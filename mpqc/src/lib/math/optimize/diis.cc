@@ -30,6 +30,7 @@
 #endif
 
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 #include <math/scmat/cmatrix.h>
 #include <math/optimize/diis.h>
 

@@ -30,6 +30,7 @@
 #endif
 
 #include <util/misc/newstring.h>
+#include <util/state/stateio.h>
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
 #include <chemistry/qc/scf/clscf.h>

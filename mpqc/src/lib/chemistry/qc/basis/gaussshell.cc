@@ -34,6 +34,7 @@
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
+#include <util/state/stateio.h>
 
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/integral.h>

@@ -56,6 +56,7 @@
 #include <math.h>
 
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 #include <math/symmetry/pointgrp.h>
 
 #include <math/topology/point.h> // still needed to support old ckpt files

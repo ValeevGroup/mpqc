@@ -169,14 +169,14 @@ double Triangle::flat_area()
                       - c2*c2 - b2*b2 - a2*a2);
 }
 
-void Triangle::add_vertices(SetRefVertex&set)
+void Triangle::add_vertices(AVLSet<RefVertex>&set)
 {
-  for (int i=0; i<3; i++) set.add(_edges[i]->vertex(orientation(i)));
+  for (int i=0; i<3; i++) set.insert(_edges[i]->vertex(orientation(i)));
 }
 
-void Triangle::add_edges(SetRefEdge&set)
+void Triangle::add_edges(AVLSet<RefEdge>&set)
 {
-  for (int i=0; i<3; i++) set.add(_edges[i]);
+  for (int i=0; i<3; i++) set.insert(_edges[i]);
 }
 
 void

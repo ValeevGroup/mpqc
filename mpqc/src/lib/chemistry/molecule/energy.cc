@@ -33,6 +33,7 @@
 #include <math.h>
 
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 #include <math/scmat/local.h>
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/energy.h>

@@ -29,6 +29,8 @@
 #pragma implementation
 #endif
 
+#include <util/state/stateio.h>
+
 #include <math/symmetry/corrtab.h>
 #include <math/scmat/local.h>
 #include <math/scmat/blocked.h>

@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <util/state/stateio.h>
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/matrix.h>

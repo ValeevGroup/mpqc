@@ -33,7 +33,6 @@
 
 #include <util/group/topology.h>
 #include <util/group/hcube.h>
-#include <util/class/classMap.h>
 #ifdef HAVE_NX
 #  include <util/group/messpgon.h>
 #endif
@@ -55,7 +54,6 @@ MessageGrp::_castdown(const ClassDesc*cd)
 MessageGrp::MessageGrp(const RefKeyVal& keyval):
   me_(-1),
   n_(-1),
-  classdesc_to_index_(-1),
   index_to_classdesc_(0)
 {
   gop_max_ = keyval->intvalue("gop_max");
@@ -66,7 +64,6 @@ MessageGrp::MessageGrp(const RefKeyVal& keyval):
 MessageGrp::MessageGrp():
   me_(-1),
   n_(-1),
-  classdesc_to_index_(-1),
   index_to_classdesc_(0)
 {
   gop_max_ = 320000;
@@ -193,13 +190,13 @@ MessageGrp::initialize(int me, int n)
     }
 
   int i;
-  Pix J;
+  AVLMap<ClassKey,ClassDescP>::iterator J;
   
   me_ = me;
   n_ = n;
 
   // get all of the classes known on this node
-  ClassKeyClassDescPMap& classes = ClassDesc::all();
+  AVLMap<ClassKey,ClassDescP>& classes = ClassDesc::all();
 
   // Keeps count of how many classes are known.
   int iclass = 0;
@@ -210,28 +207,24 @@ MessageGrp::initialize(int me, int n)
           // classdesc to index map.
           int n_new_class = 0;
           int buffer_size = 0;
-          for (J=classes.first(); J; classes.next(J)) {
-              // I'm not sure where the null entries come from, but
-              // they are bad--skip them.
-              if (classes.contents(J) == 0) continue;
-              if (!classdesc_to_index_.contains(classes.contents(J))) {
+          for (J=classes.begin(); J!=classes.end(); J++) {
+              if (!classdesc_to_index_.contains(J.data())) {
                   n_new_class++;
-                  buffer_size += strlen(classes.contents(J)->name()) + 1;
+                  buffer_size += strlen(J.data()->name()) + 1;
                 }
             }
           char* buffer = new char[buffer_size];
           char* currentbuffer = buffer;
-          for (J=classes.first(); J; classes.next(J)) {
-              if (classes.contents(J) == 0) continue;
-              if (!classdesc_to_index_.contains(classes.contents(J))) {
-                  classdesc_to_index_[classes.contents(J)] = iclass;
+          for (J=classes.begin(); J!=classes.end(); J++) {
+              if (!classdesc_to_index_.contains(J.data())) {
+                  classdesc_to_index_[J.data()] = iclass;
                   iclass++;
 #ifdef DEBUG
                   cout << scprintf("node %d adding class %d = \"%s\"\n",
-                                   me, iclass, classes.contents(J)->name());
+                                   me, iclass, J.data()->name());
 #endif
-                  strcpy(currentbuffer,classes.contents(J)->name());
-                  currentbuffer += strlen(classes.contents(J)->name()) + 1;
+                  strcpy(currentbuffer,J.data()->name());
+                  currentbuffer += strlen(J.data()->name()) + 1;
                 }
             }
 #ifdef DEBUG
@@ -296,9 +289,9 @@ MessageGrp::initialize(int me, int n)
   for (i=0; i<nclass_; i++) {
       index_to_classdesc_[i] = 0;
     }
-  for (J=classes.first(); J; classes.next(J)) {
-      if (classdesc_to_index_.contains(classes.contents(J))) {
-          index_to_classdesc_[classdesc_to_index_[classes.contents(J)]] = classes.contents(J);
+  for (J=classes.begin(); J!=classes.end(); J++) {
+      if (classdesc_to_index_.contains(J.data())) {
+          index_to_classdesc_[classdesc_to_index_[J.data()]] = J.data();
         }
     }
 

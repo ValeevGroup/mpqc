@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <util/state/stateio.h>
 #include <math/scmat/elemop.h>
 #include <math/scmat/blocked.h>
 #include <math/optimize/scextrapmat.h>

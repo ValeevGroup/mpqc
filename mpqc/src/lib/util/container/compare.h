@@ -1,7 +1,7 @@
 //
-// set.cc
+// compare.h --- compare function
 //
-// Copyright (C) 1996 Limit Point Systems, Inc.
+// Copyright (C) 1998 Limit Point Systems, Inc.
 //
 // Author: Curtis Janssen <cljanss@limitpt.com>
 // Maintainer: LPS
@@ -25,15 +25,21 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUC__
-#pragma implementation
+#ifndef _util_container_compare_h
+#define _util_container_compare_h
+
+template <class T>
+inline int
+compare(const T& k1, const T& k2)
+{
+  return (k1<k2?-1:(k1==k2?0:1));
+}
+
 #endif
 
-#include <util/container/set.h>
+/////////////////////////////////////////////////////////////////////////////
 
-SET_def(int);
-ARRAYSET_def(int);
-ARRAY_def(Arraysetint);
-SET_def(double);
-ARRAYSET_def(double);
-
+// Local Variables:
+// mode: c++
+// c-file-style: "CLJ"
+// End:

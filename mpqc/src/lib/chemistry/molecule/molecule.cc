@@ -34,6 +34,7 @@
 #include <stdio.h>
 
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/formula.h>
 #include <chemistry/molecule/localdef.h>

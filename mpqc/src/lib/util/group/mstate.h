@@ -33,6 +33,8 @@
 #define _util_group_mstate_h
 
 #include <util/state/state.h>
+#include <util/state/statein.h>
+#include <util/state/stateout.h>
 #include <util/group/message.h>
 
 //. The \clsnm{MsgStateSend} is an abstract base class that sends objects

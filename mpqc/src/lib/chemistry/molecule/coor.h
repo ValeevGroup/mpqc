@@ -35,7 +35,6 @@
 #include <iostream.h>
 
 #include <util/container/array.h>
-#include <util/container/set.h>
 #include <math/scmat/matrix.h>
 #include <math/optimize/transform.h>
 #include <chemistry/molecule/molecule.h>
@@ -103,8 +102,6 @@ class IntCoor: public SavableState {
 };
 SavableState_REF_dec(IntCoor);
 ARRAY_dec(RefIntCoor);
-SET_dec(RefIntCoor);
-ARRAYSET_dec(RefIntCoor);
 
 //.  \clsnm{SumIntCoor} is used to construct linear combinations of
 //internal coordinates.  Normally one will use simple internal coordinates,
@@ -177,7 +174,7 @@ class SetIntCoor: public SavableState {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    ArraysetRefIntCoor coor_;
+    ArrayRefIntCoor coor_;
   public:
     SetIntCoor();
     SetIntCoor(StateIn&);
@@ -191,10 +188,8 @@ class SetIntCoor: public SavableState {
     void add(const RefIntCoor&);
     //. Adds all the elements of another set to this one.
     void add(const RefSetIntCoor&);
-    //. Removes a coordinate from this set.
-    void del(const RefIntCoor&);
-    //. Removes all the elements of a set of coordinates from this one.
-    void del(const RefSetIntCoor&);
+    //. Removes the last coordinate from this set.
+    void pop();
     //. Removes all coordinates from the set.
     void clear();
     //. Returns the number of coordinates in the set.
@@ -225,7 +220,7 @@ SavableState_REF_dec(SetIntCoor);
 
 //////////////////////////////////////////////////////////////////////////
 
-class BitArray;
+class BitArrayLTri;
 
 //.  \clsnm{IntCoorGen} generates a set of simple internal coordinates
 //given a molecule.
@@ -250,13 +245,13 @@ class IntCoorGen: public SavableState
     double radius_scale_factor_;
 
     double cos_ijk(Molecule& m, int i, int j, int k);
-    int hterminal(Molecule& m, BitArray& bonds, int i);
+    int hterminal(Molecule& m, BitArrayLTri& bonds, int i);
     int nearest_contact(int i, Molecule& m);
 
-    void add_bonds(const RefSetIntCoor& list, BitArray& bonds, Molecule& m);
-    void add_bends(const RefSetIntCoor& list, BitArray& bonds, Molecule& m);
-    void add_tors(const RefSetIntCoor& list, BitArray& bonds, Molecule& m);
-    void add_out(const RefSetIntCoor& list, BitArray& bonds, Molecule& m);
+    void add_bonds(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m);
+    void add_bends(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m);
+    void add_tors(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m);
+    void add_out(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m);
   public:
     //. Create an \clsnm{IntCoorGen} given a \clsnmref{Molecule} and,
     //optionally, extra bonds.  \clsnm{IntCoorGen} keeps a reference to

@@ -34,7 +34,6 @@
 #include <math/scmat/vector3.h>
 #include <math/isosurf/isosurf.h>
 #include <math/isosurf/implicit.h>
-#include <math/isosurf/vtsRAVLMap.h>
 
 ////////////////////////////////////////////////////////////////////////////
 // IsosurfaceGen members
@@ -116,25 +115,25 @@ ImplicitSurfacePolygonizer::isosurface(double value,
   if (!_volume->gradient_implemented()) {
       int i;
       // make a list of what triangles are connected to each vertex
-      RefTriangleAVLSet empty;
-      RefVertexRefTriangleAVLSetRAVLMap vertex_to_triangles(empty);
+      AVLMap<RefVertex,AVLSet<RefTriangle> > vertex_to_triangles;
       for (i=0; i<surf.ntriangle(); i++) {
           RefTriangle t = surf.triangle(i);
 	  RefVertex v0 = t->vertex(0);
 	  RefVertex v1 = t->vertex(1);
 	  RefVertex v2 = t->vertex(2);
-          vertex_to_triangles[v0].add(t);
-          vertex_to_triangles[v1].add(t);
-          vertex_to_triangles[v2].add(t);
+          vertex_to_triangles[v0].insert(t);
+          vertex_to_triangles[v1].insert(t);
+          vertex_to_triangles[v2].insert(t);
         }
       for (i=0; i<surf.nvertex(); i++) {
           RefVertex v = surf.vertex(i);
-          RefTriangleAVLSet triangles;
+          AVLSet<RefTriangle> triangles;
           triangles |= vertex_to_triangles[v];
           SCVector3 norm(0.0);
           SCVector3 tmp(0.0);
-          for (Pix J = triangles.first(); J; triangles.next(J)) {
-              RefTriangle t(triangles(J));
+          for (AVLSet<RefTriangle>::iterator J = triangles.begin();
+               J != triangles.end(); J++) {
+              RefTriangle t(*J);
               // compute the normal to the surface
               // (using flat triangles)
               SCVector3 BA = t->vertex(1)->point() - t->vertex(0)->point();
@@ -170,8 +169,9 @@ int
 ImplicitSurfacePolygonizer::add_triangle_to_current(int i1, int i2, int i3,
                                                    VERTICES v)
 {
-  int i;
-  for (i=current->_tmp_vertices.length(); i<v.count; i++) {
+  int oldlength = current->_tmp_vertices.length();
+  current->_tmp_vertices.reset_length(v.count);
+  for (int i=oldlength; i<v.count; i++) {
       SCVector3 newpoint;
       newpoint[0] = v.ptr[i].position.x;
       newpoint[1] = v.ptr[i].position.y;
@@ -182,7 +182,7 @@ ImplicitSurfacePolygonizer::add_triangle_to_current(int i1, int i2, int i3,
           current->_volume->get_gradient(normal);
           normal.normalize();
         }
-      current->_tmp_vertices.add(new Vertex(newpoint, normal));
+      current->_tmp_vertices[i] = new Vertex(newpoint, normal);
     }
 
   RefVertex v1 = current->_tmp_vertices[i1];

@@ -1,5 +1,5 @@
 //
-// avl.h --- definitions for some list classes
+// eavlmmap.h --- definition for embedded avl multimap class
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
@@ -25,14 +25,14 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _util_container_avl_h
-#define _util_container_avl_h
+#ifndef _util_container_eavlmmap_h
+#define _util_container_eavlmmap_h
 
 #include <iostream.h>
-#include <math.h>
+#include <util/container/compare.h>
 
-template <class T, class K>
-class EAVLNode {
+template <class K, class T>
+class EAVLMMapNode {
   public:
     K key;
     T* lt;
@@ -40,46 +40,62 @@ class EAVLNode {
     T* up;
     int balance;
   public:
-    EAVLNode(const K& k): key(k) {}
+    EAVLMMapNode(const K& k): key(k) {}
 };
 
-template <class T>
-inline int
-compare(const T& k1, const T& k2)
-{
-  return (k1<k2?-1:(k1==k2?0:1));
-}
-
-template <class T, class K>
-class EAVLList {
+template <class K, class T>
+class EAVLMMap {
   private:
+    size_t length_;
     T *root_;
     T *start_;
-    EAVLNode<T,K> T::* node_;
-  private:
+    EAVLMMapNode<K,T> T::* node_;
+  public:
 #if defined(__GNUC__) && defined(__alpha__)
-    T*& rlink(T* n) const { T*& r = (n->*node_).rt; return r; }
-    T*& llink(T* n) const { T*& r = (n->*node_).lt; return r; }
-    T*& uplink(T* n) const { T*& r = (n->*node_).up; return r; }
-    int& balance(T* n) const { int& r = (n->*node_).balance; return r; }
+    T*& rlink(const T* n) const { T*& r = (n->*node_).rt; return r; }
+    T*& llink(const T* n) const { T*& r = (n->*node_).lt; return r; }
+    T*& uplink(const T* n) const { T*& r = (n->*node_).up; return r; }
+    int& balance(const T* n) const { int& r = (n->*node_).balance; return r; }
     K& key(T* n) const { K& r = (n->*node_).key; return r; }
+    const K& key(const T* n) const { K& r = (n->*node_).key; return r; }
 #else    
-    T*& rlink(T* n) const { return (n->*node_).rt; }
-    T*& llink(T* n) const { return (n->*node_).lt; }
-    T*& uplink(T* n) const { return (n->*node_).up; }
-    int& balance(T* n) const { return (n->*node_).balance; }
+    T*& rlink(const T* n) const { return (n->*node_).rt; }
+    T*& llink(const T* n) const { return (n->*node_).lt; }
+    T*& uplink(const T* n) const { return (n->*node_).up; }
+    int& balance(const T* n) const { return (n->*node_).balance; }
     K& key(T* n) const { return (n->*node_).key; }
+    const K& key(const T* n) const { return (n->*node_).key; }
 #endif
     int compare(T*n,T*m) const { return ::compare(key(n), key(m)); }
     int compare(T*n,const K&m) const { return ::compare(key(n), m); }
-
+  private:
     void adjust_balance_insert(T* A, T* child);
     void adjust_balance_remove(T* A, T* child);
     void clear(T*);
   public:
-    EAVLList();
-    EAVLList(EAVLNode<T,K> T::* node);
-    void initialize(EAVLNode<T,K> T::* node);
+    class iterator {
+      private:
+        EAVLMMap<K,T> *map_;
+        T *node;
+      public:
+        iterator(EAVLMMap<K,T> *m, T *n):map_(m),node(n){}
+        iterator(const EAVLMMap<K,T>::iterator &i) { map_=i.map_; node=i.node; }
+        void operator++() { map_->next(node); }
+        void operator++(int) { operator++(); }
+        int operator == (const EAVLMMap<K,T>::iterator &i) const
+            { return map_ == i.map_ && node == i.node; }
+        int operator != (const EAVLMMap<K,T>::iterator &i) const
+            { return !operator == (i); }
+        void operator = (const EAVLMMap<K,T>::iterator &i)
+            { map_ = i.map_; node = i.node; }
+        const K &key() const { return map_->key(node); }
+        T & operator *() { return *node; }
+        T * operator->() { return node; }
+    };
+  public:
+    EAVLMMap();
+    EAVLMMap(EAVLMMapNode<K,T> T::* node);
+    void initialize(EAVLMMapNode<K,T> T::* node);
     void clear_without_delete() { initialize(node_); }
     void clear() { clear(root_); initialize(node_); }
     void insert(T*);
@@ -91,28 +107,20 @@ class EAVLList {
     void check();
     void check_node(T*) const;
 
-    int length() const;
-
     T* start() const { return start_; }
-    void next(T*&) const;
+    void next(const T*&) const;
+
+    iterator begin() { return iterator(this,start()); }
+    iterator end() { return iterator(this,0); }
 
     void print();
-
+    int length() const { return length_; }
     int depth(T*);
 };
 
-template <class T, class K>
-int
-EAVLList<T,K>::length() const
-{
-  int r = 0;
-  for (T* i=start(); i; next(i)) r++;
-  return r;
-}
-
-template <class T, class K>
+template <class K, class T>
 T*
-EAVLList<T,K>::find(const K& key) const
+EAVLMMap<K,T>::find(const K& key) const
 {
   T* n = root_;
 
@@ -126,11 +134,13 @@ EAVLList<T,K>::find(const K& key) const
   return 0;
 }
 
-template <class T, class K>
+template <class K, class T>
 void
-EAVLList<T,K>::remove(T* node)
+EAVLMMap<K,T>::remove(T* node)
 {
   if (!node) return;
+
+  length_--;
 
   if (node == start_) {
       next(start_);
@@ -168,7 +178,7 @@ EAVLList<T,K>::remove(T* node)
       next(r);
 
       if (r == 0 || llink(r) != 0) {
-          cerr << "EAVLList::remove: inconsistency" << endl;
+          cerr << "EAVLMMap::remove: inconsistency" << endl;
           abort();
         }
 
@@ -217,14 +227,13 @@ EAVLList<T,K>::remove(T* node)
   adjust_balance_remove(rebalance_point, q);
 }
 
-template <class T, class K>
+template <class K, class T>
 void
-EAVLList<T,K>::print()
+EAVLMMap<K,T>::print()
 {
   for (T*n=start(); n; next(n)) {
       int d = depth(n) + 1;
       for (int i=0; i<d; i++) cout << "     ";
-      n->print();
       if (balance(n) == 1) cout << " (+)" << endl;
       else if (balance(n) == -1) cout << " (-)" << endl;
       else if (balance(n) == 0) cout << " (.)" << endl;
@@ -232,9 +241,9 @@ EAVLList<T,K>::print()
     }
 }
 
-template <class T, class K>
+template <class K, class T>
 int
-EAVLList<T,K>::depth(T*node)
+EAVLMMap<K,T>::depth(T*node)
 {
   int d = 0;
   while (node) {
@@ -244,9 +253,9 @@ EAVLList<T,K>::depth(T*node)
   return d;
 }
 
-template <class T, class K>
+template <class K, class T>
 void
-EAVLList<T,K>::check_node(T*n) const
+EAVLMMap<K,T>::check_node(T*n) const
 {
   if (uplink(n) && uplink(n) == n) abort();
   if (llink(n) && llink(n) == n) abort();
@@ -258,9 +267,9 @@ EAVLList<T,K>::check_node(T*n) const
                      || rlink(uplink(n)) == n)) abort();
 }
 
-template <class T, class K>
+template <class K, class T>
 void
-EAVLList<T,K>::clear(T*n)
+EAVLMMap<K,T>::clear(T*n)
 {
   if (!n) return;
   clear(llink(n));
@@ -268,9 +277,9 @@ EAVLList<T,K>::clear(T*n)
   delete n;
 }
 
-template <class T, class K>
+template <class K, class T>
 int
-EAVLList<T,K>::height(T* node)
+EAVLMMap<K,T>::height(T* node)
 {
   if (!node) return 0;
   int rh = height(rlink(node)) + 1;
@@ -278,12 +287,13 @@ EAVLList<T,K>::height(T* node)
   return rh>lh?rh:lh;
 }
 
-template <class T, class K>
+template <class K, class T>
 void
-EAVLList<T,K>::check()
+EAVLMMap<K,T>::check()
 {
   T* node;
   T* prev=0;
+  int computed_length = 0;
   for (node = start(); node; next(node)) {
       check_node(node);
       if (prev && compare(prev,node) > 0) {
@@ -291,6 +301,7 @@ EAVLList<T,K>::check()
           abort();
         }
       prev = node;
+      computed_length++;
     }
   for (node = start(); node; next(node)) {
       if (balance(node) != height(rlink(node)) - height(llink(node))) {
@@ -302,11 +313,15 @@ EAVLList<T,K>::check()
           abort();
         }
     }
+  if (length_ != computed_length) {
+      cerr << "length error" << endl;
+      abort();
+    }
 }
 
-template <class T, class K>
+template <class K, class T>
 void
-EAVLList<T,K>::next(T*& node) const
+EAVLMMap<K,T>::next(const T*& node) const
 {
   T* r;
   if (r = rlink(node)) {
@@ -324,13 +339,15 @@ EAVLList<T,K>::next(T*& node) const
   node = 0;
 }
 
-template <class T, class K>
+template <class K, class T>
 void
-EAVLList<T,K>::insert(T* n)
+EAVLMMap<K,T>::insert(T* n)
 {
   if (!n) {
       return;
     }
+
+  length_++;
 
   rlink(n) = 0;
   llink(n) = 0;
@@ -368,7 +385,7 @@ EAVLList<T,K>::insert(T* n)
       else rlink(prev_p) = n;
     }
 
-  // maybe update the first node in the list
+  // maybe update the first node in the map
   if (have_start) start_ = n;
 
   // adjust the balance factors
@@ -377,9 +394,9 @@ EAVLList<T,K>::insert(T* n)
     }
 }
 
-template <class T, class K>
+template <class K, class T>
 void
-EAVLList<T,K>::adjust_balance_insert(T* A, T* child)
+EAVLMMap<K,T>::adjust_balance_insert(T* A, T* child)
 {
   if (!A) return;
   int adjustment;
@@ -491,9 +508,9 @@ EAVLList<T,K>::adjust_balance_insert(T* A, T* child)
     }
 }
 
-template <class T, class K>
+template <class K, class T>
 void
-EAVLList<T,K>::adjust_balance_remove(T* A, T* child)
+EAVLMMap<K,T>::adjust_balance_remove(T* A, T* child)
 {
   if (!A) return;
   int adjustment;
@@ -639,402 +656,29 @@ EAVLList<T,K>::adjust_balance_remove(T* A, T* child)
     }
 }
 
-template <class T, class K>
+template <class K, class T>
 inline
-EAVLList<T,K>::EAVLList()
+EAVLMMap<K,T>::EAVLMMap()
 {
   initialize(0);
 }
 
-template <class T, class K>
+template <class K, class T>
 inline
-EAVLList<T,K>::EAVLList(EAVLNode<T,K> T::* node)
+EAVLMMap<K,T>::EAVLMMap(EAVLMMapNode<K,T> T::* node)
 {
   initialize(node);
 }
 
-template <class T, class K>
+template <class K, class T>
 inline void
-EAVLList<T,K>::initialize(EAVLNode<T,K> T::* node)
+EAVLMMap<K,T>::initialize(EAVLMMapNode<K,T> T::* node)
 {
   node_ = node;
   root_ = 0;
   start_ = 0;
+  length_ = 0;
 }
-
-
-#undef TEST
-#define TEST 0
-#if TEST
-
-class Data {
-  public:
-    EAVLNode<Data,int> list1;
-    EAVLNode<Data,int> list2;
-  public:
-    Data(int k1, int k2 = 0): list1(k1), list2(k2) {};
-    void print(int indent = 0);
-    void change1(int val) { list1.key = val; }
-};
-
-void
-Data::print(int indent)
-{
-  for (int i=0; i<indent; i++) cout << " ";
-  cout << list1.key;
-}
-
-#define TEST1 1
-#define TEST2 1
-#define TEST3 1
-#define TEST4 1
-#define TEST5 1
-#define TEST6 1
-#define TEST7 1
-#define TEST8 0
-#define TEST9 0
-
-static int Ni = 0;
-static int Nr = 0;
-static int Nf = 0;
-
-void
-testlist(EAVLList<Data, int>& list, Data** data, int n)
-{
-  for (int i=0; i<n; i++) {
-      for (int j=0; j<n; j++) {
-          list.insert(data[j]);
-          Ni++;
-        }
-#if 0
-      if (i==0) {
-          cout << "--------------------------------------------" << endl;
-          list.check();
-          list.print2();
-        }
-      cout << "............................. removing ";
-      data[i]->print();
-      cout << endl;
-#endif
-      list.remove(data[i]);
-      Nr++;
-#if 0
-      list.print2();
-#endif
-      list.check();
-      list.clear_without_delete();
-    }
-}
-
-void
-rantest(EAVLList<Data, int>&list1, Data** data, int n)
-{
-  for (int i=0; i<n; i++) {
-      Data* d = data[i];
-      d->change1(random());
-      list1.insert(d);
-      Ni++;
-    }
-  list1.check();
-  for (int i=0; i<n; i++) {
-      list1.find(i);
-      Nf++;
-    }
-  for (int i=0; i<n; i++) {
-      Data* d = data[i];
-      list1.remove(d);
-      Nr++;
-    }
-  list1.check();
-  list1.clear_without_delete();
-}
-
-int
-main()
-{
-  const int maxkey = 9;
-  EAVLList<Data,int> list1(&Data::list1);
-  Data* data[maxkey][maxkey];
-  Data* currentdata[maxkey];
-  for (int i=0; i<maxkey; i++) {
-      for (int j=0; j<maxkey; j++) {
-          data[i][j] = new Data(j);
-        }
-    }
-  int max;
-
-  const int unique = 1;
-
-#if TEST1
-  cout << "=================================================" << endl;
-  max = 1;
-  for (int i=0; i<max; i++) {
-      currentdata[0] = data[0][i];
-
-      testlist(list1, currentdata, max);
-    }
-#endif
-
-#if TEST2
-  cout << "=================================================" << endl;
-  max = 2;
-  for (int i=0; i<max; i++) {
-      currentdata[0] = data[0][i];
-      for (int j=0; j<max; j++) {
-          if (unique && i == j) continue;
-          currentdata[1] = data[0][j];
-          testlist(list1, currentdata, max);
-        }
-    }
-#endif
-
-#if TEST3
-  cout << "=================================================" << endl;
-  max = 3;
-  for (int i=0; i<max; i++) {
-      currentdata[0] = data[0][i];
-      for (int j=0; j<max; j++) {
-          if (unique && i == j) continue;
-          currentdata[1] = data[0][j];
-          for (int k=0; k<max; k++) {
-              if (unique && k==i || k==j) continue;
-              currentdata[2] = data[0][k];
-
-              testlist(list1, currentdata, max);
-            }
-        }
-    }
-#endif
-
-#if TEST4
-  cout << "=================================================" << endl;
-  max = 4;
-  for (int i=0; i<max; i++) {
-      currentdata[0] = data[0][i];
-      for (int j=0; j<max; j++) {
-          if (unique && i == j) continue;
-          currentdata[1] = data[0][j];
-          for (int k=0; k<max; k++) {
-              if (unique && k==i || k==j) continue;
-              currentdata[2] = data[0][k];
-              for (int l=0; l<max; l++) {
-                  if (unique && l==i || l==j || l==k) continue;
-                  currentdata[3] = data[0][l];
-
-                  testlist(list1, currentdata, max);
-                }
-            }
-        }
-    }
-#endif
-
-#if TEST5
-  cout << "=================================================" << endl;
-  max = 5;
-  for (int i=0; i<max; i++) {
-      currentdata[0] = data[0][i];
-      for (int j=0; j<max; j++) {
-          if (unique && i == j) continue;
-          currentdata[1] = data[0][j];
-          for (int k=0; k<max; k++) {
-              if (unique && k==i || k==j) continue;
-              currentdata[2] = data[0][k];
-              for (int l=0; l<max; l++) {
-                  if (unique && l==i || l==j || l==k) continue;
-                  currentdata[3] = data[0][l];
-                  for (int m=0; m<max; m++) {
-                  if (unique && m==i || m==j || m==k || m==l) continue;
-                  currentdata[4] = data[0][m];
-
-                  testlist(list1, currentdata, max);
-                  }
-                }
-            }
-        }
-    }
-#endif
-
-#if TEST6
-  cout << "=================================================" << endl;
-  max = 6;
-  for (int i=0; i<max; i++) {
-      currentdata[0] = data[0][i];
-      for (int j=0; j<max; j++) {
-          if (unique && i == j) continue;
-          currentdata[1] = data[0][j];
-          cout << "6: i = " << i << " j = " << j << endl;
-          for (int k=0; k<max; k++) {
-              if (unique && k==i || k==j) continue;
-      currentdata[2] = data[0][k];
-              for (int l=0; l<max; l++) {
-                  if (unique && l==i || l==j || l==k) continue;
-      currentdata[3] = data[0][l];
-                  for (int m=0; m<max; m++) {
-                  if (unique && m==i || m==j || m==k || m==l) continue;
-      currentdata[4] = data[0][m];
-                  for (int n=0; n<max; n++) {
-                  if (unique && n==i || n==j || n==k || n==l || n==m) continue;
-      currentdata[5] = data[0][n];
-
-                  testlist(list1, currentdata, max);
-
-                }
-                }
-                }
-            }
-        }
-    }
-#endif
-
-#if TEST7
-  cout << "=================================================" << endl;
-  max = 7;
-  for (int i=0; i<max; i++) {
-      currentdata[0] = data[0][i];
-      for (int j=0; j<max; j++) {
-          if (unique && i == j) continue;
-      currentdata[1] = data[0][j];
-          for (int k=0; k<max; k++) {
-              if (unique && k==i || k==j) continue;
-              currentdata[2] = data[0][k];
-              cout << "7: i = " << i << " j = " << j << " k = " << k << endl;
-              for (int l=0; l<max; l++) {
-                  if (unique && l==i || l==j || l==k) continue;
-      currentdata[3] = data[0][l];
-                  for (int m=0; m<max; m++) {
-                  if (unique && m==i || m==j || m==k || m==l) continue;
-      currentdata[4] = data[0][m];
-                  for (int n=0; n<max; n++) {
-                  if (unique && n==i || n==j || n==k || n==l || n==m) continue;
-      currentdata[5] = data[0][n];
-                  for (int o=0; o<max; o++) {
-                  if (unique && o==i || o==j || o==k || o==l || o==m || o==n) continue;
-      currentdata[6] = data[0][o];
-
-                  testlist(list1, currentdata, max);
-
-                }
-                }
-                }
-                }
-            }
-        }
-    }
-#endif
-
-#if TEST8
-  cout << "=================================================" << endl;
-  max = 8;
-  for (int i=0; i<max; i++) {
-      currentdata[0] = data[0][i];
-      for (int j=0; j<max; j++) {
-          if (unique && i == j) continue;
-      currentdata[1] = data[0][j];
-          for (int k=0; k<max; k++) {
-              if (unique && k==i || k==j) continue;
-      currentdata[2] = data[0][k];
-              for (int l=0; l<max; l++) {
-                  if (unique && l==i || l==j || l==k) continue;
-      currentdata[3] = data[0][l];
-                  cout << "7: i = " << i << " j = " << j << " k = " << k
-                       << " l = " << l << endl;
-                  for (int m=0; m<max; m++) {
-                  if (unique && m==i || m==j || m==k || m==l) continue;
-      currentdata[4] = data[0][m];
-                  for (int n=0; n<max; n++) {
-                  if (unique && n==i || n==j || n==k || n==l || n==m) continue;
-      currentdata[5] = data[0][n];
-                  for (int o=0; o<max; o++) {
-                  if (unique && o==i || o==j || o==k || o==l || o==m || o==n) continue;
-      currentdata[6] = data[0][o];
-                  for (int p=0; p<max; p++) {
-                  if (unique && p==i||p==j||p==k||p==l||p==m||p==n||p==o) continue;
-      currentdata[7] = data[0][p];
-
-                  testlist(list1, currentdata, max);
-
-                }
-                }
-                }
-                }
-                }
-            }
-        }
-    }
-#endif
-
-#if TEST9
-  cout << "=================================================" << endl;
-  max = 9;
-  for (int i=0; i<max; i++) {
-      currentdata[0] = data[0][i];
-      for (int j=0; j<max; j++) {
-          if (unique && i == j) continue;
-      currentdata[1] = data[0][j];
-          for (int k=0; k<max; k++) {
-              if (unique && k==i || k==j) continue;
-      currentdata[2] = data[0][k];
-              for (int l=0; l<max; l++) {
-                  if (unique && l==i || l==j || l==k) continue;
-      currentdata[3] = data[0][l];
-                  for (int m=0; m<max; m++) {
-                  if (unique && m==i || m==j || m==k || m==l) continue;
-      currentdata[4] = data[0][m];
-                  cout << "7: i = " << i << " j = " << j << " k = " << k
-                       << " l = " << l << " m = " << m << endl;
-                  for (int n=0; n<max; n++) {
-                  if (unique && n==i || n==j || n==k || n==l || n==m) continue;
-      currentdata[5] = data[0][n];
-                  for (int o=0; o<max; o++) {
-                  if (unique && o==i || o==j || o==k || o==l || o==m || o==n) continue;
-      currentdata[6] = data[0][o];
-                  for (int p=0; p<max; p++) {
-                  if (unique && p==i||p==j||p==k||p==l||p==m||p==n||p==o) continue;
-      currentdata[7] = data[0][p];
-                  for (int q=0; q<max; q++) {
-                  if (unique && q==i||q==j||q==k||q==l||q==m||q==n||q==o||q==p) continue;
-      currentdata[8] = data[0][q];
-
-                  testlist(list1, currentdata, max);
-
-                }
-                }
-                }
-                }
-                }
-                }
-            }
-        }
-    }
-#endif
-
-  cout << "Ni = " << Ni << ", Nr = " << Nr << ", N = " << Ni+Nr << endl;
-
-  const int maxdat2 = 2000;
-  Data * data2[maxdat2];
-  for (int i=0; i<maxdat2; i++) {
-      data2[i] = new Data(i);
-    }
-  for (int i=0; i<maxdat2; i++) {
-      if (i%100 == 0) cout << "-";
-    }
-  cout << endl;
-  for (int i=0; i<maxdat2; i++) {
-      if (i%100 == 0) {
-          cout << ".";
-          fflush(stdout);
-        }
-      rantest(list1, data2, i);
-    }
-  cout << endl;
-
-  cout << "Ni = " << Ni << ", Nr = " << Nr << ", Nf = " << Nf
-       << ", N = " << Ni+Nr << endl;
-
-  return 0;
-}
-
-#endif // TEST
 
 #endif
 

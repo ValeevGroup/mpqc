@@ -33,7 +33,7 @@
 #define _util_misc_compute_h
 
 #include <stdio.h>
-#include <util/container/set.h>
+#include <util/container/avlset.h>
 #include <util/state/state.h>
 
 class ResultInfo;
@@ -42,14 +42,12 @@ class StateOut;
 
 typedef ResultInfo* ResultInfoP;
 
-SET_dec(ResultInfoP);
-
 class Compute
 {
    friend class ResultInfo;
    friend class AccResultInfo;
   private:
-    SetResultInfoP _results;
+    AVLSet<ResultInfoP> _results;
     void add(ResultInfo*);
 
     // Prohibit copy

@@ -37,6 +37,8 @@
 #include <iomanip.h>
 
 #include <util/state/state.h>
+#include <util/state/statein.h>
+#include <util/state/stateout.h>
 
 //. The \clsnmref{StateOutFile} provides a \clsnmref{StateOut}
 //. which writes to files.  It is still abstract---one of its

@@ -40,6 +40,7 @@
 #include <util/group/pregtime.h>
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 
 #include <math/scmat/repl.h>
 #include <math/scmat/dist.h>

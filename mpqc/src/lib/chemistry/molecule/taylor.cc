@@ -30,6 +30,7 @@
 #endif
 
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 #include <math/scmat/local.h>
 #include <chemistry/molecule/taylor.h>
 
@@ -175,23 +176,22 @@ factorial(int i)
 static double
 factor(Arrayint&indices)
 {
-  Arraysetint nonredundant;
+  AVLMap<int,int> n_occur;
   int i;
   for (i=0; i<indices.length(); i++) {
-      nonredundant.add(indices[i]);
+      n_occur[indices[i]] = 0;
     }
-  Arrayint n_occur;
-  n_occur.set_length(nonredundant.length());
-  for (i=0; i<nonredundant.length(); i++) n_occur[i] = 0;
   for (i=0; i<indices.length(); i++) {
-      n_occur[nonredundant.iseek(indices[i])]++;
+      n_occur[indices[i]]++;
     }
   int n_indices = indices.length();
   int int_factor = 1;
-  for (i=0; i<nonredundant.length(); i++) {
+  AVLMap<int,int>::iterator I;
+  for (I=n_occur.begin(); I!=n_occur.end(); I++) {
+      int n = I.data();
       int_factor *= factorial(n_indices)
-                   /(factorial(n_occur[i])*factorial(n_indices-n_occur[i]));
-      n_indices -= n_occur[i];
+                   /(factorial(n)*factorial(n_indices-n));
+      n_indices -= n;
     }
   double term = ((double)int_factor) / factorial(indices.length());
   return term;

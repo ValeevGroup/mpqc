@@ -35,6 +35,7 @@
 #include <math/optimize/newton.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 
 #define CLASSNAME NewtonOpt
 #define PARENTS public Optimize

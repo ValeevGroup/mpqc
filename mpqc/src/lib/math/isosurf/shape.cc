@@ -77,8 +77,6 @@ Shape::_castdown(const ClassDesc*cd)
 }
 
 SavableState_REF_def(Shape);
-SET_def(RefShape);
-ARRAYSET_def(RefShape);
 
 Shape::Shape():
   Volume()
@@ -239,8 +237,7 @@ SphereShape::~SphereShape()
 }
 
 REF_def(SphereShape);
-SET_def(RefSphereShape);
-ARRAYSET_def(RefSphereShape);
+ARRAY_def(RefSphereShape);
 
 double
 SphereShape::distance_to_surface(const SCVector3&p,SCVector3*grad) const
@@ -1165,7 +1162,7 @@ UnionShape::~UnionShape()
 void
 UnionShape::add_shape(RefShape s)
 {
-  _shapes.add(s);
+  _shapes.insert(s);
 }
 
 // NOTE: this underestimates the distance to the surface when
@@ -1173,11 +1170,11 @@ UnionShape::add_shape(RefShape s)
 double
 UnionShape::distance_to_surface(const SCVector3&p,SCVector3* grad) const
 {
-  if (_shapes.length() == 0) return 0.0;
-  double min = _shapes[0]->distance_to_surface(p);
-  int imin = 0;
-  for (int i=1; i<_shapes.length(); i++) {
-      double d = _shapes[i]->distance_to_surface(p);
+  AVLSet<RefShape>::iterator imin = _shapes.begin();
+  if (imin == _shapes.end()) return 0.0;
+  double min = (*imin)->distance_to_surface(p);
+  for (AVLSet<RefShape>::iterator i=imin; i!=_shapes.end(); i++) {
+      double d = (*i)->distance_to_surface(p);
       if (min <= 0.0) {
           if (d < 0.0 && d > min) { min = d; imin = i; }
         }
@@ -1187,7 +1184,7 @@ UnionShape::distance_to_surface(const SCVector3&p,SCVector3* grad) const
     }
 
   if (grad) {
-      _shapes[imin]->distance_to_surface(p,grad);
+      (*imin)->distance_to_surface(p,grad);
     }
   return min;
 }
@@ -1195,9 +1192,8 @@ UnionShape::distance_to_surface(const SCVector3&p,SCVector3* grad) const
 int
 UnionShape::is_outside(const SCVector3&p) const
 {
-  if (_shapes.length() == 0) return 1;
-  for (int i=0; i<_shapes.length(); i++) {
-      if (!_shapes[i]->is_outside(p)) return 0;
+  for (AVLSet<RefShape>::iterator i=_shapes.begin(); i!=_shapes.end(); i++) {
+      if (!(*i)->is_outside(p)) return 0;
     }
 
   return 1;
@@ -1208,7 +1204,7 @@ UnionShape::boundingbox(double valuemin, double valuemax,
                         SCVector3& p1,
                         SCVector3& p2)
 {
-  if (_shapes.length() == 0) {
+  if (_shapes.begin() == _shapes.end()) {
       for (int i=0; i<3; i++) p1[i] = p2[i] = 0.0;
       return;
     }
@@ -1216,10 +1212,11 @@ UnionShape::boundingbox(double valuemin, double valuemax,
   SCVector3 pt1;
   SCVector3 pt2;
   
-  int i,j;
-  _shapes[0]->boundingbox(valuemin,valuemax,p1,p2);
-  for (j=1; j<_shapes.length(); j++) {
-      _shapes[j]->boundingbox(valuemin,valuemax,pt1,pt2);
+  AVLSet<RefShape>::iterator j = _shapes.begin();
+  int i;
+  (*j)->boundingbox(valuemin,valuemax,p1,p2);
+  for (j++; j!=_shapes.end(); j++) {
+      (*j)->boundingbox(valuemin,valuemax,pt1,pt2);
       for (i=0; i<3; i++) {
           if (pt1[i] < p1[i]) p1[i] = pt1[i];
           if (pt2[i] > p2[i]) p2[i] = pt2[i];
@@ -1230,8 +1227,8 @@ UnionShape::boundingbox(double valuemin, double valuemax,
 int
 UnionShape::gradient_implemented()
 {
-  for (int j=1; j<_shapes.length(); j++) {
-      if (!_shapes[j]->gradient_implemented()) return 0;
+  for (AVLSet<RefShape>::iterator j=_shapes.begin(); j!=_shapes.end(); j++) {
+      if (!(*j)->gradient_implemented()) return 0;
     }
   return 1;
 }

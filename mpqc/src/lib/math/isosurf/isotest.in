@@ -3,6 +3,7 @@
 surf<TriangulatedImplicitSurface>: (
     % TriangulatedSurface
     verbose = yes
+    debug = no
     integrator<GaussTriangleIntegrator>: (
          n = 7
       )

@@ -65,8 +65,8 @@ class Triangle: public VRefCount {
     }
     unsigned int orientation(const RefEdge&) const;
     ~Triangle();
-    void add_edges(SetRefEdge&);
-    void add_vertices(SetRefVertex&);
+    void add_edges(AVLSet<RefEdge>&);
+    void add_vertices(AVLSet<RefVertex>&);
 
     // returns the surface area element
     // 0<=r<=1, 0<=s<=1, 0<=r+s<=1

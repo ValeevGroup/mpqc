@@ -32,27 +32,16 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-SETIMPL = AVL
-MAPIMPL = RAVL
+CXXSRC = array.cc avl.cc bitarray.cc
 
-GENCXXSRC = pixintMap.cc pixint$(MAPIMPL)Map.cc \
-            intpixMap.cc intpix$(MAPIMPL)Map.cc
-
-REALCXXSRC = array.cc set.cc gnuavlse.cc avl.cc error.cc
-
-GENSRC = $(GENCXXSRC)
-
-CXXSRC = $(GENCXXSRC) $(REALCXXSRC)
-TESTCXX = settest.cc settestt.cc
+TESTCXX = avltest.cc artest.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
-INC = pixmap.h pixvpdefs.h ptrset.h \
-      set.h array.h artem.h ar2tem.h ssarmac.h ssar2mac.h \
-      gnuset.h gnuavlse.h pixintdefs.h avl.h refset.h
+INC = array.h artem.h ar2tem.h ssarmac.h ssar2mac.h \
+      eavlmmap.h avlmap.h avlset.h compare.h bitarray.h
 
-GENINC = $(GENCXXSRC:%.cc=%.h) setmacr.h asetmacr.h \
-         armac.h ar2mac.h ssarmac.h ssar2mac.h
+GENINC = armac.h ar2mac.h ssarmac.h ssar2mac.h
 
 DEPENDINCLUDE = $(INC) $(GENINC)
 
@@ -77,23 +66,11 @@ ssarmac.h: ssartem.h $(TMPL2MACDEP)
 ssar2mac.h: ssar2tem.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > ssar2mac.h
 
-setmacr.h: settmpl.h $(TMPL2MACDEP)
-	$(TMPL2MAC) $< > setmacr.h
-
-asetmacr.h: asettmpl.h $(TMPL2MACDEP)
-	$(TMPL2MAC) $< > asetmacr.h
-
-settest: settest.o libcontainer.$(LIBSUF) libmisc.$(LIBSUF) libref.$(LIBSUF)
-	$(CXX) $(LDFLAGS) -o settest $^
-
-gnutest: gnutest.o libcontainer.$(LIBSUF)
-	$(CXX) $(LDFLAGS) -o gnutest $^
+avltest: avltest.o
+	$(CXX) $(LDFLAGS) -o avltest $^
 
 artest: artest.o libcontainer.$(LIBSUF)
 	$(CXX) $(LDFLAGS) -o artest $^
-
-settestt: settestt.o libcontainer.$(LIBSUF)
-	$(CXX) $(LDFLAGS) -o settestt $^
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
@@ -102,29 +79,5 @@ miscclean::
 
 $(TESTCXX:%.cc=%.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d)
+include $(TESTCXX:%.cc=%.d) $(LIBOBJ:.o=.d)
 endif
-
-pixintMap.cc pixintMap.h:
-	$(GENCLASS) -2 Pix val int val Map pixint
-	$(PREPEND_HEADER) pixintMap.h "#include <Pix.h>"
-	$(PREPEND_HEADER) pixintMap.h "#include <util/container/pixintdefs.h>"
-	/bin/mv pixintMap.h tmp.pixintMap.h
-	egrep -v "#include <pixinth>|#include \"pixintdefs.h\"" < tmp.pixintMap.h > pixintMap.h
-	/bin/rm tmp.pixintMap.h
-
-intpixMap.cc intpixMap.h:
-	$(GENCLASS) -2 int val Pix val Map intpix
-	$(PREPEND_HEADER) intpixMap.h "#include <Pix.h>"
-	$(PREPEND_HEADER) intpixMap.h "#include <util/container/pixintdefs.h>"
-	/bin/mv intpixMap.h tmp.intpixMap.h
-	egrep -v "#include <intpixh>|#include \"intpixdefs.h\"" < tmp.intpixMap.h > intpixMap.h
-	/bin/rm tmp.intpixMap.h
-
-pixint$(MAPIMPL)Map.cc pixint$(MAPIMPL)Map.h:
-	$(GENCLASS) -2 Pix val int val $(MAPIMPL)Map pixint
-	$(PREPEND_HEADER) pixint$(MAPIMPL)Map.h "#include <Pix.h>"
-
-intpix$(MAPIMPL)Map.cc intpix$(MAPIMPL)Map.h:
-	$(GENCLASS) -2 int val Pix val $(MAPIMPL)Map intpix
-	$(PREPEND_HEADER) intpix$(MAPIMPL)Map.h "#include <Pix.h>"

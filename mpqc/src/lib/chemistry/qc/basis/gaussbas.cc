@@ -35,6 +35,7 @@
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
 #include <util/misc/newstring.h>
+#include <util/state/stateio.h>
 #include <math/scmat/blocked.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/gaussshell.h>

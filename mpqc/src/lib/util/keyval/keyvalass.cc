@@ -26,23 +26,20 @@
 //
 
 #include <util/keyval/keyval.h>
-#include <util/keyval/keyvalImplMap.h>
 
 AssignedKeyVal::AssignedKeyVal()
 {
-  _map = new MAPCTOR;
 }
 
 AssignedKeyVal::~AssignedKeyVal()
 {
-  delete _map;
 }
 
 int
 AssignedKeyVal::key_exists(const char * key)
 {
   KeyValKeyword k(key); 
-  int result = _map->contains(k);
+  int result = _map.contains(k);
   if (!result) {
       seterror(UnknownKeyword);
     }
@@ -58,7 +55,7 @@ AssignedKeyVal::key_value(const char * key, const KeyValValue &def)
   KeyValKeyword k(key); 
   if (exists(key)) {
       seterror(OK);
-      return _map->operator[](k);
+      return _map[k];
     }
   else {
       seterror(UnknownKeyword);
@@ -70,7 +67,7 @@ void
 AssignedKeyVal::assign(const char*key,const RefKeyValValue& val)
 {
   KeyValKeyword k(key);
-  _map->operator[](k) = val;
+  _map[k] = val;
 }
 void
 AssignedKeyVal::assign(const char*key,double val)
@@ -112,8 +109,15 @@ AssignedKeyVal::assign(const char*key,const RefDescribedClass&val)
 void
 AssignedKeyVal::clear()
 {
-  _map->clear();
+  _map.clear();
 }
+
+#ifdef __GNUG__
+template class EAVLMMapNode<KeyValKeyword, AVLMapNode<KeyValKeyword,RefKeyValValue> >;
+template class EAVLMMap<KeyValKeyword, AVLMapNode<KeyValKeyword,RefKeyValValue> >;
+template class AVLMapNode<KeyValKeyword,RefKeyValValue>;
+template class AVLMap<KeyValKeyword,RefKeyValValue>;
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 

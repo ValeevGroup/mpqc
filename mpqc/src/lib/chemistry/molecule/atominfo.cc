@@ -32,6 +32,7 @@
 
 #include <util/misc/units.h>
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 #include <util/group/message.h>
 #include <chemistry/molecule/atominfo.h>
 

@@ -36,6 +36,7 @@
 
 #include <util/keyval/keyval.h>
 #include <util/misc/timer.h>
+#include <util/state/stateio.h>
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/intv3/intv3.h>

@@ -28,6 +28,7 @@
 #include <math.h>
 #include <strstream.h>
 
+#include <util/state/stateio.h>
 #include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/hess.h>

@@ -41,10 +41,10 @@
 
 #ifdef __GNUC__
 // instantiate the templates needed for integral storage
-template class EAVLList<IntegralLink,IntegralKey>;
-template class EAVLList<IntegralLink,int>;
-template class EAVLNode<IntegralLink, IntegralKey>;
-template class EAVLNode<IntegralLink, int>;
+template class EAVLMMap<IntegralKey,IntegralLink>;
+template class EAVLMMap<int,IntegralLink>;
+template class EAVLMMapNode<IntegralKey, IntegralLink>;
+template class EAVLMMapNode<int, IntegralLink>;
 #endif
 
 /////////////////////////////////////////////////////////////////////////
@@ -107,7 +107,7 @@ IntegralStorer::_castdown(const ClassDesc*cd)
 IntegralStorer::IntegralStorer()
 {
   table_size_ = 1597;
-  table_ = new EAVLList<IntegralLink,IntegralKey>[table_size_];
+  table_ = new EAVLMMap<IntegralKey,IntegralLink>[table_size_];
   init(0);
 }
 
@@ -121,7 +121,7 @@ IntegralStorer::IntegralStorer(const RefKeyVal&keyval)
 {
   table_size_ = keyval->intvalue("table_size");
   if (table_size_ <= 0) table_size_ = 1597;
-  table_ = new EAVLList<IntegralLink,IntegralKey>[table_size_];
+  table_ = new EAVLMMap<IntegralKey,IntegralLink>[table_size_];
 
   int n_integral = keyval->intvalue("n_integral");
   init(n_integral);
@@ -206,7 +206,7 @@ IntegralStorer::find(IntegralKey& key)
                                           key.sh1(),
                                           key.sh2(),
                                           key.sh3());
-  EAVLList<IntegralLink,IntegralKey> &list = table_[hash % table_size_];
+  EAVLMMap<IntegralKey,IntegralLink> &list = table_[hash % table_size_];
   IntegralLink* link = list.find(key);
   return link;
 }

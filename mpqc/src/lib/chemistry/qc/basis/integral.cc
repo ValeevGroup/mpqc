@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <util/state/stateio.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/shellrot.h>
 #include <chemistry/qc/basis/petite.h>

@@ -32,6 +32,7 @@
 #include <math.h>
 
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>

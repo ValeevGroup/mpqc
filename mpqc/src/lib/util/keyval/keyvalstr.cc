@@ -34,7 +34,6 @@ extern "C" {
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
-#include <util/keyval/keyvalImplMap.h>
 #include <util/class/proxy.h>
 
 
@@ -45,13 +44,11 @@ extern "C" {
 
 StringKeyVal::StringKeyVal()
 {
-  _map = new MAPCTOR;
 
 }
 
 StringKeyVal::~StringKeyVal()
 {
-  delete _map;
 }
 
 const char*
@@ -98,13 +95,8 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
       //cout << "classname = " << classn << '\n';
       if (classn) {
           KeyValKeyword truekey(tkw);
-          //cout << "truekey = " << tkw << '\n';
-          // see if a reference to this datum already exists
-          //cout << "(*_map).contains(truekey) = "
-          //     << (*_map).contains(truekey)
-          //     << '\n';
-          if ((*_map).contains(truekey)) {
-              result = (*_map)[truekey];
+          if (_map.contains(truekey)) {
+              result = _map[truekey];
             }
           else {
               // create a new instance of this datum
@@ -132,7 +124,7 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
               seterror(original_error);
               KeyValValueRefDescribedClass* keyvalvalue
                   = new KeyValValueRefDescribedClass(newdc);
-              (*_map)[truekey] = keyvalvalue;
+              _map[truekey] = keyvalvalue;
               result = keyvalvalue;
             }
         }

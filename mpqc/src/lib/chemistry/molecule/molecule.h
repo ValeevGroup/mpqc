@@ -33,7 +33,6 @@
 #endif
 
 #include <stdio.h>
-#include <Pix.h>
 #ifdef __GNUC__
 #include <ostream.h>
 #endif

@@ -29,17 +29,12 @@
 
 #include <math/scmat/matrix.h>
 #include <math/isosurf/surf.h>
-#include <math/isosurf/triRAVLMap.h>
-#include <math/isosurf/veRAVLMap.h>
-#include <math/isosurf/vtsRAVLMap.h>
-#include <math/isosurf/edgeRAVLMap.h>
-#include <math/isosurf/vertexAVLSet.h>
 
 void
 TriangulatedSurface::fix_orientation()
 {
   int i,j;
-  Pix I;
+  AVLSet<RefTriangle>::iterator I;
   int nflip = 0;
   
   int ne = nedge();
@@ -49,12 +44,11 @@ TriangulatedSurface::fix_orientation()
   edge_to_triangle0 = new RefTriangle[ne];
   edge_to_triangle1 = new RefTriangle[ne];
 
-  for (I = _triangles.first(); I; _triangles.next(I)) {
-      RefTriangle tri = _triangles(I);
+  for (I = _triangles.begin(); I != _triangles.end(); I++) {
+      RefTriangle tri = *I;
       for (j=0; j<3; j++) {
           RefEdge e = tri->edge(j);
-          Pix ix = _edges.seek(e);
-          int e_index = _edge_to_index[ix];
+          int e_index = _edge_to_index[e];
           if (edge_to_triangle0[e_index].null()) {
               edge_to_triangle0[e_index] = tri;
             }
@@ -69,23 +63,23 @@ TriangulatedSurface::fix_orientation()
         }
     }
 
-  RefTriangleAVLSet unfixed;
-  RefTriangleAVLSet fixed;
-  RefTriangleAVLSet finished;
+  AVLSet<RefTriangle> unfixed;
+  AVLSet<RefTriangle> fixed;
+  AVLSet<RefTriangle> finished;
 
   unfixed |= _triangles;
 
   while (unfixed.length()) {
       // define unfixed.first()'s orientation to be the fixed orientation
-      Pix first = unfixed.first();
-      fixed.add(unfixed(first));
-      unfixed.del(unfixed(first));
+      AVLSet<RefTriangle>::iterator first = unfixed.begin();
+      fixed.insert(*first);
+      unfixed.remove(*first);
       while (fixed.length()) {
-          RefTriangle tri = fixed(fixed.first());
+          RefTriangle tri = *fixed.begin();
           // make all neighbors of tri oriented the same as tri
           for (i=0; i<3; i++) {
               RefEdge e = tri->edge(i);
-              int e_index = _edge_to_index[_edges.seek(e)];
+              int e_index = _edge_to_index[e];
               RefTriangle othertri;
               if (edge_to_triangle0[e_index] == tri) {
                   othertri = edge_to_triangle1[e_index];
@@ -103,8 +97,8 @@ TriangulatedSurface::fix_orientation()
                 }
               if (tri->orientation(i) == othertri->orientation(j)) {
                   if (unfixed.contains(othertri)) {
-                      unfixed.del(othertri);
-                      fixed.add(othertri);
+                      unfixed.remove(othertri);
+                      fixed.insert(othertri);
                       othertri->flip();
                       nflip++;
                     }
@@ -115,14 +109,14 @@ TriangulatedSurface::fix_orientation()
                     }
                 }
               else if (unfixed.contains(othertri)) {
-                  unfixed.del(othertri);
-                  fixed.add(othertri);
+                  unfixed.remove(othertri);
+                  fixed.insert(othertri);
                 }
             }
           // by this point all of tri's neighbors have had their
           // orientation fixed to match that of tri
-          fixed.del(tri);
-          finished.add(tri);
+          fixed.remove(tri);
+          finished.insert(tri);
         }
     }
 

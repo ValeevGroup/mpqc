@@ -46,96 +46,65 @@
  *      July, 1993
  */
 
-#ifndef _math_topology_bitarray_h
-#define _math_topology_bitarray_h
+#ifndef _util_container_bitarray_h
+#define _util_container_bitarray_h
 
 #include <string.h>
 #include <stdlib.h>
-#include <math.h>
 
 #include <util/misc/formio.h>
-#include <math/scmat/offset.h>
 
 //
-// class BitArray is used as the lower triangle of a boolean matrix.  rather
-// than storing an int or a char, just use one bit for each, so instead
-// of n(n+1)/2 bytes of storage you have n(n+1)/16 bytes.  A further savings
-// of n bits could be obtained by setting the diagonal to always true or always
-// false depending on the application, but this would probably be more
-// expensive computationally than it's worth.
+// class BitArrayLTri is used as the lower triangle of a boolean matrix.
+// rather than storing an int or a char, just use one bit for each, so
+// instead of n(n+1)/2 bytes of storage you have n(n+1)/16 bytes.  A
+// further savings of n bits could be obtained by setting the diagonal to
+// always true or always false depending on the application, but this would
+// probably be more expensive computationally than it's worth.
 //
 
-class BitArray {
+class BitArrayLTri {
   private:
     unsigned char *a;
     int n;
     int nm;
     int na;
 
+    static int
+    ij_offset(int i, int j)
+        {
+          return (i>j) ? (((i*(i+1)) >> 1) + j) : (((j*(j+1)) >> 1) + i);
+        }
+
   public:
-    BitArray(int =0);
-    BitArray(int =0, int =0);
-    ~BitArray();
+    BitArrayLTri(int =0, int =0);
+    ~BitArrayLTri();
 
-    inline void set(unsigned int i) { a[(i>>3)] |= (1 << (i&7)); }
-    inline void set(unsigned int i, unsigned int j) { set(ij_offset(i,j)); }
+    void set(unsigned int i) { a[(i>>3)] |= (1 << (i&7)); }
+    void set(unsigned int i, unsigned int j) { set(ij_offset(i,j)); }
 
-    inline int is_set(unsigned int i, unsigned int j) const
+    int is_set(unsigned int i, unsigned int j) const
       { int ij = ij_offset(i,j); return (a[(ij>>3)] & (1 << (ij&7))); }
-    inline int is_set(unsigned int i) const
+    int is_set(unsigned int i) const
       { return (a[(i>>3)] & (1 << (i&7))); }
 
-    inline int operator()(unsigned int i, unsigned int j) const
+    int operator()(unsigned int i, unsigned int j) const
       { int ij = ij_offset(i,j); return (a[(ij>>3)] & (1 << (ij&7))); }
-    inline int operator()(unsigned int i) const
+    int operator()(unsigned int i) const
       { return (a[(i>>3)] & (1 << (i&7))); }
-    inline int operator[](unsigned int i) const
+    int operator[](unsigned int i) const
       { return (a[(i>>3)] & (1 << (i&7))); }
 
-    inline int dim() const { return na; }
-    inline int nrow() const { return nm; }
-    inline int ncol() const { return nm; }
+    int dim() const { return na; }
+    int nrow() const { return nm; }
+    int ncol() const { return nm; }
 
-    inline int degree(unsigned int i) const {
+    int degree(unsigned int i) const {
       int nedge=0;
       for (int j=0; j < nm; j++) if ((*this)(i,j)) nedge++;
       return nedge;
     }
 };
-
-
-inline BitArray::BitArray(int sz)
-  : a(0), n(0), nm(0), na(sz)
-{
-  if(sz) {
-    n = sz/8 + ((sz%8)?1:0);
-    a = new unsigned char[n];
-    memset(a,'\0',n);
-    nm = (int)((sqrt((double)1+8*sz) - 1)/2);
-  }
-}
-
-inline BitArray::BitArray(int i, int j)
-  : a(0), n(0), nm(0), na(0)
-{
-  if (i!=j) {
-    cerr << node0 << indent << "BitArray(int,int): i != j" << endl;
-    abort();
-  }
-  int sz = i*(i+1)/2;
-
-  if(sz) {
-    n = sz/8 + ((sz%8)?1:0);
-    a = new unsigned char[n];
-    memset(a,'\0',n);
-    na=sz; nm=i;
-  }
-}
-
-inline BitArray::~BitArray()
-{
-  if (a) delete[] a; a=0; n=0;
-}
 
 #endif
 

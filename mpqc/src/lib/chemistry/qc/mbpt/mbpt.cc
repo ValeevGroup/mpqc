@@ -30,6 +30,7 @@
 #endif
 
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbpt/mbpt.h>
 

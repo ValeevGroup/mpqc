@@ -33,12 +33,6 @@
 #endif
 
 #include <math/isosurf/triangle.h>
-#include <math/isosurf/vertexAVLSet.h>
-#include <math/isosurf/edgeAVLSet.h>
-#include <math/isosurf/triAVLSet.h>
-#include <util/container/pixintRAVLMap.h>
-#include <util/container/intpixRAVLMap.h>
-#include <math/isosurf/edgeRAVLMap.h>
 #include <math/isosurf/volume.h>
 #include <util/render/render.h>
 
@@ -55,19 +49,19 @@ class TriangulatedSurface: public DescribedClass {
     int _completed_surface;
 
     // sets of objects that make up the surface
-    RefVertexAVLSet _vertices;
-    RefEdgeAVLSet _edges;
-    RefTriangleAVLSet _triangles;
+    AVLSet<RefVertex> _vertices;
+    AVLSet<RefEdge> _edges;
+    AVLSet<RefTriangle> _triangles;
 
-    // map pixes to an integer index
-    PixintRAVLMap _vertex_to_index;
-    PixintRAVLMap _edge_to_index;
-    PixintRAVLMap _triangle_to_index;
+    // map objects to an integer index
+    AVLMap<RefVertex,int> _vertex_to_index;
+    AVLMap<RefEdge,int> _edge_to_index;
+    AVLMap<RefTriangle,int> _triangle_to_index;
 
-    // map integer indices to a pix
-    intPixRAVLMap _index_to_vertex;
-    intPixRAVLMap _index_to_edge;
-    intPixRAVLMap _index_to_triangle;
+    // map integer indices to an object
+    AVLMap<int,RefVertex> _index_to_vertex;
+    AVLMap<int,RefEdge> _index_to_edge;
+    AVLMap<int,RefTriangle> _index_to_triangle;
 
     // mappings between array element numbers
     int** _triangle_vertex;
@@ -107,7 +101,7 @@ class TriangulatedSurface: public DescribedClass {
     virtual Edge* newEdge(const RefVertex&,const RefVertex&) const;
 
     // this map of edges to vertices is used to construct the surface
-    RefVertexRefEdgeAVLSetRAVLMap _tmp_edges;
+    AVLMap<RefVertex,AVLSet<RefEdge> > _tmp_edges;
   public:
     TriangulatedSurface();
     TriangulatedSurface(const RefKeyVal&);
@@ -144,13 +138,11 @@ class TriangulatedSurface: public DescribedClass {
 
     // get information from the object sets
     inline int nvertex() { return _vertices.length(); };
-    inline RefVertex vertex(int i) { return _vertices(_index_to_vertex[i]); };
+    inline RefVertex vertex(int i) { return _index_to_vertex[i]; };
     inline int nedge() { return _edges.length(); };
-    inline RefEdge edge(int i) { return _edges(_index_to_edge[i]); };
+    inline RefEdge edge(int i) { return _index_to_edge[i]; };
     inline int ntriangle() { return _triangles.length(); };
-    inline RefTriangle triangle(int i) {
-        return _triangles(_index_to_triangle[i]);
-      }
+    inline RefTriangle triangle(int i) { return _index_to_triangle[i]; }
 
     // information from the index mappings
     inline int triangle_vertex(int i,int j) { return _triangle_vertex[i][j]; };

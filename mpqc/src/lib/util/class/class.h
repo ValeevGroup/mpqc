@@ -38,8 +38,8 @@
 #include <iostream.h>
 #include <iomanip.h>
 #include <util/ref/ref.h>
-#include <util/container/array.h>
-#include <util/container/set.h>
+#include <util/container/avlset.h>
+#include <util/container/avlmap.h>
 
 template <class T, class C>
 class DescribedMemberDatum {
@@ -50,8 +50,6 @@ class DescribedMemberDatum {
     //T &member(C *c) { return c->*member_; }
 };
 
-class ClassKeyClassDescPMap;
-class ClassKeySet;
 class DescribedClass;
 class ClassDesc;
 typedef ClassDesc* ClassDescP;
@@ -66,9 +64,10 @@ class ClassKey {
     ClassKey(const ClassKey&);
     ~ClassKey();
     ClassKey& operator=(const ClassKey&);
-    int operator==(ClassKey& ck);
+    int operator==(const ClassKey& ck) const;
+    int operator<(const ClassKey& ck) const;
     int hash() const;
-    int cmp(ClassKey&ck) const;
+    int cmp(const ClassKey&ck) const;
     char* name() const;
   };
 
@@ -129,14 +128,14 @@ class StateIn;
 class ClassDesc: public Identity {
     friend class ParentClasses;
   private:
-    static ClassKeyClassDescPMap* all_;
+    static AVLMap<ClassKey,ClassDescP> *all_;
     static char * classlib_search_path_;
-    static ClassKeySet* unresolved_parents_;
+    static AVLSet<ClassKey> *unresolved_parents_;
 
     char* classname_;
     int version_;
     ParentClasses parents_;
-    ClassKeySet* children_;
+    AVLSet<ClassKey> *children_;
     DescribedClass* (*ctor_)();
     DescribedClass* (*keyvalctor_)(const RefKeyVal&);
     DescribedClass* (*stateinctor_)(StateIn&);
@@ -153,7 +152,7 @@ class ClassDesc: public Identity {
               DescribedClass* (*stateinctor)(StateIn&)=0);
     ~ClassDesc();
 
-    static ClassKeyClassDescPMap& all();
+    static AVLMap<ClassKey,ClassDescP>& all();
     const ParentClasses& parents() const { return parents_; }
 
     //. Writes a list of all of the classes to \srccd{stdout}.

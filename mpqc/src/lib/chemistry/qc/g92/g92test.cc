@@ -31,6 +31,7 @@
 #include <unistd.h>
 
 #include <util/keyval/keyval.h>
+#include <util/state/stateio.h>
 
 #include "g92.h"
 

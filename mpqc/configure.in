@@ -553,8 +553,6 @@ esac
 
 dnl -- other options --
 
-CPPFLAGS="$CPPFLAGS -I$srcdir/include/libg++-stub"
-
 AC_MSG_CHECKING([GNU c++ library/template flags])
 if test X$GXX = Xyes; then
   CXXOPTIONS_MISC="$CXXOPTIONS_MISC -fno-implicit-templates"

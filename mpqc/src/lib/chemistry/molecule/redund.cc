@@ -27,6 +27,7 @@
 
 #include <math.h>
 
+#include <util/state/stateio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>

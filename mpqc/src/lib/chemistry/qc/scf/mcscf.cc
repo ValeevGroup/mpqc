@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <util/state/stateio.h>
 #include <util/misc/newstring.h>
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>

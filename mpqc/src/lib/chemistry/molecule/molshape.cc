@@ -129,7 +129,7 @@ void
 DiscreteConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
 {
   _shapes.clear();
-  ArraysetRefSphereShape spheres;
+  ArrayRefSphereShape spheres;
 
   RefAtomInfo a;
   if (atominfo_.null()) a = mol->atominfo();
@@ -144,7 +144,7 @@ DiscreteConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
                                              mol->Z(i)))
             );
       add_shape(sphere.pointer());
-      spheres.add(sphere);
+      spheres.push_back(sphere);
     }
 
   ////////////////////// Leave out the other shapes

@@ -26,6 +26,7 @@
 //
 
 #include <iostream.h>
+#include <util/state/stateio.h>
 #include <math/optimize/function.h>
 #include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>

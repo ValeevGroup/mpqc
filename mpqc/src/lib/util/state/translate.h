@@ -156,6 +156,8 @@ class TranslateDataOut {
     TranslateData *translator() { return translate_; }
 };
 
+class StateIn;
+
 //. \clsnm{TranslateDataIn} is used to convert data from other formats
 //and injected into the StateIn given to the constructor.
 class TranslateDataIn {

@@ -34,15 +34,6 @@
 
 #include <util/state/state_text.h>
 
-#include <util/state/state_ptr.h>
-#include <util/state/stateptrSet.h>
-#include <util/state/statenumSet.h>
-#include <util/state/stateptrImplSet.h>
-#include <util/state/statenumImplSet.h>
-
-#include <util/state/classdImplMap.h>
-#include <util/state/classdatImplMap.h>
-
 #define CLASSNAME StateOutText
 #define PARENTS public StateOutFile
 #include <util/class/classi.h>
@@ -224,12 +215,12 @@ int StateOutText::put(const ClassDesc*cd)
   ostream out(buf_);
   //
   // write out parent info
-  if (!classidmap_->contains((ClassDesc*)cd)) {
+  if (!classidmap_.contains((ClassDesc*)cd)) {
       putparents(cd);
       out << " version of class " << cd->name()
           << " is " << cd->version() << endl;
       out.flush();
-      classidmap_->operator[]((ClassDesc*)cd) = nextclassid_++;
+      classidmap_[(ClassDesc*)cd] = nextclassid_++;
     }
   out << "object of class " << cd->name() << " being written" << endl;
   out.flush();
@@ -244,12 +235,12 @@ StateOutText::putparents(const ClassDesc*cd)
   for (int i=0; i<parents.n(); i++) {
       // the cast is needed to de-const-ify the class descriptor
       ClassDesc*tmp = (ClassDesc*) parents[i].classdesc();
-      if (!classidmap_->contains(tmp)) {
+      if (!classidmap_.contains(tmp)) {
           putparents(tmp);
           out << " version of class " << tmp->name()
               << " is " << tmp->version() << endl;
           out.flush();
-          classidmap_->operator[](tmp) = nextclassid_++;
+          classidmap_[tmp] = nextclassid_++;
         }
     }
   return 0;
@@ -272,9 +263,9 @@ int StateInText::get(const ClassDesc**cd)
       ClassDesc* tmp = ClassDesc::name_to_class_desc(name);
       // save the class descriptor and the version
       int classid = nextclassid_++;
-      classidmap_->operator[](tmp) = classid;
+      classidmap_[tmp] = classid;
       StateClassData classdat(version,tmp);
-      classdatamap_->operator[](classid) = classdat;
+      classdatamap_[classid] = classdat;
       in.getline(line,line_length); newlines_++;
     }
 
@@ -374,24 +365,24 @@ int StateOutText::putobject(const RefSavableState &p)
       out.flush();
     }
   else {
-      StateDataPtr dp(p);
-      Pix ind = ps_->seek(dp);
-      if (ind == 0 || copy_references_) {
+      AVLMap<RefSavableState,StateOutData>::iterator ind = ps_.find(p);
+      if (ind == ps_.end() || copy_references_) {
           // object has not been written yet
+          StateOutData dp;
           dp.num = next_object_number_++;
           out << "writing object " << dp.num << endl;
           out.flush();
           const ClassDesc *cd = p->class_desc();
           put(cd);
           out.flush();
-          dp.type = classidmap_->operator[]((ClassDesc*)cd);
-          if (!copy_references_) ps_->add(dp);
+          dp.type = classidmap_[(ClassDesc*)cd];
+          if (!copy_references_) ps_[p] = dp;
           have_classdesc();
           p->save_vbase_state(*this);
           p->save_data_state(*this);
         }
       else {
-          out << "reference to object " << (*this->ps_)(ind).num << endl;
+          out << "reference to object " << ind.data().num << endl;
           out.flush();
         }
     }
@@ -412,7 +403,6 @@ int StateInText::getobject(RefSavableState &p)
   else if (!strncmp("writing",line,7)) {
       int refnum;
       sscanf(line,"writing object %d",&refnum);
-      StateDataNum num(refnum);
       const ClassDesc *cd;
       get(&cd);
       have_classdesc();
@@ -423,9 +413,7 @@ int StateInText::getobject(RefSavableState &p)
   else if (!strncmp("reference",line,9)) {
       int refnum;
       sscanf(line,"reference to object %d",&refnum);
-      StateDataNum num(refnum);
-      Pix ind = ps_->seek(num);
-      p = ((*this->ps_)(ind)).ptr;
+      p = ps_[refnum].ptr;
     }
   else {
       cerr << "StateInText: couldn't find a reference object" << endl;

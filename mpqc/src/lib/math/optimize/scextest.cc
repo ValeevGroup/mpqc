@@ -26,6 +26,7 @@
 //
 
 #include <util/keyval/keyval.h>
+#include <util/state/stateio.h>
 #include <math/scmat/local.h>
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrap.h>

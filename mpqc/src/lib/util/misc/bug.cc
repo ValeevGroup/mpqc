@@ -47,6 +47,7 @@
 
 #include <util/keyval/keyval.h>
 #include <util/misc/bug.h>
+#include <util/state/stateio.h>
 
 //////////////////////////////////////////////////////////////////////
 // static variables

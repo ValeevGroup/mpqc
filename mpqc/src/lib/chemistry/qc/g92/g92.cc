@@ -31,6 +31,8 @@
 
 #include "g92.h"
 
+#include <util/state/stateio.h>
+
 extern "C" {
 #include <stdio.h>
 #include <stdlib.h>

@@ -33,6 +33,7 @@
 
 #include <util/misc/timer.h>
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 
 #include <math/scmat/block.h>
 #include <math/scmat/blocked.h>

@@ -28,6 +28,7 @@
 #include <math.h>
 
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/elemop.h>
 #include <chemistry/molecule/localdef.h>
@@ -342,7 +343,7 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
   // now remove followed coords from the fixed list, and add to the
   // variable list
   if (followed_.nonnull()) {
-    fixed_->del(followed_);
+    fixed_->pop();
     variable_->add(followed_);
   }
   

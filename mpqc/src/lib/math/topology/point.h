@@ -34,13 +34,9 @@
 
 // This class implements arbitrary dimensional point using double precision #'s
 #include <iostream.h>
-#include <string.h>
-#include <ctype.h>
 
 #include <util/class/class.h>
 #include <util/state/state.h>
-#include <util/container/set.h>
-#include <util/container/array.h>
 
 class RefSCVector;
 class RefKeyVal;

@@ -43,15 +43,9 @@
 
 #include <util/class/class.h>
 
-#include <util/class/classMap.h>
-#include <util/class/classImplMap.h>
-
-#include <util/class/classkeySet.h>
-#include <util/class/classkeyImplSet.h>
-
-ClassKeyClassDescPMap* ClassDesc::all_ = 0;
+AVLMap<ClassKey,ClassDescP>* ClassDesc::all_ = 0;
 char * ClassDesc::classlib_search_path_ = 0;
-ClassKeySet* ClassDesc::unresolved_parents_ = 0;
+AVLSet<ClassKey>* ClassDesc::unresolved_parents_ = 0;
 
 /////////////////////////////////////////////////////////////////
 
@@ -92,15 +86,14 @@ ClassKey& ClassKey::operator=(const ClassKey& key)
   return *this;
 }
 
-int ClassKey::operator==(ClassKey& ck)
+int ClassKey::operator==(const ClassKey& ck) const
 {
-  if (!classname_) {
-      if (!ck.classname_) return 1;
-      else return 0;
-    }
-  else if (!ck.classname_) return 0;
-  
-  return !::strcmp(classname_,ck.classname_);
+  return cmp(ck) == 0;
+}
+
+int ClassKey::operator<(const ClassKey& ck) const
+{
+  return cmp(ck) < 0;
 }
 
 int
@@ -122,8 +115,13 @@ ClassKey::hash() const
   return r;
 }
 
-int ClassKey::cmp(ClassKey&ck) const
+int ClassKey::cmp(const ClassKey&ck) const
 {
+  if (!classname_) {
+      if (!ck.classname_) return 0;
+      return -1;
+    }
+  if (!ck.classname_) return 1;
   return strcmp(classname_,ck.classname_);
 }
 
@@ -209,9 +207,9 @@ ParentClasses::init(const char* parents)
           if (!ClassDesc::all()[parentkey]) {
               ClassDesc::all()[parentkey] = new ClassDesc(token);
               if (ClassDesc::unresolved_parents_ == 0) {
-                  ClassDesc::unresolved_parents_ = new SETCTOR;
+                  ClassDesc::unresolved_parents_ = new AVLSet<ClassKey>;
                 }
-              ClassDesc::unresolved_parents_->add(token);
+              ClassDesc::unresolved_parents_->insert(token);
             }
           ParentClass* p = new ParentClass(ClassDesc::all()[parentkey],
                                            access,
@@ -270,7 +268,7 @@ ClassDesc::ClassDesc(char* name, int version,
 {
   // make sure that the static members have been initialized
   if (!all_) {
-      all_ = new MAPCTOR;
+      all_ = new AVLMap<ClassKey,ClassDescP>;
       const char* tmp = getenv("LD_LIBRARY_PATH");
       if (tmp) {
           // Needed for misbehaving getenv's.
@@ -299,14 +297,9 @@ ClassDesc::ClassDesc(char* name, int version,
   for (int i=0; i<parents_.n(); i++) {
       ClassKey parentkey(parents_[i].classdesc()->name());
       if (!(*all_)[parentkey]->children_)
-        (*all_)[parentkey]->children_ = new SETCTOR;
+        (*all_)[parentkey]->children_ = new AVLSet<ClassKey>;
       // let the parents know about the child
-#ifndef GNUBUG
-      ((*all_)[parentkey]->children_)->add(key);
-#else
-      ClassKeySet *ppp=(*all_)[parentkey]->children_;
-      ppp->add(key);
-#endif
+      ((*all_)[parentkey]->children_)->insert(key);
     }
 
   // if this class is aleady in all_, then it was put there by a child
@@ -323,12 +316,13 @@ ClassDesc::ClassDesc(char* name, int version,
 
       // go thru the list of children and correct their
       // parent class descriptors
-      for (Pix i=children_->first(); i; children_->next(i)) {
-          (*all_)[children_->operator()(i)]->change_parent((*all_)[key],this);
+      for (AVLSet<ClassKey>::iterator i=children_->begin();
+           i!=children_->end(); i++) {
+          (*all_)[*i]->change_parent((*all_)[key],this);
         }
 
       delete (*all_)[key];
-      unresolved_parents_->del(key);
+      unresolved_parents_->remove(key);
       if (unresolved_parents_->length() == 0) {
           delete unresolved_parents_;
           unresolved_parents_ = 0;
@@ -341,15 +335,16 @@ ClassDesc::~ClassDesc()
 {
   // remove references to this class descriptor
   if (children_) {
-      for (Pix i=children_->first(); i; children_->next(i)) {
-          if (all_->contains(children_->operator()(i))) {
-              (*all_)[children_->operator()(i)]->change_parent(this,0);
+      for (AVLSet<ClassKey>::iterator i=children_->begin();
+           i!=children_->end(); i++) {
+          if (all_->contains(*i)) {
+              (*all_)[*i]->change_parent(this,0);
             }
         }
     }
   // delete this ClassDesc from the list of all ClassDesc's
   ClassKey key(classname_);
-  all_->del(key);
+  all_->remove(key);
   // if the list of all ClassDesc's is empty, delete it
   if (all_->length() == 0) {
       delete all_;
@@ -363,7 +358,7 @@ ClassDesc::~ClassDesc()
   if (children_) delete children_;
 }
 
-ClassKeyClassDescPMap&
+AVLMap<ClassKey,ClassDescP>&
 ClassDesc::all()
 {
   if (!all_) {
@@ -415,8 +410,9 @@ void
 ClassDesc::list_all_classes()
 {
   cout << "Listing all classes:" << endl;
-  for (Pix ind=all_->first(); ind!=0; all_->next(ind)) {
-      ClassDesc* classdesc = all_->contents(ind);
+  for (AVLMap<ClassKey,ClassDescP>::iterator ind=all_->begin();
+       ind!=all_->end(); ind++) {
+      ClassDesc* classdesc = ind.data();
       cout << "class " << classdesc->name() << endl;
       ParentClasses& parents = classdesc->parents_;
       if (parents.n()) {
@@ -435,11 +431,12 @@ ClassDesc::list_all_classes()
             }
           cout << endl;
         }
-      ClassKeySet* children = classdesc->children_;
+      AVLSet<ClassKey>* children = classdesc->children_;
       if (children) {
           cout << "  children:";
-          for (Pix pind=children->first(); pind!=0; children->next(pind)) {
-              cout << " " << (*children)(pind).name();
+          for (AVLSet<ClassKey>::iterator pind=children->begin();
+               pind!=children->end(); pind++) {
+              cout << " " << (*pind).name();
             }
           cout << endl;
         }
@@ -513,8 +510,7 @@ ClassDesc::load_class(const char* classname)
                       // load code for parents
                       while (unresolved_parents_
                              && unresolved_parents_->length()) {
-                          load_class(unresolved_parents_->operator()
-                                     (unresolved_parents_->first()).name());
+                          load_class((*unresolved_parents_->begin()).name());
                         }
 
                       fclose(fp);
@@ -763,6 +759,21 @@ operator <<(ostream&o, const DCRefBase &ref)
 }
 
 DescribedClass_REF_def(DescribedClass);
+
+#ifdef __GNUG__
+
+template class EAVLMMapNode<ClassKey,AVLMapNode<ClassKey,ClassDescP> >;
+template class EAVLMMap<ClassKey,AVLMapNode<ClassKey,ClassDescP> >;
+template class AVLMapNode<ClassKey,ClassDescP>;
+template class AVLMap<ClassKey,ClassDescP>;
+
+template class EAVLMMapNode<ClassKey,AVLMapNode<ClassKey,int> >;
+template class EAVLMMap<ClassKey,AVLMapNode<ClassKey,int> >;
+template class AVLMapNode<ClassKey,int>;
+template class AVLMap<ClassKey,int>;
+template class AVLSet<ClassKey>;
+
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -32,8 +32,8 @@
 #pragma interface
 #endif
 
+#include <util/container/array.h>
 #include <math/isosurf/surf.h>
-#include  <math/isosurf/edgeRAVLMap.h>
 
 class IsosurfaceGen {
   protected:
@@ -56,7 +56,7 @@ class ImplicitSurfacePolygonizer: public IsosurfaceGen {
   protected:
     RefVolume _volume;
 
-    ArraysetRefVertex  _tmp_vertices;
+    Array<RefVertex>  _tmp_vertices;
     TriangulatedSurface* _surf;
     double _value;
   public:

@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <util/state/stateio.h>
 #include <chemistry/qc/wfn/accum.h>
 #include <chemistry/qc/basis/integral.h>
 

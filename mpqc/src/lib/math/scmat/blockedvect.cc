@@ -29,6 +29,7 @@
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
+#include <util/state/stateio.h>
 #include <math/scmat/blocked.h>
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>

@@ -33,6 +33,7 @@
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
+#include <util/state/stateio.h>
 #include <math/optimize/conv.h>
 
 /////////////////////////////////////////////////////////////////////////

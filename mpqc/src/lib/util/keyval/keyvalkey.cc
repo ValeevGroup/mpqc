@@ -43,7 +43,7 @@ KeyValKeyword::KeyValKeyword(const char* name)
     }
 }
 
-KeyValKeyword::KeyValKeyword(KeyValKeyword& key):
+KeyValKeyword::KeyValKeyword(const KeyValKeyword& key):
   keyword_(::strcpy(new char[strlen(key.keyword_)+1],key.keyword_))
 {
 }
@@ -62,15 +62,14 @@ KeyValKeyword& KeyValKeyword::operator=(const KeyValKeyword& key)
   return *this;
 }
 
-int KeyValKeyword::operator==(KeyValKeyword& ck)
+int KeyValKeyword::operator==(const KeyValKeyword& ck) const
 {
-  if (!keyword_) {
-      if (!ck.keyword_) return 1;
-      else return 0;
-    }
-  else if (!ck.keyword_) return 0;
-  
-  return !::strcmp(keyword_,ck.keyword_);
+  return cmp(ck) == 0;
+}
+
+int KeyValKeyword::operator<(const KeyValKeyword& ck) const
+{
+  return cmp(ck)<0;
 }
 
 int

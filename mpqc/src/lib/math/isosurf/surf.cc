@@ -38,7 +38,7 @@
 #include <util/render/polygons.h>
 
 #ifndef WRITE_OOGL
-#define WRITE_OOGL 0
+#define WRITE_OOGL 1
 #endif
 
 #if WRITE_OOGL
@@ -62,19 +62,11 @@ TriangulatedSurface::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-RefEdgeAVLSet niledgeavlset;
 TriangulatedSurface::TriangulatedSurface():
   _triangle_vertex(0),
   _triangle_edge(0),
   _edge_vertex(0),
   _integrator(new GaussTriangleIntegrator(1)),
-  _index_to_vertex(0),
-  _index_to_edge(0),
-  _index_to_triangle(0),
-  _vertex_to_index(0),
-  _edge_to_index(0),
-  _triangle_to_index(0),
-  _tmp_edges(niledgeavlset),
   _verbose(0),
   _debug(0)
 {
@@ -84,14 +76,7 @@ TriangulatedSurface::TriangulatedSurface():
 TriangulatedSurface::TriangulatedSurface(const RefKeyVal& keyval):
   _triangle_vertex(0),
   _triangle_edge(0),
-  _edge_vertex(0),
-  _index_to_vertex(0),
-  _index_to_edge(0),
-  _index_to_triangle(0),
-  _vertex_to_index(0),
-  _edge_to_index(0),
-  _triangle_to_index(0),
-  _tmp_edges(niledgeavlset)
+  _edge_vertex(0)
 {
   _verbose = keyval->booleanvalue("verbose");
   _debug = keyval->booleanvalue("debug");
@@ -277,8 +262,7 @@ TriangulatedSurface::complete_int_arrays()
       _triangle_vertex[i] = new int[3];
       for (int j=0; j<3; j++) {
           RefVertex v = triangle(i)->vertex(j);
-          _triangle_vertex[i][j] =
-                   _vertex_to_index[_vertices.seek(v)];
+          _triangle_vertex[i][j] = _vertex_to_index[v];
         }
     }
 
@@ -289,8 +273,7 @@ TriangulatedSurface::complete_int_arrays()
       _triangle_edge[i] = new int[3];
       for (int j=0; j<3; j++) {
           RefEdge e = triangle(i)->edge(j);
-          _triangle_edge[i][j] =
-             _edge_to_index[_edges.seek(e)];
+          _triangle_edge[i][j] = _edge_to_index[e];
         }
     }
 
@@ -301,8 +284,7 @@ TriangulatedSurface::complete_int_arrays()
       _edge_vertex[i] = new int[2];
       for (int j=0; j<2; j++) {
           RefVertex v = edge(i)->vertex(j);
-          _edge_vertex[i][j]
-              = _vertex_to_index[_vertices.seek(v)];
+          _edge_vertex[i][j] = _vertex_to_index[v];
         }
     }
 }
@@ -324,8 +306,9 @@ double
 TriangulatedSurface::flat_area()
 {
   double result = 0.0;
-  for (Pix i=_triangles.first(); i; _triangles.next(i)) {
-      result += _triangles(i)->flat_area();
+  for (AVLSet<RefTriangle>::iterator i=_triangles.begin();
+       i!=_triangles.end(); i++) {
+      result += (*i)->flat_area();
     }
   return result;
 }
@@ -421,15 +404,14 @@ void
 TriangulatedSurface::add_vertex(const RefVertex&t)
 {
   int i = _vertices.length();
-  RefVertex tnotconst(t);
-  Pix ix = _vertices.add(tnotconst);
+  _vertices.insert(t);
   if (i != _vertices.length()) {
-      _index_to_vertex[i] = ix;
-      _vertex_to_index[ix] = i;
-    }
-  if (_index_to_vertex.length() != _vertex_to_index.length()) {
-      cerr << "TriangulatedSurface::add_vertex: length mismatch" << endl;
-      abort();
+      _index_to_vertex[i] = t;
+      _vertex_to_index[t] = i;
+      if (_index_to_vertex.length() != _vertex_to_index.length()) {
+          cerr << "TriangulatedSurface::add_vertex: length mismatch" << endl;
+          abort();
+        }
     }
 }
 
@@ -437,15 +419,14 @@ void
 TriangulatedSurface::add_edge(const RefEdge&t)
 {
   int i = _edges.length();
-  RefEdge tnotconst(t);
-  Pix ix = _edges.add(tnotconst);
+  _edges.insert(t);
   if (i != _edges.length()) {
-      _index_to_edge[i] = ix;
-      _edge_to_index[ix] = i;
-    }
-  if (_index_to_edge.length() != _edge_to_index.length()) {
-      cerr << "TriangulatedSurface::add_edge: length mismatch" << endl;
-      abort();
+      _index_to_edge[i] = t;
+      _edge_to_index[t] = i;
+      if (_index_to_edge.length() != _edge_to_index.length()) {
+          cerr << "TriangulatedSurface::add_edge: length mismatch" << endl;
+          abort();
+        }
     }
 }
 
@@ -454,11 +435,14 @@ TriangulatedSurface::add_triangle(const RefTriangle&t)
 {
   if (_completed_surface) clear();
   int i = _triangles.length();
-  RefTriangle tnotconst(t);
-  Pix ix = _triangles.add(tnotconst);
+  _triangles.insert(t);
   if (i != _triangles.length()) {
-      _index_to_triangle[i] = ix;
-      _triangle_to_index[ix] = i;
+      _index_to_triangle[i] = t;
+      _triangle_to_index[t] = i;
+      if (_index_to_triangle.length() != _triangle_to_index.length()) {
+          cerr << "TriangulatedSurface::add_triangle: length mismatch" << endl;
+          abort();
+        }
     }
 }
 
@@ -471,17 +455,13 @@ TriangulatedSurface::add_triangle(const RefVertex& v1,
   // for some other triangle.
   RefEdge e0, e1, e2;
 
-  RefVertex v1_not_const(v1);
-  RefEdgeAVLSet v1edges;
-  v1edges |= _tmp_edges[v1_not_const];
+  const AVLSet<RefEdge> &v1edges = _tmp_edges[v1];
 
-  RefVertex v2_not_const(v2);
-  RefEdgeAVLSet v2edges;
-  v2edges |= _tmp_edges[v2_not_const];
+  const AVLSet<RefEdge> &v2edges = _tmp_edges[v2];
 
-  Pix ix;
-  for (ix = v1edges.first(); ix; v1edges.next(ix)) {
-      RefEdge& e = v1edges(ix);
+  AVLSet<RefEdge>::iterator ix;
+  for (ix = v1edges.begin(); ix != v1edges.end(); ix++) {
+      const RefEdge& e = *ix;
       if (e->vertex(0) == v2 || e->vertex(1) == v2) {
           e0 = e;
         }
@@ -489,28 +469,27 @@ TriangulatedSurface::add_triangle(const RefVertex& v1,
           e2 = e;
         }
     }
-  for (ix = v2edges.first(); ix; v1edges.next(ix)) {
-      RefEdge& e = v2edges(ix);
+  for (ix = v2edges.begin(); ix != v2edges.end(); ix++) {
+      const RefEdge& e = *ix;
       if (e->vertex(0) == v3 || e->vertex(1) == v3) {
           e1 = e;
         }
     }
 
-  RefVertex v3_not_const(v3);
   if (e0.null()) {
       e0 = newEdge(v1,v2);
-      _tmp_edges[v1_not_const].add(e0);
-      _tmp_edges[v2_not_const].add(e0);
+      _tmp_edges[v1].insert(e0);
+      _tmp_edges[v2].insert(e0);
     }
   if (e1.null()) {
       e1 = newEdge(v2,v3);
-      _tmp_edges[v2_not_const].add(e1);
-      _tmp_edges[v3_not_const].add(e1);
+      _tmp_edges[v2].insert(e1);
+      _tmp_edges[v3].insert(e1);
     }
   if (e2.null()) {
       e2 = newEdge(v3,v1);
-      _tmp_edges[v3_not_const].add(e2);
-      _tmp_edges[v1_not_const].add(e2);
+      _tmp_edges[v3].insert(e2);
+      _tmp_edges[v1].insert(e2);
     }
   
   int orientation;
@@ -530,10 +509,10 @@ TriangulatedSurface::add_triangle(const RefVertex& v1,
 RefEdge
 TriangulatedSurface::find_edge(const RefVertex& v1, const RefVertex& v2)
 {
-  Pix i;
+  AVLSet<RefTriangle>::iterator i;
 
-  for (i=_triangles.first(); i; _triangles.next(i)) {
-      RefTriangle t = _triangles(i);
+  for (i=_triangles.begin(); i!=_triangles.end(); i++) {
+      RefTriangle t = *i;
       RefEdge e1 = t->edge(0);
       RefEdge e2 = t->edge(1);
       RefEdge e3 = t->edge(2);
@@ -573,8 +552,8 @@ TriangulatedSurface::print(ostream&o)
       RefVertex v1 = e->vertex(1);
       o << indent
         << scprintf("  %3d: %3d %3d",i,
-                    _vertex_to_index[_vertices.seek(v0)],
-                    _vertex_to_index[_vertices.seek(v1)])
+                    _vertex_to_index[v0],
+                    _vertex_to_index[v1])
         << endl;
     }
 
@@ -587,9 +566,9 @@ TriangulatedSurface::print(ostream&o)
       RefEdge e2 = tri->edge(2);
       o << indent
         << scprintf("  %3d: %3d %3d %3d",i,
-                    _edge_to_index[_edges.seek(e0)],
-                    _edge_to_index[_edges.seek(e1)],
-                    _edge_to_index[_edges.seek(e2)])
+                    _edge_to_index[e0],
+                    _edge_to_index[e1],
+                    _edge_to_index[e2])
         << endl;
     }
 }
@@ -630,12 +609,13 @@ TriangulatedSurface::render(const RefRender &render)
   RefRenderedPolygons poly = new RenderedPolygons;
   poly->initialize(_vertices.length(), _triangles.length(),
                    RenderedPolygons::Vertex);
-  Pix I;
-  PixintRAVLMap pix_to_index(0);
+  AVLSet<RefVertex>::iterator iv;
+  AVLSet<RefTriangle>::iterator it;
+  AVLMap<RefVertex, int> vertex_to_index;
   int i = 0;
-  for (I = _vertices.first(); I; _vertices.next(I), i++) {
-      RefVertex v = _vertices(I);
-      pix_to_index[(Pix)v.pointer()] = i;
+  for (iv = _vertices.begin(); iv != _vertices.end(); iv++, i++) {
+      RefVertex v = *iv;
+      vertex_to_index[v] = i;
       poly->set_vertex(i,
                        v->point()[0],
                        v->point()[1],
@@ -643,12 +623,12 @@ TriangulatedSurface::render(const RefRender &render)
       poly->set_vertex_rgb(i, 0.3, 0.3, 0.3);
     }
   i = 0;
-  for (I = _triangles.first(); I; _triangles.next(I), i++) {
-      RefTriangle t = _triangles(I);
+  for (it = _triangles.begin(); it != _triangles.end(); it++, i++) {
+      RefTriangle t = *it;
       poly->set_face(i,
-                     pix_to_index[(Pix)t->vertex(0).pointer()],
-                     pix_to_index[(Pix)t->vertex(1).pointer()],
-                     pix_to_index[(Pix)t->vertex(2).pointer()]);
+                     vertex_to_index[t->vertex(0)],
+                     vertex_to_index[t->vertex(1)],
+                     vertex_to_index[t->vertex(2)]);
     }
   render->render(poly);
 }
@@ -685,7 +665,9 @@ void
 TriangulatedSurface::recompute_index_maps()
 {
   int i;
-  Pix I;
+  AVLSet<RefVertex>::iterator iv;
+  AVLSet<RefEdge>::iterator ie;
+  AVLSet<RefTriangle>::iterator it;
 
   // fix the index maps
   _vertex_to_index.clear();
@@ -700,19 +682,19 @@ TriangulatedSurface::recompute_index_maps()
   int nv = _vertices.length();
   int nt = _triangles.length();
 
-  for (i=0, I = _vertices.first(); I; i++, _vertices.next(I)) {
-      _vertex_to_index[I] = i;
-      _index_to_vertex[i] = I;
+  for (i=0, iv = _vertices.begin(); iv != _vertices.end(); i++, iv++) {
+      _vertex_to_index[*iv] = i;
+      _index_to_vertex[i] = *iv;
     }
 
-  for (i=0, I = _edges.first(); I; i++, _edges.next(I)) {
-      _edge_to_index[I] = i;
-      _index_to_edge[i] = I;
+  for (i=0, ie = _edges.begin(); ie != _edges.end(); i++, ie++) {
+      _edge_to_index[*ie] = i;
+      _index_to_edge[i] = *ie;
     }
 
-  for (i=0, I = _triangles.first(); I; i++, _triangles.next(I)) {
-      _triangle_to_index[I] = i;
-      _index_to_triangle[i] = I;
+  for (i=0, it = _triangles.begin(); it != _triangles.end(); i++, it++) {
+      _triangle_to_index[*it] = i;
+      _index_to_triangle[i] = *it;
     }
 
 }

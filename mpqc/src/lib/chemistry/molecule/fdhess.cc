@@ -34,6 +34,7 @@
 
 #include <util/misc/formio.h>
 #include <util/misc/timer.h>
+#include <util/state/stateio.h>
 #include <util/state/state_bin.h>
 #include <util/group/mstate.h>
 #include <util/keyval/keyval.h>

@@ -27,6 +27,7 @@
 
 #include <util/state/state.h>
 #include <util/state/translate.h>
+#include <util/state/stateio.h>
 
 ////////////////////////////////////////////////////////////////////////
 

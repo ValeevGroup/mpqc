@@ -26,6 +26,7 @@
 //
 
 #include "g92.h"
+#include <util/state/stateio.h>
 
 #define CLASSNAME Gaussian92UHF
 #define PARENTS public Gaussian92

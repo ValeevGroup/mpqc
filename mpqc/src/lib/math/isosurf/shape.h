@@ -36,7 +36,7 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
 #include <util/container/array.h>
-#include <util/container/set.h>
+#include <util/container/avlset.h>
 
 class Shape: public Volume {
 #   define CLASSNAME Shape
@@ -59,8 +59,6 @@ class Shape: public Volume {
 };
 
 SavableState_REF_dec(Shape);
-SET_dec(RefShape);
-ARRAYSET_dec(RefShape);
 
 class SphereShape: public Shape {
 #   define CLASSNAME SphereShape
@@ -105,8 +103,7 @@ SphereShape::origin(const SCVector3& o)
 }
 
 REF_dec(SphereShape);
-SET_dec(RefSphereShape);
-ARRAYSET_dec(RefSphereShape);
+ARRAY_dec(RefSphereShape);
 
 class UncappedTorusHoleShape: public Shape
 {
@@ -249,7 +246,7 @@ class UnionShape: public Shape {
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   protected:
-    ArraysetRefShape _shapes;
+    AVLSet<RefShape> _shapes;
   public:
     void add_shape(RefShape);
     UnionShape();

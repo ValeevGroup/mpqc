@@ -35,6 +35,7 @@
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
 #include <util/misc/timer.h>
+#include <util/state/stateio.h>
 #include <util/state/state_bin.h>
 
 SavableState_REF_def(Optimize);

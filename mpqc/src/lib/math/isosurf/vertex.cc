@@ -37,8 +37,6 @@
 // Vertex (a point and a gradient)
 
 REF_def(Vertex);
-SET_def(RefVertex);
-ARRAYSET_def(RefVertex);
 
 Vertex::Vertex(const SCVector3&point):
   _point(point),

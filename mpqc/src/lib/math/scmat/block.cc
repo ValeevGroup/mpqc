@@ -31,6 +31,7 @@
 
 #include <iostream.h>
 #include <string.h>
+#include <util/state/stateio.h>
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>

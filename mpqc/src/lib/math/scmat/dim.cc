@@ -34,6 +34,7 @@
 #include <util/keyval/keyval.h>
 #include <math/scmat/dim.h>
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 #include <iomanip.h>
 
 static void

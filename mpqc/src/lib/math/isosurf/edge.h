@@ -32,6 +32,7 @@
 #pragma interface
 #endif
 
+#include <util/container/avlset.h>
 #include <math/isosurf/vertex.h>
 
 class Edge: public VRefCount {
@@ -67,7 +68,7 @@ class Edge: public VRefCount {
       return _vertices[i];
     }
     // add the endpoints to the set
-    void add_vertices(SetRefVertex&);
+    void add_vertices(AVLSet<RefVertex>&);
     void set_order(int order, const RefVolume&vol,double isovalue);
     // find the position of a point on the edge
     int interpolate(double location, SCVector3&point, SCVector3&norm);
@@ -77,7 +78,6 @@ class Edge: public VRefCount {
 };
 
 REF_dec(Edge);
-SET_dec(RefEdge);
 
 #endif
 

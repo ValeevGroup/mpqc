@@ -1,7 +1,7 @@
 //
-// gnutest.cc
+// array.cc
 //
-// Copyright (C) 1996 Limit Point Systems, Inc.
+// Copyright (C) 1998 Limit Point Systems, Inc.
 //
 // Author: Curtis Janssen <cljanss@limitpt.com>
 // Maintainer: LPS
@@ -25,65 +25,13 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <util/container/set.h>
+#ifdef __GNUC__
+#pragma implementation
+#endif
 
-int
-main()
-{
-  int i;
-  AVLSet<int> iset;
+#include <util/state/array.h>
 
-  for (i=10; i<20; i++) {
-      court << "adding " << i << endl;
-      iset.add(i);
-    }
-
-  for (i=1; i<15; i++) {
-      court << "adding " << i << endl;
-      iset.add(i);
-    }
-
-  int ten=10, fifteen=15;
-  iset.del(ten);
-  iset.del(fifteen);
-
-  cout << "iset:" << endl;
-  Pix I;
-  for (I=iset.first(); I; iset.next(I)) {
-      cout << " " << iset(I);
-    }
-  cout << endl;
-
-  ///////////////////////////////////////////////////////////////
-
-  Arrayset<int> aset;
-
-  for (I=aset.first(); I; aset.next(I)) {
-      cout << " " << aset(I);
-    }
-  cout << endl;
-
-  for (i=10; i<20; i++) {
-      cout << "adding " << i << endl;
-      aset.add(i);
-    }
-
-  for (i=1; i<15; i++) {
-      cout << "adding " << i << endl;
-      aset.add(i);
-    }
-
-  aset.del(ten);
-  aset.del(fifteen);
-
-  cout << "aset:";
-  for (I=aset.first(); I; aset.next(I)) {
-      cout << " " << aset(I);
-    }
-  cout << endl;
-
-  return 0;
-}
+SSB_ARRAY_def(int);
 
 /////////////////////////////////////////////////////////////////////////////
 

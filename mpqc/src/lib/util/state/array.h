@@ -1,7 +1,7 @@
 //
-// error.cc
+// array.h
 //
-// Copyright (C) 1996 Limit Point Systems, Inc.
+// Copyright (C) 1998 Limit Point Systems, Inc.
 //
 // Author: Curtis Janssen <cljanss@limitpt.com>
 // Maintainer: LPS
@@ -25,22 +25,22 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <builtin.h>
-#include <iostream.h>
-#include <stdlib.h>
+#ifndef _util_state_array_h
+#define _util_state_array_h
 
-//
-// this is called by some GNU generated files.  only make it if we're not
-// using libg++
-//
-
-#ifdef USING_LIBGPLUSPLUS_STUB
-static void
-the_lib_error_handler(const char *kind, const char* msg)
-{
-  cerr << kind << endl << "Error: " << msg << endl;
-  exit(1);
-}
-two_arg_error_handler_t lib_error_handler = the_lib_error_handler;
+#ifdef __GNUC__
+#pragma interface
 #endif
 
+#include <util/state/state.h>
+#include <util/state/stateio.h>
+#include <util/container/array.h>
+
+SSB_ARRAY_dec(int);
+
+#endif
+
+// Local Variables:
+// mode: c++
+// c-file-style: "CLJ"
+// End:

@@ -32,6 +32,7 @@
 #include <math.h>
 
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
@@ -39,6 +40,7 @@
 #include <chemistry/molecule/localdef.h>
 
 #include <util/container/bitarray.h>
+#include <util/container/avlset.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -83,8 +85,6 @@ double IntCoor::radian_conv = 180.0/3.14159265358979323846;
 
 SavableState_REF_def(IntCoor);
 ARRAY_def(RefIntCoor);
-SET_def(RefIntCoor);
-ARRAYSET_def(RefIntCoor);
 
 void *
 IntCoor::_castdown(const ClassDesc*cd)
@@ -236,7 +236,7 @@ SetIntCoor::SetIntCoor(const RefKeyVal& keyval)
     }
 
   for (int i=0; i<n; i++) {
-      coor_.add(keyval->describedclassvalue(i));
+      coor_.push_back(keyval->describedclassvalue(i));
     }
 }
 
@@ -249,7 +249,7 @@ SetIntCoor::SetIntCoor(StateIn& s):
   RefIntCoor tmp;
   for (int i=0; i<n; i++) {
       tmp.restore_state(s);
-      coor_.add(tmp);
+      coor_.push_back(tmp);
     }
 }
 
@@ -271,31 +271,21 @@ SetIntCoor::save_data_state(StateOut& s)
 void
 SetIntCoor::add(const RefIntCoor& coor)
 {
-  coor_.add(coor);
+  coor_.push_back(coor);
 }
 
 void
 SetIntCoor::add(const RefSetIntCoor& coor)
 {
   for (int i=0; i<coor->n(); i++) {
-      coor_.add(coor->coor(i));
+      coor_.push_back(coor->coor(i));
     }
 }
 
 void
-SetIntCoor::del(const RefIntCoor& coor)
+SetIntCoor::pop()
 {
-  RefIntCoor tmp(coor);
-  coor_.del(tmp);
-}
-
-void
-SetIntCoor::del(const RefSetIntCoor& coor)
-{
-  for (int i=0; i<coor->n(); i++) {
-      RefIntCoor c = coor->coor(i);
-      coor_.del(c);
-    }
+  coor_.pop_back();
 }
 
 int
@@ -857,7 +847,7 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
   // bonds is a lower triangle matrix of 1's and 0's indicating whether
   // there is a bond between atoms i and j
 
-  BitArray bonds(m.natom(),m.natom());
+  BitArrayLTri bonds(m.natom(),m.natom());
 
   int i;
   for(i=0; i < m.natom(); i++) {
@@ -910,34 +900,34 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
 
   // check for groups of atoms bound to nothing
   if (m.natom() > 0) {
-    Setint atoms;
-    Setint newatoms, nextnewatoms;
-    newatoms.add(0);
-    Pix iatom;
+    AVLSet<int> atoms;
+    AVLSet<int> newatoms, nextnewatoms;
+    newatoms.insert(0);
+    AVLSet<int>::iterator iatom;
     while (newatoms.length() > 0) {
-      for (iatom=newatoms.first(); iatom; newatoms.next(iatom)) {
-        atoms.add(newatoms(iatom));
+      for (iatom=newatoms.begin(); iatom!=newatoms.end(); iatom++) {
+        atoms.insert(*iatom);
         }
       nextnewatoms.clear();
-      for (iatom=newatoms.first(); iatom; newatoms.next(iatom)) {
-        int atom = newatoms(iatom);
+      for (iatom=newatoms.begin(); iatom!=newatoms.end(); iatom++) {
+        int atom = *iatom;
         for (i=0; i<m.natom(); i++) {
           if (bonds(i,atom) && !atoms.contains(i)) {
-            nextnewatoms.add(i);
+            nextnewatoms.insert(i);
             }
           }
         }
       newatoms.clear();
-      for (iatom=nextnewatoms.first(); iatom; nextnewatoms.next(iatom)) {
-        newatoms.add(nextnewatoms(iatom));
+      for (iatom=nextnewatoms.begin(); iatom!=nextnewatoms.end(); iatom++) {
+        newatoms.insert(*iatom);
         }
       }
     if (atoms.length() != m.natom()) {
       cerr << node0 << "ERROR: there are two unbound groups of atoms" << endl
            << "You must add an entry to extra_bonds." << endl
            << "One of the groups consists of atoms:";
-      for (iatom=atoms.first(); iatom; atoms.next(iatom)) {
-        cerr << node0 << " " << atoms(iatom) + 1;
+      for (iatom=atoms.begin(); iatom!=atoms.end(); iatom++) {
+        cerr << node0 << " " << *iatom + 1;
         }
       cerr << node0 << endl;
       abort();
@@ -967,7 +957,7 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
  */
 
 void
-IntCoorGen::add_bonds(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
+IntCoorGen::add_bonds(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m)
 {
   int i,j,ij;
   int labelc=0;
@@ -1005,7 +995,7 @@ IntCoorGen::cos_ijk(Molecule& m, int i, int j, int k)
 }
 
 void
-IntCoorGen::add_bends(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
+IntCoorGen::add_bends(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m)
 {
   int i,j,k;
   int labelc=0;
@@ -1079,7 +1069,7 @@ IntCoorGen::add_bends(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
  */
 
 int
-IntCoorGen::hterminal(Molecule& m, BitArray& bonds, int i)
+IntCoorGen::hterminal(Molecule& m, BitArrayLTri& bonds, int i)
 {
   int nh=0;
   for (int j=0; j < m.natom(); j++)
@@ -1088,7 +1078,7 @@ IntCoorGen::hterminal(Molecule& m, BitArray& bonds, int i)
 }
 
 void
-IntCoorGen::add_tors(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
+IntCoorGen::add_tors(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m)
 {
   int i,j,k,l;
   int labelc=0;
@@ -1141,7 +1131,7 @@ IntCoorGen::add_tors(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
   }
 
 void
-IntCoorGen::add_out(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
+IntCoorGen::add_out(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m)
 {
   int i,j,k,l;
   int labelc=0;

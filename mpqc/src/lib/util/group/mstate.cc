@@ -34,9 +34,6 @@
 #include <util/group/mstate.h>
 
 #include <util/state/translate.h>
-#include <util/state/stateptrImplSet.h>
-#include <util/state/statenumImplSet.h>
-#include <util/state/classdatImplMap.h>
 
 // This sets up a communication buffer.  It is made up of a of
 // an integer that gives the number of bytes used in the buffer
@@ -363,7 +360,7 @@ void
 StateSend::target(int t)
 {
   target_ = t;
-  ps_->clear();
+  ps_.clear();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -388,7 +385,7 @@ void
 StateRecv::source(int s)
 {
   source_ = s;
-  ps_->clear();
+  ps_.clear();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -432,7 +429,7 @@ BcastStateRecv::source(int s)
       abort();
     }
   source_ = s;
-  ps_->clear();
+  ps_.clear();
 }
 
 void
@@ -590,10 +587,10 @@ BcastStateInBin::close()
   nbuf = 0;
   ibuf = 0;
 
-  classidmap_->clear();
+  classidmap_.clear();
   nextclassid_ = 0;
-  classdatamap_->clear();
-  ps_->clear();
+  classdatamap_.clear();
+  ps_.clear();
 }
 
 int

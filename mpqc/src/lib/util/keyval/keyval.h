@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include <util/container/avlmap.h>
 #include <util/class/class.h>
 #include <util/keyval/keyvalval.h>
 
@@ -45,13 +46,19 @@ class KeyValKeyword {
   public:
     KeyValKeyword();
     KeyValKeyword(const char* name);
-    KeyValKeyword(KeyValKeyword&);
+    KeyValKeyword(const KeyValKeyword&);
     ~KeyValKeyword();
     KeyValKeyword& operator=(const KeyValKeyword&);
-    int operator==(KeyValKeyword& ck);
+    int operator==(const KeyValKeyword& ck) const;
+    int operator<(const KeyValKeyword& ck) const;
     int hash() const;
-    inline int cmp(KeyValKeyword&ck) const
+    inline int cmp(const KeyValKeyword&ck) const
     {
+      if (!keyword_) {
+          if (!ck.keyword_) return 0;
+          return -1;
+        }
+      if (!ck.keyword_) return 1;
       return strcmp(keyword_,ck.keyword_);
     }
     inline const char* name() const {return keyword_;}
@@ -275,10 +282,9 @@ REF_dec(KeyVal);
 
 // this class allows keyval associations to be set up by the program,
 // rather than determined by an external file
-class KeyValKeywordRefKeyValValueMap;
 class AssignedKeyVal: public KeyVal {
   private:
-    KeyValKeywordRefKeyValValueMap* _map;
+    AVLMap<KeyValKeyword,RefKeyValValue> _map;
     // do not allow a copy constructor or assignment
     AssignedKeyVal(const AssignedKeyVal&);
     void operator=(const AssignedKeyVal&);
@@ -308,7 +314,7 @@ class StringKeyVal: public KeyVal {
   private:
     // once a described class is found it is kept here so
     // multiple references to it return the same instance
-    KeyValKeywordRefKeyValValueMap* _map;
+    AVLMap<KeyValKeyword,RefKeyValValue> _map;
     // do not allow a copy constructor or assignment
     StringKeyVal(const StringKeyVal&);
     void operator=(const StringKeyVal&);

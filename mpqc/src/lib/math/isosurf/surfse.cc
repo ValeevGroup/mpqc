@@ -29,18 +29,14 @@
 
 #include <math/scmat/matrix.h>
 #include <math/isosurf/surf.h>
-#include <math/isosurf/triRAVLMap.h>
-#include <math/isosurf/veRAVLMap.h>
-#include <math/isosurf/vtsRAVLMap.h>
-#include <math/isosurf/edgeRAVLMap.h>
-#include <math/isosurf/vertexAVLSet.h>
 
 void
 TriangulatedSurface::remove_short_edges(double length_cutoff,
                                         const RefVolume &vol, double isoval)
 {
   int j,k;
-  Pix I,J,K;
+  AVLSet<RefTriangle>::iterator it,jt,kt;
+  AVLSet<RefEdge>::iterator ie,je;
 
   int surface_was_completed = _completed_surface;
 
@@ -66,52 +62,49 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
 
   int deleted_edges_length;
   do {
-      RefTriangleAVLSet deleted_triangles;
-      RefEdgeAVLSet deleted_edges;
-      RefVertexAVLSet deleted_vertices;
+      AVLSet<RefTriangle> deleted_triangles;
+      AVLSet<RefEdge> deleted_edges;
+      AVLSet<RefVertex> deleted_vertices;
 
-      RefTriangleAVLSet new_triangles;
-      RefEdgeAVLSet new_edges;
-      RefVertexAVLSet new_vertices;
+      AVLSet<RefTriangle> new_triangles;
+      AVLSet<RefEdge> new_edges;
+      AVLSet<RefVertex> new_vertices;
 
       // a vertex to set-of-connected-triangles map
-      RefTriangleAVLSet empty_triangle_set;
-      RefVertexRefTriangleAVLSetRAVLMap connected_triangle_map(
-          empty_triangle_set);
-      for (I = _triangles.first(); I; _triangles.next(I)) {
-          RefTriangle tri = _triangles(I);
+      AVLMap<RefVertex,AVLSet<RefTriangle> > connected_triangle_map;
+      for (it = _triangles.begin(); it != _triangles.end(); it++) {
+          RefTriangle tri = *it;
           for (j = 0; j<3; j++) {
               RefVertex v  = tri->vertex(j);
-              connected_triangle_map[v].add(tri);
+              connected_triangle_map[v].insert(tri);
             }
         }
 
       // a vertex to set-of-connected-edges map
-      RefEdgeAVLSet empty_edge_set;
-      RefVertexRefEdgeAVLSetRAVLMap connected_edge_map(empty_edge_set);
-      for (I = _edges.first(); I; _edges.next(I)) {
-          RefEdge e = _edges(I);
+      AVLMap<RefVertex,AVLSet<RefEdge> > connected_edge_map;
+      for (ie = _edges.begin(); ie != _edges.end(); ie++) {
+          RefEdge e = *ie;
           for (j = 0; j<2; j++) {
               RefVertex v = e->vertex(j);
-              connected_edge_map[v].add(e);
+              connected_edge_map[v].insert(e);
             }
         }
   
-      for (I = _edges.first(); I; _edges.next(I)) {
-          RefEdge edge = _edges(I);
+      for (ie = _edges.begin(); ie != _edges.end(); ie++) {
+          RefEdge edge = *ie;
           double length = edge->straight_length();
           if (length < length_cutoff) {
-              RefTriangleAVLSet connected_triangles;
+              AVLSet<RefTriangle> connected_triangles;
               RefVertex v0 = edge->vertex(0);
               RefVertex v1 = edge->vertex(1);
               // = operator here causes problems
               connected_triangles |= connected_triangle_map[v0];
               connected_triangles |= connected_triangle_map[v1];
               int skip = 0;
-              for (J = connected_triangles.first();
-                   J;
-                   connected_triangles.next(J)) {
-                  RefTriangle tri = connected_triangles(J);
+              for (jt = connected_triangles.begin();
+                   jt != connected_triangles.end();
+                   jt++) {
+                  RefTriangle tri = *jt;
                   if (tri->edge(0)->straight_length() < length
                       ||tri->edge(1)->straight_length() < length
                       ||tri->edge(2)->straight_length() < length
@@ -124,11 +117,11 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
               deleted_triangles |= connected_triangles;
 	      v0 = edge->vertex(0);
 	      v1 = edge->vertex(1);
-              deleted_vertices.add(v0);
-              deleted_vertices.add(v1);
+              deleted_vertices.insert(v0);
+              deleted_vertices.insert(v1);
               // find all of the edges connected to the short edge
               // (including the short edge)
-              RefEdgeAVLSet connected_edges;
+              AVLSet<RefEdge> connected_edges;
 	      v0 = edge->vertex(0);
 	      v1 = edge->vertex(1);
               connected_edges |= connected_edge_map[v0];
@@ -136,12 +129,12 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
               deleted_edges |= connected_edges;
               // find the edges forming the perimeter of the deleted triangles
               // (these are used to form the new triangles)
-              RefEdgeAVLSet perimeter_edges;
+              AVLSet<RefEdge> perimeter_edges;
               int embedded_triangle = 0;
-              for (J = connected_triangles.first();
-                   J;
-                   connected_triangles.next(J)) {
-                  RefTriangle tri = connected_triangles(J);
+              for (jt = connected_triangles.begin();
+                   jt != connected_triangles.end();
+                   jt++) {
+                  RefTriangle tri = *jt;
                   for (j=0; j<3; j++) {
                       RefEdge e = tri->edge(j);
                       if (!connected_edges.contains(e)) {
@@ -156,12 +149,12 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
                           RefEdge e = tri->edge(j);
                           if (perimeter_edges
                               .contains(e)) {
-                              perimeter_edges.del(e);
-                              deleted_edges.add(e);
+                              perimeter_edges.remove(e);
+                              deleted_edges.insert(e);
                               embedded_triangle = 1;
                             }
                           else {
-                              perimeter_edges.add(e);
+                              perimeter_edges.insert(e);
                             }
                         }
                     }
@@ -172,21 +165,21 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
               if (embedded_triangle) {
                   // make a list of vertices on the perimeter (so i
                   // don't delete them
-                  RefVertexAVLSet perimeter_vertices;
-                  for (J = perimeter_edges.first();
-                       J;
-                       perimeter_edges.next(J)) {
-                      RefEdge e = perimeter_edges(J);
+                  AVLSet<RefVertex> perimeter_vertices;
+                  for (je = perimeter_edges.begin();
+                       je != perimeter_edges.end();
+                       je++) {
+                      RefEdge e = *je;
                       for (j=0; j<2; j++) {
                           RefVertex v = e->vertex(j);
-                          perimeter_vertices.add(v);
+                          perimeter_vertices.insert(v);
                         }
                     }
                   // find the embedded_triangle
-                  for (J = connected_triangles.first();
-                       J;
-                       connected_triangles.next(J)) {
-                      RefTriangle tri = connected_triangles(J);
+                  for (jt = connected_triangles.begin();
+                       jt != connected_triangles.end();
+                       jt++) {
+                      RefTriangle tri = *jt;
                       // see if this triangle is embedded
                       for (j=0; j<3; j++) {
                           RefEdge e = tri->edge(j);
@@ -198,7 +191,7 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
                           for (j=0; j<3; j++) {
                               RefVertex v = tri->vertex(j);
                               if (!perimeter_vertices.contains(v))
-                                  deleted_vertices.add(v);
+                                  deleted_vertices.insert(v);
                             }
                         }
                     }
@@ -215,13 +208,13 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
                   replacement_vertex = new Vertex(point);
                   if (hn) replacement_vertex->set_normal(norm);
                 }
-              new_vertices.add(replacement_vertex);
+              new_vertices.insert(replacement_vertex);
               // for each vertex on the perimeter form a new edge to the
               // replacement vertex
-              RefEdge empty_edge;
-              RefVertexRefEdgeRAVLMap new_edge_map(empty_edge);
-              for (J = perimeter_edges.first(); J; perimeter_edges.next(J)) {
-                  RefEdge e = perimeter_edges(J);
+              AVLMap<RefVertex,RefEdge> new_edge_map;
+              for (je = perimeter_edges.begin(); je!=perimeter_edges.end();
+                   je++) {
+                  RefEdge e = *je;
                   for (k = 0; k<2; k++) {
                       RefVertex v = e->vertex(k);
                       if (!new_edge_map.contains(v)) {
@@ -230,14 +223,15 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
                               v
                               );
                           new_edge_map[v] = new_e;
-                          new_edges.add(new_e);
+                          new_edges.insert(new_e);
                         }
                     }
                 }
               // for each edge on the perimeter form a new triangle with the
               // replacement vertex
-              for (J = perimeter_edges.first(); J; perimeter_edges.next(J)) {
-                  RefEdge e1 = perimeter_edges(J);
+              for (je = perimeter_edges.begin(); je != perimeter_edges.end();
+                   je++) {
+                  RefEdge e1 = *je;
                   RefVertex v0 = e1->vertex(0);
                   RefVertex v1 = e1->vertex(1);
                   RefEdge e2 = new_edge_map[v0];
@@ -255,17 +249,17 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
                   // triangle, by finding the orientation within the old
                   // triangle.
                   int orientation = 0;
-                  for (K = connected_triangles.first();
-                       K;
-                       connected_triangles.next(K)) {
-                      if (connected_triangles(K)->contains(e1)) {
+                  for (kt = connected_triangles.begin();
+                       kt != connected_triangles.end();
+                       kt++) {
+                      if ((*kt)->contains(e1)) {
                           orientation
-                              = connected_triangles(K)->orientation(e1);
+                              = (*kt)->orientation(e1);
                           break;
                         }
                     }
                   RefTriangle newtri(newTriangle(e1,e2,e3,orientation));
-                  new_triangles.add(newtri);
+                  new_triangles.insert(newtri);
                 }
               //cout << "WARNING: only one short edge removed" << endl;
               //break;

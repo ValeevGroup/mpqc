@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <util/state/stateio.h>
 #include <math/optimize/scextrap.h>
 
 SavableState_REF_def(SCExtrapData);

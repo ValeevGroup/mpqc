@@ -32,6 +32,7 @@
 #include <math.h>
 #include <string.h>
 #include <util/misc/units.h>
+#include <util/state/stateio.h>
 
 //////////////////////////////////////////////////////////////////////
 // Units class definition

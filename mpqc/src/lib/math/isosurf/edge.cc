@@ -36,7 +36,6 @@
 // Edge
 
 REF_def(Edge);
-SET_def(RefEdge);
 
 Edge::Edge(const RefVertex &p1,
      const RefVertex &p2,
@@ -68,10 +67,10 @@ double Edge::straight_length()
   return BA.norm();
 }
 
-void Edge::add_vertices(SetRefVertex&set)
+void Edge::add_vertices(AVLSet<RefVertex>&set)
 {
-  set.add(_vertices[0]);
-  set.add(_vertices[_order]);
+  set.insert(_vertices[0]);
+  set.insert(_vertices[_order]);
 }
 
 void

@@ -35,6 +35,7 @@
 #include <iostream.h>
 
 #include <util/state/state.h>
+#include <util/state/array.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>

@@ -32,6 +32,7 @@
 #include <math.h>
 #include <float.h>
 
+#include <util/state/stateio.h>
 #include <math/optimize/qnewton.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>

@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <util/state/stateio.h>
 #include <chemistry/qc/intv3/intv3.h>
 #include <chemistry/qc/intv3/cartitv3.h>
 #include <chemistry/qc/intv3/tformv3.h>

@@ -34,6 +34,7 @@
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
+#include <util/state/stateio.h>
 #include <math/scmat/blocked.h>
 #include <chemistry/molecule/hess.h>
 #include <chemistry/molecule/molfreq.h>

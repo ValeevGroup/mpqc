@@ -31,6 +31,7 @@
 
 #include <math.h>
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 #include <util/group/message.h>
 #include <math/symmetry/corrtab.h>
 #include <math/scmat/local.h>

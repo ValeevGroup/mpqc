@@ -89,6 +89,13 @@ class Array {
           };
         return _array[i];
       }
+    void push_back(const Type &d) {
+        reset_length(_length+1);
+        _array[_length-1] = d;
+    }
+    void pop_back() {
+        set_length(_length-1);
+    }
 };
 
 /////////////////////////////////////////////////////////////////////////////

@@ -37,7 +37,7 @@
 #include <stddef.h>
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
-#include <util/container/avl.h>
+#include <util/container/eavlmmap.h>
 
 // the max shell number is 2^15 (sizeof(int) must be >= 4)
 #define SH_BITS 15 // the number of bits holding a shell index
@@ -102,8 +102,8 @@ compare(const IntegralKey&k1, const IntegralKey&k2)
 
 class IntegralLink {
   public:
-    EAVLNode<IntegralLink, IntegralKey> intlist;
-    EAVLNode<IntegralLink, int> costlist;
+    EAVLMMapNode<IntegralKey, IntegralLink> intlist;
+    EAVLMMapNode<int, IntegralLink> costlist;
     int size;
   public:
     IntegralLink(IntegralKey& key, int cost, int size);
@@ -155,8 +155,8 @@ class IntegralStorer: public DescribedClass {
 #   include <util/class/classd.h>
   private:
     int table_size_;
-    EAVLList<IntegralLink,int> costlist;
-    EAVLList<IntegralLink,IntegralKey>* table_;
+    EAVLMMap<int,IntegralLink> costlist;
+    EAVLMMap<IntegralKey,IntegralLink>* table_;
     int maxsize_;
     int currentsize_;
     int n_integrals_;

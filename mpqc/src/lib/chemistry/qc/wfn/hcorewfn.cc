@@ -26,6 +26,7 @@
 //
 
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/basis/integral.h>

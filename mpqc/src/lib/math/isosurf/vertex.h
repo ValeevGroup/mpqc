@@ -37,7 +37,6 @@ extern "C" {
 #include <math.h>
 }
 #include <util/ref/ref.h>
-#include <util/container/set.h>
 #include <math/scmat/matrix.h>
 #include <math/isosurf/volume.h>
 #include <math/isosurf/implicit.h>
@@ -62,8 +61,6 @@ class Vertex: public VRefCount {
 };
 
 REF_dec(Vertex);
-SET_dec(RefVertex);
-ARRAYSET_dec(RefVertex);
 
 #endif
 

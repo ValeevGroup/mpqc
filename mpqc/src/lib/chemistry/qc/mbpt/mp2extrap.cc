@@ -30,6 +30,7 @@
 #endif
 
 #include <util/misc/formio.h>
+#include <util/state/stateio.h>
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbpt/mp2extrap.h>
 

@@ -34,22 +34,18 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 DEFINES += -DSRCLIBDIR=\"$(SRCLIBDIR)\"
 LD = $(CXX)
 
-MAPIMPL = RAVL
-
 CXXSRC = ipv2.cc ipv2_alloc.cc ipv2_cwk.cc ipv2_data.cc ipv2_error.cc \
 	 ipv2_karray.cc ipv2_print.cc ipv2_read.cc \
 	 keyval.cc keyvalipv2.cc keyvalval.cc keyvalkey.cc keyvalass.cc \
          keyvalstr.cc keyvalagg.cc keyvalpre.cc
 
-GENCXXSRC =ipv2_parse.cc ipv2_scan.cc \
-           keyval$(MAPIMPL)Map.cc keyvalMap.cc
+GENCXXSRC =ipv2_parse.cc ipv2_scan.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(GENCXXSRC:%.cc=%.o)
 GENSRC = $(GENCXXSRC)
 
 INC = ipv2.h keyval.h keyvaldefs.h ipv2_scan.h
-GENINC = ipv2_parse.h \
-         keyvalImplMap.h keyval$(MAPIMPL)Map.h keyvalMap.h
+GENINC = ipv2_parse.h
 
 
 DEPENDINCLUDE = $(INC) $(GENINC)
@@ -95,21 +91,3 @@ ipv2_scan.cc: ipv2_scan.ll
 	                | sed "s/static int yyinput/int yyinput/" \
 	                > ipv2_scan.cc
 
-#############################
-
-
-keyvalMap.cc keyvalMap.h:
-	$(GENCLASS) -2 KeyValKeyword val RefKeyValValue val Map keyval
-	$(PREPEND_HEADER) keyvalMap.h "#include <util/keyval/keyval.h>"
-	$(PREPEND_HEADER) keyvalMap.h "#include <util/keyval/keyvaldefs.h>"
-	/bin/mv keyvalMap.h tmp.keyvalMap.h
-	grep -v "#include \"keyvaldefs.h\"" < tmp.keyvalMap.h > keyvalMap.h
-	/bin/rm tmp.keyvalMap.h
-
-keyval$(MAPIMPL)Map.cc keyval$(MAPIMPL)Map.h:
-	$(GENCLASS) -2 KeyValKeyword val RefKeyValValue val $(MAPIMPL)Map keyval
-	$(PREPEND_HEADER) keyval$(MAPIMPL)Map.h "#include <util/keyval/keyval.h>"
-
-keyvalImplMap.h:
-	echo "#include <util/keyval/keyval$(MAPIMPL)Map.h>" > keyvalImplMap.h
-	echo "#define MAPCTOR KeyValKeywordRefKeyValValue"$(MAPIMPL)"Map(0)" >> keyvalImplMap.h

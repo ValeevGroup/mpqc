@@ -27,6 +27,7 @@
 
 #include <math.h>
 
+#include <util/state/stateio.h>
 #include <math/optimize/update.h>
 #include <math/optimize/transform.h>
 #include <util/keyval/keyval.h>

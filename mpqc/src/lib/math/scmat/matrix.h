@@ -33,7 +33,6 @@
 
 #include <iostream.h>
 #include <util/container/array.h>
-#include <util/container/set.h>
 
 #include <math/scmat/abstract.h>
 

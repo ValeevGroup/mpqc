@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <util/container/avl.h>
+#include <util/container/avlset.h>
 
 #ifdef __GNUG__
 #define INST_COMP(T) \
@@ -36,4 +36,11 @@ INST_COMP(long);
 INST_COMP(double);
 INST_COMP(char);
 INST_COMP(unsigned char);
+
+template class EAVLMMapNode<int, AVLMapNode<int, int> >;
+template class EAVLMMap<int, AVLMapNode<int, int> >;
+template class AVLMapNode<int, int>;
+template class AVLMap<int, int>;
+template class AVLSet<int>;
+
 #endif

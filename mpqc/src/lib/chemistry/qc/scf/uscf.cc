@@ -33,6 +33,8 @@
 #include <limits.h>
 #include <sys/stat.h>
 
+#include <util/state/stateio.h>
+
 #include <util/misc/timer.h>
 #include <util/misc/formio.h>
 

@@ -33,14 +33,13 @@
 #include <util/misc/formio.h>
 #include <util/misc/compute.h>
 #include <util/state/state.h>
+#include <util/state/stateio.h>
 
 #ifdef __GNUC__
 template class Result<int>;
 template class Result<double>;
 template class NCAccResult<double>;
 #endif
-
-SET_def(ResultInfoP);
 
 Compute::Compute()
 {
@@ -53,15 +52,16 @@ Compute::~Compute()
 void
 Compute::add(ResultInfo*r)
 {
-  _results.add(r);
+  _results.insert(r);
 }
 
 void
 Compute::obsolete()
 {
   // go thru all of the results and mark them as obsolete
-  for (Pix i = _results.first(); i; _results.next(i)) {
-      _results(i)->computed() = 0;
+  for (AVLSet<ResultInfoP>::iterator i = _results.begin();
+       i!=_results.end(); i++) {
+      (*i)->computed() = 0;
     }
 }
 
@@ -240,6 +240,11 @@ AccResultInfo::update() {
         }
     }
 }
+
+#ifdef __GNUG__
+template class EAVLMMap<ResultInfoP, AVLMapNode<ResultInfoP, int> >;
+template class AVLMapNode<ResultInfoP, int>;
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 

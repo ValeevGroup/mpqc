@@ -29,6 +29,7 @@
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
+#include <util/state/stateio.h>
 #include <util/state/state_text.h>
 #include <util/state/state_bin.h>
 #include <chemistry/qc/basis/basis.h>

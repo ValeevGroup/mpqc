@@ -33,11 +33,6 @@
 
 #include <util/state/state_file.h>
 
-#include <util/state/statenumSet.h>
-#include <util/state/classdImplMap.h>
-#include <util/state/classdatImplMap.h>
-#include <util/state/stateptrImplSet.h>
-
 #define CLASSNAME StateOutFile
 #define PARENTS public StateOut
 #include <util/class/classia.h>
@@ -81,10 +76,10 @@ void StateOutFile::close()
   if(opened_) delete buf_;
   opened_=0; buf_=0;
 
-  classidmap_->clear();
+  classidmap_.clear();
   nextclassid_=0;
 
-  ps_->clear();
+  ps_.clear();
   next_object_number_ = 1;
 }
 
@@ -143,10 +138,10 @@ void StateInFile::close()
   if(opened_) delete buf_;
   opened_=0; buf_=0;
 
-  classidmap_->clear();
+  classidmap_.clear();
   nextclassid_ = 0;
-  classdatamap_->clear();
-  ps_->clear();
+  classdatamap_.clear();
+  ps_.clear();
 }
 
 int StateInFile::open(const char *path)

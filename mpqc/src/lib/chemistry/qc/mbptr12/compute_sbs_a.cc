@@ -110,6 +110,9 @@ print_contrib(double tmpval, int num, int onum,
 }
 #endif
 
+static inline void increment_ij(int& i, int& j, int n);
+
+
 /*-------------------------------------
   Based on MBPT2::compute_mp2_energy()
  -------------------------------------*/
@@ -742,6 +745,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
       for (int j=0; j<nocc_act; j++) {
 	int jj = j;
         double ecorr_ij = 0.0;
+	// alpha-alpha pair energy is 0 when i == j - thus we only need strictly i > j
 	int ij_aa = (ii > jj) ? ii*(ii-1)/2 + jj : jj*(jj-1)/2 + ii;
 	int ij_ab = ii*nocc_act + jj;
 	double eaa = 0.0;
@@ -769,8 +773,11 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 		// aabb or bbaa or abba or baab
 		biggest_coefs.insert(*iajb_ptr,i_offset+i,j,a,b,1212);
 	      } // endif
-	      double tmpval = (*iajb_ptr - *ibja_ptr)*(*iajb_ptr - *ibja_ptr)/delta_ijab;
-	      eaa += tmpval;
+	      double tmpval;
+	      if (i != j) {
+		tmpval = (*iajb_ptr - *ibja_ptr)*(*iajb_ptr - *ibja_ptr)/delta_ijab;
+		eaa += tmpval;
+	      }
 	      tmpval = 0.5*(*iajb_ptr * *iajb_ptr + *ibja_ptr * *ibja_ptr)/delta_ijab;
 	      eab += tmpval;
 	      ecorr_ij += *iajb_ptr*(2.0 * *iajb_ptr - *ibja_ptr)/delta_ijab;
@@ -841,7 +848,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
    --------------------------------*/
   ExEnv::out0() << indent << "Begin computation of intermediates" << endl;
   tim_enter("mp2-r12a intermeds");
-  int naa = (nocc_act*(nocc_act-1))/2;          // Number of alpha-alpha pairs
+  int naa = (nocc_act*(nocc_act-1))/2;          // Number of alpha-alpha pairs (i > j)
   int nab = nocc_act*nocc_act;                  // Number of alpha-beta pairs
   if (debug_) {
     ExEnv::out0() << indent << "naa = " << naa << endl;
@@ -904,9 +911,11 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   /////////////////////////////////////////////////////////////////////////////////
 
   if (r12intsacc->has_access(me)) {
+    int nij = nocc_act*(nocc_act+1)/2;
     int kl = 0;
     for(int k=0;k<nocc_act;k++)
       for(int l=0;l<=k;l++,kl++) {
+	// Figure out if this task will handle this kl
         int kl_proc = kl%nproc_with_ints;
         if (kl_proc != proc_with_ints[me])
           continue;
@@ -917,7 +926,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
         if (debug_)
           ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
 
-         // Get (|r12|) and (|[r12,T1]|) integrals only
+	// Get (|1/r12|), (|r12|), and (|[r12,T1]|) integrals
         tim_enter("MO ints retrieve");
         double *klyx_buf_eri = r12intsacc->retrieve_pair_block(k,l,R12IntsAcc::eri);
         double *klyx_buf_r12 = r12intsacc->retrieve_pair_block(k,l,R12IntsAcc::r12);
@@ -928,10 +937,11 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 	if (debug_)
           ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
 
-	int ij = 0;
-        for(int i=0;i<nocc_act;i++)
-          for(int j=0;j<=i;j++,ij++) {
-
+	// to avoid every task hitting same ij at the same time, stagger ij-accesses, i.e. each kl task will start with ij=kl+1
+	int i = k;
+	int j = l;
+	increment_ij(i,j,nocc_act);
+	for(int ij_counter=0; ij_counter<nij; ij_counter++, increment_ij(i,j,nocc_act)) {
 
 	    int ij_aa = i*(i-1)/2 + j;
 	    int ij_ab = i*nocc_act + j;
@@ -1399,6 +1409,17 @@ R12IntEval_sbs_A::compute_transform_dynamic_memory_(int ni, int nocc_act, const 
 }
 
 
+// This function increments a pair of indices i and j subject to a condition i<n, j<n, i>=j
+// If i==n and j==n then it sets i=0 and j=0
+static inline void increment_ij(int& i, int& j, int n)
+{
+  if (i == j) {
+    i = (++i)%n;
+    j = 0;
+  }
+  else
+    j++;
+}
 
 ////////////////////////////////////////////////////////////////////////////
 

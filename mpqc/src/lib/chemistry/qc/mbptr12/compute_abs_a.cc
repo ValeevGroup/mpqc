@@ -110,6 +110,9 @@ print_contrib(double tmpval, int num, int onum,
 }
 #endif
 
+static inline void increment_ij(int& i, int& j, int n);
+
+
 /*-------------------------------------
   Based on MBPT2::compute_mp2_energy()
  -------------------------------------*/
@@ -911,10 +914,12 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   /////////////////////////////////////////////////////////////////////////////////
 
   if (r12intsacc->has_access(me)) {
+    int nij = nocc_act*(nocc_act+1)/2;
     int kl = 0;
     for(int k=0;k<nocc_act;k++)
       for(int l=0;l<=k;l++,kl++) {
         double pfac_kl = (k==l) ? oosqrt2 : 1.0;
+	// Figure out if this task will handle this kl
         int kl_proc = kl%nproc_with_ints;
         if (kl_proc != proc_with_ints[me])
           continue;
@@ -922,7 +927,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 	int kl_ab = k*nocc_act + l;
 	int lk_ab = l*nocc_act + k;
         
-        // Get (|r12|) and (|[r12,T1]|) integrals only
+        // Get (|1/r12|), (|r12|), (|[r12,T1]|), and (|[r12,T2]|) integrals
         tim_enter("MO ints retrieve");
         double *klox_buf_eri = r12intsacc->retrieve_pair_block(k,l,R12IntsAcc::eri);
         double *klox_buf_r12 = r12intsacc->retrieve_pair_block(k,l,R12IntsAcc::r12);
@@ -935,9 +940,11 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 	double *lkox_buf_r12t2 = r12intsacc->retrieve_pair_block(l,k,R12IntsAcc::r12t2);
         tim_exit("MO ints retrieve");
 
-	int ij = 0;
-        for(int i=0;i<nocc_act;i++)
-          for(int j=0;j<=i;j++,ij++) {
+	// to avoid every task hitting same ij at the same time, stagger ij-accesses, i.e. each kl task will start with ij=kl+1
+	int i = k;
+	int j = l;
+	increment_ij(i,j,nocc_act);
+	for(int ij_counter=0; ij_counter<nij; ij_counter++, increment_ij(i,j,nocc_act)) {
 
             double pfac_ij = (i==j) ? oosqrt2 : 1.0;
 	    int ij_aa = i*(i-1)/2 + j;
@@ -1354,6 +1361,18 @@ R12IntEval_abs_A::compute_transform_dynamic_memory_(int ni, int nocc_act, const 
   return memsize;
 }
 
+
+// This function increments a pair of indices i and j subject to a condition i<n, j<n, i>=j
+// If i==n and j==n then it sets i=0 and j=0
+static inline void increment_ij(int& i, int& j, int n)
+{
+  if (i == j) {
+    i = (++i)%n;
+    j = 0;
+  }
+  else
+    j++;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////

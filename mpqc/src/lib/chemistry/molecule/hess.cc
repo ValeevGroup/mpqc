@@ -175,7 +175,7 @@ MolecularHessian::cartesian_to_symmetry(const Ref<Molecule> &mol,
           atom_map[i][g] = mol->atom_at_position(np, 0.05);
           if (atom_map[i][g] < 0) {
               ExEnv::err() << node0 << indent
-                   << "FinDispMolecularHessian: atom mapping bad" << endl;
+                   << "MolecularHessian: atom mapping bad" << endl;
               abort();
             }
         }

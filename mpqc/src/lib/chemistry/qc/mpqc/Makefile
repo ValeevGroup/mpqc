@@ -34,7 +34,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-mpqctest: mpqctest.o libmpqc.a \
+mpqctest: mpqctest.o \
 	$(shell $(LISTLIBS) $(MPQCLIBSDEFINE) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(CXX) $(LDFLAGS) -o mpqctest $^ $(SYSLIBS)
 

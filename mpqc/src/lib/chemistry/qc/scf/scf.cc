@@ -53,7 +53,7 @@ using namespace std;
 // SCF
 
 static ClassDesc SCF_cd(
-  typeid(SCF),"SCF",2,"public OneBodyWavefunction",
+  typeid(SCF),"SCF",3,"public OneBodyWavefunction",
   0, 0, 0);
 
 SCF::SCF(StateIn& s) :
@@ -72,7 +72,15 @@ SCF::SCF(StateIn& s) :
     s.get(print_all_evals_);
     s.get(print_occ_evals_);
   }
+  else {
+    print_all_evals_ = 0;
+    print_occ_evals_ = 0;
+  }
   s.get(level_shift_);
+  if (s.version(::class_desc<SCF>()) >= 3) {
+    s.get(keep_guess_wfn_);
+  }
+  else keep_guess_wfn_ = 0;
 
   extrap_ << SavableState::restore_state(s);
   accumdih_ << SavableState::restore_state(s);
@@ -129,6 +137,8 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
   scf_grp_ = basis()->matrixkit()->messagegrp();
   threadgrp_ = ThreadGrp::get_default_threadgrp();
   
+  keep_guess_wfn_ = keyval->booleanvalue("keep_guess_wavefunction");
+
   // first see if guess_wavefunction is a wavefunction, then check to
   // see if it's a string.
   if (keyval->exists("guess_wavefunction")) {
@@ -195,6 +205,15 @@ int
 SCF::spin_unrestricted()
 {
   return 0;
+}
+
+void
+SCF::symmetry_changed()
+{
+  OneBodyWavefunction::symmetry_changed();
+  if (guess_wfn_.nonnull()) {
+    guess_wfn_->symmetry_changed();
+  }
 }
 
 void
@@ -390,8 +409,8 @@ SCF::initial_vector(int needv)
         }
 
         // we should only have to do this once, so free up memory used
-        // for the old wavefunction
-        guess_wfn_=0;
+        // for the old wavefunction, unless told otherwise
+        if (!keep_guess_wfn_) guess_wfn_=0;
 
         ExEnv::out() << node0 << endl;
       

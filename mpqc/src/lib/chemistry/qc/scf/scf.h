@@ -49,6 +49,7 @@ class SCF: public OneBodyWavefunction {
     int need_vec_;
     int compute_guess_;
 
+    int keep_guess_wfn_;
     Ref<OneBodyWavefunction> guess_wfn_;
     
     Ref<SelfConsistentExtrapolation> extrap_;
@@ -151,6 +152,13 @@ class SCF: public OneBodyWavefunction {
         one-electron hamiltonian will be diagonalized to obtain the initial
         guess.
 
+        <dt><tt>keep_guess_wavefunction</tt><dd> The guess wavefunction is
+        normally discarded after it is projected.  Setting this boolean
+        variable to true will cause the guess to be kept.  This is useful
+        when doing frequencies of symmetric molecules by finite
+        displacements, because the wavefunction is lost whenever the
+        molecule is displaced into lower symmetry.
+
         </dl> */
     SCF(const Ref<KeyVal>&);
     ~SCF();
@@ -173,6 +181,8 @@ class SCF: public OneBodyWavefunction {
 
     virtual double one_body_energy();
     virtual void two_body_energy(double &ec, double &ex);
+
+    void symmetry_changed();
 
     void print(std::ostream&o=ExEnv::out()) const;
 

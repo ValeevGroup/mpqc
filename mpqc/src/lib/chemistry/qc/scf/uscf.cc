@@ -453,8 +453,8 @@ UnrestrictedSCF::initial_vector(int needv)
         }
 
         // we should only have to do this once, so free up memory used
-        // for the old wavefunction
-        guess_wfn_=0;
+        // for the old wavefunction, unless told otherwise
+        if (!keep_guess_wfn_) guess_wfn_=0;
 
         ExEnv::out() << node0 << endl;
       

@@ -33,6 +33,9 @@
 
 // /////////////////////////////////////////////////////////////////////////
 
+/** This implements most one body integrals in the IntV3 library. It is
+    given a function pointer to the Int1eV3 member that computes the
+    particular integral of interest. */
 class OneBodyIntV3 : public OneBodyInt {
   protected:
     RefInt1eV3 int1ev3_;
@@ -90,6 +93,9 @@ class DipoleIntV3: public OneBodyInt
 
 // /////////////////////////////////////////////////////////////////////////
 
+/** This implements one body derivative integrals in the IntV3 library. It
+    is given a function pointer to the Int1eV3 member that computes the
+    particular integral of interest. */
 class OneBodyDerivIntV3 : public OneBodyDerivInt {
   protected:
     RefInt1eV3 int1ev3_;

@@ -43,6 +43,13 @@ class StateOut;
 
 typedef ResultInfo* ResultInfoP;
 
+/** The Compute class provides a means of keeping results up
+    to date.  Derived classes can have member data which is
+    registered with the compute class.  When this member data
+    is accessed and it is not available, the compute member
+    function is called.  The compute member must be implemented
+    in derived classes and is responsible for computed the
+    requested result. */
 class Compute
 {
    friend class ResultInfo;
@@ -55,23 +62,23 @@ class Compute
     Compute(const Compute&) {};
 
   protected:
-    // Recompute at least the results that have compute true
-    // and are not already computed.  This should only be called
-    // by Result's members.
+    /** Recompute at least the results that have compute true
+        and are not already computed.  This should only be called
+        by Result's members. */
     virtual void compute() = 0;
   public:
     Compute();
     virtual ~Compute();
 
-    // Marks all results as being out of date.  Any subsequent access
-    // to results will cause Compute::compute() to be called.
+    /** Marks all results as being out of date.  Any subsequent access
+        to results will cause Compute::compute() to be called. */
     virtual void obsolete();
 };
 
-// Usually Result_dec(Type) will be used to create a result that has
-// a particular datum associated with it, however simple Result's can
-// also be declared to keep track of datum's for which it is awkward
-// to use Result_dec.
+/** This is a base class for all of Compute's result types.  Usually
+ Result<Type> will be used to create a result that has a particular datum
+ associated with it, however a ResultInfo can also be declared to keep
+ track of datum's for which it is awkward to use Result_dec. */
 class ResultInfo
 {
   protected:
@@ -98,10 +105,8 @@ class ResultInfo
     virtual int needed() const;
 };
 
-// This is like result but the accuracy with which a result was computed as
-// well as the desired accuracy are stored.  A _computed datum may has an
-// actual accuracy greater than, equal to, or less than the computed
-// accuracy.
+/** This is like ResultInfo but the accuracy with which a result was
+ computed as well as the desired accuracy are stored. */
 class AccResultInfo: public ResultInfo
 {
   private:

@@ -47,6 +47,9 @@ class Integral;
 
 #define CHECK_INTEGRAL_ALGORITHM 0
 
+/** Int2eV3 is a class wrapper for the two body part of the C language
+    IntV3 library.  It is used by TwoBodyIntV3 and TwoBodyDerivIntV3 to
+    implement IntegralV3. */
 class Int2eV3: public VRefCount {
   protected:
     Integral *integral_;

@@ -25,6 +25,10 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+/** Result are members of Compute specializations that keep track of
+  whether or not a particular result should be computed or if it has
+  already been computed.  For non-class template parameters, use
+  NCResult. */
 template <class T>
 class Result: public ResultInfo {
   private:
@@ -43,7 +47,8 @@ class Result: public ResultInfo {
        { ResultInfo::operator=(r); _result = r._result; };
 };
 
-// Result with non-class type
+/** This is similar to Result, but can be used with
+    non-class types. */
 template <class T>
 class NCResult: public ResultInfo {
   private:
@@ -61,8 +66,8 @@ class NCResult: public ResultInfo {
        { ResultInfo::operator=(r); _result = r._result; };
 };
 
-// Accuracy result with any type.  The result datum is not saved
-// or restored.
+/** This associates a result datum with an accuracy.  If the result datum
+    is to be saved or restored use SSAccResult. */
 template <class T>
 class AccResult: public AccResultInfo {
   private:
@@ -89,7 +94,8 @@ class AccResult: public AccResultInfo {
     AccResult(StateIn&s,Compute*c): AccResultInfo(s,c) {}
 };
 
-// Accuracy Result with SavableState type
+/** This associates a result datum with an accuracy.  The
+    datum must be a SavableState and will be saved and restored. */
 template <class T>
 class SSAccResult: public AccResultInfo {
   private:
@@ -118,7 +124,7 @@ class SSAccResult: public AccResultInfo {
     SSAccResult(StateIn&s,Compute*c): AccResultInfo(s,c), _result(s) {}
 };
 
-// Accuracy Result with non-class type
+/** This associates a result non-class datum with an accuracy. */
 template <class T>
 class NCAccResult: public AccResultInfo {
   private:

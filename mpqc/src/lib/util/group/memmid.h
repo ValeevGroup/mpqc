@@ -63,6 +63,13 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
 
     volatile int nsync_;
 
+    int n_sum_recv_;
+    int n_rep_recv_;
+    int n_ret_recv_;
+    int *n_sum_send_;
+    int *n_rep_send_;
+    int *n_ret_send_;
+
     int use_acknowledgments_;
     int use_active_messages_;
 

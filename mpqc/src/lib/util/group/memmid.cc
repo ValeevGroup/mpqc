@@ -105,6 +105,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
               "%d: %s sent %d bytes at byte offset %d (mid = %d)\n",
               me_, handlerstr, size, offset, mid);
         }
+      n_ret_recv_++;
       if (msgid_arg) activate();
       break;
   case MemoryDataRequest::Replace:
@@ -124,6 +125,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
                                me_, handlerstr, junk&0xff, junk>>8, node);
             }
         }
+      n_rep_recv_++;
       if (msgid_arg) activate();
       break;
   case MemoryDataRequest::DoubleSum:
@@ -166,6 +168,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
                    << endl;
             }
         }
+      n_sum_recv_++;
       if (msgid_arg) activate();
       break;
   default:
@@ -215,6 +218,17 @@ MIDMemoryGrp::MIDMemoryGrp(const RefMessageGrp& msg):
       cout << node0 << indent << "data_type_from_handler = "
            << data_type_from_handler_ << endl;
     }
+
+  n_sum_send_ = new int[msg_->n()];
+  n_ret_send_ = new int[msg_->n()];
+  n_rep_send_ = new int[msg_->n()];
+  memset(n_sum_send_,0,msg_->n() * sizeof(int));
+  memset(n_ret_send_,0,msg_->n() * sizeof(int));
+  memset(n_rep_send_,0,msg_->n() * sizeof(int));
+
+  n_sum_recv_ = 0;
+  n_ret_recv_ = 0;
+  n_rep_recv_ = 0;
 }
 
 MIDMemoryGrp::MIDMemoryGrp(const RefKeyVal& keyval):
@@ -245,10 +259,25 @@ MIDMemoryGrp::MIDMemoryGrp(const RefKeyVal& keyval):
   use_active_messages_ = keyval->booleanvalue("active");
   if (keyval->error() != KeyVal::OK) use_active_messages_ = 1;
   active_ = 0;
+
+  n_sum_send_ = new int[msg_->n()];
+  n_ret_send_ = new int[msg_->n()];
+  n_rep_send_ = new int[msg_->n()];
+  memset(n_sum_send_,0,msg_->n() * sizeof(int));
+  memset(n_ret_send_,0,msg_->n() * sizeof(int));
+  memset(n_rep_send_,0,msg_->n() * sizeof(int));
+
+  n_sum_recv_ = 0;
+  n_ret_recv_ = 0;
+  n_rep_recv_ = 0;
 }
 
 MIDMemoryGrp::~MIDMemoryGrp()
 {
+  delete[] n_sum_send_;
+  delete[] n_ret_send_;
+  delete[] n_rep_send_;
+
   if (debug_) cout << scprintf("%d: ~MIDMemoryGrp\n", me());
 }
 
@@ -313,6 +342,8 @@ MIDMemoryGrp::deactivate()
 void
 MIDMemoryGrp::retrieve_data(void *data, int node, int offset, int size)
 {
+  n_ret_send_[node]++;
+
   MemoryDataRequestQueue q;
 
   long oldlock = lockcomm();
@@ -334,6 +365,8 @@ MIDMemoryGrp::retrieve_data(void *data, int node, int offset, int size)
 void
 MIDMemoryGrp::replace_data(void *data, int node, int offset, int size)
 {
+  n_rep_send_[node]++;
+
   MemoryDataRequestQueue q;
 
   long oldlock = lockcomm();
@@ -363,6 +396,8 @@ MIDMemoryGrp::replace_data(void *data, int node, int offset, int size)
 void
 MIDMemoryGrp::sum_data(double *data, int node, int offset, int size)
 {
+  n_sum_send_[node]++;
+
   MemoryDataRequestQueue q;
 
   long oldlock = lockcomm();
@@ -533,6 +568,35 @@ MIDMemoryGrp::sync_act(int reactivate)
 
   if (debug_)
       cout << scprintf("%d: MIDMemoryGrp::sync() done", me_) << endl;
+
+  // after a sync, the sums must agree
+  msg_->sum(n_sum_send_, n_);
+  msg_->sum(n_ret_send_, n_);
+  msg_->sum(n_rep_send_, n_);
+  int doabort = 0;
+  if (n_sum_send_[me_] != n_sum_recv_
+      || n_ret_send_[me_] != n_ret_recv_
+      || n_rep_send_[me_] != n_rep_recv_) {
+      cout << scprintf("ERROR: %d: sum:s=%d r=%d ret:s=%d r=%d rep:s=%d r=%d",
+                       me_,
+                       n_sum_send_[me_], n_sum_recv_,
+                       n_ret_send_[me_], n_ret_recv_,
+                       n_rep_send_[me_], n_rep_recv_) << endl;
+      doabort = 1;
+    }
+  msg_->max(doabort);
+  if (doabort) {
+      cout << node0 << "MIDMemoryGrp: counts do not not agree" << endl;
+      abort();
+    }
+
+  // reset the counters
+  memset(n_sum_send_, 0, n_*sizeof(int));
+  memset(n_ret_send_, 0, n_*sizeof(int));
+  memset(n_rep_send_, 0, n_*sizeof(int));
+  n_sum_recv_ = 0;
+  n_ret_recv_ = 0;
+  n_rep_recv_ = 0;
 
   unlockcomm(oldlock);
 }

@@ -32,15 +32,15 @@ INC = volume.h shape.h volume_i.h implicit.h tricoef.h
 DEPENDINCLUDE = $(GENINC) $(INC)
 
 BIN_OR_LIB = LIB
-TARGET_TO_MAKE = isosurf
+TARGET_TO_MAKE = libisosurf
 
 DISTFILES = isotest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: $(DEPENDINCLUDE)
 default:: dlinfo
-default:: $(TOPDIR)/lib/isosurf.a
+default:: $(TOPDIR)/lib/libisosurf.a
 ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/isosurf.so
+default:: $(TOPDIR)/lib/libisosurf.so
 endif
 
 isotest.o: isotest.cc

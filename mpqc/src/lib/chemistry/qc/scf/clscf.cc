@@ -5,6 +5,9 @@
 
 #include <math.h>
 
+#include <util/misc/timer.h>
+
+#include <math/scmat/block.h>
 #include <math/scmat/blocked.h>
 #include <math/scmat/local.h>
 #include <math/optimize/diis.h>
@@ -365,11 +368,27 @@ CLSCF::ao_fock()
   RefPetiteList pl = integral()->petite_list(basis());
   
   // calculate G
+  //cl_dens_diff_.print("dens diff");
   RefSymmSCMatrix dd = cl_dens_diff_;
   cl_dens_diff_ = pl->to_AO_basis(dd);
   cl_dens_diff_->scale(2.0);
   cl_dens_diff_->scale_diagonal(0.5);
   //cl_dens_diff_.print("dens diff");
+
+  RefSCMatrixSubblockIter giter =
+    cl_gmat_->local_blocks(SCMatrixSubblockIter::Write);
+  RefSCMatrixSubblockIter piter =
+    cl_dens_diff_->local_blocks(SCMatrixSubblockIter::Read);
+  
+  giter->begin();
+  SCMatrixLTriBlock *gblock = SCMatrixLTriBlock::castdown(giter->block());
+
+  piter->begin();
+  SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
+
+  gmat_data = gblock->data;
+  pmat_data = pblock->data;
+  
   ao_gmat();
 
   //cl_gmat_.print("ao gmat");
@@ -380,8 +399,6 @@ CLSCF::ao_fock()
   //foo.print("foo");
   
   pl->symmetrize(foo,dd);
-  //dd = pl->to_SO_basis(cl_gmat_);
-  
   //dd.print("SO gmat");
   
   cl_fock_.assign(cl_hcore_);
@@ -426,7 +443,41 @@ CLSCF::make_contribution(int i, int j, int k, int l, double val, int type)
     fprintf(stderr,"  CLSCF::make_contribution: invalid type %d\n",type);
     abort();
   }
+}
 
+void
+CLSCF::make_contribution(int ij, int kl, double val, int type)
+{
+  switch(type) {
+  case 1:
+    gmat_data[ij] += val*pmat_data[kl];
+    gmat_data[kl] += val*pmat_data[ij];
+    break;
+    
+  case 2:
+    gmat_data[ij] += -0.25*val*pmat_data[kl];
+    gmat_data[kl] += -0.25*val*pmat_data[ij];
+    break;
+    
+  case 3:
+    gmat_data[ij] += -0.5*val*pmat_data[kl];
+    gmat_data[kl] += -0.5*val*pmat_data[ij];
+    break;
+    
+  case 4:
+    gmat_data[ij] += 0.75*val*pmat_data[kl];
+    gmat_data[kl] += 0.75*val*pmat_data[ij];
+    break;
+    
+  case 5:
+    gmat_data[ij] += 0.5*val*pmat_data[kl];
+    gmat_data[kl] += 0.5*val*pmat_data[ij];
+    break;
+    
+  default:
+    fprintf(stderr,"  CLSCF::make_contribution: invalid type %d\n",type);
+    abort();
+  }
 }
 
 RefSCExtrapError

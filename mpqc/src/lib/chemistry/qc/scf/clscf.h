@@ -23,6 +23,9 @@ class CLSCF: public SCF {
     RefSymmSCMatrix cl_dens_diff_;
     RefSymmSCMatrix cl_gmat_;
     RefSymmSCMatrix cl_hcore_;
+
+    double *gmat_data;
+    double *pmat_data;
     
     int user_occupations_;
     int tndocc_;
@@ -42,6 +45,7 @@ class CLSCF: public SCF {
     double scf_energy();
 
     void ao_fock();
+    void make_contribution(int,int,double,int);
     void make_contribution(int,int,int,int,double,int);
 
     RefSCExtrapError extrap_error();

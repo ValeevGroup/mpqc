@@ -51,6 +51,7 @@ class SCF: public OneBodyWavefunction {
     virtual RefSymmSCMatrix effective_fock() =0;
     
     virtual void ao_fock() =0;
+    virtual void make_contribution(int, int, double, int) =0;
     virtual void make_contribution(int, int, int, int, double, int) =0;
     
     // calculate the AO fock matrices
@@ -100,6 +101,7 @@ SavableState_REF_dec(SCF);
 
 ////////////////////////////////////////////////////////////////////////////
 
+#if 0
 class Fock: public SavableState {
 #   define CLASSNAME Fock
 #   include <util/state/stated.h>
@@ -144,5 +146,6 @@ class Fock: public SavableState {
 
 
 };
+#endif
 
 #endif

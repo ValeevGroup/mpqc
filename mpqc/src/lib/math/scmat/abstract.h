@@ -104,6 +104,10 @@ class SCVector: public DescribedClass {
     virtual void assign(const double* v);
     //texi Assign @var{v[i]} to element @var{i} for all @var{i}.
     virtual void convert(double* v);
+    //texi Convert an @code{SCVector} of a different specialization
+    // to this specialization and possibly accumulate the data.
+    virtual void convert(SCVector*);
+    virtual void convert_accumulate(SCVector*);
     //texi Make @code{this} have the same elements as @var{v}.
     // The dimensions must match.
     virtual void assign(SCVector* v);
@@ -187,6 +191,10 @@ class SCMatrix: public DescribedClass {
     // to the arguments.
     virtual void convert(double*);
     virtual void convert(double**);
+    //texi Convert an @code{SCMatrix} of a different specialization
+    // to this specialization and possibly accumulate the data.
+    virtual void convert(SCMatrix*);
+    virtual void convert_accumulate(SCMatrix*);
     //texi Make @code{this} have the same elements as @var{m}.
     // The dimensions must match.
     virtual void assign(SCMatrix* m);
@@ -317,6 +325,10 @@ class SymmSCMatrix: public DescribedClass {
     // to the arguments.
     virtual void convert(double*);
     virtual void convert(double**);
+    //texi Convert an @code{SCSymmSCMatrix} of a different specialization
+    // to this specialization and possibly accumulate the data.
+    virtual void convert(SymmSCMatrix*);
+    virtual void convert_accumulate(SymmSCMatrix*);
     //texi Make @code{this} have the same elements as @var{m}.
     // The dimensions must match.
     virtual void assign(SymmSCMatrix* m);
@@ -440,6 +452,10 @@ class DiagSCMatrix: public DescribedClass {
     //texi Like the @code{assign} member, but this write values
     // to the argument.
     virtual void convert(double*);
+    //texi Convert an @code{SCDiagSCMatrix} of a different specialization
+    // to this specialization and possibly accumulate the data.
+    virtual void convert(DiagSCMatrix*);
+    virtual void convert_accumulate(DiagSCMatrix*);
     //texi Make @code{this} have the same elements as @var{m}.
     // The dimensions must match.
     virtual void assign(DiagSCMatrix*);

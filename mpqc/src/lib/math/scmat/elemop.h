@@ -15,6 +15,11 @@ class SCMatrixLTriBlock;
 class SCMatrixDiagBlock;
 class SCVectorSimpleBlock;
 
+class SCMatrix;
+class SymmSCMatrix;
+class DiagSCMatrix;
+class SCVector;
+
 class SSRefSCElementOp;
 typedef class SSRefSCElementOp RefSCElementOp;
 
@@ -294,6 +299,54 @@ class SCElementDot: public SCElementOp {
     SCElementDot(double**a, double**b, int length);
     void process(SCMatrixBlockIter&);
     int has_side_effects();
+};
+
+class SCElementAccumulateSCMatrix: public SCElementOp {
+#   define CLASSNAME SCElementAccumulateSCMatrix
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    SCMatrix *m;
+  public:
+    SCElementAccumulateSCMatrix(SCMatrix *);
+    int has_side_effects();
+    void process(SCMatrixBlockIter&);
+};
+
+class SCElementAccumulateSymmSCMatrix: public SCElementOp {
+#   define CLASSNAME SCElementAccumulateSymmSCMatrix
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    SymmSCMatrix *m;
+  public:
+    SCElementAccumulateSymmSCMatrix(SymmSCMatrix *);
+    int has_side_effects();
+    void process(SCMatrixBlockIter&);
+};
+
+class SCElementAccumulateDiagSCMatrix: public SCElementOp {
+#   define CLASSNAME SCElementAccumulateDiagSCMatrix
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    DiagSCMatrix *m;
+  public:
+    SCElementAccumulateDiagSCMatrix(DiagSCMatrix *);
+    int has_side_effects();
+    void process(SCMatrixBlockIter&);
+};
+
+class SCElementAccumulateSCVector: public SCElementOp {
+#   define CLASSNAME SCElementAccumulateSCVector
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    SCVector *m;
+  public:
+    SCElementAccumulateSCVector(SCVector *);
+    int has_side_effects();
+    void process(SCMatrixBlockIter&);
 };
 
 #endif

@@ -14,6 +14,12 @@ SCMatrixBlockIter::~SCMatrixBlockIter()
 {
 }
 
+void
+SCMatrixBlockIter::accum(double a)
+{
+  set(get()+a);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixRectBlockIter member functions
 

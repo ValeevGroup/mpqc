@@ -9,6 +9,7 @@
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
+#include <math/scmat/abstract.h>
 
 /////////////////////////////////////////////////////////////////////////////
 // SCElementOp member functions
@@ -815,6 +816,144 @@ SCElementDot::process(SCMatrixBlockIter&i)
       for (int j = length; j; j--, a++, b++) {
           tmp += *a * *b;
         }
-      i.set(tmp);
+      i.accum(tmp);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////
+// SCElementAccumulateSCMatrix members
+
+#define CLASSNAME SCElementAccumulateSCMatrix
+#define PARENTS   public SCElementOp
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+SCElementAccumulateSCMatrix::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+SCElementAccumulateSCMatrix::SCElementAccumulateSCMatrix(SCMatrix*a):
+  m(a)
+{
+}
+
+int
+SCElementAccumulateSCMatrix::has_side_effects()
+{
+  return 1;
+}
+
+void
+SCElementAccumulateSCMatrix::process(SCMatrixBlockIter&i)
+{
+  for (i.reset(); i; ++i) {
+      i.accum(m->get_element(i.i(), i.j()));
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////
+// SCElementAccumulateSymmSCMatrix members
+
+#define CLASSNAME SCElementAccumulateSymmSCMatrix
+#define PARENTS   public SCElementOp
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+SCElementAccumulateSymmSCMatrix::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+SCElementAccumulateSymmSCMatrix::SCElementAccumulateSymmSCMatrix(
+    SymmSCMatrix*a):
+  m(a)
+{
+}
+
+int
+SCElementAccumulateSymmSCMatrix::has_side_effects()
+{
+  return 1;
+}
+
+void
+SCElementAccumulateSymmSCMatrix::process(SCMatrixBlockIter&i)
+{
+  for (i.reset(); i; ++i) {
+      i.accum(m->get_element(i.i(), i.j()));
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////
+// SCElementAccumulateDiagSCMatrix members
+
+#define CLASSNAME SCElementAccumulateDiagSCMatrix
+#define PARENTS   public SCElementOp
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+SCElementAccumulateDiagSCMatrix::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+SCElementAccumulateDiagSCMatrix::SCElementAccumulateDiagSCMatrix(
+    DiagSCMatrix*a):
+  m(a)
+{
+}
+
+int
+SCElementAccumulateDiagSCMatrix::has_side_effects()
+{
+  return 1;
+}
+
+void
+SCElementAccumulateDiagSCMatrix::process(SCMatrixBlockIter&i)
+{
+  for (i.reset(); i; ++i) {
+      i.accum(m->get_element(i.i()));
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////
+// SCElementAccumulateSCVector members
+
+#define CLASSNAME SCElementAccumulateSCVector
+#define PARENTS   public SCElementOp
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+SCElementAccumulateSCVector::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+SCElementAccumulateSCVector::SCElementAccumulateSCVector(SCVector*a):
+  m(a)
+{
+}
+
+int
+SCElementAccumulateSCVector::has_side_effects()
+{
+  return 1;
+}
+
+void
+SCElementAccumulateSCVector::process(SCMatrixBlockIter&i)
+{
+  for (i.reset(); i; ++i) {
+      i.accum(m->get_element(i.i()));
     }
 }

@@ -24,6 +24,7 @@ class SCMatrixBlockIter {
     virtual int i() = 0;
     virtual int j() = 0;
     virtual void set(double) = 0;
+    virtual void accum(double);
     virtual double get() = 0;
     virtual operator int() = 0;
     virtual void operator++() = 0; // prefix ++

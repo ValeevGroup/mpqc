@@ -233,6 +233,20 @@ SCMatrix::assign(const double**a)
 }
 
 void
+SCMatrix::convert(SCMatrix*a)
+{
+  assign(0.0);
+  convert_accumulate(a);
+}
+
+void
+SCMatrix::convert_accumulate(SCMatrix*a)
+{
+  RefSCElementOp op = new SCElementAccumulateSCMatrix(a);
+  element_op(op);
+}
+
+void
 SCMatrix::convert(double*a)
 {
   int i;
@@ -437,6 +451,20 @@ SymmSCMatrix::assign(const double**a)
           set_element(i,j,a[i][j]);
         }
     }
+}
+
+void
+SymmSCMatrix::convert(SymmSCMatrix*a)
+{
+  assign(0.0);
+  convert_accumulate(a);
+}
+
+void
+SymmSCMatrix::convert_accumulate(SymmSCMatrix*a)
+{
+  RefSCElementOp op = new SCElementAccumulateSymmSCMatrix(a);
+  element_op(op);
 }
 
 void
@@ -712,6 +740,20 @@ DiagSCMatrix::assign(const double*a)
 }
 
 void
+DiagSCMatrix::convert(DiagSCMatrix*a)
+{
+  assign(0.0);
+  convert_accumulate(a);
+}
+
+void
+DiagSCMatrix::convert_accumulate(DiagSCMatrix*a)
+{
+  RefSCElementOp op = new SCElementAccumulateDiagSCMatrix(a);
+  element_op(op);
+}
+
+void
 DiagSCMatrix::convert(double*a)
 {
   int i;
@@ -846,6 +888,20 @@ SCVector::assign(const double*a)
   for (i=0; i<nr; i++) {
       set_element(i,a[i]);
     }
+}
+
+void
+SCVector::convert(SCVector*a)
+{
+  assign(0.0);
+  convert_accumulate(a);
+}
+
+void
+SCVector::convert_accumulate(SCVector*a)
+{
+  RefSCElementOp op = new SCElementAccumulateSCVector(a);
+  element_op(op);
 }
 
 void

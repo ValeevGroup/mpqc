@@ -174,7 +174,7 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
    // read coor and update from the input
     coor = keyval->describedclassvalue("coor");
     if (coor.null())
-      coor = new IntMolecularCoor(mol);
+      coor = new SymmMolecularCoor(mol);
     
    // for now, always read the update from the input. default to bfgs
     update = keyval->describedclassvalue("update");

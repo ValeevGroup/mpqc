@@ -542,14 +542,14 @@ Int2eV3::int_buildgcam(int minam1, int minam2, int minam3, int minam4,
   for (m=minam1; m<=maxam12; m++) {
     for (n=minam3; n<=maxam34; n++) {
   for (ci=0; ci<nc1; ci++) {
-    if (m < int_shell1->type[ci].am+dam1) continue;
+    if (m < int_shell1->am(ci)+dam1) continue;
     for (cj=0; cj<nc2; cj++) {
-      if (int_shell1->type[ci].am+dam1+int_shell2->type[cj].am+dam2 < m)
+      if (int_shell1->am(ci)+dam1+int_shell2->am(cj)+dam2 < m)
         continue;
       for (ck=0; ck<nc3; ck++) {
-        if (n < int_shell3->type[ck].am+dam3) continue;
+        if (n < int_shell3->am(ck)+dam3) continue;
         for (cl=0; cl<nc4; cl++) {
-          if (int_shell3->type[ck].am+dam3 +int_shell4->type[cl].am+dam4 < n)
+          if (int_shell3->am(ck)+dam3 +int_shell4->am(cl)+dam4 < n)
             continue;
       for (k=0; k<INT_NCART(m)*INT_NCART(n); k++) {
         int_con_ints_array[ci][cj][ck][cl].dp[m][0][n][0][k] = 0.0;
@@ -598,53 +598,53 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
 
           /* Sum thru all possible contractions. */
   for (ci=0; ci<nc1; ci++) {
-    int mlower = int_shell1->type[ci].am + dam1;
+    int mlower = int_shell1->am(ci) + dam1;
     if (mlower < 0) continue;
     for (cj=0; cj<nc2; cj++) {
-      int mupper = mlower + int_shell2->type[cj].am + dam2;
+      int mupper = mlower + int_shell2->am(cj) + dam2;
       if (mupper < mlower) continue;
       if (mlower < minam1) mlower = minam1;
       if (mupper > maxam12) mupper = maxam12;
       for (ck=0; ck<nc3; ck++) {
-        int nlower = int_shell3->type[ck].am + dam3;
+        int nlower = int_shell3->am(ck) + dam3;
         if (nlower < 0) continue;
         for (cl=0; cl<nc4; cl++) {
-          int nupper = nlower + int_shell4->type[cl].am + dam4;
+          int nupper = nlower + int_shell4->am(cl) + dam4;
           if (nupper < nlower) continue;
           if (nlower < minam3) nlower = minam3;
           if (nupper > maxam34) nupper = maxam34;
 
   /* Loop over the primitives. */
-  for (i=0; i<int_shell1->nprim; i++) {
+  for (i=0; i<int_shell1->nprimitive(); i++) {
     double coef0;
-    coef0 = int_shell1->coef[ci][i];
+    coef0 = int_shell1->coefficient_unnorm(ci,i);
     if (int_expweight1) coef0 = coef0
-                                    * int_shell1->exp[i];
+                                    * int_shell1->exponent(i);
     /* This factor of two comes from the derivative integral formula. */
     if (int_expweight1) coef0 *= 2.0;
     if (int_expweight2) coef0 *= 2.0;
     if (int_expweight3) coef0 *= 2.0;
     if (int_expweight4) coef0 *= 2.0;
     if (int_store1) opr1 = int_shell_to_prim.i[osh1] + i;
-    for (j=0; j<int_shell2->nprim; j++) {
+    for (j=0; j<int_shell2->nprimitive(); j++) {
       double coef1;
-      coef1 = int_shell2->coef[cj][j];
+      coef1 = int_shell2->coefficient_unnorm(cj,j);
       if (int_expweight2) coef1 *=  coef0
-                                      * int_shell2->exp[j];
+                                      * int_shell2->exponent(j);
       else                     coef1 *= coef0;
       if (int_store1) opr2 = int_shell_to_prim.i[osh2] + j;
-      for (k=0; k<int_shell3->nprim; k++) {
+      for (k=0; k<int_shell3->nprimitive(); k++) {
         double coef2;
-        coef2 = int_shell3->coef[ck][k];
+        coef2 = int_shell3->coefficient_unnorm(ck,k);
         if (int_expweight3) coef2 *=  coef1
-                                        * int_shell3->exp[k];
+                                        * int_shell3->exponent(k);
         else                     coef2 *= coef1;
         if (int_store1) opr3 = int_shell_to_prim.i[osh3] + k;
-        for (l=0; l<int_shell4->nprim; l++) {
+        for (l=0; l<int_shell4->nprimitive(); l++) {
           double coef3;
-          coef3 = int_shell4->coef[cl][l];
+          coef3 = int_shell4->coefficient_unnorm(cl,l);
           if (int_expweight4) coef3 *=  coef2
-                                          * int_shell4->exp[l];
+                                          * int_shell4->exponent(l);
           else                     coef3 *= coef2;
           if (int_store1) opr4 = int_shell_to_prim.i[osh4] + l;
 
@@ -719,13 +719,13 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
 
           if (!have_all_ints) {
             for (m=minam1; m<=maxam12; m++) {
-              if (m < int_shell1->type[ci].am+dam1) continue;
-              if (int_shell1->type[ci].am+dam1+int_shell2->type[cj].am+dam2
+              if (m < int_shell1->am(ci)+dam1) continue;
+              if (int_shell1->am(ci)+dam1+int_shell2->am(cj)+dam2
                   < m)
                 continue;
               for (n=minam3; n<=maxam34; n++) {
-                if (n < int_shell3->type[ck].am+dam3) continue;
-                if (int_shell3->type[ck].am+dam3 +int_shell4->type[cl].am+dam4
+                if (n < int_shell3->am(ck)+dam3) continue;
+                if (int_shell3->am(ck)+dam3 +int_shell4->am(cl)+dam4
                     < n)
                   continue;
 
@@ -784,24 +784,24 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
   intfunc brptr=build_routine[minam1][maxam12][minam3][maxam34][eAB];
 
   /* Loop over the primitives. */
-  for (i=0; i<int_shell1->nprim; i++) {
+  for (i=0; i<int_shell1->nprimitive(); i++) {
     if (int_store1) opr1 = int_shell_to_prim.i[osh1] + i;
-    if (int_expweight1) ishl1expi=2.0*int_shell1->exp[i];
+    if (int_expweight1) ishl1expi=2.0*int_shell1->exponent(i);
 
-    for (j=0; j<int_shell2->nprim; j++) {
+    for (j=0; j<int_shell2->nprimitive(); j++) {
       if (int_store1) opr2 = int_shell_to_prim.i[osh2] + j;
       ishl2expj = (int_expweight2) ? 
-                        2.0*int_shell2->exp[j]*ishl1expi : ishl1expi;
+                        2.0*int_shell2->exponent(j)*ishl1expi : ishl1expi;
 
-      for (k=0; k<int_shell3->nprim; k++) {
+      for (k=0; k<int_shell3->nprimitive(); k++) {
         if (int_store1) opr3 = int_shell_to_prim.i[osh3] + k;
         ishl3expk = (int_expweight3) ? 
-                        2.0*int_shell3->exp[k]*ishl2expj : ishl2expj;
+                        2.0*int_shell3->exponent(k)*ishl2expj : ishl2expj;
 
-        for (l=0; l<int_shell4->nprim; l++) {
+        for (l=0; l<int_shell4->nprimitive(); l++) {
           if (int_store1) opr4 = int_shell_to_prim.i[osh4] + l;
           c0scale = (int_expweight4) ? 
-                        2.0*int_shell4->exp[l]*ishl3expk : ishl3expk;
+                        2.0*int_shell4->exponent(l)*ishl3expk : ishl3expk;
 
           /* Produce the remaining intermediates. */
           gen_prim_intermediates(i,j,k,l, maxam1234);
@@ -876,25 +876,25 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
             }
 
   for (ci=0; ci<nc1; ci++) {
-    int mlower = int_shell1->type[ci].am + dam1;
+    int mlower = int_shell1->am(ci) + dam1;
     if (mlower < 0) continue;
-    coef0 = int_shell1->coef[ci][i]*c0scale;
+    coef0 = int_shell1->coefficient_unnorm(ci,i)*c0scale;
     for (cj=0; cj<nc2; cj++) {
-      int mupper = mlower + int_shell2->type[cj].am + dam2;
+      int mupper = mlower + int_shell2->am(cj) + dam2;
       if (mupper < mlower) continue;
       if (mlower < minam1) mlower = minam1;
       if (mupper > maxam12) mupper = maxam12;
-      coef1 = int_shell2->coef[cj][j]*coef0;
+      coef1 = int_shell2->coefficient_unnorm(cj,j)*coef0;
       for (ck=0; ck<nc3; ck++) {
-        int nlower = int_shell3->type[ck].am + dam3;
+        int nlower = int_shell3->am(ck) + dam3;
         if (nlower < 0) continue;
-        coef2 = int_shell3->coef[ck][k]*coef1;
+        coef2 = int_shell3->coefficient_unnorm(ck,k)*coef1;
         for (cl=0; cl<nc4; cl++) {
-          int nupper = nlower + int_shell4->type[cl].am + dam4;
+          int nupper = nlower + int_shell4->am(cl) + dam4;
           if (nupper < nlower) continue;
           if (nlower < minam3) nlower = minam3;
           if (nupper > maxam34) nupper = maxam34;
-          coef3 = int_shell4->coef[cl][l]*coef2;
+          coef3 = int_shell4->coefficient_unnorm(cl,l)*coef2;
 
           /* Contract the primitive target integrals. */
           for (m=mlower; m<=mupper; m++) {
@@ -960,28 +960,28 @@ Int2eV3::gen_prim_intermediates(int pr1, int pr2, int pr3, int pr4, int am)
     build.int_v_k34 = int_prim_k.d[opr3][opr4];
     }
   else {
-    build.int_v_zeta12 = int_shell1->exp[pr1] + int_shell2->exp[pr2];
-    build.int_v_zeta34 = int_shell3->exp[pr3] + int_shell4->exp[pr4];
+    build.int_v_zeta12 = int_shell1->exponent(pr1) + int_shell2->exponent(pr2);
+    build.int_v_zeta34 = int_shell3->exponent(pr3) + int_shell4->exponent(pr4);
     build.int_v_oo2zeta12 = 1.0/build.int_v_zeta12;
     build.int_v_oo2zeta34 = 1.0/build.int_v_zeta34;
     build.int_v_p120 = build.int_v_oo2zeta12
-                     * ( int_shell1->exp[pr1] * build.int_v_r10
-                         + int_shell2->exp[pr2] * build.int_v_r20 );
+                     * ( int_shell1->exponent(pr1) * build.int_v_r10
+                         + int_shell2->exponent(pr2) * build.int_v_r20 );
     build.int_v_p121 = build.int_v_oo2zeta12
-                     * ( int_shell1->exp[pr1] * build.int_v_r11
-                         + int_shell2->exp[pr2] * build.int_v_r21 );
+                     * ( int_shell1->exponent(pr1) * build.int_v_r11
+                         + int_shell2->exponent(pr2) * build.int_v_r21 );
     build.int_v_p122 = build.int_v_oo2zeta12
-                     * ( int_shell1->exp[pr1] * build.int_v_r12
-                         + int_shell2->exp[pr2] * build.int_v_r22 );
+                     * ( int_shell1->exponent(pr1) * build.int_v_r12
+                         + int_shell2->exponent(pr2) * build.int_v_r22 );
     build.int_v_p340 = build.int_v_oo2zeta34
-                     * ( int_shell3->exp[pr3] * build.int_v_r30
-                         + int_shell4->exp[pr4] * build.int_v_r40 );
+                     * ( int_shell3->exponent(pr3) * build.int_v_r30
+                         + int_shell4->exponent(pr4) * build.int_v_r40 );
     build.int_v_p341 = build.int_v_oo2zeta34
-                     * ( int_shell3->exp[pr3] * build.int_v_r31
-                         + int_shell4->exp[pr4] * build.int_v_r41 );
+                     * ( int_shell3->exponent(pr3) * build.int_v_r31
+                         + int_shell4->exponent(pr4) * build.int_v_r41 );
     build.int_v_p342 = build.int_v_oo2zeta34
-                     * ( int_shell3->exp[pr3] * build.int_v_r32
-                         + int_shell4->exp[pr4] * build.int_v_r42 );
+                     * ( int_shell3->exponent(pr3) * build.int_v_r32
+                         + int_shell4->exponent(pr4) * build.int_v_r42 );
 
     /* Compute AmB^2 for shell 1 and 2. */
     AmB = build.int_v_r20 - build.int_v_r10;
@@ -993,7 +993,7 @@ Int2eV3::gen_prim_intermediates(int pr1, int pr2, int pr3, int pr4, int am)
 
     build.int_v_k12 =    sqrt2pi54
                  * build.int_v_oo2zeta12
-                 * exp( -   int_shell1->exp[pr1] * int_shell2->exp[pr2]
+                 * exp( -   int_shell1->exponent(pr1)*int_shell2->exponent(pr2)
                           * build.int_v_oo2zeta12
                           * AmB2 );
 
@@ -1007,7 +1007,7 @@ Int2eV3::gen_prim_intermediates(int pr1, int pr2, int pr3, int pr4, int am)
 
     build.int_v_k34 =    sqrt2pi54
                  * build.int_v_oo2zeta34
-                 * exp( -   int_shell3->exp[pr3] * int_shell4->exp[pr4]
+                 * exp( -   int_shell3->exponent(pr3)*int_shell4->exponent(pr4)
                           * build.int_v_oo2zeta34
                           * AmB2 );
 
@@ -1078,28 +1078,28 @@ Int2eV3::gen_prim_intermediates_with_norm(int pr1, int pr2, int pr3, int pr4,
     build.int_v_k34 = int_prim_k.d[opr3][opr4];
     }
   else {
-    build.int_v_zeta12 = int_shell1->exp[pr1] + int_shell2->exp[pr2];
-    build.int_v_zeta34 = int_shell3->exp[pr3] + int_shell4->exp[pr4];
+    build.int_v_zeta12 = int_shell1->exponent(pr1) + int_shell2->exponent(pr2);
+    build.int_v_zeta34 = int_shell3->exponent(pr3) + int_shell4->exponent(pr4);
     build.int_v_oo2zeta12 = 1.0/build.int_v_zeta12;
     build.int_v_oo2zeta34 = 1.0/build.int_v_zeta34;
     build.int_v_p120 = build.int_v_oo2zeta12
-                     * ( int_shell1->exp[pr1] * build.int_v_r10
-                         + int_shell2->exp[pr2] * build.int_v_r20 );
+                     * ( int_shell1->exponent(pr1) * build.int_v_r10
+                         + int_shell2->exponent(pr2) * build.int_v_r20 );
     build.int_v_p121 = build.int_v_oo2zeta12
-                     * ( int_shell1->exp[pr1] * build.int_v_r11
-                         + int_shell2->exp[pr2] * build.int_v_r21 );
+                     * ( int_shell1->exponent(pr1) * build.int_v_r11
+                         + int_shell2->exponent(pr2) * build.int_v_r21 );
     build.int_v_p122 = build.int_v_oo2zeta12
-                     * ( int_shell1->exp[pr1] * build.int_v_r12
-                         + int_shell2->exp[pr2] * build.int_v_r22 );
+                     * ( int_shell1->exponent(pr1) * build.int_v_r12
+                         + int_shell2->exponent(pr2) * build.int_v_r22 );
     build.int_v_p340 = build.int_v_oo2zeta34
-                     * ( int_shell3->exp[pr3] * build.int_v_r30
-                         + int_shell4->exp[pr4] * build.int_v_r40 );
+                     * ( int_shell3->exponent(pr3) * build.int_v_r30
+                         + int_shell4->exponent(pr4) * build.int_v_r40 );
     build.int_v_p341 = build.int_v_oo2zeta34
-                     * ( int_shell3->exp[pr3] * build.int_v_r31
-                         + int_shell4->exp[pr4] * build.int_v_r41 );
+                     * ( int_shell3->exponent(pr3) * build.int_v_r31
+                         + int_shell4->exponent(pr4) * build.int_v_r41 );
     build.int_v_p342 = build.int_v_oo2zeta34
-                     * ( int_shell3->exp[pr3] * build.int_v_r32
-                         + int_shell4->exp[pr4] * build.int_v_r42 );
+                     * ( int_shell3->exponent(pr3) * build.int_v_r32
+                         + int_shell4->exponent(pr4) * build.int_v_r42 );
 
     /* Compute AmB^2 for shell 1 and 2. */
     AmB = build.int_v_r20 - build.int_v_r10;
@@ -1111,7 +1111,7 @@ Int2eV3::gen_prim_intermediates_with_norm(int pr1, int pr2, int pr3, int pr4,
 
     build.int_v_k12 =    sqrt2pi54
                  * build.int_v_oo2zeta12
-                 * exp( -   int_shell1->exp[pr1] * int_shell2->exp[pr2]
+                 * exp( -   int_shell1->exponent(pr1)*int_shell2->exponent(pr2)
                           * build.int_v_oo2zeta12
                           * AmB2 );
 
@@ -1125,7 +1125,7 @@ Int2eV3::gen_prim_intermediates_with_norm(int pr1, int pr2, int pr3, int pr4,
 
     build.int_v_k34 =    sqrt2pi54
                  * build.int_v_oo2zeta34
-                 * exp( -   int_shell3->exp[pr3] * int_shell4->exp[pr4]
+                 * exp( -   int_shell3->exponent(pr3)*int_shell4->exponent(pr4)
                           * build.int_v_oo2zeta34
                           * AmB2 );
 
@@ -1174,18 +1174,18 @@ void
 Int2eV3::gen_shell_intermediates(int sh1, int sh2, int sh3, int sh4)
 {
   if (int_store1 && !int_unit2 && !int_unit4) {
-    build.int_v_r10 = int_shell_r.dp[osh1][0];
-    build.int_v_r11 = int_shell_r.dp[osh1][1];
-    build.int_v_r12 = int_shell_r.dp[osh1][2];
-    build.int_v_r20 = int_shell_r.dp[osh2][0];
-    build.int_v_r21 = int_shell_r.dp[osh2][1];
-    build.int_v_r22 = int_shell_r.dp[osh2][2];
-    build.int_v_r30 = int_shell_r.dp[osh3][0];
-    build.int_v_r31 = int_shell_r.dp[osh3][1];
-    build.int_v_r32 = int_shell_r.dp[osh3][2];
-    build.int_v_r40 = int_shell_r.dp[osh4][0];
-    build.int_v_r41 = int_shell_r.dp[osh4][1];
-    build.int_v_r42 = int_shell_r.dp[osh4][2];
+    build.int_v_r10 = int_shell_r.d[osh1][0];
+    build.int_v_r11 = int_shell_r.d[osh1][1];
+    build.int_v_r12 = int_shell_r.d[osh1][2];
+    build.int_v_r20 = int_shell_r.d[osh2][0];
+    build.int_v_r21 = int_shell_r.d[osh2][1];
+    build.int_v_r22 = int_shell_r.d[osh2][2];
+    build.int_v_r30 = int_shell_r.d[osh3][0];
+    build.int_v_r31 = int_shell_r.d[osh3][1];
+    build.int_v_r32 = int_shell_r.d[osh3][2];
+    build.int_v_r40 = int_shell_r.d[osh4][0];
+    build.int_v_r41 = int_shell_r.d[osh4][1];
+    build.int_v_r42 = int_shell_r.d[osh4][2];
     }
   else {
     build.int_v_r10 = bs1_->r(bs1_->shell_to_center(sh1),0);

@@ -13,6 +13,15 @@
 #include <chemistry/qc/intv3/tformv3.h>
 
 static inline void
+swtch(RefGaussianBasisSet &i,RefGaussianBasisSet &j)
+{
+  RefGaussianBasisSet tmp;
+  tmp = i;
+  i = j;
+  j = tmp;
+}
+
+static inline void
 pswtch(void**i,void**j)
 {
   void*tmp;
@@ -60,10 +69,10 @@ Int2eV3::erep(int *shells, int  *sizes)
 {
   erep(shells[0],shells[1],shells[2],shells[3]);
   if (sizes) {
-    sizes[0] = INT_SH(int_cs1,shells[0]).nfunc;
-    sizes[1] = INT_SH(int_cs2,shells[1]).nfunc;
-    sizes[2] = INT_SH(int_cs3,shells[2]).nfunc;
-    sizes[3] = INT_SH(int_cs4,shells[3]).nfunc;
+    sizes[0] = bs1_->shell(shells[0]).nfunction();
+    sizes[1] = bs2_->shell(shells[1]).nfunction();
+    sizes[2] = bs3_->shell(shells[2]).nfunction();
+    sizes[3] = bs4_->shell(shells[3]).nfunction();
     }
   }
 
@@ -80,7 +89,10 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 #ifdef TIMING
   char section[30];
 #endif
-  centers_t *pcs1=int_cs1,*pcs2=int_cs2,*pcs3=int_cs3,*pcs4=int_cs4;
+  RefGaussianBasisSet pbs1=bs1_;
+  RefGaussianBasisSet pbs2=bs2_;
+  RefGaussianBasisSet pbs3=bs3_;
+  RefGaussianBasisSet pbs4=bs4_;
   int size;
   int ii;
   int size1, size2, size3, size4;
@@ -117,29 +129,25 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   if (!int_unit4) sh4 = *psh4;
 
   /* Test the arguments to make sure that they are sensible. */
-  if (   sh1 < 0 || sh1 >= int_cs1->nshell
-      ||( !int_unit2 && (sh2 < 0 || sh2 >= int_cs2->nshell))
-      || sh3 < 0 || sh3 >= int_cs3->nshell
-      ||( !int_unit4 && (sh4 < 0 || sh4 >= int_cs4->nshell))) {
+  if (   sh1 < 0 || sh1 >= bs1_->nbasis()
+      ||( !int_unit2 && (sh2 < 0 || sh2 >= bs2_->nbasis()))
+      || sh3 < 0 || sh3 >= bs3_->nbasis()
+      ||( !int_unit4 && (sh4 < 0 || sh4 >= bs4_->nbasis()))) {
     fprintf(stderr,"compute_erep has been incorrectly used\n");
     fprintf(stderr,"shells (bounds): %d (%d), %d (%d), %d (%d), %d (%d)\n",
-            sh1,int_cs1->nshell-1,
-            sh2,int_cs2->nshell-1,
-            sh3,int_cs3->nshell-1,
-            sh4,int_cs4->nshell-1);
+            sh1,bs1_->nbasis()-1,
+            sh2,bs2_->nbasis()-1,
+            sh3,bs3_->nbasis()-1,
+            sh4,bs4_->nbasis()-1);
     fail();
     }
 
   /* Set up pointers to the current shells. */
-  int_shell1 = &int_cs1->center[int_cs1->center_num[sh1]]
-                  .basis.shell[int_cs1->shell_num[sh1]];
-  if (!int_unit2) int_shell2 = &int_cs2->center[int_cs2->center_num[sh2]]
-                  .basis.shell[int_cs2->shell_num[sh2]];
+  int_shell1 = &bs1_->shell(sh1);
+  if (!int_unit2) int_shell2 = &bs2_->shell(sh2);
   else int_shell2 = int_unit_shell;
-  int_shell3 = &int_cs3->center[int_cs3->center_num[sh3]]
-                  .basis.shell[int_cs3->shell_num[sh3]];
-  if (!int_unit4) int_shell4 = &int_cs4->center[int_cs4->center_num[sh4]]
-                  .basis.shell[int_cs4->shell_num[sh4]];
+  int_shell3 = &bs3_->shell(sh3);
+  if (!int_unit4) int_shell4 = &bs4_->shell(sh4);
   else int_shell4 = int_unit_shell;
 
 
@@ -147,27 +155,14 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
    * determine the most efficient way to invoke the building and shifting
    * routines.  The minimum angular momentum will be computed at the
    * same time. */
-  am1 = am2 = am3 = am4 = 0;
-  minam1 = int_shell1->type[0].am;
-  minam2 = int_shell2->type[0].am;
-  minam3 = int_shell3->type[0].am;
-  minam4 = int_shell4->type[0].am;
-  for (i=0; i<int_shell1->ncon; i++) {
-    if (am1<int_shell1->type[i].am) am1 = int_shell1->type[i].am;
-    if (minam1>int_shell1->type[i].am) minam1 = int_shell1->type[i].am;
-    }
-  for (i=0; i<int_shell2->ncon; i++) {
-    if (am2<int_shell2->type[i].am) am2 = int_shell2->type[i].am;
-    if (minam2>int_shell2->type[i].am) minam2 = int_shell2->type[i].am;
-    }
-  for (i=0; i<int_shell3->ncon; i++) {
-    if (am3<int_shell3->type[i].am) am3 = int_shell3->type[i].am;
-    if (minam3>int_shell3->type[i].am) minam3 = int_shell3->type[i].am;
-    }
-  for (i=0; i<int_shell4->ncon; i++) {
-    if (am4<int_shell4->type[i].am) am4 = int_shell4->type[i].am;
-    if (minam4>int_shell4->type[i].am) minam4 = int_shell4->type[i].am;
-    }
+  minam1 = int_shell1->min_am();
+  minam2 = int_shell2->min_am();
+  minam3 = int_shell3->min_am();
+  minam4 = int_shell4->min_am();
+  am1 = int_shell1->max_am();
+  am2 = int_shell2->max_am();
+  am3 = int_shell3->max_am();
+  am4 = int_shell4->max_am();
 
   am1 += dam1; minam1 += dam1;
   am2 += dam2; minam2 += dam2;
@@ -206,7 +201,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     iswtch(&dam1,&dam2);
     iswtch(&minam1,&minam2);
     pswtch((void**)&int_shell1,(void**)&int_shell2);
-    pswtch((void**)&pcs1,(void**)&pcs2);
+    swtch(pbs1,pbs2);
     }
   if (am4 > am3) {
     p34 = 1;
@@ -214,7 +209,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     iswtch(&dam3,&dam4);
     iswtch(&minam3,&minam4);
     pswtch((void**)&int_shell3,(void**)&int_shell4);
-    pswtch((void**)&pcs3,(void**)&pcs4);
+    swtch(pbs3,pbs4);
     }
   if (!(int_unit2||int_unit4) && (osh1 == osh4) && (osh2 == osh3) && (osh1 != osh2)) {
     /* Don't make the permutation unless we won't override what was
@@ -225,7 +220,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
       iswtch(&dam3,&dam4);
       iswtch(&minam3,&minam4);
       pswtch((void**)&int_shell3,(void**)&int_shell4);
-      pswtch((void**)&pcs3,(void**)&pcs4);
+      swtch(pbs3,pbs4);
       }
     }
   if ((am3 > am1)||((am3 == am1)&&(am4 > am2))) {
@@ -237,21 +232,21 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     iswtch(&dam1,&dam3);
     iswtch(&minam1,&minam3);
     pswtch((void**)&int_shell1,(void**)&int_shell3);
-    pswtch((void**)&pcs1,(void**)&pcs3);
+    swtch(pbs1,pbs3);
     iswtch(&dam2,&dam4);
     iswtch(&minam2,&minam4);
     pswtch((void**)&int_shell2,(void**)&int_shell4);
-    pswtch((void**)&pcs2,(void**)&pcs4);
+    swtch(pbs2,pbs4);
     }
   /* This tries to make centers A and B equivalent, if possible. */
   else if (  (am3 == am1)
            &&(am4 == am2)
            && !int_unit2
            && !int_unit4
-           &&(!(  (int_cs1 == int_cs2)
-                &&(int_cs1->center_num[sh1]==int_cs2->center_num[sh2])))
-           &&(   (int_cs3 == int_cs4)
-               &&(int_cs3->center_num[sh3]==int_cs4->center_num[sh4]))) {
+           &&(!(  (bs1_ == bs2_)
+                &&(bs1_->shell_to_center(sh1)==bs2_->shell_to_center(sh2))))
+           &&(   (bs3_ == bs4_)
+               &&(bs3_->shell_to_center(sh3)==bs4_->shell_to_center(sh4)))) {
     p13p24 = 1;
     iswtch(&am1,&am3);iswtch(&sh1,&sh3);iswtch(psh1,psh3);iswtch(&osh1,&osh3);
     iswtch(&am2,&am4);iswtch(&sh2,&sh4);iswtch(psh2,psh4);iswtch(&osh2,&osh4);
@@ -259,11 +254,11 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     iswtch(&dam1,&dam3);
     iswtch(&minam1,&minam3);
     pswtch((void**)&int_shell1,(void**)&int_shell3);
-    pswtch((void**)&pcs1,(void**)&pcs3);
+    swtch(pbs1,pbs3);
     iswtch(&dam2,&dam4);
     iswtch(&minam2,&minam4);
     pswtch((void**)&int_shell2,(void**)&int_shell4);
-    pswtch((void**)&pcs2,(void**)&pcs4);
+    swtch(pbs2,pbs4);
     }
 #else /* OLD_PERMUTATION_ALGORITHM */
   if (am2 > am1) {
@@ -272,7 +267,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     iswtch(&dam1,&dam2);
     iswtch(&minam1,&minam2);
     pswtch((void**)&int_shell1,(void**)&int_shell2);
-    pswtch((void**)&pcs1,(void**)&pcs2);
+    swtch(pbs1,pbs2);
     }
   if (am4 > am3) {
     p34 = 1;
@@ -280,7 +275,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     iswtch(&dam3,&dam4);
     iswtch(&minam3,&minam4);
     pswtch((void**)&int_shell3,(void**)&int_shell4);
-    pswtch((void**)&pcs3,(void**)&pcs4);
+    swtch(pbs3,pbs4);
     }
   if (!(int_unit2||int_unit4) && (osh1 == osh4) && (osh2 == osh3) && (osh1 != osh2)) {
     /* Don't make the permutation unless we won't override what was
@@ -291,7 +286,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
       iswtch(&dam3,&dam4);
       iswtch(&minam3,&minam4);
       pswtch((void**)&int_shell3,(void**)&int_shell4);
-      pswtch((void**)&pcs3,(void**)&pcs4);
+      swtch(pbs3,pbs4);
       }
     }
   if ((am34 > am12)||((am34 == am12)&&(minam1 > minam3))) {
@@ -303,11 +298,11 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     iswtch(&dam1,&dam3);
     iswtch(&minam1,&minam3);
     pswtch((void**)&int_shell1,(void**)&int_shell3);
-    pswtch((void**)&pcs1,(void**)&pcs3);
+    swtch(pbs1,pbs3);
     iswtch(&dam2,&dam4);
     iswtch(&minam2,&minam4);
     pswtch((void**)&int_shell2,(void**)&int_shell4);
-    pswtch((void**)&pcs2,(void**)&pcs4);
+    swtch(pbs2,pbs4);
     }
   /* This tries to make centers A and B equivalent, if possible. */
   else if (  (am3 == am1)
@@ -315,10 +310,10 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
            && !int_unit2
            && !int_unit4
            &&(minam1 == minam3)
-           &&(!(  (int_cs1 == int_cs2)
-                &&(int_cs1->center_num[sh1]==int_cs2->center_num[sh2])))
-           &&(   (int_cs3 == int_cs4)
-               &&(int_cs3->center_num[sh3]==int_cs4->center_num[sh4]))) {
+           &&(!(  (bs1_ == bs2_)
+                &&(bs1_->shell_to_center(sh1)==bs2_->shell_to_center(sh2))))
+           &&(   (bs3_ == bs4_)
+               &&(bs3_->shell_to_center(sh3)==bs4_->shell_to_center(sh4)))) {
     p13p24 = 1;
     iswtch(&am1,&am3);iswtch(&sh1,&sh3);iswtch(psh1,psh3);iswtch(&osh1,&osh3);
     iswtch(&am2,&am4);iswtch(&sh2,&sh4);iswtch(psh2,psh4);iswtch(&osh2,&osh4);
@@ -326,17 +321,17 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     iswtch(&dam1,&dam3);
     iswtch(&minam1,&minam3);
     pswtch((void**)&int_shell1,(void**)&int_shell3);
-    pswtch((void**)&pcs1,(void**)&pcs3);
+    swtch(pbs1,pbs3);
     iswtch(&dam2,&dam4);
     iswtch(&minam2,&minam4);
     pswtch((void**)&int_shell2,(void**)&int_shell4);
-    pswtch((void**)&pcs2,(void**)&pcs4);
+    swtch(pbs2,pbs4);
     }
 #endif /* OLD_PERMUTATION_ALGORITHM */
 
   if (  int_unit2
-        ||((pcs1 == pcs2)
-          &&(pcs1->center_num[sh1]==pcs2->center_num[sh2]))) {
+        ||((pbs1 == pbs2)
+          &&(pbs1->shell_to_center(sh1)==pbs2->shell_to_center(sh2)))) {
     eAB = 1;
     }
   else {
@@ -362,14 +357,14 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     }
 
   /* Compute the shell sizes. */
-  for (ii=size1=0; ii<int_shell1->ncon; ii++) 
-    size1 += INT_NCART(int_shell1->type[ii].am+dam1);
-  for (ii=size2=0; ii<int_shell2->ncon; ii++) 
-    size2 += INT_NCART(int_shell2->type[ii].am+dam2);
-  for (ii=size3=0; ii<int_shell3->ncon; ii++) 
-    size3 += INT_NCART(int_shell3->type[ii].am+dam3);
-  for (ii=size4=0; ii<int_shell4->ncon; ii++) 
-    size4 += INT_NCART(int_shell4->type[ii].am+dam4);
+  for (ii=size1=0; ii<int_shell1->ncontraction(); ii++)
+    size1 += INT_NCART(int_shell1->am(ii)+dam1);
+  for (ii=size2=0; ii<int_shell2->ncontraction(); ii++)
+    size2 += INT_NCART(int_shell2->am(ii)+dam2);
+  for (ii=size3=0; ii<int_shell3->ncontraction(); ii++)
+    size3 += INT_NCART(int_shell3->am(ii)+dam3);
+  for (ii=size4=0; ii<int_shell4->ncontraction(); ii++)
+    size4 += INT_NCART(int_shell4->am(ii)+dam4);
   size = size1*size2*size3*size4;
 
   if (int_integral_storage) {
@@ -394,20 +389,20 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 
   /* Begin loop over generalized contractions. */
   ogc1 = 0;
-  for (i=0; i<int_shell1->ncon; i++) {
-    tam1 = int_shell1->type[i].am + dam1;
+  for (i=0; i<int_shell1->ncontraction(); i++) {
+    tam1 = int_shell1->am(i) + dam1;
     if (tam1 < 0) continue;
     ogc2 = 0;
-    for (j=0; j<int_shell2->ncon; j++) {
-      tam2 = int_shell2->type[j].am + dam2;
+    for (j=0; j<int_shell2->ncontraction(); j++) {
+      tam2 = int_shell2->am(j) + dam2;
       if (tam2 < 0) continue;
       ogc3 = 0;
-      for (k=0; k<int_shell3->ncon; k++) {
-        tam3 = int_shell3->type[k].am + dam3;
+      for (k=0; k<int_shell3->ncontraction(); k++) {
+        tam3 = int_shell3->am(k) + dam3;
         if (tam3 < 0) continue;
         ogc4 = 0;
-        for (l=0; l<int_shell4->ncon; l++) {
-          tam4 = int_shell4->type[l].am + dam4;
+        for (l=0; l<int_shell4->ncontraction(); l++) {
+          tam4 = int_shell4->am(l) + dam4;
           if (tam4 < 0) continue;
 
   /* Shift angular momentum from 1 to 2 and from 3 to 4. */
@@ -612,9 +607,9 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
       iswtch(&am2,&am4);
       iswtch(&am12,&am34);
       pswtch((void**)&int_shell1,(void**)&int_shell3);
-      pswtch((void**)&pcs1,(void**)&pcs3);
+      swtch(pbs1,pbs3);
       pswtch((void**)&int_shell2,(void**)&int_shell4);
-      pswtch((void**)&pcs2,(void**)&pcs4);
+      swtch(pbs2,pbs4);
       iswtch(&int_expweight1,&int_expweight3);
       iswtch(&int_expweight2,&int_expweight4);
       }
@@ -622,14 +617,14 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
       iswtch(&sh3,&sh4);iswtch(psh3,psh4);iswtch(&osh3,&osh4);
       iswtch(&am3,&am4);
       pswtch((void**)&int_shell3,(void**)&int_shell4);
-      pswtch((void**)&pcs3,(void**)&pcs4);
+      swtch(pbs3,pbs4);
       iswtch(&int_expweight3,&int_expweight4);
       }
     if (p12) {
       iswtch(&sh1,&sh2);iswtch(psh1,psh2);iswtch(&osh1,&osh2);
       iswtch(&am1,&am2);
       pswtch((void**)&int_shell1,(void**)&int_shell2);
-      pswtch((void**)&pcs1,(void**)&pcs2);
+      swtch(pbs1,pbs2);
       iswtch(&int_expweight1,&int_expweight2);
       }
     }
@@ -637,10 +632,10 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   /* Transform to pure am (if requested in the centers structure). */
   if (!(flags&INT_NOPURE)) {
       intv3_transform_2e(int_buffer, int_buffer,
-                         &INT_SH(int_cs1,sh1),
-                         int_unit2?int_unit_shell:(&INT_SH(int_cs2,sh2)),
-                         &INT_SH(int_cs3,sh3),
-                         int_unit4?int_unit_shell:(&INT_SH(int_cs4,sh4)));
+                         &bs1_->shell(sh1),
+                         int_unit2?int_unit_shell:&bs2_->shell(sh2),
+                         &bs3_->shell(sh3),
+                         int_unit4?int_unit_shell:&bs4_->shell(sh4));
     }
 
 
@@ -658,10 +653,10 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
                   || ((int_unit2||int_unit4)?0:(osh2 == osh4))));
     e34 = (int_unit4?0:(osh3 == osh4));
     nonredundant_erep(int_buffer,e12,e34,e13e24,
-                           int_shell1->nfunc,
-                           int_shell2->nfunc,
-                           int_shell3->nfunc,
-                           int_shell4->nfunc,
+                           int_shell1->nfunction(),
+                           int_shell2->nfunction(),
+                           int_shell3->nfunction(),
+                           int_shell4->nfunction(),
                            &redundant_offset,
                            &nonredundant_offset);
     }
@@ -712,18 +707,18 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 
 void
 Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
-                      der_centers_t *der_centers)
+                      der_centersv3_t *der_centers)
 {
   double *current_buffer;
   int nints;
   double *user_int_buffer;
   int omit;
-  centers_t *cs[4];
+  RefGaussianBasisSet cs[4];
   int sh[4];
   int n_unique;
   int i,j;
-  shell_t *shell1,*shell2,*shell3,*shell4;
-  centers_t *ucs[4];  /* The centers struct for the unique centers. */
+  GaussianShell *shell1,*shell2,*shell3,*shell4;
+  RefGaussianBasisSet ucs[4]; /* The centers struct for the unique centers. */
   int ush[4];         /* The shells for the unique centers. */
   int unum[4];        /* The number of times that this unique center occurs. */
   int uam[4];         /* The total angular momentum on each unique center. */
@@ -732,10 +727,10 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
   int ncart;
   double *current_pure_buffer;
 
-  cs[0] = int_cs1;
-  cs[1] = int_cs2;
-  cs[2] = int_cs3;
-  cs[3] = int_cs4;
+  cs[0] = bs1_;
+  cs[1] = bs2_;
+  cs[2] = bs3_;
+  cs[3] = bs4_;
 
   sh[0] = psh1;
   sh[1] = psh2;
@@ -743,24 +738,21 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
   sh[3] = psh4;
 
   /* Set up pointers to the current shells. */
-  shell1 = &int_cs1->center[int_cs1->center_num[psh1]]
-                  .basis.shell[int_cs1->shell_num[psh1]];
-  shell2 = &int_cs2->center[int_cs2->center_num[psh2]]
-                  .basis.shell[int_cs2->shell_num[psh2]];
-  shell3 = &int_cs3->center[int_cs3->center_num[psh3]]
-                  .basis.shell[int_cs3->shell_num[psh3]];
-  shell4 = &int_cs4->center[int_cs4->center_num[psh4]]
-                  .basis.shell[int_cs4->shell_num[psh4]];
+  shell1 = &bs1_->shell(psh1);
+  shell2 = &bs2_->shell(psh2);
+  shell3 = &bs3_->shell(psh3);
+  shell4 = &bs4_->shell(psh4);
 
   /* Number of cartesian and pure integrals. */
-  ncart = int_ncart(shell1)*int_ncart(shell2)
-         *int_ncart(shell3)*int_ncart(shell4);
-  nints = shell1->nfunc * shell2->nfunc * shell3->nfunc * shell4->nfunc;
+  ncart = shell1->ncartesian()*shell2->ncartesian()
+         *shell3->ncartesian()*shell4->ncartesian();
+  nints = shell1->nfunction()*shell2->nfunction()
+         *shell3->nfunction()*shell4->nfunction();
 
-  am[0] = int_find_jmax_shell(shell1);
-  am[1] = int_find_jmax_shell(shell2);
-  am[2] = int_find_jmax_shell(shell3);
-  am[3] = int_find_jmax_shell(shell4);
+  am[0] = shell1->max_am();
+  am[1] = shell2->max_am();
+  am[2] = shell3->max_am();
+  am[3] = shell4->max_am();
 
   /* Compute the offset shell numbers. */
   osh[0] = psh1 + bs1_shell_offset_;
@@ -769,7 +761,7 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
   osh[3] = psh4 + bs4_shell_offset_;
 
   /* This macro returns true if two shell centers are the same. */
-#define SC(cs1,sh1,cs2,sh2) (((cs1)==(cs2))&&((cs1)->center_num[sh1]==(cs1)->center_num[sh2]))
+#define SC(cs1,sh1,cs2,sh2) (((cs1)==(cs2))&&((cs1)->shell_to_center(sh1)==(cs1)->shell_to_center(sh2)))
 
   /* Build the list of unique centers structures and shells. */
   n_unique = 0;
@@ -833,7 +825,7 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
     if (i==omit) continue;
 
     der_centers->cs[der_centers->n] = ucs[i];
-    der_centers->num[der_centers->n] = ucs[i]->center_num[ush[i]];
+    der_centers->num[der_centers->n] = ucs[i]->shell_to_center(ush[i]);
     der_centers->n++;
 
     for (j=0; j<4; j++) {
@@ -851,7 +843,7 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
 
   /* Put the information about the omitted center into der_centers. */
   der_centers->ocs = ucs[omit];
-  der_centers->onum = ucs[omit]->center_num[ush[omit]];
+  der_centers->onum = ucs[omit]->shell_to_center(ush[omit]);
 
   /* Transform to pure am. */
   current_buffer = user_int_buffer;
@@ -883,10 +875,10 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
     /* Repack x, y, and z integrals. */
     for (i=0; i<3*der_centers->n; i++) {
       nonredundant_erep(current_buffer,e12,e34,e13e24,
-                             shell1->nfunc,
-                             shell2->nfunc,
-                             shell3->nfunc,
-                             shell4->nfunc,
+                             shell1->nfunction(),
+                             shell2->nfunction(),
+                             shell3->nfunction(),
+                             shell4->nfunction(),
                              &redundant_offset,
                              &nonredundant_offset);
       }
@@ -918,17 +910,13 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
   int index;
   int sizem234,sizem34,sizem2,sizem3,sizem4;
   int sizep234,sizep34,sizep2,sizep3,sizep4;
-  shell_t *shell1,*shell2,*shell3,*shell4;
+  GaussianShell *shell1,*shell2,*shell3,*shell4;
 
   /* Set up pointers to the current shells. */
-  shell1 = &int_cs1->center[int_cs1->center_num[*psh1]]
-                  .basis.shell[int_cs1->shell_num[*psh1]];
-  shell2 = &int_cs2->center[int_cs2->center_num[*psh2]]
-                  .basis.shell[int_cs2->shell_num[*psh2]];
-  shell3 = &int_cs3->center[int_cs3->center_num[*psh3]]
-                  .basis.shell[int_cs3->shell_num[*psh3]];
-  shell4 = &int_cs4->center[int_cs4->center_num[*psh4]]
-                  .basis.shell[int_cs4->shell_num[*psh4]];
+  shell1 = &bs1_->shell(*psh1);
+  shell2 = &bs2_->shell(*psh2);
+  shell3 = &bs3_->shell(*psh3);
+  shell4 = &bs4_->shell(*psh4);
 
   if ((dercenter<0) || (dercenter > 3)) {
     fprintf(stderr,"illegal derivative center -- must be 0, 1, 2, or 3\n");
@@ -937,22 +925,22 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
 
 #define DCTEST(n) ((dercenter==n)?1:0)
   /* Offsets for the intermediates with angular momentum decremented. */
-  for (ii=sizem2=0; ii<shell2->ncon; ii++) 
-    sizem2 += INT_NCART(shell2->type[ii].am-DCTEST(1));
-  for (ii=sizem3=0; ii<shell3->ncon; ii++) 
-    sizem3 += INT_NCART(shell3->type[ii].am-DCTEST(2));
-  for (ii=sizem4=0; ii<shell4->ncon; ii++) 
-    sizem4 += INT_NCART(shell4->type[ii].am-DCTEST(3));
+  for (ii=sizem2=0; ii<shell2->ncontraction(); ii++) 
+    sizem2 += INT_NCART(shell2->am(ii)-DCTEST(1));
+  for (ii=sizem3=0; ii<shell3->ncontraction(); ii++) 
+    sizem3 += INT_NCART(shell3->am(ii)-DCTEST(2));
+  for (ii=sizem4=0; ii<shell4->ncontraction(); ii++) 
+    sizem4 += INT_NCART(shell4->am(ii)-DCTEST(3));
   sizem34 = sizem4 * sizem3;
   sizem234 = sizem34 * sizem2;
 
   /* Offsets for the intermediates with angular momentum incremented. */
-  for (ii=sizep2=0; ii<shell2->ncon; ii++) 
-    sizep2 += INT_NCART(shell2->type[ii].am+DCTEST(1));
-  for (ii=sizep3=0; ii<shell3->ncon; ii++) 
-    sizep3 += INT_NCART(shell3->type[ii].am+DCTEST(2));
-  for (ii=sizep4=0; ii<shell4->ncon; ii++) 
-    sizep4 += INT_NCART(shell4->type[ii].am+DCTEST(3));
+  for (ii=sizep2=0; ii<shell2->ncontraction(); ii++) 
+    sizep2 += INT_NCART(shell2->am(ii)+DCTEST(1));
+  for (ii=sizep3=0; ii<shell3->ncontraction(); ii++) 
+    sizep3 += INT_NCART(shell3->am(ii)+DCTEST(2));
+  for (ii=sizep4=0; ii<shell4->ncontraction(); ii++) 
+    sizep4 += INT_NCART(shell4->am(ii)+DCTEST(3));
   sizep34 = sizep4 * sizep3;
   sizep234 = sizep34 * sizep2;
 
@@ -972,8 +960,8 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
   /* Trouble if cpp is nonANSI. */
 #define DERLOOP(index,indexp1) \
    oc##indexp1 = 0;\
-   for ( c##indexp1 =0; c##indexp1 <shell##indexp1->ncon; c##indexp1 ++) {\
-     am[index] = shell##indexp1->type[c##indexp1].am;\
+   for ( c##indexp1 =0; c##indexp1 <shell##indexp1->ncontraction(); c##indexp1 ++) {\
+     am[index] = shell##indexp1->am(c##indexp1);\
      FOR_CART(i[index],j[index],k[index],am[index])
 
 #define END_DERLOOP(index,indexp1,sign) \
@@ -1159,15 +1147,15 @@ Int2eV3::nonredundant_erep(double *buffer, int e12, int e34, int e13e24,
  * information, if it is non-NULL, and the dercenters pointer. */
 void
 Int2eV3::erep_all1der(int *shells, int  *sizes,
-                      der_centers_t *dercenters)
+                      der_centersv3_t *dercenters)
 {
   erep_all1der(shells[0],shells[1],shells[2],shells[3],
                dercenters);
   if (sizes) {
-    sizes[0] = INT_SH_NFUNC(int_cs1,shells[0]);
-    sizes[1] = INT_SH_NFUNC(int_cs2,shells[1]);
-    sizes[2] = INT_SH_NFUNC(int_cs3,shells[2]);
-    sizes[3] = INT_SH_NFUNC(int_cs4,shells[3]);
+    sizes[0] = bs1_->shell(shells[0]).nfunction();
+    sizes[1] = bs2_->shell(shells[1]).nfunction();
+    sizes[2] = bs3_->shell(shells[2]).nfunction();
+    sizes[3] = bs4_->shell(shells[3]).nfunction();
     }
   }
 
@@ -1179,7 +1167,7 @@ Int2eV3::int_erep_bound1der(int flags, int bsh1, int bsh2, int *size)
   int nints;
   double *user_int_buffer;
   int i;
-  shell_t *shell1,*shell2,*shell3,*shell4;
+  GaussianShell *shell1,*shell2,*shell3,*shell4;
   int osh[4];
   int sh1 = bsh1;
   int sh2 = bsh2;
@@ -1193,19 +1181,16 @@ Int2eV3::int_erep_bound1der(int flags, int bsh1, int bsh2, int *size)
   double *current_pure_buffer;
 
   /* Set up pointers to the current shells. */
-  shell1 = &int_cs1->center[int_cs1->center_num[*psh1]]
-                  .basis.shell[int_cs1->shell_num[*psh1]];
-  shell2 = &int_cs2->center[int_cs2->center_num[*psh2]]
-                  .basis.shell[int_cs2->shell_num[*psh2]];
-  shell3 = &int_cs3->center[int_cs3->center_num[*psh3]]
-                  .basis.shell[int_cs3->shell_num[*psh3]];
-  shell4 = &int_cs4->center[int_cs4->center_num[*psh4]]
-                  .basis.shell[int_cs4->shell_num[*psh4]];
+  shell1 = &bs1_->shell(*psh1);
+  shell2 = &bs2_->shell(*psh2);
+  shell3 = &bs3_->shell(*psh3);
+  shell4 = &bs4_->shell(*psh4);
 
   /* Number of cartesian and pure integrals. */
-  ncart = int_ncart(shell1)*int_ncart(shell2)
-         *int_ncart(shell3)*int_ncart(shell4);
-  nints = shell1->nfunc * shell2->nfunc * shell3->nfunc * shell4->nfunc;
+  ncart = shell1->ncartesian()*shell2->ncartesian()
+         *shell3->ncartesian()*shell4->ncartesian();
+  nints = shell1->nfunction() * shell2->nfunction()
+        * shell3->nfunction() * shell4->nfunction();
 
   /* Compute the offset shell numbers. */
   osh[0] = *psh1 + bs1_shell_offset_;
@@ -1234,10 +1219,10 @@ Int2eV3::int_erep_bound1der(int flags, int bsh1, int bsh2, int *size)
   current_pure_buffer = user_int_buffer;
   for (i=0; i<3; i++) {
       intv3_transform_2e(current_buffer, current_pure_buffer,
-                       &INT_SH(int_cs1,sh1),
-                       &INT_SH(int_cs2,sh2),
-                       &INT_SH(int_cs3,sh3),
-                       &INT_SH(int_cs4,sh4));
+                       &bs1_->shell(sh1),
+                       &bs2_->shell(sh2),
+                       &bs3_->shell(sh3),
+                       &bs4_->shell(sh4));
       current_buffer = &current_buffer[ncart];
       current_pure_buffer = &current_pure_buffer[nints];
     }
@@ -1262,10 +1247,10 @@ Int2eV3::int_erep_bound1der(int flags, int bsh1, int bsh2, int *size)
     /* Repack x, y, and z integrals. */
     for (i=0; i<3; i++) {
       nonredundant_erep(current_buffer,e12,e34,e13e24,
-                             shell1->nfunc,
-                             shell2->nfunc,
-                             shell3->nfunc,
-                             shell4->nfunc,
+                             shell1->nfunction(),
+                             shell2->nfunction(),
+                             shell3->nfunction(),
+                             shell4->nfunction(),
                              &redundant_offset,
                              &nonredundant_offset);
       }
@@ -1292,48 +1277,44 @@ Int2eV3::compute_erep_bound1der(int flags, double *buffer,
   int sizem234,sizem34,sizem2,sizem3,sizem4;
   int sizep234,sizep34,sizep2,sizep3,sizep4;
   int sizepm234,sizepm34,sizepm2,sizepm3,sizepm4;
-  shell_t *shell1,*shell2,*shell3,*shell4;
+  GaussianShell *shell1,*shell2,*shell3,*shell4;
 
   /* Set up pointers to the current shells. */
-  shell1 = &int_cs1->center[int_cs1->center_num[*psh1]]
-                  .basis.shell[int_cs1->shell_num[*psh1]];
-  shell2 = &int_cs2->center[int_cs2->center_num[*psh2]]
-                  .basis.shell[int_cs2->shell_num[*psh2]];
-  shell3 = &int_cs3->center[int_cs3->center_num[*psh3]]
-                  .basis.shell[int_cs3->shell_num[*psh3]];
-  shell4 = &int_cs4->center[int_cs4->center_num[*psh4]]
-                  .basis.shell[int_cs4->shell_num[*psh4]];
+  shell1 = &bs1_->shell(*psh1);
+  shell2 = &bs2_->shell(*psh2);
+  shell3 = &bs3_->shell(*psh3);
+  shell4 = &bs4_->shell(*psh4);
 
 #define DCT1(n) ((((n)==0)||((n)==2))?1:0)
 #define DCT2(n) ((((n)==0)||((n)==2))?((((n)==0))?1:-1):0)
   /* Offsets for the intermediates with angular momentum decremented. */
-  for (ii=sizem2=0; ii<shell2->ncon; ii++) 
-    sizem2 += INT_NCART(shell2->type[ii].am-DCT1(1));
-  for (ii=sizem3=0; ii<shell3->ncon; ii++) 
-    sizem3 += INT_NCART(shell3->type[ii].am-DCT1(2));
-  for (ii=sizem4=0; ii<shell4->ncon; ii++) 
-    sizem4 += INT_NCART(shell4->type[ii].am-DCT1(3));
+  for (ii=sizem2=0; ii<shell2->ncontraction(); ii++) 
+    sizem2 += INT_NCART(shell2->am(ii)-DCT1(1));
+  for (ii=sizem3=0; ii<shell3->ncontraction(); ii++) 
+    sizem3 += INT_NCART(shell3->am(ii)-DCT1(2));
+  for (ii=sizem4=0; ii<shell4->ncontraction(); ii++) 
+    sizem4 += INT_NCART(shell4->am(ii)-DCT1(3));
   sizem34 = sizem4 * sizem3;
   sizem234 = sizem34 * sizem2;
 
   /* Offsets for the intermediates with angular momentum incremented. */
-  for (ii=sizep2=0; ii<shell2->ncon; ii++) 
-    sizep2 += INT_NCART(shell2->type[ii].am+DCT1(1));
-  for (ii=sizep3=0; ii<shell3->ncon; ii++) 
-    sizep3 += INT_NCART(shell3->type[ii].am+DCT1(2));
-  for (ii=sizep4=0; ii<shell4->ncon; ii++) 
-    sizep4 += INT_NCART(shell4->type[ii].am+DCT1(3));
+  for (ii=sizep2=0; ii<shell2->ncontraction(); ii++) 
+    sizep2 += INT_NCART(shell2->am(ii)+DCT1(1));
+  for (ii=sizep3=0; ii<shell3->ncontraction(); ii++) 
+    sizep3 += INT_NCART(shell3->am(ii)+DCT1(2));
+  for (ii=sizep4=0; ii<shell4->ncontraction(); ii++) 
+    sizep4 += INT_NCART(shell4->am(ii)+DCT1(3));
   sizep34 = sizep4 * sizep3;
   sizep234 = sizep34 * sizep2;
 
   /* Offsets for the intermediates with angular momentum incremented and
    * decremented. */
-  for (ii=sizepm2=0; ii<shell2->ncon; ii++) 
-    sizepm2 += INT_NCART(shell2->type[ii].am+DCT2(1));
-  for (ii=sizepm3=0; ii<shell3->ncon; ii++) 
-    sizepm3 += INT_NCART(shell3->type[ii].am+DCT2(2));
-  for (ii=sizepm4=0; ii<shell4->ncon; ii++) 
-    sizepm4 += INT_NCART(shell4->type[ii].am+DCT2(3));
+  for (ii=sizepm2=0; ii<shell2->ncontraction(); ii++) 
+    sizepm2 += INT_NCART(shell2->am(ii)+DCT2(1));
+  for (ii=sizepm3=0; ii<shell3->ncontraction(); ii++) 
+    sizepm3 += INT_NCART(shell3->am(ii)+DCT2(2));
+  for (ii=sizepm4=0; ii<shell4->ncontraction(); ii++) 
+    sizepm4 += INT_NCART(shell4->am(ii)+DCT2(3));
   sizepm34 = sizepm4 * sizepm3;
   sizepm234 = sizepm34 * sizepm2;
 

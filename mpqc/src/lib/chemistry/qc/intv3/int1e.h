@@ -128,9 +128,8 @@ class Int1eV3: public VRefCount {
 
     // from offsets.cc
   protected:
-    void int_initialize_offsets1(RefGaussianBasisSet cs1,
-                                 RefGaussianBasisSet cs2);
-    void int_done_offsets1(RefGaussianBasisSet cs1, RefGaussianBasisSet cs2);
+    void int_initialize_offsets1();
+    void int_done_offsets1();
 
   public:
     Int1eV3(const RefGaussianBasisSet&,

@@ -80,7 +80,7 @@ class Int2eV3: public VRefCount {
     RefFJT fjt_;
 
     int_vector_t int_shell_to_prim;
-    doublep_vector_t int_shell_r;
+    double_matrix_t int_shell_r;
     double_matrix_t int_prim_zeta;
     double_matrix_t int_prim_k;
     double_matrix_t int_prim_oo2zeta;
@@ -89,15 +89,15 @@ class Int2eV3: public VRefCount {
     double *int_buffer;
     double *int_derint_buffer;
 
-    centers_t *int_cs1;
-    centers_t *int_cs2;
-    centers_t *int_cs3;
-    centers_t *int_cs4;
+    RefGaussianBasisSet int_cs1;
+    RefGaussianBasisSet int_cs2;
+    RefGaussianBasisSet int_cs3;
+    RefGaussianBasisSet int_cs4;
 
-    shell_t *int_shell1;
-    shell_t *int_shell2;
-    shell_t *int_shell3;
-    shell_t *int_shell4;
+    GaussianShell *int_shell1;
+    GaussianShell *int_shell2;
+    GaussianShell *int_shell3;
+    GaussianShell *int_shell4;
 
     doublep_array4_t *int_con_ints;
     doublep_array4_t ****int_con_ints_array;  /* The contr. int. inter. */
@@ -115,7 +115,7 @@ class Int2eV3: public VRefCount {
 
     int int_unit2;
     int int_unit4;
-    shell_t* int_unit_shell;
+    GaussianShell* int_unit_shell;
 
     int int_integral_storage;
     int int_store1;
@@ -159,19 +159,19 @@ class Int2eV3: public VRefCount {
   protected:
     void int_offset_print(FILE *fp,
                           double *buffer,
-                          centers_t *c1, int s1,
-                          centers_t *c2, int s2,
-                          centers_t *c3, int s3,
-                          centers_t *c4, int s4);
+                          RefGaussianBasisSet c1, int s1,
+                          RefGaussianBasisSet c2, int s2,
+                          RefGaussianBasisSet c3, int s3,
+                          RefGaussianBasisSet c4, int s4);
     void int_offset_print_n(FILE *fp, double *buffer,
                             int n1, int n2, int n3, int n4,
                             int o1, int o2, int o3, int o4,
                             int e12, int e13e24, int e34);
     void int_print(FILE *fp, double *buffer,
-                   centers_t *c1, int s1,
-                   centers_t *c2, int s2,
-                   centers_t *c3, int s3,
-                   centers_t *c4, int s4);
+                   RefGaussianBasisSet c1, int s1,
+                   RefGaussianBasisSet c2, int s2,
+                   RefGaussianBasisSet c3, int s3,
+                   RefGaussianBasisSet c4, int s4);
     void int_print_n(FILE *fp, double *buffer,
                      int n1, int n2, int n3, int n4,
                      int e12, int e13e24, int e34);
@@ -196,17 +196,19 @@ class Int2eV3: public VRefCount {
     // locals from init2e.cc
   protected:
     void alloc_inter(int nprim,int nshell);
-    void compute_shell_1(centers_t *cs);
-    void compute_prim_1(centers_t *cs1);
-    void compute_shell_2(centers_t *cs1,centers_t *cs2);
-    void compute_prim_2(centers_t *cs1,centers_t *cs2);
+    void compute_shell_1(RefGaussianBasisSet cs, int, int);
+    void compute_prim_1(RefGaussianBasisSet cs1);
+    void compute_shell_2(RefGaussianBasisSet cs1,RefGaussianBasisSet cs2);
+    void compute_prim_2(RefGaussianBasisSet cs1,RefGaussianBasisSet cs2);
 
 
     // globals from init2e.cc
   protected:
     double *int_initialize_erep(int storage, int order,
-                                centers_t *cs1, centers_t *cs2,
-                                centers_t *cs3, centers_t *cs4);
+                                RefGaussianBasisSet cs1,
+                                RefGaussianBasisSet cs2,
+                                RefGaussianBasisSet cs3,
+                                RefGaussianBasisSet cs4);
     void int_done_erep();
 
     // locals from comp2e.cc
@@ -261,10 +263,8 @@ class Int2eV3: public VRefCount {
 
     // from offsets.cc
   protected:
-    void int_initialize_offsets2(centers_t *, centers_t *,
-                                 centers_t *, centers_t *);
-    void int_done_offsets2(centers_t *, centers_t *,
-                           centers_t *, centers_t *);
+    void int_initialize_offsets2();
+    void int_done_offsets2();
 
     // from comp2e3c.cc
   protected:
@@ -317,9 +317,9 @@ class Int2eV3: public VRefCount {
     void erep(int &psh1, int &psh2, int &psh3, int &psh4);
     void erep(int *shells, int  *sizes);
     void erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
-                      der_centers_t *der_centers);
+                      der_centersv3_t *der_centers);
     void erep_all1der(int *shells, int  *sizes,
-                      der_centers_t *dercenters);
+                      der_centersv3_t *dercenters);
 
     // from comp2e3c.cc
     void erep_2center(int &psh1, int &psh2);
@@ -343,10 +343,10 @@ class Int2eV3: public VRefCount {
     RefGaussianBasisSet basis3() { return bs3_; }
     RefGaussianBasisSet basis4() { return bs4_; }
 
-    centers_t *cs1() const { return int_cs1; }
-    centers_t *cs2() const { return int_cs2; }
-    centers_t *cs3() const { return int_cs3; }
-    centers_t *cs4() const { return int_cs4; }
+    RefGaussianBasisSet cs1() const { return int_cs1; }
+    RefGaussianBasisSet cs2() const { return int_cs2; }
+    RefGaussianBasisSet cs3() const { return int_cs3; }
+    RefGaussianBasisSet cs4() const { return int_cs4; }
 };
 REF_dec(Int2eV3);
 

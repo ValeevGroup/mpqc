@@ -25,12 +25,12 @@ Int1eV3::Int1eV3(const RefGaussianBasisSet&b1,
   bs1_ = b1;
   bs2_ = b2;
 
-  int_initialize_offsets1(bs1_,bs2_);
+  int_initialize_offsets1();
   int_initialize_1e(0,order);
 }
 
 Int1eV3::~Int1eV3()
 {
   int_done_1e();
-  int_done_offsets1(bs1_,bs2_);
+  int_done_offsets1();
 }

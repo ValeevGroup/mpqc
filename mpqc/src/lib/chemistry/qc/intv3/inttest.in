@@ -53,17 +53,17 @@ htest: (
     )
  )
 
-centers = $:htest
+centers = $:h2o
 
 test: (
    storage = 1000000
    print_centers = no
-   overlap = no
+   overlap = yes
    kinetic = no
    hcore = no
    nuclear = no
    3 = no
-   bounds = yes
+   bounds = no
    4 = no
    4der = no
    print = no

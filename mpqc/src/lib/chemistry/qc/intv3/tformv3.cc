@@ -415,8 +415,8 @@ intv3_accum_transform_1e_xyz(double *integrals, double *target,
 
 static void
 do_gencon_sparse_transform_2e(double *integrals, double *target, int index,
-                              shell_t *sh1, shell_t *sh2,
-                              shell_t *sh3, shell_t *sh4)
+                              GaussianShell *sh1, GaussianShell *sh2,
+                              GaussianShell *sh3, GaussianShell *sh4)
 {
   int ncart[4];
   int nfunc[4];
@@ -447,18 +447,18 @@ do_gencon_sparse_transform_2e(double *integrals, double *target, int index,
   int *ogc3 = &ogccart[2];
   int *ogc4 = &ogccart[3];
 
-  shell_t *shell;
+  GaussianShell *shell;
 
   int *tgencon;
 
-  ncart[0] = int_ncart(sh1);
-  ncart[1] = int_ncart(sh2);
-  ncart[2] = int_ncart(sh3);
-  ncart[3] = int_ncart(sh4);
-  nfunc[0] = sh1->nfunc;
-  nfunc[1] = sh2->nfunc;
-  nfunc[2] = sh3->nfunc;
-  nfunc[3] = sh4->nfunc;
+  ncart[0] = sh1->ncartesian();
+  ncart[1] = sh2->ncartesian();
+  ncart[2] = sh3->ncartesian();
+  ncart[3] = sh4->ncartesian();
+  nfunc[0] = sh1->nfunction();
+  nfunc[1] = sh2->nfunction();
+  nfunc[2] = sh3->nfunction();
+  nfunc[3] = sh4->nfunction();
 
   ntarget1 = ncart[0];
   ntarget2 = ncart[1];
@@ -536,32 +536,32 @@ do_gencon_sparse_transform_2e(double *integrals, double *target, int index,
 
   ogccart[0] = 0;
   ogcfunc[0] = 0;
-  for (i=0; i<sh1->ncon; i++) {
-      am1 = sh1->type[i].am;
-      nfunci = INT_NFUNC(sh1->type[i].puream,sh1->type[i].am);
+  for (i=0; i<sh1->ncontraction(); i++) {
+      am1 = sh1->am(i);
+      nfunci = sh1->nfunction(i);
       ncarti = INT_NCART(am1);
       ogccart[1] = 0;
       ogcfunc[1] = 0;
-      for (j=0; j<sh2->ncon; j++) {
-          am2 = sh2->type[j].am;
-          nfuncj = INT_NFUNC(sh2->type[j].puream,sh2->type[j].am);
+      for (j=0; j<sh2->ncontraction(); j++) {
+          am2 = sh2->am(j);
+          nfuncj = sh2->nfunction(j);
           ncartj = INT_NCART(am2);
           ogccart[2] = 0;
           ogcfunc[2] = 0;
-          for (k=0; k<sh3->ncon; k++) {
-              am3 = sh3->type[k].am;
-              nfunck = INT_NFUNC(sh3->type[k].puream,sh3->type[k].am);
+          for (k=0; k<sh3->ncontraction(); k++) {
+              am3 = sh3->am(k);
+              nfunck = sh3->nfunction(k);
               ncartk = INT_NCART(am3);
               ogccart[3] = 0;
               ogcfunc[3] = 0;
-              for (l=0; l<sh4->ncon; l++) {
-                  am4 = sh4->type[l].am;
-                  nfuncl = INT_NFUNC(sh4->type[l].puream,sh4->type[l].am);
+              for (l=0; l<sh4->ncontraction(); l++) {
+                  am4 = sh4->am(l);
+                  nfuncl = sh4->nfunction(l);
                   ncartl = INT_NCART(am4);
 
-                  if (shell->type[*tgencon].puream) {
+                  if (shell->is_pure(*tgencon)) {
                       SphericalTransformIterV3
-                          trans(shell->type[*tgencon].am);
+                          trans(shell->am(*tgencon));
                       do_sparse_transform2(source, target,
                                            index, trans,
                                            ncart[index], nfunc[index],
@@ -614,13 +614,13 @@ do_gencon_sparse_transform_2e(double *integrals, double *target, int index,
 
 void
 intv3_transform_2e(double *integrals, double *target,
-                 shell_t *sh1, shell_t *sh2,
-                 shell_t *sh3, shell_t *sh4)
+                 GaussianShell *sh1, GaussianShell *sh2,
+                 GaussianShell *sh3, GaussianShell *sh4)
 {
-  int pure1 = have_pure(sh1);
-  int pure2 = have_pure(sh2);
-  int pure3 = have_pure(sh3);
-  int pure4 = have_pure(sh4);
+  int pure1 = sh1->has_pure();
+  int pure2 = sh2->has_pure();
+  int pure3 = sh3->has_pure();
+  int pure4 = sh4->has_pure();
 
   if (pure1) {
       do_gencon_sparse_transform_2e(integrals, target, 0, sh1, sh2, sh3, sh4);
@@ -640,7 +640,8 @@ intv3_transform_2e(double *integrals, double *target,
     }
 
   if (integrals != target) {
-      int nint = sh1->nfunc * sh2->nfunc * sh3->nfunc * sh4->nfunc;
+      int nint = sh1->nfunction() * sh2->nfunction()
+               * sh3->nfunction() * sh4->nfunction();
       memmove(target, integrals, sizeof(double)*nint);
     }
 }

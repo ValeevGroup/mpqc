@@ -17,29 +17,24 @@
 void
 Int2eV3::make_int_unit_shell()
 {
-  int_unit_shell = (shell_t*) malloc(sizeof(shell_t));
-  int_unit_shell->nprim = 1;
-  int_unit_shell->ncon = 1;
-  int_unit_shell->nfunc = 1;
-  int_unit_shell->exp = (double*) malloc(sizeof(double));
-  int_unit_shell->exp[0] = 0.0;
-  int_unit_shell->type = (shell_type_t*) malloc(sizeof(shell_type_t));
-  int_unit_shell->type[0].am = 0;
-  int_unit_shell->type[0].puream = 0;
-  int_unit_shell->coef = (double**) malloc(sizeof(double*));
-  int_unit_shell->coef[0] = (double*) malloc(sizeof(double));
-  int_unit_shell->coef[0][0] = 1.0;
+  double *exp = new double[1];
+  int *am = new int[1];
+  int *pure = new int[1];
+  double **c = new double*[1];
+  *c = new double[1];
+
+  exp[0] = 0.0;
+  am[0] = 0;
+  pure[0] = 0;
+  c[0][0] = 1.0;
+
+  int_unit_shell = new GaussianShell(1,1,exp,am,pure,c);
 }
 
 void
 Int2eV3::delete_int_unit_shell()
 {
-  if (!int_unit_shell) return;
-  free(int_unit_shell->coef[0]);
-  free(int_unit_shell->coef);
-  free(int_unit_shell->type);
-  free(int_unit_shell->exp);
-  free(int_unit_shell);
+  delete int_unit_shell;
   int_unit_shell = 0;
 }
 
@@ -50,19 +45,19 @@ Int2eV3::delete_int_unit_shell()
 void
 Int2eV3::erep_2center(int &psh1, int &psh2)
 {
-  centers_t *cs2 = int_cs2;
-  centers_t *cs4 = int_cs4;
+  RefGaussianBasisSet cs2 = bs2_;
+  RefGaussianBasisSet cs4 = bs4_;
   int shd = 0x11111111; /* a dummy shell that will cause death if used */
   if (!int_unit_shell) make_int_unit_shell();
-  int_cs2 = (centers_t*) 0x0;
-  int_cs4 = (centers_t*) 0x0;
+  bs2_ = 0;
+  bs4_ = 0;
   int_unit2 = 1;
   int_unit4 = 1;
   erep(psh1,shd,psh2,shd);
   int_unit2 = 0;
   int_unit4 = 0;
-  int_cs2 = cs2;
-  int_cs4 = cs4;
+  bs2_ = cs2;
+  bs4_ = cs4;
 }
 
 /* This is an alternate interface to int_erep2.  It takes
@@ -74,8 +69,8 @@ Int2eV3::erep_2center(int *shells, int  *sizes)
 {
   erep_2center(shells[0],shells[1]);
   if (sizes) {
-      sizes[0] = INT_SH(int_cs1,shells[0]).nfunc;
-      sizes[1] = INT_SH(int_cs3,shells[1]).nfunc;
+      sizes[0] = bs1_->shell(shells[0]).nfunction();
+      sizes[1] = bs3_->shell(shells[1]).nfunction();
     }
 }
 
@@ -105,8 +100,8 @@ Int2eV3::erep_3center(int *shells, int  *sizes)
 {
   erep_3center(shells[0],shells[1],shells[2]);
   if (sizes) {
-      sizes[0] = INT_SH(int_cs1,shells[0]).nfunc;
-      sizes[1] = INT_SH(int_cs3,shells[1]).nfunc;
-      sizes[2] = INT_SH(int_cs4,shells[2]).nfunc;
+      sizes[0] = bs1_->shell(shells[0]).nfunction();
+      sizes[1] = bs3_->shell(shells[1]).nfunction();
+      sizes[2] = bs4_->shell(shells[2]).nfunction();
     }
 }

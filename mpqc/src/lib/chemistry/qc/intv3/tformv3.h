@@ -32,8 +32,8 @@ void intv3_accum_transform_1e_xyz(double *integrals, double *target,
 
 /* integrals and target may overlap */
 void intv3_transform_2e(double *integrals, double *target,
-                      shell_t *sh1, shell_t *sh2,
-                      shell_t *sh3, shell_t *sh4);
+                        GaussianShell *sh1, GaussianShell *sh2,
+                        GaussianShell *sh3, GaussianShell *sh4);
 
 class SphericalTransformComponentV3 : public SphericalTransformComponent {
   public:

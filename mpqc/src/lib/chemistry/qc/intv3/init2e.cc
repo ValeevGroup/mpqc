@@ -33,8 +33,8 @@ fail()
  */
 double *
 Int2eV3::int_initialize_erep(int storage, int order,
-                             centers_t *cs1, centers_t *cs2,
-                             centers_t *cs3, centers_t *cs4)
+                             RefGaussianBasisSet cs1, RefGaussianBasisSet cs2,
+                             RefGaussianBasisSet cs3, RefGaussianBasisSet cs4)
 {
   int nc1,nc2,nc3,nc4;
   int jmax,jmax1,jmax2,jmax3,jmax4;
@@ -87,7 +87,7 @@ Int2eV3::int_initialize_erep(int storage, int order,
    * accordingly. */
 
   // this size estimate is only accurate if all centers are the same
-  int size_inter_1 = cs1->nshell * (sizeof(double*)+sizeof(int));
+  int size_inter_1 = cs1->nshell() * (sizeof(double*)+sizeof(int));
   if (storage - used_storage_ >= size_inter_1) {
       int_store1 = 1;
       used_storage_ += size_inter_1;
@@ -95,7 +95,7 @@ Int2eV3::int_initialize_erep(int storage, int order,
   else int_store1 = 0;
 
   // this size estimate is only accurate if all centers are the same
-  int size_inter_2 = cs1->nprim * cs1->nprim * (7*sizeof(double));
+  int size_inter_2 = cs1->nprimitive() * cs1->nprimitive() * (7*sizeof(double));
   if (storage - used_storage_ >= size_inter_2) {
       int_store2 = 1;
       used_storage_ += size_inter_2;
@@ -103,15 +103,18 @@ Int2eV3::int_initialize_erep(int storage, int order,
   else int_store2 = 0;
 
   /* Allocate storage for the intermediates. */
-  alloc_inter(cs4->prim_offset + cs4->nprim,
+  alloc_inter(bs4_prim_offset_ + cs4->nprimitive(),
               bs4_shell_offset_ + bs4_->nshell());
 
   /* Set up the one shell intermediates, block by block. */
   if (int_store1) {
-    compute_shell_1(cs1);
-    if (cs2 != cs1) compute_shell_1(cs2);
-    if (cs3 != cs2 && cs3 != cs1) compute_shell_1(cs3);
-    if (cs4 != cs3 && cs4 != cs2 && cs4 != cs1) compute_shell_1(cs4);
+    compute_shell_1(cs1, bs1_shell_offset_, bs1_prim_offset_);
+    if (cs2 != cs1)
+        compute_shell_1(cs2, bs2_shell_offset_, bs2_prim_offset_);
+    if (cs3 != cs2 && cs3 != cs1)
+        compute_shell_1(cs3, bs3_shell_offset_, bs3_prim_offset_);
+    if (cs4 != cs3 && cs4 != cs2 && cs4 != cs1)
+        compute_shell_1(cs4, bs4_shell_offset_, bs4_prim_offset_);
   
     /* Set up the one primitive intermediates, block by block. */
     compute_prim_1(cs1);
@@ -171,16 +174,16 @@ Int2eV3::int_initialize_erep(int storage, int order,
     }
 
   /* Find the max angular momentum on each center. */
-  jmax1 = int_find_jmax(cs1);
-  jmax2 = int_find_jmax(cs2);
-  jmax3 = int_find_jmax(cs3);
-  jmax4 = int_find_jmax(cs4);
+  jmax1 = cs1->max_angular_momentum();
+  jmax2 = cs2->max_angular_momentum();
+  jmax3 = cs3->max_angular_momentum();
+  jmax4 = cs4->max_angular_momentum();
 
   /* Find the maximum number of contractions in a shell on each center. */
-  nc1 = int_find_nconmax(cs1);
-  nc2 = int_find_nconmax(cs2);
-  nc3 = int_find_nconmax(cs3);
-  nc4 = int_find_nconmax(cs4);
+  nc1 = cs1->max_ncontraction();
+  nc2 = cs2->max_ncontraction();
+  nc3 = cs3->max_ncontraction();
+  nc4 = cs4->max_ncontraction();
 
   /* Initialize the Fj(T) routine. */
   jmax = jmax1+jmax2+jmax3+jmax4;
@@ -196,20 +199,20 @@ Int2eV3::int_initialize_erep(int storage, int order,
   int_init_shiftgc(order,jmax1,jmax2,jmax3,jmax4);
 
   /* Allocate storage for the integral buffer. */
-  int maxsize = int_find_ncartmax(cs1)
-               *int_find_ncartmax(cs2)
-               *int_find_ncartmax(cs3)
-               *int_find_ncartmax(cs4);
+  int maxsize = INT_NCART(cs1->max_angular_momentum())
+               *INT_NCART(cs2->max_angular_momentum())
+               *INT_NCART(cs3->max_angular_momentum())
+               *INT_NCART(cs4->max_angular_momentum());
   if (order==0) {
     int_buffer = (double *) malloc(sizeof(double) * maxsize);
     int_derint_buffer = NULL;
     }
   else if (order==1) {
     int nderint;
-    nderint = int_find_ncartmax_aminc(cs1,1)
-             *int_find_ncartmax_aminc(cs2,1)
-             *int_find_ncartmax_aminc(cs3,1)
-             *int_find_ncartmax_aminc(cs4,1);
+    nderint = INT_NCART(cs1->max_angular_momentum()+1)
+             *INT_NCART(cs2->max_angular_momentum()+1)
+             *INT_NCART(cs3->max_angular_momentum()+1)
+             *INT_NCART(cs4->max_angular_momentum()+1);
  
     /* Allocate the integral buffers. */
     int_buffer = (double *) malloc(sizeof(double) * 9*maxsize);
@@ -237,7 +240,7 @@ Int2eV3::int_done_erep()
   if (int_derint_buffer) free(int_derint_buffer);
   free(int_buffer);
   if (int_store1) {
-    free_doublep_vector(&int_shell_r);
+    free_double_matrix(&int_shell_r);
     free_int_vector(&int_shell_to_prim);
     }
   if (int_store2) {
@@ -256,7 +259,7 @@ void
 Int2eV3::alloc_inter(int nprim,int nshell)
 {
   if (int_store1) {
-    if (  allocbn_doublep_vector(&int_shell_r, "n", nshell)
+    if (  allocbn_double_matrix(&int_shell_r, "n1 n2", nshell, 3)
         ||allocbn_int_vector(&int_shell_to_prim, "n", nshell)
         ) {
       fprintf(stderr,"problem allocating O(n) integral intermediates for");
@@ -278,66 +281,69 @@ Int2eV3::alloc_inter(int nprim,int nshell)
   }
 
 void
-Int2eV3::compute_shell_1(centers_t *cs)
+Int2eV3::compute_shell_1(RefGaussianBasisSet cs,
+                         int shell_offset, int prim_offset)
 {
   int i,j;
   int offset;
   int iprim;
 
-  offset = cs->shell_offset;
-  iprim = cs->prim_offset;
-  for (i=0; i<cs->n; i++) {
-    for (j=0; j<cs->center[i].basis.n; j++) {
+  offset = shell_offset;
+  iprim = prim_offset;
+  for (i=0; i<cs->ncenter(); i++) {
+    for (j=0; j<cs->nshell_on_center(i); j++) {
 
       /* The offset shell geometry vectors. */
-      int_shell_r.dp[offset] = cs->center[i].r;
+      for (int xyz=0; xyz<3; xyz++) {
+        int_shell_r.d[offset][xyz] = cs->molecule()->atom(i).r(xyz);
+        }
 
       /* The number of the first offset primitive in a offset shell. */
       int_shell_to_prim.i[offset] = iprim;
 
       offset++;
-      iprim += cs->center[i].basis.shell[j].nprim;
+      iprim += cs->shell(i,j).nprimitive();
       }
     }
   }
 
 void
-Int2eV3::compute_prim_1(centers_t *cs1)
+Int2eV3::compute_prim_1(RefGaussianBasisSet cs1)
 {
 }
 
 void
-Int2eV3::compute_shell_2(centers_t *cs1,centers_t *cs2)
+Int2eV3::compute_shell_2(RefGaussianBasisSet cs1,RefGaussianBasisSet cs2)
 {
   /* There are no 2 shell intermediates. */
 }
 
 /* The 2 primitive intermediates. */
 void
-Int2eV3::compute_prim_2(centers_t *cs1,centers_t *cs2)
+Int2eV3::compute_prim_2(RefGaussianBasisSet cs1,RefGaussianBasisSet cs2)
 {
   int offset1, offset2;
   int i1,j1,k1,i2,j2,k2;
-  shell_t *shell1,*shell2;
+  GaussianShell *shell1,*shell2;
   int i;
   /* This is 2^(1/2) * pi^(5/4) */
   const double sqrt2pi54 = 5.9149671727956129;
   double AmB,AmB2;
 
-  offset1 = cs1->prim_offset;
-  for (i1=0; i1<cs1->n; i1++) {
-    for (j1=0; j1<cs1->center[i1].basis.n; j1++) {
-      shell1 = &cs1->center[i1].basis.shell[j1];
-      for (k1=0; k1<cs1->center[i1].basis.shell[j1].nprim; k1++) {
-        offset2 = cs2->prim_offset;
-        for (i2=0; i2<cs2->n; i2++) {
-          for (j2=0; j2<cs2->center[i2].basis.n; j2++) {
-            shell2 = &cs2->center[i2].basis.shell[j2];
-            for (k2=0; k2<cs2->center[i2].basis.shell[j2].nprim; k2++) {
+  offset1 = bs1_prim_offset_;
+  for (i1=0; i1<cs1->ncenter(); i1++) {
+    for (j1=0; j1<cs1->nshell_on_center(i1); j1++) {
+      shell1 = &cs1->shell(i1,j1);
+      for (k1=0; k1<shell1->nprimitive(); k1++) {
+        offset2 = bs2_prim_offset_;
+        for (i2=0; i2<cs2->ncenter(); i2++) {
+          for (j2=0; j2<cs2->nshell_on_center(i2); j2++) {
+            shell2 = &cs2->shell(i2,j2);
+            for (k2=0; k2<shell2->nprimitive(); k2++) {
 
               /* The zeta = alpha + beta intermediate. */
               int_prim_zeta.d[offset1][offset2] =
-                shell1->exp[k1] + shell2->exp[k2];
+                shell1->exponent(k1) + shell2->exponent(k2);
 
               /* The 1/(2 zeta) intermediate times 2.0. */
               int_prim_oo2zeta.d[offset1][offset2] =
@@ -346,15 +352,16 @@ Int2eV3::compute_prim_2(centers_t *cs1,centers_t *cs2)
               /* The p = (alpha A + beta B) / zeta */
               for (i=0; i<3; i++) {
                 int_prim_p.d[offset1][offset2][i] =
-                  (  shell1->exp[k1] * cs1->center[i1].r[i]
-                   + shell2->exp[k2] * cs2->center[i2].r[i])
+                  (  shell1->exponent(k1) * cs1->molecule()->atom(i1).r(i)
+                   + shell2->exponent(k2) * cs2->molecule()->atom(i2).r(i))
                   *  int_prim_oo2zeta.d[offset1][offset2];
                 }
 
               /* Compute AmB^2 */
               AmB2 = 0.0;
               for (i=0; i<3; i++) {
-                AmB = cs2->center[i2].r[i] - cs1->center[i1].r[i];
+                AmB = cs2->molecule()->atom(i2).r(i)
+                    - cs1->molecule()->atom(i1).r(i);
                 AmB2 += AmB*AmB;
                 }
 
@@ -362,7 +369,7 @@ Int2eV3::compute_prim_2(centers_t *cs1,centers_t *cs2)
               int_prim_k.d[offset1][offset2] =
                    sqrt2pi54
                  * int_prim_oo2zeta.d[offset1][offset2]
-                 * exp( -   shell1->exp[k1] * shell2->exp[k2]
+                 * exp( -   shell1->exponent(k1) * shell2->exponent(k2)
                           * int_prim_oo2zeta.d[offset1][offset2]
                           * AmB2 );
 

@@ -20,23 +20,23 @@
 void
 Int2eV3::int_offset_print(FILE *fp,
                           double *buffer,
-                          centers_t *c1, int s1,
-                          centers_t *c2, int s2,
-                          centers_t *c3, int s3,
-                          centers_t *c4, int s4)
+                          RefGaussianBasisSet c1, int s1,
+                          RefGaussianBasisSet c2, int s2,
+                          RefGaussianBasisSet c3, int s3,
+                          RefGaussianBasisSet c4, int s4)
 {
   int nfunc1,nfunc2,nfunc3,nfunc4;
 
-  nfunc1 = INT_SH_NFUNC(c1,s1);
-  nfunc2 = INT_SH_NFUNC(c2,s2);
-  nfunc3 = INT_SH_NFUNC(c3,s3);
-  nfunc4 = INT_SH_NFUNC(c4,s4);
+  nfunc1 = c1->shell(s1).nfunction();
+  nfunc2 = c1->shell(s2).nfunction();
+  nfunc3 = c1->shell(s3).nfunction();
+  nfunc4 = c1->shell(s4).nfunction();
 
   int_offset_print_n(fp,buffer,nfunc1,nfunc2,nfunc3,nfunc4
-    ,c1->func_offset + c1->func_num[s1]
-    ,c2->func_offset + c2->func_num[s2]
-    ,c3->func_offset + c3->func_num[s3]
-    ,c4->func_offset + c4->func_num[s4]
+    ,bs1_func_offset_ + c1->shell_to_function(s1)
+    ,bs2_func_offset_ + c2->shell_to_function(s2)
+    ,bs3_func_offset_ + c3->shell_to_function(s3)
+    ,bs4_func_offset_ + c4->shell_to_function(s4)
     ,(c2==c1)&&(s2==s1)
     ,(c3==c1)&&(s3==s1) && (c4==c2)&&(s4==s2)
     ,(c4==c3)&&(s4==s3)
@@ -88,17 +88,17 @@ Int2eV3::int_offset_print_n(FILE *fp, double *buffer,
  */
 void
 Int2eV3::int_print(FILE *fp, double *buffer,
-                   centers_t *c1, int s1,
-                   centers_t *c2, int s2,
-                   centers_t *c3, int s3,
-                   centers_t *c4, int s4)
+                   RefGaussianBasisSet c1, int s1,
+                   RefGaussianBasisSet c2, int s2,
+                   RefGaussianBasisSet c3, int s3,
+                   RefGaussianBasisSet c4, int s4)
 {
   int nfunc1,nfunc2,nfunc3,nfunc4;
 
-  nfunc1 = INT_SH_NFUNC(c1,s1);
-  nfunc2 = INT_SH_NFUNC(c2,s2);
-  nfunc3 = INT_SH_NFUNC(c3,s3);
-  nfunc4 = INT_SH_NFUNC(c4,s4);
+  nfunc1 = c1->shell(s1).nfunction();
+  nfunc2 = c1->shell(s2).nfunction();
+  nfunc3 = c1->shell(s3).nfunction();
+  nfunc4 = c1->shell(s4).nfunction();
 
   int_print_n(fp,buffer,nfunc1,nfunc2,nfunc3,nfunc4
     ,(c2==c1)&&(s2==s1)

@@ -77,8 +77,8 @@ main()
 
   int storage = tkeyval->intvalue("storage");
   RefInt1eV3 int1ev3 = new Int1eV3(basis,basis,1);
-  RefInt2eV3 int2ev3 = new Int2eV3(basis,basis,basis,basis,
-                                   1, storage);
+  RefInt2eV3 int2ev3;// = new Int2eV3(basis,basis,basis,basis,
+        //               1, storage);
 
   int permute = keyval->booleanvalue("permute");
   tim->enter("overlap");
@@ -501,7 +501,7 @@ do_shell_quartet_der_test(const RefInt2eV3 &int2ev3,
                           int i, int j, int k, int l)
 {
   int ii,jj,kk,ll, ibuf, ider, xyz;
-  der_centers_t dercenters;
+  der_centersv3_t dercenters;
 
   int sh[4], sizes[4];
   sh[0] = i;

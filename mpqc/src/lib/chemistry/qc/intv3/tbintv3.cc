@@ -58,7 +58,7 @@ TwoBodyDerivIntV3::compute_shell(int is, int js, int ks, int ls,
                                  DerivCenters&c)
 {
   int center;
-  der_centers_t dercenters;
+  der_centersv3_t dercenters;
   int sh[4], sz[4];
 
   sh[0]=is; sh[1]=js; sh[2]=ks; sh[3]=ls;

@@ -84,10 +84,10 @@ Int2eV3::int_store_integral(int sh1,int sh2,int sh3,int sh4,
   if (int_Qvec) cost = erep_4bound(sh1,sh2,sh3,sh4) + 30;
   else cost = 1;
   if (cost <= 0) return;
-  cost *=  int_shell1->nprim
-         * int_shell2->nprim
-         * int_shell3->nprim
-         * int_shell4->nprim
+  cost *=  int_shell1->nprimitive()
+         * int_shell2->nprimitive()
+         * int_shell3->nprimitive()
+         * int_shell4->nprimitive()
          * size
          * 1024; // the 1024 is arbitrary
   int actualsize = IntegralLink::size_to_actualsize(size);

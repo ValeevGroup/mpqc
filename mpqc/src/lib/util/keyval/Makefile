@@ -77,11 +77,11 @@ ipv2_scan.cc: ipv2_scan.ll
 
 
 keyvalMap.cc keyvalMap.h:
-	genclass -2 KeyValKeyword val RefKeyValValue val Map keyval
+	$(GENCLASS) -2 KeyValKeyword val RefKeyValValue val Map keyval
 	prepend-header keyvalMap.h "#include \"keyval.h\""
 
 keyval$(MAPIMPL)Map.cc keyval$(MAPIMPL)Map.h:
-	genclass -2 KeyValKeyword val RefKeyValValue val $(MAPIMPL)Map keyval
+	$(GENCLASS) -2 KeyValKeyword val RefKeyValValue val $(MAPIMPL)Map keyval
 	prepend-header keyval$(MAPIMPL)Map.h "#include \"keyval.h\""
 
 keyvalImplMap.h:

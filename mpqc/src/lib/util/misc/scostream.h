@@ -3,6 +3,7 @@
 #define _util_misc_scostream_h
 
 #include <stdio.h>
+#include <string.h>
 #include <iostream.h>
 
 class SCostream: public ostream {

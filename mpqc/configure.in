@@ -1,5 +1,5 @@
 define([sc_version],[2.0.1])
-define([sc_buildid],[])
+define([sc_buildid],[""])
 define([sc_so_version],[1:0:0])
 
 dnl Process this file with autoconf to produce a configure script.
@@ -23,6 +23,15 @@ AC_SUBST(SC_VERSION)
 
 SC_SO_VERSION=sc_so_version
 AC_SUBST(SC_SO_VERSION)
+
+changequote(<<, >>)dnl
+SC_MAJOR_VERSION=`echo $SC_VERSION|sed 's/\([0-9]*\)\.[0-9]*\.[0-9]*/\1/'`
+SC_MINOR_VERSION=`echo $SC_VERSION|sed 's/[0-9]*\.\([0-9]*\)\.[0-9]*/\1/'`
+SC_MICRO_VERSION=`echo $SC_VERSION|sed 's/[0-9]*\.[0-9]*\.\([0-9]*\)/\1/'`
+changequote([, ])dnl
+AC_DEFINE_UNQUOTED(SC_MAJOR_VERSION,$SC_MAJOR_VERSION)
+AC_DEFINE_UNQUOTED(SC_MINOR_VERSION,$SC_MINOR_VERSION)
+AC_DEFINE_UNQUOTED(SC_MICRO_VERSION,$SC_MICRO_VERSION)
 
 dnl --------- Features ---------
 
@@ -280,6 +289,7 @@ AC_ARG_WITH(build-id,
 BUILDID=$withval
 )
 AC_SUBST(BUILDID)
+AC_DEFINE_UNQUOTED(SC_BUILDID,sc_buildid)
 
 AC_ARG_WITH(cc,
 [  --with-cc               Gives the name of the C compiler to use.],

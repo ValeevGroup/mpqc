@@ -101,6 +101,8 @@ private:
   void construct_ortho_comp_();
   // Same as above, except for this function uses Curt's approach
   void construct_ortho_comp_jv_();
+  // Same as above, except for it uses pure SVD
+  void construct_ortho_comp_svd_();
   // Returns true if ABS spans OBS
   bool abs_spans_obs_();
   // Construct eigenvector and eigenvalues sorted by energy

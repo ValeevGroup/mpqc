@@ -98,7 +98,7 @@ R12IntEvalInfo::construct_ri_basis_ev_(bool safe)
     if (safe)
       throw std::runtime_error("R12IntEvalInfo::construct_ri_basis_ev_ -- auxiliary basis is not safe to use with the given orbital basis");
   }
-  construct_ortho_comp_jv_();
+  construct_ortho_comp_svd_();
 }
 
 void
@@ -106,7 +106,7 @@ R12IntEvalInfo::construct_ri_basis_evplus_(bool safe)
 {
   GaussianBasisSet& abs = *(bs_aux_.pointer());
   bs_ri_ = abs + bs_;
-  construct_ortho_comp_jv_();
+  construct_ortho_comp_svd_();
 }
 
 void
@@ -503,6 +503,154 @@ R12IntEvalInfo::construct_ortho_comp_jv_()
   ExEnv::out0() << decindent;
 
   if (debug_ > 1) (scf_vec_ri_bm * orthog_ri_).print("C * S(OBS/RI-BS) * U");
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void
+R12IntEvalInfo::construct_ortho_comp_svd_()
+{
+  construct_orthog_ri_();
+
+   ExEnv::out0() << indent << "SVD-projecting out OBS from RI-BS:" << endl << incindent;
+
+   // Make an Integral and initialize with bs_aux
+   Ref<Integral> integral_aux = integral()->clone();
+
+   //
+   // Compute OBS/RI-BS overlap matrix
+   //
+   Ref<GaussianBasisSet> obs = bs_;
+   Ref<GaussianBasisSet> ri_bs = bs_ri_;
+   Ref<SCMatrixKit> ao_matrixkit = bs_ri_->matrixkit();
+   Ref<SCMatrixKit> so_matrixkit = bs_ri_->so_matrixkit();
+   integral_aux->set_basis(obs,ri_bs);
+   Ref<OneBodyInt> ov_12_engine = integral_aux->overlap();
+
+   // form AO s matrix
+   RefSCMatrix s12(obs->basisdim(), ri_bs->basisdim(), ao_matrixkit);
+   Ref<SCElementOp> ov_op12 =
+     new OneBodyIntOp(new OneBodyIntIter(ov_12_engine));
+
+   s12.assign(0.0);
+   s12.element_op(ov_op12);
+   ov_op12=0;
+   if (debug_ > 1) s12.print("AO overlap (OBS/RI-BS)");
+
+   // get MOs
+   RefSCMatrix scf_vec = ref_->eigenvectors();
+   RefSCMatrix so_ao = integral_aux->petite_list()->sotoao();
+   scf_vec = scf_vec.t() * so_ao;
+
+   // Convert blocked overlap into a nonblocked overlap
+   integral_aux->set_basis(ri_bs);
+   Ref<PetiteList> plist_ri = integral_aux->petite_list();
+   RefSCMatrix ao2so_ri = plist_ri->aotoso();
+   RefSCMatrix s12_nb(scf_vec.coldim(),ao2so_ri->rowdim(), so_matrixkit);
+   s12_nb->convert(s12);
+   s12 = 0;
+
+   // MOs (in terms of AOs) "transformed" into the RI AO basis:
+   // C12 = C1 * S12 * X2 
+   RefSCMatrix C12 = scf_vec * s12_nb * orthog_ri_;
+
+
+   //
+   // SVDecompose C12 = U Sigma V and throw out columns of V
+   //
+   int nblocks = C12.nblock();
+   double toler = ref_->lindep_tol();
+   int* nvec_per_block = new int[nblocks];
+   // basis for orthogonal complement is a vector of nvecs by nao_ri
+   // we don't know nvecs yet, so use noso_ri
+   int noso_ri = orthog_ri_.coldim().n();
+   int nao_ri = orthog_ri_.rowdim().n();
+   double* vecs = new double[noso_ri * nao_ri];
+   int nlindep = 0;
+
+   int v_offset = 0;
+   for(int b=0; b<nblocks; b++) {
+
+     RefSCDimension rowd = C12.rowdim()->blocks()->subdim(b);
+     RefSCDimension cold = C12.coldim()->blocks()->subdim(b);
+     int nrow = rowd.n();
+     int ncol = cold.n();
+     if (nrow && ncol) {
+
+       RefSCMatrix C12_b = C12.block(b);
+       RefSCDimension sigd = nrow < ncol ? rowd : cold;
+       int nsigmas = sigd.n();
+       
+       RefSCMatrix U(rowd, rowd, ao_matrixkit);
+       RefSCMatrix V(cold, cold, ao_matrixkit);
+       RefDiagSCMatrix Sigma(sigd, ao_matrixkit);
+       
+       C12_b.svd(U,Sigma,V);
+
+       // Transform V into AO(RI) basis and transpose so that vectors are in rows
+       RefSCMatrix orthog_ri_b = orthog_ri_.block(b);
+       V = (orthog_ri_b*V).t();
+
+       // Figure out how many sigmas are too small, i.e. how many vectors from RI overlap
+       // only weakly with OBS
+       int nzeros = 0;
+       for(int s=0; s<nsigmas; s++) {
+         if (Sigma(s) < toler)
+           nzeros++;
+       }
+
+       // number of vectors that span the orthogonal space
+       nvec_per_block[b] = nzeros + ncol - nsigmas;
+       nlindep += nsigmas - nzeros;
+
+       if (nvec_per_block[b]) {
+         int v_first = nsigmas - nzeros;
+         int v_last = ncol - 1;
+         double* v_ptr = vecs + v_offset*nao_ri;
+         RefSCMatrix vtmp = V.get_subblock(v_first,v_last,0,nao_ri-1);
+         vtmp.convert(v_ptr);
+       }
+     }
+     else {
+       nvec_per_block[b] = ncol;
+
+       if (nvec_per_block[b]) {
+         RefSCMatrix orthog_ri_b = orthog_ri_.block(b);
+         orthog_ri_b = orthog_ri_b.t();
+         double* v_ptr = vecs + v_offset*nao_ri;
+         orthog_ri_b.convert(v_ptr);
+       }
+     }
+
+     v_offset += nvec_per_block[b];
+   }
+
+   if (v_offset == 0)
+     throw std::runtime_error("R12IntEvalInfo::construct_ortho_comp_svd_ -- RI-BS has null projection \
+on orthogonal complement to OBS. Modify/increase your auxiliary basis.");
+
+   // convert vecs into orthog_ri_
+   RefSCDimension orthog_dim = new SCDimension(v_offset, nblocks, nvec_per_block, "RI-BS(orthogonal to OBS)");
+   for(int b=0; b<nblocks; b++)
+     orthog_dim->blocks()->set_subdim(b, new SCDimension(nvec_per_block[b]));
+   RefSCMatrix orthog_vecs(orthog_dim,orthog_ri_.rowdim(),so_matrixkit);
+   orthog_vecs.assign(vecs);
+   orthog_ri_ = orthog_vecs.t();
+
+   ExEnv::out0() << indent
+                 << nlindep << " basis function"
+                 << (nlindep>1?"s":"")
+                 << " SVD-projected out of RI-BS."
+                 << endl;
+   ExEnv::out0() << indent
+                 << "n(basis):        ";
+   for (int i=0; i<orthog_dim->blocks()->nblock(); i++) {
+     ExEnv::out0() << scprintf(" %5d", orthog_dim->blocks()->size(i));
+   }
+   ExEnv::out0() << endl;
+
+   delete[] vecs;
+   delete[] nvec_per_block;
 }
 
 /////////////////////////////////////////////////////////////////////////////

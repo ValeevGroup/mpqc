@@ -473,26 +473,24 @@ AtomInfo::string_to_Z(const std::string &name, int allow_exceptions)
 
   // see if the name is a atomic number
   Z = atoi(name.c_str());
+  if (Z) return Z;
 
-  // name is not an atomic number--must be a symbol or atom name
-  if (!Z) {
-      // convert the name to lower case
-      std::string tmpname(name);
-      for (int j=0; j<tmpname.size(); j++) {
-	  if (isupper(tmpname[j])) tmpname[j] = tolower(tmpname[j]);
-	}
-
-      std::map<std::string,int>::const_iterator iname
-          = name_to_Z_.find(tmpname);
-      if (iname != name_to_Z_.end()) return iname->second;
-
-      if (tmpname.size() > 0) {
-          if (islower(tmpname[0])) tmpname[0] = toupper(tmpname[0]);
-        }
-
-      iname = symbol_to_Z_.find(tmpname);
-      if (iname != symbol_to_Z_.end()) return iname->second;
+  // convert the name to lower case
+  std::string tmpname(name);
+  for (int j=0; j<tmpname.size(); j++) {
+      if (isupper(tmpname[j])) tmpname[j] = tolower(tmpname[j]);
     }
+
+  std::map<std::string,int>::const_iterator iname
+      = name_to_Z_.find(tmpname);
+  if (iname != name_to_Z_.end()) return iname->second;
+
+  if (tmpname.size() > 0) {
+      if (islower(tmpname[0])) tmpname[0] = toupper(tmpname[0]);
+    }
+
+  iname = symbol_to_Z_.find(tmpname);
+  if (iname != symbol_to_Z_.end()) return iname->second;
 
   if (allow_exceptions) {
       ExEnv::err0() << sprintf("AtomInfo: invalid name: %s\n",name.c_str());

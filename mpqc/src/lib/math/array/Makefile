@@ -20,7 +20,7 @@ SGENFILE = matrix.sgen
 
 SGENSRC = matrixbc0.c matrixrbc0.c matrixsbc0.c matrixbwr.c matrixbrd.c \
           matrixfree.c matrixfrd.c matrixfwr.c matrixallc.c matrixinit.c \
-          matrixip.c matrixprnt.c matrixiseq.c matrixasgn.c matrixsnd0.c \
+          matrixprnt.c matrixiseq.c matrixasgn.c matrixsnd0.c \
           matrixrcv0.c matrixzero.c
 
 INC = math_lib.h

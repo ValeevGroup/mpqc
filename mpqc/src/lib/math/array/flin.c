@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:29  etseidl
- * Initial revision
+ * Revision 1.2  1994/08/26 17:57:41  etseidl
+ * get rid of rcs id's and fix a few warnings
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:30  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.4  1992/08/12  11:18:39  seidl
  * kludge for matrices with a row=0.0
@@ -21,8 +24,6 @@
  * Revision 1.1  1992/01/06  11:34:27  seidl
  * Initial revision
  * */
-
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -72,7 +73,7 @@ int *indx;
 double *d;
 
 {
-  int i,imax,j,k;
+  int i,imax=-1,j,k;
   double big,dum,sum,temp;
   double *vv;
 
@@ -140,7 +141,7 @@ int n;
 int *indx;
 double *b;
 {
-  int i,ii,ip,j;
+  int i,ii=0,ip,j;
   int t=0;
   double sum;
 

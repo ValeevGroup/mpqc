@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:29  etseidl
- * Initial revision
+ * Revision 1.2  1994/08/26 17:57:42  etseidl
+ * get rid of rcs id's and fix a few warnings
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:30  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.1.1.1  1992/03/17  16:35:08  seidl
  * DOE-NIH Quantum Chemistry Library 0.0
@@ -52,7 +55,6 @@
 #include <math/array/matrixfwr.h>
 #include <math/array/matrixallc.h>
 #include <math/array/matrixinit.h>
-#include <math/array/matrixip.h>
 #include <math/array/matrixprnt.h>
 #include <math/array/matrixasgn.h>
 #include <math/array/matrixiseq.h>

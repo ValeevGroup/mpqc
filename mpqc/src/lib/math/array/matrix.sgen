@@ -1,6 +1,9 @@
 
 // $Log$
-// Revision 1.2  1994/06/08 01:16:15  cljanss
+// Revision 1.3  1994/08/26 17:57:43  etseidl
+// get rid of rcs id's and fix a few warnings
+//
+// Revision 1.2  1994/06/08  01:16:15  cljanss
 // Many changes.  These include: newmat7 and nihmatrix -> scmat
 // and mpqcic -> MPSCF and updated optimize stuff.
 //
@@ -35,7 +38,7 @@
 // Initial revision
 //
 
-default_modules(keyvalip free alloc bread bwrite print init bcast0 rbcast0
+default_modules(free alloc bread bwrite print init bcast0 rbcast0
                 sbcast0 fread fwrite iseq assign zero send0 recv0);
 
 doublep_array4 {

@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:29  etseidl
- * Initial revision
+ * Revision 1.2  1994/08/26 17:57:48  etseidl
+ * get rid of rcs id's and fix a few warnings
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:30  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.2  1992/06/17  22:10:18  jannsen
  * clean up for saber-c
@@ -34,8 +37,6 @@
  * math_print_dmv is intended for printing out the eigenvectors and
  * eigenvalues of a matrix
  */
-
-static char rcsid[] = "$Id$";
 
 #include <stdio.h>
 #include <tmpl.h>

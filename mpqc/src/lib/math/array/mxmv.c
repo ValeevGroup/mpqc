@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:29  etseidl
- * Initial revision
+ * Revision 1.2  1994/08/26 17:57:47  etseidl
+ * get rid of rcs id's and fix a few warnings
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:30  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.2  1992/06/17  22:10:16  jannsen
  * clean up for saber-c
@@ -24,8 +27,6 @@
  * Revision 1.1  1991/12/02  23:39:44  etseidl
  * Initial revision
  * */
-
-static char rcsid[] = "$Id$";
 
 #define IOFF(a,b) ((a)>(b))?(a)*((a)+1)/2+(b):(b)*((b)+1)/2+(a)
 

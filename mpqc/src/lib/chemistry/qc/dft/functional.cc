@@ -174,15 +174,19 @@ SumDenFunctional::SumDenFunctional(const RefKeyVal& keyval):
 {
   int ncoef = keyval->count("coefs");
   int nfunc = keyval->count("funcs");
-  if (ncoef != nfunc) {
+  if (ncoef != nfunc && ncoef != 0) {
       cerr << "SumDenFunctional: number of coefs and funcs differ" << endl;
       abort();
     }
-  n_ = ncoef;
+  
+  n_ = nfunc;
   coefs_ = new double[n_];
   funcs_ = new RefDenFunctional[n_];
   for (int i=0; i<n_; i++) {
-      coefs_[i] = keyval->doublevalue("coefs", i);
+      if (ncoef)
+          coefs_[i] = keyval->doublevalue("coefs", i);
+      else
+          coefs_[i] = 1.0;
       funcs_[i] = keyval->describedclassvalue("funcs", i);
     }
 }

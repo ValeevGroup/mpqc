@@ -57,18 +57,23 @@ class ElectronDensity: public Volume {
 /** This a more highly optimized than ElectronDensity since
     everything is precomputed.  However, it cannot be used
     if the density and/or geometry might change between
-    computations of the density or bounding box. */
+    computations of the density or bounding box, unless the
+    obsolete member is called. */
 class BatchElectronDensity: public Volume {
-    void init();
+    void zero_pointers();
   protected:
     Ref<Wavefunction> wfn_;
 
     Ref<GaussianBasisSet> basis_;
+
+    // shared between threads
     GaussianBasisSet::ValueData *valdat_;
     double *alpha_dmat_;
     double *beta_dmat_;
     double *dmat_bound_;
     ShellExtent *extent_;
+
+    // private data
     int ncontrib_;
     int *contrib_;
     int ncontrib_bf_;
@@ -76,30 +81,105 @@ class BatchElectronDensity: public Volume {
     double *bs_values_;
     double *bsg_values_;
     double *bsh_values_;
+
     int nshell_;
     int nbasis_;
     int spin_polarized_;
     int linear_scaling_;
     int use_dmat_bound_;
 
+    bool need_hessian_, need_gradient_;
+
+    bool using_shared_data_;
+
     double accuracy_;
-    virtual void init_data();
-    void compute_basis_values(SCVector3&r);
-    void compute_density(double *dmat, double &rho, double *grad, double *hess);
+    virtual void init_common_data(bool initialize_density_matrices);
+    // this must be called after common data is initialized,
+    // either with init_common_data or by copying
+    virtual void init_scratch_data();
+    void compute_basis_values(const SCVector3&r);
+    void compute_spin_density(const double *dmat,
+                              double *rho, double *grad, double *hess);
 
     virtual void compute();
   public:
+
+    /** This gives the elements of gradient arrays. */
+    enum {X=0, Y=1, Z=2};
+    /** This gives the elements of hessian arrays. */
+    enum {XX=0, YX=1, YY=2, ZX=3, ZY=4, ZZ=5};
+
     BatchElectronDensity(const Ref<KeyVal>&);
     BatchElectronDensity(const Ref<Wavefunction>&);
+    /** This will construct copies of this.  If reference_parent_data is
+        true, then data that do not change, such as the density matrices
+        and shell extent, are referenced rather than copied.  In this case,
+        the original object that allocated this items must be valid while
+        copied objects are used to compute densities.  Also d must have
+        already been intialized. */
+    BatchElectronDensity(const Ref<BatchElectronDensity>& d,
+                         bool reference_parent_data=false);
     ~BatchElectronDensity();
     /** Returns the bounding box. */
     virtual void boundingbox(double valuemin,
                              double valuemax,
                              SCVector3& p1, SCVector3& p2);
-    /** This must be called if anything in the Wavefunction, such as the
-        Molecule's geometry, changes.  It will cause all stratch storage to
-        be released. */
+
+    /** This will cause all stratch storage to be released. */
     void clear();
+
+    /** This is a alternate to the Volume interface that avoids some of the
+        overhead of that interface. */
+    void compute_density(const SCVector3 &r,
+                         double *alpha_density,
+                         double *alpha_density_grad,
+                         double *alpha_density_hessian,
+                         double *beta_density,
+                         double *beta_density_grad,
+                         double *beta_density_hessian);
+
+    /** This is called to finish initialization of the object.  It must not
+        be called with objects that created in a way that they share parent
+        data, those objects are initialized when they are constructed. This
+        member is usually called automatically, however, if it will be used
+        to initial other objects that share parent data, then it must be
+        initialized first and this return is the way to do that.  If
+        initialize_density_matrices is false, then the density matrices
+        will be allocated, but not filled in.  They must be later filled in
+        with set_densities. */
+    virtual void init(bool initialize_density_matrices = true);
+
+    /** This will fill in the internel copies of the density matrices with
+        new values.  aden is the alpha density matrix and bden is the beta
+        density matrix.  bden is ignored if the wavefunction is not spin
+        polarized. */
+    virtual void set_densities(const RefSymmSCMatrix &aden,
+                               const RefSymmSCMatrix &bden);
+
+    /** Turn linear scaling algorithm on/off. The effect of this will be
+        delayed until the next time init() is called. */
+    void set_linear_scaling(bool b) { linear_scaling_ = b; }
+
+    /** Turn use of density matrix bounds on/off. */
+    void set_use_dmat_bound(bool b) { use_dmat_bound_ = b; }
+
+    /** These return some of the internal data, some of which is
+        only value after a density has been computed.  This data
+        is needed by the density functional theory code. */
+    //@{
+    /** Return the alpha density matrix. */
+    double *alpha_density_matrix() { return alpha_dmat_; }
+    /** Return the beta density matrix. */
+    double *beta_density_matrix()
+        { return (spin_polarized_?beta_dmat_:alpha_dmat_); }
+    int ncontrib() { return ncontrib_; }
+    int *contrib() { return contrib_; }
+    int ncontrib_bf() { return ncontrib_bf_; }
+    int *contrib_bf() { return contrib_bf_; }
+    double *bs_values() { return bs_values_; }
+    double *bsg_values() { return bsg_values_; }
+    double *bsh_values() { return bsh_values_; }
+    //@}
 };
 
 class DensityColorizer: public MoleculeColorizer {

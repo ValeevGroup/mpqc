@@ -548,12 +548,156 @@ int DescribedClass::class_version() const
     return class_desc()->version();
 }
 
-void RefDescribedClassBase::require_nonnull() const
+///////////////////////////////////////////////////////////////////////
+// DCRefBase members
+
+void
+DCRefBase::require_nonnull() const
 {
   if (parentpointer() == 0) {
       fprintf(stderr,"RefDescribedClass: needed a nonnull pointer but got"
               "null\n");
       abort();
+    }
+}
+
+DCRefBase::~DCRefBase()
+{
+}
+
+void
+DCRefBase::warn(const char * msg) const
+{
+  RefBase::warn(msg);
+}
+
+void
+DCRefBase::warn_ref_to_stack() const
+{
+  RefBase::warn_ref_to_stack();
+}
+
+void
+DCRefBase::warn_skip_stack_delete() const
+{
+  RefBase::warn_skip_stack_delete();
+}
+
+void
+DCRefBase::warn_bad_ref_count() const
+{
+  RefBase::warn_bad_ref_count();
+}
+
+void
+DCRefBase::ref_info(VRefCount*p,FILE*fp) const
+{
+  RefBase::ref_info(p,fp);
+}
+
+int
+DCRefBase::operator==(const DescribedClass*a) const
+{
+  return eq(parentpointer(),a);
+}
+
+int
+DCRefBase::operator!=(const DescribedClass*a) const
+{
+  return ne(parentpointer(),a);
+}
+
+int
+DCRefBase::operator>=(const DescribedClass*a) const
+{
+  return ge(parentpointer(),a);
+}
+
+int
+DCRefBase::operator<=(const DescribedClass*a) const
+{
+  return le(parentpointer(),a);
+}
+
+int
+DCRefBase::operator> (const DescribedClass*a) const
+{
+  return gt(parentpointer(),a);
+}
+
+int
+DCRefBase::operator< (const DescribedClass*a) const
+{
+  return lt(parentpointer(),a);
+}
+
+int
+DCRefBase::operator==(const DCRefBase &a) const
+{
+  return eq(parentpointer(),a.parentpointer());
+}
+
+int
+DCRefBase::operator!=(const DCRefBase &a) const
+{
+  return ne(parentpointer(),a.parentpointer());
+}
+
+int
+DCRefBase::operator>=(const DCRefBase &a) const
+{
+  return ge(parentpointer(),a.parentpointer());
+}
+
+int
+DCRefBase::operator<=(const DCRefBase &a) const
+{
+  return le(parentpointer(),a.parentpointer());
+}
+
+int
+DCRefBase::operator> (const DCRefBase &a) const
+{
+  return gt(parentpointer(),a.parentpointer());
+}
+
+int
+DCRefBase::operator< (const DCRefBase &a) const
+{
+  return lt(parentpointer(),a.parentpointer());
+}
+
+void
+DCRefBase::check_pointer() const
+{
+  if (parentpointer() && parentpointer()->nreference() <= 0) {
+      warn_bad_ref_count();
+    }
+}
+
+void
+DCRefBase::ref_info(FILE*fp) const
+{
+  DCRefBase::ref_info(parentpointer(),fp);
+}
+
+void
+DCRefBase::reference(VRefCount *p)
+{
+  if (p) {
+      if (DO_REF_CHECK_STACK(p)) {
+          DO_REF_UNMANAGE(p);
+          warn_ref_to_stack();
+        }
+      p->reference();
+    }
+}
+
+void
+DCRefBase::dereference(VRefCount *p)
+{
+  if (p && p->dereference()<=0) {
+      delete p;
     }
 }
 

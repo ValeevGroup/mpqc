@@ -160,17 +160,33 @@ class DescribedClass : public VRefCount {
     int class_version() const;
   };
 
-class  RefDescribedClassBase: private RefBase {
+class DCRefBase: private RefBase {
   public:
-    RefDescribedClassBase() {}
+    DCRefBase() {}
     virtual DescribedClass* parentpointer() const = 0;
-    virtual ~RefDescribedClassBase () {}
-    void warn ( const char * msg) const { RefBase::warn(msg); }
-    void warn_ref_to_stack() const { RefBase::warn_ref_to_stack(); }
-    void warn_skip_stack_delete() const { RefBase::warn_skip_stack_delete(); }
-    void warn_bad_ref_count() const { RefBase::warn_bad_ref_count(); }
-    void ref_info(VRefCount*p,FILE*fp) const { RefBase::ref_info(p,fp); }
+    virtual ~DCRefBase();
+    void warn(const char * msg) const;
+    void warn_ref_to_stack() const;
+    void warn_skip_stack_delete() const;
+    void warn_bad_ref_count() const;
+    void ref_info(VRefCount*p,FILE*fp) const;
     void require_nonnull() const;
+    int operator==(const DescribedClass*a) const;
+    int operator!=(const DescribedClass*a) const;
+    int operator>=(const DescribedClass*a) const;
+    int operator<=(const DescribedClass*a) const;
+    int operator> (const DescribedClass*a) const;
+    int operator< (const DescribedClass*a) const;
+    int operator==(const DCRefBase &a) const;
+    int operator!=(const DCRefBase &a) const;
+    int operator>=(const DCRefBase &a) const;
+    int operator<=(const DCRefBase &a) const;
+    int operator> (const DCRefBase &a) const;
+    int operator< (const DCRefBase &a) const;
+    void check_pointer() const;
+    void ref_info(FILE*fp) const;
+    void reference(VRefCount *p);
+    void dereference(VRefCount *p);
 };
 
 // These files declare template and macro smart pointer classes for

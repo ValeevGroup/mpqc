@@ -265,7 +265,7 @@ class AssignedKeyVal: public KeyVal {
     int    key_exists(const char*);
     RefKeyValValue key_value(const char*);
 
-    void assign(const char*, RefKeyValValue&);
+    void assign(const char*, const RefKeyValValue&);
     void assign(const char*, double);
     void assignboolean(const char*, int);
     void assign(const char*, float);

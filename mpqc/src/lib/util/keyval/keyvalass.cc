@@ -41,7 +41,7 @@ AssignedKeyVal::key_value(const char * key)
 }
 
 void
-AssignedKeyVal::assign(const char*key,RefKeyValValue& val)
+AssignedKeyVal::assign(const char*key,const RefKeyValValue& val)
 {
   KeyValKeyword k(key);
   _map->operator[](k) = val;

@@ -32,8 +32,10 @@ static int refcount(int nref)
   int rc = nref | (nref<<16);
   return rc;
 }
-static int reference(int& rc)
+static int reference(const int& constrc)
 {
+  // cast away the constness:
+  int& rc = (int) constrc;
   if (!managed(rc)) return 1;
   int nref = nreference(rc);
   nref++;
@@ -70,12 +72,12 @@ managed(int rc)
 }
 
 int
-VRefCount::nreference()
+VRefCount::nreference() const
 {
   return ::nreference(_reference_count_);
 }
 int
-VRefCount::reference()
+VRefCount::reference() const
 {
   return ::reference(_reference_count_);
 }
@@ -85,7 +87,7 @@ VRefCount::dereference()
   return ::dereference(_reference_count_);
 }
 int
-VRefCount::managed()
+VRefCount::managed() const
 {
   return ::managed(_reference_count_);
 }
@@ -96,12 +98,12 @@ VRefCount::unmanage()
 }
 
 int
-RefCount::nreference()
+RefCount::nreference() const
 {
   return ::nreference(_reference_count_);
 }
 int
-RefCount::reference()
+RefCount::reference() const
 {
   return ::reference(_reference_count_);
 }
@@ -111,7 +113,7 @@ RefCount::dereference()
   return ::dereference(_reference_count_);
 }
 int
-RefCount::managed()
+RefCount::managed() const
 {
   return ::managed(_reference_count_);
 }

@@ -426,7 +426,7 @@ int StateIn::get(double*&s)
 int StateIn::get_version(const ClassDesc*cd)
 {
   if (!_cd.contains((const ClassDescP&)cd)) {
-      ClassDesc *tmp;
+      const ClassDesc *tmp;
       get(&tmp);
     }
   return 0;

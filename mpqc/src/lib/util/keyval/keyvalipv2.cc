@@ -131,7 +131,7 @@ static KeyVal::KeyValError maperr(IPV2::Status err)
 
 const char* ParsedKeyVal::stringvalue(const char* key)
 {
-  char* result;
+  const char* result;
   seterror(maperr(ipv2->value_v((char *)key,&result,0,0)));
   if (error() != OK) {
       result = 0;
@@ -142,7 +142,7 @@ const char* ParsedKeyVal::stringvalue(const char* key)
 const char*
 ParsedKeyVal::classname(const char* key)
 {
-  char* result;
+  const char* result;
   seterror(maperr(ipv2->classname_v((char *)key,&result,0,0)));
   return result;
 }
@@ -150,7 +150,7 @@ ParsedKeyVal::classname(const char* key)
 const char*
 ParsedKeyVal::truekeyword(const char*key)
 {
-  char* result;
+  const char* result;
   seterror(maperr(ipv2->truekeyword_v((char *)key,&result,0,0)));
   if (!result && error() == OK) return key;
   else return result;

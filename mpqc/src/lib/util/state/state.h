@@ -21,12 +21,12 @@ DescribedClass_named_REF_dec(RefDC ## T, T);				      \
 class refname: public RefDC ## T {					      \
   public:								      \
     refname();								      \
-    refname(refname&);							      \
+    refname(const refname&);						      \
     refname(T *);							      \
-    refname(RefDescribedClassBase&);					      \
+    refname(const RefDescribedClassBase&);				      \
     refname& operator=(T* cr);						      \
-    refname& operator=( RefDescribedClassBase & c);			      \
-    refname& operator=( refname & c);					      \
+    refname& operator=(const RefDescribedClassBase & c);		      \
+    refname& operator=(const refname & c);				      \
     ~refname();								      \
     refname(StateIn&);							      \
     void save_data_state(StateOut&);					      \
@@ -36,21 +36,21 @@ class refname: public RefDC ## T {					      \
 #define SavableState_named_REF_def(refname,T)				      \
 DescribedClass_named_REF_def(RefDC ## T, T)				      \
 refname :: refname() {}							      \
-refname :: refname (refname & o): RefDC ## T (o) {}			      \
+refname :: refname (const refname & o): RefDC ## T (o) {}		      \
 refname :: refname (T * o): RefDC ## T (o) {}				      \
-refname :: refname (RefDescribedClassBase&o): RefDC ## T (o) {}		      \
+refname :: refname (const RefDescribedClassBase&o): RefDC ## T (o) {}	      \
 refname :: ~refname () {}						      \
 refname& refname :: operator=(T* cr)					      \
 {									      \
   RefDC ## T::operator=(cr);						      \
   return *this;								      \
 }									      \
-refname& refname :: operator=( RefDescribedClassBase & c)		      \
+refname& refname :: operator=(const RefDescribedClassBase & c)		      \
 {									      \
   RefDC ## T::operator=(c);						      \
   return *this;								      \
 }									      \
-refname& refname :: operator=( refname & c)				      \
+refname& refname :: operator=(const refname & c)			      \
 {									      \
   RefDC ## T::operator=(c);						      \
   return *this;								      \

@@ -69,11 +69,11 @@ class  Ref ## T  {							      \
     const T& operator *() const;					      \
     Ref ## T ();							      \
     Ref ## T (T*a);							      \
-    Ref ## T ( Ref ## T &a);						      \
+    Ref ## T (const Ref ## T &a);					      \
     ~Ref ## T ();							      \
     int null();								      \
     int nonnull();							      \
-    Ref ## T& operator=( Ref ## T & c);					      \
+    Ref ## T& operator=(const Ref ## T & c);				      \
     Ref ## T& operator=(T* cr);						      \
     void assign_pointer(T* cr);						      \
     int operator==(const Ref ## T &a) const;				      \
@@ -117,7 +117,7 @@ Ref ## T :: Ref ## T (T*a): p(a)					      \
   if (p) p->reference();						      \
   if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
-Ref ## T :: Ref ## T ( Ref ## T &a): p(a.p)				      \
+Ref ## T :: Ref ## T (const Ref ## T &a): p(a.p)			      \
 {									      \
   if (p) p->reference();						      \
   if (REF_CHECK_POINTER) check_pointer();				      \
@@ -145,7 +145,7 @@ Ref ## T :: warn ( const char * msg)					      \
 {									      \
   fprintf(stderr,"WARNING: %s\n",msg);					      \
 }									      \
-Ref ## T& Ref ## T :: operator=( Ref ## T & c)				      \
+Ref ## T& Ref ## T :: operator=(const Ref ## T & c)			      \
 {									      \
   if (c.p) c.p->reference();						      \
   clear();								      \
@@ -191,10 +191,10 @@ class RefCount {
     RefCount& operator=(const RefCount&);
   public:
     ~RefCount();
-    int reference();
-    int nreference();
+    int reference() const;
+    int nreference() const;
     int dereference();
-    int managed();
+    int managed() const;
     void unmanage();
 };
 
@@ -207,12 +207,12 @@ class VRefCount {
     VRefCount& operator=(const VRefCount&);
   public:
     virtual ~VRefCount();
-    int reference();
-    int nreference();
+    int reference() const;
+    int nreference() const;
     int dereference();
 
     // unmanaged objects always return 1 for reference counts
-    int managed();
+    int managed() const;
     void unmanage();
 };
 

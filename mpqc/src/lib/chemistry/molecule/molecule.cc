@@ -42,7 +42,8 @@ Molecule::Molecule(Molecule& mol) :
 
 Molecule::~Molecule()
 {
-  if(atoms) delete[] atoms; atoms=0;
+  if(atoms) delete[] atoms;
+  atoms=0;
   natoms=0;
 }
 
@@ -193,28 +194,20 @@ Molecule::get_atom(int i)
 
 Pix Molecule::first()
 {
-  if (natoms) return (Pix) 1;
-  else return (Pix) 0;
+  return (Pix)atoms;
 }
 
 void Molecule::next(Pix& i)
 {
-#ifdef __GNUC__
-  if ((int)i < natoms) ((int)i)++;
+  if ((AtomicCenter*)i < &atoms[natoms-1]) {
+      i = (Pix) &((AtomicCenter*)i)[1];
+    }
   else i = 0;
-#else
-  if ((int)i < natoms) {
-    int ii = (int) i;
-    ii++;
-    i = (Pix)ii;
-  }
-  else i = 0;
-#endif
 }
 
 int Molecule::owns(Pix i)
 {
-  if ((int)i > 0 && (int)i <= natoms) return 1;
+  if (i >= (Pix)atoms && i <= (Pix)&atoms[natoms-1]) return 1;
   else return 0;
 }
 
@@ -300,7 +293,7 @@ AtomicCenter& Molecule::atom(int ind)
 
 AtomicCenter& Molecule::operator()(Pix pix)
 {
-  return get_atom(((int)pix)-1);
+  return *(AtomicCenter*)pix;
 }
 
 const AtomicCenter& Molecule::operator[](int ind) const
@@ -315,7 +308,7 @@ const AtomicCenter& Molecule::atom(int ind) const
 
 const AtomicCenter& Molecule::operator()(Pix pix) const
 {
-  return get_atom(((int)pix)-1);
+  return *(AtomicCenter*)pix;
 }
 
 PointBag_double* Molecule::charges() const

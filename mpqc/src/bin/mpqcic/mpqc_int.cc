@@ -39,12 +39,12 @@
 
 #include "mpqc_int.h"
 
-// #define STATEOUT StateOutBinXDR
-// #define STATEIN StateInBinXDR
-//#define STATEOUT StateOutBin
-//#define STATEIN StateInBin
-#define STATEOUT StateOutText
-#define STATEIN StateInText
+#define STATEOUT StateOutBinXDR
+#define STATEIN StateInBinXDR
+// #define STATEOUT StateOutBin
+// #define STATEIN StateInBin
+// #define STATEOUT StateOutText
+// #define STATEIN StateInText
 
 /////////////////////////////////////////////////////////////////
 
@@ -271,9 +271,6 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
   fprintf(outfp,"\n Initial simple internal coordinates\n\n");
   coor->print_simples();
   fprintf(outfp,"\n");
-
-  coor->print();
-  hessian.print("inverse hessian");
 
   return GEOM_COMPUTE_GRADIENT;
 }

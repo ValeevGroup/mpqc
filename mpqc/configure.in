@@ -1,4 +1,4 @@
-define([sc_version],[2.0.beta.5])
+define([sc_version],[2.0.0])
 
 dnl Process this file with autoconf to produce a configure script.
 define([AC_CACHE_LOAD], )dnl for debugging configure.in
@@ -1141,6 +1141,12 @@ AC_CHECK_FUNC($F77_DGEMM,HAVE_BLAS=yes,[
     AC_CHECK_LIB(blas,$F77_DGEMM,[HAVE_BLAS=yes;LIBBLAS="-lblas"])
   )]
 )
+if test X$HAVE_BLAS != Xyes; then
+  LIBSSAV2="$LIBS"
+  LIBS="-latlas $LIBS"
+  AC_CHECK_LIB(f77blas,$F77_DGEMM,[HAVE_BLAS=yes;LIBBLAS="-lf77blas -latlas"],
+               LIBS="$LIBSSAV2")
+fi
 AC_SUBST(HAVE_BLAS)
 if test X$HAVE_BLAS != Xyes; then
   echo "WARNING: Could not link to the BLAS library.  It can be obtained at"

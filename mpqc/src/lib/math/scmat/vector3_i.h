@@ -10,11 +10,6 @@
 #endif
 
 INLINE
-SCVector3::SCVector3()
-{
-}
-
-INLINE
 SCVector3::SCVector3(double x[3])
 {
   _v[0] = x[0];
@@ -43,42 +38,6 @@ SCVector3::norm() const
 {
   return sqrt(this->dot(*this));
 };
-
-INLINE double&
-SCVector3::elem(int xyz)
-{
-  return _v[xyz];
-}
-
-INLINE const double&
-SCVector3::elem(int xyz) const
-{
-  return _v[xyz];
-}
-
-INLINE double&
-SCVector3::operator [] (int i)
-{
-  return _v[i];
-}
-
-INLINE const double&
-SCVector3::operator [] (int i) const
-{
-  return _v[i];
-}
-
-INLINE const double&
-SCVector3::operator () (int i) const
-{
-  return _v[i];
-}
-
-INLINE double&
-SCVector3::operator () (int i)
-{
-  return _v[i];
-}
 
 INLINE const double*
 SCVector3::data() const

@@ -1858,7 +1858,7 @@ MBPT2::compute_cs_grad()
         }
       }
     s2norm = sqrt(s2norm/(2*nocc_act));
-    cout << indent << "S2 norm = " << s2norm << endl;
+    cout << indent << scprintf("S2 norm = %12.8f", s2norm) << endl;
     if (biggest_s2.ncontrib()) {
       cout << endl << indent << "Largest S2 values (unique determinants):" << endl;
       }

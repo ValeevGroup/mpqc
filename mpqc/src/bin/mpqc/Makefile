@@ -56,7 +56,7 @@ distclean::
 	/bin/rm -f $(GENCXXSRC) $(GENINC) parse.output
 
 # (only works with bison and flex)
-parse.cc parse.h: parse.yy
+parse.cc: parse.yy
 	$(BISON) -v -d -o parse.tmp $^
 	cat parse.tmp \
 		| sed "s/^int yyparse.*;$$//" \
@@ -86,6 +86,8 @@ scan.cc: scan.ll
 	                | sed "s/static int yyinput/int yyinput/" \
 			| sed "s/yylval/MPQCInylval/g" \
 	                >> scan.cc
+
+parse.h: parse.cc
 
 scan.d: parse.h
 

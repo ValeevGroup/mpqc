@@ -1734,7 +1734,8 @@ MBPT2::compute_cs_grad()
   sum_gradients(msg_, ginter, natom, 3);
 
   // Add intermediate gradients to the gradient on node 0
-  accum_gradients(gradient, ginter, natom, 3);
+  if (me==0)
+    accum_gradients(gradient, ginter, natom, 3);
 
   // Print out contribution to the gradient from non-sep. 2PDM
   if (me == 0) {

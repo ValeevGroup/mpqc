@@ -109,6 +109,9 @@
 /* Define if you have the <unistd.h> header file.  */
 #undef HAVE_UNISTD_H
 
+/* Define if you have the <pthread.h> header file.  */
+#undef HAVE_PTHREAD_H
+
 /* Define if you have the <cube.h> header file (Intel Gamma).  */
 #undef HAVE_CUBE_H
 
@@ -132,6 +135,12 @@
 
 /* Define if your MPI implementation has the cougar MPI2 one-sided calls */
 #undef HAVE_PUMA_MPI2
+
+/* Define if you have the pthreads library (-lpthread).  */
+#undef HAVE_LIBPTHREAD
+
+/* Define if you have the pthreads library (-lpthreads).  */
+#undef HAVE_LIBPTHREADS
 
 /* Define if you have the m library (-lm).  */
 #undef HAVE_LIBM

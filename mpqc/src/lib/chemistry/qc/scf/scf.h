@@ -250,6 +250,11 @@ class SCF: public OneBodyWavefunction {
     // do setup for hessian calculation
     virtual void init_hessian() =0;
     virtual void done_hessian() =0;
+
+  private:
+    // This experimental function does SVD of Coulomb matrix
+    // to be used in low-rank reconstruction
+    void svd_product_basis();
 };
 
 }

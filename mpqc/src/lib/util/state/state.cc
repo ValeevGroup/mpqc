@@ -212,6 +212,15 @@ int StateIn::get(double&r) { return get_array_double(&r,1); }
 
 /////////////////////////////////////////////////////////////////
 
+// This deletes all references to objects, so if they are output
+// again, they will be written in their entirety.
+void StateOut::forget()
+{
+  ps_->clear();
+}
+
+/////////////////////////////////////////////////////////////////
+
 int StateOut::put_array_void(const void*p,int s)
 {
   fprintf(stderr,"StateOut::put_array_void(const void*p,int s)"

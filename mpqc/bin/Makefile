@@ -10,6 +10,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 install_devel::
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
 	$(INSTALL) $(INSTALLSCRIPTOPT) sc-config $(bindir)
+	$(INSTALL) $(INSTALLSCRIPTOPT) mkf77sym.pl $(bindir)/sc-mkf77sym
 	-$(INSTALL) $(INSTALLSCRIPTOPT) sc-libtool $(bindir)
 
 distclean::

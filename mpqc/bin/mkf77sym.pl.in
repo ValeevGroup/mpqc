@@ -1,4 +1,6 @@
-#!/usr/bin/perl
+#
+eval 'exec perl $0 $*'
+    if 0;
 
 $method = '@F77_SYMBOLS@';
 

@@ -631,7 +631,7 @@ LYPFunctional::point(const PointInputData &id,
   double dens2=dens*dens;
   double grad=id.dens_grad_alpha+id.dens_grad_beta;
   double grad2=grad*grad;
-  double dens1_3=pow(dens,1./3.);
+  double dens1_3=pow(dens,-1./3.);
 
   // Precalculate terms defined in Miehlich's paper
   double a=0.04918;
@@ -646,7 +646,7 @@ LYPFunctional::point(const PointInputData &id,
   // is a closed shell system or not
   if (!spin_polarized_) {
       // Use simplified formula
-      ec= -(a*dens/(1. + d/dens1_3)) +
+      ec= -(a*dens/(1. + d*dens1_3)) +
           a*b*omega*dens2*((3. + 7.*delta)*grad2-
                            72.*cf*pow(dens,8./3.))/72;
     }
@@ -658,7 +658,7 @@ LYPFunctional::point(const PointInputData &id,
       double grad_b2=id.dens_grad_beta*id.dens_grad_beta;
         
       ec= -4*a*id.dens_alpha*id.dens_beta/
-          ((1. + d/dens1_3)*dens) - a*b*omega*
+          ((1. + d*dens1_3)*dens) - a*b*omega*
           (-2.*grad2*dens2/3. +
            grad_b2*(2.*dens2/3. - dens_a2) +
            grad_a2*(2.*dens2/3. - dens_b2) +

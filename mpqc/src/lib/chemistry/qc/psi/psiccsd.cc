@@ -9,6 +9,7 @@ extern "C" {
 
 #include <util/keyval/keyval.h>
 #include <util/misc/libmisc.h>
+#include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
 #include <math/symmetry/pointgrp.h>
 #include <chemistry/molecule/molecule.h>
@@ -87,24 +88,46 @@ PSI_CCSD::compute()
     int *reorder;
     double tol = 1e-6;
     reorder = new int[molecule()->natom()];
+    for (i=0; i<molecule()->natom(); i++) reorder[i] = -1;
     FILE11 file11(0);
-    for(i=0; i<molecule()->natom(); i++)
-      for(j=0; j<molecule()->natom(); j++)
+    for(i=0; i<molecule()->natom(); i++) {
+      int gotj = 0;
+      for(j=0; j<molecule()->natom(); j++) {
         if( fabs(file11.coordinate(0,i) - molecule()->r(j,0)) < tol &&
-            fabs(file11.coordinate(1,i) - molecule()->r(j,1)) < tol &&
-            fabs(file11.coordinate(2,i) - molecule()->r(j,2)) < tol){
-          reorder[i] = j;
-          break;
-          }
+	    fabs(file11.coordinate(1,i) - molecule()->r(j,1)) < tol && 
+	    fabs(file11.coordinate(2,i) - molecule()->r(j,2)) < tol){
+          reorder[j] = i;
+          gotj = 1;
+	  break;
+	  }
+        }
+      if (!gotj) {
+          cerr << "ERROR: PSI: atom "<<i<<" not found in file11" << endl;
+          abort();
+        }
+      }
+    cout << node0 << indent << " PSI<->MPQC atom reordering:";
+    for(i=0; i<molecule()->natom(); i++) cout << node0 << " " << reorder[i];
+    cout << node0 << endl;
+
     RefSCVector g(moldim(),matrixkit());
+
+    for (ii=0, i=0; i<molecule()->natom(); i++) {
+      for (j=0; j<3; j++, ii++) {
+        g(ii) = file11.coordinate(j,reorder[i]);
+        }
+      }
+    print_natom_3(g, "Reordered FILE11 Geometry");
 
     for (ii=0, i=0; i<molecule()->natom(); i++) {
       for (j=0; j<3; j++, ii++) {
         g(ii) = file11.gradient(j,reorder[i]);
         }
       }
+    delete[] reorder;
+    print_natom_3(g, "Reordered FILE11 Gradient");
     set_gradient(g);
-    set_actual_gradient_accuracy(grad_acc);
+    set_actual_gradient_accuracy(desired_gradient_accuracy());
     set_energy(file11.energy());
     }
   else {

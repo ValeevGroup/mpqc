@@ -38,7 +38,6 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
   indentation = 0;
   _mol = keyval->describedclassvalue("molecule");
   _gbs = keyval->describedclassvalue("psibasis");
-  printf("here it comes\n");
   _gbs->print();
   // _gbs = keyval->describedclassvalue("basis");
   nirrep = _mol->point_group()->char_table().nirrep();
@@ -432,10 +431,25 @@ PSI_Input::write_defaults(const char *dertype, const char *wavefn)
    delete[] y_vec;
    delete[] z_vec;
    
-   write_keyword("docc", nirrep, docc);
-   write_keyword("socc", nirrep, socc);
-   write_keyword("frozen_docc", nirrep, frozen_docc);
-   write_keyword("frozen_uocc", nirrep, frozen_uocc);
+   if (_mol->point_group()->char_table().nirrep() == 1) {
+       // perhaps the symmetry has been lowered
+       // make sure that the occupation vectors are still correct
+       int norb;
+       for (norb=i=0; i<nirrep; i++) norb+=docc[i];
+       write_keyword("docc", 1, &norb);
+       for (norb=i=0; i<nirrep; i++) norb+=socc[i];
+       write_keyword("socc", 1, &norb);
+       for (norb=i=0; i<nirrep; i++) norb+=frozen_docc[i];
+       write_keyword("frozen_docc", 1, &norb);
+       for (norb=i=0; i<nirrep; i++) norb+=frozen_uocc[i];
+       write_keyword("frozen_uocc", 1, &norb);
+     }
+   else {
+       write_keyword("docc", nirrep, docc);
+       write_keyword("socc", nirrep, socc);
+       write_keyword("frozen_docc", nirrep, frozen_docc);
+       write_keyword("frozen_uocc", nirrep, frozen_uocc);
+     }
 
    if (ex_lvl) write_keyword("ex_lvl", ex_lvl);
    begin_section("files");

@@ -48,6 +48,7 @@ class IParagonMemoryGrp: public MIDMemoryGrp {
     long recv(void* data, int nbytes, int node, int type);
     long postrecv(void *data, int nbytes, int type);
     long wait(long, long = -1);
+    int probe(long);
   public:
     IParagonMemoryGrp(const RefMessageGrp& msg);
     IParagonMemoryGrp(const RefKeyVal& keyval);

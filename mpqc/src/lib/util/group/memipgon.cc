@@ -109,6 +109,19 @@ IParagonMemoryGrp::recv(void* data, int nbytes, int node, int type)
   return mid;
 }
 
+int
+IParagonMemoryGrp::probe(long type)
+{
+  int ret = iprobe((int)type);
+
+  if (ret < 0) {
+      cerr << "IParagonMemoryGrp::probe() failed\n";
+      return 0;
+    }
+  
+  return ret;
+}
+
 long
 IParagonMemoryGrp::postrecv(void *data, int nbytes, int type)
 {

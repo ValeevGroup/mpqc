@@ -71,6 +71,7 @@ const char *
 mpi_thread_string(int level)
 {
   switch (level) {
+#ifdef HAVE_MPI_INIT_THREAD
   case MPI_THREAD_SINGLE:
       return "MPI_THREAD_SINGLE";
   case MPI_THREAD_FUNNELED:
@@ -79,6 +80,7 @@ mpi_thread_string(int level)
       return "MPI_THREAD_SERIALIZED";
   case MPI_THREAD_MULTIPLE:
       return "MPI_THREAD_MULTIPLE";
+#endif
   default:
       return "unknown";
     }

@@ -52,11 +52,11 @@ class PthreadThreadLock : public ThreadLock {
   public:
     PthreadThreadLock() {
       pthread_mutexattr_init(&attr_);
-#if defined(PTHREAD_MUTEX_FAST_NP)
-      pthread_mutexattr_setkind_np(&attr_, PTHREAD_MUTEX_FAST_NP);
-#elif defined(MUTEX_FAST_NP)
-      pthread_mutexattr_setkind_np(&attr_, MUTEX_FAST_NP);
-#endif
+//#if defined(PTHREAD_MUTEX_FAST_NP)
+//      pthread_mutexattr_setkind_np(&attr_, PTHREAD_MUTEX_FAST_NP);
+//#elif defined(MUTEX_FAST_NP)
+//      pthread_mutexattr_setkind_np(&attr_, MUTEX_FAST_NP);
+//#endif
       pthread_mutex_init(&mutex_, &attr_);
     }
 

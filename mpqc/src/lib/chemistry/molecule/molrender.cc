@@ -153,6 +153,8 @@ RenderedStickMolecule::_castdown(const ClassDesc*cd)
 RenderedStickMolecule::RenderedStickMolecule(const RefKeyVal& keyval):
   RenderedMolecule(keyval)
 {
+  use_color_ = keyval->booleanvalue("color");
+  if (keyval->error() != KeyVal::OK) use_color_ = 1;
   init();
 }
 
@@ -191,8 +193,11 @@ RenderedStickMolecule::init()
         }
     }
 
+  int nvertex = natoms;
+  if (use_color_) nvertex += 2*nbonds;
+
   // initialize the polylines
-  o->initialize(natoms+2*nbonds, nbonds, RenderedPolylines::Vertex);
+  o->initialize(nvertex, nbonds, RenderedPolylines::Vertex);
 
   // put the atoms in the vertex list
   for (i=0; i<natoms; i++) {
@@ -200,10 +205,15 @@ RenderedStickMolecule::init()
                     mol_->atom(i)[0],
                     mol_->atom(i)[1],
                     mol_->atom(i)[2]);
-      o->set_vertex_rgb(i,
-                        atominfo_->red(mol_->atom(i).element()),
-                        atominfo_->green(mol_->atom(i).element()),
-                        atominfo_->blue(mol_->atom(i).element()));
+      if (use_color_) {
+          o->set_vertex_rgb(i,
+                            atominfo_->red(mol_->atom(i).element()),
+                            atominfo_->green(mol_->atom(i).element()),
+                            atominfo_->blue(mol_->atom(i).element()));
+        }
+      else {
+          o->set_vertex_rgb(i, 0.0, 0.0, 0.0);
+        }
     }
 
   // put the bonds in the line list
@@ -215,22 +225,27 @@ RenderedStickMolecule::init()
                    mol_->atom(i)[2]);
       for (j=0; j<i; j++) {
           if (bonding(mol_, atominfo_, i, j)) {
-              SCVector3 rj(mol_->atom(j)[0],
-                           mol_->atom(j)[1],
-                           mol_->atom(j)[2]);
-              SCVector3 v = 0.5*(ri+rj);
-              o->set_vertex(ibonds2, v.x(), v.y(), v.z());
-              o->set_vertex_rgb(ibonds2,
-                                atominfo_->red(mol_->atom(i).element()),
-                                atominfo_->green(mol_->atom(i).element()),
-                                atominfo_->blue(mol_->atom(i).element()));
-              o->set_vertex(ibonds2+1, v.x(), v.y(), v.z());
-              o->set_vertex_rgb(ibonds2+1,
-                                atominfo_->red(mol_->atom(j).element()),
-                                atominfo_->green(mol_->atom(j).element()),
-                                atominfo_->blue(mol_->atom(j).element()));
-              o->set_polyline(nbonds, i, ibonds2, ibonds2+1, j);
-              ibonds2 += 2;
+              if (use_color_) {
+                  SCVector3 rj(mol_->atom(j)[0],
+                               mol_->atom(j)[1],
+                               mol_->atom(j)[2]);
+                  SCVector3 v = 0.5*(ri+rj);
+                  o->set_vertex(ibonds2, v.x(), v.y(), v.z());
+                  o->set_vertex_rgb(ibonds2,
+                                    atominfo_->red(mol_->atom(i).element()),
+                                    atominfo_->green(mol_->atom(i).element()),
+                                    atominfo_->blue(mol_->atom(i).element()));
+                  o->set_vertex(ibonds2+1, v.x(), v.y(), v.z());
+                  o->set_vertex_rgb(ibonds2+1,
+                                    atominfo_->red(mol_->atom(j).element()),
+                                    atominfo_->green(mol_->atom(j).element()),
+                                    atominfo_->blue(mol_->atom(j).element()));
+                  o->set_polyline(nbonds, i, ibonds2, ibonds2+1, j);
+                  ibonds2 += 2;
+                }
+              else {
+                  o->set_polyline(nbonds, i, j);
+                }
               nbonds++;
             }
         }

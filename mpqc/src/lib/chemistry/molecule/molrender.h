@@ -64,6 +64,7 @@ class RenderedStickMolecule: public RenderedMolecule {
 #   define HAVE_KEYVAL_CTOR
 #   include <util/class/classd.h>
   protected:
+    int use_color_;
   public:
     RenderedStickMolecule(const RefKeyVal& keyval);
     ~RenderedStickMolecule();

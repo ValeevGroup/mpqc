@@ -16,6 +16,7 @@ basis<GaussianBasisSet>: (
 )
 mpqc: (
   checkpoint = no
+  savestate = no
   % molecular coordinates for optimization
   coor<SymmMolecularCoor>: (
     molecule = $:molecule

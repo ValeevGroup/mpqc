@@ -18,6 +18,7 @@ basis<GaussianBasisSet>: (
 )
 mpqc: (
   checkpoint = no
+  savestate = no
   % method for computing the molecule's energy
   mole<CLSCF>: (
     molecule = $:molecule

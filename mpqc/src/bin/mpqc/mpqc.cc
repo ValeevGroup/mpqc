@@ -327,6 +327,7 @@ main(int argc, char *argv[])
 
   // set up output classes
   SCFormIO::setindent(ExEnv::out(), 2);
+  SCFormIO::setindent(ExEnv::err(), 2);
   SCFormIO::setindent(cout, 2);
   SCFormIO::setindent(cerr, 2);
 

@@ -1,6 +1,13 @@
 # Emacs should use -*- Perl -*- mode.
 
-$srcdir = $ARGV[0];
+while ($arg = shift) {
+    if ($arg eq "-x") {
+        $excluded[$#excluded+1] = shift;
+    }
+    else {
+        $srcdir = $arg;
+    }
+}
 
 ($mydev,$myino,$mymode,$mynlink,$myuid,$mygid,$myrdev,$mysize,
  $myatime,$mymtime,$myctime,$myblksize,$myblocks)
@@ -116,7 +123,7 @@ sub doconfigfiles {
     $dir =~ s/\//_/g;
     $dir = uc($dir);
     $dir =~ s/^_//;
-    if ($dir ne "") {
+    if ($dir ne "" && ! &excluded($dir)) {
         printf MAKEDIRLIST "HAVE_SC_%s=yes\n", $dir;
         printf INCDIRLIST "#define HAVE_SC_%s 1\n", $dir;
     }
@@ -148,4 +155,13 @@ sub domake {
     print STUBMAKE "VPATH = \$(SRCDIR)\n";
     print STUBMAKE "include \$(SRCDIR)/Makefile\n";
     close(STUBMAKE);
+}
+
+sub excluded {
+    my $dir = shift;
+    my $i;
+    foreach $i (0..($#excluded)) {
+        if ($dir eq $excluded[$i]) { return 1; }
+    }
+    return 0;
 }

@@ -41,7 +41,6 @@
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/intv3/intv3.h>
-#include <chemistry/qc/cints/linkage.h>
 
 #include <chemistry/qc/wfn/wfn.h>
 

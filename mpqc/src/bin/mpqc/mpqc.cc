@@ -84,8 +84,12 @@
 #include <chemistry/qc/scf/linkage.h>
 #include <chemistry/qc/dft/linkage.h>
 #include <chemistry/qc/mbpt/linkage.h>
-#include <chemistry/qc/mbptr12/linkage.h>
-#include <chemistry/qc/cints/linkage.h>
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12
+#  include <chemistry/qc/mbptr12/linkage.h>
+#endif
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
+#  include <chemistry/qc/cints/linkage.h>
+#endif
 //#include <chemistry/qc/psi/linkage.h>
 #include <util/state/linkage.h>
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC

@@ -578,7 +578,7 @@ class IntMolecularCoor: public MolecularCoor
         coordinate displacements.  The default is 100.
                
         <dt><tt>update_bmat</tt><dd> Displacements in internal coordinates
-        are converted to a cartesian displacements interatively.  If there
+        are converted to a cartesian displacements iteratively.  If there
         are large changes in the cartesian coordinates during conversion,
         then recompute the \f$B\f$ matrix, which is using to do the
         conversion.  The default is false.

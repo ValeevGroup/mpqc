@@ -68,6 +68,8 @@ static int iter=1;
 static int print_hessian=0;
 static int print_internal=0;
 static int cartesians=0;
+static int tstate=0;
+static int efc=0;
 static double conv_crit=1.0e-6;
 static double conv_rmsf=1.0e-5;
 static double conv_maxf=4.0e-5;
@@ -117,9 +119,19 @@ get_input(const RefKeyVal& keyval)
     print_internal = keyval->booleanvalue("print_internal");
   }
 
+  if (keyval->exists("eigenvector_following")) {
+    efc = keyval->booleanvalue("eigenvector_following");
+  }
+  
+  if (keyval->exists("transition_state")) {
+    efc = 1;
+    tstate = keyval->booleanvalue("transition_state");
+  }
+
   fprintf(outfp,"  intco:print_hessian       = %d\n",print_hessian);
   fprintf(outfp,"  intco:print_internal      = %d\n",print_internal);
   fprintf(outfp,"  intco:cartesians          = %d\n",cartesians);
+  fprintf(outfp,"  intco:transition_state    = %d\n",tstate);
   fprintf(outfp,"  intco:maxstepsize         = %g\n",maxstepsize);
   fprintf(outfp,"  intco:cartesian_tolerance = %g\n",cart_tol);
   fprintf(outfp,"  intco:convergence         = %g\n",conv_crit);
@@ -158,10 +170,15 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
     
    // for now, always read the update from the input. default to bfgs
     update = keyval->describedclassvalue("update");
-    if (update.null())
-      update = new BFGSUpdate;
-   // we only use quasi-Newton methods, so update the inverse hessian
-    update->set_inverse();
+    if (update.null()) {
+      if (tstate)
+        update = new PowellUpdate;
+      else
+        update = new BFGSUpdate;
+    }
+    
+   // use inverse hessian for QN, hessian for EFC
+    if (!efc) update->set_inverse();
 
     dc = mol->dim_natom3();
     di = coor->dim();
@@ -169,7 +186,7 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
    // create the inverted hessian 
     hessian = new LocalSymmSCMatrix(di.pointer());
     coor->guess_hessian(hessian);
-    hessian = hessian.i();
+    if (!efc) hessian = hessian.i();
 
     xn = new LocalSCVector(di.pointer());
     gn = new LocalSCVector(di.pointer());
@@ -277,8 +294,102 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
   RefNLP2 nlp = 0;
   update->update(hessian,nlp,xn,gn);
 
-  // take the Newton-Raphson step
-  RefSCVector xdisp = -1.0*(hessian * gn);
+  RefSCVector xdisp(hessian.dim());
+  
+  if (!efc) {
+    // take the Newton-Raphson step
+    xdisp = -1.0*(hessian * gn);
+  } else {
+    // begin efc junk
+    // first diagonalize hessian
+    RefSCMatrix evecs(hessian.dim(),hessian.dim());
+    RefDiagSCMatrix evals(hessian.dim());
+
+    hessian.diagonalize(evals,evecs);
+    evals.print("hessian eigenvalues");
+    evecs.print("hessian eigenvectors");
+
+    // form gradient to local hessian modes F = Ug
+    RefSCVector F = evecs.t() * gn;
+    F.print("F");
+
+    // figure out if hessian has the right number of negative eigenvalues
+    int ncoord = evals.n();
+    int npos=0,nneg=0;
+    for (i=0; i < ncoord; i++) {
+      if (evals.get_element(i) >= 0.0) npos++;
+      else nneg++;
+    }
+
+    xdisp.assign(0.0);
+  
+    // for now, we always take the P-RFO for tstate (could take NR if
+    // nneg==1, but we won't make that an option yet)
+    if (tstate) {
+      // no mode following yet, just follow lowest mode
+      int mode = 0;
+      printf("\n following mode %d\n",mode);
+
+      double bk = evals(mode);
+      double Fk = F(mode);
+      double lambda_p = 0.5*bk + 0.5*sqrt(bk*bk + 4*Fk*Fk);
+    
+      double lambda_n;
+      double nlambda=1.0;
+      do {
+        lambda_n=nlambda;
+        nlambda=0;
+        for (i=0; i < ncoord; i++) {
+          if (i==mode) continue;
+          
+          nlambda += F.get_element(i)*F.get_element(i) /
+                    (lambda_n - evals.get_element(i));
+        }
+      } while(fabs(nlambda-lambda_n) > 1.0e-8);
+
+      printf("lambda_p = %g\n",lambda_p);
+      printf("lambda_n = %g\n",lambda_n);
+
+      // form Xk
+      double Fkobkl = F(mode)/(evals(mode)-lambda_p);
+      for (j=0; j < F.n(); j++)
+        xdisp(j) = xdisp(j) - evecs(j,mode) * Fkobkl;
+    
+      // form displacement x = sum -Fi*Vi/(bi-lam)
+      for (i=0; i < F.n(); i++) {
+        if (i==mode) continue;
+      
+        double Fiobil = F(i) / (evals(i)-lambda_n);
+        for (j=0; j < F.n(); j++) {
+          xdisp(j) = xdisp(j) - evecs(j,i) * Fiobil;
+        }
+      }
+    
+    // minimum search
+    } else {
+      // evaluate lambda
+      double lambda;
+      double nlambda=1.0;
+      do {
+        lambda=nlambda;
+        nlambda=0;
+        for (i=0; i < F.n(); i++) {
+          double Fi = F(i);
+          nlambda += Fi*Fi / (lambda - evals.get_element(i));
+        }
+      } while(fabs(nlambda-lambda) > 1.0e-8);
+      printf("lambda = %g\n",lambda);
+
+      // form displacement x = sum -Fi*Vi/(bi-lam)
+      for (i=0; i < F.n(); i++) {
+        double Fiobil = F(i) / (evals(i)-lambda);
+        for (j=0; j < F.n(); j++) {
+          xdisp(j) = xdisp(j) - evecs(j,i) * Fiobil;
+        }
+      }
+    }
+  }
+  
   xdisp.print("internal coordinate displacements");
 
   // calculate max and rms stepsize

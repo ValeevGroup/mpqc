@@ -50,6 +50,7 @@ MolecularFormula::MolecularFormula(const RefMolecule& m)
 
   int ntype=0;
   int maxcount=0;
+  int maxsym=0;
   for (int a=0; a < mol.natom(); a++) {
     int i=0;
     while(symbols[i]) {
@@ -57,6 +58,7 @@ MolecularFormula::MolecularFormula(const RefMolecule& m)
         count_[i]++;
 
         maxcount = (count_[i] > maxcount) ? count_[i] : maxcount;
+        maxsym = (strlen(symbols[i]) > maxsym) ? strlen(symbols[i]) : maxsym;
         
         if (count_[i]==1)
           ntype++;
@@ -69,19 +71,20 @@ MolecularFormula::MolecularFormula(const RefMolecule& m)
 
   // allocate storage for formula
   int ndigits = ((int) (log((double)maxcount)/log(10.0))) + 1;
-  form_ = new char[(ndigits+2)*ntype+1];
+  form_ = new char[(ndigits+maxsym)*ntype+1];
   form_[0] = 0;
   
   int c;
   for (int i=0; i < nelem_; i++) {
     if (c=count_[i]) {
-      char temp[ndigits+10];
+      char *temp = new char[ndigits+maxsym+1];
       if (c > 1)
         sprintf(temp, "%s%d", symbols[i], count_[i]);
       else 
         sprintf(temp, "%s", symbols[i]);
 
       strcat(form_, temp);
+      delete[] temp;
     }
   }
 }

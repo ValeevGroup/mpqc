@@ -1,3 +1,4 @@
+% Emacs should use -*- KeyVal -*- mode.
 
 % check forward references of variables
 forref: (

@@ -4,6 +4,7 @@
 #else
 #include <stdlib.h>
 #endif
+#include <string.h>
 #ifdef BISON
 #define YYDEBUG 0
 #if YYDEBUG != 0
@@ -31,8 +32,9 @@ int yydebug =1;
 
 %token T_KEYWORD_LEFT T_ARRAY_LEFT T_TABLE_LEFT
 %token T_KEYWORD_RIGHT T_ARRAY_RIGHT T_TABLE_RIGHT
-%token <str> T_STRING
-%type <str> scalar var_key var_sub table_key polymorph
+%token T_CONCAT
+%token <str> T_STRING T_QUOTED_STRING
+%type <str> string quoted_string var_key var_sub table_key polymorph
 %type <sl> stringlist parentlist commalist
 %type <str> expression
 %type <dbl> subexpression expvalue
@@ -84,8 +86,8 @@ stringlist:     stringlist table_key
             ;
 
 
-table_key:      table_key ':' T_STRING  { $$ = ip_append_keystrings($1,$3); }
-            |   T_STRING                { $$ = $1; }
+table_key:      table_key ':' string    { $$ = ip_append_keystrings($1,$3); }
+            |   string                  { $$ = $1; }
             ;
 
 tablevalues:    tablevalues value
@@ -117,28 +119,28 @@ keyword:        T_STRING
             ;
 */
 
-keyword:        T_STRING                        { ip_push_keyword($1); }
-            |   T_STRING polymorph              { ip_push_keyclass($1,$2,0); }
-            |   T_STRING parentlist             { ip_push_keyclass($1,0,$2); }
-            |   T_STRING parentlist polymorph   { ip_push_keyclass($1,$3,$2); }
-            |   T_STRING polymorph parentlist   { ip_push_keyclass($1,$2,$3); }
+keyword:        string                        { ip_push_keyword($1); }
+            |   string polymorph              { ip_push_keyclass($1,$2,0); }
+            |   string parentlist             { ip_push_keyclass($1,0,$2); }
+            |   string parentlist polymorph   { ip_push_keyclass($1,$3,$2); }
+            |   string polymorph parentlist   { ip_push_keyclass($1,$2,$3); }
             ;
 implicit_keyword:
                 polymorph                       { ip_push_keyclass(0,$1,0); }
             ;
 
-polymorph:      '<' T_STRING '>'                { $$ = $2; }
+polymorph:      '<' string '>'                { $$ = $2; }
             ;
 
 parentlist:     '<' '<' commalist '>' '>'       { $$ = $3; }
             ;
 
-commalist:      commalist ',' T_STRING  { $$ = ip_add_string_list($1,$3); }
-            |   T_STRING                { $$ = ip_string_to_string_list($1); }
+commalist:      commalist ',' string  { $$ = ip_add_string_list($1,$3); }
+            |   string                { $$ = ip_string_to_string_list($1); }
             ;
 
 value:          array
-            |   scalar
+            |   string
                                     { ip_assign_value($1); }
             |   var_sub             { ip_assign_variable($1); }
             |   expression          { ip_assign_value($1); }
@@ -156,16 +158,16 @@ subexpression:  expvalue '*' expvalue   { $$ = $1 * $3; }
 
 
 expvalue:       var_sub             { $$ = ip_get_variable_double($1); }
-            |   scalar              { $$ = atof($1); free($1); }
+            |   string              { $$ = atof($1); free($1); }
             ; 
 
 var_sub:        '$' var_key         { $$ = $2; }
             ;
 
 
-var_key:        var_key ':' T_STRING    { $$ = ip_append_keystrings($1,$3); }
-            |   ':' T_STRING            { $$ = ip_append_keystrings(NULL,$2); }
-            |   T_STRING                { $$ = $1; }
+var_key:        var_key ':' string    { $$ = ip_append_keystrings($1,$3); }
+            |   ':' string            { $$ = ip_append_keystrings(NULL,$2); }
+            |   string                { $$ = $1; }
             ;
 
 array:          array_left values array_right
@@ -176,8 +178,19 @@ values:         values { ip_incr_karray(); } value
                                                 { ip_init_karray(); }
             ;
 
-scalar:         T_STRING
+quoted_string: quoted_string T_CONCAT T_QUOTED_STRING
+                                { $$ = (char*) malloc(strlen($1)+strlen($3)+1);
+                                  strcpy($$, $1);
+                                  strcat($$, $3);
+                                  free($1);
+                                  free($3);
+                                }
+            |  T_QUOTED_STRING
                                                 { $$ = $1; }
+            ;
+
+string:        T_STRING                         { $$ = $1; }
+            |  quoted_string                    { $$ = $1; }
             ;
 
 %%

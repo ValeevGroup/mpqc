@@ -29,8 +29,63 @@ static void getnewkey(char*newkey,const char*key,int n1,int n2,int n3,int n4)
   sprintf(newkey,"%s:%d:%d:%d:%d",key,n1,n2,n3,n4);
   }
 
+static void getnewkey(char*newkey,int n1)
+  {
+  sprintf(newkey,"%d",n1);
+  }
+
+static void getnewkey(char*newkey,int n1,int n2)
+  {
+  sprintf(newkey,"%d:%d",n1,n2);
+  }
+
+static void getnewkey(char*newkey,int n1,int n2,int n3)
+  {
+  sprintf(newkey,"%d:%d:%d",n1,n2,n3);
+  }
+
+static void getnewkey(char*newkey,int n1,int n2,int n3,int n4)
+  {
+  sprintf(newkey,"%d:%d:%d:%d",n1,n2,n3,n4);
+  }
+
+
 ///////////////////////////////////////////////////////////////////////
 // PrefixKeyVal
+
+PrefixKeyVal::PrefixKeyVal(const RefKeyVal&kv,const char *prefix,
+                           int n1,int n2,int n3,int n4):
+keyval(kv)
+{
+  setup(prefix,4,n1,n2,n3,n4);
+}
+
+PrefixKeyVal::PrefixKeyVal(const RefKeyVal&kv,const char *prefix,
+                           int n1,int n2,int n3):
+keyval(kv)
+{
+  setup(prefix,3,n1,n2,n3,0);
+}
+
+PrefixKeyVal::PrefixKeyVal(const RefKeyVal&kv,const char *prefix,
+                           int n1,int n2):
+keyval(kv)
+{
+  setup(prefix,2,n1,n2,0,0);
+}
+
+PrefixKeyVal::PrefixKeyVal(const RefKeyVal&kv,const char *prefix,int n1):
+keyval(kv)
+{
+  setup(prefix,1,n1,0,0,0);
+}
+
+PrefixKeyVal::PrefixKeyVal(const RefKeyVal&kv,const char *prefix):
+keyval(kv)
+{
+  setup(prefix,0,0,0,0,0);
+}
+
 
 PrefixKeyVal::PrefixKeyVal(const char *prefix,const RefKeyVal&kv,
                            int n1,int n2,int n3,int n4):
@@ -63,6 +118,30 @@ PrefixKeyVal::PrefixKeyVal(const char *prefix,const RefKeyVal&kv):
 keyval(kv)
 {
   setup(prefix,0,0,0,0,0);
+}
+
+PrefixKeyVal::PrefixKeyVal(const RefKeyVal&kv,int n1):
+keyval(kv)
+{
+  setup(0,1,n1,0,0,0);
+}
+
+PrefixKeyVal::PrefixKeyVal(const RefKeyVal&kv,int n1,int n2):
+keyval(kv)
+{
+  setup(0,2,n1,n2,0,0);
+}
+
+PrefixKeyVal::PrefixKeyVal(const RefKeyVal&kv,int n1,int n2,int n3):
+keyval(kv)
+{
+  setup(0,3,n1,n2,n3,0);
+}
+
+PrefixKeyVal::PrefixKeyVal(const RefKeyVal&kv,int n1,int n2,int n3,int n4):
+keyval(kv)
+{
+  setup(0,4,n1,n2,n3,n4);
 }
 
 void PrefixKeyVal::setup(const char*pref,int n_dim,int n1,int n2,int n3,int n4)

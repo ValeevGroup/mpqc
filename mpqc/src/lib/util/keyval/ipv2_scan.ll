@@ -13,6 +13,7 @@
 string  [A-Za-z0-9_\.*+-/]*
 qstring \"[^"\n]+\"
 %%
+"##"            { return T_CONCAT; }
 {string}        { int strlenyytext = strlen(yytext);
                   if (strlenyytext==1) {
                     if (yytext[0]=='*') return '*';
@@ -35,7 +36,7 @@ qstring \"[^"\n]+\"
                     }
                   strcpy(yylval.str,&yytext[1]);
                   yylval.str[strlen(yylval.str)-1] = '\0';
-                  return(T_STRING);
+                  return(T_QUOTED_STRING);
                   }
 [ \t]+          ; 
 %.*$            ;

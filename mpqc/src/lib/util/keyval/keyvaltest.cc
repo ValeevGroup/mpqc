@@ -74,7 +74,7 @@ B::B():
 {
 }
 B::B(const RefKeyVal&keyval):
-  A(new PrefixKeyVal("A",keyval)),
+  A(new PrefixKeyVal(keyval,"A")),
   b_(keyval->intvalue("b"))
 {
 }
@@ -170,8 +170,8 @@ D::D():
 {
 }
 D::D(const RefKeyVal&keyval):
-  B(new PrefixKeyVal("B",keyval)),
-  C(new PrefixKeyVal("C",keyval)),
+  B(new PrefixKeyVal(keyval,"B")),
+  C(new PrefixKeyVal(keyval,"C")),
   d_(keyval->intvalue("d")),
   d_a_(A::castdown(keyval->describedclassvalue("a"))),
   d_b_(B::castdown(keyval->describedclassvalue("b")))

@@ -59,8 +59,11 @@ nfp(0)
   if (!directory) {
       directory = getenv("SCLIBDIR");
       if (directory) {
-          directory = strchr(directory,'=') + 1;
-          directory = strcpy(new char[strlen(directory)+1], directory);
+          char *tmp = strchr(directory,'=');
+          if (!tmp) tmp = directory;
+          else tmp = &tmp[1];
+
+          directory = strcpy(new char[strlen(tmp)+1], tmp);
         }
       else {
           directory = strcpy(new char[strlen(SRCLIBDIR)+1], SRCLIBDIR);
@@ -117,7 +120,7 @@ ParsedKeyVal::read(const char* name)
 void ParsedKeyVal::read(istream&infp)
 {
   nfp++;
-  ipv2->read(infp,cerr);
+  ipv2->read(infp,cerr,file[nfile-1]);
 }
 
 ParsedKeyVal::~ParsedKeyVal()

@@ -3,6 +3,7 @@
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <util/keyval/ipv2.h>
 #include <util/keyval/ipv2_parse.h>
@@ -23,7 +24,8 @@ ip_in(0),
 ip_out(0),
 ip_tree(0),
 ip_cwk(0),
-ip_keyword(0)
+ip_keyword(0),
+filename_(0)
 {
   lastkeyword[0] = '\0';
   lexer = new IPV2FlexLexer;
@@ -34,10 +36,16 @@ IPV2::~IPV2()
   if (ip_tree) ip_free_keyword_tree(ip_tree);
   ip_tree = 0;
   delete lexer;
+  delete[] filename_;
 }
 
-void IPV2::read(istream&in,ostream&out)
+void IPV2::read(istream&in,ostream&out,const char *filename)
 {
+  delete[] filename_;
+  if (filename) {
+      filename_ = strcpy(new char[strlen(filename)+1], filename);
+    }
+  else filename_ = 0;
   if (ip_initialized) {
     ip_append(in,out);
     }
@@ -93,6 +101,10 @@ IPV2::showpos()
 {
   cerr << "error occurred at line number "
        << lexer->lineno() << " (roughly)" << endl;
+  if (filename_) {
+      cerr << "in file \"" << filename_ << "\"";
+    }
+  cerr << endl;
 }
 
 int

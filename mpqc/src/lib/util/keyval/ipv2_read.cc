@@ -218,16 +218,14 @@ IPV2::ip_push_keyclass(char*keyword,char*classname,ip_string_list_t*parentlist)
       if (!strcmp(I->keyword,keyword)) {
 	  /* We found it. */
 	  sub_tree = I;
-	  if ((classname && (!I->classname))||((!classname) && I->classname)) {
-	      error("A class specification was given for only one keyword: %k\n");
-	    }
-	  else if (classname) {
+	  if (classname && I->classname) {
 	      if (strcmp(classname,I->classname)) {
 		  error("Class specifications differ for keyword %k\n");
 		}
+              free(classname);
 	    }
+          else if (classname) I->classname = classname;
 	  free(keyword);
-	  if (classname) free(classname);
 	  return;
 	}
       

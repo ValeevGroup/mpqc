@@ -392,6 +392,16 @@ class PrefixKeyVal : public KeyVal {
     PrefixKeyVal(const PrefixKeyVal&);
     operator=(const PrefixKeyVal&);
   public:
+    PrefixKeyVal(const RefKeyVal&,int);
+    PrefixKeyVal(const RefKeyVal&,int,int);
+    PrefixKeyVal(const RefKeyVal&,int,int,int);
+    PrefixKeyVal(const RefKeyVal&,int,int,int,int);
+    PrefixKeyVal(const RefKeyVal&,const char*);
+    PrefixKeyVal(const RefKeyVal&,const char*,int);
+    PrefixKeyVal(const RefKeyVal&,const char*,int,int);
+    PrefixKeyVal(const RefKeyVal&,const char*,int,int,int);
+    PrefixKeyVal(const RefKeyVal&,const char*,int,int,int,int);
+    // old CTOR syntax (use the above instead)
     PrefixKeyVal(const char*,const RefKeyVal&);
     PrefixKeyVal(const char*,const RefKeyVal&,int);
     PrefixKeyVal(const char*,const RefKeyVal&,int,int);

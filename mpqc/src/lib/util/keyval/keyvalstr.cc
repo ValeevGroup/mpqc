@@ -74,7 +74,7 @@ StringKeyVal::key_value(const char* key)
         }
       else {
           // create a new instance of this datum
-          RefKeyVal pkv = new PrefixKeyVal(tkw, this);
+          RefKeyVal pkv = new PrefixKeyVal(this, tkw);
           const ClassDesc* cd = ClassDesc::name_to_class_desc(classn);
           if (!cd) {
               ClassDesc::load_class(classn);

@@ -88,9 +88,9 @@ IntegralV3::new_redundant_cartesian_sub_iter(int l)
 }
 
 SphericalTransformIter *
-IntegralV3::new_spherical_transform_iter(int l, int inv)
+IntegralV3::new_spherical_transform_iter(int l, int inv, int subl)
 {
-  return new SphericalTransformIterV3(l, inv);
+  return new SphericalTransformIterV3(l, inv, subl);
 }
 
 RefOneBodyInt

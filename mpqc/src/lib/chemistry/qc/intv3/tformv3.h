@@ -71,10 +71,7 @@ class SphericalTransformComponentV3 : public SphericalTransformComponent {
 
 class SphericalTransformV3 : public SphericalTransform {
   public:
-    SphericalTransformV3(int l) {
-      n_=0;
-      l_=l;
-      components_=0;
+    SphericalTransformV3(int l, int subl=-1):SphericalTransform(l,subl) {
       init();
     }
 
@@ -99,7 +96,7 @@ class ISphericalTransformV3 : public ISphericalTransform {
 
 class SphericalTransformIterV3 : public SphericalTransformIter {
   public:
-    SphericalTransformIterV3(int l, int inverse=0);
+    SphericalTransformIterV3(int l, int inverse=0, int subl=-1);
 };
 
 #endif

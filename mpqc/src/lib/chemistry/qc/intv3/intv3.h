@@ -52,7 +52,9 @@ class IntegralV3 : public Integral {
     CartesianIter * new_cartesian_iter(int);
     RedundantCartesianIter * new_redundant_cartesian_iter(int);
     RedundantCartesianSubIter * new_redundant_cartesian_sub_iter(int);
-    SphericalTransformIter * new_spherical_transform_iter(int, int=0);
+    SphericalTransformIter * new_spherical_transform_iter(int l,
+                                                          int inv=0,
+                                                          int subl=-1);
     
     RefOneBodyInt overlap();
 

@@ -42,6 +42,7 @@
 
 // initialize the transformations
 static SphericalTransformV3 trans2(2);
+static SphericalTransformV3 trans20(2,0);
 static SphericalTransformV3 trans3(3);
 static SphericalTransformV3 trans4(4);
 
@@ -49,19 +50,25 @@ static ISphericalTransformV3 itrans2(2);
 static ISphericalTransformV3 itrans3(3);
 static ISphericalTransformV3 itrans4(4);
 
-SphericalTransformIterV3::SphericalTransformIterV3(int l, int inverse)
+SphericalTransformIterV3::SphericalTransformIterV3(int l, int inverse,
+                                                   int subl)
 {
-  if (l==2) {
+  if (subl==-1) subl = l;
+  if (l==2 && subl == l) {
     if (inverse) transform_ = &itrans2;
     else transform_ = &trans2;
-  } else if (l==3) {
+  } else if (l==2 && subl == 0 && !inverse) {
+    transform_ = &trans20;
+  } else if (l==3 && subl == l) {
     if (inverse) transform_ = &itrans3;
     else transform_ = &trans3;
-  } else if (l==4) {
+  } else if (l==4 && subl == l) {
     if (inverse) transform_ = &itrans4;
     else transform_ = &trans4;
   } else {
-    cerr << scprintf("SphericalTransformIterV3: cannot handle l = %d\n", l);
+    cerr << "SphericalTransformIterV3: cannot handle l = " << l
+         << " inverse = " << inverse
+         << " subl = " << subl;
     abort();
   }
 }

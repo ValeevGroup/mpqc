@@ -40,12 +40,15 @@ SphericalTransform::SphericalTransform()
 {
   n_ = 0;
   l_ = 0;
+  subl_ = 0;
   components_ = 0;
 }
 
-SphericalTransform::SphericalTransform(int l) : l_(l)
+SphericalTransform::SphericalTransform(int l, int subl) : l_(l)
 {
   n_ = 0;
+  if (subl == -1) subl_ = l;
+  else subl_ = subl;
   components_ = 0;
 }
 
@@ -54,7 +57,7 @@ SphericalTransform::init()
 {
   int i = 0;
 
-  if (l_==2) {
+  if (l_==2 && subl_ == 2) {
     add(0,0,2,  2.0 * sqrt(0.25), i);
     add(2,0,0, -1.0 * sqrt(0.25), i);
     add(0,2,0, -1.0 * sqrt(0.25), i);
@@ -68,7 +71,12 @@ SphericalTransform::init()
     i++;
     add(1,0,1,  1.0 * sqrt(3.0), i);
 
-  } else if (l_==3) {
+  } else if (l_==2 && subl_ == 0) {
+    add(0,0,2,  1.0 * sqrt(1.0/3.0), i);
+    add(2,0,0,  1.0 * sqrt(1.0/3.0), i);
+    add(0,2,0,  1.0 * sqrt(1.0/3.0), i);
+
+  } else if (l_==3 && subl_ == l_) {
     // orthonormal functions
     add(0,0,3,  2.0 * sqrt(0.25), i);
     add(2,0,1, -3.0 * sqrt(0.25), i);
@@ -93,7 +101,7 @@ SphericalTransform::init()
     add(0,3,0,  1.0 * sqrt(0.625), i);
     add(2,1,0, -3.0 * sqrt(0.625), i);
 
-  } else if (l_==4) {
+  } else if (l_==4 && subl_ == l_) {
     // orthonormal functions
     add(0,0,4,  8.0 * sqrt(1.0/64.0), i);
     add(4,0,0,  3.0 * sqrt(1.0/64.0), i);
@@ -134,7 +142,8 @@ SphericalTransform::init()
 
   } else {
     cerr << node0 << indent
-         << "SphericalTransform: cannot handle l = " << l_ << endl;
+         << "SphericalTransform: cannot handle l = " << l_
+         << " and subl_ = " << subl_ << endl;
     abort();
   }
 }

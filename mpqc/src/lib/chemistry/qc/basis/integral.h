@@ -105,7 +105,8 @@ class Integral : public SavableState {
     virtual RedundantCartesianSubIter *
                                  new_redundant_cartesian_sub_iter(int) =0;
     virtual SphericalTransformIter *
-                              new_spherical_transform_iter(int, int=0) =0;
+                  new_spherical_transform_iter(int l,
+                                               int inv=0, int subl=-1) =0;
     
     virtual RefOneBodyInt overlap() =0;
     

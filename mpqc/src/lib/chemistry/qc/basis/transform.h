@@ -56,10 +56,11 @@ class SphericalTransform {
   protected:
     int n_;
     int l_;
+    int subl_;
     SphericalTransformComponent *components_;
 
     SphericalTransform();
-    SphericalTransform(int l);
+    SphericalTransform(int l, int subl = -1);
 
     virtual void init();
     

@@ -324,7 +324,10 @@ MBPT2::compute()
 void
 MBPT2::obsolete()
 {
-  reference_->obsolete();
+  // Solaris 2.7 workshop 5.0 is causing this routine to
+  // be incorrectly called in a base class CTOR.  Thus
+  // reference_ might be null and it must be tested.
+  if (reference_.nonnull()) reference_->obsolete();
   Compute::obsolete();
 }
 

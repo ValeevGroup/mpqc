@@ -497,10 +497,14 @@ int StateIn::get(const ClassDesc**cd)
       ClassDesc* tmp = ClassDesc::name_to_class_desc(name);
       // save the class descriptor and the version
       _cd.add(tmp);
-      _version.add(version);
+      int position = _cd.iseek(tmp);
+      if (_version.length() <= position) {
+          _version.reset_length(position + 10);
+        }
+      _version[position] = version;
       delete[] name;
       get(size);
-    };
+    }
 
   // get the class id for the object
   int classid;

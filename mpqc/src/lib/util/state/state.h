@@ -156,7 +156,7 @@ class StateIn: public DescribedClass {
     StateDataNumSet* ps_;
     int _nextobject;
     ArraysetCClassDescP _cd;
-    Arraysetint _version;
+    Arrayint _version;
     virtual int get_array_void(void*,int);
   public:
     StateIn();

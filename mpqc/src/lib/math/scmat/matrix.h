@@ -189,12 +189,12 @@ class RefSCMatrix: public RefDCSCMatrix {
                          int source_br = 0, int source_bc = 0);
     void accumulate_subblock(const RefSCMatrix&, int, int, int, int,
                              int source_br = 0, int source_bc = 0);
-    RefSCVector get_row(int);
-    RefSCVector get_column(int);
-    void assign_row(const RefSCVector&, int);
-    void assign_column(const RefSCVector&, int);
-    void accumulate_row(const RefSCVector&, int);
-    void accumulate_column(const RefSCVector&, int);
+    RefSCVector get_row(int) const;
+    RefSCVector get_column(int) const;
+    void assign_row(const RefSCVector&, int) const;
+    void assign_column(const RefSCVector&, int) const;
+    void accumulate_row(const RefSCVector&, int) const;
+    void accumulate_column(const RefSCVector&, int) const;
 
     void accumulate_outer_product(const RefSCVector&,const RefSCVector&) const;
     void accumulate_product(const RefSCMatrix&,const RefSCMatrix&) const;
@@ -272,6 +272,7 @@ class RefSymmSCMatrix: public RefDCSymmSCMatrix {
     RefSymmSCMatrix(const RefSCDimension& d,const RefSCMatrixKit&);
     //. Multiply this by a matrix and return a matrix.
     RefSCMatrix operator*(const RefSCMatrix&) const;
+    RefSCMatrix operator*(const RefSymmSCMatrix&) const;
     //. Multiply this by a vector and return a vector.
     RefSCVector operator*(const RefSCVector&a) const;
     RefSymmSCMatrix operator*(double) const;

@@ -285,6 +285,7 @@ class SCMatrix: public DescribedClass {
     virtual void accumulate_product(SCMatrix*,DiagSCMatrix*);
     virtual void accumulate_product(SymmSCMatrix*,SCMatrix*);
     virtual void accumulate_product(DiagSCMatrix*,SCMatrix*);
+    virtual void accumulate_product(SymmSCMatrix*,SymmSCMatrix*);
     //. Transpose \srccd{this}.
     virtual void transpose_this() = 0;
     //. Return the trace.

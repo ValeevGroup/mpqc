@@ -334,7 +334,7 @@ RefSCMatrix::accumulate_subblock(const RefSCMatrix& sb,
 }
 
 RefSCVector
-RefSCMatrix::get_row(int i)
+RefSCMatrix::get_row(int i) const
 {
   require_nonnull();
   
@@ -343,7 +343,7 @@ RefSCMatrix::get_row(int i)
 }
 
 RefSCVector
-RefSCMatrix::get_column(int i)
+RefSCMatrix::get_column(int i) const
 {
   require_nonnull();
   
@@ -352,7 +352,7 @@ RefSCMatrix::get_column(int i)
 }
 
 void
-RefSCMatrix::assign_row(const RefSCVector& v, int i)
+RefSCMatrix::assign_row(const RefSCVector& v, int i) const
 {
   require_nonnull();
   v.require_nonnull();
@@ -360,7 +360,7 @@ RefSCMatrix::assign_row(const RefSCVector& v, int i)
 }
 
 void
-RefSCMatrix::assign_column(const RefSCVector& v, int i)
+RefSCMatrix::assign_column(const RefSCVector& v, int i) const
 {
   require_nonnull();
   v.require_nonnull();
@@ -368,7 +368,7 @@ RefSCMatrix::assign_column(const RefSCVector& v, int i)
 }
 
 void
-RefSCMatrix::accumulate_row(const RefSCVector& v, int i)
+RefSCMatrix::accumulate_row(const RefSCVector& v, int i) const
 {
   require_nonnull();
   v.require_nonnull();
@@ -376,7 +376,7 @@ RefSCMatrix::accumulate_row(const RefSCVector& v, int i)
 }
 
 void
-RefSCMatrix::accumulate_column(const RefSCVector& v, int i)
+RefSCMatrix::accumulate_column(const RefSCVector& v, int i) const
 {
   require_nonnull();
   v.require_nonnull();
@@ -1023,6 +1023,18 @@ RefSymmSCMatrix::operator*(const RefSCMatrix&a) const
   a.require_nonnull();
 
   RefSCMatrix r = kit()->matrix(dim(),a->coldim());
+  r->assign(0.0);
+  r->accumulate_product(pointer(),a.pointer());
+  return r;
+}
+
+RefSCMatrix
+RefSymmSCMatrix::operator*(const RefSymmSCMatrix&a) const
+{
+  require_nonnull();
+  a.require_nonnull();
+
+  RefSCMatrix r = kit()->matrix(dim(),a->dim());
   r->assign(0.0);
   r->accumulate_product(pointer(),a.pointer());
   return r;

@@ -152,10 +152,11 @@ BlockedSCMatrix::get_element(int i,int j)
   if (d1->blocks()->nblock() == 1 && d2->blocks()->nblock() > 1) {
     return mats_[block_j]->get_element(elem_i,elem_j);
 
-  } else if (d1->blocks()->nblock() > 1 && d2->blocks()->nblock() == 1 ||
-             d1->blocks()->nblock() == d2->blocks()->nblock()) {
+  } else if (d1->blocks()->nblock() > 1 && d2->blocks()->nblock() == 1) {
     return mats_[block_i]->get_element(elem_i,elem_j);
-
+  } else if (d1->blocks()->nblock() == d2->blocks()->nblock()
+             && block_i == block_j) {
+    return mats_[block_i]->get_element(elem_i,elem_j);
   } else {
     return 0;
   }
@@ -173,8 +174,10 @@ BlockedSCMatrix::set_element(int i,int j,double a)
   if (d1->blocks()->nblock() == 1 && d2->blocks()->nblock() > 1) {
     mats_[block_j]->set_element(elem_i,elem_j,a);
 
-  } else if (d1->blocks()->nblock() > 1 && d2->blocks()->nblock() == 1 ||
-             d1->blocks()->nblock() == d2->blocks()->nblock()) {
+  } else if (d1->blocks()->nblock() > 1 && d2->blocks()->nblock()) {
+    mats_[block_i]->set_element(elem_i,elem_j,a);
+  } else if (d1->blocks()->nblock() == d2->blocks()->nblock()
+             && block_i == block_j) {
     mats_[block_i]->set_element(elem_i,elem_j,a);
   }
 }
@@ -500,7 +503,7 @@ BlockedSCMatrix::invert_this()
   // if this matrix is block diagonal, then give a normal inversion a shot
   if (d1->blocks()->nblock() == d2->blocks()->nblock()) {
     for (i=0; i < nblocks_; i++)
-      res *= mats_[i]->invert_this();
+      if (mats_[i].nonnull()) res *= mats_[i]->invert_this();
     return res;
   }
 

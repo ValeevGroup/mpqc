@@ -1,8 +1,11 @@
 %{
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:57  etseidl
- * Initial revision
+ * Revision 1.2  1994/02/23 02:05:49  cljanss
+ * Added a yyerror declaration.
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:58  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.3  1992/04/01  17:28:35  seidl
  * remove token names
@@ -29,6 +32,8 @@ static char *rcsid = "$Id$";
 #include "types.h"
 #include "global.h"
 #include "sgen_read.gbl"
+
+void yyerror(char*);
 %}
 
 %union {

@@ -133,6 +133,8 @@ scf_init_scf_struct(const RefKeyVal& keyval, centers_t& centers,
       } else if (!strcmp(open,"special")) {
         scf_info.special=1;
       }
+    } else if (!strcmp(open,"uhf")) {
+      scf_info.uhf = 1;
     } else if (strcmp(open,"none")) {
       fprintf(stderr,"scf_init_scf_struct:  unrecognized OPENTYPE: %s\n",open);
       return -1;
@@ -398,6 +400,8 @@ scf_print_options(FILE* outfile, scf_struct_t& scf_info)
     fprintf(outfile,"    opentype         = twocon\n");
   } else if (scf_info.special) {
     fprintf(outfile,"    opentype         = special\n");
+  } else if (scf_info.uhf) {
+    fprintf(outfile,"    opentype         = uhf\n");
   }
 
   fprintf(outfile,"    use_symmetry     = %s\n",PBOOL(scf_info.use_symmetry));
@@ -573,6 +577,7 @@ put_scf_struct(StateOut& so, scf_struct_t& scf_info)
   so.put(scf_info.singlet);
   so.put(scf_info.special);
   so.put(scf_info.twocon);
+  so.put(scf_info.uhf);
   so.put(scf_info.use_symmetry);
   so.put(scf_info.restart);
   so.put(scf_info.warmrestart);
@@ -634,6 +639,7 @@ get_scf_struct(StateIn& si, scf_struct_t& scf_info)
   si.get(scf_info.singlet);
   si.get(scf_info.special);
   si.get(scf_info.twocon);
+  si.get(scf_info.uhf);
   si.get(scf_info.use_symmetry);
   si.get(scf_info.restart);
   si.get(scf_info.warmrestart);

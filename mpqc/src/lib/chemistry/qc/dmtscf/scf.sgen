@@ -7,6 +7,7 @@ scf_struct {
   boolean singlet;        // 1 if open-shell singlet
   boolean special;        // 1 if OPENTYPE=special
   boolean twocon;         // 1 if tcscf
+  boolean uhf;            // 1 if UHF wavefunction
   boolean use_symmetry;   // 1 if symmetry is to be used
   boolean restart;        // 1 if old scf vector to be used
   boolean warmrestart;    // 1 if there is a checkpoint vector to

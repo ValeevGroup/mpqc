@@ -80,6 +80,7 @@
 #include <chemistry/qc/wfn/wfn.h>
 
 // Force linkages:
+#include <util/group/linkage.h>
 #include <chemistry/qc/wfn/linkage.h>
 #include <chemistry/qc/scf/linkage.h>
 #include <chemistry/qc/dft/linkage.h>

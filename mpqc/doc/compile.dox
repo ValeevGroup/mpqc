@@ -168,6 +168,14 @@ Useful options to configure include:
   link with them instead of standard ``.a'' libraries.  This works on a
   Linux-ELF system.
 
+<dt><tt>--with-build-id</tt><dd>This is used to generate unique shared
+  library names and a unique default prefix for an MPQC installation.
+  Unique shared library names must be used used by package distributors if
+  a non-official ABI is used.  The official ABI is GCC-3.2.  Earlier
+  versions of GCC are not compatible.  Installations with multiple C++
+  compilers that use shared libraries should use --with-build-id to avoid
+  accidentally dynamically linking with the wrong libraries.
+
 <dt><tt>--with-cc</tt><dd>Gives the name of the C compiler.
 
 <dt><tt>--with-cxx</tt><dd>Gives the name of the C++ compiler.

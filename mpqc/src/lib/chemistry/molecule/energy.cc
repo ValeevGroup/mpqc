@@ -36,6 +36,16 @@ MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
 MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
   Function(keyval)
 {
+  if (!keyval->exists("value_accuracy")) {
+      value_.set_desired_accuracy(1.0e-6);
+    }
+  if (!keyval->exists("gradient_accuracy")) {
+      gradient_.set_desired_accuracy(1.0e-6);
+    }
+  if (!keyval->exists("hessian_accuracy")) {
+      hessian_.set_desired_accuracy(1.0e-4);
+    }
+
   mol_ = keyval->describedclassvalue("molecule");
 
   moldim_ = new SCDimension(3 * mol_->natom(), "3Natom");

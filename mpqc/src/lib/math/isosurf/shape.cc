@@ -675,8 +675,18 @@ Uncapped5SphereExclusionShape::
   _solution_exists = 1;
 
   double h = sqrt(h2);
-  if (h<r()) _reentrant = 1;
-  else _reentrant = 0;
+  if (h<r()) {
+      _reentrant = 1;
+      //printf("WARNING: throwing out reentrant shape\n");
+      //_solution_exists = 0;
+      //return;
+    }
+  else {
+      _reentrant = 0;
+      //printf("WARNING: throwing out nonreentrant shape\n");
+      //_solution_exists = 0;
+      //return;
+    }
 
   // The projection of D into the ABC plane
   SCVector3 MA = (DAdotBA/BA2)*BA + (DAdotCA_perpBA/CA_perpBA2)*CA_perpBA;
@@ -709,13 +719,13 @@ Uncapped5SphereExclusionShape::
     }
   else _folded = 0;
   
-  printf("r = %14.8f, h = %14.8f\n",r(),h);
-  M.print();
-  D[0].print();
-  D[1].print();
-  A().print();
-  B().print();
-  C().print();
+  //printf("r = %14.8f, h = %14.8f\n",r(),h);
+  //M.print();
+  //D[0].print();
+  //D[1].print();
+  //A().print();
+  //B().print();
+  //C().print();
 
   for (int i=0; i<2; i++) {
       SCVector3 AD = A() - D[i];
@@ -729,11 +739,12 @@ Uncapped5SphereExclusionShape::
       ADxBDdotCD[i] = ADxBD[i].dot(CD);
     }
 
+  for (i=0; i<2; i++) MD[i] = M - D[i];
+
   // reentrant surfaces need a whole bunch more to be able to compute
   // the distance to the surface
   if (_reentrant) {
       int i;
-      for (i=0; i<2; i++) MD[i] = M - D[i];
       double rMD = MD[0].norm(); // this is the same as rMD[1]
       theta_intersect = M_PI_2 - asin(rMD/r());
       r_intersect = r() * sin(theta_intersect);
@@ -816,11 +827,13 @@ Uncapped5SphereExclusionShape::
   FILE* testout = fopen("testout.vect", "w");
 
   const double scalefactor_inc = 0.05;
+  const double start = -10.0;
+  const double end = 10.0;
 
   SCVector3 middle = (1.0/3.0)*(A()+B()+C());
 
   int nlines = 1;
-  int nvert = (int) (1.0 / scalefactor_inc);
+  int nvert = (int) ( (end-start) / scalefactor_inc);
   int ncolor = nvert;
 
   fprintf(testout, "VECT\n%d %d %d\n", nlines, nvert, ncolor);
@@ -828,7 +841,7 @@ Uncapped5SphereExclusionShape::
   fprintf(testout, "%d\n", nvert);
   fprintf(testout, "%d\n", ncolor);
 
-  double scalefactor = 0.0;
+  double scalefactor = start;
   for (int ii = 0; ii<nvert; ii++) {
       SCVector3 position = (D[0] - middle) * scalefactor + middle;
       double d = distance_to_surface(position);
@@ -836,7 +849,7 @@ Uncapped5SphereExclusionShape::
               position[0], position[1], position[2], d);
       scalefactor += scalefactor_inc;
     }
-  scalefactor = 0.0;
+  scalefactor = start;
   for (ii = 0; ii<nvert; ii++) {
       SCVector3 position = (D[0] - middle) * scalefactor + middle;
       double d = distance_to_surface(position);
@@ -911,9 +924,14 @@ Uncapped5SphereExclusionShape::
   if (MD[0].dot(XM) > 0.0) side = 1;
   else side = 0;
 
-  if (verbose) printf("distance_to_surface: folded = %d,"
-                      " side = %d\n",
-                      _folded, side);
+  if (verbose) {
+      printf("distance_to_surface: folded = %d,"
+             " side = %d\n",
+             _folded, side);
+      printf("XM = "); XM.print();
+      printf("MD[0] = "); MD[0].print();
+      printf("MD[0].dot(XM) = %f\n",MD[0].dot(XM));
+    }
 
   SCVector3 XD = Xv - D[side];
   double u = BDxCD[side].dot(XD)/BDxCDdotAD[side];

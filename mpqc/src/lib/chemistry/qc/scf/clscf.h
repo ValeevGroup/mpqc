@@ -17,6 +17,13 @@ class CLSCF: public SCF {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
+    // these are temporary data, so they should not be checkpointed
+    RefSymmSCMatrix cl_fock_;
+    RefSymmSCMatrix cl_dens_;
+    RefSymmSCMatrix cl_dens_diff_;
+    RefSymmSCMatrix cl_gmat_;
+    RefSymmSCMatrix cl_hcore_;
+    
     void init();
     
   protected:
@@ -40,16 +47,13 @@ class CLSCF: public SCF {
     void init_gradient();
     void done_gradient();
 
+    RefSymmSCMatrix lagrangian();
+    RefSymmSCMatrix gradient_density();
+    void make_gradient_contribution();
+
     // hessian things
     void init_hessian();
     void done_hessian();
-    
-    // these are temporary data, so they should not be checkpointed
-    RefSymmSCMatrix cl_fock_;
-    RefSymmSCMatrix cl_dens_;
-    RefSymmSCMatrix cl_dens_diff_;
-    RefSymmSCMatrix cl_gmat_;
-    RefSymmSCMatrix cl_hcore_;
     
   public:
     CLSCF(StateIn&);

@@ -45,7 +45,7 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
     ndocc_ = keyval->intvalue("ndocc");
   } else {
     int Z=0;
-    PointBag_double *z = _mol->charges();
+    PointBag_double *z = molecule()->charges();
   
     for (Pix i=z->first(); i; z->next(i)) Z += (int) z->get(i);
 
@@ -89,7 +89,7 @@ CLSCF::value_implemented()
 int
 CLSCF::gradient_implemented()
 {
-  return 0;
+  return 1;
 }
 
 int
@@ -110,12 +110,7 @@ void
 CLSCF::init_vector()
 {
   // calculate the core Hamiltonian
-  RefAccumHCore hc = new AccumHCore();
-  hc->init(basis(), integral());
-
-  cl_hcore_ = matrixkit()->symmmatrix(basis_dimension());
-  hc->accum(cl_hcore_);
-  hc=0;
+  cl_hcore_ = core_hamiltonian();
   
   // allocate storage for other temp matrices
   cl_dens_ = cl_hcore_.clone();
@@ -131,27 +126,20 @@ CLSCF::init_vector()
   cl_fock_.assign(0.0);
   
   // test to see if we need a guess vector
-  if (_eigenvectors.result_noupdate().null()) {
-    RefSCMatrix vec(basis_dimension(), basis_dimension(), matrixkit());
-    RefDiagSCMatrix val(basis_dimension(), matrixkit());
-    cl_hcore_.diagonalize(val,vec);
+  if (eigenvectors_.result_noupdate().null())
+    eigenvectors_ = hcore_guess();
 
-    // transform to S**(-1/2) basis
-    vec = ao_to_orthog_ao() * vec;
-    
-    vec->schmidt_orthog(overlap().pointer(), ndocc_);
-    
-    _eigenvectors = vec;
-  }
-
-  scf_vector_ = _eigenvectors.result_noupdate();
+  scf_vector_ = eigenvectors_.result_noupdate();
 }
 
 void
 CLSCF::done_vector()
 {
+  // save these if we're doing the gradient or hessian
+  if (!gradient_needed() && !hessian_needed())
+    cl_fock_ = 0;
+
   cl_hcore_ = 0;
-  cl_fock_ = 0;
   cl_gmat_ = 0;
   cl_dens_ = 0;
   cl_dens_diff_ = 0;
@@ -313,12 +301,67 @@ CLSCF::effective_fock()
 void
 CLSCF::init_gradient()
 {
+  // presumably the eigenvectors have already been computed by the time
+  // we get here
+  scf_vector_ = eigenvectors_.result_noupdate();
 }
 
 void
 CLSCF::done_gradient()
 {
+  // save these if we're doing the hessian
+  if (!hessian_needed()) {
+    cl_fock_=0;
+  }
+
+  scf_vector_ = 0;
 }
+
+RefSymmSCMatrix
+CLSCF::lagrangian()
+{
+  RefSymmSCMatrix ewdens(basis_dimension(), basis_matrixkit());
+  RefSymmSCMatrix evals = effective_fock();
+  
+  for (int i=0; i < scf_vector_->nrow(); i++) {
+    for (int j=0; j <= i; j++) {
+      double pt=0;
+      for (int k=0; k < ndocc_; k++)
+        pt += scf_vector_->get_element(i,k)*scf_vector_->get_element(j,k)*
+          evals->get_element(k,k);
+      
+      ewdens->set_element(i,j,pt);
+    }
+  }
+  ewdens->scale(-2.0);
+
+  return ewdens;
+}
+
+RefSymmSCMatrix
+CLSCF::gradient_density()
+{
+  cl_dens_ = basis_matrixkit()->symmmatrix(basis_dimension());
+  
+  for (int i=0; i < scf_vector_->nrow(); i++) {
+    for (int j=0; j <= i; j++) {
+      double pt=0;
+      for (int k=0; k < ndocc_; k++)
+        pt += scf_vector_->get_element(i,k)*scf_vector_->get_element(j,k);
+      
+      cl_dens_->set_element(i,j,2.0*pt);
+    }
+  }
+
+  return cl_dens_;
+}
+
+void
+CLSCF::make_gradient_contribution()
+{
+}
+
+/////////////////////////////////////////////////////////////////////////////
 
 void
 CLSCF::init_hessian()

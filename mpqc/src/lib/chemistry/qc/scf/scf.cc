@@ -21,6 +21,7 @@ SCF::_castdown(const ClassDesc*cd)
 
 SCF::SCF(StateIn& s) :
   OneBodyWavefunction(s)
+  maybe_SavableState(s)
 {
   s.get(maxiter_);
 }
@@ -45,7 +46,7 @@ SCF::save_data_state(StateOut& s)
 RefSCMatrix
 SCF::eigenvectors()
 {
-  return _eigenvectors;
+  return eigenvectors_;
 }
 
 void

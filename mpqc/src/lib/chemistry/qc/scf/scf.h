@@ -20,26 +20,20 @@ class SCF: public OneBodyWavefunction {
 #   define CLASSNAME SCF
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
- protected:
+  protected:
+    ////////////////////////////////////////////////////////////////////////
+    // SCF stuff
     int maxiter_;
+
+    // do setup for SCF calculation
+    virtual void init_vector() =0;
+    virtual void done_vector() =0;
 
     // calculate new density matrices, returns the rms density difference
     virtual double new_density() =0;
 
     // reset density diff matrix and zero out delta G matrix
     virtual void reset_density() =0;
-
-    // do setup for SCF calculation
-    virtual void init_vector() =0;
-    virtual void done_vector() =0;
-
-    // do setup for gradient calculation
-    virtual void init_gradient() =0;
-    virtual void done_gradient() =0;
-
-    // do setup for hessian calculation
-    virtual void init_hessian() =0;
-    virtual void done_hessian() =0;
 
     // return the scf electronic energy
     virtual double scf_energy() =0;
@@ -60,13 +54,27 @@ class SCF: public OneBodyWavefunction {
     virtual void ao_gmat();
 
     // calculate the scf vector
-    virtual void do_vector(double&);
+    virtual void compute_vector(double&);
 
+    ////////////////////////////////////////////////////////////////////////
     // calculate the scf gradient
-    virtual void do_gradient(const RefSCVector&);
+    // do setup for gradient calculation
+    virtual void init_gradient() =0;
+    virtual void done_gradient() =0;
+
+    virtual RefSymmSCMatrix lagrangian() =0;
+    virtual RefSymmSCMatrix gradient_density() =0;
+    virtual void make_gradient_contribution() =0;
     
+    virtual void compute_gradient(const RefSCVector&);
+    
+    ////////////////////////////////////////////////////////////////////////
     // calculate the scf hessian
-    virtual void do_hessian(const RefSymmSCMatrix&);
+    // do setup for hessian calculation
+    virtual void init_hessian() =0;
+    virtual void done_hessian() =0;
+
+    virtual void compute_hessian(const RefSymmSCMatrix&);
     
     virtual void compute();
 

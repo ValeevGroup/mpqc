@@ -7,6 +7,9 @@
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
 
+#include <chemistry/qc/basis/obint.h>
+#include <chemistry/qc/basis/tbint.h>
+
 #include <chemistry/qc/scf/scf.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -15,55 +18,57 @@
 void
 SCF::compute()
 {
-  if (_hessian.needed())
+  if (hessian_needed())
     set_desired_gradient_accuracy(desired_hessian_accuracy()/100.0);
 
-  if (_gradient.needed())
+  if (gradient_needed())
     set_desired_value_accuracy(desired_gradient_accuracy()/100.0);
 
-  if (_energy.needed()) {
+  if (value_needed()) {
     printf("\n  SCF::compute: energy accuracy = %g\n\n",
-           _energy.desired_accuracy());
+           desired_value_accuracy());
 
     double eelec;
-    do_vector(eelec);
+    compute_vector(eelec);
       
     // this will be done elsewhere eventually
     double nucrep = molecule()->nuclear_repulsion_energy();
     printf("  total scf energy = %20.15f\n",eelec+nucrep);
 
     set_energy(eelec+nucrep);
-    _energy.set_actual_accuracy(_energy.desired_accuracy());
+    set_actual_value_accuracy(desired_value_accuracy());
   }
 
-  if (_gradient.needed()) {
-    RefSCVector gradient = matrixkit()->vector(_moldim);
+  if (gradient_needed()) {
+    RefSCVector gradient = matrixkit()->vector(moldim());
 
     printf("\n  SCF::compute: gradient accuracy = %g\n\n",
-           _gradient.desired_accuracy());
+           desired_gradient_accuracy());
 
-    do_gradient(gradient);
+    compute_gradient(gradient);
     gradient.print("cartesian gradient");
     set_gradient(gradient);
 
-    _gradient.set_actual_accuracy(_gradient.desired_accuracy());
+    set_actual_gradient_accuracy(desired_gradient_accuracy());
   }
   
-  if (_hessian.needed()) {
-    RefSymmSCMatrix hessian = matrixkit()->symmmatrix(_moldim);
+  if (hessian_needed()) {
+    RefSymmSCMatrix hessian = matrixkit()->symmmatrix(moldim());
     
     printf("\n  SCF::compute: hessian accuracy = %g\n\n",
-           _hessian.desired_accuracy());
+           desired_hessian_accuracy());
 
-    do_hessian(hessian);
+    compute_hessian(hessian);
     set_hessian(hessian);
 
-    _hessian.set_actual_accuracy(_hessian.desired_accuracy());
+    set_actual_hessian_accuracy(desired_hessian_accuracy());
   }
 }
 
+///////////////////////////////////////////////////////////////////////////
+
 void
-SCF::do_vector(double& eelec)
+SCF::compute_vector(double& eelec)
 {
   int i;
 
@@ -81,7 +86,7 @@ SCF::do_vector(double& eelec)
     double delta = new_density();
     
     // check convergence
-    if (delta < _energy.desired_accuracy())
+    if (delta < desired_value_accuracy())
       break;
 
     // reset the density from time to time
@@ -105,7 +110,7 @@ SCF::do_vector(double& eelec)
 
     // diagonalize effective MO fock to get MO vector
     RefSCMatrix nvector = scf_vector_.clone();
-    RefDiagSCMatrix evals = matrixkit()->diagmatrix(nvector.rowdim());
+    RefDiagSCMatrix evals(basis_dimension(), basis_matrixkit());
   
     RefSymmSCMatrix eff = effective_fock();
     eff.diagonalize(evals,nvector);
@@ -120,8 +125,8 @@ SCF::do_vector(double& eelec)
     scf_vector_->schmidt_orthog(overlap().pointer(),basis()->nbasis());
   }
       
-  _eigenvectors = scf_vector_;
-  _eigenvectors.computed() = 1;
+  eigenvectors_ = scf_vector_;
+  eigenvectors_.computed() = 1;
   
   // now clean up
   done_vector();
@@ -362,16 +367,135 @@ SCF::ao_gmat()
   printf("%20.0f integrals\n",tnint);
 }
 
-void
-SCF::do_gradient(const RefSCVector& gradient)
+//////////////////////////////////////////////////////////////////////////////
+
+static void
+set_scale(double& coulombscale, double& exchangescale,
+          int i, int j, int k, int l)
 {
-  fprintf(stderr,"SCF::do_gradient: not finished yet\n");
-  abort();
+  double scale = 1.0;
+
+  if ((i!=k)||(j!=l))
+    scale *= 2.0;
+
+  if (i!=j)
+    scale *= 2.0;
+
+  coulombscale = 0.5*scale;
+  exchangescale = -0.25*scale;
+
+  if (k!=l)
+    coulombscale *= 2.0;
+
+  if ((k!=l)&&(i==j))
+    exchangescale *= 2.0;
 }
 
 void
-SCF::do_hessian(const RefSymmSCMatrix& hessian)
+SCF::compute_gradient(const RefSCVector& gradient)
 {
-  fprintf(stderr,"SCF::do_hessian: not finished yet\n");
-  abort();
+  init_gradient();
+  gradient.assign(0.0);
+
+  // handy things
+  GaussianBasisSet& gbs = *basis().pointer();
+
+  // form one electron contribution
+  RefSymmSCMatrix lag = lagrangian();
+  RefSymmSCMatrix dens = gradient_density();
+
+  RefOneBodyDerivInt obints = integral()->deriv_int(basis());
+  for (int x=0; x < molecule()->natom(); x++) {
+    for (int ish=0; ish < gbs.nshell(); ish++) {
+      GaussianShell& gsi = gbs(ish);
+      
+      int istart = gbs.shell_to_function(ish);
+      int iend = istart + gsi.nfunction();
+
+      for (int jsh=0; jsh <= ish; jsh++) {
+        GaussianShell& gsj = gbs(jsh);
+
+        int jstart = gbs.shell_to_function(jsh);
+        int jend = jstart + gsj.nfunction();
+
+        obints->compute_overlap_shell(x,ish,jsh);
+
+        const double *buf = obints->buffer();
+        
+        int index=0;
+        double dx=0, dy=0, dz=0;
+        for (int i=istart; i < iend; i++) {
+          for (int j=jstart; j < jend; j++) {
+            double ewij = lag.get_element(i,j);
+            
+            dx += buf[index++] * ewij;
+            dy += buf[index++] * ewij;
+            dz += buf[index++] * ewij;
+          }
+        }
+
+        obints->compute_hcore_shell(x,ish,jsh);
+        buf = obints->buffer();
+        
+        index=0;
+        for (int i=istart; i < iend; i++) {
+          for (int j=jstart; j < jend; j++) {
+            double dij = dens.get_element(i,j);
+            
+            dx += buf[index++] * dij;
+            dy += buf[index++] * dij;
+            dz += buf[index++] * dij;
+          }
+        }
+
+        if (ish != jsh) {
+          dx *= 2.0;
+          dy *= 2.0;
+          dz *= 2.0;
+        }
+
+        gradient.accumulate_element(x*3+0, dx);
+        gradient.accumulate_element(x*3+1, dy);
+        gradient.accumulate_element(x*3+2, dz);
+      }
+    }
+  }
+
+  lag=0;
+  dens=0;
+  obints=0;
+  
+  gradient.print("one electron contribution");
+
+  RefTwoBodyDerivInt tbints = integral()->two_body_deriv_int(basis());
+  
+  // now the two electron part
+  for (int i=0; i < gbs.nshell(); i++) {
+    for (int j=0; j <= i; j++) {
+      for (int k=0; k <= i; k++) {
+        for (int l=0; l <= ((i==k)?j:k); l++) {
+          tbints->compute_shell(i,j,k,l);
+          const double * buf = tbints->buffer();
+          
+          double coulombscale, exchangescale;
+
+          set_scale(coulombscale, exchangescale, i, j, k, l);
+          make_gradient_contribution();
+        }
+      }
+    }
+  }
+  
+  // clean up
+  tbints=0;
+  
+  done_gradient();
+}
+
+void
+SCF::compute_hessian(const RefSymmSCMatrix& hessian)
+{
+  init_hessian();
+
+  done_hessian();
 }

@@ -104,7 +104,7 @@ vec2 operator * (const mat3& a, const vec2& v) {
     return av;
 }
 
-vec2 operator * (const vec2& v, mat3& a)
+vec2 operator * (const vec2& v, const mat3& a)
 { return a.transpose() * v; }
 
 double operator * (const vec2& a, const vec2& b)
@@ -265,7 +265,7 @@ vec3 operator * (const double d, const vec3& a)
 vec3 operator * (const mat4& a, const vec3& v)
 { return a * vec4(v); }
 
-vec3 operator * (const vec3& v, mat4& a)
+vec3 operator * (const vec3& v, const mat4& a)
 { return a.transpose() * v; }
 
 double operator * (const vec3& a, const vec3& b)
@@ -381,6 +381,12 @@ double& vec4::operator [] ( int i) {
     return n[i];
 }
 
+const double& vec4::operator [] ( int i) const {
+    if (i < VX || i > VW)
+	V_ERROR("vec4 [] operator: illegal access; index = " << i << '\n')
+    return n[i];
+}
+
 
 // SPECIAL FUNCTIONS
 
@@ -424,7 +430,7 @@ vec4 operator * (const mat4& a, const vec4& v) {
     #undef ROWCOL
 }
 
-vec4 operator * (const vec4& v, mat4& a)
+vec4 operator * (const vec4& v, const mat4& a)
 { return a.transpose() * v; }
 
 double operator * (const vec4& a, const vec4& b)
@@ -527,10 +533,16 @@ vec3& mat3::operator [] ( int i) {
     return v[i];
 }
 
+const vec3& mat3::operator [] ( int i) const {
+    if (i < VX || i > VZ)
+	V_ERROR("mat3 [] operator: illegal access; index = " << i << '\n')
+    return v[i];
+}
+
 
 // SPECIAL FUNCTIONS
 
-mat3 mat3::transpose() {
+mat3 mat3::transpose() const {
     return mat3(vec3(v[0][0], v[1][0], v[2][0]),
 		vec3(v[0][1], v[1][1], v[2][1]),
 		vec3(v[0][2], v[1][2], v[2][2]));
@@ -588,7 +600,7 @@ mat3 operator + (const mat3& a, const mat3& b)
 mat3 operator - (const mat3& a, const mat3& b)
 { return mat3(a.v[0] - b.v[0], a.v[1] - b.v[1], a.v[2] - b.v[2]); }
 
-mat3 operator * (mat3& a, mat3& b) {
+mat3 operator * (const mat3& a, const mat3& b) {
     #define ROWCOL(i, j) \
     a.v[i].n[0]*b.v[0][j] + a.v[i].n[1]*b.v[1][j] + a.v[i].n[2]*b.v[2][j]
     return mat3(vec3(ROWCOL(0,0), ROWCOL(0,1), ROWCOL(0,2)),
@@ -674,9 +686,15 @@ vec4& mat4::operator [] ( int i) {
     return v[i];
 }
 
+const vec4& mat4::operator [] ( int i) const {
+    if (i < VX || i > VW)
+	V_ERROR("mat4 [] operator: illegal access; index = " << i << '\n')
+    return v[i];
+}
+
 // SPECIAL FUNCTIONS;
 
-mat4 mat4::transpose() {
+mat4 mat4::transpose() const {
     return mat4(vec4(v[0][0], v[1][0], v[2][0], v[3][0]),
 		vec4(v[0][1], v[1][1], v[2][1], v[3][1]),
 		vec4(v[0][2], v[1][2], v[2][2], v[3][2]),
@@ -734,7 +752,7 @@ mat4 operator + (const mat4& a, const mat4& b)
 mat4 operator - (const mat4& a, const mat4& b)
 { return mat4(a.v[0] - b.v[0], a.v[1] - b.v[1], a.v[2] - b.v[2], a.v[3] - b.v[3]); }
 
-mat4 operator * (mat4& a, mat4& b) {
+mat4 operator * (const mat4& a, const mat4& b) {
     #define ROWCOL(i, j) a.v[i].n[0]*b.v[0][j] + a.v[i].n[1]*b.v[1][j] + \
     a.v[i].n[2]*b.v[2][j] + a.v[i].n[3]*b.v[3][j]
     return mat4(

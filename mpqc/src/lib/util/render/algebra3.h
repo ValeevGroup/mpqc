@@ -150,7 +150,7 @@ friend vec3 operator - (const vec3& a, const vec3& b);	    // v1 - v2
 friend vec3 operator * (const vec3& a, const double d);	    // v1 * 3.0
 friend vec3 operator * (const double d, const vec3& a);	    // 3.0 * v1
 friend vec3 operator * (const mat4& a, const vec3& v);	    // M . v
-friend vec3 operator * (const vec3& v, mat4& a);	    // v . M
+friend vec3 operator * (const vec3& v, const mat4& a);	    // v . M
 friend double operator * (const vec3& a, const vec3& b);    // dot product
 friend vec3 operator / (const vec3& a, const double d);	    // v1 / 3.0
 friend vec3 operator ^ (const vec3& a, const vec3& b);	    // cross product
@@ -169,7 +169,7 @@ friend class vec2;
 friend class vec4;
 friend class mat3;
 friend vec2 operator * (const mat3& a, const vec2& v);	    // linear transform
-friend mat3 operator * (mat3& a, mat3& b);		    // matrix 3 product
+friend mat3 operator * (const mat3& a, const mat3& b);		    // matrix 3 product
 };
 
 /****************************************************************
@@ -203,6 +203,7 @@ vec4& operator -= ( const vec4& v );	    // decrementation by a vec4
 vec4& operator *= ( const double d );	    // multiplication by a constant
 vec4& operator /= ( const double d );	    // division by a constant
 double& operator [] ( int i);		    // indexing
+const double& operator [] ( int i) const;		    // indexing
 
 // special functions
 
@@ -219,7 +220,7 @@ friend vec4 operator - (const vec4& a, const vec4& b);	    // v1 - v2
 friend vec4 operator * (const vec4& a, const double d);	    // v1 * 3.0
 friend vec4 operator * (const double d, const vec4& a);	    // 3.0 * v1
 friend vec4 operator * (const mat4& a, const vec4& v);	    // M . v
-friend vec4 operator * (const vec4& v, mat4& a);	    // v . M
+friend vec4 operator * (const vec4& v, const mat4& a);	    // v . M
 friend double operator * (const vec4& a, const vec4& b);    // dot product
 friend vec4 operator / (const vec4& a, const double d);	    // v1 / 3.0
 friend int operator == (const vec4& a, const vec4& b);	    // v1 == v2 ?
@@ -236,7 +237,7 @@ friend vec4 prod(const vec4& a, const vec4& b);		    // term by term *
 friend class vec3;
 friend class mat4;
 friend vec3 operator * (const mat4& a, const vec3& v);	    // linear transform
-friend mat4 operator * (mat4& a, mat4& b);		    // matrix 4 product
+friend mat4 operator * (const mat4& a, const mat4& b);		    // matrix 4 product
 };
 
 /****************************************************************
@@ -268,10 +269,11 @@ mat3& operator -= ( const mat3& m );	    // decrementation by a mat3
 mat3& operator *= ( const double d );	    // multiplication by a constant
 mat3& operator /= ( const double d );	    // division by a constant
 vec3& operator [] ( int i);		    // indexing
+const vec3& operator [] ( int i) const;		    // indexing
 
 // special functions
 
-mat3 transpose();			    // transpose
+mat3 transpose() const;			    // transpose
 mat3 inverse();				    // inverse
 mat3& apply(V_FCT_PTR fct);		    // apply a func. to each element
 
@@ -280,7 +282,7 @@ mat3& apply(V_FCT_PTR fct);		    // apply a func. to each element
 friend mat3 operator - (const mat3& a);			    // -m1
 friend mat3 operator + (const mat3& a, const mat3& b);	    // m1 + m2
 friend mat3 operator - (const mat3& a, const mat3& b);	    // m1 - m2
-friend mat3 operator * (mat3& a, mat3& b);		    // m1 * m2
+friend mat3 operator * (const mat3& a, const mat3& b);		    // m1 * m2
 friend mat3 operator * (const mat3& a, const double d);	    // m1 * 3.0
 friend mat3 operator * (const double d, const mat3& a);	    // 3.0 * m1
 friend mat3 operator / (const mat3& a, const double d);	    // m1 / 3.0
@@ -325,10 +327,11 @@ mat4& operator -= ( const mat4& m );	    // decrementation by a mat4
 mat4& operator *= ( const double d );	    // multiplication by a constant
 mat4& operator /= ( const double d );	    // division by a constant
 vec4& operator [] ( int i);		    // indexing
+const vec4& operator [] ( int i) const;		    // indexing
 
 // special functions
 
-mat4 transpose();			    // transpose
+mat4 transpose() const;			    // transpose
 mat4 inverse();				    // inverse
 mat4& apply(V_FCT_PTR fct);		    // apply a func. to each element
 
@@ -337,7 +340,7 @@ mat4& apply(V_FCT_PTR fct);		    // apply a func. to each element
 friend mat4 operator - (const mat4& a);			    // -m1
 friend mat4 operator + (const mat4& a, const mat4& b);	    // m1 + m2
 friend mat4 operator - (const mat4& a, const mat4& b);	    // m1 - m2
-friend mat4 operator * (mat4& a, mat4& b);		    // m1 * m2
+friend mat4 operator * (const mat4& a, const mat4& b);		    // m1 * m2
 friend mat4 operator * (const mat4& a, const double d);	    // m1 * 4.0
 friend mat4 operator * (const double d, const mat4& a);	    // 4.0 * m1
 friend mat4 operator / (const mat4& a, const double d);	    // m1 / 3.0

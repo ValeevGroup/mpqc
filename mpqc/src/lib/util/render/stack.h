@@ -4,16 +4,16 @@
 
 #include <stdio.h>
 
+#define STACK_MAX_STACK_SIZE 20
 template <class T>
 class Stack {
   private:
-    const int max_stack_size = 20;
-    T objects[max_stack_size];
+    T objects[STACK_MAX_STACK_SIZE];
     int nobjects;
   public:
     Stack(): nobjects(0) {}
     void push(const T&a) {
-        if (nobjects >= max_stack_size) {
+        if (nobjects >= STACK_MAX_STACK_SIZE) {
             fprintf(stderr,"Stack: overflow\n");
             abort();
           }

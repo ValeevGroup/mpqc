@@ -121,7 +121,6 @@ debugger at this point.
 public void debug_init(nm)
 char *nm; 
 {
-    char *strcpy();
     (void) strcpy (name, nm);@/
 #ifdef SIGBUS
     (void) signal (SIGBUS, handler);
@@ -248,7 +247,6 @@ this way we avoid recursive debuggers.
 @<Create init file, leave file name in |initfile|.@>=
 {
   FILE *ifile;
-  char *strcpy(), *mktemp();
 
   (void) strcpy(initfile, "dbginit.XXXXXX");
   (void) mktemp(initfile);

@@ -175,8 +175,8 @@ class PREFIX ## T: public BASE {					      \
     PUBLIC								      \
 }
 
-#define Result_dec_nc(T) _Result_dec_nc(Result,Result,T,)
-#define AccResult_dec_nc(T) _Result_dec_nc(AccResult,AccResult,T,)
+#define Result_dec_nc(T) _Result_dec_nc(Result,Result,T,public:)
+#define AccResult_dec_nc(T) _Result_dec_nc(AccResult,AccResult,T,public:)
 #define SSAccResult_dec_nc(T) _Result_dec_nc(AccResult,AccResult,T,\
                                        void save_data_state(StateOut&);\
                                        AccResult ## T (StateIn&,Compute*);)

@@ -177,7 +177,7 @@ void PthreadThreadGrp::init_priority(int ithread, int priority)
     low_param.sched_priority = sched_get_priority_min(SCHED_FIFO);
     high_param.sched_priority = sched_get_priority_max(SCHED_FIFO);
     if (high_param.sched_priority > low_param.sched_priority) {
-      selected_sched=SCHED_RR; set_params=1;
+      selected_sched=SCHED_FIFO; set_params=1;
     }
   }
 

@@ -345,11 +345,11 @@ case $target in
   mips4-sgi-irix* | r8000-sgi-irix* | r10000-sgi-irix*)
     if test X$GCC != Xyes; then
       COPTIONS_OPT="-O2 \
-        -OPT:const_copy_limit=20000:fold_arith_limit=20000:global_limit=20000"
+        -OPT:fprop_limit=2000:const_copy_limit=40000:fold_arith_limit=40000:global_limit=40000"
     fi
     if test X$GXX != Xyes; then
       CXXOPTIONS_OPT="-O2 \
-        -OPT:const_copy_limit=20000:fold_arith_limit=20000:global_limit=20000"
+        -OPT:fprop_limit=2000:const_copy_limit=40000:fold_arith_limit=40000:global_limit=40000"
       AC_DEFINE(NO_VIRTUAL_BASES)
     fi
     AC_MSG_RESULT("mips4-sgi-irix r8000-sgi-irix or r10000-sgi-irix")
@@ -408,9 +408,9 @@ changequote([, ])dnl
       COPTIONS_MISC="$COPTIONS_MISC -mips4 -mcpu=r8000"
       CXXOPTIONS_MISC="$CXXOPTIONS_MISC -mips4 -mcpu=r8000"
     else
-      LDFLAGS="$LDFLAGS -64"
-      COPTIONS_MISC="$COPTIONS_MISC -64 -mips4 -TARG:processor=r8000"
-      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -mips4 -TARG:processor=r8000 -ptused"
+      LDFLAGS="$LDFLAGS -64 -G0"
+      COPTIONS_MISC="$COPTIONS_MISC -64 -G0 -mips4 -TARG:processor=r8000"
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -G0 -mips4 -TARG:processor=r8000 -ptused"
     fi
     AC_MSG_RESULT(r8000)
   ;;
@@ -419,9 +419,9 @@ changequote([, ])dnl
       COPTIONS_MISC="$COPTIONS_MISC -mips4 -mcpu=r8000"
       CXXOPTIONS_MISC="$CXXOPTIONS_MISC -mips4 -mcpu=r8000"
     else
-      LDFLAGS="$LDFLAGS -64"
-      COPTIONS_MISC="$COPTIONS_MISC -64 -mips4 -r10000"
-      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -mips4 -r10000 -ptused"
+      LDFLAGS="$LDFLAGS -64 -G0"
+      COPTIONS_MISC="$COPTIONS_MISC -64 -G0 -mips4 -r10000"
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -G0 -mips4 -r10000 -ptused"
     fi
     AC_MSG_RESULT(r10000)
   ;;

@@ -1993,9 +1993,9 @@ void
 RadialAngularIntegrator::init_alpha_coefficients(void)
 {
   Alpha_coeffs_[0][0] = 0.25;   Alpha_coeffs_[0][1] = 0.5;
-  Alpha_coeffs_[0][2] = 1.0;    Alpha_coeffs_[0][3] = 4.5;
+  Alpha_coeffs_[0][2] = 0.9;    Alpha_coeffs_[0][3] = 4.5;
   Alpha_coeffs_[1][0] = 0.1667; Alpha_coeffs_[1][1] = 0.5;
-  Alpha_coeffs_[1][2] = 0.9;    Alpha_coeffs_[1][3] = 3.5;
+  Alpha_coeffs_[1][2] = 0.8;    Alpha_coeffs_[1][3] = 4.5;
   Alpha_coeffs_[2][0] = 0.1;    Alpha_coeffs_[2][1] = 0.4;
   Alpha_coeffs_[2][2] = 0.8;    Alpha_coeffs_[2][3] = 2.5;
 
@@ -2013,12 +2013,12 @@ RadialAngularIntegrator::init_default_grids(void)
   nr_points_ = new_c_array2(natomic_rows_,max_gridtype_,int(0));
 
   // Set angular momentum level of reference xcoarse grids for each atomic row
-  xcoarse_l_[0] = 11; xcoarse_l_[1] = 17; xcoarse_l_[2] = 21;
+  xcoarse_l_[0] = 17; xcoarse_l_[1] = 17; xcoarse_l_[2] = 21;
   xcoarse_l_[3] = 25; xcoarse_l_[4] = 31;
 
   // Set number of radial points for each atomic row and grid type
-  nr_points_[0][0] = 20; nr_points_[0][1] = 30; nr_points_[0][2] = 50;
-  nr_points_[0][3] = 60; nr_points_[0][4] = 70; nr_points_[0][5] = 100;
+  nr_points_[0][0] = 30; nr_points_[0][1] = 50; nr_points_[0][2] = 75;
+  nr_points_[0][3] = 85; nr_points_[0][4] = 100; nr_points_[0][5] = 140;
 
   nr_points_[1][0] = 30; nr_points_[1][1] = 50; nr_points_[1][2] = 75;
   nr_points_[1][3] = 85; nr_points_[1][4] = 100; nr_points_[1][5] = 140;

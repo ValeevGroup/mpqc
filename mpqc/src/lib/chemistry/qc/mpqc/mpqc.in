@@ -30,7 +30,7 @@ sodium<Molecule>: (
     { atoms geometry } = { Na [ 0 0 0 ] }
   )
 
-molecule = $:sodium
+molecule = $:water
 
 solvent<BEMSolvent>: (
     solute = $:molecule
@@ -87,7 +87,7 @@ mole<MPSCF>: (
         molecule = $:molecule
         name = sto3g
       )
-    solvent = $:solvent
+    %solvent = $:solvent
   )
 
 opt<QNewtonOpt>: (

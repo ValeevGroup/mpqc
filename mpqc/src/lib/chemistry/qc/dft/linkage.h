@@ -63,7 +63,7 @@ const ClassDesc &dft_force_link_w_ = PW91CFunctional::class_desc_;
 const ClassDesc &dft_force_link_x_ = HSOSKS::class_desc_;
 const ClassDesc &dft_force_link_y_ = VWNLCFunctional::class_desc_;
 const ClassDesc &dft_force_link_z_ = VWNTestLCFunctional::class_desc_;
-// const ClassDesc &dft_force_link_y_ = EMLIntegrator::class_desc_;
+const ClassDesc &dft_force_link_aa_ = RadialAngularIntegrator::class_desc_;
 
 #endif /* __PIC__ */
 

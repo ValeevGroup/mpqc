@@ -171,25 +171,134 @@ class BeckeIntegrationWeight: public IntegrationWeight {
     double w(int center, SCVector3 &point, double *grad_w = 0);
 };
 
-/* class EMLIntegrator: public DenIntegrator {
-#   define CLASSNAME EMLIntegrator
+class RadialIntegrator: virtual public SavableState{
+#   define CLASSNAME RadialIntegrator
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
+  protected:
+    int nr_;
+  public:
+    RadialIntegrator();
+    RadialIntegrator(const RefKeyVal &);
+    RadialIntegrator(StateIn &);
+    ~RadialIntegrator();
+    void save_data_state(StateOut &);
+
+    void set_nr(int i);
+    int get_nr(void);
+    virtual double radial_value(int ir, int nr, double radii) = 0;
+    virtual double radial_multiplier(double value, int nr) = 0;
+    virtual double get_dr_dq(void) = 0;
+    virtual double get_dr_dqr2(void) = 0;
+    virtual void set_dr_dq(double i) = 0;
+    virtual void set_dr_dqr2(double i) = 0;
+};
+SavableState_REF_dec(RadialIntegrator);
+
+class AngularIntegrator: virtual public SavableState{
+#   define CLASSNAME AngularIntegrator
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+  public:
+    AngularIntegrator();
+    AngularIntegrator(const RefKeyVal &);
+    AngularIntegrator(StateIn &);
+    ~AngularIntegrator();
+    void save_data_state(StateOut &);
+
+    virtual int get_ntheta(void) = 0;
+    virtual int get_nphi(void) = 0;
+    virtual int get_Ktheta(void) = 0;
+    virtual int num_angular_points(double r_value, int ir) = 0;
+    virtual void angular_weights(void) = 0;
+    virtual double angular_point_cartesian(int iangular, SCVector3 &point,
+        SCVector3 &integration_point) = 0;
+    virtual double sin_theta(SCVector3 &point) = 0;
+};
+SavableState_REF_dec(AngularIntegrator);
+
+class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
+#   define CLASSNAME EulerMaclaurinRadialIntegrator
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    int nr_;
+    double dr_dq_;
+    double dr_dqr2_;
+  public:
+    EulerMaclaurinRadialIntegrator();
+    EulerMaclaurinRadialIntegrator(const RefKeyVal &);
+    EulerMaclaurinRadialIntegrator(StateIn &);
+    ~EulerMaclaurinRadialIntegrator();
+    void save_data_state(StateOut &);
+
+    double radial_value(int ir, int nr, double radii);
+    double radial_multiplier(double value, int nr);
+    double get_dr_dq(void);
+    void set_dr_dq(double i);
+    double get_dr_dqr2(void);
+    void set_dr_dqr2(double i);
+};
+
+class GaussLegendreAngularIntegrator: public AngularIntegrator {
+#   define CLASSNAME GaussLegendreAngularIntegrator
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
     int ntheta_;
     int nphi_;
     int Ktheta_;
-
-    RefIntegrationWeight weight_;
-    
+    int ntheta_r_;
+    int nphi_r_;
+    int Ktheta_r_;
+    double *theta_quad_weights_;
+    double *theta_quad_points_;
   public:
-    EMLIntegrator();
-    EMLIntegrator(const RefKeyVal &);
-    EMLIntegrator(StateIn &);
-    ~EMLIntegrator()
+    GaussLegendreAngularIntegrator();
+    GaussLegendreAngularIntegrator(const RefKeyVal &);
+    GaussLegendreAngularIntegrator(StateIn &);
+    ~GaussLegendreAngularIntegrator();
+    void save_data_state(StateOut &);
+
+    int get_ntheta(void);
+    void set_ntheta(int i);
+    int get_nphi(void);
+    void set_nphi(int i);
+    int get_Ktheta(void);
+    void set_Ktheta(int i);
+    int get_ntheta_r(void);
+    void set_ntheta_r(int i);
+    int get_nphi_r(void);
+    void set_nphi_r(int i);
+    int get_Ktheta_r(void);
+    void set_Ktheta_r(int i);
+    int num_angular_points(double r_value, int ir);
+    void angular_weights(void);
+    double angular_point_cartesian(int iangular, SCVector3 &point,
+        SCVector3 &integration_point);
+    double sin_theta(SCVector3 &point);
+    void gauleg(double x1, double x2, int n);    
+};
+
+class RadialAngularIntegrator: public DenIntegrator {
+#   define CLASSNAME RadialAngularIntegrator
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    RefRadialIntegrator RadInt_;
+    RefAngularIntegrator AngInt_;
+    RefIntegrationWeight weight_;
+  public:
+    RadialAngularIntegrator();
+    RadialAngularIntegrator(const RefKeyVal &);
+    RadialAngularIntegrator(StateIn &);
+    ~RadialAngularIntegrator();
     void save_data_state(StateOut &);
 
     void integrate(const RefDenFunctional &,
@@ -199,8 +308,7 @@ class BeckeIntegrationWeight: public IntegrationWeight {
 
     void print(ostream & =cout) const;
 };
-*/
-
+    
 // Based on C.W. Murray, et al. Mol. Phys. 78, No. 4, 997-1014, 1993
 class Murray93Integrator: public DenIntegrator {
 #   define CLASSNAME Murray93Integrator

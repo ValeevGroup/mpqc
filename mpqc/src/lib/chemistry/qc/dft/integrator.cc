@@ -1281,11 +1281,13 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
 
       for (ir=0; ir < nr[icenter]; ir++) {
           // Mike Colvin's interpretation of Murray's radial grid
-          q=(double) ir/nr[icenter];
+          cout << " ir = " << ir << endl;
+          q=(double)ir/(double)nr[icenter];
           double value=q/(1-q);
           double r = bragg_radius[icenter]*value*value;
           double dr_dq = 2.0*bragg_radius[icenter]*q*pow(1.0-q,-3.);
           double drdqr2 = dr_dq*r*r;
+          //       cout << scprintf(" radial_int_volume = %20.14f", drdqr2) << endl;
           point.r() = r;
 
           // Precalcute theta Guass-Legendre abcissas and weights
@@ -1307,13 +1309,18 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
           for (itheta=0; itheta < ntheta; itheta++) {
               point.theta() = theta_quad_points[itheta];
               sin_theta = sin(point.theta());
-
+              //cout << scprintf(" radial_int_volume = %20.14f", drdqr2) << endl;
+              //cout << scprintf(" angular_int_volume = %20.14f", sin_theta) << endl;
               // calculate integration volume 
               int_volume=drdqr2*sin_theta;
-
+              //         cout << scprintf(" int_volume = %20.14f", int_volume) << endl;
               for (iphi=0; iphi < nphi; iphi++) {
                   point.phi() = (double)iphi/(double)nphi * 2.0 * M_PI;
-
+                  cout << " itheta = " << itheta << endl;
+                  cout << " iphi = " << iphi << endl;
+ //   cout << " iangular = " << itheta*nphi+iphi << endl;
+   cout << scprintf(" radial_int_volume = %20.14f", drdqr2) << endl;
+   cout << scprintf(" angular_int_volume = %20.14f", sin_theta) << endl;
                   point.spherical_to_cartesian(integration_point);
                   integration_point += center;
 
@@ -1328,7 +1335,7 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
                   double multiplier = int_volume
                                     * theta_quad_weights[itheta]/nr[icenter]
                                     * 2.0 * M_PI / ((double)nphi);
-
+      //          cout << scprintf(" multiplier = %20.14f", multiplier) << endl;
                   if (do_point(icenter, integration_point, denfunc,
                                w, multiplier,
                                nuclear_gradient, f_gradient, w_gradient)
@@ -1398,9 +1405,622 @@ Murray93Integrator::print(ostream &o) const
   o << decindent;
 }
 
+///////////////////////////////////////////////////
+// Radial Integrator
+
+#define CLASSNAME RadialIntegrator
+#define PARENTS public SavableState
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+RadialIntegrator::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+RadialIntegrator::RadialIntegrator(StateIn& s):
+  SavableState(s)
+{
+}
+
+RadialIntegrator::RadialIntegrator()
+{
+  set_nr(64);
+}
+
+RadialIntegrator::RadialIntegrator(const RefKeyVal& keyval)
+{
+  set_nr( keyval->intvalue("nr") );
+  if (keyval->error() != KeyVal::OK)
+      set_nr(64);
+}
+
+RadialIntegrator::~RadialIntegrator()
+{
+}
+
+void
+RadialIntegrator::save_data_state(StateOut& s)
+{
+  cout << class_name() << ": cannot save state" << endl;
+  abort();
+}
+
+void
+RadialIntegrator::set_nr(int i)
+{
+  nr_ = i;
+}
+
+int
+RadialIntegrator::get_nr(void)
+{
+  return nr_;
+}
+
+
+///////////////////////////////////////
+//  AngularIntegrator
+
+#define CLASSNAME AngularIntegrator
+#define PARENTS public SavableState
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+AngularIntegrator::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+AngularIntegrator::AngularIntegrator(StateIn& s):
+  SavableState(s)
+{
+}
+
+AngularIntegrator::AngularIntegrator()
+{
+}
+
+AngularIntegrator::AngularIntegrator(const RefKeyVal& keyval)
+{
+}
+
+AngularIntegrator::~AngularIntegrator()
+{
+}
+
+void
+AngularIntegrator::save_data_state(StateOut& s)
+{
+  cout << class_name() << ": cannot save state" << endl;
+  abort();
+}
+
+
+///////////////////////////////////////
+//  EulerMaclaurinRadialIntegrator
+
+#define CLASSNAME EulerMaclaurinRadialIntegrator
+#define PARENTS public RadialIntegrator
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+EulerMaclaurinRadialIntegrator::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = RadialIntegrator::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+EulerMaclaurinRadialIntegrator::EulerMaclaurinRadialIntegrator(StateIn& s):
+  SavableState(s),
+  RadialIntegrator(s)
+{
+}
+
+EulerMaclaurinRadialIntegrator::EulerMaclaurinRadialIntegrator()
+{
+}
+
+EulerMaclaurinRadialIntegrator::EulerMaclaurinRadialIntegrator(const RefKeyVal& keyval):
+RadialIntegrator(keyval)
+{
+}
+
+EulerMaclaurinRadialIntegrator::~EulerMaclaurinRadialIntegrator()
+{
+}
+
+void
+EulerMaclaurinRadialIntegrator::save_data_state(StateOut& s)
+{
+  cout << class_name() << ": cannot save state" << endl;
+  abort();
+}
+
+double
+EulerMaclaurinRadialIntegrator::radial_value(int ir, int nr, double radii)
+{
+  double q = (double) (double)ir/(double)nr;
+  double value = q/(1.-q);
+  double r = radii*value*value;
+  set_dr_dq( 2.*radii*q*pow(1.-q,-3.) );
+  set_dr_dqr2( dr_dq_*r*r );
+  return r;
+}
+
+
+double
+EulerMaclaurinRadialIntegrator::radial_multiplier(double value, int nr)
+{
+  return value/((double) nr);
+}
+
+void
+EulerMaclaurinRadialIntegrator::set_dr_dq(double i)
+{
+  dr_dq_ = i;
+}
+
+double
+EulerMaclaurinRadialIntegrator::get_dr_dq(void)
+{
+  return dr_dq_;
+}
+
+void
+EulerMaclaurinRadialIntegrator::set_dr_dqr2(double i)
+{
+  dr_dqr2_ = i;
+}
+
+double
+EulerMaclaurinRadialIntegrator::get_dr_dqr2(void)
+{
+  return dr_dqr2_;
+}
+
+/////////////////////////////////
+//  GaussLegendreAngularIntegrator
+
+#define CLASSNAME GaussLegendreAngularIntegrator
+#define PARENTS public AngularIntegrator
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+GaussLegendreAngularIntegrator::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = AngularIntegrator::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+GaussLegendreAngularIntegrator::GaussLegendreAngularIntegrator(StateIn& s):
+  SavableState(s),
+  AngularIntegrator(s)
+{
+}
+
+GaussLegendreAngularIntegrator::GaussLegendreAngularIntegrator()
+{
+  set_ntheta(16);
+  set_nphi(32);
+  set_Ktheta(5);
+  int ntheta = get_ntheta();
+  theta_quad_weights_ = new double [ntheta];
+  theta_quad_points_ = new double [ntheta];
+}
+
+GaussLegendreAngularIntegrator::GaussLegendreAngularIntegrator(const RefKeyVal& keyval)
+{
+  set_ntheta( keyval->intvalue("ntheta") );
+  if (keyval->error() != KeyVal::OK) set_ntheta(16);
+  set_nphi( keyval->intvalue("nphi") );
+  if (keyval->error() != KeyVal::OK) set_nphi(2*get_ntheta());
+  set_Ktheta( keyval->intvalue("Ktheta") );
+  if (keyval->error() != KeyVal::OK) set_Ktheta(5);
+
+  int ntheta = get_ntheta();
+  theta_quad_weights_ = new double [ntheta];
+  theta_quad_points_ = new double [ntheta];
+}
+
+GaussLegendreAngularIntegrator::~GaussLegendreAngularIntegrator()
+{
+  delete [] theta_quad_points_;
+  delete [] theta_quad_weights_;
+}
+
+void
+GaussLegendreAngularIntegrator::save_data_state(StateOut& s)
+{
+  cout << class_name() << ": cannot save state" << endl;
+  abort();
+}
+
+int
+GaussLegendreAngularIntegrator::get_ntheta(void)
+{
+  return ntheta_;
+}
+
+void
+GaussLegendreAngularIntegrator::set_ntheta(int i)
+{
+  ntheta_ = i;
+}
+
+int
+GaussLegendreAngularIntegrator::get_nphi(void)
+{
+  return nphi_;
+}
+
+void
+GaussLegendreAngularIntegrator::set_nphi(int i)
+{
+  nphi_ = i;
+}
+
+int
+GaussLegendreAngularIntegrator::get_Ktheta(void)
+{
+  return Ktheta_;
+}
+
+void
+GaussLegendreAngularIntegrator::set_Ktheta(int i)
+{
+  Ktheta_ = i;
+}
+
+int
+GaussLegendreAngularIntegrator::get_ntheta_r(void)
+{
+  return ntheta_r_;
+}
+
+void
+GaussLegendreAngularIntegrator::set_ntheta_r(int i)
+{
+  ntheta_r_ = i;
+}
+
+int
+GaussLegendreAngularIntegrator::get_nphi_r(void)
+{
+  return nphi_r_;
+}
+
+void
+GaussLegendreAngularIntegrator::set_nphi_r(int i)
+{
+  nphi_r_ = i;
+}
+
+int
+GaussLegendreAngularIntegrator::get_Ktheta_r(void)
+{
+  return Ktheta_r_;
+}
+
+void
+GaussLegendreAngularIntegrator::set_Ktheta_r(int i)
+{
+  Ktheta_r_ = i;
+}
+
+double
+GaussLegendreAngularIntegrator::sin_theta(SCVector3 &point)
+{
+  return sin(point.theta());
+}
+
+int
+GaussLegendreAngularIntegrator::num_angular_points(double r_value, int ir)
+{
+  int Ktheta, ntheta, ntheta_r;
+  
+  if (ir == 0) {
+      set_ntheta_r(1);
+      set_nphi_r(1);
+    }
+  else {
+      Ktheta = get_Ktheta();
+      ntheta = get_ntheta();
+      ntheta_r= (int) (r_value*Ktheta*ntheta);
+      if (ntheta_r > ntheta) set_ntheta_r(ntheta);
+      if (ntheta_r < 6) set_ntheta_r(6);
+      set_nphi_r(2*get_ntheta_r());
+    }
+
+  return get_ntheta_r()*get_nphi_r();
+}
+
+void
+GaussLegendreAngularIntegrator::angular_weights(void)
+{
+  gauleg(0.0, M_PI, get_ntheta_r());
+}
+
+void
+GaussLegendreAngularIntegrator::gauleg(double x1, double x2, int n)
+{
+  int m,j,i;
+  double z1,z,xm,xl,pp,p3,p2,p1;
+  const double EPS = 10.0 * DBL_EPSILON;
+
+  m=(n+1)/2;
+  xm=0.5*(x2+x1);
+  xl=0.5*(x2-x1);
+  for (i=1;i<=m;i++)  {
+      z=cos(M_PI*(i-0.25)/(n+0.5));
+      do {
+          p1=1.0;
+          p2=0.0;
+          for (j=1;j<=n;j++) {
+              p3=p2;
+              p2=p1;
+              p1=((2.0*j-1.0)*z*p2-(j-1.0)*p3)/j;
+	    }
+          pp=n*(z*p1-p2)/(z*z-1.0);
+          z1=z;
+          z=z1-p1/pp;
+	} while (fabs(z-z1) > EPS);
+      theta_quad_points_[i-1]=xm-xl*z;
+      theta_quad_points_[n-i]=xm+xl*z;
+      theta_quad_weights_[i-1]=2.0*xl/((1.0-z*z)*pp*pp);
+      theta_quad_weights_[n-i]=theta_quad_weights_[i-1];
+    }
+}
+
+double
+GaussLegendreAngularIntegrator::angular_point_cartesian(int iangular, SCVector3 &point,
+                                                        SCVector3 &integration_point)
+{
+  int itheta, iphi, nphi_r;
+
+  nphi_r = get_nphi_r();
+  itheta = iangular/nphi_r;
+  iphi = iangular - itheta*nphi_r;
+  cout << " itheta = " << itheta << endl;
+  cout << " iphi = " << iphi << endl;
+  point.theta() = theta_quad_points_[itheta];
+  point.phi() = (double) iphi/ (double) nphi_r * 2.0 * M_PI;
+  point.spherical_to_cartesian(integration_point);
+  return ( sin_theta(point)*theta_quad_weights_[itheta]*2.0*M_PI/(double)nphi_r );
+}
+
+
+//////////////////////////////////////////////
+//  RadialAngularIntegrator
+
+#define CLASSNAME RadialAngularIntegrator
+#define PARENTS public DenIntegrator
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+RadialAngularIntegrator::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = DenIntegrator::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
+  SavableState(s),
+  DenIntegrator(s)
+{
+  abort();
+}
+
+RadialAngularIntegrator::RadialAngularIntegrator()
+{
+  RadInt_ = new EulerMaclaurinRadialIntegrator;
+  AngInt_ = new GaussLegendreAngularIntegrator;
+  weight_ = new BeckeIntegrationWeight;
+}
+
+RadialAngularIntegrator::RadialAngularIntegrator(const RefKeyVal& keyval):
+  DenIntegrator(keyval)
+{
+  RadInt_ = keyval->describedclassvalue("RadInt");
+  if (RadInt_.null()) RadInt_ = new EulerMaclaurinRadialIntegrator(keyval);
+  AngInt_ = keyval->describedclassvalue("AngInt");
+  if (AngInt_.null()) AngInt_ = new GaussLegendreAngularIntegrator(keyval);
+  weight_ = keyval->describedclassvalue("weight");
+  if (weight_.null()) weight_ = new BeckeIntegrationWeight;
+
+}
+
+RadialAngularIntegrator::~RadialAngularIntegrator()
+{
+}
+
+void
+RadialAngularIntegrator::save_data_state(StateOut& s)
+{
+  cout << ": cannot save state" << endl;
+  abort();
+}
+
+
+// Murray93 Integrator used as template
+void
+RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
+                              const RefSymmSCMatrix& densa,
+                              const RefSymmSCMatrix& densb,
+                              double *nuclear_gradient)
+{
+  tim_enter("integrate");
+
+  init_integration(denfunc, densa, densb, nuclear_gradient);
+
+#if COUNT_CONTRIBUTIONS
+  delete[] contrib_array;
+  contrib_array = new int[nshell_+1];
+  memset(contrib_array, 0, sizeof(int)*(nshell_+1));
+#endif
+
+  RefMolecule mol = wavefunction()->molecule();
+  weight_->init(mol, DBL_EPSILON);
+
+  int ncenters=mol->natom();   // number of centers
+  int icenter;                 // Loop index over centers
+
+  int *nr = new int[ncenters];
+  int nangular;
+  
+  for (icenter=0; icenter<ncenters; icenter++) nr[icenter] = RadInt_->get_nr();
+
+  double *w_gradient = 0;
+  double *f_gradient = 0;
+  if (nuclear_gradient) {
+      w_gradient = new double[ncenters*3];
+      f_gradient = new double[ncenters*3];
+    }
+
+  SCVector3 *centers = new SCVector3[ncenters];
+  for (icenter=0; icenter<ncenters; icenter++) {
+      centers[icenter].x() = mol->r(icenter,0);
+      centers[icenter].y() = mol->r(icenter,1);
+      centers[icenter].z() = mol->r(icenter,2);
+    }
+
+  int ir, iangular;           // Loop indices for diff. integration dim
+  int point_count;            // Counter for # integration points per center
+  int point_count_total=0;    // Counter for # integration points
+
+  SCVector3 point;            // sph coord of current integration point
+  SCVector3 center;           // Cartesian position of center
+  SCVector3 integration_point;
+
+  double w,q,int_volume,radial_multiplier,angular_multiplier,dr_dqr2;
+        
+  // Determine maximium # grid points
+  int nr_max=0;
+  for (icenter=0;icenter<ncenters;icenter++) {
+      if (nr[icenter]>nr_max) nr_max=nr[icenter];
+    }
+
+  RefMessageGrp msg = MessageGrp::get_default_messagegrp();
+  int nproc = msg->n();
+  int me = msg->me();
+  int parallel_counter = 0;
+
+  double *bragg_radius = new double[ncenters];
+  for (icenter=0; icenter<ncenters; icenter++) {
+      bragg_radius[icenter] = mol->atominfo()->bragg_radius(mol->Z(icenter));
+    }
+
+  for (icenter=0; icenter < ncenters; icenter++) {
+      if (! (parallel_counter++%nproc == me)) continue;
+
+      point_count=0;
+      center = centers[icenter];
+      int r_done = 0;
+      if (icenter==0) cout << " ncenters = " << ncenters << endl;
+      cout << " icenter = " << icenter << endl;
+      for (ir=0; ir < nr[icenter]; ir++) {
+  if (ir==0) cout << " nr = " << nr[icenter] << endl;
+  cout << " ir = " << ir << endl;    
+          double r = RadInt_->radial_value(ir, nr[icenter], bragg_radius[icenter]);
+          point.r() = r;
+          dr_dqr2 = RadInt_->get_dr_dqr2();
+          radial_multiplier = RadInt_->radial_multiplier(dr_dqr2, nr[icenter]);
+          nangular = AngInt_->num_angular_points(r/bragg_radius[icenter],ir);
+          AngInt_->angular_weights();
+          double radial_int_volume = RadInt_->get_dr_dqr2();
+          //cout << scprintf(" radial_int_volume = %20.14f", radial_int_volume) << endl;
+ // cout << scprintf(" radial_mulitplier = %20.14f", radial_multiplier) << endl;
+          for (iangular=0; iangular<nangular; iangular++) {
+  if (iangular==0) cout << " nangular = " << nangular << endl;
+ cout << " iangular = " << iangular << endl;
+              angular_multiplier =
+                AngInt_->angular_point_cartesian(iangular, point, integration_point);
+              integration_point += center;
+              w=weight_->w(icenter, integration_point, w_gradient);
+              //if (w_gradient) weight_->test(icenter, integration_point);
+              point_count++;
+//   cout << scprintf(" angular_mulitplier = %20.14f", angular_multiplier) << endl;
+              double multiplier = angular_multiplier * radial_multiplier;
+//   cout << scprintf(" multiplier = %20.14f", multiplier) << endl;
+              double angular_int_volume = AngInt_->sin_theta(point);
+   cout << scprintf(" radial_int_volume = %20.14f", radial_int_volume) << endl;
+   cout << scprintf(" angular_int_volume = %20.14f", angular_int_volume) << endl;
+              double int_volume = radial_int_volume * angular_int_volume;
+//   cout << scprintf(" int_volume = %20.14f", int_volume) << endl;
+              if (do_point(icenter, integration_point, denfunc,
+                           w, multiplier,
+                           nuclear_gradient, f_gradient, w_gradient)
+                  * int_volume < 1e2*DBL_EPSILON
+                  && int_volume > 1e2*DBL_EPSILON) {
+                  r_done=1;
+                  break;
+                }
+            }
+
+          if (r_done)
+              break;
+        }
+      point_count_total+=point_count;
+    }
+
+  msg->sum(point_count_total);
+  done_integration();
+  weight_->done();
+
+     cout << node0 << indent
+          << "Total integration points = " << point_count_total << endl;
+    //cout << scprintf(" Value of integral = %16.14f", value()) << endl;
+
+    delete[] f_gradient;
+    delete[] w_gradient;
+    delete[] bragg_radius;
+    delete[] nr;
+    delete[] centers;
+
+  tim_exit("integrate");
+
+#if COUNT_CONTRIBUTIONS
+  int tot = 0;
+  double sav1 = 0.0;
+  double sav2 = 0.0;
+  for (int i=0; i<nshell_+1; i++) {
+      cout << "contrib_array[" << setw(2) << i << "] = "
+           << contrib_array[i] << endl;
+      tot += contrib_array[i];
+      sav1 += contrib_array[i]*i;
+      sav2 += contrib_array[i]*i*i;
+    }
+  cout << "tot = " << tot << endl;
+  cout << "sav1 = " << sav1/(tot*nshell_) << endl;
+  cout << "sav2 = " << sav2/(tot*nshell_*nshell_) << endl;
+#endif
+}
+
+void
+RadialAngularIntegrator::print(ostream &o) const
+{
+  o << node0 << indent << class_name() << " Parameters:" << endl;
+  o << incindent;
+  o << node0 << indent << scprintf("nr     = %5d", RadInt_->get_nr()) << endl;
+  o << node0 << indent << scprintf("ntheta = %5d", AngInt_->get_ntheta()) << endl;
+  o << node0 << indent << scprintf("nphi   = %5d", AngInt_->get_nphi()) << endl;
+  o << node0 << indent << scprintf("Ktheta = %5d", AngInt_->get_Ktheta()) << endl;
+  o << decindent;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:
 // mode: c++
 // c-file-style: "CLJ"
 // End:
+

@@ -148,6 +148,7 @@ class Molecule: public SavableState
     void move_to_com();
     void transform_to_principal_axes(int trans_frame=1);
     void cleanup_molecule();
+    void print_pdb(ostream& =cout, char *title =0);
 
     //. Compute the principal moments of inertia and, possibly, the
     // principal axes.

@@ -899,6 +899,51 @@ Molecule::principal_moments_of_inertia(double *evals, double **evecs)
     }
 }
 
+void
+Molecule::print_pdb(ostream& os, char *title)
+{
+  double bohr = 0.52917706;
+
+  if (title)
+      os << node0 << scprintf("%-10s%-60s\n","COMPND",title);
+  else
+      os << node0 << scprintf("%-10s%-60s\n","COMPND","Title");
+
+  if (title)
+      os << node0 << scprintf("REMARK   %s\n", title);
+
+  int i;
+  for (i=0; i < natom(); i++) {
+    char symb[4];
+    sprintf(symb,"%s1",atom(i).element().symbol());
+
+    os << node0 << scprintf(
+        "HETATM%5d  %-3s UNK %5d    %8.3f%8.3f%8.3f  0.00  0.00   0\n",
+        i+1, symb, 0, atom(i)[0]*bohr, atom(i)[1]*bohr, atom(i)[2]*bohr);
+  }
+
+  for (i=0; i < natom(); i++) {
+    double at_rad_i = atom(i).element().atomic_radius();
+
+    os << node0 << scprintf("CONECT%5d",i+1);
+
+    for (int j=0; j < natom(); j++) {
+
+      if (j==i) continue;
+
+      double at_rad_j = atom(j).element().atomic_radius();
+
+      if (dist(atom(i).point(),atom(j).point()) < 1.1*(at_rad_i+at_rad_j))
+          os << node0 << scprintf("%5d",j+1);
+    }
+
+    os << node0 << endl;
+  }
+
+  os << node0 << "END" << endl;
+  os.flush();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

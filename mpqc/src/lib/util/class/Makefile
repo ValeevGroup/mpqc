@@ -38,7 +38,7 @@ default:: libclass.a
 
 # a test program
 classtest: classtest.cc libclass.a ../container/libcontainer.a
-	$(CXX) $(CXXFLAGS) -o classtest $^
+	$(CXX) $(CXXFLAGS) -o classtest $^ $(SYSLIBS)
 bug: bug.cc
 	$(CXX) $(CXXFLAGS) -o bug $^
 

@@ -66,7 +66,7 @@ Shape::~Shape()
 void
 Shape::compute()
 {
-  RefSCVector cv = get_x();
+  const RefSCVector& cv = get_x_no_copy();
   SCVector3 r;
   r[0] = cv.get_element(0);
   r[1] = cv.get_element(1);
@@ -289,8 +289,10 @@ UncappedTorusHoleShape::newUncappedTorusHoleShape(double r,
 // Given a node, finds a sphere in the plane of n and the centers
 // of _s1 and _s2 that touches the UncappedTorusHole.  There are two
 // candidates, the one closest to n is chosen.
-SphereShape
-UncappedTorusHoleShape::in_plane_sphere(const SCVector3& n) const
+void
+UncappedTorusHoleShape::in_plane_sphere(
+    const SCVector3& n,
+    SCVector3& P) const
 {
   // the center of the sphere is given by the vector equation
   // P = A + a R(AB) + b U(perp),
@@ -357,13 +359,9 @@ UncappedTorusHoleShape::in_plane_sphere(const SCVector3& n) const
   //printf("r_Ar = %f, r_AB = %f\n",r_Ar,r_AB);
   //printf("a = %f, b = %f\n",a,b);
 
-  SCVector3 P = A + a * R_AB + b * U_perp;
+  P = A + a * R_AB + b * U_perp;
   //printf("a*R_AB: "); (a*R_AB).print();
   //printf("b*U_perp: "); (b*U_perp).print();
-
-  SphereShape s(P,_r);
-
-  return s;
 }
 
 void
@@ -451,8 +449,8 @@ ReentrantUncappedTorusHoleShape::ReentrantUncappedTorusHoleShape(double r,
 
   SCVector3 arbitrary; 
   arbitrary[0] = arbitrary[1] = arbitrary[2] = 0.0;
-  SphereShape PS = in_plane_sphere(arbitrary);
-  SCVector3 P(PS.origin());
+  SCVector3 P;
+  in_plane_sphere(arbitrary,P);
   SCVector3 PA = P - A();
 
   double a = BA.dot(BA);
@@ -484,7 +482,8 @@ ReentrantUncappedTorusHoleShape::
 {
   SCVector3 Xv(X);
 
-  SCVector3 P = in_plane_sphere(X).origin();
+  SCVector3 P;
+  in_plane_sphere(X,P);
   SCVector3 XP = Xv - P;
   double rXP = XP.norm();
   if (rXP > rAP || rXP > rBP) return 1;
@@ -506,7 +505,8 @@ ReentrantUncappedTorusHoleShape::
 {
   SCVector3 Xv(X);
 
-  SCVector3 P = in_plane_sphere(X).origin();
+  SCVector3 P;
+  in_plane_sphere(X,P);
   SCVector3 XP = Xv - P;
   double rXP = XP.norm();
   if (rXP > rAP || rXP > rBP) return infinity;
@@ -567,8 +567,8 @@ double NonreentrantUncappedTorusHoleShape::
 {
   SCVector3 Xv(X);
 
-  SphereShape s(in_plane_sphere(X));
-  SCVector3 P = s.origin();
+  SCVector3 P;
+  in_plane_sphere(X,P);
   SCVector3 PX = P - Xv;
   double rPX = PX.norm();
   if (rPX > rAP || rPX > rBP) return infinity;
@@ -631,6 +631,7 @@ Uncapped5SphereExclusionShape::
   delete s;
   return 0;
 }
+static int verbose = 0;
 Uncapped5SphereExclusionShape::
   Uncapped5SphereExclusionShape(double radius,
                                 const SphereShape&s1,
@@ -678,11 +679,38 @@ Uncapped5SphereExclusionShape::
   else _reentrant = 0;
 
   // The projection of D into the ABC plane
-  M = A() + (DAdotBA/BA2)*BA + (DAdotCA_perpBA/CA_perpBA2)*CA_perpBA;
+  SCVector3 MA = (DAdotBA/BA2)*BA + (DAdotCA_perpBA/CA_perpBA2)*CA_perpBA;
+  M = MA + A();
   SCVector3 BAxCA = BA.cross(CA);
   D[0] = M + h * BAxCA * ( 1.0/BAxCA.norm() );
   D[1] = M - h * BAxCA * ( 1.0/BAxCA.norm() );
 
+  // The projection of D into the ABC plane, M, does not lie in the
+  // ABC triangle, then this shape must be treated carefully and it
+  // will be designated as folded.
+  SCVector3 MC = M - C();
+  if (!(is_in_unbounded_triangle(MA, BA, CA)
+        &&is_in_unbounded_triangle(MC, B() - C(), A() - C()))) {
+      _folded = 1;
+      SCVector3 MB = M - B();
+      double MA2 = MA.dot(MA);
+      double MB2 = MB.dot(MB);
+      double MC2 = MC.dot(MC);
+      if (MA2 < MB2) {
+          F1 = A();
+          if (MB2 < MC2) F2 = B();
+          else F2 = C();
+        }
+      else {
+          F1 = B();
+          if (MA2 < MC2) F2 = A();
+          else F2 = C();
+        }
+    }
+  else _folded = 0;
+  
+  printf("r = %14.8f, h = %14.8f\n",r(),h);
+  M.print();
   D[0].print();
   D[1].print();
   A().print();
@@ -780,11 +808,63 @@ Uncapped5SphereExclusionShape::
       }
 
     }
+
+#if 0 // test code
+  printf("Uncapped5SphereExclusionShape: running some tests\n");
+  verbose = 1;
+
+  FILE* testout = fopen("testout.vect", "w");
+
+  const double scalefactor_inc = 0.05;
+
+  SCVector3 middle = (1.0/3.0)*(A()+B()+C());
+
+  int nlines = 1;
+  int nvert = (int) (1.0 / scalefactor_inc);
+  int ncolor = nvert;
+
+  fprintf(testout, "VECT\n%d %d %d\n", nlines, nvert, ncolor);
+
+  fprintf(testout, "%d\n", nvert);
+  fprintf(testout, "%d\n", ncolor);
+
+  double scalefactor = 0.0;
+  for (int ii = 0; ii<nvert; ii++) {
+      SCVector3 position = (D[0] - middle) * scalefactor + middle;
+      double d = distance_to_surface(position);
+      fprintf(testout, "%f %f %f # value = %f\n",
+              position[0], position[1], position[2], d);
+      scalefactor += scalefactor_inc;
+    }
+  scalefactor = 0.0;
+  for (ii = 0; ii<nvert; ii++) {
+      SCVector3 position = (D[0] - middle) * scalefactor + middle;
+      double d = distance_to_surface(position);
+      printf("d = %f\n", d);
+      if (d<0.0) fprintf(testout,"1.0 0.0 0.0 0.5\n");
+      else fprintf(testout,"0.0 0.0 1.0 0.5\n");
+      scalefactor += scalefactor_inc;
+    }
+
+  fclose(testout);
+  printf("testout.vect written\n");
+
+  verbose = 0;
+#endif // test code
+  
 }
 int
 Uncapped5SphereExclusionShape::is_outside(const SCVector3&X) const
 {
   SCVector3 Xv(X);
+
+  if (verbose) printf("point %14.8f %14.8f %14.8f\n",X(0),X(1),X(2));
+
+  // The folded case isn't handled correctly here, so use
+  // the less efficient distance_to_surface routine.
+  if (_folded) {
+      return distance_to_surface(X) >= 0.0;
+    }
 
   for (int i=0; i<2; i++) {
       SCVector3 XD = Xv - D[i];
@@ -797,6 +877,8 @@ Uncapped5SphereExclusionShape::is_outside(const SCVector3&X) const
       double w = ADxBD[i].dot(XD)/ADxBDdotCD[i];
       if (w <= 0.0) return 1;
     }
+
+  if (verbose) printf("is_inside\n");
 
   return 0;
 }
@@ -823,96 +905,109 @@ Uncapped5SphereExclusionShape::
 {
   SCVector3 Xv(X);
 
-  for (int i=0; i<2; i++) {
-      SCVector3 XD = Xv - D[i];
-      double u = BDxCD[i].dot(XD)/BDxCDdotAD[i];
-      if (u <= 0.0) return infinity;
-      double v = CDxAD[i].dot(XD)/CDxADdotBD[i];
-      if (v <= 0.0) return infinity;
-      double w = ADxBD[i].dot(XD)/ADxBDdotCD[i];
-      if (w <= 0.0) return infinity;
-      double rXD = XD.norm();
-      if (rXD <= r()) {
-          if (!_reentrant) return r() - rXD;
-          // this shape is reentrant
-          // make sure that we're on the right side
-          if ((i == 1) || (u + v + w <= 1.0)) {
-              // see if we're outside the cone that intersects
-              // the opposite sphere
-              double angle = acos(fabs(XD.dot(MD[i]))
-                                  /(XD.norm()*MD[i].norm()));
-              if (angle >= theta_intersect) {
-                  if (grad) {
-                      for (int j=0; j<3; j++) grad[j] = -XD[j]/rXD;
-                    }
-                  return r() - rXD;
+  // Find out if I'm on the D[0] side or the D[1] side of the ABC plane.
+  int side;
+  SCVector3 XM = Xv - M;
+  if (MD[0].dot(XM) > 0.0) side = 1;
+  else side = 0;
+
+  if (verbose) printf("distance_to_surface: folded = %d,"
+                      " side = %d\n",
+                      _folded, side);
+
+  SCVector3 XD = Xv - D[side];
+  double u = BDxCD[side].dot(XD)/BDxCDdotAD[side];
+  if (verbose) printf("u = %14.8f\n", u);
+  if (u <= 0.0) return infinity;
+  double v = CDxAD[side].dot(XD)/CDxADdotBD[side];
+  if (verbose) printf("v = %14.8f\n", v);
+  if (v <= 0.0) return infinity;
+  double w = ADxBD[side].dot(XD)/ADxBDdotCD[side];
+  if (verbose) printf("w = %14.8f\n", w);
+  if (w <= 0.0) return infinity;
+  double rXD = XD.norm();
+  if (verbose) printf("r() - rXD = %14.8f\n", r() - rXD);
+  if (rXD <= r()) {
+      if (!_reentrant) return r() - rXD;
+      // this shape is reentrant
+      // make sure that we're on the right side
+      if ((side == 1) || (u + v + w <= 1.0)) {
+          // see if we're outside the cone that intersects
+          // the opposite sphere
+          double angle = acos(fabs(XD.dot(MD[side]))
+                              /(XD.norm()*MD[side].norm()));
+          if (angle >= theta_intersect) {
+              if (grad) {
+                  for (int j=0; j<3; j++) grad[j] = -XD[j]/rXD;
                 }
-              if (_intersects_AB
-                  &&is_contained_in_unbounded_pyramid(XD,
-                                                      MD[i],
-                                                      IABD[i][0],
-                                                      IABD[i][1])) {
-                  //printf("XD: "); XD.print();
-                  //printf("MD[%d]: ",i); MD[i].print();
-                  //printf("IABD[%d][0]: ",i); IABD[i][0].print();
-                  //printf("IABD[%d][1]: ",i); IABD[i][1].print();
-                  return closest_distance(XD,(SCVector3*)IABD[i],2,grad);
-                }
-              if (_intersects_BC
-                  &&is_contained_in_unbounded_pyramid(XD,
-                                                      MD[i],
-                                                      IBCD[i][0],
-                                                      IBCD[i][1])) {
-                  return closest_distance(XD,(SCVector3*)IBCD[i],2,grad);
-                }
-              if (_intersects_CA
-                  &&is_contained_in_unbounded_pyramid(XD,
-                                                      MD[i],
-                                                      ICAD[i][0],
-                                                      ICAD[i][1])) {
-                  return closest_distance(XD,(SCVector3*)ICAD[i],2,grad);
-                }
-              // at this point we are closest to the ring formed
-              // by the intersection of the two probe spheres
-              double distance_to_plane;
-              double distance_to_ring_in_plane;
-              double MDnorm = MD[i].norm();
-              SCVector3 XM = XD - MD[i];
-              SCVector3 XM_in_plane;
-              if (MDnorm<1.0e-16) {
-                  distance_to_plane = 0.0;
-                  XM_in_plane = XD;
+              return r() - rXD;
+            }
+          if (_intersects_AB
+              &&is_contained_in_unbounded_pyramid(XD,
+                                                  MD[side],
+                                                  IABD[side][0],
+                                                  IABD[side][1])) {
+              //printf("XD: "); XD.print();
+              //printf("MD[%d]: ",i); MD[i].print();
+              //printf("IABD[%d][0]: ",i); IABD[i][0].print();
+              //printf("IABD[%d][1]: ",i); IABD[i][1].print();
+              return closest_distance(XD,(SCVector3*)IABD[side],2,grad);
+            }
+          if (_intersects_BC
+              &&is_contained_in_unbounded_pyramid(XD,
+                                                  MD[side],
+                                                  IBCD[side][0],
+                                                  IBCD[side][1])) {
+              return closest_distance(XD,(SCVector3*)IBCD[side],2,grad);
+            }
+          if (_intersects_CA
+              &&is_contained_in_unbounded_pyramid(XD,
+                                                  MD[side],
+                                                  ICAD[side][0],
+                                                  ICAD[side][1])) {
+              return closest_distance(XD,(SCVector3*)ICAD[side],2,grad);
+            }
+          // at this point we are closest to the ring formed
+          // by the intersection of the two probe spheres
+          double distance_to_plane;
+          double distance_to_ring_in_plane;
+          double MDnorm = MD[side].norm();
+          SCVector3 XM = XD - MD[side];
+          SCVector3 XM_in_plane;
+          if (MDnorm<1.0e-16) {
+              distance_to_plane = 0.0;
+              XM_in_plane = XD;
+            }
+          else {
+              distance_to_plane = XM.dot(MD[side])/MDnorm;
+              XM_in_plane = XM - (distance_to_plane/MDnorm)*MD[side];
+            }
+          if (grad) {
+              double XM_in_plane_norm = XM_in_plane.norm();
+              if (XM_in_plane_norm < 1.e-8) {
+                  // the grad points along MD
+                  double scale = - distance_to_plane
+                         /(MDnorm*sqrt(r_intersect*r_intersect
+                                       + distance_to_plane*distance_to_plane));
+                  for (int j=0; j<3; j++) grad[j] = MD[side][j] * scale;
                 }
               else {
-                  distance_to_plane = XM.dot(MD[i])/MDnorm;
-                  XM_in_plane = XM - (distance_to_plane/MDnorm)*MD[i];
+                  SCVector3 point_on_ring;
+                  point_on_ring = XM_in_plane
+                                * (r_intersect/XM_in_plane_norm) + M;
+                  SCVector3 gradv = Xv - point_on_ring;
+                  gradv.normalize();
+                  for (int j=0; j<3; j++) grad[j] = gradv[j];
                 }
-              if (grad) {
-                  double XM_in_plane_norm = XM_in_plane.norm();
-                  if (XM_in_plane_norm < 1.e-8) {
-                      // the grad points along MD
-                      double scale = - distance_to_plane
-                        /(MDnorm*sqrt(r_intersect*r_intersect
-                                      + distance_to_plane*distance_to_plane));
-                      for (int j=0; j<3; j++) grad[j] = MD[i][j] * scale;
-                    }
-                  else {
-                      SCVector3 point_on_ring;
-                      point_on_ring = XM_in_plane
-                        * (r_intersect/XM_in_plane_norm) + M;
-                      SCVector3 gradv = Xv - point_on_ring;
-                      gradv.normalize();
-                      for (int j=0; j<3; j++) grad[j] = gradv[j];
-                    }
-                }
-              distance_to_ring_in_plane =
-                r_intersect - sqrt(XM_in_plane.dot(XM_in_plane));
-              return sqrt(distance_to_ring_in_plane*distance_to_ring_in_plane
-                          +distance_to_plane*distance_to_plane);
             }
+          distance_to_ring_in_plane =
+                         r_intersect - sqrt(XM_in_plane.dot(XM_in_plane));
+          return sqrt(distance_to_ring_in_plane*distance_to_ring_in_plane
+                      +distance_to_plane*distance_to_plane);
         }
     }
 
+  if (verbose) printf("returning -1.0\n");
   return -1.0;
 }
 
@@ -921,12 +1016,12 @@ Uncapped5SphereExclusionShape::boundingbox(double valuemin, double valuemax,
                                            RefSCVector& p1,
                                            RefSCVector& p2)
 {
-  RefSCVector p11;
-  RefSCVector p12;
-  RefSCVector p21;
-  RefSCVector p22;
-  RefSCVector p31;
-  RefSCVector p32;
+  RefSCVector p11(dimension());
+  RefSCVector p12(dimension());
+  RefSCVector p21(dimension());
+  RefSCVector p22(dimension());
+  RefSCVector p31(dimension());
+  RefSCVector p32(dimension());
 
   _s1.boundingbox(valuemin,valuemax,p11,p12);
   _s2.boundingbox(valuemin,valuemax,p21,p22);

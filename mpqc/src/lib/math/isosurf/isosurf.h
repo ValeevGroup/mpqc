@@ -7,6 +7,7 @@
 #endif
 
 #include <math/isosurf/surf.h>
+#include  <math/isosurf/edgeRAVLMap.h>
 
 class IsosurfaceGen {
   protected:
@@ -28,6 +29,9 @@ class ImplicitSurfacePolygonizer: public IsosurfaceGen {
     static double value_of_current(double x, double y, double z);
   protected:
     RefVolume _volume;
+
+    //RAVLMap<RefVertex,AVLSet<RefEdge>> _tmp_edges;
+    RefVertexRefEdgeAVLSetRAVLMap _tmp_edges;
 
     ArraysetRefVertex  _tmp_vertices;
     TriangulatedSurface* _surf;

@@ -43,16 +43,6 @@ main(int argc,char** argv)
       return 0;
     }
 
-#ifdef SGI
-  sigfpe_[_OVERFL].abort=1;  
-  sigfpe_[_DIVZERO].abort=1;  
-  sigfpe_[_INVALID].abort=1;
-  handle_sigfpes(_ON,
-                 _EN_OVERFL | _EN_DIVZERO | _EN_INVALID,
-                 0,
-                 _ABORT_ON_ERROR,
-                 0);
-#endif
   SCVector3 center;
   center[0] = center[1] = center[2] = 0.0;
   double radius = 1.0;
@@ -80,8 +70,8 @@ main(int argc,char** argv)
   isogen.set_resolution(resolution);
 
   double distance_from_surface = 0.5;
-  //TriangulatedSurface10 surf(vol,distance_from_surface);
-  TriangulatedSurface surf;
+  TriangulatedSurface10 surf(vol,distance_from_surface);
+  //TriangulatedSurface surf;
   surf.set_integrator(new GaussTriangleIntegrator(7));
   //surf.set_integrator(new TestTriangleIntegrator());
   isogen.isosurface(distance_from_surface,surf);

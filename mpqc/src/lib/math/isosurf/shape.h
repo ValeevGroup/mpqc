@@ -46,11 +46,29 @@ class SphereShape: public Shape {
     ~SphereShape();
     void boundingbox(double minvalue, double maxvalue,
                      RefSCVector& p1, RefSCVector&p2);
-    inline double radius() const { return _radius; };
-    inline const SCVector3& origin() const { return _origin; };
+    double radius() const { return _radius; }
+    const SCVector3& origin() const { return _origin; }
     double distance_to_surface(const SCVector3&r,double*grad=0) const;
     void print(FILE*fp=stdout) const;
+
+    // these are used to update the parameters describing the sphere
+    double radius(double r);
+    const SCVector3& origin(const SCVector3& o);
 };
+
+inline double
+SphereShape::radius(double r)
+{
+  obsolete();
+  return _radius = r;
+}
+
+inline const SCVector3&
+SphereShape::origin(const SCVector3& o)
+{
+  obsolete();
+  return _origin=o;
+}
 
 REF_dec(SphereShape);
 ARRAY_dec(RefSphereShape);
@@ -67,7 +85,8 @@ class UncappedTorusHoleShape: public Shape
     SphereShape _s2;
     double _r;
   protected:
-    SphereShape in_plane_sphere(const SCVector3&) const;
+    void in_plane_sphere(const SCVector3& point,
+                         SCVector3& origin) const;
     UncappedTorusHoleShape(double r,const SphereShape&,const SphereShape&);
   public:
     static UncappedTorusHoleShape*
@@ -128,6 +147,7 @@ class Uncapped5SphereExclusionShape: public Shape
   private:
     int _solution_exists;
     int _reentrant;
+    int _folded;
     SphereShape _s1;
     SphereShape _s2;
     SphereShape _s3;
@@ -139,6 +159,11 @@ class Uncapped5SphereExclusionShape: public Shape
     double ADxBDdotCD[2];
     SCVector3 ADxBD[2];
     double _r;
+
+    // these are needed for folded shapes
+    // F1 and F2 are the two points of A, B, and C that are closed to M
+    SCVector3 F1;
+    SCVector3 F2;
     
     // these are needed for reentrant surfaces to compute distances
     SCVector3 M;   // projection of D onto ABC plane

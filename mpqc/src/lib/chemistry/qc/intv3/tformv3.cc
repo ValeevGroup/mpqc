@@ -1014,7 +1014,8 @@ Int2eV3::transform_2e(Integral *integ,
     int cartindex1 = ogccart1*ncart234
                    + ogccart2*ncart34 + ogccart3*ncart4 + ogccart4;
     double *tmp_source = source;
-    for (int is=0; is<ncarti; is++) {
+    int is;
+    for (is=0; is<ncarti; is++) {
       int cartindex12 = cartindex1;
       for (int js=0; js<ncartj; js++) {
         int cartindex123 = cartindex12;
@@ -1077,7 +1078,7 @@ Int2eV3::transform_2e(Integral *integ,
     int funcindex1 = ogcfunc1*nfunc234
                    + ogcfunc2*nfunc34 + ogcfunc3*nfunc4 + ogcfunc4;
     tmp_source = sourcebuf;
-    for (int is=0; is<nfunci; is++) {
+    for (is=0; is<nfunci; is++) {
       int funcindex12 = funcindex1;
       for (int js=0; js<nfuncj; js++) {
         int funcindex123 = funcindex12;

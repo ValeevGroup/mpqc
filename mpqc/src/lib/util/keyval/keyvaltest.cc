@@ -44,7 +44,8 @@ A::A(KeyVal&keyval):
 void *
 A::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { DescribedClass::_castdown(cd) };
+  void* casts[1];
+  casts[0] =   DescribedClass::_castdown(cd) ;
   return do_castdowns(casts,cd);
 }
 
@@ -86,7 +87,8 @@ B::B(KeyVal&keyval):
 void *
 B::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { A::_castdown(cd) };
+  void* casts[1];
+  casts[0] =  A::_castdown(cd) ;
   return do_castdowns(casts,cd);
 }
 
@@ -126,7 +128,8 @@ C::C(KeyVal&keyval):
 void *
 C::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { DescribedClass::_castdown(cd) };
+  void* casts[1];
+  casts[0] =   DescribedClass::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -183,7 +186,9 @@ D::D(KeyVal&keyval):
 void *
 D::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { B::_castdown(cd), C::_castdown(cd) };
+  void* casts[2];
+  casts[0] =  B::_castdown(cd);
+  casts[1] =  C::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -205,11 +210,11 @@ main()
   ipv2->value_v(":forref:nest:x",&test,0,0);
   printf("test = \"%s\"\n", test);
   err = ipv2->truekeyword_v(":forref:a",&test,0,0);
-  printf("test = \"%s\" (%s)\n", test, ipv2.error_message(err));
+  printf("test = \"%s\" (%s)\n", test, ipv2->error_message(err));
   err = ipv2->truekeyword_v(":forref:nest:x",&test,0,0);
-  printf("test = \"%s\" (%s)\n", test, ipv2.error_message(err));
+  printf("test = \"%s\" (%s)\n", test, ipv2->error_message(err));
   err = ipv2->truekeyword_v(":forref:x",&test,0,0);
-  printf("test = \"%s\" (%s)\n", test, ipv2.error_message(err));
+  printf("test = \"%s\" (%s)\n", test, ipv2->error_message(err));
   delete ipv2;
   ipv2 = 0;
 

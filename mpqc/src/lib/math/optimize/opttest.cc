@@ -31,6 +31,8 @@
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 #include <math/scmat/matrix.h>
+#include <math/scmat/elemop.h>
+#include <math/optimize/linkage.h>
 
 class Quadratic: public Function
 {
@@ -58,20 +60,23 @@ class Quadratic: public Function
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 Quadratic::Quadratic(StateIn&s):
-  SavableState(s,class_desc_),
   Function(s)
+  maybe_SavableState(s)
 {
-  x0.restore_state(s);
-  g0.restore_state(s);
-  h0.restore_state(s);
+  x0 = matrixkit_->vector(dim_);
+  x0.restore(s);
+  g0 = matrixkit_->vector(dim_);
+  g0.restore(s);
+  h0 = matrixkit_->symmmatrix(dim_);
+  h0.restore(s);
 }
 void
 Quadratic::save_data_state(StateOut&s)
 {
   Function::save_data_state(s);
-  x0.save_state(s);
-  g0.save_state(s);
-  h0.save_state(s);
+  x0.save(s);
+  g0.save(s);
+  h0.save(s);
 }
 void *
 Quadratic::_castdown(const ClassDesc*cd)
@@ -80,12 +85,13 @@ Quadratic::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 Quadratic::Quadratic(const RefKeyVal&keyval):
-  Function(new LocalSCDimension(keyval->count("x0")))
+  Function(keyval)
 {
-  x0 = dimension()->create_vector();
-  g0 = dimension()->create_vector();
-  h0 = dimension()->create_symmmatrix();
-  hguess = dimension()->create_symmmatrix();
+  set_dimension(new SCDimension(keyval->count("x0")));
+  x0 = matrixkit_->vector(dim_);
+  g0 = matrixkit_->vector(dim_);
+  h0 = matrixkit_->symmmatrix(dim_);
+  hguess = matrixkit_->symmmatrix(dim_);
   hguess.assign(0.0);
   RefSCElementOp op(new SCElementShiftDiagonal(1.0));
   hguess.element_op(op);
@@ -107,7 +113,7 @@ Quadratic::compute()
   cout << "Quadratic::compute(): entered\n";
   
   // compute the displacement from x0
-  RefSCVector d = _x - x0;
+  RefSCVector d = x_ - x0;
 
   // compute h * d
   RefSCVector h0d = h0 * d;
@@ -122,17 +128,17 @@ Quadratic::compute()
 //     }
 
   // compute the value
-  _value.result_noupdate() =   d.scalar_product(g0)
+  value_.result_noupdate() =   d.scalar_product(g0)
                              + 0.5 * d.scalar_product(h0d);
-  _value.computed() = 1;
+  value_.computed() = 1;
 
   // compute the gradient
-  _gradient.result_noupdate() = g0 + h0d;
-  _gradient.computed() = 1;
+  gradient_.result_noupdate() = g0 + h0d;
+  gradient_.computed() = 1;
 
   // compute the hessian
-  _hessian.result_noupdate() = h0;
-  _hessian.computed() = 1;
+  hessian_.result_noupdate() = h0;
+  hessian_.computed() = 1;
 }
 void
 Quadratic::guess_hessian(RefSymmSCMatrix&gh)
@@ -143,7 +149,7 @@ Quadratic::guess_hessian(RefSymmSCMatrix&gh)
 main()
 {
   RefKeyVal kv = new ParsedKeyVal( SRCDIR "/opttest.in");
-  RefKeyVal pkv = new PrefixKeyVal("opt",*kv);
+  RefKeyVal pkv = new PrefixKeyVal(kv,"opt");
 
   for (int i=0; i<pkv->count(); i++) {
       RefOptimize opt(pkv->describedclassvalue(i));

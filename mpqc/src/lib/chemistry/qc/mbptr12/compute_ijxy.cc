@@ -159,7 +159,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
   */
   }
   
-  int nijmax = compute_nij(batchsize_,rank3,nproc,me);
+  int nijmax = compute_nij(batchsize_,rank2,nproc,me);
   
   vector<int> mosym1 = space1_->mosym();
   vector<int> mosym2 = space2_->mosym();
@@ -225,7 +225,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
 
     // Compute number of of i,j pairs on each node during current pass for
     // two-el integrals
-    int nij = compute_nij(ni,rank3,nproc,me);
+    int nij = compute_nij(ni,rank2,nproc,me);
 
     // debug print
     if (debug_)

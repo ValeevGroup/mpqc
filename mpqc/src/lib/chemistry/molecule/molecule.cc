@@ -409,13 +409,45 @@ Molecule::nuclear_repulsion_energy()
     
     for (j=0; j < i; j++) {
       AtomicCenter& aj = get_atom(j);
-
-      r = dist(ai.point(), aj.point());
       e += Zi * aj.element().charge() / dist(ai.point(), aj.point());
     }
   }
 
   return e;
+}
+
+void
+Molecule::nuclear_repulsion_1der(int center, double xyz[3])
+{
+  int i,j,k;
+  double r[3],r2;
+  double factor;
+
+  xyz[0] = 0.0;
+  xyz[1] = 0.0;
+  xyz[2] = 0.0;
+  for (i=0; i < natoms; i++) {
+    AtomicCenter& ai = get_atom(i);
+    double Zi = ai.element().charge();
+
+    for (j=0; j < i; j++) {
+      if (center==i || center==j) {
+        AtomicCenter& aj = get_atom(j);
+
+        r2 = 0.0;
+        for (k=0; k < 3; k++) {
+          r[k] = ai[k] - aj[k];
+          r2 += r[k]*r[k];
+        }
+        
+        factor = - Zi * aj.element().charge() * pow(r2,-1.5);
+        if (center==j) factor = -factor;
+        for (k=0; k<3; k++) {
+          xyz[k] += factor * r[k];
+        }
+      }
+    }
+  }
 }
 
 int

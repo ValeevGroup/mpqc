@@ -111,6 +111,10 @@ class Molecule: public SavableState
     //. Returns the nuclear repulsion energy for the molecule
     double nuclear_repulsion_energy();
     
+    //. Compute the nuclear repulsion energy first derivative with respect
+    //  to the given center. */
+    void nuclear_repulsion_1der(int center, double xyz[3]);
+    
     //. If the molecule contains only symmetry unique atoms, this function
     // will generate the other, redundant atoms.
     void symmetrize();

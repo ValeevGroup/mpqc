@@ -17,7 +17,7 @@ extern "C" {
 void
 dmt_force_osscf_keyval_init(KeyVal*keyval,FILE*fp)
 {
-  if (!keyval) {
+  if (!keyval && mynode0() == 0) {
       fprintf(stderr, "dmt_force_osscf_keyval_init got null keyval\n");
       abort();
     }
@@ -27,7 +27,7 @@ dmt_force_osscf_keyval_init(KeyVal*keyval,FILE*fp)
 void
 dmt_force_csscf_keyval_init(KeyVal*keyval,FILE*fp)
 {
-  if (!keyval) {
+  if (!keyval && mynode0() == 0) {
       fprintf(stderr, "dmt_force_csscf_keyval_init got null keyval\n");
       abort();
     }

@@ -45,16 +45,16 @@
 static volatile int global_source, global_type, global_mid;
 static MPLMemoryGrp *global_mpl_mem = 0;
 
-static void
-mpl_memory_handler(int*msgid_arg)
+void
+MPLMemoryGrp::static_handler(int*msgid_arg)
 {
-  long lmid = *msgid_arg;
   if (!global_mpl_mem) {
       cerr << scprintf("WARNING: Tried to call mpl_memory_handler"
               " without global_mpl_mem\n");
     }
   else {
-      global_mpl_mem->handler(&lmid);
+      long grpmid = global_mpl_mem->grp_mid(*msgid_arg);
+      global_mpl_mem->handler(&grpmid);
     }
 }
 
@@ -98,6 +98,14 @@ MPLMemoryGrp::get_mid(char info)
                 }
               cout << endl;
             }
+          if (info == 'P') {
+              for (int ii=0; ii<max_mid; ii++) {
+                  if (info_[ii] == 'P' && ii != i && !mid_ready_[i]) {
+                      cerr << "MPLMemoryGrp: double post" << endl;
+                      abort();
+                    }
+                }
+            }
           return i;
         }
     }
@@ -128,8 +136,22 @@ void
 MPLMemoryGrp::free_mid(long mid)
 {
   if (debug_) cout << "MPLMemoryGrp::free_mid(): freeing " << mid << endl;
+  if (mid_ready_[mid]) {
+      cerr << "MPLMemoryGrp::free_mid(): mid not in use" << endl;
+      abort();
+    }
   mid_ready_[mid] = 1;
 }
+
+int &
+MPLMemoryGrp::mpc_mid(long mid)
+{
+  if (mid_ready_[mid]) {
+      cerr << "MPLMemoryGrp::mpc_mid(" << mid << "): not in use" << endl;
+    }
+  return handles_[mid];
+}
+
 long
 MPLMemoryGrp::lockcomm()
 {
@@ -186,7 +208,7 @@ MPLMemoryGrp::postrecv(void *data, int nbytes, int type)
   global_mid = get_mid('P');
   mpc_rcvncall(data, nbytes,
                (int*)&global_source, (int*)&global_type, &mpc_mid(global_mid),
-               mpl_memory_handler);
+               static_handler);
   if (debug_) cout << ">>>> mpc_rcvncall(,"
                    << nbytes << ","
                    << ","

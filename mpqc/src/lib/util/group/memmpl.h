@@ -44,7 +44,7 @@ class MPLMemoryGrp: public MIDMemoryGrp {
     int handles_[max_mid];
     char info_[max_mid];
 
-    int &mpc_mid(long mid) { return handles_[mid]; }
+    int &mpc_mid(long mid);
     long grp_mid(int mpc_mid);
     long get_mid(char info = '?');
     void free_mid(long mid);
@@ -56,6 +56,8 @@ class MPLMemoryGrp: public MIDMemoryGrp {
     long recv(void* data, int nbytes, int node, int type);
     long postrecv(void *data, int nbytes, int type);
     long wait(long, long = -1);
+
+    static void static_handler(int *msgid);
   public:
     MPLMemoryGrp(const RefMessageGrp& msg);
     MPLMemoryGrp(const RefKeyVal&);

@@ -78,6 +78,8 @@ class ChemicalElement: public SavableState
     ChemicalElement(const ChemicalElement&);
 
     ~ChemicalElement();
+
+    int operator == (const ChemicalElement &e) const { return Z_ == e.Z_; }
     
     void save_data_state(StateOut&);
 

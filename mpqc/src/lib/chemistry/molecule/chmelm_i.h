@@ -35,8 +35,8 @@
 #define INLINE
 #endif
 
-QUERY_FUNCTION_IMPL(char* ,name);
-QUERY_FUNCTION_IMPL(char* ,symbol);
+QUERY_FUNCTION_IMPL(const char* ,name);
+QUERY_FUNCTION_IMPL(const char* ,symbol);
 QUERY_FUNCTION_IMPL(int   ,number);
 QUERY_FUNCTION_IMPL(double,mass);
 QUERY_FUNCTION_IMPL(int   ,family);

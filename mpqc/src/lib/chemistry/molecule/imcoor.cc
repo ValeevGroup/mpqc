@@ -48,7 +48,9 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
   scale_outs_(1.0),
   max_update_steps_(100),
   max_update_disp_(0.5),
-  given_fixed_values_(0)
+  given_fixed_values_(0),
+  decouple_bonds_(0),
+  decouple_bends_(0)
 {
   new_coords();
   generator_ = new IntCoorGen(mol);

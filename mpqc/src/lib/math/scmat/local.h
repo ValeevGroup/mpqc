@@ -19,7 +19,7 @@ class LocalSCDimension: public SCDimension {
   private:
     int n_;
   public:
-    LocalSCDimension(int n);
+    LocalSCDimension(int n, const char* name = 0);
     LocalSCDimension(const RefKeyVal&);
     LocalSCDimension(StateIn&);
     ~LocalSCDimension();

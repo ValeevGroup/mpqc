@@ -35,7 +35,9 @@
 /////////////////////////////////////////////////////////////////////////////
 // LocalSCDimension member functions
 
-LocalSCDimension::LocalSCDimension(int n): n_(n)
+LocalSCDimension::LocalSCDimension(int n, const char* name):
+  SCDimension(name),
+  n_(n)
 {
 }
 
@@ -53,6 +55,7 @@ LocalSCDimension::LocalSCDimension(const RefKeyVal&keyval)
 void
 LocalSCDimension::save_data_state(StateOut&s)
 {
+  SCDimension::save_data_state(s);
   s.put(n_);
 }
 

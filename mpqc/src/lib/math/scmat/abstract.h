@@ -29,16 +29,20 @@ class SCDimension: public SavableState {
 #   define CLASSNAME SCDimension
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
+  private:
+    char *name_;
   public:
-    SCDimension();
-    SCDimension(StateIn&s): SavableState(s) {}
+    SCDimension(const char* name = 0);
+    SCDimension(StateIn&s);
     virtual ~SCDimension();
+    void save_data_state(StateOut&);
     virtual int n() = 0;
     virtual SCMatrix* create_matrix(SCDimension*) = 0;
     SCMatrix* create_matrix(const RefSCDimension&);
     virtual SymmSCMatrix* create_symmmatrix() = 0;
     virtual DiagSCMatrix* create_diagmatrix() = 0;
     virtual SCVector* create_vector() = 0;
+    const char* name() { return name_; }
 };
 
 class SCVector: public SavableState {

@@ -105,6 +105,25 @@ class SCElementOp3: public SavableState {
 DCRef_declare(SCElementOp3);
 SSRef_declare(SCElementOp3);
 
+class SCElementScalarProduct: public SCElementOp2 {
+#   define CLASSNAME SCElementScalarProduct
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    double product;
+  public:
+    SCElementScalarProduct();
+    SCElementScalarProduct(StateIn&);
+    ~SCElementScalarProduct();
+    void save_data_state(StateOut&);
+    void process(SCMatrixBlockIter&,SCMatrixBlockIter&);
+    int has_collect();
+    void collect(RefSCElementOp&);
+    double result();
+};
+SavableState_REF_dec(SCElementScalarProduct);
+
 class SCDestructiveElementProduct: public SCElementOp2 {
 #   define CLASSNAME SCDestructiveElementProduct
 #   define HAVE_STATEIN_CTOR

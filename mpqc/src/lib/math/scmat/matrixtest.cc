@@ -1,8 +1,8 @@
 
 #include <iostream.h>
 #include <math.h>
-#include <matrix.h>
-#include <blkiter.h>
+#include <math/scmat/matrix.h>
+#include <math/scmat/blkiter.h>
 
 class Prod3: public SCElementOp3 {
   private:

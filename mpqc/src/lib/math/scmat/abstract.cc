@@ -20,8 +20,22 @@
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
-SCDimension::SCDimension()
+SCDimension::SCDimension(const char* name)
 {
+  if (name) name_ = strcpy(new char[strlen(name)+1], name);
+  else name_ = 0;
+}
+
+SCDimension::SCDimension(StateIn&s):
+  SavableState(s)
+{
+  s.getstring(name_);
+}
+
+void
+SCDimension::save_data_state(StateOut&s)
+{
+  s.putstring(name_);
 }
 
 void *
@@ -40,6 +54,7 @@ SCDimension::create_matrix(const RefSCDimension&d)
 
 SCDimension::~SCDimension()
 {
+  if (name_) delete[] name_;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -75,6 +90,71 @@ SCElementScale::process(SCMatrixBlockIter&i)
   for (i.reset(); i; ++i) {
       i.set(scale*i.get());
     }
+}
+
+/////////////////////////////////////////////////////////////////////////
+// SCElementScalarProduct members
+
+#define CLASSNAME SCElementScalarProduct
+#define PARENTS   public SCElementOp2
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+SCElementScalarProduct::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCElementOp2::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+SCElementScalarProduct::SCElementScalarProduct():
+  product(0.0)
+{
+}
+
+SCElementScalarProduct::SCElementScalarProduct(StateIn&s):
+  SCElementOp2(s)
+{
+  s.get(product);
+}
+
+void
+SCElementScalarProduct::save_data_state(StateOut&s)
+{
+  s.put(product);
+}
+
+SCElementScalarProduct::~SCElementScalarProduct()
+{
+}
+
+void
+SCElementScalarProduct::process(SCMatrixBlockIter&i,
+                                SCMatrixBlockIter&j)
+{
+  for (i.reset(),j.reset(); i; ++i,++j) {
+      product += i.get()*j.get();
+    }
+}
+
+int
+SCElementScalarProduct::has_collect()
+{
+  return 1;
+}
+
+void
+SCElementScalarProduct::collect(RefSCElementOp&op)
+{
+  RefSCElementScalarProduct ma(op);
+  product += ma->product;
+}
+
+double
+SCElementScalarProduct::result()
+{
+  return product;
 }
 
 /////////////////////////////////////////////////////////////////////////

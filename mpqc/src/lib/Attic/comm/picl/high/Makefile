@@ -15,6 +15,9 @@ PICLHIGH = none
 ifeq ($(ARCH),PARAGON)
   PICLHIGH = piclparagon.c
 endif
+ifeq ($(ARCH),SUNMOS)
+  PICLHIGH = piclparagon.c
+endif
 ifeq ($(PICLHIGH),none)
   PICLHIGH = piclhcube.c
 endif

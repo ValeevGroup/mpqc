@@ -70,20 +70,28 @@ const ClassDesc* CLASSNAME::class_desc() const
 CLASSNAME*
 CLASSNAME::castdown(DescribedClass*p)
 {
+#if USE_RTTI
+  return dynamic_cast<CLASSNAME*>(p);
+#else
   if (!p) return 0;
   return (CLASSNAME*) p->_castdown(CLASSNAME::static_class_desc());
+#endif
 }
 const CLASSNAME*
 CLASSNAME::const_castdown(const DescribedClass*p)
 {
+#if USE_RTTI
+  return dynamic_cast<const CLASSNAME *>(p);
+#else
   if (!p) return 0;
   return (const CLASSNAME*) ((DescribedClass*)p)->_castdown(CLASSNAME::static_class_desc());
+#endif
 }
 CLASSNAME*
 CLASSNAME::require_castdown(DescribedClass*p,const char * errmsg,...)
 {
   if (!p) return 0;
-  CLASSNAME* t = (CLASSNAME*) p->_castdown(CLASSNAME::static_class_desc());
+  CLASSNAME* t = CLASSNAME::castdown(p);
   if (!t) {
       va_list args;
       va_start(args,errmsg);
@@ -101,7 +109,7 @@ const CLASSNAME*
 CLASSNAME::require_const_castdown(const DescribedClass*p,const char * errmsg,...)
 {
   if (!p) return 0;
-  const CLASSNAME* t = (const CLASSNAME*) ((DescribedClass*)p)->_castdown(CLASSNAME::static_class_desc());
+  const CLASSNAME* t = CLASSNAME::const_castdown(p);
   if (!t) {
       va_list args;
       va_start(args,errmsg);
@@ -118,8 +126,7 @@ CLASSNAME::require_const_castdown(const DescribedClass*p,const char * errmsg,...
 CLASSNAME*
 CLASSNAME::castdown(const RefDescribedClass&p)
 {
-  if (p.null()) return 0;
-  return (CLASSNAME*) p->_castdown(CLASSNAME::static_class_desc());
+  return CLASSNAME::castdown(p.pointer());
 }
 void *
 CLASSNAME::do_castdowns(void**casts,const ClassDesc*cd)

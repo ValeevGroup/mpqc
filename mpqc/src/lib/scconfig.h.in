@@ -15,6 +15,9 @@
 /* Define if you want to use macros instead of templates for ref's.  */
 #undef USE_REF_MACROS
 
+/* Define if you want to use RTTI instead of the _castdown mechanism.  */
+#undef USE_RTTI
+
 /* Define if you don't have vprintf but do have _doprnt.  */
 #undef HAVE_DOPRNT
 

@@ -129,6 +129,21 @@ esac
 ]
 )
 
+AC_ARG_ENABLE(rtti,
+[  --enable-rtti           Use RTTI for castdown mechanism.],
+[
+case $enableval in
+  yes)
+    AC_DEFINE(USE_RTTI)
+  ;;
+  no)
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --enable-rtti ($enableval)])
+  ;;
+esac
+])
+
 AC_ARG_ENABLE(cross-compile,
 [  --enable-cross-compile  Rather than checking, assume cross compilation.],
 [

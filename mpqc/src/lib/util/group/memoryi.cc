@@ -8,9 +8,12 @@
 
 #include <util/group/memproc.h>
 
-#ifdef HAVE_HRECV
+#ifdef HAVE_NX
+#  ifdef HAVE_HRECV
+#    include <util/group/mempgon.h>
+#  endif
 #  include <util/group/messpgon.h>
-#  include <util/group/mempgon.h>
+#  include <util/group/memipgon.h>
 #endif
 
 #ifdef HAVE_SYSV_IPC
@@ -136,9 +139,13 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
       fprintf(stderr, "MemoryGrp::create_memorygrp: requires default msg\n");
       abort();
     }
-#ifdef HAVE_HRECV
+#ifdef HAVE_NX
   else if (msg->class_desc() == ParagonMessageGrp::static_class_desc()) {
+#ifdef HAVE_HRECV
       grp = new ParagonMemoryGrp(msg);
+#else
+      grp = new IParagonMemoryGrp(msg);
+#endif
     }
 #endif
 #if defined(HAVE_MPI)

@@ -32,7 +32,7 @@ class SphericalTransform {
     SphericalTransform();
   public:
     SphericalTransform(int l);
-    ~SphericalTransform();
+    virtual ~SphericalTransform();
     int cartindex(int i) const { return components_[i].cartindex(); }
     int pureindex(int i) const { return components_[i].pureindex(); }
     double coef(int i) const { return components_[i].coef(); }

@@ -73,7 +73,7 @@ SphericalTransform::SphericalTransform(int l)
       add(1,0,1,  1.0 * sqrt(3.0), i);
     }
   else if (l==3) {
-#if 0
+#if 1
       // orthonormal functions
       add(0,0,3,  2.0 * sqrt(0.25), i);
       add(2,0,1, -3.0 * sqrt(0.25), i);
@@ -125,7 +125,7 @@ SphericalTransform::SphericalTransform(int l)
 #endif
     }
   else if (l==4) {
-#if 0
+#if 1
       // orthonormal functions
       add(0,0,4,  8.0 * sqrt(1.0/64.0), i);
       add(4,0,0,  3.0 * sqrt(1.0/64.0), i);
@@ -255,6 +255,100 @@ SphericalTransformIter::SphericalTransformIter(int l, int inverse)
 ISphericalTransform::ISphericalTransform(int l)
 {
 #if 1
+  n_ = 0;
+  l_ = l;
+  components_ = 0;
+  int i = 0;
+
+  if (l==2) {
+      add(0,0,2,  2.0/3.0 , i);
+      add(2,0,0, -1.0/3.0, i);
+      add(0,2,0, -1.0/3.0, i);
+      i++;
+      add(2,0,0,  sqrt(1.0/3.0), i);
+      add(0,2,0, -sqrt(1.0/3.0), i);
+      i++;
+      add(1,1,0,  sqrt(1.0/3.0), i);
+      i++;
+      add(0,1,1,  sqrt(1.0/3.0), i);
+      i++;
+      add(1,0,1,  sqrt(1.0/3.0), i);
+    }
+  else if (l==3) {
+      // orthonormal functions
+      add(0,0,3,  2.0/11.0, i);
+      add(2,0,1, -3.0/11.0, i);
+      add(0,2,1, -3.0/11.0, i);
+      i++;
+      add(1,0,2,  4.0 * sqrt(1.0/150.0), i);
+      add(3,0,0, -3.0 * sqrt(1.0/150.0), i);
+      add(1,2,0, -1.0 * sqrt(1.0/150.0), i);
+      i++;
+      add(0,1,2,  4.0 * sqrt(1.0/150.0), i);
+      add(0,3,0, -3.0 * sqrt(1.0/150.0), i);
+      add(2,1,0, -1.0 * sqrt(1.0/150.0), i);
+      i++;
+      add(2,0,1,  sqrt(1.0/15.0), i);
+      add(0,2,1, -sqrt(1.0/15.0), i);
+      i++;
+      add(1,1,1,  sqrt(1.0/15.0), i);
+      i++;
+      add(3,0,0,  sqrt(1.0/10.0), i);
+      add(1,2,0, -sqrt(1.0/10.0), i);
+      i++;
+      add(0,3,0,  sqrt(1.0/10.0), i);
+      add(2,1,0, -sqrt(1.0/10.0), i);
+    }
+  else if (l==4) {
+      // orthonormal functions
+      add(0,0,4, 19.0/370.0, i);
+      add(4,0,0,  9.0/370.0, i);
+      add(0,4,0,  9.0/370.0, i);
+      add(2,0,2,-57.0/370.0, i);
+      add(0,2,2,-57.0/370.0, i);
+      add(2,2,0,  3.0/370.0, i);
+      i++;
+      add(1,0,3,  1.0/19.0 * sqrt(10.0), i);
+      add(3,0,1, -9.0/19.0 * sqrt(0.1), i);
+      add(1,2,1, -3.0/19.0 * sqrt(0.1), i);
+      i++;
+      add(0,1,3,  1.0/19.0 * sqrt(10.0), i);
+      add(0,3,1, -9.0/19.0 * sqrt(0.1), i);
+      add(2,1,1, -3.0/19.0 * sqrt(0.1), i);
+      i++;
+      add(2,0,2, 12.0/37.0 * sqrt(0.2), i);
+      add(0,2,2,-12.0/37.0 * sqrt(0.2), i);
+      add(4,0,0, -2.0/37.0 * sqrt(0.2), i);
+      add(0,4,0,  2.0/37.0 * sqrt(0.2), i);
+      i++;
+      add(1,1,2,  6.0/19.0 * sqrt(0.2), i);
+      add(3,1,0, -1.0/19.0 * sqrt(0.2), i);
+      add(1,3,0, -1.0/19.0 * sqrt(0.2), i);
+      i++;
+      add(1,0,3,  3.0/19.0 * sqrt(2.0/35.0), i);
+      add(3,0,1,-13.0/19.0 * sqrt(1.0/70.0), i);
+      add(1,2,1,  3.0/19.0 * sqrt(.7), i);
+      i++;
+      add(0,1,3,  3.0/19.0 * sqrt(2.0/35.0), i);
+      add(0,3,1,-13.0/19.0 * sqrt(1.0/70.0), i);
+      add(2,1,1,  3.0/19.0 * sqrt(0.7), i);
+      i++;
+      add(2,2,0, 93.0/(74.0*sqrt(35.0)), i);
+      add(2,0,2,  9.0/(74.0*sqrt(35.0)), i);
+      add(0,2,2,  9.0/(74.0*sqrt(35.0)), i);
+      add(4,0,0,-17.0/(74.0*sqrt(35.0)), i);
+      add(0,4,0,-17.0/(74.0*sqrt(35.0)), i);
+      add(0,0,4, -3.0/(74.0*sqrt(35.0)), i);
+      i++;
+      add(3,1,0,  sqrt(1.0/35.0), i);
+      add(1,3,0, -sqrt(1.0/35.0), i);
+    }
+  else {
+      fprintf(stderr, "ISphericalTransform: cannot handle l = %d\n", l);
+      abort();
+    }
+#else
+
   l_ = l;
   
   // this transform is orthogonal, but not normalized
@@ -277,33 +371,6 @@ ISphericalTransform::ISphericalTransform(int l)
     }
 
   delete[] norm;
-#else
-  int ncart = 2*l+1;
-  int npure = ((l+1)*(l+2))>>1;
-
-  double_matrix_t T;
-  //zero_double_matrix(&T);
-  T.n1 = 0;
-  T.n2 = 0;
-  T.d = 0;
-  allocbn_double_matrix(&T,"n1 n2",npure, ncart);
-
-  SphericalTransform t(l);
-
-  SphericalTransformIter I(&t);
-
-  int i,j;
-  for (i=0; i<npure; i++) {
-      for (j=0; j<ncart; j++) {
-          T.d[i][j] = 0.0;
-        }
-    }
-
-  for (I.begin(); I.ready(); I.next()) {
-      T.d[I.pureindex()][I.cartindex()] = I.coef();
-    }
-
-  print_double_matrix(stdout, &T);
 #endif
 }
 

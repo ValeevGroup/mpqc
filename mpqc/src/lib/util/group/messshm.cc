@@ -7,7 +7,7 @@
 
 #include <util/group/messshm.h>
 
-#if defined(OSF) || defined(SUNMOS)
+#if defined(OSF) || defined(SUNMOS) || defined(AIX)
 union semun {
   int val;
   struct semid_ds *buf;

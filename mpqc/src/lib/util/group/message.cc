@@ -66,12 +66,30 @@ MessageGrp::get_default_messagegrp()
 }
 
 MessageGrp*
-MessageGrp::initial_messagegrp()
+MessageGrp::initial_messagegrp(int argc, char** argv)
 {
 #if defined(PARAGON)
   // the initial message group on the paragon is always ParagonMessageGrp
   return new ParagonMessageGrp;
 #else
+  // see if a message group is given on the command line
+  if (argc && argv) {
+      for (int i=0; i<argc; i++) {
+	  if (argv[i] && !strcmp(argv[i], "-messagegrp")) {
+              i++;
+              if (i<argc && argv[i]) {
+                  ClassDesc* cd = ClassDesc::name_to_class_desc(argv[i]);
+                  if (!cd) {
+                    fprintf(stderr, "MessageGrp::initial_messagegrp()"
+                            ": couldn't find \"%s\"\n", argv[i]);
+                    abort();
+                    }
+		  return MessageGrp::castdown(cd->create());
+                }
+            }
+        }
+    }
+
   // find out if the environment gives the containing message group
   char *groupname = getenv("MessageGrp");
   if (!groupname) return 0;

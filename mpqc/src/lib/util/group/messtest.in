@@ -18,4 +18,4 @@ pvmmessage<PVMMessageGrp>: (
   %          ]
   )
 
-message = $:pvmmessage
+message = $:procmessage

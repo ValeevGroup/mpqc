@@ -10,7 +10,7 @@ REQUIREDCXXSRC = mstate.cc \
 # pool.cc
 # memory.cc
 
-OPTIONALCXXSRC = messshm.cc messpgon.cc messpvm.h
+OPTIONALCXXSRC = messshm.cc messpgon.cc messpvm.cc messmpi.cc
 
 CXXSRC := $(REQUIREDCXXSRC)
 ifneq ($(ARCH),SUNMOS)
@@ -25,8 +25,11 @@ endif
 ifeq ($(HAVE_PVM),yes)
   CXXSRC += messpvm.cc
 endif
+ifeq ($(HAVE_MPI),yes)
+  CXXSRC += messmpi.cc
+endif
 
-INC = pool.h message.h mstate.h topology.h picl.h messshm.h messpvm.h
+INC = pool.h message.h mstate.h topology.h picl.h messshm.h messpvm.h messmpi.h
 # memory.h
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
@@ -59,8 +62,6 @@ messtest: messtest.o \
 	$(LD) $(LDFLAGS) -o messtest $^ $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
-
-LD = $(CXX)
 
 $(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

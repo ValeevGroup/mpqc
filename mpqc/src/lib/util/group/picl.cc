@@ -8,6 +8,8 @@
 
 #if defined(PARAGON)
 #  include <nx.h>
+#elif defined(HAVE_MPI)
+#  include <mpi.h>
 #elif defined(OLDCLOCK)
 #else
 #  include <sys/types.h>
@@ -47,6 +49,19 @@ double clock0()
     initp = 1;
   }
   t = dclock();
+  return (t - first);
+}
+#elif defined(HAVE_MPI)
+double clock0()
+{
+  static double first;
+  static initp = 0;
+  double t;
+  if (!initp) {
+    first = MPI_Wtime();
+    initp = 1;
+  }
+  t = MPI_Wtime();
   return (t - first);
 }
 #elif defined(OLDCLOCK)

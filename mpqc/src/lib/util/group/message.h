@@ -139,7 +139,7 @@ class MessageGrp: public DescribedClass {
     // The initial message group is the group that starts up a process.
     // This returns null if this process is first and it is up to the
     // programmer to create a messagegrp.
-    static MessageGrp* initial_messagegrp();
+    static MessageGrp* initial_messagegrp(int argc = 0, char** argv = 0);
 
     // send messages sequentially to the target
     virtual void send(int target, double* data, int ndata);
@@ -289,13 +289,13 @@ class intMessageGrp: public MessageGrp {
 #include <util/class/classda.h>
   protected:
     int msgtype_nbit; // the total number of bits available
-    const int ctl_nbit = 2; // control information bits
+    int ctl_nbit; // control information bits
     int seq_nbit; // sequence information bits
     int typ_nbit; // type information bits
     int src_nbit; // source information bits
 
     // Masks for the fields in the type.
-    const int ctl_mask = 0x3;
+    int ctl_mask;
     int seq_mask;
     int typ_mask;
     int src_mask;

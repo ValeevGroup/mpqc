@@ -116,7 +116,7 @@ void test_hcube(int nproc, int root, int fwd);
 int
 main(int argc, char**argv)
 {
-  RefMessageGrp grp = MessageGrp::initial_messagegrp();
+  RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
 
   if (grp.null()) {
       const char* input = SRCDIR "/messtest.in";
@@ -137,7 +137,7 @@ main(int argc, char**argv)
 
   grp->sync();
 
-  if (grp->me() == 0) {
+  if (0 && grp->me() == 0) {
       test_hcube(3, 0, 1);
       test_hcube(39, 0, 1);
       test_hcube(16, 0, 1);
@@ -160,6 +160,10 @@ main(int argc, char**argv)
   if (testsum != grp->n()) {
       fprintf(stderr,"WARNING: sum wrong\n");
     }
+
+  double testdsum = 1.0;
+  grp->sum(&testdsum,1);
+  printf("on %d testdsum = %4.1f\n", grp->me(), testdsum);
 
   grp->sync();
   grp = 0;
@@ -223,21 +227,27 @@ void
 test(const RefMessageGrp& grp, int source, int target)
 {
   RefA a,b;
+  const int nca = 1000000;
+  char ca[nca];
   
   if (grp->me() == source) {
       StateSend so(grp);
-      so.set_buffer_size(5);
+      //so.set_buffer_size(5);
       so.target(target);
       a = new A(10);
       a.save_state(so);
       so.flush();
+      grp->send(target, ca, nca);
+      if (source != target) grp->recv(target, ca, nca);
     }
 
   if (grp->me() == target) {
       StateRecv si(grp);
-      si.set_buffer_size(5);
+      //si.set_buffer_size(5);
       si.source(source);
       b.restore_state(si);
+      if (source != target) grp->send(source, ca, nca);
+      grp->recv(source, ca, nca);
     }
 
   if (grp->me() == target) {

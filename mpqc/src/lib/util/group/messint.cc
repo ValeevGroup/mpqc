@@ -12,12 +12,16 @@ intMessageGrp::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-intMessageGrp::intMessageGrp()
+intMessageGrp::intMessageGrp():
+  ctl_nbit(2),
+  ctl_mask(0x3)
 {
 }
 
 intMessageGrp::intMessageGrp(const RefKeyVal& keyval):
-  MessageGrp(keyval)
+  MessageGrp(keyval),
+  ctl_nbit(2),
+  ctl_mask(0x3)
 {
 }
 

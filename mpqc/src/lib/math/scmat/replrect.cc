@@ -439,6 +439,9 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
   int nc = lb->ncol();
   int ncc = la->ncol();
 
+  if (nr==0 || nc==0 || ncc==0)
+    return;
+  
   int nproc = messagegrp()->n();
   int me = messagegrp()->me();
   int mod = nr%nproc;

@@ -134,10 +134,7 @@ ReplSymmSCMatrix::compute_offset(int i,int j)
       cerr << indent << "ReplSymmSCMatrix: index out of bounds\n";
       abort();
     }
-  if (i<j) {
-      int tmp = j; j=i; i=tmp;
-    }
-  return (i*(i+1))/2 + j;
+  return ij_offset(i,j);
 }
 
 double
@@ -717,6 +714,9 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
     nr = la->ncol();
   }
 
+  if (nr==0 || nc==0)
+    return;
+  
   int nproc = messagegrp()->n();
 
   double **ablock = cmat_new_square_matrix(D1);

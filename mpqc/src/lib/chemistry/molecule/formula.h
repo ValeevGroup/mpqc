@@ -37,7 +37,7 @@
 // takes \clsnm{RefMolecule} as input.
 class MolecularFormula {
   private:
-    const int nelem_ = 105;
+    enum {nelem_ = 105};
     int count_[nelem_];
     char *form_;
     

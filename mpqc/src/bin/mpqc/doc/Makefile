@@ -10,7 +10,7 @@ LATEX=latex
 XDVI=xdvi
 LATEX2HTML=latex2html
 L2HFLAGS=-dir mpqcuser \
-         -up_url "http://midway.ca.sandia.gov/%7Ecljanss/mpqc.html" \
+         -up_url ".." \
          -up_title "The MPQC Home Page" -html_version 3.2 \
          -split 4 -link 4 -local_icons -no_math -no_reuse \
          -index_in_navigation -contents_in_navigation -bottom_navigation

@@ -98,7 +98,7 @@ disttest.o: disttest.cc
 TAGS: $(CXXSRC) $(CSRC)
 	etags $^
 
-disthql.o: f77sym.h
+disthql.o disthql.d: f77sym.h
 
 f77sym.h: f77sym.in
 	$(MKF77SYM) $< $@

@@ -34,7 +34,8 @@
 
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
-#include <chemistry/qc/mbptr12/vxb_eval.h>
+//#include <chemistry/qc/mbptr12/vxb_eval.h>
+#include <chemistry/qc/mbptr12/r12int_eval.h>
 
 namespace sc {
 

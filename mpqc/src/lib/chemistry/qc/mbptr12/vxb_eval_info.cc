@@ -91,6 +91,8 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
 
   abs_method_ = mbptr12->abs_method();
   construct_ri_basis_(false);
+
+  tfactory_ = new MOIntsTransformFactory(integral_,obs_space_);
 }
 
 R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
@@ -135,6 +137,7 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     ribs_space_ << SavableState::restore_state(si);
     act_occ_space_ << SavableState::restore_state(si);
     occ_space_ << SavableState::restore_state(si);
+    tfactory_ << SavableState::restore_state(si);
   }
 
   orbsym_ = 0;
@@ -177,6 +180,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(ribs_space_.pointer(),so);
   SavableState::save_state(act_occ_space_.pointer(),so);
   SavableState::save_state(occ_space_.pointer(),so);
+  SavableState::save_state(tfactory_.pointer(),so);
 }
 
 char* R12IntEvalInfo::ints_file() const

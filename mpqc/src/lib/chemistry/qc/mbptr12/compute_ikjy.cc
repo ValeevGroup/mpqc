@@ -284,6 +284,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
 #endif
 
     // Fourth quarter transform
+    ExEnv::out0() << indent << "Begin fourth q.t." << endl;
     tim_enter("4. q.t.");
     // Begin fourth quarter transformation;
     // generate (ix|jy) stored as ijxy
@@ -315,7 +316,8 @@ TwoBodyMOIntsTransform_ikjy::compute()
       }
     }
     delete[] ijxy_ints;
-    tim_exit("4. q.t.");    
+    tim_exit("4. q.t.");
+    ExEnv::out0() << indent << "End of fourth q.t." << endl;
 
     integral_ijsx = 0;
     double* integral_ijxy = (double*) mem_->localdata();

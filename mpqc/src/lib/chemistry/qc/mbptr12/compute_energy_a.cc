@@ -31,7 +31,6 @@
 #include <util/misc/timer.h>
 #include <math/scmat/abstract.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
-#include <chemistry/qc/mbptr12/vxb_eval.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 
 using namespace std;
@@ -44,7 +43,8 @@ MBPT2_R12::compute_energy_a_()
   tim_enter("mp2-r12/a energy");
 
   if (r12eval_.null()) {
-    r12eval_ = new R12IntEval(this);
+    Ref<R12IntEvalInfo> r12info = new R12IntEvalInfo(this);
+    r12eval_ = new R12IntEval(r12info);
     // will adapt energies rather than the intermediates
     r12eval_->set_spinadapted(false);
     r12eval_->set_absmethod(abs_method_);

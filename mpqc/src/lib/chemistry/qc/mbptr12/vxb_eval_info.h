@@ -39,6 +39,7 @@
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/transform_factory.h>
 
 namespace sc {
 
@@ -98,6 +99,7 @@ private:
   Ref<MOIndexSpace> ribs_space_;
   Ref<MOIndexSpace> act_occ_space_;
   Ref<MOIndexSpace> occ_space_;
+  Ref<MOIntsTransformFactory> tfactory_;
 
   // construct the RI basis based on abs_method
   void construct_ri_basis_(bool safe);
@@ -192,6 +194,8 @@ public:
   Ref<MOIndexSpace> abs_space() const { return abs_space_; };
   /// Returns the MOIndexSpace object for RI-BS
   Ref<MOIndexSpace> ribs_space() const { return ribs_space_; };
+  /// Returns the MOIntsTransformFactory object
+  Ref<MOIntsTransformFactory> tfactory() const { return tfactory_; };
 
   /// Compute dipole and quadrupole moment matrices in active MO basis
   void compute_multipole_ints(RefSymmSCMatrix& MX,

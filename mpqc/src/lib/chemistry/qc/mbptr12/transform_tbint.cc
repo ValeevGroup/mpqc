@@ -36,6 +36,7 @@
 #include <util/ref/ref.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/mbptr12/transform_tbint.h>
 
 using namespace std;
@@ -60,6 +61,7 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Re
   thr_ = ThreadGrp::get_default_threadgrp();
 
   // Default values
+  num_te_types_ = 1;
   memory_ = factory_->memory();
   debug_ = factory_->debug();
   dynamic_ = factory_->dynamic();
@@ -83,6 +85,7 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
+  si.get(num_te_types_);
   double memory; si.get(memory); memory_ = (size_t) memory;
   si.get(debug_);
   int dynamic; si.get(dynamic); dynamic_ = (bool) dynamic;
@@ -107,12 +110,23 @@ TwoBodyMOIntsTransform::save_data_state(StateOut& so)
   SavableState::save_state(space3_.pointer(),so);
   SavableState::save_state(space4_.pointer(),so);
 
+  so.put(num_te_types_);
   so.put((double)memory_);
   so.put(debug_);
   so.put((int)dynamic_);
   so.put(print_percent_);
   so.put((int)ints_method_);
   so.put(file_prefix_);
+}
+
+void
+TwoBodyMOIntsTransform::set_num_te_types(const int num_te_types)
+{
+  // need to figure out how to determine the number of te types supported by this TwoBodyInt
+  if (num_te_types < 1 || num_te_types > TwoBodyInt::num_tbint_types)
+    throw std::runtime_error("TwoBodyMOIntsTransform::set_num_te_types() -- ");
+  num_te_types_ = num_te_types;
+  init_vars();
 }
 
 void

@@ -125,10 +125,16 @@ MOIntsTransformFactory::set_spaces(const Ref<MOIndexSpace>& space1, const Ref<MO
   space1_ = space1;
   if (space2.null())
     space2_ = space1_;
+  else
+    space2_ = space2;
   if (space3.null())
     space3_ = space2_;
+  else
+    space3_ = space3;
   if (space4.null())
     space4_ = space3_;
+  else
+    space4_ = space4;
 }
 
 Ref<TwoBodyMOIntsTransform>

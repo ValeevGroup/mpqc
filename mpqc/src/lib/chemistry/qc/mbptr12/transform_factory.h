@@ -34,8 +34,9 @@
 
 #include <string>
 #include <util/ref/ref.h>
-#include <chemistry/qc/mbptr12/mbptr12.h>
-#include <chemistry/qc/mbptr12/linearr12.h>
+#include <util/group/memory.h>
+#include <chemistry/molecule/energy.h>
+#include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
 
 using namespace std;

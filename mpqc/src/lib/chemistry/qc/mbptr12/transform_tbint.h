@@ -34,8 +34,7 @@
 
 #include <string>
 #include <util/ref/ref.h>
-#include <chemistry/qc/mbptr12/mbptr12.h>
-#include <chemistry/qc/mbptr12/linearr12.h>
+#include <chemistry/qc/mbptr12/r12ia.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 
@@ -73,9 +72,7 @@ protected:
   Ref<MOIndexSpace> space3_;
   Ref<MOIndexSpace> space4_;
 
-  // Other cases will be handled later
-  static const int num_te_types_ = 3;
-
+  int num_te_types_;
   size_t memory_;
   bool dynamic_;
   double print_percent_;
@@ -148,6 +145,9 @@ public:
   /// Specifies the top-level MolecularEnergy object to use for checkpointing
   void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }
 
+  /** Specifies how many integral types computed by TwoBodyInt to be transformed
+      Default is 1. */
+  void set_num_te_types(const int num_te_types);
   void set_memory(const size_t memory);
   void set_debug(int debug) { debug_ = debug; }
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; }

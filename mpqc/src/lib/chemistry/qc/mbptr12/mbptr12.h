@@ -41,7 +41,8 @@
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
-#include <chemistry/qc/mbptr12/vxb_eval.h>
+//#include <chemistry/qc/mbptr12/vxb_eval.h>
+#include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 

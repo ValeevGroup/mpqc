@@ -37,17 +37,16 @@ BIN_OR_LIB = LIB
 
 CXXSRCS = mbptr12.cc trans12_grt.cc \
   trans123_r12a_abs.cc r12ia.cc r12ia_memgrp.cc \
-  r12ia_node0file.cc vxb_eval.cc vxb_eval_info.cc \
-  vxb_eval_sbs_a.cc compute_sbs_a.cc \
-  vxb_eval_abs_a.cc compute_abs_a.cc \
-  vxb_eval_b.cc compute_all_b.cc \
+  r12ia_node0file.cc \
+  vxb_eval_info.cc \
   compute_energy_a.cc mp2r12_energy.cc \
   multipole_ints.cc ri_basis.cc \
-  moindexspace.cc \
+  moindexspace.cc pairiter.cc \
   transform_factory.cc transform_tbint.cc \
   transform_ijxy.cc transform_ixjy.cc transform_ikjy.cc \
   transform_123inds.cc transform_13inds.cc transform_12inds.cc \
-  compute_ixjy.cc compute_ikjy.cc compute_ijxy.cc
+  compute_ixjy.cc compute_ikjy.cc compute_ijxy.cc \
+  r12int_eval.cc compute_a_gebc.cc compute_a_gebc_abs1.cc
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += r12ia_mpiiofile.cc

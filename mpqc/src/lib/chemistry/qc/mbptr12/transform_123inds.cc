@@ -143,12 +143,12 @@ TwoBodyMOIntsTransform_123Inds::run()
   /*-------------------------------------------------------------
     Find integrals buffers to 1/r12, r12, and [r12,T1] integrals
    -------------------------------------------------------------*/
-  int num_te_types = tform_->num_te_types();
-  enum te_types {eri=0, r12=1, r12t1=2};
-  const double *intbuf[num_te_types];
-  intbuf[eri] = tbint_->buffer(TwoBodyInt::eri);
-  intbuf[r12] = tbint_->buffer(TwoBodyInt::r12);
-  intbuf[r12t1] = tbint_->buffer(TwoBodyInt::r12t1);
+  const int num_te_types = tform_->num_te_types();
+  const double *intbuf[TwoBodyInt::num_tbint_types];
+  intbuf[TwoBodyInt::eri] = tbint_->buffer(TwoBodyInt::eri);
+  intbuf[TwoBodyInt::r12] = tbint_->buffer(TwoBodyInt::r12);
+  intbuf[TwoBodyInt::r12t1] = tbint_->buffer(TwoBodyInt::r12t1);
+  intbuf[TwoBodyInt::r12t2] = tbint_->buffer(TwoBodyInt::r12t2);
 
   /*-----------------------------------------------------
     Allocate buffers for partially transformed integrals
@@ -301,7 +301,7 @@ TwoBodyMOIntsTransform_123Inds::run()
                     if (bs1_eq_bs2) {
 
                       double rsip_int_contrib = rsiq_int_contrib;
-                      if (te_type == r12t1)
+                      if (te_type == TwoBodyInt::r12t1)
                       rsip_int_contrib = -1.0*rsiq_int_contrib;
 
                       if (p == q) {

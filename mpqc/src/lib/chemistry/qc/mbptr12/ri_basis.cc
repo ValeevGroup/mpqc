@@ -162,15 +162,16 @@ R12IntEvalInfo::construct_orthog_aux_()
   overlap_aux_ = overlap_aux;
   ExEnv::out0() << decindent;
 
+  abs_space_ = new MOIndexSpace("ABS",orthog_aux_,bs_aux_);
+
   if (bs_aux_ == bs_ri_) {
     orthog_ri_ = orthog_aux_;
     orthog_ri_so_ = orthog_aux_so;
     nlindep_ri_ = nlindep_aux_;
     overlap_ri_ = overlap_aux_;
+    ribs_space_ = abs_space_;
   }
-  orthog_aux_so = 0;
-  
-  abs_space_ = new MOIndexSpace("ABS",orthog_aux_,bs_aux_);
+  orthog_aux_so = 0;  
 }
 
 void
@@ -425,6 +426,8 @@ R12IntEvalInfo::construct_ortho_comp_()
    if (debug_ > 1) (orthog_ri_.t() * plist_ri->to_AO_basis(overlap_ri_) * orthog_ri_).print("Ut * S(RI-BS/RI-BS) * U");
 
    ExEnv::out0() << decindent;
+
+   ribs_space_ = new MOIndexSpace("RI-BS",orthog_ri_,bs_ri_);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -507,6 +510,8 @@ R12IntEvalInfo::construct_ortho_comp_jv_()
 
   if (debug_ > 1) (scf_vec_ri_bm * orthog_ri_).print("C * S(OBS/RI-BS) * U");
   ExEnv::out0() << decindent;
+
+  ribs_space_ = new MOIndexSpace("RI-BS",orthog_ri_,bs_ri_);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -670,6 +675,8 @@ on orthogonal complement to OBS. Modify/increase your auxiliary basis.");
 
    delete[] vecs;
    delete[] nvec_per_block;
+
+   ribs_space_ = new MOIndexSpace("RI-BS",orthog_ri_,bs_ri_);
 }
 
 /////////////////////////////////////////////////////////////////////////////

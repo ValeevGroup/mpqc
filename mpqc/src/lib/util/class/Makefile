@@ -11,7 +11,7 @@ STACKIMPL = SL
 CXXSRC = class.cc
 
 GENCXXSRC = classMap.cc class$(MAPIMPL)Map.cc classkeySet.cc \
-            classkey$(SETIMPL)Set.cc
+            classkey$(SETIMPL)Set.cc proxy.cc
 # classStack.cc
 #            class$(STACKIMPL)Stack.cc class$(STACKIMPL)List.cc \
 #            classl$(STACKIMPL)List.cc
@@ -19,9 +19,9 @@ GENCXXSRC = classMap.cc class$(MAPIMPL)Map.cc classkeySet.cc \
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(GENCXXSRC:%.cc=%.o)
 GENSRC = $(GENCXXSRC)
 
-CLASSES = DescribedClass
+CLASSES = DescribedClass DescribedClassProxy
 
-INC = class.h
+INC = class.h proxy.h
 GENINC = classMap.h classImplMap.h classkeySet.h classkeyImplSet.h \
          classRAVLMap.h classkeyAVLSet.h \
          clasmacr.h

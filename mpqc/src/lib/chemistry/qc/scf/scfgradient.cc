@@ -115,23 +115,19 @@ ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
           double dx=0, dy=0, dz=0;
           for (int i=ist; i < ien; i++) {
             for (int j=jst; j < jen; j++) {
-              if (i < istart || i >= iend || j < jstart || j >= jend) {
+              if (i < istart || i >= iend || j < jstart || j >= jend
+                || j > i) {
                 index += 3;
               } else {
                 int doff = (sub) ? ij_offset(i,j) :
                                    ij_offset(i-istart,j-jstart);
                 double denij = ddata[doff];
+                if (j!=i) denij *= 2.0;
                 dx += buf[index++] * denij;
                 dy += buf[index++] * denij;
                 dz += buf[index++] * denij;
               }
             }
-          }
-
-          if (ish != jsh) {
-            dx *= 2.0;
-            dy *= 2.0;
-            dz *= 2.0;
           }
 
           gradient[x*3+0] += dx;

@@ -354,7 +354,7 @@ MPSCF::do_eigenvectors(int f)
 void
 MPSCF::compute()
 {
-  int i,j;
+  int i,j,ii;
 
  // print the geometry every iteration
   if (mynode0()==0) {
@@ -437,7 +437,7 @@ MPSCF::compute()
         solvent_->normals(normals);
         solvent_->charge_positions(scf_info.chargex);
         fprintf(stderr,"WARNING: iterating scf_vector 1 times\n");
-        for (int i=0; i<1; i++) {
+        for (i=0; i<1; i++) {
             int j;
             tim_enter("Efield");
             scfvec_to_eigenvectors();
@@ -638,8 +638,8 @@ MPSCF::compute()
 
     // convert the gradient to a SCVector
     RefSCVector g(_moldim);
-    for (int ii=0,i=0; i<centers.n; i++) {
-      for (int j=0; j<3; j++,ii++) {
+    for (ii=0,i=0; i<centers.n; i++) {
+      for (j=0; j<3; j++,ii++) {
         g(ii) = grad.d[j][i];
       }
     }

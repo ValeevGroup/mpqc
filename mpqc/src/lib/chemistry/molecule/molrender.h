@@ -35,7 +35,7 @@
 #include <util/render/object.h>
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/molecule.h>
-#include <chemistry/molecule/molinfo.h>
+#include <chemistry/molecule/atominfo.h>
 #include <math/isosurf/surf.h>
 
 class RenderedMolecule: public RenderedObject {

@@ -131,11 +131,7 @@ UnrestrictedSCF::UnrestrictedSCF(const RefKeyVal& keyval) :
   fockb_.computed()=0;
 
   // calculate the total nuclear charge
-  int Znuc=0;
-  PointBag_double *z = molecule()->charges();
-  
-  for (Pix p=z->first(); p; z->next(p)) Znuc += (int) z->get(p);
-  delete z;
+  int Znuc=molecule()->nuclear_charge();
 
   // check to see if this is to be a charged molecule
   int charge = keyval->intvalue("total_charge");
@@ -179,7 +175,7 @@ UnrestrictedSCF::UnrestrictedSCF(const RefKeyVal& keyval) :
        << "USCF::init: total charge = " << Znuc-tnalpha_-tnbeta_
        << endl << endl;
 
-  nirrep_ = molecule()->point_group().char_table().ncomp();
+  nirrep_ = molecule()->point_group()->char_table().ncomp();
 
   if (keyval->exists("alpha") && keyval->exists("beta")) {
     nalpha_ = new int[nirrep_];

@@ -51,7 +51,6 @@
 
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/localdef.h>
-#include <chemistry/molecule/chemelem.h>
 
 
 #define CLASSNAME OutSimpleCo
@@ -108,30 +107,38 @@ double
 OutSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 {
   int a=atoms[0]-1; int b=atoms[1]-1; int c=atoms[2]-1; int d=atoms[3]-1;
-  Point u1(3),u2(3),u3(3),z1(3);
+  SCVector3 u1,u2,u3,z1;
 
-  norm(u1,m[a].point(),m[b].point());
-  norm(u2,m[c].point(),m[b].point());
-  norm(u3,m[d].point(),m[b].point());
+  SCVector3 ra(m.r(a));
+  SCVector3 rb(m.r(b));
+  SCVector3 rc(m.r(c));
+  SCVector3 rd(m.r(d));
 
-  normal(u2,u3,z1);
-  double st=scalar(u1,z1);
+  u1 = ra-rb;
+  u1.normalize();
+  u2 = rc-rb;
+  u2.normalize();
+  u3 = rd-rb;
+  u3.normalize();
+
+  z1 = u2.perp_unit(u3);
+  double st=u1.dot(z1);
   double ct=s2(st);
 
   value_ = (st<0) ? -acos(ct) : acos(ct);
 
   if (bmat) {
     double uu,vv;
-    Point ww(3),xx(3),zz(3);
-    double cphi1 = scalar(u2,u3);
+    SCVector3 ww,xx,zz;
+    double cphi1 = u2.dot(u3);
     double sphi1 = s2(cphi1);
-    double cphi2 = scalar(u3,u1);
-    double cphi3 = scalar(u2,u1);
+    double cphi2 = u3.dot(u1);
+    double cphi3 = u2.dot(u1);
     double den = ct * sphi1*sphi1;
     double sthta2 = (cphi1*cphi2-cphi3)/
-              (den*dist(m[c].point(),m[b].point()));
+              (den*rc.dist(rb));
     double sthta3 = (cphi1*cphi3-cphi2)/
-              (den*dist(m[d].point(),m[b].point()));
+              (den*rd.dist(rb));
 #if OLD_BMAT
     sthta2 /= bohr;
     sthta3 /= bohr;
@@ -141,9 +148,9 @@ OutSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
       ww[j] = z1[j]*sthta2;
       zz[j] = z1[j]*sthta3;
     }
-    normal(z1,u1,xx);
-    normal(u1,xx,z1);
-    double r1i = 1.0/(dist(m[a].point(),m[b].point()));
+    xx = z1.perp_unit(u1);
+    z1 = u1.perp_unit(xx);
+    double r1i = 1.0/ra.dist(rb);
 #if OLD_BMAT
     r1i /= bohr;
 #endif    
@@ -167,16 +174,19 @@ OutSimpleCo::calc_force_con(Molecule& m)
   int x=atoms[0]-1;
   int a=atoms[1]-1; int b=atoms[2]-1; int c=atoms[3]-1;
 
-  double rad_ab =   m[a].element().atomic_radius()
-                  + m[b].element().atomic_radius();
+  SCVector3 ra(m.r(a));
+  SCVector3 rx(m.r(x));
 
-  double rad_ac =   m[a].element().atomic_radius()
-                  + m[c].element().atomic_radius();
+  double rad_ab =   m.atominfo()->atomic_radius(m.Z(a))
+                  + m.atominfo()->atomic_radius(m.Z(b));
 
-  double rad_ax =   m[a].element().atomic_radius()
-                  + m[x].element().atomic_radius();
+  double rad_ac =   m.atominfo()->atomic_radius(m.Z(a))
+                  + m.atominfo()->atomic_radius(m.Z(c));
 
-  double r_ax = dist(m[a].point(),m[x].point());
+  double rad_ax =   m.atominfo()->atomic_radius(m.Z(a))
+                  + m.atominfo()->atomic_radius(m.Z(x));
+
+  double r_ax = ra.dist(rx);
 
   calc_intco(m);
 

@@ -56,7 +56,7 @@ class MolecularFrequencies: public SavableState {
     // In case molecule must be given in lower symmetry, its actual
     // symmetry and the symmetry used to compute displacements is this
     RefPointGroup displacement_point_group_;
-    PointGroup original_point_group_;
+    RefPointGroup original_point_group_;
     RefSCVector original_geometry_;
     // the cartesian displacement size in bohr
     double disp_;

@@ -33,30 +33,29 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 DEFINES += -DSRCDIR=\"$(SRCDIR)\" -DSRCLIBDIR=\"$(SRCLIBDIR)\"
 
-CXXSRC = atomcent.cc chemelem.cc molecule.cc \
+CXXSRC = molecule.cc \
          simple.cc stre.cc bend.cc out.cc tors.cc stors.cc linip.cc linop.cc \
          energy.cc coor.cc imcoor.cc symmcoor.cc redund.cc cartcoor.cc \
-         molshape.cc chmelm_i.cc taylor.cc \
-         molrender.cc molinfo.cc molfreq.cc formula.cc
+         molshape.cc taylor.cc \
+         molrender.cc atominfo.cc molfreq.cc formula.cc
 
 CLASSES = Molecule \
-          AtomicCenter ChemicalElement \
           IntCoor SumIntCoor SetIntCoor \
           MolecularCoor IntMolecularCoor \
           MolecularEnergy  TaylorMolecularEnergy \
           VDWShape ConnollyShape \
           SimpleCo StreSimpleCo BendSimpleCo TorsSimpleCo \
           OutSimpleCo LinIPSimpleCo LinOPSimpleCo \
-          MolInfo AtomInfo \
+          AtomInfo \
           RenderedMolecule RenderedStickMolecule RenderedBallMolecule \
           RenderedMolecularSurface MolecularFormula
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
-INC = atomcent.h atomcentdefs.h chemelem.h molecule.h \
+INC = molecule.h \
       simple.h localdef.h \
-      coor.h energy.h molshape.h chmelm_i.h taylor.h \
-      molrender.h molinfo.h molfreq.h formula.h
+      coor.h energy.h molshape.h taylor.h \
+      molrender.h atominfo.h molfreq.h formula.h
 
 DEPENDINCLUDE = $(INC)
 

@@ -68,30 +68,30 @@ LinOPSimpleCo::_castdown(const ClassDesc*cd)
 }
 SimpleCo_IMPL(LinOPSimpleCo)
 
-LinOPSimpleCo::LinOPSimpleCo() : SimpleCo(3), u2(3)
+LinOPSimpleCo::LinOPSimpleCo() : SimpleCo(3)
 {
   u2[0] = 0.0; u2[1] = 1.0; u2[2] = 0.0;
 }
 
 LinOPSimpleCo::LinOPSimpleCo(const LinOPSimpleCo& s)
-  : SimpleCo(3), u2(3)
+  : SimpleCo(3)
 {
   *this=s;
 }
 
 LinOPSimpleCo::LinOPSimpleCo(const char *refr, int a1, int a2, int a3,
-                             const Point &u)
+                             const SCVector3 &u)
   : SimpleCo(3,refr), u2(u)
 {
   atoms[0]=a1; atoms[1]=a2; atoms[2]=a3;
-  normalize(u2);
+  u2.normalize();
 }
 
 LinOPSimpleCo::LinOPSimpleCo(const RefKeyVal &kv) :
-  SimpleCo(kv,3), u2(3)
+  SimpleCo(kv,3)
 {
   for (int i=0; i<3; i++) u2[i] = kv->doublevalue("u",i);
-  normalize(u2);
+  u2.normalize();
 }
 
 LinOPSimpleCo::~LinOPSimpleCo()
@@ -114,23 +114,30 @@ double
 LinOPSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 {
   int a=atoms[0]-1; int b=atoms[1]-1; int c=atoms[2]-1; int d=atoms[3]-1;
-  Point u1(3),u3(3),z1(3);
+  SCVector3 u1,u3,z1;
 
-  norm(u1,m[a].point(),m[b].point());
-  norm(u3,m[c].point(),m[b].point());
-  normal(u2,u1,z1);
+  SCVector3 ra(m.r(a));
+  SCVector3 rb(m.r(b));
+  SCVector3 rc(m.r(c));
 
-  double co=scalar(u1,z1);
-  double co2=scalar(u3,z1);
+  u1=ra-rb;
+  u1.normalize();
+  u3=rc-rb;
+  u3.normalize();
+
+  z1 = u2.perp_unit(u1);
+
+  double co=u1.dot(z1);
+  double co2=u3.dot(z1);
 
   value_ = pi-acos(co)-acos(co2);
 
   if (bmat) {
     double uu,vv,ww;
-    Point z2(3);
-    normal(u3,u2,z2);
-    double r1 = dist(m[a].point(),m[b].point());
-    double r2 = dist(m[c].point(),m[b].point());
+    SCVector3 z2;
+    z2 = u3.perp_unit(u2);
+    double r1 = ra.dist(rb);
+    double r2 = rc.dist(rb);
 #if OLD_BMAT
     r1 *= bohr;
     r2 *= bohr;
@@ -153,14 +160,18 @@ LinOPSimpleCo::calc_force_con(Molecule&m)
 {
   int a=atoms[1]-1; int b=atoms[0]-1; int c=atoms[2]-1;
 
-  double rad_ab =   m[a].element().atomic_radius()
-                  + m[b].element().atomic_radius();
+  SCVector3 ra(m.r(a));
+  SCVector3 rb(m.r(b));
+  SCVector3 rc(m.r(c));
 
-  double rad_ac =   m[a].element().atomic_radius()
-                  + m[c].element().atomic_radius();
+  double rad_ab =   m.atominfo()->atomic_radius(m.Z(a))
+                  + m.atominfo()->atomic_radius(m.Z(b));
 
-  double r_ab = dist(m[a].point(),m[b].point());
-  double r_ac = dist(m[a].point(),m[c].point());
+  double rad_ac =   m.atominfo()->atomic_radius(m.Z(a))
+                  + m.atominfo()->atomic_radius(m.Z(c));
+
+  double r_ab = ra.dist(rb);
+  double r_ac = ra.dist(rc);
 
   double k = 0.089 + 0.11/pow((rad_ab*rad_ac),-0.42) *
                            exp(-0.44*(r_ab+r_ac-rad_ab-rad_ac));

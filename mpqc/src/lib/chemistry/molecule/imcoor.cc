@@ -579,9 +579,9 @@ IntMolecularCoor::form_K_matrix(RefSCDimension& dredundant,
   // coordinates
   RefSCVector geom(dnatom3_,matrixkit_);
   for(i=0; i < geom.n()/3; i++) {
-      geom(3*i) = molecule_->operator[](i).point()[0];
-      geom(3*i+1) = molecule_->operator[](i).point()[1];
-      geom(3*i+2) = molecule_->operator[](i).point()[2];
+      geom(3*i  ) = molecule_->r(i,0);
+      geom(3*i+1) = molecule_->r(i,1);
+      geom(3*i+2) = molecule_->r(i,2);
     }
 
   RefSCDimension dcoor = new SCDimension(all_->n());
@@ -856,9 +856,9 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
       // update the geometry
       for (int i=0; i < dnatom3_.n(); i++) {
 #if OLD_BMAT
-          molecule[i/3][i%3] += cartesian_displacement(i) * 1.88972666;
+          molecule.r(i/3,i%3) += cartesian_displacement(i) * 1.88972666;
 #else        
-          molecule[i/3][i%3] += cartesian_displacement(i);
+          molecule.r(i/3,i%3) += cartesian_displacement(i);
 #endif          
         }
 

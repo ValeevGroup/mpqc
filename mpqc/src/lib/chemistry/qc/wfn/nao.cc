@@ -301,7 +301,7 @@ Wavefunction::nao()
   RefPetiteList pl = integral()->petite_list();
 
   // sym is 1 if not C1 symmetry, 0 otherwise
-  int sym = (molecule()->point_group().char_table().nirrep()==1?0:1);
+  int sym = (molecule()->point_group()->char_table().nirrep()==1?0:1);
 
   // compute S, the ao basis overlap
   RefSymmSCMatrix S =
@@ -497,7 +497,7 @@ Wavefunction::nao()
   // count the size of nmb
   int nnmb = 0;
   for (i=0; i<natom; i++) {
-      nnmb += nnmb_all_atom(molecule()->atom(i).element().number(),
+      nnmb += nnmb_all_atom(molecule()->Z(i),
                             maxam_on_atom[i]);
     }
   int nnrb = nb - nnmb;
@@ -521,7 +521,7 @@ Wavefunction::nao()
   int im = 0;
   int ir = 0;
   for (i=0; i<natom; i++) {
-      int z = molecule()->atom(i).element().number();
+      int z = molecule()->Z(i);
       for (j=0; j<=maxam_on_atom[i]; j++) {
           int nnmb_zj = nnmb_atom(z,j);
           int nt = nam_on_atom[i][j];
@@ -590,7 +590,7 @@ Wavefunction::nao()
   int ***r_amoff_on_atom = new int**[natom];
   int r_offset = 0;
   for (i=0; i<natom; i++) {
-      int z = molecule()->atom(i).element().number();
+      int z = molecule()->Z(i);
       r_maxam_on_atom[i] = maxam_on_atom[i];
       r_nam_on_atom[i] = new int[r_maxam_on_atom[i]+1];
       for (j=0; j<=r_maxam_on_atom[i]; j++) {
@@ -840,8 +840,8 @@ Wavefunction::nao()
         }
       cout << node0 << indent
            << scprintf("%3d   %2s   % 8.6f",i + 1,
-                       molecule()->atom(i).element().symbol(),
-                       molecule()->atom(i).element().charge() - e);
+                       AtomInfo::symbol(molecule()->Z(i)),
+                       double(molecule()->Z(i)) - e);
       for (j=0; j<=maxam_on_atom[i]; j++) {
           e = 0.0;
           for (k=0; k<nam_on_atom[i][j]; k++) {

@@ -308,7 +308,7 @@ Int2eV3::compute_shell_1(RefGaussianBasisSet cs,
 
       /* The offset shell geometry vectors. */
       for (int xyz=0; xyz<3; xyz++) {
-        int_shell_r(offset,xyz) = cs->molecule()->atom(i).r(xyz);
+        int_shell_r(offset,xyz) = cs->molecule()->r(i,xyz);
         }
 
       /* The number of the first offset primitive in a offset shell. */
@@ -365,16 +365,16 @@ Int2eV3::compute_prim_2(RefGaussianBasisSet cs1,RefGaussianBasisSet cs2)
               /* The p = (alpha A + beta B) / zeta */
               for (i=0; i<3; i++) {
                 int_prim_p(offset1,offset2,i) =
-                  (  shell1->exponent(k1) * cs1->molecule()->atom(i1).r(i)
-                   + shell2->exponent(k2) * cs2->molecule()->atom(i2).r(i))
+                  (  shell1->exponent(k1) * cs1->molecule()->r(i1,i)
+                   + shell2->exponent(k2) * cs2->molecule()->r(i2,i))
                   *  int_prim_oo2zeta(offset1,offset2);
                 }
 
               /* Compute AmB^2 */
               AmB2 = 0.0;
               for (i=0; i<3; i++) {
-                AmB = cs2->molecule()->atom(i2).r(i)
-                    - cs1->molecule()->atom(i1).r(i);
+                AmB = cs2->molecule()->r(i2,i)
+                    - cs1->molecule()->r(i1,i);
                 AmB2 += AmB*AmB;
                 }
 

@@ -68,25 +68,6 @@ DipoleData::set_origin(double*o)
 
 ///////////////////////////////////////////////////////////////////////
 
-PointChargeData::PointChargeData(PointBag_double* c)
-{
-  ncharges_ = c->length();
-  alloced_positions_ = new double*[ncharges_];
-  alloced_charges_ = new double[ncharges_];
-  double *tmp = new double[ncharges_*3];
-  Pix pix=c->first();
-  for (int i=0; i<ncharges_; i++) {
-    alloced_positions_[i] = tmp;
-    alloced_charges_[i] = c->get(pix);
-    for (int j=0; j<3; j++) {
-      *tmp++ = c->point(pix)[j];
-    }
-    c->next(pix);
-  }
-  positions_ = alloced_positions_;
-  charges_ = alloced_charges_;
-}
-
 PointChargeData::PointChargeData(int ncharges,
                                  const double *const*positions,
                                  const double *charges,

@@ -97,11 +97,11 @@ Orbital::boundingbox(double valuemin,
     }
 
   int i;
-  for (i=0; i<3; i++) p1[i] = p2[i] = mol[0][i];
+  for (i=0; i<3; i++) p1[i] = p2[i] = mol.r(0,i);
   for (i=1; i<mol.natom(); i++) {
       for (int j=0; j<3; j++) {
-          if (mol[i][j] < p1[i]) p1[i] = mol[i][j];
-          if (mol[i][j] > p2[i]) p2[i] = mol[i][j];
+          if (mol.r(i,j) < p1[i]) p1[i] = mol.r(i,j);
+          if (mol.r(i,j) > p2[i]) p2[i] = mol.r(i,j);
         }
     }
   for (i=0; i<3; i++) {

@@ -152,7 +152,7 @@ SCF::compute_vector(double& eelec)
                                                  "SCF::compute_vector");
   
   RefPetiteList pl = integral()->petite_list(basis());
-  CharacterTable ct = molecule()->point_group().char_table();
+  CharacterTable ct = molecule()->point_group()->char_table();
   
   int homo_ir, lumo_ir;
   int homo_mo = -1, lumo_mo = -1;

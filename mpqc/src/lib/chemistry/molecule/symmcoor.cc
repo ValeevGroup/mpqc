@@ -145,7 +145,7 @@ SymmCoorTransform::to_cartesian(const RefSCVector& new_internal)
       RefSCVector cartesian_displacement = internal_to_cart_disp*displacement;
       // update the geometry
       for (int i=0; i < dnatom3_.n(); i++) {
-          molecule[i/3][i%3] += cartesian_displacement(i);
+          molecule.r(i/3,i%3) += cartesian_displacement(i);
         }
 
       // check for convergence

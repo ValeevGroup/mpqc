@@ -91,11 +91,7 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
   cl_fock_.computed()=0;
   
   // calculate the total nuclear charge
-  int Znuc=0;
-  PointBag_double *z = molecule()->charges();
-  
-  for (Pix p=z->first(); p; z->next(p)) Znuc += (int) z->get(p);
-  delete z;
+  int Znuc=molecule()->nuclear_charge();
 
   // check to see if this is to be a charged molecule
   int charge = keyval->intvalue("total_charge");
@@ -117,7 +113,7 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
   cout << node0 << endl << indent
        << "CLSCF::init: total charge = " << Znuc-2*tndocc_ << endl << endl;
 
-  nirrep_ = molecule()->point_group().char_table().ncomp();
+  nirrep_ = molecule()->point_group()->char_table().ncomp();
 
   if (keyval->exists("docc")) {
     ndocc_ = new int[nirrep_];

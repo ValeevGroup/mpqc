@@ -74,7 +74,6 @@ class PointChargeData: public VRefCount
     double **alloced_positions_;
 
   public:
-    PointChargeData(PointBag_double* c);
     // If copy_data is 0, the passed positions and charges will
     // be stored (but not freed).
     PointChargeData(int ncharge,

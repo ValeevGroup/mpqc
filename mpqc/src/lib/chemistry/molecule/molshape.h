@@ -35,7 +35,7 @@
 #include <util/misc/formio.h>
 
 #include <math/isosurf/shape.h>
-#include <chemistry/molecule/molinfo.h>
+#include <chemistry/molecule/atominfo.h>
 #include <chemistry/molecule/molecule.h>
 
 //. The \clsnm{VDWShape} class describes the surface of a
@@ -63,6 +63,7 @@ class DiscreteConnollyShape: public UnionShape {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
+    double radius_scale_factor_;
     RefAtomInfo atominfo_;
  public:
     DiscreteConnollyShape(const RefKeyVal&);
@@ -155,6 +156,7 @@ class ConnollyShape: public Shape {
   private:
     CS2Sphere* sphere;
     double probe_r;
+    double radius_scale_factor_;
     int n_spheres;
     RefAtomInfo atominfo_;
 

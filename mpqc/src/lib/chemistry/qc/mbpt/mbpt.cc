@@ -375,7 +375,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
       occs(i) = reference_->occupation(i);
     }
   // sort the eigenvectors and values if symmetry is not c1
-  if (molecule()->point_group().char_table().order() != 1) {
+  if (molecule()->point_group()->char_table().order() != 1) {
       int n = vals.n();
       double *evals = new double[n];
       vals->convert(evals);

@@ -340,20 +340,20 @@ SetIntCoor::fd_bmat(RefMolecule& mol,RefSCMatrix& fd_bmatrix)
   // the finite displacement bmat
   for (i=0; i<n3; i++) {
       // the plus displacement
-      m[i/3][i%3] += cart_disp;
+      m.r(i/3,i%3) += cart_disp;
       update_values(mol);
       int j;
       for (j=0; j<nc; j++) {
           internal_p(j) = coor_[j]->value();
         }
       // the minus displacement
-      m[i/3][i%3] -= 2.0*cart_disp;
+      m.r(i/3,i%3) -= 2.0*cart_disp;
       update_values(mol);
       for (j=0; j<nc; j++) {
           internal_m(j) = coor_[j]->value();
         }
       // reset the cartesian coordinate to its original value
-      m[i/3][i%3] += cart_disp;
+      m.r(i/3,i%3) += cart_disp;
 
       // construct the entries in the finite displacement bmat
       for (j=0; j<nc; j++) {
@@ -855,12 +855,14 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
 
   int i;
   for(i=0; i < m.natom(); i++) {
-      double at_rad_i = m[i].element().atomic_radius();
+      double at_rad_i = m.atominfo()->atomic_radius(m.Z(i));
+      SCVector3 ri(m.r(i));
 
       for(int j=0; j < i; j++) {
-          double at_rad_j = m[j].element().atomic_radius();
+          double at_rad_j = m.atominfo()->atomic_radius(m.Z(j));
+          SCVector3 rj(m.r(j));
 
-          if (dist(m[i].point(),m[j].point())
+          if (ri.dist(rj)
               < radius_scale_factor_*(at_rad_i+at_rad_j))
             bonds.set(i,j);
         }
@@ -872,6 +874,7 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
 
   // check for atoms bound to nothing
   for (i=0; i < m.natom(); i++) {
+      SCVector3 ri(m.r(i));
       int bound=0;
       for (int j=0; j < m.natom(); j++) {
           if (bonds(i,j)) {
@@ -881,8 +884,9 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
         }
       if (m.natom() > 1 && !bound) {
           int j = nearest_contact(i,m);
+          SCVector3 rj(m.r(j));
           // the distance to the nearest contact in angstroms
-          double d = bohr*dist(m[i].point(),m[j].point());
+          double d = bohr*ri.dist(rj);
           // as a last resort add the nearest contact
           if (d > 0.5 && d < 5.0) {
               bonds.set(i,j);
@@ -949,9 +953,9 @@ IntCoorGen::cos_ijk(Molecule& m, int i, int j, int k)
   SCVector3 a, b, c;
   int xyz;
   for (xyz=0; xyz<3; xyz++) {
-      a[xyz] = m[i].point()[xyz];
-      b[xyz] = m[j].point()[xyz];
-      c[xyz] = m[k].point()[xyz];
+      a[xyz] = m.r(i,xyz);
+      b[xyz] = m.r(j,xyz);
+      c[xyz] = m.r(k,xyz);
     }
   SCVector3 ab = a - b;
   SCVector3 cb = c - b;
@@ -970,10 +974,13 @@ IntCoorGen::add_bends(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
   double thres = cos(linear_bend_thres_*M_PI/180.0);
 
   for(i=0; i < n; i++) {
+    SCVector3 ri(m.r(i));
     for(j=0; j < n; j++) {
       if(bonds(i,j)) {
+        SCVector3 rj(m.r(j));
         for(k=0; k < i; k++) {
           if(bonds(j,k)) {
+            SCVector3 rk(m.r(k));
             int is_linear = (cos_ijk(m,i,j,k) >= thres);
             if (linear_bends_ || !is_linear) {
               labelc++;
@@ -982,7 +989,7 @@ IntCoorGen::add_bends(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
               }
             if (linear_lbends_ && is_linear) {
               // find a unit vector roughly perp to the bonds
-              Point u(3);
+              SCVector3 u;
               // first try to find another atom, that'll help keep one of
               // the coordinates totally symmetric in some cases
               int most_perp_atom = -1;
@@ -996,17 +1003,15 @@ IntCoorGen::add_bends(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
                   }
                 }
               if (most_perp_atom != -1) {
-                norm(u,m[j].point(),m[most_perp_atom].point());
+                SCVector3 rmpa(m.r(most_perp_atom));
+                u = rj-rmpa;
+                u.normalize();
                 }
               else {
-                SCVector3 b1, b2, uv;
-                int ii;
-                for (ii=0; ii<3; ii++) {
-                  b1[ii] = m.atom(i)[ii] - m.atom(j)[ii];
-                  b2[ii] = m.atom(k)[ii] - m.atom(j)[ii];
-                  }
-                uv = b1.perp_unit(b2);
-                for (ii=0; ii<3; ii++) u[ii] = uv[ii];
+                SCVector3 b1, b2;
+                b1 = ri-rj;
+                b2 = rk-rj;
+                u = b1.perp_unit(b2);
                 }
               labelc++;
               sprintf(label,"b%d",labelc);
@@ -1036,7 +1041,7 @@ IntCoorGen::hterminal(Molecule& m, BitArray& bonds, int i)
 {
   int nh=0;
   for (int j=0; j < m.natom(); j++)
-    if (bonds(i,j) && m[j].element().mass() > 1.1) nh++;
+    if (bonds(i,j) && m.Z(j) > 1) nh++;
   return (nh==1);
 }
 
@@ -1058,7 +1063,7 @@ IntCoorGen::add_tors(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
           if(k==i) continue;
 
          // no hydrogen torsions, ok?
-	  if (m[i].element().mass() < 1.1 && !hterminal(m,bonds,j)) continue;
+	  if (m.Z(i) == 1 && !hterminal(m,bonds,j)) continue;
 
           if (bonds(j,i)) {
             int is_linear = 0;
@@ -1068,7 +1073,7 @@ IntCoorGen::add_tors(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
               if (l==j || l==i) continue;
 
              // no hydrogen torsions, ok?
-	      if (m[l].element().mass() < 1.1 && !hterminal(m,bonds,k))
+	      if (m.Z(l) == 1 && !hterminal(m,bonds,k))
                 continue;
 
               if (bonds(k,l)) {
@@ -1131,9 +1136,12 @@ IntCoorGen::nearest_contact(int i, Molecule& m)
 {
   double d=-1.0;
   int n=0;
+
+  SCVector3 ri(m.r(i));
   
   for (int j=0; j < m.natom(); j++) {
-    double td = dist(m[i].point(),m[j].point());
+    SCVector3 rj(m.r(j));
+    double td = ri.dist(rj);
     if (j==i)
       continue;
     else if (d < 0 || td < d) {

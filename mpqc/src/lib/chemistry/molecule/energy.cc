@@ -210,9 +210,9 @@ MolecularEnergy::x_to_molecule()
     int c = 0;
     
     for (int i=0; i<mol_->natom(); i++) {
-      mol_->operator[](i)[0] = x(c); c++;
-      mol_->operator[](i)[1] = x(c); c++;
-      mol_->operator[](i)[2] = x(c); c++;
+      mol_->r(i,0) = x(c); c++;
+      mol_->r(i,1) = x(c); c++;
+      mol_->r(i,2) = x(c); c++;
     }
   } else {
     mc_->to_cartesian(get_x_no_copy());
@@ -226,9 +226,9 @@ MolecularEnergy::molecule_to_x()
     RefSCVector cartesian(moldim(),matrixkit());
     int c = 0;
     for (int i=0; i < mol_->natom(); i++) {
-      cartesian(c) = mol_->operator[](i)[0]; c++;
-      cartesian(c) = mol_->operator[](i)[1]; c++;
-      cartesian(c) = mol_->operator[](i)[2]; c++;
+      cartesian(c) = mol_->r(i,0); c++;
+      cartesian(c) = mol_->r(i,1); c++;
+      cartesian(c) = mol_->r(i,2); c++;
     }
     Function::set_x(cartesian);
   } else {
@@ -254,9 +254,9 @@ MolecularEnergy::get_cartesian_x()
   RefSCVector cartesian(moldim(),matrixkit());
   int c = 0;
   for (int i=0; i < mol_->natom(); i++) {
-      cartesian(c) = mol_->operator[](i)[0]; c++;
-      cartesian(c) = mol_->operator[](i)[1]; c++;
-      cartesian(c) = mol_->operator[](i)[2]; c++;
+      cartesian(c) = mol_->r(i,0); c++;
+      cartesian(c) = mol_->r(i,1); c++;
+      cartesian(c) = mol_->r(i,2); c++;
     }
   return cartesian;
 }

@@ -105,7 +105,7 @@ CartMolecularCoor::to_cartesian(const RefSCVector&new_internal)
 
   // update the geometry
   for(int i=0; i < dim_.n(); i++) {
-    molecule[i/3][i%3] = new_internal(i);
+    molecule.r(i/3,i%3) = new_internal(i);
   }
 
   return 0;
@@ -121,7 +121,7 @@ CartMolecularCoor::to_internal(RefSCVector&internal)
   
   int n = dim_.n();
   for (int i=0; i < n; i++) {
-    internal(i) = molecule[i/3][i%3];
+    internal(i) = molecule.r(i/3,i%3);
   }
 
   return 0;

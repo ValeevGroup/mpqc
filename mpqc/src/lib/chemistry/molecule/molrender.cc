@@ -112,19 +112,18 @@ RenderedBallMolecule::init()
   for (int i=0; i<mol_->natom(); i++) {
       RefRenderedObject atom = new RenderedSphere;
 
-      AtomicCenter& atomcent = mol_->operator[](i);
-      ChemicalElement& chemelem = atomcent.element();
+      int Z = mol_->Z(i);
 
       RefMaterial material = new Material;
-      Color color(atominfo_->red(chemelem),
-                  atominfo_->green(chemelem),
-                  atominfo_->blue(chemelem));
+      Color color(atominfo_->red(Z),
+                  atominfo_->green(Z),
+                  atominfo_->blue(Z));
       material->diffuse().set(color);
       material->ambient().set(color);
 
       RefTransform transform = new Transform;
-      transform->scale(atominfo_->radius(chemelem));
-      transform->translate(atomcent[0], atomcent[1], atomcent[2]);
+      transform->scale(atominfo_->vdw_radius(Z));
+      transform->translate(mol_->r(i,0), mol_->r(i,1), mol_->r(i,2));
 
       atom->material(material);
       atom->transform(transform);
@@ -165,12 +164,10 @@ RenderedStickMolecule::~RenderedStickMolecule()
 static int
 bonding(const RefMolecule& m, const RefAtomInfo& a, int i, int j)
 {
-  SCVector3 ri(m->atom(i)[0], m->atom(i)[1], m->atom(i)[2]);
-  SCVector3 rj(m->atom(j)[0], m->atom(j)[1], m->atom(j)[2]);
-  //double maxbonddist = 1.1*(a->radius(m->atom(i).element())
-  //                          +a->radius(m->atom(j).element()));
-  double maxbonddist = 1.1*(m->atom(i).element().atomic_radius()
-                            +m->atom(j).element().atomic_radius());
+  SCVector3 ri(m->r(i));
+  SCVector3 rj(m->r(j));
+  double maxbonddist = 1.1*(m->atominfo()->atomic_radius(m->Z(i))
+                            +m->atominfo()->atomic_radius(m->Z(j)));
   SCVector3 r(ri-rj);
   if (r.dot(r) <= maxbonddist*maxbonddist) return 1;
   return 0;
@@ -202,14 +199,15 @@ RenderedStickMolecule::init()
   // put the atoms in the vertex list
   for (i=0; i<natoms; i++) {
       o->set_vertex(i,
-                    mol_->atom(i)[0],
-                    mol_->atom(i)[1],
-                    mol_->atom(i)[2]);
+                    mol_->r(i,0),
+                    mol_->r(i,1),
+                    mol_->r(i,2));
       if (use_color_) {
+          int Z = mol_->Z(i);
           o->set_vertex_rgb(i,
-                            atominfo_->red(mol_->atom(i).element()),
-                            atominfo_->green(mol_->atom(i).element()),
-                            atominfo_->blue(mol_->atom(i).element()));
+                            atominfo_->red(Z),
+                            atominfo_->green(Z),
+                            atominfo_->blue(Z));
         }
       else {
           o->set_vertex_rgb(i, 0.0, 0.0, 0.0);
@@ -220,26 +218,24 @@ RenderedStickMolecule::init()
   nbonds = 0;
   int ibonds2 = natoms;
   for (i=0; i<natoms; i++) {
-      SCVector3 ri(mol_->atom(i)[0],
-                   mol_->atom(i)[1],
-                   mol_->atom(i)[2]);
+      SCVector3 ri(mol_->r(i));
+      int Zi = mol_->Z(i);
       for (j=0; j<i; j++) {
           if (bonding(mol_, atominfo_, i, j)) {
               if (use_color_) {
-                  SCVector3 rj(mol_->atom(j)[0],
-                               mol_->atom(j)[1],
-                               mol_->atom(j)[2]);
+                  SCVector3 rj(mol_->r(j));
+                  int Zj = mol_->Z(j);
                   SCVector3 v = 0.5*(ri+rj);
                   o->set_vertex(ibonds2, v.x(), v.y(), v.z());
                   o->set_vertex_rgb(ibonds2,
-                                    atominfo_->red(mol_->atom(i).element()),
-                                    atominfo_->green(mol_->atom(i).element()),
-                                    atominfo_->blue(mol_->atom(i).element()));
+                                    atominfo_->red(Zi),
+                                    atominfo_->green(Zi),
+                                    atominfo_->blue(Zi));
                   o->set_vertex(ibonds2+1, v.x(), v.y(), v.z());
                   o->set_vertex_rgb(ibonds2+1,
-                                    atominfo_->red(mol_->atom(j).element()),
-                                    atominfo_->green(mol_->atom(j).element()),
-                                    atominfo_->blue(mol_->atom(j).element()));
+                                    atominfo_->red(Zj),
+                                    atominfo_->green(Zj),
+                                    atominfo_->blue(Zj));
                   o->set_polyline(nbonds, i, ibonds2, ibonds2+1, j);
                   ibonds2 += 2;
                 }
@@ -302,11 +298,11 @@ RenderedMolecularSurface::init()
   double *arad = new double[natom];
   ij = 0;
   for (i=0; i<natom; i++) {
-      ChemicalElement& element = mol_->atom(i).element();
-      arad[i] = atominfo_->radius(element);
+      int Z = mol_->Z(i);
+      arad[i] = atominfo_->vdw_radius(Z);
       for (j=0; j<3; j++,ij++) {
-          axyz[ij] = mol_->atom(i)[j];
-          argb[ij] = atominfo_->rgb(element, j);
+          axyz[ij] = mol_->r(i,j);
+          argb[ij] = atominfo_->rgb(Z, j);
         }
     }
 
@@ -473,11 +469,11 @@ AtomProximityColorizer::colorize(const RefRenderedPolygons &poly)
   double *arad = new double[natom];
   ij = 0;
   for (i=0; i<natom; i++) {
-      ChemicalElement& element = mol_->atom(i).element();
-      arad[i] = atominfo_->radius(element);
+      int Z = mol_->Z(i);
+      arad[i] = atominfo_->vdw_radius(Z);
       for (j=0; j<3; j++,ij++) {
-          axyz[ij] = mol_->atom(i)[j];
-          argb[ij] = atominfo_->rgb(element, j);
+          axyz[ij] = mol_->r(i,j);
+          argb[ij] = atominfo_->rgb(Z, j);
         }
     }
 

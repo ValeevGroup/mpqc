@@ -94,7 +94,7 @@ PetiteList::init()
   Molecule& mol = *gbs.molecule().pointer();
 
   // create the character table for the point group
-  CharacterTable ct = mol.point_group().char_table();
+  CharacterTable ct = mol.point_group()->char_table();
   
   // initialize private members
   c1_=0;
@@ -134,7 +134,7 @@ PetiteList::init()
   
   // loop over all centers
   for (i=0; i < natom_; i++) {
-    AtomicCenter ac = mol.atom(i);
+    SCVector3 ac(mol.r(i));
 
     // then for each symop in the pointgroup, transform the coordinates of
     // center "i" and see which atom it maps into
@@ -284,7 +284,7 @@ PetiteList::SO_basisdim()
   GaussianBasisSet& gbs = *gbs_.pointer();
   
   // create the character table for the point group
-  CharacterTable ct = gbs.molecule()->point_group().char_table();
+  CharacterTable ct = gbs.molecule()->point_group()->char_table();
 
   // ncomp is the number of symmetry blocks we have
   int ncomp=nblocks();
@@ -383,7 +383,7 @@ PetiteList::print(ostream& o, int verbose)
     o << node0 << endl << decindent;
   }
 
-  CharacterTable ct = gbs_->molecule()->point_group().char_table();
+  CharacterTable ct = gbs_->molecule()->point_group()->char_table();
   for (i=0; i < nirrep_; i++)
     o << node0 << indent 
       << scprintf("%5d functions of %s symmetry\n",
@@ -399,7 +399,7 @@ PetiteList::r(int g)
   GaussianBasisSet& gbs = *gbs_.pointer();
   
   SymmetryOperation so =
-    gbs.molecule()->point_group().char_table().symm_operation(g);
+    gbs.molecule()->point_group()->char_table().symm_operation(g);
 
   RefSCMatrix ret = gbs.matrixkit()->matrix(gbs.basisdim(), gbs.basisdim());
   ret.assign(0.0);

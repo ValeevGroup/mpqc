@@ -636,7 +636,7 @@ Int1eV3::int_accum_shell_nuclear_hfc_1der(int ish, int jsh,
   /* Compute the nuc attr part of the nuclear derivative for three equal
    * centers. */
   scale_shell_result = 1;
-  result_scale_factor = -bs1_->molecule()->atom(centernum).element().charge();
+  result_scale_factor = -bs1_->molecule()->Z(centernum);
   for (int xyz=0; xyz<3; xyz++) {
       C[xyz] = bs1_->r(centernum,xyz);
     }
@@ -666,7 +666,7 @@ Int1eV3::int_accum_shell_nuclear_hf_1der(int ish, int jsh,
   /* Compute the nuc attr part of the nuclear derivative. */
   if (bs1_ == dercs) {
     scale_shell_result = 1;
-    result_scale_factor= -bs1_->molecule()->atom(centernum).element().charge();
+    result_scale_factor= -bs1_->molecule()->Z(centernum);
     for (int xyz=0; xyz<3; xyz++) {
         C[xyz] = bs1_->r(centernum,xyz);
       }
@@ -675,7 +675,7 @@ Int1eV3::int_accum_shell_nuclear_hf_1der(int ish, int jsh,
     }
   else if (bs2_ == dercs) {
     scale_shell_result = 1;
-    result_scale_factor= -bs2_->molecule()->atom(centernum).element().charge();
+    result_scale_factor= -bs2_->molecule()->Z(centernum);
     for (int xyz=0; xyz<3; xyz++) {
         C[xyz] = bs2_->r(centernum,xyz);
       }
@@ -705,7 +705,7 @@ Int1eV3::int_accum_shell_nuclear_nonhf_1der(int ish, int jsh,
         C[xyz] = bs1_->r(i,xyz);
       }
     scale_shell_result = 1;
-    result_scale_factor = -bs1_->molecule()->atom(i).element().charge();
+    result_scale_factor = -bs1_->molecule()->Z(i);
     accum_shell_1der(buff,ish,jsh,dercs,centernum,
                      Int1eV3::comp_shell_nuclear);
     scale_shell_result = 0;
@@ -718,7 +718,7 @@ Int1eV3::int_accum_shell_nuclear_nonhf_1der(int ish, int jsh,
           C[xyz] = bs2_->r(i,xyz);
         }
       scale_shell_result = 1;
-      result_scale_factor = -bs2_->molecule()->atom(i).element().charge();
+      result_scale_factor = -bs2_->molecule()->Z(i);
       accum_shell_1der(buff,ish,jsh,dercs,centernum,
                        Int1eV3::comp_shell_nuclear);
       scale_shell_result = 0;
@@ -871,7 +871,7 @@ Int1eV3::nuclear(int ish, int jsh)
           C[xyz] = bs1_->r(i,xyz);
           }
         cartesianbuffer[index] -= comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                       * bs1_->molecule()->atom(i).element().charge();
+                       * bs1_->molecule()->Z(i);
         }
       /* Loop thru the centers on bs2_ if necessary. */
       if (bs2_ != bs1_) {
@@ -880,7 +880,7 @@ Int1eV3::nuclear(int ish, int jsh)
             C[xyz] = bs2_->r(i,xyz);
             }
           cartesianbuffer[index]-=comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                         * bs2_->molecule()->atom(i).element().charge();
+                         * bs2_->molecule()->Z(i);
           }
         }
       index++;
@@ -1025,7 +1025,7 @@ Int1eV3::hcore(int ish, int jsh)
           C[xyz] = bs1_->r(i,xyz);
           }
         cartesianbuffer[index] -= comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                                * bs1_->molecule()->atom(i).element().charge();
+                                * bs1_->molecule()->Z(i);
         }
       /* Loop thru the centers on bs2_ if necessary. */
       if (bs2_ != bs1_) {
@@ -1034,7 +1034,7 @@ Int1eV3::hcore(int ish, int jsh)
             C[xyz] = bs2_->r(i,xyz);
             }
           cartesianbuffer[index]-=comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                                * bs2_->molecule()->atom(i).element().charge();
+                                * bs2_->molecule()->Z(i);
           }
         }
       index++;

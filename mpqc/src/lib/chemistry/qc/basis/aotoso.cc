@@ -279,7 +279,7 @@ PetiteList::aotoso_info()
   Molecule& mol = *gbs.molecule().pointer();
 
   // create the character table for the point group
-  CharacterTable ct = mol.point_group().char_table();
+  CharacterTable ct = mol.point_group()->char_table();
   SymmetryOperation so;
 
   if (c1_) {
@@ -878,7 +878,7 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   
   int b,c;
 
-  CharacterTable ct = gbs.molecule()->point_group().char_table();
+  CharacterTable ct = gbs.molecule()->point_group()->char_table();
 
 #if 1
   RefSCMatrix aoso = aotoso();

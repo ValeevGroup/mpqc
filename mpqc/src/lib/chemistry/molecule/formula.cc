@@ -54,7 +54,7 @@ MolecularFormula::MolecularFormula(const RefMolecule& m)
   for (int a=0; a < mol.natom(); a++) {
     int i=0;
     while(symbols[i]) {
-      if (!strcmp(mol[a].element().symbol(), symbols[i])) {
+      if (!strcmp(AtomInfo::symbol(mol.Z(a)), symbols[i])) {
         count_[i]++;
 
         maxcount = (count_[i] > maxcount) ? count_[i] : maxcount;

@@ -42,7 +42,7 @@
 SavableState_REF_def(Molecule);
 
 #define CLASSNAME Molecule
-#define VERSION 2
+#define VERSION 3
 #define PARENTS public SavableState
 #define HAVE_CTOR
 #define HAVE_KEYVAL_CTOR
@@ -57,28 +57,51 @@ Molecule::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-Molecule::Molecule() :
-  atoms(0), natoms(0)
+Molecule::Molecule():
+  r_(0), natoms_(0), Z_(0), mass_(0), labels_(0)
 {
+  atominfo_ = new AtomInfo();
   geometry_units_ = new Units("bohr");
 }
 
-Molecule::Molecule(Molecule& mol) :
- atoms(0), natoms(0)
+Molecule::Molecule(Molecule& mol):
+ r_(0), natoms_(0), Z_(0), mass_(0), labels_(0)
 {
   *this=mol;
 }
 
 Molecule::~Molecule()
 {
-  if (atoms) delete[] atoms;
-  atoms=0;
-  natoms=0;
+  clear();
 }
 
-Molecule::Molecule(const RefKeyVal&input) :
-  pg(input), atoms(0), natoms(0)
+void
+Molecule::clear()
 {
+  if (r_) {
+      delete[] r_[0];
+      delete[] r_;
+      r_ = 0;
+    }
+  if (labels_) {
+      for (int i=0; i<natoms_; i++) {
+          delete[] labels_[i];
+        }
+      delete[] labels_;
+      labels_ = 0;
+    }
+  delete[] mass_;
+  mass_ = 0;
+  delete[] Z_;
+  Z_ = 0;
+}
+
+Molecule::Molecule(const RefKeyVal&input):
+ r_(0), natoms_(0), Z_(0), mass_(0), labels_(0)
+{
+  pg_ = new PointGroup(input);
+  atominfo_ = input->describedclassvalue("atominfo");
+  if (atominfo_.null()) atominfo_ = new AtomInfo;
   if (input->exists("pdb_file")) {
       geometry_units_ = new Units("angstrom");
       double ang_to_bohr = geometry_units_->to_atomic_units();
@@ -92,7 +115,6 @@ Molecule::Molecule(const RefKeyVal&input) :
                << scprintf("pdb file not found: \"%s\"\n", filename);
           abort();
         }
-      int i=0;
       while(fgets(line,LineLength,fp)) {
           if (!strncmp(line,"HETA",4) || !strncmp(line,"ATOM",4)) {
               char atomsym[3];
@@ -119,13 +141,8 @@ Molecule::Molecule(const RefKeyVal&input) :
               // z
               strncpy(position,&line[46],8);
               double z = atof(position);
-              AtomicCenter ac(atomsym,
-                              x*ang_to_bohr,
-                              y*ang_to_bohr,
-                              z*ang_to_bohr,
-                              0);
-              add_atom(i,ac);
-              i++;
+              add_atom(AtomInfo::string_to_Z(atomsym),
+                       x*ang_to_bohr, y*ang_to_bohr, z*ang_to_bohr);
             }
         }
       fclose(fp);
@@ -161,17 +178,15 @@ Molecule::Molecule(const RefKeyVal&input) :
 
       int i;
       for (i=0; i<natom; i++) {
-          char* name;
-          char* labels;
-          AtomicCenter ac(name = input->pcharvalue("atoms",i),
-                          input->doublevalue("geometry",i,0)*conv,
-                          input->doublevalue("geometry",i,1)*conv,
-                          input->doublevalue("geometry",i,2)*conv,
-                          labels = input->pcharvalue("atom_labels",i)
-                          );
-          if (name) delete[] name;
-          if (labels) delete[] labels;
-          add_atom(i,ac);
+          char *name, *label;
+          add_atom(AtomInfo::string_to_Z(name = input->pcharvalue("atoms",i)),
+                   input->doublevalue("geometry",i,0)*conv,
+                   input->doublevalue("geometry",i,1)*conv,
+                   input->doublevalue("geometry",i,2)*conv,
+                   label = input->pcharvalue("atom_labels",i)
+              );
+          delete[] name;
+          delete[] label;
         }
     }
     
@@ -181,73 +196,114 @@ Molecule::Molecule(const RefKeyVal&input) :
     symmetrize();
 }
 
-Molecule& Molecule::operator=(Molecule& mol)
+Molecule&
+Molecule::operator=(Molecule& mol)
 {
-  if(atoms) delete[] atoms; atoms=0;
-  natoms=0;
+  clear();
 
-  pg = mol.pg;
-
-  for(int i=0; i < mol.natom(); i++) {
-       AtomicCenter ac = mol[i];
-       add_atom(i,ac);
-    }
-
+  pg_ = new PointGroup(*(mol.pg_.pointer()));
+  atominfo_ = mol.atominfo_;
   geometry_units_ = new Units(mol.geometry_units_->string_rep());
+
+  natoms_ = mol.natoms_;
+
+  if (natoms_) {
+      if (mol.mass_) {
+          mass_ = new double[natoms_];
+          memcpy(mass_,mol.mass_,natoms_*sizeof(double));
+        }
+      if (mol.labels_) {
+          labels_ = new char *[natoms_];
+          for (int i=0; i<natoms_; i++) {
+              if (mol.labels_[i]) {
+                  labels_[i] = strcpy(new char[strlen(mol.labels_[i])+1],
+                                      mol.labels_[i]);
+                }
+              else labels_[i] = 0;
+            }
+        }
+      r_ = new double*[natoms_];
+      r_[0] = new double[natoms_*3];
+      for (int i=0; i<natoms_; i++) {
+          r_[i] = &(r_[0][i*3]);
+        }
+      memcpy(r_[0], mol.r_[0], natoms_*3*sizeof(double));
+      Z_ = new int[natoms_];
+      memcpy(Z_, mol.Z_, natoms_*sizeof(int));
+    }
 
   return *this;
 }
 
-int
-Molecule::natom() const
-{
-  return natoms;
-}
-
-const AtomicCenter&
-Molecule::get_atom(int i) const
-{
-  return atoms[i];
-}
-
-AtomicCenter&
-Molecule::get_atom(int i)
-{
-  return atoms[i];
-}
-
-Pix Molecule::first()
-{
-  return (Pix)atoms;
-}
-
-void Molecule::next(Pix& i)
-{
-  if ((AtomicCenter*)i < &atoms[natoms-1]) {
-      i = (Pix) &((AtomicCenter*)i)[1];
-    }
-  else i = 0;
-}
-
-int Molecule::owns(Pix i)
-{
-  if (i >= (Pix)atoms && i <= (Pix)&atoms[natoms-1]) return 1;
-  else return 0;
-}
-
 void
-Molecule::add_atom(int i,AtomicCenter& ac)
+Molecule::add_atom(int Z,double x,double y,double z,
+                   const char *label,double mass)
 {
-  if (i>=natoms) {
-      AtomicCenter* new_atoms = new AtomicCenter[i+1];
-      for (int j=0; j<natoms; j++) {
-	  new_atoms[j] = atoms[j];
-	}
-      if (atoms) delete[] atoms;
-      atoms = new_atoms;
-      natoms = i+1;
+  // allocate new arrays
+  int *newZ = new int[natoms_+1];
+  double **newr = new double*[natoms_+1];
+  double *newr0 = new double[(natoms_+1)*3];
+  char **newlabels = 0;
+  if (label || labels_) {
+      newlabels = new char*[natoms_+1];
     }
-  atoms[i] = ac;
+  double *newmass = 0;
+  if (mass_ || mass != 0.0) {
+      newmass = new double[natoms_+1];
+    }
+
+  // setup the r_ pointers
+  for (int i=0; i<=natoms_; i++) {
+      newr[i] = &(newr0[i*3]);
+    }
+
+  // copy old data to new arrays
+  if (natoms_) {
+      memcpy(newZ,Z_,sizeof(int)*natoms_);
+      memcpy(newr0,r_[0],sizeof(double)*natoms_*3);
+      if (labels_) {
+          memcpy(newlabels,labels_,sizeof(char*)*natoms_);
+        }
+      else if (newlabels) {
+          memset(newlabels,0,sizeof(char*)*natoms_);
+        }
+      if (mass_) {
+          memcpy(newmass,mass_,sizeof(double)*natoms_);
+        }
+      else if (newmass) {
+          memset(newmass,0,sizeof(double)*natoms_);
+        }
+    }
+
+  // delete old data
+  delete[] Z_;
+  if (r_) {
+      delete[] r_[0];
+      delete[] r_;
+    }
+  delete[] labels_;
+  delete[] mass_;
+
+  // setup new pointers
+  Z_ = newZ;
+  r_ = newr;
+  labels_ = newlabels;
+  mass_ = newmass;
+
+  // copy info for this atom into arrays
+  Z_[natoms_] = Z;
+  r_[natoms_][0] = x;
+  r_[natoms_][1] = y;
+  r_[natoms_][2] = z;
+  if (mass_) mass_[natoms_] = mass;
+  if (label) {
+      labels_[natoms_] = strcpy(new char[strlen(label)+1],label);
+    }
+  else if (labels_) {
+      labels_[natoms_] = 0;
+    }
+
+  natoms_++;
 }
 
 void
@@ -256,9 +312,6 @@ Molecule::print(ostream& os)
   int i;
 
   double conv = geometry_units_->from_atomic_units();
-
-  int have_label = 0;
-  for (i=0; i<natom(); i++) if (get_atom(i).label()) have_label = 1;
 
   // Be careful here, since MolecularFormula requires a smart
   // pointer that might try to delete this if i'm not referenced.
@@ -272,7 +325,7 @@ Molecule::print(ostream& os)
   os << node0 << indent << "molecule<Molecule>: (" << endl;
   os << incindent;
   os << node0 << indent
-     << "symmetry = " << pg.symbol() << endl;
+     << "symmetry = " << pg_->symbol() << endl;
   if (geometry_units_->string_rep()) {
       os << node0 << indent
          << "unit = \"" << geometry_units_->string_rep() << "\""
@@ -281,7 +334,7 @@ Molecule::print(ostream& os)
   os << node0 << indent
      << scprintf("{%3s", "n")
      << scprintf(" %5s", "atoms");
-  if (have_label) os << node0 << scprintf(" %11s", "atom_labels");
+  if (labels_) os << node0 << scprintf(" %11s", "atom_labels");
   os << node0
      << scprintf("  %16s", "")
      << scprintf(" %16s", "geometry   ")
@@ -290,9 +343,9 @@ Molecule::print(ostream& os)
   for (i=0; i<natom(); i++) {
       os << node0 << indent
          << scprintf(" %3d", i+1)
-         << scprintf(" %5s", get_atom(i).element().symbol());
-      if (have_label) {
-          const char *lab = get_atom(i).label();
+         << scprintf(" %5s", AtomInfo::symbol(Z_[i]));
+      if (labels_) {
+          const char *lab = labels_[i];
           if (lab == 0) lab = "";
           char  *qlab = new char[strlen(lab)+3];
           strcpy(qlab,"\"");
@@ -303,9 +356,9 @@ Molecule::print(ostream& os)
           delete[] qlab;
         }
       os << node0
-         << scprintf(" [% 16.10f", conv * get_atom(i)[0])
-         << scprintf(" % 16.10f", conv * get_atom(i)[1])
-         << scprintf(" % 16.10f]", conv * get_atom(i)[2])
+         << scprintf(" [% 16.10f", conv * r(i,0))
+         << scprintf(" % 16.10f", conv * r(i,1))
+         << scprintf(" % 16.10f]", conv * r(i,2))
          << endl;
     }
   os << node0 << indent << "}" << endl;
@@ -316,58 +369,29 @@ Molecule::print(ostream& os)
   for (i=0; i<natom(); i+=5) {
       os << node0 << indent;
       for (int j=i; j<i+5 && j<natom(); j++) {
-          os << node0 << scprintf(" %10.5f", get_atom(j).element().mass());
+          os << node0 << scprintf(" %10.5f", mass(j));
         }
       os << node0 << endl;
     }
 }
 
-AtomicCenter& Molecule::operator[](int ind)
-{
-  return get_atom(ind);
-}
-
-AtomicCenter& Molecule::atom(int ind)
-{
-  return get_atom(ind);
-}
-
-AtomicCenter& Molecule::operator()(Pix pix)
-{
-  return *(AtomicCenter*)pix;
-}
-
-const AtomicCenter& Molecule::operator[](int ind) const
-{
-  return get_atom(ind);
-}
-
-const AtomicCenter& Molecule::atom(int ind) const
-{
-  return get_atom(ind);
-}
-
 int
-Molecule::atom_label_to_index(const char *label) const
+Molecule::atom_label_to_index(const char *l) const
 {
   int i;
   for (i=0; i<natom(); i++) {
-      if (atom(i).label() && !strcmp(label,atom(i).label())) return i;
+      if (label(i) && !strcmp(l,label(i))) return i;
     }
   return -1;
 }
 
-const AtomicCenter& Molecule::operator()(Pix pix) const
+double*
+Molecule::charges() const
 {
-  return *(AtomicCenter*)pix;
-}
-
-PointBag_double* Molecule::charges() const
-{
-  PointBag_double*result = new PointBag_double;
+  double*result = new double[natoms_];
   int i;
   for (i=0; i<natom(); i++) {
-      result->add(get_atom(i).point(), get_atom(i).element().charge());
+      result[i] = Z_[i];
     }
   return result;
 }
@@ -377,105 +401,121 @@ Molecule::nuclear_charge() const
 {
   int i, c = 0;
   for (i=0; i<natom(); i++) {
-      c += get_atom(i).element().number();
+      c += Z_[i];
     }
   return c;
 }
 
 void Molecule::save_data_state(StateOut& so)
 {
-  pg.save_object_state(so);
-  so.put(natoms);
-  for (int i=0; i < natoms; i++) {
-      get_atom(i).save_object_state(so);
-    }
-
+  so.put(natoms_);
+  pg_.save_state(so);
   geometry_units_.save_state(so);
+  atominfo_.save_state(so);
+  if (natoms_) {
+      so.put(Z_, natoms_);
+      so.put(r_[0], natoms_*3);
+    }
+  if (mass_) {
+      so.put(1);
+      so.put(mass_, natoms_);
+    }
+  else {
+      so.put(0);
+    }
+  if (labels_){
+      so.put(1);
+      for (int i=0; i<natoms_; i++) {
+          so.putstring(labels_[i]);
+        }
+    }
+  else {
+      so.put(0);
+    }
 }
 
 Molecule::Molecule(StateIn& si):
-  atoms(0),
-  natoms(0),
+  r_(0), natoms_(0), Z_(0), mass_(0), labels_(0),
   SavableState(si)
 {
-  PointGroup tpg(si);
-  pg=tpg;
-
-  int natom;
-  si.get(natom);
-  for (int i=0; i < natom; i++) {
-      AtomicCenter ac(si);
-      add_atom(i,ac);
+  if (si.version(static_class_desc()) < 3) {
+      cerr << "Molecule: cannot restore from old molecules" << endl;
+      abort();
     }
-
-  if (si.version(static_class_desc()) >= 2) {
-      geometry_units_.restore_state(si);
+  si.get(natoms_);
+  pg_.restore_state(si);
+  geometry_units_.restore_state(si);
+  atominfo_.restore_state(si);
+  if (natoms_) {
+      si.get(Z_);
+      r_ = new double*[natoms_];
+      si.get(r_[0]);
+      for (int i=1; i<natoms_; i++) {
+          r_[i] = &(r_[0][i*3]);
+        }
+    }
+  int test;
+  si.get(test);
+  if (test) {
+      si.get(mass_);
+    }
+  si.get(test);
+  if (test){
+      labels_ = new char*[natoms_];
+      for (int i=0; i<natoms_; i++) {
+          si.getstring(labels_[i]);
+        }
     }
 }
 
 void
-Molecule::set_point_group(const PointGroup&ppg)
+Molecule::set_point_group(const RefPointGroup&ppg)
 {
-  pg = ppg;
+  pg_ = new PointGroup(*ppg.pointer());
   symmetrize();
 }
 
-const PointGroup& Molecule::point_group() const
+const RefPointGroup
+Molecule::point_group() const
 {
-  return pg;
+  return pg_;
 }
 
-RefPoint Molecule::center_of_mass()
-#ifdef __GNUC__
-  return ret;
-#endif
+SCVector3
+Molecule::center_of_mass()
 {
-#ifndef __GNUC__
-  RefPoint ret;
-#endif
-  double X,Y,Z,M;
+  SCVector3 ret;
+  double M;
 
-  X = Y = Z = M = 0;
+  ret = 0.0;
+  M = 0.0;
 
   for (int i=0; i < natom(); i++) {
-    double m = atom(i).element().mass();
-    X += m * atom(i)[0];
-    Y += m * atom(i)[1];
-    Z += m * atom(i)[2];
+    double m = mass(i);
+    ret += m * SCVector3(r(i));
     M += m;
   }
 
-  X /= M;
-  Y /= M;
-  Z /= M;
+  ret *= 1.0/M;
 
-  //cout << scprintf("center of mass = %f %f %f\n",X,Y,Z);
-
-  ret = new Point;
-  ret->operator[](0) = X;
-  ret->operator[](1) = Y;
-  ret->operator[](2) = Z;
-
-#ifndef __GNUC__
   return ret;
-#endif
 }
 
 double
 Molecule::nuclear_repulsion_energy()
 {
   int i, j;
-  double r, e=0;
+  double e=0.0;
 
-  for (i=1; i < natoms; i++) {
-    AtomicCenter& ai = get_atom(i);
-    double Zi = ai.element().charge();
+  for (i=1; i < natoms_; i++) {
+    SCVector3 ai(r(i));
+    double Zi = Z_[i];
     
     for (j=0; j < i; j++) {
-      AtomicCenter& aj = get_atom(j);
-      e += Zi * aj.element().charge() / dist(ai.point(), aj.point());
+        SCVector3 aj(r(j));
+        e += Zi * double(Z_[j]) / ai.dist(aj);
+      }
     }
-  }
 
   return e;
 }
@@ -484,34 +524,34 @@ void
 Molecule::nuclear_repulsion_1der(int center, double xyz[3])
 {
   int i,j,k;
-  double r[3],r2;
+  double rd[3],r2;
   double factor;
 
   xyz[0] = 0.0;
   xyz[1] = 0.0;
   xyz[2] = 0.0;
-  for (i=0; i < natoms; i++) {
-    AtomicCenter& ai = get_atom(i);
-    double Zi = ai.element().charge();
+  for (i=0; i < natoms_; i++) {
+      SCVector3 ai(r(i));
+      double Zi = Z_[i];
 
-    for (j=0; j < i; j++) {
-      if (center==i || center==j) {
-        AtomicCenter& aj = get_atom(j);
+      for (j=0; j < i; j++) {
+          if (center==i || center==j) {
+              SCVector3 aj(r(j));
 
-        r2 = 0.0;
-        for (k=0; k < 3; k++) {
-          r[k] = ai[k] - aj[k];
-          r2 += r[k]*r[k];
-        }
+              r2 = 0.0;
+              for (k=0; k < 3; k++) {
+                  rd[k] = ai[k] - aj[k];
+                  r2 += rd[k]*rd[k];
+                }
         
-        factor = - Zi * aj.element().charge() * pow(r2,-1.5);
-        if (center==j) factor = -factor;
-        for (k=0; k<3; k++) {
-          xyz[k] += factor * r[k];
+              factor = - Zi * Z_[j] * pow(r2,-1.5);
+              if (center==j) factor = -factor;
+              for (k=0; k<3; k++) {
+                  xyz[k] += factor * rd[k];
+                }
+            }
         }
-      }
     }
-  }
 }
 
 void
@@ -519,20 +559,20 @@ Molecule::nuclear_efield(const double *position, double *efield)
 {
   int i,j;
   double tmp;
-  double r[3];
+  double rd[3];
 
   for (i=0; i<3; i++) efield[i] = 0.0;
 
-  for (i=0; i<natoms; i++) {
-      AtomicCenter& a = get_atom(i);
+  for (i=0; i<natoms_; i++) {
+      SCVector3 a(r(i));
       tmp = 0.0;
       for (j=0; j<3; j++) {
-          r[j] = position[j] - a[j];
-          tmp += r[j]*r[j];
+          rd[j] = position[j] - a[j];
+          tmp += rd[j]*rd[j];
         }
-      tmp = double(a.element().number())/(tmp*sqrt(tmp));
+      tmp = double(Z_[i])/(tmp*sqrt(tmp));
       for (j=0; j<3; j++) {
-          efield[j] +=  r[j] * tmp;
+          efield[j] +=  rd[j] * tmp;
         }
     }
 }
@@ -540,11 +580,11 @@ Molecule::nuclear_efield(const double *position, double *efield)
 int
 Molecule::atom_at_position(double *v, double tol)
 {
-  Point p(v,3);
+  SCVector3 p(v);
   for (int i=0; i < natom(); i++) {
-    if (dist(p,atom(i).point()) < tol)
-      return i;
-  }
+      SCVector3 ai(r(i));
+      if (p.dist(ai) < tol) return i;
+    }
   return -1;
 }
 
@@ -552,24 +592,22 @@ Molecule::atom_at_position(double *v, double tol)
 
 // pass in natoms if you don't want to search through the entire molecule
 static int
-is_unique(Point& p, Molecule *mol, int natoms)
+is_unique(SCVector3& p, Molecule *mol, int natoms)
 {
   for (int i=natoms-1; i >= 0; i--) {
-    if (dist(p,mol->atom(i).point()) < 0.5) {
-      return 0;
+      SCVector3 ai(mol->r(i));
+      if (p.dist(ai) < 0.5) return 0;
     }
-  }
   return 1;
 }
 
 static int
-is_unique(Point& p, Molecule *mol)
+is_unique(SCVector3& p, Molecule *mol)
 {
   for (int i=0; i < mol->natom(); i++) {
-    if (dist(p,mol->atom(i).point()) < 0.5) {
-      return 0;
+      SCVector3 ai(mol->r(i));
+      if (p.dist(ai) < 0.5) return 0;
     }
-  }
 
   return 1;
 }
@@ -583,28 +621,19 @@ void
 Molecule::symmetrize()
 {
   // if molecule is c1, don't do anything
-  if (!strcmp(this->point_group().symbol(),"c1")) {
-    return;
-  }
+  if (!strcmp(this->point_group()->symbol(),"c1")) {
+      return;
+    }
 
-  Molecule *newmol = new Molecule;
-  newmol->pg = this->pg;
+  Molecule *newmol = new Molecule(*this);
   
-  CharacterTable ct = this->point_group().char_table();
+  CharacterTable ct = this->point_group()->char_table();
 
-  Point np;
+  SCVector3 np;
   SymmetryOperation so;
-  int nnew=0;
-
-  // first off, copy the un-symmetrized molecule into the new one
-  int i;
-  for (i=0; i < this->natom(); i++) {
-    newmol->add_atom(nnew,this->atom(i));
-    nnew++;
-  }
   
-  for (i=0; i < this->natom(); i++) {
-    AtomicCenter ac = this->atom(i);
+  for (int i=0; i < natom(); i++) {
+    SCVector3 ac(r(i));
 
     for (int g=0; g < ct.order(); g++) {
       so = ct.symm_operation(g);
@@ -614,9 +643,7 @@ Molecule::symmetrize()
       }
 
       if (is_unique(np,newmol)) {
-        AtomicCenter nac(ac.element().symbol(),np[0],np[1],np[2],ac.label());
-        newmol->add_atom(nnew,nac);
-        nnew++;
+        newmol->add_atom(Z_[i],np[0],np[1],np[2],label(i));
       }
     }
   }
@@ -631,16 +658,12 @@ Molecule::symmetrize()
 void
 Molecule::move_to_com()
 {
-  RefPoint com = center_of_mass();
-
-  double X = com->operator[](0);
-  double Y = com->operator[](1);
-  double Z = com->operator[](2);
+  SCVector3 com = center_of_mass();
 
   for (int i=0; i < natom(); i++) {
-    atom(i)[0] -= X;
-    atom(i)[1] -= Y;
-    atom(i)[2] -= Z;
+    r_[i][0] -= com[0];
+    r_[i][1] -= com[1];
+    r_[i][2] -= com[2];
   }
 }
 
@@ -664,10 +687,9 @@ Molecule::transform_to_principal_axes(int trans_frame)
   memset(inert_dat,'\0',sizeof(double)*9);
   memset(evecs_dat,'\0',sizeof(double)*9);
 
-  AtomicCenter ac;
   for (i=0; i < natom(); i++) {
-    ac = atom(i);
-    double m=au_to_angs*ac.element().mass();
+    SCVector3 ac(r(i));
+    double m=au_to_angs*mass(i);
     inert[0][0] += m * (ac[1]*ac[1] + ac[2]*ac[2]);
     inert[1][0] -= m * ac[0]*ac[1];
     inert[1][1] += m * (ac[0]*ac[0] + ac[2]*ac[2]);
@@ -702,16 +724,16 @@ Molecule::transform_to_principal_axes(int trans_frame)
 
   double x,y,z;
   for (i=0; i < natom(); i++) {
-    x = atom(i)[0]; y = atom(i)[1]; z = atom(i)[2];
+    x = r(i,0); y = r(i,1); z = r(i,2);
 
-    atom(i)[0] = evecs[0][0]*x + evecs[1][0]*y + evecs[2][0]*z;
-    atom(i)[1] = evecs[0][1]*x + evecs[1][1]*y + evecs[2][1]*z;
-    atom(i)[2] = evecs[0][2]*x + evecs[1][2]*y + evecs[2][2]*z;
+    r_[i][0] = evecs[0][0]*x + evecs[1][0]*y + evecs[2][0]*z;
+    r_[i][1] = evecs[0][1]*x + evecs[1][1]*y + evecs[2][1]*z;
+    r_[i][2] = evecs[0][2]*x + evecs[1][2]*y + evecs[2][2]*z;
   }
 
   if (!trans_frame) return;
   
-  SymmetryOperation tso=point_group().symm_frame();
+  SymmetryOperation tso=point_group()->symm_frame();
 
   for (i=0; i < 3; i++) {
     for (int j=0; j < 3; j++) {
@@ -722,7 +744,7 @@ Molecule::transform_to_principal_axes(int trans_frame)
       else if (fabs(t) >= .5)
         t = 1;
       
-      pg.symm_frame()[i][j] = t;
+      pg_->symm_frame()[i][j] = t;
     }
   }
 }
@@ -732,7 +754,7 @@ int *
 Molecule::find_unique_atoms()
 {
   // if this is a c1 molecule, then return all indices
-  if (!strcmp(point_group().symbol(),"c1")) {
+  if (!strcmp(point_group()->symbol(),"c1")) {
     int * ret = new int[natom()];
     for (int i=0; i < natom(); i++) ret[i]=i;
     return ret;
@@ -750,16 +772,16 @@ Molecule::find_unique_atoms()
 //   mol->transform_to_principal_axes(0);
 //   mol->symmetrize();
 
-  CharacterTable ct = mol->point_group().char_table();
+  CharacterTable ct = mol->point_group()->char_table();
 
-  AtomicCenter ac;
+  SCVector3 ac;
   SymmetryOperation so;
-  Point np;
+  SCVector3 np;
 
   int nu=1;
   int i;
   for (i=1; i < mol->natom(); i++) {
-    ac = mol->atom(i);
+    ac = mol->r(i);
     int i_is_unique=1;
 
     // subject i to all symmetry ops...if one of these maps into an atom
@@ -787,7 +809,7 @@ Molecule::find_unique_atoms()
  // change the coordinate number if so
   double tol=1.0e-5;
   for (i=0; i < nuniq; i++) {
-    ac = mol->atom(ret[i]);
+    ac = mol->r(ret[i]);
     if (fabs(ac[0]) < tol || fabs(ac[1]) < tol || fabs(ac[2]) < tol)
       continue;
 
@@ -802,7 +824,7 @@ Molecule::find_unique_atoms()
      // if np has a zero coordinate then find it in atoms
       if (fabs(np[0]) < tol || fabs(np[1]) < tol || fabs(np[2]) < tol) {
         for (int j=0; j < mol->natom(); j++) {
-          if (dist(np,mol->atom(j).point()) < 0.1) {
+          if (np.dist(SCVector3(mol->r(j))) < 0.1) {
             ret[i] = j;
             breakg=1;
             break;
@@ -820,7 +842,7 @@ int
 Molecule::num_unique_atoms()
 {
  // if this is a c1 molecule, then return natom
-  if (!strcmp(point_group().symbol(),"c1"))
+  if (!strcmp(point_group()->symbol(),"c1"))
     return natom();
 
  // so that we don't have side effects, copy this to mol
@@ -829,16 +851,16 @@ Molecule::num_unique_atoms()
 //   mol_transform_to_principal_axes(mol,0);
 //   mol->symmetrize();
 
-  AtomicCenter ac;
+  SCVector3 ac;
   SymmetryOperation so;
-  Point np;
+  SCVector3 np;
 
-  CharacterTable ct = mol->point_group().char_table();
+  CharacterTable ct = mol->point_group()->char_table();
 
   int nu=1;
 
   for (int i=1; i < mol->natom(); i++) {
-    ac = mol->atom(i);
+    ac = mol->r(i);
     int i_is_unique=1;
 
     // subject i to all symmetry ops...if one of these maps into an atom
@@ -868,23 +890,23 @@ void
 Molecule::cleanup_molecule()
 {
   // if symmetry is c1, do nothing else
-  if (!strcmp(point_group().symbol(),"c1")) return;
+  if (!strcmp(point_group()->symbol(),"c1")) return;
 
   // now let's find out how many unique atoms there are and who they are
   int nuniq = num_unique_atoms();
   int *uniq = find_unique_atoms();
 
   int i;
-  Point up,np,ap;
+  SCVector3 up,np,ap;
   SymmetryOperation so;
-  CharacterTable ct = point_group().char_table();
+  CharacterTable ct = point_group()->char_table();
 
   // first clean up the unique atoms by replacing each coordinate with the
   // average of coordinates obtained by applying all symmetry operations to
   // the original atom, iff the new atom ends up near the original atom
   for (i=0; i < nuniq; i++) {
       // up will store the original coordinates of unique atom i
-      up = atom(uniq[i]).point();
+      up = r(uniq[i]);
       // ap will hold the average coordinate (times the number of coordinates)
       // initialize it to the E result
       ap = up;
@@ -896,15 +918,15 @@ Molecule::cleanup_molecule()
               np[ii]=0;
               for (int jj=0; jj < 3; jj++) np[ii] += so(ii,jj) * up[jj];
             }
-          if (dist(np,up) < 0.1) {
+          if (np.dist(up) < 0.1) {
               for (int jj=0; jj < 3; jj++) ap[jj] += np[jj];
               ncoor++;
             }
         }
       // replace the unique coordinate with the average coordinate
-      atom(uniq[i])[0] = ap[0] / ncoor;
-      atom(uniq[i])[1] = ap[1] / ncoor;
-      atom(uniq[i])[2] = ap[2] / ncoor;
+      r_[uniq[i]][0] = ap[0] / ncoor;
+      r_[uniq[i]][1] = ap[1] / ncoor;
+      r_[uniq[i]][2] = ap[2] / ncoor;
     }
 
   // find the atoms equivalent to each unique atom and eliminate
@@ -913,7 +935,7 @@ Molecule::cleanup_molecule()
   // loop through unique atoms
   for (i=0; i < nuniq; i++) {
       // up will store the coordinates of unique atom i
-      up = atom(uniq[i]).point();
+      up = r(uniq[i]);
 
       // loop through all sym ops except E
       for (int g=1; g < ct.order(); g++) {
@@ -932,10 +954,10 @@ Molecule::cleanup_molecule()
               // skip j if it is unique
               if (k < nuniq) continue;
               // see if j is generated from i
-              if (dist(np,atom(j).point()) < 0.1) {
-                  atom(j)[0] = np[0];
-                  atom(j)[1] = np[1];
-                  atom(j)[2] = np[2];
+              if (np.dist(SCVector3(r(j))) < 0.1) {
+                  r_[j][0] = np[0];
+                  r_[j][1] = np[1];
+                  r_[j][2] = np[2];
                 }
             }
         }
@@ -981,10 +1003,10 @@ Molecule::principal_moments_of_inertia(double *evals, double **evecs)
   move_to_com();
 
   // compute inertia tensor
-  AtomicCenter ac;
+  SCVector3 ac;
   for (i=0; i<natom(); i++) {
-    ac = atom(i);
-    double m=au_to_angs*ac.element().mass();
+    ac = r(i);
+    double m=au_to_angs*mass(i);
     inert[0][0] += m * (ac[1]*ac[1] + ac[2]*ac[2]);
     inert[1][0] -= m * ac[0]*ac[1];
     inert[1][1] += m * (ac[0]*ac[0] + ac[2]*ac[2]);
@@ -1012,7 +1034,7 @@ Molecule::n_core_electrons()
 {
   int i,n=0;
   for (i=0; i<natom(); i++) {
-      int z = get_atom(i).element().number();
+      int z = Z_[i];
       if (z > 2) n += 2;
       if (z > 10) n += 8;
       if (z > 18) n += 8;
@@ -1034,7 +1056,7 @@ Molecule::max_z()
 {
   int i, maxz=0;
   for (i=0; i<natom(); i++) {
-      int z = get_atom(i).element().number();
+      int z = Z_[i];
       if (z>maxz) maxz = z;
     }
   return maxz;
@@ -1057,15 +1079,16 @@ Molecule::print_pdb(ostream& os, char *title)
   int i;
   for (i=0; i < natom(); i++) {
     char symb[4];
-    sprintf(symb,"%s1",atom(i).element().symbol());
+    sprintf(symb,"%s1",AtomInfo::symbol(Z_[i]));
 
     os << node0 << scprintf(
         "HETATM%5d  %-3s UNK %5d    %8.3f%8.3f%8.3f  0.00  0.00   0\n",
-        i+1, symb, 0, atom(i)[0]*bohr, atom(i)[1]*bohr, atom(i)[2]*bohr);
+        i+1, symb, 0, r(i,0)*bohr, r(i,1)*bohr, r(i,2)*bohr);
   }
 
   for (i=0; i < natom(); i++) {
-    double at_rad_i = atom(i).element().atomic_radius();
+    double at_rad_i = atominfo_->atomic_radius(Z_[i]);
+    SCVector3 ai(r(i));
 
     os << node0 << scprintf("CONECT%5d",i+1);
 
@@ -1073,9 +1096,10 @@ Molecule::print_pdb(ostream& os, char *title)
 
       if (j==i) continue;
 
-      double at_rad_j = atom(j).element().atomic_radius();
+      double at_rad_j = atominfo_->atomic_radius(Z_[j]);
+      SCVector3 aj(r(j));
 
-      if (dist(atom(i).point(),atom(j).point()) < 1.1*(at_rad_i+at_rad_j))
+      if (ai.dist(aj) < 1.1*(at_rad_i+at_rad_j))
           os << node0 << scprintf("%5d",j+1);
     }
 
@@ -1084,6 +1108,22 @@ Molecule::print_pdb(ostream& os, char *title)
 
   os << node0 << "END" << endl;
   os.flush();
+}
+
+double
+Molecule::mass(int atom) const
+{
+  if (!mass_ || mass_[atom] == 0) {
+      return atominfo_->mass(Z_[atom]);
+    }
+  return mass_[atom];
+}
+
+const char *
+Molecule::label(int atom) const
+{
+  if (!labels_) return 0;
+  return labels_[atom];
 }
 
 /////////////////////////////////////////////////////////////////////////////

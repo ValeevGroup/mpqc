@@ -32,7 +32,6 @@
 
 #include <util/misc/formio.h>
 #include <chemistry/molecule/simple.h>
-#include <chemistry/molecule/chemelem.h>
 #include <chemistry/molecule/localdef.h>
 
 #include <math/topology/bitarray.h>
@@ -231,7 +230,7 @@ SimpleCo::print(RefMolecule mol, ostream& os)
           os << node0 << "   ";
         }
       for (i=0; i<natoms(); i++) {
-          os << node0 << separator << mol->atom(atoms[i]-1).element().symbol();
+          os << node0 << separator << AtomInfo::symbol(mol->Z(atoms[i]-1));
           separator = "-";
         }
     }

@@ -73,7 +73,8 @@ MolecularFrequencies::MolecularFrequencies(const RefKeyVal& keyval)
 
   displacement_point_group_ = keyval->describedclassvalue("point_group");
   if (displacement_point_group_.null()) {
-      displacement_point_group_ = new PointGroup(mol_->point_group());
+      displacement_point_group_
+          = new PointGroup(*mol_->point_group().pointer());
     }
 
   nirrep_ = displacement_point_group_->char_table().nirrep();
@@ -102,10 +103,16 @@ MolecularFrequencies::~MolecularFrequencies()
 }
 
 MolecularFrequencies::MolecularFrequencies(StateIn& si):
-  SavableState(si),
-  original_point_group_(si)
+  SavableState(si)
 {
   int i;
+
+  if (si.version(static_class_desc()) < 2) {
+      cerr << "MolecularFrequencies: cannot restore from old version" << endl;
+      abort();
+    }
+
+  original_point_group_.restore_state(si);
 
   if (si.version(static_class_desc()) >= 2) {
       displacement_point_group_.restore_state(si);
@@ -147,7 +154,7 @@ MolecularFrequencies::MolecularFrequencies(StateIn& si):
 void
 MolecularFrequencies::save_data_state(StateOut& so)
 {
-  original_point_group_.save_object_state(so);
+  original_point_group_.save_state(so);
 
   displacement_point_group_.save_state(so);
   mol_.save_state(so);
@@ -176,7 +183,7 @@ MolecularFrequencies::compute_displacements()
   int i, coor;
   for (i=0, coor=0; i<mol_->natom(); i++) {
       for (int j=0; j<3; j++, coor++) {
-          original_geometry_(coor) = mol_->atom(i)[j];
+          original_geometry_(coor) = mol_->r(i,j);
         }
     }
 
@@ -193,7 +200,7 @@ MolecularFrequencies::compute_displacements()
   RefSCMatrix externaldisp(d3natom_,dext,matrixkit());
   externaldisp.assign(0.0);
   for (i=0; i<natom; i++) {
-      AtomicCenter &atom = mol_->atom(i);
+      SCVector3 atom(mol_->r(i));
       for (int j=0; j<3; j++) {
           externaldisp(i*3 + j,j) = 1.0;
         }
@@ -240,7 +247,7 @@ MolecularFrequencies::compute_displacements()
   for (i=0; i < natom; i++) atom_map[i] = new int[ng];
   // loop over all centers
   for (i=0; i < natom; i++) {
-      AtomicCenter ac = mol_->atom(i);
+      SCVector3 ac(mol_->r(i));
       // then for each symop in the pointgroup, transform the coordinates of
       // center "i" and see which atom it maps into
       for (int g=0; g < ng; g++) {
@@ -404,7 +411,7 @@ MolecularFrequencies::displace(int disp)
 
   for (int i=0, coor=0; i<mol_->natom(); i++) {
       for (int j=0; j<3; j++, coor++) {
-          mol_->atom(i)[j] = original_geometry_(coor)
+          mol_->r(i,j) = original_geometry_(coor)
                            + coef * disp_
                             * displacements_[irrep]->get_element(coor,index);
         }
@@ -415,8 +422,7 @@ MolecularFrequencies::displace(int disp)
     }
   else {
       // Future work: doesn't need to be reduced to c1 symmetry here
-      PointGroup pg("c1");
-      mol_->set_point_group(pg);
+      mol_->set_point_group(new PointGroup("c1"));
     }
 }
 
@@ -427,7 +433,7 @@ MolecularFrequencies::original_geometry()
 
   for (int i=0, coor=0; i<mol_->natom(); i++) {
       for (int j=0; j<3; j++, coor++) {
-          mol_->atom(i)[j] = original_geometry_(coor);
+          mol_->r(i,j) = original_geometry_(coor);
         }
     }
 
@@ -468,7 +474,7 @@ MolecularFrequencies::compute_frequencies_from_gradients()
   RefDiagSCMatrix m(d3natom_, matrixkit());
   for (i=0,coor=0; i<mol_->natom(); i++) {
       for (int j=0; j<3; j++, coor++) {
-          m(coor) = 1.0/sqrt(mol_->atom(i).mass()*(1.0/5.48579903e-4));
+          m(coor) = 1.0/sqrt(mol_->mass(i)*(1.0/5.48579903e-4));
         }
     }
 
@@ -642,7 +648,7 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
   // compute the mass of the molecule (in kg)
   double mass = 0.0;
   for (i=0; i<mol_->natom(); i++) {
-      mass += mol_->atom(i).mass();
+      mass += mol_->mass(i);
       }
   mass *= amu_to_kg;
 
@@ -917,7 +923,7 @@ MolFreqAnimate::object(int iobject)
   int ixyz, iatom, icoor=0;
   for (iatom=0; iatom<mol->natom(); iatom++) {
       for (ixyz=0; ixyz<3; ixyz++, icoor++) {
-          mol->atom(iatom)[ixyz] += scale
+          mol->r(iatom,ixyz) += scale
                                    * irrepblock->get_element(icoor,mode_);
         }
     }

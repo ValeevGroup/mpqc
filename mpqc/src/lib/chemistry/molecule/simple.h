@@ -367,7 +367,7 @@ class LinIPSimpleCo : public SimpleCo {
 #   include <util/class/classd.h>
 SimpleCo_DECLARE(LinIPSimpleCo)
   private:
-    Point u2;
+    SCVector3 u2;
   public:
     LinIPSimpleCo();
     LinIPSimpleCo(const LinIPSimpleCo&);
@@ -376,7 +376,7 @@ SimpleCo_DECLARE(LinIPSimpleCo)
     // the linear angle abc.  The last argument, u, is a unit vector
     // used to defined the direction in which distortion is measured.
     // Atom numbering begins at atom 1, not atom 0.
-    LinIPSimpleCo(const char *refr, int, int, int, const Point &u);
+    LinIPSimpleCo(const char *refr, int, int, int, const SCVector3 &u);
     //. The \clsnmref{KeyVal} constructor.  This calls the \clsnm{SimpleCo} keyval
     // constructor with an integer argument of 3.
     LinIPSimpleCo(const RefKeyVal&);
@@ -410,7 +410,7 @@ class LinOPSimpleCo : public SimpleCo {
 #   include <util/class/classd.h>
 SimpleCo_DECLARE(LinOPSimpleCo)
   private:
-    Point u2;
+    SCVector3 u2;
   public:
     LinOPSimpleCo();
     LinOPSimpleCo(const LinOPSimpleCo&);
@@ -419,7 +419,7 @@ SimpleCo_DECLARE(LinOPSimpleCo)
     // the linear angle abc.  The last argument, u, is a unit vector used to
     // defined the direction perpendicular to the direction in which
     // distortion is measured.  Atom numbering begins at atom 1, not atom 0.
-    LinOPSimpleCo(const char *refr, int, int, int, const Point &u);
+    LinOPSimpleCo(const char *refr, int, int, int, const SCVector3 &u);
     //. The \clsnmref{KeyVal} constructor.  This calls the
     //\clsnmref{SimpleCo} keyval constructor with an integer argument of 3.
     LinOPSimpleCo(const RefKeyVal&);

@@ -56,9 +56,7 @@ XSCF::_castdown(const ClassDesc*cd)
 static void
 occ(PointBag_double *z, int &nd)
 {
-  int Z=0;
-  for (Pix i=z->first(); i; z->next(i)) Z += (int) z->get(i);
-  delete z;
+  int Z=molecule()->nuclear_charge();
 
   nd = Z/2;
   if (Z%2) {

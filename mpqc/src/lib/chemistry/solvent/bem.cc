@@ -382,10 +382,10 @@ BEMSolvent::nuclear_interaction_energy(double** charge_positions,
       for (int j=0; j<ncharge(); j++) {
           double r2 = 0.0;
           for (int k=0; k<3; k++) {
-              double r = charge_positions[j][k] - solute_->atom(i)[k];
+              double r = charge_positions[j][k] - solute_->r(i,k);
               r2 += r*r;
             }
-          energy += solute_->atom(i).element().charge() * charge[j] / sqrt(r2);
+          energy += double(solute_->Z(i)) * charge[j] / sqrt(r2);
         }
     }
   return energy;

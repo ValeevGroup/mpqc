@@ -51,7 +51,6 @@
 
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/localdef.h>
-#include <chemistry/molecule/chemelem.h>
 
 
 #define CLASSNAME TorsSimpleCo
@@ -109,20 +108,28 @@ double
 TorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 {
   int a=atoms[0]-1; int b=atoms[1]-1; int c=atoms[2]-1; int d=atoms[3]-1;
-  Point u1(3),u2(3),u3(3),z1(3),z2(3);
+  SCVector3 u1,u2,u3,z1,z2;
 
-  norm(u1,m[a].point(),m[b].point());
-  norm(u2,m[c].point(),m[b].point());
-  norm(u3,m[c].point(),m[d].point());
+  SCVector3 ra(m.r(a));
+  SCVector3 rb(m.r(b));
+  SCVector3 rc(m.r(c));
+  SCVector3 rd(m.r(d));
 
-  normal(u1,u2,z1);
-  normal(u3,u2,z2);
+  u1 = ra-rb;
+  u1.normalize();
+  u2 = rc-rb;
+  u2.normalize();
+  u3 = rc-rd;
+  u3.normalize();
 
-  double co=scalar(z1,z2);
+  z1 = u1.perp_unit(u2);
+  z2 = u3.perp_unit(u2);
+
+  double co=z1.dot(z2);
   u1[0]=z1[1]*z2[2]-z1[2]*z2[1];
   u1[1]=z1[2]*z2[0]-z1[0]*z2[2];
   u1[2]=z1[0]*z2[1]-z1[1]*z2[0];
-  double co2=scalar(u1,u2);
+  double co2=u1.dot(u2);
 
   if (co < -1.0) co= -1.0;
   if (co > 1.0) co = 1.0;
@@ -149,16 +156,19 @@ TorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 
   if (bmat) {
     double uu,vv,ww,zz;
-    norm(u1,m[a].point(),m[b].point());
-    norm(u2,m[c].point(),m[b].point());
-    norm(u3,m[c].point(),m[d].point());
-    normal(u1,u2,z1);
-    normal(u3,u2,z2);
-    co=scalar(u1,u2); double si=s2(co);
-    co2=scalar(u2,u3); double si2=s2(co2);
-    double r1 = dist(m[a].point(),m[b].point());
-    double r2 = dist(m[c].point(),m[b].point());
-    double r3 = dist(m[c].point(),m[d].point());
+    u1 = ra-rb;
+    u1.normalize();
+    u2 = rc-rb;
+    u2.normalize();
+    u3 = rc-rd;
+    u3.normalize();
+    z1 = u1.perp_unit(u2);
+    z2 = u3.perp_unit(u2);
+    co=u1.dot(u2); double si=s2(co);
+    co2=u2.dot(u3); double si2=s2(co2);
+    double r1 = ra.dist(rb);
+    double r2 = rc.dist(rb);
+    double r3 = rc.dist(rd);
 #if OLD_BMAT
     r1 *= bohr;
     r2 *= bohr;
@@ -186,10 +196,13 @@ TorsSimpleCo::calc_force_con(Molecule& m)
 {
   int a=atoms[1]-1; int b=atoms[2]-1;
 
-  double rad_ab =   m[a].element().atomic_radius()
-                  + m[b].element().atomic_radius();
+  double rad_ab =   m.atominfo()->atomic_radius(m.Z(a))
+                  + m.atominfo()->atomic_radius(m.Z(b));
 
-  double r_ab = dist(m[a].point(),m[b].point());
+  SCVector3 ra(m.r(a));
+  SCVector3 rb(m.r(b));
+
+  double r_ab = ra.dist(rb);
 
   double k = 0.0015 + 14.0*pow(1.0,0.57)/pow((rad_ab*r_ab),4.0) *
                            exp(-2.85*(r_ab-rad_ab));

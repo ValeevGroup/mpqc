@@ -26,6 +26,7 @@
 //
 
 #include <math.h>
+#include <strstream.h>
 
 #include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
@@ -46,10 +47,49 @@ __builtin_delete(void*ptr)
 
 void do_displacement(RefMolecularCoor&mc,int i);
 
+void
+print_atominfo(const RefAtomInfo &atominfo,
+               const RefAtomInfo &refatominfo)
+{
+  cout << "Rvdw(H) = " << refatominfo->vdw_radius(1)
+       << " " << atominfo->vdw_radius(1)
+       << endl;
+  cout << "Rvdw(C) = " << refatominfo->vdw_radius(6)
+       << " " << atominfo->vdw_radius(6)
+       << endl;
+  cout << "Rb(H) = " << refatominfo->bragg_radius(1)
+       << " " << atominfo->bragg_radius(1)
+       << endl;
+  cout << "Ra(H) = " << refatominfo->atomic_radius(1)
+       << " " << atominfo->atomic_radius(1)
+       << endl;
+  cout << "mass(H) = " << refatominfo->mass(1)
+       << " " << atominfo->mass(1)
+       << endl;
+  cout << "rgb(H) = "
+       << "["
+       << refatominfo->rgb(1,0) << " "
+       << refatominfo->rgb(1,1) << " "
+       << refatominfo->rgb(1,2) << " "
+       << "] ["
+       << atominfo->rgb(1,0) << " "
+       << atominfo->rgb(1,1) << " "
+       << atominfo->rgb(1,2) << " "
+       << "]"
+       << endl;
+}
+
 int 
 main(int argc, char **argv)
 {
   int i;
+
+  // get the message group.  first try the commandline and environment
+  RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
+  if (grp.nonnull())
+    MessageGrp::set_default_messagegrp(grp);
+  else
+    grp = MessageGrp::get_default_messagegrp();
 
   RefKeyVal kv;
   if (argc == 2) {
@@ -57,6 +97,30 @@ main(int argc, char **argv)
     }
   else {
       kv = new ParsedKeyVal(SRCDIR "/moltest.in");
+    }
+
+  RefAtomInfo atominfo = kv->describedclassvalue("atominfo");
+  if (atominfo.nonnull()) {
+      RefAtomInfo refatominfo = new AtomInfo;
+      cout << node0<< "-------------- testing atominfo --------------" << endl;
+      if (grp->me() == 0) print_atominfo(atominfo, refatominfo);
+      cout << node0 << "saving/restoring atominfo" << endl;
+      ostrstream ostrs;
+      StateOutBinXDR so(ostrs);
+      atominfo.save_state(so);
+      atominfo = 0;
+      so.flush();
+      istream istrs(ostrs.rdbuf());
+      StateInBinXDR si(istrs);
+      atominfo.restore_state(si);
+      if (grp->me() == 0) print_atominfo(atominfo, refatominfo);
+      if (grp->n() > 1) {
+          BcastState b(grp, 0);
+          b.bcast(atominfo);
+        }
+      if (grp->me() == 1) {
+          print_atominfo(atominfo, refatominfo);
+        }
     }
 
   RefMolecule mol = kv->describedclassvalue("molecule");
@@ -79,7 +143,22 @@ main(int argc, char **argv)
 
       delete[] unique_atoms;
 
-      mol->point_group().char_table().print();
+      mol->point_group()->char_table().print();
+
+      cout << "---------- testing molecule save/restore ----------" << endl;
+
+      ostrstream ostrs;
+      StateOutBinXDR so(ostrs);
+      cout << "saveing ..." << endl;
+      mol.save_state(so);
+      mol = 0;
+      so.flush();
+      istream istrs(ostrs.rdbuf());
+      StateInBinXDR si(istrs);
+      cout << "restoring ..." << endl;
+      mol.restore_state(si);
+      cout << "printing restored molecule:" << endl;
+      mol->print();
     }
 
   cout << "-------------- initializing render tests --------------" << endl;
@@ -196,7 +275,7 @@ main(int argc, char **argv)
     }
 
   return 0;
-}
+    }
 
 
 void

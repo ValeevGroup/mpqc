@@ -41,12 +41,10 @@
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/units.h>
-#include <math/topology/point.h>
-#include <math/topology/pointbag.h>
 #include <math/symmetry/pointgrp.h>
+#include <math/scmat/vector3.h>
 #include <math/scmat/matrix.h>
-#include <chemistry/molecule/chemelem.h>
-#include <chemistry/molecule/atomcent.h>
+#include <chemistry/molecule/atominfo.h>
 
 class PointBag_double;
 
@@ -63,15 +61,18 @@ class Molecule: public SavableState
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    PointGroup pg;
-    AtomicCenter* atoms;
-    int natoms;
-    //. Returns the \vrbl{i}'th \clsnmref{AtomicCenter}.
-    AtomicCenter& get_atom(int i);
-    //. \srccd{const} version of the above.
-    const AtomicCenter& get_atom(int) const;
-
+    int natoms_;
+    RefAtomInfo atominfo_;
+    RefPointGroup pg_;
     RefUnits geometry_units_;
+    double **r_;
+    int *Z_;
+
+    // these are optional
+    double *mass_;
+    char **labels_;
+
+    void clear();
   public:
     Molecule();
     Molecule(Molecule&);
@@ -83,38 +84,23 @@ class Molecule: public SavableState
 
     Molecule& operator=(Molecule&);
 
-    //. Add an \clsnmref{AtomicCenter} to the \clsnm{Molecule}.  The first
-    // argument is the index of the atom.  You should add atoms sequentially
-    // starting from zero.
-    void add_atom(int,AtomicCenter&);
+    //. Add an \clsnmref{AtomicCenter} to the \clsnm{Molecule}.
+    void add_atom(int Z,double x,double y,double z,
+                  const char * = 0, double mass = 0.0);
 
     //. Print information about the molecule.
     virtual void print(ostream& =cout);
 
     //. Returns the number of atoms in the molcule.
-    int natom() const;
+    int natom() const { return natoms_; }
 
-    //. Returns `1' if \vrbl{i} is a valid \clsnm{Pix} for this molecule.
-    // Returns `0' otherwise.
-    int owns(Pix i);
-    //. Returns the \clsnm{Pix} for the first atom.
-    Pix first();
-    //. Sets \vrbl{i} to point to the next atom.  \vrbl{i} is null if there
-    // are no more atoms.
-    void next(Pix& i);
-
-    //. Returns the \clsnmref{AtomicCenter} pointed to by \vrbl{i}.
-    AtomicCenter& operator()(Pix i);
-    //. \srccd{const} version of the above.
-    const AtomicCenter& operator()(Pix) const;
-    //. Returns the i'th \clsnmref{AtomicCenter}.
-    AtomicCenter& operator[](int i);
-    //. \srccd{const} version of the above.
-    const AtomicCenter& operator[](int) const;
-    //. Returns the i'th \clsnmref{AtomicCenter}.
-    AtomicCenter& atom(int i);
-    //. \srccd{const} version of the above.
-    const AtomicCenter& atom(int) const;
+    int Z(int atom) const { return Z_[atom]; }
+    double &r(int atom, int xyz) { return r_[atom][xyz]; }
+    const double &r(int atom, int xyz) const { return r_[atom][xyz]; }
+    double *r(int atom) { return r_[atom]; }
+    const double *r(int atom) const { return r_[atom]; }
+    double mass(int atom) const;
+    const char *label(int atom) const;
 
     //. Takes an (x, y, z) postion and finds an atom within the
     //given tolerance distance.  If no atom is found -1 is returned.
@@ -124,21 +110,22 @@ class Molecule: public SavableState
     // If the label cannot be found \srccd{-1} is returned.
     int atom_label_to_index(const char *label) const;
 
-    //. Returns a \srccd{\clsnm{PointBag\_double}*} containing the nuclear
-    //charges of the atoms.
-    PointBag_double* charges() const;
+    //. Returns a \srccd{double*} containing the nuclear
+    //charges of the atoms.  The caller is responible for
+    //freeing the return value.
+    double *charges() const;
 
     //. Returns the total nuclear charge.
     int nuclear_charge() const;
 
     //. Sets the \clsnmref{PointGroup} of the molecule.
-    void set_point_group(const PointGroup&);
+    void set_point_group(const RefPointGroup&);
     //. Returns the \clsnmref{PointGroup} of the molecule.
-    const PointGroup& point_group() const;
+    const RefPointGroup point_group() const;
 
-    //. Returns a \clsnm{RefPoint} containing the cartesian coordinates of
+    //. Returns a \clsnm{SCVector3} containing the cartesian coordinates of
     // the center of mass for the molecule
-    RefPoint center_of_mass();
+    SCVector3 center_of_mass();
 
     //. Returns the nuclear repulsion energy for the molecule
     double nuclear_repulsion_energy();
@@ -171,6 +158,9 @@ class Molecule: public SavableState
 
     //. Return the maximum atomic number.
     int max_z();
+
+    //. Return the molecules \clsnmref{AtomInfo} object.
+    RefAtomInfo atominfo() const { return atominfo_; }
 
     void save_data_state(StateOut&);
 };

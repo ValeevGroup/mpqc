@@ -240,7 +240,7 @@ GaussianBasisSet::init(RefMolecule&molecule,
   ncenter_ = molecule->natom();
   int iatom;
   for (iatom=0; iatom < ncenter_; iatom++) {
-      ChemicalElement currentelement(molecule->operator[](iatom).element());
+      int Z = molecule->Z(iatom);
       // see if there is a specific basisname for this atom
       char* sbasisname = 0;
       if (have_custom && !nelement) {
@@ -250,8 +250,8 @@ GaussianBasisSet::init(RefMolecule&molecule,
           int i;
           for (i=0; i<nelement; i++) {
               char *tmpelementname = keyval->pcharvalue("element", i);
-              ChemicalElement tmpelement(tmpelementname);
-              if (tmpelement == currentelement) {
+              int tmpZ = AtomInfo::string_to_Z(tmpelementname);
+              if (tmpZ == Z) {
                   sbasisname = keyval->pcharvalue("basis", i);
                   break;
                 }
@@ -262,13 +262,13 @@ GaussianBasisSet::init(RefMolecule&molecule,
           if (!name_) {
               cerr << node0 << indent << "GaussianBasisSet: "
                    << scprintf("no basis name for atom %d (%s)\n",
-                               iatom, currentelement.name());
+                               iatom, AtomInfo::name(Z));
               abort();
             }
           sbasisname = strcpy(new char[strlen(name_)+1],name_);
         }
       recursively_get_shell(ishell,keyval,
-                            currentelement.name(),
+                            AtomInfo::name(Z),
                             sbasisname,bases,havepure,pure,0);
       delete[] sbasisname;
     }
@@ -277,7 +277,7 @@ GaussianBasisSet::init(RefMolecule&molecule,
   ishell = 0;
   center_to_nshell_.set_length(ncenter_);
   for (iatom=0; iatom<ncenter_; iatom++) {
-      ChemicalElement currentelement(molecule->operator[](iatom).element());
+      int Z = molecule->Z(iatom);
       // see if there is a specific basisname for this atom
       char* sbasisname = 0;
       if (have_custom && !nelement) {
@@ -287,8 +287,8 @@ GaussianBasisSet::init(RefMolecule&molecule,
           int i;
           for (i=0; i<nelement; i++) {
               char *tmpelementname = keyval->pcharvalue("element", i);
-              ChemicalElement tmpelement(tmpelementname);
-              if (tmpelement == currentelement) {
+              int tmpZ = AtomInfo::string_to_Z(tmpelementname);
+              if (tmpZ == Z) {
                   sbasisname = keyval->pcharvalue("basis", i);
                   break;
                 }
@@ -299,7 +299,7 @@ GaussianBasisSet::init(RefMolecule&molecule,
           if (!name_) {
               cerr << node0 << indent << "GaussianBasisSet: "
                    << scprintf("no basis name for atom %d (%s)\n",
-                               iatom, currentelement.name());
+                               iatom, AtomInfo::name(Z));
               abort();
             }
           sbasisname = strcpy(new char[strlen(name_)+1],name_);
@@ -307,7 +307,7 @@ GaussianBasisSet::init(RefMolecule&molecule,
 
       int ishell_old = ishell;
       recursively_get_shell(ishell,keyval,
-                            currentelement.name(),
+                            AtomInfo::name(Z),
                             sbasisname,bases,havepure,pure,1);
 
       center_to_nshell_[iatom] = ishell - ishell_old;
@@ -329,7 +329,7 @@ GaussianBasisSet::init(RefMolecule&molecule,
 double
 GaussianBasisSet::r(int icenter, int xyz) const
 {
-  return molecule_->atom(icenter).point()[xyz];
+  return molecule_->r(icenter,xyz);
 }
 
 void

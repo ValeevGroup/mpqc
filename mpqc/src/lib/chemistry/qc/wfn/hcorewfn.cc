@@ -61,7 +61,7 @@ HCoreWfn::HCoreWfn(StateIn& s) :
 HCoreWfn::HCoreWfn(const RefKeyVal&keyval):
   OneBodyWavefunction(keyval)
 {
-  CharacterTable ct = molecule()->point_group().char_table();
+  CharacterTable ct = molecule()->point_group()->char_table();
 
   nirrep_ = ct.ncomp();
   docc = new int[nirrep_];

@@ -51,7 +51,6 @@
 
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/localdef.h>
-#include <chemistry/molecule/chemelem.h>
 
 #define CLASSNAME BendSimpleCo
 #define PARENTS public SimpleCo
@@ -104,13 +103,19 @@ BendSimpleCo::operator=(const BendSimpleCo& s)
 double
 BendSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 {
-  Point u1(3),u2(3);
+  SCVector3 u1, u2;
   int a=atoms[0]-1; int b=atoms[1]-1; int c=atoms[2]-1;
 
-  norm(u1,m[a].point(),m[b].point());
-  norm(u2,m[c].point(),m[b].point());
+  SCVector3 ra(m.r(a));
+  SCVector3 rb(m.r(b));
+  SCVector3 rc(m.r(c));
 
-  double co=scalar(u1,u2);
+  u1 = ra-rb;
+  u1.normalize();
+  u2 = rc-rb;
+  u2.normalize();
+
+  double co=u1.dot(u2);
 
   value_=acos(co);
 
@@ -119,8 +124,8 @@ BendSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
     double si=s2(co);
     double r1i, r2i;
     if (si > 1.0e-4) {
-        r1i = 1.0/(si*dist(m[a].point(),m[b].point()));
-        r2i = 1.0/(si*dist(m[c].point(),m[b].point()));
+        r1i = 1.0/(si*ra.dist(rb));
+        r2i = 1.0/(si*rc.dist(rb));
       }
     else {r1i = 0.0; r2i = 0.0;}
 #if OLD_BMAT
@@ -145,14 +150,18 @@ BendSimpleCo::calc_force_con(Molecule& m)
 {
   int a=atoms[1]-1; int b=atoms[0]-1; int c=atoms[2]-1;
 
-  double rad_ab =   m[a].element().atomic_radius()
-                  + m[b].element().atomic_radius();
+  double rad_ab =   m.atominfo()->atomic_radius(m.Z(a))
+                  + m.atominfo()->atomic_radius(m.Z(b));
 
-  double rad_ac =   m[a].element().atomic_radius()
-                  + m[c].element().atomic_radius();
+  double rad_ac =   m.atominfo()->atomic_radius(m.Z(a))
+                  + m.atominfo()->atomic_radius(m.Z(c));
 
-  double r_ab = dist(m[a].point(),m[b].point());
-  double r_ac = dist(m[a].point(),m[c].point());
+  SCVector3 ra(m.r(a));
+  SCVector3 rb(m.r(b));
+  SCVector3 rc(m.r(c));
+
+  double r_ab = ra.dist(rb);
+  double r_ac = ra.dist(rc);
 
   double k = 0.089 + 0.11/pow((rad_ab*rad_ac),-0.42) *
                            exp(-0.44*(r_ab+r_ac-rad_ab-rad_ac));

@@ -31,8 +31,6 @@
 #include <util/misc/formio.h>
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/localdef.h>
-#include <chemistry/molecule/chemelem.h>
-
 
 #define CLASSNAME ScaledTorsSimpleCo
 #define PARENTS public SimpleCo
@@ -111,14 +109,7 @@ ScaledTorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
   int a=atoms[0]-1; int b=atoms[1]-1; int c=atoms[2]-1; int d=atoms[3]-1;
   SCVector3 u1,u2,u3,z1,z2;
 
-  SCVector3 ra, rb, rc, rd;
-
-  for (i=0; i<3; i++) {
-      ra[i] = m[a].point()[i];
-      rb[i] = m[b].point()[i];
-      rc[i] = m[c].point()[i];
-      rd[i] = m[d].point()[i];
-    }
+  SCVector3 ra(m.r(a)), rb(m.r(b)), rc(m.r(c)), rd(m.r(d));
 
   double rab, rbc, rcd;
   u1 = ra - rb; rab = u1.norm(); u1 *= 1.0/rab;
@@ -228,10 +219,13 @@ ScaledTorsSimpleCo::calc_force_con(Molecule& m)
 {
   int a=atoms[1]-1; int b=atoms[2]-1;
 
-  double rad_ab =   m[a].element().atomic_radius()
-                  + m[b].element().atomic_radius();
+  SCVector3 ra(m.r(a));
+  SCVector3 rb(m.r(b));
 
-  double r_ab = dist(m[a].point(),m[b].point());
+  double rad_ab =   m.atominfo()->atomic_radius(m.Z(a))
+                  + m.atominfo()->atomic_radius(m.Z(b));
+
+  double r_ab = ra.dist(rb);
 
   double k = 0.0015 + 14.0*pow(1.0,0.57)/pow((rad_ab*r_ab),4.0) *
                            exp(-2.85*(r_ab-rad_ab));

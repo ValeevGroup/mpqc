@@ -69,9 +69,9 @@ VDWShape::initialize(const RefMolecule&mol)
   _shapes.clear();
   for (int i=0; i<mol->natom(); i++) {
       SCVector3 r;
-      for (int j=0; j<3; j++) r[j] = mol->operator[](i)[j];
+      for (int j=0; j<3; j++) r[j] = mol->r(i,j);
       add_shape(
-          new SphereShape(r,mol->operator[](i).element().vdw_radius())
+          new SphereShape(r,mol->atominfo()->vdw_radius(mol->Z(i)))
           );
     }
 }
@@ -84,9 +84,9 @@ VDWShape::~VDWShape()
 // static functions for DiscreteConnollyShape and ConnollyShape
 
 static double
-find_atom_size(const RefAtomInfo& a, ChemicalElement&element)
+find_atom_size(const RefAtomInfo& a, int Z)
 {
-  return a->radius(element);
+  return a->vdw_radius(Z);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -112,6 +112,10 @@ DiscreteConnollyShape::DiscreteConnollyShape(const RefKeyVal&keyval)
   if (keyval->error() != KeyVal::OK) {
       probe_radius = 2.6456173;
     }
+  radius_scale_factor_ = keyval->doublevalue("radius_scale_factor");
+  if (keyval->error() != KeyVal::OK) {
+      radius_scale_factor_ = 1.2;
+    }
   atominfo_ = keyval->describedclassvalue("atominfo");
   initialize(mol,probe_radius);
 }
@@ -128,12 +132,11 @@ DiscreteConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
 
   int i;
   for (i=0; i<mol->natom(); i++) {
-      SCVector3 r;
-      for (int j=0; j<3; j++) r[j] = mol->operator[](i)[j];
+      SCVector3 r(mol->r(i));
       RefSphereShape
         sphere(
-            new SphereShape(r,find_atom_size(a,
-                                             mol->operator[](i).element()))
+            new SphereShape(r,radius_scale_factor_*find_atom_size(a,
+                                             mol->Z(i)))
             );
       add_shape(sphere.pointer());
       spheres.add(sphere);
@@ -197,6 +200,10 @@ ConnollyShape::ConnollyShape(const RefKeyVal&keyval)
       probe_r = 2.6456173;
     }
   atominfo_ = keyval->describedclassvalue("atominfo");
+  radius_scale_factor_ = keyval->doublevalue("radius_scale_factor");
+  if (keyval->error() != KeyVal::OK) {
+      radius_scale_factor_ = 1.2;
+    }
   initialize(mol,probe_r);
 }
 
@@ -240,10 +247,9 @@ ConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
   else a = atominfo_;
 
   for (int i=0; i<n_spheres; i++) {
-      SCVector3 r;
-      for (int j=0; j<3; j++) r[j] = mol->operator[](i)[j];
-      sphere[i].initialize(r,find_atom_size(a,
-                                            mol->operator[](i).element())
+      SCVector3 r(mol->r(i));
+      sphere[i].initialize(r,radius_scale_factor_*find_atom_size(a,
+                                            mol->Z(i))
                               + probe_r);
     }
 }

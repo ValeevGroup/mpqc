@@ -532,14 +532,14 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
 
   SCVector3 *centers = new SCVector3[ncenters];
   for (icenter=0; icenter<ncenters; icenter++) {
-      centers[icenter].x() = mol->atom(icenter)[0];
-      centers[icenter].y() = mol->atom(icenter)[1];
-      centers[icenter].z() = mol->atom(icenter)[2];
+      centers[icenter].x() = mol->r(icenter,0);
+      centers[icenter].y() = mol->r(icenter,1);
+      centers[icenter].z() = mol->r(icenter,2);
     }
 
   double *bragg_radius = new double[ncenters];
   for (icenter=0; icenter<ncenters; icenter++) {
-      bragg_radius[icenter] = mol->atom(icenter).element().bragg_radius();
+      bragg_radius[icenter] = mol->atominfo()->bragg_radius(mol->Z(icenter));
     }
 
   if (a_mat) {

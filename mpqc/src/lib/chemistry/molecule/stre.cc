@@ -51,7 +51,6 @@
 
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/localdef.h>
-#include <chemistry/molecule/chemelem.h>
 
 
 #define CLASSNAME StreSimpleCo
@@ -107,8 +106,8 @@ double
 StreSimpleCo::calc_force_con(Molecule& m)
 {
   int a=atoms[0]-1; int b=atoms[1]-1;
-  double rad_ab =   m[a].element().atomic_radius()
-                  + m[b].element().atomic_radius();
+  double rad_ab =   m.atominfo()->atomic_radius(m.Z(a))
+                  + m.atominfo()->atomic_radius(m.Z(b));
 
   calc_intco(m);
 
@@ -126,10 +125,11 @@ double
 StreSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 {
   int a=atoms[0]-1; int b=atoms[1]-1;
-  value_ = dist(m[a].point(),m[b].point());
+  SCVector3 ra(m.r(a)), rb(m.r(b));
+  value_ = ra.dist(rb);
   if(bmat) {
-    Point uu(3);
-    norm(uu,m[a].point(),m[b].point());
+    SCVector3 uu = ra - rb;
+    uu.normalize();
     bmat[a*3] += coeff*uu[0]; bmat[b*3] -= coeff*uu[0];
     bmat[a*3+1] += coeff*uu[1]; bmat[b*3+1] -= coeff*uu[1];
     bmat[a*3+2] += coeff*uu[2]; bmat[b*3+2] -= coeff*uu[2];

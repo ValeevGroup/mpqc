@@ -32,7 +32,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 scpr: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
-install: scpr
+install:: scpr
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
 	$(INSTALL) $(INSTALLBINOPT) $< $(bindir)
 

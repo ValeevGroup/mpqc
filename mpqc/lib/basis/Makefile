@@ -10,3 +10,5 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 install::
 	$(INSTALL) $(INSTALLDIROPT) $(libdir)/basis
 	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/*.kv $(libdir)/basis
+
+install_devel::

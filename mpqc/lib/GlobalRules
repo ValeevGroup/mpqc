@@ -33,9 +33,13 @@
 #
 #################################################
 
-.PHONY: default install install_inc install_target clean
+.PHONY: default install install_devel install_inc install_target clean
 
 default::
+
+install::
+
+install_devel::
 
 ifeq ($(BIN_OR_LIB),LIB)
 
@@ -74,7 +78,9 @@ $(TOPDIR)/lib/$(TARGET_TO_MAKE).so: $(LIBOBJ)
           $(TARGET_TO_MAKE).so.$(ELF_MAJOR).$(ELF_MINOR) \
           $(TOPDIR)/lib/$(TARGET_TO_MAKE).so
 
-install: install_inc install_target
+install_devel:: install_inc install_target
+
+install::
 
 install_inc::
 	$(INSTALL) $(INSTALLDIROPT) $(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
@@ -92,9 +98,11 @@ ifeq ($(BIN_OR_LIB),BIN)
 $(TARGET_TO_MAKE): $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) $^ -o $(@F) $(SYSLIBS)
 
-install: install_target
+install_devel::
 
-install_target: $(TARGET_TO_MAKE)
+install:: install_target
+
+install_target:: $(TARGET_TO_MAKE)
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
 	$(INSTALL) $(INSTALLBINOPT) $(TARGET_TO_MAKE) $(bindir)
 

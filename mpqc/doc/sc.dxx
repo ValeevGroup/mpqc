@@ -1,13 +1,6 @@
 
 /**@name The Massively Parallel Quantum Chemistry Program (MPQC) and the Scientific Computing Toolkit (SC)
 
-@memo Libraries and Programs for Quantum Chemistry and Scientific Programming.
-*/
-
-//@{
-
-/**@name Introduction
-
 The Scientific Computing toolkit (SC) provides C++ class libraries for
 scientific computation.  Included are classes for managing memory, saving
 and restoring the state of objects, reading objects from an input file,
@@ -36,9 +29,17 @@ MPQC and SC run on Unix compatible workstations (Intel/Linux, SGI/IRIX IBM
 RS/6000), symmetric multi-processors (Intel/Linux, SGI/IRIX), and massively
 parallel computers (IBM SP, Intel Paragon).
 
- */
+@memo Libraries and Programs for Quantum Chemistry and Scientific Programming.
+*/
+
+//@{
 
 /**@name Obtaining SC and MPQC
+
+   The Scientific Computing toolkit (SC) and the Massively Parallel Quantum
+   Chemistry program (MPQC) are distributed together.  The library code is
+   distributed under the Library GNU Public License and the accompanying
+   programs are distributed under the GNU Public License.
 
    The latest version of the source code is available from
    \URL{http://aros.ca.sandia.gov/~cljanss/mpqc}
@@ -170,6 +171,7 @@ parallel computers (IBM SP, Intel Paragon).
 
 \end{description}
 
+ @memo A brief description of each of the directories in the distribution.
  */
 
   //@Include: compiling.dxx

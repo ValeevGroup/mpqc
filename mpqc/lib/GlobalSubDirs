@@ -23,6 +23,12 @@ install::
 	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) install) || exit 1; \
 	  done
 
+install_devel::
+	for dir in $(SUBDIRS); \
+	  do \
+	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) install_devel) || exit 1; \
+	  done
+
 install_inc::
 	for dir in $(SUBDIRS); \
 	  do \

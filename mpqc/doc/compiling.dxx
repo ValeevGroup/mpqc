@@ -17,14 +17,17 @@ at any GNU software FTP repository.
 
   \begin{itemize}
 
-    \item Compilers for the C, C++, and FORTRAN languages are needed.
-          The FORTRAN compiler is needed to determine the linkage
-          conventions for the BLAS libraries.  The following compilers
-          are known to work.
+    \item Compilers for the C, C++, and FORTRAN languages are needed.  The
+          FORTRAN compiler is used to determine the linkage conventions for
+          the BLAS libraries, however, you can turn off the use of a
+          FORTRAN compiler by giving #--without-f77# as an option to the
+          configure script.  Turning off the FORTRAN support should work fine
+          with the current release, but will break things in future
+          releases.  The following compilers are known to work:
 
        \begin{itemize}
 
-           \item EGCS 1.1.2 and GCC 2.29.1, both available from
+           \item EGCS 1.1.2 and GCC 2.95.1, both available from
                  \URL{http://egcs.cygnus.com}, seem to work.  There seem to
                  be problems with optimization with these compilers,
                  however.  Use #--enable-debug# to make sure everything
@@ -92,6 +95,8 @@ and optimization options.
 \item[#--disable-parallel#] Do not try to find communications
 libraries.
 \item[#--disable-threads#] Do not try to find the multi-thread libraries.
+\item[#--enable-stl#] Use the Standard Template Library for some of the
+container classes.  Your compiler must have a working STL implementation.
 \item[#--enable-ref-debug#] Check for overwrites and overflows
 for reference counts.  Implied by ``--enable-debug''.
 \item[#--disable-ref-macros#] Use template classes for reference
@@ -104,6 +109,8 @@ link with them instead of standard ``.a'' libraries.  This works on a
 Linux-ELF system.
 \item[#--with-cc#] Gives the name of the C compiler.
 \item[#--with-cxx#] Gives the name of the C++ compiler.
+\item[#--with-f77#] Gives the name of the FORTRAN compiler.
+\item[#--without-f77#] configure will not try to find a FORTRAN compiler.
 \item[#--with-ranlib#] Gives the name of the archive indexing utility.
 \item[#--with-ar#] Gives the name of the program than makes libraries.
 \item[#--with-ld#] Gives the name of the object linker.
@@ -129,7 +136,12 @@ typing #make# in your target directory.  If you are running on a
 symmetric multi-processor, you can use GNU make to parallelize the
 compilation.  To compile four files at a time, type #make JOBS=-j4#.
 
- You can install the executables and the libraries with #make install#.
+ You can install the executables and data files with #make install#.
+
+ You can install the libraries and header files with #make install_devel#,
+however, #make install# must be also be run to install the files needed for
+run-time support.
+
 
 */
 

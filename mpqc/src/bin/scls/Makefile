@@ -32,7 +32,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 scls: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
-install: scls
+install:: scls
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
 	$(INSTALL) $(INSTALLBINOPT) $< $(bindir)
 

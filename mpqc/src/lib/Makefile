@@ -9,7 +9,7 @@ SUBDIRS = util math chemistry
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 
-install:: install_inc
+install::
 
 install_inc::
 	$(INSTALL) $(INSTALLDIROPT) $(includedir)

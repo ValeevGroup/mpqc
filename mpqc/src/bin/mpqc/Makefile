@@ -45,7 +45,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 mpqc: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
-install: mpqc
+install:: mpqc
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
 	$(INSTALL) $(INSTALLBINOPT) $< $(bindir)
 

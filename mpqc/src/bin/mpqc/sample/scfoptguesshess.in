@@ -2,7 +2,7 @@
 % molecule specification
 molecule<Molecule>: (
   symmetry = C2V
-  angstroms = yes
+  unit = angstrom
   { atoms geometry } = {
     O     [     0.00000000     0.00000000     0.37000000 ]
     H     [     0.78000000     0.00000000    -0.18000000 ]

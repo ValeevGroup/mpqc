@@ -1,24 +1,6 @@
 
 /**@name The scls Program
 
-\begin{center}
-{\bf License}
-\end{center}
-
-scls is open-source software; you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 2 of the License, or (at your option)
-any later version.
-
-\begin{center}
-{\bf Warranty}
-\end{center}
-
-scls is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-details.
-
    @memo This program lists the contents of files created by \Ref{The State Library}.
 
 */
@@ -47,6 +29,24 @@ scls takes the following command line options followed by a list of files.
 \item[{\tt -L}] Print the license.
 \item[{\tt -h}] Print this help.
 \end{description}
+
+*/
+
+/**@name License
+
+scls is open-source software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your option)
+any later version.
+
+*/
+
+/**@name Warranty
+
+scls is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
 
 */
 

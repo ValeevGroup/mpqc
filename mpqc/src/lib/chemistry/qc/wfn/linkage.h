@@ -32,9 +32,11 @@
 
 #include <chemistry/qc/wfn/density.h>
 #include <chemistry/qc/wfn/orbital.h>
+#include <chemistry/qc/wfn/solvent.h>
 
 const ClassDesc &wfn_force_link_a_ = ElectronDensity::class_desc_;
 const ClassDesc &wfn_force_link_b_ = Orbital::class_desc_;
+const ClassDesc &wfn_force_link_c_ = BEMSolventH::class_desc_;
 
 #endif /* __PIC__ */
 

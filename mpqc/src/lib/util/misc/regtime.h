@@ -39,6 +39,11 @@ namespace sc {
 
 class TimedRegion;
 
+/** The RegionTimer class is used to record the time spent in a section of
+code.  During the run of a code, enter and exit members are called to begin
+and end timed sections.  The print member is used to display the obtained
+times.  Multiple enter calls for a region with the same name aggregate the
+timings. Nested regions are supported. */
 class RegionTimer: public DescribedClass {
   protected:
     int wall_time_;
@@ -82,6 +87,32 @@ class RegionTimer: public DescribedClass {
 
     static RegionTimer *default_regiontimer();
     static void set_default_regiontimer(const Ref<RegionTimer> &);
+};
+
+/** The Timer class uses RegionTimer to time intervals in an exception safe
+manner.  It will automatically call RegionTimer::enter when its constructor
+is called and RegionTimer::exit when its destructor is called.  The reset
+member can also result in RegionTimer's enter and exit routines being
+called.  The programmer is responsible for making sure that timers are
+exited in the reverse of the order that they are entered.  */
+class Timer {
+    Ref<RegionTimer> timer_;
+    std::string name_;
+    bool active_;
+  public:
+    /** Start timing a region using the default RegionTimer and activate
+        the timer.  If a null name pointer is given, then the
+        timer will not be activated. */
+    Timer(const char *name);
+    /** Start timing a region using the given RegionTimer. If a null name
+        pointer is given, then the timer will not be activated. */
+    Timer(const Ref<RegionTimer> &, const char *name);
+    /** Stop timing a region, if active. */
+    ~Timer();
+    /** Stop timing the current region, if active.  If a new region name is
+        passed in, start timing with that name.  If no region name is
+        given, the Timer will be deactivated.  */
+    void reset(const char * = 0);
 };
 
 }

@@ -699,6 +699,52 @@ RegionTimer::set_default_regiontimer(const Ref<RegionTimer>& t)
 }
 
 //////////////////////////////////////////////////////////////////////
+// Timer functions
+
+Timer::Timer(const char *name):
+  active_(false)
+{
+  timer_ = RegionTimer::default_regiontimer();
+  if (timer_.nonnull() && name != 0) {
+      name_ = name;
+      timer_->enter(name);
+      active_ = true;
+    }
+}
+
+Timer::Timer(const Ref<RegionTimer>&t, const char *name):
+  active_(false),
+  timer_(t)
+{
+  if (timer_.nonnull() && name != 0) {
+      name_ = name;
+      timer_->enter(name);
+      active_ = true;
+    }
+}
+
+Timer::~Timer()
+{
+  if (active_) {
+      timer_->exit(name_.c_str());
+    }
+}
+
+void
+Timer::reset(const char *name)
+{
+  if (active_) {
+      timer_->exit(name_.c_str());
+      active_ = false;
+    }
+  if (timer_.nonnull() && name) {
+      timer_->enter(name);
+      name_ = name;
+      active_ = true;
+    }
+}
+
+//////////////////////////////////////////////////////////////////////
 // Shorthand to manipulate the global region timer
 
 void

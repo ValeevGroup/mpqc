@@ -75,6 +75,25 @@ main()
   tim->exit();
   tim->exit("main");
 
+  RegionTimer::set_default_regiontimer(tim);
+
+  Timer timertest("timertest");
+  Timer r1("r1");
+  r1.reset("r2");
+  Timer r3("r3");
+  r3.reset();
+  r1.reset();
+
+  {
+    Timer x1("x1");
+    Timer x2("x2");
+    Timer x3("x3");
+    // destructors are called in the reverse of the order of declaration
+  }
+
+  Timer y1("y1");
+  y1.reset();
+
   tim->print();
 
   return 0;

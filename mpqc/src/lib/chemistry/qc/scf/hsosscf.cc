@@ -286,6 +286,8 @@ HSOSSCF::print(ostream&o)
   
   SCF::print(o);
   o << node0 << indent << "HSOSSCF Parameters:\n" << incindent
+    << indent << "charge = " << molecule()->nuclear_charge()
+                                - 2*tndocc_ - tnsocc_ << endl
     << indent << "ndocc = " << tndocc_ << endl
     << indent << "nsocc = " << tnsocc_ << endl
     << indent << "docc = [";

@@ -236,6 +236,7 @@ CLSCF::print(ostream&o)
 {
   SCF::print(o);
   o << node0 << indent << "CLSCF Parameters:\n" << incindent
+    << indent << "charge = " << molecule()->nuclear_charge()-2*tndocc_ << endl
     << indent << "ndocc = " << tndocc_ << endl
     << indent << "docc = [";
   for (int i=0; i < nirrep_; i++)

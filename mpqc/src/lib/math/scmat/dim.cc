@@ -49,22 +49,9 @@ fail(const char *s)
 /////////////////////////////////////////////////////////////////////////////
 // SCBlockInfo member functions
 
-SavableState_REF_def(SCBlockInfo);
-
-#define CLASSNAME SCBlockInfo
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-void *
-SCBlockInfo::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SCBlockInfo_cd(
+  typeid(SCBlockInfo),"SCBlockInfo",1,"public SavableState",
+  0, create<SCBlockInfo>, create<SCBlockInfo>);
 
 SCBlockInfo::SCBlockInfo(int n, int nblocks, const int *blocksizes):
   subdims_(0)
@@ -104,7 +91,7 @@ SCBlockInfo::SCBlockInfo(int n, int nblocks, const int *blocksizes):
   init_start();
 }
 
-SCBlockInfo::SCBlockInfo(const RefKeyVal&keyval):
+SCBlockInfo::SCBlockInfo(const Ref<KeyVal>&keyval):
   subdims_(0)
 {
   nblocks_ = keyval->count("sizes");
@@ -117,11 +104,11 @@ SCBlockInfo::SCBlockInfo(const RefKeyVal&keyval):
   int nsubdims = keyval->count("subdims");
   if (nsubdims) {
       if (nblocks_ != 0 && nsubdims != nblocks_) {
-          fail("SCBlockInfo(const RefKeyVal&): nsubdims != nblocks");
+          fail("SCBlockInfo(const Ref<KeyVal>&): nsubdims != nblocks");
         }
       subdims_ = new RefSCDimension[nsubdims];
       for (int i=0; i<nsubdims; i++) {
-          subdims_[i] = keyval->describedclassvalue("subdims",i);
+          subdims_[i] << keyval->describedclassvalue("subdims",i);
         }
       if (nblocks_ == 0) {
           delete[] size_;
@@ -148,7 +135,7 @@ SCBlockInfo::SCBlockInfo(StateIn&s):
   if (have_subdims) {
       subdims_ = new RefSCDimension[nblocks_];
       for (int i=0; i<nblocks_; i++) {
-          subdims_[i].restore_state(s);
+          subdims_[i] << SavableState::restore_state(s);
         }
     }
   else {
@@ -166,7 +153,7 @@ SCBlockInfo::save_data_state(StateOut&s)
   if (subdims_) {
       s.put(1);
       for (int i=0; i<nblocks_; i++) {
-          subdims_[i].save_state(s);
+          SavableState::save_state(subdims_[i].pointer(),s);
         }
     }
   else {
@@ -286,17 +273,9 @@ SCBlockInfo::print(ostream&o) const
 /////////////////////////////////////////////////////////////////////////
 // SCDimension members
 
-DCRef_define(SCDimension);
-SSRef_define(SCDimension);
-#define CLASSNAME SCDimension
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-
-
+static ClassDesc SCDimension_cd(
+  typeid(SCDimension),"SCDimension",1,"public SavableState",
+  0, create<SCDimension>, create<SCDimension>);
 
 SCDimension::SCDimension(const char* name):
   n_(0)
@@ -313,7 +292,7 @@ SCDimension::SCDimension(int n, const char* name):
   blocks_ = new SCBlockInfo(n, 1);
 }
 
-SCDimension::SCDimension(const RefSCBlockInfo& b, const char* name):
+SCDimension::SCDimension(const Ref<SCBlockInfo>& b, const char* name):
   n_(b->nelem()), blocks_(b)
 {
   if (name) name_ = strcpy(new char[strlen(name)+1], name);
@@ -330,19 +309,19 @@ SCDimension::SCDimension(int n,
   blocks_ = new SCBlockInfo(n, nblocks, blocksizes);
 }
 
-SCDimension::SCDimension(const RefKeyVal& keyval)
+SCDimension::SCDimension(const Ref<KeyVal>& keyval)
 {
-  blocks_ = keyval->describedclassvalue("blocks");
+  blocks_ << keyval->describedclassvalue("blocks");
   n_ = keyval->intvalue("n");
   if (blocks_.null()) {
       if (keyval->error() != KeyVal::OK) {
-          fail("SCDimension(const RefKeyVal&): missing input");
+          fail("SCDimension(const Ref<KeyVal>&): missing input");
         }
       blocks_ = new SCBlockInfo(n_);
     }
   else {
       if (n_ != 0 && n_ != blocks_->nelem()) {
-          fail("SCDimension(const RefKeyVal&): inconsistent sizes");
+          fail("SCDimension(const Ref<KeyVal>&): inconsistent sizes");
         }
       n_ = blocks_->nelem();
     }
@@ -354,7 +333,7 @@ SCDimension::SCDimension(StateIn&s):
 {
   s.getstring(name_);
   s.get(n_);
-  blocks_.restore_state(s);
+  blocks_ << SavableState::restore_state(s);
 }
 
 void
@@ -362,15 +341,7 @@ SCDimension::save_data_state(StateOut&s)
 {
   s.putstring(name_);
   s.put(n_);
-  blocks_.save_state(s);
-}
-
-void *
-SCDimension::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
+  SavableState::save_state(blocks_.pointer(), s);
 }
 
 SCDimension::~SCDimension()

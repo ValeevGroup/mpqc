@@ -36,33 +36,26 @@
 
 using namespace std;
 
-#define CLASSNAME MsgMemoryGrp
-#define PARENTS public MemoryGrp
-#include <util/class/classia.h>
-void *
-MsgMemoryGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  MemoryGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MsgMemoryGrp_cd(
+  typeid(MsgMemoryGrp),"MsgMemoryGrp",1,"public MemoryGrp",
+  0, 0, 0);
 
-MsgMemoryGrp::MsgMemoryGrp(const RefMessageGrp &msg)
+MsgMemoryGrp::MsgMemoryGrp(const Ref<MessageGrp> &msg)
 {
   msg_ = msg;
   n_ = msg->n();
   me_ = msg->me();
 }
 
-MsgMemoryGrp::MsgMemoryGrp(const RefKeyVal &keyval):
+MsgMemoryGrp::MsgMemoryGrp(const Ref<KeyVal> &keyval):
   MemoryGrp(keyval)
 {
-  RefMessageGrp msg = keyval->describedclassvalue("message");
+  Ref<MessageGrp> msg; msg << keyval->describedclassvalue("message");
   if (msg.null()) {
       msg = MessageGrp::get_default_messagegrp();
     }
   if (msg.null()) {
-      ExEnv::err() << "MsgMemoryGrp(const RefKeyVal&): couldn't find MessageGrp"
+      ExEnv::err() << "MsgMemoryGrp(const Ref<KeyVal>&): couldn't find MessageGrp"
            << endl;
       abort();
     }

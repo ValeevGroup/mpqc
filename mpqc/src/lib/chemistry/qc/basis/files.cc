@@ -45,7 +45,7 @@
 
 using namespace std;
 
-BasisFileSet::BasisFileSet(const RefKeyVal& keyval)
+BasisFileSet::BasisFileSet(const Ref<KeyVal>& keyval)
 {
   nbasissets_ = 0;
   basissets_ = 0;
@@ -78,8 +78,8 @@ BasisFileSet::~BasisFileSet()
   delete[] dir_[1];
 }
 
-RefKeyVal
-BasisFileSet::keyval(const RefKeyVal &keyval, const char *basisname)
+Ref<KeyVal>
+BasisFileSet::keyval(const Ref<KeyVal> &keyval, const char *basisname)
 {
   int i;
 
@@ -116,10 +116,10 @@ BasisFileSet::keyval(const RefKeyVal &keyval, const char *basisname)
     }
   filename[i] = '\0';
 
-  RefMessageGrp grp = MessageGrp::get_default_messagegrp();
+  Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
 
   // find the basis file
-  RefKeyVal newkeyval(keyval);
+  Ref<KeyVal> newkeyval(keyval);
   for (i=0; i<2; i++) {
       if (!dir_[i]) continue;
       if (grp->me() == 0) {
@@ -151,10 +151,10 @@ BasisFileSet::keyval(const RefKeyVal &keyval, const char *basisname)
 #endif
               grp->bcast(n);
               grp->bcast(in_char_array, n);
-              RefParsedKeyVal parsedkv = new ParsedKeyVal;
+              Ref<ParsedKeyVal> parsedkv = new ParsedKeyVal;
               parsedkv->parse_string(in_char_array);
               delete[] in_char_array;
-              RefKeyVal libkeyval = parsedkv.pointer();
+              Ref<KeyVal> libkeyval = parsedkv.pointer();
               newkeyval = new AggregateKeyVal(keyval,libkeyval);
               delete[] path;
               break;
@@ -173,10 +173,10 @@ BasisFileSet::keyval(const RefKeyVal &keyval, const char *basisname)
               grp->bcast(n);
               char *in_char_array = new char[n];
               grp->bcast(in_char_array, n);
-              RefParsedKeyVal parsedkv = new ParsedKeyVal;
+              Ref<ParsedKeyVal> parsedkv = new ParsedKeyVal;
               parsedkv->parse_string(in_char_array);
               delete[] in_char_array;
-              RefKeyVal libkeyval = parsedkv.pointer();
+              Ref<KeyVal> libkeyval = parsedkv.pointer();
               newkeyval = new AggregateKeyVal(keyval,libkeyval);
               break;
             }

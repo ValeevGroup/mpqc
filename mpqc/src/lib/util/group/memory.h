@@ -169,8 +169,6 @@ matching set of criteria are found.
 
 */
 class MemoryGrp: public DescribedClass {
-#define CLASSNAME MemoryGrp
-#include <util/class/classda.h>
   private:
     RangeLock locks_;
 
@@ -188,7 +186,7 @@ class MemoryGrp: public DescribedClass {
 
   public:
     MemoryGrp();
-    MemoryGrp(const RefKeyVal&);
+    MemoryGrp(const Ref<KeyVal>&);
     virtual ~MemoryGrp();
     
     /// Returns who I am.
@@ -259,7 +257,7 @@ class MemoryGrp: public DescribedClass {
     static MemoryGrp* initial_memorygrp(int &argc, char** argv);
     static MemoryGrp* initial_memorygrp();
 };
-DescribedClass_REF_dec(MemoryGrp);
+
 
 /** The MemoryGrpBug class provides access to pieces of the
     global shared memory that have been obtained with MemoryGrp.
@@ -268,7 +266,7 @@ DescribedClass_REF_dec(MemoryGrp);
     of sizeof(data_t). */
 template <class data_t>
 class MemoryGrpBuf {
-    RefMemoryGrp grp_;
+    Ref<MemoryGrp> grp_;
     enum LockType { None, Read, Write };
     LockType locktype_;
     data_t *data_;
@@ -278,7 +276,7 @@ class MemoryGrpBuf {
     /** Creates a new MemoryGrpBuf given a MemoryGrp
         reference.  This is a template class parameterized on
         data_t. */
-    MemoryGrpBuf(const RefMemoryGrp &);
+    MemoryGrpBuf(const Ref<MemoryGrp> &);
     /** Request write only access to global memory at the global address
         offset and with size length.  Writing the same bit of memory twice
         without an intervening sync of the MemoryGrp will have undefined
@@ -312,7 +310,7 @@ class MemoryGrpBuf {
 // MemoryGrpBuf members
 
 template <class data_t>
-MemoryGrpBuf<data_t>::MemoryGrpBuf(const RefMemoryGrp & grp)
+MemoryGrpBuf<data_t>::MemoryGrpBuf(const Ref<MemoryGrp> & grp)
 {
   grp_ = grp;
   locktype_ = None;

@@ -44,11 +44,8 @@ default MessageGrp must be a MPIMessageGrp.  MPI must be safe with respect
 to the default ThreadGrp.  Alternately, a MessageGrp and a ThreadGrp can be
 passed to the constructor.  */
 class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
-#define CLASSNAME MTMPIMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   private:
-    RefThreadGrp th_;
+    Ref<ThreadGrp> th_;
 
     int req_type_;
     int fr_type_;
@@ -57,8 +54,8 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     int active_;
 
     Thread **thread_;
-    RefThreadLock mem_lock_;
-    RefThreadLock print_lock_; // needed for debugging only
+    Ref<ThreadLock> mem_lock_;
+    Ref<ThreadLock> print_lock_; // needed for debugging only
     std::ofstream hout; // handler out
     std::ofstream mout; // main thread out
 
@@ -71,8 +68,8 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
 
     friend class MTMPIThread;
   public:
-    MTMPIMemoryGrp(const RefMessageGrp& msg, const RefThreadGrp &th);
-    MTMPIMemoryGrp(const RefKeyVal &);
+    MTMPIMemoryGrp(const Ref<MessageGrp>& msg, const Ref<ThreadGrp> &th);
+    MTMPIMemoryGrp(const Ref<KeyVal> &);
     ~MTMPIMemoryGrp();
 
     long lockcomm();

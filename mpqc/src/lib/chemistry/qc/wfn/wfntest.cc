@@ -27,24 +27,25 @@
 
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
+#include <util/state/state_text.h>
 
 #include <chemistry/qc/wfn/obwfn.h>
 
 using namespace std;
 
 // Force linkages:
-const ClassDesc &fl0 = HCoreWfn::class_desc_;
+static ForceLink<HCoreWfn> fl0;
 
 main(int argc, char *argv[])
 {
-  char *input = (argc > 1) ? argv[1] : SRCDIR "/wfntest.kv";
+  const char *input = (argc > 1) ? argv[1] : SRCDIR "/wfntest.kv";
 
-  RefKeyVal rpkv(new ParsedKeyVal(input));
+  Ref<KeyVal> rpkv(new ParsedKeyVal(input));
   
   // the output stream is standard out
   ostream &o = cout;
 
-  RefOneBodyWavefunction wfn = rpkv->describedclassvalue("wavefunction");
+  Ref<OneBodyWavefunction> wfn = rpkv->describedclassvalue("wavefunction");
   if (wfn.null()) {
     cerr << node0 << "wfn is null\n";
     exit(1);
@@ -60,7 +61,7 @@ main(int argc, char *argv[])
   //wfn->print(o);
   //o << endl;
 
-  RefOneBodyWavefunction oldwfn = rpkv->describedclassvalue("pwavefunction");
+  Ref<OneBodyWavefunction> oldwfn = rpkv->describedclassvalue("pwavefunction");
   
   RefSCMatrix evecs = wfn->projected_eigenvectors(oldwfn);
 
@@ -70,7 +71,7 @@ main(int argc, char *argv[])
   wfn.save_state(so);
   so.close();
 
-  RefMolecularEnergy me;
+  Ref<MolecularEnergy> me;
   StateInText si("wfn.ckpt");
   me.restore_state(si);
   

@@ -84,66 +84,55 @@ dquicksort(double *item,int *index,int n)
 ///////////////////////////////////////////////////////////////////////////
 // MBPT2
 
-#define VERSION 7
-#define CLASSNAME MBPT2
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public Wavefunction
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-MBPT2::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Wavefunction::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MBPT2_cd(
+  typeid(MBPT2),"MBPT2",7,"public Wavefunction",
+  0, create<MBPT2>, create<MBPT2>);
 
 MBPT2::MBPT2(StateIn& s):
   SavableState(s),
   Wavefunction(s)
 {
-  reference_.restore_state(s);
+  reference_ << SavableState::restore_state(s);
   s.get(nfzc);
   s.get(nfzv);
   s.get(mem_alloc);
   s.getstring(method_);
   s.getstring(algorithm_);
 
-  if (s.version(static_class_desc()) <= 6) {
+  if (s.version(::class_desc<MBPT2>()) <= 6) {
       int debug_old;
       s.get(debug_old);
     }
 
-  if (s.version(static_class_desc()) >= 2) {
+  if (s.version(::class_desc<MBPT2>()) >= 2) {
       s.get(do_d1_);
     }
   else {
       do_d1_ = 0;
     }
 
-  if (s.version(static_class_desc()) >= 3) {
+  if (s.version(::class_desc<MBPT2>()) >= 3) {
       s.get(dynamic_);
     }
   else {
       dynamic_ = 0;
     }
 
-  if (s.version(static_class_desc()) >= 4) {
+  if (s.version(::class_desc<MBPT2>()) >= 4) {
       s.get(cphf_epsilon_);
     }
   else {
       cphf_epsilon_ = 1.0e-8;
     }
 
-  if (s.version(static_class_desc()) >= 5) {
+  if (s.version(::class_desc<MBPT2>()) >= 5) {
       s.get(max_norb_);
     }
   else {
       max_norb_ = 0;
     }
 
-  if (s.version(static_class_desc()) >= 6) {
+  if (s.version(::class_desc<MBPT2>()) >= 6) {
       s.get(do_d2_);
     }
   else {
@@ -166,10 +155,10 @@ MBPT2::MBPT2(StateIn& s):
   restart_orbital_memgrp_ = 0;
 }
 
-MBPT2::MBPT2(const RefKeyVal& keyval):
+MBPT2::MBPT2(const Ref<KeyVal>& keyval):
   Wavefunction(keyval)
 {
-  reference_ = keyval->describedclassvalue("reference");
+  reference_ << keyval->describedclassvalue("reference");
   if (reference_.null()) {
       ExEnv::err() << node0 << "MBPT2::MBPT2: no reference wavefunction" << endl;
       abort();
@@ -196,7 +185,7 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
           mem_alloc = 8000000;
         }
     }
-  mem = keyval->describedclassvalue("memorygrp");
+  mem << keyval->describedclassvalue("memorygrp");
   if (mem.null()) {
       mem = MemoryGrp::initial_memorygrp();
     }
@@ -241,7 +230,7 @@ void
 MBPT2::save_data_state(StateOut& s)
 {
   Wavefunction::save_data_state(s);
-  reference_.save_state(s);
+  SavableState::save_state(reference_.pointer(),s);
   s.put(nfzc);
   s.put(nfzv);
   s.put(mem_alloc);
@@ -472,7 +461,7 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
   if (!symorb_num_) symorb_num_ = new int[nbasis];
   // Check for degenerate eigenvalues.  Use unsorted eigenvalues since it
   // only matters if the degeneracies occur within a given irrep.
-  BlockedDiagSCMatrix *bvals = BlockedDiagSCMatrix::castdown(vals.pointer());
+  BlockedDiagSCMatrix *bvals = dynamic_cast<BlockedDiagSCMatrix*>(vals.pointer());
   for (i=0; i<bvals->nblocks(); i++) {
       int done = 0;
       RefDiagSCMatrix valsi = bvals->block(i);

@@ -38,32 +38,20 @@
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 
-#define CLASSNAME EFCOpt
-#define VERSION 2
-#define PARENTS public Optimize
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////////
 // EFCOpt
 
-void *
-EFCOpt::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Optimize::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc EFCOpt_cd(
+  typeid(EFCOpt),"EFCOpt",2,"public Optimize",
+  0, create<EFCOpt>, create<EFCOpt>);
 
-EFCOpt::EFCOpt(const RefKeyVal&keyval):
+EFCOpt::EFCOpt(const Ref<KeyVal>&keyval):
   Optimize(keyval),
   maxabs_gradient(-1.0)
 {
-  update_ = keyval->describedclassvalue("update");
+  update_ << keyval->describedclassvalue("update");
   
   accuracy_ = keyval->doublevalue("accuracy");
   if (keyval->error() != KeyVal::OK) accuracy_ = 0.0001;
@@ -106,10 +94,10 @@ EFCOpt::EFCOpt(StateIn&s):
   s.get(modef);
   hessian_ = matrixkit()->symmmatrix(dimension());
   hessian_.restore(s);
-  update_.restore_state(s);
+  update_ << SavableState::restore_state(s);
   last_mode_ = matrixkit()->vector(dimension());
   last_mode_.restore(s);
-  if (s.version(static_class_desc()) < 2) {
+  if (s.version(::class_desc<EFCOpt>()) < 2) {
     double convergence;
     s.get(convergence);
   }
@@ -128,7 +116,7 @@ EFCOpt::save_data_state(StateOut&s)
   s.put(tstate);
   s.put(modef);
   hessian_.save(s);
-  update_.save_state(s);
+  SavableState::save_state(update_.pointer(),s);
   last_mode_.save(s);
   s.put(accuracy_);
   s.put(maxabs_gradient);
@@ -365,7 +353,7 @@ EFCOpt::update()
        << indent << scprintf("taking step of size %f",tot) << endl;
                     
   function()->set_x(xnext);
-  RefNonlinearTransform t = function()->change_coordinates();
+  Ref<NonlinearTransform> t = function()->change_coordinates();
   apply_transform(t);
 
   // make the next gradient computed more accurate, since it will
@@ -376,7 +364,7 @@ EFCOpt::update()
 }
 
 void
-EFCOpt::apply_transform(const RefNonlinearTransform &t)
+EFCOpt::apply_transform(const Ref<NonlinearTransform> &t)
 {
   if (t.null()) return;
   Optimize::apply_transform(t);

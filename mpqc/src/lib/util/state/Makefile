@@ -41,7 +41,6 @@ LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 INC =  LIBS.h state.h statein.h stateout.h \
        translate.h array.h \
        stattmpl.h state_bin.h state_file.h state_text.h
-GENINC = statmacr.h
 
 DEPENDINCLUDE = $(INC) $(GENINC)
 
@@ -53,9 +52,6 @@ TARGET_TO_MAKE = libstate
 default:: $(DEPENDINCLUDE)
 
 interface:: $(DEPENDINCLUDE)
-
-statmacr.h: stattmpl.h $(TMPL2MACDEP)
-	$(TMPL2MAC) $< > statmacr.h
 
 statetest.$(OBJSUF): statetest.cc
 	$(LTCOMP) $(CXX) $(CXXFLAGS) $(DEFINES) $(INCLUDE) -DSRCDIR=\"$(SRCDIR)\" -c $<

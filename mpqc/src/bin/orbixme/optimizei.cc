@@ -5,7 +5,7 @@
 
 // force linkage of QNewtonOpt
 #include <math/optimize/qnewton.h>
-const ClassDesc &fl0 = QNewtonOpt::class_desc_;
+static ForceLink<QNewtonOpt> fl0;
 
 C_OptimizeImpl::C_OptimizeImpl()
 {
@@ -19,7 +19,7 @@ Optimize *
 C_OptimizeImpl::opt()
 {
   Optimize *ret;
-  ret = Optimize::castdown(dc_);
+  ret = dynamic_cast<Optimize*>(dc_);
   return ret;
 }
 

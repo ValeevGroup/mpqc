@@ -109,8 +109,8 @@ PointChargeData::~PointChargeData()
 ///////////////////////////////////////////////////////////////////////
 
 OneBodyInt::OneBodyInt(Integral* integral,
-                       const RefGaussianBasisSet&bs1,
-                       const RefGaussianBasisSet&bs2) :
+                       const Ref<GaussianBasisSet>&bs1,
+                       const Ref<GaussianBasisSet>&bs2) :
   integral_(integral),
   bs1_(bs1), bs2_(bs2)
 {
@@ -157,19 +157,19 @@ OneBodyInt::nshell2() const
   return bs2_->nshell();
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 OneBodyInt::basis()
 {
   return bs1_;
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 OneBodyInt::basis1()
 {
   return bs1_;
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 OneBodyInt::basis2()
 {
   return bs2_;
@@ -219,7 +219,7 @@ OneBodyIntIter::OneBodyIntIter()
 {
 }
 
-OneBodyIntIter::OneBodyIntIter(const RefOneBodyInt& o) :
+OneBodyIntIter::OneBodyIntIter(const Ref<OneBodyInt>& o) :
   obi(o)
 {
 }
@@ -293,12 +293,12 @@ OneBodyIntIter::current_pair()
 
 ///////////////////////////////////////////////////////////////////////
 
-OneBodyIntOp::OneBodyIntOp(const RefOneBodyInt& it)
+OneBodyIntOp::OneBodyIntOp(const Ref<OneBodyInt>& it)
 {
   iter = new OneBodyIntIter(it);
 }
 
-OneBodyIntOp::OneBodyIntOp(const RefOneBodyIntIter& it) :
+OneBodyIntOp::OneBodyIntOp(const Ref<OneBodyIntIter>& it) :
   iter(it)
 {
 }
@@ -318,8 +318,8 @@ OneBodyIntOp::process(SCMatrixBlockIter& b)
 void
 OneBodyIntOp::process_spec_rect(SCMatrixRectBlock* b)
 {
-  RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
-  RefGaussianBasisSet bs2 = iter->one_body_int()->basis2();
+  Ref<GaussianBasisSet> bs1 = iter->one_body_int()->basis1();
+  Ref<GaussianBasisSet> bs2 = iter->one_body_int()->basis2();
   
   // convert basis function indices into shell indices
   int ishstart = bs1->function_to_shell(b->istart);
@@ -356,7 +356,7 @@ OneBodyIntOp::process_spec_rect(SCMatrixRectBlock* b)
 void
 OneBodyIntOp::process_spec_ltri(SCMatrixLTriBlock* b)
 {
-  RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
+  Ref<GaussianBasisSet> bs1 = iter->one_body_int()->basis1();
 
   // convert basis function indices into shell indices
   int fnstart = b->start;
@@ -391,8 +391,8 @@ OneBodyIntOp::process_spec_ltri(SCMatrixLTriBlock* b)
 void
 OneBodyIntOp::process_spec_rectsub(SCMatrixRectSubBlock* b)
 {
-  RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
-  RefGaussianBasisSet bs2 = iter->one_body_int()->basis2();
+  Ref<GaussianBasisSet> bs1 = iter->one_body_int()->basis1();
+  Ref<GaussianBasisSet> bs2 = iter->one_body_int()->basis2();
   
   // convert basis function indices into shell indices
   int istart = b->istart;
@@ -430,7 +430,7 @@ OneBodyIntOp::process_spec_rectsub(SCMatrixRectSubBlock* b)
 void
 OneBodyIntOp::process_spec_ltrisub(SCMatrixLTriSubBlock* b)
 {
-  RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
+  Ref<GaussianBasisSet> bs1 = iter->one_body_int()->basis1();
 
   // convert basis function indices into shell indices
   int istart = b->istart;
@@ -474,12 +474,12 @@ OneBodyIntOp::has_side_effects()
 
 ///////////////////////////////////////////////////////////////////////
 
-OneBody3IntOp::OneBody3IntOp(const RefOneBodyInt& it)
+OneBody3IntOp::OneBody3IntOp(const Ref<OneBodyInt>& it)
 {
   iter = new OneBodyIntIter(it);
 }
 
-OneBody3IntOp::OneBody3IntOp(const RefOneBodyIntIter& it) :
+OneBody3IntOp::OneBody3IntOp(const Ref<OneBodyIntIter>& it) :
   iter(it)
 {
 }
@@ -504,8 +504,8 @@ OneBody3IntOp::process_spec_rect(SCMatrixRectBlock* a,
                                  SCMatrixRectBlock* b,
                                  SCMatrixRectBlock* c)
 {
-  RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
-  RefGaussianBasisSet bs2 = iter->one_body_int()->basis2();
+  Ref<GaussianBasisSet> bs1 = iter->one_body_int()->basis1();
+  Ref<GaussianBasisSet> bs2 = iter->one_body_int()->basis2();
 
   // convert basis function indices into shell indices
   int ishstart = bs1->function_to_shell(b->istart);
@@ -559,7 +559,7 @@ OneBody3IntOp::process_spec_ltri(SCMatrixLTriBlock* a,
                                  SCMatrixLTriBlock* c)
 {
 #if 0
-  RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
+  Ref<GaussianBasisSet> bs1 = iter->one_body_int()->basis1();
 
   // convert basis function indices into shell indices
   int fnstart = b->start;
@@ -631,7 +631,7 @@ OneBody3IntOp::has_side_effects_in_arg2()
 ///////////////////////////////////////////////////////////////////////
 
 OneBodyDerivInt::OneBodyDerivInt(Integral *integral,
-                                 const RefGaussianBasisSet&b) :
+                                 const Ref<GaussianBasisSet>&b) :
   integral_(integral),
   bs1(b), bs2(b)
 {
@@ -647,8 +647,8 @@ OneBodyDerivInt::OneBodyDerivInt(Integral *integral,
 }
 
 OneBodyDerivInt::OneBodyDerivInt(Integral *integral,
-                                 const RefGaussianBasisSet&b1,
-                                 const RefGaussianBasisSet&b2) :
+                                 const Ref<GaussianBasisSet>&b1,
+                                 const Ref<GaussianBasisSet>&b2) :
   integral_(integral),
   bs1(b1), bs2(b2)
 {
@@ -695,19 +695,19 @@ OneBodyDerivInt::nshell2() const
   return bs2->nshell();
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 OneBodyDerivInt::basis()
 {
   return bs1;
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 OneBodyDerivInt::basis1()
 {
   return bs1;
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 OneBodyDerivInt::basis2()
 {
   return bs2;

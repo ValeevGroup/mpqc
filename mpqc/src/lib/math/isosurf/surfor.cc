@@ -36,20 +36,20 @@ void
 TriangulatedSurface::fix_orientation()
 {
   int i,j;
-  AVLSet<RefTriangle>::iterator I;
+  AVLSet<Ref<Triangle> >::iterator I;
   int nflip = 0;
   
   int ne = nedge();
   int ntri = ntriangle();
-  RefTriangle *edge_to_triangle0;
-  RefTriangle *edge_to_triangle1;
-  edge_to_triangle0 = new RefTriangle[ne];
-  edge_to_triangle1 = new RefTriangle[ne];
+  Ref<Triangle> *edge_to_triangle0;
+  Ref<Triangle> *edge_to_triangle1;
+  edge_to_triangle0 = new Ref<Triangle>[ne];
+  edge_to_triangle1 = new Ref<Triangle>[ne];
 
   for (I = _triangles.begin(); I != _triangles.end(); I++) {
-      RefTriangle tri = *I;
+      Ref<Triangle> tri = *I;
       for (j=0; j<3; j++) {
-          RefEdge e = tri->edge(j);
+          Ref<Edge> e = tri->edge(j);
           int e_index = _edge_to_index[e];
           if (edge_to_triangle0[e_index].null()) {
               edge_to_triangle0[e_index] = tri;
@@ -65,24 +65,24 @@ TriangulatedSurface::fix_orientation()
         }
     }
 
-  AVLSet<RefTriangle> unfixed;
-  AVLSet<RefTriangle> fixed;
-  AVLSet<RefTriangle> finished;
+  AVLSet<Ref<Triangle> > unfixed;
+  AVLSet<Ref<Triangle> > fixed;
+  AVLSet<Ref<Triangle> > finished;
 
   unfixed |= _triangles;
 
   while (unfixed.length()) {
       // define unfixed.first()'s orientation to be the fixed orientation
-      AVLSet<RefTriangle>::iterator first = unfixed.begin();
+      AVLSet<Ref<Triangle> >::iterator first = unfixed.begin();
       fixed.insert(*first);
       unfixed.remove(*first);
       while (fixed.length()) {
-          RefTriangle tri = *fixed.begin();
+          Ref<Triangle> tri = *fixed.begin();
           // make all neighbors of tri oriented the same as tri
           for (i=0; i<3; i++) {
-              RefEdge e = tri->edge(i);
+              Ref<Edge> e = tri->edge(i);
               int e_index = _edge_to_index[e];
-              RefTriangle othertri;
+              Ref<Triangle> othertri;
               if (edge_to_triangle0[e_index] == tri) {
                   othertri = edge_to_triangle1[e_index];
                 }

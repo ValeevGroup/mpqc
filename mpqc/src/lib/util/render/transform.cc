@@ -30,20 +30,11 @@
 
 using namespace std;
 
-DescribedClass_REF_def(Transform);
-#define CLASSNAME Transform
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public DescribedClass
-#include <util/class/classi.h>
-void *
-Transform::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc Transform_cd(
+  typeid(Transform),"Transform",1,"public DescribedClass",
+  0, create<Transform>, 0);
 
-Transform::Transform(const RefKeyVal& keyval)
+Transform::Transform(const Ref<KeyVal>& keyval)
 {
   transform_ = identity3D();
   if (keyval->exists("translate")) {

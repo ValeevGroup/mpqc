@@ -43,20 +43,9 @@ using namespace std;
 /////////////////////////////////////////////////////////////////
 // MolecularEnergy
 
-SavableState_REF_def(MolecularEnergy);
-
-#define CLASSNAME MolecularEnergy
-#define PARENTS public Function
-#define VERSION 4
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-MolecularEnergy::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Function::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MolecularEnergy_cd(
+  typeid(MolecularEnergy),"MolecularEnergy",4,"public Function",
+  0, 0, 0);
 
 MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
   Function(mole)
@@ -68,7 +57,7 @@ MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
   initial_pg_ = new PointGroup(mol_->point_group());
 }
 
-MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
+MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
   Function(keyval,1.0e-6,1.0e-6,1.0e-4)
 {
   // The following code is a solaris workshop 5.0 hack, since it doesn't
@@ -95,7 +84,7 @@ MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
       = keyval->booleanvalue("print_molecule_when_changed");
   if (keyval->error() != KeyVal::OK) print_molecule_when_changed_ = 1;
 
-  mol_ = keyval->describedclassvalue("molecule");
+  mol_ << keyval->describedclassvalue("molecule");
   if (mol_.null()) {
       ExEnv::err() << indent << "MolecularEnergy(Keyval): no molecule found"
            << endl;
@@ -104,25 +93,25 @@ MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
 
   initial_pg_ = new PointGroup(mol_->point_group());
 
-  hess_ = keyval->describedclassvalue("hessian");
+  hess_ << keyval->describedclassvalue("hessian");
 
-  guesshess_ = keyval->describedclassvalue("guess_hessian");
+  guesshess_ << keyval->describedclassvalue("guess_hessian");
 
   moldim_ = new SCDimension(3 * mol_->natom(), "3Natom");
 
   // the molecule coordinate object needs moldim_
   // so constract a keyval that has it
-  RefAssignedKeyVal assignedkeyval = new AssignedKeyVal;
-  RefDescribedClass dc = moldim_;
+  Ref<AssignedKeyVal> assignedkeyval = new AssignedKeyVal;
+  Ref<DescribedClass> dc = moldim_.pointer();
   assignedkeyval->assign("natom3", dc);
   dc = matrixkit();
   assignedkeyval->assign("matrixkit", dc);
-  RefKeyVal asskeyval(assignedkeyval.pointer());
-  RefKeyVal aggkeyval = new AggregateKeyVal(asskeyval, keyval);
+  Ref<KeyVal> asskeyval(assignedkeyval.pointer());
+  Ref<KeyVal> aggkeyval = new AggregateKeyVal(asskeyval, keyval);
 
   // Don't bother with internal coordinates if there is only 1 atom
   if (mol_->natom() > 1) {
-      mc_  = aggkeyval->describedclassvalue("coor");
+      mc_ << aggkeyval->describedclassvalue("coor");
     }
 
   RefSCDimension dim;
@@ -149,16 +138,18 @@ MolecularEnergy::MolecularEnergy(StateIn&s):
   SavableState(s),
   Function(s)
 {
-  mc_.restore_state(s);
-  moldim_.restore_state(s);
-  mol_.restore_state(s);
-  if (s.version(static_class_desc()) >= 2) s.get(print_molecule_when_changed_);
+  mc_ << SavableState::restore_state(s);
+  moldim_ << SavableState::restore_state(s);
+  mol_ << SavableState::restore_state(s);
+  if (s.version(::class_desc<MolecularEnergy>()) >= 2)
+      s.get(print_molecule_when_changed_);
   else print_molecule_when_changed_ = 1;
-  if (s.version(static_class_desc()) >= 3) {
-      hess_.restore_state(s);
-      guesshess_.restore_state(s);
+  if (s.version(::class_desc<MolecularEnergy>()) >= 3) {
+      hess_ << SavableState::restore_state(s);
+      guesshess_ << SavableState::restore_state(s);
     }
-  if (s.version(static_class_desc()) >= 4) initial_pg_.restore_state(s);
+  if (s.version(::class_desc<MolecularEnergy>()) >= 4)
+      initial_pg_ << SavableState::restore_state(s);
   else initial_pg_ = new PointGroup(mol_->point_group());
 }
 
@@ -178,13 +169,13 @@ void
 MolecularEnergy::save_data_state(StateOut&s)
 {
   Function::save_data_state(s);
-  mc_.save_state(s);
-  moldim_.save_state(s);
-  mol_.save_state(s);
+  SavableState::save_state(mc_.pointer(),s);
+  SavableState::save_state(moldim_.pointer(),s);
+  SavableState::save_state(mol_.pointer(),s);
   s.put(print_molecule_when_changed_);
-  hess_.save_state(s);
-  guesshess_.save_state(s);
-  initial_pg_.save_state(s);
+  SavableState::save_state(hess_.pointer(),s);
+  SavableState::save_state(guesshess_.pointer(),s);
+  SavableState::save_state(initial_pg_.pointer(),s);
 }
 
 void
@@ -324,7 +315,7 @@ MolecularEnergy::moldim() const
   return moldim_;
 }
 
-RefMolecule
+Ref<Molecule>
 MolecularEnergy::molecule() const
 {
   return mol_;
@@ -395,11 +386,11 @@ MolecularEnergy::symmetry_changed()
   obsolete();
 }
 
-RefNonlinearTransform
+Ref<NonlinearTransform>
 MolecularEnergy::change_coordinates()
 {
   if (!mc_) return 0;
-  RefNonlinearTransform t = mc_->change_coordinates();
+  Ref<NonlinearTransform> t = mc_->change_coordinates();
   do_change_coordinates(t);
   return t;
 }
@@ -501,30 +492,18 @@ MolecularEnergy::print(ostream&o) const
 /////////////////////////////////////////////////////////////////
 // SumMolecularEnergy
 
-SavableState_REF_def(SumMolecularEnergy);
-#define CLASSNAME SumMolecularEnergy
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public MolecularEnergy
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SumMolecularEnergy_cd(
+  typeid(SumMolecularEnergy),"SumMolecularEnergy",1,"public MolecularEnergy",
+  0, create<SumMolecularEnergy>, create<SumMolecularEnergy>);
 
-void *
-SumMolecularEnergy::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MolecularEnergy::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-SumMolecularEnergy::SumMolecularEnergy(const RefKeyVal &keyval):
+SumMolecularEnergy::SumMolecularEnergy(const Ref<KeyVal> &keyval):
   MolecularEnergy(keyval)
 {
   n_ = keyval->count("mole");
-  mole_ = new RefMolecularEnergy[n_];
+  mole_ = new Ref<MolecularEnergy>[n_];
   coef_ = new double[n_];
   for (int i=0; i<n_; i++) {
-      mole_[i] = keyval->describedclassvalue("mole",i);
+      mole_[i] << keyval->describedclassvalue("mole",i);
       coef_[i] = keyval->intvalue("coef",i);
       if (mole_[i].null()
           || mole_[i]->molecule()->natom() != molecule()->natom()) {
@@ -540,10 +519,10 @@ SumMolecularEnergy::SumMolecularEnergy(StateIn&s):
 {
   s.get(n_);
   coef_ = new double[n_];
-  mole_ = new RefMolecularEnergy[n_];
+  mole_ = new Ref<MolecularEnergy>[n_];
   s.get_array_double(coef_,n_);
   for (int i=0; i<n_; i++) {
-      mole_[i].restore_state(s);
+      mole_[i] << SavableState::restore_state(s);
     }
 }
 
@@ -554,7 +533,7 @@ SumMolecularEnergy::save_data_state(StateOut&s)
   s.put(n_);
   s.put_array_double(coef_,n_);
   for (int i=0; i<n_; i++) {
-      mole_[i].save_state(s);
+      SavableState::save_state(mole_[i].pointer(),s);
     }
 }
 
@@ -668,22 +647,9 @@ SumMolecularEnergy::compute()
 /////////////////////////////////////////////////////////////////
 // MolEnergyConvergence
 
-SavableState_REF_def(MolEnergyConvergence);
-#define CLASSNAME MolEnergyConvergence
-#define VERSION 3
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public Convergence
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-void *
-MolEnergyConvergence::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Convergence::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MolEnergyConvergence_cd(
+  typeid(MolEnergyConvergence),"MolEnergyConvergence",3,"public Convergence",
+  0, create<MolEnergyConvergence>, create<MolEnergyConvergence>);
 
 MolEnergyConvergence::MolEnergyConvergence()
 {
@@ -694,15 +660,17 @@ MolEnergyConvergence::MolEnergyConvergence(StateIn&s):
   SavableState(s),
   Convergence(s)
 {
-  if (s.version(static_class_desc()) >= 2) s.get(cartesian_);
-  if (s.version(static_class_desc()) >= 3) mole_.restore_state(s);
+  if (s.version(::class_desc<MolEnergyConvergence>()) >= 2)
+      s.get(cartesian_);
+  if (s.version(::class_desc<MolEnergyConvergence>()) >= 3)
+      mole_ << SavableState::restore_state(s);
 }
 
-MolEnergyConvergence::MolEnergyConvergence(const RefKeyVal&keyval)
+MolEnergyConvergence::MolEnergyConvergence(const Ref<KeyVal>&keyval)
 {
-  mole_ = keyval->describedclassvalue("energy");
+  mole_ << keyval->describedclassvalue("energy");
   if (mole_.null()) {
-      ExEnv::err() << "MolEnergyConvergence(const RefKeyVal&keyval): "
+      ExEnv::err() << "MolEnergyConvergence(const Ref<KeyVal>&keyval): "
            << "require an energy keyword of type MolecularEnergy"
            << endl;
       abort();
@@ -738,7 +706,7 @@ MolEnergyConvergence::save_data_state(StateOut&s)
 {
   Convergence::save_data_state(s);
   s.put(cartesian_);
-  mole_.save_state(s);
+  SavableState::save_state(mole_.pointer(),s);
 }
 
 void
@@ -755,9 +723,9 @@ MolEnergyConvergence::set_defaults()
 }
 
 void
-MolEnergyConvergence::get_x(const RefFunction &f)
+MolEnergyConvergence::get_x(const Ref<Function> &f)
 {
-  RefMolecularEnergy m(f);
+  Ref<MolecularEnergy> m; m << f;
   if (cartesian_ && m.nonnull() && m->molecularcoor().nonnull()) {
       x_ = m->get_cartesian_x();
     }
@@ -771,7 +739,7 @@ void
 MolEnergyConvergence::set_nextx(const RefSCVector& x)
 {
   if (cartesian_ && mole_.nonnull() && mole_->molecularcoor().nonnull()) {
-      RefMolecule mol = new Molecule(*(mole_->molecule().pointer()));
+      Ref<Molecule> mol = new Molecule(*(mole_->molecule().pointer()));
       mole_->molecularcoor()->to_cartesian(mol, x);
       nextx_ = mole_->matrixkit()->vector(mole_->moldim());
       int c = 0;
@@ -792,9 +760,9 @@ MolEnergyConvergence::set_nextx(const RefSCVector& x)
 }
 
 void
-MolEnergyConvergence::get_grad(const RefFunction &f)
+MolEnergyConvergence::get_grad(const Ref<Function> &f)
 {
-  RefMolecularEnergy m(f);
+  Ref<MolecularEnergy> m; m << f;
   if (cartesian_ && m.nonnull() && m->molecularcoor().nonnull()) {
       RefSCVector cartesian_grad = m->get_cartesian_gradient()->copy();
       if (m->molecularcoor()->nconstrained()) {

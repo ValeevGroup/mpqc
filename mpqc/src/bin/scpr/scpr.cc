@@ -183,14 +183,14 @@ main(int argc, char *argv[])
     chdir(working_dir);
 
   // get the message group.  first try the commandline and environment
-  RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
+  Ref<MessageGrp> grp = MessageGrp::initial_messagegrp(argc, argv);
   if (grp.nonnull())
     MessageGrp::set_default_messagegrp(grp);
   else
     grp = MessageGrp::get_default_messagegrp();
 
   // get the thread group.  first try the commandline and environment
-  RefThreadGrp thread = ThreadGrp::initial_threadgrp(argc, argv);
+  Ref<ThreadGrp> thread = ThreadGrp::initial_threadgrp(argc, argv);
   if (thread.nonnull())
     ThreadGrp::set_default_threadgrp(thread);
   else
@@ -218,8 +218,8 @@ main(int argc, char *argv[])
               cout << node0 << indent << objects[j] << ":" << endl;
               cout << incindent;
             }
-          RefSavableState o;
-          o.dir_restore_state(s,objects[j]);
+          Ref<SavableState> o;
+          o << SavableState::dir_restore_state(s,objects[j]);
           cout << node0 << o;
           if (nobject > 1) cout << decindent;
         }

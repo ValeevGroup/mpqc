@@ -53,7 +53,7 @@ three important specializations of this class:
 
 The ThreadGrp class is the ancestor of classes that provide
 multiple-threads within a single address space.  There are
-three important specializations of this class:
+two important specializations of this class:
 
 <dl>
 

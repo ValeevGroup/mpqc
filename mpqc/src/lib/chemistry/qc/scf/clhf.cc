@@ -46,18 +46,9 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////
 // CLHF
 
-#define CLASSNAME CLHF
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public CLSCF
-#include <util/class/classi.h>
-void *
-CLHF::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = CLSCF::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc CLHF_cd(
+  typeid(CLHF),"CLHF",1,"public CLSCF",
+  0, create<CLHF>, create<CLHF>);
 
 CLHF::CLHF(StateIn& s) :
   SavableState(s),
@@ -65,7 +56,7 @@ CLHF::CLHF(StateIn& s) :
 {
 }
 
-CLHF::CLHF(const RefKeyVal& keyval) :
+CLHF::CLHF(const Ref<KeyVal>& keyval) :
   CLSCF(keyval)
 {
 }
@@ -106,7 +97,7 @@ CLHF::ao_fock(double accuracy)
   int i;
   int nthread = threadgrp_->nthread();
 
-  RefPetiteList pl = integral()->petite_list(basis());
+  Ref<PetiteList> pl = integral()->petite_list(basis());
   
   // calculate G.  First transform cl_dens_diff_ to the AO basis, then
   // scale the off-diagonal elements by 2.0
@@ -146,7 +137,7 @@ CLHF::ao_fock(double accuracy)
     double **gmats = new double*[nthread];
     gmats[0] = gmat;
     
-    RefGaussianBasisSet bs = basis();
+    Ref<GaussianBasisSet> bs = basis();
     int ntri = i_offset(bs->nbasis());
 
     double gmat_accuracy = accuracy;
@@ -269,7 +260,7 @@ CLHF::two_body_energy(double &ec, double &ex)
     tim_exit("local data");
 
     // initialize the two electron integral classes
-    RefTwoBodyInt tbi = integral()->electron_repulsion();
+    Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
     tbi->set_integral_storage(0);
 
     tim_enter("init pmax");
@@ -277,7 +268,7 @@ CLHF::two_body_energy(double &ec, double &ex)
     tim_exit("init pmax");
   
     LocalCLHFEnergyContribution lclc(pmat);
-    RefPetiteList pl = integral()->petite_list();
+    Ref<PetiteList> pl = integral()->petite_list();
     LocalGBuild<LocalCLHFEnergyContribution>
       gb(lclc, tbi, pl, basis(), scf_grp_, pmax,
          1.e-20/*desired_value_accuracy()/100.0*/);

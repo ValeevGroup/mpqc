@@ -40,19 +40,19 @@
 using namespace std;
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
-template void delete_c_array2<RefRadialIntegrator>(RefRadialIntegrator**);
-template RefRadialIntegrator**
-  new_c_array2<RefRadialIntegrator>(int,int,RefRadialIntegrator);
-template void delete_c_array3<RefRadialIntegrator>(RefRadialIntegrator***);
-template RefRadialIntegrator***
-  new_c_array3<RefRadialIntegrator>(int,int,int,RefRadialIntegrator);
+template void delete_c_array2<Ref<RadialIntegrator> >(Ref<RadialIntegrator>**);
+template Ref<RadialIntegrator>**
+  new_c_array2<Ref<RadialIntegrator> >(int,int,Ref<RadialIntegrator>);
+template void delete_c_array3<Ref<RadialIntegrator> >(Ref<RadialIntegrator>***);
+template Ref<RadialIntegrator>***
+  new_c_array3<Ref<RadialIntegrator> >(int,int,int,Ref<RadialIntegrator>);
 
-template void delete_c_array2<RefAngularIntegrator>(RefAngularIntegrator**);
-template RefAngularIntegrator**
-  new_c_array2<RefAngularIntegrator>(int,int,RefAngularIntegrator);
-template void delete_c_array3<RefAngularIntegrator>(RefAngularIntegrator***);
-template RefAngularIntegrator***
-  new_c_array3<RefAngularIntegrator>(int,int,int,RefAngularIntegrator);
+template void delete_c_array2<Ref<AngularIntegrator> >(Ref<AngularIntegrator>**);
+template Ref<AngularIntegrator>**
+  new_c_array2<Ref<AngularIntegrator> >(int,int,Ref<AngularIntegrator>);
+template void delete_c_array3<Ref<AngularIntegrator> >(Ref<AngularIntegrator>***);
+template Ref<AngularIntegrator>***
+  new_c_array3<Ref<AngularIntegrator> >(int,int,int,Ref<AngularIntegrator>);
 #endif
 
 //#define CHECK_ALIGN(v) if(int(&v)&7)ExEnv::out()<<"Bad Alignment: "<< ## v <<endl;
@@ -224,19 +224,9 @@ DenIntegratorThread::~DenIntegratorThread()
 ///////////////////////////////////////////////////////////////////////////
 // DenIntegrator
 
-SavableState_REF_def(DenIntegrator);
-
-#define CLASSNAME DenIntegrator
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-DenIntegrator::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc DenIntegrator_cd(
+  typeid(DenIntegrator),"DenIntegrator",1,"public SavableState",
+  0, 0, 0);
 
 DenIntegrator::DenIntegrator(StateIn& s):
   SavableState(s)
@@ -251,7 +241,7 @@ DenIntegrator::DenIntegrator()
   init_object();
 }
 
-DenIntegrator::DenIntegrator(const RefKeyVal& keyval)
+DenIntegrator::DenIntegrator(const Ref<KeyVal>& keyval)
 {
   init_object();
 
@@ -298,7 +288,7 @@ DenIntegrator::set_compute_potential_integrals(int i)
 }
 
 void
-DenIntegrator::init(const RefWavefunction &wfn)
+DenIntegrator::init(const Ref<Wavefunction> &wfn)
 {
   wfn_ = wfn;
   if (linear_scaling_) {
@@ -336,7 +326,7 @@ DenIntegrator::done()
 }
 
 void
-DenIntegrator::init_integration(const RefDenFunctional &func,
+DenIntegrator::init_integration(const Ref<DenFunctional> &func,
                                 const RefSymmSCMatrix& densa,
                                 const RefSymmSCMatrix& densb,
                                 double *nuclear_gradient)
@@ -783,19 +773,9 @@ DenIntegratorThread::do_point(int acenter, const SCVector3 &r,
 ///////////////////////////////////////////////////////////////////////////
 // IntegrationWeight
 
-SavableState_REF_def(IntegrationWeight);
-
-#define CLASSNAME IntegrationWeight
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-IntegrationWeight::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc IntegrationWeight_cd(
+  typeid(IntegrationWeight),"IntegrationWeight",1,"public SavableState",
+  0, 0, 0);
 
 IntegrationWeight::IntegrationWeight(StateIn& s):
   SavableState(s)
@@ -806,7 +786,7 @@ IntegrationWeight::IntegrationWeight()
 {
 }
 
-IntegrationWeight::IntegrationWeight(const RefKeyVal& keyval)
+IntegrationWeight::IntegrationWeight(const Ref<KeyVal>& keyval)
 {
 }
 
@@ -820,7 +800,7 @@ IntegrationWeight::save_data_state(StateOut& s)
 }
 
 void
-IntegrationWeight::init(const RefMolecule &mol, double tolerance)
+IntegrationWeight::init(const Ref<Molecule> &mol, double tolerance)
 {
   mol_ = mol;
   tol_ = tolerance;
@@ -838,8 +818,8 @@ IntegrationWeight::fd_w(int icenter, SCVector3 &point,
   if (!fd_grad_w) return;
   double delta = 0.001;
   int natom = mol_->natom();
-  RefMolecule molsav = mol_;
-  RefMolecule dmol = new Molecule(*mol_.pointer());
+  Ref<Molecule> molsav = mol_;
+  Ref<Molecule> dmol = new Molecule(*mol_.pointer());
   for (int i=0; i<natom; i++) {
       for (int j=0; j<3; j++) {
           dmol->r(i,j) += delta;
@@ -944,19 +924,9 @@ calc_f3_prime(double m)
   return m3*n2*o1;
 }
 
-#define CLASSNAME BeckeIntegrationWeight
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public IntegrationWeight
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-BeckeIntegrationWeight::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = IntegrationWeight::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc BeckeIntegrationWeight_cd(
+  typeid(BeckeIntegrationWeight),"BeckeIntegrationWeight",1,"public IntegrationWeight",
+  0, create<BeckeIntegrationWeight>, create<BeckeIntegrationWeight>);
 
 BeckeIntegrationWeight::BeckeIntegrationWeight(StateIn& s):
   SavableState(s),
@@ -976,7 +946,7 @@ BeckeIntegrationWeight::BeckeIntegrationWeight()
   oorab = 0;
 }
 
-BeckeIntegrationWeight::BeckeIntegrationWeight(const RefKeyVal& keyval):
+BeckeIntegrationWeight::BeckeIntegrationWeight(const Ref<KeyVal>& keyval):
   IntegrationWeight(keyval)
 {
   centers = 0;
@@ -997,7 +967,7 @@ BeckeIntegrationWeight::save_data_state(StateOut& s)
 }
 
 void
-BeckeIntegrationWeight::init(const RefMolecule &mol, double tolerance)
+BeckeIntegrationWeight::init(const Ref<Molecule> &mol, double tolerance)
 {
   done();
   IntegrationWeight::init(mol, tolerance);
@@ -1241,18 +1211,9 @@ BeckeIntegrationWeight::w(int acenter, SCVector3 &point,
 
 ///////////////////////////////////////////////////
 // RadialIntegrator
-SavableState_REF_def(RadialIntegrator);
-#define CLASSNAME RadialIntegrator
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-RadialIntegrator::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc RadialIntegrator_cd(
+  typeid(RadialIntegrator),"RadialIntegrator",1,"public SavableState",
+  0, 0, 0);
 
 RadialIntegrator::RadialIntegrator(StateIn& s):
   SavableState(s)
@@ -1263,7 +1224,7 @@ RadialIntegrator::RadialIntegrator()
 {
 }
 
-RadialIntegrator::RadialIntegrator(const RefKeyVal& keyval)
+RadialIntegrator::RadialIntegrator(const Ref<KeyVal>& keyval)
 {
 }
 
@@ -1279,19 +1240,9 @@ RadialIntegrator::save_data_state(StateOut& s)
 ///////////////////////////////////////
 //  AngularIntegrator
 
-SavableState_REF_def(AngularIntegrator);
-
-#define CLASSNAME AngularIntegrator
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-AngularIntegrator::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc AngularIntegrator_cd(
+  typeid(AngularIntegrator),"AngularIntegrator",1,"public SavableState",
+  0, 0, 0);
 
 AngularIntegrator::AngularIntegrator(StateIn& s):
   SavableState(s)
@@ -1302,7 +1253,7 @@ AngularIntegrator::AngularIntegrator()
 {
 }
 
-AngularIntegrator::AngularIntegrator(const RefKeyVal& keyval)
+AngularIntegrator::AngularIntegrator(const Ref<KeyVal>& keyval)
 {
 }
 
@@ -1318,19 +1269,9 @@ AngularIntegrator::save_data_state(StateOut& s)
 ///////////////////////////////////////
 //  EulerMaclaurinRadialIntegrator
 
-#define CLASSNAME EulerMaclaurinRadialIntegrator
-#define PARENTS public RadialIntegrator
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-EulerMaclaurinRadialIntegrator::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = RadialIntegrator::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc EulerMaclaurinRadialIntegrator_cd(
+  typeid(EulerMaclaurinRadialIntegrator),"EulerMaclaurinRadialIntegrator",1,"public RadialIntegrator",
+  0, create<EulerMaclaurinRadialIntegrator>, create<EulerMaclaurinRadialIntegrator>);
 
 EulerMaclaurinRadialIntegrator::EulerMaclaurinRadialIntegrator(StateIn& s):
   SavableState(s),
@@ -1349,7 +1290,7 @@ EulerMaclaurinRadialIntegrator::EulerMaclaurinRadialIntegrator(int nr_points)
   nr_ = nr_points;
 }
 
-EulerMaclaurinRadialIntegrator::EulerMaclaurinRadialIntegrator(const RefKeyVal& keyval):
+EulerMaclaurinRadialIntegrator::EulerMaclaurinRadialIntegrator(const Ref<KeyVal>& keyval):
   RadialIntegrator(keyval)
 {
   nr_ = keyval->intvalue("nr", KeyValValueint(75));
@@ -1395,19 +1336,9 @@ EulerMaclaurinRadialIntegrator::print(ostream &o) const
 //////////////////////////////////////////////////////////////////////////
 // LebedevLaikovIntegrator
 
-#define CLASSNAME LebedevLaikovIntegrator
-#define PARENTS public AngularIntegrator
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-LebedevLaikovIntegrator::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = AngularIntegrator::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc LebedevLaikovIntegrator_cd(
+  typeid(LebedevLaikovIntegrator),"LebedevLaikovIntegrator",1,"public AngularIntegrator",
+  0, create<LebedevLaikovIntegrator>, create<LebedevLaikovIntegrator>);
 
 LebedevLaikovIntegrator::LebedevLaikovIntegrator(StateIn& s):
   SavableState(s),
@@ -1427,7 +1358,7 @@ LebedevLaikovIntegrator::LebedevLaikovIntegrator(int npoint)
   init(npoint);
 }
 
-LebedevLaikovIntegrator::LebedevLaikovIntegrator(const RefKeyVal& keyval)
+LebedevLaikovIntegrator::LebedevLaikovIntegrator(const Ref<KeyVal>& keyval)
 {
   KeyValValueint defnpoint(302);
   
@@ -1510,19 +1441,9 @@ LebedevLaikovIntegrator::print(ostream &o) const
 /////////////////////////////////
 //  GaussLegendreAngularIntegrator
 
-#define CLASSNAME GaussLegendreAngularIntegrator
-#define PARENTS public AngularIntegrator
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-GaussLegendreAngularIntegrator::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = AngularIntegrator::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc GaussLegendreAngularIntegrator_cd(
+  typeid(GaussLegendreAngularIntegrator),"GaussLegendreAngularIntegrator",1,"public AngularIntegrator",
+  0, create<GaussLegendreAngularIntegrator>, create<GaussLegendreAngularIntegrator>);
 
 GaussLegendreAngularIntegrator::GaussLegendreAngularIntegrator(StateIn& s):
   SavableState(s),
@@ -1545,7 +1466,7 @@ GaussLegendreAngularIntegrator::GaussLegendreAngularIntegrator()
   theta_quad_points_ = new double [ntheta];
 }
 
-GaussLegendreAngularIntegrator::GaussLegendreAngularIntegrator(const RefKeyVal& keyval)
+GaussLegendreAngularIntegrator::GaussLegendreAngularIntegrator(const Ref<KeyVal>& keyval)
 {
   set_ntheta( keyval->intvalue("ntheta") );
   if (keyval->error() != KeyVal::OK) set_ntheta(16);
@@ -1883,19 +1804,9 @@ RadialAngularIntegratorThread::run()
 //////////////////////////////////////////////
 //  RadialAngularIntegrator
 
-#define CLASSNAME RadialAngularIntegrator
-#define PARENTS public DenIntegrator
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-RadialAngularIntegrator::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenIntegrator::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc RadialAngularIntegrator_cd(
+  typeid(RadialAngularIntegrator),"RadialAngularIntegrator",1,"public DenIntegrator",
+  0, create<RadialAngularIntegrator>, create<RadialAngularIntegrator>);
 
 RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
   SavableState(s),
@@ -1928,8 +1839,8 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
                                        double(0));
   s.get_array_double(Alpha_coeffs_[0], natomic_rows_*(npruned_partitions_-1));
 
-  radial_user_.restore_state(s);
-  angular_user_.restore_state(s);
+  radial_user_ << SavableState::restore_state(s);
+  angular_user_ << SavableState::restore_state(s);
 
   init_default_grids();    
   set_grids();
@@ -1946,16 +1857,16 @@ RadialAngularIntegrator::RadialAngularIntegrator()
 
 }
 
-RadialAngularIntegrator::RadialAngularIntegrator(const RefKeyVal& keyval):
+RadialAngularIntegrator::RadialAngularIntegrator(const Ref<KeyVal>& keyval):
   DenIntegrator(keyval)
 {
   
-  radial_user_ = keyval->describedclassvalue("radial");
-  angular_user_ = keyval->describedclassvalue("angular");
+  radial_user_ << keyval->describedclassvalue("radial");
+  angular_user_ << keyval->describedclassvalue("angular");
 
-  weight_ = keyval->describedclassvalue("weight");
+  weight_ << keyval->describedclassvalue("weight");
   if (weight_.null()) weight_ = new BeckeIntegrationWeight;
-//  ExEnv::out() << "In RefKeyVal Constructor" << endl;
+//  ExEnv::out() << "In Ref<KeyVal> Constructor" << endl;
   
   init_parameters(keyval);
   init_default_grids();
@@ -1994,8 +1905,8 @@ RadialAngularIntegrator::save_data_state(StateOut& s)
 //  ExEnv::out() << "npruned_partitions_ = " << npruned_partitions_ << endl;
 //  ExEnv::out() << "dynamic_grids_ = " << dynamic_grids_ << endl;
   
-  radial_user_.save_state(s);
-  angular_user_.save_state(s);
+  SavableState::save_state(radial_user_.pointer(),s);
+  SavableState::save_state(angular_user_.pointer(),s);
 }
 
 void
@@ -2021,7 +1932,7 @@ RadialAngularIntegrator::init_parameters(void)
 }
 
 void
-RadialAngularIntegrator::init_parameters(const RefKeyVal& keyval)
+RadialAngularIntegrator::init_parameters(const Ref<KeyVal>& keyval)
 {
   char *grid = 0;
   
@@ -2081,9 +1992,9 @@ RadialAngularIntegrator::set_grids(void)
   int i, j, k;
 
   radial_grid_ = new_c_array2(natomic_rows_,gridtype_+1,
-                              RefRadialIntegrator());
+                              Ref<RadialIntegrator>());
   angular_grid_ = new_c_array3(natomic_rows_, npruned_partitions_,
-                               gridtype_+1, RefAngularIntegrator());
+                               gridtype_+1, Ref<AngularIntegrator>());
   
   int prune_formula_1[5] = {26, 18, 12, 0, 12};  // for H to Ne
   int prune_formula_2[5] = {36, 24, 12, 0, 12};  // for Na and up
@@ -2157,7 +2068,7 @@ RadialAngularIntegrator::init_pruning_coefficients(void)
 }
 
 void
-RadialAngularIntegrator::init_pruning_coefficients(const RefKeyVal& keyval)
+RadialAngularIntegrator::init_pruning_coefficients(const Ref<KeyVal>& keyval)
 {
   int i, j;
 
@@ -2362,7 +2273,7 @@ RadialAngularIntegrator::get_angular_grid(double radius, double atomic_radius,
 }
 
 void
-RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
+RadialAngularIntegrator::integrate(const Ref<DenFunctional> &denfunc,
                               const RefSymmSCMatrix& densa,
                               const RefSymmSCMatrix& densb,
                               double *nuclear_gradient)
@@ -2390,7 +2301,7 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
 
   // create threads
   //cout << "creating test lock" << endl;
-  //RefThreadLock reflock = threadgrp_->new_lock();
+  //Ref<ThreadLock> reflock = threadgrp_->new_lock();
   //tlock = reflock.pointer();
   RadialAngularIntegratorThread **threads =
       new RadialAngularIntegratorThread*[nthread];

@@ -20,20 +20,11 @@ using namespace std;
 
 //////////////////////////////////////////////////////////////////////////
 
-#define CLASSNAME PsiWfn
-#define PARENTS public Wavefunction
-#include <util/state/statei.h>
-#include <util/class/classia.h>
+static ClassDesc PsiWfn_cd(
+  typeid(PsiWfn),"PsiWfn",1,"public Wavefunction",
+  0, 0, 0);
 
-void *
-PsiWfn::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Wavefunction::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-PsiWfn::PsiWfn(const RefKeyVal&keyval):
+PsiWfn::PsiWfn(const Ref<KeyVal>&keyval):
   Wavefunction(keyval), psi_in(keyval)
 {
 }
@@ -189,22 +180,11 @@ PsiWfn::write_basic_input(int conv, const char *wfn)
 
 //////////////////////////////////////////////////////////////////////////
 
-#define CLASSNAME PsiCCSD
-#define PARENTS public PsiWfn
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc PsiCCSD_cd(
+  typeid(PsiCCSD),"PsiCCSD",1,"public PsiWfn",
+  0, create<PsiCCSD>, create<PsiCCSD>);
 
-void *
-PsiCCSD::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = PsiWfn::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-PsiCCSD::PsiCCSD(const RefKeyVal&keyval):
+PsiCCSD::PsiCCSD(const Ref<KeyVal>&keyval):
   PsiWfn(keyval)
 {
 }
@@ -275,22 +255,11 @@ PsiCCSD::read_energy()
 
 //////////////////////////////////////////////////////////////////////////
 
-#define CLASSNAME PsiCCSD_T
-#define PARENTS public PsiWfn
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc PsiCCSD_T_cd(
+  typeid(PsiCCSD_T),"PsiCCSD_T",1,"public PsiWfn",
+  0, create<PsiCCSD_T>, create<PsiCCSD_T>);
 
-void *
-PsiCCSD_T::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = PsiWfn::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-PsiCCSD_T::PsiCCSD_T(const RefKeyVal&keyval):
+PsiCCSD_T::PsiCCSD_T(const Ref<KeyVal>&keyval):
   PsiWfn(keyval)
 {
 }
@@ -362,22 +331,11 @@ PsiCCSD_T::read_energy()
 
 //////////////////////////////////////////////////////////////////////////
 
-#define CLASSNAME PsiCCSDT
-#define PARENTS public PsiWfn
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc PsiCCSDT_cd(
+  typeid(PsiCCSDT),"PsiCCSDT",1,"public PsiWfn",
+  0, create<PsiCCSDT>, create<PsiCCSDT>);
 
-void *
-PsiCCSDT::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = PsiWfn::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-PsiCCSDT::PsiCCSDT(const RefKeyVal&keyval):
+PsiCCSDT::PsiCCSDT(const Ref<KeyVal>&keyval):
   PsiWfn(keyval)
 {
 }
@@ -455,22 +413,11 @@ PsiCCSDT::gradient_implemented() const
 
 //////////////////////////////////////////////////////////////////////////
 
-#define CLASSNAME PsiCI
-#define PARENTS public PsiWfn
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc PsiCI_cd(
+  typeid(PsiCI),"PsiCI",1,"public PsiWfn",
+  0, create<PsiCI>, create<PsiCI>);
 
-void *
-PsiCI::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = PsiWfn::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-PsiCI::PsiCI(const RefKeyVal&keyval):
+PsiCI::PsiCI(const Ref<KeyVal>&keyval):
   PsiWfn(keyval)
 {
 }
@@ -531,22 +478,11 @@ PsiCI::read_energy()
 
 //////////////////////////////////////////////////////////////////////////
 
-#define CLASSNAME PsiHF
-#define PARENTS public PsiWfn
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc PsiHF_cd(
+  typeid(PsiHF),"PsiHF",1,"public PsiWfn",
+  0, create<PsiHF>, create<PsiHF>);
 
-void *
-PsiHF::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = PsiWfn::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-PsiHF::PsiHF(const RefKeyVal&keyval):
+PsiHF::PsiHF(const Ref<KeyVal>&keyval):
   PsiWfn(keyval)
 {
 }

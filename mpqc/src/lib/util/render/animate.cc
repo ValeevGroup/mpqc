@@ -36,25 +36,16 @@
 /////////////////////////////////////////////////////////////////////////////
 // AnimatedObject
 
-DescribedClass_REF_def(AnimatedObject);
-
-#define CLASSNAME AnimatedObject
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-AnimatedObject::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc AnimatedObject_cd(
+  typeid(AnimatedObject),"AnimatedObject",1,"public DescribedClass",
+  0, 0, 0);
 
 AnimatedObject::AnimatedObject()
 {
   name_ = 0;
 }
 
-AnimatedObject::AnimatedObject(const RefKeyVal& keyval)
+AnimatedObject::AnimatedObject(const Ref<KeyVal>& keyval)
 {
   name_ = keyval->pcharvalue("name");
 }

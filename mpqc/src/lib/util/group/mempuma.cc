@@ -68,24 +68,16 @@ int MPI2_Put(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 ///////////////////////////////////////////////////////////////////////
 // The PumaMemoryGrp class
 
-#define CLASSNAME PumaMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public ActiveMsgMemoryGrp
-#include <util/class/classi.h>
-void *
-PumaMemoryGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  ActiveMsgMemoryGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc PumaMemoryGrp_cd(
+  typeid(PumaMemoryGrp),"PumaMemoryGrp",1,"public ActiveMsgMemoryGrp",
+  0, create<PumaMemoryGrp>, 0);
 
-PumaMemoryGrp::PumaMemoryGrp(const RefMessageGrp& msg):
+PumaMemoryGrp::PumaMemoryGrp(const Ref<MessageGrp>& msg):
   ActiveMsgMemoryGrp(msg)
 {
 }
 
-PumaMemoryGrp::PumaMemoryGrp(const RefKeyVal& keyval):
+PumaMemoryGrp::PumaMemoryGrp(const Ref<KeyVal>& keyval):
   ActiveMsgMemoryGrp(keyval)
 {
 }

@@ -36,26 +36,16 @@
 
 using namespace std;
 
-#define CLASSNAME TaylorMolecularEnergy
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public MolecularEnergy
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-TaylorMolecularEnergy::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MolecularEnergy::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc TaylorMolecularEnergy_cd(
+  typeid(TaylorMolecularEnergy),"TaylorMolecularEnergy",1,"public MolecularEnergy",
+  0, create<TaylorMolecularEnergy>, create<TaylorMolecularEnergy>);
 
 // Note:  this gets the values of the coordinates from the current molecule
 // rather than the coordinates.
-TaylorMolecularEnergy::TaylorMolecularEnergy(const RefKeyVal&keyval):
+TaylorMolecularEnergy::TaylorMolecularEnergy(const Ref<KeyVal>&keyval):
   MolecularEnergy(keyval)
 {
-  coordinates_ = keyval->describedclassvalue("coordinates");
+  coordinates_ << keyval->describedclassvalue("coordinates");
   // if coordinates is nonnull use cartesian coordinates
   if (coordinates_.nonnull()) {
       dim_ = new SCDimension(coordinates_->n());

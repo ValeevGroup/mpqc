@@ -38,12 +38,12 @@
     particular integral of interest. */
 class OneBodyIntV3 : public OneBodyInt {
   protected:
-    RefInt1eV3 int1ev3_;
+    Ref<Int1eV3> int1ev3_;
     typedef void (Int1eV3::*IntegralFunction)(int,int);
     IntegralFunction intfunc_;
   public:
     OneBodyIntV3(Integral*,
-                 const RefGaussianBasisSet&, const RefGaussianBasisSet&,
+                 const Ref<GaussianBasisSet>&, const Ref<GaussianBasisSet>&,
                  IntegralFunction);
     ~OneBodyIntV3();
     void compute_shell(int,int);
@@ -52,13 +52,13 @@ class OneBodyIntV3 : public OneBodyInt {
 class PointChargeIntV3 : public OneBodyInt
 {
   protected:
-    RefInt1eV3 int1ev3_;
-    RefPointChargeData data_;
+    Ref<Int1eV3> int1ev3_;
+    Ref<PointChargeData> data_;
   public:
     PointChargeIntV3(Integral*,
-                     const RefGaussianBasisSet&,
-                     const RefGaussianBasisSet&,
-                     const RefPointChargeData&);
+                     const Ref<GaussianBasisSet>&,
+                     const Ref<GaussianBasisSet>&,
+                     const Ref<PointChargeData>&);
     ~PointChargeIntV3();
     void compute_shell(int,int);
 };
@@ -66,13 +66,13 @@ class PointChargeIntV3 : public OneBodyInt
 class EfieldDotVectorIntV3: public OneBodyInt
 {
   protected:
-    RefInt1eV3 int1ev3_;
-    RefEfieldDotVectorData data_;
+    Ref<Int1eV3> int1ev3_;
+    Ref<EfieldDotVectorData> data_;
   public:
     EfieldDotVectorIntV3(Integral*,
-                         const RefGaussianBasisSet&,
-                         const RefGaussianBasisSet&,
-                         const RefEfieldDotVectorData&);
+                         const Ref<GaussianBasisSet>&,
+                         const Ref<GaussianBasisSet>&,
+                         const Ref<EfieldDotVectorData>&);
     ~EfieldDotVectorIntV3();
     void compute_shell(int,int);
 };
@@ -80,13 +80,13 @@ class EfieldDotVectorIntV3: public OneBodyInt
 class DipoleIntV3: public OneBodyInt
 {
   protected:
-    RefInt1eV3 int1ev3_;
-    RefDipoleData data_;
+    Ref<Int1eV3> int1ev3_;
+    Ref<DipoleData> data_;
   public:
     DipoleIntV3(Integral*,
-                const RefGaussianBasisSet&,
-                const RefGaussianBasisSet&,
-                const RefDipoleData&);
+                const Ref<GaussianBasisSet>&,
+                const Ref<GaussianBasisSet>&,
+                const Ref<DipoleData>&);
     ~DipoleIntV3();
     void compute_shell(int,int);
 };
@@ -98,13 +98,13 @@ class DipoleIntV3: public OneBodyInt
     particular integral of interest. */
 class OneBodyDerivIntV3 : public OneBodyDerivInt {
   protected:
-    RefInt1eV3 int1ev3_;
+    Ref<Int1eV3> int1ev3_;
     typedef void (Int1eV3::*IntegralFunction)(int,int,int,int);
     IntegralFunction intfunc_;
   public:
     OneBodyDerivIntV3(Integral*,
-                      const RefGaussianBasisSet&,
-                      const RefGaussianBasisSet&,
+                      const Ref<GaussianBasisSet>&,
+                      const Ref<GaussianBasisSet>&,
                       IntegralFunction);
     ~OneBodyDerivIntV3();
     void compute_shell(int,int,DerivCenters&);

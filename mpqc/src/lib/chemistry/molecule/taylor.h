@@ -37,14 +37,9 @@
 
 // the molecular energy as a taylor expansion
 class TaylorMolecularEnergy: public MolecularEnergy {
-#   define CLASSNAME TaylorMolecularEnergy
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     // the coordinates
-    RefSetIntCoor coordinates_;
+    Ref<SetIntCoor> coordinates_;
 
     // The force constants (only the unique ones are given) to arbitrary
     // order.  If nonunique force constants are put here, then the answer
@@ -64,7 +59,7 @@ class TaylorMolecularEnergy: public MolecularEnergy {
     // the maximum order derivative that can be computed
     int maxorder_;
   public:
-    TaylorMolecularEnergy(const RefKeyVal&);
+    TaylorMolecularEnergy(const Ref<KeyVal>&);
     TaylorMolecularEnergy(StateIn&);
     ~TaylorMolecularEnergy();
     void save_data_state(StateOut&);

@@ -58,7 +58,7 @@ IsosurfaceGen::set_resolution(double r)
 ////////////////////////////////////////////////////////////////////////////
 // ImplicitSurfacePolygonizer members
 
-ImplicitSurfacePolygonizer::ImplicitSurfacePolygonizer(const RefVolume&vol):
+ImplicitSurfacePolygonizer::ImplicitSurfacePolygonizer(const Ref<Volume>&vol):
   _volume(vol)
 #ifdef HAVE_STL
   ,_tmp_vertices(0)
@@ -139,7 +139,7 @@ ImplicitSurfacePolygonizer::isosurface(double value,
       // compute the normals as the average of the normals of
       // all the connected triangles
       for (i=0; i<surf.ntriangle(); i++) {
-          RefTriangle t = surf.triangle(i);
+          Ref<Triangle> t = surf.triangle(i);
           SCVector3 tmp;
           SCVector3 BA = t->vertex(1)->point() - t->vertex(0)->point();
           SCVector3 CA = t->vertex(2)->point() - t->vertex(0)->point();
@@ -157,7 +157,7 @@ ImplicitSurfacePolygonizer::isosurface(double value,
           for (j=0; j<3; j++) {
               int iv = surf.vertex_index(t->vertex(j));
               if (iv>=0) {
-                  RefVertex v = surf.vertex(iv);
+                  Ref<Vertex> v = surf.vertex(iv);
                   if (v->has_normal()) {
                       tmp += v->normal();
                     }
@@ -168,7 +168,7 @@ ImplicitSurfacePolygonizer::isosurface(double value,
         }
       // normalize all the normals
       for (i=0; i<surf.nvertex(); i++) {
-          RefVertex v = surf.vertex(i);
+          Ref<Vertex> v = surf.vertex(i);
           if (v->has_normal()) {
               SCVector3 n = v->normal();
               n.normalize();
@@ -213,9 +213,9 @@ ImplicitSurfacePolygonizer::add_triangle_to_current(int i1, int i2, int i3,
         }
     }
 
-  RefVertex v1 = current->_tmp_vertices[i1];
-  RefVertex v2 = current->_tmp_vertices[i2];
-  RefVertex v3 = current->_tmp_vertices[i3];
+  Ref<Vertex> v1 = current->_tmp_vertices[i1];
+  Ref<Vertex> v2 = current->_tmp_vertices[i2];
+  Ref<Vertex> v3 = current->_tmp_vertices[i3];
   
   static int tricnt = 0;
   if (++tricnt%100 == 0) {

@@ -32,7 +32,7 @@
 
 #include <util/state/proxy.h>
 
-const ClassDesc &state_force_link_a_ = SavableStateProxy::class_desc_;
+static ForceLink<SavableStateProxy,const Ref<KeyVal> &> state_force_link_a_;
 
 #endif /* __PIC__ */
 

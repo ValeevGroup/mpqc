@@ -43,9 +43,6 @@
 /** The Optimize class is an abstract base class for classes
     that find the extreme points of Function's. */
 class Optimize: virtual public SavableState {
-#   define CLASSNAME Optimize
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
     int max_iterations_;
     int n_iterations_;
@@ -53,8 +50,8 @@ class Optimize: virtual public SavableState {
     int print_timings_;
     double max_stepsize_;
     char *ckpt_file;
-    RefFunction function_;
-    RefConvergence conv_;
+    Ref<Function> function_;
+    Ref<Convergence> conv_;
   public:
     Optimize();
     /// Restore the state of a Function object.
@@ -84,7 +81,7 @@ class Optimize: virtual public SavableState {
         Convergence class for the default.
 
         </dl> */
-    Optimize(const RefKeyVal&);
+    Optimize(const Ref<KeyVal>&);
     virtual ~Optimize();
 
     void save_data_state(StateOut&);
@@ -98,7 +95,7 @@ class Optimize: virtual public SavableState {
     void set_checkpoint_file(const char*);
 
     /// Set the function to be optimized
-    void set_function(const RefFunction&);
+    void set_function(const Ref<Function>&);
     
     /// Set the iteration limit.
     void set_max_iterations(int);
@@ -109,35 +106,32 @@ class Optimize: virtual public SavableState {
         otherwise 0. */
     virtual int update() = 0;
 
-    virtual void apply_transform(const RefNonlinearTransform&);
+    virtual void apply_transform(const Ref<NonlinearTransform>&);
 
     /// Returns information about the Function being optimized.
-    RefFunction function() const { return function_; }
-    RefSCMatrixKit matrixkit() const { return function_->matrixkit(); }
+    Ref<Function> function() const { return function_; }
+    Ref<SCMatrixKit> matrixkit() const { return function_->matrixkit(); }
     RefSCDimension dimension() const { return function_->dimension(); }
 };
-SavableState_REF_dec(Optimize);
+
 
 /** The LineOpt abstract class is used to perform one dimensional
 optimizations.*/
 class LineOpt: public Optimize {
-#   define CLASSNAME LineOpt
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
     RefSCVector search_direction_;
   public:
     LineOpt();
     LineOpt(StateIn&);
-    LineOpt(const RefKeyVal&);
+    LineOpt(const Ref<KeyVal>&);
     ~LineOpt();
     void save_data_state(StateOut&);
 
-    void apply_tranform(const RefNonlinearTransform&);
+    void apply_tranform(const Ref<NonlinearTransform>&);
 
     void set_search_direction(RefSCVector&);
 };
-SavableState_REF_dec(LineOpt);
+
 
 #endif
 

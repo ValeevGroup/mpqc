@@ -24,7 +24,7 @@ class MPQCInDatum {
 class MPQCInFlexLexer;
 class MPQCIn {
     MPQCInFlexLexer *lexer_;
-    RefMolecule mol_;
+    Ref<Molecule> mol_;
     MPQCInDatum<int> gradient_;
     MPQCInDatum<int> frequencies_;
     MPQCInDatum<int> optimize_;

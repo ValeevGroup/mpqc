@@ -39,17 +39,17 @@
 
 using namespace std;
 
-void test_int_shell_1e(const RefKeyVal&, const RefInt1eV3 &int1ev3,
+void test_int_shell_1e(const Ref<KeyVal>&, const Ref<Int1eV3> &int1ev3,
                        void (Int1eV3::*int_shell_1e)(int,int),
                        int permute);
-void test_3_center(const RefKeyVal&, const RefInt2eV3 &);
-void test_4_center(const RefKeyVal& keyval, const RefInt2eV3 &int2ev3);
-void test_4der_center(const RefKeyVal&, const RefInt2eV3 &int2ev3);
+void test_3_center(const Ref<KeyVal>&, const Ref<Int2eV3> &);
+void test_4_center(const Ref<KeyVal>& keyval, const Ref<Int2eV3> &int2ev3);
+void test_4der_center(const Ref<KeyVal>&, const Ref<Int2eV3> &int2ev3);
 
 #define maxint 9
 
 void
-testint(const RefOneBodyInt& in)
+testint(const Ref<OneBodyInt>& in)
 {
   if (in.null()) {
       cout << "null integral generator" << endl;
@@ -58,7 +58,7 @@ testint(const RefOneBodyInt& in)
 }
 
 void
-testint(const RefOneBodyDerivInt& in)
+testint(const Ref<OneBodyDerivInt>& in)
 {
   if (in.null()) {
       cout << "null integral generator" << endl;
@@ -67,7 +67,7 @@ testint(const RefOneBodyDerivInt& in)
 }
 
 void
-testint(const RefTwoBodyInt& in)
+testint(const Ref<TwoBodyInt>& in)
 {
   if (in.null()) {
       cout << "null integral generator" << endl;
@@ -76,7 +76,7 @@ testint(const RefTwoBodyInt& in)
 }
 
 void
-testint(const RefTwoBodyDerivInt& in)
+testint(const Ref<TwoBodyDerivInt>& in)
 {
   if (in.null()) {
       cout << "null integral generator" << endl;
@@ -85,8 +85,8 @@ testint(const RefTwoBodyDerivInt& in)
 }
 
 void
-do_bounds_stats(const RefKeyVal& keyval,
-                const RefInt2eV3 &int2ev3)
+do_bounds_stats(const Ref<KeyVal>& keyval,
+                const Ref<Int2eV3> &int2ev3)
 {
   int i,j;
   int nshell = int2ev3->basis()->nshell();
@@ -117,11 +117,11 @@ main(int argc, char **argv)
 {
   int ii, i,j,k,l,m,n;
 
-  RefMessageGrp msg = MessageGrp::initial_messagegrp(argc,argv);
+  Ref<MessageGrp> msg = MessageGrp::initial_messagegrp(argc,argv);
   if (msg.null()) msg = new ProcMessageGrp();
   MessageGrp::set_default_messagegrp(msg);
 
-  RefRegionTimer tim = new ParallelRegionTimer(msg,"inttest", 1, 1);
+  Ref<RegionTimer> tim = new ParallelRegionTimer(msg,"inttest", 1, 1);
 
   char *infile = new char[strlen(SRCDIR)+strlen("/inttest.in")+1];
   sprintf(infile,SRCDIR "/inttest.in");
@@ -129,11 +129,11 @@ main(int argc, char **argv)
     infile = argv[1];
     }
 
-  RefKeyVal pkv(new ParsedKeyVal(infile));
-  RefKeyVal tkeyval(new PrefixKeyVal(":test", pkv));
+  Ref<KeyVal> pkv(new ParsedKeyVal(infile));
+  Ref<KeyVal> tkeyval(new PrefixKeyVal(":test", pkv));
 
-  RefGaussianBasisSet basis = tkeyval->describedclassvalue("basis");
-  RefMolecule mol = basis->molecule();
+  Ref<GaussianBasisSet> basis = tkeyval->describedclassvalue("basis");
+  Ref<Molecule> mol = basis->molecule();
 
   int tproc = tkeyval->intvalue("test_processor");
   if (tproc >= msg->n()) tproc = 0;
@@ -143,9 +143,9 @@ main(int argc, char **argv)
 
   int storage = tkeyval->intvalue("storage");
   cout << "storage = " << storage << endl;
-  RefIntegral intgrl = new IntegralV3(basis,basis,basis,basis);
-  RefInt1eV3 int1ev3 = new Int1eV3(intgrl.pointer(),basis,basis,1);
-  RefInt2eV3 int2ev3 = new Int2eV3(intgrl.pointer(),basis,basis,basis,basis,
+  Ref<Integral> intgrl = new IntegralV3(basis,basis,basis,basis);
+  Ref<Int1eV3> int1ev3 = new Int1eV3(intgrl.pointer(),basis,basis,1);
+  Ref<Int2eV3> int2ev3 = new Int2eV3(intgrl.pointer(),basis,basis,basis,basis,
                                    1, storage);
 
   int permute = tkeyval->booleanvalue("permute");
@@ -187,20 +187,20 @@ main(int argc, char **argv)
     }
 
   tim->change("IntegralV3");
-  RefIntegral integral = new IntegralV3(basis);
-  RefOneBodyInt overlap = integral->overlap();
+  Ref<Integral> integral = new IntegralV3(basis);
+  Ref<OneBodyInt> overlap = integral->overlap();
   testint(overlap);
-  RefOneBodyInt kinetic = integral->kinetic();
+  Ref<OneBodyInt> kinetic = integral->kinetic();
   testint(kinetic);
-  RefOneBodyDerivInt kinetic_der = integral->kinetic_deriv();
+  Ref<OneBodyDerivInt> kinetic_der = integral->kinetic_deriv();
   testint(kinetic_der);
-  RefOneBodyDerivInt overlap_der = integral->overlap_deriv();
+  Ref<OneBodyDerivInt> overlap_der = integral->overlap_deriv();
   testint(overlap_der);
-  RefOneBodyDerivInt nuclear_der = integral->nuclear_deriv();
+  Ref<OneBodyDerivInt> nuclear_der = integral->nuclear_deriv();
   testint(nuclear_der);
-  RefTwoBodyInt erep = integral->electron_repulsion();
+  Ref<TwoBodyInt> erep = integral->electron_repulsion();
   testint(erep);
-  RefTwoBodyDerivInt erep_der = integral->electron_repulsion_deriv();
+  Ref<TwoBodyDerivInt> erep_der = integral->electron_repulsion_deriv();
   testint(erep_der);
   tim->exit();
 
@@ -209,7 +209,7 @@ main(int argc, char **argv)
 }
 
 void
-do_shell_test_1e(const RefInt1eV3 &int1ev3,
+do_shell_test_1e(const Ref<Int1eV3> &int1ev3,
                  void (Int1eV3::*int_shell_1e)(int,int),
                  int permute, int i, int j, int na, int nb,
                  double *buf, double *pbuf)
@@ -247,12 +247,12 @@ do_shell_test_1e(const RefInt1eV3 &int1ev3,
 }
 
 void
-test_int_shell_1e(const RefKeyVal& keyval, const RefInt1eV3 &int1ev3,
+test_int_shell_1e(const Ref<KeyVal>& keyval, const Ref<Int1eV3> &int1ev3,
                   void (Int1eV3::*int_shell_1e)(int,int),
                   int permute)
 {
   int flags = 0;
-  RefGaussianBasisSet basis = int1ev3->basis();
+  Ref<GaussianBasisSet> basis = int1ev3->basis();
   int maxfunc = basis->max_nfunction_in_shell();
   int size = maxfunc * maxfunc;
   double *buf = new double[size];
@@ -274,7 +274,7 @@ test_int_shell_1e(const RefKeyVal& keyval, const RefInt1eV3 &int1ev3,
 }
 
 void
-test_3_center(const RefKeyVal& keyval, const RefInt2eV3 &int2ev3)
+test_3_center(const Ref<KeyVal>& keyval, const Ref<Int2eV3> &int2ev3)
 {
   int ii, i,j,k,l,m,n;
 
@@ -328,7 +328,7 @@ test_3_center(const RefKeyVal& keyval, const RefInt2eV3 &int2ev3)
 }
 
 void
-init_shell_perm(const RefInt2eV3 &int2ev3, double *integrals,
+init_shell_perm(const Ref<Int2eV3> &int2ev3, double *integrals,
                 double buff[maxint][maxint][maxint][maxint],
                 int sh[4], int sizes[4])
 {
@@ -349,7 +349,7 @@ init_shell_perm(const RefInt2eV3 &int2ev3, double *integrals,
 }
 
 void
-check_shell_perm(const RefInt2eV3 &int2ev3, double *integrals,
+check_shell_perm(const Ref<Int2eV3> &int2ev3, double *integrals,
                  double buff[maxint][maxint][maxint][maxint],
                  int sh[4], int sizes[4], int p0, int p1, int p2, int p3)
 {
@@ -399,9 +399,9 @@ check_shell_perm(const RefInt2eV3 &int2ev3, double *integrals,
 }
 
 void
-do_shell_quartet_test(const RefInt2eV3 &int2ev3,
+do_shell_quartet_test(const Ref<Int2eV3> &int2ev3,
                       int print, int printbounds, int bounds, int permute,
-                      const RefKeyVal& keyval,
+                      const Ref<KeyVal>& keyval,
                       int i, int j, int k, int l)
 {
   int sh[4], sizes[4];
@@ -498,15 +498,15 @@ do_shell_quartet_test(const RefInt2eV3 &int2ev3,
 }
 
 void
-do_4_center_test(const RefInt2eV3 &int2ev3, int print, int printbounds,
+do_4_center_test(const Ref<Int2eV3> &int2ev3, int print, int printbounds,
                  int bounds, int permute,
-                 const RefKeyVal& keyval)
+                 const Ref<KeyVal>& keyval)
 {
   int ii,jj,kk,ll, i,j,k,l, ibuf;
   int nshell = int2ev3->basis()->nshell();
   int unique = keyval->booleanvalue("unique");
   int timestats = keyval->booleanvalue("timestats");
-  RefRegionTimer timer = new RegionTimer();
+  Ref<RegionTimer> timer = new RegionTimer();
 
   if (!timestats) {
       for (i=0; i<nshell; i++) {
@@ -584,7 +584,7 @@ do_4_center_test(const RefInt2eV3 &int2ev3, int print, int printbounds,
 }
 
 void
-test_4_center(const RefKeyVal& keyval, const RefInt2eV3 &int2ev3)
+test_4_center(const Ref<KeyVal>& keyval, const Ref<Int2eV3> &int2ev3)
 {
   int i;
 
@@ -632,10 +632,10 @@ test_4_center(const RefKeyVal& keyval, const RefInt2eV3 &int2ev3)
 }
 
 void
-do_shell_quartet_der_test(const RefInt2eV3 &int2ev3,
+do_shell_quartet_der_test(const Ref<Int2eV3> &int2ev3,
                           double* buffer, int print, int printbounds,
                           int bounds, int permute,
-                          const RefKeyVal& keyval,
+                          const Ref<KeyVal>& keyval,
                           int i, int j, int k, int l)
 {
   int ii,jj,kk,ll, ibuf, ider, xyz;
@@ -716,10 +716,10 @@ do_shell_quartet_der_test(const RefInt2eV3 &int2ev3,
 }
 
 void
-do_test_4der_center(const RefInt2eV3 &int2ev3,
+do_test_4der_center(const Ref<Int2eV3> &int2ev3,
                     double* buffer, int print, int printbounds,
                     int bounds, int permute,
-                    const RefKeyVal& keyval)
+                    const Ref<KeyVal>& keyval)
 {
   int i,j,k,l;
   int nshell = int2ev3->basis()->nshell();
@@ -739,7 +739,7 @@ do_test_4der_center(const RefInt2eV3 &int2ev3,
 }
 
 void
-test_4der_center(const RefKeyVal& keyval, const RefInt2eV3 &int2ev3)
+test_4der_center(const Ref<KeyVal>& keyval, const Ref<Int2eV3> &int2ev3)
 {
   int i;
 

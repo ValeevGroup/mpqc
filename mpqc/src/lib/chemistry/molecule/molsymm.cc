@@ -248,7 +248,7 @@ like_world_axis(SCVector3 &axis,
   return like;
 }
 
-RefPointGroup
+Ref<PointGroup>
 Molecule::highest_point_group(double tol) const
 {
   int i,j;
@@ -589,7 +589,7 @@ Molecule::highest_point_group(double tol) const
   origin.print(ExEnv::out() << node0);
 #endif
 
-  RefPointGroup pg;
+  Ref<PointGroup> pg;
   if (have_inversion) {
     if (have_c2axis) {
       if (have_sigmav) {

@@ -50,21 +50,11 @@ using namespace std;
 /////////////////////////////////////////////////////////////////
 // FinDispMolecularHessian
 
-#define CLASSNAME FinDispMolecularHessian
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public MolecularHessian
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-FinDispMolecularHessian::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MolecularHessian::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc FinDispMolecularHessian_cd(
+  typeid(FinDispMolecularHessian),"FinDispMolecularHessian",1,"public MolecularHessian",
+  0, create<FinDispMolecularHessian>, create<FinDispMolecularHessian>);
 
-FinDispMolecularHessian::FinDispMolecularHessian(const RefMolecularEnergy &e):
+FinDispMolecularHessian::FinDispMolecularHessian(const Ref<MolecularEnergy> &e):
   mole_(e)
 {
   only_totally_symmetric_ = 0;
@@ -83,14 +73,14 @@ FinDispMolecularHessian::FinDispMolecularHessian(const RefMolecularEnergy &e):
   restart_file_ = SCFormIO::fileext_to_filename(".ckpt.hess");
 }
 
-FinDispMolecularHessian::FinDispMolecularHessian(const RefKeyVal&keyval):
+FinDispMolecularHessian::FinDispMolecularHessian(const Ref<KeyVal>&keyval):
   MolecularHessian(keyval)
 {
-  mole_ = keyval->describedclassvalue("energy");
+  mole_ << keyval->describedclassvalue("energy");
 
   debug_ = keyval->booleanvalue("debug");
 
-  displacement_point_group_ = keyval->describedclassvalue("point_group");
+  displacement_point_group_ << keyval->describedclassvalue("point_group");
 
   disp_ = keyval->doublevalue("displacement",KeyValValuedouble(1.0e-2));
 
@@ -123,7 +113,7 @@ FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
   SavableState(s),
   MolecularHessian(s)
 {
-  mole_.restore_state(s);
+  mole_ << SavableState::restore_state(s);
   s.get(checkpoint_);
   s.get(debug_);
   s.get(accuracy_);
@@ -146,7 +136,7 @@ FinDispMolecularHessian::save_data_state(StateOut&s)
 {
   MolecularHessian::save_data_state(s);
 
-  mole_.save_state(s);
+  SavableState::save_state(mole_.pointer(),s);
   s.put(checkpoint_);
   s.put(debug_);
   s.put(accuracy_);
@@ -189,7 +179,7 @@ FinDispMolecularHessian::init()
 }
 
 void
-FinDispMolecularHessian::set_energy(const RefMolecularEnergy &energy)
+FinDispMolecularHessian::set_energy(const Ref<MolecularEnergy> &energy)
 {
   mole_ = energy;
 }
@@ -204,7 +194,7 @@ void
 FinDispMolecularHessian::restart()
 {
   int statresult, statsize;
-  RefMessageGrp grp = MessageGrp::get_default_messagegrp();
+  Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
   if (grp->me() == 0) {
     struct stat sb;
     statresult = stat(restart_file_,&sb);
@@ -241,8 +231,8 @@ void
 FinDispMolecularHessian::restore_displacements(StateIn& s)
 {
   int i;
-  displacement_point_group_.restore_state(s);
-  original_point_group_.restore_state(s);
+  displacement_point_group_ << SavableState::restore_state(s);
+  original_point_group_ << SavableState::restore_state(s);
   original_geometry_ = matrixkit()->vector(d3natom());
   original_geometry_.restore(s);
 
@@ -255,9 +245,9 @@ FinDispMolecularHessian::restore_displacements(StateIn& s)
 
   if (ndisp_) {
     RefSCDimension symrow, symcol;
-    symrow.restore_state(s);
-    symcol.restore_state(s);
-    RefSCMatrixKit symkit = new BlockedSCMatrixKit(matrixkit());
+    symrow << SavableState::restore_state(s);
+    symcol << SavableState::restore_state(s);
+    Ref<SCMatrixKit> symkit = new BlockedSCMatrixKit(matrixkit());
     symbasis_ = symkit->matrix(symrow,symcol);
     symbasis_.restore(s);
 
@@ -277,8 +267,8 @@ void
 FinDispMolecularHessian::checkpoint_displacements(StateOut& s)
 {
   int i;
-  displacement_point_group_.save_state(s);
-  original_point_group_.save_state(s);
+  SavableState::save_state(displacement_point_group_.pointer(),s);
+  SavableState::save_state(original_point_group_.pointer(),s);
   original_geometry_.save(s);
 
   s.put(disp_);
@@ -289,8 +279,8 @@ FinDispMolecularHessian::checkpoint_displacements(StateOut& s)
   s.put(do_null_displacement_);
 
   if (ndisp_) {
-    symbasis_.rowdim().save_state(s);
-    symbasis_.coldim().save_state(s);
+    SavableState::save_state(symbasis_.rowdim().pointer(),s);
+    SavableState::save_state(symbasis_.coldim().pointer(),s);
     symbasis_.save(s);
 
     for (i=0; i < ndisp_; i++) {
@@ -303,7 +293,7 @@ FinDispMolecularHessian::checkpoint_displacements(StateOut& s)
 RefSCMatrix
 FinDispMolecularHessian::displacements(int irrep) const
 {
-  BlockedSCMatrix *bsymbasis = BlockedSCMatrix::castdown(symbasis_.pointer());
+  BlockedSCMatrix *bsymbasis = dynamic_cast<BlockedSCMatrix*>(symbasis_.pointer());
   RefSCMatrix block = bsymbasis->block(irrep);
   if (block.null() || (only_totally_symmetric_ && irrep > 0)) {
     RefSCDimension zero = new SCDimension(0);
@@ -399,8 +389,8 @@ FinDispMolecularHessian::displace(int disp)
     mol_->set_point_group(original_point_group_);
     }
   else {
-    RefPointGroup oldpg = mol_->point_group();
-    RefPointGroup newpg = mol_->highest_point_group();
+    Ref<PointGroup> oldpg = mol_->point_group();
+    Ref<PointGroup> newpg = mol_->highest_point_group();
     CorrelationTable corrtab;
     if (corrtab.initialize_table(original_point_group_, newpg)) {
       // something went wrong so use c1 symmetry

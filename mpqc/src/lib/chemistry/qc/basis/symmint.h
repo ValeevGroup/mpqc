@@ -41,10 +41,10 @@
 
 class SymmOneBodyIntIter : public OneBodyIntIter {
   protected:
-    RefPetiteList pl;
+    Ref<PetiteList> pl;
     
   public:
-    SymmOneBodyIntIter(const RefOneBodyInt&, const RefPetiteList&);
+    SymmOneBodyIntIter(const Ref<OneBodyInt>&, const Ref<PetiteList>&);
     ~SymmOneBodyIntIter();
 
     void start(int ist=0, int jst=0, int ien=0, int jen=0);
@@ -55,10 +55,10 @@ class SymmOneBodyIntIter : public OneBodyIntIter {
 
 class SymmTwoBodyIntIter : public TwoBodyIntIter {
   protected:
-    RefPetiteList pl;
+    Ref<PetiteList> pl;
 
   public:
-    SymmTwoBodyIntIter(const RefTwoBodyInt&, const RefPetiteList&);
+    SymmTwoBodyIntIter(const Ref<TwoBodyInt>&, const Ref<PetiteList>&);
     ~SymmTwoBodyIntIter();
 
     void start();

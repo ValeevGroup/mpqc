@@ -37,7 +37,7 @@
 /** The NonlinearTransform class transforms between
     two nonlinear coordinate systems.  It is needed when a change
     of coordinates occurs in the middle of an optimization. */
-class NonlinearTransform: public VRefCount {
+class NonlinearTransform: public RefCount {
   protected:
     // The linear part of the nonlinear transform.  This must
     // be initialized by derived classes in their
@@ -63,7 +63,7 @@ class NonlinearTransform: public VRefCount {
     virtual void transform_ihessian(const RefSymmSCMatrix &ih);
 };
 
-REF_dec(NonlinearTransform);
+
 
 /** The IdentityTransform is a special case of
     NonlinearTransform were no transformation takes place.

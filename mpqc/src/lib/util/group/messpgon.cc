@@ -32,19 +32,11 @@ extern "C" {
 
 typedef long(*gopfarg)(...);
 
-#define CLASSNAME ParagonMessageGrp
-#define PARENTS public intMessageGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-ParagonMessageGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  intMessageGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ParagonMessageGrp_cd(
+  typeid(ParagonMessageGrp),"ParagonMessageGrp",1,"public intMessageGrp",
+  0, create<ParagonMessageGrp>, 0);
 
-ParagonMessageGrp::ParagonMessageGrp(const RefKeyVal&)
+ParagonMessageGrp::ParagonMessageGrp(const Ref<KeyVal>&)
 {
   // an extra control bit is needed for the bcast type
   ctl_nbit = 3;

@@ -74,17 +74,9 @@ class PthreadThreadLock : public ThreadLock {
 /////////////////////////////////////////////////////////////////////////////
 // PthreadThreadGrp members
 
-#define CLASSNAME PthreadThreadGrp
-#define PARENTS public ThreadGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-PthreadThreadGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = ThreadGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc PthreadThreadGrp_cd(
+  typeid(PthreadThreadGrp),"PthreadThreadGrp",1,"public ThreadGrp",
+  0, create<PthreadThreadGrp>, 0);
 
 PthreadThreadGrp::PthreadThreadGrp()
   : ThreadGrp()
@@ -101,7 +93,7 @@ PthreadThreadGrp::PthreadThreadGrp(const PthreadThreadGrp &tg,int nthread):
   init_attr();
 }
 
-PthreadThreadGrp::PthreadThreadGrp(const RefKeyVal& keyval)
+PthreadThreadGrp::PthreadThreadGrp(const Ref<KeyVal>& keyval)
   : ThreadGrp(keyval)
 {
   pthreads_ = new pthread_t[nthread_];
@@ -147,7 +139,7 @@ PthreadThreadGrp::start_threads()
   for (int i=1; i < nthread_; i++) {
     if (threads_[i]) {
       int res = pthread_create(&pthreads_[i], attr_,
-                               Thread::run_Thread_run,
+                               Thread__run_Thread_run,
                                (void*) threads_[i]);
       if (res) {
         ExEnv::err() << indent << "thread death " << res << endl;
@@ -178,7 +170,7 @@ PthreadThreadGrp::wait_threads()
   return 0;
 }
 
-RefThreadLock
+Ref<ThreadLock>
 PthreadThreadGrp::new_lock()
 {
   return new PthreadThreadLock;

@@ -41,17 +41,9 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // ReplDiagSCMatrix member functions
 
-#define CLASSNAME ReplDiagSCMatrix
-#define PARENTS public DiagSCMatrix
-//#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-ReplDiagSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DiagSCMatrix::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ReplDiagSCMatrix_cd(
+  typeid(ReplDiagSCMatrix),"ReplDiagSCMatrix",1,"public DiagSCMatrix",
+  0, 0, 0);
 
 ReplDiagSCMatrix::ReplDiagSCMatrix(const RefSCDimension&a,ReplSCMatrixKit*k):
   DiagSCMatrix(a,k)
@@ -135,7 +127,7 @@ ReplDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const ReplDiagSCMatrix* la
-    = ReplDiagSCMatrix::require_const_castdown(a,"ReplDiagSCMatrix::accumulate");
+    = require_dynamic_cast<const ReplDiagSCMatrix*>(a,"ReplDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -195,7 +187,7 @@ ReplDiagSCMatrix::gen_invert_this()
 }
 
 void
-ReplDiagSCMatrix::element_op(const RefSCElementOp& op)
+ReplDiagSCMatrix::element_op(const Ref<SCElementOp>& op)
 {
   if (op->has_side_effects()) before_elemop();
   SCMatrixBlockListIter i;
@@ -207,11 +199,11 @@ ReplDiagSCMatrix::element_op(const RefSCElementOp& op)
 }
 
 void
-ReplDiagSCMatrix::element_op(const RefSCElementOp2& op,
+ReplDiagSCMatrix::element_op(const Ref<SCElementOp2>& op,
                               DiagSCMatrix* m)
 {
   ReplDiagSCMatrix *lm
-      = ReplDiagSCMatrix::require_castdown(m,"ReplDiagSCMatrix::element_op");
+      = require_dynamic_cast<ReplDiagSCMatrix*>(m,"ReplDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
       ExEnv::err() << indent << "ReplDiagSCMatrix: bad element_op\n";
@@ -231,13 +223,13 @@ ReplDiagSCMatrix::element_op(const RefSCElementOp2& op,
 }
 
 void
-ReplDiagSCMatrix::element_op(const RefSCElementOp3& op,
+ReplDiagSCMatrix::element_op(const Ref<SCElementOp3>& op,
                               DiagSCMatrix* m,DiagSCMatrix* n)
 {
   ReplDiagSCMatrix *lm
-      = ReplDiagSCMatrix::require_castdown(m,"ReplDiagSCMatrix::element_op");
+      = require_dynamic_cast<ReplDiagSCMatrix*>(m,"ReplDiagSCMatrix::element_op");
   ReplDiagSCMatrix *ln
-      = ReplDiagSCMatrix::require_castdown(n,"ReplDiagSCMatrix::element_op");
+      = require_dynamic_cast<ReplDiagSCMatrix*>(n,"ReplDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
       ExEnv::err() << indent << "ReplDiagSCMatrix: bad element_op\n";
@@ -295,7 +287,7 @@ ReplDiagSCMatrix::vprint(const char *title, ostream& os, int prec) const
   os.flush();
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 ReplDiagSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
   return new ReplSCMatrixListSubblockIter(access, blocklist,
@@ -303,7 +295,7 @@ ReplDiagSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
                                           matrix, d->n());
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 ReplDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
@@ -312,17 +304,17 @@ ReplDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
            << endl;
       abort();
     }
-  RefSCMatrixBlockList allblocklist = new SCMatrixBlockList();
+  Ref<SCMatrixBlockList> allblocklist = new SCMatrixBlockList();
   allblocklist->insert(new SCMatrixDiagSubBlock(0, d->n(), 0, matrix));
   return new ReplSCMatrixListSubblockIter(access, allblocklist,
                                           messagegrp(),
                                           matrix, d->n());
 }
 
-RefReplSCMatrixKit
+Ref<ReplSCMatrixKit>
 ReplDiagSCMatrix::skit()
 {
-  return ReplSCMatrixKit::castdown(kit().pointer());
+  return dynamic_cast<ReplSCMatrixKit*>(kit().pointer());
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -38,7 +38,7 @@
 
 class StateInData {
   public:
-    RefSavableState ptr;
+    Ref<SavableState> ptr;
     int size;
     int type;
     int offset;
@@ -63,8 +63,6 @@ class StateClassData {
 /** Restores objects that derive from SavableState.
  */
 class StateIn:  public DescribedClass {
-#   define CLASSNAME StateIn
-#   include <util/class/classda.h>
     friend class SavableState;
     friend class TranslateDataIn;
   private:
@@ -76,7 +74,7 @@ class StateIn:  public DescribedClass {
     char key_[KeyVal::MaxKeywordLength];
     int keylength_;
   protected:
-    RefKeyVal override_;
+    Ref<KeyVal> override_;
     TranslateDataIn *translate_;
     AVLMap<int,StateInData> ps_;
     int expected_object_num_;
@@ -105,21 +103,21 @@ class StateIn:  public DescribedClass {
         restored has previously been restored, then the pointer
         being restored is set to a reference to the previously
         restored object. */
-    virtual int getobject(RefSavableState &);
+    virtual int getobject(Ref<SavableState> &);
 
     /// This restores objects that are listed in the directory.
-    virtual int dir_getobject(RefSavableState &, const char *name);
+    virtual int dir_getobject(Ref<SavableState> &, const char *name);
 
     /** When storage has been allocated during object restoration,
         this routine is called with the object reference number
         and the pointer to the new storage so getpointer
         can find the data if it is referenced again. */
-    virtual void haveobject(int,const RefSavableState &);
+    virtual void haveobject(int,const Ref<SavableState> &);
 
     /** A call to nextobject followed by havepointer(int) is equiv
         to havepointer(int,void**); */
     virtual void nextobject(int);
-    virtual void haveobject(const RefSavableState &);
+    virtual void haveobject(const Ref<SavableState> &);
 
     void have_classdesc() { have_cd_ = 1; }
     int need_classdesc() { int tmp = have_cd_; have_cd_ = 0; return !tmp; }
@@ -190,11 +188,11 @@ class StateIn:  public DescribedClass {
 
     /** Give this StateIn a KeyVal object
         that is used to override values. */
-    void set_override(const RefKeyVal&kv) { override_ = kv; }
+    void set_override(const Ref<KeyVal>&kv) { override_ = kv; }
     /** Return the KeyVal used to override values. */
-    const RefKeyVal &override() const { return override_; }
+    const Ref<KeyVal> &override() const { return override_; }
   };
-DescribedClass_REF_dec(StateIn);
+
 
 #endif
 

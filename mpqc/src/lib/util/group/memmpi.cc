@@ -59,19 +59,11 @@ print_error_and_abort(int me, int mpierror)
 ///////////////////////////////////////////////////////////////////////
 // The MPIMemoryGrp class
 
-#define CLASSNAME MPIMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public MIDMemoryGrp
-#include <util/class/classi.h>
-void *
-MPIMemoryGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  MIDMemoryGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MPIMemoryGrp_cd(
+  typeid(MPIMemoryGrp),"MPIMemoryGrp",1,"public MIDMemoryGrp",
+  0, create<MPIMemoryGrp>, 0);
 
-MPIMemoryGrp::MPIMemoryGrp(const RefMessageGrp& msg):
+MPIMemoryGrp::MPIMemoryGrp(const Ref<MessageGrp>& msg):
   MIDMemoryGrp(msg)
 {
   if (debug_) ExEnv::out() << "MPIMemoryGrp entered" << endl;
@@ -84,7 +76,7 @@ MPIMemoryGrp::MPIMemoryGrp(const RefMessageGrp& msg):
   activate();
 }
 
-MPIMemoryGrp::MPIMemoryGrp(const RefKeyVal& keyval):
+MPIMemoryGrp::MPIMemoryGrp(const Ref<KeyVal>& keyval):
   MIDMemoryGrp(keyval)
 {
   if (debug_) ExEnv::out() << "MPIMemoryGrp keyval entered" << endl;

@@ -79,9 +79,6 @@ above:
 </pre>
  */
 class SimpleCo : public IntCoor {
-#   define CLASSNAME SimpleCo
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     int natoms_;
     int *atoms;
@@ -94,7 +91,7 @@ class SimpleCo : public IntCoor {
      the IntCoor constructor. */
     SimpleCo(int,const char* =0);
     /// The KeyVal constructor requires the number of atoms.
-    SimpleCo(const RefKeyVal&,int natom);
+    SimpleCo(const Ref<KeyVal>&,int natom);
 
     virtual ~SimpleCo();
 
@@ -112,12 +109,12 @@ class SimpleCo : public IntCoor {
     // these IntCoor members are implemented in term of
     // the calc_force_con and calc_intco members.
     /// Returns an approximate force constant (a la Almlof).
-    double force_constant(RefMolecule&);
+    double force_constant(Ref<Molecule>&);
     /** Recalculates the value of the coordinate based on the geometry
         in the Molecule. */
-    void update_value(const RefMolecule&);
+    void update_value(const Ref<Molecule>&);
     /// Fill in a row of the B matrix.
-    void bmat(const RefMolecule&,RefSCVector&bmat,double coef = 1.0);
+    void bmat(const Ref<Molecule>&,RefSCVector&bmat,double coef = 1.0);
 
     /// Calculates an approximate force constant and returns it's value.
     virtual double calc_force_con(Molecule&) = 0;
@@ -128,14 +125,14 @@ class SimpleCo : public IntCoor {
     virtual double calc_intco(Molecule&, double* =0, double =1) = 0;
 
     /// Print the coordinate.
-    void print_details(const RefMolecule &,
+    void print_details(const Ref<Molecule> &,
                        std::ostream& = ExEnv::out()) const;
     
     /** Tests to see if two coordinates are equivalent to each other.
         This is false if the atoms don't match. */
-    int equivalent(RefIntCoor&);
+    int equivalent(Ref<IntCoor>&);
   };
-SavableState_REF_dec(SimpleCo);
+
 
 
 // ///////////////////////////////////////////////////////////////////////
@@ -153,7 +150,7 @@ SavableState_REF_dec(SimpleCo);
 #define SimpleCo_IMPL_eq(classname)					      \
 SimpleCo& classname::operator=(const SimpleCo& c)			      \
 {									      \
-  classname *cp = classname::castdown((SimpleCo*)&c);			      \
+  classname *cp = dynamic_cast<classname*>((SimpleCo*)&c);			      \
   if(cp) {								      \
       *this=*cp;							      \
     }									      \
@@ -193,12 +190,6 @@ Designating the two atoms as \f$a\f$ and \f$b\f$ and their cartesian
 positions as \f$\bar{r}_a\f$ and \f$\bar{r}_b\f$, the value of the
 coordinate, \f$r\f$, is \f[ r = \| \bar{r}_a - \bar{r}_b \| \f] */
 class StreSimpleCo : public SimpleCo {
-#   define CLASSNAME StreSimpleCo
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
 SimpleCo_DECLARE(StreSimpleCo)
   public:
     StreSimpleCo();
@@ -209,7 +200,7 @@ SimpleCo_DECLARE(StreSimpleCo)
     StreSimpleCo(const char*, int, int);
     /** The KeyVal constructor.  This calls the SimpleCo keyval constructor
         with an integer argument of 2. */
-    StreSimpleCo(const RefKeyVal&);
+    StreSimpleCo(const Ref<KeyVal>&);
 
     ~StreSimpleCo();
 
@@ -244,12 +235,6 @@ cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$, and
 
 */
 class BendSimpleCo : public SimpleCo { 
-#   define CLASSNAME BendSimpleCo
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
 SimpleCo_DECLARE(BendSimpleCo)
   public:
     BendSimpleCo();
@@ -260,7 +245,7 @@ SimpleCo_DECLARE(BendSimpleCo)
     BendSimpleCo(const char*, int, int, int);
     /** The KeyVal constructor.  This calls the SimpleCo keyval constructor
         with an integer argument of 3. */
-    BendSimpleCo(const RefKeyVal&);
+    BendSimpleCo(const Ref<KeyVal>&);
 
     ~BendSimpleCo();
 
@@ -308,12 +293,6 @@ their cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$,
 
 */
 class TorsSimpleCo : public SimpleCo { 
-#   define CLASSNAME TorsSimpleCo
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
 SimpleCo_DECLARE(TorsSimpleCo)
   public:
     TorsSimpleCo();
@@ -324,7 +303,7 @@ SimpleCo_DECLARE(TorsSimpleCo)
     TorsSimpleCo(const char *refr, int, int, int, int);
     /** The KeyVal constructor.  This calls the
         SimpleCo keyval constructor with an integer argument of 4. */
-    TorsSimpleCo(const RefKeyVal&);
+    TorsSimpleCo(const Ref<KeyVal>&);
 
     ~TorsSimpleCo();
 
@@ -375,12 +354,6 @@ their cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$,
 
  */
 class ScaledTorsSimpleCo : public SimpleCo { 
-#   define CLASSNAME ScaledTorsSimpleCo
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
 SimpleCo_DECLARE(ScaledTorsSimpleCo)
   private:
     double old_torsion_;
@@ -393,7 +366,7 @@ SimpleCo_DECLARE(ScaledTorsSimpleCo)
     ScaledTorsSimpleCo(const char *refr, int, int, int, int);
     /** The KeyVal constructor.  This calls the
         SimpleCo keyval constructor with an integer argument of 4. */
-    ScaledTorsSimpleCo(const RefKeyVal&);
+    ScaledTorsSimpleCo(const Ref<KeyVal>&);
 
     ~ScaledTorsSimpleCo();
 
@@ -431,12 +404,6 @@ their cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$,
 
 */
 class OutSimpleCo : public SimpleCo { 
-#   define CLASSNAME OutSimpleCo
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
 SimpleCo_DECLARE(OutSimpleCo)
   public:
     OutSimpleCo();
@@ -448,7 +415,7 @@ SimpleCo_DECLARE(OutSimpleCo)
     OutSimpleCo(const char *refr, int, int, int, int);
     /** The KeyVal constructor.  This calls the SimpleCo keyval
         constructor with an integer argument of 4. */
-    OutSimpleCo(const RefKeyVal&);
+    OutSimpleCo(const Ref<KeyVal>&);
 
     ~OutSimpleCo();
 
@@ -489,12 +456,6 @@ cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$, and
 
 */
 class LinIPSimpleCo : public SimpleCo { 
-#   define CLASSNAME LinIPSimpleCo
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
 SimpleCo_DECLARE(LinIPSimpleCo)
   private:
     SCVector3 u2;
@@ -509,7 +470,7 @@ SimpleCo_DECLARE(LinIPSimpleCo)
     LinIPSimpleCo(const char *refr, int, int, int, const SCVector3 &u);
     /** The KeyVal constructor.  This calls the SimpleCo keyval
         constructor with an integer argument of 3. */
-    LinIPSimpleCo(const RefKeyVal&);
+    LinIPSimpleCo(const Ref<KeyVal>&);
 
     ~LinIPSimpleCo();
 
@@ -553,12 +514,6 @@ cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$, and
 
 */
 class LinOPSimpleCo : public SimpleCo { 
-#   define CLASSNAME LinOPSimpleCo
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
 SimpleCo_DECLARE(LinOPSimpleCo)
   private:
     SCVector3 u2;
@@ -573,7 +528,7 @@ SimpleCo_DECLARE(LinOPSimpleCo)
     LinOPSimpleCo(const char *refr, int, int, int, const SCVector3 &u);
     /** The KeyVal constructor.  This calls the
         SimpleCo keyval constructor with an integer argument of 3. */
-    LinOPSimpleCo(const RefKeyVal&);
+    LinOPSimpleCo(const Ref<KeyVal>&);
 
     ~LinOPSimpleCo();
 

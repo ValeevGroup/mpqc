@@ -36,31 +36,31 @@
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/functional.h>
 
-const ClassDesc &dft_force_link_a_ = RadialAngularIntegrator::class_desc_;
-const ClassDesc &dft_force_link_b_ = NElFunctional::class_desc_;
-const ClassDesc &dft_force_link_c_ = XalphaFunctional::class_desc_;
-const ClassDesc &dft_force_link_d_ = SlaterXFunctional::class_desc_;
-const ClassDesc &dft_force_link_e_ = Becke88XFunctional::class_desc_;
-const ClassDesc &dft_force_link_f_ = LYPCFunctional::class_desc_;
-const ClassDesc &dft_force_link_h_ = CLKS::class_desc_;
-const ClassDesc &dft_force_link_i_ = UKS::class_desc_;
-const ClassDesc &dft_force_link_j_ = VWN5LCFunctional::class_desc_;
-const ClassDesc &dft_force_link_k_ = VWN3LCFunctional::class_desc_;
-const ClassDesc &dft_force_link_l_ = PW92LCFunctional::class_desc_;
-const ClassDesc &dft_force_link_m_ = PBEXFunctional::class_desc_;
-const ClassDesc &dft_force_link_n_ = PBECFunctional::class_desc_;
-const ClassDesc &dft_force_link_o_ = P86CFunctional::class_desc_;
-const ClassDesc &dft_force_link_p_ = PW91XFunctional::class_desc_;
-const ClassDesc &dft_force_link_q_ = PW86XFunctional::class_desc_;
-const ClassDesc &dft_force_link_r_ = PZ81LCFunctional::class_desc_;
-const ClassDesc &dft_force_link_s_ = G96XFunctional::class_desc_;
-const ClassDesc &dft_force_link_t_ = VWN1LCFunctional::class_desc_;
-const ClassDesc &dft_force_link_u_ = VWN2LCFunctional::class_desc_;
-const ClassDesc &dft_force_link_v_ = VWN4LCFunctional::class_desc_;
-const ClassDesc &dft_force_link_w_ = PW91CFunctional::class_desc_;
-const ClassDesc &dft_force_link_x_ = HSOSKS::class_desc_;
-const ClassDesc &dft_force_link_y_ = VWNLCFunctional::class_desc_;
-const ClassDesc &dft_force_link_z_ = NewP86CFunctional::class_desc_;
+static ForceLink<RadialAngularIntegrator> dft_force_link_a_;
+static ForceLink<NElFunctional> dft_force_link_b_;
+static ForceLink<XalphaFunctional> dft_force_link_c_;
+static ForceLink<SlaterXFunctional> dft_force_link_d_;
+static ForceLink<Becke88XFunctional> dft_force_link_e_;
+static ForceLink<LYPCFunctional> dft_force_link_f_;
+static ForceLink<CLKS> dft_force_link_h_;
+static ForceLink<UKS> dft_force_link_i_;
+static ForceLink<VWN5LCFunctional> dft_force_link_j_;
+static ForceLink<VWN3LCFunctional> dft_force_link_k_;
+static ForceLink<PW92LCFunctional> dft_force_link_l_;
+static ForceLink<PBEXFunctional> dft_force_link_m_;
+static ForceLink<PBECFunctional> dft_force_link_n_;
+static ForceLink<P86CFunctional> dft_force_link_o_;
+static ForceLink<PW91XFunctional> dft_force_link_p_;
+static ForceLink<PW86XFunctional> dft_force_link_q_;
+static ForceLink<PZ81LCFunctional> dft_force_link_r_;
+static ForceLink<G96XFunctional> dft_force_link_s_;
+static ForceLink<VWN1LCFunctional> dft_force_link_t_;
+static ForceLink<VWN2LCFunctional> dft_force_link_u_;
+static ForceLink<VWN4LCFunctional> dft_force_link_v_;
+static ForceLink<PW91CFunctional> dft_force_link_w_;
+static ForceLink<HSOSKS> dft_force_link_x_;
+static ForceLink<VWNLCFunctional> dft_force_link_y_;
+static ForceLink<NewP86CFunctional> dft_force_link_z_;
 
 #endif /* __PIC__ */
 

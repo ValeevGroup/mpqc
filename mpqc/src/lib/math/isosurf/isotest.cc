@@ -45,8 +45,8 @@ using namespace std;
 
 // Force linkages:
 #ifndef __PIC__
-const ClassDesc &fl0 = SphereShape::class_desc_;
-const ClassDesc &fl1 = TriangulatedImplicitSurface::class_desc_;
+static ForceLink<SphereShape> fl0;
+static ForceLink<TriangulatedImplicitSurface> fl1;
 #endif
 
 main(int argc,char** argv)
@@ -63,9 +63,9 @@ main(int argc,char** argv)
   const char *keyword = (argc > 2)? argv[2] : "surf";
 
   // open keyval input
-  RefKeyVal rpkv(new ParsedKeyVal(input));
+  Ref<KeyVal> rpkv(new ParsedKeyVal(input));
 
-  RefTriangulatedSurface surf = rpkv->describedclassvalue(keyword);
+  Ref<TriangulatedSurface> surf = rpkv->describedclassvalue(keyword);
 
   cout << scprintf("surf->flat_area() = %f\n", surf->flat_area());
   cout << scprintf("surf->flat_volume() = %f\n", surf->flat_volume());
@@ -81,7 +81,7 @@ main(int argc,char** argv)
           double s = 1.0 - r;
           cout << scprintf("  r = %6.4f, s = %6.4f", r, s) << endl;
           TriInterpCoefKey key(order, r, s);
-          RefTriInterpCoef coef = new TriInterpCoef(key);
+          Ref<TriInterpCoef> coef = new TriInterpCoef(key);
           for (int i=0; i<=order; i++) {
               for (int j=0; j+i<=order; j++) {
                   int k = order - i - j;

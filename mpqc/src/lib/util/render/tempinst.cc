@@ -35,9 +35,9 @@
 #include <util/render/parameter.h>
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
-template class Stack<DCRefMaterial>;
-template class Stack<DCRefAppearance>;
-template class Stack<DCRefTransform>;
+template class Stack<DCRef<Material> >;
+template class Stack<DCRef<Appearance> >;
+template class Stack<DCRef<Transform> >;
 template class Parameter<Color>;
 template class Parameter<int>;
 #endif

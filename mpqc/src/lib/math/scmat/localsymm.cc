@@ -39,16 +39,9 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // LocalSymmSCMatrix member functions
 
-#define CLASSNAME LocalSymmSCMatrix
-#define PARENTS public SymmSCMatrix
-#include <util/class/classi.h>
-void *
-LocalSymmSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SymmSCMatrix::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc LocalSymmSCMatrix_cd(
+  typeid(LocalSymmSCMatrix),"LocalSymmSCMatrix",1,"public SymmSCMatrix",
+  0, 0, 0);
 
 static double **
 init_symm_rows(double *data, int n)
@@ -139,7 +132,7 @@ LocalSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
   sb->assign(0.0);
 
   LocalSCMatrix *lsb =
-    LocalSCMatrix::require_castdown(sb, "LocalSymmSCMatrix::get_subblock");
+    require_dynamic_cast<LocalSCMatrix*>(sb, "LocalSymmSCMatrix::get_subblock");
 
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
@@ -167,7 +160,7 @@ LocalSymmSCMatrix::get_subblock(int br, int er)
   sb->assign(0.0);
 
   LocalSymmSCMatrix *lsb =
-    LocalSymmSCMatrix::require_castdown(sb, "LocalSymmSCMatrix::get_subblock");
+    require_dynamic_cast<LocalSymmSCMatrix*>(sb, "LocalSymmSCMatrix::get_subblock");
 
   for (int i=0; i < nsrow; i++)
     for (int j=0; j <= i; j++)
@@ -180,7 +173,7 @@ void
 LocalSymmSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
 {
   LocalSCMatrix *lsb =
-    LocalSCMatrix::require_castdown(sb, "LocalSCMatrix::assign_subblock");
+    require_dynamic_cast<LocalSCMatrix*>(sb, "LocalSCMatrix::assign_subblock");
 
   int nsrow = er-br+1;
   int nscol = ec-bc+1;
@@ -201,7 +194,7 @@ LocalSymmSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
 void
 LocalSymmSCMatrix::assign_subblock(SymmSCMatrix*sb, int br, int er)
 {
-  LocalSymmSCMatrix *lsb = LocalSymmSCMatrix::require_castdown(sb,
+  LocalSymmSCMatrix *lsb = require_dynamic_cast<LocalSymmSCMatrix*>(sb,
                                         "LocalSymmSCMatrix::assign_subblock");
 
   int nsrow = er-br+1;
@@ -222,7 +215,7 @@ LocalSymmSCMatrix::assign_subblock(SymmSCMatrix*sb, int br, int er)
 void
 LocalSymmSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
 {
-  LocalSCMatrix *lsb = LocalSCMatrix::require_castdown(sb,
+  LocalSCMatrix *lsb = require_dynamic_cast<LocalSCMatrix*>(sb,
                                   "LocalSymmSCMatrix::accumulate_subblock");
 
   int nsrow = er-br+1;
@@ -245,7 +238,7 @@ LocalSymmSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int 
 void
 LocalSymmSCMatrix::accumulate_subblock(SymmSCMatrix*sb, int br, int er)
 {
-  LocalSCMatrix *lsb = LocalSCMatrix::require_castdown(sb,
+  LocalSCMatrix *lsb = require_dynamic_cast<LocalSCMatrix*>(sb,
                                   "LocalSymmSCMatrix::accumulate_subblock");
 
   int nsrow = er-br+1;
@@ -277,7 +270,7 @@ LocalSymmSCMatrix::get_row(int i)
   SCVector * v = kit()->vector(dim());
 
   LocalSCVector *lv =
-    LocalSCVector::require_castdown(v, "LocalSymmSCMatrix::get_row");
+    require_dynamic_cast<LocalSCVector*>(v, "LocalSymmSCMatrix::get_row");
 
   for (int j=0; j < n(); j++)
     lv->set_element(j,get_element(i,j));
@@ -303,7 +296,7 @@ LocalSymmSCMatrix::assign_row(SCVector *v, int i)
   }
   
   LocalSCVector *lv =
-    LocalSCVector::require_castdown(v, "LocalSymmSCMatrix::assign_row");
+    require_dynamic_cast<LocalSCVector*>(v, "LocalSymmSCMatrix::assign_row");
 
   for (int j=0; j < n(); j++)
     set_element(i,j,lv->get_element(j));
@@ -328,7 +321,7 @@ LocalSymmSCMatrix::accumulate_row(SCVector *v, int i)
   }
   
   LocalSCVector *lv =
-    LocalSCVector::require_castdown(v, "LocalSymmSCMatrix::accumulate_row");
+    require_dynamic_cast<LocalSCVector*>(v, "LocalSymmSCMatrix::accumulate_row");
 
   for (int j=0; j < n(); j++)
     set_element(i,j,get_element(i,j)+lv->get_element(j));
@@ -339,7 +332,7 @@ LocalSymmSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   const LocalSymmSCMatrix* la
-    = LocalSymmSCMatrix::require_const_castdown(a,"LocalSymmSCMatrix::accumulate");
+    = require_dynamic_cast<const LocalSymmSCMatrix*>(a,"LocalSymmSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -377,7 +370,7 @@ double
 LocalSymmSCMatrix::solve_this(SCVector*v)
 {
   LocalSCVector* lv =
-    LocalSCVector::require_castdown(v,"LocalSymmSCMatrix::solve_this");
+    require_dynamic_cast<LocalSCVector*>(v,"LocalSymmSCMatrix::solve_this");
   
   // make sure that the dimensions match
   if (!dim()->equiv(lv->dim())) {
@@ -420,8 +413,8 @@ LocalSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
 
   const char* name = "LocalSymmSCMatrix::diagonalize";
   // make sure that the arguments is of the correct type
-  LocalDiagSCMatrix* la = LocalDiagSCMatrix::require_castdown(a,name);
-  LocalSCMatrix* lb = LocalSCMatrix::require_castdown(b,name);
+  LocalDiagSCMatrix* la = require_dynamic_cast<LocalDiagSCMatrix*>(a,name);
+  LocalSCMatrix* lb = require_dynamic_cast<LocalSCMatrix*>(b,name);
 
   if (!dim()->equiv(la->dim()) ||
       !dim()->equiv(lb->coldim()) || !dim()->equiv(lb->rowdim())) {
@@ -459,7 +452,7 @@ LocalSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)
 {
   // make sure that the argument is of the correct type
   LocalSCMatrix* la
-    = LocalSCMatrix::require_castdown(a,"LocalSymmSCMatrix::"
+    = require_dynamic_cast<LocalSCMatrix*>(a,"LocalSymmSCMatrix::"
                                           "accumulate_symmetric_product");
 
   if (!dim()->equiv(la->rowdim())) {
@@ -478,7 +471,7 @@ LocalSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
 {
   // make sure that the argument is of the correct type
   LocalSCMatrix* la
-    = LocalSCMatrix::require_castdown(a,"LocalSymmSCMatrix::"
+    = require_dynamic_cast<LocalSCMatrix*>(a,"LocalSymmSCMatrix::"
                                           "accumulate_symmetric_sum");
 
   if (!dim()->equiv(la->rowdim()) || !dim()->equiv(la->coldim())) {
@@ -503,7 +496,7 @@ LocalSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
 {
   // make sure that the argument is of the correct type
   LocalSCVector* la
-    = LocalSCVector::require_castdown(a,"LocalSymmSCMatrix::"
+    = require_dynamic_cast<LocalSCVector*>(a,"LocalSymmSCMatrix::"
                                       "accumulate_symmetric_outer_product");
 
   if (!dim()->equiv(la->dim())) {
@@ -530,10 +523,11 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
 {
   // do the necessary castdowns
   LocalSCMatrix*la
-    = LocalSCMatrix::require_castdown(a,"%s::accumulate_transform",
+    = require_dynamic_cast<LocalSCMatrix*>(a,"%s::accumulate_transform",
                                       class_name());
-  LocalSymmSCMatrix*lb = require_castdown(b,"%s::accumulate_transform",
-                                          class_name());
+  LocalSymmSCMatrix*lb
+      = require_dynamic_cast<LocalSymmSCMatrix*>(
+          b,"%s::accumulate_transform", class_name());
 
   // check the dimensions
   if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
@@ -561,10 +555,10 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b,
 {
   // do the necessary castdowns
   LocalSCMatrix*la
-    = LocalSCMatrix::require_castdown(a,"%s::accumulate_transform",
+    = require_dynamic_cast<LocalSCMatrix*>(a,"%s::accumulate_transform",
                                       class_name());
   LocalDiagSCMatrix*lb
-    = LocalDiagSCMatrix::require_castdown(b,"%s::accumulate_transform",
+    = require_dynamic_cast<LocalDiagSCMatrix*>(b,"%s::accumulate_transform",
                                           class_name());
 
   // check the dimensions
@@ -588,7 +582,7 @@ LocalSymmSCMatrix::scalar_product(SCVector*a)
 {
   // make sure that the argument is of the correct type
   LocalSCVector* la
-    = LocalSCVector::require_castdown(a,"LocalSCVector::scalar_product");
+    = require_dynamic_cast<LocalSCVector*>(a,"LocalSCVector::scalar_product");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -611,17 +605,17 @@ LocalSymmSCMatrix::scalar_product(SCVector*a)
 }
 
 void
-LocalSymmSCMatrix::element_op(const RefSCElementOp& op)
+LocalSymmSCMatrix::element_op(const Ref<SCElementOp>& op)
 {
   op->process_spec_ltri(block.pointer());
 }
 
 void
-LocalSymmSCMatrix::element_op(const RefSCElementOp2& op,
+LocalSymmSCMatrix::element_op(const Ref<SCElementOp2>& op,
                               SymmSCMatrix* m)
 {
   LocalSymmSCMatrix *lm
-      = LocalSymmSCMatrix::require_castdown(m,"LocalSymSCMatrix::element_op");
+      = require_dynamic_cast<LocalSymmSCMatrix*>(m,"LocalSymSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
       ExEnv::err() << indent << "LocalSymmSCMatrix: bad element_op\n";
@@ -631,13 +625,13 @@ LocalSymmSCMatrix::element_op(const RefSCElementOp2& op,
 }
 
 void
-LocalSymmSCMatrix::element_op(const RefSCElementOp3& op,
+LocalSymmSCMatrix::element_op(const Ref<SCElementOp3>& op,
                               SymmSCMatrix* m,SymmSCMatrix* n)
 {
   LocalSymmSCMatrix *lm
-      = LocalSymmSCMatrix::require_castdown(m,"LocalSymSCMatrix::element_op");
+      = require_dynamic_cast<LocalSymmSCMatrix*>(m,"LocalSymSCMatrix::element_op");
   LocalSymmSCMatrix *ln
-      = LocalSymmSCMatrix::require_castdown(n,"LocalSymSCMatrix::element_op");
+      = require_dynamic_cast<LocalSymmSCMatrix*>(n,"LocalSymSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
       ExEnv::err() << indent << "LocalSymmSCMatrix: bad element_op\n";
@@ -700,7 +694,7 @@ LocalSymmSCMatrix::vprint(const char *title, ostream& os, int prec) const
   }
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 LocalSymmSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
   if (messagegrp()->n() > 1) {
@@ -709,12 +703,12 @@ LocalSymmSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
            << endl;
       abort();
     }
-  RefSCMatrixSubblockIter iter
+  Ref<SCMatrixSubblockIter> iter
       = new SCMatrixSimpleSubblockIter(access, block.pointer());
   return iter;
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 LocalSymmSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {

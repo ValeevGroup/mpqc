@@ -46,9 +46,6 @@ message<ShmMessageGrp>: n = 4
 
 */
 class ShmMessageGrp: public intMessageGrp {
-#define CLASSNAME ShmMessageGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   protected:
     void basic_send(int target, int type, void* data, int nbyte);
     void basic_recv(int type, void* data, int nbyte);
@@ -66,7 +63,7 @@ class ShmMessageGrp: public intMessageGrp {
     void set_last_size(int a) { last_size_ = a; }
   public:
     ShmMessageGrp(); // read nprocs from environmental variable NUMPROC
-    ShmMessageGrp(const RefKeyVal&);
+    ShmMessageGrp(const Ref<KeyVal>&);
     ShmMessageGrp(int nprocs);
     ~ShmMessageGrp();
     void sync();

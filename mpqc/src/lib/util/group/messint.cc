@@ -30,16 +30,9 @@
 
 using namespace std;
 
-#define CLASSNAME intMessageGrp
-#define PARENTS public MessageGrp
-#include <util/class/classia.h>
-void *
-intMessageGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  MessageGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc intMessageGrp_cd(
+  typeid(intMessageGrp),"intMessageGrp",1,"public MessageGrp",
+  0, 0, 0);
 
 intMessageGrp::intMessageGrp():
   ctl_nbit(2),
@@ -47,7 +40,7 @@ intMessageGrp::intMessageGrp():
 {
 }
 
-intMessageGrp::intMessageGrp(const RefKeyVal& keyval):
+intMessageGrp::intMessageGrp(const Ref<KeyVal>& keyval):
   MessageGrp(keyval),
   ctl_nbit(2),
   ctl_mask(0x3)

@@ -45,12 +45,9 @@ class LocalDiagSCMatrix;
 /** The LocalSCMatrixKit produces matrices that work in a single processor
 environment.  */
 class LocalSCMatrixKit: public SCMatrixKit {
-#   define CLASSNAME LocalSCMatrixKit
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   public:
     LocalSCMatrixKit();
-    LocalSCMatrixKit(const RefKeyVal&);
+    LocalSCMatrixKit(const Ref<KeyVal>&);
     ~LocalSCMatrixKit();
     SCMatrix* matrix(const RefSCDimension&,const RefSCDimension&);
     SymmSCMatrix* symmmatrix(const RefSCDimension&);
@@ -62,10 +59,8 @@ class LocalSCVector: public SCVector {
     friend class LocalSCMatrix;
     friend class LocalSymmSCMatrix;
     friend class LocalDiagSCMatrix;
-#   define CLASSNAME LocalSCVector
-#   include <util/class/classd.h>
   private:
-    RefSCVectorSimpleBlock block;
+    Ref<SCVectorSimpleBlock> block;
 
     void resize(int);
   public:
@@ -84,10 +79,10 @@ class LocalSCVector: public SCVector {
     void accumulate(const SCVector*);
     void accumulate(const SCMatrix*);
     double scalar_product(SCVector*);
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     SCVector*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     SCVector*,SCVector*);
     void vprint(const char* title=0,
                 std::ostream& out=ExEnv::out(), int =10) const;
@@ -95,18 +90,16 @@ class LocalSCVector: public SCVector {
     // return a pointer to the data for fast access
     double *get_data();
     
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class LocalSCMatrix: public SCMatrix {
     friend class LocalSymmSCMatrix;
     friend class LocalDiagSCMatrix;
     friend class LocalSCVector;
-#   define CLASSNAME LocalSCMatrix
-#   include <util/class/classd.h>
   private:
-    RefSCMatrixRectBlock block;
+    Ref<SCMatrixRectBlock> block;
     double** rows;
   private:
     // utility functions
@@ -146,10 +139,10 @@ class LocalSCMatrix: public SCMatrix {
     double determ_this();
     double trace();
     void schmidt_orthog(SymmSCMatrix*,int);
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     SCMatrix*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     SCMatrix*,SCMatrix*);
     void vprint(const char* title=0,
                 std::ostream& out=ExEnv::out(), int =10) const;
@@ -158,18 +151,16 @@ class LocalSCMatrix: public SCMatrix {
     double *get_data();
     double **get_rows();
     
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class LocalSymmSCMatrix: public SymmSCMatrix {
     friend class LocalSCMatrix;
     friend class LocalDiagSCMatrix;
     friend class LocalSCVector;
-#   define CLASSNAME LocalSymmSCMatrix
-#   include <util/class/classd.h>
   private:
-    RefSCMatrixLTriBlock block;
+    Ref<SCMatrixLTriBlock> block;
     double** rows;
   private:
     // utility functions
@@ -212,10 +203,10 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     void accumulate_transform(SCMatrix*,DiagSCMatrix*,
                               SCMatrix::Transform = SCMatrix::NormalTransform);
     void accumulate_transform(SymmSCMatrix*,SymmSCMatrix*);
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     SymmSCMatrix*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     SymmSCMatrix*,SymmSCMatrix*);
     void vprint(const char* title=0,
                 std::ostream& out=ExEnv::out(), int =10) const;
@@ -224,18 +215,16 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     double *get_data();
     double **get_rows();
     
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class LocalDiagSCMatrix: public DiagSCMatrix {
     friend class LocalSCMatrix;
     friend class LocalSymmSCMatrix;
     friend class LocalSCVector;
-#   define CLASSNAME LocalDiagSCMatrix
-#   include <util/class/classd.h>
   private:
-    RefSCMatrixDiagBlock block;
+    Ref<SCMatrixDiagBlock> block;
     void resize(int n);
   public:
     LocalDiagSCMatrix(const RefSCDimension&, LocalSCMatrixKit*);
@@ -252,10 +241,10 @@ class LocalDiagSCMatrix: public DiagSCMatrix {
     double trace();
     void gen_invert_this();
 
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     DiagSCMatrix*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     DiagSCMatrix*,DiagSCMatrix*);
     void vprint(const char* title=0,
                 std::ostream& out=ExEnv::out(), int =10) const;
@@ -263,8 +252,8 @@ class LocalDiagSCMatrix: public DiagSCMatrix {
     // return a pointer to the data for fast access
     double *get_data();
 
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
 
 #endif

@@ -41,9 +41,9 @@
 
 CSGradS2PDM::CSGradS2PDM(int mythread_a, int nthread_a,
                          int me_a, int nproc_a,
-                         const RefThreadLock &lock_a,
-                         const RefGaussianBasisSet &basis_a,
-                         const RefTwoBodyDerivInt &tbintder_a,
+                         const Ref<ThreadLock> &lock_a,
+                         const Ref<GaussianBasisSet> &basis_a,
+                         const Ref<TwoBodyDerivInt> &tbintder_a,
                          const double *PHF_a, const double *P2AO_a,
                          int tol_a, int debug_a, int dynamic_a)
 {

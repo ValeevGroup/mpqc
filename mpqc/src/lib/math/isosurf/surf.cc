@@ -49,20 +49,9 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////////////
 // TriangulatedSurface
-DescribedClass_REF_def(TriangulatedSurface);
-#define CLASSNAME TriangulatedSurface
-#define PARENTS public DescribedClass
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-//#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-TriangulatedSurface::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc TriangulatedSurface_cd(
+  typeid(TriangulatedSurface),"TriangulatedSurface",1,"public DescribedClass",
+  create<TriangulatedSurface>, create<TriangulatedSurface>, 0);
 
 TriangulatedSurface::TriangulatedSurface():
   _verbose(0),
@@ -75,19 +64,23 @@ TriangulatedSurface::TriangulatedSurface():
   clear();
 }
 
-TriangulatedSurface::TriangulatedSurface(const RefKeyVal& keyval):
+TriangulatedSurface::TriangulatedSurface(const Ref<KeyVal>& keyval):
   _triangle_vertex(0),
   _triangle_edge(0),
   _edge_vertex(0)
 {
   _verbose = keyval->booleanvalue("verbose");
   _debug = keyval->booleanvalue("debug");
-  set_integrator(keyval->describedclassvalue("integrator"));
-  if (keyval->error() != KeyVal::OK) {
-      set_integrator(new GaussTriangleIntegrator(1));
+  Ref<TriangleIntegrator> triint;
+  triint << keyval->describedclassvalue("integrator");
+  if (triint.null()) {
+      triint = new GaussTriangleIntegrator(1);
     }
-  set_fast_integrator(keyval->describedclassvalue("fast_integrator"));
-  set_accurate_integrator(keyval->describedclassvalue("accurate_integrator"));
+  set_integrator(triint);
+  triint << keyval->describedclassvalue("fast_integrator");
+  set_fast_integrator(triint);
+  triint << keyval->describedclassvalue("accurate_integrator");
+  set_accurate_integrator(triint);
   clear();
 }
 
@@ -127,38 +120,38 @@ TriangulatedSurface::topology_info(int v, int e, int t, ostream&o)
 }
 
 void
-TriangulatedSurface::set_integrator(const RefTriangleIntegrator& i)
+TriangulatedSurface::set_integrator(const Ref<TriangleIntegrator>& i)
 {
   _integrator = i;
 }
 
 void
-TriangulatedSurface::set_fast_integrator(const RefTriangleIntegrator& i)
+TriangulatedSurface::set_fast_integrator(const Ref<TriangleIntegrator>& i)
 {
   _fast_integrator = i;
 }
 
 void
-TriangulatedSurface::set_accurate_integrator(const RefTriangleIntegrator& i)
+TriangulatedSurface::set_accurate_integrator(const Ref<TriangleIntegrator>& i)
 {
   _accurate_integrator = i;
 }
 
-RefTriangleIntegrator
+Ref<TriangleIntegrator>
 TriangulatedSurface::integrator(int)
 {
   // currently the argument, the integer index of the triangle, is ignored
   return _integrator;
 }
 
-RefTriangleIntegrator
+Ref<TriangleIntegrator>
 TriangulatedSurface::fast_integrator(int)
 {
   // currently the argument, the integer index of the triangle, is ignored
   return _fast_integrator.null()?_integrator:_fast_integrator;
 }
 
-RefTriangleIntegrator
+Ref<TriangleIntegrator>
 TriangulatedSurface::accurate_integrator(int)
 {
   // currently the argument, the integer index of the triangle, is ignored
@@ -232,7 +225,7 @@ TriangulatedSurface::complete_ref_arrays()
   int ntri = ntriangle();
   _edges.clear();
   for (i=0; i<ntri; i++) {
-      RefTriangle tri = triangle(i);
+      Ref<Triangle> tri = triangle(i);
       add_edge(tri->edge(0));
       add_edge(tri->edge(1));
       add_edge(tri->edge(2));
@@ -242,7 +235,7 @@ TriangulatedSurface::complete_ref_arrays()
   _index_to_vertex.clear();
   _vertex_to_index.clear();
   for (i=0; i<ne; i++) {
-      RefEdge e = edge(i);
+      Ref<Edge> e = edge(i);
       add_vertex(e->vertex(0));
       add_vertex(e->vertex(1));
     }
@@ -263,7 +256,7 @@ TriangulatedSurface::complete_int_arrays()
   for (i=0; i<ntri; i++) {
       _triangle_vertex[i] = new int[3];
       for (int j=0; j<3; j++) {
-          RefVertex v = triangle(i)->vertex(j);
+          Ref<Vertex> v = triangle(i)->vertex(j);
           _triangle_vertex[i][j] = _vertex_to_index[v];
         }
     }
@@ -274,7 +267,7 @@ TriangulatedSurface::complete_int_arrays()
   for (i=0; i<ntri; i++) {
       _triangle_edge[i] = new int[3];
       for (int j=0; j<3; j++) {
-          RefEdge e = triangle(i)->edge(j);
+          Ref<Edge> e = triangle(i)->edge(j);
           _triangle_edge[i][j] = _edge_to_index[e];
         }
     }
@@ -285,14 +278,14 @@ TriangulatedSurface::complete_int_arrays()
   for (i=0; i<ne; i++) {
       _edge_vertex[i] = new int[2];
       for (int j=0; j<2; j++) {
-          RefVertex v = edge(i)->vertex(j);
+          Ref<Vertex> v = edge(i)->vertex(j);
           _edge_vertex[i][j] = _vertex_to_index[v];
         }
     }
 }
 
 void
-TriangulatedSurface::compute_values(RefVolume&vol)
+TriangulatedSurface::compute_values(Ref<Volume>&vol)
 {
   int n = _vertices.length();
   _values.set_length(n);
@@ -308,7 +301,7 @@ double
 TriangulatedSurface::flat_area()
 {
   double result = 0.0;
-  for (AVLSet<RefTriangle>::iterator i=_triangles.begin();
+  for (AVLSet<Ref<Triangle> >::iterator i=_triangles.begin();
        i!=_triangles.end(); i++) {
       result += (*i)->flat_area();
     }
@@ -403,7 +396,7 @@ TriangulatedSurface::volume()
 }
 
 void
-TriangulatedSurface::add_vertex(const RefVertex&t)
+TriangulatedSurface::add_vertex(const Ref<Vertex>&t)
 {
   int i = _vertices.length();
   _vertices.insert(t);
@@ -418,7 +411,7 @@ TriangulatedSurface::add_vertex(const RefVertex&t)
 }
 
 void
-TriangulatedSurface::add_edge(const RefEdge&t)
+TriangulatedSurface::add_edge(const Ref<Edge>&t)
 {
   int i = _edges.length();
   _edges.insert(t);
@@ -433,7 +426,7 @@ TriangulatedSurface::add_edge(const RefEdge&t)
 }
 
 void
-TriangulatedSurface::add_triangle(const RefTriangle&t)
+TriangulatedSurface::add_triangle(const Ref<Triangle>&t)
 {
   if (_completed_surface) clear();
   int i = _triangles.length();
@@ -449,21 +442,21 @@ TriangulatedSurface::add_triangle(const RefTriangle&t)
 }
 
 void
-TriangulatedSurface::add_triangle(const RefVertex& v1,
-                                  const RefVertex& v2,
-                                  const RefVertex& v3)
+TriangulatedSurface::add_triangle(const Ref<Vertex>& v1,
+                                  const Ref<Vertex>& v2,
+                                  const Ref<Vertex>& v3)
 {
   // Find this triangle's edges if they have already be created
   // for some other triangle.
-  RefEdge e0, e1, e2;
+  Ref<Edge> e0, e1, e2;
 
-  const AVLSet<RefEdge> &v1edges = _tmp_edges[v1];
+  const AVLSet<Ref<Edge> > &v1edges = _tmp_edges[v1];
 
-  const AVLSet<RefEdge> &v2edges = _tmp_edges[v2];
+  const AVLSet<Ref<Edge> > &v2edges = _tmp_edges[v2];
 
-  AVLSet<RefEdge>::iterator ix;
+  AVLSet<Ref<Edge> >::iterator ix;
   for (ix = v1edges.begin(); ix != v1edges.end(); ix++) {
-      const RefEdge& e = *ix;
+      const Ref<Edge>& e = *ix;
       if (e->vertex(0) == v2 || e->vertex(1) == v2) {
           e0 = e;
         }
@@ -472,7 +465,7 @@ TriangulatedSurface::add_triangle(const RefVertex& v1,
         }
     }
   for (ix = v2edges.begin(); ix != v2edges.end(); ix++) {
-      const RefEdge& e = *ix;
+      const Ref<Edge>& e = *ix;
       if (e->vertex(0) == v3 || e->vertex(1) == v3) {
           e1 = e;
         }
@@ -508,16 +501,16 @@ TriangulatedSurface::add_triangle(const RefVertex& v1,
 // If a user isn't keeping track of edges while add_triangle is being
 // used to build the surface, then this can be called to see if an edge
 // already exists (at a great performance cost).
-RefEdge
-TriangulatedSurface::find_edge(const RefVertex& v1, const RefVertex& v2)
+Ref<Edge>
+TriangulatedSurface::find_edge(const Ref<Vertex>& v1, const Ref<Vertex>& v2)
 {
-  AVLSet<RefTriangle>::iterator i;
+  AVLSet<Ref<Triangle> >::iterator i;
 
   for (i=_triangles.begin(); i!=_triangles.end(); i++) {
-      RefTriangle t = *i;
-      RefEdge e1 = t->edge(0);
-      RefEdge e2 = t->edge(1);
-      RefEdge e3 = t->edge(2);
+      Ref<Triangle> t = *i;
+      Ref<Edge> e1 = t->edge(0);
+      Ref<Edge> e2 = t->edge(1);
+      Ref<Edge> e3 = t->edge(2);
       if (e1->vertex(0) == v1 && e1->vertex(1) == v2) return e1;
       if (e1->vertex(1) == v1 && e1->vertex(0) == v2) return e1;
       if (e2->vertex(0) == v1 && e2->vertex(1) == v2) return e2;
@@ -538,7 +531,7 @@ TriangulatedSurface::print(ostream&o) const
   int np = nvertex();
   o << indent << scprintf(" %3d Vertices:",np) << endl;
   for (i=0; i<np; i++) {
-      RefVertex p = vertex(i);
+      Ref<Vertex> p = vertex(i);
       o << indent << scprintf("  %3d:",i);
       for (int j=0; j<3; j++) {
           o << scprintf(" % 15.10f", p->point()[j]);
@@ -549,11 +542,11 @@ TriangulatedSurface::print(ostream&o) const
   int ne = nedge();
   o << indent << scprintf(" %3d Edges:",ne) << endl;
   for (i=0; i<ne; i++) {
-      RefEdge e = edge(i);
-      RefVertex v0 = e->vertex(0);
-      RefVertex v1 = e->vertex(1);
-      AVLMap<RefVertex,int>::iterator v0i = _vertex_to_index.find(v0);
-      AVLMap<RefVertex,int>::iterator v1i = _vertex_to_index.find(v1);
+      Ref<Edge> e = edge(i);
+      Ref<Vertex> v0 = e->vertex(0);
+      Ref<Vertex> v1 = e->vertex(1);
+      AVLMap<Ref<Vertex>,int>::iterator v0i = _vertex_to_index.find(v0);
+      AVLMap<Ref<Vertex>,int>::iterator v1i = _vertex_to_index.find(v1);
       int v0int = v0i==_vertex_to_index.end()? -1: v0i.data();
       int v1int = v1i==_vertex_to_index.end()? -1: v1i.data();
       o << indent
@@ -564,13 +557,13 @@ TriangulatedSurface::print(ostream&o) const
   int nt = ntriangle();
   o << indent << scprintf(" %3d Triangles:",nt) << endl;
   for (i=0; i<nt; i++) {
-      RefTriangle tri = triangle(i);
-      RefEdge e0 = tri->edge(0);
-      RefEdge e1 = tri->edge(1);
-      RefEdge e2 = tri->edge(2);
-      AVLMap<RefEdge,int>::iterator e0i = _edge_to_index.find(e0);
-      AVLMap<RefEdge,int>::iterator e1i = _edge_to_index.find(e1);
-      AVLMap<RefEdge,int>::iterator e2i = _edge_to_index.find(e2);
+      Ref<Triangle> tri = triangle(i);
+      Ref<Edge> e0 = tri->edge(0);
+      Ref<Edge> e1 = tri->edge(1);
+      Ref<Edge> e2 = tri->edge(2);
+      AVLMap<Ref<Edge>,int>::iterator e0i = _edge_to_index.find(e0);
+      AVLMap<Ref<Edge>,int>::iterator e1i = _edge_to_index.find(e1);
+      AVLMap<Ref<Edge>,int>::iterator e2i = _edge_to_index.find(e2);
       int e0int = e0i==_edge_to_index.end()? -1: e0i.data();
       int e1int = e1i==_edge_to_index.end()? -1: e1i.data();
       int e2int = e2i==_edge_to_index.end()? -1: e2i.data();
@@ -589,7 +582,7 @@ TriangulatedSurface::print_vertices_and_triangles(ostream&o) const
   int np = nvertex();
   o << indent << scprintf(" %3d Vertices:",np) << endl;
   for (i=0; i<np; i++) {
-      RefVertex p = vertex(i);
+      Ref<Vertex> p = vertex(i);
       o << indent << scprintf("  %3d:",i);
       for (int j=0; j<3; j++) {
           o << scprintf(" % 15.10f", p->point()[j]);
@@ -600,7 +593,7 @@ TriangulatedSurface::print_vertices_and_triangles(ostream&o) const
   int nt = ntriangle();
   o << indent << scprintf(" %3d Triangles:",nt) << endl;
   for (i=0; i<nt; i++) {
-      RefTriangle tri = triangle(i);
+      Ref<Triangle> tri = triangle(i);
       o << indent
         << scprintf("  %3d: %3d %3d %3d",i,
                     _triangle_vertex[i][0],
@@ -611,17 +604,17 @@ TriangulatedSurface::print_vertices_and_triangles(ostream&o) const
 }
 
 void
-TriangulatedSurface::render(const RefRender &render)
+TriangulatedSurface::render(const Ref<Render> &render)
 {
-  RefRenderedPolygons poly = new RenderedPolygons;
+  Ref<RenderedPolygons> poly = new RenderedPolygons;
   poly->initialize(_vertices.length(), _triangles.length(),
                    RenderedPolygons::Vertex);
-  AVLSet<RefVertex>::iterator iv;
-  AVLSet<RefTriangle>::iterator it;
-  AVLMap<RefVertex, int> vertex_to_index;
+  AVLSet<Ref<Vertex> >::iterator iv;
+  AVLSet<Ref<Triangle> >::iterator it;
+  AVLMap<Ref<Vertex>, int> vertex_to_index;
   int i = 0;
   for (iv = _vertices.begin(); iv != _vertices.end(); iv++, i++) {
-      RefVertex v = *iv;
+      Ref<Vertex> v = *iv;
       vertex_to_index[v] = i;
       poly->set_vertex(i,
                        v->point()[0],
@@ -631,13 +624,13 @@ TriangulatedSurface::render(const RefRender &render)
     }
   i = 0;
   for (it = _triangles.begin(); it != _triangles.end(); it++, i++) {
-      RefTriangle t = *it;
+      Ref<Triangle> t = *it;
       poly->set_face(i,
                      vertex_to_index[t->vertex(0)],
                      vertex_to_index[t->vertex(1)],
                      vertex_to_index[t->vertex(2)]);
     }
-  render->render(poly);
+  render->render(poly.pointer());
 }
 
 void
@@ -650,7 +643,7 @@ TriangulatedSurface::print_geomview_format(ostream&o) const
 
   int np = nvertex();
   for (i=0; i<np; i++) {
-      RefVertex p = vertex(i);
+      Ref<Vertex> p = vertex(i);
       for (int j=0; j<3; j++) {
           o << scprintf(" % 15.10f", p->point()[j]);
         }
@@ -659,7 +652,7 @@ TriangulatedSurface::print_geomview_format(ostream&o) const
 
   int nt = ntriangle();
   for (i=0; i<nt; i++) {
-      RefTriangle tri = triangle(i);
+      Ref<Triangle> tri = triangle(i);
       o << scprintf(" 3 %3d %3d %3d",
                     _triangle_vertex[i][0],
                     _triangle_vertex[i][1],
@@ -672,9 +665,9 @@ void
 TriangulatedSurface::recompute_index_maps()
 {
   int i;
-  AVLSet<RefVertex>::iterator iv;
-  AVLSet<RefEdge>::iterator ie;
-  AVLSet<RefTriangle>::iterator it;
+  AVLSet<Ref<Vertex> >::iterator iv;
+  AVLSet<Ref<Edge> >::iterator ie;
+  AVLSet<Ref<Triangle> >::iterator it;
 
   // fix the index maps
   _vertex_to_index.clear();
@@ -706,15 +699,15 @@ TriangulatedSurface::recompute_index_maps()
 }
 
 Edge*
-TriangulatedSurface::newEdge(const RefVertex& v0, const RefVertex& v1) const
+TriangulatedSurface::newEdge(const Ref<Vertex>& v0, const Ref<Vertex>& v1) const
 {
   return new Edge(v0,v1);
 }
 
 Triangle*
-TriangulatedSurface::newTriangle(const RefEdge& e0,
-                                 const RefEdge& e1,
-                                 const RefEdge& e2,
+TriangulatedSurface::newTriangle(const Ref<Edge>& e0,
+                                 const Ref<Edge>& e1,
+                                 const Ref<Edge>& e2,
                                  int orientation) const
 {
   return new Triangle(e0,e1,e2,orientation);
@@ -724,7 +717,7 @@ TriangulatedSurface::newTriangle(const RefEdge& e0,
 // TriangulatedSurfaceIntegrator
 
 TriangulatedSurfaceIntegrator::
-  TriangulatedSurfaceIntegrator(const RefTriangulatedSurface&ts)
+  TriangulatedSurfaceIntegrator(const Ref<TriangulatedSurface>&ts)
 {
   set_surface(ts);
   use_default_integrator();
@@ -756,7 +749,7 @@ TriangulatedSurfaceIntegrator::
 }
 
 void
-TriangulatedSurfaceIntegrator::set_surface(const RefTriangulatedSurface&s)
+TriangulatedSurfaceIntegrator::set_surface(const Ref<TriangulatedSurface>&s)
 {
   _ts = s;
   _current = new Vertex();
@@ -769,7 +762,7 @@ TriangulatedSurfaceIntegrator::
   return _ts->triangle_vertex(_itri,i);
 }
 
-RefVertex
+Ref<Vertex>
 TriangulatedSurfaceIntegrator::
   current()
 {
@@ -796,8 +789,8 @@ TriangulatedSurfaceIntegrator::update()
   _s = i->s(_irs);
   _r = i->r(_irs);
   _weight = i->w(_irs);
-  RefTriangle t = _ts->triangle(_itri);
-  RefTriInterpCoef coef = i->coef(t->order(),_irs);
+  Ref<Triangle> t = _ts->triangle(_itri);
+  Ref<TriInterpCoef> coef = i->coef(t->order(),_irs);
   t->interpolate(coef, _r, _s, _current, _dA);
   _surface_element = _dA.norm();
   static double cum;
@@ -826,7 +819,7 @@ TriangulatedSurfaceIntegrator::
 }
 
 void
-TriangulatedSurfaceIntegrator::distribute(const RefMessageGrp &grp)
+TriangulatedSurfaceIntegrator::distribute(const Ref<MessageGrp> &grp)
 {
   _grp = grp;
 }
@@ -860,29 +853,19 @@ TriangulatedSurfaceIntegrator::use_accurate_integrator()
 
 /////////////////////////////////////////////////////////////////////////
 // TriangulatedImplicitSurface
-DescribedClass_REF_def(TriangulatedImplicitSurface);
-#define CLASSNAME TriangulatedImplicitSurface
-#define PARENTS public TriangulatedSurface
-#define HAVE_KEYVAL_CTOR
-//#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-TriangulatedImplicitSurface::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = TriangulatedSurface::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc TriangulatedImplicitSurface_cd(
+  typeid(TriangulatedImplicitSurface),"TriangulatedImplicitSurface",1,"public TriangulatedSurface",
+  0, create<TriangulatedImplicitSurface>, 0);
 
 TriangulatedImplicitSurface::
-TriangulatedImplicitSurface(const RefKeyVal&keyval):
+TriangulatedImplicitSurface(const Ref<KeyVal>&keyval):
   TriangulatedSurface(keyval)
 {
   inited_ = 0;
 
-  vol_ = keyval->describedclassvalue("volume");
+  vol_ << keyval->describedclassvalue("volume");
   if (keyval->error() != KeyVal::OK) {
-      ExEnv::err() << "TriangulatedImplicitSurface(const RefKeyVal&keyval): "
+      ExEnv::err() << "TriangulatedImplicitSurface(const Ref<KeyVal>&keyval): "
            << "requires \"volume\"" << endl;
       abort();
     }

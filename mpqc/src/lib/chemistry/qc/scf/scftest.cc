@@ -50,11 +50,11 @@
 // Force linkages:
 #include <chemistry/qc/scf/linkage.h>
 
-RefRegionTimer tim;
-RefMessageGrp grp;
+Ref<RegionTimer> tim;
+Ref<MessageGrp> grp;
 
-static RefMessageGrp
-init_mp(const RefKeyVal& keyval)
+static Ref<MessageGrp>
+init_mp(const Ref<KeyVal>& keyval)
 {
   // if we are on a paragon then use a ParagonMessageGrp
   // otherwise read the message group from the input file
@@ -67,7 +67,7 @@ init_mp(const RefKeyVal& keyval)
   if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
   else grp = MessageGrp::get_default_messagegrp();
 
-  RefDebugger debugger = keyval->describedclassvalue(":debug");
+  Ref<Debugger> debugger = keyval->describedclassvalue(":debug");
   // Let the debugger know the name of the executable and the node
   if (debugger.nonnull()) {
     debugger->set_exec("scftest");
@@ -101,7 +101,7 @@ main(int argc, char**argv)
   char *optkeyword = (argc > 3)? argv[3] : "opt";
 
   // open keyval input
-  RefKeyVal rpkv(new ParsedKeyVal(input));
+  Ref<KeyVal> rpkv(new ParsedKeyVal(input));
 
   init_mp(rpkv);
 
@@ -111,8 +111,8 @@ main(int argc, char**argv)
     SCMatrixKit::set_default_matrixkit(rpkv->describedclassvalue("matrixkit"));
   
   struct stat sb;
-  RefMolecularEnergy mole;
-  RefOptimize opt;
+  Ref<MolecularEnergy> mole;
+  Ref<Optimize> opt;
 
   if (stat("scftest.ckpt",&sb)==0 && sb.st_size) {
     StateInBin si("scftest.ckpt");

@@ -34,24 +34,14 @@
 
 using namespace std;
 
-#define CLASSNAME IntegralV3
-#define PARENTS public Integral
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-IntegralV3::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Integral::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc IntegralV3_cd(
+  typeid(IntegralV3),"IntegralV3",1,"public Integral",
+  0, create<IntegralV3>, create<IntegralV3>);
 
-IntegralV3::IntegralV3(const RefGaussianBasisSet &b1,
-                       const RefGaussianBasisSet &b2,
-                       const RefGaussianBasisSet &b3,
-                       const RefGaussianBasisSet &b4):
+IntegralV3::IntegralV3(const Ref<GaussianBasisSet> &b1,
+                       const Ref<GaussianBasisSet> &b2,
+                       const Ref<GaussianBasisSet> &b3,
+                       const Ref<GaussianBasisSet> &b4):
   Integral(b1,b2,b3,b4)
 {
   initialize_transforms();
@@ -63,7 +53,7 @@ IntegralV3::IntegralV3(StateIn& s) :
   initialize_transforms();
 }
 
-IntegralV3::IntegralV3(const RefKeyVal& k) :
+IntegralV3::IntegralV3(const Ref<KeyVal>& k) :
   Integral(k)
 {
   initialize_transforms();
@@ -134,89 +124,89 @@ IntegralV3::spherical_transform(int l, int inv, int subl)
   return st_[l][(l-subl)/2];
 }
 
-RefOneBodyInt
+Ref<OneBodyInt>
 IntegralV3::overlap()
 {
   return new OneBodyIntV3(this, bs1_, bs2_, &Int1eV3::overlap);
 }
 
-RefOneBodyInt
+Ref<OneBodyInt>
 IntegralV3::kinetic()
 {
   return new OneBodyIntV3(this, bs1_, bs2_, &Int1eV3::kinetic);
 }
 
-RefOneBodyInt
+Ref<OneBodyInt>
 IntegralV3::nuclear()
 {
   return new OneBodyIntV3(this, bs1_, bs2_, &Int1eV3::nuclear);
 }
 
-RefOneBodyInt
+Ref<OneBodyInt>
 IntegralV3::hcore()
 {
   return new OneBodyIntV3(this, bs1_, bs2_, &Int1eV3::hcore);
 }
 
-RefOneBodyInt
-IntegralV3::point_charge(const RefPointChargeData& dat)
+Ref<OneBodyInt>
+IntegralV3::point_charge(const Ref<PointChargeData>& dat)
 {
   return new PointChargeIntV3(this, bs1_, bs2_, dat);
 }
 
-RefOneBodyInt
-IntegralV3::efield_dot_vector(const RefEfieldDotVectorData&dat)
+Ref<OneBodyInt>
+IntegralV3::efield_dot_vector(const Ref<EfieldDotVectorData>&dat)
 {
   return new EfieldDotVectorIntV3(this, bs1_, bs2_, dat);
 }
 
-RefOneBodyInt
-IntegralV3::dipole(const RefDipoleData& dat)
+Ref<OneBodyInt>
+IntegralV3::dipole(const Ref<DipoleData>& dat)
 {
   return new DipoleIntV3(this, bs1_, bs2_, dat);
 }
 
-RefOneBodyDerivInt
+Ref<OneBodyDerivInt>
 IntegralV3::overlap_deriv()
 {
   return new OneBodyDerivIntV3(this, bs1_, bs2_, &Int1eV3::overlap_1der);
 }
 
-RefOneBodyDerivInt
+Ref<OneBodyDerivInt>
 IntegralV3::kinetic_deriv()
 {
   return new OneBodyDerivIntV3(this, bs1_, bs2_, &Int1eV3::kinetic_1der);
 }
 
-RefOneBodyDerivInt
+Ref<OneBodyDerivInt>
 IntegralV3::nuclear_deriv()
 {
   return new OneBodyDerivIntV3(this, bs1_, bs2_, &Int1eV3::nuclear_1der);
 }
 
-RefOneBodyDerivInt
+Ref<OneBodyDerivInt>
 IntegralV3::hcore_deriv()
 {
   return new OneBodyDerivIntV3(this, bs1_, bs2_, &Int1eV3::hcore_1der);
 }
 
-RefTwoBodyInt
+Ref<TwoBodyInt>
 IntegralV3::electron_repulsion()
 {
   return new TwoBodyIntV3(this, bs1_, bs2_, bs3_, bs4_, storage_);
 }
 
-RefTwoBodyDerivInt
+Ref<TwoBodyDerivInt>
 IntegralV3::electron_repulsion_deriv()
 {
   return new TwoBodyDerivIntV3(this, bs1_, bs2_, bs3_, bs4_, storage_);
 }
 
 void
-IntegralV3::set_basis(const RefGaussianBasisSet &b1,
-                      const RefGaussianBasisSet &b2,
-                      const RefGaussianBasisSet &b3,
-                      const RefGaussianBasisSet &b4)
+IntegralV3::set_basis(const Ref<GaussianBasisSet> &b1,
+                      const Ref<GaussianBasisSet> &b2,
+                      const Ref<GaussianBasisSet> &b3,
+                      const Ref<GaussianBasisSet> &b4)
 {
   free_transforms();
   Integral::set_basis(b1,b2,b3,b4);

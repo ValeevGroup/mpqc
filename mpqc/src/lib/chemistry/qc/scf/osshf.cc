@@ -48,18 +48,9 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////
 // OSSHF
 
-#define CLASSNAME OSSHF
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public OSSSCF
-#include <util/class/classi.h>
-void *
-OSSHF::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = OSSSCF::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc OSSHF_cd(
+  typeid(OSSHF),"OSSHF",1,"public OSSSCF",
+  0, create<OSSHF>, create<OSSHF>);
 
 OSSHF::OSSHF(StateIn& s) :
   SavableState(s),
@@ -67,7 +58,7 @@ OSSHF::OSSHF(StateIn& s) :
 {
 }
 
-OSSHF::OSSHF(const RefKeyVal& keyval) :
+OSSHF::OSSHF(const Ref<KeyVal>& keyval) :
   OSSSCF(keyval)
 {
 }
@@ -105,7 +96,7 @@ OSSHF::print(ostream&o) const
 void
 OSSHF::ao_fock(double accuracy)
 {
-  RefPetiteList pl = integral()->petite_list(basis());
+  Ref<PetiteList> pl = integral()->petite_list(basis());
   
   // calculate G.  First transform cl_dens_diff_ to the AO basis, then
   // scale the off-diagonal elements by 2.0
@@ -156,7 +147,7 @@ OSSHF::ao_fock(double accuracy)
     double **gmats = new double*[nthread];
     gmats[0] = gmat;
     
-    RefGaussianBasisSet bs = basis();
+    Ref<GaussianBasisSet> bs = basis();
     int ntri = i_offset(bs->nbasis());
 
     double gmat_accuracy = accuracy;
@@ -304,7 +295,7 @@ OSSHF::two_body_energy(double& ec, double& ex)
   ex = 0.0;
 
   if (local_ || local_dens_) {
-    RefPetiteList pl = integral()->petite_list(basis());
+    Ref<PetiteList> pl = integral()->petite_list(basis());
     
     // grab the data pointers from the G and P matrices
     double *dpmat;
@@ -319,13 +310,13 @@ OSSHF::two_body_energy(double& ec, double& ex)
     RefSymmSCMatrix sdensa = bdens.copy();
     sdensa.scale(-2.0);
     sdensa.accumulate(ddens);
-    BlockedSymmSCMatrix::castdown(sdensa.pointer())->block(osb_)->assign(0.0);
+    dynamic_cast<BlockedSymmSCMatrix*>(sdensa.pointer())->block(osb_)->assign(0.0);
 
     // 2C+a+b - 2(c+a) = b-a
     RefSymmSCMatrix sdensb = adens.copy();
     sdensb.scale(-2.0);
     sdensb.accumulate(ddens);
-    BlockedSymmSCMatrix::castdown(sdensb.pointer())->block(osa_)->assign(0.0);
+    dynamic_cast<BlockedSymmSCMatrix*>(sdensb.pointer())->block(osa_)->assign(0.0);
 
     adens=0;
     bdens=0;
@@ -347,7 +338,7 @@ OSSHF::two_body_energy(double& ec, double& ex)
     tim_exit("local data");
 
     // initialize the two electron integral classes
-    RefTwoBodyInt tbi = integral()->electron_repulsion();
+    Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
     tbi->set_integral_storage(0);
 
     signed char * pmax = init_pmax(dpmat);
@@ -377,8 +368,8 @@ OSSHF::two_body_energy(double& ec, double& ex)
 void
 OSSHF::two_body_deriv(double * tbgrad)
 {
-  RefSCElementMaxAbs m = new SCElementMaxAbs;
-  cl_dens_.element_op(m);
+  Ref<SCElementMaxAbs> m = new SCElementMaxAbs;
+  cl_dens_.element_op(m.pointer());
   double pmax = m->result();
   m=0;
 
@@ -394,8 +385,8 @@ OSSHF::two_body_deriv(double * tbgrad)
     RefSymmSCMatrix pbtmp = get_local_data(op_densb_, pmatb, SCF::Read);
   
     LocalOSSGradContribution l(pmat,pmata,pmatb);
-    RefTwoBodyDerivInt tbi = integral()->electron_repulsion_deriv();
-    RefPetiteList pl = integral()->petite_list();
+    Ref<TwoBodyDerivInt> tbi = integral()->electron_repulsion_deriv();
+    Ref<PetiteList> pl = integral()->petite_list();
     LocalTBGrad<LocalOSSGradContribution> tb(l, tbi, pl, basis(), scf_grp_,
                                              tbgrad, pmax, desired_gradient_accuracy());
     tb.run();

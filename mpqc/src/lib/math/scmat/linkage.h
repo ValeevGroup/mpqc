@@ -35,8 +35,8 @@
 
 #include <util/group/linkage.h>
 
-const ClassDesc &math_scmat_force_link_a_ = ReplSCMatrixKit::class_desc_;
-const ClassDesc &math_scmat_force_link_b_ = DistSCMatrixKit::class_desc_;
+static ForceLink<ReplSCMatrixKit> math_scmat_force_link_a_;
+static ForceLink<DistSCMatrixKit> math_scmat_force_link_b_;
 
 #endif /* __PIC__ */
 

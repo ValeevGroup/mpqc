@@ -36,31 +36,22 @@
 
 using namespace std;
 
-DescribedClass_REF_def(RenderedObject);
+static ClassDesc RenderedObject_cd(
+  typeid(RenderedObject),"RenderedObject",1,"public DescribedClass",
+  0, 0, 0);
 
-#define CLASSNAME RenderedObject
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-RenderedObject::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-RenderedObject::RenderedObject(const RefMaterial& material):
+RenderedObject::RenderedObject(const Ref<Material>& material):
   name_(0),
   material_(material)
 {
 }
 
-RenderedObject::RenderedObject(const RefKeyVal& keyval):
-  name_(keyval->pcharvalue("name")),
-  material_(keyval->describedclassvalue("material")),
-  appearance_(keyval->describedclassvalue("appearance")),
-  transform_(keyval->describedclassvalue("transform"))
+RenderedObject::RenderedObject(const Ref<KeyVal>& keyval)
 {
+  name_ = keyval->pcharvalue("name");
+  material_ << keyval->describedclassvalue("material");
+  appearance_ << keyval->describedclassvalue("appearance");
+  transform_ << keyval->describedclassvalue("transform");
 }
 
 RenderedObject::~RenderedObject()
@@ -94,27 +85,18 @@ RenderedObject::print(ostream& os) const
 }
   
 
-DescribedClass_REF_def(RenderedObjectSet);
-#define CLASSNAME RenderedObjectSet
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public RenderedObject
-#include <util/class/classi.h>
-void *
-RenderedObjectSet::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = RenderedObject::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc RenderedObjectSet_cd(
+  typeid(RenderedObjectSet),"RenderedObjectSet",1,"public RenderedObject",
+  0, create<RenderedObjectSet>, 0);
 
 RenderedObjectSet::RenderedObjectSet(int capacity)
 {
   capacity_ = capacity;
   n_ = 0;
-  array_ = new RefRenderedObject[capacity_];
+  array_ = new Ref<RenderedObject>[capacity_];
 }
 
-RenderedObjectSet::RenderedObjectSet(const RefKeyVal& keyval):
+RenderedObjectSet::RenderedObjectSet(const Ref<KeyVal>& keyval):
   RenderedObject(keyval)
 {
   capacity_ = keyval->count("objects");
@@ -123,9 +105,9 @@ RenderedObjectSet::RenderedObjectSet(const RefKeyVal& keyval):
       abort();
     }
   n_ = capacity_;
-  array_ = new RefRenderedObject[capacity_];
+  array_ = new Ref<RenderedObject>[capacity_];
   for (int i=0; i<n_; i++) {
-      array_[i] = keyval->describedclassvalue("objects",i);
+      array_[i] << keyval->describedclassvalue("objects",i);
       if (keyval->error() != KeyVal::OK) {
           ExEnv::err() << "RenderedObjectSet: error reading objects" << endl;
           abort();
@@ -139,11 +121,11 @@ RenderedObjectSet::~RenderedObjectSet()
 }
 
 void
-RenderedObjectSet::add(const RefRenderedObject& object)
+RenderedObjectSet::add(const Ref<RenderedObject>& object)
 {
   if (capacity_ == n_) {
       capacity_ += 10;
-      RefRenderedObject *tmp = new RefRenderedObject[capacity_];
+      Ref<RenderedObject> *tmp = new Ref<RenderedObject>[capacity_];
       for (int i=0; i<n_; i++) {
           tmp[i] = array_[i];
         }
@@ -155,7 +137,7 @@ RenderedObjectSet::add(const RefRenderedObject& object)
 }
 
 void
-RenderedObjectSet::render(const RefRender& render)
+RenderedObjectSet::render(const Ref<Render>& render)
 {
   render->set(this);
 }

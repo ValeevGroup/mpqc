@@ -34,7 +34,7 @@
 
 #include <util/ref/ref.h>
 
-class FJT: public VRefCount {
+class FJT: public RefCount {
   private:
     double **gtable;
 
@@ -54,7 +54,7 @@ class FJT: public VRefCount {
     // They will be deleted during the call to ~FJT.
     double *values(int J, double T);
 };
-REF_dec(FJT);
+
 
 #endif
 

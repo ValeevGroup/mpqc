@@ -60,7 +60,7 @@ class TriInterpCoefKey {
 #define TriInterpCoefKeyEQ(k1,k2) ((k1).cmp(k2)==0)
 #define TriInterpCoefKeyCMP(k1,k2) ((k1).cmp(k2))
 
-class TriInterpCoef: public VRefCount {
+class TriInterpCoef: public RefCount {
     double *coef_;
     double *rderiv_;
     double *sderiv_;
@@ -86,7 +86,7 @@ class TriInterpCoef: public VRefCount {
     }
 };
 
-REF_dec(TriInterpCoef);
+
 
 #endif
 

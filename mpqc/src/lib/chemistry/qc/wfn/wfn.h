@@ -43,9 +43,6 @@
 
 /** A Wavefunction is a MolecularEnergy that utilizies a GaussianBasisSet. */
 class Wavefunction: public MolecularEnergy {
-#   define CLASSNAME Wavefunction
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   public:
 
     /// An enum for the types of orthogonalization.
@@ -55,7 +52,7 @@ class Wavefunction: public MolecularEnergy {
     RefSCDimension aodim_;
     RefSCDimension sodim_;
     RefSCDimension osodim_;
-    RefSCMatrixKit basiskit_;
+    Ref<SCMatrixKit> basiskit_;
 
     ResultRefSCMatrix overlap_eigvec_;
     ResultRefDiagSCMatrix overlap_isqrt_eigval_;
@@ -71,8 +68,8 @@ class Wavefunction: public MolecularEnergy {
     double * bs_values;
     double * bsg_values;
 
-    RefGaussianBasisSet gbs_;
-    RefIntegral integral_;
+    Ref<GaussianBasisSet> gbs_;
+    Ref<Integral> integral_;
 
     // The tolerance for lambda(max)/lambda(min) for linearly
     // independent basis functions
@@ -123,7 +120,7 @@ class Wavefunction: public MolecularEnergy {
         for debugging.  The default is 0.
 
         </dl> */
-    Wavefunction(const RefKeyVal&);
+    Wavefunction(const Ref<KeyVal>&);
     virtual ~Wavefunction();
 
     void save_data_state(StateOut&);
@@ -181,11 +178,11 @@ class Wavefunction: public MolecularEnergy {
     /// Orthogonalized symmetry adapted orbital dimension.
     RefSCDimension oso_dimension();
     /// Matrix kit for AO, SO, orthogonalized SO, and MO dimensioned matrices.
-    RefSCMatrixKit basis_matrixkit();
+    Ref<SCMatrixKit> basis_matrixkit();
     /// Returns the basis set.
-    RefGaussianBasisSet basis() const;
+    Ref<GaussianBasisSet> basis() const;
     /// Returns the integral evaluator.
-    RefIntegral integral();
+    Ref<Integral> integral();
 
     // override symmetry_changed from MolecularEnergy
     void symmetry_changed();
@@ -207,7 +204,7 @@ class Wavefunction: public MolecularEnergy {
 
     void print(std::ostream& = ExEnv::out()) const;
 };
-SavableState_REF_dec(Wavefunction);
+
 
 #endif
 

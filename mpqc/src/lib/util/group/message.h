@@ -97,14 +97,10 @@ class GrpFunctionReduce: public GrpReduce<T> {
     void reduce(T*target, T*data, int nelement);
 };
 
-DescribedClass_REF_fwddec(MessageGrp);
-
 /** The MessageGrp abstract class provides
     a mechanism for moving data and objects between
     nodes in a parallel machine. */
 class MessageGrp: public DescribedClass {
-#define CLASSNAME MessageGrp
-#include <util/class/classda.h>
   private:
     // These are initialized by the initialize() member (see below).
     int me_;
@@ -122,12 +118,12 @@ class MessageGrp: public DescribedClass {
         to complete the initialization process. */
     void initialize(int me, int n);
 
-    RefMachineTopology topology_;
+    Ref<MachineTopology> topology_;
 
     int debug_;
   public:
     MessageGrp();
-    MessageGrp(const RefKeyVal&);
+    MessageGrp(const Ref<KeyVal>&);
     virtual ~MessageGrp();
     
     /// Returns the number of processors.
@@ -137,7 +133,7 @@ class MessageGrp: public DescribedClass {
 
     /** The default message group contains the primary message group to
         be used by an application. */
-    static void set_default_messagegrp(const RefMessageGrp&);
+    static void set_default_messagegrp(const Ref<MessageGrp>&);
     /// Returns the default message group.
     static MessageGrp* get_default_messagegrp();
 
@@ -309,14 +305,11 @@ class MessageGrp: public DescribedClass {
     const ClassDesc* index_to_classdesc(int);
     int nclass() const { return nclass_; }
 };
-DescribedClass_REF_dec(MessageGrp);
+
 
 /** ProcMessageGrp provides a concrete specialization
     of MessageGrp that supports only one node. */
 class ProcMessageGrp: public MessageGrp {
-#define CLASSNAME ProcMessageGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   private:
     // Information about the last message received or probed.
     int last_type_;
@@ -328,7 +321,7 @@ class ProcMessageGrp: public MessageGrp {
     void set_last_size(int a) { last_size_ = a; }
   public:
     ProcMessageGrp();
-    ProcMessageGrp(const RefKeyVal&);
+    ProcMessageGrp(const Ref<KeyVal>&);
     ~ProcMessageGrp();
     void raw_send(int target, void* data, int nbyte);
     void raw_sendt(int target, int type, void* data, int nbyte);
@@ -348,8 +341,6 @@ class ProcMessageGrp: public MessageGrp {
     and the Paragon NX can be conveniently implemented in terms
     of this. */
 class intMessageGrp: public MessageGrp {
-#define CLASSNAME intMessageGrp
-#include <util/class/classda.h>
   protected:
     int msgtype_nbit; // the total number of bits available
     int ctl_nbit; // control information bits
@@ -385,7 +376,7 @@ class intMessageGrp: public MessageGrp {
     virtual int basic_probe(int type) = 0;
 
     intMessageGrp();
-    intMessageGrp(const RefKeyVal&);
+    intMessageGrp(const Ref<KeyVal>&);
     void initialize(int me, int n, int nbits);
   public:
     ~intMessageGrp();

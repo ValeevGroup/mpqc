@@ -37,20 +37,20 @@ using namespace std;
 //#ifndef __PIC__
 #ifdef PUMAGON
 #   include <util/group/thpuma.h>
-    const ClassDesc &fl0 = PumaThreadGrp::class_desc_;
+    static ForceLink<PumaThreadGrp> fl0;
 #endif
 # ifdef HAVE_PTHREAD
 #   include <util/group/thpthd.h>
-    const ClassDesc &fl2 = PthreadThreadGrp::class_desc_;
+    static ForceLink<PthreadThreadGrp> fl2;
 # endif
 //#endif
 
 class TestThread: public Thread {
   private:
-    RefThreadLock lock;
+    Ref<ThreadLock> lock;
   public:
     static int count;
-    TestThread(const RefThreadLock &l): lock(l) {}
+    TestThread(const Ref<ThreadLock> &l): lock(l) {}
     void run();
     int n() const { return 1000000; }
 };
@@ -72,9 +72,9 @@ main(int argc, char**argv)
 {
   int i;
 
-  RefThreadGrp grp = ThreadGrp::initial_threadgrp(argc, argv);
+  Ref<ThreadGrp> grp = ThreadGrp::initial_threadgrp(argc, argv);
 
-  RefDebugger debugger;
+  Ref<Debugger> debugger;
 
   if (grp.null()) {
       const char* input = SRCDIR "/thrtest.in";
@@ -83,7 +83,7 @@ main(int argc, char**argv)
       if (argc >= 2) input = argv[1];
       if (argc >= 3) keyword = argv[2];
 
-      RefKeyVal keyval = new ParsedKeyVal(input);
+      Ref<KeyVal> keyval = new ParsedKeyVal(input);
 
       grp = keyval->describedclassvalue(keyword);
 
@@ -103,7 +103,7 @@ main(int argc, char**argv)
   Debugger::set_default_debugger(debugger);
 
   TestThread **thr = new TestThread*[grp->nthread()];
-  RefThreadLock lock = grp->new_lock();
+  Ref<ThreadLock> lock = grp->new_lock();
   for (i=0; i<grp->nthread(); i++) {
       thr[i] = new TestThread(lock);
       grp->add_thread(i,thr[i]);

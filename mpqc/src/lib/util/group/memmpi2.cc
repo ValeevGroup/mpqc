@@ -42,26 +42,18 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////
 // The MPI2MemoryGrp class
 
-#define CLASSNAME MPI2MemoryGrp
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public MsgMemoryGrp
-#include <util/class/classi.h>
-void *
-MPI2MemoryGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MsgMemoryGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MPI2MemoryGrp_cd(
+  typeid(MPI2MemoryGrp),"MPI2MemoryGrp",1,"public MsgMemoryGrp",
+  0, create<MPI2MemoryGrp>, 0);
 
-MPI2MemoryGrp::MPI2MemoryGrp(const RefMessageGrp& msg):
+MPI2MemoryGrp::MPI2MemoryGrp(const Ref<MessageGrp>& msg):
   MsgMemoryGrp(msg)
 {
   rma_win_ = MPI_WIN_NULL;
   data_ = 0;
 }
 
-MPI2MemoryGrp::MPI2MemoryGrp(const RefKeyVal& keyval):
+MPI2MemoryGrp::MPI2MemoryGrp(const Ref<KeyVal>& keyval):
   MsgMemoryGrp(keyval)
 {
   rma_win_ = MPI_WIN_NULL;

@@ -37,17 +37,9 @@
 
 using namespace std;
 
-#define CLASSNAME OOGLRender
-#define PARENTS public FileRender
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-OOGLRender::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = FileRender::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc OOGLRender_cd(
+  typeid(OOGLRender),"OOGLRender",1,"public FileRender",
+  0, create<OOGLRender>, 0);
 
 OOGLRender::OOGLRender(const char * filename):
   FileRender(filename)
@@ -61,7 +53,7 @@ OOGLRender::OOGLRender(ostream &o):
   oogl_spheres_ = 0;
 }
 
-OOGLRender::OOGLRender(const RefKeyVal& keyval):
+OOGLRender::OOGLRender(const Ref<KeyVal>& keyval):
   FileRender(keyval)
 {
   oogl_spheres_ = keyval->booleanvalue("oogl_spheres");
@@ -78,7 +70,7 @@ OOGLRender::file_extension()
 }
 
 void
-OOGLRender::animate(const RefAnimatedObject& animated_object)
+OOGLRender::animate(const Ref<AnimatedObject>& animated_object)
 {
   // save the old filename_ and basename_
   char *old_filename = filename_;
@@ -116,7 +108,7 @@ OOGLRender::animate(const RefAnimatedObject& animated_object)
   ofstream anim(file);
   delete[] file;
   for (int i=0; i<animated_object->nobject(); i++) {
-      RefRenderedObject object = animated_object->object(i);
+      Ref<RenderedObject> object = animated_object->object(i);
       if (object->name() == 0) {
           char ic[64];
           sprintf(ic,"%03d",i);
@@ -135,7 +127,7 @@ OOGLRender::animate(const RefAnimatedObject& animated_object)
 }
 
 void
-OOGLRender::render(const RefRenderedObject& object)
+OOGLRender::render(const Ref<RenderedObject>& object)
 {
   open_sbuf(object->name());
   ostream o(sbuf_);
@@ -191,7 +183,7 @@ OOGLRender::render(const RefRenderedObject& object)
 }
 
 void
-OOGLRender::set(const RefRenderedObjectSet& set)
+OOGLRender::set(const Ref<RenderedObjectSet>& set)
 {
   ostream o(sbuf_);
   o << "LIST" << endl;
@@ -201,7 +193,7 @@ OOGLRender::set(const RefRenderedObjectSet& set)
 }
 
 void
-OOGLRender::sphere(const RefRenderedSphere& sphere)
+OOGLRender::sphere(const Ref<RenderedSphere>& sphere)
 {
   if (oogl_spheres_) {
       ostream o(sbuf_);
@@ -213,7 +205,7 @@ OOGLRender::sphere(const RefRenderedSphere& sphere)
 }
 
 void
-OOGLRender::polygons(const RefRenderedPolygons& poly)
+OOGLRender::polygons(const Ref<RenderedPolygons>& poly)
 {
   ostream o(sbuf_);
   if (poly->have_vertex_rgb()) {
@@ -249,7 +241,7 @@ OOGLRender::polygons(const RefRenderedPolygons& poly)
 }
 
 void
-OOGLRender::polylines(const RefRenderedPolylines& poly)
+OOGLRender::polylines(const Ref<RenderedPolylines>& poly)
 {
   int i;
   ostream o(sbuf_);

@@ -39,9 +39,6 @@
 class for machines that implement the full NX library, which is typically
 the case on Intel Paragon machines.  */
 class ParagonMemoryGrp: public ActiveMsgMemoryGrp {
-#define CLASSNAME ParagonMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   private:
     friend void paragon_memory_handler(long,long,long,long);
     
@@ -57,8 +54,8 @@ class ParagonMemoryGrp: public ActiveMsgMemoryGrp {
 
     int active_;
   public:
-    ParagonMemoryGrp(const RefMessageGrp& msg);
-    ParagonMemoryGrp(const RefKeyVal&);
+    ParagonMemoryGrp(const Ref<MessageGrp>& msg);
+    ParagonMemoryGrp(const Ref<KeyVal>&);
     ~ParagonMemoryGrp();
 
     void activate();

@@ -30,24 +30,16 @@
 #include <math/scmat/blocked.h>
 #include <math/optimize/scextrapmat.h>
 
-#define CLASSNAME SymmSCMatrixSCExtrapData
-#define PARENTS public SCExtrapData
-#define HAVE_STATEIN_CTOR
-#include <util/class/classi.h>
-void *
-SymmSCMatrixSCExtrapData::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCExtrapData::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SymmSCMatrixSCExtrapData_cd(
+  typeid(SymmSCMatrixSCExtrapData),"SymmSCMatrixSCExtrapData",1,"public SCExtrapData",
+  0, 0, create<SymmSCMatrixSCExtrapData>);
 
 SymmSCMatrixSCExtrapData::SymmSCMatrixSCExtrapData(StateIn& s) :
   SCExtrapData(s)
 {
-  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  Ref<SCMatrixKit> k = SCMatrixKit::default_matrixkit();
   RefSCDimension dim;
-  dim.restore_state(s);
+  dim << SavableState::restore_state(s);
 
   int blocked;
   s.get(blocked);
@@ -68,9 +60,9 @@ void
 SymmSCMatrixSCExtrapData::save_data_state(StateOut& s)
 {
   SCExtrapData::save_data_state(s);
-  m.dim().save_state(s);
+  SavableState::save_state(m.dim().pointer(),s);
 
-  int blocked = (BlockedSymmSCMatrix::castdown(m.pointer())) ? 1 : 0;
+  int blocked = (dynamic_cast<BlockedSymmSCMatrix*>(m.pointer())) ? 1 : 0;
   s.put(blocked);
   
   m.save(s);
@@ -90,10 +82,10 @@ SymmSCMatrixSCExtrapData::copy()
 
 void
 SymmSCMatrixSCExtrapData::accumulate_scaled(double scale,
-                                            const RefSCExtrapData& data)
+                                            const Ref<SCExtrapData>& data)
 {
   SymmSCMatrixSCExtrapData* a
-      = SymmSCMatrixSCExtrapData::require_castdown(
+      = require_dynamic_cast<SymmSCMatrixSCExtrapData*>(
           data.pointer(), "SymmSCMatrixSCExtrapData::accumulate_scaled");
 
   RefSymmSCMatrix am = a->m.copy();
@@ -103,24 +95,16 @@ SymmSCMatrixSCExtrapData::accumulate_scaled(double scale,
 
 ///////////////////////////////////////////////////////////////////////////
 
-#define CLASSNAME SymmSCMatrix2SCExtrapData
-#define PARENTS public SCExtrapData
-#define HAVE_STATEIN_CTOR
-#include <util/class/classi.h>
-void *
-SymmSCMatrix2SCExtrapData::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCExtrapData::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SymmSCMatrix2SCExtrapData_cd(
+  typeid(SymmSCMatrix2SCExtrapData),"SymmSCMatrix2SCExtrapData",1,"public SCExtrapData",
+  0, 0, create<SymmSCMatrix2SCExtrapData>);
 
 SymmSCMatrix2SCExtrapData::SymmSCMatrix2SCExtrapData(StateIn&s) :
   SCExtrapData(s)
 {
-  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  Ref<SCMatrixKit> k = SCMatrixKit::default_matrixkit();
   RefSCDimension dim;
-  dim.restore_state(s);
+  dim << SavableState::restore_state(s);
 
   int blocked;
   s.get(blocked);
@@ -146,9 +130,9 @@ void
 SymmSCMatrix2SCExtrapData::save_data_state(StateOut& s)
 {
   SCExtrapData::save_data_state(s);
-  m1.dim().save_state(s);
+  SavableState::save_state(m1.dim().pointer(),s);
 
-  int blocked = (BlockedSymmSCMatrix::castdown(m1.pointer())) ? 1 : 0;
+  int blocked = (dynamic_cast<BlockedSymmSCMatrix*>(m1.pointer())) ? 1 : 0;
   s.put(blocked);
   
   m1.save(s);
@@ -170,10 +154,10 @@ SymmSCMatrix2SCExtrapData::copy()
 
 void
 SymmSCMatrix2SCExtrapData::accumulate_scaled(double scale,
-                                             const RefSCExtrapData& data)
+                                             const Ref<SCExtrapData>& data)
 {
   SymmSCMatrix2SCExtrapData* a
-      = SymmSCMatrix2SCExtrapData::require_castdown(
+      = require_dynamic_cast<SymmSCMatrix2SCExtrapData*>(
           data.pointer(), "SymmSCMatrix2SCExtrapData::accumulate_scaled");
 
   RefSymmSCMatrix am = a->m1.copy();
@@ -188,24 +172,16 @@ SymmSCMatrix2SCExtrapData::accumulate_scaled(double scale,
 
 ///////////////////////////////////////////////////////////////////////////
 
-#define CLASSNAME SymmSCMatrix4SCExtrapData
-#define PARENTS public SCExtrapData
-#define HAVE_STATEIN_CTOR
-#include <util/class/classi.h>
-void *
-SymmSCMatrix4SCExtrapData::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCExtrapData::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SymmSCMatrix4SCExtrapData_cd(
+  typeid(SymmSCMatrix4SCExtrapData),"SymmSCMatrix4SCExtrapData",1,"public SCExtrapData",
+  0, 0, create<SymmSCMatrix4SCExtrapData>);
 
 SymmSCMatrix4SCExtrapData::SymmSCMatrix4SCExtrapData(StateIn&s) :
   SCExtrapData(s)
 {
-  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  Ref<SCMatrixKit> k = SCMatrixKit::default_matrixkit();
   RefSCDimension dim;
-  dim.restore_state(s);
+  dim << SavableState::restore_state(s);
 
   int blocked;
   s.get(blocked);
@@ -239,9 +215,9 @@ void
 SymmSCMatrix4SCExtrapData::save_data_state(StateOut& s)
 {
   SCExtrapData::save_data_state(s);
-  m1.dim().save_state(s);
+  SavableState::save_state(m1.dim().pointer(),s);
 
-  int blocked = (BlockedSymmSCMatrix::castdown(m1.pointer())) ? 1 : 0;
+  int blocked = (dynamic_cast<BlockedSymmSCMatrix*>(m1.pointer())) ? 1 : 0;
   s.put(blocked);
   
   m1.save(s);
@@ -268,10 +244,10 @@ SymmSCMatrix4SCExtrapData::copy()
 
 void
 SymmSCMatrix4SCExtrapData::accumulate_scaled(double scale,
-                                             const RefSCExtrapData& data)
+                                             const Ref<SCExtrapData>& data)
 {
   SymmSCMatrix4SCExtrapData* a
-      = SymmSCMatrix4SCExtrapData::require_castdown(
+      = require_dynamic_cast<SymmSCMatrix4SCExtrapData*>(
           data.pointer(), "SymmSCMatrix4SCExtrapData::accumulate_scaled");
 
   RefSymmSCMatrix am = a->m1.copy();
@@ -294,26 +270,18 @@ SymmSCMatrix4SCExtrapData::accumulate_scaled(double scale,
 
 ///////////////////////////////////////////////////////////////////////////
 
-#define CLASSNAME SymmSCMatrixNSCExtrapData
-#define PARENTS public SCExtrapData
-#define HAVE_STATEIN_CTOR
-#include <util/class/classi.h>
-void *
-SymmSCMatrixNSCExtrapData::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCExtrapData::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SymmSCMatrixNSCExtrapData_cd(
+  typeid(SymmSCMatrixNSCExtrapData),"SymmSCMatrixNSCExtrapData",1,"public SCExtrapData",
+  0, 0, create<SymmSCMatrixNSCExtrapData>);
 
 SymmSCMatrixNSCExtrapData::SymmSCMatrixNSCExtrapData(StateIn&s) :
   SCExtrapData(s)
 {
   s.get(n_);
   
-  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  Ref<SCMatrixKit> k = SCMatrixKit::default_matrixkit();
   RefSCDimension dim;
-  dim.restore_state(s);
+  dim << SavableState::restore_state(s);
 
   int blocked;
   s.get(blocked);
@@ -344,9 +312,9 @@ SymmSCMatrixNSCExtrapData::save_data_state(StateOut& s)
   SCExtrapData::save_data_state(s);
 
   s.put(n_);
-  m[0].dim().save_state(s);
+  SavableState::save_state(m[0].dim().pointer(),s);
 
-  int blocked = (BlockedSymmSCMatrix::castdown(m[0].pointer())) ? 1 : 0;
+  int blocked = (dynamic_cast<BlockedSymmSCMatrix*>(m[0].pointer())) ? 1 : 0;
   s.put(blocked);
   
   for (int i=0; i < n_; i++)
@@ -375,10 +343,10 @@ SymmSCMatrixNSCExtrapData::copy()
 
 void
 SymmSCMatrixNSCExtrapData::accumulate_scaled(double scale,
-                                             const RefSCExtrapData& data)
+                                             const Ref<SCExtrapData>& data)
 {
   SymmSCMatrixNSCExtrapData* a
-      = SymmSCMatrixNSCExtrapData::require_castdown(
+      = require_dynamic_cast<SymmSCMatrixNSCExtrapData*>(
           data.pointer(), "SymmSCMatrixNSCExtrapData::accumulate_scaled");
 
   for (int i=0; i < n_; i++) {
@@ -390,24 +358,16 @@ SymmSCMatrixNSCExtrapData::accumulate_scaled(double scale,
 
 ///////////////////////////////////////////////////////////////////////////
 
-#define CLASSNAME SymmSCMatrixSCExtrapError
-#define PARENTS public SCExtrapError
-#define HAVE_STATEIN_CTOR
-#include <util/class/classi.h>
-void *
-SymmSCMatrixSCExtrapError::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCExtrapError::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SymmSCMatrixSCExtrapError_cd(
+  typeid(SymmSCMatrixSCExtrapError),"SymmSCMatrixSCExtrapError",1,"public SCExtrapError",
+  0, 0, create<SymmSCMatrixSCExtrapError>);
 
 SymmSCMatrixSCExtrapError::SymmSCMatrixSCExtrapError(StateIn& s) :
   SCExtrapError(s)
 {
-  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  Ref<SCMatrixKit> k = SCMatrixKit::default_matrixkit();
   RefSCDimension dim;
-  dim.restore_state(s);
+  dim << SavableState::restore_state(s);
 
   int blocked;
   s.get(blocked);
@@ -429,9 +389,9 @@ void
 SymmSCMatrixSCExtrapError::save_data_state(StateOut& s)
 {
   SCExtrapError::save_data_state(s);
-  m.dim().save_state(s);
+  SavableState::save_state(m.dim().pointer(),s);
 
-  int blocked = (BlockedSymmSCMatrix::castdown(m.pointer())) ? 1 : 0;
+  int blocked = (dynamic_cast<BlockedSymmSCMatrix*>(m.pointer())) ? 1 : 0;
   s.put(blocked);
   
   m.save(s);
@@ -444,12 +404,12 @@ SymmSCMatrixSCExtrapError::error()
 }
 
 double
-SymmSCMatrixSCExtrapError::scalar_product(const RefSCExtrapError& arg)
+SymmSCMatrixSCExtrapError::scalar_product(const Ref<SCExtrapError>& arg)
 {
   SymmSCMatrixSCExtrapError* a
-      = SymmSCMatrixSCExtrapError::require_castdown(
+      = require_dynamic_cast<SymmSCMatrixSCExtrapError*>(
           arg.pointer(), "SymmSCMatrixSCExtrapError::scalar_product");
-  RefSCElementScalarProduct sp(new SCElementScalarProduct);
+  Ref<SCElementScalarProduct> sp(new SCElementScalarProduct);
   m->element_op(sp.pointer(), a->m.pointer());
   return sp->result();
 }

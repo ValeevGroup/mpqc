@@ -37,58 +37,37 @@
 
 using namespace std;
 
-#define A_parents virtual public DescribedClass
-class A: A_parents {
-#define CLASSNAME A
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
+class A: virtual public DescribedClass {
   private:
     int i;
   public:
     A();
-    A(const RefKeyVal&keyval);
+    A(const Ref<KeyVal>&keyval);
     inline int& a() { return i; };
     virtual void print (ostream&s = cout)
     {
       s << "A::a = " << a() << '\n';
     }
 };
-DescribedClass_REF_dec(A);
-DescribedClass_REF_def(A);
+
 A::A():
   i(1)
 {
 }
-A::A(const RefKeyVal& keyval):
+A::A(const Ref<KeyVal>& keyval):
   i(keyval->intvalue("a"))
 {
 }
 
-#define CLASSNAME A
-#define PARENTS A_parents
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-A::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =   DescribedClass::_castdown(cd) ;
-  return do_castdowns(casts,cd);
-}
-
-#define B_parents public A
-class B: B_parents {
-#define CLASSNAME B 
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
+static ClassDesc A_cd(typeid(A),"A",1,"virtual public DescribedClass",
+                      create<A>,create<A>,0);
+ 
+class B: public A {
   private:
     int b_;
   public:
     B();
-    B(const RefKeyVal&keyval);
+    B(const Ref<KeyVal>&keyval);
     inline int& b() { return b_; };
     virtual void print (ostream&s = cout)
     {
@@ -96,94 +75,61 @@ class B: B_parents {
       s << "B::b = " << b() << '\n';
     }
 };
-DescribedClass_REF_dec(B);
-DescribedClass_REF_def(B);
+
 B::B():
   b_(2)
 {
 }
-B::B(const RefKeyVal&keyval):
+B::B(const Ref<KeyVal>&keyval):
   A(new PrefixKeyVal(keyval,"A")),
   b_(keyval->intvalue("b"))
 {
 }
 
-#define CLASSNAME B
-#define PARENTS B_parents
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-B::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  A::_castdown(cd) ;
-  return do_castdowns(casts,cd);
-}
+class ClassDesc B_cd(typeid(B),"B",1,"public A",create<B>,create<B>);
 
-#define C_parents virtual public DescribedClass
-class C: C_parents {
-#define CLASSNAME C 
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
+class C: virtual public DescribedClass {
   private:
     int i;
   public:
     C();
-    C(const RefKeyVal&keyval);
+    C(const Ref<KeyVal>&keyval);
     inline int& c() { return i; };
     virtual void print (ostream&s = cout)
     {
       s << "C::c = " << c() << '\n';
     }
 };
-DescribedClass_REF_dec(C);
-DescribedClass_REF_def(C);
+
 C::C():
   i(3)
 {
 }
-C::C(const RefKeyVal&keyval):
+C::C(const Ref<KeyVal>&keyval):
   i(keyval->intvalue("c"))
 {
 }
 
-#define CLASSNAME C
-#define PARENTS C_parents
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-C::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =   DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc C_cd(typeid(C),"C",1,"virtual public DescribedClass",
+                      create<C>, create<C>);
 
-#define D_parents public B, public C
-class D: D_parents {
-#define CLASSNAME D
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
+class D: public B, public C {
   private:
     int d_;
-    RefA d_a_;
-    RefB d_b_;
+    Ref<A> d_a_;
+    Ref<B> d_b_;
   public:
     D();
-    D(const RefKeyVal&keyval);
+    D(const Ref<KeyVal>&keyval);
     inline int& d() { return d_; }
-    inline RefA da() { return d_a_; }
-    inline RefB db() { return d_b_; }
+    inline Ref<A> da() { return d_a_; }
+    inline Ref<B> db() { return d_b_; }
     virtual void print (ostream&s = cout)
     {
       B::print(s);
       C::print(s);
       s << "D::a:\n";  da()->print(s);
-      if ( (A*)d_a_.pointer() == A::castdown(db().pointer()) ) {
+      if ( (A*)d_a_.pointer() == dynamic_cast<A*>(db().pointer()) ) {
           cout << "a == b\n";
         }
       else {
@@ -192,34 +138,22 @@ class D: D_parents {
       s << "D::d = " << d() << '\n';
     }
 };
-DescribedClass_REF_dec(D);
-DescribedClass_REF_def(D);
+
 D::D():
   d_(4)
 {
 }
-D::D(const RefKeyVal&keyval):
+D::D(const Ref<KeyVal>&keyval):
   B(new PrefixKeyVal(keyval,"B")),
   C(new PrefixKeyVal(keyval,"C")),
   d_(keyval->intvalue("d")),
-  d_a_(A::castdown(keyval->describedclassvalue("a"))),
-  d_b_(B::castdown(keyval->describedclassvalue("b")))
+  d_a_(dynamic_cast<A*>(keyval->describedclassvalue("a").pointer())),
+  d_b_(dynamic_cast<B*>(keyval->describedclassvalue("b").pointer()))
 {
 }
 
-#define CLASSNAME D
-#define PARENTS D_parents
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-D::_castdown(const ClassDesc*cd)
-{
-  void* casts[2];
-  casts[0] =  B::_castdown(cd);
-  casts[1] =  C::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc D_cd(typeid(D),"D",1,"public B, public C",
+                      create<D>,create<D>);
 
 main()
 {
@@ -259,15 +193,15 @@ main()
   cout << "D name:" << d.class_name() << '\n';
 
   cout << "&d = " << (void*) &d << '\n';
-  cout << "D::castdown(&d) = " << (void*) D::castdown(&d) << '\n';
-  cout << "B::castdown(&d) = " << (void*) B::castdown(&d) << '\n';
-  cout << "A::castdown(&d) = " << (void*) A::castdown(&d) << '\n';
-  cout << "C::castdown(&d) = " << (void*) C::castdown(&d) << '\n';
-  cout << "DescribedClass::castdown(&d) = "
-       << (void*) DescribedClass::castdown(&d) << '\n';
+  cout << "dynamic_cast<D*>(&d) = " << (void*) dynamic_cast<D*>(&d) << '\n';
+  cout << "dynamic_cast<B*>(&d) = " << (void*) dynamic_cast<B*>(&d) << '\n';
+  cout << "dynamic_cast<A*>(&d) = " << (void*) dynamic_cast<A*>(&d) << '\n';
+  cout << "dynamic_cast<C*>(&d) = " << (void*) dynamic_cast<C*>(&d) << '\n';
+  cout << "dynamic_cast<DescribedClass*>(&d) = "
+       << (void*) dynamic_cast<DescribedClass*>(&d) << '\n';
 
 
-  RefAssignedKeyVal akv = new AssignedKeyVal;
+  Ref<AssignedKeyVal> akv = new AssignedKeyVal;
 
   akv->assign(":x",1);
   akv->assign(":y",3.0);
@@ -283,7 +217,7 @@ main()
   show( akv->intvalue("x") );  show (akv->errormsg() ); cout << '\n';
   show( akv->intvalue(":z") );  show (akv->errormsg() ); cout << '\n';
 
-  RefKeyVal pkv = new ParsedKeyVal(SRCDIR "/keyvaltest.in");
+  Ref<KeyVal> pkv = new ParsedKeyVal(SRCDIR "/keyvaltest.in");
   pkv->verbose(1);
 
   cout << "Initial unseen keywords:" << endl;
@@ -302,10 +236,10 @@ main()
 
   show ( pkv->exists("test:object_d") ); show(pkv->errormsg()); cout << '\n';
 
-  RefDescribedClass rdc = pkv->describedclassvalue("test:object");
+  Ref<DescribedClass> rdc = pkv->describedclassvalue("test:object");
   show (pkv->errormsg() ); cout << '\n';
   show( rdc.pointer() ); cout << '\n';
-  RefA ra(rdc);
+  Ref<A> ra; ra << rdc;
   show( ra.pointer() ); cout << '\n';
 
   show( pkv->intvalue(":test:object:d") ); cout << '\n';
@@ -324,9 +258,9 @@ main()
   if (ra.nonnull()) { ra->print(); cout << '\n'; }
 
   cout << "Testing string keyvals" << endl;
-  RefParsedKeyVal strkv = new ParsedKeyVal();
+  Ref<ParsedKeyVal> strkv = new ParsedKeyVal();
   strkv->parse_string("<B>:(b=123456)");
-  RefB strb(strkv->describedclassvalue());
+  Ref<B> strb; strb << strkv->describedclassvalue();
   if (strb.nonnull()) { strb->print(); cout << endl; }
 
   strkv = new ParsedKeyVal();

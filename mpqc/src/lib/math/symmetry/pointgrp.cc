@@ -63,23 +63,9 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////
 
-SavableState_REF_def(PointGroup);
-
-#define CLASSNAME PointGroup
-#define VERSION 2
-#define PARENTS public SavableState
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-PointGroup::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc PointGroup_cd(
+  typeid(PointGroup),"PointGroup",2,"public SavableState",
+  create<PointGroup>, create<PointGroup>, create<PointGroup>);
 
 PointGroup::PointGroup()
   : symb(0)
@@ -114,7 +100,7 @@ PointGroup::PointGroup(const char *s, SymmetryOperation& so,
   origin_ = origin;
 }
 
-PointGroup::PointGroup(const RefKeyVal& kv)
+PointGroup::PointGroup(const Ref<KeyVal>& kv)
   : symb(0)
 {
   if (kv->exists("symmetry")) {
@@ -146,7 +132,7 @@ PointGroup::PointGroup(StateIn& si) :
   symb(0)
 {
   int i;
-  if (si.version(static_class_desc()) < 2) {
+  if (si.version(::class_desc<PointGroup>()) < 2) {
     ExEnv::err() << "PointGroup: checkpoint file is too old: cannot read"
                  << endl;
     abort();
@@ -167,7 +153,7 @@ PointGroup::PointGroup(const PointGroup& pg)
   *this = pg;
 }
 
-PointGroup::PointGroup(const RefPointGroup& pg)
+PointGroup::PointGroup(const Ref<PointGroup>& pg)
   : symb(0)
 {
   *this = *pg.pointer();
@@ -222,7 +208,7 @@ PointGroup::char_table() const
 }
 
 int
-PointGroup::equiv(const RefPointGroup &grp, double tol) const
+PointGroup::equiv(const Ref<PointGroup> &grp, double tol) const
 {
   if (strcmp(symb,grp->symb)) return 0;
 

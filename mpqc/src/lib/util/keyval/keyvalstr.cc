@@ -75,10 +75,10 @@ StringKeyVal::key_exists(const char* key)
   return 0;
 }
 
-RefKeyValValue
+Ref<KeyValValue>
 StringKeyVal::key_value(const char* key, const KeyValValue &def)
 {
-  RefKeyValValue result;
+  Ref<KeyValValue> result;
 
   if (!key) key = "TOP";
 
@@ -101,7 +101,7 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
             }
           else {
               // create a new instance of this datum
-              RefKeyVal pkv = new PrefixKeyVal(this, tkw);
+              Ref<KeyVal> pkv = new PrefixKeyVal(this, tkw);
               const ClassDesc* cd = ClassDesc::name_to_class_desc(classn);
               if (!cd) {
                   ClassDesc::load_class(classn);
@@ -109,7 +109,7 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
                 }
               // the original error status must be saved
               KeyValError original_error = error();
-              RefDescribedClass newdc(cd->create(pkv));
+              Ref<DescribedClass> newdc(cd->create(pkv));
               if (newdc.null()) {
                   ExEnv::err() << "StringKeyVal::value: create failed for:" << endl
                        << " keyword = \"" << tkw << "\" class = \"" << classn
@@ -118,7 +118,7 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
                        << " exist or memory was exhausted" << endl;
                 }
               DescribedClassProxy *proxy
-                  = DescribedClassProxy::castdown(newdc.pointer());
+                  = dynamic_cast<DescribedClassProxy*>(newdc.pointer());
               if (proxy) {
                   newdc = proxy->object();
                 }

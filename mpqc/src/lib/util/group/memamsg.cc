@@ -173,25 +173,18 @@ MemoryDataRequestQueue::pop(MemoryDataRequest&r)
 ///////////////////////////////////////////////////////////////////////
 // Members for ActiveMsgMemoryGrp
 
-#define CLASSNAME ActiveMsgMemoryGrp
-#define PARENTS public MsgMemoryGrp
-#include <util/class/classia.h>
-void *
-ActiveMsgMemoryGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  MsgMemoryGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ActiveMsgMemoryGrp_cd(
+  typeid(ActiveMsgMemoryGrp),"ActiveMsgMemoryGrp",1,"public MsgMemoryGrp",
+  0, 0, 0);
 
-ActiveMsgMemoryGrp::ActiveMsgMemoryGrp(const RefMessageGrp& msg):
+ActiveMsgMemoryGrp::ActiveMsgMemoryGrp(const Ref<MessageGrp>& msg):
   MsgMemoryGrp(msg)
 {
   use_locks_for_reduction_ = 0;
   data_ = 0;
 }
 
-ActiveMsgMemoryGrp::ActiveMsgMemoryGrp(const RefKeyVal& keyval):
+ActiveMsgMemoryGrp::ActiveMsgMemoryGrp(const Ref<KeyVal>& keyval):
   MsgMemoryGrp(keyval)
 {
   use_locks_for_reduction_ = 0;

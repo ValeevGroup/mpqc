@@ -39,13 +39,13 @@
 
 #include <math/scmat/linkage.h>
 
-const ClassDesc &optimize_force_link_a_ = QNewtonOpt::class_desc_;
-const ClassDesc &optimize_force_link_b_ = GDIISOpt::class_desc_;
-const ClassDesc &optimize_force_link_c_ = EFCOpt::class_desc_;
-const ClassDesc &optimize_force_link_d_ = BFGSUpdate::class_desc_;
-const ClassDesc &optimize_force_link_e_ = PowellUpdate::class_desc_;
-const ClassDesc &optimize_force_link_f_ = SteepestDescentOpt::class_desc_;
-const ClassDesc &optimize_force_link_g_ = NewtonOpt::class_desc_;
+static ForceLink<QNewtonOpt> optimize_force_link_a_;
+static ForceLink<GDIISOpt> optimize_force_link_b_;
+static ForceLink<EFCOpt> optimize_force_link_c_;
+static ForceLink<BFGSUpdate> optimize_force_link_d_;
+static ForceLink<PowellUpdate> optimize_force_link_e_;
+static ForceLink<SteepestDescentOpt> optimize_force_link_f_;
+static ForceLink<NewtonOpt> optimize_force_link_g_;
 
 #endif /* __PIC__ */
 

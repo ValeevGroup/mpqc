@@ -53,40 +53,31 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////
 // HSOSKS
 
-#define CLASSNAME HSOSKS
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public HSOSSCF
-#include <util/class/classi.h>
-void *
-HSOSKS::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = HSOSSCF::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc HSOSKS_cd(
+  typeid(HSOSKS),"HSOSKS",1,"public HSOSSCF",
+  0, create<HSOSKS>, create<HSOSKS>);
 
 HSOSKS::HSOSKS(StateIn& s) :
   SavableState(s),
   HSOSSCF(s)
 {
   exc_=0;
-  integrator_.restore_state(s);
-  functional_.restore_state(s);
+  integrator_ << SavableState::restore_state(s);
+  functional_ << SavableState::restore_state(s);
   vxc_a_ = basis_matrixkit()->symmmatrix(so_dimension());
   vxc_a_.restore(s);
   vxc_b_ = basis_matrixkit()->symmmatrix(so_dimension());
   vxc_b_.restore(s);
 }
 
-HSOSKS::HSOSKS(const RefKeyVal& keyval) :
+HSOSKS::HSOSKS(const Ref<KeyVal>& keyval) :
   HSOSSCF(keyval)
 {
   exc_=0;
-  integrator_ = keyval->describedclassvalue("integrator");
+  integrator_ << keyval->describedclassvalue("integrator");
   if (integrator_.null()) integrator_ = new RadialAngularIntegrator();
 
-  functional_ = keyval->describedclassvalue("functional");
+  functional_ << keyval->describedclassvalue("functional");
   if (functional_.null()) {
     ExEnv::out() << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
     abort();
@@ -101,8 +92,8 @@ void
 HSOSKS::save_data_state(StateOut& s)
 {
   HSOSSCF::save_data_state(s);
-  integrator_.save_state(s);
-  functional_.save_state(s);
+  SavableState::save_state(integrator_.pointer(),s);
+  SavableState::save_state(functional_.pointer(),s);
   vxc_a_.save(s);
   vxc_b_.save(s);
 }
@@ -170,7 +161,7 @@ HSOSKS::effective_fock()
                                  SCMatrix::TransposeTransform);
   }
 
-  RefSCElementOp2 op = new GSGeneralEffH(this);
+  Ref<SCElementOp2> op = new GSGeneralEffH(this);
   mofock.element_op(op, mofocko);
 
   return mofock;
@@ -195,7 +186,7 @@ HSOSKS::lagrangian()
 
   mofock.scale(2.0);
   
-  RefSCElementOp2 op = new MOLagrangian(this);
+  Ref<SCElementOp2> op = new MOLagrangian(this);
   mofock.element_op(op, mofocko);
   mofocko=0;
 
@@ -205,7 +196,7 @@ HSOSKS::lagrangian()
   so_lag.accumulate_transform(so_to_oso_tr * oso_scf_vector_, mofock);
   
   // and then from SO to AO
-  RefPetiteList pl = integral()->petite_list();
+  Ref<PetiteList> pl = integral()->petite_list();
   RefSymmSCMatrix ao_lag = pl->to_AO_basis(so_lag);
 
   ao_lag.scale(-1.0);
@@ -213,10 +204,10 @@ HSOSKS::lagrangian()
   return ao_lag;
 }
 
-RefSCExtrapData
+Ref<SCExtrapData>
 HSOSKS::extrap_data()
 {
-  RefSCExtrapData data =
+  Ref<SCExtrapData> data =
     new SymmSCMatrix4SCExtrapData(cl_fock_.result_noupdate(),
                                   op_fock_.result_noupdate(),
                                   vxc_a_, vxc_b_);
@@ -228,7 +219,7 @@ HSOSKS::extrap_data()
 void
 HSOSKS::ao_fock(double accuracy)
 {
-  RefPetiteList pl = integral()->petite_list(basis());
+  Ref<PetiteList> pl = integral()->petite_list(basis());
   
   // calculate G.  First transform cl_dens_diff_ to the AO basis, then
   // scale the off-diagonal elements by 2.0
@@ -271,7 +262,7 @@ HSOSKS::ao_fock(double accuracy)
     double **gmatos = new double*[nthread];
     gmatos[0] = gmato;
     
-    RefGaussianBasisSet bs = basis();
+    Ref<GaussianBasisSet> bs = basis();
     int ntri = i_offset(bs->nbasis());
 
     double gmat_accuracy = accuracy;
@@ -428,13 +419,13 @@ HSOSKS::two_body_energy(double &ec, double &ex)
     tim_exit("local data");
 
     // initialize the two electron integral classes
-    RefTwoBodyInt tbi = integral()->electron_repulsion();
+    Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
     tbi->set_integral_storage(0);
 
     signed char * pmax = init_pmax(dpmat);
   
     LocalHSOSKSEnergyContribution lclc(dpmat, spmat, functional_->a0());
-    RefPetiteList pl = integral()->petite_list();
+    Ref<PetiteList> pl = integral()->petite_list();
     LocalGBuild<LocalHSOSKSEnergyContribution>
       gb(lclc, tbi, pl, basis(), scf_grp_, pmax,
          desired_value_accuracy()/100.0);

@@ -39,20 +39,17 @@
     appropriate for the intel teraflops machine.
 */
 class PumaThreadGrp: public ThreadGrp {
-#define CLASSNAME PumaThreadGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   private:
     volatile unsigned int flag_;
     
   public:
     PumaThreadGrp();
-    PumaThreadGrp(const RefKeyVal&);
+    PumaThreadGrp(const Ref<KeyVal>&);
     ~PumaThreadGrp();
 
     int start_threads();
     int wait_threads();
-    RefThreadLock new_lock();
+    Ref<ThreadLock> new_lock();
 };
 #endif
 

@@ -154,22 +154,9 @@ AtomInfo::names_[MaxZ] =
    {"Unnamed",      "Un"} // 107
   };
 
-SavableState_REF_def(AtomInfo);
-
-#define CLASSNAME AtomInfo
-#define VERSION 2
-#define PARENTS public SavableState
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-AtomInfo::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc AtomInfo_cd(
+  typeid(AtomInfo),"AtomInfo",2,"public SavableState",
+  0, create<AtomInfo>, create<AtomInfo>);
 
 AtomInfo::AtomInfo()
 {
@@ -177,7 +164,7 @@ AtomInfo::AtomInfo()
   load_library_values();
 }
 
-AtomInfo::AtomInfo(const RefKeyVal& keyval)
+AtomInfo::AtomInfo(const Ref<KeyVal>& keyval)
 {
   overridden_values_ = 0;
   load_library_values();
@@ -202,13 +189,13 @@ AtomInfo::AtomInfo(StateIn& s):
       char *overrides;
       s.getstring(overrides);
       if (overrides) {
-          RefParsedKeyVal keyval = new ParsedKeyVal;
+          Ref<ParsedKeyVal> keyval = new ParsedKeyVal;
           keyval->parse_string(overrides);
           override_library_values(keyval.pointer());
           delete[] overrides;
         }
     }
-  if (s.version(static_class_desc()) < 2) {
+  if (s.version(::class_desc<AtomInfo>()) < 2) {
       atomic_radius_scale_ = 1.0;
       vdw_radius_scale_ = 1.0;
       bragg_radius_scale_ = 1.0;
@@ -251,10 +238,10 @@ AtomInfo::save_data_state(StateOut& s)
 void
 AtomInfo::load_library_values()
 {
-  RefMessageGrp grp = MessageGrp::get_default_messagegrp();
+  Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
   if (grp->me() == 0) {
       const char* libdir;
-      RefKeyVal keyval;
+      Ref<KeyVal> keyval;
       if ((libdir = getenv("SCLIBDIR")) != 0) {
           const char* atominfo = "/atominfo.kv";
           const char *eq = strchr(libdir,'=');
@@ -274,7 +261,7 @@ AtomInfo::load_library_values()
           ExEnv::out() << indent << "Reading file " << ainfo << "." << endl;
           keyval = new ParsedKeyVal(ainfo);
         }
-      RefKeyVal pkeyval = new PrefixKeyVal(keyval, "atominfo");
+      Ref<KeyVal> pkeyval = new PrefixKeyVal(keyval, "atominfo");
       load_values(pkeyval,0);
     }
   grp->bcast(mass_,MaxZ);
@@ -290,16 +277,16 @@ AtomInfo::load_library_values()
 }
 
 void
-AtomInfo::override_library_values(const RefKeyVal &keyval)
+AtomInfo::override_library_values(const Ref<KeyVal> &keyval)
 {
   load_values(keyval, 1);
 }
 
 void
-AtomInfo::load_values(const RefKeyVal& keyval, int override)
+AtomInfo::load_values(const Ref<KeyVal>& keyval, int override)
 {
-  RefUnits amu = new Units("amu");
-  RefUnits bohr = new Units("bohr");
+  Ref<Units> amu = new Units("amu");
+  Ref<Units> bohr = new Units("bohr");
 
   load_values(mass_, 0, "mass", keyval, override, amu);
   load_values(atomic_radius_, &atomic_radius_scale_, "atomic_radius",
@@ -315,11 +302,11 @@ AtomInfo::load_values(const RefKeyVal& keyval, int override)
 
 void
 AtomInfo::load_values(double *array, double *scale, const char *keyword,
-                      const RefKeyVal &keyval, int override,
-                      const RefUnits &units)
+                      const Ref<KeyVal> &keyval, int override,
+                      const Ref<Units> &units)
 {
-  RefKeyVal pkeyval = new PrefixKeyVal(keyval,keyword);
-  RefUnits fileunits = new Units(pkeyval->pcharvalue("unit"), Units::Steal);
+  Ref<KeyVal> pkeyval = new PrefixKeyVal(keyval,keyword);
+  Ref<Units> fileunits = new Units(pkeyval->pcharvalue("unit"), Units::Steal);
   double f = 1.0;
   if (fileunits.nonnull() && units.nonnull()) {
       f = fileunits->to(units);
@@ -388,10 +375,10 @@ AtomInfo::load_values(double *array, double *scale, const char *keyword,
 
 void
 AtomInfo::load_values(double array[][3], const char *keyword,
-                      const RefKeyVal &keyval, int override)
+                      const Ref<KeyVal> &keyval, int override)
 {
   int i,j;
-  RefKeyVal pkeyval = new PrefixKeyVal(keyval,keyword);
+  Ref<KeyVal> pkeyval = new PrefixKeyVal(keyval,keyword);
   double def[3];
   if (!override) {
       for (i=0; i<3; i++) {

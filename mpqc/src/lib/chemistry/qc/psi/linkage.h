@@ -32,11 +32,11 @@
 
 #include <chemistry/qc/psi/psi.h>
 
-const ClassDesc &psi_force_link_a_ = PsiHF::class_desc_;
-const ClassDesc &psi_force_link_b_ = PsiCI::class_desc_;
-const ClassDesc &psi_force_link_c_ = PsiCCSD::class_desc_;
-const ClassDesc &psi_force_link_d_ = PsiCCSD_T::class_desc_;
-const ClassDesc &psi_force_link_e_ = PsiCCSDT::class_desc_;
+static ForceLink<PsiHF> psi_force_link_a_;
+static ForceLink<PsiCI> psi_force_link_b_;
+static ForceLink<PsiCCSD> psi_force_link_c_;
+static ForceLink<PsiCCSD_T> psi_force_link_d_;
+static ForceLink<PsiCCSDT> psi_force_link_e_;
 
 #endif /* __PIC__ */
 

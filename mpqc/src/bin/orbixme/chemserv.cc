@@ -108,34 +108,23 @@ ChemistryLoader::load(const char *interface,
 // that is already in in the server by its marker
 
 class ORBProxy: public DescribedClassProxy {
-#   define CLASSNAME ORBProxy
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   private:
     char *marker_;
   public:
     static ChemistryLoader *loader;
 
-    ORBProxy(const RefKeyVal&);
+    ORBProxy(const Ref<KeyVal>&);
     ~ORBProxy();
-    RefDescribedClass object();
+    Ref<DescribedClass> object();
 };
 
 ChemistryLoader *ORBProxy::loader = 0;
 
-#define CLASSNAME ORBProxy
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public DescribedClassProxy
-#include <util/class/classi.h>
-void *
-ORBProxy::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClassProxy::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ORBProxy_cd(
+  typeid(ORBProxy),"ORBProxy",1,"public DescribedClassProxy",
+  0, create<ORBProxy>, 0);
 
-ORBProxy::ORBProxy(const RefKeyVal &keyval)
+ORBProxy::ORBProxy(const Ref<KeyVal> &keyval)
 {
   marker_ = keyval->pcharvalue("marker");
 }
@@ -145,7 +134,7 @@ ORBProxy::~ORBProxy()
   delete[] marker_;
 }
 
-RefDescribedClass
+Ref<DescribedClass>
 ORBProxy::object()
 {
   if (!loader) return 0;

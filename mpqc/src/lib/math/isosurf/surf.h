@@ -46,11 +46,6 @@
 #include <util/render/render.h>
 
 class TriangulatedSurface: public DescribedClass {
-#   define CLASSNAME TriangulatedSurface
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-//#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     int _verbose;
     int _debug;
@@ -58,24 +53,24 @@ class TriangulatedSurface: public DescribedClass {
     int _completed_surface;
 
     // sets of objects that make up the surface
-    AVLSet<RefVertex> _vertices;
-    AVLSet<RefEdge> _edges;
-    AVLSet<RefTriangle> _triangles;
+    AVLSet<Ref<Vertex> > _vertices;
+    AVLSet<Ref<Edge> > _edges;
+    AVLSet<Ref<Triangle> > _triangles;
 
     // map objects to an integer index
-    AVLMap<RefVertex,int> _vertex_to_index;
-    AVLMap<RefEdge,int> _edge_to_index;
-    AVLMap<RefTriangle,int> _triangle_to_index;
+    AVLMap<Ref<Vertex>,int> _vertex_to_index;
+    AVLMap<Ref<Edge>,int> _edge_to_index;
+    AVLMap<Ref<Triangle>,int> _triangle_to_index;
 
     // map integer indices to an object
 #ifdef HAVE_STL
-    std::vector<RefVertex> _index_to_vertex;
-    std::vector<RefEdge> _index_to_edge;
-    std::vector<RefTriangle> _index_to_triangle;
+    std::vector<Ref<Vertex> > _index_to_vertex;
+    std::vector<Ref<Edge> > _index_to_edge;
+    std::vector<Ref<Triangle> > _index_to_triangle;
 #else
-    Array<RefVertex> _index_to_vertex;
-    Array<RefEdge> _index_to_edge;
-    Array<RefTriangle> _index_to_triangle;
+    Array<Ref<Vertex> > _index_to_vertex;
+    Array<Ref<Edge> > _index_to_edge;
+    Array<Ref<Triangle> > _index_to_triangle;
 #endif
 
     // mappings between array element numbers
@@ -88,11 +83,11 @@ class TriangulatedSurface: public DescribedClass {
     Arraydouble _values;
 
     // what to use to integrate over the surface, by default
-    RefTriangleIntegrator _integrator;
+    Ref<TriangleIntegrator> _integrator;
     // other integrators, in terms of time & accuracy:
     // _fast_integrator <= _integrator <= _accurate_interator
-    RefTriangleIntegrator _fast_integrator;
-    RefTriangleIntegrator _accurate_integrator;
+    Ref<TriangleIntegrator> _fast_integrator;
+    Ref<TriangleIntegrator> _accurate_integrator;
 
     void clear_int_arrays();
 
@@ -101,25 +96,25 @@ class TriangulatedSurface: public DescribedClass {
 
     void recompute_index_maps();
 
-    void add_triangle(const RefTriangle&);
-    void add_vertex(const RefVertex&);
-    void add_edge(const RefEdge&);
+    void add_triangle(const Ref<Triangle>&);
+    void add_vertex(const Ref<Vertex>&);
+    void add_edge(const Ref<Edge>&);
 
     // these members must be used to allocate new triangles and edges
     // since specializations of TriangulatedSurface might need to
     // override these to produce triangles and edges with interpolation
     // data.
-    virtual Triangle* newTriangle(const RefEdge&,
-                                  const RefEdge&,
-                                  const RefEdge&,
+    virtual Triangle* newTriangle(const Ref<Edge>&,
+                                  const Ref<Edge>&,
+                                  const Ref<Edge>&,
                                   int orientation) const;
-    virtual Edge* newEdge(const RefVertex&,const RefVertex&) const;
+    virtual Edge* newEdge(const Ref<Vertex>&,const Ref<Vertex>&) const;
 
     // this map of edges to vertices is used to construct the surface
-    AVLMap<RefVertex,AVLSet<RefEdge> > _tmp_edges;
+    AVLMap<Ref<Vertex>,AVLSet<Ref<Edge> > > _tmp_edges;
   public:
     TriangulatedSurface();
-    TriangulatedSurface(const RefKeyVal&);
+    TriangulatedSurface(const Ref<KeyVal>&);
     virtual ~TriangulatedSurface();
 
     // control printing
@@ -127,49 +122,49 @@ class TriangulatedSurface: public DescribedClass {
     void verbose(int v) { _verbose = v; }
 
     // set up an integrator
-    void set_integrator(const RefTriangleIntegrator&);
-    void set_fast_integrator(const RefTriangleIntegrator&);
-    void set_accurate_integrator(const RefTriangleIntegrator&);
-    virtual RefTriangleIntegrator integrator(int itri);
-    virtual RefTriangleIntegrator fast_integrator(int itri);
-    virtual RefTriangleIntegrator accurate_integrator(int itri);
+    void set_integrator(const Ref<TriangleIntegrator>&);
+    void set_fast_integrator(const Ref<TriangleIntegrator>&);
+    void set_accurate_integrator(const Ref<TriangleIntegrator>&);
+    virtual Ref<TriangleIntegrator> integrator(int itri);
+    virtual Ref<TriangleIntegrator> fast_integrator(int itri);
+    virtual Ref<TriangleIntegrator> accurate_integrator(int itri);
 
     // construct the surface
-    void add_triangle(const RefVertex&,
-                      const RefVertex&,
-                      const RefVertex&);
-    RefEdge find_edge(const RefVertex&, const RefVertex&);
+    void add_triangle(const Ref<Vertex>&,
+                      const Ref<Vertex>&,
+                      const Ref<Vertex>&);
+    Ref<Edge> find_edge(const Ref<Vertex>&, const Ref<Vertex>&);
     virtual void complete_surface();
 
     // clean up the surface
     virtual void remove_short_edges(double cutoff_length = 1.0e-6,
-                                    const RefVolume &vol=0, double isoval=0.0);
+                                    const Ref<Volume> &vol=0, double isoval=0.0);
     virtual void remove_slender_triangles(
                                     int remove_slender, double height_cutoff,
                                     int remove_small, double area_cutoff,
-                                    const RefVolume &vol=0, double isoval=0.0);
+                                    const Ref<Volume> &vol=0, double isoval=0.0);
     virtual void fix_orientation();
     virtual void clear();
 
     // get information from the object sets
     int nvertex() const { return _vertices.length(); };
-    RefVertex vertex(int i) const { return _index_to_vertex[i]; };
-    int vertex_index(const RefVertex &o) {
-      AVLMap<RefVertex,int>::iterator i = _vertex_to_index.find(o);
+    Ref<Vertex> vertex(int i) const { return _index_to_vertex[i]; };
+    int vertex_index(const Ref<Vertex> &o) {
+      AVLMap<Ref<Vertex>,int>::iterator i = _vertex_to_index.find(o);
       if (i != _vertex_to_index.end()) return i.data();
       return -1;
     }
     int nedge() const { return _edges.length(); };
-    RefEdge edge(int i) const { return _index_to_edge[i]; };
-    int edge_index(const RefEdge &o) {
-      AVLMap<RefEdge,int>::iterator i = _edge_to_index.find(o);
+    Ref<Edge> edge(int i) const { return _index_to_edge[i]; };
+    int edge_index(const Ref<Edge> &o) {
+      AVLMap<Ref<Edge>,int>::iterator i = _edge_to_index.find(o);
       if (i != _edge_to_index.end()) return i.data();
       return -1;
     }
     int ntriangle() const { return _triangles.length(); };
-    RefTriangle triangle(int i) const { return _index_to_triangle[i]; }
-    int triangle_index(const RefTriangle &o) {
-      AVLMap<RefTriangle,int>::iterator i = _triangle_to_index.find(o);
+    Ref<Triangle> triangle(int i) const { return _index_to_triangle[i]; }
+    int triangle_index(const Ref<Triangle> &o) {
+      AVLMap<Ref<Triangle>,int>::iterator i = _triangle_to_index.find(o);
       if (i != _triangle_to_index.end()) return i.data();
       return -1;
     }
@@ -181,7 +176,7 @@ class TriangulatedSurface: public DescribedClass {
 
     // associate values with vertices
     //void compute_colors(Volume&);
-    void compute_values(RefVolume&);
+    void compute_values(Ref<Volume>&);
 
     // properties of the surface
     virtual double flat_area(); // use flat triangles
@@ -193,31 +188,31 @@ class TriangulatedSurface: public DescribedClass {
     virtual void print(std::ostream&o=ExEnv::out()) const;
     virtual void print_vertices_and_triangles(std::ostream&o=ExEnv::out()) const;
     virtual void print_geomview_format(std::ostream&o=ExEnv::out()) const;
-    virtual void render(const RefRender &render);
+    virtual void render(const Ref<Render> &render);
 
     // print information about the topology
     void topology_info(std::ostream&o=ExEnv::out());
     void topology_info(int nvertex, int nedge, int ntri, std::ostream&o=ExEnv::out());
 };
-DescribedClass_REF_dec(TriangulatedSurface);
+
 
 class TriangulatedSurfaceIntegrator {
   private:
-    RefTriangulatedSurface _ts;
+    Ref<TriangulatedSurface> _ts;
     int _itri;
     int _irs;
     double _r;
     double _s;
     double _weight;
     double _surface_element;
-    RefVertex _current;
+    Ref<Vertex> _current;
     SCVector3 _dA;
-    RefTriangleIntegrator (TriangulatedSurface::*_integrator)(int itri);
-    RefMessageGrp _grp;
+    Ref<TriangleIntegrator> (TriangulatedSurface::*_integrator)(int itri);
+    Ref<MessageGrp> _grp;
   public:
     TriangulatedSurfaceIntegrator();
     // the surface cannot be changed until this is destroyed
-    TriangulatedSurfaceIntegrator(const RefTriangulatedSurface&);
+    TriangulatedSurfaceIntegrator(const Ref<TriangulatedSurface>&);
     ~TriangulatedSurfaceIntegrator();
     // Objects initialized by these operators are not automatically
     // updated.  This must be done with the update member.
@@ -229,7 +224,7 @@ class TriangulatedSurfaceIntegrator {
     // Return the number of integration points.
     int n();
     // Assign the surface.  Don't do this while iterating.
-    void set_surface(const RefTriangulatedSurface&);
+    void set_surface(const Ref<TriangulatedSurface>&);
     // returns the number of the vertex in the current triangle
     int vertex_number(int i);
     inline double r() const { return _r; }
@@ -238,7 +233,7 @@ class TriangulatedSurfaceIntegrator {
     double surface_element() const { return _surface_element; }
     double weight() const { return _weight; }
     const SCVector3& dA() const { return _dA; }
-    RefVertex current();
+    Ref<Vertex> current();
     // Tests to see if this point is valid, if it is then
     // _r, _s, etc are computed and 1 is returned.
     int update();
@@ -258,20 +253,16 @@ class TriangulatedSurfaceIntegrator {
     int irs() const { return _irs; }
     // the number of points in the current triangle
     int n_in_tri() const { return (_ts.pointer()->*_integrator)(_itri)->n(); }
-    void distribute(const RefMessageGrp &);
+    void distribute(const Ref<MessageGrp> &);
     void use_fast_integrator();
     void use_accurate_integrator();
     void use_default_integrator();
 };
 
 class TriangulatedImplicitSurface: public TriangulatedSurface {
-#   define CLASSNAME TriangulatedImplicitSurface
-#   define HAVE_KEYVAL_CTOR
-//#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     // The surface is defined as an isosurface of the volume vol_.
-    RefVolume vol_;
+    Ref<Volume> vol_;
     double isovalue_;
 
     int fix_orientation_;
@@ -287,16 +278,16 @@ class TriangulatedImplicitSurface: public TriangulatedSurface {
 
     int inited_;
   public:
-    TriangulatedImplicitSurface(const RefKeyVal&);
+    TriangulatedImplicitSurface(const Ref<KeyVal>&);
     ~TriangulatedImplicitSurface();
 
-    RefVolume volume_object() const { return vol_; }
+    Ref<Volume> volume_object() const { return vol_; }
     double isovalue() const { return isovalue_; }
 
     void init();
     int inited() const { return inited_; }
 };
-DescribedClass_REF_dec(TriangulatedImplicitSurface);
+
 
 #endif
 

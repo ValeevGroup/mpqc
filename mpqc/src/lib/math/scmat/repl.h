@@ -42,30 +42,26 @@
 environment.  A copy of the entire matrix is stored on each node.
 */
 class ReplSCMatrixKit: public SCMatrixKit {
-#   define CLASSNAME ReplSCMatrixKit
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   public:
     ReplSCMatrixKit();
-    ReplSCMatrixKit(const RefKeyVal&);
+    ReplSCMatrixKit(const Ref<KeyVal>&);
     ~ReplSCMatrixKit();
     SCMatrix* matrix(const RefSCDimension&,const RefSCDimension&);
     SymmSCMatrix* symmmatrix(const RefSCDimension&);
     DiagSCMatrix* diagmatrix(const RefSCDimension&);
     SCVector* vector(const RefSCDimension&);
 };
-DescribedClass_REF_dec(ReplSCMatrixKit);
+
 
 class ReplSCMatrixListSubblockIter: public SCMatrixListSubblockIter {
   protected:
-    RefMessageGrp grp_;
+    Ref<MessageGrp> grp_;
     double *data_;
     int ndata_;
   public:
     ReplSCMatrixListSubblockIter(Access,
-                             const RefSCMatrixBlockList &list,
-                             const RefMessageGrp &grp,
+                             const Ref<SCMatrixBlockList> &list,
+                             const Ref<MessageGrp> &grp,
                              double *data, int ndata);
     ~ReplSCMatrixListSubblockIter();
 };
@@ -74,10 +70,8 @@ class ReplSCVector: public SCVector {
     friend class ReplSCMatrix;
     friend class ReplSymmSCMatrix;
     friend class ReplDiagSCMatrix;
-#   define CLASSNAME ReplSCVector
-#   include <util/class/classd.h>
   protected:
-    RefSCMatrixBlockList blocklist;
+    Ref<SCMatrixBlockList> blocklist;
     double* vector;
     void init_blocklist();
     void before_elemop();
@@ -97,10 +91,10 @@ class ReplSCVector: public SCVector {
     void accumulate(const SCVector*);
     void accumulate(const SCMatrix*);
     double scalar_product(SCVector*);
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     SCVector*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     SCVector*,SCVector*);
     void vprint(const char* title=0,
                 std::ostream& out=ExEnv::out(), int =10) const;
@@ -108,20 +102,18 @@ class ReplSCVector: public SCVector {
     // return a pointer to the data for fast access
     double *get_data() { return vector; }
 
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 
-    RefReplSCMatrixKit skit();
+    Ref<ReplSCMatrixKit> skit();
 };
 
 class ReplSCMatrix: public SCMatrix {
     friend class ReplSymmSCMatrix;
     friend class ReplDiagSCMatrix;
     friend class ReplSCVector;
-#   define CLASSNAME ReplSCMatrix
-#   include <util/class/classd.h>
   protected:
-    RefSCMatrixBlockList blocklist;
+    Ref<SCMatrixBlockList> blocklist;
     double* matrix;
     double** rows;
   protected:
@@ -166,10 +158,10 @@ class ReplSCMatrix: public SCMatrix {
     double determ_this();
     double trace();
     void schmidt_orthog(SymmSCMatrix*,int);
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     SCMatrix*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     SCMatrix*,SCMatrix*);
     void vprint(const char* title=0,
                 std::ostream& out=ExEnv::out(), int =10) const;
@@ -178,20 +170,18 @@ class ReplSCMatrix: public SCMatrix {
     double *get_data() { return matrix; }
     double **get_rows() { return rows; }
 
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 
-    RefReplSCMatrixKit skit();
+    Ref<ReplSCMatrixKit> skit();
 };
 
 class ReplSymmSCMatrix: public SymmSCMatrix {
     friend class ReplSCMatrix;
     friend class ReplDiagSCMatrix;
     friend class ReplSCVector;
-#   define CLASSNAME ReplSymmSCMatrix
-#   include <util/class/classd.h>
   protected:
-    RefSCMatrixBlockList blocklist;
+    Ref<SCMatrixBlockList> blocklist;
     double* matrix;
     double** rows;
   protected:
@@ -243,10 +233,10 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     void accumulate_transform(SCMatrix*,DiagSCMatrix*,
                               SCMatrix::Transform = SCMatrix::NormalTransform);
     void accumulate_transform(SymmSCMatrix*,SymmSCMatrix*);
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     SymmSCMatrix*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     SymmSCMatrix*,SymmSCMatrix*);
     void vprint(const char* title=0,
                 std::ostream& out=ExEnv::out(), int =10) const;
@@ -255,20 +245,18 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     double *get_data() { return matrix; }
     double **get_rows() { return rows; }
 
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 
-    RefReplSCMatrixKit skit();
+    Ref<ReplSCMatrixKit> skit();
 };
 
 class ReplDiagSCMatrix: public DiagSCMatrix {
     friend class ReplSCMatrix;
     friend class ReplSymmSCMatrix;
     friend class ReplSCVector;
-#   define CLASSNAME ReplDiagSCMatrix
-#   include <util/class/classd.h>
   protected:
-    RefSCMatrixBlockList blocklist;
+    Ref<SCMatrixBlockList> blocklist;
     void init_blocklist();
     double* matrix;
 
@@ -289,10 +277,10 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
     double trace();
     void gen_invert_this();
 
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     DiagSCMatrix*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     DiagSCMatrix*,DiagSCMatrix*);
     void vprint(const char* title=0,
                 std::ostream& out=ExEnv::out(), int =10) const;
@@ -300,10 +288,10 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
     // return a pointer to the data for fast access
     double *get_data() { return matrix; }
 
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 
-    RefReplSCMatrixKit skit();
+    Ref<ReplSCMatrixKit> skit();
 };
 
 #endif

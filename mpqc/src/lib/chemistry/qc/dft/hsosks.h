@@ -40,14 +40,9 @@
 // //////////////////////////////////////////////////////////////////////////
 
 class HSOSKS: public HSOSSCF {
-#   define CLASSNAME HSOSKS
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
-    RefDenIntegrator integrator_;
-    RefDenFunctional functional_;
+    Ref<DenIntegrator> integrator_;
+    Ref<DenFunctional> functional_;
     RefSymmSCMatrix vxc_a_;
     RefSymmSCMatrix vxc_b_;
 
@@ -56,7 +51,7 @@ class HSOSKS: public HSOSSCF {
     
   public:
     HSOSKS(StateIn&);
-    HSOSKS(const RefKeyVal&);
+    HSOSKS(const Ref<KeyVal>&);
     ~HSOSKS();
 
     void save_data_state(StateOut&);
@@ -72,7 +67,7 @@ class HSOSKS: public HSOSSCF {
     void ao_fock(double accuracy);
     double exc_;
     double scf_energy();
-    RefSCExtrapData extrap_data();
+    Ref<SCExtrapData> extrap_data();
     RefSymmSCMatrix effective_fock();
 
     void init_vector();

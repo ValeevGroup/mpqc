@@ -96,17 +96,11 @@ atoms so be careful.
 */
 class Molecule: public SavableState
 {
-#   define CLASSNAME Molecule
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     int natoms_;
-    RefAtomInfo atominfo_;
-    RefPointGroup pg_;
-    RefUnits geometry_units_;
+    Ref<AtomInfo> atominfo_;
+    Ref<PointGroup> pg_;
+    Ref<Units> geometry_units_;
     double **r_;
     int *Z_;
     double *charges_;
@@ -129,7 +123,7 @@ class Molecule: public SavableState
     Molecule(const Molecule&);
     Molecule(StateIn&);
     /// The KeyVal constructor.
-    Molecule(const RefKeyVal&input);
+    Molecule(const Ref<KeyVal>&input);
 
     virtual ~Molecule();
 
@@ -178,14 +172,14 @@ class Molecule: public SavableState
     double nuclear_charge() const;
 
     /// Sets the PointGroup of the molecule.
-    void set_point_group(const RefPointGroup&, double tol=1.0e-7);
+    void set_point_group(const Ref<PointGroup>&, double tol=1.0e-7);
     /// Returns the PointGroup of the molecule.
-    RefPointGroup point_group() const;
+    Ref<PointGroup> point_group() const;
 
     /** Find this molecules true point group (limited to abelian groups).
         If the point group of this molecule is set to the highest point
         group, then the origin must first be set to the center of mass. */
-    RefPointGroup highest_point_group(double tol = 1.0e-8) const;
+    Ref<PointGroup> highest_point_group(double tol = 1.0e-8) const;
 
     /** Return 1 if this given axis is a symmetry element for the molecule.
         The direction vector must be a unit vector. */
@@ -234,7 +228,7 @@ class Molecule: public SavableState
     void symmetrize(double tol = 0.5);
 
     /// Set the point group and then symmetrize.
-    void symmetrize(const RefPointGroup &pg, double tol = 0.5);
+    void symmetrize(const Ref<PointGroup> &pg, double tol = 0.5);
 
     /** This will try to carefully correct symmetry errors
         in molecules.  If any atom is out of place by more then
@@ -275,11 +269,11 @@ class Molecule: public SavableState
     int max_z();
 
     /// Return the molecules AtomInfo object.
-    RefAtomInfo atominfo() const { return atominfo_; }
+    Ref<AtomInfo> atominfo() const { return atominfo_; }
 
     void save_data_state(StateOut&);
 };
-SavableState_REF_dec(Molecule);
+
 
 #endif
 

@@ -393,13 +393,13 @@ MBPT2::compute_hsos_v1()
   // create the integrals object
   if (debug_>0) ExEnv::out() << node0 << indent << "allocating integrals" << endl;
   integral()->set_storage(mem_remaining);
-  RefTwoBodyInt *tbint = new RefTwoBodyInt[thr_->nthread()];
+  Ref<TwoBodyInt> *tbint = new Ref<TwoBodyInt>[thr_->nthread()];
   for (ithread=0; ithread<thr_->nthread(); ithread++) {
       tbint[ithread] = integral()->electron_repulsion();
     }
 
   // set up the thread objects
-  RefThreadLock lock = thr_->new_lock();
+  Ref<ThreadLock> lock = thr_->new_lock();
   HSOSV1Erep1Qtr** e1thread = new HSOSV1Erep1Qtr*[thr_->nthread()];
   for (ithread=0; ithread<thr_->nthread(); ithread++) {
       e1thread[ithread] = new HSOSV1Erep1Qtr(ithread, thr_->nthread(), me, nproc,

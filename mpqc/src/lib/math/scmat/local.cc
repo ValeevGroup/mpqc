@@ -38,23 +38,15 @@
 /////////////////////////////////////////////////////////////////////////////
 // LocalSCMatrixKit member functions
 
-#define CLASSNAME LocalSCMatrixKit
-#define PARENTS public SCMatrixKit
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-LocalSCMatrixKit::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrixKit::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc LocalSCMatrixKit_cd(
+  typeid(LocalSCMatrixKit),"LocalSCMatrixKit",1,"public SCMatrixKit",
+  0, create<LocalSCMatrixKit>, 0);
 
 LocalSCMatrixKit::LocalSCMatrixKit()
 {
 }
 
-LocalSCMatrixKit::LocalSCMatrixKit(const RefKeyVal& keyval):
+LocalSCMatrixKit::LocalSCMatrixKit(const Ref<KeyVal>& keyval):
   SCMatrixKit(keyval)
 {
 }

@@ -43,10 +43,10 @@ using namespace std;
 void
 Int2eV3::int_offset_print(ostream &o,
                           double *buffer,
-                          RefGaussianBasisSet c1, int s1,
-                          RefGaussianBasisSet c2, int s2,
-                          RefGaussianBasisSet c3, int s3,
-                          RefGaussianBasisSet c4, int s4)
+                          Ref<GaussianBasisSet> c1, int s1,
+                          Ref<GaussianBasisSet> c2, int s2,
+                          Ref<GaussianBasisSet> c3, int s3,
+                          Ref<GaussianBasisSet> c4, int s4)
 {
   int nfunc1,nfunc2,nfunc3,nfunc4;
 
@@ -112,10 +112,10 @@ Int2eV3::int_offset_print_n(ostream &o, double *buffer,
  */
 void
 Int2eV3::int_print(ostream &o, double *buffer,
-                   RefGaussianBasisSet c1, int s1,
-                   RefGaussianBasisSet c2, int s2,
-                   RefGaussianBasisSet c3, int s3,
-                   RefGaussianBasisSet c4, int s4)
+                   Ref<GaussianBasisSet> c1, int s1,
+                   Ref<GaussianBasisSet> c2, int s2,
+                   Ref<GaussianBasisSet> c3, int s3,
+                   Ref<GaussianBasisSet> c4, int s4)
 {
   int nfunc1,nfunc2,nfunc3,nfunc4;
 

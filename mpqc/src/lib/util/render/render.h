@@ -38,59 +38,55 @@
 #include <util/render/transform.h>
 #include <util/render/stack.h>
 
-DescribedClass_REF_fwddec(AnimatedObject);
-DescribedClass_REF_fwddec(RenderedObject);
-DescribedClass_REF_fwddec(RenderedObjectSet);
-DescribedClass_REF_fwddec(RenderedSphere);
-DescribedClass_REF_fwddec(RenderedPolygons);
-DescribedClass_REF_fwddec(RenderedPolylines);
+class RenderedObject;
+class AnimatedObject;
+class RenderedObjectSet;
+class RenderedSphere;
+class RenderedPolygons;
+class RenderedPolylines;
 
 class Render: public DescribedClass {
-#   define CLASSNAME Render
-#   include <util/class/classda.h>
   protected:
-    RefMaterial default_material_;
-    RefAppearance default_appearance_;
-    RefTransform default_transform_;
+    Ref<Material> default_material_;
+    Ref<Appearance> default_appearance_;
+    Ref<Transform> default_transform_;
 
-    Stack<RefMaterial> material_stack_;
-    Stack<RefAppearance> appearance_stack_;
-    Stack<RefTransform> transform_stack_;
+    Stack<Ref<Material> > material_stack_;
+    Stack<Ref<Appearance> > appearance_stack_;
+    Stack<Ref<Transform> > transform_stack_;
 
-    virtual void push_material(const RefMaterial& m);
-    virtual void push_appearance(const RefAppearance& a);
-    virtual void push_transform(const RefTransform& t);
-    virtual RefMaterial pop_material();
-    virtual RefAppearance pop_appearance();
-    virtual RefTransform pop_transform();
+    virtual void push_material(const Ref<Material>& m);
+    virtual void push_appearance(const Ref<Appearance>& a);
+    virtual void push_transform(const Ref<Transform>& t);
+    virtual Ref<Material> pop_material();
+    virtual Ref<Appearance> pop_appearance();
+    virtual Ref<Transform> pop_transform();
 
   public:
     Render();
-    Render(const RefKeyVal&);
+    Render(const Ref<KeyVal>&);
     virtual ~Render();
 
-    RefMaterial default_material() { return default_material_; }
-    RefAppearance default_appearance() { return default_appearance_; }
-    RefTransform default_transform() { return default_transform_; }
-    void default_material(const RefMaterial& m) { default_material_ = m; }
-    void default_appearance(const RefAppearance& a) {default_appearance_ = a;}
-    void default_transform(const RefTransform& t) {default_transform_ = t;}
+    Ref<Material> default_material() { return default_material_; }
+    Ref<Appearance> default_appearance() { return default_appearance_; }
+    Ref<Transform> default_transform() { return default_transform_; }
+    void default_material(const Ref<Material>& m) { default_material_ = m; }
+    void default_appearance(const Ref<Appearance>& a) {default_appearance_ = a;}
+    void default_transform(const Ref<Transform>& t) {default_transform_ = t;}
 
     virtual void clear() = 0;
 
-    virtual void render(const RefRenderedObject&);
-    virtual void animate(const RefAnimatedObject &);
+    virtual void render(const Ref<RenderedObject>&);
+    virtual void animate(const Ref<AnimatedObject> &);
 
-    virtual void set(const RefRenderedObjectSet&);
-    virtual void sphere(const RefRenderedSphere&);
-    virtual void polygons(const RefRenderedPolygons&) = 0;
-    virtual void polylines(const RefRenderedPolylines&) = 0;
+    virtual void set(const Ref<RenderedObjectSet>&);
+    virtual void sphere(const Ref<RenderedSphere>&);
+    virtual void polygons(const Ref<RenderedPolygons>&) = 0;
+    virtual void polylines(const Ref<RenderedPolylines>&) = 0;
 };
-DescribedClass_REF_dec(Render);
+
 
 class FileRender: public Render {
-#   define CLASSNAME FileRender
-#   include <util/class/classd.h>
   protected:
     char* filename_;
     char* basename_;
@@ -104,7 +100,7 @@ class FileRender: public Render {
   public:
     FileRender(const char * filename);
     FileRender(std::ostream &o = ExEnv::out());
-    FileRender(const RefKeyVal&);
+    FileRender(const Ref<KeyVal>&);
     virtual ~FileRender();
 
     void clear();
@@ -113,7 +109,7 @@ class FileRender: public Render {
     virtual void set_basename(const char *name);
     virtual const char *file_extension();
 };
-DescribedClass_REF_dec(FileRender);
+
 
 #endif
 

@@ -33,20 +33,15 @@
 #endif
 
 #include <iostream>
+#include <vector>
 
-#include <util/container/array.h>
 #include <math/scmat/matrix.h>
 #include <math/optimize/transform.h>
 #include <chemistry/molecule/molecule.h>
 
-SavableState_REF_fwddec(IntCoor);
-
 /** The IntCoor abstract class describes an internal coordinate of a
 molecule. */
 class IntCoor: public SavableState {
-#   define CLASSNAME IntCoor
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
     // conversion factors from radians, bohr to the preferred units
     static double bohr_conv;
@@ -75,7 +70,7 @@ class IntCoor: public SavableState {
         lengths and radian for angles.
 
         </dl> */
-    IntCoor(const RefKeyVal&);
+    IntCoor(const Ref<KeyVal>&);
     
     virtual ~IntCoor();
     void save_data_state(StateOut&);
@@ -92,21 +87,19 @@ class IntCoor: public SavableState {
     virtual const char* ctype() const = 0;
     /// Print information about the coordinate.
     virtual void print(std::ostream & o=ExEnv::out()) const;
-    virtual void print_details(const RefMolecule &, std::ostream& =ExEnv::out()) const;
+    virtual void print_details(const Ref<Molecule> &, std::ostream& =ExEnv::out()) const;
     /** Returns the value of the force constant associated with this
         coordinate. */
-    virtual double force_constant(RefMolecule&) = 0;
+    virtual double force_constant(Ref<Molecule>&) = 0;
     /// Recalculate the value of the coordinate.
-    virtual void update_value(const RefMolecule&) = 0;
+    virtual void update_value(const Ref<Molecule>&) = 0;
     /// Fill in a row the the B matrix.
-    virtual void bmat(const RefMolecule&,RefSCVector&bmat,double coef=1.0) = 0;
+    virtual void bmat(const Ref<Molecule>&,RefSCVector&bmat,double coef=1.0) = 0;
     /** Test to see if this internal coordinate is equivalent to that one.
         The definition of equivalence is left up to the individual
         coordinates. */
-    virtual int equivalent(RefIntCoor&) = 0;
+    virtual int equivalent(Ref<IntCoor>&) = 0;
 };
-SavableState_REF_dec(IntCoor);
-ARRAY_dec(RefIntCoor);
 
 /** SumIntCoor is used to construct linear combinations of internal
 coordinates.
@@ -123,14 +116,9 @@ The following is a sample ParsedKeyVal input for a SumIntCoor object:
 </pre>
 */
 class SumIntCoor: public IntCoor {
-#   define CLASSNAME SumIntCoor
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
-    Arraydouble coef_;
-    ArrayRefIntCoor coor_;
+    std::vector<double> coef_;
+    std::vector<Ref<IntCoor> > coor_;
   public:
     SumIntCoor(StateIn&);
     /** This constructor takes a string containing a label for this
@@ -146,7 +134,7 @@ class SumIntCoor: public IntCoor {
         the coefficients of the summed coordinates.
 
         </dl> */
-    SumIntCoor(const RefKeyVal&);
+    SumIntCoor(const Ref<KeyVal>&);
 
     ~SumIntCoor();
     void save_data_state(StateOut&);
@@ -155,7 +143,7 @@ class SumIntCoor: public IntCoor {
     int n();
     /** Add a coordinate to the linear combination.  coef is the
         coefficient for the added coordinate. */
-    void add(RefIntCoor&,double coef);
+    void add(Ref<IntCoor>&,double coef);
     /// This function normalizes all the coefficients.
     void normalize();
 
@@ -165,18 +153,16 @@ class SumIntCoor: public IntCoor {
     /// Always returns ``SUM''.
     const char* ctype() const;
     /// Print the individual coordinates in the sum with their coefficients.
-    void print_details(const RefMolecule &, std::ostream& =ExEnv::out()) const;
+    void print_details(const Ref<Molecule> &, std::ostream& =ExEnv::out()) const;
     /// Returns the weighted sum of the individual force constants.
-    double force_constant(RefMolecule&);
+    double force_constant(Ref<Molecule>&);
     /// Recalculate the value of the coordinate.
-    void update_value(const RefMolecule&);
+    void update_value(const Ref<Molecule>&);
     /// Fill in a row the the B matrix.
-    void bmat(const RefMolecule&,RefSCVector&bmat,double coef = 1.0);
+    void bmat(const Ref<Molecule>&,RefSCVector&bmat,double coef = 1.0);
     /// Always returns 0.
-    int equivalent(RefIntCoor&);
+    int equivalent(Ref<IntCoor>&);
 };
-
-SavableState_REF_fwddec(SetIntCoor);
 
 /** The SetIntCoor class describes a set of internal coordinates.
 It can automatically generate these coordinates using a integral coordinate
@@ -199,14 +185,8 @@ a SetIntCoor object.
 </pre>
 */
 class SetIntCoor: public SavableState {
-#   define CLASSNAME SetIntCoor
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
-    ArrayRefIntCoor coor_;
+    std::vector<Ref<IntCoor> > coor_;
   public:
     SetIntCoor();
     SetIntCoor(StateIn&);
@@ -220,15 +200,15 @@ class SetIntCoor: public SavableState {
         \f$0 \leq i < n\f$, can be assigned to IntCoor objects.
 
         </dl> */
-    SetIntCoor(const RefKeyVal&);
+    SetIntCoor(const Ref<KeyVal>&);
 
     virtual ~SetIntCoor();
     void save_data_state(StateOut&);
 
     /// Adds an internal coordinate to the set.
-    void add(const RefIntCoor&);
+    void add(const Ref<IntCoor>&);
     /// Adds all the elements of another set to this one.
-    void add(const RefSetIntCoor&);
+    void add(const Ref<SetIntCoor>&);
     /// Removes the last coordinate from this set.
     void pop();
     /// Removes all coordinates from the set.
@@ -236,23 +216,23 @@ class SetIntCoor: public SavableState {
     /// Returns the number of coordinates in the set.
     int n() const;
     /// Returns a reference to the i'th coordinate in the set.
-    RefIntCoor coor(int i) const;
+    Ref<IntCoor> coor(int i) const;
     /// Compute the B matrix by finite displacements.
-    virtual void fd_bmat(const RefMolecule&,RefSCMatrix&);
+    virtual void fd_bmat(const Ref<Molecule>&,RefSCMatrix&);
     /// Compute the B matrix the old-fashioned way.
-    virtual void bmat(const RefMolecule&, RefSCMatrix&);
+    virtual void bmat(const Ref<Molecule>&, RefSCMatrix&);
     /** Create an approximate Hessian for this set of coordinates.  This
         Hessian is a symmetric matrix whose i'th diagonal is the force
         constant for the i'th coordinate in the set. */
-    virtual void guess_hessian(RefMolecule&,RefSymmSCMatrix&);
+    virtual void guess_hessian(Ref<Molecule>&,RefSymmSCMatrix&);
     /// Print the coordinates in the set.
-    virtual void print_details(const RefMolecule &,std::ostream& =ExEnv::out()) const;
+    virtual void print_details(const Ref<Molecule> &,std::ostream& =ExEnv::out()) const;
     /// Recalculate the values of the internal coordinates in the set.
-    virtual void update_values(const RefMolecule&);
+    virtual void update_values(const Ref<Molecule>&);
     /// Copy the values of the internal coordinates to a vector.
     virtual void values_to_vector(const RefSCVector&);
 };
-SavableState_REF_dec(SetIntCoor);
+
 
 // ////////////////////////////////////////////////////////////////////////
 
@@ -262,13 +242,8 @@ class BitArrayLTri;
     for a molecule. */
 class IntCoorGen: public SavableState
 {
-#   define CLASSNAME IntCoorGen
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
-    RefMolecule molecule_;
+    Ref<Molecule> molecule_;
     
     int linear_bends_;
     int linear_lbends_;
@@ -286,15 +261,15 @@ class IntCoorGen: public SavableState
     int hterminal(Molecule& m, BitArrayLTri& bonds, int i);
     int nearest_contact(int i, Molecule& m);
 
-    void add_bonds(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m);
-    void add_bends(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m);
-    void add_tors(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m);
-    void add_out(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m);
+    void add_bonds(const Ref<SetIntCoor>& list, BitArrayLTri& bonds, Molecule& m);
+    void add_bends(const Ref<SetIntCoor>& list, BitArrayLTri& bonds, Molecule& m);
+    void add_tors(const Ref<SetIntCoor>& list, BitArrayLTri& bonds, Molecule& m);
+    void add_out(const Ref<SetIntCoor>& list, BitArrayLTri& bonds, Molecule& m);
   public:
     /** Create an IntCoorGen given a Molecule and, optionally, extra bonds.
         IntCoorGen keeps a reference to extra and deletes it when the
         destructor is called. */
-    IntCoorGen(const RefMolecule&, int nextra=0, int *extra=0);
+    IntCoorGen(const Ref<Molecule>&, int nextra=0, int *extra=0);
     /** The KeyVal constructor.
         <dl>
 
@@ -336,7 +311,7 @@ class IntCoorGen: public SavableState
         all the needed bonds will be found.
 
         </dl> */
-    IntCoorGen(const RefKeyVal&);
+    IntCoorGen(const Ref<KeyVal>&);
     IntCoorGen(StateIn&);
 
     ~IntCoorGen();
@@ -345,12 +320,12 @@ class IntCoorGen: public SavableState
     void save_data_state(StateOut&);
 
     /// This generates a set of internal coordinates.
-    virtual void generate(const RefSetIntCoor&);
+    virtual void generate(const Ref<SetIntCoor>&);
 
     /// Print out information about this.
     virtual void print(std::ostream& out=ExEnv::out()) const;
 };
-SavableState_REF_dec(IntCoorGen);
+
 
 // ////////////////////////////////////////////////////////////////////////
 
@@ -360,17 +335,14 @@ to describe a molecule.  It is used to convert a molecule's cartesian
 coordinates to and from this coordinate system. */
 class MolecularCoor: public SavableState
 {
-#   define CLASSNAME MolecularCoor
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
-    RefMolecule molecule_;
+    Ref<Molecule> molecule_;
     RefSCDimension dnatom3_; // the number of atoms x 3
-    RefSCMatrixKit matrixkit_; // used to construct matrices
+    Ref<SCMatrixKit> matrixkit_; // used to construct matrices
 
     int debug_;
   public:
-    MolecularCoor(RefMolecule&);
+    MolecularCoor(Ref<Molecule>&);
     MolecularCoor(StateIn&);
     /** The KeyVal constructor.
         <dl>
@@ -388,7 +360,7 @@ class MolecularCoor: public SavableState
         give this keyword.
 
         </dl> */
-    MolecularCoor(const RefKeyVal&);
+    MolecularCoor(const Ref<KeyVal>&);
 
     virtual ~MolecularCoor();
 
@@ -399,7 +371,7 @@ class MolecularCoor: public SavableState
     RefSCDimension dim_natom3() { return dnatom3_; }
 
     /// Returns the molecule.
-    RefMolecule molecule() const { return molecule_; }
+    Ref<Molecule> molecule() const { return molecule_; }
 
     /// Print the coordinate.
     virtual void print(std::ostream& =ExEnv::out()) const = 0;
@@ -414,7 +386,7 @@ class MolecularCoor: public SavableState
         coordinates of the Molecule contained herein.  This function does
         not change the vector ``internal''. */
     int to_cartesian(const RefSCVector&internal);
-    virtual int to_cartesian(const RefMolecule&mol,
+    virtual int to_cartesian(const Ref<Molecule>&mol,
                              const RefSCVector&internal) = 0;
 
     /** Fill in the vector ``internal'' with the current internal
@@ -460,23 +432,18 @@ class MolecularCoor: public SavableState
     /** When this is called, MoleculeCoor may select a new internal
         coordinate system and return a transform to it.  The default action
         is to not change anything and return an IdentityTransform. */
-    virtual RefNonlinearTransform change_coordinates();
+    virtual Ref<NonlinearTransform> change_coordinates();
 
-    RefSCMatrixKit matrixkit() const { return matrixkit_; }
+    Ref<SCMatrixKit> matrixkit() const { return matrixkit_; }
 };
-SavableState_REF_dec(MolecularCoor);
+
 
 /** The IntMolecularCoor abstract class describes a molecule's coordinates
 in terms of internal coordinates. */
 class IntMolecularCoor: public MolecularCoor
 {
-#   define CLASSNAME IntMolecularCoor
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
-    RefIntCoorGen generator_;
+    Ref<IntCoorGen> generator_;
 
     void form_K_matrix(RefSCDimension& dredundant,
                        RefSCDimension& dfixed,
@@ -486,23 +453,23 @@ class IntMolecularCoor: public MolecularCoor
     RefSCDimension dim_; // corresponds to the number of variable coordinates
     RefSCDimension dvc_; // the number of variable + constant coordinates
 
-    RefSetIntCoor variable_; // the variable internal coordinates
-    RefSetIntCoor constant_; // the constant internal coordinates
+    Ref<SetIntCoor> variable_; // the variable internal coordinates
+    Ref<SetIntCoor> constant_; // the constant internal coordinates
     
-    RefSetIntCoor fixed_;
-    RefSetIntCoor watched_;
-    RefIntCoor followed_;
+    Ref<SetIntCoor> fixed_;
+    Ref<SetIntCoor> watched_;
+    Ref<IntCoor> followed_;
 
     // these are all of the basic coordinates
-    RefSetIntCoor bonds_;
-    RefSetIntCoor bends_;
-    RefSetIntCoor tors_;
-    RefSetIntCoor outs_;
+    Ref<SetIntCoor> bonds_;
+    Ref<SetIntCoor> bends_;
+    Ref<SetIntCoor> tors_;
+    Ref<SetIntCoor> outs_;
     // these are provided by the user or generated coordinates that
     // could not be assigned to any of the above catagories
-    RefSetIntCoor extras_;
+    Ref<SetIntCoor> extras_;
 
-    RefSetIntCoor all_;
+    Ref<SetIntCoor> all_;
 
     // Useful relationships
     // variable_->n() + constant_->n() = 3N-6(5)
@@ -538,7 +505,7 @@ class IntMolecularCoor: public MolecularCoor
         simple and internal coordinates. */
     virtual void new_coords();
     /// Reads the KeyVal input.
-    virtual void read_keyval(const RefKeyVal&);
+    virtual void read_keyval(const Ref<KeyVal>&);
 
     // control whether or not to print coordinates when they are formed
     int form_print_simples_;
@@ -547,7 +514,7 @@ class IntMolecularCoor: public MolecularCoor
     int form_print_molecule_;
   public:
     IntMolecularCoor(StateIn&);
-    IntMolecularCoor(RefMolecule&mol);
+    IntMolecularCoor(Ref<Molecule>&mol);
     /** The KeyVal constructor.
         <dl>
 
@@ -652,7 +619,7 @@ class IntMolecularCoor: public MolecularCoor
         <dt><tt>coordinate_tolerance</tt><dd> Obsolete.  The default is 1.0e-7.
 
         </dl> */
-    IntMolecularCoor(const RefKeyVal&);
+    IntMolecularCoor(const Ref<KeyVal>&);
 
     virtual ~IntMolecularCoor();
     void save_data_state(StateOut&);
@@ -663,15 +630,15 @@ class IntMolecularCoor: public MolecularCoor
     
     /** Like to_cartesians(), except all internal coordinates are
         considered, not just the variable ones. */
-    virtual int all_to_cartesian(const RefMolecule &,RefSCVector&internal);
+    virtual int all_to_cartesian(const Ref<Molecule> &,RefSCVector&internal);
     /** Like to_internal(), except all internal coordinates are
         considered, not just the variable ones. */
-    virtual int all_to_internal(const RefMolecule &,RefSCVector&internal);
+    virtual int all_to_internal(const Ref<Molecule> &,RefSCVector&internal);
 
     /** These implement the virtual functions inherited from
         MolecularCoor. */
     virtual RefSCDimension dim();
-    virtual int to_cartesian(const RefMolecule &,const RefSCVector&internal);
+    virtual int to_cartesian(const Ref<Molecule> &,const RefSCVector&internal);
     virtual int to_internal(RefSCVector&internal);
     virtual int to_cartesian(RefSCVector&cartesian,RefSCVector&internal);
     virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian);
@@ -697,11 +664,6 @@ manually specify the coordinates that the SymmMolecularCoor object uses
 with the variable keyword (see the IntMolecularCoor class description).  */
 class SymmMolecularCoor: public IntMolecularCoor
 {
-#   define CLASSNAME SymmMolecularCoor
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     // true if coordinates should be changed during optimization
     int change_coordinates_;
@@ -712,7 +674,7 @@ class SymmMolecularCoor: public IntMolecularCoor
 
     void init();
   public:
-    SymmMolecularCoor(RefMolecule&mol);
+    SymmMolecularCoor(Ref<Molecule>&mol);
     SymmMolecularCoor(StateIn&);
     /** The KeyVal constructor.
         <dl>
@@ -732,7 +694,7 @@ class SymmMolecularCoor: public IntMolecularCoor
         default is true.
 
         </dl> */
-    SymmMolecularCoor(const RefKeyVal&);
+    SymmMolecularCoor(const Ref<KeyVal>&);
 
     virtual ~SymmMolecularCoor();
     void save_data_state(StateOut&);
@@ -748,7 +710,7 @@ class SymmMolecularCoor: public IntMolecularCoor
 
     /** This overrides MoleculeCoor's change_coordinates
         and might transform to a new set of coordinates. */
-    RefNonlinearTransform change_coordinates();
+    Ref<NonlinearTransform> change_coordinates();
 
     void print(std::ostream& =ExEnv::out()) const;
 };
@@ -759,17 +721,12 @@ class SymmMolecularCoor: public IntMolecularCoor
 internal coordinates. */
 class RedundMolecularCoor: public IntMolecularCoor
 {
-#   define CLASSNAME RedundMolecularCoor
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
 
   public:
-    RedundMolecularCoor(RefMolecule&mol);
+    RedundMolecularCoor(Ref<Molecule>&mol);
     RedundMolecularCoor(StateIn&);
     /// The KeyVal constructor.
-    RedundMolecularCoor(const RefKeyVal&);
+    RedundMolecularCoor(const Ref<KeyVal>&);
 
     virtual ~RedundMolecularCoor();
     void save_data_state(StateOut&);
@@ -791,11 +748,6 @@ class RedundMolecularCoor: public IntMolecularCoor
     derived from MolecularCoor. */
 class CartMolecularCoor: public MolecularCoor
 {
-#   define CLASSNAME CartMolecularCoor
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
   protected:
     RefSCDimension dim_; // the number of atoms x 3
@@ -803,10 +755,10 @@ class CartMolecularCoor: public MolecularCoor
     /// Initializes the dimensions.
     virtual void init();
   public:
-    CartMolecularCoor(RefMolecule&mol);
+    CartMolecularCoor(Ref<Molecule>&mol);
     CartMolecularCoor(StateIn&);
     /// The KeyVal constructor.
-    CartMolecularCoor(const RefKeyVal&);
+    CartMolecularCoor(const Ref<KeyVal>&);
 
     virtual ~CartMolecularCoor();
   
@@ -814,7 +766,7 @@ class CartMolecularCoor: public MolecularCoor
 
     /// These implement the virtual functions inherited from MolecularCoor.
     virtual RefSCDimension dim();
-    virtual int to_cartesian(const RefMolecule&,const RefSCVector&internal);
+    virtual int to_cartesian(const Ref<Molecule>&,const RefSCVector&internal);
     virtual int to_internal(RefSCVector&internal);
     virtual int to_cartesian(RefSCVector&cartesian,RefSCVector&internal);
     virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian);

@@ -39,27 +39,17 @@
 ///////////////////////////////////////////////////////////////////////////
 // members of RedundMolecularCoor
 
-#define CLASSNAME RedundMolecularCoor
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public IntMolecularCoor
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-RedundMolecularCoor::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = IntMolecularCoor::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc RedundMolecularCoor_cd(
+  typeid(RedundMolecularCoor),"RedundMolecularCoor",1,"public IntMolecularCoor",
+  0, create<RedundMolecularCoor>, create<RedundMolecularCoor>);
 
-RedundMolecularCoor::RedundMolecularCoor(RefMolecule&mol):
+RedundMolecularCoor::RedundMolecularCoor(Ref<Molecule>&mol):
   IntMolecularCoor(mol)
 {
   init();
 }
 
-RedundMolecularCoor::RedundMolecularCoor(const RefKeyVal& keyval):
+RedundMolecularCoor::RedundMolecularCoor(const Ref<KeyVal>& keyval):
   IntMolecularCoor(keyval)
 {
   init();

@@ -36,18 +36,14 @@
 #include <chemistry/qc/wfn/obwfn.h>
 
 class Orbital: public Volume {
-#   define CLASSNAME Orbital
-#   define HAVE_KEYVAL_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
-    RefOneBodyWavefunction wfn_;
+    Ref<OneBodyWavefunction> wfn_;
     int orbital_;
 
     virtual void compute();
   public:
-    Orbital(const RefKeyVal&);
-    Orbital(const RefOneBodyWavefunction&, int orbital);
+    Orbital(const Ref<KeyVal>&);
+    Orbital(const Ref<OneBodyWavefunction>&, int orbital);
     ~Orbital();
     virtual void boundingbox(double valuemin,
                              double valuemax,

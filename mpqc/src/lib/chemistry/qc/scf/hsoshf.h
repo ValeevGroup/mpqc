@@ -38,14 +38,9 @@
 
 /// HSOSHF is a Hartree-Fock specialization of HSOSSCF.
 class HSOSHF: public HSOSSCF {
-#   define CLASSNAME HSOSHF
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     HSOSHF(StateIn&);
-    HSOSHF(const RefKeyVal&);
+    HSOSHF(const Ref<KeyVal>&);
     ~HSOSHF();
 
     void save_data_state(StateOut&);

@@ -32,20 +32,11 @@
 #include <util/keyval/keyval.h>
 #include <util/group/messpvm.h>
 
-#define CLASSNAME PVMMessageGrp
-#define PARENTS public MessageGrp
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-PVMMessageGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  MessageGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc PVMMessageGrp_cd(
+  typeid(PVMMessageGrp),"PVMMessageGrp",1,"public MessageGrp",
+  create<PVMMessageGrp>, create<PVMMessageGrp>, 0);
 
-PVMMessageGrp::PVMMessageGrp(const RefKeyVal&keyval):
+PVMMessageGrp::PVMMessageGrp(const Ref<KeyVal>&keyval):
   MessageGrp(keyval)
 {
   int i;

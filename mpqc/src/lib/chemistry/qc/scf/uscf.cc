@@ -61,16 +61,9 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////
 // UnrestrictedSCF
 
-#define CLASSNAME UnrestrictedSCF
-#define PARENTS public SCF
-#include <util/class/classia.h>
-void *
-UnrestrictedSCF::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCF::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc UnrestrictedSCF_cd(
+  typeid(UnrestrictedSCF),"UnrestrictedSCF",1,"public SCF",
+  0, 0, 0);
 
 UnrestrictedSCF::UnrestrictedSCF(StateIn& s) :
   SavableState(s),
@@ -113,7 +106,7 @@ UnrestrictedSCF::UnrestrictedSCF(StateIn& s) :
   init_mem(4);
 }
 
-UnrestrictedSCF::UnrestrictedSCF(const RefKeyVal& keyval) :
+UnrestrictedSCF::UnrestrictedSCF(const Ref<KeyVal>& keyval) :
   SCF(keyval),
   oso_eigenvectors_beta_(this),
   eigenvalues_beta_(this),
@@ -408,7 +401,7 @@ UnrestrictedSCF::initial_vector(int needv)
           // indent output of eigenvectors() call if there is any
           ExEnv::out() << incindent << incindent;
           UnrestrictedSCF *ug =
-            UnrestrictedSCF::castdown(guess_wfn_.pointer());
+            dynamic_cast<UnrestrictedSCF*>(guess_wfn_.pointer());
           if (!ug || compute_guess_) {
             oso_eigenvectors_ = guess_wfn_->oso_alpha_eigenvectors().copy();
             eigenvalues_ = guess_wfn_->alpha_eigenvalues().copy();
@@ -499,9 +492,9 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
   }
 
   // first convert evals to something we can deal with easily
-  BlockedDiagSCMatrix *bevalsa = BlockedDiagSCMatrix::require_castdown(evalsa,
+  BlockedDiagSCMatrix *bevalsa = require_dynamic_cast<BlockedDiagSCMatrix*>(evalsa,
                                 "UnrestrictedSCF::set_occupations");
-  BlockedDiagSCMatrix *bevalsb = BlockedDiagSCMatrix::require_castdown(evalsb,
+  BlockedDiagSCMatrix *bevalsb = require_dynamic_cast<BlockedDiagSCMatrix*>(evalsb,
                                 "UnrestrictedSCF::set_occupations");
   
   double **valsa = new double*[nirrep_];
@@ -716,8 +709,8 @@ UnrestrictedSCF::new_density()
 
   RefSymmSCMatrix d = diff_densa_ + diff_densb_;
 
-  RefSCElementScalarProduct sp(new SCElementScalarProduct);
-  d.element_op(sp, d);
+  Ref<SCElementScalarProduct> sp(new SCElementScalarProduct);
+  d.element_op(sp.pointer(), d);
   d=0;
   
   double delta = sp->result();
@@ -750,7 +743,7 @@ UnrestrictedSCF::scf_energy()
 {
   SCFEnergy *eop = new SCFEnergy;
   eop->reference();
-  RefSCElementOp2 op = eop;
+  Ref<SCElementOp2> op = eop;
   focka_.result_noupdate().element_op(op, densa_);
   double ea = eop->result();
   
@@ -824,16 +817,16 @@ class UBExtrapErrorOp : public BlockedSCElementOp {
     }
 };
 
-RefSCExtrapData
+Ref<SCExtrapData>
 UnrestrictedSCF::extrap_data()
 {
-  RefSCExtrapData data =
+  Ref<SCExtrapData> data =
     new SymmSCMatrix2SCExtrapData(focka_.result_noupdate(),
                                   fockb_.result_noupdate());
   return data;
 }
 
-RefSCExtrapError
+Ref<SCExtrapError>
 UnrestrictedSCF::extrap_error()
 {
   RefSCMatrix so_to_ortho_so_tr = so_to_orthog_so().t();
@@ -845,8 +838,8 @@ UnrestrictedSCF::extrap_error()
                            focka_.result_noupdate(),
                            SCMatrix::TransposeTransform);
   
-  RefSCElementOp op = new UAExtrapErrorOp(this);
-  moa.element_op(op);
+  Ref<SCElementOp> op = new UAExtrapErrorOp(this);
+  moa.element_op(op.pointer());
   
   // form Error_b
   RefSymmSCMatrix mob(oso_dimension(), basis_matrixkit());
@@ -871,7 +864,7 @@ UnrestrictedSCF::extrap_error()
   aoa.accumulate(aob);
   aob=0;
 
-  RefSCExtrapError error = new SymmSCMatrixSCExtrapError(aoa);
+  Ref<SCExtrapError> error = new SymmSCMatrixSCExtrapError(aoa);
   aoa=0;
 
   return error;
@@ -944,8 +937,8 @@ UnrestrictedSCF::compute_vector(double& eelec)
 
     // now extrapolate the fock matrix
     tim_enter("extrap");
-    RefSCExtrapData data = extrap_data();
-    RefSCExtrapError error = extrap_error();
+    Ref<SCExtrapData> data = extrap_data();
+    Ref<SCExtrapError> error = extrap_error();
     extrap_->extrapolate(data,error);
     data=0;
     error=0;
@@ -1031,7 +1024,7 @@ UnrestrictedSCF::compute_vector(double& eelec)
       * overlap()
       * (so_to_oso_tr * oso_scf_vector_beta_);
     //Sab.print("Sab");
-    BlockedSCMatrix *pSab = BlockedSCMatrix::castdown(Sab.pointer());
+    BlockedSCMatrix *pSab = dynamic_cast<BlockedSCMatrix*>(Sab.pointer());
     double s2=0;
     for (int ir=0; ir < nirrep_; ir++) {
       RefSCMatrix Sab_ir=pSab->block(0);
@@ -1095,10 +1088,10 @@ UnrestrictedSCF::lagrangian()
   RefDiagSCMatrix ea = alpha_eigenvalues().copy();
   RefDiagSCMatrix eb = beta_eigenvalues().copy();
   
-  BlockedDiagSCMatrix *eab = BlockedDiagSCMatrix::castdown(ea.pointer());
-  BlockedDiagSCMatrix *ebb = BlockedDiagSCMatrix::castdown(eb.pointer());
+  BlockedDiagSCMatrix *eab = dynamic_cast<BlockedDiagSCMatrix*>(ea.pointer());
+  BlockedDiagSCMatrix *ebb = dynamic_cast<BlockedDiagSCMatrix*>(eb.pointer());
 
-  RefPetiteList pl = integral()->petite_list(basis());
+  Ref<PetiteList> pl = integral()->petite_list(basis());
 
   for (int ir=0; ir < nirrep_; ir++) {
     RefDiagSCMatrix eair = eab->block(ir);
@@ -1139,7 +1132,7 @@ UnrestrictedSCF::gradient_density()
   so_density(densa_, 1.0, 1);
   so_density(densb_, 1.0, 0);
   
-  RefPetiteList pl = integral()->petite_list(basis());
+  Ref<PetiteList> pl = integral()->petite_list(basis());
   
   densa_ = pl->to_AO_basis(densa_);
   densb_ = pl->to_AO_basis(densb_);
@@ -1166,8 +1159,8 @@ UnrestrictedSCF::done_hessian()
 void
 UnrestrictedSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
 {
-  RefSCElementMaxAbs m = new SCElementMaxAbs;
-  densa_.element_op(m);
+  Ref<SCElementMaxAbs> m = new SCElementMaxAbs;
+  densa_.element_op(m.pointer());
   double pmax = m->result();
   m=0;
 
@@ -1181,14 +1174,14 @@ UnrestrictedSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
     RefSymmSCMatrix ptmpa = get_local_data(densa_, pmata, SCF::Read);
     RefSymmSCMatrix ptmpb = get_local_data(densb_, pmatb, SCF::Read);
   
-    RefPetiteList pl = integral()->petite_list();
+    Ref<PetiteList> pl = integral()->petite_list();
     LocalUHFGradContribution l(pmata,pmatb);
 
     int i;
     int na3 = molecule()->natom()*3;
     int nthread = threadgrp_->nthread();
     double **grads = new double*[nthread];
-    RefTwoBodyDerivInt *tbis = new RefTwoBodyDerivInt[nthread];
+    Ref<TwoBodyDerivInt> *tbis = new Ref<TwoBodyDerivInt>[nthread];
     for (i=0; i < nthread; i++) { 
       tbis[i] = integral()->electron_repulsion_deriv();
       grads[i] = new double[na3];

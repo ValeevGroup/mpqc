@@ -292,7 +292,7 @@ main(int argc, char *argv[])
     chdir(options.retrieve("W"));
 
   // get the message group.  first try the commandline and environment
-  RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
+  Ref<MessageGrp> grp = MessageGrp::initial_messagegrp(argc, argv);
   if (grp.nonnull())
     MessageGrp::set_default_messagegrp(grp);
   else
@@ -328,7 +328,7 @@ main(int argc, char *argv[])
   if (object_input) input = object_input;
   if (generic_input) input = generic_input;
 
-  RefParsedKeyVal parsedkv;
+  Ref<ParsedKeyVal> parsedkv;
   // read the input file on only node 0
   char *in_char_array;
   if (grp->me() == 0) {
@@ -385,7 +385,7 @@ main(int argc, char *argv[])
   delete[] in_char_array;
 
   if (options.retrieve("k")) parsedkv->verbose(1);
-  RefKeyVal keyval = new PrefixKeyVal("mpqc",parsedkv.pointer());
+  Ref<KeyVal> keyval = new PrefixKeyVal("mpqc",parsedkv.pointer());
 
   // get the basename for output files
   int nfilebase = (int) (strrchr(input, '.') - input);
@@ -408,8 +408,8 @@ main(int argc, char *argv[])
     SCFormIO::set_debug(1);
 
   // initialize timing for mpqc
-  RefRegionTimer tim;
-  if (keyval->exists("timer")) tim = keyval->describedclassvalue("timer");
+  Ref<RegionTimer> tim;
+  if (keyval->exists("timer")) tim << keyval->describedclassvalue("timer");
   else                         tim = new ParallelRegionTimer(grp,"mpqc",1,1);
   RegionTimer::set_default_regiontimer(tim);
 
@@ -445,12 +445,12 @@ main(int argc, char *argv[])
        << indent << scprintf("Start Time: %s", tstr) << endl;
 
   // get the thread group.  first try the commandline and environment
-  RefThreadGrp thread = ThreadGrp::initial_threadgrp(argc, argv);
+  Ref<ThreadGrp> thread = ThreadGrp::initial_threadgrp(argc, argv);
   
   // if we still don't have a group, try reading the thread group
   // from the input
   if (thread.null()) {
-    thread = keyval->describedclassvalue("thread");
+    thread << keyval->describedclassvalue("thread");
   }
 
   if (thread.nonnull())
@@ -468,7 +468,7 @@ main(int argc, char *argv[])
        << "Total number of processors = " << grp->n() * thread->nthread() << endl;
 
   // now set up the debugger
-  RefDebugger debugger = keyval->describedclassvalue("debug");
+  Ref<Debugger> debugger; debugger << keyval->describedclassvalue("debug");
   if (debugger.nonnull()) {
     Debugger::set_default_debugger(debugger);
     debugger->set_exec(argv[0]);
@@ -480,7 +480,8 @@ main(int argc, char *argv[])
   // now check to see what matrix kit to use
   if (keyval->exists("matrixkit"))
     SCMatrixKit::set_default_matrixkit(
-      keyval->describedclassvalue("matrixkit"));
+      dynamic_cast<SCMatrixKit*>(
+        keyval->describedclassvalue("matrixkit").pointer()));
 
   // check for a molecular energy and optimizer
   KeyValValueString molnamedef(basename);
@@ -503,8 +504,8 @@ main(int argc, char *argv[])
   int savestate = keyval->booleanvalue("savestate",truevalue);
 
   struct stat sb;
-  RefMolecularEnergy mole;
-  RefOptimize opt;
+  Ref<MolecularEnergy> mole;
+  Ref<Optimize> opt;
 
   int statresult, statsize;
   if (restart) {
@@ -522,26 +523,26 @@ main(int argc, char *argv[])
     }
     char *suf = strrchr(restartfile,'.');
     if (!strcmp(suf,".wfn")) {
-      mole.key_restore_state(si,"mole");
+      mole << SavableState::key_restore_state(si,"mole");
       ExEnv::out() << node0 << endl
                    << indent << "Restored <" << mole->class_name()
                    << "> from " << restartfile << endl;
 
-      opt = keyval->describedclassvalue("opt");
+      opt << keyval->describedclassvalue("opt");
       if (opt.nonnull())
-        opt->set_function(mole);
+        opt->set_function(mole.pointer());
     }
     else {
-      opt.key_restore_state(si,"opt");
+      opt << SavableState::key_restore_state(si,"opt");
       if (opt.nonnull()) {
-        mole = opt->function();
+        mole << opt->function();
         ExEnv::out() << node0 << endl << indent
              << "Restored <Optimize> from " << restartfile << endl;
       }
     }
   } else {
-    mole = keyval->describedclassvalue("mole");
-    opt = keyval->describedclassvalue("opt");
+    mole << keyval->describedclassvalue("mole");
+    opt << keyval->describedclassvalue("opt");
   }
 
   if (mole.nonnull()) {
@@ -558,13 +559,15 @@ main(int argc, char *argv[])
 
   // see if frequencies are wanted
 
-  RefMolecularHessian molhess = keyval->describedclassvalue("hess");
-  RefMolecularFrequencies molfreq = keyval->describedclassvalue("freq");
+  Ref<MolecularHessian> molhess;
+  molhess << keyval->describedclassvalue("hess");
+  Ref<MolecularFrequencies> molfreq;
+  molfreq << keyval->describedclassvalue("freq");
   
   int check = (options.retrieve("c") != 0);
   int limit = atoi(options.retrieve("l"));
   if (limit) {
-    RefWavefunction wfn(mole);
+    Ref<Wavefunction> wfn; wfn << mole;
     if (wfn.nonnull() && wfn->ao_dimension()->n() > limit) {
       ExEnv::out() << node0 << endl << indent
            << "The limit of " << limit << " basis functions has been exceeded."
@@ -697,7 +700,7 @@ main(int argc, char *argv[])
       }
 
       StateOutBin so(ckptfile);
-      opt.save_state(so);
+      SavableState::save_state(opt.pointer(),so);
       so.close();
 
       delete[] ckptfile;
@@ -717,7 +720,7 @@ main(int argc, char *argv[])
       }
   
       StateOutBin so(wfn_file);
-      mole.save_state(so);
+      SavableState::save_state(mole.pointer(),so);
       so.close();
 
       delete[] wfn_file;
@@ -758,9 +761,12 @@ main(int argc, char *argv[])
   }
 
   // see if any pictures are desired
-  RefRender renderer = keyval->describedclassvalue("renderer");
-  RefRenderedObject rendered = keyval->describedclassvalue("rendered");
-  RefAnimatedObject animated = keyval->describedclassvalue("rendered");
+  Ref<Render> renderer;
+  renderer << keyval->describedclassvalue("renderer");
+  Ref<RenderedObject> rendered;
+  rendered << keyval->describedclassvalue("rendered");
+  Ref<AnimatedObject> animated;
+  animated << keyval->describedclassvalue("rendered");
   if (renderer.nonnull() && rendered.nonnull()) {
     if (tim.nonnull()) tim->enter("render");
     if (grp->me() == 0) renderer->render(rendered);
@@ -775,8 +781,8 @@ main(int argc, char *argv[])
     if (tim.nonnull()) tim->enter("render");
     int n = keyval->count("rendered");
     for (i=0; i<n; i++) {
-      rendered = keyval->describedclassvalue("rendered",i);
-      animated = keyval->describedclassvalue("rendered",i);
+      rendered << keyval->describedclassvalue("rendered",i);
+      animated << keyval->describedclassvalue("rendered",i);
       if (rendered.nonnull()) {
         // make sure the object has a name so we don't overwrite its file
         if (rendered->name() == 0) {
@@ -798,7 +804,8 @@ main(int argc, char *argv[])
     }
     if (tim.nonnull()) tim->exit("render");
   }
-  RefMolFreqAnimate molfreqanim = keyval->describedclassvalue("animate_modes");
+  Ref<MolFreqAnimate> molfreqanim;
+  molfreqanim << keyval->describedclassvalue("animate_modes");
   if (ready_for_freq && molfreq.nonnull()
       && molfreqanim.nonnull() && renderer.nonnull()) {
     if (tim.nonnull()) tim->enter("render");

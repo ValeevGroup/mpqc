@@ -41,19 +41,9 @@ using namespace std;
 
 //////////////////////////////////////////////////////////////////////
 
-SavableState_REF_def(SimpleCo);
-
-#define CLASSNAME SimpleCo
-#define PARENTS public IntCoor
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-SimpleCo::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = IntCoor::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SimpleCo_cd(
+  typeid(SimpleCo),"SimpleCo",1,"public IntCoor",
+  0, 0, 0);
 
 SimpleCo::SimpleCo():
   natoms_(0),
@@ -68,7 +58,7 @@ SimpleCo::SimpleCo(int na, const char *re) :
   atoms=new int[na]; memset(atoms,'\0',sizeof(int)*na);
 }
 
-SimpleCo::SimpleCo(const RefKeyVal&kv,int na) :
+SimpleCo::SimpleCo(const Ref<KeyVal>&kv,int na) :
   IntCoor(kv),
   natoms_(na), atoms(0)
 {
@@ -83,7 +73,7 @@ SimpleCo::SimpleCo(const RefKeyVal&kv,int na) :
         }
       if (i == 0) {
           // couldn't find any atoms so look for a molecule and atom labels
-          RefMolecule mol = kv->describedclassvalue("molecule");
+          Ref<Molecule> mol; mol << kv->describedclassvalue("molecule");
           if (mol.nonnull()) {
               for (i=0; i<na; i++) {
                   char *label = kv->pcharvalue("atom_labels", i);
@@ -97,7 +87,7 @@ SimpleCo::SimpleCo(const RefKeyVal&kv,int na) :
       if (i != na) {
           ExEnv::err() << node0 << indent
                << scprintf(
-                   "%s::%s(const RefKeyVal&): missing one of the atoms "
+                   "%s::%s(const Ref<KeyVal>&): missing one of the atoms "
                    "or atom_labels (requires a molecule too) "
                    "or an atom label was invalid\n",
                    class_name(),class_name());
@@ -114,7 +104,7 @@ SimpleCo::SimpleCo(const RefKeyVal&kv,int na) :
           atoms[i]=kv->intvalue(i+1);
           if (kv->error() != KeyVal::OK) {
               ExEnv::err() << node0 << indent
-                   << scprintf("%s::%s(const RefKeyVal&): missing an atom\n",
+                   << scprintf("%s::%s(const Ref<KeyVal>&): missing an atom\n",
                                class_name(),class_name());
               kv->errortrace();
               abort();
@@ -176,7 +166,7 @@ SimpleCo::operator==(SimpleCo& sc)
 }
 
 double
-SimpleCo::force_constant(RefMolecule&mol)
+SimpleCo::force_constant(Ref<Molecule>&mol)
 {
   return calc_force_con(*mol);
 }
@@ -184,7 +174,7 @@ SimpleCo::force_constant(RefMolecule&mol)
 // this updates the values before it computes the bmatrix,
 // which is not quite what I wanted--but close enough
 void
-SimpleCo::bmat(const RefMolecule&mol,RefSCVector&bmat,double coef)
+SimpleCo::bmat(const Ref<Molecule>&mol,RefSCVector&bmat,double coef)
 {
   int i;
   int n = bmat.dim().n();
@@ -202,13 +192,13 @@ SimpleCo::bmat(const RefMolecule&mol,RefSCVector&bmat,double coef)
 }
 
 void
-SimpleCo::update_value(const RefMolecule&mol)
+SimpleCo::update_value(const Ref<Molecule>&mol)
 {
   calc_intco(*mol);
 }
 
 void
-SimpleCo::print_details(const RefMolecule &mol, ostream& os) const
+SimpleCo::print_details(const Ref<Molecule> &mol, ostream& os) const
 {
   os << node0 << indent
      << scprintf("%-5s %7s %11.5f", ctype(), (label()?label():""),
@@ -237,12 +227,12 @@ SimpleCo::print_details(const RefMolecule &mol, ostream& os) const
 // this doesn't catch all cases, it would be best for each subclass
 // to override this
 int
-SimpleCo::equivalent(RefIntCoor&c)
+SimpleCo::equivalent(Ref<IntCoor>&c)
 {
   if (class_desc() != c->class_desc()) {
       return 0;
     }
-  SimpleCo* sc = SimpleCo::castdown(c.pointer());
+  SimpleCo* sc = dynamic_cast<SimpleCo*>(c.pointer());
   if (natoms_ != sc->natoms_) return 0; // this should never be the case
   for (int i=0; i<natoms_; i++) {
       if (atoms[i] != sc->atoms[i]) return 0;

@@ -45,19 +45,16 @@
 /** The SCF class is the base for all classes that use a self-consistent
 field procedure to solve an effective one body problem. */
 class SCF: public OneBodyWavefunction {
-#   define CLASSNAME SCF
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
     int need_vec_;
     int compute_guess_;
 
-    RefOneBodyWavefunction guess_wfn_;
+    Ref<OneBodyWavefunction> guess_wfn_;
     
-    RefSelfConsistentExtrapolation extrap_;
+    Ref<SelfConsistentExtrapolation> extrap_;
     
-    RefAccumH accumdih_;
-    RefAccumH accumddh_;
+    Ref<AccumH> accumdih_;
+    Ref<AccumH> accumddh_;
     
     int maxiter_;
     int dens_reset_freq_;
@@ -69,11 +66,11 @@ class SCF: public OneBodyWavefunction {
     
     double level_shift_;
 
-    RefMessageGrp scf_grp_;
-    RefThreadGrp threadgrp_;
+    Ref<MessageGrp> scf_grp_;
+    Ref<ThreadGrp> threadgrp_;
     int local_;
 
-    RefTwoBodyInt* tbis_; // a two body integral evaluator for each thread
+    Ref<TwoBodyInt>* tbis_; // a two body integral evaluator for each thread
     virtual void init_threads();
     virtual void done_threads();
     
@@ -84,7 +81,7 @@ class SCF: public OneBodyWavefunction {
     virtual double compute_vector(double&);
 
     // return the DIIS error matrices
-    virtual RefSCExtrapError extrap_error();
+    virtual Ref<SCExtrapError> extrap_error();
 
     // calculate the scf gradient
     virtual void compute_gradient(const RefSCVector&);
@@ -116,7 +113,7 @@ class SCF: public OneBodyWavefunction {
 
     // Returns a new'ed allocation vector if it is in the input,
     // otherwise null.
-    int *read_occ(const RefKeyVal &, const char *name, int nirrep);
+    int *read_occ(const Ref<KeyVal> &, const char *name, int nirrep);
   public:
     SCF(StateIn&);
     /** The KeyVal constructor.
@@ -155,7 +152,7 @@ class SCF: public OneBodyWavefunction {
         guess.
 
         </dl> */
-    SCF(const RefKeyVal&);
+    SCF(const Ref<KeyVal>&);
     ~SCF();
 
     void save_data_state(StateOut&);
@@ -206,7 +203,7 @@ class SCF: public OneBodyWavefunction {
     virtual double scf_energy() =0;
     
     // return the DIIS data matrices
-    virtual RefSCExtrapData extrap_data() =0;
+    virtual Ref<SCExtrapData> extrap_data() =0;
     
     // form the AO basis fock matrices
     virtual void ao_fock(double accuracy) =0;
@@ -225,7 +222,7 @@ class SCF: public OneBodyWavefunction {
     virtual void init_hessian() =0;
     virtual void done_hessian() =0;
 };
-SavableState_REF_dec(SCF);
+
 
 #endif
 

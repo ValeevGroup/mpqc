@@ -36,21 +36,18 @@
 #include <util/render/color.h>
 
 class Material: public DescribedClass {
-#   define CLASSNAME Material
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   private:
     Parameter<Color> diffuse_;
     Parameter<Color> ambient_;
   public:
     Material();
-    Material(const RefKeyVal&);
+    Material(const Ref<KeyVal>&);
     ~Material();
     Parameter<Color>& diffuse() { return diffuse_; }
     Parameter<Color>& ambient() { return ambient_; }
     void print(std::ostream& = ExEnv::out()) const;
 };
-DescribedClass_REF_dec(Material);
+
 
 #endif
 

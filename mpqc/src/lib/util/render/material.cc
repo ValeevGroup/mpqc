@@ -29,18 +29,9 @@
 
 using namespace std;
 
-DescribedClass_REF_def(Material);
-#define CLASSNAME Material
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public DescribedClass
-#include <util/class/classi.h>
-void *
-Material::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc Material_cd(
+  typeid(Material),"Material",1,"public DescribedClass",
+  0, create<Material>, 0);
 
 Material::Material()
 {
@@ -48,7 +39,7 @@ Material::Material()
   ambient_.set(Color(0.5, 0.5, 0.5));
 }
 
-Material::Material(const RefKeyVal& keyval)
+Material::Material(const Ref<KeyVal>& keyval)
 {
   if (keyval->exists("diffuse")) {
       Color c(new PrefixKeyVal("diffuse", keyval));

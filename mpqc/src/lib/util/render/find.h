@@ -53,7 +53,7 @@ find_parameter_in_stack(Stack<T1>& stack,
 #endif
 
 inline void
-find_int_parameter_in_appearance_stack(Stack<RefAppearance>& stack,
+find_int_parameter_in_appearance_stack(Stack<Ref<Appearance> >& stack,
                         Parameter<int>& (Appearance::*access)(),
                         int& result
                         )

@@ -38,14 +38,9 @@
 
 /// CLHF is a Hartree-Fock specialization of CLSCF.
 class CLHF: public CLSCF {
-#   define CLASSNAME CLHF
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     CLHF(StateIn&);
-    CLHF(const RefKeyVal&);
+    CLHF(const Ref<KeyVal>&);
     ~CLHF();
 
     void save_data_state(StateOut&);

@@ -44,35 +44,31 @@ class SymmSCMatrix;
 class DiagSCMatrix;
 class SCVector;
 
-SavableState_REF_fwddec(SCElementOp);
-SavableState_REF_fwddec(SCElementOp2);
-SavableState_REF_fwddec(SCElementOp3);
+class SCElementOp;
+class SCElementOp2;
+class SCElementOp3;
 
 class RefSCDimension;
-
-DescribedClass_REF_fwddec(SCMatrixKit);
 
 /** The SCMatrixKit abstract class acts as a factory for producing
 matrices.  By using one of these, the program makes sure that all of the
 matrices are consistent.  */
 class SCMatrixKit: public DescribedClass {
-#   define CLASSNAME SCMatrixKit
-#   include <util/class/classda.h>
   protected:
-    RefMessageGrp grp_;
+    Ref<MessageGrp> grp_;
     
   public:
     SCMatrixKit();
-    SCMatrixKit(const RefKeyVal&);
+    SCMatrixKit(const Ref<KeyVal>&);
     ~SCMatrixKit();
 
     // these members are default in local.cc
     /** This returns a LocalSCMatrixKit, unless the
         default has been changed with set_default_matrixkit. */
     static SCMatrixKit* default_matrixkit();
-    static void set_default_matrixkit(const RefSCMatrixKit &);
+    static void set_default_matrixkit(const Ref<SCMatrixKit> &);
 
-    RefMessageGrp messagegrp() const;
+    Ref<MessageGrp> messagegrp() const;
 
     /// Given the dimensions, create matrices or vectors.
     virtual SCMatrix* matrix(const RefSCDimension&,const RefSCDimension&) = 0;
@@ -92,16 +88,14 @@ class SCMatrixKit: public DescribedClass {
     SCVector* restore_vector(StateIn&,
                              const RefSCDimension&);
 };
-DescribedClass_REF_dec(SCMatrixKit);
+
 
 /** The SCVector class is the abstract base class for
     double valued vectors. */
 class SCVector: public DescribedClass {
-#   define CLASSNAME SCVector
-#   include <util/class/classda.h>
   protected:
     RefSCDimension d;
-    RefSCMatrixKit kit_;
+    Ref<SCMatrixKit> kit_;
   public:
     SCVector(const RefSCDimension&, SCMatrixKit *);
 
@@ -110,7 +104,7 @@ class SCVector: public DescribedClass {
     virtual void restore(StateIn&);
 
     /// Return the SCMatrixKit used to create this object.
-    RefSCMatrixKit kit() const { return kit_; }
+    Ref<SCMatrixKit> kit() const { return kit_; }
 
     // concrete functions (some can be overridden)
     /// Return a vector with the same dimension and same elements.
@@ -169,10 +163,10 @@ class SCVector: public DescribedClass {
     /// Return the dot product.
     virtual double scalar_product(SCVector*) = 0;
     /// Perform the element operation op on each element of this.
-    virtual void element_op(const RefSCElementOp&) = 0;
-    virtual void element_op(const RefSCElementOp2&,
+    virtual void element_op(const Ref<SCElementOp>&) = 0;
+    virtual void element_op(const Ref<SCElementOp2>&,
                             SCVector*) = 0;
-    virtual void element_op(const RefSCElementOp3&,
+    virtual void element_op(const Ref<SCElementOp3>&,
                             SCVector*,SCVector*) = 0;
     /// Print out the vector.
     void print(std::ostream&o=ExEnv::out()) const;
@@ -181,27 +175,25 @@ class SCVector: public DescribedClass {
                         int=10) const = 0;
 
     /// Returns the message group used by the matrix kit
-    RefMessageGrp messagegrp() const;
+    Ref<MessageGrp> messagegrp() const;
     
     /** Returns iterators for the local (rapidly accessible) blocks used in
         this vector.  Only one iterator is allowed for a matrix is it has
         Accum or Write access is allowed.  Multiple Read iterators are
         permitted. */
-    virtual RefSCMatrixSubblockIter local_blocks(
+    virtual Ref<SCMatrixSubblockIter> local_blocks(
         SCMatrixSubblockIter::Access) = 0;
     /// Returns iterators for the all blocks used in this vector.
-    virtual RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access) = 0;
+    virtual Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access) = 0;
 };
 
 /** The SCMatrix class is the abstract base class for general double valued
     n by m matrices.  For symmetric matrices use SymmSCMatrix and for
     diagonal matrices use DiagSCMatrix. */
 class SCMatrix: public DescribedClass {
-#   define CLASSNAME SCMatrix
-#   include <util/class/classda.h>
   protected:
     RefSCDimension d1,d2;
-    RefSCMatrixKit kit_;
+    Ref<SCMatrixKit> kit_;
   public:
     // used to control transformations
     enum Transform { NormalTransform = 0, TransposeTransform = 1 };
@@ -215,7 +207,7 @@ class SCMatrix: public DescribedClass {
     virtual void restore(StateIn&);
 
     /// Return the SCMatrixKit used to create this object.
-    RefSCMatrixKit kit() const { return kit_; }
+    Ref<SCMatrixKit> kit() const { return kit_; }
 
     /// Return the number of rows.
     int nrow() const { return d1->n(); }
@@ -336,10 +328,10 @@ class SCMatrix: public DescribedClass {
     virtual void schmidt_orthog(SymmSCMatrix*, int n) =0;
     
     /// Perform the element operation op on each element of this.
-    virtual void element_op(const RefSCElementOp&) = 0;
-    virtual void element_op(const RefSCElementOp2&,
+    virtual void element_op(const Ref<SCElementOp>&) = 0;
+    virtual void element_op(const Ref<SCElementOp2>&,
                             SCMatrix*) = 0;
-    virtual void element_op(const RefSCElementOp3&,
+    virtual void element_op(const Ref<SCElementOp3>&,
                             SCMatrix*,SCMatrix*) = 0;
     /// Print out the matrix.
     void print(std::ostream&o=ExEnv::out()) const;
@@ -349,30 +341,28 @@ class SCMatrix: public DescribedClass {
                         std::ostream&out=ExEnv::out(),int =10) const = 0;
 
     /// Returns the message group used by the matrix kit
-    RefMessageGrp messagegrp() const;
+    Ref<MessageGrp> messagegrp() const;
     
     /** Returns iterators for the local (rapidly accessible)
         blocks used in this matrix. */
-    virtual RefSCMatrixSubblockIter local_blocks(
+    virtual Ref<SCMatrixSubblockIter> local_blocks(
         SCMatrixSubblockIter::Access) = 0;
     /// Returns iterators for the all blocks used in this matrix.
-    virtual RefSCMatrixSubblockIter all_blocks(
+    virtual Ref<SCMatrixSubblockIter> all_blocks(
         SCMatrixSubblockIter::Access) = 0;
 };
 
 /** The SymmSCMatrix class is the abstract base class for symmetric
     double valued matrices. */
 class SymmSCMatrix: public DescribedClass {
-#   define CLASSNAME SymmSCMatrix
-#   include <util/class/classda.h>
   protected:
     RefSCDimension d;
-    RefSCMatrixKit kit_;
+    Ref<SCMatrixKit> kit_;
   public:
     SymmSCMatrix(const RefSCDimension&, SCMatrixKit *);
 
     /// Return the SCMatrixKit object that created this object.
-    RefSCMatrixKit kit() const { return kit_; }
+    Ref<SCMatrixKit> kit() const { return kit_; }
 
     /// Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
@@ -476,10 +466,10 @@ class SymmSCMatrix: public DescribedClass {
     virtual void gen_invert_this() = 0;
 
     /// Perform the element operation op on each element of this.
-    virtual void element_op(const RefSCElementOp&) = 0;
-    virtual void element_op(const RefSCElementOp2&,
+    virtual void element_op(const Ref<SCElementOp>&) = 0;
+    virtual void element_op(const Ref<SCElementOp2>&,
                             SymmSCMatrix*) = 0;
-    virtual void element_op(const RefSCElementOp3&,
+    virtual void element_op(const Ref<SCElementOp3>&,
                             SymmSCMatrix*,SymmSCMatrix*) = 0;
     /// Print out the matrix.
     void print(std::ostream&o=ExEnv::out()) const;
@@ -489,30 +479,28 @@ class SymmSCMatrix: public DescribedClass {
                         std::ostream& out=ExEnv::out(), int =10) const;
 
     /// Returns the message group used by the matrix kit
-    RefMessageGrp messagegrp() const;
+    Ref<MessageGrp> messagegrp() const;
     
     /** Returns iterators for the local (rapidly accessible)
         blocks used in this matrix. */
-    virtual RefSCMatrixSubblockIter local_blocks(
+    virtual Ref<SCMatrixSubblockIter> local_blocks(
         SCMatrixSubblockIter::Access) = 0;
     /// Returns iterators for the all blocks used in this matrix.
-    virtual RefSCMatrixSubblockIter all_blocks(
+    virtual Ref<SCMatrixSubblockIter> all_blocks(
         SCMatrixSubblockIter::Access) = 0;
 };
 
 /** The SymmSCMatrix class is the abstract base class for diagonal double
     valued matrices.  */
 class DiagSCMatrix: public DescribedClass {
-#   define CLASSNAME DiagSCMatrix
-#   include <util/class/classda.h>
   protected:
     RefSCDimension d;
-    RefSCMatrixKit kit_;
+    Ref<SCMatrixKit> kit_;
   public:
     DiagSCMatrix(const RefSCDimension&, SCMatrixKit *);
 
     /// Return the SCMatrixKit used to create this object.
-    RefSCMatrixKit kit() const { return kit_; }
+    Ref<SCMatrixKit> kit() const { return kit_; }
 
     /// Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
@@ -566,10 +554,10 @@ class DiagSCMatrix: public DescribedClass {
     /// Do a generalized inversion of this.
     virtual void gen_invert_this() = 0;
     /// Perform the element operation op on each element of this.
-    virtual void element_op(const RefSCElementOp&) = 0;
-    virtual void element_op(const RefSCElementOp2&,
+    virtual void element_op(const Ref<SCElementOp>&) = 0;
+    virtual void element_op(const Ref<SCElementOp2>&,
                             DiagSCMatrix*) = 0;
-    virtual void element_op(const RefSCElementOp3&,
+    virtual void element_op(const Ref<SCElementOp3>&,
                             DiagSCMatrix*,DiagSCMatrix*) = 0;
     /// Print out the matrix.
     void print(std::ostream&o=ExEnv::out()) const;
@@ -579,14 +567,14 @@ class DiagSCMatrix: public DescribedClass {
                         std::ostream& out=ExEnv::out(), int =10) const;
 
     /// Returns the message group used by the matrix kit
-    RefMessageGrp messagegrp() const;
+    Ref<MessageGrp> messagegrp() const;
     
     /** Returns iterators for the local (rapidly accessible)
         blocks used in this matrix. */
-    virtual RefSCMatrixSubblockIter local_blocks(
+    virtual Ref<SCMatrixSubblockIter> local_blocks(
         SCMatrixSubblockIter::Access) = 0;
     /// Returns iterators for the all blocks used in this matrix.
-    virtual RefSCMatrixSubblockIter all_blocks(
+    virtual Ref<SCMatrixSubblockIter> all_blocks(
         SCMatrixSubblockIter::Access) = 0;
 };
 

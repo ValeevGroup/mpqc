@@ -40,15 +40,13 @@
     SavableState in an input file for ParsedKeyVal.
 */
 class SavableStateProxy: public DescribedClassProxy {
-#   define CLASSNAME SavableStateProxy
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
-    RefSavableState object_;
+  private:
+    Ref<SavableState> object_;
   public:
     /// Return the object referred to by this proxy.
-    RefDescribedClass object();
+    Ref<DescribedClass> object();
     /// Create the proxy with a Ref to a KeyVal object.
-    SavableStateProxy(const RefKeyVal &);
+    SavableStateProxy(const Ref<KeyVal> &);
 };
 
 #endif

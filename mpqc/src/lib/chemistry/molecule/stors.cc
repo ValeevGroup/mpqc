@@ -33,20 +33,9 @@
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/localdef.h>
 
-#define CLASSNAME ScaledTorsSimpleCo
-#define PARENTS public SimpleCo
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-ScaledTorsSimpleCo::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SimpleCo::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ScaledTorsSimpleCo_cd(
+  typeid(ScaledTorsSimpleCo),"ScaledTorsSimpleCo",1,"public SimpleCo",
+  create<ScaledTorsSimpleCo>, create<ScaledTorsSimpleCo>, create<ScaledTorsSimpleCo>);
 SimpleCo_IMPL_eq(ScaledTorsSimpleCo)
 
 ScaledTorsSimpleCo::ScaledTorsSimpleCo(StateIn&s):
@@ -86,7 +75,7 @@ ScaledTorsSimpleCo::~ScaledTorsSimpleCo()
 {
 }
 
-ScaledTorsSimpleCo::ScaledTorsSimpleCo(const RefKeyVal &kv):
+ScaledTorsSimpleCo::ScaledTorsSimpleCo(const Ref<KeyVal> &kv):
   SimpleCo(kv,4)
 {
   old_torsion_ = 0.0;

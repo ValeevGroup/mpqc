@@ -37,9 +37,6 @@
 // //////////////////////////////////////////////////////////////////////////
 
 class TCSCF: public SCF {
-#   define CLASSNAME TCSCF
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
  protected:
     int user_occupations_;
     int tndocc_;
@@ -61,7 +58,7 @@ class TCSCF: public SCF {
     
   public:
     TCSCF(StateIn&);
-    TCSCF(const RefKeyVal&);
+    TCSCF(const Ref<KeyVal>&);
     ~TCSCF();
 
     void save_data_state(StateOut&);
@@ -108,7 +105,7 @@ class TCSCF: public SCF {
     double new_density();
     double scf_energy();
 
-    RefSCExtrapData extrap_data();
+    Ref<SCExtrapData> extrap_data();
     
     // gradient things
     void init_gradient();

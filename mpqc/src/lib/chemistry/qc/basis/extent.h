@@ -21,7 +21,7 @@ struct ExtentData {
 
 ARRAY_dec(ExtentData);
 
-class ShellExtent: public VRefCount {
+class ShellExtent: public RefCount {
     double lower_[3];
     double resolution_;
     int n_[3];
@@ -34,7 +34,7 @@ class ShellExtent: public VRefCount {
   public:
     ShellExtent();
     ~ShellExtent();
-    void init(const RefGaussianBasisSet&,
+    void init(const Ref<GaussianBasisSet>&,
               double resolution = 1.0, double tolerance = DBL_EPSILON);
     /** Returns the shells that are nonzero at coordinates x, y, z.
         The shells numbers are in ascending order. */
@@ -47,7 +47,7 @@ class ShellExtent: public VRefCount {
     double lower(int ixyz) const { return lower_[ixyz]; }
     double resolution() const { return resolution_; }
 };
-REF_dec(ShellExtent);
+
 
 #endif
 

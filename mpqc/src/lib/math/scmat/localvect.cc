@@ -38,16 +38,9 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // LocalSCVector member functions
 
-#define CLASSNAME LocalSCVector
-#define PARENTS public SCVector
-#include <util/class/classi.h>
-void *
-LocalSCVector::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCVector::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc LocalSCVector_cd(
+  typeid(LocalSCVector),"LocalSCVector",1,"public SCVector",
+  0, 0, 0);
 
 LocalSCVector::LocalSCVector(const RefSCDimension&a,
                              LocalSCMatrixKit *kit):
@@ -110,8 +103,8 @@ LocalSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b)
 {
   const char* name = "LocalSCVector::accumulate_product";
   // make sure that the arguments are of the correct type
-  LocalSCMatrix* la = LocalSCMatrix::require_castdown(a,name);
-  LocalSCVector* lb = LocalSCVector::require_castdown(b,name);
+  LocalSCMatrix* la = require_dynamic_cast<LocalSCMatrix*>(a,name);
+  LocalSCVector* lb = require_dynamic_cast<LocalSCVector*>(b,name);
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
@@ -133,8 +126,8 @@ LocalSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b)
 {
   const char* name = "LocalSCVector::accumulate_product";
   // make sure that the arguments are of the correct type
-  LocalSymmSCMatrix* la = LocalSymmSCMatrix::require_castdown(a,name);
-  LocalSCVector* lb = LocalSCVector::require_castdown(b,name);
+  LocalSymmSCMatrix* la = require_dynamic_cast<LocalSymmSCMatrix*>(a,name);
+  LocalSCVector* lb = require_dynamic_cast<LocalSCVector*>(b,name);
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim()) || !la->dim()->equiv(lb->dim())) {
@@ -167,7 +160,7 @@ LocalSCVector::accumulate(const SCVector*a)
 {
   // make sure that the argument is of the correct type
   const LocalSCVector* la
-    = LocalSCVector::require_const_castdown(a,"LocalSCVector::accumulate");
+    = require_dynamic_cast<const LocalSCVector*>(a,"LocalSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -186,7 +179,7 @@ LocalSCVector::accumulate(const SCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const LocalSCMatrix* la
-    = LocalSCMatrix::require_const_castdown(a,"LocalSCVector::accumulate");
+    = require_dynamic_cast<const LocalSCMatrix*>(a,"LocalSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)
@@ -214,7 +207,7 @@ LocalSCVector::assign_v(SCVector*a)
 {
   // make sure that the argument is of the correct type
   LocalSCVector* la
-    = LocalSCVector::require_castdown(a,"LocalSCVector::assign_v");
+    = require_dynamic_cast<LocalSCVector*>(a,"LocalSCVector::assign_v");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -241,7 +234,7 @@ LocalSCVector::scalar_product(SCVector*a)
 {
   // make sure that the argument is of the correct type
   LocalSCVector* la
-    = LocalSCVector::require_castdown(a,"LocalSCVector::scalar_product");
+    = require_dynamic_cast<LocalSCVector*>(a,"LocalSCVector::scalar_product");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -258,17 +251,17 @@ LocalSCVector::scalar_product(SCVector*a)
 }
 
 void
-LocalSCVector::element_op(const RefSCElementOp& op)
+LocalSCVector::element_op(const Ref<SCElementOp>& op)
 {
   op->process_spec_vsimp(block.pointer());
 }
 
 void
-LocalSCVector::element_op(const RefSCElementOp2& op,
+LocalSCVector::element_op(const Ref<SCElementOp2>& op,
                           SCVector* m)
 {
   LocalSCVector *lm
-      = LocalSCVector::require_castdown(m, "LocalSCVector::element_op");
+      = require_dynamic_cast<LocalSCVector*>(m, "LocalSCVector::element_op");
 
   if (!dim()->equiv(lm->dim())) {
       ExEnv::err() << indent << "LocalSCVector: bad element_op\n";
@@ -278,13 +271,13 @@ LocalSCVector::element_op(const RefSCElementOp2& op,
 }
 
 void
-LocalSCVector::element_op(const RefSCElementOp3& op,
+LocalSCVector::element_op(const Ref<SCElementOp3>& op,
                           SCVector* m,SCVector* n)
 {
   LocalSCVector *lm
-      = LocalSCVector::require_castdown(m, "LocalSCVector::element_op");
+      = require_dynamic_cast<LocalSCVector*>(m, "LocalSCVector::element_op");
   LocalSCVector *ln
-      = LocalSCVector::require_castdown(n, "LocalSCVector::element_op");
+      = require_dynamic_cast<LocalSCVector*>(n, "LocalSCVector::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
       ExEnv::err() << indent << "LocalSCVector: bad element_op\n";
@@ -325,7 +318,7 @@ LocalSCVector::vprint(const char *title, ostream& os, int prec) const
   os.flush();
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 LocalSCVector::local_blocks(SCMatrixSubblockIter::Access access)
 {
   if (messagegrp()->n() > 1) {
@@ -334,12 +327,12 @@ LocalSCVector::local_blocks(SCMatrixSubblockIter::Access access)
            << endl;
       abort();
     }
-  RefSCMatrixSubblockIter iter
+  Ref<SCMatrixSubblockIter> iter
       = new SCMatrixSimpleSubblockIter(access, block.pointer());
   return iter;
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 LocalSCVector::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {

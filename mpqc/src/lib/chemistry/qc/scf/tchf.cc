@@ -48,18 +48,9 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////
 // TCHF
 
-#define CLASSNAME TCHF
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public TCSCF
-#include <util/class/classi.h>
-void *
-TCHF::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = TCSCF::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc TCHF_cd(
+  typeid(TCHF),"TCHF",1,"public TCSCF",
+  0, create<TCHF>, create<TCHF>);
 
 TCHF::TCHF(StateIn& s) :
   SavableState(s),
@@ -67,7 +58,7 @@ TCHF::TCHF(StateIn& s) :
 {
 }
 
-TCHF::TCHF(const RefKeyVal& keyval) :
+TCHF::TCHF(const Ref<KeyVal>& keyval) :
   TCSCF(keyval)
 {
 }
@@ -105,7 +96,7 @@ TCHF::print(ostream&o) const
 void
 TCHF::ao_fock(double accuracy)
 {
-  RefPetiteList pl = integral()->petite_list(basis());
+  Ref<PetiteList> pl = integral()->petite_list(basis());
   
   // calculate G.  First transform cl_dens_diff_ to the AO basis, then
   // scale the off-diagonal elements by 2.0
@@ -175,7 +166,7 @@ TCHF::ao_fock(double accuracy)
     double **kmatbs = new double*[nthread];
     kmatbs[0] = kmatb;
     
-    RefGaussianBasisSet bs = basis();
+    Ref<GaussianBasisSet> bs = basis();
     int ntri = i_offset(bs->nbasis());
 
     double gmat_accuracy = accuracy;
@@ -329,7 +320,7 @@ TCHF::two_body_energy(double &ec, double &ex)
   ex = 0.0;
 
   if (local_ || local_dens_) {
-    RefPetiteList pl = integral()->petite_list(basis());
+    Ref<PetiteList> pl = integral()->petite_list(basis());
 
     // grab the data pointers from the G and P matrices
     double *pmata, *pmatb, *spmata, *spmatb;
@@ -370,7 +361,7 @@ TCHF::two_body_energy(double &ec, double &ex)
     tim_exit("local data");
 
     // initialize the two electron integral classes
-    RefTwoBodyInt tbi = integral()->electron_repulsion();
+    Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
     tbi->set_integral_storage(0);
 
     tim_enter("init pmax");
@@ -402,8 +393,8 @@ TCHF::two_body_energy(double &ec, double &ex)
 void
 TCHF::two_body_deriv(double * tbgrad)
 {
-  RefSCElementMaxAbs m = new SCElementMaxAbs;
-  cl_dens_.element_op(m);
+  Ref<SCElementMaxAbs> m = new SCElementMaxAbs;
+  cl_dens_.element_op(m.pointer());
   double pmax = m->result();
   m=0;
 
@@ -419,8 +410,8 @@ TCHF::two_body_deriv(double * tbgrad)
     RefSymmSCMatrix pbtmp = get_local_data(op_densb_, pmatb, SCF::Read);
   
     LocalTCGradContribution l(pmat,pmata,pmatb,ci1_,ci2_);
-    RefTwoBodyDerivInt tbi = integral()->electron_repulsion_deriv();
-    RefPetiteList pl = integral()->petite_list();
+    Ref<TwoBodyDerivInt> tbi = integral()->electron_repulsion_deriv();
+    Ref<PetiteList> pl = integral()->petite_list();
     LocalTBGrad<LocalTCGradContribution> tb(l, tbi, pl, basis(), scf_grp_,
                                             tbgrad, pmax, desired_gradient_accuracy());
     tb.run();

@@ -50,9 +50,9 @@ class DerivCenters {
     /// Clear the list of centers.
     void clear();
     /// Add a center for which derivatives will be computed.
-    void add_center(int center, const RefGaussianBasisSet &, int shell);
+    void add_center(int center, const Ref<GaussianBasisSet> &, int shell);
     /// Add a center for which derivatives will not be computed.
-    void add_omitted(int center, const RefGaussianBasisSet &, int shell);
+    void add_omitted(int center, const Ref<GaussianBasisSet> &, int shell);
     /// Add a center for which derivatives will be computed.
     void add_center(int center, int atom);
     /// Add a center for which derivatives will not be computed.

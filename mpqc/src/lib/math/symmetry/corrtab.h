@@ -41,10 +41,10 @@
 /** The CorrelationTable class provides a correlation
     table between two point groups.
 */
-class CorrelationTable: public VRefCount {
+class CorrelationTable: public RefCount {
   private:
-    RefPointGroup group_;
-    RefPointGroup subgroup_;
+    Ref<PointGroup> group_;
+    Ref<PointGroup> subgroup_;
 
     int n_;
     int subn_;
@@ -56,21 +56,21 @@ class CorrelationTable: public VRefCount {
     CorrelationTable();
 
     /// Create a correlation table for the two groups.
-    CorrelationTable(const RefPointGroup& group,
-                     const RefPointGroup& subgroup);
+    CorrelationTable(const Ref<PointGroup>& group,
+                     const Ref<PointGroup>& subgroup);
 
     ~CorrelationTable();
 
     /// Returns the higher order point group.
-    RefPointGroup group() const { return group_; }
+    Ref<PointGroup> group() const { return group_; }
     /// Returns the lower order point group.
-    RefPointGroup subgroup() const { return subgroup_; }
+    Ref<PointGroup> subgroup() const { return subgroup_; }
 
     /** Initalize the correlation table.  Returns 0 for success and nonzero
         for failure.  This will fail if the subgroup is not really a subgroup
         of group. */
-    int initialize_table(const RefPointGroup& group,
-                         const RefPointGroup& subgroup);
+    int initialize_table(const Ref<PointGroup>& group,
+                         const Ref<PointGroup>& subgroup);
 
     /// Converts error codes from initialize\_table into a text string.
     const char *error(int errcod);
@@ -92,7 +92,7 @@ class CorrelationTable: public VRefCount {
 
     void print(std::ostream &o=ExEnv::out()) const;
 };
-REF_dec(CorrelationTable);
+
 
 #endif
 

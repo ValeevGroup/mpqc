@@ -32,30 +32,18 @@
 #include <math/optimize/transform.h>
 #include <util/keyval/keyval.h>
 
-#define CLASSNAME PowellUpdate
-#define PARENTS public HessianUpdate
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
 /////////////////////////////////////////////////////////////////////////
 // PowellUpdate
 
-void *
-PowellUpdate::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = HessianUpdate::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc PowellUpdate_cd(
+  typeid(PowellUpdate),"PowellUpdate",1,"public HessianUpdate",
+  create<PowellUpdate>, create<PowellUpdate>, create<PowellUpdate>);
 
 PowellUpdate::PowellUpdate()
 {
 }
 
-PowellUpdate::PowellUpdate(const RefKeyVal&keyval):
+PowellUpdate::PowellUpdate(const Ref<KeyVal>&keyval):
   HessianUpdate(keyval)
 {
 }
@@ -64,9 +52,9 @@ PowellUpdate::PowellUpdate(StateIn&s):
   SavableState(s),
   HessianUpdate(s)
 {
-  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  Ref<SCMatrixKit> k = SCMatrixKit::default_matrixkit();
   RefSCDimension dim;
-  dim.restore_state(s);
+  dim << SavableState::restore_state(s);
   xprev = k->vector(dim);
   gprev = k->vector(dim);
   xprev.restore(s);
@@ -81,13 +69,13 @@ void
 PowellUpdate::save_data_state(StateOut&s)
 {
   HessianUpdate::save_data_state(s);
-  xprev.dim().save_state(s);
+  SavableState::save_state(xprev.dim().pointer(),s);
   xprev.save(s);
   gprev.save(s);
 }
 
 void
-PowellUpdate::update(const RefSymmSCMatrix&hessian,const RefFunction&func,
+PowellUpdate::update(const RefSymmSCMatrix&hessian,const Ref<Function>&func,
                      const RefSCVector&xn,const RefSCVector&gn)
 {
   RefSCVector xnew, gnew;
@@ -125,7 +113,7 @@ PowellUpdate::update(const RefSymmSCMatrix&hessian,const RefFunction&func,
 }
 
 void
-PowellUpdate::apply_transform(const RefNonlinearTransform& trans)
+PowellUpdate::apply_transform(const Ref<NonlinearTransform>& trans)
 {
   if (trans.null()) return;
   HessianUpdate::apply_transform(trans);

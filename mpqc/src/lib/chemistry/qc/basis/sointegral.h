@@ -36,23 +36,23 @@
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/basis/sobasis.h>
 
-class OneBodySOInt : public VRefCount {
+class OneBodySOInt : public RefCount {
   protected:
-    RefOneBodyInt ob_;
+    Ref<OneBodyInt> ob_;
 
-    RefSOBasis b1_;
-    RefSOBasis b2_;
+    Ref<SOBasis> b1_;
+    Ref<SOBasis> b2_;
 
     double *buffer_;
 
     int only_totally_symmetric_;
   public:
-    OneBodySOInt(const RefOneBodyInt &);
+    OneBodySOInt(const Ref<OneBodyInt> &);
     virtual ~OneBodySOInt();
 
-    RefSOBasis basis() const;
-    RefSOBasis basis1() const;
-    RefSOBasis basis2() const;
+    Ref<SOBasis> basis() const;
+    Ref<SOBasis> basis1() const;
+    Ref<SOBasis> basis2() const;
 
     const double * buffer() const { return buffer_; }
     
@@ -67,30 +67,30 @@ class OneBodySOInt : public VRefCount {
     void set_only_totally_symmetric(int i) { only_totally_symmetric_ = i; }
 };
 
-REF_dec(OneBodySOInt);
 
-class TwoBodySOInt : public VRefCount {
+
+class TwoBodySOInt : public RefCount {
   protected:
-    RefTwoBodyInt tb_;
+    Ref<TwoBodyInt> tb_;
 
-    RefSOBasis b1_;
-    RefSOBasis b2_;
-    RefSOBasis b3_;
-    RefSOBasis b4_;
+    Ref<SOBasis> b1_;
+    Ref<SOBasis> b2_;
+    Ref<SOBasis> b3_;
+    Ref<SOBasis> b4_;
 
     double *buffer_;
 
     int redundant_;
     int only_totally_symmetric_;
   public:
-    TwoBodySOInt(const RefTwoBodyInt &);
+    TwoBodySOInt(const Ref<TwoBodyInt> &);
     virtual ~TwoBodySOInt();
 
-    RefSOBasis basis() const;
-    RefSOBasis basis1() const;
-    RefSOBasis basis2() const;
-    RefSOBasis basis3() const;
-    RefSOBasis basis4() const;
+    Ref<SOBasis> basis() const;
+    Ref<SOBasis> basis1() const;
+    Ref<SOBasis> basis2() const;
+    Ref<SOBasis> basis3() const;
+    Ref<SOBasis> basis4() const;
 
     const double * buffer() const { return buffer_; }
     
@@ -109,7 +109,7 @@ class TwoBodySOInt : public VRefCount {
     void set_only_totally_symmetric(int i) { only_totally_symmetric_ = i; }
 };
 
-REF_dec(TwoBodySOInt);
+
 
 #endif
 

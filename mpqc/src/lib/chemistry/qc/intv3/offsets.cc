@@ -32,21 +32,21 @@
 
 /* Compute the shell offset. */
 static int
-shell_offset(RefGaussianBasisSet cs, int off)
+shell_offset(Ref<GaussianBasisSet> cs, int off)
 {
   return off + cs->nshell();
 }
 
 /* Compute the prim offset. */
 static int
-prim_offset(RefGaussianBasisSet cs, int off)
+prim_offset(Ref<GaussianBasisSet> cs, int off)
 {
   return off + cs->nprimitive();
 }
 
 /* Compute the func offset. */
 static int
-func_offset(RefGaussianBasisSet cs, int off)
+func_offset(Ref<GaussianBasisSet> cs, int off)
 {
   return off + cs->nbasis();
 }

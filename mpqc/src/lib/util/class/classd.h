@@ -41,7 +41,7 @@
     static const CLASSNAME* require_const_castdown(const DescribedClass*p,const char*,...);
     static CLASSNAME* castdown(DescribedClass*p);
     static const CLASSNAME* const_castdown(const DescribedClass*p);
-    static CLASSNAME* castdown(const RefDescribedClass&p);
+    static CLASSNAME* castdown(const Ref<DescribedClass>&p);
     static const ClassDesc* static_class_desc();
     const ClassDesc* class_desc() const;
 #ifdef HAVE_CTOR
@@ -49,7 +49,7 @@
 #undef HAVE_CTOR
 #endif
 #ifdef HAVE_KEYVAL_CTOR
-    static DescribedClass* create(const RefKeyVal&);
+    static DescribedClass* create(const Ref<KeyVal>&);
 #undef HAVE_KEYVAL_CTOR
 #endif
 #ifdef HAVE_STATEIN_CTOR

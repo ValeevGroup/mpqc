@@ -41,7 +41,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 static void
-nuc_repulsion(double * g, const RefMolecule& m)
+nuc_repulsion(double * g, const Ref<Molecule>& m)
 {
   // handy things
   Molecule& mol = *m.pointer();
@@ -55,16 +55,16 @@ nuc_repulsion(double * g, const RefMolecule& m)
 }
 
 static void
-ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
-            const RefSymmSCMatrix& density, const RefGaussianBasisSet& gbs_,
-            const RefMessageGrp& grp)
+ob_gradient(const Ref<OneBodyDerivInt>& derint, double * gradient,
+            const RefSymmSCMatrix& density, const Ref<GaussianBasisSet>& gbs_,
+            const Ref<MessageGrp>& grp)
 {
   int gsh=0;
   
   GaussianBasisSet& gbs = *gbs_.pointer();
   Molecule& mol = *gbs_->molecule().pointer();
   
-  RefSCMatrixSubblockIter diter =
+  Ref<SCMatrixSubblockIter> diter =
     density->local_blocks(SCMatrixSubblockIter::Read);
 
   for (diter->begin(); diter->ready(); diter->next()) {
@@ -167,7 +167,7 @@ SCF::compute_gradient(const RefSCVector& gradient)
   // form overlap contribution
   tim_change("overlap gradient");
   RefSymmSCMatrix dens = lagrangian();
-  RefOneBodyDerivInt derint = integral()->overlap_deriv();
+  Ref<OneBodyDerivInt> derint = integral()->overlap_deriv();
   ob_gradient(derint, o, dens, basis(), scf_grp_);
 
   scf_grp_->sum(o,n3);

@@ -32,17 +32,9 @@
 #include <util/group/message.h>
 #include <util/group/topology.h>
 
-DescribedClass_REF_def(GlobalMsgIter);
-#define CLASSNAME GlobalMsgIter
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-GlobalMsgIter::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc GlobalMsgIter_cd(
+  typeid(GlobalMsgIter),"GlobalMsgIter",1,"public DescribedClass",
+  0, 0, 0);
 
 GlobalMsgIter::GlobalMsgIter(int nproc, int me, int root)
 {
@@ -52,23 +44,15 @@ GlobalMsgIter::GlobalMsgIter(int nproc, int me, int root)
   forwards();
 }
 
-DescribedClass_REF_def(MachineTopology);
-#define CLASSNAME MachineTopology
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-MachineTopology::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MachineTopology_cd(
+  typeid(MachineTopology),"MachineTopology",1,"public DescribedClass",
+  0, 0, 0);
 
 MachineTopology::MachineTopology()
 {
 }
 
-MachineTopology::MachineTopology(const RefKeyVal&)
+MachineTopology::MachineTopology(const Ref<KeyVal>&)
 {
 }
 

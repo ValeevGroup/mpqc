@@ -38,10 +38,10 @@
 ///////////////////////////////////////////////////////////////////////
 
 TwoBodyInt::TwoBodyInt(Integral *integral,
-                       const RefGaussianBasisSet&b1,
-                       const RefGaussianBasisSet&b2,
-                       const RefGaussianBasisSet&b3,
-                       const RefGaussianBasisSet&b4) :
+                       const Ref<GaussianBasisSet>&b1,
+                       const Ref<GaussianBasisSet>&b2,
+                       const Ref<GaussianBasisSet>&b3,
+                       const Ref<GaussianBasisSet>&b4) :
   integral_(integral),
   bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4), redundant_(1)
 {
@@ -115,31 +115,31 @@ TwoBodyInt::nshell4() const
   return bs4_->nshell();
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 TwoBodyInt::basis()
 {
   return bs1_;
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 TwoBodyInt::basis1()
 {
   return bs1_;
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 TwoBodyInt::basis2()
 {
   return bs2_;
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 TwoBodyInt::basis3()
 {
   return bs3_;
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 TwoBodyInt::basis4()
 {
   return bs4_;
@@ -280,7 +280,7 @@ TwoBodyIntIter::TwoBodyIntIter()
 {
 }
 
-TwoBodyIntIter::TwoBodyIntIter(const RefTwoBodyInt& t) :
+TwoBodyIntIter::TwoBodyIntIter(const Ref<TwoBodyInt>& t) :
   tbi(t)
 {
 }
@@ -362,10 +362,10 @@ TwoBodyIntIter::current_quartet()
 ///////////////////////////////////////////////////////////////////////
 
 TwoBodyDerivInt::TwoBodyDerivInt(Integral *integral,
-                                 const RefGaussianBasisSet&b1,
-                                 const RefGaussianBasisSet&b2,
-                                 const RefGaussianBasisSet&b3,
-                                 const RefGaussianBasisSet&b4):
+                                 const Ref<GaussianBasisSet>&b1,
+                                 const Ref<GaussianBasisSet>&b2,
+                                 const Ref<GaussianBasisSet>&b3,
+                                 const Ref<GaussianBasisSet>&b4):
   integral_(integral),
   bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4)
 {
@@ -439,31 +439,31 @@ TwoBodyDerivInt::nshell4() const
   return bs4_->nshell();
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 TwoBodyDerivInt::basis()
 {
   return bs1_;
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 TwoBodyDerivInt::basis1()
 {
   return bs1_;
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 TwoBodyDerivInt::basis2()
 {
   return bs2_;
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 TwoBodyDerivInt::basis3()
 {
   return bs3_;
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 TwoBodyDerivInt::basis4()
 {
   return bs4_;

@@ -47,10 +47,10 @@ main(int argc, char *argv[])
   }
 
   char *infile = argv[1];
-  RefKeyVal kv(new ParsedKeyVal(infile));
+  Ref<KeyVal> kv(new ParsedKeyVal(infile));
 
   const char *keyword = argc>2?argv[2]:"molecule";
-  RefMolecule mol = kv->describedclassvalue(keyword);
+  Ref<Molecule> mol = kv->describedclassvalue(keyword);
 
   const char *ctol = argc>3?argv[3]:"1.0e-4";
   double tol = atof(ctol);
@@ -58,7 +58,7 @@ main(int argc, char *argv[])
   ExEnv::out() << "Original molecule:" << endl;
   mol->print();
   
-  RefPointGroup highestpg = mol->highest_point_group(tol);
+  Ref<PointGroup> highestpg = mol->highest_point_group(tol);
   ExEnv::out() << "Point Group is " << highestpg->symbol() << endl;
 
   mol->set_point_group(highestpg, 10*tol);

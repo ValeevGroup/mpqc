@@ -36,22 +36,11 @@
 
 using namespace std;
 
-DescribedClass_REF_def(BEMSolvent);
+static ClassDesc BEMSolvent_cd(
+  typeid(BEMSolvent),"BEMSolvent",1,"public DescribedClass",
+  0, create<BEMSolvent>, 0);
 
-#define CLASSNAME BEMSolvent
-#define PARENTS public DescribedClass
-#define HAVE_KEYVAL_CTOR
-//#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-BEMSolvent::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-BEMSolvent::BEMSolvent(const RefKeyVal& keyval)
+BEMSolvent::BEMSolvent(const Ref<KeyVal>& keyval)
 {
   vertex_area_ = 0;
 
@@ -59,9 +48,9 @@ BEMSolvent::BEMSolvent(const RefKeyVal& keyval)
   
   debug_ = keyval->intvalue("debug");
   
-  solute_ = keyval->describedclassvalue("solute");
+  solute_ << keyval->describedclassvalue("solute");
 
-  solvent_ = keyval->describedclassvalue("solvent");
+  solvent_ << keyval->describedclassvalue("solvent");
   // Use the aug-cc-pVQZ MP2 optimum geometry for H2O as default
   if (solvent_.null()) {
       solvent_ = new Molecule;
@@ -74,7 +63,7 @@ BEMSolvent::BEMSolvent(const RefKeyVal& keyval)
   // use as default the number density of water in au^-3, T=25 C, P=101325 Pa
   if (keyval->error() != KeyVal::OK) solvent_density_ = 0.004938887;
 
-  surf_ = keyval->describedclassvalue("surface");
+  surf_ << keyval->describedclassvalue("surface");
 
   dielectric_constant_ = keyval->doublevalue("dielectric_constant");
   if (keyval->error() != KeyVal::OK) dielectric_constant_ = 78.0;
@@ -143,7 +132,7 @@ BEMSolvent::init()
   if (vertex_area_) delete[] vertex_area_;
   vertex_area_ = new double[ncharge()];
   for (int i=0; i<ncharge(); i++) vertex_area_[i] = 0.0;
-  TriangulatedSurfaceIntegrator triint(surf_);
+  TriangulatedSurfaceIntegrator triint(surf_.pointer());
   for (triint = 0; triint.update(); triint++) {
       int j0 = triint.vertex_number(0);
       int j1 = triint.vertex_number(1);
@@ -257,7 +246,7 @@ BEMSolvent::init_system_matrix()
 
   tim_enter("precomp");
   // precompute some arrays
-  TriangulatedSurfaceIntegrator triint(surf_);
+  TriangulatedSurfaceIntegrator triint(surf_.pointer());
   int n_integration_points = triint.n();
   SCVector3 *surfpv = new SCVector3[n_integration_points];
   double *rfdA = new double[n_integration_points];
@@ -288,7 +277,7 @@ BEMSolvent::init_system_matrix()
   // loop thru all the vertices
   for (i = 0; i<n; i++) {
       memset(sysmati,0,sizeof(double)*n);
-      RefVertex v = surf_->vertex(i);
+      Ref<Vertex> v = surf_->vertex(i);
       const SCVector3& pv = v->point();
       const SCVector3& nv = v->normal();
       // integrate over the surface
@@ -446,7 +435,7 @@ BEMSolvent::self_interaction_energy(double** charge_positions,
 
   charges_to_surface_charge_density(charge);
 
-  TriangulatedSurfaceIntegrator triint(surf_);
+  TriangulatedSurfaceIntegrator triint(surf_.pointer());
   int n_integration_points = triint.n();
   SCVector3 *points = new SCVector3[n_integration_points];
   double *charges = new double[n_integration_points];

@@ -48,17 +48,9 @@ extern "C" {
 /////////////////////////////////////////////////////////////////////////////
 // ReplSCMatrix member functions
 
-#define CLASSNAME ReplSCMatrix
-#define PARENTS public SCMatrix
-//#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-ReplSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrix::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ReplSCMatrix_cd(
+  typeid(ReplSCMatrix),"ReplSCMatrix",1,"public SCMatrix",
+  0, 0, 0);
 
 static double **
 init_rect_rows(double *data, int ni,int nj)
@@ -193,7 +185,7 @@ ReplSCMatrix::get_subblock(int br, int er, int bc, int ec)
   sb->assign(0.0);
 
   ReplSCMatrix *lsb =
-    ReplSCMatrix::require_castdown(sb, "ReplSCMatrix::get_subblock");
+    require_dynamic_cast<ReplSCMatrix*>(sb, "ReplSCMatrix::get_subblock");
 
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
@@ -206,7 +198,7 @@ void
 ReplSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
                               int source_br, int source_bc)
 {
-  ReplSCMatrix *lsb = ReplSCMatrix::require_castdown(sb,
+  ReplSCMatrix *lsb = require_dynamic_cast<ReplSCMatrix*>(sb,
                                       "ReplSCMatrix::assign_subblock");
 
   int nsrow = er-br+1;
@@ -229,7 +221,7 @@ void
 ReplSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
                                   int source_br, int source_bc)
 {
-  ReplSCMatrix *lsb = ReplSCMatrix::require_castdown(sb,
+  ReplSCMatrix *lsb = require_dynamic_cast<ReplSCMatrix*>(sb,
                                       "ReplSCMatrix::accumulate_subblock");
 
   int nsrow = er-br+1;
@@ -260,7 +252,7 @@ ReplSCMatrix::get_row(int i)
   SCVector * v = kit()->vector(coldim());
 
   ReplSCVector *lv =
-    ReplSCVector::require_castdown(v, "ReplSCMatrix::get_row");
+    require_dynamic_cast<ReplSCVector*>(v, "ReplSCMatrix::get_row");
 
   for (int j=0; j < ncol(); j++)
     lv->set_element(j,rows[i][j]);
@@ -284,7 +276,7 @@ ReplSCMatrix::assign_row(SCVector *v, int i)
   }
   
   ReplSCVector *lv =
-    ReplSCVector::require_castdown(v, "ReplSCMatrix::assign_row");
+    require_dynamic_cast<ReplSCVector*>(v, "ReplSCMatrix::assign_row");
 
   for (int j=0; j < ncol(); j++)
     rows[i][j] = lv->get_element(j);
@@ -307,7 +299,7 @@ ReplSCMatrix::accumulate_row(SCVector *v, int i)
   }
   
   ReplSCVector *lv =
-    ReplSCVector::require_castdown(v, "ReplSCMatrix::accumulate_row");
+    require_dynamic_cast<ReplSCVector*>(v, "ReplSCMatrix::accumulate_row");
 
   for (int j=0; j < ncol(); j++)
     rows[i][j] += lv->get_element(j);
@@ -325,7 +317,7 @@ ReplSCMatrix::get_column(int i)
   SCVector * v = kit()->vector(rowdim());
 
   ReplSCVector *lv =
-    ReplSCVector::require_castdown(v, "ReplSCMatrix::get_column");
+    require_dynamic_cast<ReplSCVector*>(v, "ReplSCMatrix::get_column");
 
   for (int j=0; j < nrow(); j++)
     lv->set_element(j,rows[j][i]);
@@ -350,7 +342,7 @@ ReplSCMatrix::assign_column(SCVector *v, int i)
   }
   
   ReplSCVector *lv =
-    ReplSCVector::require_castdown(v, "ReplSCMatrix::assign_column");
+    require_dynamic_cast<ReplSCVector*>(v, "ReplSCMatrix::assign_column");
 
   for (int j=0; j < nrow(); j++)
     rows[j][i] = lv->get_element(j);
@@ -373,7 +365,7 @@ ReplSCMatrix::accumulate_column(SCVector *v, int i)
   }
   
   ReplSCVector *lv =
-    ReplSCVector::require_castdown(v, "ReplSCMatrix::accumulate_column");
+    require_dynamic_cast<ReplSCVector*>(v, "ReplSCMatrix::accumulate_column");
 
   for (int j=0; j < nrow(); j++)
     rows[j][i] += lv->get_element(j);
@@ -391,8 +383,8 @@ ReplSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b)
 {
   const char* name = "ReplSCMatrix::accumulate_product_rr";
   // make sure that the arguments are of the correct type
-  ReplSCMatrix* la = ReplSCMatrix::require_castdown(a,name);
-  ReplSCMatrix* lb = ReplSCMatrix::require_castdown(b,name);
+  ReplSCMatrix* la = require_dynamic_cast<ReplSCMatrix*>(a,name);
+  ReplSCMatrix* lb = require_dynamic_cast<ReplSCMatrix*>(b,name);
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->coldim()) ||
@@ -410,7 +402,7 @@ ReplSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b)
   btrans[0] = lb->rows[0];
   cmat_matrix_pointers(btrans,btrans[0],this->ncol(),la->ncol());
 
-  RefSCElementOp op = new SCElementDot(la->rows, btrans, la->ncol());
+  Ref<SCElementOp> op = new SCElementDot(la->rows, btrans, la->ncol());
   element_op(op);
 
   cmat_transpose_matrix(btrans,this->ncol(),la->ncol());
@@ -484,8 +476,8 @@ ReplSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 {
   const char* name = "ReplSCMatrix::accumulate_outer_product";
   // make sure that the arguments are of the correct type
-  ReplSCVector* la = ReplSCVector::require_castdown(a,name);
-  ReplSCVector* lb = ReplSCVector::require_castdown(b,name);
+  ReplSCVector* la = require_dynamic_cast<ReplSCVector*>(a,name);
+  ReplSCVector* lb = require_dynamic_cast<ReplSCVector*>(b,name);
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(lb->dim())) {
@@ -513,8 +505,8 @@ ReplSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
 {
   const char* name = "ReplSCMatrix::accumulate_product_rs";
   // make sure that the arguments are of the correct type
-  ReplSCMatrix* la = ReplSCMatrix::require_castdown(a,name);
-  ReplSymmSCMatrix* lb = ReplSymmSCMatrix::require_castdown(b,name);
+  ReplSCMatrix* la = require_dynamic_cast<ReplSCMatrix*>(a,name);
+  ReplSymmSCMatrix* lb = require_dynamic_cast<ReplSymmSCMatrix*>(b,name);
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
@@ -548,8 +540,8 @@ ReplSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
 {
   const char* name = "ReplSCMatrix::accumulate_product_rd";
   // make sure that the arguments are of the correct type
-  ReplSCMatrix* la = ReplSCMatrix::require_castdown(a,name);
-  ReplDiagSCMatrix* lb = ReplDiagSCMatrix::require_castdown(b,name);
+  ReplSCMatrix* la = require_dynamic_cast<ReplSCMatrix*>(a,name);
+  ReplDiagSCMatrix* lb = require_dynamic_cast<ReplDiagSCMatrix*>(b,name);
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
@@ -578,7 +570,7 @@ ReplSCMatrix::accumulate(const SCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   const ReplSCMatrix* la
-    = ReplSCMatrix::require_const_castdown(a,"ReplSCMatrix::accumulate");
+    = require_dynamic_cast<const ReplSCMatrix*>(a,"ReplSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
@@ -597,7 +589,7 @@ ReplSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   const ReplSymmSCMatrix* la
-    = ReplSymmSCMatrix::require_const_castdown(a,"ReplSCMatrix::accumulate");
+    = require_dynamic_cast<const ReplSymmSCMatrix*>(a,"ReplSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
@@ -625,7 +617,7 @@ ReplSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   const ReplDiagSCMatrix* la
-    = ReplDiagSCMatrix::require_const_castdown(a,"ReplSCMatrix::accumulate");
+    = require_dynamic_cast<const ReplDiagSCMatrix*>(a,"ReplSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
@@ -647,7 +639,7 @@ ReplSCMatrix::accumulate(const SCVector*a)
 {
   // make sure that the arguments is of the correct type
   const ReplSCVector* la
-    = ReplSCVector::require_const_castdown(a,"ReplSCVector::accumulate");
+    = require_dynamic_cast<const ReplSCVector*>(a,"ReplSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)
@@ -716,11 +708,11 @@ void
 ReplSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
 {
   ReplSCMatrix* lU =
-    ReplSCMatrix::require_castdown(U,"ReplSCMatrix::svd_this");
+    require_dynamic_cast<ReplSCMatrix*>(U,"ReplSCMatrix::svd_this");
   ReplSCMatrix* lV =
-    ReplSCMatrix::require_castdown(V,"ReplSCMatrix::svd_this");
+    require_dynamic_cast<ReplSCMatrix*>(V,"ReplSCMatrix::svd_this");
   ReplDiagSCMatrix* lsigma =
-    ReplDiagSCMatrix::require_castdown(sigma,"ReplSCMatrix::svd_this");
+    require_dynamic_cast<ReplDiagSCMatrix*>(sigma,"ReplSCMatrix::svd_this");
 
   RefSCDimension mdim = rowdim();
   RefSCDimension ndim = coldim();
@@ -791,7 +783,7 @@ double
 ReplSCMatrix::solve_this(SCVector*v)
 {
   ReplSCVector* lv =
-    ReplSCVector::require_castdown(v,"ReplSCMatrix::solve_this");
+    require_dynamic_cast<ReplSCVector*>(v,"ReplSCMatrix::solve_this");
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lv->dim())) {
@@ -810,7 +802,7 @@ ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
   int m;
 
   ReplSymmSCMatrix* lS =
-    ReplSymmSCMatrix::require_castdown(S,"ReplSCMatrix::schmidt_orthog");
+    require_dynamic_cast<ReplSymmSCMatrix*>(S,"ReplSCMatrix::schmidt_orthog");
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lS->dim())) {
@@ -944,7 +936,7 @@ ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
 }
 
 void
-ReplSCMatrix::element_op(const RefSCElementOp& op)
+ReplSCMatrix::element_op(const Ref<SCElementOp>& op)
 {
   if (op->has_side_effects()) before_elemop();
   SCMatrixBlockListIter i;
@@ -956,11 +948,11 @@ ReplSCMatrix::element_op(const RefSCElementOp& op)
 }
 
 void
-ReplSCMatrix::element_op(const RefSCElementOp2& op,
+ReplSCMatrix::element_op(const Ref<SCElementOp2>& op,
                           SCMatrix* m)
 {
   ReplSCMatrix *lm
-      = ReplSCMatrix::require_castdown(m,"ReplSCMatrix::element_op");
+      = require_dynamic_cast<ReplSCMatrix*>(m,"ReplSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
       ExEnv::err() << indent << "ReplSCMatrix: bad element_op\n";
@@ -980,13 +972,13 @@ ReplSCMatrix::element_op(const RefSCElementOp2& op,
 }
 
 void
-ReplSCMatrix::element_op(const RefSCElementOp3& op,
+ReplSCMatrix::element_op(const Ref<SCElementOp3>& op,
                           SCMatrix* m,SCMatrix* n)
 {
   ReplSCMatrix *lm
-      = ReplSCMatrix::require_castdown(m,"ReplSCMatrix::element_op");
+      = require_dynamic_cast<ReplSCMatrix*>(m,"ReplSCMatrix::element_op");
   ReplSCMatrix *ln
-      = ReplSCMatrix::require_castdown(n,"ReplSCMatrix::element_op");
+      = require_dynamic_cast<ReplSCMatrix*>(n,"ReplSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
       !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
@@ -1069,7 +1061,7 @@ ReplSCMatrix::vprint(const char *title, ostream& os, int prec) const
   }
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 ReplSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
   return new ReplSCMatrixListSubblockIter(access, blocklist,
@@ -1077,7 +1069,7 @@ ReplSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
                                           matrix, d1->n()*d2->n());
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 ReplSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
@@ -1086,7 +1078,7 @@ ReplSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
            << endl;
       abort();
     }
-  RefSCMatrixBlockList allblocklist = new SCMatrixBlockList();
+  Ref<SCMatrixBlockList> allblocklist = new SCMatrixBlockList();
   allblocklist->insert(new SCMatrixRectSubBlock(0, d1->n(), d1->n(),
                                                 0, d2->n(), matrix));
   return new ReplSCMatrixListSubblockIter(access, allblocklist,
@@ -1094,10 +1086,10 @@ ReplSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
                                           matrix, d1->n()*d2->n());
 }
 
-RefReplSCMatrixKit
+Ref<ReplSCMatrixKit>
 ReplSCMatrix::skit()
 {
-  return ReplSCMatrixKit::castdown(kit().pointer());
+  return dynamic_cast<ReplSCMatrixKit*>(kit().pointer());
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -210,24 +210,17 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
 ///////////////////////////////////////////////////////////////////////
 // The MIDMemoryGrp class
 
-#define CLASSNAME MIDMemoryGrp
-#define PARENTS public ActiveMsgMemoryGrp
-#include <util/class/classi.h>
-void *
-MIDMemoryGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  ActiveMsgMemoryGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MIDMemoryGrp_cd(
+  typeid(MIDMemoryGrp),"MIDMemoryGrp",1,"public ActiveMsgMemoryGrp",
+  0, 0, 0);
 
-MIDMemoryGrp::MIDMemoryGrp(const RefMessageGrp& msg):
+MIDMemoryGrp::MIDMemoryGrp(const Ref<MessageGrp>& msg):
   ActiveMsgMemoryGrp(msg)
 {
   if (debug_) ExEnv::out() << scprintf("%d: MIDMemoryGrp CTOR\n", me());
 
   ctl_mask_ = 0x10000;
-  intMessageGrp *img = intMessageGrp::castdown(msg_.pointer());
+  intMessageGrp *img = dynamic_cast<intMessageGrp*>(msg_.pointer());
   if (img) {
       ctl_mask_ = img->leftover_ctl_bits();
     }
@@ -260,7 +253,7 @@ MIDMemoryGrp::MIDMemoryGrp(const RefMessageGrp& msg):
   n_rep_recv_ = 0;
 }
 
-MIDMemoryGrp::MIDMemoryGrp(const RefKeyVal& keyval):
+MIDMemoryGrp::MIDMemoryGrp(const Ref<KeyVal>& keyval):
   ActiveMsgMemoryGrp(keyval)
 {
   if (debug_) ExEnv::out() << scprintf("%d: MIDMemoryGrp KeyVal CTOR\n", me());
@@ -268,7 +261,7 @@ MIDMemoryGrp::MIDMemoryGrp(const RefKeyVal& keyval):
   nsync_ = 0;
 
   int default_ctl_mask = 0x10000;
-  intMessageGrp *img = intMessageGrp::castdown(msg_.pointer());
+  intMessageGrp *img = dynamic_cast<intMessageGrp*>(msg_.pointer());
   if (img) {
       default_ctl_mask = img->leftover_ctl_bits();
     }

@@ -37,8 +37,6 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////
 // Vertex (a point and a gradient)
 
-REF_def(Vertex);
-
 Vertex::Vertex(const SCVector3&point):
   _point(point),
   _normal(0)

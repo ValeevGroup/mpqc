@@ -43,33 +43,20 @@ using namespace std;
 
 #undef DEBUG
 
-SavableState_REF_def(MolecularFrequencies);
+static ClassDesc MolecularFrequencies_cd(
+  typeid(MolecularFrequencies),"MolecularFrequencies",3,"public SavableState",
+  0, create<MolecularFrequencies>, create<MolecularFrequencies>);
 
-#define CLASSNAME MolecularFrequencies
-#define VERSION 3
-#define PARENTS public SavableState
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-MolecularFrequencies::_castdown(const ClassDesc*cd)
+MolecularFrequencies::MolecularFrequencies(const Ref<KeyVal>& keyval)
 {
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-MolecularFrequencies::MolecularFrequencies(const RefKeyVal& keyval)
-{
-  mol_ = keyval->describedclassvalue("molecule");
+  mol_ << keyval->describedclassvalue("molecule");
   if (mol_.null()) {
       ExEnv::err() << node0 << "MolecularFrequencies: KeyVal CTOR requires molecule"
            << endl;
       abort();
     }
-  KeyValValueRefDescribedClass def_pg(mol_->point_group());
-  pg_ = keyval->describedclassvalue("point_group", def_pg);
+  KeyValValueRefDescribedClass def_pg(mol_->point_group().pointer());
+  pg_ << keyval->describedclassvalue("point_group", def_pg);
   nirrep_ = pg_->char_table().nirrep();
   debug_ = keyval->booleanvalue("debug");
   nfreq_ = 0;
@@ -92,13 +79,13 @@ MolecularFrequencies::MolecularFrequencies(StateIn& si):
 {
   int i;
 
-  if (si.version(static_class_desc()) < 3) {
+  if (si.version(::class_desc<MolecularFrequencies>()) < 3) {
       ExEnv::err() << "MolecularFrequencies: cannot restore from old version" << endl;
       abort();
     }
 
-  mol_.restore_state(si);
-  pg_.restore_state(si);
+  mol_ << SavableState::restore_state(si);
+  pg_ << SavableState::restore_state(si);
 
   si.get(nirrep_);
   si.get(nfreq_);
@@ -110,8 +97,8 @@ MolecularFrequencies::save_data_state(StateOut& so)
 {
   int i;
 
-  mol_.save_state(so);
-  pg_.save_state(so);
+  SavableState::save_state(mol_.pointer(),so);
+  SavableState::save_state(pg_.pointer(),so);
 
   so.put(nirrep_);
   so.put(nfreq_,nirrep_);
@@ -125,7 +112,7 @@ MolecularFrequencies::compute_frequencies(const RefSymmSCMatrix &xhessian)
 
   RefSCMatrix symmbasis
       = MolecularHessian::cartesian_to_symmetry(mol_,pg_);
-  BlockedSCMatrix *bsymmbasis = BlockedSCMatrix::castdown(symmbasis.pointer());
+  BlockedSCMatrix *bsymmbasis = dynamic_cast<BlockedSCMatrix*>(symmbasis.pointer());
 
   kit_ = xhessian->kit();
   d3natom_ = xhessian->dim();
@@ -226,7 +213,7 @@ MolecularFrequencies::do_freq_for_irrep(
       ncbasis.print("ncbasis");
       (ncbasis*eigvecs).print("ncbasis*eigvecs");
     }
-  BlockedSCMatrix::castdown(
+  dynamic_cast<BlockedSCMatrix*>(
       normco_.pointer())->block(irrep).assign(ncbasis*eigvecs);
 }
 
@@ -482,8 +469,8 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
 }
 
 void
-MolecularFrequencies::animate(const RefRender& render,
-                              const RefMolFreqAnimate& anim)
+MolecularFrequencies::animate(const Ref<Render>& render,
+                              const Ref<MolFreqAnimate>& anim)
 {
   int i,j;
   for (i=0; i<nirrep_; i++) {
@@ -493,7 +480,7 @@ MolecularFrequencies::animate(const RefRender& render,
                 pg_->char_table().gamma(i).symbol(), j);
           anim->set_name(name);
           anim->set_mode(i,j);
-          render->animate(anim);
+          render->animate(anim.pointer());
         }
     }
 }
@@ -501,26 +488,16 @@ MolecularFrequencies::animate(const RefRender& render,
 /////////////////////////////////////////////////////////////////////////////
 // MolFreqAnimate
 
-DescribedClass_REF_def(MolFreqAnimate);
+static ClassDesc MolFreqAnimate_cd(
+  typeid(MolFreqAnimate),"MolFreqAnimate",1,"public AnimatedObject",
+  0, create<MolFreqAnimate>, 0);
 
-#define CLASSNAME MolFreqAnimate
-#define PARENTS public AnimatedObject
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-MolFreqAnimate::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = AnimatedObject::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-MolFreqAnimate::MolFreqAnimate(const RefKeyVal &keyval):
+MolFreqAnimate::MolFreqAnimate(const Ref<KeyVal> &keyval):
   AnimatedObject(keyval)
 {
-  renmol_ = keyval->describedclassvalue("rendered");
-  molfreq_ = keyval->describedclassvalue("freq");
-  dependent_mole_ = keyval->describedclassvalue("dependent_mole");
+  renmol_ << keyval->describedclassvalue("rendered");
+  molfreq_ << keyval->describedclassvalue("freq");
+  dependent_mole_ << keyval->describedclassvalue("dependent_mole");
   irrep_ = keyval->intvalue("irrep");
   mode_ = keyval->intvalue("mode");
   nframe_ = keyval->intvalue("nframe");
@@ -539,13 +516,13 @@ MolFreqAnimate::nobject()
   return nframe_;
 }
 
-RefRenderedObject
+Ref<RenderedObject>
 MolFreqAnimate::object(int iobject)
 {
   BlockedSCMatrix *normco
-      = BlockedSCMatrix::castdown(molfreq_->normal_coordinates().pointer());
-  RefMolecule mol = renmol_->molecule();
-  RefMolecule molcopy = new Molecule(*mol.pointer());
+      = dynamic_cast<BlockedSCMatrix*>(molfreq_->normal_coordinates().pointer());
+  Ref<Molecule> mol = renmol_->molecule();
+  Ref<Molecule> molcopy = new Molecule(*mol.pointer());
 
   double scale = 0.2 * cos(M_PI*(iobject+0.5)/(double)nframe_);
 
@@ -569,7 +546,7 @@ MolFreqAnimate::object(int iobject)
   mol->operator = (*molcopy.pointer());
   if (dependent_mole_.nonnull()) dependent_mole_->obsolete();
 
-  return renmol_;
+  return renmol_.pointer();
 }
 
 

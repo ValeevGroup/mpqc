@@ -42,35 +42,29 @@
 /** The DistSCMatrixKit produces matrices that work in a many processor
 environment.  The matrix is distributed across all nodes. */
 class DistSCMatrixKit: public SCMatrixKit {
-#   define CLASSNAME DistSCMatrixKit
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   public:
-    DistSCMatrixKit(const RefMessageGrp &grp = 0);
-    DistSCMatrixKit(const RefKeyVal&);
+    DistSCMatrixKit(const Ref<MessageGrp> &grp = 0);
+    DistSCMatrixKit(const Ref<KeyVal>&);
     ~DistSCMatrixKit();
     SCMatrix* matrix(const RefSCDimension&,const RefSCDimension&);
     SymmSCMatrix* symmmatrix(const RefSCDimension&);
     DiagSCMatrix* diagmatrix(const RefSCDimension&);
     SCVector* vector(const RefSCDimension&);
 };
-DescribedClass_REF_dec(DistSCMatrixKit);
+
 
 class DistSCVector: public SCVector {
     friend class DistSCMatrix;
     friend class DistSymmSCMatrix;
     friend class DistDiagSCMatrix;
-#   define CLASSNAME DistSCVector
-#   include <util/class/classd.h>
   protected:
-    RefSCMatrixBlockList blocklist;
+    Ref<SCMatrixBlockList> blocklist;
 
     void init_blocklist();
     double *find_element(int i) const;
     int element_to_node(int i) const;
     int block_to_node(int) const;
-    RefSCMatrixBlock block_to_block(int) const;
+    Ref<SCMatrixBlock> block_to_block(int) const;
     void error(const char *);
   public:
     DistSCVector(const RefSCDimension&, DistSCMatrixKit*);
@@ -87,28 +81,26 @@ class DistSCVector: public SCVector {
     void accumulate(const SCMatrix*m);
     double scalar_product(SCVector*);
     void accumulate_product_rv(SCMatrix *, SCVector *);
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     SCVector*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     SCVector*,SCVector*);
     void vprint(const char* title=0,
                 std::ostream& out=ExEnv::out(), int =10) const;
 
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 
-    RefDistSCMatrixKit skit();
+    Ref<DistSCMatrixKit> skit();
 };
 
 class DistSCMatrix: public SCMatrix {
     friend class DistSymmSCMatrix;
     friend class DistDiagSCMatrix;
     friend class DistSCVector;
-#   define CLASSNAME DistSCMatrix
-#   include <util/class/classd.h>
   protected:
-    RefSCMatrixBlockList blocklist;
+    Ref<SCMatrixBlockList> blocklist;
 
     int vecoff;
     int nvec;
@@ -120,9 +112,9 @@ class DistSCMatrix: public SCMatrix {
     double *find_element(int i, int j) const;
     int element_to_node(int i, int j) const;
     int block_to_node(int,int) const;
-    RefSCMatrixBlock block_to_block(int, int) const;
-    RefSCBlockInfo rowblocks() const { return d1->blocks(); }
-    RefSCBlockInfo colblocks() const { return d2->blocks(); }
+    Ref<SCMatrixBlock> block_to_block(int, int) const;
+    Ref<SCBlockInfo> rowblocks() const { return d1->blocks(); }
+    Ref<SCBlockInfo> colblocks() const { return d2->blocks(); }
     
     enum VecOp {CopyFromVec, CopyToVec, AccumFromVec, AccumToVec};
     enum Form { Row, Col } form;
@@ -162,37 +154,35 @@ class DistSCMatrix: public SCMatrix {
     double trace();
     void gen_invert_this();
     void schmidt_orthog(SymmSCMatrix*,int);
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     SCMatrix*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     SCMatrix*,SCMatrix*);
     void vprint(const char* title=0,
                 std::ostream& out=ExEnv::out(), int =10);
     void vprint(const char* title=0,
                 std::ostream& out=ExEnv::out(), int =10) const;
 
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 
-    RefDistSCMatrixKit skit();
+    Ref<DistSCMatrixKit> skit();
 };
 
 class DistSymmSCMatrix: public SymmSCMatrix {
     friend class DistSCMatrix;
     friend class DistDiagSCMatrix;
     friend class DistSCVector;
-#   define CLASSNAME DistSymmSCMatrix
-#   include <util/class/classd.h>
   protected:
-    RefSCMatrixBlockList blocklist;
+    Ref<SCMatrixBlockList> blocklist;
   protected:
     // utility functions
     void init_blocklist();
     double *find_element(int i, int j) const;
     int element_to_node(int i, int j) const;
     int block_to_node(int,int) const;
-    RefSCMatrixBlock block_to_block(int, int) const;
+    Ref<SCMatrixBlock> block_to_block(int, int) const;
 
     void error(const char *msg);
   public:
@@ -224,34 +214,32 @@ class DistSymmSCMatrix: public SymmSCMatrix {
 
     void diagonalize(DiagSCMatrix*,SCMatrix*);
     void accumulate_symmetric_sum(SCMatrix*);
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     SymmSCMatrix*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     SymmSCMatrix*,SymmSCMatrix*);
 
     virtual void convert_accumulate(SymmSCMatrix*);
 
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 
-    RefDistSCMatrixKit skit();
+    Ref<DistSCMatrixKit> skit();
 };
 
 class DistDiagSCMatrix: public DiagSCMatrix {
     friend class DistSCMatrix;
     friend class DistSymmSCMatrix;
     friend class DistSCVector;
-#   define CLASSNAME DistDiagSCMatrix
-#   include <util/class/classd.h>
   protected:
-    RefSCMatrixBlockList blocklist;
+    Ref<SCMatrixBlockList> blocklist;
 
     void init_blocklist();
     double *find_element(int i) const;
     int element_to_node(int i) const;
     int block_to_node(int) const;
-    RefSCMatrixBlock block_to_block(int) const;
+    Ref<SCMatrixBlock> block_to_block(int) const;
     void error(const char *msg);
   public:
     DistDiagSCMatrix(const RefSCDimension&, DistSCMatrixKit*);
@@ -267,32 +255,32 @@ class DistDiagSCMatrix: public DiagSCMatrix {
     double trace();
     void gen_invert_this();
 
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     DiagSCMatrix*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     DiagSCMatrix*,DiagSCMatrix*);
 
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 
-    RefDistSCMatrixKit skit();
+    Ref<DistSCMatrixKit> skit();
 };
 
 class DistSCMatrixListSubblockIter: public SCMatrixListSubblockIter {
   protected:
-    RefMessageGrp grp_;
+    Ref<MessageGrp> grp_;
     StateSend out_;
     StateRecv in_;
     int step_;
-    RefSCMatrixBlockList locallist_;
+    Ref<SCMatrixBlockList> locallist_;
 
     void maybe_advance_list();
     void advance_list();
   public:
     DistSCMatrixListSubblockIter(Access,
-                                 const RefSCMatrixBlockList &locallist,
-                                 const RefMessageGrp &grp);
+                                 const Ref<SCMatrixBlockList> &locallist,
+                                 const Ref<MessageGrp> &grp);
     void begin();
     void next();
     ~DistSCMatrixListSubblockIter();

@@ -39,15 +39,12 @@
 
 /** An abstract base class for integrating the electron density. */
 class DenIntegrator: virtual public SavableState {
-#   define CLASSNAME DenIntegrator
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
-    RefWavefunction wfn_;
-    RefShellExtent extent_;
+    Ref<Wavefunction> wfn_;
+    Ref<ShellExtent> extent_;
 
-    RefThreadGrp threadgrp_;
-    RefMessageGrp messagegrp_;
+    Ref<ThreadGrp> threadgrp_;
+    Ref<MessageGrp> messagegrp_;
 
     double value_;
     double accuracy_;
@@ -71,7 +68,7 @@ class DenIntegrator: virtual public SavableState {
     int linear_scaling_;
     int use_dmat_bound_;
 
-    void init_integration(const RefDenFunctional &func,
+    void init_integration(const Ref<DenFunctional> &func,
                           const RefSymmSCMatrix& densa,
                           const RefSymmSCMatrix& densb,
                           double *nuclear_gradient);
@@ -82,14 +79,14 @@ class DenIntegrator: virtual public SavableState {
     /// Construct a new DenIntegrator.
     DenIntegrator();
     /// Construct a new DenIntegrator given the KeyVal input.
-    DenIntegrator(const RefKeyVal &);
+    DenIntegrator(const Ref<KeyVal> &);
     /// Construct a new DenIntegrator given the StateIn data.
     DenIntegrator(StateIn &);
     ~DenIntegrator();
     void save_data_state(StateOut &);
 
     /// Returns the wavefunction used for the integration.
-    RefWavefunction wavefunction() const { return wfn_; }
+    Ref<Wavefunction> wavefunction() const { return wfn_; }
     /// Returns the result of the integration.
     double value() const { return value_; }
 
@@ -108,35 +105,32 @@ class DenIntegrator: virtual public SavableState {
 
     /** Called before integrate.  Does not need to be called again
         unless the geometry changes or done is called. */
-    virtual void init(const RefWavefunction &);
+    virtual void init(const Ref<Wavefunction> &);
     /// Must be called between calls to init.
     virtual void done();
     /** Performs the integration of the given functional using the given
         alpha and beta density matrices.  The nuclear derivative
         contribution is placed in nuclear_grad, if it is non-null. */
-    virtual void integrate(const RefDenFunctional &,
+    virtual void integrate(const Ref<DenFunctional> &,
                            const RefSymmSCMatrix& densa =0,
                            const RefSymmSCMatrix& densb =0,
                            double *nuclear_grad = 0) = 0;
 };
-SavableState_REF_dec(DenIntegrator);
+
 
 /** An abstract base class for computing grid weights. */
 class IntegrationWeight: virtual public SavableState {
-#   define CLASSNAME IntegrationWeight
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
 
   protected:
 
-    RefMolecule mol_;
+    Ref<Molecule> mol_;
     double tol_;
 
     void fd_w(int icenter, SCVector3 &point, double *fd_grad_w);
 
   public:
     IntegrationWeight();
-    IntegrationWeight(const RefKeyVal &);
+    IntegrationWeight(const Ref<KeyVal> &);
     IntegrationWeight(StateIn &);
     ~IntegrationWeight();
     void save_data_state(StateOut &);
@@ -145,7 +139,7 @@ class IntegrationWeight: virtual public SavableState {
     void test();
 
     /// Initialize the integration weight object.
-    virtual void init(const RefMolecule &, double tolerance);
+    virtual void init(const Ref<Molecule> &, double tolerance);
     /// Called when finished with the integration weight object.
     virtual void done();
     /** Computes the weight for a given center at a given point in space.
@@ -154,15 +148,10 @@ class IntegrationWeight: virtual public SavableState {
         before done. It must also be thread-safe. */
     virtual double w(int center, SCVector3 &point, double *grad_w = 0) = 0;
 };
-SavableState_REF_dec(IntegrationWeight);
+
 
 /** Implements Becke's integration weight scheme. */
 class BeckeIntegrationWeight: public IntegrationWeight {
-#   define CLASSNAME BeckeIntegrationWeight
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
 
     int ncenters;
     SCVector3 *centers;
@@ -180,26 +169,23 @@ class BeckeIntegrationWeight: public IntegrationWeight {
 
   public:
     BeckeIntegrationWeight();
-    BeckeIntegrationWeight(const RefKeyVal &);
+    BeckeIntegrationWeight(const Ref<KeyVal> &);
     BeckeIntegrationWeight(StateIn &);
     ~BeckeIntegrationWeight();
     void save_data_state(StateOut &);
 
-    void init(const RefMolecule &, double tolerance);
+    void init(const Ref<Molecule> &, double tolerance);
     void done();
     double w(int center, SCVector3 &point, double *grad_w = 0);
 };
 
 /** An abstract base class for radial integrators. */
 class RadialIntegrator: virtual public SavableState {
-#   define CLASSNAME RadialIntegrator
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
     int nr_;
   public:
     RadialIntegrator();
-    RadialIntegrator(const RefKeyVal &);
+    RadialIntegrator(const Ref<KeyVal> &);
     RadialIntegrator(StateIn &);
     ~RadialIntegrator();
     void save_data_state(StateOut &);
@@ -208,17 +194,14 @@ class RadialIntegrator: virtual public SavableState {
     virtual double radial_value(int ir, int nr, double radii,
                                 double &multiplier) = 0;
 };
-SavableState_REF_dec(RadialIntegrator);
+
 
 /** An abstract base class for angular integrators. */
 class AngularIntegrator: virtual public SavableState{
-#   define CLASSNAME AngularIntegrator
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
   public:
     AngularIntegrator();
-    AngularIntegrator(const RefKeyVal &);
+    AngularIntegrator(const Ref<KeyVal> &);
     AngularIntegrator(StateIn &);
     ~AngularIntegrator();
     void save_data_state(StateOut &);
@@ -228,20 +211,15 @@ class AngularIntegrator: virtual public SavableState{
     virtual double angular_point_cartesian(int iangular, double r,
         SCVector3 &integration_point) const = 0;
 };
-SavableState_REF_dec(AngularIntegrator);
+
 
 /** An implementation of a radial integrator using the Euler-Maclaurin
     weights and grid points. */
 class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
-#   define CLASSNAME EulerMaclaurinRadialIntegrator
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     EulerMaclaurinRadialIntegrator();
     EulerMaclaurinRadialIntegrator(int i);
-    EulerMaclaurinRadialIntegrator(const RefKeyVal &);
+    EulerMaclaurinRadialIntegrator(const Ref<KeyVal> &);
     EulerMaclaurinRadialIntegrator(StateIn &);
     ~EulerMaclaurinRadialIntegrator();
     void save_data_state(StateOut &);
@@ -294,11 +272,6 @@ class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
 
  */
 class LebedevLaikovIntegrator: public AngularIntegrator {
-#   define CLASSNAME LebedevLaikovIntegrator
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     int npoint_;
     double *x_, *y_, *z_, *w_;
@@ -306,7 +279,7 @@ class LebedevLaikovIntegrator: public AngularIntegrator {
     void init(int n);
   public:
     LebedevLaikovIntegrator();
-    LebedevLaikovIntegrator(const RefKeyVal &);
+    LebedevLaikovIntegrator(const Ref<KeyVal> &);
     LebedevLaikovIntegrator(StateIn &);
     LebedevLaikovIntegrator(int);
     ~LebedevLaikovIntegrator();
@@ -322,11 +295,6 @@ class LebedevLaikovIntegrator: public AngularIntegrator {
 /** An implementation of an angular integrator using the Gauss-Legendre
     weights and grid points. */
 class GaussLegendreAngularIntegrator: public AngularIntegrator {
-#   define CLASSNAME GaussLegendreAngularIntegrator
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     int ntheta_;
     int nphi_;
@@ -354,7 +322,7 @@ class GaussLegendreAngularIntegrator: public AngularIntegrator {
     void gauleg(double x1, double x2, int n);    
   public:
     GaussLegendreAngularIntegrator();
-    GaussLegendreAngularIntegrator(const RefKeyVal &);
+    GaussLegendreAngularIntegrator(const Ref<KeyVal> &);
     GaussLegendreAngularIntegrator(StateIn &);
     ~GaussLegendreAngularIntegrator();
     void save_data_state(StateOut &);
@@ -368,11 +336,6 @@ class GaussLegendreAngularIntegrator: public AngularIntegrator {
 /** An implementation of an integrator using any combination of
     a RadianIntegrator and an AngularIntegrator. */
 class RadialAngularIntegrator: public DenIntegrator {
-#   define CLASSNAME RadialAngularIntegrator
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     int prune_grid_;
     double **Alpha_coeffs_;
@@ -384,19 +347,19 @@ class RadialAngularIntegrator: public DenIntegrator {
     int natomic_rows_;
     int max_gridtype_;
   protected:
-    RefIntegrationWeight weight_;
-    RefRadialIntegrator radial_user_;
-    RefAngularIntegrator angular_user_;
-    RefAngularIntegrator ***angular_grid_;
-    RefRadialIntegrator **radial_grid_;
+    Ref<IntegrationWeight> weight_;
+    Ref<RadialIntegrator> radial_user_;
+    Ref<AngularIntegrator> angular_user_;
+    Ref<AngularIntegrator> ***angular_grid_;
+    Ref<RadialIntegrator> **radial_grid_;
   public:
     RadialAngularIntegrator();
-    RadialAngularIntegrator(const RefKeyVal &);
+    RadialAngularIntegrator(const Ref<KeyVal> &);
     RadialAngularIntegrator(StateIn &);
     ~RadialAngularIntegrator();
     void save_data_state(StateOut &);
 
-    void integrate(const RefDenFunctional &,
+    void integrate(const Ref<DenFunctional> &,
                    const RefSymmSCMatrix& densa =0,
                    const RefSymmSCMatrix& densb =0,
                    double *nuclear_gradient = 0);
@@ -409,12 +372,12 @@ class RadialAngularIntegrator: public DenIntegrator {
     void set_grids(void);
     int get_atomic_row(int i);
     void init_parameters(void);
-    void init_parameters(const RefKeyVal& keyval);
-    void init_pruning_coefficients(const RefKeyVal& keyval);
+    void init_parameters(const Ref<KeyVal>& keyval);
+    void init_pruning_coefficients(const Ref<KeyVal>& keyval);
     void init_pruning_coefficients(void);
     void init_alpha_coefficients(void);
     int select_dynamic_grid(void);
-    RefIntegrationWeight weight() { return weight_; }
+    Ref<IntegrationWeight> weight() { return weight_; }
 };
     
 #endif

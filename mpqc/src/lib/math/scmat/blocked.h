@@ -44,32 +44,27 @@ class BlockedSymmSCMatrix;
 class BlockedDiagSCMatrix;
 
 class BlockedSCMatrixKit: public SCMatrixKit {
-#   define CLASSNAME BlockedSCMatrixKit
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   private:
-    RefSCMatrixKit subkit_;
+    Ref<SCMatrixKit> subkit_;
   public:
-    BlockedSCMatrixKit(const RefSCMatrixKit& subkit);
-    BlockedSCMatrixKit(const RefKeyVal&);
+    BlockedSCMatrixKit(const Ref<SCMatrixKit>& subkit);
+    BlockedSCMatrixKit(const Ref<KeyVal>&);
     ~BlockedSCMatrixKit();
     SCMatrix* matrix(const RefSCDimension&,const RefSCDimension&);
     SymmSCMatrix* symmmatrix(const RefSCDimension&);
     DiagSCMatrix* diagmatrix(const RefSCDimension&);
     SCVector* vector(const RefSCDimension&);
 
-    RefSCMatrixKit subkit() { return subkit_; }
+    Ref<SCMatrixKit> subkit() { return subkit_; }
 };
-DescribedClass_REF_dec(BlockedSCMatrixKit);
+
 
 class BlockedSCVector: public SCVector {
     friend class BlockedSCMatrix;
     friend class BlockedSymmSCMatrix;
     friend class BlockedDiagSCMatrix;
-#   define CLASSNAME BlockedSCVector
-#   include <util/class/classd.h>
   private:
-    RefSCMatrixKit subkit;
+    Ref<SCMatrixKit> subkit;
     RefSCVector *vecs_;
 
     void resize(SCDimension*);
@@ -97,10 +92,10 @@ class BlockedSCVector: public SCVector {
     void accumulate(const SCMatrix*);
     double scalar_product(SCVector*);
 
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     SCVector*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     SCVector*,SCVector*);
     void vprint(const char* title=0,
                 std::ostream& out=ExEnv::out(), int =10) const;
@@ -111,18 +106,16 @@ class BlockedSCVector: public SCVector {
     int nblocks() const;
     RefSCVector block(int);
 
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class BlockedSCMatrix: public SCMatrix {
     friend class BlockedSymmSCMatrix;
     friend class BlockedDiagSCMatrix;
     friend class BlockedSCVector;
-#   define CLASSNAME BlockedSCMatrix
-#   include <util/class/classd.h>
   private:
-    RefSCMatrixKit subkit;
+    Ref<SCMatrixKit> subkit;
     RefSCMatrix *mats_;
     int nblocks_;
     
@@ -171,10 +164,10 @@ class BlockedSCMatrix: public SCMatrix {
     void gen_invert_this();
     void schmidt_orthog(SymmSCMatrix*,int);
 
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     SCMatrix*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     SCMatrix*,SCMatrix*);
 
     void vprint(const char* title=0,
@@ -188,18 +181,16 @@ class BlockedSCMatrix: public SCMatrix {
     int nblocks() const;
     RefSCMatrix block(int);
 
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class BlockedSymmSCMatrix: public SymmSCMatrix {
     friend class BlockedSCMatrix;
     friend class BlockedDiagSCMatrix;
     friend class BlockedSCVector;
-#   define CLASSNAME BlockedSymmSCMatrix
-#   include <util/class/classd.h>
   private:
-    RefSCMatrixKit subkit;
+    Ref<SCMatrixKit> subkit;
     RefSymmSCMatrix *mats_;
 
     void resize(SCDimension*);
@@ -250,10 +241,10 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
 
     void convert_accumulate(SymmSCMatrix*a);
 
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     SymmSCMatrix*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     SymmSCMatrix*,SymmSCMatrix*);
 
     void vprint(const char* title=0,
@@ -265,18 +256,16 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     int nblocks() const;
     RefSymmSCMatrix block(int);
 
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class BlockedDiagSCMatrix: public DiagSCMatrix {
     friend class BlockedSCMatrix;
     friend class BlockedSymmSCMatrix;
     friend class BlockedSCVector;
-#   define CLASSNAME BlockedDiagSCMatrix
-#   include <util/class/classd.h>
   private:
-    RefSCMatrixKit subkit;
+    Ref<SCMatrixKit> subkit;
     RefDiagSCMatrix *mats_;
 
     void resize(SCDimension*);
@@ -299,10 +288,10 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
     double trace();
     void gen_invert_this();
 
-    void element_op(const RefSCElementOp&);
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&);
+    void element_op(const Ref<SCElementOp2>&,
                     DiagSCMatrix*);
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     DiagSCMatrix*,DiagSCMatrix*);
     void vprint(const char* title=0,
                 std::ostream& out=ExEnv::out(), int =10) const;
@@ -313,14 +302,11 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
     int nblocks() const;
     RefDiagSCMatrix block(int);
 
-    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
-    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
+    Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class BlockedSCElementOp : public SCElementOp {
-#   define CLASSNAME BlockedSCElementOp
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   private:
     int current_block_;
     
@@ -331,9 +317,6 @@ class BlockedSCElementOp : public SCElementOp {
 };
 
 class BlockedSCElementOp2 : public SCElementOp2 {
-#   define CLASSNAME BlockedSCElementOp2
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   private:
     int current_block_;
     
@@ -344,9 +327,6 @@ class BlockedSCElementOp2 : public SCElementOp2 {
 };
 
 class BlockedSCElementOp3 : public SCElementOp3 {
-#   define CLASSNAME BlockedSCElementOp3
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   private:
     int current_block_;
     

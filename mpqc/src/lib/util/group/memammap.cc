@@ -76,19 +76,11 @@ static MmapHeap mmap_heap;
 
 #undef DEBUG
 
-#define CLASSNAME AlphaMMapMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public MsgMemoryGrp
-#include <util/class/classi.h>
-void *
-AlphaMMapMemoryGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  MsgMemoryGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc AlphaMMapMemoryGrp_cd(
+  typeid(AlphaMMapMemoryGrp),"AlphaMMapMemoryGrp",1,"public MsgMemoryGrp",
+  0, create<AlphaMMapMemoryGrp>, 0);
 
-AlphaMMapMemoryGrp::AlphaMMapMemoryGrp(const RefMessageGrp& msg):
+AlphaMMapMemoryGrp::AlphaMMapMemoryGrp(const Ref<MessageGrp>& msg):
   MsgMemoryGrp(msg)
 {
   update_ = 0;
@@ -98,7 +90,7 @@ AlphaMMapMemoryGrp::AlphaMMapMemoryGrp(const RefMessageGrp& msg):
   rangelock_ = 0;
 }
 
-AlphaMMapMemoryGrp::AlphaMMapMemoryGrp(const RefKeyVal& keyval):
+AlphaMMapMemoryGrp::AlphaMMapMemoryGrp(const Ref<KeyVal>& keyval):
   MsgMemoryGrp(keyval)
 {
   update_ = 0;

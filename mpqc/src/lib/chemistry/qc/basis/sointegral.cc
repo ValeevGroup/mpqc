@@ -39,9 +39,7 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // OneBodySOInt
 
-REF_def(OneBodySOInt);
-
-OneBodySOInt::OneBodySOInt(const RefOneBodyInt &ob)
+OneBodySOInt::OneBodySOInt(const Ref<OneBodyInt> &ob)
 {
   ob_ = ob;
 
@@ -61,19 +59,19 @@ OneBodySOInt::~OneBodySOInt()
   delete[] buffer_;
 }
 
-RefSOBasis
+Ref<SOBasis>
 OneBodySOInt::basis() const
 {
   return b1_;
 }
 
-RefSOBasis
+Ref<SOBasis>
 OneBodySOInt::basis1() const
 {
   return b1_;
 }
 
-RefSOBasis
+Ref<SOBasis>
 OneBodySOInt::basis2() const
 {
   return b2_;
@@ -145,9 +143,7 @@ OneBodySOInt::reinitialize()
 /////////////////////////////////////////////////////////////////////////////
 // TwoBodySOInt
 
-REF_def(TwoBodySOInt);
-
-TwoBodySOInt::TwoBodySOInt(const RefTwoBodyInt &tb)
+TwoBodySOInt::TwoBodySOInt(const Ref<TwoBodyInt> &tb)
 {
   tb_ = tb;
 
@@ -179,31 +175,31 @@ TwoBodySOInt::~TwoBodySOInt()
   delete[] buffer_;
 }
 
-RefSOBasis
+Ref<SOBasis>
 TwoBodySOInt::basis() const
 {
   return b1_;
 }
 
-RefSOBasis
+Ref<SOBasis>
 TwoBodySOInt::basis1() const
 {
   return b1_;
 }
 
-RefSOBasis
+Ref<SOBasis>
 TwoBodySOInt::basis2() const
 {
   return b2_;
 }
 
-RefSOBasis
+Ref<SOBasis>
 TwoBodySOInt::basis3() const
 {
   return b3_;
 }
 
-RefSOBasis
+Ref<SOBasis>
 TwoBodySOInt::basis4() const
 {
   return b4_;

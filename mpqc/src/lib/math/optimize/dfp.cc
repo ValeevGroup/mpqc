@@ -32,42 +32,22 @@
 #include <math/optimize/transform.h>
 #include <util/keyval/keyval.h>
 
-#define CLASSNAME DFPUpdate
-#define PARENTS public HessianUpdate
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-#define CLASSNAME BFGSUpdate
-#define PARENTS public DFPUpdate
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
 /////////////////////////////////////////////////////////////////////////
 // DFPUpdate
 
-void *
-DFPUpdate::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = HessianUpdate::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc DFPUpdate_cd(
+  typeid(DFPUpdate),"DFPUpdate",1,"public HessianUpdate",
+  create<DFPUpdate>, create<DFPUpdate>, create<DFPUpdate>);
 
 DFPUpdate::DFPUpdate()
 {
 }
 
-DFPUpdate::DFPUpdate(const RefKeyVal&keyval):
+DFPUpdate::DFPUpdate(const Ref<KeyVal>&keyval):
   HessianUpdate(keyval)
 {
   if (keyval->exists("xprev") && keyval->exists("gprev")) {
-    RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+    Ref<SCMatrixKit> k = SCMatrixKit::default_matrixkit();
     RefSCDimension dim = new SCDimension(keyval->count("xprev"));
     xprev = k->vector(dim);
     gprev = k->vector(dim);
@@ -82,9 +62,9 @@ DFPUpdate::DFPUpdate(StateIn&s):
   SavableState(s),
   HessianUpdate(s)
 {
-  RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+  Ref<SCMatrixKit> k = SCMatrixKit::default_matrixkit();
   RefSCDimension dim;
-  dim.restore_state(s);
+  dim << SavableState::restore_state(s);
   xprev = k->vector(dim);
   gprev = k->vector(dim);
   xprev.restore(s);
@@ -99,13 +79,13 @@ void
 DFPUpdate::save_data_state(StateOut&s)
 {
   HessianUpdate::save_data_state(s);
-  xprev.dim().save_state(s);
+  SavableState::save_state(xprev.dim().pointer(),s);
   xprev.save(s);
   gprev.save(s);
 }
 
 void
-DFPUpdate::update(const RefSymmSCMatrix&ihessian,const RefFunction&func,
+DFPUpdate::update(const RefSymmSCMatrix&ihessian,const Ref<Function>&func,
                   const RefSCVector&xn,const RefSCVector&gn)
 {
   RefSCVector xnew, gnew;
@@ -139,7 +119,7 @@ DFPUpdate::update(const RefSymmSCMatrix&ihessian,const RefFunction&func,
 }
 
 void
-DFPUpdate::apply_transform(const RefNonlinearTransform& trans)
+DFPUpdate::apply_transform(const Ref<NonlinearTransform>& trans)
 {
   if (trans.null()) return;
   HessianUpdate::apply_transform(trans);
@@ -160,19 +140,15 @@ DFPUpdate::set_inverse(void)
 /////////////////////////////////////////////////////////////////////////
 // BFGSUpdate
 
-void *
-BFGSUpdate::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DFPUpdate::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc BFGSUpdate_cd(
+  typeid(BFGSUpdate),"BFGSUpdate",1,"public HessianUpdate",
+  create<BFGSUpdate>, create<BFGSUpdate>, create<BFGSUpdate>);
 
 BFGSUpdate::BFGSUpdate()
 {
 }
 
-BFGSUpdate::BFGSUpdate(const RefKeyVal&keyval):
+BFGSUpdate::BFGSUpdate(const Ref<KeyVal>&keyval):
   DFPUpdate(keyval)
 {
 }
@@ -194,7 +170,7 @@ BFGSUpdate::save_data_state(StateOut&s)
 }
 
 void
-BFGSUpdate::update(const RefSymmSCMatrix&ihessian,const RefFunction&func,
+BFGSUpdate::update(const RefSymmSCMatrix&ihessian,const Ref<Function>&func,
                    const RefSCVector&xn,const RefSCVector&gn)
 {
   RefSCVector xnew, gnew;

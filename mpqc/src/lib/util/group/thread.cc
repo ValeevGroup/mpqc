@@ -63,21 +63,17 @@ Thread::run_Thread_run(void* vth)
   return 0;
 }
 
+void *
+Thread__run_Thread_run(void* vth)
+{
+  return Thread::run_Thread_run(vth);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // ThreadGrp members
 
-DescribedClass_REF_def(ThreadGrp);
-
-#define CLASSNAME ThreadGrp
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-ThreadGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ThreadGrp_cd(typeid(ThreadGrp),"ThreadGrp",1,
+                              "public DescribedClass");
 
 ThreadGrp::ThreadGrp() : threads_(0),  nthread_(1)
 {
@@ -91,7 +87,7 @@ ThreadGrp::ThreadGrp(const ThreadGrp &tg, int nthread)
   threads_ = new Thread*[nthread_];
 }
 
-ThreadGrp::ThreadGrp(const RefKeyVal& keyval)
+ThreadGrp::ThreadGrp(const Ref<KeyVal>& keyval)
 {
   int defaultnum = ExEnv::nproc();
   if (defaultnum == 0) defaultnum = 1;
@@ -132,10 +128,10 @@ ThreadGrp::add_thread(int i, Thread*t)
   }
 }
 
-static RefThreadGrp default_threadgrp;
+static Ref<ThreadGrp> default_threadgrp;
 
 void
-ThreadGrp::set_default_threadgrp(const RefThreadGrp& grp)
+ThreadGrp::set_default_threadgrp(const Ref<ThreadGrp>& grp)
 {
   default_threadgrp = grp;
 }
@@ -193,10 +189,10 @@ ThreadGrp::initial_threadgrp(int& argc, char ** argv)
   // create it.
   if (keyval_string) {
     if (keyval_string[0] == '\0') return 0;
-    RefParsedKeyVal strkv = new ParsedKeyVal();
+    Ref<ParsedKeyVal> strkv = new ParsedKeyVal();
     strkv->parse_string(keyval_string);
-    RefDescribedClass dc = strkv->describedclassvalue();
-    grp = ThreadGrp::castdown(dc.pointer());
+    Ref<DescribedClass> dc = strkv->describedclassvalue();
+    grp = dynamic_cast<ThreadGrp*>(dc.pointer());
     if (dc.null()) {
       ExEnv::err() << "initial_threadgrp: couldn't find a ThreadGrp in "
            << keyval_string << endl;
@@ -243,24 +239,16 @@ class ProcThreadLock : public ThreadLock {
 /////////////////////////////////////////////////////////////////////////////
 // ProcThreadGrp members
 
-#define CLASSNAME ProcThreadGrp
-#define PARENTS public ThreadGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-ProcThreadGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = ThreadGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ProcThreadGrp_cd(
+  typeid(ProcThreadGrp),"ProcThreadGrp",1,"public ThreadGrp",
+  0, create<ProcThreadGrp>, 0);
 
 ProcThreadGrp::ProcThreadGrp()
   : ThreadGrp()
 {
 }
 
-ProcThreadGrp::ProcThreadGrp(const RefKeyVal& keyval)
+ProcThreadGrp::ProcThreadGrp(const Ref<KeyVal>& keyval)
   : ThreadGrp(keyval)
 {
   if (nthread_ > 1) {
@@ -287,7 +275,7 @@ ProcThreadGrp::wait_threads()
   return 0;
 }
 
-RefThreadLock
+Ref<ThreadLock>
 ProcThreadGrp::new_lock()
 {
   return new ProcThreadLock;

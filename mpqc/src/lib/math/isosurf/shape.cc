@@ -64,26 +64,16 @@ closest_distance(SCVector3& X,SCVector3*A,int n,SCVector3*grad)
 //////////////////////////////////////////////////////////////////////
 // Shape
 
-#define CLASSNAME Shape
-#define PARENTS public Volume
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-Shape::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Volume::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-SavableState_REF_def(Shape);
+static ClassDesc Shape_cd(
+  typeid(Shape),"Shape",1,"public Volume",
+  0, 0, 0);
 
 Shape::Shape():
   Volume()
 {
 }
 
-Shape::Shape(const RefKeyVal& keyval):
+Shape::Shape(const Ref<KeyVal>& keyval):
   Volume(keyval)
 {
 }
@@ -201,18 +191,9 @@ Shape::value_implemented() const
 //////////////////////////////////////////////////////////////////////
 // SphereShape
 
-#define CLASSNAME SphereShape
-#define PARENTS public Shape
-#define HAVE_KEYVAL_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-SphereShape::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Shape::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SphereShape_cd(
+  typeid(SphereShape),"SphereShape",1,"public Shape",
+  0, create<SphereShape>, 0);
 
 SphereShape::SphereShape(const SCVector3&o,double r):
   _origin(o),
@@ -226,7 +207,7 @@ SphereShape::SphereShape(const SphereShape&s):
 {
 }
 
-SphereShape::SphereShape(const RefKeyVal& keyval):
+SphereShape::SphereShape(const Ref<KeyVal>& keyval):
   _origin(new PrefixKeyVal("origin",keyval)),
   _radius(keyval->doublevalue("radius"))
 {
@@ -235,9 +216,6 @@ SphereShape::SphereShape(const RefKeyVal& keyval):
 SphereShape::~SphereShape()
 {
 }
-
-REF_def(SphereShape);
-ARRAY_def(RefSphereShape);
 
 double
 SphereShape::distance_to_surface(const SCVector3&p,SCVector3*grad) const
@@ -291,17 +269,9 @@ SphereShape::gradient_implemented() const
 ////////////////////////////////////////////////////////////////////////
 // UncappedTorusHoleShape
 
-#define CLASSNAME UncappedTorusHoleShape
-#define PARENTS public Shape
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-UncappedTorusHoleShape::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Shape::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc UncappedTorusHoleShape_cd(
+  typeid(UncappedTorusHoleShape),"UncappedTorusHoleShape",1,"public Shape",
+  0, 0, 0);
 
 UncappedTorusHoleShape::UncappedTorusHoleShape(double r,
                                const SphereShape& s1,
@@ -479,17 +449,9 @@ is_in_unbounded_triangle(const SCVector3&XP,const SCVector3&AP,const SCVector3&B
 /////////////////////////////////////////////////////////////////////
 // ReentrantUncappedTorusHoleShape
 
-#define CLASSNAME ReentrantUncappedTorusHoleShape
-#define PARENTS public UncappedTorusHoleShape
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-ReentrantUncappedTorusHoleShape::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = UncappedTorusHoleShape::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ReentrantUncappedTorusHoleShape_cd(
+  typeid(ReentrantUncappedTorusHoleShape),"ReentrantUncappedTorusHoleShape",1,"public UncappedTorusHoleShape",
+  0, 0, 0);
 
 ReentrantUncappedTorusHoleShape::ReentrantUncappedTorusHoleShape(double r,
                                                  const SphereShape& s1,
@@ -603,17 +565,9 @@ ReentrantUncappedTorusHoleShape::gradient_implemented() const
 /////////////////////////////////////////////////////////////////////
 // NonreentrantUncappedTorusHoleShape
 
-#define CLASSNAME NonreentrantUncappedTorusHoleShape
-#define PARENTS public UncappedTorusHoleShape
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-NonreentrantUncappedTorusHoleShape::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = UncappedTorusHoleShape::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc NonreentrantUncappedTorusHoleShape_cd(
+  typeid(NonreentrantUncappedTorusHoleShape),"NonreentrantUncappedTorusHoleShape",1,"public UncappedTorusHoleShape",
+  0, 0, 0);
 
 NonreentrantUncappedTorusHoleShape::
   NonreentrantUncappedTorusHoleShape(double r,
@@ -676,17 +630,9 @@ NonreentrantUncappedTorusHoleShape::gradient_implemented() const
 /////////////////////////////////////////////////////////////////////
 // Uncapped5SphereExclusionShape
 
-#define CLASSNAME Uncapped5SphereExclusionShape
-#define PARENTS public Shape
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-Uncapped5SphereExclusionShape::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Shape::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc Uncapped5SphereExclusionShape_cd(
+  typeid(Uncapped5SphereExclusionShape),"Uncapped5SphereExclusionShape",1,"public Shape",
+  0, 0, 0);
 
 Uncapped5SphereExclusionShape*
 Uncapped5SphereExclusionShape::
@@ -1137,19 +1083,9 @@ Uncapped5SphereExclusionShape::gradient_implemented() const
 /////////////////////////////////////////////////////////////////////
 // Unionshape
 
-SavableState_REF_def(UnionShape);
-
-#define CLASSNAME UnionShape
-#define PARENTS public Shape
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-UnionShape::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Shape::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc UnionShape_cd(
+  typeid(UnionShape),"UnionShape",1,"public Shape",
+  0, 0, 0);
 
 UnionShape::UnionShape()
 {
@@ -1160,7 +1096,7 @@ UnionShape::~UnionShape()
 }
 
 void
-UnionShape::add_shape(RefShape s)
+UnionShape::add_shape(Ref<Shape> s)
 {
   _shapes.insert(s);
 }
@@ -1170,10 +1106,10 @@ UnionShape::add_shape(RefShape s)
 double
 UnionShape::distance_to_surface(const SCVector3&p,SCVector3* grad) const
 {
-  AVLSet<RefShape>::iterator imin = _shapes.begin();
+  AVLSet<Ref<Shape> >::iterator imin = _shapes.begin();
   if (imin == _shapes.end()) return 0.0;
   double min = (*imin)->distance_to_surface(p);
-  for (AVLSet<RefShape>::iterator i=imin; i!=_shapes.end(); i++) {
+  for (AVLSet<Ref<Shape> >::iterator i=imin; i!=_shapes.end(); i++) {
       double d = (*i)->distance_to_surface(p);
       if (min <= 0.0) {
           if (d < 0.0 && d > min) { min = d; imin = i; }
@@ -1192,7 +1128,7 @@ UnionShape::distance_to_surface(const SCVector3&p,SCVector3* grad) const
 int
 UnionShape::is_outside(const SCVector3&p) const
 {
-  for (AVLSet<RefShape>::iterator i=_shapes.begin(); i!=_shapes.end(); i++) {
+  for (AVLSet<Ref<Shape> >::iterator i=_shapes.begin(); i!=_shapes.end(); i++) {
       if (!(*i)->is_outside(p)) return 0;
     }
 
@@ -1212,7 +1148,7 @@ UnionShape::boundingbox(double valuemin, double valuemax,
   SCVector3 pt1;
   SCVector3 pt2;
   
-  AVLSet<RefShape>::iterator j = _shapes.begin();
+  AVLSet<Ref<Shape> >::iterator j = _shapes.begin();
   int i;
   (*j)->boundingbox(valuemin,valuemax,p1,p2);
   for (j++; j!=_shapes.end(); j++) {
@@ -1227,7 +1163,7 @@ UnionShape::boundingbox(double valuemin, double valuemax,
 int
 UnionShape::gradient_implemented() const
 {
-  for (AVLSet<RefShape>::iterator j=_shapes.begin(); j!=_shapes.end(); j++) {
+  for (AVLSet<Ref<Shape> >::iterator j=_shapes.begin(); j!=_shapes.end(); j++) {
       if (!(*j)->gradient_implemented()) return 0;
     }
   return 1;

@@ -21,14 +21,14 @@ extern "C" {
 
 static void dist_diagonalize_(int n, int m, double *a, double *d, double *e,
                               double *sigma, double *z, double *v, double *w,
-                              int *ind, const RefMessageGrp&);
+                              int *ind, const Ref<MessageGrp>&);
 static void
 pimtql2_ (double *d,double *e,int *sn,double *z,int *sm,int *info);
 
 static double absol(double x);
 
 static void pflip(int id,int n,int m,int p,double *ar,double *ac,double *w,
-                  const RefMessageGrp&);
+                  const Ref<MessageGrp>&);
 
 static double epslon (double x);
 
@@ -37,7 +37,7 @@ static void update(double *z,int m,double c,double s);
 static void
 ptred2_(double *a, int *lda, int *n, int *m, int *p, int *id,
         double *d, double *e, double *z, double *work,
-        const RefMessageGrp& grp);
+        const Ref<MessageGrp>& grp);
 
 static void
 ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
@@ -45,7 +45,7 @@ ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
 static void
 ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
                double *d, double *e, double *z, double *work,
-               const RefMessageGrp&);
+               const Ref<MessageGrp>&);
 
 /* ******************************************************** */
 /* Function of this subroutine :                            */ 
@@ -60,7 +60,7 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
 /* -------------------------------------------------------- */
 void
 dist_diagonalize(int n, int m, double *a, double *d, double *v,
-                 const RefMessageGrp &grp)
+                 const Ref<MessageGrp> &grp)
 {
   double *e = new double[n];
   double *sigma = new double[n];
@@ -94,7 +94,7 @@ dist_diagonalize(int n, int m, double *a, double *d, double *v,
 static void
 dist_diagonalize_(int n, int m, double *a, double *d, double *e,
                   double *sigma, double *z, double *v, double *w, int *ind,
-                  const RefMessageGrp& grp)
+                  const Ref<MessageGrp>& grp)
 {
   int i,info,one=1;
   int nproc = grp->n();
@@ -260,7 +260,7 @@ absol(double x)
 
 static void
 pflip(int id,int n,int m,int p,double *ar,double *ac,double *w,
-      const RefMessageGrp& grp)
+      const Ref<MessageGrp>& grp)
 {
   int i,k,r,dpsize=sizeof(double),one=1;
 
@@ -315,7 +315,7 @@ update(double *z,int m,double c,double s)
 static void
 ptred2_(double *a, int *lda, int *n, int *m, int *p, int *id,
         double *d, double *e, double *z, double *work,
-        const RefMessageGrp& grp)
+        const Ref<MessageGrp>& grp)
 {
   if (*p==1)
     ptred_single(a, lda, n, m, p, id, d, e, z, work);
@@ -494,7 +494,7 @@ ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
 static void
 ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
                double *d, double *e, double *z, double *work,
-               const RefMessageGrp& grp)
+               const Ref<MessageGrp>& grp)
 {
   int i, j, k, l, ld, r, dpsize = sizeof(double);
   int kp1l;

@@ -38,7 +38,7 @@ ClassDesc* f0 = &ShmMessageGrp::class_desc_;
 ClassDesc* f1 = &MPIMessageGrp::class_desc_;
 #endif
 
-void matrixtest(RefSCMatrixKit kit, RefKeyVal keyval,
+void matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
                 RefSCDimension d1,RefSCDimension d2,RefSCDimension d3);
 
 main(int argc, char** argv)
@@ -48,9 +48,9 @@ main(int argc, char** argv)
   if (argc > 1)
       infile = argv[1];
 
-  RefKeyVal keyval = new ParsedKeyVal(infile);
+  Ref<KeyVal> keyval = new ParsedKeyVal(infile);
 
-  RefMessageGrp msg = MessageGrp::initial_messagegrp(argc, argv);
+  Ref<MessageGrp> msg = MessageGrp::initial_messagegrp(argc, argv);
 
   if (msg.null()) {
       msg = keyval->describedclassvalue("messagegrp");
@@ -62,14 +62,14 @@ main(int argc, char** argv)
     }
 
   MessageGrp::set_default_messagegrp(msg);
-  RefRegionTimer tim = new ParallelRegionTimer(msg,"matrixtest",1,1);
+  Ref<RegionTimer> tim = new ParallelRegionTimer(msg,"matrixtest",1,1);
   RegionTimer::set_default_regiontimer(tim);
 
   SCFormIO::set_printnode(0);
   if (msg->n() > 1)
     SCFormIO::init_mp(msg->me());
 
-  RefSCMatrixKit kit = new ReplSCMatrixKit;
+  Ref<SCMatrixKit> kit = new ReplSCMatrixKit;
   RefSCDimension d1(keyval->describedclassvalue("d1"));
   RefSCDimension d2(keyval->describedclassvalue("d2"));
   RefSCDimension d3(keyval->describedclassvalue("d3"));

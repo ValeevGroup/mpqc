@@ -45,8 +45,6 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////
 // KeyVal
 
-REF_def(KeyVal);
-
 KeyVal::KeyVal() :
   errcod(OK),
   verbose_(0)
@@ -83,7 +81,7 @@ int KeyVal::key_count(const char* key)
 double
 KeyVal::key_doublevalue(const char* key, const KeyValValue& def)
 {
-  RefKeyValValue val(key_value(key,def));
+  Ref<KeyValValue> val(key_value(key,def));
   double result;
   if (val.nonnull()) {
       seterror(val->doublevalue(result));
@@ -97,7 +95,7 @@ KeyVal::key_doublevalue(const char* key, const KeyValValue& def)
 int
 KeyVal::key_booleanvalue(const char* key, const KeyValValue& def)
 {
-  RefKeyValValue val(key_value(key,def));
+  Ref<KeyValValue> val(key_value(key,def));
   int result;
   if (val.nonnull()) {
       seterror(val->booleanvalue(result));
@@ -111,7 +109,7 @@ KeyVal::key_booleanvalue(const char* key, const KeyValValue& def)
 int
 KeyVal::key_intvalue(const char* key, const KeyValValue& def)
 {
-  RefKeyValValue val(key_value(key,def));
+  Ref<KeyValValue> val(key_value(key,def));
   int result;
   if (val.nonnull()) {
       seterror(val->intvalue(result));
@@ -125,7 +123,7 @@ KeyVal::key_intvalue(const char* key, const KeyValValue& def)
 float
 KeyVal::key_floatvalue(const char* key, const KeyValValue& def)
 {
-  RefKeyValValue val(key_value(key,def));
+  Ref<KeyValValue> val(key_value(key,def));
   float result;
   if (val.nonnull()) {
       seterror(val->floatvalue(result));
@@ -139,7 +137,7 @@ KeyVal::key_floatvalue(const char* key, const KeyValValue& def)
 char
 KeyVal::key_charvalue(const char* key, const KeyValValue& def)
 {
-  RefKeyValValue val(key_value(key,def));
+  Ref<KeyValValue> val(key_value(key,def));
   char result;
   if (val.nonnull()) {
       seterror(val->charvalue(result));
@@ -153,7 +151,7 @@ KeyVal::key_charvalue(const char* key, const KeyValValue& def)
 char*
 KeyVal::key_pcharvalue(const char* key, const KeyValValue& def)
 {
-  RefKeyValValue val(key_value(key,def));
+  Ref<KeyValValue> val(key_value(key,def));
   const char* result;
   if (val.nonnull()) {
       seterror(val->pcharvalue(result));
@@ -165,11 +163,11 @@ KeyVal::key_pcharvalue(const char* key, const KeyValValue& def)
   if (result) return strcpy(new char[strlen(result)+1], result);
   else return 0;
 }
-RefDescribedClass
+Ref<DescribedClass>
 KeyVal::key_describedclassvalue(const char* key, const KeyValValue& def)
 {
-  RefKeyValValue val(key_value(key,def));
-  RefDescribedClass result;
+  Ref<KeyValValue> val(key_value(key,def));
+  Ref<DescribedClass> result;
   if (val.nonnull()) {
       seterror(val->describedclassvalue(result));
       val = 0; // fix for gcc 2.7.0 bug
@@ -191,7 +189,7 @@ KeyVal::count(const char*key)
 {
   return key_count(key);
 }
-RefKeyValValue
+Ref<KeyValValue>
 KeyVal::value(const char*key,const KeyValValue &def)
 {
   return key_value(key,def);
@@ -226,7 +224,7 @@ KeyVal::pcharvalue(const char*key,const KeyValValue& def)
 {
   return key_pcharvalue(key,def);
 }
-RefDescribedClass
+Ref<DescribedClass>
 KeyVal::describedclassvalue(const char*key,const KeyValValue& def)
 {
   return key_describedclassvalue(key,def);
@@ -305,7 +303,7 @@ char* KeyVal::pcharvalue(const char* key,int n1,const KeyValValue& def)
   getnewkey(newkey,key,n1);
   return key_pcharvalue(newkey,def);
   }
-RefDescribedClass KeyVal::describedclassvalue(const char* key,int n1,
+Ref<DescribedClass> KeyVal::describedclassvalue(const char* key,int n1,
                                               const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
@@ -368,7 +366,7 @@ char* KeyVal::pcharvalue(const char* key,int n1,int n2,
   getnewkey(newkey,key,n1,n2);
   return key_pcharvalue(newkey,def);
   }
-RefDescribedClass KeyVal::describedclassvalue(const char* key,int n1,int n2,
+Ref<DescribedClass> KeyVal::describedclassvalue(const char* key,int n1,int n2,
                                               const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
@@ -447,7 +445,7 @@ char* KeyVal::Va_pcharvalue(const char* key,int narg,...)
   getnewvakey(newkey,key,narg);
   return key_pcharvalue(newkey,KeyValValuepchar());
   }
-RefDescribedClass KeyVal::Va_describedclassvalue(const char* key,int narg,...)
+Ref<DescribedClass> KeyVal::Va_describedclassvalue(const char* key,int narg,...)
   {
   va_list args;
   char newkey[MaxKeywordLength];
@@ -546,7 +544,7 @@ KeyVal::pcharvalue(int i,const KeyValValue& def)
   return pcharvalue((const char*)0,i,def);
 }
 
-RefDescribedClass
+Ref<DescribedClass>
 KeyVal::describedclassvalue(int i,const KeyValValue& def)
 {
   return describedclassvalue((const char*)0,i,def);
@@ -600,7 +598,7 @@ KeyVal::pcharvalue(int i,int j,const KeyValValue& def)
   return pcharvalue((const char*)0,i,j,def);
 }
 
-RefDescribedClass
+Ref<DescribedClass>
 KeyVal::describedclassvalue(int i,int j,const KeyValValue& def)
 {
   return describedclassvalue((const char*)0,i,j,def);

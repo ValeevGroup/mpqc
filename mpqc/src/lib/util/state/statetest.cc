@@ -64,14 +64,7 @@ using namespace std;
 #  include <util/state/state_text.h>
 #endif
 
-#define A_parents virtual public SavableState
-class A: A_parents {
-#   define CLASSNAME A
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
+class A: virtual public SavableState {
   private:
     int ia;
     int* array;
@@ -80,7 +73,7 @@ class A: A_parents {
     char *t2c;
   public:
     A();
-    A(const RefKeyVal&);
+    A(const Ref<KeyVal>&);
     A(StateIn&);
     ~A();
     void save_data_state(StateOut&);
@@ -99,8 +92,7 @@ class A: A_parents {
         << "}\n";
     }
 };
-SavableState_REF_dec(A);
-SavableState_REF_def(A);
+
 A::A():
   ia(1),
   array(new int[4]),
@@ -115,7 +107,7 @@ A::A():
   t1c = strcpy(new char[strlen(t1)+1],t1);
   t2c = strcpy(new char[strlen(t2)+1],t2);
 }
-A::A(const RefKeyVal&keyval):
+A::A(const Ref<KeyVal>&keyval):
   ia(keyval->intvalue("a")),
   array(new int[4]),
   d(-1.24)
@@ -155,34 +147,15 @@ A::save_data_state(StateOut&s)
   s.put(array,4);
 }
 
-#define CLASSNAME A
-#define PARENTS A_parents
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-A::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc A_cd(typeid(A),"A",1,"virtual public SavableState",
+                      create<A>, create<A>, create<A>);
 
-#define B_parents public A
-class B: B_parents {
-#   define CLASSNAME B 
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
+class B: public A {
   private:
     int ib;
   public:
     B();
-    B(const RefKeyVal&);
+    B(const Ref<KeyVal>&);
     B(StateIn&);
     void save_data_state(StateOut&);
     inline int& b() { return ib; };
@@ -192,13 +165,12 @@ class B: B_parents {
       s << "B::b = " << b() << '\n';
     }
 };
-SavableState_REF_dec(B);
-SavableState_REF_def(B);
+
 B::B():
   ib(2)
 {
 }
-B::B(const RefKeyVal&keyval):
+B::B(const Ref<KeyVal>&keyval):
   A(keyval),
   ib(keyval->intvalue("b"))
 {
@@ -216,34 +188,15 @@ B::save_data_state(StateOut&s)
   s.put(ib);
 }
 
-#define CLASSNAME B
-#define PARENTS B_parents
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-B::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = A::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc B_cd(typeid(B),"B",1,"public A",
+                      create<B>,create<B>,create<B>);
 
-#define C_parents virtual public SavableState
-class C: C_parents {
-#   define CLASSNAME C 
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
+class C: virtual public SavableState {
   private:
     int ic;
   public:
     C();
-    C(const RefKeyVal&keyval);
+    C(const Ref<KeyVal>&keyval);
     C(StateIn&);
     void save_data_state(StateOut&);
     inline int& c() { return ic; };
@@ -252,13 +205,12 @@ class C: C_parents {
       s << "C::c = " << c() << '\n';
     }
 };
-SavableState_REF_dec(C);
-SavableState_REF_def(C);
+
 C::C():
   ic(3)
 {
 }
-C::C(const RefKeyVal&keyval):
+C::C(const Ref<KeyVal>&keyval):
   ic(keyval->intvalue("c"))
 {
 }
@@ -273,49 +225,30 @@ C::save_data_state(StateOut&s)
   s.put(ic);
 }
 
-#define CLASSNAME C
-#define PARENTS C_parents
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-C::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc C_cd(typeid(C),"C",1,"virtual public SavableState",
+                      create<C>,create<C>,create<C>);
 
-#define D_parents public B, public C
-class D: D_parents {
-#   define CLASSNAME D
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
+class D: public B, public C {
   private:
     int id;
     char cd;
     float fd;
     double dd;
-    RefA _a;
-    RefB _b;
+    Ref<A> _a;
+    Ref<B> _b;
     char *cdat;
     int *idat;
     float *fdat;
     double *ddat;
   public:
     D();
-    D(const RefKeyVal&);
+    D(const Ref<KeyVal>&);
     D(StateIn&);
     ~D();
     void save_data_state(StateOut&);
     inline int& d() { return id; }
-    inline RefA da() { return _a; }
-    inline RefB db() { return _b; }
+    inline Ref<A> da() { return _a; }
+    inline Ref<B> db() { return _b; }
     virtual void print (ostream&s = cout)
     {
       B::print(s);
@@ -327,7 +260,7 @@ class D: D_parents {
       else {
           s << "null\n";
         }
-      if ( _a.pointer() == A::castdown(db().pointer())) 
+      if ( _a.pointer() == dynamic_cast<A*>(db().pointer())) 
         {
           cout << "a == b\n";
         }
@@ -337,8 +270,7 @@ class D: D_parents {
       s << "D::d = " << d() << '\n';
     }
 };
-SavableState_REF_dec(D);
-SavableState_REF_def(D);
+
 D::D()
 {
   id = 4;
@@ -346,15 +278,15 @@ D::D()
   fd = 4.1;
   dd = 8.2;
 }
-D::D(const RefKeyVal&keyval):
+D::D(const Ref<KeyVal>&keyval):
   B(keyval),
   C(keyval),
   id(keyval->intvalue("di")),
   cd(keyval->charvalue("dc")),
   fd(keyval->floatvalue("df")),
   dd(keyval->doublevalue("dd")),
-  _a(A::castdown(keyval->describedclassvalue("da"))),
-  _b(B::castdown(keyval->describedclassvalue("db")))
+  _a(dynamic_cast<A*>(keyval->describedclassvalue("da").pointer())),
+  _b(dynamic_cast<B*>(keyval->describedclassvalue("db").pointer()))
 {
   ddat = new double[4];
   fdat = new float[4];
@@ -377,10 +309,10 @@ D::D(StateIn&s):
   char *junk;
   s.getstring(junk);
   delete[] junk;
-  _a.key_restore_state(s,"da");
+  _a << SavableState::key_restore_state(s,"da");
   s.getstring(junk);
   delete[] junk;
-  _b.key_restore_state(s,"db");
+  _b << SavableState::key_restore_state(s,"db");
   s.get(ddat);
   s.get(fdat);
   s.get(idat);
@@ -396,9 +328,9 @@ D::save_data_state(StateOut&s)
   s.put(fd);
   s.put(dd);
   s.putstring("here begins _a");
-  _a.save_state(s);
+  SavableState::save_state(_a.pointer(), s);
   s.putstring("here begins _b");
-  _b.save_state(s);
+  SavableState::save_state(_b.pointer(),s);
   s.put(ddat,4);
   s.put(fdat,4);
   s.put(idat,4);
@@ -412,26 +344,13 @@ D::~D()
   delete[] cdat;
 }
 
-#define CLASSNAME D
-#define PARENTS D_parents
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-D::_castdown(const ClassDesc*cd)
-{
-  void* casts[2];
-  casts[0] = B::_castdown(cd);
-  casts[1] = C::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc D_cd(typeid(D),"D",1,"public B, public C",
+                      create<D>, create<D>, create<D>);
 
 int
 main()
 {
-  RefA ra;
+  Ref<A> ra;
 
   ClassDesc::list_all_classes();
 
@@ -444,14 +363,14 @@ main()
   cout << "D name:" << d.class_name() << endl;
 
   cout << "&d = " << (void*) &d << endl;
-  cout << "D::castdown(&d) = " << (void*) D::castdown(&d) << endl;
-  cout << "B::castdown(&d) = " << (void*) B::castdown(&d) << endl;
-  cout << "A::castdown(&d) = " << (void*) A::castdown(&d) << endl;
-  cout << "C::castdown(&d) = " << (void*) C::castdown(&d) << endl;
-  cout << "DescribedClass::castdown(&d) = "
-       << (void*) DescribedClass::castdown(&d) << endl;
+  cout << "dynamic_cast<D*>(&d) = " << (void*) dynamic_cast<D*>(&d) << endl;
+  cout << "dynamic_cast<B*>(&d) = " << (void*) dynamic_cast<B*>(&d) << endl;
+  cout << "dynamic_cast<A*>(&d) = " << (void*) dynamic_cast<A*>(&d) << endl;
+  cout << "dynamic_cast<C*>(&d) = " << (void*) dynamic_cast<C*>(&d) << endl;
+  cout << "dynamic_cast<DescribedClass*>(&d) = "
+       << (void*) dynamic_cast<DescribedClass*>(&d) << endl;
 
-  RefAssignedKeyVal akv (new AssignedKeyVal);
+  Ref<AssignedKeyVal> akv (new AssignedKeyVal);
 
   akv->assign(":x",1);
   akv->assign(":y",3.0);
@@ -467,7 +386,7 @@ main()
   show( akv->intvalue("x") );  show (akv->errormsg() ); cout << endl;
   show( akv->intvalue(":z") );  show (akv->errormsg() ); cout << endl;
 
-  RefKeyVal pkv = new ParsedKeyVal(SRCDIR "/statetest.in");
+  Ref<KeyVal> pkv = new ParsedKeyVal(SRCDIR "/statetest.in");
 
   show( pkv->exists(":x") );  show( pkv->errormsg() ); cout << endl;
   show( pkv->exists(":z") );  show (pkv->errormsg() ); cout << endl;
@@ -477,10 +396,10 @@ main()
   show( pkv->intvalue("x") );  show (pkv->errormsg() ); cout << endl;
   show( pkv->intvalue(":z") );  show (pkv->errormsg() ); cout << endl;
 
-  RefDescribedClass rdc = pkv->describedclassvalue("test:object");
+  Ref<DescribedClass> rdc = pkv->describedclassvalue("test:object");
   show (pkv->errormsg() ); cout << endl;
   show( rdc.pointer() ); cout << endl;
-  ra = A::castdown(rdc);
+  ra = dynamic_cast<A*>(rdc.pointer());
   show( ra.pointer() ); cout << endl;
 
   show( pkv->intvalue(":test:object:d") ); cout << endl;
@@ -503,15 +422,15 @@ main()
   soa.forget_references();
   cout << "  second a" << endl;
   ra->save_object_state(soa);
-  ra = A::castdown(rdc);
+  ra = dynamic_cast<A*>(rdc.pointer());
   ra->save_state(soa);
   soa.flush();
   soa.close();
   cout << " --- saving to B ---" << endl;
   StateOutTypeB so("statetest.out");
-  ra.save_state(so);
-  RefA ra2;
-  ra2.save_state(so);
+  SavableState::save_state(ra.pointer(),so);
+  Ref<A> ra2;
+  SavableState::save_state(ra2.pointer(),so);
   so.close();
 
   cout << " ------------- restoring state ----------------" << endl;
@@ -523,19 +442,19 @@ main()
   cout << "  second a" << endl;
   ra = new A(sia);
   cout << "  last object" << endl;
-  ra.restore_state(sia);
+  ra << SavableState::restore_state(sia);
   if (ra.nonnull()) { ra->print(); cout << endl; }
   if (sia.use_directory()) {
       cout << " --- restoring from A's directory ---" << endl;
-      ra.dir_restore_state(sia,"B:1");
+      ra << SavableState::dir_restore_state(sia,"B:1");
       cout << "B:1 classname = " << ra->class_name() << endl;
     }
   sia.close();
   cout << " --- restoring from B ---" << endl;
   StateInTypeB si("statetest.out");
   //ra = A::restore_state(si);
-  ra.restore_state(si);
-  ra2.restore_state(si);
+  ra << SavableState::restore_state(si);
+  ra2 << SavableState::restore_state(si);
   if (ra.nonnull()) { ra->print(); cout << endl; }
   cout << "ra2.nonnull() = " << ra2.nonnull() << "(should be 0)\n";
   si.close();
@@ -544,11 +463,11 @@ main()
       sia.open("statetest.a.out");
       cout << node0 << indent
            << " --- restoring from A's directory (2) ---" << endl;
-      ra.dir_restore_state(sia,"B:1");
+      ra << SavableState::dir_restore_state(sia,"B:1");
       cout << node0 << indent
            << "B:1 classname = " << ra->class_name() << endl;
-      RefA ra3;
-      ra3.dir_restore_state(sia,"B:1");
+      Ref<A> ra3;
+      ra3 << SavableState::dir_restore_state(sia,"B:1");
       cout << node0 << indent
            <<"first B:1: " << (void*) ra.pointer()
            << " second B:1: " << (void*) ra3.pointer()
@@ -559,8 +478,8 @@ main()
 
   if (sia.use_directory()) {
       cout << " ----- proxy tests ----- " << endl;
-      RefD d1 = pkv->describedclassvalue("test2:proxy1");
-      RefD d2 = pkv->describedclassvalue("test2:proxy2");
+      Ref<D> d1; d1 << pkv->describedclassvalue("test2:proxy1");
+      Ref<D> d2; d2 << pkv->describedclassvalue("test2:proxy2");
       cout << "d1 = " << (void*)d1.pointer()
            << " d2 = " << (void*)d2.pointer() << endl;
       if (d1.nonnull()) d1->print();

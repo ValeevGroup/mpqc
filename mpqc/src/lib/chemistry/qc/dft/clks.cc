@@ -50,38 +50,29 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////
 // CLKS
 
-#define CLASSNAME CLKS
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public CLSCF
-#include <util/class/classi.h>
-void *
-CLKS::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = CLSCF::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc CLKS_cd(
+  typeid(CLKS),"CLKS",1,"public CLSCF",
+  0, create<CLKS>, create<CLKS>);
 
 CLKS::CLKS(StateIn& s) :
   SavableState(s),
   CLSCF(s)
 {
   exc_=0;
-  integrator_.restore_state(s);
-  functional_.restore_state(s);
+  integrator_ << SavableState::restore_state(s);
+  functional_ << SavableState::restore_state(s);
   vxc_ = basis_matrixkit()->symmmatrix(so_dimension());
   vxc_.restore(s);
 }
 
-CLKS::CLKS(const RefKeyVal& keyval) :
+CLKS::CLKS(const Ref<KeyVal>& keyval) :
   CLSCF(keyval)
 {
   exc_=0;
-  integrator_ = keyval->describedclassvalue("integrator");
+  integrator_ << keyval->describedclassvalue("integrator");
   if (integrator_.null()) integrator_ = new RadialAngularIntegrator();
 
-  functional_ = keyval->describedclassvalue("functional");
+  functional_ << keyval->describedclassvalue("functional");
   if (functional_.null()) {
     ExEnv::out() << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
     abort();
@@ -96,8 +87,8 @@ void
 CLKS::save_data_state(StateOut& s)
 {
   CLSCF::save_data_state(s);
-  integrator_.save_state(s);
-  functional_.save_state(s);
+  SavableState::save_state(integrator_.pointer(),s);
+  SavableState::save_state(functional_.pointer(),s);
   vxc_.save(s);
 }
 
@@ -165,10 +156,10 @@ CLKS::effective_fock()
   return mofock;
 }
 
-RefSCExtrapData
+Ref<SCExtrapData>
 CLKS::extrap_data()
 {
-  RefSCExtrapData data =
+  Ref<SCExtrapData> data =
     new SymmSCMatrix2SCExtrapData(cl_fock_.result_noupdate(), vxc_);
   return data;
 }
@@ -178,7 +169,7 @@ CLKS::extrap_data()
 void
 CLKS::ao_fock(double accuracy)
 {
-  RefPetiteList pl = integral()->petite_list(basis());
+  Ref<PetiteList> pl = integral()->petite_list(basis());
   
   // calculate G.  First transform cl_dens_diff_ to the AO basis, then
   // scale the off-diagonal elements by 2.0
@@ -218,7 +209,7 @@ CLKS::ao_fock(double accuracy)
     double **gmats = new double*[nthread];
     gmats[0] = gmat;
     
-    RefGaussianBasisSet bs = basis();
+    Ref<GaussianBasisSet> bs = basis();
     int ntri = i_offset(bs->nbasis());
 
     double gmat_accuracy = accuracy;
@@ -339,7 +330,7 @@ CLKS::two_body_energy(double &ec, double &ex)
     tim_exit("local data");
 
     // initialize the two electron integral classes
-    RefTwoBodyInt tbi = integral()->electron_repulsion();
+    Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
     tbi->set_integral_storage(0);
 
     tim_enter("init pmax");
@@ -347,7 +338,7 @@ CLKS::two_body_energy(double &ec, double &ex)
     tim_exit("init pmax");
   
     LocalCLKSEnergyContribution lclc(pmat, functional_->a0());
-    RefPetiteList pl = integral()->petite_list();
+    Ref<PetiteList> pl = integral()->petite_list();
     LocalGBuild<LocalCLKSEnergyContribution>
       gb(lclc, tbi, pl, basis(), scf_grp_, pmax,
          desired_value_accuracy()/100.0);
@@ -383,7 +374,7 @@ CLKS::two_body_deriv(double * tbgrad)
 
   double *dftgrad = new double[natom3];
   memset(dftgrad,0,sizeof(double)*natom3);
-  RefPetiteList pl = integral()->petite_list(basis());
+  Ref<PetiteList> pl = integral()->petite_list(basis());
   RefSymmSCMatrix aodens = gradient_density();
   aodens.scale(0.5);
   integrator_->set_compute_potential_integrals(0);

@@ -46,27 +46,18 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////
 // SCMatrixKit members
 
-DescribedClass_REF_def(SCMatrixKit);
-
-#define CLASSNAME SCMatrixKit
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-SCMatrixKit::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SCMatrixKit_cd(
+  typeid(SCMatrixKit),"SCMatrixKit",1,"public DescribedClass",
+  0, 0, 0);
 
 SCMatrixKit::SCMatrixKit()
 {
   grp_ = MessageGrp::get_default_messagegrp();
 }
 
-SCMatrixKit::SCMatrixKit(const RefKeyVal& keyval)
+SCMatrixKit::SCMatrixKit(const Ref<KeyVal>& keyval)
 {
-  grp_ = keyval->describedclassvalue("messagegrp");
+  grp_ << keyval->describedclassvalue("messagegrp");
   if (grp_.null()) grp_ = MessageGrp::get_default_messagegrp();
 }
 
@@ -108,7 +99,7 @@ SCMatrixKit::restore_vector(StateIn& s, const RefSCDimension& d)
   return r;
 }
 
-RefMessageGrp
+Ref<MessageGrp>
 SCMatrixKit::messagegrp() const
 {
   return grp_;
@@ -117,16 +108,9 @@ SCMatrixKit::messagegrp() const
 /////////////////////////////////////////////////////////////////////////
 // SCMatrix members
 
-#define CLASSNAME SCMatrix
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-SCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SCMatrix_cd(
+  typeid(SCMatrix),"SCMatrix",1,"public DescribedClass",
+  0, 0, 0);
 
 SCMatrix::SCMatrix(const RefSCDimension&a1, const RefSCDimension&a2,
                    SCMatrixKit*kit):
@@ -188,8 +172,8 @@ SCMatrix::restore(StateIn& s)
 double
 SCMatrix::maxabs() const
 {
-  RefSCElementMaxAbs op = new SCElementMaxAbs();
-  RefSCElementOp abop = op;
+  Ref<SCElementMaxAbs> op = new SCElementMaxAbs();
+  Ref<SCElementOp> abop = op.pointer();
   ((SCMatrix *)this)->element_op(abop);
   return op->result();
 }
@@ -197,35 +181,35 @@ SCMatrix::maxabs() const
 void
 SCMatrix::randomize()
 {
-  RefSCElementOp op = new SCElementRandomize();
+  Ref<SCElementOp> op = new SCElementRandomize();
   this->element_op(op);
 }
 
 void
 SCMatrix::assign_val(double a)
 {
-  RefSCElementOp op = new SCElementAssign(a);
+  Ref<SCElementOp> op = new SCElementAssign(a);
   this->element_op(op);
 }
 
 void
 SCMatrix::scale(double a)
 {
-  RefSCElementOp op = new SCElementScale(a);
+  Ref<SCElementOp> op = new SCElementScale(a);
   this->element_op(op);
 }
 
 void
 SCMatrix::scale_diagonal(double a)
 {
-  RefSCElementOp op = new SCElementScaleDiagonal(a);
+  Ref<SCElementOp> op = new SCElementScaleDiagonal(a);
   this->element_op(op);
 }
 
 void
 SCMatrix::shift_diagonal(double a)
 {
-  RefSCElementOp op = new SCElementShiftDiagonal(a);
+  Ref<SCElementOp> op = new SCElementShiftDiagonal(a);
   this->element_op(op);
 }
 
@@ -284,7 +268,7 @@ SCMatrix::convert(SCMatrix*a)
 void
 SCMatrix::convert_accumulate(SCMatrix*a)
 {
-  RefSCElementOp op = new SCElementAccumulateSCMatrix(a);
+  Ref<SCElementOp> op = new SCElementAccumulateSCMatrix(a);
   element_op(op);
 }
 
@@ -445,7 +429,7 @@ SCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
   delete brect;
 }
 
-RefMessageGrp
+Ref<MessageGrp>
 SCMatrix::messagegrp() const
 {
   return kit_->messagegrp();
@@ -454,9 +438,9 @@ SCMatrix::messagegrp() const
 /////////////////////////////////////////////////////////////////////////
 // SymmSCMatrix member functions
 
-#define CLASSNAME SymmSCMatrix
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
+static ClassDesc SymmSCMatrix_cd(
+  typeid(SymmSCMatrix),"SymmSCMatrix",1,"public DescribedClass",
+  0, 0, 0);
 
 SymmSCMatrix::SymmSCMatrix(const RefSCDimension&a, SCMatrixKit *kit):
   d(a),
@@ -494,19 +478,11 @@ SymmSCMatrix::restore(StateIn& s)
     }
 }
 
-void *
-SymmSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
 double
 SymmSCMatrix::maxabs() const
 {
-  RefSCElementMaxAbs op = new SCElementMaxAbs();
-  RefSCElementOp abop = op;
+  Ref<SCElementMaxAbs> op = new SCElementMaxAbs();
+  Ref<SCElementOp> abop = op.pointer();
   ((SymmSCMatrix*)this)->element_op(abop);
   return op->result();
 }
@@ -514,14 +490,14 @@ SymmSCMatrix::maxabs() const
 void
 SymmSCMatrix::randomize()
 {
-  RefSCElementOp op = new SCElementRandomize();
+  Ref<SCElementOp> op = new SCElementRandomize();
   this->element_op(op);
 }
 
 void
 SymmSCMatrix::assign_val(double a)
 {
-  RefSCElementOp op = new SCElementAssign(a);
+  Ref<SCElementOp> op = new SCElementAssign(a);
   this->element_op(op);
 }
 
@@ -566,7 +542,7 @@ SymmSCMatrix::convert(SymmSCMatrix*a)
 void
 SymmSCMatrix::convert_accumulate(SymmSCMatrix*a)
 {
-  RefSCElementOp op = new SCElementAccumulateSymmSCMatrix(a);
+  Ref<SCElementOp> op = new SCElementAccumulateSymmSCMatrix(a);
   element_op(op);
 }
 
@@ -603,21 +579,21 @@ SymmSCMatrix::convert(double**a) const
 void
 SymmSCMatrix::scale(double a)
 {
-  RefSCElementOp op = new SCElementScale(a);
+  Ref<SCElementOp> op = new SCElementScale(a);
   this->element_op(op);
 }
 
 void
 SymmSCMatrix::scale_diagonal(double a)
 {
-  RefSCElementOp op = new SCElementScaleDiagonal(a);
+  Ref<SCElementOp> op = new SCElementScaleDiagonal(a);
   this->element_op(op);
 }
 
 void
 SymmSCMatrix::shift_diagonal(double a)
 {
-  RefSCElementOp op = new SCElementShiftDiagonal(a);
+  Ref<SCElementOp> op = new SCElementShiftDiagonal(a);
   this->element_op(op);
 }
 
@@ -804,7 +780,7 @@ SymmSCMatrix::scalar_product(SCVector *v)
   return v2->scalar_product(v);
 }
 
-RefMessageGrp
+Ref<MessageGrp>
 SymmSCMatrix::messagegrp() const
 {
   return kit_->messagegrp();
@@ -813,17 +789,9 @@ SymmSCMatrix::messagegrp() const
 /////////////////////////////////////////////////////////////////////////
 // DiagSCMatrix member functions
 
-#define CLASSNAME DiagSCMatrix
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-
-void *
-DiagSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc DiagSCMatrix_cd(
+  typeid(DiagSCMatrix),"DiagSCMatrix",1,"public DescribedClass",
+  0, 0, 0);
 
 DiagSCMatrix::DiagSCMatrix(const RefSCDimension&a, SCMatrixKit *kit):
   d(a),
@@ -860,8 +828,8 @@ DiagSCMatrix::restore(StateIn& s)
 double
 DiagSCMatrix::maxabs() const
 {
-  RefSCElementMaxAbs op = new SCElementMaxAbs();
-  RefSCElementOp abop = op;
+  Ref<SCElementMaxAbs> op = new SCElementMaxAbs();
+  Ref<SCElementOp> abop = op.pointer();
   ((DiagSCMatrix*)this)->element_op(abop);
   return op->result();
 }
@@ -869,14 +837,14 @@ DiagSCMatrix::maxabs() const
 void
 DiagSCMatrix::randomize()
 {
-  RefSCElementOp op = new SCElementRandomize();
+  Ref<SCElementOp> op = new SCElementRandomize();
   this->element_op(op);
 }
 
 void
 DiagSCMatrix::assign_val(double a)
 {
-  RefSCElementOp op = new SCElementAssign(a);
+  Ref<SCElementOp> op = new SCElementAssign(a);
   this->element_op(op);
 }
 
@@ -900,7 +868,7 @@ DiagSCMatrix::convert(DiagSCMatrix*a)
 void
 DiagSCMatrix::convert_accumulate(DiagSCMatrix*a)
 {
-  RefSCElementOp op = new SCElementAccumulateDiagSCMatrix(a);
+  Ref<SCElementOp> op = new SCElementAccumulateDiagSCMatrix(a);
   element_op(op);
 }
 
@@ -917,7 +885,7 @@ DiagSCMatrix::convert(double*a) const
 void
 DiagSCMatrix::scale(double a)
 {
-  RefSCElementOp op = new SCElementScale(a);
+  Ref<SCElementOp> op = new SCElementScale(a);
   this->element_op(op);
 }
 
@@ -963,7 +931,7 @@ DiagSCMatrix::copy()
   return result;
 }
 
-RefMessageGrp
+Ref<MessageGrp>
 DiagSCMatrix::messagegrp() const
 {
   return kit_->messagegrp();
@@ -973,16 +941,9 @@ DiagSCMatrix::messagegrp() const
 // These member are used by the abstract SCVector classes.
 /////////////////////////////////////////////////////////////////////////
 
-#define CLASSNAME SCVector
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-SCVector::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SCVector_cd(
+  typeid(SCVector),"SCVector",1,"public DescribedClass",
+  0, 0, 0);
 
 SCVector::SCVector(const RefSCDimension&a, SCMatrixKit *kit):
   d(a),
@@ -1023,8 +984,8 @@ SCVector::restore(StateIn& s)
 double
 SCVector::maxabs() const
 {
-  RefSCElementMaxAbs op = new SCElementMaxAbs();
-  RefSCElementOp abop = op;
+  Ref<SCElementMaxAbs> op = new SCElementMaxAbs();
+  Ref<SCElementOp> abop = op.pointer();
   ((SCVector*)this)->element_op(abop);
   return op->result();
 }
@@ -1032,14 +993,14 @@ SCVector::maxabs() const
 void
 SCVector::randomize()
 {
-  RefSCElementOp op = new SCElementRandomize();
+  Ref<SCElementOp> op = new SCElementRandomize();
   this->element_op(op);
 }
 
 void
 SCVector::assign_val(double a)
 {
-  RefSCElementOp op = new SCElementAssign(a);
+  Ref<SCElementOp> op = new SCElementAssign(a);
   this->element_op(op);
 }
 
@@ -1063,7 +1024,7 @@ SCVector::convert(SCVector*a)
 void
 SCVector::convert_accumulate(SCVector*a)
 {
-  RefSCElementOp op = new SCElementAccumulateSCVector(a);
+  Ref<SCElementOp> op = new SCElementAccumulateSCVector(a);
   element_op(op);
 }
 
@@ -1080,7 +1041,7 @@ SCVector::convert(double*a) const
 void
 SCVector::scale(double a)
 {
-  RefSCElementOp op = new SCElementScale(a);
+  Ref<SCElementOp> op = new SCElementScale(a);
   this->element_op(op);
 }
 
@@ -1139,7 +1100,7 @@ SCVector::accumulate_product_sv(SymmSCMatrix *m, SCVector *v)
   accumulate_product(mrect.pointer(), v);
 }
 
-RefMessageGrp
+Ref<MessageGrp>
 SCVector::messagegrp() const
 {
   return kit_->messagegrp();

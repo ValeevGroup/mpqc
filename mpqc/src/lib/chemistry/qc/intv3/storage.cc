@@ -92,20 +92,9 @@ IntegralLink::~IntegralLink()
 //////////////////////////////////////////////////////////////////////////
 // IntegralStorer members
 
-DescribedClass_REF_def(IntegralStorer);
-
-#define CLASSNAME IntegralStorer
-#define PARENTS public DescribedClass
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-IntegralStorer::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc IntegralStorer_cd(
+  typeid(IntegralStorer),"IntegralStorer",1,"public DescribedClass",
+  create<IntegralStorer>, create<IntegralStorer>, 0);
 
 IntegralStorer::IntegralStorer()
 {
@@ -120,7 +109,7 @@ IntegralStorer::~IntegralStorer()
   delete[] table_;
 }
 
-IntegralStorer::IntegralStorer(const RefKeyVal&keyval)
+IntegralStorer::IntegralStorer(const Ref<KeyVal>&keyval)
 {
   table_size_ = keyval->intvalue("table_size");
   if (table_size_ <= 0) table_size_ = 1597;

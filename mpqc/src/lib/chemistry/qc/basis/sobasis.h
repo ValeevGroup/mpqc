@@ -85,9 +85,9 @@ class SOTransform {
 
 /** A SOBasis object describes the transformation from an atomic orbital
     basis to a symmetry orbital basis.  */
-class SOBasis : public VRefCount {
+class SOBasis : public RefCount {
   protected:
-    RefGaussianBasisSet basis_;
+    Ref<GaussianBasisSet> basis_;
     int nshell_;
     int nirrep_;
     int *ncomp_;
@@ -104,7 +104,7 @@ class SOBasis : public VRefCount {
 
   public:
     /// Create an SOBasis object given a GaussianBasisSet and Integral objects.
-    SOBasis(const RefGaussianBasisSet &, const RefIntegral&);
+    SOBasis(const Ref<GaussianBasisSet> &, const Ref<Integral>&);
     ~SOBasis();
 
     /// Return the number of shells.
@@ -145,7 +145,7 @@ class SOBasis : public VRefCount {
 
     void print(std::ostream &o=ExEnv::out()) const;
 };
-REF_dec(SOBasis);
+
 
 inline int
 SOBasis::function(int ishell)

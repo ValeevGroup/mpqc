@@ -39,8 +39,8 @@
  as the contained object.  DCRef has constructor
  and assignment operators that take generic
  DescribedClass references and pointers as
- arguments.  They use the contained type's static
- castdown operator to convert the target
+ arguments.  They dynamic_cast
+ to convert the target
  DescribedClass object into an object of the
  appropriate exact type.  If the cast fails a reference to
  null is assigned.
@@ -64,10 +64,10 @@ class DCRef : public DCRefBase {
     {
       reference(p);
     }
-    /** Create a reference to the object a.  Do a safe
-        castdown to convert a to the appropiate type. */
+    /** Create a reference to the object a.  Do a
+        dynamic_cast to convert a to the appropiate type. */
     DCRef(const DCRefBase&a) {
-        p = T::castdown(a.parentpointer());
+        p = dynamic_cast<T*>(a.parentpointer());
         reference(p);
       }
     /** Delete this reference to the object.  Decrement the object's reference
@@ -132,7 +132,7 @@ class DCRef : public DCRefBase {
     }
     /// Assignment to the object that a references.
     DCRef<T>& operator=(const DCRefBase&a) {
-        T* cr = T::castdown(a.parentpointer());
+        T* cr = dynamic_cast<T*>(a.parentpointer());
         reference(cr);
         clear();
         p = cr;

@@ -29,16 +29,9 @@
 #include <util/group/topology.h>
 #include <util/group/hcube.h>
 
-#define CLASSNAME HypercubeGMI
-#define PARENTS public GlobalMsgIter
-#include <util/class/classi.h>
-void *
-HypercubeGMI::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = GlobalMsgIter::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc HypercubeGMI_cd(
+  typeid(HypercubeGMI),"HypercubeGMI",1,"public GlobalMsgIter",
+  0, 0, 0);
 
 HypercubeGMI::HypercubeGMI(int nproc, int me, int root):
   GlobalMsgIter(nproc, me, root)
@@ -133,23 +126,15 @@ HypercubeGMI::fwdrecv()
 ///////////////////////////////////////////////////////////////////////////
 // HypercubeTopology members
 
-#define CLASSNAME HypercubeTopology
-#define PARENTS public MachineTopology
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-HypercubeTopology::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MachineTopology::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc HypercubeTopology_cd(
+  typeid(HypercubeTopology),"HypercubeTopology",1,"public MachineTopology",
+  0, create<HypercubeTopology>, 0);
 
 HypercubeTopology::HypercubeTopology()
 {
 }
 
-HypercubeTopology::HypercubeTopology(const RefKeyVal& keyval):
+HypercubeTopology::HypercubeTopology(const Ref<KeyVal>& keyval):
   MachineTopology(keyval)
 {
 }
@@ -158,8 +143,8 @@ HypercubeTopology::~HypercubeTopology()
 {
 }
 
-RefGlobalMsgIter
-HypercubeTopology::global_msg_iter(const RefMessageGrp& grp,
+Ref<GlobalMsgIter>
+HypercubeTopology::global_msg_iter(const Ref<MessageGrp>& grp,
                                    int root)
 {
   return new HypercubeGMI(grp->n(), grp->me(), root);

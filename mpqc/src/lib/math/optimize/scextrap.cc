@@ -32,19 +32,9 @@
 #include <util/state/stateio.h>
 #include <math/optimize/scextrap.h>
 
-SavableState_REF_def(SCExtrapData);
-
-#define CLASSNAME SCExtrapData
-#define PARENTS public SavableState
-#include <util/class/classia.h>
-
-void *
-SCExtrapData::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SCExtrapData_cd(
+  typeid(SCExtrapData),"SCExtrapData",1,"public SavableState",
+  0, 0, 0);
 
 SCExtrapData::SCExtrapData()
 {
@@ -66,18 +56,9 @@ SCExtrapData::save_data_state(StateOut& s)
 
 ////////////////////////////////////////////////////////////////////////////
 
-SavableState_REF_def(SCExtrapError);
-
-#define CLASSNAME SCExtrapError
-#define PARENTS public SavableState
-#include <util/class/classia.h>
-void *
-SCExtrapError::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SCExtrapError_cd(
+  typeid(SCExtrapError),"SCExtrapError",1,"public SavableState",
+  0, 0, 0);
 
 SCExtrapError::SCExtrapError()
 {
@@ -99,18 +80,9 @@ SCExtrapError::save_data_state(StateOut& s)
 
 ////////////////////////////////////////////////////////////////////////////
 
-SavableState_REF_def(SelfConsistentExtrapolation);
-
-#define CLASSNAME SelfConsistentExtrapolation
-#define PARENTS public SavableState
-#include <util/class/classia.h>
-void *
-SelfConsistentExtrapolation::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SelfConsistentExtrapolation_cd(
+  typeid(SelfConsistentExtrapolation),"SelfConsistentExtrapolation",1,"public SavableState",
+  0, 0, 0);
 
 SelfConsistentExtrapolation::SelfConsistentExtrapolation()
 {
@@ -127,7 +99,7 @@ SelfConsistentExtrapolation::SelfConsistentExtrapolation(StateIn& s) :
 }
 
 SelfConsistentExtrapolation::SelfConsistentExtrapolation(
-    const RefKeyVal&keyval)
+    const Ref<KeyVal>&keyval)
 {
   errorset_ = 0;
   tolerance_ = keyval->doublevalue("tolerance");

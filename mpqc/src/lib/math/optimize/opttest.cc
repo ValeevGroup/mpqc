@@ -37,11 +37,6 @@
 
 class Quadratic: public Function
 {
-#   define CLASSNAME Quadratic
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>    
   private:
     RefSCVector x0;
     RefSCVector g0;
@@ -49,17 +44,14 @@ class Quadratic: public Function
     RefSymmSCMatrix hguess;
   public:
     Quadratic(StateIn&);
-    Quadratic(const RefKeyVal&);
+    Quadratic(const Ref<KeyVal>&);
     void save_data_state(StateOut&);
     void compute();
     void guess_hessian(RefSymmSCMatrix&);
 };
-#define CLASSNAME Quadratic
-#define PARENTS public Function
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc Quadratic_cd(
+  typeid(Quadratic),"Quadratic",1,"public Function",
+  0, create<Quadratic>, create<Quadratic>);
 Quadratic::Quadratic(StateIn&s):
   SavableState(s),
   Function(s)
@@ -79,13 +71,7 @@ Quadratic::save_data_state(StateOut&s)
   g0.save(s);
   h0.save(s);
 }
-void *
-Quadratic::_castdown(const ClassDesc*cd)
-{
-  void* casts[] =  { Function::_castdown(cd) };
-  return do_castdowns(casts,cd);
-}
-Quadratic::Quadratic(const RefKeyVal&keyval):
+Quadratic::Quadratic(const Ref<KeyVal>&keyval):
   Function(keyval)
 {
   set_dimension(new SCDimension(keyval->count("x0")));
@@ -149,11 +135,11 @@ Quadratic::guess_hessian(RefSymmSCMatrix&gh)
 
 main()
 {
-  RefKeyVal kv = new ParsedKeyVal( SRCDIR "/opttest.in");
-  RefKeyVal pkv = new PrefixKeyVal(kv,"opt");
+  Ref<KeyVal> kv = new ParsedKeyVal( SRCDIR "/opttest.in");
+  Ref<KeyVal> pkv = new PrefixKeyVal(kv,"opt");
 
   for (int i=0; i<pkv->count(); i++) {
-      RefOptimize opt(pkv->describedclassvalue(i));
+      Ref<Optimize> opt(pkv->describedclassvalue(i));
       if (opt.nonnull()) {
           RefSCVector oldx = opt->function()->get_x();
           opt->optimize();

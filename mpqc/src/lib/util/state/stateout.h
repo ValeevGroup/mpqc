@@ -54,8 +54,6 @@ class StateOutData {
     output device two times.
  */
 class StateOut: public DescribedClass {
-#   define CLASSNAME StateOut
-#   include <util/class/classda.h>
     friend class SavableState;
     friend class TranslateDataOut;
   private:
@@ -68,7 +66,7 @@ class StateOut: public DescribedClass {
     TranslateDataOut *translate_;
     int copy_references_;
     int next_object_number_;
-    AVLMap<RefSavableState,StateOutData> ps_;
+    AVLMap<Ref<SavableState>,StateOutData> ps_;
     AVLMap<ClassDescP,int> classidmap_;
     int nextclassid_;
     int node_to_node_;
@@ -86,7 +84,7 @@ class StateOut: public DescribedClass {
         checks to see if the data has already been saved.  If it has, then
         a reference to this data is saved.  Otherwise the object is written
         out. */
-    virtual int putobject(const RefSavableState &);
+    virtual int putobject(const Ref<SavableState> &);
 
     /// Write out information about the given ClassDesc.
     virtual int put(const ClassDesc*);
@@ -154,7 +152,7 @@ class StateOut: public DescribedClass {
         default implementation returns 0. */
     virtual int seekable();
   };
-DescribedClass_REF_dec(StateOut);
+
 
 #endif
 

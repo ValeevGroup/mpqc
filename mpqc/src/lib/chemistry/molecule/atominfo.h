@@ -31,17 +31,12 @@
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
 
-SavableState_REF_fwddec(Units);
+class Units;
 
 /** The AtomInfo class provides information about atoms.  The information
     is kept in a file named atominfo.kv in the SC library directory.  That
     information can be overridden by the user. */
 class AtomInfo: public SavableState {
-#   define CLASSNAME AtomInfo
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     enum { MaxZ = 107+1 };
 
@@ -66,17 +61,17 @@ class AtomInfo: public SavableState {
     char *overridden_values_;
 
     void load_library_values();
-    void override_library_values(const RefKeyVal &keyval);
-    void load_values(const RefKeyVal& keyval, int override);
+    void override_library_values(const Ref<KeyVal> &keyval);
+    void load_values(const Ref<KeyVal>& keyval, int override);
     void load_values(double *array, double *scale, const char *keyword,
-                     const RefKeyVal &keyval, int override,
-                     const RefUnits &);
+                     const Ref<KeyVal> &keyval, int override,
+                     const Ref<Units> &);
     void load_values(double array[][3], const char *keyword,
-                     const RefKeyVal &keyval, int override);
+                     const Ref<KeyVal> &keyval, int override);
     void add_overridden_value(const char *assignment);
   public:
     AtomInfo();
-    AtomInfo(const RefKeyVal&);
+    AtomInfo(const Ref<KeyVal>&);
     AtomInfo(StateIn&);
     ~AtomInfo();
     void save_data_state(StateOut& s);
@@ -114,7 +109,7 @@ class AtomInfo: public SavableState {
     /// This converts a name or symbol to the atomic number.
     static int string_to_Z(const char *, int allow_exceptions = 1);
 };
-SavableState_REF_dec(AtomInfo);
+
 
 #endif
 

@@ -36,7 +36,6 @@ CXXSRC = class.cc proxy.cc
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(GENCXXSRC:%.cc=%.$(OBJSUF))
 
 INC = class.h proxy.h
-GENINC = clasmacr.h
 
 DEPENDINCLUDE = $(INC) $(GENINC)
 
@@ -49,9 +48,6 @@ DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h $(TESTCXXSRC)
 default:: $(DEPENDINCLUDE)
 
 interface:: $(DEPENDINCLUDE)
-
-clasmacr.h: clastmpl.h $(TMPL2MACDEP)
-	$(TMPL2MAC) $< > clasmacr.h
 
 # a test program
 LD = $(CXX)

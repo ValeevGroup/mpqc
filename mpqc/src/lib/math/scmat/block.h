@@ -41,9 +41,6 @@ class SCElementOp3;
 /** SCMatrixBlock is the base clase for all types of blocks
     that comprise matrices and vectors. */
 class SCMatrixBlock: public SavableState {
-#   define CLASSNAME SCMatrixBlock
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   public:
     int blocki, blockj;
   public:
@@ -69,7 +66,7 @@ class SCMatrixBlock: public SavableState {
     virtual void process(SCElementOp2*, SCMatrixBlock*) = 0;
     virtual void process(SCElementOp3*, SCMatrixBlock*, SCMatrixBlock*) = 0;
 };
-SavableState_REF_dec(SCMatrixBlock);
+
 
 class SCMatrixBlockListLink {
   private:
@@ -100,11 +97,6 @@ class SCMatrixBlockListIter {
 };
 
 class SCMatrixBlockList: public SavableState {
-#   define CLASSNAME SCMatrixBlockList
-#   define HAVE_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     SCMatrixBlockListLink* _begin;
   public:
@@ -118,7 +110,7 @@ class SCMatrixBlockList: public SavableState {
     SCMatrixBlockListIter end() { return 0; }
     SCMatrixBlockList *deepcopy();
 };
-SavableState_REF_dec(SCMatrixBlockList);
+
 
 /** The SCVectorSimpleBlock describes a piece of a
 vector.  The following bit of code illustrates the data layout:
@@ -131,10 +123,6 @@ fill(double *vector, SCVectorSimpleBlock &b)
 }
 */
 class SCVectorSimpleBlock: public SCMatrixBlock {
-#   define CLASSNAME SCVectorSimpleBlock
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     SCVectorSimpleBlock(int istart,int iend);
     SCVectorSimpleBlock(StateIn&);
@@ -153,7 +141,7 @@ class SCVectorSimpleBlock: public SCMatrixBlock {
     double *dat();
     int ndat() const;
 };
-SavableState_REF_dec(SCVectorSimpleBlock);
+
 
 /** The SCVectorSimpleSubBlock describes a subblock of a
 vector.  The following bit of code illustrates the data layout:
@@ -166,10 +154,6 @@ fill(double *vector, SCVectorSimpleSubBlock &b)
 }
 */
 class SCVectorSimpleSubBlock: public SCMatrixBlock {
-#   define CLASSNAME SCVectorSimpleSubBlock
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     SCVectorSimpleSubBlock(int istart,int iend, int offset, double* data);
     SCVectorSimpleSubBlock(StateIn&);
@@ -184,7 +168,7 @@ class SCVectorSimpleSubBlock: public SCMatrixBlock {
     void process(SCElementOp2*, SCMatrixBlock*);
     void process(SCElementOp3*, SCMatrixBlock*, SCMatrixBlock*);
 };
-SavableState_REF_dec(SCVectorSimpleSubBlock);
+
 
 /** The SCMatrixRectBlock describes a rectangular piece of a
 matrix.  The following bit of code illustrates the data layout:
@@ -199,10 +183,6 @@ fill(double **matrix, SCMatrixRectBlock &b)
 }
 */
 class SCMatrixRectBlock: public SCMatrixBlock {
-#   define CLASSNAME SCMatrixRectBlock
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     SCMatrixRectBlock(int is, int ie, int js, int je);
     SCMatrixRectBlock(StateIn&);
@@ -223,7 +203,7 @@ class SCMatrixRectBlock: public SCMatrixBlock {
     double *dat();
     int ndat() const;
 };
-SavableState_REF_dec(SCMatrixRectBlock);
+
 
 /** The SCMatrixRectSubBlock describes a rectangular piece of a
 matrix.  The following bit of code illustrates the data layout:
@@ -239,10 +219,6 @@ fill(double **matrix, SCMatrixRectSubBlock &b)
 }
 */
 class SCMatrixRectSubBlock: public SCMatrixBlock {
-#   define CLASSNAME SCMatrixRectSubBlock
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     SCMatrixRectSubBlock(int is, int ie, int istride, int js, int je,
                          double* data);
@@ -262,7 +238,7 @@ class SCMatrixRectSubBlock: public SCMatrixBlock {
     void process(SCElementOp2*, SCMatrixBlock*);
     void process(SCElementOp3*, SCMatrixBlock*, SCMatrixBlock*);
 };
-SavableState_REF_dec(SCMatrixRectSubBlock);
+
 
 /** The SCMatrixLTriBlock describes a triangular piece of a
 matrix.  The following bit of code illustrates the data layout:
@@ -277,10 +253,6 @@ fill(double **matrix, SCMatrixLTriBlock &b)
 }
 */
 class SCMatrixLTriBlock: public SCMatrixBlock {
-#   define CLASSNAME SCMatrixLTriBlock
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     SCMatrixLTriBlock(int s,int e);
     SCMatrixLTriBlock(StateIn&);
@@ -299,7 +271,7 @@ class SCMatrixLTriBlock: public SCMatrixBlock {
     double *dat();
     int ndat() const;
 };
-SavableState_REF_dec(SCMatrixLTriBlock);
+
 
 /** The SCMatrixLTriSubBlock describes a triangular subblock of a
 matrix.  The following bit of code illustrates the data layout:
@@ -316,10 +288,6 @@ fill(double **matrix, SCMatrixLTriSubBlock &b)
 }
 */
 class SCMatrixLTriSubBlock: public SCMatrixBlock {
-#   define CLASSNAME SCMatrixLTriSubBlock
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     SCMatrixLTriSubBlock(int is,int ie,int js,int je,double*data);
     SCMatrixLTriSubBlock(StateIn&);
@@ -337,7 +305,7 @@ class SCMatrixLTriSubBlock: public SCMatrixBlock {
     void process(SCElementOp2*, SCMatrixBlock*);
     void process(SCElementOp3*, SCMatrixBlock*, SCMatrixBlock*);
 };
-SavableState_REF_dec(SCMatrixLTriSubBlock);
+
 
 /** The SCMatrixDiagBlock describes a diagonal piece of a
 matrix.  The following bit of code illustrates the data layout:
@@ -350,10 +318,6 @@ fill(double **matrix, SCMatrixDiagBlock &b)
 }
 */
 class SCMatrixDiagBlock: public SCMatrixBlock {
-#   define CLASSNAME SCMatrixDiagBlock
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     SCMatrixDiagBlock(int istart,int iend,int jstart);
     SCMatrixDiagBlock(int istart,int iend);
@@ -374,7 +338,7 @@ class SCMatrixDiagBlock: public SCMatrixBlock {
     double *dat();
     int ndat() const;
 };
-SavableState_REF_dec(SCMatrixDiagBlock);
+
 
 /** The SCMatrixDiagSubBlock describes a diagonal subblock of a
 matrix.  The following bit of code illustrates the data layout:
@@ -387,10 +351,6 @@ fill(double **matrix, SCMatrixDiagSubBlock &b)
 }
 */
 class SCMatrixDiagSubBlock: public SCMatrixBlock {
-#   define CLASSNAME SCMatrixDiagSubBlock
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     SCMatrixDiagSubBlock(int istart,int iend,int jstart, int offset,
                          double*data);
@@ -410,7 +370,7 @@ class SCMatrixDiagSubBlock: public SCMatrixBlock {
     void process(SCElementOp2*, SCMatrixBlock*);
     void process(SCElementOp3*, SCMatrixBlock*, SCMatrixBlock*);
 };
-SavableState_REF_dec(SCMatrixDiagSubBlock);
+
 
 // //////////////////////////////////////////////////////////////////
 // Classes that iterate through the blocks of a matrix.
@@ -418,7 +378,7 @@ SavableState_REF_dec(SCMatrixDiagSubBlock);
 /** Objects of class SCMatrixSubblockIter are used to iterate through the
     blocks of a matrix.  The object must be deleted before using the matrix
     that owns the blocks that SCMatrixSubblockIter is iterating through. */
-class SCMatrixSubblockIter: public VRefCount {
+class SCMatrixSubblockIter: public RefCount {
   public:
     enum Access { Read, Write, Accum, None };
   protected:
@@ -438,14 +398,14 @@ class SCMatrixSubblockIter: public VRefCount {
     /// Return the type of Access allowed for these blocks.
     Access access() const { return access_; }
 };
-REF_dec(SCMatrixSubblockIter);
+
 
 class SCMatrixSimpleSubblockIter: public SCMatrixSubblockIter {
   protected:
-    RefSCMatrixBlock block_;
+    Ref<SCMatrixBlock> block_;
     int ready_;
   public:
-    SCMatrixSimpleSubblockIter(Access, const RefSCMatrixBlock &b);
+    SCMatrixSimpleSubblockIter(Access, const Ref<SCMatrixBlock> &b);
     void begin();
     int ready();
     void next();
@@ -454,10 +414,10 @@ class SCMatrixSimpleSubblockIter: public SCMatrixSubblockIter {
 
 class SCMatrixListSubblockIter: public SCMatrixSubblockIter {
   protected:
-    RefSCMatrixBlockList list_;
+    Ref<SCMatrixBlockList> list_;
     SCMatrixBlockListIter iter_;
   public:
-    SCMatrixListSubblockIter(Access, const RefSCMatrixBlockList &list);
+    SCMatrixListSubblockIter(Access, const Ref<SCMatrixBlockList> &list);
     void begin();
     int ready();
     void next();
@@ -477,32 +437,32 @@ class SCMatrixNullSubblockIter: public SCMatrixSubblockIter {
 class SCMatrixCompositeSubblockIter: public SCMatrixSubblockIter {
   protected:
     int niters_;
-    RefSCMatrixSubblockIter *iters_;
+    Ref<SCMatrixSubblockIter> *iters_;
     int iiter_;
   public:
     SCMatrixCompositeSubblockIter(Access, int niter);
-    SCMatrixCompositeSubblockIter(RefSCMatrixSubblockIter&,
-                                  RefSCMatrixSubblockIter&);
+    SCMatrixCompositeSubblockIter(Ref<SCMatrixSubblockIter>&,
+                                  Ref<SCMatrixSubblockIter>&);
     ~SCMatrixCompositeSubblockIter();
-    void set_iter(int i, const RefSCMatrixSubblockIter &);
+    void set_iter(int i, const Ref<SCMatrixSubblockIter> &);
     void begin();
     int ready();
     void next();
     SCMatrixBlock *block();
     int current_block() const { return iiter_; }
 };
-REF_dec(SCMatrixCompositeSubblockIter);
+
 
 class SCMatrixJointSubblockIter: public SCMatrixSubblockIter {
   protected:
     int niters_;
-    RefSCMatrixSubblockIter *iters_;
+    Ref<SCMatrixSubblockIter> *iters_;
   public:
-    SCMatrixJointSubblockIter(const RefSCMatrixSubblockIter&,
-                              const RefSCMatrixSubblockIter&,
-                              const RefSCMatrixSubblockIter& = 0,
-                              const RefSCMatrixSubblockIter& = 0,
-                              const RefSCMatrixSubblockIter& = 0);
+    SCMatrixJointSubblockIter(const Ref<SCMatrixSubblockIter>&,
+                              const Ref<SCMatrixSubblockIter>&,
+                              const Ref<SCMatrixSubblockIter>& = 0,
+                              const Ref<SCMatrixSubblockIter>& = 0,
+                              const Ref<SCMatrixSubblockIter>& = 0);
     ~SCMatrixJointSubblockIter();
     void begin();
     int ready();
@@ -510,7 +470,7 @@ class SCMatrixJointSubblockIter: public SCMatrixSubblockIter {
     SCMatrixBlock *block();
     SCMatrixBlock *block(int i);
 };
-REF_dec(SCMatrixJointSubblockIter);
+
 
 #endif
 

@@ -43,8 +43,8 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////
 
-PetiteList::PetiteList(const RefGaussianBasisSet &gbs,
-                       const RefIntegral& ints) :
+PetiteList::PetiteList(const Ref<GaussianBasisSet> &gbs,
+                       const Ref<Integral>& ints) :
   gbs_(gbs),
   ints_(ints)
 {
@@ -309,7 +309,7 @@ PetiteList::SO_basisdim()
   delete[] nao;
 
   for (i=ii=0; i < nirrep_; i++) {
-    RefMessageGrp grp = MessageGrp::get_default_messagegrp();
+    Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
     int np=grp->n();
     int *subblksize = new int[np];
     int nbas=(c1_) ? gbs.nbasis() : nbf_in_ir_[i];

@@ -52,7 +52,7 @@ AssignedKeyVal::key_exists(const char * key)
   return result;
 }
 
-RefKeyValValue
+Ref<KeyValValue>
 AssignedKeyVal::key_value(const char * key, const KeyValValue &def)
 {
   KeyValKeyword k(key); 
@@ -67,7 +67,7 @@ AssignedKeyVal::key_value(const char * key, const KeyValValue &def)
 }
 
 void
-AssignedKeyVal::assign(const char*key,const RefKeyValValue& val)
+AssignedKeyVal::assign(const char*key,const Ref<KeyValValue>& val)
 {
   KeyValKeyword k(key);
   _map[k] = val;
@@ -104,7 +104,7 @@ AssignedKeyVal::assign(const char*key,const char* val)
   assign(key,new KeyValValuepchar(val));
 }
 void
-AssignedKeyVal::assign(const char*key,const RefDescribedClass&val)
+AssignedKeyVal::assign(const char*key,const Ref<DescribedClass>&val)
 {
   assign(key,new KeyValValueRefDescribedClass(val));
 }
@@ -116,10 +116,10 @@ AssignedKeyVal::clear()
 }
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
-template class EAVLMMapNode<KeyValKeyword, AVLMapNode<KeyValKeyword,RefKeyValValue> >;
-template class EAVLMMap<KeyValKeyword, AVLMapNode<KeyValKeyword,RefKeyValValue> >;
-template class AVLMapNode<KeyValKeyword,RefKeyValValue>;
-template class AVLMap<KeyValKeyword,RefKeyValValue>;
+template class EAVLMMapNode<KeyValKeyword, AVLMapNode<KeyValKeyword,Ref<KeyValValue> > >;
+template class EAVLMMap<KeyValKeyword, AVLMapNode<KeyValKeyword,Ref<KeyValValue> > >;
+template class AVLMapNode<KeyValKeyword,Ref<KeyValValue> >;
+template class AVLMap<KeyValKeyword,Ref<KeyValValue> >;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////

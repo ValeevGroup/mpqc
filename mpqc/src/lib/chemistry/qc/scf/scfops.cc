@@ -56,7 +56,7 @@ SCFEnergy::defer_collect(int h)
 }
 
 void
-SCFEnergy::collect(const RefMessageGrp&grp)
+SCFEnergy::collect(const Ref<MessageGrp>&grp)
 {
   if (!deferred_)
     grp->sum(eelec);

@@ -43,11 +43,6 @@
 // newton and related methods
 
 class NewtonOpt: public Optimize {
-#   define CLASSNAME NewtonOpt
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double maxabs_gradient;
     double accuracy_;
@@ -56,7 +51,7 @@ class NewtonOpt: public Optimize {
     int print_x_;
     int print_gradient_;
   public:
-    NewtonOpt(const RefKeyVal&);
+    NewtonOpt(const Ref<KeyVal>&);
     NewtonOpt(StateIn&);
     ~NewtonOpt();
     void save_data_state(StateOut&);

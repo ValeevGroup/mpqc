@@ -42,9 +42,9 @@ class PSI_Input {
       int _test;
 
    protected:
-      RefPointGroup _origpg;
-      RefMolecule _mol;
-      RefGaussianBasisSet _gbs;
+      Ref<PointGroup> _origpg;
+      Ref<Molecule> _mol;
+      Ref<GaussianBasisSet> _gbs;
       FILE *fp;
 
    public:
@@ -58,7 +58,7 @@ class PSI_Input {
       int write_keyword(const char *, int, double *);
       int write_geom();
       void write_string(const char *);
-//      int write_basis(RefGaussianBasisSet&);
+//      int write_basis(Ref<GaussianBasisSet>&);
       int write_basis(void);
       int write_defaults(const char *, const char *);
       void write_input();
@@ -68,7 +68,7 @@ class PSI_Input {
                         const int *orbvec);
 
    public:
-      PSI_Input(const RefKeyVal&);
+      PSI_Input(const Ref<KeyVal>&);
       PSI_Input();
       virtual ~PSI_Input();
       void print(std::ostream&);

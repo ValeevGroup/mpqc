@@ -35,14 +35,11 @@
 #include <util/render/algebra3.h>
 
 class Transform: public DescribedClass {
-#   define CLASSNAME Transform
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   private:
     mat4 transform_;
   public:
     Transform() { transform_ = identity3D(); }
-    Transform(const RefKeyVal&);
+    Transform(const Ref<KeyVal>&);
     ~Transform();
     mat4& transform() { return transform_; }
     void translate(double, double, double);
@@ -51,7 +48,7 @@ class Transform: public DescribedClass {
     void scale(double);
     void print(std::ostream& = ExEnv::out()) const;
 };
-DescribedClass_REF_dec(Transform);
+
 
 #endif
 

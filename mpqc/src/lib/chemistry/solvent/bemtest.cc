@@ -37,9 +37,9 @@ main()
   // Abort on floating point errors.
   ieee_trap_errors();
 
-  RefKeyVal keyval = new ParsedKeyVal(SRCDIR "/bemtest.in");
+  Ref<KeyVal> keyval = new ParsedKeyVal(SRCDIR "/bemtest.in");
 
-  RefBEMSolvent solvent = keyval->describedclassvalue("solvent");
+  Ref<BEMSolvent> solvent = keyval->describedclassvalue("solvent");
 
   solvent->init();
   solvent->init_system_matrix();

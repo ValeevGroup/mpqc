@@ -37,7 +37,7 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////
 // AggregateKeyVal
 
-AggregateKeyVal::AggregateKeyVal(const RefKeyVal&kv0)
+AggregateKeyVal::AggregateKeyVal(const Ref<KeyVal>&kv0)
 {
   kv[0] = kv0;
   kv[1] = 0;
@@ -45,7 +45,7 @@ AggregateKeyVal::AggregateKeyVal(const RefKeyVal&kv0)
   kv[3] = 0;
 }
 
-AggregateKeyVal::AggregateKeyVal(const RefKeyVal&kv0,const RefKeyVal&kv1)
+AggregateKeyVal::AggregateKeyVal(const Ref<KeyVal>&kv0,const Ref<KeyVal>&kv1)
 {
   kv[0] = kv0;
   kv[1] = kv1;
@@ -53,8 +53,8 @@ AggregateKeyVal::AggregateKeyVal(const RefKeyVal&kv0,const RefKeyVal&kv1)
   kv[3] = 0;
 }
 
-AggregateKeyVal::AggregateKeyVal(const RefKeyVal&kv0,const RefKeyVal&kv1,
-                                 const RefKeyVal&kv2)
+AggregateKeyVal::AggregateKeyVal(const Ref<KeyVal>&kv0,const Ref<KeyVal>&kv1,
+                                 const Ref<KeyVal>&kv2)
 {
   kv[0] = kv0;
   kv[1] = kv1;
@@ -62,8 +62,8 @@ AggregateKeyVal::AggregateKeyVal(const RefKeyVal&kv0,const RefKeyVal&kv1,
   kv[3] = 0;
 }
 
-AggregateKeyVal::AggregateKeyVal(const RefKeyVal&kv0,const RefKeyVal&kv1,
-                                 const RefKeyVal&kv2,const RefKeyVal&kv3)
+AggregateKeyVal::AggregateKeyVal(const Ref<KeyVal>&kv0,const Ref<KeyVal>&kv1,
+                                 const Ref<KeyVal>&kv2,const Ref<KeyVal>&kv3)
 {
   kv[0] = kv0;
   kv[1] = kv1;
@@ -75,10 +75,10 @@ AggregateKeyVal::~AggregateKeyVal()
 {
 }
 
-RefKeyVal
+Ref<KeyVal>
 AggregateKeyVal::getkeyval(const char* keyword)
 {
-  RefKeyVal lastkeyval;
+  Ref<KeyVal> lastkeyval;
   for (int i=0; i<MaxKeyVal && kv[i].nonnull(); i++) {
       kv[i]->exists(keyword);
       seterror(kv[i]->error());
@@ -91,10 +91,10 @@ AggregateKeyVal::getkeyval(const char* keyword)
   return lastkeyval;
 }
 
-RefKeyValValue
+Ref<KeyValValue>
 AggregateKeyVal::key_value(const char*arg, const KeyValValue &def)
 {
-  RefKeyVal kval = getkeyval(arg);
+  Ref<KeyVal> kval = getkeyval(arg);
   if (kval.nonnull()) return kval->key_value(arg,def);
   else return 0;
 }
@@ -102,7 +102,7 @@ AggregateKeyVal::key_value(const char*arg, const KeyValValue &def)
 int
 AggregateKeyVal::key_exists(const char* key)
 {
-  RefKeyVal kval = getkeyval(key);
+  Ref<KeyVal> kval = getkeyval(key);
   if (kval.nonnull()) return kval->exists(key);
   else return 0;
 }

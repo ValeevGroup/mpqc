@@ -121,7 +121,7 @@ BiggestContribs::insert(double val, const int *ii)
 }
 
 void
-BiggestContribs::combine(const RefMessageGrp &grp)
+BiggestContribs::combine(const Ref<MessageGrp> &grp)
 {
   int i;
   int n = grp->n();

@@ -277,7 +277,7 @@ MessageGrp::reduce(double* data, int n, GrpReduce<double>& red,
     }
   else passed_scratch = 1;
 
-  RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  Ref<GlobalMsgIter> i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
   for (i->backwards(); !i->done(); i->next()) {
       for (int idat=0; idat<n; idat+=tgop_max) {
@@ -314,7 +314,7 @@ MessageGrp::reduce(unsigned int* data, int n, GrpReduce<unsigned int>& red,
     }
   else passed_scratch = 1;
 
-  RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  Ref<GlobalMsgIter> i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
   for (i->backwards(); !i->done(); i->next()) {
       for (int idat=0; idat<n; idat+=tgop_max) {
@@ -351,7 +351,7 @@ MessageGrp::reduce(int* data, int n, GrpReduce<int>& red,
     }
   else passed_scratch = 1;
 
-  RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  Ref<GlobalMsgIter> i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
   for (i->backwards(); !i->done(); i->next()) {
       for (int idat=0; idat<n; idat+=tgop_max) {
@@ -388,7 +388,7 @@ MessageGrp::reduce(char* data, int n, GrpReduce<char>& red,
     }
   else passed_scratch = 1;
 
-  RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  Ref<GlobalMsgIter> i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
   for (i->backwards(); !i->done(); i->next()) {
       for (int idat=0; idat<n; idat+=tgop_max) {
@@ -425,7 +425,7 @@ MessageGrp::reduce(unsigned char* data, int n, GrpReduce<unsigned char>& red,
     }
   else passed_scratch = 1;
 
-  RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  Ref<GlobalMsgIter> i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
   for (i->backwards(); !i->done(); i->next()) {
       for (int idat=0; idat<n; idat+=tgop_max) {
@@ -462,7 +462,7 @@ MessageGrp::reduce(signed char* data, int n, GrpReduce<signed char>& red,
     }
   else passed_scratch = 1;
 
-  RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  Ref<GlobalMsgIter> i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
   for (i->backwards(); !i->done(); i->next()) {
       for (int idat=0; idat<n; idat+=tgop_max) {
@@ -499,7 +499,7 @@ MessageGrp::reduce(short* data, int n, GrpReduce<short>& red,
     }
   else passed_scratch = 1;
 
-  RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  Ref<GlobalMsgIter> i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
   for (i->backwards(); !i->done(); i->next()) {
       for (int idat=0; idat<n; idat+=tgop_max) {
@@ -536,7 +536,7 @@ MessageGrp::reduce(float* data, int n, GrpReduce<float>& red,
     }
   else passed_scratch = 1;
 
-  RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  Ref<GlobalMsgIter> i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
   for (i->backwards(); !i->done(); i->next()) {
       for (int idat=0; idat<n; idat+=tgop_max) {
@@ -573,7 +573,7 @@ MessageGrp::reduce(long* data, int n, GrpReduce<long>& red,
     }
   else passed_scratch = 1;
 
-  RefGlobalMsgIter i(topology_->global_msg_iter(this,
+  Ref<GlobalMsgIter> i(topology_->global_msg_iter(this,
                                                     (target== -1?0:target)));
   for (i->backwards(); !i->done(); i->next()) {
       for (int idat=0; idat<n; idat+=tgop_max) {

@@ -37,14 +37,9 @@
 // //////////////////////////////////////////////////////////////////////////
 
 class TCHF: public TCSCF {
-#   define CLASSNAME TCHF
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     TCHF(StateIn&);
-    TCHF(const RefKeyVal&);
+    TCHF(const Ref<KeyVal>&);
     ~TCHF();
 
     void save_data_state(StateOut&);

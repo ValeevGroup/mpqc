@@ -35,8 +35,8 @@
 
 #include <chemistry/qc/scf/linkage.h>
 
-const ClassDesc &mbpt_force_link_a_ = MBPT2::class_desc_;
-const ClassDesc &mbpt_force_link_b_ = MP2BasisExtrap::class_desc_;
+static ForceLink<MBPT2> mbpt_force_link_a_;
+static ForceLink<MP2BasisExtrap> mbpt_force_link_b_;
 
 #endif /* __PIC__ */
 

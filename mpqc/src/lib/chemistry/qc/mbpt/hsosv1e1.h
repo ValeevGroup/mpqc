@@ -44,10 +44,10 @@ class HSOSV1Erep1Qtr: public Thread {
     int nthread;
     int me;
     int nproc;
-    RefRegionTimer timer;
-    RefThreadLock lock;
-    RefGaussianBasisSet basis;
-    RefTwoBodyInt tbint;
+    Ref<RegionTimer> timer;
+    Ref<ThreadLock> lock;
+    Ref<GaussianBasisSet> basis;
+    Ref<TwoBodyInt> tbint;
     int ni,i_offset;
     double **scf_vector;
     double tol;
@@ -63,9 +63,9 @@ class HSOSV1Erep1Qtr: public Thread {
   public:
     HSOSV1Erep1Qtr(int mythread_a, int nthread_a,
                    int me_a, int nproc_a,
-                   const RefThreadLock &lock_a,
-                   const RefGaussianBasisSet &basis_a,
-                   const RefTwoBodyInt &tbint_a,
+                   const Ref<ThreadLock> &lock_a,
+                   const Ref<GaussianBasisSet> &basis_a,
+                   const Ref<TwoBodyInt> &tbint_a,
                    int ni_a, double **scf_vector_a,
                    double tol_a, int debug_a);
     ~HSOSV1Erep1Qtr();

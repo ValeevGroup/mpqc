@@ -71,7 +71,7 @@ ShellRotation::ShellRotation(const ShellRotation& rot) :
 }
 
 ShellRotation::ShellRotation(int a, SymmetryOperation& so,
-                             const RefIntegral& ints,
+                             const Ref<Integral>& ints,
                              int pure) :
   n_(0),
   am_(0),
@@ -112,7 +112,7 @@ ShellRotation::operator=(const ShellRotation& rot)
 // matrix outer product, keeping only the unique terms.
 // Written by clj...blame him
 void
-ShellRotation::init(int a, SymmetryOperation& so, const RefIntegral& ints)
+ShellRotation::init(int a, SymmetryOperation& so, const Ref<Integral>& ints)
 {
   done();
 
@@ -168,7 +168,7 @@ ShellRotation::init(int a, SymmetryOperation& so, const RefIntegral& ints)
 // using the P (xyz) transformation matrix.  This is done as a
 // matrix outer product, keeping only the unique terms.
 void
-ShellRotation::init_pure(int a, SymmetryOperation&so, const RefIntegral& ints)
+ShellRotation::init_pure(int a, SymmetryOperation&so, const Ref<Integral>& ints)
 {
   if (a < 2) {
     init(a,so,ints);

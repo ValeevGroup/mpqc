@@ -38,9 +38,6 @@
 #include <mpi.h>
 
 class MPI2MemoryGrp: public MsgMemoryGrp {
-#define CLASSNAME MPI2MemoryGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   private:
     MPI_Win rma_win_;
     void *data_;
@@ -50,8 +47,8 @@ class MPI2MemoryGrp: public MsgMemoryGrp {
     void sum_data(double *data, int node, int doffset, int dsize);
 
   public:
-    MPI2MemoryGrp(const RefMessageGrp& msg);
-    MPI2MemoryGrp(const RefKeyVal&);
+    MPI2MemoryGrp(const Ref<MessageGrp>& msg);
+    MPI2MemoryGrp(const Ref<KeyVal>&);
     ~MPI2MemoryGrp();
 
     void activate();

@@ -37,14 +37,12 @@
 
 /** A MsgMemoryGrp that initializes its data using a messagegrp. */
 class MsgMemoryGrp: public MemoryGrp {
-#define CLASSNAME MsgMemoryGrp
-#include <util/class/classda.h>
 
   protected:
-    RefMessageGrp msg_;
+    Ref<MessageGrp> msg_;
   public:
-    MsgMemoryGrp(const RefMessageGrp& msg);
-    MsgMemoryGrp(const RefKeyVal& keyval);
+    MsgMemoryGrp(const Ref<MessageGrp>& msg);
+    MsgMemoryGrp(const Ref<KeyVal>& keyval);
     ~MsgMemoryGrp();
     void set_localsize(int localsize);
 

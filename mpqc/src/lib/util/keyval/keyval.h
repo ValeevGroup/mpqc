@@ -64,8 +64,6 @@ class KeyValKeyword {
     inline const char* name() const {return keyword_;}
   };
 
-REF_fwddec(KeyValValue);
-
 /**
  The KeyVal class is designed to simplify the process of allowing
  a user to specify keyword/value associations to a C++ program.  A
@@ -88,7 +86,7 @@ REF_fwddec(KeyValValue);
  by keyword/value associations.  Most use of KeyVal need not be
  concerned with this.
 */
-class KeyVal: public VRefCount {
+class KeyVal: public RefCount {
     // these classes need to directly access the key_value member
     friend class AggregateKeyVal;
     friend class PrefixKeyVal;
@@ -116,7 +114,7 @@ class KeyVal: public VRefCount {
     /// Ultimately called by count.
     virtual int    key_count(const char* =0);
     /// Ultimately called by value.
-    virtual RefKeyValValue key_value(const char*,
+    virtual Ref<KeyValValue> key_value(const char*,
                                      const KeyValValue& def) = 0;
     /// Ultimately called by booleanvalue.
     virtual int    key_booleanvalue(const char*,const KeyValValue& def);
@@ -131,7 +129,7 @@ class KeyVal: public VRefCount {
     /// Ultimately called by pcharvalue.
     virtual char*  key_pcharvalue(const char* key,const KeyValValue& def);
     /// Ultimately called by describedclassvalue.
-    virtual RefDescribedClass key_describedclassvalue(const char* key,
+    virtual Ref<DescribedClass> key_describedclassvalue(const char* key,
                                                       const KeyValValue& def);
 
   public:
@@ -150,7 +148,7 @@ class KeyVal: public VRefCount {
         counted. */
     int    count(const char* =0);
     /// Return the value associated with the keyword.
-    RefKeyValValue value(const char* = 0,
+    Ref<KeyValValue> value(const char* = 0,
                          const KeyValValue& def=KeyValValue());
     /// Returns the boolean value (0 = false, 1 = true) of key.
     int    booleanvalue(const char* key = 0,
@@ -172,7 +170,7 @@ class KeyVal: public VRefCount {
     char*  pcharvalue(const char* key = 0,
                       const KeyValValue& def=KeyValValuepchar());
     /// Returns a reference to an object of type DescribedClass.
-    RefDescribedClass describedclassvalue(const char* key = 0,
+    Ref<DescribedClass> describedclassvalue(const char* key = 0,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
 
     // For vectors:
@@ -190,7 +188,7 @@ class KeyVal: public VRefCount {
                     const KeyValValue& def=KeyValValueint());
     char*  pcharvalue(const char* key,int,
                       const KeyValValue& def=KeyValValuepchar());
-    RefDescribedClass describedclassvalue(const char* key,int,
+    Ref<DescribedClass> describedclassvalue(const char* key,int,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
 
     int    exists(int i);
@@ -207,7 +205,7 @@ class KeyVal: public VRefCount {
                     const KeyValValue& def=KeyValValueint());
     char*  pcharvalue(int i,
                       const KeyValValue& def=KeyValValuepchar());
-    RefDescribedClass describedclassvalue(int i,
+    Ref<DescribedClass> describedclassvalue(int i,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
 
     // For arrays:
@@ -225,7 +223,7 @@ class KeyVal: public VRefCount {
                     const KeyValValue& def=KeyValValueint());
     char*  pcharvalue(const char* key,int,int,
                       const KeyValValue& def=KeyValValuepchar());
-    RefDescribedClass describedclassvalue(const char* key,int,int,
+    Ref<DescribedClass> describedclassvalue(const char* key,int,int,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
 
     int    exists(int i,int j);
@@ -242,7 +240,7 @@ class KeyVal: public VRefCount {
                     const KeyValValue& def=KeyValValueint());
     char*  pcharvalue(int i,int j,
                       const KeyValValue& def=KeyValValuepchar());
-    RefDescribedClass describedclassvalue(int i,int j,
+    Ref<DescribedClass> describedclassvalue(int i,int j,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
 
     // For all else:
@@ -254,7 +252,7 @@ class KeyVal: public VRefCount {
     char   Va_charvalue(const char* key,int,...);
     int    Va_intvalue(const char* key,int,...);
     char*  Va_pcharvalue(const char* key,int,...);
-    RefDescribedClass Va_describedclassvalue(const char* key,int,...);
+    Ref<DescribedClass> Va_describedclassvalue(const char* key,int,...);
 
     /// Return the current error condition.
     KeyValError error();
@@ -279,50 +277,50 @@ class KeyVal: public VRefCount {
     int verbose() const { return verbose_; }
 };
 
-REF_dec(KeyVal);
+
 
 // this class allows keyval associations to be set up by the program,
 // rather than determined by an external file
 class AssignedKeyVal: public KeyVal {
   private:
-    AVLMap<KeyValKeyword,RefKeyValValue> _map;
+    AVLMap<KeyValKeyword,Ref<KeyValValue> > _map;
     // do not allow a copy constructor or assignment
     AssignedKeyVal(const AssignedKeyVal&);
     void operator=(const AssignedKeyVal&);
   protected:
     int    key_exists(const char*);
-    RefKeyValValue key_value(const char*,
+    Ref<KeyValValue> key_value(const char*,
                              const KeyValValue& def);
   public:
     AssignedKeyVal();
     ~AssignedKeyVal();
 
-    void assign(const char*, const RefKeyValValue&);
+    void assign(const char*, const Ref<KeyValValue>&);
     void assign(const char*, double);
     void assignboolean(const char*, int);
     void assign(const char*, float);
     void assign(const char*, char);
     void assign(const char*, int);
     void assign(const char*, const char*);
-    void assign(const char*, const RefDescribedClass&);
+    void assign(const char*, const Ref<DescribedClass>&);
 
     void clear();
 };
 
-REF_dec(AssignedKeyVal);
+
 
 class StringKeyVal: public KeyVal {
   private:
     // once a described class is found it is kept here so
     // multiple references to it return the same instance
-    AVLMap<KeyValKeyword,RefKeyValValue> _map;
+    AVLMap<KeyValKeyword,Ref<KeyValValue> > _map;
     // do not allow a copy constructor or assignment
     StringKeyVal(const StringKeyVal&);
     void operator=(const StringKeyVal&);
   protected:
     StringKeyVal();
     int    key_exists(const char*);
-    RefKeyValValue key_value(const char*,
+    Ref<KeyValValue> key_value(const char*,
                              const KeyValValue& def);
   public:
     virtual ~StringKeyVal();
@@ -341,21 +339,21 @@ class StringKeyVal: public KeyVal {
 class AggregateKeyVal : public KeyVal {
   private:
     enum { MaxKeyVal = 4 };
-    RefKeyVal kv[MaxKeyVal];
-    RefKeyVal getkeyval(const char*key);
+    Ref<KeyVal> kv[MaxKeyVal];
+    Ref<KeyVal> getkeyval(const char*key);
     // do not allow a copy constructor or assignment
     AggregateKeyVal(const AggregateKeyVal&);
     void operator=(const AggregateKeyVal&);
   protected:
     int    key_exists(const char*);
-    RefKeyValValue key_value(const char*,
+    Ref<KeyValValue> key_value(const char*,
                              const KeyValValue& def);
   public:
-    AggregateKeyVal(const RefKeyVal&);
-    AggregateKeyVal(const RefKeyVal&,const RefKeyVal&);
-    AggregateKeyVal(const RefKeyVal&,const RefKeyVal&,const RefKeyVal&);
-    AggregateKeyVal(const RefKeyVal&,const RefKeyVal&,const RefKeyVal&,
-                    const RefKeyVal&);
+    AggregateKeyVal(const Ref<KeyVal>&);
+    AggregateKeyVal(const Ref<KeyVal>&,const Ref<KeyVal>&);
+    AggregateKeyVal(const Ref<KeyVal>&,const Ref<KeyVal>&,const Ref<KeyVal>&);
+    AggregateKeyVal(const Ref<KeyVal>&,const Ref<KeyVal>&,const Ref<KeyVal>&,
+                    const Ref<KeyVal>&);
     ~AggregateKeyVal();
     void errortrace(std::ostream&fp=ExEnv::err());
     void dump(std::ostream&fp=ExEnv::err());
@@ -364,31 +362,31 @@ class AggregateKeyVal : public KeyVal {
 class PrefixKeyVal : public KeyVal {
   private:
     char* prefix;
-    RefKeyVal keyval;
+    Ref<KeyVal> keyval;
     void setup(const char*,int,int,int,int,int);
     int getnewprefixkey(const char*key,char*newkey);
     // do not allow a copy constructor or assignment
     PrefixKeyVal(const PrefixKeyVal&);
     void operator=(const PrefixKeyVal&);
     int    key_exists(const char*);
-    RefKeyValValue key_value(const char*,
+    Ref<KeyValValue> key_value(const char*,
                              const KeyValValue& def);
   public:
-    PrefixKeyVal(const RefKeyVal&,int);
-    PrefixKeyVal(const RefKeyVal&,int,int);
-    PrefixKeyVal(const RefKeyVal&,int,int,int);
-    PrefixKeyVal(const RefKeyVal&,int,int,int,int);
-    PrefixKeyVal(const RefKeyVal&,const char*);
-    PrefixKeyVal(const RefKeyVal&,const char*,int);
-    PrefixKeyVal(const RefKeyVal&,const char*,int,int);
-    PrefixKeyVal(const RefKeyVal&,const char*,int,int,int);
-    PrefixKeyVal(const RefKeyVal&,const char*,int,int,int,int);
+    PrefixKeyVal(const Ref<KeyVal>&,int);
+    PrefixKeyVal(const Ref<KeyVal>&,int,int);
+    PrefixKeyVal(const Ref<KeyVal>&,int,int,int);
+    PrefixKeyVal(const Ref<KeyVal>&,int,int,int,int);
+    PrefixKeyVal(const Ref<KeyVal>&,const char*);
+    PrefixKeyVal(const Ref<KeyVal>&,const char*,int);
+    PrefixKeyVal(const Ref<KeyVal>&,const char*,int,int);
+    PrefixKeyVal(const Ref<KeyVal>&,const char*,int,int,int);
+    PrefixKeyVal(const Ref<KeyVal>&,const char*,int,int,int,int);
     // old CTOR syntax (use the above instead)
-    PrefixKeyVal(const char*,const RefKeyVal&);
-    PrefixKeyVal(const char*,const RefKeyVal&,int);
-    PrefixKeyVal(const char*,const RefKeyVal&,int,int);
-    PrefixKeyVal(const char*,const RefKeyVal&,int,int,int);
-    PrefixKeyVal(const char*,const RefKeyVal&,int,int,int,int);
+    PrefixKeyVal(const char*,const Ref<KeyVal>&);
+    PrefixKeyVal(const char*,const Ref<KeyVal>&,int);
+    PrefixKeyVal(const char*,const Ref<KeyVal>&,int,int);
+    PrefixKeyVal(const char*,const Ref<KeyVal>&,int,int,int);
+    PrefixKeyVal(const char*,const Ref<KeyVal>&,int,int,int,int);
     ~PrefixKeyVal();
     void errortrace(std::ostream&fp=ExEnv::err());
     void dump(std::ostream&fp=ExEnv::err());
@@ -422,13 +420,13 @@ class ParsedKeyVal : public StringKeyVal {
         are used to construct file names that are used to initialize
         the ParsedKeyVal.  The keywords sought are string'dir' for the
         directory prefix and string'files' for an array of file names. */
-    ParsedKeyVal(const char*,const RefKeyVal&);
+    ParsedKeyVal(const char*,const Ref<KeyVal>&);
     /// Cleanup, deleting the IPV2 object.
     ~ParsedKeyVal();
 
-    /** This is like the ParsedKeyVal(const char*,const RefKeyVal&)
+    /** This is like the ParsedKeyVal(const char*,const Ref<KeyVal>&)
         ctor, but writes the contents of the files to the given ostream. */
-    static void cat_files(const char*,const RefKeyVal&,std::ostream &o);
+    static void cat_files(const char*,const Ref<KeyVal>&,std::ostream &o);
 
     /// Read input data from the given filename
     void read(const char*);
@@ -447,7 +445,7 @@ class ParsedKeyVal : public StringKeyVal {
     int have_unseen();
 };
 
-REF_dec(ParsedKeyVal);
+
 
 #endif /* _KeyVal_h */
 

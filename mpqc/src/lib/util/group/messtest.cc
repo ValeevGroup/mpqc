@@ -40,25 +40,19 @@ using namespace std;
 //#ifndef __PIC__
 #ifndef PUMAGON
 #   include <util/group/messshm.h>
-    const ClassDesc &fl0 = ShmMessageGrp::class_desc_;
+    static ForceLink<ShmMessageGrp> fl0;
 #endif
 # ifdef HAVE_PVM
 #   include <util/group/messpvm.h>
-    const ClassDesc &fl2 = PVMMessageGrp::class_desc_;
+    static ForceLink<PVMMessageGrp> fl2;
 # endif
 # ifdef HAVE_MPI
 #   include <util/group/messmpi.h>
-    const ClassDesc &fl2 = MPIMessageGrp::class_desc_;
+    static ForceLink<MPIMessageGrp> fl2;
 # endif
 //#endif
 
-#define A_parents virtual public SavableState
-class A: A_parents {
-#   define CLASSNAME A
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
+class A: virtual public SavableState {
   private:
     int ia;
     int n;
@@ -66,7 +60,7 @@ class A: A_parents {
     double d;
   public:
     A(int size);
-    A(const RefKeyVal&);
+    A(const Ref<KeyVal>&);
     A(StateIn&);
     ~A();
     void save_data_state(StateOut&);
@@ -79,8 +73,7 @@ class A: A_parents {
       s << "}\n";
     }
 };
-SavableState_REF_dec(A);
-SavableState_REF_def(A);
+
 A::A(int size):
   ia(1),
   n(size),
@@ -89,7 +82,7 @@ A::A(int size):
 {
   for (int i=0; i<size; i++) array[i] = size - i - 1;
 }
-A::A(const RefKeyVal&keyval):
+A::A(const Ref<KeyVal>&keyval):
   ia(keyval->intvalue("a")),
   n(keyval->intvalue("n")),
   d(-1.24)
@@ -127,29 +120,19 @@ A::save_data_state(StateOut&s)
   cout << "put everything" << endl;
 }
 
-#define CLASSNAME A
-#define PARENTS A_parents
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-A::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc A_cd(
+  typeid(A),"A",1,"virtual public SavableState",
+  0, create<A>, create<A>);
 
-void test(const RefMessageGrp&, int source, int target);
+void test(const Ref<MessageGrp>&, int source, int target);
 void test_hcube(int nproc, int root, int fwd);
 
 int
 main(int argc, char**argv)
 {
-  RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
+  Ref<MessageGrp> grp = MessageGrp::initial_messagegrp(argc, argv);
 
-  RefDebugger debugger;
+  Ref<Debugger> debugger;
 
   if (grp.null()) {
       const char* input = SRCDIR "/messtest.in";
@@ -158,7 +141,7 @@ main(int argc, char**argv)
       if (argc >= 2) input = argv[1];
       if (argc >= 3) keyword = argv[2];
 
-      RefKeyVal keyval = new ParsedKeyVal(input);
+      Ref<KeyVal> keyval = new ParsedKeyVal(input);
 
       grp = keyval->describedclassvalue(keyword);
 
@@ -228,7 +211,7 @@ void
 test_hcube(int nproc, int root, int fwd)
 {
   int i, j;
-  RefGlobalMsgIter *gmi = new RefGlobalMsgIter[nproc];
+  Ref<GlobalMsgIter> *gmi = new Ref<GlobalMsgIter>[nproc];
   for (i=0; i<nproc; i++) {
       gmi[i] =  new HypercubeGMI(nproc, i, root);
     }
@@ -278,9 +261,9 @@ test_hcube(int nproc, int root, int fwd)
 }
 
 void
-test(const RefMessageGrp& grp, int source, int target)
+test(const Ref<MessageGrp>& grp, int source, int target)
 {
-  RefA a,b;
+  Ref<A> a,b;
   const int nca = 1000000;
   char ca[nca];
   

@@ -39,18 +39,13 @@
 
 /// Computes the molecular hessian by finite displacements of gradients.
 class FinDispMolecularHessian: public MolecularHessian {
-#   define CLASSNAME FinDispMolecularHessian
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
-    RefMolecularEnergy mole_;
+    Ref<MolecularEnergy> mole_;
     // In case molecule must be given in lower symmetry, its actual
     // symmetry and the symmetry used to compute displacements is this
-    RefPointGroup displacement_point_group_;
+    Ref<PointGroup> displacement_point_group_;
     // The molecule's original point group for restoration at the end.
-    RefPointGroup original_point_group_;
+    Ref<PointGroup> original_point_group_;
     // The molecule's original geometry for restoration at the end and
     //computing displacements.
     RefSCVector original_geometry_;
@@ -92,8 +87,8 @@ class FinDispMolecularHessian: public MolecularHessian {
     void init();
     void restart();
   public:
-    FinDispMolecularHessian(const RefMolecularEnergy&);
-    FinDispMolecularHessian(const RefKeyVal&);
+    FinDispMolecularHessian(const Ref<MolecularEnergy>&);
+    FinDispMolecularHessian(const Ref<KeyVal>&);
     FinDispMolecularHessian(StateIn&);
     ~FinDispMolecularHessian();
     void save_data_state(StateOut&);
@@ -119,10 +114,10 @@ class FinDispMolecularHessian: public MolecularHessian {
     /// Return the current value of the checkpoint option.
     int checkpoint() const { return checkpoint_; }
 
-    void set_energy(const RefMolecularEnergy &energy);
+    void set_energy(const Ref<MolecularEnergy> &energy);
     MolecularEnergy* energy() const;
 
-    RefSCMatrixKit matrixkit() const { return mole_->matrixkit(); }
+    Ref<SCMatrixKit> matrixkit() const { return mole_->matrixkit(); }
     RefSCDimension d3natom() const { return mole_->moldim(); }
 };
 

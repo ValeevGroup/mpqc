@@ -50,33 +50,24 @@ value of inverse_hessian_ x and g may be reversed (see Schlegel, Ab initio
 Methods in Quantum Chemistry I, 1987, p 10).
 */
 class HessianUpdate: virtual public SavableState {
-#   define CLASSNAME HessianUpdate
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
     int inverse_hessian_;
   public:
     HessianUpdate();
     HessianUpdate(StateIn&);
-    HessianUpdate(const RefKeyVal&);
+    HessianUpdate(const Ref<KeyVal>&);
     void save_data_state(StateOut&);
     virtual ~HessianUpdate();
-    virtual void update(const RefSymmSCMatrix&hessian,const RefFunction&,
+    virtual void update(const RefSymmSCMatrix&hessian,const Ref<Function>&,
                         const RefSCVector&xnew,const RefSCVector&gnew) = 0;
     virtual void set_inverse();
-    virtual void apply_transform(const RefNonlinearTransform&);
+    virtual void apply_transform(const Ref<NonlinearTransform>&);
 };
-SavableState_REF_dec(HessianUpdate);
+
 
 /** The DFPUpdate class is used to specify a Davidson, Fletcher, and Powell
 hessian update scheme.  */
 class DFPUpdate: public HessianUpdate {
-#   define CLASSNAME DFPUpdate
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     RefSCVector xprev;
     RefSCVector gprev;
@@ -96,12 +87,12 @@ class DFPUpdate: public HessianUpdate {
     </dl>
 
     */
-    DFPUpdate(const RefKeyVal&);
+    DFPUpdate(const Ref<KeyVal>&);
     void save_data_state(StateOut&);
     ~DFPUpdate();
-    void update(const RefSymmSCMatrix&ihessian,const RefFunction&,
+    void update(const RefSymmSCMatrix&ihessian,const Ref<Function>&,
                 const RefSCVector&xnew,const RefSCVector&gnew);
-    void apply_transform(const RefNonlinearTransform&);
+    void apply_transform(const Ref<NonlinearTransform>&);
     void set_inverse();
 };
 
@@ -109,19 +100,13 @@ class DFPUpdate: public HessianUpdate {
 and Shanno hessian update scheme.  This hessian update method is the
 recommended method for use with QNewtonOpt objects.  */
 class BFGSUpdate: public DFPUpdate {
-#   define CLASSNAME BFGSUpdate
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     BFGSUpdate();
     BFGSUpdate(StateIn&);
-    BFGSUpdate(const RefKeyVal&);
+    BFGSUpdate(const Ref<KeyVal>&);
     void save_data_state(StateOut&);
     ~BFGSUpdate();
-    void update(const RefSymmSCMatrix&ihessian,const RefFunction&,
+    void update(const RefSymmSCMatrix&ihessian,const Ref<Function>&,
                 const RefSCVector&xnew,const RefSCVector&gnew);
 };
 
@@ -130,24 +115,18 @@ This hessian update method is the recommended method for use with
 transition state searches (the EFCOpt class can be used for transition
 state searches).  */
 class PowellUpdate: public HessianUpdate {
-#   define CLASSNAME PowellUpdate
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     RefSCVector xprev;
     RefSCVector gprev;
   public:
     PowellUpdate();
     PowellUpdate(StateIn&);
-    PowellUpdate(const RefKeyVal&);
+    PowellUpdate(const Ref<KeyVal>&);
     void save_data_state(StateOut&);
     ~PowellUpdate();
-    void update(const RefSymmSCMatrix&ihessian,const RefFunction&func,
+    void update(const RefSymmSCMatrix&ihessian,const Ref<Function>&func,
                 const RefSCVector&xnew,const RefSCVector&gnew);
-    void apply_transform(const RefNonlinearTransform&);
+    void apply_transform(const Ref<NonlinearTransform>&);
 };
 
 #endif

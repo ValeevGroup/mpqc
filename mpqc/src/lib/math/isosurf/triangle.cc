@@ -67,9 +67,7 @@ using namespace std;
 //  I also use these below.                                               |
 ///////////////////////////////////////////////////////////////////////////
 
-REF_def(Triangle);
-
-Triangle::Triangle(const RefEdge& v1, const RefEdge& v2, const RefEdge& v3,
+Triangle::Triangle(const Ref<Edge>& v1, const Ref<Edge>& v2, const Ref<Edge>& v3,
                    unsigned int orientation0)
 {
   _orientation0 = orientation0;
@@ -88,7 +86,7 @@ Triangle::Triangle(const RefEdge& v1, const RefEdge& v2, const RefEdge& v3,
   // edge 1 vertex (1-_orientation1) is edge 2 vertex _orientation2
   // edge 2 vertex (1-_orientation2) is edge 0 vertex _orientation0
 
-  RefEdge *e = _edges;
+  Ref<Edge> *e = _edges;
 
   // swap edges 1 and 2 if necessary
   if (e[0]->vertex(1-_orientation0) != e[1]->vertex(0)) {
@@ -124,7 +122,7 @@ Triangle::Triangle(const RefEdge& v1, const RefEdge& v2, const RefEdge& v3,
     }
 
   _order = 1;
-  _vertices = new RefVertex[3];
+  _vertices = new Ref<Vertex>[3];
 
   _vertices[TriInterpCoef::ijk_to_index(_order, 0, 0)] = vertex(0);
   _vertices[TriInterpCoef::ijk_to_index(0, 0, _order)] = vertex(1);
@@ -136,14 +134,14 @@ Triangle::~Triangle()
   if (_vertices) delete[] _vertices;
 }
 
-RefVertex
+Ref<Vertex>
 Triangle::vertex(int i)
 {
   return _edges[i]->vertex(orientation(i));
 }
 
 unsigned int
-Triangle::orientation(const RefEdge& e) const
+Triangle::orientation(const Ref<Edge>& e) const
 {
   if (e == _edges[0]) return orientation(0);
   if (e == _edges[1]) return orientation(1);
@@ -151,7 +149,7 @@ Triangle::orientation(const RefEdge& e) const
 }
 
 int
-Triangle::contains(const RefEdge& e) const
+Triangle::contains(const Ref<Edge>& e) const
 {
   if (_edges[0] == e) return 1;
   if (_edges[1] == e) return 1;
@@ -171,28 +169,28 @@ double Triangle::flat_area()
                       - c2*c2 - b2*b2 - a2*a2);
 }
 
-void Triangle::add_vertices(AVLSet<RefVertex>&set)
+void Triangle::add_vertices(AVLSet<Ref<Vertex> >&set)
 {
   for (int i=0; i<3; i++) set.insert(_edges[i]->vertex(orientation(i)));
 }
 
-void Triangle::add_edges(AVLSet<RefEdge>&set)
+void Triangle::add_edges(AVLSet<Ref<Edge> >&set)
 {
   for (int i=0; i<3; i++) set.insert(_edges[i]);
 }
 
 void
-Triangle::interpolate(double r,double s,const RefVertex&result,SCVector3&dA)
+Triangle::interpolate(double r,double s,const Ref<Vertex>&result,SCVector3&dA)
 {
   TriInterpCoefKey key(_order, r, s);
-  RefTriInterpCoef coef = new TriInterpCoef(key);
+  Ref<TriInterpCoef> coef = new TriInterpCoef(key);
   interpolate(coef, r, s, result, dA);
 }
 
 void
-Triangle::interpolate(const RefTriInterpCoef& coef,
+Triangle::interpolate(const Ref<TriInterpCoef>& coef,
                       double r, double s,
-                      const RefVertex&result, SCVector3&dA)
+                      const Ref<Vertex>&result, SCVector3&dA)
 {
   unsigned int i, j, k;
 
@@ -231,8 +229,8 @@ Triangle::interpolate(const RefTriInterpCoef& coef,
 
 void
 Triangle::interpolate(double r, double s,
-                      const RefVertex&result, SCVector3&dA,
-                      const RefVolume &vol, double isoval)
+                      const Ref<Vertex>&result, SCVector3&dA,
+                      const Ref<Volume> &vol, double isoval)
 {
   // set up an initial dummy norm
   SCVector3 norm(0.0);
@@ -265,7 +263,7 @@ Triangle::flip()
 }
 
 void
-Triangle::set_order(int order, const RefVolume&vol, double isovalue)
+Triangle::set_order(int order, const Ref<Volume>&vol, double isovalue)
 {
   if (order > max_order) {
       ExEnv::err() << scprintf("Triangle::set_order: max_order = %d but order = %d\n",
@@ -285,7 +283,7 @@ Triangle::set_order(int order, const RefVolume&vol, double isovalue)
   _order = order;
   delete[] _vertices;
 
-  _vertices = new RefVertex[TriInterpCoef::order_to_nvertex(_order)];
+  _vertices = new Ref<Vertex>[TriInterpCoef::order_to_nvertex(_order)];
 
   // fill in the corner vertices
   _vertices[TriInterpCoef::ijk_to_index(_order, 0, 0)] = vertex(0);
@@ -340,19 +338,9 @@ Triangle::set_order(int order, const RefVolume&vol, double isovalue)
 /////////////////////////////////////////////////////////////////////////
 // TriangleIntegrator
 
-DescribedClass_REF_def(TriangleIntegrator);
-#define CLASSNAME TriangleIntegrator
-#define PARENTS public DescribedClass
-#define HAVE_KEYVAL_CTOR
-//#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-TriangleIntegrator::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc TriangleIntegrator_cd(
+  typeid(TriangleIntegrator),"TriangleIntegrator",1,"public DescribedClass",
+  0, create<TriangleIntegrator>, 0);
 
 TriangleIntegrator::TriangleIntegrator(int order):
   _n(order)
@@ -363,7 +351,7 @@ TriangleIntegrator::TriangleIntegrator(int order):
   coef_ = 0;
 }
 
-TriangleIntegrator::TriangleIntegrator(const RefKeyVal& keyval)
+TriangleIntegrator::TriangleIntegrator(const Ref<KeyVal>& keyval)
 {
   _n = keyval->intvalue("n");
   if (keyval->error() != KeyVal::OK) {
@@ -421,9 +409,9 @@ TriangleIntegrator::init_coef()
 
   clear_coef();
 
-  coef_ = new RefTriInterpCoef*[Triangle::max_order];
+  coef_ = new Ref<TriInterpCoef>*[Triangle::max_order];
   for (i=0; i<Triangle::max_order; i++) {
-      coef_[i] = new RefTriInterpCoef[_n];
+      coef_[i] = new Ref<TriInterpCoef>[_n];
       for (j=0; j<_n; j++) {
           TriInterpCoefKey key(i+1,_r[j],_s[j]);
           coef_[i][j] = new TriInterpCoef(key);
@@ -451,20 +439,11 @@ TriangleIntegrator::clear_coef()
 /////////////////////////////////////////////////////////////////////////
 // GaussTriangleIntegrator
 
-#define CLASSNAME GaussTriangleIntegrator
-#define PARENTS public TriangleIntegrator
-#define HAVE_KEYVAL_CTOR
-//#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-GaussTriangleIntegrator::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = TriangleIntegrator::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc GaussTriangleIntegrator_cd(
+  typeid(GaussTriangleIntegrator),"GaussTriangleIntegrator",1,"public TriangleIntegrator",
+  0, create<GaussTriangleIntegrator>, 0);
 
-GaussTriangleIntegrator::GaussTriangleIntegrator(const RefKeyVal& keyval):
+GaussTriangleIntegrator::GaussTriangleIntegrator(const Ref<KeyVal>& keyval):
   TriangleIntegrator(keyval)
 {
   ExEnv::out() << "Created a GaussTriangleIntegrator with n = " << n() << endl;

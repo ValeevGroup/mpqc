@@ -36,16 +36,8 @@
 
 using namespace std;
 
-#define CLASSNAME StateOutText
-#define PARENTS public StateOutFile
-#include <util/class/classi.h>
-void *
-StateOutText::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = StateOutFile::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc StateOutText_cd(
+    typeid(StateOutText),"StateOutText",1,"public StateOutFile");
 
 StateOutText::StateOutText() :
   StateOutFile(),
@@ -72,17 +64,9 @@ StateOutText::~StateOutText()
 {
 }
 
-#define CLASSNAME StateInText
-#define PARENTS public StateInFile
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-StateInText::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  StateInFile::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc StateInText_cd(typeid(StateInText),
+                                "StateInText",1,"public StateInFile",
+                                0, create<StateInText>);
 
 StateInText::StateInText() :
   StateInFile(),
@@ -108,14 +92,14 @@ StateInText::StateInText(const char *path) :
 {
 }
 
-StateInText::StateInText(const RefKeyVal &keyval):
+StateInText::StateInText(const Ref<KeyVal> &keyval):
   newlines_(0),
   no_newline_(0),
   no_array_(0)
 {
   char *path = keyval->pcharvalue("file");
   if (!path) {
-      ExEnv::err() << "StateInText(const RefKeyVal&): no path given" << endl;
+      ExEnv::err() << "StateInText(const Ref<KeyVal>&): no path given" << endl;
     }
   open(path);
   delete[] path;
@@ -389,7 +373,7 @@ int StateInText::get(double*&r)
   return StateIn::get(r);
 }
 
-int StateOutText::putobject(const RefSavableState &p)
+int StateOutText::putobject(const Ref<SavableState> &p)
 {
   ostream out(buf_);
   int r=0;
@@ -398,7 +382,7 @@ int StateOutText::putobject(const RefSavableState &p)
       out.flush();
     }
   else {
-      AVLMap<RefSavableState,StateOutData>::iterator ind = ps_.find(p);
+      AVLMap<Ref<SavableState>,StateOutData>::iterator ind = ps_.find(p);
       if (ind == ps_.end() || copy_references_) {
           // object has not been written yet
           StateOutData dp;
@@ -421,7 +405,7 @@ int StateOutText::putobject(const RefSavableState &p)
     }
   return r;
 }
-int StateInText::getobject(RefSavableState &p)
+int StateInText::getobject(Ref<SavableState> &p)
 {
   istream in(buf_);
   const int line_length = 512;
@@ -441,7 +425,7 @@ int StateInText::getobject(RefSavableState &p)
       have_classdesc();
       nextobject(refnum);
       DescribedClass *dc = cd->create(*this);
-      p = SavableState::castdown(dc);
+      p = dynamic_cast<SavableState*>(dc);
     }
   else if (!strncmp("reference",line,9)) {
       int refnum;

@@ -58,11 +58,11 @@ __builtin_delete(void*ptr)
   if (ptr) free(ptr);
 }
 
-void do_displacement(RefMolecularCoor&mc,int i);
+void do_displacement(Ref<MolecularCoor>&mc,int i);
 
 void
-print_atominfo(const RefAtomInfo &atominfo,
-               const RefAtomInfo &refatominfo)
+print_atominfo(const Ref<AtomInfo> &atominfo,
+               const Ref<AtomInfo> &refatominfo)
 {
   cout << "Rvdw(H) = " << refatominfo->vdw_radius(1)
        << " " << atominfo->vdw_radius(1)
@@ -102,13 +102,13 @@ main(int argc, char **argv)
   int i;
 
   // get the message group.  first try the commandline and environment
-  RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
+  Ref<MessageGrp> grp = MessageGrp::initial_messagegrp(argc, argv);
   if (grp.nonnull())
     MessageGrp::set_default_messagegrp(grp);
   else
     grp = MessageGrp::get_default_messagegrp();
 
-  RefKeyVal kv;
+  Ref<KeyVal> kv;
   if (argc == 2) {
       kv = new ParsedKeyVal(argv[1]);
     }
@@ -116,9 +116,9 @@ main(int argc, char **argv)
       kv = new ParsedKeyVal(SRCDIR "/moltest.in");
     }
 
-  RefAtomInfo atominfo = kv->describedclassvalue("atominfo");
+  Ref<AtomInfo> atominfo = kv->describedclassvalue("atominfo");
   if (atominfo.nonnull()) {
-      RefAtomInfo refatominfo = new AtomInfo;
+      Ref<AtomInfo> refatominfo = new AtomInfo;
       cout << node0<< "-------------- testing atominfo --------------" << endl;
       if (grp->me() == 0) print_atominfo(atominfo, refatominfo);
       cout << node0 << "saving/restoring atominfo" << endl;
@@ -145,7 +145,7 @@ main(int argc, char **argv)
         }
     }
 
-  RefMolecule mol = kv->describedclassvalue("molecule");
+  Ref<Molecule> mol = kv->describedclassvalue("molecule");
   if (mol.nonnull()) {
       cout << "-------------- testing molecule --------------" << endl;
 
@@ -195,8 +195,8 @@ main(int argc, char **argv)
     }
 
   cout << "-------------- initializing render tests --------------" << endl;
-  RefRender ren = kv->describedclassvalue("renderer");
-  RefRenderedObject renmol = kv->describedclassvalue("renderedmolecule");
+  Ref<Render> ren = kv->describedclassvalue("renderer");
+  Ref<RenderedObject> renmol = kv->describedclassvalue("renderedmolecule");
   if (ren.nonnull() && renmol.nonnull()) {
       cout << "-------------- testing renderer --------------" << endl;
       ren->render(renmol);
@@ -204,10 +204,10 @@ main(int argc, char **argv)
 
   //exit(0);
 
-  RefSetIntCoor simp = kv->describedclassvalue("simp");
+  Ref<SetIntCoor> simp = kv->describedclassvalue("simp");
   if (simp.nonnull()) {
       cout << "-------------- testing simp  --------------" << endl;
-      RefIntCoorGen gen = kv->describedclassvalue("generator");
+      Ref<IntCoorGen> gen = kv->describedclassvalue("generator");
       if (gen.nonnull()) {
           gen->print();
         }
@@ -219,10 +219,10 @@ main(int argc, char **argv)
     }
 
   // compare the analytic bmatrix to the finite displacement bmatrix
-  RefSetIntCoor bmat_test = kv->describedclassvalue("bmat_test");
+  Ref<SetIntCoor> bmat_test = kv->describedclassvalue("bmat_test");
   if (bmat_test.nonnull()) {
       cout << "-------------- bmat_test  --------------" << endl;
-      RefSCMatrixKit kit = SCMatrixKit::default_matrixkit();
+      Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
       RefSCDimension dnc(new SCDimension(bmat_test->n()));
       RefSCDimension dn3(new SCDimension(mol->natom()*3));
       RefSCMatrix bmatrix(dnc,dn3,kit);
@@ -271,7 +271,7 @@ main(int argc, char **argv)
   cerr.flush();
   
   // now we get ambitious
-  RefMolecularCoor mc = kv->describedclassvalue("molcoor");
+  Ref<MolecularCoor> mc = kv->describedclassvalue("molcoor");
   cout.flush();
   cerr.flush();
 
@@ -287,7 +287,7 @@ main(int argc, char **argv)
       // do_displacement(mc,2);
       // do_displacement(mc,3);
 
-      RefSCMatrixKit kit = SCMatrixKit::default_matrixkit();
+      Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
       RefSymmSCMatrix hessian(mc->dim(),kit);
       mc->guess_hessian(hessian);
 
@@ -295,19 +295,19 @@ main(int argc, char **argv)
       // hessian.print();
     }
 
-  RefMolecularEnergy me = kv->describedclassvalue("energy");
+  Ref<MolecularEnergy> me = kv->describedclassvalue("energy");
   if (me.nonnull()) {
       cout << "-------------- testing energy  --------------" << endl;
       me->print();
     }
 
-  RefMolecularHessian molhess = kv->describedclassvalue("hess");
+  Ref<MolecularHessian> molhess = kv->describedclassvalue("hess");
   RefSymmSCMatrix xhessian;
   if (molhess.nonnull()) {
       xhessian = molhess->cartesian_hessian();
     }
 
-  RefMolecularFrequencies molfreq = kv->describedclassvalue("freq");
+  Ref<MolecularFrequencies> molfreq = kv->describedclassvalue("freq");
   if (molfreq.nonnull() && xhessian.nonnull()) {
       cout << "-------------- testing freq  --------------" << endl;
       molfreq->compute_frequencies(xhessian);
@@ -318,7 +318,7 @@ main(int argc, char **argv)
 
 
 void
-do_displacement(RefMolecularCoor&mc,int i)
+do_displacement(Ref<MolecularCoor>&mc,int i)
 {
   if (i>=mc->dim().n()) return;
   // now try to displace the geometry

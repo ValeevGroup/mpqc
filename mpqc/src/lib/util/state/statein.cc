@@ -38,18 +38,8 @@ using namespace std;
 
 #define DEBUG 0
 
-DescribedClass_REF_def(StateIn);
-
-#define CLASSNAME StateIn
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-StateIn::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc StateIn_cd(
+    typeid(StateIn),"StateIn",1,"public DescribedClass");
 
 StateIn::StateIn(const StateIn&)
 {
@@ -506,7 +496,7 @@ StateIn::list_objects(ostream &o)
 }
 
 int
-StateIn::dir_getobject(RefSavableState &p, const char *name)
+StateIn::dir_getobject(Ref<SavableState> &p, const char *name)
 {
   int r=0;
 
@@ -570,7 +560,7 @@ StateIn::dir_getobject(RefSavableState &p, const char *name)
 }
 
 int
-StateIn::getobject(RefSavableState &p)
+StateIn::getobject(Ref<SavableState> &p)
 {
   int use_dir = use_directory();
   int r=0;
@@ -626,7 +616,7 @@ StateIn::getobject(RefSavableState &p)
           have_classdesc();
           nextobject(refnum);
           DescribedClass *dc = cd->create(*this);
-          p = SavableState::castdown(dc);
+          p = dynamic_cast<SavableState*>(dc);
           if (use_dir) {
               ind.data().ptr = p;
               if (need_seek) seek(original_loc);
@@ -672,7 +662,7 @@ StateIn::nextobject(int objnum)
 }
 
 void
-StateIn::haveobject(const RefSavableState &p)
+StateIn::haveobject(const Ref<SavableState> &p)
 {
   if (expected_object_num_) {
       haveobject(expected_object_num_,p);
@@ -681,7 +671,7 @@ StateIn::haveobject(const RefSavableState &p)
 }
 
 void
-StateIn::haveobject(int objnum,const RefSavableState &p)
+StateIn::haveobject(int objnum,const Ref<SavableState> &p)
 {
   AVLMap<int,StateInData>::iterator ind = ps_.find(objnum);
   if (ind == ps_.end()) {

@@ -39,14 +39,11 @@
 /** The ProcMessageGrp concrete class provides an implementation of
 MemoryGrp for a single processor. */
 class ProcMemoryGrp: public MemoryGrp {
-#define CLASSNAME ProcMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   private:
     char *data_;
   public:
     ProcMemoryGrp();
-    ProcMemoryGrp(const RefKeyVal&);
+    ProcMemoryGrp(const Ref<KeyVal>&);
     ~ProcMemoryGrp();
 
     void set_localsize(int);

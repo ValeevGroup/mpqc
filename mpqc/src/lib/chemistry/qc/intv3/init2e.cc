@@ -57,10 +57,10 @@ fail()
  */
 double *
 Int2eV3::int_initialize_erep(int storage, int order,
-                             const RefGaussianBasisSet &cs1,
-                             const RefGaussianBasisSet &cs2,
-                             const RefGaussianBasisSet &cs3,
-                             const RefGaussianBasisSet &cs4)
+                             const Ref<GaussianBasisSet> &cs1,
+                             const Ref<GaussianBasisSet> &cs2,
+                             const Ref<GaussianBasisSet> &cs3,
+                             const Ref<GaussianBasisSet> &cs4)
 {
   int nc1,nc2,nc3,nc4;
   int jmax,jmax1,jmax2,jmax3,jmax4;
@@ -321,7 +321,7 @@ Int2eV3::alloc_inter(int nprim,int nshell)
   }
 
 void
-Int2eV3::compute_shell_1(RefGaussianBasisSet cs,
+Int2eV3::compute_shell_1(Ref<GaussianBasisSet> cs,
                          int shell_offset, int prim_offset)
 {
   int i,j;
@@ -348,19 +348,19 @@ Int2eV3::compute_shell_1(RefGaussianBasisSet cs,
   }
 
 void
-Int2eV3::compute_prim_1(RefGaussianBasisSet cs1)
+Int2eV3::compute_prim_1(Ref<GaussianBasisSet> cs1)
 {
 }
 
 void
-Int2eV3::compute_shell_2(RefGaussianBasisSet cs1,RefGaussianBasisSet cs2)
+Int2eV3::compute_shell_2(Ref<GaussianBasisSet> cs1,Ref<GaussianBasisSet> cs2)
 {
   /* There are no 2 shell intermediates. */
 }
 
 /* The 2 primitive intermediates. */
 void
-Int2eV3::compute_prim_2(RefGaussianBasisSet cs1,RefGaussianBasisSet cs2)
+Int2eV3::compute_prim_2(Ref<GaussianBasisSet> cs1,Ref<GaussianBasisSet> cs2)
 {
   int offset1, offset2;
   int i1,j1,k1,i2,j2,k2;

@@ -49,27 +49,15 @@ the automated reference mechanism finish the work.
 The reference library provides smart pointers and a base class that
 can be used to maintain reference counts to objects.  For an
 object to be reference counted its class must inherit from
-the VRefCount class.  This adds <tt>sizeof(int)</tt> bytes
+the RefCount class.  This adds <tt>sizeof(int)</tt> bytes
 of overhead per object and makes the destructor virtual (so a vtable
 will be added to objects of the class, if there wasn't already a virtual
 member in the class).
 
 The smart pointers that maintain the reference counts are
-provided by the Ref class template.  Users of
-compilers that have problems with class templates can instead
-use classes created with the cpp macros REF_dec and
-REF_def.  These macros take the name of the reference counted
-class as the only argument and declare the interface
-and define the members of the new Ref class.
-The REF_dec macro takes a class name as an argument and
-constructs a new class declaration which is formed by appending the
-class name to Ref.  This macro would usually be invoked in the
-same header file that gives the declaration for that reference counted
-class.  The implementation of the members for this class are generated
-by using the REF_def which also takes the class name as the
-argument.  This should be given in one of the source files relating to
-that class and should not be placed in the header file.  The
-REF_dec macro must be followed by a semicolon.
+provided by the Ref class template.  A smart pointer to a
+class A which inherits from RefCount would have the
+type Ref<A>.
 
 \section refcust Customizing the Reference Counting Package
 
@@ -117,24 +105,17 @@ Following is a simple example of how to manage memory with reference
 counts.
 
 <pre>
-#include <util/container/ref.h>
+\#include <util/container/ref.h>
 
-class A: virtual public VRefCount {
-};
-REF_dec(A);
+class A: virtual public RefCount {};
 
-class B: public A {
-};
-REF_dec(B);
-
-REF_def(A);
-REF_def(B);
+class B: public A {};
 
 int
 main()
 {
-  RefA a1(new A);
-  RefA a2;
+  Ref\<A\> a1(new A);
+  Ref\<A\> a2;
 
   // Create another reference to the A object pointed to by a1.
   a2 = a1;
@@ -147,12 +128,15 @@ main()
   // deleted.
   a2 = 0;
 
-  RefB b(new B);
+  Ref\<B\> b(new B);
 
-  // RefA and RefB are not related by inheritance as are A and B,
-  // so `a1 = b' will fail and the following must be used.  This
-  // will also cause the first A object to be deleted.
-  a1 = b.pointer();
+  // An object of type Ref\<X\> can be assigned to an object of type
+  // Ref\<Y\> as long as X* can be assigned to Y*.
+  a1 = b;
+
+  // An automatic dynamic cast can be done by using the left shift
+  // operator.
+  b << a1;
 
   // The B object will be deleted here because all of the references
   // to it go out of scope and destroyed.

@@ -39,21 +39,14 @@
 #include <chemistry/molecule/molrender.h>
 #include <chemistry/molecule/coor.h>
 
-DescribedClass_REF_fwddec(RenderedObject);
-DescribedClass_REF_fwddec(RenderedMolecule);
-DescribedClass_REF_fwddec(MolFreqAnimate);
+class MolFreqAnimate;
 
 /** The MolecularFrequencies class is used to compute the molecular
 frequencies and thermodynamic information. */
 class MolecularFrequencies: public SavableState {
-#   define CLASSNAME MolecularFrequencies
-#   define HAVE_STATEIN_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
-    RefMolecule mol_;
-    RefPointGroup pg_;
+    Ref<Molecule> mol_;
+    Ref<PointGroup> pg_;
     int debug_;
     int nirrep_;
     // the number of frequencies per irrep
@@ -61,8 +54,8 @@ class MolecularFrequencies: public SavableState {
     // the frequencies for each irrep
     double **freq_;
 
-    RefSCMatrixKit kit_;
-    RefSCMatrixKit symkit_;
+    Ref<SCMatrixKit> kit_;
+    Ref<SCMatrixKit> symkit_;
 
     // the symmetry blocked dimension for internal motions
     RefSCDimension disym_;
@@ -104,13 +97,13 @@ class MolecularFrequencies: public SavableState {
         displaced.  The default is 0.001.
 
         </dl> */
-    MolecularFrequencies(const RefKeyVal &);
+    MolecularFrequencies(const Ref<KeyVal> &);
     MolecularFrequencies(StateIn &);
     ~MolecularFrequencies();
     void save_data_state(StateOut&);
 
     /// Return the molecule.
-    RefMolecule molecule() const { return mol_; }
+    Ref<Molecule> molecule() const { return mol_; }
 
     /// Given a cartesian coordinate hessian, compute the frequencies.
     void compute_frequencies(const RefSymmSCMatrix &xhessian);
@@ -134,34 +127,31 @@ class MolecularFrequencies: public SavableState {
         by calling compute_frequencies first. */
     void thermochemistry(int degeneracy, double temp=298.15, double pres=1.0);
 
-    void animate(const RefRender&, const RefMolFreqAnimate&);
+    void animate(const Ref<Render>&, const Ref<MolFreqAnimate>&);
 
-    RefSCMatrixKit matrixkit() { return kit_; }
-    RefSCMatrixKit symmatrixkit() { return symkit_; }
+    Ref<SCMatrixKit> matrixkit() { return kit_; }
+    Ref<SCMatrixKit> symmatrixkit() { return symkit_; }
 };
 
-SavableState_REF_dec(MolecularFrequencies);
+
 
 class MolFreqAnimate: public AnimatedObject {
-#   define CLASSNAME MolFreqAnimate
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   private:
-    RefRenderedMolecule renmol_;
-    RefMolecularFrequencies molfreq_;
-    RefMolecularEnergy dependent_mole_;
+    Ref<RenderedMolecule> renmol_;
+    Ref<MolecularFrequencies> molfreq_;
+    Ref<MolecularEnergy> dependent_mole_;
     int irrep_;
     int mode_;
     int nframe_;
   public:
-    MolFreqAnimate(const RefKeyVal &);
+    MolFreqAnimate(const Ref<KeyVal> &);
     virtual ~MolFreqAnimate();
 
     void set_mode(int i, int j) { irrep_ = i; mode_ = j; }
     int nobject();
-    RefRenderedObject object(int iobject);
+    Ref<RenderedObject> object(int iobject);
 };
-DescribedClass_REF_dec(MolFreqAnimate);
+
 
 #endif
 

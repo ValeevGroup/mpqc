@@ -34,9 +34,6 @@
 that uses the NX library, available on Intel Paragons.
 */
 class ParagonMessageGrp: public intMessageGrp {
-#define CLASSNAME ParagonMessageGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   protected:
     void basic_send(int target, int type, void* data, int nbyte);
     void basic_recv(int type, void* data, int nbyte);
@@ -44,7 +41,7 @@ class ParagonMessageGrp: public intMessageGrp {
     void initialize();
   public:
     ParagonMessageGrp();
-    ParagonMessageGrp(const RefKeyVal&);
+    ParagonMessageGrp(const Ref<KeyVal>&);
     ~ParagonMessageGrp();
     void sync();
  

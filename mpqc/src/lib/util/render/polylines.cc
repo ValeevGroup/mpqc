@@ -32,18 +32,9 @@
 #include <util/render/polylines.h>
 #include <util/render/color.h>
 
-DescribedClass_REF_def(RenderedPolylines);
-#define CLASSNAME RenderedPolylines
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public RenderedObject
-#include <util/class/classi.h>
-void *
-RenderedPolylines::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = RenderedObject::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc RenderedPolylines_cd(
+  typeid(RenderedPolylines),"RenderedPolylines",1,"public RenderedObject",
+  0, create<RenderedPolylines>, 0);
 
 RenderedPolylines::RenderedPolylines()
 {
@@ -54,7 +45,7 @@ RenderedPolylines::RenderedPolylines()
   nvertex_in_polyline_ = 0;
 }
 
-RenderedPolylines::RenderedPolylines(const RefKeyVal& keyval):
+RenderedPolylines::RenderedPolylines(const Ref<KeyVal>& keyval):
   RenderedObject(keyval)
 {
   int nvertex = keyval->count("vertices");
@@ -109,7 +100,7 @@ RenderedPolylines::~RenderedPolylines()
 }
 
 void
-RenderedPolylines::render(const RefRender& render)
+RenderedPolylines::render(const Ref<Render>& render)
 {
   render->polylines(this);
 }

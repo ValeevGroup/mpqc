@@ -46,11 +46,6 @@ class RefSCDimension;
     of the blocks must match the number, sizes, and order of the
     SCDimension objects.  */
 class SCBlockInfo: public SavableState {
-#   define CLASSNAME SCBlockInfo
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     int n_;
     int nblocks_;
@@ -74,7 +69,7 @@ class SCBlockInfo: public SavableState {
         information.
 
         </dl> */
-    SCBlockInfo(const RefKeyVal& keyval);
+    SCBlockInfo(const Ref<KeyVal>& keyval);
 
     ~SCBlockInfo();
     void save_data_state(StateOut&);
@@ -104,27 +99,22 @@ class SCBlockInfo: public SavableState {
     /// Print the object to the stream o.
     void print(std::ostream&o=ExEnv::out()) const;
 };
-SavableState_REF_dec(SCBlockInfo);
+
 
 /** The SCDimension class is used to determine the size and blocking of
     matrices.  The blocking information is stored by an object of class
     SCBlockInfo.  */
 class SCDimension: public SavableState {
-#   define CLASSNAME SCDimension
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     char *name_;
     int n_;
-    RefSCBlockInfo blocks_;
+    Ref<SCBlockInfo> blocks_;
     SCDimension(const char* name = 0);
   public:
     /** Create a dimension with an optional name.  The name is a copy of
         the '0' terminated string name. */
     SCDimension(int n, const char* name = 0);
-    SCDimension(const RefSCBlockInfo&, const char *name = 0);
+    SCDimension(const Ref<SCBlockInfo>&, const char *name = 0);
     SCDimension(int n, int nblocks, const int *blocksizes = 0,
                 const char* name = 0);
     /** The KeyVal constructor.
@@ -137,7 +127,7 @@ class SCDimension: public SavableState {
         be given as a SCBlockInfo object.  One of n or blocks is required.
 
         </dl> */
-    SCDimension(const RefKeyVal&);
+    SCDimension(const Ref<KeyVal>&);
     SCDimension(StateIn&s);
 
     ~SCDimension();
@@ -153,18 +143,15 @@ class SCDimension: public SavableState {
     const char* name() const { return name_; }
 
     /// Return the blocking information for this dimension.
-    RefSCBlockInfo blocks() { return blocks_; }
+    Ref<SCBlockInfo> blocks() { return blocks_; }
 
     /// Print information about this dimension to o.
     void print(std::ostream&o=ExEnv::out()) const;
 };
 
-DCRef_declare(SCDimension);
-SSRef_declare(SCDimension);
-
 /** The RefSCDimension class is a smart pointer to an SCDimension
     specialization. */
-class RefSCDimension: public SSRefSCDimension {
+class RefSCDimension: public Ref<SCDimension> {
     // standard overrides
   public:
     /** Initializes the dimension pointer to 0.  The
@@ -175,12 +162,12 @@ class RefSCDimension: public SSRefSCDimension {
     /// Make this refer to d.
     RefSCDimension(SCDimension *d);
 
-    RefSCDimension(const DCRefBase&);
     ~RefSCDimension();
     /// Make this refer to d.
     RefSCDimension& operator=(SCDimension* d);
 
-    RefSCDimension& operator=(const DCRefBase & c);
+    RefSCDimension& operator<<(RefCount*);
+    RefSCDimension& operator<<(const RefBase &);
     /// Make this and d refer to the same SCDimension.
     RefSCDimension& operator=(const RefSCDimension & d);
 

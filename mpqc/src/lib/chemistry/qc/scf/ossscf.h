@@ -37,9 +37,6 @@
 // //////////////////////////////////////////////////////////////////////////
 
 class OSSSCF: public SCF {
-#   define CLASSNAME OSSSCF
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
  protected:
     int user_occupations_;
     int tndocc_;
@@ -54,7 +51,7 @@ class OSSSCF: public SCF {
 
   public:
     OSSSCF(StateIn&);
-    OSSSCF(const RefKeyVal&);
+    OSSSCF(const Ref<KeyVal>&);
     ~OSSSCF();
 
     void save_data_state(StateOut&);
@@ -99,7 +96,7 @@ class OSSSCF: public SCF {
     double new_density();
     double scf_energy();
 
-    RefSCExtrapData extrap_data();
+    Ref<SCExtrapData> extrap_data();
     
     // gradient things
     void init_gradient();

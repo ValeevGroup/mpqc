@@ -64,7 +64,7 @@ scextest: scextest.$(OBJSUF) liboptimize.$(LIBSUF) \
 	$(LTLINK) $(LD) $(LDFLAGS) -o scextest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 scextest.$(OBJSUF): scextest.cc
-	$(LTCOMP) $(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 kvopt: kvopt.$(OBJSUF) $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LTLINK) $(LD) $(LDFLAGS) -o kvopt $^ $(SYSLIBS) $(LTLINKBINOPTS)

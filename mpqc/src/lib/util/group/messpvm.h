@@ -31,10 +31,6 @@
 #include <util/group/message.h>
 
 class PVMMessageGrp: public MessageGrp {
-#define CLASSNAME PVMMessageGrp
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   protected:
     int *tids;
 
@@ -43,7 +39,7 @@ class PVMMessageGrp: public MessageGrp {
     int rlen;
   public:
     PVMMessageGrp();
-    PVMMessageGrp(const RefKeyVal&);
+    PVMMessageGrp(const Ref<KeyVal>&);
     ~PVMMessageGrp();
 
     void raw_send(int target, void* data, int nbyte);

@@ -82,18 +82,9 @@ template class MemoryGrpBuf<unsigned char>;
 //////////////////////////////////////////////////////////////////////
 // MemoryGrp members
 
-DescribedClass_REF_def(MemoryGrp);
-
-#define CLASSNAME MemoryGrp
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-MemoryGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MemoryGrp_cd(
+  typeid(MemoryGrp),"MemoryGrp",1,"public DescribedClass",
+  0, 0, 0);
 
 MemoryGrp::MemoryGrp()
 {
@@ -103,7 +94,7 @@ MemoryGrp::MemoryGrp()
   offsets_ = 0;
 }
 
-MemoryGrp::MemoryGrp(const RefKeyVal& keyval)
+MemoryGrp::MemoryGrp(const Ref<KeyVal>& keyval)
 {
   use_locks_ = 0;
   debug_ = keyval->intvalue("debug");
@@ -168,10 +159,10 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
   // create it.
   if (keyval_string) {
       //ExEnv::out() << "Creating MemoryGrp from \"" << keyval_string << "\"" << endl;
-      RefParsedKeyVal strkv = new ParsedKeyVal();
+      Ref<ParsedKeyVal> strkv = new ParsedKeyVal();
       strkv->parse_string(keyval_string);
-      RefDescribedClass dc = strkv->describedclassvalue();
-      grp = MemoryGrp::castdown(dc.pointer());
+      Ref<DescribedClass> dc = strkv->describedclassvalue();
+      grp = dynamic_cast<MemoryGrp*>(dc.pointer());
       if (dc.null()) {
           ExEnv::err() << "initial_memorygrp: couldn't find a MemoryGrp in "
                << keyval_string << endl;
@@ -192,13 +183,13 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
       return grp;
     }
 
-  RefMessageGrp msg = MessageGrp::get_default_messagegrp();
+  Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
   if (msg.null()) {
       ExEnv::err() << scprintf("MemoryGrp::create_memorygrp: requires default msg\n");
       abort();
     }
 #ifdef HAVE_NX
-  else if (msg->class_desc() == ParagonMessageGrp::static_class_desc()) {
+  else if (msg->class_desc() == ::class_desc<ParagonMessageGrp>()) {
 #ifdef HAVE_HRECV
       grp = new ParagonMemoryGrp(msg);
 #elif defined(HAVE_PUMA_MPI2)
@@ -209,12 +200,12 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
     }
 #endif
 #if defined(HAVE_MPL)
-  else if (msg->class_desc() == MPIMessageGrp::static_class_desc()) {
+  else if (msg->class_desc() == ::class_desc<MPIMessageGrp>()) {
       grp = new MPLMemoryGrp(msg);
     }
 #endif
 #if defined(HAVE_MPI)
-  else if (msg->class_desc() == MPIMessageGrp::static_class_desc()) {
+  else if (msg->class_desc() == ::class_desc<MPIMessageGrp>()) {
 #if defined(HAVE_PUMA_MPI2)
       grp = new PumaMemoryGrp(msg);
 #elif defined(HAVE_ALPHA_MMAP)
@@ -225,7 +216,7 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
     }
 #endif
 #ifdef HAVE_SYSV_IPC
-  else if (msg->class_desc() == ShmMessageGrp::static_class_desc()) {
+  else if (msg->class_desc() == ::class_desc<ShmMessageGrp>()) {
 #ifdef HAVE_ALPHA_MMAP
       grp = new AlphaMMapMemoryGrp(msg);
 #else

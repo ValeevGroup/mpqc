@@ -39,11 +39,11 @@
 #include <math/scmat/linkage.h>
 #include <chemistry/molecule/linkage.h>
 
-const ClassDesc &scf_force_link_a_ = CLHF::class_desc_;
-const ClassDesc &scf_force_link_b_ = HSOSHF::class_desc_;
-const ClassDesc &scf_force_link_c_ = OSSHF::class_desc_;
-const ClassDesc &scf_force_link_d_ = TCHF::class_desc_;
-const ClassDesc &scf_force_link_e_ = UHF::class_desc_;
+static ForceLink<CLHF> scf_force_link_a_;
+static ForceLink<HSOSHF> scf_force_link_b_;
+static ForceLink<OSSHF> scf_force_link_c_;
+static ForceLink<TCHF> scf_force_link_d_;
+static ForceLink<UHF> scf_force_link_e_;
 
 #endif /* __PIC__ */
 

@@ -32,18 +32,9 @@
 #include <util/render/polygons.h>
 #include <util/render/color.h>
 
-DescribedClass_REF_def(RenderedPolygons);
-#define CLASSNAME RenderedPolygons
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public RenderedObject
-#include <util/class/classi.h>
-void *
-RenderedPolygons::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = RenderedObject::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc RenderedPolygons_cd(
+  typeid(RenderedPolygons),"RenderedPolygons",1,"public RenderedObject",
+  0, create<RenderedPolygons>, 0);
 
 RenderedPolygons::RenderedPolygons()
 {
@@ -55,7 +46,7 @@ RenderedPolygons::RenderedPolygons()
   nvertex_in_face_ = 0;
 }
 
-RenderedPolygons::RenderedPolygons(const RefKeyVal& keyval):
+RenderedPolygons::RenderedPolygons(const Ref<KeyVal>& keyval):
   RenderedObject(keyval)
 {
   int nvertex = keyval->count("vertices");
@@ -110,7 +101,7 @@ RenderedPolygons::~RenderedPolygons()
 }
 
 void
-RenderedPolygons::render(const RefRender& render)
+RenderedPolygons::render(const Ref<Render>& render)
 {
   render->polygons(this);
 }

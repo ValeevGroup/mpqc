@@ -51,26 +51,11 @@ class SymmSCMatrix;
 class DiagSCMatrix;
 class SCVector;
 
-//class SSRefSCElementOp;
-//typedef class SSRefSCElementOp RefSCElementOp;
-SavableState_REF_fwddec(SCElementOp);
-
-//class SSRefSCElementOp2;
-//typedef class SSRefSCElementOp2 RefSCElementOp2;
-SavableState_REF_fwddec(SCElementOp2);
-
-//class SSRefSCElementOp3;
-//typedef class SSRefSCElementOp3 RefSCElementOp3;
-SavableState_REF_fwddec(SCElementOp3);
-
 /** Objects of class SCElementOp are used to perform operations on the
     elements of matrices.  When the SCElementOp object is given to the
     element_op member of a matrix, each block the matrix is passed to one
     of the process, process_base, or process_base members. */
 class SCElementOp: public SavableState {
-#   define CLASSNAME SCElementOp
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   public:
     SCElementOp();
     SCElementOp(StateIn&s): SavableState(s) {}
@@ -84,7 +69,7 @@ class SCElementOp: public SavableState {
         the blocked matrices). */
     virtual int has_collect();
     virtual void defer_collect(int);
-    virtual void collect(const RefMessageGrp&);
+    virtual void collect(const Ref<MessageGrp>&);
     /** By default this returns nonzero.  If the ElementOp specialization
         will change any elements of the matrix, then this must be
         overridden to return nonzero. */
@@ -96,7 +81,7 @@ class SCElementOp: public SavableState {
 
     /** Lazy matrix implementors can call this member when the
         type of block specialization is unknown.  However, this
-        will attempt to castdown block to a block specialization
+        will attempt to dynamic_cast block to a block specialization
         and will thus be less efficient. */
     void process_base(SCMatrixBlock*block);
 
@@ -113,17 +98,12 @@ class SCElementOp: public SavableState {
     virtual void process_spec_diagsub(SCMatrixDiagSubBlock*);
     virtual void process_spec_vsimpsub(SCVectorSimpleSubBlock*);
 };
-DCRef_declare(SCElementOp);
-SSRef_declare(SCElementOp);
 
 /** The SCElementOp2 class is very similar to the SCElementOp class except
     that pairs of blocks are treated simultaneously.  The two matrices
     involved must have identical storage layout, which will be the case if
     both matrices are of the same type and dimensions.  */
 class SCElementOp2: public SavableState {
-#   define CLASSNAME SCElementOp2
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   public:
     SCElementOp2();
     SCElementOp2(StateIn&s): SavableState(s) {}
@@ -132,7 +112,7 @@ class SCElementOp2: public SavableState {
     virtual void defer_collect(int);
     virtual int has_side_effects();
     virtual int has_side_effects_in_arg();
-    virtual void collect(const RefMessageGrp&);
+    virtual void collect(const Ref<MessageGrp>&);
     virtual void process(SCMatrixBlockIter&,SCMatrixBlockIter&) = 0;
     void process_base(SCMatrixBlock*,SCMatrixBlock*);
     virtual void process_spec_rect(SCMatrixRectBlock*,SCMatrixRectBlock*);
@@ -140,17 +120,12 @@ class SCElementOp2: public SavableState {
     virtual void process_spec_diag(SCMatrixDiagBlock*,SCMatrixDiagBlock*);
     virtual void process_spec_vsimp(SCVectorSimpleBlock*,SCVectorSimpleBlock*);
 };
-DCRef_declare(SCElementOp2);
-SSRef_declare(SCElementOp2);
 
 /** The SCElementOp3 class is very similar to the SCElementOp class except
     that a triplet of blocks is treated simultaneously.  The three matrices
     involved must have identical storage layout, which will be the case if
     all matrices are of the same type and dimensions.  */
 class SCElementOp3: public SavableState {
-#   define CLASSNAME SCElementOp3
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   public:
     SCElementOp3();
     SCElementOp3(StateIn&s): SavableState(s) {}
@@ -160,7 +135,7 @@ class SCElementOp3: public SavableState {
     virtual int has_side_effects();
     virtual int has_side_effects_in_arg1();
     virtual int has_side_effects_in_arg2();
-    virtual void collect(const RefMessageGrp&);
+    virtual void collect(const Ref<MessageGrp>&);
     virtual void process(SCMatrixBlockIter&,
                          SCMatrixBlockIter&,
                          SCMatrixBlockIter&) = 0;
@@ -178,14 +153,8 @@ class SCElementOp3: public SavableState {
                                     SCVectorSimpleBlock*,
                                     SCVectorSimpleBlock*);
 };
-DCRef_declare(SCElementOp3);
-SSRef_declare(SCElementOp3);
 
 class SCElementScalarProduct: public SCElementOp2 {
-#   define CLASSNAME SCElementScalarProduct
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     int deferred_;
     double product;
@@ -197,17 +166,13 @@ class SCElementScalarProduct: public SCElementOp2 {
     void process(SCMatrixBlockIter&,SCMatrixBlockIter&);
     int has_collect();
     void defer_collect(int);
-    void collect(const RefMessageGrp&);
+    void collect(const Ref<MessageGrp>&);
     double result();
     void init() { product = 0.0; }
 };
-SavableState_REF_dec(SCElementScalarProduct);
+
 
 class SCDestructiveElementProduct: public SCElementOp2 {
-#   define CLASSNAME SCDestructiveElementProduct
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     SCDestructiveElementProduct();
     SCDestructiveElementProduct(StateIn&);
@@ -218,10 +183,6 @@ class SCDestructiveElementProduct: public SCElementOp2 {
 };
 
 class SCElementScale: public SCElementOp {
-#   define CLASSNAME SCElementScale
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     double scale;
   public:
@@ -234,10 +195,6 @@ class SCElementScale: public SCElementOp {
 };
 
 class SCElementRandomize: public SCElementOp {
-#   define CLASSNAME SCElementRandomize
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     double assign;
   public:
@@ -250,10 +207,6 @@ class SCElementRandomize: public SCElementOp {
 };
 
 class SCElementAssign: public SCElementOp {
-#   define CLASSNAME SCElementAssign
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     double assign;
   public:
@@ -266,10 +219,6 @@ class SCElementAssign: public SCElementOp {
 };
 
 class SCElementSquareRoot: public SCElementOp {
-#   define CLASSNAME SCElementSquareRoot
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     SCElementSquareRoot();
     SCElementSquareRoot(double a);
@@ -281,10 +230,6 @@ class SCElementSquareRoot: public SCElementOp {
 };
 
 class SCElementInvert: public SCElementOp {
-#   define CLASSNAME SCElementInvert
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     double threshold_;
     int nbelowthreshold_;
@@ -298,16 +243,12 @@ class SCElementInvert: public SCElementOp {
     void process(SCMatrixBlockIter&);
     int has_collect();
     void defer_collect(int);
-    void collect(const RefMessageGrp&);
+    void collect(const Ref<MessageGrp>&);
     int result() { return nbelowthreshold_; }
 };
-SavableState_REF_dec(SCElementInvert);
+
 
 class SCElementScaleDiagonal: public SCElementOp {
-#   define CLASSNAME SCElementScaleDiagonal
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     double scale_diagonal;
   public:
@@ -320,10 +261,6 @@ class SCElementScaleDiagonal: public SCElementOp {
 };
 
 class SCElementShiftDiagonal: public SCElementOp {
-#   define CLASSNAME SCElementShiftDiagonal
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     double shift_diagonal;
   public:
@@ -336,10 +273,6 @@ class SCElementShiftDiagonal: public SCElementOp {
 };
 
 class SCElementMaxAbs: public SCElementOp {
-#   define CLASSNAME SCElementMaxAbs
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     int deferred_;
     double r;
@@ -351,16 +284,12 @@ class SCElementMaxAbs: public SCElementOp {
     void process(SCMatrixBlockIter&);
     int has_collect();
     void defer_collect(int);
-    void collect(const RefMessageGrp&);
+    void collect(const Ref<MessageGrp>&);
     double result();
 };
-SavableState_REF_dec(SCElementMaxAbs);
+
 
 class SCElementMinAbs: public SCElementOp {
-#   define CLASSNAME SCElementMinAbs
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     int deferred_;
     double r;
@@ -373,16 +302,12 @@ class SCElementMinAbs: public SCElementOp {
     void process(SCMatrixBlockIter&);
     int has_collect();
     void defer_collect(int);
-    void collect(const RefMessageGrp&);
+    void collect(const Ref<MessageGrp>&);
     double result();
 };
-SavableState_REF_dec(SCElementMinAbs);
+
 
 class SCElementSumAbs: public SCElementOp {
-#   define CLASSNAME SCElementSumAbs
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     int deferred_;
     double r;
@@ -394,17 +319,13 @@ class SCElementSumAbs: public SCElementOp {
     void process(SCMatrixBlockIter&);
     int has_collect();
     void defer_collect(int);
-    void collect(const RefMessageGrp&);
+    void collect(const Ref<MessageGrp>&);
     double result();
     void init() { r = 0.0; }
 };
-SavableState_REF_dec(SCElementSumAbs);
+
 
 class SCElementDot: public SCElementOp {
-#   define CLASSNAME SCElementDot
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     double** avects;
     double** bvects;
@@ -418,9 +339,6 @@ class SCElementDot: public SCElementOp {
 };
 
 class SCElementAccumulateSCMatrix: public SCElementOp {
-#   define CLASSNAME SCElementAccumulateSCMatrix
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     SCMatrix *m;
   public:
@@ -430,9 +348,6 @@ class SCElementAccumulateSCMatrix: public SCElementOp {
 };
 
 class SCElementAccumulateSymmSCMatrix: public SCElementOp {
-#   define CLASSNAME SCElementAccumulateSymmSCMatrix
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     SymmSCMatrix *m;
   public:
@@ -442,9 +357,6 @@ class SCElementAccumulateSymmSCMatrix: public SCElementOp {
 };
 
 class SCElementAccumulateDiagSCMatrix: public SCElementOp {
-#   define CLASSNAME SCElementAccumulateDiagSCMatrix
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     DiagSCMatrix *m;
   public:
@@ -454,9 +366,6 @@ class SCElementAccumulateDiagSCMatrix: public SCElementOp {
 };
 
 class SCElementAccumulateSCVector: public SCElementOp {
-#   define CLASSNAME SCElementAccumulateSCVector
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     SCVector *m;
   public:

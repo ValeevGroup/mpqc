@@ -46,18 +46,9 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////
 // UHF
 
-#define CLASSNAME UHF
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public UnrestrictedSCF
-#include <util/class/classi.h>
-void *
-UHF::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = UnrestrictedSCF::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc UHF_cd(
+  typeid(UHF),"UHF",1,"public UnrestrictedSCF",
+  0, create<UHF>, create<UHF>);
 
 UHF::UHF(StateIn& s) :
   SavableState(s),
@@ -65,7 +56,7 @@ UHF::UHF(StateIn& s) :
 {
 }
 
-UHF::UHF(const RefKeyVal& keyval) :
+UHF::UHF(const Ref<KeyVal>& keyval) :
   UnrestrictedSCF(keyval)
 {
 }
@@ -122,13 +113,13 @@ UHF::two_body_energy(double &ec, double &ex)
     tim_exit("local data");
 
     // initialize the two electron integral classes
-    RefTwoBodyInt tbi = integral()->electron_repulsion();
+    Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
     tbi->set_integral_storage(0);
 
     signed char * pmax = init_pmax(apmat);
   
     LocalUHFEnergyContribution lclc(apmat, bpmat);
-    RefPetiteList pl = integral()->petite_list();
+    Ref<PetiteList> pl = integral()->petite_list();
     LocalGBuild<LocalUHFEnergyContribution>
       gb(lclc, tbi, pl, basis(), scf_grp_, pmax,
          desired_value_accuracy()/100.0);
@@ -151,7 +142,7 @@ UHF::two_body_energy(double &ec, double &ex)
 void
 UHF::ao_fock(double accuracy)
 {
-  RefPetiteList pl = integral()->petite_list(basis());
+  Ref<PetiteList> pl = integral()->petite_list(basis());
   
   // calculate G.  First transform diff_densa_ to the AO basis, then
   // scale the off-diagonal elements by 2.0
@@ -195,7 +186,7 @@ UHF::ao_fock(double accuracy)
     double **gmatos = new double*[nthread];
     gmatos[0] = gmato;
     
-    RefGaussianBasisSet bs = basis();
+    Ref<GaussianBasisSet> bs = basis();
     int ntri = i_offset(bs->nbasis());
 
     double gmat_accuracy = accuracy;

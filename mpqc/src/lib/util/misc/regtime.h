@@ -37,13 +37,7 @@
 
 class TimedRegion;
 
-DescribedClass_REF_fwddec(RegionTimer);
-REF_fwddec(KeyVal);
-
 class RegionTimer: public DescribedClass {
-#  define CLASSNAME RegionTimer
-#  define HAVE_KEYVAL_CTOR
-#  include <util/class/classd.h>
   protected:
     int wall_time_;
     int cpu_time_;
@@ -56,7 +50,7 @@ class RegionTimer: public DescribedClass {
   public:
     RegionTimer(const char *topname = "total",
                 int cpu_time = 0, int wall_time = 1);
-    RegionTimer(const RefKeyVal &);
+    RegionTimer(const Ref<KeyVal> &);
     ~RegionTimer();
     void enter(const char * = 0);
     void change(const char *newname, const char * oldname = 0);
@@ -85,9 +79,9 @@ class RegionTimer: public DescribedClass {
     void add_flops(const char *, double);
 
     static RegionTimer *default_regiontimer();
-    static void set_default_regiontimer(const RefRegionTimer &);
+    static void set_default_regiontimer(const Ref<RegionTimer> &);
 };
-DescribedClass_REF_dec(RegionTimer);
+
 
 #endif
 

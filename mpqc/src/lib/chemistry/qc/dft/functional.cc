@@ -62,19 +62,9 @@ PointInputData::compute_derived(int spin_polarized, int need_gradient)
 ///////////////////////////////////////////////////////////////////////////
 // DenFunctional
 
-SavableState_REF_def(DenFunctional);
-
-#define CLASSNAME DenFunctional
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-DenFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc DenFunctional_cd(
+  typeid(DenFunctional),"DenFunctional",1,"public SavableState",
+  0, 0, 0);
 
 DenFunctional::DenFunctional(StateIn& s):
   SavableState(s)
@@ -91,7 +81,7 @@ DenFunctional::DenFunctional()
   compute_potential_ = 0;
 }
 
-DenFunctional::DenFunctional(const RefKeyVal& keyval)
+DenFunctional::DenFunctional(const Ref<KeyVal>& keyval)
 {
   // a0 is usually zero, except for ACM functionals. 
   a0_ = keyval->doublevalue("a0");
@@ -484,19 +474,9 @@ DenFunctional::test()
 /////////////////////////////////////////////////////////////////////////////
 // NElFunctional
 
-#define CLASSNAME NElFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-NElFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc NElFunctional_cd(
+  typeid(NElFunctional),"NElFunctional",1,"public DenFunctional",
+  0, create<NElFunctional>, create<NElFunctional>);
 
 NElFunctional::NElFunctional(StateIn& s):
   SavableState(s),
@@ -504,7 +484,7 @@ NElFunctional::NElFunctional(StateIn& s):
 {
 }
 
-NElFunctional::NElFunctional(const RefKeyVal& keyval):
+NElFunctional::NElFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
 }
@@ -530,19 +510,9 @@ NElFunctional::point(const PointInputData &id,
 /////////////////////////////////////////////////////////////////////////////
 // SumDenFunctional
 
-#define CLASSNAME SumDenFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-SumDenFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SumDenFunctional_cd(
+  typeid(SumDenFunctional),"SumDenFunctional",1,"public DenFunctional",
+  0, create<SumDenFunctional>, create<SumDenFunctional>);
 
 SumDenFunctional::SumDenFunctional(StateIn& s):
   SavableState(s),
@@ -554,9 +524,9 @@ SumDenFunctional::SumDenFunctional(StateIn& s):
   s.get(n_);
   if (n_) {
       s.get(coefs_);
-      funcs_ = new RefDenFunctional[n_];
+      funcs_ = new Ref<DenFunctional>[n_];
       for (int i=0; i < n_; i++)
-          funcs_[i].restore_state(s);
+          funcs_[i] << SavableState::restore_state(s);
     }
 }
 
@@ -567,7 +537,7 @@ SumDenFunctional::SumDenFunctional() :
 {
 }
 
-SumDenFunctional::SumDenFunctional(const RefKeyVal& keyval):
+SumDenFunctional::SumDenFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval),
   n_(0),
   funcs_(0),
@@ -582,13 +552,13 @@ SumDenFunctional::SumDenFunctional(const RefKeyVal& keyval):
   
   n_ = nfunc;
   coefs_ = new double[n_];
-  funcs_ = new RefDenFunctional[n_];
+  funcs_ = new Ref<DenFunctional>[n_];
   for (int i=0; i < n_; i++) {
       if (ncoef)
           coefs_[i] = keyval->doublevalue("coefs", i);
       else
           coefs_[i] = 1.0;
-      funcs_[i] = keyval->describedclassvalue("funcs", i);
+      funcs_[i] << keyval->describedclassvalue("funcs", i);
     }
 }
 
@@ -612,7 +582,7 @@ SumDenFunctional::save_data_state(StateOut& s)
   if (n_) {
       s.put(coefs_, n_);
       for (int i=0; i < n_; i++) 
-          funcs_[i].save_state(s);
+          SavableState::save_state(funcs_[i].pointer(),s);
     }
 }
 
@@ -680,19 +650,9 @@ SumDenFunctional::print(ostream& o) const
 /////////////////////////////////////////////////////////////////////////////
 // StdDenFunctional
 
-#define CLASSNAME StdDenFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public SumDenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-StdDenFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SumDenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc StdDenFunctional_cd(
+  typeid(StdDenFunctional),"StdDenFunctional",1,"public SumDenFunctional",
+  0, create<StdDenFunctional>, create<StdDenFunctional>);
 
 StdDenFunctional::StdDenFunctional(StateIn& s):
   SavableState(s),
@@ -711,12 +671,12 @@ void
 StdDenFunctional::init_arrays(int n)
 {
   n_ = n;
-  funcs_ = new RefDenFunctional[n_];
+  funcs_ = new Ref<DenFunctional>[n_];
   coefs_ = new double[n_];
   for (int i=0; i<n_; i++) coefs_[i] = 1.0;
 }
 
-StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
+StdDenFunctional::StdDenFunctional(const Ref<KeyVal>& keyval)
 {
   name_ = keyval->pcharvalue("name");
   if (name_) {
@@ -902,18 +862,9 @@ StdDenFunctional::print(ostream& o) const
 /////////////////////////////////////////////////////////////////////////////
 // LSDACFunctional: All local correlation functionals inherit from this class.
 // Coded by Matt Leininger
-SavableState_REF_def(LSDACFunctional);
-#define CLASSNAME LSDACFunctional
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-LSDACFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc LSDACFunctional_cd(
+  typeid(LSDACFunctional),"LSDACFunctional",1,"public DenFunctional",
+  0, 0, 0);
 
 LSDACFunctional::LSDACFunctional(StateIn& s):
   SavableState(s),
@@ -925,7 +876,7 @@ LSDACFunctional::LSDACFunctional()
 {
 }
 
-LSDACFunctional::LSDACFunctional(const RefKeyVal& keyval):
+LSDACFunctional::LSDACFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
 }
@@ -951,19 +902,9 @@ LSDACFunctional::point(const PointInputData &id,
 /////////////////////////////////////////////////////////////////////////////
 // SlaterXFunctional
 
-#define CLASSNAME SlaterXFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-SlaterXFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SlaterXFunctional_cd(
+  typeid(SlaterXFunctional),"SlaterXFunctional",1,"public DenFunctional",
+  0, create<SlaterXFunctional>, create<SlaterXFunctional>);
 
 SlaterXFunctional::SlaterXFunctional(StateIn& s):
   SavableState(s),
@@ -975,7 +916,7 @@ SlaterXFunctional::SlaterXFunctional()
 {
 }
 
-SlaterXFunctional::SlaterXFunctional(const RefKeyVal& keyval):
+SlaterXFunctional::SlaterXFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
 }
@@ -1018,19 +959,9 @@ SlaterXFunctional::point(const PointInputData &id,
 /////////////////////////////////////////////////////////////////////////////
 // PW92LCFunctional
 // Coded by Matt Leininger
-#define CLASSNAME PW92LCFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public LSDACFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-PW92LCFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = LSDACFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc PW92LCFunctional_cd(
+  typeid(PW92LCFunctional),"PW92LCFunctional",1,"public LSDACFunctional",
+  0, create<PW92LCFunctional>, create<PW92LCFunctional>);
 
 PW92LCFunctional::PW92LCFunctional(StateIn& s):
   SavableState(s),
@@ -1042,7 +973,7 @@ PW92LCFunctional::PW92LCFunctional()
 {
 }
 
-PW92LCFunctional::PW92LCFunctional(const RefKeyVal& keyval):
+PW92LCFunctional::PW92LCFunctional(const Ref<KeyVal>& keyval):
   LSDACFunctional(keyval)
 {
 }
@@ -1149,19 +1080,9 @@ PW92LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
 // J. P. Perdew and A. Zunger, Phys. Rev. B, 23, 5048, 1981.
 // C. W. Murray, N. C. Handy, G. J. Laming, Mol. Phys., 78, 997, 1993.
 //
-#define CLASSNAME PZ81LCFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public LSDACFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-PZ81LCFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = LSDACFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc PZ81LCFunctional_cd(
+  typeid(PZ81LCFunctional),"PZ81LCFunctional",1,"public LSDACFunctional",
+  0, create<PZ81LCFunctional>, create<PZ81LCFunctional>);
 
 PZ81LCFunctional::PZ81LCFunctional(StateIn& s):
   SavableState(s),
@@ -1173,7 +1094,7 @@ PZ81LCFunctional::PZ81LCFunctional()
 {
 }
 
-PZ81LCFunctional::PZ81LCFunctional(const RefKeyVal& keyval):
+PZ81LCFunctional::PZ81LCFunctional(const Ref<KeyVal>& keyval):
   LSDACFunctional(keyval)
 {
 }
@@ -1323,19 +1244,9 @@ PZ81LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
 // VWNLCFunctional
 // Coded by Matt Leininger
 
-#define CLASSNAME VWNLCFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public LSDACFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-VWNLCFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = LSDACFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc VWNLCFunctional_cd(
+  typeid(VWNLCFunctional),"VWNLCFunctional",1,"public LSDACFunctional",
+  0, create<VWNLCFunctional>, create<VWNLCFunctional>);
 
 VWNLCFunctional::VWNLCFunctional(StateIn& s):
   SavableState(s), LSDACFunctional(s)
@@ -1374,7 +1285,7 @@ VWNLCFunctional::~VWNLCFunctional()
 {
 }
 
-VWNLCFunctional::VWNLCFunctional(const RefKeyVal& keyval):
+VWNLCFunctional::VWNLCFunctional(const Ref<KeyVal>& keyval):
   LSDACFunctional(keyval)
 {
   init_constants();
@@ -1508,19 +1419,9 @@ VWNLCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
 // VWN1LCFunctional
 // Coded by Matt Leininger
 
-#define CLASSNAME VWN1LCFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public LSDACFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-VWN1LCFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = VWNLCFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc VWN1LCFunctional_cd(
+  typeid(VWN1LCFunctional),"VWN1LCFunctional",1,"public LSDACFunctional",
+  0, create<VWN1LCFunctional>, create<VWN1LCFunctional>);
 
 VWN1LCFunctional::VWN1LCFunctional(StateIn& s):
   SavableState(s),
@@ -1565,7 +1466,7 @@ VWN1LCFunctional::VWN1LCFunctional(int use_rpa)
   
 }
 
-VWN1LCFunctional::VWN1LCFunctional(const RefKeyVal& keyval):
+VWN1LCFunctional::VWN1LCFunctional(const Ref<KeyVal>& keyval):
   VWNLCFunctional(keyval)
 {
   int vwn1rpa = keyval->booleanvalue("rpa", KeyValValueboolean(0));
@@ -1665,19 +1566,9 @@ VWN1LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
 /////////////////////////////////////////////////////////////////////////////
 // VWN2LCFunctional
 // Coded by Matt Leininger
-#define CLASSNAME VWN2LCFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public VWNLCFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-VWN2LCFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = VWNLCFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc VWN2LCFunctional_cd(
+  typeid(VWN2LCFunctional),"VWN2LCFunctional",1,"public VWNLCFunctional",
+  0, create<VWN2LCFunctional>, create<VWN2LCFunctional>);
 
 VWN2LCFunctional::VWN2LCFunctional(StateIn& s):
   SavableState(s),
@@ -1689,7 +1580,7 @@ VWN2LCFunctional::VWN2LCFunctional()
 {
 }
 
-VWN2LCFunctional::VWN2LCFunctional(const RefKeyVal& keyval):
+VWN2LCFunctional::VWN2LCFunctional(const Ref<KeyVal>& keyval):
   VWNLCFunctional(keyval)
 {
 }
@@ -1785,19 +1676,9 @@ VWN2LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
 /////////////////////////////////////////////////////////////////////////////
 // VWN3LCFunctional
 // Coded by Matt Leininger
-#define CLASSNAME VWN3LCFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public VWNLCFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-VWN3LCFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = VWNLCFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc VWN3LCFunctional_cd(
+  typeid(VWN3LCFunctional),"VWN3LCFunctional",1,"public VWNLCFunctional",
+  0, create<VWN3LCFunctional>, create<VWN3LCFunctional>);
 
 VWN3LCFunctional::VWN3LCFunctional(StateIn& s):
   SavableState(s),
@@ -1813,7 +1694,7 @@ VWN3LCFunctional::VWN3LCFunctional(int mcp, int mce0)
   monte_carlo_e0_ = mce0;
 }
 
-VWN3LCFunctional::VWN3LCFunctional(const RefKeyVal& keyval):
+VWN3LCFunctional::VWN3LCFunctional(const Ref<KeyVal>& keyval):
   VWNLCFunctional(keyval)
 {
     monte_carlo_prefactor_ = keyval->booleanvalue("monte_carlo_prefactor",
@@ -1929,19 +1810,9 @@ VWN3LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
 /////////////////////////////////////////////////////////////////////////////
 // VWN4LCFunctional
 // Coded by Matt Leininger
-#define CLASSNAME VWN4LCFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public VWNLCFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-VWN4LCFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = VWNLCFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc VWN4LCFunctional_cd(
+  typeid(VWN4LCFunctional),"VWN4LCFunctional",1,"public VWNLCFunctional",
+  0, create<VWN4LCFunctional>, create<VWN4LCFunctional>);
 
 VWN4LCFunctional::VWN4LCFunctional(StateIn& s):
   SavableState(s),
@@ -1955,7 +1826,7 @@ VWN4LCFunctional::VWN4LCFunctional()
   monte_carlo_prefactor_ = 0;
 }
 
-VWN4LCFunctional::VWN4LCFunctional(const RefKeyVal& keyval):
+VWN4LCFunctional::VWN4LCFunctional(const Ref<KeyVal>& keyval):
   VWNLCFunctional(keyval)
 {
   monte_carlo_prefactor_ = keyval->booleanvalue("monte_carlo_prefactor",
@@ -2067,19 +1938,9 @@ VWN4LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
 // VWN5LCFunctional
 // Coded by Matt Leininger
 
-#define CLASSNAME VWN5LCFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public VWNLCFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-VWN5LCFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = VWNLCFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc VWN5LCFunctional_cd(
+  typeid(VWN5LCFunctional),"VWN5LCFunctional",1,"public VWNLCFunctional",
+  0, create<VWN5LCFunctional>, create<VWN5LCFunctional>);
 
 VWN5LCFunctional::VWN5LCFunctional(StateIn& s):
   SavableState(s),
@@ -2091,7 +1952,7 @@ VWN5LCFunctional::VWN5LCFunctional()
 {
 }
 
-VWN5LCFunctional::VWN5LCFunctional(const RefKeyVal& keyval):
+VWN5LCFunctional::VWN5LCFunctional(const Ref<KeyVal>& keyval):
   VWNLCFunctional(keyval)
 {
 }
@@ -2169,19 +2030,9 @@ VWN5LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
 /////////////////////////////////////////////////////////////////////////////
 // XalphaFunctional
 
-#define CLASSNAME XalphaFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-XalphaFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc XalphaFunctional_cd(
+  typeid(XalphaFunctional),"XalphaFunctional",1,"public DenFunctional",
+  0, create<XalphaFunctional>, create<XalphaFunctional>);
 
 XalphaFunctional::XalphaFunctional(StateIn& s):
   SavableState(s),
@@ -2197,7 +2048,7 @@ XalphaFunctional::XalphaFunctional()
   factor_ = alpha_ * 2.25 * pow(3.0/(4.*M_PI), 1.0/3.0);
 }
 
-XalphaFunctional::XalphaFunctional(const RefKeyVal& keyval):
+XalphaFunctional::XalphaFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
   alpha_ = keyval->doublevalue("alpha", KeyValValuedouble(0.70));
@@ -2250,19 +2101,9 @@ XalphaFunctional::print(ostream& o) const
 /////////////////////////////////////////////////////////////////////////////
 // Becke88XFunctional
 
-#define CLASSNAME Becke88XFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-Becke88XFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc Becke88XFunctional_cd(
+  typeid(Becke88XFunctional),"Becke88XFunctional",1,"public DenFunctional",
+  0, create<Becke88XFunctional>, create<Becke88XFunctional>);
 
 Becke88XFunctional::Becke88XFunctional(StateIn& s):
   SavableState(s),
@@ -2278,7 +2119,7 @@ Becke88XFunctional::Becke88XFunctional()
   beta6_ = 6. * beta_;
 }
 
-Becke88XFunctional::Becke88XFunctional(const RefKeyVal& keyval):
+Becke88XFunctional::Becke88XFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
   beta_ = keyval->doublevalue("beta", KeyValValuedouble(0.0042));
@@ -2382,19 +2223,9 @@ Becke88XFunctional::point(const PointInputData &id,
 // LYPCFunctional
 // Coded by Matt Leininger
 
-#define CLASSNAME LYPCFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-LYPCFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc LYPCFunctional_cd(
+  typeid(LYPCFunctional),"LYPCFunctional",1,"public DenFunctional",
+  0, create<LYPCFunctional>, create<LYPCFunctional>);
 
 LYPCFunctional::LYPCFunctional(StateIn& s):
   SavableState(s),
@@ -2411,7 +2242,7 @@ LYPCFunctional::LYPCFunctional()
   init_constants();
 }
 
-LYPCFunctional::LYPCFunctional(const RefKeyVal& keyval):
+LYPCFunctional::LYPCFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
   init_constants();
@@ -2563,19 +2394,9 @@ LYPCFunctional::point(const PointInputData &id,
 // 
 // Coded by Matt Leininger
 
-#define CLASSNAME P86CFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-P86CFunctional::_castdown(const ClassDesc*cd)
- {
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc P86CFunctional_cd(
+  typeid(P86CFunctional),"P86CFunctional",1,"public DenFunctional",
+  0, create<P86CFunctional>, create<P86CFunctional>);
 
 P86CFunctional::P86CFunctional(StateIn& s):
   SavableState(s),
@@ -2596,7 +2417,7 @@ P86CFunctional::P86CFunctional()
   init_constants();
 }
 
-P86CFunctional::P86CFunctional(const RefKeyVal& keyval):
+P86CFunctional::P86CFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
   init_constants();
@@ -2729,19 +2550,9 @@ P86CFunctional::point(const PointInputData &id,
 // 
 // Coded by Matt Leininger
 
-#define CLASSNAME NewP86CFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-NewP86CFunctional::_castdown(const ClassDesc*cd)
- {
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc NewP86CFunctional_cd(
+  typeid(NewP86CFunctional),"NewP86CFunctional",1,"public DenFunctional",
+  0, create<NewP86CFunctional>, create<NewP86CFunctional>);
 
 NewP86CFunctional::NewP86CFunctional(StateIn& s):
   SavableState(s),
@@ -2762,7 +2573,7 @@ NewP86CFunctional::NewP86CFunctional()
   init_constants();
 }
 
-NewP86CFunctional::NewP86CFunctional(const RefKeyVal& keyval):
+NewP86CFunctional::NewP86CFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
   init_constants();
@@ -2934,25 +2745,15 @@ NewP86CFunctional::point(const PointInputData &id,
 /////////////////////////////////////////////////////////////////////////////
 // PBECFunctional
 
-#define CLASSNAME PBECFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-PBECFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc PBECFunctional_cd(
+  typeid(PBECFunctional),"PBECFunctional",1,"public DenFunctional",
+  0, create<PBECFunctional>, create<PBECFunctional>);
 
 PBECFunctional::PBECFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
-  local_.restore_state(s);
+  local_ << SavableState::restore_state(s);
   s.get(gamma);
   s.get(beta);
 }
@@ -2965,10 +2766,10 @@ PBECFunctional::PBECFunctional()
   init_constants();
 }
 
-PBECFunctional::PBECFunctional(const RefKeyVal& keyval):
+PBECFunctional::PBECFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
-  local_ = keyval->describedclassvalue("local");
+  local_ << keyval->describedclassvalue("local");
   if (local_.null()) local_ = new PW92LCFunctional;
   local_->set_compute_potential(1);
 
@@ -2996,7 +2797,7 @@ void
 PBECFunctional::save_data_state(StateOut& s)
 {
   DenFunctional::save_data_state(s);
-  local_.save_state(s);
+  SavableState::save_state(local_.pointer(),s);
   s.put(gamma);
   s.put(beta);
 }
@@ -3243,25 +3044,15 @@ PBECFunctional::point(const PointInputData &id,
 /////////////////////////////////////////////////////////////////////////////
 // PW91CFunctional
 
-#define CLASSNAME PW91CFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-PW91CFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc PW91CFunctional_cd(
+  typeid(PW91CFunctional),"PW91CFunctional",1,"public DenFunctional",
+  0, create<PW91CFunctional>, create<PW91CFunctional>);
 
 PW91CFunctional::PW91CFunctional(StateIn& s):
   SavableState(s),
   DenFunctional(s)
 {
-  local_.restore_state(s);
+  local_ << SavableState::restore_state(s);
   init_constants();
 }
 
@@ -3272,10 +3063,10 @@ PW91CFunctional::PW91CFunctional()
   init_constants();
 }
 
-PW91CFunctional::PW91CFunctional(const RefKeyVal& keyval):
+PW91CFunctional::PW91CFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
-  local_ = keyval->describedclassvalue("local");
+  local_ << keyval->describedclassvalue("local");
   if (local_.null()) local_ = new PW92LCFunctional;
   local_->set_compute_potential(1);
   init_constants();
@@ -3303,7 +3094,7 @@ void
 PW91CFunctional::save_data_state(StateOut& s)
 {
   DenFunctional::save_data_state(s);
-  local_.save_state(s);
+  SavableState::save_state(local_.pointer(),s);
 }
 
 int
@@ -3761,19 +3552,9 @@ PW91CFunctional::point(const PointInputData &id, PointOutputData &od)
 /////////////////////////////////////////////////////////////////////////////
 // PW91XFunctional
 
-#define CLASSNAME PW91XFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-PW91XFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc PW91XFunctional_cd(
+  typeid(PW91XFunctional),"PW91XFunctional",1,"public DenFunctional",
+  0, create<PW91XFunctional>, create<PW91XFunctional>);
 
 PW91XFunctional::PW91XFunctional(StateIn& s):
   SavableState(s),
@@ -3791,7 +3572,7 @@ PW91XFunctional::PW91XFunctional()
   init_constants();
 }
 
-PW91XFunctional::PW91XFunctional(const RefKeyVal& keyval):
+PW91XFunctional::PW91XFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
   init_constants();
@@ -3966,19 +3747,9 @@ PW91XFunctional::point(const PointInputData &id,
 /////////////////////////////////////////////////////////////////////////////
 // PBEXFunctional
 
-#define CLASSNAME PBEXFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-PBEXFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc PBEXFunctional_cd(
+  typeid(PBEXFunctional),"PBEXFunctional",1,"public DenFunctional",
+  0, create<PBEXFunctional>, create<PBEXFunctional>);
 
 PBEXFunctional::PBEXFunctional(StateIn& s):
   SavableState(s),
@@ -3993,7 +3764,7 @@ PBEXFunctional::PBEXFunctional()
   init_constants();
 }
 
-PBEXFunctional::PBEXFunctional(const RefKeyVal& keyval):
+PBEXFunctional::PBEXFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
   init_constants();
@@ -4112,19 +3883,9 @@ PBEXFunctional::point(const PointInputData &id,
 /////////////////////////////////////////////////////////////////////////////
 // mPW91XFunctional
 
-#define CLASSNAME mPW91XFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-mPW91XFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc mPW91XFunctional_cd(
+  typeid(mPW91XFunctional),"mPW91XFunctional",1,"public DenFunctional",
+  0, create<mPW91XFunctional>, create<mPW91XFunctional>);
 
 mPW91XFunctional::mPW91XFunctional(StateIn& s):
   SavableState(s),
@@ -4148,7 +3909,7 @@ mPW91XFunctional::mPW91XFunctional(mPW91XFunctional::Func f)
   init_constants(f);
 }
 
-mPW91XFunctional::mPW91XFunctional(const RefKeyVal& keyval):
+mPW91XFunctional::mPW91XFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
   char *t = keyval->pcharvalue("constants");
@@ -4337,19 +4098,9 @@ mPW91XFunctional::point(const PointInputData &id,
 // 
 // Coded by Matt Leininger
 
-#define CLASSNAME PW86XFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-PW86XFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc PW86XFunctional_cd(
+  typeid(PW86XFunctional),"PW86XFunctional",1,"public DenFunctional",
+  0, create<PW86XFunctional>, create<PW86XFunctional>);
 
 PW86XFunctional::PW86XFunctional(StateIn& s):
   SavableState(s),
@@ -4366,7 +4117,7 @@ PW86XFunctional::PW86XFunctional()
   init_constants();
 }
 
-PW86XFunctional::PW86XFunctional(const RefKeyVal& keyval):
+PW86XFunctional::PW86XFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
   init_constants();
@@ -4503,19 +4254,9 @@ void
 // 
 // Coded by Matt Leininger
 
-#define CLASSNAME G96XFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-G96XFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc G96XFunctional_cd(
+  typeid(G96XFunctional),"G96XFunctional",1,"public DenFunctional",
+  0, create<G96XFunctional>, create<G96XFunctional>);
 
 G96XFunctional::G96XFunctional(StateIn& s):
   SavableState(s),
@@ -4529,7 +4270,7 @@ G96XFunctional::G96XFunctional()
   init_constants();
 }
 
-G96XFunctional::G96XFunctional(const RefKeyVal& keyval):
+G96XFunctional::G96XFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
   init_constants();

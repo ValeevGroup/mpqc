@@ -44,8 +44,6 @@ LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 INC = ref.h reftestx.h reftmpl.h identity.h
 
-GENINC = refmacr.h
-
 DEPENDINCLUDE = $(INC) $(GENINC)
 
 DISTFILES = Makefile $(INC) LIBS.h $(REALCXXSRC) $(TESTCXX)
@@ -57,10 +55,10 @@ default:: $(DEPENDINCLUDE)
 
 interface:: $(DEPENDINCLUDE)
 
-refmacr.h: reftmpl.h $(TMPL2MACDEP)
-	$(TMPL2MAC) $< > refmacr.h
-
-reftest: reftest.$(OBJSUF) reftestx.$(OBJSUF) libref.$(LIBSUF) libmisc.$(LIBSUF)
+reftest: reftest.$(OBJSUF) reftestx.$(OBJSUF) \
+           libkeyval.$(LIBSUF) \
+           libgroup.$(LIBSUF) libstate.$(LIBSUF) libclass.$(LIBSUF) \
+           libcontainer.$(LIBSUF) libref.$(LIBSUF) libmisc.$(LIBSUF)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o reftest $^ $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

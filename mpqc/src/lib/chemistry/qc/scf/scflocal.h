@@ -36,14 +36,14 @@ get_tri_block(SCMatrixBlock* blk,
 {
   double *data=0;
   
-  if (SCMatrixLTriBlock::castdown(blk)) {
-    SCMatrixLTriBlock *lblk = SCMatrixLTriBlock::castdown(blk);
+  if (dynamic_cast<SCMatrixLTriBlock*>(blk)) {
+    SCMatrixLTriBlock *lblk = dynamic_cast<SCMatrixLTriBlock*>(blk);
     istart = lblk->start; iend=lblk->end;
     jstart = lblk->start; jend=lblk->end;
     data = lblk->data;
     sub=0;
-  } else if (SCMatrixLTriSubBlock::castdown(blk)) {
-    SCMatrixLTriSubBlock *lblk = SCMatrixLTriSubBlock::castdown(blk);
+  } else if (dynamic_cast<SCMatrixLTriSubBlock*>(blk)) {
+    SCMatrixLTriSubBlock *lblk = dynamic_cast<SCMatrixLTriSubBlock*>(blk);
     istart = lblk->istart; iend=lblk->iend;
     jstart = lblk->jstart; jend=lblk->jend;
     data = lblk->data;

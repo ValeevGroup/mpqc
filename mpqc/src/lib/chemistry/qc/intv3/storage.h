@@ -149,10 +149,6 @@ IntegralLink::actualsize() const
 }
 
 class IntegralStorer: public DescribedClass {
-#   define CLASSNAME IntegralStorer
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   private:
     int table_size_;
     EAVLMMap<int,IntegralLink> costlist;
@@ -163,7 +159,7 @@ class IntegralStorer: public DescribedClass {
     int n_shellquart_;
   public:
     IntegralStorer();
-    IntegralStorer(const RefKeyVal&);
+    IntegralStorer(const Ref<KeyVal>&);
     ~IntegralStorer();
     void init(int nbytes);
     void done();
@@ -174,7 +170,7 @@ class IntegralStorer: public DescribedClass {
     void print_stats();
     int table_size() const { return table_size_; }
 };
-DescribedClass_REF_dec(IntegralStorer);
+
 
 #endif
 

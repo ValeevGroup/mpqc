@@ -78,7 +78,7 @@ esac
 ])
 
 AC_ARG_ENABLE(parallel,
-[  --enable-parallel       Compile for parallel execution, if possible.],
+[  --disable-parallel      Compile for serial execution.],
 [
 case $enableval in
   yes)
@@ -93,6 +93,25 @@ case $enableval in
 esac
 ],[
     PARALLEL=yes
+]
+)
+
+AC_ARG_ENABLE(long-long,
+[  --disable-long-long     Disable use of long long.],
+[
+case $enableval in
+  yes)
+    LONGLONG=yes
+  ;;
+  no)
+    LONGLONG=no
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --enable-long-long ($enableval)])
+  ;;
+esac
+],[
+    LONGLONG=yes
 ]
 )
 
@@ -152,21 +171,6 @@ esac
   AC_DEFINE(USE_REF_MACROS)
 ]
 )
-
-AC_ARG_ENABLE(rtti,
-[  --enable-rtti           Use RTTI for castdown mechanism.],
-[
-case $enableval in
-  yes)
-    AC_DEFINE(USE_RTTI)
-  ;;
-  no)
-  ;;
-  *)
-    AC_MSG_ERROR([Invalid value for --enable-rtti ($enableval)])
-  ;;
-esac
-])
 
 AC_ARG_ENABLE(cross-compile,
 [  --enable-cross-compile  Rather than checking, assume cross compilation.],
@@ -378,10 +382,33 @@ CXXOPTIONS_MISC=
 
 OBJSUF=o
 LIBSUF=a
+
+dnl -- check how dependency information is built --
+
+# The GNU compilers work with:
 CCDEPENDSUF=none
 CXXDEPENDSUF=none
 CCDEPENDFLAGS=-M
 CXXDEPENDFLAGS=-M
+
+/bin/rm -f depcheck.u depcheck.c depcheck.o
+
+# Check for an IBM visual age C compiler
+echo "#include <stdio.h>" > depcheck.c
+$CC $CPPFLAGS $CFLAGS -M depcheck.c > /dev/null 2>&1
+if test -f depcheck.u; then
+  CCDEPENDSUF=u
+fi
+/bin/rm -f depcheck.u depcheck.c depcheck.o
+
+# Check for an IBM visual age C++ compiler
+echo "#include <iostream>" > depcheck.cc
+$CXX $CPPFLAGS $CXXFLAGS -M -E depcheck.cc > /dev/null 2>&1
+if test -f depcheck.u; then
+  CXXDEPENDSUF=u
+  CXXDEPENDFLAGS="-M -E"
+fi
+/bin/rm -f depcheck.u depcheck.c depcheck.o
 
 dnl -- special optimization options --
 
@@ -487,20 +514,6 @@ case $target in
   rs6000-* | powerpc-*)
     if test X$GCC != Xyes; then
       LDFLAGS="$LDFLAGS -bmaxdata:0x70000000"
-    fi
-    if test "X$CC" = XxlC -o "X$CC" = XxlC_r; then
-      CCDEPENDSUF=u
-    fi
-    if test "X$CXX" = XxlC -o "X$CXX" = XxlC_r; then
-      CXXDEPENDSUF=u
-      CXXDEPENDFLAGS="-M -E"
-    fi
-    if test "X$CC" = Xmpcc -o "X$CC" = Xmpcc_r; then
-      CCDEPENDSUF=u
-    fi
-    if test "X$CXX" = XmpCC -o "X$CXX" = XmpCC_r; then
-      CXXDEPENDSUF=u
-      CXXDEPENDFLAGS="-M -E"
     fi
     AC_MSG_RESULT(rs6000 or powerpc)
   ;;
@@ -975,6 +988,7 @@ AC_SUBST(HAVE_IOS_FMTFLAGS)
 
 dnl --------- check for long long  ---------
 
+if test X"$LONGLONG" = Xyes; then
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING(long long)
@@ -985,6 +999,7 @@ AC_MSG_RESULT(yes)],[
 AC_MSG_RESULT(no)
 ])
 AC_LANG_RESTORE
+fi
 
 dnl --------- Check for sgetn. ---------
 

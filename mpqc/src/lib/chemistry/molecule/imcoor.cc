@@ -45,20 +45,11 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////
 // members of IntMolecularCoor
 
-#define CLASSNAME IntMolecularCoor
-#define VERSION 6
-#define PARENTS public MolecularCoor
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-IntMolecularCoor::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MolecularCoor::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc IntMolecularCoor_cd(
+  typeid(IntMolecularCoor),"IntMolecularCoor",6,"public MolecularCoor",
+  0, 0, 0);
 
-IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
+IntMolecularCoor::IntMolecularCoor(Ref<Molecule>&mol):
   MolecularCoor(mol),
   update_bmat_(0),
   only_totally_symmetric_(1),
@@ -84,7 +75,7 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
   generator_ = new IntCoorGen(mol);
 }
 
-IntMolecularCoor::IntMolecularCoor(const RefKeyVal& keyval):
+IntMolecularCoor::IntMolecularCoor(const Ref<KeyVal>& keyval):
   MolecularCoor(keyval),
   update_bmat_(0),
   only_totally_symmetric_(1),
@@ -109,9 +100,9 @@ IntMolecularCoor::IntMolecularCoor(const RefKeyVal& keyval):
 IntMolecularCoor::IntMolecularCoor(StateIn& s):
   MolecularCoor(s)
 {
-  generator_.restore_state(s);
+  generator_ << SavableState::restore_state(s);
 
-  if (s.version(static_class_desc()) >= 3) {
+  if (s.version(::class_desc<IntMolecularCoor>()) >= 3) {
       s.get(decouple_bonds_);
       s.get(decouple_bends_);
     }
@@ -120,7 +111,7 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
       decouple_bends_ = 0;
     }
   
-  if (s.version(static_class_desc()) >= 2) {
+  if (s.version(::class_desc<IntMolecularCoor>()) >= 2) {
     s.get(max_update_steps_);
     s.get(max_update_disp_);
     s.get(given_fixed_values_);
@@ -130,7 +121,7 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
     given_fixed_values_ = 0;
   }
   
-  if (s.version(static_class_desc()) >= 4) {
+  if (s.version(::class_desc<IntMolecularCoor>()) >= 4) {
     s.get(form_print_simples_);
     s.get(form_print_variable_);
     s.get(form_print_constant_);
@@ -140,31 +131,31 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
     form_print_constant_ = 0;
   }
   
-  if (s.version(static_class_desc()) >= 5) {
+  if (s.version(::class_desc<IntMolecularCoor>()) >= 5) {
     s.get(form_print_molecule_);
   } else {
     form_print_molecule_ = 0;
   }
 
-  dim_.restore_state(s);
-  dvc_.restore_state(s);
+  dim_ << SavableState::restore_state(s);
+  dvc_ << SavableState::restore_state(s);
 
-  all_.restore_state(s);
+  all_ << SavableState::restore_state(s);
 
-  variable_.restore_state(s);
-  constant_.restore_state(s);
+  variable_ << SavableState::restore_state(s);
+  constant_ << SavableState::restore_state(s);
 
-  fixed_.restore_state(s);
-  followed_.restore_state(s);
+  fixed_ << SavableState::restore_state(s);
+  followed_ << SavableState::restore_state(s);
 
-  if (s.version(static_class_desc()) >= 6)
-      watched_.restore_state(s);
+  if (s.version(::class_desc<IntMolecularCoor>()) >= 6)
+      watched_ << SavableState::restore_state(s);
 
-  bonds_.restore_state(s);
-  bends_.restore_state(s);
-  tors_.restore_state(s);
-  outs_.restore_state(s);
-  extras_.restore_state(s);
+  bonds_ << SavableState::restore_state(s);
+  bends_ << SavableState::restore_state(s);
+  tors_ << SavableState::restore_state(s);
+  outs_ << SavableState::restore_state(s);
+  extras_ << SavableState::restore_state(s);
 
   s.get(update_bmat_);
   s.get(only_totally_symmetric_);
@@ -196,14 +187,14 @@ IntMolecularCoor::new_coords()
 }
 
 void
-IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
+IntMolecularCoor::read_keyval(const Ref<KeyVal>& keyval)
 {
-  variable_ = keyval->describedclassvalue("variable");
+  variable_ << keyval->describedclassvalue("variable");
   if (variable_.null()) variable_ = new SetIntCoor;
-  fixed_ = keyval->describedclassvalue("fixed");
+  fixed_ << keyval->describedclassvalue("fixed");
   if (fixed_.null()) fixed_ = new SetIntCoor;
-  followed_ = keyval->describedclassvalue("followed");
-  watched_ = keyval->describedclassvalue("watched");
+  followed_ << keyval->describedclassvalue("followed");
+  watched_ << keyval->describedclassvalue("watched");
 
   decouple_bonds_ = keyval->booleanvalue("decouple_bonds");
   decouple_bends_ = keyval->booleanvalue("decouple_bends");
@@ -216,7 +207,7 @@ IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
   max_update_disp_ = keyval->doublevalue("max_update_disp");
   if (keyval->error() != KeyVal::OK) max_update_disp_ = 0.5;
 
-  generator_ = keyval->describedclassvalue("generator");
+  generator_ << keyval->describedclassvalue("generator");
 
   if (generator_.null()) {
       // the extra_bonds list is given as a vector of atom numbers
@@ -278,30 +269,30 @@ IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
 void
 IntMolecularCoor::init()
 {
-  RefSetIntCoor redundant = new SetIntCoor;
+  Ref<SetIntCoor> redundant = new SetIntCoor;
   generator_->generate(redundant);
 
   // sort out the simple coordinates by type
   int i;
   for (i=0; i<redundant->n(); i++) {
-      RefIntCoor coor = redundant->coor(i);
+      Ref<IntCoor> coor = redundant->coor(i);
       if (coor->class_desc()
-          == StreSimpleCo::static_class_desc()) {
+          == ::class_desc<StreSimpleCo>()) {
           bonds_->add(coor);
         }
-      else if (coor->class_desc() == BendSimpleCo::static_class_desc()
-               || coor->class_desc() == LinIPSimpleCo::static_class_desc()
-               || coor->class_desc() == LinOPSimpleCo::static_class_desc()) {
+      else if (coor->class_desc() == ::class_desc<BendSimpleCo>()
+               || coor->class_desc() == ::class_desc<LinIPSimpleCo>()
+               || coor->class_desc() == ::class_desc<LinOPSimpleCo>()) {
           bends_->add(coor);
         }
       else if (coor->class_desc()
-               == TorsSimpleCo::static_class_desc()
+               == ::class_desc<TorsSimpleCo>()
                || coor->class_desc()
-               == ScaledTorsSimpleCo::static_class_desc()) {
+               == ::class_desc<ScaledTorsSimpleCo>()) {
           tors_->add(coor);
         }
       else if (coor->class_desc()
-               == OutSimpleCo::static_class_desc()) {
+               == ::class_desc<OutSimpleCo>()) {
           outs_->add(coor);
         }
       else {
@@ -438,11 +429,11 @@ count_nonzero(const RefSCVector &vec, double eps)
 }
 
 static RefSymmSCMatrix
-form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
+form_partial_K(const Ref<SetIntCoor>& coor, Ref<Molecule>& molecule,
                const RefSCVector& geom,
                double epsilon,
                const RefSCDimension& dnatom3,
-               const RefSCMatrixKit& matrixkit,
+               const Ref<SCMatrixKit>& matrixkit,
                RefSCMatrix& projection,
                RefSCVector& totally_symmetric,
                RefSCMatrix& K,int debug)
@@ -711,7 +702,7 @@ IntMolecularCoor::save_data_state(StateOut&s)
 {
   MolecularCoor::save_data_state(s);
 
-  generator_.save_state(s);
+  SavableState::save_state(generator_.pointer(),s);
 
   s.put(decouple_bonds_);
   s.put(decouple_bends_);
@@ -725,23 +716,23 @@ IntMolecularCoor::save_data_state(StateOut&s)
   s.put(form_print_constant_);
   s.put(form_print_molecule_);
 
-  dim_.save_state(s);
-  dvc_.save_state(s);
+  SavableState::save_state(dim_.pointer(),s);
+  SavableState::save_state(dvc_.pointer(),s);
 
-  all_.save_state(s);
+  SavableState::save_state(all_.pointer(),s);
   
-  variable_.save_state(s);
-  constant_.save_state(s);
+  SavableState::save_state(variable_.pointer(),s);
+  SavableState::save_state(constant_.pointer(),s);
 
-  fixed_.save_state(s);
-  followed_.save_state(s);
-  watched_.save_state(s);
+  SavableState::save_state(fixed_.pointer(),s);
+  SavableState::save_state(followed_.pointer(),s);
+  SavableState::save_state(watched_.pointer(),s);
 
-  bonds_.save_state(s);
-  bends_.save_state(s);
-  tors_.save_state(s);
-  outs_.save_state(s);
-  extras_.save_state(s);
+  SavableState::save_state(bonds_.pointer(),s);
+  SavableState::save_state(bends_.pointer(),s);
+  SavableState::save_state(tors_.pointer(),s);
+  SavableState::save_state(outs_.pointer(),s);
+  SavableState::save_state(extras_.pointer(),s);
 
   s.put(update_bmat_);
   s.put(only_totally_symmetric_);
@@ -762,7 +753,7 @@ IntMolecularCoor::dim()
 }
 
 int
-IntMolecularCoor::all_to_cartesian(const RefMolecule &mol,
+IntMolecularCoor::all_to_cartesian(const Ref<Molecule> &mol,
                                    RefSCVector&new_internal)
 {
   // get a reference to Molecule for convenience
@@ -802,7 +793,7 @@ IntMolecularCoor::all_to_cartesian(const RefMolecule &mol,
           RefSCMatrix bmat(dvc_,dnatom3_,matrixkit_);
 
           // form the set of all coordinates
-          RefSetIntCoor variable_and_constant = new SetIntCoor();
+          Ref<SetIntCoor> variable_and_constant = new SetIntCoor();
           variable_and_constant->add(variable_);
           variable_and_constant->add(constant_);
 
@@ -857,8 +848,8 @@ IntMolecularCoor::all_to_cartesian(const RefMolecule &mol,
       molecule.cleanup_molecule();
 
       // check for convergence
-      RefSCElementMaxAbs maxabs = new SCElementMaxAbs();
-      RefSCElementOp op = maxabs;
+      Ref<SCElementMaxAbs> maxabs = new SCElementMaxAbs();
+      Ref<SCElementOp> op = maxabs.pointer();
       cartesian_displacement.element_op(op);
       maxabs_cart_diff = maxabs->result();
       if (maxabs_cart_diff < cartesian_tolerance_) {
@@ -882,7 +873,7 @@ IntMolecularCoor::all_to_cartesian(const RefMolecule &mol,
 }
 
 int
-IntMolecularCoor::to_cartesian(const RefMolecule &mol,
+IntMolecularCoor::to_cartesian(const Ref<Molecule> &mol,
                                const RefSCVector&new_internal)
 {
   if (new_internal.dim().n() != dim_.n()
@@ -915,7 +906,7 @@ IntMolecularCoor::to_cartesian(const RefMolecule &mol,
 }
 
 int
-IntMolecularCoor::all_to_internal(const RefMolecule &mol,RefSCVector&internal)
+IntMolecularCoor::all_to_internal(const Ref<Molecule> &mol,RefSCVector&internal)
 {
   if (internal.dim().n() != dvc_.n()
       || dim_.n() != variable_->n()
@@ -977,7 +968,7 @@ IntMolecularCoor::to_internal(RefSCVector&internal,RefSCVector&gradient)
   RefSCMatrix bmat(dvc_,gradient.dim(),matrixkit_);
   RefSymmSCMatrix bmbt(dvc_,matrixkit_);
 
-  RefSetIntCoor variable_and_constant = new SetIntCoor();
+  Ref<SetIntCoor> variable_and_constant = new SetIntCoor();
   variable_and_constant->add(variable_);
   variable_and_constant->add(constant_);
 

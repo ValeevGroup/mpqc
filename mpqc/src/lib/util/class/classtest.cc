@@ -36,10 +36,7 @@ using namespace std;
 
 #undef SIMPLE_TEST
 
-#define A_parents virtual public DescribedClass
-class A: A_parents {
-#define CLASSNAME A
-#include <util/class/classd.h>
+class A: virtual public DescribedClass {
   private:
     int i;
   public:
@@ -47,23 +44,11 @@ class A: A_parents {
     ~A() { cout << "A dtor\n"; };
 };
 
-#define CLASSNAME A
-#define PARENTS A_parents
-#include <util/class/classi.h>
-void *
-A::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  DescribedClass::_castdown(cd) ;
-  return do_castdowns(casts,cd);
-}
+static ClassDesc A_cd(typeid(A),"A",1,"virtual public DescribedClass");
 
 #ifndef SIMPLE_TEST
 
-#define B_parents public A
-class B: B_parents {
-#define CLASSNAME B 
-#include <util/class/classd.h>
+class B: public A {
   private:
     int ib;
   public:
@@ -71,21 +56,9 @@ class B: B_parents {
     ~B() { cout << "B dtor\n"; };
 };
 
-#define CLASSNAME B
-#define PARENTS B_parents
-#include <util/class/classi.h>
-void *
-B::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =   A::_castdown(cd) ;
-  return do_castdowns(casts,cd);
-}
+static ClassDesc B_cd(typeid(B),"B",1,"public A");
 
-#define C_parents virtual public DescribedClass
-class C: C_parents {
-#define CLASSNAME C 
-#include <util/class/classd.h>
+class C: virtual public DescribedClass {
   private:
     int i;
   public:
@@ -93,22 +66,9 @@ class C: C_parents {
     ~C() { cout << "C dtor\n"; };
 };
 
-#define CLASSNAME C
-#define PARENTS C_parents
-#include <util/class/classi.h>
-void *
-C::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =   DescribedClass::_castdown(cd) ;
-  return do_castdowns(casts,cd);
-}
+static ClassDesc C_cd(typeid(C),"C",1,"virtual public DescribedClass");
 
-#define D_parents public B, public C
-class D: D_parents {
-#define CLASSNAME D
-#define HAVE_CTOR
-#include <util/class/classd.h>
+class D: public B, public C {
   private:
     int id;
     A* atst;
@@ -117,33 +77,8 @@ class D: D_parents {
     ~D() { delete atst; cout << "D dtor\n"; };
 };
 
-#define CLASSNAME D
-#define PARENTS D_parents
-#define HAVE_CTOR
-#include <util/class/classi.h>
-void *
-D::_castdown(const ClassDesc*cd)
-{
-  void* casts[2];
-  casts[0] =  B::_castdown(cd);
-  casts[1] =  C::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc D_cd(typeid(D),"D",1,"public B, public C",create<D>);
 
-#endif /* ! SIMPLE_TEST */
-
-DescribedClass_REF_dec(A);
-#ifndef SIMPLE_TEST
-DescribedClass_REF_dec(B);
-DescribedClass_REF_dec(C);
-DescribedClass_REF_dec(D);
-#endif /* ! SIMPLE_TEST */
-
-DescribedClass_REF_def(A);
-#ifndef SIMPLE_TEST
-DescribedClass_REF_def(B);
-DescribedClass_REF_def(C);
-DescribedClass_REF_def(D);
 #endif /* ! SIMPLE_TEST */
 
 main()
@@ -151,19 +86,19 @@ main()
   ClassDesc::list_all_classes();
 
   cout << node0 << indent << "using 0" << endl;
-  const RefDescribedClass descl2(0);
-  RefA aaa;
+  const Ref<DescribedClass> descl2(0);
+  Ref<A> aaa;
   cout << "getting aaaa" << endl;
   A* aaaa = 0; //aaa.pointer();
   cout << "using aaaa" << endl;
-  const RefDescribedClass descl((aaaa==(A*)0)?(DescribedClass*)0:aaaa);
+  const Ref<DescribedClass> descl((aaaa==(A*)0)?(DescribedClass*)0:aaaa);
   cout << "using aaa.pointer()" << endl;
-  const RefDescribedClass descl3((aaa.pointer()==(A*)0)?(DescribedClass*)0:aaa.pointer());
+  const Ref<DescribedClass> descl3((aaa.pointer()==(A*)0)?(DescribedClass*)0:aaa.pointer());
 
   A a;
   cout << "A name:" << a.class_name() << '\n';
 
-  D* dtst = D::castdown(ClassDesc::name_to_class_desc("D")->create());
+  D* dtst = dynamic_cast<D*>(ClassDesc::name_to_class_desc("D")->create());
   delete dtst;
 
   // check the compiler's handling of virtual inheritance
@@ -199,21 +134,21 @@ main()
   cout << "D name:" << d.class_name() << '\n';
 
   cout << "&d = " << (void*) &d << '\n';
-  cout << "D::castdown(&d) = " << (void*) D::castdown(&d) << '\n';
-  cout << "B::castdown(&d) = " << (void*) B::castdown(&d) << '\n';
-  cout << "A::castdown(&d) = " << (void*) A::castdown(&d) << '\n';
-  cout << "C::castdown(&d) = " << (void*) C::castdown(&d) << '\n';
-  cout << "DescribedClass::castdown(&d) = "
-       << (void*) DescribedClass::castdown(&d) << '\n';
+  cout << "dynamic_cast<D*>(&d) = " << (void*) dynamic_cast<D*>(&d) << '\n';
+  cout << "dynamic_cast<B*>(&d) = " << (void*) dynamic_cast<B*>(&d) << '\n';
+  cout << "dynamic_cast<A*>(&d) = " << (void*) dynamic_cast<A*>(&d) << '\n';
+  cout << "dynamic_cast<C*>(&d) = " << (void*) dynamic_cast<C*>(&d) << '\n';
+  cout << "dynamic_cast<DescribedClass*>(&d) = "
+       << (void*) dynamic_cast<DescribedClass*>(&d) << '\n';
 
-  RefD dref(new D);
-  RefA aref(dref);
+  Ref<D> dref(new D);
+  Ref<A> aref(dref);
 
   cout << "aref.pointer() is " << aref.pointer() << '\n';
   cout << "dref.pointer() is " << dref.pointer() << '\n';
   cout << "aref == dref gives " << (aref == dref) << '\n';
 
-  dref.operator=(aref);
+  dref << aref;
 
   cout << "aref.pointer() is " << aref.pointer() << '\n';
   cout << "dref.pointer() is " << dref.pointer() << '\n';

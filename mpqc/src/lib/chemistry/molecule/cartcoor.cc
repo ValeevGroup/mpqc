@@ -38,27 +38,17 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////
 // members of CartMolecularCoor
 
-#define CLASSNAME CartMolecularCoor
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public MolecularCoor
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-CartMolecularCoor::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MolecularCoor::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc CartMolecularCoor_cd(
+  typeid(CartMolecularCoor),"CartMolecularCoor",1,"public MolecularCoor",
+  0, create<CartMolecularCoor>, create<CartMolecularCoor>);
 
-CartMolecularCoor::CartMolecularCoor(RefMolecule&mol):
+CartMolecularCoor::CartMolecularCoor(Ref<Molecule>&mol):
   MolecularCoor(mol)
 {
   init();
 }
 
-CartMolecularCoor::CartMolecularCoor(const RefKeyVal& keyval):
+CartMolecularCoor::CartMolecularCoor(const Ref<KeyVal>& keyval):
   MolecularCoor(keyval)
 {
   init();
@@ -67,7 +57,7 @@ CartMolecularCoor::CartMolecularCoor(const RefKeyVal& keyval):
 CartMolecularCoor::CartMolecularCoor(StateIn& s):
   MolecularCoor(s)
 {
-  dim_.restore_state(s);
+  dim_ << SavableState::restore_state(s);
 }
 
 void
@@ -86,7 +76,7 @@ CartMolecularCoor::save_data_state(StateOut&s)
 {
   MolecularCoor::save_data_state(s);
 
-  dim_.save_state(s);
+  SavableState::save_state(dim_.pointer(),s);
 }
 
 RefSCDimension
@@ -99,7 +89,7 @@ CartMolecularCoor::dim()
 // presumably this will actually be passed the new cartesian coords in
 // new_internal, so do almost nothing
 int
-CartMolecularCoor::to_cartesian(const RefMolecule&mol,
+CartMolecularCoor::to_cartesian(const Ref<Molecule>&mol,
                                 const RefSCVector&new_internal)
 {
   // get a reference to Molecule for convenience

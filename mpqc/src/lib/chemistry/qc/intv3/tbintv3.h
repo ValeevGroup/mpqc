@@ -34,14 +34,14 @@
 /** This implements electron repulsion integrals in the IntV3 library. */
 class TwoBodyIntV3 : public TwoBodyInt {
   protected:
-    RefInt2eV3 int2ev3_;
+    Ref<Int2eV3> int2ev3_;
 
   public:
     TwoBodyIntV3(Integral*integral,
-                 const RefGaussianBasisSet&b1,
-                 const RefGaussianBasisSet&b2,
-                 const RefGaussianBasisSet&b3,
-                 const RefGaussianBasisSet&b4,
+                 const Ref<GaussianBasisSet>&b1,
+                 const Ref<GaussianBasisSet>&b2,
+                 const Ref<GaussianBasisSet>&b3,
+                 const Ref<GaussianBasisSet>&b4,
                  int storage);
     ~TwoBodyIntV3();
 
@@ -56,14 +56,14 @@ class TwoBodyIntV3 : public TwoBodyInt {
     library. */
 class TwoBodyDerivIntV3 : public TwoBodyDerivInt {
   protected:
-    RefInt2eV3 int2ev3_;
+    Ref<Int2eV3> int2ev3_;
 
   public:
     TwoBodyDerivIntV3(Integral*integral,
-                      const RefGaussianBasisSet&b1,
-                      const RefGaussianBasisSet&b2,
-                      const RefGaussianBasisSet&b3,
-                      const RefGaussianBasisSet&b4,
+                      const Ref<GaussianBasisSet>&b1,
+                      const Ref<GaussianBasisSet>&b2,
+                      const Ref<GaussianBasisSet>&b3,
+                      const Ref<GaussianBasisSet>&b4,
                       int storage);
     ~TwoBodyDerivIntV3();
 

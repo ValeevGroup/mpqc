@@ -60,13 +60,13 @@ DerivCenters::add_omitted(int center, int atom)
 }
 
 void
-DerivCenters::add_center(int center, const RefGaussianBasisSet &b, int shell)
+DerivCenters::add_center(int center, const Ref<GaussianBasisSet> &b, int shell)
 {
   add_center(center, b->shell_to_center(shell));
 }
 
 void
-DerivCenters::add_omitted(int center, const RefGaussianBasisSet &b, int shell)
+DerivCenters::add_omitted(int center, const Ref<GaussianBasisSet> &b, int shell)
 {
   add_omitted(center, b->shell_to_center(shell));
 }

@@ -35,22 +35,12 @@
 #include <math/optimize/update.h>
 #include <util/keyval/keyval.h>
 
-SavableState_REF_def(HessianUpdate);
-#define CLASSNAME HessianUpdate
-#define PARENTS virtual public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-
 /////////////////////////////////////////////////////////////////////////
 // HessianUpdate
 
-void *
-HessianUpdate::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc HessianUpdate_cd(
+  typeid(HessianUpdate),"HessianUpdate",1,"virtual public SavableState",
+  0, 0, 0);
 
 HessianUpdate::HessianUpdate() : inverse_hessian_(0)
 {
@@ -62,7 +52,7 @@ HessianUpdate::HessianUpdate(StateIn&s):
   s.get(inverse_hessian_);
 }
 
-HessianUpdate::HessianUpdate(const RefKeyVal&keyval) :
+HessianUpdate::HessianUpdate(const Ref<KeyVal>&keyval) :
   inverse_hessian_(0)
 {
 }
@@ -84,7 +74,7 @@ HessianUpdate::set_inverse(void)
 }
 
 void
-HessianUpdate::apply_transform(const RefNonlinearTransform&)
+HessianUpdate::apply_transform(const Ref<NonlinearTransform>&)
 {
 }
 

@@ -57,17 +57,9 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////
 // HSOSSCF
 
-#define VERSION 2
-#define CLASSNAME HSOSSCF
-#define PARENTS public SCF
-#include <util/class/classia.h>
-void *
-HSOSSCF::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCF::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc HSOSSCF_cd(
+  typeid(HSOSSCF),"HSOSSCF",2,"public SCF",
+  0, 0, 0);
 
 HSOSSCF::HSOSSCF(StateIn& s) :
   SavableState(s),
@@ -91,10 +83,10 @@ HSOSSCF::HSOSSCF(StateIn& s) :
   s.get(nirrep_);
   s.get(ndocc_);
   s.get(nsocc_);
-  if (s.version(static_class_desc()) >= 2) {
+  if (s.version(::class_desc<HSOSSCF>()) >= 2) {
     s.get(initial_ndocc_);
     s.get(initial_nsocc_);
-    most_recent_pg_.restore_state(s);
+    most_recent_pg_ << SavableState::restore_state(s);
   } else {
     initial_ndocc_ = new int[nirrep_];
     memcpy(initial_ndocc_, ndocc_, sizeof(int)*nirrep_);
@@ -106,7 +98,7 @@ HSOSSCF::HSOSSCF(StateIn& s) :
   init_mem(4);
 }
 
-HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
+HSOSSCF::HSOSSCF(const Ref<KeyVal>& keyval) :
   SCF(keyval),
   cl_fock_(this),
   op_fock_(this)
@@ -238,7 +230,7 @@ HSOSSCF::save_data_state(StateOut& s)
   s.put(nsocc_,nirrep_);
   s.put(initial_ndocc_,nirrep_);
   s.put(initial_nsocc_,nirrep_);
-  most_recent_pg_.save_state(s);
+  SavableState::save_state(most_recent_pg_.pointer(),s);
 }
 
 double
@@ -363,7 +355,7 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
     evals = ev;
 
   // first convert evals to something we can deal with easily
-  BlockedDiagSCMatrix *evalsb = BlockedDiagSCMatrix::require_castdown(evals,
+  BlockedDiagSCMatrix *evalsb = require_dynamic_cast<BlockedDiagSCMatrix*>(evals,
                                                  "HSOSSCF::set_occupations");
   
   double **vals = new double*[nirrep_];
@@ -602,8 +594,8 @@ HSOSSCF::new_density()
   cl_dens_diff_.accumulate(cl_dens_);
   op_dens_diff_.accumulate(op_dens_);
 
-  RefSCElementScalarProduct sp(new SCElementScalarProduct);
-  cl_dens_diff_.element_op(sp, cl_dens_diff_);
+  Ref<SCElementScalarProduct> sp(new SCElementScalarProduct);
+  cl_dens_diff_.element_op(sp.pointer(), cl_dens_diff_);
   
   double delta = sp->result();
   delta = sqrt(delta/i_offset(cl_dens_diff_.n()));
@@ -644,7 +636,7 @@ HSOSSCF::scf_energy()
   
   SCFEnergy *eop = new SCFEnergy;
   eop->reference();
-  RefSCElementOp2 op = eop;
+  Ref<SCElementOp2> op = eop;
   t.element_op(op, cl_dens_);
 
   double cl_e = eop->result();
@@ -660,10 +652,10 @@ HSOSSCF::scf_energy()
   return cl_e-op_e;
 }
 
-RefSCExtrapData
+Ref<SCExtrapData>
 HSOSSCF::extrap_data()
 {
-  RefSCExtrapData data =
+  Ref<SCExtrapData> data =
     new SymmSCMatrix2SCExtrapData(cl_fock_.result_noupdate(),
                                   op_fock_.result_noupdate());
   return data;
@@ -694,7 +686,7 @@ HSOSSCF::effective_fock()
                                  SCMatrix::TransposeTransform);
   }
 
-  RefSCElementOp2 op = new GSGeneralEffH(this);
+  Ref<SCElementOp2> op = new GSGeneralEffH(this);
   mofock.element_op(op, mofocko);
 
   return mofock;
@@ -747,7 +739,7 @@ HSOSSCF::lagrangian()
 
   mofock.scale(2.0);
   
-  RefSCElementOp2 op = new MOLagrangian(this);
+  Ref<SCElementOp2> op = new MOLagrangian(this);
   mofock.element_op(op, mofocko);
   mofocko=0;
 
@@ -757,7 +749,7 @@ HSOSSCF::lagrangian()
   so_lag.accumulate_transform(so_to_oso_tr * oso_scf_vector_, mofock);
   
   // and then from SO to AO
-  RefPetiteList pl = integral()->petite_list();
+  Ref<PetiteList> pl = integral()->petite_list();
   RefSymmSCMatrix ao_lag = pl->to_AO_basis(so_lag);
 
   ao_lag.scale(-1.0);
@@ -776,7 +768,7 @@ HSOSSCF::gradient_density()
   
   so_density(op_dens_, 1.0);
   
-  RefPetiteList pl = integral()->petite_list(basis());
+  Ref<PetiteList> pl = integral()->petite_list(basis());
   
   cl_dens_ = pl->to_AO_basis(cl_dens_);
   op_dens_ = pl->to_AO_basis(op_dens_);
@@ -806,9 +798,9 @@ HSOSSCF::done_hessian()
 void
 HSOSSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
 {
-  RefSCElementMaxAbs m = new SCElementMaxAbs;
-  cl_dens_.element_op(m);
-  op_dens_.element_op(m);
+  Ref<SCElementMaxAbs> m = new SCElementMaxAbs;
+  cl_dens_.element_op(m.pointer());
+  op_dens_.element_op(m.pointer());
   double pmax = m->result();
   m=0;
 
@@ -822,14 +814,14 @@ HSOSSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
     RefSymmSCMatrix ptmp = get_local_data(cl_dens_, pmat, SCF::Read);
     RefSymmSCMatrix potmp = get_local_data(op_dens_, pmato, SCF::Read);
   
-    RefPetiteList pl = integral()->petite_list();
+    Ref<PetiteList> pl = integral()->petite_list();
     LocalHSOSGradContribution l(pmat,pmato);
     
     int i;
     int na3 = molecule()->natom()*3;
     int nthread = threadgrp_->nthread();
     double **grads = new double*[nthread];
-    RefTwoBodyDerivInt *tbis = new RefTwoBodyDerivInt[nthread];
+    Ref<TwoBodyDerivInt> *tbis = new Ref<TwoBodyDerivInt>[nthread];
     for (i=0; i < nthread; i++) { 
       tbis[i] = integral()->electron_repulsion_deriv();
       grads[i] = new double[na3];

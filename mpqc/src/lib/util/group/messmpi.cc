@@ -65,25 +65,16 @@ print_error_and_abort(int me, int mpierror)
 ///////////////////////////////////////////////////////////////////////
 // The MPIMessageGrp class
 
-#define CLASSNAME MPIMessageGrp
-#define PARENTS public MessageGrp
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-MPIMessageGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  MessageGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MPIMessageGrp_cd(
+  typeid(MPIMessageGrp),"MPIMessageGrp",1,"public MessageGrp",
+  create<MPIMessageGrp>, create<MPIMessageGrp>, 0);
 
 MPIMessageGrp::MPIMessageGrp()
 {
   init();
 }
 
-MPIMessageGrp::MPIMessageGrp(const RefKeyVal& keyval):
+MPIMessageGrp::MPIMessageGrp(const Ref<KeyVal>& keyval):
   MessageGrp(keyval)
 {
   int argc = -1;

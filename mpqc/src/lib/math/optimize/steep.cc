@@ -37,32 +37,20 @@
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
 
-#define CLASSNAME SteepestDescentOpt
-#define VERSION 2
-#define PARENTS public Optimize
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////////
 // SteepestDescentOpt
 
-void *
-SteepestDescentOpt::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Optimize::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SteepestDescentOpt_cd(
+  typeid(SteepestDescentOpt),"SteepestDescentOpt",2,"public Optimize",
+  0, create<SteepestDescentOpt>, create<SteepestDescentOpt>);
 
-SteepestDescentOpt::SteepestDescentOpt(const RefKeyVal&keyval):
+SteepestDescentOpt::SteepestDescentOpt(const Ref<KeyVal>&keyval):
   Optimize(keyval),
   maxabs_gradient(-1.0)
 {
-  lineopt_ = keyval->describedclassvalue("lineopt");
+  lineopt_ << keyval->describedclassvalue("lineopt");
   accuracy_ = keyval->doublevalue("accuracy");
   if (keyval->error() != KeyVal::OK) accuracy_ = 0.0001;
   print_x_ = keyval->booleanvalue("print_x");
@@ -78,7 +66,7 @@ SteepestDescentOpt::SteepestDescentOpt(StateIn&s):
   s.get(maxabs_gradient);
   s.get(print_x_);
   s.get(print_gradient_);
-  lineopt_.restore_state(s);
+  lineopt_ << SavableState::restore_state(s);
 }
 
 SteepestDescentOpt::~SteepestDescentOpt()
@@ -94,7 +82,7 @@ SteepestDescentOpt::save_data_state(StateOut&s)
   s.put(maxabs_gradient);
   s.put(print_x_);
   s.put(print_gradient_);
-  lineopt_.save_state(s);
+  SavableState::save_state(lineopt_.pointer(),s);
 }
 
 void

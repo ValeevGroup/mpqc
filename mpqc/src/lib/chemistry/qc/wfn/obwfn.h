@@ -34,13 +34,9 @@
 
 #include <chemistry/qc/wfn/wfn.h>
 
-SavableState_REF_fwddec(OneBodyWavefunction);
 /**A OneBodyWavefunction is a MolecularEnergy that solves an effective
 one-body problem. */
 class OneBodyWavefunction: public Wavefunction {
-#   define CLASSNAME OneBodyWavefunction
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
  protected:
     ResultRefSymmSCMatrix density_;
     AccResultRefSCMatrix oso_eigenvectors_;
@@ -71,7 +67,7 @@ class OneBodyWavefunction: public Wavefunction {
 
         </dl>
     */
-    OneBodyWavefunction(const RefKeyVal&);
+    OneBodyWavefunction(const Ref<KeyVal>&);
     ~OneBodyWavefunction();
 
     void save_data_state(StateOut&);
@@ -126,10 +122,10 @@ class OneBodyWavefunction: public Wavefunction {
     virtual RefDiagSCMatrix beta_eigenvalues();
 
     virtual RefDiagSCMatrix
-      projected_eigenvalues(const RefOneBodyWavefunction&, int alp=1);
+      projected_eigenvalues(const Ref<OneBodyWavefunction>&, int alp=1);
     /** Projects the density into the current basis set.  Returns an
         orthogonalized SO to MO transformation with the orbitals. */
-    virtual RefSCMatrix projected_eigenvectors(const RefOneBodyWavefunction&,
+    virtual RefSCMatrix projected_eigenvectors(const Ref<OneBodyWavefunction>&,
                                                int alp=1);
     /** Return a guess vector.  The guess transforms the orthogonal SO
         basis to the MO basis. */
@@ -146,14 +142,10 @@ class OneBodyWavefunction: public Wavefunction {
 
     void print(std::ostream&o=ExEnv::out()) const;
 };
-SavableState_REF_dec(OneBodyWavefunction);
+
 
 // This is useful as an initial guess for other one body wavefunctions
 class HCoreWfn: public OneBodyWavefunction {
-#   define CLASSNAME HCoreWfn
-#   define HAVE_STATEIN_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   private:
     int nirrep_;
     int *docc_;
@@ -168,7 +160,7 @@ class HCoreWfn: public OneBodyWavefunction {
 
   public:
     HCoreWfn(StateIn&);
-    HCoreWfn(const RefKeyVal&);
+    HCoreWfn(const Ref<KeyVal>&);
     ~HCoreWfn();
 
     void save_data_state(StateOut&);
@@ -183,7 +175,7 @@ class HCoreWfn: public OneBodyWavefunction {
 
     int value_implemented() const;
 };
-SavableState_REF_dec(HCoreWfn);
+
 
 #endif
 

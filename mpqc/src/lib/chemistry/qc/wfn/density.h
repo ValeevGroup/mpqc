@@ -37,16 +37,12 @@
 #include <chemistry/molecule/molrender.h>
 
 class ElectronDensity: public Volume {
-#   define CLASSNAME ElectronDensity
-#   define HAVE_KEYVAL_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
-    RefWavefunction wfn_;
+    Ref<Wavefunction> wfn_;
     virtual void compute();
   public:
-    ElectronDensity(const RefKeyVal&);
-    ElectronDensity(const RefWavefunction&);
+    ElectronDensity(const Ref<KeyVal>&);
+    ElectronDensity(const Ref<Wavefunction>&);
     ~ElectronDensity();
     virtual void boundingbox(double valuemin,
                              double valuemax,
@@ -54,37 +50,31 @@ class ElectronDensity: public Volume {
 };
 
 class DensityColorizer: public MoleculeColorizer {
-#   define CLASSNAME DensityColorizer
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   protected:
-    RefWavefunction wfn_;
+    Ref<Wavefunction> wfn_;
     double scale_;
     double reference_;
     int have_scale_;
     int have_reference_;
   public:
-    DensityColorizer(const RefKeyVal&);
+    DensityColorizer(const Ref<KeyVal>&);
     ~DensityColorizer();
 
-    void colorize(const RefRenderedPolygons &);
+    void colorize(const Ref<RenderedPolygons> &);
 };
 
 class GradDensityColorizer: public MoleculeColorizer {
-#   define CLASSNAME GradDensityColorizer
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   protected:
-    RefWavefunction wfn_;
+    Ref<Wavefunction> wfn_;
     double scale_;
     double reference_;
     int have_scale_;
     int have_reference_;
   public:
-    GradDensityColorizer(const RefKeyVal&);
+    GradDensityColorizer(const Ref<KeyVal>&);
     ~GradDensityColorizer();
 
-    void colorize(const RefRenderedPolygons &);
+    void colorize(const Ref<RenderedPolygons> &);
 };
 
 #endif

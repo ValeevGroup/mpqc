@@ -36,21 +36,23 @@
 #  include <util/group/memipgon.h>
 #endif
 
+using namespace std;
+
 // Force linkages:
 //#ifndef __PIC__
 #ifdef HAVE_SYSV_IPC
 #   include <util/group/messshm.h>
-    const ClassDesc &fl0 = ShmMessageGrp::class_desc_;
+    static ForceLink<ShmMessageGrp> fl0;
 #endif
 #ifdef HAVE_PVM
 #   include <util/group/messpvm.h>
-    const ClassDesc &fl2 = PVMMessageGrp::class_desc_;
+    static ForceLink<PVMMessageGrp> fl2;
 #endif
 #ifdef HAVE_MPI
 #   include <util/group/messmpi.h>
 #   include <util/group/memmtmpi.h>
-    const ClassDesc &fl2 = MPIMessageGrp::class_desc_;
-    const ClassDesc &fl3 = MTMPIMemoryGrp::class_desc_;
+    static ForceLink<MPIMessageGrp> fl2;
+    static ForceLink<MTMPIMemoryGrp> fl3;
 #endif
 //#endif
 
@@ -78,18 +80,18 @@ extern "C" {
                           ENABLE; \
                          } while(0)
 
-void do_simple_tests(const RefMessageGrp&,const RefMemoryGrp&);
-void do_int_tests(const RefMessageGrp&,const RefMemoryGrp&);
-void do_double_tests(const RefMessageGrp&,const RefMemoryGrp&);
-void do_double2_tests(const RefMessageGrp&,const RefMemoryGrp&);
+void do_simple_tests(const Ref<MessageGrp>&,const Ref<MemoryGrp>&);
+void do_int_tests(const Ref<MessageGrp>&,const Ref<MemoryGrp>&);
+void do_double_tests(const Ref<MessageGrp>&,const Ref<MemoryGrp>&);
+void do_double2_tests(const Ref<MessageGrp>&,const Ref<MemoryGrp>&);
 
 int
 main(int argc, char**argv)
 {
-  RefMessageGrp msg = MessageGrp::initial_messagegrp(argc, argv);
+  Ref<MessageGrp> msg = MessageGrp::initial_messagegrp(argc, argv);
 
   const char* input = SRCDIR "/memtest.in";
-  RefKeyVal keyval = new ParsedKeyVal(input);
+  Ref<KeyVal> keyval = new ParsedKeyVal(input);
 
   if (msg.null()) {
       const char* keyword = "message";
@@ -106,7 +108,7 @@ main(int argc, char**argv)
     }
 
   // now set up the debugger
-  RefDebugger debugger = keyval->describedclassvalue(":debug");
+  Ref<Debugger> debugger = keyval->describedclassvalue(":debug");
   if (debugger.nonnull()) {
     debugger->set_exec(argv[0]);
     debugger->set_prefix(msg->me());
@@ -118,7 +120,7 @@ main(int argc, char**argv)
 
   MessageGrp::set_default_messagegrp(msg);
 
-  RefMemoryGrp mem = MemoryGrp::initial_memorygrp(argc, argv);
+  Ref<MemoryGrp> mem = MemoryGrp::initial_memorygrp(argc, argv);
 
   do_simple_tests(msg, mem);
 
@@ -131,8 +133,8 @@ main(int argc, char**argv)
 }
 
 void
-do_simple_tests(const RefMessageGrp&msg,
-                const RefMemoryGrp&mem)
+do_simple_tests(const Ref<MessageGrp>&msg,
+                const Ref<MemoryGrp>&mem)
 {
   mem->set_localsize(8);
 
@@ -143,8 +145,8 @@ do_simple_tests(const RefMessageGrp&msg,
 }
 
 void
-do_int_tests(const RefMessageGrp&msg,
-             const RefMemoryGrp&mem)
+do_int_tests(const Ref<MessageGrp>&msg,
+             const Ref<MemoryGrp>&mem)
 {
   const int intbufsize = 10;
 
@@ -277,8 +279,8 @@ do_int_tests(const RefMessageGrp&msg,
 }
 
 void
-do_double_tests(const RefMessageGrp&msg,
-                const RefMemoryGrp&mem)
+do_double_tests(const Ref<MessageGrp>&msg,
+                const Ref<MemoryGrp>&mem)
 {
   PRINTF(("double tests entered\n"));
 
@@ -369,8 +371,8 @@ do_double_tests(const RefMessageGrp&msg,
 }
 
 void
-do_double2_tests(const RefMessageGrp&msg,
-                 const RefMemoryGrp&mem)
+do_double2_tests(const Ref<MessageGrp>&msg,
+                 const Ref<MemoryGrp>&mem)
 {
   PRINTF(("double2 tests entered\n"));
 

@@ -40,29 +40,12 @@
 
 using namespace std;
 
-SavableState_REF_def(Optimize);
-#define CLASSNAME Optimize
-#define VERSION 2
-#define PARENTS virtual public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-
-SavableState_REF_def(LineOpt);
-#define CLASSNAME LineOpt
-#define PARENTS public Optimize
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-
 /////////////////////////////////////////////////////////////////////////
 // Optimize
 
-void *
-Optimize::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc Optimize_cd(
+  typeid(Optimize),"Optimize",2,"virtual public SavableState",
+  0, 0, 0);
 
 Optimize::Optimize() :
   ckpt_(0), ckpt_file(0)
@@ -76,15 +59,15 @@ Optimize::Optimize(StateIn&s):
   s.getstring(ckpt_file);
   s.get(max_iterations_,"max_iterations");
   s.get(max_stepsize_,"max_stepsize");
-  if (s.version(static_class_desc()) > 1) {
+  if (s.version(::class_desc<Optimize>()) > 1) {
       s.get(print_timings_,"print_timings");
     }
   n_iterations_ = 0;
-  conv_.restore_state(s);
-  function_.key_restore_state(s,"function");
+  conv_ << SavableState::restore_state(s);
+  function_ << SavableState::key_restore_state(s,"function");
 }
 
-Optimize::Optimize(const RefKeyVal&keyval)
+Optimize::Optimize(const Ref<KeyVal>&keyval)
 {
   print_timings_ = keyval->booleanvalue("print_timings");
   if (keyval->error() != KeyVal::OK) print_timings_ = 0;
@@ -103,14 +86,14 @@ Optimize::Optimize(const RefKeyVal&keyval)
   max_stepsize_ = keyval->doublevalue("max_stepsize");
   if (keyval->error() != KeyVal::OK) max_stepsize_ = 0.6;
 
-  function_ = keyval->describedclassvalue("function");
+  function_ << keyval->describedclassvalue("function");
   if (function_.null()) {
       ExEnv::err() << node0 << "Optimize requires a function keyword" << endl;
       ExEnv::err() << node0 << "which is an object of type Function" << endl;
       abort();
     }
 
-  conv_ = keyval->describedclassvalue("convergence");
+  conv_ << keyval->describedclassvalue("convergence");
   if (conv_.null()) {
       double convergence = keyval->doublevalue("convergence");
       if (keyval->error() == KeyVal::OK) {
@@ -134,8 +117,8 @@ Optimize::save_data_state(StateOut&s)
   s.put(max_iterations_);
   s.put(max_stepsize_);
   s.put(print_timings_);
-  conv_.save_state(s);
-  function_.save_state(s);
+  SavableState::save_state(conv_.pointer(),s);
+  SavableState::save_state(function_.pointer(),s);
 }
 
 void
@@ -168,7 +151,7 @@ Optimize::set_checkpoint_file(const char *path)
 }
   
 void
-Optimize::set_function(const RefFunction& f)
+Optimize::set_function(const Ref<Function>& f)
 {
   function_ = f;
 }
@@ -195,20 +178,16 @@ Optimize::optimize()
 }
 
 void
-Optimize::apply_transform(const RefNonlinearTransform &t)
+Optimize::apply_transform(const Ref<NonlinearTransform> &t)
 {
 }
 
 /////////////////////////////////////////////////////////////////////////
 // LineOpt
 
-void *
-LineOpt::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Optimize::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc LineOpt_cd(
+  typeid(LineOpt),"LineOpt",1,"public Optimize",
+  0, 0, 0);
 
 LineOpt::LineOpt()
 {
@@ -222,7 +201,7 @@ LineOpt::LineOpt(StateIn&s):
   search_direction_.restore(s);
 }
 
-LineOpt::LineOpt(const RefKeyVal&keyval):
+LineOpt::LineOpt(const Ref<KeyVal>&keyval):
   Optimize(keyval)
 {
 }
@@ -245,7 +224,7 @@ LineOpt::set_search_direction(RefSCVector&s)
 }
 
 void
-LineOpt::apply_tranform(const RefNonlinearTransform &t)
+LineOpt::apply_tranform(const Ref<NonlinearTransform> &t)
 {
   if (t.null()) return;
   Optimize::apply_transform(t);

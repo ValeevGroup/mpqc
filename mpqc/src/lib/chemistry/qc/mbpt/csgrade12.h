@@ -42,12 +42,12 @@
 
 class CSGradErep12Qtr: public Thread {
   private:
-    RefMessageGrp msg;
-    RefMemoryGrp mem;
-    RefTwoBodyInt tbint;
-    RefGaussianBasisSet basis;
-    RefThreadLock lock;
-    RefRegionTimer timer;
+    Ref<MessageGrp> msg;
+    Ref<MemoryGrp> mem;
+    Ref<TwoBodyInt> tbint;
+    Ref<GaussianBasisSet> basis;
+    Ref<ThreadLock> lock;
+    Ref<RegionTimer> timer;
     int mythread;
     int nthread;
     int ni;
@@ -63,11 +63,11 @@ class CSGradErep12Qtr: public Thread {
   public:
     CSGradErep12Qtr(int mythread_a, int nthread_a,
                     int me_a, int nproc_a,
-                    const RefMemoryGrp &mem_a,
-                    const RefMessageGrp &msg_a,
-                    const RefThreadLock &lock_a,
-                    const RefGaussianBasisSet &basis_a,
-                    const RefTwoBodyInt &tbint_a,
+                    const Ref<MemoryGrp> &mem_a,
+                    const Ref<MessageGrp> &msg_a,
+                    const Ref<ThreadLock> &lock_a,
+                    const Ref<GaussianBasisSet> &basis_a,
+                    const Ref<TwoBodyInt> &tbint_a,
                     int ni_a, int nocc_a,
                     double **scf_vector_a,
                     double tol_a, int debug_a,

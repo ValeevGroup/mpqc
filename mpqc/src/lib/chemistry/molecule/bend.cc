@@ -52,20 +52,9 @@
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/localdef.h>
 
-#define CLASSNAME BendSimpleCo
-#define PARENTS public SimpleCo
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-BendSimpleCo::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SimpleCo::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc BendSimpleCo_cd(
+  typeid(BendSimpleCo),"BendSimpleCo",1,"public SimpleCo",
+  create<BendSimpleCo>, create<BendSimpleCo>, create<BendSimpleCo>);
 SimpleCo_IMPL(BendSimpleCo)
 
 BendSimpleCo::BendSimpleCo() : SimpleCo(3) {}
@@ -82,7 +71,7 @@ BendSimpleCo::BendSimpleCo(const char *refr, int a1, int a2, int a3)
   atoms[0]=a1; atoms[1]=a2; atoms[2]=a3;
 }
 
-BendSimpleCo::BendSimpleCo(const RefKeyVal &kv)
+BendSimpleCo::BendSimpleCo(const Ref<KeyVal> &kv)
   : SimpleCo(kv,3)
 {
 }

@@ -55,17 +55,9 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////
 // CLSCF
 
-#define VERSION 2
-#define CLASSNAME CLSCF
-#define PARENTS public SCF
-#include <util/class/classia.h>
-void *
-CLSCF::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCF::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc CLSCF_cd(
+  typeid(CLSCF),"CLSCF",2,"public SCF",
+  0, 0, 0);
 
 CLSCF::CLSCF(StateIn& s) :
   SavableState(s),
@@ -81,9 +73,9 @@ CLSCF::CLSCF(StateIn& s) :
   s.get(tndocc_);
   s.get(nirrep_);
   s.get(ndocc_);
-  if (s.version(static_class_desc()) >= 2) {
+  if (s.version(::class_desc<CLSCF>()) >= 2) {
     s.get(initial_ndocc_);
-    most_recent_pg_.restore_state(s);
+    most_recent_pg_ << SavableState::restore_state(s);
   } else {
     initial_ndocc_ = new int[nirrep_];
     memcpy(initial_ndocc_, ndocc_, sizeof(int)*nirrep_);
@@ -93,7 +85,7 @@ CLSCF::CLSCF(StateIn& s) :
   init_mem(2);
 }
 
-CLSCF::CLSCF(const RefKeyVal& keyval) :
+CLSCF::CLSCF(const Ref<KeyVal>& keyval) :
   SCF(keyval),
   cl_fock_(this)
 {
@@ -179,7 +171,7 @@ CLSCF::save_data_state(StateOut& s)
   s.put(nirrep_);
   s.put(ndocc_,nirrep_);
   s.put(initial_ndocc_,nirrep_);
-  most_recent_pg_.save_state(s);
+  SavableState::save_state(most_recent_pg_.pointer(),s);
 }
 
 double
@@ -264,7 +256,7 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
     evals = ev;
 
   // first convert evals to something we can deal with easily
-  BlockedDiagSCMatrix *evalsb = BlockedDiagSCMatrix::require_castdown(evals,
+  BlockedDiagSCMatrix *evalsb = require_dynamic_cast<BlockedDiagSCMatrix*>(evals,
                                                  "CLSCF::set_occupations");
   
   double **vals = new double*[nirrep_];
@@ -444,8 +436,8 @@ CLSCF::new_density()
 
   cl_dens_diff_.accumulate(cl_dens_);
   
-  RefSCElementScalarProduct sp(new SCElementScalarProduct);
-  cl_dens_diff_.element_op(sp, cl_dens_diff_);
+  Ref<SCElementScalarProduct> sp(new SCElementScalarProduct);
+  cl_dens_diff_.element_op(sp.pointer(), cl_dens_diff_);
   
   double delta = sp->result();
   delta = sqrt(delta/i_offset(cl_dens_diff_.n()));
@@ -466,7 +458,7 @@ CLSCF::scf_energy()
 
   SCFEnergy *eop = new SCFEnergy;
   eop->reference();
-  RefSCElementOp2 op = eop;
+  Ref<SCElementOp2> op = eop;
   t.element_op(op,cl_dens_);
   op=0;
   eop->dereference();
@@ -478,10 +470,10 @@ CLSCF::scf_energy()
   return eelec;
 }
 
-RefSCExtrapData
+Ref<SCExtrapData>
 CLSCF::extrap_data()
 {
-  RefSCExtrapData data =
+  Ref<SCExtrapData> data =
     new SymmSCMatrixSCExtrapData(cl_fock_.result_noupdate());
   return data;
 }
@@ -557,7 +549,7 @@ CLSCF::lagrangian()
   // the MO lagrangian is just the eigenvalues of the occupied MO's
   RefSymmSCMatrix mofock = effective_fock();
 
-  RefSCElementOp op = new CLLag(this);
+  Ref<SCElementOp> op = new CLLag(this);
   mofock.element_op(op);
   
   // transform MO lagrangian to SO basis
@@ -566,7 +558,7 @@ CLSCF::lagrangian()
   so_lag.accumulate_transform(so_to_orthog_so().t() * oso_scf_vector_, mofock);
   
   // and then from SO to AO
-  RefPetiteList pl = integral()->petite_list();
+  Ref<PetiteList> pl = integral()->petite_list();
   RefSymmSCMatrix ao_lag = pl->to_AO_basis(so_lag);
   ao_lag->scale(-2.0);
 
@@ -582,7 +574,7 @@ CLSCF::gradient_density()
   so_density(cl_dens_, 2.0);
   cl_dens_.scale(2.0);
   
-  RefPetiteList pl = integral()->petite_list(basis());
+  Ref<PetiteList> pl = integral()->petite_list(basis());
   
   cl_dens_ = pl->to_AO_basis(cl_dens_);
 
@@ -611,20 +603,20 @@ CLSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
   int nthread = threadgrp_->nthread();
 
   tim_enter("setup");
-  RefSCElementMaxAbs m = new SCElementMaxAbs;
-  cl_dens_.element_op(m);
+  Ref<SCElementMaxAbs> m = new SCElementMaxAbs;
+  cl_dens_.element_op(m.pointer());
   double pmax = m->result();
   m=0;
 
   double **grads = new double*[nthread];
-  RefTwoBodyDerivInt *tbis = new RefTwoBodyDerivInt[nthread];
+  Ref<TwoBodyDerivInt> *tbis = new Ref<TwoBodyDerivInt>[nthread];
   for (i=0; i < nthread; i++) { 
     tbis[i] = integral()->electron_repulsion_deriv();
     grads[i] = new double[na3];
     memset(grads[i], 0, sizeof(double)*na3);
   }
   
-  RefPetiteList pl = integral()->petite_list();
+  Ref<PetiteList> pl = integral()->petite_list();
   
   tim_change("contribution");
   

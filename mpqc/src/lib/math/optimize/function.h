@@ -44,11 +44,8 @@
     given a set of coordinates, will compute a value and possibly
     a gradient and hessian at that point. */
 class Function: virtual public SavableState, public Compute {
-#   define CLASSNAME Function
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
-    RefSCMatrixKit matrixkit_;          ///< Used to construct new matrices.
+    Ref<SCMatrixKit> matrixkit_;          ///< Used to construct new matrices.
 
     RefSCVector x_;                     ///< The variables.
     RefSCDimension dim_;                ///< The dimension of x_.
@@ -67,7 +64,7 @@ class Function: virtual public SavableState, public Compute {
 
     /** Set the SCMatrixKit that should be used to
         construct the requisite vectors and matrices. */
-    virtual void set_matrixkit(const RefSCMatrixKit&);
+    virtual void set_matrixkit(const Ref<SCMatrixKit>&);
     virtual void set_dimension(const RefSCDimension&);
 
     /** @name Accuracy Setting Members
@@ -84,7 +81,7 @@ class Function: virtual public SavableState, public Compute {
 
     /** Change the coordinate system and apply the given transform to
         intermediates matrices and vectors. */
-    void do_change_coordinates(const RefNonlinearTransform&);
+    void do_change_coordinates(const Ref<NonlinearTransform>&);
   public:
     Function();
     Function(StateIn&);
@@ -106,7 +103,7 @@ class Function: virtual public SavableState, public Compute {
         hessians are computed.  The default is the machine accuracy.
 
         </dl> */
-    Function(const RefKeyVal&, double funcacc = DBL_EPSILON,
+    Function(const Ref<KeyVal>&, double funcacc = DBL_EPSILON,
              double gradacc = DBL_EPSILON, double hessacc = DBL_EPSILON);
     virtual ~Function();
 
@@ -114,7 +111,7 @@ class Function: virtual public SavableState, public Compute {
 
     /** Return the SCMatrixKit used to construct
         vectors and matrices. */
-    RefSCMatrixKit matrixkit() const;
+    Ref<SCMatrixKit> matrixkit() const;
     /// Return the SCDimension of the problem.
     RefSCDimension dimension() const;
 
@@ -187,12 +184,12 @@ class Function: virtual public SavableState, public Compute {
         transform object to the new coordinate system is return.  The
         function object applies the transform to any objects it contains.
         This will obsolete the function data. */
-    virtual RefNonlinearTransform change_coordinates();
+    virtual Ref<NonlinearTransform> change_coordinates();
 
     /// Print information about the object.
     virtual void print(std::ostream& = ExEnv::out()) const;
 };
-SavableState_REF_dec(Function);
+
 
 #endif
 

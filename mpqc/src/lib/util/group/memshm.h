@@ -45,9 +45,6 @@
 MsgMemoryGrp.  It uses SYSV IPC to provided shared memory in a system that
 provide shared memory in hardware.  It is very fast and reliable. */
 class ShmMemoryGrp: public MsgMemoryGrp {
-#define CLASSNAME ShmMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   private:
     int nregion_;
     int *shmid_;
@@ -69,8 +66,8 @@ class ShmMemoryGrp: public MsgMemoryGrp {
     int attach_memory(void *ataddress, int size);
     void detach_memory();
   public:
-    ShmMemoryGrp(const RefMessageGrp& msg);
-    ShmMemoryGrp(const RefKeyVal&);
+    ShmMemoryGrp(const Ref<MessageGrp>& msg);
+    ShmMemoryGrp(const Ref<KeyVal>&);
     ~ShmMemoryGrp();
 
     void set_localsize(int);

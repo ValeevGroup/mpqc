@@ -41,6 +41,7 @@
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
+#include <util/state/state_bin.h>
 
 #include <math/scmat/repl.h>
 #include <math/scmat/dist.h>
@@ -62,39 +63,39 @@ using namespace std;
 
 // Force linkages:
 #ifndef __PIC__
-const ClassDesc &fl0a = CLHF::class_desc_;
-const ClassDesc &fl0b = HSOSHF::class_desc_;
+static ForceLink<CLHF> fl0a;
+static ForceLink<HSOSHF> fl0b;
 
-const ClassDesc &fl0e = MBPT2::class_desc_;
+static ForceLink<MBPT2> fl0e;
 
-const ClassDesc &fl1a = RedundMolecularCoor::class_desc_;
-const ClassDesc &fl1b = CartMolecularCoor::class_desc_;
-const ClassDesc &fl1c = SymmMolecularCoor::class_desc_;
+static ForceLink<RedundMolecularCoor> fl1a;
+static ForceLink<CartMolecularCoor> fl1b;
+static ForceLink<SymmMolecularCoor> fl1c;
 
-const ClassDesc &fl2 = QNewtonOpt::class_desc_;
-const ClassDesc &fl3 = GDIISOpt::class_desc_;
-const ClassDesc &fl4 = EFCOpt::class_desc_;
-const ClassDesc &fl5 = BFGSUpdate::class_desc_;
+static ForceLink<QNewtonOpt> fl2;
+static ForceLink<GDIISOpt> fl3;
+static ForceLink<EFCOpt> fl4;
+static ForceLink<BFGSUpdate> fl5;
 
-const ClassDesc &fl6 = ReplSCMatrixKit::class_desc_;
-const ClassDesc &fl7 = DistSCMatrixKit::class_desc_;
+static ForceLink<ReplSCMatrixKit> fl6;
+static ForceLink<DistSCMatrixKit> fl7;
 
 # ifdef HAVE_SYSV_IPC
 #   include <util/group/messshm.h>
-    const ClassDesc &fl8 = ShmMessageGrp::class_desc_;
+    static ForceLink<ShmMessageGrp> fl8;
 # endif
-const ClassDesc &fl9 = ProcMessageGrp::class_desc_;
+static ForceLink<ProcMessageGrp> fl9;
 # ifdef HAVE_NX_H
 #  include <util/group/messpgon.h>
-    const ClassDesc &fl10 = ParagonMessageGrp::class_desc_;
+    static ForceLink<ParagonMessageGrp> fl10;
 # endif
 #endif
 
-RefRegionTimer tim;
-RefMessageGrp grp;
+Ref<RegionTimer> tim;
+Ref<MessageGrp> grp;
 
-static RefMessageGrp
-init_mp(const RefKeyVal& keyval)
+static Ref<MessageGrp>
+init_mp(const Ref<KeyVal>& keyval)
 {
   // if we are on a paragon then use a ParagonMessageGrp
   // otherwise read the message group from the input file
@@ -107,7 +108,7 @@ init_mp(const RefKeyVal& keyval)
   if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
   else grp = MessageGrp::get_default_messagegrp();
 
-  RefDebugger debugger = keyval->describedclassvalue(":debug");
+  Ref<Debugger> debugger = keyval->describedclassvalue(":debug");
   // Let the debugger know the name of the executable and the node
   if (debugger.nonnull()) {
     debugger->set_exec("mbpttest");
@@ -119,7 +120,7 @@ init_mp(const RefKeyVal& keyval)
   RegionTimer::set_default_regiontimer(tim);
 
   SCFormIO::set_printnode(0);
-  SCFormIO::set_messagegrp(grp);
+  SCFormIO::init_mp(grp->me());
   //SCFormIO::set_debug(1);
 
   SCFormIO::setindent(ExEnv::out(), 2);
@@ -130,12 +131,12 @@ init_mp(const RefKeyVal& keyval)
 
 main(int argc, char**argv)
 {
-  char *input =      (argc > 1)? argv[1] : SRCDIR "/mbpttest.in";
-  char *keyword =    (argc > 2)? argv[2] : "mole";
-  char *optkeyword = (argc > 3)? argv[3] : "opt";
+  const char *input =      (argc > 1)? argv[1] : SRCDIR "/mbpttest.in";
+  const char *keyword =    (argc > 2)? argv[2] : "mole";
+  const char *optkeyword = (argc > 3)? argv[3] : "opt";
 
   // open keyval input
-  RefKeyVal rpkv(new ParsedKeyVal(input));
+  Ref<KeyVal> rpkv(new ParsedKeyVal(input));
 
   init_mp(rpkv);
 
@@ -147,8 +148,8 @@ main(int argc, char**argv)
     SCMatrixKit::set_default_matrixkit(rpkv->describedclassvalue("matrixkit"));
   
   struct stat sb;
-  RefMolecularEnergy mole;
-  RefOptimize opt;
+  Ref<MolecularEnergy> mole;
+  Ref<Optimize> opt;
 
   if (stat("mbpttest.ckpt",&sb)==0 && sb.st_size) {
     StateInBin si("mbpttest.ckpt");

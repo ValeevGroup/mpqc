@@ -43,7 +43,7 @@
  
 */
 template <class T>
-class  Ref  : private RefBase {
+class  Ref  : public RefBase {
   private:
     T* p;
   public:
@@ -52,22 +52,27 @@ class  Ref  : private RefBase {
     /// Create a reference to the object a.
     Ref(T*a): p(a)
     {
-      if (p) {
-          if (DO_REF_CHECK_STACK(p)) {
-              DO_REF_UNMANAGE(p);
-              warn_ref_to_stack();
-            }
-          p->reference();
-        }
+      reference(p);
     }
     /// Create a reference to the object referred to by a.
     Ref(const Ref<T> &a): p(a.p)
     {
-      if (p) p->reference();
+      reference(p);
     }
+//      /** Create a reference to the object a.  Do a
+//          dynamic_cast to convert a to the appropiate type. */
+//      Ref(const RefBase&a) {
+//          p = dynamic_cast<T*>(a.parentpointer());
+//          reference(p);
+//        }
+//      /** Create a reference to the object a.  Do a
+//          dynamic_cast to convert a to the appropiate type. */
+//      Ref(RefCount*a): p(0) {
+//        operator=(a);
+//        }
     /** Delete this reference to the object.  Decrement the object's reference
         count and delete the object if the count is zero. */
-    ~ Ref ()
+    ~Ref()
     {
       clear();
     }
@@ -76,6 +81,8 @@ class  Ref  : private RefBase {
     T* operator->() const { return p; }
     /// Returns a pointer the reference counted object.
     T* pointer() const { return p; }
+    /// Implements the parentpointer pure virtual in the base class.
+    RefCount *parentpointer() const { return p; }
 
     REF_TYPE_CAST_DEC(T);
     /** Returns a C++ reference to the reference counted object.
@@ -104,9 +111,7 @@ class  Ref  : private RefBase {
     /// Refer to the null object.
     void clear()
     {
-      if (p && p->dereference()<=0) {
-          delete p;
-        }
+      dereference(p);
       p = 0;
     }
     /// Assignment to c.
@@ -117,6 +122,23 @@ class  Ref  : private RefBase {
       p=c.p;
       return *this;
     }
+    /// Assignment to the object that a references using dynamic_cast.
+    Ref<T>& operator<<(const RefBase&a) {
+        T* cr = dynamic_cast<T*>(a.parentpointer());
+        reference(cr);
+        clear();
+        p = cr;
+        return *this;
+      }
+    /** Assigns to the given base class pointer using dynamic_cast.  If
+        the dynamic_cast fails and the argument in nonnull and has a
+        reference count of zero, then it is deleted. */
+    Ref<T>& operator<<(RefCount *a) {
+        T* cr = dynamic_cast<T*>(a);
+        if (cr) assign_pointer(cr);
+        else if (a && a->nreference() <= 0) delete a;
+        return *this;
+      }
     /// Assignment to cr.
     Ref<T>& operator=(T* cr)
     {

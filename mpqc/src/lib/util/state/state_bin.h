@@ -37,8 +37,6 @@
 /** Save state to a binary file.
  */
 class StateOutBin: public StateOutFile {
-#   define CLASSNAME StateOutBin
-#   include <util/class/classd.h>
   private:
     int file_position_;
     // do not allow copy constructor or assignment
@@ -67,9 +65,6 @@ class StateOutBin: public StateOutFile {
 /** Read objects written with StateOutBin.
  */
 class StateInBin: public StateInFile {
-#   define CLASSNAME StateInBin
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   private:
     int file_position_;
     // do not allow copy constructor or assignment
@@ -81,7 +76,7 @@ class StateInBin: public StateInFile {
     int get_array_void(void*,int);
   public:
     StateInBin();
-    StateInBin(const RefKeyVal &);
+    StateInBin(const Ref<KeyVal> &);
     StateInBin(std::istream&);
     StateInBin(const char *);
     ~StateInBin();

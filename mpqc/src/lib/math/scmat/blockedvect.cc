@@ -39,16 +39,9 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // BlockedSCVector member functions
 
-#define CLASSNAME BlockedSCVector
-#define PARENTS public SCVector
-#include <util/class/classi.h>
-void *
-BlockedSCVector::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCVector::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc BlockedSCVector_cd(
+  typeid(BlockedSCVector),"BlockedSCVector",1,"public SCVector",
+  0, 0, 0);
 
 void
 BlockedSCVector::resize(SCDimension *bsd)
@@ -100,7 +93,7 @@ BlockedSCVector::assign_v(SCVector*a)
 {
   // make sure that the argument is of the correct type
   BlockedSCVector* la
-    = BlockedSCVector::require_castdown(a,"BlockedSCVector::assign");
+    = require_dynamic_cast<BlockedSCVector*>(a,"BlockedSCVector::assign");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -169,8 +162,8 @@ BlockedSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b)
 {
   const char* name = "BlockedSCVector::accumulate_product";
   // make sure that the arguments are of the correct type
-  BlockedSCMatrix* la = BlockedSCMatrix::require_castdown(a,name);
-  BlockedSCVector* lb = BlockedSCVector::require_castdown(b,name);
+  BlockedSCMatrix* la = require_dynamic_cast<BlockedSCMatrix*>(a,name);
+  BlockedSCVector* lb = require_dynamic_cast<BlockedSCVector*>(b,name);
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
@@ -190,8 +183,8 @@ BlockedSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b)
 {
   const char* name = "BlockedSCVector::accumulate_product";
   // make sure that the arguments are of the correct type
-  BlockedSymmSCMatrix* la = BlockedSymmSCMatrix::require_castdown(a,name);
-  BlockedSCVector* lb = BlockedSCVector::require_castdown(b,name);
+  BlockedSymmSCMatrix* la = require_dynamic_cast<BlockedSymmSCMatrix*>(a,name);
+  BlockedSCVector* lb = require_dynamic_cast<BlockedSCVector*>(b,name);
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim()) || !la->dim()->equiv(lb->dim())) {
@@ -211,7 +204,7 @@ BlockedSCVector::accumulate(const SCVector*a)
 {
   // make sure that the argument is of the correct type
   const BlockedSCVector* la
-    = BlockedSCVector::require_const_castdown(a,"BlockedSCVector::accumulate");
+    = require_dynamic_cast<const BlockedSCVector*>(a,"BlockedSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -230,7 +223,7 @@ BlockedSCVector::accumulate(const SCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const BlockedSCMatrix* la
-    = BlockedSCMatrix::require_const_castdown(a,"BlockedSCVector::accumulate");
+    = require_dynamic_cast<const BlockedSCMatrix*>(a,"BlockedSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)
@@ -250,7 +243,7 @@ BlockedSCVector::scalar_product(SCVector*a)
 {
   // make sure that the argument is of the correct type
   BlockedSCVector* la
-    = BlockedSCVector::require_castdown(a,"BlockedSCVector::scalar_product");
+    = require_dynamic_cast<BlockedSCVector*>(a,"BlockedSCVector::scalar_product");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -269,9 +262,9 @@ BlockedSCVector::scalar_product(SCVector*a)
 }
 
 void
-BlockedSCVector::element_op(const RefSCElementOp& op)
+BlockedSCVector::element_op(const Ref<SCElementOp>& op)
 {
-  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
+  BlockedSCElementOp *bop = dynamic_cast<BlockedSCElementOp*>(op.pointer());
 
   int nb = d->blocks()->nblock();
   
@@ -287,18 +280,18 @@ BlockedSCVector::element_op(const RefSCElementOp& op)
 }
 
 void
-BlockedSCVector::element_op(const RefSCElementOp2& op,
+BlockedSCVector::element_op(const Ref<SCElementOp2>& op,
                           SCVector* m)
 {
   BlockedSCVector *lm
-      = BlockedSCVector::require_castdown(m, "BlockedSCVector::element_op");
+      = require_dynamic_cast<BlockedSCVector*>(m, "BlockedSCVector::element_op");
 
   if (!dim()->equiv(lm->dim())) {
     ExEnv::err() << indent << "BlockedSCVector: bad element_op\n";
     abort();
   }
 
-  BlockedSCElementOp2 *bop = BlockedSCElementOp2::castdown(op.pointer());
+  BlockedSCElementOp2 *bop = dynamic_cast<BlockedSCElementOp2*>(op.pointer());
 
   int nb = d->blocks()->nblock();
   
@@ -314,20 +307,20 @@ BlockedSCVector::element_op(const RefSCElementOp2& op,
 }
 
 void
-BlockedSCVector::element_op(const RefSCElementOp3& op,
+BlockedSCVector::element_op(const Ref<SCElementOp3>& op,
                           SCVector* m,SCVector* n)
 {
   BlockedSCVector *lm
-      = BlockedSCVector::require_castdown(m, "BlockedSCVector::element_op");
+      = require_dynamic_cast<BlockedSCVector*>(m, "BlockedSCVector::element_op");
   BlockedSCVector *ln
-      = BlockedSCVector::require_castdown(n, "BlockedSCVector::element_op");
+      = require_dynamic_cast<BlockedSCVector*>(n, "BlockedSCVector::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
     ExEnv::err() << indent << "BlockedSCVector: bad element_op\n";
     abort();
   }
 
-  BlockedSCElementOp3 *bop = BlockedSCElementOp3::castdown(op.pointer());
+  BlockedSCElementOp3 *bop = dynamic_cast<BlockedSCElementOp3*>(op.pointer());
 
   int nb = d->blocks()->nblock();
   
@@ -377,10 +370,10 @@ BlockedSCVector::block(int i)
   return vecs_[i];
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 BlockedSCVector::local_blocks(SCMatrixSubblockIter::Access access)
 {
-  RefSCMatrixCompositeSubblockIter iter
+  Ref<SCMatrixCompositeSubblockIter> iter
       = new SCMatrixCompositeSubblockIter(access,nblocks());
   for (int i=0; i<nblocks(); i++) {
       if (block(i).null())
@@ -388,14 +381,14 @@ BlockedSCVector::local_blocks(SCMatrixSubblockIter::Access access)
       else
           iter->set_iter(i, block(i)->local_blocks(access));
     }
-  RefSCMatrixSubblockIter ret = iter.pointer();
+  Ref<SCMatrixSubblockIter> ret = iter.pointer();
   return ret;
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 BlockedSCVector::all_blocks(SCMatrixSubblockIter::Access access)
 {
-  RefSCMatrixCompositeSubblockIter iter
+  Ref<SCMatrixCompositeSubblockIter> iter
       = new SCMatrixCompositeSubblockIter(access,nblocks());
   for (int i=0; i<nblocks(); i++) {
       if (block(i).null())
@@ -403,7 +396,7 @@ BlockedSCVector::all_blocks(SCMatrixSubblockIter::Access access)
       else
           iter->set_iter(i, block(i)->all_blocks(access));
     }
-  RefSCMatrixSubblockIter ret = iter.pointer();
+  Ref<SCMatrixSubblockIter> ret = iter.pointer();
   return ret;
 }
 

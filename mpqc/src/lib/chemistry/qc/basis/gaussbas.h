@@ -43,9 +43,7 @@
 
 class GaussianShell;
 class BasisFileSet;
-
-SavableState_REF_fwddec(GaussianBasisSet);
-SavableState_REF_fwddec(Integral)
+class Integral;
 
 class CartesianIter;
 class SphericalTransformIter;
@@ -113,21 +111,16 @@ non-alpha-numerical characters in their name must be given in quotes.
 */
 class GaussianBasisSet: public SavableState
 {
-#   define CLASSNAME GaussianBasisSet
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     char* name_;
     GaussianShell** shell_;
     Arrayint shell_to_function_;
     Arrayint function_to_shell_;
 
-    RefMolecule molecule_;
+    Ref<Molecule> molecule_;
 
-    RefSCMatrixKit matrixkit_;
-    RefSCMatrixKit so_matrixkit_;
+    Ref<SCMatrixKit> matrixkit_;
+    Ref<SCMatrixKit> so_matrixkit_;
     RefSCDimension basisdim_;
 
     int ncenter_;
@@ -140,11 +133,11 @@ class GaussianBasisSet: public SavableState
     int nbasis_;
     int nprim_;
 
-    void recursively_get_shell(int&,RefKeyVal&,
+    void recursively_get_shell(int&,Ref<KeyVal>&,
                                const char*,const char*,BasisFileSet&,
                                int,int,int);
 
-    void init(RefMolecule&,RefKeyVal&,
+    void init(Ref<Molecule>&,Ref<KeyVal>&,
               BasisFileSet&,
               int have_userkeyval,
               int pure);
@@ -152,7 +145,7 @@ class GaussianBasisSet: public SavableState
     
   protected:
     GaussianBasisSet(const GaussianBasisSet&);
-    virtual void set_matrixkit(const RefSCMatrixKit&);
+    virtual void set_matrixkit(const Ref<SCMatrixKit>&);
     
   public:
     /** This holds scratch data needed to compute basis function values. */
@@ -162,7 +155,7 @@ class GaussianBasisSet: public SavableState
         SphericalTransformIter **sivec_;
         int maxam_;
       public:
-        ValueData(const RefGaussianBasisSet &, const RefIntegral &);
+        ValueData(const Ref<GaussianBasisSet> &, const Ref<Integral> &);
         ~ValueData();
         CartesianIter **civec() { return civec_; }
         SphericalTransformIter **sivec() { return sivec_; }
@@ -278,7 +271,7 @@ class GaussianBasisSet: public SavableState
          ]
         )
         </pre> */
-    GaussianBasisSet(const RefKeyVal&);
+    GaussianBasisSet(const Ref<KeyVal>&);
     GaussianBasisSet(StateIn&);
     virtual ~GaussianBasisSet();
 
@@ -288,11 +281,11 @@ class GaussianBasisSet: public SavableState
     const char* name() const { return name_; }
 
     /// Return the Molecule object.
-    RefMolecule molecule() const { return molecule_; }
+    Ref<Molecule> molecule() const { return molecule_; }
     /// Returns the SCMatrixKit that is to be used for AO bases.
-    RefSCMatrixKit matrixkit() { return matrixkit_; }
+    Ref<SCMatrixKit> matrixkit() { return matrixkit_; }
     /// Returns the SCMatrixKit that is to be used for SO bases.
-    RefSCMatrixKit so_matrixkit() { return so_matrixkit_; }
+    Ref<SCMatrixKit> so_matrixkit() { return so_matrixkit_; }
     /// Returns the SCDimension object for the dimension.
     RefSCDimension basisdim() { return basisdim_; }
 
@@ -393,7 +386,7 @@ class GaussianBasisSet: public SavableState
                        double*g_values=0,double* basis_values=0) const;
 
     /// Returns true if this and the argument are equivalent.
-    int equiv(const RefGaussianBasisSet &b);
+    int equiv(const Ref<GaussianBasisSet> &b);
 
     /// Print a brief description of the basis set.
     void print_brief(std::ostream& =ExEnv::out()) const;
@@ -401,7 +394,7 @@ class GaussianBasisSet: public SavableState
     void print(std::ostream& =ExEnv::out()) const;
 };
 
-SavableState_REF_dec(GaussianBasisSet);
+
 
 #endif
 

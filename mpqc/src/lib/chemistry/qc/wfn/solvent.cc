@@ -46,13 +46,11 @@ using namespace std;
 //. The \clsnm{NElFunctional} computes the number of electrons.
 //. It is primarily for testing the integrator.
 class NElInShapeFunctional: public DenFunctional {
-#   define CLASSNAME NElInShapeFunctional
-#   include <util/class/classd.h>
   private:
-    RefVolume vol_;
+    Ref<Volume> vol_;
     double isoval_;
   public:
-    NElInShapeFunctional(const RefVolume &, double);
+    NElInShapeFunctional(const Ref<Volume> &, double);
     ~NElInShapeFunctional();
 
     void point(const PointInputData&, PointOutputData&);
@@ -61,18 +59,11 @@ class NElInShapeFunctional: public DenFunctional {
 /////////////////////////////////////////////////////////////////////////////
 // NElFunctional
 
-#define CLASSNAME NElInShapeFunctional
-#define PARENTS public DenFunctional
-#include <util/class/classi.h>
-void *
-NElInShapeFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc NElInShapeFunctional_cd(
+  typeid(NElInShapeFunctional),"NElInShapeFunctional",1,"public DenFunctional",
+  0, 0, 0);
 
-NElInShapeFunctional::NElInShapeFunctional(const RefVolume& vol,
+NElInShapeFunctional::NElInShapeFunctional(const Ref<Volume>& vol,
                                            double isoval)
 {
   vol_ = vol;
@@ -98,22 +89,11 @@ NElInShapeFunctional::point(const PointInputData &id,
 
 /////////////////////////////////////////////////////////////////////////////
 
-#define CLASSNAME BEMSolventH
-#define VERSION 1
-#define PARENTS public AccumH
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-BEMSolventH::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = AccumH::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc BEMSolventH_cd(
+  typeid(BEMSolventH),"BEMSolventH",1,"public AccumH",
+  0, create<BEMSolventH>, create<BEMSolventH>);
 
-BEMSolventH::BEMSolventH(const RefKeyVal&keyval):
+BEMSolventH::BEMSolventH(const Ref<KeyVal>&keyval):
   AccumH(keyval)
 {
   charge_positions_ = 0;
@@ -121,10 +101,10 @@ BEMSolventH::BEMSolventH(const RefKeyVal&keyval):
   efield_dot_normals_ = 0;
   charges_ = 0;
   charges_n_ = 0;
-  solvent_ = keyval->describedclassvalue("solvent");
+  solvent_ << keyval->describedclassvalue("solvent");
   gamma_ = keyval->doublevalue("gamma");
   if (keyval->error() != KeyVal::OK) {
-      RefUnits npm = new Units("dyne/cm");
+      Ref<Units> npm = new Units("dyne/cm");
       gamma_ = 72.75 * npm->to_atomic_units();
     }
   // If onebody add a term to the one body hamiltonian, h.
@@ -157,7 +137,7 @@ BEMSolventH::BEMSolventH(StateIn&s):
   charges_n_ = 0;
   escalar_ = 0;
 
-  wfn_.restore_state(s);
+  wfn_ << SavableState::restore_state(s);
   //solvent_.restore_state(s);
   abort();
 }
@@ -173,13 +153,13 @@ BEMSolventH::save_data_state(StateOut&s)
 {
   AccumH::save_data_state(s);
 
-  wfn_.save_state(s);
+  SavableState::save_state(wfn_.pointer(),s);
   //solvent_.save_state(s);
   abort();
 }
 
 void
-BEMSolventH::init(const RefWavefunction& wfn)
+BEMSolventH::init(const Ref<Wavefunction>& wfn)
 {
   tim_enter("solvent");
   tim_enter("init");
@@ -200,8 +180,8 @@ BEMSolventH::init(const RefWavefunction& wfn)
   solvent_->normals(normals_);
 
   if (integrate_nelectron_) {
-      RefDenIntegrator integrator = new RadialAngularIntegrator();
-      RefDenFunctional functional
+      Ref<DenIntegrator> integrator = new RadialAngularIntegrator();
+      Ref<DenFunctional> functional
           = new NElInShapeFunctional(solvent_->surface()->volume_object(),
                                      solvent_->surface()->isovalue());
       integrator->init(wfn_);
@@ -248,16 +228,16 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   // compute the e-field at each point and dot with normals
   tim_enter("efield");
   int ncharge = solvent_->ncharge();
-  RefEfieldDotVectorData efdn_dat = new EfieldDotVectorData;
-  RefOneBodyInt efdn = wfn_->integral()->efield_dot_vector(efdn_dat);
-  RefSCElementOp efdn_op = new OneBodyIntOp(efdn);
+  Ref<EfieldDotVectorData> efdn_dat = new EfieldDotVectorData;
+  Ref<OneBodyInt> efdn = wfn_->integral()->efield_dot_vector(efdn_dat);
+  Ref<SCElementOp> efdn_op = new OneBodyIntOp(efdn);
   RefSymmSCMatrix ao_density = wfn_->ao_density()->copy();
   RefSymmSCMatrix efdn_mat(ao_density->dim(), ao_density->kit());
   // for the scalar products, scale the density's off-diagonals by two
   ao_density->scale(2.0);
   ao_density->scale_diagonal(0.5);
-  RefSCElementScalarProduct sp = new SCElementScalarProduct;
-  RefSCElementOp2 generic_sp(sp.pointer());
+  Ref<SCElementScalarProduct> sp = new SCElementScalarProduct;
+  Ref<SCElementOp2> generic_sp(sp.pointer());
   for (i=0; i<ncharge; i++) {
       efdn_dat->set_position(charge_positions_[i]);
       efdn_dat->set_vector(normals_[i]);
@@ -269,7 +249,7 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
       efield_dot_normals_[i] = sp->result();
     }
   RefSCDimension aodim = ao_density.dim();
-  RefSCMatrixKit aokit = ao_density.kit();
+  Ref<SCMatrixKit> aokit = ao_density.kit();
   ao_density = 0;
   efdn_mat = 0;
   tim_exit("efield");
@@ -334,10 +314,10 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
 
   // compute the electron-surface interaction matrix elements
   tim_enter("e-s");
-  RefPointChargeData pc_dat = new PointChargeData(ncharge,
+  Ref<PointChargeData> pc_dat = new PointChargeData(ncharge,
                                                   charge_positions_, charges_);
-  RefOneBodyInt pc = wfn_->integral()->point_charge(pc_dat);
-  RefSCElementOp pc_op = new OneBodyIntOp(pc);
+  Ref<OneBodyInt> pc = wfn_->integral()->point_charge(pc_dat);
+  Ref<SCElementOp> pc_op = new OneBodyIntOp(pc);
 
   // compute matrix elements in the ao basis
   RefSymmSCMatrix h_ao(aodim, aokit);
@@ -454,7 +434,7 @@ BEMSolventH::done()
 void
 BEMSolventH::print_summary()
 {
-  RefUnits unit = new Units("kcal/mol");
+  Ref<Units> unit = new Units("kcal/mol");
   ExEnv::out() << endl;
   ExEnv::out() << "Summary of solvation calculation:" << endl;
   ExEnv::out() << "_______________________________________________" << endl;

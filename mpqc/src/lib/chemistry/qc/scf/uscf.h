@@ -38,9 +38,6 @@
 
 /// A base class for unrestricted self-consistent-field methods.
 class UnrestrictedSCF: public SCF {
-#   define CLASSNAME UnrestrictedSCF
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
     int user_occupations_;
     int tnalpha_;
@@ -55,14 +52,14 @@ class UnrestrictedSCF: public SCF {
     ResultRefSymmSCMatrix fockb_;
 
   protected:
-    RefSCExtrapError extrap_error();
+    Ref<SCExtrapError> extrap_error();
     // calculate the scf vector, returning the accuracy
     double compute_vector(double&);
     void initial_vector(int needv=1);
     
   public:
     UnrestrictedSCF(StateIn&);
-    UnrestrictedSCF(const RefKeyVal&);
+    UnrestrictedSCF(const Ref<KeyVal>&);
     ~UnrestrictedSCF();
 
     void save_data_state(StateOut&);
@@ -97,7 +94,7 @@ class UnrestrictedSCF: public SCF {
     
   protected:
     // these are temporary data, so they should not be checkpointed
-    RefTwoBodyInt tbi_;
+    Ref<TwoBodyInt> tbi_;
     
     RefSymmSCMatrix densa_;
     RefSymmSCMatrix densb_;
@@ -114,7 +111,7 @@ class UnrestrictedSCF: public SCF {
     double new_density();
     void reset_density();
     double scf_energy();
-    RefSCExtrapData extrap_data();
+    Ref<SCExtrapData> extrap_data();
 
     void init_gradient();
     void done_gradient();
@@ -127,7 +124,7 @@ class UnrestrictedSCF: public SCF {
     // The Hartree-Fock derivatives
     void two_body_deriv_hf(double*grad,double exchange_fraction);
 };
-SavableState_REF_dec(UnrestrictedSCF);
+
 
 #endif
 

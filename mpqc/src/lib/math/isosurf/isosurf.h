@@ -53,17 +53,17 @@ class ImplicitSurfacePolygonizer: public IsosurfaceGen {
     static int add_triangle_to_current(int,int,int,VERTICES);
     static double value_of_current(double x, double y, double z);
   protected:
-    RefVolume _volume;
+    Ref<Volume> _volume;
 
 #ifdef HAVE_STL
-    std::vector<RefVertex>  _tmp_vertices;
+    std::vector<Ref<Vertex> >  _tmp_vertices;
 #else
-    Array<RefVertex>  _tmp_vertices;
+    Array<Ref<Vertex> >  _tmp_vertices;
 #endif
     TriangulatedSurface* _surf;
     double _value;
   public:
-    ImplicitSurfacePolygonizer(const RefVolume&);
+    ImplicitSurfacePolygonizer(const Ref<Volume>&);
     virtual ~ImplicitSurfacePolygonizer();
     virtual void isosurface(double value,
                             TriangulatedSurface& surf);

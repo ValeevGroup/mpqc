@@ -51,7 +51,7 @@ BiggestContribs biggest_ints_1(4,40);
 
 #define WRITE_DOUBLES 0
 
-static void sum_gradients(const RefMessageGrp& msg, double **f, int n1, int n2);
+static void sum_gradients(const Ref<MessageGrp>& msg, double **f, int n1, int n2);
 static void zero_gradients(double **f, int n1, int n2);
 static void accum_gradients(double **g, double **f, int n1, int n2);
 
@@ -101,7 +101,7 @@ MBPT2::compute_cs_grad()
   // New version of MP2 gradient program which uses the full
   // permutational symmetry of the two-electron integral derivatives
 
-  RefSCMatrixKit kit = SCMatrixKit::default_matrixkit();
+  Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
 
   int do_d2_ = 1;  // if true, compute d2 diagnostic
 
@@ -546,7 +546,7 @@ MBPT2::compute_cs_grad()
 
   // Initialize the integrals
   integral()->set_storage(mem_remaining);
-  RefTwoBodyInt *tbint = new RefTwoBodyInt[thr_->nthread()];
+  Ref<TwoBodyInt> *tbint = new Ref<TwoBodyInt>[thr_->nthread()];
   for (i=0; i<thr_->nthread(); i++) {
       tbint[i] = integral()->electron_repulsion();
     }
@@ -589,7 +589,7 @@ MBPT2::compute_cs_grad()
 
   MemoryGrpBuf<double> membuf_remote(mem);
 
-  RefThreadLock lock = thr_->new_lock();
+  Ref<ThreadLock> lock = thr_->new_lock();
   CSGradErep12Qtr** e12thread = new CSGradErep12Qtr*[thr_->nthread()];
   for (i=0; i<thr_->nthread(); i++) {
       e12thread[i] = new CSGradErep12Qtr(i, thr_->nthread(), me, nproc,
@@ -1878,8 +1878,8 @@ MBPT2::compute_cs_grad()
     s2_diag = sqrt(s2_diag/(2*nocc_act));
     // compute the T1 matrix 1-norm
     double t1onenorm = 0.0;
-    RefSCElementSumAbs sumabs = new SCElementSumAbs;
-    RefSCElementOp genop = sumabs.pointer();
+    Ref<SCElementSumAbs> sumabs = new SCElementSumAbs;
+    Ref<SCElementOp> genop = sumabs.pointer();
     for (a=0; a < nvir_act; a++) {
       sumabs->init();
       T1_mat.get_column(a).element_op(genop);
@@ -2287,7 +2287,7 @@ MBPT2::compute_cs_grad()
   zero_gradients(hf_ginter, natom, 3);
   tim_enter("sep 2PDM contrib.");
 
-  RefTwoBodyDerivInt *tbintder = new RefTwoBodyDerivInt[thr_->nthread()];
+  Ref<TwoBodyDerivInt> *tbintder = new Ref<TwoBodyDerivInt>[thr_->nthread()];
   CSGradS2PDM** s2pdmthread = new CSGradS2PDM*[thr_->nthread()];
   for (i=0; i<thr_->nthread(); i++) {
       tbintder[i] = integral()->electron_repulsion_deriv();
@@ -2458,7 +2458,7 @@ MBPT2::hcore_cs_grad(double *PHF, double *PMP2,
   double hf_gxyz[3];
 
   // Initialize 1e object
-  RefOneBodyDerivInt obintder_ = integral()->hcore_deriv();
+  Ref<OneBodyDerivInt> obintder_ = integral()->hcore_deriv();
   oneebuf = obintder_->buffer();
 
   nshell = basis()->nshell();
@@ -2546,7 +2546,7 @@ MBPT2::overlap_cs_grad(double *WHF, double *WMP2,
   double hf_gxyz[3];
 
   // Initialize 1e object
-  RefOneBodyDerivInt obintder_ = integral()->overlap_deriv();
+  Ref<OneBodyDerivInt> obintder_ = integral()->overlap_deriv();
   oneebuf = obintder_->buffer();
 
   nshell = basis()->nshell();
@@ -2617,7 +2617,7 @@ MBPT2::overlap_cs_grad(double *WHF, double *WMP2,
 }
 
 static void
-sum_gradients(const RefMessageGrp& msg, double **f, int n1, int n2)
+sum_gradients(const Ref<MessageGrp>& msg, double **f, int n1, int n2)
 {
   int i;
 

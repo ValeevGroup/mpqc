@@ -46,6 +46,7 @@
 using namespace std;
 
 AVLMap<ClassKey,ClassDescP>* ClassDesc::all_ = 0;
+AVLMap<type_info_key,ClassDescP>* ClassDesc::type_info_all_ = 0;
 char * ClassDesc::classlib_search_path_ = 0;
 AVLSet<ClassKey>* ClassDesc::unresolved_parents_ = 0;
 
@@ -205,7 +206,7 @@ ParentClasses::init(const char* parents)
           ClassKey parentkey(token);
           // if the parents class desc does not exist create a temporary
           // the temporary will be incorrect,because it does not have the
-          // parent's parents   ' for braindead compiler
+          // parent's parents
           if (ClassDesc::all().find(parentkey) == ClassDesc::all().end()) {
               ClassDesc *tmp_classdesc = new ClassDesc(token);
               ClassDesc::all()[parentkey] = tmp_classdesc;
@@ -256,19 +257,92 @@ ParentClasses::change_parent(ClassDesc*oldcd,ClassDesc*newcd)
 
 ////////////////////////////////////////////////////////////////////////
 
-ClassDesc::ClassDesc(const char* name, int version,
+type_info_key&
+type_info_key::operator=(const type_info_key&t)
+{
+  ti_ = t.ti_;
+  return *this;
+}
+
+int
+type_info_key::operator==(const type_info_key&t) const
+{
+  if (!ti_ && !t.ti_) return 1;
+  if (!ti_ || !t.ti_) return 0;
+
+  return *ti_ == *t.ti_;
+}
+
+int
+type_info_key::operator<(const type_info_key&t) const
+{
+  if (!ti_ && !t.ti_) return 0;
+  if (!ti_) return 0;
+  if (!t.ti_) return 1;
+
+  return ti_->before(*t.ti_);
+}
+
+int
+type_info_key::cmp(const type_info_key&t) const
+{
+  if (*this == t) return 0;
+  if (*this < t) return -1;
+  return 1;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+ClassDesc::ClassDesc(const type_info &ti,
+                     const char* name, int version,
                      const char* parents,
                      DescribedClass* (*ctor)(),
-                     DescribedClass* (*keyvalctor)(const RefKeyVal&),
+                     DescribedClass* (*keyvalctor)(const Ref<KeyVal>&),
                      DescribedClass* (*stateinctor)(StateIn&)
-                     ):
-  classname_(0),
-  version_(version),
-  children_(0),
-  ctor_(ctor),
-  keyvalctor_(keyvalctor),
-  stateinctor_(stateinctor)
+                     )
 {
+  if (!type_info_all_) {
+      type_info_all_ = new AVLMap<type_info_key,ClassDescP>;
+    }
+  type_info_key key(&ti);
+  if (type_info_all_->find(key) != type_info_all_->end()) {
+      ExEnv::err() << node0 << indent
+                   << "ERROR: duplicate ClassDesc detected for class "
+                   << name << " type_info name = " << ti.name() << endl;
+      abort();
+    }
+  else {
+      (*type_info_all_)[key] = this;
+    }
+
+  // test the version number to see if it is valid
+  if (version <= 0) {
+      ExEnv::err() << "ERROR: ClassDesc ctor: version <= 0" << endl;
+      exit(1);
+    }
+
+  init(name,version,parents,ctor,keyvalctor,stateinctor);
+}
+
+ClassDesc::ClassDesc(const char* name)
+{
+  init(name, 0);
+}
+
+void
+ClassDesc::init(const char* name, int version,
+                const char* parents,
+                DescribedClass* (*ctor)(),
+                DescribedClass* (*keyvalctor)(const Ref<KeyVal>&),
+                DescribedClass* (*stateinctor)(StateIn&))
+{
+  classname_ = 0;
+  version_ = version;
+  children_ = 0;
+  ctor_ = ctor;
+  keyvalctor_ = keyvalctor;
+  stateinctor_ = stateinctor;
+
   // make sure that the static members have been initialized
   if (!all_) {
       all_ = new AVLMap<ClassKey,ClassDescP>;
@@ -284,15 +358,32 @@ ClassDesc::ClassDesc(const char* name, int version,
       classlib_search_path_ = ::strcpy(new char[strlen(tmp)+1],tmp);
     }
   
+  // see if I'm already in the list
+  ClassDesc *me = name_to_class_desc(name);
+  int temp_copy_present = 0;
+  if (me && me->version() != 0) {
+      ExEnv::err()
+          << node0 << indent
+          << "ERROR: ClassDesc ctor: ClassDesc already initialized for "
+          << name << endl;
+      abort();
+    }
+  else if (me) {
+      temp_copy_present = 1;
+    }
+
   parents_.init(parents);
 
-  classname_ = ::strcpy(new char[strlen(name)+1],name);
-
-  // test the version number to see if it is valid
-  if (version <= 0) {
-      ExEnv::err() << "error in ClassDesc ctor: version <= 0" << endl;
-      exit(1);
+  if (!temp_copy_present && name_to_class_desc(name)) {
+      // I wasn't in the list before, but am in it now
+      ExEnv::err()
+          << node0 << indent
+          << "ERROR: ClassDesc ctor: inheritance loop detected for "
+          << name << endl;
+      abort();
     }
+
+  classname_ = ::strcpy(new char[strlen(name)+1],name);
 
   ClassKey key(name);
 
@@ -312,9 +403,11 @@ ClassDesc::ClassDesc(const char* name, int version,
       (*all_)[key]->children_ = 0;
 
       if (!children_) {
-          ExEnv::out() << "ClassDesc: inconsistency in initialization for "
-               << key.name()
-               << "--perhaps a duplicated CTOR call" << endl;
+          ExEnv::err()
+              << node0 << indent
+              << "ERROR: ClassDesc: inconsistency in initialization for "
+              << key.name()
+              << "--perhaps a duplicated CTOR call" << endl;
           abort();
         }
 
@@ -362,6 +455,14 @@ ClassDesc::~ClassDesc()
   if (children_) delete children_;
 }
 
+ClassDesc*
+ClassDesc::class_desc(const type_info &ti)
+{
+  if (type_info_all_->find(type_info_key(&ti))
+      == type_info_all_->end()) return 0;
+  return (*type_info_all_)[type_info_key(&ti)];
+}
+
 AVLMap<ClassKey,ClassDescP>&
 ClassDesc::all()
 {
@@ -388,7 +489,7 @@ ClassDesc::create() const
 }
 
 DescribedClass*
-ClassDesc::create(const RefKeyVal&keyval) const
+ClassDesc::create(const Ref<KeyVal>&keyval) const
 {
   DescribedClass* result;
   if (keyvalctor_) {
@@ -432,6 +533,14 @@ ClassDesc::list_all_classes()
               else if (parents[i].access() == ParentClass::Protected) {
                   ExEnv::out() << " protected";
                 }
+              if (parents[i].classdesc() == 0) {
+                  ExEnv::err() << endl
+                               << "ERROR: parent " << i
+                               << " for " << classdesc->name()
+                               << " is missing" << endl;
+                  abort();
+                }
+              const char *n = parents[i].classdesc()->name();
               ExEnv::out() << " " << parents[i].classdesc()->name();
             }
           ExEnv::out() << endl;
@@ -556,7 +665,8 @@ ClassDesc::load_class(const char* classname)
 
 ////////////////////////////////////////////////////
 
-ClassDesc DescribedClass::class_desc_("DescribedClass");
+static ClassDesc DescribedClass_cd(
+    typeid(DescribedClass),"DescribedClass");
 
 DescribedClass::DescribedClass()
 {
@@ -572,29 +682,10 @@ DescribedClass::~DescribedClass()
 {
 }
 
-const ClassDesc*
+ClassDesc*
 DescribedClass::class_desc() const
 {
-  return &class_desc_;
-}
-
-void*
-DescribedClass::_castdown(const ClassDesc*cd)
-{
-  if (cd == &class_desc_) return this;
-  return 0;
-}
-
-DescribedClass*
-DescribedClass::castdown(DescribedClass*p)
-{
-  return (DescribedClass*) p->_castdown(DescribedClass::static_class_desc());
-}
-
-const ClassDesc*
-DescribedClass::static_class_desc()
-{
-  return &class_desc_;
+  return ClassDesc::class_desc(typeid(*this));
 }
 
 const char* DescribedClass::class_name() const
@@ -613,143 +704,10 @@ DescribedClass::print(ostream &o) const
   o << indent << "Object of type " << class_name() << endl;
 }
 
-///////////////////////////////////////////////////////////////////////
-// DCRefBase members
-
-void
-DCRefBase::require_nonnull() const
-{
-  if (parentpointer() == 0) {
-      ExEnv::err() << "RefDescribedClass: needed a nonnull pointer but got null"
-           << endl;
-      abort();
-    }
-}
-
-DCRefBase::~DCRefBase()
-{
-}
-
-void
-DCRefBase::warn(const char * msg) const
-{
-  RefBase::warn(msg);
-}
-
-void
-DCRefBase::warn_ref_to_stack() const
-{
-  RefBase::warn_ref_to_stack();
-}
-
-void
-DCRefBase::warn_skip_stack_delete() const
-{
-  RefBase::warn_skip_stack_delete();
-}
-
-void
-DCRefBase::warn_bad_ref_count() const
-{
-  RefBase::warn_bad_ref_count();
-}
-
-void
-DCRefBase::ref_info(VRefCount*p, ostream& os) const
-{
-  RefBase::ref_info(p,os);
-}
-
-int
-DCRefBase::operator==(const DescribedClass*a) const
-{
-  return eq(parentpointer(),a);
-}
-
-int
-DCRefBase::operator!=(const DescribedClass*a) const
-{
-  return ne(parentpointer(),a);
-}
-
-int
-DCRefBase::operator>=(const DescribedClass*a) const
-{
-  return ge(parentpointer(),a);
-}
-
-int
-DCRefBase::operator<=(const DescribedClass*a) const
-{
-  return le(parentpointer(),a);
-}
-
-int
-DCRefBase::operator> (const DescribedClass*a) const
-{
-  return gt(parentpointer(),a);
-}
-
-int
-DCRefBase::operator< (const DescribedClass*a) const
-{
-  return lt(parentpointer(),a);
-}
-
-int
-DCRefBase::operator==(const DCRefBase &a) const
-{
-  return eq(parentpointer(),a.parentpointer());
-}
-
-int
-DCRefBase::operator!=(const DCRefBase &a) const
-{
-  return ne(parentpointer(),a.parentpointer());
-}
-
-int
-DCRefBase::operator>=(const DCRefBase &a) const
-{
-  return ge(parentpointer(),a.parentpointer());
-}
-
-int
-DCRefBase::operator<=(const DCRefBase &a) const
-{
-  return le(parentpointer(),a.parentpointer());
-}
-
-int
-DCRefBase::operator> (const DCRefBase &a) const
-{
-  return gt(parentpointer(),a.parentpointer());
-}
-
-int
-DCRefBase::operator< (const DCRefBase &a) const
-{
-  return lt(parentpointer(),a.parentpointer());
-}
-
-void
-DCRefBase::check_pointer() const
-{
-  if (parentpointer() && parentpointer()->nreference() <= 0) {
-      warn_bad_ref_count();
-    }
-}
-
-void
-DCRefBase::ref_info( ostream& os) const
-{
-  DCRefBase::ref_info(parentpointer(),os);
-}
-
 ostream &
-operator <<(ostream&o, const DCRefBase &ref)
+operator <<(ostream&o, const RefBase &ref)
 {
-  DescribedClass *dc = ref.parentpointer();
+  DescribedClass *dc = dynamic_cast<DescribedClass*>(ref.parentpointer());
   if (dc) {
       dc->print(o);
     }
@@ -759,8 +717,6 @@ operator <<(ostream&o, const DCRefBase &ref)
 
   return o;
 }
-
-DescribedClass_REF_def(DescribedClass);
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 

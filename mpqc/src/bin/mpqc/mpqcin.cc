@@ -210,7 +210,7 @@ MPQCIn::set_symmetry(char *s)
 {
   symmetry_ = s;
   if (strcmp(s,"auto")) {
-      RefPointGroup p = new PointGroup(s);
+      Ref<PointGroup> p = new PointGroup(s);
       nirrep_ = p->char_table().nirrep();
     }
 }

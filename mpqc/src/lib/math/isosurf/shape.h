@@ -44,12 +44,9 @@ negative if the point is inside the solid.  For Shape specializations that
 cannot compute the distance to the surface, the value will be 1.0 outside
 and -1.0 inside the solid. */
 class Shape: public Volume {
-#   define CLASSNAME Shape
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   public:
     Shape();
-    Shape(const RefKeyVal&keyval);
+    Shape(const Ref<KeyVal>&keyval);
     virtual double distance_to_surface(const SCVector3&r,
                                        SCVector3*grad=0) const = 0;
     virtual int is_outside(const SCVector3&r) const;
@@ -63,19 +60,15 @@ class Shape: public Volume {
     int value_implemented() const;
 };
 
-SavableState_REF_dec(Shape);
+
 
 class SphereShape: public Shape {
-#   define CLASSNAME SphereShape
-#   define HAVE_KEYVAL_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     SCVector3 _origin;
     double _radius;
   public:
     SphereShape(const SCVector3&,double);
-    SphereShape(const RefKeyVal&);
+    SphereShape(const Ref<KeyVal>&);
     SphereShape(const SphereShape&);
     ~SphereShape();
     void boundingbox(double minvalue, double maxvalue,
@@ -107,14 +100,8 @@ SphereShape::origin(const SCVector3& o)
   return _origin;
 }
 
-REF_dec(SphereShape);
-ARRAY_dec(RefSphereShape);
-
 class UncappedTorusHoleShape: public Shape
 {
-#   define CLASSNAME UncappedTorusHoleShape
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   private:
     SphereShape _s1;
     SphereShape _s2;
@@ -142,9 +129,6 @@ class UncappedTorusHoleShape: public Shape
 
 class NonreentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
 {
-#   define CLASSNAME NonreentrantUncappedTorusHoleShape
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   private:
     double rAP;
     double rBP;
@@ -161,9 +145,6 @@ class NonreentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
 
 class ReentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
 {
-#   define CLASSNAME ReentrantUncappedTorusHoleShape
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   private:
     double rAP;
     double rBP;
@@ -182,9 +163,6 @@ class ReentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
 
 class Uncapped5SphereExclusionShape: public Shape
 {
-#   define CLASSNAME Uncapped5SphereExclusionShape
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   private:
     int _solution_exists;
     int _reentrant;
@@ -248,13 +226,10 @@ class Uncapped5SphereExclusionShape: public Shape
 
 /** A UnionShape is volume enclosed by a set of Shape's. */
 class UnionShape: public Shape {
-#   define CLASSNAME UnionShape
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
-    AVLSet<RefShape> _shapes;
+    AVLSet<Ref<Shape> > _shapes;
   public:
-    void add_shape(RefShape);
+    void add_shape(Ref<Shape>);
     UnionShape();
     ~UnionShape();
     double distance_to_surface(const SCVector3&r,SCVector3*grad=0) const;
@@ -264,7 +239,7 @@ class UnionShape: public Shape {
 
     int gradient_implemented() const;
 };
-SavableState_REF_dec(UnionShape);
+
 
 #endif
 

@@ -103,7 +103,7 @@ int
 main(int,char**)
 {
   int maxj = 18;
-  RefFJT fjt = new FJT(maxj+1);
+  Ref<FJT> fjt = new FJT(maxj+1);
 
   double tinc = 0.1;
   for (double T=0.0; T<1000.0; T+=tinc) {

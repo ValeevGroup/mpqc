@@ -53,8 +53,8 @@ class LocalGBuild : public GBuild<T> {
     double accuracy_;
     
   public:
-    LocalGBuild(T& t, const RefTwoBodyInt& tbi, const RefPetiteList& rpl,
-                const RefGaussianBasisSet& bs, const RefMessageGrp& g,
+    LocalGBuild(T& t, const Ref<TwoBodyInt>& tbi, const Ref<PetiteList>& rpl,
+                const Ref<GaussianBasisSet>& bs, const Ref<MessageGrp>& g,
                 signed char *pm, double acc, int nt=1, int tn=0) :
       GBuild<T>(t),
       pmax(pm), nthread_(nt), threadno_(tn), accuracy_(acc)

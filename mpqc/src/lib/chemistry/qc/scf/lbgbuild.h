@@ -37,15 +37,15 @@
 template<class T>
 class LocalLBGBuild : public GBuild<T> {
   protected:
-    RefMessageGrp grp_;
-    RefTwoBodyInt tbi_;
-    RefIntegral integral_;
-    RefGaussianBasisSet gbs_;
+    Ref<MessageGrp> grp_;
+    Ref<TwoBodyInt> tbi_;
+    Ref<Integral> integral_;
+    Ref<GaussianBasisSet> gbs_;
     signed char *pmax;
     
   public:
-    LocalLBGBuild(T& t, const RefTwoBodyInt& tbi, const RefIntegral& ints,
-                const RefGaussianBasisSet& bs, const RefMessageGrp& g,
+    LocalLBGBuild(T& t, const Ref<TwoBodyInt>& tbi, const Ref<Integral>& ints,
+                const Ref<GaussianBasisSet>& bs, const Ref<MessageGrp>& g,
                 signed char *pm) :
       GBuild<T>(t), grp_(g), tbi_(tbi), integral_(ints), gbs_(bs), pmax(pm) {}
     ~LocalLBGBuild() {}
@@ -59,7 +59,7 @@ class LocalLBGBuild : public GBuild<T> {
       int me=grp_->me();
       int nproc = grp_->n();
   
-      RefPetiteList rpl = integral_->petite_list();
+      Ref<PetiteList> rpl = integral_->petite_list();
   
       // grab references for speed
       GaussianBasisSet& gbs = *gbs_.pointer();

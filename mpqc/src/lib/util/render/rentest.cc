@@ -37,11 +37,11 @@ using namespace std;
 int
 main()
 {
-  RefKeyVal keyval = new ParsedKeyVal(SRCDIR "/rentest.in");
+  Ref<KeyVal> keyval = new ParsedKeyVal(SRCDIR "/rentest.in");
   cout << "getting render" << endl << flush;
-  RefRender render = keyval->describedclassvalue("render");
+  Ref<Render> render; render << keyval->describedclassvalue("render");
   cout << "getting object" << endl << flush;
-  RefRenderedObject object = keyval->describedclassvalue("object");
+  Ref<RenderedObject> object; object << keyval->describedclassvalue("object");
 
   cout << "rendering object" << endl << flush;
   render->render(object);

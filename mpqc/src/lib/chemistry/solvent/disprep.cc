@@ -60,7 +60,7 @@ get_d6ii(int z, double r_vdw)
   double d6ii;
   double ki;
 
-  RefUnits unit = new Units("kcal/mol");
+  Ref<Units> unit = new Units("kcal/mol");
   
   ki = get_ki(z);
   d6ii = ki*ki*a6*pow(4*r_vdw*r_vdw,3.0);  // units of (kcal mol^-1)*bohr^6
@@ -183,11 +183,11 @@ BEMSolvent::disprep()
   int natomtypes;
   int z_solvent_atom;
 
-  RefUnits unit = new Units("kcal/mol");
+  Ref<Units> unit = new Units("kcal/mol");
   double kcalpermol_to_hartree = unit->to_atomic_units();
 
-  RefAtomInfo atominfo = solute_->atominfo();
-  RefAtomInfo solventatominfo = solvent_->atominfo();
+  Ref<AtomInfo> atominfo = solute_->atominfo();
+  Ref<AtomInfo> solventatominfo = solvent_->atominfo();
   MolecularFormula formula(solvent_);
 
   // Compute number of different atom types in solvent molecule
@@ -211,7 +211,7 @@ BEMSolvent::disprep()
   for (iloop=0; iloop<natomtypes; iloop++) {
 
       // define the shape of the surface for current atom type
-      RefUnionShape us = new UnionShape;
+      Ref<UnionShape> us = new UnionShape;
       z_solvent_atom = formula.Z(iloop);
       proberadius = solventatominfo->vdw_radius(z_solvent_atom);
       for (i=0; i<solute_->natom(); i++) {
@@ -220,7 +220,7 @@ BEMSolvent::disprep()
         }
       
       // triangulate the surface
-      RefAssignedKeyVal keyval = new AssignedKeyVal;
+      Ref<AssignedKeyVal> keyval = new AssignedKeyVal;
       keyval->assign("volume", us.pointer());
       keyval->assign("order", 2);
       keyval->assign("remove_short_edges", 1);
@@ -229,7 +229,7 @@ BEMSolvent::disprep()
       keyval->assign("short_edge_factor", 0.8);
       keyval->assign("small_triangle_factor", 0.8);
       keyval->assign("slender_triangle_factor", 0.8);
-      RefTriangulatedImplicitSurface ts = new TriangulatedImplicitSurface(keyval.pointer());
+      Ref<TriangulatedImplicitSurface> ts = new TriangulatedImplicitSurface(keyval.pointer());
       ts->init();
 
       // Debug print: check the triangulated surface

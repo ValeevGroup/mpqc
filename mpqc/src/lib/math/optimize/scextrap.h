@@ -36,13 +36,9 @@
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
 
-SavableState_REF_fwddec(SCExtrapData);
 /** SCExtrapData hold the data to be extrapolated needed by
     SelfConsistentExtrapolation.  */
 class SCExtrapData: public SavableState {
-#   define CLASSNAME SCExtrapData
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   public:
     /// Construct a new SCExtrapData.
     SCExtrapData();
@@ -58,17 +54,13 @@ class SCExtrapData: public SavableState {
     virtual void zero() = 0;
     /** The passed SCExtrapData is accumulated into this after applying the
         scaling factor. */
-    virtual void accumulate_scaled(double scale, const RefSCExtrapData&) = 0;
+    virtual void accumulate_scaled(double scale, const Ref<SCExtrapData>&) = 0;
 };
-SavableState_REF_dec(SCExtrapData);
 
-SavableState_REF_fwddec(SCExtrapError);
+
 /** SCExtrapError holds the error data needed by SelfConsistentExtrapolation.
  */
 class SCExtrapError: public SavableState {
-#   define CLASSNAME SCExtrapError
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   public:
     /// Construct a new SCExtrapError.
     SCExtrapError();
@@ -81,9 +73,9 @@ class SCExtrapError: public SavableState {
     /// Returns some measure of the total error.
     virtual double error() = 0;
     /// Performs a scalar product between this and the given SCExtrapError.
-    virtual double scalar_product(const RefSCExtrapError&) = 0;
+    virtual double scalar_product(const Ref<SCExtrapError>&) = 0;
 };
-SavableState_REF_dec(SCExtrapError);
+
 
 /** The SelfConsistentExtrapolation abstract class is used to iteratively
 solve equations requiring a self consistent solution, such as,
@@ -91,9 +83,6 @@ solve equations requiring a self consistent solution, such as,
 \f[ \bar{x}' = f(\bar{x}) \f]
 */
 class SelfConsistentExtrapolation: public SavableState {
-#   define CLASSNAME SelfConsistentExtrapolation
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   private:
     double error_;
     int errorset_;
@@ -106,7 +95,7 @@ class SelfConsistentExtrapolation: public SavableState {
     /** The only keyword read is #tolerance#, which is usually not needed
         since the objects using SelfConsistentExtrapolation should set the
         tolerances as needed.  */
-    SelfConsistentExtrapolation(const RefKeyVal&);
+    SelfConsistentExtrapolation(const Ref<KeyVal>&);
     ~SelfConsistentExtrapolation();
 
     void save_data_state(StateOut&);
@@ -120,8 +109,8 @@ class SelfConsistentExtrapolation: public SavableState {
     // Makes a copy of data and returns the extrapolation in
     // data.  A reference to error is saved so a copy must
     // be given to extrapolate if error could be changed.
-    virtual int extrapolate(const RefSCExtrapData& data,
-                            const RefSCExtrapError& error) = 0;
+    virtual int extrapolate(const Ref<SCExtrapData>& data,
+                            const Ref<SCExtrapError>& error) = 0;
 
     // Extrapolation should be started when this is called,
     // if it hasn't already started.  The default starting
@@ -131,7 +120,7 @@ class SelfConsistentExtrapolation: public SavableState {
 
     virtual void reinitialize() =0;
 };
-SavableState_REF_dec(SelfConsistentExtrapolation);
+
 
 #endif
 

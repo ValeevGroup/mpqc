@@ -39,88 +39,72 @@
 #include <math/isosurf/surf.h>
 
 class RenderedMolecule: public RenderedObject {
-#   define CLASSNAME RenderedMolecule
-#   include <util/class/classda.h>
   protected:
-    RefRenderedObject object_;
-    RefMolecule mol_;
-    RefAtomInfo atominfo_;
+    Ref<RenderedObject> object_;
+    Ref<Molecule> mol_;
+    Ref<AtomInfo> atominfo_;
 
   public:
-    RenderedMolecule(const RefKeyVal& keyval);
+    RenderedMolecule(const Ref<KeyVal>& keyval);
     ~RenderedMolecule();
 
-    RefMolecule molecule() { return mol_; }
+    Ref<Molecule> molecule() { return mol_; }
 
     // init must be called if the molecule changes
     virtual void init() = 0;
 
-    void render(const RefRender&);
+    void render(const Ref<Render>&);
 };
-DescribedClass_REF_dec(RenderedMolecule);
+
 
 class RenderedStickMolecule: public RenderedMolecule {
-#   define CLASSNAME RenderedStickMolecule
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   protected:
     int use_color_;
   public:
-    RenderedStickMolecule(const RefKeyVal& keyval);
+    RenderedStickMolecule(const Ref<KeyVal>& keyval);
     ~RenderedStickMolecule();
 
     void init();
 };
 
 class RenderedBallMolecule: public RenderedMolecule {
-#   define CLASSNAME RenderedBallMolecule
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   protected:
   public:
-    RenderedBallMolecule(const RefKeyVal& keyval);
+    RenderedBallMolecule(const Ref<KeyVal>& keyval);
     ~RenderedBallMolecule();
 
     void init();
 };
 
 class MoleculeColorizer: public DescribedClass {
-#   define CLASSNAME MoleculeColorizer
-#   include <util/class/classda.h>
   protected:
-    RefMolecule mol_;
+    Ref<Molecule> mol_;
   public:
-    MoleculeColorizer(const RefMolecule &);
-    MoleculeColorizer(const RefKeyVal&);
+    MoleculeColorizer(const Ref<Molecule> &);
+    MoleculeColorizer(const Ref<KeyVal>&);
     ~MoleculeColorizer();
 
-    virtual void colorize(const RefRenderedPolygons &) = 0;
+    virtual void colorize(const Ref<RenderedPolygons> &) = 0;
 };
-DescribedClass_REF_dec(MoleculeColorizer);
+
 
 class AtomProximityColorizer: public MoleculeColorizer {
-#   define CLASSNAME AtomProximityColorizer
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   protected:
-    RefAtomInfo atominfo_;
+    Ref<AtomInfo> atominfo_;
   public:
-    AtomProximityColorizer(const RefMolecule&, const RefAtomInfo &);
-    AtomProximityColorizer(const RefKeyVal &);
+    AtomProximityColorizer(const Ref<Molecule>&, const Ref<AtomInfo> &);
+    AtomProximityColorizer(const Ref<KeyVal> &);
     ~AtomProximityColorizer();
 
-    void colorize(const RefRenderedPolygons &);
+    void colorize(const Ref<RenderedPolygons> &);
 };
 
 class RenderedMolecularSurface: public RenderedMolecule {
-#   define CLASSNAME RenderedMolecularSurface
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   protected:
-    RefTriangulatedImplicitSurface surf_;
-    RefMoleculeColorizer colorizer_;
+    Ref<TriangulatedImplicitSurface> surf_;
+    Ref<MoleculeColorizer> colorizer_;
   public:
-    RenderedMolecularSurface(const RefKeyVal& keyval);
+    RenderedMolecularSurface(const Ref<KeyVal>& keyval);
     ~RenderedMolecularSurface();
 
     void init(int reinit_surf);

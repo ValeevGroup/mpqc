@@ -35,15 +35,10 @@
 #include <chemistry/molecule/energy.h>
 
 class MP2BasisExtrap: public SumMolecularEnergy {
-#   define CLASSNAME MP2BasisExtrap
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     void compute();
   public:
-    MP2BasisExtrap(const RefKeyVal &);
+    MP2BasisExtrap(const Ref<KeyVal> &);
     MP2BasisExtrap(StateIn&);
     ~MP2BasisExtrap();
 

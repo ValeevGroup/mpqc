@@ -87,9 +87,6 @@ struct PointOutputData {
 
 /** An abstract base class for density functionals. */
 class DenFunctional: virtual public SavableState {
-#   define CLASSNAME DenFunctional
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
     int spin_polarized_;
     int compute_potential_;
@@ -99,7 +96,7 @@ class DenFunctional: virtual public SavableState {
                      double lower_bound, double upper_bound);
   public:
     DenFunctional();
-    DenFunctional(const RefKeyVal &);
+    DenFunctional(const Ref<KeyVal> &);
     DenFunctional(StateIn &);
     ~DenFunctional();
     void save_data_state(StateOut &);
@@ -134,19 +131,14 @@ class DenFunctional: virtual public SavableState {
     int test(const PointInputData &);
     int test();
 };
-SavableState_REF_dec(DenFunctional);
+
 
 /** The NElFunctional computes the number of electrons.
     It is primarily for testing the integrator. */
 class NElFunctional: public DenFunctional {
-#   define CLASSNAME NElFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     NElFunctional();
-    NElFunctional(const RefKeyVal &);
+    NElFunctional(const Ref<KeyVal> &);
     NElFunctional(StateIn &);
     ~NElFunctional();
     void save_data_state(StateOut &);
@@ -157,18 +149,13 @@ class NElFunctional: public DenFunctional {
 /** The SumDenFunctional computes energies and densities
     using the a sum of energy density functions method. */
 class SumDenFunctional: public DenFunctional {
-#   define CLASSNAME SumDenFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     int n_;
-    RefDenFunctional *funcs_;
+    Ref<DenFunctional> *funcs_;
     double *coefs_;
   public:
     SumDenFunctional();
-    SumDenFunctional(const RefKeyVal &);
+    SumDenFunctional(const Ref<KeyVal> &);
     SumDenFunctional(StateIn &);
     ~SumDenFunctional();
     void save_data_state(StateOut &);
@@ -255,11 +242,6 @@ class SumDenFunctional: public DenFunctional {
 
 </table> */
 class StdDenFunctional: public SumDenFunctional {
-#   define CLASSNAME StdDenFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     char *name_;
     void init_arrays(int n);
@@ -268,7 +250,7 @@ class StdDenFunctional: public SumDenFunctional {
     /** The "name" keyword is read from the input and is used to initialize
         the functional.  All other keywords will be ignored.
     */
-    StdDenFunctional(const RefKeyVal &);
+    StdDenFunctional(const Ref<KeyVal> &);
     StdDenFunctional(StateIn &);
     ~StdDenFunctional();
     void save_data_state(StateOut &);
@@ -278,13 +260,10 @@ class StdDenFunctional: public SumDenFunctional {
 
 /** An abstract base class for local correlation functionals. */
 class LSDACFunctional: public DenFunctional {
-#   define CLASSNAME LSDACFunctional
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
   public:
     LSDACFunctional();
-    LSDACFunctional(const RefKeyVal &);
+    LSDACFunctional(const Ref<KeyVal> &);
     LSDACFunctional(StateIn &);
     ~LSDACFunctional();
     void save_data_state(StateOut &);
@@ -295,7 +274,7 @@ class LSDACFunctional: public DenFunctional {
                     double &ec_local, double &decrs, double &deczeta) = 0;
 
 };
-SavableState_REF_dec(LSDACFunctional);
+
 
 /** Implements the Perdew-Burke-Ernzerhof (PBE) correlation functional.
 
@@ -306,13 +285,8 @@ SavableState_REF_dec(LSDACFunctional);
     77(18), pp. 3865-3868, 1996.
 */
 class PBECFunctional: public DenFunctional {
-#   define CLASSNAME PBECFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>  
   protected:
-    RefLSDACFunctional local_;
+    Ref<LSDACFunctional> local_;
     double gamma;
     double beta;
     void init_constants();
@@ -321,7 +295,7 @@ class PBECFunctional: public DenFunctional {
     double gab_deriv(double rho, double phi, double mdr, double ec_local);
   public:
     PBECFunctional();
-    PBECFunctional(const RefKeyVal &);
+    PBECFunctional(const Ref<KeyVal> &);
     PBECFunctional(StateIn &);
     ~PBECFunctional();
     void save_data_state(StateOut &);
@@ -342,13 +316,8 @@ class PBECFunctional: public DenFunctional {
     J. P. Perdew, J. A. Chevary, S. H. Vosko, K. A. Jackson, M. R. Pederson,
     and D. J. Singh, Phys. Rev. B, 46, 6671, 1992.  */
 class PW91CFunctional: public DenFunctional {
-#   define CLASSNAME PW91CFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>  
   protected:
-    RefLSDACFunctional local_;
+    Ref<LSDACFunctional> local_;
     double a;
     double b;
     double c;
@@ -363,7 +332,7 @@ class PW91CFunctional: public DenFunctional {
 
   public:
     PW91CFunctional();
-    PW91CFunctional(const RefKeyVal &);
+    PW91CFunctional(const Ref<KeyVal> &);
     PW91CFunctional(StateIn &);
     ~PW91CFunctional();
     void save_data_state(StateOut &);
@@ -381,11 +350,6 @@ class PW91CFunctional: public DenFunctional {
     J. P. Perdew, Phys. Rev. B. 34(10), pp. 7406.
  */
 class P86CFunctional: public DenFunctional {
-#   define CLASSNAME P86CFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>  
   protected:
     double a_;
     double C1_;
@@ -398,7 +362,7 @@ class P86CFunctional: public DenFunctional {
     void init_constants();
   public:
     P86CFunctional();
-    P86CFunctional(const RefKeyVal &);
+    P86CFunctional(const Ref<KeyVal> &);
     P86CFunctional(StateIn &);
     ~P86CFunctional();
     void save_data_state(StateOut &);
@@ -411,11 +375,6 @@ class P86CFunctional: public DenFunctional {
 // The Perdew 1986 (P86) Correlation Functional computes energies and densities
 //    using the designated local correlation functional.
 class NewP86CFunctional: public DenFunctional {
-#   define CLASSNAME NewP86CFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>  
   protected:
     double a_;
     double C1_;
@@ -431,7 +390,7 @@ class NewP86CFunctional: public DenFunctional {
 
   public:
     NewP86CFunctional();
-    NewP86CFunctional(const RefKeyVal &);
+    NewP86CFunctional(const Ref<KeyVal> &);
     NewP86CFunctional(StateIn &);
     ~NewP86CFunctional();
     void save_data_state(StateOut &);
@@ -443,15 +402,10 @@ class NewP86CFunctional: public DenFunctional {
    Implements the Slater exchange functional.
 */
 class SlaterXFunctional: public DenFunctional {
-#   define CLASSNAME SlaterXFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
   public:
     SlaterXFunctional();
-    SlaterXFunctional(const RefKeyVal &);
+    SlaterXFunctional(const Ref<KeyVal> &);
     SlaterXFunctional(StateIn &);
     ~SlaterXFunctional();
     void save_data_state(StateOut &);
@@ -466,11 +420,6 @@ class SlaterXFunctional: public DenFunctional {
     1980.
 */
 class VWNLCFunctional: public LSDACFunctional {
-#   define CLASSNAME VWNLCFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double Ap_, Af_, A_alpha_;
     double x0p_mc_, bp_mc_, cp_mc_, x0f_mc_, bf_mc_, cf_mc_;
@@ -483,7 +432,7 @@ class VWNLCFunctional: public LSDACFunctional {
     double dFdr_s(double x, double A, double x0, double b, double c);
   public:
     VWNLCFunctional();
-    VWNLCFunctional(const RefKeyVal &);
+    VWNLCFunctional(const Ref<KeyVal> &);
     VWNLCFunctional(StateIn &);
     ~VWNLCFunctional();
     void save_data_state(StateOut &);
@@ -495,11 +444,6 @@ class VWNLCFunctional: public LSDACFunctional {
 /** The VWN1LCFunctional computes energies and densities using the
     VWN1 local correlation term (from Vosko, Wilk, and Nusair). */
 class VWN1LCFunctional: public VWNLCFunctional {
-#   define CLASSNAME VWN1LCFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double x0p_, bp_, cp_, x0f_, bf_, cf_;
   public:
@@ -512,7 +456,7 @@ class VWN1LCFunctional: public VWNLCFunctional {
         Furthermore, each value can be overridden by assigning to
         x0p, bp, cp, x0f, bf, and/or cf.
     */
-    VWN1LCFunctional(const RefKeyVal &);
+    VWN1LCFunctional(const Ref<KeyVal> &);
     VWN1LCFunctional(StateIn &);
     ~VWN1LCFunctional();
     void save_data_state(StateOut &);
@@ -524,17 +468,12 @@ class VWN1LCFunctional: public VWNLCFunctional {
 /** The VWN2LCFunctional computes energies and densities using the
     VWN2 local correlation term (from Vosko, Wilk, and Nusair). */
 class VWN2LCFunctional: public VWNLCFunctional {
-#   define CLASSNAME VWN2LCFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
   public:
     /// Construct a VWN2 functional.
     VWN2LCFunctional();
     /// Construct a VWN2 functional.
-    VWN2LCFunctional(const RefKeyVal &);
+    VWN2LCFunctional(const Ref<KeyVal> &);
     VWN2LCFunctional(StateIn &);
     ~VWN2LCFunctional();
     void save_data_state(StateOut &);
@@ -546,17 +485,12 @@ class VWN2LCFunctional: public VWNLCFunctional {
 /** The VWN3LCFunctional computes energies and densities using the
     VWN3 local correlation term (from Vosko, Wilk, and Nusair). */
 class VWN3LCFunctional: public VWNLCFunctional {
-#   define CLASSNAME VWN3LCFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     int monte_carlo_prefactor_;
     int monte_carlo_e0_;
   public:
     VWN3LCFunctional(int mcp = 1, int mce0 = 1);
-    VWN3LCFunctional(const RefKeyVal &);
+    VWN3LCFunctional(const Ref<KeyVal> &);
     VWN3LCFunctional(StateIn &);
     ~VWN3LCFunctional();
     void save_data_state(StateOut &);
@@ -567,16 +501,11 @@ class VWN3LCFunctional: public VWNLCFunctional {
 /** The VWN4LCFunctional computes energies and densities using the
     VWN4 local correlation term (from Vosko, Wilk, and Nusair). */
 class VWN4LCFunctional: public VWNLCFunctional {
-#   define CLASSNAME VWN4LCFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     int monte_carlo_prefactor_;
   public:
     VWN4LCFunctional();
-    VWN4LCFunctional(const RefKeyVal &);
+    VWN4LCFunctional(const Ref<KeyVal> &);
     VWN4LCFunctional(StateIn &);
     ~VWN4LCFunctional();
     void save_data_state(StateOut &);
@@ -587,15 +516,10 @@ class VWN4LCFunctional: public VWNLCFunctional {
 /** The VWN5LCFunctional computes energies and densities using the
     VWN5 local correlation term (from Vosko, Wilk, and Nusair). */
 class VWN5LCFunctional: public VWNLCFunctional {
-#   define CLASSNAME VWN5LCFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
   public:
     VWN5LCFunctional();
-    VWN5LCFunctional(const RefKeyVal &);
+    VWN5LCFunctional(const Ref<KeyVal> &);
     VWN5LCFunctional(StateIn &);
     ~VWN5LCFunctional();
     void save_data_state(StateOut &);
@@ -609,11 +533,6 @@ class VWN5LCFunctional: public VWNLCFunctional {
     J. P. Perdew and Y. Wang.  Phys. Rev. B, 45, 13244, 1992.
 */
 class PW92LCFunctional: public LSDACFunctional {
-#   define CLASSNAME PW92LCFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double F(double x, double A, double alpha_1, double beta_1, double beta_2, 
              double beta_3, double beta_4, double p);
@@ -621,7 +540,7 @@ class PW92LCFunctional: public LSDACFunctional {
              double beta_3, double beta_4, double p);
   public:
     PW92LCFunctional();
-    PW92LCFunctional(const RefKeyVal &);
+    PW92LCFunctional(const Ref<KeyVal> &);
     PW92LCFunctional(StateIn &);
     ~PW92LCFunctional();
     void save_data_state(StateOut &);
@@ -635,11 +554,6 @@ class PW92LCFunctional: public LSDACFunctional {
    J. P. Perdew and A. Zunger, Phys. Rev. B, 23, pp. 5048-5079, 1981.
 */
 class PZ81LCFunctional: public LSDACFunctional {
-#   define CLASSNAME PZ81LCFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double Fec_rsgt1(double rs, double beta_1, double beta_2, double gamma);
     double dFec_rsgt1_drho(double rs, double beta_1, double beta_2, double gamma,
@@ -649,7 +563,7 @@ class PZ81LCFunctional: public LSDACFunctional {
                            double &dec_drs);
   public:
     PZ81LCFunctional();
-    PZ81LCFunctional(const RefKeyVal &);
+    PZ81LCFunctional(const Ref<KeyVal> &);
     PZ81LCFunctional(StateIn &);
     ~PZ81LCFunctional();
     void save_data_state(StateOut &);
@@ -659,17 +573,12 @@ class PZ81LCFunctional: public LSDACFunctional {
 
 /** Implements the Xalpha exchange functional */
 class XalphaFunctional: public DenFunctional {
-#   define CLASSNAME XalphaFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double alpha_;
     double factor_;
   public:
     XalphaFunctional();
-    XalphaFunctional(const RefKeyVal &);
+    XalphaFunctional(const Ref<KeyVal> &);
     XalphaFunctional(StateIn &);
     ~XalphaFunctional();
     void save_data_state(StateOut &);
@@ -684,17 +593,12 @@ class XalphaFunctional: public DenFunctional {
     A. D. Becke, Phys. Rev. A, 38(6), pp. 3098-3100, 1988.
  */
 class Becke88XFunctional: public DenFunctional {
-#   define CLASSNAME Becke88XFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double beta_;
     double beta6_;
   public:
     Becke88XFunctional();
-    Becke88XFunctional(const RefKeyVal &);
+    Becke88XFunctional(const Ref<KeyVal> &);
     Becke88XFunctional(StateIn &);
     ~Becke88XFunctional();
     void save_data_state(StateOut &);
@@ -713,11 +617,6 @@ class Becke88XFunctional: public DenFunctional {
     1988.
  */
 class LYPCFunctional: public DenFunctional {
-#   define CLASSNAME LYPCFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double a_;
     double b_;
@@ -726,7 +625,7 @@ class LYPCFunctional: public DenFunctional {
     void init_constants();
   public:
     LYPCFunctional();
-    LYPCFunctional(const RefKeyVal &);
+    LYPCFunctional(const Ref<KeyVal> &);
     LYPCFunctional(StateIn &);
     ~LYPCFunctional();
     void save_data_state(StateOut &);
@@ -741,11 +640,6 @@ class LYPCFunctional: public DenFunctional {
     J. P. Perdew and Y. Wang, Phys. Rev. B, 33(12), pp 8800-8802, 1986.
 */
 class PW86XFunctional: public DenFunctional {
-#   define CLASSNAME PW86XFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double a_;
     double b_;
@@ -754,7 +648,7 @@ class PW86XFunctional: public DenFunctional {
     void init_constants();
   public:
     PW86XFunctional();
-    PW86XFunctional(const RefKeyVal &);
+    PW86XFunctional(const Ref<KeyVal> &);
     PW86XFunctional(StateIn &);
     ~PW86XFunctional();
     void save_data_state(StateOut &);
@@ -780,11 +674,6 @@ class PW86XFunctional: public DenFunctional {
     John P. Perdew, Kieron Burke, and Matthias Ernzerhof, Phys. Rev. Lett.,
     80(4), pp. 891, 1998.  */
 class PBEXFunctional: public DenFunctional {
-#   define CLASSNAME PBEXFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double mu;
     double kappa;
@@ -793,7 +682,7 @@ class PBEXFunctional: public DenFunctional {
     void init_constants();
   public:
     PBEXFunctional();
-    PBEXFunctional(const RefKeyVal &);
+    PBEXFunctional(const Ref<KeyVal> &);
     PBEXFunctional(StateIn &);
     ~PBEXFunctional();
     void save_data_state(StateOut &);
@@ -814,11 +703,6 @@ class PBEXFunctional: public DenFunctional {
     J. P. Perdew, J. A. Chevary, S. H. Vosko, K. A. Jackson, M. R. Pederson,
     and D. J. Singh, Phys. Rev. B, 46, 6671, 1992.  */
 class PW91XFunctional: public DenFunctional {
-#   define CLASSNAME PW91XFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double a;
     double b;
@@ -830,7 +714,7 @@ class PW91XFunctional: public DenFunctional {
     void init_constants();
   public:
     PW91XFunctional();
-    PW91XFunctional(const RefKeyVal &);
+    PW91XFunctional(const Ref<KeyVal> &);
     PW91XFunctional(StateIn &);
     ~PW91XFunctional();
     void save_data_state(StateOut &);
@@ -845,11 +729,6 @@ class PW91XFunctional: public DenFunctional {
     C. Adamo and V. Barone, J. Chem. Phys., 108(2), pp. 664-674, 1998.
 */
 class mPW91XFunctional: public DenFunctional {
-#   define CLASSNAME mPW91XFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double b;
     double beta;
@@ -886,7 +765,7 @@ class mPW91XFunctional: public DenFunctional {
         </dl>
 
     */
-    mPW91XFunctional(const RefKeyVal &);
+    mPW91XFunctional(const Ref<KeyVal> &);
     mPW91XFunctional(StateIn &);
     ~mPW91XFunctional();
     void save_data_state(StateOut &);
@@ -903,17 +782,12 @@ class mPW91XFunctional: public DenFunctional {
     P. M. W. Gill, Mol. Phys., 89(2), pp. 433-445, 1996.
 */
 class G96XFunctional: public DenFunctional {
-#   define CLASSNAME G96XFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double b_;
     void init_constants();
   public:
     G96XFunctional();
-    G96XFunctional(const RefKeyVal &);
+    G96XFunctional(const Ref<KeyVal> &);
     G96XFunctional(StateIn &);
     ~G96XFunctional();
     void save_data_state(StateOut &);

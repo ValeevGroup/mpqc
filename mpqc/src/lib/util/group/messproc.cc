@@ -28,19 +28,11 @@
 #include <util/misc/formio.h>
 #include <util/group/message.h>
 
-#define CLASSNAME ProcMessageGrp
-#define PARENTS public MessageGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-ProcMessageGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  MessageGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ProcMessageGrp_cd(
+  typeid(ProcMessageGrp),"ProcMessageGrp",1,"public MessageGrp",
+  0, create<ProcMessageGrp>, 0);
 
-ProcMessageGrp::ProcMessageGrp(const RefKeyVal& keyval):
+ProcMessageGrp::ProcMessageGrp(const Ref<KeyVal>& keyval):
   MessageGrp(keyval)
 {
   initialize(0,1);

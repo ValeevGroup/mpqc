@@ -35,49 +35,49 @@
 #include <util/container/avlset.h>
 #include <math/isosurf/vertex.h>
 
-class Edge: public VRefCount {
+class Edge: public RefCount {
   private:
     int _order;
-    RefVertex *_vertices; // nvertices = _order + 1
+    Ref<Vertex> *_vertices; // nvertices = _order + 1
   public:
-    Edge(const RefVertex &p1,
-         const RefVertex &p2)
+    Edge(const Ref<Vertex> &p1,
+         const Ref<Vertex> &p2)
     {
       _order = 1;
-      _vertices = new RefVertex[2];
+      _vertices = new Ref<Vertex>[2];
       _vertices[0]=p1; _vertices[1]=p2;
     }
-    Edge(const RefVertex &p1,
-         const RefVertex &p2,
-         const RefVertex &p3);
-    Edge(const RefVertex &p1,
-         const RefVertex &p2,
-         const RefVertex &p3,
-         const RefVertex &p4);
+    Edge(const Ref<Vertex> &p1,
+         const Ref<Vertex> &p2,
+         const Ref<Vertex> &p3);
+    Edge(const Ref<Vertex> &p1,
+         const Ref<Vertex> &p2,
+         const Ref<Vertex> &p3,
+         const Ref<Vertex> &p4);
     ~Edge();
     int order() const { return _order; }
     double straight_length();
     // return the endpoints
-    RefVertex vertex(int i) const
+    Ref<Vertex> vertex(int i) const
     {
       return i?_vertices[_order]:_vertices[0];
     }
     // returns endpoints or interior vertex 0 <= i <= order
-    RefVertex interior_vertex(int i) const
+    Ref<Vertex> interior_vertex(int i) const
     {
       return _vertices[i];
     }
     // add the endpoints to the set
-    void add_vertices(AVLSet<RefVertex>&);
-    void set_order(int order, const RefVolume&vol,double isovalue);
+    void add_vertices(AVLSet<Ref<Vertex> >&);
+    void set_order(int order, const Ref<Volume>&vol,double isovalue);
     // find the position of a point on the edge
     int interpolate(double location, SCVector3&point, SCVector3&norm);
     // find the true position of a point using the isosurface
     int interpolate(double location, SCVector3&point, SCVector3&norm,
-                     const RefVolume &vol, double isovalue);
+                     const Ref<Volume> &vol, double isovalue);
 };
 
-REF_dec(Edge);
+
 
 #endif
 

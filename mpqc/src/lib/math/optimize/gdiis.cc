@@ -39,25 +39,14 @@
 
 using namespace std;
 
-#define CLASSNAME GDIISOpt
-#define PARENTS public Optimize
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
 /////////////////////////////////////////////////////////////////////////
 // GDIISOpt
 
-void *
-GDIISOpt::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Optimize::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc GDIISOpt_cd(
+  typeid(GDIISOpt),"GDIISOpt",1,"public Optimize",
+  0, create<GDIISOpt>, create<GDIISOpt>);
 
-GDIISOpt::GDIISOpt(const RefKeyVal&keyval):
+GDIISOpt::GDIISOpt(const Ref<KeyVal>&keyval):
   Optimize(keyval),
   diis_iter(0),
   maxabs_gradient(-1.0)
@@ -65,7 +54,7 @@ GDIISOpt::GDIISOpt(const RefKeyVal&keyval):
   nsave = keyval->intvalue("ngdiis");
   if (keyval->error() != KeyVal::OK) nsave = 5;
   
-  update_ = keyval->describedclassvalue("update");
+  update_ << keyval->describedclassvalue("update");
   update_->set_inverse();
   
   convergence_ = keyval->doublevalue("convergence");
@@ -111,7 +100,7 @@ GDIISOpt::GDIISOpt(StateIn&s):
   s.get(diis_iter);
   ihessian_ = matrixkit()->symmmatrix(dimension());
   ihessian_.restore(s);
-  update_.restore_state(s);
+  update_ << SavableState::restore_state(s);
   s.get(convergence_);
   s.get(accuracy_);
   s.get(maxabs_gradient);
@@ -142,7 +131,7 @@ GDIISOpt::save_data_state(StateOut&s)
   s.put(nsave);
   s.put(diis_iter);
   ihessian_.save(s);
-  update_.save_state(s);
+  SavableState::save_state(update_.pointer(),s);
   s.put(convergence_);
   s.put(accuracy_);
   s.put(maxabs_gradient);
@@ -296,7 +285,7 @@ GDIISOpt::update()
     int num = howmany-ntry;
 
     RefSCDimension size = new SCDimension(num+1);
-    RefSCMatrixKit lkit = new LocalSCMatrixKit;
+    Ref<SCMatrixKit> lkit = new LocalSCMatrixKit;
     A = lkit->matrix(size,size);
     coeff = lkit->vector(size);
 

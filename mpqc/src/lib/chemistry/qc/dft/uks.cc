@@ -50,40 +50,31 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////
 // UKS
 
-#define CLASSNAME UKS
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public UnrestrictedSCF
-#include <util/class/classi.h>
-void *
-UKS::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = UnrestrictedSCF::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc UKS_cd(
+  typeid(UKS),"UKS",1,"public UnrestrictedSCF",
+  0, create<UKS>, create<UKS>);
 
 UKS::UKS(StateIn& s) :
   SavableState(s),
   UnrestrictedSCF(s)
 {
   exc_=0;
-  integrator_.restore_state(s);
-  functional_.restore_state(s);
+  integrator_ << SavableState::restore_state(s);
+  functional_ << SavableState::restore_state(s);
   vaxc_ = basis_matrixkit()->symmmatrix(so_dimension());
   vaxc_.restore(s);
   vbxc_ = basis_matrixkit()->symmmatrix(so_dimension());
   vbxc_.restore(s);
 }
 
-UKS::UKS(const RefKeyVal& keyval) :
+UKS::UKS(const Ref<KeyVal>& keyval) :
   UnrestrictedSCF(keyval)
 {
   exc_=0;
-  integrator_ = keyval->describedclassvalue("integrator");
+  integrator_ << keyval->describedclassvalue("integrator");
   if (integrator_.null()) integrator_ = new RadialAngularIntegrator();
 
-  functional_ = keyval->describedclassvalue("functional");
+  functional_ << keyval->describedclassvalue("functional");
   if (functional_.null()) {
     ExEnv::out() << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
     abort();
@@ -98,8 +89,8 @@ void
 UKS::save_data_state(StateOut& s)
 {
   UnrestrictedSCF::save_data_state(s);
-  integrator_.save_state(s);
-  functional_.save_state(s);
+  SavableState::save_state(integrator_.pointer(),s);
+  SavableState::save_state(functional_.pointer(),s);
   vaxc_.save(s);
   vbxc_.save(s);
 }
@@ -131,7 +122,7 @@ UKS::scf_energy()
   return ehf + exc_;
 }
 
-RefSCExtrapData
+Ref<SCExtrapData>
 UKS::extrap_data()
 {
   RefSymmSCMatrix *m = new RefSymmSCMatrix[4];
@@ -140,7 +131,7 @@ UKS::extrap_data()
   m[2] = vaxc_;
   m[3] = vbxc_;
   
-  RefSCExtrapData data = new SymmSCMatrixNSCExtrapData(4, m);
+  Ref<SCExtrapData> data = new SymmSCMatrixNSCExtrapData(4, m);
   delete[] m;
   
   return data;
@@ -187,13 +178,13 @@ UKS::two_body_energy(double &ec, double &ex)
     tim_exit("local data");
 
     // initialize the two electron integral classes
-    RefTwoBodyInt tbi = integral()->electron_repulsion();
+    Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
     tbi->set_integral_storage(0);
 
     signed char * pmax = init_pmax(apmat);
   
     LocalUKSEnergyContribution lclc(apmat, bpmat, 0);
-    RefPetiteList pl = integral()->petite_list();
+    Ref<PetiteList> pl = integral()->petite_list();
     LocalGBuild<LocalUKSEnergyContribution>
       gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
     gb.run();
@@ -215,7 +206,7 @@ UKS::two_body_energy(double &ec, double &ex)
 void
 UKS::ao_fock(double accuracy)
 {
-  RefPetiteList pl = integral()->petite_list(basis());
+  Ref<PetiteList> pl = integral()->petite_list(basis());
   
   // calculate G.  First transform diff_densa_ to the AO basis, then
   // scale the off-diagonal elements by 2.0
@@ -258,7 +249,7 @@ UKS::ao_fock(double accuracy)
     double **gmatos = new double*[nthread];
     gmatos[0] = gmato;
     
-    RefGaussianBasisSet bs = basis();
+    Ref<GaussianBasisSet> bs = basis();
     int ntri = i_offset(bs->nbasis());
 
     double gmat_accuracy = accuracy;

@@ -27,7 +27,7 @@
 
 #include <util/render/color.h>
 
-Color::Color(const RefKeyVal& keyval)
+Color::Color(const Ref<KeyVal>& keyval)
 {
   const char* rgb = "rgb";
   red_ = keyval->doublevalue(rgb,0);

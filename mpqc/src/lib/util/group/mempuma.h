@@ -40,9 +40,6 @@
 class for the Intel Paragon running the Puma OS.  This implementation
 is buggy.  */
 class PumaMemoryGrp: public ActiveMsgMemoryGrp {
-#define CLASSNAME PumaMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   private:
     MPI_Comm rma_comm_;
     
@@ -51,8 +48,8 @@ class PumaMemoryGrp: public ActiveMsgMemoryGrp {
     void sum_data(double *data, int node, int doffset, int dsize);
 
   public:
-    PumaMemoryGrp(const RefMessageGrp& msg);
-    PumaMemoryGrp(const RefKeyVal&);
+    PumaMemoryGrp(const Ref<MessageGrp>& msg);
+    PumaMemoryGrp(const Ref<KeyVal>&);
     ~PumaMemoryGrp();
 
     void set_localsize(int);

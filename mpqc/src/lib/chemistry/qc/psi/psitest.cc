@@ -31,13 +31,13 @@ main(int argc, char**argv)
   ostream& o = cout;
 
   ParsedKeyVal* pkv;
-  RefKeyVal rpkv(pkv = new ParsedKeyVal());
+  Ref<KeyVal> rpkv(pkv = new ParsedKeyVal());
   pkv->read( SRCDIR "/psi.in");
   pkv = 0; // should only use rpkv
 
   int i;
   for (i=0; rpkv->exists("mole",i); i++) {
-      RefMolecularEnergy mole = rpkv->describedclassvalue("mole",i);
+      Ref<MolecularEnergy> mole = rpkv->describedclassvalue("mole",i);
 
       if (mole.nonnull()) {
           mole->print(o);
@@ -52,7 +52,7 @@ main(int argc, char**argv)
     }
 
   for (i=0; rpkv->exists("opt",i); i++) {
-      RefOptimize opt = rpkv->describedclassvalue("opt",i);
+      Ref<Optimize> opt = rpkv->describedclassvalue("opt",i);
 
       if (opt.nonnull()) {
           //opt->print(o);

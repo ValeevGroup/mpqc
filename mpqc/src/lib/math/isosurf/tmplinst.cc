@@ -38,58 +38,58 @@
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 
 #ifdef HAVE_STL
-template class vector<RefVertex>;
-template class vector<RefEdge>;
-template class vector<RefTriangle>;
+template class vector<Ref<Vertex> >;
+template class vector<Ref<Edge> >;
+template class vector<Ref<Triangle> >;
 #else
-template class Array<RefVertex>;
-template class Array<RefEdge>;
-template class Array<RefTriangle>;
+template class Array<Ref<Vertex> >;
+template class Array<Ref<Edge> >;
+template class Array<Ref<Triangle> >;
 #endif
 
 // Vertex
-template class EAVLMMapNode<RefVertex, AVLMapNode<RefVertex, int> >;
-template class EAVLMMap<RefVertex, AVLMapNode<RefVertex, int> >;
-template class AVLMapNode<RefVertex, int>;
-template class AVLMap<RefVertex, int>;
-template class AVLSet<RefVertex>;
+template class EAVLMMapNode<Ref<Vertex>, AVLMapNode<Ref<Vertex>, int> >;
+template class EAVLMMap<Ref<Vertex>, AVLMapNode<Ref<Vertex>, int> >;
+template class AVLMapNode<Ref<Vertex>, int>;
+template class AVLMap<Ref<Vertex>, int>;
+template class AVLSet<Ref<Vertex> >;
 
 // Edge
-template class EAVLMMapNode<RefEdge, AVLMapNode<RefEdge, int> >;
-template class EAVLMMap<RefEdge, AVLMapNode<RefEdge, int> >;
-template class AVLMapNode<RefEdge, int>;
-template class AVLMap<RefEdge, int>;
-template class AVLSet<RefEdge>;
+template class EAVLMMapNode<Ref<Edge>, AVLMapNode<Ref<Edge>, int> >;
+template class EAVLMMap<Ref<Edge>, AVLMapNode<Ref<Edge>, int> >;
+template class AVLMapNode<Ref<Edge>, int>;
+template class AVLMap<Ref<Edge>, int>;
+template class AVLSet<Ref<Edge> >;
 
 // Triangle
-template class EAVLMMapNode<RefTriangle, AVLMapNode<RefTriangle, int> >;
-template class EAVLMMap<RefTriangle, AVLMapNode<RefTriangle, int> >;
-template class AVLMapNode<RefTriangle, int>;
-template class AVLMap<RefTriangle, int>;
-template class AVLSet<RefTriangle>;
+template class EAVLMMapNode<Ref<Triangle>, AVLMapNode<Ref<Triangle>, int> >;
+template class EAVLMMap<Ref<Triangle>, AVLMapNode<Ref<Triangle>, int> >;
+template class AVLMapNode<Ref<Triangle>, int>;
+template class AVLMap<Ref<Triangle>, int>;
+template class AVLSet<Ref<Triangle> >;
 
 // Shape
-template class EAVLMMapNode<RefShape, AVLMapNode<RefShape, int> >;
-template class EAVLMMap<RefShape, AVLMapNode<RefShape, int> >;
-template class AVLMapNode<RefShape, int>;
-template class AVLMap<RefShape, int>;
-template class AVLSet<RefShape>;
+template class EAVLMMapNode<Ref<Shape>, AVLMapNode<Ref<Shape>, int> >;
+template class EAVLMMap<Ref<Shape>, AVLMapNode<Ref<Shape>, int> >;
+template class AVLMapNode<Ref<Shape>, int>;
+template class AVLMap<Ref<Shape>, int>;
+template class AVLSet<Ref<Shape> >;
 
 // (mixed)
-template class EAVLMMapNode<RefVertex, AVLMapNode<RefVertex, AVLSet<RefEdge> > >;
-template class EAVLMMap<RefVertex, AVLMapNode<RefVertex, AVLSet<RefEdge> > >;
-template class AVLMapNode<RefVertex, AVLSet<RefEdge> >;
-template class AVLMap<RefVertex, AVLSet<RefEdge> >;
+template class EAVLMMapNode<Ref<Vertex>, AVLMapNode<Ref<Vertex>, AVLSet<Ref<Edge> > > >;
+template class EAVLMMap<Ref<Vertex>, AVLMapNode<Ref<Vertex>, AVLSet<Ref<Edge> > > >;
+template class AVLMapNode<Ref<Vertex>, AVLSet<Ref<Edge> > >;
+template class AVLMap<Ref<Vertex>, AVLSet<Ref<Edge> > >;
 
-template class EAVLMMapNode<RefVertex, AVLMapNode<RefVertex, RefEdge> >;
-template class EAVLMMap<RefVertex, AVLMapNode<RefVertex, RefEdge> >;
-template class AVLMapNode<RefVertex, RefEdge>;
-template class AVLMap<RefVertex, RefEdge>;
+template class EAVLMMapNode<Ref<Vertex>, AVLMapNode<Ref<Vertex>, Ref<Edge> > >;
+template class EAVLMMap<Ref<Vertex>, AVLMapNode<Ref<Vertex>, Ref<Edge> > >;
+template class AVLMapNode<Ref<Vertex>, Ref<Edge> >;
+template class AVLMap<Ref<Vertex>, Ref<Edge> >;
 
-template class EAVLMMapNode<RefVertex, AVLMapNode<RefVertex, AVLSet<RefTriangle> > >;
-template class EAVLMMap<RefVertex, AVLMapNode<RefVertex, AVLSet<RefTriangle> > >;
-template class AVLMapNode<RefVertex, AVLSet<RefTriangle> >;
-template class AVLMap<RefVertex, AVLSet<RefTriangle> >;
+template class EAVLMMapNode<Ref<Vertex>, AVLMapNode<Ref<Vertex>, AVLSet<Ref<Triangle> > > >;
+template class EAVLMMap<Ref<Vertex>, AVLMapNode<Ref<Vertex>, AVLSet<Ref<Triangle> > > >;
+template class AVLMapNode<Ref<Vertex>, AVLSet<Ref<Triangle> > >;
+template class AVLMap<Ref<Vertex>, AVLSet<Ref<Triangle> > >;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////

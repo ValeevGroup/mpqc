@@ -45,11 +45,6 @@ eigenvector following as described by Baker in J. Comput. Chem., Vol 7, No
 4, 385-395, 1986.
 */
 class EFCOpt: public Optimize {
-#   define CLASSNAME EFCOpt
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     int tstate;
     int modef;
@@ -59,7 +54,7 @@ class EFCOpt: public Optimize {
     double accuracy_;
 
     RefSymmSCMatrix hessian_;
-    RefHessianUpdate update_;
+    Ref<HessianUpdate> update_;
     RefSCVector last_mode_;
 
   public:
@@ -91,12 +86,12 @@ class EFCOpt: public Optimize {
         is 0.0001.
 
         </dl> */
-    EFCOpt(const RefKeyVal&);
+    EFCOpt(const Ref<KeyVal>&);
     EFCOpt(StateIn&);
     ~EFCOpt();
     void save_data_state(StateOut&);
 
-    void apply_transform(const RefNonlinearTransform&);
+    void apply_transform(const Ref<NonlinearTransform>&);
 
     void init();
     int update();

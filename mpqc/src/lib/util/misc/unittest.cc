@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
       abort();
     }
   
-  RefUnits unit = new Units(argv[1]);
+  Ref<Units> unit = new Units(argv[1]);
   cout << indent << "Conversion between " << unit->string_rep() << " and atomic units:" << endl;
   cout << setprecision(10);
   cout << indent << "From atomic units: " << unit->from_atomic_units() << endl;

@@ -36,9 +36,9 @@ class BasisFileSet {
     char **basissets_;
     int nbasissets_;
   public:
-    BasisFileSet(const RefKeyVal&);
+    BasisFileSet(const Ref<KeyVal>&);
     ~BasisFileSet();
-    RefKeyVal keyval(const RefKeyVal&, const char *name);
+    Ref<KeyVal> keyval(const Ref<KeyVal>&, const char *name);
 };
 
 #endif

@@ -34,7 +34,7 @@
 
 /** The MolecularFormula class is used to calculate the molecular
  formula of a Molecule.  There is only one constructor which
- takes RefMolecule as input. */
+ takes Ref<Molecule> as input. */
 class MolecularFormula {
   private:
     enum {nelem_ = 105};
@@ -47,7 +47,7 @@ class MolecularFormula {
     void compute_form(const Molecule *m);
   public:
     /// Constructors.  The argument must be nonnull.
-    MolecularFormula(const RefMolecule&m);
+    MolecularFormula(const Ref<Molecule>&m);
     MolecularFormula(const Molecule *m);
 
     ~MolecularFormula();

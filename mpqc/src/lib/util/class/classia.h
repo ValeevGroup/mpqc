@@ -124,7 +124,7 @@ CLASSNAME::require_const_castdown(const DescribedClass*p,const char * errmsg,...
   return t;
 }
 CLASSNAME*
-CLASSNAME::castdown(const RefDescribedClass&p)
+CLASSNAME::castdown(const Ref<DescribedClass>&p)
 {
   return CLASSNAME::castdown(p.pointer());
 }

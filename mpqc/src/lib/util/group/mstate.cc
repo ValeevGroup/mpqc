@@ -73,7 +73,7 @@ release_buffer(char* send_buffer)
 ///////////////////////////////////////////////////////////////////////////
 // MsgStateSend member functions
 
-MsgStateSend::MsgStateSend(const RefMessageGrp&grp_):
+MsgStateSend::MsgStateSend(const Ref<MessageGrp>&grp_):
   grp(grp_)
 {
   nbuf = 0;
@@ -189,16 +189,9 @@ MsgStateSend::put(const double* d, int n)
 ///////////////////////////////////////////////////////////////////////////
 // MsgStateBufRecv member functions
 
-#define CLASSNAME MsgStateBufRecv
-#define PARENTS public StateIn
-#include <util/class/classi.h>
-void *
-MsgStateBufRecv::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = StateIn::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MsgStateBufRecv_cd(
+  typeid(MsgStateBufRecv),"MsgStateBufRecv",1,"public StateIn",
+  0, 0, 0);
 
 MsgStateBufRecv::MsgStateBufRecv()
 {
@@ -210,7 +203,7 @@ MsgStateBufRecv::MsgStateBufRecv()
   obtain_buffer(nbuf_buffer,send_buffer,nheader,buffer,bufsize,8192);
 }
 
-MsgStateBufRecv::MsgStateBufRecv(const RefMessageGrp&grp_):
+MsgStateBufRecv::MsgStateBufRecv(const Ref<MessageGrp>&grp_):
   grp(grp_)
 {
   nbuf = 0;
@@ -267,7 +260,7 @@ MsgStateBufRecv::get_array_void(void* vd, int n)
 ///////////////////////////////////////////////////////////////////////////
 // MsgStateRecv member functions
 
-MsgStateRecv::MsgStateRecv(const RefMessageGrp&grp_):
+MsgStateRecv::MsgStateRecv(const Ref<MessageGrp>&grp_):
   MsgStateBufRecv(grp_)
 {
   node_to_node_ = 1;
@@ -363,7 +356,7 @@ MsgStateRecv::get(double*& d)
 ///////////////////////////////////////////////////////////////////////////
 // StateSend member functions
 
-StateSend::StateSend(const RefMessageGrp&grp_):
+StateSend::StateSend(const Ref<MessageGrp>&grp_):
   MsgStateSend(grp_),
   target_(0)
 {
@@ -394,7 +387,7 @@ StateSend::target(int t)
 ///////////////////////////////////////////////////////////////////////////
 // StateRecv member functions
 
-StateRecv::StateRecv(const RefMessageGrp&grp_):
+StateRecv::StateRecv(const Ref<MessageGrp>&grp_):
   MsgStateRecv(grp_),
   source_(0)
 {
@@ -419,7 +412,7 @@ StateRecv::source(int s)
 ///////////////////////////////////////////////////////////////////////////
 // BcastStateSend member functions
 
-BcastStateSend::BcastStateSend(const RefMessageGrp&grp_):
+BcastStateSend::BcastStateSend(const Ref<MessageGrp>&grp_):
   MsgStateSend(grp_)
 {
 }
@@ -442,7 +435,7 @@ BcastStateSend::flush()
 ///////////////////////////////////////////////////////////////////////////
 // BcastStateRecv member functions
 
-BcastStateRecv::BcastStateRecv(const RefMessageGrp&grp_, int s):
+BcastStateRecv::BcastStateRecv(const Ref<MessageGrp>&grp_, int s):
   MsgStateRecv(grp_)
 {
   source(s);
@@ -472,7 +465,7 @@ BcastStateRecv::next_buffer()
 ///////////////////////////////////////////////////////////////////////////
 // BcastState member functions
 
-BcastState::BcastState(const RefMessageGrp &grp, int source)
+BcastState::BcastState(const Ref<MessageGrp> &grp, int source)
 {
   if (grp->n() == 1) {
       recv_ = 0;
@@ -523,15 +516,6 @@ BcastState::bcast(double *&a, int n)
 }
 
 void
-BcastState::bcast(SSRefBase &a)
-{
-  if (recv_) a.restore_state(*recv_);
-  else if (send_) {
-      a.save_state(*send_);
-    }
-}
-
-void
 BcastState::flush()
 {
   if (send_) send_->flush();
@@ -553,19 +537,11 @@ BcastState::forget_references()
 ///////////////////////////////////////////////////////////////////////////
 // BcastStateRecv member functions
 
-#define CLASSNAME BcastStateInBin
-#define PARENTS public MsgStateBufRecv
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-BcastStateInBin::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MsgStateBufRecv::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc BcastStateInBin_cd(
+  typeid(BcastStateInBin),"BcastStateInBin",1,"public MsgStateBufRecv",
+  0, create<BcastStateInBin>, 0);
 
-BcastStateInBin::BcastStateInBin(const RefMessageGrp&grp_,
+BcastStateInBin::BcastStateInBin(const Ref<MessageGrp>&grp_,
                                  const char *filename):
   MsgStateBufRecv(grp_)
 {
@@ -573,11 +549,11 @@ BcastStateInBin::BcastStateInBin(const RefMessageGrp&grp_,
   open(filename);
 }
 
-BcastStateInBin::BcastStateInBin(const RefKeyVal &keyval)
+BcastStateInBin::BcastStateInBin(const Ref<KeyVal> &keyval)
 {
   char *path = keyval->pcharvalue("file");
   if (!path) {
-      ExEnv::err() << "StateInBin(const RefKeyVal&): no path given" << endl;
+      ExEnv::err() << "StateInBin(const Ref<KeyVal>&): no path given" << endl;
     }
   opened_ = 0;
   open(path);

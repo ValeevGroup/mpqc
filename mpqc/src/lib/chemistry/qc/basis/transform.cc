@@ -331,7 +331,7 @@ solidharm(int l, const RefSCMatrix &coefmat)
 void
 SphericalTransform::init()
 {
-  RefSCMatrixKit matrixkit = new ReplSCMatrixKit;
+  Ref<SCMatrixKit> matrixkit = new ReplSCMatrixKit;
   RefSCDimension cartdim(new SCDimension(ncart(l_)));
   RefSCMatrix coefmat(cartdim,cartdim,matrixkit);
   coefmat->assign(0.0);
@@ -403,7 +403,7 @@ ISphericalTransform::ISphericalTransform(int l,int subl) :
 void
 ISphericalTransform::init()
 {
-  RefSCMatrixKit matrixkit = new ReplSCMatrixKit;
+  Ref<SCMatrixKit> matrixkit = new ReplSCMatrixKit;
   RefSCDimension cartdim(new SCDimension(ncart(l_)));
   RefSCMatrix coefmat(cartdim,cartdim,matrixkit);
   coefmat->assign(0.0);

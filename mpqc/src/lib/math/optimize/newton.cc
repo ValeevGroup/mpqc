@@ -37,27 +37,16 @@
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 
-#define CLASSNAME NewtonOpt
-#define PARENTS public Optimize
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////////
 // NewtonOpt
 
-void *
-NewtonOpt::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Optimize::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc NewtonOpt_cd(
+  typeid(NewtonOpt),"NewtonOpt",1,"public Optimize",
+  0, create<NewtonOpt>, create<NewtonOpt>);
 
-NewtonOpt::NewtonOpt(const RefKeyVal&keyval):
+NewtonOpt::NewtonOpt(const Ref<KeyVal>&keyval):
   Optimize(keyval)
 {
   init();

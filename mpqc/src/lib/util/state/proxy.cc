@@ -7,21 +7,14 @@
 #include <util/state/proxy.h>
 #include <util/keyval/keyval.h>
 
-#define CLASSNAME SavableStateProxy
-#define PARENTS public DescribedClassProxy
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-SavableStateProxy::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  DescribedClassProxy::_castdown(cd) ;
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SavableStateProxy_cd(
+    typeid(SavableStateProxy),
+    "SavableStateProxy",1,"public DescribedClassProxy",
+    0,create<SavableStateProxy>);
 
-SavableStateProxy::SavableStateProxy(const RefKeyVal &keyval)
+SavableStateProxy::SavableStateProxy(const Ref<KeyVal> &keyval)
 {
-  RefStateIn statein = keyval->describedclassvalue("statein");
+  Ref<StateIn> statein; statein << keyval->describedclassvalue("statein");
   if (statein.nonnull()) {
       char *objectname = keyval->pcharvalue("object");
       StateIn &si = *(statein.pointer());
@@ -29,18 +22,18 @@ SavableStateProxy::SavableStateProxy(const RefKeyVal &keyval)
           si.set_override(new PrefixKeyVal(keyval,"override"));
         }
       if (objectname) {
-          object_.dir_restore_state(si, objectname);
+          object_ = SavableState::dir_restore_state(si, objectname);
           delete[] objectname;
         }
       else {
-          object_.restore_state(si);
+          object_= SavableState::restore_state(si);
         }
     }
 }
 
-RefDescribedClass
+Ref<DescribedClass>
 SavableStateProxy::object()
 {
-  return object_;
+  return object_.pointer();
 }
 

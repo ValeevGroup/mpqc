@@ -49,7 +49,7 @@
 using namespace std;
 
 static void
-do_so_shell_test(const RefSOBasis& sobas, const RefTwoBodySOInt &soer,
+do_so_shell_test(const Ref<SOBasis>& sobas, const Ref<TwoBodySOInt> &soer,
                  int i, int j, int k, int l)
 {
   if (i>=soer->basis1()->nshell()
@@ -80,7 +80,7 @@ do_so_shell_test(const RefSOBasis& sobas, const RefTwoBodySOInt &soer,
 }
 
 static void
-do_so_shell_test(const RefSOBasis& sobas, const RefOneBodySOInt &soov,
+do_so_shell_test(const Ref<SOBasis>& sobas, const Ref<OneBodySOInt> &soov,
                  int i, int j)
 {
   if (i>=soov->basis1()->nshell()
@@ -103,19 +103,19 @@ do_so_shell_test(const RefSOBasis& sobas, const RefOneBodySOInt &soov,
 }
 
 static void
-do_so_test(const RefKeyVal &keyval,
-           const RefIntegral& intgrl, const RefGaussianBasisSet &gbs)
+do_so_test(const Ref<KeyVal> &keyval,
+           const Ref<Integral>& intgrl, const Ref<GaussianBasisSet> &gbs)
 {
   intgrl->set_basis(gbs);
 
-  RefSOBasis sobas = new SOBasis(gbs, intgrl);
+  Ref<SOBasis> sobas = new SOBasis(gbs, intgrl);
   sobas->print(cout << node0);
 
-  RefTwoBodyInt aoer = intgrl->electron_repulsion();
-  RefTwoBodySOInt soer = new TwoBodySOInt(aoer);
+  Ref<TwoBodyInt> aoer = intgrl->electron_repulsion();
+  Ref<TwoBodySOInt> soer = new TwoBodySOInt(aoer);
 
-  RefOneBodyInt aoov = intgrl->overlap();
-  RefOneBodySOInt soov = new OneBodySOInt(aoov);
+  Ref<OneBodyInt> aoov = intgrl->overlap();
+  Ref<OneBodySOInt> soov = new OneBodySOInt(aoov);
 
   sobas = soer->basis();
   sobas->print(cout << node0);
@@ -152,8 +152,8 @@ do_so_test(const RefKeyVal &keyval,
 }
 
 static void
-test_overlap(const RefGaussianBasisSet& gbs, const RefGaussianBasisSet& gbs2,
-             const RefIntegral& intgrl)
+test_overlap(const Ref<GaussianBasisSet>& gbs, const Ref<GaussianBasisSet>& gbs2,
+             const Ref<Integral>& intgrl)
 {
   intgrl->set_basis(gbs);
 
@@ -166,7 +166,7 @@ test_overlap(const RefGaussianBasisSet& gbs, const RefGaussianBasisSet& gbs2,
   s.print("overlap");
       
   // now transform s to SO basis
-  RefPetiteList pl = intgrl->petite_list();
+  Ref<PetiteList> pl = intgrl->petite_list();
   RefSymmSCMatrix sb = pl->to_SO_basis(s);
   sb.print("blocked s");
       
@@ -198,7 +198,7 @@ test_overlap(const RefGaussianBasisSet& gbs, const RefGaussianBasisSet& gbs2,
   ssq.print("overlap sq");
   ov=0;
 
-  RefPetiteList pl2 = intgrl->petite_list(gbs2);
+  Ref<PetiteList> pl2 = intgrl->petite_list(gbs2);
   RefSCMatrix ssqb(pl2->AO_basisdim(), pl->AO_basisdim(), gbs->so_matrixkit());
   ssqb->convert(ssq);
 
@@ -207,10 +207,10 @@ test_overlap(const RefGaussianBasisSet& gbs, const RefGaussianBasisSet& gbs2,
 }
 
 static void
-test_eigvals(const RefGaussianBasisSet& gbs, const RefIntegral& intgrl)
+test_eigvals(const Ref<GaussianBasisSet>& gbs, const Ref<Integral>& intgrl)
 {
   intgrl->set_basis(gbs);
-  RefPetiteList pl = intgrl->petite_list();
+  Ref<PetiteList> pl = intgrl->petite_list();
 
   // form AO Hcore and evecs
   RefSymmSCMatrix hcore_ao(gbs->basisdim(), gbs->matrixkit());
@@ -223,7 +223,7 @@ test_eigvals(const RefGaussianBasisSet& gbs, const RefIntegral& intgrl)
   hcore_ao.element_op(op);
   op=0;
 
-  RefOneBodyInt nuc = intgrl->nuclear();
+  Ref<OneBodyInt> nuc = intgrl->nuclear();
   nuc->reinitialize();
   op = new OneBodyIntOp(nuc);
   hcore_ao.element_op(op);
@@ -294,7 +294,7 @@ checkerror(const char *name, int shell, int func,
 }
 
 void
-test_func_values(const RefGaussianBasisSet &gbs)
+test_func_values(const Ref<GaussianBasisSet> &gbs)
 {
   cout << "testing basis function value gradient and hessian numerically"
        << endl;
@@ -427,7 +427,7 @@ test_func_values(const RefGaussianBasisSet &gbs)
 }
 
 void
-do_extent_test(const RefGaussianBasisSet &gbs)
+do_extent_test(const Ref<GaussianBasisSet> &gbs)
 {
   int i, j;
   for (i=0; i<gbs->nshell(); i++) {
@@ -444,7 +444,7 @@ do_extent_test(const RefGaussianBasisSet &gbs)
       cout << endl;
     }
 
-  RefShellExtent extent = new ShellExtent;
+  Ref<ShellExtent> extent = new ShellExtent;
   extent->init(gbs);
   extent->print();
 }
@@ -463,9 +463,9 @@ main(int, char *argv[])
 
   char *filename = (argv[1]) ? argv[1] : SRCDIR "/btest.kv";
   
-  RefKeyVal keyval = new ParsedKeyVal(filename);
+  Ref<KeyVal> keyval = new ParsedKeyVal(filename);
   
-  RefIntegral intgrl = new IntegralV3;
+  Ref<Integral> intgrl = new IntegralV3;
 
   int dooverlap = keyval->booleanvalue("overlap");
   int doeigvals = keyval->booleanvalue("eigvals");
@@ -477,8 +477,8 @@ main(int, char *argv[])
   int doextent = keyval->booleanvalue("extent");
 
   for (i=0; i<keyval->count("test"); i++) {
-      RefGaussianBasisSet gbs = keyval->describedclassvalue("test", i);
-      RefGaussianBasisSet gbs2 = keyval->describedclassvalue("test2", i);
+      Ref<GaussianBasisSet> gbs = keyval->describedclassvalue("test", i);
+      Ref<GaussianBasisSet> gbs2 = keyval->describedclassvalue("test2", i);
 
       if (dooverlap) test_overlap(gbs,gbs2,intgrl);
 
@@ -517,22 +517,22 @@ main(int, char *argv[])
       const int nelem = 37;
 
       // Make H, C, and P molecules
-      RefMolecule hmol = new Molecule();
+      Ref<Molecule> hmol = new Molecule();
       hmol->add_atom(AtomInfo::string_to_Z("H"),0,0,0);
-      RefMolecule cmol = new Molecule();
+      Ref<Molecule> cmol = new Molecule();
       cmol->add_atom(AtomInfo::string_to_Z("C"),0,0,0);
-      RefMolecule pmol = new Molecule();
+      Ref<Molecule> pmol = new Molecule();
       pmol->add_atom(AtomInfo::string_to_Z("P"),0,0,0);
 
       perlout << "%basissets = (" << endl;
       int nbasis = keyval->count("basislist");
-      RefKeyVal nullkv = new AssignedKeyVal();
+      Ref<KeyVal> nullkv = new AssignedKeyVal();
       for (i=0; i<nbasis; i++) {
           int first_element = 1;
           char *basisname = keyval->pcharvalue("basislist",i);
           perlout << "  \"" << basisname << "\" => (";
           BasisFileSet bfs(nullkv);
-          RefKeyVal basiskv = bfs.keyval(nullkv, basisname);
+          Ref<KeyVal> basiskv = bfs.keyval(nullkv, basisname);
           char elemstr[512];
           elemstr[0] = '\0';
           int last_elem_exists = 0;
@@ -540,8 +540,8 @@ main(int, char *argv[])
           int n1 = 0;
           int n2 = 0;
           for (j=0; j<nelem; j++) {
-              RefAssignedKeyVal atombaskv_a(new AssignedKeyVal());
-              RefKeyVal atombaskv(atombaskv_a);
+              Ref<AssignedKeyVal> atombaskv_a(new AssignedKeyVal());
+              Ref<KeyVal> atombaskv(atombaskv_a);
               char keyword[256];
               strcpy(keyword,":basis:");
               strcat(keyword,AtomInfo::name(j+1));
@@ -566,19 +566,19 @@ main(int, char *argv[])
                   if (j+1 == 1) {
                       atombaskv_a->assign("name", basisname);
                       atombaskv_a->assign("molecule", hmol);
-                      RefGaussianBasisSet gbs=new GaussianBasisSet(atombaskv);
+                      Ref<GaussianBasisSet> gbs=new GaussianBasisSet(atombaskv);
                       n0 = gbs->nbasis();
                     }
                   if (j+1 == 6) {
                       atombaskv_a->assign("name", basisname);
                       atombaskv_a->assign("molecule", cmol);
-                      RefGaussianBasisSet gbs=new GaussianBasisSet(atombaskv);
+                      Ref<GaussianBasisSet> gbs=new GaussianBasisSet(atombaskv);
                       n1 = gbs->nbasis();
                     }
                   if (j+1 == 15) {
                       atombaskv_a->assign("name", basisname);
                       atombaskv_a->assign("molecule", pmol);
-                      RefGaussianBasisSet gbs=new GaussianBasisSet(atombaskv);
+                      Ref<GaussianBasisSet> gbs=new GaussianBasisSet(atombaskv);
                       n2 = gbs->nbasis();
                     }
                 }

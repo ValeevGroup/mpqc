@@ -34,8 +34,8 @@
 ////////////////////////////////////////////////////////////////////////////
 // SymmOneBodyIntIter
 
-SymmOneBodyIntIter::SymmOneBodyIntIter(const RefOneBodyInt& ints,
-                                       const RefPetiteList& p) :
+SymmOneBodyIntIter::SymmOneBodyIntIter(const Ref<OneBodyInt>& ints,
+                                       const Ref<PetiteList>& p) :
   OneBodyIntIter(ints), pl(p)
 {
 }
@@ -69,8 +69,8 @@ SymmOneBodyIntIter::scale() const
 ////////////////////////////////////////////////////////////////////////////
 // SymmTwoBodyIntIter
 
-SymmTwoBodyIntIter::SymmTwoBodyIntIter(const RefTwoBodyInt& ints,
-                                       const RefPetiteList& p) :
+SymmTwoBodyIntIter::SymmTwoBodyIntIter(const Ref<TwoBodyInt>& ints,
+                                       const Ref<PetiteList>& p) :
   TwoBodyIntIter(ints), pl(p)
 {
 }

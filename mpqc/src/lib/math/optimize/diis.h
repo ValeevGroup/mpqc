@@ -36,11 +36,6 @@
 
 /** The DIIS class provides DIIS extrapolation. */
 class DIIS: public SelfConsistentExtrapolation {
-#   define CLASSNAME DIIS
-#   define HAVE_STATEIN_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     int start;
     int ndiis;
@@ -53,13 +48,13 @@ class DIIS: public SelfConsistentExtrapolation {
     double ** bold;
     double ** bmat;
 
-    RefSCExtrapData dtemp_data;
-    RefSCExtrapError dtemp_error;
+    Ref<SCExtrapData> dtemp_data;
+    Ref<SCExtrapError> dtemp_error;
 
-    RefSCExtrapData Ldata;
+    Ref<SCExtrapData> Ldata;
 
-    RefSCExtrapData *diism_data;
-    RefSCExtrapError *diism_error;
+    Ref<SCExtrapData> *diism_data;
+    Ref<SCExtrapError> *diism_error;
 
     void init();
   public:
@@ -90,13 +85,13 @@ class DIIS: public SelfConsistentExtrapolation {
         ngroup.
 
         </dl> */
-    DIIS(const RefKeyVal&);
+    DIIS(const Ref<KeyVal>&);
     ~DIIS();
 
     void save_data_state(StateOut&);
     
-    int extrapolate(const RefSCExtrapData& data,
-                    const RefSCExtrapError& error);
+    int extrapolate(const Ref<SCExtrapData>& data,
+                    const Ref<SCExtrapError>& error);
 
     void start_extrapolation();
 

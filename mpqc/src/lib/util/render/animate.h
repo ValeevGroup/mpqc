@@ -35,22 +35,20 @@
 #include <util/render/render.h>
 
 class AnimatedObject: public DescribedClass {
-#   define CLASSNAME AnimatedObject
-#   include <util/class/classda.h>
   protected:
     char *name_;
   public:
     AnimatedObject();
-    AnimatedObject(const RefKeyVal&);
+    AnimatedObject(const Ref<KeyVal>&);
     virtual ~AnimatedObject();
 
     const char *name() const { return name_; }
     void set_name(const char *name);
 
     virtual int nobject() = 0;
-    virtual RefRenderedObject object(int iobject) = 0;
+    virtual Ref<RenderedObject> object(int iobject) = 0;
 };
-DescribedClass_REF_dec(AnimatedObject);
+
 
 #endif
 

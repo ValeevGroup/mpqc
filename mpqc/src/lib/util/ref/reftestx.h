@@ -31,7 +31,7 @@
 
 #include <util/ref/ref.h>
 
-class X: public VRefCount {
+class X: public RefCount {
   private:
     int x;
   public:
@@ -40,4 +40,12 @@ class X: public VRefCount {
     ~X();
 };
 
-Ref_declare(X);
+class Y: public X {
+  private:
+    int y;
+  public:
+    Y();
+    ~Y();
+};
+
+

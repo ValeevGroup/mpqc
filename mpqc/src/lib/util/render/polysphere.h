@@ -30,6 +30,6 @@
 
 #include <util/render/polygons.h>
 
-void polysphere(int maxlevel, const RefRenderedPolygons& poly);
+void polysphere(int maxlevel, const Ref<RenderedPolygons>& poly);
 
 #endif

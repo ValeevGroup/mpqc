@@ -10,9 +10,6 @@
 #include <chemistry/qc/psi/psiinput.h>
 
 class PsiWfn: public Wavefunction {
-#   define CLASSNAME PsiWfn
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
     PSI_Input psi_in;
     void compute();
@@ -21,7 +18,7 @@ class PsiWfn: public Wavefunction {
     virtual double read_energy() = 0;
     void write_basic_input(int conv, const char *wfn);
   public:
-    PsiWfn(const RefKeyVal&);
+    PsiWfn(const Ref<KeyVal>&);
     PsiWfn(StateIn&);
     virtual ~PsiWfn();
     void save_data_state(StateOut&);
@@ -39,64 +36,44 @@ class PsiWfn: public Wavefunction {
 };
 
 class PsiHF: public PsiWfn {
-#   define CLASSNAME PsiHF
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     void write_input(int conv);
     double read_energy();
   public:
-    PsiHF(const RefKeyVal&);
+    PsiHF(const Ref<KeyVal>&);
     PsiHF(StateIn&);
     ~PsiHF();
     void save_data_state(StateOut&);
 };
 
 class PsiCCSD: public PsiWfn {
-#   define CLASSNAME PsiCCSD
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     void write_input(int conv);
     double read_energy();
   public:
-    PsiCCSD(const RefKeyVal&);
+    PsiCCSD(const Ref<KeyVal>&);
     PsiCCSD(StateIn&);
     ~PsiCCSD();
     void save_data_state(StateOut&);
 };
 
 class PsiCCSD_T: public PsiWfn {
-#   define CLASSNAME PsiCCSD_T
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     void write_input(int conv);
     double read_energy();
   public:
-    PsiCCSD_T(const RefKeyVal&);
+    PsiCCSD_T(const Ref<KeyVal>&);
     PsiCCSD_T(StateIn&);
     ~PsiCCSD_T();
     void save_data_state(StateOut&);
 };
 
 class PsiCCSDT: public PsiWfn {
-#   define CLASSNAME PsiCCSDT
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     void write_input(int conv);
     double read_energy();
   public:
-    PsiCCSDT(const RefKeyVal&);
+    PsiCCSDT(const Ref<KeyVal>&);
     PsiCCSDT(StateIn&);
     ~PsiCCSDT();
     void save_data_state(StateOut&);
@@ -104,16 +81,11 @@ class PsiCCSDT: public PsiWfn {
 };
 
 class PsiCI: public PsiWfn {
-#   define CLASSNAME PsiCI
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     void write_input(int conv);
     double read_energy();
   public:
-    PsiCI(const RefKeyVal&);
+    PsiCI(const Ref<KeyVal>&);
     PsiCI(StateIn&);
     ~PsiCI();
     void save_data_state(StateOut&);

@@ -59,19 +59,11 @@ using namespace std;
 
 #undef DEBUG
 
-#define CLASSNAME ShmMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public MsgMemoryGrp
-#include <util/class/classi.h>
-void *
-ShmMemoryGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  MsgMemoryGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ShmMemoryGrp_cd(
+  typeid(ShmMemoryGrp),"ShmMemoryGrp",1,"public MsgMemoryGrp",
+  0, create<ShmMemoryGrp>, 0);
 
-ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg):
+ShmMemoryGrp::ShmMemoryGrp(const Ref<MessageGrp>& msg):
   MsgMemoryGrp(msg)
 {
   update_ = 0;
@@ -84,7 +76,7 @@ ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg):
   attach_address_ = 0;
 }
 
-ShmMemoryGrp::ShmMemoryGrp(const RefKeyVal& keyval):
+ShmMemoryGrp::ShmMemoryGrp(const Ref<KeyVal>& keyval):
   MsgMemoryGrp(keyval)
 {
   update_ = 0;

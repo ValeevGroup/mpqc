@@ -44,36 +44,26 @@ using namespace std;
 /////////////////////////////////////////////////////////////////
 // MolecularHessian
 
-SavableState_REF_def(MolecularHessian);
-
-#define CLASSNAME MolecularHessian
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-MolecularHessian::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MolecularHessian_cd(
+  typeid(MolecularHessian),"MolecularHessian",1,"public SavableState",
+  0, 0, 0);
 
 MolecularHessian::MolecularHessian()
 {
   matrixkit_ = SCMatrixKit::default_matrixkit();
 }
 
-MolecularHessian::MolecularHessian(const RefKeyVal&keyval)
+MolecularHessian::MolecularHessian(const Ref<KeyVal>&keyval)
 {
-  mol_ = keyval->describedclassvalue("molecule");
+  mol_ << keyval->describedclassvalue("molecule");
   matrixkit_ = SCMatrixKit::default_matrixkit();
 }
 
 MolecularHessian::MolecularHessian(StateIn&s):
   SavableState(s)
 {
-  mol_.restore_state(s);
-  d3natom_.restore_state(s);
+  mol_ << SavableState::restore_state(s);
+  d3natom_ << SavableState::restore_state(s);
   matrixkit_ = SCMatrixKit::default_matrixkit();
 }
 
@@ -84,8 +74,8 @@ MolecularHessian::~MolecularHessian()
 void
 MolecularHessian::save_data_state(StateOut&s)
 {
-  mol_.save_state(s);
-  d3natom_.save_state(s);
+  SavableState::save_state(mol_.pointer(),s);
+  SavableState::save_state(d3natom_.pointer(),s);
 }
 
 RefSCDimension
@@ -96,9 +86,9 @@ MolecularHessian::d3natom()
 }
 
 RefSCMatrix
-MolecularHessian::cartesian_to_symmetry(const RefMolecule &mol,
-                                        RefPointGroup pg,
-                                        RefSCMatrixKit kit)
+MolecularHessian::cartesian_to_symmetry(const Ref<Molecule> &mol,
+                                        Ref<PointGroup> pg,
+                                        Ref<SCMatrixKit> kit)
 {
   int i;
 
@@ -266,7 +256,7 @@ MolecularHessian::cartesian_to_symmetry(const RefMolecule &mol,
   for (i=0; i<nirrep; i++) {
       total += dims[i];
     }
-  RefSCBlockInfo bi = new SCBlockInfo(total, nirrep, dims);
+  Ref<SCBlockInfo> bi = new SCBlockInfo(total, nirrep, dims);
   for (i=0; i<nirrep; i++) {
       bi->set_subdim(i, symmbasis[i]->coldim());
     }
@@ -275,9 +265,9 @@ MolecularHessian::cartesian_to_symmetry(const RefMolecule &mol,
   RefSCDimension bd3natom = new SCDimension(3*mol->natom());
   bd3natom->blocks()->set_subdim(0,d3natom);
 
-  RefSCMatrixKit symkit = new BlockedSCMatrixKit(kit);
+  Ref<SCMatrixKit> symkit = new BlockedSCMatrixKit(kit);
   RefSCMatrix result(dsym, bd3natom, symkit);
-  BlockedSCMatrix *bresult = BlockedSCMatrix::castdown(result.pointer());
+  BlockedSCMatrix *bresult = dynamic_cast<BlockedSCMatrix*>(result.pointer());
 
   // put the symmetric basis in the result matrix
   for (i=0; i<nirrep; i++) {
@@ -294,7 +284,7 @@ MolecularHessian::cartesian_to_symmetry(const RefMolecule &mol,
 }
 
 void
-MolecularHessian::set_energy(const RefMolecularEnergy &)
+MolecularHessian::set_energy(const Ref<MolecularEnergy> &)
 {
 }
 
@@ -306,7 +296,7 @@ MolecularHessian::energy() const
 
 void
 MolecularHessian::write_cartesian_hessian(const char *filename,
-                                          const RefMolecule &mol,
+                                          const Ref<Molecule> &mol,
                                           const RefSymmSCMatrix &hess)
 {
   int ntri = (3*mol->natom()*(3*mol->natom()+1))/2;
@@ -339,12 +329,12 @@ MolecularHessian::write_cartesian_hessian(const char *filename,
 
 void
 MolecularHessian::read_cartesian_hessian(const char *filename,
-                                         const RefMolecule &mol,
+                                         const Ref<Molecule> &mol,
                                          const RefSymmSCMatrix &hess)
 {
   int ntri = (3*mol->natom()*(3*mol->natom()+1))/2;
   double *hessv = new double[ntri];
-  RefMessageGrp grp = MessageGrp::get_default_messagegrp();
+  Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
   if (grp->me() == 0) {
       int i;
       ifstream in(filename);
@@ -395,21 +385,11 @@ MolecularHessian::read_cartesian_hessian(const char *filename,
 /////////////////////////////////////////////////////////////////
 // ReadMolecularHessian
 
-#define CLASSNAME ReadMolecularHessian
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public MolecularHessian
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-ReadMolecularHessian::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MolecularHessian::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ReadMolecularHessian_cd(
+  typeid(ReadMolecularHessian),"ReadMolecularHessian",1,"public MolecularHessian",
+  0, create<ReadMolecularHessian>, create<ReadMolecularHessian>);
 
-ReadMolecularHessian::ReadMolecularHessian(const RefKeyVal&keyval):
+ReadMolecularHessian::ReadMolecularHessian(const Ref<KeyVal>&keyval):
   MolecularHessian(keyval)
 {
   KeyValValueString default_filename(SCFormIO::fileext_to_filename(".hess"),
@@ -447,24 +427,14 @@ ReadMolecularHessian::cartesian_hessian()
 /////////////////////////////////////////////////////////////////
 // GuessMolecularHessian
 
-#define CLASSNAME GuessMolecularHessian
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public MolecularHessian
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-GuessMolecularHessian::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MolecularHessian::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc GuessMolecularHessian_cd(
+  typeid(GuessMolecularHessian),"GuessMolecularHessian",1,"public MolecularHessian",
+  0, create<GuessMolecularHessian>, create<GuessMolecularHessian>);
 
-GuessMolecularHessian::GuessMolecularHessian(const RefKeyVal&keyval):
+GuessMolecularHessian::GuessMolecularHessian(const Ref<KeyVal>&keyval):
   MolecularHessian(keyval)
 {
-  coor_ = keyval->describedclassvalue("coor");
+  coor_ << keyval->describedclassvalue("coor");
   if (mol_.null()) mol_ = coor_->molecule();
 }
 
@@ -472,7 +442,7 @@ GuessMolecularHessian::GuessMolecularHessian(StateIn&s):
   SavableState(s),
   MolecularHessian(s)
 {
-  coor_.restore_state(s);
+  coor_ << SavableState::restore_state(s);
 }
 
 GuessMolecularHessian::~GuessMolecularHessian()
@@ -483,7 +453,7 @@ void
 GuessMolecularHessian::save_data_state(StateOut&s)
 {
   MolecularHessian::save_data_state(s);
-  coor_.save_state(s);
+  SavableState::save_state(coor_.pointer(),s);
 }
 
 RefSymmSCMatrix
@@ -499,21 +469,11 @@ GuessMolecularHessian::cartesian_hessian()
 /////////////////////////////////////////////////////////////////
 // DiagMolecularHessian
 
-#define CLASSNAME DiagMolecularHessian
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public MolecularHessian
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-DiagMolecularHessian::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MolecularHessian::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc DiagMolecularHessian_cd(
+  typeid(DiagMolecularHessian),"DiagMolecularHessian",1,"public MolecularHessian",
+  0, create<DiagMolecularHessian>, create<DiagMolecularHessian>);
 
-DiagMolecularHessian::DiagMolecularHessian(const RefKeyVal&keyval):
+DiagMolecularHessian::DiagMolecularHessian(const Ref<KeyVal>&keyval):
   MolecularHessian(keyval)
 {
   diag_ = keyval->doublevalue("coor",KeyValValuedouble(1.0));

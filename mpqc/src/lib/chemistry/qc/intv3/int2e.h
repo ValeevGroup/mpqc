@@ -50,19 +50,19 @@ class Integral;
 /** Int2eV3 is a class wrapper for the two body part of the C language
     IntV3 library.  It is used by TwoBodyIntV3 and TwoBodyDerivIntV3 to
     implement IntegralV3. */
-class Int2eV3: public VRefCount {
+class Int2eV3: public RefCount {
   protected:
     Integral *integral_;
 
     BuildIntV3 build;
-    RefIntegralStorer storer;
+    Ref<IntegralStorer> storer;
 
-    RefGaussianBasisSet bs1_;
-    RefGaussianBasisSet bs2_;
-    RefGaussianBasisSet bs3_;
-    RefGaussianBasisSet bs4_;
+    Ref<GaussianBasisSet> bs1_;
+    Ref<GaussianBasisSet> bs2_;
+    Ref<GaussianBasisSet> bs3_;
+    Ref<GaussianBasisSet> bs4_;
 
-    RefMessageGrp grp_;
+    Ref<MessageGrp> grp_;
 
     int bs1_shell_offset_;
     int bs2_shell_offset_;
@@ -116,7 +116,7 @@ class Int2eV3: public VRefCount {
     int permute_;
 
   protected:
-    RefFJT fjt_;
+    Ref<FJT> fjt_;
 
     int *int_shell_to_prim;
     IntV3Arraydouble2 int_shell_r;
@@ -128,10 +128,10 @@ class Int2eV3: public VRefCount {
     double *int_buffer;
     double *int_derint_buffer;
 
-    RefGaussianBasisSet int_cs1;
-    RefGaussianBasisSet int_cs2;
-    RefGaussianBasisSet int_cs3;
-    RefGaussianBasisSet int_cs4;
+    Ref<GaussianBasisSet> int_cs1;
+    Ref<GaussianBasisSet> int_cs2;
+    Ref<GaussianBasisSet> int_cs3;
+    Ref<GaussianBasisSet> int_cs4;
 
     GaussianShell *int_shell1;
     GaussianShell *int_shell2;
@@ -195,19 +195,19 @@ class Int2eV3: public VRefCount {
   protected:
     void int_offset_print(std::ostream &,
                           double *buffer,
-                          RefGaussianBasisSet c1, int s1,
-                          RefGaussianBasisSet c2, int s2,
-                          RefGaussianBasisSet c3, int s3,
-                          RefGaussianBasisSet c4, int s4);
+                          Ref<GaussianBasisSet> c1, int s1,
+                          Ref<GaussianBasisSet> c2, int s2,
+                          Ref<GaussianBasisSet> c3, int s3,
+                          Ref<GaussianBasisSet> c4, int s4);
     void int_offset_print_n(std::ostream &, double *buffer,
                             int n1, int n2, int n3, int n4,
                             int o1, int o2, int o3, int o4,
                             int e12, int e13e24, int e34);
     void int_print(std::ostream &, double *buffer,
-                   RefGaussianBasisSet c1, int s1,
-                   RefGaussianBasisSet c2, int s2,
-                   RefGaussianBasisSet c3, int s3,
-                   RefGaussianBasisSet c4, int s4);
+                   Ref<GaussianBasisSet> c1, int s1,
+                   Ref<GaussianBasisSet> c2, int s2,
+                   Ref<GaussianBasisSet> c3, int s3,
+                   Ref<GaussianBasisSet> c4, int s4);
     void int_print_n(std::ostream &, double *buffer,
                      int n1, int n2, int n3, int n4,
                      int e12, int e13e24, int e34);
@@ -232,19 +232,19 @@ class Int2eV3: public VRefCount {
     // locals from init2e.cc
   protected:
     void alloc_inter(int nprim,int nshell);
-    void compute_shell_1(RefGaussianBasisSet cs, int, int);
-    void compute_prim_1(RefGaussianBasisSet cs1);
-    void compute_shell_2(RefGaussianBasisSet cs1,RefGaussianBasisSet cs2);
-    void compute_prim_2(RefGaussianBasisSet cs1,RefGaussianBasisSet cs2);
+    void compute_shell_1(Ref<GaussianBasisSet> cs, int, int);
+    void compute_prim_1(Ref<GaussianBasisSet> cs1);
+    void compute_shell_2(Ref<GaussianBasisSet> cs1,Ref<GaussianBasisSet> cs2);
+    void compute_prim_2(Ref<GaussianBasisSet> cs1,Ref<GaussianBasisSet> cs2);
 
 
     // globals from init2e.cc
   protected:
     double *int_initialize_erep(int storage, int order,
-                                const RefGaussianBasisSet &cs1,
-                                const RefGaussianBasisSet &cs2,
-                                const RefGaussianBasisSet &cs3,
-                                const RefGaussianBasisSet &cs4);
+                                const Ref<GaussianBasisSet> &cs1,
+                                const Ref<GaussianBasisSet> &cs2,
+                                const Ref<GaussianBasisSet> &cs3,
+                                const Ref<GaussianBasisSet> &cs4);
     void int_done_erep();
 
     // from tformv3.cc
@@ -343,10 +343,10 @@ class Int2eV3: public VRefCount {
 
   public:
     Int2eV3(Integral *,
-            const RefGaussianBasisSet&,
-            const RefGaussianBasisSet&,
-            const RefGaussianBasisSet&,
-            const RefGaussianBasisSet&,
+            const Ref<GaussianBasisSet>&,
+            const Ref<GaussianBasisSet>&,
+            const Ref<GaussianBasisSet>&,
+            const Ref<GaussianBasisSet>&,
             int order, int storage);
     ~Int2eV3();
 
@@ -403,27 +403,27 @@ class Int2eV3: public VRefCount {
 
     double *buffer() { return int_buffer; }
 
-    RefGaussianBasisSet basis()
+    Ref<GaussianBasisSet> basis()
     {
       if (bs1_==bs2_ && bs1_ == bs3_ && bs1_ == bs4_) return bs1_;
       return 0;
     }
-    RefGaussianBasisSet basis1() { return bs1_; }
-    RefGaussianBasisSet basis2() { return bs2_; }
-    RefGaussianBasisSet basis3() { return bs3_; }
-    RefGaussianBasisSet basis4() { return bs4_; }
+    Ref<GaussianBasisSet> basis1() { return bs1_; }
+    Ref<GaussianBasisSet> basis2() { return bs2_; }
+    Ref<GaussianBasisSet> basis3() { return bs3_; }
+    Ref<GaussianBasisSet> basis4() { return bs4_; }
 
-    RefGaussianBasisSet cs1() const { return int_cs1; }
-    RefGaussianBasisSet cs2() const { return int_cs2; }
-    RefGaussianBasisSet cs3() const { return int_cs3; }
-    RefGaussianBasisSet cs4() const { return int_cs4; }
+    Ref<GaussianBasisSet> cs1() const { return int_cs1; }
+    Ref<GaussianBasisSet> cs2() const { return int_cs2; }
+    Ref<GaussianBasisSet> cs3() const { return int_cs3; }
+    Ref<GaussianBasisSet> cs4() const { return int_cs4; }
 
     GaussianBasisSet * pcs1() const { return int_cs1.pointer(); }
     GaussianBasisSet * pcs2() const { return int_cs2.pointer(); }
     GaussianBasisSet * pcs3() const { return int_cs3.pointer(); }
     GaussianBasisSet * pcs4() const { return int_cs4.pointer(); }
 };
-REF_dec(Int2eV3);
+
 
 #endif
 

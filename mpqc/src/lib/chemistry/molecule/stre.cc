@@ -53,20 +53,9 @@
 #include <chemistry/molecule/localdef.h>
 
 
-#define CLASSNAME StreSimpleCo
-#define PARENTS public SimpleCo
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-StreSimpleCo::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SimpleCo::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc StreSimpleCo_cd(
+  typeid(StreSimpleCo),"StreSimpleCo",1,"public SimpleCo",
+  create<StreSimpleCo>, create<StreSimpleCo>, create<StreSimpleCo>);
 SimpleCo_IMPL(StreSimpleCo);
 
 StreSimpleCo::StreSimpleCo() : SimpleCo(2) {}
@@ -83,7 +72,7 @@ StreSimpleCo::StreSimpleCo(const char *re, int a1, int a2)
   atoms[0]=a1; atoms[1]=a2;
 }
 
-StreSimpleCo::StreSimpleCo(const RefKeyVal &kv)
+StreSimpleCo::StreSimpleCo(const Ref<KeyVal> &kv)
   : SimpleCo(kv,2)
 {
 }

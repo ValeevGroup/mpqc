@@ -44,57 +44,15 @@
 
 using namespace std;
 
-////////////////////////////////////////////////////////////////////////////
-
-#define CLASSNAME IntCoor
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-
-#define CLASSNAME SetIntCoor
-#define PARENTS public SavableState
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-#define CLASSNAME IntCoorGen
-#define VERSION 2
-#define PARENTS public SavableState
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-#define CLASSNAME SumIntCoor
-#define PARENTS public IntCoor
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-#define CLASSNAME MolecularCoor
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-
 ///////////////////////////////////////////////////////////////////////////
 // members of IntCoor
 
 double IntCoor::bohr_conv = 0.52917706;
 double IntCoor::radian_conv = 180.0/3.14159265358979323846;
 
-SavableState_REF_def(IntCoor);
-ARRAY_def(RefIntCoor);
-
-void *
-IntCoor::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc IntCoor_cd(
+  typeid(IntCoor),"IntCoor",1,"public SavableState",
+  0, 0, 0);
 
 IntCoor::IntCoor(const char *re):
   label_(0), value_(0.0)
@@ -110,7 +68,7 @@ IntCoor::IntCoor(const IntCoor& c):
   if (c.label_) label_ = strcpy(new char[strlen(c.label_)+1],c.label_);
 }
 
-IntCoor::IntCoor(const RefKeyVal&keyval)
+IntCoor::IntCoor(const Ref<KeyVal>&keyval)
 {
   label_ = keyval->pcharvalue("label");
   value_ = keyval->doublevalue("value");
@@ -181,7 +139,7 @@ IntCoor::print(ostream &o) const
 }
 
 void
-IntCoor::print_details(const RefMolecule &mol, ostream& os) const
+IntCoor::print_details(const Ref<Molecule> &mol, ostream& os) const
 {
   os.setf(ios::fixed,ios::floatfield);
   os.precision(10);
@@ -201,25 +159,19 @@ IntCoor::preferred_value() const
 ///////////////////////////////////////////////////////////////////////////
 // members of SetIntCoor
 
-SavableState_REF_def(SetIntCoor);
-
-void *
-SetIntCoor::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SetIntCoor_cd(
+  typeid(SetIntCoor),"SetIntCoor",1,"public SavableState",
+  create<SetIntCoor>, create<SetIntCoor>, create<SetIntCoor>);
 
 SetIntCoor::SetIntCoor()
 {
 }
 
-SetIntCoor::SetIntCoor(const RefKeyVal& keyval)
+SetIntCoor::SetIntCoor(const Ref<KeyVal>& keyval)
 {
   int n = keyval->count();
 
-  RefIntCoorGen gen = keyval->describedclassvalue("generator");
+  Ref<IntCoorGen> gen; gen << keyval->describedclassvalue("generator");
 
   if (gen.null() && !n) {
       ExEnv::err() << node0 << indent << "SetIntCoor::SetIntCoor: bad input\n";
@@ -236,7 +188,8 @@ SetIntCoor::SetIntCoor(const RefKeyVal& keyval)
     }
 
   for (int i=0; i<n; i++) {
-      coor_.push_back(keyval->describedclassvalue(i));
+      Ref<IntCoor> coori; coori << keyval->describedclassvalue(i);
+      coor_.push_back(coori);
     }
 }
 
@@ -246,9 +199,9 @@ SetIntCoor::SetIntCoor(StateIn& s):
   int n;
   s.get(n);
 
-  RefIntCoor tmp;
+  Ref<IntCoor> tmp;
   for (int i=0; i<n; i++) {
-      tmp.restore_state(s);
+      tmp << SavableState::restore_state(s);
       coor_.push_back(tmp);
     }
 }
@@ -264,18 +217,18 @@ SetIntCoor::save_data_state(StateOut& s)
   s.put(n);
 
   for (int i=0; i<n; i++) {
-      coor_[i].save_state(s);
+      SavableState::save_state(coor_[i].pointer(),s);
     }
 }
 
 void
-SetIntCoor::add(const RefIntCoor& coor)
+SetIntCoor::add(const Ref<IntCoor>& coor)
 {
   coor_.push_back(coor);
 }
 
 void
-SetIntCoor::add(const RefSetIntCoor& coor)
+SetIntCoor::add(const Ref<SetIntCoor>& coor)
 {
   for (int i=0; i<coor->n(); i++) {
       coor_.push_back(coor->coor(i));
@@ -294,7 +247,7 @@ SetIntCoor::n() const
   return coor_.size();
 }
 
-RefIntCoor
+Ref<IntCoor>
 SetIntCoor::coor(int i) const
 {
   return coor_[i];
@@ -302,9 +255,9 @@ SetIntCoor::coor(int i) const
 
 // compute the bmatrix by finite displacements
 void
-SetIntCoor::fd_bmat(const RefMolecule& mol,RefSCMatrix& fd_bmatrix)
+SetIntCoor::fd_bmat(const Ref<Molecule>& mol,RefSCMatrix& fd_bmatrix)
 {
-  RefSCMatrixKit kit = fd_bmatrix.kit();
+  Ref<SCMatrixKit> kit = fd_bmatrix.kit();
 
   fd_bmatrix.assign(0.0);
   
@@ -353,7 +306,7 @@ SetIntCoor::fd_bmat(const RefMolecule& mol,RefSCMatrix& fd_bmatrix)
 }
 
 void
-SetIntCoor::bmat(const RefMolecule& mol, RefSCMatrix& bmat)
+SetIntCoor::bmat(const Ref<Molecule>& mol, RefSCMatrix& bmat)
 {
   bmat.assign(0.0);
 
@@ -369,7 +322,7 @@ SetIntCoor::bmat(const RefMolecule& mol, RefSCMatrix& bmat)
 }
 
 void
-SetIntCoor::guess_hessian(RefMolecule& mol,RefSymmSCMatrix& hessian)
+SetIntCoor::guess_hessian(Ref<Molecule>& mol,RefSymmSCMatrix& hessian)
 {
   int ncoor = hessian.n();
 
@@ -380,7 +333,7 @@ SetIntCoor::guess_hessian(RefMolecule& mol,RefSymmSCMatrix& hessian)
 }
 
 void
-SetIntCoor::print_details(const RefMolecule &mol, ostream& os) const
+SetIntCoor::print_details(const Ref<Molecule> &mol, ostream& os) const
 {
   int i;
 
@@ -390,7 +343,7 @@ SetIntCoor::print_details(const RefMolecule &mol, ostream& os) const
 }
 
 void
-SetIntCoor::update_values(const RefMolecule&mol)
+SetIntCoor::update_values(const Ref<Molecule>&mol)
 {
   for (int i=0; i<coor_.size(); i++) {
       coor_[i]->update_value(mol);
@@ -414,20 +367,16 @@ SetIntCoor::clear()
 ///////////////////////////////////////////////////////////////////////////
 // members of SumIntCoor
 
-void *
-SumIntCoor::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = IntCoor::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SumIntCoor_cd(
+  typeid(SumIntCoor),"SumIntCoor",1,"public IntCoor",
+  0, create<SumIntCoor>, create<SumIntCoor>);
 
 SumIntCoor::SumIntCoor(const char* label):
   IntCoor(label)
 {
 }
 
-SumIntCoor::SumIntCoor(const RefKeyVal&keyval):
+SumIntCoor::SumIntCoor(const Ref<KeyVal>&keyval):
   IntCoor(keyval)
 {
   static const char* coor = "coor";
@@ -441,7 +390,7 @@ SumIntCoor::SumIntCoor(const RefKeyVal&keyval):
 
   for (int i=0; i<n; i++) {
       double coe = keyval->doublevalue(coef,i);
-      RefIntCoor coo = keyval->describedclassvalue(coor,i);
+      Ref<IntCoor> coo; coo << keyval->describedclassvalue(coor,i);
       add(coo,coe);
     }
 }
@@ -452,11 +401,11 @@ SumIntCoor::SumIntCoor(StateIn&s):
   int n;
   s.get(n);
 
-  coef_.set_length(n);
-  coor_.set_length(n);
+  coef_.resize(n);
+  coor_.resize(n);
   for (int i=0; i<n; i++) {
       s.get(coef_[i]);
-      coor_[i].restore_state(s);
+      coor_[i] << SavableState::restore_state(s);
     }
 }
 
@@ -469,11 +418,11 @@ SumIntCoor::save_data_state(StateOut&s)
 {
   int n = coef_.size();
   IntCoor::save_data_state(s);
-  s.put(coef_.size());
+  s.put(int(coef_.size()));
 
   for (int i=0; i<n; i++) {
       s.put(coef_[i]);
-      coor_[i].save_state(s);
+      SavableState::save_state(coor_[i].pointer(),s);
     }
 }
 
@@ -484,10 +433,10 @@ SumIntCoor::n()
 }
 
 void
-SumIntCoor::add(RefIntCoor&coor,double coef)
+SumIntCoor::add(Ref<IntCoor>&coor,double coef)
 {
   // if a sum is added to a sum, unfold the nested sum
-  SumIntCoor* scoor = SumIntCoor::castdown(coor.pointer());
+  SumIntCoor* scoor = dynamic_cast<SumIntCoor*>(coor.pointer());
   if (scoor) {
       int l = scoor->coor_.size();
       for (int i=0; i<l; i++) {
@@ -510,7 +459,7 @@ SumIntCoor::add(RefIntCoor&coor,double coef)
 }
 
 int
-SumIntCoor::equivalent(RefIntCoor&c)
+SumIntCoor::equivalent(Ref<IntCoor>&c)
 {
   return 0;
 }
@@ -548,7 +497,7 @@ SumIntCoor::ctype() const
 }
 
 void
-SumIntCoor::print_details(const RefMolecule &mol, ostream& os) const
+SumIntCoor::print_details(const Ref<Molecule> &mol, ostream& os) const
 {
   int initial_indent = SCFormIO::getindent(os);
   int i;
@@ -570,7 +519,7 @@ SumIntCoor::print_details(const RefMolecule &mol, ostream& os) const
 
 // the SumIntCoor should be normalized before this is called.
 double
-SumIntCoor::force_constant(RefMolecule&molecule)
+SumIntCoor::force_constant(Ref<Molecule>&molecule)
 {
   double fc = 0.0;
   
@@ -582,7 +531,7 @@ SumIntCoor::force_constant(RefMolecule&molecule)
 }
 
 void
-SumIntCoor::update_value(const RefMolecule&molecule)
+SumIntCoor::update_value(const Ref<Molecule>&molecule)
 {
   int i, l = n();
 
@@ -590,8 +539,8 @@ SumIntCoor::update_value(const RefMolecule&molecule)
   for (i=0; i<l; i++) {
       coor_[i]->update_value(molecule);
 #if OLD_BMAT
-      if (StreSimpleCo::castdown(coor_[i]))
-        value_ += coef_[i] * StreSimpleCo::castdown(coor_[i])->angstrom();
+      if (dynamic_cast<StreSimpleCo*>(coor_[i]))
+        value_ += coef_[i] * dynamic_cast<StreSimpleCo*>(coor_[i])->angstrom();
       else
 #endif        
       value_ += coef_[i] * coor_[i]->value();
@@ -599,7 +548,7 @@ SumIntCoor::update_value(const RefMolecule&molecule)
 }
 
 void
-SumIntCoor::bmat(const RefMolecule&molecule,RefSCVector&bmat,double coef)
+SumIntCoor::bmat(const Ref<Molecule>&molecule,RefSCVector&bmat,double coef)
 {
   int i, l = n();
   
@@ -611,17 +560,11 @@ SumIntCoor::bmat(const RefMolecule&molecule,RefSCVector&bmat,double coef)
 ///////////////////////////////////////////////////////////////////////////
 // members of MolecularCoor
 
-SavableState_REF_def(MolecularCoor);
+static ClassDesc MolecularCoor_cd(
+  typeid(MolecularCoor),"MolecularCoor",1,"public SavableState",
+  0, 0, 0);
 
-void *
-MolecularCoor::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-MolecularCoor::MolecularCoor(RefMolecule&mol):
+MolecularCoor::MolecularCoor(Ref<Molecule>&mol):
   molecule_(mol)
 {
   debug_ = 0;
@@ -629,20 +572,20 @@ MolecularCoor::MolecularCoor(RefMolecule&mol):
   dnatom3_ = new SCDimension(3*molecule_->natom());
 }
 
-MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
+MolecularCoor::MolecularCoor(const Ref<KeyVal>&keyval)
 {
-  molecule_ = keyval->describedclassvalue("molecule");
+  molecule_ << keyval->describedclassvalue("molecule");
 
   if (molecule_.null()) {
       ExEnv::err() << node0 << indent
-           << "MolecularCoor(const RefKeyVal&keyval): molecule not found\n";
+           << "MolecularCoor(const Ref<KeyVal>&keyval): molecule not found\n";
       abort();
     }
 
   debug_ = keyval->intvalue("debug");
 
-  matrixkit_ = keyval->describedclassvalue("matrixkit");
-  dnatom3_ = keyval->describedclassvalue("natom3");
+  matrixkit_ << keyval->describedclassvalue("matrixkit");
+  dnatom3_ << keyval->describedclassvalue("natom3");
 
   if (matrixkit_.null()) matrixkit_ = SCMatrixKit::default_matrixkit();
 
@@ -658,8 +601,8 @@ MolecularCoor::MolecularCoor(StateIn&s):
 {
   debug_ = 0;
   matrixkit_ = SCMatrixKit::default_matrixkit();
-  molecule_.restore_state(s);
-  dnatom3_.restore_state(s);
+  molecule_ << SavableState::restore_state(s);
+  dnatom3_ << SavableState::restore_state(s);
 }
 
 MolecularCoor::~MolecularCoor()
@@ -669,8 +612,8 @@ MolecularCoor::~MolecularCoor()
 void
 MolecularCoor::save_data_state(StateOut&s)
 {
-  molecule_.save_state(s);
-  dnatom3_.save_state(s);
+  SavableState::save_state(molecule_.pointer(),s);
+  SavableState::save_state(dnatom3_.pointer(),s);
 }
 
 int
@@ -680,7 +623,7 @@ MolecularCoor::nconstrained()
 }
 
 // The default action is to never change the coordinates.
-RefNonlinearTransform
+Ref<NonlinearTransform>
 MolecularCoor::change_coordinates()
 {
   return 0;
@@ -695,17 +638,11 @@ MolecularCoor::to_cartesian(const RefSCVector&internal)
 ///////////////////////////////////////////////////////////////////////////
 // members of IntCoorGen
 
-SavableState_REF_def(IntCoorGen);
+static ClassDesc IntCoorGen_cd(
+  typeid(IntCoorGen),"IntCoorGen",2,"public SavableState",
+  0, create<IntCoorGen>, create<IntCoorGen>);
 
-void *
-IntCoorGen::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-IntCoorGen::IntCoorGen(const RefMolecule& mol,
+IntCoorGen::IntCoorGen(const Ref<Molecule>& mol,
                        int nextra_bonds, int *extra_bonds)
 {
   init_constants();
@@ -715,11 +652,11 @@ IntCoorGen::IntCoorGen(const RefMolecule& mol,
   extra_bonds_ = extra_bonds;
 }
 
-IntCoorGen::IntCoorGen(const RefKeyVal& keyval)
+IntCoorGen::IntCoorGen(const Ref<KeyVal>& keyval)
 {
   init_constants();
 
-  molecule_ = keyval->describedclassvalue("molecule");
+  molecule_ << keyval->describedclassvalue("molecule");
 
   radius_scale_factor_
     = keyval->doublevalue("radius_scale_factor",
@@ -775,9 +712,9 @@ IntCoorGen::IntCoorGen(const RefKeyVal& keyval)
 IntCoorGen::IntCoorGen(StateIn& s):
   SavableState(s)
 {
-  molecule_.restore_state(s);
+  molecule_ << SavableState::restore_state(s);
   s.get(linear_bends_);
-  if (s.version(static_class_desc()) >= 2) {
+  if (s.version(::class_desc<IntCoorGen>()) >= 2) {
       s.get(linear_lbends_);
     }
   s.get(linear_tors_);
@@ -811,7 +748,7 @@ IntCoorGen::~IntCoorGen()
 void
 IntCoorGen::save_data_state(StateOut& s)
 {
-  molecule_.save_state(s);
+  SavableState::save_state(molecule_.pointer(),s);
   s.put(linear_bends_);
   s.put(linear_lbends_);
   s.put(linear_tors_);
@@ -939,7 +876,7 @@ find_bonds(Molecule &m, BitArrayLTri &bonds,
 }
 
 void
-IntCoorGen::generate(const RefSetIntCoor& sic)
+IntCoorGen::generate(const Ref<SetIntCoor>& sic)
 {
   int i;
   Molecule& m = *molecule_.pointer();
@@ -979,7 +916,7 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
  */
 
 void
-IntCoorGen::add_bonds(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m)
+IntCoorGen::add_bonds(const Ref<SetIntCoor>& list, BitArrayLTri& bonds, Molecule& m)
 {
   int i,j,ij;
   int labelc=0;
@@ -1017,7 +954,7 @@ IntCoorGen::cos_ijk(Molecule& m, int i, int j, int k)
 }
 
 void
-IntCoorGen::add_bends(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m)
+IntCoorGen::add_bends(const Ref<SetIntCoor>& list, BitArrayLTri& bonds, Molecule& m)
 {
   int i,j,k;
   int labelc=0;
@@ -1100,7 +1037,7 @@ IntCoorGen::hterminal(Molecule& m, BitArrayLTri& bonds, int i)
 }
 
 void
-IntCoorGen::add_tors(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m)
+IntCoorGen::add_tors(const Ref<SetIntCoor>& list, BitArrayLTri& bonds, Molecule& m)
 {
   int i,j,k,l;
   int labelc=0;
@@ -1153,7 +1090,7 @@ IntCoorGen::add_tors(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m
   }
 
 void
-IntCoorGen::add_out(const RefSetIntCoor& list, BitArrayLTri& bonds, Molecule& m)
+IntCoorGen::add_out(const Ref<SetIntCoor>& list, BitArrayLTri& bonds, Molecule& m)
 {
   int i,j,k,l;
   int labelc=0;

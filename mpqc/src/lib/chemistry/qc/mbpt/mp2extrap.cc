@@ -39,23 +39,11 @@ using namespace std;
 /////////////////////////////////////////////////////////////////
 // MP2BasisExtrap
 
-SavableState_REF_def(MP2BasisExtrap);
-#define CLASSNAME MP2BasisExtrap
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public SumMolecularEnergy
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc MP2BasisExtrap_cd(
+  typeid(MP2BasisExtrap),"MP2BasisExtrap",1,"public SumMolecularEnergy",
+  0, create<MP2BasisExtrap>, create<MP2BasisExtrap>);
 
-void *
-MP2BasisExtrap::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SumMolecularEnergy::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-MP2BasisExtrap::MP2BasisExtrap(const RefKeyVal &keyval):
+MP2BasisExtrap::MP2BasisExtrap(const Ref<KeyVal> &keyval):
   SumMolecularEnergy(keyval)
 {
   if (n_ != 3) {
@@ -77,9 +65,9 @@ MP2BasisExtrap::MP2BasisExtrap(const RefKeyVal &keyval):
     }
 
   MBPT2 *mbpt[3];
-  if ((mbpt[0] = MBPT2::castdown(mole_[0].pointer())) == 0
-      ||(mbpt[1] = MBPT2::castdown(mole_[1].pointer())) == 0
-      ||(mbpt[2] = MBPT2::castdown(mole_[2].pointer())) == 0) {
+  if ((mbpt[0] = dynamic_cast<MBPT2*>(mole_[0].pointer())) == 0
+      ||(mbpt[1] = dynamic_cast<MBPT2*>(mole_[1].pointer())) == 0
+      ||(mbpt[2] = dynamic_cast<MBPT2*>(mole_[2].pointer())) == 0) {
       ExEnv::out() << node0 << "ERROR: MP2BasisExtrap: need MBPT2 objects"
            << endl;
       abort();
@@ -117,9 +105,9 @@ MP2BasisExtrap::compute()
   int i;
 
   MBPT2 *mbpt2[3];
-  mbpt2[0] = MBPT2::castdown(mole_[0].pointer());
-  mbpt2[1] = MBPT2::castdown(mole_[1].pointer());
-  mbpt2[2] = MBPT2::castdown(mole_[2].pointer());
+  mbpt2[0] = dynamic_cast<MBPT2*>(mole_[0].pointer());
+  mbpt2[1] = dynamic_cast<MBPT2*>(mole_[1].pointer());
+  mbpt2[2] = dynamic_cast<MBPT2*>(mole_[2].pointer());
 
   int *old_do_value = new int[n_];
   int *old_do_gradient = new int[n_];

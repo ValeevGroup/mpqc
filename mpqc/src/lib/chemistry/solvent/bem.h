@@ -39,21 +39,17 @@
 // This represents a solvent by a polarization charge on a dielectric
 // boundary surface.
 class BEMSolvent: public DescribedClass {
-#   define CLASSNAME BEMSolvent
-#   define HAVE_KEYVAL_CTOR
-//#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     int debug_;
 
-    RefMolecule solute_;
-    RefMolecule solvent_;
+    Ref<Molecule> solute_;
+    Ref<Molecule> solvent_;
     double solvent_density_;
     double dielectric_constant_;
-    RefSCMatrixKit matrixkit_;
+    Ref<SCMatrixKit> matrixkit_;
     RefSCMatrix system_matrix_i_;
     double f_;
-    RefMessageGrp grp_;
+    Ref<MessageGrp> grp_;
 
     double area_;
     double volume_;
@@ -61,7 +57,7 @@ class BEMSolvent: public DescribedClass {
     double edisp_;
     double erep_;
 
-    RefTriangulatedImplicitSurface surf_;
+    Ref<TriangulatedImplicitSurface> surf_;
 
     double** alloc_array(int n, int m);
     void free_array(double**);
@@ -76,7 +72,7 @@ class BEMSolvent: public DescribedClass {
     // Given surface charge density compute charges.
     void surface_charge_density_to_charges(double *charges);
   public:
-    BEMSolvent(const RefKeyVal&);
+    BEMSolvent(const Ref<KeyVal>&);
     virtual ~BEMSolvent();
 
     // This should be called after everything is setup--the
@@ -88,7 +84,7 @@ class BEMSolvent: public DescribedClass {
 
     int ncharge() { return surf_->nvertex(); }
 
-    RefMolecule solvent() { return solvent_ ;}
+    Ref<Molecule> solvent() { return solvent_ ;}
     double solvent_density() { return solvent_density_ ;}
 
     // NOTE: call allocation routines after init and free routines before done
@@ -148,11 +144,11 @@ class BEMSolvent: public DescribedClass {
     // this never needs to be called explicitly, but is here now for debugging
     void init_system_matrix();
 
-    RefTriangulatedImplicitSurface surface() const { return surf_; }
+    Ref<TriangulatedImplicitSurface> surface() const { return surf_; }
 
-    RefSCMatrixKit matrixkit() { return matrixkit_; }
+    Ref<SCMatrixKit> matrixkit() { return matrixkit_; }
 };
-DescribedClass_REF_dec(BEMSolvent);
+
 
 #endif
 

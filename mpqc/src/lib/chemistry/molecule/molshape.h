@@ -43,17 +43,13 @@
     van der Waals radius of the atom.
 */
 class VDWShape: public UnionShape {
-#   define CLASSNAME VDWShape
-#   define HAVE_KEYVAL_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
  private:
-    RefAtomInfo atominfo_;
+    Ref<AtomInfo> atominfo_;
  public:
-    VDWShape(const RefMolecule&);
-    VDWShape(const RefKeyVal&);
+    VDWShape(const Ref<Molecule>&);
+    VDWShape(const Ref<KeyVal>&);
     ~VDWShape();
-    void initialize(const RefMolecule&);
+    void initialize(const Ref<Molecule>&);
 };  
 
 /** DiscreteConnollyShape and ConnollyShape should produce the same result.
@@ -61,17 +57,13 @@ class VDWShape: public UnionShape {
     slower.  These classes describe the solvent accessible surface of a
     molecule.  */
 class DiscreteConnollyShape: public UnionShape {
-#   define CLASSNAME DiscreteConnollyShape
-#   define HAVE_KEYVAL_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     double radius_scale_factor_;
-    RefAtomInfo atominfo_;
+    Ref<AtomInfo> atominfo_;
  public:
-    DiscreteConnollyShape(const RefKeyVal&);
+    DiscreteConnollyShape(const Ref<KeyVal>&);
     ~DiscreteConnollyShape();
-    void initialize(const RefMolecule&,double probe_radius);
+    void initialize(const Ref<Molecule>&,double probe_radius);
 };
 
 #ifndef COUNT_CONNOLLY
@@ -152,16 +144,12 @@ class CS2Sphere
     slower.  These classes describe the solvent accessible surface of a
     molecule. */
 class ConnollyShape: public Shape {
-#   define CLASSNAME ConnollyShape
-#   define HAVE_KEYVAL_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     CS2Sphere* sphere;
     double probe_r;
     double radius_scale_factor_;
     int n_spheres;
-    RefAtomInfo atominfo_;
+    Ref<AtomInfo> atominfo_;
 
     Arrayint ***box_;
     double l_;
@@ -179,9 +167,9 @@ class ConnollyShape: public Shape {
 #endif
 
   public:
-    ConnollyShape(const RefKeyVal&);
+    ConnollyShape(const Ref<KeyVal>&);
     ~ConnollyShape();
-    void initialize(const RefMolecule&,double probe_radius);
+    void initialize(const Ref<Molecule>&,double probe_radius);
     void clear();
     double distance_to_surface(const SCVector3&r,
                                SCVector3*grad=0) const;

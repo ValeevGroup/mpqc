@@ -38,15 +38,13 @@
 
 using namespace std;
 
-REF_def(SOBasis);
-
-SOBasis::SOBasis(const RefGaussianBasisSet &basis, const RefIntegral&integral)
+SOBasis::SOBasis(const Ref<GaussianBasisSet> &basis, const Ref<Integral>&integral)
 {
   int i,j,k;
 
   basis_ = basis;
 
-  RefMolecule mol = basis_->molecule();
+  Ref<Molecule> mol = basis_->molecule();
 
   CharacterTable ct = mol->point_group()->char_table();
   nirrep_ = ct.nirrep();
@@ -93,7 +91,7 @@ SOBasis::SOBasis(const RefGaussianBasisSet &basis, const RefIntegral&integral)
       }
     }
 
-  RefPetiteList petite = new PetiteList(basis_, integral);
+  Ref<PetiteList> petite = new PetiteList(basis_, integral);
 
   int nblocks = petite->nblocks();
   SO_block *soblocks = petite->aotoso_info();

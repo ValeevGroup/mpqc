@@ -34,45 +34,6 @@
 
 #include <util/class/class.h>
 
-/** This macro declares a smart pointer type with savable state
-    capabilities.  If the class name is T, the smart pointer type will be
-    RefT.  */
-
-#define SavableState_REF_dec(T) SavableState_named_REF_dec(Ref ## T,T)
-
-/** This macro gives the class definition a smart pointer type with savable
-    state capabilities.  If the class name is T, the smart pointer type
-    will be RefT.  */
-
-#define SavableState_REF_def(T) SavableState_named_REF_def(Ref ## T,T)
-
-#ifdef USE_REF_MACROS
-#  define SavableState_named_REF_dec(refname,T)				      \
-     DCRef_declare(T); SSRef_declare(T); typedef class SSRef ## T refname;
-#  define SavableState_named_REF_def(refname,T)
-#  define SSRef_define(T)
-#else
-#  define SSRef_declare(T) typedef class SSRef<T> SSRef ## T;
-#  define SavableState_named_REF_dec(refname,T) typedef class SSRef<T> refname;
-#  ifdef EXPLICIT_TEMPLATE_INSTANTIATION
-#    define SavableState_named_REF_def(refname,T) template class SSRef<T>; \
-                                                  template class DCRef<T>;
-#    define SSRef_define(T) template class SSRef<T>;
-#  else
-#    define SavableState_named_REF_def(refname,T)
-#    define SSRef_define(T)
-#  endif
-#endif
-
-// This does forward declarations of REF classes.
-#ifdef USE_REF_MACROS
-#define SavableState_REF_fwddec(T) class SSRef ## T; \
-                                   typedef class SSRef ## T Ref ## T;
-#else
-#define SavableState_REF_fwddec(T) class T; \
-                                   typedef class SSRef<T> Ref ## T;
-#endif
-
 class StateIn;
 class StateOut;
 class TranslateDataIn;
@@ -81,13 +42,9 @@ class TranslateDataOut;
 /** Base class for objects that can save/restore state.
  */
 class SavableState: public DescribedClass {
-#   define CLASSNAME SavableState
-#   include <util/class/classda.h>
   protected:
     SavableState();
     SavableState(const SavableState&);
-    // helper for save_object_state overrides
-    void save_object_state_(StateOut&, const ClassDesc *);
 #ifndef __GNUC__
   public:
 #endif
@@ -153,45 +110,6 @@ class SavableState: public DescribedClass {
         the SavableState(StateIn&) constructor. */
     SavableState(StateIn&);
   };
-
-// //////////////////////////////////////////////////////////////////
-
-/** Provides a few utility routines common to all SSRef instantiations.
- */
-class SSRefBase {
-  protected:
-    void check_castdown_result(void*, SavableState *, const ClassDesc *);
-  public:
-    virtual SavableState *sspointer() = 0;
-    virtual void dir_restore_state(StateIn& si, const char *objectname,
-                                   const char *keyword = 0) = 0;
-    void key_restore_state(StateIn& si, const char *keyword) {
-      dir_restore_state(si,0,keyword);
-    }
-    void restore_state(StateIn& si) {
-      dir_restore_state(si,0,0);
-    }
-    void save_data_state(StateOut&);
-    /// Save the state of the reference.
-    void save_state(StateOut&);
-};
-
-// Include the smart pointer to SavableState templates and macros.
-#include <util/state/stattmpl.h>
-#ifdef USE_REF_MACROS
-#include <util/state/statmacr.h>
-#endif
-
-SavableState_REF_dec(SavableState);
-
-// //////////////////////////////////////////////////////////////////
-
-#ifndef __GNUC__
-static SavableState * att_hack_job(StateIn&si)
-{
-  return SavableState::restore_state(si);
-}
-#endif
 
 #endif
 

@@ -169,7 +169,7 @@ Int1eV3::overlap_1der(int ish, int jsh,
     exit(1);
     }
 
-  RefGaussianBasisSet dercs;
+  Ref<GaussianBasisSet> dercs;
   if (idercs == 0) dercs = bs1_;
   else dercs = bs2_;
 
@@ -201,7 +201,7 @@ Int1eV3::overlap_1der(int ish, int jsh,
  */
 void
 Int1eV3::int_accum_shell_overlap_1der(int ish, int jsh,
-                                      RefGaussianBasisSet dercs, int centernum)
+                                      Ref<GaussianBasisSet> dercs, int centernum)
 {
   accum_shell_1der(buff,ish,jsh,dercs,centernum,&Int1eV3::comp_shell_overlap);
   }
@@ -403,7 +403,7 @@ Int1eV3::int_accum_shell_kinetic(int ish, int jsh)
  */
 void
 Int1eV3::int_accum_shell_kinetic_1der(int ish, int jsh,
-                                      RefGaussianBasisSet dercs, int centernum)
+                                      Ref<GaussianBasisSet> dercs, int centernum)
 {
   accum_shell_1der(buff,ish,jsh,dercs,centernum,&Int1eV3::comp_shell_kinetic);
   }
@@ -416,7 +416,7 @@ Int1eV3::int_accum_shell_kinetic_1der(int ish, int jsh,
  */
 void
 Int1eV3::accum_shell_1der(double *buff, int ish, int jsh,
-                          RefGaussianBasisSet dercs, int centernum,
+                          Ref<GaussianBasisSet> dercs, int centernum,
                           double (Int1eV3::*shell_function)
                           (int,int,int,int,int,int,int,int))
 {
@@ -519,7 +519,7 @@ Int1eV3::accum_shell_1der(double *buff, int ish, int jsh,
  */
 void
 Int1eV3::accum_shell_block_1der(double *buff, int ish, int jsh,
-                                RefGaussianBasisSet dercs, int centernum,
+                                Ref<GaussianBasisSet> dercs, int centernum,
                                 void (Int1eV3::*shell_block_function)
                                   (int gc1, int a, int gc2, int b,
                                    int gcsize2, int gcoff1, int gcoff2,
@@ -833,7 +833,7 @@ Int1eV3::comp_prim_kinetic(int i1, int j1, int k1,
  */
 void
 Int1eV3::int_accum_shell_nuclear_1der(int ish, int jsh,
-                                      RefGaussianBasisSet dercs, int centernum)
+                                      Ref<GaussianBasisSet> dercs, int centernum)
 {
   int_accum_shell_nuclear_hf_1der(ish,jsh,dercs,centernum);
   int_accum_shell_nuclear_nonhf_1der(ish,jsh,dercs,centernum);
@@ -846,7 +846,7 @@ Int1eV3::int_accum_shell_nuclear_1der(int ish, int jsh,
  */
 void
 Int1eV3::int_accum_shell_nuclear_hfc_1der(int ish, int jsh,
-                                          RefGaussianBasisSet dercs,
+                                          Ref<GaussianBasisSet> dercs,
                                           int centernum)
 {
   /* If both ish and jsh are not on the der center,
@@ -876,7 +876,7 @@ Int1eV3::int_accum_shell_nuclear_hfc_1der(int ish, int jsh,
  */
 void
 Int1eV3::int_accum_shell_nuclear_hf_1der(int ish, int jsh,
-                                         RefGaussianBasisSet dercs,
+                                         Ref<GaussianBasisSet> dercs,
                                          int centernum)
 {
 
@@ -918,7 +918,7 @@ Int1eV3::int_accum_shell_nuclear_hf_1der(int ish, int jsh,
  */
 void
 Int1eV3::int_accum_shell_nuclear_nonhf_1der(int ish, int jsh,
-                                            RefGaussianBasisSet dercs,
+                                            Ref<GaussianBasisSet> dercs,
                                             int centernum)
 {
   int i;
@@ -1434,7 +1434,7 @@ Int1eV3::hcore_1der(int ish, int jsh,
     exit(1);
     }
 
-  RefGaussianBasisSet dercs;
+  Ref<GaussianBasisSet> dercs;
   if (idercs == 0) dercs = bs1_;
   else dercs = bs2_;
 
@@ -1474,7 +1474,7 @@ Int1eV3::kinetic_1der(int ish, int jsh,
     exit(1);
     }
 
-  RefGaussianBasisSet dercs;
+  Ref<GaussianBasisSet> dercs;
   if (idercs == 0) dercs = bs1_;
   else dercs = bs2_;
 
@@ -1512,7 +1512,7 @@ Int1eV3::nuclear_1der(int ish, int jsh, int idercs, int centernum)
     exit(1);
     }
 
-  RefGaussianBasisSet dercs;
+  Ref<GaussianBasisSet> dercs;
   if (idercs == 0) dercs = bs1_;
   else dercs = bs2_;
 
@@ -1541,7 +1541,7 @@ Int1eV3::nuclear_1der(int ish, int jsh, int idercs, int centernum)
  */
 void
 Int1eV3::int_shell_nuclear_hf_1der(int ish, int jsh,
-                                   RefGaussianBasisSet dercs, int centernum)
+                                   Ref<GaussianBasisSet> dercs, int centernum)
 {
   int i;
   int c1,c2;
@@ -1577,7 +1577,7 @@ Int1eV3::int_shell_nuclear_hf_1der(int ish, int jsh,
  */
 void
 Int1eV3::int_shell_nuclear_nonhf_1der(int ish, int jsh,
-                                      RefGaussianBasisSet dercs, int centernum)
+                                      Ref<GaussianBasisSet> dercs, int centernum)
 {
   int i;
   int c1,c2;

@@ -146,13 +146,13 @@ extern "C" void * sbrk(ssize_t);
 typedef unsigned long refcount_t;
 
 /** The base class for all reference counted objects.  If multiple
-    inheritance is used, VRefCount must be virtually inherited from,
+    inheritance is used, RefCount must be virtually inherited from,
     otherwise references to invalid memory will likely result.
 
     Reference counting information is usually maintained by smart
     pointer classes Ref, however this mechanism can be
     supplemented or replaced by directly using the public
-    interface to VRefCount.
+    interface to RefCount.
 
     The unmanage() member is only needed for special cases where memory
     management must be turned off.  For example, if a reference counted
@@ -169,7 +169,7 @@ typedef unsigned long refcount_t;
 
 */
 
-class VRefCount: public Identity {
+class RefCount: public Identity {
   private:
 #if REF_CHECKSUM
 #   if REF_MANAGE
@@ -209,21 +209,21 @@ class VRefCount: public Identity {
       }
 #endif // REF_CHECKSUM
   protected:
-    VRefCount(): _reference_count_(0) {
+    RefCount(): _reference_count_(0) {
 #       if REF_CHECKSUM
         update_checksum();
 #       endif
       }
-    VRefCount(const VRefCount&): _reference_count_(0) {
+    RefCount(const RefCount&): _reference_count_(0) {
 #       if REF_CHECKSUM
         update_checksum();
 #       endif
       }
 
     // Assigment should not overwrite the reference count.
-    VRefCount& operator=(const VRefCount&) { return *this; }
+    RefCount& operator=(const RefCount&) { return *this; }
   public:
-    virtual ~VRefCount();
+    virtual ~RefCount();
 
     /// Return the reference count.
     refcount_t nreference() const {
@@ -300,7 +300,7 @@ class VRefCount: public Identity {
     Ref template instantiations.
 */
 class RefBase {
-  public:
+  protected:
     /// Print a warning message.
     void warn ( const char * msg) const;
     /// Called when stack data is referenced.
@@ -310,41 +310,181 @@ class RefBase {
     /// Called when the reference count is corrupted.
     void warn_bad_ref_count() const;
     /// Print information about the reference.
-    void ref_info(VRefCount*p,std::ostream& os) const;
+    void ref_info(RefCount*p,std::ostream& os) const;
+    void ref_info(std::ostream& os) const;
+    void check_pointer() const;
+    void reference(RefCount *);
+    void dereference(RefCount *);
+  public:
+    virtual ~RefBase();
+    /// Returns the DescribedClass pointer for the contained object.
+    virtual RefCount* parentpointer() const = 0;
+    /** Requires that a nonnull reference is held.  If not,
+        the program will abort. */
+    void require_nonnull() const;
 };
 
-#ifdef TYPE_CONV_BUG
-#  define REF_TYPE_CAST_DEC(T)
-#else
-#  define REF_TYPE_CAST_DEC(T) operator T*() const { return p; }
-#endif
+/** A template class that maintains references counts.
 
-// The template reference declaration.
-#include <util/ref/reftmpl.h>
+    Several of these operations can cause a reference to an object to be
+    replaced by a reference to a different object.  If a reference to a
+    nonnull object is eliminated, the object's reference count is
+    decremented and the object is deleted if the reference count becomes
+    zero.
 
-// The macro reference declaration.
-#ifdef USE_REF_MACROS
-#include <util/ref/refmacr.h>
-/** This macro declares a smart pointer type.  If the class name is T, the
-    smart pointer type will be RefT.  */
-#  define REF_dec(T) Ref_declare(T)
-#  define REF_def(T)
-#else
-#  define REF_dec(T) typedef class Ref<T> Ref ## T;
-#  ifdef EXPLICIT_TEMPLATE_INSTANTIATION
-#    define REF_def(T) template class Ref<T>;
-#  else
-#    define REF_def(T)
-#  endif
-#endif
+    There also may be a to convert to T*, where T is the type of the object
+    which Ref references.  Some compilers have bugs that prevent the use of
+    operator T*().  The pointer() member should be used instead.
+ 
+*/
+template <class T>
+class  Ref  : public RefBase {
+  private:
+    T* p;
+  public:
+    /// Create a reference to a null object.
+    Ref(): p(0) {}
+    /// Create a reference to the object a.
+    Ref(T*a): p(a)
+    {
+      reference(p);
+    }
+    /// Create a reference to the object referred to by a.
+    Ref(const Ref<T> &a): p(a.pointer())
+    {
+      reference(p);
+    }
+    /// Create a reference to the object referred to by a.
+    template <class A> Ref(const Ref<A> &a): p(a.pointer())
+    {
+      reference(p);
+    }
+//      /** Create a reference to the object a.  Do a
+//          dynamic_cast to convert a to the appropiate type. */
+//      Ref(const RefBase&a) {
+//          p = dynamic_cast<T*>(a.parentpointer());
+//          reference(p);
+//        }
+//      /** Create a reference to the object a.  Do a
+//          dynamic_cast to convert a to the appropiate type. */
+//      Ref(RefCount*a): p(0) {
+//        operator<<(a);
+//        }
+    /** Delete this reference to the object.  Decrement the object's reference
+        count and delete the object if the count is zero. */
+    ~Ref()
+    {
+      clear();
+    }
+    /** Returns the reference counted object.  The behaviour is undefined if
+        the object is null. */
+    T* operator->() const { return p; }
+    /// Returns a pointer the reference counted object.
+    T* pointer() const { return p; }
+    /// Implements the parentpointer pure virtual in the base class.
+    RefCount *parentpointer() const { return p; }
 
-// This does forward declarations of REF classes.
-#ifdef USE_REF_MACROS
-/** This macro forward declares a type that is a smart pointer to type T.  */
-#define REF_fwddec(T) class Ref ## T;
-#else
-#define REF_fwddec(T) class T; typedef class Ref<T> Ref ## T;
-#endif
+    operator T*() const { return p; }
+    /** Returns a C++ reference to the reference counted object.
+        The behaviour is undefined if the object is null. */
+    T& operator *() const { return *p; };
+    /** Return 1 if this is a reference to a null object.  Otherwise
+        return 0. */
+    int null() const { return p == 0; }
+    /// Return !null().
+    int nonnull() const { return p != 0; }
+    /** A variety of ordering and equivalence operators are provided using
+        the Identity class. */
+    template <class A> int operator==(const Ref<A>&a) const
+        { return eq(p,a.pointer()); }
+    template <class A> int operator>=(const Ref<A>&a) const
+        { return ge(p,a.pointer()); }
+    template <class A> int operator<=(const Ref<A>&a) const
+        { return le(p,a.pointer()); }
+    template <class A> int operator>(const Ref<A>&a) const
+        { return gt(p,a.pointer()); }
+    template <class A> int operator<(const Ref<A>&a) const
+        { return lt(p,a.pointer()); }
+    template <class A> int operator!=(const Ref<A>&a) const
+        { return ne(p,a.pointer()); }
+    /** Compare two objects returning -1, 0, or 1. Similar
+        to the C library routine strcmp. */
+    int compare(const Ref<T> &a) const {
+      return eq(p,a.p)?0:((lt(p,a.p)?-1:1));
+    }
+    /// Refer to the null object.
+    void clear()
+    {
+      dereference(p);
+      p = 0;
+    }
+    /// Assignment to c.
+    Ref<T>& operator=(const Ref<T> & c)
+    {
+      if (c.pointer()) c.pointer()->reference();
+      clear();
+      p=c.pointer();
+      return *this;
+    }
+    /// Assignment to c.
+    template <class A> Ref<T>& operator=(const Ref<A> & c)
+    {
+      if (c.pointer()) c.pointer()->reference();
+      clear();
+      p=c.pointer();
+      return *this;
+    }
+    /// Assignment to the object that a references using dynamic_cast.
+    Ref<T>& operator<<(const RefBase&a) {
+        T* cr = dynamic_cast<T*>(a.parentpointer());
+        reference(cr);
+        clear();
+        p = cr;
+        return *this;
+      }
+    /** Assigns to the given base class pointer using dynamic_cast.  If
+        the dynamic_cast fails and the argument is nonnull and has a
+        reference count of zero, then it is deleted. */
+    Ref<T>& operator<<(RefCount *a) {
+        T* cr = dynamic_cast<T*>(a);
+        if (cr) assign_pointer(cr);
+        else if (a && a->nreference() <= 0) delete a;
+        return *this;
+      }
+    /// Assignment to cr.
+    Ref<T>& operator=(T* cr)
+    {
+      assign_pointer(cr);
+      return *this;
+    }
+    /// Assignment to cr.
+    void assign_pointer(T* cr)
+    {
+      if (cr) {
+          if (DO_REF_CHECK_STACK(cr)) {
+              DO_REF_UNMANAGE(cr);
+              warn_ref_to_stack();
+            }
+          cr->reference();
+        }
+      clear();
+      p = cr;
+    }
+    /// Check the validity of the pointer.
+    void check_pointer() const
+    {
+      if (p && p->nreference() <= 0) {
+          warn_bad_ref_count();
+        }
+    }
+    /// Print information about the reference to os.
+    void ref_info(std::ostream& os) const
+    {
+      RefBase::ref_info(p,os);
+    }
+    /// Print a warning concerning the reference.
+    void warn(const char*s) const { RefBase::warn(s); }
+};
 
 #endif
 

@@ -45,9 +45,6 @@
     started that communication with shared memory.
 */
 class AlphaMMapMemoryGrp: public MsgMemoryGrp {
-#define CLASSNAME AlphaMMapMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   private:
     GlobalCounter lock_;
     GlobalCounter *update_;
@@ -64,8 +61,8 @@ class AlphaMMapMemoryGrp: public MsgMemoryGrp {
 
     void cleanup();
   public:
-    AlphaMMapMemoryGrp(const RefMessageGrp& msg);
-    AlphaMMapMemoryGrp(const RefKeyVal&);
+    AlphaMMapMemoryGrp(const Ref<MessageGrp>& msg);
+    AlphaMMapMemoryGrp(const Ref<KeyVal>&);
     ~AlphaMMapMemoryGrp();
 
     void set_localsize(int);

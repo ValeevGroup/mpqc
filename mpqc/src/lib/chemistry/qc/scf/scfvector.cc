@@ -132,8 +132,8 @@ SCF::compute_vector(double& eelec)
 
     // now extrapolate the fock matrix
     tim_enter("extrap");
-    RefSCExtrapData data = extrap_data();
-    RefSCExtrapError error = extrap_error();
+    Ref<SCExtrapData> data = extrap_data();
+    Ref<SCExtrapError> error = extrap_error();
     extrap_->extrapolate(data,error);
     data=0;
     error=0;
@@ -145,13 +145,13 @@ SCF::compute_vector(double& eelec)
     RefSymmSCMatrix bfmatref = fock(0);
     RefSymmSCMatrix bsmatref = overlap();
     BlockedSymmSCMatrix *bfmat
-      = BlockedSymmSCMatrix::castdown(bfmatref.pointer());
+      = dynamic_cast<BlockedSymmSCMatrix*>(bfmatref.pointer());
     BlockedSymmSCMatrix *bsmat
-      = BlockedSymmSCMatrix::castdown(bsmatref.pointer());
+      = dynamic_cast<BlockedSymmSCMatrix*>(bsmatref.pointer());
     BlockedDiagSCMatrix *bevals
-      = BlockedDiagSCMatrix::castdown(evals.pointer());
+      = dynamic_cast<BlockedDiagSCMatrix*>(evals.pointer());
     BlockedSCMatrix *bvec
-      = BlockedSCMatrix::castdown(oso_scf_vector_.pointer());
+      = dynamic_cast<BlockedSCMatrix*>(oso_scf_vector_.pointer());
 
     ExEnv::out() << node0 << indent
                  << "solving generalized eigenvalue problem" << endl;
@@ -267,7 +267,7 @@ SCF::compute_vector(double& eelec)
 
   // search for HOMO and LUMO
   // first convert evals to something we can deal with easily
-  BlockedDiagSCMatrix *evalsb = BlockedDiagSCMatrix::require_castdown(evals,
+  BlockedDiagSCMatrix *evalsb = require_dynamic_cast<BlockedDiagSCMatrix*>(evals,
                                                  "SCF::compute_vector");
   
   CharacterTable ct = molecule()->point_group()->char_table();
@@ -375,12 +375,12 @@ class ExtrapErrorOp : public BlockedSCElementOp {
     }
 };
 
-RefSCExtrapError
+Ref<SCExtrapError>
 SCF::extrap_error()
 {
   RefSymmSCMatrix mofock = effective_fock();
   
-  RefSCElementOp op = new ExtrapErrorOp(this);
+  Ref<SCElementOp> op = new ExtrapErrorOp(this);
   mofock.element_op(op);
   
   RefSymmSCMatrix aoerror(so_dimension(), basis_matrixkit());
@@ -388,7 +388,7 @@ SCF::extrap_error()
   aoerror.accumulate_transform(so_to_orthog_so().t()*oso_scf_vector_, mofock);
   mofock=0;
 
-  RefSCExtrapError error = new SymmSCMatrixSCExtrapError(aoerror);
+  Ref<SCExtrapError> error = new SymmSCMatrixSCExtrapError(aoerror);
   aoerror=0;
 
   return error;

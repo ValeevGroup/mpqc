@@ -52,12 +52,12 @@ ShellExtent::distance(double loc, int axis, int origin, int point)
 }
 
 void
-ShellExtent::init(const RefGaussianBasisSet&gbs,
+ShellExtent::init(const Ref<GaussianBasisSet>&gbs,
                   double resolution, double tolerance)
 {
   int i,j,k,l,m,n;
 
-  RefMolecule mol = gbs->molecule();
+  Ref<Molecule> mol = gbs->molecule();
   resolution_ = resolution;
 
   delete[] contributing_shells_;

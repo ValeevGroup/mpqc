@@ -37,24 +37,22 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////
 // Edge
 
-REF_def(Edge);
-
-Edge::Edge(const RefVertex &p1,
-     const RefVertex &p2,
-     const RefVertex &p3)
+Edge::Edge(const Ref<Vertex> &p1,
+     const Ref<Vertex> &p2,
+     const Ref<Vertex> &p3)
 {
   _order = 2;
-  _vertices = new RefVertex[3];
+  _vertices = new Ref<Vertex>[3];
   _vertices[0]=p1; _vertices[1]=p2; _vertices[2]=p3;
 }
 
-Edge::Edge(const RefVertex &p1,
-     const RefVertex &p2,
-     const RefVertex &p3,
-     const RefVertex &p4)
+Edge::Edge(const Ref<Vertex> &p1,
+     const Ref<Vertex> &p2,
+     const Ref<Vertex> &p3,
+     const Ref<Vertex> &p4)
 {
   _order = 3;
-  _vertices = new RefVertex[4];
+  _vertices = new Ref<Vertex>[4];
   _vertices[0]=p1; _vertices[1]=p2; _vertices[2]=p3; _vertices[3]=p4;
 }
 
@@ -69,16 +67,16 @@ double Edge::straight_length()
   return BA.norm();
 }
 
-void Edge::add_vertices(AVLSet<RefVertex>&set)
+void Edge::add_vertices(AVLSet<Ref<Vertex> >&set)
 {
   set.insert(_vertices[0]);
   set.insert(_vertices[_order]);
 }
 
 void
-Edge::set_order(int order, const RefVolume&vol,double isovalue)
+Edge::set_order(int order, const Ref<Volume>&vol,double isovalue)
 {
-  RefVertex *newvertices = new RefVertex[order+1];
+  Ref<Vertex> *newvertices = new Ref<Vertex>[order+1];
   newvertices[0] = vertex(0);
   newvertices[order] = vertex(1);
   delete[] _vertices;
@@ -144,7 +142,7 @@ Edge::interpolate(double r, SCVector3&point, SCVector3&norm)
 
 int
 Edge::interpolate(double r, SCVector3&point, SCVector3&norm,
-                  const RefVolume &vol, double isovalue)
+                  const Ref<Volume> &vol, double isovalue)
 {
   // first guess
   int has_norm = interpolate(r,point,norm);

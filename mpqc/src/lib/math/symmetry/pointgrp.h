@@ -418,8 +418,6 @@ class CharacterTable {
 
 // ///////////////////////////////////////////////////////////
 
-SavableState_REF_fwddec(PointGroup);
-
 /** The PointGroup class is really a place holder for a CharacterTable.  It
  contains a string representation of the Schoenflies symbol of a point
  group, a frame of reference for the symmetry operation transformation
@@ -428,12 +426,6 @@ SavableState_REF_fwddec(PointGroup);
  origin, first translate all your coordinates to the origin and then set
  the origin to zero.  */
 class PointGroup: public SavableState {
-#   define CLASSNAME PointGroup
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     char *symb;
     SymmetryOperation frame;
@@ -484,17 +476,17 @@ class PointGroup: public SavableState {
        )
        </pre>
      */
-    PointGroup(const RefKeyVal&);
+    PointGroup(const Ref<KeyVal>&);
 
     PointGroup(StateIn&);
     PointGroup(const PointGroup&);
-    PointGroup(const RefPointGroup&);
+    PointGroup(const Ref<PointGroup>&);
     ~PointGroup();
 
     PointGroup& operator=(const PointGroup&);
 
     /// Returns 1 if the point groups are equivalent, 0 otherwise.
-    int equiv(const RefPointGroup &, double tol = 1.0e-6) const;
+    int equiv(const Ref<PointGroup> &, double tol = 1.0e-6) const;
 
     /// Returns the CharacterTable for this point group.
     CharacterTable char_table() const;
@@ -515,7 +507,7 @@ class PointGroup: public SavableState {
 
     void print(std::ostream&o=ExEnv::out()) const;
 };
-SavableState_REF_dec(PointGroup);
+
 
 #endif
 

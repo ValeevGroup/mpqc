@@ -37,14 +37,9 @@
 // //////////////////////////////////////////////////////////////////////////
 
 class OSSHF: public OSSSCF {
-#   define CLASSNAME OSSHF
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     OSSHF(StateIn&);
-    OSSHF(const RefKeyVal&);
+    OSSHF(const Ref<KeyVal>&);
     ~OSSHF();
 
     void save_data_state(StateOut&);

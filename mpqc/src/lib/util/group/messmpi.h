@@ -33,10 +33,6 @@
 /** The MPIMessageGrp class is an concrete implementation of MessageGrp
 that uses the MPI 1 library.  */
 class MPIMessageGrp: public MessageGrp {
-#define CLASSNAME MPIMessageGrp
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   protected:
     void* buf;
     int bufsize;
@@ -62,7 +58,7 @@ class MPIMessageGrp: public MessageGrp {
     void init(int argc=-1, char **argv=0);
   public:
     MPIMessageGrp();
-    MPIMessageGrp(const RefKeyVal&);
+    MPIMessageGrp(const Ref<KeyVal>&);
     ~MPIMessageGrp();
 
     void raw_send(int target, void* data, int nbyte);

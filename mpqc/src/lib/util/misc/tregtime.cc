@@ -36,7 +36,7 @@ int
 main()
 {
   int i;
-  RefRegionTimer tim = new RegionTimer("top", 1, 1);
+  Ref<RegionTimer> tim = new RegionTimer("top", 1, 1);
   tim->enter("main");
 
   tim->enter("x");

@@ -47,20 +47,8 @@ static inline int eq(const char* a, const char* b)
 //////////////////////////////////////////////////////////////////////
 // Units class definition
 
-SavableState_REF_def(Units);
-
-#define CLASSNAME Units
-#define PARENTS public SavableState
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-Units::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc Units_cd(typeid(Units),"Units",1,"public SavableState",
+                          0, 0, create<Units>);
 
 Units::Units(const char *strrep)
 {
@@ -100,13 +88,13 @@ Units::save_data_state(StateOut&s)
 }
 
 double
-Units::to(const RefUnits &units) const
+Units::to(const Ref<Units> &units) const
 {
   return to_atomic_units_/units->to_atomic_units_;
 }
 
 double
-Units::from(const RefUnits &units) const
+Units::from(const Ref<Units> &units) const
 {
   return 1.0/to(units);
 }

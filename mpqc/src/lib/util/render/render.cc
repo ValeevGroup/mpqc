@@ -43,24 +43,15 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // Render
 
-DescribedClass_REF_def(Render);
-
-#define CLASSNAME Render
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-Render::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc Render_cd(
+  typeid(Render),"Render",1,"public DescribedClass",
+  0, 0, 0);
 
 Render::Render()
 {
 }
 
-Render::Render(const RefKeyVal& keyval)
+Render::Render(const Ref<KeyVal>& keyval)
 {
 }
 
@@ -69,43 +60,43 @@ Render::~Render()
 }
 
 void
-Render::push_material(const RefMaterial& m)
+Render::push_material(const Ref<Material>& m)
 {
   material_stack_.push(m);
 }
 
 void
-Render::push_appearance(const RefAppearance& a)
+Render::push_appearance(const Ref<Appearance>& a)
 {
   appearance_stack_.push(a);
 }
 
 void
-Render::push_transform(const RefTransform& t)
+Render::push_transform(const Ref<Transform>& t)
 {
   transform_stack_.push(t);
 }
 
-RefMaterial
+Ref<Material>
 Render::pop_material()
 {
   return material_stack_.pop();
 }
 
-RefAppearance
+Ref<Appearance>
 Render::pop_appearance()
 {
   return appearance_stack_.pop();
 }
 
-RefTransform
+Ref<Transform>
 Render::pop_transform()
 {
   return transform_stack_.pop();
 }
 
 void
-Render::render(const RefRenderedObject& object)
+Render::render(const Ref<RenderedObject>& object)
 {
   if (object->material().nonnull()) push_material(object->material());
   if (object->transform().nonnull()) push_transform(object->transform());
@@ -117,7 +108,7 @@ Render::render(const RefRenderedObject& object)
 }
 
 void
-Render::set(const RefRenderedObjectSet& set)
+Render::set(const Ref<RenderedObjectSet>& set)
 {
   for (int i=0; i<set->n(); i++) {
       render(set->element(i));
@@ -126,14 +117,14 @@ Render::set(const RefRenderedObjectSet& set)
 
 // This renders spheres by creating a RenderedPolygon object
 void
-Render::sphere(const RefRenderedSphere& sphere)
+Render::sphere(const Ref<RenderedSphere>& sphere)
 {
   // find the level of accuracy which should be used to render the sphere
   int level = 1;
   find_int_parameter_in_appearance_stack(appearance_stack_,
                                          &Appearance::level,
                                          level);
-  RefRenderedPolygons poly(new RenderedPolygons);
+  Ref<RenderedPolygons> poly(new RenderedPolygons);
 
   polysphere(level, poly.pointer());
 
@@ -141,10 +132,10 @@ Render::sphere(const RefRenderedSphere& sphere)
 }
 
 void
-Render::animate(const RefAnimatedObject &animated_object)
+Render::animate(const Ref<AnimatedObject> &animated_object)
 {
   for (int i=0; i<animated_object->nobject(); i++) {
-      RefRenderedObject object = animated_object->object(i);
+      Ref<RenderedObject> object = animated_object->object(i);
       render(object);
     }
 }
@@ -152,16 +143,9 @@ Render::animate(const RefAnimatedObject &animated_object)
 /////////////////////////////////////////////////////////////////////////////
 // FileRender
 
-#define CLASSNAME FileRender
-#define PARENTS public Render
-#include <util/class/classia.h>
-void *
-FileRender::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Render::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc FileRender_cd(
+  typeid(FileRender),"FileRender",1,"public Render",
+  0, 0, 0);
 
 FileRender::FileRender(const char * filename)
 {
@@ -182,7 +166,7 @@ FileRender::FileRender(ostream &o)
   delete_sbuf_ = 0;
 }
 
-FileRender::FileRender(const RefKeyVal& keyval):
+FileRender::FileRender(const Ref<KeyVal>& keyval):
   Render(keyval)
 {
   char *filename = keyval->pcharvalue("filename");

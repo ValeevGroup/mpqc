@@ -33,7 +33,7 @@
 
 #include <util/class/class.h>
 
-class KeyValValue: public VRefCount {
+class KeyValValue: public RefCount {
   public:
     enum KeyValValueError { OK, WrongType };
   public:
@@ -47,12 +47,12 @@ class KeyValValue: public VRefCount {
     virtual KeyValValue::KeyValValueError charvalue(char&) const;
     virtual KeyValValue::KeyValValueError intvalue(int&) const;
     virtual KeyValValue::KeyValValueError pcharvalue(const char*&) const;
-    virtual KeyValValue::KeyValValueError describedclassvalue(RefDescribedClass&) const;
+    virtual KeyValValue::KeyValValueError describedclassvalue(Ref<DescribedClass>&) const;
     virtual void print(std::ostream &o=ExEnv::out()) const;
 };
 std::ostream& operator<<(std::ostream&,const KeyValValue&);
 
-REF_dec(KeyValValue);
+
 
 class KeyValValuedouble: public KeyValValue {
   private:
@@ -128,13 +128,13 @@ class KeyValValuepchar: public KeyValValue {
 
 class KeyValValueRefDescribedClass: public KeyValValue {
   private:
-    RefDescribedClass _val;
+    Ref<DescribedClass> _val;
   public:
     KeyValValueRefDescribedClass() {}
-    KeyValValueRefDescribedClass(const RefDescribedClass& v): _val(v) {}
+    KeyValValueRefDescribedClass(const Ref<DescribedClass>& v): _val(v) {}
     KeyValValueRefDescribedClass(const KeyValValueRefDescribedClass&);
     ~KeyValValueRefDescribedClass();
-    KeyValValue::KeyValValueError describedclassvalue(RefDescribedClass&) const;
+    KeyValValue::KeyValValueError describedclassvalue(Ref<DescribedClass>&) const;
     void print(std::ostream &o=ExEnv::out()) const;
 };
 

@@ -45,42 +45,25 @@ Here is a simple example of the specification of a client, C,
 of SavableState:
 <pre>
 class C: virtual public SavableState {
-# define CLASSNAME C
-# define HAVE_STATEIN_CTOR
-# include <util/state/stated.h>
-# include <util/class/classd.h>
   private:
     int i;
   public:
     C(StateIn&);
     void save_data_state(StateOut&);
-  };
+};
 </pre>
 
 Here is the implementation for the above:
 <pre>
-#define CLASSNAME C
-#define PARENTS virtual public SavableState
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void* C::_castdown(ClassDesc*cd)
-  {
-  void* casts[] = {SavableState::_castdown(cd);}
-  return do_castdowns(casts,cd);
-  }
+static ClassDesc C_cd(typeid(C),"C",1,"virtual public SavableState",
+                      0, 0, create<C>);
 void C::save_data_state(StateOut&so) {
   so.put(i);
-  }
+}
 C::C(StateIn&si): SavableState(si) {
   si.get(i);
-  }
+}
 </pre>
-
-Note that the stated.h and statei.h must be included just
-before classd.h and classi.h, respectively.  The order
-in which data is saved must match the order in which it
-is restored.
 
 \section stateexin Example with Inheritance
 
@@ -89,37 +72,25 @@ where C nonvirtually inherits from another
 SavableState derivative:
 <pre>
 class C: public B {
-# define CLASSNAME C
-# define HAVE_STATEIN_CTOR
-# include <util/state/stated.h>
-# include <util/class/classd.h>
   private:
     int i;
   public:
     C(StateIn&);
     void save_data_state(StateOut&);
-  };
+};
 </pre>
 
 Here is the implementation for the above:
 <pre>
-#define CLASSNAME C
-#define PARENTS public B
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void* C::_castdown(ClassDesc*cd)
-  {
-  void* casts[] = { B::_castdown(cd) };
-  return do_castdowns(casts,cd);
-  }
+static ClassDesc C_cd(typeid(C),"C",1,"public B",
+                      0, 0, create<C>);
 void C::save_data_state(StateOut&so) {
   B::save_data_state(so);
   so.put(i);
-  }
+}
 C::C(StateIn&si): SavableState(si), B(si)  {
   si.get(i);
-  }
+}
 </pre>
 
 Note that B (or one of its parents) virtually inherits from
@@ -135,10 +106,6 @@ of SavableState:
 <pre>
 class C: public B,
          virtual public E {
-# define CLASSNAME C
-# define HAVE_STATEIN_CTOR
-# include <util/state/stated.h>
-# include <util/class/classd.h>
   private:
     int i;
   public:
@@ -157,27 +124,19 @@ first, left to right transversal of the directed acyclic graph of
 parent classes.  In this example, B and E inherit virtually
 from SavableState.  Here is the implementation:
 <pre>
-#define CLASSNAME C
-#define PARENTS public B, virtual public E
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void* C::_castdown(ClassDesc*cd)
-  {
-  void* casts[] = {B::_castdown(cd),E::_castdown(cd)};
-  return do_castdowns(casts,cd);
-  }
+static ClassDesc C_cd(typeid(C),"C",1,"public B, virtual public E",
+                      0, 0, create<C>);
 void C::save_vbase_state(StateOut&sio) {
   SavableState::save_data_state(so);
   E::save_data_state(sio);
-  }
+}
 void C::save_data_state(StateOut&so) {
   B::save_parent_state(so);
   so.put(i);
-  }
+}
 C::C(StateIn&si): SavableState(si), B(si), E(si) {
   si.get(i);
-  }
+}
 </pre>
 
 \section stateexpoint Example with Pointers to SavableStates
@@ -186,10 +145,6 @@ Here is an example where C has data members which are
 pointers to derivatives of SavableState:
 <pre>
 class C: virtual public SavableState {
-# define CLASSNAME C
-# define HAVE_STATEIN_CTOR
-# include <util/state/stated.h>
-# include <util/class/classd.h>
   private:
     A* ap; // A is also a SavableState
   public:
@@ -200,22 +155,14 @@ class C: virtual public SavableState {
 
 Here is the implementation for the above:
 <pre>
-#define CLASSNAME C
-#define PARENTS virtual public SavableState
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void* C::_castdown(ClassDesc*cd)
-  {
-  void* casts[] = {SavableState::_castdown(cd)};
-  return do_castdowns(casts,cd);
-  }
+static ClassDesc C_cd(typeid(C),"C",1,"virtual public SavableState",
+                      0, 0, create<C>);
 void C::save_data_state(StateOut&so) {
-  so.put(ap);
-  }
+  SavableState::save_state(ap,so);
+}
 C::C(StateIn&si): SavableState(si) {
-  ap = A::restore_state(si);
-  }
+  ap = dynamic_cast<A>(SavableState::restore_state(si));
+}
 </pre>
 
 \section stateexsmart Example with Smart Pointers to SavableStates
@@ -224,36 +171,24 @@ Here is an example where C has data members which are
 smart pointers to derivatives of SavableState:
 <pre>
 class C: virtual public SavableState {
-# define CLASSNAME C
-# define HAVE_STATEIN_CTOR
-# include <util/state/stated.h>
-# include <util/class/classd.h>
   private:
-    RefA a; // A is also a SavableState
+    Ref<A> a; // A is also a SavableState
   public:
     C(StateIn&);
     void save_data_state(StateOut&);
-  };
+};
 </pre>
 
 Here is the implementation for the above:
 <pre>
-#define CLASSNAME C
-#define PARENTS virtual public SavableState
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void* C::_castdown(ClassDesc*cd)
-  {
-  void* casts[] = {SavableState::_castdown(cd)};
-  return do_castdowns(casts,cd);
-  }
+static ClassDesc C_cd(typeid(C),"C",1,"virtual public SavableState",
+                      0, 0, create<C>);
 void C::save_data_state(StateOut&so) {
-  a.save_state(so);
-  }
+  SavableState::save_state(a.pointer(),so);
+}
 C::C(StateIn&si): SavableState(si) {
-  a.restore_state(so);
-  }
+  a << SavableState::restore_state(so);
+}
 </pre>
 
 \section stateexdata Example with Pointers to Data
@@ -262,10 +197,6 @@ Here is an example where C has data members which are
 pointers to data:
 <pre>
 class C: virtual public SavableState {
-# define CLASSNAME C
-# define HAVE_STATEIN_CTOR
-# include <util/state/stated.h>
-# include <util/class/classd.h>
   private:
     int vecsize;
     double *vec;
@@ -275,21 +206,13 @@ class C: virtual public SavableState {
   public:
     C(StateIn&);
     void save_data_state(StateOut&);
-  };
+};
 </pre>
 
 Here is the implementation for the above:
 <pre>
-#define CLASSNAME C
-#define PARENTS virtual public SavableState
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void* C::_castdown(ClassDesc*cd)
-  {
-  void* casts[] = {SavableState::_castdown(cd);}
-  return do_castdowns(casts,cd);
-  }
+static ClassDesc C_cd(typeid(C),"C",1,"virtual public SavableState",
+                      0, 0, create<C>);
 void C::save_data_state(StateOut&so) {
   so.put(vecsize);
   so.put_array_double(vec,vecsize);
@@ -298,8 +221,8 @@ void C::save_data_state(StateOut&so) {
   so.put(n2);
   for (int i=0; i<n1; i++) {
     so.put_array_double(array[i],n2);
-    }
   }
+}
 C::C(StateIn&si): SavableState(si) {
   si.get(vecsize);
   vec = new double[vecsize];
@@ -312,8 +235,8 @@ C::C(StateIn&si): SavableState(si) {
   for (int i=0; i<n1; i++) {
     array[i] = new double[n2];
     si.get_array_double(array[i],n2);
-    }
   }
+}
 </pre>
 
 */

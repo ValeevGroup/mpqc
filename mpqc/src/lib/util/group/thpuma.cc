@@ -56,24 +56,16 @@ class PumaThreadLock : public ThreadLock {
 /////////////////////////////////////////////////////////////////////////////
 // PumaThreadGrp members
 
-#define CLASSNAME PumaThreadGrp
-#define PARENTS public ThreadGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-PumaThreadGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = ThreadGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc PumaThreadGrp_cd(
+  typeid(PumaThreadGrp),"PumaThreadGrp",1,"public ThreadGrp",
+  0, create<PumaThreadGrp>, 0);
 
 PumaThreadGrp::PumaThreadGrp()
   : ThreadGrp()
 {
 }
 
-PumaThreadGrp::PumaThreadGrp(const RefKeyVal& keyval)
+PumaThreadGrp::PumaThreadGrp(const Ref<KeyVal>& keyval)
   : ThreadGrp(keyval)
 {
   if (nthread_ > 2) {
@@ -114,7 +106,7 @@ PumaThreadGrp::wait_threads()
   return 0;
 }
 
-RefThreadLock
+Ref<ThreadLock>
 PumaThreadGrp::new_lock()
 {
   return new PumaThreadLock;

@@ -33,8 +33,8 @@
 #include <chemistry/qc/intv3/utils.h>
 
 Int1eV3::Int1eV3(Integral *integral,
-                 const RefGaussianBasisSet&b1,
-                 const RefGaussianBasisSet&b2,
+                 const Ref<GaussianBasisSet>&b1,
+                 const Ref<GaussianBasisSet>&b2,
                  int order)
 {
   integral_ = integral;

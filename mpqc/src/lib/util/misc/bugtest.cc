@@ -43,7 +43,7 @@ y()
 }
 
 void
-x(const RefDebugger &d)
+x(const Ref<Debugger> &d)
 {
   d->traceback();
   y();
@@ -54,9 +54,9 @@ main(int argc, char **argv)
 {
   const char *infile = SRCDIR "/bugtest.in";
 
-  RefKeyVal keyval = new ParsedKeyVal(infile);
+  Ref<KeyVal> keyval = new ParsedKeyVal(infile);
 
-  RefDebugger d;
+  Ref<Debugger> d;
 
   d = keyval->describedclassvalue("debug");
   if (d.null()) {

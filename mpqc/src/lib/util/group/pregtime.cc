@@ -41,25 +41,17 @@
 
 using namespace std;
 
-#define CLASSNAME ParallelRegionTimer
-#define PARENTS public RegionTimer
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-ParallelRegionTimer::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  RegionTimer::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ParallelRegionTimer_cd(
+  typeid(ParallelRegionTimer),"ParallelRegionTimer",1,"public RegionTimer",
+  0, create<ParallelRegionTimer>, 0);
 
-ParallelRegionTimer::ParallelRegionTimer(const RefKeyVal &keyval):
+ParallelRegionTimer::ParallelRegionTimer(const Ref<KeyVal> &keyval):
   RegionTimer(keyval)
 {
   msg_ = MessageGrp::get_default_messagegrp();
 }
 
-ParallelRegionTimer::ParallelRegionTimer(const RefMessageGrp&msg,
+ParallelRegionTimer::ParallelRegionTimer(const Ref<MessageGrp>&msg,
                                          const char *topname,
                                          int cpu_time, int wall_time):
   RegionTimer(topname, cpu_time, wall_time),

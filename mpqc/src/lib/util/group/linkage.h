@@ -34,43 +34,43 @@
 #include <scconfig.h>
 #endif
 
-const ClassDesc &group_force_link_ = ProcMessageGrp::class_desc_;
+static ForceLink<ProcMessageGrp> group_force_link_;
 
 # ifdef HAVE_SYSV_IPC
 #   include <util/group/messshm.h>
-    const ClassDesc &group_force_link_a_ = ShmMessageGrp::class_desc_;
+    static ForceLink<ShmMessageGrp> group_force_link_a_;
 # endif
 
 # ifdef HAVE_NX
 #   include <util/group/messpgon.h>
 #   include <util/group/memipgon.h>
-    const ClassDesc &group_force_link_b_ = ParagonMessageGrp::class_desc_;
-    const ClassDesc &group_force_link_b1_ = IParagonMemoryGrp::class_desc_;
+    static ForceLink<ParagonMessageGrp> group_force_link_b_;
+    static ForceLink<IParagonMemoryGrp> group_force_link_b1_;
 # endif
 
 # if defined(HAVE_PTHREAD)
 #   include <util/group/thpthd.h>
-    const ClassDesc &group_force_link_c_ = PthreadThreadGrp::class_desc_;
+    static ForceLink<PthreadThreadGrp> group_force_link_c_;
 # endif
 
 #if defined(HAVE_PUMA_MPI2)
 #   include <util/group/thpuma.h>
-    const ClassDesc &group_force_link_d_ = PumaThreadGrp::class_desc_;
+    static ForceLink<PumaThreadGrp> group_force_link_d_;
 #endif
 
 #if defined(HAVE_MPI)
 #   include <util/group/memmpi.h>
-    const ClassDesc &group_force_link_e_ = MPIMemoryGrp::class_desc_;
+    static ForceLink<MPIMemoryGrp> group_force_link_e_;
 #endif
 
 #if defined(HAVE_MPI2_ONE_SIDED)
 #   include <util/group/memmpi2.h>
-    const ClassDesc &group_force_link_f_ = MPI2MemoryGrp::class_desc_;
+    static ForceLink<MPI2MemoryGrp> group_force_link_f_;
 #endif
 
 #if defined(HAVE_MPI)
 #   include <util/group/memmtmpi.h>
-    const ClassDesc &group_force_link_g_ = MTMPIMemoryGrp::class_desc_;
+    static ForceLink<MTMPIMemoryGrp> group_force_link_g_;
 #endif
 
 #endif /* __PIC__ */

@@ -144,20 +144,12 @@ MTMPIThread::run()
 ///////////////////////////////////////////////////////////////////////
 // The MTMPIMemoryGrp class
 
-#define CLASSNAME MTMPIMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public ActiveMsgMemoryGrp
-#include <util/class/classi.h>
-void *
-MTMPIMemoryGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  ActiveMsgMemoryGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MTMPIMemoryGrp_cd(
+  typeid(MTMPIMemoryGrp),"MTMPIMemoryGrp",1,"public ActiveMsgMemoryGrp",
+  0, create<MTMPIMemoryGrp>, 0);
 
-MTMPIMemoryGrp::MTMPIMemoryGrp(const RefMessageGrp& msg,
-                               const RefThreadGrp& th):
+MTMPIMemoryGrp::MTMPIMemoryGrp(const Ref<MessageGrp>& msg,
+                               const Ref<ThreadGrp>& th):
   ActiveMsgMemoryGrp(msg)
 {
   if (debug_) ExEnv::out() << "MTMPIMemoryGrp CTOR entered" << endl;
@@ -167,7 +159,7 @@ MTMPIMemoryGrp::MTMPIMemoryGrp(const RefMessageGrp& msg,
   init_mtmpimg(th_->nthread());
 }
 
-MTMPIMemoryGrp::MTMPIMemoryGrp(const RefKeyVal& keyval):
+MTMPIMemoryGrp::MTMPIMemoryGrp(const Ref<KeyVal>& keyval):
   ActiveMsgMemoryGrp(keyval)
 {
   if (debug_) ExEnv::out() << "MTMPIMemoryGrp keyval CTOR entered" << endl;

@@ -35,20 +35,17 @@
 #include <util/render/parameter.h>
 
 class Appearance: public DescribedClass {
-#   define CLASSNAME Appearance
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   private:
     Parameter<int> level_; // level of accuracy used to generate spheres, etc
   public:
     Appearance();
-    Appearance(const RefKeyVal&);
+    Appearance(const Ref<KeyVal>&);
     ~Appearance();
     Parameter<int>& level() { return level_; }
 
     void print(std::ostream& = ExEnv::out()) const;
 };
-DescribedClass_REF_dec(Appearance);
+
 
 #endif
 

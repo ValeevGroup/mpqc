@@ -39,19 +39,14 @@
 // //////////////////////////////////////////////////////////////////////////
 
 class CLKS: public CLSCF {
-#   define CLASSNAME CLKS
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
-    RefDenIntegrator integrator_;
-    RefDenFunctional functional_;
+    Ref<DenIntegrator> integrator_;
+    Ref<DenFunctional> functional_;
     RefSymmSCMatrix vxc_;
     
   public:
     CLKS(StateIn&);
-    CLKS(const RefKeyVal&);
+    CLKS(const Ref<KeyVal>&);
     ~CLKS();
 
     void save_data_state(StateOut&);
@@ -68,7 +63,7 @@ class CLKS: public CLSCF {
     void ao_fock(double accuracy);
     double exc_;
     double scf_energy();
-    RefSCExtrapData extrap_data();
+    Ref<SCExtrapData> extrap_data();
     RefSymmSCMatrix effective_fock();
 
     void init_vector();

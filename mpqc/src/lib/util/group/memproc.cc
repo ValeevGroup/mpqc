@@ -34,17 +34,9 @@
 
 #include <util/group/memproc.h>
 
-#define CLASSNAME ProcMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public MemoryGrp
-#include <util/class/classi.h>
-void *
-ProcMemoryGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  MemoryGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ProcMemoryGrp_cd(
+  typeid(ProcMemoryGrp),"ProcMemoryGrp",1,"public MemoryGrp",
+  0, create<ProcMemoryGrp>, 0);
 
 ProcMemoryGrp::ProcMemoryGrp()
 {
@@ -52,7 +44,7 @@ ProcMemoryGrp::ProcMemoryGrp()
   offsets_ = 0;
 }
 
-ProcMemoryGrp::ProcMemoryGrp(const RefKeyVal& keyval):
+ProcMemoryGrp::ProcMemoryGrp(const Ref<KeyVal>& keyval):
   MemoryGrp(keyval)
 {
   data_ = 0;

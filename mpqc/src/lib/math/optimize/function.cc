@@ -45,20 +45,9 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////
 
-SavableState_REF_def(Function);
-
-#define CLASSNAME Function
-#define PARENTS virtual public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-
-void *
-Function::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc Function_cd(
+  typeid(Function),"Function",1,"virtual public SavableState",
+  0, 0, 0);
 
 Function::Function():
   value_(this),
@@ -81,13 +70,13 @@ Function::Function(const Function& func):
   x_ = func.x_;
 }
 
-Function::Function(const RefKeyVal&kv, double funcacc,
+Function::Function(const Ref<KeyVal>&kv, double funcacc,
                    double gradacc, double hessacc):
   value_(this),
   gradient_(this),
   hessian_(this)
 {
-  matrixkit_ = kv->describedclassvalue("matrixkit");
+  matrixkit_ << kv->describedclassvalue("matrixkit");
 
   if (matrixkit_.null()) matrixkit_ = SCMatrixKit::default_matrixkit();
 
@@ -116,7 +105,7 @@ Function::Function(StateIn&s):
   hessian_(this)
 {
   matrixkit_ = SCMatrixKit::default_matrixkit();
-  dim_.restore_state(s);
+  dim_ << SavableState::restore_state(s);
   x_ = matrixkit_->vector(dim_);
   x_.restore(s);
 
@@ -149,7 +138,7 @@ void
 Function::save_data_state(StateOut&s)
 {
   value_.save_data_state(s);
-  dim_.save_state(s);
+  SavableState::save_state(dim_.pointer(),s);
   x_.save(s);
   gradient_.save_data_state(s);
   gradient_.result_noupdate().save(s);
@@ -157,7 +146,7 @@ Function::save_data_state(StateOut&s)
   hessian_.result_noupdate().save(s);
 }
 
-RefSCMatrixKit
+Ref<SCMatrixKit>
 Function::matrixkit() const
 {
   return matrixkit_;
@@ -304,7 +293,7 @@ Function::set_hessian(RefSymmSCMatrix&h)
 void
 Function::guess_hessian(RefSymmSCMatrix&hessian)
 {
-  RefSCElementOp op(new SCElementShiftDiagonal(1.0));
+  Ref<SCElementOp> op(new SCElementShiftDiagonal(1.0));
   hessian.assign(0.0);
   hessian.element_op(op);
 }
@@ -360,7 +349,7 @@ Function::print(ostream&o) const
 }
 
 void
-Function::set_matrixkit(const RefSCMatrixKit& kit)
+Function::set_matrixkit(const Ref<SCMatrixKit>& kit)
 {
   matrixkit_ = kit;
 }
@@ -395,14 +384,14 @@ Function::hessian_implemented() const
   return 0;
 }
 
-RefNonlinearTransform
+Ref<NonlinearTransform>
 Function::change_coordinates()
 {
   return 0;
 }
 
 void
-Function::do_change_coordinates(const RefNonlinearTransform &t)
+Function::do_change_coordinates(const Ref<NonlinearTransform> &t)
 {
   if (t.null())
       return;

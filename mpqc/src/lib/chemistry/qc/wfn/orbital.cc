@@ -38,27 +38,18 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/wfn/orbital.h>
 
-#define CLASSNAME Orbital
-#define PARENTS public Volume
-#define HAVE_KEYVAL_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-Orbital::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Volume::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc Orbital_cd(
+  typeid(Orbital),"Orbital",1,"public Volume",
+  0, create<Orbital>, 0);
 
-Orbital::Orbital(const RefKeyVal &keyval):
+Orbital::Orbital(const Ref<KeyVal> &keyval):
   Volume(keyval)
 {
-  wfn_ = keyval->describedclassvalue("wfn");
+  wfn_ << keyval->describedclassvalue("wfn");
   orbital_ = keyval->intvalue("orbital");
 }
 
-Orbital::Orbital(const RefOneBodyWavefunction& wfn, int orbital):
+Orbital::Orbital(const Ref<OneBodyWavefunction>& wfn, int orbital):
   Volume(),
   wfn_(wfn),
   orbital_(orbital)

@@ -63,17 +63,9 @@ MPLMemoryGrp::static_handler(int*msgid_arg)
 ///////////////////////////////////////////////////////////////////////
 // The MPLMemoryGrp class
 
-#define CLASSNAME MPLMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public MIDMemoryGrp
-#include <util/class/classi.h>
-void *
-MPLMemoryGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  MIDMemoryGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MPLMemoryGrp_cd(
+  typeid(MPLMemoryGrp),"MPLMemoryGrp",1,"public MIDMemoryGrp",
+  0, create<MPLMemoryGrp>, 0);
 
 
 void
@@ -259,7 +251,7 @@ MPLMemoryGrp::wait(long mid1, long mid2)
   return grpmid;
 }
 
-MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg):
+MPLMemoryGrp::MPLMemoryGrp(const Ref<MessageGrp>& msg):
   MIDMemoryGrp(msg)
 {
   if (debug_) 
@@ -284,7 +276,7 @@ MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg):
       ExEnv::out() << scprintf("MPLMemoryGrp done\n");
 }
 
-MPLMemoryGrp::MPLMemoryGrp(const RefKeyVal& keyval):
+MPLMemoryGrp::MPLMemoryGrp(const Ref<KeyVal>& keyval):
   MIDMemoryGrp(keyval)
 {
   if (debug_) 

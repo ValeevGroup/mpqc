@@ -32,9 +32,6 @@
 #include <util/render/object.h>
 
 class RenderedPolylines: public RenderedObject {
-#   define CLASSNAME RenderedPolylines
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   public:
     enum Coloring { None, Vertex };
   private:
@@ -47,7 +44,7 @@ class RenderedPolylines: public RenderedObject {
     double **vertex_rgb_;
   public:
     RenderedPolylines();
-    RenderedPolylines(const RefKeyVal&);
+    RenderedPolylines(const Ref<KeyVal>&);
     ~RenderedPolylines();
 
     void initialize(int nvertex, int npolylines,
@@ -66,9 +63,9 @@ class RenderedPolylines: public RenderedObject {
     void set_polyline(int i, int v1, int v2, int v3);
     void set_polyline(int i, int v1, int v2, int v3, int v4);
 
-    void render(const RefRender&);
+    void render(const Ref<Render>&);
 };
-DescribedClass_REF_dec(RenderedPolylines);
+
 
 #endif
 

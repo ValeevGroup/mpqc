@@ -43,8 +43,6 @@
 /** Writes state information to files.
  */
 class StateOutFile: public StateOut {
-#   define CLASSNAME StateOutFile
-#   include <util/class/classda.h>
   private:
     // do not allow copy constructor or assignment
     StateOutFile(const StateOutFile&);
@@ -73,8 +71,6 @@ class StateOutFile: public StateOut {
 /** Reads state information from a file.
  */
 class StateInFile: public StateIn {
-#   define CLASSNAME StateInFile
-#   include <util/class/classda.h>
   private:
     // do not allow copy constructor or assignment
     StateInFile(const StateInFile&);

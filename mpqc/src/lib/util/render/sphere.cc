@@ -31,29 +31,20 @@
 #include <util/render/object.h>
 #include <util/render/sphere.h>
 
-DescribedClass_REF_def(RenderedSphere);
-#define CLASSNAME RenderedSphere
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public RenderedObject
-#include <util/class/classi.h>
-void *
-RenderedSphere::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = RenderedObject::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc RenderedSphere_cd(
+  typeid(RenderedSphere),"RenderedSphere",1,"public RenderedObject",
+  0, create<RenderedSphere>, 0);
 
 RenderedSphere::RenderedSphere()
 {
 }
 
-RenderedSphere::RenderedSphere(const RefMaterial& material):
+RenderedSphere::RenderedSphere(const Ref<Material>& material):
   RenderedObject(material)
 {
 }
 
-RenderedSphere::RenderedSphere(const RefKeyVal& keyval):
+RenderedSphere::RenderedSphere(const Ref<KeyVal>& keyval):
   RenderedObject(keyval)
 {
 }
@@ -63,7 +54,7 @@ RenderedSphere::~RenderedSphere()
 }
 
 void
-RenderedSphere::render(const RefRender& render)
+RenderedSphere::render(const Ref<Render>& render)
 {
   render->sphere(this);
 }

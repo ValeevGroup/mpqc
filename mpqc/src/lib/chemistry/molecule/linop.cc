@@ -52,20 +52,9 @@
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/localdef.h>
 
-#define CLASSNAME LinOPSimpleCo
-#define PARENTS public SimpleCo
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-LinOPSimpleCo::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SimpleCo::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc LinOPSimpleCo_cd(
+  typeid(LinOPSimpleCo),"LinOPSimpleCo",1,"public SimpleCo",
+  create<LinOPSimpleCo>, create<LinOPSimpleCo>, create<LinOPSimpleCo>);
 SimpleCo_IMPL(LinOPSimpleCo)
 
 LinOPSimpleCo::LinOPSimpleCo() : SimpleCo(3)
@@ -87,7 +76,7 @@ LinOPSimpleCo::LinOPSimpleCo(const char *refr, int a1, int a2, int a3,
   u2.normalize();
 }
 
-LinOPSimpleCo::LinOPSimpleCo(const RefKeyVal &kv) :
+LinOPSimpleCo::LinOPSimpleCo(const Ref<KeyVal> &kv) :
   SimpleCo(kv,3)
 {
   for (int i=0; i<3; i++) u2[i] = kv->doublevalue("u",i);

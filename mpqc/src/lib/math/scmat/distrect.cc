@@ -52,17 +52,9 @@ fail(const char *m)
 /////////////////////////////////////////////////////////////////////////////
 // DistSCMatrix member functions
 
-#define CLASSNAME DistSCMatrix
-#define PARENTS public SCMatrix
-//#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-DistSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrix::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc DistSCMatrix_cd(
+  typeid(DistSCMatrix),"DistSCMatrix",1,"public SCMatrix",
+  0, 0, 0);
 
 DistSCMatrix::DistSCMatrix(const RefSCDimension&a,const RefSCDimension&b,
                            DistSCMatrixKit*k):
@@ -77,7 +69,7 @@ DistSCMatrix::block_to_node(int i, int j) const
   return (i*d2->blocks()->nblock() + j)%messagegrp()->n();
 }
 
-RefSCMatrixBlock
+Ref<SCMatrixBlock>
 DistSCMatrix::block_to_block(int i, int j) const
 {
   int offset = i*d2->blocks()->nblock() + j;
@@ -105,8 +97,8 @@ DistSCMatrix::find_element(int i, int j) const
   int bj, oj;
   d2->blocks()->elem_to_block(j, bj, oj);
 
-  RefSCMatrixRectBlock blk
-      = SCMatrixRectBlock::castdown(block_to_block(bi, bj).pointer());
+  Ref<SCMatrixRectBlock> blk
+      = dynamic_cast<SCMatrixRectBlock*>(block_to_block(bi, bj).pointer());
   if (blk.nonnull()) {
       return &blk->data[oi*(blk->jend-blk->jstart)+oj];
     }
@@ -136,7 +128,7 @@ DistSCMatrix::init_blocklist()
   for (i=0, index=0; i<d1->blocks()->nblock(); i++) {
       for (j=0; j<d2->blocks()->nblock(); j++, index++) {
           if (block_to_node(i,j) == me) {
-              RefSCMatrixBlock b
+              Ref<SCMatrixBlock> b
                   = new SCMatrixRectBlock(d1->blocks()->start(i),
                                           d1->blocks()->fence(i),
                                           d2->blocks()->start(j),
@@ -231,9 +223,9 @@ DistSCMatrix::get_column(int i)
 {
   double *col = new double[nrow()];
   
-  RefSCMatrixSubblockIter iter = local_blocks(SCMatrixSubblockIter::Read);
+  Ref<SCMatrixSubblockIter> iter = local_blocks(SCMatrixSubblockIter::Read);
   for (iter->begin(); iter->ready(); iter->next()) {
-    SCMatrixRectBlock *b = SCMatrixRectBlock::castdown(iter->block());
+    SCMatrixRectBlock *b = dynamic_cast<SCMatrixRectBlock*>(iter->block());
     if (b->jstart > i || b->jend <= i)
       continue;
 
@@ -270,7 +262,7 @@ DistSCMatrix::accumulate(const SCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const DistSCMatrix* la
-    = DistSCMatrix::require_const_castdown(a,"DistSCMatrix::accumulate");
+    = require_dynamic_cast<const DistSCMatrix*>(a,"DistSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
@@ -303,7 +295,7 @@ DistSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const DistSymmSCMatrix* la
-    = DistSymmSCMatrix::require_const_castdown(a,"DistSCMatrix::accumulate");
+    = require_dynamic_cast<const DistSymmSCMatrix*>(a,"DistSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
@@ -312,16 +304,16 @@ DistSCMatrix::accumulate(const SymmSCMatrix*a)
       abort();
     }
 
-  RefSCMatrixSubblockIter I = ((SymmSCMatrix*)a)->all_blocks(SCMatrixSubblockIter::Read);
+  Ref<SCMatrixSubblockIter> I = ((SymmSCMatrix*)a)->all_blocks(SCMatrixSubblockIter::Read);
   for (I->begin(); I->ready(); I->next()) {
-      RefSCMatrixBlock block = I->block();
+      Ref<SCMatrixBlock> block = I->block();
       if (DEBUG)
           ExEnv::out() << messagegrp()->me() << ": "
                << block->class_name()
                << "(" << block->blocki << ", " << block->blockj << ")"
                << endl;
       // see if i've got this block
-      RefSCMatrixBlock localblock
+      Ref<SCMatrixBlock> localblock
           = block_to_block(block->blocki,block->blockj);
       if (localblock.nonnull()) {
           // the diagonal blocks require special handling
@@ -371,7 +363,7 @@ DistSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const DistDiagSCMatrix* la
-    = DistDiagSCMatrix::require_const_castdown(a,"DistSCMatrix::accumulate");
+    = require_dynamic_cast<const DistDiagSCMatrix*>(a,"DistSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
@@ -380,11 +372,11 @@ DistSCMatrix::accumulate(const DiagSCMatrix*a)
       abort();
     }
 
-  RefSCMatrixSubblockIter I = ((DiagSCMatrix*)a)->all_blocks(SCMatrixSubblockIter::Read);
+  Ref<SCMatrixSubblockIter> I = ((DiagSCMatrix*)a)->all_blocks(SCMatrixSubblockIter::Read);
   for (I->begin(); I->ready(); I->next()) {
-      RefSCMatrixBlock block = I->block();
+      Ref<SCMatrixBlock> block = I->block();
       // see if i've got this block
-      RefSCMatrixBlock localblock
+      Ref<SCMatrixBlock> localblock
           = block_to_block(block->blocki,block->blockj);
       if (localblock.nonnull()) {
           int n = rowblocks()->size(block->blocki);
@@ -402,7 +394,7 @@ DistSCMatrix::accumulate(const SCVector*a)
 {
   // make sure that the argument is of the correct type
   const DistSCVector* la
-    = DistSCVector::require_const_castdown(a,"DistSCMatrix::accumulate");
+    = require_dynamic_cast<const DistSCVector*>(a,"DistSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)
@@ -433,8 +425,8 @@ DistSCMatrix::accumulate_product_rr(SCMatrix*pa,SCMatrix*pb)
 {
   const char* name = "DistSCMatrix::accumulate_product_rr";
   // make sure that the arguments are of the correct type
-  DistSCMatrix* a = DistSCMatrix::require_castdown(pa,name);
-  DistSCMatrix* b = DistSCMatrix::require_castdown(pb,name);
+  DistSCMatrix* a = require_dynamic_cast<DistSCMatrix*>(pa,name);
+  DistSCMatrix* b = require_dynamic_cast<DistSCMatrix*>(pb,name);
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(a->rowdim()) || !coldim()->equiv(b->coldim()) ||
@@ -451,10 +443,10 @@ DistSCMatrix::accumulate_product_rr(SCMatrix*pa,SCMatrix*pb)
   a->create_vecform(Row);
   a->vecform_op(CopyToVec);
 
-  RefSCMatrixSubblockIter I = b->all_blocks(SCMatrixSubblockIter::Read);
+  Ref<SCMatrixSubblockIter> I = b->all_blocks(SCMatrixSubblockIter::Read);
   for (I->begin(); I->ready(); I->next()) {
-      RefSCMatrixRectBlock blk
-          = SCMatrixRectBlock::castdown(I->block());
+      Ref<SCMatrixRectBlock> blk
+          = dynamic_cast<SCMatrixRectBlock*>(I->block());
       int kk,k,jj,j,i,nj;
       nj = blk->jend - blk->jstart;
       double *data = blk->data;
@@ -535,7 +527,7 @@ DistSCMatrix::delete_vecform()
 void
 DistSCMatrix::vecform_op(VecOp op, int *ivec)
 {
-  RefSCMatrixSubblockIter i;
+  Ref<SCMatrixSubblockIter> i;
   if (op == CopyToVec || op == AccumToVec) {
       i = all_blocks(SCMatrixSubblockIter::Read);
     }
@@ -544,7 +536,7 @@ DistSCMatrix::vecform_op(VecOp op, int *ivec)
       i = all_blocks(SCMatrixSubblockIter::Accum);
     }
   for (i->begin(); i->ready(); i->next()) {
-      RefSCMatrixRectBlock b = SCMatrixRectBlock::castdown(i->block());
+      Ref<SCMatrixRectBlock> b = dynamic_cast<SCMatrixRectBlock*>(i->block());
       if (DEBUG)
           ExEnv::out() << messagegrp()->me() << ": "
                << "got block " << b->blocki << ' ' << b->blockj << endl;
@@ -640,8 +632,8 @@ DistSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 {
   const char* name = "DistSCMatrix::accumulate_outer_product";
   // make sure that the arguments are of the correct type
-  DistSCVector* la = DistSCVector::require_castdown(a,name);
-  DistSCVector* lb = DistSCVector::require_castdown(b,name);
+  DistSCVector* la = require_dynamic_cast<DistSCVector*>(a,name);
+  DistSCVector* lb = require_dynamic_cast<DistSCVector*>(b,name);
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(lb->dim())) {
@@ -651,17 +643,17 @@ DistSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
       abort();
     }
 
-  RefSCMatrixSubblockIter I = a->all_blocks(SCMatrixSubblockIter::Read);
-  RefSCMatrixSubblockIter J = b->all_blocks(SCMatrixSubblockIter::Read);
+  Ref<SCMatrixSubblockIter> I = a->all_blocks(SCMatrixSubblockIter::Read);
+  Ref<SCMatrixSubblockIter> J = b->all_blocks(SCMatrixSubblockIter::Read);
   for (I->begin(); I->ready(); I->next()) {
-      RefSCVectorSimpleBlock vi
-          = SCVectorSimpleBlock::castdown(I->block());
+      Ref<SCVectorSimpleBlock> vi
+          = dynamic_cast<SCVectorSimpleBlock*>(I->block());
       int ni = vi->iend - vi->istart;
       for (J->begin(); J->ready(); J->next()) {
-          RefSCVectorSimpleBlock vj
-              = SCVectorSimpleBlock::castdown(J->block());
-          RefSCMatrixRectBlock rij
-              = SCMatrixRectBlock::castdown(block_to_block(vi->blocki,
+          Ref<SCVectorSimpleBlock> vj
+              = dynamic_cast<SCVectorSimpleBlock*>(J->block());
+          Ref<SCMatrixRectBlock> rij
+              = dynamic_cast<SCMatrixRectBlock*>(block_to_block(vi->blocki,
                                                        vj->blocki).pointer());
           // if the block is held locally sum in the outer prod contrib
           if (rij.nonnull()) {
@@ -684,20 +676,20 @@ DistSCMatrix::transpose_this()
   d1 = d2;
   d2 = tmp;
 
-  RefSCMatrixBlockList oldlist = blocklist;
+  Ref<SCMatrixBlockList> oldlist = blocklist;
   init_blocklist();
 
   assign(0.0);
 
-  RefSCMatrixSubblockIter I
+  Ref<SCMatrixSubblockIter> I
       = new DistSCMatrixListSubblockIter(SCMatrixSubblockIter::Read,
                                          oldlist,
                                          messagegrp());
   for (I->begin(); I->ready(); I->next()) {
-      RefSCMatrixRectBlock remote
-          = SCMatrixRectBlock::castdown(I->block());
-      RefSCMatrixRectBlock local
-          = SCMatrixRectBlock::castdown(block_to_block(remote->blockj,
+      Ref<SCMatrixRectBlock> remote
+          = dynamic_cast<SCMatrixRectBlock*>(I->block());
+      Ref<SCMatrixRectBlock> local
+          = dynamic_cast<SCMatrixRectBlock*>(block_to_block(remote->blockj,
                                                     remote->blocki).pointer());
       if (local.nonnull()) {
           int ni = local->iend - local->istart;
@@ -755,9 +747,9 @@ DistSCMatrix::trace()
   }
 
   double ret=0.0;
-  RefSCMatrixSubblockIter I = local_blocks(SCMatrixSubblockIter::Read);
+  Ref<SCMatrixSubblockIter> I = local_blocks(SCMatrixSubblockIter::Read);
   for (I->begin(); I->ready(); I->next()) {
-      RefSCMatrixRectBlock b = SCMatrixRectBlock::castdown(I->block());
+      Ref<SCMatrixRectBlock> b = dynamic_cast<SCMatrixRectBlock*>(I->block());
       if (b->blocki == b->blockj) {
           int ni = b->iend-b->istart;
           for (int i=0; i<ni; i++) {
@@ -789,7 +781,7 @@ void
 DistSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
 {
   DistSymmSCMatrix* lS =
-    DistSymmSCMatrix::require_castdown(S,"DistSCMatrix::schmidt_orthog");
+    require_dynamic_cast<DistSymmSCMatrix*>(S,"DistSCMatrix::schmidt_orthog");
 
   error("no schmidt_orthog");
   
@@ -802,7 +794,7 @@ DistSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
 }
 
 void
-DistSCMatrix::element_op(const RefSCElementOp& op)
+DistSCMatrix::element_op(const Ref<SCElementOp>& op)
 {
   SCMatrixBlockListIter i;
   for (i = blocklist->begin(); i != blocklist->end(); i++) {
@@ -814,11 +806,11 @@ DistSCMatrix::element_op(const RefSCElementOp& op)
 }
 
 void
-DistSCMatrix::element_op(const RefSCElementOp2& op,
+DistSCMatrix::element_op(const Ref<SCElementOp2>& op,
                           SCMatrix* m)
 {
   DistSCMatrix *lm
-      = DistSCMatrix::require_castdown(m,"DistSCMatrix::element_op");
+      = require_dynamic_cast<DistSCMatrix*>(m,"DistSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
       ExEnv::err() << indent << "DistSCMatrix: bad element_op\n";
@@ -834,13 +826,13 @@ DistSCMatrix::element_op(const RefSCElementOp2& op,
 }
 
 void
-DistSCMatrix::element_op(const RefSCElementOp3& op,
+DistSCMatrix::element_op(const Ref<SCElementOp3>& op,
                           SCMatrix* m,SCMatrix* n)
 {
   DistSCMatrix *lm
-      = DistSCMatrix::require_castdown(m,"DistSCMatrix::element_op");
+      = require_dynamic_cast<DistSCMatrix*>(m,"DistSCMatrix::element_op");
   DistSCMatrix *ln
-      = DistSCMatrix::require_castdown(n,"DistSCMatrix::element_op");
+      = require_dynamic_cast<DistSCMatrix*>(n,"DistSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
       !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
@@ -923,13 +915,13 @@ DistSCMatrix::vprint(const char *title, ostream& os, int prec)
   delete_vecform();
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 DistSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
   return new SCMatrixListSubblockIter(access, blocklist);
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 DistSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   return new DistSCMatrixListSubblockIter(access, blocklist, messagegrp());
@@ -941,10 +933,10 @@ DistSCMatrix::error(const char *msg)
   ExEnv::err() << "DistSCMatrix: error: " << msg << endl;
 }
 
-RefDistSCMatrixKit
+Ref<DistSCMatrixKit>
 DistSCMatrix::skit()
 {
-  return DistSCMatrixKit::castdown(kit().pointer());
+  return dynamic_cast<DistSCMatrixKit*>(kit().pointer());
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -48,12 +48,12 @@ void
 TriangulatedSurface::remove_slender_triangles(
     int remove_slender, double height_cutoff,
     int remove_small, double area_cutoff,
-    const RefVolume &vol, double isoval)
+    const Ref<Volume> &vol, double isoval)
 {
   int i,j,k;
-  AVLSet<RefTriangle>::iterator it,jt,kt;
-  AVLSet<RefEdge>::iterator ie,je,ke;
-  AVLSet<RefVertex>::iterator iv,jv;
+  AVLSet<Ref<Triangle> >::iterator it,jt,kt;
+  AVLSet<Ref<Edge> >::iterator ie,je,ke;
+  AVLSet<Ref<Vertex> >::iterator iv,jv;
 
   int surface_was_completed = _completed_surface;
 
@@ -81,38 +81,38 @@ TriangulatedSurface::remove_slender_triangles(
 
   int deleted_edges_length;
   do {
-      AVLSet<RefTriangle> deleted_triangles;
-      AVLSet<RefEdge> deleted_edges;
-      AVLSet<RefVertex> deleted_vertices;
+      AVLSet<Ref<Triangle> > deleted_triangles;
+      AVLSet<Ref<Edge> > deleted_edges;
+      AVLSet<Ref<Vertex> > deleted_vertices;
 
-      AVLSet<RefVertex> vertices_of_deleted_triangles;
+      AVLSet<Ref<Vertex> > vertices_of_deleted_triangles;
 
-      AVLSet<RefTriangle> new_triangles;
-      AVLSet<RefEdge> new_edges;
-      AVLSet<RefVertex> new_vertices;
+      AVLSet<Ref<Triangle> > new_triangles;
+      AVLSet<Ref<Edge> > new_edges;
+      AVLSet<Ref<Vertex> > new_vertices;
 
       // a vertex to set-of-connected-triangles map
-      AVLMap<RefVertex,AVLSet<RefTriangle> > connected_triangle_map;
+      AVLMap<Ref<Vertex>,AVLSet<Ref<Triangle> > > connected_triangle_map;
       for (it = _triangles.begin(); it != _triangles.end(); it++) {
-          RefTriangle tri = *it;
+          Ref<Triangle> tri = *it;
           for (j = 0; j<3; j++) {
-              RefVertex v  = tri->vertex(j);
+              Ref<Vertex> v  = tri->vertex(j);
               connected_triangle_map[v].insert(tri);
             }
         }
 
       // a vertex to set-of-connected-edges map
-      AVLMap<RefVertex,AVLSet<RefEdge> > connected_edge_map;
+      AVLMap<Ref<Vertex>,AVLSet<Ref<Edge> > > connected_edge_map;
       for (ie = _edges.begin(); ie != _edges.end(); ie++) {
-          RefEdge e = *ie;
+          Ref<Edge> e = *ie;
           for (j = 0; j<2; j++) {
-              RefVertex v = e->vertex(j);
+              Ref<Vertex> v = e->vertex(j);
               connected_edge_map[v].insert(e);
             }
         }
   
       for (it = _triangles.begin(); it != _triangles.end(); it++) {
-          RefTriangle tri = *it;
+          Ref<Triangle> tri = *it;
           // find the heights of the vertices in tri
           double l[3], l2[3], h[3];
           for (j=0; j<3; j++) {
@@ -140,7 +140,7 @@ TriangulatedSurface::remove_slender_triangles(
           // see if the shortest height is below the cutoff
           if (remove_slender && h[hmin] < height_cutoff) {
               // find the vertex that gets eliminated
-              RefVertex vertex;
+              Ref<Vertex> vertex;
               for (j=0; j<3; j++) {
                   if (tri->vertex(j) != tri->edge(hmin)->vertex(0)
                       &&tri->vertex(j) != tri->edge(hmin)->vertex(1)) {
@@ -148,7 +148,7 @@ TriangulatedSurface::remove_slender_triangles(
                       break;
                     }
                 }
-              AVLSet<RefTriangle> connected_triangles;
+              AVLSet<Ref<Triangle> > connected_triangles;
               connected_triangles |= connected_triangle_map[vertex];
 
               // if one of the connected triangles has a vertex
@@ -158,9 +158,9 @@ TriangulatedSurface::remove_slender_triangles(
               for (jt = connected_triangles.begin();
                    jt != connected_triangles.end();
                    jt++) {
-                  RefTriangle tri = *jt;
+                  Ref<Triangle> tri = *jt;
                   for (j=0; j<3; j++) {
-                      RefVertex v = tri->vertex(j);
+                      Ref<Vertex> v = tri->vertex(j);
                       if (vertices_of_deleted_triangles.contains(v)) {
                           skip = 1;
                           break;
@@ -171,25 +171,25 @@ TriangulatedSurface::remove_slender_triangles(
               if (skip) continue;
 
               // find all of the edges contained in the connected triangles
-              AVLSet<RefEdge> all_edges;
+              AVLSet<Ref<Edge> > all_edges;
               for (jt = connected_triangles.begin();
                    jt != connected_triangles.end();
                    jt++) {
-                  RefTriangle ctri = *jt;
-                  RefEdge e0 = ctri->edge(0);
-                  RefEdge e1 = ctri->edge(1);
-                  RefEdge e2 = ctri->edge(2);
+                  Ref<Triangle> ctri = *jt;
+                  Ref<Edge> e0 = ctri->edge(0);
+                  Ref<Edge> e1 = ctri->edge(1);
+                  Ref<Edge> e2 = ctri->edge(2);
                   all_edges.insert(e0);
                   all_edges.insert(e1);
                   all_edges.insert(e2);
                 }
               // find all of the edges connected to the deleted vertex
               // (including the short edge)
-              AVLSet<RefEdge> connected_edges;
+              AVLSet<Ref<Edge> > connected_edges;
               connected_edges |= connected_edge_map[vertex];
               // find the edges forming the perimeter of the deleted triangles
               // (these are used to form the new triangles)
-              AVLSet<RefEdge> perimeter_edges;
+              AVLSet<Ref<Edge> > perimeter_edges;
               perimeter_edges |= all_edges;
               perimeter_edges -= connected_edges;
 
@@ -197,16 +197,16 @@ TriangulatedSurface::remove_slender_triangles(
               // surface, reject it.  This is tested by checking for
               // triangles that have all vertices contained in the set
               // of vertices connected to the deleted vertex.
-              AVLSet<RefVertex> connected_vertices;
+              AVLSet<Ref<Vertex> > connected_vertices;
               for (je = perimeter_edges.begin(); je != perimeter_edges.end();
                    je++) {
-                  RefEdge e = *je;
-                  RefVertex v0 = e->vertex(0);
-                  RefVertex v1 = e->vertex(1);
+                  Ref<Edge> e = *je;
+                  Ref<Vertex> v0 = e->vertex(0);
+                  Ref<Vertex> v1 = e->vertex(1);
                   connected_vertices.insert(v0);
                   connected_vertices.insert(v1);
                 }
-              AVLSet<RefTriangle> triangles_connected_to_perimeter;
+              AVLSet<Ref<Triangle> > triangles_connected_to_perimeter;
               for (jv = connected_vertices.begin();
                    jv != connected_vertices.end();
                    jv++) {
@@ -216,10 +216,10 @@ TriangulatedSurface::remove_slender_triangles(
               for (jt = triangles_connected_to_perimeter.begin();
                    jt != triangles_connected_to_perimeter.end();
                    jt++) {
-                  RefTriangle t = *jt;
-                  RefVertex v0 = t->vertex(0);
-                  RefVertex v1 = t->vertex(1);
-                  RefVertex v2 = t->vertex(2);
+                  Ref<Triangle> t = *jt;
+                  Ref<Vertex> v0 = t->vertex(0);
+                  Ref<Vertex> v1 = t->vertex(1);
+                  Ref<Vertex> v2 = t->vertex(2);
                   if (connected_vertices.contains(v0)
                       &&connected_vertices.contains(v1)
                       &&connected_vertices.contains(v2)) {
@@ -238,9 +238,9 @@ TriangulatedSurface::remove_slender_triangles(
               for (jt = deleted_triangles.begin();
                    jt != deleted_triangles.end();
                    jt++) {
-                  RefTriangle t = *jt;
+                  Ref<Triangle> t = *jt;
                   for (j=0; j<2; j++) {
-                      RefVertex v = t->vertex(j);
+                      Ref<Vertex> v = t->vertex(j);
                       vertices_of_deleted_triangles.insert(v);
                     }
                 }
@@ -248,8 +248,8 @@ TriangulatedSurface::remove_slender_triangles(
               // find a new point that replaces the deleted vertex
               // (for now use one of the original, since it must lie on the
               // analytic surface)
-              RefVertex replacement_vertex;
-              RefEdge short_edge;
+              Ref<Vertex> replacement_vertex;
+              Ref<Edge> short_edge;
               if (hmin==0) {
                   if (l[1] < l[2]) short_edge = tri->edge(1);
                   else short_edge = tri->edge(2);
@@ -272,21 +272,21 @@ TriangulatedSurface::remove_slender_triangles(
               // for each vertex on the perimeter form a new edge to the
               // replacement vertex (unless the replacement vertex
               // is equal to the perimeter vertex)
-              AVLMap<RefVertex,RefEdge> new_edge_map;
+              AVLMap<Ref<Vertex>,Ref<Edge> > new_edge_map;
               for (je = perimeter_edges.begin(); je != perimeter_edges.end();
                    je++) {
-                  RefEdge e = *je;
+                  Ref<Edge> e = *je;
                   for (k = 0; k<2; k++) {
-                      RefVertex v = e->vertex(k);
+                      Ref<Vertex> v = e->vertex(k);
                       if (v == replacement_vertex) continue;
                       if (!new_edge_map.contains(v)) {
-                          RefEdge new_e;
+                          Ref<Edge> new_e;
                           // if the edge already exists then use the
                           // existing edge
                           for (ke = perimeter_edges.begin();
                                ke != perimeter_edges.end();
                                ke++) {
-                              RefEdge tmp = *ke;
+                              Ref<Edge> tmp = *ke;
                               if ((tmp->vertex(0) == replacement_vertex
                                    &&tmp->vertex(1) == v)
                                   ||(tmp->vertex(1) == replacement_vertex
@@ -309,11 +309,11 @@ TriangulatedSurface::remove_slender_triangles(
               // vertex)
               for (je = perimeter_edges.begin(); je != perimeter_edges.end();
                    je++) {
-                  RefEdge e1 = *je;
-                  RefVertex v0 = e1->vertex(0);
-                  RefVertex v1 = e1->vertex(1);
-                  RefEdge e2 = new_edge_map[v0];
-                  RefEdge e3 = new_edge_map[v1];
+                  Ref<Edge> e1 = *je;
+                  Ref<Vertex> v0 = e1->vertex(0);
+                  Ref<Vertex> v1 = e1->vertex(1);
+                  Ref<Edge> e2 = new_edge_map[v0];
+                  Ref<Edge> e3 = new_edge_map[v1];
                   if (v0 == replacement_vertex
                       || v1 == replacement_vertex) continue;
                   // Compute the correct orientation of e1 within the new
@@ -329,7 +329,7 @@ TriangulatedSurface::remove_slender_triangles(
                           break;
                         }
                     }
-                  RefTriangle newtri(newTriangle(e1,e2,e3,orientation));
+                  Ref<Triangle> newtri(newTriangle(e1,e2,e3,orientation));
                   new_triangles.insert(newtri);
                 }
             }
@@ -341,8 +341,8 @@ TriangulatedSurface::remove_slender_triangles(
           static int pass = 0;
           sprintf(filename, "surfst%04d.oogl", pass);
           ExEnv::out() << scprintf("PASS = %04d\n", pass);
-          RefRender render = new OOGLRender(filename);
-          RefRenderedPolygons poly = new RenderedPolygons;
+          Ref<Render> render = new OOGLRender(filename);
+          Ref<RenderedPolygons> poly = new RenderedPolygons;
           poly->initialize(_vertices.length(), _triangles.length(),
                            RenderedPolygons::Vertex);
           // the number of triangles and edges touching a vertex
@@ -350,13 +350,13 @@ TriangulatedSurface::remove_slender_triangles(
           int *n_edge = new int[_vertices.length()];
           memset(n_triangle,0,sizeof(int)*_vertices.length());
           memset(n_edge,0,sizeof(int)*_vertices.length());
-          AVLSet<RefTriangle>::iterator it;
-          AVLSet<RefEdge>::iterator ie;
-          AVLSet<RefVertex>::iterator iv;
-          AVLMap<RefVertex, int> vertex_to_index;
+          AVLSet<Ref<Triangle> >::iterator it;
+          AVLSet<Ref<Edge> >::iterator ie;
+          AVLSet<Ref<Vertex> >::iterator iv;
+          AVLMap<Ref<Vertex>, int> vertex_to_index;
           int i = 0;
           for (iv = _vertices.begin(); iv != _vertices.end(); iv++, i++) {
-              RefVertex v = *iv;
+              Ref<Vertex> v = *iv;
               vertex_to_index[v] = i;
               poly->set_vertex(i,
                                v->point()[0],
@@ -371,7 +371,7 @@ TriangulatedSurface::remove_slender_triangles(
             }
           i = 0;
           for (it = _triangles.begin(); it != _triangles.end(); it++, i++) {
-              RefTriangle t = *it;
+              Ref<Triangle> t = *it;
               int i0 = vertex_to_index[t->vertex(0)];
               int i1 = vertex_to_index[t->vertex(1)];
               int i2 = vertex_to_index[t->vertex(2)];
@@ -381,7 +381,7 @@ TriangulatedSurface::remove_slender_triangles(
               poly->set_face(i,i0,i1,i2);
             }
           for (ie = _edges.begin(); ie != _edges.end(); ie++, i++) {
-              RefEdge e = *ie;
+              Ref<Edge> e = *ie;
               int i0 = vertex_to_index[e->vertex(0)];
               int i1 = vertex_to_index[e->vertex(1)];
               n_edge[i0]++;
@@ -389,7 +389,7 @@ TriangulatedSurface::remove_slender_triangles(
             }
           i = 0;
           for (iv = _vertices.begin(); iv != _vertices.end(); iv++, i++) {
-              RefVertex v = *iv;
+              Ref<Vertex> v = *iv;
               if (n_triangle[i] != n_edge[i]) {
                   ExEnv::out() << "found bad vertex"
                        << " nedge = " << n_edge[i]
@@ -403,7 +403,7 @@ TriangulatedSurface::remove_slender_triangles(
                     }
                 }
             }
-          render->render(poly);
+          render->render(poly.pointer());
           pass++;
           delete[] n_triangle;
           delete[] n_edge;

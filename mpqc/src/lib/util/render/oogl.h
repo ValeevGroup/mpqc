@@ -32,28 +32,25 @@
 #include <util/render/render.h>
 
 class OOGLRender: public FileRender {
-#   define CLASSNAME OOGLRender
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   private:
     int oogl_spheres_;
   public:
     OOGLRender(const char * filename);
     OOGLRender(std::ostream &o = ExEnv::out());
-    OOGLRender(const RefKeyVal&);
+    OOGLRender(const Ref<KeyVal>&);
     virtual ~OOGLRender();
 
-    void render(const RefRenderedObject&);
-    void animate(const RefAnimatedObject&);
+    void render(const Ref<RenderedObject>&);
+    void animate(const Ref<AnimatedObject>&);
 
     const char *file_extension();
 
-    void set(const RefRenderedObjectSet&);
-    void sphere(const RefRenderedSphere&);
-    void polygons(const RefRenderedPolygons&);
-    void polylines(const RefRenderedPolylines&);
+    void set(const Ref<RenderedObjectSet>&);
+    void sphere(const Ref<RenderedSphere>&);
+    void polygons(const Ref<RenderedPolygons>&);
+    void polylines(const Ref<RenderedPolylines>&);
 };
-DescribedClass_REF_dec(OOGLRender);
+
 
 #endif
 

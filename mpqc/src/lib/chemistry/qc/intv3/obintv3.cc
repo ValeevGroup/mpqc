@@ -31,8 +31,8 @@
 // OneBodyIntV3
 
 OneBodyIntV3::OneBodyIntV3(Integral* integral,
-                           const RefGaussianBasisSet&bs1,
-                           const RefGaussianBasisSet&bs2,
+                           const Ref<GaussianBasisSet>&bs1,
+                           const Ref<GaussianBasisSet>&bs2,
                            IntegralFunction ifunc):
   OneBodyInt(integral,bs1,bs2)
 {
@@ -56,9 +56,9 @@ OneBodyIntV3::compute_shell(int i, int j)
 
 PointChargeIntV3::PointChargeIntV3(
     Integral *integral,
-    const RefGaussianBasisSet&bs1,
-    const RefGaussianBasisSet&bs2,
-    const RefPointChargeData&dat):
+    const Ref<GaussianBasisSet>&bs1,
+    const Ref<GaussianBasisSet>&bs2,
+    const Ref<PointChargeData>&dat):
   OneBodyInt(integral,bs1,bs2),
   data_(dat)
 {
@@ -84,9 +84,9 @@ PointChargeIntV3::compute_shell(int i,int j)
 
 EfieldDotVectorIntV3::EfieldDotVectorIntV3(
     Integral *integral,
-    const RefGaussianBasisSet&bs1,
-    const RefGaussianBasisSet&bs2,
-    const RefEfieldDotVectorData&dat) :
+    const Ref<GaussianBasisSet>&bs1,
+    const Ref<GaussianBasisSet>&bs2,
+    const Ref<EfieldDotVectorData>&dat) :
   OneBodyInt(integral,bs1,bs2),
   data_(dat)
 {
@@ -123,9 +123,9 @@ EfieldDotVectorIntV3::compute_shell(int i,int j)
 // DipoleIntV3
 
 DipoleIntV3::DipoleIntV3(Integral *integral,
-                         const RefGaussianBasisSet&bs1,
-                         const RefGaussianBasisSet&bs2,
-                         const RefDipoleData&dat) :
+                         const Ref<GaussianBasisSet>&bs1,
+                         const Ref<GaussianBasisSet>&bs2,
+                         const Ref<DipoleData>&dat) :
   OneBodyInt(integral,bs1,bs2),
   data_(dat)
 {
@@ -148,8 +148,8 @@ DipoleIntV3::compute_shell(int i,int j)
 // OneBodyDerivIntV3
 
 OneBodyDerivIntV3::OneBodyDerivIntV3(Integral *integral,
-                                     const RefGaussianBasisSet&bs1,
-                                     const RefGaussianBasisSet&bs2,
+                                     const Ref<GaussianBasisSet>&bs1,
+                                     const Ref<GaussianBasisSet>&bs2,
                                      IntegralFunction ifunc):
   OneBodyDerivInt(integral,bs1,bs2)
 {

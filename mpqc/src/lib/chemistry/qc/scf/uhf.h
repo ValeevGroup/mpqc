@@ -37,14 +37,9 @@
 // //////////////////////////////////////////////////////////////////////////
 
 class UHF: public UnrestrictedSCF {
-#   define CLASSNAME UHF
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     UHF(StateIn&);
-    UHF(const RefKeyVal&);
+    UHF(const Ref<KeyVal>&);
     ~UHF();
 
     void save_data_state(StateOut&);

@@ -153,17 +153,9 @@ print_buffer(int node, int me)
 }
 #endif
 
-#define CLASSNAME ShmMessageGrp
-#define PARENTS public intMessageGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-ShmMessageGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  intMessageGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ShmMessageGrp_cd(
+  typeid(ShmMessageGrp),"ShmMessageGrp",1,"public intMessageGrp",
+  0, create<ShmMessageGrp>, 0);
 
 ShmMessageGrp::ShmMessageGrp()
 {
@@ -175,7 +167,7 @@ ShmMessageGrp::ShmMessageGrp(int nprocs)
   initialize(nprocs);
 }
 
-ShmMessageGrp::ShmMessageGrp(const RefKeyVal& keyval):
+ShmMessageGrp::ShmMessageGrp(const Ref<KeyVal>& keyval):
   intMessageGrp(keyval)
 {
   int nprocs = keyval->intvalue("n");

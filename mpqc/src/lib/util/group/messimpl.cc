@@ -43,20 +43,11 @@
 
 using namespace std;
 
-DescribedClass_REF_def(MessageGrp);
+static ClassDesc MessageGrp_cd(
+  typeid(MessageGrp),"MessageGrp",1,"public DescribedClass",
+  0, 0, 0);
 
-#define CLASSNAME MessageGrp
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-MessageGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-MessageGrp::MessageGrp(const RefKeyVal& keyval):
+MessageGrp::MessageGrp(const Ref<KeyVal>& keyval):
   me_(-1),
   n_(-1),
   index_to_classdesc_(0)
@@ -80,10 +71,10 @@ MessageGrp::~MessageGrp()
   if (index_to_classdesc_) delete[] index_to_classdesc_;
 }
 
-static RefMessageGrp default_messagegrp;
+static Ref<MessageGrp> default_messagegrp;
 
 void
-MessageGrp::set_default_messagegrp(const RefMessageGrp& grp)
+MessageGrp::set_default_messagegrp(const Ref<MessageGrp>& grp)
 {
   default_messagegrp = grp;
 }
@@ -143,10 +134,10 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
   if (keyval_string) {
       if (keyval_string[0] == '\0') return 0;
       //ExEnv::out() << "Creating MessageGrp from \"" << keyval_string << "\"" << endl;
-      RefParsedKeyVal strkv = new ParsedKeyVal();
+      Ref<ParsedKeyVal> strkv = new ParsedKeyVal();
       strkv->parse_string(keyval_string);
-      RefDescribedClass dc = strkv->describedclassvalue();
-      grp = MessageGrp::castdown(dc.pointer());
+      Ref<DescribedClass> dc = strkv->describedclassvalue();
+      grp = dynamic_cast<MessageGrp*>(dc.pointer());
       if (dc.null()) {
           ExEnv::err() << "initial_messagegrp: couldn't find a MessageGrp in "
                << keyval_string << endl;
@@ -586,7 +577,7 @@ MessageGrp::raw_bcast(void* data, int nbyte, int from)
     }
   for (int idat=0; idat<nbyte_actual; idat+=tgop_max) {
       int ndat = (idat+tgop_max>nbyte_actual)?(nbyte_actual-idat):tgop_max;
-      RefGlobalMsgIter i(topology_->global_msg_iter(this, from));
+      Ref<GlobalMsgIter> i(topology_->global_msg_iter(this, from));
       for (i->forwards(); !i->done(); i->next()) {
           if (i->send()) {
               raw_send(i->sendto(), &((char*)data)[idat], ndat);
@@ -601,7 +592,7 @@ MessageGrp::raw_bcast(void* data, int nbyte, int from)
 void
 MessageGrp::sync()
 {
-  RefGlobalMsgIter i(topology_->global_msg_iter(this, 0));
+  Ref<GlobalMsgIter> i(topology_->global_msg_iter(this, 0));
 
   for (i->backwards(); !i->done(); i->next()) {
       if (i->send()) {

@@ -5,6 +5,6 @@
 #include <util/group/message.h>
 
 void dist_diagonalize(int n, int m, double *a, double *d, double *v,
-                      const RefMessageGrp &);
+                      const Ref<MessageGrp> &);
 
 #endif

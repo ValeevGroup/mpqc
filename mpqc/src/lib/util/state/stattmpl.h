@@ -68,8 +68,8 @@ class SSRef: public DCRef<T>, public SSRefBase {
                            const char *keyword = 0) {
       SavableState* ss
           = SavableState::dir_restore_state(si, objectname, keyword);
-      T* t = T::castdown(ss);
-      check_castdown_result((void*)t,ss,T::static_class_desc());
+      T* t = dynamic_cast<T*>(ss);
+      check_castdown_result((void*)t,ss,class_desc<T>());
       assign_pointer(t);
     };
 };

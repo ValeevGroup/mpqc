@@ -6,10 +6,10 @@
 // force linkages
 
 #include <chemistry/qc/mpqc/mpqc.h>
-const ClassDesc &fl0 = MPSCF::class_desc_;
+static ForceLink<MPSCF> fl0;
 #include <chemistry/molecule/coor.h>
-const ClassDesc &fl1 = SymmMolecularCoor::class_desc_;
-const ClassDesc &fl2 = RedundMolecularCoor::class_desc_;
+static ForceLink<SymmMolecularCoor> fl1;
+static ForceLink<RedundMolecularCoor> fl2;
 
 C_MolecularEnergyImpl::C_MolecularEnergyImpl()
 {
@@ -23,7 +23,7 @@ MolecularEnergy *
 C_MolecularEnergyImpl::mole()
 {
   MolecularEnergy *ret;
-  ret = MolecularEnergy::castdown(dc_);
+  ret = dynamic_cast<MolecularEnergy*>(dc_);
   return ret;
 }
 

@@ -52,19 +52,9 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////
 // SCF
 
-SavableState_REF_def(SCF);
-
-#define CLASSNAME SCF
-#define VERSION 2
-#define PARENTS public OneBodyWavefunction
-#include <util/class/classia.h>
-void *
-SCF::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = OneBodyWavefunction::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SCF_cd(
+  typeid(SCF),"SCF",2,"public OneBodyWavefunction",
+  0, 0, 0);
 
 SCF::SCF(StateIn& s) :
   SavableState(s),
@@ -78,21 +68,21 @@ SCF::SCF(StateIn& s) :
   s.get(reset_occ_);
   s.get(local_dens_);
   s.get(storage_);
-  if (s.version(static_class_desc()) >= 2) {
+  if (s.version(::class_desc<SCF>()) >= 2) {
     s.get(print_all_evals_);
     s.get(print_occ_evals_);
   }
   s.get(level_shift_);
 
-  extrap_.restore_state(s);
-  accumdih_.restore_state(s);
-  accumddh_.restore_state(s);
+  extrap_ << SavableState::restore_state(s);
+  accumdih_ << SavableState::restore_state(s);
+  accumddh_ << SavableState::restore_state(s);
 
   scf_grp_ = basis()->matrixkit()->messagegrp();
   threadgrp_ = ThreadGrp::get_default_threadgrp();
 }
 
-SCF::SCF(const RefKeyVal& keyval) :
+SCF::SCF(const Ref<KeyVal>& keyval) :
   OneBodyWavefunction(keyval),
   need_vec_(1),
   compute_guess_(0),
@@ -115,15 +105,15 @@ SCF::SCF(const RefKeyVal& keyval) :
   if (keyval->exists("level_shift"))
     level_shift_ = keyval->doublevalue("level_shift");
 
-  extrap_ = keyval->describedclassvalue("extrap");
+  extrap_ << keyval->describedclassvalue("extrap");
   if (extrap_.null())
     extrap_ = new DIIS;
 
-  accumdih_ = keyval->describedclassvalue("accumdih");
+  accumdih_ << keyval->describedclassvalue("accumdih");
   if (accumdih_.null())
     accumdih_ = new AccumHNull;
   
-  accumddh_ = keyval->describedclassvalue("accumddh");
+  accumddh_ << keyval->describedclassvalue("accumddh");
   if (accumddh_.null())
     accumddh_ = new AccumHNull;
   
@@ -143,7 +133,7 @@ SCF::SCF(const RefKeyVal& keyval) :
   // see if it's a string.
   if (keyval->exists("guess_wavefunction")) {
     ExEnv::out() << incindent << incindent;
-    guess_wfn_ = keyval->describedclassvalue("guess_wavefunction");
+    guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
     compute_guess_=1;
     if (guess_wfn_.null()) {
       compute_guess_=0;
@@ -154,10 +144,10 @@ SCF::SCF(const RefKeyVal& keyval) :
 
         // reset the default matrixkit so that the matrices in the guess
         // wavefunction will match those in this wavefunction
-        RefSCMatrixKit oldkit = SCMatrixKit::default_matrixkit();
+        Ref<SCMatrixKit> oldkit = SCMatrixKit::default_matrixkit();
         SCMatrixKit::set_default_matrixkit(basis()->matrixkit());
 
-        guess_wfn_.restore_state(s);
+        guess_wfn_ << SavableState::restore_state(s);
 
         // go back to the original default matrixkit
         SCMatrixKit::set_default_matrixkit(oldkit);
@@ -184,9 +174,9 @@ SCF::save_data_state(StateOut& s)
   s.put(print_all_evals_);
   s.put(print_occ_evals_);
   s.put(level_shift_);
-  extrap_.save_state(s);
-  accumdih_.save_state(s);
-  accumddh_.save_state(s);
+  SavableState::save_state(extrap_.pointer(),s);
+  SavableState::save_state(accumdih_.pointer(),s);
+  SavableState::save_state(accumddh_.pointer(),s);
 }
 
 RefSCMatrix
@@ -223,8 +213,8 @@ SCF::print(ostream&o) const
 void
 SCF::compute()
 {
-  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit().pointer()) ||
-            ReplSCMatrixKit::castdown(basis()->matrixkit().pointer())) ? 1:0;
+  local_ = (dynamic_cast<LocalSCMatrixKit*>(basis()->matrixkit().pointer()) ||
+            dynamic_cast<ReplSCMatrixKit*>(basis()->matrixkit().pointer())) ? 1:0;
   
   const double hess_to_grad_acc = 1.0/100.0;
   if (hessian_needed())
@@ -339,9 +329,9 @@ SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
 {
   RefSymmSCMatrix l = m;
   
-  if (!LocalSymmSCMatrix::castdown(l.pointer())
-      && !ReplSymmSCMatrix::castdown(l.pointer())) {
-    RefSCMatrixKit k = new ReplSCMatrixKit;
+  if (!dynamic_cast<LocalSymmSCMatrix*>(l.pointer())
+      && !dynamic_cast<ReplSymmSCMatrix*>(l.pointer())) {
+    Ref<SCMatrixKit> k = new ReplSCMatrixKit;
     l = k->symmmatrix(m.dim());
     l->convert(m);
 
@@ -352,10 +342,10 @@ SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
     l.assign(0.0);
   }
 
-  if (ReplSymmSCMatrix::castdown(l.pointer()))
-    p = ReplSymmSCMatrix::castdown(l.pointer())->get_data();
+  if (dynamic_cast<ReplSymmSCMatrix*>(l.pointer()))
+    p = dynamic_cast<ReplSymmSCMatrix*>(l.pointer())->get_data();
   else
-    p = LocalSymmSCMatrix::castdown(l.pointer())->get_data();
+    p = dynamic_cast<LocalSymmSCMatrix*>(l.pointer())->get_data();
 
   return l;
 }
@@ -378,7 +368,7 @@ SCF::initial_vector(int needv)
 
           // indent output of eigenvectors() call if there is any
           ExEnv::out() << incindent << incindent;
-          SCF *g = SCF::castdown(guess_wfn_.pointer());
+          SCF *g = dynamic_cast<SCF*>(guess_wfn_.pointer());
           if (!g || compute_guess_) {
             oso_eigenvectors_ = guess_wfn_->oso_eigenvectors().copy();
             eigenvalues_ = guess_wfn_->eigenvalues().copy();
@@ -433,8 +423,8 @@ SCF::init_mem(int nm)
   int nmem = i_offset(basis()->nbasis())*nm*sizeof(double);
 
   // if we're actually using local matrices, then there's no choice
-  if (LocalSCMatrixKit::castdown(basis()->matrixkit().pointer())
-      ||ReplSCMatrixKit::castdown(basis()->matrixkit().pointer())) {
+  if (dynamic_cast<LocalSCMatrixKit*>(basis()->matrixkit().pointer())
+      ||dynamic_cast<ReplSCMatrixKit*>(basis()->matrixkit().pointer())) {
     if (nmem > storage_)
       return;
   } else {
@@ -487,10 +477,10 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
 
   if (debug_ > 1) vector.print("SO vector");
   
-  BlockedSCMatrix *bvec = BlockedSCMatrix::require_castdown(
+  BlockedSCMatrix *bvec = require_dynamic_cast<BlockedSCMatrix*>(
     vector, "SCF::so_density: blocked vector");
 
-  BlockedSymmSCMatrix *bd = BlockedSymmSCMatrix::require_castdown(
+  BlockedSymmSCMatrix *bd = require_dynamic_cast<BlockedSymmSCMatrix*>(
     d, "SCF::so_density: blocked density");
   
   for (int ir=0; ir < oso_dimension()->blocks()->nblock(); ir++) {
@@ -537,7 +527,7 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
 
       // get local copies of vector and density matrix
       if (!local_) {
-        RefSCMatrixKit rk = new ReplSCMatrixKit;
+        Ref<SCMatrixKit> rk = new ReplSCMatrixKit;
         RefSCMatrix lvir = rk->matrix(vir.rowdim(), vir.coldim());
         lvir->convert(vir);
         occbits = lvir->get_subblock(0, n_SO-1, col0, coln);
@@ -553,17 +543,17 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
       double **c;
       double *dens;
       
-      if (LocalSCMatrix::castdown(occbits.pointer()))
-        c = LocalSCMatrix::castdown(occbits.pointer())->get_rows();
-      else if (ReplSCMatrix::castdown(occbits.pointer()))
-        c = ReplSCMatrix::castdown(occbits.pointer())->get_rows();
+      if (dynamic_cast<LocalSCMatrix*>(occbits.pointer()))
+        c = dynamic_cast<LocalSCMatrix*>(occbits.pointer())->get_rows();
+      else if (dynamic_cast<ReplSCMatrix*>(occbits.pointer()))
+        c = dynamic_cast<ReplSCMatrix*>(occbits.pointer())->get_rows();
       else
         abort();
 
-      if (LocalSymmSCMatrix::castdown(ldir.pointer()))
-        dens = LocalSymmSCMatrix::castdown(ldir.pointer())->get_data();
-      else if (ReplSymmSCMatrix::castdown(ldir.pointer()))
-        dens = ReplSymmSCMatrix::castdown(ldir.pointer())->get_data();
+      if (dynamic_cast<LocalSymmSCMatrix*>(ldir.pointer()))
+        dens = dynamic_cast<LocalSymmSCMatrix*>(ldir.pointer())->get_data();
+      else if (dynamic_cast<ReplSymmSCMatrix*>(ldir.pointer()))
+        dens = dynamic_cast<ReplSymmSCMatrix*>(ldir.pointer())->get_data();
       else
         abort();
 
@@ -639,13 +629,13 @@ SCF::one_body_energy()
   RefSymmSCMatrix dens = ao_density().copy();
   RefSymmSCMatrix hcore = dens->clone();
   hcore.assign(0.0);
-  RefSCElementOp hcore_op = new OneBodyIntOp(integral()->hcore());
+  Ref<SCElementOp> hcore_op = new OneBodyIntOp(integral()->hcore());
   hcore.element_op(hcore_op);
 
   dens->scale_diagonal(0.5);
   SCElementScalarProduct *prod = new SCElementScalarProduct;
   prod->reference();
-  RefSCElementOp2 op = prod;
+  Ref<SCElementOp2> op = prod;
   hcore->element_op(prod, dens);
   double e = prod->result();
   op = 0;
@@ -669,7 +659,7 @@ SCF::init_threads()
   int int_store = integral()->storage_unused()/nthread;
   
   // initialize the two electron integral classes
-  tbis_ = new RefTwoBodyInt[nthread];
+  tbis_ = new Ref<TwoBodyInt>[nthread];
   for (int i=0; i < nthread; i++) {
     tbis_[i] = integral()->electron_repulsion();
     tbis_[i]->set_integral_storage(int_store);
@@ -686,14 +676,14 @@ SCF::done_threads()
 }
 
 int *
-SCF::read_occ(const RefKeyVal &keyval, const char *name, int nirrep)
+SCF::read_occ(const Ref<KeyVal> &keyval, const char *name, int nirrep)
 {
   int *occ = 0;
   if (keyval->exists(name)) {
     if (keyval->count(name) != nirrep) {
       ExEnv::err() << node0 << indent
                    << "ERROR: SCF: have " << nirrep << " irreps but "
-                   << name << " vector " << " is length " << keyval->count(name)
+                   << name << " vector is length " << keyval->count(name)
                    << endl;
       abort();
     }

@@ -29,7 +29,7 @@
 #include <math/scmat/local.h>
 #include <math/scmat/blocked.h>
 
-void matrixtest(RefSCMatrixKit, RefKeyVal,
+void matrixtest(Ref<SCMatrixKit>, Ref<KeyVal>,
                 RefSCDimension d1,RefSCDimension d2,RefSCDimension d3);
 
 main()
@@ -38,9 +38,9 @@ main()
   int nblks;
   int *blks1, *blks2, *blks3;
 
-  RefKeyVal keyval = new ParsedKeyVal(SRCDIR "/matrixtest.in");
-  RefSCMatrixKit subkit = new LocalSCMatrixKit;
-  RefBlockedSCMatrixKit kit = new BlockedSCMatrixKit(subkit);
+  Ref<KeyVal> keyval = new ParsedKeyVal(SRCDIR "/matrixtest.in");
+  Ref<SCMatrixKit> subkit = new LocalSCMatrixKit;
+  Ref<BlockedSCMatrixKit> kit = new BlockedSCMatrixKit(subkit);
 
   nblks = keyval->intvalue("nblocks");
   if (!nblks)

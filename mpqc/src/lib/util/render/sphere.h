@@ -31,18 +31,15 @@
 #include <util/render/object.h>
 
 class RenderedSphere: public RenderedObject {
-#   define CLASSNAME RenderedSphere
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   protected:
-    void render(const RefRender&);
+    void render(const Ref<Render>&);
   public:
     RenderedSphere();
-    RenderedSphere(const RefMaterial&);
-    RenderedSphere(const RefKeyVal&);
+    RenderedSphere(const Ref<Material>&);
+    RenderedSphere(const Ref<KeyVal>&);
     ~RenderedSphere();
 };
-DescribedClass_REF_dec(RenderedSphere);
+
 
 #endif
 

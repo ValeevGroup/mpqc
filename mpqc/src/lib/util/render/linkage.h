@@ -32,7 +32,7 @@
 
 #include <util/render/oogl.h>
 
-const ClassDesc &render_force_link_a_ = OOGLRender::class_desc_;
+static ForceLink<OOGLRender> render_force_link_a_;
 
 #endif /* __PIC__ */
 

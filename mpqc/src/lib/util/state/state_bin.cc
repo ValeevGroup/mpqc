@@ -36,16 +36,8 @@ using namespace std;
 
 #define DEBUG 0
 
-#define CLASSNAME StateOutBin
-#define PARENTS public StateOutFile
-#include <util/class/classi.h>
-void *
-StateOutBin::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = StateOutFile::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc StateOutBin_cd(
+    typeid(StateOutBin),"StateOutBin",1,"public StateOutFile");
 
 StateOutBin::StateOutBin() :
   StateOutFile()
@@ -132,17 +124,9 @@ StateOutBin::use_directory()
 
 ////////////////////////////////////////////////////////////////
 
-#define CLASSNAME StateInBin
-#define PARENTS public StateInFile
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-StateInBin::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  StateInFile::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc StateInBin_cd(typeid(StateInBin),
+                               "StateInBin",1,"public StateInFile",
+                               0, create<StateInBin>);
 
 StateInBin::StateInBin() :
   StateInFile()
@@ -166,11 +150,11 @@ StateInBin::StateInBin(const char *path) :
   find_and_get_directory();
 }
 
-StateInBin::StateInBin(const RefKeyVal &keyval)
+StateInBin::StateInBin(const Ref<KeyVal> &keyval)
 {
   char *path = keyval->pcharvalue("file");
   if (!path) {
-      ExEnv::err() << "StateInBin(const RefKeyVal&): no path given" << endl;
+      ExEnv::err() << "StateInBin(const Ref<KeyVal>&): no path given" << endl;
     }
   open(path);
   delete[] path;

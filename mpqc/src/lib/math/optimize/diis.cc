@@ -36,19 +36,9 @@
 #include <math/scmat/cmatrix.h>
 #include <math/optimize/diis.h>
 
-#define CLASSNAME DIIS
-#define VERSION 3
-#define PARENTS public SelfConsistentExtrapolation
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-DIIS::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SelfConsistentExtrapolation::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc DIIS_cd(
+  typeid(DIIS),"DIIS",3,"public SelfConsistentExtrapolation",
+  0, create<DIIS>, create<DIIS>);
 
 void
 DIIS::init()
@@ -74,8 +64,8 @@ DIIS::init()
       bold[i] = new double[ndiis];
   }
   
-  diism_data = new RefSCExtrapData[ndiis];
-  diism_error = new RefSCExtrapError[ndiis];
+  diism_data = new Ref<SCExtrapData>[ndiis];
+  diism_error = new Ref<SCExtrapError>[ndiis];
 }
 
 DIIS::DIIS(int strt, int ndi, double dmp, int ngr, int ngrdiis) :
@@ -100,7 +90,7 @@ DIIS::DIIS(StateIn& s) :
   s.get(start);
   s.get(ndiis);
   s.get(iter);
-  if (s.version(static_class_desc()) >= 2) {
+  if (s.version(::class_desc<DIIS>()) >= 2) {
     s.get(ngroup);
     s.get(ngroupdiis);
   }
@@ -117,13 +107,13 @@ DIIS::DIIS(StateIn& s) :
   for (i=0; i <= ndiis; i++)
     bmat[i] = new double[ndiis+1];
 
-  diism_data = new RefSCExtrapData[ndiis];
-  diism_error = new RefSCExtrapError[ndiis];
+  diism_data = new Ref<SCExtrapData>[ndiis];
+  diism_error = new Ref<SCExtrapError>[ndiis];
 
   // read arrays
   int ndat = iter;
   if (iter > ndiis) ndat = ndiis;
-  if (s.version(static_class_desc()) < 3) ndat = ndiis;
+  if (s.version(::class_desc<DIIS>()) < 3) ndat = ndiis;
 
   s.get_array_double(btemp,ndat+1);
 
@@ -134,12 +124,12 @@ DIIS::DIIS(StateIn& s) :
     s.get_array_double(bmat[i],ndat+1);
   
   for (i=0; i < ndat; i++) {
-    diism_data[i].restore_state(s);
-    diism_error[i].restore_state(s);
+    diism_data[i] << SavableState::restore_state(s);
+    diism_error[i] << SavableState::restore_state(s);
   }
 }
 
-DIIS::DIIS(const RefKeyVal& keyval):
+DIIS::DIIS(const Ref<KeyVal>& keyval):
   SelfConsistentExtrapolation(keyval),
   btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0)
 {
@@ -160,7 +150,7 @@ DIIS::DIIS(const RefKeyVal& keyval):
   
   if (ndiis <= 0) {
     ExEnv::err() << node0 << indent
-         << "DIIS::DIIS(const RefKeyVal& keyval): got ndiis = 0\n";
+         << "DIIS::DIIS(const Ref<KeyVal>& keyval): got ndiis = 0\n";
     abort();
   }
 
@@ -228,8 +218,8 @@ DIIS::save_data_state(StateOut& s)
     s.put_array_double(bmat[i], ndat+1);
   
   for (i=0; i < ndat; i++) {
-    diism_data[i].save_state(s);
-    diism_error[i].save_state(s);
+    SavableState::save_state(diism_data[i].pointer(),s);
+    SavableState::save_state(diism_error[i].pointer(),s);
   }
 }
 
@@ -246,8 +236,8 @@ DIIS::start_extrapolation()
 }
 
 int
-DIIS::extrapolate(const RefSCExtrapData& data,
-                  const RefSCExtrapError& error)
+DIIS::extrapolate(const Ref<SCExtrapData>& data,
+                  const Ref<SCExtrapError>& error)
 {
   int i, j, k;
   int last = iter;

@@ -107,19 +107,9 @@ append(char *cmd, int i, int len)
 
 Debugger *Debugger::default_debugger_ = 0;
 
-#define CLASSNAME Debugger
-#define PARENTS public SavableState
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-Debugger::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc Debugger_cd(
+    typeid(Debugger),"Debugger",1,"public SavableState",
+    0, create<Debugger>, create<Debugger>);
 
 Debugger::Debugger(const char *exec)
 {
@@ -133,7 +123,7 @@ Debugger::Debugger(const char *exec)
   default_cmd();
 }
 
-Debugger::Debugger(const RefKeyVal &keyval)
+Debugger::Debugger(const Ref<KeyVal> &keyval)
 {
   init();
 
@@ -454,12 +444,12 @@ Debugger::set_exit_on_signal(int v)
 }
 
 void
-Debugger::set_default_debugger(const RefDebugger &d)
+Debugger::set_default_debugger(const Ref<Debugger> &d)
 {
   if (default_debugger_) {
       default_debugger_->dereference();
       // let a smart pointer figure out what to do with the old debugger
-      RefDebugger old(default_debugger_);
+      Ref<Debugger> old(default_debugger_);
     }
   if (d.pointer()) d.pointer()->reference();
   default_debugger_ = d.pointer();

@@ -43,11 +43,6 @@
 // gdiis
 
 class GDIISOpt: public Optimize {
-#   define CLASSNAME GDIISOpt
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     int nsave;
     int diis_iter;
@@ -61,10 +56,10 @@ class GDIISOpt: public Optimize {
     RefSCVector *error_;
 
     RefSymmSCMatrix ihessian_;
-    RefHessianUpdate update_;
+    Ref<HessianUpdate> update_;
 
   public:
-    GDIISOpt(const RefKeyVal&);
+    GDIISOpt(const Ref<KeyVal>&);
     GDIISOpt(StateIn&);
     ~GDIISOpt();
     void save_data_state(StateOut&);

@@ -41,17 +41,9 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // DistDiagSCMatrix member functions
 
-#define CLASSNAME DistDiagSCMatrix
-#define PARENTS public DiagSCMatrix
-//#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-DistDiagSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DiagSCMatrix::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc DistDiagSCMatrix_cd(
+  typeid(DistDiagSCMatrix),"DistDiagSCMatrix",1,"public DiagSCMatrix",
+  0, 0, 0);
 
 DistDiagSCMatrix::DistDiagSCMatrix(const RefSCDimension&a,DistSCMatrixKit*k):
   DiagSCMatrix(a,k)
@@ -65,7 +57,7 @@ DistDiagSCMatrix::block_to_node(int i) const
   return (i)%messagegrp()->n();
 }
 
-RefSCMatrixBlock
+Ref<SCMatrixBlock>
 DistDiagSCMatrix::block_to_block(int i) const
 {
   int offset = i;
@@ -98,7 +90,7 @@ DistDiagSCMatrix::find_element(int i) const
                    << "offset = " << oi
                    << endl;
 
-  RefSCMatrixDiagBlock blk = block_to_block(bi);
+  Ref<SCMatrixDiagBlock> blk; blk << block_to_block(bi);
   if (blk.nonnull()) {
       if (DEBUG)
           ExEnv::out() << messagegrp()->me() << ": ndat = " << blk->ndat() << endl;
@@ -186,7 +178,7 @@ DistDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const DistDiagSCMatrix* la
-    = DistDiagSCMatrix::require_const_castdown(a,"DistDiagSCMatrix::accumulate");
+    = require_dynamic_cast<const DistDiagSCMatrix*>(a,"DistDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -216,7 +208,7 @@ DistDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 double
 DistDiagSCMatrix::invert_this()
 {
-  RefSCMatrixSubblockIter I = local_blocks(SCMatrixSubblockIter::Read);
+  Ref<SCMatrixSubblockIter> I = local_blocks(SCMatrixSubblockIter::Read);
   double det = 1.0;
   for (I->begin(); I->ready(); I->next()) {
       int n = I->block()->ndat();
@@ -234,7 +226,7 @@ DistDiagSCMatrix::invert_this()
 double
 DistDiagSCMatrix::determ_this()
 {
-  RefSCMatrixSubblockIter I = local_blocks(SCMatrixSubblockIter::Read);
+  Ref<SCMatrixSubblockIter> I = local_blocks(SCMatrixSubblockIter::Read);
   double det = 1.0;
   for (I->begin(); I->ready(); I->next()) {
       int n = I->block()->ndat();
@@ -252,7 +244,7 @@ double
 DistDiagSCMatrix::trace()
 {
   double ret=0.0;
-  RefSCMatrixSubblockIter I = local_blocks(SCMatrixSubblockIter::Read);
+  Ref<SCMatrixSubblockIter> I = local_blocks(SCMatrixSubblockIter::Read);
   for (I->begin(); I->ready(); I->next()) {
       int n = I->block()->ndat();
       double *data = I->block()->dat();
@@ -267,7 +259,7 @@ DistDiagSCMatrix::trace()
 void
 DistDiagSCMatrix::gen_invert_this()
 {
-  RefSCMatrixSubblockIter I = local_blocks(SCMatrixSubblockIter::Read);
+  Ref<SCMatrixSubblockIter> I = local_blocks(SCMatrixSubblockIter::Read);
   for (I->begin(); I->ready(); I->next()) {
       int n = I->block()->ndat();
       double *data = I->block()->dat();
@@ -281,7 +273,7 @@ DistDiagSCMatrix::gen_invert_this()
 }
 
 void
-DistDiagSCMatrix::element_op(const RefSCElementOp& op)
+DistDiagSCMatrix::element_op(const Ref<SCElementOp>& op)
 {
   SCMatrixBlockListIter i;
   for (i = blocklist->begin(); i != blocklist->end(); i++) {
@@ -291,11 +283,11 @@ DistDiagSCMatrix::element_op(const RefSCElementOp& op)
 }
 
 void
-DistDiagSCMatrix::element_op(const RefSCElementOp2& op,
+DistDiagSCMatrix::element_op(const Ref<SCElementOp2>& op,
                               DiagSCMatrix* m)
 {
   DistDiagSCMatrix *lm
-      = DistDiagSCMatrix::require_castdown(m,"DistDiagSCMatrix::element_op");
+      = require_dynamic_cast<DistDiagSCMatrix*>(m,"DistDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
       ExEnv::err() << indent << "DistDiagSCMatrix: bad element_op\n";
@@ -311,13 +303,13 @@ DistDiagSCMatrix::element_op(const RefSCElementOp2& op,
 }
 
 void
-DistDiagSCMatrix::element_op(const RefSCElementOp3& op,
+DistDiagSCMatrix::element_op(const Ref<SCElementOp3>& op,
                               DiagSCMatrix* m,DiagSCMatrix* n)
 {
   DistDiagSCMatrix *lm
-      = DistDiagSCMatrix::require_castdown(m,"DistDiagSCMatrix::element_op");
+      = require_dynamic_cast<DistDiagSCMatrix*>(m,"DistDiagSCMatrix::element_op");
   DistDiagSCMatrix *ln
-      = DistDiagSCMatrix::require_castdown(n,"DistDiagSCMatrix::element_op");
+      = require_dynamic_cast<DistDiagSCMatrix*>(n,"DistDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
       ExEnv::err() << indent << "DistDiagSCMatrix: bad element_op\n";
@@ -334,13 +326,13 @@ DistDiagSCMatrix::element_op(const RefSCElementOp3& op,
   if (op->has_collect()) op->collect(messagegrp());
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 DistDiagSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
   return new SCMatrixListSubblockIter(access, blocklist);
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 DistDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   return new DistSCMatrixListSubblockIter(access, blocklist, messagegrp());
@@ -352,10 +344,10 @@ DistDiagSCMatrix::error(const char *msg)
   ExEnv::err() << indent << "DistDiagSCMatrix: error: " << msg << endl;
 }
 
-RefDistSCMatrixKit
+Ref<DistSCMatrixKit>
 DistDiagSCMatrix::skit()
 {
-  return DistSCMatrixKit::castdown(kit().pointer());
+  return dynamic_cast<DistSCMatrixKit*>(kit().pointer());
 }
 
 /////////////////////////////////////////////////////////////////////////////

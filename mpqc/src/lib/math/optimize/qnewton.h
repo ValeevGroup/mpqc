@@ -45,18 +45,13 @@
 
 /** The QNewtonOpt implements a quasi-Newton optimization scheme. */
 class QNewtonOpt: public Optimize {
-#   define CLASSNAME QNewtonOpt
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double maxabs_gradient;
     double accuracy_;
 
     RefSymmSCMatrix ihessian_;
-    RefHessianUpdate update_;
-    RefLineOpt lineopt_;
+    Ref<HessianUpdate> update_;
+    Ref<LineOpt> lineopt_;
 
     int take_newton_step_;
 
@@ -97,12 +92,12 @@ class QNewtonOpt: public Optimize {
         hessian each iteration. The default is false.
 
         </dl> */
-    QNewtonOpt(const RefKeyVal&);
+    QNewtonOpt(const Ref<KeyVal>&);
     QNewtonOpt(StateIn&);
     ~QNewtonOpt();
     void save_data_state(StateOut&);
 
-    void apply_transform(const RefNonlinearTransform&);
+    void apply_transform(const Ref<NonlinearTransform>&);
 
     void init();
     int update();

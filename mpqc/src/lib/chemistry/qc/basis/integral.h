@@ -38,8 +38,6 @@
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/tbint.h>
 
-REF_fwddec(PetiteList);
-
 class SymmetryOperation;
 class RefSymmSCMatrix;
 class ShellRotation;
@@ -49,39 +47,34 @@ class RedundantCartesianSubIter;
 class SphericalTransformIter;
 class SphericalTransform;
 class PointBag_double;
-
-SavableState_REF_fwddec(SCElementOp);
-SavableState_REF_fwddec(SCElementOp3);
+class PetiteList;
 
 /** The Integral abstract class acts as a factory to provide objects that
 compute one and two electron integrals.  */
 class Integral : public SavableState {
-#   define CLASSNAME Integral
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
     /** Initialize the Integral object given a GaussianBasisSet for
         each center. */
-    Integral(const RefGaussianBasisSet &b1,
-             const RefGaussianBasisSet &b2,
-             const RefGaussianBasisSet &b3,
-             const RefGaussianBasisSet &b4);
-    RefGaussianBasisSet bs1_;
-    RefGaussianBasisSet bs2_;
-    RefGaussianBasisSet bs3_;
-    RefGaussianBasisSet bs4_;
+    Integral(const Ref<GaussianBasisSet> &b1,
+             const Ref<GaussianBasisSet> &b2,
+             const Ref<GaussianBasisSet> &b3,
+             const Ref<GaussianBasisSet> &b4);
+    Ref<GaussianBasisSet> bs1_;
+    Ref<GaussianBasisSet> bs2_;
+    Ref<GaussianBasisSet> bs3_;
+    Ref<GaussianBasisSet> bs4_;
 
     // the maximum number of bytes that should be used for
     // storing intermediates
     int storage_;
     int storage_used_;
 
-    RefMessageGrp grp_;
+    Ref<MessageGrp> grp_;
   public:
     /// Restore the Integral object from the given StateIn object.
     Integral(StateIn&);
     /// Integral the Integral object from the given KeyVal object.
-    Integral(const RefKeyVal&);
+    Integral(const Ref<KeyVal>&);
     
     void save_data_state(StateOut&);
 
@@ -97,18 +90,18 @@ class Integral : public SavableState {
     void adjust_storage(int s) { storage_used_ += s; }
 
     /// Return the PetiteList object.
-    RefPetiteList petite_list();
+    Ref<PetiteList> petite_list();
     /// Return the PetiteList object for the given basis set.
-    RefPetiteList petite_list(const RefGaussianBasisSet&);
+    Ref<PetiteList> petite_list(const Ref<GaussianBasisSet>&);
     /** Return the ShellRotation object for a shell of the given angular
         momentum.  Pass nonzero to pure to do solid harmonics. */
     ShellRotation shell_rotation(int am, SymmetryOperation&, int pure=0);
 
     /// Set the basis set for each center.
-    virtual void set_basis(const RefGaussianBasisSet &b1,
-                           const RefGaussianBasisSet &b2 = 0,
-                           const RefGaussianBasisSet &b3 = 0,
-                           const RefGaussianBasisSet &b4 = 0);
+    virtual void set_basis(const Ref<GaussianBasisSet> &b1,
+                           const Ref<GaussianBasisSet> &b2 = 0,
+                           const Ref<GaussianBasisSet> &b3 = 0,
+                           const Ref<GaussianBasisSet> &b4 = 0);
 
     // /////////////////////////////////////////////////////////////////////
     // the following must be defined in the specific integral package
@@ -135,51 +128,51 @@ class Integral : public SavableState {
                                       int inv=0, int subl=-1) =0;
     
     /// Return a OneBodyInt that computes the overlap.
-    virtual RefOneBodyInt overlap() =0;
+    virtual Ref<OneBodyInt> overlap() =0;
     
     /// Return a OneBodyInt that computes the kinetic energy.
-    virtual RefOneBodyInt kinetic() =0;
+    virtual Ref<OneBodyInt> kinetic() =0;
 
     /** Return a OneBodyInt that computes the integrals for interactions
         with point charges. */
-    virtual RefOneBodyInt point_charge(const RefPointChargeData&) =0;
+    virtual Ref<OneBodyInt> point_charge(const Ref<PointChargeData>&) =0;
 
     /** Return a OneBodyInt that computes the nuclear repulsion integrals.
         Charges from the atoms on the center one are used. */
-    virtual RefOneBodyInt nuclear() = 0;
+    virtual Ref<OneBodyInt> nuclear() = 0;
 
     /// Return a OneBodyInt that computes the core Hamiltonian integrals.
-    virtual RefOneBodyInt hcore() = 0;
+    virtual Ref<OneBodyInt> hcore() = 0;
 
     /** Return a OneBodyInt that computes the electric field integrals
         dotted with a given vector. */
-    virtual RefOneBodyInt efield_dot_vector(const RefEfieldDotVectorData&) =0;
+    virtual Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>&) =0;
 
     /// Return a OneBodyInt that computes dipole moment integrals.
-    virtual RefOneBodyInt dipole(const RefDipoleData&) =0;
+    virtual Ref<OneBodyInt> dipole(const Ref<DipoleData>&) =0;
 
     /// Return a OneBodyDerivInt that computes overlap derivatives.
-    virtual RefOneBodyDerivInt overlap_deriv() =0;
+    virtual Ref<OneBodyDerivInt> overlap_deriv() =0;
                                              
     /// Return a OneBodyDerivInt that computes kinetic energy derivatives.
-    virtual RefOneBodyDerivInt kinetic_deriv() =0;
+    virtual Ref<OneBodyDerivInt> kinetic_deriv() =0;
                                              
     /// Return a OneBodyDerivInt that computes nuclear repulsion derivatives.
-    virtual RefOneBodyDerivInt nuclear_deriv() =0;
+    virtual Ref<OneBodyDerivInt> nuclear_deriv() =0;
                                      
     /// Return a OneBodyDerivInt that computes core Hamiltonian derivatives.
-    virtual RefOneBodyDerivInt hcore_deriv() =0;
+    virtual Ref<OneBodyDerivInt> hcore_deriv() =0;
                                              
     /// Return a TwoBodyInt that computes electron repulsion integrals.
-    virtual RefTwoBodyInt electron_repulsion() =0;
+    virtual Ref<TwoBodyInt> electron_repulsion() =0;
     
     /// Return a TwoBodyDerivInt that computes electron repulsion derivatives.
-    virtual RefTwoBodyDerivInt electron_repulsion_deriv() =0;
+    virtual Ref<TwoBodyDerivInt> electron_repulsion_deriv() =0;
 
     /// Return the MessageGrp used by the integrals objects.
-    RefMessageGrp messagegrp() { return grp_; }
+    Ref<MessageGrp> messagegrp() { return grp_; }
 };
-SavableState_REF_dec(Integral);
+
 
 #endif
 

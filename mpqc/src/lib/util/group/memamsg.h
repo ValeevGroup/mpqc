@@ -107,8 +107,6 @@ class MemoryDataRequestQueue {
 /** The ActiveMsgMemoryGrp abstract class specializes the MsgMemoryGrp
 class.  It uses active messages to implement global shared memory.  */
 class ActiveMsgMemoryGrp : public MsgMemoryGrp {
-#define CLASSNAME ActiveMsgMemoryGrp
-#include <util/class/classda.h>
   protected:
     char *data_;
     int use_locks_for_reduction_;
@@ -122,8 +120,8 @@ class ActiveMsgMemoryGrp : public MsgMemoryGrp {
     virtual void replace_data(void *, int node, int offset, int size) = 0;
     virtual void sum_data(double *data, int node, int doffset, int dsize) = 0;
   public:
-    ActiveMsgMemoryGrp(const RefMessageGrp& msg);
-    ActiveMsgMemoryGrp(const RefKeyVal&);
+    ActiveMsgMemoryGrp(const Ref<MessageGrp>& msg);
+    ActiveMsgMemoryGrp(const Ref<KeyVal>&);
     ~ActiveMsgMemoryGrp();
 
     void set_localsize(int);

@@ -34,10 +34,10 @@
 #include <chemistry/qc/intv3/utils.h>
 
 Int2eV3::Int2eV3(Integral *integral,
-                 const RefGaussianBasisSet& b1,
-                 const RefGaussianBasisSet& b2,
-                 const RefGaussianBasisSet& b3,
-                 const RefGaussianBasisSet& b4,
+                 const Ref<GaussianBasisSet>& b1,
+                 const Ref<GaussianBasisSet>& b2,
+                 const Ref<GaussianBasisSet>& b3,
+                 const Ref<GaussianBasisSet>& b4,
                  int order, int storage) :
   integral_(integral),
   grp_(integral->messagegrp()),

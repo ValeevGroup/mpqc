@@ -68,8 +68,8 @@ Int2eV3::delete_int_unit_shell()
 void
 Int2eV3::erep_2center(int &psh1, int &psh2)
 {
-  RefGaussianBasisSet cs2 = bs2_;
-  RefGaussianBasisSet cs4 = bs4_;
+  Ref<GaussianBasisSet> cs2 = bs2_;
+  Ref<GaussianBasisSet> cs4 = bs4_;
   int shd = 0x11111111; /* a dummy shell that will cause death if used */
   if (!int_unit_shell) make_int_unit_shell();
   bs2_ = 0;

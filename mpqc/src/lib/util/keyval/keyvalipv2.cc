@@ -77,7 +77,7 @@ nfp(0)
   read(fp);
 }
 
-ParsedKeyVal::ParsedKeyVal(const char* keyprefix, const RefKeyVal& keyval):
+ParsedKeyVal::ParsedKeyVal(const char* keyprefix, const Ref<KeyVal>& keyval):
 nfile(0),
 file(0),
 nfp(0)
@@ -141,7 +141,7 @@ nfp(0)
 }
 
 void
-ParsedKeyVal::cat_files(const char* keyprefix, const RefKeyVal& keyval,
+ParsedKeyVal::cat_files(const char* keyprefix, const Ref<KeyVal>& keyval,
                         ostream &ostr)
 {
   char* filespec = new char[strlen(keyprefix)+6];

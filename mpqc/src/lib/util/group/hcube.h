@@ -31,8 +31,6 @@
 #include <util/group/topology.h>
 
 class HypercubeGMI: public GlobalMsgIter {
-#define CLASSNAME HypercubeGMI
-#include <util/class/classd.h>
   private:
     int nhyper_;
   protected:
@@ -48,14 +46,11 @@ class HypercubeGMI: public GlobalMsgIter {
 // This utilitizes a hypercube topology, but will work for any number of
 // nodes.
 class HypercubeTopology: public MachineTopology {
-#define CLASSNAME HypercubeTopology
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   public:
     HypercubeTopology();
-    HypercubeTopology(const RefKeyVal&);
+    HypercubeTopology(const Ref<KeyVal>&);
     ~HypercubeTopology();
-    RefGlobalMsgIter global_msg_iter(const RefMessageGrp&, int target);
+    Ref<GlobalMsgIter> global_msg_iter(const Ref<MessageGrp>&, int target);
 };
 
 #endif

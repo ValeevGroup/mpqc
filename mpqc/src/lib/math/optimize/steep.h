@@ -39,16 +39,11 @@
 #include <math/optimize/opt.h>
 
 class SteepestDescentOpt: public Optimize {
-#   define CLASSNAME SteepestDescentOpt
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double maxabs_gradient;
     double accuracy_;
 
-    RefLineOpt lineopt_;
+    Ref<LineOpt> lineopt_;
 
     int take_newton_step_;
 
@@ -56,7 +51,7 @@ class SteepestDescentOpt: public Optimize {
     int print_gradient_;
 
   public:
-    SteepestDescentOpt(const RefKeyVal&);
+    SteepestDescentOpt(const Ref<KeyVal>&);
     SteepestDescentOpt(StateIn&);
     ~SteepestDescentOpt();
     void save_data_state(StateOut&);

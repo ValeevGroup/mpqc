@@ -39,7 +39,7 @@
 #include <math/isosurf/volume.h>
 #include <math/isosurf/implicit.h>
 
-class Vertex: public VRefCount {
+class Vertex: public RefCount {
   private:
     SCVector3 _point;
     SCVector3 *_normal; // _normal is optional
@@ -58,7 +58,7 @@ class Vertex: public VRefCount {
     void print(std::ostream&o=ExEnv::out());
 };
 
-REF_dec(Vertex);
+
 
 #endif
 

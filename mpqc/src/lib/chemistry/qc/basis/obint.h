@@ -44,7 +44,7 @@ class Integral;
 
 // //////////////////////////////////////////////////////////////////////////
 
-class EfieldDotVectorData: public VRefCount
+class EfieldDotVectorData: public RefCount
 {
   public:
     double position[3];
@@ -53,9 +53,9 @@ class EfieldDotVectorData: public VRefCount
     void set_position(double*);
     void set_vector(double*);
 };
-REF_dec(EfieldDotVectorData);
 
-class DipoleData: public VRefCount
+
+class DipoleData: public RefCount
 {
   public:
     double origin[3];
@@ -64,9 +64,9 @@ class DipoleData: public VRefCount
     DipoleData() {origin[0]=origin[1]=origin[2];}
     void set_origin(double*);
 };
-REF_dec(DipoleData);
 
-class PointChargeData: public VRefCount
+
+class PointChargeData: public RefCount
 {
   private:
     int ncharges_;
@@ -87,23 +87,23 @@ class PointChargeData: public VRefCount
     const double *charges() const { return charges_; }
     const double *const*positions() const { return positions_; }
 };
-REF_dec(PointChargeData);
+
 
 /** OneBodyInt is an abstract base class for objects that
     compute integrals between two basis functions. */
-class OneBodyInt : public VRefCount {
+class OneBodyInt : public RefCount {
   protected:
     // this is who created me
     Integral *integral_;
 
-    RefGaussianBasisSet bs1_;
-    RefGaussianBasisSet bs2_;
+    Ref<GaussianBasisSet> bs1_;
+    Ref<GaussianBasisSet> bs2_;
 
     double *buffer_;
 
     OneBodyInt(Integral *integral,
-               const RefGaussianBasisSet&b1,
-               const RefGaussianBasisSet&b2 = 0);
+               const Ref<GaussianBasisSet>&b1,
+               const Ref<GaussianBasisSet>&b2 = 0);
 
   public:
     virtual ~OneBodyInt();
@@ -127,12 +127,12 @@ class OneBodyInt : public VRefCount {
     //@}
 
     /// Return the basis set on center one.
-    RefGaussianBasisSet basis();
+    Ref<GaussianBasisSet> basis();
 
     /// Return the basis set on the given center.
     //@{
-    RefGaussianBasisSet basis1();
-    RefGaussianBasisSet basis2();
+    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis2();
     //@}
 
     /// Returns the buffer where the integrals are placed.
@@ -149,7 +149,7 @@ class OneBodyInt : public VRefCount {
     Integral *integral() const { return integral_; }
 };
 
-REF_dec(OneBodyInt);
+
 
 // //////////////////////////////////////////////////////////////////////////
 
@@ -208,9 +208,9 @@ class ShellPairIter {
 
 // //////////////////////////////////////////////////////////////////////////
 
-class OneBodyIntIter : public VRefCount {
+class OneBodyIntIter : public RefCount {
   protected:
-    RefOneBodyInt obi; // help me obi wan
+    Ref<OneBodyInt> obi; // help me obi wan
     ShellPairIter spi;
     
     int redund;
@@ -228,7 +228,7 @@ class OneBodyIntIter : public VRefCount {
     
   public:
     OneBodyIntIter();
-    OneBodyIntIter(const RefOneBodyInt&);
+    OneBodyIntIter(const Ref<OneBodyInt>&);
     virtual ~OneBodyIntIter();
     
     virtual void start(int ist=0, int jst=0, int ien=0, int jen=0);
@@ -246,22 +246,22 @@ class OneBodyIntIter : public VRefCount {
     
     virtual double scale() const;
 
-    RefOneBodyInt one_body_int() { return obi; }
+    Ref<OneBodyInt> one_body_int() { return obi; }
 
     ShellPairIter& current_pair();
 };
 
-REF_dec(OneBodyIntIter);
+
 
 // //////////////////////////////////////////////////////////////////////////
 
 class OneBodyIntOp: public SCElementOp {
   protected:
-    RefOneBodyIntIter iter;
+    Ref<OneBodyIntIter> iter;
 
   public:
-    OneBodyIntOp(const RefOneBodyInt&);
-    OneBodyIntOp(const RefOneBodyIntIter&);
+    OneBodyIntOp(const Ref<OneBodyInt>&);
+    OneBodyIntOp(const Ref<OneBodyIntIter>&);
     virtual ~OneBodyIntOp();
   
     void process(SCMatrixBlockIter&);
@@ -275,11 +275,11 @@ class OneBodyIntOp: public SCElementOp {
 
 class OneBody3IntOp: public SCElementOp3 {
   private:
-    RefOneBodyIntIter iter;
+    Ref<OneBodyIntIter> iter;
 
   public:
-    OneBody3IntOp(const RefOneBodyInt&b);
-    OneBody3IntOp(const RefOneBodyIntIter&);
+    OneBody3IntOp(const Ref<OneBodyInt>&b);
+    OneBody3IntOp(const Ref<OneBodyIntIter>&);
     virtual ~OneBody3IntOp();
   
     void process(SCMatrixBlockIter&,
@@ -302,21 +302,21 @@ class OneBody3IntOp: public SCElementOp3 {
 
 /** OneBodyInt is an abstract base class for objects that
     compute one body derivative integrals. */
-class OneBodyDerivInt : public VRefCount {
+class OneBodyDerivInt : public RefCount {
   protected:
     // this is who created me
     Integral *integral_;
 
-    RefGaussianBasisSet bs1;
-    RefGaussianBasisSet bs2;
+    Ref<GaussianBasisSet> bs1;
+    Ref<GaussianBasisSet> bs2;
 
     double *buffer_;
 
   public:
-    OneBodyDerivInt(Integral *, const RefGaussianBasisSet&b);
+    OneBodyDerivInt(Integral *, const Ref<GaussianBasisSet>&b);
     OneBodyDerivInt(Integral *,
-                    const RefGaussianBasisSet&b1,
-                    const RefGaussianBasisSet&b2);
+                    const Ref<GaussianBasisSet>&b1,
+                    const Ref<GaussianBasisSet>&b2);
     virtual ~OneBodyDerivInt();
   
     /// Return the number of basis functions on center one.
@@ -336,11 +336,11 @@ class OneBodyDerivInt : public VRefCount {
     //@}
 
     /// Return the basis set on center one.
-    RefGaussianBasisSet basis();
+    Ref<GaussianBasisSet> basis();
     /// Return the basis set on the given center.
     //@{
-    RefGaussianBasisSet basis1();
-    RefGaussianBasisSet basis2();
+    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis2();
     //@}
 
     /** The computed shell integrals will be put in the buffer returned by
@@ -355,7 +355,7 @@ class OneBodyDerivInt : public VRefCount {
     //@}
 };
 
-REF_dec(OneBodyDerivInt);
+
 
 #endif
 

@@ -42,7 +42,7 @@ static const char * symbols[] = {
   "Zr", 0
 };
 
-MolecularFormula::MolecularFormula(const RefMolecule&m):
+MolecularFormula::MolecularFormula(const Ref<Molecule>&m):
   form_(0)
 {
   compute_form(m.pointer());

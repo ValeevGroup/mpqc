@@ -42,29 +42,19 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // BlockedSCMatrixKit member functions
 
-DescribedClass_REF_def(BlockedSCMatrixKit);
+static ClassDesc BlockedSCMatrixKit_cd(
+  typeid(BlockedSCMatrixKit),"BlockedSCMatrixKit",1,"public SCMatrixKit",
+  0, create<BlockedSCMatrixKit>, 0);
 
-#define CLASSNAME BlockedSCMatrixKit
-#define PARENTS public SCMatrixKit
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-BlockedSCMatrixKit::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrixKit::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-BlockedSCMatrixKit::BlockedSCMatrixKit(const RefSCMatrixKit&subkit):
+BlockedSCMatrixKit::BlockedSCMatrixKit(const Ref<SCMatrixKit>&subkit):
   subkit_(subkit)
 {
 }
 
-BlockedSCMatrixKit::BlockedSCMatrixKit(const RefKeyVal& keyval):
+BlockedSCMatrixKit::BlockedSCMatrixKit(const Ref<KeyVal>& keyval):
   SCMatrixKit(keyval)
 {
-  subkit_ = keyval->describedclassvalue("subkit");
+  subkit_ << keyval->describedclassvalue("subkit");
 }
 
 BlockedSCMatrixKit::~BlockedSCMatrixKit()
@@ -138,17 +128,9 @@ BlockedSCMatrixKit::vector(const RefSCDimension&d)
 
 /////////////////////////////////////////////////////////////////////////////
 
-#define CLASSNAME BlockedSCElementOp
-#define PARENTS public SCElementOp
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-BlockedSCElementOp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc BlockedSCElementOp_cd(
+  typeid(BlockedSCElementOp),"BlockedSCElementOp",1,"public SCElementOp",
+  0, 0, 0);
 
 BlockedSCElementOp::BlockedSCElementOp()
 {
@@ -167,17 +149,9 @@ BlockedSCElementOp::current_block() const
   return current_block_;
 }
 
-#define CLASSNAME BlockedSCElementOp2
-#define PARENTS public SCElementOp2
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-BlockedSCElementOp2::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp2::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc BlockedSCElementOp2_cd(
+  typeid(BlockedSCElementOp2),"BlockedSCElementOp2",1,"public SCElementOp2",
+  0, 0, 0);
 
 BlockedSCElementOp2::BlockedSCElementOp2()
 {
@@ -196,17 +170,9 @@ BlockedSCElementOp2::current_block() const
   return current_block_;
 }
 
-#define CLASSNAME BlockedSCElementOp3
-#define PARENTS public SCElementOp3
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-BlockedSCElementOp3::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp3::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc BlockedSCElementOp3_cd(
+  typeid(BlockedSCElementOp3),"BlockedSCElementOp3",1,"public SCElementOp3",
+  0, 0, 0);
 
 BlockedSCElementOp3::BlockedSCElementOp3()
 {

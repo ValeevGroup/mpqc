@@ -49,18 +49,18 @@ class ShellRotation {
   public:
     /** Initialize the ShellRotation for Cartesian functions, given the
         angular momentum, a symmetry operation, and an Integral object. */
-    void init(int a, SymmetryOperation&, const RefIntegral&);
+    void init(int a, SymmetryOperation&, const Ref<Integral>&);
     /** Initialize the ShellRotation for solid harmonic functions, given
         the angular momentum, a symmetry operation, and an Integral
         object. */
-    void init_pure(int a, SymmetryOperation&, const RefIntegral&);
+    void init_pure(int a, SymmetryOperation&, const Ref<Integral>&);
     
     /// Initialize this ShellRotation to hold a n by n transformation.
     ShellRotation(int n);
     /// Initialize this from another ShellRotation.
     ShellRotation(const ShellRotation&);
     /// Initialize using init(...) or, if pure is nonzero, init_pure(...).
-    ShellRotation(int a, SymmetryOperation&, const RefIntegral&, int pure =0);
+    ShellRotation(int a, SymmetryOperation&, const Ref<Integral>&, int pure =0);
     virtual ~ShellRotation();
 
     /// Assign this to another shell rotation.

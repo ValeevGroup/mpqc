@@ -46,7 +46,7 @@ class MsgStateSend: public StateOut {
     MsgStateSend(const MsgStateSend&);
     void operator=(const MsgStateSend&);
   protected:
-    RefMessageGrp grp;
+    Ref<MessageGrp> grp;
     int nbuf; // the number of bytes used in the buffer
     int bufsize; // the allocated size of the data buffer
     char* buffer; // the data buffer
@@ -56,7 +56,7 @@ class MsgStateSend: public StateOut {
 
     int put_array_void(const void*, int);
   public:
-    MsgStateSend(const RefMessageGrp&);
+    MsgStateSend(const Ref<MessageGrp>&);
     virtual ~MsgStateSend();
 
     /// Specializations must implement flush().
@@ -85,14 +85,12 @@ class MsgStateSend: public StateOut {
     buffers objects sent through a MessageGrp.
 */
 class MsgStateBufRecv: public StateIn {
-#   define CLASSNAME MsgStateBufRecv
-#   include <util/class/classda.h>
   private:
     // do not allow copy constructor or assignment
     MsgStateBufRecv(const MsgStateBufRecv&);
     void operator=(const MsgStateBufRecv&);
   protected:
-    RefMessageGrp grp;
+    Ref<MessageGrp> grp;
     int nbuf; // the number of bytes used in the buffer
     int ibuf; // the current pointer withing the buffer
     int bufsize; // the allocated size of the buffer
@@ -107,7 +105,7 @@ class MsgStateBufRecv: public StateIn {
     virtual void next_buffer() = 0;
   public:
     /// MsgStateBufRecv can be initialized with a MessageGrp.
-    MsgStateBufRecv(const RefMessageGrp&);
+    MsgStateBufRecv(const Ref<MessageGrp>&);
     /// Use the default MessageGrp.
     MsgStateBufRecv();
 
@@ -127,7 +125,7 @@ class MsgStateRecv: public MsgStateBufRecv {
     void operator=(const MsgStateRecv&);
   public:
     /// MsgStateRecv must be initialized with a MessageGrp.
-    MsgStateRecv(const RefMessageGrp&);
+    MsgStateRecv(const Ref<MessageGrp>&);
 
     virtual ~MsgStateRecv();
 
@@ -163,7 +161,7 @@ class StateSend: public MsgStateSend {
     int target_;
   public:
     /// Create a StateSend given a MessageGrp.
-    StateSend(const RefMessageGrp&);
+    StateSend(const Ref<MessageGrp>&);
 
     ~StateSend();
     /// Specify the target node.
@@ -186,7 +184,7 @@ class StateRecv: public MsgStateRecv {
     void next_buffer();
   public:
     /// Create a StateRecv given a MessageGrp.
-    StateRecv(const RefMessageGrp&);
+    StateRecv(const Ref<MessageGrp>&);
     /// Specify the source node.
     void source(int);
 };
@@ -201,7 +199,7 @@ class BcastStateSend: public MsgStateSend {
     void operator=(const BcastStateSend&);
   public:
     /// Create the BcastStateSend.
-    BcastStateSend(const RefMessageGrp&);
+    BcastStateSend(const Ref<MessageGrp>&);
 
     ~BcastStateSend();
     /// Flush the data remaining in the buffer.
@@ -221,7 +219,7 @@ class BcastStateRecv: public MsgStateRecv {
     void next_buffer();
   public:
     /// Create the BcastStateRecv.
-    BcastStateRecv(const RefMessageGrp&, int source = 0);
+    BcastStateRecv(const Ref<MessageGrp>&, int source = 0);
     /// Set the source node.
     void source(int s);
 };
@@ -235,7 +233,7 @@ class BcastState {
     BcastStateSend *send_;
   public:
     /// Create a BcastState object.  The default source is node 0.
-    BcastState(const RefMessageGrp &, int source = 0);
+    BcastState(const Ref<MessageGrp> &, int source = 0);
 
     ~BcastState();
 
@@ -246,7 +244,15 @@ class BcastState {
     void bcast(double &);
     void bcast(int *&, int);
     void bcast(double *&, int);
-    void bcast(SSRefBase &);
+    template <class T> void bcast(Ref<T>&a)
+        {
+          if (recv_) {
+              a << SavableState::restore_state(*recv_);
+            }
+          else if (send_) {
+              SavableState::save_state(a.pointer(),*send_);
+            }
+        }
 
     /** Force data to be written.  Data is not otherwise written
         until the buffer is full. */
@@ -264,9 +270,6 @@ class BcastState {
     StateInBin on node 0 and broadcasts it to all nodes
     so state can be simultaneously restored on all nodes. */
 class BcastStateInBin: public MsgStateBufRecv {
-#   define CLASSNAME BcastStateInBin
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   private:
     // do not allow copy constructor or assignment
     BcastStateInBin(const BcastStateRecv&);
@@ -280,9 +283,9 @@ class BcastStateInBin: public MsgStateBufRecv {
     int get_array_void(void*, int);
   public:
     /// Create the BcastStateRecv using the default MessageGrp.
-    BcastStateInBin(const RefKeyVal &);
+    BcastStateInBin(const Ref<KeyVal> &);
     /// Create the BcastStateRecv.
-    BcastStateInBin(const RefMessageGrp&, const char *filename);
+    BcastStateInBin(const Ref<MessageGrp>&, const char *filename);
 
     ~BcastStateInBin();
 

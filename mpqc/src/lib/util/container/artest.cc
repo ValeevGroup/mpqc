@@ -31,6 +31,8 @@
 #endif
 #include <util/container/array.h>
 
+using namespace std;
+
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class Array<int>;
 template class Array2<int>;

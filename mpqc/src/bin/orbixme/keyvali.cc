@@ -24,9 +24,9 @@ C_KeyValCreatableImpl::keyval_create(const char *s, CORBA_Environment &IT_env)
 
   istrstream in(s);
 
-  RefKeyVal keyval = new ParsedKeyVal(in);
+  Ref<KeyVal> keyval = new ParsedKeyVal(in);
 
-  RefDescribedClass dc = keyval->describedclassvalue("object");
+  Ref<DescribedClass> dc = keyval->describedclassvalue("object");
   if (dc.null()) {
       ExEnv::out() << "create failed" << endl;
       return;

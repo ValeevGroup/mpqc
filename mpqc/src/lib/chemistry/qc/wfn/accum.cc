@@ -36,19 +36,9 @@
 ///////////////////////////////////////////////////////////////////////////
 // AccumH
 
-SavableState_REF_def(AccumH);
-
-#define CLASSNAME AccumH
-#define PARENTS public SavableState
-#include <util/class/classia.h>
-
-void *
-AccumH::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc AccumH_cd(
+  typeid(AccumH),"AccumH",1,"public SavableState",
+  0, 0, 0);
 
 AccumH::AccumH()
 {
@@ -57,12 +47,12 @@ AccumH::AccumH()
 AccumH::AccumH(StateIn&s) :
   SavableState(s)
 {
-  wfn_.restore_state(s);
+  wfn_ << SavableState::restore_state(s);
 }
 
-AccumH::AccumH(const RefKeyVal& keyval)
+AccumH::AccumH(const Ref<KeyVal>& keyval)
 {
-  wfn_ = keyval->describedclassvalue("wavefunction");
+  wfn_ << keyval->describedclassvalue("wavefunction");
 }
 
 AccumH::~AccumH()
@@ -72,11 +62,11 @@ AccumH::~AccumH()
 void
 AccumH::save_data_state(StateOut& s)
 {
-  wfn_.save_state(s);
+  SavableState::save_state(wfn_.pointer(),s);
 }
 
 void
-AccumH::init(const RefWavefunction& w)
+AccumH::init(const Ref<Wavefunction>& w)
 {
   wfn_ = w;
 }
@@ -101,20 +91,9 @@ AccumH::e()
 ///////////////////////////////////////////////////////////////////////////
 // AccumHNull
 
-#define CLASSNAME AccumHNull
-#define PARENTS public AccumH
-#define HAVE_CTOR
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-
-void *
-AccumHNull::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = AccumH::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc AccumHNull_cd(
+  typeid(AccumHNull),"AccumHNull",1,"public AccumH",
+  create<AccumHNull>, create<AccumHNull>, create<AccumHNull>);
 
 AccumHNull::AccumHNull()
 {
@@ -126,7 +105,7 @@ AccumHNull::AccumHNull(StateIn&s) :
 {
 }
 
-AccumHNull::AccumHNull(const RefKeyVal& keyval) :
+AccumHNull::AccumHNull(const Ref<KeyVal>& keyval) :
   AccumH(keyval)
 {
 }
@@ -149,37 +128,27 @@ AccumHNull::accum(const RefSymmSCMatrix& h)
 /////////////////////////////////////////////////////////////////////////////
 // SumAccumH
 
-#define CLASSNAME SumAccumH
-#define PARENTS public AccumH
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-
-void *
-SumAccumH::_castdown(const ClassDesc* cd)
-{
-  void *casts[1];
-  casts[0] = AccumH::_castdown(cd);
-  return do_castdowns(casts, cd);
-}
+static ClassDesc SumAccumH_cd(
+  typeid(SumAccumH),"SumAccumH",1,"public AccumH",
+  0, create<SumAccumH>, create<SumAccumH>);
 
 SumAccumH::SumAccumH(StateIn& s) :
   SavableState(s),
   AccumH(s)
 {
   s.get(n_);
-  accums_ = new RefAccumH[n_];
+  accums_ = new Ref<AccumH>[n_];
   for (int i=0; i < n_; i++)
-    accums_[i].restore_state(s);
+    accums_[i] << SavableState::restore_state(s);
 }
 
-SumAccumH::SumAccumH(const RefKeyVal& keyval) :
+SumAccumH::SumAccumH(const Ref<KeyVal>& keyval) :
   AccumH(keyval)
 {
   n_ = keyval->count("accums");
-  accums_ = new RefAccumH[n_];
+  accums_ = new Ref<AccumH>[n_];
   for (int i=0; i < n_; i++)
-    accums_[i] = keyval->describedclassvalue("accums", i);
+    accums_[i] << keyval->describedclassvalue("accums", i);
 }
 
 SumAccumH::~SumAccumH()
@@ -197,11 +166,11 @@ SumAccumH::save_data_state(StateOut& s)
   AccumH::save_data_state(s);
   s.put(n_);
   for (int i=0; i < n_; i++)
-    accums_[i].save_state(s);
+    SavableState::save_state(accums_[i].pointer(),s);
 }
 
 void
-SumAccumH::init(const RefWavefunction& w)
+SumAccumH::init(const Ref<Wavefunction>& w)
 {
   for (int i=0; i < n_; i++)
     accums_[i]->init(w);

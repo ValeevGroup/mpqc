@@ -47,6 +47,15 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 mpqc: $(BINOBJ) $(LIBS)
 	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
+$(TOPDIR)/lib/libmpqc.a: $(BINOBJ)
+	/bin/rm -f $@
+	$(AR) $(ARFLAGS) $@ $^
+	$(RANLIB) $@
+
+install_devel:: $(TOPDIR)/lib/libmpqc.$(LIBSUF)
+	$(INSTALL) $(INSTALLDIROPT) $(libdir)
+	$(LTINST) $(INSTALL) $(INSTALLLIBOPT) $< $(libdir)
+
 install:: mpqc
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
 	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(bindir)

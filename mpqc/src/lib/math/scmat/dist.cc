@@ -43,20 +43,11 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // DistSCMatrixKit member functions
 
-DescribedClass_REF_def(DistSCMatrixKit);
-#define CLASSNAME DistSCMatrixKit
-#define PARENTS public SCMatrixKit
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-DistSCMatrixKit::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrixKit::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc DistSCMatrixKit_cd(
+  typeid(DistSCMatrixKit),"DistSCMatrixKit",1,"public SCMatrixKit",
+  0, create<DistSCMatrixKit>, 0);
 
-DistSCMatrixKit::DistSCMatrixKit(const RefMessageGrp &grp)
+DistSCMatrixKit::DistSCMatrixKit(const Ref<MessageGrp> &grp)
 {
   // if grp is nonnull, then reset grp_ (it gets set to the default in the
   // default SCMatrixKit constructor
@@ -64,7 +55,7 @@ DistSCMatrixKit::DistSCMatrixKit(const RefMessageGrp &grp)
     grp_ = grp;
 }
 
-DistSCMatrixKit::DistSCMatrixKit(const RefKeyVal& keyval):
+DistSCMatrixKit::DistSCMatrixKit(const Ref<KeyVal>& keyval):
   SCMatrixKit(keyval)
 {
 }
@@ -103,8 +94,8 @@ DistSCMatrixKit::vector(const RefSCDimension&d)
 
 DistSCMatrixListSubblockIter::DistSCMatrixListSubblockIter(
     Access access,
-    const RefSCMatrixBlockList &list,
-    const RefMessageGrp &grp
+    const Ref<SCMatrixBlockList> &list,
+    const Ref<MessageGrp> &grp
     ):
   SCMatrixListSubblockIter(access, list->deepcopy()),
   grp_(grp),
@@ -153,9 +144,9 @@ DistSCMatrixListSubblockIter::maybe_advance_list()
 void
 DistSCMatrixListSubblockIter::advance_list()
 {
-  list_.save_state(out_);
+  SavableState::save_state(list_.pointer(), out_);
   out_.flush();
-  list_.restore_state(in_);
+  list_ << SavableState::restore_state(in_);
   SCMatrixListSubblockIter::begin();
   step_++;
 }

@@ -38,21 +38,9 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////////////
 
-SavableState_REF_def(HCoreWfn);
-
-#define CLASSNAME HCoreWfn
-#define PARENTS public OneBodyWavefunction
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-
-void *
-HCoreWfn::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = OneBodyWavefunction::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc HCoreWfn_cd(
+  typeid(HCoreWfn),"HCoreWfn",1,"public OneBodyWavefunction",
+  0, create<HCoreWfn>, create<HCoreWfn>);
 
 HCoreWfn::HCoreWfn(StateIn& s) :
   SavableState(s),
@@ -65,7 +53,7 @@ HCoreWfn::HCoreWfn(StateIn& s) :
   s.get(total_charge_);
 }
 
-HCoreWfn::HCoreWfn(const RefKeyVal&keyval):
+HCoreWfn::HCoreWfn(const Ref<KeyVal>&keyval):
   OneBodyWavefunction(keyval)
 {
   CharacterTable ct = molecule()->point_group()->char_table();
@@ -197,7 +185,7 @@ HCoreWfn::density()
     RefSCMatrix mo_to_so = this->mo_to_so();
     RefDiagSCMatrix mo_density(oso_dimension(), basis_matrixkit());
     BlockedDiagSCMatrix *modens
-      = BlockedDiagSCMatrix::castdown(mo_density.pointer());
+      = dynamic_cast<BlockedDiagSCMatrix*>(mo_density.pointer());
     if (!modens) {
       ExEnv::err() << node0 << indent
                    << "HCoreWfn::density: wrong MO matrix kit" << endl;
@@ -293,8 +281,8 @@ HCoreWfn::fill_occ(const RefDiagSCMatrix &evals,int ndocc,int *docc,
                    int nsocc, int *socc)
 {
   BlockedDiagSCMatrix *bval
-    = BlockedDiagSCMatrix::require_castdown(evals.pointer(),
-                                            "HCoreWave: getting occupations");
+    = require_dynamic_cast<BlockedDiagSCMatrix*>(evals.pointer(),
+                                           "HCoreWave: getting occupations");
   int nblock = bval->nblocks();
   if (nblock != nirrep_) {
     ExEnv::err() << "ERROR: HCoreWfn: fill_occ: nblock != nirrep" << endl

@@ -39,8 +39,6 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////////////
 
-REF_def(KeyValValue)
-
 KeyValValue::KeyValValue(const KeyValValue&)
 {
 }
@@ -98,7 +96,7 @@ KeyValValue::pcharvalue(const char*& val) const
 }
 
 KeyValValue::KeyValValueError
-KeyValValue::describedclassvalue(RefDescribedClass& val) const
+KeyValValue::describedclassvalue(Ref<DescribedClass>& val) const
 {
   KeyValValueRefDescribedClass def;
   def.describedclassvalue(val);
@@ -272,7 +270,7 @@ KeyValValueRefDescribedClass::
 {
 }
 KeyValValue::KeyValValueError
-KeyValValueRefDescribedClass::describedclassvalue(RefDescribedClass&val) const
+KeyValValueRefDescribedClass::describedclassvalue(Ref<DescribedClass>&val) const
 {
   val = _val;
   return KeyValValue::OK;

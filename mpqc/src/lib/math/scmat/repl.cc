@@ -39,25 +39,15 @@
 /////////////////////////////////////////////////////////////////////////////
 // ReplSCMatrixKit member functions
 
-DescribedClass_REF_def(ReplSCMatrixKit);
-#define CLASSNAME ReplSCMatrixKit
-#define PARENTS public SCMatrixKit
-#define HAVE_KEYVAL_CTOR
-//#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-ReplSCMatrixKit::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrixKit::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ReplSCMatrixKit_cd(
+  typeid(ReplSCMatrixKit),"ReplSCMatrixKit",1,"public SCMatrixKit",
+  0, create<ReplSCMatrixKit>, 0);
 
 ReplSCMatrixKit::ReplSCMatrixKit()
 {
 }
 
-ReplSCMatrixKit::ReplSCMatrixKit(const RefKeyVal& keyval):
+ReplSCMatrixKit::ReplSCMatrixKit(const Ref<KeyVal>& keyval):
   SCMatrixKit(keyval)
 {
 }
@@ -96,8 +86,8 @@ ReplSCMatrixKit::vector(const RefSCDimension&d)
 
 ReplSCMatrixListSubblockIter::ReplSCMatrixListSubblockIter(
     Access access,
-    const RefSCMatrixBlockList &list,
-    const RefMessageGrp &grp,
+    const Ref<SCMatrixBlockList> &list,
+    const Ref<MessageGrp> &grp,
     double *data,
     int ndata
     ):
@@ -121,7 +111,7 @@ ReplSCMatrixListSubblockIter::~ReplSCMatrixListSubblockIter()
 ///////////////////////////////////////////////////////////////////////
 // The static SCMatrixKit members.
 
-static RefSCMatrixKit defaultmatrixkit;
+static Ref<SCMatrixKit> defaultmatrixkit;
 
 SCMatrixKit*
 SCMatrixKit::default_matrixkit()
@@ -131,7 +121,7 @@ SCMatrixKit::default_matrixkit()
 }
 
 void
-SCMatrixKit::set_default_matrixkit(const RefSCMatrixKit &k)
+SCMatrixKit::set_default_matrixkit(const Ref<SCMatrixKit> &k)
 {
   defaultmatrixkit = k;
 }

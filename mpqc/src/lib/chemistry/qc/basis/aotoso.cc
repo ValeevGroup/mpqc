@@ -478,7 +478,7 @@ PetiteList::aotoso_info()
 
   // Make sure all the nodes agree on what the symmetry orbitals are.
   // (All the above work for me > 0 is ignored.)
-  RefMessageGrp grp = MessageGrp::get_default_messagegrp();
+  Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
   for (i=0; i<ncomp; i++) {
     int len = SOs[i].len;
     grp->bcast(len);
@@ -577,7 +577,7 @@ PetiteList::aotoso()
   
   SO_block *sos = aotoso_info();
   
-  BlockedSCMatrix *aosop = BlockedSCMatrix::castdown(aoso.pointer());
+  BlockedSCMatrix *aosop = dynamic_cast<BlockedSCMatrix*>(aoso.pointer());
 
   for (int b=0; b < aosop->nblocks(); b++) {
     RefSCMatrix aosb = aosop->block(b);
@@ -587,12 +587,12 @@ PetiteList::aotoso()
     
     SO_block& sob = sos[b];
     
-    RefSCMatrixSubblockIter iter =
+    Ref<SCMatrixSubblockIter> iter =
       aosb->local_blocks(SCMatrixSubblockIter::Write);
 
     for (iter->begin(); iter->ready(); iter->next()) {
-      if (SCMatrixRectBlock::castdown(iter->block())) {
-        SCMatrixRectBlock *blk = SCMatrixRectBlock::castdown(iter->block());
+      if (dynamic_cast<SCMatrixRectBlock*>(iter->block())) {
+        SCMatrixRectBlock *blk = dynamic_cast<SCMatrixRectBlock*>(iter->block());
 
         int jlen = blk->jend-blk->jstart;
     
@@ -614,7 +614,7 @@ PetiteList::aotoso()
         }
       } else {
         SCMatrixRectSubBlock *blk =
-          SCMatrixRectSubBlock::castdown(iter->block());
+          dynamic_cast<SCMatrixRectSubBlock*>(iter->block());
 
         for (int j=0; j < sob.len; j++) {
           if (j < blk->jstart || j >= blk->jend)
@@ -655,7 +655,7 @@ RefSymmSCMatrix
 PetiteList::to_SO_basis(const RefSymmSCMatrix& a)
 {
   // SO basis is always blocked, so first make sure a is blocked
-  RefSymmSCMatrix aomatrix = BlockedSymmSCMatrix::castdown(a.pointer());
+  RefSymmSCMatrix aomatrix = dynamic_cast<BlockedSymmSCMatrix*>(a.pointer());
   if (aomatrix.null()) {
     aomatrix = gbs_->so_matrixkit()->symmmatrix(AO_basisdim());
     aomatrix->convert(a);
@@ -699,7 +699,7 @@ PetiteList::evecs_to_SO_basis(const RefSCMatrix& aoev)
        << "PetiteList::evecs_to_SO_basis: don't work yet\n";
   abort();
   
-  RefSCMatrix aoevecs = BlockedSCMatrix::castdown(aoev.pointer());
+  RefSCMatrix aoevecs = dynamic_cast<BlockedSCMatrix*>(aoev.pointer());
   if (aoevecs.null()) {
     aoevecs = gbs_->so_matrixkit()->matrix(AO_basisdim(), AO_basisdim());
     aoevecs->convert(aoev);
@@ -735,7 +735,7 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   GaussianBasisSet& gbs = *gbs_.pointer();
 
   // SO basis is always blocked, so first make sure skel is blocked
-  RefSymmSCMatrix bskel = BlockedSymmSCMatrix::castdown(skel.pointer());
+  RefSymmSCMatrix bskel = dynamic_cast<BlockedSymmSCMatrix*>(skel.pointer());
   if (bskel.null()) {
     bskel = gbs.so_matrixkit()->symmmatrix(AO_basisdim());
     bskel->convert(skel);
@@ -752,7 +752,7 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   CharacterTable ct = gbs.molecule()->point_group()->char_table();
 
   RefSCMatrix aoso = aotoso();
-  BlockedSCMatrix *lu = BlockedSCMatrix::castdown(aoso.pointer());
+  BlockedSCMatrix *lu = dynamic_cast<BlockedSCMatrix*>(aoso.pointer());
 
   for (b=0; b < lu->nblocks(); b++) {
     if (lu->block(b).null())
@@ -769,7 +769,7 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   sym.accumulate_transform(aoso,bskel,SCMatrix::TransposeTransform);
   aoso=0;
 
-  BlockedSymmSCMatrix *la = BlockedSymmSCMatrix::castdown(sym.pointer());
+  BlockedSymmSCMatrix *la = dynamic_cast<BlockedSymmSCMatrix*>(sym.pointer());
   
   // loop through blocks and finish symmetrizing degenerate blocks
   for (b=0; b < la->nblocks(); b++) {

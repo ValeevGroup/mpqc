@@ -15,7 +15,7 @@ NLP2 *
 C_FunctionImpl::func()
 {
   NLP2 *ret;
-  ret = NLP2::castdown(dc_);
+  ret = dynamic_cast<NLP2*>(dc_);
   return ret;
 }
 

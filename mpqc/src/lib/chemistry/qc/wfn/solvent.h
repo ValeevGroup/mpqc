@@ -37,11 +37,6 @@
 #include <chemistry/qc/wfn/accum.h>
 
 class BEMSolventH: public AccumH {
-#   define CLASSNAME BEMSolventH
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     double gamma_;
     int onebody_;
@@ -50,8 +45,8 @@ class BEMSolventH: public AccumH {
     int y_equals_j_;
     int integrate_nelectron_;
 
-    RefWavefunction wfn_;
-    RefBEMSolvent solvent_;
+    Ref<Wavefunction> wfn_;
+    Ref<BEMSolvent> solvent_;
 
     double **charge_positions_;
     double **normals_;
@@ -67,12 +62,12 @@ class BEMSolventH: public AccumH {
 
   public:
     BEMSolventH(StateIn&);
-    BEMSolventH(const RefKeyVal&);
+    BEMSolventH(const Ref<KeyVal>&);
     virtual ~BEMSolventH();
 
     void save_data_state(StateOut&);
 
-    void init(const RefWavefunction&);
+    void init(const Ref<Wavefunction>&);
     void accum(const RefSymmSCMatrix& h);
     void done();
     void print_summary();

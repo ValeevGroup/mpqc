@@ -38,25 +38,21 @@
 #include <chemistry/molecule/coor.h>
 
 class MolecularEnergy;
-SavableState_REF_fwddec(MolecularEnergy);
 
 class MolecularHessian: virtual public SavableState {
-#   define CLASSNAME MolecularHessian
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
-    RefMolecule mol_;
+    Ref<Molecule> mol_;
     RefSCDimension d3natom_;
-    RefSCMatrixKit matrixkit_;
+    Ref<SCMatrixKit> matrixkit_;
   public:
     MolecularHessian();
-    MolecularHessian(const RefKeyVal&);
+    MolecularHessian(const Ref<KeyVal>&);
     MolecularHessian(StateIn&);
     ~MolecularHessian();
     void save_data_state(StateOut&);
 
     RefSCDimension d3natom();
-    RefSCMatrixKit matrixkit() const { return matrixkit_; }
+    Ref<SCMatrixKit> matrixkit() const { return matrixkit_; }
 
     // Return the cartesian hessian.
     virtual RefSymmSCMatrix cartesian_hessian() = 0;
@@ -64,37 +60,32 @@ class MolecularHessian: virtual public SavableState {
     // Some MolecularHessian specializations require a molecular
     //energy object.  The default implementations of these ignore
     //the argument or return null.
-    virtual void set_energy(const RefMolecularEnergy &energy);
+    virtual void set_energy(const Ref<MolecularEnergy> &energy);
     virtual MolecularEnergy* energy() const;
 
     // Find transformation matrix from cartesian to symmetry
     // coordinates.
-    static RefSCMatrix cartesian_to_symmetry(const RefMolecule &m,
-                                             RefPointGroup pg = 0,
-                                             RefSCMatrixKit kit = 0);
+    static RefSCMatrix cartesian_to_symmetry(const Ref<Molecule> &m,
+                                             Ref<PointGroup> pg = 0,
+                                             Ref<SCMatrixKit> kit = 0);
 
     /// Write the hessian in a simple text format.
     static void write_cartesian_hessian(const char *filename,
-                                        const RefMolecule &m,
+                                        const Ref<Molecule> &m,
                                         const RefSymmSCMatrix &hess);
 
     /// Read the hessian from a simple text format.
     static void read_cartesian_hessian(const char *filename,
-                                       const RefMolecule &m,
+                                       const Ref<Molecule> &m,
                                        const RefSymmSCMatrix &hess);
 };
-SavableState_REF_dec(MolecularHessian);
+
 
 class ReadMolecularHessian: public MolecularHessian {
-#   define CLASSNAME ReadMolecularHessian
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     char *filename_;
   public:
-    ReadMolecularHessian(const RefKeyVal&);
+    ReadMolecularHessian(const Ref<KeyVal>&);
     ReadMolecularHessian(StateIn&);
     ~ReadMolecularHessian();
     void save_data_state(StateOut&);
@@ -103,15 +94,10 @@ class ReadMolecularHessian: public MolecularHessian {
 };
 
 class GuessMolecularHessian: public MolecularHessian {
-#   define CLASSNAME GuessMolecularHessian
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
-    RefMolecularCoor coor_;
+    Ref<MolecularCoor> coor_;
   public:
-    GuessMolecularHessian(const RefKeyVal&);
+    GuessMolecularHessian(const Ref<KeyVal>&);
     GuessMolecularHessian(StateIn&);
     ~GuessMolecularHessian();
     void save_data_state(StateOut&);
@@ -120,15 +106,10 @@ class GuessMolecularHessian: public MolecularHessian {
 };
 
 class DiagMolecularHessian: public MolecularHessian {
-#   define CLASSNAME DiagMolecularHessian
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     double diag_;
   public:
-    DiagMolecularHessian(const RefKeyVal&);
+    DiagMolecularHessian(const Ref<KeyVal>&);
     DiagMolecularHessian(StateIn&);
     ~DiagMolecularHessian();
     void save_data_state(StateOut&);

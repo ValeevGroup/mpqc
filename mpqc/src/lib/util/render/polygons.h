@@ -32,9 +32,6 @@
 #include <util/render/object.h>
 
 class RenderedPolygons: public RenderedObject {
-#   define CLASSNAME RenderedPolygons
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   public:
     enum Coloring { None, Vertex /*, Face*/ };
   private:
@@ -46,10 +43,10 @@ class RenderedPolygons: public RenderedObject {
     int** faces_;
     int* nvertex_in_face_;
   protected:
-    void render(const RefRender&);
+    void render(const Ref<Render>&);
   public:
     RenderedPolygons();
-    RenderedPolygons(const RefKeyVal&);
+    RenderedPolygons(const Ref<KeyVal>&);
     ~RenderedPolygons();
 
     void initialize(int nvertex, int nface,
@@ -71,7 +68,7 @@ class RenderedPolygons: public RenderedObject {
     double vertex_rgb(int i, int j) const { return vertex_rgb_[i][j]; }
     int have_vertex_rgb() const { return coloring_ == Vertex; }
 };
-DescribedClass_REF_dec(RenderedPolygons);
+
 
 #endif
 

@@ -45,23 +45,9 @@ using namespace std;
 const char* GaussianShell::amtypes = "spdfghiklmn";
 const char* GaussianShell::AMTYPES = "SPDFGHIKLMN";
 
-SavableState_REF_def(GaussianShell);
-
-#define VERSION 2
-#define CLASSNAME GaussianShell
-#define PARENTS public SavableState
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-void *
-GaussianShell::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc GaussianShell_cd(
+  typeid(GaussianShell),"GaussianShell",2,"public SavableState",
+  0, create<GaussianShell>, create<GaussianShell>);
 
 // this GaussianShell ctor allocates and computes normalization constants
 // and computes nfunc
@@ -111,7 +97,7 @@ GaussianShell::GaussianShell(
   normalize_shell();
 }
 
-GaussianShell::GaussianShell(const RefKeyVal&keyval)
+GaussianShell::GaussianShell(const Ref<KeyVal>&keyval)
 {
   // read in the shell
   PrimitiveType pt = keyval_init(keyval,0,0);
@@ -132,7 +118,7 @@ GaussianShell::GaussianShell(StateIn&s):
 {
   s.get(nprim);
   s.get(ncon);
-  if (s.version(static_class_desc()) < 2) s.get(nfunc);
+  if (s.version(::class_desc<GaussianShell>()) < 2) s.get(nfunc);
   s.get(l);
   s.get(puream);
   s.get(exp);
@@ -156,7 +142,7 @@ GaussianShell::save_data_state(StateOut&s)
     }
 }
 
-GaussianShell::GaussianShell(const RefKeyVal&keyval,int pure)
+GaussianShell::GaussianShell(const Ref<KeyVal>&keyval,int pure)
 {
   // read in the shell
   PrimitiveType pt = keyval_init(keyval,1,pure);
@@ -173,7 +159,7 @@ GaussianShell::GaussianShell(const RefKeyVal&keyval,int pure)
 }
 
 GaussianShell::PrimitiveType
-GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
+GaussianShell::keyval_init(const Ref<KeyVal>& keyval,int havepure,int pure)
 {
   ncon = keyval->count("type");
   if (keyval->error() != KeyVal::OK) {
@@ -209,7 +195,7 @@ GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
         }
     }
   for (i=0; i<ncon; i++) {
-      RefKeyVal prefixkeyval = new PrefixKeyVal("type",keyval,i);
+      Ref<KeyVal> prefixkeyval = new PrefixKeyVal("type",keyval,i);
       coef[i] = new double[nprim];
       char* am = prefixkeyval->pcharvalue("am");
       if (prefixkeyval->error() != KeyVal::OK) {
@@ -433,7 +419,7 @@ GaussianShell::relative_overlap(int con,
 }
 
 double
-GaussianShell::relative_overlap(const RefIntegral& ints,
+GaussianShell::relative_overlap(const Ref<Integral>& ints,
                                 int con, int func1, int func2) const
 {
   if (puream[con]) {

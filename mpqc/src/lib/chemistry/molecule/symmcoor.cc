@@ -47,29 +47,29 @@ using namespace std;
 
 class SymmCoorTransform: public NonlinearTransform {
   private:
-    RefMolecule molecule_;
+    Ref<Molecule> molecule_;
     RefSCDimension dnatom3_;
-    RefSetIntCoor oldintcoor_;
-    RefSetIntCoor newintcoor_;
-    RefSCMatrixKit matrixkit_;
+    Ref<SetIntCoor> oldintcoor_;
+    Ref<SetIntCoor> newintcoor_;
+    Ref<SCMatrixKit> matrixkit_;
     int transform_hessian_;
   public:
-    SymmCoorTransform(const RefMolecule& molecule,
+    SymmCoorTransform(const Ref<Molecule>& molecule,
                       const RefSCDimension& dnatom3,
-                      const RefSCMatrixKit& kit,
-                      const RefSetIntCoor& oldintcoor,
-                      const RefSetIntCoor& newintcoor,
+                      const Ref<SCMatrixKit>& kit,
+                      const Ref<SetIntCoor>& oldintcoor,
+                      const Ref<SetIntCoor>& newintcoor,
                       int transform_hessian);
     void to_cartesian(const RefSCVector& new_internal);
     void transform_coordinates(const RefSCVector& x);
     void transform_hessian(const RefSymmSCMatrix& h);
 };
 
-SymmCoorTransform::SymmCoorTransform(const RefMolecule& molecule,
+SymmCoorTransform::SymmCoorTransform(const Ref<Molecule>& molecule,
                                      const RefSCDimension& dnatom3,
-                                     const RefSCMatrixKit& kit,
-                                     const RefSetIntCoor& oldintcoor,
-                                     const RefSetIntCoor& newintcoor,
+                                     const Ref<SCMatrixKit>& kit,
+                                     const Ref<SetIntCoor>& oldintcoor,
+                                     const Ref<SetIntCoor>& newintcoor,
                                      int transform_hessian)
 {
   molecule_ = new Molecule(*molecule.pointer());
@@ -83,7 +83,7 @@ SymmCoorTransform::SymmCoorTransform(const RefMolecule& molecule,
 void
 SymmCoorTransform::to_cartesian(const RefSCVector& new_internal)
 {
-  RefSCMatrixKit kit = new_internal.kit();
+  Ref<SCMatrixKit> kit = new_internal.kit();
 
   // get a reference to Molecule for convenience
   Molecule& molecule = *(molecule_.pointer());
@@ -152,8 +152,8 @@ SymmCoorTransform::to_cartesian(const RefSCVector& new_internal)
         }
 
       // check for convergence
-      RefSCElementMaxAbs maxabs = new SCElementMaxAbs();
-      RefSCElementOp op = maxabs;
+      Ref<SCElementMaxAbs> maxabs = new SCElementMaxAbs();
+      Ref<SCElementOp> op = maxabs.pointer();
       cartesian_displacement.element_op(op);
       maxabs_cart_diff = maxabs->result();
       if (maxabs_cart_diff < cartesian_tolerance) {
@@ -178,7 +178,7 @@ SymmCoorTransform::transform_coordinates(const RefSCVector& x)
 {
   if (x.null()) return;
 
-  RefSCMatrixKit kit = x.kit();
+  Ref<SCMatrixKit> kit = x.kit();
   RefSCDimension dim = x.dim();
 
   // using the old coordinates update molecule
@@ -229,27 +229,17 @@ SymmCoorTransform::transform_hessian(const RefSymmSCMatrix& h)
 ///////////////////////////////////////////////////////////////////////////
 // members of SymmMolecularCoor
 
-#define CLASSNAME SymmMolecularCoor
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public IntMolecularCoor
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-SymmMolecularCoor::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = IntMolecularCoor::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SymmMolecularCoor_cd(
+  typeid(SymmMolecularCoor),"SymmMolecularCoor",1,"public IntMolecularCoor",
+  0, create<SymmMolecularCoor>, create<SymmMolecularCoor>);
 
-SymmMolecularCoor::SymmMolecularCoor(RefMolecule&mol):
+SymmMolecularCoor::SymmMolecularCoor(Ref<Molecule>&mol):
   IntMolecularCoor(mol)
 {
   init();
 }
 
-SymmMolecularCoor::SymmMolecularCoor(const RefKeyVal& keyval):
+SymmMolecularCoor::SymmMolecularCoor(const Ref<KeyVal>& keyval):
   IntMolecularCoor(keyval)
 {
   init();
@@ -304,7 +294,7 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
   int nouts = outs_->n();
   int nextras = extras_->n();
 
-  RefSetIntCoor saved_fixed_ = fixed_;
+  Ref<SetIntCoor> saved_fixed_ = fixed_;
   fixed_ = new SetIntCoor;
   fixed_->add(saved_fixed_);
   // if we're following coordinates, add them to the fixed list
@@ -373,7 +363,7 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
       int j;
       for(j=0; j < nredundant; j++) {
           if(pow(K(j,i),2.0) > simple_tolerance_) {
-              RefIntCoor c = all_->coor(j);
+              Ref<IntCoor> c = all_->coor(j);
               coordinate->add(c,K(j,i));
               if (debug_) {
                   ExEnv::out() << "added redund coor "
@@ -461,7 +451,7 @@ SymmMolecularCoor::inverse_hessian(RefSymmSCMatrix& hessian)
 }
 
 // Possibly change to a new coordinate system
-RefNonlinearTransform
+Ref<NonlinearTransform>
 SymmMolecularCoor::change_coordinates()
 {
   if (dim_.n() == 0 || !change_coordinates_) return 0;
@@ -509,7 +499,7 @@ SymmMolecularCoor::change_coordinates()
            kappa2, max_kappa2_);
 
   if (kappa2 > max_kappa2_) {
-      RefSetIntCoor oldvariable = new SetIntCoor;
+      Ref<SetIntCoor> oldvariable = new SetIntCoor;
       oldvariable->add(variable_);
 
       // form the new variable coordinates

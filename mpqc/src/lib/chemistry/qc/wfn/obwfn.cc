@@ -49,21 +49,11 @@ using namespace std;
 #define DBL_EPSILON 1.0e-15
 #endif
 
-SavableState_REF_def(OneBodyWavefunction);
+static ClassDesc OneBodyWavefunction_cd(
+  typeid(OneBodyWavefunction),"OneBodyWavefunction",1,"public Wavefunction",
+  0, 0, 0);
 
-#define CLASSNAME OneBodyWavefunction
-#define PARENTS public Wavefunction
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-OneBodyWavefunction::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Wavefunction::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-OneBodyWavefunction::OneBodyWavefunction(const RefKeyVal&keyval):
+OneBodyWavefunction::OneBodyWavefunction(const Ref<KeyVal>&keyval):
   Wavefunction(keyval),
   density_(this),
   oso_eigenvectors_(this),
@@ -146,7 +136,7 @@ OneBodyWavefunction::save_data_state(StateOut&s)
 }
 
 RefSCMatrix
-OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
+OneBodyWavefunction::projected_eigenvectors(const Ref<OneBodyWavefunction>& owfn,
                                             int alp)
 {
   //............................................................
@@ -184,15 +174,15 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
   integral()->set_basis(owfn->basis(), basis());
   RefSCMatrix old_to_new_ao(owfn->basis()->basisdim(), basis()->basisdim(),
                             basis()->matrixkit());
-  RefSCElementOp op = new OneBodyIntOp(integral()->overlap());
+  Ref<SCElementOp> op = new OneBodyIntOp(integral()->overlap());
   old_to_new_ao.assign(0.0);
   old_to_new_ao.element_op(op);
   op = 0;
   integral()->set_basis(basis());
 
   // now must transform the transform into the SO basis
-  RefPetiteList pl = integral()->petite_list();
-  RefPetiteList oldpl = owfn->integral()->petite_list();
+  Ref<PetiteList> pl = integral()->petite_list();
+  Ref<PetiteList> oldpl = owfn->integral()->petite_list();
   RefSCMatrix blocked_old_to_new_ao(oldpl->AO_basisdim(), pl->AO_basisdim(),
                                     basis()->so_matrixkit());
   blocked_old_to_new_ao->convert(old_to_new_ao);
@@ -252,7 +242,7 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
 // set all others to 99.
 
 RefDiagSCMatrix
-OneBodyWavefunction::projected_eigenvalues(const RefOneBodyWavefunction& owfn,
+OneBodyWavefunction::projected_eigenvalues(const Ref<OneBodyWavefunction>& owfn,
                                            int alp)
 {
   // get the old eigenvalues and the new core hamiltonian evals
@@ -266,7 +256,7 @@ OneBodyWavefunction::projected_eigenvalues(const RefOneBodyWavefunction& owfn,
     oval = owfn->eigenvalues();
 
   BlockedDiagSCMatrix *ovalp =
-    BlockedDiagSCMatrix::require_castdown(oval.pointer(),
+    require_dynamic_cast<BlockedDiagSCMatrix*>(oval.pointer(),
       "OneBodyWavefunction::projected_eigenvalues: oval"
       );
     
@@ -274,7 +264,7 @@ OneBodyWavefunction::projected_eigenvalues(const RefOneBodyWavefunction& owfn,
   RefDiagSCMatrix val;
   hcore_guess(val);
   BlockedDiagSCMatrix *valp =
-    BlockedDiagSCMatrix::require_castdown(val.pointer(),
+    require_dynamic_cast<BlockedDiagSCMatrix*>(val.pointer(),
       "OneBodyWavefunction::projected_eigenvalues: val"
       );
 

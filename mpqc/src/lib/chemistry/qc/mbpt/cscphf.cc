@@ -65,7 +65,7 @@ MBPT2::cs_cphf(double **scf_vector,
   int niter;
   int dimP = nocc*nvir;
 
-  RefSCMatrixKit kit = SCMatrixKit::default_matrixkit();
+  Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
 
   RefSCDimension nbasis_dim(new SCDimension(nbasis));
   RefSCDimension nvir_dim(new SCDimension(nvir));
@@ -401,7 +401,7 @@ compute_alpha(int dim, double **AP, double **alpha,
   double *ptr1, *ptr2;
   double *norm = new double[dim]; // contains norms of vectors P[i], i=0,dim
 
-  RefSCMatrixKit kit = SCMatrixKit::default_matrixkit();
+  Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
   RefSCDimension C_dim(new SCDimension(dim));
 
   RefSCMatrix C(C_dim,C_dim,kit);

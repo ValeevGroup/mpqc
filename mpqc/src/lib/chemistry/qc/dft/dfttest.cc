@@ -51,7 +51,7 @@ dot(double v[3], double w[3])
 }
 
 double *
-density_matrix(const RefWavefunction &wfn)
+density_matrix(const Ref<Wavefunction> &wfn)
 {
   int nbasis = wfn->basis()->nbasis();
   RefSymmSCMatrix adens = wfn->alpha_ao_density();
@@ -62,7 +62,7 @@ density_matrix(const RefWavefunction &wfn)
 
 void
 get_density(PointInputData::SpinData &d, const SCVector3 &r,
-            const RefWavefunction &wfn, double *pdmat = 0)
+            const Ref<Wavefunction> &wfn, double *pdmat = 0)
 {
   double *dmat;
   if (pdmat) dmat = pdmat;
@@ -139,7 +139,7 @@ get_density(PointInputData::SpinData &d, const SCVector3 &r,
 
 double
 fd_test_do_point(const SCVector3 &point,
-                 const RefDenFunctional &func, const RefWavefunction &wfn,
+                 const Ref<DenFunctional> &func, const Ref<Wavefunction> &wfn,
                  double *frozen_dmat = 0)
 {
   PointInputData id(point);
@@ -153,10 +153,10 @@ fd_test_do_point(const SCVector3 &point,
 
 void
 fd_test_point(int acenter, const SCVector3 &tpoint,
-              const RefDenFunctional &functional, const RefWavefunction &wfn)
+              const Ref<DenFunctional> &functional, const Ref<Wavefunction> &wfn)
 {
   SCVector3 point(tpoint);
-  RefMolecule mol = wfn->molecule();
+  Ref<Molecule> mol = wfn->molecule();
 
   double *fd_grad_f = new double[mol->natom()*3];
   memset(fd_grad_f,0, 3*mol->natom() * sizeof(double));
@@ -243,7 +243,7 @@ fd_test_point(int acenter, const SCVector3 &tpoint,
 }
 
 void
-fd_test(const RefDenFunctional &functional, const RefWavefunction &wfn)
+fd_test(const Ref<DenFunctional> &functional, const Ref<Wavefunction> &wfn)
 {
   cout << "fd_test with functional:" << endl;
   cout << functional;
@@ -259,9 +259,9 @@ fd_test(const RefDenFunctional &functional, const RefWavefunction &wfn)
 }
 
 void
-fd_e_test(const RefWavefunction &wfn)
+fd_e_test(const Ref<Wavefunction> &wfn)
 {
-  RefMolecule mol = wfn->molecule();
+  Ref<Molecule> mol = wfn->molecule();
 
   cout << "Testing dE/dx with:" << endl;
   cout << incindent;
@@ -329,7 +329,7 @@ extern "C" easypbe_(double *up,double *agrup,double *delgrup,double *uplap,
 #endif
 
 void
-do_valtest(const RefDenFunctional &valtest)
+do_valtest(const Ref<DenFunctional> &valtest)
 {
   valtest->set_spin_polarized(1);
 
@@ -485,7 +485,7 @@ main(int argc, char**argv)
   char *input = (argc > 1)? argv[1] : SRCDIR "/dfttest.in";
 
   // open keyval input
-  RefKeyVal keyval(new ParsedKeyVal(input));
+  Ref<KeyVal> keyval(new ParsedKeyVal(input));
 
 #if defined(__i386__) && defined(__GNUC__)
   //make floating point errors cause an exception (except for denormalized
@@ -497,19 +497,19 @@ main(int argc, char**argv)
   cout << "=========== Value f Tests ===========" << endl;
   int nvaltest = keyval->count("valtest");
   for (i=0; i<nvaltest; i++) {
-    RefDenFunctional valtest = keyval->describedclassvalue("valtest", i);
+    Ref<DenFunctional> valtest = keyval->describedclassvalue("valtest", i);
     if (valtest.nonnull()) valtest->print();
     do_valtest(valtest);
     }
 
-  RefWavefunction  dft        = keyval->describedclassvalue("dft");
+  Ref<Wavefunction>  dft        = keyval->describedclassvalue("dft");
   if (dft.nonnull()) {
     cout << "=========== FD dE/dx Tests ===========" << endl;
     fd_e_test(dft);
     }
 
   cout << "=========== FD df/drho Tests ===========" << endl;
-  RefDenFunctional funcs[] = {
+  Ref<DenFunctional> funcs[] = {
     new PBECFunctional,
     new PW91CFunctional,
     new PW91XFunctional,
@@ -553,10 +553,10 @@ main(int argc, char**argv)
     cout << endl;
     }
 
-  RefMolecule mol = keyval->describedclassvalue("molecule");
+  Ref<Molecule> mol = keyval->describedclassvalue("molecule");
   if (mol.nonnull()) {
     cout << "=========== FD Weight Tests ===========" << endl;
-    RefIntegrationWeight weights[] = {
+    Ref<IntegrationWeight> weights[] = {
       new BeckeIntegrationWeight,
       0
     };
@@ -570,8 +570,8 @@ main(int argc, char**argv)
       }
     }
 
-  RefDenFunctional functional = keyval->describedclassvalue("functional");
-  RefWavefunction  wfn        = keyval->describedclassvalue("wfn");
+  Ref<DenFunctional> functional = keyval->describedclassvalue("functional");
+  Ref<Wavefunction>  wfn        = keyval->describedclassvalue("wfn");
   if (functional.nonnull() && wfn.nonnull()) {
     cout << "=========== FD df/dx Tests ===========" << endl;
     fd_test(functional, wfn);

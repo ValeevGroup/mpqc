@@ -40,17 +40,17 @@
 #include <math/scmat/linkage.h>
 #include <math/optimize/linkage.h>
 
-const ClassDesc &molecule_force_link_a_ = RedundMolecularCoor::class_desc_;
-const ClassDesc &molecule_force_link_b_ = CartMolecularCoor::class_desc_;
-const ClassDesc &molecule_force_link_c_ = SymmMolecularCoor::class_desc_;
-const ClassDesc &molecule_force_link_d_ = TaylorMolecularEnergy::class_desc_;
-const ClassDesc &molecule_force_link_e_ = MolecularFrequencies::class_desc_;
-const ClassDesc &molecule_force_link_f_ = RenderedStickMolecule::class_desc_;
-const ClassDesc &molecule_force_link_g_ = RenderedBallMolecule::class_desc_;
-const ClassDesc &molecule_force_link_h_ =RenderedMolecularSurface::class_desc_;
-const ClassDesc &molecule_force_link_i_ = VDWShape::class_desc_;
-const ClassDesc &molecule_force_link_j_ = DiscreteConnollyShape::class_desc_;
-const ClassDesc &molecule_force_link_k_ = ConnollyShape::class_desc_;
+static ForceLink<RedundMolecularCoor> molecule_force_link_a_;
+static ForceLink<CartMolecularCoor> molecule_force_link_b_;
+static ForceLink<SymmMolecularCoor> molecule_force_link_c_;
+static ForceLink<TaylorMolecularEnergy> molecule_force_link_d_;
+static ForceLink<MolecularFrequencies> molecule_force_link_e_;
+static ForceLink<RenderedStickMolecule> molecule_force_link_f_;
+static ForceLink<RenderedBallMolecule> molecule_force_link_g_;
+static ForceLink<RenderedMolecularSurface> molecule_force_link_h_;
+static ForceLink<VDWShape> molecule_force_link_i_;
+static ForceLink<DiscreteConnollyShape> molecule_force_link_j_;
+static ForceLink<ConnollyShape> molecule_force_link_k_;
 
 #endif /* __PIC__ */
 

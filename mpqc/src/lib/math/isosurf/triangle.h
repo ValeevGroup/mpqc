@@ -35,7 +35,7 @@
 #include <math/isosurf/tricoef.h>
 #include <math/isosurf/edge.h>
 
-class Triangle: public VRefCount {
+class Triangle: public RefCount {
   protected:
     // these break gcc 2.5.8
     //unsigned int _order:5;
@@ -50,38 +50,38 @@ class Triangle: public VRefCount {
     unsigned int _orientation0;
     unsigned int _orientation1;
     unsigned int _orientation2;
-    RefEdge _edges[3];
-    RefVertex *_vertices;
+    Ref<Edge> _edges[3];
+    Ref<Vertex> *_vertices;
   public:
     enum {max_order = 10};
 
-    Triangle(const RefEdge& v1, const RefEdge& v2, const RefEdge& v3,
+    Triangle(const Ref<Edge>& v1, const Ref<Edge>& v2, const Ref<Edge>& v3,
              unsigned int orient0 = 0);
-    RefEdge edge(int i) { return _edges[i]; };
-    int contains(const RefEdge&) const;
+    Ref<Edge> edge(int i) { return _edges[i]; };
+    int contains(const Ref<Edge>&) const;
     unsigned int orientation(int i) const
     {
       return i==0?_orientation0:i==1?_orientation1:_orientation2;
     }
-    unsigned int orientation(const RefEdge&) const;
+    unsigned int orientation(const Ref<Edge>&) const;
     ~Triangle();
-    void add_edges(AVLSet<RefEdge>&);
-    void add_vertices(AVLSet<RefVertex>&);
+    void add_edges(AVLSet<Ref<Edge> >&);
+    void add_vertices(AVLSet<Ref<Vertex> >&);
 
     // returns the surface area element
     // 0<=r<=1, 0<=s<=1, 0<=r+s<=1
-    // RefVertex is the intepolated vertex (both point and normal)
-    void interpolate(const RefTriInterpCoef&,
-                     double r,double s,const RefVertex&v, SCVector3& dA);
-    void interpolate(double r,double s,const RefVertex&v, SCVector3& dA);
-    void interpolate(double r,double s,const RefVertex&v, SCVector3& dA,
-                     const RefVolume &vol, double isovalue);
+    // Ref<Vertex> is the intepolated vertex (both point and normal)
+    void interpolate(const Ref<TriInterpCoef>&,
+                     double r,double s,const Ref<Vertex>&v, SCVector3& dA);
+    void interpolate(double r,double s,const Ref<Vertex>&v, SCVector3& dA);
+    void interpolate(double r,double s,const Ref<Vertex>&v, SCVector3& dA,
+                     const Ref<Volume> &vol, double isovalue);
 
     // returns a corner vertex from the triangle
     // i = 0 is the (0,0) vertex (or L1 = 1, L2 = 0, L3 = 0)
     // i = 1 is the (r=1,s=0) vertex (or L1 = 0, L2 = 1, L3 = 0)
     // i = 2 is the (r=0,s=1) vertex (or L1 = 0, L2 = 0, L3 = 1)
-    RefVertex vertex(int i);
+    Ref<Vertex> vertex(int i);
 
     double flat_area();
 
@@ -90,23 +90,19 @@ class Triangle: public VRefCount {
 
     unsigned int order() const { return _order; }
 
-    void set_order(int order, const RefVolume&vol,double isovalue);
+    void set_order(int order, const Ref<Volume>&vol,double isovalue);
 };
 
-REF_dec(Triangle);
+
 
 class TriangleIntegrator: public DescribedClass {
-#   define CLASSNAME TriangleIntegrator
-#   define HAVE_KEYVAL_CTOR
-//#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     int _n;
     double* _r;
     double* _s;
     double* _w;
     // precomputed interpolation coefficients for triangles of various orders
-    RefTriInterpCoef **coef_; // max_order by _n
+    Ref<TriInterpCoef> **coef_; // max_order by _n
   protected:
     void set_r(int i,double r);
     void set_s(int i,double s);
@@ -114,7 +110,7 @@ class TriangleIntegrator: public DescribedClass {
     void init_coef();
     void clear_coef();
   public:
-    TriangleIntegrator(const RefKeyVal&);
+    TriangleIntegrator(const Ref<KeyVal>&);
     TriangleIntegrator(int n);
     virtual ~TriangleIntegrator();
     inline double w(int i) { return _w[i]; }
@@ -122,19 +118,15 @@ class TriangleIntegrator: public DescribedClass {
     inline double s(int i) { return _s[i]; }
     inline int n() { return _n; }
     virtual void set_n(int n);
-    RefTriInterpCoef coef(int order, int i) { return coef_[order-1][i]; }
+    Ref<TriInterpCoef> coef(int order, int i) { return coef_[order-1][i]; }
 };
-DescribedClass_REF_dec(TriangleIntegrator);
+
 
 class GaussTriangleIntegrator: public TriangleIntegrator {
-#   define CLASSNAME GaussTriangleIntegrator
-#   define HAVE_KEYVAL_CTOR
-//#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     void init_rw(int order);
   public:
-    GaussTriangleIntegrator(const RefKeyVal&);
+    GaussTriangleIntegrator(const Ref<KeyVal>&);
     GaussTriangleIntegrator(int order);
     ~GaussTriangleIntegrator();
     void set_n(int n);

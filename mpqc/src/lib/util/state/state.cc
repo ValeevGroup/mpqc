@@ -44,18 +44,8 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////
 
-SavableState_REF_def(SavableState);
-
-#define CLASSNAME SavableState
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-SavableState::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SavableState_cd(
+    typeid(SavableState),"SavableState",1,"public DescribedClass");
 
 SavableState::SavableState()
 {
@@ -75,7 +65,7 @@ SavableState::SavableState(StateIn&si)
   // In case si is looking for the next pointer, let it know i
   // have one.
   reference();
-  RefSavableState th(this);
+  Ref<SavableState> th(this);
   si.haveobject(th);
   th = 0;
   dereference();
@@ -123,19 +113,19 @@ SavableState*
 SavableState::dir_restore_state(StateIn&si, const char *objectname,
                                 const char *keyword)
 {
-  RefKeyVal old_override;
-  RefSavableState overriding_value;
+  Ref<KeyVal> old_override;
+  Ref<SavableState> overriding_value;
   int p = si.push_key(keyword);
   const int can_override_objects = 0;
   if (can_override_objects && keyword && si.override().nonnull()) {
-      overriding_value = si.override()->describedclassvalue(si.key());
+      overriding_value << si.override()->describedclassvalue(si.key());
       old_override = si.override();
       if (overriding_value.nonnull()) {
           si.set_override(0);
         }
     }
   // restore the pointer
-  RefSavableState ss;
+  Ref<SavableState> ss;
   if (objectname) si.dir_getobject(ss, objectname);
   else si.getobject(ss);
   if (overriding_value.nonnull()) {
@@ -162,26 +152,10 @@ SavableState::dir_restore_state(StateIn&si, const char *objectname,
 }
 
 void
-SavableState::save_object_state_(StateOut&so, const ClassDesc *cd)
+SavableState::save_object_state(StateOut&so)
 {
-  if (class_desc() != cd) {
-      ExEnv::err() <<  "Warning:"
-           << cd->name()
-           << "::save_object_state: "
-           << "exact type not known -- object not saved" << endl;
-      return;
-    }
   save_vbase_state(so);
   save_data_state(so);
-}
-
-void
-SavableState::save_object_state(StateOut&)
-{
-  ExEnv::err() << "SavableState::save_object_state(StateOut&):" << endl
-       << " only can be used when exact type is known" << endl
-       << " otherwise use save_state(StateOut&)" << endl
-       << " (object not saved)" << endl;
 }
 
 void
@@ -193,37 +167,6 @@ void
 SavableState::save_data_state(StateOut& so)
 {
   if (so.need_classdesc()) so.put(class_desc());
-}
-
-////////////////////////////////////////////////////////////////////////
-// SSRefBase members
-
-void
-SSRefBase::save_data_state(StateOut&s)
-{
-  save_state(s);
-}
-
-void
-SSRefBase::save_state(StateOut&so)
-{
-  SavableState::save_state(sspointer(),so);
-}
-
-void
-SSRefBase::check_castdown_result(void* t, SavableState *ss,
-                                 const ClassDesc *cd)
-{
-  if (!t && ss) {
-      ExEnv::err() << node0
-           << "SSRef::restore_state() got type \"" << ss->class_name()
-           << "\""
-           << " but expected \""
-           << cd->name()
-           << "\""
-           << endl;
-        abort();
-    }
 }
 
 /////////////////////////////////////////////////////////////////////////////

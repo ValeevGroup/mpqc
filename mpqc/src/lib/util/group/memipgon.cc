@@ -46,26 +46,18 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////
 // The IParagonMemoryGrp class
 
-#define CLASSNAME IParagonMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public MIDMemoryGrp
-#include <util/class/classi.h>
-void *
-IParagonMemoryGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  MIDMemoryGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc IParagonMemoryGrp_cd(
+  typeid(IParagonMemoryGrp),"IParagonMemoryGrp",1,"public MIDMemoryGrp",
+  0, create<IParagonMemoryGrp>, 0);
 
-IParagonMemoryGrp::IParagonMemoryGrp(const RefMessageGrp& msg):
+IParagonMemoryGrp::IParagonMemoryGrp(const Ref<MessageGrp>& msg):
   MIDMemoryGrp(msg)
 {
   use_acknowledgments_ = 0;
   use_active_messages_ = 0;
 }
 
-IParagonMemoryGrp::IParagonMemoryGrp(const RefKeyVal& keyval):
+IParagonMemoryGrp::IParagonMemoryGrp(const Ref<KeyVal>& keyval):
   MIDMemoryGrp(keyval)
 {
   use_acknowledgments_ = 0;

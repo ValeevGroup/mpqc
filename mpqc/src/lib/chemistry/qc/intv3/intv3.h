@@ -37,11 +37,6 @@ class ISphericalTransformV3;
 
 /** IntegralV3 computes integrals between Gaussian basis functions. */
 class IntegralV3 : public Integral {
-#   define CLASSNAME IntegralV3
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     int maxl_;
     SphericalTransformV3 ***st_;
@@ -50,12 +45,12 @@ class IntegralV3 : public Integral {
     void free_transforms();
     void initialize_transforms();
   public:
-    IntegralV3(const RefGaussianBasisSet &b1=0,
-               const RefGaussianBasisSet &b2=0,
-               const RefGaussianBasisSet &b3=0,
-               const RefGaussianBasisSet &b4=0);
+    IntegralV3(const Ref<GaussianBasisSet> &b1=0,
+               const Ref<GaussianBasisSet> &b2=0,
+               const Ref<GaussianBasisSet> &b3=0,
+               const Ref<GaussianBasisSet> &b4=0);
     IntegralV3(StateIn&);
-    IntegralV3(const RefKeyVal&);
+    IntegralV3(const Ref<KeyVal>&);
     ~IntegralV3();
 
     void save_data_state(StateOut&);
@@ -69,36 +64,36 @@ class IntegralV3 : public Integral {
     const SphericalTransform * spherical_transform(int l,
                                                    int inv=0, int subl=-1);
     
-    RefOneBodyInt overlap();
+    Ref<OneBodyInt> overlap();
 
-    RefOneBodyInt kinetic();
+    Ref<OneBodyInt> kinetic();
 
-    RefOneBodyInt point_charge(const RefPointChargeData& =0);
+    Ref<OneBodyInt> point_charge(const Ref<PointChargeData>& =0);
 
-    RefOneBodyInt nuclear();
+    Ref<OneBodyInt> nuclear();
 
-    RefOneBodyInt hcore();
+    Ref<OneBodyInt> hcore();
 
-    RefOneBodyInt efield_dot_vector(const RefEfieldDotVectorData& =0);
+    Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>& =0);
 
-    RefOneBodyInt dipole(const RefDipoleData& =0);
+    Ref<OneBodyInt> dipole(const Ref<DipoleData>& =0);
 
-    RefOneBodyDerivInt overlap_deriv();
+    Ref<OneBodyDerivInt> overlap_deriv();
                                      
-    RefOneBodyDerivInt kinetic_deriv();
+    Ref<OneBodyDerivInt> kinetic_deriv();
                                      
-    RefOneBodyDerivInt nuclear_deriv();
+    Ref<OneBodyDerivInt> nuclear_deriv();
                                      
-    RefOneBodyDerivInt hcore_deriv();
+    Ref<OneBodyDerivInt> hcore_deriv();
                                      
-    RefTwoBodyInt electron_repulsion();
+    Ref<TwoBodyInt> electron_repulsion();
 
-    RefTwoBodyDerivInt electron_repulsion_deriv();
+    Ref<TwoBodyDerivInt> electron_repulsion_deriv();
 
-    void set_basis(const RefGaussianBasisSet &b1,
-                   const RefGaussianBasisSet &b2 = 0,
-                   const RefGaussianBasisSet &b3 = 0,
-                   const RefGaussianBasisSet &b4 = 0);
+    void set_basis(const Ref<GaussianBasisSet> &b1,
+                   const Ref<GaussianBasisSet> &b2 = 0,
+                   const Ref<GaussianBasisSet> &b3 = 0,
+                   const Ref<GaussianBasisSet> &b4 = 0);
 };
 
 

@@ -44,25 +44,25 @@ class Integral;
 /** This is an abstract base type for classes that
     compute integrals involving two electrons.
  */
-class TwoBodyInt : public VRefCount {
+class TwoBodyInt : public RefCount {
   protected:
     // this is who created me
     Integral *integral_;
 
-    RefGaussianBasisSet bs1_;
-    RefGaussianBasisSet bs2_;
-    RefGaussianBasisSet bs3_;
-    RefGaussianBasisSet bs4_;
+    Ref<GaussianBasisSet> bs1_;
+    Ref<GaussianBasisSet> bs2_;
+    Ref<GaussianBasisSet> bs3_;
+    Ref<GaussianBasisSet> bs4_;
 
     double *buffer_;
 
     int redundant_;
     
     TwoBodyInt(Integral *integral,
-               const RefGaussianBasisSet&bs1,
-               const RefGaussianBasisSet&bs2,
-               const RefGaussianBasisSet&bs3,
-               const RefGaussianBasisSet&bs4);
+               const Ref<GaussianBasisSet>&bs1,
+               const Ref<GaussianBasisSet>&bs2,
+               const Ref<GaussianBasisSet>&bs3,
+               const Ref<GaussianBasisSet>&bs4);
   public:
     virtual ~TwoBodyInt();
   
@@ -89,14 +89,14 @@ class TwoBodyInt : public VRefCount {
     //@}
 
     /// Return the basis set on center one.
-    RefGaussianBasisSet basis();
+    Ref<GaussianBasisSet> basis();
 
     /// Return the basis set on the given center.
     //@{
-    RefGaussianBasisSet basis1();
-    RefGaussianBasisSet basis2();
-    RefGaussianBasisSet basis3();
-    RefGaussianBasisSet basis4();
+    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis2();
+    Ref<GaussianBasisSet> basis3();
+    Ref<GaussianBasisSet> basis4();
     //@}
 
     /** The computed shell integrals will be put in the buffer returned
@@ -126,7 +126,7 @@ class TwoBodyInt : public VRefCount {
     Integral *integral() const { return integral_; }
 };
 
-REF_dec(TwoBodyInt);
+
 
 // //////////////////////////////////////////////////////////////////////////
 
@@ -190,7 +190,7 @@ class ShellQuartetIter {
 
 class TwoBodyIntIter {
   protected:
-    RefTwoBodyInt tbi;
+    Ref<TwoBodyInt> tbi;
     ShellQuartetIter sqi;
     
     int iend;
@@ -202,7 +202,7 @@ class TwoBodyIntIter {
     
   public:
     TwoBodyIntIter();
-    TwoBodyIntIter(const RefTwoBodyInt&);
+    TwoBodyIntIter(const Ref<TwoBodyInt>&);
 
     virtual ~TwoBodyIntIter();
     
@@ -226,23 +226,23 @@ class TwoBodyIntIter {
 /** This is an abstract base type for classes that
     compute integrals involving two electrons.
  */
-class TwoBodyDerivInt : public VRefCount {
+class TwoBodyDerivInt : public RefCount {
   protected:
     // this is who created me
     Integral *integral_;
 
-    RefGaussianBasisSet bs1_;
-    RefGaussianBasisSet bs2_;
-    RefGaussianBasisSet bs3_;
-    RefGaussianBasisSet bs4_;
+    Ref<GaussianBasisSet> bs1_;
+    Ref<GaussianBasisSet> bs2_;
+    Ref<GaussianBasisSet> bs3_;
+    Ref<GaussianBasisSet> bs4_;
 
     double *buffer_;
 
     TwoBodyDerivInt(Integral* integral,
-                    const RefGaussianBasisSet&b1,
-                    const RefGaussianBasisSet&b2,
-                    const RefGaussianBasisSet&b3,
-                    const RefGaussianBasisSet&b4);
+                    const Ref<GaussianBasisSet>&b1,
+                    const Ref<GaussianBasisSet>&b2,
+                    const Ref<GaussianBasisSet>&b3,
+                    const Ref<GaussianBasisSet>&b4);
   public:
     virtual ~TwoBodyDerivInt();
   
@@ -269,14 +269,14 @@ class TwoBodyDerivInt : public VRefCount {
     //@}
 
     /// Return the basis set on center one.
-    RefGaussianBasisSet basis();
+    Ref<GaussianBasisSet> basis();
 
     /// Return the basis set on the given center.
     //@{
-    RefGaussianBasisSet basis1();
-    RefGaussianBasisSet basis2();
-    RefGaussianBasisSet basis3();
-    RefGaussianBasisSet basis4();
+    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis2();
+    Ref<GaussianBasisSet> basis3();
+    Ref<GaussianBasisSet> basis4();
     //@}
 
     /** The computed shell integrals will be put in the buffer returned
@@ -293,7 +293,7 @@ class TwoBodyDerivInt : public VRefCount {
     virtual int log2_shell_bound(int= -1,int= -1,int= -1,int= -1) = 0;
 };
 
-REF_dec(TwoBodyDerivInt);
+
 
 #endif
 

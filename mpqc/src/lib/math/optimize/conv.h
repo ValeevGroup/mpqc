@@ -52,11 +52,6 @@ input:
 </pre>
 */
 class Convergence: virtual public SavableState {
-#   define CLASSNAME Convergence
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     RefSCVector grad_;
     RefSCVector x_;
@@ -118,14 +113,14 @@ class Convergence: virtual public SavableState {
         described above.
 
         </dl> */
-    Convergence(const RefKeyVal&);
+    Convergence(const Ref<KeyVal>&);
     virtual ~Convergence();
 
     void save_data_state(StateOut&);
 
     /// Set the current gradient and displacement.
-    virtual void get_grad(const RefFunction &);
-    virtual void get_x(const RefFunction &);
+    virtual void get_grad(const Ref<Function> &);
+    virtual void get_x(const Ref<Function> &);
     virtual void set_nextx(const RefSCVector &);
 
     /// Set the current gradient and displacement to null.
@@ -134,7 +129,7 @@ class Convergence: virtual public SavableState {
     /// Return nonzero if the optimization has converged.
     virtual int converged();
 };
-SavableState_REF_dec(Convergence);
+
 
 #endif
 

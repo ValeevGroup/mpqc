@@ -53,20 +53,9 @@
 #include <chemistry/molecule/localdef.h>
 
 
-#define CLASSNAME OutSimpleCo
-#define PARENTS public SimpleCo
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-OutSimpleCo::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SimpleCo::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc OutSimpleCo_cd(
+  typeid(OutSimpleCo),"OutSimpleCo",1,"public SimpleCo",
+  create<OutSimpleCo>, create<OutSimpleCo>, create<OutSimpleCo>);
 SimpleCo_IMPL(OutSimpleCo)
 
 OutSimpleCo::OutSimpleCo() : SimpleCo(4) {}
@@ -83,7 +72,7 @@ OutSimpleCo::OutSimpleCo(const char *refr, int a1, int a2, int a3, int a4)
   atoms[0]=a1; atoms[1]=a2; atoms[2]=a3; atoms[3]=a4;
 }
 
-OutSimpleCo::OutSimpleCo(const RefKeyVal &kv) :
+OutSimpleCo::OutSimpleCo(const Ref<KeyVal> &kv) :
   SimpleCo(kv,4)
 {
 }

@@ -37,7 +37,7 @@
 /** The ThreadLock abstract class provides mutex locks to be used in
     conjunction with ThreadGrp's.
 */
-class ThreadLock : public VRefCount {
+class ThreadLock : public RefCount {
   public:
     ThreadLock();
     virtual ~ThreadLock();
@@ -47,7 +47,7 @@ class ThreadLock : public VRefCount {
     /// Release the lock.
     virtual void unlock() =0;
 };
-REF_dec(ThreadLock);
+
 
 /** The Thread abstract class defines an interface which must be
     implemented by classes wishing to be run as threads. */
@@ -61,21 +61,22 @@ class Thread {
     /// This is called with the Thread is run from a ThreadGrp.
     virtual void run() =0;
 };
-    
-DescribedClass_REF_fwddec(ThreadGrp);
 
+extern "C" {
+    // a C linkage interface to run_Thread_run
+    void *Thread__run_Thread_run(void*thread);
+}
+    
 /** The ThreadGrp abstract class provides a means to manage separate
     threads of control. */
 class ThreadGrp: public DescribedClass {
-#define CLASSNAME ThreadGrp
-#include <util/class/classda.h>
   protected:
     Thread** threads_;
     int nthread_;
 
   public:
     ThreadGrp();
-    ThreadGrp(const RefKeyVal&);
+    ThreadGrp(const Ref<KeyVal>&);
     ThreadGrp(const ThreadGrp&, int nthread = -1);
     virtual ~ThreadGrp();
 
@@ -94,7 +95,7 @@ class ThreadGrp: public DescribedClass {
         before start_threads is called again or the object is destroyed. */
     virtual int wait_threads() =0;
     /// Return a local object.
-    virtual RefThreadLock new_lock() =0;
+    virtual Ref<ThreadLock> new_lock() =0;
 
     /** Create a ThreadGrp like the current one.  If
         nthread is given it will be the number of threads
@@ -103,27 +104,24 @@ class ThreadGrp: public DescribedClass {
         is not supported 0 will be returned. */
     virtual ThreadGrp* clone(int nthread = -1);
 
-    static void set_default_threadgrp(const RefThreadGrp&);
+    static void set_default_threadgrp(const Ref<ThreadGrp>&);
     static ThreadGrp * get_default_threadgrp();
     static ThreadGrp * initial_threadgrp(int &argc, char ** argv);
 };
-DescribedClass_REF_dec(ThreadGrp);
+
 
 /** The ProcThreadGrp class privides a concrete thread group
     appropriate for an environment where there is only one thread.
 */
 class ProcThreadGrp: public ThreadGrp {
-#define CLASSNAME ProcThreadGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   public:
     ProcThreadGrp();
-    ProcThreadGrp(const RefKeyVal&);
+    ProcThreadGrp(const Ref<KeyVal>&);
     ~ProcThreadGrp();
 
     int start_threads();
     int wait_threads();
-    RefThreadLock new_lock();
+    Ref<ThreadLock> new_lock();
 };
 
 #endif

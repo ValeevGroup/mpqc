@@ -46,18 +46,9 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////
 // HSOSHF
 
-#define CLASSNAME HSOSHF
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public HSOSSCF
-#include <util/class/classi.h>
-void *
-HSOSHF::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = HSOSSCF::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc HSOSHF_cd(
+  typeid(HSOSHF),"HSOSHF",1,"public HSOSSCF",
+  0, create<HSOSHF>, create<HSOSHF>);
 
 HSOSHF::HSOSHF(StateIn& s) :
   SavableState(s),
@@ -65,7 +56,7 @@ HSOSHF::HSOSHF(StateIn& s) :
 {
 }
 
-HSOSHF::HSOSHF(const RefKeyVal& keyval) :
+HSOSHF::HSOSHF(const Ref<KeyVal>& keyval) :
   HSOSSCF(keyval)
 {
 }
@@ -124,13 +115,13 @@ HSOSHF::two_body_energy(double &ec, double &ex)
     tim_exit("local data");
 
     // initialize the two electron integral classes
-    RefTwoBodyInt tbi = integral()->electron_repulsion();
+    Ref<TwoBodyInt> tbi = integral()->electron_repulsion();
     tbi->set_integral_storage(0);
 
     signed char * pmax = init_pmax(dpmat);
   
     LocalHSOSEnergyContribution lclc(dpmat, spmat);
-    RefPetiteList pl = integral()->petite_list();
+    Ref<PetiteList> pl = integral()->petite_list();
     LocalGBuild<LocalHSOSEnergyContribution>
       gb(lclc, tbi, pl, basis(), scf_grp_, pmax,
          desired_value_accuracy()/100.0);
@@ -153,7 +144,7 @@ HSOSHF::two_body_energy(double &ec, double &ex)
 void
 HSOSHF::ao_fock(double accuracy)
 {
-  RefPetiteList pl = integral()->petite_list(basis());
+  Ref<PetiteList> pl = integral()->petite_list(basis());
   
   // calculate G.  First transform cl_dens_diff_ to the AO basis, then
   // scale the off-diagonal elements by 2.0
@@ -197,7 +188,7 @@ HSOSHF::ao_fock(double accuracy)
     double **gmatos = new double*[nthread];
     gmatos[0] = gmato;
     
-    RefGaussianBasisSet bs = basis();
+    Ref<GaussianBasisSet> bs = basis();
     int ntri = i_offset(bs->nbasis());
 
     double gmat_accuracy = accuracy;

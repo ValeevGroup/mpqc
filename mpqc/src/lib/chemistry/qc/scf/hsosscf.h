@@ -39,13 +39,8 @@
 /** The HSOSSCF class is a base for classes implementing a self-consistent
 procedure for high-spin open-shell molecules. */
 class HSOSSCF: public SCF {
-#   define CLASSNAME HSOSSCF
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
-    RefPointGroup most_recent_pg_;
+    Ref<PointGroup> most_recent_pg_;
     int user_occupations_;
     int tndocc_;
     int tnsocc_;
@@ -102,7 +97,7 @@ class HSOSSCF: public SCF {
         parent class, SCF; however, the default value is 1.0.
 
         </dl> */
-    HSOSSCF(const RefKeyVal&);
+    HSOSSCF(const Ref<KeyVal>&);
     ~HSOSSCF();
 
     void save_data_state(StateOut&);
@@ -145,7 +140,7 @@ class HSOSSCF: public SCF {
     double new_density();
     double scf_energy();
 
-    RefSCExtrapData extrap_data();
+    Ref<SCExtrapData> extrap_data();
     
     // gradient things
     void init_gradient();

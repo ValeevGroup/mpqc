@@ -44,7 +44,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////
 // DVector3
 
-SCVector3::SCVector3(const RefKeyVal&keyval)
+SCVector3::SCVector3(const Ref<KeyVal>&keyval)
 {
   _v[0] = keyval->doublevalue(0);
   _v[1] = keyval->doublevalue(1);

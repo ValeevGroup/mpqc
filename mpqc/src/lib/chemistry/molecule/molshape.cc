@@ -31,6 +31,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <vector>
 
 #include <chemistry/molecule/molshape.h>
 #include <chemistry/molecule/molecule.h>
@@ -41,35 +42,26 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////
 // VDWShape
 
-#define CLASSNAME VDWShape
-#define PARENTS public UnionShape
-#define HAVE_KEYVAL_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-VDWShape::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = UnionShape::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc VDWShape_cd(
+  typeid(VDWShape),"VDWShape",1,"public UnionShape",
+  0, create<VDWShape>, 0);
 
-VDWShape::VDWShape(const RefMolecule&mol)
+VDWShape::VDWShape(const Ref<Molecule>&mol)
 {
   initialize(mol);
 }
 
-VDWShape::VDWShape(const RefKeyVal&keyval)
+VDWShape::VDWShape(const Ref<KeyVal>&keyval)
 {
-  RefMolecule mol = keyval->describedclassvalue("molecule");
-  atominfo_ = keyval->describedclassvalue("atominfo");
+  Ref<Molecule> mol; mol << keyval->describedclassvalue("molecule");
+  atominfo_ << keyval->describedclassvalue("atominfo");
   initialize(mol);
 }
 
 void
-VDWShape::initialize(const RefMolecule&mol)
+VDWShape::initialize(const Ref<Molecule>&mol)
 {
-  RefAtomInfo a;
+  Ref<AtomInfo> a;
   if (atominfo_.null()) a = mol->atominfo();
   else a = atominfo_;
 
@@ -91,7 +83,7 @@ VDWShape::~VDWShape()
 // static functions for DiscreteConnollyShape and ConnollyShape
 
 static double
-find_atom_size(const RefAtomInfo& a, int Z)
+find_atom_size(const Ref<AtomInfo>& a, int Z)
 {
   return a->vdw_radius(Z);
 }
@@ -99,22 +91,13 @@ find_atom_size(const RefAtomInfo& a, int Z)
 ////////////////////////////////////////////////////////////////////////
 // DiscreteConnollyShape
 
-#define CLASSNAME DiscreteConnollyShape
-#define PARENTS public UnionShape
-#define HAVE_KEYVAL_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-DiscreteConnollyShape::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = UnionShape::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc DiscreteConnollyShape_cd(
+  typeid(DiscreteConnollyShape),"DiscreteConnollyShape",1,"public UnionShape",
+  0, create<DiscreteConnollyShape>, 0);
 
-DiscreteConnollyShape::DiscreteConnollyShape(const RefKeyVal&keyval)
+DiscreteConnollyShape::DiscreteConnollyShape(const Ref<KeyVal>&keyval)
 {
-  RefMolecule mol = keyval->describedclassvalue("molecule");
+  Ref<Molecule> mol; mol << keyval->describedclassvalue("molecule");
   double probe_radius = keyval->doublevalue("probe_radius");
   if (keyval->error() != KeyVal::OK) {
       probe_radius = 2.6456173;
@@ -123,24 +106,24 @@ DiscreteConnollyShape::DiscreteConnollyShape(const RefKeyVal&keyval)
   if (keyval->error() != KeyVal::OK) {
       radius_scale_factor_ = 1.2;
     }
-  atominfo_ = keyval->describedclassvalue("atominfo");
+  atominfo_ << keyval->describedclassvalue("atominfo");
   initialize(mol,probe_radius);
 }
 
 void
-DiscreteConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
+DiscreteConnollyShape::initialize(const Ref<Molecule>&mol,double probe_radius)
 {
   _shapes.clear();
-  ArrayRefSphereShape spheres;
+  std::vector<Ref<SphereShape> > spheres(0);
 
-  RefAtomInfo a;
+  Ref<AtomInfo> a;
   if (atominfo_.null()) a = mol->atominfo();
   else a = atominfo_;
 
   int i;
   for (i=0; i<mol->natom(); i++) {
       SCVector3 r(mol->r(i));
-      RefSphereShape
+      Ref<SphereShape>
         sphere(
             new SphereShape(r,radius_scale_factor_*find_atom_size(a,
                                              mol->Z(i)))
@@ -154,7 +137,7 @@ DiscreteConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
 
   for (i=0; i<spheres.size(); i++) {
       for (int j=0; j<i; j++) {
-          RefShape th =
+          Ref<Shape> th =
             UncappedTorusHoleShape::newUncappedTorusHoleShape(probe_radius,
                                               *(spheres[i].pointer()),
                                               *(spheres[j].pointer()));
@@ -166,7 +149,7 @@ DiscreteConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
           
           // now check for excluding volume for groups of three spheres
           for (int k=0; k<j; k++) {
-              RefShape e =
+              Ref<Shape> e =
                 Uncapped5SphereExclusionShape::
               newUncapped5SphereExclusionShape(probe_radius,
                                                *(spheres[i].pointer()),
@@ -185,29 +168,20 @@ DiscreteConnollyShape::~DiscreteConnollyShape()
 ////////////////////////////////////////////////////////////////////////
 // ConnollyShape
 
-#define CLASSNAME ConnollyShape
-#define PARENTS public Shape
-#define HAVE_KEYVAL_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-ConnollyShape::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Shape::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ConnollyShape_cd(
+  typeid(ConnollyShape),"ConnollyShape",1,"public Shape",
+  0, create<ConnollyShape>, 0);
 
-ConnollyShape::ConnollyShape(const RefKeyVal&keyval)
+ConnollyShape::ConnollyShape(const Ref<KeyVal>&keyval)
 {
   box_ = 0;
   sphere = 0;
-  RefMolecule mol = keyval->describedclassvalue("molecule");
+  Ref<Molecule> mol; mol << keyval->describedclassvalue("molecule");
   probe_r = keyval->doublevalue("probe_radius");
   if (keyval->error() != KeyVal::OK) {
       probe_r = 2.6456173;
     }
-  atominfo_ = keyval->describedclassvalue("atominfo");
+  atominfo_ << keyval->describedclassvalue("atominfo");
   radius_scale_factor_ = keyval->doublevalue("radius_scale_factor");
   if (keyval->error() != KeyVal::OK) {
       radius_scale_factor_ = 1.2;
@@ -244,14 +218,14 @@ ConnollyShape::print_counts(ostream& os)
 }
 
 void
-ConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
+ConnollyShape::initialize(const Ref<Molecule>&mol,double probe_radius)
 {
   clear();
 
   n_spheres = mol->natom();
   sphere = new CS2Sphere[n_spheres];
 
-  RefAtomInfo a;
+  Ref<AtomInfo> a;
   if (atominfo_.null()) a = mol->atominfo();
   else a = atominfo_;
 

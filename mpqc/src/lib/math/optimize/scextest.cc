@@ -27,6 +27,7 @@
 
 #include <util/keyval/keyval.h>
 #include <util/state/stateio.h>
+#include <util/state/state_text.h>
 #include <math/scmat/local.h>
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrap.h>
@@ -36,7 +37,7 @@ using namespace std;
 
 // Force linkages:
 #ifndef __PIC__
-const ClassDesc &fl0 = DIIS::class_desc_;
+static ForceLink<DIIS> fl0;
 #endif
 
 int
@@ -44,19 +45,20 @@ main()
 {
   int i;
   
-  RefKeyVal keyval = new ParsedKeyVal( SRCDIR "/scextest.in");
+  Ref<KeyVal> keyval = new ParsedKeyVal( SRCDIR "/scextest.in");
 
-  RefSelfConsistentExtrapolation extrap
+  Ref<SelfConsistentExtrapolation> extrap
       = keyval->describedclassvalue("scextrap");
 
-  RefSCDimension dim = new LocalSCDimension(3, "test_dim");
+  RefSCDimension dim = new SCDimension(3, "test_dim");
+  Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
 
-  RefSymmSCMatrix datamat(dim);
+  RefSymmSCMatrix datamat(dim,kit);
   datamat.assign(0.0);
   datamat->shift_diagonal(2.0);
 
-  RefDiagSCMatrix val(dim);
-  RefSCMatrix vec(dim,dim);
+  RefDiagSCMatrix val(dim,kit);
+  RefSCMatrix vec(dim,dim,kit);
 
   // solve f(x) = x
 
@@ -67,14 +69,14 @@ main()
           double v = val.get_element(j);
           val.set_element(j, sqrt(v));
         }
-      RefSymmSCMatrix newdatamat(dim);
+      RefSymmSCMatrix newdatamat(dim,kit);
       newdatamat.assign(0.0);
       newdatamat.accumulate_transform(vec, val);
       RefSymmSCMatrix errormat = newdatamat - datamat;
 
       datamat.assign(newdatamat);
-      RefSCExtrapData data = new SymmSCMatrixSCExtrapData(datamat);
-      RefSCExtrapError error = new SymmSCMatrixSCExtrapError(errormat);
+      Ref<SCExtrapData> data = new SymmSCMatrixSCExtrapData(datamat);
+      Ref<SCExtrapError> error = new SymmSCMatrixSCExtrapError(errormat);
 
       ExEnv::out() << "Iteration " << i << ":" << endl;
 
@@ -93,7 +95,7 @@ main()
   s.close();
 
   StateInText si("scextest.ckpt");
-  RefSelfConsistentExtrapolation e2(si);
+  Ref<SelfConsistentExtrapolation> e2(si);
   
   si.close();
   

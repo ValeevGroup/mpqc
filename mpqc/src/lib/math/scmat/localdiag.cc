@@ -38,16 +38,9 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // LocalDiagSCMatrix member functions
 
-#define CLASSNAME LocalDiagSCMatrix
-#define PARENTS public DiagSCMatrix
-#include <util/class/classi.h>
-void *
-LocalDiagSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DiagSCMatrix::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc LocalDiagSCMatrix_cd(
+  typeid(LocalDiagSCMatrix),"LocalDiagSCMatrix",1,"public DiagSCMatrix",
+  0, 0, 0);
 
 LocalDiagSCMatrix::LocalDiagSCMatrix(const RefSCDimension&a,
                                      LocalSCMatrixKit *kit):
@@ -95,7 +88,7 @@ LocalDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const LocalDiagSCMatrix* la
-    = LocalDiagSCMatrix::require_const_castdown(a,"LocalDiagSCMatrix::accumulate");
+    = require_dynamic_cast<const LocalDiagSCMatrix*>(a,"LocalDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -159,17 +152,17 @@ LocalDiagSCMatrix::gen_invert_this()
 }
 
 void
-LocalDiagSCMatrix::element_op(const RefSCElementOp& op)
+LocalDiagSCMatrix::element_op(const Ref<SCElementOp>& op)
 {
   op->process_spec_diag(block.pointer());
 }
 
 void
-LocalDiagSCMatrix::element_op(const RefSCElementOp2& op,
+LocalDiagSCMatrix::element_op(const Ref<SCElementOp2>& op,
                               DiagSCMatrix* m)
 {
   LocalDiagSCMatrix *lm
-      = LocalDiagSCMatrix::require_castdown(m,"LocalDiagSCMatrix::element_op");
+      = require_dynamic_cast<LocalDiagSCMatrix*>(m,"LocalDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
       ExEnv::err() << indent << "LocalDiagSCMatrix: bad element_op\n";
@@ -179,13 +172,13 @@ LocalDiagSCMatrix::element_op(const RefSCElementOp2& op,
 }
 
 void
-LocalDiagSCMatrix::element_op(const RefSCElementOp3& op,
+LocalDiagSCMatrix::element_op(const Ref<SCElementOp3>& op,
                               DiagSCMatrix* m,DiagSCMatrix* n)
 {
   LocalDiagSCMatrix *lm
-      = LocalDiagSCMatrix::require_castdown(m,"LocalDiagSCMatrix::element_op");
+      = require_dynamic_cast<LocalDiagSCMatrix*>(m,"LocalDiagSCMatrix::element_op");
   LocalDiagSCMatrix *ln
-      = LocalDiagSCMatrix::require_castdown(n,"LocalDiagSCMatrix::element_op");
+      = require_dynamic_cast<LocalDiagSCMatrix*>(n,"LocalDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
       ExEnv::err() << indent << "LocalDiagSCMatrix: bad element_op\n";
@@ -226,7 +219,7 @@ LocalDiagSCMatrix::vprint(const char *title, ostream& os, int prec) const
   os.flush();
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 LocalDiagSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
   if (messagegrp()->n() > 1) {
@@ -235,12 +228,12 @@ LocalDiagSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
            << endl;
       abort();
     }
-  RefSCMatrixSubblockIter iter
+  Ref<SCMatrixSubblockIter> iter
       = new SCMatrixSimpleSubblockIter(access, block.pointer());
   return iter;
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 LocalDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {

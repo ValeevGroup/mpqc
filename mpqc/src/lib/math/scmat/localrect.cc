@@ -44,16 +44,9 @@ extern "C" {
 /////////////////////////////////////////////////////////////////////////////
 // LocalSCMatrix member functions
 
-#define CLASSNAME LocalSCMatrix
-#define PARENTS public SCMatrix
-#include <util/class/classi.h>
-void *
-LocalSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrix::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc LocalSCMatrix_cd(
+  typeid(LocalSCMatrix),"LocalSCMatrix",1,"public SCMatrix",
+  0, 0, 0);
 
 static double **
 init_rect_rows(double *data, int ni,int nj)
@@ -154,7 +147,7 @@ LocalSCMatrix::get_subblock(int br, int er, int bc, int ec)
   sb->assign(0.0);
 
   LocalSCMatrix *lsb =
-    LocalSCMatrix::require_castdown(sb, "LocalSCMatrix::get_subblock");
+    require_dynamic_cast<LocalSCMatrix*>(sb, "LocalSCMatrix::get_subblock");
 
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
@@ -168,7 +161,7 @@ LocalSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
                                int source_br, int source_bc)
 {
   LocalSCMatrix *lsb =
-    LocalSCMatrix::require_castdown(sb, "LocalSCMatrix::assign_subblock");
+    require_dynamic_cast<LocalSCMatrix*>(sb, "LocalSCMatrix::assign_subblock");
 
   int nsrow = er-br+1;
   int nscol = ec-bc+1;
@@ -191,7 +184,7 @@ LocalSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
                                    int source_br, int source_bc)
 {
   LocalSCMatrix *lsb =
-    LocalSCMatrix::require_castdown(sb, "LocalSCMatrix::accumulate_subblock");
+    require_dynamic_cast<LocalSCMatrix*>(sb, "LocalSCMatrix::accumulate_subblock");
 
   int nsrow = er-br+1;
   int nscol = ec-bc+1;
@@ -221,7 +214,7 @@ LocalSCMatrix::get_row(int i)
   SCVector * v = kit()->vector(coldim());
 
   LocalSCVector *lv =
-    LocalSCVector::require_castdown(v, "LocalSCMatrix::get_row");
+    require_dynamic_cast<LocalSCVector*>(v, "LocalSCMatrix::get_row");
 
   for (int j=0; j < ncol(); j++)
     lv->set_element(j,rows[i][j]);
@@ -246,7 +239,7 @@ LocalSCMatrix::assign_row(SCVector *v, int i)
     }
   
   LocalSCVector *lv =
-    LocalSCVector::require_castdown(v, "LocalSCMatrix::assign_row");
+    require_dynamic_cast<LocalSCVector*>(v, "LocalSCMatrix::assign_row");
 
   for (int j=0; j < ncol(); j++)
     rows[i][j] = lv->get_element(j);
@@ -270,7 +263,7 @@ LocalSCMatrix::accumulate_row(SCVector *v, int i)
     }
   
   LocalSCVector *lv =
-    LocalSCVector::require_castdown(v, "LocalSCMatrix::accumulate_row");
+    require_dynamic_cast<LocalSCVector*>(v, "LocalSCMatrix::accumulate_row");
 
   for (int j=0; j < ncol(); j++)
     rows[i][j] += lv->get_element(j);
@@ -289,7 +282,7 @@ LocalSCMatrix::get_column(int i)
   SCVector * v = kit()->vector(rowdim());
 
   LocalSCVector *lv =
-    LocalSCVector::require_castdown(v, "LocalSCMatrix::get_column");
+    require_dynamic_cast<LocalSCVector*>(v, "LocalSCMatrix::get_column");
 
   for (int j=0; j < nrow(); j++)
     lv->set_element(j,rows[j][i]);
@@ -315,7 +308,7 @@ LocalSCMatrix::assign_column(SCVector *v, int i)
     }
   
   LocalSCVector *lv =
-    LocalSCVector::require_castdown(v, "LocalSCMatrix::assign_column");
+    require_dynamic_cast<LocalSCVector*>(v, "LocalSCMatrix::assign_column");
 
   for (int j=0; j < nrow(); j++)
     rows[j][i] = lv->get_element(j);
@@ -339,7 +332,7 @@ LocalSCMatrix::accumulate_column(SCVector *v, int i)
     }
   
   LocalSCVector *lv =
-    LocalSCVector::require_castdown(v, "LocalSCMatrix::accumulate_column");
+    require_dynamic_cast<LocalSCVector*>(v, "LocalSCMatrix::accumulate_column");
 
   for (int j=0; j < nrow(); j++)
     rows[j][i] += lv->get_element(j);
@@ -358,8 +351,8 @@ LocalSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b)
 {
   const char* name = "LocalSCMatrix::accumulate_product";
   // make sure that the arguments are of the correct type
-  LocalSCMatrix* la = LocalSCMatrix::require_castdown(a,name);
-  LocalSCMatrix* lb = LocalSCMatrix::require_castdown(b,name);
+  LocalSCMatrix* la = require_dynamic_cast<LocalSCMatrix*>(a,name);
+  LocalSCMatrix* lb = require_dynamic_cast<LocalSCMatrix*>(b,name);
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->coldim()) ||
@@ -391,8 +384,8 @@ LocalSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 {
   const char* name = "LocalSCMatrix::accumulate_outer_product";
   // make sure that the arguments are of the correct type
-  LocalSCVector* la = LocalSCVector::require_castdown(a,name);
-  LocalSCVector* lb = LocalSCVector::require_castdown(b,name);
+  LocalSCVector* la = require_dynamic_cast<LocalSCVector*>(a,name);
+  LocalSCVector* lb = require_dynamic_cast<LocalSCVector*>(b,name);
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(lb->dim())) {
@@ -420,8 +413,8 @@ LocalSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
 {
   const char* name = "LocalSCMatrix::accumulate_product";
   // make sure that the arguments are of the correct type
-  LocalSCMatrix* la = LocalSCMatrix::require_castdown(a,name);
-  LocalSymmSCMatrix* lb = LocalSymmSCMatrix::require_castdown(b,name);
+  LocalSCMatrix* la = require_dynamic_cast<LocalSCMatrix*>(a,name);
+  LocalSymmSCMatrix* lb = require_dynamic_cast<LocalSymmSCMatrix*>(b,name);
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
@@ -455,8 +448,8 @@ LocalSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
 {
   const char* name = "LocalSCMatrix::accumulate_product_rd";
   // make sure that the arguments are of the correct type
-  LocalSCMatrix* la = LocalSCMatrix::require_castdown(a,name);
-  LocalDiagSCMatrix* lb = LocalDiagSCMatrix::require_castdown(b,name);
+  LocalSCMatrix* la = require_dynamic_cast<LocalSCMatrix*>(a,name);
+  LocalDiagSCMatrix* lb = require_dynamic_cast<LocalDiagSCMatrix*>(b,name);
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
@@ -485,7 +478,7 @@ LocalSCMatrix::accumulate(const SCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   const LocalSCMatrix* la
-    = LocalSCMatrix::require_const_castdown(a,"LocalSCMatrix::accumulate");
+    = require_dynamic_cast<const LocalSCMatrix*>(a,"LocalSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
@@ -504,7 +497,7 @@ LocalSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   const LocalSymmSCMatrix* la
-    = LocalSymmSCMatrix::require_const_castdown(a,"LocalSCMatrix::accumulate");
+    = require_dynamic_cast<const LocalSymmSCMatrix*>(a,"LocalSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
@@ -532,7 +525,7 @@ LocalSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
   const LocalDiagSCMatrix* la
-    = LocalDiagSCMatrix::require_const_castdown(a,"LocalSCMatrix::accumulate");
+    = require_dynamic_cast<const LocalDiagSCMatrix*>(a,"LocalSCMatrix::accumulate");
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
@@ -554,7 +547,7 @@ LocalSCMatrix::accumulate(const SCVector*a)
 {
   // make sure that the arguments is of the correct type
   const LocalSCVector* la
-    = LocalSCVector::require_const_castdown(a,"LocalSCVector::accumulate");
+    = require_dynamic_cast<const LocalSCVector*>(a,"LocalSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)
@@ -630,11 +623,11 @@ void
 LocalSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
 {
   LocalSCMatrix* lU =
-    LocalSCMatrix::require_castdown(U,"LocalSCMatrix::svd_this");
+    require_dynamic_cast<LocalSCMatrix*>(U,"LocalSCMatrix::svd_this");
   LocalSCMatrix* lV =
-    LocalSCMatrix::require_castdown(V,"LocalSCMatrix::svd_this");
+    require_dynamic_cast<LocalSCMatrix*>(V,"LocalSCMatrix::svd_this");
   LocalDiagSCMatrix* lsigma =
-    LocalDiagSCMatrix::require_castdown(sigma,"LocalSCMatrix::svd_this");
+    require_dynamic_cast<LocalDiagSCMatrix*>(sigma,"LocalSCMatrix::svd_this");
 
   RefSCDimension mdim = rowdim();
   RefSCDimension ndim = coldim();
@@ -705,7 +698,7 @@ double
 LocalSCMatrix::solve_this(SCVector*v)
 {
   LocalSCVector* lv =
-    LocalSCVector::require_castdown(v,"LocalSCMatrix::solve_this");
+    require_dynamic_cast<LocalSCVector*>(v,"LocalSCMatrix::solve_this");
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lv->dim())) {
@@ -721,7 +714,7 @@ void
 LocalSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
 {
   LocalSymmSCMatrix* lS =
-    LocalSymmSCMatrix::require_castdown(S,"LocalSCMatrix::schmidt_orthog");
+    require_dynamic_cast<LocalSymmSCMatrix*>(S,"LocalSCMatrix::schmidt_orthog");
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lS->dim())) {
@@ -734,17 +727,17 @@ LocalSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
 }
 
 void
-LocalSCMatrix::element_op(const RefSCElementOp& op)
+LocalSCMatrix::element_op(const Ref<SCElementOp>& op)
 {
   op->process_spec_rect(block.pointer());
 }
 
 void
-LocalSCMatrix::element_op(const RefSCElementOp2& op,
+LocalSCMatrix::element_op(const Ref<SCElementOp2>& op,
                           SCMatrix* m)
 {
   LocalSCMatrix *lm
-      = LocalSCMatrix::require_castdown(m,"LocalSCMatrix::element_op");
+      = require_dynamic_cast<LocalSCMatrix*>(m,"LocalSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
       ExEnv::err() << indent << "LocalSCMatrix: bad element_op\n";
@@ -754,13 +747,13 @@ LocalSCMatrix::element_op(const RefSCElementOp2& op,
 }
 
 void
-LocalSCMatrix::element_op(const RefSCElementOp3& op,
+LocalSCMatrix::element_op(const Ref<SCElementOp3>& op,
                           SCMatrix* m,SCMatrix* n)
 {
   LocalSCMatrix *lm
-      = LocalSCMatrix::require_castdown(m,"LocalSCMatrix::element_op");
+      = require_dynamic_cast<LocalSCMatrix*>(m,"LocalSCMatrix::element_op");
   LocalSCMatrix *ln
-      = LocalSCMatrix::require_castdown(n,"LocalSCMatrix::element_op");
+      = require_dynamic_cast<LocalSCMatrix*>(n,"LocalSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
       !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
@@ -825,7 +818,7 @@ LocalSCMatrix::vprint(const char *title, ostream& os, int prec) const
   }
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 LocalSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
   if (messagegrp()->n() > 1) {
@@ -834,12 +827,12 @@ LocalSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
            << endl;
       abort();
     }
-  RefSCMatrixSubblockIter iter
+  Ref<SCMatrixSubblockIter> iter
       = new SCMatrixSimpleSubblockIter(access, block.pointer());
   return iter;
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 LocalSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {

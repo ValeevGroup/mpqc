@@ -124,7 +124,7 @@ CLASSNAME::require_const_castdown(const DescribedClass*p,const char * errmsg,...
   return t;
 }
 CLASSNAME*
-CLASSNAME::castdown(const RefDescribedClass&p)
+CLASSNAME::castdown(const Ref<DescribedClass>&p)
 {
   return CLASSNAME::castdown(p.pointer());
 }
@@ -161,7 +161,7 @@ CLASSNAME::create()
 #endif
 #ifdef HAVE_KEYVAL_CTOR
 DescribedClass*
-CLASSNAME::create(const RefKeyVal& keyval)
+CLASSNAME::create(const Ref<KeyVal>& keyval)
 {
   return (DescribedClass*) new CLASSNAME(keyval);
 }

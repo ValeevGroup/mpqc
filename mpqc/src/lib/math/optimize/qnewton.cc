@@ -37,35 +37,23 @@
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
 
-#define CLASSNAME QNewtonOpt
-#define VERSION 2
-#define PARENTS public Optimize
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////////
 // QNewtonOpt
 
-void *
-QNewtonOpt::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Optimize::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc QNewtonOpt_cd(
+  typeid(QNewtonOpt),"QNewtonOpt",2,"public Optimize",
+  0, create<QNewtonOpt>, create<QNewtonOpt>);
 
-QNewtonOpt::QNewtonOpt(const RefKeyVal&keyval):
+QNewtonOpt::QNewtonOpt(const Ref<KeyVal>&keyval):
   Optimize(keyval)
 {
   init();
 
-  update_ = keyval->describedclassvalue("update");
+  update_ << keyval->describedclassvalue("update");
   if (update_.nonnull()) update_->set_inverse();
-  lineopt_ = keyval->describedclassvalue("lineopt");
+  lineopt_ << keyval->describedclassvalue("lineopt");
   accuracy_ = keyval->doublevalue("accuracy");
   if (keyval->error() != KeyVal::OK) accuracy_ = 0.0001;
   print_x_ = keyval->booleanvalue("print_x");
@@ -97,11 +85,11 @@ QNewtonOpt::QNewtonOpt(StateIn&s):
 {
   ihessian_ = matrixkit()->symmmatrix(dimension());
   ihessian_.restore(s);
-  update_.restore_state(s);
+  update_ << SavableState::restore_state(s);
   s.get(accuracy_);
   s.get(take_newton_step_);
   s.get(maxabs_gradient);
-  if (s.version(static_class_desc()) > 1) {
+  if (s.version(::class_desc<QNewtonOpt>()) > 1) {
     s.get(print_hessian_);
     s.get(print_x_);
     s.get(print_gradient_);
@@ -111,7 +99,7 @@ QNewtonOpt::QNewtonOpt(StateIn&s):
     print_x_ = 0;
     print_gradient_ = 0;
   }
-  lineopt_.restore_state(s);
+  lineopt_ << SavableState::restore_state(s);
 }
 
 QNewtonOpt::~QNewtonOpt()
@@ -123,14 +111,14 @@ QNewtonOpt::save_data_state(StateOut&s)
 {
   Optimize::save_data_state(s);
   ihessian_.save(s);
-  update_.save_state(s);
+  SavableState::save_state(update_.pointer(),s);
   s.put(accuracy_);
   s.put(take_newton_step_);
   s.put(maxabs_gradient);
   s.put(print_hessian_);
   s.put(print_x_);
   s.put(print_gradient_);
-  lineopt_.save_state(s);
+  SavableState::save_state(lineopt_.pointer(),s);
 }
 
 void
@@ -277,7 +265,7 @@ QNewtonOpt::update()
        << scprintf("taking step of size %f", tot) << endl;
   
   function()->set_x(xnext);
-  RefNonlinearTransform t = function()->change_coordinates();
+  Ref<NonlinearTransform> t = function()->change_coordinates();
   apply_transform(t);
 
   // do a line min step next time
@@ -291,7 +279,7 @@ QNewtonOpt::update()
 }
 
 void
-QNewtonOpt::apply_transform(const RefNonlinearTransform &t)
+QNewtonOpt::apply_transform(const Ref<NonlinearTransform> &t)
 {
   if (t.null()) return;
   Optimize::apply_transform(t);

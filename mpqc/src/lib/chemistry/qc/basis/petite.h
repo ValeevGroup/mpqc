@@ -104,7 +104,7 @@ struct SO_block {
 // //////////////////////////////////////////////////////////////////////////
 // this should only be used from within a SymmGaussianBasisSet
 
-class PetiteList : public VRefCount {
+class PetiteList : public RefCount {
   private:
     int natom_;
     int nshell_;
@@ -113,8 +113,8 @@ class PetiteList : public VRefCount {
     int nblocks_;
     int c1_;
 
-    RefGaussianBasisSet gbs_;
-    RefIntegral ints_;
+    Ref<GaussianBasisSet> gbs_;
+    Ref<Integral> ints_;
     
     char *p1_;        // p1[n] is 1 if shell n is in the group P1
     int **atom_map_;  // atom_map[n][g] is the atom that symop g maps atom n
@@ -128,7 +128,7 @@ class PetiteList : public VRefCount {
     void init();
 
   public:
-    PetiteList(const RefGaussianBasisSet&, const RefIntegral&);
+    PetiteList(const Ref<GaussianBasisSet>&, const Ref<Integral>&);
     ~PetiteList();
 
     int nirrep() const { return nirrep_; }
@@ -202,7 +202,7 @@ PetiteList::in_p4(int ij, int kl, int i, int j, int k, int l) const
   return ng_/nijkl;
 }
 
-REF_dec(PetiteList);
+
 
 #endif
 

@@ -40,8 +40,6 @@
  read in again with StateInText.
  */
 class StateOutText: public StateOutFile {
-#   define CLASSNAME StateOutText
-#   include <util/class/classd.h>
   private:
     // do not allow copy constructor or assignment
     StateOutText(const StateOutText&);
@@ -54,7 +52,7 @@ class StateOutText: public StateOutFile {
     void newline();
     void start_array();
     void end_array();
-    int putobject(const RefSavableState &);
+    int putobject(const Ref<SavableState> &);
     int putparents(const ClassDesc*);
   public:
     StateOutText();
@@ -83,9 +81,6 @@ class StateOutText: public StateOutFile {
 /** Reads state information written with StateOutText.
  */
 class StateInText: public StateInFile {
-#   define CLASSNAME StateInText
-#   define HAVE_KEYVAL_CTOR
-#   include <util/class/classd.h>
   private:
     // do not allow copy constructor or assignment
     StateInText(const StateInText&);
@@ -105,14 +100,14 @@ class StateInText: public StateInFile {
     void newline();
     void start_array();
     void end_array();
-    int  getobject(RefSavableState &);
+    int  getobject(Ref<SavableState> &);
 
     void abort();
   public:
     StateInText();
     StateInText(std::istream& s);
     StateInText(const char *);
-    StateInText(const RefKeyVal &);
+    StateInText(const Ref<KeyVal> &);
     ~StateInText();
     int getstring(char*&);
     int get_array_char(char*,int);

@@ -43,8 +43,8 @@ CorrelationTable::CorrelationTable():
 {
 }
 
-CorrelationTable::CorrelationTable(const RefPointGroup& group,
-                                   const RefPointGroup& subgroup):
+CorrelationTable::CorrelationTable(const Ref<PointGroup>& group,
+                                   const Ref<PointGroup>& subgroup):
   n_(0),
   ngamma_(0),
   gamma_(0)
@@ -63,8 +63,8 @@ CorrelationTable::~CorrelationTable()
 }
 
 int
-CorrelationTable::initialize_table(const RefPointGroup& group,
-                                   const RefPointGroup& subgroup)
+CorrelationTable::initialize_table(const Ref<PointGroup>& group,
+                                   const Ref<PointGroup>& subgroup)
 {
   clear();
 

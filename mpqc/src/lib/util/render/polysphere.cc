@@ -91,7 +91,7 @@ class triangle {
 static void
 subdivide(int level, int maxlevel,
           edge* edges, triangle* triangles,
-          int nv, int ne, int nf, const RefRenderedPolygons& poly)
+          int nv, int ne, int nf, const Ref<RenderedPolygons>& poly)
 {
   int i;
   
@@ -207,7 +207,7 @@ subdivide(int level, int maxlevel,
 }
 
 void
-polysphere(int level, const RefRenderedPolygons& poly)
+polysphere(int level, const Ref<RenderedPolygons>& poly)
 {
   int i;
 

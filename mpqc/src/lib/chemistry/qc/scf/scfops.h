@@ -48,7 +48,7 @@ class SCFEnergy : public SCElementOp2 {
 
     int has_collect();
     void defer_collect(int h);
-    void collect(const RefMessageGrp&grp);
+    void collect(const Ref<MessageGrp>&grp);
     double result();
     void reset();
 

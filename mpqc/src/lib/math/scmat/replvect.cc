@@ -41,17 +41,9 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // ReplSCVector member functions
 
-#define CLASSNAME ReplSCVector
-#define PARENTS public SCVector
-//#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-ReplSCVector::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCVector::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ReplSCVector_cd(
+  typeid(ReplSCVector),"ReplSCVector",1,"public SCVector",
+  0, 0, 0);
 
 ReplSCVector::ReplSCVector(const RefSCDimension&a,ReplSCMatrixKit*k):
   SCVector(a,k)
@@ -128,8 +120,8 @@ ReplSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b)
 {
   const char* name = "ReplSCVector::accumulate_product_rv";
   // make sure that the arguments are of the correct type
-  ReplSCMatrix* la = ReplSCMatrix::require_castdown(a,name);
-  ReplSCVector* lb = ReplSCVector::require_castdown(b,name);
+  ReplSCMatrix* la = require_dynamic_cast<ReplSCMatrix*>(a,name);
+  ReplSCVector* lb = require_dynamic_cast<ReplSCVector*>(b,name);
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
@@ -151,8 +143,8 @@ ReplSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b)
 {
   const char* name = "ReplSCVector::accumulate_product_sv";
   // make sure that the arguments are of the correct type
-  ReplSymmSCMatrix* la = ReplSymmSCMatrix::require_castdown(a,name);
-  ReplSCVector* lb = ReplSCVector::require_castdown(b,name);
+  ReplSymmSCMatrix* la = require_dynamic_cast<ReplSymmSCMatrix*>(a,name);
+  ReplSCVector* lb = require_dynamic_cast<ReplSCVector*>(b,name);
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim()) || !la->dim()->equiv(lb->dim())) {
@@ -184,7 +176,7 @@ ReplSCVector::accumulate(const SCVector*a)
 {
   // make sure that the argument is of the correct type
   const ReplSCVector* la
-    = ReplSCVector::require_const_castdown(a,"ReplSCVector::accumulate");
+    = require_dynamic_cast<const ReplSCVector*>(a,"ReplSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -203,7 +195,7 @@ ReplSCVector::accumulate(const SCMatrix*a)
 {
   // make sure that the argument is of the correct type
   const ReplSCMatrix *la
-    = ReplSCMatrix::require_const_castdown(a,"ReplSCVector::accumulate");
+    = require_dynamic_cast<const ReplSCMatrix*>(a,"ReplSCVector::accumulate");
 
   // make sure that the dimensions match
   if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)
@@ -231,7 +223,7 @@ ReplSCVector::assign_v(SCVector*a)
 {
   // make sure that the argument is of the correct type
   ReplSCVector* la
-    = ReplSCVector::require_castdown(a,"ReplSCVector::assign_v");
+    = require_dynamic_cast<ReplSCVector*>(a,"ReplSCVector::assign_v");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -258,7 +250,7 @@ ReplSCVector::scalar_product(SCVector*a)
 {
   // make sure that the argument is of the correct type
   ReplSCVector* la
-    = ReplSCVector::require_castdown(a,"ReplSCVector::scalar_product");
+    = require_dynamic_cast<ReplSCVector*>(a,"ReplSCVector::scalar_product");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -275,7 +267,7 @@ ReplSCVector::scalar_product(SCVector*a)
 }
 
 void
-ReplSCVector::element_op(const RefSCElementOp& op)
+ReplSCVector::element_op(const Ref<SCElementOp>& op)
 {
   if (op->has_side_effects()) before_elemop();
   SCMatrixBlockListIter i;
@@ -287,11 +279,11 @@ ReplSCVector::element_op(const RefSCElementOp& op)
 }
 
 void
-ReplSCVector::element_op(const RefSCElementOp2& op,
+ReplSCVector::element_op(const Ref<SCElementOp2>& op,
                           SCVector* m)
 {
   ReplSCVector *lm
-      = ReplSCVector::require_castdown(m, "ReplSCVector::element_op");
+      = require_dynamic_cast<ReplSCVector*>(m, "ReplSCVector::element_op");
 
   if (!dim()->equiv(lm->dim())) {
       ExEnv::err() << indent << "ReplSCVector: bad element_op\n";
@@ -312,13 +304,13 @@ ReplSCVector::element_op(const RefSCElementOp2& op,
 }
 
 void
-ReplSCVector::element_op(const RefSCElementOp3& op,
+ReplSCVector::element_op(const Ref<SCElementOp3>& op,
                           SCVector* m,SCVector* n)
 {
   ReplSCVector *lm
-      = ReplSCVector::require_castdown(m, "ReplSCVector::element_op");
+      = require_dynamic_cast<ReplSCVector*>(m, "ReplSCVector::element_op");
   ReplSCVector *ln
-      = ReplSCVector::require_castdown(n, "ReplSCVector::element_op");
+      = require_dynamic_cast<ReplSCVector*>(n, "ReplSCVector::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
       ExEnv::err() << indent << "ReplSCVector: bad element_op\n";
@@ -376,7 +368,7 @@ ReplSCVector::vprint(const char *title, ostream& os, int prec) const
   os.flush();
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 ReplSCVector::local_blocks(SCMatrixSubblockIter::Access access)
 {
   return new ReplSCMatrixListSubblockIter(access, blocklist,
@@ -384,7 +376,7 @@ ReplSCVector::local_blocks(SCMatrixSubblockIter::Access access)
                                           vector, d->n());
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 ReplSCVector::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
@@ -393,17 +385,17 @@ ReplSCVector::all_blocks(SCMatrixSubblockIter::Access access)
            << endl;
       abort();
     }
-  RefSCMatrixBlockList allblocklist = new SCMatrixBlockList();
+  Ref<SCMatrixBlockList> allblocklist = new SCMatrixBlockList();
   allblocklist->insert(new SCVectorSimpleSubBlock(0, d->n(), 0, vector));
   return new ReplSCMatrixListSubblockIter(access, allblocklist,
                                           messagegrp(),
                                           vector, d->n());
 }
 
-RefReplSCMatrixKit
+Ref<ReplSCMatrixKit>
 ReplSCVector::skit()
 {
-  return ReplSCMatrixKit::castdown(kit().pointer());
+  return dynamic_cast<ReplSCMatrixKit*>(kit().pointer());
 }
 
 /////////////////////////////////////////////////////////////////////////////

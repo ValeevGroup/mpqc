@@ -41,10 +41,10 @@
 /// Distributes shell pairs either statically or dynamically.
 class DistShellPair {
   private:
-    RefMessageGrp msg_;
+    Ref<MessageGrp> msg_;
     int nthread_;
-    RefThreadLock lock_;
-    RefGaussianBasisSet basis_;
+    Ref<ThreadLock> lock_;
+    Ref<GaussianBasisSet> basis_;
     int dynamic_;
     int debug_;
     int print_percent_;
@@ -63,9 +63,9 @@ class DistShellPair {
     int print_interval_;
     int print_index_;
   public:
-    DistShellPair(const RefMessageGrp &, int nthread, int mythread,
-                  const RefThreadLock &,
-                  const RefGaussianBasisSet &);
+    DistShellPair(const Ref<MessageGrp> &, int nthread, int mythread,
+                  const Ref<ThreadLock> &,
+                  const Ref<GaussianBasisSet> &);
     ~DistShellPair();
     /// Resets to the first shell.
     void init();

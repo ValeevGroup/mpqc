@@ -38,8 +38,6 @@
 class.  This is for active message systems that manipulate messages in
 terms of long int message identifiers.  */
 class MIDMemoryGrp: public ActiveMsgMemoryGrp {
-#define CLASSNAME MIDMemoryGrp
-#include <util/class/classd.h>
   public:
     // This is public so memory handler functions can call it.
     void handler(long *mid = 0);
@@ -94,8 +92,8 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
   public:
     MemoryDataRequest &data_request_buffer() { return data_request_buffer_; }
 
-    MIDMemoryGrp(const RefMessageGrp& msg);
-    MIDMemoryGrp(const RefKeyVal& msg);
+    MIDMemoryGrp(const Ref<MessageGrp>& msg);
+    MIDMemoryGrp(const Ref<KeyVal>& msg);
     ~MIDMemoryGrp();
 
     void activate();

@@ -42,9 +42,6 @@ Unfortunately, this class interacts badly with most MPI implementions, so
 you will probably have very limited success using it.  */
 
 class MPIMemoryGrp: public MIDMemoryGrp {
-#define CLASSNAME MPIMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   private:
     enum { max_mid = 3 };
     int mid_ready_[max_mid];
@@ -62,8 +59,8 @@ class MPIMemoryGrp: public MIDMemoryGrp {
     long wait(long, long = -1);
     int probe(long);
   public:
-    MPIMemoryGrp(const RefMessageGrp& msg);
-    MPIMemoryGrp(const RefKeyVal &);
+    MPIMemoryGrp(const Ref<MessageGrp>& msg);
+    MPIMemoryGrp(const Ref<KeyVal> &);
     ~MPIMemoryGrp();
     void deactivate();
 };

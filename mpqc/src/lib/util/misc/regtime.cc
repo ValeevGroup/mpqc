@@ -315,19 +315,10 @@ TimedRegion::flops_exit(double f)
 
 //////////////////////////////////////////////////////////////////////
 
-#define CLASSNAME RegionTimer
-#define PARENTS public DescribedClass
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-RegionTimer::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc RegionTimer_cd(
+    typeid(RegionTimer),"RegionTimer",1,"public DescribedClass");
 
-RegionTimer::RegionTimer(const RefKeyVal &keyval)
+RegionTimer::RegionTimer(const Ref<KeyVal> &keyval)
 {
   KeyValValueboolean yes(1);
   KeyValValueboolean no(0);
@@ -690,7 +681,7 @@ RegionTimer::print(ostream& o) const
   delete[] depth;
 }
 
-static RefRegionTimer default_regtimer;
+static Ref<RegionTimer> default_regtimer;
 
 RegionTimer *
 RegionTimer::default_regiontimer()
@@ -699,7 +690,7 @@ RegionTimer::default_regiontimer()
 }
 
 void
-RegionTimer::set_default_regiontimer(const RefRegionTimer& t)
+RegionTimer::set_default_regiontimer(const Ref<RegionTimer>& t)
 {
   default_regtimer = t;
 }

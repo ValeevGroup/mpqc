@@ -39,14 +39,14 @@ ClassDesc* f0 = &ShmMessageGrp::class_desc_;
 ClassDesc* f1 = &MPIMessageGrp::class_desc_;
 #endif
 
-void matrixtest(RefSCMatrixKit kit, RefKeyVal keyval,
+void matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
                 RefSCDimension d1,RefSCDimension d2,RefSCDimension d3);
 
 main(int argc, char** argv)
 {
-  RefKeyVal keyval = new ParsedKeyVal(SRCDIR "/matrixtest.in");
+  Ref<KeyVal> keyval = new ParsedKeyVal(SRCDIR "/matrixtest.in");
 
-  RefMessageGrp msg = MessageGrp::initial_messagegrp(argc, argv);
+  Ref<MessageGrp> msg = MessageGrp::initial_messagegrp(argc, argv);
 
   if (msg.null()) {
       msg = keyval->describedclassvalue("messagegrp");
@@ -59,7 +59,7 @@ main(int argc, char** argv)
 
   MessageGrp::set_default_messagegrp(msg);
 
-  RefDebugger d = keyval->describedclassvalue("debugger");
+  Ref<Debugger> d = keyval->describedclassvalue("debugger");
   if (d.nonnull()) {
       d->set_prefix(msg->me());
       d->set_exec(argv[0]);
@@ -67,7 +67,7 @@ main(int argc, char** argv)
 
   // test the blocklist send and receive
   if (msg->n() > 1) {
-      RefSCMatrixBlockList l = new SCMatrixBlockList;
+      Ref<SCMatrixBlockList> l = new SCMatrixBlockList;
       l->append(new SCMatrixRectBlock(0,5,0,2));
       l->append(new SCMatrixRectBlock(0,3,0,11));
       l->append(new SCMatrixLTriBlock(7,13));
@@ -86,7 +86,7 @@ main(int argc, char** argv)
         }
     }
 
-  RefSCMatrixKit kit = new DistSCMatrixKit;
+  Ref<SCMatrixKit> kit = new DistSCMatrixKit;
   RefSCDimension d1(keyval->describedclassvalue("d1"));
   RefSCDimension d2(keyval->describedclassvalue("d2"));
   RefSCDimension d3(keyval->describedclassvalue("d3"));

@@ -4,8 +4,8 @@
 
 main(int argc, char *argv[])
 {
-  RefPointGroup pg = new PointGroup(argv[1]);
-  RefPointGroup pg2;
+  Ref<PointGroup> pg = new PointGroup(argv[1]);
+  Ref<PointGroup> pg2;
   if (argc > 2) pg2 = new PointGroup(argv[2]);
 
   //pg.char_table().print();

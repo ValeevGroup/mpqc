@@ -53,20 +53,9 @@
 #include <chemistry/molecule/localdef.h>
 
 
-#define CLASSNAME TorsSimpleCo
-#define PARENTS public SimpleCo
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-TorsSimpleCo::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SimpleCo::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc TorsSimpleCo_cd(
+  typeid(TorsSimpleCo),"TorsSimpleCo",1,"public SimpleCo",
+  create<TorsSimpleCo>, create<TorsSimpleCo>, create<TorsSimpleCo>);
 SimpleCo_IMPL(TorsSimpleCo)
 
 
@@ -88,7 +77,7 @@ TorsSimpleCo::~TorsSimpleCo()
 {
 }
 
-TorsSimpleCo::TorsSimpleCo(const RefKeyVal &kv):
+TorsSimpleCo::TorsSimpleCo(const Ref<KeyVal> &kv):
   SimpleCo(kv,4)
 {
 }

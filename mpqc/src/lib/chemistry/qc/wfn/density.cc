@@ -38,26 +38,17 @@
 
 using namespace std;
 
-#define CLASSNAME ElectronDensity
-#define PARENTS public Volume
-#define HAVE_KEYVAL_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-ElectronDensity::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Volume::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ElectronDensity_cd(
+  typeid(ElectronDensity),"ElectronDensity",1,"public Volume",
+  0, create<ElectronDensity>, 0);
 
-ElectronDensity::ElectronDensity(const RefKeyVal &keyval):
+ElectronDensity::ElectronDensity(const Ref<KeyVal> &keyval):
   Volume(keyval)
 {
-  wfn_ = keyval->describedclassvalue("wfn");
+  wfn_ << keyval->describedclassvalue("wfn");
 }
 
-ElectronDensity::ElectronDensity(const RefWavefunction& wfn):
+ElectronDensity::ElectronDensity(const Ref<Wavefunction>& wfn):
   Volume(),
   wfn_(wfn)
 {
@@ -121,22 +112,14 @@ ElectronDensity::boundingbox(double valuemin,
 /////////////////////////////////////////////////////////////////////////////
 // DensityColorizer
 
-#define CLASSNAME DensityColorizer
-#define PARENTS public MoleculeColorizer
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-DensityColorizer::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MoleculeColorizer::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc DensityColorizer_cd(
+  typeid(DensityColorizer),"DensityColorizer",1,"public MoleculeColorizer",
+  0, create<DensityColorizer>, 0);
 
-DensityColorizer::DensityColorizer(const RefKeyVal&keyval):
+DensityColorizer::DensityColorizer(const Ref<KeyVal>&keyval):
   MoleculeColorizer(keyval)
 {
-  wfn_ = keyval->describedclassvalue("wfn");
+  wfn_ << keyval->describedclassvalue("wfn");
   reference_ = keyval->doublevalue("reference");
   if (keyval->error() == KeyVal::OK) have_reference_ = 1;
   else have_reference_ = 0;
@@ -150,7 +133,7 @@ DensityColorizer::~DensityColorizer()
 }
 
 void
-DensityColorizer::colorize(const RefRenderedPolygons &poly)
+DensityColorizer::colorize(const Ref<RenderedPolygons> &poly)
 {
   const double base = 0.3;
   int i;
@@ -210,22 +193,14 @@ DensityColorizer::colorize(const RefRenderedPolygons &poly)
 /////////////////////////////////////////////////////////////////////////////
 // GradDensityColorizer
 
-#define CLASSNAME GradDensityColorizer
-#define PARENTS public MoleculeColorizer
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-GradDensityColorizer::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MoleculeColorizer::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc GradDensityColorizer_cd(
+  typeid(GradDensityColorizer),"GradDensityColorizer",1,"public MoleculeColorizer",
+  0, create<GradDensityColorizer>, 0);
 
-GradDensityColorizer::GradDensityColorizer(const RefKeyVal&keyval):
+GradDensityColorizer::GradDensityColorizer(const Ref<KeyVal>&keyval):
   MoleculeColorizer(keyval)
 {
-  wfn_ = keyval->describedclassvalue("wfn");
+  wfn_ << keyval->describedclassvalue("wfn");
   reference_ = keyval->doublevalue("reference");
   if (keyval->error() == KeyVal::OK) have_reference_ = 1;
   else have_reference_ = 0;
@@ -239,7 +214,7 @@ GradDensityColorizer::~GradDensityColorizer()
 }
 
 void
-GradDensityColorizer::colorize(const RefRenderedPolygons &poly)
+GradDensityColorizer::colorize(const Ref<RenderedPolygons> &poly)
 {
   const double base = 0.3;
   int i;

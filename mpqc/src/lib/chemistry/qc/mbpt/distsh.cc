@@ -81,10 +81,10 @@ iquicksort(int *item,int *index,int n)
 /////////////////////////////////////////////////////////////////
 // DistShellPair class
 
-DistShellPair::DistShellPair(const RefMessageGrp & msg,
+DistShellPair::DistShellPair(const Ref<MessageGrp> & msg,
                              int nthread, int mythread,
-                             const RefThreadLock & lock,
-                             const RefGaussianBasisSet & basis):
+                             const Ref<ThreadLock> & lock,
+                             const Ref<GaussianBasisSet> & basis):
   msg_(msg),
   nthread_(nthread),
   mythread_(mythread),

@@ -36,14 +36,8 @@
 #include <util/state/state.h>
 #include <util/ref/ref.h>
 
-SavableState_REF_fwddec(Units);
-
 /// The Units class is used to perform unit converions.
 class Units: public SavableState {
-#define CLASSNAME Units
-#define HAVE_STATEIN_CTOR
-#include <util/state/stated.h>
-#include <util/class/classd.h>
   protected:
     char *strrep_;
     double to_atomic_units_;
@@ -64,9 +58,9 @@ class Units: public SavableState {
     ~Units();
 
     /// The conversion factor from this to u.
-    double to(const RefUnits &u) const;
+    double to(const Ref<Units> &u) const;
     /// The conversion factor from u to this.
-    double from(const RefUnits &u) const;
+    double from(const Ref<Units> &u) const;
 
     /// The conversion factor from this to atomic units.
     double to_atomic_units() const;
@@ -79,7 +73,7 @@ class Units: public SavableState {
     /// Save the state of the Units object to s.
     void save_data_state(StateOut&s);
 };
-SavableState_REF_dec(Units);
+
 
 #endif
 

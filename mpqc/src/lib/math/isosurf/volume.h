@@ -38,9 +38,6 @@
 
 /** A Volume is a Function of three variables. */
 class Volume: public Function {
-#   define CLASSNAME Volume
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   private:
     double _interp_acc;
   protected:
@@ -51,7 +48,7 @@ class Volume: public Function {
     virtual void failure(const char*);
   public:
     Volume();
-    Volume(const RefKeyVal&);
+    Volume(const Ref<KeyVal>&);
     ~Volume();
 
     void set_gradient(const SCVector3& g);
@@ -78,7 +75,7 @@ class Volume: public Function {
                        SCVector3& result);
 };
 
-SavableState_REF_dec(Volume);
+
 
 #ifdef INLINE_FUNCTIONS
 #include <math/isosurf/volume_i.h>

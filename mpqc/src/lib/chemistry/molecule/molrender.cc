@@ -42,23 +42,15 @@
 ////////////////////////////////////////////////////////////////
 // RenderedMolecule
 
-DescribedClass_REF_def(RenderedMolecule);
-#define CLASSNAME RenderedMolecule
-#define PARENTS public RenderedObject
-#include <util/class/classia.h>
-void *
-RenderedMolecule::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = RenderedObject::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc RenderedMolecule_cd(
+  typeid(RenderedMolecule),"RenderedMolecule",1,"public RenderedObject",
+  0, 0, 0);
 
-RenderedMolecule::RenderedMolecule(const RefKeyVal& keyval):
-  RenderedObject(keyval),
-  mol_(keyval->describedclassvalue("molecule")),
-  atominfo_(keyval->describedclassvalue("atominfo"))
+RenderedMolecule::RenderedMolecule(const Ref<KeyVal>& keyval):
+  RenderedObject(keyval)
 {
+  mol_ << keyval->describedclassvalue("molecule");
+  atominfo_ << keyval->describedclassvalue("atominfo");
   if (atominfo_.null()) {
       atominfo_ = new AtomInfo();
     }
@@ -75,7 +67,7 @@ RenderedMolecule::~RenderedMolecule()
 }
 
 void
-RenderedMolecule::render(const RefRender& render)
+RenderedMolecule::render(const Ref<Render>& render)
 {
   object_->render(render);
 }
@@ -83,19 +75,11 @@ RenderedMolecule::render(const RefRender& render)
 ////////////////////////////////////////////////////////////////
 // RenderedBallMolecule
 
-#define CLASSNAME RenderedBallMolecule
-#define PARENTS public RenderedMolecule
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-RenderedBallMolecule::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = RenderedMolecule::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc RenderedBallMolecule_cd(
+  typeid(RenderedBallMolecule),"RenderedBallMolecule",1,"public RenderedMolecule",
+  0, create<RenderedBallMolecule>, 0);
 
-RenderedBallMolecule::RenderedBallMolecule(const RefKeyVal& keyval):
+RenderedBallMolecule::RenderedBallMolecule(const Ref<KeyVal>& keyval):
   RenderedMolecule(keyval)
 {
   init();
@@ -108,21 +92,21 @@ RenderedBallMolecule::~RenderedBallMolecule()
 void
 RenderedBallMolecule::init()
 {
-  RefRenderedObjectSet set = new RenderedObjectSet;
+  Ref<RenderedObjectSet> set = new RenderedObjectSet;
 
   for (int i=0; i<mol_->natom(); i++) {
-      RefRenderedObject atom = new RenderedSphere;
+      Ref<RenderedObject> atom = new RenderedSphere;
 
       int Z = mol_->Z(i);
 
-      RefMaterial material = new Material;
+      Ref<Material> material = new Material;
       Color color(atominfo_->red(Z),
                   atominfo_->green(Z),
                   atominfo_->blue(Z));
       material->diffuse().set(color);
       material->ambient().set(color);
 
-      RefTransform transform = new Transform;
+      Ref<Transform> transform = new Transform;
       transform->scale(atominfo_->vdw_radius(Z));
       transform->translate(mol_->r(i,0), mol_->r(i,1), mol_->r(i,2));
 
@@ -138,19 +122,11 @@ RenderedBallMolecule::init()
 ////////////////////////////////////////////////////////////////
 // RenderedStickMolecule
 
-#define CLASSNAME RenderedStickMolecule
-#define PARENTS public RenderedMolecule
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-RenderedStickMolecule::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = RenderedMolecule::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc RenderedStickMolecule_cd(
+  typeid(RenderedStickMolecule),"RenderedStickMolecule",1,"public RenderedMolecule",
+  0, create<RenderedStickMolecule>, 0);
 
-RenderedStickMolecule::RenderedStickMolecule(const RefKeyVal& keyval):
+RenderedStickMolecule::RenderedStickMolecule(const Ref<KeyVal>& keyval):
   RenderedMolecule(keyval)
 {
   use_color_ = keyval->booleanvalue("color");
@@ -163,7 +139,7 @@ RenderedStickMolecule::~RenderedStickMolecule()
 }
 
 static int
-bonding(const RefMolecule& m, const RefAtomInfo& a, int i, int j)
+bonding(const Ref<Molecule>& m, const Ref<AtomInfo>& a, int i, int j)
 {
   SCVector3 ri(m->r(i));
   SCVector3 rj(m->r(j));
@@ -181,7 +157,7 @@ RenderedStickMolecule::init()
   int nbonds;
   int natoms = mol_->natom();
   
-  RefRenderedPolylines o = new RenderedPolylines;
+  Ref<RenderedPolylines> o = new RenderedPolylines;
 
   // count the number of bonds
   nbonds = 0;
@@ -254,23 +230,15 @@ RenderedStickMolecule::init()
 ////////////////////////////////////////////////////////////////
 // RenderedMolecularSurface
 
-#define CLASSNAME RenderedMolecularSurface
-#define PARENTS public RenderedMolecule
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-RenderedMolecularSurface::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = RenderedMolecule::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc RenderedMolecularSurface_cd(
+  typeid(RenderedMolecularSurface),"RenderedMolecularSurface",1,"public RenderedMolecule",
+  0, create<RenderedMolecularSurface>, 0);
 
-RenderedMolecularSurface::RenderedMolecularSurface(const RefKeyVal& keyval):
+RenderedMolecularSurface::RenderedMolecularSurface(const Ref<KeyVal>& keyval):
   RenderedMolecule(keyval)
 {
-  surf_ = keyval->describedclassvalue("surface");
-  colorizer_ = keyval->describedclassvalue("colorizer");
+  surf_ << keyval->describedclassvalue("surface");
+  colorizer_ << keyval->describedclassvalue("colorizer");
   if (colorizer_.null())
       colorizer_ = new AtomProximityColorizer(mol_,atominfo_);
   init(0);
@@ -295,7 +263,7 @@ RenderedMolecularSurface::init(int reinit_surf)
   int ntriangle = surf_->ntriangle();
   int natom = mol_->natom();
 
-  RefRenderedPolygons o = new RenderedPolygons;
+  Ref<RenderedPolygons> o = new RenderedPolygons;
 
   o->initialize(nvertex, ntriangle, RenderedPolygons::Vertex);
 
@@ -339,26 +307,18 @@ RenderedMolecularSurface::init(int reinit_surf)
 /////////////////////////////////////////////////////////////////////////////
 // MoleculeColorizer
 
-DescribedClass_REF_def(MoleculeColorizer);
-#define CLASSNAME MoleculeColorizer
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-MoleculeColorizer::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc MoleculeColorizer_cd(
+  typeid(MoleculeColorizer),"MoleculeColorizer",1,"public DescribedClass",
+  0, 0, 0);
 
-MoleculeColorizer::MoleculeColorizer(const RefMolecule&mol)
+MoleculeColorizer::MoleculeColorizer(const Ref<Molecule>&mol)
 {
   mol_ = mol;
 }
 
-MoleculeColorizer::MoleculeColorizer(const RefKeyVal&keyval)
+MoleculeColorizer::MoleculeColorizer(const Ref<KeyVal>&keyval)
 {
-  mol_ = keyval->describedclassvalue("molecule");
+  mol_ << keyval->describedclassvalue("molecule");
 }
 
 MoleculeColorizer::~MoleculeColorizer()
@@ -368,29 +328,21 @@ MoleculeColorizer::~MoleculeColorizer()
 /////////////////////////////////////////////////////////////////////////////
 // AtomProximityColorizer
 
-#define CLASSNAME AtomProximityColorizer
-#define PARENTS public MoleculeColorizer
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classi.h>
-void *
-AtomProximityColorizer::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MoleculeColorizer::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc AtomProximityColorizer_cd(
+  typeid(AtomProximityColorizer),"AtomProximityColorizer",1,"public MoleculeColorizer",
+  0, create<AtomProximityColorizer>, 0);
 
-AtomProximityColorizer::AtomProximityColorizer(const RefMolecule &mol,
-                                               const RefAtomInfo &ai):
+AtomProximityColorizer::AtomProximityColorizer(const Ref<Molecule> &mol,
+                                               const Ref<AtomInfo> &ai):
   MoleculeColorizer(mol)
 {
   atominfo_ = ai;
 }
 
-AtomProximityColorizer::AtomProximityColorizer(const RefKeyVal&keyval):
+AtomProximityColorizer::AtomProximityColorizer(const Ref<KeyVal>&keyval):
   MoleculeColorizer(keyval)
 {
-  atominfo_ = keyval->describedclassvalue("atominfo");
+  atominfo_ << keyval->describedclassvalue("atominfo");
   if (atominfo_.null()) {
       atominfo_ = new AtomInfo();
     }
@@ -465,7 +417,7 @@ compute_color(int n, double* axyz, double* argb, double* arad,
 }
 
 void
-AtomProximityColorizer::colorize(const RefRenderedPolygons &poly)
+AtomProximityColorizer::colorize(const Ref<RenderedPolygons> &poly)
 {
   int natom = mol_->natom();
   int nvertex = poly->nvertex();

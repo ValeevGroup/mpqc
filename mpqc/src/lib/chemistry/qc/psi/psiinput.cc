@@ -31,15 +31,15 @@ PSI_Input::PSI_Input()
 {
   printf("in default constructor\n");
 }
-PSI_Input::PSI_Input(const RefKeyVal&keyval)
+PSI_Input::PSI_Input(const Ref<KeyVal>&keyval)
 {
   int i,n;
   int tmp;
   char *ts;
 
   indentation = 0;
-  _mol = keyval->describedclassvalue("molecule");
-  _gbs = keyval->describedclassvalue("psibasis");
+  _mol << keyval->describedclassvalue("molecule");
+  _gbs << keyval->describedclassvalue("psibasis");
   _gbs->print();
   // _gbs = keyval->describedclassvalue("basis");
   _origpg = new PointGroup(*_mol->point_group().pointer());
@@ -48,7 +48,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
   socc = new int[nirrep];
   frozen_docc = new int[nirrep];
   frozen_uocc = new int[nirrep];
-  RefKeyVal psifiles = new PrefixKeyVal("psifiles",keyval);
+  Ref<KeyVal> psifiles = new PrefixKeyVal("psifiles",keyval);
 
   memory = keyval->intvalue("memory");
   if (keyval->error() != KeyVal::OK) {
@@ -82,9 +82,10 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
   label = keyval->pcharvalue("label");
   _test = keyval->booleanvalue("test");
 
-  RefOneBodyWavefunction obwfn = keyval->describedclassvalue("obwfn");
+  Ref<OneBodyWavefunction> obwfn;
+  obwfn << keyval->describedclassvalue("obwfn");
   const double epsilon = 0.001;
-  RefPetiteList pl;
+  Ref<PetiteList> pl;
 
   n = keyval->count("docc");
   if (keyval->error() != KeyVal::OK || n != nirrep) {
@@ -385,7 +386,7 @@ PSI_Input::write_basis(void)
   char ts[133];
 
   begin_section("basis");
-  RefAtomInfo atominfo = _mol->atominfo();
+  Ref<AtomInfo> atominfo = _mol->atominfo();
   for (i=0; i<_mol->nunique(); i++) {
     int uniquei = _mol->unique(i);
     sprintf(ts, "%s:SCdefined = (\n", 
@@ -453,7 +454,7 @@ PSI_Input::write_defaults(const char *dertype, const char *wavefn)
        ExEnv::out() << node0 << indent
             << "DOING D2 calc in C2 because of bugs in PSI"
             << endl;
-       RefPointGroup newgrp(new PointGroup("c2",
+       Ref<PointGroup> newgrp(new PointGroup("c2",
                                            _mol->point_group()->symm_frame(),
                                            _mol->point_group()->origin()));
        _mol->set_point_group(newgrp);
@@ -597,7 +598,7 @@ PSI_Input::write_input(void)
   char t2[133];
 
   begin_section("input");
-  RefAtomInfo atominfo = _mol->atominfo();
+  Ref<AtomInfo> atominfo = _mol->atominfo();
   sprintf(t1, "atoms = (");
   for (i=0; i < _mol->nunique(); i++) {
     sprintf(t2, "%s ", atominfo->symbol(_mol->Z(_mol->unique(i))));

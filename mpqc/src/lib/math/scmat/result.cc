@@ -36,8 +36,8 @@
 #include <util/state/state.h>
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
-template class AccResult<RefSCMatrix>;
-template class AccResult<RefSymmSCMatrix>;
-template class AccResult<RefDiagSCMatrix>;
-template class AccResult<RefSCVector>;
+template class AccResult<RefSCMatrix >;
+template class AccResult<RefSymmSCMatrix >;
+template class AccResult<RefDiagSCMatrix >;
+template class AccResult<RefSCVector >;
 #endif

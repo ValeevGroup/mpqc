@@ -36,19 +36,12 @@
 #include <util/state/state.h>
 #include <util/ref/ref.h>
 
-SavableState_REF_fwddec(Debugger);
-
 /** The Debugger class describes what should be done when a catastrophic
 error causes unexpected program termination.  It can try things such as
 start a debugger running where the program died or it can attempt to
 produce a stack traceback showing roughly where the program died.  These
 attempts will not always succeed.  */
 class Debugger: public SavableState {
-#define CLASSNAME Debugger
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
-#include <util/state/stated.h>
-#include <util/class/classd.h>
   protected:
     char *prefix_;
     char *exec_;
@@ -98,7 +91,7 @@ class Debugger: public SavableState {
         debugger.  The default varies with machine.
         
         </dl> */
-    Debugger(const RefKeyVal&);
+    Debugger(const Ref<KeyVal>&);
 
     Debugger(StateIn&);
     ~Debugger();
@@ -150,13 +143,13 @@ class Debugger: public SavableState {
     virtual void got_signal(int sig);
 
     /// Set the global default debugger.  The initial value is null.
-    static void set_default_debugger(const RefDebugger &);
+    static void set_default_debugger(const Ref<Debugger> &);
     /// Return the global default debugger.
     static Debugger *default_debugger();
 
     void save_data_state(StateOut&);
 };
-SavableState_REF_dec(Debugger);
+
 
 #endif
 

@@ -37,6 +37,7 @@
 #include <stdarg.h>
 #include <iostream>
 #include <iomanip>
+#include <typeinfo>
 #include <util/ref/ref.h>
 #include <util/container/avlset.h>
 #include <util/container/avlmap.h>
@@ -117,8 +118,44 @@ class ParentClasses
 };
     
 
-REF_fwddec(KeyVal);
+class KeyVal;
 class StateIn;
+
+/** This is used to pass a function that make void constructor calls to the
+    ClassDesc constructor. */
+template <class T>
+DescribedClass* create()
+{
+  return new T;
+}
+
+/** This is used to pass a function that make KeyVal constructor calls to
+    the ClassDesc constructor. */
+template <class T>
+DescribedClass* create(const Ref<KeyVal>& keyval)
+{
+  return new T(keyval);
+}
+
+/** This is used to pass a function that make StateIn constructor calls to
+    the ClassDesc constructor. */
+template <class T>
+DescribedClass* create(StateIn& statein)
+{
+  return new T(statein);
+}
+
+class type_info_key {
+  private:
+    const std::type_info *ti_;
+  public:
+    type_info_key(): ti_(0) {}
+    type_info_key(const std::type_info *ti): ti_(ti) {}
+    type_info_key& operator=(const type_info_key&);
+    int operator==(const type_info_key&) const;
+    int operator<(const type_info_key&) const;
+    int cmp(const type_info_key&) const;
+};
 
 /** This class is used to contain information about classes.
  Each DescribedClass type has a static ClassDesc
@@ -135,6 +172,7 @@ class ClassDesc: public Identity {
     friend class ParentClasses;
   private:
     static AVLMap<ClassKey,ClassDescP> *all_;
+    static AVLMap<type_info_key,ClassDescP> *type_info_all_;
     static char * classlib_search_path_;
     static AVLSet<ClassKey> *unresolved_parents_;
 
@@ -143,7 +181,7 @@ class ClassDesc: public Identity {
     ParentClasses parents_;
     AVLSet<ClassKey> *children_;
     DescribedClass* (*ctor_)();
-    DescribedClass* (*keyvalctor_)(const RefKeyVal&);
+    DescribedClass* (*keyvalctor_)(const Ref<KeyVal>&);
     DescribedClass* (*stateinctor_)(StateIn&);
 
     void change_parent(ClassDesc*oldcd,ClassDesc*newcd);
@@ -151,10 +189,17 @@ class ClassDesc: public Identity {
     // do not allow copy constructor or assignment
     ClassDesc(const ClassDesc&);
     void operator=(const ClassDesc&);
-  public:
-    ClassDesc(const char*,int=1,const char* p=0,
+
+    // this is used for temporary parent class descriptors
+    ClassDesc(const char*);
+    void init(const char*,int=1,const char* p=0,
               DescribedClass* (*ctor)()=0,
-              DescribedClass* (*keyvalctor)(const RefKeyVal&)=0,
+              DescribedClass* (*keyvalctor)(const Ref<KeyVal>&)=0,
+              DescribedClass* (*stateinctor)(StateIn&)=0);
+  public:
+    ClassDesc(const std::type_info&, const char*,int=1,const char* p=0,
+              DescribedClass* (*ctor)()=0,
+              DescribedClass* (*keyvalctor)(const Ref<KeyVal>&)=0,
               DescribedClass* (*stateinctor)(StateIn&)=0);
     ~ClassDesc();
 
@@ -166,6 +211,8 @@ class ClassDesc: public Identity {
     /** Given the name of the class, return a pointer to the
         class descriptor. */
     static ClassDesc* name_to_class_desc(const char*);
+    /** Given a type_info object return a pointer to the ClassDesc. */
+    static ClassDesc *class_desc(const std::type_info &);
     /// Returns the name of the class.
     const char* name() const { return classname_; }
     /// Returns the version number of the class.
@@ -185,7 +232,7 @@ class ClassDesc: public Identity {
         constructor is used.  If this constructor doesn't exist or a static
         function that calls it with new wasn't passed to this ClassDesc,
         then 0 will be returned. */
-    virtual DescribedClass* create(const RefKeyVal&) const;
+    virtual DescribedClass* create(const Ref<KeyVal>&) const;
     /** Create an instance of DescribedClass with exact type equal to the
         class to which this class descriptor belongs.  The StateIn&
         constructor is used.  If this constructor doesn't exist or a static
@@ -201,146 +248,108 @@ class ClassDesc: public Identity {
 /** Classes which need runtime information about themselves and their
     relationship to other classes can virtually inherit from
     DescribedClass.  This will provide the class with the ability to query
-    its name, query its version, and perform safe castdown operations.
+    its name and its version.
     Furthermore, the class's static ClassDesc can be obtained
     which permits several other operations.  See \ref class for
     more information. */
-class DescribedClass : public VRefCount {
-  private:
-    static ClassDesc class_desc_;
+class DescribedClass : public RefCount {
   public:
     DescribedClass();
     DescribedClass(const DescribedClass&);
     DescribedClass& operator=(const DescribedClass&);
     virtual ~DescribedClass();
-    /** Returns the argument.  This member is more interesting for types
-        that derive from DescribedClass.  In this case the castdown member
-        converts a DescribedClass pointer to the derived type.  If the type
-        of the pointer is not the same as or (perhaps indirectly) derived
-        from the type whose castdown member is being called, then 0 is
-        return.  The return type for derived class is a pointer to the
-        derived class.  This member is implemented by the include files for
-        derived types. */
-    static DescribedClass* castdown(DescribedClass*);
-    /** Returns a pointer to the ClassDesc for the DescribedClass.  Similar
-        static members are implemented for derivatives of DescribedClass by
-        the provided include files. */
-    static const ClassDesc* static_class_desc();
-    /** This returns the unique pointer to the ClassDesc for the object.
-        For derived types, this is declared and implemented for the
-        programmer by the provided include files. */
-    virtual const ClassDesc* class_desc() const;
+    /** This returns the unique pointer to the ClassDesc corresponding
+        to the given type_info object. */
+    ClassDesc* class_desc() const;
     /// Return the name of the object's exact type.
     const char* class_name() const;
     /// Return the version of the class.
     int class_version() const;
-    /** This is a helper function that the programmer must override
-        for derived types. */
-    virtual void* _castdown(const ClassDesc*);
     /// Print the object.
     virtual void print(std::ostream& = ExEnv::out()) const;
   };
 
-/** DCRefBase provides a few utility routines common to all
-    DCRef template instantiations.
-*/
-class DCRefBase: private RefBase {
-  protected:
-    void reference(VRefCount *p);
-    void dereference(VRefCount *p);
+/** Return the ClassDesc corresponding to template argument. */
+template <class T>
+inline ClassDesc *
+class_desc()
+{
+  return ClassDesc::class_desc(typeid(T));
+}
+
+/** Return the ClassDesc corresponding to the exact type for the
+    argument. */
+inline ClassDesc *
+class_desc(DescribedClass *d)
+{
+  return ClassDesc::class_desc(typeid(*d));
+}
+
+/** Attempt to cast a DescribedClass pointer to a DescribedClass
+    descendent.  It is an error for the result to be a null pointer. */
+template<class T>
+inline T
+require_dynamic_cast(DescribedClass*p,const char * errmsg,...)
+{
+  T t = dynamic_cast<T>(p);
+  if (p && !t) {
+      va_list args;
+      va_start(args,errmsg);
+      fprintf(stderr,"A required dynamic_cast failed in: ");
+      vfprintf(stderr,errmsg,args);
+      fprintf(stderr,"\nwanted type \"%s\" but got \"%s\"\n",
+              typeid(T).name(),typeid(p).name());
+      fflush(stderr);
+      va_end(args);
+      abort();
+  }
+  return t;
+}
+
+/** Attempt to cast a const DescribedClass pointer to a DescribedClass
+    descendent.  It is an error for the result to be a null pointer. */
+template<class T>
+inline T
+require_dynamic_cast(const DescribedClass*p,const char * errmsg,...)
+{
+  T t = dynamic_cast<T>(p);
+  if (p && !t) {
+      va_list args;
+      va_start(args,errmsg);
+      fprintf(stderr,"A required dynamic_cast failed in: ");
+      vfprintf(stderr,errmsg,args);
+      fprintf(stderr,"\nwanted type \"%s\" but got \"%s\"\n",
+              typeid(T).name(),typeid(p).name());
+      fflush(stderr);
+      va_end(args);
+      abort();
+  }
+  return t;
+}
+
+/** This, together with ForceLink, is used to force code for particular
+    classes to be linked into executables. */
+template <class A>
+class ForceLinkBase {
   public:
-    DCRefBase() {}
-    virtual ~DCRefBase();
-    /// Returns the DescribedClass pointer for the contained object.
-    virtual DescribedClass* parentpointer() const = 0;
-    /** Requires that a nonnull reference is held.  If not,
-        the program will abort. */
-    void require_nonnull() const;
-    // Ordering relationships.
-    int operator==(const DescribedClass*a) const;
-    int operator!=(const DescribedClass*a) const;
-    int operator>=(const DescribedClass*a) const;
-    int operator<=(const DescribedClass*a) const;
-    int operator> (const DescribedClass*a) const;
-    int operator< (const DescribedClass*a) const;
-    int operator==(const DCRefBase &a) const;
-    int operator!=(const DCRefBase &a) const;
-    int operator>=(const DCRefBase &a) const;
-    int operator<=(const DCRefBase &a) const;
-    int operator> (const DCRefBase &a) const;
-    int operator< (const DCRefBase &a) const;
-    // Miscellaneous utility functions.
-    void warn(const char * msg) const;
-    void warn_ref_to_stack() const;
-    void warn_skip_stack_delete() const;
-    void warn_bad_ref_count() const;
-    void ref_info(VRefCount*p, std::ostream& os) const;
-    void ref_info(std::ostream& os) const;
-    void check_pointer() const;
+    virtual ~ForceLinkBase() {};
+    virtual DescribedClass *create(A) = 0;
 };
-std::ostream &operator<<(std::ostream&,const DCRefBase&);
 
-inline void
-DCRefBase::reference(VRefCount *p)
-{
-  if (p) {
-#if REF_CHECK_STACK
-      if (DO_REF_CHECK_STACK(p)) {
-          DO_REF_UNMANAGE(p);
-          warn_ref_to_stack();
-        }
-#endif
-      p->reference();
-    }
-}
-
-inline void
-DCRefBase::dereference(VRefCount *p)
-{
-  if (p && p->dereference()<=0) {
-      delete p;
-    }
-}
-
-// These files declare template and macro smart pointer classes for
-// DescribedClass objects.  They use macros from util/ref/ref.h.
-#include <util/class/clastmpl.h>
-#ifdef USE_REF_MACROS
-#include <util/class/clasmacr.h>
-#endif
-
-#ifdef USE_REF_MACROS
-#  define DescribedClass_named_REF_dec(name,T) DCRef_declare(T); \
-                                               typedef class DCRef ## T name;
-#  define DescribedClass_named_REF_def(name,T)
-#  define DCRef_define(T)
-#else
-#  define DCRef_declare(T) typedef class DCRef<T> DCRef ## T;
-#  define DescribedClass_named_REF_dec(name,T) typedef class DCRef<T> name; \
-                                             typedef class DCRef<T> DCRef ## T;
-#  ifdef EXPLICIT_TEMPLATE_INSTANTIATION
-#    define DescribedClass_named_REF_def(refname,T) template class DCRef<T>;
-#    define DCRef_define(T) template class DCRef<T>;
-#  else
-#    define DescribedClass_named_REF_def(refname,T)
-#    define DCRef_define(T)
-#  endif
-#endif
-
-// These macros choose a default name for the reference class formed from
-// "Ref" followed by the type name.
-#define DescribedClass_REF_dec(T) DescribedClass_named_REF_dec(Ref ## T,T)
-#define DescribedClass_REF_def(T) DescribedClass_named_REF_def(Ref ## T,T)
-
-// This does forward declarations of REF classes.
-#ifdef USE_REF_MACROS
-#define DescribedClass_REF_fwddec(T) class DCRef ## T; \
-                                     typedef class DCRef ## T Ref ## T;
-#else
-#define DescribedClass_REF_fwddec(T) class T; typedef class DCRef<T> Ref ## T;
-#endif
-
-DescribedClass_REF_dec(DescribedClass);
+/** This, together with ForceLinkBase, is used to force code for particular
+classes to be linked into executables.  Objects are created from input and
+checkpoint files by using class name lookup to find that class's ClassDesc
+object.  The ClassDesc object has members that can create the class.
+Unfortunately, linking in a library doesn't cause code for the the
+ClassDesc, and thus the class itself, to be linked.  ForceLink objects are
+created in linkage.h files for each library.  The code containing the main
+routine for an executable can include these linkage files to force code for
+that library's classes to be linked. */
+template <class T, class A = const Ref<KeyVal> &>
+class ForceLink: public ForceLinkBase<A> {
+  public:
+    DescribedClass *create(A a) { return new T(a); }
+};
 
 #endif
 

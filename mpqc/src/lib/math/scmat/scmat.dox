@@ -68,17 +68,18 @@ DistSCMatrix, DistSymmSCMatrix, DistDiagSCMatrix, and DistSCVector.
 The abstract matrix classes and their derivations are usually not directly
 used by SCMAT users.  The most convenient classes to use are the smart
 pointer classes RefSCMatrix, RefSymmSCMatrix, RefDiagSCMatrix,
-RefSCDimension, and RefSCMatrixKit.  These automatically delete matrix
-objects when they are no longer needed.  This is through a reference count
-mechanism that is supported by the VRefCount base class from which the
-abstract matrix classes derive.  The smart pointer classes also have matrix
+and RefSCDimension.
+These classes respectively inherit from Ref<SCMatrix>, Ref<SymmSCMatrix>,
+Ref<DiagSCMatrix>, and Ref<SCDimension>, providing automatic memory
+management through reference counting.
+The smart pointer classes also have matrix
 operations such as operator *(), operator -(), and operator +() defined as
 members for convenience.  These forward the operations to the contained
 matrix object.  The smart pointer classes also simplify creation of
 matrices by providing constructors that take as arguments one or more
-RefSCDimension's and a RefSCMatrixKit.  These initialize the smart pointer
+RefSCDimension's and a Ref<SCMatrixKit>.  These initialize the smart pointer
 to contain a new matrix with a specialization corresponding to that of the
-RefSCMatrixKit.  Matrix operations not provided by the smart pointer
+Ref<SCMatrixKit>.  Matrix operations not provided by the smart pointer
 classes but present as member in the abstract classes can be accessed with
 operator->().
 
@@ -180,7 +181,7 @@ is held in an object of class SCBlockInfo.
 
 The easiest way to use SCMAT is through the smart pointer classes
 RefSCMatrix, RefSymmSCMatrix, RefDiagSCMatrix, RefSCVector, RefSCDimension,
-and RefSCMatrixKit.  These are based on the Ref reference counting package
+and Ref<SCMatrixKit>.  These are based on the Ref reference counting package
 and automatically delete matrix objects when they are no longer needed.
 These reference classes also have common operations defined as members for
 convenience.  This makes it unnecessary to also use the sometimes awkward

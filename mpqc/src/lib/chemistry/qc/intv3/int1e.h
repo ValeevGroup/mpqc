@@ -42,14 +42,14 @@ class Integral;
 /** Int2eV3 is a class wrapper for the one body part of the C language
     IntV3 library.  It is used by OneBodyIntV3 and OneBodyDerivIntV3 to
     implement IntegralV3. */
-class Int1eV3: public VRefCount {
+class Int1eV3: public RefCount {
   protected:
     Integral *integral_;
 
-    RefGaussianBasisSet bs1_;
-    RefGaussianBasisSet bs2_;
+    Ref<GaussianBasisSet> bs1_;
+    Ref<GaussianBasisSet> bs2_;
     double *fjttable_;
-    RefFJT fjt_;
+    Ref<FJT> fjt_;
     int bs1_shell_offset_;
     int bs2_shell_offset_;
     int bs1_func_offset_;
@@ -78,7 +78,7 @@ class Int1eV3: public VRefCount {
     int scale_shell_result;
     double result_scale_factor;
     int three_center;
-    RefGaussianBasisSet third_centers;
+    Ref<GaussianBasisSet> third_centers;
     int third_centernum;
     int init_order;
     double *buff;
@@ -91,12 +91,12 @@ class Int1eV3: public VRefCount {
   protected:
     void accum_shell_1der(
         double *buff, int ish, int jsh,
-        RefGaussianBasisSet dercs, int centernum,
+        Ref<GaussianBasisSet> dercs, int centernum,
         double (Int1eV3::*)(int,int,int,int,int,int,int,int)
         );
     void accum_shell_block_1der(
         double *buff, int ish, int jsh,
-        RefGaussianBasisSet dercs, int centernum,
+        Ref<GaussianBasisSet> dercs, int centernum,
         void (Int1eV3::*shell_block_function)
                                   (int gc1, int a, int gc2, int b,
                                    int gcsize2, int gcoff1, int gcoff2,
@@ -142,7 +142,7 @@ class Int1eV3: public VRefCount {
     // routines from comp_1e:
   protected:
     void int_accum_shell_overlap_1der(int ish, int jsh,
-                                      RefGaussianBasisSet dercs,
+                                      Ref<GaussianBasisSet> dercs,
                                       int centernum);
     void int_done_1e();
     void int_initialize_1e(int flags, int order);
@@ -155,19 +155,19 @@ class Int1eV3: public VRefCount {
 #endif
     void int_accum_shell_kinetic(int ish, int jsh);
     void int_accum_shell_kinetic_1der(int ish, int jsh,
-                                      RefGaussianBasisSet dercs,
+                                      Ref<GaussianBasisSet> dercs,
                                       int centernum);
     void int_accum_shell_nuclear_1der(int ish, int jsh,
-                                      RefGaussianBasisSet dercs,
+                                      Ref<GaussianBasisSet> dercs,
                                       int centernum);
     void int_accum_shell_nuclear_hfc_1der(int ish, int jsh,
-                                          RefGaussianBasisSet dercs,
+                                          Ref<GaussianBasisSet> dercs,
                                           int centernum);
     void int_accum_shell_nuclear_hf_1der(int ish, int jsh,
-                                         RefGaussianBasisSet dercs,
+                                         Ref<GaussianBasisSet> dercs,
                                          int centernum);
     void int_accum_shell_nuclear_nonhf_1der(int ish, int jsh,
-                                            RefGaussianBasisSet dercs,
+                                            Ref<GaussianBasisSet> dercs,
                                             int centernum);
     void int_accum_shell_efield(int ish, int jsh,
                                 double *position);
@@ -175,10 +175,10 @@ class Int1eV3: public VRefCount {
                                       int ncharge, const double* charge,
                                       const double*const* position);
     void int_shell_nuclear_hf_1der(int ish, int jsh,
-                                   RefGaussianBasisSet dercs,
+                                   Ref<GaussianBasisSet> dercs,
                                    int centernum);
     void int_shell_nuclear_nonhf_1der(int ish, int jsh,
-                                      RefGaussianBasisSet dercs,
+                                      Ref<GaussianBasisSet> dercs,
                                       int centernum);
     void int_accum_shell_dipole(int ish, int jsh,
                                 double *com);
@@ -224,15 +224,15 @@ class Int1eV3: public VRefCount {
 
   public:
     Int1eV3(Integral *,
-            const RefGaussianBasisSet&,
-            const RefGaussianBasisSet&,
+            const Ref<GaussianBasisSet>&,
+            const Ref<GaussianBasisSet>&,
             int order);
     ~Int1eV3();
 
     double *buffer() { return buff; }
-    RefGaussianBasisSet basis() { if (bs1_==bs2_) return bs1_; return 0; }
-    RefGaussianBasisSet basis1() { return bs1_; }
-    RefGaussianBasisSet basis2() { return bs2_; }
+    Ref<GaussianBasisSet> basis() { if (bs1_==bs2_) return bs1_; return 0; }
+    Ref<GaussianBasisSet> basis1() { return bs1_; }
+    Ref<GaussianBasisSet> basis2() { return bs2_; }
 
     void kinetic(int ish, int jsh);
     void nuclear_slow(int ish, int jsh);
@@ -255,7 +255,7 @@ class Int1eV3: public VRefCount {
     void overlap_1der(int ish, int jsh,
                       int dercs, int centernum);
 };
-REF_dec(Int1eV3);
+
 
 
 #endif

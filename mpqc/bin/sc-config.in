@@ -84,6 +84,9 @@ while test $# -gt 0; do
     --cxx)
       echo $cxx
       ;;
+    --libdir)
+      echo $libdir
+      ;;
     --libs)
       echo -L${libdir} $sclibs $libs
       ;;

@@ -40,9 +40,9 @@
 
 HSOSV1Erep1Qtr::HSOSV1Erep1Qtr(int mythread_a, int nthread_a,
                                int me_a, int nproc_a,
-                               const RefThreadLock &lock_a,
-                               const RefGaussianBasisSet &basis_a,
-                               const RefTwoBodyInt &tbint_a,
+                               const Ref<ThreadLock> &lock_a,
+                               const Ref<GaussianBasisSet> &basis_a,
+                               const Ref<TwoBodyInt> &tbint_a,
                                int ni_a, double **scf_vector_a,
                                double tol_a, int debug_a)
 {

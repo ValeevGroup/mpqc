@@ -53,27 +53,13 @@
 
 using namespace std;
 
-SavableState_REF_def(GaussianBasisSet);
+static ClassDesc GaussianBasisSet_cd(
+  typeid(GaussianBasisSet),"GaussianBasisSet",2,"public SavableState",
+  0, create<GaussianBasisSet>, create<GaussianBasisSet>);
 
-#define CLASSNAME GaussianBasisSet
-#define PARENTS public SavableState
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define VERSION 2
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-void *
-GaussianBasisSet::_castdown(const ClassDesc*cd)
+GaussianBasisSet::GaussianBasisSet(const Ref<KeyVal>&topkeyval)
 {
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
-{
-  molecule_ = topkeyval->describedclassvalue("molecule");
+  molecule_ << topkeyval->describedclassvalue("molecule");
   if (molecule_.null()) {
       ExEnv::err() << node0 << indent << "GaussianBasisSet: no \"molecule\"\n";
       abort();
@@ -85,11 +71,11 @@ GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
   if (topkeyval->error() != KeyVal::OK) pure = -1;
 
   // construct a keyval that contains the basis library
-  RefKeyVal keyval;
+  Ref<KeyVal> keyval;
 
   if (topkeyval->exists("basisfiles")) {
-      RefMessageGrp grp = MessageGrp::get_default_messagegrp();
-      RefParsedKeyVal parsedkv = new ParsedKeyVal();
+      Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
+      Ref<ParsedKeyVal> parsedkv = new ParsedKeyVal();
       char *in_char_array;
       if (grp->me() == 0) {
 #ifdef HAVE_SSTREAM
@@ -120,7 +106,7 @@ GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
         }
       parsedkv->parse_string(in_char_array);
       delete[] in_char_array;
-      RefKeyVal libkeyval = parsedkv.pointer();
+      Ref<KeyVal> libkeyval = parsedkv.pointer();
       keyval = new AggregateKeyVal(topkeyval,libkeyval);
     }
   else {
@@ -129,7 +115,7 @@ GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
 
   // if there isn't a matrixkit in the input, init2() will assign the
   // default matrixkit
-  matrixkit_ = keyval->describedclassvalue("matrixkit");
+  matrixkit_ << keyval->describedclassvalue("matrixkit");
   
   // Bases keeps track of what basis set data bases have already
   // been read in.  It also handles the conversion of basis
@@ -190,8 +176,8 @@ GaussianBasisSet::GaussianBasisSet(StateIn&s):
 {
   matrixkit_ = SCMatrixKit::default_matrixkit();
 
-  molecule_.restore_state(s);
-  basisdim_.restore_state(s);
+  molecule_ << SavableState::restore_state(s);
+  basisdim_ << SavableState::restore_state(s);
 
   ncenter_ = center_to_nshell_.size();
   s.getstring(name_);
@@ -215,8 +201,8 @@ GaussianBasisSet::save_data_state(StateOut&s)
 {
   center_to_nshell_.save_object_state(s);
 
-  molecule_.save_state(s);
-  basisdim_.save_state(s);
+  SavableState::save_state(molecule_.pointer(),s);
+  SavableState::save_state(basisdim_.pointer(),s);
   
   s.putstring(name_);
   for (int i=0; i<nshell_; i++) {
@@ -225,8 +211,8 @@ GaussianBasisSet::save_data_state(StateOut&s)
 }
 
 void
-GaussianBasisSet::init(RefMolecule&molecule,
-                       RefKeyVal&keyval,
+GaussianBasisSet::init(Ref<Molecule>&molecule,
+                       Ref<KeyVal>&keyval,
                        BasisFileSet& bases,
                        int have_userkeyval,
                        int pur)
@@ -428,7 +414,7 @@ GaussianBasisSet::init2(int skip_ghosts)
 }
 
 void
-GaussianBasisSet::set_matrixkit(const RefSCMatrixKit& mk)
+GaussianBasisSet::set_matrixkit(const Ref<SCMatrixKit>& mk)
 {
   matrixkit_ = mk;
   so_matrixkit_ = new BlockedSCMatrixKit(matrixkit_);
@@ -436,7 +422,7 @@ GaussianBasisSet::set_matrixkit(const RefSCMatrixKit& mk)
 
 void
 GaussianBasisSet::
-  recursively_get_shell(int&ishell,RefKeyVal&keyval,
+  recursively_get_shell(int&ishell,Ref<KeyVal>&keyval,
 			const char*element,
 			const char*basisname,
                         BasisFileSet &bases,
@@ -462,7 +448,7 @@ GaussianBasisSet::
   for (int j=0; j<count; j++) {
       sprintf(prefix,":basis:%s:%s",
 	      element,basisname);
-      RefKeyVal prefixkeyval = new PrefixKeyVal(prefix,keyval,j);
+      Ref<KeyVal> prefixkeyval = new PrefixKeyVal(prefix,keyval,j);
       if (prefixkeyval->exists("get")) {
           char* newbasis = prefixkeyval->pcharvalue("get");
           if (!newbasis) {
@@ -610,7 +596,7 @@ GaussianBasisSet::operator()(int icenter,int ishell)
 }
 
 int
-GaussianBasisSet::equiv(const RefGaussianBasisSet &b)
+GaussianBasisSet::equiv(const Ref<GaussianBasisSet> &b)
 {
   if (nshell() != b->nshell()) return 0;
   for (int i=0; i<nshell(); i++) {
@@ -673,8 +659,8 @@ GaussianBasisSet::print(ostream& os) const
 // GaussianBasisSet::ValueData
 
 GaussianBasisSet::ValueData::ValueData(
-    const RefGaussianBasisSet &basis,
-    const RefIntegral &integral)
+    const Ref<GaussianBasisSet> &basis,
+    const Ref<Integral> &integral)
 {
   maxam_ = basis->max_angular_momentum();
 

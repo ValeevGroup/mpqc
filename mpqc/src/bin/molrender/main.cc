@@ -58,29 +58,29 @@ main(int argc, char** argv)
     }
 
   // Find the molecule.
-  RefMolecule mol;
+  Ref<Molecule> mol;
   if (input == PDB) {
-      RefAssignedKeyVal keyval = new AssignedKeyVal();
+      Ref<AssignedKeyVal> keyval = new AssignedKeyVal();
       keyval->assign("pdb_file", inputfile);
       mol = new Molecule(keyval.pointer());
     }
   else {
-      RefKeyVal keyval = new ParsedKeyVal(inputfile);
+      Ref<KeyVal> keyval = new ParsedKeyVal(inputfile);
       mol = new Molecule(new PrefixKeyVal(keyword, keyval));
     }
 
   // Set up the rendered molecule object.
-  RefAssignedKeyVal tmpkv = new AssignedKeyVal();
-  RefAssignedKeyVal keyval = new AssignedKeyVal();
+  Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal();
+  Ref<AssignedKeyVal> keyval = new AssignedKeyVal();
 
   keyval->assign("molecule", mol.pointer());
   keyval->assign("model", model);
 
-  RefDescribedClass atominfo = new AtomInfo(tmpkv.pointer());
+  Ref<DescribedClass> atominfo = new AtomInfo(tmpkv.pointer());
   keyval->assign("atominfo", atominfo);
   tmpkv->clear();
 
-  RefRenderedObject molobject;
+  Ref<RenderedObject> molobject;
   if (!strcmp(model,"stick")) {
       molobject = new RenderedStickMolecule(keyval.pointer());
     }
@@ -88,19 +88,19 @@ main(int argc, char** argv)
       molobject = new RenderedBallMolecule(keyval.pointer());
     }
   else if (!strcmp(model,"connolly")) {
-      tmpkv->assign("molecule", mol);
+      tmpkv->assign("molecule", mol.pointer());
       tmpkv->assign("atominfo", atominfo);
-      RefDescribedClass volume = new ConnollyShape(tmpkv.pointer());
+      Ref<DescribedClass> volume = new ConnollyShape(tmpkv.pointer());
       tmpkv->clear();
       tmpkv->assignboolean("verbose", !quiet);
-      RefDescribedClass trisurf = new TriangulatedSurface(tmpkv.pointer());
+      Ref<DescribedClass> trisurf = new TriangulatedSurface(tmpkv.pointer());
       tmpkv->clear();
       tmpkv->assign("surface", trisurf);
       tmpkv->assign("volume", volume);
       tmpkv->assign("resolution", 1.0);
       tmpkv->assignboolean("remove_short_edges", 0);
       tmpkv->assignboolean("remove_slender_edges", 0);
-      RefDescribedClass surface
+      Ref<DescribedClass> surface
           = new TriangulatedImplicitSurface(tmpkv.pointer());
       tmpkv->clear();
       keyval->assign("surface", surface);
@@ -111,12 +111,12 @@ main(int argc, char** argv)
       abort();
     }
 
-  RefRenderedObjectSet object;
+  Ref<RenderedObjectSet> object;
 
   if (render) {
       object = new RenderedObjectSet;
       object->add(molobject);
-      RefAppearance appearance = new Appearance;
+      Ref<Appearance> appearance = new Appearance;
       appearance->level().set(level);
       object->appearance(appearance);
       if (object.null()) {
@@ -125,7 +125,7 @@ main(int argc, char** argv)
         }
 
       // Set up the renderer.
-      RefRender renderer;
+      Ref<Render> renderer;
       if (!strcmp("oogl", render)) {
           renderer = new OOGLRender;
         }

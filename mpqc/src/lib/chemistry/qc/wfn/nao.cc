@@ -102,7 +102,7 @@ static RefSymmSCMatrix
 mhalf(const RefSymmSCMatrix &S)
 {
   RefSCDimension tdim = S.dim();
-  RefSCMatrixKit kit = S.kit();
+  Ref<SCMatrixKit> kit = S.kit();
 
   // find a symmetric orthogonalization transform
   RefSCMatrix trans(tdim,tdim,kit);
@@ -110,10 +110,10 @@ mhalf(const RefSymmSCMatrix &S)
 
   S.diagonalize(eigval,trans);
 
-  RefSCElementOp squareroot = new SCElementSquareRoot;
+  Ref<SCElementOp> squareroot = new SCElementSquareRoot;
   eigval.element_op(squareroot);
 
-  RefSCElementOp invert = new SCElementInvert(1.0e-12);
+  Ref<SCElementOp> invert = new SCElementInvert(1.0e-12);
   eigval.element_op(invert);
 
   RefSymmSCMatrix OL(tdim,kit);
@@ -215,7 +215,7 @@ static void
 form_nao(const RefSymmSCMatrix &P, const RefSymmSCMatrix &S,
          const RefSCMatrix &N, const RefDiagSCMatrix &W, int natom,
          int *maxam_on_atom, int **nam_on_atom, int ***amoff_on_atom,
-         const RefSCMatrixKit& kit)
+         const Ref<SCMatrixKit>& kit)
 {
   int i,j,k,l,m;
 
@@ -302,13 +302,13 @@ RefSCMatrix
 Wavefunction::nao(double *atom_charges)
 {
 
-  RefGaussianBasisSet b = basis();
-  RefPetiteList pl = integral()->petite_list();
+  Ref<GaussianBasisSet> b = basis();
+  Ref<PetiteList> pl = integral()->petite_list();
 
   // compute S, the ao basis overlap
   RefSymmSCMatrix blockedS = pl->to_AO_basis(overlap());
   RefSymmSCMatrix S
-      = BlockedSymmSCMatrix::castdown(blockedS.pointer())->block(0);
+      = dynamic_cast<BlockedSymmSCMatrix*>(blockedS.pointer())->block(0);
   blockedS = 0;
 # ifdef DEBUG
   S.print("S");
@@ -316,7 +316,7 @@ Wavefunction::nao(double *atom_charges)
 
   // compute P, the ao basis density
   RefSymmSCMatrix P
-      = BlockedSymmSCMatrix::castdown(ao_density().pointer())->block(0);
+      = dynamic_cast<BlockedSymmSCMatrix*>(ao_density().pointer())->block(0);
 
   // why?  good question.
   RefSymmSCMatrix Ptmp = P->clone();

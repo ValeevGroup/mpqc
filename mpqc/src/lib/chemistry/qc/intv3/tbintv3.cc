@@ -29,10 +29,10 @@
 #include <chemistry/qc/basis/integral.h>
 
 TwoBodyIntV3::TwoBodyIntV3(Integral*integral,
-                           const RefGaussianBasisSet& b1,
-                           const RefGaussianBasisSet& b2,
-                           const RefGaussianBasisSet& b3,
-                           const RefGaussianBasisSet& b4,
+                           const Ref<GaussianBasisSet>& b1,
+                           const Ref<GaussianBasisSet>& b2,
+                           const Ref<GaussianBasisSet>& b3,
+                           const Ref<GaussianBasisSet>& b4,
                            int storage):
   TwoBodyInt(integral,b1,b2,b3,b4)
 {
@@ -68,10 +68,10 @@ TwoBodyIntV3::set_integral_storage(int storage)
 //////////////////////////////////////////////////////////////////////////
 
 TwoBodyDerivIntV3::TwoBodyDerivIntV3(Integral*integral,
-                                     const RefGaussianBasisSet& b1,
-                                     const RefGaussianBasisSet& b2,
-                                     const RefGaussianBasisSet& b3,
-                                     const RefGaussianBasisSet& b4,
+                                     const Ref<GaussianBasisSet>& b1,
+                                     const Ref<GaussianBasisSet>& b2,
+                                     const Ref<GaussianBasisSet>& b3,
+                                     const Ref<GaussianBasisSet>& b4,
                                      int storage):
   TwoBodyDerivInt(integral,b1,b2,b3,b4)
 {

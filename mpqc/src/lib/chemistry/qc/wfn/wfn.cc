@@ -48,22 +48,11 @@ using namespace std;
 
 #define CHECK_SYMMETRIZED_INTEGRALS 0
 
-SavableState_REF_def(Wavefunction);
+static ClassDesc Wavefunction_cd(
+  typeid(Wavefunction),"Wavefunction",4,"public MolecularEnergy",
+  0, 0, 0);
 
-#define CLASSNAME Wavefunction
-#define VERSION 4
-#define PARENTS public MolecularEnergy
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-Wavefunction::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = MolecularEnergy::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-Wavefunction::Wavefunction(const RefKeyVal&keyval):
+Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
   // this will let molecule be retrieved from basis
   // MolecularEnergy(new AggregateKeyVal(keyval,
   //                                     new PrefixKeyVal("basis", keyval))),
@@ -103,17 +92,17 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
 
   debug_ = keyval->intvalue("debug");
 
-  gbs_ = GaussianBasisSet::require_castdown(
+  gbs_ = require_dynamic_cast<GaussianBasisSet*>(
     keyval->describedclassvalue("basis").pointer(),
     "Wavefunction::Wavefunction\n"
     );
 
-  integral_ = keyval->describedclassvalue("integrals");
+  integral_ << keyval->describedclassvalue("integrals");
   if (integral_.null())
     integral_ = new IntegralV3(gbs_);
   
   integral_->set_basis(gbs_);
-  RefPetiteList pl = integral_->petite_list();
+  Ref<PetiteList> pl = integral_->petite_list();
 
   sodim_ = pl->SO_basisdim();
   aodim_ = pl->AO_basisdim();
@@ -151,7 +140,7 @@ Wavefunction::Wavefunction(StateIn&s):
   natural_orbitals_.computed() = 0;
   natural_density_.computed() = 0;
 
-  if (s.version(static_class_desc()) >= 2) {
+  if (s.version(::class_desc<Wavefunction>()) >= 2) {
     s.get(print_nao_);
     s.get(print_npa_);
   }
@@ -160,25 +149,25 @@ Wavefunction::Wavefunction(StateIn&s):
     print_npa_ = 0;
   }
 
-  if (s.version(static_class_desc()) >= 3) {
+  if (s.version(::class_desc<Wavefunction>()) >= 3) {
     s.get(symm_orthog_);
   }
   else {
     symm_orthog_ = 1;
   }
 
-  if (s.version(static_class_desc()) >= 4) {
+  if (s.version(::class_desc<Wavefunction>()) >= 4) {
     s.get(lindep_tol_);
   }
   else {
     lindep_tol_ = 1.e-6;
   }
 
-  gbs_.restore_state(s);
-  integral_.restore_state(s);
+  gbs_ << SavableState::restore_state(s);
+  integral_ << SavableState::restore_state(s);
 
   integral_->set_basis(gbs_);
-  RefPetiteList pl = integral_->petite_list();
+  Ref<PetiteList> pl = integral_->petite_list();
 
   sodim_ = pl->SO_basisdim();
   aodim_ = pl->AO_basisdim();
@@ -190,7 +179,7 @@ Wavefunction::symmetry_changed()
 {
   MolecularEnergy::symmetry_changed();
 
-  RefPetiteList pl = integral_->petite_list();
+  Ref<PetiteList> pl = integral_->petite_list();
   sodim_ = pl->SO_basisdim();
   aodim_ = pl->SO_basisdim();
   osodim_ = 0;
@@ -226,8 +215,8 @@ Wavefunction::save_data_state(StateOut&s)
   s.put(symm_orthog_);
   s.put(lindep_tol_);
 
-  gbs_.save_state(s);
-  integral_.save_state(s);
+  SavableState::save_state(gbs_.pointer(),s);
+  SavableState::save_state(integral_.pointer(),s);
 }
 
 double
@@ -288,12 +277,12 @@ Wavefunction::overlap()
 {
   if (!overlap_.computed()) {
     integral()->set_basis(gbs_);
-    RefPetiteList pl = integral()->petite_list();
+    Ref<PetiteList> pl = integral()->petite_list();
 
 #if ! CHECK_SYMMETRIZED_INTEGRALS
     // first form skeleton s matrix
     RefSymmSCMatrix s(basis()->basisdim(), basis()->matrixkit());
-    RefSCElementOp ov =
+    Ref<SCElementOp> ov =
       new OneBodyIntOp(new SymmOneBodyIntIter(integral()->overlap(), pl));
 
     s.assign(0.0);
@@ -309,7 +298,7 @@ Wavefunction::overlap()
     ExEnv::out() << "Checking symmetrized overlap" << endl;
 
     RefSymmSCMatrix s(basis()->basisdim(), basis()->matrixkit());
-    RefSCElementOp ov =
+    Ref<SCElementOp> ov =
       new OneBodyIntOp(new OneBodyIntIter(integral()->overlap()));
 
     s.assign(0.0);
@@ -361,19 +350,19 @@ Wavefunction::core_hamiltonian()
 {
   if (!hcore_.computed()) {
     integral()->set_basis(gbs_);
-    RefPetiteList pl = integral()->petite_list();
+    Ref<PetiteList> pl = integral()->petite_list();
 
 #if ! CHECK_SYMMETRIZED_INTEGRALS
     // form skeleton Hcore in AO basis
     RefSymmSCMatrix hao(basis()->basisdim(), basis()->matrixkit());
     hao.assign(0.0);
 
-    RefSCElementOp hc =
+    Ref<SCElementOp> hc =
       new OneBodyIntOp(new SymmOneBodyIntIter(integral_->kinetic(), pl));
     hao.element_op(hc);
     hc=0;
 
-    RefOneBodyInt nuc = integral_->nuclear();
+    Ref<OneBodyInt> nuc = integral_->nuclear();
     nuc->reinitialize();
     hc = new OneBodyIntOp(new SymmOneBodyIntIter(nuc, pl));
     hao.element_op(hc);
@@ -390,12 +379,12 @@ Wavefunction::core_hamiltonian()
     RefSymmSCMatrix hao(basis()->basisdim(), basis()->matrixkit());
     hao.assign(0.0);
 
-    RefSCElementOp hc =
+    Ref<SCElementOp> hc =
       new OneBodyIntOp(new OneBodyIntIter(integral_->kinetic()));
     hao.element_op(hc);
     hc=0;
 
-    RefOneBodyInt nuc = integral_->nuclear();
+    Ref<OneBodyInt> nuc = integral_->nuclear();
     nuc->reinitialize();
     hc = new OneBodyIntOp(new OneBodyIntIter(nuc));
     hao.element_op(hc);
@@ -461,13 +450,13 @@ Wavefunction::compute_overlap_eig()
   M.diagonalize(m,U);
   M = 0;
 
-  RefSCElementMaxAbs maxabsop = new SCElementMaxAbs;
-  m.element_op(maxabsop);
+  Ref<SCElementMaxAbs> maxabsop = new SCElementMaxAbs;
+  m.element_op(maxabsop.pointer());
   double maxabs = maxabsop->result();
   double s_tol = lindep_tol_ * maxabs;
 
   double minabs = maxabs;
-  BlockedDiagSCMatrix *bm = BlockedDiagSCMatrix::castdown(m.pointer());
+  BlockedDiagSCMatrix *bm = dynamic_cast<BlockedDiagSCMatrix*>(m.pointer());
   if (bm == 0) {
       ExEnv::out() << node0 << "Wfn: orthog: expected blocked overlap" << endl;
     }
@@ -533,10 +522,10 @@ Wavefunction::compute_overlap_eig()
     }
   else {
       BlockedSCMatrix *bev
-          = BlockedSCMatrix::castdown(overlap_eigvec_.result_noupdate()
+          = dynamic_cast<BlockedSCMatrix*>(overlap_eigvec_.result_noupdate()
                                       .pointer());
       BlockedSCMatrix *bU
-          = BlockedSCMatrix::castdown(U.pointer());
+          = dynamic_cast<BlockedSCMatrix*>(U.pointer());
       int ifunc = 0;
       for (i=0; i<bev->nblocks(); i++) {
           if (bev->block(i).null()) continue;
@@ -628,13 +617,13 @@ Wavefunction::so_to_orthog_so_inverse()
   return trans;
 }
 
-RefGaussianBasisSet
+Ref<GaussianBasisSet>
 Wavefunction::basis() const
 {
   return gbs_;
 }
 
-RefIntegral
+Ref<Integral>
 Wavefunction::integral()
 {
   return integral_;
@@ -659,7 +648,7 @@ Wavefunction::oso_dimension()
   return osodim_;
 }
 
-RefSCMatrixKit
+Ref<SCMatrixKit>
 Wavefunction::basis_matrixkit()
 {
   return basiskit_;

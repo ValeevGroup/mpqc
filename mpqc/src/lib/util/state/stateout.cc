@@ -48,18 +48,8 @@
 
 using namespace std;
 
-DescribedClass_REF_def(StateOut);
-
-#define CLASSNAME StateOut
-#define PARENTS public DescribedClass
-#include <util/class/classia.h>
-void *
-StateOut::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc StateOut_cd(
+    typeid(StateOut),"StateOut",1,"public DescribedClass");
 
 StateOut::StateOut() :
   have_cd_(0),
@@ -229,7 +219,7 @@ void
 StateOut::put_directory()
 {
   AVLMap<ClassDescP,int>::iterator iid;
-  AVLMap<RefSavableState,StateOutData>::iterator isd;
+  AVLMap<Ref<SavableState>,StateOutData>::iterator isd;
 
   // write the class information
   put(classidmap_.length());
@@ -402,7 +392,7 @@ StateOut::putparents(const ClassDesc*cd)
 }
 
 int
-StateOut::putobject(const RefSavableState &p)
+StateOut::putobject(const Ref<SavableState> &p)
 {
   int r=0;
   if (p.null()) {
@@ -410,7 +400,7 @@ StateOut::putobject(const RefSavableState &p)
       r += put(0);
     }
   else {
-      AVLMap<RefSavableState,StateOutData>::iterator ind = ps_.find(p);
+      AVLMap<Ref<SavableState>,StateOutData>::iterator ind = ps_.find(p);
       if (ind == ps_.end() || copy_references_) {
           StateOutData dp;
           // object has not been written yet

@@ -38,21 +38,18 @@
 
 // computes additions to H
 class AccumH: virtual public SavableState {
-#   define CLASSNAME AccumH
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
-    RefWavefunction wfn_;
+    Ref<Wavefunction> wfn_;
 
   public:
     AccumH();
     AccumH(StateIn&);
-    AccumH(const RefKeyVal&);
+    AccumH(const Ref<KeyVal>&);
     virtual ~AccumH();
 
     void save_data_state(StateOut&);
     
-    virtual void init(const RefWavefunction&);
+    virtual void init(const Ref<Wavefunction>&);
     virtual void accum(const RefSymmSCMatrix& h) =0;
     virtual void print_summary();
     virtual void done();
@@ -61,19 +58,13 @@ class AccumH: virtual public SavableState {
     // Available only after accum is called.
     virtual double e();
 };
-SavableState_REF_dec(AccumH);
+
 
 class AccumHNull: public AccumH {
-#   define CLASSNAME AccumHNull
-#   define HAVE_CTOR
-#   define HAVE_STATEIN_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     AccumHNull();
     AccumHNull(StateIn&);
-    AccumHNull(const RefKeyVal&);
+    AccumHNull(const Ref<KeyVal>&);
     ~AccumHNull();
 
     void save_data_state(StateOut&);
@@ -82,23 +73,18 @@ class AccumHNull: public AccumH {
 };
 
 class SumAccumH: public AccumH {
-#   define CLASSNAME SumAccumH
-#   define HAVE_STATEIN_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     int n_;
-    RefAccumH *accums_;
+    Ref<AccumH> *accums_;
 
   public:
     SumAccumH(StateIn&);
-    SumAccumH(const RefKeyVal&);
+    SumAccumH(const Ref<KeyVal>&);
     ~SumAccumH();
 
     void save_data_state(StateOut&);
 
-    void init(const RefWavefunction&);
+    void init(const Ref<Wavefunction>&);
     void accum(const RefSymmSCMatrix& h);
     void done();
 

@@ -270,11 +270,11 @@ Consider a linked list class, A, which reads from the keyword
 <tt>next</tt> a reference to an object of class A.  Input for such an
 object, read from keyword <tt>a1</tt>, follows:
 <pre>
-a1<A>: (
-    next<A>: (
-        next<B>: (
+a1\<A\>: (
+    next\<A\>: (
+        next\<B\>: (
             bdata = 4
-            next<A>:()
+            next\<A\>:()
             )
         )
     )

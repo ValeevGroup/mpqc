@@ -40,10 +40,10 @@ template class EAVLMMap<int, AVLMapNode<int, StateInData> >;
 template class AVLMapNode<int, StateInData>;
 template class AVLMap<int, StateInData>;
 
-template class EAVLMMapNode<RefSavableState, AVLMapNode<RefSavableState, StateOutData> >;
-template class EAVLMMap<RefSavableState, AVLMapNode<RefSavableState, StateOutData> >;
-template class AVLMapNode<RefSavableState, StateOutData>;
-template class AVLMap<RefSavableState, StateOutData>;
+template class EAVLMMapNode<Ref<SavableState>, AVLMapNode<Ref<SavableState>, StateOutData> >;
+template class EAVLMMap<Ref<SavableState>, AVLMapNode<Ref<SavableState>, StateOutData> >;
+template class AVLMapNode<Ref<SavableState>, StateOutData>;
+template class AVLMap<Ref<SavableState>, StateOutData>;
 
 template class EAVLMMapNode<ClassDescP, AVLMapNode<ClassDescP,int> >;
 template class EAVLMMap<ClassDescP, AVLMapNode<ClassDescP,int> >;

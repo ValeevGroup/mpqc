@@ -35,24 +35,14 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/obint.h>
 
-SavableState_REF_def(Integral);
+static ClassDesc Integral_cd(
+  typeid(Integral),"Integral",1,"public SavableState",
+  0, 0, 0);
 
-#define CLASSNAME Integral
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-void *
-Integral::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-Integral::Integral(const RefGaussianBasisSet &b1,
-                   const RefGaussianBasisSet &b2,
-                   const RefGaussianBasisSet &b3,
-                   const RefGaussianBasisSet &b4)
+Integral::Integral(const Ref<GaussianBasisSet> &b1,
+                   const Ref<GaussianBasisSet> &b2,
+                   const Ref<GaussianBasisSet> &b3,
+                   const Ref<GaussianBasisSet> &b4)
 {
   storage_ = 0;
   storage_used_ = 0;
@@ -64,15 +54,15 @@ Integral::Integral(StateIn& s) :
   SavableState(s)
 {
   storage_used_ = 0;
-  bs1_.restore_state(s);
-  bs2_.restore_state(s);
-  bs3_.restore_state(s);
-  bs4_.restore_state(s);
+  bs1_ << SavableState::restore_state(s);
+  bs2_ << SavableState::restore_state(s);
+  bs3_ << SavableState::restore_state(s);
+  bs4_ << SavableState::restore_state(s);
   s.get(storage_);
   grp_ = MessageGrp::get_default_messagegrp();
 }
 
-Integral::Integral(const RefKeyVal&)
+Integral::Integral(const Ref<KeyVal>&)
 {
   storage_used_ = 0;
   storage_ = 0;
@@ -82,21 +72,21 @@ Integral::Integral(const RefKeyVal&)
 void
 Integral::save_data_state(StateOut&o)
 {
-  bs1_.save_state(o);
-  bs2_.save_state(o);
-  bs3_.save_state(o);
-  bs4_.save_state(o);
+  SavableState::save_state(bs1_.pointer(),o);
+  SavableState::save_state(bs2_.pointer(),o);
+  SavableState::save_state(bs3_.pointer(),o);
+  SavableState::save_state(bs4_.pointer(),o);
   o.put(storage_);
 }
 
-RefPetiteList
+Ref<PetiteList>
 Integral::petite_list()
 {
   return new PetiteList(bs1_, this);
 }
 
-RefPetiteList
-Integral::petite_list(const RefGaussianBasisSet& gbs)
+Ref<PetiteList>
+Integral::petite_list(const Ref<GaussianBasisSet>& gbs)
 {
   return new PetiteList(gbs, this);
 }
@@ -111,10 +101,10 @@ Integral::shell_rotation(int am, SymmetryOperation& so, int pure)
 }
 
 void
-Integral::set_basis(const RefGaussianBasisSet &b1,
-                    const RefGaussianBasisSet &b2,
-                    const RefGaussianBasisSet &b3,
-                    const RefGaussianBasisSet &b4)
+Integral::set_basis(const Ref<GaussianBasisSet> &b1,
+                    const Ref<GaussianBasisSet> &b2,
+                    const Ref<GaussianBasisSet> &b3,
+                    const Ref<GaussianBasisSet> &b4)
 {
   bs1_ = b1;
   bs2_ = b2;

@@ -32,10 +32,6 @@
 #include <math/scmat/matrix.h>
 
 class SymmSCMatrixSCExtrapData: public SCExtrapData {
-#   define CLASSNAME SymmSCMatrixSCExtrapData
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     RefSymmSCMatrix m;
   public:
@@ -46,14 +42,10 @@ class SymmSCMatrixSCExtrapData: public SCExtrapData {
     
     SCExtrapData* copy();
     void zero();
-    void accumulate_scaled(double, const RefSCExtrapData&);
+    void accumulate_scaled(double, const Ref<SCExtrapData>&);
 };
 
 class SymmSCMatrix2SCExtrapData: public SCExtrapData {
-#   define CLASSNAME SymmSCMatrix2SCExtrapData
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     RefSymmSCMatrix m1;
     RefSymmSCMatrix m2;
@@ -65,14 +57,10 @@ class SymmSCMatrix2SCExtrapData: public SCExtrapData {
     
     SCExtrapData* copy();
     void zero();
-    void accumulate_scaled(double, const RefSCExtrapData&);
+    void accumulate_scaled(double, const Ref<SCExtrapData>&);
 };
 
 class SymmSCMatrix4SCExtrapData: public SCExtrapData {
-#   define CLASSNAME SymmSCMatrix4SCExtrapData
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     RefSymmSCMatrix m1;
     RefSymmSCMatrix m2;
@@ -87,14 +75,10 @@ class SymmSCMatrix4SCExtrapData: public SCExtrapData {
     
     SCExtrapData* copy();
     void zero();
-    void accumulate_scaled(double, const RefSCExtrapData&);
+    void accumulate_scaled(double, const Ref<SCExtrapData>&);
 };
 
 class SymmSCMatrixNSCExtrapData: public SCExtrapData {
-#   define CLASSNAME SymmSCMatrixNSCExtrapData
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     int n_;
     RefSymmSCMatrix *m;
@@ -106,14 +90,10 @@ class SymmSCMatrixNSCExtrapData: public SCExtrapData {
     
     SCExtrapData* copy();
     void zero();
-    void accumulate_scaled(double, const RefSCExtrapData&);
+    void accumulate_scaled(double, const Ref<SCExtrapData>&);
 };
 
 class SymmSCMatrixSCExtrapError: public SCExtrapError {
-#   define CLASSNAME SymmSCMatrixSCExtrapError
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   private:
     RefSymmSCMatrix m;
   public:
@@ -123,7 +103,7 @@ class SymmSCMatrixSCExtrapError: public SCExtrapError {
     void save_data_state(StateOut&);
     
     double error();
-    double scalar_product(const RefSCExtrapError&);
+    double scalar_product(const Ref<SCExtrapError>&);
 };
 
 #endif

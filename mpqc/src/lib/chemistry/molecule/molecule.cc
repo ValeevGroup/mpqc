@@ -45,23 +45,9 @@ using namespace std;
 //////////////////////////////////////////////////////////////////////////
 // Molecule
 
-SavableState_REF_def(Molecule);
-
-#define CLASSNAME Molecule
-#define VERSION 5
-#define PARENTS public SavableState
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-Molecule::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc Molecule_cd(
+  typeid(Molecule),"Molecule",5,"public SavableState",
+  create<Molecule>, create<Molecule>, create<Molecule>);
 
 Molecule::Molecule():
   natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0)
@@ -116,7 +102,7 @@ Molecule::clear()
   clear_symmetry_info();
 }
 
-Molecule::Molecule(const RefKeyVal&input):
+Molecule::Molecule(const Ref<KeyVal>&input):
  natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0)
 {
   nuniq_ = 0;
@@ -124,7 +110,7 @@ Molecule::Molecule(const RefKeyVal&input):
   nequiv_ = 0;
   atom_to_uniq_ = 0;
 
-  atominfo_ = input->describedclassvalue("atominfo");
+  atominfo_ << input->describedclassvalue("atominfo");
   if (atominfo_.null()) atominfo_ = new AtomInfo;
   if (input->exists("pdb_file")) {
       geometry_units_ = new Units("angstrom");
@@ -486,9 +472,9 @@ Molecule::nuclear_charge() const
 void Molecule::save_data_state(StateOut& so)
 {
   so.put(natoms_);
-  pg_.save_state(so);
-  geometry_units_.save_state(so);
-  atominfo_.save_state(so);
+  SavableState::save_state(pg_.pointer(),so);
+  SavableState::save_state(geometry_units_.pointer(),so);
+  SavableState::save_state(atominfo_.pointer(),so);
   if (natoms_) {
       so.put(Z_, natoms_);
       so.put_array_double(r_[0], natoms_*3);
@@ -516,14 +502,14 @@ Molecule::Molecule(StateIn& si):
   SavableState(si),
   natoms_(0), r_(0), Z_(0), mass_(0), labels_(0)
 {
-  if (si.version(static_class_desc()) < 4) {
+  if (si.version(::class_desc<Molecule>()) < 4) {
       ExEnv::err() << "Molecule: cannot restore from old molecules" << endl;
       abort();
     }
   si.get(natoms_);
-  pg_.restore_state(si);
-  geometry_units_.restore_state(si);
-  atominfo_.restore_state(si);
+  pg_ << SavableState::restore_state(si);
+  geometry_units_ << SavableState::restore_state(si);
+  atominfo_ << SavableState::restore_state(si);
   if (natoms_) {
       si.get(Z_);
       r_ = new double*[natoms_];
@@ -532,7 +518,7 @@ Molecule::Molecule(StateIn& si):
       for (int i=1; i<natoms_; i++) {
           r_[i] = &(r_[0][i*3]);
         }
-      if (si.version(static_class_desc()) > 4) {
+      if (si.version(::class_desc<Molecule>()) > 4) {
           si.get(charges_);
         }
       else {
@@ -574,7 +560,7 @@ Molecule::atom_to_unique_offset(int iatom) const
 }
 
 void
-Molecule::set_point_group(const RefPointGroup&ppg, double tol)
+Molecule::set_point_group(const Ref<PointGroup>&ppg, double tol)
 {
   ExEnv::out() << node0 << indent
        << "Molecule: setting point group to " << ppg->symbol()
@@ -594,7 +580,7 @@ Molecule::set_point_group(const RefPointGroup&ppg, double tol)
   cleanup_molecule(tol);
 }
 
-RefPointGroup
+Ref<PointGroup>
 Molecule::point_group() const
 {
   return pg_;
@@ -732,7 +718,7 @@ Molecule::atom_at_position(double *v, double tol) const
 }
 
 void
-Molecule::symmetrize(const RefPointGroup &pg, double tol)
+Molecule::symmetrize(const Ref<PointGroup> &pg, double tol)
 {
   pg_ = new PointGroup(pg);
 
@@ -794,7 +780,7 @@ Molecule::symmetrize(double tol)
     }
   }
   
-  RefUnits saved_units = geometry_units_;
+  Ref<Units> saved_units = geometry_units_;
   *this = *newmol;
   geometry_units_ = saved_units;
   delete newmol;
@@ -1117,7 +1103,7 @@ Molecule::read_pdb(const char *filename)
 {
   clear();
   ifstream in(filename);
-  RefUnits units = new Units("angstrom");
+  Ref<Units> units = new Units("angstrom");
   while (in.good()) {
       const int max_line = 80;
       char line[max_line];
@@ -1213,7 +1199,7 @@ Molecule::read_pdb(const char *filename)
 void
 Molecule::print_pdb(ostream& os, char *title) const
 {
-  RefUnits u = new Units("angstrom");
+  Ref<Units> u = new Units("angstrom");
   double bohr = u->from_atomic_units();
 
   if (title)

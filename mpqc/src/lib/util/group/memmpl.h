@@ -41,9 +41,6 @@ Recent IBM SP machines no local support the mp_recvncall routines; in those
 cases use MTMPIMemoryGrp instead. */
 
 class MPLMemoryGrp: public MIDMemoryGrp {
-#define CLASSNAME MPLMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   private:
     enum { max_mid = 3 };
     int mid_ready_[max_mid];
@@ -65,8 +62,8 @@ class MPLMemoryGrp: public MIDMemoryGrp {
 
     static void static_handler(int *msgid);
   public:
-    MPLMemoryGrp(const RefMessageGrp& msg);
-    MPLMemoryGrp(const RefKeyVal&);
+    MPLMemoryGrp(const Ref<MessageGrp>& msg);
+    MPLMemoryGrp(const Ref<KeyVal>&);
     ~MPLMemoryGrp();
     void deactivate();
 };

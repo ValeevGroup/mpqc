@@ -45,20 +45,17 @@
 It computes the energy of the molecule as a function of the geometry.  The
 coordinate system used can be either internal or cartesian.  */
 class MolecularEnergy: public Function {
-#   define CLASSNAME MolecularEnergy
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   private:
     RefSCDimension moldim_; // the number of cartesian variables
-    RefMolecularCoor mc_;
-    RefMolecule mol_;
-    RefMolecularHessian hess_;
-    RefMolecularHessian guesshess_;
+    Ref<MolecularCoor> mc_;
+    Ref<Molecule> mol_;
+    Ref<MolecularHessian> hess_;
+    Ref<MolecularHessian> guesshess_;
 
     RefSCVector cartesian_gradient_;
     RefSymmSCMatrix cartesian_hessian_;
   protected:
-    RefPointGroup initial_pg_;
+    Ref<PointGroup> initial_pg_;
 
     void failure(const char *);
 
@@ -100,7 +97,7 @@ class MolecularEnergy: public Function {
         default is true.
 
         </dl> */
-    MolecularEnergy(const RefKeyVal&);
+    MolecularEnergy(const Ref<KeyVal>&);
     MolecularEnergy(StateIn&);
     ~MolecularEnergy();
 
@@ -111,7 +108,7 @@ class MolecularEnergy: public Function {
     /// A wrapper around value();
     virtual double energy();
 
-    virtual RefMolecule molecule() const;
+    virtual Ref<Molecule> molecule() const;
     virtual RefSCDimension moldim() const;
     
     void guess_hessian(RefSymmSCMatrix&);
@@ -131,13 +128,13 @@ class MolecularEnergy: public Function {
     /// Return the cartesian hessian.
     RefSymmSCMatrix get_cartesian_hessian();
 
-    RefMolecularCoor molecularcoor() { return mc_; }
+    Ref<MolecularCoor> molecularcoor() { return mc_; }
 
     /** Call this if you have changed the molecular symmetry of the
         molecule contained by this MolecularEnergy. */
     virtual void symmetry_changed();
 
-    RefNonlinearTransform change_coordinates();
+    Ref<NonlinearTransform> change_coordinates();
     
     /// Nicely print n x 3 data that are stored in a vector.
     void print_natom_3(const RefSCVector &,
@@ -147,21 +144,16 @@ class MolecularEnergy: public Function {
 
     virtual void print(std::ostream& = ExEnv::out()) const;
 };
-SavableState_REF_dec(MolecularEnergy);
+
 
 class SumMolecularEnergy: public MolecularEnergy {
-#   define CLASSNAME SumMolecularEnergy
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
     int n_;
-    RefMolecularEnergy *mole_;
+    Ref<MolecularEnergy> *mole_;
     double *coef_;
     void compute();
   public:
-    SumMolecularEnergy(const RefKeyVal &);
+    SumMolecularEnergy(const Ref<KeyVal> &);
     SumMolecularEnergy(StateIn&);
     ~SumMolecularEnergy();
 
@@ -173,7 +165,7 @@ class SumMolecularEnergy: public MolecularEnergy {
 
     void set_x(const RefSCVector&);
 };
-SavableState_REF_dec(SumMolecularEnergy);
+
 
 /* The MolEnergyConvergence class derives from the Convergence class.  The
 MolEnergyConvergence class allows the user to request that cartesian
@@ -197,13 +189,8 @@ For MolEnergyConverence to work, the Function object given to the Optimizer
 object must derive from MolecularEnergy.
 */
 class MolEnergyConvergence: public Convergence {
-#   define CLASSNAME MolEnergyConvergence
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
-    RefMolecularEnergy mole_;
+    Ref<MolecularEnergy> mole_;
     int cartesian_;
 
     void set_defaults();
@@ -228,7 +215,7 @@ class MolEnergyConvergence: public Convergence {
         </dl>
 
      */
-    MolEnergyConvergence(const RefKeyVal&);
+    MolEnergyConvergence(const Ref<KeyVal>&);
     virtual ~MolEnergyConvergence();
 
     void save_data_state(StateOut&);
@@ -236,14 +223,14 @@ class MolEnergyConvergence: public Convergence {
     // Set the current gradient and position information.  These
     //will possibly grab the cartesian infomation if we have a
     //MolecularEnergy.
-    void get_grad(const RefFunction &);
-    void get_x(const RefFunction &);
+    void get_grad(const Ref<Function> &);
+    void get_x(const Ref<Function> &);
     void set_nextx(const RefSCVector &);
 
     // Return nonzero if the optimization has converged.
     int converged();
 };
-SavableState_REF_dec(MolEnergyConvergence);
+
 
 #endif
 

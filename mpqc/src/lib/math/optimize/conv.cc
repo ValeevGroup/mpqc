@@ -41,21 +41,9 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////
 // Convergence
 
-SavableState_REF_def(Convergence);
-#define CLASSNAME Convergence
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS virtual public SavableState
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-void *
-Convergence::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc Convergence_cd(
+  typeid(Convergence),"Convergence",1,"virtual public SavableState",
+  0, create<Convergence>, create<Convergence>);
 
 Convergence::Convergence()
 {
@@ -87,7 +75,7 @@ Convergence::Convergence(StateIn&s):
   s.get(graddisp_);
 }
 
-Convergence::Convergence(const RefKeyVal&keyval)
+Convergence::Convergence(const Ref<KeyVal>&keyval)
 {
   use_max_disp_ = keyval->exists("max_disp");
   use_max_grad_ = keyval->exists("max_grad");
@@ -139,7 +127,7 @@ Convergence::set_defaults()
 }
 
 void
-Convergence::get_x(const RefFunction &f)
+Convergence::get_x(const Ref<Function> &f)
 {
   x_ = f->get_x();
 }
@@ -151,7 +139,7 @@ Convergence::set_nextx(const RefSCVector &x)
 }
 
 void
-Convergence::get_grad(const RefFunction &f)
+Convergence::get_grad(const Ref<Function> &f)
 {
   grad_ = f->gradient();
 }

@@ -44,29 +44,24 @@
 /** The MBPT2 class implements several second-order perturbation theory
 methods. */
 class MBPT2: public Wavefunction {
-#   define CLASSNAME MBPT2
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   protected:
 #define ref_to_mp2_acc 100.0
 
-    RefSCF reference_;
-    RefMemoryGrp mem;
+    Ref<SCF> reference_;
+    Ref<MemoryGrp> mem;
     int nfzc, nfzv;
     unsigned int mem_alloc;
 
     double cphf_epsilon_;
     int eliminate_in_gmat_;
     const double *intbuf_;
-    RefTwoBodyInt tbint_;
-    RefTwoBodyDerivInt tbintder_;
+    Ref<TwoBodyInt> tbint_;
+    Ref<TwoBodyDerivInt> tbintder_;
     int nbasis;
-    RefMessageGrp msg_;
+    Ref<MessageGrp> msg_;
     int nvir, nocc, nsocc;
 
-    RefThreadGrp thr_;
+    Ref<ThreadGrp> thr_;
 
     // use a dynamic load balance algorithm if possible if true
     // (will not work if messagegrp not thread safe and
@@ -224,12 +219,12 @@ class MBPT2: public Wavefunction {
         appropriate default.
 
         </dl> */
-    MBPT2(const RefKeyVal&);
+    MBPT2(const Ref<KeyVal>&);
     ~MBPT2();
 
     void save_data_state(StateOut&);
 
-    RefSCF ref() { return reference_; }
+    Ref<SCF> ref() { return reference_; }
     double ref_energy();
     double corr_energy();
     RefSCVector ref_energy_gradient();
@@ -250,7 +245,7 @@ class MBPT2: public Wavefunction {
 
     void print(std::ostream&o=ExEnv::out()) const;
 };
-SavableState_REF_dec(MBPT2);
+
 
 #endif
 

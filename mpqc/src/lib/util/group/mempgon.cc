@@ -122,19 +122,11 @@ paragon_memory_handler(long ptype, long pcount, long pnode, long pptype)
 ///////////////////////////////////////////////////////////////////////
 // The ParagonMemoryGrp class
 
-#define CLASSNAME ParagonMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public ActiveMsgMemoryGrp
-#include <util/class/classi.h>
-void *
-ParagonMemoryGrp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] =  ActiveMsgMemoryGrp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc ParagonMemoryGrp_cd(
+  typeid(ParagonMemoryGrp),"ParagonMemoryGrp",1,"public ActiveMsgMemoryGrp",
+  0, create<ParagonMemoryGrp>, 0);
 
-ParagonMemoryGrp::ParagonMemoryGrp(const RefMessageGrp& msg):
+ParagonMemoryGrp::ParagonMemoryGrp(const Ref<MessageGrp>& msg):
   ActiveMsgMemoryGrp(msg)
 {
   if (global_pgon_mem) {
@@ -148,7 +140,7 @@ ParagonMemoryGrp::ParagonMemoryGrp(const RefMessageGrp& msg):
   active_ = 0;
 }
 
-ParagonMemoryGrp::ParagonMemoryGrp(const RefKeyVal& keyval):
+ParagonMemoryGrp::ParagonMemoryGrp(const Ref<KeyVal>& keyval):
   ActiveMsgMemoryGrp(keyval)
 {
   if (global_pgon_mem) {

@@ -39,16 +39,9 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // BlockedSymmSCMatrix member functions
 
-#define CLASSNAME BlockedSymmSCMatrix
-#define PARENTS public SymmSCMatrix
-#include <util/class/classi.h>
-void *
-BlockedSymmSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SymmSCMatrix::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc BlockedSymmSCMatrix_cd(
+  typeid(BlockedSymmSCMatrix),"BlockedSymmSCMatrix",1,"public SymmSCMatrix",
+  0, 0, 0);
 
 void
 BlockedSymmSCMatrix::resize(SCDimension *a)
@@ -244,7 +237,7 @@ BlockedSymmSCMatrix::solve_this(SCVector*v)
   double res=1;
   
   BlockedSCVector* lv =
-    BlockedSCVector::require_castdown(v,"BlockedSymmSCMatrix::solve_this");
+    require_dynamic_cast<BlockedSCVector*>(v,"BlockedSymmSCMatrix::solve_this");
   
   // make sure that the dimensions match
   if (!dim()->equiv(lv->dim())) {
@@ -272,7 +265,7 @@ void
 BlockedSymmSCMatrix::assign_s(SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  BlockedSymmSCMatrix* la = BlockedSymmSCMatrix::require_castdown(a,
+  BlockedSymmSCMatrix* la = require_dynamic_cast<BlockedSymmSCMatrix*>(a,
                                    "BlockedSymmSCMatrix::assign");
 
   // make sure that the dimensions match
@@ -308,7 +301,7 @@ BlockedSymmSCMatrix::scalar_product(SCVector*a)
 {
   // make sure that the argument is of the correct type
   BlockedSCVector* la
-    = BlockedSCVector::require_castdown(a,"BlockedSCVector::scalar_product");
+    = require_dynamic_cast<BlockedSCVector*>(a,"BlockedSCVector::scalar_product");
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
@@ -330,8 +323,8 @@ BlockedSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
 {
   const char* name = "BlockedSymmSCMatrix::diagonalize";
   // make sure that the arguments is of the correct type
-  BlockedDiagSCMatrix* la = BlockedDiagSCMatrix::require_castdown(a,name);
-  BlockedSCMatrix* lb = BlockedSCMatrix::require_castdown(b,name);
+  BlockedDiagSCMatrix* la = require_dynamic_cast<BlockedDiagSCMatrix*>(a,name);
+  BlockedSCMatrix* lb = require_dynamic_cast<BlockedSCMatrix*>(b,name);
 
   if (!dim()->equiv(la->dim()) ||
       !dim()->equiv(lb->coldim()) || !dim()->equiv(lb->rowdim())) {
@@ -349,7 +342,7 @@ void
 BlockedSymmSCMatrix::accumulate(const SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
-  const BlockedSymmSCMatrix* la = BlockedSymmSCMatrix::require_const_castdown(a,
+  const BlockedSymmSCMatrix* la = require_dynamic_cast<const BlockedSymmSCMatrix*>(a,
                                    "BlockedSymmSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -372,7 +365,7 @@ BlockedSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)
   
   // make sure that the argument is of the correct type
   BlockedSCMatrix* la
-    = BlockedSCMatrix::require_castdown(a,"BlockedSymmSCMatrix::"
+    = require_dynamic_cast<BlockedSCMatrix*>(a,"BlockedSymmSCMatrix::"
                                           "accumulate_symmetric_product");
 
   if (!dim()->equiv(la->rowdim())) {
@@ -397,7 +390,7 @@ BlockedSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
 {
   // make sure that the argument is of the correct type
   BlockedSCMatrix* la
-    = BlockedSCMatrix::require_castdown(a,"BlockedSymmSCMatrix::"
+    = require_dynamic_cast<BlockedSCMatrix*>(a,"BlockedSymmSCMatrix::"
                                           "accumulate_symmetric_sum");
 
   if (!dim()->equiv(la->rowdim()) || !dim()->equiv(la->coldim())) {
@@ -416,7 +409,7 @@ BlockedSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
 {
   // make sure that the argument is of the correct type
   BlockedSCVector* la
-    = BlockedSCVector::require_castdown(a,"BlockedSymmSCMatrix::"
+    = require_dynamic_cast<BlockedSCVector*>(a,"BlockedSymmSCMatrix::"
                                       "accumulate_symmetric_outer_product");
 
   if (!dim()->equiv(la->dim())) {
@@ -439,10 +432,10 @@ BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
   
   // do the necessary castdowns
   BlockedSCMatrix*la
-    = BlockedSCMatrix::require_castdown(a,"%s::accumulate_transform",
+    = require_dynamic_cast<BlockedSCMatrix*>(a,"%s::accumulate_transform",
                                       class_name());
-  BlockedSymmSCMatrix*lb = require_castdown(b,"%s::accumulate_transform",
-                                          class_name());
+  BlockedSymmSCMatrix*lb = require_dynamic_cast<BlockedSymmSCMatrix*>(
+      b,"%s::accumulate_transform", class_name());
 
   // check the dimensions
   if (t == SCMatrix::NormalTransform) {
@@ -490,10 +483,10 @@ BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b,
   
   // do the necessary castdowns
   BlockedSCMatrix*la
-    = BlockedSCMatrix::require_castdown(a,"%s::accumulate_transform",
+    = require_dynamic_cast<BlockedSCMatrix*>(a,"%s::accumulate_transform",
                                       class_name());
   BlockedDiagSCMatrix*lb
-    = BlockedDiagSCMatrix::require_castdown(b,"%s::accumulate_transform",
+    = require_dynamic_cast<BlockedDiagSCMatrix*>(b,"%s::accumulate_transform",
                                           class_name());
 
   // check the dimensions
@@ -525,9 +518,9 @@ BlockedSymmSCMatrix::accumulate_transform(SymmSCMatrix*a,SymmSCMatrix*b)
 }
 
 void
-BlockedSymmSCMatrix::element_op(const RefSCElementOp& op)
+BlockedSymmSCMatrix::element_op(const Ref<SCElementOp>& op)
 {
-  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
+  BlockedSCElementOp *bop = dynamic_cast<BlockedSCElementOp*>(op.pointer());
 
   int nb = d->blocks()->nblock();
   
@@ -543,17 +536,17 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp& op)
 }
 
 void
-BlockedSymmSCMatrix::element_op(const RefSCElementOp2& op,
+BlockedSymmSCMatrix::element_op(const Ref<SCElementOp2>& op,
                                 SymmSCMatrix* m)
 {
-  BlockedSymmSCMatrix *lm = BlockedSymmSCMatrix::require_castdown(m,
+  BlockedSymmSCMatrix *lm = require_dynamic_cast<BlockedSymmSCMatrix*>(m,
                                           "BlockedSymSCMatrix::element_op");
   if (!dim()->equiv(lm->dim())) {
     ExEnv::err() << indent << "BlockedSymmSCMatrix: bad element_op\n";
     abort();
   }
 
-  BlockedSCElementOp2 *bop = BlockedSCElementOp2::castdown(op.pointer());
+  BlockedSCElementOp2 *bop = dynamic_cast<BlockedSCElementOp2*>(op.pointer());
 
   int nb = d->blocks()->nblock();
   
@@ -569,12 +562,12 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp2& op,
 }
 
 void
-BlockedSymmSCMatrix::element_op(const RefSCElementOp3& op,
+BlockedSymmSCMatrix::element_op(const Ref<SCElementOp3>& op,
                               SymmSCMatrix* m,SymmSCMatrix* n)
 {
-  BlockedSymmSCMatrix *lm = BlockedSymmSCMatrix::require_castdown(m,
+  BlockedSymmSCMatrix *lm = require_dynamic_cast<BlockedSymmSCMatrix*>(m,
                                         "BlockedSymSCMatrix::element_op");
-  BlockedSymmSCMatrix *ln = BlockedSymmSCMatrix::require_castdown(n,
+  BlockedSymmSCMatrix *ln = require_dynamic_cast<BlockedSymmSCMatrix*>(n,
                                         "BlockedSymSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
@@ -582,7 +575,7 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp3& op,
     abort();
   }
 
-  BlockedSCElementOp3 *bop = BlockedSCElementOp3::castdown(op.pointer());
+  BlockedSCElementOp3 *bop = dynamic_cast<BlockedSCElementOp3*>(op.pointer());
 
   int nb = d->blocks()->nblock();
   
@@ -633,10 +626,10 @@ BlockedSymmSCMatrix::block(int i)
   return mats_[i];
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 BlockedSymmSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
-  RefSCMatrixCompositeSubblockIter iter
+  Ref<SCMatrixCompositeSubblockIter> iter
       = new SCMatrixCompositeSubblockIter(access,nblocks());
   for (int i=0; i<nblocks(); i++) {
       if (block(i).null())
@@ -644,14 +637,14 @@ BlockedSymmSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
       else
           iter->set_iter(i, block(i)->local_blocks(access));
     }
-  RefSCMatrixSubblockIter ret = iter.pointer();
+  Ref<SCMatrixSubblockIter> ret = iter.pointer();
   return ret;
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 BlockedSymmSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
-  RefSCMatrixCompositeSubblockIter iter
+  Ref<SCMatrixCompositeSubblockIter> iter
       = new SCMatrixCompositeSubblockIter(access,nblocks());
   for (int i=0; i<nblocks(); i++) {
       if (block(i).null())
@@ -659,7 +652,7 @@ BlockedSymmSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
       else
           iter->set_iter(i, block(i)->all_blocks(access));
     }
-  RefSCMatrixSubblockIter ret = iter.pointer();
+  Ref<SCMatrixSubblockIter> ret = iter.pointer();
   return ret;
 }
 
@@ -714,8 +707,8 @@ BlockedSymmSCMatrix::convert_accumulate(SymmSCMatrix*a)
   // ok, are we converting a non-blocked matrix to a blocked one, or are
   // we converting a blocked matrix from one specialization to another?
   
-  if (BlockedSymmSCMatrix::castdown(a)) {
-    BlockedSymmSCMatrix *ba = BlockedSymmSCMatrix::castdown(a);
+  if (dynamic_cast<BlockedSymmSCMatrix*>(a)) {
+    BlockedSymmSCMatrix *ba = dynamic_cast<BlockedSymmSCMatrix*>(a);
     if (ba->nblocks() == this->nblocks()) {
       for (int i=0; i < nblocks(); i++)
         mats_[i]->convert_accumulate(ba->mats_[i]);

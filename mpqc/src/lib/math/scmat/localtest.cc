@@ -30,7 +30,7 @@
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 
-void matrixtest(RefSCMatrixKit kit, RefKeyVal keyval,
+void matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
                 RefSCDimension d1,RefSCDimension d2,RefSCDimension d3);
 
 main(int argc, char *argv[])
@@ -40,16 +40,16 @@ main(int argc, char *argv[])
   if (argc > 1)
       infile = argv[1];
 
-  RefKeyVal keyval = new ParsedKeyVal(infile);
+  Ref<KeyVal> keyval = new ParsedKeyVal(infile);
 
-  RefMessageGrp msg = MessageGrp::get_default_messagegrp();
+  Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
 
-  RefRegionTimer tim = new ParallelRegionTimer(msg,"matrixtest",1,1);
+  Ref<RegionTimer> tim = new ParallelRegionTimer(msg,"matrixtest",1,1);
   RegionTimer::set_default_regiontimer(tim);
 
   SCFormIO::set_printnode(0);
 
-  RefSCMatrixKit kit = new LocalSCMatrixKit;
+  Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
   RefSCDimension d1(keyval->describedclassvalue("d1"));
   RefSCDimension d2(keyval->describedclassvalue("d2"));
   RefSCDimension d3(keyval->describedclassvalue("d3"));

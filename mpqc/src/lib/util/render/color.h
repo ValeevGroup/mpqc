@@ -38,7 +38,7 @@ class Color {
   public:
     Color() {}
     Color(double r, double g, double b): red_(r), green_(g), blue_(b) {}
-    Color(const RefKeyVal&);
+    Color(const Ref<KeyVal>&);
     double red() const { return red_; }
     double green() const { return green_; }
     double blue() const { return blue_; }

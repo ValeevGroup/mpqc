@@ -35,10 +35,7 @@
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
 
-DescribedClass_REF_fwddec(MessageGrp);
 class GlobalMsgIter: public DescribedClass {
-#define CLASSNAME GlobalMsgIter
-#include <util/class/classda.h>
   protected:
     int me_;
     int nproc_;
@@ -64,20 +61,19 @@ class GlobalMsgIter: public DescribedClass {
     int recvfrom() { return fwd_?fwdrecvfrom():fwdsendto(); }
     int recv() { return fwd_?fwdrecv():fwdsend(); }
 };
-DescribedClass_REF_dec(GlobalMsgIter);
 
+
+class MessageGrp;
 class MachineTopology: public DescribedClass {
-#define CLASSNAME MachineTopology
-#include <util/class/classda.h>
   public:
     MachineTopology();
-    MachineTopology(const RefKeyVal&);
+    MachineTopology(const Ref<KeyVal>&);
     ~MachineTopology();
 
-    virtual RefGlobalMsgIter global_msg_iter(const RefMessageGrp&,
+    virtual Ref<GlobalMsgIter> global_msg_iter(const Ref<MessageGrp>&,
                                              int target) = 0;
 };
-DescribedClass_REF_dec(MachineTopology);
+
 
 #endif
 

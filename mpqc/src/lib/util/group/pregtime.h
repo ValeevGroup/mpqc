@@ -37,16 +37,13 @@
 #include <util/group/message.h>
 
 class ParallelRegionTimer: public RegionTimer {
-#  define CLASSNAME ParallelRegionTimer
-#  define HAVE_KEYVAL_CTOR
-#  include <util/class/classd.h>
   protected:
-    RefMessageGrp msg_;
+    Ref<MessageGrp> msg_;
   public:
-    ParallelRegionTimer(const RefMessageGrp&,
+    ParallelRegionTimer(const Ref<MessageGrp>&,
                         const char *topname = "total",
                         int cpu_time = 0, int wall_time = 1);
-    ParallelRegionTimer(const RefKeyVal&);
+    ParallelRegionTimer(const Ref<KeyVal>&);
     ~ParallelRegionTimer();
 
     void print(std::ostream& = ExEnv::out()) const;

@@ -49,10 +49,9 @@ class SCVectorSimpleBlock;
 
 class RefSCMatrix;
 class RefSymmSCMatrix;
-DescribedClass_named_REF_dec(RefDCSCVector,SCVector);
 /** The RefSCVector class is a smart pointer to an SCVector specialization.
  */
-class RefSCVector: public RefDCSCVector {
+class RefSCVector: public Ref<SCVector> {
     // standard overrides
   public:
     /** Initializes the vector pointer to 0.  The reference must
@@ -74,7 +73,7 @@ class RefSCVector: public RefDCSCVector {
   public:
     /** Create a vector with dimension dim.  The data values
         are undefined. */
-    RefSCVector(const RefSCDimension& dim,const RefSCMatrixKit&);
+    RefSCVector(const RefSCDimension& dim,const Ref<SCMatrixKit>&);
 
     /// Return an l-value that can be used to assign or retrieve an element.
     SCVectordouble operator()(int) const;
@@ -96,7 +95,7 @@ class RefSCVector: public RefDCSCVector {
     double get_element(int) const;
     int n() const;
     RefSCDimension dim() const;
-    RefSCMatrixKit kit() const;
+    Ref<SCMatrixKit> kit() const;
     RefSCVector clone() const;
     RefSCVector copy() const;
     double maxabs() const;
@@ -112,10 +111,10 @@ class RefSCVector: public RefDCSCVector {
     void accumulate(const RefSCVector& v) const;
     void accumulate_product(const RefSymmSCMatrix&, const RefSCVector&);
     void accumulate_product(const RefSCMatrix&, const RefSCVector&);
-    void element_op(const RefSCElementOp& op) const;
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>& op) const;
+    void element_op(const Ref<SCElementOp2>&,
                     const RefSCVector&) const;
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     const RefSCVector&,
                     const RefSCVector&) const;
     void print(std::ostream&out) const;
@@ -128,11 +127,10 @@ RefSCVector operator*(double,const RefSCVector&);
 
 class RefSymmSCMatrix;
 class RefDiagSCMatrix;
-DescribedClass_named_REF_dec(RefDCSCMatrix,SCMatrix);
 /** The RefSCMatrix class is a smart pointer to an SCMatrix
     specialization.
 */
-class RefSCMatrix: public RefDCSCMatrix {
+class RefSCMatrix: public Ref<SCMatrix> {
     // standard overrides
   public:
     /** Initializes the matrix pointer to 0.  The reference must
@@ -153,7 +151,7 @@ class RefSCMatrix: public RefDCSCMatrix {
     /** Create a vector with dimension d1 by d2.
         The data values are undefined. */
     RefSCMatrix(const RefSCDimension& d1,const RefSCDimension& d2,
-                const RefSCMatrixKit&);
+                const Ref<SCMatrixKit>&);
 
     /// Multiply this by a vector and return a vector.
     RefSCVector operator*(const RefSCVector&) const;
@@ -208,17 +206,17 @@ class RefSCMatrix: public RefDCSCMatrix {
     void accumulate(const RefSCMatrix&) const;
     void accumulate(const RefSymmSCMatrix&) const;
     void accumulate(const RefDiagSCMatrix&) const;
-    void element_op(const RefSCElementOp&) const;
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&) const;
+    void element_op(const Ref<SCElementOp2>&,
                     const RefSCMatrix&) const;
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     const RefSCMatrix&,
                     const RefSCMatrix&) const;
     int nrow() const;
     int ncol() const;
     RefSCDimension rowdim() const;
     RefSCDimension coldim() const;
-    RefSCMatrixKit kit() const;
+    Ref<SCMatrixKit> kit() const;
     void set_element(int,int,double) const;
     void accumulate_element(int,int,double) const;
     double get_element(int,int) const;
@@ -246,10 +244,9 @@ class RefSCMatrix: public RefDCSCMatrix {
 /// Allow multiplication with a scalar on the left.
 RefSCMatrix operator*(double,const RefSCMatrix&);
 
-DescribedClass_named_REF_dec(RefDCSymmSCMatrix,SymmSCMatrix);
 /** The RefSymmSCMatrix class is a smart pointer to an SCSymmSCMatrix
     specialization.  */
-class RefSymmSCMatrix: public RefDCSymmSCMatrix {
+class RefSymmSCMatrix: public Ref<SymmSCMatrix> {
     // standard overrides
   public:
     /** Initializes the matrix pointer to 0.  The reference must
@@ -269,7 +266,7 @@ class RefSymmSCMatrix: public RefDCSymmSCMatrix {
   public:
     /** Create a vector with dimension d by d.
         The data values are undefined. */
-    RefSymmSCMatrix(const RefSCDimension& d,const RefSCMatrixKit&);
+    RefSymmSCMatrix(const RefSCDimension& d,const Ref<SCMatrixKit>&);
     /// Multiply this by a matrix and return a matrix.
     RefSCMatrix operator*(const RefSCMatrix&) const;
     RefSCMatrix operator*(const RefSymmSCMatrix&) const;
@@ -322,16 +319,16 @@ class RefSymmSCMatrix: public RefDCSymmSCMatrix {
     void convert(double*) const;
     void convert(double**) const;
     void accumulate(const RefSymmSCMatrix&) const;
-    void element_op(const RefSCElementOp&) const;
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&) const;
+    void element_op(const Ref<SCElementOp2>&,
                     const RefSymmSCMatrix&) const;
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     const RefSymmSCMatrix&,
                     const RefSymmSCMatrix&) const;
     double trace() const;
     int n() const;
     RefSCDimension dim() const;
-    RefSCMatrixKit kit() const;
+    Ref<SCMatrixKit> kit() const;
     void print(std::ostream&) const;
     void print(const char*title=0,
                std::ostream&out=ExEnv::out(), int =10) const;
@@ -356,10 +353,9 @@ class RefSymmSCMatrix: public RefDCSymmSCMatrix {
 /// Allow multiplication with a scalar on the left.
 RefSymmSCMatrix operator*(double,const RefSymmSCMatrix&);
 
-DescribedClass_named_REF_dec(RefDCDiagSCMatrix,DiagSCMatrix);
 /** The RefDiagSCMatrix class is a smart pointer to an DiagSCMatrix
     specialization. */
-class RefDiagSCMatrix: public RefDCDiagSCMatrix {
+class RefDiagSCMatrix: public Ref<DiagSCMatrix> {
     // standard overrides
   public:
     /** Initializes the matrix pointer to 0.  The reference must
@@ -379,7 +375,7 @@ class RefDiagSCMatrix: public RefDCDiagSCMatrix {
   public:
     /** Create a diagonal matrix with dimension d by d.  The data values
         are undefined. */
-    RefDiagSCMatrix(const RefSCDimension&,const RefSCMatrixKit&);
+    RefDiagSCMatrix(const RefSCDimension&,const Ref<SCMatrixKit>&);
     /// Multiply this by a matrix and return a matrix.
     RefSCMatrix operator*(const RefSCMatrix&) const;
     RefDiagSCMatrix operator*(double) const;
@@ -404,15 +400,15 @@ class RefDiagSCMatrix: public RefDCDiagSCMatrix {
     void assign(const double*) const;
     void convert(double*) const;
     void accumulate(const RefDiagSCMatrix&) const;
-    void element_op(const RefSCElementOp&) const;
-    void element_op(const RefSCElementOp2&,
+    void element_op(const Ref<SCElementOp>&) const;
+    void element_op(const Ref<SCElementOp2>&,
                     const RefDiagSCMatrix&) const;
-    void element_op(const RefSCElementOp3&,
+    void element_op(const Ref<SCElementOp3>&,
                     const RefDiagSCMatrix&,
                     const RefDiagSCMatrix&) const;
     int n() const;
     RefSCDimension dim() const;
-    RefSCMatrixKit kit() const;
+    Ref<SCMatrixKit> kit() const;
     double trace() const;
     void print(std::ostream&) const;
     void print(const char*title=0,

@@ -41,12 +41,9 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixBlock member functions
 
-SavableState_REF_def(SCMatrixBlock);
-
-#define CLASSNAME SCMatrixBlock
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
+static ClassDesc SCMatrixBlock_cd(
+  typeid(SCMatrixBlock),"SCMatrixBlock",1,"public SavableState",
+  0, 0, 0);
 
 SCMatrixBlock::SCMatrixBlock()
 {
@@ -65,14 +62,6 @@ SCMatrixBlock::save_data_state(StateOut&s)
 {
   s.put(blocki);
   s.put(blockj);
-}
-
-void *
-SCMatrixBlock::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 
 SCMatrixBlock::~SCMatrixBlock()
@@ -134,19 +123,9 @@ SCMatrixBlockListLink::block(SCMatrixBlock* b)
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixBlockList member functions
 
-SavableState_REF_def(SCMatrixBlockList);
-#define CLASSNAME SCMatrixBlockList
-#define PARENTS public SavableState
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-SCMatrixBlockList::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SCMatrixBlockList_cd(
+  typeid(SCMatrixBlockList),"SCMatrixBlockList",1,"public SavableState",
+  0, 0, create<SCMatrixBlockList>);
 
 SCMatrixBlockList::SCMatrixBlockList()
 {
@@ -157,10 +136,12 @@ SCMatrixBlockList::SCMatrixBlockList(StateIn& s):
   SavableState(s)
 {
   int i, count;
+  Ref<SCMatrixBlock> b;
   s.get(count);
   _begin = 0;
   for (i=0; i<count; i++) {
-      append(SCMatrixBlock::restore_state(s));
+      b << SavableState::restore_state(s);
+      append(b);
     }
 }
 
@@ -214,13 +195,9 @@ SCMatrixBlockList::deepcopy()
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixRectBlock member functions
 
-SavableState_REF_def(SCMatrixRectBlock);
-
-#define CLASSNAME SCMatrixRectBlock
-#define PARENTS public SCMatrixBlock
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCMatrixRectBlock_cd(
+  typeid(SCMatrixRectBlock),"SCMatrixRectBlock",1,"public SCMatrixBlock",
+  0, 0, create<SCMatrixRectBlock>);
 
 SCMatrixRectBlock::SCMatrixRectBlock(int is, int ie, int js, int je):
   istart(is),
@@ -274,14 +251,6 @@ SCMatrixRectBlock::ndat() const
   return (iend-istart)*(jend-jstart);
 }
 
-void *
-SCMatrixRectBlock::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrixBlock::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
 SCMatrixRectBlock::~SCMatrixRectBlock()
 {
   delete[] data;
@@ -316,13 +285,9 @@ SCMatrixRectBlock::process(SCElementOp3*op,
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixRectSubBlock member functions
 
-SavableState_REF_def(SCMatrixRectSubBlock);
-
-#define CLASSNAME SCMatrixRectSubBlock
-#define PARENTS public SCMatrixBlock
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCMatrixRectSubBlock_cd(
+  typeid(SCMatrixRectSubBlock),"SCMatrixRectSubBlock",1,"public SCMatrixBlock",
+  0, 0, create<SCMatrixRectSubBlock>);
 
 SCMatrixRectSubBlock::SCMatrixRectSubBlock(int is, int ie, int istr,
                                            int js, int je, double* d):
@@ -355,14 +320,6 @@ SCMatrixRectSubBlock::save_data_state(StateOut&s)
   s.put(jstart);
   s.put(iend);
   s.put(jend);
-}
-
-void *
-SCMatrixRectSubBlock::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrixBlock::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 
 SCMatrixRectSubBlock::~SCMatrixRectSubBlock()
@@ -399,13 +356,9 @@ SCMatrixRectSubBlock::process(SCElementOp3*op,
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixLTriBlock member functions
 
-SavableState_REF_def(SCMatrixLTriBlock);
-
-#define CLASSNAME SCMatrixLTriBlock
-#define PARENTS public SCMatrixBlock
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCMatrixLTriBlock_cd(
+  typeid(SCMatrixLTriBlock),"SCMatrixLTriBlock",1,"public SCMatrixBlock",
+  0, 0, create<SCMatrixLTriBlock>);
 
 SCMatrixLTriBlock::SCMatrixLTriBlock(int s,int e):
   start(s),
@@ -453,14 +406,6 @@ SCMatrixLTriBlock::ndat() const
   return ((end-start)*(end-start+1))/2;
 }
 
-void *
-SCMatrixLTriBlock::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrixBlock::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
 SCMatrixLTriBlock::~SCMatrixLTriBlock()
 {
   delete[] data;
@@ -495,13 +440,9 @@ SCMatrixLTriBlock::process(SCElementOp3*op,
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixLTriSubBlock member functions
 
-SavableState_REF_def(SCMatrixLTriSubBlock);
-
-#define CLASSNAME SCMatrixLTriSubBlock
-#define PARENTS public SCMatrixBlock
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCMatrixLTriSubBlock_cd(
+  typeid(SCMatrixLTriSubBlock),"SCMatrixLTriSubBlock",1,"public SCMatrixBlock",
+  0, 0, create<SCMatrixLTriSubBlock>);
 
 SCMatrixLTriSubBlock::SCMatrixLTriSubBlock(int is, int ie,
                                            int js, int je,
@@ -532,14 +473,6 @@ SCMatrixLTriSubBlock::save_data_state(StateOut&s)
   s.put(iend);
   s.put(jstart);
   s.put(jend);
-}
-
-void *
-SCMatrixLTriSubBlock::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrixBlock::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 
 SCMatrixLTriSubBlock::~SCMatrixLTriSubBlock()
@@ -576,13 +509,9 @@ SCMatrixLTriSubBlock::process(SCElementOp3*op,
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixDiagBlock member functions
 
-SavableState_REF_def(SCMatrixDiagBlock);
-
-#define CLASSNAME SCMatrixDiagBlock
-#define PARENTS public SCMatrixBlock
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCMatrixDiagBlock_cd(
+  typeid(SCMatrixDiagBlock),"SCMatrixDiagBlock",1,"public SCMatrixBlock",
+  0, 0, create<SCMatrixDiagBlock>);
 
 SCMatrixDiagBlock::SCMatrixDiagBlock(int s, int e):
   istart(s),
@@ -641,14 +570,6 @@ SCMatrixDiagBlock::ndat() const
   return iend-istart;
 }
 
-void *
-SCMatrixDiagBlock::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrixBlock::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
 SCMatrixDiagBlock::~SCMatrixDiagBlock()
 {
   delete[] data;
@@ -683,13 +604,9 @@ SCMatrixDiagBlock::process(SCElementOp3*op,
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixDiagSubBlock member functions
 
-SavableState_REF_def(SCMatrixDiagSubBlock);
-
-#define CLASSNAME SCMatrixDiagSubBlock
-#define PARENTS public SCMatrixBlock
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCMatrixDiagSubBlock_cd(
+  typeid(SCMatrixDiagSubBlock),"SCMatrixDiagSubBlock",1,"public SCMatrixBlock",
+  0, 0, create<SCMatrixDiagSubBlock>);
 
 SCMatrixDiagSubBlock::SCMatrixDiagSubBlock(int s, int e, int o,
                                            double* d):
@@ -731,14 +648,6 @@ SCMatrixDiagSubBlock::save_data_state(StateOut&s)
   s.put(offset);
 }
 
-void *
-SCMatrixDiagSubBlock::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrixBlock::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
 SCMatrixDiagSubBlock::~SCMatrixDiagSubBlock()
 {
 }
@@ -773,13 +682,9 @@ SCMatrixDiagSubBlock::process(SCElementOp3*op,
 /////////////////////////////////////////////////////////////////////////////
 // SCVectorSimpleBlock member functions
 
-SavableState_REF_def(SCVectorSimpleBlock);
-
-#define CLASSNAME SCVectorSimpleBlock
-#define PARENTS public SCMatrixBlock
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCVectorSimpleBlock_cd(
+  typeid(SCVectorSimpleBlock),"SCVectorSimpleBlock",1,"public SCMatrixBlock",
+  0, 0, create<SCVectorSimpleBlock>);
 
 SCVectorSimpleBlock::SCVectorSimpleBlock(int s, int e):
   istart(s),
@@ -827,14 +732,6 @@ SCVectorSimpleBlock::ndat() const
   return iend-istart;
 }
 
-void *
-SCVectorSimpleBlock::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrixBlock::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
 SCVectorSimpleBlock::~SCVectorSimpleBlock()
 {
   delete[] data;
@@ -870,13 +767,9 @@ SCVectorSimpleBlock::process(SCElementOp3*op,
 /////////////////////////////////////////////////////////////////////////////
 // SCVectorSimpleSubBlock member functions
 
-SavableState_REF_def(SCVectorSimpleSubBlock);
-
-#define CLASSNAME SCVectorSimpleSubBlock
-#define PARENTS public SCMatrixBlock
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCVectorSimpleSubBlock_cd(
+  typeid(SCVectorSimpleSubBlock),"SCVectorSimpleSubBlock",1,"public SCMatrixBlock",
+  0, 0, create<SCVectorSimpleSubBlock>);
 
 SCVectorSimpleSubBlock::SCVectorSimpleSubBlock(int s, int e, int o,
                                                double* d):
@@ -903,14 +796,6 @@ SCVectorSimpleSubBlock::save_data_state(StateOut&s)
   s.put(istart);
   s.put(iend);
   s.put(offset);
-}
-
-void *
-SCVectorSimpleSubBlock::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCMatrixBlock::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 
 SCVectorSimpleSubBlock::~SCVectorSimpleSubBlock()
@@ -954,7 +839,7 @@ SCVectorSimpleSubBlock::process(SCElementOp3*op,
 
 SCMatrixSimpleSubblockIter::SCMatrixSimpleSubblockIter(
     Access access_,
-    const RefSCMatrixBlock &b):
+    const Ref<SCMatrixBlock> &b):
   SCMatrixSubblockIter(access_)
 {
   block_ = b;
@@ -990,7 +875,7 @@ SCMatrixSimpleSubblockIter::block()
 
 SCMatrixListSubblockIter::SCMatrixListSubblockIter(
     Access access,
-    const RefSCMatrixBlockList &list
+    const Ref<SCMatrixBlockList> &list
     ):
   SCMatrixSubblockIter(access),
   list_(list)
@@ -1060,14 +945,14 @@ SCMatrixNullSubblockIter::block()
 // SCMatrixCompositeSubblockIter
 
 SCMatrixCompositeSubblockIter::SCMatrixCompositeSubblockIter(
-    RefSCMatrixSubblockIter& i1,
-    RefSCMatrixSubblockIter& i2):
+    Ref<SCMatrixSubblockIter>& i1,
+    Ref<SCMatrixSubblockIter>& i2):
   SCMatrixSubblockIter(None)
 {
   niters_ = 0;
   if (i1.nonnull()) { niters_++; }
   if (i2.nonnull()) { niters_++; }
-  iters_ = new RefSCMatrixSubblockIter[niters_];
+  iters_ = new Ref<SCMatrixSubblockIter>[niters_];
   iiter_ = 0;
   if (i1.nonnull()) { iters_[iiter_] = i1; iiter_++; }
   if (i2.nonnull()) { iters_[iiter_] = i2; iiter_++; }
@@ -1088,7 +973,7 @@ SCMatrixCompositeSubblockIter::SCMatrixCompositeSubblockIter(
   SCMatrixSubblockIter(access_)
 {
   niters_ = niters;
-  iters_ = new RefSCMatrixSubblockIter[niters_];
+  iters_ = new Ref<SCMatrixSubblockIter>[niters_];
 }
 
 SCMatrixCompositeSubblockIter::~SCMatrixCompositeSubblockIter()
@@ -1098,7 +983,7 @@ SCMatrixCompositeSubblockIter::~SCMatrixCompositeSubblockIter()
 
 void
 SCMatrixCompositeSubblockIter::set_iter(int i,
-                                        const RefSCMatrixSubblockIter& iter)
+                                        const Ref<SCMatrixSubblockIter>& iter)
 {
   iters_[i] = iter;
   if (iters_[i]->access() != access_) {
@@ -1152,11 +1037,11 @@ SCMatrixCompositeSubblockIter::block()
 // SCMatrixJointSubblockIter
 
 SCMatrixJointSubblockIter::SCMatrixJointSubblockIter(
-    const RefSCMatrixSubblockIter& i1,
-    const RefSCMatrixSubblockIter& i2,
-    const RefSCMatrixSubblockIter& i3,
-    const RefSCMatrixSubblockIter& i4,
-    const RefSCMatrixSubblockIter& i5):
+    const Ref<SCMatrixSubblockIter>& i1,
+    const Ref<SCMatrixSubblockIter>& i2,
+    const Ref<SCMatrixSubblockIter>& i3,
+    const Ref<SCMatrixSubblockIter>& i4,
+    const Ref<SCMatrixSubblockIter>& i5):
   SCMatrixSubblockIter(None)
 {
   niters_ = 0;
@@ -1165,7 +1050,7 @@ SCMatrixJointSubblockIter::SCMatrixJointSubblockIter(
   if (i3.nonnull()) { niters_++; }
   if (i4.nonnull()) { niters_++; }
   if (i5.nonnull()) { niters_++; }
-  iters_ = new RefSCMatrixSubblockIter[niters_];
+  iters_ = new Ref<SCMatrixSubblockIter>[niters_];
   int i = 0;
   if (i1.nonnull()) { iters_[i] = i1; i++; }
   if (i2.nonnull()) { iters_[i] = i2; i++; }

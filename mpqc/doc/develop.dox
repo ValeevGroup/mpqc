@@ -13,6 +13,9 @@ initialized in your <tt>main</tt> subroutine.
 <ul>
   <li> \ref scconfig
   <li> \ref scinit
+  <li> \ref devsampsrc
+  <li> \ref devsampmak
+  <li> \ref devsampinp
 </ul>
 
 \subsection scconfig The sc-config Program
@@ -23,6 +26,7 @@ and installed.  The following information is available:
 <dl>
      <dt><tt>--prefix</tt><dd> The directory where SC is installed.
      <dt><tt>--version</tt><dd> The version of SC.
+     <dt><tt>--libdir</tt><dd> The directory were the libraries are found.
      <dt><tt>--libs</tt><dd> The libraries and library paths needed to link.
      <dt><tt>--cppflags</tt><dd> The include directories.
      <dt><tt>--cc</tt><dd> The C compiler.
@@ -112,5 +116,40 @@ This segment of code sets up the message passing object:
     grp = MessageGrp::get_default_messagegrp();
 </pre>
 
+\subsection devsampsrc MP2 Implementation Example: Source
+
+This example code illustrates a complete MP2 energy
+implementation using the SC Toolkit.  First an MP2 class is
+declared and the necesary base class member functions are
+provided.  Next a ClassDesc is defined.  Finally, the member
+functions are defined.
+
+Note that no main routine is provided.  This is because this file
+is designed to be used to extend the functionality of the mpqc
+executable.  To generate a new mpqc executable with the new class
+available for use, see the \ref devsampmak section.
+
+\include mp2.cc
+
+\subsection devsampmak MP2 Implementation Example: Makefile
+
+This example Makefile demonstrates how to link in a new class to
+form a new mpqc executable, here named mp2.  The code is given in
+the \ref devsampsrc section.  The \ref scconfig "sc-config command"
+is used to obtain information about how the SC toolkit
+was compiled and installed.  The library specified with -lmpqc
+provides the main routine from mpqc.
+
+\include Makefile
+
+\subsection devsampinp MP2 Implementation Example: Input
+
+This input file can be used with the program illustrated in
+the \ref devsampsrc section.  It will compute the MP2 energy
+using the new MP2 class.  Note that only the
+\ref mpqcoo "object-oriented input format" can be used with
+user provided classes.
+
+\include mp2.in
 
 */

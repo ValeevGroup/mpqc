@@ -47,7 +47,7 @@ main(int argc, char** argv)
       exit(1);
     }
 
-  RefParsedKeyVal keyval = new ParsedKeyVal(fp);
+  Ref<ParsedKeyVal> keyval = new ParsedKeyVal(fp);
 
   if (!keyval->exists(keyword)) {
       ExEnv::err() << scprintf("%s: keyword \"%s\" doesn't exist in file \"%s\"\n",
@@ -61,7 +61,7 @@ main(int argc, char** argv)
       exit(1);
     }
 
-  RefDescribedClass dc = keyval->describedclassvalue(keyword);
+  Ref<DescribedClass> dc = keyval->describedclassvalue(keyword);
 
   if (dc.null()) {
       ExEnv::err() << scprintf("%s: keyword \"%s\" in file \"%s\" could not be"
@@ -70,7 +70,7 @@ main(int argc, char** argv)
       exit(1);
     }
 
-  RefOptimize opt = dc;
+  Ref<Optimize> opt = dc;
 
   if (opt.null()) {
       ExEnv::err() << scprintf("%s: keyword \"%s\" in file \"%s\" could not be"

@@ -42,9 +42,6 @@ Intel Paragon machines.  Most Paragons implement the full NX library and on
 these machines ParagonMemoryGrp should be used instead.  */
 
 class IParagonMemoryGrp: public MIDMemoryGrp {
-#define CLASSNAME IParagonMemoryGrp
-#define HAVE_KEYVAL_CTOR
-#include <util/class/classd.h>
   private:
     long lockcomm();
     void unlockcomm(long oldvalue);
@@ -54,8 +51,8 @@ class IParagonMemoryGrp: public MIDMemoryGrp {
     long wait(long, long = -1);
     int probe(long);
   public:
-    IParagonMemoryGrp(const RefMessageGrp& msg);
-    IParagonMemoryGrp(const RefKeyVal& keyval);
+    IParagonMemoryGrp(const Ref<MessageGrp>& msg);
+    IParagonMemoryGrp(const Ref<KeyVal>& keyval);
     ~IParagonMemoryGrp();
 };
 

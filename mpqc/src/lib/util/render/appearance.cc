@@ -29,25 +29,16 @@
 
 using namespace std;
 
-DescribedClass_REF_def(Appearance);
-#define CLASSNAME Appearance
-#define HAVE_KEYVAL_CTOR
-#define PARENTS public DescribedClass
-#include <util/class/classi.h>
-void *
-Appearance::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DescribedClass::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc Appearance_cd(
+  typeid(Appearance),"Appearance",1,"public DescribedClass",
+  0, create<Appearance>, 0);
 
 Appearance::Appearance()
 {
   level_.set(1);
 }
 
-Appearance::Appearance(const RefKeyVal& keyval)
+Appearance::Appearance(const Ref<KeyVal>& keyval)
 {
   int level = keyval->intvalue("level");
   if (keyval->error() == KeyVal::OK) level_.set(level);

@@ -39,18 +39,9 @@
 
 using namespace std;
 
-#define CLASSNAME Volume
-#define PARENTS public Function
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-
-void *
-Volume::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = Function::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc Volume_cd(
+  typeid(Volume),"Volume",1,"public Function",
+  0, 0, 0);
 
 Volume::Volume():
   _interp_acc(1.0e-6)
@@ -58,7 +49,7 @@ Volume::Volume():
   set_dimension(new SCDimension(3));
 }
 
-Volume::Volume(const RefKeyVal&keyval):
+Volume::Volume(const Ref<KeyVal>&keyval):
   Function(keyval)
 {
   set_dimension(new SCDimension(3));
@@ -211,8 +202,6 @@ Volume::get_x(SCVector3& x)
   x[1] = v.get_element(1);
   x[2] = v.get_element(2);
 }
-
-SavableState_REF_def(Volume);
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -37,19 +37,13 @@
 #include <math/scmat/vector3.h>
 #include <util/keyval/keyval.h>
 
-SavableState_REF_fwddec(Integral)
-
 class CartesianIter;
 class SphericalTransformIter;
+class Integral;
 
 /// A Gaussian orbital shell.
 class GaussianShell: public SavableState
 {
-#   define CLASSNAME GaussianShell
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
   public:
     enum PrimitiveType { Normalized, Unnormalized };
     enum GaussianType { Cartesian, Pure };
@@ -72,7 +66,7 @@ class GaussianShell: public SavableState
     double shell_normalization(int);
     void convert_coef();
     void normalize_shell();
-    PrimitiveType keyval_init(const RefKeyVal&,int,int);
+    PrimitiveType keyval_init(const Ref<KeyVal>&,int,int);
     static const char* amtypes;
     static const char* AMTYPES;
 
@@ -116,13 +110,13 @@ class GaussianShell: public SavableState
                   double** c,
                   PrimitiveType pt = GaussianShell::Normalized);
     /// Construct a GaussianShell from KeyVal input.
-    GaussianShell(const RefKeyVal&);
+    GaussianShell(const Ref<KeyVal>&);
     /// Restore a GaussianShell from a StateIn object.
     GaussianShell(StateIn&);
     /** Construct a GaussianShell from KeyVal input.  If pure
         is nonzero Cartesian functions will be used, otherwise,
         solid harmonics will be used. */
-    GaussianShell(const RefKeyVal&,int pure);
+    GaussianShell(const Ref<KeyVal>&,int pure);
     ~GaussianShell();
     void save_data_state(StateOut&);
     /// The number of primitive Gaussian shells.
@@ -187,7 +181,7 @@ class GaussianShell: public SavableState
     /** Returns the intra-generalized-contraction overlap
         matrix element <con func1|con func2> within an arbitrary
         constant for the shell. */
-    double relative_overlap(const RefIntegral&,
+    double relative_overlap(const Ref<Integral>&,
                             int con, int func1, int func2) const;
     /** Returns the intra-generalized-contraction overlap matrix element
         <con func1|con func2> within an arbitrary constant for the shell.
@@ -212,7 +206,7 @@ class GaussianShell: public SavableState
     void print(std::ostream& =ExEnv::out()) const;
 };
 
-SavableState_REF_dec(GaussianShell);
+
 
 #endif
 

@@ -35,33 +35,33 @@
 using namespace std;
 
 void
-VRefCount::error(const char * w) const
+RefCount::error(const char * w) const
 {
-  ExEnv::err() << "VRefCount: ERROR: " << w << endl;
+  ExEnv::err() << "RefCount: ERROR: " << w << endl;
   abort();
 }
 
 void
-VRefCount::too_many_refs() const
+RefCount::too_many_refs() const
 {
   error("Too many refs.");
 }
 
 void
-VRefCount::not_enough_refs() const
+RefCount::not_enough_refs() const
 {
   error("Ref count dropped below zero.");
 }
 
 #if REF_CHECKSUM
 void
-VRefCount::bad_checksum() const
+RefCount::bad_checksum() const
 {
   error("Bad checksum.");
 }
 #endif
 
-VRefCount::~VRefCount()
+RefCount::~RefCount()
 {
 #if REF_CHECKSUM
   if (_reference_count_ == 0 && _checksum_ == 0) {
@@ -102,12 +102,62 @@ RefBase::warn_bad_ref_count() const
   warn("Ref: bad reference count in referenced object\n");
 }
 void
-RefBase::ref_info(VRefCount*p, ostream& os) const
+RefBase::ref_info(RefCount*p, ostream& os) const
 {
   if (p)
       os << "nreference() = " << p->nreference() << endl;
   else
       os << "reference is null" << endl;
+}
+
+void
+RefBase::require_nonnull() const
+{
+  if (parentpointer() == 0) {
+      ExEnv::err() << "RefBase: needed a nonnull pointer but got null"
+           << endl;
+      abort();
+    }
+}
+
+RefBase::~RefBase()
+{
+}
+
+void
+RefBase::check_pointer() const
+{
+  if (parentpointer() && parentpointer()->nreference() <= 0) {
+      warn_bad_ref_count();
+    }
+}
+
+void
+RefBase::ref_info(ostream& os) const
+{
+  RefBase::ref_info(parentpointer(),os);
+}
+
+void
+RefBase::reference(RefCount *p)
+{
+  if (p) {
+#if REF_CHECK_STACK
+      if (DO_REF_CHECK_STACK(p)) {
+          DO_REF_UNMANAGE(p);
+          warn_ref_to_stack();
+        }
+#endif
+      p->reference();
+    }
+}
+
+void
+RefBase::dereference(RefCount *p)
+{
+  if (p && p->dereference()<=0) {
+      delete p;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -37,46 +37,42 @@
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
-// SCMatrix reference base class member functions
-
-DescribedClass_named_REF_def(RefDCSCVector,SCVector);
-DescribedClass_named_REF_def(RefDCSCMatrix,SCMatrix);
-DescribedClass_named_REF_def(RefDCSymmSCMatrix,SymmSCMatrix);
-DescribedClass_named_REF_def(RefDCDiagSCMatrix,DiagSCMatrix);
-
-/////////////////////////////////////////////////////////////////////////////
 // SCDimension reference member functions
 
 RefSCDimension::RefSCDimension() {}
              
 RefSCDimension::RefSCDimension (const RefSCDimension & o):
-  SSRefSCDimension (o) {}
+  Ref<SCDimension> (o) {}
              
-RefSCDimension::RefSCDimension (SCDimension * o): SSRefSCDimension (o) {}
-             
-RefSCDimension::RefSCDimension (const DCRefBase&o):
-  SSRefSCDimension (o) {}
+RefSCDimension::RefSCDimension (SCDimension * o): Ref<SCDimension> (o) {}
 
 RefSCDimension::~RefSCDimension () {}
 
 RefSCDimension&
 RefSCDimension::operator=(SCDimension* cr)
 {
-  SSRefSCDimension::operator=(cr);
+  Ref<SCDimension>::operator=(cr);
   return *this;
 }
 
 RefSCDimension&
-RefSCDimension::operator=(const DCRefBase & c)
+RefSCDimension::operator<<(const RefBase & c)
 {
-  SSRefSCDimension::operator=(c);
+  Ref<SCDimension>::operator<<(c);
+  return *this;
+}
+
+RefSCDimension&
+RefSCDimension::operator<<(RefCount*a)
+{
+  Ref<SCDimension>::operator<<(a);
   return *this;
 }
 
 RefSCDimension&
 RefSCDimension::operator=(const RefSCDimension & c)
 {
-  SSRefSCDimension::operator=(c);
+  Ref<SCDimension>::operator=(c);
   return *this;
 }
 
@@ -99,28 +95,28 @@ RefSCDimension::operator int() const
 // SCMatrix reference member functions
 RefSCMatrix::RefSCMatrix() {}
              
-RefSCMatrix::RefSCMatrix (const RefSCMatrix & o): RefDCSCMatrix (o) {}
+RefSCMatrix::RefSCMatrix (const RefSCMatrix & o): Ref<SCMatrix> (o) {}
              
-RefSCMatrix::RefSCMatrix (SCMatrix * o): RefDCSCMatrix (o) {}
+RefSCMatrix::RefSCMatrix (SCMatrix * o): Ref<SCMatrix> (o) {}
 
 RefSCMatrix::~RefSCMatrix () {}
 
 RefSCMatrix&
 RefSCMatrix::operator=(SCMatrix* cr)
 {
-  RefDCSCMatrix::operator=(cr);
+  Ref<SCMatrix>::operator=(cr);
   return *this;
 }
 
 RefSCMatrix&
 RefSCMatrix::operator=(const RefSCMatrix & c)
 {
-  RefDCSCMatrix::operator=(c);
+  Ref<SCMatrix>::operator=(c);
   return *this;
 }
 
 RefSCMatrix::RefSCMatrix(const RefSCDimension&a,const RefSCDimension&b,
-                         const RefSCMatrixKit&k)
+                         const Ref<SCMatrixKit>&k)
 {
   assign_pointer(k->matrix(a,b));
 }
@@ -287,7 +283,7 @@ RefSCMatrix::coldim() const
   else return pointer()->coldim();
 }
 
-RefSCMatrixKit
+Ref<SCMatrixKit>
 RefSCMatrix::kit() const
 {
   if (null()) return 0;
@@ -479,20 +475,20 @@ RefSCMatrix::accumulate(const RefDiagSCMatrix&a) const
 }
 
 void
-RefSCMatrix::element_op(const RefSCElementOp&op) const
+RefSCMatrix::element_op(const Ref<SCElementOp>&op) const
 {
   if (nonnull()) pointer()->element_op(op);
 }
 
 void
-RefSCMatrix::element_op(const RefSCElementOp2& op,
+RefSCMatrix::element_op(const Ref<SCElementOp2>& op,
                         const RefSCMatrix& m) const
 {
   if (nonnull()) pointer()->element_op(op,m.pointer());
 }
 
 void
-RefSCMatrix::element_op(const RefSCElementOp3& op,
+RefSCMatrix::element_op(const Ref<SCElementOp3>& op,
                         const RefSCMatrix& m,
                         const RefSCMatrix& n) const
 {
@@ -610,12 +606,12 @@ RefSymmSCMatrix::RefSymmSCMatrix()
 }
              
 RefSymmSCMatrix::RefSymmSCMatrix (const RefSymmSCMatrix & o):
-  RefDCSymmSCMatrix (o)
+  Ref<SymmSCMatrix> (o)
 {
 }
              
 RefSymmSCMatrix::RefSymmSCMatrix (SymmSCMatrix * o):
-  RefDCSymmSCMatrix (o)
+  Ref<SymmSCMatrix> (o)
 {
 }
 
@@ -626,19 +622,19 @@ RefSymmSCMatrix::~RefSymmSCMatrix ()
 RefSymmSCMatrix&
 RefSymmSCMatrix::operator=(SymmSCMatrix* cr)
 {
-  RefDCSymmSCMatrix::operator=(cr);
+  Ref<SymmSCMatrix>::operator=(cr);
   return *this;
 }
 
 RefSymmSCMatrix&
 RefSymmSCMatrix::operator=(const RefSymmSCMatrix & c)
 {
-  RefDCSymmSCMatrix::operator=(c);
+  Ref<SymmSCMatrix>::operator=(c);
   return *this;
 }
 
 RefSymmSCMatrix::RefSymmSCMatrix(const RefSCDimension&a,
-                                 const RefSCMatrixKit&k)
+                                 const Ref<SCMatrixKit>&k)
 {
   assign_pointer(k->symmmatrix(a));
 }
@@ -848,7 +844,7 @@ RefSymmSCMatrix::dim() const
   else return pointer()->dim();
 }
 
-RefSCMatrixKit
+Ref<SCMatrixKit>
 RefSymmSCMatrix::kit() const
 {
   if (null()) return 0;
@@ -996,20 +992,20 @@ RefSymmSCMatrix::accumulate(const RefSymmSCMatrix&a) const
 }
 
 void
-RefSymmSCMatrix::element_op(const RefSCElementOp&op) const
+RefSymmSCMatrix::element_op(const Ref<SCElementOp>&op) const
 {
   if (nonnull()) pointer()->element_op(op);
 }
 
 void
-RefSymmSCMatrix::element_op(const RefSCElementOp2&op,
+RefSymmSCMatrix::element_op(const Ref<SCElementOp2>&op,
                             const RefSymmSCMatrix&m) const
 {
   if (nonnull()) pointer()->element_op(op,m.pointer());
 }
 
 void
-RefSymmSCMatrix::element_op(const RefSCElementOp3&op,
+RefSymmSCMatrix::element_op(const Ref<SCElementOp3>&op,
                             const RefSymmSCMatrix&m,
                             const RefSymmSCMatrix&n) const
 {
@@ -1134,12 +1130,12 @@ RefDiagSCMatrix::RefDiagSCMatrix()
 }
              
 RefDiagSCMatrix::RefDiagSCMatrix (const RefDiagSCMatrix & o):
-  RefDCDiagSCMatrix (o)
+  Ref<DiagSCMatrix> (o)
 {
 }
              
 RefDiagSCMatrix::RefDiagSCMatrix (DiagSCMatrix * o):
-  RefDCDiagSCMatrix (o)
+  Ref<DiagSCMatrix> (o)
 {
 }
 
@@ -1150,19 +1146,19 @@ RefDiagSCMatrix::~RefDiagSCMatrix ()
 RefDiagSCMatrix&
 RefDiagSCMatrix::operator=(DiagSCMatrix* cr)
 {
-  RefDCDiagSCMatrix::operator=(cr);
+  Ref<DiagSCMatrix>::operator=(cr);
   return *this;
 }
 
 RefDiagSCMatrix&
 RefDiagSCMatrix::operator=(const RefDiagSCMatrix & c)
 {
-  RefDCDiagSCMatrix::operator=(c);
+  Ref<DiagSCMatrix>::operator=(c);
   return *this;
 }
 
 RefDiagSCMatrix::RefDiagSCMatrix(const RefSCDimension&a,
-                                 const RefSCMatrixKit&k)
+                                 const Ref<SCMatrixKit>&k)
 {
   a.require_nonnull();
   assign_pointer(k->diagmatrix(a));
@@ -1268,7 +1264,7 @@ RefDiagSCMatrix::dim() const
   else return pointer()->dim();
 }
 
-RefSCMatrixKit
+Ref<SCMatrixKit>
 RefDiagSCMatrix::kit() const
 {
   if (null()) return 0;
@@ -1347,20 +1343,20 @@ RefDiagSCMatrix::accumulate(const RefDiagSCMatrix&a) const
 }
 
 void
-RefDiagSCMatrix::element_op(const RefSCElementOp&op) const
+RefDiagSCMatrix::element_op(const Ref<SCElementOp>&op) const
 {
   if (nonnull()) pointer()->element_op(op);
 }
 
 void
-RefDiagSCMatrix::element_op(const RefSCElementOp2&op,
+RefDiagSCMatrix::element_op(const Ref<SCElementOp2>&op,
                             const RefDiagSCMatrix&m) const
 {
   if (nonnull()) pointer()->element_op(op,m.pointer());
 }
 
 void
-RefDiagSCMatrix::element_op(const RefSCElementOp3&op,
+RefDiagSCMatrix::element_op(const Ref<SCElementOp3>&op,
                             const RefDiagSCMatrix&m,
                             const RefDiagSCMatrix&n) const
 {
@@ -1447,12 +1443,12 @@ RefSCVector::RefSCVector()
 }
              
 RefSCVector::RefSCVector (const RefSCVector & o):
-  RefDCSCVector (o)
+  Ref<SCVector> (o)
 {
 }
              
 RefSCVector::RefSCVector (SCVector * o):
-  RefDCSCVector (o)
+  Ref<SCVector> (o)
 {
 }
 
@@ -1463,19 +1459,19 @@ RefSCVector::~RefSCVector ()
 RefSCVector&
 RefSCVector::operator=(SCVector* cr)
 {
-  RefDCSCVector::operator=(cr);
+  Ref<SCVector>::operator=(cr);
   return *this;
 }
 
 RefSCVector&
 RefSCVector::operator=(const RefSCVector & c)
 {
-  RefDCSCVector::operator=(c);
+  Ref<SCVector>::operator=(c);
   return *this;
 }
 
 RefSCVector::RefSCVector(const RefSCDimension&a,
-                         const RefSCMatrixKit&k)
+                         const Ref<SCMatrixKit>&k)
 {
   a.require_nonnull();
   assign_pointer(k->vector(a));
@@ -1545,7 +1541,7 @@ RefSCVector::dim() const
   else return pointer()->dim();
 }
 
-RefSCMatrixKit
+Ref<SCMatrixKit>
 RefSCVector::kit() const
 {
   if (null()) return 0;
@@ -1658,20 +1654,20 @@ RefSCVector::accumulate_product(const RefSCMatrix&a, const RefSCVector&b)
 }
 
 void
-RefSCVector::element_op(const RefSCElementOp&op) const
+RefSCVector::element_op(const Ref<SCElementOp>&op) const
 {
   if (nonnull()) pointer()->element_op(op);
 }
 
 void
-RefSCVector::element_op(const RefSCElementOp2&op,
+RefSCVector::element_op(const Ref<SCElementOp2>&op,
                         const RefSCVector&v) const
 {
   if (nonnull()) pointer()->element_op(op,v.pointer());
 }
 
 void
-RefSCVector::element_op(const RefSCElementOp3&op,
+RefSCVector::element_op(const Ref<SCElementOp3>&op,
                         const RefSCVector&v,
                         const RefSCVector&w) const
 {

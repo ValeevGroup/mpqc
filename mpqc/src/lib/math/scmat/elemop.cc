@@ -42,23 +42,12 @@
 /////////////////////////////////////////////////////////////////////////////
 // SCElementOp member functions
 
-SavableState_REF_def(SCElementOp);
-
-#define CLASSNAME SCElementOp
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
+static ClassDesc SCElementOp_cd(
+  typeid(SCElementOp),"SCElementOp",1,"public SavableState",
+  0, 0, 0);
 
 SCElementOp::SCElementOp()
 {
-}
-
-void *
-SCElementOp::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 
 SCElementOp::~SCElementOp()
@@ -83,29 +72,29 @@ SCElementOp::has_side_effects()
 }
 
 void
-SCElementOp::collect(const RefMessageGrp&)
+SCElementOp::collect(const Ref<MessageGrp>&)
 {
 }
 
 void
 SCElementOp::process_base(SCMatrixBlock* a)
 {
-  if (SCMatrixRectBlock::castdown(a))
-    process_spec_rect(SCMatrixRectBlock::castdown(a));
-  else if (SCMatrixLTriBlock::castdown(a))
-    process_spec_ltri(SCMatrixLTriBlock::castdown(a));
-  else if (SCMatrixDiagBlock::castdown(a))
-    process_spec_diag(SCMatrixDiagBlock::castdown(a));
-  else if (SCVectorSimpleBlock::castdown(a))
-    process_spec_vsimp(SCVectorSimpleBlock::castdown(a));
-  else if (SCMatrixRectSubBlock::castdown(a))
-    process_spec_rectsub(SCMatrixRectSubBlock::castdown(a));
-  else if (SCMatrixLTriSubBlock::castdown(a))
-    process_spec_ltrisub(SCMatrixLTriSubBlock::castdown(a));
-  else if (SCMatrixDiagSubBlock::castdown(a))
-    process_spec_diagsub(SCMatrixDiagSubBlock::castdown(a));
-  else if (SCVectorSimpleSubBlock::castdown(a))
-    process_spec_vsimpsub(SCVectorSimpleSubBlock::castdown(a));
+  if (dynamic_cast<SCMatrixRectBlock*>(a))
+    process_spec_rect(dynamic_cast<SCMatrixRectBlock*>(a));
+  else if (dynamic_cast<SCMatrixLTriBlock*>(a))
+    process_spec_ltri(dynamic_cast<SCMatrixLTriBlock*>(a));
+  else if (dynamic_cast<SCMatrixDiagBlock*>(a))
+    process_spec_diag(dynamic_cast<SCMatrixDiagBlock*>(a));
+  else if (dynamic_cast<SCVectorSimpleBlock*>(a))
+    process_spec_vsimp(dynamic_cast<SCVectorSimpleBlock*>(a));
+  else if (dynamic_cast<SCMatrixRectSubBlock*>(a))
+    process_spec_rectsub(dynamic_cast<SCMatrixRectSubBlock*>(a));
+  else if (dynamic_cast<SCMatrixLTriSubBlock*>(a))
+    process_spec_ltrisub(dynamic_cast<SCMatrixLTriSubBlock*>(a));
+  else if (dynamic_cast<SCMatrixDiagSubBlock*>(a))
+    process_spec_diagsub(dynamic_cast<SCMatrixDiagSubBlock*>(a));
+  else if (dynamic_cast<SCVectorSimpleSubBlock*>(a))
+    process_spec_vsimpsub(dynamic_cast<SCVectorSimpleSubBlock*>(a));
   else
     a->process(this);
 }
@@ -183,23 +172,12 @@ SCElementOp::process_spec_vsimpsub(SCVectorSimpleSubBlock* a)
 /////////////////////////////////////////////////////////////////////////////
 // SCElementOp2 member functions
 
-SavableState_REF_def(SCElementOp2);
-
-#define CLASSNAME SCElementOp2
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
+static ClassDesc SCElementOp2_cd(
+  typeid(SCElementOp2),"SCElementOp2",1,"public SavableState",
+  0, 0, 0);
 
 SCElementOp2::SCElementOp2()
 {
-}
-
-void *
-SCElementOp2::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 
 SCElementOp2::~SCElementOp2()
@@ -230,7 +208,7 @@ SCElementOp2::has_side_effects_in_arg()
 }
 
 void
-SCElementOp2::collect(const RefMessageGrp&)
+SCElementOp2::collect(const Ref<MessageGrp>&)
 {
 }
 
@@ -288,23 +266,12 @@ SCElementOp2::process_spec_vsimp(SCVectorSimpleBlock* a,SCVectorSimpleBlock* b)
 /////////////////////////////////////////////////////////////////////////////
 // SCElementOp3 member functions
 
-SavableState_REF_def(SCElementOp3);
-
-#define CLASSNAME SCElementOp3
-#define PARENTS public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
+static ClassDesc SCElementOp3_cd(
+  typeid(SCElementOp3),"SCElementOp3",1,"public SavableState",
+  0, 0, 0);
 
 SCElementOp3::SCElementOp3()
 {
-}
-
-void *
-SCElementOp3::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SavableState::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 
 SCElementOp3::~SCElementOp3()
@@ -341,7 +308,7 @@ SCElementOp3::has_side_effects_in_arg2()
 }
 
 void
-SCElementOp3::collect(const RefMessageGrp&)
+SCElementOp3::collect(const Ref<MessageGrp>&)
 {
 }
 
@@ -414,11 +381,9 @@ SCElementOp3::process_spec_vsimp(SCVectorSimpleBlock* a,
 /////////////////////////////////////////////////////////////////////////
 // SCElementScale members
 
-#define CLASSNAME SCElementScale
-#define PARENTS   public SCElementOp
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCElementScale_cd(
+  typeid(SCElementScale),"SCElementScale",1,"public SCElementOp",
+  0, 0, create<SCElementScale>);
 SCElementScale::SCElementScale(double a):scale(a) {}
 SCElementScale::SCElementScale(StateIn&s):
   SCElementOp(s)
@@ -429,13 +394,6 @@ void
 SCElementScale::save_data_state(StateOut&s)
 {
   s.put(scale);
-}
-void *
-SCElementScale::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 SCElementScale::~SCElementScale() {}
 void
@@ -455,20 +413,9 @@ SCElementScale::has_side_effects()
 /////////////////////////////////////////////////////////////////////////
 // SCElementScalarProduct members
 
-SavableState_REF_def(SCElementScalarProduct);
-
-#define CLASSNAME SCElementScalarProduct
-#define PARENTS   public SCElementOp2
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-SCElementScalarProduct::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp2::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SCElementScalarProduct_cd(
+  typeid(SCElementScalarProduct),"SCElementScalarProduct",1,"public SCElementOp2",
+  0, 0, create<SCElementScalarProduct>);
 
 SCElementScalarProduct::SCElementScalarProduct():
   deferred_(0), product(0.0)
@@ -515,7 +462,7 @@ SCElementScalarProduct::defer_collect(int h)
 }
 
 void
-SCElementScalarProduct::collect(const RefMessageGrp&grp)
+SCElementScalarProduct::collect(const Ref<MessageGrp>&grp)
 {
   if (!deferred_)
     grp->sum(product);
@@ -530,11 +477,9 @@ SCElementScalarProduct::result()
 /////////////////////////////////////////////////////////////////////////
 // SCDestructiveElementProduct members
 
-#define CLASSNAME SCDestructiveElementProduct
-#define PARENTS   public SCElementOp2
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCDestructiveElementProduct_cd(
+  typeid(SCDestructiveElementProduct),"SCDestructiveElementProduct",1,"public SCElementOp2",
+  0, 0, create<SCDestructiveElementProduct>);
 SCDestructiveElementProduct::SCDestructiveElementProduct() {}
 SCDestructiveElementProduct::SCDestructiveElementProduct(StateIn&s):
   SCElementOp2(s)
@@ -543,13 +488,6 @@ SCDestructiveElementProduct::SCDestructiveElementProduct(StateIn&s):
 void
 SCDestructiveElementProduct::save_data_state(StateOut&s)
 {
-}
-void *
-SCDestructiveElementProduct::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp2::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 SCDestructiveElementProduct::~SCDestructiveElementProduct() {}
 void
@@ -570,12 +508,9 @@ SCDestructiveElementProduct::has_side_effects()
 /////////////////////////////////////////////////////////////////////////
 // SCElementInvert members
 
-SavableState_REF_def(SCElementInvert);
-#define CLASSNAME SCElementInvert
-#define PARENTS   public SCElementOp
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCElementInvert_cd(
+  typeid(SCElementInvert),"SCElementInvert",1,"public SCElementOp",
+  0, 0, create<SCElementInvert>);
 SCElementInvert::SCElementInvert(double threshold):
   threshold_(threshold),
   nbelowthreshold_(0),
@@ -594,13 +529,6 @@ SCElementInvert::save_data_state(StateOut&s)
   s.put(threshold_);
   s.put(nbelowthreshold_);
   s.put(deferred_);
-}
-void *
-SCElementInvert::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 SCElementInvert::~SCElementInvert() {}
 void
@@ -630,7 +558,7 @@ SCElementInvert::defer_collect(int h)
   deferred_=h;
 }
 void
-SCElementInvert::collect(const RefMessageGrp&msg)
+SCElementInvert::collect(const Ref<MessageGrp>&msg)
 {
   if (!deferred_)
     msg->sum(nbelowthreshold_);
@@ -639,11 +567,9 @@ SCElementInvert::collect(const RefMessageGrp&msg)
 /////////////////////////////////////////////////////////////////////////
 // SCElementSquareRoot members
 
-#define CLASSNAME SCElementSquareRoot
-#define PARENTS   public SCElementOp
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCElementSquareRoot_cd(
+  typeid(SCElementSquareRoot),"SCElementSquareRoot",1,"public SCElementOp",
+  0, 0, create<SCElementSquareRoot>);
 SCElementSquareRoot::SCElementSquareRoot() {}
 SCElementSquareRoot::SCElementSquareRoot(double a) {}
 SCElementSquareRoot::SCElementSquareRoot(StateIn&s):
@@ -653,13 +579,6 @@ SCElementSquareRoot::SCElementSquareRoot(StateIn&s):
 void
 SCElementSquareRoot::save_data_state(StateOut&s)
 {
-}
-void *
-SCElementSquareRoot::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 SCElementSquareRoot::~SCElementSquareRoot() {}
 void
@@ -681,12 +600,9 @@ SCElementSquareRoot::has_side_effects()
 /////////////////////////////////////////////////////////////////////////
 // SCElementMaxAbs members
 
-SavableState_REF_def(SCElementMaxAbs);
-#define CLASSNAME SCElementMaxAbs
-#define PARENTS   public SCElementOp
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCElementMaxAbs_cd(
+  typeid(SCElementMaxAbs),"SCElementMaxAbs",1,"public SCElementOp",
+  0, 0, create<SCElementMaxAbs>);
 
 SCElementMaxAbs::SCElementMaxAbs():deferred_(0), r(0.0) {}
 SCElementMaxAbs::SCElementMaxAbs(StateIn&s):
@@ -700,13 +616,6 @@ SCElementMaxAbs::save_data_state(StateOut&s)
 {
   s.put(r);
   s.put(deferred_);
-}
-void *
-SCElementMaxAbs::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 SCElementMaxAbs::~SCElementMaxAbs() {}
 void
@@ -732,7 +641,7 @@ SCElementMaxAbs::defer_collect(int h)
   deferred_=h;
 }
 void
-SCElementMaxAbs::collect(const RefMessageGrp&msg)
+SCElementMaxAbs::collect(const Ref<MessageGrp>&msg)
 {
   if (!deferred_)
     msg->max(r);
@@ -741,13 +650,9 @@ SCElementMaxAbs::collect(const RefMessageGrp&msg)
 /////////////////////////////////////////////////////////////////////////
 // SCElementMin members
 
-SavableState_REF_def(SCElementMinAbs);
-#define CLASSNAME SCElementMinAbs
-#define PARENTS   public SCElementOp
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
+static ClassDesc SCElementMinAbs_cd(
+  typeid(SCElementMinAbs),"SCElementMinAbs",1,"public SCElementOp",
+  0, 0, create<SCElementMinAbs>);
 SCElementMinAbs::SCElementMinAbs(double rinit):deferred_(0), r(rinit) {}
 SCElementMinAbs::SCElementMinAbs(StateIn&s):
   SCElementOp(s)
@@ -760,13 +665,6 @@ SCElementMinAbs::save_data_state(StateOut&s)
 {
   s.put(r);
   s.put(deferred_);
-}
-void *
-SCElementMinAbs::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 SCElementMinAbs::~SCElementMinAbs() {}
 void
@@ -792,7 +690,7 @@ SCElementMinAbs::defer_collect(int h)
   deferred_=h;
 }
 void
-SCElementMinAbs::collect(const RefMessageGrp&msg)
+SCElementMinAbs::collect(const Ref<MessageGrp>&msg)
 {
   if (!deferred_)
     msg->min(r);
@@ -801,13 +699,9 @@ SCElementMinAbs::collect(const RefMessageGrp&msg)
 /////////////////////////////////////////////////////////////////////////
 // SCElementSumAbs members
 
-SavableState_REF_def(SCElementSumAbs);
-#define CLASSNAME SCElementSumAbs
-#define PARENTS   public SCElementOp
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
+static ClassDesc SCElementSumAbs_cd(
+  typeid(SCElementSumAbs),"SCElementSumAbs",1,"public SCElementOp",
+  0, 0, create<SCElementSumAbs>);
 SCElementSumAbs::SCElementSumAbs():deferred_(0), r(0.0) {}
 SCElementSumAbs::SCElementSumAbs(StateIn&s):
   SCElementOp(s)
@@ -820,13 +714,6 @@ SCElementSumAbs::save_data_state(StateOut&s)
 {
   s.put(r);
   s.put(deferred_);
-}
-void *
-SCElementSumAbs::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 SCElementSumAbs::~SCElementSumAbs() {}
 void
@@ -852,7 +739,7 @@ SCElementSumAbs::defer_collect(int h)
   deferred_=h;
 }
 void
-SCElementSumAbs::collect(const RefMessageGrp&msg)
+SCElementSumAbs::collect(const Ref<MessageGrp>&msg)
 {
   if (!deferred_)
     msg->sum(r);
@@ -861,11 +748,9 @@ SCElementSumAbs::collect(const RefMessageGrp&msg)
 /////////////////////////////////////////////////////////////////////////
 // SCElementAssign members
 
-#define CLASSNAME SCElementAssign
-#define PARENTS   public SCElementOp
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCElementAssign_cd(
+  typeid(SCElementAssign),"SCElementAssign",1,"public SCElementOp",
+  0, 0, create<SCElementAssign>);
 SCElementAssign::SCElementAssign(double a):assign(a) {}
 SCElementAssign::SCElementAssign(StateIn&s):
   SCElementOp(s)
@@ -876,13 +761,6 @@ void
 SCElementAssign::save_data_state(StateOut&s)
 {
   s.put(assign);
-}
-void *
-SCElementAssign::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 SCElementAssign::~SCElementAssign() {}
 void
@@ -902,11 +780,9 @@ SCElementAssign::has_side_effects()
 /////////////////////////////////////////////////////////////////////////
 // SCElementRandomize members
 
-#define CLASSNAME SCElementRandomize
-#define PARENTS   public SCElementOp
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCElementRandomize_cd(
+  typeid(SCElementRandomize),"SCElementRandomize",1,"public SCElementOp",
+  0, 0, create<SCElementRandomize>);
 SCElementRandomize::SCElementRandomize() {}
 SCElementRandomize::SCElementRandomize(StateIn&s):
   SCElementOp(s)
@@ -915,13 +791,6 @@ SCElementRandomize::SCElementRandomize(StateIn&s):
 void
 SCElementRandomize::save_data_state(StateOut&s)
 {
-}
-void *
-SCElementRandomize::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 SCElementRandomize::~SCElementRandomize() {}
 void
@@ -947,11 +816,9 @@ SCElementRandomize::has_side_effects()
 /////////////////////////////////////////////////////////////////////////
 // SCElementShiftDiagonal members
 
-#define CLASSNAME SCElementShiftDiagonal
-#define PARENTS   public SCElementOp
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCElementShiftDiagonal_cd(
+  typeid(SCElementShiftDiagonal),"SCElementShiftDiagonal",1,"public SCElementOp",
+  0, 0, create<SCElementShiftDiagonal>);
 SCElementShiftDiagonal::SCElementShiftDiagonal(double a):shift_diagonal(a) {}
 SCElementShiftDiagonal::SCElementShiftDiagonal(StateIn&s):
   SCElementOp(s)
@@ -962,13 +829,6 @@ void
 SCElementShiftDiagonal::save_data_state(StateOut&s)
 {
   s.put(shift_diagonal);
-}
-void *
-SCElementShiftDiagonal::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 SCElementShiftDiagonal::~SCElementShiftDiagonal() {}
 void
@@ -988,11 +848,9 @@ SCElementShiftDiagonal::has_side_effects()
 /////////////////////////////////////////////////////////////////////////
 // SCElementScaleDiagonal members
 
-#define CLASSNAME SCElementScaleDiagonal
-#define PARENTS   public SCElementOp
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
+static ClassDesc SCElementScaleDiagonal_cd(
+  typeid(SCElementScaleDiagonal),"SCElementScaleDiagonal",1,"public SCElementOp",
+  0, 0, create<SCElementScaleDiagonal>);
 SCElementScaleDiagonal::SCElementScaleDiagonal(double a):scale_diagonal(a) {}
 SCElementScaleDiagonal::SCElementScaleDiagonal(StateIn&s):
   SCElementOp(s)
@@ -1003,13 +861,6 @@ void
 SCElementScaleDiagonal::save_data_state(StateOut&s)
 {
   s.put(scale_diagonal);
-}
-void *
-SCElementScaleDiagonal::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
 }
 SCElementScaleDiagonal::~SCElementScaleDiagonal() {}
 void
@@ -1029,18 +880,9 @@ SCElementScaleDiagonal::has_side_effects()
 /////////////////////////////////////////////////////////////////////////
 // SCElementDot members
 
-#define CLASSNAME SCElementDot
-#define PARENTS   public SCElementOp
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-SCElementDot::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SCElementDot_cd(
+  typeid(SCElementDot),"SCElementDot",1,"public SCElementOp",
+  0, 0, create<SCElementDot>);
 
 SCElementDot::SCElementDot(double**a, double**b, int n):
   avects(a),
@@ -1085,17 +927,9 @@ SCElementDot::process(SCMatrixBlockIter&i)
 /////////////////////////////////////////////////////////////////////////
 // SCElementAccumulateSCMatrix members
 
-#define CLASSNAME SCElementAccumulateSCMatrix
-#define PARENTS   public SCElementOp
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-SCElementAccumulateSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SCElementAccumulateSCMatrix_cd(
+  typeid(SCElementAccumulateSCMatrix),"SCElementAccumulateSCMatrix",1,"public SCElementOp",
+  0, 0, 0);
 
 SCElementAccumulateSCMatrix::SCElementAccumulateSCMatrix(SCMatrix*a):
   m(a)
@@ -1119,17 +953,9 @@ SCElementAccumulateSCMatrix::process(SCMatrixBlockIter&i)
 /////////////////////////////////////////////////////////////////////////
 // SCElementAccumulateSymmSCMatrix members
 
-#define CLASSNAME SCElementAccumulateSymmSCMatrix
-#define PARENTS   public SCElementOp
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-SCElementAccumulateSymmSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SCElementAccumulateSymmSCMatrix_cd(
+  typeid(SCElementAccumulateSymmSCMatrix),"SCElementAccumulateSymmSCMatrix",1,"public SCElementOp",
+  0, 0, 0);
 
 SCElementAccumulateSymmSCMatrix::SCElementAccumulateSymmSCMatrix(
     SymmSCMatrix*a):
@@ -1154,17 +980,9 @@ SCElementAccumulateSymmSCMatrix::process(SCMatrixBlockIter&i)
 /////////////////////////////////////////////////////////////////////////
 // SCElementAccumulateDiagSCMatrix members
 
-#define CLASSNAME SCElementAccumulateDiagSCMatrix
-#define PARENTS   public SCElementOp
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-SCElementAccumulateDiagSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SCElementAccumulateDiagSCMatrix_cd(
+  typeid(SCElementAccumulateDiagSCMatrix),"SCElementAccumulateDiagSCMatrix",1,"public SCElementOp",
+  0, 0, 0);
 
 SCElementAccumulateDiagSCMatrix::SCElementAccumulateDiagSCMatrix(
     DiagSCMatrix*a):
@@ -1189,17 +1007,9 @@ SCElementAccumulateDiagSCMatrix::process(SCMatrixBlockIter&i)
 /////////////////////////////////////////////////////////////////////////
 // SCElementAccumulateSCVector members
 
-#define CLASSNAME SCElementAccumulateSCVector
-#define PARENTS   public SCElementOp
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-SCElementAccumulateSCVector::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = SCElementOp::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc SCElementAccumulateSCVector_cd(
+  typeid(SCElementAccumulateSCVector),"SCElementAccumulateSCVector",1,"public SCElementOp",
+  0, 0, 0);
 
 SCElementAccumulateSCVector::SCElementAccumulateSCVector(SCVector*a):
   m(a)

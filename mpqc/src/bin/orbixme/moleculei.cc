@@ -21,7 +21,7 @@ Molecule *
 C_MoleculeImpl::mol()
 {
   Molecule *ret;
-  ret = Molecule::castdown(dc_);
+  ret = dynamic_cast<Molecule*>(dc_);
   return ret;
 }
 

@@ -39,11 +39,8 @@
 /** The CLSCF class is a base for classes implementing a self-consistent
 procedure for closed-shell molecules. */
 class CLSCF: public SCF {
-#   define CLASSNAME CLSCF
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
   protected:
-    RefPointGroup most_recent_pg_;
+    Ref<PointGroup> most_recent_pg_;
     int user_occupations_;
     int tndocc_;
     int nirrep_;
@@ -67,7 +64,7 @@ class CLSCF: public SCF {
         irreducible representations according to the orbital energies.
 
         </dl> */
-    CLSCF(const RefKeyVal&);
+    CLSCF(const Ref<KeyVal>&);
     ~CLSCF();
 
     void save_data_state(StateOut&);
@@ -102,7 +99,7 @@ class CLSCF: public SCF {
     double new_density();
     double scf_energy();
 
-    RefSCExtrapData extrap_data();
+    Ref<SCExtrapData> extrap_data();
     
     // gradient things
     void init_gradient();

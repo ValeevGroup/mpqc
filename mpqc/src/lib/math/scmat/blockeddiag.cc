@@ -39,16 +39,9 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // BlockedDiagSCMatrix member functions
 
-#define CLASSNAME BlockedDiagSCMatrix
-#define PARENTS public DiagSCMatrix
-#include <util/class/classi.h>
-void *
-BlockedDiagSCMatrix::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DiagSCMatrix::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
+static ClassDesc BlockedDiagSCMatrix_cd(
+  typeid(BlockedDiagSCMatrix),"BlockedDiagSCMatrix",1,"public DiagSCMatrix",
+  0, 0, 0);
 
 void
 BlockedDiagSCMatrix::resize(SCDimension *a)
@@ -111,7 +104,7 @@ void
 BlockedDiagSCMatrix::accumulate(const DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
-  const BlockedDiagSCMatrix* la = BlockedDiagSCMatrix::require_const_castdown(a,
+  const BlockedDiagSCMatrix* la = require_dynamic_cast<const BlockedDiagSCMatrix*>(a,
                                "BlockedDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match
@@ -171,9 +164,9 @@ BlockedDiagSCMatrix::gen_invert_this()
 }
 
 void
-BlockedDiagSCMatrix::element_op(const RefSCElementOp& op)
+BlockedDiagSCMatrix::element_op(const Ref<SCElementOp>& op)
 {
-  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
+  BlockedSCElementOp *bop = dynamic_cast<BlockedSCElementOp*>(op.pointer());
 
   int nb = d->blocks()->nblock();
   
@@ -189,17 +182,17 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp& op)
 }
 
 void
-BlockedDiagSCMatrix::element_op(const RefSCElementOp2& op,
+BlockedDiagSCMatrix::element_op(const Ref<SCElementOp2>& op,
                               DiagSCMatrix* m)
 {
-  BlockedDiagSCMatrix *lm = BlockedDiagSCMatrix::require_castdown(m,
+  BlockedDiagSCMatrix *lm = require_dynamic_cast<BlockedDiagSCMatrix*>(m,
                                     "BlockedDiagSCMatrix::element_op");
   if (!dim()->equiv(lm->dim())) {
     ExEnv::err() << indent << "BlockedDiagSCMatrix: bad element_op\n";
     abort();
   }
 
-  BlockedSCElementOp2 *bop = BlockedSCElementOp2::castdown(op.pointer());
+  BlockedSCElementOp2 *bop = dynamic_cast<BlockedSCElementOp2*>(op.pointer());
 
   int nb = d->blocks()->nblock();
   
@@ -215,12 +208,12 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp2& op,
 }
 
 void
-BlockedDiagSCMatrix::element_op(const RefSCElementOp3& op,
+BlockedDiagSCMatrix::element_op(const Ref<SCElementOp3>& op,
                               DiagSCMatrix* m,DiagSCMatrix* n)
 {
-  BlockedDiagSCMatrix *lm = BlockedDiagSCMatrix::require_castdown(m,
+  BlockedDiagSCMatrix *lm = require_dynamic_cast<BlockedDiagSCMatrix*>(m,
                                       "BlockedDiagSCMatrix::element_op");
-  BlockedDiagSCMatrix *ln = BlockedDiagSCMatrix::require_castdown(n,
+  BlockedDiagSCMatrix *ln = require_dynamic_cast<BlockedDiagSCMatrix*>(n,
                                       "BlockedDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
@@ -228,7 +221,7 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp3& op,
     abort();
   }
 
-  BlockedSCElementOp3 *bop = BlockedSCElementOp3::castdown(op.pointer());
+  BlockedSCElementOp3 *bop = dynamic_cast<BlockedSCElementOp3*>(op.pointer());
 
   int nb = d->blocks()->nblock();
   
@@ -278,10 +271,10 @@ BlockedDiagSCMatrix::block(int i)
   return mats_[i];
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 BlockedDiagSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
-  RefSCMatrixCompositeSubblockIter iter
+  Ref<SCMatrixCompositeSubblockIter> iter
       = new SCMatrixCompositeSubblockIter(access,nblocks());
   for (int i=0; i<nblocks(); i++) {
       if (block(i).null())
@@ -289,14 +282,14 @@ BlockedDiagSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
       else
           iter->set_iter(i, block(i)->local_blocks(access));
     }
-  RefSCMatrixSubblockIter ret = iter.pointer();
+  Ref<SCMatrixSubblockIter> ret = iter.pointer();
   return ret;
 }
 
-RefSCMatrixSubblockIter
+Ref<SCMatrixSubblockIter>
 BlockedDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
-  RefSCMatrixCompositeSubblockIter iter
+  Ref<SCMatrixCompositeSubblockIter> iter
       = new SCMatrixCompositeSubblockIter(access,nblocks());
   for (int i=0; i<nblocks(); i++) {
       if (block(i).null())
@@ -304,7 +297,7 @@ BlockedDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
       else
           iter->set_iter(i, block(i)->all_blocks(access));
     }
-  RefSCMatrixSubblockIter ret = iter.pointer();
+  Ref<SCMatrixSubblockIter> ret = iter.pointer();
   return ret;
 }
 

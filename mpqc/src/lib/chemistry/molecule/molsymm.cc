@@ -68,6 +68,7 @@ Molecule::init_symmetry_info(double tol)
       nequiv_[i]=1;
       equiv_[i]=new int[1];
       equiv_[i][0]=i;
+      atom_to_uniq_[i]=i;
       }
     return;
   }

@@ -716,7 +716,8 @@ Molecule::symmetrize(double tol)
 {
   // if molecule is c1, don't do anything
   if (!strcmp(this->point_group()->symbol(),"c1")) {
-      return;
+    init_symmetry_info();
+    return;
     }
 
   clear_symmetry_info();

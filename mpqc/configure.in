@@ -119,9 +119,18 @@ echo Using extra include directories: $withval
 )
 
 AC_ARG_WITH(libs,
-[  --with-libs             Specifies library directories (-Ldir1 -Ldir2).],
+[  --with-libs             Specifies libraries (-ldir1 -ldir2).],
 LIBS=$withval
 echo Using extra libraries: $withval
+)
+
+LDFLAGS=
+SH_LDFLAGS=
+AC_ARG_WITH(libdirs,
+[  --with-libdirs          Specifies library directories (-Ldir1 -Ldir2).],
+LDFLAGS=$withval
+SH_LDFLAGS=$withval
+echo Using extra library directories: $withval
 )
 
 dnl --------- Want absolute path for srcdir, not relative. ---------
@@ -199,9 +208,7 @@ CXXDEPENDSUF=none
 CCDEPENDFLAGS=-M
 CXXDEPENDFLAGS=-M
 
-LDFLAGS=
 SH_LD=ld
-SH_LDFLAGS=
 ELF=no
 ELF_MAJOR=1
 ELF_MINOR=0.1
@@ -216,15 +223,15 @@ if test X$SHARED_LIBS = Xyes; then
       LIBSUF=so
       if test X$GXX = Xyes; then
         SH_LD="\$(CXX)"
-        LDFLAGS="-Wl,-rpath -Wl,\$(LIBDIR)"
-        SH_LDFLAGS="-elf -shared \
+        LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(LIBDIR)"
+        SH_LDFLAGS="$SH_LDFLAGS -elf -shared \
           -Wl,-update_registry -Wl,\$(LIBDIR)/so_locations \
           -Wl,-rdata_shared \
           -Wl,-rpath -Wl,\$(LIBDIR) \
           -Wl,-soname -Wl,\$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
       else
-        LDFLAGS="-rpath \$(LIBDIR)"
-        SH_LDFLAGS="-elf -shared -rdata_shared -rpath \$(LIBDIR) \
+        LDFLAGS="$LDFLAGS -rpath \$(LIBDIR)"
+        SH_LDFLAGS="$SH_LDFLAGS -elf -shared -rdata_shared -rpath \$(LIBDIR) \
                      -update_registry \$(LIBDIR)/so_locations \
                      -soname \$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
       fi
@@ -233,8 +240,8 @@ if test X$SHARED_LIBS = Xyes; then
       ELF=yes
       LIBSUF=so
       SH_LD="\$(CXX)"
-      SH_LDFLAGS="-shared -Wl,-soname -Wl,\$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
-      LDFLAGS="-Wl,-rpath -Wl,\$(LIBDIR)"
+      SH_LDFLAGS="$SH_LDFLAGS -shared -Wl,-soname -Wl,\$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
+      LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(LIBDIR)"
     ;;
   esac
 fi

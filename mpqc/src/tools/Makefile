@@ -5,6 +5,6 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-SUBDIRS = listlibs tmpl
+SUBDIRS = listlibs
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs

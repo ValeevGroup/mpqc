@@ -3,9 +3,10 @@
 #pragma implementation
 #endif
 
+#include <util/misc/newstring.h>
 #include <math/optimize/diis.h>
-#include <chemistry/qc/scf/grscf.h>
 #include <chemistry/qc/integral/integralv2.h>
+#include <chemistry/qc/scf/grscf.h>
 
 ///////////////////////////////////////////////////////////////////////////
 // GRSCF
@@ -21,6 +22,29 @@ GRSCF::_castdown(const ClassDesc*cd)
   void* casts[1];
   casts[0] = OneBodyWavefunction::_castdown(cd);
   return do_castdowns(casts,cd);
+}
+
+static void
+occ(PointBag_double *z, int &nd, int &ns)
+{
+  int Z=0;
+  for (Pix i=z->first(); i; z->next(i)) Z += (int) z->get(i);
+
+  nd = Z/2;
+  ns = Z%2;
+}
+
+void
+GRSCF::init()
+{
+  _accumdih = new AccumHCore;
+  
+  occ(_mol->charges(),_ndocc,_nsocc);
+  _density_reset_freq = 10;
+  _maxiter = 100;
+  _eliminate = 1;
+  ckptdir = new_string("./");
+  fname = new_string("this_here_thing");
 }
 
 GRSCF::GRSCF(StateIn& s) :
@@ -47,44 +71,76 @@ GRSCF::GRSCF(StateIn& s) :
 GRSCF::GRSCF(const RefKeyVal& keyval) :
   OneBodyWavefunction(keyval)
 {
-  _maxiter = keyval->intvalue("maxiter");
-  if (keyval->error() != KeyVal::OK) {
-    _maxiter = 100;
-  }
-
+  init();
+  
   _extrap = keyval->describedclassvalue("extrap");
   if (_extrap.null()) {
     _extrap = new DIIS;
   }
 
-  _ndocc = keyval->intvalue("ndocc");
-  if (keyval->error() != KeyVal::OK) {
-    double charge = 0.0;
-    for (int i=0; i<molecule()->natom(); i++) {
-      charge += molecule()->atom(i).element().charge();
-    }
-    _ndocc = (int) (charge + 0.5);
+  _accumdih = keyval->describedclassvalue("accumdih");
+  if (_accumdih.null()) {
+    _accumdih = new AccumHCore;
+  }
+  
+  _accumddh = keyval->describedclassvalue("accumddh");
+  if (_accumddh.null()) {
+    _accumddh = new GSGeneralEffH;
+  }
+  
+  if (keyval->exists("ndocc"))
+    _ndocc = keyval->intvalue("ndocc");
+
+  if (keyval->exists("nsocc"))
+    _nsocc = keyval->intvalue("nsocc");
+
+  if (keyval->exists("density_reset_freq"))
+    _density_reset_freq = keyval->intvalue("density_reset_freq");
+
+  if (keyval->exists("maxiter"))
+    _maxiter = keyval->intvalue("maxiter");
+
+  if (keyval->exists("eliminate"))
+    _maxiter = keyval->booleanvalue("eliminate");
+
+  if (keyval->exists("ckpt_dir")) {
+    delete[] ckptdir;
+    ckptdir = keyval->pcharvalue("ckpt_dir");
   }
 
-  _nsocc = keyval->intvalue("nsocc");
+  if (keyval->exists("filename")) {
+    delete[] fname;
+    fname = keyval->pcharvalue("filename");
+  }
+}
 
+GRSCF::GRSCF(const OneBodyWavefunction& obwfn) :
+  OneBodyWavefunction(obwfn)
+{
   init();
+}
+
+GRSCF::GRSCF(const GRSCF& grscf) :
+  OneBodyWavefunction(grscf)
+{
+  _extrap = grscf._extrap;
+  _data = grscf._data;
+  _error = grscf._error;
+  _accumdih = grscf._accumdih;
+  _accumddh = grscf._accumddh;
+  _accumeffh = grscf._accumeffh;
+  _ndocc = grscf._ndocc;
+  _nsocc = grscf._nsocc;
+  _density_reset_freq = grscf._density_reset_freq;
+  _maxiter = grscf._maxiter;
+  _eliminate = grscf._eliminate;
+
+  ckptdir = new_string(grscf.ckptdir);
+  fname = new_string(grscf.fname);
 }
 
 GRSCF::~GRSCF()
 {
-}
-
-void
-GRSCF::init()
-{
-}
-
-void
-GRSCF::compute()
-{
-  fprintf(stderr,"GRSCF::compute(): don't call me yet\n");
-  abort();
 }
 
 RefSCMatrix
@@ -122,255 +178,57 @@ GRSCF::occupation(int i)
   return 0.0;
 }
 
-#if 0
-void
-GRSCF::form_density_independent_h()
+int
+GRSCF::value_implemented()
 {
-  RefSymmSCMatrix& h = _density_independent_h;
-  if (h.null()) {
-    h = _orth_dim->create_symmmatrix();
-  }
-
-  if (_density_independent_h.needed()) {
-    h.assign(0.0);
-    RefSCElementOp op = new GaussianKineticIntv2(basis(), molecule());
-    h.element_op(op);
-    op = new GaussianNuclearIntv2(basis(), molecule());
-    h.element_op(op);
-  }
-}
-#endif
-
-void
-GRSCF::converge_eigenvectors()
-{
-#if 0
-  double etot, edif, neelec, delta;
-  double plimit = 0.1 * _energy.desired_accuracy();
-
-  _extrap->set_tolerance(plimit);
-
-  RefDiagSCMatrix val(basis_dimension());
-  RefSCMatrix vec(basis_dimension(), basis_dimension());
-  RefSymmSCMatrix h(basis_dimension());
-  RefSymmSCMatrix dih(basis_dimension());
-  RefSymmSCMatrix h_open;
-  RefSymmSCMatrix P(basis_dimension());
-  RefSymmSCMatrix P_open;
-  RefSymmSCMatrix DP(basis_dimension());
-  RefSymmSCMatrix DP_open;
-
-  if (_nsocc) {
-    P_open = basis_dimension()->create_symmmatrix();
-    DP_open = basis_dimension()->create_symmmatrix();
-    h_open = basis_dimension()->create_symmmatrix();
-  }
-
-  _accumdih->init(basis(),_mol);
-  _accumdih->accum(dih,h);
-  _accumdih->done();
-
-  fprintf(outfile, "GRSCF: AccumDIH = %s\n", _accumdih->class_name());
-  fprintf(outfile, "GRSCF: AccumDDH = %s\n", _accumddh->class_name());
-
-  fprintf(outfile,"\n  iter       total energy       "
-          " delta E         delta P          error\n");
-
-
-  double E_nuc = nuclear_energy();
-
-  _accumeffh->docc(0, _ndocc);
-  _accumeffh->socc(_ndocc, _ndocc + _nsocc);
-
-  _accumddh->init(basis(),_mol);
-  int iter = 0;
-  double old_E_elec = 0.0;
-  while (++iter < _maxiter) {
-    form_density(iter, vec, P, P_open, DP, DP_open);
-
-    h.assign(dih);
-    if (h_open.nonnull()) h_open.assign(dih);
-
-    _accumddh->accum(plimit, P, P_open, DP, DP_open, h, h_open);
-
-    double E_elec = electronic_energy(dih, P, P_open, h, h_open);
-    double E_dif = E_elec - old_E_elec;
-    old_E_elec = E_elec;
-
-    delta = rms_delta_density(DP, DP_open);
-
-    fprintf(outfile, "%5d %20.10f %15.6e %15.6e %15.6e\n",
-            iter+1, E_nuc + E_elec, E_dif, delta, _extrap->error());
-    fflush(outfile);
-
-    if (delta < plimit) {
-      fprintf(outfile,"\n  converged scf energy is %20.10f au\n",
-              E_tot);
-      break;
-    }
-
-    if (((iter+1) % _ckpt_freq) == 0) checkpoint(vec);
-
-    RefSCMatrix aovec(_orth_dim);
-    aovec.assign(0.0);
-    aovec.accumulate_product(vec, smhalf);
-
-    RefSymmSCMatrix hmo(_orth_dim);
-    hmo.assign(0.0);
-    hmo.accumulate_transform(aovec, h);
-
-    // convert hmo to an effective hmo
-    if (hmo_open.nonnull()) hmo.element_op(_accumeffh, hmo_open);
-
-    // convert the effective hmo back to the orthogonal ao basis
-    RefSymmSCMatrix hoao(_orth_dim);
-    hoao.assign(0.0);
-    hoao.accum_transform(vec.t(), hmo);
-
-    RefSCExtrapError error = form_error_matrix(hmo);
-    RefSCExtrapData data = new SymmSCMatrixExtrapData(hoao);
-    _extrap->extrapolate(data, error);
-
-    // back to the mo basis so a level shift can be applied
-    hmo.assign(0.0);
-    hmo.accumulate_tranform(vec, hoao);
-    level_shift(hmo);
-    RefSCMatrix vec2(_orth_dim, _orth_dim);
-    hmo.diagonalize(val, vec2);
-    RefSCMatrix old_vec = vec.copy();
-    vec.assign(0.0);
-    vec.accumulate_transform(old_vec, vec2);
-    vec.orthogonalize_this();
-  }
-  _accumddh->done();
-#endif
+  return 1;
 }
 
-void
-GRSCF::form_density(int iter,
-                    const RefSCMatrix& vec,
-                    const RefSymmSCMatrix& P,
-                    const RefSymmSCMatrix& P_open,
-                    const RefSymmSCMatrix& DP,
-                    const RefSymmSCMatrix& DP_open)
+int
+GRSCF::gradient_implemented()
 {
-#if 0
-  RefDiagSCMatrix occ(_orth_dim);
-  RefSCElementAssignBlock occop = new SCElementAssignBlock();
-  occop->value(2.0);
-  occop->block(0, _ndocc, 0, _ndocc);
-  occ.element_op(occup);
-  occop->value(1.0);
-  occop->block(_ndocc, _ndocc+_nsocc, _ndocc, _ndocc+_nsocc);
-  occ.element_op(occup);
-  occop->value(0.0);
-  occop->block(_ndocc+_nsocc, _orth_dim.n(),
-               _ndocc+_nsocc, _orth_dim.n());
-  occ.element_op(occup);
-
-  // P is the total density
-  DP.assign(P);
-  DP.scale(-1.0);
-  P.assign(0.0);
-  P.accumulate_transform(vec, occ);
-
-  DP.accumulate(P);
-
-  // P_open is the open shell density
-  if (P_open.nonnull()) {
-    DP_open.assign(P_open);
-    DP_open.scale(-1.0);
-    P_open.assign(0.0);
-    occop->value(0.0);
-    occop->block(0, _ndocc, 0, _ndocc);
-    occ.element_op(occup);
-    P_open.accumulate_transform(vec, occ);
-
-    DP_open.accumulate(P_open);
-  }
-
-  if (iter && _eliminate && ((iter)%_density_reset_freq == 0)) {
-    fprintf(outfile,"  GRSCF: resetting density matrices\n");
-    DP.assign(P);
-    P.assign(0.0);
-    h.assign(dih);
-    if (P_open.nonnull()) {
-      DP_open.assign(P_open);
-      P_open.assign(0.0);
-      h_open.assign(0.0);
-    }
-  }
-#endif
+  return 0;
 }
 
-#if 0
-RefSymmSCMatrix
-GRSCF::form_error_matrix(const RefSymmSCMatrix& hmo,
-                         const RefSCMatrix& vec)
+int
+GRSCF::hessian_implemented()
 {
-  RefSymmSCMatrix errormat(_orth_dim);
-  errormat.assign(hmo);
-
-  // zero out arbitrary blocks of the error matrix
-  RefSCElementAssignBlock zero = new SCElementAssignBlock();
-  zero->value(0.0);
-  zero->block(0, _ndocc, 0, _ndocc);
-  errormat.element_op(zero);
-  zero->block(_ndocc, _ndocc+_nsocc, _ndocc, _ndocc+_nsocc);
-  errormat.element_op(zero);
-  zero->block(_ndocc+_nsocc, _orth_dim.n(),
-              _ndocc+_nsocc, _orth_dim.n());
-  errormat.element_op(zero);
-
-  // form the error matrix in the orthogonal AO basis
-  RefSymmSCMatrix oaoerrormat(_orth_dim);
-  oaoerrormat.assign(0.0);
-  oaoerrormat.accumulate_transform(errormat, vec);
-
-  RefSCExtrapError error = new SymmSCMatrixExtraData(aoaerrormat);
-
-  return error;
+  return 0;
 }
-#endif
-
-#if 0
-void
-GRSCF::checkpoint(const RefSCMatrix& vec)
-{
-  char ckptfile[512];
-  sprintf(ckptfile,"%s%s.scfvec",ckptdir,fname);
-  char ckpttmpfile[512];
-  sprintf(ckpttmpfile,"%s%s.scfvec.tmp",ckptdir,fname);
-  fprintf(outfile,
-          "  GRSCF: checkpointing vector\n");
-  StateBinFileOut out(ckpttmpfile);
-  vec.save_state(out);
-  out.close();
-  rename(ckpttmpfile,ckptfile);
-}
-#endif
-
-#if 0
-double
-GRSCF::rms_delta_density(const RefSymmSCMatrix& DP,
-                         const RefSymmSCMatrix& DP_open)
-{
-  RefSCElementScalarProduct op(new SCElementScalarProduct);
-  DP->element_op(op,DP);
-  double delta = op->result;
-  if (DP_open.nonnull()) {
-    op->init();
-    DP_open->element_op(op,DP_open);
-    delta += op->result();
-  }
-  int ntri = DP.dim().n() * (1 + DP.dim().n()) / 2;
-  return delta/ntri;
-}
-#endif
 
 void
 GRSCF::print(SCostream&o)
 {
   OneBodyWavefunction::print(o);
+}
+
+void
+GRSCF::compute()
+{
+  if (_energy.needed()) {
+    if (_eigenvectors.result_noupdate().null()) {
+      // start from core guess
+      HCoreWfn hcwfn(*this);
+      RefSCMatrix vec = hcwfn.eigenvectors();
+
+      vec->schmidt_orthog(overlap().pointer(),_ndocc+_nocc);
+      
+      _eigenvectors = vec;
+
+      set_energy(0.0);
+      _energy.set_actual_accuracy(_energy.desired_accuracy());
+    }
+  }
+
+  if (_gradient.needed()) {
+    fprintf(stderr,"GRSCF::compute: gradient not implemented\n");
+    abort();
+  }
+  
+  if (_hessian.needed()) {
+    fprintf(stderr,"GRSCF::compute: gradient not implemented\n");
+    abort();
+  }
+  
 }
 

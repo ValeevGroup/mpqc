@@ -36,14 +36,18 @@ using namespace sc;
 OneBodyIntCCA::OneBodyIntCCA(Integral* integral,
                            const Ref<GaussianBasisSet>&bs1,
                            const Ref<GaussianBasisSet>&bs2,
-                           IntegralFunction ifunc,
 			   IntegralEvaluatorFactory eval_factory,
+                           IntegralFunction ifunc,
                            bool use_opaque ):
-  OneBodyInt(integral,bs1,bs2), eval_factory_(eval_factory), 
+  OneBodyInt(integral,bs1,bs2), intfunc_(ifunc), eval_factory_(eval_factory), 
   use_opaque_(use_opaque) 
 {
-  int1ecca_ = new Int1eCCA(integral,bs1,bs2,0,eval_factory,use_opaque);
-  intfunc_ = ifunc;
+  std::string int_type;
+  if( ifunc == &Int1eCCA::overlap ) int_type = "overlap";
+  else if (ifunc == &Int1eCCA::kinetic ) int_type = "kinetic";
+  else if (ifunc == &Int1eCCA::nuclear ) int_type = "nuclear";
+  else if (ifunc == &Int1eCCA::hcore ) int_type = "1eham";
+  int1ecca_ = new Int1eCCA(integral,bs1,bs2,0,eval_factory,int_type,use_opaque);
   buffer_ = int1ecca_->buffer();
 }
 
@@ -67,8 +71,8 @@ OneBodyIntCCA::cloneable()
 Ref<OneBodyInt>
 OneBodyIntCCA::clone()
 {
-  return new OneBodyIntCCA(integral_, bs1_, bs2_, intfunc_, 
-                           eval_factory_, use_opaque_ );
+  return new OneBodyIntCCA(integral_, bs1_, bs2_, 
+                           eval_factory_, intfunc_, use_opaque_ );
 }
 
 // ////////////////////////////////////////////////////////////////////////////

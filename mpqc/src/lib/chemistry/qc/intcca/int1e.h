@@ -76,7 +76,7 @@ class Int1eCCA: public RefCount {
     Int1eCCA(Integral *integral,
              const Ref<GaussianBasisSet>&b1,
 	     const Ref<GaussianBasisSet>&b2,
-	     int order, IntegralEvaluatorFactory, bool);
+	     int order, IntegralEvaluatorFactory, std::string, bool);
     ~Int1eCCA();
 
     double *buffer() { return buff_; }

@@ -45,7 +45,7 @@ Int2eCCA::Int2eCCA(Integral *integral,
                    bool use_opaque):
   bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4),
   erep_ptr_(0), integral_(integral), eval_factory_(eval_factory),
-  use_opaque_(use_opaque)
+  use_opaque_(use_opaque), buffer_(0)
 {
   // integral_ = integral;
 
@@ -76,8 +76,24 @@ Int2eCCA::Int2eCCA(Integral *integral,
     abort();
   }
 
+  cca_bs1_ = GaussianBasis_Molecular::_create();
+  cca_bs2_ = GaussianBasis_Molecular::_create();
+  cca_bs3_ = GaussianBasis_Molecular::_create();
+  cca_bs4_ = GaussianBasis_Molecular::_create();
+  cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
+  cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
+  cca_bs3_.initialize( bs3_.pointer(), bs3_->name() );
+  cca_bs4_.initialize( bs4_.pointer(), bs4_->name() );
+  erep_ = eval_factory_.get_integral_evaluator4( "eri2", 0,
+                                     cca_bs1_, cca_bs2_, cca_bs3_, cca_bs4_ );
+  erep_ptr_ = &erep_;
+  if( use_opaque_ ) {
+    try{ buffer_ = static_cast<double*>( erep_ptr_->buffer() ); }
+    catch(std::exception &e) { e.what(); abort(); }
+  }
+
   if (!buffer_) {
-    ExEnv::errn() << scprintf("couldn't allocate integrals\n");
+    ExEnv::errn() << scprintf("buffer not initialized\n");
     abort();
   }
   
@@ -93,6 +109,7 @@ Int2eCCA::~Int2eCCA()
 void
 Int2eCCA::compute_erep( int is, int js, int ks, int ls )
 {
+/*
   if(erep_ptr_==0) {
     cca_bs1_ = GaussianBasis_Molecular::_create();
     cca_bs2_ = GaussianBasis_Molecular::_create();
@@ -110,6 +127,7 @@ Int2eCCA::compute_erep( int is, int js, int ks, int ls )
       catch(std::exception &e) { e.what(); abort(); }
     }
   }
+*/
 
   if( use_opaque_ )
     erep_ptr_->compute( is, js, ks, ls, 0 );

@@ -250,32 +250,32 @@ Ref<OneBodyInt>
 IntegralCCA::overlap()
 {
   //ExEnv::out0() << "IntegralCCA::overlap() called\n";
-  return new OneBodyIntCCA(this, bs1_, bs2_, &Int1eCCA::overlap, 
-                           eval_factory_, use_opaque_ );
+  return new OneBodyIntCCA(this, bs1_, bs2_, eval_factory_, &Int1eCCA::overlap, 
+                           use_opaque_ );
 }
 
 Ref<OneBodyInt>
 IntegralCCA::kinetic()
 {
   //ExEnv::out0() << "IntegralCCA::kinetic() called\n";
-  return new OneBodyIntCCA(this, bs1_, bs2_, &Int1eCCA::kinetic, 
-                           eval_factory_, use_opaque_ );
+  return new OneBodyIntCCA(this, bs1_, bs2_, eval_factory_, &Int1eCCA::kinetic, 
+                           use_opaque_ );
 }
 
 Ref<OneBodyInt>
 IntegralCCA::nuclear()
 {
   //ExEnv::out0() << "IntegralCCA::nuclear() called\n";
-  return new OneBodyIntCCA(this, bs1_, bs2_, &Int1eCCA::nuclear, 
-                           eval_factory_, use_opaque_ );
+  return new OneBodyIntCCA(this, bs1_, bs2_, eval_factory_, &Int1eCCA::nuclear, 
+                           use_opaque_ );
 }
 
 Ref<OneBodyInt>
 IntegralCCA::hcore()
 {
   //ExEnv::out0() << "IntegralCCA::hcore() called\n";
-  return new OneBodyIntCCA(this, bs1_, bs2_, &Int1eCCA::hcore, 
-                           eval_factory_, use_opaque_ );
+  return new OneBodyIntCCA(this, bs1_, bs2_, eval_factory_, &Int1eCCA::hcore, 
+                           use_opaque_ );
 }
 
 Ref<OneBodyInt>

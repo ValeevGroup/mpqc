@@ -46,13 +46,13 @@ class OneBodyIntCCA : public OneBodyInt {
     IntegralEvaluatorFactory eval_factory_;
     bool use_opaque_;
   protected:
-    Ref<Int1eCCA> int1ecca_;
-    typedef void (Int1eCCA::*IntegralFunction)(int,int);
+    Ref<sc::Int1eCCA> int1ecca_;
+    typedef void (sc::Int1eCCA::*IntegralFunction)(int,int);
     IntegralFunction intfunc_;
   public:
     OneBodyIntCCA(Integral*,
                  const Ref<GaussianBasisSet>&, const Ref<GaussianBasisSet>&,
-                 IntegralFunction, IntegralEvaluatorFactory, bool );
+                 IntegralEvaluatorFactory, IntegralFunction, bool );
     ~OneBodyIntCCA();
     void compute_shell(int,int);
     bool cloneable();

@@ -39,7 +39,7 @@ Int1eCCA::Int1eCCA(Integral *integral,
 		   const Ref<GaussianBasisSet>&b1,
 		   const Ref<GaussianBasisSet>&b2,
 		   int order, IntegralEvaluatorFactory eval_factory, 
-                   bool use_opaque):
+                   std::string int_type, bool use_opaque):
   bs1_(b1), bs2_(b2),
   overlap_ptr_(0), kinetic_ptr_(0),
   nuclear_ptr_(0), hcore_ptr_(0),
@@ -78,11 +78,78 @@ Int1eCCA::Int1eCCA(Integral *integral,
       scprintf("Int1eCCA constructor: invalid order: %d\n",order);
     exit(1);
   }
-  
+
   if( !use_opaque_ ) {
     ExEnv::out0() << "\nMPQC: newing 1e buffer" << endl;
     buff_ = new double[scratchsize];
   }
+
+  cca_bs1_ = GaussianBasis_Molecular::_create();
+  cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
+  if( bs1_.pointer() != bs2_.pointer() ) {
+    cca_bs2_ = GaussianBasis_Molecular::_create();
+    cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
+  }
+  else
+    cca_bs2_ = cca_bs1_;
+
+  if( int_type == "overlap" ) {
+    overlap_ = eval_factory_.get_integral_evaluator2( "overlap", 0, 
+                                                      cca_bs1_, cca_bs2_ );
+    overlap_ptr_ = &overlap_;
+    if( use_opaque_ ) {
+      try{ buff_ = static_cast<double*>( overlap_ptr_->buffer() ); }
+      catch(exception &e) { e.what(); abort(); }
+      ExEnv::err0() << "\nMPQC: got buffer pointer" << endl;
+    }
+  }
+
+  else if( int_type == "kinetic" ) {
+    kinetic_ = eval_factory_.get_integral_evaluator2( "kinetic", 0,
+                                                      cca_bs1_, cca_bs2_ );
+    kinetic_ptr_ = &kinetic_;
+    if( use_opaque_ ) {
+      try{ buff_ = static_cast<double*>( kinetic_ptr_->buffer() ); }
+      catch(exception &e) { e.what(); abort(); }
+    }
+  }
+
+  if( int_type == "nuclear" ) {
+    nuclear_ = eval_factory_.get_integral_evaluator2( "potential", 0,
+                                                      cca_bs1_, cca_bs2_ );
+    nuclear_ptr_ = &nuclear_;
+    if( use_opaque_ ) {
+      try{ buff_ = static_cast<double*>( nuclear_ptr_->buffer() ); }
+      catch(exception &e) { e.what(); abort(); }
+    }
+  }
+
+  if( int_type == "hcore" ) {
+    hcore_ = eval_factory_.get_integral_evaluator2( "1eham", 0,
+                                                    cca_bs1_, cca_bs2_ );
+    hcore_ptr_ = &hcore_;
+    if( use_opaque_ ) {
+      try{ buff_ = static_cast<double*>( hcore_ptr_->buffer() ); }
+      catch(exception &e) { e.what(); abort(); }
+    }
+  }
+
+/*
+  else {
+    void* temp;
+    cca_bs1_ = GaussianBasis_Molecular::_create();
+    cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
+    if( bs1_.pointer() == bs2_.pointer() )
+      temp = eval_factory_.get_buffer( 0, cca_bs1_, cca_bs1_ );
+      buff_ = const_cast<double*>( static_cast<double*>(temp) );
+    else {
+      cca_bs2_ = GaussianBasis_Molecular::_create();
+      cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
+      temp = eval_factory_.get_one_body_buffer( 0, cca_bs1_, cca_bs2_ );
+      buff_ = const_cast<double*>( static_cast<double*>(temp) );
+    }
+  }
+*/
 
 }
 
@@ -96,6 +163,7 @@ Int1eCCA::~Int1eCCA()
 void
 Int1eCCA::overlap( int ish, int jsh )
 {
+/*
   if(overlap_ptr_==0) {
     cca_bs1_ = GaussianBasis_Molecular::_create();
     cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
@@ -112,20 +180,19 @@ Int1eCCA::overlap( int ish, int jsh )
     if( use_opaque_ ) {
       try{ buff_ = static_cast<double*>( overlap_ptr_->buffer() ); }
       catch(exception &e) { e.what(); abort(); }
-      ExEnv::out0() << "\nMPQC: got buffer pointer" << endl;
+      ExEnv::err0() << "\nMPQC: got buffer pointer" << endl;
     }
   }
+*/
   if( use_opaque_ ) {
     overlap_ptr_->compute( ish, jsh, 0 );
-    try{ buff_ = static_cast<double*>( overlap_ptr_->buffer() ); }
-    catch(exception &e) { e.what(); abort(); }
-    ExEnv::out0() << "\nMPQC: got buffer pointer" << endl;
-    ExEnv::out0() << "\nMPQC: computing shell" << endl;
+    ExEnv::err0() << "\nMPQC: got buffer pointer" << endl;
+    ExEnv::err0() << "\nMPQC: computing shell" << endl;
   }
   else {
-    ExEnv::out0() << "\nMPQC: calling compute array" << endl;
+    ExEnv::err0() << "\nMPQC: calling compute array" << endl;
     sidl_buffer_ = overlap_ptr_->compute_array( ish, jsh, 0 ); 
-    ExEnv::out0() << "\nMPQC: copying buffer" << endl;
+    ExEnv::err0() << "\nMPQC: copying buffer" << endl;
     copy_buffer();
   }
 }  
@@ -133,6 +200,7 @@ Int1eCCA::overlap( int ish, int jsh )
 void
 Int1eCCA::kinetic( int ish, int jsh )
 {
+/*
   if(kinetic_ptr_==0) {
     cca_bs1_ = GaussianBasis_Molecular::_create();
     cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
@@ -151,6 +219,7 @@ Int1eCCA::kinetic( int ish, int jsh )
       catch(exception &e) { e.what(); abort(); }
     }
   }
+*/
   if( use_opaque_ )
     kinetic_ptr_->compute( ish, jsh, 0 );
   else {
@@ -162,6 +231,7 @@ Int1eCCA::kinetic( int ish, int jsh )
 void
 Int1eCCA::nuclear( int ish, int jsh )
 {
+/*
   if(nuclear_ptr_==0) {
     cca_bs1_ = GaussianBasis_Molecular::_create();
     cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
@@ -180,6 +250,7 @@ Int1eCCA::nuclear( int ish, int jsh )
       catch(exception &e) { e.what(); abort(); }
     }
   }
+*/
   if( use_opaque_ )
     nuclear_ptr_->compute( ish, jsh, 0 );
   else {
@@ -191,6 +262,7 @@ Int1eCCA::nuclear( int ish, int jsh )
 void
 Int1eCCA::hcore( int ish, int jsh )
 {
+/*
   if(hcore_ptr_==0) {
     cca_bs1_ = GaussianBasis_Molecular::_create();
     cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
@@ -209,6 +281,7 @@ Int1eCCA::hcore( int ish, int jsh )
       catch(exception &e) { e.what(); abort(); }
     }
   }
+*/
   if( use_opaque_ )
     hcore_ptr_->compute( ish, jsh, 0 );
   else {

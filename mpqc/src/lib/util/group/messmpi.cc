@@ -130,7 +130,9 @@ MPIMessageGrp::init(int argc,char **argv)
       // implementations.
       int dot = open(".",O_RDONLY);
       MPI_Init(&argc, &argv);
+#ifdef HAVE_FCHDIR
       fchdir(dot);
+#endif
       close(dot);
     }
   MPI_Comm_rank(MPI_COMM_WORLD,&me);

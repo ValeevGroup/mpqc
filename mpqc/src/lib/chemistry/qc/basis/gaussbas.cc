@@ -755,6 +755,15 @@ GaussianBasisSet::get_even_temp_shells_(int& ishell, Ref<KeyVal>& keyval, const 
       else
         shell_[ishell] = new GaussianShell(1,1,exps,am,GaussianShell::Cartesian,coeffs,GaussianShell::Normalized);
       ishell++;
+
+      // Recompute beta at each step to maintain accuracy
+      if (have_last_exp && have_first_exp) {
+        int nprim_left = nprim - p;
+        if (nprim_left > 1)
+          beta = pow(alpha/alphaN,1.0/(nprim_left-1));
+        else
+          beta = 1.0;
+      }
     }
   }
 }

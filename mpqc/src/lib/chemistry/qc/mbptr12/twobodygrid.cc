@@ -1,7 +1,7 @@
 //
 // twobodygrid.cc
 //
-// Copyright (C) 2003 Edward Valeev
+// Copyright (C) 2004 Edward Valeev
 //
 // Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
 // Maintainer: EV

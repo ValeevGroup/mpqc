@@ -58,11 +58,11 @@ MBPT2_R12::compute_energy_a_()
   
   // Now we can compute and print pair energies
   r12a_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_A,debug_);
-  r12a_energy_->print_pair_energies(ExEnv::out0(),spinadapted_);
+  r12a_energy_->print_pair_energies(spinadapted_);
   etotal = r12a_energy_->energy();
   if (stdapprox_ == LinearR12::StdApprox_Ap) {
     r12ap_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_Ap,debug_);
-    r12ap_energy_->print_pair_energies(ExEnv::out0(),spinadapted_);
+    r12ap_energy_->print_pair_energies(spinadapted_);
     etotal = r12ap_energy_->energy();
   }
 

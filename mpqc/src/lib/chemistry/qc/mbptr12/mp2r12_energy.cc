@@ -199,10 +199,10 @@ void MP2R12Energy::compute()
   RefSCDimension dim_ab = r12eval_->dim_ab();
   int naa = dim_aa.n();
   int nab = dim_ab.n();
-  RefSCVector emp2r12_aa_ = localkit->vector(dim_aa);
-  RefSCVector emp2r12_ab_ = localkit->vector(dim_ab);
-  RefSCVector er12_aa_ = localkit->vector(dim_aa);
-  RefSCVector er12_ab_ = localkit->vector(dim_ab);
+  emp2r12_aa_ = localkit->vector(dim_aa);
+  emp2r12_ab_ = localkit->vector(dim_ab);
+  er12_aa_ = localkit->vector(dim_aa);
+  er12_ab_ = localkit->vector(dim_ab);
   double* er12_aa_vec = new double[naa];
   double* er12_ab_vec = new double[nab];
   bzerofast(er12_aa_vec,naa);
@@ -327,9 +327,12 @@ void MP2R12Energy::compute()
   
   return;
 }
-			 
 
-void MP2R12Energy::print_pair_energies(std::ostream& so = ExEnv::out0(), bool spinadapted = true)
+void MP2R12Energy::print(std::ostream& so) const
+{
+} 
+
+void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
 {
   compute();
   
@@ -337,12 +340,18 @@ void MP2R12Energy::print_pair_energies(std::ostream& so = ExEnv::out0(), bool sp
   switch (stdapprox_) {
     case LinearR12::StdApprox_A:
       SA_str = strdup("A");
+      break;
 
     case LinearR12::StdApprox_Ap:
       SA_str = strdup("A'");
+      break;
 
     case LinearR12::StdApprox_B:
       SA_str = strdup("B");
+      break;
+
+    default:
+      throw std::runtime_error("MP2R12Energy::print_pair_energies -- stdapprox_ is not valid");
   }
 
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();

@@ -63,7 +63,7 @@ public:
   void save_data_state(StateOut&);
   void obsolete();
   void print(std::ostream&o=ExEnv::out0()) const;
-  void print_pair_energies(std::ostream&so=ExEnv::out0(), bool spinadapted=true);
+  void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0());
 
   Ref<R12IntEval> r12eval() const;
   LinearR12::StandardApproximation stdapp() const;

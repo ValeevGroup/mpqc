@@ -164,10 +164,10 @@ interface::
 #
 
 %.d: %.c
-	$(CC) -M -c $(CFLAGS) $< | sed 's/$*.o/$*.o $*.d/g' > $(@F)
+	$(CC) -M -c $(CFLAGS) $< | sed 's/^$*.o/$*.o $*.d/g' > $(@F)
 
 %.d: %.cc
-	$(CXX) -M -c $(CXXFLAGS) $< | sed 's/$*.o/$*.o $*.d/g' > $(@F)
+	$(CXX) -M -c $(CXXFLAGS) $< | sed 's/^$*.o/$*.o $*.d/g' > $(@F)
 
 #
 # sometimes it's nice to get assembler source

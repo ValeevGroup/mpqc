@@ -29,6 +29,8 @@
 #pragma implementation
 #endif
 
+#include <typeinfo>
+
 #include <util/ref/ref.h>
 #include <util/misc/exenv.h>
 

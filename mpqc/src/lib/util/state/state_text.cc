@@ -72,40 +72,44 @@ no_array()
 
 ///////////////////////////////////////////////////////////////////////
 
-void
+int
 StateInText::read(char*s)
 {
   if (fscanf(fp_,"%s",s) != 1) {
       fprintf(stderr,"StateInText::read(char*): failed\n");
       abort();
     }
+  return strlen(s)+1;
 }
 
-void
+int
 StateInText::read(int&i)
 {
   if (fscanf(fp_,"%d",&i) != 1) {
       fprintf(stderr,"StateInText::read(int&): failed\n");
       abort();
     }
+  return (sizeof(int));
 }
 
-void
+int
 StateInText::read(float&f)
 {
   if (fscanf(fp_,"%f",&f) != 1) {
       fprintf(stderr,"StateInText::read(float&): failed\n");
       abort();
     }
+  return sizeof(float);
 }
 
-void
+int
 StateInText::read(double&d)
 {
   if (fscanf(fp_,"%lf",&d) != 1) {
       fprintf(stderr,"StateInText::read(double&): failed\n");
       abort();
     }
+  return sizeof(double);
 }
 
 void
@@ -135,7 +139,7 @@ int StateOutText::put(const ClassDesc*cd)
 void
 StateOutText::putparents(const ClassDesc*cd)
 {
-  ParentClasses& parents = cd->parents();
+  const ParentClasses& parents = cd->parents();
 
   for (int i=0; i<parents.n(); i++) {
       // the cast is needed to de-const-ify the class descriptor
@@ -164,7 +168,7 @@ int StateInText::get(const ClassDesc**cd)
       sscanf(line," version of class %s is %d\n",
              name,
              &version);
-      const ClassDesc* tmp = ClassDesc::name_to_class_desc(name);
+      ClassDesc* tmp = ClassDesc::name_to_class_desc(name);
       // save the class descriptor and the version
       _cd.add(tmp);
       _version.add(version);
@@ -562,7 +566,7 @@ int StateInText::get_array_int(int*d,int size)
   start_array();
   int nread,tnread=0;
   for (int i=0; i<size; i++) {
-      read(d[i]);
+      nread=read(d[i]);
       tnread += nread;
     }
   end_array();
@@ -585,7 +589,7 @@ int StateInText::get_array_float(float*d,int size)
   start_array();
   int nread,tnread;
   for (int i=0; i<size; i++) {
-      read(d[i]);
+      nread=read(d[i]);
       tnread += nread;
     }
   end_array();
@@ -608,7 +612,7 @@ int StateInText::get_array_double(double*d,int size)
   start_array();
   int nread,tnread=0;
   for (int i=0; i<size; i++) {
-      read(d[i]);
+      nread=read(d[i]);
       tnread += nread;
     }
   end_array();

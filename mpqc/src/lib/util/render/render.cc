@@ -261,6 +261,14 @@ FileRender::get_filename(const char *objectname)
         }
       strcat(file, ext);
     }
+  else {
+      if (!objectname) objectname = "renderedobject";
+      const char *ext = file_extension();
+      int lenobjectname;
+      file = new char[strlen(objectname)+strlen(ext)+1];
+      strcpy(file, objectname);
+      strcat(file, ext);
+    }
 
   return file;
 }

@@ -29,45 +29,43 @@ MolecularEnergy::_castdown(const ClassDesc*cd)
 }
 
 MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
-  Function(mole),
-  _energy(_value)
+  Function(mole)
 {
-  _mc = mole._mc;
-  _moldim = mole._moldim;
-  _mol = mole._mol;
+  mc_ = mole.mc_;
+  moldim_ = mole.moldim_;
+  mol_ = mole.mol_;
 }
 
 MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
-  Function(keyval),
-  _energy(_value)
+  Function(keyval)
 {
-  _mol = keyval->describedclassvalue("molecule");
+  mol_ = keyval->describedclassvalue("molecule");
 
-  _moldim = new SCDimension(3 * _mol->natom(), "3Natom");
+  moldim_ = new SCDimension(3 * mol_->natom(), "3Natom");
 
-  // the molecule coordinate object needs _moldim
+  // the molecule coordinate object needs moldim_
   // so constract a keyval that has it
   RefAssignedKeyVal assignedkeyval = new AssignedKeyVal;
-  RefDescribedClass dc = _moldim;
+  RefDescribedClass dc = moldim_;
   assignedkeyval->assign("natom3", dc);
   dc = matrixkit();
   assignedkeyval->assign("matrixkit", dc);
   RefKeyVal asskeyval(assignedkeyval.pointer());
   RefKeyVal aggkeyval = new AggregateKeyVal(asskeyval, keyval);
-  _mc  = aggkeyval->describedclassvalue("coor");
+  mc_  = aggkeyval->describedclassvalue("coor");
 
   RefSCDimension dim;
-  if (_mc.null()) {
-      dim = _moldim;
+  if (mc_.null()) {
+      dim = moldim_;
     }
   else {
-      dim = _mc->dim();
+      dim = mc_->dim();
     }
   set_dimension(dim);
 
-  _energy.compute() = 1;
-  _gradient.compute() = 0;
-  _hessian.compute() = 0;
+  do_value(1);
+  do_gradient(0);
+  do_hessian(0);
 
   molecule_to_x();
 }
@@ -77,22 +75,21 @@ MolecularEnergy::~MolecularEnergy()
 }
 
 MolecularEnergy::MolecularEnergy(StateIn&s):
-  Function(s),
-  _energy(_value)
+  Function(s)
   maybe_SavableState(s)
 {
-  _mc.restore_state(s);
-  _moldim.restore_state(s);
-  _mol.restore_state(s);
+  mc_.restore_state(s);
+  moldim_.restore_state(s);
+  mol_.restore_state(s);
 }
 
 MolecularEnergy&
 MolecularEnergy::operator=(const MolecularEnergy& mole)
 {
   Function::operator=(mole);
-  _mc = mole._mc;
-  _moldim = mole._moldim;
-  _mol = mole._mol;
+  mc_ = mole.mc_;
+  moldim_ = mole.moldim_;
+  mol_ = mole.mol_;
   return *this;
 }
 
@@ -100,9 +97,9 @@ void
 MolecularEnergy::save_data_state(StateOut&s)
 {
   Function::save_data_state(s);
-  _mc.save_state(s);
-  _moldim.save_state(s);
-  _mol.save_state(s);
+  mc_.save_state(s);
+  moldim_.save_state(s);
+  mol_.save_state(s);
 }
 
 void
@@ -115,75 +112,73 @@ MolecularEnergy::failure(const char * msg)
 void
 MolecularEnergy::set_energy(double e)
 {
-  _energy.result_noupdate() = e;
-  _energy.computed() = 1;
+  set_value(e);
 }
 
 double
 MolecularEnergy::energy()
 {
-  return _energy;
+  return value();
 }
 
 void
 MolecularEnergy::set_gradient(RefSCVector&g)
 {
-  if (_mc.null()) {
-      _gradient.result_noupdate() = g;
-    }
-  else {
-      _mc->to_internal(_gradient.result_noupdate(),g);
-    }
-  _gradient.computed() = 1;
+  if (mc_.null()) {
+    Function::set_gradient(g);
+  } else {
+    RefSCVector grad(dimension(), matrixkit());
+    mc_->to_internal(grad,g);
+    Function::set_gradient(grad);
+  }
 }
 
 void
 MolecularEnergy::set_hessian(RefSymmSCMatrix&h)
 {
-  if (_mc.null()) {
-      _hessian.result_noupdate() = h;
-    }
-  else {
-      _mc->to_internal(_hessian.result_noupdate(),h);
-    }
-  _hessian.computed() = 1;
+  if (mc_.null()) {
+    Function::set_hessian(h);
+  } else {
+    RefSymmSCMatrix hess(dimension(), matrixkit());
+    mc_->to_internal(hess,h);
+    Function::set_hessian(hess);
+  }
 }
 
 void
 MolecularEnergy::x_to_molecule()
 {
+  RefSCVector x = get_x_no_copy();
 
-  if (_mc.null()) {
-      int c = 0;
-      for (int i=0; i<_mol->natom(); i++) {
-          _mol->operator[](i)[0] = _x(c); c++;
-          _mol->operator[](i)[1] = _x(c); c++;
-          _mol->operator[](i)[2] = _x(c); c++;
-        }
+  if (mc_.null()) {
+    int c = 0;
+    
+    for (int i=0; i<mol_->natom(); i++) {
+      mol_->operator[](i)[0] = x(c); c++;
+      mol_->operator[](i)[1] = x(c); c++;
+      mol_->operator[](i)[2] = x(c); c++;
     }
-  else {
-      _mc->to_cartesian(_x);
-    }
+  } else {
+    mc_->to_cartesian(get_x_no_copy());
+  }
 }
 
 void
 MolecularEnergy::molecule_to_x()
 {
-  if (_mc.null()) {
-      RefSCVector cartesian(_moldim,matrixkit());
-      int c = 0;
-      for (int i=0; i<_mol->natom(); i++) {
-          cartesian(c) = _mol->operator[](i)[0]; c++;
-          cartesian(c) = _mol->operator[](i)[1]; c++;
-          cartesian(c) = _mol->operator[](i)[2]; c++;
-        }
-      _x = cartesian;
+  if (mc_.null()) {
+    RefSCVector cartesian(moldim(),matrixkit());
+    int c = 0;
+    for (int i=0; i < mol_->natom(); i++) {
+      cartesian(c) = mol_->operator[](i)[0]; c++;
+      cartesian(c) = mol_->operator[](i)[1]; c++;
+      cartesian(c) = mol_->operator[](i)[2]; c++;
     }
-  else {
-      _mc->to_internal(_x);
-    }
-
-  obsolete();
+    Function::set_x(cartesian);
+  } else {
+    mc_->to_internal(get_x_no_copy());
+    obsolete();
+  }
 }
 
 void
@@ -193,17 +188,23 @@ MolecularEnergy::set_x(const RefSCVector&v)
   x_to_molecule();
 }
 
+RefSCDimension
+MolecularEnergy::moldim()
+{
+  return moldim_;
+}
+
 RefMolecule
 MolecularEnergy::molecule()
 {
-  return _mol;
+  return mol_;
 }
 
 void
 MolecularEnergy::guess_hessian(RefSymmSCMatrix&hessian)
 {
-  if (_mc.nonnull()) {
-      _mc->guess_hessian(hessian);
+  if (mc_.nonnull()) {
+      mc_->guess_hessian(hessian);
     }
   else {
       Function::guess_hessian(hessian);
@@ -213,8 +214,8 @@ MolecularEnergy::guess_hessian(RefSymmSCMatrix&hessian)
 RefSymmSCMatrix
 MolecularEnergy::inverse_hessian(RefSymmSCMatrix&hessian)
 {
-  if (_mc.nonnull()) {
-      return _mc->inverse_hessian(hessian);
+  if (mc_.nonnull()) {
+      return mc_->inverse_hessian(hessian);
     }
   else {
       return Function::inverse_hessian(hessian);
@@ -225,16 +226,16 @@ void
 MolecularEnergy::print(ostream&o)
 {
   Function::print(o);
-  if (_mc.nonnull()) {
+  if (mc_.nonnull()) {
       o << indent << "Molecular Coordinates:\n";
       o << incindent;
-      _mc->print(o);
+      mc_->print(o);
       o << decindent;
     }
   else {
       o << indent << "Molecule:\n";
       o << incindent;
-      _mol->print(o);
+      mol_->print(o);
       o << decindent;
     }
 }

@@ -28,7 +28,7 @@ TaylorMolecularEnergy::TaylorMolecularEnergy(const RefKeyVal&keyval):
   coordinates_ = keyval->describedclassvalue("coordinates");
   dim_ = new SCDimension(coordinates_->n());
   expansion_point_ = matrixkit()->vector(dim_);
-  coordinates_->update_values(_mol);
+  coordinates_->update_values(molecule());
   coordinates_->values_to_vector(expansion_point_);
 
   e0_ = keyval->doublevalue("e0");
@@ -75,14 +75,15 @@ TaylorMolecularEnergy::print(ostream&o)
 void
 TaylorMolecularEnergy::compute()
 {
-  if (_value.compute()) {
-      compute_energy(_value.result_noupdate());
-      _value.computed() = 1;
+  if (value_needed()) {
+      double e;
+      compute_energy(e);
+      set_value(e);
     }
-  else if (_gradient.compute()) {
+  else if (gradient_needed()) {
       abort();
     }
-  else if (_hessian.compute()) {
+  else if (hessian_needed()) {
       abort();
     }
 }
@@ -127,7 +128,7 @@ TaylorMolecularEnergy::compute_energy(double&energy)
 {
   RefSCVector geometry = expansion_point_.clone();
 
-  coordinates_->update_values(_mol);
+  coordinates_->update_values(molecule());
   coordinates_->values_to_vector(geometry);
   RefSCVector displacement = geometry - expansion_point_;
 

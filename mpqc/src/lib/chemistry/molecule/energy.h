@@ -19,17 +19,16 @@ class MolecularEnergy: public Function {
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   private:
-    RefMolecularCoor _mc;
+    RefSCDimension moldim_; // the number of cartesian variables
+    RefMolecularCoor mc_;
+    RefMolecule mol_;
 
   protected:
-    AccResultdouble& _energy;
-
-    RefSCDimension _moldim; // the number of cartesian variables
-    RefMolecule _mol;
-
     void failure(const char *);
 
+    // this is just a wrapper around set_value()
     virtual void set_energy(double);
+
     // These are passed gradients and hessian in cartesian coordinates.
     // The _gradient and _hessian in internal coordinates are computed.
     virtual void set_gradient(RefSCVector&);
@@ -37,17 +36,23 @@ class MolecularEnergy: public Function {
 
     void x_to_molecule();
     void molecule_to_x();
+
   public:
     MolecularEnergy(const MolecularEnergy&);
     MolecularEnergy(const RefKeyVal&);
     MolecularEnergy(StateIn&);
     ~MolecularEnergy();
+
     void save_data_state(StateOut&);
 
     MolecularEnergy & operator=(const MolecularEnergy&);
     
+    // a wrapper around value();
     virtual double energy();
+
     virtual RefMolecule molecule();
+    virtual RefSCDimension moldim();
+    
     void guess_hessian(RefSymmSCMatrix&);
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 

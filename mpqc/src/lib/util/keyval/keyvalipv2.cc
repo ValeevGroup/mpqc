@@ -1,5 +1,7 @@
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "ipv2.h"
 #include "keyval.h"
 
@@ -52,9 +54,20 @@ nfp(0)
   strcpy(dirspec,keyprefix);
   strcat(dirspec,"dir");
 
+  char* directory = keyval->pcharvalue(dirspec);
+  if (!directory) {
+      directory = getenv("SCLIBDIR");
+      if (directory) {
+          directory = strchr(directory,'=') + 1;
+          directory = strcpy(new char[strlen(directory)+1], directory);
+        }
+      else {
+          directory = strcpy(new char[strlen(SRCLIBDIR)+1], SRCLIBDIR);
+        }
+    }
+
   int nfiles = keyval->count(filespec);
   for (int i=0; i<nfiles; i++) {
-      char* directory = keyval->pcharvalue(dirspec);
       char* filename = keyval->pcharvalue(filespec,i);
       char* fullname;
       if (directory) {
@@ -67,11 +80,12 @@ nfp(0)
         }
       read(fullname);
       if (directory) {
-          delete[] directory;
           delete[] filename;
         }
       delete[] fullname;
     }
+
+  if (directory) delete[] directory;
 
   delete[] dirspec;
   delete[] filespec;

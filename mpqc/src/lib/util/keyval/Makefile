@@ -4,6 +4,7 @@ ifndef SRCDIR
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+DEFINES += -DSRCLIBDIR=\"$(SRCLIBDIR)\"
 
 ifeq ($(YACC),bison)
 CXXFLAGS += -DBISON

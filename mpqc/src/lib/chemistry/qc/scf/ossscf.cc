@@ -122,8 +122,8 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
     tndocc_ = (nelectrons-2)/2;
     if ((nelectrons-2)%2) {
       if (me==0) {
-        cerr << endl << indent <<
-          "OSSSCF::init: Warning, there's a leftover electron.\n";
+        cerr << endl << indent
+             << "OSSSCF::init: Warning, there's a leftover electron.\n";
         cerr << incindent;
         cerr << indent << "total_charge = " << charge << endl;
         cerr << indent << "total nuclear charge = " << Znuc << endl;
@@ -133,8 +133,8 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
   }
 
   if (me==0)
-    cout << endl << indent << "OSSSCF::init: total charge = " <<
-      Znuc-2*tndocc_-2 << endl << endl;
+    cout << endl << indent << "OSSSCF::init: total charge = "
+         << Znuc-2*tndocc_-2 << endl << endl;
 
   nirrep_ = molecule()->point_group().char_table().ncomp();
 
@@ -247,7 +247,7 @@ OSSSCF::fock(int n)
     return cl_fock_.result();
   else if (n==1)
     return op_focka_.result();
-  else if (n==2)
+  else
     return op_fockb_.result();
 }
 
@@ -412,8 +412,6 @@ OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
     }
 
     memcpy(ndocc_,newdocc,sizeof(int)*nirrep_);
-    //osa_=osa;
-    //osb_=osb;
     
     delete[] newdocc;
   }

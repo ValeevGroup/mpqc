@@ -5,7 +5,7 @@
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
 #include <chemistry/qc/intv2/int_libv2.h>
-#include <chemistry/qc/scf/tcscf.h>
+#include <chemistry/qc/scf/xscf.h>
 
 static void
 set_scale(double& coulombscale, double& exchangescale,
@@ -59,7 +59,7 @@ gr_density(const RefSCMatrix& vec, const RefSymmSCMatrix& dens,
 }
 
 void
-TCSCF::do_gradient(const RefSCVector& gradient)
+XSCF::do_gradient(const RefSCVector& gradient)
 {
   double alpha[4][4], beta[4][4];
 

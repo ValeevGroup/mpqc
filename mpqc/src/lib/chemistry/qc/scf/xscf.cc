@@ -6,18 +6,19 @@
 #include <util/misc/newstring.h>
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
-#include <chemistry/qc/scf/tcscf.h>
+#include <chemistry/qc/scf/clscf.h>
+#include <chemistry/qc/scf/xscf.h>
 
 ///////////////////////////////////////////////////////////////////////////
-// TCSCF
+// XSCF
 
-#define CLASSNAME TCSCF
+#define CLASSNAME XSCF
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
 #define PARENTS public OneBodyWavefunction
 #include <util/class/classi.h>
 void *
-TCSCF::_castdown(const ClassDesc*cd)
+XSCF::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
   casts[0] = OneBodyWavefunction::_castdown(cd);
@@ -32,7 +33,7 @@ occ(PointBag_double *z, int &nd)
 
   nd = Z/2;
   if (Z%2) {
-    fprintf(stderr,"TCSCF::occ: Warning, there's a leftover electron.\n");
+    fprintf(stderr,"XSCF::occ: Warning, there's a leftover electron.\n");
     fprintf(stderr,"  total nuclear charge = %d, %d closed shells\n",Z,nd);
     fprintf(stderr,"  total charge = %d\n\n",Z-2*nd);
   }
@@ -41,7 +42,7 @@ occ(PointBag_double *z, int &nd)
 }
 
 void
-TCSCF::init()
+XSCF::init()
 {
   occ(_mol->charges(),_ndocc);
   _density_reset_freq = 10;
@@ -50,12 +51,11 @@ TCSCF::init()
   ckptdir = new_string("./");
   fname = new_string("this_here_thing");
 
-  ci1 = ci2 = 1.0/sqrt(2.0);
-  occa = 1.0;
-  occb = 1.0;
+  aorb = _ndocc;
+  borb = _ndocc+1;
 }
 
-TCSCF::TCSCF(StateIn& s) :
+XSCF::XSCF(StateIn& s) :
   OneBodyWavefunction(s)
 {
   _extrap.restore_state(s);
@@ -75,7 +75,7 @@ TCSCF::TCSCF(StateIn& s) :
   s.getstring(fname);
 }
 
-TCSCF::TCSCF(const RefKeyVal& keyval) :
+XSCF::XSCF(const RefKeyVal& keyval) :
   OneBodyWavefunction(keyval)
 {
   init();
@@ -102,17 +102,16 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
     _accumeffh = new GSGeneralEffH;
   }
   
+  if (keyval->exists("aorb"))
+    aorb = keyval->intvalue("aorb");
+
+  if (keyval->exists("borb"))
+    borb = keyval->intvalue("borb");
+
   if (keyval->exists("ci1")) {
     ci1 = keyval->doublevalue("ci1");
-    ci2 = keyval->doublevalue("ci2");
-    occa = 2.0*ci1*ci1;
-    occb = 2.0*ci2*ci2;
-  }
-
-  if (keyval->exists("occa")) {
-    occa = keyval->doublevalue("occa");
-    ci1 = sqrt(occa/2.0);
     ci2 = sqrt(1.0 - ci1*ci1);
+    occa = 2.0*ci1*ci1;
     occb = 2.0*ci2*ci2;
   }
 
@@ -139,42 +138,42 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
   }
 }
 
-TCSCF::TCSCF(const OneBodyWavefunction& obwfn) :
+XSCF::XSCF(const OneBodyWavefunction& obwfn) :
   OneBodyWavefunction(obwfn)
 {
   init();
 }
 
-TCSCF::TCSCF(const TCSCF& tcscf) :
-  OneBodyWavefunction(tcscf)
+XSCF::XSCF(const XSCF& xscf) :
+  OneBodyWavefunction(xscf)
 {
-  _extrap = tcscf._extrap;
-  _data = tcscf._data;
-  _error = tcscf._error;
-  _accumdih = tcscf._accumdih;
-  _accumddh = tcscf._accumddh;
-  _accumeffh = tcscf._accumeffh;
-  _ndocc = tcscf._ndocc;
-  _density_reset_freq = tcscf._density_reset_freq;
-  _maxiter = tcscf._maxiter;
-  _eliminate = tcscf._eliminate;
+  _extrap = xscf._extrap;
+  _data = xscf._data;
+  _error = xscf._error;
+  _accumdih = xscf._accumdih;
+  _accumddh = xscf._accumddh;
+  _accumeffh = xscf._accumeffh;
+  _ndocc = xscf._ndocc;
+  _density_reset_freq = xscf._density_reset_freq;
+  _maxiter = xscf._maxiter;
+  _eliminate = xscf._eliminate;
 
-  ckptdir = new_string(tcscf.ckptdir);
-  fname = new_string(tcscf.fname);
+  ckptdir = new_string(xscf.ckptdir);
+  fname = new_string(xscf.fname);
 }
 
-TCSCF::~TCSCF()
+XSCF::~XSCF()
 {
 }
 
 RefSCMatrix
-TCSCF::eigenvectors()
+XSCF::eigenvectors()
 {
   return _eigenvectors;
 }
 
 void
-TCSCF::save_data_state(StateOut& s)
+XSCF::save_data_state(StateOut& s)
 {
   _extrap.save_state(s);
   _data.save_state(s);
@@ -194,40 +193,40 @@ TCSCF::save_data_state(StateOut& s)
 }
 
 double
-TCSCF::occupation(int i)
+XSCF::occupation(int i)
 {
   if (i < _ndocc) return 2.0;
-  if (i < _ndocc + 1) return occa;
-  if (i < _ndocc + 1) return occb;
+  if (i == aorb) return occa;
+  if (i == borb) return occb;
   return 0.0;
 }
 
 int
-TCSCF::value_implemented()
+XSCF::value_implemented()
 {
   return 1;
 }
 
 int
-TCSCF::gradient_implemented()
+XSCF::gradient_implemented()
 {
-  return 1;
+  return 0;
 }
 
 int
-TCSCF::hessian_implemented()
+XSCF::hessian_implemented()
 {
   return 0;
 }
 
 void
-TCSCF::print(SCostream&o)
+XSCF::print(SCostream&o)
 {
   OneBodyWavefunction::print(o);
 }
 
 void
-TCSCF::compute()
+XSCF::compute()
 {
   // hack!!!!  need a way to make sure that the basis geometry is the
   // same as that in the molecule, also need a member in diis to reset it
@@ -245,7 +244,7 @@ TCSCF::compute()
   if (_energy.needed()) {
     if (_eigenvectors.result_noupdate().null()) {
       // start from core guess
-      HCoreWfn hcwfn(*this);
+      CLSCF hcwfn(*this);
       RefSCMatrix vec = hcwfn.eigenvectors();
 
       _eigenvectors = vec;
@@ -255,22 +254,34 @@ TCSCF::compute()
     _eigenvectors.result_noupdate()->schmidt_orthog(overlap().pointer(),
                                                     _ndocc+2);
 
+    if (_fockc.null())
+      _fockc = _eigenvectors.result_noupdate()->rowdim()->create_symmmatrix();
+    
     if (_focka.null())
-      _focka = _eigenvectors.result_noupdate()->rowdim()->create_symmmatrix();
+      _focka = _fockc.clone();
     
     if (_fockb.null())
-      _fockb = _focka.clone();
+      _fockb = _fockc.clone();
+    
+    if (_fockab.null())
+      _fockab = _fockc.clone();
     
     if (_ka.null())
-      _ka = _focka.clone();
+      _ka = _fockc.clone();
     
     if (_kb.null())
-      _kb = _focka.clone();
+      _kb = _fockc.clone();
     
-    if (_fock_evals.null())
-      _fock_evals = _focka->dim()->create_diagmatrix();
+    if (_fock_evalsc.null())
+      _fock_evalsc = _focka->dim()->create_diagmatrix();
     
-    printf("\n  TCSCF::compute: energy accuracy = %g\n\n",
+    if (_fock_evalsa.null())
+      _fock_evalsc = _focka->dim()->create_diagmatrix();
+    
+    if (_fock_evalsb.null())
+      _fock_evalsc = _focka->dim()->create_diagmatrix();
+    
+    printf("\n  XSCF::compute: energy accuracy = %g\n\n",
            _energy.desired_accuracy());
 
     double eelec,nucrep;
@@ -286,7 +297,7 @@ TCSCF::compute()
   if (_gradient.needed()) {
     RefSCVector gradient = _moldim->create_vector();
 
-    printf("\n  TCSCF::compute: gradient accuracy = %g\n\n",
+    printf("\n  XSCF::compute: gradient accuracy = %g\n\n",
            _gradient.desired_accuracy());
 
     do_gradient(gradient);
@@ -297,7 +308,7 @@ TCSCF::compute()
   }
   
   if (_hessian.needed()) {
-    fprintf(stderr,"TCSCF::compute: gradient not implemented\n");
+    fprintf(stderr,"XSCF::compute: gradient not implemented\n");
     abort();
   }
   
@@ -305,23 +316,31 @@ TCSCF::compute()
 
 
 void
-TCSCF::do_vector(double& eelec, double& nucrep)
+XSCF::do_vector(double& eelec, double& nucrep)
 {
   _gr_vector = _eigenvectors.result_noupdate();
   
   // allocate storage for the temp arrays
-  RefSCMatrix nvector = _gr_vector.clone();
+  RefSCMatrix nvectorc = _gr_vector.clone();
+  RefSCMatrix nvectora = _gr_vector.clone();
+  RefSCMatrix nvectorb = _gr_vector.clone();
   
-  _gr_dens = _focka.clone();
-  _gr_dens.assign(0.0);
+  _densc = _focka.clone();
+  _densc.assign(0.0);
   
-  _gr_opa_dens = _focka.clone();
-  _gr_opa_dens.assign(0.0);
+  _densa = _focka.clone();
+  _densa.assign(0.0);
   
-  _gr_opb_dens = _focka.clone();
-  _gr_opb_dens.assign(0.0);
+  _densb = _focka.clone();
+  _densb.assign(0.0);
   
-  _gr_hcore = _gr_dens->clone();
+  _densab = _focka.clone();
+  _densab.assign(0.0);
+  
+  _densab2 = _focka.clone();
+  _densab2.assign(0.0);
+  
+  _gr_hcore = _focka->clone();
 
   // form Hcore
   _gr_hcore.assign(0.0);
@@ -359,6 +378,9 @@ TCSCF::do_vector(double& eelec, double& nucrep)
     printf("iter %5d energy = %20.15f delta = %15.10g\n",
            iter,eelec+nucrep,olde-eelec);
 
+    exit(0);
+    
+#if 0
     // now extrapolate the fock matrix
     // first we form the error matrix which is the offdiagonal blocks of
     // the MO fock matrix
@@ -415,6 +437,7 @@ TCSCF::do_vector(double& eelec, double& nucrep)
     
     // and orthogonalize vector
     _gr_vector->schmidt_orthog(overlap().pointer(),basis()->nbasis());
+#endif
   }
       
   _eigenvectors = _gr_vector;
@@ -426,10 +449,14 @@ TCSCF::do_vector(double& eelec, double& nucrep)
   free_centers(centers);
   free(centers);
 
-  _gr_dens = 0;
-  _gr_opa_dens = 0;
-  _gr_opb_dens = 0;
+  _densc = 0;
+  _densa = 0;
+  _densb = 0;
+  _densab = 0;
+  _densab2 = 0;
   _gr_hcore = 0;
   _gr_vector = 0;
-  nvector = 0;
+  nvectorc = 0;
+  nvectora = 0;
+  nvectorb = 0;
 }

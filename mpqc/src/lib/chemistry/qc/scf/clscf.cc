@@ -210,12 +210,6 @@ CLSCF::compute()
   // hack!!!!  need a way to make sure that the basis geometry is the
   // same as that in the molecule
   _extrap=new DIIS;
-  
-  for (int i=0; i < molecule()->natom(); i++) {
-    basis()->r(i,0) = molecule()->atom(i)[0];
-    basis()->r(i,1) = molecule()->atom(i)[1];
-    basis()->r(i,2) = molecule()->atom(i)[2];
-  }
     
   if (_hessian.needed())
     set_desired_gradient_accuracy(desired_hessian_accuracy()/100.0);
@@ -301,7 +295,7 @@ CLSCF::do_vector(double& eelec, double& nucrep)
   _accumdih->accum(_gr_hcore);
 
   // initialize some junk
-  centers_t *centers = basis()->convert_to_centers_t(molecule());
+  centers_t *centers = basis()->convert_to_centers_t();
   if (!centers) {
     fprintf(stderr,"hoot man!  no centers\n");
     abort();

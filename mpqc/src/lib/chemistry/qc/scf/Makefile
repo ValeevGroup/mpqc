@@ -9,9 +9,10 @@ TARGET_TO_MAKE = libscf
 BIN_OR_LIB = LIB
 
 SRCS = clscf.cc clgmat.cc clgrad.cc hsosscf.cc hsosgmat.cc hsosgrad.cc \
-       ossscf.cc ossgmat.cc ossgrad.cc tcscf.cc tcgmat.cc tcgrad.cc
+       ossscf.cc ossgmat.cc ossgrad.cc tcscf.cc tcgmat.cc tcgrad.cc \
+       xscf.cc xgmat.cc xgrad.cc
 
-CLASSES = CLSCF HSOSSCF OSSSCF
+CLASSES = CLSCF HSOSSCF OSSSCF TCSCF XSCF
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 

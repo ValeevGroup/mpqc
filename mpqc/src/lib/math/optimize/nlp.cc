@@ -20,7 +20,7 @@ SavableState_REF_def(NLP0);
 #define CLASSNAME NLP0
 #define PARENTS virtual_base public SavableState
 #include <util/state/statei.h>
-#include <util/class/classi.h>
+#include <util/class/classia.h>
 
 void *
 NLP0::_castdown(const ClassDesc*cd)
@@ -38,13 +38,11 @@ NLP0::NLP0():
 }
 
 NLP0::NLP0(const NLP0& nlp0) :
-  _value(this)
+  _value(nlp0._value,this)
 {
   _matrixkit = nlp0._matrixkit;
   _dim = nlp0._dim;
   _x = nlp0._x;
-  _value = nlp0._value.result_noupdate();
-  _value.set_desired_accuracy(nlp0._value.desired_accuracy());
 }
 
 NLP0::NLP0(const RefKeyVal&kv):
@@ -78,8 +76,7 @@ NLP0::operator=(const NLP0& nlp0)
   _matrixkit = nlp0._matrixkit;
   _dim = nlp0._dim;
   _x = nlp0._x;
-  _value = nlp0._value.result_noupdate();
-  _value.set_desired_accuracy(nlp0._value.desired_accuracy());
+  _value = nlp0._value;
   return *this;
 }
 
@@ -185,7 +182,7 @@ SavableState_REF_def(NLP1);
 #define CLASSNAME NLP1
 #define PARENTS public NLP0
 #include <util/state/statei.h>
-#include <util/class/classi.h>
+#include <util/class/classia.h>
 
 void *
 NLP1::_castdown(const ClassDesc*cd)
@@ -203,10 +200,8 @@ NLP1::NLP1():
 
 NLP1::NLP1(const NLP1& nlp1) :
   NLP0(nlp1),
-  _gradient(this)
+  _gradient(nlp1._gradient,this)
 {
-  _gradient = nlp1._gradient.result_noupdate();
-  _gradient.set_desired_accuracy(nlp1._gradient.desired_accuracy());
 }
 
 NLP1::NLP1(const RefKeyVal&kv):
@@ -233,8 +228,7 @@ NLP1 &
 NLP1::operator=(const NLP1& nlp1)
 {
   NLP0::operator=(nlp1);
-  _gradient = nlp1._gradient.result_noupdate();
-  _gradient.set_desired_accuracy(nlp1._gradient.desired_accuracy());
+  _gradient = nlp1._gradient;
   return *this;
 }
 
@@ -312,7 +306,7 @@ SavableState_REF_def(NLP2);
 #define CLASSNAME NLP2
 #define PARENTS public NLP1
 #include <util/state/statei.h>
-#include <util/class/classi.h>
+#include <util/class/classia.h>
 
 void *
 NLP2::_castdown(const ClassDesc*cd)
@@ -330,10 +324,8 @@ NLP2::NLP2():
 
 NLP2::NLP2(const NLP2& nlp2):
   NLP1(nlp2),
-  _hessian(this)
+  _hessian(nlp2._hessian,this)
 {
-  _hessian = nlp2._hessian.result_noupdate();
-  _hessian.set_desired_accuracy(nlp2._hessian.desired_accuracy());
 }
 
 NLP2::NLP2(const RefKeyVal&kv):
@@ -360,8 +352,7 @@ NLP2 &
 NLP2::operator=(const NLP2& nlp2)
 {
   NLP1::operator=(nlp2);
-  _hessian = nlp2._hessian.result_noupdate();
-  _hessian.set_desired_accuracy(nlp2._hessian.desired_accuracy());
+  _hessian = nlp2._hessian;
   return *this;
 }
 

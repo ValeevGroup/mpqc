@@ -14,6 +14,9 @@ extern "C" {
 #include <chemistry/qc/intv2/normalize.gbl>
 }
 
+#include <chemistry/qc/basis/gaussbas.h>
+#include <chemistry/qc/basis/gaussshell.h>
+
 enum whats { READ, COUNT };
 
 static int parse_am(char*, shell_type_t&);
@@ -367,4 +370,80 @@ parse_am(char *am, shell_type_t& st)
   }
 
   return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////
+//
+// returns a centers struct given a GaussianBasisSet
+
+centers_t*
+int_centers_from_gbs(const RefGaussianBasisSet& gbs_)
+{
+  GaussianBasisSet& gbs = *gbs_.pointer();
+  
+  centers_t* c;
+  c = (centers_t*)malloc(sizeof(centers_t));
+  c->n = gbs.ncenter();
+  c->center = (center_t*) malloc(sizeof(center_t)*gbs.ncenter());
+  c->center_num = 0;
+  c->shell_num = 0;
+  c->func_num = 0;
+  c->nfunc = 0;
+  c->nshell = 0;
+  c->nprim = 0;
+  c->func_offset = 0;
+  c->prim_offset = 0;
+  c->shell_offset = 0;
+
+  Molecule *mol = gbs.molecule().pointer();
+  
+  for (int icenter = 0; icenter < gbs.ncenter(); icenter++) {
+    if (mol) {
+      const Molecule& molr = *mol;
+      c->center[icenter].atom = strdup(molr[icenter].element().symbol());
+      c->center[icenter].charge = molr[icenter].element().charge();
+    } else {
+      c->center[icenter].atom = strdup("dummy");
+      c->center[icenter].charge = 0.0;
+    }
+
+    c->center[icenter].r = (double*)malloc(sizeof(double)*3);
+    for (int xyz=0; xyz < 3; xyz++)
+      c->center[icenter].r[xyz] = gbs.r(icenter,xyz);
+
+    c->center[icenter].basis.n = gbs.nshell_on_center(icenter);
+    c->center[icenter].basis.name = strdup(gbs.name());
+
+    c->center[icenter].basis.shell =
+      (shell_t*)malloc(sizeof(shell_t)*gbs.nshell_on_center(icenter));
+
+    shell_t*shell = c->center[icenter].basis.shell;
+    int ishell;
+    for (ishell = 0; ishell < gbs.nshell_on_center(icenter); ishell++) {
+      const GaussianShell &igshell = gbs(icenter, ishell);
+
+      int nprim = shell[ishell].nprim = igshell.nprimitive();
+      int ncon = shell[ishell].ncon = igshell.ncontraction();
+
+      shell[ishell].exp = (double *) malloc(sizeof(double)*nprim);
+      shell[ishell].type = (shell_type_t *) malloc(sizeof(shell_type_t)*ncon);
+      shell[ishell].coef = (double **) malloc(sizeof(double *)*ncon);
+
+      int i;
+      for (i=0; i < ncon; i++) {
+        shell[ishell].coef[i] = (double *) malloc(sizeof(double)*nprim);
+        shell[ishell].type[i].am = igshell.am(i);
+        shell[ishell].type[i].puream = igshell.is_pure(i);
+      }
+
+      for (i=0; i < nprim; i++) {
+        shell[ishell].exp[i] = igshell.exponent(i);
+        for (int j=0; j < ncon; j++)
+          shell[ishell].coef[j][i] = igshell.coefficient_norm(j,i);
+      }
+    }
+  }
+
+  int_initialize_centers(c);
+  return c;
 }

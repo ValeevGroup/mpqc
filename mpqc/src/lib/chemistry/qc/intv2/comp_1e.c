@@ -1,5 +1,9 @@
 
 /* $Log$
+ * Revision 1.12  1996/03/29 01:13:36  etseidl
+ * moved SphericalTransformIter to basis.  Replaced it with
+ * SphericalTransformIterV2.  Also moved integralv2 from integral to here
+ *
  * Revision 1.11  1996/03/23 02:37:39  cljanss
  * Everything can now be configured with autoconf.
  *
@@ -93,7 +97,7 @@
 /*#include "initialize.gbl"*/
 #include <chemistry/qc/intv2/int_fjt.gbl>
 #include <chemistry/qc/intv2/utils.gbl>
-#include <chemistry/qc/intv2/transform.h>
+#include <chemistry/qc/intv2/tformv2.h>
 
 /* The NCUBE exp function cannot handle large negative arguments. */
 #ifndef NCUBE

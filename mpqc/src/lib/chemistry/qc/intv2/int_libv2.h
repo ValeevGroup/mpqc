@@ -1,5 +1,9 @@
 
 /* $Log$
+ * Revision 1.11  1996/03/29 01:13:38  etseidl
+ * moved SphericalTransformIter to basis.  Replaced it with
+ * SphericalTransformIterV2.  Also moved integralv2 from integral to here
+ *
  * Revision 1.10  1995/11/16 00:47:35  cljanss
  * Removed normalization for individual basis functions.
  *
@@ -105,9 +109,13 @@ extern "C" {
 #ifdef __cplusplus
 }
 
+#include <chemistry/qc/basis/basis.h>
+
 class RefKeyVal;
 int int_read_basis(const RefKeyVal&, char*, const char*, basis_t&);
 int int_read_centers(const RefKeyVal&, centers_t&);
+
+centers_t * int_centers_from_gbs(const RefGaussianBasisSet&);
 
 #endif
 

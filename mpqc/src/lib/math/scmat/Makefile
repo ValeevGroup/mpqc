@@ -45,23 +45,21 @@ TESTFILES = # localtest.in
 DISTFILES = $(CXXSRC) $(INC) scmat.h $(WEBSRC) Makefile LIBS.h \
             $(TESTSRC) $(TESTFILES)
 
+LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+
 matrixtest:
 	@echo The target must be a specialization such as localtest.
 
-localtest: localtest.o $(TESTOBJ) \
-	 $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+localtest: localtest.o $(TESTOBJ) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o localtest $^ $(SYSLIBS) 
 
-repltest: repltest.o $(TESTOBJ) \
-	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+repltest: repltest.o $(TESTOBJ) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o repltest $^ $(SYSLIBS) 
 
-disttest: disttest.o $(TESTOBJ) \
-	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+disttest: disttest.o $(TESTOBJ) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o disttest $^ $(SYSLIBS) 
 
-blockedtest: blockedtest.o $(TESTOBJ) \
-	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+blockedtest: blockedtest.o $(TESTOBJ) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o blockedtest $^ $(SYSLIBS) 
 
 repltest.o: repltest.cc

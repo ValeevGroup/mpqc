@@ -124,6 +124,8 @@ public:
 
 }
 
+#include <chemistry/qc/mbptr12/transform_tbint.h>
+
 #endif
 
 // Local Variables:

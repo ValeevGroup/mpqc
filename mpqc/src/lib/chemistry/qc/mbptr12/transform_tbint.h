@@ -50,6 +50,13 @@ class MOIntsTransformFactory;
 
 class TwoBodyMOIntsTransform : virtual public SavableState {
 
+  // Construct the integrals accumulator object
+  // This function depends on the particulars of the transformation
+  virtual void init_acc() = 0;
+  // Compute required dynamic memory for a given batch size
+  // implementation depends on the particulars of the concrete type
+  virtual distsize_t compute_transform_dynamic_memory_(int ni) const = 0;
+
 protected:
   std::string name_;
   Ref<MOIntsTransformFactory> factory_;
@@ -84,8 +91,6 @@ protected:
   
   // Compute used static memory and batch size
   void init_vars();
-  // Construct the integrals accumulator object
-  virtual void init_acc() = 0;
   // Re-construct the integrals accumulator object
   void reinit_acc();
 
@@ -93,9 +98,7 @@ protected:
   // the number of i-orbitals
   int compute_transform_batchsize_(size_t mem_static, int rank_i);
   
-  // Compute required dynamic memory for a given batch size
-  // implementation depends on the particulars of the concrete type
-  virtual distsize_t compute_transform_dynamic_memory_(int ni) const = 0;
+  static int compute_nij(const int rank_i, const int rank_j, const int nproc, const int me);
 
 public:
 
@@ -110,6 +113,7 @@ public:
   /// Specifies the top-level MolecularEnergy object to use for checkpointing
   void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }
 
+  void set_memory(const size_t memory);
   void set_debug(int debug) { debug_ = debug; }
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; }
   void set_print_percent(double print_percent) { print_percent_ = print_percent; }
@@ -125,6 +129,9 @@ public:
 
   /// Computes transformed integrals
   virtual void compute() = 0;
+  
+  /// Make the transform obsolete. Next call to compute() will recompute
+  virtual void obsolete();
   
 };
 

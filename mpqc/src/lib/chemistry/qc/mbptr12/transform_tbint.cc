@@ -66,8 +66,6 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Re
   print_percent_ = factory_->print_percent();
   ints_method_ = factory_->ints_method();
   file_prefix_ = factory_->file_prefix();
-  
-  init_vars();
 }
 
 TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
@@ -91,8 +89,6 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
   si.get(print_percent_);
   int ints_method; si.get(ints_method); ints_method_ = (MOIntsTransformFactory::StoreMethod) ints_method;
   si.get(file_prefix_);
-
-  init_vars();
 }
 
 TwoBodyMOIntsTransform::~TwoBodyMOIntsTransform()
@@ -117,6 +113,13 @@ TwoBodyMOIntsTransform::save_data_state(StateOut& so)
   so.put(print_percent_);
   so.put((int)ints_method_);
   so.put(file_prefix_);
+}
+
+void
+TwoBodyMOIntsTransform::set_memory(const size_t memory)
+{
+  memory_ = memory;
+  init_vars();
 }
 
 ///////////////////////////////////////////////////////
@@ -209,6 +212,27 @@ TwoBodyMOIntsTransform::reinit_acc()
   if (ints_acc_.nonnull())
     ints_acc_ = 0;
   init_acc();
+}
+
+void
+TwoBodyMOIntsTransform::obsolete()
+{
+  reinit_acc();
+}
+
+int
+TwoBodyMOIntsTransform::compute_nij(const int rank_i, const int rank_j, const int nproc, const int me)
+{
+  // compute nij as nij on node 0, since nij on node 0 is >= nij on other nodes
+  int index = 0;
+  int nij = 0;
+  for (int i=0; i<rank_i; i++) {
+    for (int j=0; j<rank_j; j++) {
+      if (index++ % nproc == 0) nij++;
+    }
+  }
+  
+  return nij;
 }
 
 /////////////////////////////////////////////////////////////////////////////

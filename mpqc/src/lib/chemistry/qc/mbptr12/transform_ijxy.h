@@ -45,11 +45,8 @@ namespace sc {
 
 class TwoBodyMOIntsTransform_ijxy : public TwoBodyMOIntsTransform {
 
-protected:
-
   // Initialize the MO integrals accumulator
   void init_acc();
-
   // Compute required dynamic memory for a given batch size
   distsize_t compute_transform_dynamic_memory_(int ni) const;
 

@@ -59,11 +59,12 @@ TwoBodyMOIntsTransform_ijxy::TwoBodyMOIntsTransform_ijxy(const std::string& name
                                                          const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
   TwoBodyMOIntsTransform(name,factory,space1,space2,space3,space4)
 {
-  init_acc();
+  init_vars();
 }
 
 TwoBodyMOIntsTransform_ijxy::TwoBodyMOIntsTransform_ijxy(StateIn& si) : TwoBodyMOIntsTransform(si)
 {
+  init_vars();
 }
 
 TwoBodyMOIntsTransform_ijxy::~TwoBodyMOIntsTransform_ijxy()
@@ -98,13 +99,7 @@ TwoBodyMOIntsTransform_ijxy::compute_transform_dynamic_memory_(int ni) const
   int nbasis4 = space4_->basis()->nbasis();
 
   // compute nij as nij on node 0, since nij on node 0 is >= nij on other nodes
-  int index = 0;
-  int nij = 0;
-  for (int i=0; i<ni; i++) {
-    for (int j=0; j<rank2; j++) {
-      if (index++ % nproc == 0) nij++;
-    }
-  }
+  int nij = compute_nij(ni, rank2, nproc, 0);
 
   distsize_t memsize = sizeof(double)*(num_te_types_*((distsize_t)nthread * ni * nbasis2 * nfuncmax3 * nfuncmax4 // iqrs
 						     + (distsize_t)ni * rank2 * nfuncmax3 * nfuncmax4  // ijrs
@@ -123,6 +118,17 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
   if (ints_acc_.nonnull())
     return;
 
+  int nij = compute_nij(batchsize_, space2_->rank(), msg_->n(), msg_->me());
+  if (mem_.null())
+    throw std::runtime_error("TwoBodyMOIntsTransform_ijxy::init_acc() -- memory group not initialized");
+  mem_->set_localsize(num_te_types_*nij*space3_->rank()*space4_->rank()*sizeof(double));
+  if (debug_ >= 1) {
+    ExEnv::out0() << indent
+                  << "Size of global distributed array:       "
+                  << mem_->totalsize()
+                  << " Bytes" << endl;
+  }
+
   // R12IntsAcc cannot work yet in cases when i and j are different spaces
   if (space1_ != space2_)
     throw std::runtime_error("TwoBodyMOIntsTransform_ijxy::init_acc() -- space1_ and space2_ must be the same");
@@ -132,38 +138,44 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
   case MOIntsTransformFactory::mem_only:
     if (npass_ > 1)
       throw std::runtime_error("TwoBodyMOIntsTransform_ijxy::init_acc() -- cannot use MemoryGrp-based accumulator in multi-pass transformations");
-    ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space3_->rank(), space4_->rank(), space1_->rank(), 0);  // Hack to avoid using nfzc and nocc
+    ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space3_->rank(), space4_->rank(), space1_->rank());  // Hack to avoid using nfzc and nocc
     break;
 
   case MOIntsTransformFactory::mem_posix:
     if (npass_ == 1) {
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space3_->rank(), space4_->rank(), space1_->rank(), 0);
+      ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space3_->rank(), space4_->rank(), space1_->rank());
       break;
     }
     // else use the next case
       
   case MOIntsTransformFactory::posix:
     ints_acc_ = new R12IntsAcc_Node0File(mem_, (file_prefix_+"."+name_).c_str(), num_te_types_,
-                                         space3_->rank(), space4_->rank(), space1_->rank(), 0, false);
+                                         space3_->rank(), space4_->rank(), space1_->rank());
     break;
 
 #if HAVE_MPIIO
   case MOIntsTransformFactory::mem_mpi:
     if (npass_ == 1) {
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space3_->rank(), space4_->rank(), space1_->rank(), 0);
+      ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space3_->rank(), space4_->rank(), space1_->rank());
       break;
     }
     // else use the next case
 
   case MOIntsTransformFactory::mpi:
     ints_acc_ = new R12IntsAcc_MPIIOFile_Ind(mem_, (file_prefix_+"."+name_).c_str(), num_te_types_,
-                                             space3_->rank(), space4_->rank(), space1_->rank(), 0, false);
+                                             space3_->rank(), space4_->rank(), space1_->rank());
     break;
 #endif
   
   default:
     throw std::runtime_error("TwoBodyMOIntsTransform_ijxy::init_acc() -- invalid integrals store method");
   }
+}
+
+void
+TwoBodyMOIntsTransform_ijxy::compute()
+{
+  init_acc();
 }
 
 /////////////////////////////////////////////////////////////////////////////

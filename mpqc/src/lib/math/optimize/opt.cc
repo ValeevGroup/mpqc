@@ -41,7 +41,7 @@
 SavableState_REF_def(Optimize);
 #define CLASSNAME Optimize
 #define VERSION 2
-#define PARENTS virtual_base public SavableState
+#define PARENTS virtual public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
@@ -213,7 +213,7 @@ LineOpt::LineOpt()
 }
 
 LineOpt::LineOpt(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   Optimize(s)
 {
   search_direction_ = matrixkit()->vector(dimension());

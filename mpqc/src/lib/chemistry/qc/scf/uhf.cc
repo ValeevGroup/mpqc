@@ -60,7 +60,7 @@ UHF::_castdown(const ClassDesc*cd)
 }
 
 UHF::UHF(StateIn& s) :
-  maybe_SavableState(s)
+  SavableState(s),
   UnrestrictedSCF(s)
 {
 }

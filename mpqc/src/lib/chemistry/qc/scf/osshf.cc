@@ -60,7 +60,7 @@ OSSHF::_castdown(const ClassDesc*cd)
 }
 
 OSSHF::OSSHF(StateIn& s) :
-  maybe_SavableState(s)
+  SavableState(s),
   OSSSCF(s)
 {
 }

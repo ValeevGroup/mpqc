@@ -37,7 +37,7 @@
 
 SavableState_REF_def(HessianUpdate);
 #define CLASSNAME HessianUpdate
-#define PARENTS virtual_base public SavableState
+#define PARENTS virtual public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 

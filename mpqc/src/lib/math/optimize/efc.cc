@@ -97,7 +97,7 @@ EFCOpt::EFCOpt(const RefKeyVal&keyval):
 }
 
 EFCOpt::EFCOpt(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   Optimize(s)
 {
   s.get(tstate);

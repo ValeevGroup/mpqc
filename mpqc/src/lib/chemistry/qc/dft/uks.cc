@@ -62,7 +62,7 @@ UKS::_castdown(const ClassDesc*cd)
 }
 
 UKS::UKS(StateIn& s) :
-  maybe_SavableState(s)
+  SavableState(s),
   UnrestrictedSCF(s)
 {
   exc_=0;

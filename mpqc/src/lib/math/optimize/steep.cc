@@ -68,7 +68,7 @@ SteepestDescentOpt::SteepestDescentOpt(const RefKeyVal&keyval):
 }
 
 SteepestDescentOpt::SteepestDescentOpt(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   Optimize(s)
 {
   s.get(accuracy_);

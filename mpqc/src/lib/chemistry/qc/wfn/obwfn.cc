@@ -86,7 +86,7 @@ OneBodyWavefunction::OneBodyWavefunction(const RefKeyVal&keyval):
 }
 
 OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   Wavefunction(s),
   density_(this),
   oso_eigenvectors_(this),

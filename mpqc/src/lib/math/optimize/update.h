@@ -50,7 +50,7 @@ scheme.  It is used, for example, by QNewtonOpt objects.  Based on the
 value of inverse_hessian_ x and g may be reversed (see Schlegel, Ab initio
 Methods in Quantum Chemistry I, 1987, p 10).
 */
-class HessianUpdate: virtual_base public SavableState {
+class HessianUpdate: virtual public SavableState {
 #   define CLASSNAME HessianUpdate
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>

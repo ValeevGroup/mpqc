@@ -183,9 +183,6 @@
  */
 #undef HAVE_STL
 
-/* Define if virtual base classes do not work. */
-#undef NO_VIRTUAL_BASES
-
 /* Define if machine byte order is big endian. */
 #undef WORDS_BIGENDIAN
 

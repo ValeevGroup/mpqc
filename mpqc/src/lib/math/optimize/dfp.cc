@@ -79,7 +79,7 @@ DFPUpdate::DFPUpdate(const RefKeyVal&keyval):
 }
 
 DFPUpdate::DFPUpdate(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   HessianUpdate(s)
 {
   RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
@@ -178,7 +178,7 @@ BFGSUpdate::BFGSUpdate(const RefKeyVal&keyval):
 }
 
 BFGSUpdate::BFGSUpdate(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   DFPUpdate(s)
 {
 }

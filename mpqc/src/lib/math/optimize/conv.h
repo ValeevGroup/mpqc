@@ -51,7 +51,7 @@ input:
   )
 \end{verbatim}
 */
-class Convergence: virtual_base public SavableState {
+class Convergence: virtual public SavableState {
 #   define CLASSNAME Convergence
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR

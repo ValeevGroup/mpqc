@@ -62,7 +62,7 @@ CLKS::_castdown(const ClassDesc*cd)
 }
 
 CLKS::CLKS(StateIn& s) :
-  maybe_SavableState(s)
+  SavableState(s),
   CLSCF(s)
 {
   exc_=0;

@@ -63,7 +63,7 @@
 #  include <util/state/state_text.h>
 #endif
 
-#define A_parents virtual_base public SavableState
+#define A_parents virtual public SavableState
 class A: A_parents {
 #   define CLASSNAME A
 #   define HAVE_CTOR
@@ -203,7 +203,7 @@ B::B(const RefKeyVal&keyval):
 {
 }
 B::B(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   A(s)
 {
   s.get(ib);
@@ -230,7 +230,7 @@ B::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-#define C_parents virtual_base public SavableState
+#define C_parents virtual public SavableState
 class C: C_parents {
 #   define CLASSNAME C 
 #   define HAVE_CTOR
@@ -287,7 +287,6 @@ C::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-#ifndef NO_VIRTUAL_BASES
 #define D_parents public B, public C
 class D: D_parents {
 #   define CLASSNAME D
@@ -366,7 +365,7 @@ D::D(const RefKeyVal&keyval):
   ddat[0]=(ddat[1]=(ddat[2]=(ddat[3]=1.0)+1)+1)+1;
 }
 D::D(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   B(s),
   C(s)
 {
@@ -427,7 +426,6 @@ D::_castdown(const ClassDesc*cd)
   casts[1] = C::_castdown(cd);
   return do_castdowns(casts,cd);
 }
-#endif // ! NO_VIRTUAL_BASES
 
 int
 main()
@@ -443,7 +441,6 @@ main()
   A a;
   cout << "A name:" << a.class_name() << endl;
 
-#ifndef NO_VIRTUAL_BASES
   D d;
   cout << "D name:" << d.class_name() << endl;
 
@@ -454,7 +451,6 @@ main()
   cout << "C::castdown(&d) = " << (void*) C::castdown(&d) << endl;
   cout << "DescribedClass::castdown(&d) = "
        << (void*) DescribedClass::castdown(&d) << endl;
-#endif
 
   RefAssignedKeyVal akv (new AssignedKeyVal);
 
@@ -482,7 +478,6 @@ main()
   show( pkv->intvalue("x") );  show (pkv->errormsg() ); cout << endl;
   show( pkv->intvalue(":z") );  show (pkv->errormsg() ); cout << endl;
 
-#ifndef NO_VIRTUAL_BASES
   RefDescribedClass rdc = pkv->describedclassvalue("test:object");
   show (pkv->errormsg() ); cout << endl;
   show( rdc.pointer() ); cout << endl;
@@ -490,7 +485,6 @@ main()
   show( ra.pointer() ); cout << endl;
 
   show( pkv->intvalue(":test:object:d") ); cout << endl;
-#endif // ! NO_VIRTUAL_BASES
 
   //pkv->dump();
 
@@ -510,9 +504,7 @@ main()
   soa.forget_references();
   cout << "  second a" << endl;
   ra->save_object_state(soa);
-#ifndef NO_VIRTUAL_BASES
   ra = A::castdown(rdc);
-#endif // ! NO_VIRTUAL_BASES
   ra->save_state(soa);
   soa.flush();
   soa.close();

@@ -35,7 +35,7 @@
 #include <util/state/state.h>
 #include <chemistry/qc/dft/functional.h>
 
-class DenIntegrator: virtual_base public SavableState {
+class DenIntegrator: virtual public SavableState {
 #   define CLASSNAME DenIntegrator
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>

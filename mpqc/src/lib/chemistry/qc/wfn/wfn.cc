@@ -117,7 +117,7 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
 }
 
 Wavefunction::Wavefunction(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   MolecularEnergy(s),
   overlap_(this),
   overlap_isqrt_eigval_(this),

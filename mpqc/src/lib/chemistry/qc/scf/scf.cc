@@ -63,7 +63,7 @@ SCF::_castdown(const ClassDesc*cd)
 }
 
 SCF::SCF(StateIn& s) :
-  maybe_SavableState(s)
+  SavableState(s),
   OneBodyWavefunction(s)
 {
   need_vec_ = 1;

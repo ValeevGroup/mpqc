@@ -78,7 +78,7 @@ struct PointOutputData {
     double df_dgamma_ab;
 };
 
-class DenFunctional: virtual_base public SavableState {
+class DenFunctional: virtual public SavableState {
 #   define CLASSNAME DenFunctional
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>

@@ -69,21 +69,6 @@ class StateOut;
 class TranslateDataIn;
 class TranslateDataOut;
 
-// If multiple inheritance is used, SavableState should be a virtual
-// parent.  This breaks some compilers so the virtual_base macro should
-// be used instead of the virtual keyword (see identity.h).  Since for StateIn
-// CTORs the SavableState base class must be initialized with the
-// StateIn object, the following macro should be used to determine if
-// nondirect descendants of SavableState need to call the SavableState
-// CTOR.  s is the StateIn
-#ifdef NO_VIRTUAL_BASES
-#  define maybe_SavableState(s)
-#  define maybe_SavableState_alone(s)
-#else
-#  define maybe_SavableState(s) SavableState(s),
-#  define maybe_SavableState_alone(s) :SavableState(s)
-#endif
-
 /** Base class for objects that can save/restore state.
  */
 class SavableState: public DescribedClass {

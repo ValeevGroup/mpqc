@@ -43,7 +43,7 @@ PsiWfn::~PsiWfn()
 }
 
 PsiWfn::PsiWfn(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   Wavefunction(s)
 {
   abort();
@@ -214,7 +214,7 @@ PsiCCSD::~PsiCCSD()
 }
 
 PsiCCSD::PsiCCSD(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   PsiWfn(s)
 {
   abort();
@@ -300,7 +300,7 @@ PsiCCSD_T::~PsiCCSD_T()
 }
 
 PsiCCSD_T::PsiCCSD_T(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   PsiWfn(s)
 {
   abort();
@@ -387,7 +387,7 @@ PsiCCSDT::~PsiCCSDT()
 }
 
 PsiCCSDT::PsiCCSDT(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   PsiWfn(s)
 {
   abort();
@@ -480,7 +480,7 @@ PsiCI::~PsiCI()
 }
 
 PsiCI::PsiCI(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   PsiWfn(s)
 {
   abort();
@@ -556,7 +556,7 @@ PsiHF::~PsiHF()
 }
 
 PsiHF::PsiHF(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   PsiWfn(s)
 {
   abort();

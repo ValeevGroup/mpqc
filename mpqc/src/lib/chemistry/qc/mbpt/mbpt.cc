@@ -98,7 +98,7 @@ MBPT2::_castdown(const ClassDesc*cd)
 }
 
 MBPT2::MBPT2(StateIn& s):
-  maybe_SavableState(s)
+  SavableState(s),
   Wavefunction(s)
 {
   reference_.restore_state(s);

@@ -42,7 +42,7 @@
 
 /** The Optimize class is an abstract base class for classes
     that find the extreme points of Function's. */
-class Optimize: virtual_base public SavableState {
+class Optimize: virtual public SavableState {
 #   define CLASSNAME Optimize
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>

@@ -61,7 +61,7 @@ PowellUpdate::PowellUpdate(const RefKeyVal&keyval):
 }
 
 PowellUpdate::PowellUpdate(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   HessianUpdate(s)
 {
   RefSCMatrixKit k = SCMatrixKit::default_matrixkit();

@@ -118,7 +118,7 @@ NElFunctional::_castdown(const ClassDesc*cd)
 }
 
 NElFunctional::NElFunctional(StateIn& s):
-  maybe_SavableState(s)
+  SavableState(s),
   DenFunctional(s)
 {
 }
@@ -163,7 +163,7 @@ SumDenFunctional::_castdown(const ClassDesc*cd)
 }
 
 SumDenFunctional::SumDenFunctional(StateIn& s):
-  maybe_SavableState(s)
+  SavableState(s),
   DenFunctional(s),
   n_(0),
   funcs_(0),
@@ -314,7 +314,7 @@ LSDAXFunctional::_castdown(const ClassDesc*cd)
 }
 
 LSDAXFunctional::LSDAXFunctional(StateIn& s):
-  maybe_SavableState(s)
+  SavableState(s),
   DenFunctional(s)
 {
 }
@@ -383,7 +383,7 @@ LSDACFunctional::_castdown(const ClassDesc*cd)
 }
 
 LSDACFunctional::LSDACFunctional(StateIn& s):
-  maybe_SavableState(s)
+  SavableState(s),
   DenFunctional(s)
 {
 }
@@ -503,7 +503,7 @@ XalphaFunctional::_castdown(const ClassDesc*cd)
 }
 
 XalphaFunctional::XalphaFunctional(StateIn& s):
-  maybe_SavableState(s)
+  SavableState(s),
   DenFunctional(s)
 {
 }
@@ -583,7 +583,7 @@ Becke88Functional::_castdown(const ClassDesc*cd)
 }
 
 Becke88Functional::Becke88Functional(StateIn& s):
-  maybe_SavableState(s)
+  SavableState(s),
   DenFunctional(s)
 {
 }
@@ -701,7 +701,7 @@ LYPFunctional::_castdown(const ClassDesc*cd)
 }
 
 LYPFunctional::LYPFunctional(StateIn& s):
-  maybe_SavableState(s)
+  SavableState(s),
   DenFunctional(s)
 {
 }
@@ -814,7 +814,7 @@ PW91Functional::_castdown(const ClassDesc*cd)
 }
 
 PW91Functional::PW91Functional(StateIn& s):
-  maybe_SavableState(s)
+  SavableState(s),
   DenFunctional(s)
 {
 }

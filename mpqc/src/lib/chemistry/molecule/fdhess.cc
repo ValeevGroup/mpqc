@@ -118,7 +118,7 @@ FinDispMolecularHessian::FinDispMolecularHessian(const RefKeyVal&keyval):
 }
 
 FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   MolecularHessian(s)
 {
   mole_.restore_state(s);

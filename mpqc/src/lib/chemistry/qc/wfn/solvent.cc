@@ -143,7 +143,7 @@ BEMSolventH::BEMSolventH(const RefKeyVal&keyval):
 }
 
 BEMSolventH::BEMSolventH(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   AccumH(s)
 {
   charge_positions_ = 0;

@@ -50,7 +50,7 @@
 # endif
 //#endif
 
-#define A_parents virtual_base public SavableState
+#define A_parents virtual public SavableState
 class A: A_parents {
 #   define CLASSNAME A
 #   define HAVE_KEYVAL_CTOR

@@ -37,7 +37,7 @@
 // //////////////////////////////////////////////////////////////////////////
 
 // computes additions to H
-class AccumH: virtual_base public SavableState {
+class AccumH: virtual public SavableState {
 #   define CLASSNAME AccumH
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>

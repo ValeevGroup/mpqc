@@ -34,7 +34,7 @@
 
 #undef SIMPLE_TEST
 
-#define A_parents virtual_base public DescribedClass
+#define A_parents virtual public DescribedClass
 class A: A_parents {
 #define CLASSNAME A
 #include <util/class/classd.h>
@@ -80,7 +80,7 @@ B::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-#define C_parents virtual_base public DescribedClass
+#define C_parents virtual public DescribedClass
 class C: C_parents {
 #define CLASSNAME C 
 #include <util/class/classd.h>
@@ -102,7 +102,6 @@ C::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-#ifndef NO_VIRTUAL_BASES
 #define D_parents public B, public C
 class D: D_parents {
 #define CLASSNAME D
@@ -128,7 +127,6 @@ D::_castdown(const ClassDesc*cd)
   casts[1] =  C::_castdown(cd);
   return do_castdowns(casts,cd);
 }
-#endif
 
 #endif /* ! SIMPLE_TEST */
 
@@ -136,18 +134,14 @@ DescribedClass_REF_dec(A);
 #ifndef SIMPLE_TEST
 DescribedClass_REF_dec(B);
 DescribedClass_REF_dec(C);
-#ifndef NO_VIRTUAL_BASES
 DescribedClass_REF_dec(D);
-#endif
 #endif /* ! SIMPLE_TEST */
 
 DescribedClass_REF_def(A);
 #ifndef SIMPLE_TEST
 DescribedClass_REF_def(B);
 DescribedClass_REF_def(C);
-#ifndef NO_VIRTUAL_BASES
 DescribedClass_REF_def(D);
-#endif
 #endif /* ! SIMPLE_TEST */
 
 main()
@@ -167,7 +161,6 @@ main()
   A a;
   cout << "A name:" << a.class_name() << '\n';
 
-#ifndef NO_VIRTUAL_BASES
   D* dtst = D::castdown(ClassDesc::name_to_class_desc("D")->create());
   delete dtst;
 
@@ -224,8 +217,6 @@ main()
   cout << "dref.pointer() is " << dref.pointer() << '\n';
   cout << "aref == dref gives " << (aref == dref) << '\n';
 #endif /* ! SIMPLE_TEST */
-
-#endif // ! NO_VIRTUAL_BASES
 
 }
 

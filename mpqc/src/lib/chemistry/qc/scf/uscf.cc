@@ -69,7 +69,7 @@ UnrestrictedSCF::_castdown(const ClassDesc*cd)
 }
 
 UnrestrictedSCF::UnrestrictedSCF(StateIn& s) :
-  maybe_SavableState(s)
+  SavableState(s),
   SCF(s),
   oso_eigenvectors_beta_(this),
   eigenvalues_beta_(this),

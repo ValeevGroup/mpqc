@@ -124,7 +124,7 @@ MolecularEnergy::~MolecularEnergy()
 }
 
 MolecularEnergy::MolecularEnergy(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   Function(s)
 {
   mc_.restore_state(s);
@@ -643,7 +643,7 @@ MolEnergyConvergence::MolEnergyConvergence()
 }
 
 MolEnergyConvergence::MolEnergyConvergence(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   Convergence(s)
 {
   if (s.version(static_class_desc()) >= 2) s.get(cartesian_);

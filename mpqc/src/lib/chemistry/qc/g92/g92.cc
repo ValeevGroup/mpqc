@@ -128,7 +128,7 @@ Gaussian92::~Gaussian92()
 }
 
 Gaussian92::Gaussian92(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   OneBodyWavefunction(s),
   _eigenvectors(this)
 {

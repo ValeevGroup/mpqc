@@ -59,7 +59,7 @@ CLHF::_castdown(const ClassDesc*cd)
 }
 
 CLHF::CLHF(StateIn& s) :
-  maybe_SavableState(s)
+  SavableState(s),
   CLSCF(s)
 {
 }

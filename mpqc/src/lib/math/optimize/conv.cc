@@ -43,7 +43,7 @@ SavableState_REF_def(Convergence);
 #define CLASSNAME Convergence
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
-#define PARENTS virtual_base public SavableState
+#define PARENTS virtual public SavableState
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 

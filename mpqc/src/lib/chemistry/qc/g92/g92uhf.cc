@@ -90,7 +90,7 @@ Gaussian92UHF::~Gaussian92UHF()
 }
 
 Gaussian92UHF::Gaussian92UHF(StateIn&s) :
-  maybe_SavableState(s)
+  SavableState(s),
   Gaussian92(s)
 {
 }

@@ -65,7 +65,7 @@ TCSCF::_castdown(const ClassDesc*cd)
 }
 
 TCSCF::TCSCF(StateIn& s) :
-  maybe_SavableState(s)
+  SavableState(s),
   SCF(s),
   focka_(this),
   fockb_(this),

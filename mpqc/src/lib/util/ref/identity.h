@@ -36,12 +36,6 @@
 
 #include <scconfig.h>
 
-#ifdef NO_VIRTUAL_BASES
-#  define virtual_base
-#else
-#  define virtual_base virtual
-#endif
-
 class Identity;
 
 /** Identifier's are used to distinguish and order objects.  On many
@@ -88,10 +82,8 @@ ostream & operator << (ostream &o, const Identifier &i);
 /** Identity gives objects a unique identity and ordering relationship
  relative to all other objects.
 
- Normally Identity must be virtually inherited if multiple inheritance is
- to be used.  This breaks certain compilers so NO_VIRTUAL_BASES must be
- defined in these cases.  Not everything will work under these
- circumstances.  */
+ Identity must be virtually inherited if multiple inheritance is
+ to be used. */
 class Identity {
   public:
     virtual ~Identity();

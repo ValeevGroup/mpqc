@@ -66,7 +66,7 @@ NewtonOpt::NewtonOpt(const RefKeyVal&keyval):
 }
 
 NewtonOpt::NewtonOpt(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   Optimize(s)
 {
   s.get(accuracy_);

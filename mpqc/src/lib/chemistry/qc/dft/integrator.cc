@@ -541,7 +541,7 @@ Murray93Integrator::_castdown(const ClassDesc*cd)
 }
 
 Murray93Integrator::Murray93Integrator(StateIn& s):
-  maybe_SavableState(s)
+  SavableState(s),
   DenIntegrator(s)
 {
   abort();

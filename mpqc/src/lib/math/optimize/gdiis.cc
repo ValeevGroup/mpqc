@@ -102,7 +102,7 @@ GDIISOpt::GDIISOpt(const RefKeyVal&keyval):
 }
 
 GDIISOpt::GDIISOpt(StateIn&s):
-  maybe_SavableState(s)
+  SavableState(s),
   Optimize(s)
 {
   s.get(nsave);

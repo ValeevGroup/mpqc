@@ -63,7 +63,7 @@ OSSSCF::_castdown(const ClassDesc*cd)
 }
 
 OSSSCF::OSSSCF(StateIn& s) :
-  maybe_SavableState(s)
+  SavableState(s),
   SCF(s),
   cl_fock_(this),
   op_focka_(this),

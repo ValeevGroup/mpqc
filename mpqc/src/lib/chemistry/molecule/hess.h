@@ -40,7 +40,7 @@
 class MolecularEnergy;
 SavableState_REF_fwddec(MolecularEnergy);
 
-class MolecularHessian: virtual_base public SavableState {
+class MolecularHessian: virtual public SavableState {
 #   define CLASSNAME MolecularHessian
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>

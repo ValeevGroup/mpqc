@@ -43,7 +43,7 @@
 /** The Function class is an abstract base class that,
     given a set of coordinates, will compute a value and possibly
     a gradient and hessian at that point. */
-class Function: virtual_base public SavableState, public Compute {
+class Function: virtual public SavableState, public Compute {
 #   define CLASSNAME Function
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>

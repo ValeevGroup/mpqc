@@ -119,7 +119,7 @@ AccumHNull::AccumHNull()
 }
 
 AccumHNull::AccumHNull(StateIn&s) :
-  maybe_SavableState(s)
+  SavableState(s),
   AccumH(s)
 {
 }
@@ -162,7 +162,7 @@ SumAccumH::_castdown(const ClassDesc* cd)
 }
 
 SumAccumH::SumAccumH(StateIn& s) :
-  maybe_SavableState(s)
+  SavableState(s),
   AccumH(s)
 {
   s.get(n_);

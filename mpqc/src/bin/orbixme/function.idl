@@ -1,9 +1,0 @@
-
-#include <keyval.idl>
-
-interface C_Function : C_KeyValCreatable {
-  double value();
-
-  // orbix bug workaround
-  boolean function_has_object();
-};

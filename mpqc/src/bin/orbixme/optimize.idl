@@ -1,6 +1,0 @@
-
-#include <keyval.idl>
-
-interface C_Optimize : C_KeyValCreatable {
-  long optimize();
-};

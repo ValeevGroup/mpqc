@@ -69,7 +69,8 @@ MBPTINPUTS = \
  mbpt_mp2mem.in     mbpt_opt12v1.in    mbpt_opt22v2.in    mbpt_zapt2v2lb.in \
  mbpt_mp2v1.in      mbpt_opt12v2.in    mbpt_opt22v2lb.in \
  mbpt_mp2v2.in      mbpt_opt12v2lb.in  mbpt_zapt2v1.in \
- mbpt_mp2v2lb.in    mbpt_opt22v1.in    mbpt_zapt2v2.in
+ mbpt_mp2v2lb.in    mbpt_opt22v1.in    mbpt_zapt2v2.in \
+ mbpt_mp2mem_mp.in  mbpt_mp2v2_mp.in
 MBPTINPUTS := $(MBPTINPUTS:%=run/%)
 MBPTOUTPUTS = $(MBPTINPUTS:%.$(INSUF)=%.out)
 

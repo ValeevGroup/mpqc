@@ -56,7 +56,7 @@ class KeyValKeyword {
     inline const char* name() const {return keyword_;}
   };
 
-class RefKeyValValue;
+REF_fwddec(KeyValValue);
 
 //.
 // The \clsnm{KeyVal} class is designed to simplify the process of allowing

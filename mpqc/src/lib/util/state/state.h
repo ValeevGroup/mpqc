@@ -343,23 +343,7 @@ class StateInBin: public StateInFile {
 
 ////////////////////////////////////////////////////////////////////
 
-class StateOutXDR : public StateOut, public QCXDR {
-  private:
-    // do not allow copy constructor or assignment
-    StateOutXDR(const StateOutXDR&);
-    operator=(const StateOutXDR&);
-  protected:
-  public:
-    StateOutXDR();
-    ~StateOutXDR();
-    int put_array_char(const char*,int);
-    int put_array_int(const int*,int);
-    int put_array_float(const float*,int);
-    int put_array_double(const double*,int);
-  };
-
-class StateOutBinXDR : public StateOutBin,
-                       public StateOutXDR
+class StateOutBinXDR : public StateOutBin, public QCXDR
 {
   private:
     // do not allow copy constructor or assignment
@@ -373,25 +357,13 @@ class StateOutBinXDR : public StateOutBin,
     StateOutBinXDR(FILE*);
     StateOutBinXDR(const char *, const char * = "w");
     ~StateOutBinXDR();
+    int put_array_char(const char*,int);
+    int put_array_int(const int*,int);
+    int put_array_float(const float*,int);
+    int put_array_double(const double*,int);
 };
 
-class StateInXDR : public StateIn, public QCXDR {
-  private:
-    // do not allow copy constructor or assignment
-    StateInXDR(const StateInXDR&);
-    operator=(const StateInXDR&);
-  protected:
-  public:
-    StateInXDR();
-    ~StateInXDR();
-    int get_array_char(char*,int);
-    int get_array_int(int*,int);
-    int get_array_float(float*,int);
-    int get_array_double(double*,int);
-  };
-
-class StateInBinXDR : public StateInBin,
-                      public StateInXDR
+class StateInBinXDR : public StateInBin, public QCXDR
 {
   private:
     // do not allow copy constructor or assignment
@@ -405,6 +377,10 @@ class StateInBinXDR : public StateInBin,
     StateInBinXDR(FILE*);
     StateInBinXDR(const char *, const char * = "r");
     ~StateInBinXDR();
+    int get_array_char(char*,int);
+    int get_array_int(int*,int);
+    int get_array_float(float*,int);
+    int get_array_double(double*,int);
   };
 
 #ifndef __GNUC__

@@ -24,88 +24,6 @@
 
 ///////////////////////////////////////////////////////////////////
 
-StateOutXDR::StateOutXDR() :
-  StateOut()
-{
-}
-
-StateOutXDR::~StateOutXDR()
-{
-}
-
-int StateOutXDR::put_array_char(const char *p, int size)
-{
-  translate((char*)p,size);
-  int ret = put_array_void((void*)p,size*sizeof(char));
-  translate((char*)p,size);
-  return ret;
-}
-
-int StateOutXDR::put_array_int(const int *p, int size)
-{
-  translate((unsigned int*)p,size);
-  int ret = put_array_void((void*)p,size*sizeof(int));
-  translate((unsigned int*)p,size);
-  return ret;
-}
-
-int StateOutXDR::put_array_float(const float *p, int size)
-{
-  translate((float*)p,size);
-  int ret = put_array_void((void*)p,size*sizeof(float));
-  translate((float*)p,size);
-  return ret;
-}
-
-int StateOutXDR::put_array_double(const double *p, int size)
-{
-  translate((double*)p,size);
-  int ret = put_array_void((void*)p,size*sizeof(double));
-  translate((double*)p,size);
-  return ret;
-}
-
-///////////////////////////////////////////////////////////////////
-
-StateInXDR::StateInXDR() :
-  StateIn()
-{
-}
-
-StateInXDR::~StateInXDR()
-{
-}
-
-int StateInXDR::get_array_char(char *p, int size)
-{
-  int ret = get_array_void((void*)p,size*sizeof(char));
-  translate(p,size);
-  return ret;
-}
-
-int StateInXDR::get_array_int(int *p, int size)
-{
-  int ret = get_array_void((void*)p,size*sizeof(int));
-  translate((unsigned int*)p,size);
-  return ret;
-}
-
-int StateInXDR::get_array_float(float *p, int size)
-{
-  int ret = get_array_void((void*)p,size*sizeof(float));
-  translate(p,size);
-  return ret;
-}
-
-int StateInXDR::get_array_double(double *p, int size)
-{
-  int ret = get_array_void((void*)p,size*sizeof(double));
-  translate(p,size);
-  return ret;
-}
-
-//////////////////////////////////////////////////////////////
-
 StateOutBinXDR::StateOutBinXDR() :
   StateOutBin()
 {
@@ -128,6 +46,38 @@ StateOutBinXDR::~StateOutBinXDR()
 int StateOutBinXDR::put_array_void(const void*v,int i)
 {
   return StateOutBin::put_array_void(v,i);
+}
+
+int StateOutBinXDR::put_array_char(const char *p, int size)
+{
+  translate((char*)p,size);
+  int ret = put_array_void((void*)p,size*sizeof(char));
+  translate((char*)p,size);
+  return ret;
+}
+
+int StateOutBinXDR::put_array_int(const int *p, int size)
+{
+  translate((unsigned int*)p,size);
+  int ret = put_array_void((void*)p,size*sizeof(int));
+  translate((unsigned int*)p,size);
+  return ret;
+}
+
+int StateOutBinXDR::put_array_float(const float *p, int size)
+{
+  translate((float*)p,size);
+  int ret = put_array_void((void*)p,size*sizeof(float));
+  translate((float*)p,size);
+  return ret;
+}
+
+int StateOutBinXDR::put_array_double(const double *p, int size)
+{
+  translate((double*)p,size);
+  int ret = put_array_void((void*)p,size*sizeof(double));
+  translate((double*)p,size);
+  return ret;
 }
 
 //////////////////////////////////////////////////////////////
@@ -154,4 +104,32 @@ StateInBinXDR::~StateInBinXDR()
 int StateInBinXDR::get_array_void(void*v,int i)
 {
   return StateInBin::get_array_void(v,i);
+}
+
+int StateInBinXDR::get_array_char(char *p, int size)
+{
+  int ret = get_array_void((void*)p,size*sizeof(char));
+  translate(p,size);
+  return ret;
+}
+
+int StateInBinXDR::get_array_int(int *p, int size)
+{
+  int ret = get_array_void((void*)p,size*sizeof(int));
+  translate((unsigned int*)p,size);
+  return ret;
+}
+
+int StateInBinXDR::get_array_float(float *p, int size)
+{
+  int ret = get_array_void((void*)p,size*sizeof(float));
+  translate(p,size);
+  return ret;
+}
+
+int StateInBinXDR::get_array_double(double *p, int size)
+{
+  int ret = get_array_void((void*)p,size*sizeof(double));
+  translate(p,size);
+  return ret;
 }

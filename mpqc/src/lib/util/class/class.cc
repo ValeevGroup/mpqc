@@ -240,7 +240,6 @@ ClassDesc::ClassDesc(char* name, int version,
       all_ = new MAPCTOR;
       unresolved_parents_ = new SETCTOR;
       const char* tmp = getenv("LD_LIBRARY_PATH");
-      printf("tmp = %s\n",tmp);
       if (tmp) {
           // Needed for misbehaving getenv's.
           if (strncmp(tmp, "LD_LIBRARY_PATH=", 16) == 0) {
@@ -249,9 +248,7 @@ ClassDesc::ClassDesc(char* name, int version,
             }
         }
       else tmp = ".";
-      printf("tmp (after = stripped) = %s\n",tmp);
       classlib_search_path_ = ::strcpy(new char[strlen(tmp)+1],tmp);
-      printf("path = %s\n",tmp);
     }
   
   parents_.init(parents);

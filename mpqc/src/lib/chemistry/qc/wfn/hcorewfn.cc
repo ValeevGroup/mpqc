@@ -1,4 +1,6 @@
 
+#include <util/misc/formio.h>
+
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/petite.h>
@@ -101,6 +103,12 @@ HCoreWfn::occupation(int ir, int i)
 void
 HCoreWfn::compute()
 {
-  fprintf(stderr,"HCoreWfn::compute(): don't call me\n");
+  cerr << node0 << indent << "HCoreWfn::compute(): don't call me\n";
   abort();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

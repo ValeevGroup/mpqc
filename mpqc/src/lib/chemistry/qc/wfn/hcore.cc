@@ -128,3 +128,9 @@ SymmAccumHCore::accum(const RefSymmSCMatrix& h)
   // now symmetrize Hao
   pl->symmetrize(hao,h);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -1,5 +1,5 @@
 
-#include <stdio.h>
+#include <util/misc/formio.h>
 
 #include <chemistry/qc/wfn/obwfn.h>
 
@@ -17,7 +17,7 @@ main(int argc, char *argv[])
 
   RefOneBodyWavefunction wfn = rpkv->describedclassvalue("wavefunction");
   if (wfn.null()) {
-    fprintf(stderr,"wfn is null\n");
+    cerr << node0 << "wfn is null\n";
     exit(1);
   }
 
@@ -47,3 +47,9 @@ main(int argc, char *argv[])
   
   return 0;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

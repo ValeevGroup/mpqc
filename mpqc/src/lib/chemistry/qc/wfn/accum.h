@@ -85,3 +85,7 @@ class AccumNullDDH: public AccumDDH {
 SavableState_REF_dec(AccumNullDDH);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

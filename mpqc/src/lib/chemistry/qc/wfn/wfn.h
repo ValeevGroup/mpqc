@@ -6,7 +6,8 @@
 #pragma interface
 #endif
 
-#include <stdio.h>
+#include <iostream.h>
+
 #include <util/misc/compute.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
@@ -73,3 +74,7 @@ class Wavefunction: public MolecularEnergy {
 SavableState_REF_dec(Wavefunction);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -1,6 +1,4 @@
 
-#include <stdio.h>
-#include <iostream.h>
 #include <math/scmat/matrix.h>
 #include <util/keyval/keyval.h>
 #include <math/topology/point.h>
@@ -50,3 +48,9 @@ double Wavefunction::orbital_density(const SCVector3& r,
   if (orbvalue) *orbvalue = tmp;
   return 2.0 * tmp * tmp;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

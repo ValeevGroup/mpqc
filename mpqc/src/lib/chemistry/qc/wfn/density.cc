@@ -3,9 +3,7 @@
 #pragma implementation
 #endif
 
-extern "C" {
-#include <stdio.h>
-}
+#include <util/misc/formio.h>
 
 #include <math/scmat/local.h>
 #include <math/scmat/vector3.h>
@@ -38,8 +36,8 @@ ElectronDensity::compute()
       set_value(wfn_.density(r));
     }
   if (do_hessian()) {
-      fprintf(stderr,"ElectronDensity::compute(): "
-              " isn't yet implemented\n");
+      cerr << node0 << << indent
+           << "ElectronDensity::compute(): isn't yet implemented\n";
       abort();
     }
 }
@@ -69,3 +67,9 @@ ElectronDensity::boundingbox(double valuemin,
       p2[i] = p2[i] + 3.0;
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

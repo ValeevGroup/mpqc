@@ -1,5 +1,5 @@
-#include <stdio.h>
-#include <iostream.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/topology/point.h>
 #include <chemistry/qc/basis/basis.h>
@@ -16,7 +16,8 @@ double Wavefunction::density(const SCVector3&r)
   basis()->values(integral_,r,bs_values);
 
   //for (int i=0; i<nbasis; i++)
-  //     printf("bs_values[%d] = % 12.8f\n",i,bs_values[i]);
+  //     cout << node0 << indent
+  //          << scprintf("bs_values[%d] = %12.8f\n",i,bs_values[i]);
 
   // Assuming this will be called many times for the same wavefunction,
   // it is more efficient to force the computation of the natural
@@ -51,7 +52,8 @@ double Wavefunction::density_gradient(const SCVector3&r,double*grad)
   basis()->grad_values(integral_,r,bsg_values,bs_values);
 
   //for (int i=0; i<nbasis; i++)
-  //     printf("bs_values[%d] = % 12.8f\n",i,bs_values[i]);
+  //     cout << node0 << indent
+  //          << scprintf("bs_values[%d] = % 12.8f\n",i,bs_values[i]);
 
   // get the natural orbitals and density
   RefSCMatrix nos = natural_orbitals();
@@ -85,3 +87,9 @@ double Wavefunction::density_gradient(const SCVector3&r,double*grad)
 
   return elec_density;
 }     
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

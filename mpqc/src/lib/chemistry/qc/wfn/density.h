@@ -22,3 +22,7 @@ class ElectronDensity: public Volume {
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

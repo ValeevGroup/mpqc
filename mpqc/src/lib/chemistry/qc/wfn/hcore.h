@@ -47,3 +47,7 @@ class SymmAccumHCore: public AccumDIH {
 SavableState_REF_dec(SymmAccumHCore);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

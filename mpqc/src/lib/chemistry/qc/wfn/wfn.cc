@@ -286,3 +286,9 @@ Wavefunction::print(ostream&o)
   MolecularEnergy::print(o);
   // the other stuff is a wee bit too big to print
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

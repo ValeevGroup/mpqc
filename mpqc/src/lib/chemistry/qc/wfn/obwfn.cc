@@ -320,3 +320,9 @@ OneBodyWavefunction::print(ostream&o)
 {
   Wavefunction::print(o);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

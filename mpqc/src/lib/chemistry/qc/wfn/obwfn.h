@@ -70,3 +70,7 @@ class HCoreWfn: public OneBodyWavefunction {
 SavableState_REF_dec(HCoreWfn);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -141,11 +141,11 @@ MPIMemoryGrp::send(void* data, int nbytes, int node, int type)
   int mid = get_mid();
   //int MPI_Ibsend(void* buf, int count, MPI_Datatype datatype,
   //int dest, int tag, MPI_Comm comm, MPI_Request *request) 
-  if (debug_) cout << ">>>> MPI_Ibsend for mid " << mid
+  if (debug_) cout << ">>>> MPI_Isend for mid " << mid
                    << " type " << type << endl;
   int ret;
-  if ((ret = MPI_Ibsend(data, nbytes, MPI_BYTE, node, type,
-                        MPI_COMM_WORLD, &handles_[mid])) != MPI_SUCCESS) {
+  if ((ret = MPI_Isend(data, nbytes, MPI_BYTE, node, type,
+                       MPI_COMM_WORLD, &handles_[mid])) != MPI_SUCCESS) {
       cerr << me() << ": MPIMemoryGrp::send(," << nbytes << "," << node
            << "," << type << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);

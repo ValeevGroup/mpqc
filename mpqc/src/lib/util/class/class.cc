@@ -310,7 +310,8 @@ ClassDesc::ClassDesc(char* name, int version,
       (*all_)[key]->children_ = 0;
 
       if (!children_) {
-          cerr << "ClassDesc: inconsistency in initialization"
+          cout << "ClassDesc: inconsistency in initialization for "
+               << key.name()
                << "--perhaps a duplicated CTOR call" << endl;
           abort();
         }

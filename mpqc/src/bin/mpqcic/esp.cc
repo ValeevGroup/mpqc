@@ -267,14 +267,20 @@ atomic_charges_from_esp(centers_t *centers, Molecule& mol, dmt_matrix pmat,
             }
 
           if (me==0) {
-	    avsfil.put(Vi); avsfil.put(xp); avsfil.put(yp); avsfil.put(zp);
+	    avsfil.put(Vi);
+            avsfil.put(xp);
+            avsfil.put(yp);
+            avsfil.put(zp);
             avsfil.flush();
             }
 #else
 	  Vi = espr(centers,&center,pmat,xp,yp,zp);
 	  sum_A_B(A,B,Vi,&center,xp,yp,zp);
           if (me==0) {
-	    avsfil.put(Vi); avsfil.put(xp); avsfil.put(yp); avsfil.put(zp);
+	    avsfil.put(Vi);
+            avsfil.put(xp);
+            avsfil.put(yp);
+            avsfil.put(zp);
             avsfil.flush();
             }
           sync0();
@@ -290,8 +296,10 @@ atomic_charges_from_esp(centers_t *centers, Molecule& mol, dmt_matrix pmat,
 
   if (me==0) {
     vdw_scale=-99999.0;
-    avsfil.put(vdw_scale); avsfil.put(vdw_scale);
-    avsfil.put(vdw_scale); avsfil.put(vdw_scale);
+    avsfil.put(vdw_scale);
+    avsfil.put(vdw_scale);
+    avsfil.put(vdw_scale);
+    avsfil.put(vdw_scale);
     }
 
  /* sum contributions to A and B */

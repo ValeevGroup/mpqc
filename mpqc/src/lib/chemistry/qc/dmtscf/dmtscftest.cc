@@ -81,9 +81,9 @@ main(int argc, char *argv[])
   if (mynode0() == 0) {
    // initialize keyval
     RefKeyVal pkv(new ParsedKeyVal(filename));
-    RefKeyVal ppkv(new PrefixKeyVal(":scf :default",*pkv.pointer()));
-    pkv = new ParsedKeyVal("input",*ppkv.pointer());
-    keyval = new AggregateKeyVal(*ppkv.pointer(),*pkv.pointer());
+    RefKeyVal ppkv(new PrefixKeyVal(":scf :default",pkv));
+    pkv = new ParsedKeyVal("input",ppkv);
+    keyval = new AggregateKeyVal(ppkv,pkv);
 
     pkv = ppkv = 0;
 

@@ -161,7 +161,6 @@ throw ()
   bs3_ = basis_cca_to_sc( bs3 );
   bs4_ = basis_cca_to_sc( bs4 );
 
-  //if( !opaque_ ) {
   std::cout << "  initializing " << package_ << " " << evaluator_label_
             << " integral evaluator\n";
   if ( package_ == "intv3" ) 

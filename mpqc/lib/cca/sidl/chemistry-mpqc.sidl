@@ -32,19 +32,31 @@ package MPQC version 0.2 {
 
   class IntegralEvaluatorFactory
     implements-all Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory,
-    gov.cca.Component, gov.cca.Port {};
+    gov.cca.Component, gov.cca.Port {
+      opaque get_one_body_buffer( in int deriv, 
+                                  in Chemistry.QC.GaussianBasis.Molecular bs1,
+                                  in Chemistry.QC.GaussianBasis.Molecular bs2 );
+      opaque get_two_body_buffer( in int deriv,
+                                  in Chemistry.QC.GaussianBasis.Molecular bs1,
+                                  in Chemistry.QC.GaussianBasis.Molecular bs2,
+                                  in Chemistry.QC.GaussianBasis.Molecular bs3,
+                                  in Chemistry.QC.GaussianBasis.Molecular bs4 );
+    };
 
   class IntegralEvaluator2 implements-all
     Chemistry.QC.GaussianBasis.IntegralEvaluator2{
       void set_integral_package(in string label); 
+      void initialize_opaque( in opaque integral );
     };
   class IntegralEvaluator3 implements-all
     Chemistry.QC.GaussianBasis.IntegralEvaluator3{
       void set_integral_package(in string label);
+      void initialize_opaque( in opaque integral );
     };
   class IntegralEvaluator4 implements-all
     Chemistry.QC.GaussianBasis.IntegralEvaluator4{
       void set_integral_package(in string label);
+      void initialize_opaque( in opaque integral );
     };
 
   class ChemistryOpt_CoordinateModel implements-all ChemistryOpt.CoordinateModel,

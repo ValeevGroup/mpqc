@@ -272,7 +272,6 @@ throw ()
   }
   
   sc_buffer_ = eval_->buffer();
-  std::cerr << "\nbuffer pointer transfered" << endl;
 
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.initialize)
 }
@@ -286,7 +285,6 @@ throw ()
 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.buffer)
-  std::cout << "buffer called (too early?)\n";
   return const_cast<double*>( sc_buffer_ );
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.buffer)
 }
@@ -333,14 +331,11 @@ throw ()
   compute( shellnum1, shellnum2, deriv_level );
 
   // create a proxy SIDL array
-  std::cout << "\nborrowing sidl array" << endl;
   int lower[1] = {0};
   int upper[1]; upper[0] = max_nshell2_-1;
   int stride[1] = {1};
   sidl_buffer_.borrow( const_cast<double*>(sc_buffer_), 1, 
                        lower, upper, stride);
-
-  std::cout << "\nreturning borrowed array" << endl;
   return sidl_buffer_;
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.compute_array)

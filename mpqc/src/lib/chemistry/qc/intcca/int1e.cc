@@ -80,7 +80,6 @@ Int1eCCA::Int1eCCA(Integral *integral,
   }
 
   if( !use_opaque_ ) {
-    ExEnv::out0() << "\nMPQC: newing 1e buffer" << endl;
     buff_ = new double[scratchsize];
   }
 
@@ -100,7 +99,6 @@ Int1eCCA::Int1eCCA(Integral *integral,
     if( use_opaque_ ) {
       try{ buff_ = static_cast<double*>( overlap_ptr_->buffer() ); }
       catch(exception &e) { e.what(); abort(); }
-      ExEnv::err0() << "\nMPQC: got buffer pointer" << endl;
     }
   }
 
@@ -186,13 +184,9 @@ Int1eCCA::overlap( int ish, int jsh )
 */
   if( use_opaque_ ) {
     overlap_ptr_->compute( ish, jsh, 0 );
-    ExEnv::err0() << "\nMPQC: got buffer pointer" << endl;
-    ExEnv::err0() << "\nMPQC: computing shell" << endl;
   }
   else {
-    ExEnv::err0() << "\nMPQC: calling compute array" << endl;
     sidl_buffer_ = overlap_ptr_->compute_array( ish, jsh, 0 ); 
-    ExEnv::err0() << "\nMPQC: copying buffer" << endl;
     copy_buffer();
   }
 }  

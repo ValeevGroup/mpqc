@@ -69,7 +69,6 @@ Int2eCCA::Int2eCCA(Integral *integral,
                 *bs4_->max_ncartesian_in_shell();
   if (order==0) { 
     if( !use_opaque ) buffer_ = new double[maxsize];
-//    ExEnv::out0() << "Allocating 2e buffer of size " << maxsize << std::endl;
   }
   else if (order==1) {
     ExEnv::errn() << scprintf("deriv ints not implemented yet\n");
@@ -139,7 +138,6 @@ Int2eCCA::compute_erep( int is, int js, int ks, int ls )
   }
 
   if(!redundant_) {
-    //std::cout << "\nchecking for redundant integrals";
     remove_redundant(is,js,ks,ls);
   }
 }  

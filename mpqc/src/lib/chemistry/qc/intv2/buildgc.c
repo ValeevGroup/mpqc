@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.8  1995/08/28 23:59:13  cljanss
+ * Fixed a bug that could cause overwrites during 2e deriv. computation.
+ *
  * Revision 1.7  1995/08/28 17:12:18  etseidl
  * workaround a few gcc bugs on SUNMOS
  *
@@ -841,14 +844,18 @@ int eAB;
           /* Sum thru all possible contractions. */
   for (ci=0; ci<nc1; ci++) {
     int mlower = int_shell1->type[ci].am + dam1;
+    if (mlower < 0) continue;
     for (cj=0; cj<nc2; cj++) {
       int mupper = mlower + int_shell2->type[cj].am + dam2;
+      if (mupper < mlower) continue;
       if (mlower < minam1) mlower = minam1;
       if (mupper > maxam12) mupper = maxam12;
       for (ck=0; ck<nc3; ck++) {
         int nlower = int_shell3->type[ck].am + dam3;
+        if (nlower < 0) continue;
         for (cl=0; cl<nc4; cl++) {
           int nupper = nlower + int_shell4->type[cl].am + dam4;
+          if (nupper < nlower) continue;
           if (nlower < minam3) nlower = minam3;
           if (nupper > maxam34) nupper = maxam34;
 
@@ -1125,17 +1132,21 @@ int eAB;
 
   for (ci=0; ci<nc1; ci++) {
     int mlower = int_shell1->type[ci].am + dam1;
+    if (mlower < 0) continue;
     coef0 = int_shell1->coef[ci][i]*c0scale;
     for (cj=0; cj<nc2; cj++) {
       int mupper = mlower + int_shell2->type[cj].am + dam2;
+      if (mupper < mlower) continue;
       if (mlower < minam1) mlower = minam1;
       if (mupper > maxam12) mupper = maxam12;
       coef1 = int_shell2->coef[cj][j]*coef0;
       for (ck=0; ck<nc3; ck++) {
         int nlower = int_shell3->type[ck].am + dam3;
+        if (nlower < 0) continue;
         coef2 = int_shell3->coef[ck][k]*coef1;
         for (cl=0; cl<nc4; cl++) {
           int nupper = nlower + int_shell4->type[cl].am + dam4;
+          if (nupper < nlower) continue;
           if (nlower < minam3) nlower = minam3;
           if (nupper > maxam34) nupper = maxam34;
           coef3 = int_shell4->coef[cl][l]*coef2;

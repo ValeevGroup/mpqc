@@ -43,8 +43,12 @@ default:: libdmtscf.a
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
+ifeq ($(ARCH),PARAGON)
+  MPQCLIBSDEFINE=-DUSE_PICLPARAGON
+endif
+
 dmtscftest: dmtscftest.o libdmtscf.a \
-        $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+        $(shell $(LISTLIBS) $(MPQCLIBSDEFINE) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(CXX) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
@@ -56,9 +60,9 @@ endif
 
 # The SGI cc compiler cannot handle scf_mkgd.c.
 # The resulting code will sometimes produce a wrong answer.
-ifeq ($(ARCH),SGI)
-scf_mkgd.o: scf_mkgd.c
-	gcc -O -g $(INCLUDE) -c $< -o scf_mkgd.o
-scf_ex.o: scf_ex.c
-	gcc -g $(INCLUDE) -c $< -o scf_ex.o
-endif
+#ifeq ($(ARCH),SGI)
+#scf_mkgd.o: scf_mkgd.c
+#	gcc -O -g $(INCLUDE) -c $< -o scf_mkgd.o
+#scf_ex.o: scf_ex.c
+#	gcc -g $(INCLUDE) -c $< -o scf_ex.o
+#endif

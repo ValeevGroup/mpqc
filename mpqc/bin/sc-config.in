@@ -10,6 +10,8 @@ all_sclibs="@SCLIBS@"
 cppdefines="@DEFS@ @EXTRADEFINES@"
 cxxflags="@CXXFLAGS@"
 cflags="@CFLAGS@"
+cxx="@CXX@"
+cc="@CC@"
 
 sclibs=""
 for i in $all_sclibs; do
@@ -20,7 +22,7 @@ for i in $all_sclibs; do
 done
 
 usage="\
-Usage: sc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--libs] [--cppflags] [--cflags] [--cxxflags]"
+Usage: sc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--libs] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags]"
 
 if test $# -eq 0; then
       echo "${usage}" 1>&2
@@ -65,6 +67,12 @@ while test $# -gt 0; do
       ;;
     --cxxflags)
       echo $cxxflags
+      ;;
+    --cc)
+      echo $cc
+      ;;
+    --cxx)
+      echo $cxx
       ;;
     --libs)
       echo -L${libdir} $sclibs $libs

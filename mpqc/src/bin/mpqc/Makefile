@@ -32,7 +32,7 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC),yes)
 XDEF += -DHAVE_CHEMISTRY_QC_CC
 endif
 
-LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(XDEF) $(SRCDIR)/LIBS.h) /home/mlleinin/src/vprof/vmonauto.o
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(XDEF) $(SRCDIR)/LIBS.h)
 
 ifeq ($(ARCH),I860)
   DEFINES += -DLINPACKD=-lkmath

@@ -1,5 +1,8 @@
 %
 % $Log$
+% Revision 1.12  1996/05/17 17:11:06  cljanss
+% Get rid of TEXIT and TENTER macros.
+%
 % Revision 1.11  1996/03/23 02:37:26  cljanss
 % Everything can now be configured with autoconf.
 %
@@ -396,18 +399,18 @@ allocated |double_matrix_t| datum.
 
 @<Global functions.@>=
 #ifdef NCUBE_V2
-static void tenter_gradient() { TENTER("gradient"); }
-static void texit_gradient() { TEXIT("gradient"); }
-static void tenter_initialize() { TENTER("initialize"); }
-static void texit_initialize() { TEXIT("initialize"); }
-static void tenter_twoei() { TENTER("two electron init"); }
-static void texit_twoei() { TEXIT("two electron init"); }
-static void tenter_twoe() { TENTER("two electron"); }
-static void texit_twoe() { TEXIT("two electron"); }
-static void tenter_onee() { TENTER("one electron"); }
-static void texit_onee() { TEXIT("one electron"); }
-static void tenter_ewd() { TENTER("energy weighted density"); }
-static void texit_ewd() { TEXIT("energy weighted density"); }
+static void tenter_gradient() { tim_enter("gradient"); }
+static void texit_gradient() { tim_exit("gradient"); }
+static void tenter_initialize() { tim_enter("initialize"); }
+static void texit_initialize() { tim_exit("initialize"); }
+static void tenter_twoei() { tim_enter("two electron init"); }
+static void texit_twoei() { tim_exit("two electron init"); }
+static void tenter_twoe() { tim_enter("two electron"); }
+static void texit_twoe() { tim_exit("two electron"); }
+static void tenter_onee() { tim_enter("one electron"); }
+static void texit_onee() { tim_exit("one electron"); }
+static void tenter_ewd() { tim_enter("energy weighted density"); }
+static void texit_ewd() { tim_exit("energy weighted density"); }
 #endif
 GLOBAL_FUNCTION void
 dmt_force_csscf(forcefp, F, C, centers, sym_info, ndoc, f) @;
@@ -440,8 +443,8 @@ double_matrix_t *f; /* The forces on the atoms. */
   tenter_gradient();
   tenter_initialize();
 #else
-  TENTER("gradient");
-  TENTER("initialize");
+  tim_enter("gradient");
+  tim_enter("initialize");
 #endif
 
   who0(&nproc,&me,&host);
@@ -473,16 +476,16 @@ double_matrix_t *f; /* The forces on the atoms. */
   texit_initialize();
   tenter_ewd();
 #else
-  TEXIT("initialize");
-  TENTER("energy weighted density");
+  tim_exit("initialize");
+  tim_enter("energy weighted density");
 #endif
   @<Compute the energy weighted density matrix.@> @;@/
 #ifdef NCUBE_V2
   texit_ewd();
   tenter_onee();
 #else
-  TEXIT("energy weighted density");
-  TENTER("one electron");
+  tim_exit("energy weighted density");
+  tim_enter("one electron");
 #endif
   @<Compute the overlap contribution to the gradients.@> @;@/
 
@@ -493,16 +496,16 @@ double_matrix_t *f; /* The forces on the atoms. */
   texit_onee();
   tenter_twoei();
 #else
-  TEXIT("one electron");
-  TENTER("two electron init");
+  tim_exit("one electron");
+  tim_enter("two electron init");
 #endif
   @<Initialize the two electron integral routines.@> @;@/
 #ifdef NCUBE_V2
   texit_twoei();
   tenter_twoe();
 #else
-  TEXIT("two electron init");
-  TENTER("two electron");
+  tim_exit("two electron init");
+  tim_enter("two electron");
 #endif
   if (local_P) {
     @<Compute the two electron contribution to the gradients with local P.@> @;@/
@@ -513,7 +516,7 @@ double_matrix_t *f; /* The forces on the atoms. */
 #ifdef NCUBE_V2
   texit_twoe();
 #else
-  TEXIT("two electron");
+  tim_exit("two electron");
 #endif
 
   @<Clean up the two electron integral routines.@> @;@/
@@ -531,7 +534,7 @@ double_matrix_t *f; /* The forces on the atoms. */
 #ifdef NCUBE_V2
   texit_gradient();
 #else
-  TEXIT("gradient");
+  tim_exit("gradient");
 #endif
 
 }
@@ -1079,11 +1082,11 @@ if the local and loop blocks are redundant.> section).
   int xyz;
   double contrib;
 
-  TENTER("erep");
+  tim_enter("erep");
   int_erep_all1der(INT_EREP|INT_REDUND|INT_NOPERM,
                    &ilocal,&jlocal,&iloop,&jloop,
                    &dercenters);
-  TEXIT("erep");
+  tim_exit("erep");
 
   indexijkl = 0;
   for (derset=0; derset<dercenters.n; derset++) {
@@ -1134,11 +1137,11 @@ if the local and loop blocks are redundant.> section).
   int xyz;
   double contrib;
 
-  TENTER("erep");
+  tim_enter("erep");
   int_erep_all1der(INT_EREP|INT_REDUND|INT_NOPERM,
                    &ilocal,&iloop,&jlocal,&jloop,
                    &dercenters);
-  TEXIT("erep");
+  tim_exit("erep");
 
   for (derset=0; derset<dercenters.n; derset++) {
     for (xyz=0; xyz<3; xyz++) {
@@ -1189,11 +1192,11 @@ if the local and loop blocks are redundant.> section).
   int xyz;
   double contrib;
 
-  TENTER("erep");
+  tim_enter("erep");
   int_erep_all1der(INT_EREP|INT_REDUND|INT_NOPERM,
                    &ilocal,&jloop,&jlocal,&iloop,
                    &dercenters);
-  TEXIT("erep");
+  tim_exit("erep");
 
   for (derset=0; derset<dercenters.n; derset++) {
     for (xyz=0; xyz<3; xyz++) {
@@ -1424,10 +1427,10 @@ $$
   sh[0] = i; sh[1] = j; sh[2] = k; sh[3] = l;
 
   /* Compute the integrals. */
-  TENTER("erep");
+  tim_enter("erep");
   int_erep_all1der_v(INT_EREP|INT_REDUND|INT_NOPERM,
                    sh,sz,&dercenters);
-  TEXIT("erep");
+  tim_exit("erep");
 
   set_scale(&coulombscale,&exchangescale,i,j,k,l);
 

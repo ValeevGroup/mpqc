@@ -25,8 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream.h>
 
 //
 // this is called by some GNU generated files.  only make it if we're not

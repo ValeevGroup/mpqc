@@ -27,6 +27,7 @@ struct contribution {
 
 struct SO {
     int len;
+    int length;
     contribution *cont;
 
     SO();

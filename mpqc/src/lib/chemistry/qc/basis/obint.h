@@ -202,8 +202,8 @@ class OneBodyIntOp: public SCElementOp {
     virtual ~OneBodyIntOp();
   
     virtual void process(SCMatrixBlockIter&);
-    virtual void process(SCMatrixRectBlock*);
-    virtual void process(SCMatrixLTriBlock*);
+    virtual void process_spec(SCMatrixRectBlock*);
+    virtual void process_spec(SCMatrixLTriBlock*);
 
     int has_side_effects();
 };
@@ -220,12 +220,12 @@ class OneBody3IntOp: public SCElementOp3 {
     virtual void process(SCMatrixBlockIter&,
                          SCMatrixBlockIter&,
                          SCMatrixBlockIter&);
-    virtual void process(SCMatrixRectBlock*,
-                         SCMatrixRectBlock*,
-                         SCMatrixRectBlock*);
-    virtual void process(SCMatrixLTriBlock*,
-                         SCMatrixLTriBlock*,
-                         SCMatrixLTriBlock*);
+    virtual void process_spec(SCMatrixRectBlock*,
+                              SCMatrixRectBlock*,
+                              SCMatrixRectBlock*);
+    virtual void process_spec(SCMatrixLTriBlock*,
+                              SCMatrixLTriBlock*,
+                              SCMatrixLTriBlock*);
 
     int has_side_effects();
     int has_side_effects_in_arg1();

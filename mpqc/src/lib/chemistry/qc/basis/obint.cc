@@ -258,7 +258,7 @@ OneBodyIntOp::process(SCMatrixBlockIter&)
 }
 
 void
-OneBodyIntOp::process(SCMatrixRectBlock* b)
+OneBodyIntOp::process_spec(SCMatrixRectBlock* b)
 {
   RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
   RefGaussianBasisSet bs2 = iter->one_body_int()->basis2();
@@ -299,7 +299,7 @@ OneBodyIntOp::process(SCMatrixRectBlock* b)
 }
 
 void
-OneBodyIntOp::process(SCMatrixLTriBlock* b)
+OneBodyIntOp::process_spec(SCMatrixLTriBlock* b)
 {
   RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
 
@@ -371,9 +371,9 @@ OneBody3IntOp::process(SCMatrixBlockIter&,
 }
 
 void
-OneBody3IntOp::process(SCMatrixRectBlock* a,
-                       SCMatrixRectBlock* b,
-                       SCMatrixRectBlock* c)
+OneBody3IntOp::process_spec(SCMatrixRectBlock* a,
+                            SCMatrixRectBlock* b,
+                            SCMatrixRectBlock* c)
 {
   RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
   RefGaussianBasisSet bs2 = iter->one_body_int()->basis2();
@@ -432,9 +432,9 @@ OneBody3IntOp::process(SCMatrixRectBlock* a,
 }
 
 void
-OneBody3IntOp::process(SCMatrixLTriBlock* a,
-                       SCMatrixLTriBlock* b,
-                       SCMatrixLTriBlock* c)
+OneBody3IntOp::process_spec(SCMatrixLTriBlock* a,
+                            SCMatrixLTriBlock* b,
+                            SCMatrixLTriBlock* c)
 {
 #if 0
   RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();

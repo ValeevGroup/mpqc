@@ -131,8 +131,8 @@ Convergence::set_defaults()
   use_rms_disp_ = 0;
   use_rms_grad_ = 1;
   use_graddisp_ = 0;
-  max_grad_ = 4.0e-5;
-  rms_grad_ = 1.0e-5;
+  max_grad_ = 4.0e-6;
+  rms_grad_ = 1.0e-6;
 }
 
 void

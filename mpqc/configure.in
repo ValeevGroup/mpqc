@@ -196,6 +196,7 @@ if test X$SHARED_LIBS = Xyes; then
   case $target in
     mips*-sgi-irix[5-6]* | r8000-sgi-irix*)
       ELF=yes
+      LIBSUF=so
       if test X$GXX = Xyes; then
         SH_LD="\$(CXX)"
         LDFLAGS="-Wl,-rpath -Wl,\$(LIBDIR)"
@@ -213,6 +214,7 @@ if test X$SHARED_LIBS = Xyes; then
     ;;
     *-linux)
       ELF=yes
+      LIBSUF=so
       SH_LD="\$(CXX)"
       SH_LDFLAGS="-shared -Wl,-soname -Wl,\$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
       LDFLAGS="-Wl,-rpath -Wl,\$(LIBDIR)"

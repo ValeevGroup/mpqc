@@ -22,7 +22,7 @@ class Identifier {
     Identifier(): id(0) {}
     Identifier(const Identity* i): id((void*)i) {}
     Identifier(const Identifier& i): id(i.id) {}
-    operator = (const Identifier& i) { id = i.id; }
+    void operator = (const Identifier& i) { id = i.id; }
     ~Identifier() {}
     
     operator < (const Identifier&i) const { return id < i.id; }

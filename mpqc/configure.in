@@ -370,10 +370,10 @@ AC_MSG_CHECKING([for special optimization options])
 case $target in
   rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
     if test X$GCC != Xyes; then
-      COPTIONS_OPT="-O3"
+      COPTIONS_OPT="-O"
     fi
     if test X$GXX != Xyes; then
-      CXXOPTIONS_OPT="-O3"
+      CXXOPTIONS_OPT="-O"
     fi
     AC_MSG_RESULT("rs6000 or powerpc")
   ;;

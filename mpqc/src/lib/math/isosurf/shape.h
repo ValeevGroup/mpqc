@@ -212,7 +212,6 @@ class Uncapped5SphereExclusionShape: public Shape
     inline double rC() const { return _s3.radius(); };
     inline double r() const { return _r; };
     inline int solution_exists() const { return _solution_exists; };
-    void print(ostream&o=cout);
     double distance_to_surface(const SCVector3&r,SCVector3*grad=0) const;
     int is_outside(const SCVector3&) const;
     void boundingbox(double valuemin, double valuemax,

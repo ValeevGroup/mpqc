@@ -17,29 +17,49 @@ struct contribution {
     int bfn;
     double coef;
 
-    contribution() {}
+    contribution();
     contribution(int b, double c);
+    ~contribution();
 };
-ARRAY_dec(contribution);
 
 struct SO {
-    Arraycontribution cont;
+    int len;
+    contribution *cont;
 
+    SO();
+    SO(int);
+    ~SO();
+
+    SO& operator=(const SO&);
+    
+    void set_length(int);
+    void reset_length(int);
+    
     // is this equal to so to within a sign
     int equiv(const SO& so);
 };
-ARRAY_dec(SO);
 
 struct SO_block {
-    ArraySO so;
+    int len;
+    SO *so;
+
+    SO_block();
+    SO_block(int);
+    ~SO_block();
+
+    void set_length(int);
+    void reset_length(int);
 
     int add(SO& s, int i);
     void print(const char *title);
 };
 
 ////////////////////////////////////////////////////////////////////////////
+// this should only be used from within a SymmGaussianBasisSet
 
 class PetiteList {
+    friend class SymmGaussianBasisSet;
+
   private:
     int natom_;
     int nshell_;
@@ -47,7 +67,7 @@ class PetiteList {
     int nirrep_;
     int nblocks_;
 
-    RefGaussianBasisSet gbs_;
+    GaussianBasisSet& gbs_;
     
     char *p1_;        // p1[n] is 1 if shell n is in the group P1
     int **atom_map_;  // atom_map[n][g] is the atom that symop g maps atom n
@@ -62,13 +82,13 @@ class PetiteList {
     inline int ioff(int i, int j) const
       { return (i>=j) ? ioff(i)+j : ioff(j)+i; }
     
+    void init();
+    PetiteList(GaussianBasisSet&);
+
   public:
-    PetiteList();
-    PetiteList(const RefGaussianBasisSet&);
     ~PetiteList();
 
-    void init(const RefGaussianBasisSet&);
-
+    int order() const { return ng_; }
     int atom_map(int n, int g) const { return atom_map_[n][g]; }
     int shell_map(int n, int g) const { return shell_map_[n][g]; }
     int lambda(int ij) const { return (int) lamij_[ij]; }
@@ -88,6 +108,8 @@ class PetiteList {
     RefBlockedSCDimension SO_basisdim();
     SO_block * aotoso();
     RefSCMatrix r(int g);
+
+    void symmetrize(const RefSymmSCMatrix& skel, const RefSymmSCMatrix& sym);
 };
 
 inline int
@@ -109,50 +131,6 @@ PetiteList::in_p4(int ij, int kl, int i, int j, int k, int l) const
 
   return ng_/nijkl;
 }
-
-////////////////////////////////////////////////////////////////////////////
-
-class SymmetryOrbitals {
-    friend class AOSO_Transformation;
-    
-  private:
-    SO_block *sos_;
-    SO_block **som_;
-    RefGaussianBasisSet gbs_;
-
-  public:
-    SymmetryOrbitals();
-    SymmetryOrbitals(const RefGaussianBasisSet&);
-    ~SymmetryOrbitals();
-
-    void print(FILE* =stdout);
-
-    RefBlockedSCDimension AO_basisdim();
-    RefBlockedSCDimension SO_basisdim();
-};
-
-class AOSO_Unit : public BlockedSCElementOp {
-  private:
-    RefBlockedSCDimension d1;
-    RefBlockedSCDimension d2;
-
-  public:
-    AOSO_Unit(const RefBlockedSCDimension&,const RefBlockedSCDimension&);
-
-    void process(SCMatrixBlockIter&);
-    void process(SCMatrixRectBlock*);
-};
-
-class AOSO_Transformation : public BlockedSCElementOp {
-  private:
-    SymmetryOrbitals sos;
-
-  public:
-    AOSO_Transformation(const RefGaussianBasisSet&);
-
-    void process(SCMatrixBlockIter&);
-    void process(SCMatrixRectBlock*);
-};
 
 #endif
     

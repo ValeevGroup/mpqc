@@ -95,6 +95,7 @@ class EAVLMMap {
   public:
     EAVLMMap();
     EAVLMMap(EAVLMMapNode<K,T> T::* node);
+    ~EAVLMMap() { clear(root_); }
     void initialize(EAVLMMapNode<K,T> T::* node);
     void clear_without_delete() { initialize(node_); }
     void clear() { clear(root_); initialize(node_); }

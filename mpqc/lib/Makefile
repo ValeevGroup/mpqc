@@ -5,7 +5,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-SUBDIRS = basis elisp perl texinputs
+SUBDIRS = basis elisp perl
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 

@@ -30,6 +30,9 @@
 #include <util/unix/cct_cprot.h>
 #include <util/misc/libmisc.h>
 
+#include <math/optimize/opt.h>
+#include <math/scmat/local.h>
+
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/coor.h>
@@ -50,7 +53,13 @@ static FILE *errfp=stderr;
 
 static RefMolecule mol;
 static RefMolecularCoor coor;
-static centers_t *centers;
+static RefIHessianUpdate update;
+
+static RefSymmSCMatrix hessian;
+static RefSCVector xn, xprev;
+static RefSCVector gn, gprev;
+
+RefLocalSCDimension di, dc;
 
 static int iter=1;
 
@@ -198,9 +207,22 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& keyval)
   if (stat("geom.dat",&buf) < 0 || buf.st_size==0) {
     STATEOUT so("geom.dat","w+");
 
-   // read coor from the input
-    coor = new IntMolecularCoor(keyval);
+   // read coor and update from the input
+    coor = keyval->describedclassvalue("coor");
+    update = keyval->describedclassvalue("update");
+    
+    dc = mol->dim_natom3();
+    di = coor->dim();
 
+    hessian = new LocalSymmSCMatrix(di.pointer());
+    coor->guess_hessian(hessian);
+
+    xn = new LocalSCVector(di.pointer());
+    gn = new LocalSCVector(di.pointer());
+
+    coor->to_internal(xn);
+    gn->assign(0.0);
+    
    // save it all to disk
     so.put(iter);
     mol.save_state(so);
@@ -255,11 +277,28 @@ Geom_done_mpqc(const RefKeyVal& keyval, int converged)
 int
 Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
 {
-  for (int i=0; i < mol->natom(); i++) {
-    mol->atom(i)[0] = 0;
-    mol->atom(i)[1] = 0;
-    mol->atom(i)[2] = 0;
-  }
+  int i,j,ij;
+  
+  RefSCVector cgrad = new LocalSCVector(dc.pointer());
+  
+  // find rms and max force
+  rmsforce=0;
+  maxforce=0;
+  for (j=ij=0; j < grad->n2; j++) {
+    for (i=0; i < grad->n1; i++,ij++) {
+      double d = fabs(grad->d[i][j]);
+      rmsforce += d*d;
+      maxforce = (d>maxforce) ? d : maxforce;
+      cgrad->set_element(ij,grad->d[i][j]);
+      }
+    }
+  rmsforce = sqrt(rmsforce/(grad->n1*grad->n2));
+
+  cgrad.print("cgrad");
+  coor->to_internal(gn,cgrad);
+
+  gn.print("gn");
+  exit(0);
 #if 0  
   int nfixed = (fixed?fixed->length():0);
 
@@ -271,17 +310,6 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
   int i;
   DMatrix bmat;
 
-  // find rms and max force
-  rmsforce=0;
-  maxforce=0;
-  for (i=0; i < grad->n1; i++) {
-    for (int j=0; j < grad->n2; j++) {
-      double d = fabs(grad->d[i][j]);
-      rmsforce += d*d;
-      maxforce = (d>maxforce) ? d : maxforce;
-      }
-    }
-  rmsforce = sqrt(rmsforce/(grad->n1*grad->n2));
       
   if (!cartesians) {
 

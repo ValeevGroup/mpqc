@@ -10,16 +10,17 @@ typedef struct g92_calc_type {
   char *parse_string;
 } g92_calc_t;
 
+// don't forget units=au, Freq or Force
 // Initialize the list of runtypes and their corresponding names
 static int n_g92_calc_types=7;
 static g92_calc_t g92_calc[] = {
-  {1, 1, "SCF", "units=au Freq SCF=DIRECT RHF", "\\HF="},
-  {2, 1, "MP2", "units=au Freq SCF=DIRECT MP2=fulldirect","\\MP2="},
-  {3, 0, "AM1", "units=au Freq MNDO", "\\HF="},
-  {4, 0, "PM3", "units=au Freq PM3", "\\HF="},
-  {5, 0, "MNDO", "units=au Freq MNDO", "\\HF="},
-  {6, 1, "UHF", "units=au Freq SCF=DIRECT UHF", "\\HF="},
-  {7, 1, "ROHF", "units=au Freq SCF=DIRECT ROHF", "\\HF="}
+  {1, 1, "SCF", "SCF=DIRECT RHF", "\\HF="},
+  {2, 1, "MP2", "SCF=DIRECT MP2=fulldirect","\\MP2="},
+  {3, 0, "AM1", "MNDO", "\\HF="},
+  {4, 0, "PM3", "PM3", "\\HF="},
+  {5, 0, "MNDO", "MNDO", "\\HF="},
+  {6, 1, "UHF", "SCF=DIRECT UHF", "\\HF="},
+  {7, 1, "ROHF", "SCF=DIRECT ROHF", "\\HF="}
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -27,7 +28,7 @@ static g92_calc_t g92_calc[] = {
 int run_g92(char *name_in, const RefKeyVal &, RefMolecule&,
             double &energy, RefSCVector& gradient);
 
-int run_g92_calc(char *prefix, char *command, char *basis, int memory,
+int run_g92_calc(char *prefix, int runtype, char *basis, int memory,
                  int chk_guess, char *scratch, char *g92_dir, RefMolecule &,
                  int charge, int multiplicity);
 
@@ -41,7 +42,7 @@ int g92_freq_driver(char *name_in, RefMolecule&, const RefKeyVal&,
                     RefSCVector& gradient, RefSCVector &frequencies,
                     RefSCVector &normalmodes, int &nmodes, int &nimag);
 
-int run_g92_freq(char *prefix, char *command, char *basis, int memory,
+int run_g92_freq(char *prefix, int runtype, char *basis, int memory,
                  int chk_guess,char *scratch, char *g92_dir, RefMolecule &mole,
                  int charge, int multiplicity);
 

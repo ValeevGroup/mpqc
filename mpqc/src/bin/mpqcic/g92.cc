@@ -16,6 +16,7 @@ extern "C" {
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/libmisc.h>
+#include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
 
 #include "mpqc_int.h"
@@ -47,6 +48,7 @@ main(int argc, char *argv[])
   int read_geom, opt_geom, nopt;
   int print_geometry, make_pdb=0;
   int geometry_converged;
+  int do_freq;
 
   RefMolecule mol;
   
@@ -80,6 +82,9 @@ main(int argc, char *argv[])
   make_pdb = keyval->booleanvalue("write_pdb");
   read_geom = keyval->booleanvalue("read_geometry");
   opt_geom = keyval->booleanvalue("optimize_geometry");
+  do_freq = keyval->booleanvalue("frequencies");
+  if (keyval->error() != KeyVal::OK)
+    do_freq = 1;
   
   char *molname = keyval->pcharvalue("filename");
   if (keyval->error() != KeyVal::OK)
@@ -96,6 +101,7 @@ main(int argc, char *argv[])
   fprintf(outfile,"    optimize_geometry  = %s\n",(opt_geom)?"YES":"NO");
   fprintf(outfile,"    nopt               = %d\n",nopt);
   fprintf(outfile,"    print_geometry     = %s\n",(print_geometry)?"YES":"NO");
+  fprintf(outfile,"    frequencies        = %s\n",(do_freq)?"YES":"NO");
 
   if (print_geometry)
     mol->print();
@@ -168,6 +174,25 @@ main(int argc, char *argv[])
       Geom_write_pdb(keyval,mol,"final geometry");
     else if (make_pdb)
       Geom_write_pdb(keyval,mol,"converged geometry");
+  }
+
+  if (do_freq) {
+    double energy;
+    int nmodes, nimag;
+
+    RefSCDimension dim1 = mol->dim_natom3();
+    RefSCDimension dim2 = new LocalSCDimension(dim1->n()-6);
+    RefSCDimension dim3 = new LocalSCDimension(dim1->n() * dim2->n());
+    RefSCVector normals = dim3->create_vector();
+    RefSCVector freqs = dim2->create_vector();
+    
+    if (g92_freq_driver(molname, mol, g92kv, 0, energy, gradient, freqs,
+                        normals, nmodes, nimag) < 0) {
+      fprintf(stderr,"could not do g92 freqs\n");
+    }
+
+    freqs->print("frequencies");
+    
   }
 
   tim_print(0);

@@ -14,17 +14,6 @@ int
 run_g92(char *name_in, const RefKeyVal& g92_keyval, RefMolecule& mole,
         double& energy, RefSCVector& gradient)
 {
-    // Initialize the list of runtypes and their corresponding names
-    static int n_g92_calc_types=7;
-    static struct g92_calc_type g92_calc[] = {
-                      {1, 1, "SCF", "units=au Force SCF=DIRECT RHF", "\\HF="},
-                      {2, 1, "MP2", "units=au Force SCF=DIRECT MP2=fulldirect", "\\MP2="},
-                      {3, 0, "AM1", "units=au Force MNDO", "\\HF="},
-                      {4, 0, "PM3", "units=au Force PM3", "\\HF="},
-                      {5, 0, "MNDO", "units=au Force MNDO", "\\HF="},
-                      {6, 1, "UHF", "units=au Force SCF=DIRECT UHF", "\\HF="},
-                      {7, 1, "ROHF", "units=au Force SCF=DIRECT ROHF", "\\HF="}};
-
     // Read necessary pieces from KeyVal
     char *g92_method;
     if (g92_keyval->exists("g92_method"))
@@ -115,7 +104,7 @@ run_g92(char *name_in, const RefKeyVal& g92_keyval, RefMolecule& mole,
     }
         
     // Run g92 calculations and then parse the output 
-    run_g92_calc(name, g92_calc[runtype].command, basis, memory,
+    run_g92_calc(name, runtype, basis, memory,
                  use_checkpoint_guess, scratch_dir, g92_dir, mole,
                  charge, multiplicity);
 
@@ -144,7 +133,7 @@ run_g92(char *name_in, const RefKeyVal& g92_keyval, RefMolecule& mole,
 }    
 
 int
-run_g92_calc(char *prefix, char *command, char *basis, int memory,
+run_g92_calc(char *prefix, int runtype, char *basis, int memory,
              int chk_guess, char *scratch, char *g92_dir, RefMolecule &mole,
              int charge, int multiplicity)
 {
@@ -164,7 +153,7 @@ run_g92_calc(char *prefix, char *command, char *basis, int memory,
     // Write out required headers 
     fprintf(fp_g92_input,"%%chk=%s\n",prefix);
     fprintf(fp_g92_input,"%%mem=%d\n",memory);
-    fprintf(fp_g92_input,"#p %s", command); 
+    fprintf(fp_g92_input,"#p units=au Force %s", g92_calc[runtype].command); 
     if (basis)
         fprintf(fp_g92_input,"/%s\n",basis);
     else

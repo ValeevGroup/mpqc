@@ -109,7 +109,7 @@ g92_freq_driver(char *name_in, RefMolecule& mole,
     }
         
     // Run g92 calculations and then parse the output 
-    run_g92_freq(name, g92_calc[runtype].command, basis, memory,
+    run_g92_freq(name, runtype, basis, memory,
                  use_checkpoint_guess, scratch_dir, g92_dir, mole,
                  charge, multiplicity);
 
@@ -139,7 +139,7 @@ g92_freq_driver(char *name_in, RefMolecule& mole,
 }    
 
 int
-run_g92_freq(char *prefix, char *command, char *basis, int memory,
+run_g92_freq(char *prefix, int runtype, char *basis, int memory,
              int chk_guess,char *scratch, char *g92_dir, RefMolecule &mole,
              int charge, int multiplicity)
 {
@@ -159,7 +159,7 @@ run_g92_freq(char *prefix, char *command, char *basis, int memory,
     // Write out required headers 
     fprintf(fp_g92_input,"%%chk=%s\n",prefix);
     fprintf(fp_g92_input,"%%mem=%d\n",memory);
-    fprintf(fp_g92_input,"#p %s", command); 
+    fprintf(fp_g92_input,"#p units=au Freq %s", g92_calc[runtype].command); 
     if (basis)
         fprintf(fp_g92_input,"/%s\n",basis);
     else

@@ -11,7 +11,7 @@ TARGET_TO_MAKE = mpqcic
 
 CXXSRC = mpqcic.cc mpqc_int.cc opt2_v1.cc opt2_v2.cc
 CSRC = scf_ffo.c opt2_fock.c gcollect.c
-INC = mpqc_int.h opt2.h
+INC = mpqc_int.h opt2.h g92_int.h
 
 DEPENDINCLUDE = $(INC) \
                 scf_ffo.gbl scf_ffo.lcl opt2_fock.gbl opt2_fock.lcl
@@ -101,7 +101,7 @@ install_mpqcic:: mpqcic
 mpqcic: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
-g92: g92.o run_g92.o mpqc_int.o $(LIBS)
+g92: g92.o run_g92.o g92freq.o mpqc_int.o $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
 writeavs: writeavs.o $(LIBS)

@@ -7,7 +7,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 
 CXXSRC = atomcent.cc chemelem.cc molecule.cc \
-         simple.cc stre.cc bend.cc out.cc tors.cc lin.cc \
+         simple.cc stre.cc bend.cc out.cc tors.cc linip.cc linop.cc \
          energy.cc coor.cc \
          molshape.cc chmelm_i.cc imcoor.cc taylor.cc
 
@@ -29,13 +29,16 @@ TESTFILES = moltest.in
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
 
 default:: $(DEPENDINCLUDE)
-default:: libmolecule.a
+default:: $(TOPDIR)/lib/libmolecule.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libmolecule.so
+endif
 
 interface:: $(DEPENDINCLUDE)
 
 moltest: $(TESTOBJ) libmolecule.a \
 	 $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(CXX) $(CXXFLAGS) -o moltest $^ $(SYSLIBS)
+	$(LD) $(LDFLAGS) -o moltest $^ $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -310,7 +310,7 @@ SCF::compute_vector(double& eelec, double nucrep)
 
     savestate_iter(iter);
   }
-    
+ 
   eigenvalues_ = evals;
   eigenvalues_.computed() = 1;
   eigenvalues_.set_actual_accuracy(accuracy<delta?delta:accuracy);
@@ -387,6 +387,9 @@ SCF::compute_vector(double& eelec, double nucrep)
   oso_eigenvectors_ = oso_scf_vector_;
   oso_eigenvectors_.computed() = 1;
   oso_eigenvectors_.set_actual_accuracy(delta);
+  // Checkpoint wavefunction, if needed, so that if converged
+  // on the last iteration then the wavefunction is marked as computed
+  savestate_iter(iter-1);
 
   // now clean up
   done_vector();

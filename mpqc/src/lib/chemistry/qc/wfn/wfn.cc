@@ -168,32 +168,7 @@ Wavefunction::save_data_state(StateOut&s)
 RefSymmSCMatrix
 Wavefunction::ao_density()
 {
-#if 1
   return integral()->petite_list()->to_AO_basis(density());
-#else
-  // sym is 1 if not C1 symmetry, 0 otherwise
-  int sym = (molecule()->point_group().char_table().nirrep()==1?0:1);
-
-  // so_ao is the so to ao basis transform
-  RefSCMatrix so_ao;
-  if (sym) {
-    so_ao = integral()->petite_list()->sotoao();
-  }
-
-  RefSymmSCMatrix dens;
-  if (sym) {
-    RefSymmSCMatrix dens_so = density();
-    // compute dens, the ao basis density
-    dens = dens_so.kit()->symmmatrix(so_ao.coldim());
-    dens.assign(0.0);
-    // (assuming so_ao is unitary)
-    dens.accumulate_transform(so_ao.t(), dens_so);
-  }
-  else {
-    dens = density();
-  }
-  return dens;
-#endif
 }
 
 RefSCMatrix
@@ -381,6 +356,52 @@ Wavefunction::print(ostream&o)
     tim_exit("NAO");
     if (print_nao_) naos.print("NAO");
   }
+}
+    
+int
+Wavefunction::spin_polarized()
+{
+  cerr << class_name() << "::spin_polarized not implemented" << endl;
+  abort();
+  return 0;
+}
+
+RefSymmSCMatrix
+Wavefunction::alpha_density()
+{
+  if (!spin_polarized()) {
+    RefSymmSCMatrix result = density().copy();
+    result.scale(0.5);
+    return result;
+  }
+  cerr << class_name() << "::alpha_density not implemented" << endl;
+  abort();
+  return 0;
+}
+
+RefSymmSCMatrix
+Wavefunction::beta_density()
+{
+  if (!spin_polarized()) {
+    RefSymmSCMatrix result = density().copy();
+    result.scale(0.5);
+    return result;
+  }
+  cerr << class_name() << "::beta_density not implemented" << endl;
+  abort();
+  return 0;
+}
+
+RefSymmSCMatrix
+Wavefunction::alpha_ao_density()
+{
+  return integral()->petite_list()->to_AO_basis(alpha_density());
+}
+
+RefSymmSCMatrix
+Wavefunction::beta_ao_density()
+{
+  return integral()->petite_list()->to_AO_basis(beta_density());
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -174,6 +174,18 @@ checkrun: checkckpt checkmbpt checksymm1 checksymm2
 	    ($(CHECKOUT) $${file} ); \
 	  done
 
+.PHONY: checkh2ofrq
+checkh2ofrq:
+	@echo Consistency checks on h2o frequency tests:
+	@$(CHECKOUT) $(RUN)/h2ofrq_scfsto3g{c1,c2v}frq.out
+	@$(CHECKOUT) $(RUN)/h2ofrq_scfsto3g{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/h2ofrq_mp200sto3g{c1,c2v}frq.out
+	@$(CHECKOUT) $(RUN)/h2ofrq_mp200sto3g{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/h2ofrq_scf6311gss{c1,c2v}frq.out
+	@$(CHECKOUT) $(RUN)/h2ofrq_scf6311gss{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/h2ofrq_mp2006311gss{c1,c2v}frq.out
+	@$(CHECKOUT) $(RUN)/h2ofrq_mp2006311gss{c1,c2v}optfrq.out
+
 .PHONY: checkckpt
 checkckpt:
 	@echo Consistency checks on checkpoint tests:

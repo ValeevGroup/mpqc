@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.5  1995/03/17 01:49:23  cljanss
+ * Revision 1.6  1995/07/26 16:29:23  cljanss
+ * Rearranged memory layout and loops to speed things up.
+ *
+ * Revision 1.5  1995/03/17  01:49:23  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -111,6 +114,9 @@ static int_array3_t inthave;
 
   /* Saved initialization parameters used to free data. */
 static int saved_am12,saved_am34,saved_ncon;
+
+  /* Stores the length of the inner loop for integral contraction. */
+static int_array3_t contract_length;
 
   /* MG is the maximum angular momentum for which we will use
    * the generated build routines. */
@@ -230,6 +236,10 @@ int nc4;
   int am;
   int i,j,k,l,m;
   int ci,cj,ck,cl;
+  int e0f0_con_int_bufsize, con_int_bufsize;
+  double *e0f0_con_int_buf, *con_int_buf;
+  int int_v_bufsize, int_v0_bufsize;
+  double *int_v_buf, *int_v0_buf;
 
   /* Convert the am1-4 to their canonical ordering. */
   if (am2>am1) {
@@ -283,6 +293,7 @@ int nc4;
 
   /* Allocate the intlist. */
   if (  allocbn_int_array3(&inthave,"n1 n2 n3",am12+1,am34+1,am+1)
+      ||allocbn_int_array3(&contract_length,"n1 n2 n3",am12+1,am34+1,am34+1)
       ||allocbn_doublep_array3(&int_v_list,"n1 n2 n3",am12+1,am34+1,am+1)) {
     fprintf(stderr,"problem allocating integral intermediates for");
     fprintf(stderr," am12 = %d, am34 = %d, and am = %d \n",am12,am34,am);
@@ -298,16 +309,45 @@ int nc4;
       }
     }
 
+  for (i=0; i<=am12; i++) {
+      for (j=0; j<=am34; j++) {
+          for (k=0; k<=am34; k++) {
+              contract_length.i[i][j][k] = 0;
+              for (l=j; l<=k; l++) {
+                  contract_length.i[i][j][k] += INT_NCART(i)*INT_NCART(l);
+                }
+            }
+        }
+    }
+
+  /* Compute the size of the buffer for the primitive integrals. */
+  int_v_bufsize = 0;
+  int_v0_bufsize = 0;
+  for (i=0; i<=am12; i++) {
+    for (j=0; j<=am34; j++) {
+      int_v0_bufsize += INT_NCART(i)*INT_NCART(j);
+      for (k=0; k<=am12+am34-i-j; k++) {
+        int_v_bufsize += INT_NCART(i)*INT_NCART(j);
+        }
+      }
+    }
+
+  int_v0_buf = (double*) malloc(sizeof(double)*int_v_bufsize);
+  if (!int_v0_buf) {
+    fprintf(stderr,"couldn't allocate all integral intermediates\n");
+    fail();
+    }
+  add_store(int_v0_buf);
+  int_v_buf = &int_v0_buf[int_v0_bufsize];
+
   /* Allocate storage for the needed slots. */
   for (i=0; i<=am12; i++) {
     for (j=0; j<=am34; j++) {
-      for (k=0; k<=am12+am34-i-j; k++) {
-        int_v_list.dp[i][j][k] =
-            (double *) malloc(sizeof(double)*INT_NCART(i)*INT_NCART(j));
-        if (!int_v_list.dp[i][j][k]) {
-          fprintf(stderr,"couldn't allocate all integral intermediates\n");
-          fail();
-          }
+      int_v_list.dp[i][j][0] = int_v0_buf;
+      int_v0_buf += INT_NCART(i)*INT_NCART(j);
+      for (k=1; k<=am12+am34-i-j; k++) {
+        int_v_list.dp[i][j][k] = int_v_buf;
+        int_v_buf += INT_NCART(i)*INT_NCART(j);
         }
       }
     }
@@ -317,6 +357,8 @@ int nc4;
    * of the build routines). */
   /* The ci, etc, indices refer to which of the pair of contraction
    * coefficients we are using. */
+  e0f0_con_int_bufsize = 0;
+  con_int_bufsize = 0;
   int_con_ints_array =
     (doublep_array4_t ****)malloc(sizeof(doublep_array4_t ***)*nc1);
   for (ci=0; ci<nc1; ci++) {
@@ -340,15 +382,82 @@ int nc4;
     am34_for_con = jmax_for_con[ck] + jmax_for_con[cl];
     }
 
-  /* Find the biggest am for this contraction. */
-
   if (allocbn_doublep_array4(&int_con_ints_array[ci][cj][ck][cl],"n1 n2 n3 n4",
                              am12+1,am12+1,am34+1,am34+1)) {
     fprintf(stderr,"couldn't allocate contracted integral array\n");
     fail();
     }
+  /* Count how much storage for the integrals is needed. */
+  for (i=0; i<=am12; i++) {
+    for (j=0; j<=am12; j++) {
+      for (k=0; k<=am34; k++) {
+        for (l=0; l<=am34; l++) {
+          int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l] = NULL;
+          }
+        }
+      }
+    }
+  for (i=0; i<=am12_for_con; i++) {
+    for (j=0; j<=am12_for_con-i; j++) {
+      for (k=0; k<=am34_for_con; k++) {
+        for (l=0; l<=am34_for_con-k; l++) {
+          if ((j==0)&&(l==0)) {
+            int s =  INT_NCART(i)
+                   * INT_NCART(j)
+                   * INT_NCART(l)
+                   * INT_NCART(k);
+            e0f0_con_int_bufsize += s;
+            con_int_bufsize += s;
+             }
+          else if ((ci==0)&&(cj==0)&&(ck==0)&&(cl==0)) {
+            con_int_bufsize +=  INT_NCART(i)
+                              * INT_NCART(j)
+                              * INT_NCART(k)
+                              * INT_NCART(l);
+             }
+          else if (int_con_ints_array[0][0][0][0].dp[i][j][k][l]) {
+            int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l] =
+              int_con_ints_array[0][0][0][0].dp[i][j][k][l];
+             }
+          else {
+            con_int_bufsize +=  INT_NCART(i)
+                              * INT_NCART(j)
+                              * INT_NCART(k)
+                              * INT_NCART(l);
+             }
+          int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l] = (void*)1;
+          }
+        }
+      }
+    }
+          }
+        }
+      }
+    }
+  e0f0_con_int_buf = (double*) malloc(con_int_bufsize*sizeof(double));
+  if (!e0f0_con_int_buf) {
+    fprintf(stderr,"couldn't allocate contracted integral storage\n");
+    fail();
+    }
+  add_store(e0f0_con_int_buf);
+  con_int_buf = &e0f0_con_int_buf[e0f0_con_int_bufsize];
   /* Allocate storage for the integrals which will be used by the shift
    * routine. */
+  for (ci=0; ci<nc1; ci++) {
+    for (cj=0; cj<nc2; cj++) {
+      for (ck=0; ck<nc3; ck++) {
+        for (cl=0; cl<nc4; cl++) {
+  int am12_for_con;
+  int am34_for_con;
+
+  am12_for_con = jmax_for_con[ci] + jmax_for_con[cj] + order;
+  if ((jmax_for_con[ck]!=am3)||(jmax_for_con[cl]!=am4)) {
+    am34_for_con = jmax_for_con[ck] + jmax_for_con[cl] + order;
+    }
+  else {
+    am34_for_con = jmax_for_con[ck] + jmax_for_con[cl];
+    }
+
   for (i=0; i<=am12; i++) {
     for (j=0; j<=am12; j++) {
       for (k=0; k<=am34; k++) {
@@ -367,69 +476,35 @@ int nc4;
  * then this algorithm would will allocate a little more storage
  * than needed.  General contraction should be ordered high to
  * low angular momentum for this reason. */
-#undef NO_SHARED_INT_INTER
-#ifndef NO_SHARED_INT_INTER
                 /* Share storage for certain cases. */
           if ((j==0)&&(l==0)) {
-            int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l] =
-                (double *) malloc(  sizeof(double)
-                                                 * INT_NCART(i)
-                                                 * INT_NCART(j)
-                                                 * INT_NCART(k)
-                                                 * INT_NCART(l));
-             add_store(int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l]);
-#if 0
-             printf("mallocing %d %d %d %d %d %d %d %d\n",
-                    ci,cj,ck,cl,i,j,k,l);
-#endif
+            int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l]
+                = e0f0_con_int_buf;
+            e0f0_con_int_buf +=  INT_NCART(i)
+                               * INT_NCART(j)
+                               * INT_NCART(k)
+                               * INT_NCART(l);
              }
            else if ((ci==0)&&(cj==0)&&(ck==0)&&(cl==0)) {
-            int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l] =
-              (double *) malloc(  sizeof(double)
-                                                 * INT_NCART(i)
-                                                 * INT_NCART(j)
-                                                 * INT_NCART(k)
-                                                 * INT_NCART(l));
-             add_store(int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l]);
-#if 0
-             printf("mallocing %d %d %d %d %d %d %d %d\n",
-                    ci,cj,ck,cl,i,j,k,l);
-#endif
-             }
+            int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l]
+                = con_int_buf;
+            con_int_buf +=  INT_NCART(i)
+                          * INT_NCART(j)
+                          * INT_NCART(k)
+                          * INT_NCART(l);
+               }
            else if (int_con_ints_array[0][0][0][0].dp[i][j][k][l]) {
              int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l] =
                int_con_ints_array[0][0][0][0].dp[i][j][k][l];
-#if 0
-             printf("copying %d %d %d %d %d %d %d %d\n",
-                    ci,cj,ck,cl,i,j,k,l);
-#endif
              }
            else {
-            int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l] =
-              (double *) malloc(  sizeof(double)
-                                                 * INT_NCART(i)
-                                                 * INT_NCART(j)
-                                                 * INT_NCART(k)
-                                                 * INT_NCART(l));
-             add_store(int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l]);
-#if 0
-             printf("mallocing %d %d %d %d %d %d %d %d\n",
-                    ci,cj,ck,cl,i,j,k,l);
-#endif
+            int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l]
+                = con_int_buf;
+            con_int_buf +=  INT_NCART(i)
+                          * INT_NCART(j)
+                          * INT_NCART(k)
+                          * INT_NCART(l);
              }
-#else
-          int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l] =
-                (double *) malloc(  sizeof(double)
-                                                 * INT_NCART(i)
-                                                 * INT_NCART(j)
-                                                 * INT_NCART(k)
-                                                 * INT_NCART(l));
-          add_store(int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l]);
-#endif
-          if (!int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l]) {
-            fprintf(stderr,"couldn't allocate contracted integral storage\n");
-            fail();
-            }
           }
         }
       }
@@ -558,67 +633,11 @@ int_done_buildgc()
   int ci,cj,ck,cl;
 
   free_int_array3(&inthave);
-
-  for (i=0; i<=saved_am12; i++) {
-    for (j=0; j<=saved_am34; j++) {
-      for (k=0; k<=saved_am12+saved_am34-i-j; k++) {
-        free(int_v_list.dp[i][j][k]);
-        }
-      }
-    }
+  free_int_array3(&contract_length);
 
   free_doublep_array3(&int_v_list);
 
-#if 1
   free_store();
-#else
-  /* Since some storage is shared, this is a bit messy. */
-  for (ci=0; ci<saved_ncon; ci++) {
-    for (cj=0; cj<saved_ncon; cj++) {
-      for (ck=0; ck<saved_ncon; ck++) {
-        for (cl=0; cl<saved_ncon; cl++) {
-          for (i=0; i<=saved_am12; i++) {
-            for (j=0; j<=saved_am12; j++) {
-              for (k=0; k<=saved_am34; k++) {
-                for (l=0; l<=saved_am34; l++) {
-  if (int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l]) {
-    double *tmp = int_con_ints_array[ci][cj][ck][cl].dp[i][j][k][l];
-    int ci2,cj2,ck2,cl2,i2,j2,k2,l2;
-
-    /* Find all occurences of this buffer is set them to NULL. */
-
-    for (ci2=0; ci2<saved_ncon; ci2++) {
-      for (cj2=0; cj2<saved_ncon; cj2++) {
-        for (ck2=0; ck2<saved_ncon; ck2++) {
-          for (cl2=0; cl2<saved_ncon; cl2++) {
-            for (i2=0; i2<=saved_am12; i2++) {
-              for (j2=0; j2<=saved_am12; j2++) {
-                for (k2=0; k2<=saved_am34; k2++) {
-                  for (l2=0; l2<=saved_am34; l2++) {
-    if (int_con_ints_array[ci2][cj2][ck2][cl2].dp[i2][j2][k2][l2] == tmp) {
-      int_con_ints_array[ci2][cj2][ck2][cl2].dp[i2][j2][k2][l2] = NULL;
-      }
-
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    /* Now we finally free the storage. */
-    free(tmp);
-    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-#endif
 
   for (ci=0; ci<saved_ncon; ci++) {
     for (cj=0; cj<saved_ncon; cj++) {
@@ -802,11 +821,10 @@ int dam4;
 int eAB;
 {
   int have_all_ints;
-  int i,j,k,l,m,n,o;
+  int i,j,k,l,m,n;
   int ci,cj,ck,cl;
   double *bufferprim;
   double *con_ints;
-  double *tmpbufferprim;
 
 #if 0
   printf("not_gcs: %d%d%d%d\n",
@@ -819,10 +837,17 @@ int eAB;
 
           /* Sum thru all possible contractions. */
   for (ci=0; ci<nc1; ci++) {
+    int mlower = int_shell1->type[ci].am + dam1;
     for (cj=0; cj<nc2; cj++) {
+      int mupper = mlower + int_shell2->type[cj].am + dam2;
+      if (mlower < minam1) mlower = minam1;
+      if (mupper > maxam12) mupper = maxam12;
       for (ck=0; ck<nc3; ck++) {
+        int nlower = int_shell3->type[ck].am + dam3;
         for (cl=0; cl<nc4; cl++) {
-
+          int nupper = nlower + int_shell4->type[cl].am + dam4;
+          if (nlower < minam3) nlower = minam3;
+          if (nupper > maxam34) nupper = maxam34;
 
   /* Loop over the primitives. */
   for (i=0; i<int_shell1->nprim; i++) {
@@ -926,33 +951,37 @@ int eAB;
             have_all_ints = 0;
             }
 
-          /* Contract the primitive target integrals. */
-          /* Throw out all unneeded contractions. */
-          for (m=minam1; m<=maxam12; m++) {
-            if (m < int_shell1->type[ci].am+dam1) continue;
-            if (int_shell1->type[ci].am+dam1+int_shell2->type[cj].am+dam2 < m)
-              continue;
-            for (n=minam3; n<=maxam34; n++) {
-              int sizemn;
-              if (n < int_shell3->type[ck].am+dam3) continue;
-              if (int_shell3->type[ck].am+dam3 +int_shell4->type[cl].am+dam4
-                   < n)
-                 continue;
+          if (!have_all_ints) {
+            for (m=minam1; m<=maxam12; m++) {
+              if (m < int_shell1->type[ci].am+dam1) continue;
+              if (int_shell1->type[ci].am+dam1+int_shell2->type[cj].am+dam2
+                  < m)
+                continue;
+              for (n=minam3; n<=maxam34; n++) {
+                if (n < int_shell3->type[ck].am+dam3) continue;
+                if (int_shell3->type[ck].am+dam3 +int_shell4->type[cl].am+dam4
+                    < n)
+                  continue;
 
-              sizemn = INT_NCART(m)*INT_NCART(n);
-              if (have_all_ints) bufferprim = int_v_list.dp[m][n][0];
-              else bufferprim = buildprim(m, n, 0);
-
-          con_ints = int_con_ints_array[ci][cj][ck][cl].dp[m][0][n][0];
-          tmpbufferprim = bufferprim;
-
-                /* Sum the integrals into the contracted integrals. */
-                for (o=sizemn; o!=0; o--) {
-                  *con_ints++ += *tmpbufferprim++;
-                  }
-
+                buildprim(m, n, 0);
                 }
               }
+            have_all_ints = 1;
+            }
+
+          /* Contract the primitive target integrals. */
+          /* Throw out all unneeded contractions. */
+          for (m=mlower; m<=mupper; m++) {
+            int o;
+            int sizec = contract_length.i[m][nlower][nupper];
+            con_ints = int_con_ints_array[ci][cj][ck][cl].dp[m][0][nlower][0];
+            bufferprim = int_v_list.dp[m][nlower][0];
+
+            for (o=sizec; o!=0; o--) {
+              *con_ints++ += *bufferprim++;
+              }
+
+            }
 
           }
         }
@@ -987,7 +1016,7 @@ int dam4;
 int eAB;
 {
   int have_all_ints;
-  int i,j,k,l,m,n,o;
+  int i,j,k,l,m,n;
   int ci,cj,ck,cl;
   int ist1,ist3;
   int nm3;
@@ -996,8 +1025,6 @@ int eAB;
   double ishl1expi=1.0, ishl2expj=1.0, ishl3expk=1.0;
   double *bufferprim;
   double *con_ints;
-  double *tmpbufferprim;
-  doublep_array4_t *iciaptr;
   double c0scale;
   intfunc brptr=build_routine[minam1][maxam12][minam3][maxam34][eAB];
 
@@ -1081,51 +1108,54 @@ int eAB;
             have_all_ints = 0;
             }
 
-          /* Contract the primitive target integrals. */
-          for (m=minam1; m<=maxam12; m++) {
-            for (n=minam3; n<=maxam34; n++) {
-              int sizemn = INT_NCART(m)*INT_NCART(n);
-              if (have_all_ints) bufferprim = int_v_list.dp[m][n][0];
-              else bufferprim = buildprim(m, n, 0);
-
           /* Sum thru all possible contractions.
            * Throw out all unneeded contractions. */
 
+          if (!have_all_ints) {
+            for (m=minam1; m<=maxam12; m++) {
+              for (n=minam3; n<=maxam34; n++) {
+                bufferprim = buildprim(m, n, 0);
+                }
+              }
+            have_all_ints = 1;
+            }
+
   for (ci=0; ci<nc1; ci++) {
-    if (m < (ist1=int_shell1->type[ci].am+dam1)) continue;
+    int mlower = int_shell1->type[ci].am + dam1;
     coef0 = int_shell1->coef[ci][i]*c0scale;
-
     for (cj=0; cj<nc2; cj++) {
-      if (ist1+int_shell2->type[cj].am+dam2 < m) continue;
-
+      int mupper = mlower + int_shell2->type[cj].am + dam2;
+      if (mlower < minam1) mlower = minam1;
+      if (mupper > maxam12) mupper = maxam12;
       coef1 = int_shell2->coef[cj][j]*coef0;
-
       for (ck=0; ck<nc3; ck++) {
-        if (n < (ist3=int_shell3->type[ck].am+dam3)) continue;
-
+        int nlower = int_shell3->type[ck].am + dam3;
         coef2 = int_shell3->coef[ck][k]*coef1;
-
-        iciaptr = int_con_ints_array[ci][cj][ck];
-
-        nm3=n-ist3-dam4;
-        for (cl=0; cl<nc4; cl++,iciaptr++) {
-          if (int_shell4->type[cl].am < nm3) continue;
-
+        for (cl=0; cl<nc4; cl++) {
+          int nupper = nlower + int_shell4->type[cl].am + dam4;
+          if (nlower < minam3) nlower = minam3;
+          if (nupper > maxam34) nupper = maxam34;
           coef3 = int_shell4->coef[cl][l]*coef2;
 
-          con_ints = *((*iciaptr).dp[m][0][n]);
-          tmpbufferprim = bufferprim;
+          /* Contract the primitive target integrals. */
+          for (m=mlower; m<=mupper; m++) {
+            int o;
+            int sizec = contract_length.i[m][nlower][nupper];
+            con_ints = int_con_ints_array[ci][cj][ck][cl].dp[m][0][nlower][0];
+            bufferprim = int_v_list.dp[m][nlower][0];
 
-          /* Sum the integrals into the contracted integrals. */
-          for (o=sizemn; o; o--) *con_ints++ += coef3 * *tmpbufferprim++;
+            /* Sum the integrals into the contracted integrals. */
+            for (o=sizec; o; o--) {
+                *con_ints++ += coef3 * *bufferprim++;
+              }
+
+            }
           }
         }
       }
     }
 
 
-              }
-            }
           }
         }
       }
@@ -1153,16 +1183,19 @@ int am;
   double conv_to_s;
 
   if (int_store2 && !int_unit2 && !int_unit4) {
+    double *tmp;
     int_v_zeta12 = int_prim_zeta.d[opr1][opr2];
     int_v_zeta34 = int_prim_zeta.d[opr3][opr4];
     int_v_oo2zeta12 = int_prim_oo2zeta.d[opr1][opr2];
     int_v_oo2zeta34 = int_prim_oo2zeta.d[opr3][opr4];
-    int_v_p120 = int_prim_p.d[opr1][opr2][0];
-    int_v_p121 = int_prim_p.d[opr1][opr2][1];
-    int_v_p122 = int_prim_p.d[opr1][opr2][2];
-    int_v_p340 = int_prim_p.d[opr3][opr4][0];
-    int_v_p341 = int_prim_p.d[opr3][opr4][1];
-    int_v_p342 = int_prim_p.d[opr3][opr4][2];
+    tmp = int_prim_p.d[opr1][opr2];
+    int_v_p120 = *tmp++;
+    int_v_p121 = *tmp++;
+    int_v_p122 = *tmp;
+    tmp = int_prim_p.d[opr3][opr4];
+    int_v_p340 = *tmp++;
+    int_v_p341 = *tmp++;
+    int_v_p342 = *tmp;
     int_v_k12 = int_prim_k.d[opr1][opr2];
     int_v_k34 = int_prim_k.d[opr3][opr4];
     }

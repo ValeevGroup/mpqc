@@ -5,6 +5,10 @@
 #include <util/misc/formio.h>
 #include <util/misc/newstring.h>
 
+#if HAVE_P4
+#include <netdb.h>
+#endif
+
 //#define MPI_SEND_ROUTINE MPI_Ssend // hangs
 //#define MPI_SEND_ROUTINE MPI_Send // hangs
 #define MPI_SEND_ROUTINE MPI_Bsend // works requires the attach and detach
@@ -32,7 +36,7 @@ MPIMessageGrp::MPIMessageGrp(const RefKeyVal& keyval):
 {
 #if HAVE_P4
   nlocal=keyval->intvalue("nlocal");
-  if (keyval->error() != KeyVal::OK)
+  if (!nlocal || keyval->error() != KeyVal::OK)
       nlocal=1;
 
   nremote=keyval->count("remote_clusters");
@@ -89,11 +93,116 @@ MPIMessageGrp::MPIMessageGrp(const RefKeyVal& keyval):
 }
 
 #if HAVE_P4
+
+static struct hostent *
+mygethostbyname(const char *mach)
+{
+  int i,j;
+  char *alias;
+  struct hostent *host;
+
+  if (mach) {
+      host=gethostbyname(mach);
+    }
+  else {
+      char name[80];
+      gethostname(name,80);
+      host=gethostbyname(name);
+    }
+
+  if (!host)
+      return 0;
+  
+  struct hostent *mhost = new hostent;
+
+  mhost->h_addrtype=host->h_addrtype;
+  mhost->h_length=host->h_length;
+  mhost->h_name=new_string(host->h_name);
+
+  if (host->h_aliases) {
+      i=0;
+      while (alias=host->h_aliases[i]) i++;
+      mhost->h_aliases = new char*[i+1];
+      for (j=0; j < i ; j++)
+          mhost->h_aliases[j]=new_string(host->h_aliases[j]);
+      mhost->h_aliases[i]=NULL;
+    }
+
+  return mhost;
+}
+
+static void
+freehostent(struct hostent *h)
+{
+  if (!h) return;
+  
+  delete[] h->h_name;
+
+  int i=0;
+  while (h->h_aliases[i]) {
+      delete[] h->h_aliases[i];
+      i++;
+    }
+
+  delete[] h->h_aliases;
+  delete h;
+}
+
+static int
+same_host(const char *m1, const char *m2)
+{
+  int i;
+  char *alias;
+  struct hostent *h1, *h2;
+
+  if (!strcmp(m1,"any") || !strcmp(m2,"any"))
+      return 1;
+
+  h1 = mygethostbyname(m1);
+  h2 = mygethostbyname(m2);
+
+  if (!h1 || !h2) {
+      freehostent(h1);
+      freehostent(h2);
+      return 0;
+    }
+  
+  if (!strcmp(h1->h_name,h2->h_name)) {
+      freehostent(h1);
+      freehostent(h2);
+      return 1;
+    }
+
+  i=0;
+  while (alias=h1->h_aliases[i]) {
+      if (!strcmp(alias,h2->h_name)) {
+          freehostent(h1);
+          freehostent(h2);
+          return 1;
+        }
+      i++;
+    }
+
+  i=0;
+  while (alias=h2->h_aliases[i]) {
+      if (!strcmp(alias,h1->h_name)) {
+          freehostent(h1);
+          freehostent(h2);
+          return 1;
+        }
+      i++;
+    }
+
+  freehostent(h1);
+  freehostent(h2);
+  return 0;
+}
+
 struct MPIMessageGrp::p4_cluster *
 MPIMessageGrp::my_node_info(const char hostname[], int& nodenum)
 {
   for (nodenum=1; nodenum <= nremote; nodenum++) {
-      if (strcmp(hostname,remote_clusters[nodenum-1].hostname)==0)
+      if (same_host(hostname,remote_clusters[nodenum-1].hostname))
           return &remote_clusters[nodenum-1];
     }
   return 0;
@@ -216,7 +325,7 @@ MPIMessageGrp::init()
       for (int i=0; i < nremote; i++)
           delete[] nslaves[i];
   delete[] nslaves;
-  delete[] argv;
+  //delete[] argv;
 #endif  
 }
 

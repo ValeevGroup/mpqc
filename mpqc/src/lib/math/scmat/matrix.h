@@ -280,8 +280,8 @@ class RefSymmSCMatrix: public RefDCSymmSCMatrix {
     void accumulate_symmetric_sum(const RefSCMatrix&) const;
     //. Add a * b * a.t() to this.
     void accumulate_transform(const RefSCMatrix&a,const RefSymmSCMatrix&b) const;
-    void accumulate_transform(const RefSCMatrix&,const RefDiagSCMatrix&) const;
-    void accumulate_transform(const RefSymmSCMatrix&,const RefSymmSCMatrix&) const;
+    void accumulate_transform(const RefSCMatrix&a,const RefDiagSCMatrix&b) const;
+    void accumulate_transform(const RefSymmSCMatrix&a,const RefSymmSCMatrix&b) const;
 
     void randomize() const;
     void assign(const RefSymmSCMatrix&) const;

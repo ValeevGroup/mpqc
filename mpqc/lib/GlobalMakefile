@@ -22,6 +22,7 @@ SRCLIBDIR = $(SRCTOPDIR)/lib/
 # THISDIR is the name of the current directory relative to TOPDIR/src/lib/
 THISDIR = $(subst $(shell cd $(TOPDIR); pwd)/src/lib/,,$(shell pwd))
 
+CLASS2TEXFLAGS =
 CLASS2TEX = $(PERL) $(SRCTOPDIR)/bin/class2tex
 
 include $(TOPDIR)/lib/LocalMakefile

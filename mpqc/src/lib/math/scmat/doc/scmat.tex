@@ -1,5 +1,9 @@
 
+\addtocounter{clsheadingnum}{1}
+\addtocounter{clssubheadingnum}{1}
+
 \chapter{The Matrix Library}
+%\doheading{2}{Introduction}
 
 The scientific computing matrix library (SCMAT) is designed around a set
 of matrix abstractions that permit very general matrix implementations.
@@ -41,9 +45,9 @@ specializes the abstract classes to \clsnmref{LocalSCMatrix},
 \clsnmref{LocalSymmSCMatrix}, \clsnmref{LocalDiagSCMatrix},
 \clsnmref{LocalSCVector}, \clsnmref{LocalSCDimension}, and
 \clsnmref{LocalSCMatrixKit}.  These specializations are all designed to
-work with each other.  However, they are incompatible with other matrix
-specializations.  An attempt to multiply a local matrix by a distributed
-matrix would generate an error at runtime.
+work with each other.  However, a given specialization is incompatible with
+other matrix specializations.  An attempt to multiply a local matrix by a
+distributed matrix would generate an error at runtime.
 
 Since the different groups of classes do not interoperate, some mechanism
 of creating consistent specializations is needed.  This is done with
@@ -60,45 +64,46 @@ pointer classes \clsnmref{RefSCMatrix}, \clsnmref{RefSymmSCMatrix},
 \clsnmref{RefDiagSCMatrix}, \clsnmref{RefSCDimension}, and
 \clsnmref{RefSCMatrixKit}.  These automatically delete matrix objects when
 they are no longer needed.  This is through a reference count mechanism
-that is supported by the \clsnmref{VRefCount} base class.  The smart
-pointer classes also have matrix operations such as \clsnmref{operator
-*()}, \clsnmref{operator -()}, and \clsnmref{operator +()} defined as
-members for convenience.  These forward the operations to the contained
-matrix object.  The smart pointer classes also simplify creation of
-matrices by providing constructors that take as arguments one or more
-\clsnmref{RefSCDimension}'s and a \clsnmref{RefSCMatrixKit}.  These
-initialize the smart pointer to contain a new matrix with a specialization
-corresponding to that of the \clsnmref{RefSCMatrixKit}.  Matrix operations
-not provided by the smart pointer classes but present as member in the
-abstract classes can be accessed with \clsnmref{operator->()}.
+that is supported by the \clsnmref{VRefCount} base class from which the
+abstract matrix classes derive.  The smart pointer classes also have matrix
+operations such as \srccd{operator *()}, \srccd{operator -()}, and
+\srccd{operator +()} defined as members for convenience.  These forward the
+operations to the contained matrix object.  The smart pointer classes also
+simplify creation of matrices by providing constructors that take as
+arguments one or more \clsnmref{RefSCDimension}'s and a
+\clsnmref{RefSCMatrixKit}.  These initialize the smart pointer to contain a
+new matrix with a specialization corresponding to that of the
+\clsnmref{RefSCMatrixKit}.  Matrix operations not provided by the smart
+pointer classes but present as member in the abstract classes can be
+accessed with \srccd{operator->()}.
 
 If a needed matrix operation is missing, mechanisms exist to add more
 general operations.  Operations which only depend on individual elements of
-matrices can be provided by user provided specializations of the
-\clsnmref{SCElementOp} class.  Sometimes we need operations on matrices
-with identical dimensions that examine each element in one matrix along
-with the corresponding element from the other matrix.  This is accomplished
-with \clsnmref{SCElementOp2} for two matrices and with
-\clsnmref{SCElementOp3} for three.
+matrices can be provided by specializations of the \clsnmref{SCElementOp}
+class.  Sometimes we need operations on matrices with identical dimensions
+that examine each element in one matrix along with the corresponding
+element from the other matrix.  This is accomplished with
+\clsnmref{SCElementOp2} for two matrices and with \clsnmref{SCElementOp3}
+for three.
 
 Other features of SCMAT include run-time type facilities and persistence.
 Castdown operations (type conversions from less to more derived objects)
 and other run-time type information are provided by the
 \clsnmref{DescribedClass} base class.  Persistence is not provided by
 inheriting from \clsnmref{SavableState} base clase as is the case with many
-other classes, because it is necessary to save objects in an implementation
-independent manner.  If a calculation checkpoints a matrix on a single
-processor machine and later is restarted on a multiprocessor machine the
-matrix would need to be restored as a different matrix abstraction.  This
-is handled by saving and restoring matrices' and vectors' data without
-reference to the specialization.
+other classes in the SC class hierarchies, because it is necessary to save
+objects in an implementation independent manner.  If a calculation
+checkpoints a matrix on a single processor machine and later is restarted
+on a multiprocessor machine the matrix would need to be restored as a
+different matrix specialization.  This is handled by saving and restoring
+matrices' and vectors' data without reference to the specialization.
 
 The following include files are provided by the matrix library:
 
-\begin{itemize}
+\begin{description}
 \item[\filnm{matrix.h}]
 Usually, this is the only include file needed by users of matrices.  It
-declares reference counting pointers to matrix implementations.
+declares reference counting pointers to abstract matrices.
 
 If kit for a matrix must be created, or a member specific to an
 implementation is needed, then that implementation's header file must be
@@ -113,8 +118,8 @@ specializations.
 This include file contains the declarations for abstract classes that
 users do not usually need to see.  These include \clsnmref{SCDimension},
 \clsnmref{SCMatrix}, \clsnmref{SymmSCMatrix}, \clsnmref{DiagSCMatrix},
-\clsnmref{SCMatrixKit}.  This file is currently include by \filnm{matrix.h}
-however this may change.
+\clsnmref{SCMatrixKit}.  This file is currently included by
+\filnm{matrix.h}.
 
 \item[\filnm{block.h}]
 This file declares \clsnmref{SCMatrixBlock} and specializations.  It
@@ -127,17 +132,17 @@ This include file declares the implementations of
 new \clsnmref{SCElementOp} specializations.
 
 \item[\filnm{vector3.h}]
-This declares \clsnmref{SCVector3} a fast vector of length three.
+This declares \clsnmref{SCVector3}, a lightweight vector of length three.
 
 \item[\filnm{matrix3.h}]
-This declares \clsnmref{SCMatrix3}, a fast matrix of dimension three by
+This declares \clsnmref{SCMatrix3}, a lightweight matrix of dimension three by
 three.  It includes \filnm{vector3.h}.
 
 \item[\filnm{local.h}]
 This include file is the matrix implementation for locally stored
-matrices.  These are suitable for use in a uniprocessor environment.
-The \clsnmref{LocalSCMatrixKit} is the default matrix implementation
-returned by the static member \clsnmref{SCMatrixKit::default\_matrixkit}.
+matrices.  These are suitable for use in a uniprocessor environment.  The
+\clsnmref{LocalSCMatrixKit} is the default matrix implementation returned
+by the static member \clsnmref{SCMatrixKit}\srccd{::default\_matrixkit}.
 This file usually doesn't need to be included.
 
 \item[\filnm{dist.h}]
@@ -154,12 +159,36 @@ processor.  This file usually doesn't need to be included.
 
 \item[\filnm{blocked.h}]
 This include file is the matrix implementation for blocked matrices.
-Blocked matrices store a matrix as subblocks that are matrices from
-another matrix specialization.  These are used to implement point group
-symmetry in the quantum chemistry applications.
+Blocked matrices store a matrix as subblocks that are matrices from another
+matrix specialization.  These are used to save storage and computation time
+in quantum chemistry applications for molecules with other than $C_1$ point
+group symmetry.
 
-\end{itemize}
+\end{description}
 
+\section{Matrix Dimensions}
+%\doheading{2}{Matrix Dimensions}
+
+In addition to the simple integer dimension, objects of the
+\clsnmref{SCDimension} class contain application specific blocking
+information.  This information is held in an object of class
+\clsnmref{SCBlockInfo}.
+
+\input{math/scmat/doc/SCDimension.cls.tex}
+\input{math/scmat/doc/SCBlockInfo.cls.tex}
+
+\section{Matrix Reference Classes}\label{matrixrefclass}
+%\doheading{2}{Matrix Reference Classes}\label{matrixrefclass}
+
+The easiest way to use SCMAT is through the smart pointer classes
+\clsnmref{RefSCMatrix}, \clsnmref{RefSymmSCMatrix},
+\clsnmref{RefDiagSCMatrix}, \clsnmref{RefSCVector},
+\clsnmref{RefSCDimension}, and \clsnmref{RefSCMatrixKit}.  These are based
+on the \clsnmref{Ref} reference counting package and automatically delete
+matrix objects when they are no longer needed.  These reference classes
+also have common operations defined as members for convenience.  This makes
+it unnecessary to also use the sometimes awkward syntax of
+\srccd{operator->()} to manipulate the contained objects.
 
 \input{math/scmat/doc/RefSCDimension.cls.tex}
 \input{math/scmat/doc/RefSCVector.cls.tex}
@@ -167,10 +196,130 @@ symmetry in the quantum chemistry applications.
 \input{math/scmat/doc/RefSymmSCMatrix.cls.tex}
 \input{math/scmat/doc/RefDiagSCMatrix.cls.tex}
 
-\input{math/scmat/doc/SCDimension.cls.tex}
+\section{Abstract Matrix Classes}
+%\doheading{2}{Abstract Matrix Classes}
+
+This section documents the primary abstract classes: \clsnmref{SCMatrix},
+\clsnmref{SymmSCMatrix}, \clsnmref{DiagSCMatrix}, and \clsnmref{SCVector},
+as well as the \clsnmref{SCMatrixKit} class which allows the programmer to
+generate consistent specializations of matrices.  These represent matrices,
+symmetric matrices, diagonal matrices, and vectors, respectively.
+
+This section is primarily for implementers of new specializations
+of matrices.  Users of existing matrices will be most interested
+in \htmlref{the matrix reference classes}{matrixrefclass}.
 
 \input{math/scmat/doc/SCMatrixKit.cls.tex}
 \input{math/scmat/doc/SCVector.cls.tex}
 \input{math/scmat/doc/SCMatrix.cls.tex}
 \input{math/scmat/doc/SymmSCMatrix.cls.tex}
 \input{math/scmat/doc/DiagSCMatrix.cls.tex}
+
+\section{Matrix Storage}
+%\doheading{2}{Matrix Storage}
+
+All elements of matrices and vectors are kept in blocks.  The
+choice of blocks and where they are keep is left up to each
+matrix specialization.
+
+\input{math/scmat/doc/SCMatrixBlock.cls.tex}
+\input{math/scmat/doc/SCMatrixRectBlock.cls.tex}
+\input{math/scmat/doc/SCMatrixRectSubBlock.cls.tex}
+\input{math/scmat/doc/SCMatrixLTriBlock.cls.tex}
+\input{math/scmat/doc/SCMatrixLTriSubBlock.cls.tex}
+\input{math/scmat/doc/SCMatrixDiagBlock.cls.tex}
+\input{math/scmat/doc/SCMatrixDiagSubBlock.cls.tex}
+\input{math/scmat/doc/SCVectorSimpleBlock.cls.tex}
+\input{math/scmat/doc/SCVectorSimpleSubBlock.cls.tex}
+
+\section{Manipulating Matrix Elements with Element Operations}
+%\doheading{2}{Manipulating Matrix Elements with Element Operations}
+
+\input{math/scmat/doc/SCElementOp.cls.tex}
+\input{math/scmat/doc/SCElementOp2.cls.tex}
+\input{math/scmat/doc/SCElementOp3.cls.tex}
+\input{math/scmat/doc/SCMatrixBlockIter.cls.tex}
+
+\section{\clsnm{SCElementOp} Specializations}
+%\doheading{2}{\clsnm{SCElementOp} Specializations}
+
+Several commonly needed element operations are already coded
+up and available by including \filnm{math/scmat/elemop.h}.
+Below are descriptions of these classes:
+
+\begin{description}
+\item[\clsnm{SCElementScalarProduct}] This \clsnmref{SCElementOp2} computes
+the scalar product of two matrices or vectors.  The result is available
+after the operation from the return value of the \srccd{result()} member.
+\item[\clsnm{SCDestructiveElementProduct}] This \clsnmref{SCElementOp2}
+replaces the elements of the matrix or vector whose \srccd{element\_op}
+member is called.  The resulting values are the element by element products
+of the two matrices or vectors.
+\item[\clsnm{SCElementScale}] This scales each element by an amount given
+in the constructor.
+\item[\clsnm{SCElementRandomize}] This generates random elements.
+\item[\clsnm{SCElementAssign}] Assign to each element the value passed to
+the constructor.
+\item[\clsnm{SCElementSquareRoot}] Replace each element with its square
+root.
+\item[\clsnm{SCElementInvert}] Replace each element by its reciprocal.
+\item[\clsnm{SCElementScaleDiagonal}] Scales the diagonal elements of a
+matrix by the argument passed to the constructor.  Use of this on a vector
+is undefined.
+\item[\clsnm{SCElementShiftDiagonal}] Add the value passed to the
+constructor to the diagonal elements of the matrix.  Use of this on a
+vector is undefined.
+\item[\clsnm{SCElementMaxAbs}] Find the maximum absolute value element in a
+matrix or vector.  The result is available as the return value of the
+\srccd{result()} member.
+\item[\clsnm{SCElementDot}] The constructor for this class takes three
+arguments: \linebreak \srccd{SCElementDot(double**\vrbl{a},
+double**\vrbl{b}, int \vrbl{length})}.  The length of each vector given by
+\vrbl{a} and \vrbl{b} is given by \vrbl{length}.  The number of vectors in
+\vrbl{a} is the number of rows in the matrix and the number in \vrbl{b} is
+the number of columns.  To each element in the matrix $m_{ij}$ the dot
+product of the $a_i$ and $b_j$ is added.
+\item[\clsnm{SCElementAccumulateSCMatrix}]  This is obsolete---do not use it.
+\item[\clsnm{SCElementAccumulateSymmSCMatrix}] This is obsolete---do not
+use it.
+\item[\clsnm{SCElementAccumulateDiagSCMatrix}] This is obsolete---do not
+use it.
+\item[\clsnm{SCElementAccumulateSCVector}] This is obsolete---do not use
+it.
+\end{description}
+
+\section{Manipulating Matrix Elements with Block Iterators}
+%\doheading{2}{Manipulating Matrix Elements with Block Iterators}
+
+\input{math/scmat/doc/SCMatrixSubblockIter.cls.tex}
+
+\subsection{Local Matrices}
+%\doheading{3}{Local Matrices}
+
+Local matrices do no communication.  All elements reside on each node
+and all computations are duplicated on each node.
+
+\subsection{Replicated Matrices}
+%\doheading{3}{Replicated Matrices}
+
+Replicated matrices hold all of the elements on each node, however
+do some communications in order to reduce computation time.
+
+\subsection{Distributed Matrices}
+%\doheading{3}{Distributed Matrices}
+
+Distributed matrices spread the elements across all the nodes and
+thus require less storage than local matrices however these use
+more communications that replicated matrices.
+
+\subsection{Blocked Matrices}
+%\doheading{3}{Blocked Matrices}
+
+Blocked matrices are used to implement point group symmetry.  Another
+matrix specialization is used to hold the diagonal subblocks of a
+matrix.  The offdiagonal subblocks are known to be zero and not stored.
+This results in considerable savings in storage and computation for
+those cases where it applies.
+
+\addtocounter{clsheadingnum}{-1}
+\addtocounter{clssubheadingnum}{-1}

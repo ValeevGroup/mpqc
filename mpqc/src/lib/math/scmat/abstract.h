@@ -122,11 +122,11 @@ class SCVector: public DescribedClass {
     //. Return the \clsnmref{RefSCDimension} corresponding to this vector.
     RefSCDimension dim() const { return d; }
     //. Set element \vrbl{i} to \vrbl{val}.
-    virtual void set_element(int,double) = 0;
+    virtual void set_element(int i,double val) = 0;
     //. Add \vrbl{val} to element \vrbl{i}.
     virtual void accumulate_element(int,double) = 0;
     //. Return the value of element \vrbl{i}.
-    virtual double get_element(int) = 0;
+    virtual double get_element(int i) = 0;
     //. Sum the result of \vrbl{m} times \vrbl{v} into \srccd{this}.
     virtual void accumulate_product(SymmSCMatrix* m, SCVector* v);
     virtual void accumulate_product(SCMatrix* m, SCVector* v) = 0;
@@ -463,7 +463,7 @@ class DiagSCMatrix: public DescribedClass {
     //. Assign element \vrbl{i}, \vrbl{i} to
     //. \srccd{\vrbl{m}[\vrbl{i}]}.
     virtual void assign(const double*);
-    //. Like the \srccd{assign} member, but this write values
+    //. Like the \srccd{assign} member, but this writes values
     //. to the argument.
     virtual void convert(double*);
     //. Convert an \clsnmref{SCDiagSCMatrix} of a different specialization

@@ -1,0 +1,67 @@
+
+% Putting the item in a parbox prevent long member names from
+% overrunning the line.
+\newcommand*\classmember[1]{\parbox{4.5in}{\normalfont\bfseries #1}}
+\newenvironment{classinterface}
+               {\list{}{\setlength{\labelwidth}{\z@ \itemindent-\leftmargin}
+                        \setlength{\itemsep}{0pt}
+                        \setlength{\parsep}{0pt}
+                        \setlength{\listparindent}{2em}
+                        \renewcommand{\makelabel}[1]{\classmember{##1}}
+                        }}
+               {\endlist}
+
+% classname
+\newcommand{\clsnm}[1]{{\rmfamily\scshape #1}}
+\newcommand{\clsnmref}[1]{\htmlref{{\rmfamily\scshape #1}}{#1}}
+
+% variable
+\newcommand{\vrbl}[1]{{\itshape #1}}
+
+% source code
+\newcommand{\srccd}[1]{{\ttfamily #1}}
+
+% file names
+\newcommand{\filnm}[1]{{\ttfamily #1}}
+
+% command names
+\newcommand{\exenm}[1]{{\ttfamily #1}}
+
+\newcommand{\doheading}[2]{
+  \ifnum #1=0
+  \part{#2}
+  \else\ifnum #1=1
+    \chapter{#2}
+    \else\ifnum #1=2
+      \section{#2}
+      \else\ifnum #1=3
+        \subsection{#2}
+        \else\ifnum #1=4
+          \subsubsection{#2}
+          \fi
+        \fi
+      \fi
+    \fi
+  \fi
+}
+
+\newcounter{headingnum}
+\newcounter{subheadingnum}
+\newcounter{subsubheadingnum}
+\newcounter{clsheadingnum}
+\newcounter{clssubheadingnum}
+\setcounter{headingnum}{1}
+\setcounter{subheadingnum}{2}
+\setcounter{subsubheadingnum}{3}
+\setcounter{clsheadingnum}{2}
+\setcounter{clssubheadingnum}{3}
+
+\newcommand{\scchapter}[1]{\doheading{\theheadingnum}{#1}}
+\newcommand{\scsection}[1]{\doheading{\thesubheadingnum}{#1}}
+\newcommand{\scsubsection}[1]{\doheading{\thesubsubheadingnum}{#1}}
+\newcommand{\scclssection}[1]{\doheading{\theclsheadingnum}{#1}}
+\newcommand{\scclssubsection}[1]{\doheading{\theclssubheadingnum}{#1}}
+
+\newcommand{\clssection}[1]{\scclssection{The \clsnm{#1} Class}\label{#1}\index{#1}}
+\newcommand{\tclssection}[2]{\scclssection{The \clsnm{#1}$<$#2$>$ Template Class}\label{#1}\index{#1}}
+\newcommand{\clssubsection}[1]{\scclssubsection{#1}}

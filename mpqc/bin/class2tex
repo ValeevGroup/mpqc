@@ -1,6 +1,27 @@
 #!/usr/bin/perl
 # Use -*-perl-*- mode in emacs.
 
+@files = ();
+
+$clssection = "section";
+$clssubsection = "subsection";
+
+#for $i (@ARGV) {
+while ($i = shift) {
+    if ($i eq '-clssection') {
+        $clssection = shift;
+    }
+    elsif ($i eq '-clssubsection') {
+        $clssubsection = shift;
+    }
+    else {
+        @files = (@files, $i);
+    }
+}
+@ARGV = @files;
+
+$printmember = 0;
+$printmembercase = 0;
 $template_param = '';
 $class = '';
 $classdoc = '';
@@ -71,11 +92,15 @@ sub write_doc {
         }
         print "writing $class.cls.tex\n";
         if ($template_param eq '') {
-            print OUTPUT "\\section{The \\clsnm{$class} Class}\n";
+            print OUTPUT "\\$clssection\{The \\clsnm{$class} Class}";
+            print OUTPUT "\\label{$class}\\index{$class}\n";
+            #print OUTPUT "\\clssection{$class}\n";
         }
         else {
-            print OUTPUT "\\section{The \\clsnm{$class";
-            print OUTPUT "\$<\$$template_param\$>\$} Class Template}\n";
+            print OUTPUT "\\$clssection\{The \\clsnm{$class";
+            print OUTPUT "\$<\$$template_param\$>\$} Class Template}";
+            print OUTPUT "\\label{$class}\\index{$class}\n";
+            #print OUTPUT "\\tclssection{$class}{$template_param}\n";
         }
         print OUTPUT "\\index{$class}\n";
         if ($classdoc ne '') {
@@ -84,15 +109,18 @@ sub write_doc {
         for (@sectionorder) {
             if ($item{$_} ne '') {
                 if ($template_param eq '') {
-                    print OUTPUT "\\subsection{The $sectionname{$_} \\clsnm{$class} Interface}\n";
+                    print OUTPUT "\\$clssubsection\{The $sectionname{$_} \\clsnm{$class} Interface}\n";
                 }
                 else {
-                    print OUTPUT "\\section{The Public \\clsnm{$class";
+                    print OUTPUT "\\$clssubsection\{The \\clsnm{$class";
                     print OUTPUT "\$<\$$template_param\$>\$} Class Template Interface}\n";
                 }
-                print OUTPUT "\\begin{description}\n";
-                print OUTPUT $item{$_};
-                print OUTPUT "\\end{description}\n";
+                local($memberdoc) = $item{$_};
+                # two items in a row shouldn't have an mbox
+                $memberdoc =~ s/\\mbox{}\\\\\s*\\item\[/\n\\item\[/g;
+                print OUTPUT "\\begin{classinterface}\n";
+                print OUTPUT $memberdoc;
+                print OUTPUT "\\end{classinterface}\n";
             }
         }
         close(OUTPUT);
@@ -104,13 +132,17 @@ sub write_doc {
 sub beautify_member {
     $m = $_[0];
 
+    print "MEM=$m\n" if ($printmember);
+
     $_ = $m;
 
     # remove inline
     s/inline//;
 
     # remove parent/member constructor calls
+    s/::/SAVEDCOLONCOLON/g;
     s/:.*$//;
+    s/SAVEDCOLONCOLON/::/g;
 
     $virtual = 0;
     $static = 0;
@@ -161,7 +193,12 @@ sub beautify_member {
         /^\s*(~?)\s*([A-Za-z_][A-Za-z0-9_]*)(.*)/;
     $_ = $rest;
     $membername = "$destructor$membername";
-    if ($membername eq 'operator') {
+    if ($typename eq "operator") {
+        # fixup type conversion operators
+        $typename = "$membername";
+        $membername = "operator $membername";
+    }
+    elsif ($membername eq 'operator') {
         # operator () is a special case
         if (/^\s*\(\s*\)(.*)/) {
             $membername = "$membername ()";
@@ -202,6 +239,10 @@ sub beautify_member {
     $arglist =~ s/&/\\&/g;
     $arglist =~ s/</\$<\$/g;
     $arglist =~ s/>/\$>\$/g;
+    $arglist =~ s/_/\\_/g;
+
+    # make sure there is whitespace after commas (for better formatting).
+    $arglist =~ s/,\s*/, /g;
 
     # parse the constness of calling object
     $constobject = 0;
@@ -253,7 +294,7 @@ sub get_doc {
     $members = '';
     $indoc = 1;
     while (<>) {
-        if ($indoc && /^\s*\/\/(\.)?\s*(.*)/) {
+        if ($indoc && /^\s*\/\/(\.)?(\s*.*)/) {
             $doc = "$doc\n$2";
         }
         elsif (/^\s*template <(.*)>\s*class\s+([a-zA-Z_][a-zA-Z0-9_]*)/) {
@@ -273,49 +314,40 @@ sub get_doc {
             do new_class($1,'',$doc);
             last;
         }
-        elsif (/^\s*((~\s*)?[A-Za-z_].*),\s*$/) {
+        elsif (/^\s*((~\s*)?[A-Za-z_].*,)\s*$/) {
             $indoc = 0;
             $member = $1;
-            while (<>) {
-                if (/^\s*(.*,)\s*$/) {
-                    $member = "$member$1";
-                }
-                elsif (/^\s*(.*){\s*/) {
-                    $member = "$member$1";
-                    # attempt to skip over simple routines
-                    &skip_inlined_routine("{$'");
-                    last;
-                }
-                elsif (/^\s*(.*);\s*/) {
-                    $member = "$member$1";
-                    last;
-                }
-                elsif (/};/) {
-                    last;
-                }
-                else {
-                    printf "BAD MEMBER CONTINUATION: $_\n";
-                }
-            }
+            $remainder = &read_member_continuation;
+            $member = "$member$remainder";
+            print "CASE 1: MEM=$member\n" if ($printmembercase);
             $member = &beautify_member($member);
-            $members = "$members\\item[$member]\n";
+            $members = "$members\\item[$member]\\mbox{}\\\\\n";
         }
         elsif (/^\s*((~\s*)?[A-Za-z_].*)\s*{/) {
             $indoc = 0;
+            print "CASE 2: MEM=$1\n" if ($printmembercase);
             $member = &beautify_member($1);
-            $members = "$members\\item[$member]\n";
+            $members = "$members\\item[$member]\\mbox{}\\\\\n";
             # attempt to skip over simple routines
             &skip_inlined_routine("{$'");
         }
         elsif (/^\s*((~\s*)?[A-Za-z_].*);\s*/) {
             $indoc = 0;
+            print "CASE 3: MEM=$1\n" if ($printmembercase);
             $member = &beautify_member($1);
-            $members = "$members\\item[$member]\n";
+            $members = "$members\\item[$member]\\mbox{}\\\\\n";
         }
         elsif (/^\s*((~\s*)?[A-Za-z_].*)\s*/) {
             $indoc = 0;
-            $member = &beautify_member($1);
-            $members = "$members\\item[$member]\n";
+            $member = $1;
+            if (! /\)/) {
+                # the member is not complete--finish it
+                $remainder = &read_member_continuation;
+                $member = "$member$remainder";
+            }
+            print "CASE 4: MEM=$member\n" if ($printmembercase);
+            $member = &beautify_member($member);
+            $members = "$members\\item[$member]\\mbox{}\\\\\n";
         }
         elsif (/^\s*{/) {
             $indoc = 0;
@@ -352,4 +384,30 @@ sub count_brackets {
         }
     }
     return $n;
+}
+
+sub read_member_continuation {
+    local($member) = "";
+    while (<>) {
+        if (/^\s*(.*,)\s*$/) {
+            $member = "$member$1";
+        }
+        elsif (/^\s*(.*){\s*/) {
+            $member = "$member$1";
+            # attempt to skip over simple routines
+            &skip_inlined_routine("{$'");
+            last;
+        }
+        elsif (/^\s*(.*);\s*/) {
+            $member = "$member$1";
+            last;
+        }
+        elsif (/};/) {
+            last;
+        }
+        else {
+            printf "BAD MEMBER CONTINUATION: $_\n";
+        }
+    }
+    return $member;
 }

@@ -10,6 +10,15 @@
 #include <util/state/state.h>
 
 class RefSCDimension;
+//. \clsnm{SCBlockInfo} contains blocking information for the
+//\clsnmref{SCDimension} class.  There are really two ways that it can
+//contain blocking information.  In the first way, a vector of block
+//offsets and block sizes is stored.  The second method is only used by
+//those specializations created by the \clsnm{BlockedSCMatrixKit} class.
+//In this method the blocking information is stored as subdimensions of
+//type \clsnmref{SCDimension}.  If both methods are used, they must be used
+//consistently.  That is, the number, sizes, and order of the blocks must
+//match the number, sizes, and order of the \clsnm{SCDimension} objects.
 class SCBlockInfo: public SavableState {
 #   define CLASSNAME SCBlockInfo
 #   define HAVE_KEYVAL_CTOR
@@ -24,27 +33,44 @@ class SCBlockInfo: public SavableState {
     RefSCDimension *subdims_;
     void init_start();
   public:
-    SCBlockInfo(int n_, int nblocks = 0, const int *blocksizes_ = 0);
+    //. Create a \clsnm{SCBlockInfo} object.
+    SCBlockInfo(int n, int nblocks = 0, const int *blocksizes = 0);
     SCBlockInfo(StateIn&);
     SCBlockInfo(const RefKeyVal& keyval);
+
     ~SCBlockInfo();
     void save_data_state(StateOut&);
-    int equiv(SCBlockInfo *);
+
+    //. Return nonzero if \vrbl{this} is equivalent to \vrbl{bi}.
+    int equiv(SCBlockInfo *bi);
+    //. Return the total number of elements.
     int nelem() const { return n_; }
+    //. Return the number of blocks.
     int nblock() const { return nblocks_; }
+    //. Return the starting index for block \vrbl{i}.
     int start(int i) const { return start_[i]; }
+    //. Return the size of block \vrbl{i}.
     int size(int i) const { return size_[i]; }
+    //. Return the last index $+ 1$ for block \vrbl{i}.
     int fence(int i) const { return start_[i] + size_[i]; }
+
     void elem_to_block(int i, int &block, int &offset);
+
+    //. Retreive subdimension information.
     RefSCDimension subdim(int i);
+    //. Set subdimension information.  The dimension \vrbl{dim} and
+    // index \vrbl{i} must be consistent with the \vrbl{nblocks} and
+    // \vrbl{blocksizes} information given to the constructor.
     void set_subdim(int i, const RefSCDimension &dim);
 
+    //. Print the object to the stream \vrbl{o}.
     void print(ostream&o=cout);
 };
 SavableState_REF_dec(SCBlockInfo);
 
-//. The \srccd{SCDimension} class is used to determine the size and
-//. blocking of matrices.
+//. The \clsnm{SCDimension} class is used to determine the size and
+// blocking of matrices.  The blocking information is stored by
+// an object of class \clsnmref{SCBlockInfo}.
 class SCDimension: public SavableState {
 #   define CLASSNAME SCDimension
 #   define HAVE_KEYVAL_CTOR
@@ -58,13 +84,14 @@ class SCDimension: public SavableState {
     SCDimension(const char* name = 0);
   public:
     //. Create a dimension with an optional name.  The
-    //. name is a copy of the \srccd{'0'} terminated string @var{name}.
+    //. name is a copy of the \srccd{'0'} terminated string \vrbl{name}.
     SCDimension(int n, const char* name = 0);
     SCDimension(const RefSCBlockInfo&, const char *name = 0);
     SCDimension(int n, int nblocks, const int *blocksizes = 0,
                 const char* name = 0);
     SCDimension(const RefKeyVal&);
     SCDimension(StateIn&s);
+
     ~SCDimension();
     void save_data_state(StateOut&);
 
@@ -77,8 +104,10 @@ class SCDimension: public SavableState {
     //. to the constructor, then return \srccd{0}.
     const char* name() const { return name_; }
 
+    //. Return the blocking information for this dimension.
     RefSCBlockInfo blocks() { return blocks_; }
 
+    //. Print information about this dimension to \vrbl{o}.
     void print(ostream&o=cout);
 };
 
@@ -93,9 +122,9 @@ class RefSCDimension: public SSRefSCDimension {
     //. Initializes the dimension pointer to \srccd{0}.  The
     //. reference must be initialized before it is used.
     RefSCDimension();
-    //. Make this and @var{d} refer to the same \clsnmref{SCDimension}.
+    //. Make this and \vrbl{d} refer to the same \clsnmref{SCDimension}.
     RefSCDimension(const RefSCDimension& d);
-    //. Make this refer to @var{d}.
+    //. Make this refer to \vrbl{d}.
     RefSCDimension(SCDimension *d);
 
     RefSCDimension(const DCRefBase&);

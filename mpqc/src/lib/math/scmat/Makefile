@@ -6,6 +6,8 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 
+CLASS2TEXFLAGS = -clssection subsection -clssubsection subsubsection
+
 default:: $(DEPENDINCLUDE)
 
 CXXSRC = dim.cc \

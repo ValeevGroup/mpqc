@@ -95,9 +95,11 @@ A::A(StateIn&s):
 {
   char* junk;
   s.get(d);
-  s.getstring(junk); delete[] junk;
+  s.getstring(junk);
+  delete[] junk;
   s.get(ia);
-  s.getstring(junk); delete[] junk;
+  s.getstring(junk);
+  delete[] junk;
   s.get(array);
 }
 void
@@ -344,11 +346,13 @@ D::_castdown(const ClassDesc*cd)
 }
 #endif // ! NO_VIRTUAL_BASES
 
-#define StateOutType StateOutText
-#define StateInType StateInText
-
-//#define StateOutType StateOutBinXDR
-//#define StateInType StateInBinXDR
+#if 0
+#  define StateOutType StateOutText
+#  define StateInType StateInText
+#else
+#  define StateOutType StateOutBinXDR
+#  define StateInType StateInBinXDR
+#endif
 
 main()
 {
@@ -422,8 +426,10 @@ main()
 
   StateOutType soa("statetest.a.out");
   ra = new A(new PrefixKeyVal("test:object_a",pkv));
+  cout << "  first a" << endl;
   ra->save_object_state(soa);
   soa.forget_references();
+  cout << "  second a" << endl;
   ra->save_object_state(soa);
   soa.flush();
 #ifndef NO_VIRTUAL_BASES
@@ -438,7 +444,10 @@ main()
   cout << " -- restoring state --\n";
 
   StateInType sia("statetest.a.out");
+  cout << "  first a" << endl;
   ra = new A(sia);
+  sia.forget_references();
+  cout << "  second a" << endl;
   ra = new A(sia);
   if (ra.nonnull()) { ra->print(); cout << endl; }
   StateInText si("statetest.out");

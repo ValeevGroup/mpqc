@@ -80,7 +80,7 @@ Quadratic::Quadratic(const Ref<KeyVal>&keyval):
   h0 = matrixkit_->symmmatrix(dim_);
   hguess = matrixkit_->symmmatrix(dim_);
   hguess.assign(0.0);
-  RefSCElementOp op(new SCElementShiftDiagonal(1.0));
+  Ref<SCElementOp> op(new SCElementShiftDiagonal(1.0));
   hguess.element_op(op);
   
   int dim = dimension()->n();
@@ -139,7 +139,7 @@ main()
   Ref<KeyVal> pkv = new PrefixKeyVal(kv,"opt");
 
   for (int i=0; i<pkv->count(); i++) {
-      Ref<Optimize> opt(pkv->describedclassvalue(i));
+      Ref<Optimize> opt; opt << pkv->describedclassvalue(i);
       if (opt.nonnull()) {
           RefSCVector oldx = opt->function()->get_x();
           opt->optimize();

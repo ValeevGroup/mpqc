@@ -5,7 +5,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-SUBDIRS = intv2 dmtqc dmtsym dmtscf force basis integral wfn mpqc mbpt
+SUBDIRS = basis intv2 dmtqc dmtsym dmtscf force wfn mpqc mbpt
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 

@@ -40,6 +40,11 @@ using namespace std;
 using namespace sc;
 using namespace sc::exp;
 
+// Defining REVERSE_ORDERING does the small tasks first.  This would give
+// poorer load balancing and it included only for debugging (in particular,
+// for stressing MPI libraries up front instead of at the end of a run).
+#undef REVERSE_ORDERING
+
 /////////////////////////////////////////////////////////////////
 // Function iquicksort performs a quick sort (larger -> smaller) 
 // of the integer data in item by the integer indices in index;
@@ -174,6 +179,9 @@ DistShellPair::serve_tasks()
     for (R=0; R<=Rmax; R++) {
       cost[index] = bs1_->shell(S).nfunction() * bs2_->shell(R).nfunction() *
 	            bs1_->shell(S).nprimitive() * bs2_->shell(R).nprimitive();
+#ifdef REVERSE_ORDERING
+      cost[index] = - cost[index];
+#endif
       Svec[index] = S;
       Rvec[index] = R;
       Ivec[index] = index;

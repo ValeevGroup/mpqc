@@ -1,0 +1,66 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{SCMatrixKit} Class}
+\label{SCMatrixKit}\index{SCMatrixKit}
+
+The \clsnm{SCMatrixKit} abstract class acts as a factory for producing
+matrices.  By using one of these, the program makes sure that all of the
+matrices are consistent.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{LocalSCMatrixKit} Class}
+\label{LocalSCMatrixKit}\index{LocalSCMatrixKit}
+
+The \clsnm{LocalSCMatrixKit} produces matrices that work in a
+single processor environment.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{ReplSCMatrixKit} Class}
+\label{ReplSCMatrixKit}\index{ReplSCMatrixKit}
+
+The \clsnm{ReplSCMatrixKit} produces matrices that work in a
+many processor environment.  A copy of the entire matrix is stored
+on each node.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{DistSCMatrixKit} Class}
+\label{DistSCMatrixKit}\index{DistSCMatrixKit}
+
+The \clsnm{DistSCMatrixKit} produces matrices that work in a many processor
+environment.  The matrix is distributed across all nodes.  Some debugging
+may be required with this specialization.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{SCDimension} Class}
+\label{SCDimension}\index{SCDimension}
+
+\begin{description}
+  \item[\keywd{n}] This gives size of the dimension.  One of \keywd{n} or
+        \keywd{blocks} is required.
+
+  \item[\keywd{blocks}] The block information for the dimension can be
+        given as a \clsnmref{SCBlockInfo} object.  One of \keywd{n} or
+        \keywd{blocks} is required.
+
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{SCBlockInfo} Class}
+\label{SCBlockInfo}\index{SCBlockInfo}
+
+\begin{description}
+  \item[\keywd{sizes}]  This is a vector giving the size of each
+        subblock.  There is no default.
+
+  \item[\keywd{subdims}] If this vector is given there is must be entry for
+        each entry in the \keywd{sizes} vector.  Each entry is an
+        \clsnmref{SCDimension} object.  The default is to not store
+        subdimension information.
+
+\end{description}

@@ -1,0 +1,615 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{Molecule} Class}\label{Molecule}\index{Molecule}
+
+The \clsnm{Molecule} class contains information about molecules.  It has a
+\clsnmref{KeyVal} constructor that can create a new molecule from either a
+PDB file or from a list of Cartesian coordinates.
+
+The following \clsnmref{ParsedKeyVal} input reads from the PDB
+file \verb|h2o.pdb|:
+\begin{alltt}
+molecule<\clsnmref{Molecule}>: (
+   pdb_file = "h2o.pdb"
+ )
+\end{alltt}
+
+The following input explicitly gives the atom coordinates:
+\begin{alltt}
+molecule<\clsnmref{Molecule}>: (
+    angstrom=yes
+    \{ atom_labels atoms           geometry            \} = \{
+          O1         O   [ 0.000000000 0  0.369372944 ]
+          H1         H   [ 0.783975899 0 -0.184686472 ]
+          H2         H   [-0.783975899 0 -0.184686472 ]
+     \}
+    )
+  )
+\end{alltt}
+The default units are Bohr with can be overridden with
+\verb|angstrom=yes|.  The \verb|atom_labels| array can be
+omitted.  The \verb|atoms| and \verb|geometry| arrays
+are required.
+
+The \clsnmref{Molecule} class has a \clsnmref{PointGroup}
+member object, which also has a \clsnmref{KeyVal} constructor
+that is called when a \clsnmref{Molecule} is made.  The
+following example constructs a molecule with $C_{2v}$ symmetry:
+\begin{alltt}
+molecule<\clsnmref{Molecule}>: (
+    symmetry=c2v
+    angstrom=yes
+    \{ atoms         geometry            \} = \{
+        O   [0.000000000 0  0.369372944 ]
+        H   [0.783975899 0 -0.184686472 ]
+     \}
+    )
+  )
+\end{alltt}
+Only the symmetry unique atoms need can be specified.  Nonunique
+atoms can be given too, however, numerical errors in the
+geometry specification can result in the generation of extra
+atoms so be careful.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{MolecularEnergy} Class}\label{MolecularEnergy}\index{MolecularEnergy}
+
+The \clsnm{MolecularEnergy} abstract class inherits from the
+\clsnmref{Function} class.  It computes the energy of the
+molecule as a function of the geometry.  The coordinate system
+used can be either internal or cartesian.
+
+\begin{description}
+  \item[\keywd{molecule}] A \clsnmref{Molecule} object.  There is no
+    default.
+
+  \item[\keywd{coor}] A \clsnmref{MolecularCoor} that describes the
+    coordinates.  If this is not given cartesian coordinates will be used.
+    For convenience, two keywords needed by the \clsnmref{MolecularCoor}
+    object are automatically provided: \keywd{natom3} and
+    \keywd{matrixkit}.
+
+  \item[\keywd{value\_accuracy}] Sets the accuracy to which values are
+    computed.  The default is 1.0e-6 atomic units.
+
+  \item[\keywd{gradient\_accuracy}] Sets the accuracy to which gradients
+    are computed.  The default is 1.0e-6 atomic units.
+
+  \item[\keywd{hessian\_accuracy}] Sets the accuracy to which hessians are
+    computed.  The default is 1.0e-4 atomic units.
+
+  \item[\keywd{print\_molecule\_when\_changed}] If true, then whenever the
+    molecule's coordinates are updated they will be printed.  The default
+    is true.
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{MolecularCoor} Class}\label{MolecularCoor}\index{MolecularCoor}
+
+The \clsnm{MolecularCoor} abstract class describes the coordinate system
+used to describe a molecule.  It is used to convert a molecule's cartesian
+coordinates to and from this coordinate system.
+
+\begin{description}
+  \item[\keywd{molecule}] A \clsnmref{Molecule} object.  There is no
+    default.
+
+  \item[\keywd{debug}] An integer which, if nonzero, will cause extra
+    output.
+
+  \item[\keywd{matrixkit}] A \clsnmref{SCMatrixKit} object.  It is
+    usually unnecessary to give this keyword.
+
+  \item[\keywd{natom3}] An \clsnmref{SCDimensionObject} for dimension
+    of the vector of cartesian coordinates.  It is
+    usually unnecessary to give this keyword.
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{IntMolecularCoor} Class}\label{IntMolecularCoor}\index{IntMolecularCoor}
+
+The \clsnm{IntMolecularCoor} abstract class inherits from the
+\clsnmref{MolecularCoor} class.  It describes a molecule's coordinates in
+terms of internal coordinates.
+
+\begin{description}
+  \item[\keywd{variable}] Gives a \clsnmref{SetIntCoor} object that
+    specifies the internal coordinates that can be varied. If this is not
+    given, the variable coordinates will be generated.
+
+  \item[\keywd{followed}] Gives a \clsnmref{SetIntCoor} object that
+    specifies coordinates to include in the variable coordinate list.  The
+    remaining coordinates will be automatically generated.  The default is
+    no followed coordinates.
+
+  \item[\keywd{fixed}] Gives a \clsnmref{SetIntCoor} object that specifies
+    the internal coordinates that will be fixed.  The default is no
+    fixed coordinates.
+
+  \item[\keywd{have\_fixed\_values}] If true, then values for the fixed
+    coordinates must be given in \keywd{fixed} and an attempt will be made
+    to displace the initial geometry to the given fixed values. The default
+    is false.
+
+  \item[\keywd{extra\_bonds}] This is only read if the \keywd{generator}
+     keyword is not given.  It is a vector of atom numbers, where elements
+     $(i-1)\times 2 + 1$ and $i\times 2$ specify the atoms which are
+     bound in extra bond $i$.  The \keywd{extra\_bonds} keyword should only
+     be needed for weakly interacting fragments, otherwise all the needed
+     bonds will be found.
+
+  \item[\keywd{generator}] Specifies an \clsnmref{IntCoorGen} object that
+    creates simple, redundant internal coordinates. If this keyword is not
+    given, then a vector giving extra bonds to be added is read from
+    \keywd{extra\_bonds} and this is used to create an
+    \clsnmref{IntCoorGen} object.
+
+  \item[\keywd{decouple\_bonds}] Automatically generated internal
+    coordinates are linear combinations of possibly any mix of simple
+    internal coordinates.  If \keywd{decouple\_bonds} is true, an attempt
+    will be made to form some of the internal coordinates from just stretch
+    simple coordinates.  The default is false.
+
+  \item[\keywd{decouple\_bends}] This is like \keywd{decouple\_bonds}
+    except it applies to the bend-like coordinates.  The default is false.
+
+  \item[\keywd{max\_update\_disp}] The maximum displacement to be used in
+    the displacement to fixed internal coordinates values.  Larger
+    displacements will be broken into several smaller displacements and new
+    coordinates will be formed for each of these displacments. This is only
+    used when \keywd{fixed} and \keywd{have\_fixed\_values} are given.  The
+    default is 0.5.
+
+  \item[\keywd{max\_update\_steps}] The maximum number of steps permitted
+    to convert internal coordinate displacements to cartesian coordinate
+    displacements.  The default is 100.
+               
+  \item[\keywd{update\_bmat}] Displacements in internal coordinates are
+     converted to a cartesian displacements interatively.  If there are
+     large changes in the cartesian coordinates during conversion, then
+     recompute the $B$ matrix, which is using to do the conversion.  The
+     default is false.
+
+  \item[\keywd{only\_totally\_symmetric}] If a simple test reveals that an
+     internal coordinate is not totally symmetric, then it will not be
+     added to the internal coordinate list.  The default is true.
+               
+  \item[\keywd{simple\_tolerance}] The internal coordinates are formed as
+     linear combinations of simple, redundant internal coordinates.
+     Coordinates with coefficients smaller then \keywd{simple\_tolerance}
+     will be omitted. The default is 1.0e-3.
+
+  \item[\keywd{cartesian\_tolerance}] The tolerance for conversion of
+     internal coordinate displacements to cartesian displacements.  The
+     default is 1.0e-12.
+               
+  \item[\keywd{form:print\_simple}] Print the simple internal coordinates.
+     The default is false.
+               
+  \item[\keywd{form:print\_variable}] Print the variable internal
+     coordinates.  The default is false.
+               
+  \item[\keywd{form:print\_constant}] Print the constant internal
+     coordinates.  The default is false.
+               
+  \item[\keywd{scale\_bonds}] Obsolete.  The default value is 1.0.
+
+  \item[\keywd{scale\_bends}] Obsolete.  The default value is 1.0.
+               
+  \item[\keywd{scale\_tors}] Obsolete.  The default value is 1.0.
+
+  \item[\keywd{scale\_outs}] Obsolete.  The default value is 1.0.
+
+  \item[\keywd{symmetry\_tolerance}] Obsolete.  The default is 1.0e-5.
+
+  \item[\keywd{coordinate\_tolerance}] Obsolete.  The default is 1.0e-7.
+
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{SymmMolecularCoor} Class}\label{SymmMolecularCoor}\index{SymmMolecularCoor}
+
+The \clsnm{SymmMolecularCoor} class derives from
+\clsnmref{IntMolecularCoor}.  It provides a unique set of totally symmetric
+internal coordinates.  Giving an \clsnmref{MolecularEnergy} object a
+\keywd{coor} is usually the best way to optimize a molecular structure.
+However, for some classes of molecules \clsnm{SymmMolecularCoor} doesn't
+work very well.  For example, enediyne can cause problems.  In these cases,
+cartesian coordinates (obtained by not giving the
+\clsnmref{MolecularEnergy} object the \keywd{coor} keyword) might be better
+or you can manually specify the coordinates that the
+\clsnm{SymmMolecularCoor} object uses with the \keywd{variable} keyword
+(see the \clsnmref{IntMolecularCoor} class description).
+
+\begin{description}
+  \item[\keywd{change\_coordinates}] If true, the quality of the internal
+    coordinates will be checked periodically and if they are beginning to
+    become linearly dependent a new set of internal coordinates will be
+    computed.  The default is false.
+
+  \item[\keywd{max\_kappa2}] A measure of the quality of the internal
+    coordinates.  Values of the 2-norm condition, $\kappa_2$, larger than
+    \keywd{max\_kappa2} are considered linearly dependent.  The default is
+    10.0.
+
+  \item[\keywd{transform\_hessian}] If true, the hessian will be transformed
+    every time the internal coordinates are formed.  The default is true.
+
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{RedundMolecularCoor} Class}\label{RedundMolecularCoor}\index{RedundMolecularCoor}
+
+The \clsnm{RedundMolecularCoor} class derives from
+\clsnmref{IntMolecularCoor}.  It provides a redundant set of simple
+internal coordinates.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{IntCoorGen} Class}\label{IntCoorGen}\index{IntCoorGen}
+
+The \clsnm{IntCoorGen} class is used to construct a set of internal
+coordinates for a molecule.
+
+\begin{description}
+  \item[\keywd{molecule}] A \clsnmref{Molecule} object.  There is no
+    default.
+
+  \item[\keywd{radius\_scale\_factor}] If the distance between two atoms is
+      less than the radius scale factor times the sum of the atoms' atomic
+      radii, then a bond is placed between the two atoms for the purpose of
+      finding internal coordinates.  The default is 1.1.
+
+  \item[\keywd{linear\_bend\_threshold}] A bend angle greater than 180 -
+      \keywd{linear\_tors\_threshold} degrees is considered a linear
+      bend. The default is 5.0.
+
+  \item[\keywd{linear\_tors\_threshold}] The angles formed by atoms a-b-c and
+      b-c-d are checked for near linearity.  An angle greater than 180 -
+      \keywd{linear\_tors\_threshold} degrees the torsion is classified
+      as a linear torsion. The default is 5.0.
+
+  \item[\keywd{linear\_bend}] Generate \clsnmref{BendSimpleCo} objects
+      to describe linear bends.  The default is false.
+
+  \item[\keywd{linear\_lbend}] Generate pairs of \clsnmref{LinIPSimpleCo}
+      and \clsnmref{LinIPSimpleCo} objects to describe linear bends.  The
+      default is true.
+
+  \item[\keywd{linear\_tors}] Generate \clsnmref{TorsSimpleCo} objects
+      to described linear torsions.  The default is false.
+
+  \item[\keywd{linear\_stors}] Generate \clsnmref{ScaledTorsSimpleCo}
+      objects to described linear torsions.  The default is true.
+
+
+  \item[\keywd{extra\_bonds}] This is a vector of atom numbers, where
+     elements $2 (i-1) + 1$ and $2 i$ specify the atoms which
+     are bound in extra bond $i$.  The \keywd{extra\_bonds} keyword should
+     only be needed for weakly interacting fragments, otherwise all the
+     needed bonds will be found.
+
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{IntCoor} Class}\label{IntCoor}\index{IntCoor}
+
+The \clsnm{IntCoor} abstract class describes an internal coordinate of a
+molecule.  The following keywords are recognized in the input:
+
+\begin{description}
+  \item[\keywd{label}] A label for the coordinate using only to
+     identify the coordinate to the user in printouts.  The default
+     is no label.
+
+  \item[\keywd{value}] A value for the coordinate.  In the way that
+     coordinates are usually used, the default is to compute a value
+     from the cartesian coordinates in a \clsnmref{Molecule} object.
+
+  \item[\keywd{unit}] The unit in which the value is given.  This can be
+     \keywd{bohr}, \keywd{anstrom}, \keywd{radian}, and \keywd{degree}.
+     The default is \keywd{bohr} for lengths and \keywd{radian} for angles.
+
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{SimpleCo} Class}\label{SimpleCo}\index{SimpleCo}
+
+The \clsnm{SimpleCo} abstract class describes a simple internal coordinate
+of a molecule.  The number atoms involved can be 2, 3 or 4 and is
+determined by the specialization of \clsnm{SimpleCo}.
+
+There are three ways to specify the atoms involved in the internal
+coordinate.  The first way is a shorthand notation, just a vector of a
+label followed by the atom numbers (starting at 1) is given.  For example,
+a stretch between two atoms, 1 and 2, is given, in the
+\clsnmref{ParsedKeyVal} format, as
+\begin{alltt}
+  stretch<\clsnmref{StreSimpleCo}>: [ R12 1 2 ]
+\end{alltt}
+
+The other two ways to specify the atoms are more general.  With them, it is
+possible to give parameters for the \clsnm{IntCoor} base class (and thus
+give the value of the coordinate).  In the first of these input formats, a
+vector associated with the keyword \keywd{atoms} gives the atom numbers.
+The following specification for \keywd{stretch} is equivalent to that
+above:
+\begin{alltt}
+  stretch<\clsnmref{StreSimpleCo}>:( label = R12 atoms = [ 1 2 ] )
+\end{alltt}
+
+In the second, a vector, \keywd{atom\_labels}, is given along with a
+\clsnmref{Molecule} object.  The atom labels are looked up in the
+\clsnmref{Molecule} object to find the atom numbers.
+The following specification for \keywd{stretch} is equivalent to those
+above:
+\begin{alltt}
+  molecule<\clsnmref{Molecule}>: (
+    \{ atom_labels atoms   geometry      \} = \{
+          H1         H   [ 1.0 0.0 0.0 ]
+          H2         H   [-1.0 0.0 0.0 ] \} )
+  stretch<\clsnmref{StreSimpleCo}>:( label = R12
+                          atom_labels = [ H1 H2 ]
+                          molecule = $molecule )
+\end{alltt}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{StreSimpleCo} Class}\label{StreSimpleCo}\index{StreSimpleCo}
+
+The \clsnm{StreSimpleCo} class describes an stretch internal coordinate of a
+molecule.  The input is described in the documentation of its parent
+class \clsnmref{SimpleCo}.
+
+Designating the two atoms as $a$ and $b$ and their cartesian positions as
+$\bar{r}_a$ and $\bar{r}_b$, the value of the coordinate, $r$, is
+\[ r = \| \bar{r}_a - \bar{r}_b \| \]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{BendSimpleCo} Class}\label{BendSimpleCo}\index{BendSimpleCo}
+
+The \clsnm{BendSimpleCo} class describes an bend internal coordinate of a
+molecule.  The input is described in the documentation of its parent
+class \clsnmref{SimpleCo}.
+
+Designating the three atoms as $a$, $b$, and $c$ and their cartesian
+positions as $\bar{r}_a$, $\bar{r}_b$, and $\bar{r}_c$, the value of the
+coordinate, $\theta$, is given by
+\begin{eqnarray*}
+ \bar{u}_{ab} &=& \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\\
+ \bar{u}_{cb} &=& \frac{\bar{r}_c - \bar{r}_b}{\| \bar{r}_c - \bar{r}_b \|}\\
+ \theta       &=& \arccos ( \bar{u}_{ab} \cdot \bar{u}_{cb} )
+\end{eqnarray*}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{TorsSimpleCo} Class}\label{TorsSimpleCo}\index{TorsSimpleCo}
+
+The \clsnm{TorsSimpleCo} class describes an torsion internal coordinate of a
+molecule.  The input is described in the documentation of its parent
+class \clsnmref{SimpleCo}.
+
+Designating the four atoms as $a$, $b$, $c$, and $d$ and their cartesian
+positions as $\bar{r}_a$, $\bar{r}_b$, $\bar{r}_c$, and $\bar{r}_d$, the
+value of the coordinate, $\tau$, is given by
+\begin{eqnarray*}
+ \bar{u}_{ab} &=& \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\\
+ \bar{u}_{cb} &=& \frac{\bar{r}_c - \bar{r}_b}{\| \bar{r}_c - \bar{r}_b \|}\\
+ \bar{u}_{cd} &=& \frac{\bar{r}_c - \bar{r}_d}{\| \bar{r}_c - \bar{r}_b \|}\\
+ \bar{n}_{abc}&=& \frac{\bar{u}_{ab} \times \bar{u}_{cb}}
+                       {\| \bar{u}_{ab} \times \bar{u}_{cb} \|} \\
+ \bar{n}_{bcd}&=& \frac{\bar{u}_{cd} \times \bar{u}_{bc}}
+                       {\| \bar{u}_{cd} \times \bar{u}_{bc} \|} \\
+ s            &=& \cases{1, &if $(\bar{n}_{abc}\times\bar{n}_{bcd})
+                                  \cdot \bar{u}_{cb} > 0$;\cr
+                         -1, &otherwise.\cr}\\
+ \tau       &=& s \arccos ( - \bar{n}_{abc} \cdot \bar{n}_{bcd} )
+\end{eqnarray*}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{OutSimpleCo} Class}\label{OutSimpleCo}\index{OutSimpleCo}
+
+The \clsnm{OutSimpleCo} class describes an out-of-plane internal coordinate
+of a molecule.  The input is described in the documentation of its parent
+class \clsnmref{SimpleCo}.
+
+Designating the four atoms as $a$, $b$, $c$, and $d$ and their cartesian
+positions as $\bar{r}_a$, $\bar{r}_b$, $\bar{r}_c$, and $\bar{r}_d$, the
+value of the coordinate, $\tau$, is given by
+\begin{eqnarray*}
+ \bar{u}_{ab} &=& \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\\
+ \bar{u}_{cb} &=& \frac{\bar{r}_b - \bar{r}_c}{\| \bar{r}_c - \bar{r}_b \|}\\
+ \bar{u}_{db} &=& \frac{\bar{r}_c - \bar{r}_d}{\| \bar{r}_c - \bar{r}_b \|}\\
+ \bar{n}_{bcd}&=& \frac{\bar{u}_{cb} \times \bar{u}_{db}}
+                       {\| \bar{u}_{cb} \times \bar{u}_{db} \|} \\
+ \phi       &=& \arcsin ( \bar{u}_{ab} \cdot \bar{n}_{bcd} )
+\end{eqnarray*}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{LinIPSimpleCo} Class}\label{LinIPSimpleCo}\index{LinIPSimpleCo}
+
+The \clsnm{LinIPSimpleCo} class describes an in-plane component of a linear
+bend internal coordinate of a molecule.  The input is described in the
+documentation of its parent class \clsnmref{SimpleCo}.  A vector,
+$\bar{u}$, given as the keyword \keywd{u}, that is not colinear with either
+$\bar{r}_a - \bar{r}_b$ or $\bar{r}_b - \bar{r}_c$ must be provided, where
+$\bar{r}_a$, $\bar{r}_b$, and $\bar{r}_c$ are the positions of the first,
+second, and third atoms, respectively.
+
+  Usually, \clsnmref{LinIPSimpleCo} is used with a corresponding
+\clsnmref{LinOPSimpleCo}, which is given exactly the same \keywd{u}.
+
+Designating the three atoms as $a$, $b$, and $c$ and their cartesian
+positions as $\bar{r}_a$, $\bar{r}_b$, and $\bar{r}_c$, the value of the
+coordinate, $\theta_i$, is given by
+\begin{eqnarray*}
+ \bar{u}_{ab} &=& \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\\
+ \bar{u}_{cb} &=& \frac{\bar{r}_b - \bar{r}_c}{\| \bar{r}_c - \bar{r}_b \|}\\
+ \theta_i     &=& \pi - \arccos ( \bar{u}_{ab} \cdot \bar{u} )
+                      - \arccos ( \bar{u}_{cb} \cdot \bar{u} )
+\end{eqnarray*}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{LinOPSimpleCo} Class}\label{LinOPSimpleCo}\index{LinOPSimpleCo}
+
+The \clsnm{LinOPSimpleCo} class describes an out-of-plane component of a
+linear bend internal coordinate of a molecule.  The input is described in
+the documentation of its parent class \clsnmref{SimpleCo}.  A vector,
+$\bar{u}$, given as the keyword \keywd{u}, that is not colinear with either
+$\bar{r}_a - \bar{r}_b$ or $\bar{r}_b - \bar{r}_c$ must be provided, where
+$\bar{r}_a$, $\bar{r}_b$, and $\bar{r}_c$ are the positions of the first,
+second, and third atoms, respectively.
+
+  Usually, \clsnmref{LinOPSimpleCo} is used with a corresponding
+\clsnmref{LinIPSimpleCo}, which is given exactly the same \keywd{u}.
+
+Designating the three atoms as $a$, $b$, and $c$ and their cartesian
+positions as $\bar{r}_a$, $\bar{r}_b$, and $\bar{r}_c$, the value of the
+coordinate, $\theta_o$, is given by
+\begin{eqnarray*}
+ \bar{u}_{ab} &=& \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\\
+ \bar{u}_{cb} &=& \frac{\bar{r}_b - \bar{r}_c}{\| \bar{r}_c - \bar{r}_b \|}\\
+ \bar{n}      &=& \frac{\bar{u} \times \bar{u}_{ab}}
+                       {\| \bar{u} \times \bar{u}_{ab} \|}\\
+ \theta_o     &=& \pi - \arccos ( \bar{u}_{ab} \cdot \bar{n} )
+                      - \arccos ( \bar{u}_{cb} \cdot \bar{n} )
+\end{eqnarray*}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{ScaledTorsSimpleCo} Class}\label{ScaledTorsSimpleCo}\index{ScaledTorsSimpleCo}
+
+The \clsnm{ScaledTorsSimpleCo} class describes an scaled torsion internal
+coordinate of a molecule.  The scaled torsion is more stable that ordinary
+torsions (see the \clsnmref{TorsSimpleCo} class) in describing situations
+where one of the torsions plane's is given by three near linear atoms.
+
+Designating the four atoms as $a$, $b$, $c$, and $d$ and their cartesian
+positions as $\bar{r}_a$, $\bar{r}_b$, $\bar{r}_c$, and $\bar{r}_d$, the
+value of the coordinate, $\tau_s$, is given by
+\begin{eqnarray*}
+ \bar{u}_{ab} &=& \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\\
+ \bar{u}_{cb} &=& \frac{\bar{r}_c - \bar{r}_b}{\| \bar{r}_c - \bar{r}_b \|}\\
+ \bar{u}_{cd} &=& \frac{\bar{r}_c - \bar{r}_d}{\| \bar{r}_c - \bar{r}_b \|}\\
+ \bar{n}_{abc}&=& \frac{\bar{u}_{ab} \times \bar{u}_{cb}}
+                       {\| \bar{u}_{ab} \times \bar{u}_{cb} \|} \\
+ \bar{n}_{bcd}&=& \frac{\bar{u}_{cd} \times \bar{u}_{cb}}
+                       {\| \bar{u}_{cd} \times \bar{u}_{cb} \|} \\
+ s            &=& \cases{-1, &if $(\bar{n}_{abc}\times\bar{n}_{bcd})
+                                  \cdot \bar{u}_{cb} > 0$;\cr
+                         1, &otherwise.\cr}\\
+ \tau_s       &=& \sqrt{\left(1-(\bar{u}_{ab} \cdot \bar{u}_{cb}\right)^2)
+                        \left(1-(\bar{u}_{cb} \cdot \bar{u}_{cd}\right)^2)}
+                  \arccos ( - \bar{n}_{abc} \cdot \bar{n}_{bcd} )
+\end{eqnarray*}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{SumIntCoor} Class}\label{SumIntCoor}\index{SumIntCoor}
+
+The \clsnm{SumIntCoor} class specifies a linear combination of
+\clsnmref{IntCoor} objects.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{SetIntCoor} Class}\label{SetIntCoor}\index{SetIntCoor}
+
+The \clsnm{SetIntCoor} class describes a set of internal coordinates.  It
+can automatically generate these coordinates using a integral coordinate
+generator object (see the \clsnmref{IntCoorGen} class) or the internal
+coordinates can be explicity given.  Internal coordinate classes include:
+\clsnmref{SumIntCoor}, \clsnmref{StreSimpleCo}, \clsnmref{BendSimpleCo},
+\clsnmref{LinIPSimpleCo}, \clsnmref{LinOPSimpleCo},
+\clsnmref{TorsSimpleCo}, \clsnmref{ScaledTorsSimpleCo}, and
+\clsnmref{OutSimpleCo}.
+
+\begin{description}
+  \item[\keywd{generator}] A \clsnmref{IntCoorGen} object that will be
+    used to generate the internal coordinates.
+
+  \item[\vrbl{i}] A sequence of integer keywords, all $i$ for 0 $\leq$
+    \vrbl{i} $<$ $n$, can be assign to \clsnmref{IntCoor} objects.
+
+\end{description}
+
+The following is a sample \clsnmref{ParsedKeyVal} input for
+a \clsnmref{SetIntCoor} object.
+\begin{alltt}
+  setintcoor<\clsnmref{SetIntCoor}>: [
+    <\clsnmref{SumIntCoor}>: (
+      coor: [
+        <\clsnmref{StreSimpleCo}>:( atoms = [ 1 2 ] )
+        <\clsnmref{StreSimpleCo}>:( atoms = [ 2 3 ] )
+        ]
+      coef = [ 1.0 1.0 ]
+      )
+    <\clsnmref{BendSimpleCo}>:( atoms = [ 1 2 3 ] )
+  ]
+\end{alltt}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{MolecularFrequencies} Class}\label{MolecularFrequencies}\index{MolecularFrequencies}
+
+The \clsnm{MolecularFrequencies} class is used to generate vibrational
+frequencies and compute thermodynamic information for a molecule.
+
+\begin{description}
+  \item[\keywd{mole}] A \clsnmref{MolecularEnergy} object.  If this is not
+    given then \keywd{molecule} must be given.
+
+  \item[\keywd{molecule}] A \clsnmref{Molecule} object.  If this is not
+    given than \keywd{mole} must be given.
+
+  \item[\keywd{debug}] An integer which, if nonzero, will cause extra
+    output.
+
+  \item[\keywd{displacement}] The amount that coordinates will be
+    displaced.  The default is 0.001.
+
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{MolEnergyConvergence} Class}\label{MolEnergyConvergence}\index{MolEnergyConvergence}
+
+The \clsnm{MolEnergyConvergence} class derives from the
+\clsnmref{Convergence} class.  The \clsnm{MolEnergyConvergence} class
+allows the user to request that cartesian coordinates be used in evaluating
+the convergence criteria.  This is useful, since the internal coordinates
+can be somewhat arbitary.  If the optimization is constrained, then the
+fixed internal coordinates will be projected out of the cartesian
+gradients.  The input is similar to that for \clsnmref{Convergence} class
+with the exception that giving none of the convergence criteria keywords is
+the same as providing the following input:
+\begin{alltt}
+  conv<\clsnm{MolEnergyConvergence}>: (
+    max_disp = 1.0e-4
+    max_grad = 1.0e-4
+    graddisp = 1.0e-4
+  )
+\end{alltt}
+
+For \clsnm{MolEnergyConverence} to work, the \clsnmref{Function} object
+given to the \clsnmref{Optimizer} object must derive from
+\clsnmref{MolecularEnergy}.
+
+The other input parameter is listed below:
+\begin{description}
+  \item[\keywd{cartesian}] If true, cartesian displacements and gradients
+    will be compared to the convergence criteria.  The default is true.
+
+\end{description}

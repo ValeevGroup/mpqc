@@ -1,0 +1,172 @@
+
+\chapter{MPQC Input}
+\index{input}
+
+MPQC is an object-oriented program that directly allows the user to specify
+objects that MPQC then manipulates to obtain energies, properties, etc.
+Thus, the input may seem a bit complex to the beginner; however, many
+calculations will quite similar to the examples given later in this
+chapter.  The best way to get started is to use one of the example input
+files and modify it to meet your needs.
+
+MPQC starts off by creating a
+\hyperref{\clsnm{ParsedKeyVal}}
+         {\clsnm{ParsedKeyVal} (see Section~}
+         {)}
+         {ParsedKeyVal}
+object that parses the input file specified on the command line.
+It is the \clsnm{ParsedKeyVal} object that dictates the format
+of the input file.  It is basically a free format input that
+associates keywords and logical groupings of keywords with
+values.  The values can be scalars, arrays, or objects.
+
+The keywords recognized by \exenm{mpqc} begin with either an
+{\ttfamily mpqc}
+or {\ttfamily default} prefix.  That is, they
+must be nested between an {\ttfamily mpqc:(} and a {\ttfamily )}.
+Alternately, each keyword can be prefixed by {\ttfamily mpqc:}.
+The primary keywords are given below.  Some of the keywords
+specify objects, in which case the object will require more
+\clsnmref{KeyVal} input.  These objects are created from the
+input by using their \clsnmref{KeyVal} constructors, which
+are documented in
+\begin{latexonly}
+Chapters~\ref{firstclasschapt} through~\ref{lastclasschapt}.
+\end{latexonly}
+\begin{htmlonly}
+several chapters that follow.
+\end{htmlonly}
+
+\begin{description}
+\item[{\ttfamily mole}] This is the most important keyword for
+        \exenm{mpqc}.  It specifies the \clsnmref{MolecularEnergy} object.
+        This is an object that knows how to compute the energy of a
+        molecule.
+\item[{\ttfamily opt}] This keyword must be specified for optimizations.
+        It specifies an \clsnmref{Optimizer} object.
+\item[{\ttfamily freq}] This keyword must be specified to compute frequencies.
+        It specifies an \clsnmref{MolecularFrequency} object.
+\item[{\ttfamily checkpoint}] The value of this keyword is boolean.  If
+        true the calculation will be checkpointed.  The default is to
+        checkpoint.
+\item[{\ttfamily restart}] The value of this keyword is boolean.  If true
+        \exenm{mpqc} will attempt to restart the calculation.  If the
+        checkpoint file is not found, the calculation will continue as if
+        the value were false. The default is true.
+\item[{\ttfamily do\_energy}] The value of this keyword is boolean.  If
+        true a single point energy calculation will be done for the
+        \clsnmref{MolecularEnergy} object given with the \ttfamily{mole}
+        keyword.  The default is true.
+\item[{\ttfamily do\_gradient}] The value of this keyword is boolean.  If
+        true a single point gradient calculation will be done for the
+        \clsnmref{MolecularEnergy} object given with the \ttfamily{mole}
+        keyword.  The default is false.
+\item[{\ttfamily optimize}] The value of this keyword is boolean.  If
+        true and the \ttfamily{opt} keyword was set to a valid value,
+        then an optimization will be performed.  The default is true.
+\item[{\ttfamily write\_pdb}] The value of this keyword is boolean.  If
+        true a PDB file with the molecular coordinates will be written.
+\item[{\ttfamily filename}] The value of this keyword is a string that
+        gives a name from which checkpoint and other filenames are
+        constructed.  The default is the basename of the input file.
+\end{description}
+
+There also some utility keywords that tell mpqc some technical
+details about how to do the calculation:
+\begin{description}
+\item[{\ttfamily message}]
+        This optional keyword gives a \clsnmref{MessageGrp} object
+        that sets up MPQC for parallel processing.  The default
+        is a \clsnmref{ProcMessageGrp} that runs MPQC on a single
+        processor.  If another \clsnmref{MessageGrp} is used because
+        of command line options or due to the environment in which MPQC
+        is run, then this keyword may be ignored.
+        See \hyperref{the chapter on running mpqc}
+                     {Chapter~}
+                     {}
+                     {running mpqc}
+        for other ways to specify the \clsnmref{MessageGrp} object.
+\item[{\ttfamily debug}]
+        This optional keyword gives a \clsnmref{Debugger} object
+        which can used to help find the problem if MPQC encounters
+        a catastrophic error.
+\item[{\ttfamily matrixkit}]
+        This optional keyword gives a \clsnmref{SCMatrixKit} specialization
+        which is used to produce matrices of the desired type.
+        The default is a \clsnmref{ReplSCMatrixKit} which replicates
+        matrices on all of the nodes.
+\end{description}
+
+\input{util/keyval/doc/ParsedKeyVal.doc.tex}
+
+\section{Sample Input Files}
+
+The easiest way to get started with \exenm{mpqc} is to start with
+one of sample inputs that most nearly matches your problem.  All
+of the samples inputs shown here can be found in the directory
+\filnm{src/bin/mpqc/samples}.
+
+\subsection{SCF Energy}
+\index{SCF!example}
+\index{examples!SCF}
+
+The following input will compute the SCF energy of water.
+
+\input{scf.in.tex}
+
+\subsection{MP2 Energy}
+\index{MP2!example}
+\index{examples!MP2}
+
+The following input will compute the MP2 energy of water.
+
+\input{mp2.in.tex}
+
+\subsection{SCF Optimization}
+\index{optimization!example}
+\index{examples!optimization}
+
+The following input will optimize the geometry of water using
+the quasi-newton method.
+
+\input{scfopt.in.tex}
+
+\subsection{SCF Frequencies}
+\index{frequencies!example}
+\index{examples!frequencies}
+
+The following input will compute SCF frequencies by finite
+displacements.  A thermodynamic analysis will also be
+performed.  If optimization input is also provided, then the
+optimization will be run first, then the frequencies.
+
+\input{scffreq.in.tex}
+
+\subsection{Giving Coordinates and a Guess Hessian}
+\index{fixed coordinates!example}
+\index{examples!fixed coordinates}
+\index{guess hessian!example}
+\index{examples!guess hessian}
+\index{coordinates!example}
+\index{examples!coordinates}
+
+The following example shows several features that are really independent.
+The variable coordinates are explicitly given, rather than generated
+automatically.  This is especially useful when a guess hessian is to be
+provided, as it is here.  This hessian, as given by the user, is not
+complete and the \clsnmref{QNewtonOpt} object will fill in the missing
+values using a guess the hessian provided by the \clsnmref{MolecularEnergy}
+object.  Also, fixed coordinates are given in this sample input.
+
+\input{mancoor.in.tex}
+
+\subsection{Optimizations with Hydrogen Bonds}
+\index{hydrogen bonds!example}
+\index{examples!hydrogen bonds}
+
+The automatic internal coordinate generator will fail if it cannot find
+enough redundant internal coordinates.  In this case, the internal
+coordinate generator must be explicitly created in the input and given
+extra connectivity information, as is shown below.
+
+\input{hbondopt.in.tex}

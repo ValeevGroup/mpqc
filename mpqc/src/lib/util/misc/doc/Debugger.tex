@@ -1,6 +1,6 @@
 
-\clssection{Debugger}
-\index{Debugger}
+\section{The \clsnm{Debugger} Class}
+\label{Debugger}\index{Debugger}
 
 The \clsnm{Debugger} class describes what should be done when
 a catastrophic error causes unexpected program termination.
@@ -10,46 +10,34 @@ showing roughly where the program died.  These attempts could
 just complicate matters more if the program has gotten into
 a peculiar enough state.
 
-Table~\ref{debugger:keyval} shows the \clsnm{KeyVal} input parameters
-for \clsnm{Debugger}.
+The \clsnm{KeyVal} input parameters for \clsnm{Debugger} are given
+below.
 
-\begin{table}
-\caption{\clsnmref{KeyVal} Input for \clsnm{Debugger}}
-\begin{center}
-\begin{tabular}{lp{2.5in}p{1in}}
-  \multicolumn{1}{c}{Keyword}
-     & \multicolumn{1}{c}{Meaning}
-     & \multicolumn{1}{c}{Default} \\
- \verb|debug|
-        & Try to start a debugger when an error occurs.  Doesn't
-        work on all machines.
-        & \verb|yes|, if possible \\
- \verb|traceback|
-        & Try to print out a traceback extracting return addresses
-        from the call stack.  Doesn't work on most machines.
-        & \verb|yes|, if possible \\
- \verb|exit|
-        & Exit on errors.
-        & \verb|yes| \\
- \verb|wait_for_debugger|
-        & When starting a debugger go into an infinite loop
-        to give the debugger a chance to attach to the process.
-        & \verb|yes| \\
- \verb|sleep|
-        & When starting a debugger wait this many seconds
-        to give the debugger a chance to attach to the process.
-        & \verb|0| \\
- \verb|handle_defaults|
-        & Handle a standard set of signals such as SIGBUS, SIGSEGV, etc.
-        & \verb|yes| \\
- \verb|prefix|
-        & Gives a string that is printed before each line
-        that is printed by \clsnm{Debugger}.
-        & empty \\
- \verb|cmd|
-        & Gives a command to be executed to start the debugger.
-        & varies with machine
-\end{tabular}
-\end{center}
-\label{debugger:keyval}
-\end{table}
+\begin{description}
+ \item[\keywd{debug}] Try to start a debugger when an error occurs.
+        Doesn't work on all machines. The default is true, if possible.
+
+ \item[\keywd{traceback}] Try to print out a traceback extracting return
+        addresses from the call stack.  Doesn't work on most machines.  The
+        default is true, if possible.
+
+ \item[\keywd{exit}] Exit on errors.  The default is true.
+
+ \item[\keywd{wait\_for\_debugger}] When starting a debugger go into an
+        infinite loop to give the debugger a chance to attach to the
+        process.  The default is true.
+
+ \item[\keywd{sleep}] When starting a debugger wait this many seconds to
+        give the debugger a chance to attach to the process.  The default
+        is 0.
+
+ \item[\keywd{handle\_defaults}] Handle a standard set of signals such as
+        SIGBUS, SIGSEGV, etc.  The default is true.
+
+ \item[\keywd{prefix}] Gives a string that is printed before each line that
+        is printed by \clsnm{Debugger}. The default is nothing.
+
+ \item[\keywd{cmd}] Gives a command to be executed to start the debugger.
+        The default varies with machine.
+
+\end{description}

@@ -53,6 +53,22 @@ sub do_cmd_exenm {
     join('',"<tt>",$&,"<\/tt>",$rest);
 }
 
+sub do_cmd_type {
+    local($_) = @_;
+    local($rest) = $_;
+    $rest =~ s/$next_pair_pr_rx//o;
+    local($match) = $&;
+    join('',"<tt>",$&,"<\/tt>",$rest);
+}
+
+sub do_cmd_keywd {
+    local($_) = @_;
+    local($rest) = $_;
+    $rest =~ s/$next_pair_pr_rx//o;
+    local($match) = $&;
+    join('',"<tt>",$&,"<\/tt>",$rest);
+}
+
 sub do_cmd_filnm {
     local($_) = @_;
     local($rest) = $_;

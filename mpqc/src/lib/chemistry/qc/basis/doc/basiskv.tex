@@ -1,0 +1,105 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{GaussianBasisSet} Class}
+\label{GaussianBasisSet}\index{GaussianBasisSet}
+
+The \clsnm{GaussianBasisSet} class is used describe a
+basis set atomic composed of atomic gaussian orbitals.
+
+\begin{description}
+  \item[\keywd{molecule}] The gives a \clsnmref{Molecule} object.
+     The is no default.
+
+  \item[\keywd{puream}] If this boolean parameter is true then
+     5D, 7F, etc. will be used.  Otherwise all cartesian functions
+     will be used.  The default depends on the particular basis set.
+
+  \item[\keywd{name}] This is a string giving the name of the basis set.
+     Table~\ref{basissets} gives some of the recognized basis set names.
+     It may be necessary to put the name in double quotes. There is no
+     default.
+
+  \item[\keywd{basis}] This is a vector of basis set names that can give a
+     different basis set to each atom in the molecule.  If the
+     \keywd{element} vector is given, then it gives different basis sets
+     to different elements.  The default is to give every atom the
+     basis set specified in \keywd{name}.
+
+  \item[\keywd{element}] This is a vector of elements.  If it is given
+     then it must have the same number of entries as the \keywd{basis}
+     vector.
+
+  \item[\keywd{basisdir}] A string giving a directory where basis
+     set data files are to be sought.  See the text below for a
+     complete description of what directors are consulted.
+
+  \item[\keywd{basisfiles}] Each keyword in this vector of files is
+     appended to the directory specified with \keywd{basisdir} and basis
+     set data is read from them.
+
+  \item[\keywd{matrixkit}] Specifies a \clsnmref{SCMatrixKit} object.
+     It is usually not necessary to give this keyword, as the default
+     action should get the correct \clsnmref{SCMatrixKit}.
+
+\end{description}
+
+Several files directories are checked for basis set data.  First, basis
+sets can be given by the user in the \keywd{basis} section at the top level
+of the main input file.  Next, if a path is given with the \keywd{basisdir}
+keyword, then all of the files given with the \keywd{basisfiles} keyword
+are read in after appending their names to the value of \keywd{basisdir}.
+Basis sets can be given in these files in the \keywd{basis} section at the
+top level as well.  If the named basis set still cannot be found, then
+\clsnm{GaussianBasisSet} will try convert the basis set name to a file name
+and check first in the directory given by \keywd{basisdir}.  Next it checks
+for the environment variable \verb|SCLIBDIR|.  If it is set it will look
+for the basis file in \filnm{\$SCLIBDIR/basis}.  Otherwise it will look in
+the source code distribution in the directory \filnm{SC/lib/basis}.  If the
+executable has changed machines or the source code has be moved, then it
+may be necessary to copy the library files to your machine and set the
+\verb|SCLIBDIR| environmental variable.
+
+\begin{table}
+\caption{Available Basis Sets}
+\begin{center}
+\begin{tabular}{l}
+  \multicolumn{1}{c}{Basis Set} \\
+ \keywd{STO-2G} \\
+ \keywd{STO-3G} \\
+ \keywd{STO-6G} \\
+ \keywd{3-21G} \\
+ \keywd{3-21G*} \\
+ \keywd{3-21++G} \\
+ \keywd{3-21++G*} \\
+ \keywd{4-31G} \\
+ \keywd{4-31G*} \\
+ \keywd{4-31G**} \\
+ \keywd{6-31G} \\
+ \keywd{6-31G*} \\
+ \keywd{6-31G**} \\
+ \keywd{6-31+G*} \\
+ \keywd{6-31++G} \\
+ \keywd{6-31++G*} \\
+ \keywd{6-311G} \\
+ \keywd{6-311G*} \\
+ \keywd{6-311G**} \\
+ \keywd{6-311++G**} \\
+ \keywd{cc-pVDZ} \\
+ \keywd{cc-pVTZ} \\
+ \keywd{cc-pVQZ} \\
+ \keywd{aug-cc-pVDZ} \\
+ \keywd{aug-cc-pVTZ} \\
+ \keywd{aug-cc-pVQZ} \\
+\end{tabular}
+\end{center}
+\label{basissets}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{Integral} Class}
+\label{Integral}\index{Integral}
+
+The \clsnm{Integral} abstract class acts as a factory to provide
+objects that compute one and two electron integrals.

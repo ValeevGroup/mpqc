@@ -1,0 +1,132 @@
+
+\documentclass{report}
+
+\usepackage{html}
+\usepackage{verbatim}
+\usepackage{alltt}
+\usepackage{makeidx}
+\usepackage{scdoc}
+
+\setcounter{tocdepth}{1}
+
+\makeindex
+
+\begin{document}
+
+\title{The MPQC User Manual}
+
+\author{Curtis L. Janssen \and Edward T. Seidl \and Ida M. B. Nielsen
+        \and Michael E. Colvin}
+
+\date{\today}
+
+\maketitle
+
+\begin{abstract}
+The Massively Parallel Quantum Chemistry program (MPQC) computes
+the properties of molecules, {\it ab initio}, on a wide variety
+of computer architectures.
+
+MPQC can compute closed shell and general restricted open shell
+Hartree-Fock energies and gradients, second order open shell
+perturbation theory (OPT2[2]) and Z-averaged perturbation theory
+(ZAPT2) energies, and second order closed shell M\o{}ller-Plesset
+perturbation theory energies and gradients.  It also includes a
+robust internal coordinate geometry optimizer that efficiently
+optimizes molecules with many degrees of freedom.
+
+MPQC runs on Unix compatible workstations (Intel/Linux, R8000,
+RS/6000), symmetric multi-processors (SGI Power Challenge), and
+massively parallel computers (IBM SP2, Intel Paragon).
+\end{abstract}
+
+\tableofcontents
+
+\chapter{Introduction}
+The Massively Parallel Quantum Chemistry program (MPQC) computes
+the properties of molecules, {\it ab initio}, on a wide variety
+of computer architectures.
+
+MPQC can compute closed shell and general restricted open shell
+Hartree-Fock energies and gradients, second order open shell
+perturbation theory (OPT2[2]) and Z-averaged perturbation theory
+(ZAPT2) energies, and second order closed shell M\o{}ller-Plesset
+perturbation theory energies and gradients.  It also includes a
+robust internal coordinate geometry optimizer that efficiently
+optimizes molecules with many degrees of freedom.
+
+MPQC runs on Unix compatible workstations (Intel/Linux, SGI R8000,
+IBM RS/6000), symmetric multi-processors (SGI Power Challenge),
+and massively parallel computers (IBM SP2, Intel Paragon).
+
+MPQC is designed using object-orient programming techniques and
+implemented in the C++ programming language.  This design has
+propagated even to the input of MPQC which is object-oriented
+as well.  The user specifies a group of objects that the program
+creates when it starts.  MPQC manipulates the objects to produce
+energies, gradients, geometries, and properties.
+
+The object-oriented nature of the input makes this user manual
+read like a bit like a programmers manual.  Object-orient oriented
+terminology is thus a natural way to describe the input and a
+short \htmlref{glossary}{glossary} is provided in the back for
+those in need.
+
+\input{compiling.tex}
+
+\input{input.tex}
+
+\input{running.tex}
+
+\chapter{Utility Classes}
+\label{firstclasschapt}
+
+\input{util/misc/doc/Debugger.tex}
+\input{util/group/doc/groupkv.tex}
+
+\chapter{Math Classes}
+
+\input{math/scmat/doc/scmatkv.tex}
+\input{math/optimize/doc/optkv.tex}
+\input{math/symmetry/doc/symkv.tex}
+
+\chapter{Chemistry Classes}
+\label{lastclasschapt}
+
+\input{chemistry/molecule/doc/molkv.tex}
+\input{chemistry/qc/wfn/doc/wfnkv.tex}
+\input{chemistry/qc/basis/doc/basiskv.tex}
+\input{chemistry/qc/intv3/doc/intv3kv.tex}
+
+\chapter*{Glossary}
+\label{glossary}
+
+\begin{itemize}
+\item[{\bfseries abstract class}]
+          An abstract class cannot be created.  It is used
+          as a parent class of another class.
+\index{abstract}
+\item[{\bfseries concrete class}]
+          A class that is fully described and can be created.
+\index{concrete}
+\item[{\bfseries class}]
+          A class data type.  Data with class types are objects.
+\index{class}
+\item[{\bfseries derivation}]
+          The process of making a new class based on an already
+          existing class.  The only way to use an abstract class
+          is to make a derivative concrete class.
+\index{derivation}
+\item[{\bfseries instantiation}]
+          The process of creating an object of a given class.
+\index{instantiation}
+\item[{\bfseries object}]
+          A piece of data with associated functions.  The data
+          contained and manipulations that can be done on an object
+          are described in a class.
+\index{object}
+\end{itemize}
+
+\printindex
+
+\end{document}

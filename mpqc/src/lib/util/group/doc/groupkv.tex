@@ -1,0 +1,45 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{MessageGrp} Class}
+\label{MessageGrp}\index{MessageGrp}
+
+The \clsnm{MessageGrp} abstract class provides
+a mechanism for moving data and objects between
+nodes in a parallel machine.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{ProcMessageGrp} Class}
+\label{ProcMessageGrp}\index{ProcMessageGrp}
+\index{MessageGrp!ProcMessageGrp}
+
+The \clsnm{ProcMessageGrp} class provides
+a simple single processor implementation of
+the \clsnmref{MessageGrp} class.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{ShmMessageGrp} Class}
+\label{ShmMessageGrp}\index{ShmMessageGrp}
+\index{MessageGrp!ShmMessageGrp}
+
+The \clsnm{ShmMessageGrp} class is an implementation of
+\clsnmref{MessageGrp} that allows multiple process to be
+started that communication with shared memory.  This
+only provides improved performance if you have multiple
+CPU's in a symmetric multiprocessor configuration.  Nonetheless,
+it is quite useful on a single CPU for tracking down bugs.
+
+The \clsnm{ShmMessageGrp} \clsnmref{KeyVal} constructor takes
+a single argument that specifies the number of processors.
+Here is an example of a \clsnmref{ParsedKeyVal} input that
+creates a \clsnm{ShmMessageGrp} that runs on four processors.
+\begin{alltt}
+message<\clsnm{ShmMessageGrp}>: n = 4
+\end{alltt}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The \clsnm{MemoryGrp} Class}
+\label{MemoryGrp}\index{MemoryGrp}

@@ -32,8 +32,9 @@ Wavefunction::_castdown(const ClassDesc*cd)
 
 Wavefunction::Wavefunction(const RefKeyVal&keyval):
   // this will let molecule be retrieved from basis
-  MolecularEnergy(new AggregateKeyVal(keyval,
-                                      new PrefixKeyVal("basis", keyval))),
+  // MolecularEnergy(new AggregateKeyVal(keyval,
+  //                                     new PrefixKeyVal("basis", keyval))),
+  MolecularEnergy(keyval),
   overlap_(this),
   hcore_(this),
   natural_orbitals_(this),

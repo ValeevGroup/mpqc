@@ -1,3 +1,29 @@
+//
+// classi.h
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifndef CLASSNAME
 #define CLASSNAME you_forgot_to_define_CLASSNAME
@@ -59,6 +85,7 @@ CLASSNAME::require_castdown(DescribedClass*p,const char * errmsg,...)
       vfprintf(stderr,errmsg,args);
       fprintf(stderr,"\nwanted type \"%s\" but got \"%s\"\n",
               stringize(CLASSNAME),p?p->class_name():"(null)");
+      fflush(stderr);
       va_end(args);
       abort();
   }
@@ -84,11 +111,12 @@ CLASSNAME::do_castdowns(void**casts,const ClassDesc*cd)
           void * tmp = casts[i];
           if (!tmp) continue;
           if (p && tmp != p) {
-              fprintf(stderr,"%s: castdown to %s ambiguous (from %s)\n",
-                      CLASSNAME::class_desc_.name(),
-                      cd->name(),
-                      CLASSNAME::class_desc_.name());
-              fprintf(stderr," tmp = 0x%lx p = 0x%lx\n",(long)tmp,(long)p);
+              cerr << CLASSNAME::class_desc_.name()
+                   << ": castdown to " << cd->name()
+                   << " ambiguous (from "
+                   << CLASSNAME::class_desc_.name() << ")" << endl
+                   << " tmp = 0x" << setbase(16) << (long)tmp
+                   << " p = 0x" << setbase(16) << (long)p << endl;
             }
           p = tmp;
         }

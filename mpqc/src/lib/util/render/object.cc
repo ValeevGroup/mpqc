@@ -1,6 +1,32 @@
+//
+// object.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <util/misc/formio.h>
 #include <util/render/render.h>
 #include <util/render/object.h>
 
@@ -36,18 +62,19 @@ RenderedObject::~RenderedObject()
 }
 
 void
-RenderedObject::print(FILE*fp)
+RenderedObject::print(ostream& os)
 {
-  fprintf(fp, "RenderedObject:\n");
+  os << "RenderedObject:" << endl;
   if (material_.nonnull()) {
-      fprintf(fp, "  material = 0x%x\n", material_.pointer());
+      os << scprintf("  material = 0x%x\n", material_.pointer());
     }
   if (appearance_.nonnull()) {
-      fprintf(fp, "  appearance = 0x%x\n", appearance_.pointer());
+      os << scprintf("  appearance = 0x%x\n", appearance_.pointer());
     }
   if (transform_.nonnull()) {
-      fprintf(fp, "  transform = 0x%x\n", transform_.pointer());
+      os << scprintf("  transform = 0x%x\n", transform_.pointer());
     }
+  os.flush();
 }
   
 
@@ -75,7 +102,7 @@ RenderedObjectSet::RenderedObjectSet(const RefKeyVal& keyval):
 {
   capacity_ = keyval->count("objects");
   if (keyval->error() != KeyVal::OK) {
-      fprintf(stderr,"RenderedObjectSet: error counting objects\n");
+      cerr << "RenderedObjectSet: error counting objects" << endl;
       abort();
     }
   n_ = capacity_;
@@ -83,7 +110,7 @@ RenderedObjectSet::RenderedObjectSet(const RefKeyVal& keyval):
   for (int i=0; i<n_; i++) {
       array_[i] = keyval->describedclassvalue("objects",i);
       if (keyval->error() != KeyVal::OK) {
-          fprintf(stderr,"RenderedObjectSet: error reading objects\n");
+          cerr << "RenderedObjectSet: error reading objects" << endl;
           abort();
         }
     }
@@ -116,3 +143,9 @@ RenderedObjectSet::render(const RefRender& render)
   render->set(this);
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

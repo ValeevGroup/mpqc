@@ -1,3 +1,29 @@
+//
+// settmpl.h
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifdef __GNUG__
 #pragma interface
@@ -13,7 +39,8 @@ class Set {
     void range_check(int i) const
     {
       if ((i<0) || (i >= nelement)) {
-          fprintf(stderr,"Set::range_check(%d): nelement=%d\n",i,nelement);
+          cerr << "Set::range_check(" << i << "): nelement=" << nelement
+               << endl;
           abort();
         }
     }
@@ -22,9 +49,10 @@ class Set {
       if (!nelement
           || ((Type*)i<&element[0])
           || ((Type*)i>&element[nelement-1])) {
-          fprintf(stderr,
-                  "Set::range_check(0x%p): start=0x%p nelement=%d size=%d\n",
-                  (void*)element,(void*)i,sizeof(Type),nelement);
+          cerr << "Set::range_check(0x" << setbase(16) << (void*)element
+               << "): start=0x" << setbase(16) << (void*)i
+               << " nelement=" << sizeof(Type)
+               << " size=" << nelement << endl;
           abort();
         }
     }
@@ -143,3 +171,10 @@ class Set {
       else i = 0;
     }
 };
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

@@ -133,3 +133,10 @@ int StateInBinXDR::get_array_double(double *p, int size)
   translate(p,size);
   return ret;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")
+// End:

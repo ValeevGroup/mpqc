@@ -15,7 +15,7 @@
  *      Division of Computer Research and Technology
  *      National Institutes of Health
  *      Bethesda, Maryland 20892
- *      Internet: seidl@alw.nih.gov
+ *      Internet: seidl@janed.com
  *      February, 1993
  */
 
@@ -94,3 +94,8 @@ class QCXDR
 #endif
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")
+// End:

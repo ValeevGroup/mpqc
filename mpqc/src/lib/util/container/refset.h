@@ -1,3 +1,29 @@
+//
+// refset.h
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifndef _refset_h
 #define _refset_h
@@ -39,8 +65,8 @@ class RefArray ## Type							      \
   Ref ## Type& operator[] (int i) const \
   { \
     if (i<0 || i>=_length) { \
-        fprintf(stderr,"RefArray::operator[] out of range: %d (nelement = %d)\n",\
-                i,_length); \
+        cerr << "RefArray::operator[] out of range: " << i \
+             << " (nelement = " << _length << ")" << endl; \
         abort(); \
       }; \
     return _array[i]; \
@@ -61,8 +87,8 @@ class RefArraySet ## Type : public RefSet ## Type \
    Ref ## Type & operator[](int i) const \
      { \
        if (i<0 || i>=nelement) { \
-          fprintf(stderr,"RefArraySet::operator[] out of range: %d (nelement = %d)\n",\
-                  i,nelement); \
+          cerr << "RefArray::operator[] out of range: " << i \
+               << " (nelement = " << nelement << ")" << endl; \
           abort(); \
          }; \
        return element[i]; \
@@ -86,7 +112,8 @@ class  RefSet ## Type 							      \
   int range_check(int i) const \
     { \
       if ((i<0) || (i >= nelement)) { \
-          fprintf(stderr,"RefSet::range_check(%d): nelement=%d\n",i,nelement);\
+          cerr << "RefSet::range_check(" << i << "): nelement=" \
+               << nelement << endl;\
           abort(); \
         } \
       return i; \
@@ -108,14 +135,14 @@ class  RefSet ## Type 							      \
        return *this; \
      }; \
   ~ RefSet ## Type () { clear(); }					      \
-  void print(FILE*fp=stdout) \
+  void print(ostream& os=cout) \
     { \
       int i; \
-      fprintf(fp,"RefSet: printing:\n"); \
+      os << "RefSet: printing:" << endl; \
       for (i=0; i<nelement; i++) { \
-          element[i]->print(fp); \
+          element[i]->print(os); \
 	} \
-      fprintf(fp,"RefSet: done printing\n"); \
+      os << "RefSet: done printing" << endl; \
     } \
   int length() const { return nelement; };				      \
   void clear()								      \
@@ -145,8 +172,8 @@ class  RefSet ## Type 							      \
    Ref ## Type & operator()(Pix i) const \
      { \
        if (pix_to_index(i)<0 || pix_to_index(i)>=nelement) { \
-          fprintf(stderr,"Ref::operator() out of range: %d (nelement = %d)\n",\
-                  pix_to_index(i),nelement); \
+          cerr << "Ref::operator() out of range: " \
+               << pix_to_index(i) << "(nelement = " << nelement << endl; \
           abort(); \
          }; \
        return element[pix_to_index(i)]; \

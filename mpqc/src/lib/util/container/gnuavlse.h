@@ -56,14 +56,14 @@ void* get_item(AVLNodeBase*p) {
 static //template <class T>
 int equal(void*a1, void*a2)
 {
-  //printf("equal(%d,%d)\n",*(T*)a1, *(T*)a2);
+  //cout << "equal(" << *(T*)a1 << "," << *(T*)a2 << ")" << endl;
   return *(T*)a1 == *(T*)a2;
 }
 
 static //template <class T>
 int compare_items(void*a1, void*a2)
 {
-  //printf("compare_items(%d,%d)\n",*(T*)a1, *(T*)a2);
+  //cout << "compare_items(" << *(T*)a1 << "," << *(T*)a2 << ")" << endl;
   T& d1 = *((T*)a1);
   T& d2 = *((T*)a2);
   return (d1 < d2)? -1: ((d1 == d2)? 0: 1);
@@ -72,7 +72,7 @@ int compare_items(void*a1, void*a2)
 static //template <class T>
 AVLNodeBase* new_from_item(void*d)
 {
-  //printf("new_from_item(%d)\n",*(T*)d);
+  //cout << "new_from_item(" << *(T*)d << ")" << endl;
   return new AVLNode<T>(*((T*)d));
 }
 

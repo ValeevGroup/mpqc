@@ -1,3 +1,29 @@
+//
+// keyvaltest.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 // a simple program to test the class stuff
 
@@ -200,7 +226,7 @@ main()
   IPV2::Status err;
   ifstream in(SRCDIR "/keyvaltest.in",ios::in);
   if (in.bad()) {
-      printf("couldn't open " SRCDIR "/keyvaltest.in\n");
+      cout << "couldn't open " << SRCDIR << "/keyvaltest.in" << endl;
       abort();
     }
   IPV2 *ipv2 = new IPV2();
@@ -208,13 +234,16 @@ main()
   ipv2->print_tree(cout);
   const char* test = 0;
   ipv2->value_v(":forref:nest:x",&test,0,0);
-  printf("test = \"%s\"\n", test);
+  cout << "test = \"" << test << "\"" << endl;
   err = ipv2->truekeyword_v(":forref:a",&test,0,0);
-  printf("test = \"%s\" (%s)\n", test, ipv2->error_message(err));
+  cout << "test = \"" << test << "\" (" << ipv2->error_message(err) << ")"
+       << endl;
   err = ipv2->truekeyword_v(":forref:nest:x",&test,0,0);
-  printf("test = \"%s\" (%s)\n", test, ipv2->error_message(err));
+  cout << "test = \"" << test << "\" (" << ipv2->error_message(err) << ")"
+       << endl;
   err = ipv2->truekeyword_v(":forref:x",&test,0,0);
-  printf("test = \"%s\" (%s)\n", test, ipv2->error_message(err));
+  cout << "test = \"" << test << "\" (" << ipv2->error_message(err) << ")"
+       << endl;
   delete ipv2;
   ipv2 = 0;
 
@@ -289,3 +318,10 @@ main()
 
   return 0;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

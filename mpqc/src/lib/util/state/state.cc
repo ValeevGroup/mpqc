@@ -1,3 +1,29 @@
+//
+// state.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifdef __GNUC__
 #pragma implementation
@@ -103,20 +129,20 @@ SavableState::restore_state(StateIn&si)
 
       si.have_classdesc();
       DescribedClass* dc = cd->create(si);
-      //printf("dc = 0x%x\n",dc);
+      //cout << "dc = 0x" << setbase(16) << dc << endl;
       ss = SavableState::castdown(dc);
     }
-  //printf("ss = 0x%x\n",ss);
+  //cout << "ss = 0x" << setbase(16) << ss << endl;
   return ss;
 }
 
 void
 SavableState::save_object_state(StateOut&)
 {
-  fprintf(stderr,"SavableState::save_object_state(StateOut&):\n");
-  fprintf(stderr," only can be used when exact type is known\n");
-  fprintf(stderr," otherwise use save_state(StateOut&)\n");
-  fprintf(stderr," (object not saved)\n");
+  cerr << "SavableState::save_object_state(StateOut&):" << endl
+       << " only can be used when exact type is known" << endl
+       << " otherwise use save_state(StateOut&)" << endl
+       << " (object not saved)" << endl;
 }
 
 void
@@ -154,13 +180,17 @@ StateOut::StateOut() :
 {
 }
 
-StateOut::StateOut(const StateOut&) {
-    fprintf(stderr,"StateOut: private copy ctor called???\n");
-    abort();
+StateOut::StateOut(const StateOut&)
+{
+  cerr << "StateOut: private copy ctor called???" << endl;
+  abort();
 }
-void StateOut::operator=(const StateOut&) {
-    fprintf(stderr,"StateOut: private assignment called???\n");
-    abort();
+
+void
+StateOut::operator=(const StateOut&)
+{
+  cerr << "StateOut: private assignment called???" << endl;
+  abort();
 }
 
 StateOut::~StateOut()
@@ -201,13 +231,17 @@ StateIn::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-StateIn::StateIn(const StateIn&) {
-    fprintf(stderr,"StateIn: private copy ctor called???\n");
-    abort();
+StateIn::StateIn(const StateIn&)
+{
+  cerr << "StateIn: private copy ctor called???" << endl;
+  abort();
 }
-void StateIn::operator=(const StateIn&) {
-    fprintf(stderr,"StateIn: private assignment called???\n");
-    abort();
+
+void
+StateIn::operator=(const StateIn&)
+{
+  cerr << "StateIn: private assignment called???" << endl;
+  abort();
 }
 
 StateIn::StateIn() :
@@ -276,18 +310,18 @@ void StateIn::copy_references()
 
 int StateOut::put_array_void(const void*p,int s)
 {
-  fprintf(stderr,"StateOut::put_array_void(const void*p,int s)"
-    " is a derived class responsiblility\n");
-  fprintf(stderr,"  exact type is \"%s\"\n",class_name());
+  cerr << "StateOut::put_array_void(const void*p,int s) "
+       << "is a derived class responsiblility" << endl
+       << "  exact type is \"" << class_name() << "\"" << endl;
   abort();
   return -1;
 }
 
 int StateIn::get_array_void(void*p,int s)
 {
-  fprintf(stderr,"StateIn::get_array_void(void*p,int s)"
-    " is a derived class responsiblility\n");
-  fprintf(stderr,"  exact type is \"%s\"\n",class_name());
+  cerr << "StateIn::get_array_void(void*p,int s) "
+       << "is a derived class responsiblility" << endl
+       << "  exact type is \"" << class_name() << "\"" << endl;
   abort();
   return -1;
 }
@@ -493,7 +527,7 @@ int StateIn::get(const ClassDesc**cd)
       name[size] = '\0';
       int version;
       get(version);
-      //printf("just got \"%s\" %d\n",name,version);
+      //cout << "just got \"" << name << "\" " << version << endl;
       ClassDesc* tmp = ClassDesc::name_to_class_desc(name);
       // save the class descriptor and the version
       _cd.add(tmp);
@@ -603,9 +637,15 @@ void
 SSRefBase::check_castdown_result(void* t, SavableState *ss)
 {
   if (!t && ss) {
-      fprintf(stderr,
-              "SSRef::restore_state() got type \"%s\"\n",
-              ss->class_name());
+      cerr << "SSRef::restore_state() got type \"" << ss->class_name()
+           << "\"" << endl;
         abort();
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

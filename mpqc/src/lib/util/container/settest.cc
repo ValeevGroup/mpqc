@@ -1,5 +1,32 @@
+//
+// settest.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
-#include <stdio.h>
+#include <iomanip.h>
+
 #include <util/ref/ref.h>
 #include <util/container/array.h>
 #include <util/container/set.h>
@@ -17,7 +44,7 @@ Intg::Intg(int i):
 _int(i)
 {
 };
-void Intg::print() { printf("%d\n",_int); }
+void Intg::print() { cout << _int << endl; }
 
 REF_dec(Intg);
 REF_def(Intg);
@@ -50,12 +77,15 @@ main()
   aar = 0;
 
   A* aap = new A;
-  printf("0x%08x ref count = %d\n",aap,aap->nreference());
+  cout << "0x" << setbase(16) << setw(8) << setfill('0') << aap
+       << "ref count = " << setbase(10) << aap->nreference() << endl;
 //   delete aap;
-//   printf("0x%08x ref count = %d\n",aap,aap->_reference_count_);
+//   cout << "0x" << setbase(16) << setw(8) << setfill('0') << aap
+//        << "ref count = " << setbase(10) << aap->_reference_count_ << endl;
   aar = aap;
 //   delete aap;
-//   printf("0x%08x ref count = %d\n",aap,aap->_reference_count_);
+//   cout << "0x" << setbase(16) << setw(8) << setfill('0') << aap
+//        << "ref count = " << setbase(10) << aap->_reference_count_ << endl;
   aar = 0;
   
   RefB b;
@@ -80,3 +110,10 @@ main()
   ii->print();
   i1->print();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

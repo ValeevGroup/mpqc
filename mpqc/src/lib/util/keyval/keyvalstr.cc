@@ -1,11 +1,37 @@
+//
+// keyvalstr.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 extern "C" {
 #include <ctype.h>
 #include <stdlib.h>
 }
+
 #include <iostream.h>
 
-#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <util/keyval/keyvalImplMap.h>
 #include <util/class/proxy.h>
@@ -87,11 +113,11 @@ StringKeyVal::key_value(const char* key)
           KeyValError original_error = error();
           RefDescribedClass newdc(cd->create(pkv));
           if (newdc.null()) {
-              cerr << scprintf("StringKeyVal::value: create failed for:\n");
-              cerr << scprintf(" keyword = \"%s\" class = \"%s\"\n",
-                      tkw,classn);
-              cerr << scprintf(" either the KeyVal create operator doesn't\n");
-              cerr << scprintf(" exist or memory was exhausted\n");
+              cerr << "StringKeyVal::value: create failed for:" << endl
+                   << " keyword = \"" << tkw << "\" class = \"" << classn
+                   << "\"" << endl
+                   << " either the KeyVal create operator doesn't" << endl
+                   << " exist or memory was exhausted" << endl;
             }
           DescribedClassProxy *proxy
               = DescribedClassProxy::castdown(newdc.pointer());
@@ -123,3 +149,10 @@ StringKeyVal::dump(ostream&o,int n)
 {
   offset(o,n); o << "StringKeyVal: error: \"" << errormsg() << "\"" << endl;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

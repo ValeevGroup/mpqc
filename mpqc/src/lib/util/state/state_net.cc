@@ -558,3 +558,10 @@ StateIOUnixDGram::StateIOUnixDGram()
 StateIOUnixDGram::~StateIOUnixDGram()
 {
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")
+// End:

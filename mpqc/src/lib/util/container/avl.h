@@ -1,8 +1,34 @@
+//
+// avl.h --- definitions for some list classes
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifndef _util_container_avl_h
 #define _util_container_avl_h
 
-#include <stdio.h>
+#include <iostream.h>
 #include <math.h>
 
 template <class T, class K>
@@ -134,7 +160,7 @@ EAVLList<T,K>::remove(T* node)
       next(r);
 
       if (r == 0 || llink(r) != 0) {
-          fprintf(stderr, "EAVLList::remove: inconsistency\n");
+          cerr << "EAVLList::remove: inconsistency" << endl;
           abort();
         }
 
@@ -189,12 +215,12 @@ EAVLList<T,K>::print()
 {
   for (T*n=start(); n; next(n)) {
       int d = depth(n) + 1;
-      for (int i=0; i<d; i++) printf("     ");
+      for (int i=0; i<d; i++) cout << "     ";
       n->print();
-      if (balance(n) == 1) printf(" (+)\n");
-      else if (balance(n) == -1) printf(" (-)\n");
-      else if (balance(n) == 0) printf(" (.)\n");
-      else printf(" (%d)\n", balance(n));
+      if (balance(n) == 1) cout << " (+)" << endl;
+      else if (balance(n) == -1) cout << " (-)" << endl;
+      else if (balance(n) == 0) cout << " (.)" << endl;
+      else cout << " (" << balance(n) << ")" << endl;
     }
 }
 
@@ -253,18 +279,18 @@ EAVLList<T,K>::check()
   for (node = start(); node; next(node)) {
       check_node(node);
       if (prev && compare(prev,node) > 0) {
-          fprintf(stderr,"nodes out of order\n");
+          cerr << "nodes out of order" << endl;
           abort();
         }
       prev = node;
     }
   for (node = start(); node; next(node)) {
       if (balance(node) != height(rlink(node)) - height(llink(node))) {
-          fprintf(stderr,"balance inconsistency\n");
+          cerr << "balance inconsistency" << endl;
           abort();
         }
       if (balance(node) < -1 || balance(node) > 1) {
-          fprintf(stderr,"balance out of range\n");
+          cerr << "balance out of range" << endl;
           abort();
         }
     }
@@ -646,8 +672,8 @@ class Data {
 void
 Data::print(int indent)
 {
-  for (int i=0; i<indent; i++) printf(" ");
-  printf("%d", list1.key);
+  for (int i=0; i<indent; i++) cout << " ";
+  cout << list1.key;
 }
 
 #define TEST1 1
@@ -674,13 +700,13 @@ testlist(EAVLList<Data, int>& list, Data** data, int n)
         }
 #if 0
       if (i==0) {
-          printf("--------------------------------------------\n");
+          cout << "--------------------------------------------" << endl;
           list.check();
           list.print2();
         }
-      printf("............................. removing ");
+      cout << "............................. removing ";
       data[i]->print();
-      printf("\n");
+      cout << endl;
 #endif
       list.remove(data[i]);
       Nr++;
@@ -732,7 +758,7 @@ main()
   const int unique = 1;
 
 #if TEST1
-  printf("=================================================\n");
+  cout << "=================================================" << endl;
   max = 1;
   for (int i=0; i<max; i++) {
       currentdata[0] = data[0][i];
@@ -742,7 +768,7 @@ main()
 #endif
 
 #if TEST2
-  printf("=================================================\n");
+  cout << "=================================================" << endl;
   max = 2;
   for (int i=0; i<max; i++) {
       currentdata[0] = data[0][i];
@@ -755,7 +781,7 @@ main()
 #endif
 
 #if TEST3
-  printf("=================================================\n");
+  cout << "=================================================" << endl;
   max = 3;
   for (int i=0; i<max; i++) {
       currentdata[0] = data[0][i];
@@ -773,7 +799,7 @@ main()
 #endif
 
 #if TEST4
-  printf("=================================================\n");
+  cout << "=================================================" << endl;
   max = 4;
   for (int i=0; i<max; i++) {
       currentdata[0] = data[0][i];
@@ -795,7 +821,7 @@ main()
 #endif
 
 #if TEST5
-  printf("=================================================\n");
+  cout << "=================================================" << endl;
   max = 5;
   for (int i=0; i<max; i++) {
       currentdata[0] = data[0][i];
@@ -821,15 +847,14 @@ main()
 #endif
 
 #if TEST6
-  printf("=================================================\n");
+  cout << "=================================================" << endl;
   max = 6;
   for (int i=0; i<max; i++) {
       currentdata[0] = data[0][i];
       for (int j=0; j<max; j++) {
           if (unique && i == j) continue;
-      currentdata[1] = data[0][j];
-                  printf("6: i = %d j = %d\n",
-                         i, j);
+          currentdata[1] = data[0][j];
+          cout << "6: i = " << i << " j = " << j << endl;
           for (int k=0; k<max; k++) {
               if (unique && k==i || k==j) continue;
       currentdata[2] = data[0][k];
@@ -854,7 +879,7 @@ main()
 #endif
 
 #if TEST7
-  printf("=================================================\n");
+  cout << "=================================================" << endl;
   max = 7;
   for (int i=0; i<max; i++) {
       currentdata[0] = data[0][i];
@@ -863,9 +888,8 @@ main()
       currentdata[1] = data[0][j];
           for (int k=0; k<max; k++) {
               if (unique && k==i || k==j) continue;
-      currentdata[2] = data[0][k];
-                  printf("7: i = %d j = %d k = %d\n",
-                         i, j, k);
+              currentdata[2] = data[0][k];
+              cout << "7: i = " << i << " j = " << j << " k = " << k << endl;
               for (int l=0; l<max; l++) {
                   if (unique && l==i || l==j || l==k) continue;
       currentdata[3] = data[0][l];
@@ -891,7 +915,7 @@ main()
 #endif
 
 #if TEST8
-  printf("=================================================\n");
+  cout << "=================================================" << endl;
   max = 8;
   for (int i=0; i<max; i++) {
       currentdata[0] = data[0][i];
@@ -904,8 +928,8 @@ main()
               for (int l=0; l<max; l++) {
                   if (unique && l==i || l==j || l==k) continue;
       currentdata[3] = data[0][l];
-                  printf("8: i = %d j = %d k = %d l = %d\n",
-                         i, j, k, l);
+                  cout << "7: i = " << i << " j = " << j << " k = " << k
+                       << " l = " << l << endl;
                   for (int m=0; m<max; m++) {
                   if (unique && m==i || m==j || m==k || m==l) continue;
       currentdata[4] = data[0][m];
@@ -932,7 +956,7 @@ main()
 #endif
 
 #if TEST9
-  printf("=================================================\n");
+  cout << "=================================================" << endl;
   max = 9;
   for (int i=0; i<max; i++) {
       currentdata[0] = data[0][i];
@@ -948,8 +972,8 @@ main()
                   for (int m=0; m<max; m++) {
                   if (unique && m==i || m==j || m==k || m==l) continue;
       currentdata[4] = data[0][m];
-                  printf("9: i = %d j = %d k = %d l = %d m = %d\n",
-                         i, j, k, l, m);
+                  cout << "7: i = " << i << " j = " << j << " k = " << k
+                       << " l = " << l << " m = " << m << endl;
                   for (int n=0; n<max; n++) {
                   if (unique && n==i || n==j || n==k || n==l || n==m) continue;
       currentdata[5] = data[0][n];
@@ -976,7 +1000,7 @@ main()
     }
 #endif
 
-  printf("Ni = %d, Nr = %d, N = %d\n", Ni, Nr, Ni + Nr);
+  cout << "Ni = " << Ni << ", Nr = " << Nr << ", N = " << Ni+Nr << endl;
 
   const int maxdat2 = 2000;
   Data * data2[maxdat2];
@@ -984,19 +1008,20 @@ main()
       data2[i] = new Data(i);
     }
   for (int i=0; i<maxdat2; i++) {
-      if (i%100 == 0) printf("-");
+      if (i%100 == 0) cout << "-";
     }
-  printf("\n");
+  cout << endl;
   for (int i=0; i<maxdat2; i++) {
       if (i%100 == 0) {
-          printf(".");
+          cout << ".";
           fflush(stdout);
         }
       rantest(list1, data2, i);
     }
-  printf("\n");
+  cout << endl;
 
-  printf("Ni = %d, Nr = %d, Nf = %d, N = %d\n", Ni, Nr, Nf, Ni + Nr);
+  cout << "Ni = " << Ni << ", Nr = " << Nr << ", Nf = " << Nf
+       << ", N = " << Ni+Nr << endl;
 
   return 0;
 }
@@ -1004,3 +1029,10 @@ main()
 #endif // TEST
 
 #endif
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

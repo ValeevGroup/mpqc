@@ -1,3 +1,29 @@
+//
+// class.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifdef __GNUG__
 #pragma implementation
@@ -7,7 +33,6 @@
 #include <config.h>
 #endif
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #if defined(HAVE_DLFCN_H)
@@ -265,7 +290,7 @@ ClassDesc::ClassDesc(char* name, int version,
 
   // test the version number to see if it is valid
   if (version <= 0) {
-      fprintf(stderr,"error in ClassDesc ctor: version <= 0\n");
+      cerr << "error in ClassDesc ctor: version <= 0" << endl;
       exit(1);
     }
 
@@ -292,8 +317,8 @@ ClassDesc::ClassDesc(char* name, int version,
       (*all_)[key]->children_ = 0;
 
       if (!children_) {
-          fprintf(stderr, "ClassDesc: inconsistency in initialization"
-                  "--perhaps a duplicated CTOR call\n");
+          cerr << "ClassDesc: inconsistency in initialization"
+               << "--perhaps a duplicated CTOR call" << endl;
           abort();
         }
 
@@ -319,7 +344,7 @@ ClassKeyClassDescPMap&
 ClassDesc::all()
 {
   if (!all_) {
-      fprintf(stderr,"ClassDesc::all(): all not initialized\n");
+      cerr << "ClassDesc::all(): all not initialized" << endl;
       abort();
     }
   return *all_;
@@ -366,34 +391,34 @@ ClassDesc::change_parent(ClassDesc*oldcd,ClassDesc*newcd)
 void
 ClassDesc::list_all_classes()
 {
-  printf("Listing all classes:\n");
+  cout << "Listing all classes:" << endl;
   for (Pix ind=all_->first(); ind!=0; all_->next(ind)) {
       ClassDesc* classdesc = all_->contents(ind);
-      printf("class %s\n",classdesc->name());
+      cout << "class " << classdesc->name() << endl;
       ParentClasses& parents = classdesc->parents_;
       if (parents.n()) {
-          printf("  parents:");
+          cout << "  parents:";
           for (int i=0; i<parents.n(); i++) {
               if (parents[i].is_virtual()) {
-                  printf(" virtual");
+                  cout << " virtual";
                 }
               if (parents[i].access() == ParentClass::Public) {
-                  printf(" public");
+                  cout << " public";
                 }
               else if (parents[i].access() == ParentClass::Protected) {
-                  printf(" protected");
+                  cout << " protected";
                 }
-              printf(" %s",parents[i].classdesc()->name());
+              cout << " " << parents[i].classdesc()->name();
             }
-          printf("\n");
+          cout << endl;
         }
       ClassKeySet* children = classdesc->children_;
       if (children) {
-          printf("  children:");
+          cout << "  children:";
           for (Pix pind=children->first(); pind!=0; children->next(pind)) {
-              printf(" %s",(*children)(pind).name());
+              cout << " " << (*children)(pind).name();
             }
-          printf("\n");
+          cout << endl;
         }
     }
 }
@@ -424,7 +449,8 @@ ClassDesc::load_class(const char* classname)
       char* filename = new char[strlen(dir) + 8 + 1];
       strcpy(filename,dir);
       strcat(filename,"/classes");
-      printf("ClassDesc::load_class looking for \"%s\"\n", filename);
+      cout << "ClassDesc::load_class looking for \"" << filename << "\""
+           << endl;
       FILE* fp = fopen(filename, "r");
       delete[] filename;
 
@@ -438,9 +464,9 @@ ClassDesc::load_class(const char* classname)
                 }
               char* lib = strtok(buf," ");
               char* testclassname = strtok(0," ");
-              printf("lib = \"%s\"\n", lib);
+              cout << "lib = \"" << lib << "\"" << endl;
               while(testclassname) {
-                  printf("classname = \"%s\"\n", testclassname);
+                  cout << "classname = \"" << testclassname << "\"" << endl;
                   if (strcmp(testclassname,classname) == 0) {
                       // found it
                       char* libname = new char[strlen(lib) + strlen(dir) + 2];
@@ -458,7 +484,7 @@ ClassDesc::load_class(const char* classname)
                       // and load parents until nothing is left
 
                       // load the library
-                      printf("loading \"%s\"\n", libname);
+                      cout << "loading \"" << libname << "\"" << endl;
                       dlopen(libname, RTLD_LAZY);
 
                       // load code for parents
@@ -471,14 +497,13 @@ ClassDesc::load_class(const char* classname)
                       delete[] path;
                       // make sure it worked.
                       if (name_to_class_desc(classname) == 0) {
-                          fprintf(stderr,
-                                  "load of \"%s\" from \"%s\" failed\n",
-                                  classname, libname);
+                          cerr << "load of \"" << classname << "\" from \""
+                               << libname << "\" failed" << endl;
                           delete[] libname;
                           return -1;
                         }
-                      printf("loaded \"%s\" from \"%s\"\n",
-                             classname, libname);
+                      cout << "loaded \"" << classname << "\" from \""
+                           << libname << "\"" << endl;
                       delete[] libname;
                       return 0;
                     }
@@ -494,7 +519,8 @@ ClassDesc::load_class(const char* classname)
   delete[] path;
 #endif // HAVE_DLFCN_H
 
-  fprintf(stderr,"ClassDesc::load_class(\"%s\"): load failed\n", classname);
+  cerr << "ClassDesc::load_class(\"" << classname << "\"): load failed"
+       << endl;
 
   return -1;
 }
@@ -559,8 +585,8 @@ void
 DCRefBase::require_nonnull() const
 {
   if (parentpointer() == 0) {
-      fprintf(stderr,"RefDescribedClass: needed a nonnull pointer but got"
-              "null\n");
+      cerr << "RefDescribedClass: needed a nonnull pointer but got null"
+           << endl;
       abort();
     }
 }
@@ -594,9 +620,9 @@ DCRefBase::warn_bad_ref_count() const
 }
 
 void
-DCRefBase::ref_info(VRefCount*p,FILE*fp) const
+DCRefBase::ref_info(VRefCount*p, ostream& os) const
 {
-  RefBase::ref_info(p,fp);
+  RefBase::ref_info(p,os);
 }
 
 int
@@ -680,9 +706,9 @@ DCRefBase::check_pointer() const
 }
 
 void
-DCRefBase::ref_info(FILE*fp) const
+DCRefBase::ref_info( ostream& os) const
 {
-  DCRefBase::ref_info(parentpointer(),fp);
+  DCRefBase::ref_info(parentpointer(),os);
 }
 
 void
@@ -710,3 +736,10 @@ ARRAY_def(RefDescribedClass);
 SET_def(RefDescribedClass);
 ARRAYSET_def(RefDescribedClass);
 
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

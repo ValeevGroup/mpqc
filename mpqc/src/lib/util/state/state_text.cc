@@ -1,3 +1,29 @@
+//
+// state_text.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -76,7 +102,7 @@ int
 StateInText::read(char*s)
 {
   if (fscanf(fp_,"%s",s) != 1) {
-      fprintf(stderr,"StateInText::read(char*): failed\n");
+      cerr << "StateInText::read(char*): failed" << endl;
       abort();
     }
   return strlen(s)+1;
@@ -86,7 +112,7 @@ int
 StateInText::read(int&i)
 {
   if (fscanf(fp_,"%d",&i) != 1) {
-      fprintf(stderr,"StateInText::read(int&): failed\n");
+      cerr << "StateInText::read(int&): failed\n" << endl;
       abort();
     }
   return (sizeof(int));
@@ -96,7 +122,7 @@ int
 StateInText::read(float&f)
 {
   if (fscanf(fp_,"%f",&f) != 1) {
-      fprintf(stderr,"StateInText::read(float&): failed\n");
+      cerr << "StateInText::read(float&): failed" << endl;
       abort();
     }
   return sizeof(float);
@@ -106,7 +132,7 @@ int
 StateInText::read(double&d)
 {
   if (fscanf(fp_,"%lf",&d) != 1) {
-      fprintf(stderr,"StateInText::read(double&): failed\n");
+      cerr << "StateInText::read(double&): failed" << endl;
       abort();
     }
   return sizeof(double);
@@ -115,7 +141,8 @@ StateInText::read(double&d)
 void
 StateInText::abort()
 {
-  fprintf(stderr,"StateInText aborting at line %d in the input\n",_newlines+1);
+  cerr << "StateInText aborting at line " << _newlines+1 << " in the input"
+       << endl;
   ::abort();
 }
 
@@ -389,7 +416,7 @@ int StateInText::getpointer(void**p)
       return 0;
     }
   else {
-      fprintf(stderr,"StateInText: couldn't find a reference object\n");
+      cerr << "StateInText: couldn't find a reference object" << endl;
       abort();
     }
 
@@ -406,7 +433,7 @@ StateInText::start_array()
 {
   if (!_no_array) {
       if ((getc(fp_) != ' ') || (getc(fp_) != '<')) {
-          fprintf(stderr,"StateInText: expected a \" <\"\n");
+          cerr << "StateInText: expected a \" <\"" << endl;
           abort();
         }
     }
@@ -427,7 +454,7 @@ StateInText::end_array()
 {
   if (!_no_array) {
       if ((getc(fp_) != ' ') || (getc(fp_) != '>')) {
-          fprintf(stderr,"StateInText: expected a \"> \"\n");
+          cerr << "StateInText: expected a \"> \"" << endl;
           abort();
         }
     }
@@ -454,7 +481,7 @@ StateInText::newline()
       return;
     }
   if (getc(fp_) != '\n') {
-      fprintf(stderr,"StateInText: expected newline\n");
+      cerr << "StateInText: expected newline" << endl;
       abort();
     }
   _newlines++;
@@ -477,12 +504,12 @@ StateInText::comment()
 {
   int ch;
   if (getc(fp_) != '%' || getc(fp_) != ' ') {
-      fprintf(stderr,"StateInText: couldn't find beginning of comment\n");
+      cerr << "StateInText: couldn't find beginning of comment" << endl;
       abort();
     }
   while((ch = getc(fp_)) != '\n') {
       if (ch == EOF) {
-          fprintf(stderr,"StateInText: couldn't find end of comment\n");
+          cerr << "StateInText: couldn't find end of comment" << endl;
           abort();
         }
     }
@@ -547,8 +574,8 @@ int StateInText::get_array_char(char*d,int size)
   for (int i=0; i<size; i++) {
       ch = getc(fp_);
       if (ch == EOF) {
-          fprintf(stderr,"StateInText::get_array_char:"
-                  "EOF while reading array\n");
+          cerr << "StateInText::get_array_char: EOF while reading array"
+               << endl;
           abort();
         }
       d[i] = ch;
@@ -626,3 +653,10 @@ int StateInText::get_array_double(double*d,int size)
   newline();
   return tnread;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

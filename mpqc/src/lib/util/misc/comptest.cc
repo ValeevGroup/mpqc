@@ -1,5 +1,31 @@
+//
+// comptest.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
-#include <stdio.h>
+#include <iomanip.h>
 #include <util/misc/compute.h>
 
 #ifdef __GNUC__
@@ -26,51 +52,59 @@ A::A():i(this),a(this)
 void
 A::compute()
 {
-  printf("computing");
+  cout << "computing";
   if (i.needed()) {
       i.result_noupdate() = 5;
       i.computed() = 1;
-      printf(" i");
+      cout << " i";
     }
   if (a.needed()) {
       a.result_noupdate() += 0.001;
       a.computed() = 1;
-      printf(" a");
+      cout << " a";
       a.set_actual_accuracy(a.desired_accuracy());
     }
-  printf("\n");
+  cout << endl;
 }
 
 void
 A::print()
 {
-  printf("A: i = %d, a = %5.3f\n",(int)i,(double)a);
+  cout << "A: i = " << (int) i << ", a = "
+       << setw(5) << setprecision(3) << (double)a << endl;
 }
 
 main()
 {
   A a;
 
-  printf("should not compute a\n");
+  cout << "should not compute a" << endl;
   a.print();
 
   a.a.set_desired_accuracy(0.01);
 
-  printf("should compute a\n");
+  cout << "should compute a" << endl;
   a.print();
 
   a.a.set_desired_accuracy(0.1);
 
-  printf("should not compute a\n");
+  cout << "should not compute a" << endl;
   a.print();
 
   a.a.set_desired_accuracy(0.01);
 
-  printf("should not compute a\n");
+  cout << "should not compute a" << endl;
   a.print();
 
   a.a.set_desired_accuracy(0.001);
 
-  printf("should compute a\n");
+  cout << "should compute a" << endl;
   a.print();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

@@ -1,3 +1,29 @@
+//
+// gnutest.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #include <util/container/set.h>
 
@@ -8,12 +34,12 @@ main()
   AVLSet<int> iset;
 
   for (i=10; i<20; i++) {
-      printf("adding %d\n",i);
+      court << "adding " << i << endl;
       iset.add(i);
     }
 
   for (i=1; i<15; i++) {
-      printf("adding %d\n",i);
+      court << "adding " << i << endl;
       iset.add(i);
     }
 
@@ -21,39 +47,47 @@ main()
   iset.del(ten);
   iset.del(fifteen);
 
-  printf("iset:");
+  cout << "iset:" << endl;
   Pix I;
   for (I=iset.first(); I; iset.next(I)) {
-      printf(" %d",iset(I));
+      cout << " " << iset(I);
     }
-  printf("\n");
+  cout << endl;
 
   ///////////////////////////////////////////////////////////////
 
   Arrayset<int> aset;
 
   for (I=aset.first(); I; aset.next(I)) {
-      printf(" %d",aset(I));
+      cout << " " << aset(I);
     }
+  cout << endl;
 
   for (i=10; i<20; i++) {
-      printf("adding %d\n",i);
+      cout << "adding " << i << endl;
       aset.add(i);
     }
 
   for (i=1; i<15; i++) {
-      printf("adding %d\n",i);
+      cout << "adding " << i << endl;
       aset.add(i);
     }
 
   aset.del(ten);
   aset.del(fifteen);
 
-  printf("aset:");
+  cout << "aset:";
   for (I=aset.first(); I; aset.next(I)) {
-      printf(" %d",aset(I));
+      cout << " " << aset(I);
     }
-  printf("\n");
+  cout << endl;
 
   return 0;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

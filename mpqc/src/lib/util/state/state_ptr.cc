@@ -1,3 +1,29 @@
+//
+// state_ptr.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifdef __GNUC__
 #pragma implementation
@@ -16,19 +42,21 @@ int StateIn::getpointer(void**p)
   get(refnum);
   if (refnum == 0) {
     *p = 0;
-    //printf("StateOut::getpointer: pointer is 0\n");
+    //cout << "StateOut::getpointer: pointer is 0" << endl;
     return 0;
     }
   StateDataNum num(refnum);
   Pix ind = (ps_?ps_->seek(num):0);
-  //printf("StateOut::getpointer: looking for %d and got %d\n",refnum,(int)ind);
+  //cout << "StateOut::getpointer: looking for " << refnum << " and got "
+  //     << (int)ind << endl;
   if (ind == 0) {
     *p = 0;
     return refnum;
     }
   else {
     *p = ((*this->ps_)(ind)).ptr();
-    //printf("StateOut::getpointer: pointer is made 0x%x\n",*p);
+    //cout << "StateOut::getpointer: pointer is made 0x"
+    //     << setbase(16) << *p << endl;
     return 0;
     }
   }
@@ -62,7 +90,8 @@ int StateOut::putpointer(void*p)
     }
   StateDataPtr dp(p);
   Pix ind = (ps_?ps_->seek(dp):0);
-  //printf("StateOut::putpointer: ind = %d for 0x%x\n",(int)ind,p);
+  //cout << "StateOut::putpointer: ind = " << (int)ind << " for 0x"
+  //     << setbase(16) << p << endl;
   if (ind == 0) {
       if (ps_) {
           dp.assign_num(next_pointer_number++);
@@ -76,3 +105,10 @@ int StateOut::putpointer(void*p)
       return 0;
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

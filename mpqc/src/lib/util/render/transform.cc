@@ -1,5 +1,30 @@
+//
+// transform.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <util/render/transform.h>
 
@@ -20,7 +45,7 @@ Transform::Transform(const RefKeyVal& keyval)
   transform_ = identity3D();
   if (keyval->exists("translate")) {
       if (keyval->count("translate") != 3) {
-          fprintf(stderr,"Transform: error in translation\n");
+          cerr << "Transform: error in translation" << endl;
           abort();
         }
       translate(keyval->doublevalue("translate",0),
@@ -30,7 +55,7 @@ Transform::Transform(const RefKeyVal& keyval)
   if (keyval->exists("rotate")) {
       if (keyval->count("rotate:axis") != 3
           || !keyval->exists("rotate:angle")) {
-          fprintf(stderr,"Transform: error in rotation\n");
+          cerr << "Transform: error in rotation" << endl;
           abort();
         }
       vec3 axis(keyval->doublevalue("rotate:axis",0),
@@ -75,7 +100,14 @@ Transform::scale(double scalefactor)
     }
 
 void
-Transform::print(FILE*fp)
+Transform::print(ostream& os)
 {
-  fprintf(fp, "Transform\n");
+  os << "Transform" << endl;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

@@ -37,6 +37,7 @@
 #include <util/class/class.h>
 #endif
 
+#include <stddef.h>
 #include <exception>
 #include <sstream>
 #include <vector>

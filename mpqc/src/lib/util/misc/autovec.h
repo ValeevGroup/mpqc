@@ -44,13 +44,15 @@
  *
  */
 
-#ifndef _autovec_h
-#define _autovec_h
+#ifndef _util_misc_autovec_h
+#define _util_misc_autovec_h
+
+#include <stddef.h>
 
 namespace sc {
 
 /** The auto_vec class functions much like auto_ptr, except
-    it reference to arrays.  The delete[] operator will be used
+    it contains references to arrays.  The delete[] operator will be used
     to deallocate data. */
 template <class T>
 class auto_vec {
@@ -100,5 +102,5 @@ class auto_vec {
 
 }
 
-#endif // _autovec_h
+#endif // _util_misc_autovec_h
 

@@ -852,7 +852,7 @@ AC_TRY_LINK([
 ],[
 case $target in
   *-sgi-irix*)
-    AC_DEFINE(SEMCTL_REQUIRES_SEMUN) AC_MSG_RESULT(sgi-irix, yes)
+    AC_DEFINE(SEMCTL_REQUIRES_SEMUN) AC_MSG_RESULT(sgi-irix -- yes)
   ;;
   *)
     AC_MSG_RESULT(no)

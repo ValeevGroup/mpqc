@@ -406,6 +406,7 @@ double Triangle10::area()
 {
   fprintf(stderr,"Triangle10::area not implemented\n");
   abort();
+  return 0.0;
 }
 
 double
@@ -415,8 +416,7 @@ Triangle10::interpolate(double r,double s,RefVertex&result)
 
   RefSCDimension dim = _vertices[0]->point().dim();
 
-  if (result->point().dim() != dim
-      ||result->gradient().dim() != dim) {
+  if (!(result->point().dim() == dim) || !(result->gradient().dim() == dim)) {
       fprintf(stderr,"Triangle10::interpolate(): need to allocate vertex\n");
       abort();
     }
@@ -1411,7 +1411,6 @@ TriangulatedSurfaceIntegrator::
   return _current;
 }
 
-int
 TriangulatedSurfaceIntegrator::
   operator int()
 {
@@ -1427,7 +1426,7 @@ TriangulatedSurfaceIntegrator::
   //       _itri, _r, _s, _weight, _surface_element);
   //_current->print(stdout);
 
-  return 1;
+  return (int) 1;
 }
 
 void

@@ -117,6 +117,7 @@ optimize_option:
             ;
 
 molecule:       molecule_options_list atoms
+            ;
 
 atoms:          atoms atom
             |
@@ -124,6 +125,7 @@ atoms:          atoms atom
 
 atom:           string string string string atom_options_list
                                                 { add_atom($1,$2,$3,$4); }
+            ;
 
 atom_options_list:
                 T_BEG_OPT atom_options T_END_OPT

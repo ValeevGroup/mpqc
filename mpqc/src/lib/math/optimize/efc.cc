@@ -116,7 +116,7 @@ EFCOpt::init()
 int
 EFCOpt::update()
 {
-  int i,j,ii,jj;
+  int i,j;
   
   // these are good candidates to be input options
   const double maxabs_gradient_to_desired_accuracy = 0.05;

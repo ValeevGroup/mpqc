@@ -914,6 +914,21 @@ esac
 AC_DEFINE(SEMCTL_REQUIRES_SEMUN) AC_MSG_RESULT(yes))
 AC_LANG_RESTORE
 
+dnl --------- Checks for working mmap. ---------
+
+AC_MSG_CHECKING([for Alpha mmap])
+case $target in
+  alpha-dec-osf*)
+    HAVE_ALPHA_MMAP=yes
+    AC_DEFINE(HAVE_ALPHA_MMAP)
+    AC_MSG_RESULT(yes)
+    ;;
+  *)
+    HAVE_ALPHA_MMAP=no
+    AC_MSG_RESULT(no)
+    ;;
+esac
+
 dnl --------- Checks that must be done last. ---------
 
 AC_MSG_CHECKING([for special flags that must be set last])

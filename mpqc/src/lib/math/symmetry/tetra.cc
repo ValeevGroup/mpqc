@@ -351,10 +351,10 @@ CharacterTable::o()
 
   for (i=0; i < 12; i++) {
     gamma_[0].rep[i][0][0] = 1.0;
-    gamma_[0].rep[i][0][0] = 1.0;
+    gamma_[1].rep[i][0][0] = 1.0;
 
     gamma_[0].rep[i+12][0][0] =  1.0;
-    gamma_[0].rep[i+12][0][0] = -1.0;
+    gamma_[1].rep[i+12][0][0] = -1.0;
   }
 
   IrreducibleRepresentation& ire = gamma_[2];
@@ -405,10 +405,10 @@ CharacterTable::o()
   ire.rep[14] = ire.rep[12].operate(ire.rep[1]);
   ire.rep[15] = ire.rep[14];
   
-  // 6 C2's
   ire.rep[16] = ire.rep[14].operate(ire.rep[1]);
   ire.rep[17] = ire.rep[16];
 
+  // 6 C2's
   for (i=18; i < 24; i++)
     ire.rep[i] = ire.rep[i-6];
 }
@@ -525,9 +525,12 @@ void CharacterTable::oh()
   ireg.rep[14] = ireg.rep[12].operate(ireg.rep[1]);
   ireg.rep[15] = ireg.rep[14];
   
-  // 6 C2's
   ireg.rep[16] = ireg.rep[14].operate(ireg.rep[1]);
   ireg.rep[17] = ireg.rep[16];
+
+  // 6 C2's
+  for (i=18; i < 24; i++)
+    ireg.rep[i] = ireg.rep[i-6];
 
   SymRep sr(2);
   sr.i();

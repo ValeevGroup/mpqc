@@ -98,6 +98,15 @@ dmt_matrix Sahalf;
     dmt_matrix Hc = dmt_columns("foo",Hcore);
     dmt_diag(Hc,Evecs,evals);
     dmt_free(Hc);
+    if (scf_info->print_flg&2048) {
+      if (mynode0()==0) printf("HCore eigenvectors");
+      dmt_printf("%15.7f ",Evecs);
+      if (mynode0()==0) {
+        printf("eigenvalues\n");
+        for (i=0; i < nbasis; i++)
+          printf("%5d %20.10f\n",i+1,evals[i]);
+      }
+    }
   }
 #endif
   dmt_mult(Sahalf,Evecs,Scf_Vec);

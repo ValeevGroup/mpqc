@@ -652,8 +652,8 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     ExEnv::out0() << indent
 		  << scprintf("Begin loop over shells (grt, 1.+2. q.t.)") << endl;
 
-    // Do the two electron integrals and the first two quarter transformations
-    tim_enter("grt+1.qt+2.qt");
+    // Do the two electron integrals and the first three quarter transformations
+    tim_enter("grt+1.qt+2.qt+3.qt");
     for (int i=0; i<thr->nthread(); i++) {
       e123thread[i]->set_i_offset(i_offset);
       e123thread[i]->set_ni(ni);
@@ -666,7 +666,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     thr->start_threads();
     thr->wait_threads();
 #   endif
-    tim_exit("grt+1.qt+2.qt");
+    tim_exit("grt+1.qt+2.qt+3.qt");
     ExEnv::out0() << indent << "End of loop over shells" << endl;
     
     mem->sync();  // Make sure ijsk is complete on each node before continuing

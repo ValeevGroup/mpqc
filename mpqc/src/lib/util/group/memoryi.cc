@@ -52,15 +52,85 @@ MemoryGrp::MemoryGrp()
   use_locks_ = 1;
 }
 
+MemoryGrp::MemoryGrp(const RefKeyVal& keyval)
+{
+  use_locks_ = 1;
+}
+
 MemoryGrp::~MemoryGrp()
 {
   delete[] offsets_;
 }
 
 MemoryGrp *
-MemoryGrp::create_memorygrp(int localsize)
+MemoryGrp::initial_memorygrp(int &argc, char *argv[])
 {
-  MemoryGrp *ret = 0;
+  MemoryGrp *grp = 0;
+
+  char *keyval_string = 0;
+
+  // see if a memory group is given on the command line
+  if (argc && argv) {
+      for (int i=0; i<argc; i++) {
+	  if (argv[i] && !strcmp(argv[i], "-memorygrp")) {
+              i++;
+              if (i >= argc) {
+                  cerr << "-memorygrp must be following by an argument"
+                       << endl;
+                  abort();
+                }
+              keyval_string = argv[i];
+              // permute the memorygrp arguments to the end of argv
+              char *tmp = argv[argc-2];
+              argv[argc-2] = argv[i-1];
+              argv[i-1] = tmp;
+              tmp = argv[argc-1];
+              argv[argc-1] = argv[i];
+              argv[i] = tmp;
+              break;
+            }
+        }
+    }
+
+  if (!keyval_string) {
+      // find out if the environment gives the containing memory group
+      keyval_string = getenv("MEMORYGRP");
+      if (keyval_string) {
+          if (!strncmp("MEMORYGRP=", keyval_string, 11)) {
+              keyval_string = strchr(keyval_string, '=');
+            }
+          if (*keyval_string == '=') keyval_string++;
+        }
+    }
+
+  // if keyval input for a memory group was found, then
+  // create it.
+  if (keyval_string) {
+      //cout << "Creating MemoryGrp from \"" << keyval_string << "\"" << endl;
+      RefParsedKeyVal strkv = new ParsedKeyVal();
+      strkv->parse_string(keyval_string);
+      RefDescribedClass dc = strkv->describedclassvalue();
+      grp = MemoryGrp::castdown(dc.pointer());
+      if (dc.null()) {
+          cerr << "initial_memorygrp: couldn't find a MemoryGrp in "
+               << keyval_string << endl;
+          abort();
+        }
+      else if (!grp) {
+          cerr << "initial_memorygrp: wanted MemoryGrp but got "
+               << dc->class_name() << endl;
+          abort();
+        }
+      // prevent an accidental delete
+      grp->reference();
+      strkv = 0;
+      dc = 0;
+      // accidental delete not a problem anymore since all smart pointers
+      // to grp are dead
+      grp->dereference();
+      return grp;
+    }
+
   RefMessageGrp msg = MessageGrp::get_default_messagegrp();
   if (msg.null()) {
       fprintf(stderr, "MemoryGrp::create_memorygrp: requires default msg\n");
@@ -68,22 +138,22 @@ MemoryGrp::create_memorygrp(int localsize)
     }
 #ifdef HAVE_HRECV
   else if (msg->class_desc() == ParagonMessageGrp::static_class_desc()) {
-      ret = new ParagonMemoryGrp(msg, localsize);
+      grp = new ParagonMemoryGrp(msg);
     }
 #endif
-#if defined(HAVE_MPL) && defined(HAVE_MPI)
+#if defined(HAVE_MPI)
   else if (msg->class_desc() == MPIMessageGrp::static_class_desc()) {
-      printf("creating mplmemorygrp\n");
-      ret = new MPLMemoryGrp(msg, localsize);
+      printf("creating mpimemorygrp\n");
+      grp = new MPIMemoryGrp(msg);
     }
 #endif
 #ifdef HAVE_SYSV_IPC
   else if (msg->class_desc() == ShmMessageGrp::static_class_desc()) {
-      ret = new ShmMemoryGrp(msg, localsize);
+      grp = new ShmMemoryGrp(msg);
     }
 #endif
   else if (msg->n() == 1) {
-      ret = new ProcMemoryGrp(localsize);
+      grp = new ProcMemoryGrp();
     }
   else {
       fprintf(stderr, "MemoryGrp::create_memorygrp: cannot create "
@@ -91,11 +161,11 @@ MemoryGrp::create_memorygrp(int localsize)
       abort();
     }
 
-  if (!ret) {
-      fprintf(stderr, "WARNING: MemoryGrp::create_memorygrp(): failed\n");
+  if (!grp) {
+      fprintf(stderr, "WARNING: MemoryGrp::initial_memorygrp(): failed\n");
     }
 
-  return ret;
+  return grp;
 }
 
 void

@@ -138,9 +138,8 @@ MIDMemoryGrp::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-MIDMemoryGrp::MIDMemoryGrp(const RefMessageGrp& msg,
-                                   int localsize):
-  ActiveMsgMemoryGrp(msg, localsize)
+MIDMemoryGrp::MIDMemoryGrp(const RefMessageGrp& msg):
+  ActiveMsgMemoryGrp(msg)
 {
   PRINTF(("MIDMemoryGrp CTOR\n", me()));
   data_request_type_ = 113;
@@ -149,6 +148,7 @@ MIDMemoryGrp::MIDMemoryGrp(const RefMessageGrp& msg,
   nsync_ = 0;
   use_acknowledgments_ = 0;
   use_active_messages_ = 1;
+  active_ = 0;
 }
 
 MIDMemoryGrp::~MIDMemoryGrp()
@@ -175,24 +175,30 @@ MIDMemoryGrp::print_memreq(MemoryDataRequest &req,
 void
 MIDMemoryGrp::activate()
 {
-  if (use_active_messages_) {
-      data_request_mid_ = postrecv(data_request_buffer_.data(),
+  if (!active_) {
+      if (use_active_messages_) {
+          data_request_mid_ = postrecv(data_request_buffer_.data(),
+                                       data_request_buffer_.nbytes(),
+                                       data_request_type_);
+        }
+      else {
+          data_request_mid_ = recv(data_request_buffer_.data(),
                                    data_request_buffer_.nbytes(),
+                                   -1,
                                    data_request_type_);
+        }
+      PRINTF(("activated memory request handler\n"));
+      active_ = 1;
     }
-  else {
-      data_request_mid_ = recv(data_request_buffer_.data(),
-                               data_request_buffer_.nbytes(),
-                               -1,
-                               data_request_type_);
-    }
-  PRINTF(("activated memory request handler\n"));
 }
 
 void
 MIDMemoryGrp::deactivate()
 {
-  sync();
+  if (active_) {
+      sync();
+      active_ = 0;
+    }
 }
 
 void

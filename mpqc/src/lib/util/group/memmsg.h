@@ -16,10 +16,11 @@ class MsgMemoryGrp: public MemoryGrp {
 
   protected:
     RefMessageGrp msg_;
-
   public:
-    MsgMemoryGrp(const RefMessageGrp& msg, int localsize);
+    MsgMemoryGrp(const RefMessageGrp& msg);
+    MsgMemoryGrp(const RefKeyVal& keyval);
     ~MsgMemoryGrp();
+    void set_localsize(int localsize);
 
     void sync();
 };

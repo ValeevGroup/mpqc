@@ -88,8 +88,11 @@ class ActiveMsgMemoryGrp : public MsgMemoryGrp {
     virtual void replace_data(void *, int node, int offset, int size) = 0;
     virtual void sum_data(double *data, int node, int doffset, int dsize) = 0;
   public:
-    ActiveMsgMemoryGrp(const RefMessageGrp& msg, int localsize);
+    ActiveMsgMemoryGrp(const RefMessageGrp& msg);
+    ActiveMsgMemoryGrp(const RefKeyVal&);
     ~ActiveMsgMemoryGrp();
+
+    void set_localsize(int);
 
     void *obtain_writeonly(int offset, int size);
     void *obtain_readwrite(int offset, int size);

@@ -25,6 +25,8 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
     void replace_data(void *, int node, int offset, int size);
     void sum_data(double *data, int node, int doffset, int dsize);
 
+    int active_;
+
     int data_request_type_;
     int data_type_to_handler_;
     int data_type_from_handler_;
@@ -54,7 +56,7 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
   public:
     MemoryDataRequest &data_request_buffer() { return data_request_buffer_; }
 
-    MIDMemoryGrp(const RefMessageGrp& msg, int localsize);
+    MIDMemoryGrp(const RefMessageGrp& msg);
     ~MIDMemoryGrp();
 
     void activate();

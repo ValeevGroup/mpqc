@@ -3,17 +3,14 @@
 #pragma interface
 #endif
 
-#ifndef _util_group_memipgon_h
-#define _util_group_memipgon_h
+#ifndef _util_group_memmpl_h
+#define _util_group_memmpl_h
 
 #include <stdio.h>
 #include <util/group/memmid.h>
 
-// This is a memory group that uses the paragon NX library,
-// but doesn't use hrecv.  Instead irecv and isend are used.
-
-class IParagonMemoryGrp: public MIDMemoryGrp {
-#define CLASSNAME IParagonMemoryGrp
+class MPIMemoryGrp: public MIDMemoryGrp {
+#define CLASSNAME MPLMemoryGrp
 #include <util/class/classd.h>
   private:
     long lock();
@@ -23,8 +20,10 @@ class IParagonMemoryGrp: public MIDMemoryGrp {
     long postrecv(void *data, int nbytes, int type);
     long wait(long, long = -1);
   public:
-    IParagonMemoryGrp(const RefMessageGrp& msg);
-    ~IParagonMemoryGrp();
+    MPIMemoryGrp(const RefMessageGrp& msg);
+    MPIMemoryGrp(const RefKeyVal &);
+    ~MPIMemoryGrp();
+    void deactivate();
 };
 
 #endif

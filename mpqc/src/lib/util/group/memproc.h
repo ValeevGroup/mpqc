@@ -13,12 +13,16 @@
 
 class ProcMemoryGrp: public MemoryGrp {
 #define CLASSNAME ProcMemoryGrp
+#define HAVE_KEYVAL_CTOR
 #include <util/class/classd.h>
   private:
     char *data_;
   public:
-    ProcMemoryGrp(int size);
+    ProcMemoryGrp();
+    ProcMemoryGrp(const RefKeyVal&);
     ~ProcMemoryGrp();
+
+    void set_localsize(int);
 
     void *obtain_readwrite(int offset, int size);
     void *obtain_readonly(int offset, int size);

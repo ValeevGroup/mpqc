@@ -16,6 +16,7 @@
 #undef DEBUG
 
 #define CLASSNAME ShmMemoryGrp
+#define HAVE_KEYVAL_CTOR
 #define PARENTS public MsgMemoryGrp
 #include <util/class/classi.h>
 void *
@@ -26,10 +27,33 @@ ShmMemoryGrp::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg,
-                           int localsize):
-  MsgMemoryGrp(msg, localsize)
+ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg):
+  MsgMemoryGrp(msg)
 {
+  update_ = 0;
+  data_ = 0;
+  memory_ = 0;
+  pool_ = 0;
+  rangelock_ = 0;
+}
+
+ShmMemoryGrp::ShmMemoryGrp(const RefKeyVal& keyval):
+  MsgMemoryGrp(keyval)
+{
+  update_ = 0;
+  data_ = 0;
+  memory_ = 0;
+  pool_ = 0;
+  rangelock_ = 0;
+}
+
+void
+ShmMemoryGrp::set_localsize(int localsize)
+{
+  cleanup();
+
+  MsgMemoryGrp::set_localsize(localsize);
+
   const int poolallocation = 160000;
 
   update_ = new GlobalCounter[n()];
@@ -61,8 +85,8 @@ ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg,
       lock_ = 1;
       char * stringrep = lock_.stringrep();
       int length = strlen(stringrep) + 1;
-      msg->bcast(&length, 1);
-      msg->bcast(stringrep, length);
+      msg_->bcast(&length, 1);
+      msg_->bcast(stringrep, length);
 #ifdef DEBUG
       printf("%d: sent initialize string of \"%s\" (%d)\n",
              me(), stringrep, length);
@@ -73,8 +97,8 @@ ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg,
           update_[i].initialize();
           char * stringrep = update_[i].stringrep();
           int length = strlen(stringrep) + 1;
-          msg->bcast(&length, 1);
-          msg->bcast(stringrep, length);
+          msg_->bcast(&length, 1);
+          msg_->bcast(stringrep, length);
 #ifdef DEBUG
           printf("%d: sent initialize string of \"%s\" (%d) for %d\n",
                  me(), stringrep, length, i);
@@ -85,9 +109,9 @@ ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg,
     }
   else {
       int length;
-      msg->bcast(&length, 1);
+      msg_->bcast(&length, 1);
       char * stringrep = new char[length];
-      msg->bcast(stringrep, length);
+      msg_->bcast(stringrep, length);
 #ifdef DEBUG
       printf("%d: got initialize string of \"%s\" (%d)\n",
              me(), stringrep, length);
@@ -96,9 +120,9 @@ ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg,
       lock_.initialize(stringrep);
       delete[] stringrep;
       for (int i=0; i<n(); i++) {
-          msg->bcast(&length, 1);
+          msg_->bcast(&length, 1);
           stringrep = new char[length];
-          msg->bcast(stringrep, length);
+          msg_->bcast(stringrep, length);
 #ifdef DEBUG
           printf("%d: got initialize string of \"%s\" (%d) for %d\n",
                  me(), stringrep, length, i);
@@ -109,10 +133,10 @@ ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg,
         }
     }
 
-  msg->bcast(&shmid_, 1);
-  msg->raw_bcast((void*)&memory_, sizeof(void*));
-  msg->raw_bcast((void*)&pool_, sizeof(void*));
-  msg->raw_bcast((void*)&rangelock_, sizeof(void*));
+  msg_->bcast(&shmid_, 1);
+  msg_->raw_bcast((void*)&memory_, sizeof(void*));
+  msg_->raw_bcast((void*)&pool_, sizeof(void*));
+  msg_->raw_bcast((void*)&rangelock_, sizeof(void*));
 
 #ifdef DEBUG
   fprintf(stderr,"%d: memory = 0x%x shmid = %d\n",
@@ -135,17 +159,27 @@ ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg,
   data_ = (void *) &((char*)memory_)[poolallocation];
 }
 
-ShmMemoryGrp::~ShmMemoryGrp()
+void
+ShmMemoryGrp::cleanup()
 {
-  shmdt((SHMTYPE)memory_);
+  if (memory_) {
+      shmdt((SHMTYPE)memory_);
 
-  msg_->sync();
+      msg_->sync();
+
+      if (me() == 0) {
+          shmctl(shmid_,IPC_RMID,0);
+        }
+      memory_ = 0;
+    }
 
   delete[] update_;
+  update_ = 0;
+}
 
-  if (me() == 0) {
-      shmctl(shmid_,IPC_RMID,0);
-    }
+ShmMemoryGrp::~ShmMemoryGrp()
+{
+  cleanup();
 
 #ifdef DEBUG
   printf("msg_->nreference() = %d\n", msg_->nreference());

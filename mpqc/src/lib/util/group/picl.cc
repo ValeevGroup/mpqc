@@ -118,7 +118,9 @@ load0(char* file, int node)
 void
 open0(int*numproc, int*me, int*host)
 {
-  global_messagegrp = MessageGrp::initial_messagegrp();
+  int argc = 0;
+  char * argv[] = {""};
+  global_messagegrp = MessageGrp::initial_messagegrp(argc, 0);
   if (global_messagegrp.null()) {
       global_messagegrp = MessageGrp::get_default_messagegrp();
     }

@@ -28,7 +28,7 @@ ifeq ($(HAVE_PVM),yes)
   CXXSRC += messpvm.cc
 endif
 ifeq ($(HAVE_MPI),yes)
-  CXXSRC += messmpi.cc
+  CXXSRC += messmpi.cc memmpi.cc
 endif
 ifeq ($(HAVE_MPL),yes)
   CXXSRC += memmpl.cc
@@ -37,7 +37,7 @@ endif
 INC = pool.h message.h mstate.h topology.h picl.h \
       messshm.h messpvm.h messmpi.h \
       rnglock.h memory.h memmsg.h memshm.h pool.h memamsg.h memproc.h \
-      memmpl.h
+      memmpl.h memmpi.h
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
@@ -57,7 +57,7 @@ default:: $(TOPDIR)/lib/libgroup.so
 endif
 
 memtest.o: memtest.cc
-	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 memtest: memtest.o \
 	libgroup.a \
@@ -69,13 +69,13 @@ memtest: memtest.o \
 	$(LD) $(LDFLAGS) -o memtest $^ $(SYSLIBS)
 
 pooltest: pooltest.o libgroup.a
-	$(CXX) $(CXXFLAGS) -o pooltest $^ $(SYSLIBS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o pooltest $^ $(SYSLIBS)
 
 rnglocktest: rnglocktest.o libgroup.a
-	$(CXX) $(CXXFLAGS) -o rnglocktest $^ $(SYSLIBS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o rnglocktest $^ $(SYSLIBS)
 
 messtest.o: messtest.cc
-	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 messtest: messtest.o \
 	libgroup.a \

@@ -113,10 +113,13 @@ class MessageGrp: public DescribedClass {
     static void set_default_messagegrp(const RefMessageGrp&);
     static MessageGrp* get_default_messagegrp();
 
-    //. The initial message group is the group that starts up a process.
-    //. This returns null if this process is first and then it is up to the
-    //. programmer to create a messagegrp.
-    static MessageGrp* initial_messagegrp(int argc = 0, char** argv = 0);
+    //. Create a message group.  This routine looks for a -messagegrp
+    //argument, then the environmental variable MESSAGEGRP to decide which
+    //specialization of \clsnm{MessageGrp} would be appropriate.  The
+    //argument to -messagegrp should be either string for a
+    //\clsnmref{ParsedKeyVal} constructor or a classname.  If this returns
+    //null, it is up to the programmer to create a \clsnm{MessageGrp}.
+    static MessageGrp* initial_messagegrp(int &argc, char** argv);
 
     //. Send messages sequentially to the target processor.
     virtual void send(int target, double* data, int ndata);

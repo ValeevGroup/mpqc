@@ -19,13 +19,44 @@ MsgMemoryGrp::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-MsgMemoryGrp::MsgMemoryGrp(const RefMessageGrp &msg,
-                           int localsize)
+MsgMemoryGrp::MsgMemoryGrp(const RefMessageGrp &msg)
 {
   msg_ = msg;
-
   n_ = msg->n();
   me_ = msg->me();
+
+  offsets_ = 0;
+}
+
+MsgMemoryGrp::MsgMemoryGrp(const RefKeyVal &keyval):
+  MemoryGrp(keyval)
+{
+  RefMessageGrp msg = keyval->describedclassvalue("message");
+  if (msg.null()) {
+      msg = MessageGrp::get_default_messagegrp();
+    }
+  if (msg.null()) {
+      cerr << "MsgMemoryGrp(const RefKeyVal&): couldn't find MessageGrp"
+           << endl;
+      abort();
+    }
+
+  msg_ = msg;
+  n_ = msg->n();
+  me_ = msg->me();
+
+  offsets_ = 0;
+}
+
+MsgMemoryGrp::~MsgMemoryGrp()
+{
+  delete[] offsets_;
+}
+
+void
+MsgMemoryGrp::set_localsize(int localsize)
+{
+  delete[] offsets_;
 
   offsets_ = new int[n_ + 1];
   int *sizes = new int[n_];
@@ -34,7 +65,7 @@ MsgMemoryGrp::MsgMemoryGrp(const RefMessageGrp &msg,
   for (i=0; i<n_; i++) sizes[i] = 0;
   sizes[me_] = localsize;
 
-  msg->sum(sizes, n_);
+  msg_->sum(sizes, n_);
 
   offsets_[0] = 0;
   for (i=1; i<=n_; i++) {
@@ -42,10 +73,6 @@ MsgMemoryGrp::MsgMemoryGrp(const RefMessageGrp &msg,
     }
 
   delete[] sizes;
-}
-
-MsgMemoryGrp::~MsgMemoryGrp()
-{
 }
 
 void

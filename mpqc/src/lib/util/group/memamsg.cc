@@ -259,16 +259,33 @@ ActiveMsgMemoryGrp::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-ActiveMsgMemoryGrp::ActiveMsgMemoryGrp(const RefMessageGrp& msg,
-                                       int localsize):
-  MsgMemoryGrp(msg, localsize)
+ActiveMsgMemoryGrp::ActiveMsgMemoryGrp(const RefMessageGrp& msg):
+  MsgMemoryGrp(msg)
 {
   use_locks_for_reduction_ = 0;
+  data_ = 0;
+}
+
+ActiveMsgMemoryGrp::ActiveMsgMemoryGrp(const RefKeyVal& keyval):
+  MsgMemoryGrp(keyval)
+{
+  use_locks_for_reduction_ = 0;
+  data_ = 0;
+}
+
+void
+ActiveMsgMemoryGrp::set_localsize(int localsize)
+{
+  deactivate();
+  MsgMemoryGrp::set_localsize(localsize);
+  delete[] data_;
   data_ = new char[localsize];
+  activate();
 }
 
 ActiveMsgMemoryGrp::~ActiveMsgMemoryGrp()
 {
+  deactivate();
   delete[] data_;
 }
 

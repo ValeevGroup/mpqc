@@ -19,6 +19,7 @@
 //. started that communication with shared memory.
 class ShmMemoryGrp: public MsgMemoryGrp {
 #define CLASSNAME ShmMemoryGrp
+#define HAVE_KEYVAL_CTOR
 #include <util/class/classd.h>
   private:
     int shmid_;
@@ -34,9 +35,14 @@ class ShmMemoryGrp: public MsgMemoryGrp {
     void note_release();
     void obtain_lock();
     void release_lock();
+
+    void cleanup();
   public:
-    ShmMemoryGrp(const RefMessageGrp& msg, int localsize);
+    ShmMemoryGrp(const RefMessageGrp& msg);
+    ShmMemoryGrp(const RefKeyVal&);
     ~ShmMemoryGrp();
+
+    void set_localsize(int);
 
     void *obtain_readwrite(int offset, int size);
     void *obtain_readonly(int offset, int size);

@@ -55,9 +55,9 @@ void do_double_tests(const RefMessageGrp&);
 void do_double2_tests(const RefMessageGrp&);
 
 #ifdef HAVE_HRECV
-#  define MemoryGrp_CTOR(msg,size) new IParagonMemoryGrp(msg,size)
+#  define MemoryGrp_CTOR(msg) new IParagonMemoryGrp(msg)
 #else
-#  define MemoryGrp_CTOR(msg,size) MemoryGrp::create_memorygrp(size)
+#  define MemoryGrp_CTOR(msg) MemoryGrp::create_memorygrp()
 #endif
 
 int
@@ -99,7 +99,9 @@ main(int argc, char**argv)
 void
 do_simple_tests(const RefMessageGrp&msg)
 {
-  RefMemoryGrp mem = MemoryGrp_CTOR(msg, 8);
+  RefMemoryGrp mem = MemoryGrp_CTOR(msg);
+
+  mem->set_localsize(8);
 
   printf("Using memory group \"%s\".\n", mem->class_name());
 
@@ -111,7 +113,9 @@ void
 do_int_tests(const RefMessageGrp&msg)
 {
   const int intbufsize = 10;
-  RefMemoryGrp mem = MemoryGrp_CTOR(msg, intbufsize*sizeof(int));
+  RefMemoryGrp mem = MemoryGrp_CTOR(msg);
+
+  mem->set_localsize(intbufsize*sizeof(int));
 
   printf("Using memory group \"%s\".\n", mem->class_name());
 
@@ -250,7 +254,9 @@ do_double_tests(const RefMessageGrp&msg)
   RefMemoryGrp mem;
 
   const int doublebufsize = 4;
-  mem = MemoryGrp_CTOR(msg, doublebufsize*sizeof(double));
+  mem = MemoryGrp_CTOR(msg);
+
+  mem->set_localsize(doublebufsize*sizeof(double));
 
   printf("Using memory group \"%s\".\n", mem->class_name());
 
@@ -342,7 +348,8 @@ do_double2_tests(const RefMessageGrp&msg)
   RefMemoryGrp mem;
 
   const int doublebufsize = 4;
-  mem = MemoryGrp_CTOR(msg, doublebufsize*sizeof(double));
+  mem = MemoryGrp_CTOR(msg);
+  mem->set_localsize(doublebufsize*sizeof(double));
   printf("Using memory group \"%s\".\n", mem->class_name());
 
   mem->sync();

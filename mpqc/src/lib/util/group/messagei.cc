@@ -10,6 +10,9 @@
 #ifdef HAVE_NX
 #  include <util/group/messpgon.h>
 #endif
+#ifdef HAVE_MPI
+#  include <util/group/messmpi.h>
+#endif
 
 #define CLASSNAME MessageGrp
 #define PARENTS public DescribedClass
@@ -62,55 +65,86 @@ MessageGrp::get_default_messagegrp()
   return default_messagegrp.pointer();
 }
 
-MessageGrp*
-MessageGrp::initial_messagegrp(int argc, char** argv)
+MessageGrp *
+MessageGrp::initial_messagegrp(int &argc, char** argv)
 {
-#ifdef HAVE_NX
-  // the initial message group on the paragon is always ParagonMessageGrp
-  return new ParagonMessageGrp;
-#else
+  MessageGrp *grp;
+
+  char *keyval_string = 0;
+
   // see if a message group is given on the command line
   if (argc && argv) {
       for (int i=0; i<argc; i++) {
 	  if (argv[i] && !strcmp(argv[i], "-messagegrp")) {
               i++;
-              if (i<argc && argv[i]) {
-                  ClassDesc* cd = ClassDesc::name_to_class_desc(argv[i]);
-                  if (!cd) {
-                    fprintf(stderr, "MessageGrp::initial_messagegrp()"
-                            ": couldn't find \"%s\"\n", argv[i]);
-                    abort();
-                    }
-		  return MessageGrp::castdown(cd->create());
+              if (i >= argc) {
+                  cerr << "-messagegrp must be following by an argument"
+                       << endl;
+                  abort();
                 }
+              keyval_string = argv[i];
+              // permute the messagegrp arguments to the end of argv
+              char *tmp = argv[argc-2];
+              argv[argc-2] = argv[i-1];
+              argv[i-1] = tmp;
+              tmp = argv[argc-1];
+              argv[argc-1] = argv[i];
+              argv[i] = tmp;
+              break;
             }
         }
     }
 
-  // find out if the environment gives the containing message group
-  char *groupname = getenv("MessageGrp");
-  if (!groupname) return 0;
-  if (strchr(groupname, '=')) {
-      groupname = strchr(groupname, '=');
+  if (!keyval_string) {
+      // find out if the environment gives the containing message group
+      keyval_string = getenv("MESSAGEGRP");
+      if (keyval_string) {
+          if (!strncmp("MESSAGEGRP=", keyval_string, 11)) {
+              keyval_string = strchr(keyval_string, '=');
+            }
+          if (*keyval_string == '=') keyval_string++;
+        }
     }
-  if (*groupname == '=') groupname++;
-  ClassDesc *cd = ClassDesc::name_to_class_desc(groupname);
-  if (!cd) {
-      fprintf(stderr,
-              "MessageGrp::initial_messagegrp: failed to find ClassDesc"
-              " for \"%s\"\n",
-              groupname);
-      abort();
+
+  // if keyval input for a message group was found, then
+  // create it.
+  if (keyval_string) {
+      //cout << "Creating MessageGrp from \"" << keyval_string << "\"" << endl;
+      RefParsedKeyVal strkv = new ParsedKeyVal();
+      strkv->parse_string(keyval_string);
+      RefDescribedClass dc = strkv->describedclassvalue();
+      grp = MessageGrp::castdown(dc.pointer());
+      if (dc.null()) {
+          cerr << "initial_messagegrp: couldn't find a MessageGrp in "
+               << keyval_string << endl;
+          abort();
+        }
+      else if (!grp) {
+          cerr << "initial_messagegrp: wanted MessageGrp but got "
+               << dc->class_name() << endl;
+          abort();
+        }
+      // prevent an accidental delete
+      grp->reference();
+      strkv = 0;
+      dc = 0;
+      // accidental delete not a problem anymore since all smart pointers
+      // to grp are dead
+      grp->dereference();
+      return grp;
     }
-  MessageGrp* grp = MessageGrp::castdown(cd->create());
-  if (!grp) {
-      fprintf(stderr,
-              "MessageGrp::initial_messagegrp: failed to create \"%s\"\n",
-              groupname);
-      abort();
-    }
-  return grp;
+
+  // if certain libraries have been compiled in, use those message groups
+#if defined(HAVE_NX)
+  grp = new ParagonMessageGrp;
+  if (grp->n() == 1) delete grp;
+  else return grp;
+#elif defined(HAVE_MPI)
+  grp = new MPIMessageGrp;
+  if (grp->n() == 1) delete grp;
+  else return grp;
 #endif
+  return new ProcMessageGrp;
 }
 
 void

@@ -21,4 +21,4 @@ pvmmessage<PVMMessageGrp>: (
   %          ]
   )
 
-message = $:mpimessage
+message = $:shmmessage

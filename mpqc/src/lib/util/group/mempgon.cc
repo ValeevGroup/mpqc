@@ -96,6 +96,7 @@ paragon_memory_handler(long ptype, long pcount, long pnode, long pptype)
 // The ParagonMemoryGrp class
 
 #define CLASSNAME ParagonMemoryGrp
+#define HAVE_KEYVAL_CTOR
 #define PARENTS public ActiveMsgMemoryGrp
 #include <util/class/classi.h>
 void *
@@ -106,9 +107,8 @@ ParagonMemoryGrp::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-ParagonMemoryGrp::ParagonMemoryGrp(const RefMessageGrp& msg,
-                                   int localsize):
-  ActiveMsgMemoryGrp(msg, localsize)
+ParagonMemoryGrp::ParagonMemoryGrp(const RefMessageGrp& msg):
+  ActiveMsgMemoryGrp(msg)
 {
   if (global_pgon_mem) {
       fprintf(stderr, "ParagonMemoryGrp: only one allowed at a time\n");
@@ -119,10 +119,20 @@ ParagonMemoryGrp::ParagonMemoryGrp(const RefMessageGrp& msg,
   data_type_from_handler_ = 15;
   global_pgon_mem = this;
   active_ = 0;
+}
 
-  activate();
-
-  PRINTF(("%d: data_ = 0x%x\n", me(), data_));
+ParagonMemoryGrp::ParagonMemoryGrp(const RefKeyVal& keyval):
+  ActiveMsgMemoryGrp(keyval)
+{
+  if (global_pgon_mem) {
+      fprintf(stderr, "ParagonMemoryGrp: only one allowed at a time\n");
+      abort();
+    }
+  data_request_type_ = 13;
+  data_type_to_handler_ = 14;
+  data_type_from_handler_ = 15;
+  global_pgon_mem = this;
+  active_ = 0;
 }
 
 ParagonMemoryGrp::~ParagonMemoryGrp()
@@ -142,8 +152,8 @@ ParagonMemoryGrp::activate()
       hrecv(data_request_type_, (char *) data_request_buffer_.data(),
             data_request_buffer_.nbytes(),
             (handlertype)paragon_memory_handler);
+      active_ = 1;
     }
-  active_ = 1;
 }
 
 void
@@ -163,8 +173,8 @@ ParagonMemoryGrp::deactivate()
       crecv(data_type_from_handler_, (char*) &junk, sizeof(junk));
       PRINTF(("%d: ParagonMemoryGrp::deactivate complete\n", me()));
 #endif
+      active_ = 0;
     }
-  active_ = 0;
 }
 
 void

@@ -48,19 +48,15 @@ IParagonMemoryGrp::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-IParagonMemoryGrp::IParagonMemoryGrp(const RefMessageGrp& msg,
-                           int localsize):
-  MIDMemoryGrp(msg, localsize)
+IParagonMemoryGrp::IParagonMemoryGrp(const RefMessageGrp& msg):
+  MIDMemoryGrp(msg)
 {
   use_acknowledgments_ = 0;
   use_active_messages_ = 0;
-
-  activate();
 }
 
 IParagonMemoryGrp::~IParagonMemoryGrp()
 {
-  deactivate();
 }
 
 long

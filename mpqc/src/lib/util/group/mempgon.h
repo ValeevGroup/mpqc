@@ -11,6 +11,7 @@
 
 class ParagonMemoryGrp: public ActiveMsgMemoryGrp {
 #define CLASSNAME ParagonMemoryGrp
+#define HAVE_KEYVAL_CTOR
 #include <util/class/classd.h>
   private:
     friend void paragon_memory_handler(long,long,long,long);
@@ -27,7 +28,8 @@ class ParagonMemoryGrp: public ActiveMsgMemoryGrp {
 
     int active_;
   public:
-    ParagonMemoryGrp(const RefMessageGrp& msg, int localsize);
+    ParagonMemoryGrp(const RefMessageGrp& msg);
+    ParagonMemoryGrp(const RefKeyVal&);
     ~ParagonMemoryGrp();
 
     void activate();

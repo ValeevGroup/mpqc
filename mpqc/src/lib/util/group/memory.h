@@ -38,12 +38,17 @@ class MemoryGrp: public DescribedClass {
 
   public:
     MemoryGrp();
+    MemoryGrp(const RefKeyVal&);
     virtual ~MemoryGrp();
     
     //. Returns who I am and how many nodes there are.
     int me() { return me_; }
     int n() { return n_; }
 
+    //. Set the size of locally held memory.
+    //. When memory is accessed using a global offset counting
+    //. starts at node 0 and proceeds up to node \srccd{n()} - 1.
+    virtual void set_localsize(int) = 0;
     //. Returns the amount of memory residing locally on \srccd{me()};
     int localsize() { return offsets_[me_+1] - offsets_[me_]; }
     //. Returns the global offset to this node's memory.
@@ -85,13 +90,17 @@ class MemoryGrp: public DescribedClass {
     //. Prints out information about the object.
     virtual void print(FILE *fp = stdout);
 
-    //. Create a memory group with \vrbl{localsize} bytes on this
-    //. node.  When memory is accessed using a global offset counting
-    //. starts at node 0 and proceeds up to node \srccd{n()} - 1.
-    //. This routine looks at the default \clsnmref{MessageGrp} object
-    //. to decide which specialization of \clsnm{MemoryGrp} would be
-    //. appropriate.
-    static MemoryGrp *create_memorygrp(int localsize);
+    //. The initial message group is the group that starts up a process.
+    //. This returns null if this process is first and then it is up to the
+    //. programmer to create a messagegrp.
+
+    //. Create a memory group.  This routine looks for a -memorygrp
+    //argument, then the environmental variable MEMORYGRP, and, finally,
+    //the default \clsnmref{MessageGrp} object to decide which
+    //specialization of \clsnm{MemoryGrp} would be appropriate.  The
+    //argument to -memorygrp should be either string for a
+    //\clsnmref{ParsedKeyVal} constructor or a classname.
+    static MemoryGrp* initial_memorygrp(int &argc, char** argv);
 };
 DescribedClass_REF_dec(MemoryGrp);
 

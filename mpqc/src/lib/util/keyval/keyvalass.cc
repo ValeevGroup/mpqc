@@ -43,7 +43,7 @@ AssignedKeyVal::~AssignedKeyVal()
 int
 AssignedKeyVal::key_exists(const char * key)
 {
-  KeyValKeyword k(key); 
+  std::string k(key); 
   int result = _map.contains(k);
   if (!result) {
       seterror(UnknownKeyword);
@@ -57,7 +57,7 @@ AssignedKeyVal::key_exists(const char * key)
 Ref<KeyValValue>
 AssignedKeyVal::key_value(const char * key, const KeyValValue &def)
 {
-  KeyValKeyword k(key); 
+  std::string k(key); 
   if (exists(key)) {
       seterror(OK);
       return _map[k];
@@ -71,7 +71,7 @@ AssignedKeyVal::key_value(const char * key, const KeyValValue &def)
 void
 AssignedKeyVal::assign(const char*key,const Ref<KeyValValue>& val)
 {
-  KeyValKeyword k(key);
+  std::string k(key);
   _map[k] = val;
 }
 void
@@ -118,10 +118,10 @@ AssignedKeyVal::clear()
 }
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
-template class EAVLMMapNode<KeyValKeyword, AVLMapNode<KeyValKeyword,Ref<KeyValValue> > >;
-template class EAVLMMap<KeyValKeyword, AVLMapNode<KeyValKeyword,Ref<KeyValValue> > >;
-template class AVLMapNode<KeyValKeyword,Ref<KeyValValue> >;
-template class AVLMap<KeyValKeyword,Ref<KeyValValue> >;
+template class EAVLMMapNode<std::string, AVLMapNode<std::string,Ref<KeyValValue> > >;
+template class EAVLMMap<std::string, AVLMapNode<std::string,Ref<KeyValValue> > >;
+template class AVLMapNode<std::string,Ref<KeyValValue> >;
+template class AVLMap<std::string,Ref<KeyValValue> >;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////

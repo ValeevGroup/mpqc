@@ -35,7 +35,7 @@ LD = $(CXX)
 
 CXXSRC = ipv2.cc ipv2_alloc.cc ipv2_cwk.cc ipv2_data.cc ipv2_error.cc \
 	 ipv2_karray.cc ipv2_print.cc ipv2_read.cc \
-	 keyval.cc keyvalipv2.cc keyvalval.cc keyvalkey.cc keyvalass.cc \
+	 keyval.cc keyvalipv2.cc keyvalval.cc keyvalass.cc \
          keyvalstr.cc keyvalagg.cc keyvalpre.cc
 
 GENCXXSRC =ipv2_parse.cc ipv2_scan.cc
@@ -45,7 +45,7 @@ TESTPROGS = keyvaltest
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(GENCXXSRC:%.cc=%.$(OBJSUF))
 GENSRC = $(GENCXXSRC)
 
-INC = ipv2.h keyval.h keyvaldefs.h ipv2_scan.h
+INC = ipv2.h keyval.h ipv2_scan.h
 GENINC = ipv2_parse.h
 
 

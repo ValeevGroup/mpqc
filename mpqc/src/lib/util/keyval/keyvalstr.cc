@@ -69,7 +69,7 @@ StringKeyVal::truekeyword(const char * key)
 int
 StringKeyVal::key_exists(const char* key)
 {
-  stringvalue(key);
+  stringrep(key);
   if (error() == OK || error() == HasNoValue) {
       return 1;
     }
@@ -96,7 +96,7 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
       const char* classn = classname(tkw);
       //ExEnv::outn() << "classname = " << classn << '\n';
       if (classn) {
-          KeyValKeyword truekey(tkw);
+          std::string truekey(tkw);
           if (_map.contains(truekey)) {
               result = _map[truekey];
             }
@@ -131,7 +131,7 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
             }
         }
       else {
-          const char* string = stringvalue(tkw);
+          const char* string = stringrep(tkw);
           if (string) result = new KeyValValueString(string);
           else result = 0;
         }

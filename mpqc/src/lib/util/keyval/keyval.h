@@ -44,30 +44,6 @@
 
 namespace sc {
 
-class KeyValKeyword {
-  private:
-    char* keyword_;
-  public:
-    KeyValKeyword();
-    KeyValKeyword(const char* name);
-    KeyValKeyword(const KeyValKeyword&);
-    ~KeyValKeyword();
-    KeyValKeyword& operator=(const KeyValKeyword&);
-    int operator==(const KeyValKeyword& ck) const;
-    int operator<(const KeyValKeyword& ck) const;
-    int hash() const;
-    inline int cmp(const KeyValKeyword&ck) const
-    {
-      if (!keyword_) {
-          if (!ck.keyword_) return 0;
-          return -1;
-        }
-      if (!ck.keyword_) return 1;
-      return strcmp(keyword_,ck.keyword_);
-    }
-    inline const char* name() const {return keyword_;}
-  };
-
 /**
  The KeyVal class is designed to simplify the process of allowing
  a user to specify keyword/value associations to a C++ program.  A
@@ -188,24 +164,30 @@ class KeyVal: public RefCount {
     Ref<DescribedClass> describedclassvalue(const char* key = 0,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
 
-    // For vectors:
-    int    exists(const char*,int);
-    int    count(const char*,int);
-    int    booleanvalue(const char*,int,
+    /** These members correspond to the above members, but take
+        an additional integer argument, i, which is a vector index.
+        This is equivalent to getting a value for a keyword named
+        "<i>key</i>:<i>i</i>".  The routines that do not take
+        key arguments get the value for the keyword named "<i>i</i>".
+     */
+    //@{
+    int    exists(const char* key,int i);
+    int    count(const char* key,int i);
+    int    booleanvalue(const char* key,int i,
                         const KeyValValue& def=KeyValValueboolean());
-    double doublevalue(const char* key,int,
+    double doublevalue(const char* key,int i,
                        const KeyValValue& def=KeyValValuedouble());
-    float  floatvalue(const char* key,int,
+    float  floatvalue(const char* key,int i,
                       const KeyValValue& def=KeyValValuefloat());
-    char   charvalue(const char* key,int,
+    char   charvalue(const char* key,int i,
                      const KeyValValue& def=KeyValValuechar());
-    int    intvalue(const char* key,int,
+    int    intvalue(const char* key,int i,
                     const KeyValValue& def=KeyValValueint());
-    size_t sizevalue(const char* key,int,
+    size_t sizevalue(const char* key,int i,
                      const KeyValValue& def=KeyValValuesize());
-    char*  pcharvalue(const char* key,int,
+    char*  pcharvalue(const char* key,int i,
                       const KeyValValue& def=KeyValValuepchar());
-    std::string stringvalue(const char* key,int,
+    std::string stringvalue(const char* key,int i,
                             const KeyValValue& def=KeyValValuestring());
     Ref<DescribedClass> describedclassvalue(const char* key,int,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
@@ -230,8 +212,14 @@ class KeyVal: public RefCount {
                             const KeyValValue& def=KeyValValuestring());
     Ref<DescribedClass> describedclassvalue(int i,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
+    //@}
 
-    // For arrays:
+    /** These members correspond to the above members, but take additional
+        integer arguments, i and j, which is an array index.  This is
+        equivalent to getting a value for a keyword named
+        "<i>key</i>:<i>i</i>:<i>j</i>".  The routines that do not take key
+        arguments get the value for the keyword named "<i>i</i>:<i>j</i>".  */
+    //@{
     int    exists(const char*,int,int);
     int    count(const char*,int,int);
     int    booleanvalue(const char*,int,int,
@@ -273,19 +261,25 @@ class KeyVal: public RefCount {
                             const KeyValValue& def=KeyValValuestring());
     Ref<DescribedClass> describedclassvalue(int i,int j,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
+    //@}
 
-    // For all else:
-    int    Va_exists(const char*,int,...);
-    int    Va_count(const char*,int,...);
-    int    Va_booleanvalue(const char*,int,...);
-    double Va_doublevalue(const char* key,int,...);
-    float  Va_floatvalue(const char* key,int,...);
-    char   Va_charvalue(const char* key,int,...);
-    int    Va_intvalue(const char* key,int,...);
-    size_t Va_sizevalue(const char* key,int,...);
-    char*  Va_pcharvalue(const char* key,int,...);
-    std::string Va_stringvalue(const char* key,int,...);
-    Ref<DescribedClass> Va_describedclassvalue(const char* key,int,...);
+    /** These members correspond to the above members, but can be used
+        to read in arrays with more than two dimensions.  The nindex
+        argument is the number of indices in the array.  It is followed
+        by an int giving the value of each index.  */
+    //@{
+    int    Va_exists(const char* key,int nindex,...);
+    int    Va_count(const char* key,int nindex,...);
+    int    Va_booleanvalue(const char* key,int nindex,...);
+    double Va_doublevalue(const char* key,int nindex,...);
+    float  Va_floatvalue(const char* key,int nindex,...);
+    char   Va_charvalue(const char* key,int nindex,...);
+    int    Va_intvalue(const char* key,int nindex,...);
+    size_t Va_sizevalue(const char* key,int nindex,...);
+    char*  Va_pcharvalue(const char* key,int nindex,...);
+    std::string Va_stringvalue(const char* key,int nindex,...);
+    Ref<DescribedClass> Va_describedclassvalue(const char* key,int nindex,...);
+    //@}
 
     /// Return the current error condition.
     KeyValError error();
@@ -293,8 +287,9 @@ class KeyVal: public RefCount {
     const char*  errormsg(KeyValError err);
     /// Return a textual representation of the current error.
     const char*  errormsg();
-
+    /// Write a message to fp describing the error.
     virtual void errortrace(std::ostream&fp=ExEnv::err0());
+    /// Write a message to fp describing the error.
     virtual void dump(std::ostream&fp=ExEnv::err0());
 
     /// Print keywords that were never looked at, if possible.
@@ -312,11 +307,11 @@ class KeyVal: public RefCount {
 
 
 
-// this class allows keyval associations to be set up by the program,
-// rather than determined by an external file
+/** This class allows keyval associations to be set up by the program,
+    rather than determined by an external file. */
 class AssignedKeyVal: public KeyVal {
   private:
-    AVLMap<KeyValKeyword,Ref<KeyValValue> > _map;
+    AVLMap<std::string,Ref<KeyValValue> > _map;
     // do not allow a copy constructor or assignment
     AssignedKeyVal(const AssignedKeyVal&);
     void operator=(const AssignedKeyVal&);
@@ -328,25 +323,33 @@ class AssignedKeyVal: public KeyVal {
     AssignedKeyVal();
     ~AssignedKeyVal();
 
-    void assign(const char*, const Ref<KeyValValue>&);
-    void assign(const char*, double);
-    void assignboolean(const char*, int);
-    void assign(const char*, float);
-    void assign(const char*, char);
-    void assign(const char*, int);
-    void assign(const char*, const char*);
-    void assign(const char*, const Ref<DescribedClass>&);
+    /** Each of this routines assigns key to val.  */
+    //@{
+    void assign(const char* key, const Ref<KeyValValue>& val);
+    void assign(const char* key, double val);
+    void assignboolean(const char* key, int val);
+    void assign(const char* key, float val);
+    void assign(const char* key, char val);
+    void assign(const char* key, int val);
+    void assign(const char* key, const char* val);
+    void assign(const char* key, const Ref<DescribedClass>& val);
+    //@}
 
+    /// Erase all of the stored assignments.
     void clear();
 };
 
 
 
+/** StringKeyVal is a base class for KeyVal implementations
+    that store all values in a string format.  These are
+    converted to other data types through KeyValValue.
+*/
 class StringKeyVal: public KeyVal {
   private:
     // once a described class is found it is kept here so
     // multiple references to it return the same instance
-    AVLMap<KeyValKeyword,Ref<KeyValValue> > _map;
+    AVLMap<std::string,Ref<KeyValValue> > _map;
     // do not allow a copy constructor or assignment
     StringKeyVal(const StringKeyVal&);
     void operator=(const StringKeyVal&);
@@ -357,16 +360,21 @@ class StringKeyVal: public KeyVal {
                              const KeyValValue& def);
   public:
     virtual ~StringKeyVal();
-    virtual const char* stringvalue(const char *) = 0;
-    // returns the name of the exact class the object at the keyword
+    /// Returns the string representation of the value assigned to key.
+    virtual const char* stringrep(const char *key) = 0;
+    /** Returns the name of the exact class of the object at the keyword.
+        If no classname is assigned then 0 is returned. */
     virtual const char* classname(const char*);
-    // returns a string which is the actual keyword if some sort
-    // of variable substitution takes place (needed to make multiple
-    // references to the same object work in input files)
+    /** Returns a string which is the actual keyword if some sort
+        of variable substitution takes place (needed to make multiple
+        references to the same object work in input files). */
     virtual const char* truekeyword(const char*);
 
+    /// See the parent class documentation for descriptions of these functions.
+    //@{
     virtual void errortrace(std::ostream&fp=ExEnv::err0());
     virtual void dump(std::ostream&fp=ExEnv::err0());
+    //@}
 };
 
 class AggregateKeyVal : public KeyVal {
@@ -468,14 +476,16 @@ class ParsedKeyVal : public StringKeyVal {
     /// Read input data from the given string.
     void parse_string(const char *);
 
-    // Overrides of parent members.
-    const char* stringvalue(const char*);
+    /// Overrides of parent members.
+    //@{
+    const char* stringrep(const char*);
     const char* classname(const char*);
     const char* truekeyword(const char*);
     void errortrace(std::ostream&fp=ExEnv::err0());
     void dump(std::ostream&fp=ExEnv::err0());
     void print_unseen(std::ostream&fp=ExEnv::out0());
     int have_unseen();
+    //@}
 };
 
 }

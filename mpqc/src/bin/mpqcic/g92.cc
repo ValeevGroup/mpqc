@@ -19,7 +19,7 @@ extern "C" {
 #include <chemistry/molecule/molecule.h>
 
 #include "mpqc_int.h"
-#include "run_g92_proto.h"
+#include "g92_int.h"
 
 //////////////////////////////////////////////////////////////////////////////
 

@@ -238,6 +238,23 @@ PSI_Input::~PSI_Input()
   delete[] nvolume;
 }
 
+void
+PSI_Input::open(const char *fname)
+{
+  fp = fopen(fname, "w");
+  if (fp == NULL) {
+    cerr << "(PSI_Input_CI::write_input_file): Can't open "
+         << fname << endl;
+    abort();
+    }
+}
+
+void
+PSI_Input::close()
+{
+  fclose(fp);
+  fp = 0;
+}
 
 void
 PSI_Input::begin_section(const char * s)
@@ -404,8 +421,13 @@ PSI_Input::write_defaults(const char *dertype, const char *wavefn)
    int i;
    double *x_vec, *y_vec, *z_vec;
 
+   int dograd = !strcmp(dertype,"FIRST");
+
    begin_section("default");
-   write_keyword("output", "terminal");
+   // Gradient calcs write the energy to file11 so the output
+   // can go to the terminal.  Otherwise, the output must go
+   // to output.dat from which the energy will be read.
+   if (dograd) write_keyword("output", "terminal");
    write_keyword("wfn", wavefn);
    write_keyword("dertype", dertype);
    write_keyword("opentype", opentype);
@@ -568,79 +590,5 @@ PSI_Input::write_key_wq(const char *s, const char *t)
       return(0);
       }
    else return(1);
-}
-
-
-void
-PSI_Input_SCF::write_input_file(const char *dertype, const char *wavefn, 
-    const int convergence, const char *fname )
-{
-  fp = fopen(fname, "w");
-  if (fp == NULL) {
-    cerr << "(PSI_Input_SCF::write_input_file): Can't open " << fname << endl;
-    abort();
-    }
-  write_defaults(dertype, wavefn);
-  write_input();
-  write_basis();
-  if(convergence != 0){
-    begin_section("scf");
-    write_keyword("convergence", convergence);
-    end_section();
-    }
-
-  fclose(fp);
-}
-
-void
-PSI_Input_CI::write_input_file(const char *dertype, const char *wavefn,
-    const int convergence, const char *fname )
-{
-  fp = fopen(fname, "w");
-  if (fp == NULL) {
-    cerr << "(PSI_Input_CI::write_input_file): Can't open "
-         << fname << endl;
-    abort();
-    }
-  write_defaults(dertype, wavefn);
-  write_input();
-  write_basis();
-  if(convergence != 0){
-    begin_section("gugaci");
-    write_keyword("convergence", convergence);
-    end_section();
-    }
-
-  fclose(fp);
-}
-
-void
-PSI_Input_CC::write_input_file(const char *dertype, const char *wavefn,
-    const int convergence, const char *fname )
-{
-  fp = fopen(fname, "w");
-  if (fp == NULL) {
-    cerr << "(PSI_Input_CC::write_input_file): Can't open " << fname << endl;
-    abort();
-    }
-  write_defaults(dertype, wavefn);
-  write_input();
-  write_basis();
-  begin_section("cceg");
-  if(convergence != 0){
-    write_keyword("convergence", convergence);
-    }
-  write_keyword("restart", "no");
-  write_keyword("maxiter", 50);
-  end_section();
-  begin_section("cczv");
-  if(convergence != 0){
-    write_keyword("convergence", convergence);
-    }
-  write_keyword("restart", "no");
-  write_keyword("maxiter", 50);
-  end_section();
-
-  fclose(fp);
 }
 

@@ -1,9 +1,7 @@
 
+#include <util/misc/formio.h>
 #include <chemistry/qc/psi/psi.h>
-#include <chemistry/qc/psi/psici.h>
-#include <chemistry/qc/psi/psicc.h>
 #include <math/optimize/opt.h>
-#include <util/keyval/ipv2.h>
 #include <util/keyval/keyval.h>
 #include <new.h>
 
@@ -30,11 +28,8 @@ main(int argc, char**argv)
   // the output stream is standard out
   ostream& o = cout;
 
-  // use the same IPV2 for both the C IPV2 input and the keyval input
-  IPV2* ipv2 = new IPV2;
-  //IPV2::set_global(ipv2);
   ParsedKeyVal* pkv;
-  RefKeyVal rpkv(pkv = new ParsedKeyVal(ipv2));
+  RefKeyVal rpkv(pkv = new ParsedKeyVal());
   pkv->read( SRCDIR "/psi.in");
   pkv = 0; // should only use rpkv
 
@@ -47,7 +42,7 @@ main(int argc, char**argv)
 
           o << "energy = " << mole->energy() << endl;
           o << "gradient:\n";
-          o++; mole->gradient().print(o); o--;
+          o << incindent; mole->gradient().print(o); o << decindent;
         }
       else {
           o << "mole[" << i << "] is null\n";
@@ -65,6 +60,6 @@ main(int argc, char**argv)
       else {
           o << "opt[" << i << "] is null\n";
         }
-      opt->nlp()->print();
+      opt->function()->print();
     }
 }

@@ -43,6 +43,8 @@ class PSI_Input {
       RefMolecule _mol;
       RefGaussianBasisSet _gbs;
       FILE *fp;
+
+   public:
       void begin_section(const char * s);
       void end_section();
       void write_indent();
@@ -67,43 +69,9 @@ class PSI_Input {
       virtual void write_input_file(const char *,const char *,
                const int convergence = 0, const char *s = "input.dat");
       int test() { return _test; }
-};
 
-
-class PSI_Input_SCF : public PSI_Input
-{
-
-   public:
-      PSI_Input_SCF(const RefKeyVal&keyval) : PSI_Input(keyval) {}
-      PSI_Input_SCF() : PSI_Input() {}
-      ~PSI_Input_SCF() {}
-      virtual void write_input_file(const char *,const char *,
-               const int convergence = 0, const char *s = "input.dat");
-
-};
-
-
-class PSI_Input_CI : public PSI_Input
-{
-
-   public:
-      PSI_Input_CI(const RefKeyVal&keyval) : PSI_Input(keyval) {}
-      PSI_Input_CI() : PSI_Input() {}
-      ~PSI_Input_CI() {}
-      virtual void write_input_file(const char *,const char *,
-               const int convergence = 0, const char *s = "input.dat");
-
-};
-
-class PSI_Input_CC : public PSI_Input
-{
-
-   public:
-      PSI_Input_CC(const RefKeyVal&keyval) : PSI_Input(keyval) {}
-      PSI_Input_CC() : PSI_Input() {}
-      ~PSI_Input_CC() {}
-      virtual void write_input_file(const char *,const char *,
-               const int convergence = 0, const char *s = "input.dat");
+      void open(const char*filename);
+      void close();
 };
 
 #endif

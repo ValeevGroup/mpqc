@@ -1,46 +1,122 @@
 
+#ifdef __GNUC__
+#pragma interface
+#endif
 
 #ifndef _chemistry_qc_psi_psi_h
 #define _chemistry_qc_psi_psi_h
 
-#include <chemistry/qc/wfn/obwfn.h>
-#include <chemistry/molecule/energy.h>
-#include <chemistry/qc/basis/basis.h>
-#include "psiinput.h"
+#include <chemistry/qc/wfn/wfn.h>
+#include <chemistry/qc/psi/psiinput.h>
 
-class PSISCF: public OneBodyWavefunction
-{
-#   define CLASSNAME PSISCF
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
+class PsiWfn: public Wavefunction {
+#   define CLASSNAME PsiWfn
 #   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  private:
-    PSI_Input_SCF psi_in;
+#   include <util/class/classda.h>
   protected:
+    PSI_Input psi_in;
     void compute();
+
+    virtual void write_input(int conv) = 0;
+    virtual double read_energy() = 0;
+    void write_basic_input(int conv, const char *wfn);
   public:
-    PSISCF(const RefKeyVal&);
-    PSISCF(StateIn&);
-    virtual ~PSISCF();
+    PsiWfn(const RefKeyVal&);
+    PsiWfn(StateIn&);
+    virtual ~PsiWfn();
     void save_data_state(StateOut&);
-  
-    void print(ostream& =cout);
 
-    //int do_eigenvectors(int);
-    //RefSCMatrix eigenvectors();
-    double occupation(int vectornum);
+    double density(cart_point&);
+    RefSymmSCMatrix density();
 
-    double occupation(int,int);
-    RefDiagSCMatrix eigenvalues();
-    RefSCMatrix eigenvectors();
+    void print(ostream&o=cout);
 
     int spin_polarized();
-    int spin_unrestricted();
-    RefSymmSCMatrix density();
+    int nelectron();
 
     int gradient_implemented();
     int value_implemented();
 };
-  
+
+class PsiHF: public PsiWfn {
+#   define CLASSNAME PsiHF
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    void write_input(int conv);
+    double read_energy();
+  public:
+    PsiHF(const RefKeyVal&);
+    PsiHF(StateIn&);
+    ~PsiHF();
+    void save_data_state(StateOut&);
+};
+
+class PsiCCSD: public PsiWfn {
+#   define CLASSNAME PsiCCSD
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    void write_input(int conv);
+    double read_energy();
+  public:
+    PsiCCSD(const RefKeyVal&);
+    PsiCCSD(StateIn&);
+    ~PsiCCSD();
+    void save_data_state(StateOut&);
+};
+
+class PsiCCSD_T: public PsiWfn {
+#   define CLASSNAME PsiCCSD_T
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    void write_input(int conv);
+    double read_energy();
+  public:
+    PsiCCSD_T(const RefKeyVal&);
+    PsiCCSD_T(StateIn&);
+    ~PsiCCSD_T();
+    void save_data_state(StateOut&);
+};
+
+class PsiCCSDT: public PsiWfn {
+#   define CLASSNAME PsiCCSDT
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    void write_input(int conv);
+    double read_energy();
+  public:
+    PsiCCSDT(const RefKeyVal&);
+    PsiCCSDT(StateIn&);
+    ~PsiCCSDT();
+    void save_data_state(StateOut&);
+    int gradient_implemented();
+};
+
+class PsiCI: public PsiWfn {
+#   define CLASSNAME PsiCI
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    void write_input(int conv);
+    double read_energy();
+  public:
+    PsiCI(const RefKeyVal&);
+    PsiCI(StateIn&);
+    ~PsiCI();
+    void save_data_state(StateOut&);
+};
+
 #endif

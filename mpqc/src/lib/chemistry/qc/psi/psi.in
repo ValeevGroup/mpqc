@@ -1,7 +1,7 @@
 % Emacs should use -*- KeyVal -*- mode.
 
 mole: [
-  <PSI_CI>: (
+  <PsiCI>: (
     % Function input
     value_accuracy = 1e-5
     gradient_accuracy = 1e-4

@@ -31,14 +31,12 @@
 #ifndef __PIC__
 
 #include <chemistry/qc/psi/psi.h>
-#include <chemistry/qc/psi/psicc.h>
-#include <chemistry/qc/psi/psici.h>
 
-const ClassDesc &psi_force_link_a_ = PSISCF::class_desc_;
-const ClassDesc &psi_force_link_b_ = PSI_CCSD::class_desc_;
-const ClassDesc &psi_force_link_c_ = PSI_CCSD_T::class_desc_;
-const ClassDesc &psi_force_link_d_ = PSI_CCSDT::class_desc_;
-const ClassDesc &psi_force_link_e_ = PSI_CI::class_desc_;
+const ClassDesc &psi_force_link_a_ = PsiHF::class_desc_;
+const ClassDesc &psi_force_link_b_ = PsiCI::class_desc_;
+const ClassDesc &psi_force_link_c_ = PsiCCSD::class_desc_;
+const ClassDesc &psi_force_link_d_ = PsiCCSD_T::class_desc_;
+const ClassDesc &psi_force_link_e_ = PsiCCSDT::class_desc_;
 
 #endif /* __PIC__ */
 

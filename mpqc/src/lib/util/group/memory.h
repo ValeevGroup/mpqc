@@ -37,6 +37,12 @@
 #include <util/class/class.h>
 #include <util/group/rnglock.h>
 
+#ifdef __GNUC__
+typedef unsigned long long distsize_t;
+#else
+typedef unsigned long distsize_t;
+#endif
+
 //. The \clsnm{MemoryGrp} abstract class provides the appearance of global
 //. shared memory in a parallel machine.
 class MemoryGrp: public DescribedClass {

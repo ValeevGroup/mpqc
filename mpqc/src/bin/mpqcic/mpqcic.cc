@@ -190,7 +190,8 @@ main(int argc, char *argv[])
 
    // initialize keyval
     RefKeyVal pkv(new ParsedKeyVal(filename));
-    RefKeyVal ppkv(new PrefixKeyVal(":mpqc :default",pkv));
+    RefKeyVal ppkv(new AggregateKeyVal(new PrefixKeyVal(":mpqc",pkv),
+                                       new PrefixKeyVal(":default",pkv)));
     pkv = new ParsedKeyVal("input",ppkv);
     keyval = new AggregateKeyVal(ppkv,pkv);
 

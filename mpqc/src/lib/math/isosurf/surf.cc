@@ -4,6 +4,7 @@
 #endif
 
 #include <math/scmat/matrix.h>
+#include <math/scmat/vector3.h>
 #include <math/isosurf/surf.h>
 
 /////////////////////////////////////////////////////////////////////////
@@ -47,8 +48,8 @@ TriangulatedSurface::topology_info(int v, int e, int t, FILE* fp)
   int nsurf_e = ((3*v - e)%6 == 0)? (3*v - e)/6 : -1;
   int nsurf_t = ((2*v - t)%4 == 0)? (2*v - t)/4 : -1;
   if ((nsurf_e!=-1) && (nsurf_e == nsurf_t)) {
-      fprintf(fp,"  this is consistent with %d closed surface%s\n",
-              nsurf_e, (nsurf_e == 1)?"":"s");
+      fprintf(fp,"  this is consistent with n_closed_surface - n_hole = %d\n",
+              nsurf_e);
     }
   else {
       fprintf(fp,"  this implies that some surfaces are not closed\n");
@@ -218,18 +219,18 @@ TriangulatedSurface::volume()
   for (int i=0; i<_triangles.length(); i++) {
 
       // get the vertices of the triangle
-      RefSCVector A(vertex(triangle_vertex(i,0))->point());
-      RefSCVector B(vertex(triangle_vertex(i,1))->point());
-      RefSCVector C(vertex(triangle_vertex(i,2))->point());
+      SCVector3 A(vertex(triangle_vertex(i,0))->point());
+      SCVector3 B(vertex(triangle_vertex(i,1))->point());
+      SCVector3 C(vertex(triangle_vertex(i,2))->point());
 
       // project the vertices onto the xy plane
-      RefSCVector Axy(A.dim()); Axy.assign(A); Axy[2] = 0.0;
-      RefSCVector Bxy(B.dim()); Bxy.assign(B); Bxy[2] = 0.0;
-      RefSCVector Cxy(C.dim()); Cxy.assign(C); Cxy[2] = 0.0;
+      SCVector3 Axy(A); Axy[2] = 0.0;
+      SCVector3 Bxy(B); Bxy[2] = 0.0;
+      SCVector3 Cxy(C); Cxy[2] = 0.0;
 
       // construct the legs of the triangle in the xy plane
-      RefSCVector BAxy = Bxy - Axy;
-      RefSCVector CAxy = Cxy - Axy;
+      SCVector3 BAxy = Bxy - Axy;
+      SCVector3 CAxy = Cxy - Axy;
 
       // find the lengths of the legs of the triangle in the xy plane
       double baxy = sqrt(BAxy.dot(BAxy));
@@ -256,14 +257,12 @@ TriangulatedSurface::volume()
       // the volume of the space under the triangle
       double volume = areaxy * (hA + (hB + hC - 2.0*hA)/3.0);
 
-      // the sum of the gradients of the triangle's three vertices
-      // along the projection axis (z)
-      double zgrad
-        = vertex(triangle_vertex(i,0))->gradient()[2]
-        + vertex(triangle_vertex(i,1))->gradient()[2]
-        + vertex(triangle_vertex(i,2))->gradient()[2];
+      // the orientation of the triangle along the projection axis (z)
+      SCVector3 BA(B-A);
+      SCVector3 CA(C-A);
+      double z_orientation = BA.cross(CA)[2];
 
-      if (zgrad > 0.0) {
+      if (z_orientation > 0.0) {
           result += volume;
         }
       else {

@@ -139,7 +139,7 @@ IntMolecularCoor::new_coords()
   // intialize the coordinate sets
   all_ = new SetIntCoor; // all redundant coors
   variable_ = new SetIntCoor; // internal coors to be varied
-  constant_ = new SetIntCoor; // internal coors to be head fixed
+  constant_ = new SetIntCoor; // internal coors to be fixed
   bonds_ = new SetIntCoor;
   bends_ = new SetIntCoor;
   tors_ = new SetIntCoor;

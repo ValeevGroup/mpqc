@@ -484,7 +484,7 @@ dnl --------- Checks for library functions. ---------
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
 AC_FUNC_WAIT3
-AC_CHECK_FUNCS(strerror sigfillset)
+AC_CHECK_FUNCS(strerror sigfillset signal system)
 
 dnl --------- Check for signal handler argument lists. ---------
 

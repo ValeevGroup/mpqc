@@ -57,6 +57,12 @@
 /* Define if you have the sigfillset function (and company).  */
 #undef HAVE_SIGFILLSET
 
+/* Define if you have the signal function.  */
+#undef HAVE_SIGNAL
+
+/* Define if you have the system function.  */
+#undef HAVE_SYSTEM
+
 /* Define if you have functioning SYSV IPC.  */
 #undef HAVE_SYSV_IPC
 

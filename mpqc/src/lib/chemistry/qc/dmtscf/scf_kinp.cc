@@ -315,16 +315,24 @@ scf_init_scf_struct(const RefKeyVal& keyval, centers_t& centers,
 
  // read in the number of mo's to occupy in each symmetry type
 
+  double net_charge = keyval->doublevalue("net_charge");
+  if (keyval->error() != KeyVal::OK) net_charge=0.0;
+
   scf_info.nclosed = keyval->intvalue("docc");
 
   if (keyval->error() != KeyVal::OK && !scf_info.iopen) {
-    scf_info.nclosed = (int) ((nuclear_charge+0.5)/2);
+    scf_info.nclosed = (int) ((nuclear_charge-net_charge+0.5)/2);
 
-    if (fabs(nuclear_charge-2*scf_info.nclosed)> 1.e-5) {
+    if (fabs(nuclear_charge-net_charge-2*scf_info.nclosed)> 1.e-5) {
       fprintf(stderr,"Yikes! Error assigning charge--give docc.!\n");
       return -1;
     }
   }
+
+  printf("\n  total charge = %f\n",
+         nuclear_charge-2*scf_info.nclosed-scf_info.nopen);
+  printf("  number of electrons = %d (%d docc, %d socc)\n",
+         scf_info.nclosed*2+scf_info.nopen,scf_info.nclosed,scf_info.nopen);
 
  // use diis extrapolation?
   scf_info.diis_flg = keyval->booleanvalue("diis");

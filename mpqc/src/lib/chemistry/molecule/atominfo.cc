@@ -244,7 +244,7 @@ AtomInfo::load_library_values()
       Ref<KeyVal> keyval;
       if ((libdir = getenv("SCLIBDIR")) != 0) {
           const char* atominfo = "/atominfo.kv";
-          const char *eq = strchr(libdir,'=');
+          const char *eq = ::strchr(libdir,'=');
           if (eq) libdir = eq + 1;
           char *filename = new char[strlen(libdir) + strlen(atominfo) + 1];
           strcpy(filename, libdir);

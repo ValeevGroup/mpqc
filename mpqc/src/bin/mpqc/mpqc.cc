@@ -388,7 +388,7 @@ main(int argc, char *argv[])
   Ref<KeyVal> keyval = new PrefixKeyVal("mpqc",parsedkv.pointer());
 
   // get the basename for output files
-  int nfilebase = (int) (strrchr(input, '.') - input);
+  int nfilebase = (int) (::strrchr(input, '.') - input);
   char *basename = new char[nfilebase + 1];
   strncpy(basename, input, nfilebase);
   basename[nfilebase] = '\0';

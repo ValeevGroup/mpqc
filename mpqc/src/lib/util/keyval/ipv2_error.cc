@@ -85,7 +85,7 @@ IPV2::warn(const char *msg)
     }
   if (poskey[0] != '%') poskey = NULL;
 #else
-  poskey = strstr(msg,"%k");
+  poskey = ::strstr(msg,"%k");
 #endif
   if (poskey) {
       newmsg = (char *) malloc(strlen(msg)-1 + strlen(lastkeyword));

@@ -32,7 +32,6 @@ class mat4;
 enum {VX, VY, VZ, VW};		    // axes
 enum {PA, PB, PC, PD};		    // planes
 enum {RED, GREEN, BLUE};	    // colors
-enum {KA, KD, KS, ES};		    // phong coefficients
 
 /****************************************************************
 *								*

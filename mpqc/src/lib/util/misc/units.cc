@@ -126,7 +126,7 @@ Units::parse_unit()
   const char *rest = strrep_;
 
   while (rest) {
-      const char *end = strpbrk(rest, " */");
+      const char *end = ::strpbrk(rest, " */");
       int nchar;
       if (end) {
           nchar = end - rest;
@@ -212,7 +212,7 @@ Units::parse_unit()
       delete[] unitstring;
       if (invert) factor = 1.0/factor;
       to_atomic_units_ *= factor;
-      rest = strpbrk(rest, " */");
+      rest = ::strpbrk(rest, " */");
       while (rest && (*rest == ' ' || *rest == '*' || *rest == '/')) {
           if (*rest == '/') invert = !invert;
           rest++;

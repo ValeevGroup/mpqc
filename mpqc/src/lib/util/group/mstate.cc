@@ -633,7 +633,11 @@ void
 BcastStateInBin::seek(int loc)
 {
   file_position_ = loc;
+#if defined(HAS_PUBSEEKOFF)
   if (grp->me() == 0) buf_->pubseekoff(loc,ios::beg,ios::in);
+#elif defined(HAS_SEEKOFF)
+  if (grp->me() == 0) buf_->seekoff(loc,ios::beg,ios::in);
+#endif
   nbuf = 0;
   ibuf = 0;
 }
@@ -641,13 +645,17 @@ BcastStateInBin::seek(int loc)
 int
 BcastStateInBin::seekable()
 {
+#if defined(HAS_PUBSEEKOFF) || defined(HAS_SEEKOFF)
   return 1;
+#else
+  return 0;
+#endif
 }
 
 int
 BcastStateInBin::use_directory()
 {
-  return 1;
+  return seekable();
 }
 
 int

@@ -23,7 +23,7 @@ extern "C" {
 #include <comm/picl/ext/piclext.h>
 
 
-#if defined(I860)
+#if defined(I860) || defined(SGI)
 int led(int);
 void bzero(void*,int);
 #endif
@@ -284,7 +284,7 @@ main(int argc, char *argv[])
 
       char * tmp;
       for(i=0; i < count; i++) {
-        tmp = keyval->pcharvalue("atom_labels");
+        tmp = keyval->pcharvalue("atom_labels",i);
         atom_labels[i]=tmp;
         }
       }

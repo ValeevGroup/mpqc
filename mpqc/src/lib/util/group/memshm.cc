@@ -186,7 +186,7 @@ ShmMemoryGrp::set_localsize(int localsize)
       cout.flush();
 #endif // DEBUG
       delete[] stringrep;
-      for (int i=0; i<n(); i++) {
+      for (i=0; i<n(); i++) {
           update_[i].initialize();
           char * stringrep = update_[i].stringrep();
           int length = strlen(stringrep) + 1;
@@ -212,7 +212,7 @@ ShmMemoryGrp::set_localsize(int localsize)
 #endif // DEBUG
       lock_.initialize(stringrep);
       delete[] stringrep;
-      for (int i=0; i<n(); i++) {
+      for (i=0; i<n(); i++) {
           msg_->bcast(&length, 1);
           stringrep = new char[length];
           msg_->bcast(stringrep, length);
@@ -238,7 +238,7 @@ ShmMemoryGrp::set_localsize(int localsize)
     }
   
   if (me() != 0) {
-      for (int i=0; i<nregion_; i++) {
+      for (i=0; i<nregion_; i++) {
           if (debug_) {
               cout << me() << ": ";
               cout << "ShmMemoryGrp: attaching segment at address "

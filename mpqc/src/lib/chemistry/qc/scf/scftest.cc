@@ -112,8 +112,10 @@ main(int argc, char**argv)
   } else {
     mole = rpkv->describedclassvalue(keyword);
     opt = rpkv->describedclassvalue(optkeyword);
-    // opt->set_checkpoint();
-    // opt->set_checkpoint_file("scftest.ckpt");
+    if (opt.nonnull()) {
+      opt->set_checkpoint();
+      opt->set_checkpoint_file("scftest.ckpt");
+    }
   }
 
   tim->exit("input");

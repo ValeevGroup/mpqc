@@ -379,7 +379,7 @@ MPIMessageGrp::sync()
 
 #define REDUCEMEMBER(name, type, mpitype) \
 static GrpReduce<type>* name ## reduceobject; \
-static void \
+extern "C" void \
 name ## reduce(void*b, void*a, int*len, MPI_Datatype*datatype) \
 { \
   name ## reduceobject->reduce((type*)a, (type*)b, *len); \

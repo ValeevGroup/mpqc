@@ -1,5 +1,6 @@
 
 #include <math/scmat/elemop.h>
+#include <math/scmat/blocked.h>
 #include <math/optimize/scextrapmat.h>
 
 #define CLASSNAME SymmSCMatrixSCExtrapData
@@ -156,6 +157,13 @@ SymmSCMatrixSCExtrapError::SymmSCMatrixSCExtrapError(StateIn& s) :
   RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
   RefSCDimension dim;
   dim.restore_state(s);
+
+  int blocked;
+  s.get(blocked);
+  
+  if (blocked)
+    k = new BlockedSCMatrixKit(SCMatrixKit::default_matrixkit());
+  
   m = k->symmmatrix(dim);
   m.restore(s);
 }
@@ -171,6 +179,10 @@ SymmSCMatrixSCExtrapError::save_data_state(StateOut& s)
 {
   SCExtrapError::save_data_state(s);
   m.dim().save_state(s);
+
+  int blocked = (BlockedSymmSCMatrix::castdown(m)) ? 1 : 0;
+  s.put(blocked);
+  
   m.save(s);
 }
 

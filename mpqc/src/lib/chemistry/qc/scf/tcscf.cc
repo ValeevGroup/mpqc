@@ -718,10 +718,18 @@ TCExtrapData::TCExtrapData(StateIn&s) :
   RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
   RefSCDimension dim;
   dim.restore_state(s);
+
+  int blocked;
+  s.get(blocked);
+
+  if (blocked)
+    k = new BlockedSCMatrixKit(SCMatrixKit::default_matrixkit());
+  
   m1 = k->symmmatrix(dim);
   m2 = k->symmmatrix(dim);
   m3 = k->symmmatrix(dim);
   m4 = k->symmmatrix(dim);
+
   m1.restore(s);
   m2.restore(s);
   m3.restore(s);
@@ -745,6 +753,10 @@ TCExtrapData::save_data_state(StateOut& s)
 {
   SCExtrapData::save_data_state(s);
   m1.dim().save_state(s);
+
+  int blocked = (BlockedSymmSCMatrix::castdown(m1)) ? 1 : 0;
+  s.put(blocked);
+  
   m1.save(s);
   m2.save(s);
   m3.save(s);

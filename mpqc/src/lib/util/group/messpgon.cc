@@ -103,7 +103,7 @@ ParagonMessageGrp::reduce(double*d, int n, GrpReduce<double>&r,
   if (!scratch) work = new double[n];
   else work = scratch;
 
-  gopf((char*)d, n*sizeof(double), (char*)work, (gopfarg)doublereduce);
+  gopf(d, n*sizeof(double), work, doublereduce);
 
   if (!scratch) delete[] work;
 }
@@ -126,7 +126,7 @@ ParagonMessageGrp::reduce(int*d, int n, GrpReduce<int>&r,
   if (!scratch) work = new int[n];
   else work = scratch;
 
-  gopf((char*)d, n*sizeof(int), (char*)work, (gopfarg)intreduce);
+  gopf(d, n*sizeof(int), work, intreduce);
 
   if (!scratch) delete[] work;
 }
@@ -149,7 +149,7 @@ ParagonMessageGrp::reduce(char*d, int n, GrpReduce<char>&r,
   if (!scratch) work = new char[n];
   else work = scratch;
 
-  gopf((char*)d, n*sizeof(char), (char*)work, (gopfarg)charreduce);
+  gopf(d, n*sizeof(char), work, charreduce);
 
   if (!scratch) delete[] work;
 }
@@ -172,7 +172,7 @@ ParagonMessageGrp::reduce(long*d, int n, GrpReduce<long>&r,
   if (!scratch) work = new long[n];
   else work = scratch;
 
-  gopf((char*)d, n*sizeof(long), (char*)work, (gopfarg)longreduce);
+  gopf(d, n*sizeof(long), work, longreduce);
 
   if (!scratch) delete[] work;
 }
@@ -195,7 +195,7 @@ ParagonMessageGrp::reduce(float*d, int n, GrpReduce<float>&r,
   if (!scratch) work = new float[n];
   else work = scratch;
 
-  gopf((char*)d, n*sizeof(float), (char*)work, (gopfarg)floatreduce);
+  gopf(d, n*sizeof(float), work, floatreduce);
 
   if (!scratch) delete[] work;
 }
@@ -219,8 +219,7 @@ ParagonMessageGrp::reduce(unsigned char*d, int n, GrpReduce<unsigned char>&r,
   if (!scratch) work = new unsigned char[n];
   else work = scratch;
 
-  gopf((char*)d, n*sizeof(unsigned char), (char*)work,
-       (gopfarg)unsignedcharreduce);
+  gopf(d, n*sizeof(unsigned char), work, unsignedcharreduce);
 
   if (!scratch) delete[] work;
 }
@@ -243,7 +242,7 @@ ParagonMessageGrp::reduce(short*d, int n, GrpReduce<short>&r,
   if (!scratch) work = new short[n];
   else work = scratch;
 
-  gopf((char*)d, n*sizeof(short), (char*)work, (gopfarg)shortreduce);
+  gopf(d, n*sizeof(short), work, shortreduce);
 
   if (!scratch) delete[] work;
 }

@@ -211,6 +211,20 @@ SetIntCoor::add(const RefSetIntCoor& coor)
     }
 }
 
+void
+SetIntCoor::del(const RefIntCoor& coor)
+{
+  coor_.del(coor);
+}
+
+void
+SetIntCoor::del(const RefSetIntCoor& coor)
+{
+  for (int i=0; i<coor->n(); i++) {
+      coor_.del(coor->coor(i));
+    }
+}
+
 int
 SetIntCoor::n() const
 {

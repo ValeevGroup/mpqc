@@ -93,6 +93,7 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
   outs_ = new SetIntCoor;
   extras_ = new SetIntCoor;
   fixed_ = new SetIntCoor;
+  followed_ = 0;
   
   init();
 }
@@ -121,6 +122,7 @@ IntMolecularCoor::IntMolecularCoor(const RefKeyVal& keyval):
   extras_ = new SetIntCoor;
   fixed_ = keyval->describedclassvalue("fixed");
   if (fixed_.null()) fixed_ = new SetIntCoor;
+  followed_ = keyval->describedclassvalue("followed");
 
   // the extra_bonds list is given as a vector of atom numbers
   // (atom numbering starts at 1)
@@ -185,6 +187,7 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
   constant_.restore_state(s);
 
   fixed_.restore_state(s);
+  followed_.restore_state(s);
 
   bonds_.restore_state(s);
   bends_.restore_state(s);
@@ -264,6 +267,10 @@ IntMolecularCoor::form_coordinates()
   for (i=0; i<nouts; i++) all_->add(outs_->coor(i));
   for (i=0; i<nextras; i++) all_->add(extras_->coor(i));
 
+  // if we're following coordinates, add them to the fixed list
+  if (followed_.nonnull())
+    fixed_->add(followed_);
+  
   int nredundant = nbonds + nbends + ntors + nouts + nextras;
   int nfixed = fixed_->n();
 
@@ -296,7 +303,15 @@ IntMolecularCoor::form_coordinates()
   variable_->clear();
   constant_->clear();
 
+  // now remove followed coords from the fixed list, and add to the
+  // variable list
+  if (followed_.nonnull()) {
+    fixed_->del(followed_);
+    variable_->add(followed_);
+  }
+  
   // put the fixed coordinates into the constant list
+  nfixed = fixed_->n();
   for (i=0; i<nfixed; i++) {
       constant_->add(fixed_->coor(i));
     }
@@ -551,6 +566,7 @@ IntMolecularCoor::save_data_state(StateOut&s)
   constant_.save_state(s);
 
   fixed_.save_state(s);
+  followed_.save_state(s);
 
   bonds_.save_state(s);
   bends_.save_state(s);
@@ -931,6 +947,9 @@ IntMolecularCoor::print_simples(SCostream& os)
   }
   if (fixed_->n()) {
     os.indent() << "Fixed:\n";  os++; fixed_->print(molecule_,os); os--;
+  }
+  if (followed_.nonnull()) {
+    os.indent() << "Followed:\n"; os++; followed_->print(molecule_,os); os--;
   }
 }
 

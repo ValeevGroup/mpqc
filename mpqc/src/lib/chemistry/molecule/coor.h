@@ -106,6 +106,8 @@ class SetIntCoor: virtual public SavableState {
     void save_data_state(StateOut&);
     void add(const RefIntCoor&);
     void add(const RefSetIntCoor&);
+    void del(const RefIntCoor&);
+    void del(const RefSetIntCoor&);
     void clear();
     int n() const;
     RefIntCoor coor(int) const;
@@ -176,6 +178,7 @@ class IntMolecularCoor: public MolecularCoor
     RefSetIntCoor constant_; // the constant internal coordinates
     
     RefSetIntCoor fixed_;
+    RefIntCoor followed_;
 
     // these are all of the basic coordinates
     RefSetIntCoor bonds_;

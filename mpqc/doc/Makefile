@@ -11,7 +11,7 @@ info:
 	makeinfo SC.texi
 
 html:
-	texi2html -verbose -deepsplit -menu SC.texi
+	perl $(TOPDIR)/bin/texi2html -verbose -deepsplit -menu SC.texi
 
 clean distclean::
 	/bin/rm -f *.info* *.html

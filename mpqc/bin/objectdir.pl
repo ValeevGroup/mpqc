@@ -2,6 +2,10 @@
 
 $srcdir = $ARGV[0];
 
+($mydev,$myino,$mymode,$mynlink,$myuid,$mygid,$myrdev,$mysize,
+ $myatime,$mymtime,$myctime,$myblksize,$myblocks)
+    = stat(".");
+
 if (substr($srcdir,0,1) eq "/") {
     $topdir = "";
 }
@@ -69,6 +73,8 @@ sub dodir {
         local($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
          $atime,$mtime,$ctime,$blksize,$blocks)
             = stat("$dir/$file");
+
+        if ($dev == $mydev && $ino == $myino) { next; }
 
         if (-d "$dir/$file") {
             mkdir ("$objdir/$file", $mode);

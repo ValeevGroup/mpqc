@@ -96,6 +96,8 @@ TriangulatedSurface::TriangulatedSurface(const RefKeyVal& keyval):
   _verbose = keyval->booleanvalue("verbose");
   _debug = keyval->booleanvalue("debug");
   set_integrator(keyval->describedclassvalue("integrator"));
+  set_fast_integrator(keyval->describedclassvalue("fast_integrator"));
+  set_accurate_integrator(keyval->describedclassvalue("accurate_integrator"));
   if (keyval->error() != KeyVal::OK) {
       set_integrator(new GaussTriangleIntegrator(1));
     }
@@ -143,11 +145,37 @@ TriangulatedSurface::set_integrator(const RefTriangleIntegrator& i)
   _integrator = i;
 }
 
+void
+TriangulatedSurface::set_fast_integrator(const RefTriangleIntegrator& i)
+{
+  _fast_integrator = i;
+}
+
+void
+TriangulatedSurface::set_accurate_integrator(const RefTriangleIntegrator& i)
+{
+  _accurate_integrator = i;
+}
+
 RefTriangleIntegrator
 TriangulatedSurface::integrator(int)
 {
   // currently the argument, the integer index of the triangle, is ignored
   return _integrator;
+}
+
+RefTriangleIntegrator
+TriangulatedSurface::fast_integrator(int)
+{
+  // currently the argument, the integer index of the triangle, is ignored
+  return _fast_integrator.null()?_integrator:_fast_integrator;
+}
+
+RefTriangleIntegrator
+TriangulatedSurface::accurate_integrator(int)
+{
+  // currently the argument, the integer index of the triangle, is ignored
+  return _accurate_integrator.null()?_integrator:_accurate_integrator;
 }
 
 void
@@ -711,6 +739,7 @@ TriangulatedSurfaceIntegrator::
   TriangulatedSurfaceIntegrator(const RefTriangulatedSurface&ts)
 {
   set_surface(ts);
+  use_default_integrator();
 
   _itri = 0;
   _irs = 0;
@@ -719,6 +748,7 @@ TriangulatedSurfaceIntegrator::
 TriangulatedSurfaceIntegrator::
   TriangulatedSurfaceIntegrator()
 {
+  use_default_integrator();
 }
 
 void
@@ -727,6 +757,7 @@ TriangulatedSurfaceIntegrator::
 {
   set_surface(i._ts);
 
+  _integrator = i._integrator;
   _itri = i._itri;
   _irs = i._irs;
 }
@@ -773,7 +804,7 @@ TriangulatedSurfaceIntegrator::update()
 {
   if (_itri < 0 || _itri >= _ts->ntriangle()) return 0;
 
-  TriangleIntegrator* i = _ts->integrator(_itri).pointer();
+  TriangleIntegrator* i = (_ts.pointer()->*_integrator)(_itri).pointer();
   _s = i->s(_irs);
   _r = i->r(_irs);
   _weight = i->w(_irs);
@@ -792,11 +823,18 @@ TriangulatedSurfaceIntegrator::
   int n = _ts->integrator(_itri)->n();
   if (_irs == n-1) {
       _irs = 0;
-      _itri++;
+      if (_grp.null()) _itri++;
+      else _itri += _grp->n();
     }
   else {
       _irs++;
     }
+}
+
+void
+TriangulatedSurfaceIntegrator::distribute(const RefMessageGrp &grp)
+{
+  _grp = grp;
 }
 
 int
@@ -806,6 +844,24 @@ TriangulatedSurfaceIntegrator::
   _itri = i;
   _irs = 0;
   return i;
+}
+
+void
+TriangulatedSurfaceIntegrator::use_default_integrator()
+{
+  _integrator = TriangulatedSurface::integrator;
+}
+
+void
+TriangulatedSurfaceIntegrator::use_fast_integrator()
+{
+  _integrator = TriangulatedSurface::fast_integrator;
+}
+
+void
+TriangulatedSurfaceIntegrator::use_accurate_integrator()
+{
+  _integrator = TriangulatedSurface::accurate_integrator;
 }
 
 /////////////////////////////////////////////////////////////////////////

@@ -78,8 +78,12 @@ class TriangulatedSurface: public DescribedClass {
     int _have_values;
     Arraydouble _values;
 
-    // what to use to integrate over the surface
+    // what to use to integrate over the surface, by default
     RefTriangleIntegrator _integrator;
+    // other integrators, in terms of time & accuracy:
+    // _fast_integrator <= _integrator <= _accurate_interator
+    RefTriangleIntegrator _fast_integrator;
+    RefTriangleIntegrator _accurate_integrator;
 
     void clear_int_arrays();
 
@@ -115,7 +119,11 @@ class TriangulatedSurface: public DescribedClass {
 
     // set up an integrator
     void set_integrator(const RefTriangleIntegrator&);
+    void set_fast_integrator(const RefTriangleIntegrator&);
+    void set_accurate_integrator(const RefTriangleIntegrator&);
     virtual RefTriangleIntegrator integrator(int itri);
+    virtual RefTriangleIntegrator fast_integrator(int itri);
+    virtual RefTriangleIntegrator accurate_integrator(int itri);
 
     // construct the surface
     void add_triangle(const RefVertex&,
@@ -178,6 +186,8 @@ class TriangulatedSurfaceIntegrator {
     double _surface_element;
     RefVertex _current;
     SCVector3 _dA;
+    RefTriangleIntegrator (TriangulatedSurface::*_integrator)(int itri);
+    RefMessageGrp _grp;
   public:
     TriangulatedSurfaceIntegrator();
     // the surface cannot be changed until this is destroyed
@@ -185,6 +195,7 @@ class TriangulatedSurfaceIntegrator {
     ~TriangulatedSurfaceIntegrator();
     // Objects initialized by these operators are not automatically
     // updated.  This must be done with the update member.
+    // The _grp is not copied.
     void operator = (const TriangulatedSurfaceIntegrator&);
     TriangulatedSurfaceIntegrator(const TriangulatedSurfaceIntegrator&i) {
         operator = (i);
@@ -216,6 +227,10 @@ class TriangulatedSurfaceIntegrator {
     inline void operator++(int) { operator++(); }
     // setting TSI = i sets TSI to begin at the triangle i
     int operator = (int);
+    void distribute(const RefMessageGrp &);
+    void use_fast_integrator();
+    void use_accurate_integrator();
+    void use_default_integrator();
 };
 
 class TriangulatedImplicitSurface: public TriangulatedSurface {

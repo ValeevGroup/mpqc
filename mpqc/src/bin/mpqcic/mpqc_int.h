@@ -41,7 +41,7 @@ extern "C" {
 
 int Geom_init_mpqc(RefMolecule&, const RefKeyVal&);
 
-int Geom_update_mpqc(double_matrix_t*, const RefKeyVal&);
+int Geom_update_mpqc(RefSCVector&, const RefKeyVal&);
 
 void Geom_done_mpqc(const RefKeyVal&, int converged);
 void Geom_write_pdb(const RefKeyVal&, RefMolecule&, char * =0);

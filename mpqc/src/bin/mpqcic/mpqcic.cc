@@ -467,7 +467,17 @@ main(int argc, char *argv[])
 
         if (mynode0()==0) {
           fprintf(outfile,"\n");
-          geom_code = Geom_update_mpqc(&gradient, keyval);
+
+          RefSCVector gradv(mol->dim_natom3());
+          
+          int i,j,ij;
+          for (j=ij=0; j < gradient.n2; j++) {
+            for (i=0; i < gradient.n1; i++,ij++) {
+              gradv->set_element(ij,gradient.d[i][j]);
+            }
+          }
+          
+          geom_code = Geom_update_mpqc(gradv, keyval);
           reset_centers(centers,mol);
         }
       }
@@ -513,7 +523,7 @@ main(int argc, char *argv[])
    // write pdb file if requested
     if (make_pdb && geometry_converged)
       Geom_write_pdb(keyval,mol,"final geometry");
-    else
+    else if (make_pdb)
       Geom_write_pdb(keyval,mol,"converged geometry");
   }
 

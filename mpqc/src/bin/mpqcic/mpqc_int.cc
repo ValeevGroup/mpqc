@@ -30,7 +30,7 @@
 #include <util/unix/cct_cprot.h>
 #include <util/misc/libmisc.h>
 
-#include <math/optimize/opt.h>
+#include <math/optimize/update.h>
 #include <math/scmat/local.h>
 
 #include <chemistry/molecule/molecule.h>
@@ -60,6 +60,7 @@ static RefSymmSCMatrix hessian;
 static RefSCVector xn;
 static RefSCVector gn;
 static RefSCVector cart_grad;
+static RefSCVector last_mode;
 
 RefLocalSCDimension di, dc;
 
@@ -70,6 +71,8 @@ static int print_internal=0;
 static int cartesians=0;
 static int tstate=0;
 static int efc=0;
+static int modef=0;
+
 static double conv_crit=1.0e-6;
 static double conv_rmsf=1.0e-5;
 static double conv_maxf=4.0e-5;
@@ -126,12 +129,16 @@ get_input(const RefKeyVal& keyval)
   if (keyval->exists("transition_state")) {
     efc = 1;
     tstate = keyval->booleanvalue("transition_state");
+    if (keyval->exists("mode_following")) {
+      modef = keyval->booleanvalue("mode_following");
+    }
   }
 
   fprintf(outfp,"  intco:print_hessian       = %d\n",print_hessian);
   fprintf(outfp,"  intco:print_internal      = %d\n",print_internal);
   fprintf(outfp,"  intco:cartesians          = %d\n",cartesians);
   fprintf(outfp,"  intco:transition_state    = %d\n",tstate);
+  fprintf(outfp,"  intco:mode_following      = %d\n",modef);
   fprintf(outfp,"  intco:maxstepsize         = %g\n",maxstepsize);
   fprintf(outfp,"  intco:cartesian_tolerance = %g\n",cart_tol);
   fprintf(outfp,"  intco:convergence         = %g\n",conv_crit);
@@ -265,30 +272,29 @@ Geom_done_mpqc(const RefKeyVal& keyval, int converged)
 
 
 int
-Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
+Geom_update_mpqc(RefSCVector& grad, const RefKeyVal& keyval)
 {
   int i,j,ij;
-  
+
+  cart_grad = grad.copy();
+    
   // find rms and max force
   rmsforce=0;
   maxforce=0;
-  for (j=ij=0; j < grad->n2; j++) {
-    for (i=0; i < grad->n1; i++,ij++) {
-      double d = fabs(grad->d[i][j]);
-      rmsforce += d*d;
-      maxforce = (d>maxforce) ? d : maxforce;
-      cart_grad->set_element(ij,grad->d[i][j]);
-      }
-    }
-  rmsforce = sqrt(rmsforce/(grad->n1*grad->n2));
+  for (i=0; i < cart_grad.n(); i++) {
+    double d = fabs(cart_grad(i));
+    rmsforce += d*d;
+    maxforce = (d>maxforce) ? d : maxforce;
+  }
+  rmsforce = sqrt(rmsforce/cart_grad.n());
 
   // transform cartesian coordinates to internal coordinates 
   coor->to_internal(xn);
-  xn.print("internal coordinates");
+  // xn.print("internal coordinates");
 
   // transform cartesian gradient to internal coordinates
   coor->to_internal(gn,cart_grad);
-  gn.print("internal coordinate gradients");
+  // gn.print("internal coordinate gradients");
 
   // update the inverse hessian
   RefNLP2 nlp = 0;
@@ -306,12 +312,12 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
     RefDiagSCMatrix evals(hessian.dim());
 
     hessian.diagonalize(evals,evecs);
-    evals.print("hessian eigenvalues");
-    evecs.print("hessian eigenvectors");
+    //evals.print("hessian eigenvalues");
+    //evecs.print("hessian eigenvectors");
 
     // form gradient to local hessian modes F = Ug
     RefSCVector F = evecs.t() * gn;
-    F.print("F");
+    //F.print("F");
 
     // figure out if hessian has the right number of negative eigenvalues
     int ncoord = evals.n();
@@ -328,8 +334,12 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
     if (tstate) {
       // no mode following yet, just follow lowest mode
       int mode = 0;
-      printf("\n following mode %d\n",mode);
 
+      if (modef) {
+        printf("\n following mode %d\n",mode);
+      }
+      
+      
       double bk = evals(mode);
       double Fk = F(mode);
       double lambda_p = 0.5*bk + 0.5*sqrt(bk*bk + 4*Fk*Fk);
@@ -347,8 +357,8 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
         }
       } while(fabs(nlambda-lambda_n) > 1.0e-8);
 
-      printf("lambda_p = %g\n",lambda_p);
-      printf("lambda_n = %g\n",lambda_n);
+      printf("\n  lambda_p = %g\n",lambda_p);
+      printf("  lambda_n = %g\n",lambda_n);
 
       // form Xk
       double Fkobkl = F(mode)/(evals(mode)-lambda_p);
@@ -378,7 +388,7 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
           nlambda += Fi*Fi / (lambda - evals.get_element(i));
         }
       } while(fabs(nlambda-lambda) > 1.0e-8);
-      printf("lambda = %g\n",lambda);
+      printf("\n  lambda = %g\n",lambda);
 
       // form displacement x = sum -Fi*Vi/(bi-lam)
       for (i=0; i < F.n(); i++) {
@@ -390,7 +400,7 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
     }
   }
   
-  xdisp.print("internal coordinate displacements");
+  //xdisp.print("internal coordinate displacements");
 
   // calculate max and rms stepsize
   maxdisp = xdisp.maxabs();
@@ -434,7 +444,7 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
 
   // displace internal coordinates
   xn.accumulate(xdisp);
-  xn.print("new internal coordinates");
+  //xn.print("new internal coordinates");
   
   fprintf(outfp,"\n max of 1/2 idisp*iforce = %15.10g\n",iconv);
   fprintf(outfp," max force               = %15.10g\n",maxforce);
@@ -453,6 +463,7 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
   }
 
   printf("\nnew molecular coordinates\n");
+  fflush(stdout);
   mol->print();
 
   // checkpoint

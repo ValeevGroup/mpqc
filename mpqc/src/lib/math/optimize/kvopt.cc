@@ -29,6 +29,8 @@
 #include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>
 
+using namespace sc;
+
 int
 main(int argc, char** argv)
 {

@@ -41,6 +41,8 @@
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
 
+namespace sc {
+
 class GaussianShell;
 class BasisFileSet;
 class Integral;
@@ -394,7 +396,7 @@ class GaussianBasisSet: public SavableState
     void print(std::ostream& =ExEnv::out0()) const;
 };
 
-
+}
 
 #endif
 

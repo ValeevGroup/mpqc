@@ -36,6 +36,7 @@
 #include <util/keyval/keyvalval.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -118,7 +119,7 @@ KeyValValue::print(ostream&o) const
 }
 
 ostream&
-operator << (ostream&o, const KeyValValue &val)
+sc::operator << (ostream&o, const KeyValValue &val)
 {
   val.print(o);
   return o;

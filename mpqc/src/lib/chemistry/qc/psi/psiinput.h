@@ -24,7 +24,10 @@ using namespace std;
 #include<chemistry/molecule/molecule.h>
 #include<chemistry/qc/basis/basis.h>
 
+namespace sc {
+
 class PsiExEnv;
+class CorrelationTable;
 
 ///////////////////////////////////////////////////
 /// PsiInput is a Psi input file
@@ -68,5 +71,7 @@ class PsiInput: public RefCount {
     
     void write_defaults(const Ref<PsiExEnv>&, const char *dertype);
 };
+
+}
 
 #endif

@@ -38,6 +38,8 @@
 #include <util/container/array.h>
 #include <util/container/avlset.h>
 
+namespace sc {
+
 /** A Shape is a Volume represents an 3D solid.  The value of the Shape at
 each point in space is the distance to the surface.  The distance is
 negative if the point is inside the solid.  For Shape specializations that
@@ -240,6 +242,7 @@ class UnionShape: public Shape {
     int gradient_implemented() const;
 };
 
+}
 
 #endif
 

@@ -7,6 +7,8 @@
 #include <util/state/proxy.h>
 #include <util/keyval/keyval.h>
 
+using namespace sc;
+
 static ClassDesc SavableStateProxy_cd(
     typeid(SavableStateProxy),
     "SavableStateProxy",1,"public DescribedClassProxy",

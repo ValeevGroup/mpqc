@@ -33,12 +33,15 @@
 #include <chemistry/qc/psi/psiwfn.h>
 #include <math/optimize/qnewton.h>
 
+namespace sc {
+
 static ForceLink<PsiCLHF> psi_force_link_a_;
 static ForceLink<PsiHSOSHF> psi_force_link_b_;
 static ForceLink<PsiUHF> psi_force_link_c_;
 static ForceLink<PsiCCSD> psi_force_link_d_;
 static ForceLink<PsiCCSD_T> psi_force_link_e_;
-static ForceLink<QNewtonOpt> qnewtonopt_force_link_a_;
+
+}
 
 #endif /* __PIC__ */
 

@@ -2,6 +2,8 @@
 #include <math/symmetry/pointgrp.h>
 #include <math/symmetry/corrtab.h>
 
+using namespace sc;
+
 main(int argc, char *argv[])
 {
   Ref<PointGroup> pg = new PointGroup(argv[1]);

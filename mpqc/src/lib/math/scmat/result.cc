@@ -35,6 +35,8 @@
 #include <math/scmat/result.h>
 #include <util/state/state.h>
 
+using namespace sc;
+
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class AccResult<RefSCMatrix >;
 template class AccResult<RefSymmSCMatrix >;

@@ -38,6 +38,7 @@
 #include <math/scmat/mops.h>
 
 using namespace std;
+using namespace sc;
 
 extern "C" {
     int sing_(double *q, int *lq, int *iq, double *s, double *p,

@@ -39,6 +39,8 @@
 #include <chemistry/molecule/molrender.h>
 #include <math/scmat/vector3.h>
 
+using namespace sc;
+
 ////////////////////////////////////////////////////////////////
 // RenderedMolecule
 

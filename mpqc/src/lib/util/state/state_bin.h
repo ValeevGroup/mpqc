@@ -34,6 +34,8 @@
 
 #include <util/state/state_file.h>
 
+namespace sc {
+
 /** Save state to a binary file.
  */
 class StateOutBin: public StateOutFile {
@@ -89,6 +91,8 @@ class StateInBin: public StateInFile {
     void seek(int loc);
     int seekable();
   };
+
+}
 
 #endif
 

@@ -34,6 +34,8 @@
 
 #include <chemistry/qc/basis/basis.h>
 
+namespace sc {
+
 /** SOTransformShell describes how an AO function contributes to an SO
     function in a particular SO shell. */
 class SOTransformFunction {
@@ -185,6 +187,8 @@ inline int
 SOBasis::function_offset_within_shell(int ishell, int iirrep) const
 {
   return funcoff_[ishell][iirrep];
+}
+
 }
 
 #endif

@@ -40,6 +40,8 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/result.h>
 
+namespace sc {
+
 /** The Function class is an abstract base class that,
     given a set of coordinates, will compute a value and possibly
     a gradient and hessian at that point. */
@@ -190,6 +192,7 @@ class Function: virtual public SavableState, public Compute {
     virtual void print(std::ostream& = ExEnv::out0()) const;
 };
 
+}
 
 #endif
 

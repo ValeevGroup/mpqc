@@ -38,6 +38,8 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/wfn/orbital.h>
 
+using namespace sc;
+
 static ClassDesc Orbital_cd(
   typeid(Orbital),"Orbital",1,"public Volume",
   0, create<Orbital>, 0);

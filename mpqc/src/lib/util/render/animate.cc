@@ -33,6 +33,8 @@
 #include <util/render/animate.h>
 #include <util/render/object.h>
 
+using namespace sc;
+
 /////////////////////////////////////////////////////////////////////////////
 // AnimatedObject
 

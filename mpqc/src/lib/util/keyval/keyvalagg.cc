@@ -33,6 +33,7 @@ extern "C" {
 #include <util/keyval/keyval.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////
 // AggregateKeyVal

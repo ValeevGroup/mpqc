@@ -36,6 +36,8 @@
 #include <util/state/state.h>
 #include <util/container/avlmap.h>
 
+namespace sc {
+
 class StateOutData {
   public:
     int num;
@@ -153,6 +155,7 @@ class StateOut: public DescribedClass {
     virtual int seekable();
   };
 
+}
 
 #endif
 

@@ -34,6 +34,8 @@
 #include <util/misc/compute.h>
 #include <math/scmat/matrix.h>
 
+namespace sc {
+
 typedef AccResult<RefSCMatrix > AccResultRefSCMatrix;
 typedef AccResult<RefSymmSCMatrix > AccResultRefSymmSCMatrix;
 typedef AccResult<RefDiagSCMatrix > AccResultRefDiagSCMatrix;
@@ -43,5 +45,7 @@ typedef AccResult<RefSCMatrix > ResultRefSCMatrix;
 typedef AccResult<RefSymmSCMatrix > ResultRefSymmSCMatrix;
 typedef AccResult<RefDiagSCMatrix > ResultRefDiagSCMatrix;
 typedef AccResult<RefSCVector > ResultRefSCVector;
+
+}
 
 #endif

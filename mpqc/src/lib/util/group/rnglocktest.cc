@@ -34,6 +34,7 @@
 #include <util/group/rnglock.h>
 
 using namespace std;
+using namespace sc;
 
 main()
 {

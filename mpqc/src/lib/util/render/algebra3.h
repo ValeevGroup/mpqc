@@ -12,6 +12,8 @@
 #include <iostream>
 #include <stdlib.h>
 
+namespace sc {
+
 // this line defines a new type: pointer to a function which returns a
 // double and takes as argument a double
 typedef double (*V_FCT_PTR)(double);
@@ -363,5 +365,7 @@ mat4 translation3D(const vec3& v);                          // translation 3D
 mat4 rotation3D(const vec3& Axis, const double angleDeg);   // rotation 3D
 mat4 scaling3D(const vec3& scaleVector);                    // scaling 3D
 mat4 perspective3D(const double d);                         // perspective 3D
+
+}
 
 #endif

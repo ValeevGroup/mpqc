@@ -36,6 +36,8 @@
 #include <util/state/state.h>
 #include <util/ref/ref.h>
 
+namespace sc {
+
 /** The Debugger class describes what should be done when a catastrophic
 error causes unexpected program termination.  It can try things such as
 start a debugger running where the program died or it can attempt to
@@ -150,6 +152,7 @@ class Debugger: public SavableState {
     void save_data_state(StateOut&);
 };
 
+}
 
 #endif
 

@@ -40,6 +40,8 @@
 #include <string.h>
 #include <util/keyval/ipv2.h>
 
+using namespace sc;
+
 void
 IPV2::ip_cwk_karray_add_v(int n,int*v)
 {

@@ -25,6 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+namespace sc {
+
 template <class Type>
 class Array2 {
   protected:
@@ -85,6 +87,8 @@ class Array2 {
         return _array[i*_length1+j];
       }
 };
+
+}
 
 // ///////////////////////////////////////////////////////////////////////////
 

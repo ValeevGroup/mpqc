@@ -46,6 +46,7 @@
 #include <chemistry/qc/mbpt/csgrads2pdm.h>
 
 using namespace std;
+using namespace sc;
 
 #define SINGLE_THREAD_E12   0
 #define SINGLE_THREAD_QBT34 0

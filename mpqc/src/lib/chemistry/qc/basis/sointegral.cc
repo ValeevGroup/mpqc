@@ -33,6 +33,7 @@
 #include <chemistry/qc/basis/sointegral.h>
 
 using namespace std;
+using namespace sc;
 
 #define DEBUG 0
 

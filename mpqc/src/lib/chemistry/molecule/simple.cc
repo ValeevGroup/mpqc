@@ -38,6 +38,7 @@
 #include <util/container/bitarray.h>
 
 using namespace std;
+using namespace sc;
 
 //////////////////////////////////////////////////////////////////////
 

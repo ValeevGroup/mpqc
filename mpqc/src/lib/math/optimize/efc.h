@@ -39,6 +39,8 @@
 #include <math/optimize/opt.h>
 #include <math/optimize/update.h>
 
+namespace sc {
+
 /**
 The EFCOpt class implements
 eigenvector following as described by Baker in J. Comput. Chem., Vol 7, No
@@ -96,6 +98,8 @@ class EFCOpt: public Optimize {
     void init();
     int update();
 };
+
+}
 
 #endif
 

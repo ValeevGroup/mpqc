@@ -35,6 +35,7 @@
 #include <chemistry/qc/mbpt/mp2extrap.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////
 // MP2BasisExtrap

@@ -31,6 +31,8 @@
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/intv3/int2e.h>
 
+namespace sc {
+
 /** This implements electron repulsion integrals in the IntV3 library. */
 class TwoBodyIntV3 : public TwoBodyInt {
   protected:
@@ -72,6 +74,8 @@ class TwoBodyDerivIntV3 : public TwoBodyDerivInt {
 
     size_t storage_used() { return int2ev3_->storage_used(); }
 };
+
+}
 
 #endif
 

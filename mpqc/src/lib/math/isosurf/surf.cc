@@ -38,6 +38,7 @@
 #include <util/render/polygons.h>
 
 using namespace std;
+using namespace sc;
 
 #ifndef WRITE_OOGL
 #define WRITE_OOGL 1

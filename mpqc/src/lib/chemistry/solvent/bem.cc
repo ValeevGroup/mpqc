@@ -35,6 +35,7 @@
 #include <chemistry/solvent/bem.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc BEMSolvent_cd(
   typeid(BEMSolvent),"BEMSolvent",1,"public DescribedClass",

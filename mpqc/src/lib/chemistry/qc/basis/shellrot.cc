@@ -37,6 +37,7 @@
 #include <chemistry/qc/basis/transform.h>
 
 using namespace std;
+using namespace sc;
 
 void
 ShellRotation::done() {

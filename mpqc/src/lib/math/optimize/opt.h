@@ -38,6 +38,8 @@
 #include <math/optimize/function.h>
 #include <math/optimize/conv.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////
 
 /** The Optimize class is an abstract base class for classes
@@ -132,6 +134,7 @@ class LineOpt: public Optimize {
     void set_search_direction(RefSCVector&);
 };
 
+}
 
 #endif
 

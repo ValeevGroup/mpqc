@@ -31,6 +31,8 @@
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
 
+namespace sc {
+
 class Units;
 
 /** The AtomInfo class provides information about atoms.  The information
@@ -114,6 +116,7 @@ class AtomInfo: public SavableState {
     static int string_to_Z(const char *, int allow_exceptions = 1);
 };
 
+}
 
 #endif
 

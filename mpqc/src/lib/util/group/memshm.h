@@ -42,6 +42,8 @@
 
 #include <util/group/rnglock.h>
 
+namespace sc {
+
 /** The ShmMemoryGrp concrete class provides an implementation of
 MsgMemoryGrp.  It uses SYSV IPC to provided shared memory in a system that
 provide shared memory in hardware.  It is very fast and reliable. */
@@ -83,6 +85,8 @@ class ShmMemoryGrp: public MsgMemoryGrp {
 
     void print(std::ostream &o = ExEnv::out0()) const;
 };
+
+}
 
 #endif
 

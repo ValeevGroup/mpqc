@@ -32,6 +32,10 @@
 
 #include <util/ref/reftestx.h>
 
+using sc::X;
+using sc::Y;
+using sc::Ref;
+
 #ifdef __GNUG__
 typedef Ref<X> forced_implementation_of_RefX;
 #endif

@@ -10,6 +10,7 @@
 #include <chemistry/qc/basis/extent.h>
 
 using namespace std;
+using namespace sc;
 
 ARRAY_def(ExtentData);
 

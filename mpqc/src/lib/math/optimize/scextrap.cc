@@ -32,6 +32,8 @@
 #include <util/state/stateio.h>
 #include <math/optimize/scextrap.h>
 
+using namespace sc;
+
 static ClassDesc SCExtrapData_cd(
   typeid(SCExtrapData),"SCExtrapData",1,"public SavableState",
   0, 0, 0);

@@ -47,6 +47,7 @@
 #include <chemistry/qc/basis/extent.h>
 
 using namespace std;
+using namespace sc;
 
 static void
 do_so_shell_test(const Ref<SOBasis>& sobas, const Ref<TwoBodySOInt> &soer,

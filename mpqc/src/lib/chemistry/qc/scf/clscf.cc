@@ -51,6 +51,9 @@
 #include <chemistry/qc/scf/clhftmpl.h>
 
 using namespace std;
+using namespace sc;
+
+namespace sc {
 
 ///////////////////////////////////////////////////////////////////////////
 // CLSCF
@@ -686,6 +689,8 @@ CLSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+}
 
 // Local Variables:
 // mode: c++

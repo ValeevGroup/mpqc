@@ -7,6 +7,10 @@
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/molecule.h>
 
+class MPQCInFlexLexer;
+
+namespace sc {
+
 class IPV2;
 
 template <class T>
@@ -21,7 +25,6 @@ class MPQCInDatum {
     T val() const { return val_; }
 };
 
-class MPQCInFlexLexer;
 class MPQCIn {
     MPQCInFlexLexer *lexer_;
     Ref<Molecule> mol_;
@@ -106,5 +109,7 @@ class MPQCIn {
 
     static int checking() { return checking_; }
 };
+
+}
 
 #endif

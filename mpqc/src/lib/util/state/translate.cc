@@ -29,6 +29,8 @@
 #include <util/state/translate.h>
 #include <util/state/stateio.h>
 
+using namespace sc;
+
 ////////////////////////////////////////////////////////////////////////
 
 static inline void

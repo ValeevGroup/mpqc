@@ -33,6 +33,7 @@
 #include <chemistry/qc/wfn/obwfn.h>
 
 using namespace std;
+using namespace sc;
 
 // Force linkages:
 static ForceLink<HCoreWfn> fl0;

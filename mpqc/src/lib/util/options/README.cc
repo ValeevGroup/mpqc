@@ -29,6 +29,8 @@ Let's take a walk through the usage.
 #include <iostream>
 #include <stdlib.h>
 
+using namespace sc;
+
 int debug_index = 0;
 
 int
@@ -59,7 +61,7 @@ main(int argc, char **argv)
 #ifdef DEBUG
    option.enroll("debug", GetLongOpt::MandatoryValue,
       "set debug level to $val", "0");
-#endif DEBUG
+#endif /* DEBUG */
 
 // GetLongOpt::enroll adds option specifications to its internal
 // database. The first argument is the option sting. The second
@@ -101,7 +103,7 @@ main(int argc, char **argv)
 
 #ifdef DEBUG
    debug_index = atoi(option.retrieve("debug"));
-#endif DEBUG
+#endif /* DEBUG */
 
    if ( option.retrieve("help") ) {
       option.usage();

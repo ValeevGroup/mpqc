@@ -34,6 +34,7 @@
 #include <chemistry/qc/intv3/int2e.h>
 
 using namespace std;
+using namespace sc;
 
 #define COMPUTE_Q 1
 #define COMPUTE_R 2

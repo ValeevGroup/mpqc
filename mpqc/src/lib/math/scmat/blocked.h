@@ -37,6 +37,8 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/abstract.h>
 
+namespace sc {
+
 class BlockedSCMatrixKit;
 class BlockedSCVector;
 class BlockedSCMatrix;
@@ -336,6 +338,8 @@ class BlockedSCElementOp3 : public SCElementOp3 {
     void working_on(int);
     int current_block() const;
 };
+
+}
 
 #endif
 

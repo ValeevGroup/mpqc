@@ -41,6 +41,8 @@
 #define INLINE
 #endif
 
+namespace sc {
+
 // /////////////////////////////////////////////////////////////////////////
 // SCMatrixdouble inline candidates
 
@@ -183,6 +185,8 @@ INLINE double
 SCVectordouble::val() const
 {
   return vector.get_element(i);
+}
+
 }
 
 #undef INLINE

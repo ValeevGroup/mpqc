@@ -27,6 +27,8 @@
 
 #include <util/render/color.h>
 
+using namespace sc;
+
 Color::Color(const Ref<KeyVal>& keyval)
 {
   const char* rgb = "rgb";

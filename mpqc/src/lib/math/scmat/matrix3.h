@@ -35,6 +35,9 @@
 #include <math.h>
 
 #include <math/scmat/vector3.h>
+
+namespace sc {
+
 class RefSCmatrix;
 
 class SCMatrix3
@@ -79,6 +82,8 @@ SCMatrix3 rotation_mat(const SCVector3&, const SCVector3&);
 SCMatrix3 rotation_mat(const SCVector3&, double theta);
 SCMatrix3 reflection_mat(const SCVector3&);
 inline int delta(int i, int j) { return i==j; }
+
+}
 
 #endif
 

@@ -34,6 +34,8 @@
 
 #include <chemistry/qc/scf/scf.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 /// A base class for unrestricted self-consistent-field methods.
@@ -130,6 +132,7 @@ class UnrestrictedSCF: public SCF {
     void two_body_deriv_hf(double*grad,double exchange_fraction);
 };
 
+}
 
 #endif
 

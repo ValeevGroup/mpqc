@@ -12,6 +12,8 @@
 #include <float.h>
 #include <chemistry/qc/basis/basis.h>
 
+namespace sc {
+
 struct ExtentData {
     int shell;
     double bound;
@@ -48,6 +50,7 @@ class ShellExtent: public RefCount {
     double resolution() const { return resolution_; }
 };
 
+}
 
 #endif
 

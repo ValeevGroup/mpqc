@@ -32,6 +32,8 @@
 
 #include <chemistry/qc/basis/integral.h>
 
+namespace sc {
+
 class SphericalTransformV3;
 class ISphericalTransformV3;
 
@@ -96,6 +98,7 @@ class IntegralV3 : public Integral {
                    const Ref<GaussianBasisSet> &b4 = 0);
 };
 
+}
 
 #endif
 

@@ -36,6 +36,8 @@
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/basis/sobasis.h>
 
+namespace sc {
+
 class OneBodySOInt : public RefCount {
   protected:
     Ref<OneBodyInt> ob_;
@@ -109,7 +111,7 @@ class TwoBodySOInt : public RefCount {
     void set_only_totally_symmetric(int i) { only_totally_symmetric_ = i; }
 };
 
-
+}
 
 #endif
 

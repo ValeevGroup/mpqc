@@ -43,6 +43,7 @@
 #include <chemistry/molecule/fdhess.h>
 
 using namespace std;
+using namespace sc;
 
 #define DEFAULT_CHECKPOINT  1
 #define DEFAULT_RESTART     1

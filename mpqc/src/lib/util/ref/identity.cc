@@ -32,6 +32,7 @@
 #include <util/ref/identity.h>
 
 using namespace std;
+using namespace sc;
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -42,7 +43,7 @@ Identifier::print(ostream &o) const
 }
 
 ostream &
-operator << (ostream &o, const Identifier &i)
+sc::operator << (ostream &o, const Identifier &i)
 {
   i.print(o);
   return o;

@@ -34,31 +34,43 @@
 #include <scconfig.h>
 #endif
 
+namespace sc {
 static ForceLink<ProcMessageGrp> group_force_link_;
+}
 
 # ifdef HAVE_SYSV_IPC
 #   include <util/group/messshm.h>
+namespace sc {
     static ForceLink<ShmMessageGrp> group_force_link_a_;
+}
 # endif
 
 # if defined(HAVE_PTHREAD)
 #   include <util/group/thpthd.h>
+namespace sc {
     static ForceLink<PthreadThreadGrp> group_force_link_c_;
+}
 # endif
 
 #if defined(HAVE_PUMA_MPI2)
 #   include <util/group/thpuma.h>
+namespace sc {
     static ForceLink<PumaThreadGrp> group_force_link_d_;
+}
 #endif
 
 #if defined(HAVE_MPI2_ONE_SIDED)
 #   include <util/group/memmpi2.h>
+namespace sc {
     static ForceLink<MPI2MemoryGrp> group_force_link_f_;
+}
 #endif
 
 #if defined(HAVE_MPI)
 #   include <util/group/memmtmpi.h>
+namespace sc {
     static ForceLink<MTMPIMemoryGrp> group_force_link_g_;
+}
 #endif
 
 #endif /* __PIC__ */

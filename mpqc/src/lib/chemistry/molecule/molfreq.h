@@ -39,6 +39,8 @@
 #include <chemistry/molecule/molrender.h>
 #include <chemistry/molecule/coor.h>
 
+namespace sc {
+
 class MolFreqAnimate;
 
 /** The MolecularFrequencies class is used to compute the molecular
@@ -153,6 +155,7 @@ class MolFreqAnimate: public AnimatedObject {
     Ref<RenderedObject> object(int iobject);
 };
 
+}
 
 #endif
 

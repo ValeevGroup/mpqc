@@ -37,6 +37,8 @@
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/dercent.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 class Integral;
@@ -293,7 +295,7 @@ class TwoBodyDerivInt : public RefCount {
     virtual int log2_shell_bound(int= -1,int= -1,int= -1,int= -1) = 0;
 };
 
-
+}
 
 #endif
 

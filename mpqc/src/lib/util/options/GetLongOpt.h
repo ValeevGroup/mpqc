@@ -11,6 +11,8 @@
 #include <iostream>
 #include <string.h>
 
+namespace sc {
+
 class GetLongOpt {
 public:
    enum OptType { 
@@ -52,5 +54,7 @@ public:
    void usage(std::ostream &outfile = std::cout) const;
    void usage(const char *str)		{ ustring = str; }
 };
+
+}
 
 #endif /* _GetLongOpt_h_ */

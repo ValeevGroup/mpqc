@@ -35,6 +35,8 @@
 #include <math/isosurf/tricoef.h>
 #include <math/isosurf/edge.h>
 
+namespace sc {
+
 class Triangle: public RefCount {
   protected:
     // these break gcc 2.5.8
@@ -131,6 +133,8 @@ class GaussTriangleIntegrator: public TriangleIntegrator {
     ~GaussTriangleIntegrator();
     void set_n(int n);
 };
+
+}
 
 #endif
 

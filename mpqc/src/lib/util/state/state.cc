@@ -39,6 +39,7 @@
 #include <util/state/stateio.h>
 
 using namespace std;
+using namespace sc;
 
 #define DEBUG 0
 

@@ -34,6 +34,8 @@
 
 #include <iostream>
 
+namespace sc {
+
 class IntV3Arraydouble2 {
   private:
     int n1_, n2_;
@@ -134,6 +136,8 @@ class IntV3Arrayint4 {
     void print(std::ostream &);
     int nbyte() const;
 };
+
+}
 
 #endif
 

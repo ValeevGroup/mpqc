@@ -37,6 +37,8 @@
 #include <chemistry/molecule/hess.h>
 #include <chemistry/molecule/energy.h>
 
+namespace sc {
+
 /// Computes the molecular hessian by finite displacements of gradients.
 class FinDispMolecularHessian: public MolecularHessian {
   protected:
@@ -120,6 +122,8 @@ class FinDispMolecularHessian: public MolecularHessian {
     Ref<SCMatrixKit> matrixkit() const { return mole_->matrixkit(); }
     RefSCDimension d3natom() const { return mole_->moldim(); }
 };
+
+}
 
 #endif
 

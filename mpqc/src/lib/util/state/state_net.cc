@@ -41,6 +41,8 @@ extern "C" {
 #include <sys/socket.h>
 }
 
+using namespace sc;
+
 ///////////////////////////////////////////////////////////////////
 
 Socket::Socket() :

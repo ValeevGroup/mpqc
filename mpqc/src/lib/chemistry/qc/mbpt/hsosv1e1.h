@@ -38,6 +38,8 @@
 #include <util/group/thread.h>
 #include <chemistry/qc/basis/integral.h>
 
+namespace sc {
+
 class HSOSV1Erep1Qtr: public Thread {
   private:
     int mythread;
@@ -76,6 +78,8 @@ class HSOSV1Erep1Qtr: public Thread {
     void set_data(int R_a,int nr_a,int S_a,int ns_a,int ni_a, int ioffset_a);
     double aoint_computed() { return aoint_computed_; }
 };
+
+}
 
 #endif
 

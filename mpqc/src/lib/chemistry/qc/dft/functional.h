@@ -36,6 +36,8 @@
 #include <math/scmat/vector3.h>
 #include <chemistry/qc/wfn/wfn.h>
 
+namespace sc {
+
 /** Contains data needed at each point by a DenFunctional. */
 struct PointInputData {
     enum {X=0, Y=1, Z=2};
@@ -796,6 +798,8 @@ class G96XFunctional: public DenFunctional {
 
     void point(const PointInputData&, PointOutputData&);
 };
+
+}
 
 #endif
 

@@ -37,6 +37,7 @@
 #include <chemistry/qc/mbpt/mbpt.h>
 
 using namespace std;
+using namespace sc;
 
 static void
 compute_alpha(int dim, double **AP, double **alpha,

@@ -49,8 +49,10 @@
 // work if Type is a basic type like int, double, etc.
 // The SSB macros and templates cannot be used unless <util/state/state.h>
 // is included.  This cannot be done here since state.h grabs this file.
+namespace sc {
 class StateIn;
 class StateOut;
+}
 #include <util/container/ssartem.h>
 #include <util/container/ssarmac.h>
 #define SSB_ARRAY_dec(Type) SSBArray_declare(Type)
@@ -71,6 +73,8 @@ class StateOut;
 // The SSB versions cannot be declared because state.h cannot be included
 // yet.  Use the template versions instead.
 
+namespace sc {
+
 ARRAY_dec(int);
 ARRAY2_dec(int);
 
@@ -80,5 +84,7 @@ ARRAY_dec(double);
 ARRAY2_dec(double);
 
 ARRAY_dec(Arraydouble);
+
+}
 
 #endif

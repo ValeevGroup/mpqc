@@ -43,6 +43,8 @@
 #include <util/container/avlmap.h>
 #include <util/misc/exenv.h>
 
+namespace sc {
+
 template <class T, class C>
 class DescribedMemberDatum {
   private:
@@ -350,6 +352,8 @@ class ForceLink: public ForceLinkBase<A> {
   public:
     DescribedClass *create(A a) { return new T(a); }
 };
+
+}
 
 #endif
 

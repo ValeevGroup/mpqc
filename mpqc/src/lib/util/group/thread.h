@@ -34,6 +34,8 @@
 
 #include <util/class/class.h>
 
+namespace sc {
+
 /** The ThreadLock abstract class provides mutex locks to be used in
     conjunction with ThreadGrp's.
 */
@@ -61,11 +63,6 @@ class Thread {
     /// This is called with the Thread is run from a ThreadGrp.
     virtual void run() =0;
 };
-
-extern "C" {
-    // a C linkage interface to run_Thread_run
-    void *Thread__run_Thread_run(void*thread);
-}
     
 /** The ThreadGrp abstract class provides a means to manage separate
     threads of control. */
@@ -128,6 +125,13 @@ class ProcThreadGrp: public ThreadGrp {
 
     ThreadGrp* clone(int nthread = -1);
 };
+
+}
+
+extern "C" {
+    // a C linkage interface to run_Thread_run
+    void *Thread__run_Thread_run(void*thread);
+}
 
 #endif
 

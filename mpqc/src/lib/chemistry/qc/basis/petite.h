@@ -45,6 +45,8 @@
 
 // //////////////////////////////////////////////////////////////////////////
 
+namespace sc {
+
 inline sc_int_least64_t
 ij_offset64(sc_int_least64_t i, sc_int_least64_t j)
 {
@@ -202,7 +204,7 @@ PetiteList::in_p4(int ij, int kl, int i, int j, int k, int l) const
   return ng_/nijkl;
 }
 
-
+}
 
 #endif
 

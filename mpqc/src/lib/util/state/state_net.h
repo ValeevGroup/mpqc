@@ -50,6 +50,8 @@
 #include <malloc.h>
 #endif
 
+namespace sc {
+
 // ////////////////////////////////////////////////////////////
 
 class Socket {
@@ -242,6 +244,8 @@ class StateIOUnixDGram : public StateInUnixDGram, public StateOutUnixDGram {
     StateIOUnixDGram();
     ~StateIOUnixDGram();
   };
+
+}
 
 #endif
 

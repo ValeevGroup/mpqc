@@ -38,6 +38,7 @@
 #include <math/scmat/matrix3.h>
 
 using namespace std;
+using namespace sc;
 
 ////////////////////////////////////////////////////////////////////////
 // VDWShape

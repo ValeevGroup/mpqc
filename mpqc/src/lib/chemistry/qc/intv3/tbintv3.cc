@@ -28,6 +28,8 @@
 #include <chemistry/qc/intv3/tbintv3.h>
 #include <chemistry/qc/basis/integral.h>
 
+using namespace sc;
+
 TwoBodyIntV3::TwoBodyIntV3(Integral*integral,
                            const Ref<GaussianBasisSet>& b1,
                            const Ref<GaussianBasisSet>& b2,

@@ -31,6 +31,8 @@
 #include <util/render/stack.h>
 #include <util/render/parameter.h>
 
+namespace sc {
+
 // cannot be used with g++ 2.6-94q4 and has other bugs anyway
 #if 0
 template <class T1, class T2>
@@ -67,6 +69,8 @@ find_int_parameter_in_appearance_stack(Stack<Ref<Appearance> >& stack,
             }
         }
     }
+}
+
 }
 
 #endif

@@ -37,6 +37,8 @@
 
 #include <chemistry/qc/intv3/int2e.h>
 
+using namespace sc;
+
 void
 Int2eV3::make_int_unit_shell()
 {

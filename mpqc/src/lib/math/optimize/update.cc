@@ -35,6 +35,8 @@
 #include <math/optimize/update.h>
 #include <util/keyval/keyval.h>
 
+using namespace sc;
+
 /////////////////////////////////////////////////////////////////////////
 // HessianUpdate
 

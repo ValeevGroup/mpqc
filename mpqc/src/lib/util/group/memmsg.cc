@@ -35,6 +35,7 @@
 #include <util/group/memmsg.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc MsgMemoryGrp_cd(
   typeid(MsgMemoryGrp),"MsgMemoryGrp",1,"public MemoryGrp",

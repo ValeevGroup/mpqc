@@ -40,6 +40,7 @@
 #include <chemistry/molecule/molrender.h>
 
 using namespace std;
+using namespace sc;
 
 #undef DEBUG
 

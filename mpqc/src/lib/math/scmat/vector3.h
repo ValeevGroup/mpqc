@@ -37,6 +37,8 @@
 #include <util/misc/exenv.h>
 #include <util/keyval/keyval.h>
 
+namespace sc {
+
 class RefSCVector;
 class SCMatrix3;
 
@@ -135,6 +137,8 @@ class SCVector3
 };
 SCVector3 operator*(double,const SCVector3&);
 std::ostream &operator<<(std::ostream&, const SCVector3 &);
+
+}
 
 #ifdef INLINE_FUNCTIONS
 #include <math/scmat/vector3_i.h>

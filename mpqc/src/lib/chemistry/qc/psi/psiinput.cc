@@ -29,6 +29,8 @@
 
 using namespace std;
 
+namespace sc {
+
 PsiInput::PsiInput(const string& name) : file_()
 {
   filename_ = string(name);
@@ -281,3 +283,4 @@ PsiInput::print(ostream& o)
 {
 }
 
+}

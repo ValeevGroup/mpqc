@@ -52,6 +52,8 @@
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/localdef.h>
 
+using namespace sc;
+
 static ClassDesc BendSimpleCo_cd(
   typeid(BendSimpleCo),"BendSimpleCo",1,"public SimpleCo",
   create<BendSimpleCo>, create<BendSimpleCo>, create<BendSimpleCo>);

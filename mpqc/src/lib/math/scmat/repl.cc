@@ -36,6 +36,8 @@
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
 
+using namespace sc;
+
 /////////////////////////////////////////////////////////////////////////////
 // ReplSCMatrixKit member functions
 

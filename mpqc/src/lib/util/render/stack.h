@@ -30,6 +30,8 @@
 
 #include <iostream>
 
+namespace sc {
+
 #define STACK_MAX_STACK_SIZE 20
 template <class T>
 class Stack {
@@ -70,6 +72,8 @@ class Stack {
           }
       }
 };
+
+}
 
 #endif
 

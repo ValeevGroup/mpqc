@@ -9,6 +9,8 @@
 #include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/qc/psi/psiexenv.h>
 
+namespace sc {
+
 ///////////////////////////////////////////////////////////////////
 /** PsiWavefunction is an abstract base for all Psi wave functions.
 Its KeyVal constructor is invoked by all KeyVal constructors of
@@ -164,5 +166,7 @@ class PsiCCSD_T: public PsiWavefunction {
     int spin_polarized() { return reference_->spin_polarized();};
     int gradient_implemented() const;
 };
+
+}
 
 #endif

@@ -38,6 +38,8 @@
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/basis.h>
 
+using namespace sc;
+
 ///////////////////////////////////////////////////////////////////////
 
 void

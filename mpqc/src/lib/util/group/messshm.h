@@ -36,6 +36,7 @@
 
 #include <util/group/message.h>
 
+namespace sc {
 
 /** The ShmMessageGrp class is an implementation of MessageGrp that
 allows multiple process to be started that communicate with shared memory.
@@ -108,6 +109,8 @@ class ShmMessageGrp: public intMessageGrp {
 
     Ref<MessageGrp> clone(void);
 };
+
+}
      
 #endif
 

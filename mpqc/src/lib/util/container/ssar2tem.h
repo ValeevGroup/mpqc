@@ -29,6 +29,8 @@
 #pragma interface
 #endif
 
+namespace sc {
+
 template <class Type>
 class SSBArray2: public Array2<Type> {
   public:
@@ -48,6 +50,8 @@ class SSBArray2: public Array2<Type> {
         if (_length0&&_length1) s.put(_array,_length0*_length1);
       }
 };
+
+}
 
 // ///////////////////////////////////////////////////////////////////////////
 

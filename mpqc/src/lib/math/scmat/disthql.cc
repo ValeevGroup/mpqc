@@ -12,12 +12,15 @@
 #include <math/scmat/f77sym.h>
 
 using namespace std;
+using namespace sc;
 
 extern "C" {
   void F77_PDSTEQR(int *n, double *d, double *e,
                 double *z, int *ldz, int *nz, double *work,
                 int *info);
 }
+
+namespace sc {
 
 static void dist_diagonalize_(int n, int m, double *a, double *d, double *e,
                               double *sigma, double *z, double *v, double *w,
@@ -658,3 +661,5 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
   grp->sum(d, sn, work);
   grp->sum(e, sn, work);
   }
+
+}

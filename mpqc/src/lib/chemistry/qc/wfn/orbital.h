@@ -35,6 +35,8 @@
 #include <math/isosurf/volume.h>
 #include <chemistry/qc/wfn/obwfn.h>
 
+namespace sc {
+
 class Orbital: public Volume {
   protected:
     Ref<OneBodyWavefunction> wfn_;
@@ -49,6 +51,8 @@ class Orbital: public Volume {
                              double valuemax,
                              SCVector3& p1, SCVector3& p2);
 };
+
+}
 
 #endif
 

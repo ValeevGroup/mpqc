@@ -36,6 +36,7 @@
 #include <chemistry/qc/basis/f77sym.h>
 
 using namespace std;
+using namespace sc;
 
 extern "C" {
   void

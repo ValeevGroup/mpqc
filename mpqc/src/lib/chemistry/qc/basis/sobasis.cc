@@ -37,6 +37,7 @@
 #include <chemistry/qc/basis/sobasis.h>
 
 using namespace std;
+using namespace sc;
 
 SOBasis::SOBasis(const Ref<GaussianBasisSet> &basis, const Ref<Integral>&integral)
 {

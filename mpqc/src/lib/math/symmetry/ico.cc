@@ -34,6 +34,8 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+using namespace sc;
+
 // these are the operations which make up T
 static void
 i_ops(SymRep *t1rep, SymRep *t2rep, SymRep *grep, SymRep *hrep)

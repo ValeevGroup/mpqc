@@ -35,6 +35,8 @@
 #include <util/group/thread.h>
 #include <chemistry/qc/scf/scf.h>
 
+namespace sc {
+
 template<class T>
 class GBuild : public Thread {
   protected:
@@ -45,6 +47,8 @@ class GBuild : public Thread {
     GBuild(T&t) : contribution(t) {}
     virtual ~GBuild() {}
 };
+
+}
 
 #endif
 

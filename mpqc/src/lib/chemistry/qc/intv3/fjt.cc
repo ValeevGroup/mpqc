@@ -46,6 +46,7 @@
 #include <chemistry/qc/intv3/fjt.h>
 
 using namespace std;
+using namespace sc;
 
  /* Tablesize should always be at least 121. */
 #define TABLESIZE 121

@@ -29,6 +29,7 @@
 #include <util/group/message.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc intMessageGrp_cd(
   typeid(intMessageGrp),"intMessageGrp",1,"public MessageGrp",

@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <util/keyval/ipv2.h>
 
+using namespace sc;
+
 ip_keyword_tree_t *
 IPV2::ip_alloc_keyword_tree()
 {

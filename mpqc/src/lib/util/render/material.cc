@@ -28,6 +28,7 @@
 #include <util/render/material.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc Material_cd(
   typeid(Material),"Material",1,"public DescribedClass",

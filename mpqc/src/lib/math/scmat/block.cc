@@ -37,6 +37,7 @@
 #include <math/scmat/elemop.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixBlock member functions

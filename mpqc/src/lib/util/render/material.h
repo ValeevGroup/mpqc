@@ -35,6 +35,8 @@
 #include <util/render/parameter.h>
 #include <util/render/color.h>
 
+namespace sc {
+
 class Material: public DescribedClass {
   private:
     Parameter<Color> diffuse_;
@@ -48,6 +50,7 @@ class Material: public DescribedClass {
     void print(std::ostream& = ExEnv::out0()) const;
 };
 
+}
 
 #endif
 

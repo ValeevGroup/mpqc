@@ -38,6 +38,8 @@
 
 #include <util/misc/formio.h>
 
+namespace sc {
+
 /** The ExEnv class is used to find out about how
     the program is being run. */
 class ExEnv {
@@ -84,6 +86,8 @@ class ExEnv {
     /// The number of processors on this node.
     static int nproc() { return nproc_; }
 };
+
+}
 
 #endif
 

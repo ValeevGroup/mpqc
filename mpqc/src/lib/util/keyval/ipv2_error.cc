@@ -33,6 +33,7 @@
 #include <util/keyval/ipv2.h>
 
 using namespace std;
+using namespace sc;
 
 /* Returns some text for an errcod. */
 const char*

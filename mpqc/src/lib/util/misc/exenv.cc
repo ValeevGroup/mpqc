@@ -52,6 +52,7 @@
 #endif
 
 using namespace std;
+using namespace sc;
 
 int ExEnv::initialized_ = 0;
 size_t ExEnv::mem_ = 0;

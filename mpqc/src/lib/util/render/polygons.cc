@@ -32,6 +32,8 @@
 #include <util/render/polygons.h>
 #include <util/render/color.h>
 
+using namespace sc;
+
 static ClassDesc RenderedPolygons_cd(
   typeid(RenderedPolygons),"RenderedPolygons",1,"public RenderedObject",
   0, create<RenderedPolygons>, 0);

@@ -29,6 +29,8 @@
 #pragma implementation
 #endif
 
+namespace sc {
+    
 template <class Type>
 class Array {
   protected:
@@ -98,6 +100,8 @@ class Array {
         resize(_length-1);
     }
 };
+
+}
 
 // ///////////////////////////////////////////////////////////////////////////
 

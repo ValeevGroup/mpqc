@@ -35,6 +35,8 @@
 #define INLINE
 #endif
 
+namespace sc {
+
 INLINE void
 SCVector3::spherical_coord(double theta, double phi,
                            double r)
@@ -50,6 +52,8 @@ SCVector3::dist(const SCVector3 &s) const
 {
   double x=_v[0]-s._v[0],y=_v[1]-s._v[1],z=_v[2]-s._v[2];
   return sqrt(x*x + y*y + z*z);
+}
+
 }
 
 #undef INLINE

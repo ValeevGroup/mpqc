@@ -38,6 +38,9 @@
 #include <chemistry/qc/dft/integrator.h>
 
 using namespace std;
+using namespace sc;
+
+namespace sc {
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template void delete_c_array2<Ref<RadialIntegrator> >(Ref<RadialIntegrator>**);
@@ -2416,6 +2419,8 @@ RadialAngularIntegrator::print(ostream &o) const
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+}
 
 // Local Variables:
 // mode: c++

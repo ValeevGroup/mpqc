@@ -38,6 +38,7 @@
 #include <math/isosurf/volume.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc Volume_cd(
   typeid(Volume),"Volume",1,"public Function",

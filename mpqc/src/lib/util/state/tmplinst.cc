@@ -33,6 +33,8 @@
 #include <util/state/state.h>
 #include <util/state/stateio.h>
 
+using namespace sc;
+
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 
 template class EAVLMMapNode<int, AVLMapNode<int, StateInData> >;

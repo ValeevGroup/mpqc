@@ -119,6 +119,8 @@ static unsigned char sRefLock = 0;
 
 #endif /* !REF_USE_LOCKS */
 
+using namespace sc;
+
 int
 RefCount::lock_ptr() const
 {

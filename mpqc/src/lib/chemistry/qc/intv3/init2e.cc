@@ -36,6 +36,7 @@
 #include <chemistry/qc/intv3/utils.h>
 
 using namespace std;
+using namespace sc;
 
 static void
 fail()

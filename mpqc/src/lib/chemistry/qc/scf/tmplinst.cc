@@ -17,6 +17,8 @@
 #include <chemistry/qc/scf/tchftmpl.h>
 #include <chemistry/qc/scf/uhftmpl.h>
 
+using namespace sc;
+
 template class GBuild<LocalCLHFContribution>;
 template class GBuild<LocalCLHFEnergyContribution>;
 

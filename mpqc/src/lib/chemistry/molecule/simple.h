@@ -37,6 +37,8 @@
 
 #include <math/scmat/vector3.h>
 
+namespace sc {
+
 // ////////////////////////////////////////////////////////////////////////
 
 /**
@@ -544,6 +546,8 @@ SimpleCo_DECLARE(LinOPSimpleCo)
   };
 
 typedef LinOPSimpleCo LinOP;
+
+}
 
 #endif /* _intco_simple_h */
 

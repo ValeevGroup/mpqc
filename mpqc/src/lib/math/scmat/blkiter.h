@@ -34,6 +34,8 @@
 
 #include <math/scmat/block.h>
 
+namespace sc {
+
 class SCMatrixRectBlock;
 class SCMatrixLTriBlock;
 class SCMatrixDiagBlock;
@@ -207,6 +209,8 @@ class SCVectorSimpleSubBlockIter: public SCMatrixBlockIter {
     void operator++();
     void reset();
 };
+
+}
 
 #endif
 

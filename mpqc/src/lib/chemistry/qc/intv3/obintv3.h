@@ -31,6 +31,8 @@
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/intv3/int1e.h>
 
+namespace sc {
+
 // /////////////////////////////////////////////////////////////////////////
 
 /** This implements most one body integrals in the IntV3 library. It is
@@ -110,6 +112,8 @@ class OneBodyDerivIntV3 : public OneBodyDerivInt {
     void compute_shell(int,int,DerivCenters&);
     void compute_shell(int,int,int);
 };
+
+}
 
 #endif
 

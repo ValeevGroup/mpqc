@@ -39,6 +39,8 @@
 #include <util/group/topology.h>
 #include <util/container/avlmap.h>
 
+namespace sc {
+
 template <class T>
 class GrpReduce {
   public:
@@ -395,6 +397,8 @@ class intMessageGrp: public MessageGrp {
 
     int leftover_ctl_bits();
 };
+
+}
 
 #include <util/group/messaget.h>
 

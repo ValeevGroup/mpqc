@@ -34,6 +34,8 @@
 
 #include <chemistry/molecule/energy.h>
 
+namespace sc {
+
 class MP2BasisExtrap: public SumMolecularEnergy {
   protected:
     void compute();
@@ -44,6 +46,8 @@ class MP2BasisExtrap: public SumMolecularEnergy {
 
     void save_data_state(StateOut&);
 };
+
+}
 
 #endif
 

@@ -37,6 +37,8 @@
 #include <util/state/state.h>
 #include <util/state/stateio.h>
 
+namespace sc {
+
 class ResultInfo;
 class StateIn;
 class StateOut;
@@ -131,11 +133,17 @@ class AccResultInfo: public ResultInfo
     int needed() const;
 };
 
+}
+
 #include <util/misc/comptmpl.h>
+
+namespace sc {
 
 typedef NCResult<int> Resultint;
 typedef NCResult<double> Resultdouble;
 typedef NCAccResult<double> AccResultdouble;
+
+}
 
 #endif
 

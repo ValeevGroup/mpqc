@@ -42,6 +42,7 @@
 #include <chemistry/qc/wfn/obwfn.h>
 
 using namespace std;
+using namespace sc;
 
 #define DEBUG 0
 

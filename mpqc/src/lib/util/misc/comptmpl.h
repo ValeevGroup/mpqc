@@ -25,6 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+namespace sc {
+
 /** Result are members of Compute specializations that keep track of
   whether or not a particular result should be computed or if it has
   already been computed.  For non-class template parameters, use
@@ -151,6 +153,8 @@ class NCAccResult: public AccResultInfo {
     }
     NCAccResult(StateIn&s,Compute*c): AccResultInfo(s,c) {s.get(_result);}
 };
+
+}
 
 // ///////////////////////////////////////////////////////////////////////////
 

@@ -33,6 +33,7 @@
 #include <util/state/state_bin.h>
 
 using namespace std;
+using namespace sc;
 
 #define DEBUG 0
 

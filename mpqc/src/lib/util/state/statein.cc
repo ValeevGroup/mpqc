@@ -35,6 +35,7 @@
 #include <util/state/statein.h>
 
 using namespace std;
+using namespace sc;
 
 #define DEBUG 0
 

@@ -35,6 +35,8 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/basis.h>
 
+using namespace sc;
+
 ///////////////////////////////////////////////////////////////////////
 
 TwoBodyInt::TwoBodyInt(Integral *integral,

@@ -37,6 +37,7 @@
 #include <math/optimize/conv.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////
 // Convergence

@@ -1,4 +1,6 @@
 
+namespace sc {
+
 class LocalUKSContribution {
   private:
     double * const gmata;
@@ -93,3 +95,5 @@ class LocalUKSEnergyContribution {
       cont3(ij,kl,val);
     }
 };
+
+}

@@ -47,6 +47,7 @@
 #include <util/state/stateout.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc StateOut_cd(
     typeid(StateOut),"StateOut",1,"public DescribedClass");

@@ -42,8 +42,11 @@
 #include <chemistry/qc/scf/scflocal.h>
 
 using namespace std;
+using namespace sc;
 
 #undef GENERALIZED_EIGENSOLVER
+
+namespace sc {
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -397,6 +400,8 @@ SCF::extrap_error()
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+}
 
 // Local Variables:
 // mode: c++

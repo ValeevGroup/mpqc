@@ -38,6 +38,7 @@
 #include <math/scmat/repl.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////////
 // BlockedSCMatrix member functions

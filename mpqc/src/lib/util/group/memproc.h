@@ -36,6 +36,8 @@
 
 #include <util/group/memmsg.h>
 
+namespace sc {
+
 /** The ProcMessageGrp concrete class provides an implementation of
 MemoryGrp for a single processor. */
 class ProcMemoryGrp: public MemoryGrp {
@@ -58,6 +60,8 @@ class ProcMemoryGrp: public MemoryGrp {
 
     void sync();
 };
+
+}
 
 #endif
 

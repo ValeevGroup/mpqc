@@ -39,6 +39,8 @@
 #include <chemistry/qc/mbpt/csgrads2pdm.h>
 #include <chemistry/qc/mbpt/distsh.h>
 
+using namespace sc;
+
 CSGradS2PDM::CSGradS2PDM(int mythread_a, int nthread_a,
                          int me_a, int nproc_a,
                          const Ref<ThreadLock> &lock_a,

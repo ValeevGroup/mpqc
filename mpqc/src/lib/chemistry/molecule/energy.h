@@ -40,6 +40,7 @@
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/hess.h>
 
+namespace sc {
 
 /** The MolecularEnergy abstract class inherits from the Function class.
 It computes the energy of the molecule as a function of the geometry.  The
@@ -231,6 +232,7 @@ class MolEnergyConvergence: public Convergence {
     int converged();
 };
 
+}
 
 #endif
 

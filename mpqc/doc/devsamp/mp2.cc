@@ -3,6 +3,7 @@
 #include <chemistry/qc/scf/clhf.h>
 
 using namespace std;
+using namespace sc;
 
 class MP2: public Wavefunction {
     Ref<OneBodyWavefunction> ref_mp2_wfn_;

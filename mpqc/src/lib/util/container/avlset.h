@@ -30,6 +30,7 @@
 
 #include <util/container/avlmap.h>
 
+namespace sc {
 
 template <class K>
 class AVLSet {
@@ -103,6 +104,8 @@ inline typename AVLSet<K>::iterator
 AVLSet<K>::find(const K& k) const
 {
   return iterator(&map_.map_,map_.map_.find(k));
+}
+
 }
 
 #endif

@@ -36,6 +36,8 @@
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/functional.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 class UKS: public UnrestrictedSCF {
@@ -70,6 +72,8 @@ class UKS: public UnrestrictedSCF {
     void init_vector();
     void done_vector();
 };
+
+}
 
 #endif
 

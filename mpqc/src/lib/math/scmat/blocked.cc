@@ -38,6 +38,7 @@
 #include <math/scmat/elemop.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////////
 // BlockedSCMatrixKit member functions

@@ -34,6 +34,8 @@
 
 #include <chemistry/qc/scf/tcscf.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 class TCHF: public TCSCF {
@@ -55,6 +57,9 @@ class TCHF: public TCSCF {
     void ao_fock(double accuracy);
     void two_body_deriv(double*);
 };
+
+}
+
 #endif
 
 // Local Variables:

@@ -35,6 +35,8 @@
 #include <pthread.h>
 #include <util/group/thread.h>
 
+namespace sc {
+
 /** The PthreadThreadGrp class privides a concrete thread group
     appropriate for an environment where pthreads is available. */
 class PthreadThreadGrp: public ThreadGrp {
@@ -59,6 +61,9 @@ class PthreadThreadGrp: public ThreadGrp {
 
     ThreadGrp* clone(int nthread = -1);
 };
+
+}
+
 #endif
 
 // Local Variables:

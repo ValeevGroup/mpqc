@@ -36,6 +36,8 @@
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbpt/hsosv1e1.h>
 
+using namespace sc;
+
 #define PRINT1Q 0
 
 HSOSV1Erep1Qtr::HSOSV1Erep1Qtr(int mythread_a, int nthread_a,

@@ -38,6 +38,8 @@
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/scf/scflocal.h>
 
+using namespace sc;
+
 //////////////////////////////////////////////////////////////////////////////
 
 static void

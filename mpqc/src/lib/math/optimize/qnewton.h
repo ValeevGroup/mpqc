@@ -39,6 +39,8 @@
 #include <math/optimize/opt.h>
 #include <math/optimize/update.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////
 // newton and related methods
 
@@ -102,6 +104,8 @@ class QNewtonOpt: public Optimize {
     void init();
     int update();
 };
+
+}
 
 #endif
 

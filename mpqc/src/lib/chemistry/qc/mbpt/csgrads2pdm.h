@@ -38,6 +38,8 @@
 #include <util/group/thread.h>
 #include <chemistry/qc/basis/integral.h>
 
+namespace sc {
+
 #define PRINT_BIGGEST_INTS 0
 
 class CSGradS2PDM: public Thread {
@@ -73,6 +75,8 @@ class CSGradS2PDM: public Thread {
     void accum_hf_contrib(double **hf_ginter);
     void run();
 };
+
+}
 
 #endif
 

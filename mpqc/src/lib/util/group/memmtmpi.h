@@ -40,6 +40,8 @@
 #include <util/group/memamsg.h>
 #include <util/group/thread.h>
 
+namespace sc {
+
 class MTMPIThread;
 
 /** This MemoryGrp class requires a MT-safe MPI implementation.  The
@@ -86,6 +88,8 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
 
     void sync();
 };
+
+}
 
 #endif
 

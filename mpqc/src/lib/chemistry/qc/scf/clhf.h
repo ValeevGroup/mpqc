@@ -34,6 +34,8 @@
 
 #include <chemistry/qc/scf/clscf.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 /// CLHF is a Hartree-Fock specialization of CLSCF.
@@ -56,6 +58,8 @@ class CLHF: public CLSCF {
     void ao_fock(double accuracy);
     void two_body_deriv(double*);
 };
+
+}
 
 #endif
 

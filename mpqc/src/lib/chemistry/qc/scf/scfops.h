@@ -37,6 +37,8 @@
 
 #include <chemistry/qc/scf/scf.h>
 
+namespace sc {
+
 class SCFEnergy : public SCElementOp2 {
   private:
     double eelec;
@@ -104,6 +106,8 @@ class MOLagrangian : public BlockedSCElementOp2 {
 
     void process(SCMatrixBlockIter& bi1, SCMatrixBlockIter& bi2);
 };
+
+}
 
 #endif
 

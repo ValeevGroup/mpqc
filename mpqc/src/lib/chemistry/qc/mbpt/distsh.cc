@@ -34,6 +34,7 @@
 #include <chemistry/qc/mbpt/distsh.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////
 // Function iquicksort performs a quick sort (larger -> smaller) 

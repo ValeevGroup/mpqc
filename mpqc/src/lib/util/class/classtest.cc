@@ -33,6 +33,7 @@
 #include <util/class/class.h>
 
 using namespace std;
+using namespace sc;
 
 #undef SIMPLE_TEST
 

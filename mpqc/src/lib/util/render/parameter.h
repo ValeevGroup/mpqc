@@ -30,6 +30,8 @@
 
 #include <util/keyval/keyval.h>
 
+namespace sc {
+
 template <class T>
 class Parameter {
     T parameter_;
@@ -43,6 +45,8 @@ class Parameter {
     int overrides() const { return overrides_; }
     int is_set() const { return is_set_; }
 };
+
+}
 
 #endif
 

@@ -34,6 +34,8 @@
 
 #include <util/render/render.h>
 
+namespace sc {
+
 class AnimatedObject: public DescribedClass {
   protected:
     char *name_;
@@ -49,6 +51,7 @@ class AnimatedObject: public DescribedClass {
     virtual Ref<RenderedObject> object(int iobject) = 0;
 };
 
+}
 
 #endif
 

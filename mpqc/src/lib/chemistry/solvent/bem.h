@@ -36,6 +36,8 @@
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/molecule.h>
 
+namespace sc {
+
 // This represents a solvent by a polarization charge on a dielectric
 // boundary surface.
 class BEMSolvent: public DescribedClass {
@@ -149,6 +151,7 @@ class BEMSolvent: public DescribedClass {
     Ref<SCMatrixKit> matrixkit() { return matrixkit_; }
 };
 
+}
 
 #endif
 

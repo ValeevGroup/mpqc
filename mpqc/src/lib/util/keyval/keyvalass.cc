@@ -30,6 +30,8 @@
 #endif
 #include <util/keyval/keyval.h>
 
+using namespace sc;
+
 AssignedKeyVal::AssignedKeyVal()
 {
 }

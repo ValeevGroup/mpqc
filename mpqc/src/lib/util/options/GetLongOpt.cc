@@ -8,6 +8,7 @@
 #include <util/options/GetLongOpt.h>
 
 using namespace std;
+using namespace sc;
 
 GetLongOpt::GetLongOpt(const char optmark)
 {

@@ -33,6 +33,7 @@
 #include <util/group/pool.h>
 
 using namespace std;
+using namespace sc;
 
 void
 PoolData::check(void* lower_bound, void* upper_bound)

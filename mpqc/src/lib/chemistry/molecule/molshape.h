@@ -38,6 +38,8 @@
 #include <chemistry/molecule/atominfo.h>
 #include <chemistry/molecule/molecule.h>
 
+namespace sc {
+
 /** The VDWShape class describes the surface of a
     molecule as the union of atom centered spheres, each the
     van der Waals radius of the atom.
@@ -179,6 +181,8 @@ class ConnollyShape: public Shape {
 
     static void print_counts(std::ostream& = ExEnv::out0());
 };
+
+}
 
 #endif
 

@@ -9,6 +9,8 @@
 #include <chemistry/molecule/molrender.h>
 #include <chemistry/molecule/molshape.h>
 
+using namespace sc;
+
 int
 main(int argc, char** argv)
 {

@@ -34,6 +34,8 @@
 
 #include <chemistry/qc/scf/hsosscf.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 /// HSOSHF is a Hartree-Fock specialization of HSOSSCF.
@@ -56,6 +58,8 @@ class HSOSHF: public HSOSSCF {
     void ao_fock(double accuracy);
     void two_body_deriv(double*);
 };
+
+}
 
 #endif
 

@@ -32,6 +32,8 @@
 #include <math/isosurf/triangle.h>
 #include <math/isosurf/tricoef.h>
 
+using namespace sc;
+
 /////////////////////////////////////////////////////////////////////////
 // Utility functions
 

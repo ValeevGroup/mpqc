@@ -39,6 +39,7 @@
 #include <util/container/bitarray.h>
 
 using namespace std;
+using namespace sc;
 
 #define DEFAULT_SIMPLE_TOLERANCE 1.0e-3
 

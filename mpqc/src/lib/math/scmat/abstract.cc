@@ -38,6 +38,7 @@
 #include <math/scmat/elemop.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////
 // These member are used by the abstract SCMatrix classes.

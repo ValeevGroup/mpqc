@@ -42,6 +42,9 @@
 #include <iomanip>
 
 using namespace std;
+using namespace sc;
+
+namespace sc {
 
 //. The \clsnm{NElFunctional} computes the number of electrons.
 //. It is primarily for testing the integrator.
@@ -480,6 +483,8 @@ BEMSolventH::e()
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+}
 
 // Local Variables:
 // mode: c++

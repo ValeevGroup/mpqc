@@ -36,6 +36,7 @@
 #include <util/state/translate.h>
 
 using namespace std;
+using namespace sc;
 
 #define DEBUG 0
 

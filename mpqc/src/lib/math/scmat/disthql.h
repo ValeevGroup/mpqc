@@ -4,7 +4,11 @@
 
 #include <util/group/message.h>
 
+namespace sc {
+
 void dist_diagonalize(int n, int m, double *a, double *d, double *v,
                       const Ref<MessageGrp> &);
+
+}
 
 #endif

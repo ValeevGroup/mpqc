@@ -36,6 +36,8 @@
 #include <math/scmat/cmatrix.h>
 #include <math/optimize/diis.h>
 
+using namespace sc;
+
 static ClassDesc DIIS_cd(
   typeid(DIIS),"DIIS",3,"public SelfConsistentExtrapolation",
   0, create<DIIS>, create<DIIS>);

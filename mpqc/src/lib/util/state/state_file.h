@@ -40,6 +40,8 @@
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
 
+namespace sc {
+
 /** Writes state information to files.
  */
 class StateOutFile: public StateOut {
@@ -93,6 +95,8 @@ class StateInFile: public StateIn {
     /// Close the output file.
     virtual void close();
   };
+
+}
 
 #endif
 

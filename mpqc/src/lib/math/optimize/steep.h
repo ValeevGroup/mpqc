@@ -38,6 +38,8 @@
 #include <math/optimize/function.h>
 #include <math/optimize/opt.h>
 
+namespace sc {
+
 class SteepestDescentOpt: public Optimize {
   protected:
     double maxabs_gradient;
@@ -59,6 +61,8 @@ class SteepestDescentOpt: public Optimize {
     void init();
     int update();
 };
+
+}
 
 #endif
 

@@ -41,6 +41,7 @@
 #include <fstream>
 
 using namespace std;
+using namespace sc;
 
 /* Initialize the ip routines.  This involves parsing the entire file and
  * converting it into an internal representation. */

@@ -36,6 +36,7 @@
 #include <util/keyval/keyval.h>
 
 using namespace std;
+using namespace sc;
 
 class A: virtual public DescribedClass {
   private:

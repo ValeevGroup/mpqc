@@ -39,6 +39,7 @@
 #include <util/state/state_bin.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////
 // Optimize

@@ -30,6 +30,8 @@
 #include <chemistry/qc/intv3/int1e.h>
 #include <chemistry/qc/intv3/int2e.h>
 
+using namespace sc;
+
 /* Compute the shell offset. */
 static int
 shell_offset(Ref<GaussianBasisSet> cs, int off)

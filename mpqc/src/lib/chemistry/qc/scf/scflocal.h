@@ -30,6 +30,8 @@
 
 #include <math/scmat/block.h>
 
+namespace sc {
+
 static inline double *
 get_tri_block(SCMatrixBlock* blk,
               int& istart, int& iend, int& jstart, int& jend, int& sub)
@@ -51,6 +53,8 @@ get_tri_block(SCMatrixBlock* blk,
   }
 
   return data;
+}
+
 }
 
 #endif

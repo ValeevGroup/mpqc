@@ -30,6 +30,7 @@
 #include <chemistry/qc/intv3/int2e.h>
 
 using namespace std;
+using namespace sc;
 
 //#undef CHECK_INTEGRAL_ALGORITHM
 //#define CHECK_INTEGRAL_ALGORITHM 1

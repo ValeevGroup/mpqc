@@ -32,6 +32,8 @@
 #include <util/group/message.h>
 #include <util/group/topology.h>
 
+using namespace sc;
+
 static ClassDesc GlobalMsgIter_cd(
   typeid(GlobalMsgIter),"GlobalMsgIter",1,"public DescribedClass",
   0, 0, 0);

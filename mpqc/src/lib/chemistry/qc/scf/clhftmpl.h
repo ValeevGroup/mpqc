@@ -9,6 +9,8 @@
 #define CHECK(ival,pval,ij,kl,con)
 #endif
 
+namespace sc {
+
 class LocalCLHFContribution {
   private:
     double * const gmat;
@@ -129,3 +131,5 @@ class LocalCLHFGradContribution {
       return pmat[ij]*pmat[kl];
     }
 };
+
+}

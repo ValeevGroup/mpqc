@@ -18,9 +18,9 @@ int yydebug =1;
 #include <alloca.h>
 #endif
 #include "mpqcin.h"
-#define yyerror MPQCIn::yerror
-#define yyparse MPQCIn::yparse
-#define yylex MPQCIn::ylex
+#define yyerror sc::MPQCIn::yerror
+#define yyparse sc::MPQCIn::yparse
+#define yylex sc::MPQCIn::ylex
 #define yynerrs MPQCInyynerrs
 #define yychar MPQCInyychar
 #define YYSTYPE MPQCInYYSTYPE
@@ -29,7 +29,7 @@ int yydebug =1;
 %union {
   char *str;
   int i;
-  Arrayint *nniv;
+  sc::Arrayint *nniv;
   }
 
 %token T_MOLECULE T_MULTIPLICITY T_CHARGE T_METHOD T_BASIS T_EQUALS

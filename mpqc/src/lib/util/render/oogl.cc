@@ -36,6 +36,7 @@
 #include <util/render/animate.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc OOGLRender_cd(
   typeid(OOGLRender),"OOGLRender",1,"public FileRender",

@@ -33,6 +33,8 @@
 
 #include <mpi.h>
 
+namespace sc {
+
 /** The MPIMessageGrp class is an concrete implementation of MessageGrp
 that uses the MPI 1 library.  */
 class MPIMessageGrp: public MessageGrp {
@@ -106,6 +108,8 @@ class MPIMessageGrp: public MessageGrp {
 
     void raw_bcast(void* data, int nbyte, int from);
 };
+
+}
 
 #endif
 

@@ -34,6 +34,7 @@
 #include <util/state/state_file.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc StateOutFile_cd(
     typeid(StateOutFile),"StateOutFile",1,"public StateOut");

@@ -29,6 +29,8 @@
 #include <util/group/topology.h>
 #include <util/group/hcube.h>
 
+using namespace sc;
+
 static ClassDesc HypercubeGMI_cd(
   typeid(HypercubeGMI),"HypercubeGMI",1,"public GlobalMsgIter",
   0, 0, 0);

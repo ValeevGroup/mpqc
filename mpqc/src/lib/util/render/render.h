@@ -38,6 +38,8 @@
 #include <util/render/transform.h>
 #include <util/render/stack.h>
 
+namespace sc {
+
 class RenderedObject;
 class AnimatedObject;
 class RenderedObjectSet;
@@ -110,6 +112,7 @@ class FileRender: public Render {
     virtual const char *file_extension();
 };
 
+}
 
 #endif
 

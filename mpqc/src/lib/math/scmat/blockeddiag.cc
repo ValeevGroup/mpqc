@@ -35,6 +35,7 @@
 #include <math/scmat/elemop.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////////
 // BlockedDiagSCMatrix member functions

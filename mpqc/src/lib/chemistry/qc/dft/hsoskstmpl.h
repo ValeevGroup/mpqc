@@ -1,4 +1,6 @@
 
+namespace sc {
+
 class LocalHSOSKSContribution {
   private:
     double * const gmat;
@@ -96,3 +98,5 @@ class LocalHSOSKSEnergyContribution {
       ex -= a0*0.5*val*(pmat[ij]*pmat[kl] + pmato[ij]*pmato[kl]);
     }
 };
+
+}

@@ -12,6 +12,8 @@
 #include "parse.h"
 #include "mpqcin.h"
 
+using namespace sc;
+
 static inline char *
 cstr(char *yytext)
 {

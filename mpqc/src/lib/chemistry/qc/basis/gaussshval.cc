@@ -37,6 +37,7 @@
 #include <chemistry/qc/basis/transform.h>
 
 using namespace std;
+using namespace sc;
 
 #define MAX_NPRIM 20
 #define MAX_NCON  10

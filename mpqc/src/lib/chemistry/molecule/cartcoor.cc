@@ -34,6 +34,7 @@
 #include <chemistry/molecule/simple.h>
 
 using namespace std;
+using namespace sc;
 
 ///////////////////////////////////////////////////////////////////////////
 // members of CartMolecularCoor

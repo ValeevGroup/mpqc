@@ -34,6 +34,8 @@
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/gaussshell.h>
 
+using namespace sc;
+
 int
 GaussianBasisSet::values(const SCVector3& r, ValueData *v,
                          double* basis_values) const

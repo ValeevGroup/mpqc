@@ -41,6 +41,8 @@
 #include <sys/sem.h>
 #include <util/group/globcnt.h>
 
+using namespace sc;
+
 #ifndef SEM_A
 #  define SEM_A 0200
 #endif

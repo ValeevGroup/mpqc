@@ -34,6 +34,8 @@
 
 #include <math/isosurf/surf.h>
 
+namespace sc {
+
 class IsosurfaceGen {
   protected:
     double _resolution;
@@ -68,6 +70,8 @@ class ImplicitSurfacePolygonizer: public IsosurfaceGen {
     virtual void isosurface(double value,
                             TriangulatedSurface& surf);
 };  
+
+}
 
 #endif
 

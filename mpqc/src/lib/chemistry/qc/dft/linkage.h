@@ -36,6 +36,8 @@
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/functional.h>
 
+namespace sc {
+
 static ForceLink<RadialAngularIntegrator> dft_force_link_a_;
 static ForceLink<NElFunctional> dft_force_link_b_;
 static ForceLink<XalphaFunctional> dft_force_link_c_;
@@ -61,6 +63,8 @@ static ForceLink<PW91CFunctional> dft_force_link_w_;
 static ForceLink<HSOSKS> dft_force_link_x_;
 static ForceLink<VWNLCFunctional> dft_force_link_y_;
 static ForceLink<NewP86CFunctional> dft_force_link_z_;
+
+}
 
 #endif /* __PIC__ */
 

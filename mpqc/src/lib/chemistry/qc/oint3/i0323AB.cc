@@ -1,5 +1,5 @@
 #include <chemistry/qc/oint3/build.h>
-int BuildIntV3::i0323eAB(){
+int sc::BuildIntV3::i0323eAB(){
 /* the cost is 2054 */
 double t1;
 double t2;

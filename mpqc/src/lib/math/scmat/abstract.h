@@ -39,6 +39,8 @@
 #include <math/scmat/block.h>
 #include <iostream>
 
+namespace sc {
+
 class SCMatrix;
 class SymmSCMatrix;
 class DiagSCMatrix;
@@ -582,6 +584,8 @@ class DiagSCMatrix: public DescribedClass {
     virtual Ref<SCMatrixSubblockIter> all_blocks(
         SCMatrixSubblockIter::Access) = 0;
 };
+
+}
 
 #endif
 

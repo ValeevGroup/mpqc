@@ -51,6 +51,7 @@
 #include <chemistry/qc/scf/linkage.h>
 
 using namespace std;
+using namespace sc;
 
 Ref<RegionTimer> tim;
 Ref<MessageGrp> grp;

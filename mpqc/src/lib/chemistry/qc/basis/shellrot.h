@@ -34,6 +34,8 @@
 
 #include <math/symmetry/pointgrp.h>
 
+namespace sc {
+
 class Integral;
 /** Compute the transformation matrices that maps a set of Cartesian
     functions into to another set of Cartesian functions in a rotated
@@ -87,6 +89,8 @@ class ShellRotation {
     /// Print the object to ExEnv::out0().
     void print() const;
 };
+
+}
 
 #endif
 

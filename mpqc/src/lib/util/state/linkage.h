@@ -32,7 +32,11 @@
 
 #include <util/state/proxy.h>
 
+namespace sc {
+
 static ForceLink<SavableStateProxy,const Ref<KeyVal> &> state_force_link_a_;
+
+}
 
 #endif /* __PIC__ */
 

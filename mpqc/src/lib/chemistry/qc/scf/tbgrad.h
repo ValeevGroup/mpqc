@@ -34,6 +34,8 @@
 
 #include <util/group/thread.h>
 
+namespace sc {
+
 template<class T>
 class TBGrad : public Thread {
   protected:
@@ -65,6 +67,8 @@ class TBGrad : public Thread {
         exchangescale *= 2.0;
     }
 };
+
+}
 
 #endif
 

@@ -30,6 +30,8 @@
 
 #include <util/group/topology.h>
 
+namespace sc {
+
 class HypercubeGMI: public GlobalMsgIter {
   private:
     int nhyper_;
@@ -52,6 +54,8 @@ class HypercubeTopology: public MachineTopology {
     ~HypercubeTopology();
     Ref<GlobalMsgIter> global_msg_iter(const Ref<MessageGrp>&, int target);
 };
+
+}
 
 #endif
 

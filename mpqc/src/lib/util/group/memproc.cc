@@ -34,6 +34,8 @@
 
 #include <util/group/memproc.h>
 
+using namespace sc;
+
 static ClassDesc ProcMemoryGrp_cd(
   typeid(ProcMemoryGrp),"ProcMemoryGrp",1,"public MemoryGrp",
   0, create<ProcMemoryGrp>, 0);

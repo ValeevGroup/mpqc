@@ -38,6 +38,7 @@ extern int MPI_Initialized(int *); // missing in mpi.h
 #include <util/misc/newstring.h>
 
 using namespace std;
+using namespace sc;
 
 //#define MPI_SEND_ROUTINE MPI_Ssend // hangs
 #define MPI_SEND_ROUTINE MPI_Send // hangs in old MPI implementations

@@ -30,6 +30,7 @@
 #include <chemistry/qc/intv3/int2e.h>
 
 using namespace std;
+using namespace sc;
 
 /* Prints out an integral buffer given
  * fp = where to print

@@ -36,6 +36,8 @@
 #include <util/state/state.h>
 #include <util/ref/ref.h>
 
+namespace sc {
+
 /// The Units class is used to perform unit converions.
 class Units: public SavableState {
   protected:
@@ -74,6 +76,7 @@ class Units: public SavableState {
     void save_data_state(StateOut&s);
 };
 
+}
 
 #endif
 

@@ -34,6 +34,8 @@
 
 #include <chemistry/qc/scf/ossscf.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 class OSSHF: public OSSSCF {
@@ -55,6 +57,8 @@ class OSSHF: public OSSSCF {
     void ao_fock(double accuracy);
     void two_body_deriv(double*);
 };
+
+}
 
 #endif
 

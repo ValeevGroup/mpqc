@@ -35,8 +35,12 @@
 
 #include <chemistry/qc/scf/linkage.h>
 
+namespace sc {
+
 static ForceLink<MBPT2> mbpt_force_link_a_;
 static ForceLink<MP2BasisExtrap> mbpt_force_link_b_;
+
+}
 
 #endif /* __PIC__ */
 

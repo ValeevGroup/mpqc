@@ -31,6 +31,7 @@
 #include <chemistry/molecule/molecule.h>
 
 using namespace std;
+using namespace sc;
 
 #undef DEBUG
 

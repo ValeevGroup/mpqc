@@ -38,6 +38,8 @@
 #include <util/group/thread.h>
 #include <chemistry/qc/basis/integral.h>
 
+namespace sc {
+
 class CSGrad34Qbtr: public Thread {
   private:
     Ref<MessageGrp> msg;
@@ -86,6 +88,8 @@ class CSGrad34Qbtr: public Thread {
     double **get_ginter() { return ginter ;}
     int get_aointder_computed() { return aointder_computed ;}
 };
+
+}
 
 #endif
 

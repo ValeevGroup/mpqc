@@ -3,9 +3,12 @@
 #include <chemistry/qc/psi/psiwfn.h>
 #include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>
+
 #include <chemistry/qc/psi/linkage.h>
+#include <math/optimize/linkage.h>
 
 using namespace std;
+using namespace sc;
 
 void die()
 {

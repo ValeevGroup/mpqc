@@ -11,6 +11,7 @@
 #include <util/container/array.h>
 
 using namespace std;
+using namespace sc;
 
 #undef yyFlexLexer
 #define yyFlexLexer MPQCInFlexLexer

@@ -41,6 +41,8 @@
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/integral.h>
 
+namespace sc {
+
 /** A Wavefunction is a MolecularEnergy that utilizies a GaussianBasisSet. */
 class Wavefunction: public MolecularEnergy {
   public:
@@ -226,6 +228,7 @@ class Wavefunction: public MolecularEnergy {
     void print(std::ostream& = ExEnv::out0()) const;
 };
 
+}
 
 #endif
 

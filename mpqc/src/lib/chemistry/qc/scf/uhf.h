@@ -34,6 +34,8 @@
 
 #include <chemistry/qc/scf/uscf.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 class UHF: public UnrestrictedSCF {
@@ -55,6 +57,8 @@ class UHF: public UnrestrictedSCF {
     void ao_fock(double accuracy);
     void two_body_deriv(double*);
 };
+
+}
 
 #endif
 

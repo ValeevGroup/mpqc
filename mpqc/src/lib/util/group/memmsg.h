@@ -35,6 +35,8 @@
 #include <util/group/message.h>
 #include <util/group/memory.h>
 
+namespace sc {
+
 /** A MsgMemoryGrp that initializes its data using a messagegrp. */
 class MsgMemoryGrp: public MemoryGrp {
 
@@ -48,6 +50,8 @@ class MsgMemoryGrp: public MemoryGrp {
 
     void sync();
 };
+
+}
 
 #endif
 

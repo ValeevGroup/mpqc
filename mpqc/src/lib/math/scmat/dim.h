@@ -35,6 +35,8 @@
 #include <util/keyval/keyval.h>
 #include <util/state/state.h>
 
+namespace sc {
+
 class RefSCDimension;
 /** SCBlockInfo contains blocking information for the SCDimension class.
     There are really two ways that it can contain blocking information.  In
@@ -179,6 +181,8 @@ class RefSCDimension: public Ref<SCDimension> {
 
     void print(std::ostream&o=ExEnv::out0()) const;
 };
+
+}
 
 #endif
 

@@ -38,6 +38,8 @@ extern "C" {
 #include <util/group/thpuma.h>
 #include <util/misc/formio.h>
 
+using namespace sc;
+
 /////////////////////////////////////////////////////////////////////////////
 // PumaThreadLock class
 

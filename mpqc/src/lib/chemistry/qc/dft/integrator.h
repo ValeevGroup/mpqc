@@ -37,6 +37,8 @@
 #include <chemistry/qc/dft/functional.h>
 #include <chemistry/qc/basis/extent.h>
 
+namespace sc {
+
 /** An abstract base class for integrating the electron density. */
 class DenIntegrator: virtual public SavableState {
   protected:
@@ -379,6 +381,8 @@ class RadialAngularIntegrator: public DenIntegrator {
     int select_dynamic_grid(void);
     Ref<IntegrationWeight> weight() { return weight_; }
 };
+
+}
     
 #endif
 

@@ -44,6 +44,8 @@
 #  define eavl_typename typename
 #endif
 
+namespace sc {
+
 template <class K, class T>
 class EAVLMMapNode {
   public:
@@ -83,8 +85,8 @@ class EAVLMMap {
     K& key(T* n) const { return (n->*node_).key; }
     const K& key(const T* n) const { return (n->*node_).key; }
 #endif
-    int compare(T*n,T*m) const { return ::compare(key(n), key(m)); }
-    int compare(T*n,const K&m) const { return ::compare(key(n), m); }
+    int compare(T*n,T*m) const { return sc::compare(key(n), key(m)); }
+    int compare(T*n,const K&m) const { return sc::compare(key(n), m); }
   private:
     void adjust_balance_insert(T* A, T* child);
     void adjust_balance_remove(T* A, T* child);
@@ -717,6 +719,8 @@ EAVLMMap<K,T>::initialize(EAVLMMapNode<K,T> T::* node)
   root_ = 0;
   start_ = 0;
   length_ = 0;
+}
+
 }
 
 #endif

@@ -34,6 +34,8 @@
 #include <util/keyval/keyval.h>
 #include <util/render/parameter.h>
 
+namespace sc {
+
 class Appearance: public DescribedClass {
   private:
     Parameter<int> level_; // level of accuracy used to generate spheres, etc
@@ -46,6 +48,7 @@ class Appearance: public DescribedClass {
     void print(std::ostream& = ExEnv::out0()) const;
 };
 
+}
 
 #endif
 

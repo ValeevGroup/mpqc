@@ -31,6 +31,8 @@
 #include <math/optimize/scextrap.h>
 #include <math/scmat/matrix.h>
 
+namespace sc {
+
 class SymmSCMatrixSCExtrapData: public SCExtrapData {
   private:
     RefSymmSCMatrix m;
@@ -105,6 +107,8 @@ class SymmSCMatrixSCExtrapError: public SCExtrapError {
     double error();
     double scalar_product(const Ref<SCExtrapError>&);
 };
+
+}
 
 #endif
 

@@ -38,6 +38,7 @@
 #include <util/group/messshm.h>
 
 using namespace std;
+using namespace sc;
 
 //#define DEBUG
 

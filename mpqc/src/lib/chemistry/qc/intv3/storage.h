@@ -39,6 +39,8 @@
 #include <util/keyval/keyval.h>
 #include <util/container/eavlmmap.h>
 
+namespace sc {
+
 // the max shell number is 2^15 (sizeof(int) must be >= 4)
 #define SH_BITS 15 // the number of bits holding a shell index
 #define PE_BITS 1  // the number of bits holding a permutation
@@ -172,6 +174,7 @@ class IntegralStorer: public DescribedClass {
     int table_size() const { return table_size_; }
 };
 
+}
 
 #endif
 

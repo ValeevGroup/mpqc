@@ -36,7 +36,11 @@
 #include <util/state/stateio.h>
 #include <util/container/array.h>
 
+namespace sc {
+
 SSB_ARRAY_dec(int);
+
+}
 
 #endif
 

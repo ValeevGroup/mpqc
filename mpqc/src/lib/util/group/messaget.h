@@ -34,6 +34,8 @@
 
 #include <util/group/message.h>
 
+namespace sc {
+
 template <class T>
 void
 GrpSumReduce<T>::reduce(T*target, T*data, int nelement)
@@ -102,6 +104,8 @@ void
 GrpFunctionReduce<T>::reduce(T*target, T*data, int nelement)
 {
   (*func_)(target,data,nelement);
+}
+
 }
 
 #endif

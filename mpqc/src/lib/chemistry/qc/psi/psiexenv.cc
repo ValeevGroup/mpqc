@@ -14,6 +14,8 @@
 
 using namespace std;
 
+namespace sc {
+
 static ClassDesc PsiExEnv_cd(
   typeid(PsiExEnv),"PsiExEnv",1,"public DescribedClass",
   0, create<PsiExEnv>, 0);
@@ -159,4 +161,6 @@ void PsiExEnv::print(std::ostream&o) const
   for(int i=0; i<nscratch_; i++)
     o << indent << "Scratch Group " << i << ": " << scratch_[i] << endl;
   o << endl << decindent;
+}
+
 }

@@ -37,6 +37,11 @@
 #include <util/container/avlset.h>
 
 using namespace std;
+using sc::AVLMap;
+using sc::AVLSet;
+using sc::EAVLMMap;
+using sc::EAVLMMapNode;
+using sc::compare;
 
 class Data {
   public:

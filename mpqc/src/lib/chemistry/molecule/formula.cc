@@ -30,6 +30,8 @@
 #include <util/container/avlmap.h>
 #include <chemistry/molecule/formula.h>
 
+using namespace sc;
+
 static const char * symbols[] = {
   "C", "H", "Ac", "Ag", "Al", "Am", "Ar", "As", "At", "Au", "B", "Ba", "Be",
   "Bi", "Bk", "Br", "Ca", "Cd", "Ce", "Cf", "Cl", "Cm", "Co", "Cr", "Cs", "Cu",

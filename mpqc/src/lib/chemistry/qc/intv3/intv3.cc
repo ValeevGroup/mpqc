@@ -33,6 +33,7 @@
 #include <chemistry/qc/intv3/tbintv3.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc IntegralV3_cd(
   typeid(IntegralV3),"IntegralV3",1,"public Integral",

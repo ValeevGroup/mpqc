@@ -31,6 +31,8 @@
 #include <util/keyval/keyval.h>
 #include <util/render/object.h>
 
+namespace sc {
+
 class RenderedPolygons: public RenderedObject {
   public:
     enum Coloring { None, Vertex /*, Face*/ };
@@ -69,6 +71,7 @@ class RenderedPolygons: public RenderedObject {
     int have_vertex_rgb() const { return coloring_ == Vertex; }
 };
 
+}
 
 #endif
 

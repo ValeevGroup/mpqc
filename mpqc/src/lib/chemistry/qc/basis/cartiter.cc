@@ -36,6 +36,8 @@
 #include <util/misc/exenv.h>
 #include <chemistry/qc/basis/cartiter.h>
 
+using namespace sc;
+
 ////////////////////////////////////////////////////////////////////////
 // CartianIter
 

@@ -155,6 +155,8 @@ extern "C" void * sbrk(ssize_t);
 #define __REF_INITLOCK__()
 #endif
 
+namespace sc {
+
 typedef unsigned long refcount_t;
 
 /** The base class for all reference counted objects.  If multiple
@@ -492,6 +494,8 @@ class  Ref  : public RefBase {
     /// Print a warning concerning the reference.
     void warn(const char*s) const { RefBase::warn(s); }
 };
+
+}
 
 #endif
 

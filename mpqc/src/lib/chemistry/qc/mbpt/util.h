@@ -34,6 +34,8 @@
 
 #include <util/group/message.h>
 
+namespace sc {
+
 class BiggestContribs {
   private:
     int nindex_;
@@ -53,6 +55,8 @@ class BiggestContribs {
     void insert(double val, int i0, int i1, int i2, int i3, int i4);
     void combine(const Ref<MessageGrp> &grp);
 };
+
+}
 
 #endif
 

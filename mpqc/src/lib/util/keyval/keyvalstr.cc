@@ -37,6 +37,7 @@ extern "C" {
 #include <util/class/proxy.h>
 
 using namespace std;
+using namespace sc;
 
 ////////////////////////////////////////////////////////////////////////
 // StringKeyVal

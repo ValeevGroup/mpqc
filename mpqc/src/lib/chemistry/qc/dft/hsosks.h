@@ -37,6 +37,8 @@
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/functional.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 class HSOSKS: public HSOSSCF {
@@ -77,6 +79,8 @@ class HSOSKS: public HSOSSCF {
 
     RefSymmSCMatrix lagrangian();
 };
+
+}
 
 #endif
 

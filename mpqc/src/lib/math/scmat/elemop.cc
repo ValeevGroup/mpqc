@@ -39,6 +39,8 @@
 #include <math/scmat/elemop.h>
 #include <math/scmat/abstract.h>
 
+using namespace sc;
+
 /////////////////////////////////////////////////////////////////////////////
 // SCElementOp member functions
 

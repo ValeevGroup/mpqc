@@ -37,6 +37,8 @@
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/basis/petite.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 class SymmOneBodyIntIter : public OneBodyIntIter {
@@ -66,6 +68,8 @@ class SymmTwoBodyIntIter : public TwoBodyIntIter {
 
     double scale() const;
 };
+
+}
 
 #endif
 

@@ -34,6 +34,8 @@
 
 #include <util/ref/ref.h>
 
+namespace sc {
+
 class TriInterpCoefKey {
   private:
     int order_;
@@ -86,7 +88,7 @@ class TriInterpCoef: public RefCount {
     }
 };
 
-
+}
 
 #endif
 

@@ -36,6 +36,8 @@
 
 #include <util/group/memmsg.h>
 
+namespace sc {
+    
 class MemoryDataRequest {
   public:
     enum { NData = 6 };
@@ -118,6 +120,8 @@ class ActiveMsgMemoryGrp : public MsgMemoryGrp {
 
     void print(std::ostream &o = ExEnv::out0()) const;
 };
+
+}
 
 #endif
 

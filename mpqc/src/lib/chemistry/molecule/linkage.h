@@ -41,6 +41,8 @@
 #include <math/scmat/linkage.h>
 #include <math/optimize/linkage.h>
 
+namespace sc {
+
 static ForceLink<RedundMolecularCoor> molecule_force_link_a_;
 static ForceLink<CartMolecularCoor> molecule_force_link_b_;
 static ForceLink<SymmMolecularCoor> molecule_force_link_c_;
@@ -53,6 +55,8 @@ static ForceLink<VDWShape> molecule_force_link_i_;
 static ForceLink<DiscreteConnollyShape> molecule_force_link_j_;
 static ForceLink<ConnollyShape> molecule_force_link_k_;
 static ForceLink<FinDispMolecularHessian> molecule_force_link_l_;
+
+}
 
 #endif /* __PIC__ */
 

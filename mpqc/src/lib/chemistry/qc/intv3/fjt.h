@@ -34,6 +34,8 @@
 
 #include <util/ref/ref.h>
 
+namespace sc {
+
 class FJT: public RefCount {
   private:
     double **gtable;
@@ -55,6 +57,7 @@ class FJT: public RefCount {
     double *values(int J, double T);
 };
 
+}
 
 #endif
 

@@ -37,6 +37,7 @@
 #include <chemistry/qc/wfn/density.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc ElectronDensity_cd(
   typeid(ElectronDensity),"ElectronDensity",1,"public Volume",

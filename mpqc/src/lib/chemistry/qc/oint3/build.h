@@ -7,6 +7,8 @@
 
 #include <chemistry/qc/intv3/array.h>
 
+namespace sc {
+
 #define MG 3
 
 #define DECLARE_BUILD(ii,j,k,l) \
@@ -113,5 +115,7 @@ class BuildIntV3 {
     DECLARE_BUILD(3,3,3,3);
 #endif
 };
+
+}
 
 #endif

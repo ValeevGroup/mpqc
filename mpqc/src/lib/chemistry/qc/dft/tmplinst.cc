@@ -15,6 +15,7 @@
 #include <chemistry/qc/dft/ukstmpl.h>
 #include <chemistry/qc/dft/hsoskstmpl.h>
 
+using namespace sc;
 
 template class GBuild<LocalUKSContribution>;
 template class GBuild<LocalUKSEnergyContribution>;

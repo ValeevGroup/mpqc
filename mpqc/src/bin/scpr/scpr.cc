@@ -47,6 +47,7 @@
 #include <util/state/linkage.h>
 
 using namespace std;
+using namespace sc;
 
 #ifdef HAVE_MPI
 #include <mpi.h>

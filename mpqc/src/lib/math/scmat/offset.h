@@ -30,6 +30,8 @@
 
 #ifdef __c_plus_plus
 
+namespace sc {
+
 static inline int
 i_offset(int i)
 {
@@ -46,6 +48,8 @@ static inline int
 igtj_offset(int i, int j)
 {
   return ((i*(i+1)) >> 1) + j;
+}
+
 }
 
 #else

@@ -31,6 +31,7 @@
 #include <math/isosurf/surf.h>
 
 using namespace std;
+using namespace sc;
 
 void
 TriangulatedSurface::remove_short_edges(double length_cutoff,

@@ -37,6 +37,7 @@
 #include <math/isosurf/shape.h>
 
 using namespace std;
+using namespace sc;
 
 static const double shape_infinity = 1.0e23;
 

@@ -39,6 +39,8 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/abstract.h>
 
+namespace sc {
+
 /** The DistSCMatrixKit produces matrices that work in a many processor
 environment.  The matrix is distributed across all nodes. */
 class DistSCMatrixKit: public SCMatrixKit {
@@ -286,6 +288,8 @@ class DistSCMatrixListSubblockIter: public SCMatrixListSubblockIter {
     void next();
     ~DistSCMatrixListSubblockIter();
 };
+
+}
 
 #endif
 

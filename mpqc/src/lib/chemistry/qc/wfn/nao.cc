@@ -31,9 +31,11 @@
 #include <chemistry/qc/basis/transform.h>
 
 using namespace std;
+using namespace sc;
 
 #undef DEBUG
 
+namespace sc {
 static RefSCMatrix
 operator *(const RefDiagSCMatrix &d, const RefSymmSCMatrix &s)
 {
@@ -45,6 +47,7 @@ operator *(const RefDiagSCMatrix &d, const RefSymmSCMatrix &s)
         }
     }
   return ret;
+}
 }
 
 static RefSymmSCMatrix

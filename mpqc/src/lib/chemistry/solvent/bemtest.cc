@@ -31,6 +31,8 @@
 #include <chemistry/molecule/molshape.h>
 #include <chemistry/solvent/bem.h>
 
+using namespace sc;
+
 int
 main()
 {

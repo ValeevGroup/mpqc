@@ -42,6 +42,7 @@
 #include <chemistry/qc/scf/clhftmpl.h>
 
 using namespace std;
+using namespace sc;
 
 ///////////////////////////////////////////////////////////////////////////
 // CLHF

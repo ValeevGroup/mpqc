@@ -4,6 +4,7 @@
 #include <ctype.h>
 
 using namespace std;
+using namespace sc;
 
 // min-max macros
 #define MIN(A,B) ((A) < (B) ? (A) : (B))
@@ -90,6 +91,8 @@ vec2& vec2::apply(V_FCT_PTR fct)
 
 // FRIENDS
 
+namespace sc {
+
 vec2 operator - (const vec2& a)
 { return vec2(-a.n[VX],-a.n[VY]); }
 
@@ -168,6 +171,8 @@ vec2 max(const vec2& a, const vec2& b)
 
 vec2 prod(const vec2& a, const vec2& b)
 { return vec2(a.n[VX] * b.n[VX], a.n[VY] * b.n[VY]); }
+
+}
 
 /****************************************************************
 *								*
@@ -257,6 +262,8 @@ return *this; }
 
 // FRIENDS
 
+namespace sc {
+
 vec3 operator - (const vec3& a)
 {  return vec3(-a.n[VX],-a.n[VY],-a.n[VZ]); }
 
@@ -337,6 +344,7 @@ vec3 max(const vec3& a, const vec3& b)
 vec3 prod(const vec3& a, const vec3& b)
 { return vec3(a.n[VX] * b.n[VX], a.n[VY] * b.n[VY], a.n[VZ] * b.n[VZ]); }
 
+}
 
 /****************************************************************
 *								*
@@ -415,6 +423,8 @@ n[VW] = (*fct)(n[VW]); return *this; }
 
 
 // FRIENDS
+
+namespace sc {
 
 vec4 operator - (const vec4& a)
 { return vec4(-a.n[VX],-a.n[VY],-a.n[VZ],-a.n[VW]); }
@@ -499,6 +509,7 @@ vec4 prod(const vec4& a, const vec4& b)
 { return vec4(a.n[VX] * b.n[VX], a.n[VY] * b.n[VY], a.n[VZ] * b.n[VZ],
   a.n[VW] * b.n[VW]); }
 
+}
 
 /****************************************************************
 *								*
@@ -601,6 +612,8 @@ mat3& mat3::apply(V_FCT_PTR fct) {
 
 // FRIENDS
 
+namespace sc {
+
 mat3 operator - (const mat3& a)
 { return mat3(-a.v[0], -a.v[1], -a.v[2]); }
 
@@ -649,6 +662,7 @@ istream& operator >> (istream& s, mat3& m) {
 void swap(mat3& a, mat3& b)
 { mat3 tmp(a); a = b; b = tmp; }
 
+}
 
 /****************************************************************
 *								*
@@ -751,6 +765,8 @@ return *this; }
 
 // FRIENDS
 
+namespace sc {
+
 mat4 operator - (const mat4& a)
 { return mat4(-a.v[0], -a.v[1], -a.v[2], -a.v[3]); }
 
@@ -805,12 +821,16 @@ istream& operator >> (istream& s, mat4& m)
 void swap(mat4& a, mat4& b)
 { mat4 tmp(a); a = b; b = tmp; }
 
+}
+
 
 /****************************************************************
 *								*
 *	       2D functions and 3D functions			*
 *								*
 ****************************************************************/
+
+namespace sc {
 
 mat3 identity2D()
 {   return mat3(vec3(1.0, 0.0, 0.0),
@@ -883,3 +903,5 @@ mat4 perspective3D(const double d)
 		vec4(0.0, 1.0, 0.0, 0.0),
 		vec4(0.0, 0.0, 1.0, 0.0),
 		vec4(0.0, 0.0, 1.0/d, 0.0)); }
+
+}

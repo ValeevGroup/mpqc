@@ -36,8 +36,11 @@
 #include <util/group/pool.h>
 
 using namespace std;
+using namespace sc;
 
 #define CHECK 0
+
+namespace sc {
 
 /////////////////////////////////////////////////////////////////////
 // RangeLockItem members
@@ -332,6 +335,8 @@ RangeLock::print(ostream &o) const
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+}
 
 // Local Variables:
 // mode: c++

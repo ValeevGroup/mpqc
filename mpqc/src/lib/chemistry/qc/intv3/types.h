@@ -30,6 +30,8 @@
 
 #include <chemistry/qc/basis/gaussbas.h>
 
+namespace sc {
+
 /* Types that are used for integrals, but for which we don't need all
  * of the sgen utilities, are defined here. */
 
@@ -41,6 +43,8 @@ class der_centersv3_t {
     GaussianBasisSet *ocs; /* The omitted center's centers_t. */
     int onum;        /* The omitted center's number. */
 };
+
+}
 
 #endif
 

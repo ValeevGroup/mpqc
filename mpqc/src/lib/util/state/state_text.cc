@@ -35,6 +35,7 @@
 #include <util/state/state_text.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc StateOutText_cd(
     typeid(StateOutText),"StateOutText",1,"public StateOutFile");

@@ -34,6 +34,8 @@
 
 #include <chemistry/qc/wfn/wfn.h>
 
+namespace sc {
+
 /**A OneBodyWavefunction is a MolecularEnergy that solves an effective
 one-body problem. */
 class OneBodyWavefunction: public Wavefunction {
@@ -176,6 +178,7 @@ class HCoreWfn: public OneBodyWavefunction {
     int value_implemented() const;
 };
 
+}
 
 #endif
 

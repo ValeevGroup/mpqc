@@ -38,6 +38,7 @@
 #include <chemistry/molecule/atominfo.h>
 
 using namespace std;
+using namespace sc;
 
 ////////////////////////////////////////////////////////////////////////
 // AtomInfo

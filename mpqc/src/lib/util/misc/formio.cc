@@ -34,6 +34,7 @@
 #include <stdarg.h>
 
 using namespace std;
+using namespace sc;
 
 char *SCFormIO::default_basename_ = 0;
 int  SCFormIO::ready_ = 0;
@@ -255,45 +256,27 @@ SCFormIO::warranty(ostream& o)
 }
 
 ios&
-indent(ios& o)
+sc::indent(ios& o)
 {
   return SCFormIO::indent(o);
 }
 
 ios&
-decindent(ios& o)
+sc::decindent(ios& o)
 {
   return SCFormIO::decindent(o);
 }
 
 ios&
-incindent(ios& o)
+sc::incindent(ios& o)
 {
   return SCFormIO::incindent(o);
 }
 
 ios&
-skipnextindent(ios& o)
+sc::skipnextindent(ios& o)
 {
   return SCFormIO::skipnextindent(o);
-}
-
-ostream&
-copyright(ostream& o)
-{
-  return SCFormIO::copyright(o);
-}
-
-ostream&
-warranty(ostream& o)
-{
-  return SCFormIO::warranty(o);
-}
-
-ostream&
-license(ostream& o)
-{
-  return SCFormIO::license(o);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -318,7 +301,7 @@ scprintf::scprintf(const char *fmt, ...)
 }
 
 ostream&
-operator<<(ostream& o, const scprintf& s)
+sc::operator<<(ostream& o, const scprintf& s)
 {
   o << s.str << flush;
   return o;

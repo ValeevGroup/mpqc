@@ -33,6 +33,8 @@
 #include <chemistry/qc/intv3/int2e.h>
 #include <chemistry/qc/intv3/utils.h>
 
+using namespace sc;
+
 Int2eV3::Int2eV3(Integral *integral,
                  const Ref<GaussianBasisSet>& b1,
                  const Ref<GaussianBasisSet>& b2,

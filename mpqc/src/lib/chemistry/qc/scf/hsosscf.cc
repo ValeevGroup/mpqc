@@ -53,6 +53,7 @@
 #include <chemistry/qc/scf/hsoshftmpl.h>
 
 using namespace std;
+using namespace sc;
 
 ///////////////////////////////////////////////////////////////////////////
 // HSOSSCF

@@ -52,6 +52,7 @@
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/localdef.h>
 
+using namespace sc;
 
 static ClassDesc OutSimpleCo_cd(
   typeid(OutSimpleCo),"OutSimpleCo",1,"public SimpleCo",

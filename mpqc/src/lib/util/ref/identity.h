@@ -36,6 +36,8 @@
 
 #include <scconfig.h>
 
+namespace sc {
+
 class Identity;
 
 /** Identifier's are used to distinguish and order objects.  On many
@@ -108,6 +110,8 @@ inline int ne(const Identity*i, const Identity*j) { return i != j; }
 inline int cmp(const Identity*i, const Identity*j)
 {
   return (i==j)?0:((i<j)?-1:1);
+}
+
 }
 
 #endif

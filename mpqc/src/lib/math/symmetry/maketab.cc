@@ -54,6 +54,7 @@
 #include <util/misc/formio.h>
 
 using namespace std;
+using namespace sc;
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846

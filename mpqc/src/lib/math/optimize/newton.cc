@@ -38,6 +38,7 @@
 #include <util/state/stateio.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////
 // NewtonOpt

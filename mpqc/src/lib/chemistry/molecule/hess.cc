@@ -40,6 +40,7 @@
 #include <chemistry/molecule/molfreq.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////
 // MolecularHessian

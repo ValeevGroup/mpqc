@@ -34,6 +34,8 @@
 
 #include <chemistry/qc/scf/scf.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 /** The CLSCF class is a base for classes implementing a self-consistent
@@ -115,6 +117,8 @@ class CLSCF: public SCF {
     // The Hartree-Fock derivatives
     void two_body_deriv_hf(double*grad,double exchange_fraction);
 };
+
+}
 
 #endif
 

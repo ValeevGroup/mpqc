@@ -35,8 +35,12 @@
 
 #include <util/group/linkage.h>
 
+namespace sc {
+
 static ForceLink<ReplSCMatrixKit> math_scmat_force_link_a_;
 static ForceLink<DistSCMatrixKit> math_scmat_force_link_b_;
+
+}
 
 #endif /* __PIC__ */
 

@@ -28,6 +28,8 @@
 #include <util/misc/formio.h>
 #include <util/group/message.h>
 
+using namespace sc;
+
 static ClassDesc ProcMessageGrp_cd(
   typeid(ProcMessageGrp),"ProcMessageGrp",1,"public MessageGrp",
   0, create<ProcMessageGrp>, 0);

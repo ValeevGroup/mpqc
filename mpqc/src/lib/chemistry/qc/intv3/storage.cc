@@ -50,6 +50,8 @@ template class EAVLMMapNode<IntegralKey, IntegralLink>;
 template class EAVLMMapNode<int, IntegralLink>;
 #endif
 
+using namespace sc;
+
 /////////////////////////////////////////////////////////////////////////
 // IntegralLink members
 

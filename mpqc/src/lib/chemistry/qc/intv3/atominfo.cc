@@ -32,6 +32,8 @@
 #include <chemistry/qc/intv3/atominfo.gbl>
 #include <chemistry/qc/intv3/atominfo.lcl>
 
+using namespace sc;
+
 #define N_ATOMS 110
 
 struct {

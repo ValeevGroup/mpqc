@@ -31,6 +31,8 @@
 
 #include <chemistry/qc/basis/dercent.h>
 
+using namespace sc;
+
 DerivCenters::DerivCenters()
 {
   clear();

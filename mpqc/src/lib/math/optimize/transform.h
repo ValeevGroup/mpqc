@@ -34,6 +34,8 @@
 
 #include <math/scmat/matrix.h>
 
+namespace sc {
+
 /** The NonlinearTransform class transforms between
     two nonlinear coordinate systems.  It is needed when a change
     of coordinates occurs in the middle of an optimization. */
@@ -79,6 +81,8 @@ class IdentityTransform: public NonlinearTransform {
     void transform_hessian(const RefSymmSCMatrix& h);
     void transform_ihessian(const RefSymmSCMatrix &ih);
 };
+
+}
 
 #endif
 

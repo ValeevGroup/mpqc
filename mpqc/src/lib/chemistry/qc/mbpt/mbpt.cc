@@ -37,6 +37,7 @@
 #include <chemistry/qc/mbpt/mbpt.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////
 // Function dquicksort performs a quick sort (smaller -> larger) 

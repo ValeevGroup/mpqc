@@ -45,6 +45,7 @@
 #include <chemistry/qc/wfn/wfn.h>
 
 using namespace std;
+using namespace sc;
 
 #define CHECK_SYMMETRIZED_INTEGRALS 0
 

@@ -40,6 +40,9 @@
 #include <util/keyval/keyval.h>
 
 using namespace std;
+using namespace sc;
+
+namespace sc {
 
 ////////////////////////////////////////////////////////////////////////
 // DVector3
@@ -216,6 +219,8 @@ operator<<(ostream&o, const SCVector3 &v)
 {
   o << scprintf("{% 8.5f % 8.5f % 8.5f}", v.x(), v.y(), v.z());
   return o;
+}
+
 }
 
 /////////////////////////////////////////////////////////////////////////////

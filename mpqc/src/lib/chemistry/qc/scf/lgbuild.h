@@ -38,6 +38,8 @@
 
 #include <chemistry/qc/scf/gbuild.h>
 
+namespace sc {
+
 template<class T>
 class LocalGBuild : public GBuild<T> {
   public:
@@ -362,6 +364,8 @@ class LocalGBuild : public GBuild<T> {
       }
     }
 };
+
+}
 
 #endif
 

@@ -12,6 +12,8 @@ using namespace std;
 #include <chemistry/qc/psi/psiinput.h>
 #include <chemistry/qc/psi/psifile11.h>
 
+namespace sc {
+
 /// PsiExEnv specifies a Psi calculation
 
 class PsiExEnv: public DescribedClass {
@@ -68,5 +70,7 @@ class PsiExEnv: public DescribedClass {
     
     void print(std::ostream&o=ExEnv::out0()) const;
 };
+
+}
 
 #endif

@@ -40,6 +40,7 @@
 #include <util/group/pregtime.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc ParallelRegionTimer_cd(
   typeid(ParallelRegionTimer),"ParallelRegionTimer",1,"public RegionTimer",

@@ -30,6 +30,8 @@
 
 #include <util/keyval/keyval.h>
 
+namespace sc {
+
 class Color {
   private:
     double red_;
@@ -48,6 +50,8 @@ class Color {
         blue_ = b;
       }
 };
+
+}
 
 #endif
 

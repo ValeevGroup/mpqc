@@ -5,14 +5,15 @@
 
 #include <fstream>
 
-#ifdef USING_NAMESPACE_STD
-using namespace std;
-#endif
-
 #include <util/keyval/keyval.h>
 #include <math/isosurf/shape.h>
 #include <chemistry/qc/wfn/solvent.h>
 #include <chemistry/molecule/formula.h>
+
+#ifdef USING_NAMESPACE_STD
+using namespace std;
+#endif
+using namespace sc;
 
 static inline double
 get_ki(int z)

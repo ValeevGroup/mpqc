@@ -31,6 +31,8 @@
 #include <util/keyval/keyval.h>
 #include <util/render/object.h>
 
+namespace sc {
+
 class RenderedPolylines: public RenderedObject {
   public:
     enum Coloring { None, Vertex };
@@ -66,6 +68,7 @@ class RenderedPolylines: public RenderedObject {
     void render(const Ref<Render>&);
 };
 
+}
 
 #endif
 

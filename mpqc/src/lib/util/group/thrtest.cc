@@ -32,6 +32,7 @@
 #include <util/group/thread.h>
 
 using namespace std;
+using namespace sc;
 
 // Force linkages:
 //#ifndef __PIC__

@@ -34,6 +34,8 @@
 #include <util/render/stack.h>
 #include <util/render/parameter.h>
 
+using namespace sc;
+
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class Stack<Ref<Material> >;
 template class Stack<Ref<Appearance> >;

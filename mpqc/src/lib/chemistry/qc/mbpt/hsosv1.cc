@@ -43,6 +43,7 @@ typedef int dmt_matrix;
 #include <chemistry/qc/mbpt/hsosv1e1.h>
 
 using namespace std;
+using namespace sc;
 
 static distsize_t
 compute_v1_memory(int ni,

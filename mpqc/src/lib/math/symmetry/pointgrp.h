@@ -60,6 +60,8 @@
 #include <util/keyval/keyval.h>
 #include <math/scmat/vector3.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////
 
 /** The SymmetryOperation class provides a 3 by 3 matrix
@@ -514,6 +516,7 @@ class PointGroup: public SavableState {
     void print(std::ostream&o=ExEnv::out0()) const;
 };
 
+}
 
 #endif
 

@@ -34,6 +34,8 @@
 
 #include <util/state/state.h>
 
+namespace sc {
+
 class SCElementOp;
 class SCElementOp2;
 class SCElementOp3;
@@ -471,6 +473,7 @@ class SCMatrixJointSubblockIter: public SCMatrixSubblockIter {
     SCMatrixBlock *block(int i);
 };
 
+}
 
 #endif
 

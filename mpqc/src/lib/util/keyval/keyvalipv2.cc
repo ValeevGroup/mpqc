@@ -42,6 +42,7 @@
 #include <util/keyval/keyval.h>
 
 using namespace std;
+using namespace sc;
 
 ParsedKeyVal::ParsedKeyVal(IPV2*i):
 nfile(0),

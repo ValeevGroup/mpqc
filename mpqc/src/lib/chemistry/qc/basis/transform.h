@@ -32,6 +32,8 @@
 #ifndef _chemistry_qc_basis_transform_h
 #define _chemistry_qc_basis_transform_h
 
+namespace sc {
+
 // ///////////////////////////////////////////////////////////////////////////
 
 /** This is a base class for a container for a component of a sparse
@@ -160,6 +162,8 @@ class SphericalTransformIter {
     int l(int i) { return i?(i==1?b():c()):a(); }
     int n() { return 2*l() + 1; }
 };
+
+}
 
 #endif
 

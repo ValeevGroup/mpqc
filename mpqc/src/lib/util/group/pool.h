@@ -40,6 +40,8 @@
 
 #undef DEBUG_POOL
 
+namespace sc {
+
 const int pool_data_alignment_bit = 3;
 //const int pool_data_alignment_bit = 14;
 const size_t pool_data_alignment = 1<<pool_data_alignment_bit;
@@ -319,6 +321,8 @@ inline void
 Pool::release(int*d)
 {
   release((void*)d);
+}
+
 }
 
 #endif

@@ -39,6 +39,7 @@
 #include <errno.h>
 
 using namespace std;
+using namespace sc;
 
 #ifndef SHMMAX
 // glibc 2.0.3 isn't defining SHMMAX so make set it here

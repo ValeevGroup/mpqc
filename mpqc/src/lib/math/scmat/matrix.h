@@ -36,6 +36,8 @@
 
 #include <math/scmat/abstract.h>
 
+namespace sc {
+
 class SCVectordouble;
 class SCMatrixdouble;
 class SymmSCMatrixdouble;
@@ -489,6 +491,8 @@ class DiagSCMatrixdouble {
     operator double();
     double val() const;
 };
+
+}
 
 #ifdef INLINE_FUNCTIONS
 #include <math/scmat/matrix_i.h>

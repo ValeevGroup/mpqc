@@ -39,6 +39,8 @@
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/scf/scf.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 /** The MBPT2 class implements several second-order perturbation theory
@@ -249,6 +251,7 @@ class MBPT2: public Wavefunction {
     void print(std::ostream&o=ExEnv::out0()) const;
 };
 
+}
 
 #endif
 

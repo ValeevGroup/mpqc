@@ -31,6 +31,8 @@
 #include <iostream>
 #include <util/render/render.h>
 
+namespace sc {
+
 class OOGLRender: public FileRender {
   private:
     int oogl_spheres_;
@@ -51,6 +53,7 @@ class OOGLRender: public FileRender {
     void polylines(const Ref<RenderedPolylines>&);
 };
 
+}
 
 #endif
 

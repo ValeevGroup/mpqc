@@ -33,6 +33,7 @@
 #include <math/scmat/elemop.h>
 
 using namespace std;
+using namespace sc;
 
 class Prod3: public SCElementOp3 {
   private:

@@ -33,6 +33,8 @@
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/localdef.h>
 
+using namespace sc;
+
 static ClassDesc ScaledTorsSimpleCo_cd(
   typeid(ScaledTorsSimpleCo),"ScaledTorsSimpleCo",1,"public SimpleCo",
   create<ScaledTorsSimpleCo>, create<ScaledTorsSimpleCo>, create<ScaledTorsSimpleCo>);

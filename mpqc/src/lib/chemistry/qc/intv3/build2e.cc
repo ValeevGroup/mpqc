@@ -36,6 +36,7 @@
 #include <chemistry/qc/intv3/int2e.h>
 
 using namespace std;
+using namespace sc;
 
 #define CHECK_STACK_ALIGNMENT 0
 #if CHECK_STACK_ALIGNMENT

@@ -31,6 +31,8 @@
 #include <util/render/object.h>
 #include <util/render/sphere.h>
 
+using namespace sc;
+
 static ClassDesc RenderedSphere_cd(
   typeid(RenderedSphere),"RenderedSphere",1,"public RenderedObject",
   0, create<RenderedSphere>, 0);

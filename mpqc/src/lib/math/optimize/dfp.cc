@@ -32,6 +32,8 @@
 #include <math/optimize/transform.h>
 #include <util/keyval/keyval.h>
 
+using namespace sc;
+
 /////////////////////////////////////////////////////////////////////////
 // DFPUpdate
 

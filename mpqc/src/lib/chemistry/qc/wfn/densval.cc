@@ -31,6 +31,8 @@
 
 #include <chemistry/qc/wfn/wfn.h>
 
+using namespace sc;
+
 // Function for returning electron charge density at a point
 double Wavefunction::density(const SCVector3&r)
 {

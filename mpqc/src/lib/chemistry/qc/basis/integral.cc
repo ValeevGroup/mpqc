@@ -35,6 +35,8 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/obint.h>
 
+using namespace sc;
+
 static ClassDesc Integral_cd(
   typeid(Integral),"Integral",2,"public SavableState",
   0, 0, 0);

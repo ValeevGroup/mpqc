@@ -36,6 +36,8 @@
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/functional.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 class CLKS: public CLSCF {
@@ -71,6 +73,8 @@ class CLKS: public CLSCF {
     
     void two_body_deriv(double*);
 };
+
+}
 
 #endif
 

@@ -39,6 +39,8 @@
 #include <util/render/appearance.h>
 #include <util/render/transform.h>
 
+namespace sc {
+
 class Render;
 
 class RenderedObject: public DescribedClass {
@@ -85,6 +87,7 @@ class RenderedObjectSet: public RenderedObject {
     virtual void add(const Ref<RenderedObject>&);
 };
 
+}
 
 #endif
 

@@ -30,6 +30,8 @@
 
 #include <util/render/object.h>
 
+namespace sc {
+
 class RenderedSphere: public RenderedObject {
   protected:
     void render(const Ref<Render>&);
@@ -40,6 +42,7 @@ class RenderedSphere: public RenderedObject {
     ~RenderedSphere();
 };
 
+}
 
 #endif
 

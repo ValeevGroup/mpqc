@@ -42,6 +42,9 @@
 #include <util/misc/formio.h>
 
 using namespace std;
+using namespace sc;
+
+namespace sc {
 
 /////////////////////////////////////////////////////////////////////////////
 // PthreadThreadLock class
@@ -240,6 +243,8 @@ PthreadThreadGrp::clone(int nthread)
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+}
 
 // Local Variables:
 // mode: c++

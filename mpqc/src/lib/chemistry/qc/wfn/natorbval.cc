@@ -31,6 +31,8 @@
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/wfn/wfn.h>
 
+using namespace sc;
+
 // Function for returning an orbital value at a point
 double Wavefunction::natural_orbital(const SCVector3& r, int iorb)
 {

@@ -36,6 +36,8 @@
 #include <util/misc/regtime.h>
 #include <util/group/message.h>
 
+namespace sc {
+
 class ParallelRegionTimer: public RegionTimer {
   protected:
     Ref<MessageGrp> msg_;
@@ -48,6 +50,8 @@ class ParallelRegionTimer: public RegionTimer {
 
     void print(std::ostream& = ExEnv::out0()) const;
 };
+
+}
 
 #endif
 

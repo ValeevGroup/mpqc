@@ -38,6 +38,8 @@
 #define BIGENDIAN 0
 #endif
 
+namespace sc {
+
 /** Generic data translation.
  */
 class TranslateData {
@@ -208,6 +210,8 @@ class TranslateDataIn {
     /// Return the translator.
     TranslateData *translator() { return translate_; }
 };
+
+}
 
 #endif
 

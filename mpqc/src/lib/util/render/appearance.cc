@@ -28,6 +28,7 @@
 #include <util/render/appearance.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc Appearance_cd(
   typeid(Appearance),"Appearance",1,"public DescribedClass",

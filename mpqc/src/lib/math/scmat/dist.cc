@@ -39,6 +39,7 @@
 #include <math/scmat/elemop.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////////
 // DistSCMatrixKit member functions

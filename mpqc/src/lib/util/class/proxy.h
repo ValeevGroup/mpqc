@@ -30,9 +30,13 @@
 
 #include <util/class/class.h>
 
+namespace sc {
+    
 class DescribedClassProxy: public DescribedClass {
   public:
     virtual Ref<DescribedClass> object() = 0;
 };
+
+}
 
 #endif

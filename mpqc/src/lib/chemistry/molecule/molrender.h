@@ -38,6 +38,8 @@
 #include <chemistry/molecule/atominfo.h>
 #include <math/isosurf/surf.h>
 
+namespace sc {
+
 class RenderedMolecule: public RenderedObject {
   protected:
     Ref<RenderedObject> object_;
@@ -110,6 +112,8 @@ class RenderedMolecularSurface: public RenderedMolecule {
     void init(int reinit_surf);
     void init();
 };
+
+}
 
 #endif
 

@@ -35,6 +35,8 @@
 #include <util/container/avlset.h>
 #include <math/isosurf/vertex.h>
 
+namespace sc {
+
 class Edge: public RefCount {
   private:
     int _order;
@@ -77,7 +79,7 @@ class Edge: public RefCount {
                      const Ref<Volume> &vol, double isovalue);
 };
 
-
+}
 
 #endif
 

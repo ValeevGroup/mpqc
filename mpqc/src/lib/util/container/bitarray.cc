@@ -51,6 +51,8 @@
 
 using namespace std;
 
+using sc::BitArrayLTri;
+
 BitArrayLTri::BitArrayLTri(int i, int j)
   : a(0), n(0), nm(0), na(0)
 {

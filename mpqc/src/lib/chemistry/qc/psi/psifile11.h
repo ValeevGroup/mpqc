@@ -13,6 +13,8 @@ using namespace std;
 #include<chemistry/molecule/molecule.h>
 #include<chemistry/qc/basis/basis.h>
 
+namespace sc {
+
 class PsiExEnv;
 
 ///////////////////////////////////////////////////
@@ -42,5 +44,7 @@ class PsiFile11: public RefCount {
     double get_coord(int entry, int atom, int xyz);
     double get_grad(int entry, int atom, int xyz);
 };
+
+}
 
 #endif

@@ -35,6 +35,7 @@
 #include <chemistry/molecule/taylor.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc TaylorMolecularEnergy_cd(
   typeid(TaylorMolecularEnergy),"TaylorMolecularEnergy",1,"public MolecularEnergy",

@@ -37,6 +37,8 @@
 
 #include <mpi.h>
 
+namespace sc {
+
 class MPI2MemoryGrp: public MsgMemoryGrp {
   private:
     MPI_Win rma_win_;
@@ -69,6 +71,8 @@ class MPI2MemoryGrp: public MsgMemoryGrp {
 
     void sync();
 };
+
+}
 
 #endif
 

@@ -43,6 +43,7 @@
 #include <util/container/avlset.h>
 
 using namespace std;
+using namespace sc;
 
 ///////////////////////////////////////////////////////////////////////////
 // members of IntCoor

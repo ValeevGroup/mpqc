@@ -36,6 +36,8 @@
 #include <util/container/avlmap.h>
 #include <util/keyval/keyval.h>
 
+namespace sc {
+
 class StateInData {
   public:
     Ref<SavableState> ptr;
@@ -193,6 +195,7 @@ class StateIn:  public DescribedClass {
     const Ref<KeyVal> &override() const { return override_; }
   };
 
+}
 
 #endif
 

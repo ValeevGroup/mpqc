@@ -30,6 +30,8 @@
 
 #include <chemistry/qc/basis/cartiter.h>
 
+namespace sc {
+
 class CartesianIterV3 : public CartesianIter {
   public:
     CartesianIterV3(int l) : CartesianIter(l) {}
@@ -78,6 +80,8 @@ class RedundantCartesianSubIterV3 : public RedundantCartesianSubIter {
       return (((((((am)+1)<<1)-(i))*((i)+1))>>1)-(j)-1);
     }
 };
+
+}
 
 #endif
 

@@ -30,6 +30,8 @@
 
 #include <util/container/eavlmmap.h>
 
+namespace sc {
+    
 template <class K, class T>
 class AVLMapNode {
   public:
@@ -121,6 +123,8 @@ AVLMap<K,T>::operator [](const K& k)
   insert(k,T());
   node = map_.find(k);
   return node->data;
+}
+
 }
 
 #endif

@@ -32,6 +32,8 @@
 #include <util/render/polylines.h>
 #include <util/render/color.h>
 
+using namespace sc;
+
 static ClassDesc RenderedPolylines_cd(
   typeid(RenderedPolylines),"RenderedPolylines",1,"public RenderedObject",
   0, create<RenderedPolylines>, 0);

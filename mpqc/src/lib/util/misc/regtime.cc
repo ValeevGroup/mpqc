@@ -37,8 +37,6 @@
 #include <iostream>
 #include <iomanip>
 
-using namespace std;
-
 // getrusage and gettimeofday don't exit under SUNMOS
 // so if NX is being used call dclock() instead.
 #ifdef HAVE_NX
@@ -88,6 +86,11 @@ int getrusage (
 #include <util/misc/regtime.h>
 #include <util/misc/timer.h>
 
+using namespace std;
+using namespace sc;
+
+namespace sc {
+
 class TimedRegion {
   private:
     char *name_;
@@ -127,6 +130,8 @@ class TimedRegion {
     void get_flops(double *);
     void get_depth(int *, int depth = 0);
 };
+
+}
 
 //////////////////////////////////////////////////////////////////////
 

@@ -39,6 +39,8 @@
 #define yyFlexLexer IPV2FlexLexer
 #include <FlexLexer.h>
 
+namespace sc {
+
 // For temporary data (only used while parsing)
 /* This integer list is used to keep track of the karray index. */
 struct intlist_struct {
@@ -223,6 +225,8 @@ class IPV2
   void print_unseen(std::ostream&f=ExEnv::out0(),ip_keyword_tree_t*k=0);
   int have_unseen(ip_keyword_tree_t*k=0);
 };
+
+}
 
 #endif
 

@@ -38,6 +38,7 @@
 #include <iomanip>
 
 using namespace std;
+using namespace sc;
 
 static void
 fail(const char *s)

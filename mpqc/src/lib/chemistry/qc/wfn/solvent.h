@@ -36,6 +36,8 @@
 #include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/qc/wfn/accum.h>
 
+namespace sc {
+
 class BEMSolventH: public AccumH {
   private:
     double gamma_;
@@ -74,6 +76,8 @@ class BEMSolventH: public AccumH {
 
     double e();
 };
+
+}
 
 #endif
 

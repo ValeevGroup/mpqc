@@ -1,4 +1,6 @@
 
+namespace sc {
+
 class LocalUHFContribution {
   private:
     double * const gmata;
@@ -107,3 +109,5 @@ class LocalUHFGradContribution {
       return 2*((pmata[ij]*pmata[kl])+(pmatb[ij]*pmatb[kl]));
     }
 };
+
+}

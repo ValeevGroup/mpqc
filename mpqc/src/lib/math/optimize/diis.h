@@ -34,6 +34,8 @@
 
 #include <math/optimize/scextrap.h>
 
+namespace sc {
+
 /** The DIIS class provides DIIS extrapolation. */
 class DIIS: public SelfConsistentExtrapolation {
   protected:
@@ -97,6 +99,8 @@ class DIIS: public SelfConsistentExtrapolation {
 
     void reinitialize();
 };
+
+}
 
 #endif
 

@@ -35,6 +35,8 @@
 #include <chemistry/molecule/energy.h>
 #include <chemistry/molecule/coor.h>
 
+namespace sc {
+
 // the molecular energy as a taylor expansion
 class TaylorMolecularEnergy: public MolecularEnergy {
   private:
@@ -69,6 +71,8 @@ class TaylorMolecularEnergy: public MolecularEnergy {
     int gradient_implemented() const;
     int hessian_implemented() const;
 };
+
+}
 
 #endif
 

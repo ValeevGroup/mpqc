@@ -49,6 +49,7 @@
 #include <chemistry/qc/dft/hsoskstmpl.h>
 
 using namespace std;
+using namespace sc;
 
 ///////////////////////////////////////////////////////////////////////////
 // HSOSKS

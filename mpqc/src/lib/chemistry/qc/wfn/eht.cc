@@ -35,6 +35,7 @@
 #include <chemistry/qc/basis/petite.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////
 

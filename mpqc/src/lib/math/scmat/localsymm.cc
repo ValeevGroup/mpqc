@@ -37,6 +37,7 @@
 #include <math/scmat/mops.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////////
 // LocalSymmSCMatrix member functions

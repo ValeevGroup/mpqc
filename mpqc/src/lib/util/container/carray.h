@@ -5,6 +5,8 @@
 #ifndef _util_container_carray_h
 #define _util_container_carray_h
 
+namespace sc {
+    
 template <class T>
 T **
 new_c_array2(int l, int m, T)
@@ -90,6 +92,8 @@ delete_c_array3(T***b)
   if (b && b[0]) delete[] b[0][0];
   if (b) delete[] b[0];
   delete[] b;
+}
+
 }
 
 #endif

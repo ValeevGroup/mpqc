@@ -38,6 +38,8 @@
 #include <math/optimize/function.h>
 #include <math/optimize/transform.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////
 //  hessian update classes.  based on the value of inverse_hessian_
 //  x and g may be reversed (see Schlegel, ab initio Methods in Quantum
@@ -128,6 +130,8 @@ class PowellUpdate: public HessianUpdate {
                 const RefSCVector&xnew,const RefSCVector&gnew);
     void apply_transform(const Ref<NonlinearTransform>&);
 };
+
+}
 
 #endif
 

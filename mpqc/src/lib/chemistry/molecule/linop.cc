@@ -52,6 +52,8 @@
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/localdef.h>
 
+using namespace sc;
+
 static ClassDesc LinOPSimpleCo_cd(
   typeid(LinOPSimpleCo),"LinOPSimpleCo",1,"public SimpleCo",
   create<LinOPSimpleCo>, create<LinOPSimpleCo>, create<LinOPSimpleCo>);

@@ -32,6 +32,8 @@
 
 #include <util/group/linkage.h>
 
+using namespace sc;
+
 void matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
                 RefSCDimension d1,RefSCDimension d2,RefSCDimension d3,
                 bool have_svd);

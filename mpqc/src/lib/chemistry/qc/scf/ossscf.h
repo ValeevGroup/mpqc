@@ -34,6 +34,8 @@
 
 #include <chemistry/qc/scf/scf.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 class OSSSCF: public SCF {
@@ -109,6 +111,8 @@ class OSSSCF: public SCF {
     void init_hessian();
     void done_hessian();
 };
+
+}
 
 #endif
 

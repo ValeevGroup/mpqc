@@ -32,6 +32,7 @@
 #include <chemistry/molecule/molecule.h>
 
 using namespace std;
+using namespace sc;
 
 int
 main(int argc, char *argv[])

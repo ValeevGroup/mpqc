@@ -36,6 +36,7 @@
 #include <chemistry/qc/dft/functional.h>
 
 using namespace std;
+using namespace sc;
 
 #define MIN_DENSITY 1.e-14
 #define MIN_GAMMA 1.e-24

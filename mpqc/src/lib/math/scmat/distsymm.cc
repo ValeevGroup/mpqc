@@ -36,6 +36,7 @@
 #include <math/scmat/disthql.h>
 
 using namespace std;
+using namespace sc;
 
 extern "C" { int DBmalloc_chain_check(const char *, int, int); }
 

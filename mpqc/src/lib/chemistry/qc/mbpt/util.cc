@@ -31,6 +31,8 @@
 
 #include <chemistry/qc/mbpt/util.h>
 
+using namespace sc;
+
 BiggestContribs::BiggestContribs(int nindex, int maxcontrib)
 {
   maxcontrib_  = maxcontrib;

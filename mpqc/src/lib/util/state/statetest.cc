@@ -38,6 +38,7 @@
 #include <util/state/linkage.h>
 
 using namespace std;
+using namespace sc;
 
 #ifdef __GNUG__
 #pragma implementation "stattmpl"

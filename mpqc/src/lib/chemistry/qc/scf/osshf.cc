@@ -44,6 +44,7 @@
 #include <chemistry/qc/scf/osshftmpl.h>
 
 using namespace std;
+using namespace sc;
 
 ///////////////////////////////////////////////////////////////////////////
 // OSSHF

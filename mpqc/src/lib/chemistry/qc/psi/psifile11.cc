@@ -13,6 +13,8 @@
 
 using namespace std;
 
+namespace sc {
+
 PsiFile11::PsiFile11(const string& name) : file_()
 {
   filename_ = string(name);
@@ -139,3 +141,4 @@ PsiFile11::get_grad(int entry, int atom, int xyz)
   return grad;
 }
 
+}

@@ -35,6 +35,7 @@
 #include <math/scmat/vector3.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////
 // Triangle

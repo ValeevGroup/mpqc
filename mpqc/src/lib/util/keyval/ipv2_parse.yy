@@ -44,15 +44,15 @@ int yydebug =1;
 #include <alloca.h>
 #endif
 #include <util/keyval/ipv2.h>
-#define yyerror IPV2::yerror
-#define yyparse IPV2::yparse
-#define yylex IPV2::ylex
-#define yywrap IPV2::ywrap
+#define yyerror sc::IPV2::yerror
+#define yyparse sc::IPV2::yparse
+#define yylex sc::IPV2::ylex
+#define yywrap sc::IPV2::ywrap
 %}
 
 %union {
   char *str;
-  ip_string_list_t *sl;
+  sc::ip_string_list_t *sl;
   double dbl;
   }
 

@@ -40,6 +40,8 @@
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/tbint.h>
 
+namespace sc {
+
 class SymmetryOperation;
 class RefSymmSCMatrix;
 class ShellRotation;
@@ -179,6 +181,7 @@ class Integral : public SavableState {
     Ref<MessageGrp> messagegrp() { return grp_; }
 };
 
+}
 
 #endif
 

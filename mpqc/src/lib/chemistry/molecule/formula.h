@@ -32,6 +32,8 @@
 
 #include <chemistry/molecule/molecule.h>
 
+namespace sc {
+
 /** The MolecularFormula class is used to calculate the molecular
  formula of a Molecule.  There is only one constructor which
  takes Ref<Molecule> as input. */
@@ -61,5 +63,7 @@ class MolecularFormula {
     /// Returns number of atoms of given atomtypeindex
     int nZ(int itype);
 };
+
+}
 
 #endif

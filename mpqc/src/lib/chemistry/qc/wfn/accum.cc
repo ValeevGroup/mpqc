@@ -33,6 +33,8 @@
 #include <chemistry/qc/wfn/accum.h>
 #include <chemistry/qc/basis/integral.h>
 
+using namespace sc;
+
 ///////////////////////////////////////////////////////////////////////////
 // AccumH
 

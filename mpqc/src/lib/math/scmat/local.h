@@ -36,6 +36,8 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/abstract.h>
 
+namespace sc {
+
 class LocalSCMatrixKit;
 class LocalSCVector;
 class LocalSCMatrix;
@@ -256,6 +258,8 @@ class LocalDiagSCMatrix: public DiagSCMatrix {
     Ref<SCMatrixSubblockIter> local_blocks(SCMatrixSubblockIter::Access);
     Ref<SCMatrixSubblockIter> all_blocks(SCMatrixSubblockIter::Access);
 };
+
+}
 
 #endif
 

@@ -29,6 +29,8 @@
 #include <math/scmat/local.h>
 #include <math/scmat/blocked.h>
 
+using namespace sc;
+
 void matrixtest(Ref<SCMatrixKit>, Ref<KeyVal>,
                 RefSCDimension d1,RefSCDimension d2,RefSCDimension d3,
                 bool have_svd);

@@ -32,6 +32,8 @@
 
 #include <math.h>
 
+namespace sc {
+
 static const double pi=3.14159265358979323846;
 static const double pih=1.57079632679489661923;
 static const double tpi=2.0*pi;
@@ -104,6 +106,8 @@ normal(const double a[], const double b[], double w[])
   w[2] = a[0]*b[1]-a[1]*b[0];
   double x = 1.0/sqrt(scalar(w,w));
   w[0] *= x; w[1] *= x; w[2] *= x;
+}
+
 }
 
 #endif

@@ -37,6 +37,8 @@
 #include <util/state/stateout.h>
 #include <util/group/message.h>
 
+namespace sc {
+
 /** The MsgStateSend is an abstract base class that sends objects
     to nodes in a MessageGrp.
 */
@@ -297,6 +299,8 @@ class BcastStateInBin: public MsgStateBufRecv {
     int tell();
     int use_directory();
 };
+
+}
 
 #endif
 

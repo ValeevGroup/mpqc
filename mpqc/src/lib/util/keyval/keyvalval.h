@@ -33,6 +33,8 @@
 
 #include <util/class/class.h>
 
+namespace sc {
+
 class KeyValValue: public RefCount {
   public:
     enum KeyValValueError { OK, WrongType };
@@ -176,6 +178,8 @@ class KeyValValueString: public KeyValValue {
     KeyValValue::KeyValValueError pcharvalue(const char*&) const;
     void print(std::ostream &o=ExEnv::out0()) const;
 };
+
+}
 
 #endif /* _KeyVal_h */
 

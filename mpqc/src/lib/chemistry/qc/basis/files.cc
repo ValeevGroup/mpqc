@@ -44,6 +44,7 @@
 #include <chemistry/qc/basis/files.h>
 
 using namespace std;
+using namespace sc;
 
 BasisFileSet::BasisFileSet(const Ref<KeyVal>& keyval)
 {

@@ -14,6 +14,8 @@
 
 #include <stdint.h>
 
+namespace sc {
+
 typedef int8_t         sc_int8_t;
 typedef int_least8_t   sc_int_least8_t;
 typedef int_fast8_t    sc_int_fast8_t;
@@ -44,6 +46,8 @@ typedef uint64_t       sc_uint64_t;
 typedef uint_least64_t sc_uint_least64_t;
 typedef uint_fast64_t  sc_uint_fast64_t;
 
+}
+
 #else
 
 //  This is not a complete implementation of the 1999 C Standard stdint.h
@@ -51,6 +55,8 @@ typedef uint_fast64_t  sc_uint_fast64_t;
 //  C++ programs.
 
 #include <limits.h> // implementation artifact; not part of interface
+
+namespace sc {
 
 //  These are fairly safe guesses for some 16-bit, and most 32-bit and 64-bit
 //  platforms.  For other systems, they will have to be hand tailored.
@@ -142,6 +148,8 @@ typedef uint_fast64_t  sc_uint_fast64_t;
      typedef sc_int32_t              sc_intmax_t;
      typedef sc_uint32_t             sc_uintmax_t;
 # endif
+
+}
 
 #endif
 

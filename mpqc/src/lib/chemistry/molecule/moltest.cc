@@ -48,6 +48,7 @@
 #include <chemistry/molecule/formula.h>
 
 using namespace std;
+using namespace sc;
 
 // force linkage 
 #include <chemistry/molecule/linkage.h>

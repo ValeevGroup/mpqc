@@ -34,6 +34,8 @@
 #include <util/keyval/keyval.h>
 #include <util/render/algebra3.h>
 
+namespace sc {
+
 class Transform: public DescribedClass {
   private:
     mat4 transform_;
@@ -49,6 +51,7 @@ class Transform: public DescribedClass {
     void print(std::ostream& = ExEnv::out0()) const;
 };
 
+}
 
 #endif
 

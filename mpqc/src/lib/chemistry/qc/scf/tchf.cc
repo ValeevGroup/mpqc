@@ -44,6 +44,7 @@
 #include <chemistry/qc/scf/tchftmpl.h>
 
 using namespace std;
+using namespace sc;
 
 ///////////////////////////////////////////////////////////////////////////
 // TCHF

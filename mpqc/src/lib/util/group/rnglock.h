@@ -36,6 +36,8 @@
 
 #include <util/misc/exenv.h>
 
+namespace sc {
+
 class Pool;
 
 class RangeLockItem {
@@ -80,6 +82,8 @@ class RangeLock {
 
     int lockvalue(int i);
 };
+
+}
 
 #endif
 

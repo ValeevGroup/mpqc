@@ -36,12 +36,16 @@
 #include <util/render/material.h>
 #include <util/render/transform.h>
 
+namespace sc {
+
 static ForceLink<OOGLRender> render_force_link_a_;
 static ForceLink<RenderedSphere> render_force_link_b_;
 static ForceLink<RenderedPolylines> render_force_link_c_;
 static ForceLink<Appearance> render_force_link_d_;
 static ForceLink<Material> render_force_link_e_;
 static ForceLink<Transform> render_force_link_f_;
+
+}
 
 #endif /* __PIC__ */
 

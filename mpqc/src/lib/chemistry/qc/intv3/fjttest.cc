@@ -6,6 +6,7 @@
 #include <util/misc/formio.h>
 
 using namespace std;
+using namespace sc;
 
 // this should only be used for x < a + 1
 static double

@@ -38,6 +38,7 @@
 #include <util/group/memiter.h>
 
 using namespace std;
+using namespace sc;
 
 #ifdef HAVE_HRECV
 #  define DISABLE do { masktrap(1); ExEnv::outn().flush(); } while(0)

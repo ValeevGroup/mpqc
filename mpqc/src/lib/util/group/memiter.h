@@ -35,6 +35,8 @@
 
 #include <util/group/memory.h>
 
+namespace sc {
+
 class MemoryIter {
   private:
     distsize_t *offsets_;
@@ -68,6 +70,8 @@ class MemoryIter {
     // returns true if all data is local to node
     int local(distsize_t offset, int size, int node);
 };
+
+}
 
 #endif
 

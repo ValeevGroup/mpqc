@@ -36,6 +36,8 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
 
+namespace sc {
+
 /** A Volume is a Function of three variables. */
 class Volume: public Function {
   private:
@@ -75,7 +77,7 @@ class Volume: public Function {
                        SCVector3& result);
 };
 
-
+}
 
 #ifdef INLINE_FUNCTIONS
 #include <math/isosurf/volume_i.h>

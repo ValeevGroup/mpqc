@@ -38,6 +38,8 @@
 #include <util/group/thread.h>
 #include <chemistry/qc/basis/basis.h>
 
+namespace sc {
+
 /// Distributes shell pairs either statically or dynamically.
 class DistShellPair {
   private:
@@ -81,6 +83,8 @@ class DistShellPair {
         end if dyanmic load balancing is used. */
     int get_task(int &P, int &Q);
 };
+
+}
 
 #endif
 

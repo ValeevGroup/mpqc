@@ -44,6 +44,7 @@
 #include <util/class/class.h>
 
 using namespace std;
+using namespace sc;
 
 AVLMap<ClassKey,ClassDescP>* ClassDesc::all_ = 0;
 AVLMap<type_info_key,ClassDescP>* ClassDesc::type_info_all_ = 0;

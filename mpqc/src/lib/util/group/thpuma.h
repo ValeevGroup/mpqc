@@ -35,6 +35,8 @@
 #include <pthread.h>
 #include <util/group/thread.h>
 
+namespace sc {
+  
 /** The PumaThreadGrp class privides a concrete thread group
     appropriate for the intel teraflops machine.
 */
@@ -51,6 +53,9 @@ class PumaThreadGrp: public ThreadGrp {
     int wait_threads();
     Ref<ThreadLock> new_lock();
 };
+
+}
+
 #endif
 
 // Local Variables:

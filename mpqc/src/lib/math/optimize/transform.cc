@@ -32,6 +32,8 @@
 #include <math/optimize/transform.h>
 #include <util/misc/formio.h>
 
+using namespace sc;
+
 ////////////////////////////////////////////////////////////////////////////
 
 NonlinearTransform::~NonlinearTransform()

@@ -30,6 +30,8 @@
 
 #include <util/keyval/keyval.h>
 
+namespace sc {
+
 class BasisFileSet {
   private:
     char *dir_[2];
@@ -40,6 +42,8 @@ class BasisFileSet {
     ~BasisFileSet();
     Ref<KeyVal> keyval(const Ref<KeyVal>&, const char *name);
 };
+
+}
 
 #endif
 

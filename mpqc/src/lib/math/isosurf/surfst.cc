@@ -34,6 +34,7 @@
 #include <math/isosurf/surf.h>
 
 using namespace std;
+using namespace sc;
 
 #ifndef WRITE_OOGL // this is useful for debugging this routine
 #define WRITE_OOGL 1

@@ -37,6 +37,8 @@
 #include <chemistry/qc/intv3/fjt.h>
 #include <chemistry/qc/intv3/array.h>
 
+namespace sc {
+
 class Integral;
 
 /** Int2eV3 is a class wrapper for the one body part of the C language
@@ -256,7 +258,7 @@ class Int1eV3: public RefCount {
                       int dercs, int centernum);
 };
 
-
+}
 
 #endif
 

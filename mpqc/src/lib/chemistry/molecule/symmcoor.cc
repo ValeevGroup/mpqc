@@ -39,8 +39,11 @@
 #include <util/container/bitarray.h>
 
 using namespace std;
+using namespace sc;
 
 #define VERBOSE 0
+
+namespace sc {
 
 ///////////////////////////////////////////////////////////////////////////
 // SymmCoorTransform
@@ -532,6 +535,8 @@ SymmMolecularCoor::print(ostream& os) const
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+}
 
 // Local Variables:
 // mode: c++

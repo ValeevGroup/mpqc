@@ -36,6 +36,8 @@
 
 #include <math/symmetry/pointgrp.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////
  
 /** The CorrelationTable class provides a correlation
@@ -93,6 +95,7 @@ class CorrelationTable: public RefCount {
     void print(std::ostream &o=ExEnv::out0()) const;
 };
 
+}
 
 #endif
 

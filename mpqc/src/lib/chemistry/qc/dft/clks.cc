@@ -46,6 +46,7 @@
 #include <chemistry/qc/dft/clkstmpl.h>
 
 using namespace std;
+using namespace sc;
 
 ///////////////////////////////////////////////////////////////////////////
 // CLKS

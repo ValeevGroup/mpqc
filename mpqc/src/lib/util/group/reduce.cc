@@ -30,6 +30,8 @@
 #endif
 #include <util/group/message.h>
 
+using namespace sc;
+
 /////////////////////////////////////////////////////////////////////////
 // instantiate templates
 

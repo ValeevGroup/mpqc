@@ -34,6 +34,8 @@
 
 #include <chemistry/qc/scf/gbuild.h>
 
+namespace sc {
+
 template<class T>
 class LocalLBGBuild : public GBuild<T> {
   protected:
@@ -373,6 +375,8 @@ class LocalLBGBuild : public GBuild<T> {
     }
     
 };
+
+}
 
 #endif
 

@@ -33,6 +33,8 @@
 #include <math/scmat/blkiter.h>
 #include <math/scmat/block.h>
 
+using namespace sc;
+
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixBlockIter member functions
 

@@ -30,6 +30,7 @@
 #include <util/keyval/ipv2.h>
 
 using namespace std;
+using namespace sc;
 
 void
 IPV2::print_keyword(ostream&fp,ip_keyword_tree_t*st)

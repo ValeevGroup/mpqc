@@ -30,6 +30,8 @@
 #include <math/scmat/blocked.h>
 #include <math/optimize/scextrapmat.h>
 
+using namespace sc;
+
 static ClassDesc SymmSCMatrixSCExtrapData_cd(
   typeid(SymmSCMatrixSCExtrapData),"SymmSCMatrixSCExtrapData",1,"public SCExtrapData",
   0, 0, create<SymmSCMatrixSCExtrapData>);

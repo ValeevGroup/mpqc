@@ -29,6 +29,7 @@
 #include <util/render/transform.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc Transform_cd(
   typeid(Transform),"Transform",1,"public DescribedClass",

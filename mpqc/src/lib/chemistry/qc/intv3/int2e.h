@@ -43,6 +43,8 @@
 #include <chemistry/qc/intv3/array.h>
 #include <chemistry/qc/intv3/macros.h>
 
+namespace sc {
+
 class Integral;
 
 #define CHECK_INTEGRAL_ALGORITHM 0
@@ -424,6 +426,7 @@ class Int2eV3: public RefCount {
     GaussianBasisSet * pcs4() const { return int_cs4.pointer(); }
 };
 
+}
 
 #endif
 

@@ -35,11 +35,15 @@
 #define INLINE
 #endif
 
+namespace sc {
+
 INLINE double&
 Volume::interpolation_accuracy()
 {
   return _interp_acc;
 };
+
+}
 
 // Local Variables:
 // mode: c++

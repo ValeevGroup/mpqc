@@ -35,6 +35,8 @@
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
 
+namespace sc {
+
 class GlobalMsgIter: public DescribedClass {
   protected:
     int me_;
@@ -74,6 +76,7 @@ class MachineTopology: public DescribedClass {
                                              int target) = 0;
 };
 
+}
 
 #endif
 

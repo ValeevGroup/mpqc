@@ -35,6 +35,8 @@
 #include <iostream>
 #include <util/class/class.h>
 
+namespace sc {
+
 class TimedRegion;
 
 class RegionTimer: public DescribedClass {
@@ -82,6 +84,7 @@ class RegionTimer: public DescribedClass {
     static void set_default_regiontimer(const Ref<RegionTimer> &);
 };
 
+}
 
 #endif
 

@@ -40,6 +40,7 @@
 #include <math/scmat/mops.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////////
 // ReplSymmSCMatrix member functions

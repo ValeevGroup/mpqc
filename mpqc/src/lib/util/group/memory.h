@@ -38,6 +38,8 @@
 #include <util/class/class.h>
 #include <util/group/thread.h>
 
+namespace sc {
+
 #if 0 // this can be used to catch accidental conversions to int
 class distsize_t {
     friend size_t distsize_to_size(const distsize_t &a);
@@ -408,6 +410,8 @@ MemoryGrpBuf<data_t>::release()
                               sizeof(data_t)*length_);
 
   accesstype_ = None;
+}
+
 }
 
 #endif

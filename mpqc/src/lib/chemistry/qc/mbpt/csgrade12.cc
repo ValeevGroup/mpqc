@@ -38,9 +38,11 @@
 #include <chemistry/qc/mbpt/distsh.h>
 
 #include <chemistry/qc/mbpt/util.h>
-extern BiggestContribs biggest_ints_1;
 
 using namespace std;
+using namespace sc;
+
+extern BiggestContribs biggest_ints_1;
 
 #define PRINT1Q 0
 

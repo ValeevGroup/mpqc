@@ -32,6 +32,8 @@
 
 #ifdef __cplusplus
 
+namespace sc {
+
 inline static char *
 new_string(const char* s)
 {
@@ -40,6 +42,8 @@ new_string(const char* s)
   char *ret = new char[strlen(s)+1];
   strcpy(ret,s);
   return ret;
+}
+
 }
 
 #endif

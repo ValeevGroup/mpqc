@@ -32,6 +32,8 @@
 #ifndef _util_group_globcnt_h
 #define _util_group_globcnt_h
 
+namespace sc {
+
 // A process can create a GlobalCounter using the void CTOR.
 // This process can share the string representation of the
 // counter with other processes.  They can then use the const
@@ -63,6 +65,8 @@ class GlobalCounter {
 
     int val();
 };
+
+}
 
 #endif
 

@@ -31,6 +31,8 @@
 
 #include <util/ref/ref.h>
 
+namespace sc {
+
 class X: public RefCount {
   private:
     int x;
@@ -48,4 +50,5 @@ class Y: public X {
     ~Y();
 };
 
+}
 

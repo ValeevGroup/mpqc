@@ -32,6 +32,7 @@
 #include <util/state/state_text.h>
 
 using namespace std;
+using namespace sc;
 
 double bugtest_global_var_;
 double t;

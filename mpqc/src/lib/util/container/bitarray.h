@@ -54,6 +54,8 @@
 
 #include <util/misc/formio.h>
 
+namespace sc {
+
 //
 // class BitArrayLTri is used as the lower triangle of a boolean matrix.
 // rather than storing an int or a char, just use one bit for each, so
@@ -105,6 +107,8 @@ class BitArrayLTri {
       return nedge;
     }
 };
+
+}
 
 #endif
 

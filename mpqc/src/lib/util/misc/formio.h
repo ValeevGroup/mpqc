@@ -31,6 +31,8 @@
 #include <iostream>
 #include <fstream>
 
+namespace sc {
+
 /** This utility class is used to print only on node 0 and to
     provide attractive indentation of output. */
 class SCFormIO {
@@ -86,6 +88,9 @@ std::ios& skipnextindent(std::ios&);
 
 // ///////////////////////////////////////////////////////////////////////////
 
+class scprintf;
+std::ostream& operator<<(std::ostream&, const scprintf&);
+
 /** This class allows <tt>printf</tt> like output to put sent
     to an <tt>ostream</tt>. */
 class scprintf {
@@ -94,10 +99,10 @@ class scprintf {
 
   public:
     scprintf(const char*,...);
-    friend std::ostream& operator<<(std::ostream&, const scprintf&);
+    friend std::ostream& sc::operator<<(std::ostream&, const scprintf&);
 };
 
-std::ostream& operator<<(std::ostream&, const scprintf&);
+}
 
 #endif
 

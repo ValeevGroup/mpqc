@@ -40,6 +40,8 @@
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/dercent.h>
 
+namespace sc {
+
 class Integral;
 
 // //////////////////////////////////////////////////////////////////////////
@@ -355,7 +357,7 @@ class OneBodyDerivInt : public RefCount {
     //@}
 };
 
-
+}
 
 #endif
 

@@ -39,6 +39,8 @@
 #include <math/optimize/opt.h>
 #include <math/optimize/update.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////
 // gdiis
 
@@ -67,6 +69,8 @@ class GDIISOpt: public Optimize {
     void init();
     int update();
 };
+
+}
 
 #endif
 

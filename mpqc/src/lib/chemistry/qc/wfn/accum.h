@@ -34,6 +34,8 @@
 
 #include <chemistry/qc/wfn/wfn.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 // computes additions to H
@@ -90,6 +92,8 @@ class SumAccumH: public AccumH {
 
     double e();
 };
+
+}
 
 #endif
 

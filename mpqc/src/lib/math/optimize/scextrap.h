@@ -36,6 +36,8 @@
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
 
+namespace sc {
+
 /** SCExtrapData hold the data to be extrapolated needed by
     SelfConsistentExtrapolation.  */
 class SCExtrapData: public SavableState {
@@ -121,6 +123,7 @@ class SelfConsistentExtrapolation: public SavableState {
     virtual void reinitialize() =0;
 };
 
+}
 
 #endif
 

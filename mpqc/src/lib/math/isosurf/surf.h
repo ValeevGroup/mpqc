@@ -45,6 +45,8 @@
 #include <math/isosurf/volume.h>
 #include <util/render/render.h>
 
+namespace sc {
+
 class TriangulatedSurface: public DescribedClass {
   protected:
     int _verbose;
@@ -288,6 +290,7 @@ class TriangulatedImplicitSurface: public TriangulatedSurface {
     int inited() const { return inited_; }
 };
 
+}
 
 #endif
 

@@ -38,6 +38,9 @@
 #include <math/scmat/vector3.h>
 
 using namespace std;
+using namespace sc;
+
+namespace sc {
 
 ////////////////////////////////////////////////////////////////////////
 // DMatrix3
@@ -231,7 +234,7 @@ void SCMatrix3::print(ostream& os) const
      << setw(8) << setprecision(5) << operator()(2,2) << "}\n";
 }
 
-
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -43,6 +43,8 @@
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/atominfo.h>
 
+namespace sc {
+
 /**
 The Molecule class contains information about molecules.  It has a
 KeyVal constructor that can create a new molecule from either a
@@ -274,6 +276,7 @@ class Molecule: public SavableState
     void save_data_state(StateOut&);
 };
 
+}
 
 #endif
 

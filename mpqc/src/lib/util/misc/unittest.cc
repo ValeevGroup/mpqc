@@ -6,6 +6,7 @@
 #include <util/misc/formio.h>
 
 using namespace std;
+using namespace sc;
 
 //////////////////////////////////////////////////////////////////////
 // Unit conversion test program 

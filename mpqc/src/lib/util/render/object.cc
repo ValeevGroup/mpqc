@@ -35,6 +35,7 @@
 #include <util/render/object.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc RenderedObject_cd(
   typeid(RenderedObject),"RenderedObject",1,"public DescribedClass",

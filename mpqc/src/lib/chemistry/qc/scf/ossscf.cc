@@ -49,6 +49,7 @@
 #include <chemistry/qc/scf/ossscf.h>
 
 using namespace std;
+using namespace sc;
 
 ///////////////////////////////////////////////////////////////////////////
 // OSSSCF

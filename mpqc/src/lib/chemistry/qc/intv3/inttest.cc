@@ -38,6 +38,7 @@
 #include <chemistry/qc/intv3/intv3.h>
 
 using namespace std;
+using namespace sc;
 
 void test_int_shell_1e(const Ref<KeyVal>&, const Ref<Int1eV3> &int1ev3,
                        void (Int1eV3::*int_shell_1e)(int,int),

@@ -34,6 +34,7 @@
 #include <chemistry/qc/intv3/array.h>
 
 using namespace std;
+using namespace sc;
 
 static void
 no_storage(const char *msg)

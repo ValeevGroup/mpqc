@@ -34,6 +34,8 @@
 
 #include <util/class/class.h>
 
+namespace sc {
+
 class StateIn;
 class StateOut;
 class TranslateDataIn;
@@ -110,6 +112,8 @@ class SavableState: public DescribedClass {
         the SavableState(StateIn&) constructor. */
     SavableState(StateIn&);
   };
+
+}
 
 #endif
 

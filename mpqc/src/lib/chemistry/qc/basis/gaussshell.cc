@@ -41,6 +41,7 @@
 #include <chemistry/qc/basis/cartiter.h>
 
 using namespace std;
+using namespace sc;
 
 const char* GaussianShell::amtypes = "spdfghiklmn";
 const char* GaussianShell::AMTYPES = "SPDFGHIKLMN";

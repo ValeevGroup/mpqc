@@ -38,6 +38,8 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/abstract.h>
 
+namespace sc {
+
 /** The ReplSCMatrixKit produces matrices that work in a many processor
 environment.  A copy of the entire matrix is stored on each node.
 */
@@ -294,6 +296,8 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
 
     Ref<ReplSCMatrixKit> skit();
 };
+
+}
 
 #endif
 

@@ -1,4 +1,6 @@
 
+namespace sc {
+
 class LocalCLKSContribution {
   private:
     double * const gmat;
@@ -80,3 +82,5 @@ class LocalCLKSEnergyContribution {
       ex -= a0*0.5*val*pmat[ij]*pmat[kl];
     }
 };
+
+}

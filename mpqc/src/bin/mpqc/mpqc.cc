@@ -97,6 +97,7 @@
 #endif
 
 using namespace std;
+using namespace sc;
 
 #include "mpqcin.h"
 

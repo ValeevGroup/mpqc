@@ -31,6 +31,7 @@
 #include <util/misc/regtime.h>
 
 using namespace std;
+using namespace sc;
 
 int
 main()

@@ -39,6 +39,8 @@
 #include <math/isosurf/volume.h>
 #include <math/isosurf/implicit.h>
 
+namespace sc {
+
 class Vertex: public RefCount {
   private:
     SCVector3 _point;
@@ -58,7 +60,7 @@ class Vertex: public RefCount {
     void print(std::ostream&o=ExEnv::out0());
 };
 
-
+}
 
 #endif
 

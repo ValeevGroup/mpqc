@@ -37,6 +37,8 @@
 #include <math/scmat/vector3.h>
 #include <util/keyval/keyval.h>
 
+namespace sc {
+
 class CartesianIter;
 class SphericalTransformIter;
 class Integral;
@@ -206,7 +208,7 @@ class GaussianShell: public SavableState
     void print(std::ostream& =ExEnv::out0()) const;
 };
 
-
+}
 
 #endif
 

@@ -41,6 +41,8 @@
 #include <chemistry/qc/basis/petite.h>
 
 #include <chemistry/qc/scf/tbgrad.h>
+
+namespace sc {
   
 template<class T>
 class LocalTBGrad : public TBGrad<T> {
@@ -228,6 +230,8 @@ class LocalTBGrad : public TBGrad<T> {
       delete[] tbint;
     }
 };
+
+}
 
 #endif
 

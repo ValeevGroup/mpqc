@@ -39,6 +39,7 @@
 #include <chemistry/molecule/energy.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////
 // MolecularEnergy

@@ -33,6 +33,7 @@
 #include <math/isosurf/vertex.h>
 
 using namespace std;
+using namespace sc;
 
 /////////////////////////////////////////////////////////////////////////
 // Vertex (a point and a gradient)

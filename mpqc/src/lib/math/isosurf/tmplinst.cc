@@ -35,6 +35,8 @@
 #include <vector>
 #endif
 
+using namespace sc;
+
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 
 #ifdef HAVE_STL

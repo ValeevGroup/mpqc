@@ -1,4 +1,6 @@
 
+namespace sc {
+
 class LocalOSSContribution {
   private:
     double * const gmat;
@@ -172,3 +174,6 @@ class LocalOSSGradContribution {
              pmata[ij]*pmatb[kl] - pmatb[ij]*pmata[kl]);
     }
 };
+
+}
+

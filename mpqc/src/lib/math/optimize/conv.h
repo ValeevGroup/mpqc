@@ -37,6 +37,8 @@
 #include <math/scmat/matrix.h>
 #include <math/optimize/function.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////
 
 /** The Convergence class is used by the optimizer to determine when an
@@ -130,6 +132,7 @@ class Convergence: virtual public SavableState {
     virtual int converged();
 };
 
+}
 
 #endif
 

@@ -34,6 +34,10 @@
 
 using namespace std;
 
+using sc::Y;
+using sc::X;
+using sc::Ref;
+
 void
 test1()
 {

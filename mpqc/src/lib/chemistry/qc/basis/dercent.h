@@ -34,6 +34,8 @@
 
 #include <chemistry/qc/basis/basis.h>
 
+namespace sc {
+
 /** DerivCenters keeps track the centers that
     derivatives are taken with respect to. */
 class DerivCenters {
@@ -71,6 +73,8 @@ class DerivCenters {
     /// The atom that is omitted from the integral buffer.
     int omitted_atom() const { return omitted_atom_; }
 };
+
+}
 
 #endif
 

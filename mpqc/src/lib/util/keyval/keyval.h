@@ -40,6 +40,8 @@
 #include <util/class/class.h>
 #include <util/keyval/keyvalval.h>
 
+namespace sc {
+
 class KeyValKeyword {
   private:
     char* keyword_;
@@ -459,7 +461,7 @@ class ParsedKeyVal : public StringKeyVal {
     int have_unseen();
 };
 
-
+}
 
 #endif /* _KeyVal_h */
 

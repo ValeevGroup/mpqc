@@ -37,6 +37,8 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
 
+namespace sc {
+
 class MolecularEnergy;
 
 class MolecularHessian: virtual public SavableState {
@@ -116,6 +118,8 @@ class DiagMolecularHessian: public MolecularHessian {
 
     RefSymmSCMatrix cartesian_hessian();
 };
+
+}
 
 #endif
 

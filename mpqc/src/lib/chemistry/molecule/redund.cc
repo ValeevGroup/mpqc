@@ -36,6 +36,8 @@
 
 #include <util/container/bitarray.h>
 
+using namespace sc;
+
 ///////////////////////////////////////////////////////////////////////////
 // members of RedundMolecularCoor
 

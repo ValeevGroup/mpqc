@@ -1,5 +1,5 @@
 #include <chemistry/qc/oint3/build.h>
-int BuildIntV3::i1313(){
+int sc::BuildIntV3::i1313(){
 /* the cost is 3339 */
 double t1;
 double t2;

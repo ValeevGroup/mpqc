@@ -27,5 +27,5 @@
 
 #include <util/class/proxy.h>
 
-static ClassDesc DescribedClassProxy_cd(
-    typeid(DescribedClassProxy), "DescribedClassProxy",1,"public DescribedClass");
+static sc::ClassDesc DescribedClassProxy_cd(
+    typeid(sc::DescribedClassProxy), "DescribedClassProxy",1,"public DescribedClass");

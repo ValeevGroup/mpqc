@@ -1,4 +1,6 @@
 
+namespace sc {
+
 class LocalTCContribution {
   private:
     double * const gmata;
@@ -186,3 +188,5 @@ class LocalTCGradContribution {
         c1c2*(pmata[ij]*pmatb[kl] + pmatb[ij]*pmata[kl]);
     }
 };
+
+}

@@ -40,6 +40,8 @@
 #include <chemistry/qc/wfn/accum.h>
 #include <chemistry/qc/wfn/obwfn.h>
 
+namespace sc {
+
 // //////////////////////////////////////////////////////////////////////////
 
 /** The SCF class is the base for all classes that use a self-consistent
@@ -233,6 +235,7 @@ class SCF: public OneBodyWavefunction {
     virtual void done_hessian() =0;
 };
 
+}
 
 #endif
 

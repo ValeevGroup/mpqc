@@ -39,6 +39,7 @@
 #include <chemistry/qc/mbpt/util.h>
 
 using namespace std;
+using namespace sc;
 
 CSGrad34Qbtr::CSGrad34Qbtr(int mythread_a, int nthread_a,
                            int me_a, int nproc_a,

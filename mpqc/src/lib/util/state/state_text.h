@@ -34,6 +34,8 @@
 
 #include <util/state/state_file.h>
 
+namespace sc {
+
 /** Writes out state information in an almost human readable format.
 
  StateOutText is intended for debugging only.  The state information can
@@ -127,6 +129,8 @@ class StateInText: public StateInFile {
     int get(float*&);
     int get(double*&);
   };
+
+}
 
 #endif
 

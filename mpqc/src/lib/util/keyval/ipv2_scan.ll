@@ -36,6 +36,8 @@
 #include <util/keyval/ipv2_scan.h>
 #include <util/keyval/ipv2_parse.h>
 
+using namespace sc;
+
 %}
 string  [A-Za-z0-9_\.*+-/]*
 qstring \"[^"\n]+\"

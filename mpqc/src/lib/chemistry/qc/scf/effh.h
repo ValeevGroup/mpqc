@@ -36,6 +36,8 @@
 #include <math/scmat/blocked.h>
 #include <chemistry/qc/scf/scf.h>
 
+namespace sc {
+
 class AccumEffectiveH: public BlockedSCElementOp2 {
   protected:
     SCF *scf_;
@@ -154,6 +156,8 @@ class PsiEffH: public AccumEffectiveH {
     PsiEffH(SCF*);
     ~PsiEffH();
 };
+
+}
 
 #endif
 

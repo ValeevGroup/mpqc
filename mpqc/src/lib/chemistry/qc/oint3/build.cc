@@ -9,6 +9,7 @@
 #include <chemistry/qc/oint3/build.h>
 
 using namespace std;
+using namespace sc;
 
 BuildIntV3::BuildIntV3()
 {

@@ -34,6 +34,8 @@
 
 #include <chemistry/qc/scf/scfops.h>
 
+using namespace sc;
+
 SCFEnergy::SCFEnergy()
   : eelec(0), deferred_(0)
 {

@@ -38,6 +38,8 @@
 #include <chemistry/qc/intv3/int1e.h>
 #include <chemistry/qc/intv3/int2e.h>
 
+namespace sc {
+
 class Integral;
 
 class SphericalTransformComponentV3 : public SphericalTransformComponent {
@@ -73,6 +75,8 @@ class ISphericalTransformV3 : public ISphericalTransform {
       return new SphericalTransformComponentV3[n_+1];
     }
 };
+
+}
 
 #endif
 

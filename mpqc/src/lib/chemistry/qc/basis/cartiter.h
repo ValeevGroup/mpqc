@@ -32,6 +32,8 @@
 #pragma interface
 #endif
 
+namespace sc {
+
 /** CartesianIter gives the ordering of the Cartesian functions
     within a shell for the particular integrals specialization. */
 class CartesianIter {
@@ -208,6 +210,8 @@ class RedundantCartesianSubIter {
     /// Return the i'th axis.
     int axis(int i) { return axis_[i]; }
 };
+
+}
   
 #endif
 

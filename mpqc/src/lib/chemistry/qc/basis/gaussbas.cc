@@ -52,6 +52,7 @@
 #include <chemistry/qc/basis/integral.h>
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc GaussianBasisSet_cd(
   typeid(GaussianBasisSet),"GaussianBasisSet",2,"public SavableState",

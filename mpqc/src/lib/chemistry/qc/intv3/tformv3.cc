@@ -39,6 +39,8 @@
 #include <chemistry/qc/intv3/tformv3.h>
 #include <chemistry/qc/intv3/utils.h>
 
+using namespace sc;
+
 ////////////////////////////////////////////////////////////////////////////
 
 #define PRINT 0

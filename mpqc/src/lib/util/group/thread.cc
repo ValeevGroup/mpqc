@@ -35,6 +35,16 @@
 #include <util/misc/exenv.h>
 
 using namespace std;
+using namespace sc;
+
+// This has C linkage.
+void *
+Thread__run_Thread_run(void* vth)
+{
+  return Thread::run_Thread_run(vth);
+}
+
+namespace sc {
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -61,12 +71,6 @@ Thread::run_Thread_run(void* vth)
 {
   if (vth) ((Thread*)vth)->run();
   return 0;
-}
-
-void *
-Thread__run_Thread_run(void* vth)
-{
-  return Thread::run_Thread_run(vth);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -293,6 +297,8 @@ ProcThreadGrp::clone(int nthread)
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+}
 
 // Local Variables:
 // mode: c++

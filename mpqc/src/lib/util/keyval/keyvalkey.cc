@@ -27,6 +27,8 @@
 
 #include <util/keyval/keyval.h>
 
+using namespace sc;
+
 KeyValKeyword::KeyValKeyword() :
   keyword_(0)
 {

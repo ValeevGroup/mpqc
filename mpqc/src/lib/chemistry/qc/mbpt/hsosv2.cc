@@ -37,6 +37,7 @@
 #include <chemistry/qc/mbpt/bzerofast.h>
 
 using namespace std;
+using namespace sc;
 
 static void iqs(int *item,int *index,int left,int right);
 static void iquicksort(int *item,int *index,int n);

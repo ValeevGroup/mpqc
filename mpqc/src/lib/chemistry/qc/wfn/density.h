@@ -36,6 +36,8 @@
 #include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/molecule/molrender.h>
 
+namespace sc {
+
 class ElectronDensity: public Volume {
   protected:
     Ref<Wavefunction> wfn_;
@@ -76,6 +78,8 @@ class GradDensityColorizer: public MoleculeColorizer {
 
     void colorize(const Ref<RenderedPolygons> &);
 };
+
+}
 
 #endif
 

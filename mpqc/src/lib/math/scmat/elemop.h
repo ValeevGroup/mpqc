@@ -35,6 +35,8 @@
 #include <util/state/state.h>
 #include <util/group/message.h>
 
+namespace sc {
+
 class SCMatrixBlock;
 class SCMatrixBlockIter;
 class SCMatrixRectBlock;
@@ -373,6 +375,8 @@ class SCElementAccumulateSCVector: public SCElementOp {
     int has_side_effects();
     void process(SCMatrixBlockIter&);
 };
+
+}
 
 #endif
 

@@ -32,6 +32,7 @@
 #include <util/misc/formio.h>
 
 using namespace std;
+using namespace sc;
 
 class Double {
   private:

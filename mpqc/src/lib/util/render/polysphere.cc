@@ -34,6 +34,7 @@
 #include <util/render/polygons.h>
 
 using namespace std;
+using namespace sc;
 
 static inline void
 switch2(int& i, int& j)
@@ -207,7 +208,7 @@ subdivide(int level, int maxlevel,
 }
 
 void
-polysphere(int level, const Ref<RenderedPolygons>& poly)
+sc::polysphere(int level, const Ref<RenderedPolygons>& poly)
 {
   int i;
 

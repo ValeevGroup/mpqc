@@ -36,6 +36,7 @@
 #include <math/optimize/linkage.h>
 
 using namespace std;
+using namespace sc;
 
 class Quadratic: public Function
 {

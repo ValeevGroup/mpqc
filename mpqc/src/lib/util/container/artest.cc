@@ -32,6 +32,7 @@
 #include <util/container/array.h>
 
 using namespace std;
+using namespace sc;
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class Array<int>;

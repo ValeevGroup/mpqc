@@ -43,6 +43,7 @@
 #endif
 
 using namespace std;
+using namespace sc;
 
 static ClassDesc MessageGrp_cd(
   typeid(MessageGrp),"MessageGrp",1,"public DescribedClass",

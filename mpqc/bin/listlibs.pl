@@ -107,9 +107,33 @@ sub process_file {
 sub get_lines {
     local($filecontents) = shift;
     local(@lines) = ();
+    my($ifdepth) = 0;
     while ($filecontents ne "") {
+        # get next line
         $filecontents =~ s/^(.*)\n//;
-        $lines[++$#lines] = $1;
+        my($line) = $1;
+        # remove comments
+        $line =~ s/\/\/.*$//;
+        # remove leading trailing whitespace
+        $line =~ s/^\s*//;
+        $line =~ s/\s*$//;
+        # this only handles ifdef's that are one level deep
+        if ($line =~ /\#\s*ifdef\s+([a-zA-Z_]\w*)/) {
+            my($symbol) = $1;
+            if (! exists($defines{$symbol})) {
+                while ($filecontents ne "") {
+                    $filecontents =~ s/^(.*)\n//;
+                    my($tline) = $1;
+                    last if ($tline =~ /\#\s*endif/);
+                }
+            }
+        }
+        elsif ($line =~ /\#\s*endif/) {
+            # eat this endif
+        }
+        else {
+            $lines[++$#lines] = $line if ($line ne "");
+        }
     }
     return @lines;
 }

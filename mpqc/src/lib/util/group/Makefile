@@ -82,7 +82,7 @@ LIBOBJ = $(CXXSRC:%.cc=%.o)
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libgroup
 
-TESTCXXSRC = pooltest.cc messtest.cc rnglocktest.cc
+TESTCXXSRC = pooltest.cc messtest.cc rnglocktest.cc thrtest.cc
 DISTFILES = $(REQUIREDCXXSRC) $(OPTIONALCXXSRC) $(INC) \
             Makefile LIBS.h $(TESTCXXSRC)
 
@@ -129,6 +129,19 @@ messtest: messtest.o \
 	libref.$(LIBSUF)
 	$(LD) $(LDFLAGS) -o messtest $^ $(SYSLIBS)
 
+thrtest.o: thrtest.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
+thrtest: thrtest.o \
+	libgroup.$(LIBSUF) \
+	libkeyval.$(LIBSUF) \
+	libmisc.$(LIBSUF) \
+	libstate.$(LIBSUF) \
+	libclass.$(LIBSUF) \
+	libcontainer.$(LIBSUF) \
+	libref.$(LIBSUF)
+	$(LD) $(LDFLAGS) -o thrtest $^ $(SYSLIBS)
+
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 $(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
@@ -137,4 +150,4 @@ include $(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.o=.d)
 endif
 
 targetclean::
-	/bin/rm -f memtest rnglocktest messtest
+	/bin/rm -f memtest rnglocktest messtest thrtest

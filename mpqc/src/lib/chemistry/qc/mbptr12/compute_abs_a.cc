@@ -836,6 +836,12 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   //          After that deactivate the size of mem will be 0 [mem->set_localsize(0)]
   r12intsacc->commit();
 
+  //
+  // Intermediate cleanup
+  //
+  delete[] symorb_irrep_aux;
+  delete[] orthog_aux_vector;
+  
   /*--------------------------------
     Compute MP2-R12/A intermediates
     and collect on node0

@@ -271,7 +271,9 @@ CSGradErep12Qtr::run_task_runner()
   if (work_per_thread == 0) work_per_thread = 1;
 
   if (debug) {
-      cout << scprintf("%d:%d: starting get_task loop",me,mythread) << endl;
+    lock->lock();
+    cout << scprintf("%d:%d: starting get_task loop",me,mythread) << endl;
+    lock->unlock();
     }
 
   S = 0;
@@ -448,7 +450,9 @@ CSGradErep12Qtr::run_task_runner()
     }         // exit while get_task
 
   if (debug) {
-      cout << scprintf("%d:%d: done with get_task loop",me,mythread) << endl;
+    lock->lock();
+    cout << scprintf("%d:%d: done with get_task loop",me,mythread) << endl;
+    lock->unlock();
     }
 
   lock->lock();

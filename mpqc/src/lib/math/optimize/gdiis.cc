@@ -70,16 +70,6 @@ GDIISOpt::GDIISOpt(const RefKeyVal&keyval):
   grad_ = new RefSCVector[nsave];
   error_ = new RefSCVector[nsave];
 
-//   LocalSCDimension *ldim =
-//     LocalSCDimension::require_castdown(dim_.pointer(),
-//                                     "GDIISOpt::GDIISOpt(const RefKeyVal&)");
-//   
-//   for (int i=0; i < nsave; i++) {
-//     coords_[i] = new LocalSCVector(ldim);  coords_[i]->assign(0.0);
-//     grad_[i] = new LocalSCVector(ldim);    grad_[i]->assign(0.0);
-//     error_[i] = new LocalSCVector(ldim);   error_[i]->assign(0.0);
-//   }
-
   for (int i=0; i < nsave; i++) {
     coords_[i] = dim_->create_vector(); coords_[i]->assign(0.0);
     grad_[i] = dim_->create_vector(); grad_[i]->assign(0.0);
@@ -223,11 +213,24 @@ GDIISOpt::update()
   }
   
   // take the step
-  if (diis_iter==1 || maxabs_gradient > 0.005) {
+  if (diis_iter==1 || maxabs_gradient > 0.05) {
     // just take the Newton-Raphson step first iteration
-    // RefSCVector xdisp = -1.0*(ihessian_ * gcurrent);
+    RefSCVector xdisp = -1.0*(ihessian_ * gcurrent);
     // try steepest descent
-    RefSCVector xdisp = -1.0*gcurrent;
+    // RefSCVector xdisp = -1.0*gcurrent;
+    
+    // scale displacement vector if it's too large
+    double tot = sqrt(xdisp.scalar_product(xdisp));
+    double maxstepsize=0.3;
+    if (tot > maxstepsize) {
+      double scal = maxstepsize/tot;
+      printf("\n stepsize of %f is too big, scaling by %f\n",tot,scal);
+      xdisp.scale(scal);
+      tot *= scal;
+    }
+    printf("\n taking step of size %f\n",tot);
+    fflush(stdout);
+    
     RefSCVector xnext = xcurrent + xdisp;
     nlp_->set_x(xnext);
     
@@ -292,6 +295,18 @@ GDIISOpt::update()
   }
 
   RefSCVector xdisp = xstar - xcurrent - ihessian_*delstar;
+  // scale displacement vector if it's too large
+  double tot = sqrt(xdisp.scalar_product(xdisp));
+  double maxstepsize=0.3;
+  if (tot > maxstepsize) {
+    double scal = maxstepsize/tot;
+    printf("\n stepsize of %f is too big, scaling by %f\n",tot,scal);
+    xdisp.scale(scal);
+    tot *= scal;
+  }
+  printf("\n taking step of size %f\n",tot);
+  fflush(stdout);
+  
   RefSCVector xnext = xcurrent + xdisp;
   nlp_->set_x(xnext);
   

@@ -43,6 +43,6 @@ PointBag_double::PointBag_double(PointBag_double&b)
 PointBag_double::~PointBag_double()
 {
   for (Pix i=first(); i!=0; next(i)) {
-      delete (PointBagElem_double*) &impl(i);
+      delete (PointBagElem_double*) impl(i).getptr();
     }
 }

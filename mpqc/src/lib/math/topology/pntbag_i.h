@@ -31,7 +31,7 @@ INLINE int PointBag_double::owns(Pix i)
 
 INLINE double& PointBag_double::operator()(Pix i)
 {
-  return ((PointBagElem_double*)&impl(i))->object();
+  return ((PointBagElem_double*)impl(i).getptr())->object();
 }
 
 INLINE double& PointBag_double::get(Pix i)
@@ -41,7 +41,7 @@ INLINE double& PointBag_double::get(Pix i)
 
 INLINE Point& PointBag_double::point(Pix i)
 {
-  return ((PointBagElem_double*)&impl(i))->point();
+  return ((PointBagElem_double*)impl(i).getptr())->point();
 }
 
 INLINE Pix PointBag_double::first()

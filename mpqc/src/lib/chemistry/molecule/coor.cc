@@ -844,8 +844,9 @@ find_bonds(Molecule &m, BitArrayLTri &bonds,
   AVLSet<int> newatoms, nextnewatoms;
   // start out with atom 0
   newatoms.insert(0);
-  while (boundatoms.length() != m.natom()) {
-    AVLSet<int>::iterator iatom;
+  AVLSet<int>::iterator iatom;
+  int warning_printed = 0;
+  while (newatoms.length() > 0) {
     while (newatoms.length() > 0) {
       // newatoms gets merged into boundatoms
       for (iatom=newatoms.begin(); iatom!=newatoms.end(); iatom++) {
@@ -868,35 +869,53 @@ find_bonds(Molecule &m, BitArrayLTri &bonds,
         newatoms.insert(*iatom);
         }
       }
+
     if (boundatoms.length() != m.natom()) {
-      cout << node0
-           << indent << "WARNING: two unbound groups of atoms" << endl
-           << indent << "         consider using extra_bonds input" << endl
-           << endl;
+      if (!warning_printed) {
+        warning_printed = 1;
+        cout << node0
+             << indent << "WARNING: two unbound groups of atoms" << endl
+             << indent << "         consider using extra_bonds input" << endl
+             << endl;
+        }
       // find an unbound group
+      double nearest_dist;
+      int nearest_bound = -1, nearest_unbound = -1;
       for(i=0; i < m.natom(); i++) {
         if (!boundatoms.contains(i)) {
           SCVector3 ri(m.r(i));
-          double nearest;
-          int nearest_j = -1;
           for (iatom=boundatoms.begin(); iatom!=boundatoms.end(); iatom++) {
             SCVector3 rj(m.r(*iatom));
             double d = ri.dist(rj);
-            if (nearest_j == -1 || d < nearest) {
-              d = nearest;
-              nearest_j = *iatom;
+            if (nearest_unbound == -1 || d < nearest_dist) {
+              nearest_dist = d;
+              nearest_bound = *iatom;
+              nearest_unbound = i;
               }
             }
-          cout << node0 << indent
-               << "         adding bond between "
-               << i << " and " << nearest_j << endl;
-          bonds.set(i,nearest_j);
-          newatoms.insert(nearest_j);
-          // now that we have something in newatoms break the for loop
-          // to continue processing everthing bound to nearest_j
-          break;
           }
         }
+      if (nearest_bound == -1) {
+        cout << node0 << indent
+             << "ERROR: impossible error generating coordinates"
+             << endl;
+        abort();
+        }
+      // add all bound atoms within a certain distance of nearest_unbound
+      // --- should really do this for all atoms that nearest_unbound
+      // --- is already bound to, too
+      SCVector3 rnearest_unbound(m.r(nearest_unbound));
+      for (iatom=boundatoms.begin(); iatom!=boundatoms.end(); iatom++) {
+        SCVector3 r(m.r(*iatom));
+        if (*iatom == nearest_bound
+            || rnearest_unbound.dist(r) < 1.1 * nearest_dist) {
+          cout << node0 << indent
+               << "         adding bond between "
+               << *iatom+1 << " and " << nearest_unbound+1 << endl;
+          bonds.set(*iatom,nearest_unbound);
+          }
+        }
+      newatoms.insert(nearest_unbound);
       }
     }
 }

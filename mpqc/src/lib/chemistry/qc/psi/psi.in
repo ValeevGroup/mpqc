@@ -2,7 +2,7 @@
 
 mole: [
   <PSI_CI>: (
-    % NLP... input
+    % Function input
     value_accuracy = 1e-5
     gradient_accuracy = 1e-4
     % MolecularEnergy input

@@ -159,7 +159,7 @@ MBPT2::compute_hsos_v1()
   a_rest = nvir%nproc;
   if (me < a_rest) a_number++;
 
-  if (a_number < nsocc) { 
+  if (me == 0 && a_number < nsocc) { 
     cerr << "not enough memory allocated" << endl;
     /* must have all socc's on node 0 for computation of socc_sum*/
     abort();

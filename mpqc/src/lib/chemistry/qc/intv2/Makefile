@@ -26,18 +26,13 @@ ifeq ($(MG),none)
   MG=3
 endif
 
-ifeq ($(ARCH),NCUBE_V2)
-  COPTIONS = -O2
-endif
-ifeq ($(ARCH),I860)
-  COPTIONS = -O3 -Knoieee -Mnoframe
-endif
-
-TESTCSRC = inttest.c
+TESTCSRC = inttest.cc
 
 CSRC = bounds.c storage.c  buildgc.c  comp_1e.c  comp_0e.c  normalize.c  \
        offsets.c int_fjt.c  init2e.c  atominfo.c  basis.c  comp_erep.c  \
        shiftgc.c int_print.c utils.c comp_erep23.c
+
+CXXSRC = basisk.cc
 
 XCSRC = shellprnt.c  shellrbc0.c  shellrcv0.c  shellsbc0.c  shellsnd0.c  \
         shellasgn.c  shellbrd.c  shellbwr.c  shellfrd.c  shellfwr.c \
@@ -47,7 +42,7 @@ SGENFILE = atoms.sgen
 
 SGENSRC = \
   atomsallc.c atomsbc0.c atomsbrd.c atomsbwr.c atomsfree.c \
-  atomsinit.c atomsip.c atomsprnt.c atomsrbc0.c atomssbc0.c \
+  atomsinit.c atomsprnt.c atomsrbc0.c atomssbc0.c \
   atomsfrd.c atomsfwr.c atomsiseq.c atomsasgn.c atomssnd0.c \
   atomsrcv0.c atomszero.c
 
@@ -56,8 +51,9 @@ INC = bounds.h buildinter.h fjttable.h genbuild.h \
 SGENINC = $(SGENSRC:%.c=%.h)
 GENINC = MG.h $(CSRC:%.c=%.gbl) $(CSRC:%.c=%.lcl)
 
-LIBSRC = $(CSRC) $(XCSRC) $(SGENSRC)
+LIBSRC = $(CSRC) $(XCSRC) $(SGENSRC) $(CXXSRC)
 LIBOBJ = $(LIBSRC:%.c=%.$(OBJSUF))
+LIBOBJ := $(LIBOBJ:%.cc=%.$(OBJSUF))
 
 DISTFILES = $(TESTCSRC) $(CSRC) $(XCSRC) $(INC) atoms.sgen Makefile LIBS.h
 
@@ -74,8 +70,8 @@ inttest: inttest.o libintv2.a \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(CXX) $(LDFLAGS) -o inttest $^ $(SYSLIBS)
 
-inttest.o: inttest.c
-	$(CC) $(CFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+inttest.o: inttest.cc
+	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 $(TESTOBJ:.o=.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

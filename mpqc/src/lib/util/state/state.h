@@ -143,7 +143,7 @@ class StateOut: virtual public DescribedClass {
   private:
     // do not allow copy constructor or assignment
     StateOut(const StateOut&);
-    operator=(const StateOut&);
+    void operator=(const StateOut&);
   protected:
     StateDataPtrSet* ps_;
     ClassDescPintMap* _classidmap;
@@ -181,7 +181,7 @@ class StateIn: virtual public DescribedClass {
   private:
     // do not allow copy constructor or assignment
     StateIn(const StateIn&);
-    operator=(const StateIn&);
+    void operator=(const StateIn&);
   protected:
     StateDataNumSet* ps_;
     int _nextobject;
@@ -304,10 +304,10 @@ class StateInText: public StateInFile {
   protected:
     int _newlines;
     
-    void read(char*);
-    void read(int&);
-    void read(float&);
-    void read(double&);
+    int read(char*);
+    int read(int&);
+    int read(float&);
+    int read(double&);
     void newline();
     void comment();
     void start_array();

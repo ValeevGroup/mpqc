@@ -165,9 +165,6 @@
 /* Define if you have the NIAMA library.  */
 #undef HAVE_NIAMA
 
-/* Define if you have the <mpl.h> header file and library.  */
-#undef HAVE_MPL
-
 /* Define if you have the <mpi.h> header file and library.  */
 #undef HAVE_MPI
 
@@ -185,9 +182,6 @@
 
 /* Define if you have the <perf.h> header file and library.  */
 #undef HAVE_PERF
-
-/* Define if your MPI implementation uses p4 */
-#undef HAVE_P4
 
 /* Define if MPIMessageGrp should be used by default. */
 #undef DEFAULT_MPI

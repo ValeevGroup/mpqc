@@ -11,7 +11,6 @@ install_devel::
 	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)
 	$(INSTALL) $(INSTALLSCRIPTOPT) sc-config $(installroot)$(bindir)
 	$(INSTALL) $(INSTALLSCRIPTOPT) mkf77sym.pl $(installroot)$(bindir)/sc-mkf77sym
-	-$(INSTALL) $(INSTALLSCRIPTOPT) sc-libtool $(installroot)$(bindir)
 
 distclean::
 	-/bin/rm -f sc-config

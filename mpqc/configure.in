@@ -1,6 +1,6 @@
 define([sc_mmm_version],[2.2.0])
 define([sc_buildid],[alpha])
-define([sc_so_version],[4:0:0])
+define([sc_so_version],[5:0:0])
 
 dnl Process this file with autoconf to produce a configure script.
 define([AC_CACHE_LOAD], )dnl for debugging configure.in
@@ -220,54 +220,6 @@ case $enableval in
 esac
 ])
 
-enableshared=no
-AC_ARG_ENABLE(shared,
-[  --enable-shared         Build shared libraries.],
-[
-case $enableval in
-  yes)
-    enableshared=yes
-  ;;
-  no)
-  ;;
-  *)
-    AC_MSG_ERROR([Invalid value for --(dis|en)able-shared ($enableval)])
-  ;;
-esac
-])
-
-enablestatic=yes
-AC_ARG_ENABLE(static,
-[  --disable-static        Do not build static libraries.],
-[
-case $enableval in
-  yes)
-  ;;
-  no)
-    enablestatic=no
-  ;;
-  *)
-    AC_MSG_ERROR([Invalid value for --(dis|en)able-static ($enableval)])
-  ;;
-esac
-])
-
-enablelibtool=yes
-AC_ARG_ENABLE(libtool,
-[  --disable-libtool       Do not use libtool.],
-[
-case $enableval in
-  yes)
-  ;;
-  no)
-    enablelibtool=no
-  ;;
-  *)
-    AC_MSG_ERROR([Invalid value for --(dis|en)able-libtool ($enableval)])
-  ;;
-esac
-])
-
 DOXYGEN_MAN=YES
 AC_ARG_ENABLE(doxygen-man,
 [  --disable-doxygen-man   Disable doxygen man pages.],
@@ -366,23 +318,12 @@ CPPFLAGS=$withval
 echo Using extra include directories: $withval
 )
 
-if test $prefix = $ac_default_prefix -o $prefix = NONE; then
-  scincludedir=$includedir
-else
-  scincludedir=$includedir/mpqc/$SC_VERSION
-fi
+scincludedir=$includedir
 AC_ARG_WITH(sc-includedir,
-[  --with-sc-includedir       Specifies include file install subdir.],
+[  --with-sc-includedir    Specifies include file install subdir.],
 scincludedir=$withval
 )
 AC_SUBST(scincludedir)
-
-AC_ARG_WITH(include,
-[  --with-include          Specifies include directories (-Idir1 -Idir2).],
-EXTRAINCLUDE=$withval
-CPPFLAGS=$withval
-echo Using extra include directories: $withval
-)
 
 AC_ARG_WITH(libs,
 [  --with-libs             Specifies libraries (-llib1 -llib2).],
@@ -1005,19 +946,18 @@ if test X$PARALLEL = Xyes; then
   AC_LANG_CPLUSPLUS
   dnl Must use try_link since check_header runs cpp which doesn't
   dnl always find mpi.h (if mpicc and no -I is used for example)
-  AC_TRY_LINK([#include <mpi.h>],[],
-    AC_CHECK_FUNC(MPI_Init,HAVE_MPI=yes,[
-      AC_CHECK_LIB(mpi,MPI_Init,[HAVE_MPI=yes;LIBS="-lmpi $LIBS"],[
-        AC_CHECK_LIB(mpich,MPI_Init,[HAVE_MPI=yes;LIBS="-lmpich $LIBS"])
-        ]
-      )]
-    )
-  )
+  AC_TRY_LINK([#include <mpi.h>],[],have_mpi_h=yes,have_mpi_h=no)
+  if test "$have_mpi_h" = yes; then
+    AC_CHECK_FUNC(MPI_Init,HAVE_MPI=yes,HAVE_MPI=no)
+    if test "$HAVE_MPI" = no; then
+      AC_CHECK_LIB(mpi,MPI_Init,[HAVE_MPI=yes;LIBS="-lmpi $LIBS"])
+    fi
+    if test "$HAVE_MPI" = no; then
+      AC_CHECK_LIB(mpich,MPI_Init,[HAVE_MPI=yes;LIBS="-lmpich $LIBS"])
+    fi
+  fi
   if test X$HAVE_MPI = Xyes; then
     AC_DEFINE(HAVE_MPI)
-    dnl ----- check for functions that might be in an mpi library
-    AC_CHECK_FUNC(mpc_rcvncall,[HAVE_MPL=yes;AC_DEFINE(HAVE_MPL)])
-    AC_CHECK_FUNC(p4_initenv,[HAVE_P4=yes;AC_DEFINE(HAVE_P4)])
     AC_CHECK_FUNC(MPI_File_open,
                  [HAVE_MPIIO=yes;AC_DEFINE(HAVE_MPIIO)])
   fi
@@ -1055,8 +995,6 @@ if test $DEFAULT_PARALLEL = armcimpi -a X$HAVE_ARMCI != Xyes; then
 fi
 
 AC_SUBST(HAVE_PERF)
-AC_SUBST(HAVE_MPL)
-AC_SUBST(HAVE_P4)
 AC_SUBST(HAVE_MPI)
 AC_SUBST(HAVE_ARMCI)
 AC_SUBST(HAVE_MPIIO)
@@ -1461,42 +1399,43 @@ AC_SUBST(TMPLINLIB)
 
 dnl --------- Shared library configuration. ---------
 
-if test "$enableshared" = no; then
-  enablelibtool=no
-fi
+enablelibtool=yes
+AC_ARG_ENABLE(libtool,
+[  --disable-libtool       Do not use libtool.],
+[
+case $enableval in
+  yes)
+  ;;
+  no)
+    enablelibtool=no
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --(dis|en)able-libtool ($enableval)])
+  ;;
+esac
+])
 
 if test "$enablelibtool" = yes; then
 
-case "$target" in
-NONE) lt_target="$host" ;;
-*) lt_target="$target" ;;
-esac
-
-libtool_flags=
-test "$enableshared" = no && libtool_flags="$libtool_flags --disable-shared"
-test "$enablestatic" = no && libtool_flags="$libtool_flags --disable-static"
-
-test -d bin || mkdir bin
-
-CC="$CXX" CFLAGS="$CXXFLAGS" CPPFLAGS="$CPPFLAGS" \
-LD="$LD" LDFLAGS="$LDFLAGS" LIBS="$LIBS $FLIBS" \
-LN_S="$LN_S" NM="$NM" RANLIB="$RANLIB" \
-DLLTOOL="$DLLTOOL" AS="$AS" OBJDUMP="$OBJDUMP" \
-${CONFIG_SHELL-/bin/sh} $ac_aux_dir/ltconfig --no-reexec \
---output=bin/sc-libtool \
-$libtool_flags --no-verify $ac_aux_dir/ltmain.sh $lt_target \
-|| { echo "configure: error: libtool configure failed" 1>&2; exit 1; }
+dnl by default make only static libraries
+AC_DISABLE_SHARED
+AC_PROG_LIBTOOL
 
 OBJSUF=lo
 LIBSUF=la
 
 else
 
-enableshared=no
+enable_shared=no
 
 fi
 
-ENABLESHARED=$enableshared
+if test "$enable_shared" = "no"; then
+  OBJSUF=o
+  LIBSUF=a
+fi
+
+ENABLESHARED=$enable_shared
 AC_SUBST(ENABLESHARED)
 
 dnl --------- Find the list of all sc libraries. ---------

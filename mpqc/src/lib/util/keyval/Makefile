@@ -85,6 +85,7 @@ ipv2_parse.cc: ipv2_parse.yy
 	$(BISON) -v -d -o ipv2_parse.tmp.cc $^
 	sed "s/^int yyparse.*;$$//" < ipv2_parse.tmp.cc \
 		| sed "s/^YYPARSE_RETURN_TYPE yyparse.*;$$//" \
+		| sed "s/__attribute__ ((__unused__))//" \
 		> ipv2_parse.cc
 	if test -f ipv2_parse.tmp.cc.h; then \
 	  echo "Older bison detected."; \

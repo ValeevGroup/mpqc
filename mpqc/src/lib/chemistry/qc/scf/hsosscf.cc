@@ -282,8 +282,99 @@ HSOSSCF::hessian_implemented()
 void
 HSOSSCF::two_body_energy(double &ec, double &ex)
 {
-  cerr << "HSOSSCF::two_body_energy: not implemented" << endl;
-  abort();
+  tim_enter("hsosscf e2");
+  ec = 0.0;
+  ex = 0.0;
+  if (local_ || local_dens_) {
+    // grab the data pointers from the G and P matrices
+    double *dpmat;
+    double *spmat;
+    tim_enter("local data");
+    RefSymmSCMatrix adens = alpha_ao_density();
+    RefSymmSCMatrix bdens = beta_ao_density();
+    RefSymmSCMatrix ddens = 2.0 * bdens;
+    RefSymmSCMatrix sdens = adens - bdens;
+    adens = 0; bdens = 0;
+    RefSymmSCMatrix dptmp = get_local_data(ddens, dpmat, SCF::Read);
+    RefSymmSCMatrix sptmp = get_local_data(sdens, spmat, SCF::Read);
+    tim_exit("local data");
+
+    // initialize the two electron integral classes
+    tbi_ = integral()->electron_repulsion();
+    tbi_->set_integral_storage(0);
+
+    GaussianBasisSet& gbs = *basis().pointer();
+    TwoBodyInt& tbi = *tbi_.pointer();
+
+    const double *intbuf = tbi.buffer();
+
+    // POINT GROUP SYMMETRY IS NOT YET USED HERE
+    // INTEGRAL INDEX SYMMETRY IS NOT YET USED HERE
+    // BOUNDS ARE NOT YET USED HERE
+    // PARALLELISM NOT YET USED HERE
+    for (int i=0; i<gbs.nshell(); i++) {
+      int ni=gbs(i).nfunction();
+      int fi=gbs.shell_to_function(i);
+      for (int j=0; j<gbs.nshell(); j++) {
+        int nj=gbs(j).nfunction();
+        int fj=gbs.shell_to_function(j);
+        for (int k=0; k<gbs.nshell(); k++) {
+          int nk=gbs(k).nfunction();
+          int fk=gbs.shell_to_function(k);
+          int lmax = k;
+          if (k==i) lmax = j;
+          for (int l=0; l<gbs.nshell(); l++) {
+            int nl=gbs(l).nfunction();
+            int fl=gbs.shell_to_function(l);
+            tbi.compute_shell(i,j,k,l);
+            int index = 0;
+            for (int I=0, ii=fi; I<ni; I++, ii++) {
+              for (int J=0, jj=fj; J<nj; J++, jj++) {
+                int iijj;
+                if (ii > jj) iijj = (ii*(ii+1))/2 + jj;
+                else iijj = (jj*(jj+1))/2 + ii;
+                double dpij = dpmat[iijj];
+                double spij = spmat[iijj];
+                for (int K=0, kk=fk; K<nk; K++, kk++) {
+                  int iikk;
+                  if (ii > kk) iikk = (ii*(ii+1))/2 + kk;
+                  else iikk = (kk*(kk+1))/2 + ii;
+                  double dpik = dpmat[iikk];
+                  double spik = spmat[iikk];
+                  for (int L=0, ll=fl; L<nl; L++, ll++, index++) {
+                    int kkll;
+                    if (kk > ll) kkll = (kk*(kk+1))/2 + ll;
+                    else kkll = (ll*(ll+1))/2 + kk;
+                    double dpkl = dpmat[kkll];
+                    double spkl = spmat[kkll];
+                    int jjll;
+                    if (jj > ll) jjll = (jj*(jj+1))/2 + ll;
+                    else jjll = (ll*(ll+1))/2 + jj;
+                    double dpjl = dpmat[jjll];
+                    double spjl = spmat[jjll];
+                    double integral = intbuf[index];
+                    ec +=  0.5  * dpij * dpkl * integral;
+                    ec +=         dpij * spkl * integral;
+                    ec +=  0.5  * spij * spkl * integral;
+                    ex += -0.25 * dpik * dpjl * integral;
+                    ex += -0.5  * dpik * spjl * integral;
+                    ex += -0.5  * spik * spjl * integral;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    tbi_ = 0;
+  }
+  else {
+    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    abort();
+  }
+  tim_exit("hsosscf e2");
 }
 
 int
@@ -298,13 +389,14 @@ HSOSSCF::alpha_density()
   RefSymmSCMatrix dens1(basis_dimension(), basis_matrixkit());
   RefSymmSCMatrix dens2(basis_dimension(), basis_matrixkit());
 
+  RefSCMatrix scf_vector = eigenvectors_.result();
+
   dens1.assign(0.0);
-  RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
+  RefSCElementOp op = new SCFDensity(this, scf_vector, 2.0);
   dens1.element_op(op);
-  dens1.scale(1.0);
 
   dens2.assign(0.0);
-  op = new SCFDensity(this, scf_vector_, 1.0);
+  op = new SCFDensity(this, scf_vector, 1.0);
   dens2.element_op(op);
 
   return dens1 + dens2;
@@ -315,10 +407,11 @@ HSOSSCF::beta_density()
 {
   RefSymmSCMatrix dens(basis_dimension(), basis_matrixkit());
 
+  RefSCMatrix scf_vector = eigenvectors_.result();
+
   dens.assign(0.0);
-  RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
+  RefSCElementOp op = new SCFDensity(this, scf_vector, 2.0);
   dens.element_op(op);
-  dens.scale(1.0);
 
   return dens;
 }

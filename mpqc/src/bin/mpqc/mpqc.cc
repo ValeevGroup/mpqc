@@ -258,7 +258,7 @@ main(int argc, char *argv[])
       molfreq->displace(i);
 
       mole->obsolete();
-      RefSCVector gradv = mole->gradient();
+      RefSCVector gradv = mole->get_cartesian_gradient();
       molfreq->set_gradient(i, gradv);
     }
 
@@ -277,7 +277,7 @@ main(int argc, char *argv[])
          << endl;
   }
 
-  ckptfile = new char[strlen(molname+5)];
+  ckptfile = new char[strlen(molname)+5];
   sprintf(ckptfile, "%s.wfn",molname);
   
   if (checkpoint) {

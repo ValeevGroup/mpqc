@@ -156,7 +156,6 @@ class SSRefBase {
     virtual SavableState *sspointer() = 0;
     virtual void restore_state(StateIn&) = 0;
     void save_data_state(StateOut&);
-    SavableState *restore_ss(StateIn&);
     //. Save the state of the reference.
     void save_state(StateOut&);
 };
@@ -200,7 +199,7 @@ class StateOut: public DescribedClass {
     virtual ~StateOut();
 
     void have_classdesc() { have_cd_ = 1; }
-    int need_classdesc() { int tmp = have_cd_; have_cd_ = 0; return tmp; }
+    int need_classdesc() { int tmp = have_cd_; have_cd_ = 0; return !tmp; }
 
     //. This will prepare \clsnm{StateOut} to output a pointer to
     //. data.  It first checks to see if the data has already been
@@ -311,7 +310,7 @@ class StateIn: public DescribedClass {
     virtual void havepointer(void*);
 
     void have_classdesc() { have_cd_ = 1; }
-    int need_classdesc() { int tmp = have_cd_; have_cd_ = 0; return tmp; }
+    int need_classdesc() { int tmp = have_cd_; have_cd_ = 0; return !tmp; }
 
     //. Returns the version of the ClassDesc in the persistent object
     //. or -1 if info on the ClassDesc doesn't exist

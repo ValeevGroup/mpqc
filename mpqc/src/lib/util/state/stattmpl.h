@@ -51,7 +51,7 @@ class SSRef: public DCRef<T>, public SSRefBase {
     SavableState *sspointer() { return p; }
     //. Restore the state of the reference.
     void restore_state(StateIn&si) {
-        SavableState* ss = restore_ss(si);
+        SavableState* ss = SavableState::restore_state(si);
         T* t = T::castdown(ss);
         check_castdown_result((void*)t,ss);
         assign_pointer(t);

@@ -27,6 +27,7 @@
 
 // a simple program to test the state stuff
 
+#include <new.h>
 #include <iostream.h>
 
 #include <util/class/class.h>
@@ -50,6 +51,8 @@ class A: A_parents {
     int ia;
     int* array;
     double d;
+    char *t1c;
+    char *t2c;
   public:
     A();
     A(const RefKeyVal&);
@@ -59,6 +62,8 @@ class A: A_parents {
     inline int& a() { return ia; };
     virtual void print (ostream&s = cout)
     {
+      s << "A::t1c = " << t1c << '\n';
+      s << "A::t2c = " << t2c << '\n';
       s << "A::a = " << a() << '\n';
       s << "A::array = {"
         << array[0] << ' '
@@ -79,6 +84,10 @@ A::A():
   array[1] = 3;
   array[2] = 2;
   array[3] = 1;
+  const char* t1 = "test string";
+  const char* t2 = "test2\nstring";
+  t1c = strcpy(new char[strlen(t1)+1],t1);
+  t2c = strcpy(new char[strlen(t2)+1],t2);
 }
 A::A(const RefKeyVal&keyval):
   ia(keyval->intvalue("a")),
@@ -90,37 +99,34 @@ A::A(const RefKeyVal&keyval):
   array[1] = 3;
   array[2] = 2;
   array[3] = 8;
+  const char* t1 = "test string";
+  const char* t2 = "test2\nstring";
+  t1c = strcpy(new char[strlen(t1)+1],t1);
+  t2c = strcpy(new char[strlen(t2)+1],t2);
 }
 A::A(StateIn&s):
   SavableState(s)
 {
-  char* junk;
   s.get(d);
-  s.getstring(junk);
-  delete[] junk;
+  s.getstring(t1c);
   s.get(ia);
-  s.getstring(junk);
-  delete[] junk;
+  s.getstring(t2c);
   s.get(array);
 }
 A::~A()
 {
   delete[] array;
+  delete[] t1c;
+  delete[] t2c;
 }
 void
 A::save_data_state(StateOut&s)
 {
-  const char* t1 = "test string";
-  const char* t2 = "test2\nstring";
-  char* t1c = strcpy(new char[strlen(t1)+1],t1);
-  char* t2c = strcpy(new char[strlen(t2)+1],t2);
   s.put(d);
   s.putstring(t1c);
   s.put(ia);
   s.putstring(t2c);
   s.put(array,4);
-  delete[] t1c;
-  delete[] t2c;
 }
 
 #define CLASSNAME A
@@ -362,6 +368,8 @@ D::_castdown(const ClassDesc*cd)
 int
 main()
 {
+  set_new_handler(abort);
+
   RefA ra;
 
   ClassDesc::list_all_classes();

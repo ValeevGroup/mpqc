@@ -115,7 +115,7 @@ SavableState::restore_state(StateIn&si)
   SavableState* ss;
   int objnum = si.getpointer((void**)&ss);
   if (objnum) {
-      // The object doesn't yet exist.
+      // The object doesn't yet exist, so create it
 
       // Get the class descriptor (and all parent class descriptors are
       // retrieved too).
@@ -476,31 +476,6 @@ int StateIn::get(double*&s)
   return 0;
   }
 
-/////////////////////////////////////////////////////////////////
-// 
-// int StateOut::put(SavableState*ss)
-// {
-//   if (ss) ss->save_state(*this);
-//   else putpointer((void*)(DescribedClass*)ss);
-//   return 0;
-// }
-// 
-/////////////////////////////////////////////////////////////////
-// 
-// int StateOut::put(SavableState&ss)
-// {
-//   ss.save_member_state(*this);
-//   return 0;
-// }
-// 
-// int StateIn::get(SavableState&ss)
-// {
-//   ss.restore_member_state(*this);
-//   return 0;
-// }
-// 
-/////////////////////////////////////////////////////////////////
-
 int StateIn::version(const ClassDesc* cd)
 {
   int position = _cd.iseek(cd);
@@ -612,28 +587,9 @@ SSRefBase::save_data_state(StateOut&s)
 void
 SSRefBase::save_state(StateOut&so)
 {
-  if (so.putpointer(sspointer())) {
-      so.put(sspointer()->class_desc());
-      so.have_classdesc();
-      sspointer()->save_vbase_state(so);
-      sspointer()->save_data_state(so);
-    }
-}
-
-SavableState *
-SSRefBase::restore_ss(StateIn&si)
-{
-  SavableState* ss;
-  int objnum = si.getpointer((void**)&ss);
-  if (objnum) {
-      const ClassDesc* cd;
-      si.get(&cd);
-      si.nextobject(objnum);
-      si.have_classdesc();
-      DescribedClass* dc = cd->create(si);
-      ss = SavableState::castdown(dc);
-    }
-  return ss;
+  SavableState *ssp = sspointer();
+  if (ssp) ssp->save_state(so);
+  else so.putpointer(ssp);
 }
 
 void

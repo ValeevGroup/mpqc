@@ -28,6 +28,10 @@
 #include <util/ref/ref.h>
 #include <util/ref/reftestx.h>
 
+#if HAVE_PTHREAD==1
+#include <pthread.h>
+#endif
+
 using namespace std;
 
 void

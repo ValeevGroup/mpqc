@@ -3,30 +3,33 @@
 #define _math_optimize_nlp_h
 
 #include <util/state/state.h>
-#include <util/misc/compute.h>
 #include <math/scmat/matrix.h>
-
-Result_dec(RefSCVector);
-Result_dec(RefSymmSCMatrix);
+#include <math/scmat/result.h>
 
 class NLP0: virtual public SavableState, public Compute {
 #   define CLASSNAME NLP0
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
+    RefSCDimension _dim;
     RefSCVector    _x;    // variables
     Resultdouble   _value;// value of function at _x
     double       _acc_value;    // value should be evaluated with this accuracy
     double       _maxacc_value; // maximum value for _acc_value
+    virtual void set_value(double);
   public:
     NLP0(RefSCDimension&);
     NLP0(StateIn&);
     NLP0(KeyVal&);
     virtual ~NLP0();
 
+    virtual RefSCDimension dimension();
+
     virtual void save_data_state(StateOut&);
 
     virtual double value();
+    int do_value(int);
+    int do_value();
 
     virtual void set_x(int i, double);
     virtual void set_x(RefSCVector&);
@@ -47,7 +50,7 @@ class NLP1: public NLP0 {
 #   include <util/class/classd.h>
   protected:
     ResultRefSCVector _gradient;     // gradient at _x
-
+    virtual void set_gradient(RefSCVector&);
   public:
     NLP1(RefSCDimension&);
     NLP1(StateIn&);
@@ -57,6 +60,8 @@ class NLP1: public NLP0 {
     virtual void save_data_state(StateOut&);
 
     virtual RefSCVector gradient();
+    int do_gradient(int);
+    int do_gradient();
 
     // gradients by values at finite displacements
     // virtual RefSCVector fd0_gradient();
@@ -69,7 +74,7 @@ class NLP2: public NLP1 {
 #   include <util/class/classd.h>
   protected:
     ResultRefSymmSCMatrix _hessian;
-
+    virtual void set_hessian(RefSymmSCMatrix&);
   public:
     NLP2(RefSCDimension&);
     NLP2(StateIn&);
@@ -79,6 +84,8 @@ class NLP2: public NLP1 {
     void save_data_state(StateOut&);
 
     virtual RefSymmSCMatrix hessian();
+    int do_hessian(int);
+    int do_hessian();
 
     // hessian by gradients at finite displacements
     // virtual RefSCMatrix fd1_hessian();

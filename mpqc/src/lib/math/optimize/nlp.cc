@@ -10,9 +10,6 @@ static char rcsid[] = "$Header$";
 
 #include "nlp.h"
 
-Result_def(RefSCVector);
-Result_def(RefSymmSCMatrix);
-
 ////////////////////////////////////////////////////////////////////////
 
 SavableState_REF_def(NLP0);
@@ -31,6 +28,7 @@ NLP0::_castdown(const ClassDesc*cd)
 
 NLP0::NLP0(RefSCDimension&dim):
   _value(this),
+  _dim(dim),
   _x(dim),
   _acc_value(DBL_EPSILON),
   _maxacc_value(DBL_EPSILON)
@@ -42,12 +40,16 @@ NLP0::NLP0(KeyVal&kv):
   _acc_value(DBL_EPSILON),
   _maxacc_value(DBL_EPSILON)
 {
+  _dim = kv.describedclassvalue("dimension");
+  RefSCVector x(_dim);
+  _x = x;
 }
 
 NLP0::NLP0(StateIn&s):
   SavableState(s,class_desc_),
   _value(this)
 {
+  _dim.restore_state(s);
   s.get(_value.computed());
   s.get(_value.compute());
   s.get(_acc_value);
@@ -64,6 +66,7 @@ NLP0::~NLP0()
 void
 NLP0::save_data_state(StateOut&s)
 {
+  _dim.save_state(s);
   s.put(_value.computed());
   s.put(_value.compute());
   s.put(_acc_value);
@@ -73,10 +76,29 @@ NLP0::save_data_state(StateOut&s)
     }
 }
 
+
+RefSCDimension
+NLP0::dimension()
+{
+  return _dim;
+}
+
 double
 NLP0::value()
 {
   return _value;
+}
+
+int
+NLP0::do_value()
+{
+  return _value.compute();
+}
+
+int
+NLP0::do_value(int f)
+{
+  return _value.compute(f);
 }
 
 void
@@ -97,6 +119,13 @@ RefSCVector
 NLP0::get_x()
 {
   return _x.copy();
+}
+
+void
+NLP0::set_value(double e)
+{
+  _value.result_noupdate() = e;
+  _value.computed() = 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -127,6 +156,8 @@ NLP1::NLP1(KeyVal&kv):
   NLP0(kv),
   _gradient(this)
 {
+  RefSCVector gradient(_dim);
+  _gradient = gradient;
 }
 
 NLP1::NLP1(StateIn&s):
@@ -162,6 +193,25 @@ NLP1::gradient()
   return _gradient;
 }
 
+int
+NLP1::do_gradient()
+{
+  return _gradient.compute();
+}
+
+int
+NLP1::do_gradient(int f)
+{
+  return _gradient.compute(f);
+}
+
+void
+NLP1::set_gradient(RefSCVector&g)
+{
+  _gradient.result_noupdate() = g;
+  _gradient.computed() = 1;
+}
+
 ///////////////////////////////////////////////////////////////////////////
 
 SavableState_REF_def(NLP2);
@@ -190,6 +240,8 @@ NLP2::NLP2(KeyVal&kv):
   NLP1(kv),
   _hessian(this)
 {
+  RefSymmSCMatrix hessian(_dim);
+  _hessian = hessian;
 }
 
 NLP2::NLP2(StateIn&s):
@@ -223,6 +275,25 @@ RefSymmSCMatrix
 NLP2::hessian()
 {
   return _hessian;
+}
+
+int
+NLP2::do_hessian()
+{
+  return _hessian.compute();
+}
+
+int
+NLP2::do_hessian(int f)
+{
+  return _hessian.compute(f);
+}
+
+void
+NLP2::set_hessian(RefSymmSCMatrix&h)
+{
+  _hessian.result_noupdate() = h;
+  _hessian.computed() = 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////

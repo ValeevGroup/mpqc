@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include <voidptr.h>
 
 VoidPtr::VoidPtr(): ptr_(0) {}

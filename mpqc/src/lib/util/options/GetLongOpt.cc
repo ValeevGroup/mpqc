@@ -1,6 +1,10 @@
 /* $Id$ */
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include "GetLongOpt.h"
 
 GetLongOpt::GetLongOpt(const char optmark)

@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #ifndef _util_container_ref_h
 #define _util_container_ref_h
 

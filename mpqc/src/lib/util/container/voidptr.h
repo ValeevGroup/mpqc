@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #ifndef _libQC_voidptr_h
 #define _libQC_voidptr_h
 

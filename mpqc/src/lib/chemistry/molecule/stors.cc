@@ -63,12 +63,16 @@ ScaledTorsSimpleCo::save_data_state(StateOut&s)
   s.put(old_torsion_);
 }
 
-ScaledTorsSimpleCo::ScaledTorsSimpleCo() : SimpleCo(4) {}
+ScaledTorsSimpleCo::ScaledTorsSimpleCo() : SimpleCo(4)
+{
+  old_torsion_ = 0.0;
+}
 
 ScaledTorsSimpleCo::ScaledTorsSimpleCo(const ScaledTorsSimpleCo& s)
   : SimpleCo(4)
 {
   *this=s;
+  old_torsion_ = 0.0;
 }
 
 ScaledTorsSimpleCo::ScaledTorsSimpleCo(const char *refr,
@@ -76,6 +80,7 @@ ScaledTorsSimpleCo::ScaledTorsSimpleCo(const char *refr,
   : SimpleCo(4,refr)
 {
   atoms[0]=a1; atoms[1]=a2; atoms[2]=a3; atoms[3]=a4;
+  old_torsion_ = 0.0;
 }
 
 ScaledTorsSimpleCo::~ScaledTorsSimpleCo()
@@ -134,7 +139,7 @@ ScaledTorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 
   // ok, we want omega between 3*pi/2 and -pi/2, so if omega is > pi/2
   // (omega is eventually -omega), then knock 2pi off of it
-  if(tors_value > pih) tors_value += tpi;
+  if(tors_value > pih) tors_value -= tpi;
 
   // the following tests to see if the new coordinate has crossed the
   // 3pi/2 <--> -pi/2 boundary...if so, then we add or subtract 2pi as

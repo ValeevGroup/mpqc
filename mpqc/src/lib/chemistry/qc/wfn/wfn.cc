@@ -3,11 +3,8 @@
 #pragma implementation
 #endif
 
-extern "C" {
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-}
 
 #include <iostream.h>
 

@@ -66,6 +66,24 @@ print_error_and_abort(int me, int mpierror)
   //MPI_Abort(MPI_COMM_WORLD, mpierror);
 }
 
+static
+const char *
+mpi_thread_string(int level)
+{
+  switch (level) {
+  case MPI_THREAD_SINGLE:
+      return "MPI_THREAD_SINGLE";
+  case MPI_THREAD_FUNNELED:
+      return "MPI_THREAD_FUNNELED";
+  case MPI_THREAD_SERIALIZED:
+      return "MPI_THREAD_SERIALIZED";
+  case MPI_THREAD_MULTIPLE:
+      return "MPI_THREAD_MULTIPLE";
+  default:
+      return "unknown";
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////
 // The MPIMessageGrp class
 
@@ -153,7 +171,20 @@ MPIMessageGrp::init(MPI_Comm comm, int *argc, char ***argv)
             }
           ExEnv::outn() << endl;
         }
+#ifdef HAVE_MPI_INIT_THREAD
+      int provided, desired = SC_MPI_THREAD_LEVEL;
+      MPI_Init_thread(inits_argc, inits_argv, desired, &provided);
+      if (provided != desired) {
+          ExEnv::out0() << indent
+                        << "WARNING: desired "
+                        << mpi_thread_string(desired)
+                        << " MPI threading support but got "
+                        << mpi_thread_string(provided)
+                        << endl;
+        }
+#else
       MPI_Init(inits_argc, inits_argv);
+#endif
 #ifdef HAVE_FCHDIR
       fchdir(dot);
 #endif

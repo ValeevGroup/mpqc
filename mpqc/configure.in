@@ -166,6 +166,31 @@ elif test $DEFAULT_PARALLEL = armcimpi; then
   AC_DEFINE(DEFAULT_ARMCI)
 fi
 
+SC_MPI_THREAD_LEVEL=MPI_THREAD_MULTIPLE
+AC_ARG_WITH(mpi-thread,
+[  --with-mpi-thread       Thread level for MPI (multiple,serialized,funneled,single)],
+[
+   case $withval in
+   multiple)
+        SC_MPI_THREAD_LEVEL=MPI_THREAD_MULTIPLE
+   ;;
+   serialized)
+        SC_MPI_THREAD_LEVEL=MPI_THREAD_SERIALIZED
+   ;;
+   funneled)
+        SC_MPI_THREAD_LEVEL=MPI_THREAD_FUNNELED
+   ;;
+   single)
+        SC_MPI_THREAD_LEVEL=MPI_THREAD_SINGLE
+   ;;
+   *)
+     AC_MSG_ERROR([Invalid value for --with-mpi-thread ($withval)])
+   ;;
+   esac
+]
+)
+AC_DEFINE_UNQUOTED(SC_MPI_THREAD_LEVEL,$SC_MPI_THREAD_LEVEL)
+
 AC_ARG_ENABLE(long-long,
 [  --disable-long-long     Disable use of long long.],
 [
@@ -1011,6 +1036,8 @@ if test X$PARALLEL = Xyes; then
     AC_DEFINE(HAVE_MPI)
     AC_CHECK_FUNC(MPI_File_open,
                  [HAVE_MPIIO=yes;AC_DEFINE(HAVE_MPIIO)])
+    AC_CHECK_FUNC(MPI_Init_thread,
+                 [AC_DEFINE(HAVE_MPI_INIT_THREAD)])
   fi
   AC_LANG_RESTORE
 fi

@@ -181,6 +181,12 @@
 /* Define if you have the <mpi.h> header file and library.  */
 #undef HAVE_MPI
 
+/* Define if you have the MPI_Init_thread routine.  */
+#undef HAVE_MPI_INIT_THREAD
+
+/* Set to the MPI macro defined the desired threading support level.  */
+#undef SC_MPI_THREAD_LEVEL
+
 /* Define if you have the <armci.h> header file and library.  */
 #undef HAVE_ARMCI
 

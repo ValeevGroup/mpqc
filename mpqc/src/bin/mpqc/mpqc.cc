@@ -213,14 +213,6 @@ try_main(int argc, char *argv[])
   Ref<MessageGrp> grp;
 #if defined(HAVE_MPI) && defined(ALWAYS_USE_MPI)
   grp = new MPIMessageGrp(&argc, &argv);
-#elif defined(HAVE_MPI)
-  // MPI is allowed wait until MPI_Init to fill in argc and argv,
-  // so we may have to call MPI_Init before we even know that we
-  // want an MPIMessageGrp.  The command name is used to let mpqc
-  // know that an early init is needed.
-  if (!strcmp(ExEnv::program_name(), "mpqc-mpi")) {
-    MPI_Init(&argc, &argv);
-  }
 #endif
 
   // parse commandline options

@@ -77,9 +77,9 @@ name.  If the input file name is not given, it will default to
 </dl>
 
 Some MPI environments do not pass the command line to slave programs, but
-supply it when MPI_Init is called.  To make MPQC call MPI_Init on start-up,
-instead of when an MPIMessageGrp is created, name the executable
-mpqc-mpi.
+supply it when MPI_Init is called.  To make MPQC call MPI_Init with the
+correct arguments as early as possible use the configure option
+<tt>--enable-always-use-mpi</tt>.
 
 \section mpqcenv Environmental Variables
 

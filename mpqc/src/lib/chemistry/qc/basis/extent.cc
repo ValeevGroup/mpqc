@@ -82,7 +82,7 @@ ShellExtent::init(const RefGaussianBasisSet&gbs,
   resolution_ = resolution;
 
   delete[] contributing_shells_;
-  n_[0] = n_[1] = n_[3] = 0;
+  n_[0] = n_[1] = n_[2] = 0;
   for (i=0; i<3; i++) lower_[i] = 0.0;
   contributing_shells_ = 0;
   if (mol->natom() == 0) return;

@@ -103,8 +103,8 @@ Edge::set_order(int order, const RefVolume&vol,double isovalue)
       vol->set_x(newpoint);
       if (vol->gradient_implemented()) {
           vol->get_gradient(interpnorm);
-          interpnorm.normalize();
         }
+      interpnorm.normalize();
       _vertices[i] = new Vertex(newpoint,interpnorm);
     }
 

@@ -154,11 +154,10 @@ ImplicitSurfacePolygonizer::isosurface(double value,
               if (iv>=0) {
                   RefVertex v = surf.vertex(iv);
                   if (v->has_normal()) {
-                      v->set_normal(tmp + v->normal());
+                      tmp += v->normal();
                     }
-                  else {
-                      v->set_normal(tmp);
-                    }
+                  tmp.normalize();
+                  v->set_normal(tmp);
                 }
             }
         }
@@ -202,8 +201,11 @@ ImplicitSurfacePolygonizer::add_triangle_to_current(int i1, int i2, int i3,
       if (current->_volume->gradient_implemented()) {
           current->_volume->get_gradient(normal);
           normal.normalize();
+          current->_tmp_vertices[i] = new Vertex(newpoint, normal);
         }
-      current->_tmp_vertices[i] = new Vertex(newpoint, normal);
+      else {
+          current->_tmp_vertices[i] = new Vertex(newpoint);
+        }
     }
 
   RefVertex v1 = current->_tmp_vertices[i1];

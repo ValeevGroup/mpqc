@@ -48,6 +48,11 @@ Vertex::Vertex(const SCVector3&point,const SCVector3&normal):
   _point(point),
   _normal(new SCVector3(normal))
 {
+  double dot = _normal->dot(*_normal);
+  if (dot < 0.999999 || dot > 1.000001) {
+      cout << "Vertex: ctor: bad normal\n" << endl;
+      abort();
+    }
 }
 
 Vertex::Vertex():
@@ -74,6 +79,11 @@ Vertex::set_normal(const SCVector3&p)
     }
   else {
       _normal = new SCVector3(p);
+    }
+  double dot = _normal->dot(*_normal);
+  if (dot < 0.999999 || dot > 1.000001) {
+      cout << "Vertex::set_normal: bad normal\n" << endl;
+      abort();
     }
 }
 

@@ -108,7 +108,8 @@ static double **
 init_rect_rows(double *data, int ni,int nj)
 {
   double** r = new double*[ni];
-  for (int i=0; i<ni; i++) r[i] = &data[i*nj];
+  int i;
+  for (i=0; i<ni; i++) r[i] = &data[i*nj];
   return r;
 }
 
@@ -135,14 +136,15 @@ LocalSCMatrix::LocalSCMatrix(StateIn&s):
 
 LocalSCMatrix::LocalSCMatrix(const RefKeyVal&keyval)
 {
+  int i, j;
   d1 = keyval->describedclassvalue("rowdim");
   d2 = keyval->describedclassvalue("coldim");
   d1.require_nonnull();
   d2.require_nonnull();
   block = new SCMatrixRectBlock(0,d1->n(),0,d2->n());
   rows = init_rect_rows(block->data,d1->n(),d2->n());
-  for (int i=0; i<nrow(); i++) {
-      for (int j=0; j<ncol(); j++) {
+  for (i=0; i<nrow(); i++) {
+      for (j=0; j<ncol(); j++) {
           set_element(i,j,keyval->doublevalue("data",i,j));
         }
     }
@@ -215,6 +217,14 @@ LocalSCMatrix::set_element(int i,int j,double a)
 }
 
 void
+LocalSCMatrix::assign(double a)
+{
+  int n = d1->n() * d2->n();
+  double *data = block->data;
+  for (int i=0; i<n; i++) data[i] = a;
+}
+
+void
 LocalSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
 {
   const char* name = "LocalSCMatrix::accumulate_product";
@@ -260,11 +270,12 @@ LocalSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 
   int nr = a->n();
   int nc = b->n();
+  int i, j;
   double* adat = la->block->data;
   double* bdat = lb->block->data;
   double** thisdat = rows;
-  for (int i=0; i<nr; i++) {
-      for (int j=0; j<nc; j++) {
+  for (i=0; i<nr; i++) {
+      for (j=0; j<nc; j++) {
           thisdat[i][j] += adat[i] * bdat[j];
         }
     }
@@ -293,9 +304,10 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
   double **bd = lb->rows;
   int ni = a->rowdim().n();
   int njk = b->dim().n();
-  for (int i=0; i<ni; i++) {
-      for (int j=0; j<njk; j++) {
-          for (int k=0; k<=j; k++) {
+  int i, j, k;
+  for (i=0; i<ni; i++) {
+      for (j=0; j<njk; j++) {
+          for (k=0; k<=j; k++) {
               cd[i][k] += ad[i][j]*bd[j][k];
             }
           for (; k<njk; k++) {
@@ -328,8 +340,9 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
   double *bd = lb->block->data;
   int ni = a->rowdim().n();
   int nj = b->dim().n();
-  for (int i=0; i<ni; i++) {
-      for (int j=0; j<nj; j++) {
+  int i, j;
+  for (i=0; i<ni; i++) {
+      for (j=0; j<nj; j++) {
           cd[i][j] += ad[i][j]*bd[j];
         }
     }
@@ -352,7 +365,8 @@ LocalSCMatrix::accumulate(SCMatrix*a)
     }
 
   int nelem = this->ncol() * this->nrow();
-  for (int i=0; i<nelem; i++) block->data[i] += la->block->data[i];
+  int i;
+  for (i=0; i<nelem; i++) block->data[i] += la->block->data[i];
 }
 
 void
@@ -402,7 +416,8 @@ LocalSCMatrix::trace()
     abort();
   }
   double ret=0;
-  for (int i=0; i < nrow(); i++)
+  int i;
+  for (i=0; i < nrow(); i++)
     ret += rows[i][i];
   return ret;
 }
@@ -526,7 +541,8 @@ LocalSCVector::LocalSCVector(const RefKeyVal&keyval)
   d = keyval->describedclassvalue("dim");
   d.require_nonnull();
   block = new SCVectorSimpleBlock(0,d->n());
-  for (int i=0; i<n(); i++) {
+  int i;
+  for (i=0; i<n(); i++) {
       set_element(i,keyval->doublevalue("data",i,i));
     }
 }
@@ -629,10 +645,11 @@ LocalSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
   double* thisdat = block->data;
   double** adat = la->rows;
   double* bdat = lb->block->data;
+  double tmp;
   int n = dim()->n();
-  for (int i=0; i<n; i++) {
-      int j;
-      double tmp = 0.0;
+  int i, j;
+  for (i=0; i<n; i++) {
+      tmp = 0.0;
       for (j=0; j<=i; j++) {
           tmp += adat[i][j] * bdat[j];
         }
@@ -659,14 +676,16 @@ LocalSCVector::accumulate(SCVector*a)
     }
 
   int nelem = d->n();
-  for (int i=0; i<nelem; i++) block->data[i] += la->block->data[i];
+  int i;
+  for (i=0; i<nelem; i++) block->data[i] += la->block->data[i];
 }
 
 void
 LocalSCVector::assign(double a)
 {
   int nelem = d->n();
-  for (int i=0; i<nelem; i++) block->data[i] = a;
+  int i;
+  for (i=0; i<nelem; i++) block->data[i] = a;
 }
 
 void
@@ -685,14 +704,16 @@ LocalSCVector::assign(SCVector*a)
     }
 
   int nelem = d->n();
-  for (int i=0; i<nelem; i++) block->data[i] = la->block->data[i];
+  int i;
+  for (i=0; i<nelem; i++) block->data[i] = la->block->data[i];
 }
 
 void
 LocalSCVector::assign(const double*a)
 {
   int nelem = d->n();
-  for (int i=0; i<nelem; i++) block->data[i] = a[i];
+  int i;
+  for (i=0; i<nelem; i++) block->data[i] = a[i];
 }
 
 double
@@ -711,8 +732,9 @@ LocalSCVector::scalar_product(SCVector*a)
     }
 
   int nelem = d->n();
+  int i;
   double result = 0.0;
-  for (int i=0; i<nelem; i++) result += block->data[i] * la->block->data[i];
+  for (i=0; i<nelem; i++) result += block->data[i] * la->block->data[i];
   return result;
 }
 

@@ -100,6 +100,7 @@ class LocalSCMatrix: public SCMatrix {
     ~LocalSCMatrix();
 
     // implementations and overrides of virtual functions
+    void assign(double);
     void save_data_state(StateOut&);
     RefSCDimension rowdim();
     RefSCDimension coldim();

@@ -68,7 +68,8 @@ at any GNU software FTP repository.
          not installed in the default library search path, then configure
          must be given --with-libs, --with-libdirs, or both.
 
-    <li> A lexical analyzer generator is required to generate code to read
+    <li> If you modify the scanner source file, then a
+         lexical analyzer generator is required to generate code to read
 	 input files.  The flex program is used for this purpose.
 	 However, the most common version of flex, 2.5.4a, does
 	 not generate legal C++.  It may be necessary to download,
@@ -80,8 +81,9 @@ at any GNU software FTP repository.
          configure with an argument that looks something like:
          <tt>--with-include=-I/usr/local/include</tt>
 
-    <li> GNU bison (version 1.24 or greater): This is a parser generator used
-         to generate code to read input files.
+    <li> If you modify a parser source file, then GNU bison (version 1.24
+         or greater) is needed.  This is a parser generator used to
+         generate code to read input files.
 
     <li> GNU gmake (version 3.70 or greater): GNU specific extensions to make
          are used extensively.

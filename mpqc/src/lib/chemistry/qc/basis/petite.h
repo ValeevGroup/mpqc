@@ -131,6 +131,18 @@ class SymmetryOrbitals {
     RefBlockedSCDimension SO_basisdim();
 };
 
+class AOSO_Unit : public BlockedSCElementOp {
+  private:
+    RefBlockedSCDimension d1;
+    RefBlockedSCDimension d2;
+
+  public:
+    AOSO_Unit(const RefBlockedSCDimension&,const RefBlockedSCDimension&);
+
+    void process(SCMatrixBlockIter&);
+    void process(SCMatrixRectBlock*);
+};
+
 class AOSO_Transformation : public BlockedSCElementOp {
   private:
     SymmetryOrbitals sos;

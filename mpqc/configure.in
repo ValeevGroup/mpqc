@@ -346,14 +346,14 @@ dnl -- special optimization options --
 
 AC_MSG_CHECKING([for special optimization options])
 case $target in
-  rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.*)
+  rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
     if test X$GCC != Xyes; then
       COPTIONS_OPT="-O3"
     fi
     if test X$GXX != Xyes; then
       CXXOPTIONS_OPT="-O3"
     fi
-    AC_MSG_RESULT("rs6000")
+    AC_MSG_RESULT("rs6000 or powerpc")
   ;;
   mips*-sgi-irix5*)
     if test X$GCC != Xyes; then
@@ -458,25 +458,25 @@ changequote([, ])dnl
     fi
     AC_MSG_RESULT(r10000)
   ;;
-  rs6000-*)
+  rs6000-* | powerpc-*)
     if test X$GCC != Xyes; then
       LDFLAGS="$LDFLAGS -bmaxdata:0x40000000"
     fi
-    if test X$CC = XxlC; then
+    if test X$CC = XxlC -o X$CC = XxlC_r; then
       CCDEPENDSUF=u
     fi
-    if test X$CXX = XxlC; then
+    if test X$CXX = XxlC -o X$CXX = XxlC_r; then
       CXXDEPENDSUF=u
       CXXDEPENDFLAGS="-M -E"
     fi
-    if test X$CC = Xmpcc; then
+    if test X$CC = Xmpcc -o X$CC = Xmpcc_r; then
       CCDEPENDSUF=u
     fi
-    if test X$CXX = XmpCC; then
+    if test X$CXX = XmpCC -o X$CXX = XmpCC_r; then
       CXXDEPENDSUF=u
       CXXDEPENDFLAGS="-M -E"
     fi
-    AC_MSG_RESULT(rs6000)
+    AC_MSG_RESULT(rs6000 or powerpc)
   ;;
   i686-intel-cougar*)
     COPTIONS_MISC="$COPTIONS_MISC -mcougar"
@@ -958,7 +958,7 @@ changequote([, ])dnl
     AC_MSG_RESULT("old mips4-sgi-irix r8000-sgi-irix or r10000-sgi-irix")
   ;;
   rs6000-*)
-    if test "X$CXX" = XmpCC; then
+    if test "X$CXX" = XmpCC -o X$CXX = XmpCC_r; then
       CXX="\$(SRCTOPDIR)/bin/xlCfix mpCC"
     fi
     if test "X$CXX" = XxlC; then

@@ -29,7 +29,6 @@
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
-#include <util/unix/cct_cprot.h>
 #include <util/misc/libmisc.h>
 
 #include <math/optimize/update.h>

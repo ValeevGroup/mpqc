@@ -61,7 +61,7 @@ class DipoleData: public RefCount
     double origin[3];
 
     DipoleData(double *d) {origin[0]=d[0]; origin[1]=d[1]; origin[2]=d[2];}
-    DipoleData() {origin[0]=origin[1]=origin[2];}
+    DipoleData() {origin[0]=origin[1]=origin[2]=0.0;}
     void set_origin(double*);
 };
 

@@ -25,6 +25,7 @@
 //    ----------------------------
 class GSGeneralEffH: public AccumEffectiveH {
 #   define CLASSNAME GSGeneralEffH
+#   define HAVE_CTOR
 #   define HAVE_STATEIN_CTOR
 #   define HAVE_KEYVAL_CTOR
 #   include <util/state/stated.h>
@@ -58,6 +59,7 @@ class GSGeneralEffH: public AccumEffectiveH {
 //    ----------------------------
 class GSHighSpinEffH: public AccumEffectiveH {
 #   define CLASSNAME GSHighSpinEffH
+#   define HAVE_CTOR
 #   define HAVE_STATEIN_CTOR
 #   define HAVE_KEYVAL_CTOR
 #   include <util/state/stated.h>
@@ -91,6 +93,7 @@ class GSHighSpinEffH: public AccumEffectiveH {
 //    ----------------------------
 class TestEffH: public AccumEffectiveH {
 #   define CLASSNAME TestEffH
+#   define HAVE_CTOR
 #   define HAVE_STATEIN_CTOR
 #   define HAVE_KEYVAL_CTOR
 #   include <util/state/stated.h>
@@ -124,6 +127,7 @@ class TestEffH: public AccumEffectiveH {
 //    ----------------------------
 class PsiEffH: public AccumEffectiveH {
 #   define CLASSNAME PsiEffH
+#   define HAVE_CTOR
 #   define HAVE_STATEIN_CTOR
 #   define HAVE_KEYVAL_CTOR
 #   include <util/state/stated.h>

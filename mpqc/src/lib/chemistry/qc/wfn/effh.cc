@@ -66,6 +66,7 @@ GSGeneralEffH::save_data_state(StateOut&s)
 // GSHighSpinEffH
 
 #define CLASSNAME GSHighSpinEffH
+#define HAVE_CTOR
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
 #define PARENTS public AccumEffectiveH
@@ -122,6 +123,7 @@ GSHighSpinEffH::save_data_state(StateOut&s)
 // TestEffH
 
 #define CLASSNAME TestEffH
+#define HAVE_CTOR
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
 #define PARENTS public AccumEffectiveH
@@ -178,6 +180,7 @@ TestEffH::save_data_state(StateOut&s)
 // PsiEffH
 
 #define CLASSNAME PsiEffH
+#define HAVE_CTOR
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
 #define PARENTS public AccumEffectiveH

@@ -30,7 +30,7 @@ mpqcrun takes the following command line options:
                            rather than the install directory.
   <dt><tt>--small</tt><dd>Skip big runs in verification suite.
   <dt><tt>--maxjobs</tt> n<dd>Run n jobs at a time.
-  <dt><tt>--nprocperjob</tt> n<dd>Run with n processes per job.
+  <dt><tt>--nprocperjob</tt> n<dd>Run with n processes per job.  If this is <tt>max</tt>, use all available nodes.
   <dt><tt>--nprocpernode</tt> n<dd>Run with n processes per node.
   <dt><tt>--nthreadperproc</tt> n<dd>Use n threads per process.
   <dt><tt>--threadgrp</tt> grp<dd>Use the given threading layer.

@@ -66,7 +66,7 @@ $nodes = "";
 $nodename = "%d";
 
 # The number of processes each job will use.
-$nprocperjob = 1;
+$nprocperjob = "max";
 
 # The number of threads each process will use.
 $nthreadperproc = 1;
@@ -235,23 +235,15 @@ if ($objdir) {
 
 ######################################################################
 
-if ($messagegrp eq "none" && $nprocperjob > 1) {
-    $messagegrp = "mpi";
-}
-
-if ($messagegrp eq "proc") {
-  $ENV{"MESSAGEGRP"} = "<ProcMessageGrp>:()";
-}
-elsif ($messagegrp eq "mpi") {
-  $ENV{"MESSAGEGRP"} = "<MPIMessageGrp>:()";
-}
-
 @nodelist = ();
 if ($nodes ne "") {
     $nodes =~ s/-/../g;
     foreach my $i (eval $nodes) {
         $nodelist[$#nodelist + 1] = sprintf "$nodename", $i;
     }
+}
+elsif ("$nodefile" eq "" && exists($ENV{"PBS_NODEFILE"})) {
+    $nodefile=$ENV{"PBS_NODEFILE"};
 }
 if ("$nodefile" ne "" && -f "$nodefile") {
     open(NODEFILE,"<$nodefile");
@@ -261,6 +253,22 @@ if ("$nodefile" ne "" && -f "$nodefile") {
         }
     }
     close(NODEFILE);
+}
+
+if ($nprocperjob eq "max") {
+    if ($#nodelist == -1) { $nprocperjob = 1; }
+    else { $nprocperjob = $#nodelist + 1; }
+}
+
+if ($messagegrp eq "none" && $nprocperjob > 1) {
+    $messagegrp = "mpi";
+}
+
+if ($messagegrp eq "proc") {
+  $ENV{"MESSAGEGRP"} = "<ProcMessageGrp>:()";
+}
+elsif ($messagegrp eq "mpi") {
+  $ENV{"MESSAGEGRP"} = "<MPIMessageGrp>:()";
 }
 
 @jobnodes = ();

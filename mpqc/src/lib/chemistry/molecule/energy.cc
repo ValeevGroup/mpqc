@@ -320,6 +320,7 @@ MolecularEnergy::x_to_molecule()
   } else {
     mc_->to_cartesian(get_x_no_copy());
   }
+  mol_->cleanup_molecule(0.000001);
 }
 
 void

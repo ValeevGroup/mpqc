@@ -9,13 +9,13 @@ DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 CXXSRC = atomcent.cc chemelem.cc molecule.cc \
          simple.cc stre.cc bend.cc out.cc tors.cc lin.cc \
          energy.cc coor.cc \
-         shape.cc chmelm_i.cc imcoor.cc taylor.cc
+         molshape.cc chmelm_i.cc imcoor.cc taylor.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = atomcent.h atomcentdefs.h chemelem.h molecule.h \
       simple.h localdef.h \
-      coor.h energy.h shape.h chmelm_i.h taylor.h taylor_f.h
+      coor.h energy.h molshape.h chmelm_i.h taylor.h taylor_f.h
 
 DEPENDINCLUDE = $(INC)
 

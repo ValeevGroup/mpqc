@@ -1,6 +1,9 @@
 %
 % $Log$
-% Revision 1.4  1994/06/08 01:15:26  cljanss
+% Revision 1.5  1994/08/26 23:21:22  etseidl
+% fix a few warnings
+%
+% Revision 1.4  1994/06/08  01:15:26  cljanss
 % Many changes.  These include: newmat7 and nihmatrix -> scmat
 % and mpqcic -> MPSCF and updated optimize stuff.
 %
@@ -177,11 +180,6 @@ The program itself is divided similarly, as outlined below:
 
 
 @* Definitions and include files.
-
-@ The RCS ID
-
-@c
-static char rcsid[]="$Id$";
 
 @ The macro GradientFormat is a string giving the format in which all
 gradients will be printed out.
@@ -645,7 +643,7 @@ needed.
   dmt_scale(P,2.0);
   if (print) {
     if (master) printf("The density matrix:\n");
-    dmt_printf("%12.8lf ",P);
+    dmt_printf("%12.8f ",P);
     }
 
   nlocal = dmt_nlocal(P);
@@ -674,7 +672,7 @@ needed.
   if (print_mofock || print_all) {
     @^print options@> @.print_mofock@> @.print_all@>
     if (master) printf("The mo basis fock matrix:\n");
-    dmt_printf("%12.8lf ",Fmo);
+    dmt_printf("%12.8f ",Fmo);
     }
 
   W = dmt_create("Energy weighted density",nao,SCATTERED);
@@ -683,7 +681,7 @@ needed.
   if (print_ewdensity || print_all) {
     @^print options@> @.print_ewdensity@> @.print_all@>
     if (master) printf("The energy weighted density:\n");
-    dmt_printf("%12.8lf ",W);
+    dmt_printf("%12.8f ",W);
     }
 
 #if 0
@@ -746,7 +744,7 @@ needed.
         fprintf(fp,"The one electron derivatives for center %d:\n",i);
         for (k=0; k<isz; k++) {
           for (l=0; l<jsz; l++) {
-            fprintf(fp," %d %d %d %d %12.8lf %12.8lf %12.8lf  %12.8lf\n",
+            fprintf(fp," %d %d %d %d %12.8f %12.8f %12.8f  %12.8f\n",
                     ish,jsh,k,l,
                     oneebuff[index],oneebuff[index+1],oneebuff[index+2],
                     Pblock[index2]);
@@ -814,7 +812,7 @@ needed.
         fprintf(fp,"The one electron derivatives for center %d:\n",i);
         for (k=0; k<isz; k++) {
           for (l=0; l<jsz; l++) {
-            fprintf(fp," %d %d %d %d %12.8lf %12.8lf %12.8lf  %12.8lf\n",
+            fprintf(fp," %d %d %d %d %12.8f %12.8f %12.8f  %12.8f\n",
                     ish,jsh,k,l,
                     oneebuff[index],oneebuff[index+1],oneebuff[index+2],
                     Wblock[index2]);
@@ -1043,7 +1041,7 @@ if the local and loop blocks are redundant.> section).
                        * Plocal[indexij] * Ploop[indexkl];
               if (contrib > 0.00001 || contrib < -0.00001) {
 #ifdef PRINTCONTRIBS
-                printf("co %d %d  %d %d %d %d :  % 12.8lf % 12.8lf (% 12.8lf * %4.1lf)\n",
+                printf("co %d %d  %d %d %d %d :  % 12.8f % 12.8f (% 12.8f * %4.1f)\n",
                        xyz, dercenters.num[derset],
                        centers->func_num[ilocal] + i,
                        centers->func_num[jlocal] + j,
@@ -1098,7 +1096,7 @@ if the local and loop blocks are redundant.> section).
                        * Plocal[indexij] * Ploop[indexkl];
               if (contrib > 0.00001 || contrib < -0.00001) {
 #ifdef PRINTCONTRIBS
-                printf("e1 %d %d  %d %d %d %d :  % 12.8lf % 12.8lf (% 12.8lf * %4.1lf)\n",
+                printf("e1 %d %d  %d %d %d %d :  % 12.8f % 12.8f (% 12.8f * %4.1f)\n",
                        xyz, dercenters.num[derset],
                        centers->func_num[ilocal] + i,
                        centers->func_num[jlocal] + j,
@@ -1153,7 +1151,7 @@ if the local and loop blocks are redundant.> section).
                        * Plocal[indexij] * Ploop[indexkl];
               if (contrib > 0.00001 || contrib < -0.00001) {
 #ifdef PRINTCONTRIBS
-                printf("e2 %d %d  %d %d %d %d :  % 12.8lf % 12.8lf (% 12.8lf * %4.1lf)\n",
+                printf("e2 %d %d  %d %d %d %d :  % 12.8f % 12.8f (% 12.8f * %4.1f)\n",
                        xyz, dercenters.num[derset],
                        centers->func_num[ilocal] + i,
                        centers->func_num[jlocal] + j,

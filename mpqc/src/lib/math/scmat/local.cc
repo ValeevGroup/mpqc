@@ -88,24 +88,6 @@ LocalSCMatrixKit::vector(const RefSCDimension&d)
 
 }
 
-///////////////////////////////////////////////////////////////////////
-// The static SCMatrixKit members.
-
-static RefSCMatrixKit defaultmatrixkit;
-
-SCMatrixKit*
-SCMatrixKit::default_matrixkit()
-{
-  if (defaultmatrixkit.null()) defaultmatrixkit = new LocalSCMatrixKit;
-  return defaultmatrixkit.pointer();
-}
-
-void
-SCMatrixKit::set_default_matrixkit(const RefSCMatrixKit &k)
-{
-  defaultmatrixkit = k;
-}
-
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

@@ -863,6 +863,10 @@ LocalSCMatrix::vprint(const char *title, ostream& os, int prec)
 RefSCMatrixSubblockIter
 LocalSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
+  cerr << indent
+       << "LocalSCMatrix::local_blocks: not valid for local matrices"
+       << endl;
+  abort();
   RefSCMatrixSubblockIter iter
       = new SCMatrixSimpleSubblockIter(access, block.pointer());
   return iter;

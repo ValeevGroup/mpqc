@@ -699,6 +699,10 @@ LocalSymmSCMatrix::vprint(const char *title, ostream& os, int prec)
 RefSCMatrixSubblockIter
 LocalSymmSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
+  cerr << indent
+       << "LocalSymmSCMatrix::local_blocks: not valid for local matrices"
+       << endl;
+  abort();
   RefSCMatrixSubblockIter iter
       = new SCMatrixSimpleSubblockIter(access, block.pointer());
   return iter;

@@ -101,6 +101,9 @@ class ReplSCVector: public SCVector {
                     SCVector*,SCVector*);
     void vprint(const char* title=0,ostream& out=cout, int =10);
 
+    // return a pointer to the data for fast access
+    double *get_data() { return vector; }
+
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 
@@ -172,6 +175,10 @@ class ReplSCMatrix: public SCMatrix {
                     SCMatrix*,SCMatrix*);
     void vprint(const char* title=0,ostream& out=cout, int =10);
 
+    // return a pointer to the data for fast access
+    double *get_data() { return matrix; }
+    double **get_rows() { return rows; }
+
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 
@@ -241,6 +248,10 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
                     SymmSCMatrix*,SymmSCMatrix*);
     void vprint(const char* title=0,ostream& out=cout, int =10);
 
+    // return a pointer to the data for fast access
+    double *get_data() { return matrix; }
+    double **get_rows() { return rows; }
+
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 
@@ -283,6 +294,9 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
     void element_op(const RefSCElementOp3&,
                     DiagSCMatrix*,DiagSCMatrix*);
     void vprint(const char* title=0,ostream& out=cout, int =10);
+
+    // return a pointer to the data for fast access
+    double *get_data() { return matrix; }
 
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);

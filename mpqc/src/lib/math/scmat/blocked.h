@@ -220,6 +220,8 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     void accumulate_transform(SCMatrix*,DiagSCMatrix*);
     void accumulate_transform(SymmSCMatrix*,SymmSCMatrix*);
 
+    void convert_accumulate(SymmSCMatrix*a);
+
     void element_op(const RefSCElementOp&);
     void element_op(const RefSCElementOp2&,
                     SymmSCMatrix*);

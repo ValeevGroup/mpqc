@@ -632,3 +632,35 @@ BlockedSymmSCMatrix::restore(StateIn& s)
       abort();
     }
 }
+
+void
+BlockedSymmSCMatrix::convert_accumulate(SymmSCMatrix*a)
+{
+  // ok, are we converting a non-blocked matrix to a blocked one, or are
+  // we converting a blocked matrix from one specialization to another?
+  
+  if (BlockedSymmSCMatrix::castdown(a)) {
+    BlockedSymmSCMatrix *ba = BlockedSymmSCMatrix::castdown(a);
+    if (ba->nblocks() == this->nblocks()) {
+      for (int i=0; i < nblocks(); i++)
+        mats_[i]->convert_accumulate(ba->mats_[i]);
+    } else {
+      cerr << indent
+           << "BlockedSymmSCMatrix::convert_accumulate: "
+           << "I can't do that"
+           << endl;
+      abort();
+    }
+  }
+  else {
+    if (nblocks()==1) {
+      mats_[0]->convert_accumulate(a);
+    } else {
+      cerr << indent
+           << "BlockedSymmSCMatrix::convert_accumulate: "
+           << "I can't do that either"
+           << endl;
+      abort();
+    }
+  }
+}

@@ -12,7 +12,6 @@
 #include <math/optimize/nlp.h>
 
 ////////////////////////////////////////////////////////////////////////
-// hessian update classes
 
 class Optimize: virtual public SavableState {
 #   define CLASSNAME Optimize
@@ -59,24 +58,29 @@ class LineOpt: public Optimize {
 SavableState_REF_dec(LineOpt);
 
 ////////////////////////////////////////////////////////////////////////
-// inverse hessian update classes
+//  hessian update classes.  based on the value of inverse_hessian_
+//  x and g may be reversed (see Schlegel, ab initio Methods in Quantum
+//  Chemistry I, 1987, p 10
 
-class IHessianUpdate: virtual public SavableState {
-#   define CLASSNAME IHessianUpdate
+class HessianUpdate: virtual public SavableState {
+#   define CLASSNAME HessianUpdate
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
+  protected:
+    int inverse_hessian_;
   public:
-    IHessianUpdate();
-    IHessianUpdate(StateIn&);
-    IHessianUpdate(const RefKeyVal&);
+    HessianUpdate();
+    HessianUpdate(StateIn&);
+    HessianUpdate(const RefKeyVal&);
     void save_data_state(StateOut&);
-    virtual ~IHessianUpdate();
-    virtual void update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
+    virtual ~HessianUpdate();
+    virtual void update(RefSymmSCMatrix&hessian,RefNLP2&nlp,
                         RefSCVector&xnew,RefSCVector&gnew) = 0;
+    void set_inverse();
 };
-SavableState_REF_dec(IHessianUpdate);
+SavableState_REF_dec(HessianUpdate);
 
-class DFPUpdate: public IHessianUpdate {
+class DFPUpdate: public HessianUpdate {
 #   define CLASSNAME DFPUpdate
 #   define HAVE_CTOR
 #   define HAVE_KEYVAL_CTOR
@@ -113,6 +117,26 @@ class BFGSUpdate: public DFPUpdate {
                 RefSCVector&xnew,RefSCVector&gnew);
 };
 
+class PowellUpdate: public HessianUpdate {
+#   define CLASSNAME PowellUpdate
+#   define HAVE_CTOR
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    RefSCVector xprev;
+    RefSCVector gprev;
+  public:
+    PowellUpdate();
+    PowellUpdate(StateIn&);
+    PowellUpdate(const RefKeyVal&);
+    void save_data_state(StateOut&);
+    ~PowellUpdate();
+    void update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
+                RefSCVector&xnew,RefSCVector&gnew);
+};
+
 ////////////////////////////////////////////////////////////////////////
 // newton and related methods
 
@@ -129,7 +153,7 @@ class QNewtonOpt: public Optimize {
 
     RefNLP2 nlp_;
     RefSymmSCMatrix ihessian_;
-    RefIHessianUpdate update_;
+    RefHessianUpdate update_;
     RefLineOpt lineopt_;
 
     int take_newton_step_;

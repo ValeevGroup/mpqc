@@ -1,6 +1,6 @@
 
-#ifndef _math_optimize_gdiis_h
-#define _math_optimize_gdiis_h
+#ifndef _math_optimize_efc_h
+#define _math_optimize_efc_h
 
 #ifdef __GNUC__
 #pragma interface
@@ -13,36 +13,30 @@
 #include <math/optimize/opt.h>
 
 ////////////////////////////////////////////////////////////////////////
-// gdiis
+// eigenvector following a la Baker (JCC Vol 7, No 4, 385-395, 1986)
 
-class GDIISOpt: public Optimize {
-#   define CLASSNAME GDIISOpt
+class EFCOpt: public Optimize {
+#   define CLASSNAME EFCOpt
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    int nsave;
-    int diis_iter;
+    int tstate;
   
     double maxabs_gradient;
     double convergence_;
     double accuracy_;
 
-    RefSCDimension dim_;
-    RefSCVector *coords_;
-    RefSCVector *grad_;
-    RefSCVector *error_;
-
     RefNLP2 nlp_;
-    RefSymmSCMatrix ihessian_;
+    RefSymmSCMatrix hessian_;
     RefHessianUpdate update_;
 
     int take_newton_step_;
   public:
-    GDIISOpt(const RefKeyVal&);
-    GDIISOpt(StateIn&);
-    ~GDIISOpt();
+    EFCOpt(const RefKeyVal&);
+    EFCOpt(StateIn&);
+    ~EFCOpt();
     void save_data_state(StateOut&);
 
     void init();

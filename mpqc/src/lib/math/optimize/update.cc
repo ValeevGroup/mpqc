@@ -6,14 +6,14 @@ extern "C" {
 #include "opt.h"
 #include <util/keyval/keyval.h>
 
-SavableState_REF_def(IHessianUpdate);
-#define CLASSNAME IHessianUpdate
+SavableState_REF_def(HessianUpdate);
+#define CLASSNAME HessianUpdate
 #define PARENTS virtual public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
 #define CLASSNAME DFPUpdate
-#define PARENTS public IHessianUpdate
+#define PARENTS public HessianUpdate
 #define HAVE_CTOR
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -29,36 +29,45 @@ SavableState_REF_def(IHessianUpdate);
 #include <util/class/classi.h>
 
 /////////////////////////////////////////////////////////////////////////
-// IHessianUpdate
+// HessianUpdate
 
 void *
-IHessianUpdate::_castdown(const ClassDesc*cd)
+HessianUpdate::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
   casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-IHessianUpdate::IHessianUpdate()
+HessianUpdate::HessianUpdate() : inverse_hessian_(0)
 {
 }
 
-IHessianUpdate::IHessianUpdate(StateIn&s):
-  SavableState(s,IHessianUpdate::class_desc_)
+HessianUpdate::HessianUpdate(StateIn&s):
+  SavableState(s,HessianUpdate::class_desc_)
+{
+  s.get(inverse_hessian_);
+}
+
+HessianUpdate::HessianUpdate(const RefKeyVal&keyval) :
+  inverse_hessian_(0)
 {
 }
 
-IHessianUpdate::IHessianUpdate(const RefKeyVal&keyval)
-{
-}
-
-IHessianUpdate::~IHessianUpdate()
+HessianUpdate::~HessianUpdate()
 {
 }
 
 void
-IHessianUpdate::save_data_state(StateOut&s)
+HessianUpdate::save_data_state(StateOut&s)
 {
+  s.put(inverse_hessian_);
+}
+
+void
+HessianUpdate::set_inverse(void)
+{
+  inverse_hessian_ = 1;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -68,7 +77,7 @@ void *
 DFPUpdate::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = IHessianUpdate::_castdown(cd);
+  casts[0] = HessianUpdate::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -77,13 +86,13 @@ DFPUpdate::DFPUpdate()
 }
 
 DFPUpdate::DFPUpdate(const RefKeyVal&keyval):
-  IHessianUpdate(keyval)
+  HessianUpdate(keyval)
 {
 }
 
 DFPUpdate::DFPUpdate(StateIn&s):
   SavableState(s,DFPUpdate::class_desc_),
-  IHessianUpdate(s)
+  HessianUpdate(s)
 {
   xprev.restore_state(s);
   gprev.restore_state(s);
@@ -96,15 +105,27 @@ DFPUpdate::~DFPUpdate()
 void
 DFPUpdate::save_data_state(StateOut&s)
 {
-  IHessianUpdate::save_data_state(s);
+  HessianUpdate::save_data_state(s);
   xprev.save_state(s);
   gprev.save_state(s);
 }
 
 void
 DFPUpdate::update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
-                  RefSCVector&xnew,RefSCVector&gnew)
+                  RefSCVector&xn,RefSCVector&gn)
 {
+  RefSCVector xnew, gnew;
+
+  // the update for the inverse hessian differs from the update for the
+  // hessian in that xdisp and gdisp are exchanged
+  if (inverse_hessian_) {
+    xnew = xn;
+    gnew = gn;
+  } else {
+    xnew = gn;
+    gnew = xn;
+  }
+  
   if (xprev.nonnull()) {
       RefSCVector xdisp = xnew-xprev;
       RefSCVector gdisp = gnew-gprev;
@@ -161,8 +182,21 @@ BFGSUpdate::save_data_state(StateOut&s)
 
 void
 BFGSUpdate::update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
-                   RefSCVector&xnew,RefSCVector&gnew)
+                   RefSCVector&xn,RefSCVector&gn)
 {
+    RefSCVector xnew, gnew;
+
+  // the update for the inverse hessian differs from the update for the
+  // hessian in that xdisp and gdisp are exchanged
+    if (inverse_hessian_) {
+        xnew = xn;
+        gnew = gn;
+      }
+    else {
+        xnew = gn;
+        gnew = xn;
+      }
+  
     if (xprev.nonnull()) {
       RefSCVector xdisp = xnew-xprev;
       RefSCVector gdisp = gnew-gprev;

@@ -7,16 +7,16 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 LD=$(CXX)
 
-CXXSRC = nlp.cc opt.cc update.cc qnewton.cc gdiis.cc
+CXXSRC = nlp.cc opt.cc update.cc qnewton.cc gdiis.cc efc.cc powell.cc
 CSRC = 
 
-CLASSES = Optimize QNewtonOpt GDIISOpt LineOpt \
+CLASSES = Optimize QNewtonOpt GDIISOpt LineOpt EFCOpt \
           NLP0 NLP1 NLP2 \
-          IHessianUpdate DFPUpdate BFGSUpdate
+          HessianUpdate DFPUpdate BFGSUpdate PowellUpdate
 
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)
 
-INC = nlp.h opt.h gdiis.h
+INC = nlp.h opt.h gdiis.h efc.h
 
 DEPENDINCLUDE =
 

@@ -30,6 +30,7 @@ QNewtonOpt::QNewtonOpt(const RefKeyVal&keyval):
 {
   nlp_ = keyval->describedclassvalue("function");
   update_ = keyval->describedclassvalue("update");
+  update_->set_inverse();
   convergence_ = keyval->doublevalue("convergence");
   if (keyval->error() != KeyVal::OK) convergence_ = 1.0e-6;
   lineopt_ = keyval->describedclassvalue("lineopt");

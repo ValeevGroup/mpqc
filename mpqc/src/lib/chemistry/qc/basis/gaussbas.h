@@ -113,9 +113,20 @@ non-alpha-numerical characters in their name must be given in quotes.
 <tr><td><tt>aug-cc-pCVQZ</tt><td>B-Ne, Al-Ar<td><td>109<td>134
 <tr><td><tt>aug-cc-pCV5Z</tt><td>B-F<td><td>181<td>
 <tr><td><tt>NASA Ames ANO</tt><td>H, B-Ne, Al, P, Ti, Fe, Ni<td>30<td>55<td>59
+<tr><td><tt>pc-0</tt><td>H, C-F, Si-Cl<td>2<td>9<td>13
+<tr><td><tt>pc-1</tt><td>H, C-F, Si-Cl<td>5<td>14<td>18
+<tr><td><tt>pc-2</tt><td>H, C-F, Si-Cl<td>14<td>30<td>34
+<tr><td><tt>pc-3</tt><td>H, C-F, Si-Cl<td>34<td>64<td>64
+<tr><td><tt>pc-4</tt><td>H, C-F, Si-Cl<td>63<td>109<td>105
+<tr><td><tt>pc-0-aug</tt><td>H, C-F, Si-Cl<td>3<td>13<td>17
+<tr><td><tt>pc-1-aug</tt><td>H, C-F, Si-Cl<td>9<td>23<td>27
+<tr><td><tt>pc-2-aug</tt><td>H, C-F, Si-Cl<td>23<td>46<td>50
+<tr><td><tt>pc-3-aug</tt><td>H, C-F, Si-Cl<td>50<td>89<td>89
+<tr><td><tt>pc-4-aug</tt><td>H, C-F, Si-Cl<td>88<td>145<td>141
 </table>
 
-Basis sets were obtained from the Extensible Computational Chemistry
+All basis sets except for the pc-<i>n</i> and pc-<i>n</i>-aug basis sets
+were obtained from the Extensible Computational Chemistry
 Environment Basis Set Database, Version 12/03/03, as developed and
 distributed by the Molecular Science Computing Facility, Environmental and
 Molecular Sciences Laboratory which is part of the Pacific Northwest
@@ -124,6 +135,11 @@ the U.S. Department of Energy. The Pacific Northwest Laboratory is a
 multi-program laboratory operated by Battelle Memorial Institute for the
 U.S. Department of Energy under contract DE-AC06-76RLO 1830. Contact David
 Feller or Karen Schuchardt for further information.
+
+The pc-<i>n</i> and pc-<i>n</i>-aug basis sets are the polarization
+consistent basis sets of Frank Jensen.  See J. Chem. Phys. 115 (2001) 9113;
+J. Chem. Phys. 116 (2002) 7372; J. Chem. Phys. 117 (2002) 9234; and
+J. Chem. Phys. 121 (2004) 3463.
 
 */
 class GaussianBasisSet: public SavableState

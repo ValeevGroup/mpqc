@@ -2,13 +2,15 @@
 test_basis:
      STO-2G STO-3G STO-3G* STO-6G
      3-21G 3-21G* 3-21++G 3-21++G*
-     4-31G 4-31G* 4-31G**
+     4-31G
      6-31G 6-31G* 6-31G** 6-31++G 6-31++G* 6-31++G**
      6-311G 6-311G* 6-311G** 6-311++G**
      cc-pVDZ cc-pVTZ cc-pVQZ cc-pV5Z
      aug-cc-pVDZ aug-cc-pVTZ aug-cc-pVQZ aug-cc-pV5Z
      cc-pCVDZ cc-pCVTZ cc-pCVQZ cc-pCV5Z
      aug-cc-pCVDZ aug-cc-pCVTZ aug-cc-pCVQZ aug-cc-pCV5Z
+     pc-0 pc-1 pc-2 pc-3 pc-4
+     pc-0-aug pc-1-aug pc-2-aug pc-3-aug pc-4-aug
 test_method: scf
 #test_calc: opt
 gradient: yes

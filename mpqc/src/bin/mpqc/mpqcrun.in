@@ -462,6 +462,9 @@ sub get_file_list {
         if ($in =~ /^methods_/) {
             $issmall = 0;
         }
+        if ($in =~ /^basis[12]_.*pc[234]/) {
+            $issmall = 0;
+        }
         if ($in =~ /^mbpt_mp2r12_c6h6_multipass/) {
             $issmall = 0;
         }

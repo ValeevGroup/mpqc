@@ -544,8 +544,8 @@ main(int, char *argv[])
       Ref<GaussianBasisSet> b1, b2;
       b1 << keyval->describedclassvalue("concat1");
       b2 << keyval->describedclassvalue("concat2");
-      Ref<GaussianBasisSet> b12 = b1->concatenate(b2);
-      Ref<GaussianBasisSet> b121 = b12->concatenate(b1);
+      Ref<GaussianBasisSet> b12 = b1->operator+(b2);
+      Ref<GaussianBasisSet> b121 = b12->operator+(b1);
       b1->print();
       b2->print();
       b12->print();
@@ -637,7 +637,10 @@ main(int, char *argv[])
                   else {
                       first_element = 0;
                     }
-                  perlout << "\"" << AtomInfo::symbol(j+1) << "\"";
+                  // This will print the symbol:
+                  //perlout << "\"" << AtomInfo::symbol(j+1) << "\"";
+                  // This will print the atomic number:
+                  perlout << j+1;
                   if (!last_elem_exists) {
                       if (elemstr[0] != '\0') strcat(elemstr,", ");
                       strcat(elemstr,AtomInfo::symbol(j+1));

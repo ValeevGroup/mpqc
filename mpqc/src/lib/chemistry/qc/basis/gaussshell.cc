@@ -196,7 +196,7 @@ GaussianShell::keyval_init(const Ref<KeyVal>& keyval,int havepure,int pure)
         }
     }
   for (i=0; i<ncon; i++) {
-      Ref<KeyVal> prefixkeyval = new PrefixKeyVal("type",keyval,i);
+      Ref<KeyVal> prefixkeyval = new PrefixKeyVal(keyval,"type",i);
       coef[i] = new double[nprim];
       char* am = prefixkeyval->pcharvalue("am");
       if (prefixkeyval->error() != KeyVal::OK) {

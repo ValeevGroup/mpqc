@@ -43,11 +43,11 @@ Material::Material()
 Material::Material(const Ref<KeyVal>& keyval)
 {
   if (keyval->exists("diffuse")) {
-      Color c(new PrefixKeyVal("diffuse", keyval));
+      Color c(new PrefixKeyVal(keyval, "diffuse"));
       diffuse_.set(c);
     }
   if (keyval->exists("ambient")) {
-      Color c(new PrefixKeyVal("ambient", keyval));
+      Color c(new PrefixKeyVal(keyval, "ambient"));
       ambient_.set(c);
     }
 }

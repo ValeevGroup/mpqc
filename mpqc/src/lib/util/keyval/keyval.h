@@ -377,6 +377,10 @@ class StringKeyVal: public KeyVal {
     //@}
 };
 
+/** This takes several KeyVal objects and makes them look like
+    one KeyVal object.  When a key is sought first KeyVal, then
+    the next, and so on is searched until the keyword is found.
+*/
 class AggregateKeyVal : public KeyVal {
   private:
     enum { MaxKeyVal = 4 };
@@ -390,16 +394,64 @@ class AggregateKeyVal : public KeyVal {
     Ref<KeyValValue> key_value(const char*,
                              const KeyValValue& def);
   public:
-    AggregateKeyVal(const Ref<KeyVal>&);
-    AggregateKeyVal(const Ref<KeyVal>&,const Ref<KeyVal>&);
-    AggregateKeyVal(const Ref<KeyVal>&,const Ref<KeyVal>&,const Ref<KeyVal>&);
-    AggregateKeyVal(const Ref<KeyVal>&,const Ref<KeyVal>&,const Ref<KeyVal>&,
-                    const Ref<KeyVal>&);
+    /** These contructors create an AggregateKeyVal that is formed from
+        several other KeyVal objects.  The search order is keyval1,
+        keyval2, and so on. */
+    //@{
+    AggregateKeyVal(const Ref<KeyVal>& keyval1);
+    AggregateKeyVal(const Ref<KeyVal>& keyval1,const Ref<KeyVal>& keyval2);
+    AggregateKeyVal(const Ref<KeyVal>& keyval1,const Ref<KeyVal>& keyval2,
+                    const Ref<KeyVal>& keyval3);
+    AggregateKeyVal(const Ref<KeyVal>& keyval1,const Ref<KeyVal>& keyval2,
+                    const Ref<KeyVal>& keyval3, const Ref<KeyVal>& keyval4);
+    //@}
     ~AggregateKeyVal();
     void errortrace(std::ostream&fp=ExEnv::err0());
     void dump(std::ostream&fp=ExEnv::err0());
 };
 
+/** PrefixKeyVal is a KeyVal that searches a different KeyVal using
+    modified keys.  This is convenient for reading keys grouped together
+    with a common prefix.  Consider the following code:
+    <pre>
+    sc::Ref<sc::KeyVal> keyval = new sc::PrefixKeyVal("A",original_keyval);
+    int r = keyval->intvalue("x");
+    </pre>
+    This code will assign to r the value associated with "x" in keyval.
+    keyval will search for "x" by searching for "A::x" in original_keyval.
+
+    This class is important for implementing constructors that take
+    KeyVal arguments.  When an object is being constructed from a KeyVal,
+    it may contain another object that must be constructed from a KeyVal.
+    In order to let the sub-object read the correct keywords from the
+    KeyVal, without knowledge of the containing objects keyword prefix,
+    a PrefixKeyVal can be constructed.  For example, the code
+    <pre>
+    class A: public DescribedClass {
+       double f0_;
+      public:
+       A(const Ref<KeyVal> &keyval): f0_(keyval->doublevalue("f0")) {}
+    }
+    class B: public DescribedClass {
+       double f1_;
+       Ref<A> a_;
+      public:
+       B(const Ref<KeyVal> &keyval):
+         f1_(keyval->doublevalue("f1")),
+         a_(new PrefixKeyVal(keyval,"a"))
+       {}
+    };
+    </pre>
+    can be used to read ParsedKeyVal input that looks like
+    <pre>
+    b<B>: (
+      f1 = 1.0
+      a<A>: (
+        f0 = 2.0
+      )
+    )
+    </pre>
+ */
 class PrefixKeyVal : public KeyVal {
   private:
     char* prefix;
@@ -413,21 +465,26 @@ class PrefixKeyVal : public KeyVal {
     Ref<KeyValValue> key_value(const char*,
                              const KeyValValue& def);
   public:
-    PrefixKeyVal(const Ref<KeyVal>&,int);
-    PrefixKeyVal(const Ref<KeyVal>&,int,int);
-    PrefixKeyVal(const Ref<KeyVal>&,int,int,int);
-    PrefixKeyVal(const Ref<KeyVal>&,int,int,int,int);
-    PrefixKeyVal(const Ref<KeyVal>&,const char*);
-    PrefixKeyVal(const Ref<KeyVal>&,const char*,int);
-    PrefixKeyVal(const Ref<KeyVal>&,const char*,int,int);
-    PrefixKeyVal(const Ref<KeyVal>&,const char*,int,int,int);
-    PrefixKeyVal(const Ref<KeyVal>&,const char*,int,int,int,int);
-    // old CTOR syntax (use the above instead)
+    /** Construct a PrefixKeyVal, using the given prefix and indices. */
+    //@{
+    PrefixKeyVal(const Ref<KeyVal>&,int i);
+    PrefixKeyVal(const Ref<KeyVal>&,int i,int j);
+    PrefixKeyVal(const Ref<KeyVal>&,int i,int j,int k);
+    PrefixKeyVal(const Ref<KeyVal>&,int i,int j,int k,int l);
+    PrefixKeyVal(const Ref<KeyVal>&,const char*prefix);
+    PrefixKeyVal(const Ref<KeyVal>&,const char*prefix,int i);
+    PrefixKeyVal(const Ref<KeyVal>&,const char*prefix,int i,int j);
+    PrefixKeyVal(const Ref<KeyVal>&,const char*prefix,int i,int j,int k);
+    PrefixKeyVal(const Ref<KeyVal>&,const char*prefix,int i,int j,int k,int l);
+    //@}
+    /// These routines are deprecated and will be removed in a future release.
+    //@{
     PrefixKeyVal(const char*,const Ref<KeyVal>&);
     PrefixKeyVal(const char*,const Ref<KeyVal>&,int);
     PrefixKeyVal(const char*,const Ref<KeyVal>&,int,int);
     PrefixKeyVal(const char*,const Ref<KeyVal>&,int,int,int);
     PrefixKeyVal(const char*,const Ref<KeyVal>&,int,int,int,int);
+    //@}
     ~PrefixKeyVal();
     void errortrace(std::ostream&fp=ExEnv::err0());
     void dump(std::ostream&fp=ExEnv::err0());

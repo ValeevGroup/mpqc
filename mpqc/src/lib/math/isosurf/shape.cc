@@ -209,7 +209,7 @@ SphereShape::SphereShape(const SphereShape&s):
 }
 
 SphereShape::SphereShape(const Ref<KeyVal>& keyval):
-  _origin(new PrefixKeyVal("origin",keyval)),
+  _origin(new PrefixKeyVal(keyval,"origin")),
   _radius(keyval->doublevalue("radius"))
 {
 }

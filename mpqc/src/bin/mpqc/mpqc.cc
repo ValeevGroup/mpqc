@@ -380,7 +380,7 @@ try_main(int argc, char *argv[])
   delete[] in_char_array;
 
   if (options.retrieve("k")) parsedkv->verbose(1);
-  Ref<KeyVal> keyval = new PrefixKeyVal("mpqc",parsedkv.pointer());
+  Ref<KeyVal> keyval = new PrefixKeyVal(parsedkv.pointer(),"mpqc");
 
   // get the basename for output files
   int nfilebase = (int) (::strrchr(input, '.') - input);

@@ -449,7 +449,7 @@ GaussianBasisSet::
   for (int j=0; j<count; j++) {
       sprintf(prefix,":basis:%s:%s",
 	      element,basisname);
-      Ref<KeyVal> prefixkeyval = new PrefixKeyVal(prefix,keyval,j);
+      Ref<KeyVal> prefixkeyval = new PrefixKeyVal(keyval,prefix,j);
       if (prefixkeyval->exists("get")) {
           char* newbasis = prefixkeyval->pcharvalue("get");
           if (!newbasis) {

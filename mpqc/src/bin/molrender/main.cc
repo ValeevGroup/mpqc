@@ -68,7 +68,7 @@ main(int argc, char** argv)
     }
   else {
       Ref<KeyVal> keyval = new ParsedKeyVal(inputfile);
-      mol = new Molecule(new PrefixKeyVal(keyword, keyval));
+      mol = new Molecule(new PrefixKeyVal(keyval, keyword));
     }
 
   // Set up the rendered molecule object.

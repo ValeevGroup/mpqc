@@ -19,6 +19,12 @@ CartesianIter::~CartesianIter()
 {
 }
 
+INLINE int
+CartesianIter::n()
+{
+  return ((l_>=0)?((((l_)+2)*((l_)+1))>>1):0);
+}
+
 INLINE void
 CartesianIter::start()
 {
@@ -53,6 +59,12 @@ INLINE int
 CartesianIter::c()
 {
   return c_;
+}
+
+INLINE int
+CartesianIter::l(int i)
+{
+  return i?(i==1?(l_-a_-c_):c_):a_;
 }
 
 INLINE int

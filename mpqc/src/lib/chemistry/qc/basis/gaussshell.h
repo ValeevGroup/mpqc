@@ -26,8 +26,10 @@ class CartesianIter
     int a();
     int b();
     int c();
+    int l(int i);
     int l();
     int bfn();
+    int n();
 };
 
 class RefKeyVal;

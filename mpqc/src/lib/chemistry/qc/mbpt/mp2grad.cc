@@ -450,10 +450,6 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   MemoryGrpBuf<double> membuf(mem);
   MemoryGrpBuf<double> membuf_remote(mem);
 
-  // find the start of memory for debugging purposes:
-  const double *memstart = membuf.readonly_on_node(0,1,0);
-  membuf.release();
-
   for (pass=0; pass<npass; pass++) {
 
     i_offset = pass*ni;

@@ -214,7 +214,7 @@ R12IntsAcc_MPIIOFile_Ind::save_data_state(StateOut&so)
 }
 
 void
-R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
+R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize)
 {
   if (committed_) {
     ExEnv::out0() << "R12IntsAcc_MPIIOFile_Ind::store_memorygrp(mem,ni) called after all data has been committed" << endl;
@@ -237,6 +237,10 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
     abort();
   }
   else {
+    size_t blksize_memgrp = blksize;
+    if (blksize_memgrp == 0)
+      blksize_memgrp = blksize_;
+
     // Now do some extra work to figure layout of data in MemoryGrp
     // Compute global offsets to each processor's data
     int i,j,ij;
@@ -253,14 +257,16 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
 	int proc = ij%nproc;
         if (proc != me) continue;
 	int local_ij_index = ij/nproc;
-        double *data = (double *) mem->localdata() + nbasis__2_*num_te_types()*local_ij_index;
-        
-        int IJ = ij_index(i+next_orbital(),j);
-        int errcod = MPI_File_seek(datafile_, pairblk_[IJ].offset_, MPI_SEEK_SET);
-        check_error_code_(errcod);
-        MPI_Status status;
-        errcod = MPI_File_write(datafile_, (void *)data, nints_per_block_, MPI_DOUBLE, &status);
-        check_error_code_(errcod);
+        double *data = (double *) ((size_t)mem->localdata() + blksize_memgrp*num_te_types()*local_ij_index);
+        for(int te_type=0; te_type < num_te_types(); te_type++) {
+          int IJ = ij_index(i+next_orbital(),j);
+          int errcod = MPI_File_seek(datafile_, pairblk_[IJ].offset_+(MPI_Offset)te_type*blksize_, MPI_SEEK_SET);
+          check_error_code_(errcod);
+          MPI_Status status;
+          errcod = MPI_File_write(datafile_, (void *)data, nbasis__2_, MPI_DOUBLE, &status);
+          check_error_code_(errcod);
+          data = (double*) ((size_t) data + blksize_memgrp);
+        }
       }
     // Close the file and update the i counter
     errcod = MPI_File_close(&datafile_);

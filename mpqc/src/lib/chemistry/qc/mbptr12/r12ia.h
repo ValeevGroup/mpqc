@@ -69,7 +69,7 @@ class R12IntsAcc: virtual public SavableState {
     int nbasis1_, nbasis2_;
     size_t nbasis__2_;  // nbasis1_ * nbasis2_  - the size of a block of integrals of one type
     size_t blksize_;    // the same in bytes
-    size_t blocksize_;  // hence the size of the block of num_te_types of integrals is nbasis__2_ * num_te_types
+    size_t blocksize_;  // hence the size of the block of num_te_types of integrals is blksize_ * num_te_types
     
     int next_orbital_;  // The first index of the next batch to be stored
     bool committed_;    // Whether all data has been written out and ready to be read
@@ -90,14 +90,23 @@ class R12IntsAcc: virtual public SavableState {
     /// The number of types of integrals that are being handled together
     int num_te_types() const { return num_te_types_; };
     /// Size of each block of the integrals of the same type, in double words
-    size_t blocksize() const { return nbasis__2_; };
+    size_t blocksize() const { return blksize_; };
     /// The index of the first orbital in the next integrals batch to be stored
     int next_orbital() const;
 
-    /// Stores all pair block of integrals held in mem
-    /// in a layout assumed throughout MBPT2_R12
-    /// ni is the range of index i of integrals held in mem at the moment
-    virtual void store_memorygrp(Ref<MemoryGrp>& mem, int ni)=0;
+    /** Stores all pair block of integrals held in mem
+        in a layout assumed throughout MBPT2_R12.
+        Let's suppose the number of tasks is nproc, nj is the number of j indices,
+        ni is the number of i indices of integrals held in
+        mem at the moment. Then all integrals with a given i and j
+        are stored on task (i*nj+j)/nproc and this ij block is
+        (i*nj+j)%nproc -th block on this task. Each ij block contains
+        num_te_types_ subblocks of integrals. Each subblock of integrals
+        has blksize bytes allocated for it. Note that
+        blksize may be larger than blksize_ because an ij-block of partially
+        transformed integrals may be larger than the block of fully transformed integrals.
+      */
+    virtual void store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize = 0) =0;
     /// All member functions of this class and its children
     /// indices i and j don't include frozen orbitals
     /// Stores an ij pair block of integrals (assumes the block resides locally)
@@ -105,7 +114,7 @@ class R12IntsAcc: virtual public SavableState {
     /// Commit the content of the accumulator for reading
     virtual void commit() { committed_ = true; };
     /// Has the content of the accumulator been commited for reading?
-    bool is_commited() { return committed_; };
+    bool is_committed() { return committed_; };
     /// Call when done reading content
     virtual void deactivate() {};
     /// Retrieves an ij pair block of integrals

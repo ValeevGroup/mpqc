@@ -75,12 +75,14 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
     ~R12IntsAcc_Node0File();
     void save_data_state(StateOut&);
 
-    /// Stores all pair block of integrals held in mem.
-    /// By default blocks are appended to the end of the same file, i.e.
-    /// they are assumed to have come from consecutive passes of
-    /// the same transformation
-    /// This is a collective operation
-    void store_memorygrp(Ref<MemoryGrp>& mem, int ni);
+    /** Stores all pair block of integrals held in mem.
+        By default blocks are appended to the end of the same file, i.e.
+        they are assumed to have come from consecutive passes of
+        the same transformation.
+        This is a collective operation. See documentation for R12IntsAcc::store_memorygrp()
+        for more info.
+      */
+    void store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize = 0);
     /// Stores an ij pair block of integrals to the file
     void store_pair_block(int i, int j, double *ints);
     /// Commit the content of the accumulator for reading - deactivate the associated MemoryGrp

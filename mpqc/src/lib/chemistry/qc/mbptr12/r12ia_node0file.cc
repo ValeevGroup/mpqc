@@ -141,7 +141,7 @@ R12IntsAcc_Node0File::check_filedescr_()
 }
 
 void
-R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
+R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize)
 {
   if (committed_) {
     ExEnv::out0() << "R12IntsAcc_Node0File::store_memorygrp(mem,ni) called after all data has been committed" << endl;
@@ -167,6 +167,10 @@ R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
     abort();
   }
   else {
+    size_t blksize_memgrp = blksize;
+    if (blksize_memgrp == 0)
+      blksize_memgrp = blksize_;
+
     // Now do some extra work to figure layout of data in MemoryGrp
     // Compute global offsets to each processor's data
     int i,j,ij;
@@ -182,14 +186,20 @@ R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
 	int proc = ij%nproc;
 	int local_ij_index = ij/nproc;
 	if (proc != me) {
-	  distsize_t moffset = (distsize_t)local_ij_index*blocksize_ + mem->offset(proc);
-	  data = (double *) mem->obtain_readonly(moffset, blocksize_);
-	  write(datafile_, data, blocksize_);
-	  mem->release_readonly(data, moffset, blocksize_);
+	  distsize_t moffset = (distsize_t)local_ij_index*blksize_memgrp*num_te_types() + mem->offset(proc);
+          for(int te_type=0; te_type < num_te_types(); te_type++) {
+	    data = (double *) mem->obtain_readonly(moffset, blksize_);
+	    write(datafile_, data, blksize_);
+	    mem->release_readonly(data, moffset, blksize_);
+            moffset += blksize_memgrp;
+          }
 	}
 	else {
-	  data = (double *) mem->localdata() + nbasis__2_*num_te_types()*local_ij_index;
-	  write(datafile_, data, blocksize_);
+          data = (double *) ((size_t)mem->localdata() + blksize_memgrp*num_te_types()*local_ij_index);
+          for(int te_type=0; te_type < num_te_types(); te_type++) {
+            write(datafile_, data, blksize_);
+            data = (double*) ((size_t) data + blksize_memgrp);
+          }
 	}
       }
     // Close the file and update the i counter

@@ -50,6 +50,7 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
 
     Ref<MemoryGrp> mem_; // The MemoryGrp used by this accumulator to store integrals
     int nproc_;
+    size_t blksize_memgrp_;  // The size of the ij-block in held memory (may be larger than blksize_)
 
     struct PairBlkInfo {
       double *ints_[max_num_te_types_];         // blocks corresponding to each operator type
@@ -66,10 +67,12 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
     ~R12IntsAcc_MemoryGrp();
     void save_data_state(StateOut&);
 
-    /// Stores all pair block of integrals held in mem
-    /// mem must be the same as mem_ used to construct this
-    /// This is a collective operation
-    void store_memorygrp(Ref<MemoryGrp>& mem, int ni);
+    /** Stores all pair block of integrals held in mem
+     mem must be the same as mem_ used to construct this
+     This is a collective operation. See documentation for R12IntsAcc::store_memorygrp()
+     for more info.
+     */
+    void store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize);
     /// Stores an ij pair block of integrals (assumes the block resides locally)
     void store_pair_block(int i, int j, double *ints);
     /// Done reading content - call set_localsize(0) on the associated MemoryGrp

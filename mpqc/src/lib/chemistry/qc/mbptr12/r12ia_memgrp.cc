@@ -45,7 +45,7 @@ static ClassDesc R12IntsAcc_MemoryGrp_cd(
   0, 0, create<R12IntsAcc_MemoryGrp>);
 
 R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(Ref<MemoryGrp>& mem, int num_te_types, int nbasis1, int nbasis2, int nocc_act) :
-  R12IntsAcc(num_te_types, nbasis1, nbasis2, nocc_act)
+  R12IntsAcc(num_te_types, nbasis1, nbasis2, nocc_act), blksize_memgrp_(blksize_)
 {
   mem_ = mem;
   
@@ -55,6 +55,7 @@ R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(Ref<MemoryGrp>& mem, int num_te_types
 R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(StateIn& si) : R12IntsAcc(si)
 {
   mem_ = MemoryGrp::get_default_memorygrp();
+  blksize_memgrp_ = blksize_;
   
   init();
 }
@@ -100,12 +101,13 @@ R12IntsAcc_MemoryGrp::init()
       pairblk_[ij].refcount_[r12t1] = 0;
       pairblk_[ij].refcount_[r12t2] = 0;
       int local_ij_index = ij_index(i,j)/nproc_;
-      pairblk_[ij].offset_ = (distsize_t)local_ij_index*blocksize_ + mem_->offset(ij_proc(i,j));
+      pairblk_[ij].offset_ = (distsize_t)local_ij_index*blksize_memgrp_*num_te_types() +
+        mem_->offset(ij_proc(i,j));
     }
 }
 
 void
-R12IntsAcc_MemoryGrp::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
+R12IntsAcc_MemoryGrp::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize)
 {
   if (committed_) {
     ExEnv::out0() << "R12IntsAcc_MemoryGrp::store_memorygrp(mem,ni) called after all data has been committed" << endl;
@@ -122,14 +124,21 @@ R12IntsAcc_MemoryGrp::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
       "ni != R12IntsAcc_MemoryGrp::nocc_act_" << endl;
     abort();
   }
-  else
+  else {
+    if (blksize != 0 && blksize != blksize_memgrp_) {
+      blksize_memgrp_ = blksize;
+      init();
+    }
+    
     for (int i=0; i<nocc_act_; i++)
       for (int j=0; j<nocc_act_; j++)
 	if (is_local(i,j)) {
 	  int local_ij_index = ij_index(i,j)/nproc_;
-	  double *integral_ij_offset = (double *)mem_->localdata() + nbasis__2_*num_te_types()*local_ij_index;
+	  double *integral_ij_offset = (double *) ((size_t)mem_->localdata() +
+                                            blksize_memgrp_*num_te_types()*local_ij_index);
 	  store_pair_block(i,j,integral_ij_offset);
 	}
+  }
 
   inc_next_orbital(ni);
 }
@@ -141,9 +150,9 @@ R12IntsAcc_MemoryGrp::store_pair_block(int i, int j, double *ints)
   if (is_local(i,j)) {
     int ij = ij_index(i,j);
     pairblk_[ij].ints_[eri] = ints;
-    pairblk_[ij].ints_[r12] = ints + nbasis__2_;
-    pairblk_[ij].ints_[r12t1] = ints + 2*nbasis__2_;
-    pairblk_[ij].ints_[r12t2] = ints + 3*nbasis__2_;
+    pairblk_[ij].ints_[r12] = (double*) ((size_t)ints + blksize_memgrp_);
+    pairblk_[ij].ints_[r12t1] = (double*) ((size_t)ints + 2*blksize_memgrp_);
+    pairblk_[ij].ints_[r12t2] = (double*) ((size_t)ints + 3*blksize_memgrp_);;
   }
 }
 
@@ -160,7 +169,7 @@ R12IntsAcc_MemoryGrp::retrieve_pair_block(int i, int j, tbint_type oper_type)
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   if (!is_local(i,j) && pb->ints_[oper_type] == 0) {
-    pb->ints_[oper_type] = (double *) mem_->obtain_readonly(pb->offset_ + (distsize_t)oper_type*blksize_, blksize_);
+    pb->ints_[oper_type] = (double *) mem_->obtain_readonly(pb->offset_ + (distsize_t)oper_type*blksize_memgrp_, blksize_);
   }
   pb->refcount_[oper_type] += 1;
   return pb->ints_[oper_type];
@@ -176,7 +185,7 @@ R12IntsAcc_MemoryGrp::release_pair_block(int i, int j, tbint_type oper_type)
     throw std::runtime_error("Logic error: R12IntsAcc_MemoryGrp::release_pair_block: refcount is already zero!");
   }
   if (!is_local(i,j) && pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 1) {
-    mem_->release_readonly(pb->ints_[oper_type],pb->offset_+ oper_type*blksize_,blksize_);
+    mem_->release_readonly(pb->ints_[oper_type],pb->offset_+ oper_type*blksize_memgrp_,blksize_);
     pb->ints_[oper_type] = NULL;
   }
   pb->refcount_[oper_type] -= 1;

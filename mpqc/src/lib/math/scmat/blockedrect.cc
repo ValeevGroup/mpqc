@@ -153,7 +153,7 @@ BlockedSCMatrix::set_element(int i,int j,double a)
   if (d1->blocks()->nblock() == 1 && d2->blocks()->nblock() > 1) {
     mats_[block_j]->set_element(elem_i,elem_j,a);
 
-  } else if (d1->blocks()->nblock() > 1 && d2->blocks()->nblock()) {
+  } else if (d1->blocks()->nblock() > 1 && d2->blocks()->nblock() == 1) {
     mats_[block_i]->set_element(elem_i,elem_j,a);
   } else if (d1->blocks()->nblock() == d2->blocks()->nblock()
              && block_i == block_j) {
@@ -173,8 +173,11 @@ BlockedSCMatrix::accumulate_element(int i,int j,double a)
   if (d1->blocks()->nblock() == 1 && d2->blocks()->nblock() > 1) {
     mats_[block_j]->accumulate_element(elem_i,elem_j,a);
 
-  } else if (d1->blocks()->nblock() > 1 && d2->blocks()->nblock() == 1 ||
-             d1->blocks()->nblock() == d2->blocks()->nblock()) {
+  } else if (d1->blocks()->nblock() > 1 && d2->blocks()->nblock() == 1) {
+    mats_[block_i]->accumulate_element(elem_i,elem_j,a);
+  }
+  else if (d1->blocks()->nblock() == d2->blocks()->nblock()
+           && block_i == block_j) {
     mats_[block_i]->accumulate_element(elem_i,elem_j,a);
   }
 }

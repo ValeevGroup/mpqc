@@ -65,10 +65,10 @@ blockedtest: blockedtest.o $(TESTOBJ) \
 	$(CXX) $(CXXFLAGS) -o blockedtest $^ $(SYSLIBS) 
 
 repltest.o: repltest.cc
-	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< -o $@
 
 disttest.o: disttest.cc
-	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< -o $@
 
 TAGS: $(CXXSRC) $(CSRC)
 	etags $^

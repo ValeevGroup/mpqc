@@ -84,6 +84,9 @@ class MBPT2: public Wavefunction {
     int gradient_implemented();
     int value_implemented();
 
+    // override compute's obsolete so we can call the reference's obsolete
+    void obsolete();
+
     void print(ostream&o=cout);
 };
 SavableState_REF_dec(MBPT2);

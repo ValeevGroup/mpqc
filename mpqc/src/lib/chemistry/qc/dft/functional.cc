@@ -362,12 +362,13 @@ DenFunctional::test()
   // del rho should not be used by any of the functionals
   for (i=0; i<3; i++) id.a.del_rho[i] = id.b.del_rho[i] = 0.0;
 
-  double testrho[] = { 0.001, 0.5, -1 };
-  double testgamma[] = { 0.0001, 0.001, 0.5, -1 };
+  double testrho[] = { 0.0, 0.001, 0.5, -1 };
+  double testgamma[] = { 0.0, 0.0001, 0.001, 0.5, -1 };
   double testgammaab[] = { -0.5, 0.0, 0.5, -1 };
 
   cout << "Testing with rho_a == rho_b" << endl;
   for (i=0; testrho[i] != -1.0; i++) {
+      if (testrho[i] == 0.0) continue;
       id.a.rho=testrho[i];
       for (j=0; testgamma[j] != -1.0; j++) {
           id.a.gamma = testgamma[j];
@@ -382,6 +383,7 @@ DenFunctional::test()
       id.a.rho=testrho[i];
       for (j=0; testrho[j] != -1.0; j++) {
           id.b.rho=testrho[j];
+          if (testrho[i]+testrho[j] == 0.0) continue;
           for (k=0; testgamma[k] != -1.0; k++) {
               id.a.gamma = testgamma[k];
               double sqrt_gamma_a = sqrt(id.a.gamma);

@@ -386,6 +386,7 @@ do_valtest(const RefDenFunctional &valtest)
         double wt=4.*pi*r*r*dr;
         double dup=fup*(zup*zup*zup/pi)*exp(-2.0*zup*r);
         double ddn=fdn*(zdn*zdn*zdn/pi)*exp(-2.0*zdn*r);
+        if (dup+ddn < DBL_EPSILON) continue;
         double zdnnu=zdn+delzdn;
         double delddn=fdn*(zdnnu*zdnnu*zdnnu/pi)*exp(-2.0*zdnnu*r)-ddn;
         double agrup=2.0*zup*dup;

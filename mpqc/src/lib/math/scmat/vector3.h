@@ -35,10 +35,10 @@
 #include <math.h>
 
 #include <util/misc/exenv.h>
+#include <util/keyval/keyval.h>
 
 class RefSCVector;
 class SCMatrix3;
-class RefKeyVal;
 
 class SCVector3
 {

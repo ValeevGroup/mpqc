@@ -47,13 +47,21 @@
 #define SavableState_REF_def(T) SavableState_named_REF_def(Ref ## T,T)
 
 #ifdef USE_REF_MACROS
-#define SavableState_named_REF_dec(refname,T)				      \
-   DCRef_declare(T); SSRef_declare(T); typedef class SSRef ## T refname;
+#  define SavableState_named_REF_dec(refname,T)				      \
+     DCRef_declare(T); SSRef_declare(T); typedef class SSRef ## T refname;
+#  define SavableState_named_REF_def(refname,T)
 #else
-#define SSRef_declare(T) typedef class SSRef<T> SSRef ## T;
-#define SavableState_named_REF_dec(refname,T) typedef class SSRef<T> refname;
+#  define SSRef_declare(T) typedef class SSRef<T> SSRef ## T;
+#  define SavableState_named_REF_dec(refname,T) typedef class SSRef<T> refname;
+#  ifdef EXPLICIT_TEMPLATE_INSTANTIATION
+#    define SavableState_named_REF_def(refname,T) template class SSRef<T>; \
+                                                  template class DCRef<T>;
+#    define SSRef_define(T) template class SSRef<T>;
+#  else
+#    define SavableState_named_REF_def(refname,T)
+#    define SSRef_define(T)
+#  endif
 #endif
-#define SavableState_named_REF_def(refname,T)
 
 // This does forward declarations of REF classes.
 #ifdef USE_REF_MACROS
@@ -144,10 +152,6 @@ class SavableState: public DescribedClass {
         the SavableState(StateIn&) constructor. */
     SavableState(StateIn&);
   };
-
-// just do a fwddec here, since StateIn and StateOut are not
-// yet declared.
-SavableState_REF_fwddec(SavableState);
 
 // //////////////////////////////////////////////////////////////////
 

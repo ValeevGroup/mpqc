@@ -50,6 +50,8 @@
 ///////////////////////////////////////////////////////////////////////////
 // SCF
 
+SavableState_REF_def(SCF);
+
 #define CLASSNAME SCF
 #define VERSION 2
 #define PARENTS public OneBodyWavefunction

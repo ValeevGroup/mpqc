@@ -455,6 +455,8 @@ SCElementScale::has_side_effects()
 /////////////////////////////////////////////////////////////////////////
 // SCElementScalarProduct members
 
+SavableState_REF_def(SCElementScalarProduct);
+
 #define CLASSNAME SCElementScalarProduct
 #define PARENTS   public SCElementOp2
 #define HAVE_STATEIN_CTOR

@@ -32,6 +32,7 @@
 #include <util/render/polylines.h>
 #include <util/render/color.h>
 
+DescribedClass_REF_def(RenderedPolylines);
 #define CLASSNAME RenderedPolylines
 #define HAVE_KEYVAL_CTOR
 #define PARENTS public RenderedObject

@@ -44,6 +44,8 @@
 /////////////////////////////////////////////////////////////////////////
 // SCMatrixKit members
 
+DescribedClass_REF_def(SCMatrixKit);
+
 #define CLASSNAME SCMatrixKit
 #define PARENTS public DescribedClass
 #include <util/class/classia.h>

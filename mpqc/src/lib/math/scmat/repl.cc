@@ -39,6 +39,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // ReplSCMatrixKit member functions
 
+DescribedClass_REF_def(ReplSCMatrixKit);
 #define CLASSNAME ReplSCMatrixKit
 #define PARENTS public SCMatrixKit
 #define HAVE_KEYVAL_CTOR

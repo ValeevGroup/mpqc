@@ -60,6 +60,8 @@ PointInputData::compute_derived(int spin_polarized, int need_gradient)
 ///////////////////////////////////////////////////////////////////////////
 // DenFunctional
 
+SavableState_REF_def(DenFunctional);
+
 #define CLASSNAME DenFunctional
 #define PARENTS public SavableState
 #include <util/state/statei.h>
@@ -893,6 +895,7 @@ StdDenFunctional::print(ostream& o) const
 /////////////////////////////////////////////////////////////////////////////
 // LSDACFunctional: All local correlation functionals inherit from this class.
 // Coded by Matt Leininger
+SavableState_REF_def(LSDACFunctional);
 #define CLASSNAME LSDACFunctional
 #define PARENTS public DenFunctional
 #include <util/state/statei.h>

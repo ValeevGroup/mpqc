@@ -37,7 +37,6 @@
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrix reference base class member functions
 
-DescribedClass_named_REF_def(RefDCSCDimension,SCDimension);
 DescribedClass_named_REF_def(RefDCSCVector,SCVector);
 DescribedClass_named_REF_def(RefDCSCMatrix,SCMatrix);
 DescribedClass_named_REF_def(RefDCSymmSCMatrix,SymmSCMatrix);

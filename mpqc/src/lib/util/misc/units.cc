@@ -45,6 +45,8 @@ static inline int eq(const char* a, const char* b)
 //////////////////////////////////////////////////////////////////////
 // Units class definition
 
+SavableState_REF_def(Units);
+
 #define CLASSNAME Units
 #define PARENTS public SavableState
 #define HAVE_STATEIN_CTOR

@@ -86,7 +86,7 @@ class TriInterpCoef: public VRefCount {
     }
 };
 
-Ref_declare(TriInterpCoef);
+REF_dec(TriInterpCoef);
 
 #endif
 

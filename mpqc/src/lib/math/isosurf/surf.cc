@@ -47,7 +47,7 @@
 
 /////////////////////////////////////////////////////////////////////////
 // TriangulatedSurface
-
+DescribedClass_REF_def(TriangulatedSurface);
 #define CLASSNAME TriangulatedSurface
 #define PARENTS public DescribedClass
 #define HAVE_CTOR
@@ -858,7 +858,7 @@ TriangulatedSurfaceIntegrator::use_accurate_integrator()
 
 /////////////////////////////////////////////////////////////////////////
 // TriangulatedImplicitSurface
-
+DescribedClass_REF_def(TriangulatedImplicitSurface);
 #define CLASSNAME TriangulatedImplicitSurface
 #define PARENTS public TriangulatedSurface
 #define HAVE_KEYVAL_CTOR

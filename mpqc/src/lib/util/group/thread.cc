@@ -64,6 +64,8 @@ Thread::run_Thread_run(void* vth)
 /////////////////////////////////////////////////////////////////////////////
 // ThreadGrp members
 
+DescribedClass_REF_def(ThreadGrp);
+
 #define CLASSNAME ThreadGrp
 #define PARENTS public DescribedClass
 #include <util/class/classia.h>

@@ -693,7 +693,7 @@ MolecularCoor::to_cartesian(const RefSCVector&internal)
 ///////////////////////////////////////////////////////////////////////////
 // members of IntCoorGen
 
-SavableState_REF_def(SetIntCoor);
+SavableState_REF_def(IntCoorGen);
 
 void *
 IntCoorGen::_castdown(const ClassDesc*cd)

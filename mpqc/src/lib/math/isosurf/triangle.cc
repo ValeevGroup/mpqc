@@ -338,6 +338,7 @@ Triangle::set_order(int order, const RefVolume&vol, double isovalue)
 /////////////////////////////////////////////////////////////////////////
 // TriangleIntegrator
 
+DescribedClass_REF_def(TriangleIntegrator);
 #define CLASSNAME TriangleIntegrator
 #define PARENTS public DescribedClass
 #define HAVE_KEYVAL_CTOR

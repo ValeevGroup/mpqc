@@ -32,6 +32,7 @@
 #include <util/render/polygons.h>
 #include <util/render/color.h>
 
+DescribedClass_REF_def(RenderedPolygons);
 #define CLASSNAME RenderedPolygons
 #define HAVE_KEYVAL_CTOR
 #define PARENTS public RenderedObject

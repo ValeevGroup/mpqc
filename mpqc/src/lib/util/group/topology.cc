@@ -32,6 +32,7 @@
 #include <util/group/message.h>
 #include <util/group/topology.h>
 
+DescribedClass_REF_def(GlobalMsgIter);
 #define CLASSNAME GlobalMsgIter
 #define PARENTS public DescribedClass
 #include <util/class/classia.h>
@@ -51,6 +52,7 @@ GlobalMsgIter::GlobalMsgIter(int nproc, int me, int root)
   forwards();
 }
 
+DescribedClass_REF_def(MachineTopology);
 #define CLASSNAME MachineTopology
 #define PARENTS public DescribedClass
 #include <util/class/classia.h>

@@ -42,6 +42,7 @@
 ////////////////////////////////////////////////////////////////
 // RenderedMolecule
 
+DescribedClass_REF_def(RenderedMolecule);
 #define CLASSNAME RenderedMolecule
 #define PARENTS public RenderedObject
 #include <util/class/classia.h>
@@ -338,6 +339,7 @@ RenderedMolecularSurface::init(int reinit_surf)
 /////////////////////////////////////////////////////////////////////////////
 // MoleculeColorizer
 
+DescribedClass_REF_def(MoleculeColorizer);
 #define CLASSNAME MoleculeColorizer
 #define PARENTS public DescribedClass
 #include <util/class/classia.h>

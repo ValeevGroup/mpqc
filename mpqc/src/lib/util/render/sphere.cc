@@ -31,6 +31,7 @@
 #include <util/render/object.h>
 #include <util/render/sphere.h>
 
+DescribedClass_REF_def(RenderedSphere);
 #define CLASSNAME RenderedSphere
 #define HAVE_KEYVAL_CTOR
 #define PARENTS public RenderedObject

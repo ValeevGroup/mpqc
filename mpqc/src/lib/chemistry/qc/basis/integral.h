@@ -38,8 +38,9 @@
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/tbint.h>
 
+REF_fwddec(PetiteList);
+
 class SymmetryOperation;
-class RefPetiteList;
 class RefSymmSCMatrix;
 class ShellRotation;
 class CartesianIter;

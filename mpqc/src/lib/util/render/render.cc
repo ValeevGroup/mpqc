@@ -41,6 +41,8 @@
 /////////////////////////////////////////////////////////////////////////////
 // Render
 
+DescribedClass_REF_def(Render);
+
 #define CLASSNAME Render
 #define PARENTS public DescribedClass
 #include <util/class/classia.h>

@@ -39,8 +39,7 @@
 #include <math/optimize/transform.h>
 #include <chemistry/molecule/molecule.h>
 
-class SSRefIntCoor;
-typedef class SSRefIntCoor RefIntCoor;
+SavableState_REF_fwddec(IntCoor);
 
 /** The IntCoor abstract class describes an internal coordinate of a
 molecule. */
@@ -177,8 +176,7 @@ class SumIntCoor: public IntCoor {
     int equivalent(RefIntCoor&);
 };
 
-class SSRefSetIntCoor;
-typedef class SSRefSetIntCoor RefSetIntCoor;
+SavableState_REF_fwddec(SetIntCoor);
 
 /** The SetIntCoor class describes a set of internal coordinates.
 It can automatically generate these coordinates using a integral coordinate

@@ -36,12 +36,12 @@
 
 #include <util/state/state.h>
 #include <util/state/array.h>
+#include <util/keyval/keyval.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
 
 class GaussianShell;
-class RefKeyVal;
 class BasisFileSet;
 
 SavableState_REF_fwddec(GaussianBasisSet);

@@ -36,8 +36,7 @@
 #include <util/class/class.h>
 #include <math/scmat/matrix.h>
 #include <math/optimize/function.h>
-
-class RefNonlinearTransform;
+#include <math/optimize/transform.h>
 
 // //////////////////////////////////////////////////////////////////////
 //  hessian update classes.  based on the value of inverse_hessian_

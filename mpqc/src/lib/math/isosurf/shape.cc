@@ -1137,6 +1137,8 @@ Uncapped5SphereExclusionShape::gradient_implemented() const
 /////////////////////////////////////////////////////////////////////
 // Unionshape
 
+SavableState_REF_def(UnionShape);
+
 #define CLASSNAME UnionShape
 #define PARENTS public Shape
 #include <util/state/statei.h>

@@ -61,6 +61,8 @@
 
 ////////////////////////////////////////////////////////////////////////
 
+SavableState_REF_def(PointGroup);
+
 #define CLASSNAME PointGroup
 #define VERSION 2
 #define PARENTS public SavableState

@@ -152,6 +152,8 @@ AtomInfo::names_[MaxZ] =
    {"Unnamed",      "Un"} // 107
   };
 
+SavableState_REF_def(AtomInfo);
+
 #define CLASSNAME AtomInfo
 #define VERSION 2
 #define PARENTS public SavableState

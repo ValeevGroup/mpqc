@@ -40,7 +40,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // BlockedSCMatrixKit member functions
 
-SavableState_REF_def(BlockedSCMatrixKit);
+DescribedClass_REF_def(BlockedSCMatrixKit);
 
 #define CLASSNAME BlockedSCMatrixKit
 #define PARENTS public SCMatrixKit

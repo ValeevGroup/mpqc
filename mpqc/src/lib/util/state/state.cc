@@ -42,7 +42,7 @@
 
 /////////////////////////////////////////////////////////////////
 
-DescribedClass_REF_def(SavableState);
+SavableState_REF_def(SavableState);
 
 #define CLASSNAME SavableState
 #define PARENTS public DescribedClass

@@ -34,6 +34,8 @@
 #include <math/scmat/local.h>
 #include <chemistry/solvent/bem.h>
 
+DescribedClass_REF_def(BEMSolvent);
+
 #define CLASSNAME BEMSolvent
 #define PARENTS public DescribedClass
 #define HAVE_KEYVAL_CTOR

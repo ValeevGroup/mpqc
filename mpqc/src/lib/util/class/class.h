@@ -305,13 +305,21 @@ DCRefBase::dereference(VRefCount *p)
 #endif
 
 #ifdef USE_REF_MACROS
-#define DescribedClass_named_REF_dec(name,T) DCRef_declare(T); \
-                                             typedef class DCRef ## T name;
+#  define DescribedClass_named_REF_dec(name,T) DCRef_declare(T); \
+                                               typedef class DCRef ## T name;
+#  define DescribedClass_named_REF_def(name,T)
 #else
-#define DCRef_declare(T) typedef class DCRef<T> DCRef ## T;
-#define DescribedClass_named_REF_dec(name,T) typedef class DCRef<T> name;
+#  define DCRef_declare(T) typedef class DCRef<T> DCRef ## T;
+#  define DescribedClass_named_REF_dec(name,T) typedef class DCRef<T> name; \
+                                             typedef class DCRef<T> DCRef ## T;
+#  ifdef EXPLICIT_TEMPLATE_INSTANTIATION
+#    define DescribedClass_named_REF_def(refname,T) template class DCRef<T>;
+#    define DCRef_define(T) template class DCRef<T>;
+#  else
+#    define DescribedClass_named_REF_def(refname,T)
+#    define DCRef_define(T)
+#  endif
 #endif
-#define DescribedClass_named_REF_def(name,T)
 
 // These macros choose a default name for the reference class formed from
 // "Ref" followed by the type name.

@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <util/render/transform.h>
 
+DescribedClass_REF_def(Transform);
 #define CLASSNAME Transform
 #define HAVE_KEYVAL_CTOR
 #define PARENTS public DescribedClass

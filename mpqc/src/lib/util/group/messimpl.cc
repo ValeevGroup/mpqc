@@ -41,6 +41,8 @@
 #  include <util/group/messmpi.h>
 #endif
 
+DescribedClass_REF_def(MessageGrp);
+
 #define CLASSNAME MessageGrp
 #define PARENTS public DescribedClass
 #include <util/class/classia.h>

@@ -36,6 +36,8 @@
 /////////////////////////////////////////////////////////////////////////////
 // AnimatedObject
 
+DescribedClass_REF_def(AnimatedObject);
+
 #define CLASSNAME AnimatedObject
 #define PARENTS public DescribedClass
 #include <util/class/classia.h>

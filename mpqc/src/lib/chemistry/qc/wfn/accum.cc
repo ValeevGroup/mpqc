@@ -36,6 +36,8 @@
 ///////////////////////////////////////////////////////////////////////////
 // AccumH
 
+SavableState_REF_def(AccumH);
+
 #define CLASSNAME AccumH
 #define PARENTS public SavableState
 #include <util/class/classia.h>

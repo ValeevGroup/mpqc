@@ -27,6 +27,7 @@
 
 #include <util/render/appearance.h>
 
+DescribedClass_REF_def(Appearance);
 #define CLASSNAME Appearance
 #define HAVE_KEYVAL_CTOR
 #define PARENTS public DescribedClass

@@ -51,14 +51,17 @@ class SymmSCMatrix;
 class DiagSCMatrix;
 class SCVector;
 
-class SSRefSCElementOp;
-typedef class SSRefSCElementOp RefSCElementOp;
+//class SSRefSCElementOp;
+//typedef class SSRefSCElementOp RefSCElementOp;
+SavableState_REF_fwddec(SCElementOp);
 
-class SSRefSCElementOp2;
-typedef class SSRefSCElementOp2 RefSCElementOp2;
+//class SSRefSCElementOp2;
+//typedef class SSRefSCElementOp2 RefSCElementOp2;
+SavableState_REF_fwddec(SCElementOp2);
 
-class SSRefSCElementOp3;
-typedef class SSRefSCElementOp3 RefSCElementOp3;
+//class SSRefSCElementOp3;
+//typedef class SSRefSCElementOp3 RefSCElementOp3;
+SavableState_REF_fwddec(SCElementOp3);
 
 /** Objects of class SCElementOp are used to perform operations on the
     elements of matrices.  When the SCElementOp object is given to the

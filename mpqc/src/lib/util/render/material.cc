@@ -27,6 +27,7 @@
 
 #include <util/render/material.h>
 
+DescribedClass_REF_def(Material);
 #define CLASSNAME Material
 #define HAVE_KEYVAL_CTOR
 #define PARENTS public DescribedClass

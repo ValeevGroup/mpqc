@@ -47,6 +47,8 @@ fail(const char *s)
 /////////////////////////////////////////////////////////////////////////////
 // SCBlockInfo member functions
 
+SavableState_REF_def(SCBlockInfo);
+
 #define CLASSNAME SCBlockInfo
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -282,6 +284,8 @@ SCBlockInfo::print(ostream&o) const
 /////////////////////////////////////////////////////////////////////////
 // SCDimension members
 
+DCRef_define(SCDimension);
+SSRef_define(SCDimension);
 #define CLASSNAME SCDimension
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR

@@ -132,6 +132,7 @@ SCMatrixBlockListLink::block(SCMatrixBlock* b)
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixBlockList member functions
 
+SavableState_REF_def(SCMatrixBlockList);
 #define CLASSNAME SCMatrixBlockList
 #define PARENTS public SavableState
 #define HAVE_STATEIN_CTOR

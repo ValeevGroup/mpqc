@@ -59,6 +59,8 @@ template RefAngularIntegrator***
 ///////////////////////////////////////////////////////////////////////////
 // DenIntegrator
 
+SavableState_REF_def(DenIntegrator);
+
 #define CLASSNAME DenIntegrator
 #define PARENTS public SavableState
 #include <util/state/statei.h>
@@ -657,6 +659,8 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
 ///////////////////////////////////////////////////////////////////////////
 // IntegrationWeight
 
+SavableState_REF_def(IntegrationWeight);
+
 #define CLASSNAME IntegrationWeight
 #define PARENTS public SavableState
 #include <util/state/statei.h>
@@ -1112,8 +1116,8 @@ BeckeIntegrationWeight::w(int acenter, SCVector3 &point,
 }
 
 ///////////////////////////////////////////////////
-// Radial Integrator
-
+// RadialIntegrator
+SavableState_REF_def(RadialIntegrator);
 #define CLASSNAME RadialIntegrator
 #define PARENTS public SavableState
 #include <util/state/statei.h>
@@ -1150,6 +1154,8 @@ RadialIntegrator::save_data_state(StateOut& s)
 
 ///////////////////////////////////////
 //  AngularIntegrator
+
+SavableState_REF_def(AngularIntegrator);
 
 #define CLASSNAME AngularIntegrator
 #define PARENTS public SavableState

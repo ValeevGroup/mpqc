@@ -80,6 +80,8 @@ template class MemoryGrpBuf<unsigned char>;
 //////////////////////////////////////////////////////////////////////
 // MemoryGrp members
 
+DescribedClass_REF_def(MemoryGrp);
+
 #define CLASSNAME MemoryGrp
 #define PARENTS public DescribedClass
 #include <util/class/classia.h>

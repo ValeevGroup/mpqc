@@ -41,6 +41,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // DistSCMatrixKit member functions
 
+DescribedClass_REF_def(DistSCMatrixKit);
 #define CLASSNAME DistSCMatrixKit
 #define PARENTS public SCMatrixKit
 #define HAVE_KEYVAL_CTOR

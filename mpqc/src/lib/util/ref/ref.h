@@ -327,11 +327,16 @@ class RefBase {
 #include <util/ref/refmacr.h>
 /** This macro declares a smart pointer type.  If the class name is T, the
     smart pointer type will be RefT.  */
-#define REF_dec(T) Ref_declare(T)
+#  define REF_dec(T) Ref_declare(T)
+#  define REF_def(T)
 #else
-#define REF_dec(T) typedef class Ref<T> Ref ## T;
+#  define REF_dec(T) typedef class Ref<T> Ref ## T;
+#  ifdef EXPLICIT_TEMPLATE_INSTANTIATION
+#    define REF_def(T) template class Ref<T>;
+#  else
+#    define REF_def(T)
+#  endif
 #endif
-#define REF_def(T)
 
 // This does forward declarations of REF classes.
 #ifdef USE_REF_MACROS

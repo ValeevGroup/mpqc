@@ -41,6 +41,8 @@
 
 #undef DEBUG
 
+SavableState_REF_def(MolecularFrequencies);
+
 #define CLASSNAME MolecularFrequencies
 #define VERSION 3
 #define PARENTS public SavableState
@@ -496,6 +498,8 @@ MolecularFrequencies::animate(const RefRender& render,
 
 /////////////////////////////////////////////////////////////////////////////
 // MolFreqAnimate
+
+DescribedClass_REF_def(MolFreqAnimate);
 
 #define CLASSNAME MolFreqAnimate
 #define PARENTS public AnimatedObject

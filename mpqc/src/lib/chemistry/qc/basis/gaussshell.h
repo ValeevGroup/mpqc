@@ -35,8 +35,8 @@
 #include <iostream.h>
 #include <util/state/state.h>
 #include <math/scmat/vector3.h>
+#include <util/keyval/keyval.h>
 
-class RefKeyVal;
 SavableState_REF_fwddec(Integral)
 
 class CartesianIter;

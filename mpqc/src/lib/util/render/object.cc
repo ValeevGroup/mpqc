@@ -34,6 +34,8 @@
 #include <util/render/render.h>
 #include <util/render/object.h>
 
+DescribedClass_REF_def(RenderedObject);
+
 #define CLASSNAME RenderedObject
 #define PARENTS public DescribedClass
 #include <util/class/classia.h>
@@ -90,6 +92,7 @@ RenderedObject::print(ostream& os) const
 }
   
 
+DescribedClass_REF_def(RenderedObjectSet);
 #define CLASSNAME RenderedObjectSet
 #define HAVE_KEYVAL_CTOR
 #define PARENTS public RenderedObject

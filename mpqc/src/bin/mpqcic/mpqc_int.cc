@@ -328,8 +328,15 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
   fprintf(outfp," max disp                = %15.10g\n",maxdisp);
   fprintf(outfp," rms disp                = %15.10g\n",rmsdisp);
 
-  // no transform new internal coords back to cartesian coordinates
-  coor->to_cartesian(xn);
+  // now transform new internal coords back to cartesian coordinates
+  Molecule foo_save = *(mol.pointer());
+  if (coor->to_cartesian(xn) < 0) {
+    // that failed, try steepest descent and get out of here
+    fprintf(stderr,"\n  trying cartesian steepest descent..."
+                   "cross your fingers\n");
+    for (int i=0; i < cart_grad.n(); i++)
+      (*mol.pointer())[i/3][i%3] = foo_save[i/3][i%3]-cart_grad[i];
+  }
 
   printf("\nnew molecular coordinates\n");
   mol->print();

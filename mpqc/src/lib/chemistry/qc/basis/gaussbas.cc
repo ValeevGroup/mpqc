@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/molecule.h>
 #include "gaussshell.h"

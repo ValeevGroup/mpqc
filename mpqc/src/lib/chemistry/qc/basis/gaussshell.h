@@ -2,6 +2,10 @@
 #ifndef _chemistry_qc_basis_gaussshell_h
 #define _chemistry_qc_basis_gaussshell_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #include <stdio.h>
 #include <util/state/state.h>
 #include <math/topology/point.h>

@@ -32,6 +32,7 @@
 #ifndef _chemistry_qc_mbptr12_vxbevalinfo_h
 #define _chemistry_qc_mbptr12_vxbevalinfo_h
 
+#include <util/misc/string.h>
 #include <util/ref/ref.h>
 #include <math/scmat/abstract.h>
 #include <util/group/memory.h>

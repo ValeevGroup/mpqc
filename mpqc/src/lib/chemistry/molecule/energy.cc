@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdexcept>
+#include <util/misc/string.h>
 
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>

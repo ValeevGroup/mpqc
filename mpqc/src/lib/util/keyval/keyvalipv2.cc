@@ -37,6 +37,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include <util/misc/string.h>
 #include <util/misc/formio.h>
 #include <util/keyval/ipv2.h>
 #include <util/keyval/keyval.h>

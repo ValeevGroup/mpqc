@@ -31,6 +31,7 @@
 
 #include <stdexcept>
 #include <sstream>
+#include <util/misc/string.h>
 
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>

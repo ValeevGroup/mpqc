@@ -30,7 +30,7 @@
 #endif
 
 #include <sstream>
-#include <string.h>
+#include <util/misc/string.h>
 
 #ifdef HAVE_CONFIG_H
 #include <scconfig.h>

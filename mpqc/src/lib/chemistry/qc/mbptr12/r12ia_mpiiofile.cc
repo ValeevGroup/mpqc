@@ -31,6 +31,7 @@
 
 #include <stdexcept>
 #include <stdlib.h>
+#include <util/misc/string.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 #include <chemistry/qc/mbptr12/r12ia_mpiiofile.h>

@@ -38,8 +38,12 @@ extern int MPI_Initialized(int *); // missing in mpi.h
 #include <util/misc/newstring.h>
 
 //#define MPI_SEND_ROUTINE MPI_Ssend // hangs
-//#define MPI_SEND_ROUTINE MPI_Send // hangs
-#define MPI_SEND_ROUTINE MPI_Bsend // works requires the attach and detach
+#define MPI_SEND_ROUTINE MPI_Send // hangs in old MPI implementations
+//#define MPI_SEND_ROUTINE MPI_Bsend // works requires the attach and detach
+#define MPI_SEND_ROUTINE_NAME "MPI_Send"
+
+// OP_COMMUTES is zero to work around a bug in MPI/Pro 1.5b5 and earlier
+#define OP_COMMUTES 1
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -51,11 +55,9 @@ print_error_and_abort(int me, int mpierror)
   int size;
   MPI_Error_string(mpierror, msg, &size);
   msg[size] = '\0';
-  cerr << me << ": " << msg << endl;
+  cout << me << ": " << msg << endl;
   cout.flush();
-  cerr.flush();
-  MPI_Abort(MPI_COMM_WORLD, mpierror);
-  abort();
+  //MPI_Abort(MPI_COMM_WORLD, mpierror);
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -103,7 +105,7 @@ MPIMessageGrp::MPIMessageGrp(const RefKeyVal& keyval):
 
   SCFormIO::init_mp(me());
   if (debug_) {
-      cerr << indent << "MPIMessageGrp: KeyVal CTOR: done" << endl;
+      cout << indent << "MPIMessageGrp: KeyVal CTOR: done" << endl;
     }
 }
 
@@ -113,7 +115,7 @@ MPIMessageGrp::init(int argc,char **argv)
   int me, nproc;
 
   if (debug_) {
-      cerr << "MPIMessageGrp::init: entered" << endl;
+      cout << "MPIMessageGrp::init: entered" << endl;
     }
 
   int flag;
@@ -123,8 +125,10 @@ MPIMessageGrp::init(int argc,char **argv)
           argc = 1;
           argv = new char*[argc+1];
           // reduce the internal buffer since a user buffer is used
-          argv[0] = "-mpiB4";
-          argv[1] = 0;
+          //argv[0] = "-mpiB4";
+          //argv[1] = 0;
+          argc = 0;
+          argv[0] = 0;
         }
       // This dot business is to work around problems with some MPI
       // implementations.
@@ -146,21 +150,22 @@ MPIMessageGrp::init(int argc,char **argv)
   MPI_Comm_rank(MPI_COMM_WORLD,&me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
   bufsize = 4000000;
-  buf = (void*) new char[bufsize];
-  MPI_Buffer_attach(buf,bufsize);
+  buf = 0;
+  //buf = (void*) new char[bufsize];
+  //MPI_Buffer_attach(buf,bufsize);
   initialize(me, nproc);
 
   //MPIL_Trace_on();
 
   if (debug_) {
-      cerr << me << ": MPIMessageGrp::init: done" << endl;
+      cout << me << ": MPIMessageGrp::init: done" << endl;
     }
 }
 
 MPIMessageGrp::~MPIMessageGrp()
 {
   //MPIL_Trace_off();
-  MPI_Buffer_detach(&buf, &bufsize);
+  //MPI_Buffer_detach(&buf, &bufsize);
   delete[] (char*) buf;
   MPI_Finalize();
 }
@@ -169,18 +174,19 @@ void
 MPIMessageGrp::raw_send(int target, void* data, int nbyte)
 {
   if (debug_) {
-      cerr << scprintf("Node %d sending %d bytes to %d with tag %d\n",
-                       me(), nbyte, target, 0)
+      cout << scprintf("%3d: " MPI_SEND_ROUTINE_NAME
+                       "(0x%08x, %5d, MPI_BYTE, %3d, 0, MPI_COMM_WORLD)",
+                       me(), data, nbyte, target)
            << endl;
     }
   int ret;
   if ((ret = MPI_SEND_ROUTINE(data,nbyte,MPI_BYTE,target,0,MPI_COMM_WORLD))
       != MPI_SUCCESS) {
-      cerr << me() << ": MPIMessageGrp::raw_send("
+      cout << me() << ": MPIMessageGrp::raw_send("
           << target << ",," << nbyte << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
-  if (debug_) cerr << scprintf("Node %d sent\n", me()) << endl;
+  if (debug_) cout << scprintf("%3d: sent\n", me()) << endl;
 }
 
 void
@@ -189,21 +195,22 @@ MPIMessageGrp::raw_recv(int sender, void* data, int nbyte)
   MPI_Status status;
   if (sender == -1) sender = MPI_ANY_SOURCE;
   if (debug_) {
-      cerr << scprintf("Node %d recving %d bytes from %d with tag %d\n",
-                       me(), nbyte, sender, 0)
+      cout << scprintf("%3d: MPI_Recv"
+                       "(0x%08x, %5d, MPI_BYTE, %3d, 0, MPI_COMM_WORLD,)",
+                       me(), data, nbyte, sender)
            << endl;
     }
   int ret;
   if ((ret = MPI_Recv(data,nbyte,MPI_BYTE,sender,0,MPI_COMM_WORLD,&status))
       != MPI_SUCCESS) {
-      cerr << me() << ": MPIMessageGrp::raw_recv("
+      cout << me() << ": MPIMessageGrp::raw_recv("
           << sender << ",," << nbyte << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
   rnode = status.MPI_SOURCE;
   rtag = status.MPI_TAG;
   rlen = nbyte;
-  if (debug_) cerr << scprintf("Node %d recvd %d bytes\n", me(), rlen) << endl;
+  if (debug_) cout << scprintf("%3d: recvd %d bytes\n", me(), rlen) << endl;
 }
 
 void
@@ -211,18 +218,19 @@ MPIMessageGrp::raw_sendt(int target, int type, void* data, int nbyte)
 {
   type = (type<<1) + 1;
   if (debug_) {
-      cerr << scprintf("Node %d sending %d bytes to %d with tag %d\n",
-                       me(), nbyte, target, type)
+      cout << scprintf("%3d: " MPI_SEND_ROUTINE_NAME
+                       "(0x%08x, %5d, MPI_BYTE, %3d, %5d, MPI_COMM_WORLD)",
+                       me(), data, nbyte, target, type)
            << endl;
     }
   int ret;
   if ((ret = MPI_SEND_ROUTINE(data,nbyte,MPI_BYTE,target,type,MPI_COMM_WORLD))
       != MPI_SUCCESS) {
-      cerr << me() << ": MPIMessageGrp::raw_sendt("
+      cout << me() << ": MPIMessageGrp::raw_sendt("
           << target << "," << type << ",," << nbyte << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
-  if (debug_) cerr << scprintf("Node %d sent\n", me()) << endl;
+  if (debug_) cout << scprintf("%3d: sent\n", me()) << endl;
 }
 
 void
@@ -231,22 +239,26 @@ MPIMessageGrp::raw_recvt(int type, void* data, int nbyte)
   MPI_Status status;
   if (type == -1) type = MPI_ANY_TAG;
   else type = (type<<1) + 1;
-  if (debug_ ) {
-      cerr << scprintf("Node %d recving %d bytes from %d with tag %d\n",
-                       me(), nbyte, MPI_ANY_SOURCE, type)
+  if (debug_) {
+      cout << scprintf("%3d: MPI_Recv(0x%08x, %5d, MPI_BYTE, "
+                       "MPI_ANY_SOURCE, %5d, MPI_COMM_WORLD,)",
+                       me(), data, nbyte, type)
            << endl;
     }
   int ret;
   if ((ret = MPI_Recv(data,nbyte,MPI_BYTE,MPI_ANY_SOURCE,
                       type,MPI_COMM_WORLD,&status)) != MPI_SUCCESS) {
-      cerr << me() << ": MPIMessageGrp::raw_recvt("
+      cout << me() << ": MPIMessageGrp::raw_recvt("
           << type << ",," << nbyte << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
   rnode = status.MPI_SOURCE;
   rtag = status.MPI_TAG;
   rlen = nbyte;
-  if (debug_) cerr << scprintf("Node %d recvd %d bytes\n", me(), rlen) << endl;
+  if (debug_) {
+      cout << scprintf("%3d: recvd %d bytes from %d with tag %d\n",
+                       me(), rlen, rnode, rtag) << endl;
+    }
 }
 
 int
@@ -258,9 +270,14 @@ MPIMessageGrp::probet(int type)
   if (type == -1) type = MPI_ANY_TAG;
   else type = (type<<1) + 1;
   int ret;
+  if (debug_) {
+      cout << scprintf("%3d: MPI_Iprobe(MPI_ANY_SOURCE, %5d, MPI_COMM_WORLD, "
+                       "&flag, &status)", me(), type)
+           << endl;
+    }
   if ((ret = MPI_Iprobe(MPI_ANY_SOURCE,type,MPI_COMM_WORLD,&flag,&status))
       != MPI_SUCCESS ) {
-      cerr << me() << ": MPIMessageGrp::probet("
+      cout << me() << ": MPIMessageGrp::probet("
           << type << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
@@ -299,8 +316,11 @@ void
 MPIMessageGrp::sync()
 {
   int ret;
+  if (debug_) {
+      cout << scprintf("%3d: MPI_Barrier(MPI_COMM_WORLD)", me()) << endl;
+    }
   if ((ret = MPI_Barrier(MPI_COMM_WORLD)) != MPI_SUCCESS) {
-      cerr << me() << ": MPIMessageGrp::sync(): mpi error:" << endl;
+      cout << me() << ": MPIMessageGrp::sync(): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
 }
@@ -319,7 +339,7 @@ MPIMessageGrp::reduce(type*d, int n, GrpReduce<type>&r, \
   name ## reduceobject = &r; \
  \
   MPI_Op op; \
-  MPI_Op_create(name ## reduce, 1, &op); \
+  MPI_Op_create(name ## reduce, OP_COMMUTES, &op); \
  \
   type *work; \
   if (!scratch) work = new type[n]; \
@@ -328,14 +348,30 @@ MPIMessageGrp::reduce(type*d, int n, GrpReduce<type>&r, \
   int ret; \
  \
   if (target == -1) { \
+      if (debug_) { \
+          cout << scprintf("%3d: MPI_Allreduce" \
+          "(0x%08x, 0x%08x, %5d, %3d, op, MPI_COMM_WORLD)", \
+          me(), d, work, n, mpitype) \
+               << endl; \
+        } \
       ret = MPI_Allreduce(d, work, n, mpitype, op, MPI_COMM_WORLD); \
+      if (debug_) \
+        cout << scprintf("%3d: done with Allreduce", me()) << endl; \
     } \
   else { \
+      if (debug_) { \
+          cout << scprintf("%3d: MPI_Reduce" \
+          "(0x%08x, 0x%08x, %5d, %3d, op, %3d, MPI_COMM_WORLD)", \
+          me(), d, work, n, mpitype, target) \
+               << endl; \
+        } \
       ret = MPI_Reduce(d, work, n, mpitype, op, target, MPI_COMM_WORLD); \
+      if (debug_) \
+        cout << scprintf("%3d: done with Reduce", me()) << endl; \
     } \
  \
   if (ret != MPI_SUCCESS) { \
-      cerr << me() << ": MPIMessageGrp::reduce(," \
+      cout << me() << ": MPIMessageGrp::reduce(," \
           << n << ",,," << target << "): mpi error:" << endl; \
       print_error_and_abort(me(), ret); \
     } \
@@ -374,18 +410,20 @@ MPIMessageGrp::raw_bcast(void* data, int nbyte, int from)
   if (n() == 1) return;
 
   if (debug_) {
-      cerr << scprintf("Node %d bcast %d bytes from %d", me(), nbyte, from)
+      cout << scprintf("%3d: MPI_Bcast("
+                       "0x%08x, %5d, MPI_BYTE, %3d, MPI_COMM_WORLD)",
+                       me(), data, nbyte, from)
            << endl;
     }
   int ret;
   if ((ret = MPI_Bcast(data, nbyte, MPI_BYTE, from, MPI_COMM_WORLD))
       != MPI_SUCCESS) {
-      cerr << me() << ": MPIMessageGrp::raw_bcast(,"
+      cout << me() << ": MPIMessageGrp::raw_bcast(,"
           << nbyte << "," << from << "): mpi error:" << endl;
       print_error_and_abort(me(), ret);
     }
   if (debug_) {
-      cerr << scprintf("Node %d done with bcast", me()) << endl;
+      cout << scprintf("%3d: done with bcast", me()) << endl;
     }
 }
 

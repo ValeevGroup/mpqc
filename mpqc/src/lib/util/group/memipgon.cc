@@ -85,7 +85,7 @@ IParagonMemoryGrp::recv(void* data, int nbytes, int node, int type)
 long
 IParagonMemoryGrp::postrecv(void *data, int nbytes, int type)
 {
-  fprintf(stderr, "IParagonMemoryGrp::postrecv: not implemented\n");
+  cerr << scprintf("IParagonMemoryGrp::postrecv: not implemented\n");
   sleep(1);
   abort();
   return 0;

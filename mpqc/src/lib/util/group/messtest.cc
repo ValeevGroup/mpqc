@@ -1,5 +1,4 @@
 
-#include <stdio.h>
 #include <iostream.h>
 #include <util/keyval/keyval.h>
 #include <util/class/class.h>
@@ -138,7 +137,7 @@ main(int argc, char**argv)
       debugger = keyval->describedclassvalue(":debug");
 
       if (grp.null()) {
-          fprintf(stderr,"Couldn't initialize MessageGrp\n");
+          cerr << scprintf("Couldn't initialize MessageGrp\n");
           abort();
         }
     }
@@ -185,7 +184,7 @@ main(int argc, char**argv)
   int testsum = 1;
   grp->sum(&testsum,1);
   if (testsum != grp->n()) {
-      fprintf(stderr,"WARNING: sum wrong\n");
+      cerr << scprintf("WARNING: sum wrong\n");
     }
 
   double testdsum = 1.0;

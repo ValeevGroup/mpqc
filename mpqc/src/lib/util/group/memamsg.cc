@@ -6,6 +6,7 @@
 #pragma implementation
 #endif
 
+#include <util/misc/formio.h>
 #include <util/group/pool.h>
 #include <util/group/memamsg.h>
 
@@ -122,7 +123,7 @@ void
 MemoryDataRequestQueue::push(MemoryDataRequest&r)
 {
   if (n_ == MaxDepth) {
-      fprintf(stderr, "MemoryDataRequestQueue: MaxDepth exceeded\n");
+      cerr << scprintf("MemoryDataRequestQueue: MaxDepth exceeded\n");
       abort();
     }
   q_[n_] = r;
@@ -133,7 +134,7 @@ void
 MemoryDataRequestQueue::pop(MemoryDataRequest&r)
 {
   if (n_ == 0) {
-      fprintf(stderr, "MemoryDataRequestQueue: nothing to pop\n");
+      cerr << scprintf("MemoryDataRequestQueue: nothing to pop\n");
       abort();
     }
   n_--;
@@ -425,23 +426,23 @@ ActiveMsgMemoryGrp::release_write(void *data, int offset, int size)
 }
 
 void
-ActiveMsgMemoryGrp::print(FILE *fp)
+ActiveMsgMemoryGrp::print(ostream &o)
 {
-  MemoryGrp::print(fp);
+  MemoryGrp::print(o);
 }
 
 void
 ActiveMsgMemoryGrp::send_lock_request(MemoryLockRequest::Request req,
                                       int offset, int size)
 {
-  fprintf(stderr, "%d: %s: cannot use memory locks\n", me(), class_name());
+  cerr << scprintf("%d: %s: cannot use memory locks\n", me(), class_name());
   abort();
 }
 
 void
 ActiveMsgMemoryGrp::wait_for_lock()
 {
-  fprintf(stderr, "%d: %s: cannot use memory locks\n", me(), class_name());
+  cerr << scprintf("%d: %s: cannot use memory locks\n", me(), class_name());
   abort();
 }
 

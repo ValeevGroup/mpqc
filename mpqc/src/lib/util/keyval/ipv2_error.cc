@@ -1,8 +1,9 @@
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/ipv2.h>
 
 /* Returns some text for an errcod. */
@@ -33,22 +34,18 @@ IPV2::error_message(IPV2::Status errcod)
 }
 
 void
-IPV2::error(const char *msg,...)
+IPV2::error(const char *msg)
 {
-  va_list args;
-  va_start(args,msg);
-  fprintf(stderr,"IPV2::error: ");
-  vfprintf(stderr,msg,args);
-  fprintf(stderr,"\n");
-  va_end(args);
+  cerr << "IPV2::error: ";
+  cerr << msg;
+  cerr << endl;
   showpos();
   exit(1);
 }
 
 void
-IPV2::warn(const char *msg,...)
+IPV2::warn(const char *msg)
 {
-  va_list args;
   char *newmsg;
   const char *poskey;
   
@@ -68,19 +65,15 @@ IPV2::warn(const char *msg,...)
       newmsg[poskey-msg] = '\0';
       strcat(newmsg,lastkeyword);
       strcat(newmsg,&poskey[2]);
-      va_start(args,msg);
-      fprintf(stderr,"IPV2::warn: ");
-      vfprintf(stderr,newmsg,args);
-      fprintf(stderr,"\n");
-      va_end(args);
+      cerr << "IPV2::warn: ";
+      cerr << newmsg;
+      cerr << endl;
       if (poskey) free(newmsg);
     }
   else {
-      va_start(args,msg);
-      fprintf(stderr,"IPV2::warn: ");
-      vfprintf(stderr,msg,args);
-      fprintf(stderr,"\n");
-      va_end(args);
+      cerr << "IPV2::warn: ";
+      cerr << msg;
+      cerr << endl;
     }
 }
 

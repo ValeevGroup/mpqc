@@ -6,10 +6,10 @@
 #ifndef _util_group_memshm_h
 #define _util_group_memshm_h
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <iostream.h>
 
 #include <util/group/globcnt.h>
 #include <util/group/memmsg.h>
@@ -51,7 +51,7 @@ class ShmMemoryGrp: public MsgMemoryGrp {
 
     virtual void sum_reduction(double *data, int doffset, int dsize);
 
-    void print(FILE *fp = stdout);
+    void print(ostream &o = cout);
 };
 
 #endif

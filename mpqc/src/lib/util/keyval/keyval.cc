@@ -3,12 +3,13 @@
 #endif
 
 extern "C" {
-#include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
 
 }
 #include <iostream.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 
 ////////////////////////////////////////////////////////////////////////
@@ -324,7 +325,7 @@ RefDescribedClass KeyVal::describedclassvalue(const char* key,int n1,int n2)
   if(narg!=0) { \
     int vals[80]; \
     if(narg > 80) { \
-        fprintf(stderr,"keyval.cc: getnewvakey: too many varargs...sorry\n"); \
+        cerr << scprintf("keyval.cc: getnewvakey: too many varargs...sorry\n"); \
         exit(1); \
       } \
     va_start(args,narg); \

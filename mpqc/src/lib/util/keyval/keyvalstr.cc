@@ -1,10 +1,11 @@
 
 extern "C" {
-#include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
 }
 #include <iostream.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <util/keyval/keyvalImplMap.h>
 #include <util/class/proxy.h>
@@ -86,11 +87,11 @@ StringKeyVal::key_value(const char* key)
           KeyValError original_error = error();
           RefDescribedClass newdc(cd->create(pkv));
           if (newdc.null()) {
-              fprintf(stderr,"StringKeyVal::value: create failed for:\n");
-              fprintf(stderr," keyword = \"%s\" class = \"%s\"\n",
+              cerr << scprintf("StringKeyVal::value: create failed for:\n");
+              cerr << scprintf(" keyword = \"%s\" class = \"%s\"\n",
                       tkw,classn);
-              fprintf(stderr," either the KeyVal create operator doesn't\n");
-              fprintf(stderr," exist or memory was exhausted\n");
+              cerr << scprintf(" either the KeyVal create operator doesn't\n");
+              cerr << scprintf(" exist or memory was exhausted\n");
             }
           DescribedClassProxy *proxy
               = DescribedClassProxy::castdown(newdc.pointer());
@@ -98,7 +99,6 @@ StringKeyVal::key_value(const char* key)
               newdc = proxy->object();
             }
           seterror(original_error);
-          //pkv.dump(stderr);
           KeyValValueRefDescribedClass* keyvalvalue =
             new KeyValValueRefDescribedClass(newdc);
           (*_map)[truekey] = keyvalvalue;
@@ -113,13 +113,13 @@ StringKeyVal::key_value(const char* key)
 }
 
 void
-StringKeyVal::errortrace(ostream&fp,int n)
+StringKeyVal::errortrace(ostream&o,int n)
 {
-  offset(fp,n); fp << "StringKeyVal: error: \"" << errormsg() << "\"" << endl;
+  offset(o,n); o << "StringKeyVal: error: \"" << errormsg() << "\"" << endl;
 }
 
 void
-StringKeyVal::dump(ostream&fp,int n)
+StringKeyVal::dump(ostream&o,int n)
 {
-  offset(fp,n); fp << "StringKeyVal: error: \"" << errormsg() << "\"" << endl;
+  offset(o,n); o << "StringKeyVal: error: \"" << errormsg() << "\"" << endl;
 }

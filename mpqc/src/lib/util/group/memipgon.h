@@ -6,7 +6,6 @@
 #ifndef _util_group_memipgon_h
 #define _util_group_memipgon_h
 
-#include <stdio.h>
 #include <util/group/memmid.h>
 
 // This is a memory group that uses the paragon NX library,

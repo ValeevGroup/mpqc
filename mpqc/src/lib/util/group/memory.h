@@ -6,7 +6,8 @@
 #ifndef _util_group_memory_h
 #define _util_group_memory_h
 
-#include <stdio.h>
+#include <iostream.h>
+
 #include <util/class/class.h>
 #include <util/group/rnglock.h>
 
@@ -91,7 +92,7 @@ class MemoryGrp: public DescribedClass {
     virtual void sync() = 0;
 
     //. Prints out information about the object.
-    virtual void print(FILE *fp = stdout);
+    virtual void print(ostream &o = cout);
 
     //. The initial message group is the group that starts up a process.
     //. This returns null if this process is first and then it is up to the

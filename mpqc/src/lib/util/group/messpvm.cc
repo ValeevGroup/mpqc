@@ -1,9 +1,8 @@
 
-#include <stdio.h>
 #include <pvm3.h>
-extern "C" {
-    int pvm_catchout(FILE*fp);
-}
+// extern "C" {
+//     int pvm_catchout(FILE*fp);
+// }
 #include <util/keyval/keyval.h>
 #include <util/group/messpvm.h>
 
@@ -34,7 +33,7 @@ PVMMessageGrp::PVMMessageGrp(const RefKeyVal&keyval):
 
   char* task = keyval->pcharvalue("executable");
   if (keyval->error() != KeyVal::OK) {
-      fprintf(stderr,"PVMMessageGrp(KeyVal): \"executable\" not given\n");
+      cerr << scprintf("PVMMessageGrp(KeyVal): \"executable\" not given\n");
       abort();
     }
 
@@ -64,7 +63,8 @@ PVMMessageGrp::PVMMessageGrp(const RefKeyVal&keyval):
   int n_to_spawn = (master_is_node?nprocs - 1: nprocs);
   char **argv = 0;
   tids = new int[nprocs];
-  pvm_catchout(stdout);
+  // not sure about this under c++
+  //pvm_catchout(stdout);
   if (master_is_node) {
       tids[0] = pvm_mytid();
     }
@@ -84,10 +84,10 @@ PVMMessageGrp::PVMMessageGrp(const RefKeyVal&keyval):
     }
 
   if (numt < n_to_spawn) {
-      fprintf(stderr,"PVMMessageGrp(KeyVal): failed to spawn all processes\n");
-      fprintf(stderr," numt = %d, n_to_spawn = %d\n", numt, n_to_spawn);
+      cerr << scprintf("PVMMessageGrp(KeyVal): failed to spawn all processes\n");
+      cerr << scprintf(" numt = %d, n_to_spawn = %d\n", numt, n_to_spawn);
       for (i=0; i<nprocs; i++) {
-          fprintf(stderr, "tids[%d] = %d\n", i, tids[i]);
+          cerr << scprintf("tids[%d] = %d\n", i, tids[i]);
         }
       abort();
     }

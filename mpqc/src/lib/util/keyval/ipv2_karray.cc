@@ -21,13 +21,13 @@ IPV2::ip_cwk_karray_add_v(int n,int*v)
   char indices[110],index[10];
 
   if (n>10) {
-    warn("ip_cwk_karray_add_v: too many indices: %d",n);
+    warn("ip_cwk_karray_add_v: too many indices");
     return;
     }
   indices[0] = '\0';
   for (i=0; i<n; i++) {
     if (v[i] > 999999999 || v[i] < 0) {
-      warn("ip_cwk_karray_add_v: an index is too large or small: %d",v[i]);
+      warn("ip_cwk_karray_add_v: an index is too large or small");
       return;
       }
     sprintf(index,"%d",v[i]);
@@ -83,7 +83,7 @@ IPV2::ip_karray_descend_v(ip_keyword_tree_t*kt,int n,int*v)
   for (i=0; i<n; i++) {
     if (!r) return r;
     if (v[i] > 999999999 || v[i] < 0) {
-      warn("ip_karray_descend_v: an index is too large or small: %d",v[i]);
+      warn("ip_karray_descend_v: an index is too large or small");
       return NULL;
       }
     sprintf(index,"%d",v[i]);

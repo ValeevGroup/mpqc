@@ -145,7 +145,7 @@ ShmMemoryGrp::set_localsize(int localsize)
   msg_->raw_bcast((void*)&rangelock_, sizeof(void*));
 
 #ifdef DEBUG
-  fprintf(stderr,"%d: memory = 0x%x shmid = %d\n",
+  cerr << scprintf("%d: memory = 0x%x shmid = %d\n",
           me(), memory_, shmid_);
 #endif // DEBUG
 
@@ -153,12 +153,12 @@ ShmMemoryGrp::set_localsize(int localsize)
       // some versions of shmat return -1 for errors, bit 64 bit
       // compilers with 32 bit int's will complain.
       if ((memory_ = shmat(shmid_,(SHMTYPE)memory_,0)) == 0) {
-          fprintf(stderr,"problem on node %d\n", me());
+          cerr << scprintf("problem on node %d\n", me());
           perror("ShmMemoryGrp::shmat");
           abort();
         }
 #ifdef DEBUG
-      fprintf(stderr, "%d: attached at 0x%x\n", me(), memory_);
+      cerr << scprintf("%d: attached at 0x%x\n", me(), memory_);
 #endif // DEBUG
     }
 
@@ -198,7 +198,7 @@ void *
 ShmMemoryGrp::obtain_readwrite(int offset, int size)
 {
   if (offset + size > totalsize()) {
-      fprintf(stderr, "ShmMemoryGrp::obtain_readwrite: arg out of range\n");
+      cerr << scprintf("ShmMemoryGrp::obtain_readwrite: arg out of range\n");
       abort();
     }
 
@@ -247,7 +247,7 @@ void *
 ShmMemoryGrp::obtain_readonly(int offset, int size)
 {
   if (offset + size > totalsize()) {
-      fprintf(stderr, "ShmMemoryGrp::obtain_readonly: arg out of range\n");
+      cerr << scprintf("ShmMemoryGrp::obtain_readonly: arg out of range\n");
       abort();
     }
 
@@ -381,9 +381,9 @@ ShmMemoryGrp::clear_release_count()
 }
 
 void
-ShmMemoryGrp::print(FILE *fp)
+ShmMemoryGrp::print(ostream &o)
 {
-  MemoryGrp::print(fp);
+  MemoryGrp::print(o);
   if (me() == 0) {
       if (use_locks_) {
           obtain_lock();
@@ -400,7 +400,7 @@ ShmMemoryGrp::sum_reduction(double *data, int doffset, int dlength)
   int length = dlength * sizeof(double);
 
   if (offset + length > totalsize()) {
-      fprintf(stderr, "MemoryGrp::sum_reduction: arg out of range\n");
+      cerr << scprintf("MemoryGrp::sum_reduction: arg out of range\n");
       abort();
     }
 

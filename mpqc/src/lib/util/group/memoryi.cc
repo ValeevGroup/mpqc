@@ -3,6 +3,7 @@
 #include <config.h>
 #endif
 
+#include <util/misc/formio.h>
 #include <util/group/memory.h>
 #include <util/group/memory.cc>
 
@@ -141,7 +142,7 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
 
   RefMessageGrp msg = MessageGrp::get_default_messagegrp();
   if (msg.null()) {
-      fprintf(stderr, "MemoryGrp::create_memorygrp: requires default msg\n");
+      cerr << scprintf("MemoryGrp::create_memorygrp: requires default msg\n");
       abort();
     }
 #ifdef HAVE_NX
@@ -172,13 +173,13 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
       grp = new ProcMemoryGrp();
     }
   else {
-      fprintf(stderr, "MemoryGrp::create_memorygrp: cannot create "
+      cerr << scprintf("MemoryGrp::create_memorygrp: cannot create "
               "default for \"%s\"\n.", msg->class_name());
       abort();
     }
 
   if (!grp) {
-      fprintf(stderr, "WARNING: MemoryGrp::initial_memorygrp(): failed\n");
+      cerr << scprintf("WARNING: MemoryGrp::initial_memorygrp(): failed\n");
     }
 
   return grp;
@@ -195,7 +196,7 @@ MemoryGrp::release_read_(int offset, int size)
 {
   if (offset < offsets_[me_]
       || offset + size > offsets_[me_+1]) {
-      fprintf(stderr,"MemoryGrp::release_read_: bad args\n");
+      cerr << scprintf("MemoryGrp::release_read_: bad args\n");
       abort();
     }
 
@@ -207,7 +208,7 @@ MemoryGrp::release_write_(int offset, int size)
 {
   if (offset < offsets_[me_]
       || offset + size > offsets_[me_+1]) {
-      fprintf(stderr,"MemoryGrp::release_write_: bad args\n");
+      cerr << scprintf("MemoryGrp::release_write_: bad args\n");
       abort();
     }
 
@@ -220,7 +221,7 @@ MemoryGrp::obtain_read_(int offset, int size)
 {
   if (offset < offsets_[me_]
       || offset + size > offsets_[me_+1]) {
-      fprintf(stderr,"MemoryGrp::obtain_read_: bad args\n");
+      cerr << scprintf("MemoryGrp::obtain_read_: bad args\n");
       abort();
     }
 
@@ -235,7 +236,7 @@ MemoryGrp::obtain_write_(int offset, int size)
 {
   if (offset < offsets_[me_]
       || offset + size > offsets_[me_+1]) {
-      fprintf(stderr,"MemoryGrp::obtain_write_: bad args\n");
+      cerr << scprintf("MemoryGrp::obtain_write_: bad args\n");
       abort();
     }
 
@@ -255,13 +256,13 @@ MemoryGrp::deactivate()
 }
 
 void
-MemoryGrp::print(FILE *fp)
+MemoryGrp::print(ostream&o)
 {
-  fprintf(fp, "MemoryGrp (node %d):\n", me());
-  locks_.print(fp);
-  fprintf(fp, "%d: n = %d\n", me(), n());
+  o << scprintf("MemoryGrp (node %d):\n", me());
+  locks_.print(o);
+  o << scprintf("%d: n = %d\n", me(), n());
   for (int i=0; i<=n_; i++) {
-      fprintf(fp, "%d: offset[%d] = %5d\n", me(), i, offsets_[i]);
+      o << scprintf("%d: offset[%d] = %5d\n", me(), i, offsets_[i]);
     }
 }
 
@@ -278,7 +279,7 @@ MemoryGrp::sum_reduction(double *data, int doffset, int dlength)
   int length = dlength * sizeof(double);
 
   if (offset + length > totalsize()) {
-      fprintf(stderr, "MemoryGrp::sum_reduction: arg out of range\n");
+      cerr << scprintf("MemoryGrp::sum_reduction: arg out of range\n");
       abort();
     }
 

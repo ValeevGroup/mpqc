@@ -51,7 +51,7 @@ Double::Double(size_t s):
   size(s)
 {
   if (!pool_) {
-      fprintf(stderr,"Double::Double: Pool not initialized\n");
+      cerr << scprintf("Double::Double: Pool not initialized\n");
       abort();
     }
   d = pool_->allocate_double(size);
@@ -81,7 +81,7 @@ Double::zap()
   int* x = (int*)d;
   for (i=0; i<size*2; i++) {
       if (x[i] == PoolData::magic) {
-          fprintf(stderr,"Double::zap: tried to zap a magic number\n");
+          cerr << scprintf("Double::zap: tried to zap a magic number\n");
           abort();
         }
     }
@@ -92,7 +92,7 @@ void
 Double::pool(Pool*p)
 {
   if (pool_ && list) {
-      fprintf(stderr,"Double::pool: cannot reinitialize pool\n");
+      cerr << scprintf("Double::pool: cannot reinitialize pool\n");
       abort();
     }
   pool_ = p;

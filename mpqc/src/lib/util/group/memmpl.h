@@ -6,7 +6,6 @@
 #ifndef _util_group_memmpl_h
 #define _util_group_memmpl_h
 
-#include <stdio.h>
 #include <util/group/memmid.h>
 
 class MPLMemoryGrp: public MIDMemoryGrp {

@@ -23,7 +23,7 @@ mpl_memory_handler(int*msgid_arg)
 {
   long lmid = *msgid_arg;
   if (!global_mpl_mem) {
-      fprintf(stderr,"WARNING: Tried to call mpl_memory_handler"
+      cerr << scprintf("WARNING: Tried to call mpl_memory_handler"
               " without global_mpl_mem\n");
     }
   else {
@@ -120,7 +120,7 @@ MPLMemoryGrp::wait(long mid1, long mid2)
   size_t count;
   if (debug_) printf("MPLMemoryGrp: waiting on %d\n", imid);
   if (mpc_wait(&imid,&count)) {
-      fprintf(stderr, "MPLMemoryGrp: mpc_wait failed\n");
+      cerr << scprintf("MPLMemoryGrp: mpc_wait failed\n");
       sleep(1);
       abort();
     }
@@ -135,7 +135,7 @@ MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg):
 {
   if (debug_) printf("MPLMemoryGrp entered\n");
   if (global_mpl_mem) {
-      fprintf(stderr, "MPLMemoryGrp: only one allowed at a time\n");
+      cerr << scprintf("MPLMemoryGrp: only one allowed at a time\n");
       sleep(1);
       abort();
     }
@@ -155,7 +155,7 @@ MPLMemoryGrp::MPLMemoryGrp(const RefKeyVal& keyval):
 {
   if (debug_) printf("MPLMemoryGrp KeyVal entered\n");
   if (global_mpl_mem) {
-      fprintf(stderr, "MPLMemoryGrp: only one allowed at a time\n");
+      cerr << scprintf("MPLMemoryGrp: only one allowed at a time\n");
       sleep(1);
       abort();
     }

@@ -6,7 +6,8 @@
 #ifndef _util_group_memamsg_h
 #define _util_group_memamsg_h
 
-#include <stdio.h>
+#include <iostream.h>
+
 #include <util/group/memmsg.h>
 
 class MemoryLockRequest {
@@ -102,7 +103,7 @@ class ActiveMsgMemoryGrp : public MsgMemoryGrp {
 
     void sum_reduction(double *data, int doffset, int dsize);
 
-    void print(FILE *fp = stdout);
+    void print(ostream &o = cout);
 };
 
 #endif

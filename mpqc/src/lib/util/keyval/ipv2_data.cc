@@ -75,7 +75,7 @@ IPV2::exist(const char *keyword,int n,...)
   else {
     v = (int *) malloc(sizeof(int)*n);
     if (!v) {
-      warn("IPV2::exist: problem mallocing %d integers",n);
+      warn("IPV2::exist: problem malloc");
       return 0;
       }
     va_start(args, n);

@@ -2,7 +2,6 @@
 #define TEST 1
 #define VERBOSE 0
 
-#include <stdio.h>
 #include <math.h>
 #include <util/group/rnglock.h>
 

@@ -6,7 +6,6 @@
 #ifndef _util_group_memproc_h
 #define _util_group_memproc_h
 
-#include <stdio.h>
 #include <sys/types.h>
 
 #include <util/group/memmsg.h>

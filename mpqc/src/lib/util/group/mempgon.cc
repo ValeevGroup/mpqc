@@ -87,7 +87,7 @@ paragon_memory_handler(long ptype, long pcount, long pnode, long pptype)
       break;
 
   default:
-      fprintf(stderr, "paragon_memory_handler: bad request id\n");
+      cerr << scprintf("paragon_memory_handler: bad request id\n");
       abort();
     }
 }
@@ -111,7 +111,7 @@ ParagonMemoryGrp::ParagonMemoryGrp(const RefMessageGrp& msg):
   ActiveMsgMemoryGrp(msg)
 {
   if (global_pgon_mem) {
-      fprintf(stderr, "ParagonMemoryGrp: only one allowed at a time\n");
+      cerr << scprintf("ParagonMemoryGrp: only one allowed at a time\n");
       abort();
     }
   data_request_type_ = 13;
@@ -125,7 +125,7 @@ ParagonMemoryGrp::ParagonMemoryGrp(const RefKeyVal& keyval):
   ActiveMsgMemoryGrp(keyval)
 {
   if (global_pgon_mem) {
-      fprintf(stderr, "ParagonMemoryGrp: only one allowed at a time\n");
+      cerr << scprintf("ParagonMemoryGrp: only one allowed at a time\n");
       abort();
     }
   data_request_type_ = 13;

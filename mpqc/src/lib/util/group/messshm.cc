@@ -1,5 +1,4 @@
 
-#include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -7,6 +6,7 @@
 #include <sys/shm.h>
 
 #include <util/misc/bug.h>
+#include <util/misc/formio.h>
 #include <util/group/messshm.h>
 
 //#define DEBUG
@@ -60,7 +60,7 @@ NEXT_MESSAGE(msgbuf_t *m)
       printf("NEXT_MESSAGE: m->size = %d (real %d)\n",
              m->size,sizeof(msgbuf_t) + m->size + m->size%8);
       //debug_start("m->size < 0");
-      fprintf(stderr,"messshm.cc: m->size < 0\n");
+      cerr << scprintf("messshm.cc: m->size < 0\n");
       abort();
     }
   r = ((msgbuf_t*)(((char*)m) + ROUNDUPTOALIGN(sizeof(msgbuf_t) + m->size)));
@@ -374,7 +374,7 @@ ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
     }
 
   if (bytes < message->size) {
-      fprintf(stderr,"messshm.cc: recv buffer too small\n");
+      cerr << scprintf("messshm.cc: recv buffer too small\n");
       abort();
     }
   if (bytes < message->size) size = bytes;
@@ -424,7 +424,7 @@ ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
 
   if (dest>=n()) {
       //debug_start("bad destination");
-      fprintf(stderr,"ShmMessageGrp::basic_send: bad destination\n");
+      cerr << scprintf("ShmMessageGrp::basic_send: bad destination\n");
       abort();
     }
 

@@ -5,7 +5,6 @@
  * tree in the current working keyword list and if it is not found
  * continue looking under successive members of the list. */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <util/keyval/ipv2.h>

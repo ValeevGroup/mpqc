@@ -164,8 +164,8 @@ class IPV2
   void append_from_input(const char*,ostream&);
   void done();
   const char* error_message(IPV2::Status);
-  void error(const char*,...);
-  void warn(const char*,...);
+  void error(const char*);
+  void warn(const char*);
   void cwk_root();
   void cwk_clear();
   void cwk_add(const char*);

@@ -6,7 +6,7 @@
 #ifndef _util_group_rnglock_h
 #define _util_group_rnglock_h
 
-#include <stdio.h>
+#include <iostream.h>
 
 class Pool;
 
@@ -47,7 +47,7 @@ class RangeLock {
     int checkgr(int start, int fence, int value);
 
     void check();
-    void print(FILE *fp = stdout);
+    void print(ostream &o = cout);
 
     int lockvalue(int i);
 };

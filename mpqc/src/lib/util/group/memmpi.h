@@ -6,7 +6,6 @@
 #ifndef _util_group_memmpi_h
 #define _util_group_memmpi_h
 
-#include <stdio.h>
 #include <util/group/memmid.h>
 #include <mpi.h>
 

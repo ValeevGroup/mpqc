@@ -1,5 +1,4 @@
 
-#include <stdio.h>
 extern "C" {
 #include <nx.h>
 }

@@ -7,6 +7,8 @@
 #endif
 
 #include <unistd.h>
+
+#include <util/misc/formio.h>
 #include <util/group/memmid.h>
 
 ///////////////////////////////////////////////////////////////////////
@@ -103,7 +105,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
       if (msgid_arg) activate();
       break;
   default:
-      fprintf(stderr, "%d: mid_memory_handler: bad request id\n", me_);
+      cerr << scprintf("%d: mid_memory_handler: bad request id\n", me_);
       sleep(1);
       abort();
     }
@@ -196,7 +198,7 @@ MIDMemoryGrp::activate()
       if (debug_) printf("%d: activated memory request handler mid = %d\n",
                          me_, data_request_mid_);
       if (data_request_mid_ == -1) {
-          fprintf(stderr,"%d: MIDMemoryGrp::activate(): bad mid\n");
+          cerr << scprintf("%d: MIDMemoryGrp::activate(): bad mid\n");
           abort();
         }
       active_ = 1;

@@ -3,45 +3,45 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
+#include <util/misc/formio.h>
 #include <util/group/pool.h>
 
 void
 PoolData::check(void* lower_bound, void* upper_bound)
 {
   if ((void*)this < lower_bound || (void*)this >= upper_bound) {
-      fprintf(stderr,"PoolData::check: this out of bounds\n");
+      cerr << scprintf("PoolData::check: this out of bounds\n");
       abort();
     }
   if (next_) {
       if ((void*)next_ < lower_bound || (void*)next_ >= upper_bound) {
-          fprintf(stderr,"PoolData::check: next_ out of bounds\n");
+          cerr << scprintf("PoolData::check: next_ out of bounds\n");
           abort();
         }
       if (next_->prev_ != this) {
-          fprintf(stderr,"PoolData::check: next pd doesn't point back\n");
+          cerr << scprintf("PoolData::check: next pd doesn't point back\n");
           abort();
         }
       if ((char*)next_ != (char*)this + size_ + PoolData_aligned_size) {
-          fprintf(stderr,"PoolData::check: next_ not consistent with size\n");
+          cerr << scprintf("PoolData::check: next_ not consistent with size\n");
           abort();
         }
       if (free_ && next_->free_) {
-          fprintf(stderr,"PoolData::check: free and next is free\n");
+          cerr << scprintf("PoolData::check: free and next is free\n");
           abort();
         }
     }
   if (prev_) {
       if ((void*)prev_ < lower_bound || (void*)prev_ >= upper_bound) {
-          fprintf(stderr,"PoolData::check: prev_ out of bounds\n");
+          cerr << scprintf("PoolData::check: prev_ out of bounds\n");
           abort();
         }
       if (prev_->next_ != this) {
-          fprintf(stderr,"PoolData::check: prev pd doesn't point back\n");
+          cerr << scprintf("PoolData::check: prev pd doesn't point back\n");
           abort();
         }
       if (free_ && prev_->free_) {
-          fprintf(stderr,"PoolData::check: free and prev is free\n");
+          cerr << scprintf("PoolData::check: free and prev is free\n");
           abort();
         }
     }
@@ -50,22 +50,22 @@ PoolData::check(void* lower_bound, void* upper_bound)
       PoolData* p = f.prev_free_;
       if (n) {
           if ((void*)n < lower_bound || (void*)n >= upper_bound) {
-              fprintf(stderr,"PoolData::check: next free out of bounds\n");
+              cerr << scprintf("PoolData::check: next free out of bounds\n");
               abort();
             }
           if (n->f.prev_free_ != this) {
-              fprintf(stderr,
+              cerr << scprintf(
                       "PoolData::check: next free pd doesn't point back\n");
               abort();
             }
         }
       if (p) {
           if ((void*)p < lower_bound || (void*)p >= upper_bound) {
-              fprintf(stderr,"PoolData::check: prev free out of bounds\n");
+              cerr << scprintf("PoolData::check: prev free out of bounds\n");
               abort();
             }
           if (p->f.next_free_ != this) {
-              fprintf(stderr,
+              cerr << scprintf(
                       "PoolData::check: prev free pd doesn't point back\n");
               abort();
             }
@@ -81,7 +81,7 @@ Pool::Pool(size_t size):
   firstdatum_ = (PoolData*)align_pool_data((void*)((char*)this+sizeof(Pool)));
 
   if ((char*)this + size <= (char*) firstdatum_) {
-      fprintf(stderr,"Pool::Pool: not given enough space\n");
+      cerr << scprintf("Pool::Pool: not given enough space\n");
       abort();
     }
   
@@ -200,7 +200,7 @@ Pool::release(void* v)
 }
 
 static void
-print_pooldata(FILE*fp,PoolData*d,int free)
+print_pooldata(ostream&o,PoolData*d,int free)
 {
   PoolData *next,*prev;
   if (free) {
@@ -212,25 +212,25 @@ print_pooldata(FILE*fp,PoolData*d,int free)
       prev = d->prev();
     }
 
-  fprintf(fp,"    PoolData: size=%d", d->size_);
-  if (d->free_) fprintf(fp,", free");
-  else fprintf(fp,", allocated");
-  if (!prev) fprintf(fp,", first");
-  if (!next) fprintf(fp,", last");
-  fprintf(fp,"\n");
-  if (next) print_pooldata(fp,next,free);
+  o << scprintf("    PoolData: size=%d", d->size_);
+  if (d->free_) o << scprintf(", free");
+  else o << scprintf(", allocated");
+  if (!prev) o << scprintf(", first");
+  if (!next) o << scprintf(", last");
+  o << endl;
+  if (next) print_pooldata(o,next,free);
 }
 
 void
-Pool::print(FILE*fp)
+Pool::print(ostream&o)
 {
-  fprintf(fp,"Memory Pool:\n");
-  fprintf(fp,"  data chain:\n");
-  print_pooldata(fp,firstdatum_,0);
+  o << scprintf("Memory Pool:\n");
+  o << scprintf("  data chain:\n");
+  print_pooldata(o,firstdatum_,0);
   for (int i=0; i<freelist_size; i++) {
       if (freelist_[i]) {
-          fprintf(fp,"  freelist[%d]:\n",i);
-          print_pooldata(fp,freelist_[i],1);
+          o << scprintf("  freelist[%d]:\n",i);
+          print_pooldata(o,freelist_[i],1);
         }
     }
 }
@@ -258,9 +258,9 @@ Pool::check()
     }
   
   if (size != size_) {
-      fprintf(stderr,"Pool::check(): inconsistent sizes\n");
-      fprintf(stderr,"  computed: %d\n",size);
-      fprintf(stderr,"  actual:   %d\n",size_);
+      cerr << scprintf("Pool::check(): inconsistent sizes\n");
+      cerr << scprintf("  computed: %d\n",size);
+      cerr << scprintf("  actual:   %d\n",size_);
       abort();
     }
 
@@ -275,7 +275,7 @@ Pool::check()
     }
   for (j=firstdatum_; j; j = j->next()) {
       if (j->free_ && j->flags_) {
-          fprintf(stderr, "Pool::check: free data not in freelist\n");
+          cerr << scprintf("Pool::check: free data not in freelist\n");
           abort();
         }
     }

@@ -1,6 +1,7 @@
 
-#include <stdio.h>
 #include <sys/types.h>
+
+#include <util/misc/formio.h>
 #include <util/group/picl.h>
 #include <util/group/message.h>
 
@@ -111,7 +112,7 @@ message0(char*message)
 void
 load0(char* file, int node)
 {
-  fprintf(stderr,"load0 called but this is not a PICL host\n");
+  cerr << scprintf("load0 called but this is not a PICL host\n");
   abort();
 }
 
@@ -182,8 +183,8 @@ void
 setarc0(int*nprocs,int*,int*,int*)
 {
   if (*nprocs != global_messagegrp->n()) {
-      fprintf(stderr,"setarc0: ignored attempt to change nprocs:\n");
-      fprintf(stderr," nprocs = %d, attempted to set to %d\n",
+      cerr << scprintf("setarc0: ignored attempt to change nprocs:\n");
+      cerr << scprintf(" nprocs = %d, attempted to set to %d\n",
               global_messagegrp->n(), *nprocs);
     }
 }
@@ -265,7 +266,7 @@ gcomb0(void*buf, int items, int datatype, int msgtype, int root,
       }
       break;
   default:
-      fprintf(stderr,"gcomb0: bad data type\n");
+      cerr << scprintf("gcomb0: bad data type\n");
       abort();
     }
       
@@ -292,7 +293,7 @@ gor0(void*buf, int items, int datatype, int msgtype, int root)
         global_messagegrp->reduce((long*)buf, items, r, (long*)0, root);}
       break;
   default:
-      fprintf(stderr,"gor0: bad data type\n");
+      cerr << scprintf("gor0: bad data type\n");
       abort();
     }
 }
@@ -318,7 +319,7 @@ gxor0(void*buf, int items, int datatype, int msgtype, int root)
         global_messagegrp->reduce((long*)buf, items, r, (long*)0, root);}
       break;
   default:
-      fprintf(stderr,"gxor0: bad data type\n");
+      cerr << scprintf("gxor0: bad data type\n");
       abort();
     }
 }
@@ -344,7 +345,7 @@ gand0(void*buf, int items, int datatype, int msgtype, int root)
         global_messagegrp->reduce((long*)buf, items, r, (long*)0, root);}
       break;
   default:
-      fprintf(stderr,"gand0: bad data type\n");
+      cerr << scprintf("gand0: bad data type\n");
       abort();
     }
 }
@@ -378,7 +379,7 @@ gmax0(void*buf, int items, int datatype, int msgtype, int root)
         global_messagegrp->reduce((double*)buf, items, r, (double*)0, root);}
       break;
   default:
-      fprintf(stderr,"gmax0: bad data type\n");
+      cerr << scprintf("gmax0: bad data type\n");
       abort();
     }
 }
@@ -412,7 +413,7 @@ gprod0(void*buf, int items, int datatype, int msgtype, int root)
         global_messagegrp->reduce((double*)buf, items, r, (double*)0, root);}
       break;
   default:
-      fprintf(stderr,"gprod0: bad data type\n");
+      cerr << scprintf("gprod0: bad data type\n");
       abort();
     }
 }
@@ -446,7 +447,7 @@ gsum0(void*buf, int items, int datatype, int msgtype, int root)
         global_messagegrp->reduce((double*)buf, items, r, (double*)0, root);}
       break;
   default:
-      fprintf(stderr,"gsum0: bad data type\n");
+      cerr << scprintf("gsum0: bad data type\n");
       abort();
     }
 }
@@ -480,7 +481,7 @@ gmin0(void*buf, int items, int datatype, int msgtype, int root)
         global_messagegrp->reduce((double*)buf, items, r, (double*)0, root);}
       break;
   default:
-      fprintf(stderr,"gmin0: bad data type\n");
+      cerr << scprintf("gmin0: bad data type\n");
       abort();
     }
 }
@@ -488,7 +489,7 @@ gmin0(void*buf, int items, int datatype, int msgtype, int root)
 void
 barrier0()
 {
-  fprintf(stderr,"barrier0: not implemented\n");
+  cerr << scprintf("barrier0: not implemented\n");
   abort();
 }
 
@@ -661,7 +662,7 @@ void gop0(double *val,int len,int op,int type)
 {
   double *tmp = (double*)malloc(sizeof(double)*len);
   if (!tmp) {
-      fprintf(stderr,"gop0: couldn't allocate %d bytes\n",len);
+      cerr << scprintf("gop0: couldn't allocate %d bytes\n",len);
       exit(1);
     }
   gop1(val,len,tmp,op,type);

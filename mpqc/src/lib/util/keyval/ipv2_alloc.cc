@@ -1,5 +1,4 @@
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <util/keyval/ipv2.h>
 
@@ -10,18 +9,18 @@ IPV2::ip_alloc_keyword_tree()
 
   result = (ip_keyword_tree_t *) malloc(sizeof(ip_keyword_tree_t));
   if (!result) {
-    perror("ip_alloc_keyword_tree: malloc failed");
-    error(NULL);
+    cerr << "ip_alloc_keyword_tree: malloc failed";
+    error(0);
     }
 
-  result->up = NULL;
-  result->down = NULL;
-  result->across = NULL;
-  result->keyword = NULL;
-  result->classname = NULL;
-  result->truename = NULL;
-  result->value = NULL;
-  result->variable = NULL;
+  result->up = 0;
+  result->down = 0;
+  result->across = 0;
+  result->keyword = 0;
+  result->classname = 0;
+  result->truename = 0;
+  result->value = 0;
+  result->variable = 0;
 
   return result;
   }
@@ -36,8 +35,8 @@ IPV2::ip_free_keyword_tree(ip_keyword_tree_t* tree)
   /* Convert the circular list into a standard linked list (to
    * avoid saber-c error messages) */
   start = tree->across;
-  tree->across = NULL;
-  for (I=start; I!=NULL; I=nextI) {
+  tree->across = 0;
+  for (I=start; I!=0; I=nextI) {
     ip_free_keyword_tree(I->down);
     if (I->keyword) free(I->keyword);
     if (I->classname) free(I->classname);

@@ -4,6 +4,8 @@
 #endif
 
 #include <new.h>
+
+#include <util/misc/formio.h>
 #include <util/group/rnglock.h>
 #include <util/group/pool.h>
 
@@ -116,19 +118,19 @@ RangeLock::check()
   for (RangeLockItem* i = root_; i; i = i->next) {
       int bad = 0;
       if (i->next && i->next->prev != i) {
-          fprintf(stderr,"i->next->prev bad\n");
+          cerr << scprintf("i->next->prev bad\n");
           bad = 1;
         }
       if (i->prev && i->prev->next != i) {
-          fprintf(stderr,"i->prev->next bad\n");
+          cerr << scprintf("i->prev->next bad\n");
           bad = 1;
         }
       if (i->start >= i->fence) {
-          fprintf(stderr,"start >= fence\n");
+          cerr << scprintf("start >= fence\n");
           bad = 1;
         }
       if (i->next && i->fence > i->next->start) {
-          fprintf(stderr,"fence > next start\n");
+          cerr << scprintf("fence > next start\n");
           bad = 1;
         }
 #if VERBOSE
@@ -240,7 +242,7 @@ RangeLock::split_ranges(int start, int fence)
       // otherwise fence is after this block, continue
     }
 
-  fprintf(stderr, "RangeLock::split_ranges(): got to end\n");
+  cerr << scprintf("RangeLock::split_ranges(): got to end\n");
   abort();
 }
 
@@ -294,10 +296,10 @@ RangeLock::set(int start, int fence, int value)
 }
 
 void
-RangeLock::print(FILE *fp)
+RangeLock::print(ostream &o)
 {
   for (RangeLockItem *i = root_; i; i = i->next) {
-      fprintf(fp, "  RangeLockItem: [%5d, %5d): %4d\n",
+      o << scprintf("  RangeLockItem: [%5d, %5d): %4d\n",
               i->start, i->fence, i->value);
     }
 }

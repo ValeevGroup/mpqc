@@ -6,9 +6,9 @@
 #ifndef _util_group_pool_h
 #define _util_group_pool_h
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <new.h>
+#include <iostream.h>
 
 #undef DEBUG_POOL
 
@@ -261,7 +261,7 @@ class Pool {
     void release(double*d);
     int* allocate_int(size_t n);
     void release(int*d);
-    void print(FILE*fp=stdout);
+    void print(ostream&o=cout);
     void check();
 };
 

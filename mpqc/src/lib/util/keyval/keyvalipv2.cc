@@ -4,6 +4,8 @@
 #include <fstream.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/ipv2.h>
 #include <util/keyval/keyval.h>
 
@@ -102,7 +104,7 @@ ParsedKeyVal::read(const char* name)
 {
   ifstream infp(name,ios::in);
   if (infp.bad()) {
-    fprintf(stderr,"ParsedKeyVal couldn't open %s\n",name);
+    cerr << scprintf("ParsedKeyVal couldn't open %s\n",name);
     exit(1);
     }
 

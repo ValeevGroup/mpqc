@@ -1,5 +1,4 @@
 
-#include <stdio.h>
 #include <math.h>
 #include <util/group/message.h>
 #include <util/group/mstate.h>
@@ -71,7 +70,7 @@ main(int argc, char**argv)
       msg = keyval->describedclassvalue(keyword);
 
       if (msg.null()) {
-          fprintf(stderr,"Couldn't initialize MessageGrp\n");
+          cerr << scprintf("Couldn't initialize MessageGrp\n");
           abort();
         }
     }

@@ -1,4 +1,5 @@
 
+#include <util/misc/formio.h>
 #include <util/group/message.h>
 
 #define CLASSNAME intMessageGrp
@@ -54,7 +55,7 @@ intMessageGrp::initialize(int me, int n, int nbits)
   // The remaining bits are for sequence information.
   seq_nbit = nbits - ctl_nbit - src_nbit;
   if (seq_nbit < 8) {
-      fprintf(stderr,"intMessageGrp: not enough bits in underlying msgtype\n");
+      cerr << scprintf("intMessageGrp: not enough bits in underlying msgtype\n");
       abort();
     }
 

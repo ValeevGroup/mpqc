@@ -6,7 +6,6 @@
 #ifndef _util_group_memmid_h
 #define _util_group_memmid_h
 
-#include <stdio.h>
 #include <util/group/memamsg.h>
 
 // This is used for memory handler that use message identifiers to

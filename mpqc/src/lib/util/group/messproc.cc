@@ -1,5 +1,5 @@
 
-#include <stdio.h>
+#include <util/misc/formio.h>
 #include <util/group/message.h>
 
 #define CLASSNAME ProcMessageGrp
@@ -49,14 +49,14 @@ sendit(message_t *& messages, int dest, int msgtype, void* buf, int bytes)
   message_t *I;
 
   if (dest != 0) {
-      fprintf(stderr,"messproc.cc:sendit: can only send to 0\n");
+      cerr << scprintf("messproc.cc:sendit: can only send to 0\n");
       abort();
     }
 
   msg = (message_t *) malloc(sizeof(message_t));
   if (msg) msg->buf = (char *) malloc(bytes);
   if (!msg || !msg->buf) {
-      fprintf(stderr,"messproc.cc:sendit: allocation failed\n");
+      cerr << scprintf("messproc.cc:sendit: allocation failed\n");
       abort();
     }
 
@@ -88,7 +88,7 @@ recvit(message_t *& messages, int source, int type, void* buf, int bytes,
   for (i=messages; i!=0; i = i->p) {
     if (i->type == type || type == -1) {
       if (i->size > bytes) {
-        fprintf(stderr,
+        cerr << scprintf(
                 "messproc.cc:recvit: message buffer isn't big enough\n");
         abort();
         }
@@ -111,9 +111,9 @@ recvit(message_t *& messages, int source, int type, void* buf, int bytes,
     last = i;
     }
 
-  fprintf(stderr,
+  cerr << scprintf(
           "messproc.cc:recvit: tried to receive something that isn't there\n");
-  fprintf(stderr,"messproc:recvit: tried %d bytes of type %d, ",bytes,type);
+  cerr << scprintf("messproc:recvit: tried %d bytes of type %d, ",bytes,type);
   abort();
 }
 

@@ -4,6 +4,7 @@
 #endif
 
 #include <util/misc/bug.h>
+#include <util/misc/formio.h>
 #include <util/group/mstate.h>
 
 // This sets up a communication buffer.  It is made up of a of
@@ -155,7 +156,7 @@ MsgStateRecv::MsgStateRecv(const RefMessageGrp&grp_):
 MsgStateRecv::~MsgStateRecv()
 {
   if (ibuf && (nbuf != ibuf)) {
-      fprintf(stderr,"MsgStateRecv::~MsgStateRecv(): buffer still has"
+      cerr << scprintf("MsgStateRecv::~MsgStateRecv(): buffer still has"
               " %d bytes of data\n", nbuf - ibuf);
     }
   release_buffer(send_buffer);
@@ -165,7 +166,7 @@ void
 MsgStateRecv::set_buffer_size(int size)
 {
   if (ibuf && (nbuf != ibuf)) {
-      fprintf(stderr,"MsgStateRecv::set_buffer_size(): old buffer has data\n");
+      cerr << scprintf("MsgStateRecv::set_buffer_size(): old buffer has data\n");
     }
   obtain_buffer(nbuf_buffer, send_buffer, nheader, buffer, bufsize, size);
 }
@@ -202,7 +203,7 @@ MsgStateRecv::get(const ClassDesc**cd)
   int r = StateInBinXDR::get(index);
   *cd = grp->index_to_classdesc(index);
   if (!*cd) {
-      fprintf(stderr,"MsgStateRecvt::get(const ClassDesc**cd): "
+      cerr << scprintf("MsgStateRecvt::get(const ClassDesc**cd): "
               "class not available on this processor\n");
       abort();
     }
@@ -349,7 +350,7 @@ void
 BcastStateRecv::source(int s)
 {
   if (s == grp->me()) {
-      fprintf(stderr,"BcastStateRecv::source(%d): cannot receive my own"
+      cerr << scprintf("BcastStateRecv::source(%d): cannot receive my own"
               " broadcast\n", s);
       abort();
     }

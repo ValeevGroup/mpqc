@@ -2,7 +2,6 @@
 /* This file provides the routines to do the initial parse of the input
  * file. */
 
-#include <stdio.h>
 #include <string.h>
 #ifdef DEC
 #include <math.h>
@@ -11,6 +10,7 @@
 #endif
 #include <util/keyval/ipv2.h>
 
+#include <stdio.h>
 #include <iostream.h>
 #include <fstream.h>
 
@@ -99,7 +99,10 @@ IPV2::append_from_input(const char*prefix,ostream&outfile)
 	  strcat(dirfile,file);
           ifstream infile(dirfile, ios::in);
 	  if (infile.bad()) {
-	      warn("IPV2::append_from_input: couldn't open the file %s",dirfile);
+              cerr << "WARNING: IPV2::append_from_input: "
+                   << "couldn't open the file "
+                   << dirfile
+                   << endl;
 	    }
 	  else {
               outfile << "appending " << dirfile << " to input" << endl;
@@ -262,7 +265,6 @@ IPV2::ip_pop_keyword()
 void
 IPV2::ip_begin_table(ip_string_list_t*keywords)
 {
-  //fprintf(stderr,"ip_begin_table()\n");
   current_table_keyword = table_keywords = keywords;
   table_sub_tree = sub_tree;
   table_row_number = 0;
@@ -289,15 +291,8 @@ IPV2::ip_push_table_col(char*keys)
 void
 IPV2::ip_next_table_entry()
 {
-  
-  //fprintf(stderr,"ip_next_table_entry: table_array_depth = %d\n",table_array_depth);
-
   if (table_array_depth>0) return;
 
-  //fprintf(stderr,"ip_next_table_entry: table keyword = \"");
-  //ip_print_keyword(stderr,table_sub_tree);
-  //fprintf(stderr,"\"\n");
-  
   sub_tree = table_sub_tree;
   ip_push_table_col(current_table_keyword->string);
   
@@ -315,8 +310,6 @@ void
 IPV2::ip_done_table()
 {
   ip_string_list_t *I,*J;
-
-  //fprintf(stderr,"ip_done_table()\n");
 
   /* Free the keywords strings and string list */
   for (I=table_keywords; I!=NULL; ) {
@@ -395,7 +388,9 @@ IPV2::ip_get_variable_kt(char* variable)
   /* This should never be the case since variable keyword trees are
    * created as needed. */
   if (!kt) {
-      warn("couldn't find the variable %s",variable);
+      cerr << "WARNING: couldn't find the variable "
+           << variable
+           << endl;
       return NULL;
     }
   
@@ -474,8 +469,6 @@ IPV2::ip_assign_value(char*value)
       free(value);
     }
   else sub_tree->value = value;
-  //ip_print_keyword(stderr,sub_tree);
-  //fprintf(stderr," assigned to \"%s\"\n",value);
   }
 
 void

@@ -6,7 +6,6 @@
 #ifndef _util_group_mempgon_h
 #define _util_group_mempgon_h
 
-#include <stdio.h>
 #include <util/group/memamsg.h>
 
 class ParagonMemoryGrp: public ActiveMsgMemoryGrp {

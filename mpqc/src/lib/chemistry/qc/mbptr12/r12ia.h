@@ -102,7 +102,9 @@ class R12IntsAcc: virtual public SavableState {
     virtual void store_pair_block(int i, int j, double *ints)=0;
     /// Commit the content of the accumulator for reading
     virtual void commit() { committed_ = true; };
-    /// Done reading content
+    /// Has the content of the accumulator been commited for reading?
+    bool is_commited() { return committed_; };
+    /// Call when done reading content
     virtual void deactivate() {};
     /// Retrieves an ij pair block of integrals
     virtual double* retrieve_pair_block(int i, int j, tbint_type oper_type) =0;

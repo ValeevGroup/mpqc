@@ -2,9 +2,10 @@
 //   This is the main include file for the reference counting classes.
 // This includes two other files: reftmpl.h and refmacr.h.  The
 // former is a template declaration for the reference counted classes
-// and the latter is generated from the former by a perl script.
+// and the latter is generated from the former by a perl script and
+// provides CPP macros that declare reference counting classes.
 //
-//   The behaviour of the package can be modified with the following four
+//   The behaviour of the package can be modified with the following five
 // macros, each of which should be undefined, 0, or 1:
 //
 // REF_CHECK_STACK:  If this is 1 referenced objects are checked to see if they
@@ -16,10 +17,10 @@
 //
 // REF_MANAGE:  If this is 1 the manage and unmanage members are enabled.
 //
-// REF_CHECK_MAX_NREF:  If this is 1 the reference could is checked before
+// REF_CHECK_MAX_NREF:  If this is 1 the reference count is checked before
 // it is incremented to make sure it isn't too big.
 //
-// REF_CHECK_MIN_NREF:  If this is 1 the reference could is checked before
+// REF_CHECK_MIN_NREF:  If this is 1 the reference count is checked before
 // it is decremented to make sure it isn't already zero.
 //
 // If a macro is undefined, then the behaviour is architecture
@@ -27,6 +28,11 @@
 // For maximum efficiency and for normal operation after the program is
 // debugged, compile with all of the above macros defined to zero.
 // This can also be done with -DREF_OPTIMIZE.
+//
+//   An include file can be used to set these options as well.  This has
+// the advantage that dependency checking will force an automatic
+// recompile of all affected files if the options change.  The file
+// <refconfig.h> will be include if -DREF_CONFIG is specified.
 //
 //   Note that all source code that uses references must be compiled with
 // the same value for REF_CHECKSUM and REF_MANAGE.  Changing these can
@@ -43,6 +49,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef REF_CONFIG
+#include <refconfig.h>
+#endif
 
 #ifdef REF_OPTIMIZE
 #ifndef REF_CHECK_STACK

@@ -39,9 +39,6 @@
 // if management is enabled.  This feature can be confused by multiple threads
 // and memory checking libraries.
 //
-// REF_CHECKSUM:  If this is 1 checksums of the reference count are kept
-// and checked to see if an object has been overwritten.
-//
 // REF_MANAGE:  If this is 1 the manage and unmanage members are enabled.
 //
 // REF_CHECK_MAX_NREF:  If this is 1 the reference count is checked before
@@ -50,7 +47,7 @@
 // REF_CHECK_MIN_NREF:  If this is 1 the reference count is checked before
 // it is decremented to make sure it isn't already zero.
 //
-// USE_LOCKS:  If this is 1 then critical regions are locked before they
+// REF_USE_LOCKS:  If this is 1 then critical regions are locked before they
 // are entered.  This prevents erroneous behavior when multiple threads
 // share reference counted objects.  This will slow down certain operations,
 // so it should be set to 0 if your application does not need to be thread
@@ -68,9 +65,8 @@
 // <scconfig.h> will be include if -DHAVE_CONFIG_H is specified.
 //
 //   Note that all source code that uses references must be compiled with
-// the same value for REF_CHECKSUM and REF_MANAGE.  Changing these can
-// change the storage layout and the interpretation of the reference count
-// data.
+// the same value REF_MANAGE.  Changing this can change the storage layout
+// and the interpretation of the reference count data.
 
 
 #ifdef __GNUC__
@@ -93,9 +89,6 @@
 #ifndef REF_CHECK_STACK
 # define REF_CHECK_STACK   0
 #endif
-#ifndef REF_CHECKSUM
-# define REF_CHECKSUM      0
-#endif
 #ifndef REF_MANAGE
 # define REF_MANAGE        0
 #endif
@@ -117,10 +110,6 @@
 #endif
 #endif
 
-#ifndef REF_CHECKSUM
-#define REF_CHECKSUM 1
-#endif
-
 #ifndef REF_MANAGE
 #define REF_MANAGE 1
 #endif
@@ -133,8 +122,8 @@
 #define REF_CHECK_MIN_NREF 1
 #endif
 
-#ifndef USE_LOCKS
-#define USE_LOCKS 0
+#ifndef REF_USE_LOCKS
+#define REF_USE_LOCKS 1
 #endif
 
 #if REF_CHECK_STACK
@@ -153,7 +142,7 @@ extern "C" void * sbrk(ssize_t);
 #define DO_REF_UNMANAGE(p)
 #endif // REF_MANAGE
 
-#if USE_LOCKS
+#if REF_USE_LOCKS
 #define __REF_LOCK__(p) p->lock_ptr()
 #define __REF_UNLOCK__(p) p->unlock_ptr()
 #define __REF_INITLOCK__() ref_lock_ = 0xff
@@ -191,58 +180,28 @@ typedef unsigned long refcount_t;
 
 class RefCount: public Identity {
   private:
-#if REF_CHECKSUM
-#   if REF_MANAGE
-#     define REF_MAX_NREF   0xfffffe
-#     define REF_MANAGED_CODE 0xffffff
-#   else
-#     define REF_MAX_NREF 0xffffff
-#   endif
-    unsigned int _reference_count_:24;
-    unsigned int _checksum_:8;
+#if REF_MANAGE
+#  define REF_MAX_NREF (UINT_MAX - 1)
+#  define REF_MANAGED_CODE UINT_MAX
 #else
-#   if REF_MANAGE
-#     define REF_MAX_NREF (UINT_MAX - 1)
-#     define REF_MANAGED_CODE UINT_MAX
-#   else
-#     define REF_MAX_NREF UINT_MAX
-#   endif
-    unsigned int _reference_count_;
+#  define REF_MAX_NREF UINT_MAX
 #endif
-#if USE_LOCKS
+    unsigned int _reference_count_;
+#if REF_USE_LOCKS
     unsigned char ref_lock_;
 #endif
 
     void error(const char*) const;
     void too_many_refs() const;
     void not_enough_refs() const;
-#if REF_CHECKSUM
-    void bad_checksum() const;
-    void check_checksum() const {
-        if (_checksum_ != (~(( ( _reference_count_      & 0xff)
-                               ^((_reference_count_)>>8  & 0xff)
-                               ^((_reference_count_)>>16 & 0xff)))&0xff)) {
-            bad_checksum();
-          }
-      }
-    void update_checksum() {
-        _checksum_ = ~( ( _reference_count_      & 0xff)
-                        ^((_reference_count_)>>8  & 0xff)
-                        ^((_reference_count_)>>16 & 0xff));
-      }
-#endif // REF_CHECKSUM
   protected:
     RefCount(): _reference_count_(0) {
-#       if REF_CHECKSUM
-        update_checksum();
-#       endif
         __REF_INITLOCK__();
+        //std::cout << "ref_lock_ = " << (int) ref_lock_ << std::endl;
       }
     RefCount(const RefCount&): _reference_count_(0) {
-#       if REF_CHECKSUM
-        update_checksum();
-#       endif
         __REF_INITLOCK__();
+        //std::cout << "ref_lock_ = " << (int) ref_lock_ << std::endl;
       }
 
     // Assigment should not overwrite the reference count.
@@ -251,9 +210,9 @@ class RefCount: public Identity {
     virtual ~RefCount();
 
     /// Lock this object.
-    int lock_ptr();
+    int lock_ptr() const;
     /// Unlock this object.
-    int unlock_ptr();
+    int unlock_ptr() const;
 
     /// start and stop using locks on this object
     void use_locks(bool inVal);
@@ -263,9 +222,6 @@ class RefCount: public Identity {
 #       if REF_MANAGE
         if (!managed()) return 1;
 #       endif
-#       if REF_CHECKSUM
-        check_checksum();
-#       endif
         return _reference_count_;
       }
 
@@ -274,17 +230,14 @@ class RefCount: public Identity {
 #       if REF_MANAGE
         if (!managed()) return 1;
 #       endif
-#       if REF_CHECKSUM
-        check_checksum();
-#       endif
+        __REF_LOCK__(this);
 #       if REF_CHECK_MAX_NREF
         if (_reference_count_ >= REF_MAX_NREF) too_many_refs();
 #       endif
         _reference_count_++;
-#       if REF_CHECKSUM
-        update_checksum();
-#       endif
-        return _reference_count_;
+        refcount_t r = _reference_count_;
+        __REF_UNLOCK__(this);
+        return r;
       }
 
     /// Decrement the reference count and return the new count.
@@ -292,24 +245,18 @@ class RefCount: public Identity {
 #       if REF_MANAGE
         if (!managed()) return 1;
 #       endif
-#       if REF_CHECKSUM
-        check_checksum();
-#       endif
+        __REF_LOCK__(this);
 #       if REF_CHECK_MIN_NREF
         if (_reference_count_ == 0) not_enough_refs();
 #       endif
         _reference_count_--;
-#       if REF_CHECKSUM
-        update_checksum();
-#       endif
-        return _reference_count_;
+        refcount_t r = _reference_count_;
+        __REF_UNLOCK__(this);
+        return r;
       }
 
 #if REF_MANAGE
     int managed() const {
-#       if REF_CHECKSUM
-        check_checksum();
-#       endif // REF_CHECKSUM
         return _reference_count_ != REF_MANAGED_CODE;
       }
     /** Turn off the reference counting mechanism for this object.
@@ -319,9 +266,6 @@ class RefCount: public Identity {
         REF_MANAGE.  There is a slight performance penalty. */
     void unmanage() {
         _reference_count_ = REF_MANAGED_CODE;
-#       if REF_CHECKSUM
-        update_checksum();
-#       endif // REF_CHECKSUM
       }
 #else // REF_MANAGE
     /// Return 1 if the object is managed.  Otherwise return 0.
@@ -381,30 +325,24 @@ class  Ref  : public RefBase {
     Ref(T*a) : p(0)
     {
       if (a) {
-          __REF_LOCK__(a);
           p = a;
           reference(p);
-          __REF_UNLOCK__(a);
         }
     }
     /// Create a reference to the object referred to by a.
     Ref(const Ref<T> &a) : p(0)
     {
       if (a.pointer()) {
-          __REF_LOCK__(a.pointer());
           p = a.pointer();
           reference(p);
-          __REF_UNLOCK__(a.pointer());
         }
     }
     /// Create a reference to the object referred to by a.
     template <class A> Ref(const Ref<A> &a): p(0)
     {
       if (a.pointer()) {
-          __REF_LOCK__(a.pointer());
           p = a.pointer();
           reference(p);
-          __REF_UNLOCK__(a.pointer());
         }
     }
 //      /** Create a reference to the object a.  Do a
@@ -464,9 +402,7 @@ class  Ref  : public RefBase {
     void clear()
     {
       if (p) {
-          __REF_LOCK__(p);
           int ref = dereference(p);
-          __REF_UNLOCK__(p);
           if (ref == 0)
               delete p;
           p = 0;
@@ -475,12 +411,11 @@ class  Ref  : public RefBase {
     /// Assignment to c.
     Ref<T>& operator=(const Ref<T> & c)
     {
-      if (c.pointer()) {
-          __REF_LOCK__(c.pointer());
-          c.pointer()->reference();
-          __REF_UNLOCK__(c.pointer());
+      T *cp = c.pointer();
+      if (cp) {
+          cp->reference();
           clear();
-          p=c.pointer();
+          p=cp;
         }
       else {
           clear();
@@ -490,12 +425,11 @@ class  Ref  : public RefBase {
     /// Assignment to c.
     template <class A> Ref<T>& operator=(const Ref<A> & c)
     {
-      if (c.pointer()) {
-          __REF_LOCK__(c.pointer());
-          c.pointer()->reference();
-          __REF_UNLOCK__(c.pointer());
+      A *cp = c.pointer();
+      if (cp) {
+          cp->reference();
           clear();
-          p=c.pointer();
+          p=cp;
         }
       else {
           clear();
@@ -506,9 +440,7 @@ class  Ref  : public RefBase {
     Ref<T>& operator<<(const RefBase&a) {
         T* cr = dynamic_cast<T*>(a.parentpointer());
         if (cr) {
-            __REF_LOCK__(cr);
             reference(cr);
-            __REF_UNLOCK__(cr);
             clear();
           }
         p = cr;
@@ -533,13 +465,11 @@ class  Ref  : public RefBase {
     void assign_pointer(T* cr)
     {
       if (cr) {
-          __REF_LOCK__(cr);
           if (DO_REF_CHECK_STACK(cr)) {
               DO_REF_UNMANAGE(cr);
               warn_ref_to_stack();
             }
           cr->reference();
-          __REF_UNLOCK__(cr);
         }
       clear();
       p = cr;

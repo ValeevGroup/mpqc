@@ -156,6 +156,46 @@ test3()
    cout << "nx = " << X::nx << "(0) (outer scope on exit)" << endl;
 }
 
+#if HAVE_PTHREAD==1 && REF_USE_LOCKS==1
+static Ref<X> sx1, sx2;
+void *
+test4_run(void *)
+{
+  for (int i=0; i<100000; i++) {
+      Ref<X> x1 = sx1;
+      Ref<X> x2 = sx2;
+      x1 = x2;
+      x1 = x2;
+      x1 = x1;
+      x1 = 0;
+    }
+}
+void
+test4()
+{
+  cout << "test4: running pthread tests" << endl;
+  sx1 = new X;
+  sx2 = new X;
+  sx1->use_locks(true);
+  sx2->use_locks(true);
+  for (int iter=0; iter<10; iter++) {
+      const int nthread = 2;
+      pthread_t id[4];
+      for (int i=0; i<nthread; i++) {
+          pthread_create(&id[i],0,test4_run,0);
+        }
+      for (int i=0; i<nthread; i++) {
+          void *v;
+          pthread_join(id[i],&v);
+        }
+    }
+  sx1 = 0;
+  sx2 = 0;
+}
+#else
+void test4() {}
+#endif
+
 int
 main()
 {
@@ -165,6 +205,8 @@ main()
   test2();
   cout << "X::nx before test3: " << X::nx << "(0)" << endl;
   test3();
+  cout << "X::nx before test4: " << X::nx << "(0)" << endl;
+  test4();
 
   cout << "X::nx before exit: " << X::nx << "(0)" << endl;
 

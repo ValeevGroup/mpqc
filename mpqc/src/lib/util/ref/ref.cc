@@ -34,7 +34,7 @@
 
 using namespace std;
 
-#if USE_LOCKS
+#if REF_USE_LOCKS
 
 #if HAVE_STHREAD
 
@@ -112,17 +112,17 @@ static sc_lock_t sRefLocks[NLOCKS];
 static int sRefLocksInit = __init_lock__(sRefLocks, NLOCKS);
 static unsigned char sRefLock = 0;
 
-#else /* !USE_LOCKS */
+#else /* !REF_USE_LOCKS */
 
 #define __LOCK(l) 0
 #define __UNLOCK(l) 0
 
-#endif /* !USE_LOCKS */
+#endif /* !REF_USE_LOCKS */
 
 int
-RefCount::lock_ptr()
+RefCount::lock_ptr() const
 {
-#if USE_LOCKS
+#if REF_USE_LOCKS
     if (ref_lock_ == 0xff)
         return 1;
     return __LOCK(sRefLocks[ref_lock_]);
@@ -132,9 +132,9 @@ RefCount::lock_ptr()
 }
 
 int
-RefCount::unlock_ptr()
+RefCount::unlock_ptr() const
 {
-#if USE_LOCKS
+#if REF_USE_LOCKS
     if (ref_lock_ == 0xff)
         return 1;
     return __UNLOCK(sRefLocks[ref_lock_]);
@@ -146,12 +146,13 @@ RefCount::unlock_ptr()
 void
 RefCount::use_locks(bool inVal)
 {
-#if USE_LOCKS
+#if REF_USE_LOCKS
     if (inVal) {
         ref_lock_ = sRefLock;
-        sRefLock++;
-        if (sRefLock >= NLOCKS)
-            sRefLock = 0;
+        unsigned char tmp_sRefLock = sRefLock+1;
+        if (tmp_sRefLock >= NLOCKS)
+            tmp_sRefLock = 0;
+        sRefLock = tmp_sRefLock;
     }
     else
         ref_lock_ = 0xff;
@@ -178,29 +179,12 @@ RefCount::not_enough_refs() const
   error("Ref count dropped below zero.");
 }
 
-#if REF_CHECKSUM
-void
-RefCount::bad_checksum() const
-{
-  error("Bad checksum.");
-}
-#endif
-
 RefCount::~RefCount()
 {
-#if REF_CHECKSUM
-  if (_reference_count_ == 0 && _checksum_ == 0) {
-      error("Deleting a deleted or overwritten object.");
-    }
-#endif
 #if REF_MANAGE
   if (managed() && nreference()) {
       error("Deleting a referenced object.");
     }
-#endif
-#if REF_CHECKSUM
-  _reference_count_ = 0;
-  _checksum_ = 0;
 #endif
 }
 

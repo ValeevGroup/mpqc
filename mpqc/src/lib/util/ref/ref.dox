@@ -6,6 +6,7 @@ memory that is no longer needed.
 
 <ul>
   <li> \ref refintro
+  <li> \ref refthread
   <li> \ref refcust
   <li> \ref refexample
 </ul>
@@ -59,6 +60,15 @@ provided by the Ref class template.  A smart pointer to a
 class A which inherits from RefCount would have the
 type Ref<A>.
 
+\section refthread Thread Safety of the Reference Counting Package
+
+The referencing counting package is thread-safe if the CPP macro
+REF_USE_LOCKS is defined to 1.  This means that Ref's to a particular
+object can be created and reassigned and destroyed in different
+threads.  However, the Ref's themselves are not thread-safe.
+For example, a static Ref cannot be simultaneously modified from
+multiple threads.
+
 \section refcust Customizing the Reference Counting Package
 
   The behaviour of the package can be modified at compile time
@@ -69,9 +79,6 @@ with the following five macros, each of which should be undefined, 0, or 1:
   If this is 1, referenced objects are checked to see if they
   reside on the stack, in which case storage for the object is not managed,
   if management is enabled.
-<dt><tt>REF_CHECKSUM</tt><dd>
-  If this is 1, checksums of the reference count are kept
-  and checked to see if an object has been overwritten.
 <dt><tt>REF_MANAGE</tt><dd>
   If this is 1, the unmanage member is enabled.
 <dt><tt>REF_CHECK_MAX_NREF</tt><dd>
@@ -80,6 +87,9 @@ with the following five macros, each of which should be undefined, 0, or 1:
 <dt><tt>REF_CHECK_MIN_NREF</tt><dd>
   If this is 1, the reference count is checked before
   it is decremented to make sure it isn't already zero.
+<dt><tt>REF_USE_LOCKS</tt><dd>
+  If this is 1, modification of the reference count
+  is locked to allow thread-safe execution.
 </dl>
 
 If a macro is undefined, then the behaviour is architecture
@@ -95,8 +105,8 @@ in the file scconfig.h, which is produced by the automated configuration
 procedure.
 
   Note that all source code that uses references must be compiled with
-the same value for REF_CHECKSUM and REF_MANAGE.
-Changing these can change the storage layout and the interpretation of
+the same value for REF_MANAGE.
+Changing this can change the storage layout and the interpretation of
 the reference count data.
 
 \section refexample A Reference Example

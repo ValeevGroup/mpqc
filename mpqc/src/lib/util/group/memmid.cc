@@ -292,7 +292,8 @@ MIDMemoryGrp::sync()
 
   long oldlock = lock();
 
-  if (debug_) printf("%d: MIDMemoryGrp::sync() entered\n",me_);
+  if (debug_)
+      printf("%d: MIDMemoryGrp::sync() entered, active = %d\n", me_, active_);
 
   if (me() == 0) {
       // keep processing requests until all nodes have sent a

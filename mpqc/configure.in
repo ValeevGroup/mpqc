@@ -488,17 +488,17 @@ case $target in
     if test X$GCC != Xyes; then
       LDFLAGS="$LDFLAGS -bmaxdata:0x70000000"
     fi
-    if test X$CC = XxlC -o X$CC = XxlC_r; then
+    if test "X$CC" = XxlC -o "X$CC" = XxlC_r; then
       CCDEPENDSUF=u
     fi
-    if test X$CXX = XxlC -o X$CXX = XxlC_r; then
+    if test "X$CXX" = XxlC -o "X$CXX" = XxlC_r; then
       CXXDEPENDSUF=u
       CXXDEPENDFLAGS="-M -E"
     fi
-    if test X$CC = Xmpcc -o X$CC = Xmpcc_r; then
+    if test "X$CC" = Xmpcc -o "X$CC" = Xmpcc_r; then
       CCDEPENDSUF=u
     fi
-    if test X$CXX = XmpCC -o X$CXX = XmpCC_r; then
+    if test "X$CXX" = XmpCC -o "X$CXX" = XmpCC_r; then
       CXXDEPENDSUF=u
       CXXDEPENDFLAGS="-M -E"
     fi
@@ -1126,16 +1126,16 @@ if test -n "$F77" -a "$F77" != no ; then
   echo "      end" >> ffunc.f
   $F77 -c ffunc.f 1>/dev/null 2>/dev/null
   echo "main(){ FF(); return 0; }" > flink.c
-  if $CC -o flink -DFF=ffunc flink.c ffunc.o 1>/dev/null 2>/dev/null; then
+  if $CC -o flink -DFF=ffunc flink.c ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
     AC_MSG_RESULT(same as C)
     F77_SYMBOLS=symbol
-  elif $CC -o flink -DFF=ffunc_ flink.c ffunc.o 1>/dev/null 2>/dev/null; then
+  elif $CC -o flink -DFF=ffunc_ flink.c ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
     AC_MSG_RESULT(lowercase with underscore)
     F77_SYMBOLS=symbol_
-  elif $CC -o flink -DFF=FFUNC flink.c ffunc.o 1>/dev/null 2>/dev/null; then
+  elif $CC -o flink -DFF=FFUNC flink.c ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
     AC_MSG_RESULT(uppercase)
     F77_SYMBOLS=SYMBOL
-  elif $CC -o flink -DFF=FFUNC_ flink.c ffunc.o 1>/dev/null 2>/dev/null; then
+  elif $CC -o flink -DFF=FFUNC_ flink.c ffunc.o $LDFLAGS $LIBS 1>/dev/null 2>/dev/null; then
     AC_MSG_RESULT(uppercase with underscore)
     F77_SYMBOLS=SYMBOL_
   else
@@ -1279,7 +1279,7 @@ changequote([, ])dnl
     AC_MSG_RESULT("mips*-sgi-irix6.0 or mips*-sgi-irix6.1")
   ;;
   rs6000-*)
-    if test "X$CXX" = XmpCC -o X$CXX = XmpCC_r; then
+    if test "X$CXX" = XmpCC -o "X$CXX" = XmpCC_r; then
       CXX="\$(SRCTOPDIR)/bin/xlCfix mpCC"
     fi
     if test "X$CXX" = XxlC; then

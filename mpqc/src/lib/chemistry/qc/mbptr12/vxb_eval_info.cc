@@ -85,7 +85,8 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
 
 R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
 {
-  mole_ << SavableState::restore_state(si);
+  mole_ = require_dynamic_cast<MolecularEnergy*>(SavableState::restore_state(si),
+                                                 "R12IntEvalInfo::R12IntEvalInfo");
   ref_ << SavableState::restore_state(si);
   integral_ << SavableState::restore_state(si);
   bs_ << SavableState::restore_state(si);
@@ -120,6 +121,7 @@ R12IntEvalInfo::~R12IntEvalInfo()
 
 void R12IntEvalInfo::save_data_state(StateOut& so)
 {
+  SavableState::save_state(mole_,so);
   SavableState::save_state(ref_.pointer(),so);
   SavableState::save_state(integral_.pointer(),so);
   SavableState::save_state(bs_.pointer(),so);

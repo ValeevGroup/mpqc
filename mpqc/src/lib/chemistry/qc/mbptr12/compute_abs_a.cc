@@ -116,7 +116,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 {
   int debug_ = r12info()->debug_level();
 
-  Ref<MolecularEnergy> mole = r12info()->mole();
+  MolecularEnergy* mole = r12info()->mole();
   Ref<Integral> integral = r12info()->integral();
   Ref<GaussianBasisSet> bs = r12info()->basis();
   Ref<GaussianBasisSet> bs_aux = r12info()->basis_aux();
@@ -559,7 +559,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   tim_enter("mp2-r12/a passes");
   if (me == 0 && mole->if_to_checkpoint() && r12intsacc->can_restart()) {
     StateOutBin stateout(mole->checkpoint_file());
-    SavableState::save_state(mole.pointer(),stateout);
+    SavableState::save_state(mole,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
   }
 
@@ -768,7 +768,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     if (me == 0 && mole->if_to_checkpoint() && r12intsacc->can_restart()) {
       current_orbital_ += ni;
       StateOutBin stateout(mole->checkpoint_file());
-      SavableState::save_state(mole.pointer(),stateout);
+      SavableState::save_state(mole,stateout);
       ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
     }
 
@@ -1087,7 +1087,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
   if (me == 0 && mole->if_to_checkpoint() && r12intsacc->can_restart()) {
     StateOutBin stateout(mole->checkpoint_file());
-    SavableState::save_state(mole.pointer(),stateout);
+    SavableState::save_state(mole,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
   }
 

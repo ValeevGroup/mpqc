@@ -46,7 +46,7 @@ class MBPT2_R12;
 
 class R12IntEvalInfo : virtual public SavableState {
 
-  Ref<MolecularEnergy> mole_;     // MolecularEnergy that owns this
+  MolecularEnergy* mole_;     // MolecularEnergy that owns this
   Ref<SCF> ref_;
   Ref<Integral> integral_;
   Ref<GaussianBasisSet> bs_;
@@ -86,7 +86,7 @@ public:
   void set_ints_file(const char* filename) { ints_file_ = strdup(filename); };
   void set_memory(size_t nbytes) { if (nbytes >= 0) memory_ = nbytes; };
 
-  Ref<MolecularEnergy> mole() const { return mole_; };
+  MolecularEnergy* mole() const { return mole_; };
   Ref<SCF> ref() const { return ref_; };
   Ref<Integral> integral() const { return integral_; };
   Ref<GaussianBasisSet> basis() const { return bs_; };

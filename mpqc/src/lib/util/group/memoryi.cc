@@ -1,7 +1,7 @@
 
 #undef HAVE_PGON
 #undef HAVE_SHM
-#if defined(PARAGON)
+#if defined(PARAGON) && !defined(SUNMOS)
 #  define HAVE_PGON
 #elif !defined(SUNMOS)
 #  define HAVE_SHM

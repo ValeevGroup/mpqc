@@ -1,7 +1,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "class.h"
 
@@ -79,6 +78,16 @@ ClassKey::hash() const
   return r;
 }
 
+int ClassKey::cmp(ClassKey&ck) const
+{
+  return strcmp(classname_,ck.classname_);
+}
+
+char* ClassKey::name() const
+{
+  return classname_;
+}
+
 /////////////////////////////////////////////////////////////////
 
 ParentClass::ParentClass(ClassDesc*classdesc,Access access,int is_virtual):
@@ -88,8 +97,35 @@ ParentClass::ParentClass(ClassDesc*classdesc,Access access,int is_virtual):
 {
 }
 
+ParentClass::ParentClass(const ParentClass&p):
+  _access(p._access),
+  _is_virtual(p._is_virtual),
+  _classdesc(p._classdesc)
+{
+}
+
 ParentClass::~ParentClass()
 {
+}
+
+int ParentClass::is_virtual() const
+{
+  return _is_virtual;
+}
+
+ParentClass::Access ParentClass::access() const
+{
+  return _access;
+}
+
+const ClassDesc* ParentClass::classdesc() const
+{
+  return _classdesc;
+}
+
+void ParentClass::change_classdesc(ClassDesc*n)
+{
+  _classdesc = n;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -174,6 +210,21 @@ ParentClasses::change_parent(ClassDesc*oldcd,ClassDesc*newcd)
   for (int i=0; i<_n; i++) {
       if (parent(i).classdesc() == oldcd) parent(i).change_classdesc(newcd);
     }
+}
+
+const ParentClass& ParentClasses::parent(int i) const
+{
+  return *_classes[i];
+}
+
+const ParentClass& ParentClasses::operator[](int i) const
+{
+  return *_classes[i];
+}
+
+int ParentClasses::n() const
+{
+  return _n;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -317,9 +368,35 @@ ClassDesc::list_all_classes()
     }
 }
 
+const ParentClasses& ClassDesc::parents() const
+{
+  return parents_;
+}
+
+const char* ClassDesc::name() const
+{
+  return classname_;
+}
+
+int ClassDesc::version() const
+{ return version_;
+}
+
+DescribedClass* ClassDesc::create_described_class() const
+{
+    return create();
+}
+
 ////////////////////////////////////////////////////
 
 ClassDesc DescribedClass::class_desc_("DescribedClass");
+
+DescribedClass::DescribedClass() {}
+DescribedClass::DescribedClass(const DescribedClass&) {}
+DescribedClass& DescribedClass::operator=(const DescribedClass&)
+{
+  return *this;
+}
 
 DescribedClass::~DescribedClass()
 {
@@ -350,8 +427,45 @@ DescribedClass::static_class_desc()
   return &class_desc_;
 }
 
+const char* DescribedClass::class_name() const
+{
+    return class_desc()->name();
+}
+
+int DescribedClass::class_version() const
+{
+    return class_desc()->version();
+}
+
+RefDescribedClassBase::RefDescribedClassBase()
+{
+}
 RefDescribedClassBase::~RefDescribedClassBase()
 {
+}
+int RefDescribedClassBase::operator==( RefDescribedClassBase &a) {
+  return parentpointer() == a.parentpointer();
+};
+int RefDescribedClassBase::operator>=( RefDescribedClassBase &a) {
+  return parentpointer() >= a.parentpointer();
+};
+int RefDescribedClassBase::operator<=( RefDescribedClassBase &a) {
+  return parentpointer() <= a.parentpointer();
+};
+int RefDescribedClassBase::operator>( RefDescribedClassBase &a) {
+  return parentpointer() > a.parentpointer();
+};
+int RefDescribedClassBase::operator<( RefDescribedClassBase &a) {
+  return parentpointer() < a.parentpointer();
+};
+
+RefDescribedClassBase::RefDescribedClassBase(const RefDescribedClassBase&)
+{
+}
+RefDescribedClassBase&
+RefDescribedClassBase::operator=(const RefDescribedClassBase&)
+{
+  return *this;
 }
 
 DescribedClass_REF_def(DescribedClass);

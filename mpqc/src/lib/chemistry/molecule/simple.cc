@@ -181,7 +181,7 @@ SimpleCo::force_constant(RefMolecule&mol)
 // this updates the values before it computes the bmatrix,
 // which is not quite what I wanted--but close enough
 void
-SimpleCo::bmat(RefMolecule&mol,RefSCVector&bmat,double coef)
+SimpleCo::bmat(const RefMolecule&mol,RefSCVector&bmat,double coef)
 {
   int i;
   int n = bmat.dim().n();

@@ -312,7 +312,7 @@ SetIntCoor::coor(int i) const
 
 // compute the bmatrix by finite displacements
 void
-SetIntCoor::fd_bmat(RefMolecule& mol,RefSCMatrix& fd_bmatrix)
+SetIntCoor::fd_bmat(const RefMolecule& mol,RefSCMatrix& fd_bmatrix)
 {
   RefSCMatrixKit kit = fd_bmatrix.kit();
 
@@ -363,7 +363,7 @@ SetIntCoor::fd_bmat(RefMolecule& mol,RefSCMatrix& fd_bmatrix)
 }
 
 void
-SetIntCoor::bmat(RefMolecule& mol, RefSCMatrix& bmat)
+SetIntCoor::bmat(const RefMolecule& mol, RefSCMatrix& bmat)
 {
   bmat.assign(0.0);
 
@@ -625,7 +625,7 @@ SumIntCoor::update_value(const RefMolecule&molecule)
 }
 
 void
-SumIntCoor::bmat(RefMolecule&molecule,RefSCVector&bmat,double coef)
+SumIntCoor::bmat(const RefMolecule&molecule,RefSCVector&bmat,double coef)
 {
   int i, l = n();
   
@@ -710,6 +710,12 @@ RefNonlinearTransform
 MolecularCoor::change_coordinates()
 {
   return new IdentityTransform;
+}
+
+int
+MolecularCoor::to_cartesian(const RefSCVector&internal)
+{
+  to_cartesian(molecule_, internal);
 }
 
 ///////////////////////////////////////////////////////////////////////////

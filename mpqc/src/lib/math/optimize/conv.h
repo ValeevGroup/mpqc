@@ -80,7 +80,7 @@ class Convergence: virtual_base public SavableState {
     //. Set the current gradient and displacement.
     virtual void get_grad(const RefFunction &);
     virtual void get_x(const RefFunction &);
-    virtual void get_nextx(const RefFunction &);
+    virtual void set_nextx(const RefSCVector &);
 
     //. Set the current gradient and displacement to null.
     virtual void reset();

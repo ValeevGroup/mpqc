@@ -179,7 +179,7 @@ GDIISOpt::update()
     // compute the current point
     function()->set_desired_gradient_accuracy(accuracy_);
     
-    xcurrent = function()->get_x().copy();
+    xcurrent = function()->get_x();
     gcurrent = function()->gradient().copy();
 
     // compute the gradient convergence criterion now so i can see if
@@ -258,10 +258,9 @@ GDIISOpt::update()
     conv_->reset();
     conv_->get_grad(function());
     conv_->get_x(function());
+    conv_->set_nextx(xnext);
 
-    // check for conergence before resetting the geometry...this means we
-    // can't check convergence based on displacements (unless we pass xdisp
-    // to conv_)
+    // check for conergence before resetting the geometry
     int converged = conv_->converged();
     if (converged)
       return converged;
@@ -270,8 +269,6 @@ GDIISOpt::update()
          << scprintf("taking step of size %f", tot) << endl;
     
     function()->set_x(xnext);
-  
-    //conv_->get_nextx(function());
 
     // make the next gradient computed more accurate, since it will
     // be smaller
@@ -347,10 +344,9 @@ GDIISOpt::update()
   conv_->reset();
   conv_->get_grad(function());
   conv_->get_x(function());
+  conv_->set_nextx(xnext);
 
-  // check for conergence before resetting the geometry...this means we
-  // can't check convergence based on displacements (unless we pass xdisp
-  // to conv_)
+  // check for conergence before resetting the geometry
   int converged = conv_->converged();
   if (converged)
     return converged;
@@ -359,8 +355,6 @@ GDIISOpt::update()
        << scprintf("taking step of size %f", tot) << endl;
   
   function()->set_x(xnext);
-    
-  //conv_->get_nextx(function());
 
   // make the next gradient computed more accurate, since it will
   // be smaller

@@ -362,7 +362,7 @@ IntMolecularCoor::init()
               new_internal_coordinates(i) = constant_->coor(j)->value();
             }
 
-          all_to_cartesian(new_internal_coordinates);
+          all_to_cartesian(molecule_, new_internal_coordinates);
         }
 
       // make sure that the coordinates have exactly the
@@ -772,10 +772,11 @@ IntMolecularCoor::dim()
 }
 
 int
-IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
+IntMolecularCoor::all_to_cartesian(const RefMolecule &mol,
+                                   RefSCVector&new_internal)
 {
   // get a reference to Molecule for convenience
-  Molecule& molecule = *(molecule_.pointer());
+  Molecule& molecule = *(mol.pointer());
 
   // don't bother updating the bmatrix when the error is less than this
   const double update_tolerance = 1.0e-6;
@@ -787,7 +788,7 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
   double maxabs_cart_diff = 0.0;
   for (int step = 0; step < max_update_steps_; step++) {
       // compute the old internal coordinates
-      all_to_internal(old_internal);
+      all_to_internal(mol, old_internal);
 
       if (debug_) {
           cout << node0
@@ -816,7 +817,7 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
           variable_and_constant->add(constant_);
 
           // form the bmatrix
-          variable_and_constant->bmat(molecule_,bmat);
+          variable_and_constant->bmat(mol,bmat);
 
           // Compute the singular value decomposition of B
           RefSCMatrix U(dvc_,dvc_,matrixkit_);
@@ -872,8 +873,8 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
       maxabs_cart_diff = maxabs->result();
       if (maxabs_cart_diff < cartesian_tolerance_) {
 
-          constant_->update_values(molecule_);
-          variable_->update_values(molecule_);
+          constant_->update_values(mol);
+          variable_->update_values(mol);
 
           return 0;
         }
@@ -891,7 +892,8 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
 }
 
 int
-IntMolecularCoor::to_cartesian(const RefSCVector&new_internal)
+IntMolecularCoor::to_cartesian(const RefMolecule &mol,
+                               const RefSCVector&new_internal)
 {
   if (new_internal.dim().n() != dim_.n()
       || dvc_.n() != variable_->n() + constant_->n()
@@ -909,13 +911,13 @@ IntMolecularCoor::to_cartesian(const RefSCVector&new_internal)
       all_internal(i) = constant_->coor(j)->value();
     }
 
-  int ret = all_to_cartesian(all_internal);
+  int ret = all_to_cartesian(mol, all_internal);
 
   if (watched_.nonnull()) {
       cout << node0 << endl
            << indent << "Watched coordinate(s):\n" << incindent;
-      watched_->update_values(molecule_);
-      watched_->print(molecule_,cout);
+      watched_->update_values(mol);
+      watched_->print(mol,cout);
       cout << node0 << decindent;
     }
   
@@ -923,7 +925,7 @@ IntMolecularCoor::to_cartesian(const RefSCVector&new_internal)
 }
 
 int
-IntMolecularCoor::all_to_internal(RefSCVector&internal)
+IntMolecularCoor::all_to_internal(const RefMolecule &mol,RefSCVector&internal)
 {
   if (internal.dim().n() != dvc_.n()
       || dim_.n() != variable_->n()
@@ -932,8 +934,8 @@ IntMolecularCoor::all_to_internal(RefSCVector&internal)
       abort();
     }
 
-  variable_->update_values(molecule_);
-  constant_->update_values(molecule_);
+  variable_->update_values(mol);
+  constant_->update_values(mol);
    
   int n = dim_.n();
   int i;

@@ -84,7 +84,7 @@ class SimpleCo : public IntCoor {
     // in the Molecule.
     void update_value(const RefMolecule&);
     //. Fill in a row of the B matrix.
-    void bmat(RefMolecule&,RefSCVector&bmat,double coef = 1.0);
+    void bmat(const RefMolecule&,RefSCVector&bmat,double coef = 1.0);
 
     //. Calculates an approximate force constant and returns it's value.
     virtual double calc_force_con(Molecule&) = 0;

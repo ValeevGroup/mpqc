@@ -762,6 +762,7 @@ sub input_string() {
     $opt = "$opt\n    update<$updateclass>: ()";
     $opt = "$opt\n    convergence<MolEnergyConvergence>: (";
     $opt = "$opt\n      cartesian = yes";
+    $opt = "$opt\n      energy = \$..:..:mole";
     $opt = "$opt\n    )";
     $opt = "$opt\n  )\n";
 

@@ -358,6 +358,14 @@ MolEnergyConvergence::MolEnergyConvergence(StateIn&s):
 
 MolEnergyConvergence::MolEnergyConvergence(const RefKeyVal&keyval)
 {
+  mole_ = keyval->describedclassvalue("energy");
+  if (mole_.null()) {
+      cerr << "MolEnergyConvergence(const RefKeyVal&keyval): "
+           << "require an energy keyword of type MolecularEnergy"
+           << endl;
+      abort();
+    }
+
   cartesian_ = keyval->booleanvalue("cartesian");
   if (keyval->error() != KeyVal::OK) cartesian_ = 1;
 
@@ -416,14 +424,21 @@ MolEnergyConvergence::get_x(const RefFunction &f)
 }
 
 void
-MolEnergyConvergence::get_nextx(const RefFunction &f)
+MolEnergyConvergence::set_nextx(const RefSCVector& x)
 {
-  RefMolecularEnergy m(f);
-  if (m.nonnull() && cartesian_) {
-      nextx_ = m->get_cartesian_x();
+  if (mole_.null() && (!cartesian_ || mole_->molecularcoor().null())) {
+      nextx_ = x.copy();
     }
   else {
-      nextx_ = f->get_x();
+      RefMolecule mol = new Molecule(*(mole_->molecule().pointer()));
+      mole_->molecularcoor()->to_cartesian(mol, x);
+      nextx_ = mole_->matrixkit()->vector(mole_->moldim());
+      int c = 0;
+      for (int i=0; i < mol->natom(); i++) {
+          nextx_(c) = mol->r(i,0); c++;
+          nextx_(c) = mol->r(i,1); c++;
+          nextx_(c) = mol->r(i,2); c++;
+        }
     }
 }
 

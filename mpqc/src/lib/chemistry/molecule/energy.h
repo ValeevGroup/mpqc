@@ -101,6 +101,7 @@ class MolEnergyConvergence: public Convergence {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
+    RefMolecularEnergy mole_;
     int cartesian_;
 
     void set_defaults();
@@ -114,11 +115,11 @@ class MolEnergyConvergence: public Convergence {
     void save_data_state(StateOut&);
 
     // Set the current gradient and position information.  These
-    //will possibly grab the cartesian infomation if the Function
-    //is a MolecularEnergy.
+    //will possibly grab the cartesian infomation if we have a
+    //MolecularEnergy.
     void get_grad(const RefFunction &);
     void get_x(const RefFunction &);
-    void get_nextx(const RefFunction &);
+    void set_nextx(const RefSCVector &);
 
     // Return nonzero if the optimization has converged.
     int converged();

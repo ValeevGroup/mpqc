@@ -96,7 +96,7 @@ class IntCoor: public SavableState {
     //. Recalculate the value of the coordinate.
     virtual void update_value(const RefMolecule&) = 0;
     //. Fill in a row the the B matrix.
-    virtual void bmat(RefMolecule&,RefSCVector&bmat,double coef = 1.0) = 0;
+    virtual void bmat(const RefMolecule&,RefSCVector&bmat,double coef=1.0) = 0;
     //. Test to see if this internal coordinate is equivalent to that one.
     // The definition of equivalence is left up to the individual coordinates.
     virtual int equivalent(RefIntCoor&) = 0;
@@ -157,7 +157,7 @@ class SumIntCoor: public IntCoor {
     //. Recalculate the value of the coordinate.
     void update_value(const RefMolecule&);
     //. Fill in a row the the B matrix.
-    void bmat(RefMolecule&,RefSCVector&bmat,double coef = 1.0);
+    void bmat(const RefMolecule&,RefSCVector&bmat,double coef = 1.0);
     //. Always returns 0.
     int equivalent(RefIntCoor&);
 };
@@ -202,9 +202,9 @@ class SetIntCoor: public SavableState {
     //. Returns a reference to the i'th coordinate in the set.
     RefIntCoor coor(int i) const;
     //. Compute the B matrix by finite displacements.
-    virtual void fd_bmat(RefMolecule&,RefSCMatrix&);
+    virtual void fd_bmat(const RefMolecule&,RefSCMatrix&);
     //. Compute the B matrix the old-fashioned way.
-    virtual void bmat(RefMolecule&, RefSCMatrix&);
+    virtual void bmat(const RefMolecule&, RefSCMatrix&);
     //. Create an approximate Hessian for this set of coordinates.  This
     // Hessian is a symmetric matrix whose i'th diagonal is the force constant
     // for the i'th coordinate in the set.
@@ -324,7 +324,9 @@ class MolecularCoor: public SavableState
     //. Given a set of displaced internal coordinates, update the cartesian
     // coordinates of the \clsnmref{Molecule} contained herein.  This function
     // does not change the vector ``internal''.
-    virtual int to_cartesian(const RefSCVector&internal) = 0;
+    int to_cartesian(const RefSCVector&internal);
+    virtual int to_cartesian(const RefMolecule&mol,
+                             const RefSCVector&internal) = 0;
 
     //. Fill in the vector ``internal'' with the current internal
     // coordinates.  Note that this member will update the values of the
@@ -473,15 +475,15 @@ class IntMolecularCoor: public MolecularCoor
     
     //. Like \srccd{to\_cartesians()}, except all internal coordinates are
     // considered, not just the variable ones.
-    virtual int all_to_cartesian(RefSCVector&internal);
+    virtual int all_to_cartesian(const RefMolecule &,RefSCVector&internal);
     //. Like \srccd{to\_internal()}, except all internal coordinates are
     // considered, not just the variable ones.
-    virtual int all_to_internal(RefSCVector&internal);
+    virtual int all_to_internal(const RefMolecule &,RefSCVector&internal);
 
     //. These implement the virtual functions inherited from
     // \clsnmref{MolecularCoor}.
     virtual RefSCDimension dim();
-    virtual int to_cartesian(const RefSCVector&internal);
+    virtual int to_cartesian(const RefMolecule &,const RefSCVector&internal);
     virtual int to_internal(RefSCVector&internal);
     virtual int to_cartesian(RefSCVector&cartesian,RefSCVector&internal);
     virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian);
@@ -609,7 +611,7 @@ class CartMolecularCoor: public MolecularCoor
     //. These implement the virtual functions inherited from
     // \clsnmref{MolecularCoor}.
     virtual RefSCDimension dim();
-    virtual int to_cartesian(const RefSCVector&internal);
+    virtual int to_cartesian(const RefMolecule&,const RefSCVector&internal);
     virtual int to_internal(RefSCVector&internal);
     virtual int to_cartesian(RefSCVector&cartesian,RefSCVector&internal);
     virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian);

@@ -142,9 +142,9 @@ Convergence::get_x(const RefFunction &f)
 }
 
 void
-Convergence::get_nextx(const RefFunction &f)
+Convergence::set_nextx(const RefSCVector &x)
 {
-  nextx_ = f->get_x();
+  nextx_ = x->copy();
 }
 
 void

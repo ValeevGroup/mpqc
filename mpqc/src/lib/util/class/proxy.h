@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _util_keyval_proxy_h
-#define _util_keyval_proxy_h
+#ifndef _util_class_proxy_h
+#define _util_class_proxy_h
 
 #include <util/class/class.h>
 

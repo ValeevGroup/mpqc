@@ -26,7 +26,7 @@ static ClassDesc MP2_cd(typeid(MP2), "MP2", 1, "public Wavefunction",
 MP2::MP2(const Ref<KeyVal> &keyval):Wavefunction(keyval) {
   ref_mp2_wfn_ << keyval->describedclassvalue("reference");
   if(ref_mp2_wfn_.null()) {
-    ExEnv::out() << "reference is null" << endl;
+    ExEnv::out0() << "reference is null" << endl;
     abort();
   }
 }
@@ -47,7 +47,7 @@ void
 MP2::compute(void)
 {
   if(gradient_needed()) {
-    ExEnv::out() << "No gradients yet" << endl;
+    ExEnv::out0() << "No gradients yet" << endl;
     abort();
   }
 
@@ -57,7 +57,7 @@ MP2::compute(void)
   double refenergy = ref_mp2_wfn_->energy();
   double mp2energy = compute_mp2_energy();
 
-  ExEnv::out() << node0 << indent << "MP2 Energy = " << mp2energy << endl;
+  ExEnv::out0() << indent << "MP2 Energy = " << mp2energy << endl;
 
   set_value(refenergy + mp2energy);
   set_actual_value_accuracy(ref_mp2_wfn_->actual_value_accuracy()
@@ -76,7 +76,7 @@ MP2::nelectron(void) {
 
 RefSymmSCMatrix
 MP2::density(void) {
-  ExEnv::out() << "No density yet" << endl;
+  ExEnv::out0() << "No density yet" << endl;
   abort();
   return 0;
 }
@@ -95,7 +95,7 @@ double
 MP2::compute_mp2_energy()
 {
   if(molecule()->point_group()->char_table().order() != 1) {
-    ExEnv::out() << "C1 symmetry only" << endl;
+    ExEnv::out0() << "C1 symmetry only" << endl;
     abort();
   }
 

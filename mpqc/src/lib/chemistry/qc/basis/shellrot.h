@@ -35,6 +35,9 @@
 #include <math/symmetry/pointgrp.h>
 
 class Integral;
+/** Compute the transformation matrices that maps a set of Cartesian
+    functions into to another set of Cartesian functions in a rotated
+    coordinate system. */
 class ShellRotation {
   private:
     int n_;
@@ -44,27 +47,44 @@ class ShellRotation {
     void done();
 
   public:
+    /** Initialize the ShellRotation for Cartesian functions, given the
+        angular momentum, a symmetry operation, and an Integral object. */
     void init(int a, SymmetryOperation&, const RefIntegral&);
+    /** Initialize the ShellRotation for solid harmonic functions, given
+        the angular momentum, a symmetry operation, and an Integral
+        object. */
     void init_pure(int a, SymmetryOperation&, const RefIntegral&);
     
+    /// Initialize this ShellRotation to hold a n by n transformation.
     ShellRotation(int n);
+    /// Initialize this from another ShellRotation.
     ShellRotation(const ShellRotation&);
+    /// Initialize using init(...) or, if pure is nonzero, init_pure(...).
     ShellRotation(int a, SymmetryOperation&, const RefIntegral&, int pure =0);
     virtual ~ShellRotation();
 
+    /// Assign this to another shell rotation.
     ShellRotation& operator=(const ShellRotation&);
     
+    /// Return the angular momentum.
     int am() const { return am_; }
+    /// Return the number of functions in a shell.
     int dim() const { return n_; }
     
+    /// Return an element of the transform matrix.
     double& operator()(int i, int j) { return r[i][j]; }
+    /// Return a row of the transform matrix.
     double* operator[](int i) { return r[i]; }
     
-    ShellRotation operate(const ShellRotation&) const;
-    ShellRotation sim_transform(const ShellRotation&) const;
+    /// Returns the result of rot*this.
+    ShellRotation operate(const ShellRotation&rot) const;
+    /// Returns the result of rot*this*transpose(rot).
+    ShellRotation sim_transform(const ShellRotation&rot) const;
     
+    /// Return the trace of the transformation.
     double trace() const;
     
+    /// Print the object to cout.
     void print() const;
 };
 

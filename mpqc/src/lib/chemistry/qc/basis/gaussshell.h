@@ -76,19 +76,23 @@ class GaussianShell: public SavableState
     static const char* amtypes;
     static const char* AMTYPES;
   public:
-    // Users of GaussianShell must pass pointers to newed memory that is kept
-    // by GaussianShell and deleted by the destructor.
-    // The arguments for the following ctor are:
-    //   ncn is the number of contracted functions
-    //     (1 except for SP and gen. con.)
-    //   nprm is the number of primitives
-    //   e gives the exponents (length nprm)
-    //   am gives the angular momentum (length ncn)
-    //   pure is 1 for pure am and 0 for cartesian (length ncn)
-    //   c are the contraction coefficients (length ncn by nprm)
-    //   pt describes whether the primitive functions are to be considered
-    //     normalized or unnormalized.  this effects whether or not c is
-    //     manipulated to give the correct normalization.
+    /** A GaussianShell constructor.
+        Users of GaussianShell must pass pointers to newed memory that is kept
+        by GaussianShell and deleted by the destructor.
+        The arguments for the following ctor are:
+        \begin{itemize}
+          \item ncn is the number of contracted functions
+             (1 except for SP and gen. con.)
+          \item nprm is the number of primitives
+          \item e gives the exponents (length nprm)
+          \item am gives the angular momentum (length ncn)
+          \item pure is 1 for pure am and 0 for cartesian (length ncn)
+          \item c are the contraction coefficients (length ncn by nprm)
+          \item pt describes whether the primitive functions are to be
+            considered normalized or unnormalized.  This effects whether
+            or not c is manipulated to give the correct normalization.
+        \end{itemize}
+    */
     GaussianShell(
                   int ncn,
                   int nprm,
@@ -97,10 +101,10 @@ class GaussianShell: public SavableState
                   int* pure,
                   double** c,
                   PrimitiveType pt = GaussianShell::Normalized);
-    // In this ctor pure is either GaussianShell::Cartesian or
-    // Gaussian::Pure and all of the contracted functions are
-    // treated in that way. (The user doesn\'t need to compute
-    // generate a int*pure vector in this case.)
+    /** A GaussianShell constructor.  In this ctor pure is either
+     GaussianShell::Cartesian or Gaussian::Pure and all of the contracted
+     functions are treated in that way. (The user doesn\'t need to compute
+     generate a int*pure vector in this case.) */
     GaussianShell(
                   int ncn,
                   int nprm,
@@ -109,52 +113,84 @@ class GaussianShell: public SavableState
                   GaussianType pure,
                   double** c,
                   PrimitiveType pt = GaussianShell::Normalized);
+    /// Construct a GaussianShell from KeyVal input.
     GaussianShell(const RefKeyVal&);
+    /// Restore a GaussianShell from a StateIn object.
     GaussianShell(StateIn&);
+    /** Construct a GaussianShell from KeyVal input.  If pure
+        is nonzero Cartesian functions will be used, otherwise,
+        solid harmonics will be used. */
     GaussianShell(const RefKeyVal&,int pure);
     ~GaussianShell();
     void save_data_state(StateOut&);
+    /// The number of primitive Gaussian shells.
     int nprimitive() const { return nprim; }
+    /// The number of contractions formed from the primitives.
     int ncontraction() const { return ncon; }
+    /// The number of basis functions.
     int nfunction() const { return nfunc; }
+    /// The maximum angular momentum in the shell.
     int max_angular_momentum() const { return max_am_; }
+    /// The minimum angular momentum in the shell.
     int min_angular_momentum() const { return min_am_; }
+    /// The maximum number of Cartesian functions in any contraction.
     int max_cartesian() const;
+    /// The angular momentum of the given contraction.
     int am(int con) const { return l[con]; }
+    /// The maximum angular momentum of any contraction.
     int max_am() const { return max_am_; }
+    /// The minimum angular momentum of any contraction.
     int min_am() const { return min_am_; }
+    /// The character symbol for the angular momentum of the given contraction.
     char amchar(int con) const { return amtypes[l[con]]; }
+    /// The number of basis functions coming from the given contraction.
     int nfunction(int con) const;
+    /// The total number of functions if this shell was Cartesian.
     int ncartesian() const { return ncart_; }
-    // this is given a shift for all of the angular momentums
+    /** The total number of Cartesian functions if this shift is applied to
+        all of the angular momentums. */
     int ncartesian_with_aminc(int aminc) const;
+    /// The number of Cartesian functions for the given contraction.
     int ncartesian(int con) const { return ((l[con]+2)*(l[con]+1))>>1; }
+    /// Returns nonzero if contraction con is Cartesian.
     int is_cartesian(int con) const { return !puream[con]; }
+    /// Returns nonzero if contraction con is solid harmonics.
     int is_pure(int con) const { return puream[con]; }
+    /// Returns nonzero if any contraction is solid harmonics.
     int has_pure() const { return has_pure_; }
-    // returns the con coef for unnormalized primitives
+    /// Returns the contraction coef for unnormalized primitives.
     double coefficient_unnorm(int con,int prim) const {return coef[con][prim];}
-    // returns the con coef for normalized primitives
+    /// Returns the contraction coef for normalized primitives.
     double coefficient_norm(int con,int prim) const;
+    /// Returns the exponent of the given primitive.
     double exponent(int iprim) const { return exp[iprim]; }
 
-    // compute the value of this shell at offset r
+    /** Compute the values for this shell at position r.  The
+        basis_values argument must be vector of length nfunction(). */
     int values(CartesianIter **, SphericalTransformIter **,
                const SCVector3& r, double* basis_values);
+    /** Like values(...), but computes gradients of the basis function
+        values, too. */
     int grad_values(CartesianIter **, SphericalTransformIter **,
                     const SCVector3& R,
                     double* g_values,
                     double* basis_values=0) const;
+    /** Like values(...), but computes first and second derivatives of the
+        basis function values, too. */
     int hessian_values(CartesianIter **, SphericalTransformIter **,
                        const SCVector3& R,
                        double* h_values, double* g_values=0,
                        double* basis_values=0) const;
 
-    // returns the intra-generalized-contraction overlap
-    // matrix element <con func1|con func2> within an arbitrary
-    // constant for the shell
+    /** Returns the intra-generalized-contraction overlap
+        matrix element <con func1|con func2> within an arbitrary
+        constant for the shell. */
     double relative_overlap(const RefIntegral&,
                             int con, int func1, int func2) const;
+    /** Returns the intra-generalized-contraction overlap matrix element
+        <con func1|con func2> within an arbitrary constant for the shell.
+        func1 and func2 are determined according to the axis exponents, a1,
+        b1, c1, a2, b2, and c2. */
     double relative_overlap(int con,
                             int a1, int b1, int c1,
                             int a2, int b2, int c2) const;

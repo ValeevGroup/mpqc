@@ -277,71 +277,108 @@ class GaussianBasisSet: public SavableState
 
     void save_data_state(StateOut&);
 
+    /// Return the name of the basis set.
     const char* name() const { return name_; }
 
+    /// Return the Molecule object.
     RefMolecule molecule() const { return molecule_; }
+    /// Returns the SCMatrixKit that is to be used for AO bases.
     RefSCMatrixKit matrixkit() { return matrixkit_; }
+    /// Returns the SCMatrixKit that is to be used for SO bases.
     RefSCMatrixKit so_matrixkit() { return so_matrixkit_; }
+    /// Returns the SCDimension object for the dimension.
     RefSCDimension basisdim() { return basisdim_; }
 
+    /// Return the number of centers.
     int ncenter() const;
+    /// Return the number of shells.
     int nshell() const { return nshell_; }
+    /// Return the number of shells on the given center.
     int nshell_on_center(int icenter) const;
+    /** Return an overall shell number, given a center and the shell number
+        on that center. */
     int shell_on_center(int icenter, int shell) const;
+    /// Return the center on which the given shell is located.
     int shell_to_center(int ishell) const { return shell_to_center_(ishell); }
+    /// Return the number of basis functions.
     int nbasis() const { return nbasis_; }
+    /// Return the number of basis functions on the given center.
     int nbasis_on_center(int icenter) const;
+    /// Return the number of primitive Gaussians.
     int nprimitive() const { return nprim_; }
 
+    /// Return the maximum number of functions that any shell has.
     int max_nfunction_in_shell() const;
+    /** Return the maximum number of Cartesian functions that any shell has.
+        The optional argument is an angular momentum increment. */
     int max_ncartesian_in_shell(int aminc=0) const;
+    /// Return the highest angular momentum in any shell.
     int max_angular_momentum() const;
-    // This is only need by integrals routines to set up
-    // intermediate arrays.
+    /// Return the maximum number of Gaussians in a contraction in any shell.
     int max_ncontraction() const;
+    /** Return the maximum angular momentum found in the given contraction
+        number for any shell.  */
     int max_am_for_contraction(int con) const;
+    /// Return the maximum number of Cartesian functions in any shell.
     int max_cartesian() const;
 
+    /// Return the number of the first function in the given shell.
     int shell_to_function(int i) const { return shell_to_function_(i); }
+    /// Return the shell to which the given function belongs.
     int function_to_shell(int i) const;
 
-    // access to shells thru overall shell number
+    /// Return a reference to GaussianShell number i.
     const GaussianShell& operator()(int i) const { return *shell_[i]; }
+    /// Return a reference to GaussianShell number i.
     GaussianShell& operator()(int i) { return *shell_[i]; }
+    /// Return a reference to GaussianShell number i.
     const GaussianShell& operator[](int i) const { return *shell_[i]; }
+    /// Return a reference to GaussianShell number i.
     GaussianShell& operator[](int i) { return *shell_[i]; }
+    /// Return a reference to GaussianShell number i.
     const GaussianShell& shell(int i) const { return *shell_[i]; }
+    /// Return a reference to GaussianShell number i.
     GaussianShell& shell(int i) { return *shell_[i]; }
 
-    // access to shells thru center number and relative shell number
+    /// Return a reference to GaussianShell number ishell on center icenter.
     const GaussianShell& operator()(int icenter,int ishell) const;
+    /// Return a reference to GaussianShell number ishell on center icenter.
     GaussianShell& operator()(int icenter,int ishell);
+    /// Return a reference to GaussianShell number j on center i.
     const GaussianShell& shell(int i,int j) const { return operator()(i,j); }
+    /// Return a reference to GaussianShell number j on center i.
     GaussianShell& shell(int i,int j) { return operator()(i,j); }
 
-    // access to r thru center number
+    /** The location of center icenter.  The xyz argument is 0 for x, 1 for
+        y, and 2 for z. */
     double r(int icenter,int xyz) const;
     
-    // compute the value for this basis set at position r
-    // basis_values must be vector of length nbasis 
+    /** Compute the values for this basis set at position r.  The
+        basis_values argument must be vector of length nbasis. */
     int values(const SCVector3& r, double* basis_values) const;
-    // g_values must be vector of length 3*nbasis
-    // the data will be written in the order bf1_x, bf1_y, bf1_z, ...
+    /** Like values(...), but computes gradients of the basis function
+        values, too.  The g_values argument must be vector of length
+        3*nbasis.  The data will be written in the order bf1_x, bf1_y,
+        bf1_z, ... */
     int grad_values(const SCVector3& r,
                     double*g_values,double* basis_values=0) const;
-    // h_values must be vector of length 6*nbasis
-    // the data will be written in the order bf1_xx, bf1_yx, bf1_yy,
-    // bf1_zx, bf1_zy, bf1_zz, ...
+    /** Like values(...), but computes first and second derivatives of the
+        basis function values, too.  h_values must be vector of length
+        6*nbasis.  The data will be written in the order bf1_xx, bf1_yx,
+        bf1_yy, bf1_zx, bf1_zy, bf1_zz, ... */
     int hessian_values(const SCVector3& r, double *h_values,
                        double*g_values=0,double* basis_values=0) const;
-    // this must be called before the above two routines to initialize
-    // iterators that know the basis function order
+    /** This must be called before the values, grid_values, and
+        hessian_values members to initialize iterators that know the basis
+        function order. */
     void set_integral(const RefIntegral&);
 
     /// Returns true if this and the argument are equivalent.
     int equiv(const RefGaussianBasisSet &b);
 
+    /// Print a brief description of the basis set.
     void print_brief(ostream& =cout) const;
+    /// Print a detailed description of the basis set.
     void print(ostream& =cout) const;
 };
 

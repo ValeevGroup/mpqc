@@ -34,36 +34,57 @@
 
 #include <chemistry/qc/basis/basis.h>
 
+/** SOTransformShell describes how an AO function contributes to an SO
+    function in a particular SO shell. */
 class SOTransformFunction {
   public:
+    /// The coefficient of the AO.
     double coef;
+    /// The AO function number.
     int aofunc;
+    /// The SO function number.
     int sofunc;
+    /// The SO function's irrep.
     int irrep;
 };
 
+/** SOTransformShell maintains a list of AO functions contribute to an SO
+    function in a particular SO shell.  The information is stored in
+    objects of type SOTransformFunction. */
 class SOTransformShell {
   public:
+    /// The number of the AO shell from which these functions come.
     int aoshell;
+    /// The number of AO/SO function pairs contributing.
     int nfunc;
+    /// The array of SOTransformFunction objects describing the transform.
     SOTransformFunction *func;
     SOTransformShell();
     ~SOTransformShell();
+    /// Add another function to the transform.
     void add_func(int irrep, double coef, int aofunc, int sofunc);
 };
 
+/** SOTransform maintains a list of AO shells that are be used
+    to compute the SO.  The information is stored in objects of
+    type SOTransformShell. */
 class SOTransform {
   public:
     int naoshell_allocated;
+    /// The number of AO shells that make up this SO shell.
     int naoshell;
+    /// The SOTransformShell object for each AO.
     SOTransformShell *aoshell;
     SOTransform();
     ~SOTransform();
     void set_naoshell(int n);
+    /// Adds another term to the transform.
     void add_transform(int aoshell, int irrep,
                        double coef, int aofunc, int sofunc);
 };
 
+/** A SOBasis object describes the transformation from an atomic orbital
+    basis to a symmetry orbital basis.  */
 class SOBasis : public VRefCount {
   protected:
     RefGaussianBasisSet basis_;
@@ -82,34 +103,40 @@ class SOBasis : public VRefCount {
     SOTransform *trans_;
 
   public:
+    /// Create an SOBasis object given a GaussianBasisSet and Integral objects.
     SOBasis(const RefGaussianBasisSet &, const RefIntegral&);
     ~SOBasis();
 
+    /// Return the number of shells.
     int nshell() const { return nshell_; }
+    /// Return the number of irreps.
     int nirrep() const { return nirrep_; }
     int ncomponent(int iirrep) const { return ncomp_[iirrep]; }
-    // returns the number of functions in the shell
+    /// Return the number of functions in the given shell.
     int nfunction(int ishell) const;
-    // return the number of functions in the ao shell that make up
-    // the given so shell
+    /** Return the number of functions in the AO shell that make up
+        the given SO shell. */
     int naofunction(int ishell) const { return naofunc_[ishell]; }
-    // returns the number of functions in the shell in a given irrep
+    /// Returns the number of functions in the shell in a given irrep.
     int nfunction(int ishell, int iirrep) const;
-    // returns the max number of functions in a shell (summed over all irreps)
+    /** Returns the maximum number of functions in a shell (summed over all
+        irreps) */
     int max_nfunction_in_shell() const;
-    // normally, so shell numbering starts at zero within each irrep
-    // this returns an offset to make so shell numbers unique within the shell
+    /** Normally, SO shell numbering starts at zero within each irrep.
+        This returns an offset to make SO shell numbers unique within the
+        shell. */
     int function_offset_within_shell(int ishell, int iirrep) const;
 
-    // Convert the so shell number to the overall number of the first
-    // function within that shell.
+    /** Convert the SO shell number to the overall number of the first
+        function within that shell. */
     int function(int ishell);
 
-    // so shell and function number with shell to irrep
+    /// Convert SO shell and function number within shell to irrep.
     int irrep(int ishell, int ifunc) const;
-    // so shell and function number to number within irrep
+    /// Convert SO shell and function number to number within irrep.
     int function_within_irrep(int ishell, int ifunc) const;
 
+    /// Return the SOTransform object for the given shell.
     const SOTransform &trans(int i) const { return trans_[i]; }
 
     void print(ostream &o=cout) const;

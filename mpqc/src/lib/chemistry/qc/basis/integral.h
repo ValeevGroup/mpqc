@@ -59,6 +59,8 @@ class Integral : public SavableState {
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   protected:
+    /** Initialize the Integral object given a GaussianBasisSet for
+        each center. */
     Integral(const RefGaussianBasisSet &b1,
              const RefGaussianBasisSet &b2,
              const RefGaussianBasisSet &b3,
@@ -75,23 +77,33 @@ class Integral : public SavableState {
 
     RefMessageGrp grp_;
   public:
+    /// Restore the Integral object from the given StateIn object.
     Integral(StateIn&);
+    /// Integral the Integral object from the given KeyVal object.
     Integral(const RefKeyVal&);
     
     void save_data_state(StateOut&);
 
+    /// Sets the total amount of storage, in bytes, that is available.
     void set_storage(int i) { storage_=i; };
+    /// Returns how much storage has been used.
     int storage_used() { return storage_used_; }
+    /// Returns how much storage was not needed.
     int storage_unused();
 
-    // For the specific integral classes to tell integral
-    // how much memory they are using/freeing.
+    /** The specific integral classes use this to tell Integral
+        how much memory they are using/freeing. */
     void adjust_storage(int s) { storage_used_ += s; }
 
+    /// Return the PetiteList object.
     RefPetiteList petite_list();
+    /// Return the PetiteList object for the given basis set.
     RefPetiteList petite_list(const RefGaussianBasisSet&);
+    /** Return the ShellRotation object for a shell of the given angular
+        momentum.  Pass nonzero to pure to do solid harmonics. */
     ShellRotation shell_rotation(int am, SymmetryOperation&, int pure=0);
 
+    /// Set the basis set for each center.
     virtual void set_basis(const RefGaussianBasisSet &b1,
                            const RefGaussianBasisSet &b2 = 0,
                            const RefGaussianBasisSet &b3 = 0,
@@ -100,44 +112,70 @@ class Integral : public SavableState {
     // /////////////////////////////////////////////////////////////////////
     // the following must be defined in the specific integral package
 
+    /** Return a CartesianIter object.  The caller is responsible for
+        freeing the object. */
     virtual CartesianIter * new_cartesian_iter(int) =0;
+    /** Return a RedundantCartesianIter object.  The caller is responsible
+        for freeing the object. */
     virtual RedundantCartesianIter * new_redundant_cartesian_iter(int) =0;
+    /** Return a RedundantCartesianSubIter object.  The caller is
+        responsible for freeing the object. */
     virtual RedundantCartesianSubIter *
                                  new_redundant_cartesian_sub_iter(int) =0;
+    /** Return a SphericalTransformIter object.  The caller is
+        responsible for freeing the object. */
     virtual SphericalTransformIter *
                   new_spherical_transform_iter(int l,
                                                int inv=0, int subl=-1) =0;
+    /** Return a SphericalTransform object.  The pointer is only valid
+        while this Integral object is valid. */
     virtual const SphericalTransform *
                   spherical_transform(int l,
                                       int inv=0, int subl=-1) =0;
     
+    /// Return a OneBodyInt that computes the overlap.
     virtual RefOneBodyInt overlap() =0;
     
+    /// Return a OneBodyInt that computes the kinetic energy.
     virtual RefOneBodyInt kinetic() =0;
 
+    /** Return a OneBodyInt that computes the integrals for interactions
+        with point charges. */
     virtual RefOneBodyInt point_charge(const RefPointChargeData&) =0;
 
-    // charges from the atom on the first center are used
+    /** Return a OneBodyInt that computes the nuclear repulsion integrals.
+        Charges from the atoms on the center one are used. */
     virtual RefOneBodyInt nuclear() = 0;
 
+    /// Return a OneBodyInt that computes the core Hamiltonian integrals.
     virtual RefOneBodyInt hcore() = 0;
 
+    /** Return a OneBodyInt that computes the electric field integrals
+        dotted with a given vector. */
     virtual RefOneBodyInt efield_dot_vector(const RefEfieldDotVectorData&) =0;
 
+    /// Return a OneBodyInt that computes dipole moment integrals.
     virtual RefOneBodyInt dipole(const RefDipoleData&) =0;
 
+    /// Return a OneBodyDerivInt that computes overlap derivatives.
     virtual RefOneBodyDerivInt overlap_deriv() =0;
                                              
+    /// Return a OneBodyDerivInt that computes kinetic energy derivatives.
     virtual RefOneBodyDerivInt kinetic_deriv() =0;
                                              
+    /// Return a OneBodyDerivInt that computes nuclear repulsion derivatives.
     virtual RefOneBodyDerivInt nuclear_deriv() =0;
                                      
+    /// Return a OneBodyDerivInt that computes core Hamiltonian derivatives.
     virtual RefOneBodyDerivInt hcore_deriv() =0;
                                              
+    /// Return a TwoBodyInt that computes electron repulsion integrals.
     virtual RefTwoBodyInt electron_repulsion() =0;
     
+    /// Return a TwoBodyDerivInt that computes electron repulsion derivatives.
     virtual RefTwoBodyDerivInt electron_repulsion_deriv() =0;
 
+    /// Return the MessageGrp used by the integrals objects.
     RefMessageGrp messagegrp() { return grp_; }
 };
 SavableState_REF_dec(Integral);

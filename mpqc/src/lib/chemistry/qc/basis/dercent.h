@@ -47,10 +47,15 @@ class DerivCenters {
     /** These are used by the Integral specializations to
         initializes the DerivCenters structure. */
     DerivCenters();
+    /// Clear the list of centers.
     void clear();
+    /// Add a center for which derivatives will be computed.
     void add_center(int center, const RefGaussianBasisSet &, int shell);
+    /// Add a center for which derivatives will not be computed.
     void add_omitted(int center, const RefGaussianBasisSet &, int shell);
+    /// Add a center for which derivatives will be computed.
     void add_center(int center, int atom);
+    /// Add a center for which derivatives will not be computed.
     void add_omitted(int center, int atom);
 
     /// The number of unique centers minus one.

@@ -38,5 +38,5 @@ ifeq ($(CXX),CC)
   CXXOPTIONS += -I$(TOPDIR)/g++-include
 endif
 
-SYSLIBS = -lm -lf2c
+SYSLIBS = -lm
 

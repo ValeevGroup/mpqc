@@ -159,7 +159,7 @@ dmt_matrix DPmat;
   gsum0(&delta,1,5,mtype_get(),0);
   bcast0(&delta,sizeof(double),mtype_get(),0);
 
-  delta = sqrt(delta)/scf_info->mxcoef2;
+  delta = sqrt(delta/scf_info->mxcoef2);
 
   return delta;
 }

@@ -5,6 +5,7 @@ extern "C" {
 
 #include <math/scmat/matrix.h>
 #include <math/scmat/local.h>
+#include <chemistry/molecule/localdef.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/simple.h>
@@ -18,16 +19,8 @@ static void add_out(RefSetIntCoor&, BitArray&, Molecule&);
 
 static int linear(Molecule&,int,int,int);
 static int hterminal(Molecule&, BitArray&, int);
+static int nearest_contact(int,Molecule&);
 
-///////////////////////////////////////////////////////////////////////////
-// utility functions
-
-static inline double
-dist(Point& a, Point& b)
-{
-  double x,y,z;
-  return (sqrt((x=a[0]-b[0])*x + (y=a[1]-b[1])*y + (z=a[2]-b[2])*z));
-}
 
 ///////////////////////////////////////////////////////////////////////////
 // members of IntMolecularCoor
@@ -216,6 +209,26 @@ IntMolecularCoor::init()
       bonds.set(extra_bonds_[i*2]-1,extra_bonds_[i*2+1]-1);
     }
 
+  // check for atoms bound to nothing
+  for (i=0; i < m.natom(); i++) {
+    int bound=0;
+    for (int j=0; j < m.natom(); j++) {
+      if (bonds(i,j)) {
+        bound=1;
+        break;
+      }
+    }
+    if (!bound) {
+      int j = nearest_contact(i,m);
+      fprintf(stderr,"\n  Warning!:  atom %d is not bound to anything.\n",i+1);
+      fprintf(stderr,
+              "             You may wish to add an entry to extra_bonds.\n");
+      fprintf(stderr,
+              "             Atom %d is only %f angstroms away...\n\n",j+1,
+              bohr*dist(m[i].point(),m[j].point()));
+    }
+  }
+      
   // compute the simple internal coordinates by type
   add_bonds(bonds_,bonds,m);
   add_bends(bends_,bonds,m);
@@ -993,4 +1006,23 @@ RefSymmSCMatrix
 IntMolecularCoor::inverse_hessian(RefSymmSCMatrix& hessian)
 {
   return hessian.gi();
+}
+
+static int
+nearest_contact(int i, Molecule& m)
+{
+  double d=-1.0;
+  int n=0;
+  
+  for (int j=0; j < m.natom(); j++) {
+    double td = dist(m[i].point(),m[j].point());
+    if (j==i)
+      continue;
+    else if (d < 0 || td < d) {
+      d = td;
+      n = j;
+    }
+  }
+  
+  return n;
 }

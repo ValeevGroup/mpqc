@@ -126,14 +126,13 @@ Convergence::save_data_state(StateOut&s)
 void
 Convergence::set_defaults()
 {
-  use_max_disp_ = 1;
+  use_max_disp_ = 0;
   use_max_grad_ = 1;
   use_rms_disp_ = 0;
-  use_rms_grad_ = 0;
-  use_graddisp_ = 1;
-  max_disp_ = 1.0e-6;
-  max_grad_ = 1.0e-6;
-  graddisp_ = 1.0e-6;
+  use_rms_grad_ = 1;
+  use_graddisp_ = 0;
+  max_grad_ = 4.0e-5;
+  rms_grad_ = 1.0e-5;
 }
 
 void

@@ -105,7 +105,12 @@ Volume::solve(RefSCVector& start,RefSCVector& grad,double val)
         }
       i++;
       next = start + (direction*i)*grad;
+#if __GNUC__ && __GNUC_MINOR__ > 5
+      set_x(next);
+      trialvalue = value();
+#else      
       trialvalue = (set_x(next),value());
+#endif      
     } while ((startvalue-val)*(trialvalue-val)>0.0);
   return interpolate(start,next,val);
 }

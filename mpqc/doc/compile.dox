@@ -200,7 +200,15 @@ The default is 32 million bytes (roughly, 32 MB).
 
 <dt><tt>--with-cc</tt><dd>Gives the name of the C compiler.
 
+<dt><tt>--with-cc-optflags</tt><dd>By default configure will attempt to
+  guess a reasonable set of optimization flags.  These flags will be
+  overridden by the argument given to this keyword.
+
 <dt><tt>--with-cxx</tt><dd>Gives the name of the C++ compiler.
+
+<dt><tt>--with-cxx-optflags</tt><dd>By default configure will attempt to
+  guess a reasonable set of optimization flags.  These flags will be
+  overridden by the argument given to this keyword.
 
 <dt><tt>--with-f77</tt><dd>Gives the name of the FORTRAN compiler.
 

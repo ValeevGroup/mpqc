@@ -98,6 +98,9 @@ ReplDiagSCMatrix::init_blocklist()
 
 ReplDiagSCMatrix::~ReplDiagSCMatrix()
 {
+  if (matrix)
+      delete[] matrix;
+  matrix=0;
 }
 
 double

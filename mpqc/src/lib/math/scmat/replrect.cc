@@ -966,6 +966,7 @@ ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
     }
   }
 
+  cmat_delete_matrix(sblock);
   cmat_delete_matrix(cols);
   delete[] v;
   delete[] cm;

@@ -98,6 +98,9 @@ ReplSCVector::init_blocklist()
 
 ReplSCVector::~ReplSCVector()
 {
+  if (vector)
+      delete[] vector;
+  vector=0;
 }
 
 double

@@ -348,6 +348,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
   // Initialize the integrals
   integral->set_storage(mem_remaining);
+  integral->set_basis(bs,bs,bs,bs);
   Ref<TwoBodyInt>* tbints_ = new Ref<TwoBodyInt>[thr->nthread()];
   for (int i=0; i<thr->nthread(); i++) {
     tbints_[i] = integral->grt();

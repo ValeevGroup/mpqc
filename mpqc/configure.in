@@ -2,6 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 define([AC_CACHE_LOAD], )dnl for debugging configure.in
 define([AC_CACHE_SAVE], )dnl for debugging configure.in
 AC_INIT(src/lib/util/ref/ref.h)
+AC_PREREQ(2.8)
 AC_CONFIG_HEADER(src/lib/config.h)
 AC_CONFIG_AUX_DIR(bin)
 
@@ -322,6 +323,9 @@ changequote([, ])dnl
     if test X$GXX = Xyes; then
       CXXOPTIONS_MISC="$CXXOPTIONS_MISC -msunmos"
     fi
+    if test X$cross_compiling = Xyes; then
+      AR=ar860
+    fi
     AC_MSG_RESULT(paragon sunmos)
   ;;
   i860-intel-osf*)
@@ -330,6 +334,9 @@ changequote([, ])dnl
     fi
     if test X$GXX = Xyes; then
       CXXOPTIONS_MISC="$CXXOPTIONS_MISC -mnx"
+    fi
+    if test X$cross_compiling = Xyes; then
+      AR=ar860
     fi
     AC_MSG_RESULT(paragon osf)
   ;;

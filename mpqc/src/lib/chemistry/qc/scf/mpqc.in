@@ -33,8 +33,8 @@ mole<CLSCF>: (
 )
 
 
-basis = $:631gsbasis
-%basis = $:stobasis
+%basis = $:631gsbasis
+basis = $:stobasis
 molecule = $:water
 
 coor = $:symcoor
@@ -136,9 +136,10 @@ cscoh2<Molecule>: (
 )
 
 water<Molecule>: (
-  symmetry=c3
+  symmetry=c2
   { atoms geometry } = {
       H  [   1.5  0.0   1.0 ]
+      %H  [  -1.5  0.0   1.0 ]
       O  [   0.0  0.0   0.0 ]
   }
 )

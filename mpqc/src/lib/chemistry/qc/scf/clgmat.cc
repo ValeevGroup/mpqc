@@ -52,14 +52,14 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
   
   double tnint=0;
   
-  PetiteList pl(molecule(),basis());
+  PetiteList pl(basis());
   
   for (int i=0; i < centers->nshell; i++) {
     if (!pl.in_p1(i))
       continue;
     
     for (int j=0; j <= i; j++) {
-      int ij = ioff(i)+j;
+      int ij=ioff(i)+j;
       if (!pl.lambda(ij))
         continue;
       
@@ -132,7 +132,7 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
                         ii = k1; jj = l1; kk = i1; ll = j1;
                       }
 
-                      double pki_int = (double) qijkl*intbuf[index];
+                      double pki_int = ((double) qijkl)*intbuf[index];
                       double pkval;
 
                       int lij,lkl;
@@ -286,7 +286,7 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
                         ii = k1; jj = l1; kk = i1; ll = j1;
                       }
 
-                      double pki_int = intbuf[index];
+                      double pki_int = ((double) qijkl)*intbuf[index];
                       double pkval;
                       int lij,lkl;
 
@@ -415,15 +415,16 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
   delete[] shnfunc;
   delete[] pmax;
 
-  //_gr_gmat.print("skel G matrix");
+  RefSymmSCMatrix foo = _gr_gmat.clone();
+  foo.assign(0.0);
+  
+  for (int g=0; g < _mol->point_group().char_table().order(); g++) {
+    RefSCMatrix r = pl.r(g);
+    foo.accumulate_transform(r,_gr_gmat);
+  }
+  foo.scale(1.0/_mol->point_group().char_table().order());
+  _gr_gmat.assign(foo);
 
-  overlap().print("overlap");
-  overlap().diagonalize(_fock_evals,_gr_vector);
-  _gr_vector.print("overlap eigenvectors");
-  
-    
-  exit(0);
-  
   _fock.assign(_gr_gmat);
   _fock.accumulate(_gr_hcore);
 

@@ -362,7 +362,6 @@ MCSCF::do_vector(double& eelec, double& nucrep)
     abort();
   }
 
-  int_normalize_centers(centers);
   int_initialize_offsets2(centers,centers,centers,centers);
 
   nucrep = int_nuclear_repulsion(centers,centers);

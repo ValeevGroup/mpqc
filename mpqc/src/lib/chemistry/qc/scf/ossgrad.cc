@@ -139,7 +139,6 @@ OSSSCF::do_gradient(const RefSCVector& gradient)
 
   // grab the centers struct
   centers_t *centers = basis()->convert_to_centers_t();
-  int_normalize_centers(centers);
     
   // calculate nuclear repulsion contribution to the gradient
   double_vector_t dv;

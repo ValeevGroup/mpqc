@@ -18,7 +18,6 @@
 #include <math/optimize/gdiis.h>
 #include <math/optimize/efc.h>
 #include <math/optimize/update.h>
-#include <chemistry/molecule/molshape.h>
 #include <util/group/message.h>
 
 // Force linkages:

@@ -15,11 +15,24 @@ found at any GNU software FTP repository.
 
     \item Compilers for the C and C++ languages are needed.
        \begin{itemize}
-           \item GNU gcc 2.7.2 or later works.  I highly recommend the GNU
+           \item GNU gcc 2.7.2 or later works.  We highly recommend the GNU
                compiler which can be installed on many architectures.  It
                can be obtained by FTP from prep.ai.mit.edu.
 
            \item IBM xlC 3.1.3 or later works.
+
+           \item SGI CC 6.0.1 and later.  Virtual base classes are broken
+               in SGI's compiler and the configure script should
+               automatically turn these off.  Give a target name to
+               the configure script that contains the cpu model and
+               OS minor number to get the right compiler options.
+               For example, \type{configure r8000-sgi-irix6.0.1} or
+               \type{configure r10000-sgi-irix6.2}.  The compiler
+               might warn that some OPT limits need to be increased
+               to fully optimize the code.  Increasing them won't
+               make the code much faster, but the compile will be
+               slower and use a great deal of memory.
+
        \end{itemize}
 
     \item Parts of GNU libg++ are needed.  It isn't necessary to link with

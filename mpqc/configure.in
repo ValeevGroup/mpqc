@@ -165,6 +165,42 @@ AC_CHECK_PROG(SGEN,sgen,sgen,sgen)
 AC_CHECK_PROG(TMPL,tmpl,tmpl,tmpl)
 AC_CHECK_PROG(LISTLIBS,listlibs,listlibs,$srcdir/bin/listlibs.sh)
 
+dnl The lack of certain tools is a show stopper
+
+changequote(<<, >>)dnl
+
+if [ X$CTANGLE = X ]; then
+  echo "Could not find the program ctangle.  It can be obtained at"
+  echo "ftp://labrea.stanford.edu/pub/cweb in the cweb package."
+  exit 1
+fi
+
+if [ X$BISON = X ]; then
+  echo "Could not find the program bison.  It can be obtained at"
+  echo "ftp://prep.ai.mit.edu/pub/gnu"
+  exit 1
+fi
+
+if [ X$FLEX = X ]; then
+  echo "Could not find the program flex.  It can be obtained at"
+  echo "ftp://prep.ai.mit.edu/pub/gnu"
+  exit 1
+fi
+
+if [ X$PERL = X ]; then
+  echo "Could not find the program perl.  It can be obtained at"
+  echo "ftp://prep.ai.mit.edu/pub/gnu"
+  exit 1
+fi
+
+if [ X$GENCLASS = X ]; then
+  echo "Could not find the program genclass.  It can be obtained at"
+  echo "ftp://prep.ai.mit.edu/pub/gnu in the libg++ distribution."
+  exit 1
+fi
+
+changequote([, ])dnl
+
 dnl --------- This is at the top since its likely to cause problems. ---------
 
 AC_LANG_SAVE
@@ -368,6 +404,14 @@ changequote([, ])dnl
       CXXDEPENDFLAGS="-M -E"
     fi
     AC_MSG_RESULT(rs6000)
+  ;;
+  i686-intel-cougar*)
+    COPTIONS_MISC="$COPTIONS_MISC -mcougar"
+    CXXOPTIONS_MISC="$CXXOPTIONS_MISC -mcougar"
+    if test X$cross_compiling = Xyes; then
+      AR=tflop-ar
+    fi
+    AC_MSG_RESULT(teraflop cougar)
   ;;
 changequote(<<, >>)dnl
   i[456]86-*)
@@ -705,6 +749,10 @@ case $target in
   i860-intel-puma*)
     LDFLAGS="$LDFLAGS -mpuma -mnoieee"
     AC_MSG_RESULT(paragon puma)
+  ;;
+  i686-intel-cougar*)
+    LDFLAGS="$LDFLAGS -mcougar -mnoieee"
+    AC_MSG_RESULT(teraflop cougar)
   ;;
   i860-intel-sunmos*)
     LDFLAGS="$LDFLAGS -msunmos -mnoieee"

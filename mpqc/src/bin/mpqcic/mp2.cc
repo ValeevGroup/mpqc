@@ -69,8 +69,8 @@ mp2_hah(centers_t *centers, scf_struct_t *scf_info,
       bmem = keyval->intvalue("frozen_docc");
       }
 
-    if (keyval->exists("frozen_uocc")) {
-      nfzv = keyval->intvalue("frozen_uocc");
+    if (keyval->exists("frozen_docc")) {
+      nfzc = keyval->intvalue("frozen_docc");
       }
 
     if (keyval->exists("frozen_uocc")) {
@@ -100,14 +100,17 @@ mp2_hah(centers_t *centers, scf_struct_t *scf_info,
   int nfuncmax = int_find_nfuncmax(centers);
   int nocc=0,nvir;
 
-  if (keyval->exists("docc")) {
-    for (i=0; i < keyval->count("docc"); i++)
-      nocc += keyval->intvalue("docc",i);
-  } else {
-    for (i=0; i < centers->n; i++) nocc += (int) centers->center[i].charge;
-    nocc = (nocc%2) ? nocc/2 + 1 : nocc/2 ;
+  if (me==0) {
+    if (keyval->exists("docc")) {
+      for (i=0; i < keyval->count("docc"); i++)
+        nocc += keyval->intvalue("docc",i);
+    } else {
+      for (i=0; i < centers->n; i++) nocc += (int) centers->center[i].charge;
+      nocc = (nocc%2) ? nocc/2 + 1 : nocc/2 ;
+    }
   }
 
+  bcast0(&nocc,sizeof(int),mtype_get(),0);
   nvir = nbasis-nocc;
 
   nvir -= nfzv;

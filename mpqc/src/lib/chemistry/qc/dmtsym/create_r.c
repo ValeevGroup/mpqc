@@ -2,10 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
 #include <tmpl.h>
+#include <util/misc/libmisc.h>
 #include <math/array/math_lib.h>
-#include <chemistry/qc/intv2/int_libv2.h>
 #include <math/dmt/libdmt.h>
+#include <chemistry/qc/intv2/int_libv2.h>
 
 #include "symm.h"
 #include "symm_mac.h"
@@ -48,6 +50,8 @@ int g;
   double **rg;
   double *rcol,**lr;
   char errmsg[81];
+
+  assert(dmt_distribution(r) == COLUMNS);
 
   if (sym_info->Rf != NULL) rf = sym_info->Rf[g];
   if (sym_info->Rg != NULL) rg = sym_info->Rg[g];

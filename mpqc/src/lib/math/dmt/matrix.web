@@ -1,5 +1,8 @@
 %
 % $Log$
+% Revision 1.15  1996/05/17 17:11:44  cljanss
+% Remove TENTER and TEXIT macros.
+%
 % Revision 1.14  1996/05/02 23:16:35  cljanss
 % SP2 update
 %
@@ -2736,7 +2739,7 @@ mdescr product;
   int convertedp = 0;
   assert (dmt_distribution(c) == COLUMNS);
   assert (c != b); assert (a != b); assert (a != c);
-  TENTER ("dmt_mult");
+  tim_enter("dmt_mult");
   if (dmt_distribution (b) == SCATTERED) {
     b = dmt_columns ("dmt_mult temp mat", b);
     convertedp = 1;
@@ -2747,7 +2750,7 @@ mdescr product;
     @<Matrix multiply for |a| scattered.@>;
   }
   if (convertedp) dmt_free (b);
-  TEXIT("dmt_mult");
+  tim_exit("dmt_mult");
 }
 
 @ The matrix multiply is most straightforward if all matrices are 
@@ -2836,13 +2839,13 @@ mdescr vec;
 double *val;
 {
   @<Decls for |diag|.@>;
-  TENTER("dmt_diag");
+  tim_enter("dmt_diag");
   @<Error checking for |diag|.@>;
   @<Copy columns  from |m| into |A| for |diagonal_|@>;
   diagonal_ (&iochan, &nbasis, &diag_nlocal, A, val, e, sigma, Z, Z, w, indary);
   @<Copy eigenvectors |Z| into |vec|.@>;
   @<Deallocate temporary storage for |diag|.@>;
-  TEXIT("dmt_diag");
+  tim_exit("dmt_diag");
 }
 
 

@@ -57,7 +57,24 @@ SCElementOp::collect(RefSCElementOp&)
 void
 SCElementOp::process_base(SCMatrixBlock* a)
 {
-  a->process(this);
+  if (SCMatrixRectBlock::castdown(a))
+    process_spec(SCMatrixRectBlock::castdown(a));
+  else if (SCMatrixLTriBlock::castdown(a))
+    process_spec(SCMatrixLTriBlock::castdown(a));
+  else if (SCMatrixDiagBlock::castdown(a))
+    process_spec(SCMatrixDiagBlock::castdown(a));
+  else if (SCVectorSimpleBlock::castdown(a))
+    process_spec(SCVectorSimpleBlock::castdown(a));
+  else if (SCMatrixRectSubBlock::castdown(a))
+    process_spec(SCMatrixRectSubBlock::castdown(a));
+  else if (SCMatrixLTriSubBlock::castdown(a))
+    process_spec(SCMatrixLTriSubBlock::castdown(a));
+  else if (SCMatrixDiagSubBlock::castdown(a))
+    process_spec(SCMatrixDiagSubBlock::castdown(a));
+  else if (SCVectorSimpleSubBlock::castdown(a))
+    process_spec(SCVectorSimpleSubBlock::castdown(a));
+  else
+    a->process(this);
 }
 
 // If specializations of SCElementOp do not handle a particle
@@ -94,6 +111,38 @@ void
 SCElementOp::process_spec(SCVectorSimpleBlock* a)
 {
   SCMatrixBlockIter*i = new SCVectorSimpleBlockIter(a);
+  process(*i);
+  delete i;
+}
+void
+SCElementOp::process_spec(SCMatrixRectSubBlock* a)
+{
+  SCMatrixBlockIter*i = new SCMatrixRectSubBlockIter(a);
+  SCMatrixBlockIter&r=*i;
+  process(r);
+  // this causes a SCMatrixRectBlock::operator int() to be
+  // called with this = 0x0 using gcc 2.5.6
+  // process(*i,b);
+  delete i;
+}
+void
+SCElementOp::process_spec(SCMatrixLTriSubBlock* a)
+{
+  SCMatrixBlockIter*i = new SCMatrixLTriSubBlockIter(a);
+  process(*i);
+  delete i;
+}
+void
+SCElementOp::process_spec(SCMatrixDiagSubBlock* a)
+{
+  SCMatrixBlockIter*i = new SCMatrixDiagSubBlockIter(a);
+  process(*i);
+  delete i;
+}
+void
+SCElementOp::process_spec(SCVectorSimpleSubBlock* a)
+{
+  SCMatrixBlockIter*i = new SCVectorSimpleSubBlockIter(a);
   process(*i);
   delete i;
 }

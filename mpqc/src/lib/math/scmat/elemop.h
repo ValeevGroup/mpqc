@@ -14,6 +14,10 @@ class SCMatrixRectBlock;
 class SCMatrixLTriBlock;
 class SCMatrixDiagBlock;
 class SCVectorSimpleBlock;
+class SCMatrixRectSubBlock;
+class SCMatrixLTriSubBlock;
+class SCMatrixDiagSubBlock;
+class SCVectorSimpleSubBlock;
 
 class SCMatrix;
 class SymmSCMatrix;
@@ -51,6 +55,10 @@ class SCElementOp: public SavableState {
     virtual void process_spec(SCMatrixLTriBlock*);
     virtual void process_spec(SCMatrixDiagBlock*);
     virtual void process_spec(SCVectorSimpleBlock*);
+    virtual void process_spec(SCMatrixRectSubBlock*);
+    virtual void process_spec(SCMatrixLTriSubBlock*);
+    virtual void process_spec(SCMatrixDiagSubBlock*);
+    virtual void process_spec(SCVectorSimpleSubBlock*);
 };
 DCRef_declare(SCElementOp);
 SSRef_declare(SCElementOp);

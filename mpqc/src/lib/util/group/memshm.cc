@@ -6,6 +6,7 @@
 #pragma implementation
 #endif
 
+#include <util/misc/formio.h>
 #include <util/group/pool.h>
 #include <util/group/memshm.h>
 
@@ -67,7 +68,12 @@ ShmMemoryGrp::set_localsize(int localsize)
 
       if (shmid_ < 0) {
           perror("shmget");
-          fprintf(stderr,"ShmMemoryGrp: shmget failed -- aborting");
+          cerr << "ShmMemoryGrp: shmget failed -- aborting" << endl;
+          cerr << scprintf("shmget arguments: %d, %d, %d",
+                           IPC_PRIVATE,
+                           poolallocation + totalsize(),
+                           IPC_CREAT | SHM_R | SHM_W)
+               << endl;
           abort();
         }
 

@@ -143,7 +143,7 @@ GetLongOpt::parse(char * const str, char * const p)
 {
    enroll_done = 1;
    char *token = strtok(str, " \t");
-   char *name = p ? p : "GetLongOpt";
+   const char *name = p ? p : "GetLongOpt";
 
    while ( token ) {
       if ( token[0] != optmarker || token[1] == optmarker ) {
@@ -210,7 +210,7 @@ GetLongOpt::setcell returns
 ------------------------------------------------------------------- */
 
 int
-GetLongOpt::setcell(Cell *c, char *valtoken, char *nexttoken, char *name)
+GetLongOpt::setcell(Cell *c, const char *valtoken, const char *nexttoken, const char *name)
 {
    if ( c == 0 ) return -1;
 

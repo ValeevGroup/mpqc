@@ -37,7 +37,7 @@ private:
 
 private:
   char *basename(char * const p) const;
-  int setcell(Cell *c, char *valtoken, char *nexttoken, char *p);
+  int setcell(Cell *c, const char *valtoken, const char *nexttoken, const char *p);
 public:
    GetLongOpt(const char optmark = '-');
    ~GetLongOpt();

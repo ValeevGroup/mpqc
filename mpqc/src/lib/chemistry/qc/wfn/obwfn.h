@@ -19,6 +19,12 @@ class OneBodyWavefunction: public Wavefunction
     ResultRefSymmSCMatrix _density;
     AccResultRefSCMatrix _eigenvectors;
 
+    virtual void form_density(const RefSCMatrix& vec,
+                              const RefSymmSCMatrix& density,
+                              const RefSymmSCMatrix& density_diff,
+                              const RefSymmSCMatrix& open_density,
+                              const RefSymmSCMatrix& open_density_diff);
+
  public:
     OneBodyWavefunction(const OneBodyWavefunction&);
     OneBodyWavefunction(const RefKeyVal&);

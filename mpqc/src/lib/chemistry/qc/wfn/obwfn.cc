@@ -3,6 +3,8 @@
 #pragma implementation
 #endif
 
+#include <math/scmat/local.h>
+
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/integral/integralv2.h>
 
@@ -188,31 +190,13 @@ OneBodyWavefunction::density(const SCVector3 &c)
 RefSymmSCMatrix
 OneBodyWavefunction::density()
 {
-
   if (!_density.computed()) {
-      RefSCMatrix vec = eigenvectors();
-      RefSCMatrix ortho(basis_dimension(),basis_dimension());
-      RefSCMatrix orthoi(basis_dimension(),basis_dimension());
-      basis()->ortho(ortho,orthoi);
-      int nbasis = basis()->nbasis();
-
-      RefSymmSCMatrix newdensity(basis_dimension());
-      _density = newdensity;
-      newdensity.assign(0.0);
-      for (int k=0; k<nbasis; k++) {
-          double occ = occupation(k);
-          if (occ == 0.0) continue;
-          for (int i=0; i<nbasis; i++) {
-              for (int j=0; j<=i; j++) {
-                  newdensity.set_element(i,j,
-                             newdensity.get_element(i,j)
-                             + occ*vec.get_element(k,i)*vec.get_element(k,j));
-                }
-            }
-        }
-
-      _density.computed() = 1;
-    }
+    RefSCMatrix vec = eigenvectors();
+    RefSymmSCMatrix newdensity(basis_dimension());
+    form_density(vec,newdensity,0,0,0);
+    _density = newdensity;
+    _density.computed() = 1;
+  }
 
   return _density;
 }
@@ -237,4 +221,75 @@ void
 OneBodyWavefunction::print(SCostream&o)
 {
   Wavefunction::print(o);
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+void
+OneBodyWavefunction::form_density(const RefSCMatrix& vec,
+                                  const RefSymmSCMatrix& density,
+                                  const RefSymmSCMatrix& density_diff,
+                                  const RefSymmSCMatrix& open_density,
+                                  const RefSymmSCMatrix& open_density_diff)
+{
+  int nbasis = basis()->nbasis();
+
+  // find out how many doubly occupied orbitals there should be
+  int ndocc = 0, nsocc=0;
+  for (int i=0; i < nbasis; i++) {
+    if (occupation(i) > 1.9)
+      ndocc++;
+    else if (occupation(i) > 0.9)
+      nsocc++;
+  }
+  
+  // find out what type of matrices we're dealing with
+  if (LocalSCMatrix::castdown(vec.pointer())) {
+    LocalSCMatrix *lvec = LocalSCMatrix::require_castdown(
+      vec.pointer(), "OneBodyWavefunction::form_density");
+    LocalSymmSCMatrix *ldens = LocalSymmSCMatrix::require_castdown(
+      density.pointer(), "OneBodyWavefunction::form_density");
+    LocalSymmSCMatrix *ldensd = LocalSymmSCMatrix::require_castdown(
+      density_diff.pointer(), "OneBodyWavefunction::form_density");
+    LocalSymmSCMatrix *lodens = LocalSymmSCMatrix::require_castdown(
+      open_density.pointer(), "OneBodyWavefunction::form_density");
+    LocalSymmSCMatrix *lodensd = LocalSymmSCMatrix::require_castdown(
+      open_density_diff.pointer(), "OneBodyWavefunction::form_density");
+
+    for (int i=0; i < nbasis; i++) {
+      for (int j=0; j <= i; j++) {
+        double pt=0;
+        for (int k=0; k < ndocc; k++)
+          pt += 2.0*lvec->get_element(i,k)*lvec->get_element(j,k);
+
+        double pto=0;
+        for (int k=ndocc; k < ndocc+nsocc; k++)
+          pto += lvec->get_element(i,k)*lvec->get_element(j,k);
+
+        if (lodens) {
+          if (lodensd)
+            lodensd->set_element(i,j,pto-lodens->get_element(i,j));
+          lodens->set_element(i,j,pto);
+        }
+        if (ldensd)
+          ldensd->set_element(i,j,pt+pto-ldens->get_element(i,j));
+        ldens->set_element(i,j,pt+pto);
+      }
+    }
+  } else {
+    density.assign(0.0);
+    open_density.assign(0.0);
+    for (int i=0; i < nbasis; i++) {
+      for (int j=0; j <= i; j++) {
+        for (int k=0; k < ndocc; k++) {
+          density.set_element(i,j, density.get_element(i,j)
+                              + 2.0*vec.get_element(i,k)*vec.get_element(j,k));
+        }
+        for (int k=ndocc; k < ndocc+nsocc; k++) {
+          open_density.set_element(i,j, open_density.get_element(i,j)
+                              + vec.get_element(i,k)*vec.get_element(j,k));
+        }
+      }
+    }
+  }
 }

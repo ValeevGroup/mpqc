@@ -527,6 +527,11 @@ PetiteList::aotoso()
 {
   RefSCMatrix aoso(AO_basisdim(), SO_basisdim(), gbs_->so_matrixkit());
   aoso.assign(0.0);
+
+  if (c1_) {
+    aoso->unit();
+    return aoso;
+  }
   
   SO_block *sos = aotoso_info();
   

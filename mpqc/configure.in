@@ -357,8 +357,8 @@ CXXOPTIONS_DBG=-g
 # options that are always needed
 CXXOPTIONS_MISC=
 
-OBJSUF=lo
-LIBSUF=la
+OBJSUF=o
+LIBSUF=a
 CCDEPENDSUF=none
 CXXDEPENDSUF=none
 CCDEPENDFLAGS=-M
@@ -1226,6 +1226,10 @@ esac
 
 dnl --------- Shared library configuration. ---------
 
+if test "$enableshared" = no; then
+  enablelibtool=no
+fi
+
 if test "$enablelibtool" = yes; then
 
 case "$target" in
@@ -1248,10 +1252,11 @@ ${CONFIG_SHELL-/bin/sh} $ac_aux_dir/ltconfig --no-reexec \
 $libtool_flags --no-verify $ac_aux_dir/ltmain.sh $lt_target \
 || { echo "configure: error: libtool configure failed" 1>&2; exit 1; }
 
+OBJSUF=lo
+LIBSUF=la
+
 else
 
-OBJSUF=o
-LIBSUF=a
 enableshared=no
 
 fi

@@ -1,6 +1,6 @@
 TOPDIR=../../..
 ifndef SRCDIR
-  SRCDIR=.
+  SRCDIR=$(shell pwd)
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile

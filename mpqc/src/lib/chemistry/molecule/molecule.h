@@ -33,7 +33,7 @@
 #endif
 
 #include <stdio.h>
-#include <ostream>
+#include <iostream>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>

@@ -222,6 +222,7 @@ SCVectorSimpleBlockIter::j()
 {
   fprintf(stderr,"SCVectorSimpleBlockIter::j() attempted to find j value\n");
   abort();
+  return 0;
 }
 
 double

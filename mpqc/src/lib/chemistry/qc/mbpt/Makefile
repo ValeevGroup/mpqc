@@ -35,7 +35,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libmbpt
 BIN_OR_LIB = LIB
 
-CXXSRCS = mbpt.cc csgrad.cc csgrade12.cc csgmat.cc cscphf.cc \
+CXXSRCS = mbpt.cc csgrad.cc csgrade12.cc csgrads2pdm.cc csgmat.cc cscphf.cc \
           hsosv1.cc hsosv1e1.cc hsosv2.cc hsosv2lb.cc util.cc mp2extrap.cc \
           distsh.cc
 

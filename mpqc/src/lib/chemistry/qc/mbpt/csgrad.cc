@@ -41,6 +41,7 @@
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbpt/util.h>
 #include <chemistry/qc/mbpt/csgrade12.h>
+#include <chemistry/qc/mbpt/csgrads2pdm.h>
 
 #if PRINT_BIGGEST_INTS
 BiggestContribs biggest_ints_1(4,40);
@@ -2204,7 +2205,29 @@ MBPT2::compute_cs_grad()
   zero_gradients(ginter, natom, 3);
   zero_gradients(hf_ginter, natom, 3);
   tim_enter("sep 2PDM contrib.");
-  s2pdm_contrib(intderbuf, PHF, P2AO, hf_ginter, ginter);
+
+  RefTwoBodyDerivInt *tbintder = new RefTwoBodyDerivInt[thr_->nthread()];
+  CSGradS2PDM** s2pdmthread = new CSGradS2PDM*[thr_->nthread()];
+  for (i=0; i<thr_->nthread(); i++) {
+      tbintder[i] = integral()->electron_repulsion_deriv();
+      s2pdmthread[i] = new CSGradS2PDM(i, thr_->nthread(), me, nproc,
+                                       lock, basis(), tbintder[i],
+                                       PHF, P2AO, tol, debug_, dynamic_);
+      thr_->add_thread(i,s2pdmthread[i]);
+    }
+  thr_->start_threads();
+  thr_->wait_threads();
+  for (i=0; i<thr_->nthread(); i++) {
+      tbintder[i] = 0;
+      s2pdmthread[i]->accum_mp2_contrib(ginter);
+      s2pdmthread[i]->accum_hf_contrib(hf_ginter);
+      delete s2pdmthread[i];
+    }
+  sum_gradients(msg_, ginter, molecule()->natom(), 3);
+  sum_gradients(msg_, hf_ginter, molecule()->natom(), 3);
+  delete[] s2pdmthread;
+  delete[] tbintder;
+
   tim_exit("sep 2PDM contrib.");
   delete[] P2AO;
 
@@ -2510,199 +2533,6 @@ MBPT2::overlap_cs_grad(double *WHF, double *WMP2,
   /* Accumulate the nodes' intermediate gradients on node 0 */
   sum_gradients(msg_, ginter, molecule()->natom(), 3);
   sum_gradients(msg_, hf_ginter, molecule()->natom(), 3);
-}
-
-
-//////////////////////////////////////////////////////////////
-// Compute (in the AO basis) the contribution to the gradient 
-// from the separable part of the two particle density matrix
-//////////////////////////////////////////////////////////////
-void
-MBPT2::s2pdm_contrib(const double *intderbuf, double *PHF,
-                     double *P2AO, double **hf_ginter, double **ginter)
-{               
-
-  int P, Q, R, S;
-  int QP, SR;
-  int p, q, r;
-  int np, nq, nr, ns;
-  int p_offset, q_offset, r_offset, s_offset;
-  int bf1, bf2, bf3, bf4;
-  int index;
-  int xyz;
-  int derset;
-  int nshell = basis()->nshell();
-  int nbasis = basis()->nbasis();
-  int nproc = msg_->n();
-  int me = msg_->me();
-
-  double *grad_ptr1, *grad_ptr2;
-  double *hf_grad_ptr1, *hf_grad_ptr2;
-  double tmpval;
-  double *phf_pq, *phf_pr, *phf_ps, *phf_qr, *phf_qs, *phf_rs;
-  double *p2ao_pq, *p2ao_pr, *p2ao_ps, *p2ao_qr, *p2ao_qs, *p2ao_rs;
-  double k_QP, k_SR, k_QPSR; // factors needed since we loop over nonredund
-                             // shell quartets but do redund integrals within
-                             // shell quartets when applicable
-  double gamma_factor; // factor multiplying integrals; needed because we
-                       // loop over nonredund shell quarters but do redund
-                       // integrals within shell quartets when applicable
-  double *gammasym_pqrs; // symmetrized sep. 2PDM
-  double *gammasym_ptr;
-  double *hf_gammasym_pqrs; // HF only versions of gammsym
-  double *hf_gammasym_ptr;
-  const double *integral_ptr;
-
-  int tol = (int) (-10.0/log10(2.0));  // discard erep derivatives smaller than 10^-10
-
-  gammasym_pqrs = new double[nfuncmax*nfuncmax*nfuncmax*nfuncmax];
-  hf_gammasym_pqrs = new double[nfuncmax*nfuncmax*nfuncmax*nfuncmax];
-
-  DerivCenters der_centers;
-
-  index = 0;
-
-  tim_enter("PQRS loop");
-
-  for (Q=0; Q<nshell; Q++) {
-    nq = basis()->shell(Q).nfunction();
-    q_offset = basis()->shell_to_function(Q);
-
-    for (S=0; S<=Q; S++) {
-      ns = basis()->shell(S).nfunction();
-      s_offset = basis()->shell_to_function(S);
-
-      for (R=0; R<=S; R++) {
-        nr = basis()->shell(R).nfunction();
-        r_offset = basis()->shell_to_function(R);
-        k_SR = (R == S ? 0.5 : 1.0);
-        SR = S*(S+1)/2 + R;
-
-        for (P=0; P<=(S==Q ? R:Q); P++) {
-          // If integral derivative is 0, skip to next P
-          if (tbintder_->log2_shell_bound(P,Q,R,S) < tol) continue;
-
-          index++;
-
-          if (index%nproc == me) {
-            np = basis()->shell(P).nfunction();
-            p_offset = basis()->shell_to_function(P);
-            k_QP = (P == Q ? 0.5 : 1.0);
-            QP = Q*(Q+1)/2 + P;
-            k_QPSR = (QP == SR ? 0.5 : 1.0);
-            gamma_factor = k_QP*k_SR*k_QPSR;
-
-            // Evaluate derivative integrals
-            tbintder_->compute_shell(P,Q,R,S,der_centers);
-
-            //////////////////////////////
-            // Symmetrize sep. 2PDM
-            //////////////////////////////
-            gammasym_ptr = gammasym_pqrs;
-            hf_gammasym_ptr = hf_gammasym_pqrs;
-            for (bf1=0; bf1<np; bf1++) {
-              p = p_offset + bf1;
-              phf_pq =  &PHF [p*nbasis + q_offset];
-              p2ao_pq = &P2AO[p*nbasis + q_offset];
-
-              for (bf2=0; bf2<nq; bf2++) {
-                q = q_offset + bf2;
-                phf_pr =  &PHF [p*nbasis + r_offset];
-                p2ao_pr = &P2AO[p*nbasis + r_offset];
-                phf_qr =  &PHF [q*nbasis + r_offset];
-                p2ao_qr = &P2AO[q*nbasis + r_offset];
-
-                for (bf3=0; bf3<nr; bf3++) {
-                  r = r_offset + bf3;
-                  phf_ps =  &PHF [p*nbasis + s_offset];
-                  phf_qs =  &PHF [q*nbasis + s_offset];
-                  phf_rs =  &PHF [r*nbasis + s_offset];
-                  p2ao_ps = &P2AO[p*nbasis + s_offset];
-                  p2ao_qs = &P2AO[q*nbasis + s_offset];
-                  p2ao_rs = &P2AO[r*nbasis + s_offset];
-
-                  for (bf4=0; bf4<ns; bf4++) {
-
-                    *gammasym_ptr++ = gamma_factor*(
-                                          4**phf_pq*(*phf_rs + *p2ao_rs)
-                                        + 4**phf_rs**p2ao_pq
-                                        - *phf_qs*(*phf_pr + *p2ao_pr)
-                                        - *phf_qr*(*phf_ps + *p2ao_ps)
-                                        - *phf_ps**p2ao_qr
-                                        - *phf_pr**p2ao_qs);
-
-                    *hf_gammasym_ptr++ = gamma_factor*(
-                                          4**phf_pq*(*phf_rs)
-                                        - *phf_qs*(*phf_pr)
-                                        - *phf_qr*(*phf_ps));
-
-                    phf_ps++;
-                    phf_qs++;
-                    phf_rs++;
-                    p2ao_ps++;
-                    p2ao_qs++;
-                    p2ao_rs++;
-                    } // exit bf4 loop
-                  phf_pr++;
-                  p2ao_pr++;
-                  phf_qr++;
-                  p2ao_qr++;
-                  }   // exit bf3 loop
-                phf_pq++;
-                p2ao_pq++;
-                }     // exit bf2 loop
-              }       // exit bf1 loop
-
-            ///////////////////////////////////////////////////////////
-            // Contract symmetrized sep 2PDM with integral derivatives
-            ///////////////////////////////////////////////////////////
-            integral_ptr = intderbuf;
-            for (derset=0; derset<der_centers.n(); derset++) {
-
-              for (xyz=0; xyz<3; xyz++) {
-                grad_ptr1 = &ginter[der_centers.atom(derset)][xyz];
-                hf_grad_ptr1 = &hf_ginter[der_centers.atom(derset)][xyz];
-                if (der_centers.has_omitted_center()) {
-                  grad_ptr2 = &ginter[der_centers.omitted_atom()][xyz];
-                  hf_grad_ptr2 = &hf_ginter[der_centers.omitted_atom()][xyz];
-                  }
-
-                gammasym_ptr = gammasym_pqrs;
-                hf_gammasym_ptr = hf_gammasym_pqrs;
-                for (bf1=0; bf1<np; bf1++) {
-                  for (bf2=0; bf2<nq; bf2++) {
-                    for (bf3=0; bf3<nr; bf3++) {
-                      for (bf4=0; bf4<ns; bf4++) {
-                        double intval = *integral_ptr++;
-                        tmpval = intval * *gammasym_ptr++;
-                        *grad_ptr1 += tmpval;
-                        *grad_ptr2 -= tmpval;
-                        tmpval = intval * *hf_gammasym_ptr++;
-                        *hf_grad_ptr1 += tmpval;
-                        *hf_grad_ptr2 -= tmpval;
-                        } // exit bf4 loop
-                      }   // exit bf3 loop
-                    }     // exit bf2 loop
-                  }       // exit bf1 loop
-                }         // exit xyz loop
-              }           // exit derset loop
-
-
-            } // exit "if"
-          }   // exit P loop
-        }     // exit R loop
-      }       // exit S loop
-    }         // exit Q loop
-
-  tim_exit("PQRS loop");
-
-  delete[] gammasym_pqrs;
-  delete[] hf_gammasym_pqrs;
-
-  // Accumulate intermediate gradients on node 0
-  sum_gradients(msg_, ginter, molecule()->natom(), 3);
-  sum_gradients(msg_, hf_ginter, molecule()->natom(), 3);
-
 }
 
 static void

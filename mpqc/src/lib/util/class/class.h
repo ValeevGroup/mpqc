@@ -198,15 +198,15 @@ class  refname : public RefDescribedClassBase  {			      \
     const T& operator *() const;					      \
     refname ();								      \
     refname (T*a);							      \
-    refname ( refname &a);						      \
-    refname ( RefDescribedClassBase &);					      \
+    refname (const refname &a);						      \
+    refname (const RefDescribedClassBase &);				      \
     ~refname ();							      \
     int null();								      \
     int nonnull();							      \
     void require_nonnull();						      \
     refname& operator=(T* cr);						      \
-    refname& operator=( RefDescribedClassBase & c);			      \
-    refname& operator=( refname & c);					      \
+    refname& operator=(const RefDescribedClassBase & c);		      \
+    refname& operator=(const refname & c);				      \
     void assign_pointer(T* cr);						      \
     void  ref_info(FILE*fp=stdout);					      \
     void warn(const char *);						      \
@@ -242,14 +242,14 @@ refname :: refname (T*a): p(a)						      \
   if (p) p->reference();						      \
   if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
-refname :: refname ( refname &a): p(a.p)				      \
+refname :: refname (const refname &a): p(a.p)				      \
 {									      \
   if (p) p->reference();						      \
   if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
-refname :: refname ( RefDescribedClassBase &a)				      \
+refname :: refname (const RefDescribedClassBase &a)			      \
 {									      \
-  p = T::castdown(a.parentpointer());					      \
+  p = T::castdown((DescribedClass*)a.parentpointer());		              \
   if (p) p->reference();						      \
   if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
@@ -276,7 +276,7 @@ refname :: warn ( const char * msg)					      \
 {									      \
   fprintf(stderr,"WARNING: %s\n",msg);					      \
 }									      \
-refname& refname :: operator=( refname & c)				      \
+refname& refname :: operator=(const refname & c)			      \
 {									      \
   if (c.p) c.p->reference();						      \
   clear();								      \
@@ -292,9 +292,9 @@ refname& refname :: operator=(T* cr)					      \
   if (REF_CHECK_POINTER) check_pointer();				      \
   return *this;								      \
 }									      \
-refname& refname :: operator=( RefDescribedClassBase & c)		      \
+refname& refname :: operator=(const RefDescribedClassBase & c)		      \
 {									      \
-  T* cr = T::castdown(c.parentpointer());				      \
+  T* cr = T::castdown((DescribedClass*)c.parentpointer());		      \
   if (cr) cr->reference();						      \
   clear();								      \
   p = cr;								      \

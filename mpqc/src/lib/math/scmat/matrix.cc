@@ -244,6 +244,8 @@ RefSCMatrix::RefSCMatrix() {}
              
 RefSCMatrix::RefSCMatrix (RefSCMatrix & o): RefSSSCMatrix (o) {}
              
+RefSCMatrix::RefSCMatrix (StateIn & o): RefSSSCMatrix (o) {}
+             
 RefSCMatrix::RefSCMatrix (SCMatrix * o): RefSSSCMatrix (o) {}
              
 // RefSCMatrix::RefSCMatrix (RefDescribedClassBase&o): RefSSSCMatrix (o) {}
@@ -550,6 +552,11 @@ RefSCMatrix::accumulate_outer_product(RefSCVector& v1,RefSCVector&v2)
 // RefSymmSCMatrix members
 
 RefSymmSCMatrix::RefSymmSCMatrix()
+{
+}
+             
+RefSymmSCMatrix::RefSymmSCMatrix (StateIn & o):
+  RefSSSymmSCMatrix (o)
 {
 }
              
@@ -872,6 +879,11 @@ RefDiagSCMatrix::RefDiagSCMatrix()
 {
 }
              
+RefDiagSCMatrix::RefDiagSCMatrix (StateIn & o):
+  RefSSDiagSCMatrix (o)
+{
+}
+             
 RefDiagSCMatrix::RefDiagSCMatrix (RefDiagSCMatrix & o):
   RefSSDiagSCMatrix (o)
 {
@@ -1103,6 +1115,11 @@ ARRAY_def(RefSCVector);
 SET_def(RefSCVector);
 
 RefSCVector::RefSCVector()
+{
+}
+             
+RefSCVector::RefSCVector (StateIn & o):
+  RefSSSCVector (o)
 {
 }
              

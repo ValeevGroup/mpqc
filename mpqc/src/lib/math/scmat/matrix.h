@@ -222,6 +222,7 @@ class RefSCVector: public RefSSSCVector {
     // standard overrides
   public:
     RefSCVector();
+    RefSCVector(StateIn&);
     RefSCVector(RefSCDimension&);
     RefSCVector(RefSCVector&);
     RefSCVector(SCVector *);
@@ -273,6 +274,7 @@ class RefSCMatrix: public RefSSSCMatrix {
     // standard overrides
   public:
     RefSCMatrix();
+    RefSCMatrix(StateIn&);
     RefSCMatrix(RefSCMatrix&);
     RefSCMatrix(SCMatrix *);
     //RefSCMatrix(RefDescribedClassBase&);
@@ -323,6 +325,7 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     // standard overrides
   public:
     RefSymmSCMatrix();
+    RefSymmSCMatrix(StateIn&);
     RefSymmSCMatrix(RefSymmSCMatrix&);
     RefSymmSCMatrix(SymmSCMatrix *);
     //RefSymmSCMatrix(RefDescribedClassBase&);
@@ -374,6 +377,7 @@ class RefDiagSCMatrix: public RefSSDiagSCMatrix {
     // standard overrides
   public:
     RefDiagSCMatrix();
+    RefDiagSCMatrix(StateIn&);
     RefDiagSCMatrix(RefDiagSCMatrix&);
     RefDiagSCMatrix(DiagSCMatrix *);
     //RefDiagSCMatrix(RefDescribedClassBase&);

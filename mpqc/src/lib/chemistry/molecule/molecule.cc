@@ -198,6 +198,9 @@ Molecule::print(FILE*fp)
 
   int i;
 #if defined(I860) && !defined(PARAGON)
+ // there seems to  be a bug with somewhere in the iPSC version of the
+ // code which causes negative numbers greater than -0.1 to be written
+ // as positive, so on the iPSC write everything in sci notation
   double x;
   for (i=0; i<natom(); i++) {
       fprintf(fp," %5d%5s%8s%16.9e %16.9e %16.9e%10.5f\n",

@@ -70,11 +70,6 @@ ifeq ($(ARCH),I860)
   DEFINES += -DLINPACKD=-lkmath
 endif
 
-#ifeq ($(ARCH),SGI)
-#  CC = $(GCC)
-#  COPTIONS = $(GCOPTIONS_DEBUG)
-#endif
-
 #################################################################
 
 default:: $(DEPENDINCLUDE)

@@ -3,6 +3,7 @@
 ;;
 
 (require 'cc-mode)
+(cond ((> emacs-major-version 19) (c-initialize-cc-mode)))
 
 (setq clj-c-basic-half-offset 2)
 
@@ -129,18 +130,28 @@
 (defun clj-style ()
   "Change to insane C indentation"
   (interactive)
-  (set-c-style "CLJ")
+  (c-set-style "CLJ")
   )
 (defun ets-style ()
   "Change to sensible C indentation"
   (interactive)
-  (set-c-style "ETS")
+  (c-set-style "ETS")
   )
 
 (define-key c-mode-map "\C-ce" 'ets-style)
 (define-key c-mode-map "\C-cj" 'clj-style)
 (define-key c-mode-map "\C-j"  'reindent-then-newline-and-indent)
 (define-key c-mode-map "\C-m"  'newline-and-indent)
+
+(define-key c++-mode-map "\C-ce" 'ets-style)
+(define-key c++-mode-map "\C-cj" 'clj-style)
+(define-key c++-mode-map "\C-j"  'reindent-then-newline-and-indent)
+(define-key c++-mode-map "\C-m"  'newline-and-indent)
+
+(define-key java-mode-map "\C-ce" 'ets-style)
+(define-key java-mode-map "\C-cj" 'clj-style)
+(define-key java-mode-map "\C-j"  'reindent-then-newline-and-indent)
+(define-key java-mode-map "\C-m"  'newline-and-indent)
 
 ;;
 ;; stuff for CLJ's compile hacks

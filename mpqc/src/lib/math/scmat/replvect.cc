@@ -125,6 +125,18 @@ ReplSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
+      ExEnv::out() << node0 << indent << "dim():" << endl << incindent;
+      dim().print();
+      ExEnv::out() << node0 << decindent;
+      ExEnv::out() << node0 << indent << "la->rowdim():" << endl << incindent;
+      la->rowdim().print();
+      ExEnv::out() << node0 << decindent;
+      ExEnv::out() << node0 << indent << "la->coldim():" << endl << incindent;
+      la->coldim().print();
+      ExEnv::out() << node0 << decindent;
+      ExEnv::out() << node0 << indent << "lb->dim():" << endl << incindent;
+      lb->dim().print();
+      ExEnv::out() << node0 << decindent;
       ExEnv::err() << indent
            << "ReplSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b): "
            << "dimensions don't match\n";

@@ -21,10 +21,11 @@ mole<CLSCF>: (
   coor = $:coor
 
   % SCF input
+  %total_charge = 1
   density_reset_freq = 5
   ckpt_dir = "./"
   filename = "test"
-  maxiter=3
+  maxiter=30
 
   extrap<DIIS>: (
     start = 5
@@ -33,7 +34,7 @@ mole<CLSCF>: (
   )
 )
 
-molecule = $:silethc1
+molecule = $:water_c1
 
 coor = $:symcoor
 message = $:message1
@@ -53,8 +54,8 @@ xopt<QNewtonOpt>: (
 
 gbasis<GaussianBasisSet>: (
   molecule = $:molecule
-  name = "6-31G*"
-  %name = "STO-3G"
+  %name = "6-31G*"
+  name = "STO-3G"
   %name = "aug-cc-pVTZ"
   %puream=yes
 )

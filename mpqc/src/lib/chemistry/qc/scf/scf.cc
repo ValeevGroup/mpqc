@@ -74,7 +74,7 @@ SCF::compute()
       
     // this will be done elsewhere eventually
     double nucrep = molecule()->nuclear_repulsion_energy();
-    printf("  total scf energy = %20.15f\n",eelec+nucrep);
+    printf("\n  total scf energy = %20.15f\n",eelec+nucrep);
 
     set_energy(eelec+nucrep);
     set_actual_value_accuracy(desired_value_accuracy());

@@ -41,7 +41,7 @@ SCF::compute_vector(double& eelec)
 
     // calculate the electronic energy
     eelec = scf_energy();
-    printf("iter %5d energy = %20.15f delta = %15.10g\n",
+    printf("  iter %5d energy = %20.15f delta = %15.10g\n",
            iter,eelec+nucrep,delta);
 
     // now extrapolate the fock matrix

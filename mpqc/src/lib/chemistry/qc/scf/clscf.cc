@@ -41,22 +41,30 @@ CLSCF::CLSCF(StateIn& s) :
 CLSCF::CLSCF(const RefKeyVal& keyval) :
   SCF(keyval)
 {
+  // calculate the total nuclear charge
+  int Znuc=0;
+  PointBag_double *z = molecule()->charges();
+  
+  for (Pix i=z->first(); i; z->next(i)) Znuc += (int) z->get(i);
+
+  // check to see if this is to be a charged molecule
+  int charge = keyval->intvalue("total_charge");
+  
+  // now see if ndocc was specified
   if (keyval->exists("ndocc")) {
     ndocc_ = keyval->intvalue("ndocc");
   } else {
-    int Z=0;
-    PointBag_double *z = molecule()->charges();
-  
-    for (Pix i=z->first(); i; z->next(i)) Z += (int) z->get(i);
-
-    ndocc_ = Z/2;
-    if (Z%2) {
-      fprintf(stderr,"CLSCF::init: Warning, there's a leftover electron.\n");
-      fprintf(stderr,"  total nuclear charge = %d, %d closed shells\n",
-              Z, ndocc_);
-      fprintf(stderr,"  total charge = %d\n\n",Z-2*ndocc_);
+    ndocc_ = (Znuc-charge)/2;
+    if ((Znuc-charge)%2) {
+      fprintf(stderr,
+              "\n  CLSCF::init: Warning, there's a leftover electron.\n");
+      fprintf(stderr,"    total_charge = %d\n",charge);
+      fprintf(stderr,"    total nuclear charge = %d\n", Znuc);
+      fprintf(stderr,"    ndocc_ = %d\n", ndocc_);
     }
   }
+
+  printf("\n  CLSCF::init: total charge = %d\n\n", Znuc-2*ndocc_);
 
   // check to see if this was done in SCF(keyval)
   if (!keyval->exists("maxiter"))
@@ -70,6 +78,7 @@ CLSCF::~CLSCF()
 void
 CLSCF::save_data_state(StateOut& s)
 {
+  SCF::save_data_state(s);
   s.put(ndocc_);
 }
 
@@ -89,7 +98,7 @@ CLSCF::value_implemented()
 int
 CLSCF::gradient_implemented()
 {
-  return 1;
+  return 0;
 }
 
 int
@@ -101,7 +110,7 @@ CLSCF::hessian_implemented()
 void
 CLSCF::print(ostream&o)
 {
-  OneBodyWavefunction::print(o);
+  SCF::print(o);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -161,7 +170,6 @@ CLSCF::new_density()
 
   double delta=0;
   
-  // find out what type of matrices we're dealing with
   int ij=0;
   for (int i=0; i < nbasis; i++) {
     for (int j=0; j <= i; j++,ij++) {
@@ -246,7 +254,7 @@ CLSCF::make_contribution(int i, int j, int k, int l, double val, int type)
     break;
     
   default:
-    fprintf(stderr,"CLSCF::make_contribution: invalid type %d\n",type);
+    fprintf(stderr,"  CLSCF::make_contribution: invalid type %d\n",type);
     abort();
   }
 

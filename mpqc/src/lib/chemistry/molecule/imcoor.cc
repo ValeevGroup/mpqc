@@ -22,33 +22,11 @@ static int hterminal(Molecule&, BitArray&, int);
 ///////////////////////////////////////////////////////////////////////////
 // utility functions
 
-// this handles the inverse of matrices even if they are singular
-static RefSymmSCMatrix
-gen_inverse(RefSymmSCMatrix&mat)
-{
-  RefSCMatrix vecs(mat.dim(),mat.dim());
-  RefDiagSCMatrix vals(mat.dim());
-
-  mat.diagonalize(vals,vecs);
-
-
-  RefSymmSCMatrix lamd(mat.dim());
-  lamd.assign(0.0);
-  for(int i=0; i < lamd.n(); i++)
-    if(vals(i) > 1.0e-8) lamd(i,i) = 1.0/vals(i);
-
-  RefSymmSCMatrix lam(mat.dim());
-  lam.assign(0.0);
-  lam.accumulate_transform(vecs,lamd);
-
-  return lam;
-}
-
 static inline double
 dist(Point& a, Point& b)
 {
-  return (sqrt((a[0]-b[0])*(a[0]-b[0])+(a[1]-b[1])*(a[1]-b[1])+
-               (a[2]-b[2])*(a[2]-b[2])));
+  double x,y,z;
+  return (sqrt((x=a[0]-b[0])*x + (y=a[1]-b[1])*y + (z=a[2]-b[2])*z));
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -635,7 +613,7 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
           // form the initial inverse of bmatrix * bmatrix_t
           bmbt.assign(0.0);
           bmbt.accumulate_symmetric_product(bmat);
-          bmbt_i = gen_inverse(bmbt);
+          bmbt_i = bmbt.gi();
         }
 
       // convert displacement to a displacement over all coordinates
@@ -700,7 +678,7 @@ IntMolecularCoor::to_internal(RefSCVector&internal,RefSCVector&gradient)
   // form the inverse of bmatrix * bmatrix_t
   bmbt.assign(0.0);
   bmbt.accumulate_symmetric_product(bmat);
-  bmbt_i = gen_inverse(bmbt);
+  bmbt_i = bmbt.gi();
 
   RefSCVector all_internal = bmbt_i*bmat*gradient;
 
@@ -716,9 +694,10 @@ IntMolecularCoor::to_internal(RefSCVector&internal,RefSCVector&gradient)
 int
 IntMolecularCoor::to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal)
 {
-  fprintf(stderr, "IntMolecularCoor::"
-          "to_cartesian(RefSymmSCMatrix&,RefSymmSCMatrix&): not available\n");
-  return -1;
+  cart.assign(0.0);
+  RefSCMatrix bmat(dim_,cart.dim());
+  variable_->bmat(molecule_,bmat);
+  cart.accumulate_transform(bmat.t(),internal);
 }
 
 int

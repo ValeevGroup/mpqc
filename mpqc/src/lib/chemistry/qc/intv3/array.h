@@ -61,6 +61,19 @@ class IntV3Arraydouble3 {
     int nbyte() const;
 };
 
+class IntV3Arraydoublep2 {
+  private:
+    int n1_, n2_;
+    double ***data_;
+  public:
+    IntV3Arraydoublep2();
+    ~IntV3Arraydoublep2();
+    void set_dim(int n1, int n2);
+    double *&operator()(int i,int j) { return data_[i][j]; }
+    void print(ostream &);
+    int nbyte() const;
+};
+
 class IntV3Arraydoublep3 {
   private:
     int n1_, n2_, n3_;

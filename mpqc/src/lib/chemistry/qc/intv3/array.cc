@@ -145,6 +145,54 @@ IntV3Arraydouble3::nbyte() const
 
 ////////////////////////////////////////////////////////////////////////////
 
+IntV3Arraydoublep2::IntV3Arraydoublep2()
+{
+  n1_ = n2_ = 0;
+  data_ = 0;
+}
+
+IntV3Arraydoublep2::~IntV3Arraydoublep2()
+{
+  for (int i=0; i<n1_; i++) {
+      delete[] data_[i];
+    }
+  delete[] data_;
+}
+
+void
+IntV3Arraydoublep2::set_dim(int n1, int n2)
+{
+  n1_ = n1;
+  n2_ = n2;
+  data_ = new double**[n1_];
+  if (data_ == 0) no_storage("IntV3Arraydoublep2");
+  for (int i=0; i<n1_; i++) {
+      data_[i] = new double*[n2_];
+      if (data_[i] == 0) no_storage("IntV3Arraydoublep2");
+    }
+}
+
+void
+IntV3Arraydoublep2::print(ostream &o)
+{
+  for (int i=0; i<n1_; i++) {
+      o << "i = " << i << endl;
+      for (int j=0; j<n2_; j++) {
+          o << data_[i][j];
+        }
+      o << endl;
+    }
+}
+
+int
+IntV3Arraydoublep2::nbyte() const
+{
+  return n1_*(sizeof(double**)
+              + n2_*(sizeof(double*)));
+}
+
+////////////////////////////////////////////////////////////////////////////
+
 IntV3Arraydoublep3::IntV3Arraydoublep3()
 {
   n1_ = n2_ = n3_ = 0;

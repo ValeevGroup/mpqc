@@ -9,7 +9,7 @@ TARGET_TO_MAKE = tmpl
 
 CFLAGS = $(CFLAGS_DEBUG)
 
-SYSLIBS := $(SYSLIBS) -ll
+#SYSLIBS := $(SYSLIBS) -ll
 
 DISTFILES = main.c tmpllex.l tmpl.h
 

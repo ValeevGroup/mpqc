@@ -1822,7 +1822,7 @@ RadialAngularIntegrator::set_grids(void)
   for (i=0; i<atomic_rows; i++)
       for (j=0; j<npruned_partitions_; j++)
           for (k=0; k<=gridtype_; k++)
-              cout << " angular_grid_[" << i << "][" << j << "][" << k << "]->nw = "
+              ExEnv::out << " angular_grid_[" << i << "][" << j << "][" << k << "]->nw = "
                    << angular_grid_[i][j][k]->nw() << endl;
 */
 }
@@ -2002,7 +2002,7 @@ RadialAngularIntegrator::select_dynamic_grid(void)
 {
   double accuracy = get_accuracy();
   // accurate_grid = gridtype_ to get original non-dynamic version
-  // cout << " accuracy = " << accuracy << endl;
+  // ExEnv::out << " accuracy = " << accuracy << endl;
   int select_grid;
   int i;
 
@@ -2013,7 +2013,7 @@ RadialAngularIntegrator::select_dynamic_grid(void)
           if (accuracy >= grid_accuracy_[i]) select_grid=i;
     }
       
-  // cout << " select_grid = " << select_grid << endl;
+  // ExEnv::out << " select_grid = " << select_grid << endl;
   return select_grid;
 }  
 int
@@ -2041,8 +2041,8 @@ RadialAngularIntegrator::get_angular_grid(double radius, double bragg_radius,
   if (dynamic_grids_) select_grid = select_dynamic_grid();
   else select_grid = gridtype_;
 
-  //cout << "RAI::get_angular_grid -> select_grid = " << select_grid;
-  //cout << " prune_grid_ = " << prune_grid_
+  //ExEnv::out << "RAI::get_angular_grid -> select_grid = " << select_grid;
+  //ExEnv::out << " prune_grid_ = " << prune_grid_
   //     << "  user_defined_grids_ = " << user_defined_grids_ << endl;
   atomic_row = get_atomic_row(charge);
   if (!prune_grid_ && !user_defined_grids_) {

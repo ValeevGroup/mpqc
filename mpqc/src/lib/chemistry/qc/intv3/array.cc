@@ -270,11 +270,24 @@ IntV3Arraydoublep4::~IntV3Arraydoublep4()
       delete[] data_[i];
     }
   delete[] data_;
+  data_=0;
 }
 
 void
 IntV3Arraydoublep4::set_dim(int n1, int n2, int n3, int n4)
 {
+  if (data_) {
+      for (int i=0; i<n1_; i++) {
+          for (int j=0; j<n2_; j++) {
+              for (int k=0; k<n3_; k++) {
+                  delete[] data_[i][j][k];
+                }
+              delete[] data_[i][j];
+            }
+          delete[] data_[i];
+        }
+      delete[] data_;
+    }
   n1_ = n1;
   n2_ = n2;
   n3_ = n3;

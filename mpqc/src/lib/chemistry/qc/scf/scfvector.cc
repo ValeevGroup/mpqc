@@ -143,6 +143,9 @@ SCF::compute_vector(double& eelec)
   // now clean up
   done_vector();
 
+  level_shift->dereference();
+  delete level_shift;
+
   tim_exit("vector");
   //tim_print(0);
 }

@@ -59,8 +59,8 @@ class QCXDR
     short  translate(unsigned short);
     int    translate(unsigned int);
     long   translate(unsigned long);
-    float  translate(float);
-    double translate(double);
+    void   translate(float*);
+    void   translate(double*);
     void*  translate(void*); // for pointers
 
    // array transformations...the elements of the array are changed
@@ -76,8 +76,8 @@ class QCXDR
     short  byte_swap(unsigned short);
     int    byte_swap(unsigned int);
     long   byte_swap(unsigned long);
-    float  byte_swap(float);
-    double byte_swap(double);
+    void   byte_swap(float*);
+    void   byte_swap(double*);
     void*  byte_swap(void*); // for pointers
 };
 

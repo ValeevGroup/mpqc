@@ -265,3 +265,18 @@ ParagonMessageGrp::raw_bcast(void* data, int nbyte, int from)
       crecv(type,(char*)data,nbyte);
     }
 }
+
+void
+ParagonMessageGrp::raw_collect(const void *part, const int *lengths, void *whole,
+                              int bytes_per_datum)
+{
+  if (bytes_per_datum != 1) {
+      int *newlengths = new int[n()];
+      for (int i=0; i<n(); i++) newlengths[i] = lengths[i] * bytes_per_datum;
+      gcolx(part,newlengths,whole);
+      delete[] newlengths;
+    }
+  else {
+      gcolx(part,lengths,whole);
+    }
+}

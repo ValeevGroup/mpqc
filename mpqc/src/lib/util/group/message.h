@@ -186,6 +186,12 @@ class MessageGrp: public DescribedClass {
     void bcast(double& data, int from = 0) { bcast(&data, 1, from); }
     void bcast(int& data, int from = 0) { bcast(&data, 1, from); }
 
+    //. Collect data distributed on the nodes to a big array replicated
+    // on each node.
+    virtual void raw_collect(const void *part, const int *lengths,
+                             void *whole, int bytes_per_datum=1);
+    void collect(const double *part, const int *lengths, double *whole);
+
     //. Do various global reduction operations.
     virtual void sum(double* data, int n, double* = 0, int target = -1);
     virtual void sum(int* data, int n, int* = 0, int target = -1);

@@ -111,6 +111,7 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
   // if keyval input for a message group was found, then
   // create it.
   if (keyval_string) {
+      if (keyval_string[0] == '\0') return 0;
       //cout << "Creating MessageGrp from \"" << keyval_string << "\"" << endl;
       RefParsedKeyVal strkv = new ParsedKeyVal();
       strkv->parse_string(keyval_string);
@@ -538,5 +539,24 @@ MessageGrp::sync()
       if (i->recv()) {
           raw_recv(i->recvfrom(), 0, 0);
         }
+    }
+}
+
+void
+MessageGrp::collect(const double *part, const int *lengths, double *whole)
+{
+  raw_collect(part,lengths,whole,sizeof(double));
+}
+
+void
+MessageGrp::raw_collect(const void *part, const int *lengths, void *whole,
+                        int bytes_per_datum)
+{
+  int offset = 0;
+  for (int i=0; i<n_; i++) {
+      int nbytes = lengths[i];
+      if (i==me_) memcpy(&whole[offset], part, nbytes);
+      raw_bcast(&whole[offset], nbytes, i);
+      offset += nbytes;
     }
 }

@@ -1,6 +1,7 @@
 
 #include <math.h>
 #include "molecule.h"
+#include <math/scmat/local.h>
 
 SavableState_REF_def(Molecule);
 
@@ -124,6 +125,20 @@ natoms(0)
           add_atom(i,ac);
         }
     }
+}
+
+RefSCDimension
+Molecule::dim_natom3()
+{
+  if (dnatom3_.nonnull()) {
+      if (dnatom3_.n() != natoms) {
+          dnatom3_ = new LocalSCDimension(natoms*3);
+        }
+    }
+  else {
+      dnatom3_ = new LocalSCDimension(natoms*3);
+    }
+  return dnatom3_;
 }
 
 Molecule& Molecule::operator=(Molecule& mol)

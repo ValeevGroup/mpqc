@@ -13,6 +13,7 @@
 #include <util/keyval/keyval.h>
 #include <math/topology/point.h>
 #include <math/topology/pointbag.h>
+#include <math/scmat/matrix.h>
 #include <chemistry/molecule/chemelem.h>
 #include <chemistry/molecule/atomcent.h>
 
@@ -36,12 +37,15 @@ class Molecule :
     int natoms;
     AtomicCenter& get_atom(int);
     const AtomicCenter& get_atom(int) const;
+    RefSCDimension dnatom3_; // number of atoms times 3
   public:
     Molecule();
     Molecule(Molecule&);
     Molecule(StateIn&);
     Molecule(KeyVal&input);
     virtual ~Molecule();
+
+    RefSCDimension dim_natom3(); // return natom3_;
 
     Molecule& operator=(Molecule&);
 

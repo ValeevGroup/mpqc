@@ -65,12 +65,7 @@ MolecularEnergy::MolecularEnergy(KeyVal&keyval):
 
   _mol = keyval.describedclassvalue("molecule");
 
-  if (_mc.nonnull()) {
-      _moldim = new LocalSCDimension(_mol->natom()*3);
-    }
-  else {
-      _moldim = dimension();
-    }
+  _moldim = _mol->dim_natom3();
   
   _energy.compute() = 1;
   _gradient.compute() = 0;
@@ -80,12 +75,12 @@ MolecularEnergy::MolecularEnergy(KeyVal&keyval):
 }
 
 MolecularEnergy::MolecularEnergy(RefMolecule&mol):
-  NLP2(new LocalSCDimension(mol->natom()*3)),
+  NLP2(mol->dim_natom3()),
   _mol(mol),
   _mc(0),
   _energy(_value)
 {
-  _moldim = _x.dim();
+  _moldim = mol->dim_natom3();
   
   _energy.compute() = 1;
   _gradient.compute() = 0;

@@ -190,7 +190,7 @@ IntMolecularCoor::init()
   Molecule& m = *molecule_.pointer();
 
   // compute needed dimensions
-  dnatom3_ = new LocalSCDimension(m.natom()*3);
+  dnatom3_ = m.dim_natom3();
 
   // let's go through the geometry and find all the close contacts
   // bonds is a lower triangle matrix of 1's and 0's indicating whether
@@ -649,7 +649,7 @@ IntMolecularCoor::to_cartesian(RefSCVector&gradient,RefSCVector&internal)
 void
 IntMolecularCoor::to_internal(RefSCVector&internal,RefSCVector&gradient)
 {
-  RefSCMatrix bmat(dvc_,dnatom3_);
+  RefSCMatrix bmat(dvc_,gradient.dim());
   RefSymmSCMatrix bmbt(dvc_);
   RefSymmSCMatrix bmbt_i;
 

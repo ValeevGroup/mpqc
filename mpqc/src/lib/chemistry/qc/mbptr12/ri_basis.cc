@@ -417,6 +417,7 @@ R12IntEvalInfo::construct_ortho_comp_()
 
    if (debug_ > 1) (orthog_ri_.t() * plist_ri->to_AO_basis(overlap_ri_) * orthog_ri_).print("Ut * S(RI-BS/RI-BS) * U");
 
+   ExEnv::out0() << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////

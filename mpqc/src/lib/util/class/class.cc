@@ -76,12 +76,12 @@ ClassKey::hash() const
   int i;
 
   // Even numbered bytes make up the lower part of the hash index
-  for (i=0; i<::strlen(classname_); i+=2) {
+  for (i=0; i < ::strlen(classname_); i+=2) {
       r ^= classname_[i];
     }
 
   // Odd numbered bytes make up the upper part of the hash index
-  for (i=1; i<::strlen(classname_); i+=2) {
+  for (i=1; i < ::strlen(classname_); i+=2) {
       r ^= classname_[i]<<8;
     }
 

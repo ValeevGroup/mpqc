@@ -19,9 +19,16 @@ __builtin_delete(void*ptr)
 
 void do_displacement(RefMolecularCoor&mc,int i);
 
-main()
+int 
+main(int argc, char **argv)
 {
-  RefKeyVal kv(new ParsedKeyVal(SRCDIR "/moltest.in"));
+  RefKeyVal kv;
+  if (argc == 2) {
+      kv = new ParsedKeyVal(argv[1]);
+    }
+  else {
+      kv = new ParsedKeyVal(SRCDIR "/moltest.in");
+    }
   RefKeyVal pkv(new PrefixKeyVal("molecule",kv));
 
   RefMolecule mol = kv->describedclassvalue("molecule");

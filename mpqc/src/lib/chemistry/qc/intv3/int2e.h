@@ -47,36 +47,6 @@ class Integral;
 
 #define CHECK_INTEGRAL_ALGORITHM 0
 
-class ShiftIntermediates {
-  private:
-    double *data_;
-    int ndata_;
-    int nused_;
-    int maxused_;
-    IntV3Arraydoublep4 shell_;
-    int l1_,l2_,l3_,l4_;
-
-    void out_of_memory(int,int,int,int);
-  public:
-    ShiftIntermediates();
-    ~ShiftIntermediates();
-    // marks all data as unused and zeros the necessary elements of shell
-    void clear(int am1,int am2,int am3,int am4);
-    // allocates the memory
-    void set_l(int,int,int,int);
-    // the amount of memory used
-    int nbyte();
-
-    double *operator() (int i,int j,int k,int l) {
-      if (i>l1_+l2_||j>l2_||k>l3_+l4_||l>l4_) {
-          cerr << "out of bounds" << endl;
-          abort();
-        }
-      return shell_(i,j,k,l);
-    }
-    double *allocate(int i,int j,int k,int l);
-};
-
 class Int2eV3: public VRefCount {
   protected:
     Integral *integral_;
@@ -135,7 +105,9 @@ class Int2eV3: public VRefCount {
     /* C[] - D[] */
     double CmD[3];
     int eAB;
-    ShiftIntermediates shiftinter_;
+    double *buf34;
+    double *buf12;
+    double *bufshared;
 
     int redundant_;
     int permute_;
@@ -240,11 +212,12 @@ class Int2eV3: public VRefCount {
 
     // locals from hrr.cc
   protected:
-    double * shiftint(int am1, int am2, int am3, int am4);
-    int choose_shift(int am1, int am2, int am3, int am4);
-    void shiftam_12(double *I0100, int am1, int am2, int am3, int am4);
-    void shiftam_12eAB(double *I0100, int am1, int am2, int am3, int am4);
-    void shiftam_34(double *I0001, int am1, int am2, int am3, int am4);
+    void shiftam_12(double *I0100, double *I1000, double *I0000,
+                    int am1, int am2, int am3, int am4);
+    void shiftam_12eAB(double *I0100, double *I1000, double *I0000,
+                       int am1, int am2, int am3, int am4);
+    void shiftam_34(double *I0001, double *I0010, double *I0000,
+                    int am1, int am2, int am3, int am4);
         
     // globals from hrr.cc
   protected:

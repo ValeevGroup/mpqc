@@ -29,6 +29,9 @@
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/int2e.h>
 
+//#undef CHECK_INTEGRAL_ALGORITHM
+//#define CHECK_INTEGRAL_ALGORITHM 1
+
 static inline void
 iswtch(int *i, int *j)
 {
@@ -46,127 +49,6 @@ fail()
   cerr << scprintf("failing module:\n%s",__FILE__) << endl;
   abort();
   }
-
-ShiftIntermediates::ShiftIntermediates()
-{
-  maxused_ = 0;
-  data_ = 0;
-  ndata_ = 0;
-  nused_ = 0;
-  l1_ = 0;
-  l2_ = 0;
-  l3_ = 0;
-  l4_ = 0;
-}
-
-ShiftIntermediates::~ShiftIntermediates()
-{
-#if CHECK_INTEGRAL_ALGORITHM
-  cout << "ShiftIntermediates: DTOR: wasted "
-       << ndata_ - maxused_
-       << " of " << ndata_
-       << endl;
-#endif
-  delete[] data_;
-}
-
-void
-ShiftIntermediates::out_of_memory(int i,int j,int k,int l)
-{
-  int size = INT_NCART(i)*INT_NCART(j)*INT_NCART(k)*INT_NCART(l);
-  cerr << "ShiftIntermediates: didn't preallocate enough memory" << endl;
-  cerr << "  nused_ = " << nused_ << " size = " << size << endl;
-  cerr << "  ndata_ = " << ndata_ << endl;
-  abort();
-}
-
-void
-ShiftIntermediates::clear(int am1,int am2,int am3,int am4)
-{
-  nused_ = 0;
-  double *****data = shell_.data();
-  for (int i=0; i<=am1+am2; i++) {
-    double ****datai = data[i];
-    for (int j=0; j<=am2; j++) {
-      double ***dataij = datai[j];
-      for (int k=0; k<=am3+am4; k++) {
-        double **dataijk = dataij[k];
-        for (int l=0; l<=am4; l++) {
-          dataijk[l] = 0;
-          }
-        }
-      }
-    }
-}
-
-double *
-ShiftIntermediates::allocate(int i,int j,int k,int l)
-{
-  int size = INT_NCART(i)*INT_NCART(j)*INT_NCART(k)*INT_NCART(l);
-  //cout << "ShiftIntermediates::allocate:"
-  //     << " size = " << size
-  //     << " nused_ = " << nused_
-  //     << " ndata_ = " << ndata_
-  //     << " data_ = " << (void*)data_
-  //     << endl;
-  double *data = &data_[nused_];
-  shell_(i,j,k,l) = data;
-  if (nused_ + size > ndata_) out_of_memory(i,j,k,l);
-  nused_ += size;
-  if (nused_ > maxused_) maxused_ = nused_;
-  return data;
-}
-
-void
-ShiftIntermediates::set_l(int l1,int l2,int l3,int l4)
-{
-#if CHECK_INTEGRAL_ALGORITHM
-  cout << "ShiftIntermediates: set_l: wasted "
-       << ndata_ - maxused_
-       << " of " << ndata_
-       << endl;
-#endif
-
-  l1_ = l1;
-  l2_ = l2;
-  l3_ = l3;
-  l4_ = l4;
-  shell_.set_dim(l1+l2+1,l2+1,l3+l4+1,l4+1);
-
-  delete[] data_;
-  ndata_ = 0;
-  nused_ = 0;
-  maxused_ = 0;
-  int i;
-  for (i=l1; i<=l1+l2; i++) {
-    int szi = INT_NCART(i);
-    for (int k=l3; k<=l3+l4; k++) {
-      int szk = INT_NCART(k);
-      for (int l=1; l<=k && l+k<=l3+l4 && l<=l4; l++) {
-        int szl = INT_NCART(l);
-        ndata_ += szi*szk*szl;
-        }
-      }
-    }
-  int szkl = INT_NCART(l3)*INT_NCART(l4);
-  for (i=l1; i<=l1+l2; i++) {
-    int szi = INT_NCART(i);
-    for (int j=1; j<=i && i+j<=l1+l2 && j<=l2; j++) {
-      int szj = INT_NCART(j);
-      ndata_ += szi*szj*szkl;
-      }
-    }
-  data_ = new double[ndata_];
-#if CHECK_INTEGRAL_ALGORITHM
-  cout << "ShiftIntermediates: allocated: " << ndata_ << endl;
-#endif
-}
-
-int
-ShiftIntermediates::nbyte()
-{
-  return ndata_ * sizeof(double) + shell_.nbyte();
-}
 
 /* This initializes the shift routines.  It is called by int_initialize_erep.
  * It is passed the maximum am to be found on each center.
@@ -200,13 +82,57 @@ Int2eV3::int_init_shiftgc(int order, int am1, int am2, int am3, int am4)
   /* For derivative integral bounds am3 will need to be larger. */
   if (order==1 && int_derivative_bounds) am3++;
 
-  // Set up the intermediate array.
-  shiftinter_.set_l(am1,am2,am3,am4);
-  used_storage_shift_ += shiftinter_.nbyte();
+  // Set up the new intermediate arrays.
+  int e, c, d;
+  int ndata34_e = 0;
+  for (e=am1; e<=am1+am2; e++) {
+    int size_e = INT_NCART(e);
+    ndata34_e += size_e;
+    }
+  int ndata34_f = 0;
+  for (d=1; d<=am4; d++) {
+    int size_d = INT_NCART(d);
+    int size_dm1 = INT_NCART(d-1);
+    int off_c_dm1 = 0;
+    int off_cp1_dm1 = INT_NCART(am3) * size_dm1;
+    int off_c_d = 0;
+    for (c=am3; c<=am3+am4-d; c++) {
+      int size_c = INT_NCART(c);
+      int size_cp1 = INT_NCART(c+1);
+      off_c_d += size_c * size_d;
+      off_c_dm1 = off_cp1_dm1;
+      off_cp1_dm1 += size_cp1 * size_dm1;
+      }
+    if (off_c_d > ndata34_f) ndata34_f = off_c_d;
+    if (off_cp1_dm1 > ndata34_f) ndata34_f = off_cp1_dm1;
+    }
+  int ndata34 = ndata34_e * ndata34_f;
 
-#if CHECK_INTEGRAL_ALGORITHM
-  cout << "shiftinter: " << shiftinter_.nbyte() << endl;
-#endif
+  int ndata12 = 0;
+  int a, b;
+  int size_c_d = INT_NCART(am3)*INT_NCART(am4);
+  for (b=1; b<=am2; b++) {
+    int size_b = INT_NCART(b);
+    int size_bm1 = INT_NCART(b-1);
+    int off_a_b = 0;
+    int off_ap1_bm1 = INT_NCART(am1) * size_bm1 * size_c_d;
+    int off_a_bm1 = 0;
+    for (a=am1; a<=am1+am2-b; a++) {
+      int size_a = INT_NCART(a);
+      int size_ap1 = INT_NCART(a+1);
+      off_a_b += size_a * size_b * size_c_d;
+      off_a_bm1 = off_ap1_bm1;
+      off_ap1_bm1 += size_ap1 * size_bm1 * size_c_d;
+      }
+    if (off_a_b > ndata12) ndata12 = off_a_b;
+    if (off_ap1_bm1 > ndata12) ndata12 = off_ap1_bm1;
+    }
+  int ndatamax = (ndata12>ndata34?ndata12:ndata34);
+  buf34 = new double[ndata34];
+  buf12 = new double[ndata12];
+  bufshared = new double[ndatamax];
+
+  used_storage_shift_ += sizeof(double)*(ndata34+ndata12+ndatamax);
 
   used_storage_ += used_storage_shift_;
   }
@@ -215,7 +141,9 @@ void
 Int2eV3::int_done_shiftgc()
 {
   used_storage_ -= used_storage_shift_;
-  shiftinter_.set_l(0,0,0,0);
+  delete[] buf12;
+  delete[] buf34;
+  delete[] bufshared;
   }
 
 /* This is the principle entry point for the am shifting routines.
@@ -240,6 +168,11 @@ Int2eV3::int_shiftgcam(int gc1, int gc2, int gc3, int gc4,
   am3 = tam3;
   am4 = tam4;
 
+  // (a0|b0) does need shifting
+  if (am2==0 && am4==0) {
+    return e0f0_con_ints_array[g1][g2][g3][g4](am1,am3);
+    }
+
   /* Copy the A B equivalency info into a static global variable. */
   eAB = peAB;
 
@@ -251,102 +184,99 @@ Int2eV3::int_shiftgcam(int gc1, int gc2, int gc3, int gc4,
   CmD[1] =  build.int_v_r31 - build.int_v_r41;
   CmD[2] =  build.int_v_r32 - build.int_v_r42;
 
-  /* Mark all of the intermediates as being noncomputed. */
-  shiftinter_.clear(am1,am2,am3,am4);
-
-#if CHECK_INTEGRAL_ALGORITHM
+#if CHECK_INTEGRAL_ALGORITHM > 1
   cout << "generating ("
        << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
        << ":" << endl;
 #endif
 
-  /* Construct the target integrals. */
-  return shiftint(am1,am2,am3,am4);
-  }
+  // the (e0|f0) integrals have been initialized
+  IntV3Arraydoublep2 &e0f0 = e0f0_con_ints_array[g1][g2][g3][g4];
 
-double *
-Int2eV3::shiftint(int am1, int am2, int am3, int am4)
-{
-  double *buffer;
-
-#if 0
-  cout << scprintf(" S[%d(%d),%d(%d),%d(%d),%d(%d)]",
-         am1,g1,
-         am2,g2,
-         am3,g3,
-         am4,g4);
-#endif
-
-  if (am2==0 && am4==0) {
-    return e0f0_con_ints_array[g1][g2][g3][g4](am1,am3);
-    }
-  
-  /* If the integral is known, then return the pointer to its buffer. */
-  if (buffer = shiftinter_(am1,am2,am3,am4)) return buffer;
-
-  /* Find the preallocated storage for the target integrals. */
-  buffer = shiftinter_.allocate(am1,am2,am3,am4);
-
-  if (!buffer) {
-    cerr << "Int2eV3::shift2e: internal error: "
-         << "storage not allocated for target" << endl;
-    abort();
-    }
-
-  /* Should we shift to 2 or to 4? */
-  if (choose_shift(am1,am2,am3,am4) == 2) {
-#if CHECK_INTEGRAL_ALGORITHM
-    shiftam_12(buffer,am1,am2,am3,am4);
-#else
-    if (eAB) shiftam_12eAB(buffer,am1,am2,am3,am4);
-    else     shiftam_12(buffer,am1,am2,am3,am4);
-#endif
-    }
-  else {
-    shiftam_34(buffer,am1,am2,am3,am4);
-    }
-
-  return buffer;
-  }
-
-/* Returns 2 if we should shift am from 1 to 2 next and
- * returns 4 if we should shift am from 3 to 4 next.
- * No attempt has been made to optimize the choice.
- */
-int
-Int2eV3::choose_shift(int am1, int am2, int am3, int am4)
-{
-  if (am2 == 0) {
-    if (am4 == 0) {
-      cerr << scprintf("shift: build routines missed (%d,0,%d,0)\n",am1,am3);
-      fail();
+  // generate (e0|cd) for each needed e
+  int e, c, d;
+  int off_e = 0;
+  int size34 = INT_NCART(am3)*INT_NCART(am4);
+  double *buf34_1 = buf34;
+  double *buf34_2 = bufshared;
+  for (e=am1; e<=am1+am2; e++) {
+    int size_e = INT_NCART(e);
+    for (d=1; d<=am4; d++) {
+      int size_d = INT_NCART(d);
+      int size_dm1 = INT_NCART(d-1);
+      int off_c_dm1 = 0;
+      int off_cp1_dm1 = size_e * INT_NCART(am3) * size_dm1;
+      int off_c_d = 0;
+      for (c=am3; c<=am3+am4-d; c++) {
+        int size_c = INT_NCART(c);
+        int size_cp1 = INT_NCART(c+1);
+        double *I0001, *I0010, *I0000;
+        if (d==am4) {
+          I0001 = &buf12[off_e];
+          }
+        else I0001 = &buf34_1[off_c_d];
+        if (d==1) {
+          I0010 = e0f0(e,c+1);
+          I0000 = e0f0(e,c);
+          }
+        else {
+          I0010 = &buf34_2[off_cp1_dm1];
+          I0000 = &buf34_2[off_c_dm1];
+          }
+        shiftam_34(I0001,I0010,I0000,e,0,c,d);
+        off_c_d += size_e * size_c * size_d;
+        off_c_dm1 = off_cp1_dm1;
+        off_cp1_dm1 += size_e * size_cp1 * size_dm1;
+        }
+      // swap the buffers.
+      double *tmp = buf34_1;
+      buf34_1 = buf34_2;
+      buf34_2 = tmp;
       }
-    return 4;
+    off_e += size_e * size34;
     }
-  if (am4 == 0) return 2;
 
-#if 1
-  // always build on one electron first since the storage allocation
-  // now computes an upper bound for intermediate storage based on this
-  return 2;
-#else
-  int nneed2 = 0;
-  int nneed4 = 0;
-  if (!shiftinter_(am1+1,am2-1,am3,am4)) {
-    nneed2 += INT_NCART(am1+1)*INT_NCART(am2-1)*INT_NCART(am3)*INT_NCART(am4);
+  // generate (ab|cd)
+  int a, b;
+  int size_c_d = size34;
+  double *buf12_1 = bufshared;
+  double *buf12_2 = buf12;
+  for (b=1; b<=am2; b++) {
+    int size_b = INT_NCART(b);
+    int size_bm1 = INT_NCART(b-1);
+    int off_a_b = 0;
+    int off_ap1_bm1 = INT_NCART(am1) * size_bm1 * size_c_d;
+    int off_a_bm1 = 0;
+    for (a=am1; a<=am1+am2-b; a++) {
+      int size_a = INT_NCART(a);
+      int size_ap1 = INT_NCART(a+1);
+      double *I0100 = &buf12_1[off_a_b];
+      double *I1000;
+      double *I0000;
+      if (b==1 && am4 == 0) {
+        I1000 = e0f0(a+1,am3);
+        if (eAB) I0000 = 0;
+        else I0000 = e0f0(a,am3);
+        }
+      else {
+        I1000 = &buf12_2[off_ap1_bm1];
+        if (eAB) I0000 = 0;
+        else I0000 = &buf12_2[off_a_bm1];
+        }
+      if (eAB) shiftam_12eAB(I0100,I1000,I0000,a,b,am3,am4);
+      else shiftam_12(I0100,I1000,I0000,a,b,am3,am4);
+      off_a_b += size_a * size_b * size_c_d;
+      off_a_bm1 = off_ap1_bm1;
+      off_ap1_bm1 += size_ap1 * size_bm1 * size_c_d;
+      }
+      // swap the buffers.
+      double *tmp = buf12_1;
+      buf12_1 = buf12_2;
+      buf12_2 = tmp;
     }
-  if (!shiftinter_(am1,am2-1,am3,am4)) {
-    nneed2 += INT_NCART(am1)*INT_NCART(am2-1)*INT_NCART(am3)*INT_NCART(am4);
-    }
-  if (!shiftinter_(am1,am2,am3+1,am4-1)) {
-    nneed4 += INT_NCART(am1)*INT_NCART(am2)*INT_NCART(am3+1)*INT_NCART(am4-1);
-    }
-  if (!shiftinter_(am1,am2,am3,am4-1)) {
-    nneed4 += INT_NCART(am1)*INT_NCART(am2)*INT_NCART(am3)*INT_NCART(am4-1);
-    }
-  if (nneed2 <= nneed4) return 2;
-  return 4;
-#endif
+
+  /* Construct the target integrals. */
+  return buf12_2;
   }
 
 /* Shift angular momentum from center 1 to center 2.
@@ -354,25 +284,21 @@ Int2eV3::choose_shift(int am1, int am2, int am3, int am4)
  * am1-4 is the angular momentum on each of the centers in the target set.
  */
 void
-Int2eV3::shiftam_12(double *I0100, int am1, int am2, int am3, int am4)
+Int2eV3::shiftam_12(double *I0100, double *I1000, double *I0000,
+                    int am1, int am2, int am3, int am4)
 {
   int i;
-  double *I1000;
-  double *I0000;
   int i1,j1,k1;
   int i2,j2,k2;
   int size2, size2m134, size34;
 
-#if CHECK_INTEGRAL_ALGORITHM
+#if CHECK_INTEGRAL_ALGORITHM > 1
   cout << "(" << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
        << " <- "
        << "(" << am1+1 << "," << am2-1 << "," << am3 << "," << am4 << ")"
        << "(" << am1 << "," << am2-1 << "," << am3 << "," << am4 << ")"
        << endl;
 #endif
-
-  I1000 = shiftint(am1+1,am2-1,am3,am4);
-  I0000 = shiftint(am1,am2-1,am3,am4);
 
   size2m134 = INT_NCART(am2-1)*INT_NCART(am3)*INT_NCART(am4);
   size34    = INT_NCART(am3)*INT_NCART(am4);
@@ -433,23 +359,21 @@ Int2eV3::shiftam_12(double *I0100, int am1, int am2, int am3, int am4)
  * am1-4 is the angular momentum on each of the centers in the target set.
  */
 void
-Int2eV3::shiftam_12eAB(double *I0100, int am1, int am2, int am3, int am4)
+Int2eV3::shiftam_12eAB(double *I0100, double *I1000, double *I0000,
+                       int am1, int am2, int am3, int am4)
 {
   int i;
-  double *I1000;
   int i1,j1,k1;
   int i2,j2,k2;
   int size2, size2m134, size34;
 
-#if CHECK_INTEGRAL_ALGORITHM
+#if CHECK_INTEGRAL_ALGORITHM > 1
   cout << "(" << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
        << " <- "
        << "(" << am1+1 << "," << am2-1 << "," << am3 << "," << am4 << ")"
        << "(" << am1 << "," << am2-1 << "," << am3 << "," << am4 << ")"
        << endl;
 #endif
-
-  I1000 = shiftint(am1+1,am2-1,am3,am4);
 
   size2m134 = INT_NCART(am2-1)*INT_NCART(am3)*INT_NCART(am4);
   size34    = INT_NCART(am3)*INT_NCART(am4);
@@ -501,10 +425,9 @@ Int2eV3::shiftam_12eAB(double *I0100, int am1, int am2, int am3, int am4)
   }
 
 void
-Int2eV3::shiftam_34(double *I0001, int am1, int am2, int am3, int am4)
+Int2eV3::shiftam_34(double *I0001, double *I0010, double *I0000,
+                    int am1, int am2, int am3, int am4)
 {
-  double *I0010;
-  double *I0000;
   int i1,j1,k1,cartindex1;
   int i2,j2,k2,cartindex2;
   int i3,j3,k3,cartindex3;
@@ -512,16 +435,13 @@ Int2eV3::shiftam_34(double *I0001, int am1, int am2, int am3, int am4)
   int cartindex1234;
   int size23p14m1,size3p14m1,size4m1,size234m1,size34m1;
 
-#if CHECK_INTEGRAL_ALGORITHM
+#if CHECK_INTEGRAL_ALGORITHM > 1
   cout << "(" << am1 << "," << am2 << "," << am3 << "," << am4 << ")"
        << " <- "
        << "(" << am1 << "," << am2 << "," << am3+1 << "," << am4-1 << ")"
        << "(" << am1 << "," << am2 << "," << am3 << "," << am4-1 << ")"
        << endl;
 #endif
-
-  I0010 = shiftint(am1,am2,am3+1,am4-1);
-  I0000 = shiftint(am1,am2,am3,am4-1);
 
   size23p14m1 = INT_NCART(am2)*INT_NCART(am3+1)*INT_NCART(am4-1);
   size3p14m1 = INT_NCART(am3+1)*INT_NCART(am4-1);

@@ -36,11 +36,11 @@ class OneBodyInt : public VRefCount {
     int nshell1() const;
     int nshell2() const;
 
-    RefGaussianBasisSet basis() { return bs1; }
-    RefGaussianBasisSet basis1() { return bs1; }
-    RefGaussianBasisSet basis2() { return bs2; }
+    RefGaussianBasisSet basis();
+    RefGaussianBasisSet basis1();
+    RefGaussianBasisSet basis2();
 
-    const double * buffer() const { return buffer_; }
+    const double * buffer() const;
     
     virtual void compute_shell(int,int) = 0;
 };

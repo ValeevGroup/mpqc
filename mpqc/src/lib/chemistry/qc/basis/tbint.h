@@ -13,6 +13,10 @@
 
 class TwoBodyInt : public VRefCount {
   protected:
+    int store1_;
+    int store2_;
+    int int_store_;
+    
     RefGaussianBasisSet bs1;
     RefGaussianBasisSet bs2;
     RefGaussianBasisSet bs3;
@@ -40,15 +44,19 @@ class TwoBodyInt : public VRefCount {
     int nshell3() const;
     int nshell4() const;
 
-    RefGaussianBasisSet basis() { return bs1; }
-    RefGaussianBasisSet basis1() { return bs1; }
-    RefGaussianBasisSet basis2() { return bs2; }
-    RefGaussianBasisSet basis3() { return bs3; }
-    RefGaussianBasisSet basis4() { return bs4; }
+    RefGaussianBasisSet basis();
+    RefGaussianBasisSet basis1();
+    RefGaussianBasisSet basis2();
+    RefGaussianBasisSet basis3();
+    RefGaussianBasisSet basis4();
 
-    const double * buffer() const { return buffer_; }
+    const double * buffer() const;
     
     virtual void compute_shell(int,int,int,int) = 0;
+
+    int int_store1(int i) { store1_=i; };
+    int int_store2(int i) { store2_=i; };
+    int integral_storage(int i) { int_store_=i; };
 };
 
 REF_dec(TwoBodyInt);
@@ -81,6 +89,11 @@ class ShellQuartetIter {
     int kcur;
     int lcur;
 
+    int i_;
+    int j_;
+    int k_;
+    int l_;
+    
   public:
     ShellQuartetIter();
     virtual ~ShellQuartetIter();
@@ -93,26 +106,17 @@ class ShellQuartetIter {
 
     virtual void start();
     virtual void next();
-    virtual operator int();
 
-    int i() const;
-    int j() const;
-    int k() const;
-    int l() const;
+    int ready() const { return icur < iend; }
 
-    int ij() const;
-    int ik() const;
-    int il() const;
-
-    int kl() const;
-    int jl() const;
-    int jk() const;
-
-    int ijkl() const;
+    int i() const { return i_; }
+    int j() const { return j_; }
+    int k() const { return k_; }
+    int l() const { return l_; }
 
     int nint() const { return iend*jend*kend*lend; }
     
-    double val() const;
+    double val() const { return buf[index]*scale_; }
 };
 
 class TwoBodyIntIter {
@@ -135,12 +139,13 @@ class TwoBodyIntIter {
     
     virtual void start();
     virtual void next();
-    virtual operator int();
 
-    int ishell() const;
-    int jshell() const;
-    int kshell() const;
-    int lshell() const;
+    int ready() const { return (icur < iend); }
+
+    int ishell() const { return icur; }
+    int jshell() const { return jcur; }
+    int kshell() const { return kcur; }
+    int lshell() const { return lcur; }
 
     virtual double scale() const;
 

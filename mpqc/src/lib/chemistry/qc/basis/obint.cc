@@ -85,6 +85,30 @@ OneBodyInt::nshell2() const
   return bs2->nshell();
 }
 
+RefGaussianBasisSet
+OneBodyInt::basis()
+{
+  return bs1;
+}
+
+RefGaussianBasisSet
+OneBodyInt::basis1()
+{
+  return bs1;
+}
+
+RefGaussianBasisSet
+OneBodyInt::basis2()
+{
+  return bs2;
+}
+
+const double *
+OneBodyInt::buffer() const
+{
+  return buffer_;
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 ShellPairIter::ShellPairIter()

@@ -5,6 +5,8 @@
 
 #include <stdio.h>
 
+#include <math/scmat/offset.h>
+
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/basis/basis.h>
 
@@ -23,6 +25,9 @@ TwoBodyInt::TwoBodyInt(const RefGaussianBasisSet&b) :
   } else {
     buffer_ = 0;
   }
+
+  store1_=store2_=1;
+  int_store_=0;
 }
 
 TwoBodyInt::TwoBodyInt(const RefGaussianBasisSet&b1,
@@ -42,6 +47,9 @@ TwoBodyInt::TwoBodyInt(const RefGaussianBasisSet&b1,
   } else {
     buffer_ = 0;
   }
+
+  store1_=store2_=1;
+  int_store_=0;
 }
 
 TwoBodyInt::~TwoBodyInt()
@@ -112,6 +120,42 @@ TwoBodyInt::nshell4() const
   return bs4->nshell();
 }
 
+RefGaussianBasisSet
+TwoBodyInt::basis()
+{
+  return bs1;
+}
+
+RefGaussianBasisSet
+TwoBodyInt::basis1()
+{
+  return bs1;
+}
+
+RefGaussianBasisSet
+TwoBodyInt::basis2()
+{
+  return bs2;
+}
+
+RefGaussianBasisSet
+TwoBodyInt::basis3()
+{
+  return bs3;
+}
+
+RefGaussianBasisSet
+TwoBodyInt::basis4()
+{
+  return bs4;
+}
+
+const double *
+TwoBodyInt::buffer() const
+{
+  return buffer_;
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 ShellQuartetIter::ShellQuartetIter()
@@ -152,10 +196,10 @@ ShellQuartetIter::init(const double * b,
 void
 ShellQuartetIter::start()
 {
-  icur=0;
-  jcur=0;
-  kcur=0;
-  lcur=0;
+  icur=0; i_ = istart;
+  jcur=0; j_ = jstart;
+  kcur=0; k_ = kstart;
+  lcur=0; l_ = lstart;
 }
 
 void
@@ -166,102 +210,33 @@ ShellQuartetIter::next()
   if (lcur < ((e34) ? (((e13e24)&&((kcur)==(icur)))?(jcur):(kcur))
               : ((e13e24)&&((kcur)==(icur)))?(jcur):(lend)-1)) {
     lcur++;
+    l_++;
     return;
   }
 
   lcur=0;
+  l_=lstart;
 
   if (kcur < ((e13e24)?(icur):((kend)-1))) {
     kcur++;
+    k_++;
     return;
   }
 
   kcur=0;
+  k_=kstart;
 
   if (jcur < ((e12)?(icur):((jend)-1))) {
     jcur++;
+    j_++;
     return;
   }
 
   jcur=0;
+  j_=jstart;
+  
   icur++;
-}
-
-ShellQuartetIter::operator int()
-{
-  return (icur < iend);
-}
-
-int
-ShellQuartetIter::i() const
-{
-  return icur+istart;
-}
-
-int
-ShellQuartetIter::j() const
-{
-  return jcur+jstart;
-}
-
-int
-ShellQuartetIter::k() const
-{
-  return kcur+kstart;
-}
-
-int
-ShellQuartetIter::l() const
-{
-  return lcur+lstart;
-}
-
-int
-ShellQuartetIter::ij() const
-{
-  return i()*(i()+1)>>1 + j();
-}
-
-int
-ShellQuartetIter::ik() const
-{
-  return i()*(i()+1)>>1 + k();
-}
-
-int
-ShellQuartetIter::il() const
-{
-  return i()*(i()+1)>>1 + l();
-}
-
-int
-ShellQuartetIter::kl() const
-{
-  return k()*(k()+1)>>1 + l();
-}
-
-int
-ShellQuartetIter::jl() const
-{
-  return j()*(j()+1)>>1 + l();
-}
-
-int
-ShellQuartetIter::jk() const
-{
-  return j()*(j()+1)>>1 + k();
-}
-
-int
-ShellQuartetIter::ijkl() const
-{
-  return ij()*(ij()+1)>>1 + kl();
-}
-
-double
-ShellQuartetIter::val() const
-{
-  return buf[index]*scale_;
+  i_++;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -288,11 +263,6 @@ TwoBodyIntIter::start()
   lcur=0;
 
   iend = tbi->nshell();
-}
-
-TwoBodyIntIter::operator int()
-{
-  return (icur < iend);
 }
 
 void
@@ -326,30 +296,6 @@ TwoBodyIntIter::next()
   icur++;
 }
 
-int
-TwoBodyIntIter::ishell() const
-{
-  return icur;
-}
-
-int
-TwoBodyIntIter::jshell() const
-{
-  return jcur;
-}
-
-int
-TwoBodyIntIter::kshell() const
-{
-  return kcur;
-}
-
-int
-TwoBodyIntIter::lshell() const
-{
-  return lcur;
-}
-
 double
 TwoBodyIntIter::scale() const
 {
@@ -363,10 +309,10 @@ TwoBodyIntIter::current_quartet()
   
   sqi.init(tbi->buffer(),
            icur, jcur, kcur, lcur,
-           tbi->basis()->function_to_shell(icur),
-           tbi->basis()->function_to_shell(jcur),
-           tbi->basis()->function_to_shell(kcur),
-           tbi->basis()->function_to_shell(lcur),
+           tbi->basis()->shell_to_function(icur),
+           tbi->basis()->shell_to_function(jcur),
+           tbi->basis()->shell_to_function(kcur),
+           tbi->basis()->shell_to_function(lcur),
            tbi->basis()->operator()(icur).nfunction(),
            tbi->basis()->operator()(jcur).nfunction(),
            tbi->basis()->operator()(kcur).nfunction(),

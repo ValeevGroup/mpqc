@@ -323,6 +323,16 @@ AC_ARG_WITH(f77,
 F77=$withval
 )
 
+AC_ARG_WITH(cxx-optflags,
+[  --with-cxx-optflags     Optimization flags to use with the C++ compiler.],
+GIVEN_CXXOPTIONS_OPT=$withval
+)
+
+AC_ARG_WITH(cc-optflags,
+[  --with-cc-optflags      Optimization flags to use with the C compiler.],
+GIVEN_COPTIONS_OPT=$withval
+)
+
 DOT=yes
 AC_ARG_WITH(dot,
 [  --with-dot              Gives the path to the dot graph generator.],
@@ -669,10 +679,10 @@ changequote([, ])dnl
       cpu_arch_option="-mcpu=$target_cpu"
     fi
     if test X$GCC = Xyes; then
-      COPTIONS_MISC="$COPTIONS_MISC $cpu_arch_option"
+      COPTIONS_OPT="$COPTIONS_OPT $cpu_arch_option"
     fi
     if test X$GXX = Xyes; then
-      CXXOPTIONS_MISC="$CXXOPTIONS_MISC $cpu_arch_option"
+      CXXOPTIONS_OPT="$CXXOPTIONS_OPT $cpu_arch_option"
     fi
     AC_MSG_RESULT(IA-32: $cpu_arch_option)
   ;;
@@ -728,6 +738,18 @@ changequote([, ])dnl
     AC_MSG_RESULT("none")
   ;;
 esac
+
+dnl -- check for overriden optimization options --
+
+if test -n "$GIVEN_COPTIONS_OPT"; then
+  COPTIONS_OPT=$GIVEN_COPTIONS_OPT
+  AC_MSG_NOTICE("overriding C optimization flags with $COPTIONS_OPT")
+fi
+
+if test -n "$GIVEN_CXXOPTIONS_OPT"; then
+  CXXOPTIONS_OPT=$GIVEN_CXXOPTIONS_OPT
+  AC_MSG_NOTICE("overriding C++ optimization flags with $CXXOPTIONS_OPT")
+fi
 
 dnl ----------- check for C++ typename ---------------
 dnl This is done before template flags are set to avoid
@@ -842,7 +864,7 @@ if test $DEBUG = yes; then
   LDFLAGS="$LDFLAGS -g"
 elif test $DEBUG = opt; then
   CFLAGS="$COPTIONS_DBG $COPTIONS_OPT $COPTIONS_MISC"
-  CXXFLAGS="$CXXOPTIONS_DBG $COPTIONS_OPT $CXXOPTIONS_MISC"
+  CXXFLAGS="$CXXOPTIONS_DBG $CXXOPTIONS_OPT $CXXOPTIONS_MISC"
   LDFLAGS="$LDFLAGS -g"
 else
   CFLAGS="$COPTIONS_OPT $COPTIONS_MISC"

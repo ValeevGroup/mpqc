@@ -46,6 +46,9 @@ class BEMSolventH: public AccumH {
     double gamma_;
     int onebody_;
     int normalize_q_;
+    int separate_surf_charges_;
+    int y_equals_j_;
+    int integrate_nelectron_;
 
     RefWavefunction wfn_;
     RefBEMSolvent solvent_;

@@ -34,12 +34,10 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/wfn/solvent.h>
 
-#define INTEGRATE_NELECTRON 0
-
-#if INTEGRATE_NELECTRON
 #include <math/isosurf/volume.h>
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/functional.h>
+
 //. The \clsnm{NElFunctional} computes the number of electrons.
 //. It is primarily for testing the integrator.
 class NElInShapeFunctional: public DenFunctional {
@@ -92,7 +90,8 @@ NElInShapeFunctional::point(const PointInputData &id,
       od.energy = 0.0;
     }
 }
-#endif
+
+/////////////////////////////////////////////////////////////////////////////
 
 #define CLASSNAME BEMSolventH
 #define VERSION 1
@@ -123,10 +122,23 @@ BEMSolventH::BEMSolventH(const RefKeyVal&keyval):
       RefUnits npm = new Units("dyne/cm");
       gamma_ = 72.75 * npm->to_atomic_units();
     }
+  // If onebody add a term to the one body hamiltonian, h.
+  // Otherwise the energy contribution is scalar.
   onebody_ = keyval->booleanvalue("onebody");
   if (keyval->error() != KeyVal::OK) onebody_ = 1;
+  // Normalize the charges if normalize_q is set.
   normalize_q_ = keyval->booleanvalue("normalize_q");
   if (keyval->error() != KeyVal::OK) normalize_q_ = 1;
+  // Compute separately contributes to the energy from surfaces
+  // charges induced by the nuclear and electronic charge densities.
+  separate_surf_charges_ = keyval->booleanvalue("separate_surf_charges");
+  if (keyval->error() != KeyVal::OK) separate_surf_charges_ = 0;
+  // The Cammi-Tomasi Y term is set equal to the J term (as it formally is).
+  y_equals_j_ = keyval->booleanvalue("y_equals_j");
+  if (keyval->error() != KeyVal::OK) y_equals_j_ = 0;
+  // As a test, integrate the number of electrons inside the surface.
+  integrate_nelectron_ = keyval->booleanvalue("integrate_nelectron");
+  if (keyval->error() != KeyVal::OK) integrate_nelectron_ = 0;
 }
 
 BEMSolventH::BEMSolventH(StateIn&s):
@@ -182,26 +194,44 @@ BEMSolventH::init(const RefWavefunction& wfn)
   // get the surface normals
   solvent_->normals(normals_);
 
-#if INTEGRATE_NELECTRON
-  RefAssignedKeyVal akv = new AssignedKeyVal;
-  akv->assign("nr",128);
-  akv->assign("ntheta",32);
-  akv->assign("nphi",64);
-  RefDenIntegrator integrator = new Murray93Integrator(akv.pointer());
-  RefDenFunctional functional
-      = new NElInShapeFunctional(solvent_->surface()->volume(),
-                                 solvent_->surface()->isovalue());
-  integrator->set_wavefunction(wfn_);
-  integrator->integrate(functional);
-  cout << node0 << indent
-       << scprintf("N(e) in isosurf = %12.8f", integrator->value())
-       << endl;
-#endif
+  if (integrate_nelectron_) {
+      RefAssignedKeyVal akv = new AssignedKeyVal;
+      akv->assign("nr",128);
+      akv->assign("ntheta",32);
+      akv->assign("nphi",64);
+      RefDenIntegrator integrator = new Murray93Integrator(akv.pointer());
+      RefDenFunctional functional
+          = new NElInShapeFunctional(solvent_->surface()->volume(),
+                                     solvent_->surface()->isovalue());
+      integrator->set_wavefunction(wfn_);
+      integrator->integrate(functional);
+      cout << node0 << indent
+           << scprintf("N(e) in isosurf = %12.8f", integrator->value())
+           << endl;
+    }
 
   tim_exit("init");
   tim_exit("solvent");
 }
 
+// This adds J + X to h, where J and X are the matrices defined
+// by Canni and Tomasi, J Comp Chem, 16(12), 1457, 1995.
+// The resulting SCF free energy expression is
+//    G = 1/2TrP[h' + F'] + Une + Unn + Vnn
+//        -1/2(Uee+Uen+Une+Unn)
+// which in the Canni-Tomasi notation is
+//      = 1/2TrP[h+1/2(X+J+Y+G)] + Vnn + 1/2Unn
+// which is identical to the Canni-Tomasi energy expression.
+// My Fock matrix is
+//       F' = h + J + X + G
+// while the Canni-Tomasi Fock matrix is F' = h + 1/2(J+Y) + X + G.
+// However, since J = Y formally, (assuming no numerical errors
+// and all charge is enclosed, Canni-Tomasi use F' = h + J + X + G
+// to get better numerical results.
+//
+//   If the y_equals_j option is true, the energy expression used
+// here is G = 1/2TrP[h+1/2(X+2J+G)] + Vnn + 1/2Unn, however, THIS
+// IS NOT RECOMMENDED.
 void
 BEMSolventH::accum(const RefSymmSCMatrix& h)
 {
@@ -290,6 +320,15 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
       = solvent_->nuclear_interaction_energy(charge_positions_, charges_);
   tim_exit("n-s");
 
+  double enqn = 0.0, enqe = 0.0;
+  if (y_equals_j_ || separate_surf_charges_) {
+      tim_enter("n-qn");
+      enqn = solvent_->nuclear_interaction_energy(charge_positions_,
+                                                  charges_n_);
+      enqe = enucsurf - enqn;
+      tim_exit("n-qn");
+    }
+
   //// compute one body contributions
 
   // compute the electron-surface interaction matrix elements
@@ -316,6 +355,33 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   double eelecsurf = sp->result();
   tim_exit("e-s");
 
+  double eeqn = 0.0, eeqe = 0.0;
+  if (y_equals_j_ || separate_surf_charges_) {
+      tim_enter("e-qn");
+      pc_dat = new PointChargeData(ncharge, charge_positions_, charges_n_);
+      pc = wfn_->integral()->point_charge(pc_dat);
+      pc_op = new OneBodyIntOp(pc);
+
+      // compute matrix elements in the ao basis
+      h_ao.assign(0.0);
+      h_ao.element_op(pc_op);
+      // transform to the so basis
+      h_so = wfn_->integral()->petite_list()->to_SO_basis(h_ao);
+      // compute the contribution to the energy
+      sp->init();
+      h_so->element_op(generic_sp, so_density);
+      eeqn = sp->result();
+      eeqe = eelecsurf - eeqn;
+      tim_exit("e-qn");
+    }
+
+  if (y_equals_j_) {
+      // Remove the y term (enqe) and add the j term (eeqn).  Formally,
+      // they are equal, but they are not because some e-density is outside
+      // the surface and because of the numerical approximations.
+      enucsurf += eeqn - enqe;
+    }
+
   // compute the surface-surface interaction energy
   double esurfsurf = -0.5*(eelecsurf+enucsurf);
   // (this can also be computed as below, but is much more expensive)
@@ -338,6 +404,20 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
        << scprintf("q(e-enc)=%12.10f q(n-enc)=%12.10f", qeenc, qnenc)
        << endl;
   cout << incindent;
+  if (separate_surf_charges_) {
+      cout << node0 << indent
+           << scprintf("E(n-qn)=%10.8f ", enqn)
+           << scprintf("E(n-qe)=%10.8f", enqe)
+           << endl;
+      cout << node0 << indent
+           << scprintf("E(e-qn)=%10.8f ", eeqn)
+           << scprintf("E(e-qe)=%10.8f", eeqe)
+           << endl;
+      //cout << node0 << indent
+      //     << scprintf("DG = %12.8f ", 0.5*627.51*(enqn+enqe+eeqn+eeqe))
+      //     << scprintf("DG(Y=J) = %12.8f", 0.5*627.51*(enqn+2*eeqn+eeqe))
+      //     << endl;
+    }
   cout << node0 << indent
        << scprintf("E(c)=%10.8f ", ecavitation_)
        << scprintf("E(disp-rep)=%10.8f", edisprep)

@@ -30,19 +30,16 @@
 #include <scconfig.h>
 #endif
 #include <util/container/array.h>
-#include <util/state/state.h>
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class Array<int>;
-template class SSBArray<int>;
 template class Array2<int>;
-template class SSBArray2<int>;
 #endif
 
 main()
 {
   int i;
-  SSBArray<int> a(10);
+  Array<int> a(10);
 
   for (i=0; i<10; i++) {
       a(i) = i;
@@ -54,7 +51,7 @@ main()
 
   ///////////////
   int j;
-  SSBArray2<int> b(3,3);
+  Array2<int> b(3,3);
 
   for (i=0; i<3; i++) {
       for (j=0; j<3; j++) {

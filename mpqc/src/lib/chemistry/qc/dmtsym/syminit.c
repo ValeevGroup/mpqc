@@ -1,7 +1,10 @@
 
 
 /* $Log$
- * Revision 1.2  1994/06/08 01:15:18  cljanss
+ * Revision 1.3  1994/06/27 20:14:59  ibniels
+ * added 'return 0' at the end of the routine to fix a bug on the Paragon
+ *
+ * Revision 1.2  1994/06/08  01:15:18  cljanss
  * Many changes.  These include: newmat7 and nihmatrix -> scmat
  * and mpqcic -> MPSCF and updated optimize stuff.
  *
@@ -173,6 +176,7 @@ FILE *_outfile;
   sym_init_given_centers(&old_centers,_centers,_sym_info,point_group,_outfile);
 
   free_centers(&old_centers);
+  return 0;
 }
 
 /* This inits centers based on the info found in _old_centers.

@@ -48,7 +48,7 @@ class Material: public DescribedClass {
     ~Material();
     Parameter<Color>& diffuse() { return diffuse_; }
     Parameter<Color>& ambient() { return ambient_; }
-    void print(ostream& = cout) const;
+    void print(ostream& = ExEnv::out()) const;
 };
 DescribedClass_REF_dec(Material);
 

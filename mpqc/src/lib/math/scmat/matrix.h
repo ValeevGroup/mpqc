@@ -119,7 +119,7 @@ class RefSCVector: public RefDCSCVector {
                     const RefSCVector&,
                     const RefSCVector&) const;
     void print(ostream&out) const;
-    void print(const char*title=0, ostream&out=cout, int precision=10) const;
+    void print(const char*title=0, ostream&out=ExEnv::out(), int precision=10) const;
     void save(StateOut&);
     void restore(StateIn&);
 };
@@ -222,7 +222,7 @@ class RefSCMatrix: public RefDCSCMatrix {
     void accumulate_element(int,int,double) const;
     double get_element(int,int) const;
     void print(ostream&) const;
-    void print(const char*title=0,ostream&out=cout, int =10) const;
+    void print(const char*title=0,ostream&out=ExEnv::out(), int =10) const;
     double trace() const;
     void save(StateOut&);
     void restore(StateIn&);
@@ -331,7 +331,7 @@ class RefSymmSCMatrix: public RefDCSymmSCMatrix {
     RefSCDimension dim() const;
     RefSCMatrixKit kit() const;
     void print(ostream&) const;
-    void print(const char*title=0,ostream&out=cout, int =10) const;
+    void print(const char*title=0,ostream&out=ExEnv::out(), int =10) const;
     void save(StateOut&);
     void restore(StateIn&);
 
@@ -412,7 +412,7 @@ class RefDiagSCMatrix: public RefDCDiagSCMatrix {
     RefSCMatrixKit kit() const;
     double trace() const;
     void print(ostream&) const;
-    void print(const char*title=0,ostream&out=cout, int =10) const;
+    void print(const char*title=0,ostream&out=ExEnv::out(), int =10) const;
     void save(StateOut&);
     void restore(StateIn&);
     /// Returns the determinant of the referenced matrix.

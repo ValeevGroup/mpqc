@@ -91,7 +91,7 @@ MTMPIThread::run()
           if (req.offset()+req.size() > mem_->localsize()) {
               mem_->print_lock_->lock();
               req.print("BAD RECV");
-              cout << "mem_->localsize() = " << mem_->localsize() << endl;
+              ExEnv::out() << "mem_->localsize() = " << mem_->localsize() << endl;
               mem_->print_lock_->lock();
             }
           assert(req.offset()+req.size() <= mem_->localsize());
@@ -132,7 +132,7 @@ MTMPIThread::run()
           break;
       default:
           mem_->print_lock_->lock();
-          cout << "MTMPIThread: bad memory data request" << endl;
+          ExEnv::out() << "MTMPIThread: bad memory data request" << endl;
           mem_->print_lock_->unlock();
           abort();
         }
@@ -158,7 +158,7 @@ MTMPIMemoryGrp::MTMPIMemoryGrp(const RefMessageGrp& msg,
                                const RefThreadGrp& th):
   ActiveMsgMemoryGrp(msg)
 {
-  if (debug_) cout << "MTMPIMemoryGrp CTOR entered" << endl;
+  if (debug_) ExEnv::out() << "MTMPIMemoryGrp CTOR entered" << endl;
 
   th_ = th;
 
@@ -168,13 +168,13 @@ MTMPIMemoryGrp::MTMPIMemoryGrp(const RefMessageGrp& msg,
 MTMPIMemoryGrp::MTMPIMemoryGrp(const RefKeyVal& keyval):
   ActiveMsgMemoryGrp(keyval)
 {
-  if (debug_) cout << "MTMPIMemoryGrp keyval CTOR entered" << endl;
+  if (debug_) ExEnv::out() << "MTMPIMemoryGrp keyval CTOR entered" << endl;
 
   th_ = ThreadGrp::get_default_threadgrp();
 
   KeyValValueint nthreaddef(th_->nthread());
   int nthread = keyval->intvalue("num_threads",nthreaddef);
-  cout << node0 << indent << "MTMPIMemoryGrp: num_threads = " << nthread << endl;
+  ExEnv::out() << node0 << indent << "MTMPIMemoryGrp: num_threads = " << nthread << endl;
 
   init_mtmpimg(nthread);
 }
@@ -198,7 +198,7 @@ MTMPIMemoryGrp::init_mtmpimg(int nthread)
   th_ = th_->clone(nthread);
   nthread = th_->nthread();
   if (nthread < 2) {
-      cout << "MTMPIMemoryGrp didn't get enough threads" << endl;
+      ExEnv::out() << "MTMPIMemoryGrp didn't get enough threads" << endl;
       abort();
     }
 

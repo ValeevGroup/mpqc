@@ -62,7 +62,7 @@ class Stack {
       }
     int n() const { return nobjects; }
     T operator[](int i) { return objects[i]; }
-    void print(ostream& os = cout) {
+    void print(ostream& os = ExEnv::out()) {
         os << "Stack (depth = " << nobjects << "):" << endl;
         for (int i=0; i<nobjects; i++) {
             os << "  object " << i << ":" << endl;

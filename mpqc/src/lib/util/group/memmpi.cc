@@ -48,7 +48,7 @@ print_error_and_abort(int me, int mpierror)
   MPI_Error_string(mpierror, msg, &size);
   msg[size] = '\0';
   cerr << me << ": " << msg << endl;
-  cout.flush();
+  ExEnv::out().flush();
   cerr.flush();
   MPI_Abort(MPI_COMM_WORLD, mpierror);
   abort();
@@ -72,7 +72,7 @@ MPIMemoryGrp::_castdown(const ClassDesc*cd)
 MPIMemoryGrp::MPIMemoryGrp(const RefMessageGrp& msg):
   MIDMemoryGrp(msg)
 {
-  if (debug_) cout << "MPIMemoryGrp entered" << endl;
+  if (debug_) ExEnv::out() << "MPIMemoryGrp entered" << endl;
 
   use_acknowledgments_ = 0;
   use_active_messages_ = 0;
@@ -85,7 +85,7 @@ MPIMemoryGrp::MPIMemoryGrp(const RefMessageGrp& msg):
 MPIMemoryGrp::MPIMemoryGrp(const RefKeyVal& keyval):
   MIDMemoryGrp(keyval)
 {
-  if (debug_) cout << "MPIMemoryGrp keyval entered" << endl;
+  if (debug_) ExEnv::out() << "MPIMemoryGrp keyval entered" << endl;
 
   use_acknowledgments_ = 0;
   use_active_messages_ = 0;
@@ -107,7 +107,7 @@ MPIMemoryGrp::get_mid()
   for (int i=0; i<max_mid; i++) {
       if (mid_ready_[i]) {
           mid_ready_[i] = 0;
-          if (debug_) cout << "MPIMemoryGrp::get_mid(): got " << i << endl;
+          if (debug_) ExEnv::out() << "MPIMemoryGrp::get_mid(): got " << i << endl;
           return i;
         }
     }
@@ -120,7 +120,7 @@ MPIMemoryGrp::get_mid()
 void
 MPIMemoryGrp::free_mid(long mid)
 {
-  if (debug_) cout << "MPIMemoryGrp::free_mid(): freeing " << mid << endl;
+  if (debug_) ExEnv::out() << "MPIMemoryGrp::free_mid(): freeing " << mid << endl;
   mid_ready_[mid] = 1;
 }
 
@@ -141,7 +141,7 @@ MPIMemoryGrp::send(void* data, int nbytes, int node, int type)
   int mid = get_mid();
   //int MPI_Ibsend(void* buf, int count, MPI_Datatype datatype,
   //int dest, int tag, MPI_Comm comm, MPI_Request *request) 
-  if (debug_) cout << ">>>> MPI_Isend for mid " << mid
+  if (debug_) ExEnv::out() << ">>>> MPI_Isend for mid " << mid
                    << " type " << type << endl;
   int ret;
   if ((ret = MPI_Isend(data, nbytes, MPI_BYTE, node, type,
@@ -163,7 +163,7 @@ MPIMemoryGrp::recv(void* data, int nbytes, int node, int type)
   int mid = get_mid();
   // int MPI_Irecv(void* buf, int count, MPI_Datatype datatype, int
   // source, int tag, MPI_Comm comm, MPI_Request *request) 
-  if (debug_) cout << ">>>> MPI_Irecv for mid " << mid
+  if (debug_) ExEnv::out() << ">>>> MPI_Irecv for mid " << mid
                    << " type " << type << endl;
   int ret;
   if ((ret = MPI_Irecv(data, nbytes, MPI_BYTE, n, t,
@@ -189,7 +189,7 @@ MPIMemoryGrp::wait(long mid1, long mid2)
   int ret;
   MPI_Status status;
   if (debug_) {
-      cout << me() << ": MPIMemoryGrp::wait("
+      ExEnv::out() << me() << ": MPIMemoryGrp::wait("
            << mid1 << ", "
            << mid2 << ")"
            << endl;
@@ -201,7 +201,7 @@ MPIMemoryGrp::wait(long mid1, long mid2)
       abort();
     }
   else if (mid2 == -1) {
-      if (debug_) cout << ">>>> MPI_Wait for " << mid1 << endl;
+      if (debug_) ExEnv::out() << ">>>> MPI_Wait for " << mid1 << endl;
       if ((ret = MPI_Wait(&handles_[mid1], &status)) != MPI_SUCCESS) {
           cerr << me() << ": MPIMemoryGrp::wait("
                << mid1 << ", "
@@ -211,13 +211,13 @@ MPIMemoryGrp::wait(long mid1, long mid2)
         }
       free_mid(mid1);
       if (debug_)
-          cout << me() << ": MPIMemoryGrp::wait(): got(1) " << mid1 << endl;
+          ExEnv::out() << me() << ": MPIMemoryGrp::wait(): got(1) " << mid1 << endl;
       return mid1;
     }
   else {
       while(1) {
           int flag;
-          //if (debug_) cout << ">>>> MPI_Test for " << mid1 << endl;
+          //if (debug_) ExEnv::out() << ">>>> MPI_Test for " << mid1 << endl;
           if ((ret = MPI_Test(&handles_[mid1], &flag, &status))
               != MPI_SUCCESS) {
               cerr << me() << ": MPIMemoryGrp::wait("
@@ -229,11 +229,11 @@ MPIMemoryGrp::wait(long mid1, long mid2)
           if (flag) {
               free_mid(mid1);
               if (debug_)
-                  cout << me() << ": MPIMemoryGrp::wait(): got(2a) "
+                  ExEnv::out() << me() << ": MPIMemoryGrp::wait(): got(2a) "
                        << mid1 << endl;
               return mid1;
             }
-          //if (debug_) cout << ">>>> MPI_Test for " << mid2 << endl;
+          //if (debug_) ExEnv::out() << ">>>> MPI_Test for " << mid2 << endl;
           if ((ret = MPI_Test(&handles_[mid2], &flag, &status))
               != MPI_SUCCESS) {
               cerr << me() << ": MPIMemoryGrp::wait("
@@ -245,7 +245,7 @@ MPIMemoryGrp::wait(long mid1, long mid2)
           if (flag) {
               free_mid(mid2);
               if (debug_)
-                  cout << me() << ": MPIMemoryGrp::wait(): got(2b) "
+                  ExEnv::out() << me() << ": MPIMemoryGrp::wait(): got(2b) "
                        << mid2 << endl;
               return mid2;
             }
@@ -269,7 +269,7 @@ MPIMemoryGrp::probe(long mid)
   if (flag) {
       free_mid(mid);
       if (debug_)
-          cout << me() << ": MPIMemoryGrp::probe(): got "
+          ExEnv::out() << me() << ": MPIMemoryGrp::probe(): got "
                << mid << endl;
       return 1;
     }
@@ -280,9 +280,11 @@ void
 MPIMemoryGrp::deactivate()
 {
   if (active_) {
-      if (debug_) cout << "MPIMemoryGrp::deactivate()" << endl;
+      if (debug_)
+          ExEnv::out() << "MPIMemoryGrp::deactivate()" << endl;
       sync();
-      if (debug_) cout << ">>>> MPI_Cancel for " << data_request_mid_ << endl;
+      if (debug_)
+          ExEnv::out() << ">>>> MPI_Cancel for " << data_request_mid_ << endl;
       int ret;
 #ifndef __PUMAGON__
       if ((ret = MPI_Cancel(&handles_[data_request_mid_])) != MPI_SUCCESS) {

@@ -77,7 +77,7 @@ class AlphaMMapMemoryGrp: public MsgMemoryGrp {
 
     virtual void sum_reduction(double *data, distsize_t doffset, int dsize);
 
-    void print(ostream &o = cout);
+    void print(ostream &o = ExEnv::out());
 };
 
 #endif

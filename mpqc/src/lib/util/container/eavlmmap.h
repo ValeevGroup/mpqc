@@ -29,6 +29,7 @@
 #define _util_container_eavlmmap_h
 
 #include <iostream.h>
+#include <util/misc/exenv.h>
 #include <util/container/compare.h>
 #include <unistd.h> // for size_t on solaris
 
@@ -240,11 +241,11 @@ EAVLMMap<K,T>::print()
 {
   for (T*n=start(); n; next(n)) {
       int d = depth(n) + 1;
-      for (int i=0; i<d; i++) cout << "     ";
-      if (balance(n) == 1) cout << " (+)" << endl;
-      else if (balance(n) == -1) cout << " (-)" << endl;
-      else if (balance(n) == 0) cout << " (.)" << endl;
-      else cout << " (" << balance(n) << ")" << endl;
+      for (int i=0; i<d; i++) ExEnv::out() << "     ";
+      if (balance(n) == 1) ExEnv::out() << " (+)" << endl;
+      else if (balance(n) == -1) ExEnv::out() << " (-)" << endl;
+      else if (balance(n) == 0) ExEnv::out() << " (.)" << endl;
+      else ExEnv::out() << " (" << balance(n) << ")" << endl;
     }
 }
 

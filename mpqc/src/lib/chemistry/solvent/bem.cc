@@ -224,14 +224,14 @@ BEMSolvent::normalize_charge(double enclosed_charge, double* charges)
     }
 
   if (fabs(new_charge - expected_charge) > 1.0e-3) {
-      cout << "BEMSolvent:normalize_charge: failed:" << endl
+      ExEnv::out() << "BEMSolvent:normalize_charge: failed:" << endl
            << "new_charge = " << new_charge << endl
            << "expected_charge = " << expected_charge << endl;
       abort();
     }
 
   if (debug_) {
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << "BEMSolvent:normalize_charge:"
            << endl << indent
            << scprintf("  integrated surface charge = %20.15f", charge)
@@ -330,7 +330,7 @@ BEMSolvent::init_system_matrix()
   volume_ = V;
   tim_exit("AV");
 
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << scprintf("Solvent Accessible Surface:") << endl
        << indent
        << scprintf("  Area = %15.10f ", A)
@@ -372,7 +372,7 @@ BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
       double computed_expected_charge = computed_enclosed_charge_
                                       * (1.0/dielectric_constant_ - 1.0);
 
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
          << scprintf("BEMSolvent:compute_charges: encl q = %20.15f",
                      computed_enclosed_charge_)
          << endl << indent

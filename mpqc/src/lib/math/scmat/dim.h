@@ -102,7 +102,7 @@ class SCBlockInfo: public SavableState {
     void set_subdim(int i, const RefSCDimension &dim);
 
     /// Print the object to the stream o.
-    void print(ostream&o=cout) const;
+    void print(ostream&o=ExEnv::out()) const;
 };
 SavableState_REF_dec(SCBlockInfo);
 
@@ -157,7 +157,7 @@ class SCDimension: public SavableState {
     RefSCBlockInfo blocks() { return blocks_; }
 
     /// Print information about this dimension to o.
-    void print(ostream&o=cout) const;
+    void print(ostream&o=ExEnv::out()) const;
 };
 
 DCRef_declare(SCDimension);
@@ -191,7 +191,7 @@ class RefSCDimension: public SSRefSCDimension {
     operator int() const;
     int n() const;
 
-    void print(ostream&o=cout) const;
+    void print(ostream&o=ExEnv::out()) const;
 };
 
 #endif

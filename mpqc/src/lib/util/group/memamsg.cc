@@ -38,19 +38,19 @@
 #include <util/group/memiter.h>
 
 #ifdef HAVE_HRECV
-#  define DISABLE do { masktrap(1); cout.flush(); } while(0)
-#  define ENABLE do { cout.flush(); masktrap(0); } while(0)
+#  define DISABLE do { masktrap(1); ExEnv::out().flush(); } while(0)
+#  define ENABLE do { ExEnv::out().flush(); masktrap(0); } while(0)
    extern "C" {
        long masktrap(long state);
      }
 #else
-#  define DISABLE cout.flush()
-#  define ENABLE cout.flush()
+#  define DISABLE ExEnv::out().flush()
+#  define ENABLE ExEnv::out().flush()
 #endif
 
 #define PRINTF(args) do { DISABLE; \
-                          cout << scprintf args ; \
-                          cout.flush(); \
+                          ExEnv::out() << scprintf args ; \
+                          ExEnv::out().flush(); \
                           ENABLE; \
                          } while(0)
 
@@ -200,7 +200,7 @@ void
 ActiveMsgMemoryGrp::set_localsize(int localsize)
 {
   if (debug_) {
-      cout << "ActiveMsgMemoryGrp::set_localsize(" << localsize << ")" << endl;
+      ExEnv::out() << "ActiveMsgMemoryGrp::set_localsize(" << localsize << ")" << endl;
     }
   deactivate();
   MsgMemoryGrp::set_localsize(localsize);
@@ -208,11 +208,11 @@ ActiveMsgMemoryGrp::set_localsize(int localsize)
   data_ = new char[localsize];
   activate();
   if (debug_) {
-      cout << "ActiveMsgMemoryGrp::set_localsize done: offsets:";
+      ExEnv::out() << "ActiveMsgMemoryGrp::set_localsize done: offsets:";
       for (int i=0; i<=n(); i++) {
-          cout << " " << offset(i);
+          ExEnv::out() << " " << offset(i);
         }
-      cout << endl;
+      ExEnv::out() << endl;
     }
 }
 

@@ -108,22 +108,22 @@ ImplicitSurfacePolygonizer::isosurface(double value,
   // Clean up temporaries.
   _tmp_vertices.clear();
 
-  cout << "about to complete the surface" << endl;
+  ExEnv::out() << "about to complete the surface" << endl;
 
   // finish the surface
   surf.complete_surface();
 
-  cout << "completed the surface" << endl;
-  cout << "flat area = " << surf.flat_area() << endl;
-  cout << "  ntri = " << setw(10) << surf.ntriangle()
+  ExEnv::out() << "completed the surface" << endl;
+  ExEnv::out() << "flat area = " << surf.flat_area() << endl;
+  ExEnv::out() << "  ntri = " << setw(10) << surf.ntriangle()
        << " bytes = "
        << setw(10) << surf.ntriangle() * sizeof(Triangle)
        << endl;
-  cout << "  nedg = " << setw(10) << surf.nedge()
+  ExEnv::out() << "  nedg = " << setw(10) << surf.nedge()
        << " bytes = "
        << setw(10) << surf.nedge() * sizeof(Edge)
        << endl;
-  cout << "  nver = " << setw(10) << surf.nvertex()
+  ExEnv::out() << "  nver = " << setw(10) << surf.nvertex()
        << " bytes = "
        << setw(10) << surf.nvertex() * sizeof(Vertex)
        << endl;
@@ -170,7 +170,7 @@ ImplicitSurfacePolygonizer::isosurface(double value,
               v->set_normal(n);
             }
           else {
-              cout << "ERROR: isosurf has a vertex without a triangle" << endl;
+              ExEnv::out() << "ERROR: isosurf has a vertex without a triangle" << endl;
               abort();
             }
         }
@@ -214,8 +214,8 @@ ImplicitSurfacePolygonizer::add_triangle_to_current(int i1, int i2, int i3,
   
   static int tricnt = 0;
   if (++tricnt%100 == 0) {
-      cout << "adding triangle " << tricnt << endl;
-      cout << "  ntri = " << setw(10) << current->_surf->ntriangle()
+      ExEnv::out() << "adding triangle " << tricnt << endl;
+      ExEnv::out() << "  ntri = " << setw(10) << current->_surf->ntriangle()
            << " bytes = "
            << setw(10) << current->_surf->ntriangle() * sizeof(Triangle)
            << endl;

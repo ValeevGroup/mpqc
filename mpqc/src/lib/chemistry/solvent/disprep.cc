@@ -34,12 +34,12 @@ get_ki(int z)
   else if (z == 8) ki = 1.36;  // from Huron & Claverie, J.Phys.Chem v78, 1974, p1862
   else if (z > 1 && z < 6) {
       ki = 1.0;
-      cout << "Warning: No d6 dispersion coefficient available for atomic number " <<
+      ExEnv::out() << "Warning: No d6 dispersion coefficient available for atomic number " <<
               z << "; using value for carbon instead" << endl;
     }
   else {
       ki = 1.18;
-      cout << "Warning: No d6 dispersion coefficient available for atomic number " <<
+      ExEnv::out() << "Warning: No d6 dispersion coefficient available for atomic number " <<
               z << "; using value for nitrogen instead" << endl;
     }
   
@@ -239,8 +239,8 @@ BEMSolvent::disprep()
 //          ts->print_geomview_format(geomviewfile);
 //        }
       
-      cout.setf(ios::scientific,ios::floatfield); // use scientific format
-      cout << "Area of disp-rep surface generated with atom number "
+      ExEnv::out().setf(ios::scientific,ios::floatfield); // use scientific format
+      ExEnv::out() << "Area of disp-rep surface generated with atom number "
            << setw(3) << setfill(' ') << z_solvent_atom
            << " as probe: " << setprecision(4) << ts->area()
            << " bohr^2" << endl;
@@ -313,20 +313,20 @@ BEMSolvent::disprep()
   // Multiply energies by number density of solvent
   // Print out individual energy contributions in kcal/mol
   
-  cout.setf(ios::scientific,ios::floatfield); // use scientific format
-  cout.precision(5);
-  cout << "Edisp6:  " << edisp6*solvent_density_*unit->from_atomic_units()
+  ExEnv::out().setf(ios::scientific,ios::floatfield); // use scientific format
+  ExEnv::out().precision(5);
+  ExEnv::out() << "Edisp6:  " << edisp6*solvent_density_*unit->from_atomic_units()
        << " kcal/mol" << endl; 
-  cout << "Edisp8:  " << edisp8*solvent_density_*unit->from_atomic_units()
+  ExEnv::out() << "Edisp8:  " << edisp8*solvent_density_*unit->from_atomic_units()
        << " kcal/mol" << endl;
-  cout << "Edisp10: " << edisp10*solvent_density_*unit->from_atomic_units()
+  ExEnv::out() << "Edisp10: " << edisp10*solvent_density_*unit->from_atomic_units()
        << " kcal/mol" << endl;
 
 
-  cout << "Total dispersion energy: "
+  ExEnv::out() << "Total dispersion energy: "
        << (edisp6 + edisp8 + edisp10)*solvent_density_*unit->from_atomic_units()
        << " kcal/mol" << endl;
-  cout << "Repulsion energy:        " << setw(12) << setfill(' ') 
+  ExEnv::out() << "Repulsion energy:        " << setw(12) << setfill(' ') 
        << erep*solvent_density_*unit->from_atomic_units() << " kcal/mol" << endl;
   
   return edisprep*solvent_density_; // atomic units

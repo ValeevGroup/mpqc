@@ -314,7 +314,7 @@ DistSCMatrix::accumulate(const SymmSCMatrix*a)
   for (I->begin(); I->ready(); I->next()) {
       RefSCMatrixBlock block = I->block();
       if (DEBUG)
-          cout << messagegrp()->me() << ": "
+          ExEnv::out() << messagegrp()->me() << ": "
                << block->class_name()
                << "(" << block->blocki << ", " << block->blockj << ")"
                << endl;
@@ -544,7 +544,7 @@ DistSCMatrix::vecform_op(VecOp op, int *ivec)
   for (i->begin(); i->ready(); i->next()) {
       RefSCMatrixRectBlock b = SCMatrixRectBlock::castdown(i->block());
       if (DEBUG)
-          cout << messagegrp()->me() << ": "
+          ExEnv::out() << messagegrp()->me() << ": "
                << "got block " << b->blocki << ' ' << b->blockj << endl;
       int b1start, b2start, b1end, b2end;
       if (form == Row) {
@@ -580,8 +580,9 @@ DistSCMatrix::vecform_op(VecOp op, int *ivec)
                 }
               if (!vecj) continue;
               if (DEBUG)
-                  cout << messagegrp()->me() << ": getting [" << j << ","
-                       << b2start << "-" << b2end << ")" << endl;
+                  ExEnv::out() << messagegrp()->me() << ": getting ["
+                               << j << ","
+                               << b2start << "-" << b2end << ")" << endl;
             }
           else {
               vecj = vec[j-vecoff];
@@ -589,13 +590,13 @@ DistSCMatrix::vecform_op(VecOp op, int *ivec)
           for (int k=b2start; k<b2end; k++) {
               int blockoffset;
               if (DEBUG)
-                  cout << messagegrp()->me() << ": "
+                  ExEnv::out() << messagegrp()->me() << ": "
                        << "using vec[" << j-vecoff << "]"
                        << "[" << k << "]" << endl;
               if (form == Row) {
                   blockoffset = (j+off)*nbj+k - b2start;
                   if (DEBUG)
-                      cout << messagegrp()->me() << ": "
+                      ExEnv::out() << messagegrp()->me() << ": "
                            << "Row datum offset is "
                            << "(" << j << "+" << off << ")*" << nbj << "+" << k
                            << "-" << b2start
@@ -611,7 +612,7 @@ DistSCMatrix::vecform_op(VecOp op, int *ivec)
               double *datum = &dat[blockoffset];
               if (op == CopyToVec) {
                   if (DEBUG)
-                      cout << messagegrp()->me() << ": "
+                      ExEnv::out() << messagegrp()->me() << ": "
                            << "copying " << *datum << " "
                            << "to " << j << " " << k << endl;
                   vecj[k] = *datum;
@@ -803,7 +804,7 @@ DistSCMatrix::element_op(const RefSCElementOp& op)
 {
   SCMatrixBlockListIter i;
   for (i = blocklist->begin(); i != blocklist->end(); i++) {
-//       cout << "rect elemop processing a block of type "
+//       ExEnv::out() << "rect elemop processing a block of type "
 //            << i.block()->class_name() << endl;
       op->process_base(i.block());
     }

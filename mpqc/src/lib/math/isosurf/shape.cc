@@ -391,9 +391,9 @@ UncappedTorusHoleShape::in_plane_sphere(
     }
 
   U_perp.normalize();
-  //cout << "A: "; A.print();
-  //cout << "U_perp: "; U_perp.print();
-  //cout << "R_AB: "; R_AB.print();
+  //ExEnv::out() << "A: "; A.print();
+  //ExEnv::out() << "U_perp: "; U_perp.print();
+  //ExEnv::out() << "R_AB: "; R_AB.print();
 
   double r_AB = sqrt(R_AB.dot(R_AB));
   double r_A = _s1.radius();
@@ -404,12 +404,12 @@ UncappedTorusHoleShape::in_plane_sphere(
   double a = ((r_Ar*r_Ar - r_Br*r_Br)/(2.0*r_AB*r_AB)) + 0.5;
   double b = sqrt(r_Ar*r_Ar - a*a*r_AB*r_AB);
 
-  //cout << scprintf("r_Ar = %f, r_AB = %f\n",r_Ar,r_AB);
-  //cout << scprintf("a = %f, b = %f\n",a,b);
+  //ExEnv::out() << scprintf("r_Ar = %f, r_AB = %f\n",r_Ar,r_AB);
+  //ExEnv::out() << scprintf("a = %f, b = %f\n",a,b);
 
   P = A + a * R_AB + b * U_perp;
-  //cout << "a*R_AB: "; (a*R_AB).print();
-  //cout << "b*U_perp: "; (b*U_perp).print();
+  //ExEnv::out() << "a*R_AB: "; (a*R_AB).print();
+  //ExEnv::out() << "b*U_perp: "; (b*U_perp).print();
 }
 
 void
@@ -749,13 +749,13 @@ Uncapped5SphereExclusionShape::
   double h = sqrt(h2);
   if (h<r()) {
       _reentrant = 1;
-      //cout << "WARNING: throwing out reentrant shape" << endl;
+      //ExEnv::out() << "WARNING: throwing out reentrant shape" << endl;
       //_solution_exists = 0;
       //return;
     }
   else {
       _reentrant = 0;
-      //cout << "WARNING: throwing out nonreentrant shape" << endl;
+      //ExEnv::out() << "WARNING: throwing out nonreentrant shape" << endl;
       //_solution_exists = 0;
       //return;
     }
@@ -791,7 +791,7 @@ Uncapped5SphereExclusionShape::
     }
   else _folded = 0;
   
-  //cout << scprintf("r = %14.8f, h = %14.8f\n",r(),h);
+  //ExEnv::out() << scprintf("r = %14.8f, h = %14.8f\n",r(),h);
   //M.print();
   //D[0].print();
   //D[1].print();
@@ -894,7 +894,7 @@ Uncapped5SphereExclusionShape::
     }
 
 #if 0 // test code
-  cout << "Uncapped5SphereExclusionShape: running some tests" << endl;
+  ExEnv::out() << "Uncapped5SphereExclusionShape: running some tests" << endl;
   verbose = 1;
 
   FILE* testout = fopen("testout.vect", "w");
@@ -926,14 +926,14 @@ Uncapped5SphereExclusionShape::
   for (ii = 0; ii<nvert; ii++) {
       SCVector3 position = (D[0] - middle) * scalefactor + middle;
       double d = distance_to_surface(position);
-      cout << scprintf("d = %f\n", d);
+      ExEnv::out() << scprintf("d = %f\n", d);
       if (d<0.0) fprintf(testout,"1.0 0.0 0.0 0.5\n");
       else fprintf(testout,"0.0 0.0 1.0 0.5\n");
       scalefactor += scalefactor_inc;
     }
 
   fclose(testout);
-  cout << "testout.vect written" << endl;
+  ExEnv::out() << "testout.vect written" << endl;
 
   verbose = 0;
 #endif // test code
@@ -944,7 +944,7 @@ Uncapped5SphereExclusionShape::is_outside(const SCVector3&X) const
 {
   SCVector3 Xv(X);
 
-  if (verbose) cout << scprintf("point %14.8f %14.8f %14.8f\n",X(0),X(1),X(2));
+  if (verbose) ExEnv::out() << scprintf("point %14.8f %14.8f %14.8f\n",X(0),X(1),X(2));
 
   // The folded case isn't handled correctly here, so use
   // the less efficient distance_to_surface routine.
@@ -964,7 +964,7 @@ Uncapped5SphereExclusionShape::is_outside(const SCVector3&X) const
       if (w <= 0.0) return 1;
     }
 
-  if (verbose) cout << "is_inside" << endl;
+  if (verbose) ExEnv::out() << "is_inside" << endl;
 
   return 0;
 }
@@ -998,25 +998,25 @@ Uncapped5SphereExclusionShape::
   else side = 0;
 
   if (verbose) {
-      cout << scprintf("distance_to_surface: folded = %d, side = %d\n",
+      ExEnv::out() << scprintf("distance_to_surface: folded = %d, side = %d\n",
                        _folded, side);
-      cout << "XM = "; XM.print();
-      cout << "MD[0] = "; MD[0].print();
-      cout << "MD[0].dot(XM) = " << MD[0].dot(XM) << endl;
+      ExEnv::out() << "XM = "; XM.print();
+      ExEnv::out() << "MD[0] = "; MD[0].print();
+      ExEnv::out() << "MD[0].dot(XM) = " << MD[0].dot(XM) << endl;
     }
 
   SCVector3 XD = Xv - D[side];
   double u = BDxCD[side].dot(XD)/BDxCDdotAD[side];
-  if (verbose) cout << scprintf("u = %14.8f\n", u);
+  if (verbose) ExEnv::out() << scprintf("u = %14.8f\n", u);
   if (u <= 0.0) return shape_infinity;
   double v = CDxAD[side].dot(XD)/CDxADdotBD[side];
-  if (verbose) cout << scprintf("v = %14.8f\n", v);
+  if (verbose) ExEnv::out() << scprintf("v = %14.8f\n", v);
   if (v <= 0.0) return shape_infinity;
   double w = ADxBD[side].dot(XD)/ADxBDdotCD[side];
-  if (verbose) cout << scprintf("w = %14.8f\n", w);
+  if (verbose) ExEnv::out() << scprintf("w = %14.8f\n", w);
   if (w <= 0.0) return shape_infinity;
   double rXD = XD.norm();
-  if (verbose) cout << scprintf("r() - rXD = %14.8f\n", r() - rXD);
+  if (verbose) ExEnv::out() << scprintf("r() - rXD = %14.8f\n", r() - rXD);
   if (rXD <= r()) {
       if (!_reentrant) return r() - rXD;
       // this shape is reentrant
@@ -1037,10 +1037,10 @@ Uncapped5SphereExclusionShape::
                                                   MD[side],
                                                   IABD[side][0],
                                                   IABD[side][1])) {
-              //cout << scprintf("XD: "); XD.print();
-              //cout << scprintf("MD[%d]: ",i); MD[i].print();
-              //cout << scprintf("IABD[%d][0]: ",i); IABD[i][0].print();
-              //cout << scprintf("IABD[%d][1]: ",i); IABD[i][1].print();
+              //ExEnv::out() << scprintf("XD: "); XD.print();
+              //ExEnv::out() << scprintf("MD[%d]: ",i); MD[i].print();
+              //ExEnv::out() << scprintf("IABD[%d][0]: ",i); IABD[i][0].print();
+              //ExEnv::out() << scprintf("IABD[%d][1]: ",i); IABD[i][1].print();
               return closest_distance(XD,(SCVector3*)IABD[side],2,grad);
             }
           if (_intersects_BC
@@ -1097,7 +1097,7 @@ Uncapped5SphereExclusionShape::
         }
     }
 
-  if (verbose) cout << "returning -1.0" << endl;
+  if (verbose) ExEnv::out() << "returning -1.0" << endl;
   return -1.0;
 }
 

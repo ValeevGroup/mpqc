@@ -137,11 +137,11 @@ SavableState::dir_restore_state(StateIn&si, const char *objectname,
   if (objectname) si.dir_getobject(ss, objectname);
   else si.getobject(ss);
   if (overriding_value.nonnull()) {
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << "overriding \"" << si.key() << "\": object of type ";
-      if (ss.null()) cout << node0 << "(null)";
-      else cout << node0 << ss->class_name();
-      cout << node0 << " -> object of type "
+      if (ss.null()) ExEnv::out() << node0 << "(null)";
+      else ExEnv::out() << node0 << ss->class_name();
+      ExEnv::out() << node0 << " -> object of type "
            << overriding_value->class_name()
            << endl;
       ss = overriding_value;

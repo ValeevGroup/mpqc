@@ -121,7 +121,8 @@ TriangulatedSurface::fix_orientation()
     }
 
   if (_verbose) {
-      cout << scprintf("%d out of %d triangles were flipped\n", nflip, ntri);
+      ExEnv::out()
+          << scprintf("%d out of %d triangles were flipped\n", nflip, ntri);
     }
 
   // just in case

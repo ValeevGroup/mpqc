@@ -218,7 +218,8 @@ ThreadGrp::initial_threadgrp(int& argc, char ** argv)
 ThreadGrp*
 ThreadGrp::clone(int nthread)
 {
-  cout << "ThreadGrp::clone not supported for " << class_name() << endl;
+  ExEnv::out() << "ThreadGrp::clone not supported for " << class_name()
+               << endl;
   abort();
   return 0;
 }

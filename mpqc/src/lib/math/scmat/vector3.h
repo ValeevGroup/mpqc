@@ -34,6 +34,8 @@
 #include <iostream.h>
 #include <math.h>
 
+#include <util/misc/exenv.h>
+
 class RefSCVector;
 class SCMatrix3;
 class RefKeyVal;
@@ -129,7 +131,7 @@ class SCVector3
     const double& r() const { return _v[0]; }
     const double& theta() const { return _v[1]; }
     const double& phi() const { return _v[2]; }
-    void print(ostream& =cout) const;
+    void print(ostream& =ExEnv::out()) const;
 };
 SCVector3 operator*(double,const SCVector3&);
 ostream &operator<<(ostream&, const SCVector3 &);

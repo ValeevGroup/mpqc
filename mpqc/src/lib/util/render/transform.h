@@ -49,7 +49,7 @@ class Transform: public DescribedClass {
     void translate(const vec3&);
     void rotate(const vec3&, double angle_degrees);
     void scale(double);
-    void print(ostream& =cout) const;
+    void print(ostream& = ExEnv::out()) const;
 };
 DescribedClass_REF_dec(Transform);
 

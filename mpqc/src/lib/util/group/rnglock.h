@@ -34,6 +34,8 @@
 
 #include <iostream.h>
 
+#include <util/misc/exenv.h>
+
 class Pool;
 
 class RangeLockItem {
@@ -80,7 +82,7 @@ class RangeLock {
     int checkgr(int start, int fence, int value);
 
     void check();
-    void print(ostream &o = cout) const;
+    void print(ostream &o = ExEnv::out()) const;
 
     int lockvalue(int i);
 };

@@ -445,12 +445,12 @@ BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b,
   // check the dimensions
   if (t == SCMatrix::NormalTransform) {
       if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
-          cout << indent << "BlockedSymmSCMatrix::accumulate_transform: bad dim (not transposed)\n";
-          cout << "target dim:" << endl;
+          ExEnv::out() << indent << "BlockedSymmSCMatrix::accumulate_transform: bad dim (not transposed)\n";
+          ExEnv::out() << "target dim:" << endl;
           dim()->print();
-          cout << "source dim" << endl;
+          ExEnv::out() << "source dim" << endl;
           b->dim()->print();
-          cout << "transform dims" << endl;
+          ExEnv::out() << "transform dims" << endl;
           a->rowdim()->print();
           a->coldim()->print();
           abort();

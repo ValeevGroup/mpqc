@@ -90,15 +90,16 @@ DistDiagSCMatrix::find_element(int i) const
   d->blocks()->elem_to_block(i, bi, oi);
 
   if (DEBUG)
-      cout << messagegrp()->me() << ": " << "find_element(" << i << "): "
-           << "block = " << bi << ", "
-           << "offset = " << oi
-           << endl;
+      ExEnv::out() << messagegrp()->me() << ": "
+                   << "find_element(" << i << "): "
+                   << "block = " << bi << ", "
+                   << "offset = " << oi
+                   << endl;
 
   RefSCMatrixDiagBlock blk = block_to_block(bi);
   if (blk.nonnull()) {
       if (DEBUG)
-          cout << messagegrp()->me() << ": ndat = " << blk->ndat() << endl;
+          ExEnv::out() << messagegrp()->me() << ": ndat = " << blk->ndat() << endl;
       if (oi >= blk->ndat()) {
           cerr << messagegrp()->me() << ": DistDiagSCMatrix::find_element"
                << ": internal error" << endl;
@@ -108,7 +109,7 @@ DistDiagSCMatrix::find_element(int i) const
     }
   else {
       if (DEBUG)
-          cout << messagegrp()->me() << ": can't find" << endl;
+          ExEnv::out() << messagegrp()->me() << ": can't find" << endl;
       return 0;
     }
 }

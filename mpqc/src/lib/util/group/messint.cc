@@ -128,7 +128,7 @@ intMessageGrp::raw_send(int target, void* data, int nbyte)
   int& seq = target_seq[target];
   int msgtype = seq_msgtype(me(),seq);
 #ifdef DEBUG
-  cout << scprintf("node %d sending to %d(%d) msgtype = %d\n",
+  ExEnv::out() << scprintf("node %d sending to %d(%d) msgtype = %d\n",
                    me(),target,seq,msgtype);
 #endif
   basic_send(target, msgtype, data, nbyte);
@@ -142,12 +142,12 @@ intMessageGrp::raw_recv(int sender, void* data, int nbyte)
   int& seq = source_seq[sender];
   int msgtype = seq_msgtype(sender,seq);
 #ifdef DEBUG
-  cout << scprintf("node %d receiving from %d(%d) msgtype = %d\n",
+  ExEnv::out() << scprintf("node %d receiving from %d(%d) msgtype = %d\n",
                    me(),sender,seq,msgtype);
 #endif
   basic_recv(msgtype, data, nbyte);
 #ifdef DEBUG
-  cout << scprintf("node %d received %d\n",me(),msgtype);
+  ExEnv::out() << scprintf("node %d received %d\n",me(),msgtype);
 #endif
   if (seq >= seq_mask) seq = 0;
   else seq++;

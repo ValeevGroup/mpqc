@@ -83,7 +83,7 @@ NEXT_MESSAGE(msgbuf_t *m)
 {
   msgbuf_t *r;
   if (m->size < 0) {
-      cout << scprintf("NEXT_MESSAGE: m->size = %d (real %d)\n",
+      ExEnv::out() << scprintf("NEXT_MESSAGE: m->size = %d (real %d)\n",
                        m->size,sizeof(msgbuf_t) + m->size + m->size%8);
       //debug_start("m->size < 0");
       cerr << scprintf("messshm.cc: m->size < 0\n");
@@ -135,16 +135,16 @@ print_buffer(int node, int me)
   msgbuf_t *message;
   message = (msgbuf_t*)commbuf[node]->buf;
 
-  cout << scprintf("Printing buffer for node %d on node %d\n",node,me);
+  ExEnv::out() << scprintf("Printing buffer for node %d on node %d\n",node,me);
   for (i=0; i<commbuf[node]->nmsg; i++) {
-      cout <<
+      ExEnv::out() <<
           scprintf(" on node %2d: to=%2d, bytes=%6d, type=%10d, from=%2d\n",
                    me,
                    node,
                    message->size,
                    message->type,
                    message->from);
-      cout.flush();
+      ExEnv::out().flush();
       message = NEXT_MESSAGE(message);
     }
 
@@ -376,7 +376,7 @@ ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
   msgbuf_t *message,*lastmessage;
 
 #ifdef DEBUG
-  cout << "ShmGrp: basic_recv: "
+  ExEnv::out() << "ShmGrp: basic_recv: "
        << "type = " << type << ' '
        << "buf = " << buf << ' '
        << "bytes = " << bytes << ' '
@@ -441,7 +441,7 @@ ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
   msgbuf_t *availmsg;
 
 #ifdef DEBUG
-  cout << "ShmGrp: basic_send: "
+  ExEnv::out() << "ShmGrp: basic_send: "
        << "dest = " << dest << ' '
        << "type = " << type << ' '
        << "buf = " << buf << ' '

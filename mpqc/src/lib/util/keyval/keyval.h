@@ -267,7 +267,7 @@ class KeyVal: public VRefCount {
     virtual void dump(ostream&fp=cerr);
 
     /// Print keywords that were never looked at, if possible.
-    virtual void print_unseen(ostream&fp=cout);
+    virtual void print_unseen(ostream&fp=ExEnv::out());
     /** Return 1 if there were unseen keywords, 0 if there are
         none, or -1 this keyval doesn't keep track of unseen
         keywords. */
@@ -442,7 +442,7 @@ class ParsedKeyVal : public StringKeyVal {
     const char* truekeyword(const char*);
     void errortrace(ostream&fp=cerr);
     void dump(ostream&fp=cerr);
-    void print_unseen(ostream&fp=cout);
+    void print_unseen(ostream&fp=ExEnv::out());
     int have_unseen();
 };
 

@@ -36,6 +36,8 @@
 #include <new.h>
 #include <iostream.h>
 
+#include <util/misc/exenv.h>
+
 #undef DEBUG_POOL
 
 const int pool_data_alignment_bit = 3;
@@ -287,7 +289,7 @@ class Pool {
     void release(double*d);
     int* allocate_int(size_t n);
     void release(int*d);
-    void print(ostream&o=cout);
+    void print(ostream&o=ExEnv::out());
     void check();
 };
 

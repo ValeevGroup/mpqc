@@ -240,11 +240,11 @@ int StateInBin::get_array_void(void*p,int size)
       abort();
     }
 #if DEBUG
-  cout << "Read " << size << " bytes: ";
+  ExEnv::out() << "Read " << size << " bytes: ";
   for (int i=0; i<size; i++) {
-      cout << ((unsigned char*)p)[i];
+      ExEnv::out() << ((unsigned char*)p)[i];
     }
-  cout << endl;
+  ExEnv::out() << endl;
 #endif
   file_position_ += size;
   return size;

@@ -249,7 +249,7 @@ class MemoryGrp: public DescribedClass {
     virtual void catchup();
 
     /// Prints out information about the object.
-    virtual void print(ostream &o = cout) const;
+    virtual void print(ostream &o = ExEnv::out()) const;
 
     /** Create a memory group.  This routine looks for a -memorygrp
         argument, then the environmental variable MEMORYGRP, and, finally,

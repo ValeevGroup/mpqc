@@ -110,16 +110,16 @@ ShmMemoryGrp::attach_memory(void *ataddress, int size)
       if (isize > SHMMAX) isize = SHMMAX;
       else if (isize < SHMMIN) isize = SHMMIN;
       if (debug_) {
-          cout << me() << ": ";
-          cout << "ShmMemoryGrp: attaching segment with "
+          ExEnv::out() << me() << ": ";
+          ExEnv::out() << "ShmMemoryGrp: attaching segment with "
                << isize << " bytes at address " << (void*)ataddress
                << " on node " << me()
                << endl;
         }
       attach_address_[i] = shmat(shmid_[i],(SHMTYPE)ataddress,0);
       if (debug_) {
-          cout << me() << ": ";
-          cout << "ShmMemoryGrp: got address "
+          ExEnv::out() << me() << ": ";
+          ExEnv::out() << "ShmMemoryGrp: got address "
                << (void*)attach_address_[i]
                << " on node " << me()
                << endl;
@@ -127,7 +127,7 @@ ShmMemoryGrp::attach_memory(void *ataddress, int size)
       if (attach_address_[i] == 0
           || attach_address_[i] == (void*) -1
           || ataddress && attach_address_[i] != ataddress) {
-          //cout << "ShmMemoryGrp: shmat: problem attaching using address: "
+          //ExEnv::out() << "ShmMemoryGrp: shmat: problem attaching using address: "
           //     << " " << (void*) ataddress
           //     << ": got address: "
           //     << (void*) attach_address_[i]
@@ -152,7 +152,7 @@ ShmMemoryGrp::detach_memory()
   for (i=0; i<nregion_; i++) {
       if (attach_address_[i] != 0 && attach_address_[i] != (void*) -1) {
           if (debug_) {
-              cout << "detaching " << (void*)attach_address_[i]
+              ExEnv::out() << "detaching " << (void*)attach_address_[i]
                    << " on node " << me() << endl;
             }
           shmdt((SHMTYPE)attach_address_[i]);
@@ -191,14 +191,14 @@ ShmMemoryGrp::set_localsize(int localsize)
           if (isize > SHMMAX) isize = SHMMAX;
           else if (isize < SHMMIN) isize = SHMMIN;
           if (debug_) {
-              cout << me() << ": ";
-              cout << "ShmMemoryGrp: getting segment with " << isize
+              ExEnv::out() << me() << ": ";
+              ExEnv::out() << "ShmMemoryGrp: getting segment with " << isize
                    << " bytes" << endl;
             }
           shmid_[i] = shmget(IPC_PRIVATE, isize, IPC_CREAT | SHM_R | SHM_W);
           if (shmid_[i] == -1) {
-              cout << me() << ": ";
-              cout << "ShmMemoryGrp: shmget failed for "
+              ExEnv::out() << me() << ": ";
+              ExEnv::out() << "ShmMemoryGrp: shmget failed for "
                    << isize << " bytes: "
                    << strerror(errno) << endl;
               abort();
@@ -214,9 +214,9 @@ ShmMemoryGrp::set_localsize(int localsize)
       msg_->bcast(&length, 1);
       msg_->bcast(stringrep, length);
 #ifdef DEBUG
-      cout << scprintf("%d: sent initialize string of \"%s\" (%d)\n",
+      ExEnv::out() << scprintf("%d: sent initialize string of \"%s\" (%d)\n",
                        me(), stringrep, length);
-      cout.flush();
+      ExEnv::out().flush();
 #endif // DEBUG
       delete[] stringrep;
       for (i=0; i<n(); i++) {
@@ -226,9 +226,9 @@ ShmMemoryGrp::set_localsize(int localsize)
           msg_->bcast(&length, 1);
           msg_->bcast(stringrep, length);
 #ifdef DEBUG
-          cout << scprintf("%d: sent initialize string of \"%s\" (%d) for %d\n",
+          ExEnv::out() << scprintf("%d: sent initialize string of \"%s\" (%d) for %d\n",
                            me(), stringrep, length, i);
-          cout.flush();
+          ExEnv::out().flush();
 #endif // DEBUG
           delete[] stringrep;
         }
@@ -239,9 +239,9 @@ ShmMemoryGrp::set_localsize(int localsize)
       char * stringrep = new char[length];
       msg_->bcast(stringrep, length);
 #ifdef DEBUG
-      cout << scprintf("%d: got initialize string of \"%s\" (%d)\n",
+      ExEnv::out() << scprintf("%d: got initialize string of \"%s\" (%d)\n",
                        me(), stringrep, length);
-      cout.flush();
+      ExEnv::out().flush();
 #endif // DEBUG
       lock_.initialize(stringrep);
       delete[] stringrep;
@@ -250,9 +250,9 @@ ShmMemoryGrp::set_localsize(int localsize)
           stringrep = new char[length];
           msg_->bcast(stringrep, length);
 #ifdef DEBUG
-          cout << scprintf("%d: got initialize string of \"%s\" (%d) for %d\n",
+          ExEnv::out() << scprintf("%d: got initialize string of \"%s\" (%d) for %d\n",
                            me(), stringrep, length, i);
-          cout.flush();
+          ExEnv::out().flush();
 #endif // DEBUG
           update_[i].initialize(stringrep);
           delete[] stringrep;
@@ -322,7 +322,7 @@ ShmMemoryGrp::set_localsize(int localsize)
   msg_->raw_bcast((void*)&rangelock_, sizeof(void*));
 
   if (debug_) {
-      cout << scprintf("%d: memory_ = 0x%x shmid_[0] = %d\n",
+      ExEnv::out() << scprintf("%d: memory_ = 0x%x shmid_[0] = %d\n",
                        me(), memory_, shmid_[0]);
     }
 
@@ -369,8 +369,8 @@ ShmMemoryGrp::~ShmMemoryGrp()
   cleanup();
 
 #ifdef DEBUG
-  cout << scprintf("msg_->nreference() = %d\n", msg_->nreference());
-  cout.flush();
+  ExEnv::out() << scprintf("msg_->nreference() = %d\n", msg_->nreference());
+  ExEnv::out().flush();
 #endif // DEBUG
   msg_ = 0;
 }
@@ -388,23 +388,23 @@ ShmMemoryGrp::obtain_readwrite(distsize_t offset, int size)
       obtain_lock();
 #else // SIMPLE_LOCK
 #ifdef DEBUG
-      cout << scprintf("%d: clear_release_count\n", me());
-      cout.flush();
+      ExEnv::out() << scprintf("%d: clear_release_count\n", me());
+      ExEnv::out().flush();
 #endif // DEBUG
       clear_release_count();
 #ifdef DEBUG
-      cout << scprintf("%d: obtain_lock\n", me());
-      cout.flush();
+      ExEnv::out() << scprintf("%d: obtain_lock\n", me());
+      ExEnv::out().flush();
 #endif // DEBUG
       obtain_lock();
 #ifdef DEBUG
-      cout << scprintf("%d: checkeq\n", me());
-      cout.flush();
+      ExEnv::out() << scprintf("%d: checkeq\n", me());
+      ExEnv::out().flush();
 #endif
       while (!rangelock_->checkeq(offset, offset + size, 0)) {
 #ifdef DEBUG
-          cout << scprintf("%d: range not zero -- waiting for release\n", me());
-          cout.flush();
+          ExEnv::out() << scprintf("%d: range not zero -- waiting for release\n", me());
+          ExEnv::out().flush();
 #endif // DEBUG
           //rangelock_->print();
           release_lock();
@@ -413,8 +413,8 @@ ShmMemoryGrp::obtain_readwrite(distsize_t offset, int size)
         }
       rangelock_->decrement(offset, offset + size);
 #ifdef DEBUG
-      cout << scprintf("%d: after obtain write\n", me());
-      cout.flush();
+      ExEnv::out() << scprintf("%d: after obtain write\n", me());
+      ExEnv::out().flush();
       //rangelock_->print();
 #endif // DEBUG
       release_lock();
@@ -440,8 +440,8 @@ ShmMemoryGrp::obtain_readonly(distsize_t offset, int size)
       obtain_lock();
       while (!rangelock_->checkgr(offset, offset + size, -1)) {
 #ifdef DEBUG
-          cout << scprintf("%d: range is -1 -- waiting for release\n", me());
-          cout.flush();
+          ExEnv::out() << scprintf("%d: range is -1 -- waiting for release\n", me());
+          ExEnv::out().flush();
           //rangelock_->print();
 #endif // DEBUG
           release_lock();
@@ -450,8 +450,8 @@ ShmMemoryGrp::obtain_readonly(distsize_t offset, int size)
         }
       rangelock_->increment(offset, offset + size);
 #ifdef DEBUG
-      cout << scprintf("%d: after obtain read\n", me());
-      cout.flush();
+      ExEnv::out() << scprintf("%d: after obtain read\n", me());
+      ExEnv::out().flush();
       //rangelock_->print();
 #endif // DEBUG
       release_lock();
@@ -472,9 +472,9 @@ ShmMemoryGrp::release_read(void *data, distsize_t offset, int size)
       rangelock_->decrement(offset, offset + size);
       note_release();
 #ifdef DEBUG
-      cout << scprintf("%d: after release read\n", me());
+      ExEnv::out() << scprintf("%d: after release read\n", me());
       //rangelock_->print();
-      cout.flush();
+      ExEnv::out().flush();
 #endif // DEBUG
       release_lock();
 #endif // SIMPLE_LOCK
@@ -492,9 +492,9 @@ ShmMemoryGrp::release_write(void *data, distsize_t offset, int size)
       rangelock_->increment(offset, offset + size);
       note_release();
 #ifdef DEBUG
-      cout << scprintf("%d: after release write\n", me());
+      ExEnv::out() << scprintf("%d: after release write\n", me());
       //rangelock_->print();
-      cout.flush();
+      ExEnv::out().flush();
 #endif // DEBUG
       release_lock();
 #endif // SIMPLE_LOCK
@@ -505,13 +505,13 @@ void
 ShmMemoryGrp::obtain_lock()
 {
 #ifdef DEBUG
-  cout << scprintf("%d: lock val = %d\n", me(), lock_.val());
-  cout.flush();
+  ExEnv::out() << scprintf("%d: lock val = %d\n", me(), lock_.val());
+  ExEnv::out().flush();
 #endif // DEBUG
   lock_--;
 #ifdef DEBUG
-  cout << scprintf("%d: lock decremented\n", me());
-  cout.flush();
+  ExEnv::out() << scprintf("%d: lock decremented\n", me());
+  ExEnv::out().flush();
 #endif // DEBUG
 }
 
@@ -520,8 +520,8 @@ ShmMemoryGrp::release_lock()
 {
   lock_++;
 #ifdef DEBUG
-  cout << scprintf("%d: incremented lock\n", me());
-  cout.flush();
+  ExEnv::out() << scprintf("%d: incremented lock\n", me());
+  ExEnv::out().flush();
 #endif // DEBUG
 }
 
@@ -532,8 +532,8 @@ ShmMemoryGrp::note_release()
       update_[i]++;
     }
 #ifdef DEBUG
-  cout << scprintf("%d: incremented release flags\n", me());
-  cout.flush();
+  ExEnv::out() << scprintf("%d: incremented release flags\n", me());
+  ExEnv::out().flush();
 #endif // DEBUG
 }
 
@@ -541,13 +541,13 @@ void
 ShmMemoryGrp::wait_for_release()
 {
 #ifdef DEBUG
-  cout << scprintf("%d: decrementing release flag\n", me());
-  cout.flush();
+  ExEnv::out() << scprintf("%d: decrementing release flag\n", me());
+  ExEnv::out().flush();
 #endif // DEBUG
   update_[me()]--;
 #ifdef DEBUG
-  cout << scprintf("%d: decremented release flag\n", me());
-  cout.flush();
+  ExEnv::out() << scprintf("%d: decremented release flag\n", me());
+  ExEnv::out().flush();
 #endif // DEBUG
 }
 
@@ -556,8 +556,8 @@ ShmMemoryGrp::clear_release_count()
 {
   update_[me()] = 0;
 #ifdef DEBUG
-  cout << scprintf("%d: clearing release count\n", me());
-  cout.flush();
+  ExEnv::out() << scprintf("%d: clearing release count\n", me());
+  ExEnv::out().flush();
 #endif // DEBUG
 }
 

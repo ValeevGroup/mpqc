@@ -116,7 +116,7 @@ SteepestDescentOpt::update()
   RefSCVector xcurrent;
   RefSCVector gcurrent;
 
-  cout.flush();
+  ExEnv::out().flush();
     
   // get the next gradient at the required level of accuracy.
   // usually only one pass is needed, unless we happen to find
@@ -146,8 +146,8 @@ SteepestDescentOpt::update()
           <= accuracy_*roundoff_error_factor);
 
       if (!accurate_enough) {
-        cout.unsetf(ios::fixed);
-        cout << node0 << indent
+        ExEnv::out().unsetf(ios::fixed);
+        ExEnv::out() << node0 << indent
              << "NOTICE: function()->actual_gradient_accuracy() > accuracy_:\n"
              << indent
              << scprintf(
@@ -160,7 +160,7 @@ SteepestDescentOpt::update()
     } while(!accurate_enough);
 
   if (old_maxabs_gradient >= 0.0 && old_maxabs_gradient < maxabs_gradient) {
-    cout << node0 << indent
+    ExEnv::out() << node0 << indent
          << scprintf("NOTICE: maxabs_gradient increased from %8.4e to %8.4e",
                      old_maxabs_gradient, maxabs_gradient) << endl;
   }
@@ -179,20 +179,20 @@ SteepestDescentOpt::update()
 
   if (print_x_) {
     int n = xcurrent.n();
-    cout << node0 << indent << "x = [";
+    ExEnv::out() << node0 << indent << "x = [";
     for (int i=0; i<n; i++) {
-      cout << node0 << scprintf(" % 16.12f",double(xcurrent(i)));
+      ExEnv::out() << node0 << scprintf(" % 16.12f",double(xcurrent(i)));
     }
-    cout << node0 << " ]" << endl;
+    ExEnv::out() << node0 << " ]" << endl;
   }
 
   if (print_gradient_) {
     int n = gcurrent.n();
-    cout << node0 << indent << "gradient = [";
+    ExEnv::out() << node0 << indent << "gradient = [";
     for (int i=0; i<n; i++) {
-      cout << node0 << scprintf(" % 16.12f",double(gcurrent(i)));
+      ExEnv::out() << node0 << scprintf(" % 16.12f",double(gcurrent(i)));
     }
-    cout << node0 << " ]" << endl;
+    ExEnv::out() << node0 << " ]" << endl;
   }
 
   // take the step
@@ -202,14 +202,14 @@ SteepestDescentOpt::update()
   double tot = sqrt(xdisp.scalar_product(xdisp));
   if (tot > max_stepsize_) {
     double scal = max_stepsize_/tot;
-    cout << node0 << endl << indent
+    ExEnv::out() << node0 << endl << indent
          << scprintf("stepsize of %f is too big, scaling by %f",tot,scal)
          << endl;
     xdisp.scale(scal);
     tot *= scal;
   }
 
-  cout << node0 << endl << indent
+  ExEnv::out() << node0 << endl << indent
        << scprintf("taking step of size %f", tot) << endl;
   
   RefSCVector xnext = xcurrent + xdisp;

@@ -121,7 +121,8 @@ clean_up(void)
 static void
 out_of_memory()
 {
-  cerr << "ERROR: mpqc: out of memory" << endl;
+  ExEnv::out() << "ERROR: mpqc: out of memory" << endl;
+  ExEnv::out().flush();
   cout.flush();
   cerr.flush();
   abort();
@@ -144,22 +145,22 @@ void sigfpe_handler(int)
   long fp_control = ieee_get_fp_control();
   int fatal = 0;
   if (fp_control & IEEE_STATUS_INV) {
-      cout << "SGIFPE: invalid operation" << endl;;
+      ExEnv::out() << "SGIFPE: invalid operation" << endl;;
       fatal = 1;
     }
   if (fp_control & IEEE_STATUS_DZE) {
-      cout << "SGIFPE: divide by zero" << endl;;
+      ExEnv::out() << "SGIFPE: divide by zero" << endl;;
       fatal = 1;
     }
   if (fp_control & IEEE_STATUS_OVF) {
-      cout << "SGIFPE: overflow" << endl;;
+      ExEnv::out() << "SGIFPE: overflow" << endl;;
       fatal = 1;
     }
   if (fp_control & IEEE_STATUS_UNF) {
-      //cout << "SGIFPE: underflow" << endl;;
+      //ExEnv::out() << "SGIFPE: underflow" << endl;;
     }
   if (fp_control & IEEE_STATUS_INE) {
-      //cout << "SGIFPE: inexact" << endl;;
+      //ExEnv::out() << "SGIFPE: inexact" << endl;;
     }
   if (fatal) abort();
 }
@@ -210,6 +211,8 @@ main(int argc, char *argv[])
 
   options.enroll("f", GetLongOpt::MandatoryValue,
                  "the name of the input file", "mpqc.in");
+  options.enroll("o", GetLongOpt::MandatoryValue,
+                 "the name of the output file", 0);
   options.enroll("messagegrp", GetLongOpt::MandatoryValue,
                  "which message group to use", 0);
   options.enroll("threadgrp", GetLongOpt::MandatoryValue,
@@ -229,17 +232,24 @@ main(int argc, char *argv[])
 
   options.parse(argc, argv);
 
+  const char *output = options.retrieve("o");
+  ostream *outstream = 0;
+  if (output != 0) {
+    outstream = new ofstream(output);
+    ExEnv::set_out(outstream);
+  }
+
   if (options.retrieve("h")) {
-    cout << node0
+    ExEnv::out() << node0
          << indent << "MPQC version " << SC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright << endl;
-    options.usage(cout);
+    options.usage(ExEnv::out());
     exit(0);
   }
   
   if (options.retrieve("v")) {
-    cout << node0
+    ExEnv::out() << node0
          << indent << "MPQC version " << SC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright;
@@ -247,7 +257,7 @@ main(int argc, char *argv[])
   }
   
   if (options.retrieve("w")) {
-    cout << node0
+    ExEnv::out() << node0
          << indent << "MPQC version " << SC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright << endl
@@ -256,7 +266,7 @@ main(int argc, char *argv[])
   }
   
   if (options.retrieve("L")) {
-    cout << node0
+    ExEnv::out() << node0
          << indent << "MPQC version " << SC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright << endl
@@ -316,6 +326,7 @@ main(int argc, char *argv[])
   SCFormIO::set_default_basename(basename);
 
   // set up output classes
+  SCFormIO::setindent(ExEnv::out(), 2);
   SCFormIO::setindent(cout, 2);
   SCFormIO::setindent(cerr, 2);
 
@@ -339,13 +350,13 @@ main(int argc, char *argv[])
   int ntitle1 = sizeof(title1);
   const char title2[] = "Version " SC_VERSION;
   int ntitle2 = sizeof(title2);
-  cout << node0 << endl;
-  cout << node0 << indent;
-  for (i=0; i<(80-ntitle1)/2; i++) cout << node0 << ' ';
-  cout << node0 << title1 << endl;
-  cout << node0 << indent;
-  for (i=0; i<(80-ntitle2)/2; i++) cout << node0 << ' ';
-  cout << node0 << title2 << endl << endl;
+  ExEnv::out() << node0 << endl;
+  ExEnv::out() << node0 << indent;
+  for (i=0; i<(80-ntitle1)/2; i++) ExEnv::out() << node0 << ' ';
+  ExEnv::out() << node0 << title1 << endl;
+  ExEnv::out() << node0 << indent;
+  for (i=0; i<(80-ntitle2)/2; i++) ExEnv::out() << node0 << ' ';
+  ExEnv::out() << node0 << title2 << endl << endl;
 
   const char *tstr = 0;
 #if defined(HAVE_TIME) && defined(HAVE_CTIME)
@@ -357,7 +368,7 @@ main(int argc, char *argv[])
     tstr = "UNKNOWN";
   }
 
-  cout << node0
+  ExEnv::out() << node0
        << indent << scprintf("Machine:    %s", TARGET_ARCH) << endl
        << indent << scprintf("User:       %s@%s",
                              ExEnv::username(), ExEnv::hostname()) << endl
@@ -377,7 +388,7 @@ main(int argc, char *argv[])
   else
     thread = ThreadGrp::get_default_threadgrp();
 
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "Using " << grp->class_name()
        << " for message passing (number of nodes = " << grp->n() << ")." << endl
        << indent
@@ -440,7 +451,7 @@ main(int argc, char *argv[])
     char *suf = strrchr(restartfile,'.');
     if (!strcmp(suf,".wfn")) {
       mole.key_restore_state(si,"mole");
-      cout << node0 << endl << indent
+      ExEnv::out() << node0 << endl << indent
            << "Restored <MolecularEnergy> from " << restartfile << endl;
 
       opt = keyval->describedclassvalue("opt");
@@ -451,7 +462,7 @@ main(int argc, char *argv[])
       opt.key_restore_state(si,"opt");
       if (opt.nonnull()) {
         mole = opt->function();
-        cout << node0 << endl << indent
+        ExEnv::out() << node0 << endl << indent
              << "Restored <Optimize> from " << restartfile << endl;
       }
     }
@@ -462,7 +473,7 @@ main(int argc, char *argv[])
 
   if (mole.nonnull()) {
     MolecularFormula mf(mole->molecule());
-    cout << node0 << endl << indent
+    ExEnv::out() << node0 << endl << indent
          << "Molecular formula " << mf.formula() << endl;
   }
 
@@ -482,7 +493,7 @@ main(int argc, char *argv[])
   if (limit) {
     RefWavefunction wfn(mole);
     if (wfn.nonnull() && wfn->ao_dimension()->n() > limit) {
-      cerr << node0 << endl << indent
+      ExEnv::out() << node0 << endl << indent
            << "The limit of " << limit << " basis functions has been exceeded."
            << endl;
       check = 1;
@@ -490,7 +501,7 @@ main(int argc, char *argv[])
   }
 
   if (check) {
-    cout << node0 << endl << indent
+    ExEnv::out() << node0 << endl << indent
          << "Exiting since the check option is on." << endl;
     exit(0);
   }
@@ -515,7 +526,7 @@ main(int argc, char *argv[])
   else
     do_grad=1;
   
-  cout << node0 << endl << indent
+  ExEnv::out() << node0 << endl << indent
        << "MPQC options:" << endl << incindent
        << indent << "matrixkit     = <"
        << SCMatrixKit::default_matrixkit()->class_name() << ">" << endl
@@ -539,7 +550,7 @@ main(int argc, char *argv[])
   if (mole.nonnull()) {
     if (((do_opt && opt.nonnull()) || do_grad)
         && !mole->gradient_implemented()) {
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << "WARNING: optimization or gradient requested but the given"
            << endl
            << "         MolecularEnergy object cannot do gradients."
@@ -549,29 +560,29 @@ main(int argc, char *argv[])
     if (do_opt && opt.nonnull() && mole->gradient_implemented()) {
       int result = opt->optimize();
       if (result) {
-        cout << node0 << indent
+        ExEnv::out() << node0 << indent
              << "The optimization has converged." << endl << endl;
-        cout << node0 << indent
+        ExEnv::out() << node0 << indent
              << scprintf("Value of the MolecularEnergy: %15.10f",
                          mole->energy())
              << endl << endl;
       } else {
-        cout << node0 << indent
+        ExEnv::out() << node0 << indent
              << "The optimization has NOT converged." << endl << endl;
         ready_for_freq = 0;
       }
     } else if (do_grad && mole->gradient_implemented()) {
       mole->do_gradient(1);
-      cout << node0 << endl << indent
+      ExEnv::out() << node0 << endl << indent
            << scprintf("Value of the MolecularEnergy: %15.10f",
                        mole->energy())
            << endl;
       if (mole->value_result().actual_accuracy()
           > mole->value_result().desired_accuracy()) {
-        cout << node0 << indent
+        ExEnv::out() << node0 << indent
              << "WARNING: desired accuracy not achieved in energy" << endl;
       }
-      cout << node0 << endl;
+      ExEnv::out() << node0 << endl;
       // Use result_noupdate since the energy might not have converged
       // to the desired accuracy in which case grabbing the result will
       // start up the calculation again.  However the gradient might
@@ -588,12 +599,12 @@ main(int argc, char *argv[])
         grad.print("Gradient of the MolecularEnergy:");
         if (mole->gradient_result().actual_accuracy()
             > mole->gradient_result().desired_accuracy()) {
-          cout << node0 << indent
+          ExEnv::out() << node0 << indent
                << "WARNING: desired accuracy not achieved in gradient" << endl;
         }
       }
     } else if (do_energy && mole->value_implemented()) {
-      cout << node0 << endl << indent
+      ExEnv::out() << node0 << endl << indent
            << scprintf("Value of the MolecularEnergy: %15.10f",
                        mole->energy())
            << endl << endl;
@@ -658,7 +669,7 @@ main(int argc, char *argv[])
       xhessian = molhess->cartesian_hessian();
     }
     else {
-      cout << "mpqc: WARNING: Frequencies cannot be computed" << endl;
+      ExEnv::out() << "mpqc: WARNING: Frequencies cannot be computed" << endl;
     }
 
     if (xhessian.nonnull()) {
@@ -724,7 +735,7 @@ main(int argc, char *argv[])
 
   if (mole.nonnull()) {
     if (print_mole)
-      mole->print(cout);
+      mole->print(ExEnv::out());
 
     if (do_pdb && grp->me() == 0) {
       ckptfile = new char[strlen(molname)+5];
@@ -736,23 +747,23 @@ main(int argc, char *argv[])
     
   }
   else {
-    cout << node0 << "mpqc: The molecular energy object is null" << endl
+    ExEnv::out() << node0 << "mpqc: The molecular energy object is null" << endl
          << " make sure \"mole\" specifies a MolecularEnergy derivative"
          << endl;
   }
 
   if (parsedkv->have_unseen()) {
-    cout << node0 << indent
+    ExEnv::out() << node0 << indent
          << "The following keywords in \"" << input << "\" were ignored:"
          << endl;
-    cout << incindent;
-    parsedkv->print_unseen(cout<<node0);
-    cout << decindent;
-    cout << node0 << endl;
+    ExEnv::out() << incindent;
+    parsedkv->print_unseen(ExEnv::out()<<node0);
+    ExEnv::out() << decindent;
+    ExEnv::out() << node0 << endl;
   }
 
   if (print_timings)
-    if (tim.nonnull()) tim->print(cout);
+    if (tim.nonnull()) tim->print(ExEnv::out());
 
   delete[] basename;
   delete[] molname;
@@ -781,7 +792,13 @@ main(int argc, char *argv[])
   if (!tstr) {
     tstr = "UNKNOWN";
   }
-  cout << node0 << endl << indent << scprintf("End Time: %s", tstr) << endl;
+  ExEnv::out() << node0 << endl
+               << indent << scprintf("End Time: %s", tstr) << endl;
+
+  if (output != 0) {
+    ExEnv::set_out(&ExEnv::out());
+    delete outstream;
+  }
 
   return 0;
 }

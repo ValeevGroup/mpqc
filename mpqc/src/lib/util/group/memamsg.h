@@ -85,7 +85,7 @@ class MemoryDataRequest {
 
     void operator =(const MemoryDataRequest &r);
 
-    void print(const char* msg = 0, ostream & o = cout) const;
+    void print(const char* msg = 0, ostream & o = ExEnv::out()) const;
 };
 
 class MemoryDataRequestQueue {
@@ -142,7 +142,7 @@ class ActiveMsgMemoryGrp : public MsgMemoryGrp {
     void sum_reduction_on_node(double *data, int doffset, int dsize,
                                int node = -1);
 
-    void print(ostream &o = cout) const;
+    void print(ostream &o = ExEnv::out()) const;
 };
 
 #endif

@@ -99,7 +99,7 @@ nfp(0)
           struct stat sb;
           const char *dir = INSTALLED_SCLIBDIR;
           if (stat(dir, &sb) != 0) {
-              cout << node0 << indent << "WARNING: could not find "
+              ExEnv::out() << node0 << indent << "WARNING: could not find "
                    << dir << endl;
               dir = SRC_SCLIBDIR;
             }
@@ -159,7 +159,7 @@ ParsedKeyVal::cat_files(const char* keyprefix, const RefKeyVal& keyval,
           struct stat sb;
           const char *dir = INSTALLED_SCLIBDIR;
           if (stat(dir, &sb) != 0) {
-              cout << node0 << indent << "WARNING: could not find "
+              ExEnv::out() << node0 << indent << "WARNING: could not find "
                    << dir << endl;
               dir = SRC_SCLIBDIR;
             }

@@ -39,7 +39,7 @@ class OOGLRender: public FileRender {
     int oogl_spheres_;
   public:
     OOGLRender(const char * filename);
-    OOGLRender(ostream &o = cout);
+    OOGLRender(ostream &o = ExEnv::out());
     OOGLRender(const RefKeyVal&);
     virtual ~OOGLRender();
 

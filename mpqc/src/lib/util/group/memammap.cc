@@ -148,9 +148,9 @@ AlphaMMapMemoryGrp::set_localsize(int localsize)
     msg_->bcast(&length, 1);
     msg_->bcast(stringrep, length);
 #ifdef DEBUG
-    cout << scprintf("%d: sent initialize string of \"%s\" (%d)\n",
+    ExEnv::out() << scprintf("%d: sent initialize string of \"%s\" (%d)\n",
                      me(), stringrep, length);
-    cout.flush();
+    ExEnv::out().flush();
 #endif // DEBUG
     delete[] stringrep;
     for (i=0; i<n(); i++) {
@@ -160,9 +160,9 @@ AlphaMMapMemoryGrp::set_localsize(int localsize)
       msg_->bcast(&length, 1);
       msg_->bcast(stringrep, length);
 #ifdef DEBUG
-      cout << scprintf("%d: sent initialize string of \"%s\" (%d) for %d\n",
+      ExEnv::out() << scprintf("%d: sent initialize string of \"%s\" (%d) for %d\n",
                        me(), stringrep, length, i);
-      cout.flush();
+      ExEnv::out().flush();
 #endif // DEBUG
       delete[] stringrep;
     }
@@ -173,9 +173,9 @@ AlphaMMapMemoryGrp::set_localsize(int localsize)
     char * stringrep = new char[length];
     msg_->bcast(stringrep, length);
 #ifdef DEBUG
-    cout << scprintf("%d: got initialize string of \"%s\" (%d)\n",
+    ExEnv::out() << scprintf("%d: got initialize string of \"%s\" (%d)\n",
                      me(), stringrep, length);
-    cout.flush();
+    ExEnv::out().flush();
 #endif // DEBUG
     lock_.initialize(stringrep);
     delete[] stringrep;
@@ -184,9 +184,9 @@ AlphaMMapMemoryGrp::set_localsize(int localsize)
       stringrep = new char[length];
       msg_->bcast(stringrep, length);
 #ifdef DEBUG
-      cout << scprintf("%d: got initialize string of \"%s\" (%d) for %d\n",
+      ExEnv::out() << scprintf("%d: got initialize string of \"%s\" (%d) for %d\n",
                        me(), stringrep, length, i);
-      cout.flush();
+      ExEnv::out().flush();
 #endif // DEBUG
       update_[i].initialize(stringrep);
       delete[] stringrep;
@@ -209,7 +209,7 @@ AlphaMMapMemoryGrp::set_localsize(int localsize)
   msg_->sync();
 
   if (debug_) {
-    cout << scprintf("%d: memory_ = 0x%x %d\n",
+    ExEnv::out() << scprintf("%d: memory_ = 0x%x %d\n",
                      me(), memory_, ((int*)memory_)[0]);
   }
 
@@ -232,8 +232,8 @@ AlphaMMapMemoryGrp::~AlphaMMapMemoryGrp()
   cleanup();
 
 #ifdef DEBUG
-  cout << scprintf("msg_->nreference() = %d\n", msg_->nreference());
-  cout.flush();
+  ExEnv::out() << scprintf("msg_->nreference() = %d\n", msg_->nreference());
+  ExEnv::out().flush();
 #endif // DEBUG
   msg_ = 0;
 }
@@ -251,23 +251,23 @@ AlphaMMapMemoryGrp::obtain_readwrite(distsize_t offset, int size)
     obtain_lock();
 #else // SIMPLE_LOCK
 #ifdef DEBUG
-    cout << scprintf("%d: clear_release_count\n", me());
-    cout.flush();
+    ExEnv::out() << scprintf("%d: clear_release_count\n", me());
+    ExEnv::out().flush();
 #endif // DEBUG
     clear_release_count();
 #ifdef DEBUG
-    cout << scprintf("%d: obtain_lock\n", me());
-    cout.flush();
+    ExEnv::out() << scprintf("%d: obtain_lock\n", me());
+    ExEnv::out().flush();
 #endif // DEBUG
     obtain_lock();
 #ifdef DEBUG
-    cout << scprintf("%d: checkeq\n", me());
-    cout.flush();
+    ExEnv::out() << scprintf("%d: checkeq\n", me());
+    ExEnv::out().flush();
 #endif
     while (!rangelock_->checkeq(offset, offset + size, 0)) {
 #ifdef DEBUG
-      cout << scprintf("%d: range not zero -- waiting for release\n", me());
-      cout.flush();
+      ExEnv::out() << scprintf("%d: range not zero -- waiting for release\n", me());
+      ExEnv::out().flush();
 #endif // DEBUG
       //rangelock_->print();
       release_lock();
@@ -276,8 +276,8 @@ AlphaMMapMemoryGrp::obtain_readwrite(distsize_t offset, int size)
     }
     rangelock_->decrement(offset, offset + size);
 #ifdef DEBUG
-    cout << scprintf("%d: after obtain write\n", me());
-    cout.flush();
+    ExEnv::out() << scprintf("%d: after obtain write\n", me());
+    ExEnv::out().flush();
     //rangelock_->print();
 #endif // DEBUG
     release_lock();
@@ -303,8 +303,8 @@ AlphaMMapMemoryGrp::obtain_readonly(distsize_t offset, int size)
     obtain_lock();
     while (!rangelock_->checkgr(offset, offset + size, -1)) {
 #ifdef DEBUG
-      cout << scprintf("%d: range is -1 -- waiting for release\n", me());
-      cout.flush();
+      ExEnv::out() << scprintf("%d: range is -1 -- waiting for release\n", me());
+      ExEnv::out().flush();
       //rangelock_->print();
 #endif // DEBUG
       release_lock();
@@ -313,8 +313,8 @@ AlphaMMapMemoryGrp::obtain_readonly(distsize_t offset, int size)
     }
     rangelock_->increment(offset, offset + size);
 #ifdef DEBUG
-    cout << scprintf("%d: after obtain read\n", me());
-    cout.flush();
+    ExEnv::out() << scprintf("%d: after obtain read\n", me());
+    ExEnv::out().flush();
     //rangelock_->print();
 #endif // DEBUG
     release_lock();
@@ -335,9 +335,9 @@ AlphaMMapMemoryGrp::release_read(void *data, distsize_t offset, int size)
     rangelock_->decrement(offset, offset + size);
     note_release();
 #ifdef DEBUG
-    cout << scprintf("%d: after release read\n", me());
+    ExEnv::out() << scprintf("%d: after release read\n", me());
     //rangelock_->print();
-    cout.flush();
+    ExEnv::out().flush();
 #endif // DEBUG
     release_lock();
 #endif // SIMPLE_LOCK
@@ -355,9 +355,9 @@ AlphaMMapMemoryGrp::release_write(void *data, distsize_t offset, int size)
     rangelock_->increment(offset, offset + size);
     note_release();
 #ifdef DEBUG
-    cout << scprintf("%d: after release write\n", me());
+    ExEnv::out() << scprintf("%d: after release write\n", me());
     //rangelock_->print();
-    cout.flush();
+    ExEnv::out().flush();
 #endif // DEBUG
     release_lock();
 #endif // SIMPLE_LOCK
@@ -368,13 +368,13 @@ void
 AlphaMMapMemoryGrp::obtain_lock()
 {
 #ifdef DEBUG
-  cout << scprintf("%d: lock val = %d\n", me(), lock_.val());
-  cout.flush();
+  ExEnv::out() << scprintf("%d: lock val = %d\n", me(), lock_.val());
+  ExEnv::out().flush();
 #endif // DEBUG
   lock_--;
 #ifdef DEBUG
-  cout << scprintf("%d: lock decremented\n", me());
-  cout.flush();
+  ExEnv::out() << scprintf("%d: lock decremented\n", me());
+  ExEnv::out().flush();
 #endif // DEBUG
 }
 
@@ -383,8 +383,8 @@ AlphaMMapMemoryGrp::release_lock()
 {
   lock_++;
 #ifdef DEBUG
-  cout << scprintf("%d: incremented lock\n", me());
-  cout.flush();
+  ExEnv::out() << scprintf("%d: incremented lock\n", me());
+  ExEnv::out().flush();
 #endif // DEBUG
 }
 
@@ -395,8 +395,8 @@ AlphaMMapMemoryGrp::note_release()
     update_[i]++;
   }
 #ifdef DEBUG
-  cout << scprintf("%d: incremented release flags\n", me());
-  cout.flush();
+  ExEnv::out() << scprintf("%d: incremented release flags\n", me());
+  ExEnv::out().flush();
 #endif // DEBUG
 }
 
@@ -404,13 +404,13 @@ void
 AlphaMMapMemoryGrp::wait_for_release()
 {
 #ifdef DEBUG
-  cout << scprintf("%d: decrementing release flag\n", me());
-  cout.flush();
+  ExEnv::out() << scprintf("%d: decrementing release flag\n", me());
+  ExEnv::out().flush();
 #endif // DEBUG
   update_[me()]--;
 #ifdef DEBUG
-  cout << scprintf("%d: decremented release flag\n", me());
-  cout.flush();
+  ExEnv::out() << scprintf("%d: decremented release flag\n", me());
+  ExEnv::out().flush();
 #endif // DEBUG
 }
 
@@ -419,8 +419,8 @@ AlphaMMapMemoryGrp::clear_release_count()
 {
   update_[me()] = 0;
 #ifdef DEBUG
-  cout << scprintf("%d: clearing release count\n", me());
-  cout.flush();
+  ExEnv::out() << scprintf("%d: clearing release count\n", me());
+  ExEnv::out().flush();
 #endif // DEBUG
 }
 

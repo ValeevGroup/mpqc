@@ -175,9 +175,9 @@ class SCVector: public DescribedClass {
     virtual void element_op(const RefSCElementOp3&,
                             SCVector*,SCVector*) = 0;
     /// Print out the vector.
-    void print(ostream&o=cout) const;
-    void print(const char* title=0,ostream& out=cout, int =10) const;
-    virtual void vprint(const char*title=0,ostream&out=cout,int =10) const = 0;
+    void print(ostream&o=ExEnv::out()) const;
+    void print(const char* title=0,ostream& out=ExEnv::out(), int =10) const;
+    virtual void vprint(const char*title=0,ostream&out=ExEnv::out(),int =10) const = 0;
 
     /// Returns the message group used by the matrix kit
     RefMessageGrp messagegrp() const;
@@ -341,9 +341,9 @@ class SCMatrix: public DescribedClass {
     virtual void element_op(const RefSCElementOp3&,
                             SCMatrix*,SCMatrix*) = 0;
     /// Print out the matrix.
-    void print(ostream&o=cout) const;
-    void print(const char* title=0,ostream& out=cout, int =10) const;
-    virtual void vprint(const char*title=0,ostream&out=cout,int =10) const = 0;
+    void print(ostream&o=ExEnv::out()) const;
+    void print(const char* title=0,ostream& out=ExEnv::out(), int =10) const;
+    virtual void vprint(const char*title=0,ostream&out=ExEnv::out(),int =10) const = 0;
 
     /// Returns the message group used by the matrix kit
     RefMessageGrp messagegrp() const;
@@ -479,9 +479,9 @@ class SymmSCMatrix: public DescribedClass {
     virtual void element_op(const RefSCElementOp3&,
                             SymmSCMatrix*,SymmSCMatrix*) = 0;
     /// Print out the matrix.
-    void print(ostream&o=cout) const;
-    void print(const char* title=0,ostream& out=cout, int =10) const;
-    virtual void vprint(const char* title=0,ostream& out=cout, int =10) const;
+    void print(ostream&o=ExEnv::out()) const;
+    void print(const char* title=0,ostream& out=ExEnv::out(), int =10) const;
+    virtual void vprint(const char* title=0,ostream& out=ExEnv::out(), int =10) const;
 
     /// Returns the message group used by the matrix kit
     RefMessageGrp messagegrp() const;
@@ -567,9 +567,9 @@ class DiagSCMatrix: public DescribedClass {
     virtual void element_op(const RefSCElementOp3&,
                             DiagSCMatrix*,DiagSCMatrix*) = 0;
     /// Print out the matrix.
-    void print(ostream&o=cout) const;
-    void print(const char* title=0,ostream& out=cout, int =10) const;
-    virtual void vprint(const char* title=0,ostream& out=cout, int =10) const;
+    void print(ostream&o=ExEnv::out()) const;
+    void print(const char* title=0,ostream& out=ExEnv::out(), int =10) const;
+    virtual void vprint(const char* title=0,ostream& out=ExEnv::out(), int =10) const;
 
     /// Returns the message group used by the matrix kit
     RefMessageGrp messagegrp() const;

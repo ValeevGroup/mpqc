@@ -238,10 +238,10 @@ StateOut::put_directory()
       put(cd->version());
       put(classid);
 #if DEBUG
-      cout << "PUT CLASS:"
-           << " NAME = " << cd->name()
-           << " VERSION = " << cd->version()
-           << " ID = " << classid << endl;
+      ExEnv::out() << "PUT CLASS:"
+                   << " NAME = " << cd->name()
+                   << " VERSION = " << cd->version()
+                   << " ID = " << classid << endl;
 #endif
     }
 
@@ -254,12 +254,12 @@ StateOut::put_directory()
       put(ptr.offset);
       put(ptr.size);
 #if DEBUG
-      cout << "PUT OBJECT:"
-           << " NUM = " << ptr.num
-           << " TYPE = " << ptr.type
-           << " OFFSET = " << ptr.offset
-           << " SIZE = " << ptr.size
-           << endl;
+      ExEnv::out() << "PUT OBJECT:"
+                   << " NUM = " << ptr.num
+                   << " TYPE = " << ptr.type
+                   << " OFFSET = " << ptr.offset
+                   << " SIZE = " << ptr.size
+                   << endl;
 #endif
     }
 }

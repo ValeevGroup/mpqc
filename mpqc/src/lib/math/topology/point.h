@@ -80,7 +80,7 @@ class Point : public SavableState
     const double &operator[](int i) const;
   
   // Print out a Point
-    void print(ostream& = cout) const;
+    void print(ostream& = ExEnv::out()) const;
 
   // save and restore state
     void save_data_state(StateOut&);

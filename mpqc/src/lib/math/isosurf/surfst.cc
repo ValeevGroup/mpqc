@@ -66,7 +66,7 @@ TriangulatedSurface::remove_slender_triangles(
   _values.clear();
   
   if (_verbose) {
-      cout << "TriangulatedSurface::remove_slender_triangles:" << endl
+      ExEnv::out() << "TriangulatedSurface::remove_slender_triangles:" << endl
            << "initial: ";
       topology_info();
     }
@@ -338,7 +338,7 @@ TriangulatedSurface::remove_slender_triangles(
           char filename[100];
           static int pass = 0;
           sprintf(filename, "surfst%04d.oogl", pass);
-          cout << scprintf("PASS = %04d\n", pass);
+          ExEnv::out() << scprintf("PASS = %04d\n", pass);
           RefRender render = new OOGLRender(filename);
           RefRenderedPolygons poly = new RenderedPolygons;
           poly->initialize(_vertices.length(), _triangles.length(),
@@ -389,7 +389,7 @@ TriangulatedSurface::remove_slender_triangles(
           for (iv = _vertices.begin(); iv != _vertices.end(); iv++, i++) {
               RefVertex v = *iv;
               if (n_triangle[i] != n_edge[i]) {
-                  cout << "found bad vertex"
+                  ExEnv::out() << "found bad vertex"
                        << " nedge = " << n_edge[i]
                        << " ntriangle = " << n_triangle[i]
                        << endl;
@@ -417,7 +417,7 @@ TriangulatedSurface::remove_slender_triangles(
       _vertices |= new_vertices;
 
       if (_verbose) {
-          cout << "intermediate: ";
+          ExEnv::out() << "intermediate: ";
           topology_info();
         }
 
@@ -458,7 +458,7 @@ TriangulatedSurface::remove_slender_triangles(
     }
 
   if (_verbose) {
-      cout << "final: ";
+      ExEnv::out() << "final: ";
       topology_info();
     }
 }

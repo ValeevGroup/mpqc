@@ -34,6 +34,7 @@
 
 char *SCFormIO::default_basename_ = 0;
 int  SCFormIO::ready_ = 0;
+int  SCFormIO::xalloc_inited_ = 0;
 long SCFormIO::nindent_ = 0;
 long SCFormIO::indent_size_ = 0;
 long SCFormIO::skip_indent_ = 0;
@@ -97,24 +98,31 @@ SCFormIO::init_mp(int me)
   me_ = me;
   parallel_=1;
 }
-  
+
+void
+SCFormIO::init_ostream(ostream &o)
+{
+  if (!xalloc_inited_) {
+      xalloc_inited_ = 1;
+      nindent_ = ios::xalloc();
+      indent_size_ = ios::xalloc();
+      skip_indent_ = ios::xalloc();
+      verbose_ = ios::xalloc();
+    }
+
+  o.iword(skip_indent_) = 0;
+  o.iword(indent_size_) = 0;
+  o.iword(nindent_) = 0;
+  o.iword(verbose_) = 0;
+}
+
 void
 SCFormIO::init()
 {
   ready_ = 1;
-  nindent_ = ios::xalloc();
-  indent_size_ = ios::xalloc();
-  skip_indent_ = ios::xalloc();
-  verbose_ = ios::xalloc();
 
-  cout.iword(skip_indent_) = 0;
-  cout.iword(indent_size_) = 0;
-  cout.iword(nindent_) = 0;
-  cout.iword(verbose_) = 0;
-  cerr.iword(skip_indent_) = 0;
-  cerr.iword(indent_size_) = 0;
-  cerr.iword(nindent_) = 0;
-  cerr.iword(verbose_) = 0;
+  init_ostream(cout);
+  init_ostream(cerr);
 
   if (nullstream_.bad() || nullstream_.fail())
     nullstream_.open("/dev/null");

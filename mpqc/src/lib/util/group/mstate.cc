@@ -664,14 +664,14 @@ BcastStateInBin::seek(int loc)
   if (grp->me() == 0) {
       buf_->pubseekoff(loc,ios::beg,ios::in);
 #  if  DEBUG
-      cout << "pubseekoff to " << loc << endl;
+      ExEnv::out() << "pubseekoff to " << loc << endl;
 #  endif
     }
 #elif defined(HAVE_SEEKOFF)
   if (grp->me() == 0) {
       buf_->seekoff(loc,ios::beg,ios::in);
 #  if  DEBUG
-      cout << "seekoff to " << loc << endl;
+      ExEnv::out() << "seekoff to " << loc << endl;
 #  endif
     }
 #endif
@@ -701,11 +701,11 @@ BcastStateInBin::get_array_void(void* vd, int n)
   MsgStateBufRecv::get_array_void(vd, n);
   file_position_ += n;
 #if DEBUG
-  cout << "Read " << n << " bytes:";
+  ExEnv::out() << "Read " << n << " bytes:";
   for (int i=0; i<n; i++) {
-      cout << " " << (int) ((unsigned char*)vd)[i];
+      ExEnv::out() << " " << (int) ((unsigned char*)vd)[i];
     }
-  cout << endl;
+  ExEnv::out() << endl;
 #endif
   return n;
 }

@@ -45,7 +45,7 @@ StateOutFile::_castdown(const ClassDesc*cd)
 }
 
 StateOutFile::StateOutFile() :
-  opened_(0), buf_(cout.rdbuf())
+  opened_(0), buf_(ExEnv::out().rdbuf())
 {
 }
 

@@ -109,7 +109,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
       mid = send(&data_[offset], size, node, from_type);
       wait(mid);
       if (debug_) {
-          cout << scprintf(
+          ExEnv::out() << scprintf(
               "%d: %s sent %d bytes at byte offset %d (mid = %d)\n",
               me_, handlerstr, size, offset, mid);
         }
@@ -122,13 +122,13 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
       mid = send(&junk, sizeof(junk), node, from_type);
       wait(mid);
       if (debug_) {
-          cout << scprintf("%d: %s sent go-ahead %d:%d to %d\n",
+          ExEnv::out() << scprintf("%d: %s sent go-ahead %d:%d to %d\n",
                            me_, handlerstr, junk&0xff, junk>>8, node);
         }
       mid = recv(&data_[offset], size, node, to_type);
       wait(mid);
       if (debug_) {
-          cout << scprintf(
+          ExEnv::out() << scprintf(
               "%d: %s replaced %d bytes at byte offset %d (mid = %d)\n",
               me_, handlerstr, size, offset, mid);
         }
@@ -137,7 +137,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
           mid = send(&junk, sizeof(junk), node, from_type);
           wait(mid);
           if (debug_) {
-              cout << scprintf("%d: %s sent ack %d:%d to %d\n",
+              ExEnv::out() << scprintf("%d: %s sent ack %d:%d to %d\n",
                                me_, handlerstr, junk&0xff, junk>>8, node);
             }
         }
@@ -161,7 +161,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
       mid = send(&junk, sizeof(junk), node, from_type);
       wait(mid);
       if (debug_) {
-          cout << scprintf("%d: %s sent go-ahead %d:%d to %d",
+          ExEnv::out() << scprintf("%d: %s sent go-ahead %d:%d to %d",
                            me_, handlerstr, junk&0xff, junk>>8, node)
                << endl;
         }
@@ -172,7 +172,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
           mid = recv(chunk, chunksize, node, to_type);
           wait(mid);
           if (debug_) {
-              cout << scprintf("%d: %s summing %d bytes (%d doubles) (mid=%d)",
+              ExEnv::out() << scprintf("%d: %s summing %d bytes (%d doubles) (mid=%d)",
                                me_, handlerstr, size, size/sizeof(double), mid)
                    << endl;
             }
@@ -189,7 +189,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
           mid = send(&junk, sizeof(junk), node, from_type);
           wait(mid);
           if (debug_) {
-              cout << scprintf("%d: %s sent ack %d:%d to %d",
+              ExEnv::out() << scprintf("%d: %s sent ack %d:%d to %d",
                                me_, handlerstr, junk&0xff, junk>>8, node)
                    << endl;
             }
@@ -222,7 +222,7 @@ MIDMemoryGrp::_castdown(const ClassDesc*cd)
 MIDMemoryGrp::MIDMemoryGrp(const RefMessageGrp& msg):
   ActiveMsgMemoryGrp(msg)
 {
-  if (debug_) cout << scprintf("%d: MIDMemoryGrp CTOR\n", me());
+  if (debug_) ExEnv::out() << scprintf("%d: MIDMemoryGrp CTOR\n", me());
 
   ctl_mask_ = 0x10000;
   intMessageGrp *img = intMessageGrp::castdown(msg_.pointer());
@@ -238,11 +238,11 @@ MIDMemoryGrp::MIDMemoryGrp(const RefMessageGrp& msg):
   active_ = 0;
 
   if (debug_) {
-      cout << node0 << indent << "data_request_type = "
+      ExEnv::out() << node0 << indent << "data_request_type = "
            << data_request_type_ << endl;
-      cout << node0 << indent << "data_type_to_handler = "
+      ExEnv::out() << node0 << indent << "data_type_to_handler = "
            << data_type_to_handler_ << endl;
-      cout << node0 << indent << "data_type_from_handler = "
+      ExEnv::out() << node0 << indent << "data_type_from_handler = "
            << data_type_from_handler_ << endl;
     }
 
@@ -261,7 +261,7 @@ MIDMemoryGrp::MIDMemoryGrp(const RefMessageGrp& msg):
 MIDMemoryGrp::MIDMemoryGrp(const RefKeyVal& keyval):
   ActiveMsgMemoryGrp(keyval)
 {
-  if (debug_) cout << scprintf("%d: MIDMemoryGrp KeyVal CTOR\n", me());
+  if (debug_) ExEnv::out() << scprintf("%d: MIDMemoryGrp KeyVal CTOR\n", me());
   
   nsync_ = 0;
 
@@ -305,7 +305,7 @@ MIDMemoryGrp::~MIDMemoryGrp()
   delete[] n_ret_send_;
   delete[] n_rep_send_;
 
-  if (debug_) cout << scprintf("%d: ~MIDMemoryGrp\n", me());
+  if (debug_) ExEnv::out() << scprintf("%d: ~MIDMemoryGrp\n", me());
 }
 
 void
@@ -344,7 +344,7 @@ MIDMemoryGrp::activate()
             }
         }
       if (debug_) {
-          cout << scprintf("%d: activated memory request handler mid = %d\n",
+          ExEnv::out() << scprintf("%d: activated memory request handler mid = %d\n",
                            me_, data_request_mid_);
         }
     }
@@ -356,7 +356,7 @@ MIDMemoryGrp::deactivate()
   // active_ might be false because we've already begun sync_act(0)
   // on other nodes.
   if (active_ || nsync_) {
-      if (debug_) cout << scprintf("%d: MIDMemoryGrp::deactivate()\n", me_);
+      if (debug_) ExEnv::out() << scprintf("%d: MIDMemoryGrp::deactivate()\n", me_);
       sync_act(0);
       if (active_) {
           cerr << "MIDMemoryGrp::deactivate(): still active" << endl;
@@ -407,7 +407,7 @@ MIDMemoryGrp::replace_data(void *data, int node, int offset, int size)
   mid = recv(&junk, sizeof(junk), node, data_type_from_handler_);
   do_wait("replace: recv go-ahead", mid, q, sizeof(junk), node);
   if (debug_)
-      cout << scprintf("%d: replace: got go-ahead %d:%d\n",
+      ExEnv::out() << scprintf("%d: replace: got go-ahead %d:%d\n",
                        me_,junk&0xff,junk>>8);
 
   mid = send(data, size, node, data_type_to_handler_);
@@ -417,7 +417,7 @@ MIDMemoryGrp::replace_data(void *data, int node, int offset, int size)
       mid = recv(&junk, sizeof(junk), node, data_type_from_handler_);
       do_wait("replace: recv ack", mid, q, sizeof(junk), node);
       if (debug_)
-          cout << scprintf("%d: replace: got ack %d:%d\n",me_,junk&0xff,junk>>8);
+          ExEnv::out() << scprintf("%d: replace: got ack %d:%d\n",me_,junk&0xff,junk>>8);
     }
 
   flush_queue(q);
@@ -444,7 +444,7 @@ MIDMemoryGrp::sum_data(double *data, int node, int offset, int size)
   recv(&junk, sizeof(junk), node, data_type_from_handler_);
   do_wait("sum: recv go-ahead", mid, q, sizeof(junk), node);
   if (debug_)
-      cout << scprintf("%d: sum: got go-ahead %d:%d\n",me_,junk&0xff,junk>>8);
+      ExEnv::out() << scprintf("%d: sum: got go-ahead %d:%d\n",me_,junk&0xff,junk>>8);
 
   int remain = size;
   int dremain = size/sizeof(double);
@@ -464,7 +464,7 @@ MIDMemoryGrp::sum_data(double *data, int node, int offset, int size)
       recv(&junk, sizeof(junk), node, data_type_from_handler_);
       do_wait("sum: recv ack", mid, q, sizeof(junk), node);
       if (debug_)
-          cout << scprintf("%d: sum: got ack %d:%d\n",me_, junk&0xff, junk>>8);
+          ExEnv::out() << scprintf("%d: sum: got ack %d:%d\n",me_, junk&0xff, junk>>8);
     }
 
   flush_queue(q);
@@ -487,7 +487,7 @@ MIDMemoryGrp::sync_act(int reactivate)
   long oldlock = lockcomm();
 
   if (debug_) {
-      cout << scprintf(
+      ExEnv::out() << scprintf(
           "%d: MIDMemoryGrp::sync() entered, active = %d, reactivate = %d",
           me_, active_, reactivate)
            << endl;
@@ -497,13 +497,13 @@ MIDMemoryGrp::sync_act(int reactivate)
       // keep processing requests until all nodes have sent a
       // sync request
       if (debug_) {
-          cout << scprintf("%d: outside while loop nsync_ = %d, n() = %d",
+          ExEnv::out() << scprintf("%d: outside while loop nsync_ = %d, n() = %d",
                            me_, nsync_, n())
                << endl;
         }
       while (nsync_ < n() - 1) {
           if (debug_) {
-              cout << scprintf(
+              ExEnv::out() << scprintf(
                   "%d: waiting for sync or other msg data_req_mid = %d",
                   me_, data_request_mid_)
                    << endl;
@@ -513,7 +513,7 @@ MIDMemoryGrp::sync_act(int reactivate)
             }
           mid = wait(data_request_mid_);
           if (debug_) {
-              cout << scprintf("%d: got mid = %d (data_request_mid_ = %d)",
+              ExEnv::out() << scprintf("%d: got mid = %d (data_request_mid_ = %d)",
                      me_, mid, data_request_mid_)
                    << endl;
             }
@@ -531,7 +531,7 @@ MIDMemoryGrp::sync_act(int reactivate)
       nsync_ = 0;
 
       if (debug_)
-          cout << scprintf("%d: notifying nodes that sync is complete", me_)
+          ExEnv::out() << scprintf("%d: notifying nodes that sync is complete", me_)
                << endl;
       // tell all nodes that they can proceed
       MemoryDataRequest buf(MemoryDataRequest::Sync, me(), reactivate);
@@ -539,12 +539,12 @@ MIDMemoryGrp::sync_act(int reactivate)
           if (debug_) print_memreq(buf, "sync:", i);
           mid = send(buf.data(), buf.nbytes(), i, data_request_type_);
           if (debug_) 
-              cout << scprintf("%d: node %d can proceed (mid = %d)",
+              ExEnv::out() << scprintf("%d: node %d can proceed (mid = %d)",
                                me_,i,mid)
                    << endl;
           mid = wait(mid);
           if (debug_) 
-              cout << scprintf("%d: node %d got proceed message",
+              ExEnv::out() << scprintf("%d: node %d got proceed message",
                                me_, i, mid)
                    << endl;
         }
@@ -555,14 +555,14 @@ MIDMemoryGrp::sync_act(int reactivate)
       if (debug_) print_memreq(buf, "sync:", 0);
       mid = send(buf.data(), buf.nbytes(), 0, data_request_type_);
       if (debug_) 
-          cout << scprintf("%d: sending sync (mid = %d)", me_, mid)
+          ExEnv::out() << scprintf("%d: sending sync (mid = %d)", me_, mid)
                << endl;
       int tmpmid;
       do {
           tmpmid = wait(mid, data_request_mid_);
           if (tmpmid == data_request_mid_) {
               if (debug_) 
-                  cout << scprintf("%d: sync: wait: handling request %d-%d",
+                  ExEnv::out() << scprintf("%d: sync: wait: handling request %d-%d",
                                    me_, data_request_buffer_.node(),
                                    data_request_buffer_.serial_number())
                        << endl;
@@ -582,13 +582,13 @@ MIDMemoryGrp::sync_act(int reactivate)
       // watch for the done message from 0 or request messages
       while (!nsync_) {
           if (debug_)
-              cout << scprintf("%d: waiting for sync", me_) << endl;
+              ExEnv::out() << scprintf("%d: waiting for sync", me_) << endl;
           if (!active_) {
               cerr << me_ << ": MIDMemoryGrp::sync(): not active (3)" << endl;
             }
           mid = wait(data_request_mid_);
           if (debug_) 
-              cout << scprintf("%d: in sync got mid = %d", me_, mid) << endl;
+              ExEnv::out() << scprintf("%d: in sync got mid = %d", me_, mid) << endl;
           if (mid == data_request_mid_) {
               got_data_request_mid();
               handler();
@@ -604,7 +604,7 @@ MIDMemoryGrp::sync_act(int reactivate)
     }
 
   if (debug_)
-      cout << scprintf("%d: MIDMemoryGrp::sync() done", me_) << endl;
+      ExEnv::out() << scprintf("%d: MIDMemoryGrp::sync() done", me_) << endl;
 
   // after a sync, the sums must agree
   msg_->sum(n_sum_send_, n_);
@@ -614,7 +614,7 @@ MIDMemoryGrp::sync_act(int reactivate)
   if (n_sum_send_[me_] != n_sum_recv_
       || n_ret_send_[me_] != n_ret_recv_
       || n_rep_send_[me_] != n_rep_recv_) {
-      cout << scprintf("ERROR: %d: sum:s=%d r=%d ret:s=%d r=%d rep:s=%d r=%d",
+      ExEnv::out() << scprintf("ERROR: %d: sum:s=%d r=%d ret:s=%d r=%d rep:s=%d r=%d",
                        me_,
                        n_sum_send_[me_], n_sum_recv_,
                        n_ret_send_[me_], n_ret_recv_,
@@ -623,7 +623,7 @@ MIDMemoryGrp::sync_act(int reactivate)
     }
   msg_->max(doabort);
   if (doabort) {
-      cout << node0 << "MIDMemoryGrp: counts do not not agree" << endl;
+      ExEnv::out() << node0 << "MIDMemoryGrp: counts do not not agree" << endl;
       abort();
     }
 
@@ -648,7 +648,7 @@ MIDMemoryGrp::do_wait(const char *msg, int mid,
   int tmpmid;
   do {
       if (debug_) 
-          cout << scprintf("%d: %s: wait: waiting\n", me_, msg);
+          ExEnv::out() << scprintf("%d: %s: wait: waiting\n", me_, msg);
       if (!active_) {
           cerr << me_ << ": MIDMemoryGrp::do_wait(): not active" << endl;
         }
@@ -666,13 +666,13 @@ MIDMemoryGrp::do_wait(const char *msg, int mid,
                   abort();
                 }
               if (debug_) 
-                  cout << scprintf("%d: %s: wait: queueing request %d-%d\n",
+                  ExEnv::out() << scprintf("%d: %s: wait: queueing request %d-%d\n",
                                    me_, msg,
                                    data_request_buffer_.node(),
                                    data_request_buffer_.serial_number());
               q.push(data_request_buffer_);
               if (q.n() == MemoryDataRequestQueue::MaxDepth/2) {
-                  cout << me_ << ": " << msg
+                  ExEnv::out() << me_ << ": " << msg
                        << " wait: queue half full while waiting for node "
                        << node << endl;
                 }
@@ -680,7 +680,7 @@ MIDMemoryGrp::do_wait(const char *msg, int mid,
             }
           else {
               if (debug_) 
-                  cout << scprintf("%d: %s: wait: handling request %d-%d\n",
+                  ExEnv::out() << scprintf("%d: %s: wait: handling request %d-%d\n",
                                    me_, msg,
                                    data_request_buffer_.node(),
                                    data_request_buffer_.serial_number());
@@ -702,7 +702,7 @@ MIDMemoryGrp::do_wait(const char *msg, int mid,
         }
       else {
           if (debug_)
-              cout << scprintf("%d: %s: wait: wait complete\n", me_, msg);
+              ExEnv::out() << scprintf("%d: %s: wait: wait complete\n", me_, msg);
         }
     } while (tmpmid != mid);
 
@@ -716,7 +716,7 @@ MIDMemoryGrp::flush_queue(MemoryDataRequestQueue &q)
 
   for (int i=0; i<q.n(); i++) {
       if (debug_) 
-          cout << scprintf("%d: processing queued request %d-%d\n",
+          ExEnv::out() << scprintf("%d: processing queued request %d-%d\n",
                            me_,
                            data_request_buffer_.node(),
                            data_request_buffer_.serial_number());
@@ -738,11 +738,13 @@ MIDMemoryGrp::catchup()
 {
   while (!use_active_messages_ && probe(data_request_mid_)) {
       got_data_request_mid();
-      if (debug_) cout << scprintf("%d: catchup: handling request %d-%d",
-                                   me_,
-                                   data_request_buffer_.node(),
-                                   data_request_buffer_.serial_number())
-                       << endl;
+      if (debug_)
+          ExEnv::out()
+              << scprintf("%d: catchup: handling request %d-%d",
+                          me_,
+                          data_request_buffer_.node(),
+                          data_request_buffer_.serial_number())
+              << endl;
       handler();
       activate();
     }

@@ -51,7 +51,7 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
   _values.clear();
   
   if (_verbose) {
-      cout << "TriangulatedSurface::remove_short_edges:" << endl
+      ExEnv::out() << "TriangulatedSurface::remove_short_edges:" << endl
            << "initial: ";
       topology_info();
     }
@@ -257,7 +257,7 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
                   RefTriangle newtri(newTriangle(e1,e2,e3,orientation));
                   new_triangles.insert(newtri);
                 }
-              //cout << "WARNING: only one short edge removed" << endl;
+              //ExEnv::out() << "WARNING: only one short edge removed" << endl;
               //break;
             }
         }
@@ -275,7 +275,7 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
         }
 
       deleted_edges_length = deleted_edges.length();
-      //cout << "WARNING: one pass short edge removal" << endl;
+      //ExEnv::out() << "WARNING: one pass short edge removal" << endl;
       //deleted_edges_length = 0; // do one pass
     } while(deleted_edges_length != 0);
 
@@ -289,7 +289,7 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
     }
 
   if (_verbose) {
-      cout << "final: ";
+      ExEnv::out() << "final: ";
       topology_info();
     }
 }

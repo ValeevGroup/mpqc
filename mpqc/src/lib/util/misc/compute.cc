@@ -234,11 +234,12 @@ AccResultInfo::update() {
       _c->compute();
       compute() = oldcompute;
       if (!computed()) {
-          cerr << "AccResultInfo::update: nothing was computed" << endl;
+          ExEnv::out() << "AccResultInfo::update: nothing was computed"
+                       << endl;
           abort();
         }
       if (_actual_accuracy > _desired_accuracy) {
-          cout << node0 << indent
+          ExEnv::out() << node0 << indent
                << "WARNING: AccResultInfo::update: desired accuracy not achieved"
                << endl;
         }

@@ -163,7 +163,7 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
   // if keyval input for a memory group was found, then
   // create it.
   if (keyval_string) {
-      //cout << "Creating MemoryGrp from \"" << keyval_string << "\"" << endl;
+      //ExEnv::out() << "Creating MemoryGrp from \"" << keyval_string << "\"" << endl;
       RefParsedKeyVal strkv = new ParsedKeyVal();
       strkv->parse_string(keyval_string);
       RefDescribedClass dc = strkv->describedclassvalue();
@@ -249,7 +249,7 @@ void
 MemoryGrp::lock(int b)
 {
   if (b) {
-      cout << node0 << class_name() << ": locks not available" << endl;
+      ExEnv::out() << node0 << class_name() << ": locks not available" << endl;
       abort();
     }
   use_locks_ = b;

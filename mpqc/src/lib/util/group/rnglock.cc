@@ -174,8 +174,9 @@ RangeLock::check()
           bad = 1;
         }
 #if VERBOSE
-      cout << scprintf("i = 0x%08x, n = 0x%08x, p = 0x%08x, [%3d, %3d), %5d\n",
-                       i, i->next, i->prev, i->start, i->fence, i->value);
+      ExEnv::out()
+          << scprintf("i = 0x%08x, n = 0x%08x, p = 0x%08x, [%3d, %3d), %5d\n",
+                      i, i->next, i->prev, i->start, i->fence, i->value);
 #endif
       if (bad) abort();
     }

@@ -92,7 +92,7 @@ class DistSCVector: public SCVector {
                     SCVector*);
     void element_op(const RefSCElementOp3&,
                     SCVector*,SCVector*);
-    void vprint(const char* title=0,ostream& out=cout, int =10) const;
+    void vprint(const char* title=0,ostream& out=ExEnv::out(), int =10) const;
 
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
@@ -166,8 +166,8 @@ class DistSCMatrix: public SCMatrix {
                     SCMatrix*);
     void element_op(const RefSCElementOp3&,
                     SCMatrix*,SCMatrix*);
-    void vprint(const char* title=0,ostream& out=cout, int =10);
-    void vprint(const char* title=0,ostream& out=cout, int =10) const;
+    void vprint(const char* title=0,ostream& out=ExEnv::out(), int =10);
+    void vprint(const char* title=0,ostream& out=ExEnv::out(), int =10) const;
 
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);

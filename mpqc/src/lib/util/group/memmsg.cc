@@ -92,7 +92,7 @@ MsgMemoryGrp::set_localsize(int localsize)
   for (i=1; i<=n_; i++) {
       offsets_[i] = sizes[i-1] + offsets_[i-1];
       if (offsets_[i] < offsets_[i-1]) {
-          cout << "MsgMemoryGrp::set_localsize: distsize_t cannot handle biggest size" << endl;
+          ExEnv::out() << "MsgMemoryGrp::set_localsize: distsize_t cannot handle biggest size" << endl;
           abort();
         }
     }

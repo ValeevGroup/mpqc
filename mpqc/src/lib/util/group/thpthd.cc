@@ -163,8 +163,9 @@ PthreadThreadGrp::wait_threads()
     int tn;
     if (threads_[i]) {
       if (pthread_join(pthreads_[i], (void**)&tn)) {
-        cout << "PthreadThreadGrp::wait_threads(): error joining thread"
-             << endl;
+        ExEnv::out()
+          << "PthreadThreadGrp::wait_threads(): error joining thread"
+          << endl;
         abort();
       }
     }

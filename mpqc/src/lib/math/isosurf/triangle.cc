@@ -464,7 +464,7 @@ GaussTriangleIntegrator::_castdown(const ClassDesc*cd)
 GaussTriangleIntegrator::GaussTriangleIntegrator(const RefKeyVal& keyval):
   TriangleIntegrator(keyval)
 {
-  cout << "Created a GaussTriangleIntegrator with n = " << n() << endl;
+  ExEnv::out() << "Created a GaussTriangleIntegrator with n = " << n() << endl;
   init_rw(n());
   init_coef();
 }

@@ -173,7 +173,7 @@ GDIISOpt::update()
   RefSCVector xcurrent;
   RefSCVector gcurrent;
 
-  cout.flush();
+  ExEnv::out().flush();
     
   // get the next gradient at the required level of accuracy.
   // usually only one pass is needed, unless we happen to find
@@ -200,7 +200,7 @@ GDIISOpt::update()
                        accuracy_*roundoff_error_factor);
 
     if (!accurate_enough) {
-      cout << node0 << indent
+      ExEnv::out() << node0 << indent
            << "NOTICE: function()->actual_gradient_accuracy() > accuracy_:\n"
            << indent
            << scprintf(
@@ -213,7 +213,7 @@ GDIISOpt::update()
   } while(!accurate_enough);
 
   if (old_maxabs_gradient >= 0.0 && old_maxabs_gradient < maxabs_gradient) {
-    cout << node0 << indent
+    ExEnv::out() << node0 << indent
          << scprintf("NOTICE: maxabs_gradient increased from %8.4e to %8.4e",
                      old_maxabs_gradient, maxabs_gradient) << endl;
   }
@@ -250,7 +250,7 @@ GDIISOpt::update()
     double tot = sqrt(xdisp.scalar_product(xdisp));
     if (tot > max_stepsize_) {
       double scal = max_stepsize_/tot;
-      cout << node0 << endl << indent
+      ExEnv::out() << node0 << endl << indent
            << scprintf("stepsize of %f is too big, scaling by %f",tot,scal)
            << endl;
       xdisp.scale(scal);
@@ -269,7 +269,7 @@ GDIISOpt::update()
     if (converged)
       return converged;
 
-    cout << node0 << endl << indent
+    ExEnv::out() << node0 << endl << indent
          << scprintf("taking step of size %f", tot) << endl;
     
     function()->set_x(xnext);
@@ -336,7 +336,7 @@ GDIISOpt::update()
   double tot = sqrt(xdisp.scalar_product(xdisp));
   if (tot > max_stepsize_) {
     double scal = max_stepsize_/tot;
-    cout << node0 << endl << indent
+    ExEnv::out() << node0 << endl << indent
          << scprintf("stepsize of %f is too big, scaling by %f",tot,scal)
          << endl;
     xdisp.scale(scal);
@@ -355,7 +355,7 @@ GDIISOpt::update()
   if (converged)
     return converged;
 
-  cout << node0 << endl << indent
+  ExEnv::out() << node0 << endl << indent
        << scprintf("taking step of size %f", tot) << endl;
   
   function()->set_x(xnext);

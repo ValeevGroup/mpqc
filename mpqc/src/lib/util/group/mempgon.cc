@@ -41,12 +41,12 @@ extern "C" {
 
 typedef void (*handlertype)(...);
 
-#define DISABLE do { masktrap(1); cout.flush(); } while(0)
-#define ENABLE do { cout.flush(); masktrap(0); } while(0)
+#define DISABLE do { masktrap(1); ExEnv::out().flush(); } while(0)
+#define ENABLE do { ExEnv::out().flush(); masktrap(0); } while(0)
 
 #define PRINTF(args) do { DISABLE; \
-                          cout << scprintf args; \
-                          cout.flush(); \
+                          ExEnv::out() << scprintf args; \
+                          ExEnv::out().flush(); \
                           ENABLE; \
                          } while(0)
 

@@ -83,7 +83,7 @@ class ShmMemoryGrp: public MsgMemoryGrp {
 
     virtual void sum_reduction(double *data, distsize_t doffset, int dsize);
 
-    void print(ostream &o = cout) const;
+    void print(ostream &o = ExEnv::out()) const;
 };
 
 #endif

@@ -801,7 +801,7 @@ TriangulatedSurfaceIntegrator::update()
   static double cum;
   if (_irs == 0) cum = 0.0;
   cum += _surface_element * _weight;
-  //cout << scprintf("%2d dA = %12.8f, w = %12.8f, Sum wdA = %12.8f",
+  //ExEnv::out() << scprintf("%2d dA = %12.8f, w = %12.8f, Sum wdA = %12.8f",
   //                 _irs, _surface_element, _weight, cum)
   //     << endl;
 
@@ -922,18 +922,18 @@ TriangulatedImplicitSurface(const RefKeyVal&keyval):
 void
 TriangulatedImplicitSurface::init()
 {
-  if (_verbose) cout << "TriangulatedImplicitSurface: init start" << endl;
+  if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: init start" << endl;
   ImplicitSurfacePolygonizer isogen(vol_);
   isogen.set_resolution(resolution_);
 
-  if (_verbose) cout << "TriangulatedImplicitSurface: isosurface" << endl;
+  if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: isosurface" << endl;
   isogen.isosurface(isovalue_,*this);
 #if WRITE_OOGL
   if (_debug) {
       render(new OOGLRender("surfiso.oogl"));
     }
 #endif
-  if (_verbose) cout << "TriangulatedImplicitSurface: orientation" << endl;
+  if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: orientation" << endl;
   if (fix_orientation_) fix_orientation();
 #if WRITE_OOGL
   if (_debug) {
@@ -941,25 +941,25 @@ TriangulatedImplicitSurface::init()
     }
 #endif
   if (remove_short_edges_) {
-      if (_verbose) cout << "TriangulatedImplicitSurface: short edges" << endl;
+      if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: short edges" << endl;
       remove_short_edges(short_edge_factor_*resolution_,vol_,isovalue_);
-      if (_verbose) cout << "TriangulatedImplicitSurface: orientation" << endl;
+      if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: orientation" << endl;
       if (fix_orientation_) fix_orientation();
     }
   if (remove_slender_triangles_ || remove_small_triangles_) {
-      if (_verbose) cout << "TriangulatedImplicitSurface: slender" << endl;
+      if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: slender" << endl;
       double height_cutoff = slender_triangle_factor_ * resolution_;
       double area_cutoff = small_triangle_factor_*resolution_*resolution_*0.5;
       remove_slender_triangles(remove_slender_triangles_, height_cutoff,
                                remove_small_triangles_, area_cutoff,
                                vol_,isovalue_);
-      if (_verbose) cout << "TriangulatedImplicitSurface: orientation" << endl;
+      if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: orientation" << endl;
       if (fix_orientation_) fix_orientation();
     }
 
   // see if a higher order approximation to the surface is required
   if (order_ > 1) {
-      if (_verbose) cout << "TriangulatedImplicitSurface: order" << endl;
+      if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: order" << endl;
       int i;
       for (i=0; i<nedge(); i++) {
           edge(i)->set_order(order_, vol_, isovalue_);
@@ -969,7 +969,7 @@ TriangulatedImplicitSurface::init()
         }
     }
   inited_ = 1;
-  if (_verbose) cout << "TriangulatedImplicitSurface: init done" << endl;
+  if (_verbose) ExEnv::out() << "TriangulatedImplicitSurface: init done" << endl;
 }
 
 TriangulatedImplicitSurface::~TriangulatedImplicitSurface()

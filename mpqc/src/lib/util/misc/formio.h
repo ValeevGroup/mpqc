@@ -35,6 +35,7 @@ class SCFormIO {
   private:
     static char *default_basename_;
     static int  ready_;
+    static int  xalloc_inited_;
     static long nindent_;
     static long indent_size_;
     static long skip_indent_;
@@ -63,6 +64,8 @@ class SCFormIO {
     static void set_default_basename(const char *);
     static const char *default_basename();
     static char *fileext_to_filename(const char *extension);
+
+    static void init_ostream(ostream &);
 
     static ostream& license(ostream&);
     static ostream& warranty(ostream&);

@@ -152,6 +152,9 @@ parallel computers (IBM SP, Intel Paragon).
   self-consistent-field energies and gradients.  Specializations for
   Hartree-Fock theory are provided.
 
+\item[{\tt src/lib/chemistry/qc/scf}] The dft library provides
+  implementations of density functional theory energies and gradients.
+
 \item[{\tt src/lib/chemistry/qc/mbpt}] This library computes second-order
   perturbation theory energies and gradients.
 

@@ -310,7 +310,7 @@ ClassDesc::ClassDesc(const char* name, int version,
       (*all_)[key]->children_ = 0;
 
       if (!children_) {
-          cout << "ClassDesc: inconsistency in initialization for "
+          ExEnv::out() << "ClassDesc: inconsistency in initialization for "
                << key.name()
                << "--perhaps a duplicated CTOR call" << endl;
           abort();
@@ -412,36 +412,36 @@ ClassDesc::change_parent(ClassDesc*oldcd,ClassDesc*newcd)
 void
 ClassDesc::list_all_classes()
 {
-  cout << "Listing all classes:" << endl;
+  ExEnv::out() << "Listing all classes:" << endl;
   for (AVLMap<ClassKey,ClassDescP>::iterator ind=all_->begin();
        ind!=all_->end(); ind++) {
       ClassDesc* classdesc = ind.data();
-      cout << "class " << classdesc->name() << endl;
+      ExEnv::out() << "class " << classdesc->name() << endl;
       ParentClasses& parents = classdesc->parents_;
       if (parents.n()) {
-          cout << "  parents:";
+          ExEnv::out() << "  parents:";
           for (int i=0; i<parents.n(); i++) {
               if (parents[i].is_virtual()) {
-                  cout << " virtual";
+                  ExEnv::out() << " virtual";
                 }
               if (parents[i].access() == ParentClass::Public) {
-                  cout << " public";
+                  ExEnv::out() << " public";
                 }
               else if (parents[i].access() == ParentClass::Protected) {
-                  cout << " protected";
+                  ExEnv::out() << " protected";
                 }
-              cout << " " << parents[i].classdesc()->name();
+              ExEnv::out() << " " << parents[i].classdesc()->name();
             }
-          cout << endl;
+          ExEnv::out() << endl;
         }
       AVLSet<ClassKey>* children = classdesc->children_;
       if (children) {
-          cout << "  children:";
+          ExEnv::out() << "  children:";
           for (AVLSet<ClassKey>::iterator pind=children->begin();
                pind!=children->end(); pind++) {
-              cout << " " << (*pind).name();
+              ExEnv::out() << " " << (*pind).name();
             }
-          cout << endl;
+          ExEnv::out() << endl;
         }
     }
 }
@@ -472,7 +472,7 @@ ClassDesc::load_class(const char* classname)
       char* filename = new char[strlen(dir) + 8 + 1];
       strcpy(filename,dir);
       strcat(filename,"/classes");
-      cout << "ClassDesc::load_class looking for \"" << filename << "\""
+      ExEnv::out() << "ClassDesc::load_class looking for \"" << filename << "\""
            << endl;
       FILE* fp = fopen(filename, "r");
       delete[] filename;
@@ -487,9 +487,9 @@ ClassDesc::load_class(const char* classname)
                 }
               char* lib = strtok(buf," ");
               char* testclassname = strtok(0," ");
-              cout << "lib = \"" << lib << "\"" << endl;
+              ExEnv::out() << "lib = \"" << lib << "\"" << endl;
               while(testclassname) {
-                  cout << "classname = \"" << testclassname << "\"" << endl;
+                  ExEnv::out() << "classname = \"" << testclassname << "\"" << endl;
                   if (strcmp(testclassname,classname) == 0) {
                       // found it
                       char* libname = new char[strlen(lib) + strlen(dir) + 2];
@@ -507,7 +507,7 @@ ClassDesc::load_class(const char* classname)
                       // and load parents until nothing is left
 
                       // load the library
-                      cout << "loading \"" << libname << "\"" << endl;
+                      ExEnv::out() << "loading \"" << libname << "\"" << endl;
                       dlopen(libname, RTLD_LAZY);
 
                       // load code for parents
@@ -525,7 +525,7 @@ ClassDesc::load_class(const char* classname)
                           delete[] libname;
                           return -1;
                         }
-                      cout << "loaded \"" << classname << "\" from \""
+                      ExEnv::out() << "loaded \"" << classname << "\" from \""
                            << libname << "\"" << endl;
                       delete[] libname;
                       return 0;
@@ -542,7 +542,7 @@ ClassDesc::load_class(const char* classname)
   delete[] path;
 #endif // HAVE_DLFCN_H
 
-  cout << "ClassDesc::load_class(\"" << classname << "\"): load failed"
+  ExEnv::out() << "ClassDesc::load_class(\"" << classname << "\"): load failed"
        << endl
        << "Either \"" << classname << "\" is an invalid class name or the code"
        << endl

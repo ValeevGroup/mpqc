@@ -57,11 +57,12 @@ int *ExEnv::argc_ = 0;
 char ***ExEnv::argv_ = 0;
 char ExEnv::hostname_[256] = { '\0' };
 char ExEnv::username_[9] = { '\0' };
+ostream *ExEnv::out_ = 0;
 
 void
 ExEnv::err()
 {
-  cout << "ExEnv: attempted to use before initialized" << endl;
+  ExEnv::out() << "ExEnv: attempted to use before initialized" << endl;
   abort();
 }
 
@@ -108,7 +109,7 @@ ExEnv::init(int &argcref, char **&argvref)
   CORBA::BOA_var boa = orb->BOA_init(*argc_, *argv_, "mico-local-boa");
   CORBA::Object_var obj = orb->bind("IDL:NIAMA/Machine:1.0");
   if (CORBA::is_nil (obj)) {
-      cout << "could not bind to NIAMA server ... giving up" << endl;
+      ExEnv::out() << "could not bind to NIAMA server ... giving up" << endl;
       return;
     }
   Machine_var machine = Machine::_narrow (obj);
@@ -119,8 +120,8 @@ ExEnv::init(int &argcref, char **&argvref)
   nproc_ = machine->n_processor();
   mem_ = machine->memory();
 
-  cout << "ExEnv::init: NIAMA: nproc = " << nproc_ << endl;
-  cout << "ExEnv::init: NIAMA: memory = " << mem_ << endl;
+  ExEnv::out() << "ExEnv::init: NIAMA: nproc = " << nproc_ << endl;
+  ExEnv::out() << "ExEnv::init: NIAMA: memory = " << mem_ << endl;
 #else
   using namespace NIAMA;
   // init ORB

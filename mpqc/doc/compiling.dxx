@@ -21,16 +21,18 @@ at any GNU software FTP repository.
           FORTRAN compiler is used to determine the linkage conventions for
           the BLAS libraries, however, you can turn off the use of a
           FORTRAN compiler by giving #--without-f77# as an option to the
-          configure script.  Turning off the FORTRAN support should work fine
-          with the current release, but will break things in future
-          releases.  The following compilers are known to work:
+          configure script, however, this will cause problems unless you
+          only want the utility libraries.  The following compilers are
+          likely to work:
 
        \begin{itemize}
 
-           \item EGCS 1.1.2 and GCC 2.95.1, both available from
-                 \URL{http://egcs.cygnus.com}, seem to work.  However,
-                 there seem to be problems with the C and/or math library
-                 in RedHat 6.0, so use either Redhat 5.2 or 6.1.
+           \item EGCS 1.1.2, available from
+                 \URL{http://gcc.gnu.org} for Linux/IA32.  However,
+                 there seems to be problems with the C and/or math library
+                 in RedHat 6.0, so use either Redhat 5.2, or 6.1 or later.
+                 GCC 2.95.x and prereleases of GCC 2.96 are known to
+                 have problems.
 
            \item IBM xlC 3.1.4 and later.  Use the versions of the
                  compilers with the "_r" appended to the name, since SC
@@ -46,7 +48,28 @@ at any GNU software FTP repository.
                  --with-cxx="CC -64" --with-f77="f77 -64"# to build 64 bit
                  executables.
 
+           \item Compaq/Alpha/Linux with Compaq C++.
+
+           \item Compaq/Alpha/Tru64 V4.0 with C++ V6.2-024.  MPQC
+                 occasionally dies with a SIGFPE in this environment.
+
+           \item Sun/Solaris 2.7 with Workshop 5.0.  There are still
+                 bugs in this environment, but Hartree-Fock optimizations
+                 seem to work.
+
        \end{itemize}
+
+    \item The Basic Linear Algebra Subprograms (BLAS) are required.  They
+          can be obtained from \URL{http://www.netlib.org/blas}.  If the
+          BLAS library is not named libblas.a or is not installed in the
+          default library search path, then configure must be given
+          --with-libs, --with-libdirs, or both.
+
+    \item The Linear Algebra Package (LAPACK) 3.0 is required.  It can be
+          obtained from \URL{http://www.netlib.org/lapack}.  If LAPACK
+          library is not named liblapack.a or is not installed in the
+          default library search path, then configure must be given
+          --with-libs, --with-libdirs, or both.
 
     \item GNU flex (version 2.5.2 or greater): This is a lexical analyzer
           generator used to generate code to read input files. Make sure
@@ -65,6 +88,12 @@ at any GNU software FTP repository.
           etc.  To compile SC, either perl 4 or perl 5 will work.  To
           generate the validation inputs and automatically check the
           outputs, perl 5.003 or later is needed.
+
+    \item A library supporting the Message Passing Interface (MPI) is
+          required to use MPQC in parallel on distributed memory machines.
+          To use MP2 in parallel a thread-safe MPI is needed.  For Linux,
+          \URL[MPI Software Technology, Inc.]{http://www.mpi-softtech.com}
+          is developing a thread-safe MPI.
 
   \end{itemize}
 
@@ -115,15 +144,15 @@ Linux-ELF system.
 \item[#--with-include#] Gives directories in which include files
 should be sought.  For example, #--with-include="-I/u/local/inc -I/u/cljanss/include"#
 \item[#--with-libs#] Specifies libraries that executables should be
-linked with.  If FORTRAN libraries for BLAS are needed, then they
-must be specified here.
+linked with.  For example, #--with-libs=-llapack_IRIX.a#.
 \item[#--with-libdirs#] Gives the directories in which libraries
-should be sought.
+should be sought.  For example, #--with-libdirs=-L/usr/local/lib64#.
 \end{description}
 
   If you would like to further customize your target directory,
 you can edit #src/lib/config.h# and #lib/LocalMakefile# to
-suit your needs.
+suit your needs.  The next time you run configure, these files and
+all the makefiles be overwritten.
 
 */
 
@@ -132,7 +161,8 @@ suit your needs.
  Now you are ready to build the libraries and executable.  Do this by
 typing #make# in your target directory.  If you are running on a
 symmetric multi-processor, you can use GNU make to parallelize the
-compilation.  To compile four files at a time, type #make JOBS=-j4#.
+compilation.  To compile four files at a time, type #make -j4#.  This
+feature works correctly with GNU make version 3.78.1 or later.
 
  You can install the executables and data files with #make install#.
 

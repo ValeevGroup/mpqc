@@ -89,7 +89,7 @@ long
 IParagonMemoryGrp::send(void* data, int nbytes, int node, int type)
 {
   long mid = isend(type, (char*)data, nbytes, node, 0);
-  if (debug_) cout << me() << ": IParagonMemoryGrp::send(void*, "
+  if (debug_) ExEnv::out() << me() << ": IParagonMemoryGrp::send(void*, "
                    << nbytes << ", "
                    << node << ", "
                    << type << "): mid = " << mid
@@ -101,7 +101,7 @@ long
 IParagonMemoryGrp::recv(void* data, int nbytes, int node, int type)
 {
   long mid = irecvx(type, (char*)data, nbytes, node, 0, msginfo);
-  if (debug_) cout << me() << ": IParagonMemoryGrp::recv(void*, "
+  if (debug_) ExEnv::out() << me() << ": IParagonMemoryGrp::recv(void*, "
                    << nbytes << ", "
                    << node << ", "
                    << type << "): mid = " << mid
@@ -134,7 +134,7 @@ long
 IParagonMemoryGrp::wait(long mid1, long mid2)
 {
   if (debug_) {
-      cout << me() << ": IParagonMemoryGrp::wait("
+      ExEnv::out() << me() << ": IParagonMemoryGrp::wait("
            << mid1 << ", "
            << mid2 << ")"
            << endl;
@@ -148,20 +148,20 @@ IParagonMemoryGrp::wait(long mid1, long mid2)
   else if (mid2 == -1) {
       msgwait(mid1);
       if (debug_)
-          cout << me() << ": IParagonMemoryGrp::wait(): got " << mid1 << endl;
+          ExEnv::out() << me() << ": IParagonMemoryGrp::wait(): got " << mid1 << endl;
       return mid1;
     }
   else {
       while(1) {
           if (msgdone(mid1)) {
               if (debug_)
-                  cout << me() << ": IParagonMemoryGrp::wait(): got "
+                  ExEnv::out() << me() << ": IParagonMemoryGrp::wait(): got "
                        << mid1 << endl;
               return mid1;
             }
           if (msgdone(mid2)) {
               if (debug_)
-                  cout << me() << ": IParagonMemoryGrp::wait(): got "
+                  ExEnv::out() << me() << ": IParagonMemoryGrp::wait(): got "
                        << mid2 << endl;
               return mid2;
             }

@@ -45,7 +45,7 @@ main()
   tim->enter("subx");
   sleep(2);
   tim->exit("subx");
-  cout << indent << " x = " << x << endl;
+  ExEnv::out() << indent << " x = " << x << endl;
   tim->exit("x");
   tim->enter("a");
   double a = 0.0;
@@ -55,20 +55,20 @@ main()
   tim->enter("subx");
   sleep(1);
   tim->exit("subx");
-  cout << indent << " a = " << a << endl;
+  ExEnv::out() << indent << " a = " << a << endl;
   tim->exit("a");
   tim->enter("y");
   double y = 0.0;
   for (i=0; i<10000000; i++) {
       y += 0.0001;
     }
-  cout << indent << " y = " << y << endl;
+  ExEnv::out() << indent << " y = " << y << endl;
   tim->change("z", "y");
   double z = 0.0;
   for (i=0; i<10000000; i++) {
       z += 0.0001;
     }
-  cout << " z = " << z << endl;
+  ExEnv::out() << " z = " << z << endl;
   tim->exit();
   tim->exit("main");
 

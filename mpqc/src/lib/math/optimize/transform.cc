@@ -51,7 +51,7 @@ void
 NonlinearTransform::transform_hessian(const RefSymmSCMatrix& h)
 {
   if (h.null()) return;
-  cout << node0 << indent
+  ExEnv::out() << node0 << indent
        << "WARNING: NonlinearTransform::transform_hessian: "
        << "using linear transform\n";
   RefSymmSCMatrix newh = h->clone();

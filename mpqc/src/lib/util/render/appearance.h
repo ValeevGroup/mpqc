@@ -46,7 +46,7 @@ class Appearance: public DescribedClass {
     ~Appearance();
     Parameter<int>& level() { return level_; }
 
-    void print(ostream& = cout) const;
+    void print(ostream& = ExEnv::out()) const;
 };
 DescribedClass_REF_dec(Appearance);
 

@@ -51,12 +51,12 @@ int MPI2_Put(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
              MPI_Comm comm );
 }
 
-#define DISABLE do { masktrap(1); cout.flush(); } while(0)
-#define ENABLE do { cout.flush(); masktrap(0); } while(0)
+#define DISABLE do { masktrap(1); ExEnv::out().flush(); } while(0)
+#define ENABLE do { ExEnv::out().flush(); masktrap(0); } while(0)
 
 #define PRINTF(args) do { DISABLE; \
-                          cout << scprintf args; \
-                          cout.flush(); \
+                          ExEnv::out() << scprintf args; \
+                          ExEnv::out().flush(); \
                           ENABLE; \
                          } while(0)
 
@@ -97,7 +97,8 @@ void
 PumaMemoryGrp::set_localsize(int localsize)
 {
   if (debug_)
-    cout << "PumaMemoryGrp::set_localsize(" << localsize << ")" << endl;
+    ExEnv::out() << "PumaMemoryGrp::set_localsize(" << localsize << ")"
+                 << endl;
 
   ActiveMsgMemoryGrp::set_localsize(localsize);
 

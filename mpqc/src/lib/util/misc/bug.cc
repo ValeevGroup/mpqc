@@ -77,7 +77,7 @@ append(char *cmd, const char *a, int len)
 {
   int l = strlen(cmd) + strlen(a)+1;
   if (l > len) {
-      cout << "Debugger: command string too long" << endl;
+      ExEnv::out() << "Debugger: command string too long" << endl;
       abort();
     }
   strcat(cmd,a);
@@ -349,10 +349,10 @@ Debugger::set_cmd(const char *cmd)
 void
 Debugger::debug(const char *reason)
 {
-  cout << prefix_ << "Debugger::debug: ";
-  if (reason) cout << reason;
-  else cout << "no reason given";
-  cout << endl;
+  ExEnv::out() << prefix_ << "Debugger::debug: ";
+  if (reason) ExEnv::out() << reason;
+  else ExEnv::out() << "no reason given";
+  ExEnv::out() << endl;
 
 #ifndef HAVE_SYSTEM
   abort();
@@ -382,12 +382,12 @@ Debugger::debug(const char *reason)
             }
         }
       // start the debugger
-      cout << prefix_ << "Debugger: starting \"" << cmd << "\"" << endl;
+      ExEnv::out() << prefix_ << "Debugger: starting \"" << cmd << "\"" << endl;
       debugger_ready_ = 0;
       system(cmd);
       // wait until the debugger is ready
       if (sleep_) {
-          cout << "Sleeping " << sleep_
+          ExEnv::out() << "Sleeping " << sleep_
                << " seconds to wait for debugger ..." << endl;
           sleep(sleep_);
       }
@@ -417,11 +417,11 @@ Debugger::got_signal(int sig)
     }
 
   if (exit_on_signal_) {
-      cout << prefix_ << "Debugger: exiting" << endl;
+      ExEnv::out() << prefix_ << "Debugger: exiting" << endl;
       exit(1);
     }
   else {
-      cout << prefix_ << "Debugger: continuing" << endl;
+      ExEnv::out() << prefix_ << "Debugger: continuing" << endl;
     }
 
   //handle(sig);
@@ -485,10 +485,10 @@ Debugger::traceback(const char *reason)
   void **bottext = (void**)0x00010000L;
 #endif // SIMPLE_STACK
 
-  cout << prefix_ << "Debugger::traceback:";
-  if (reason) cout << reason;
-  else cout << "no reason given";
-  cout << endl;
+  ExEnv::out() << prefix_ << "Debugger::traceback:";
+  if (reason) ExEnv::out() << reason;
+  else ExEnv::out() << "no reason given";
+  ExEnv::out() << endl;
 #if (defined(linux) && defined(i386))
   topstack = (void**)0xc0000000;
   botstack = (void**)0xb0000000;
@@ -510,13 +510,13 @@ Debugger::traceback(const char *reason)
         && frame_pointer < topstack
         && frame_pointer[1] >= bottext
         && frame_pointer[1] < toptext) {
-      cout << prefix_ << "frame: " << (void*)frame_pointer;
-      cout.flush();
-      cout << "  retaddr: " << frame_pointer[1] << endl;
+      ExEnv::out() << prefix_ << "frame: " << (void*)frame_pointer;
+      ExEnv::out().flush();
+      ExEnv::out() << "  retaddr: " << frame_pointer[1] << endl;
       frame_pointer = (void**)*frame_pointer;
     }
 #else
-  cout << prefix_ << "traceback not available for this arch" << endl;
+  ExEnv::out() << prefix_ << "traceback not available for this arch" << endl;
 #endif // SIMPLE_STACK
 }
 

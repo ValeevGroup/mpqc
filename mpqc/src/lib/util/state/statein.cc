@@ -159,8 +159,8 @@ StateIn::get(char&r, const char *keyword)
       int p = push_key(keyword);
       char roverride = override()->charvalue(key());
       if (override()->error() == KeyVal::OK) {
-          cout << node0 << indent << "overriding \"" << key()
-               << "\": " << r << " -> " << roverride << endl;
+          ExEnv::out() << node0 << indent << "overriding \"" << key()
+                       << "\": " << r << " -> " << roverride << endl;
           r = roverride;
         }
       pop_key(p);
@@ -176,8 +176,8 @@ StateIn::get(unsigned int&r, const char *keyword)
       int p = push_key(keyword);
       int roverride = override()->intvalue(key());
       if (override()->error() == KeyVal::OK) {
-          cout << node0 << indent << "overriding \"" << key()
-               << "\": " << r << " -> " << roverride << endl;
+          ExEnv::out() << node0 << indent << "overriding \"" << key()
+                       << "\": " << r << " -> " << roverride << endl;
           r = roverride;
         }
       pop_key(p);
@@ -193,8 +193,8 @@ StateIn::get(int&r, const char *keyword)
       int p = push_key(keyword);
       int roverride = override()->intvalue(key());
       if (override()->error() == KeyVal::OK) {
-          cout << node0 << indent << "overriding \"" << key()
-               << "\": " << r << " -> " << roverride << endl;
+          ExEnv::out() << node0 << indent << "overriding \"" << key()
+                       << "\": " << r << " -> " << roverride << endl;
           r = roverride;
         }
       pop_key(p);
@@ -210,8 +210,8 @@ StateIn::get(float&r, const char *keyword)
       int p = push_key(keyword);
       float roverride = override()->floatvalue(key());
       if (override()->error() == KeyVal::OK) {
-          cout << node0 << indent << "overriding \"" << key()
-               << "\": " << r << " -> " << roverride << endl;
+          ExEnv::out() << node0 << indent << "overriding \"" << key()
+                       << "\": " << r << " -> " << roverride << endl;
           r = roverride;
         }
       pop_key(p);
@@ -227,8 +227,8 @@ StateIn::get(double&r, const char *keyword)
       int p = push_key(keyword);
       double roverride = override()->doublevalue(key());
       if (override()->error() == KeyVal::OK) {
-          cout << node0 << indent << "overriding \"" << key()
-               << "\": " << r << " -> " << roverride << endl;
+          ExEnv::out() << node0 << indent << "overriding \"" << key()
+                       << "\": " << r << " -> " << roverride << endl;
           r = roverride;
         }
       pop_key(p);
@@ -253,12 +253,12 @@ StateIn::get_directory()
 
   // read the type information
 #if DEBUG
-  cout << "Directory length location = " << tell() << endl;
+  ExEnv::out() << "Directory length location = " << tell() << endl;
 #endif
   get(length);
 #if DEBUG
-  cout << "Directory length = " << length << endl;
-  cout << "Directory entries location = " << tell() << endl;
+  ExEnv::out() << "Directory length = " << length << endl;
+  ExEnv::out() << "Directory entries location = " << tell() << endl;
 #endif
   for (i=0; i<length; i++) {
       char *name;
@@ -267,10 +267,10 @@ StateIn::get_directory()
       get(version);
       get(classid);
 #if DEBUG
-      cout << "GET CLASS:"
-           << " NAME = " << name
-           << " VERSION = " << version
-           << " ID = " << classid << endl;
+      ExEnv::out() << "GET CLASS:"
+                   << " NAME = " << name
+                   << " VERSION = " << version
+                   << " ID = " << classid << endl;
 #endif
       ClassDesc* tmp = ClassDesc::name_to_class_desc(name);
 
@@ -289,13 +289,13 @@ StateIn::get_directory()
       get(num.offset);
       get(num.size);
 #if DEBUG
-      cout << "GET OBJECT:"
-           << " NUM=" << setw(2) << n
-           << " OFF=" << setw(5) << num.offset
-           << " SZ=" << setw(4) << num.size
-           << " ID=" << setw(2) << num.type
-           << " (" << classdatamap_[num.type].name << ")"
-           << endl;
+      ExEnv::out() << "GET OBJECT:"
+                   << " NUM=" << setw(2) << n
+                   << " OFF=" << setw(5) << num.offset
+                   << " SZ=" << setw(4) << num.size
+                   << " ID=" << setw(2) << num.type
+                   << " (" << classdatamap_[num.type].name << ")"
+                   << endl;
 #endif
       ps_[n] = num;
       classdatamap_[num.type].ninstance++;
@@ -309,7 +309,7 @@ StateIn::find_and_get_directory()
       int original_loc = tell();
       seek(directory_location());
 #if DEBUG
-      cout << "Getting directory from " << tell() << endl;
+      ExEnv::out() << "Getting directory from " << tell() << endl;
 #endif
       get_directory();
       seek(original_loc);
@@ -322,15 +322,15 @@ StateIn::getstring(char*&s)
   int r=0;
   int size;
 #if DEBUG
-  cout << "String length location = " << tell() << endl;
+  ExEnv::out() << "String length location = " << tell() << endl;
 #endif
   r += get(size);
 #if DEBUG
-  cout << "String length = " << size << endl;
+  ExEnv::out() << "String length = " << size << endl;
 #endif
   if (size) {
 #if DEBUG
-      cout << "String location = " << tell() << endl;
+      ExEnv::out() << "String location = " << tell() << endl;
 #endif
       s = new char[size];
       r += get_array_char(s,size-1);
@@ -580,14 +580,15 @@ StateIn::getobject(RefSavableState &p)
   if (refnum == 0) {
       // reference to null
 #if DEBUG
-      cout << indent << "getting null object" << endl;
+      ExEnv::out() << indent << "getting null object" << endl;
 #endif
       p = 0;
     }
   else {
 #if DEBUG
-      cout << indent << "getting object number " << setw(2) << refnum << endl;
-      cout << incindent;
+      ExEnv::out() << indent << "getting object number " << setw(2)
+                   << refnum << endl;
+      ExEnv::out() << incindent;
 #endif
       AVLMap<int,StateInData>::iterator ind = ps_.find(refnum);
       if (ind == ps_.end() && use_dir) {
@@ -597,7 +598,7 @@ StateIn::getobject(RefSavableState &p)
         }
       if (ind == ps_.end() || ind.data().ptr.null()) {
 #if DEBUG
-          cout << indent << "reading object" << endl;
+          ExEnv::out() << indent << "reading object" << endl;
 #endif
           // object has not yet been read in
           int need_seek = 0;
@@ -606,7 +607,7 @@ StateIn::getobject(RefSavableState &p)
                   need_seek = 1;
                   original_loc = tell();
 #if DEBUG
-                  cout << indent << "seeking to"
+                  ExEnv::out() << indent << "seeking to"
                        << setw(5) << ind.data().offset << endl;
 #endif
                   seek(ind.data().offset);
@@ -629,7 +630,7 @@ StateIn::getobject(RefSavableState &p)
               if (need_seek) seek(original_loc);
             }
 #if DEBUG
-          cout << indent << "got object with type = "
+          ExEnv::out() << indent << "got object with type = "
                << p->class_name() << endl;
 #endif
         }
@@ -637,9 +638,9 @@ StateIn::getobject(RefSavableState &p)
           // object already exists
           p = ind.data().ptr;
 #if DEBUG
-          cout << indent << "object already existed, type = "
+          ExEnv::out() << indent << "object already existed, type = "
                << p->class_name() << endl;
-          cout << indent
+          ExEnv::out() << indent
                << "  use_dir = " << use_dir
                << " tell() = " << setw(5) << tell()
                << " offset = " << setw(5) << ind.data().offset
@@ -649,14 +650,14 @@ StateIn::getobject(RefSavableState &p)
           if (use_dir && tell() - size_refnum == ind.data().offset) {
               seek(tell() - size_refnum + ind.data().size);
 #if DEBUG
-              cout << indent << "  seeking to "
+              ExEnv::out() << indent << "  seeking to "
                    << tell() - size_refnum + ind.data().offset
                    << endl;
 #endif
             }
         }
 #if DEBUG
-      cout << decindent;
+      ExEnv::out() << decindent;
 #endif
     }
   return r;
@@ -684,13 +685,14 @@ StateIn::haveobject(int objnum,const RefSavableState &p)
   if (ind == ps_.end()) {
       ps_[objnum].ptr = p;
 #if DEBUG
-      cout << indent << "have object adding number " << objnum << endl;
+      ExEnv::out() << indent << "have object adding number " << objnum << endl;
 #endif
     }
   else {
       ind.data().ptr = p;
 #if DEBUG
-      cout << indent << "have object updating number " << objnum << endl;
+      ExEnv::out() << indent << "have object updating number " << objnum
+                   << endl;
 #endif
     }
 }

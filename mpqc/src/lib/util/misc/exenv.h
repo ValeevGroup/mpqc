@@ -34,6 +34,10 @@
 
 #include <scconfig.h>
 
+#include <iostream.h>
+
+#include <util/misc/formio.h>
+
 /** The ExEnv class is used to find out about how
     the program is being run. */
 class ExEnv {
@@ -46,6 +50,8 @@ class ExEnv {
 
     static unsigned long mem_;
     static int nproc_;
+
+    static ostream *out_;
 
     static void err();
   public:
@@ -62,6 +68,9 @@ class ExEnv {
     /// Return the host name.
     static const char *hostname() { return hostname_; }
     static const char *username() { return username_; }
+
+    static void set_out(ostream *o) { SCFormIO::init_ostream(*o); out_ = o; }
+    static ostream &out() { if (!out_) set_out(&cout); return *out_; }
 
     /// The amount of memory on this node.
     static unsigned long memory() { if (!initialized_) err(); return mem_; }

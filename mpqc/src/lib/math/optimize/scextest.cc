@@ -74,7 +74,7 @@ main()
       RefSCExtrapData data = new SymmSCMatrixSCExtrapData(datamat);
       RefSCExtrapError error = new SymmSCMatrixSCExtrapError(errormat);
 
-      cout << "Iteration " << i << ":" << endl;
+      ExEnv::out() << "Iteration " << i << ":" << endl;
 
       datamat.print("Datamat:");
       errormat.print("Errormat:");

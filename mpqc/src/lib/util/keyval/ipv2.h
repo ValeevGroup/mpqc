@@ -32,6 +32,7 @@
 #endif
 
 #include <iostream.h>
+#include <util/misc/exenv.h>
 #include <util/keyval/ipv2_scan.h>
 
 #undef yyFlexLexer
@@ -217,9 +218,9 @@ class IPV2
   IPV2::Status count_v(const char*,int*,int,int*);
 
   // some routines for debugging
-  void print_keyword(ostream&f=cout,ip_keyword_tree_t*k=0);
-  void print_tree(ostream&f=cout,ip_keyword_tree_t*k=0);
-  void print_unseen(ostream&f=cout,ip_keyword_tree_t*k=0);
+  void print_keyword(ostream&f=ExEnv::out(),ip_keyword_tree_t*k=0);
+  void print_tree(ostream&f=ExEnv::out(),ip_keyword_tree_t*k=0);
+  void print_unseen(ostream&f=ExEnv::out(),ip_keyword_tree_t*k=0);
   int have_unseen(ip_keyword_tree_t*k=0);
 };
 

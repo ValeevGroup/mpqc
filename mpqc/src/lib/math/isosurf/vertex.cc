@@ -50,7 +50,7 @@ Vertex::Vertex(const SCVector3&point,const SCVector3&normal):
 {
   double dot = _normal->dot(*_normal);
   if (dot < 0.999999 || dot > 1.000001) {
-      cout << "Vertex: ctor: bad normal\n" << endl;
+      ExEnv::out() << "Vertex: ctor: bad normal\n" << endl;
       abort();
     }
 }
@@ -82,7 +82,7 @@ Vertex::set_normal(const SCVector3&p)
     }
   double dot = _normal->dot(*_normal);
   if (dot < 0.999999 || dot > 1.000001) {
-      cout << "Vertex::set_normal: bad normal\n" << endl;
+      ExEnv::out() << "Vertex::set_normal: bad normal\n" << endl;
       abort();
     }
 }

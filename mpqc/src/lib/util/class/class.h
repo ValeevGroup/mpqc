@@ -40,6 +40,7 @@
 #include <util/ref/ref.h>
 #include <util/container/avlset.h>
 #include <util/container/avlmap.h>
+#include <util/misc/exenv.h>
 
 template <class T, class C>
 class DescribedMemberDatum {
@@ -156,7 +157,7 @@ class ClassDesc: public Identity {
     static AVLMap<ClassKey,ClassDescP>& all();
     const ParentClasses& parents() const { return parents_; }
 
-    /// Writes a list of all of the classes to cout.
+    /// Writes a list of all of the classes to ExEnv::out().
     static void list_all_classes();
     /** Given the name of the class, return a pointer to the
         class descriptor. */
@@ -232,7 +233,7 @@ class DescribedClass : public VRefCount {
         for derived types. */
     virtual void* _castdown(const ClassDesc*);
     /// Print the object.
-    virtual void print(ostream& =cout) const;
+    virtual void print(ostream& = ExEnv::out()) const;
   };
 
 /** DCRefBase provides a few utility routines common to all

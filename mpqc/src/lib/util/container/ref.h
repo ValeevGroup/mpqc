@@ -27,8 +27,8 @@ class  Ref ## T  {							      \
     ~Ref ## T ();							      \
     int null();								      \
     int nonnull();							      \
-    Ref ## T  operator=( Ref ## T & c);					      \
-    Ref ## T  operator=(T* cr);						      \
+    Ref ## T& operator=( Ref ## T & c);					      \
+    Ref ## T& operator=(T* cr);						      \
     void assign_pointer(T* cr);						      \
     int operator==( Ref ## T &a);					      \
     int operator==( T * a);						      \
@@ -111,7 +111,7 @@ Ref ## T :: warn ( const char * msg)					      \
 {									      \
   fprintf(stderr,"WARNING: %s\n",msg);					      \
 }									      \
-Ref ## T  Ref ## T :: operator=( Ref ## T & c)				      \
+Ref ## T& Ref ## T :: operator=( Ref ## T & c)				      \
 {									      \
   if (c.p) c.p->reference();						      \
   clear();								      \
@@ -119,7 +119,7 @@ Ref ## T  Ref ## T :: operator=( Ref ## T & c)				      \
   if (REF_CHECK_POINTER) check_pointer();				      \
   return *this;								      \
 }									      \
-Ref ## T  Ref ## T :: operator=(T* cr)					      \
+Ref ## T& Ref ## T :: operator=(T* cr)					      \
 {									      \
   if (cr) cr->reference();						      \
   clear();								      \

@@ -1,3 +1,29 @@
+//
+// csgrad.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Ida Nielsen <ibniels@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #include <stdlib.h>
 #include <math.h>
@@ -466,7 +492,7 @@ MBPT2::compute_cs_grad()
   for (pass=0; pass<npass; pass++) {
 
     if (debug_) {
-      cout << indent << "Beginning pass " << pass << endl;
+      cout << indent << me << " beginning pass " << pass << endl;
       }
 
     i_offset = pass*ni + nfzc;
@@ -652,7 +678,7 @@ MBPT2::compute_cs_grad()
                     iqrs_ptr += ns;
                     } // exit q loop
                   // every so often process outstanding messages
-                  if (catchup_ctr++ && catchup_mask == 0) mem->catchup();
+                  if ((catchup_ctr++ & catchup_mask) == 0) mem->catchup();
                   }   // exit bf2 loop
                 }     // exit bf1 loop
 
@@ -1469,8 +1495,8 @@ MBPT2::compute_cs_grad()
                             gamma_iprs_ptr += offset;
                             } // exit i loop
                           // every so often process outstanding messages
-                          if (catchup_ctr++
-                              && catchup_mask == 0) mem->catchup();
+                          if ((catchup_ctr++
+                              & catchup_mask) == 0) mem->catchup();
                           }   // endif
 
                         int_index++;
@@ -2601,6 +2627,8 @@ MBPT2::compute_cs_dynamic_memory(int ni, int nocc_act)
 
   return maxdyn;
 }
+
+////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:
 // mode: c++

@@ -82,19 +82,11 @@ private:
   char* ints_file_;
   LinearR12::ABSMethod abs_method_;
 
-  RefSCMatrix scf_vec_;
-  RefDiagSCMatrix evals_;
-  RefDiagSCMatrix occs_;
-  int* orbsym_;
-  RefSCMatrix orthog_aux_;
   int nlindep_aux_;
-  RefSymmSCMatrix overlap_aux_;
-  RefSCMatrix orthog_ri_;
-  RefSCMatrix orthog_ri_so_;
   int nlindep_ri_;
-  RefSymmSCMatrix overlap_ri_;
   
-  Ref<MOIndexSpace> obs_space_;
+  Ref<MOIndexSpace> mo_space_;   // symblocked MO space
+  Ref<MOIndexSpace> obs_space_;  // energy-sorted MO space
   Ref<MOIndexSpace> abs_space_;
   Ref<MOIndexSpace> ribs_space_;
   Ref<MOIndexSpace> act_occ_space_;
@@ -110,17 +102,11 @@ private:
   void construct_ri_basis_ev_(bool safe);
   void construct_ri_basis_evplus_(bool safe);
   // Uses ri_basis to construct a basis that spans the orthogonal complement to the OBS
-  void construct_ortho_comp_();
-  // Same as above, except for this function uses Curt's approach
-  void construct_ortho_comp_jv_();
-  // Same as above, except for it uses pure SVD
   void construct_ortho_comp_svd_();
   // Returns true if ABS spans OBS
   bool abs_spans_obs_();
-  // OBSOLETE: Construct eigenvector and eigenvalues sorted by energy
-  void eigen_(RefDiagSCMatrix& evals, RefSCMatrix& scf_vec, RefDiagSCMatrix& occs, int*& orbsym);
   // Construct eigenvector and eigenvalues sorted by energy
-  void eigen2_(RefDiagSCMatrix& evals, RefSCMatrix& scf_vec, int*& orbsym);
+  void eigen2_();
   // Construct orthog_aux_
   void construct_orthog_aux_();
   // Construct orthog_ri_
@@ -182,11 +168,8 @@ public:
 
   LinearR12::ABSMethod abs_method() const { return abs_method_; };
 
-  RefSCMatrix scf_vec() const { return scf_vec_; };
-  RefDiagSCMatrix evals() const { return evals_; };
-  int *orbsym() const { return orbsym_; };
-  RefSCMatrix orthog_ri();
-  
+  /// Returns the MOIndexSpace object for symmetry-blocked MOs in OBS
+  Ref<MOIndexSpace> mo_space() const { return mo_space_; };  
   /// Returns the MOIndexSpace object for energy-sorted MOs in OBS
   Ref<MOIndexSpace> obs_space() const { return obs_space_; };
   /// Returns the MOIndexSpace object for the active occupied MOs
@@ -203,11 +186,20 @@ public:
   Ref<MOIndexSpace> ribs_space() const { return ribs_space_; };
   /// Returns the MOIntsTransformFactory object
   Ref<MOIntsTransformFactory> tfactory() const { return tfactory_; };
+  
+  /// Compute subspace of space2 which is orthogonal complement to space1
+  Ref<MOIndexSpace> orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+                                const std::string& name, double lindep_tol) const;
+  /// Compute span of bs and create corresponding mospace referred to by name. Number
+  /// linear dependencies is returned in nlindep
+  Ref<MOIndexSpace> orthogonalize(const std::string& name, const Ref<GaussianBasisSet>& bs,
+                                  OverlapOrthog::OrthogMethod orthog_method, double lindep_tol,
+                                  int& nlindep) const;
 
   /// Compute overlap matrices in the basis of space1 and space2
   void compute_overlap_ints(const Ref<MOIndexSpace>& space1,
                             const Ref<MOIndexSpace>& space2,
-                            RefSCMatrix& S);
+                            RefSCMatrix& S) const;
   /// Compute electric dipole and quadrupole moment matrices in the basis of space1 and space2
   void compute_multipole_ints(const Ref<MOIndexSpace>& space1,
                               const Ref<MOIndexSpace>& space2,
@@ -216,7 +208,7 @@ public:
                               RefSCMatrix& MZ,
                               RefSCMatrix& MXX,
                               RefSCMatrix& MYY,
-                              RefSCMatrix& MZZ);
+                              RefSCMatrix& MZZ) const;
 			      
 };
 

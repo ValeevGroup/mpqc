@@ -85,9 +85,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   ints_method_ = mbptr12->r12ints_method();
   ints_file_ = mbptr12->r12ints_file();
 
-  orbsym_ = 0;
-  //eigen_(evals_,scf_vec_,occs_,orbsym_);
-  eigen2_(evals_,scf_vec_,orbsym_);
+  eigen2_();
 
   abs_method_ = mbptr12->abs_method();
   construct_ri_basis_(false);
@@ -143,15 +141,12 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     tfactory_ << SavableState::restore_state(si);
   }
 
-  orbsym_ = 0;
-  //eigen_(evals_,scf_vec_,occs_,orbsym_);
-  eigen2_(evals_,scf_vec_,orbsym_);
+  eigen2_();
 }
 
 R12IntEvalInfo::~R12IntEvalInfo()
 {
   free(ints_file_);
-  delete[] orbsym_;
 }
 
 void R12IntEvalInfo::save_data_state(StateOut& so)
@@ -211,14 +206,6 @@ R12IntEvalInfo::set_absmethod(LinearR12::ABSMethod abs_method)
   }
 }
 
-RefSCMatrix
-R12IntEvalInfo::orthog_ri() {
-  
-  if (orthog_ri_.null())
-    construct_orthog_ri_();
-  return orthog_ri_;
- };
-
 
 /////////////////////////////////////////////////////////////////
 // Function dquicksort performs a quick sort (smaller -> larger) 
@@ -268,146 +255,7 @@ dquicksort(double *item,int *index,int n)
 }
 
 
-// This function is obsoleve and will disappear soon
-void R12IntEvalInfo::eigen_(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs, int*& orbsym)
-{
-  Ref<Molecule> molecule = bs_->molecule();
-  Ref<SCMatrixKit> so_matrixkit = bs_->so_matrixkit();
-  Ref<PetiteList> plist = ref_->integral()->petite_list();
-  RefSCDimension oso_dim = plist->SO_basisdim();
-  // Special dimension for MOs sorted by energy
-  int* nfunc_per_block = new int[1];
-  nfunc_per_block[0] = oso_dim.n();
-  RefSCDimension mo_sorted_dim = new SCDimension(oso_dim.n(), 1, nfunc_per_block, "MO (sorted by energy)");
-  mo_sorted_dim->blocks()->set_subdim(0, new SCDimension(nfunc_per_block[0]));
-
-  int nbasis = bs_->nbasis();
-
-  if (debug_) ExEnv::out0() << indent << "R12IntEvalInfo: eigen_" << endl;
-  if (debug_) ExEnv::out0() << indent << "getting fock matrix" << endl;
-  // get the closed shell AO fock matrices -- this is where SCF is computed
-  RefSymmSCMatrix fock_c_so = ref_->fock(0);
-  ExEnv::out0() << endl;
-  
-  // transform the AO fock matrices to the MO basis
-  RefSymmSCMatrix fock_c_mo1 = so_matrixkit->symmmatrix(oso_dim);
-  RefSCMatrix vecs_so_mo1 = ref_->eigenvectors();
-  
-  fock_c_mo1.assign(0.0);
-  fock_c_mo1.accumulate_transform(vecs_so_mo1.t(), fock_c_so);
-  fock_c_so = 0;
-  
-  if (debug_) ExEnv::out0() << indent << "diagonalizing" << endl;
-  // diagonalize the fock matrix
-  vals = fock_c_mo1.eigvals();
-  
-  // compute the AO to new MO scf vector
-  if (debug_) ExEnv::out0() << indent << "AO to MO" << endl;
-  RefSCMatrix so_ao = plist->sotoao();
-  vecs = vecs_so_mo1.t() * so_ao;
-
-  // fill in the occupations
-  occs = matrixkit()->diagmatrix(vals.dim());
-  for (int i=0; i<oso_dim->n(); i++) {
-    occs(i) = ref_->occupation(i);
-  }
-  // allocate storage for symmetry information
-  if (!orbsym) orbsym = new int[nbasis];
-  // Check for degenerate eigenvalues.  Use unsorted eigenvalues since it
-  // only matters if the degeneracies occur within a given irrep.
-  BlockedDiagSCMatrix *bvals = dynamic_cast<BlockedDiagSCMatrix*>(vals.pointer());
-  for (int i=0; i<bvals->nblocks(); i++) {
-    int done = 0;
-    RefDiagSCMatrix valsi = bvals->block(i);
-    for (int j=1; j<valsi.n(); j++) {
-      if (fabs(valsi(j)-valsi(j-1)) < 1.0e-7) {
-	ExEnv::out0() << indent
-		      << "NOTE: There are degenerate orbitals within an irrep."
-		      << "  This will make"
-		      << endl
-		      << indent
-		      << "      some diagnostics, such as the largest amplitude,"
-		      << " nonunique."
-		      << endl;
-	done = 1;
-	break;
-      }
-      if (done) break;
-    }
-  }
-  // sort the eigenvectors and values if symmetry is not c1
-  if (molecule->point_group()->char_table().order() != 1) {
-    if (debug_) ExEnv::out0() << indent << "sorting eigenvectors" << endl;
-    double *evals = new double[noso_];
-    vals->convert(evals);
-    int *indices = new int[noso_];
-    dquicksort(evals,indices,noso_);
-    delete[] evals;
-    // make sure all nodes see the same indices and evals
-    msg_->bcast(indices,noso_);
-    RefSCMatrix newvecs(mo_sorted_dim, vecs.coldim(), matrixkit());
-    RefDiagSCMatrix newvals(mo_sorted_dim, matrixkit());
-    RefDiagSCMatrix newoccs(mo_sorted_dim, matrixkit());
-    for (int i=0; i<noso_; i++) {
-      newvals(i) = vals(indices[i]);
-      newoccs(i) = occs(indices[i]);
-      for (int j=0; j<nbasis; j++) {
-	newvecs(i,j) = vecs(indices[i],j);
-      }
-    }
-    occs = newoccs;
-    vecs = newvecs;
-    vals = newvals;
-    
-    // compute orbital symmetry information
-    CharacterTable ct = molecule->point_group()->char_table();
-    int orbnum = 0;
-    int *tmp_irrep = new int[noso_];
-    int *tmp_num = new int[noso_];
-    for (int i=0; i<oso_dim->blocks()->nblock(); i++) {
-      for (int j=0; j<oso_dim->blocks()->size(i); j++, orbnum++) {
-	tmp_irrep[orbnum] = i;
-	tmp_num[orbnum] = j;
-      }
-    }
-    for (int i=0; i<noso_; i++) {
-      orbsym[i] = tmp_irrep[indices[i]];
-    }
-    delete[] tmp_irrep;
-    delete[] tmp_num;
-    
-    delete[] indices;
-  }
-  else {
-    // compute orbital symmetry information for c1
-    for (int i=0; i<noso_; i++) {
-      orbsym[i] = 0;
-    }
-  }
-  // check the splitting between frozen and nonfrozen orbitals
-  if (nfzc_ && nfzc_ < noso_) {
-    double split = vals(nfzc_) - vals(nfzc_-1);
-    if (split < 0.2) {
-      ExEnv::out0() << endl
-		    << indent << "WARNING: "
-		    << "R12IntEvalInfo: gap between frozen and active occupied orbitals is "
-		    << split << " au" << endl << endl;
-    }
-  }
-  if (nfzv_ && noso_-nfzv_-1 >= 0) {
-    double split = vals(nbasis-nfzv_) - vals(nbasis-nfzv_-1);
-    if (split < 0.2) {
-      ExEnv::out0() << endl
-		    << indent << "WARNING: "
-		    << "R12IntEvalInfo: gap between frozen and active virtual orbitals is "
-		    << split << " au" << endl << endl;
-    }
-  }
-  if (debug_) ExEnv::out0() << indent << "R12IntEvalInfo: eigen_ done" << endl;
-}
-
-
-void R12IntEvalInfo::eigen2_(RefDiagSCMatrix &vals, RefSCMatrix &vecs, int*& orbsym)
+void R12IntEvalInfo::eigen2_()
 {
   Ref<Molecule> molecule = bs_->molecule();
   Ref<SCMatrixKit> so_matrixkit = bs_->so_matrixkit();
@@ -430,13 +278,14 @@ void R12IntEvalInfo::eigen2_(RefDiagSCMatrix &vals, RefSCMatrix &vecs, int*& orb
   
   if (debug_) ExEnv::out0() << indent << "diagonalizing" << endl;
   // diagonalize the fock matrix
-  vals = fock_c_mo1.eigvals();
+  RefDiagSCMatrix vals = fock_c_mo1.eigvals();
   
   // compute the AO to new MO scf vector
   if (debug_) ExEnv::out0() << indent << "AO to MO" << endl;
   RefSCMatrix so_ao = plist->sotoao();
-  vecs = so_ao.t() * vecs_so_mo1;
+  RefSCMatrix vecs = so_ao.t() * vecs_so_mo1;
 
+  mo_space_ = new MOIndexSpace("symmetry-blocked MOs", vecs, bs_);
   obs_space_ = new MOIndexSpace("MOs sorted by energy", vecs, bs_, vals, 0, 0);
   occ_space_ = new MOIndexSpace("occupied MOs sorted by energy", vecs, bs_, vals, 0, noso_ - nocc_);
   if (nfzc_ == 0)
@@ -448,17 +297,6 @@ void R12IntEvalInfo::eigen2_(RefDiagSCMatrix &vals, RefSCMatrix &vecs, int*& orb
     act_vir_space_ = vir_space_;
   else
     act_vir_space_ = new MOIndexSpace("active unoccupied MOs sorted by energy", vecs, bs_, vals, nocc_, nfzv_);
-
-  vecs = obs_space_->coefs().t();
-  vals = obs_space_->evals();
-  vector<int> mosym = obs_space_->mosym();
-  int nmo = mosym.size();
-  if (nmo != noso_)
-    throw std::runtime_error("R12IntEvalInfo::eigen2_() -- logic error in MOIndexSpace");
-  if (orbsym == 0)
-    orbsym = new int[nmo];
-  for(int i=0; i<nmo; i++)
-    orbsym[i] = mosym[i];
 
   if (debug_) ExEnv::out0() << indent << "R12IntEvalInfo: eigen2_ done" << endl;
 }

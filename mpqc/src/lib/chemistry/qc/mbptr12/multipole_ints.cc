@@ -40,7 +40,7 @@ using namespace sc;
 void
 R12IntEvalInfo::compute_multipole_ints(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                        RefSCMatrix& MX, RefSCMatrix& MY, RefSCMatrix& MZ,
-				       RefSCMatrix& MXX, RefSCMatrix& MYY, RefSCMatrix& MZZ)
+				       RefSCMatrix& MXX, RefSCMatrix& MYY, RefSCMatrix& MZZ) const
 {
   const Ref<GaussianBasisSet> bs1 = space1->basis();
   const Ref<GaussianBasisSet> bs2 = space2->basis();
@@ -172,7 +172,7 @@ R12IntEvalInfo::compute_multipole_ints(const Ref<MOIndexSpace>& space1, const Re
 
 void
 R12IntEvalInfo::compute_overlap_ints(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                                     RefSCMatrix& S)
+                                     RefSCMatrix& S) const
 {
   const Ref<GaussianBasisSet> bs1 = space1->basis();
   const Ref<GaussianBasisSet> bs2 = space2->basis();

@@ -283,7 +283,7 @@ RefSCVector R12IntEval::emp2_ab() {
   return emp2pair_ab_;
 }
 
-RefDiagSCMatrix R12IntEval::evals() const { return r12info_->evals(); };
+RefDiagSCMatrix R12IntEval::evals() const { return r12info_->obs_space()->evals(); };
 
 void
 R12IntEval::checkpoint_() const

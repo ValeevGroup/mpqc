@@ -139,7 +139,7 @@ while (<NWCHEMBASIS>) {
   #  next;
   GOTLINE:
   #printf "-----> %s\n", $_;
-  if (/<pre>(BASIS.* +[^ ]* +)([A-Z]*)/) {
+  if (/^ *(BASIS.* +[^ ]* +)([A-Z]*)/) {
     $retrieve = 1;
     $basis = $1;
     $line = "$1$2";
@@ -152,39 +152,42 @@ while (<NWCHEMBASIS>) {
     #printf "%s\n", $line;
     printf MPQCBASIS "%%%s\n", $line;
   }
-  elsif (/^<p>END/) {
+  elsif (/^ *END/) {
     $retrieve = 0;
   }
-  elsif (/^<p>\#(.*)/) {
+  elsif (/^ *\#(.*)/) {
     my $comment = $1;
     $comment =~ s/ *$//;
     $savedcomments = sprintf("%s%%%s\n", $savedcomments, $comment);
   }
   elsif ($retrieve == 1) {
-    /^<p>(.*)/;
+    /^(.*)/;
     $_ = $1;
     #printf "%s\n", $_;
     if (/^ *([A-Z][a-z]*) +([A-Za-z]+)/) {
       if (!($1 eq $atom)) {
         if ($atom eq none) {
           $atom = $1;
-          $am = $2;
+          my $am = $2;
+          print "first shell: atom = $atom am = $am\n";
           &start_atom;
-          &start_shell;
+          &start_shell($am);
         }
         else {
           &finish_shell;
           &finish_atom;
           $atom = $1;
-          $am = $2;
+          my $am = $2;
+          print "new atom: atom = $atom am = $am\n";
           &start_atom;
-          &start_shell;
+          &start_shell($am);
         }
       }
       else {
         &finish_shell;
-        $am = $2;
-        &start_shell;
+        my $am = $2;
+        print "new shell on old atom: atom = $atom am = $am\n";
+        &start_shell($am);
       }
     goto GOTLINE;
     }
@@ -219,14 +222,17 @@ sub finish_atom {
 }
 
 sub start_shell {
+  my $am = shift;
+
   printf MPQCBASIS "%s", $savedcomments;
   $savedcomments = "";
   while (<NWCHEMBASIS>) {
     last;
   }
-  @coefandexp = split(' ',$_);
-  $ncoef = $#coefandexp - 1;
-  ($amlower = $am) =~ tr/A-Z/a-z/;
+  @coefandexp = split;
+  $ncoef = $#coefandexp;
+  my $amlower = $am;
+  $amlower =~ tr/A-Z/a-z/;
   printf MPQCBASIS "  (type:";
   if ($amlower eq "sp") {
     printf MPQCBASIS " [am = p am = s]\n";

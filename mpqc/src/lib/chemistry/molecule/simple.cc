@@ -216,12 +216,12 @@ void
 SimpleCo::print(RefMolecule mol, ostream& os)
 {
   os << node0 << indent
-     << scprintf("%-5s %10s %14.10f", ctype(), (label()?label():""),
+     << scprintf("%-5s %7s %11.5f", ctype(), (label()?label():""),
                  preferred_value());
   
   int i;
   for (i=0; i<natoms(); i++)
-      os << node0 << scprintf(" %2d", atoms[i]);
+      os << node0 << scprintf(" %4d", atoms[i]);
 
   if (mol.nonnull()) {
       char *separator = " ";

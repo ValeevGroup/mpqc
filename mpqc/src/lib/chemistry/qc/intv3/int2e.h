@@ -275,6 +275,27 @@ class Int2eV3: public VRefCount {
                                 const RefGaussianBasisSet &cs4);
     void int_done_erep();
 
+    // from tformv3.cc
+  protected:
+    double *source;
+    int nsourcemax;
+    // transform implementation functions:
+    void transform_init();
+    void transform_done();
+    void source_space(int nsource);
+    void copy_to_source(double *integrals, int nsource);
+    void do_gencon_sparse_transform_2e(Integral*integ,
+                                       double *integrals, double *target,
+                                       int index,
+                                       GaussianShell *sh1, GaussianShell *sh2,
+                                       GaussianShell *sh3, GaussianShell *sh4);
+    // functions for general use outside of tformv3.cc:
+    // integrals and target may overlap
+    void transform_2e(Integral *,
+                      double *integrals, double *target,
+                      GaussianShell *sh1, GaussianShell *sh2,
+                      GaussianShell *sh3, GaussianShell *sh4);
+
     // locals from comp2e.cc
   protected:
     void compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,

@@ -160,6 +160,40 @@ class Int1eV3: public VRefCount {
     void int_initialize_offsets1();
     void int_done_offsets1();
 
+    // from tformv3.cc
+  protected:
+    double *source;
+    int nsourcemax;
+    // transform implementation functions:
+    void transform_init();
+    void transform_done();
+    void source_space(int nsource);
+    void copy_to_source(double *integrals, int nsource);
+    void do_transform_1e(Integral *integ,
+                         double *integrals,
+                         GaussianShell *sh1, GaussianShell *sh2,
+                         int chunk);
+    void transform_1e(Integral *integ,
+                      double *integrals, double *target,
+                      GaussianShell *sh1, GaussianShell *sh2, int chunk);
+    void accum_transform_1e(Integral *integ,
+                            double *integrals, double *target,
+                            GaussianShell *sh1, GaussianShell *sh2, int chunk);
+
+    // functions for general use outside of tformv3.cc:
+    void transform_1e(Integral*integ,
+                      double *integrals, double *target,
+                      GaussianShell *sh1, GaussianShell *sh2);
+    void accum_transform_1e(Integral*integ,
+                            double *integrals, double *target,
+                            GaussianShell *sh1, GaussianShell *sh2);
+    void transform_1e_xyz(Integral*integ,
+                          double *integrals, double *target,
+                          GaussianShell *sh1, GaussianShell *sh2);
+    void accum_transform_1e_xyz(Integral*integ,
+                                double *integrals, double *target,
+                                GaussianShell *sh1, GaussianShell *sh2);
+
   public:
     Int1eV3(Integral *,
             const RefGaussianBasisSet&,

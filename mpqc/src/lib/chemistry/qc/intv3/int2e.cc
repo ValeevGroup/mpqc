@@ -51,6 +51,7 @@ Int2eV3::Int2eV3(Integral *integral,
   if (bs3_.null()) bs3_ = bs2_;
   if (bs4_.null()) bs4_ = bs3_;
 
+  transform_init();
   int_initialize_offsets2();
   int_initialize_erep(storage,order,bs1_,bs2_,bs3_,bs4_);
   if (order==0) {
@@ -62,6 +63,7 @@ Int2eV3::Int2eV3(Integral *integral,
 
 Int2eV3::~Int2eV3()
 {
+  transform_done();
   int_done_offsets2();
   int_done_erep();
   if (int_integral_storage) {

@@ -43,10 +43,31 @@
 
 #define PRINT 0
 
-#ifndef _REENTRANT
-static double *source = 0;
-static int nsourcemax = 0;
-#endif
+void
+Int2eV3::transform_init()
+{
+  source = 0;
+  nsourcemax = 0;
+}
+
+void
+Int2eV3::transform_done()
+{
+  delete[] source;
+}
+
+void
+Int1eV3::transform_init()
+{
+  source = 0;
+  nsourcemax = 0;
+}
+
+void
+Int1eV3::transform_done()
+{
+  delete[] source;
+}
 
 static void
 do_copy1(double *source, double *target, int chunk,
@@ -130,11 +151,139 @@ do_sparse_transform12(double *source, double *target, int chunk,
 }
 
 static void
-do_abort()
+do_sparse_transform2_1(double *source, double *target,
+                       SphericalTransformIter& trans,
+                       int stcart, int stpure,
+                       int ogctcart, int ogctpure,
+                       int n2, int s2, int ogc2,
+                       int n3, int s3, int ogc3,
+                       int n4, int s4, int ogc4)
 {
-  abort();
+  int i2, i3, i4;
+
+  for (trans.begin(); trans.ready(); trans.next()) {
+      double coef = trans.coef();
+      int pure = trans.pureindex();
+      int cart = trans.cartindex();
+      int offtarget1 = ogctpure + pure;
+      int offsource1 = ogctcart + cart;
+      int offtarget2 = offtarget1*s2 + ogc2;
+      int offsource2 = offsource1*s2 + ogc2;
+      for (i2=0; i2<n2; i2++,offtarget2++,offsource2++) {
+          int offtarget3 = offtarget2*s3 + ogc3;
+          int offsource3 = offsource2*s3 + ogc3;
+          for (i3=0; i3<n3; i3++,offtarget3++,offsource3++) {
+              int offtarget4 = offtarget3*s4 + ogc4;
+              int offsource4 = offsource3*s4 + ogc4;
+              for (i4=0; i4<n4; i4++,offtarget4++,offsource4++) {
+                  target[offtarget4] += coef * source[offsource4];
+                }
+            }
+        }
+    }
 }
 
+static void
+do_sparse_transform2_2(double *source, double *target,
+                       SphericalTransformIter& trans,
+                       int stcart, int stpure,
+                       int ogctcart, int ogctpure,
+                       int n1, int s1, int ogc1,
+                       int n3, int s3, int ogc3,
+                       int n4, int s4, int ogc4)
+{
+  int i1, i3, i4;
+
+  for (trans.begin(); trans.ready(); trans.next()) {
+      double coef = trans.coef();
+      int pure = trans.pureindex();
+      int cart = trans.cartindex();
+      int offtarget1 = ogc1;
+      int offsource1 = ogc1;
+      for (i1=0; i1<n1; i1++,offtarget1++,offsource1++) {
+          int offtarget2 = offtarget1*stpure + ogctpure + pure;
+          int offsource2 = offsource1*stcart + ogctcart + cart;
+          int offtarget3 = offtarget2*s3 + ogc3;
+          int offsource3 = offsource2*s3 + ogc3;
+          for (i3=0; i3<n3; i3++,offtarget3++,offsource3++) {
+              int offtarget4 = offtarget3*s4 + ogc4;
+              int offsource4 = offsource3*s4 + ogc4;
+              for (i4=0; i4<n4; i4++,offtarget4++,offsource4++) {
+                  target[offtarget4] += coef * source[offsource4];
+                }
+            }
+        }
+    }
+}
+
+static void
+do_sparse_transform2_3(double *source, double *target,
+                       SphericalTransformIter& trans,
+                       int stcart, int stpure,
+                       int ogctcart, int ogctpure,
+                       int n1, int s1, int ogc1,
+                       int n2, int s2, int ogc2,
+                       int n4, int s4, int ogc4)
+{
+  int i1, i2, i4;
+
+  for (trans.begin(); trans.ready(); trans.next()) {
+      double coef = trans.coef();
+      int pure = trans.pureindex();
+      int cart = trans.cartindex();
+      int offtarget1 = ogc1;
+      int offsource1 = ogc1;
+      for (i1=0; i1<n1; i1++,offtarget1++,offsource1++) {
+          int offtarget2 = offtarget1*s2 + ogc2;
+          int offsource2 = offsource1*s2 + ogc2;
+          for (i2=0; i2<n2; i2++,offtarget2++,offsource2++) {
+              int offtarget3 = offtarget2*stpure + ogctpure + pure;
+              int offsource3 = offsource2*stcart + ogctcart + cart;
+              int offtarget4 = offtarget3*s4 + ogc4;
+              int offsource4 = offsource3*s4 + ogc4;
+              for (i4=0; i4<n4; i4++,offtarget4++,offsource4++) {
+                  target[offtarget4] += coef * source[offsource4];
+                }
+            }
+        }
+    }
+}
+
+static void
+do_sparse_transform2_4(double *source, double *target,
+                       SphericalTransformIter& trans,
+                       int stcart, int stpure,
+                       int ogctcart, int ogctpure,
+                       int n1, int s1, int ogc1,
+                       int n2, int s2, int ogc2,
+                       int n3, int s3, int ogc3)
+{
+  int i1, i2, i3;
+
+  for (trans.begin(); trans.ready(); trans.next()) {
+      double coef = trans.coef();
+      int pure = trans.pureindex();
+      int cart = trans.cartindex();
+      int offtarget1 = ogc1;
+      int offsource1 = ogc1;
+      for (i1=0; i1<n1; i1++,offtarget1++,offsource1++) {
+          int offtarget2 = offtarget1*s2 + ogc2;
+          int offsource2 = offsource1*s2 + ogc2;
+          for (i2=0; i2<n2; i2++,offtarget2++,offsource2++) {
+              int offtarget3 = offtarget2*s3 + ogc3;
+              int offsource3 = offsource2*s3 + ogc3;
+              int offtarget4 = offtarget3*stpure + ogctpure + pure;
+              int offsource4 = offsource3*stcart + ogctcart + cart;
+              for (i3=0; i3<n3; i3++,offtarget4+=stpure,offsource4+=stcart) {
+                  //for (i3=0; i3<n3; i3++,offtarget3++,offsource3++) {
+                  //int offtarget4 = offtarget3*stpure + ogctpure + pure;
+                  //int offsource4 = offsource3*stcart + ogctcart + cart;
+                  target[offtarget4] += coef * source[offsource4];
+                }
+            }
+        }
+    }
+}
 
 static void
 do_sparse_transform2(double *source, double *target,
@@ -146,87 +295,45 @@ do_sparse_transform2(double *source, double *target,
                      int n3, int s3, int ogc3,
                      int n4, int s4, int ogc4)
 {
-  int i1, i2, i3, i4;
-  int offtarget, offsource;
-
   switch (index) {
   case 0:
-      n1 = 1;
-      s1 = 1;
+      do_sparse_transform2_1(source, target, trans,
+                             stcart,stpure,
+                             ogctcart, ogctpure,
+                             n2, s2, ogc2,
+                             n3, s3, ogc3,
+                             n4, s4, ogc4);
       break;
   case 1:
-      n2 = 1;
-      s2 = 1;
+      do_sparse_transform2_2(source, target, trans,
+                             stcart,stpure,
+                             ogctcart, ogctpure,
+                             n1, s1, ogc1,
+                             n3, s3, ogc3,
+                             n4, s4, ogc4);
       break;
   case 2:
-      n3 = 1;
-      s3 = 1;
+      do_sparse_transform2_3(source, target, trans,
+                             stcart,stpure,
+                             ogctcart, ogctpure,
+                             n1, s1, ogc1,
+                             n2, s2, ogc2,
+                             n4, s4, ogc4);
       break;
   case 3:
-      n4 = 1;
-      s4 = 1;
+      do_sparse_transform2_4(source, target, trans,
+                             stcart,stpure,
+                             ogctcart, ogctpure,
+                             n1, s1, ogc1,
+                             n2, s2, ogc2,
+                             n3, s3, ogc3);
       break;
-    }
-
-  for (trans.begin(); trans.ready(); trans.next()) {
-      double coef = trans.coef();
-      int pure = trans.pureindex();
-      int cart = trans.cartindex();
-      for (i1=0; i1<n1; i1++) {
-          for (i2=0; i2<n2; i2++) {
-              for (i3=0; i3<n3; i3++) {
-                  for (i4=0; i4<n4; i4++) {
-                      if (index == 0) {
-                          offtarget = ogctpure + pure;
-                          offsource = ogctcart + cart;
-                        }
-                      else {
-                          offtarget = ogc1 + i1;
-                          offsource = ogc1 + i1;
-                        }
-                      if (index == 1) {
-                          offtarget = offtarget*stpure + ogctpure + pure;
-                          offsource = offsource*stcart + ogctcart + cart;
-                        }
-                      else {
-                          offtarget = offtarget*s2 + ogc2 + i2;
-                          offsource = offsource*s2 + ogc2 + i2;
-                        }                
-                      if (index == 2) {  
-                          offtarget = offtarget*stpure + ogctpure + pure;
-                          offsource = offsource*stcart + ogctcart + cart;
-                        }                
-                      else {             
-                          offtarget = offtarget*s3 + ogc3 + i3;
-                          offsource = offsource*s3 + ogc3 + i3;
-                        }                
-                      if (index == 3) {  
-                          offtarget = offtarget*stpure + ogctpure + pure;
-                          offsource = offsource*stcart + ogctcart + cart;
-                        }                
-                      else {             
-                          offtarget = offtarget*s4 + ogc4 + i4;
-                          offsource = offsource*s4 + ogc4 + i4;
-                        }
-                      target[offtarget] += coef * source[offsource];
-#if PRINT
-                      if (fabs(coef * source[offsource])>1.0e-15) {
-                          cout << scprintf("%3.1f * %15.11f [%d] += [%d] -> %15.11f\n",
-                                 coef, source[offsource], offsource,
-                                 offtarget, target[offtarget]);
-                        }
-#endif
-                    }
-                }
-            }
-        }
     }
 }
 
-#ifndef _REENTRANT
 /* make sure enough space exists for the source integrals */
-static void
-source_space(int nsource)
+void
+Int2eV3::source_space(int nsource)
 {
   if (nsourcemax < nsource) {
       if (source) free(source);
@@ -235,8 +342,8 @@ source_space(int nsource)
     }
 }
 
-static void
-copy_to_source(double *integrals, int nsource)
+void
+Int2eV3::copy_to_source(double *integrals, int nsource)
 {
   int i;
   double *tmp, *tmp2;
@@ -248,12 +355,37 @@ copy_to_source(double *integrals, int nsource)
   tmp2 = integrals;
   for (i=0; i<nsource; i++) *tmp++ = *tmp2++;
 }
-#endif
 
-static void
-do_transform_1e(Integral *integ,
-                double *integrals, GaussianShell *sh1, GaussianShell *sh2,
-                int chunk)
+/* make sure enough space exists for the source integrals */
+void
+Int1eV3::source_space(int nsource)
+{
+  if (nsourcemax < nsource) {
+      if (source) free(source);
+      source = (double*) malloc(sizeof(double)*nsource);
+      nsourcemax = nsource;
+    }
+}
+
+void
+Int1eV3::copy_to_source(double *integrals, int nsource)
+{
+  int i;
+  double *tmp, *tmp2;
+
+  /* Allocate more temporary space if needed. */
+  source_space(nsource);
+
+  tmp = source;
+  tmp2 = integrals;
+  for (i=0; i<nsource; i++) *tmp++ = *tmp2++;
+}
+
+void
+Int1eV3::do_transform_1e(Integral *integ,
+                         double *integrals,
+                         GaussianShell *sh1, GaussianShell *sh2,
+                         int chunk)
 {
   int i, j;
   int ogc1, ogc2;
@@ -269,19 +401,10 @@ do_transform_1e(Integral *integ,
 
   if (!pure1 && !pure2) return;
 
-#ifdef _REENTRANT
-  int nsource=ncart1*ncart2*chunk;
-  double *source = new double[ncart1*ncart2*chunk];
-#endif
-  
   /* Loop through the generalized general contractions,
    * transforming the first index. */
   if (pure1) {
-#ifdef _REENTRANT
-      memmove(source, integrals, sizeof(double)*nsource);
-#else      
       copy_to_source(integrals, ncart1*ncart2*chunk);
-#endif
       memset(integrals, 0, sizeof(double)*sh1->nfunction()*ncart2*chunk);
 
       ogc1 = 0;
@@ -316,11 +439,7 @@ do_transform_1e(Integral *integ,
     }
 
   if (pure2) {
-#ifdef _REENTRANT
-      memmove(source, integrals, sizeof(double)*nfunc1*ncart2*chunk);
-#else      
       copy_to_source(integrals, nfunc1*ncart2*chunk);
-#endif
       memset(integrals, 0,
              sizeof(double)*sh1->nfunction()*sh2->nfunction()*chunk);
 
@@ -354,16 +473,13 @@ do_transform_1e(Integral *integ,
           ogc1 += INT_NPURE(am1);
         }
     }
-#ifdef _REENTRANT
-  delete[] source;
-#endif  
 }
 
 /* it is ok for integrals and target to overlap */
-static void
-transform_1e(Integral *integ,
-             double *integrals, double *target,
-             GaussianShell *sh1, GaussianShell *sh2, int chunk)
+void
+Int1eV3::transform_1e(Integral *integ,
+                      double *integrals, double *target,
+                      GaussianShell *sh1, GaussianShell *sh2, int chunk)
 {
   int ntarget;
 
@@ -377,10 +493,10 @@ transform_1e(Integral *integ,
 }
 
 /* it is not ok for integrals and target to overlap */
-static void
-accum_transform_1e(Integral *integ,
-                   double *integrals, double *target,
-                   GaussianShell *sh1, GaussianShell *sh2, int chunk)
+void
+Int1eV3::accum_transform_1e(Integral *integ,
+                            double *integrals, double *target,
+                            GaussianShell *sh1, GaussianShell *sh2, int chunk)
 {
   int i, ntarget;
 
@@ -392,43 +508,43 @@ accum_transform_1e(Integral *integ,
 }
 
 void
-intv3_transform_1e(Integral*integ,
-                   double *integrals, double *target,
-                   GaussianShell *sh1, GaussianShell *sh2)
+Int1eV3::transform_1e(Integral*integ,
+                            double *integrals, double *target,
+                            GaussianShell *sh1, GaussianShell *sh2)
 {
   transform_1e(integ, integrals, target, sh1, sh2, 1);
 }
 
 void
-intv3_accum_transform_1e(Integral*integ,
-                         double *integrals, double *target,
-                         GaussianShell *sh1, GaussianShell *sh2)
+Int1eV3::accum_transform_1e(Integral*integ,
+                                  double *integrals, double *target,
+                                  GaussianShell *sh1, GaussianShell *sh2)
 {
   accum_transform_1e(integ, integrals, target, sh1, sh2, 1);
 }
 
 void
-intv3_transform_1e_xyz(Integral*integ,
-                       double *integrals, double *target,
-                       GaussianShell *sh1, GaussianShell *sh2)
+Int1eV3::transform_1e_xyz(Integral*integ,
+                          double *integrals, double *target,
+                          GaussianShell *sh1, GaussianShell *sh2)
 {
   transform_1e(integ, integrals, target, sh1, sh2, 3);
 }
 
 void
-intv3_accum_transform_1e_xyz(Integral*integ,
-                             double *integrals, double *target,
-                             GaussianShell *sh1, GaussianShell *sh2)
+Int1eV3::accum_transform_1e_xyz(Integral*integ,
+                                double *integrals, double *target,
+                                GaussianShell *sh1, GaussianShell *sh2)
 {
   accum_transform_1e(integ, integrals, target, sh1, sh2, 3);
 }
 
-static void
-do_gencon_sparse_transform_2e(Integral*integ,
-                              double *integrals, double *target,
-                              int index,
-                              GaussianShell *sh1, GaussianShell *sh2,
-                              GaussianShell *sh3, GaussianShell *sh4)
+void
+Int2eV3::do_gencon_sparse_transform_2e(Integral*integ,
+                                       double *integrals, double *target,
+                                       int index,
+                                       GaussianShell *sh1, GaussianShell *sh2,
+                                       GaussianShell *sh3, GaussianShell *sh4)
 {
   int ncart[4];
   int nfunc[4];
@@ -543,13 +659,7 @@ do_gencon_sparse_transform_2e(Integral*integ,
     }
 #endif
 
-#ifdef _REENTRANT
-  int nsource = nsource1*nsource2*nsource3*nsource4;
-  double *source = new double[nsource];
-  memmove(source, integrals, sizeof(double)*nsource);
-#else  
   copy_to_source(integrals, nsource1*nsource2*nsource3*nsource4);
-#endif
   memset(target, 0, sizeof(double)*ntarget1*ntarget2*ntarget3*ntarget4);
 
   ogccart[0] = 0;
@@ -609,9 +719,6 @@ do_gencon_sparse_transform_2e(Integral*integ,
       ogcfunc[0] += nfunci;
     }
 
-#ifdef _REENTRANT
-  delete[] source;
-#endif
   
 #if PRINT
     {
@@ -635,9 +742,9 @@ do_gencon_sparse_transform_2e(Integral*integ,
 }
 
 void
-intv3_transform_2e(Integral *integ, double *integrals, double *target,
-                 GaussianShell *sh1, GaussianShell *sh2,
-                 GaussianShell *sh3, GaussianShell *sh4)
+Int2eV3::transform_2e(Integral *integ, double *integrals, double *target,
+                      GaussianShell *sh1, GaussianShell *sh2,
+                      GaussianShell *sh3, GaussianShell *sh4)
 {
   int pure1 = sh1->has_pure();
   int pure2 = sh2->has_pure();

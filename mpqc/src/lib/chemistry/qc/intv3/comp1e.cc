@@ -120,7 +120,7 @@ Int1eV3::overlap(int ish, int jsh)
       END_FOR_GCCART_GS(index2)
     END_FOR_GCCART_GS(index1)
 
-  intv3_transform_1e(integral_, cartesianbuffer, buff, gshell1, gshell2);
+  transform_1e(integral_, cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* This computes the overlap ints between functions in two shells.
@@ -337,7 +337,7 @@ Int1eV3::kinetic(int ish, int jsh)
       END_FOR_GCCART_GS(cart2)
     END_FOR_GCCART_GS(cart1)
 
-  intv3_transform_1e(integral_, cartesianbuffer, buff, gshell1, gshell2);
+  transform_1e(integral_, cartesianbuffer, buff, gshell1, gshell2);
   }
 
 void
@@ -364,7 +364,7 @@ Int1eV3::int_accum_shell_kinetic(int ish, int jsh)
       index++;
       END_FOR_GCCART_GS(cart2)
     END_FOR_GCCART_GS(cart1)
-  intv3_accum_transform_1e(integral_, cartesianbuffer, buff, gshell1, gshell2);
+  accum_transform_1e(integral_, cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* This computes the kinetic energy derivative integrals between functions
@@ -477,8 +477,8 @@ Int1eV3::accum_shell_1der(double *buff, int ish, int jsh,
       END_FOR_GCCART_GS(index2)
     END_FOR_GCCART_GS(index1)
 
-  intv3_accum_transform_1e_xyz(integral_,
-                               cartesianbuffer, buff, gshell1, gshell2);
+  accum_transform_1e_xyz(integral_,
+                         cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* Compute the kinetic energy for the shell.  The arguments are the
@@ -784,8 +784,8 @@ Int1eV3::accum_shell_efield(double *buff, int ish, int jsh)
       END_FOR_GCCART_GS(index2)
     END_FOR_GCCART_GS(index1)
 
-  intv3_accum_transform_1e_xyz(integral_,
-                               cartesianbuffer, buff, gshell1, gshell2);
+  accum_transform_1e_xyz(integral_,
+                         cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* This computes the efield integrals between functions in two shells.
@@ -834,8 +834,8 @@ Int1eV3::efield(int ish, int jsh, double *position)
       END_FOR_GCCART_GS(index2)
     END_FOR_GCCART_GS(index1)
 
-  intv3_transform_1e_xyz(integral_,
-                         cartesianbuffer, buff, gshell1, gshell2);
+  transform_1e_xyz(integral_,
+                   cartesianbuffer, buff, gshell1, gshell2);
 }
 
 /* This computes the nuc rep energy integrals between functions in two shells.
@@ -890,8 +890,8 @@ Int1eV3::nuclear(int ish, int jsh)
       END_FOR_GCCART_GS(cart2)
     END_FOR_GCCART_GS(cart1)
 
-  intv3_transform_1e(integral_,
-                     cartesianbuffer, buff, gshell1, gshell2);
+  transform_1e(integral_,
+               cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* This computes the integrals between functions in two shells for
@@ -941,8 +941,8 @@ Int1eV3::int_accum_shell_point_charge(int ish, int jsh,
       END_FOR_GCCART_GS(cart2)
     END_FOR_GCCART_GS(cart1)
 
-  intv3_accum_transform_1e(integral_,
-                           cartesianbuffer, buff, gshell1, gshell2);
+  accum_transform_1e(integral_,
+                     cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* This computes the integrals between functions in two shells for
@@ -990,8 +990,8 @@ Int1eV3::point_charge(int ish, int jsh,
       END_FOR_GCCART_GS(cart2)
     END_FOR_GCCART_GS(cart1)
 
-  intv3_transform_1e(integral_,
-                     cartesianbuffer, buff, gshell1, gshell2);
+  transform_1e(integral_,
+               cartesianbuffer, buff, gshell1, gshell2);
   }
 
 
@@ -1047,8 +1047,8 @@ Int1eV3::hcore(int ish, int jsh)
       END_FOR_GCCART_GS(cart2)
     END_FOR_GCCART_GS(cart1)
 
-  intv3_transform_1e(integral_,
-                     cartesianbuffer, buff, gshell1, gshell2);
+  transform_1e(integral_,
+               cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* This computes the 1e Hamiltonian deriv ints between functions in two shells.
@@ -1582,8 +1582,8 @@ Int1eV3::int_accum_shell_dipole(int ish, int jsh,
         }
       END_FOR_GCCART_GS(index2)
     END_FOR_GCCART_GS(index1)
-  intv3_accum_transform_1e_xyz(integral_,
-                               cartesianbuffer, buff, gshell1, gshell2);
+  accum_transform_1e_xyz(integral_,
+                         cartesianbuffer, buff, gshell1, gshell2);
   }
 
 /* This computes the dipole integrals between functions in two shells.
@@ -1621,8 +1621,8 @@ Int1eV3::dipole(int ish, int jsh, double *com)
         }
       END_FOR_GCCART_GS(index2)
     END_FOR_GCCART_GS(index1)
-  intv3_transform_1e_xyz(integral_,
-                         cartesianbuffer, buff, gshell1, gshell2);
+  transform_1e_xyz(integral_,
+                   cartesianbuffer, buff, gshell1, gshell2);
   }
 
 void

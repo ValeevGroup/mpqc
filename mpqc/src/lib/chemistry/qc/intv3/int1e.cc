@@ -50,12 +50,14 @@ Int1eV3::Int1eV3(Integral *integral,
   bs1_ = b1;
   bs2_ = b2;
 
+  transform_init();
   int_initialize_offsets1();
   int_initialize_1e(0,order);
 }
 
 Int1eV3::~Int1eV3()
 {
+  transform_done();
   int_done_1e();
   int_done_offsets1();
 }

@@ -35,35 +35,10 @@
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/transform.h>
 #include <chemistry/qc/intv3/macros.h>
+#include <chemistry/qc/intv3/int1e.h>
+#include <chemistry/qc/intv3/int2e.h>
 
 class Integral;
-
-/* integrals and target may overlap */
-void intv3_transform_1e(Integral *,
-                        double *integrals, double *target,
-                        GaussianShell *sh1, GaussianShell *sh2
-                        );
-
-/* integrals and target may not overlap */
-void intv3_accum_transform_1e(Integral *,
-                              double *integrals, double *target,
-                              GaussianShell *sh1, GaussianShell *sh2);
-
-/* integrals and target may overlap */
-void intv3_transform_1e_xyz(Integral *,
-                            double *integrals, double *target,
-                            GaussianShell *sh1, GaussianShell *sh2);
-
-/* integrals and target may not overlap */
-void intv3_accum_transform_1e_xyz(Integral *,
-                                  double *integrals, double *target,
-                                  GaussianShell *sh1, GaussianShell *sh2);
-
-/* integrals and target may overlap */
-void intv3_transform_2e(Integral *,
-                        double *integrals, double *target,
-                        GaussianShell *sh1, GaussianShell *sh2,
-                        GaussianShell *sh3, GaussianShell *sh4);
 
 class SphericalTransformComponentV3 : public SphericalTransformComponent {
   public:

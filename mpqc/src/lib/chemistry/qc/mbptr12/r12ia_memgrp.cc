@@ -44,8 +44,8 @@ static ClassDesc R12IntsAcc_MemoryGrp_cd(
   typeid(R12IntsAcc_MemoryGrp),"R12IntsAcc_MemoryGrp",1,"public R12IntsAcc",
   0, 0, create<R12IntsAcc_MemoryGrp>);
 
-R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(Ref<MemoryGrp>& mem, int num_te_types, int nbasis1, int nbasis2, int nocc, int nfzc) :
-  R12IntsAcc(num_te_types, nbasis1, nbasis2, nocc, nfzc)
+R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(Ref<MemoryGrp>& mem, int num_te_types, int nbasis1, int nbasis2, int nocc_act) :
+  R12IntsAcc(num_te_types, nbasis1, nbasis2, nocc_act)
 {
   mem_ = mem;
   

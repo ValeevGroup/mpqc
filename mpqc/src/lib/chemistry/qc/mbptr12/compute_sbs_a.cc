@@ -395,34 +395,34 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
       if (restart)
         throw std::runtime_error("R12IntEval_sbs_A::compute -- cannot use MemoryGrp-based accumulator when restarting");
       ExEnv::out0() << indent << "Will hold transformed integrals in memory" << endl;
-      r12intsacc_ = new R12IntsAcc_MemoryGrp(mem,num_te_types,nbasis,nbasis,nocc,nfzc);
+      r12intsacc_ = new R12IntsAcc_MemoryGrp(mem,num_te_types,nbasis,nbasis,nocc_act);
       break;
 
     case R12IntEvalInfo::mem_posix:
       if (npass == 1) {
         ExEnv::out0() << indent << "Will hold transformed integrals in memory" << endl;
-        r12intsacc_ = new R12IntsAcc_MemoryGrp(mem,num_te_types,nbasis,nbasis,nocc,nfzc);
+        r12intsacc_ = new R12IntsAcc_MemoryGrp(mem,num_te_types,nbasis,nbasis,nocc_act);
         break;
       }
       // else use the next case
       
     case R12IntEvalInfo::posix:
       ExEnv::out0() << indent << "Will use POSIX I/O on node 0 to handle transformed integrals" << endl;
-      r12intsacc_ = new R12IntsAcc_Node0File(mem,r12ints_file,num_te_types,nbasis,nbasis,nocc,nfzc,restart);
+      r12intsacc_ = new R12IntsAcc_Node0File(mem,r12ints_file,num_te_types,nbasis,nbasis,nocc_act,restart);
       break;
 
     #if HAVE_MPIIO
     case R12IntEvalInfo::mem_mpi:
       if (npass == 1) {
         ExEnv::out0() << indent << "Will hold transformed integrals in memory" << endl;
-        r12intsacc_ = new R12IntsAcc_MemoryGrp(mem,num_te_types,nbasis,nbasis,nocc,nfzc);
+        r12intsacc_ = new R12IntsAcc_MemoryGrp(mem,num_te_types,nbasis,nbasis,nocc_act);
         break;
       }
       // else use the next case
 
     case R12IntEvalInfo::mpi:
       ExEnv::out0() << indent << "Will use MPI-IO (individual I/O) to handle transformed integrals" << endl;
-      r12intsacc_ = new R12IntsAcc_MPIIOFile_Ind(mem,r12ints_file,num_te_types,nbasis,nbasis,nocc,nfzc,restart);
+      r12intsacc_ = new R12IntsAcc_MPIIOFile_Ind(mem,r12ints_file,num_te_types,nbasis,nbasis,nocc_act,restart);
       break;
 #endif
   

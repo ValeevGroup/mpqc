@@ -45,8 +45,8 @@ static ClassDesc R12IntsAcc_MPIIOFile_cd(
   0, 0, 0);
 
 R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char* filename, int nte_types, int nbasis1, int nbasis2,
-					   int nocc, int nfzc, bool restart) :
-    R12IntsAcc(nte_types, nbasis1, nbasis2, nocc, nfzc), datafile_(MPI_FILE_NULL)
+					   int nocc_act, bool restart) :
+    R12IntsAcc(nte_types, nbasis1, nbasis2, nocc_act), datafile_(MPI_FILE_NULL)
 {
   mem_ = mem;
   filename_ = strdup(filename);
@@ -198,8 +198,8 @@ R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(StateIn& si) :
 }
 
 R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(Ref<MemoryGrp>& mem, const char* filename, int num_te_types, int nbasis1, int nbasis2,
-						   int nocc, int nfzc, bool restart) :
-  R12IntsAcc_MPIIOFile(mem,filename,num_te_types,nbasis1,nbasis2,nocc,nfzc,restart)
+						   int nocc_act, bool restart) :
+  R12IntsAcc_MPIIOFile(mem,filename,num_te_types,nbasis1,nbasis2,nocc_act,restart)
 {
 }
 

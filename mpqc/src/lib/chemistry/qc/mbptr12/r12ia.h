@@ -62,10 +62,10 @@ namespace sc {
 
 class R12IntsAcc: virtual public SavableState {
 
-    int num_te_types_;  // Number of types of integrals in a block (in R12 theories -- 3 or 4)
+    int num_te_types_;  // Number of types of integrals in a block (in R12 theories -- usually 3)
 
    protected:
-    int nocc_, nocc_act_, nfzc_;
+    int nocc_act_;
     int nbasis1_, nbasis2_;
     size_t nbasis__2_;  // nbasis1_ * nbasis2_  - the size of a block of integrals of one type
     size_t blksize_;    // the same in bytes
@@ -78,7 +78,7 @@ class R12IntsAcc: virtual public SavableState {
     void inc_next_orbital(int ni);
 
   public:
-    R12IntsAcc(int num_te_types, int nbasis1, int nbasis2, int nocc, int nfzc);
+    R12IntsAcc(int num_te_types, int nbasis1, int nbasis2, int nocc_act);
     R12IntsAcc(StateIn&);
     ~R12IntsAcc();
     void save_data_state(StateOut&);

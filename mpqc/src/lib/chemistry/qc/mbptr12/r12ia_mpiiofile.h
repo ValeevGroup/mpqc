@@ -70,7 +70,7 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
     
   public:
     R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char *filename, int num_te_types, int nbasis1, int nbasis2,
-			 int nocc, int nfzc, bool restart);
+			 int nocc_act, bool restart);
     R12IntsAcc_MPIIOFile(StateIn&);
     ~R12IntsAcc_MPIIOFile();
     void save_data_state(StateOut&);
@@ -110,7 +110,7 @@ class R12IntsAcc_MPIIOFile_Ind: public R12IntsAcc_MPIIOFile {
 
   public:
     R12IntsAcc_MPIIOFile_Ind(Ref<MemoryGrp>& mem, const char *filename, int num_te_types, int nbasis1, int nbasis2,
-			     int nocc, int nfzc, bool restart);
+			     int nocc_act, bool restart);
     R12IntsAcc_MPIIOFile_Ind(StateIn&);
     ~R12IntsAcc_MPIIOFile_Ind();
     void save_data_state(StateOut&);

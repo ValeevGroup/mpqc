@@ -61,7 +61,7 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
     void init();
 
   public:
-    R12IntsAcc_MemoryGrp(Ref<MemoryGrp>&, int num_te_types, int nbasis1, int nbasis2, int nocc, int nfzc);
+    R12IntsAcc_MemoryGrp(Ref<MemoryGrp>&, int num_te_types, int nbasis1, int nbasis2, int nocc_act);
     R12IntsAcc_MemoryGrp(StateIn&);
     ~R12IntsAcc_MemoryGrp();
     void save_data_state(StateOut&);

@@ -122,13 +122,12 @@ IParagonMemoryGrp::probe(long type)
   return ret;
 }
 
-long
+void
 IParagonMemoryGrp::postrecv(void *data, int nbytes, int type)
 {
   cerr << scprintf("IParagonMemoryGrp::postrecv: not implemented\n");
   sleep(1);
   abort();
-  return 0;
 }
 
 long

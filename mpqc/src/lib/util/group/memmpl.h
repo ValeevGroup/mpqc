@@ -54,7 +54,7 @@ class MPLMemoryGrp: public MIDMemoryGrp {
     void unlockcomm(long oldvalue);
     long send(void* data, int nbytes, int node, int type);
     long recv(void* data, int nbytes, int node, int type);
-    long postrecv(void *data, int nbytes, int type);
+    void postrecv(void *data, int nbytes, int type);
     long wait(long, long = -1);
 
     static void static_handler(int *msgid);

@@ -176,12 +176,11 @@ MPIMemoryGrp::recv(void* data, int nbytes, int node, int type)
   return mid;
 }
 
-long
+void
 MPIMemoryGrp::postrecv(void *data, int nbytes, int type)
 {
   cerr << "MPIMemoryGrp::postrecv: active messages not supported\n" << endl;
   abort();
-  return 0;
 }
 
 long

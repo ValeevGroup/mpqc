@@ -51,6 +51,8 @@ MIDMemoryGrp::handler(long *mid)
   handler(data_request_buffer_, mid);
 }
 
+static int handler_depth = 0;
+
 void
 MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
 {
@@ -63,6 +65,12 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
   int junk;
   double *source_data;
   double *data;
+
+  handler_depth++;
+  if (handler_depth != 1) {
+      cerr << "MIDMemoryGrp::handler: bad depth: " << handler_depth << endl;
+      abort();
+    }
 
   const char *handlerstr;
   if (msgid_arg) handlerstr = "====:";
@@ -90,9 +98,11 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
 
   switch (request) {
   case MemoryDataRequest::Deactivate:
+      handler_depth--;
       break;
   case MemoryDataRequest::Sync:
       nsync_++;
+      handler_depth--;
       if (msgid_arg) {
           if ((me() == 0 && nsync_ < n() - 1) || reactivate) activate();
         }
@@ -106,6 +116,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
               me_, handlerstr, size, offset, mid);
         }
       n_ret_recv_++;
+      handler_depth--;
       if (msgid_arg) activate();
       break;
   case MemoryDataRequest::Replace:
@@ -126,6 +137,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
             }
         }
       n_rep_recv_++;
+      handler_depth--;
       if (msgid_arg) activate();
       break;
   case MemoryDataRequest::DoubleSum:
@@ -169,6 +181,7 @@ MIDMemoryGrp::handler(MemoryDataRequest& buffer, long *msgid_arg)
             }
         }
       n_sum_recv_++;
+      handler_depth--;
       if (msgid_arg) activate();
       break;
   default:
@@ -301,26 +314,25 @@ void
 MIDMemoryGrp::activate()
 {
   if (!active_) {
+      active_ = 1;
       if (use_active_messages_) {
-          data_request_mid_ = postrecv(data_request_buffer_.data(),
-                                       data_request_buffer_.nbytes(),
-                                       data_request_type_);
+          postrecv(data_request_buffer_.data(), data_request_buffer_.nbytes(),
+                   data_request_type_);
         }
       else {
           data_request_mid_ = recv(data_request_buffer_.data(),
                                    data_request_buffer_.nbytes(),
                                    -1,
                                    data_request_type_);
+          if (data_request_mid_ == -1) {
+              cerr << scprintf("MIDMemoryGrp::activate(): bad mid\n");
+              abort();
+            }
         }
       if (debug_) {
           cout << scprintf("%d: activated memory request handler mid = %d\n",
                            me_, data_request_mid_);
         }
-      if (data_request_mid_ == -1) {
-          cerr << scprintf("%d: MIDMemoryGrp::activate(): bad mid\n");
-          abort();
-        }
-      active_ = 1;
     }
 }
 

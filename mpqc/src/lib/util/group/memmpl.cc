@@ -200,12 +200,17 @@ MPLMemoryGrp::recv(void* data, int nbytes, int node, int type)
   return mid;
 }
 
-long
+void
 MPLMemoryGrp::postrecv(void *data, int nbytes, int type)
 {
   global_type = type;
   global_source = DONTCARE; 
   global_mid = get_mid('P');
+  data_request_mid_ = global_mid;
+  if (data_request_mid_ == -1) {
+      cerr << scprintf("MPLMemoryGrp::activate(): bad mid\n");
+      abort();
+    }
   mpc_rcvncall(data, nbytes,
                (int*)&global_source, (int*)&global_type, &mpc_mid(global_mid),
                static_handler);
@@ -215,7 +220,6 @@ MPLMemoryGrp::postrecv(void *data, int nbytes, int type)
                    << global_type << ","
                    << global_mid << ","
                    << ")" << endl;
-  return global_mid;
 }
 
 long

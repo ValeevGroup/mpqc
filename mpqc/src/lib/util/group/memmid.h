@@ -85,7 +85,7 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
     virtual void unlockcomm(long oldvalue) = 0;
     virtual long send(void* data, int nbytes, int node, int type) = 0;
     virtual long recv(void* data, int nbytes, int node, int type) = 0;
-    virtual long postrecv(void *data, int nbytes, int type) = 0;
+    virtual void postrecv(void *data, int nbytes, int type) = 0;
     virtual long wait(long, long = -1) = 0;
     virtual int probe(long);
 

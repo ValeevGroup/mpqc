@@ -63,8 +63,9 @@ class LocalTBGrad : public TBGrad<T> {
   public:
     LocalTBGrad(T& t, const RefTwoBodyDerivInt& tbdi, const RefPetiteList& pl,
                 const RefGaussianBasisSet& bs, const RefMessageGrp& g,
-                double *tbg, double pm, double a, int nt = 1, int tn = 0) :
-      TBGrad<T>(t),
+                double *tbg, double pm, double a, int nt = 1, int tn = 0,
+                double exchange_fraction = 1.0) :
+      TBGrad<T>(t,exchange_fraction),
       tbgrad(tbg), pmax_(pm), accuracy_(a), threadno_(tn), nthread_(nt)
     {
       grp_ = g.pointer();

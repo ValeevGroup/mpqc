@@ -38,9 +38,10 @@ template<class T>
 class TBGrad : public Thread {
   protected:
     T& contribution;
+    double exchange_fraction;
 
   public:
-    TBGrad(T&t) : contribution(t) {}
+    TBGrad(T&t, double ex = 1.0) : contribution(t), exchange_fraction(ex) {}
     virtual ~TBGrad() {}
 
     inline void set_scale(double& coulombscale, double& exchangescale,
@@ -55,7 +56,7 @@ class TBGrad : public Thread {
         scale *= 2.0;
 
       coulombscale = 0.5*scale;
-      exchangescale = -0.25*scale;
+      exchangescale = -0.25*scale * exchange_fraction;
 
       if (k!=l)
         coulombscale *= 2.0;

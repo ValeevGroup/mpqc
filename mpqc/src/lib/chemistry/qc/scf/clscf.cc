@@ -47,6 +47,8 @@
 #include <chemistry/qc/scf/scflocal.h>
 #include <chemistry/qc/scf/scfops.h>
 #include <chemistry/qc/scf/clscf.h>
+#include <chemistry/qc/scf/ltbgrad.h>
+#include <chemistry/qc/scf/clhftmpl.h>
 
 ///////////////////////////////////////////////////////////////////////////
 // CLSCF
@@ -601,6 +603,103 @@ CLSCF::init_hessian()
 void
 CLSCF::done_hessian()
 {
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void
+CLSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
+{
+  int i;
+  int na3 = molecule()->natom()*3;
+  int nthread = threadgrp_->nthread();
+
+  tim_enter("setup");
+  RefSCElementMaxAbs m = new SCElementMaxAbs;
+  cl_dens_.element_op(m);
+  double pmax = m->result();
+  m=0;
+
+  double **grads = new double*[nthread];
+  RefTwoBodyDerivInt *tbis = new RefTwoBodyDerivInt[nthread];
+  for (i=0; i < nthread; i++) { 
+    tbis[i] = integral()->electron_repulsion_deriv();
+    grads[i] = new double[na3];
+    memset(grads[i], 0, sizeof(double)*na3);
+  }
+  
+  RefPetiteList pl = integral()->petite_list();
+  
+  tim_change("contribution");
+  
+  // now try to figure out the matrix specialization we're dealing with.
+  // if we're using Local matrices, then there's just one subblock, or
+  // see if we can convert P to a local matrix
+  if (local_ || local_dens_) {
+    double *pmat;
+    RefSymmSCMatrix ptmp = get_local_data(cl_dens_, pmat, SCF::Read);
+
+    LocalCLHFGradContribution l(pmat);
+    LocalTBGrad<LocalCLHFGradContribution> **tblds =
+      new LocalTBGrad<LocalCLHFGradContribution>*[nthread];
+
+    for (i=0; i < nthread; i++) {
+      tblds[i] = new LocalTBGrad<LocalCLHFGradContribution>(
+        l, tbis[i], pl, basis(), scf_grp_, grads[i], pmax,
+        desired_gradient_accuracy(), nthread, i, exchange_fraction);
+      threadgrp_->add_thread(i, tblds[i]);
+    }
+
+    tim_enter("start thread");
+    if (threadgrp_->start_threads() < 0) {
+      cerr << node0 << indent
+           << "CLSCF: error starting threads" << endl;
+      abort();
+    }
+    tim_exit("start thread");
+
+    tim_enter("stop thread");
+    if (threadgrp_->wait_threads() < 0) {
+      cerr << node0 << indent
+           << "CLSCF: error waiting for threads" << endl;
+      abort();
+    }
+    tim_exit("stop thread");
+
+    for (i=0; i < nthread; i++) {
+      if (i) {
+        for (int j=0; j < na3; j++)
+          grads[0][j] += grads[i][j];
+
+        delete[] grads[i];
+      }
+
+      delete tblds[i];
+    }
+
+    if (scf_grp_->n() > 1)
+      scf_grp_->sum(grads[0], na3);
+
+    for (i=0; i < na3; i++)
+      tbgrad[i] += grads[0][i];
+    
+    delete[] grads[0];
+    delete[] tblds;
+    delete[] grads;
+  }
+
+  // for now quit
+  else {
+    cerr << node0 << indent
+         << "CLHF::two_body_deriv: can't do gradient yet\n";
+    abort();
+  }
+
+  for (i=0; i < nthread; i++)
+    tbis[i] = 0;
+  delete[] tbis;
+  
+  tim_exit("contribution");
 }
 
 /////////////////////////////////////////////////////////////////////////////

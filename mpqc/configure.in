@@ -1222,6 +1222,8 @@ test "$enablestatic" = no && libtool_flags="$libtool_flags --disable-static"
 ENABLESHARED=$enableshared
 AC_SUBST(ENABLESHARED)
 
+test ! -d bin || mkdir bin
+
 CC="$CXX" CFLAGS="$CXXFLAGS" CPPFLAGS="$CPPFLAGS" \
 LD="$LD" LDFLAGS="$LDFLAGS" LIBS="$LIBS $FLIBS" \
 LN_S="$LN_S" NM="$NM" RANLIB="$RANLIB" \

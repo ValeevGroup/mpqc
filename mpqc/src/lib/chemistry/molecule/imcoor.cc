@@ -149,7 +149,7 @@ IntMolecularCoor::IntMolecularCoor(KeyVal& keyval):
 }
 
 IntMolecularCoor::IntMolecularCoor(StateIn& s):
-  SavableState(s,class_desc_),
+  SavableState(s,IntMolecularCoor::class_desc_),
   MolecularCoor(s)
 {
   s.get(nextra_bonds_);

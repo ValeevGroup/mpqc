@@ -112,7 +112,7 @@ SimpleCo& classname::operator=(const SimpleCo& c)			      \
   return *this;								      \
   }									      \
 classname::classname(StateIn&si):					      \
-  SavableState(si,class_desc_),						      \
+  SavableState(si,classname::class_desc_),				      \
   SimpleCo(si)								      \
 {									      \
 }									      \

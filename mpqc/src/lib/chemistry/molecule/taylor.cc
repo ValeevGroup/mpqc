@@ -52,7 +52,7 @@ TaylorMolecularEnergy::~TaylorMolecularEnergy()
 }
 
 TaylorMolecularEnergy::TaylorMolecularEnergy(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,TaylorMolecularEnergy::class_desc_),
   MolecularEnergy(s)
 {
   abort();

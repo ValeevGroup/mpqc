@@ -28,7 +28,8 @@ GaussianBasisSet::_castdown(const ClassDesc*cd)
 GaussianBasisSet::GaussianBasisSet(KeyVal&topkeyval)
 {
   RefMolecule molecule =
-    Molecule::require_castdown(topkeyval.describedclassvalue("molecule"),
+    Molecule::require_castdown(topkeyval
+                               .describedclassvalue("molecule").pointer(),
                                "molecule of wrong type");
   
   char* basisname = topkeyval.pcharvalue("name");

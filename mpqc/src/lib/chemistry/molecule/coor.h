@@ -102,11 +102,11 @@ class SetIntCoor: virtual public SavableState {
     SetIntCoor(StateIn&);
     virtual ~SetIntCoor();
     void save_data_state(StateOut&);
-    void add(RefIntCoor&);
-    void add(RefSetIntCoor&);
+    void add(const RefIntCoor&);
+    void add(const RefSetIntCoor&);
     void clear();
-    int n();
-    RefIntCoor coor(int);
+    int n() const;
+    RefIntCoor coor(int) const;
     virtual void fd_bmat(RefMolecule&,RefSCMatrix&);
     virtual void bmat(RefMolecule&, RefSCMatrix&);
     virtual void guess_hessian(RefMolecule&,RefSymmSCMatrix&);

@@ -25,7 +25,7 @@ void ortho(const GaussianBasisSet*t,RefSCMatrix&or,RefSCMatrix&orinv)
   RefSCVectorElementOp squareroot = new SCElementSquareRoot;
   eigval.element_op(squareroot);
 
-  if (orinv) {
+  if (orinv.nonnull()) {
       orinv.assign(trans * eigval * trans.t());
     }
 

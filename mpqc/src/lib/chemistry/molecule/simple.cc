@@ -105,7 +105,7 @@ SimpleCo::save_data_state(StateOut& s)
 }
 
 SimpleCo::SimpleCo(StateIn& si):
-  SavableState(si,class_desc_),
+  SavableState(si,SimpleCo::class_desc_),
   IntCoor(si)
 {
   si.get(natoms_);

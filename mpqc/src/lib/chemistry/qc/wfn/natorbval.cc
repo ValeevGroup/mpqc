@@ -25,7 +25,7 @@ double Wavefunction::natural_orbital_density(cart_point& r,
 // Function for returning an orbital value at a point
 double Wavefunction::orbital(cart_point& r,
                              int iorb,
-                             RefSCMatrix& orbs)
+                             const RefSCMatrix& orbs)
 {
     int nbasis = basis()->nbasis();
     if (!bs_values) bs_values=new double[nbasis];
@@ -43,7 +43,7 @@ double Wavefunction::orbital(cart_point& r,
 
 double Wavefunction::orbital_density(cart_point& r,
                                      int iorb,
-                                     RefSCMatrix& orbs,
+                                     const RefSCMatrix& orbs,
                                      double* orbvalue)
 {
   double tmp = orbital(r,iorb,orbs);

@@ -63,7 +63,7 @@ MPSCF::MPSCF(KeyVal&keyval):
   _scf(this)
 {
   RefGaussianBasisSet gbs = keyval.describedclassvalue("basis");
-  centers_t *tcenters = gbs->convert_to_centers_t(_mol);
+  centers_t *tcenters = gbs->convert_to_centers_t(_mol.pointer());
 
   if (!tcenters) {
     exit(3);
@@ -174,7 +174,7 @@ MPSCF::MPSCF(KeyVal&keyval):
   if (scf_info.proj_vector) {
     if (me==0) {
       RefGaussianBasisSet gbs = keyval.describedclassvalue("pbasis");
-      tcenters = gbs->convert_to_centers_t(_mol);
+      tcenters = gbs->convert_to_centers_t(_mol.pointer());
 
       assign_centers(&oldcenters,tcenters);
       free_centers(tcenters);

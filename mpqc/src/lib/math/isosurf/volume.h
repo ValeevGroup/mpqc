@@ -27,7 +27,7 @@ class Volume: public NLP2 {
 
     virtual void failure(const char*);
   public:
-    Volume(RefSCDimension&);
+    Volume(const RefSCDimension&);
     ~Volume();
 
     // find the corners of a bounding box which approximately

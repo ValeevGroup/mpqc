@@ -113,7 +113,7 @@ MolecularEnergy::~MolecularEnergy()
 }
 
 MolecularEnergy::MolecularEnergy(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,MolecularEnergy::class_desc_),
   NLP2(s),
   _energy(_value)
 {
@@ -149,7 +149,7 @@ MolecularEnergy::energy()
 void
 MolecularEnergy::set_gradient(RefSCVector&g)
 {
-  if (_mc == 0) {
+  if (_mc.null()) {
       _gradient.result_noupdate() = g;
     }
   else {
@@ -161,7 +161,7 @@ MolecularEnergy::set_gradient(RefSCVector&g)
 void
 MolecularEnergy::set_hessian(RefSymmSCMatrix&h)
 {
-  if (_mc == 0) {
+  if (_mc.null()) {
       _hessian.result_noupdate() = h;
     }
   else {
@@ -174,7 +174,7 @@ void
 MolecularEnergy::x_to_molecule()
 {
 
-  if (_mc == 0) {
+  if (_mc.null()) {
       int c = 0;
       for (int i=0; i<_mol->natom(); i++) {
           _mol->operator[](i)[0] = _x(c); c++;
@@ -193,7 +193,7 @@ MolecularEnergy::molecule_to_x()
 {
   RefSCVector cartesian(_moldim);
 
-  if (_mc == 0) {
+  if (_mc.null()) {
       int c = 0;
       for (int i=0; i<_mol->natom(); i++) {
           cartesian(c) = _mol->operator[](i)[0]; c++;

@@ -38,7 +38,7 @@ Wavefunction::Wavefunction(KeyVal&keyval):
   _natural_density.compute() = 0;
 
   _gbs
-    = GaussianBasisSet::require_castdown(keyval.describedclassvalue("basis"),
+    = GaussianBasisSet::require_castdown(keyval.describedclassvalue("basis").pointer(),
                                          "Wavefunction::Wavefunction\n");
 
   _basisdim = new LocalSCDimension(_gbs->nbasis());

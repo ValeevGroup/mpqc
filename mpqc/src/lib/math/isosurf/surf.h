@@ -171,10 +171,10 @@ class TriangulatedSurface {
     inline RefEdge edge(int i) { return _edges[i]; };
     inline int ntriangle() { return _triangles.length(); };
     inline RefTriangle triangle(int i) { return _triangles[i]; };
-    void add_triangle(RefTriangle&);
+    void add_triangle(const RefTriangle&);
     void initialize_vertices_triangles(int nvertex, int ntriangle);
-    void add_vertex(RefVertex&);
-    void add_triangle(RefTriangle&,int vertex0,int vertex1,int vertex2);
+    void add_vertex(const RefVertex&);
+    void add_triangle(const RefTriangle&,int vertex0,int vertex1,int vertex2);
     virtual void remove_short_edges(double cutoff_length = 1.0e-6);
     virtual void clear();
     virtual void complete_surface();
@@ -244,7 +244,7 @@ class UniformLattice {
     int _ndim;
     int* _dim;
   public:
-    UniformLattice(RefSCDimension&);
+    UniformLattice(const RefSCDimension&);
     // 3D CTOR
     UniformLattice(int dim0,double start0,double incr0,
                    int dim1,double start1,double incr1,

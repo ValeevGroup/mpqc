@@ -28,7 +28,7 @@ OneBodyWavefunction::~OneBodyWavefunction()
 }
 
 OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,OneBodyWavefunction::class_desc_),
   Wavefunction(s),
   _density(this)
 {

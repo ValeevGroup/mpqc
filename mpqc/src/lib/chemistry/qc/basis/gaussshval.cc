@@ -20,7 +20,7 @@ int GaussianShell::values(cart_point& r, double* basis_values)
 // Returns a pointer to a vector of values of basis 
 int GaussianShell::grad_values(cart_point& r,
                                double* g_values,
-                               double* basis_values)
+                               double* basis_values) const
 {
 
   // compute the maximum angular momentum component of the shell

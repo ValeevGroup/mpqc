@@ -115,7 +115,9 @@ class GaussianShell: virtual public SavableState
 
     // compute the value of this shell at offset r
     int values(cart_point& r, double* basis_values);
-    int grad_values(cart_point& r, double* g_values, double* basis_values=0);
+    int grad_values(cart_point& r,
+                    double* g_values,
+                    double* basis_values=0) const;
 
     void print(FILE*fp=stdout) const;
 };

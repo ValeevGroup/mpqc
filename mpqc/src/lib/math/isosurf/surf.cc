@@ -1186,7 +1186,7 @@ TriangulatedSurface::volume()
 }
 
 void
-TriangulatedSurface::add_triangle(RefTriangle&t)
+TriangulatedSurface::add_triangle(const RefTriangle&t)
 {
   if (_completed_surface) clear();
   else if (_triangle_vertex) {
@@ -1210,13 +1210,13 @@ TriangulatedSurface::initialize_vertices_triangles(int nvert,int ntri)
 }
 
 void
-TriangulatedSurface::add_vertex(RefVertex&v)
+TriangulatedSurface::add_vertex(const RefVertex&v)
 {
   _vertices.add(v);
 }
 
 void
-TriangulatedSurface::add_triangle(RefTriangle&t,
+TriangulatedSurface::add_triangle(const RefTriangle&t,
                                   int vertex0,
                                   int vertex1,
                                   int vertex2)
@@ -1460,7 +1460,7 @@ TriangulatedSurfaceIntegrator::
 //////////////////////////////////////////////////////////////////////
 // UniformLattice
 
-UniformLattice::UniformLattice(RefSCDimension&scdim)
+UniformLattice::UniformLattice(const RefSCDimension&scdim)
 {
   _scdim = scdim;
   _dim = 0;

@@ -24,7 +24,7 @@ Volume::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-Volume::Volume(RefSCDimension& dim):
+Volume::Volume(const RefSCDimension& dim):
   NLP2(dim),
   _interp_acc(1.0e-6)
 {

@@ -74,7 +74,7 @@ void AtomicCenter::save_data_state(StateOut& so)
 }
 
 AtomicCenter::AtomicCenter(StateIn& si):
-  SavableState(si,class_desc_),
+  SavableState(si,AtomicCenter::class_desc_),
   p(si),
   element_(si)
 {

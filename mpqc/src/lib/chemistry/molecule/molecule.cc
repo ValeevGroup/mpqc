@@ -338,7 +338,7 @@ void Molecule::save_data_state(StateOut& so)
 Molecule::Molecule(StateIn& si):
   atoms(0),
   natoms(0),
-  SavableState(si,class_desc_)
+  SavableState(si,Molecule::class_desc_)
 {
   PointGroup tpg(si);
   pg=tpg;
@@ -349,6 +349,11 @@ Molecule::Molecule(StateIn& si):
       AtomicCenter ac(si);
       add_atom(i,ac);
     }
+}
+
+PointGroup& Molecule::point_group()
+{
+  return pg;
 }
 
 const PointGroup& Molecule::point_group() const

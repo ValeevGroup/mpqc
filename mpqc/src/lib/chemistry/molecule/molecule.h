@@ -73,6 +73,7 @@ class Molecule :
 
     PointBag_double* charges() const;
 
+    PointGroup& point_group();
     const PointGroup& point_group() const;
     Point center_of_mass();
 

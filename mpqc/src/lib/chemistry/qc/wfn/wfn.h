@@ -37,10 +37,10 @@ class Wavefunction: public MolecularEnergy
     double density_gradient(cart_point&,double*);
     double natural_orbital(cart_point& r, int iorb);
     double natural_orbital_density(cart_point& r, int orb, double* orbval = 0);
-    double orbital(cart_point& r, int iorb, RefSCMatrix& orbs);
+    double orbital(cart_point& r, int iorb, const RefSCMatrix& orbs);
     double orbital_density(cart_point& r,
                            int iorb,
-                           RefSCMatrix& orbs,
+                           const RefSCMatrix& orbs,
                            double* orbval = 0);
 
     virtual RefSymmSCMatrix density() = 0;

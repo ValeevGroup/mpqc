@@ -56,7 +56,7 @@ IntCoor::IntCoor(KeyVal&keyval)
 }
 
 IntCoor::IntCoor(StateIn& si):
-  SavableState(si,class_desc_)
+  SavableState(si,IntCoor::class_desc_)
 {
   si.get(value_);
   si.getstring(label_);
@@ -154,7 +154,7 @@ SetIntCoor::SetIntCoor(KeyVal& keyval)
 }
 
 SetIntCoor::SetIntCoor(StateIn& s):
-  SavableState(s,class_desc_)
+  SavableState(s,SetIntCoor::class_desc_)
 {
   int n;
   s.get(n);
@@ -182,13 +182,13 @@ SetIntCoor::save_data_state(StateOut& s)
 }
 
 void
-SetIntCoor::add(RefIntCoor& coor)
+SetIntCoor::add(const RefIntCoor& coor)
 {
   coor_.add(coor);
 }
 
 void
-SetIntCoor::add(RefSetIntCoor& coor)
+SetIntCoor::add(const RefSetIntCoor& coor)
 {
   for (int i=0; i<coor->n(); i++) {
       coor_.add(coor->coor(i));
@@ -196,13 +196,13 @@ SetIntCoor::add(RefSetIntCoor& coor)
 }
 
 int
-SetIntCoor::n()
+SetIntCoor::n() const
 {
   return coor_.length();
 }
 
 RefIntCoor
-SetIntCoor::coor(int i)
+SetIntCoor::coor(int i) const
 {
   return coor_[i];
 }
@@ -365,7 +365,7 @@ SumIntCoor::SumIntCoor(KeyVal&keyval):
 }
 
 SumIntCoor::SumIntCoor(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,SumIntCoor::class_desc_),
   IntCoor(s)
 {
   int n;
@@ -569,7 +569,7 @@ MolecularCoor::MolecularCoor(KeyVal&keyval)
 }
 
 MolecularCoor::MolecularCoor(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,MolecularCoor::class_desc_)
 {
   molecule_.restore_state(s);
 }

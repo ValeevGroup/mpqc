@@ -65,10 +65,18 @@ MP2R12Energy::MP2R12Energy(StateIn& si) : SavableState(si)
 {
   r12eval_ << SavableState::restore_state(si);
 
-  er12_aa_ << SavableState::restore_state(si);
-  er12_ab_ << SavableState::restore_state(si);
-  emp2r12_ab_ << SavableState::restore_state(si);
-  emp2r12_ab_ << SavableState::restore_state(si);
+  RefSCDimension dim_aa = r12eval_->dim_aa();
+  RefSCDimension dim_ab = r12eval_->dim_ab();
+  Ref<SCMatrixKit> kit = r12eval_->r12info()->matrixkit();
+  er12_aa_ = kit->vector(dim_aa);
+  er12_ab_ = kit->vector(dim_ab);
+  emp2r12_aa_ = kit->vector(dim_aa);
+  emp2r12_ab_ = kit->vector(dim_ab);
+ 
+  er12_aa_.restore(si);
+  er12_ab_.restore(si);
+  emp2r12_aa_.restore(si);
+  emp2r12_ab_.restore(si);
   
   int stdapprox;
   si.get(stdapprox);

@@ -77,7 +77,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   ints_file_ = strdup("/tmp/r12ints.dat");
   memory_ = 8000000;
   debug_ = 0;
-  dynamic_ = 0;
+  dynamic_ = false;
 
   orbsym_ = 0;
   eigen_(evals_,scf_vec_,occs_,orbsym_);
@@ -106,9 +106,9 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   si.getstring(ints_file_);
 
   // Default values
-  memory_ = 8000000;
-  debug_ = 0;
-  dynamic_ = 0;
+  double memory; si.get(memory); memory_ = (size_t) memory;
+  si.get(debug_);
+  int dynamic; si.get(dynamic); dynamic_ = (bool) dynamic;
 
   orbsym_ = 0;
   eigen_(evals_,scf_vec_,occs_,orbsym_);
@@ -134,6 +134,9 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put(noso_);
 
   so.putstring(ints_file_);
+  so.put((double)memory_);
+  so.put(debug_);
+  so.put((int)dynamic_);
 }
 
 

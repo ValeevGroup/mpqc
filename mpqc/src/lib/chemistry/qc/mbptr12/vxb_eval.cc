@@ -92,14 +92,24 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   dim_s_ << SavableState::restore_state(si);
   dim_t_ << SavableState::restore_state(si);
 
-  Vaa_ << SavableState::restore_state(si);
-  Vab_ << SavableState::restore_state(si);
-  Xaa_ << SavableState::restore_state(si);
-  Xab_ << SavableState::restore_state(si);
-  Baa_ << SavableState::restore_state(si);
-  Bab_ << SavableState::restore_state(si);
-  emp2pair_aa_ << SavableState::restore_state(si);
-  emp2pair_ab_ << SavableState::restore_state(si);
+  Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
+  Vaa_ = local_matrix_kit->matrix(dim_aa_,dim_aa_);
+  Vab_ = local_matrix_kit->matrix(dim_ab_,dim_ab_);
+  Xaa_ = local_matrix_kit->matrix(dim_aa_,dim_aa_);
+  Xab_ = local_matrix_kit->matrix(dim_ab_,dim_ab_);
+  Baa_ = local_matrix_kit->matrix(dim_aa_,dim_aa_);
+  Bab_ = local_matrix_kit->matrix(dim_ab_,dim_ab_);
+  emp2pair_aa_ = local_matrix_kit->vector(dim_aa_);
+  emp2pair_ab_ = local_matrix_kit->vector(dim_ab_);
+
+  Vaa_.restore(si);
+  Vab_.restore(si);
+  Xaa_.restore(si);
+  Xab_.restore(si);
+  Baa_.restore(si);
+  Bab_.restore(si);
+  emp2pair_aa_.restore(si);
+  emp2pair_ab_.restore(si);
 
   int stdapprox;
   si.get(stdapprox);
@@ -107,8 +117,8 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   int evaluated;
   si.get(evaluated);
   evaluated_ = (bool) evaluated;
-  spinadapted_ = false;
-  debug_ = 0;
+  int spinadapted; si.get(spinadapted); spinadapted_ = (bool) spinadapted;
+  si.get(debug_);
 }
 
 R12IntEval::~R12IntEval()
@@ -145,6 +155,8 @@ void R12IntEval::save_data_state(StateOut& so)
 
   so.put((int)stdapprox_);
   so.put((int)evaluated_);
+  so.put((int)spinadapted_);
+  so.put(debug_);
 }
 
 void R12IntEval::obsolete()
@@ -254,10 +266,10 @@ void R12IntEval::compute()
   
   ExEnv::out0() << endl;
   ExEnv::out0() << indent << "Basis Set completeness diagnostics:" << endl;
-  ExEnv::out0() << indent
+  ExEnv::out0() << indent << indent
 		<< "-Tr(V)/Tr(B) for alpha-alpha pairs:" << indent <<
     scprintf("%10.6lf",(-1.0)*traceV_aa/traceB_aa) << endl;
-  ExEnv::out0() << indent
+  ExEnv::out0() << indent << indent
 		<< "-Tr(V)/Tr(B) for alpha-beta pairs:" << indent <<
     scprintf("%10.6lf",(-1.0)*traceV_ab/traceB_ab) << endl;
 

@@ -63,8 +63,8 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   int stdapprox; s.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
   int spinadapted; s.get(spinadapted); spinadapted_ = (bool)spinadapted;
   s.getstring(r12ints_file_);
-  mp2_corr_energy_ = s.get(mp2_corr_energy_);
-  r12_corr_energy_ = s.get(r12_corr_energy_);
+  s.get(mp2_corr_energy_);
+  s.get(r12_corr_energy_);
 }
 
 MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
@@ -117,6 +117,10 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     r12ints_file_ = strdup("/tmp/r12ints.dat");
   }
 
+  r12eval_ = 0;
+  r12a_energy_ = 0;
+  r12ap_energy_ = 0;
+  r12b_energy_ = 0;
   mp2_corr_energy_ = 0.0;
   r12_corr_energy_ = 0.0;
 }

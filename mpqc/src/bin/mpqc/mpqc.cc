@@ -212,7 +212,7 @@ main(int argc, char *argv[])
 
   delete[] ckptfile;
 
-  int check = (int) options.retrieve("c");
+  int check = (options.retrieve("c") != 0);
   int limit = atoi(options.retrieve("l"));
   if (limit) {
     RefWavefunction wfn(mole);

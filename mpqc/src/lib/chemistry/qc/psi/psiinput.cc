@@ -68,7 +68,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
     nvolume[n] = psifiles->intvalue("nvolume", n);
     tmp = psifiles->count("volumes", n);
     if (tmp != nvolume[n])
-      fprintf(stderr, "bad nvolumes");
+        cerr << "bad nvolumes" << endl;
     volumes[n] = new char*[tmp];
     for(int j=0; j<tmp; j++)
       volumes[n][j] = psifiles->pcharvalue("volumes", n, j);
@@ -79,7 +79,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
   _test = keyval->booleanvalue("test");
   n = keyval->count("docc");
   if (keyval->error() != KeyVal::OK || n != nirrep) {
-      fprintf(stderr, "change size of docc array");
+      cerr << "change size of docc array" << endl;
       abort();
     }
   for (i=0; i<nirrep; i++) 
@@ -88,7 +88,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
   if (!strcmp(opentype, "NONE")) {
     n = keyval->count("socc");
     if (keyval->error() != KeyVal::OK || n != nirrep) {
-        fprintf(stderr, "change size of socc array");
+        cerr << "change size of socc array" << endl;
         abort();
         }
     for (i=0; i<nirrep; i++) {
@@ -102,7 +102,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
   if (keyval->exists("frozen_docc")) {
     n = keyval->count("frozen_docc");
     if (keyval->error() != KeyVal::OK || n != nirrep) {
-        fprintf(stderr, "change size of frozen_docc array");
+        cerr << "change size of frozen_docc array" << endl;
         abort();
       }
     for (i=0; i<nirrep; i++) 
@@ -114,7 +114,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
   if (keyval->exists("frozen_uocc")) {
     n = keyval->count("frozen_uocc");
     if (keyval->error() != KeyVal::OK || n != nirrep) {
-        fprintf(stderr, "change size of frozen_uocc array");
+        cerr << "change size of frozen_uocc array" << endl;
         abort();
       }
     for (i=0; i<nirrep; i++) 
@@ -147,9 +147,6 @@ PSI_Input::~PSI_Input()
   delete[] volumes;
   delete[] unit;
   delete[] nvolume;
-   
-
-  fclose(fp);
 }
 
 
@@ -252,9 +249,9 @@ int errcod;
 char ts[133];
 
     int *unique ;
-    unique = mol_find_unique_atoms(_mol);
+    unique = _mol->find_unique_atoms();
     write_string("geometry = (\n");
-    for (int i=0; i < mol_num_unique_atoms(_mol); i++) {
+    for (int i=0; i < _mol->num_unique_atoms(); i++) {
         sprintf(ts, "  (%f %f %f)\n", _mol->atom(unique[i])[0],
            _mol->atom(unique[i])[1], _mol->atom(unique[i])[2]);
         write_string(ts);
@@ -274,8 +271,8 @@ PSI_Input::write_basis(void)
 
   begin_section("basis");
   int *unique ;
-  unique = mol_find_unique_atoms(_mol);
-  for (i=0; i<mol_num_unique_atoms(_mol); i++) {
+  unique = _mol->find_unique_atoms();
+  for (i=0; i<_mol->num_unique_atoms(); i++) {
     sprintf(ts, "%s:SCdefined = (\n", 
 	    _mol->atom(unique[i]).element().name());
     write_string(ts);
@@ -415,7 +412,7 @@ PSI_Input::write_input_file(const char *dertype, const char *wavefn,
 
   fp = fopen(fname, "w");
   if (fp == NULL) {
-    fprintf(stderr, "(PSI_Input::write_input_file): Can't open %s\n",fname);
+    cerr << "(PSI_Input::write_input_file): Can't open " << fname << endl;
     abort();
     }
   write_defaults(dertype, wavefn);
@@ -432,9 +429,9 @@ PSI_Input::write_input(void)
   char t2[133];
 
   begin_section("input");
-  unique = mol_find_unique_atoms(_mol);
+  unique = _mol->find_unique_atoms();
   sprintf(t1, "atoms = (");
-  for (i=0; i < mol_num_unique_atoms(_mol); i++) {
+  for (i=0; i < _mol->num_unique_atoms(); i++) {
     sprintf(t2, "%s ", _mol->atom(unique[i]).element().symbol());
     strcat(t1, t2);
     }
@@ -452,8 +449,8 @@ PSI_Input::write_key_wq(const char *s, const char *t)
 {
    write_indent();
    if (fprintf(fp, "%s = \"%s\"\n", s, t) < 0) {
-      fprintf(stderr,"(PSI_Input::write_key_wq): trouble writing %s = \"%s\"\n",
-         s, t);
+      cerr << "(PSI_Input::write_key_wq): trouble writing"
+           << s << "= \"" << t << "\"" << endl;
       return(0);
       }
    else return(1);
@@ -466,7 +463,7 @@ PSI_Input_SCF::write_input_file(const char *dertype, const char *wavefn,
 {
   fp = fopen(fname, "w");
   if (fp == NULL) {
-    fprintf(stderr, "(PSI_Input_SCF::write_input_file): Can't open %s\n",fname);
+    cerr << "(PSI_Input_SCF::write_input_file): Can't open " << fname << endl;
     abort();
     }
   write_defaults(dertype, wavefn);
@@ -487,7 +484,9 @@ PSI_Input_CI::write_input_file(const char *dertype, const char *wavefn,
 {
   fp = fopen(fname, "w");
   if (fp == NULL) {
-    fprintf(stderr, "(PSI_Input_CI::write_input_file): Can't open %s\n",fname);    abort();
+    cerr << "(PSI_Input_CI::write_input_file): Can't open "
+         << fname << endl;
+    abort();
     }
   write_defaults(dertype, wavefn);
   write_input();
@@ -507,7 +506,8 @@ PSI_Input_CC::write_input_file(const char *dertype, const char *wavefn,
 {
   fp = fopen(fname, "w");
   if (fp == NULL) {
-    fprintf(stderr, "(PSI_Input_CC::write_input_file): Can't open %s\n",fname);    abort();
+    cerr << "(PSI_Input_CC::write_input_file): Can't open " << fname << endl;
+    abort();
     }
   write_defaults(dertype, wavefn);
   write_input();

@@ -3,10 +3,6 @@
 #ifndef _chemistry_qc_psi_psi_h
 #define _chemistry_qc_psi_psi_h
 
-extern "C" {
-#include <stdio.h>
-}
-
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/basis/basis.h>
@@ -35,7 +31,12 @@ class PSISCF: public OneBodyWavefunction
     //RefSCMatrix eigenvectors();
     double occupation(int vectornum);
 
+    double occupation(int,int);
+    RefDiagSCMatrix eigenvalues();
     RefSCMatrix eigenvectors();
+
+    int gradient_implemented();
+    int value_implemented();
 };
   
 #endif

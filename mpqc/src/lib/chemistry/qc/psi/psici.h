@@ -31,6 +31,9 @@ class PSI_CI: public Wavefunction
     RefSymmSCMatrix density();
 
     void print(ostream&o=cout);
+
+    int gradient_implemented();
+    int value_implemented();
 };
 
 #endif

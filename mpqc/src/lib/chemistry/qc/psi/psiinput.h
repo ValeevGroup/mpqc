@@ -18,9 +18,6 @@
 
 #include<chemistry/molecule/molecule.h>
 #include<chemistry/qc/basis/basis.h>
-extern "C" {
-   #include <stdio.h>
-}
 
 class PSI_Input {
 

@@ -31,6 +31,9 @@ class PSI_CCSD_T: public Wavefunction
     RefSymmSCMatrix density();
 
     void print(ostream&o=cout);
+
+    int gradient_implemented();
+    int value_implemented();
 };
 
 class PSI_CCSD: public Wavefunction
@@ -58,6 +61,9 @@ class PSI_CCSD: public Wavefunction
     RefSymmSCMatrix density();
 
     void print(ostream&o=cout);
+
+    int gradient_implemented();
+    int value_implemented();
 };
 
 class PSI_CCSDT: public Wavefunction
@@ -85,6 +91,9 @@ class PSI_CCSDT: public Wavefunction
     RefSymmSCMatrix density();
 
     void print(ostream&o=cout);
+
+    int gradient_implemented();
+    int value_implemented();
 };
 
 #endif

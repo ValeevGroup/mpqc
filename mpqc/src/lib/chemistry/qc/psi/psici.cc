@@ -62,12 +62,12 @@ void
 PSI_CI::compute()
 {  
   int i;
-  int ni = _mol->point_group().char_table().nirrep();
+  int ni = molecule()->point_group().char_table().nirrep();
 
-  mol_transform_to_principal_axes(_mol);
+  //molecule()->transform_to_principal_axes();
 
   if (!psi_in.test()){
-    psi_in.write_input_file(_gradient.needed() ? "FIRST" : "NONE", "CI",
+    psi_in.write_input_file(do_gradient() ? "FIRST" : "NONE", "CI",
       (int)-log10(desired_value_accuracy()), "input.dat");
 
     system("inputth");
@@ -76,29 +76,29 @@ PSI_CI::compute()
   }
 
   // read output
-  if (_gradient.needed()) {
+  if (do_gradient()) {
     int i, j, ii;
     int *reorder;
     double tol = 1e-6;
-    reorder = new int[_mol->natom()];
+    reorder = new int[molecule()->natom()];
     FILE11 file11(0);
-    for(i=0; i<_mol->natom(); i++)
-      for(j=0; j<_mol->natom(); j++)
-        if( fabs(file11.coordinate(0,i) - _mol->atom(j)[0]) < tol &&
-            fabs(file11.coordinate(1,i) - _mol->atom(j)[1]) < tol &&
-            fabs(file11.coordinate(2,i) - _mol->atom(j)[2]) < tol){
+    for(i=0; i<molecule()->natom(); i++)
+      for(j=0; j<molecule()->natom(); j++)
+        if( fabs(file11.coordinate(0,i) - molecule()->atom(j)[0]) < tol &&
+            fabs(file11.coordinate(1,i) - molecule()->atom(j)[1]) < tol &&
+            fabs(file11.coordinate(2,i) - molecule()->atom(j)[2]) < tol){
           reorder[i] = j;
           break;
           }
-    RefSCVector g(_moldim);
+    RefSCVector g(moldim(),matrixkit());
 
-    for (ii=0, i=0; i<_mol->natom(); i++) {
+    for (ii=0, i=0; i<molecule()->natom(); i++) {
       for (j=0; j<3; j++, ii++) {
         g(ii) = file11.gradient(j,reorder[i]);
         }
       }
     set_gradient(g);
-    _gradient.set_actual_accuracy(desired_gradient_accuracy());
+    set_actual_gradient_accuracy(desired_gradient_accuracy());
     set_energy(file11.energy());
     }
   else {
@@ -130,4 +130,16 @@ RefSymmSCMatrix
 PSI_CI::density()
 {
   abort();
+}
+
+int
+PSI_CI::value_implemented()
+{
+  return 1;
+}
+
+int
+PSI_CI::gradient_implemented()
+{
+  return 1;
 }

@@ -1,5 +1,6 @@
+#include <stdio.h>
+#include <stream.h>
 extern "C" {
-#include<stdio.h>
 int read_file11(int natom, int readto,
       char *label, char *theory, char *dertype,
       double *energy, double *X, double *Y, double *Z, int *AN,
@@ -26,7 +27,7 @@ FILE11::FILE11(int num)
   
  int errcod = read(num);
  if (!errcod)
-   fprintf(stderr, "failed to read gradient #%d from file11\n", num);
+     cerr << "failed to read gradient #" << num <<  "from file11" << endl;
 }
 FILE11::~FILE11()
 {

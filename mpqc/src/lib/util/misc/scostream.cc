@@ -1,5 +1,12 @@
 
+#include <string.h>
+#ifdef __GNUC__
 #include <streambuf.h>
+#elif defined(SGI)
+#include <fstream.h>
+typedef int streamsize;
+#endif
+
 #include <stdiostream.h>
 #include <util/misc/scostream.h>
 

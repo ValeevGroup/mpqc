@@ -61,6 +61,12 @@ ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg,
                       poolallocation + totalsize(),
                       IPC_CREAT | SHM_R | SHM_W);
 
+      if (shmid_ < 0) {
+          perror("shmget");
+          fprintf(stderr,"ShmMemoryGrp: shmget failed -- aborting");
+          abort();
+        }
+
       // attach the shared segment.
       memory_ = (void*) 0;
       memory_ = shmat(shmid_,(SHMAT_TYPE)memory_,0);

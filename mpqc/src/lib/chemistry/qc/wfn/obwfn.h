@@ -10,35 +10,26 @@
 #include <chemistry/qc/wfn/hcore.h>
 
 SavableState_REF_fwddec(OneBodyWavefunction);
-class OneBodyWavefunction: public Wavefunction
-{
+class OneBodyWavefunction: public Wavefunction {
 #   define CLASSNAME OneBodyWavefunction
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
  protected:
-    ResultRefSymmSCMatrix _density;
-    AccResultRefSCMatrix _eigenvectors;
-
-    virtual void form_density(const RefSCMatrix& vec,
-                              const RefSymmSCMatrix& density,
-                              const RefSymmSCMatrix& density_diff,
-                              const RefSymmSCMatrix& open_density,
-                              const RefSymmSCMatrix& open_density_diff);
+    ResultRefSymmSCMatrix density_;
+    AccResultRefSCMatrix eigenvectors_;
 
  public:
-    OneBodyWavefunction(const OneBodyWavefunction&);
-    OneBodyWavefunction(const RefKeyVal&);
     OneBodyWavefunction(StateIn&);
+    OneBodyWavefunction(const RefKeyVal&);
     ~OneBodyWavefunction();
 
-    OneBodyWavefunction & operator=(const OneBodyWavefunction&);
-    
     void save_data_state(StateOut&);
 
     virtual RefSCMatrix eigenvectors() = 0;
     virtual double occupation(int vectornum) = 0;
 
     virtual RefSCMatrix projected_eigenvectors(const RefOneBodyWavefunction&);
+    virtual RefSCMatrix hcore_guess();
 
     double orbital(const SCVector3& r, int iorb);
     double orbital_density(const SCVector3& r, int iorb, double* orbval = 0);
@@ -60,19 +51,15 @@ class HCoreWfn: public OneBodyWavefunction {
     int ndocc;
     int nsocc;
     
-    RefAccumHCore _accumh;
+    RefAccumHCore accumh;
     
     void compute();
 
   public:
-    HCoreWfn(const OneBodyWavefunction&);
-    HCoreWfn(const RefKeyVal&);
-    HCoreWfn(const HCoreWfn&);
     HCoreWfn(StateIn&);
+    HCoreWfn(const RefKeyVal&);
     ~HCoreWfn();
 
-    HCoreWfn & operator=(const HCoreWfn&);
-    
     void save_data_state(StateOut&);
 
     double occupation(int vectornum);

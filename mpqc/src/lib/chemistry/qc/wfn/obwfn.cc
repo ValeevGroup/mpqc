@@ -23,51 +23,50 @@ OneBodyWavefunction::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-OneBodyWavefunction::OneBodyWavefunction(const OneBodyWavefunction& obwfn) :
-  Wavefunction(obwfn),
-  _eigenvectors(obwfn._eigenvectors,this),
-  _density(obwfn._density,this)
-{
-}
-
 OneBodyWavefunction::OneBodyWavefunction(const RefKeyVal&keyval):
   Wavefunction(keyval),
-  _eigenvectors(this),
-  _density(this)
+  eigenvectors_(this),
+  density_(this)
 {
-  _eigenvectors.set_desired_accuracy(
+  eigenvectors_.set_desired_accuracy(
     keyval->doublevalue("eigenvector_accuracy"));
-  if (_eigenvectors.desired_accuracy() < 1.0e-7)
-    _eigenvectors.set_desired_accuracy(1.0e-7);
+
+  if (eigenvectors_.desired_accuracy() > 1.0e-7)
+    eigenvectors_.set_desired_accuracy(1.0e-7);
+
+  if (eigenvectors_.desired_accuracy() < DBL_EPSILON)
+    eigenvectors_.set_desired_accuracy(DBL_EPSILON);
+}
+
+OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
+  Wavefunction(s),
+  eigenvectors_(s,this),
+  density_(s,this)
+  maybe_SavableState(s)
+{
+  eigenvectors_.result_noupdate() =
+    basis_matrixkit()->matrix(basis_dimension(), basis_dimension());
+  eigenvectors_.result_noupdate()->restore(s);
+
+  density_.result_noupdate() =
+    basis_matrixkit()->symmmatrix(basis_dimension());
+  density_.result_noupdate()->restore(s);
 }
 
 OneBodyWavefunction::~OneBodyWavefunction()
 {
 }
 
-OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
-  Wavefunction(s),
-  _eigenvectors(s,this),
-  _density(s,this)
-  maybe_SavableState(s)
-{
-}
-
-OneBodyWavefunction &
-OneBodyWavefunction::operator=(const OneBodyWavefunction& obwfn)
-{
-  Wavefunction::operator=(obwfn);
-  _eigenvectors = obwfn._eigenvectors;
-  _density = obwfn._density;
-  return *this;
-}
-
 void
 OneBodyWavefunction::save_data_state(StateOut&s)
 {
   Wavefunction::save_data_state(s);
-  _eigenvectors.save_data_state(s);
-  _density.save_data_state(s);
+
+  eigenvectors_.save_data_state(s);
+  eigenvectors_.result_noupdate()->save(s);
+
+  density_.save_data_state(s);
+  density_.result_noupdate()->save(s);
 }
 
 // at some point this will have to check for zero eigenvalues and not
@@ -106,7 +105,7 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   //ovec.print("old wavefunction");
   
   // now form the overlap between the old basis and the new one
-  RefSCMatrix s2(basis_dimension(), ovec.rowdim(), matrixkit());
+  RefSCMatrix s2(basis_dimension(), ovec.rowdim(), basis_matrixkit());
   RefSCElementOp op =
     new OneBodyIntOp(integral()->overlap_int(basis(), owfn->basis()));
   s2.assign(0.0);
@@ -116,7 +115,7 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   //s2.print("overlap between new basis and old");
   
   // form C' = S2 * Cold
-  RefSCMatrix cprime(s2.rowdim(),ovec.coldim(),matrixkit());
+  RefSCMatrix cprime(s2.rowdim(),ovec.coldim(),basis_matrixkit());
   cprime.assign(0.0);
   cprime.accumulate_product(s2,ovec);
   //cprime.print("C' matrix");
@@ -136,7 +135,7 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   //D.print("D matrix");
   
   // we also need X = C'~ * S^-1 * C'
-  RefSymmSCMatrix X(cprime.coldim(),matrixkit());
+  RefSymmSCMatrix X(cprime.coldim(),basis_matrixkit());
   X.assign(0.0);
   X.accumulate_transform(cprime.t(),s);
   //X.print("X matrix");
@@ -158,8 +157,7 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   
   // now form core guess in the present basis, and then stuff in the
   // projected bit
-  HCoreWfn hcwfn(*this);
-  RefSCMatrix vec = hcwfn.eigenvectors();
+  RefSCMatrix vec = hcore_guess();
   vec.assign_subblock(Cpp,0,Cpp.nrow()-1,0,nocc-1);
   //vec.print("new vector");
 
@@ -167,6 +165,19 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   
   Cpp=0;
   
+  return vec;
+}
+
+RefSCMatrix
+OneBodyWavefunction::hcore_guess()
+{
+  RefSymmSCMatrix hcore = core_hamiltonian();
+  RefSCMatrix vec(basis_dimension(), basis_dimension(), basis_matrixkit());
+  RefDiagSCMatrix val(basis_dimension(), basis_matrixkit());
+  hcore.diagonalize(val,vec);
+
+  vec = ao_to_orthog_ao() * vec;
+
   return vec;
 }
 
@@ -179,15 +190,64 @@ OneBodyWavefunction::density(const SCVector3 &c)
 RefSymmSCMatrix
 OneBodyWavefunction::density()
 {
-  if (!_density.computed()) {
+  if (!density_.computed()) {
     RefSCMatrix vec = eigenvectors();
-    RefSymmSCMatrix newdensity(basis_dimension(), matrixkit());
-    form_density(vec,newdensity,0,0,0);
-    _density = newdensity;
-    _density.computed() = 1;
+    RefSymmSCMatrix newdensity(basis_dimension(), basis_matrixkit());
+
+    int nbasis = basis()->nbasis();
+
+    // find out how many doubly occupied orbitals there should be
+    int ndocc = 0, nsocc=0;
+    for (int i=0; i < nbasis; i++) {
+      if (occupation(i) > 1.9)
+        ndocc++;
+      else if (occupation(i) > 0.9)
+        nsocc++;
+    }
+  
+    // find out what type of matrices we're dealing with
+    if (LocalSCMatrix::castdown(vec.pointer())) {
+      LocalSCMatrix *lvec = LocalSCMatrix::require_castdown(
+        vec.pointer(), "OneBodyWavefunction::form_density");
+      LocalSymmSCMatrix *ldens = LocalSymmSCMatrix::require_castdown(
+        newdensity.pointer(), "OneBodyWavefunction::form_density");
+
+      for (int i=0; i < nbasis; i++) {
+        for (int j=0; j <= i; j++) {
+          double pt=0;
+          int k;
+          for (k=0; k < ndocc; k++)
+            pt += 2.0*lvec->get_element(i,k)*lvec->get_element(j,k);
+
+          double pto=0;
+          for (k=ndocc; k < ndocc+nsocc; k++)
+            pto += lvec->get_element(i,k)*lvec->get_element(j,k);
+
+          ldens->set_element(i,j,pt+pto);
+        }
+      }
+    } else {
+      for (int i=0; i < nbasis; i++) {
+        for (int j=0; j <= i; j++) {
+          int k;
+          double pt=0;
+          for (k=0; k < ndocc; k++)
+            pt += 2.0*vec.get_element(i,k)*vec.get_element(j,k);
+
+          double pto=0;
+          for (k=ndocc; k < ndocc+nsocc; k++)
+            pto += vec.get_element(i,k)*vec.get_element(j,k);
+
+          newdensity.set_element(i,j,pt+pto);
+        }
+      }
+    }
+
+    density_ = newdensity;
+    density_.computed() = 1;
   }
 
-  return _density;
+  return density_;
 }
 
 // Function for returning an orbital value at a point
@@ -210,77 +270,4 @@ void
 OneBodyWavefunction::print(ostream&o)
 {
   Wavefunction::print(o);
-}
-
-//////////////////////////////////////////////////////////////////////////
-
-void
-OneBodyWavefunction::form_density(const RefSCMatrix& vec,
-                                  const RefSymmSCMatrix& density,
-                                  const RefSymmSCMatrix& density_diff,
-                                  const RefSymmSCMatrix& open_density,
-                                  const RefSymmSCMatrix& open_density_diff)
-{
-  int nbasis = basis()->nbasis();
-
-  // find out how many doubly occupied orbitals there should be
-  int ndocc = 0, nsocc=0;
-  for (int i=0; i < nbasis; i++) {
-    if (occupation(i) > 1.9)
-      ndocc++;
-    else if (occupation(i) > 0.9)
-      nsocc++;
-  }
-  
-  // find out what type of matrices we're dealing with
-  if (LocalSCMatrix::castdown(vec.pointer())) {
-    LocalSCMatrix *lvec = LocalSCMatrix::require_castdown(
-      vec.pointer(), "OneBodyWavefunction::form_density");
-    LocalSymmSCMatrix *ldens = LocalSymmSCMatrix::require_castdown(
-      density.pointer(), "OneBodyWavefunction::form_density");
-    LocalSymmSCMatrix *ldensd = LocalSymmSCMatrix::require_castdown(
-      density_diff.pointer(), "OneBodyWavefunction::form_density");
-    LocalSymmSCMatrix *lodens = LocalSymmSCMatrix::require_castdown(
-      open_density.pointer(), "OneBodyWavefunction::form_density");
-    LocalSymmSCMatrix *lodensd = LocalSymmSCMatrix::require_castdown(
-      open_density_diff.pointer(), "OneBodyWavefunction::form_density");
-
-    for (int i=0; i < nbasis; i++) {
-      for (int j=0; j <= i; j++) {
-        double pt=0;
-        int k;
-        for (k=0; k < ndocc; k++)
-          pt += 2.0*lvec->get_element(i,k)*lvec->get_element(j,k);
-
-        double pto=0;
-        for (k=ndocc; k < ndocc+nsocc; k++)
-          pto += lvec->get_element(i,k)*lvec->get_element(j,k);
-
-        if (lodens) {
-          if (lodensd)
-            lodensd->set_element(i,j,pto-lodens->get_element(i,j));
-          lodens->set_element(i,j,pto);
-        }
-        if (ldensd)
-          ldensd->set_element(i,j,pt+pto-ldens->get_element(i,j));
-        ldens->set_element(i,j,pt+pto);
-      }
-    }
-  } else {
-    density.assign(0.0);
-    open_density.assign(0.0);
-    for (int i=0; i < nbasis; i++) {
-      for (int j=0; j <= i; j++) {
-        int k;
-        for (k=0; k < ndocc; k++) {
-          density.set_element(i,j, density.get_element(i,j)
-                              + 2.0*vec.get_element(i,k)*vec.get_element(j,k));
-        }
-        for (k=ndocc; k < ndocc+nsocc; k++) {
-          open_density.set_element(i,j, open_density.get_element(i,j)
-                              + vec.get_element(i,k)*vec.get_element(j,k));
-        }
-      }
-    }
-  }
 }

@@ -168,6 +168,9 @@ Units::parse_unit()
                ||eq(unitstring, "eV")) {
           factor = 1.0/27.2113834; // physics.nist.gov/constants
         }
+      else if (eq(unitstring, "debye")) {
+          factor = 1.0/2.541765; // several WWW sources
+        }
       else if (eq(unitstring, "radian")
                ||eq(unitstring, "radians")) {
         }

@@ -4,8 +4,8 @@ ifndef SRCDIR
 endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-CXXSRC = pool.cc mstate.cc \
-         message.cc messproc.cc messint.cc messshm.cc
+CXXSRC = mstate.cc \
+         message.cc messproc.cc messint.cc messshm.cc # pool.cc
 # memory.cc
 
 INC = pool.h message.h mstate.h

@@ -63,6 +63,8 @@ class HSOSSCF: public SCF {
     void print(ostream&o=cout);
 
     double occupation(int irrep, int vectornum);
+    double alpha_occupation(int irrep, int vectornum);
+    double beta_occupation(int irrep, int vectornum);
 
     int n_fock_matrices() const;
     RefSymmSCMatrix fock(int);

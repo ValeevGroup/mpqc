@@ -224,6 +224,20 @@ HSOSSCF::occupation(int ir, int i)
   return 0.0;
 }
 
+double
+HSOSSCF::alpha_occupation(int ir, int i)
+{
+  if (i < ndocc_[ir] + nsocc_[ir]) return 1.0;
+  return 0.0;
+}
+
+double
+HSOSSCF::beta_occupation(int ir, int i)
+{
+  if (i < ndocc_[ir]) return 1.0;
+  return 0.0;
+}
+
 int
 HSOSSCF::n_fock_matrices() const
 {

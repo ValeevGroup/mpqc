@@ -200,7 +200,7 @@ sub check {
                         = compare_vecs_magnitude($result->d1large_coef(),
                                                  $cresult->d1large_coef());
                     printf " D1L:%d", $maxerror;
-                    print "*" if ($maxerror <= 8);
+                    print "*" if ($maxerror <= 7);
                     my $n = n_nonzero_in_vec($result->d1large_coef());
                     my $xok = compare_string_vecs($result->d1large_i(),
                                                   $cresult->d1large_i(),$n)

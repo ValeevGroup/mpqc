@@ -367,6 +367,10 @@ main(int argc, char *argv[])
   if (keyval->error() != KeyVal::OK)
     print_mole=1;
   
+  int print_timings = keyval->booleanvalue("print_timings");
+  if (keyval->error() != KeyVal::OK)
+    print_timings=1;
+  
   int ready_for_freq = 1;
   if (mole.nonnull()) {
     if (((do_opt && opt.nonnull()) || do_grad)
@@ -390,14 +394,14 @@ main(int argc, char *argv[])
       }
     } else if (do_grad && mole->gradient_implemented()) {
       mole->do_gradient(1);
-      cout << node0 << indent
-           << scprintf("Value of the MolecularEnergy: %20.15f\n",
+      cout << node0 << endl << indent
+           << scprintf("Value of the MolecularEnergy: %20.15f",
                        mole->energy())
            << endl;
       mole->gradient().print("Gradient of the MolecularEnergy:");
     } else if (do_energy && mole->value_implemented()) {
-      cout << node0 << indent
-           << scprintf("Value of the MolecularEnergy: %20.15f\n",
+      cout << node0 << endl << indent
+           << scprintf("Value of the MolecularEnergy: %20.15f",
                        mole->energy())
            << endl;
     }
@@ -485,7 +489,8 @@ main(int argc, char *argv[])
     }
   }
   
-  tim->print(cout);
+  if (print_timings)
+    tim->print(cout);
 
   return 0;
 }

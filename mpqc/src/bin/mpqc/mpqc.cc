@@ -283,13 +283,15 @@ main(int argc, char *argv[])
        << endl << endl;
 
   cout << node0 << indent
-       << "Using " << grp->class_name() << " for communications." << endl;
+       << "Using " << grp->class_name() << " for communications." << endl
+       << indent
+       << "Using " << thread->class_name() << " for threading." << endl;
 
   // check for a molecular energy and optimizer
   char * molname = keyval->pcharvalue("filename");
   if (!molname)
     molname = new_string(basename);
-  
+
   char * ckptfile = new char[strlen(molname)+6];
   sprintf(ckptfile,"%s.ckpt",molname);
   
@@ -332,10 +334,20 @@ main(int argc, char *argv[])
     char *suf = strrchr(restartfile,'.');
     if (!strcmp(suf,".wfn")) {
       mole.key_restore_state(si,"mole");
+      cout << node0 << endl << indent
+           << "Restored <MolecularEnergy> from " << restartfile << endl;
+
+      opt = keyval->describedclassvalue("opt");
+      if (opt.nonnull())
+        opt->set_function(mole);
     }
     else {
       opt.key_restore_state(si,"opt");
-      if (opt.nonnull()) mole = opt->function();
+      if (opt.nonnull()) {
+        mole = opt->function();
+        cout << node0 << endl << indent
+             << "Restored <Optimize> from " << restartfile << endl;
+      }
     }
   } else {
     mole = keyval->describedclassvalue("mole");
@@ -353,9 +365,6 @@ main(int argc, char *argv[])
     if (grp->me() == 0) opt->set_checkpoint_file(ckptfile);
     else opt->set_checkpoint_file(devnull);
   }
-
-  delete[] restartfile;
-  delete[] ckptfile;
 
   // see if frequencies are wanted
   char * freqfile = new char[strlen(molname)+6];
@@ -424,6 +433,32 @@ main(int argc, char *argv[])
   if (keyval->error() != KeyVal::OK)
     print_timings=1;
   
+  // sanity checks for the benefit of reasonable looking output
+  if (opt.null())
+    do_opt=0;
+  else
+    do_grad=1;
+  
+  cout << node0 << endl << indent
+       << "MPQC options:" << endl << incindent
+       << indent << "matrixkit     = <"
+       << SCMatrixKit::default_matrixkit()->class_name() << ">" << endl
+       << indent << "filename      = " << molname << endl
+       << indent << "restart_file  = " << restartfile << endl
+       << indent << "restart       = " << (restart ? "yes" : "no") << endl
+       << indent << "checkpoint    = " << (checkpoint ? "yes" : "no") << endl
+       << indent << "savestate     = " << (savestate ? "yes" : "no") << endl
+       << indent << "do_energy     = " << (do_energy ? "yes" : "no") << endl
+       << indent << "do_gradient   = " << (do_grad ? "yes" : "no") << endl
+       << indent << "optimize      = " << (do_opt ? "yes" : "no") << endl
+       << indent << "write_pdb     = " << (do_pdb ? "yes" : "no") << endl
+       << indent << "print_mole    = " << (print_mole ? "yes" : "no") << endl
+       << indent << "print_timings = " << (print_timings ? "yes" : "no")
+       << endl << decindent;
+
+  delete[] restartfile;
+  delete[] ckptfile;
+  
   int ready_for_freq = 1;
   if (mole.nonnull()) {
     if (((do_opt && opt.nonnull()) || do_grad)
@@ -445,23 +480,65 @@ main(int argc, char *argv[])
              << "The optimization has NOT converged." << endl << endl;
         ready_for_freq = 0;
       }
+      cout << node0 << indent
+           << scprintf("Value of the MolecularEnergy: %20.15f",
+                       mole->energy())
+           << endl << endl;
     } else if (do_grad && mole->gradient_implemented()) {
       mole->do_gradient(1);
       cout << node0 << endl << indent
            << scprintf("Value of the MolecularEnergy: %20.15f",
                        mole->energy())
-           << endl;
+           << endl << endl;
       mole->gradient().print("Gradient of the MolecularEnergy:");
     } else if (do_energy && mole->value_implemented()) {
       cout << node0 << endl << indent
            << scprintf("Value of the MolecularEnergy: %20.15f",
                        mole->energy())
-           << endl;
+           << endl << endl;
     }
   }
 
   tim->exit("calc");
 
+  // save this before doing the frequency stuff since that obsoletes the
+  // function stuff
+  if (savestate) {
+    if (opt.nonnull()) {
+      if (grp->me() == 0) {
+        ckptfile = new char[strlen(molname)+6];
+        sprintf(ckptfile,"%s.ckpt",molname);
+      }
+      else {
+        ckptfile = new char[strlen(devnull)+1];
+        strcpy(ckptfile, devnull);
+      }
+
+      StateOutBin so(ckptfile);
+      opt.save_state(so);
+      so.close();
+
+      delete[] ckptfile;
+    }
+
+    if (mole.nonnull()) {
+      if (grp->me() == 0) {
+        ckptfile = new char[strlen(molname)+6];
+        sprintf(ckptfile,"%s.wfn",molname);
+      }
+      else {
+        ckptfile = new char[strlen(devnull)+1];
+        strcpy(ckptfile, devnull);
+      }
+  
+      StateOutBin so(ckptfile);
+      mole.save_state(so);
+      so.close();
+
+      delete[] ckptfile;
+    }
+  }
+  
   if (ready_for_freq && molfreq.nonnull()) {
     tim->enter("frequencies");
     if (!molfreq->displacements_computed())
@@ -563,42 +640,6 @@ main(int argc, char *argv[])
          << endl;
   }
 
-  if (savestate) {
-    if (opt.nonnull()) {
-      if (grp->me() == 0) {
-        ckptfile = new char[strlen(molname)+6];
-        sprintf(ckptfile,"%s.ckpt",molname);
-      }
-      else {
-        ckptfile = new char[strlen(devnull)+1];
-        strcpy(ckptfile, devnull);
-      }
-
-      StateOutBin so(ckptfile);
-      opt.save_state(so);
-      so.close();
-
-      delete[] ckptfile;
-    }
-
-    if (mole.nonnull()) {
-      if (grp->me() == 0) {
-        ckptfile = new char[strlen(molname)+6];
-        sprintf(ckptfile,"%s.wfn",molname);
-      }
-      else {
-        ckptfile = new char[strlen(devnull)+1];
-        strcpy(ckptfile, devnull);
-      }
-  
-      StateOutBin so(ckptfile);
-      mole.save_state(so);
-      so.close();
-
-      delete[] ckptfile;
-    }
-  }
-  
   if (print_timings)
     tim->print(cout);
 

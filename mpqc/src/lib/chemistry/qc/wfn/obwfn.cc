@@ -268,7 +268,9 @@ OneBodyWavefunction::projected_eigenvalues(const RefOneBodyWavefunction& owfn,
       "OneBodyWavefunction::projected_eigenvalues: oval"
       );
     
-  RefDiagSCMatrix val = core_hamiltonian().eigvals();
+  // get the core hamiltonian eigenvalues
+  RefDiagSCMatrix val;
+  hcore_guess(val);
   BlockedDiagSCMatrix *valp =
     BlockedDiagSCMatrix::require_castdown(val.pointer(),
       "OneBodyWavefunction::projected_eigenvalues: val"

@@ -56,6 +56,7 @@ MemoryGrp::_castdown(const ClassDesc*cd)
 MemoryGrp::MemoryGrp()
 {
   use_locks_ = 1;
+  debug_ = 0;
 }
 
 MemoryGrp::MemoryGrp(const RefKeyVal& keyval)

@@ -332,7 +332,7 @@ main()
   cout << "DescribedClass::castdown(&d) = "
        << (void*) DescribedClass::castdown(&d) << '\n';
 
-  AssignedKeyVal akv;
+  AssignedKeyVal akv; akv.unmanage();
 
   akv.assign(":x",1);
   akv.assign(":y",3.0);
@@ -348,7 +348,7 @@ main()
   show( akv.intvalue("x") );  show (akv.errormsg() ); cout << '\n';
   show( akv.intvalue(":z") );  show (akv.errormsg() ); cout << '\n';
 
-  ParsedKeyVal pkv("statetest.in");
+  ParsedKeyVal pkv("statetest.in"); pkv.unmanage();
 
   show( pkv.exists(":x") );  show( pkv.errormsg() ); cout << '\n';
   show( pkv.exists(":z") );  show (pkv.errormsg() ); cout << '\n';

@@ -158,22 +158,22 @@ void sigfpe_handler(int)
   unsigned long fp_control = ieee_get_fp_control();
   int fatal = 0;
   if (fp_control & IEEE_STATUS_INV) {
-      ExEnv::outn() << "SGIFPE: invalid operation" << endl;;
+      ExEnv::outn() << "SIGFPE: invalid operation" << endl;
       fatal = 1;
     }
   if (fp_control & IEEE_STATUS_DZE) {
-      ExEnv::outn() << "SGIFPE: divide by zero" << endl;;
+      ExEnv::outn() << "SIGFPE: divide by zero" << endl;
       fatal = 1;
     }
   if (fp_control & IEEE_STATUS_OVF) {
-      ExEnv::outn() << "SGIFPE: overflow" << endl;;
+      ExEnv::outn() << "SIGFPE: overflow" << endl;
       fatal = 1;
     }
   if (fp_control & IEEE_STATUS_UNF) {
-      //ExEnv::outn() << "SGIFPE: underflow" << endl;;
+      //ExEnv::outn() << "SIGFPE: underflow" << endl;
     }
   if (fp_control & IEEE_STATUS_INE) {
-      //ExEnv::outn() << "SGIFPE: inexact" << endl;;
+      //ExEnv::outn() << "SIGFPE: inexact" << endl;
     }
   // throw'ing due to an FPE will violate nothrow guarantees, so abort
   if (fatal) abort();

@@ -4,9 +4,10 @@
 int
 main()
 {
+  int i;
   AVLSet<int> iset;
 
-  for (int i=10; i<20; i++) {
+  for (i=10; i<20; i++) {
       printf("adding %d\n",i);
       iset.add(i);
     }
@@ -16,11 +17,13 @@ main()
       iset.add(i);
     }
 
-  iset.del(10);
-  iset.del(15);
+  int ten=10, fifteen=15;
+  iset.del(ten);
+  iset.del(fifteen);
 
   printf("iset:");
-  for (Pix I=iset.first(); I; iset.next(I)) {
+  Pix I;
+  for (I=iset.first(); I; iset.next(I)) {
       printf(" %d",iset(I));
     }
   printf("\n");
@@ -43,8 +46,8 @@ main()
       aset.add(i);
     }
 
-  aset.del(10);
-  aset.del(15);
+  aset.del(ten);
+  aset.del(fifteen);
 
   printf("aset:");
   for (I=aset.first(); I; aset.next(I)) {

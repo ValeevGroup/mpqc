@@ -52,6 +52,7 @@
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/molecule/molfreq.h>
+#include <chemistry/molecule/formula.h>
 #include <chemistry/qc/wfn/wfn.h>
 
 // Force linkages:
@@ -300,6 +301,12 @@ main(int argc, char *argv[])
   } else {
     mole = keyval->describedclassvalue("mole");
     opt = keyval->describedclassvalue("opt");
+  }
+
+  if (mole.nonnull()) {
+    MolecularFormula mf(mole->molecule());
+    cout << node0 << endl << indent
+         << "Molecular formula " << mf.formula() << endl;
   }
 
   if (checkpoint && opt.nonnull()) {

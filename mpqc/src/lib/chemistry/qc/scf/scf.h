@@ -62,6 +62,8 @@ class SCF: public OneBodyWavefunction {
 
     RefMessageGrp scf_grp_;
     int local_;
+
+    int debug_;
     
   protected:
     // implement the Compute::compute() function
@@ -116,6 +118,9 @@ class SCF: public OneBodyWavefunction {
     virtual RefSymmSCMatrix effective_fock() =0;
     
     void print(ostream&o=cout);
+
+    // nicely print n x 3 data that are stored in a vector
+    void print_natom_3(const RefSCVector &, const char *t=0, ostream&o=cout);
 
   protected:
     ////////////////////////////////////////////////////////////////////////

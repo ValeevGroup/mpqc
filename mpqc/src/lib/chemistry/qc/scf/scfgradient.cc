@@ -169,6 +169,11 @@ SCF::compute_gradient(const RefSCVector& gradient)
   tim_enter("nuc rep");
   nuc_repulsion(g, molecule());
 
+  if (debug_) {
+    gradient.assign(g);
+    print_natom_3(gradient,"Nuclear Contribution to the Gradient:");
+  }
+
   double *o = new double[n3];
   memset(o,0,sizeof(double)*gradient.n());
 
@@ -177,12 +182,22 @@ SCF::compute_gradient(const RefSCVector& gradient)
   RefSymmSCMatrix dens = lagrangian();
   RefOneBodyDerivInt derint = integral()->overlap_deriv();
   ob_gradient(derint, o, dens, basis(), scf_grp_);
+
+  if (debug_) {
+    gradient.assign(o);
+    print_natom_3(gradient,"Overlap Contribution to the Gradient:");
+  }
   
   // other one electron contributions
   tim_change("one electron gradient");
   dens = gradient_density();
   derint = integral()->hcore_deriv();
   ob_gradient(derint, o, dens, basis(), scf_grp_);
+
+  if (debug_) {
+    gradient.assign(o);
+    print_natom_3(gradient,"One-Electron Contribution to the Gradient:");
+  }
 
   if (scf_grp_->n() > 1)
     scf_grp_->sum(o, n3);
@@ -197,6 +212,11 @@ SCF::compute_gradient(const RefSCVector& gradient)
   memset(o,0,sizeof(double)*gradient.n());
   two_body_deriv(o);
   tim_exit("two electron gradient");
+
+  if (debug_) {
+    gradient.assign(o);
+    print_natom_3(gradient,"Two-Electron Contribution to the Gradient:");
+  }
 
   for (i=0; i < n3; i++) g[i] += o[i];
   

@@ -97,6 +97,8 @@ SCF::SCF(const RefKeyVal& keyval) :
     extrap_ = new DIIS;
   
   storage_ = keyval->intvalue("memory");
+
+  debug_ = keyval->intvalue("debug");
   
   if (keyval->exists("local_density"))
     local_dens_ = keyval->booleanvalue("local_density");
@@ -162,6 +164,31 @@ SCF::print(ostream&o)
     << decindent << endl;
 }
 
+void
+SCF::print_natom_3(const RefSCVector &v, const char *title = 0, ostream&o=cout)
+{
+  int precision = 10;
+  int lwidth = precision + 4;
+  int n = v.n()/3;
+  if (title) {
+    o << node0 << indent << title << endl;
+    o << node0 << incindent;
+  }
+  for (int i=0,ii=0; i<n; i++) {
+    o << node0 << indent
+      << scprintf("%4d %3s",
+                  i+1,molecule()->atom(i).element().symbol());
+    for (int j=0; j<3; j++,ii++) {
+      o << node0 << scprintf(" % *.*f", lwidth,precision,double(v(ii)));
+    }
+    o << node0 << endl;
+  }
+  if (title) {
+    o << node0 << decindent;
+  }
+  o.flush();
+}
+
 //////////////////////////////////////////////////////////////////////////////
 
 void
@@ -202,7 +229,7 @@ SCF::compute()
                      desired_gradient_accuracy());
 
     compute_gradient(gradient);
-    gradient.print("cartesian gradient");
+    print_natom_3(gradient,"Total Gradient:");
     set_gradient(gradient);
 
     set_actual_gradient_accuracy(desired_gradient_accuracy());

@@ -123,6 +123,11 @@ CLSCF::CLSCF(const OneBodyWavefunction& obwfn) :
   OneBodyWavefunction(obwfn)
 {
   init();
+  _accumeffh = new GSGeneralEffH;
+  _accumddh = new AccumNullDDH;
+  _accumdih = new AccumHCore;
+  _accumdih->init(basis(),molecule());
+  _extrap = new DIIS;
 }
 
 CLSCF::CLSCF(const CLSCF& clscf) :

@@ -11,6 +11,8 @@
 #include <chemistry/qc/scf/hsosscf.h>
 #include <chemistry/qc/scf/ossscf.h>
 #include <chemistry/qc/scf/tcscf.h>
+#include <chemistry/qc/scf/xscf.h>
+#include <chemistry/qc/scf/mcscf.h>
 #include <chemistry/molecule/coor.h>
 #include <math/optimize/qnewton.h>
 #include <math/optimize/gdiis.h>
@@ -25,6 +27,8 @@ const ClassDesc &fl0  = CLSCF::class_desc_;
 const ClassDesc &fl0a = HSOSSCF::class_desc_;
 const ClassDesc &fl0b = OSSSCF::class_desc_;
 const ClassDesc &fl0c = TCSCF::class_desc_;
+const ClassDesc &fl0d = XSCF::class_desc_;
+const ClassDesc &fl0e = MCSCF::class_desc_;
 const ClassDesc &fl1a = RedundMolecularCoor::class_desc_;
 const ClassDesc &fl1b = CartMolecularCoor::class_desc_;
 const ClassDesc &fl1c = SymmMolecularCoor::class_desc_;

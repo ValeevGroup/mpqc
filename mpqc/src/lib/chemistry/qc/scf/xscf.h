@@ -57,6 +57,7 @@ class XSCF: public OneBodyWavefunction
     double ci2;
 
     double sab;
+    double eop;
     
     int _density_reset_freq;
 
@@ -72,6 +73,8 @@ class XSCF: public OneBodyWavefunction
     RefSymmSCMatrix _densb;
     RefSymmSCMatrix _densab;
     RefSymmSCMatrix _densab2;
+    RefSCVector _ca;
+    RefSCVector _cb;
 
     RefSymmSCMatrix _gr_hcore;
     RefSCMatrix _gr_vector;

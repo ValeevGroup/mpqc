@@ -6,6 +6,7 @@
 #include <util/misc/newstring.h>
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
+#include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/hsosscf.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -32,6 +33,11 @@ occ(PointBag_double *z, int &nd, int &ns)
 
   nd = Z/2;
   ns = Z%2;
+
+  if (!ns) {
+    nd--;
+    ns += 2;
+  }
 }
 
 void
@@ -123,6 +129,11 @@ HSOSSCF::HSOSSCF(const OneBodyWavefunction& obwfn) :
   OneBodyWavefunction(obwfn)
 {
   init();
+  _accumeffh = new GSGeneralEffH;
+  _accumddh = new AccumNullDDH;
+  _accumdih = new AccumHCore;
+  _accumdih->init(basis(),molecule());
+  _extrap = new DIIS;
 }
 
 HSOSSCF::HSOSSCF(const HSOSSCF& hsosscf) :
@@ -226,7 +237,7 @@ HSOSSCF::compute()
   if (_energy.needed()) {
     if (_eigenvectors.result_noupdate().null()) {
       // start from core guess
-      HCoreWfn hcwfn(*this);
+      CLSCF hcwfn(*this);
       RefSCMatrix vec = hcwfn.eigenvectors();
 
       _eigenvectors = vec;

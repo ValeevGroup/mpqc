@@ -10,9 +10,9 @@ BIN_OR_LIB = LIB
 
 SRCS = clscf.cc clgmat.cc clgrad.cc hsosscf.cc hsosgmat.cc hsosgrad.cc \
        ossscf.cc ossgmat.cc ossgrad.cc tcscf.cc tcgmat.cc tcgrad.cc \
-       xscf.cc xgmat.cc xgrad.cc
+       xscf.cc xgmat.cc xgrad.cc mcscf.cc mcgrad.cc mcgmat.cc
 
-CLASSES = CLSCF HSOSSCF OSSSCF TCSCF XSCF
+CLASSES = CLSCF HSOSSCF OSSSCF TCSCF XSCF MCSCF
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 

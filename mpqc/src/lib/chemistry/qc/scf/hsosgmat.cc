@@ -26,6 +26,7 @@ max_den(centers_t *centers, const RefSymmSCMatrix& dens, int s1, int s2)
     }
   }
 
+  if (max < 1.0e-15) max=1.0e-15;
   int ret = (int) (log(max)/log(2.0));
   if (ret < -126) ret=-126;
 

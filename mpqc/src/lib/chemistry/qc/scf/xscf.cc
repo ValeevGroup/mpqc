@@ -7,6 +7,8 @@
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
 #include <chemistry/qc/scf/clscf.h>
+#include <chemistry/qc/scf/ossscf.h>
+#include <chemistry/qc/scf/hsosscf.h>
 #include <chemistry/qc/scf/xscf.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -210,7 +212,7 @@ XSCF::value_implemented()
 int
 XSCF::gradient_implemented()
 {
-  return 0;
+  return 1;
 }
 
 int
@@ -247,12 +249,24 @@ XSCF::compute()
       CLSCF hcwfn(*this);
       RefSCMatrix vec = hcwfn.eigenvectors();
 
-      _eigenvectors = vec;
-    }
+      // schmidt orthogonalize the vector
+      vec->schmidt_orthog(overlap().pointer(),_ndocc+2);
 
-    // schmidt orthogonalize the vector
-    _eigenvectors.result_noupdate()->schmidt_orthog(overlap().pointer(),
-                                                    _ndocc+2);
+      _eigenvectors = vec;
+    } else {
+      // we must already have an old vector (and sab I hope)
+      _ca.scale(sqrt(2.0*(1.0+sab)));
+      _cb.scale(sqrt(2.0*(1.0-sab)));
+      for (int i=0; i < _ca.n(); i++) {
+        double a = _ca.get_element(i)+_cb.get_element(i);
+        double b = _ca.get_element(i)-_cb.get_element(i);
+        _ca.set_element(i,0.5*a);
+        _cb.set_element(i,0.5*b);
+      }
+      _gr_vector = _eigenvectors.result_noupdate();
+      _gr_vector.assign_column(_ca,aorb);
+      _gr_vector.assign_column(_cb,borb);
+    }
 
     if (_fockc.null())
       _fockc = _eigenvectors.result_noupdate()->rowdim()->create_symmmatrix();
@@ -272,14 +286,16 @@ XSCF::compute()
     if (_kb.null())
       _kb = _fockc.clone();
     
+    RefSCDimension actived = matrixkit()->dimension(basis()->nbasis()-_ndocc);
+
     if (_fock_evalsc.null())
       _fock_evalsc = _focka->dim()->create_diagmatrix();
     
     if (_fock_evalsa.null())
-      _fock_evalsc = _focka->dim()->create_diagmatrix();
+      _fock_evalsa = actived->create_diagmatrix();
     
     if (_fock_evalsb.null())
-      _fock_evalsc = _focka->dim()->create_diagmatrix();
+      _fock_evalsb = actived->create_diagmatrix();
     
     printf("\n  XSCF::compute: energy accuracy = %g\n\n",
            _energy.desired_accuracy());
@@ -322,8 +338,9 @@ XSCF::do_vector(double& eelec, double& nucrep)
   
   // allocate storage for the temp arrays
   RefSCMatrix nvectorc = _gr_vector.clone();
-  RefSCMatrix nvectora = _gr_vector.clone();
-  RefSCMatrix nvectorb = _gr_vector.clone();
+  RefSCMatrix nvectora =
+    _fock_evalsa->dim()->create_matrix(_fock_evalsa->dim().pointer());
+  RefSCMatrix nvectorb = nvectora.clone();
   
   _densc = _focka.clone();
   _densc.assign(0.0);
@@ -346,6 +363,10 @@ XSCF::do_vector(double& eelec, double& nucrep)
   _gr_hcore.assign(0.0);
   _accumdih->accum(_gr_hcore);
 
+  // we need the overlap down below, so let's make it before we start the
+  // two-electron junk
+  RefSymmSCMatrix ovlp = overlap();
+  
   // initialize some junk
   centers_t *centers = basis()->convert_to_centers_t();
   if (!centers) {
@@ -367,85 +388,203 @@ XSCF::do_vector(double& eelec, double& nucrep)
   int_init_bounds();
 
   eelec=0;
+
+  _ca = _gr_vector.get_column(aorb);
+  _cb = _gr_vector.get_column(borb);
+  
+  int nbasis = basis()->nbasis();
+
   for (int iter=0; ; iter++) {
     // form the AO basis fock matrix
     double olde=eelec;
     form_ao_fock(centers,intbuf,eelec);
 
-    if (fabs(olde-eelec) < 1.0e-9)
+    if (fabs(olde-eelec) < 1.0e-13)
       break;
 
     printf("iter %5d energy = %20.15f delta = %15.10g\n",
            iter,eelec+nucrep,olde-eelec);
 
-    exit(0);
+    RefSymmSCMatrix sfc = _gr_hcore.copy();
+    sfc.accumulate(_fockc);
     
-#if 0
-    // now extrapolate the fock matrix
-    // first we form the error matrix which is the offdiagonal blocks of
-    // the MO fock matrix
-    
-    _focka.scale(ci1*ci1);
-    RefSymmSCMatrix mofocka = _focka.clone();
-    mofocka.assign(0.0);
-    mofocka.accumulate_transform(_gr_vector.t(),_focka);
+    double alpha = 1.0/(1.0+sab*sab);
+    RefSymmSCMatrix sfo = _fockab.copy();
+    sfo.scale(sab);
+    sfo.accumulate(_focka);
+    sfo.accumulate(_fockb);
+    sfo.scale(alpha*0.5);
+    sfo.accumulate(sfc);
 
-    _fockb.scale(ci2*ci2);
-    RefSymmSCMatrix mofockb = _fockb.clone();
-    mofockb.assign(0.0);
-    mofockb.accumulate_transform(_gr_vector.t(),_fockb);
-
-    _ka.scale(ci1*ci2);
-    RefSymmSCMatrix moka = _ka.clone();
-    moka.assign(0.0);
-    moka.accumulate_transform(_gr_vector.t(),_ka);
-
-    _kb.scale(ci1*ci2);
-    RefSymmSCMatrix mokb = _kb.clone();
-    mokb.assign(0.0);
-    mokb.accumulate_transform(_gr_vector.t(),_kb);
-
-    RefSymmSCMatrix efff = mofocka.copy();
-    efff.accumulate(mofockb);
-    
-    for (int i=0; i < _ndocc; i++) {
-      efff.set_element(_ndocc,i,
-           mofockb.get_element(_ndocc,i)-mokb.get_element(_ndocc,i));
-      efff.set_element(_ndocc+1,i,
-           mofocka.get_element(_ndocc+1,i)-moka.get_element(_ndocc+1,i));
+    RefSCMatrix densb = ovlp.dim()->create_matrix(ovlp.dim());
+    RefSCMatrix densa = densb.clone();
+    for (int i=0; i < nbasis; i++) {
+      for (int j=0; j < i; j++) {
+        densb.set_element(i,j,_densb.get_element(i,j));
+        densb.set_element(j,i,_densb.get_element(i,j));
+        densa.set_element(i,j,_densa.get_element(i,j));
+        densa.set_element(j,i,_densa.get_element(i,j));
+      }
+      densb.set_element(i,i,_densb.get_element(i,i));
+      densa.set_element(i,i,_densa.get_element(i,i));
     }
-                       
-    efff.set_element(_ndocc+1,_ndocc,
-                     mofocka.get_element(_ndocc+1,_ndocc)-
-                     mofockb.get_element(_ndocc+1,_ndocc)+
-                     mokb.get_element(_ndocc+1,_ndocc)-
-                     moka.get_element(_ndocc+1,_ndocc));
+    densb->scale(0.5);
+    densa->scale(0.5);
     
-    for (int i=_ndocc+2; i < basis()->nbasis(); i++) {
-      efff.set_element(i,_ndocc,
-           mofocka.get_element(i,_ndocc)+mokb.get_element(i,_ndocc));
-      efff.set_element(i,_ndocc+1,
-           mofockb.get_element(i,_ndocc+1)+moka.get_element(i,_ndocc+1));
-    }
-    
-    // diagonalize MO fock to get MO vector
-    efff.diagonalize(_fock_evals,nvector);
-    efff=0;
+    RefSCMatrix fas = sfc * densa * ovlp;
+    fas.accumulate(fas.t());
 
-    // transform MO vector to AO basis
-    _gr_vector = _gr_vector * nvector;
+    RefSCMatrix fbs = sfc * densb * ovlp;
+    fbs.accumulate(fbs.t());
+
+    RefSymmSCMatrix jaka = _ka.copy();
+    jaka.scale(3.0);
+    jaka.accumulate(_focka);
+    jaka.scale(0.5);
+
+    RefSymmSCMatrix jbkb = _kb.copy();
+    jbkb.scale(3.0);
+    jbkb.accumulate(_fockb);
+    jbkb.scale(0.5);
+
+    RefSCMatrix sas = ovlp * densa * ovlp;
+    sas.scale(-alpha*eop);
+        
+    RefSCMatrix sbs = ovlp * densb * ovlp;
+    sbs.scale(-alpha*eop);
+        
+    RefSymmSCMatrix sfq = sfc.copy();
+    RefSymmSCMatrix sfr = sfc.copy();
+    sfq.accumulate(jbkb);
+    sfr.accumulate(jaka);
+    for (int i=0; i < nbasis; i++) {
+      for (int j=0; j <= i; j++) {
+        sfq.accumulate_element(i,j,sbs.get_element(i,j)+fbs.get_element(i,j));
+        sfr.accumulate_element(i,j,sas.get_element(i,j)+fas.get_element(i,j));
+      }
+    }
+
+    fas = sfq * densa * ovlp;
+    fas.accumulate(fas.t());
+
+    fbs = sfr * densb * ovlp;
+    fbs.accumulate(fbs.t());
+
+    fas.accumulate(fbs);
+    fas.scale(-alpha/2.0);
+    for (int i=0; i < nbasis; i++) {
+      for (int j=0; j <= i; j++) {
+        sfo.accumulate_element(i,j,fas.get_element(i,j));
+      }
+    }
+
+    RefSymmSCMatrix g0 = sfo.clone();
+    g0.assign(0.0);
+    g0.accumulate_transform(_gr_vector.t(),sfo);
+
+    g0.diagonalize(_fock_evalsc,nvectorc);
+    RefSCMatrix vc = _gr_vector*nvectorc;
+
+    // grab the active and virtual orbitals from vc
+    RefSCMatrix fooc =
+      _gr_vector->rowdim()->create_matrix(nvectora->coldim().pointer());
+    for (int i=0; i < fooc->nrow(); i++)
+      for (int j=0; j < fooc->ncol(); j++)
+        if (_ndocc)
+          fooc.set_element(i,j,vc.get_element(i,j+_ndocc));
+        else
+          fooc.set_element(i,j,_gr_vector.get_element(i,j));
+          
     
+    RefSymmSCMatrix ga = _fock_evalsa->dim()->create_symmmatrix();
+    ga.assign(0.0);
+    ga.accumulate_transform(fooc.t(),sfq);
+
+    ga.diagonalize(_fock_evalsa,nvectora);
+    RefSCMatrix va = fooc*nvectora;
+    
+    _ca = va.get_column(0);
+    
+    RefSymmSCMatrix gb = ga.clone();
+    gb.assign(0.0);
+    gb.accumulate_transform(va.t(),sfr);
+
+    gb.diagonalize(_fock_evalsb,nvectorb);
+    RefSCMatrix vb = va*nvectorb;
+    
+    _cb = vb.get_column(1);
+
+    sab = 0;
+    for (int i=0; i < nbasis; i++) {
+      for (int j=0; j < nbasis; j++) {
+        sab += _ca.get_element(i)*_cb.get_element(j)*ovlp.get_element(i,j);
+      }
+    }
+
+    if (sab<0) {
+      sab = -sab;
+      _cb.scale(-1.0);
+      vb.assign_column(_cb,1);
+    }
+
+    _gr_vector.assign(vc);
+
+    for (int i=0; i < nbasis; i++)
+      for (int j=0; j < vb->ncol(); j++)
+        _gr_vector.set_element(i,j+_ndocc,vb.get_element(i,j));
+                               
     // and orthogonalize vector
-    _gr_vector->schmidt_orthog(overlap().pointer(),basis()->nbasis());
-#endif
+    _gr_vector->schmidt_orthog(ovlp.pointer(),basis()->nbasis());
+  
   }
       
+  sab=0;
+  for (int i=0; i < nbasis; i++) {
+    for (int j=0; j < nbasis; j++) {
+      sab += _ca.get_element(i)*_cb.get_element(j)*ovlp.get_element(i,j);
+    }
+  }
+
+  if (sab<0.0) {
+    sab = -sab;
+    _cb.scale(-1.0);
+  }
+  
+  double ud = 1.0/sqrt(2.0*(1.0+sab));
+  double vd = 1.0/sqrt(2.0*(1.0-sab));
+  
+  for (int i=0; i < nbasis; i++) {
+    double u = ud*(_ca.get_element(i)+_cb.get_element(i));
+    double v = vd*(_ca.get_element(i)-_cb.get_element(i));
+    _ca.set_element(i,u);
+    _cb.set_element(i,v);
+  }
+      
+  double fooe;
+  form_ao_fock(centers,intbuf,fooe);
+
+  ci1 = (1.0+sab)/sqrt(2.0*(1.0+sab*sab));
+  ci2 = -(1.0-sab)/sqrt(2.0*(1.0+sab*sab));
+
+  occa = 2.0*ci1*ci1;
+  occb = 2.0*ci2*ci2;
+
+  _focka.accumulate(_fockc);
+  _focka.accumulate(_gr_hcore);
+  _fockb.accumulate(_fockc);
+  _fockb.accumulate(_gr_hcore);
+  
+  printf("sab = %lf, ci1 = %lf, ci2 = %lf\n",sab,ci1,ci2);
+  printf("occa = %lf, occb = %lf\n",occa,occb);
+  
+  _gr_vector.assign_column(_ca,aorb);
+  _gr_vector.assign_column(_cb,borb);
+  
   _eigenvectors = _gr_vector;
   
-  int_done_bounds();
   int_done_erep();
   int_done_offsets2(centers,centers,centers,centers);
-  int_done_storage();
+
   free_centers(centers);
   free(centers);
 

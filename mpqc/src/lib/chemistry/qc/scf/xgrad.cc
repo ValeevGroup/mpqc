@@ -82,9 +82,9 @@ XSCF::do_gradient(const RefSCVector& gradient)
   _gr_vector = _eigenvectors.result_noupdate();
   
   // allocate storage for the temp arrays
-  _gr_dens = _focka.clone();
-  _gr_opa_dens = _focka.clone();
-  _gr_opb_dens = _focka.clone();
+  _densc = _focka.clone();
+  _densa = _focka.clone();
+  _densb = _focka.clone();
   
   // form energy weighted density
   // first form MO fock matrices
@@ -133,12 +133,15 @@ XSCF::do_gradient(const RefSCVector& gradient)
   moafock.set_element(_ndocc+1,_ndocc,0.0);
   moafock.scale(2.0);
                       
+  //moafock.print("mo lagrangian");
+
   mobfock.assign(0.0);
   mobfock.accumulate_transform(_gr_vector,moafock);
   mobfock.scale(-1.0);
 
   moka=0;
   mokb=0;
+  //mobfock.print("ao lagrangian");
 
   // zero out gradient
   gradient.assign(0.0);
@@ -204,7 +207,7 @@ XSCF::do_gradient(const RefSCVector& gradient)
     
   mobfock=0;
 
-  // ovlp.print("overlap contribution");
+  //ovlp.print("overlap contribution");
   gradient.accumulate(ovlp);
   
   // and now the one-electron contributions
@@ -214,12 +217,16 @@ XSCF::do_gradient(const RefSCVector& gradient)
 
   // form density
   double pmax;
-  gr_density(_gr_vector,_gr_dens,_gr_opa_dens,_gr_opb_dens,
+  gr_density(_gr_vector,_densc,_densa,_densb,
              _ndocc,occa,occb,pmax);
 
-  moafock.assign(_gr_opa_dens);
-  moafock.accumulate(_gr_opb_dens);
-  moafock.accumulate(_gr_dens);
+  //_densc.print("c density");
+  //_densa.print("a density");
+  //_densb.print("b density");
+  
+  moafock.assign(_densa);
+  moafock.accumulate(_densb);
+  moafock.accumulate(_densc);
   
   for (int x=0; x < centers->n; x++) {
     for (int ish=0; ish < centers->nshell; ish++) {
@@ -260,9 +267,9 @@ XSCF::do_gradient(const RefSCVector& gradient)
 
   moafock=0;
 
-  // oneelec.print("one electron contribution");
+  //oneelec.print("one electron contribution");
   gradient.accumulate(oneelec);
-  // gradient.print("gradient sans two electron contribution");
+  //gradient.print("gradient sans two electron contribution");
   
   // done with the one-electron stuff
   int_done_offsets1(centers,centers);
@@ -289,8 +296,8 @@ XSCF::do_gradient(const RefSCVector& gradient)
   
   double tnint=0;
 
-  _gr_opa_dens.scale(2.0/occa);
-  _gr_opb_dens.scale(2.0/occb);
+  _densa.scale(2.0/occa);
+  _densb.scale(2.0/occb);
   
   for (int i=0; i < centers->nshell; i++) {
     for (int j=0; j <= i; j++) {
@@ -341,20 +348,20 @@ XSCF::do_gradient(const RefSCVector& gradient)
 
                       contrib=0;
                       contmp = coulombscale*ints[indexijkl];
-                      contrib = alpha[0][0] * _gr_dens.get_element(io,jo)*
-                                              _gr_dens.get_element(ko,lo)
-                              + alpha[1][0] * _gr_opa_dens.get_element(io,jo)*
-                                              _gr_dens.get_element(ko,lo)
-                              + alpha[2][0] * _gr_opb_dens.get_element(io,jo)*
-                                              _gr_dens.get_element(ko,lo)
-                              + alpha[0][1] * _gr_dens.get_element(io,jo)*
-                                              _gr_opa_dens.get_element(ko,lo)
-                              + alpha[1][1] * _gr_opa_dens.get_element(io,jo)*
-                                              _gr_opa_dens.get_element(ko,lo)
-                              + alpha[0][2] * _gr_dens.get_element(io,jo)*
-                                              _gr_opb_dens.get_element(ko,lo)
-                              + alpha[2][2] * _gr_opb_dens.get_element(io,jo)*
-                                              _gr_opb_dens.get_element(ko,lo);
+                      contrib = alpha[0][0] * _densc.get_element(io,jo)*
+                                              _densc.get_element(ko,lo)
+                              + alpha[1][0] * _densa.get_element(io,jo)*
+                                              _densc.get_element(ko,lo)
+                              + alpha[2][0] * _densb.get_element(io,jo)*
+                                              _densc.get_element(ko,lo)
+                              + alpha[0][1] * _densc.get_element(io,jo)*
+                                              _densa.get_element(ko,lo)
+                              + alpha[1][1] * _densa.get_element(io,jo)*
+                                              _densa.get_element(ko,lo)
+                              + alpha[0][2] * _densc.get_element(io,jo)*
+                                              _densb.get_element(ko,lo)
+                              + alpha[2][2] * _densb.get_element(io,jo)*
+                                              _densb.get_element(ko,lo);
                       contrib *= contmp;
 
                       twoelec.accumulate_element(xyz+dercenters.num[derset]*3,
@@ -364,20 +371,20 @@ XSCF::do_gradient(const RefSCVector& gradient)
                       
                       contrib=0;
                       contmp = exchangescale*ints[indexijkl];
-                      contrib = beta[0][0] * _gr_dens.get_element(io,ko)*
-                                             _gr_dens.get_element(jo,lo)
-                              + beta[1][0] * _gr_opa_dens.get_element(io,ko)*
-                                             _gr_dens.get_element(jo,lo)
-                              + beta[2][0] * _gr_opb_dens.get_element(io,ko)*
-                                             _gr_dens.get_element(jo,lo)
-                              + beta[0][1] * _gr_dens.get_element(io,ko)*
-                                             _gr_opa_dens.get_element(jo,lo)
-                              + beta[2][1] * _gr_opb_dens.get_element(io,ko)*
-                                             _gr_opa_dens.get_element(jo,lo)
-                              + beta[0][2] * _gr_dens.get_element(io,ko)*
-                                             _gr_opb_dens.get_element(jo,lo)
-                              + beta[1][2] * _gr_opa_dens.get_element(io,ko)*
-                                             _gr_opb_dens.get_element(jo,lo);
+                      contrib = beta[0][0] * _densc.get_element(io,ko)*
+                                             _densc.get_element(jo,lo)
+                              + beta[1][0] * _densa.get_element(io,ko)*
+                                             _densc.get_element(jo,lo)
+                              + beta[2][0] * _densb.get_element(io,ko)*
+                                             _densc.get_element(jo,lo)
+                              + beta[0][1] * _densc.get_element(io,ko)*
+                                             _densa.get_element(jo,lo)
+                              + beta[2][1] * _densb.get_element(io,ko)*
+                                             _densa.get_element(jo,lo)
+                              + beta[0][2] * _densc.get_element(io,ko)*
+                                             _densb.get_element(jo,lo)
+                              + beta[1][2] * _densa.get_element(io,ko)*
+                                             _densb.get_element(jo,lo);
                       contrib *= contmp;
 
                       twoelec.accumulate_element(xyz+dercenters.num[derset]*3,
@@ -387,20 +394,20 @@ XSCF::do_gradient(const RefSCVector& gradient)
 
                       if (i!=j && k!=l) {
                         contrib=0;
-                        contrib = beta[0][0] * _gr_dens.get_element(io,lo)*
-                                               _gr_dens.get_element(jo,ko)
-                                + beta[1][0] * _gr_opa_dens.get_element(io,lo)*
-                                               _gr_dens.get_element(jo,ko)
-                                + beta[2][0] * _gr_opb_dens.get_element(io,lo)*
-                                               _gr_dens.get_element(jo,ko)
-                                + beta[0][1] * _gr_dens.get_element(io,lo)*
-                                               _gr_opa_dens.get_element(jo,ko)
-                                + beta[2][1] * _gr_opb_dens.get_element(io,lo)*
-                                               _gr_opa_dens.get_element(jo,ko)
-                                + beta[0][2] * _gr_dens.get_element(io,lo)*
-                                               _gr_opb_dens.get_element(jo,ko)
-                                + beta[1][2] * _gr_opa_dens.get_element(io,lo)*
-                                               _gr_opb_dens.get_element(jo,ko);
+                        contrib = beta[0][0] * _densc.get_element(io,lo)*
+                                               _densc.get_element(jo,ko)
+                                + beta[1][0] * _densa.get_element(io,lo)*
+                                               _densc.get_element(jo,ko)
+                                + beta[2][0] * _densb.get_element(io,lo)*
+                                               _densc.get_element(jo,ko)
+                                + beta[0][1] * _densc.get_element(io,lo)*
+                                               _densa.get_element(jo,ko)
+                                + beta[2][1] * _densb.get_element(io,lo)*
+                                               _densa.get_element(jo,ko)
+                                + beta[0][2] * _densc.get_element(io,lo)*
+                                               _densb.get_element(jo,ko)
+                                + beta[1][2] * _densa.get_element(io,lo)*
+                                               _densb.get_element(jo,ko);
                         contrib *= contmp;
 
                         twoelec.accumulate_element(
@@ -422,7 +429,7 @@ XSCF::do_gradient(const RefSCVector& gradient)
     }
   }
 
-  // twoelec.print("two electron contribution");
+  //twoelec.print("two electron contribution");
   gradient.accumulate(twoelec);
   // gradient.print("cartesian gradient");
 
@@ -435,9 +442,9 @@ XSCF::do_gradient(const RefSCVector& gradient)
   int_done_erep();
   
   // clean up some things
-  _gr_dens = 0;
-  _gr_opa_dens = 0;
-  _gr_opb_dens = 0;
+  _densc = 0;
+  _densa = 0;
+  _densb = 0;
   _gr_vector = 0;
 
   free_double_vector(&dv);

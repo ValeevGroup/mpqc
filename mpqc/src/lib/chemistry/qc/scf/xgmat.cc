@@ -15,6 +15,8 @@ dens2(const RefSCMatrix& vec,
       const RefSymmSCMatrix& densb,
       const RefSymmSCMatrix& densab1,
       const RefSymmSCMatrix& densab2,
+      const RefSCVector& _ca,
+      const RefSCVector& _cb,
       int nbasis, int ndocc, int aorb, int borb)
 {
   // find out what type of matrices we're dealing with
@@ -38,10 +40,10 @@ dens2(const RefSCMatrix& vec,
         for (int k=0; k < ndocc; k++)
           pt += lvec->get_element(i,k)*lvec->get_element(j,k);
 
-        double ptoa=lvec->get_element(i,aorb)*lvec->get_element(j,aorb);
-        double ptob=lvec->get_element(i,borb)*lvec->get_element(j,borb);
-        double ptoab=lvec->get_element(i,aorb)*lvec->get_element(j,borb)
-                    +lvec->get_element(j,aorb)*lvec->get_element(i,borb);
+        double ptoa=_ca->get_element(i)*_ca->get_element(j);
+        double ptob=_cb->get_element(i)*_cb->get_element(j);
+        double ptoab=_ca->get_element(i)*_cb->get_element(j)
+                    +_ca->get_element(j)*_cb->get_element(i);
 
         ldensc->set_element(i,j,pt);
         ldensa->set_element(i,j,ptoa);
@@ -50,6 +52,11 @@ dens2(const RefSCMatrix& vec,
         ldensab2->set_element(i,j,ptoab);
       }
     }
+    ldensc->scale(2.0);
+    ldensa->scale(2.0);
+    ldensb->scale(2.0);
+    ldensab1->scale(2.0);
+    ldensab2->scale(2.0);
   }
 }
 
@@ -62,7 +69,7 @@ XSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
   for (int i=0; i < centers->nshell; i++)
     shnfunc[i] = INT_SH_NFUNC((centers),i);
 
-  dens2(_gr_vector,_densc,_densa,_densb,_densab2,_densab,
+  dens2(_gr_vector,_densc,_densa,_densb,_densab2,_densab,_ca,_cb,
         basis()->nbasis(),_ndocc,aorb,borb);
   
   _densc->scale(2.0);
@@ -73,6 +80,13 @@ XSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
   _densb->scale_diagonal(0.5);
   _densab->scale(2.0);
   _densab->scale_diagonal(0.5);
+  
+  _fockc.assign(0.0);
+  _focka.assign(0.0);
+  _fockb.assign(0.0);
+  _fockab.assign(0.0);
+  _ka.assign(0.0);
+  _kb.assign(0.0);
   
   for (int i=0; i < centers->nshell; i++) {
     for (int j=0; j <= i; j++) {
@@ -653,24 +667,24 @@ XSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
                         pkval = pki_int;
 
                         _fockc.accumulate_element(ii,jj,pkval*
-                                             _fockc.get_element(kk,ll));
+                                             _densc.get_element(kk,ll));
                         _fockc.accumulate_element(kk,ll,pkval*
-                                             _fockc.get_element(ii,jj));
+                                             _densc.get_element(ii,jj));
 
                         _focka.accumulate_element(ii,jj,pkval*
-                                             _focka.get_element(kk,ll));
+                                             _densa.get_element(kk,ll));
                         _focka.accumulate_element(kk,ll,pkval*
-                                             _focka.get_element(ii,jj));
+                                             _densa.get_element(ii,jj));
 
                         _fockb.accumulate_element(ii,jj,pkval*
-                                             _fockb.get_element(kk,ll));
+                                             _densb.get_element(kk,ll));
                         _fockb.accumulate_element(kk,ll,pkval*
-                                             _fockb.get_element(ii,jj));
+                                             _densb.get_element(ii,jj));
 
                         _fockab.accumulate_element(ii,jj,pkval*
-                                             _fockab.get_element(kk,ll));
+                                             _densab.get_element(kk,ll));
                         _fockab.accumulate_element(kk,ll,pkval*
-                                             _fockab.get_element(ii,jj));
+                                             _densab.get_element(ii,jj));
 
                         /*
                          * and to K1 of G(ik)
@@ -761,6 +775,8 @@ XSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
     }
   }
 
+  int_reduce_storage_threshold();
+
   delete[] shnfunc;
 
   _densc->scale(0.5);
@@ -775,41 +791,47 @@ XSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
   _densab->scale(0.5);
   _densab->scale_diagonal(2.0);
   
-  _fockc->scale(2.0);
-
-  sab = 0;
   double hab = 0;
   double jkab = 0;
-  for (int i=0; i < basis->nbasis(); i++) {
-    for (int j=0; j <= i; j++) {
-      sab += _gr_vector.get_element(i,aorb)*_gr_vector.get_element(j,borb)*
-             overlap().get_element(i,j);
-      hab += _gr_vector.get_element(i,aorb)*_gr_vector.get_element(j,borb)*
+  for (int i=0; i < basis()->nbasis(); i++) {
+    for (int j=0; j < i; j++) {
+      hab += _ca.get_element(i)*_cb.get_element(j)*
              _gr_hcore.get_element(i,j);
-      jkab += _densa.get_element(i,j)*0.5*(_fockb.get_element(i,j)+
+      hab += _ca.get_element(j)*_cb.get_element(i)*
+             _gr_hcore.get_element(i,j);
+      jkab += 0.5*_densa.get_element(i,j)*(_fockb.get_element(i,j)+
                                            3*_kb.get_element(i,j));
     }
+    hab += _ca.get_element(i)*_cb.get_element(i)*_gr_hcore.get_element(i,i);
+    jkab += _densa.get_element(i,i)*0.25*(_fockb.get_element(i,i)+
+                                         3*_kb.get_element(i,i));
   }
 
   double alpha = 1.0/(1.0+sab*sab);
   
   double e1 = 2.0*alpha*sab*hab;
   double e2 = alpha*jkab;
+  eop = 2.0*sab*hab+jkab;
   
   for (int i=0; i < basis()->nbasis(); i++) {
     for (int j=0; j < i; j++) {
       e1 += (2.0*_densc.get_element(i,j) + alpha*_densab2.get_element(i,j))*
             _gr_hcore.get_element(i,j);
       e2 += _densc.get_element(i,j)*_fockc.get_element(i,j) +
-            alpha*(0.5*_densab2.get_element(i,j)*_fockc.get_element(i,j)+
-                   sab*_densc.get_element(i,j)*_fockab.get_element(i,j));
+            alpha*(_densab2.get_element(i,j)*_fockc.get_element(i,j)+
+                   2.0*sab*_densc.get_element(i,j)*_fockab.get_element(i,j));
+      eop += _densab2.get_element(i,j)*_gr_hcore.get_element(i,j) +
+             _densab2.get_element(i,j)*_fockc.get_element(i,j) +
+             2.0*sab*_densc.get_element(i,j)*_fockab.get_element(i,j);
     }
-      e1 += (2.0*_densc.get_element(i,i) + alpha*_densab2.get_element(i,i))*
-            _gr_hcore.get_element(i,i)*0.5;
-      e2 += _densc.get_element(i,i)*_fockc.get_element(i,i)*0.5 +
-            alpha*(0.5*_densab2.get_element(i,i)*_fockc.get_element(i,i)+
-                   sab*_densc.get_element(i,i)*_fockab.get_element(i,i))*0.5;
-    }
+    e1 += (2.0*_densc.get_element(i,i) + alpha*_densab2.get_element(i,i))*
+          0.5*_gr_hcore.get_element(i,i);
+    e2 += 0.5*_densc.get_element(i,i)*_fockc.get_element(i,i) +
+          0.5*alpha*(_densab2.get_element(i,i)*_fockc.get_element(i,i)+
+                 2.0*sab*_densc.get_element(i,i)*_fockab.get_element(i,i));
+    eop += 0.5*_densab2.get_element(i,i)*_gr_hcore.get_element(i,i) +
+           0.5*_densab2.get_element(i,i)*_fockc.get_element(i,i) +
+           sab*_densc.get_element(i,i)*_fockab.get_element(i,i);
   }
   
   printf("sab = %lf\n",sab);

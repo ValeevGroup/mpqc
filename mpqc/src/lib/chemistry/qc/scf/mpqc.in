@@ -1,17 +1,95 @@
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% molecular energy
+%
+% can be CLSCF, HSOSSCF, OSSSCF, TCSCF, XSCF, MCSCF
+%
+
+mole<MCSCF>: (
+  % NLP... input
+  value_accuracy = 1e-7
+  gradient_accuracy = 1e-6
+
+  % MolecularEnergy input
+  molecule = $:molecule
+  basis = $:basis
+
+  % comment out coor if molecule is an atom
+  %coor = $:coor
+
+  % SCF input
+  density_reset_freq = 5
+  ckpt_dir = "./"
+  filename = "test"
+)
+
+
+basis = $:631gsbasis
+molecule = $:he
+
+coor = $:symcoor
+message = $:message1
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% basis sets
+%
+
+631gsbasis<GaussianBasisSet>: (
+  basisdir = "/net/midway/usr/people/etseidl/basis/"
+  basisfiles = [ v2g90.ipv2 ]
+  molecule = $:molecule
+  name = 631gs
+)
+
+stobasis<GaussianBasisSet>: (
+  basisdir = "/net/midway/usr/people/etseidl/basis/"
+  basisfiles = [ v2g90.ipv2 ]
+  molecule = $:molecule
+  name = sto3g
+)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% message types
+%
+
 message1<ProcMessageGrp>: ()
 
 messageShm<ShmMessageGrp>: (
   n = 2
 )
 
-message = $:message1
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% internal coordinate types
+%
+
+redcoor<RedundMolecularCoor>: (
+  molecule = $:molecule
+)
+
+symcoor<SymmMolecularCoor>: (
+  molecule = $:molecule
+)
+
+cartcoor<CartMolecularCoor>: (
+  molecule = $:molecule
+)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% a few molecules
+%
 
 ch2<Molecule>: (
   symmetry=c2v
   { atoms geometry } = {
-      H  [   1.5  0.0   1.0 ]
-      C  [   0.0  0.0   0.0 ]
+      %H  [   1.5  0.0   1.0 ]
+      %C  [   0.0  0.0   0.0 ]
+      h [ 1.8733588697    0.0000000000    0.9423746499 ]
+      c [ 0.0000000000    0.0000000000    0.1152507002 ]
   }
 )
 
@@ -29,127 +107,9 @@ he<Molecule>: (
      he [ 0 0 0 ]
   }
 )
-
-molecule = $:ch2
-mole = $:tcmole
-
-clmole<CLSCF>: (
-  % NLP... input
-  value_accuracy = 1e-5
-  gradient_accuracy = 1e-4
-
-  % MolecularEnergy input
-  molecule = $:molecule
-
-  % coor should be commented out if molecule is an atom
-  coor<SymmMolecularCoor>: (
-    molecule = $:molecule
-  )
-
-  % Wavefunction input
-  basis<GaussianBasisSet>: (
-    basisdir = "/net/midway/usr/people/etseidl/basis/"
-    basisfiles = [ v2g90.ipv2 ]
-    molecule = $:molecule
-    name = sto3g
-  )
-
-  % OneBodyWavefunction input
-  % MPSCF input
-  density_reset_freq = 5
-  ckpt_dir = "./"
-  filename = "h2o"
-)
-
-opmole<HSOSSCF>: (
-  % NLP... input
-  value_accuracy = 1e-14
-  gradient_accuracy = 1e-4
-
-  % MolecularEnergy input
-  molecule = $:molecule
-
-  % coor should be commented out if molecule is an atom
-  coor<SymmMolecularCoor>: (
-    molecule = $:molecule
-  )
-
-  % Wavefunction input
-  basis<GaussianBasisSet>: (
-    basisdir = "/net/midway/usr/people/etseidl/basis/"
-    basisfiles = [ v2g90.ipv2 ]
-    molecule = $:molecule
-    name = sto3g
-  )
-
-  % OneBodyWavefunction input
-  % MPSCF input
-  density_reset_freq = 5
-  ckpt_dir = "./"
-  filename = "ch2"
-  ndocc = 3
-  nsocc = 2
-)
-
-opbmole<OSSSCF>: (
-  % NLP... input
-  value_accuracy = 1e-14
-  gradient_accuracy = 1e-10
-
-  % MolecularEnergy input
-  molecule = $:molecule
-
-  % coor should be commented out if molecule is an atom
-  coor<SymmMolecularCoor>: (
-    molecule = $:molecule
-  )
-
-  % Wavefunction input
-  basis<GaussianBasisSet>: (
-    basisdir = "/net/midway/usr/people/etseidl/basis/"
-    basisfiles = [ v2g90.ipv2 ]
-    molecule = $:molecule
-    name = sto3g
-  )
-
-  % OneBodyWavefunction input
-  % MPSCF input
-  density_reset_freq = 5
-  ckpt_dir = "./"
-  filename = "ch2"
-)
-
-tcmole<TCSCF>: (
-  % NLP... input
-  value_accuracy = 1e-14
-  gradient_accuracy = 1e-4
-
-  % MolecularEnergy input
-  molecule = $:molecule
-
-  % coor should be commented out if molecule is an atom
-  coor<SymmMolecularCoor>: (
-    molecule = $:molecule
-  )
-
-  % Wavefunction input
-  basis<GaussianBasisSet>: (
-    basisdir = "/net/midway/usr/people/etseidl/basis/"
-    basisfiles = [ v2g90.ipv2 ]
-    molecule = $:molecule
-    name = sto3g
-  )
-
-  % OneBodyWavefunction input
-  % MPSCF input
-  density_reset_freq = 5
-  ckpt_dir = "./"
-  filename = "ch2"
-)
-
 opt<QNewtonOpt>: (
   convergence = 1.0e-5
-  max_iterations = 1
+  max_iterations = 3
   function = $:mole
   transition_state=no
   update<BFGSUpdate>:()

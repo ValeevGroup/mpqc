@@ -642,19 +642,19 @@ Wavefunction::core_hamiltonian()
   return hcore_.result_noupdate();
 }
 
-double
-Wavefunction::nuclear_repulsion_energy()
+// Compute lists of centers that are point charges and lists that
+// are charge distributions.
+void
+Wavefunction::set_up_charge_types(
+  std::vector<int> &q_pc,
+  std::vector<int> &q_cd,
+  std::vector<int> &n_pc,
+  std::vector<int> &n_cd)
 {
-  if (atom_basis_.null()) return molecule()->nuclear_repulsion_energy();
-
-  double nucrep = 0.0;
-
-  // Compute lists of centers that are point charges and lists that
-  // are charge distributions.
-  std::vector<int> q_pc;
-  std::vector<int> q_cd;
-  std::vector<int> n_pc;
-  std::vector<int> n_cd;
+  q_pc.clear();
+  q_cd.clear();
+  n_pc.clear();
+  n_cd.clear();
 
   for (int i=0; i<atom_basis_->ncenter(); i++) {
     bool is_Q = (molecule()->atom_symbol(i) == "Q");
@@ -667,26 +667,17 @@ Wavefunction::nuclear_repulsion_energy()
       else      n_pc.push_back(i);
     }
   }
+}
 
-//   std::cout << "nuc_rep: q_pc: ";
-//   std::copy(q_pc.begin(), q_pc.end(),
-//             std::ostream_iterator<int>(std::cout, " "));
-//   std::cout << std::endl;
+double
+Wavefunction::nuclear_repulsion_energy()
+{
+  if (atom_basis_.null()) return molecule()->nuclear_repulsion_energy();
 
-//   std::cout << "nuc_rep: q_cd: ";
-//   std::copy(q_cd.begin(), q_cd.end(),
-//             std::ostream_iterator<int>(std::cout, " "));
-//   std::cout << std::endl;
+  double nucrep = 0.0;
 
-//   std::cout << "nuc_rep: n_cd: ";
-//   std::copy(n_pc.begin(), n_pc.end(),
-//             std::ostream_iterator<int>(std::cout, " "));
-//   std::cout << std::endl;
-
-//   std::cout << "nuc_rep: n_cd: ";
-//   std::copy(n_cd.begin(), n_cd.end(),
-//             std::ostream_iterator<int>(std::cout, " "));
-//   std::cout << std::endl;
+  std::vector<int> q_pc, q_cd, n_pc, n_cd;
+  set_up_charge_types(q_pc,q_cd,n_pc,n_cd);
 
   // compute point charge - point charge contribution
   nucrep += nuc_rep_pc_pc(n_pc, n_pc, true /* i > j  */);
@@ -734,15 +725,6 @@ Wavefunction::nuc_rep_pc_pc(const std::vector<int>&c1,
     }
   }
 
-//   std::cout << "nuc_rep_pc_pc: pc1: ";
-//   std::copy(c1.begin(), c1.end(),
-//             std::ostream_iterator<int>(std::cout, " "));
-//   std::cout << " pc2: ";
-//   std::copy(c2.begin(), c2.end(),
-//             std::ostream_iterator<int>(std::cout, " "));
-//   std::cout << " e = " << e;
-//   std::cout << std::endl;
-
   return e;
 }
 
@@ -754,7 +736,6 @@ Wavefunction::nuc_rep_pc_cd(const std::vector<int>&pc,
 
   if (pc.size() == 0 || cd.size() == 0) return e;
 
-  Ref<GaussianBasisSet> unit = new GaussianBasisSet(GaussianBasisSet::Unit);
   integral()->set_basis(atom_basis());
 
   sc::auto_vec<double> charges(new double[pc.size()]);
@@ -792,15 +773,6 @@ Wavefunction::nuc_rep_pc_cd(const std::vector<int>&pc,
 
   integral()->set_basis(basis());
 
-//   std::cout << "nuc_rep_pc_cd: pc: ";
-//   std::copy(pc.begin(), pc.end(),
-//             std::ostream_iterator<int>(std::cout, " "));
-//   std::cout << " cd: ";
-//   std::copy(cd.begin(), cd.end(),
-//             std::ostream_iterator<int>(std::cout, " "));
-//   std::cout << " e = " << e;
-//   std::cout << std::endl;
-
   return e;
 }
 
@@ -813,7 +785,6 @@ Wavefunction::nuc_rep_cd_cd(const std::vector<int>&c1,
 
   if (c1.size() == 0 || c2.size() == 0) return e;
 
-  Ref<GaussianBasisSet> unit = new GaussianBasisSet(GaussianBasisSet::Unit);
   integral()->set_basis(atom_basis());
 
   Ref<TwoBodyTwoCenterInt> tb = integral()->electron_repulsion2();
@@ -850,15 +821,6 @@ Wavefunction::nuc_rep_cd_cd(const std::vector<int>&c1,
 
   integral()->set_basis(basis());
 
-//   std::cout << "nuc_rep_cd_cd: cd1: ";
-//   std::copy(c1.begin(), c1.end(),
-//             std::ostream_iterator<int>(std::cout, " "));
-//   std::cout << " cd2: ";
-//   std::copy(c2.begin(), c2.end(),
-//             std::ostream_iterator<int>(std::cout, " "));
-//   std::cout << " e = " << e;
-//   std::cout << std::endl;
-
   return e;
 }
 
@@ -883,6 +845,89 @@ Wavefunction::nuclear_repulsion_energy_gradient(double **g)
     }
     return;
   }
+
+  // zero the gradient
+  for (int i=0; i<molecule()->natom(); i++) {
+    for (int j=0; j<3; j++) g[i][j] = 0.0;
+  }
+
+  // compute charge types
+  std::vector<int> q_pc, q_cd, n_pc, n_cd;
+  set_up_charge_types(q_pc,q_cd,n_pc,n_cd);
+
+  // compute point charge - point charge contribution
+  nuc_rep_grad_pc_pc(g, n_pc, n_pc, true /* i > j  */);
+  nuc_rep_grad_pc_pc(g, q_pc, n_pc, false /* all i j */);
+  if (molecule()->include_qq()) {
+    nuc_rep_grad_pc_pc(g, q_pc, q_pc, true /* i > j */);
+  }
+
+  // compute point charge - charge distribution contribution
+  nuc_rep_grad_pc_cd(g, n_pc, n_cd);
+  nuc_rep_grad_pc_cd(g, q_pc, n_cd);
+  nuc_rep_grad_pc_cd(g, n_pc, q_cd);
+  if (molecule()->include_qq()) {
+    nuc_rep_grad_pc_cd(g, q_pc, q_cd);
+  }
+
+  // compute the charge distribution - charge distribution contribution
+  nuc_rep_grad_cd_cd(g, n_cd, n_cd, true /* i > j  */);
+  nuc_rep_grad_cd_cd(g, q_cd, n_cd, false /* all i j  */);
+  if (molecule()->include_qq()) {
+    nuc_rep_grad_cd_cd(g, q_cd, q_cd, true /* i > j */);
+  }
+
+  // note: the electronic terms still need to be done in
+  // a new hcore_deriv implemented in Wavefunction.
+  throw std::runtime_error("Wavefunction::nuclear_repulsion_energy_gradient: not done");
+
+}
+
+void
+Wavefunction::nuc_rep_grad_pc_pc(double **grad,
+                                 const std::vector<int>&c1,
+                                 const std::vector<int>&c2,
+                                 bool uniq)
+{
+  if (c1.size() == 0 || c2.size() == 0) return;
+
+  for (int ii=0; ii<c1.size(); ii++) {
+    int i = c1[ii];
+    SCVector3 ai(molecule()->r(i));
+    double Zi = molecule()->charge(i);
+    int jfence = (uniq?ii:c2.size());
+    for (int jj=0; jj<jfence; jj++) {
+      int j = c2[jj];
+      SCVector3 aj(molecule()->r(j));
+      double Zj = molecule()->charge(j);
+      SCVector3 rdiff = ai - aj;
+      double r2 = rdiff.dot(rdiff);
+      double factor = - Zi * Zj / (r2*sqrt(r2));
+      for (int k=0; k<3; k++) {
+        grad[i][k] += factor * rdiff[k];
+        grad[j][k] -= factor * rdiff[k];
+      }
+    }
+  }
+}
+
+void
+Wavefunction::nuc_rep_grad_pc_cd(double **grad,
+                                 const std::vector<int>&pc,
+                                 const std::vector<int>&cd)
+{
+  if (pc.size() == 0 || cd.size() == 0) return;
+
+  throw std::runtime_error("Wavefunction::nuclear_repulsion_energy_gradient: not done");
+}
+
+void
+Wavefunction::nuc_rep_grad_cd_cd(double **grad,
+                                 const std::vector<int>&c1,
+                                 const std::vector<int>&c2,
+                                 bool uniq)
+{
+  if (c1.size() == 0 || c2.size() == 0) return;
 
   throw std::runtime_error("Wavefunction::nuclear_repulsion_energy_gradient: not done");
 }

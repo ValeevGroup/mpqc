@@ -665,6 +665,181 @@ TwoBodyDerivInt::buffer() const
   return buffer_;
 }
 
+///////////////////////////////////////////////////////////////////////
+
+TwoBodyThreeCenterDerivInt::TwoBodyThreeCenterDerivInt(Integral *integral,
+                                 const Ref<GaussianBasisSet>&b1,
+                                 const Ref<GaussianBasisSet>&b2,
+                                 const Ref<GaussianBasisSet>&b3):
+  integral_(integral),
+  bs1_(b1), bs2_(b2), bs3_(b3)
+{
+  integral_->reference();
+  buffer_ = 0;
+}
+
+TwoBodyThreeCenterDerivInt::~TwoBodyThreeCenterDerivInt()
+{
+  integral_->dereference();
+  if (integral_->nreference() == 0) delete integral_;
+}
+
+int
+TwoBodyThreeCenterDerivInt::nbasis() const
+{
+  return bs1_->nbasis();
+}
+
+int
+TwoBodyThreeCenterDerivInt::nbasis1() const
+{
+  return bs1_->nbasis();
+}
+
+int
+TwoBodyThreeCenterDerivInt::nbasis2() const
+{
+  return bs2_->nbasis();
+}
+
+int
+TwoBodyThreeCenterDerivInt::nbasis3() const
+{
+  return bs3_->nbasis();
+}
+
+int
+TwoBodyThreeCenterDerivInt::nshell() const
+{
+  return bs1_->nshell();
+}
+
+int
+TwoBodyThreeCenterDerivInt::nshell1() const
+{
+  return bs1_->nshell();
+}
+
+int
+TwoBodyThreeCenterDerivInt::nshell2() const
+{
+  return bs2_->nshell();
+}
+
+int
+TwoBodyThreeCenterDerivInt::nshell3() const
+{
+  return bs3_->nshell();
+}
+
+Ref<GaussianBasisSet>
+TwoBodyThreeCenterDerivInt::basis()
+{
+  return bs1_;
+}
+
+Ref<GaussianBasisSet>
+TwoBodyThreeCenterDerivInt::basis1()
+{
+  return bs1_;
+}
+
+Ref<GaussianBasisSet>
+TwoBodyThreeCenterDerivInt::basis2()
+{
+  return bs2_;
+}
+
+Ref<GaussianBasisSet>
+TwoBodyThreeCenterDerivInt::basis3()
+{
+  return bs3_;
+}
+
+const double *
+TwoBodyThreeCenterDerivInt::buffer() const
+{
+  return buffer_;
+}
+
+///////////////////////////////////////////////////////////////////////
+
+TwoBodyTwoCenterDerivInt::TwoBodyTwoCenterDerivInt(Integral *integral,
+                                 const Ref<GaussianBasisSet>&b1,
+                                 const Ref<GaussianBasisSet>&b2):
+  integral_(integral),
+  bs1_(b1), bs2_(b2)
+{
+  integral_->reference();
+  buffer_ = 0;
+}
+
+TwoBodyTwoCenterDerivInt::~TwoBodyTwoCenterDerivInt()
+{
+  integral_->dereference();
+  if (integral_->nreference() == 0) delete integral_;
+}
+
+int
+TwoBodyTwoCenterDerivInt::nbasis() const
+{
+  return bs1_->nbasis();
+}
+
+int
+TwoBodyTwoCenterDerivInt::nbasis1() const
+{
+  return bs1_->nbasis();
+}
+
+int
+TwoBodyTwoCenterDerivInt::nbasis2() const
+{
+  return bs2_->nbasis();
+}
+
+int
+TwoBodyTwoCenterDerivInt::nshell() const
+{
+  return bs1_->nshell();
+}
+
+int
+TwoBodyTwoCenterDerivInt::nshell1() const
+{
+  return bs1_->nshell();
+}
+
+int
+TwoBodyTwoCenterDerivInt::nshell2() const
+{
+  return bs2_->nshell();
+}
+
+Ref<GaussianBasisSet>
+TwoBodyTwoCenterDerivInt::basis()
+{
+  return bs1_;
+}
+
+Ref<GaussianBasisSet>
+TwoBodyTwoCenterDerivInt::basis1()
+{
+  return bs1_;
+}
+
+Ref<GaussianBasisSet>
+TwoBodyTwoCenterDerivInt::basis2()
+{
+  return bs2_;
+}
+
+const double *
+TwoBodyTwoCenterDerivInt::buffer() const
+{
+  return buffer_;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

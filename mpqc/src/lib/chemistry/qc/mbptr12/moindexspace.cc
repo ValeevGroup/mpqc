@@ -455,13 +455,13 @@ namespace {
   class IndexedValue {
     int index_;
     double value_;
-    static const double small_diff = 1.0e-12;
   public:
     IndexedValue(int index, double value) : index_(index), value_(value) {}
     int index() const { return index_; }
     double value() const { return value_; }
 
     bool operator<(const IndexedValue& a) const {
+      const double small_diff = 1.0e-12;
       if (fabs(value_-a.value_) < small_diff)
         return false;
       else

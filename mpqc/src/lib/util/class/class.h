@@ -319,6 +319,7 @@ require_dynamic_cast(const DescribedClass*p,const char * errmsg,...)
 template <class A>
 class ForceLinkBase {
   public:
+    ForceLinkBase() {};
     virtual ~ForceLinkBase() {};
     virtual DescribedClass *create(A) = 0;
 };
@@ -335,6 +336,8 @@ that library's classes to be linked. */
 template <class T, class A = const Ref<KeyVal> &>
 class ForceLink: public ForceLinkBase<A> {
   public:
+    ForceLink() {};
+    virtual ~ForceLink() {};
     DescribedClass *create(A a) { return new T(a); }
 };
 

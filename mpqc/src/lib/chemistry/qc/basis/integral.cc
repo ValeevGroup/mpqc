@@ -56,6 +56,10 @@ Integral::Integral(const Ref<GaussianBasisSet> &b1,
   set_basis(b1,b2,b3,b4);
 }
 
+Integral::~Integral()
+{
+}
+
 Integral::Integral(StateIn& s) :
   SavableState(s)
 {
@@ -275,10 +279,22 @@ Integral::electron_repulsion3()
   throw std::runtime_error("Integral::electron_repulsion3(): not implemented in this particular integrals factory.");
 }
 
+Ref<TwoBodyThreeCenterDerivInt>
+Integral::electron_repulsion3_deriv()
+{
+  throw std::runtime_error("Integral::electron_repulsion3_deriv(): not implemented in this particular integrals factory.");
+}
+
 Ref<TwoBodyTwoCenterInt>
 Integral::electron_repulsion2()
 {
   throw std::runtime_error("Integral::electron_repulsion2(): not implemented in this particular integrals factory.");
+}
+
+Ref<TwoBodyTwoCenterDerivInt>
+Integral::electron_repulsion2_deriv()
+{
+  throw std::runtime_error("Integral::electron_repulsion2_deriv(): not implemented in this particular integrals factory.");
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -389,6 +389,7 @@ class SCMatrixSubblockIter: public RefCount {
     /** The access variable should be one of Read, Write, Accum, and None,
         with the SCMatrixSubblockIter:: scope operator applied. */
     SCMatrixSubblockIter(Access access): access_(access) {}
+    ~SCMatrixSubblockIter();
     /// Start at the beginning.
     virtual void begin() = 0;
     /// Returns nonzero if there is another block.

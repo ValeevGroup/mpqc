@@ -53,6 +53,7 @@ class GlobalMsgIter: public DescribedClass {
     virtual int fwdrecv() = 0;
   public:
     GlobalMsgIter(int nproc, int me, int root = 0);
+    ~GlobalMsgIter();
     void backwards() { fwd_ = 0; i_ = n_ - 1; }
     void forwards() { fwd_ = 1; i_ = 0; }
     void next() { if (fwd_) i_++; else i_--; }

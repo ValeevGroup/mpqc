@@ -46,6 +46,10 @@ GlobalMsgIter::GlobalMsgIter(int nproc, int me, int root)
   forwards();
 }
 
+GlobalMsgIter::~GlobalMsgIter()
+{
+}
+
 static ClassDesc MachineTopology_cd(
   typeid(MachineTopology),"MachineTopology",1,"public DescribedClass",
   0, 0, 0);

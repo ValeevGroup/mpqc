@@ -489,6 +489,135 @@ class TwoBodyDerivInt : public RefCount {
     virtual int log2_shell_bound(int= -1,int= -1,int= -1,int= -1) = 0;
 };
 
+// //////////////////////////////////////////////////////////////////////////
+
+/** This is an abstract base type for classes that
+    compute three centers integrals involving two electrons.
+ */
+class TwoBodyThreeCenterDerivInt : public RefCount {
+  protected:
+    // this is who created me
+    Integral *integral_;
+
+    Ref<GaussianBasisSet> bs1_;
+    Ref<GaussianBasisSet> bs2_;
+    Ref<GaussianBasisSet> bs3_;
+
+    double *buffer_;
+
+    TwoBodyThreeCenterDerivInt(Integral* integral,
+                    const Ref<GaussianBasisSet>&b1,
+                    const Ref<GaussianBasisSet>&b2,
+                    const Ref<GaussianBasisSet>&b3);
+  public:
+    virtual ~TwoBodyThreeCenterDerivInt();
+  
+    /// Return the number of basis functions on center one.
+    int nbasis() const;
+
+    /// Return the number of basis functions on the given center.
+    //@{
+    int nbasis1() const;
+    int nbasis2() const;
+    int nbasis3() const;
+    //@}
+
+    /// Return the number of shells on center one.
+    int nshell() const;
+
+    /// Return the number of shells on the given center.
+    //@{
+    int nshell1() const;
+    int nshell2() const;
+    int nshell3() const;
+    //@}
+
+    /// Return the basis set on center one.
+    Ref<GaussianBasisSet> basis();
+
+    /// Return the basis set on the given center.
+    //@{
+    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis2();
+    Ref<GaussianBasisSet> basis3();
+    //@}
+
+    /** The computed shell integrals will be put in the buffer returned
+        by this member.
+    */
+    const double * buffer() const;
+    
+    /** Given for shell indices, this will cause the integral buffer
+        to be filled in. */
+    virtual void compute_shell(int,int,int,DerivCenters&) = 0;
+
+    /** Return log base 2 of the maximum magnitude of any integral in a
+        shell block.  An index of -1 for any argument indicates any shell.  */
+    virtual int log2_shell_bound(int= -1,int= -1,int= -1) = 0;
+};
+
+// //////////////////////////////////////////////////////////////////////////
+
+/** This is an abstract base type for classes that
+    compute two centers integrals involving two electrons.
+ */
+class TwoBodyTwoCenterDerivInt : public RefCount {
+  protected:
+    // this is who created me
+    Integral *integral_;
+
+    Ref<GaussianBasisSet> bs1_;
+    Ref<GaussianBasisSet> bs2_;
+
+    double *buffer_;
+
+    TwoBodyTwoCenterDerivInt(Integral* integral,
+                    const Ref<GaussianBasisSet>&b1,
+                    const Ref<GaussianBasisSet>&b2);
+  public:
+    virtual ~TwoBodyTwoCenterDerivInt();
+  
+    /// Return the number of basis functions on center one.
+    int nbasis() const;
+
+    /// Return the number of basis functions on the given center.
+    //@{
+    int nbasis1() const;
+    int nbasis2() const;
+    //@}
+
+    /// Return the number of shells on center one.
+    int nshell() const;
+
+    /// Return the number of shells on the given center.
+    //@{
+    int nshell1() const;
+    int nshell2() const;
+    //@}
+
+    /// Return the basis set on center one.
+    Ref<GaussianBasisSet> basis();
+
+    /// Return the basis set on the given center.
+    //@{
+    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis2();
+    //@}
+
+    /** The computed shell integrals will be put in the buffer returned
+        by this member.
+    */
+    const double * buffer() const;
+    
+    /** Given for shell indices, this will cause the integral buffer
+        to be filled in. */
+    virtual void compute_shell(int,int,DerivCenters&) = 0;
+
+    /** Return log base 2 of the maximum magnitude of any integral in a
+        shell block.  An index of -1 for any argument indicates any shell.  */
+    virtual int log2_shell_bound(int= -1,int= -1) = 0;
+};
+
 }
 
 #endif

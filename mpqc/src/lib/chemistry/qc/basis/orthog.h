@@ -88,6 +88,8 @@ class OverlapOrthog: virtual public SavableState {
 
     OverlapOrthog(StateIn&);
 
+    virtual ~OverlapOrthog();
+
     void save_data_state(StateOut&);
 
     void reinit(OrthogMethod method,

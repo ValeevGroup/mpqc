@@ -44,6 +44,10 @@ using namespace sc;
 
 ///////////////////////////////////////////////////////////////////////
 
+EfieldDotVectorData::~EfieldDotVectorData()
+{
+}
+
 void
 EfieldDotVectorData::set_position(double*p)
 {
@@ -61,6 +65,10 @@ EfieldDotVectorData::set_vector(double*v)
 }
 
 ///////////////////////////////////////////////////////////////////////
+
+DipoleData::~DipoleData()
+{
+}
 
 void
 DipoleData::set_origin(double*o)
@@ -846,6 +854,70 @@ OneBodyDerivInt::basis2()
 
 const double *
 OneBodyDerivInt::buffer() const
+{
+  return buffer_;
+}
+
+///////////////////////////////////////////////////////////////////////
+
+OneBodyOneCenterDerivInt::OneBodyOneCenterDerivInt(Integral *integral,
+                                 const Ref<GaussianBasisSet>&b) :
+  integral_(integral),
+  bs1(b)
+{
+  // allocate a buffer
+  int biggest_shell = b->max_nfunction_in_shell();
+  biggest_shell *= biggest_shell * 3;
+
+  if (biggest_shell) {
+    buffer_ = new double[biggest_shell];
+  } else {
+    buffer_ = 0;
+  }
+}
+
+OneBodyOneCenterDerivInt::~OneBodyOneCenterDerivInt()
+{
+}
+
+int
+OneBodyOneCenterDerivInt::nbasis() const
+{
+  return bs1->nbasis();
+}
+
+int
+OneBodyOneCenterDerivInt::nbasis1() const
+{
+  return bs1->nbasis();
+}
+
+int
+OneBodyOneCenterDerivInt::nshell() const
+{
+  return bs1->nshell();
+}
+
+int
+OneBodyOneCenterDerivInt::nshell1() const
+{
+  return bs1->nshell();
+}
+
+Ref<GaussianBasisSet>
+OneBodyOneCenterDerivInt::basis()
+{
+  return bs1;
+}
+
+Ref<GaussianBasisSet>
+OneBodyOneCenterDerivInt::basis1()
+{
+  return bs1;
+}
+
+const double *
+OneBodyOneCenterDerivInt::buffer() const
 {
   return buffer_;
 }

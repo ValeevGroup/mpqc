@@ -49,6 +49,9 @@ class Integral;
 class EfieldDotVectorData: public RefCount
 {
   public:
+    EfieldDotVectorData() {};
+    ~EfieldDotVectorData();
+
     double position[3];
     double vector[3];
 
@@ -64,6 +67,7 @@ class DipoleData: public RefCount
 
     DipoleData(double *d) {origin[0]=d[0]; origin[1]=d[1]; origin[2]=d[2];}
     DipoleData() {origin[0]=origin[1]=origin[2]=0.0;}
+    ~DipoleData();
     void set_origin(double*);
 };
 
@@ -390,7 +394,7 @@ class OneBody3IntOp: public SCElementOp3 {
 
 // //////////////////////////////////////////////////////////////////////////
 
-/** OneBodyInt is an abstract base class for objects that
+/** OneBodyDerivInt is an abstract base class for objects that
     compute one body derivative integrals. */
 class OneBodyDerivInt : public RefCount {
   protected:
@@ -442,6 +446,56 @@ class OneBodyDerivInt : public RefCount {
     //@{
     virtual void compute_shell(int ish, int jsh, DerivCenters&) = 0;
     virtual void compute_shell(int ish, int jsh, int center) = 0;
+    //@}
+};
+
+// //////////////////////////////////////////////////////////////////////////
+
+/** OneBodyOneCenterDerivInt is an abstract base class for objects that
+    compute one body derivative integrals on a single center. */
+class OneBodyOneCenterDerivInt : public RefCount {
+  protected:
+    // this is who created me
+    Integral *integral_;
+
+    Ref<GaussianBasisSet> bs1;
+
+    double *buffer_;
+
+  public:
+    OneBodyOneCenterDerivInt(Integral *, const Ref<GaussianBasisSet>&b);
+    virtual ~OneBodyOneCenterDerivInt();
+  
+    /// Return the number of basis functions on center one.
+    int nbasis() const;
+    /// Return the number of basis functions on the given center.
+    //@{
+    int nbasis1() const;
+    //@}
+
+    /// Return the number of shells on center one.
+    int nshell() const;
+    /// Return the number of shells on the given center.
+    //@{
+    int nshell1() const;
+    //@}
+
+    /// Return the basis set on center one.
+    Ref<GaussianBasisSet> basis();
+    /// Return the basis set on the given center.
+    //@{
+    Ref<GaussianBasisSet> basis1();
+    //@}
+
+    /** The computed shell integrals will be put in the buffer returned by
+        this member.  */
+    const double * buffer() const;
+    
+    /** Given for shell indices, these will cause the integral buffer
+        to be filled in. */
+    //@{
+    virtual void compute_shell(int ish, DerivCenters&) = 0;
+    virtual void compute_shell(int ish, int center) = 0;
     //@}
 };
 

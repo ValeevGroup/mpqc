@@ -74,10 +74,27 @@ class Wavefunction: public MolecularEnergy {
 
     void init_orthog();
 
+    void set_up_charge_types(std::vector<int> &q_pc,
+                             std::vector<int> &q_cd,
+                             std::vector<int> &n_pc,
+                             std::vector<int> &n_cd);
+
     double nuc_rep_pc_pc(const std::vector<int>&,const std::vector<int>&,bool);
     double nuc_rep_pc_cd(const std::vector<int>&,const std::vector<int>&);
     double nuc_rep_cd_cd(const std::vector<int>&,const std::vector<int>&,bool);
     void scale_atom_basis_coef();
+
+    void nuc_rep_grad_pc_pc(double **grad,
+                            const std::vector<int>&c1,
+                            const std::vector<int>&c2,
+                            bool uniq);
+    void nuc_rep_grad_pc_cd(double **grad,
+                            const std::vector<int>&c1,
+                            const std::vector<int>&c2);
+    void nuc_rep_grad_cd_cd(double **grad,
+                            const std::vector<int>&c1,
+                            const std::vector<int>&c2,
+                            bool uniq);
 
   protected:
 

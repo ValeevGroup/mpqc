@@ -306,6 +306,7 @@ class RefBase {
     void reference(RefCount *);
     int dereference(RefCount *);
   public:
+    RefBase() {};
     virtual ~RefBase();
     /// Returns the DescribedClass pointer for the contained object.
     virtual RefCount* parentpointer() const = 0;

@@ -83,6 +83,10 @@ OverlapOrthog::OverlapOrthog(StateIn& si):
   si.get(nlindep_);
 }
 
+OverlapOrthog::~OverlapOrthog()
+{
+}
+
 void
 OverlapOrthog::save_data_state(StateOut& so)
 {

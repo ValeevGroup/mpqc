@@ -67,13 +67,13 @@ class BatchElectronDensity: public Volume {
     Ref<GaussianBasisSet> basis_;
 
     // shared between threads
-    GaussianBasisSet::ValueData *valdat_;
     double *alpha_dmat_;
     double *beta_dmat_;
     double *dmat_bound_;
     ShellExtent *extent_;
 
     // private data
+    GaussianBasisSet::ValueData *valdat_;
     int ncontrib_;
     int *contrib_;
     int ncontrib_bf_;

@@ -449,6 +449,10 @@ SymmSCMatrix::SymmSCMatrix(const RefSCDimension&a, SCMatrixKit *kit):
 {
 }
 
+SymmSCMatrix::~SymmSCMatrix()
+{
+}
+
 void
 SymmSCMatrix::save(StateOut&s)
 {
@@ -798,6 +802,10 @@ static ClassDesc DiagSCMatrix_cd(
 DiagSCMatrix::DiagSCMatrix(const RefSCDimension&a, SCMatrixKit *kit):
   d(a),
   kit_(kit)
+{
+}
+
+DiagSCMatrix::~DiagSCMatrix()
 {
 }
 

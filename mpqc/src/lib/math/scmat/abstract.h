@@ -367,6 +367,7 @@ class SymmSCMatrix: public DescribedClass {
     Ref<SCMatrixKit> kit_;
   public:
     SymmSCMatrix(const RefSCDimension&, SCMatrixKit *);
+    ~SymmSCMatrix();
 
     /// Return the SCMatrixKit object that created this object.
     Ref<SCMatrixKit> kit() const { return kit_; }
@@ -505,6 +506,7 @@ class DiagSCMatrix: public DescribedClass {
     Ref<SCMatrixKit> kit_;
   public:
     DiagSCMatrix(const RefSCDimension&, SCMatrixKit *);
+    ~DiagSCMatrix();
 
     /// Return the SCMatrixKit used to create this object.
     Ref<SCMatrixKit> kit() const { return kit_; }

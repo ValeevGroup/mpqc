@@ -79,6 +79,8 @@ class Integral : public SavableState {
     Integral(StateIn&);
     /// Integral the Integral object from the given KeyVal object.
     Integral(const Ref<KeyVal>&);
+
+    virtual ~Integral();
     
     void save_data_state(StateOut&);
 
@@ -219,9 +221,17 @@ class Integral : public SavableState {
         integrals.  If this is not re-implemented it will throw. */
     virtual Ref<TwoBodyThreeCenterInt> electron_repulsion3();
 
+    /** Return a TwoBodyThreeCenterInt that computes electron repulsion
+        integrals.  If this is not re-implemented it will throw. */
+    virtual Ref<TwoBodyThreeCenterDerivInt> electron_repulsion3_deriv();
+
     /** Return a TwoBodyTwoCenterInt that computes electron repulsion
         integrals. If this is not re-implemented it will throw. */
     virtual Ref<TwoBodyTwoCenterInt> electron_repulsion2();
+
+    /** Return a TwoBodyTwoCenterInt that computes electron repulsion
+        integrals. If this is not re-implemented it will throw. */
+    virtual Ref<TwoBodyTwoCenterDerivInt> electron_repulsion2_deriv();
 
     /// Return a TwoBodyInt that computes electron repulsion integrals.
     virtual Ref<TwoBodyInt> electron_repulsion() =0;

@@ -350,6 +350,7 @@ MolEnergyConvergence::MolEnergyConvergence()
 
 MolEnergyConvergence::MolEnergyConvergence(StateIn&s):
   Convergence(s)
+  maybe_SavableState(s)
 {
 }
 

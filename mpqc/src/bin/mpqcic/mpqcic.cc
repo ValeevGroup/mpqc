@@ -342,7 +342,7 @@ main(int argc, char *argv[])
   bcast0(&proper,sizeof(int),mtype_get(),0);
   bcast0(&do_mp2,sizeof(int),mtype_get(),0);
   bcast0(&do_opt2_v1,sizeof(int),mtype_get(),0);
-  bcast0(&do_opt2_v1,sizeof(int),mtype_get(),0);
+  bcast0(&do_opt2_v2,sizeof(int),mtype_get(),0);
   bcast0(&dens,sizeof(double),mtype_get(),0);
   bcast0(&nfzc,sizeof(int),mtype_get(),0);
   bcast0(&nfzv,sizeof(int),mtype_get(),0);

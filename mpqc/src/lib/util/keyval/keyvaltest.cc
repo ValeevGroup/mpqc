@@ -276,4 +276,16 @@ main()
   show( ra.pointer() ); cout << '\n';
   if (ra.nonnull()) { ra->print(); cout << '\n'; }
 
+  cout << "Testing string keyvals" << endl;
+  RefParsedKeyVal strkv = new ParsedKeyVal();
+  strkv->parse_string("<B>:(b=123456)");
+  RefB strb(strkv->describedclassvalue());
+  if (strb.nonnull()) { strb->print(); cout << endl; }
+
+  strkv = new ParsedKeyVal();
+  strkv->parse_string("TOP=24");
+  int strkvint = strkv->intvalue();
+  cout << "strkvint = " << strkvint << endl;
+
+  return 0;
 }

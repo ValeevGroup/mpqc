@@ -247,6 +247,9 @@ IPV2::ip_descend_tree(ip_keyword_tree_t* kt,const char* keyword)
         found = 1;
         break;
         }
+      else if (! I->keyword) {
+          return NULL;
+        }
       else if (!strcmp(token,I->keyword)) {
         if (I->variable) I = ip_descend_tree(I,I->variable);
         token = tok.tok();

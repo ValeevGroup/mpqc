@@ -109,23 +109,23 @@ class KeyVal: public VRefCount {
     // counted.
     int    count(const char* =0);
     //. Return the value associated with the keyword.
-    RefKeyValValue value(const char*);
+    RefKeyValValue value(const char* = 0);
     //. Returns the boolean value (0 = false, 1 = true) of \vrbl{key}.
-    int    booleanvalue(const char* key);
+    int    booleanvalue(const char* key = 0);
     //. Returns the double value of \vrbl{key}.
-    double doublevalue(const char* key);
+    double doublevalue(const char* key = 0);
     //. Returns the float value of \vrbl{key}.
-    float  floatvalue(const char* key);
+    float  floatvalue(const char* key = 0);
     //. Returns the char value of \vrbl{key}.
-    char   charvalue(const char* key);
+    char   charvalue(const char* key = 0);
     //. Returns the int value of \vrbl{key}.
-    int    intvalue(const char* key);
+    int    intvalue(const char* key = 0);
     //. Returns a copy of the string representation of the \vrbl{key}'s
     // value. Storage for the copy is obtained with new.
-    char*  pcharvalue(const char* key);
+    char*  pcharvalue(const char* key = 0);
     //. Returns a reference to an object of type DescribedClass
     // (@pxref{The DescribedClass Class}).
-    RefDescribedClass describedclassvalue(const char* key);
+    RefDescribedClass describedclassvalue(const char* key = 0);
 
     // For vectors:
     int    exists(const char*,int);
@@ -414,6 +414,9 @@ class PrefixKeyVal : public KeyVal {
 };
 
 class IPV2;
+//. The \clsnm{ParsedKeyVal} class converts textual information into
+//keyword/value assocations.  The parsing is done with an \clsnm{IPV2}
+//object, which is the encapsulation of the ipv2 C library.
 class ParsedKeyVal : public StringKeyVal {
   private:
     int nfile;
@@ -424,22 +427,33 @@ class ParsedKeyVal : public StringKeyVal {
     ParsedKeyVal(const ParsedKeyVal&);
     operator=(const ParsedKeyVal&);
   public:
+    //. Create an empty \clsnm{ParsedKeyVal}.
     ParsedKeyVal();
+    //. Parse the given input file.
     ParsedKeyVal(const char*);
+    //. Read input from the given \clsnm{istream}.
     ParsedKeyVal(istream&);
+    //. Use the given \clsnm{IPV2*} object.  The new \clsnm{ParsedKeyVal}
+    //takes wnership of the passed \clsnm{IPV2} object.
     ParsedKeyVal(IPV2*);
-    // This ctor is given a string which is used to form keywords
+    //. This ctor is given a string which is used to form keywords
     // that are sought in the keyval argument.  The associated values
     // are used to construct file names that are used to initialize
     // the parsedkeyval.  The keywords sought are string'dir' for the
     // directory prefix and string'files' for an array of file names.
     ParsedKeyVal(const char*,const RefKeyVal&);
+    //. Cleanup, deleting the \clsnm{IPV2} object.
     ~ParsedKeyVal();
-    const char* stringvalue(const char*);
-    virtual const char* classname(const char*);
-    virtual const char* truekeyword(const char*);
+
+    //. Read input data from the given filename, stream, or string.
     void read(const char*);
     void read(istream&);
+    void parse_string(const char *);
+
+    //. Overrides of parent members.
+    const char* stringvalue(const char*);
+    const char* classname(const char*);
+    const char* truekeyword(const char*);
     void errortrace(ostream&fp=cerr, int offset = 0);
     void dump(ostream&fp=cerr,int offset = 0);
 };

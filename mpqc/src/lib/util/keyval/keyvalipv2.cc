@@ -1,5 +1,6 @@
 
 #include <iostream.h>
+#include <strstream.h>
 #include <fstream.h>
 #include <stdlib.h>
 #include <string.h>
@@ -120,7 +121,14 @@ ParsedKeyVal::read(const char* name)
 void ParsedKeyVal::read(istream&infp)
 {
   nfp++;
-  ipv2->read(infp,cerr,file[nfile-1]);
+  ipv2->read(infp,cerr,"<stream>");
+}
+
+void
+ParsedKeyVal::parse_string(const char *str)
+{
+  istrstream in(str);
+  ipv2->read(in,cerr,"<string>");
 }
 
 ParsedKeyVal::~ParsedKeyVal()

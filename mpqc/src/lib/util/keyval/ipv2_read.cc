@@ -148,11 +148,15 @@ IPV2::ip_push_keyclass(char*keyword,char*classname,ip_string_list_t*parentlist)
   if (!keyword) {
       if (classname && sub_tree && sub_tree->keyword && !sub_tree->classname) {
           sub_tree->classname = classname;
+          return;
+        }
+      else if (!sub_tree) {
+          keyword = strdup("TOP");
         }
       else {
-          error("got a classname only in invalid context: %k");
+          if (classname) error("got a classname only in invalid context: %k");
+          else error("no classname, no keyword");
         }
-      return;
     }
   
   /* Make the parentlist a part of the keyword. */

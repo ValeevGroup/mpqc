@@ -52,6 +52,8 @@ StringKeyVal::key_exists(const char* key)
 RefKeyValValue
 StringKeyVal::key_value(const char* key)
 {
+  if (!key) key = "TOP";
+
   // convert the key to the true key so variable assignments in the
   // input will effectively be done by reference
   // check to see if the datum is a described class

@@ -59,7 +59,7 @@ class MPQCIn {
     void write_energy_object(std::ostream&, const char *keyword,
                              const char *method,
                              const char *basis, int coor,
-                             bool need_cints = false);
+                             bool &need_cints);
     void write_basis_object(std::ostream&, const char *keyword,
                             const char *basis);
     void write_vector(std::ostream &ostrs,

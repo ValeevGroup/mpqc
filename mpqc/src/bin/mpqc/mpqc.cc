@@ -510,10 +510,18 @@ try_main(int argc, char *argv[])
 
   // get the integral factory. first try commandline and environment
   Ref<Integral> integral = Integral::initial_integral(argc, argv);
+  
+  // if we still don't have a integral, try reading the integral
+  // from the input
+  if (integral.null()) {
+    integral << keyval->describedclassvalue("integrals");
+  }
+
   if (integral.nonnull())
     Integral::set_default_integral(integral);
   else
     integral = Integral::get_default_integral();
+
   ExEnv::out0() << endl << indent
        << "Using " << integral->class_name()
        << " by default for molecular integrals evaluation" << endl << endl;

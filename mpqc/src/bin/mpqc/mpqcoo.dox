@@ -55,6 +55,11 @@ class.
         giving the ThreadGrp in the environment or command line.  See the
         section on running MPQC for more information.
 
+<dt><tt>integrals</tt><dd> This specifies an object of type Integral that
+        will be used as the default integral evaluator.  If MP2-R12 is
+        used, then this should be set to use IntegralCints with a line
+        like <tt>integrals<IntegralCints>: ()</tt>.
+
 <dt><tt>checkpoint</tt> </dt> <dd> The value of this keyword is boolean.
 
         <ul>

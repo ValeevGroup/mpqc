@@ -16,6 +16,7 @@ basis<GaussianBasisSet>: (
   molecule = $:molecule
 )
 mpqc: (
+  integrals<IntegralCints>: ()
   checkpoint = no
   savestate = no
   restart = no
@@ -35,7 +36,6 @@ mpqc: (
     coor = $..:coor
     memory = 32000000
     stdapprox = "A"
-    integrals<IntegralCints>: ()
     nfzc = 2
     r12ints = posix 
     r12ints_file = "./mbpt_mp2r12_ne2_posix.r12ints.dat"
@@ -50,9 +50,7 @@ mpqc: (
       total_charge = 0
       multiplicity = 1
       memory = 32000000
-      integrals<IntegralCints>: ()
       guess_wavefunction<CLHF>: (
-        integrals<IntegralCints>: ()
         molecule = $:molecule
         total_charge = 0
         multiplicity = 1

@@ -394,7 +394,11 @@ MPQCIn::parse_string(const char *s)
   ostrs << indent << "restart = " << restart_.val() << endl;
   ostrs << indent << "checkpoint = " << checkpoint_.val() << endl;
   ostrs << indent << "savestate = " << checkpoint_.val() << endl;
-  write_energy_object(ostrs, "mole", method_.val(), 0, optimize_.val());
+  bool need_cints = false;
+  write_energy_object(ostrs, "mole", method_.val(), 0, optimize_.val(),
+                      need_cints);
+  if (need_cints)
+      ostrs << indent << "integrals<IntegralCints>: ()" << std::endl;
   if (optimize_.val()) {
       const char *coortype = "SymmMolecularCoor";
       if (opt_type_.val() == T_CARTESIAN) coortype = "CartMolecularCoor";
@@ -468,7 +472,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
                             const char *keyword,
                             const char *method,
                             const char *basis,
-                            int coor, bool need_cints)
+                            int coor, bool &need_cints)
 {
   int nelectron = int(mol_->nuclear_charge()+1e-6) - charge_.val();
   if (nelectron < 0) {

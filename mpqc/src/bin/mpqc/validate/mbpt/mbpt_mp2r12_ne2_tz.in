@@ -16,6 +16,7 @@ basis<GaussianBasisSet>: (
   molecule = $:molecule
 )
 mpqc: (
+  integrals<IntegralCints>: ()
   checkpoint = no
   savestate = no
   restart = no
@@ -35,7 +36,6 @@ mpqc: (
     coor = $..:coor
     memory = 32000000
     stdapprox = "A"
-    integrals<IntegralCints>: ()
     nfzc = 2
     aux_basis<GaussianBasisSet>: (
       name = "aug-cc-pVTZ"
@@ -48,9 +48,7 @@ mpqc: (
       total_charge = 0
       multiplicity = 1
       memory = 32000000
-      integrals<IntegralCints>: ()
       guess_wavefunction<CLHF>: (
-        integrals<IntegralCints>: ()
         molecule = $:molecule
         total_charge = 0
         multiplicity = 1

@@ -794,6 +794,8 @@ sub input_string() {
     my $qcinput = $self->{"qcinput"};
     my $qcparse = $qcinput->{"parser"};
 
+    my $use_cints = 0;
+
     printf "molecule = %s\n", $qcparse->value("molecule") if ($debug);
 
     my $symmetry = $qcinput->symmetry();
@@ -961,7 +963,8 @@ sub input_string() {
             $mole = "$mole\n    )\n";
         }
         $mole = append_reference($mole,"CLHF",$charge,$mult,$memory,$orthog_method,
-                                 $lindep_tol,$docc,$socc,1,"DZ (Dunning)");
+                                 $lindep_tol,$docc,$socc,"DZ (Dunning)");
+        $use_cints = 1;
     }
     elsif ($method eq "MBPT2") {
         my $fzc = $qcinput->fzc();
@@ -982,7 +985,7 @@ sub input_string() {
             $refmethod = "HSOSHF";
         }
         $mole = append_reference($mole,$refmethod,$charge,$mult,$memory,$orthog_method,
-                                 $lindep_tol,$docc,$socc,0,"STO-3G");
+                                 $lindep_tol,$docc,$socc,"STO-3G");
     }
     elsif (! ($basis =~ /^STO/
               || $basis =~ /^MI/
@@ -1063,6 +1066,9 @@ sub input_string() {
                           $mpqcstart,bool_to_yesno($qcinput->checkpoint()));
     $mpqcstart = sprintf ("%s  restart = %s\n",
                           $mpqcstart,bool_to_yesno($qcinput->restart()));
+    if ($use_cints) {
+        $mpqcstart = "$mpqcstart  integrals<IntegralCints>: ()\n";
+    }
     my $mpqcstop = ")\n";
     my $emacs = "% Emacs should use -*- KeyVal -*- mode\n";
     my $warn = "% this file was automatically generated\n";
@@ -1154,7 +1160,6 @@ sub append_reference {
     my $lindep_tol = shift;
     my $docc = shift;
     my $socc = shift;
-    my $use_cints = shift;
     my $guessbasis = shift;
     $mole = "$mole\n    reference<$refmethod>: (";
     $mole = "$mole\n      molecule = \$:molecule";
@@ -1162,9 +1167,6 @@ sub append_reference {
     $mole = "$mole\n      total_charge = $charge";
     $mole = "$mole\n      multiplicity = $mult";
     $mole = "$mole\n      memory = $memory";
-    if ($use_cints) {
-        $mole = "$mole\n      integrals<IntegralCints>: ()";
-    }
     if ($orthog_method ne "" ) {
         $mole = "$mole\n      orthog_method = $orthog_method";
     }
@@ -1177,9 +1179,6 @@ sub append_reference {
            || $basis =~ /^MI/
            || $basis =~ /^\d-\d1G$/)) {
         $mole = "$mole\n      guess_wavefunction<$refmethod>: (";
-        if ($use_cints) {
-            $mole = "$mole\n        integrals<IntegralCints>: ()";
-        }
         $mole = "$mole\n        molecule = \$:molecule";
         $mole = "$mole\n        total_charge = $charge";
         $mole = "$mole\n        multiplicity = $mult";

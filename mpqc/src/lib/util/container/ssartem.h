@@ -38,14 +38,14 @@ class SSBArray: public Array<Type> {
     SSBArray(const Array<Type>&a): Array<Type>(a) {}
     SSBArray(Type* data,int size): Array<Type>(data,size) {}
     SSBArray(int size): Array<Type>(size) {}
-    SSBArray(StateIn&s) {
-      s.get(_length);
-      if (_length) s.get(_array);
-      _managed=1;
+    SSBArray(StateIn&s): Array<Type>() {
+      s.get(this->_length);
+      if (this->_length) s.get(this->_array);
+      this->_managed=1;
     }
     void save_object_state(StateOut&s) {
-        s.put(_length);
-        if (_length) s.put(_array,_length);
+        s.put(this->_length);
+        if (this->_length) s.put(this->_array,this->_length);
       }
 };
 

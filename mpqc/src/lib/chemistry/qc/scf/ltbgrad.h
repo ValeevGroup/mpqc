@@ -147,7 +147,7 @@ class LocalTBGrad : public TBGrad<T> {
           
               double cscl, escl;
 
-              set_scale(cscl, escl, i, j, k, l);
+              this->set_scale(cscl, escl, i, j, k, l);
 
               int indijkl=0;
               int nx=cent.n();

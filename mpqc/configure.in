@@ -635,6 +635,36 @@ esac
 
 dnl -- special architecture options --
 
+case $target_cpu in
+     i786)
+        opt_target_cpu=pentium4
+     ;;
+     *)
+        opt_target_cpu=$target_cpu
+     ;;
+esac
+
+if test X$GXX == Xyes; then
+  AC_MSG_CHECKING([for C++ cpu tuning flag])
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  CXXFLAGS_SAV=$CXXFLAGS
+  CXXFLAGS="-mtune=$opt_target_cpu $CXXFLAGS_SAV"
+  AC_COMPILE_IFELSE([int main(){}],cxx_tuneflag="-mtune",cxx_tuneflag="-mcpu")
+  CXXFLAGS=$CXXFLAGS_SAV
+  AC_LANG_RESTORE
+  AC_MSG_RESULT($cxx_tuneflag)
+fi
+
+if test X$GCC == Xyes; then
+  AC_MSG_CHECKING([for C cpu tuning flag])
+  CFLAGS_SAV=$CFLAGS
+  CFLAGS="-mtune=$opt_target_cpu $CFLAGS_SAV"
+  AC_COMPILE_IFELSE([int main(){}],cc_tuneflag="-mtune",cc_tuneflag="-mcpu")
+  CFLAGS=$CFLAGS_SAV
+  AC_MSG_RESULT($cc_tuneflag)
+fi
+
 AC_MSG_CHECKING([for special architecture options])
 case $target in
   *-solaris2*)
@@ -661,18 +691,21 @@ case $target in
     AC_MSG_RESULT(teraflop cougar)
   ;;
 changequote(<<, >>)dnl
-  i[456]86-* | pentium | pentiumpro | k6 | athlon)
+  i[4567]86-* | pentium-* | pentium4-* | pentiumpro-* | k6-* | athlon-*)
 changequote([, ])dnl
+
     if test X$STRICT_ARCH = Xyes; then
-      cpu_arch_option="-march=$target_cpu"
+      cxx_cpu_arch_option="-march=$opt_target_cpu"
+      cc_cpu_arch_option="-march=$opt_target_cpu"
     else
-      cpu_arch_option="-mcpu=$target_cpu"
+      cxx_cpu_arch_option="$cxx_tuneflag=$opt_target_cpu"
+      cc_cpu_arch_option="$cc_tuneflag=$opt_target_cpu"
     fi
     if test X$GCC = Xyes; then
-      COPTIONS_MISC="$COPTIONS_MISC $cpu_arch_option"
+      COPTIONS_MISC="$COPTIONS_MISC $cc_cpu_arch_option"
     fi
     if test X$GXX = Xyes; then
-      CXXOPTIONS_MISC="$CXXOPTIONS_MISC $cpu_arch_option"
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC $cxx_cpu_arch_option"
     fi
     AC_MSG_RESULT(IA-32: $cpu_arch_option)
   ;;

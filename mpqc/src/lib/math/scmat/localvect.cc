@@ -326,10 +326,12 @@ LocalSCVector::vprint(const char *title, ostream& os, int prec)
 RefSCMatrixSubblockIter
 LocalSCVector::local_blocks(SCMatrixSubblockIter::Access access)
 {
-  cerr << indent
-       << "LocalSCVector::local_blocks: not valid for local matrices"
-       << endl;
-  abort();
+  if (messagegrp()->n() > 1) {
+      cerr << indent
+           << "LocalSCVector::local_blocks: not valid for local matrices"
+           << endl;
+      abort();
+    }
   RefSCMatrixSubblockIter iter
       = new SCMatrixSimpleSubblockIter(access, block.pointer());
   return iter;

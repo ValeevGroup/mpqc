@@ -35,26 +35,11 @@ GaussianBasisSet::GaussianBasisSet(KeyVal&topkeyval)
   if (topkeyval.error() != KeyVal::OK) pure = -1;
 
   // construct a keyval that contains the basis library
+
+  // this ParsedKeyVal CTOR looks at the basisdir and basisfiles
+  // variables to find out what basis set files are to be read in
   ParsedKeyVal libkeyval("basis",topkeyval); libkeyval.unmanage();
   AggregateKeyVal keyval(topkeyval,libkeyval); keyval.unmanage();
-
-  // check to see if there are extra basis files to read 
-  if (keyval.exists("basisfiles")) {
-    char path[512], *bdir = "./";
-
-    if (keyval.exists("basisdir"))
-      bdir = keyval.pcharvalue("basisdir");
-
-    for (int i=0; i < keyval.count("basisfiles"); i++) {
-      char *name = keyval.pcharvalue("basisfiles",i);
-      sprintf(path,"%s%s",bdir,name);
-      libkeyval.read(path);
-      delete[] name;
-    }
-
-    if (keyval.exists("basisdir"))
-      delete[] bdir;
-  }
 
   init(molecule,keyval,basisname,1,pure);
 

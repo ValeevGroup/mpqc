@@ -35,6 +35,9 @@ class GaussianBasisSet: public SavableState
 
     RefMolecule molecule_;
 
+    RefSCMatrixKit matrixkit_;
+    RefSCDimension basisdim_;
+    
     int ncenter_;
     SSBArrayint shell_to_center_;
     SSBArrayint center_to_shell_;
@@ -54,6 +57,9 @@ class GaussianBasisSet: public SavableState
               int pure);
     void init2();
     
+  protected:
+    virtual void set_matrixkit(const RefSCMatrixKit&);
+    
   public:
     GaussianBasisSet(const RefKeyVal&);
     GaussianBasisSet(StateIn&);
@@ -61,10 +67,13 @@ class GaussianBasisSet: public SavableState
     void save_data_state(StateOut&);
     const char* name() const;
     RefMolecule molecule() const { return molecule_; }
+    RefSCMatrixKit matrixkit() { return matrixkit_; }
+    RefSCDimension basisdim() { return basisdim_; }
 
     int ncenter() const;
     int nshell() const;
     int nshell_on_center(int icenter) const;
+    int shell_on_center(int icenter, int shell) const;
     int nbasis() const;
     int nprimitive() const;
 

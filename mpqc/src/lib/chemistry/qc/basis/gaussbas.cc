@@ -46,6 +46,10 @@ GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
   RefKeyVal libkeyval = new ParsedKeyVal("basis",topkeyval);
   RefKeyVal keyval = new AggregateKeyVal(topkeyval,libkeyval);
 
+  // if there isn't a matrixkit in the input, init2() will assign the
+  // default matrixkit
+  matrixkit_ = keyval->describedclassvalue("matrixkit");
+  
   // Bases keeps track of what basis set data bases have already
   // been read in.  It also handles the conversion of basis
   // names to file names.
@@ -58,6 +62,8 @@ GaussianBasisSet::GaussianBasisSet(StateIn&s):
   center_to_nshell_(s)
 {
   molecule_.restore_state(s);
+  matrixkit_.restore_state(s);
+  basisdim_.restore_state(s);
 
   ncenter_ = center_to_nshell_.length();
   s.getstring(name_);
@@ -82,6 +88,9 @@ GaussianBasisSet::save_data_state(StateOut&s)
   center_to_nshell_.save_object_state(s);
 
   molecule_.save_state(s);
+  matrixkit_.save_state(s);
+  basisdim_.save_state(s);
+  
   s.putstring(name_);
   for (int i=0; i<nshell_; i++) {
       shell[i]->save_object_state(s);
@@ -250,6 +259,18 @@ GaussianBasisSet::init2()
           ifunc++;
         }
     }
+
+  if (matrixkit_.null())
+    matrixkit_ = SCMatrixKit::default_matrixkit();
+
+  if (basisdim_.null())
+    basisdim_ = matrixkit_->dimension(nbasis());
+}
+
+void
+GaussianBasisSet::set_matrixkit(const RefSCMatrixKit& mk)
+{
+  matrixkit_ = mk;
 }
 
 void
@@ -341,6 +362,12 @@ int
 GaussianBasisSet::nshell_on_center(int icenter) const
 {
   return center_to_nshell_[icenter];
+}
+
+int
+GaussianBasisSet::shell_on_center(int icenter, int ishell) const
+{
+  return center_to_shell_(icenter) + ishell;
 }
 
 const GaussianShell&

@@ -31,6 +31,8 @@ SCF::SCF(const RefKeyVal& keyval) :
 {
   if (keyval->exists("maxiter"))
     maxiter_ = keyval->intvalue("maxiter");
+
+  integral()->set_storage(keyval->intvalue("integral_storage"));
 }
 
 SCF::~SCF()

@@ -55,8 +55,10 @@ fail()
  */
 double *
 Int2eV3::int_initialize_erep(int storage, int order,
-                             RefGaussianBasisSet cs1, RefGaussianBasisSet cs2,
-                             RefGaussianBasisSet cs3, RefGaussianBasisSet cs4)
+                             const RefGaussianBasisSet &cs1,
+                             const RefGaussianBasisSet &cs2,
+                             const RefGaussianBasisSet &cs3,
+                             const RefGaussianBasisSet &cs4)
 {
   int nc1,nc2,nc3,nc4;
   int jmax,jmax1,jmax2,jmax3,jmax4;

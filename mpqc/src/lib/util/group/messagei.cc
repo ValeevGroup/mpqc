@@ -272,8 +272,8 @@ MessageGrp::initialize(int me, int n)
     }
 
   if (me_ == 0) {
-      printf("MessageGrp: registered %d classes and %d nodes\n",
-             nclass_, n_);
+    cout << "MessageGrp: registered " << nclass_ << " classes and "
+         << n_ << " nodes\n";
     }
 
   this->dereference();

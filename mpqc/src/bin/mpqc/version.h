@@ -1,1 +1,1 @@
-#define MPQC_VERSION "pre-1.2 experimental"
+#define MPQC_VERSION "1.2"

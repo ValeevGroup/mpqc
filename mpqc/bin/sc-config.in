@@ -5,7 +5,7 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 LIBSUF=@LIBSUF@
 exec_prefix_set=no
-libs="@LIBDIRS@ @LIBS@"
+libs="@LIBDIRS@ @LIBS@ @FLIBS@"
 all_sclibs="@SCLIBS@"
 cppdefines="@DEFS@ @EXTRADEFINES@"
 cxxflags="@CXXFLAGS@"
@@ -13,6 +13,7 @@ cppflags="@CPPFLAGS@"
 cflags="@CFLAGS@"
 cxx="@CXX@"
 cc="@CC@"
+version="@SC_VERSION@"
 
 sclibs=""
 for i in $all_sclibs; do
@@ -58,7 +59,7 @@ while test $# -gt 0; do
       echo $exec_prefix
       ;;
     --version)
-      echo pre-1.2 experimental
+      echo $version
       ;;
     --cppflags)
       echo $includes $cppflags

@@ -82,8 +82,6 @@
 #include <mpi.h>
 #endif
 
-#include "version.h"
-
 //////////////////////////////////////////////////////////////////////////
 
 static void
@@ -220,7 +218,7 @@ main(int argc, char *argv[])
 
   if (options.retrieve("h")) {
     cout << node0
-         << indent << "MPQC version " << MPQC_VERSION << endl
+         << indent << "MPQC version " << SC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright << endl;
     options.usage(cout);
@@ -229,7 +227,7 @@ main(int argc, char *argv[])
   
   if (options.retrieve("v")) {
     cout << node0
-         << indent << "MPQC version " << MPQC_VERSION << endl
+         << indent << "MPQC version " << SC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright;
     exit(0);
@@ -237,7 +235,7 @@ main(int argc, char *argv[])
   
   if (options.retrieve("w")) {
     cout << node0
-         << indent << "MPQC version " << MPQC_VERSION << endl
+         << indent << "MPQC version " << SC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright << endl
          << SCFormIO::warranty;
@@ -246,7 +244,7 @@ main(int argc, char *argv[])
   
   if (options.retrieve("L")) {
     cout << node0
-         << indent << "MPQC version " << MPQC_VERSION << endl
+         << indent << "MPQC version " << SC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright << endl
          << SCFormIO::license;
@@ -326,7 +324,7 @@ main(int argc, char *argv[])
   // announce ourselves
   const char title1[] = "MPQC: Massively Parallel Quantum Chemistry";
   int ntitle1 = sizeof(title1);
-  const char title2[] = "Version " MPQC_VERSION;
+  const char title2[] = "Version " SC_VERSION;
   int ntitle2 = sizeof(title2);
   cout << node0 << endl;
   cout << node0 << indent;

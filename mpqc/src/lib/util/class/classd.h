@@ -7,8 +7,8 @@
      // this is public to make it easier to force linkage
     static ClassDesc class_desc_;
   private:
-    void* CLASSNAME::do_castdowns(void**,
-                                  const ClassDesc*cd);
+    void* do_castdowns(void**,
+                       const ClassDesc*cd);
   public:
     void* _castdown(const ClassDesc*);
     static CLASSNAME* require_castdown(DescribedClass*p,const char*,...);

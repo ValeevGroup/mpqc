@@ -98,15 +98,15 @@ class PointBag_double
     PointBag_double();
     PointBag_double(PointBag_double&);
     ~PointBag_double();
-    int PointBag_double::length();
-    void PointBag_double::add(const Point& p, double x);
-    void PointBag_double::add(const PointBagElem_double&);
-    int PointBag_double::owns(Pix i);
-    double& PointBag_double::operator()(Pix i);
-    double& PointBag_double::get(Pix i);
-    Point& PointBag_double::point(Pix i);
-    Pix PointBag_double::first();
-    void PointBag_double::next(Pix&i);
+    int length();
+    void add(const Point& p, double x);
+    void add(const PointBagElem_double&);
+    int owns(Pix i);
+    double& operator()(Pix i);
+    double& get(Pix i);
+    Point& point(Pix i);
+    Pix first();
+    void next(Pix&i);
 };
 
 #ifdef INLINE_FUNCTIONS

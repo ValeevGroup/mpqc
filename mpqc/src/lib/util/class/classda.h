@@ -5,9 +5,8 @@
 
   private:
     static ClassDesc class_desc_;
-    //typedef void* CLASSNAME::(* POINTER_TO_CASTDOWN ) (const ClassDesc*);
-    void* CLASSNAME::do_castdowns(void**,
-                                  const ClassDesc*cd);
+    void* do_castdowns(void**,
+                       const ClassDesc*cd);
   public:
     void* _castdown(const ClassDesc*);
     static CLASSNAME* require_castdown(DescribedClass*p,const char*,...);

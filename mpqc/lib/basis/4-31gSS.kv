@@ -1,8 +1,16 @@
 %BASIS "4-31G**" CARTESIAN; 4-31G with polarization added
-%
 basis:(
+%Elements                             References
+%--------                             ----------
+%H, C - F: R. Ditchfield, W.J. Hehre and J.A. Pople, J. Chem. Phys. 54, 724
+%          (1971).
+%He, Ne:   Gaussian 90
+%Li, Be:   These are actually 5-21G basis sets.
+%Na - Ar:  M.S. Gordon, J.S. Binkley, J.A. Pople, W.J. Pietro and W.J. Hehre,
+%          J. Am. Chem. Soc. 104, 2797 (1983).
 %
-% BASIS SET: (4s) -> [2s]                                      
+%
+% BASIS SET: (4s) -> [2s]
  hydrogen: "4-31G**": [
   (type: [am = s]
    {exp coef:0} = {
@@ -14,14 +22,14 @@ basis:(
    {exp coef:0} = {
            0.16127780      1.00000000
    })
-% AUGMENTING FUNCTIONS: (1p)                          
+% AUGMENTING FUNCTIONS: (1p)
   (type: [am = p]
    {exp coef:0} = {
            1.10000000      1.00000000
    })
  ]
 %
-% BASIS SET: (4s) -> [2s]                                      
+% BASIS SET: (4s) -> [2s]
  helium: "4-31G**": [
   (type: [am = s]
    {exp coef:0} = {
@@ -33,14 +41,14 @@ basis:(
    {exp coef:0} = {
            0.29796400      1.00000000
    })
-% AUGMENTING FUNCTIONS: (1p)                          
+% AUGMENTING FUNCTIONS: (1p)
   (type: [am = p]
    {exp coef:0} = {
            1.10000000      1.00000000
    })
  ]
 %
-% BASIS SET: (8s,3p) -> [3s,2p]                                
+% BASIS SET: (8s,3p) -> [3s,2p]
  lithium: "4-31G**": [
   (type: [am = s]
    {exp coef:0} = {
@@ -59,14 +67,14 @@ basis:(
    {exp coef:1 coef:0} = {
            0.04043870      1.00000000      1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)                          
+% AUGMENTING FUNCTIONS: (1d)
   (type: [am = d]
    {exp coef:0} = {
            0.20000000      1.00000000
    })
  ]
 %
-% BASIS SET: (8s,3p) -> [3s,2p]                                
+% BASIS SET: (8s,3p) -> [3s,2p]
  beryllium: "4-31G**": [
   (type: [am = s]
    {exp coef:0} = {
@@ -85,14 +93,14 @@ basis:(
    {exp coef:1 coef:0} = {
            0.04043870      1.00000000      1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)                          
+% AUGMENTING FUNCTIONS: (1d)
   (type: [am = d]
    {exp coef:0} = {
            0.40000000      1.00000000
    })
  ]
 %
-% BASIS SET: (8s,4p) -> [3s,2p]                                
+% BASIS SET: (8s,4p) -> [3s,2p]
  boron: "4-31G**": [
   (type: [am = s]
    {exp coef:0} = {
@@ -111,14 +119,14 @@ basis:(
    {exp coef:1 coef:0} = {
            0.14421920      1.00000000      1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)                          
+% AUGMENTING FUNCTIONS: (1d)
   (type: [am = d]
    {exp coef:0} = {
            0.60000000      1.00000000
    })
  ]
 %
-% BASIS SET: (8S,4P) -> [3S,2P]                                
+% BASIS SET: (8S,4P) -> [3S,2P]
  carbon: "4-31G**": [
   (type: [am = s]
    {exp coef:0} = {
@@ -137,39 +145,40 @@ basis:(
    {exp coef:1 coef:0} = {
            0.18355780      1.00000000      1.00000000
    })
+% AUGMENTING FUNCTIONS: (1d)
   (type: [am = d]
    {exp coef:0} = {
            0.80000000      1.00000000
    })
  ]
 %
-% BASIS SET: (8S,4P) -> [3S,2P]                                
+% BASIS SET: (8S,4P) -> [3S,2P]
  nitrogen: "4-31G**": [
   (type: [am = s]
    {exp coef:0} = {
-         671.27950000      0.01759830
-         101.20170000      0.12284600
-          22.69997000      0.43378200
-           6.04060900      0.56141800
+         671.27950000      0.01759825
+         101.20170000      0.12284624
+          22.69997000      0.43378214
+           6.04060900      0.56141822
    })
   (type: [am = p am = s]
    {exp coef:1 coef:0} = {
-          12.39360000     -0.11748900      0.06402000
-           2.92238300     -0.21399400      0.31120300
-           0.83252800      1.17450200      0.31120300
+          12.39359970     -0.11748930      0.06402034
+           2.92238280     -0.21399402      0.31120256
+           0.83252808      1.17450211      0.75274824
    })
   (type: [am = p am = s]
    {exp coef:1 coef:0} = {
            0.22596400      1.00000000      1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)                          
+% AUGMENTING FUNCTIONS: (1d)
   (type: [am = d]
    {exp coef:0} = {
            0.80000000      1.00000000
    })
  ]
 %
-% BASIS SET: (8S,4P) -> [3S,2P]                                
+% BASIS SET: (8S,4P) -> [3S,2P]
  oxygen: "4-31G**": [
   (type: [am = s]
    {exp coef:0} = {
@@ -194,7 +203,7 @@ basis:(
    })
  ]
 %
-% BASIS SET: (8S,4P) -> [3S,2P]                                
+% BASIS SET: (8S,4P) -> [3S,2P]
  fluorine: "4-31G**": [
   (type: [am = s]
    {exp coef:0} = {
@@ -219,7 +228,7 @@ basis:(
    })
  ]
 %
-% BASIS SET: (8S,4P) -> [3S,2P]                                
+% BASIS SET: (8S,4P) -> [3S,2P]
  neon: "4-31G**": [
   (type: [am = s]
    {exp coef:0} = {
@@ -238,47 +247,47 @@ basis:(
    {exp coef:1 coef:0} = {
            0.46186700      1.00000000      1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)                          
+% AUGMENTING FUNCTIONS: (1d)
   (type: [am = d]
    {exp coef:0} = {
            0.80000000      1.00000000
    })
  ]
 %
-% BASIS SET: (12s,8p) -> [4s,3p]                               
+% BASIS SET: (12s,8p) -> [4s,3p]
  phosphorus: "4-31G**": [
   (type: [am = s]
    {exp coef:0} = {
-        3018.67180000      0.01852130
-         455.12712000      0.12990490
-         102.31473000      0.45510030
-          27.61784700      0.53313190
+        3018.67180000      0.01852131
+         455.12712100      0.12990486
+         102.31473000      0.45510029
+          27.61784730      0.53313186
    })
   (type: [am = p am = s]
    {exp coef:1 coef:0} = {
-         114.42940000     -0.02475020      0.02741400
-          26.58229600     -0.13509240      0.16907910
-           7.87188890      0.22773610      0.46910210
-           2.48785730      0.87559310      0.51815310
+         114.42940100     -0.02475030      0.02741400
+          26.58229590     -0.13509246      0.16907914
+           7.87188890      0.22773608      0.46910209
+           2.48785725      0.87559312      0.51815306
    })
   (type: [am = p am = s]
    {exp coef:1 coef:0} = {
-          50.75061900     -0.04511920      0.00377910
-           1.67286240     -0.85047300     -0.04634380
-           0.62109740      0.15962860      0.10339440
+          50.75061900     -0.04511922      0.00377907
+           1.67286242     -0.85047299     -0.04634384
+           0.62109741      1.59628585      1.03394429
    })
   (type: [am = p am = s]
    {exp coef:1 coef:0} = {
-           0.16701600      1.00000000      1.00000000
+           0.16701601      1.00000000      1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)                          
+% AUGMENTING FUNCTIONS: (1d)
   (type: [am = d]
    {exp coef:0} = {
            0.55000000      1.00000000
    })
  ]
 %
-% BASIS SET: (12s,8p) -> [4s,3p]                               
+% BASIS SET: (12s,8p) -> [4s,3p]
  sulfur: "4-31G**": [
   (type: [am = s]
    {exp coef:0} = {
@@ -304,14 +313,14 @@ basis:(
    {exp coef:1 coef:0} = {
            0.17038090      1.00000000      1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)                          
+% AUGMENTING FUNCTIONS: (1d)
   (type: [am = d]
    {exp coef:0} = {
            0.65000000      1.00000000
    })
  ]
 %
-% BASIS SET: (12s,8p) -> [4s,3p]                               
+% BASIS SET: (12s,8p) -> [4s,3p]
  chlorine: "4-31G**": [
   (type: [am = s]
    {exp coef:0} = {
@@ -329,15 +338,15 @@ basis:(
    })
   (type: [am = p am = s]
    {exp coef:1 coef:0} = {
-           4.28028490     -0.27039630     -0.03670280
-           1.64101660     -0.34162970      0.19184920
+           4.28028491     -0.27039630     -0.03670280
+           1.64101667     -0.34162970      0.19184920
            0.61447850      1.35002450      0.86433760
    })
   (type: [am = p am = s]
    {exp coef:1 coef:0} = {
-           0.19565940      1.00000000      1.00000000
+           0.19565941      1.00000000      1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)                          
+% AUGMENTING FUNCTIONS: (1d)
   (type: [am = d]
    {exp coef:0} = {
            0.75000000      1.00000000

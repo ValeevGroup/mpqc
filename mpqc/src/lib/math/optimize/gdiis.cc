@@ -127,6 +127,9 @@ GDIISOpt::GDIISOpt(StateIn&s):
 
 GDIISOpt::~GDIISOpt()
 {
+  delete[] coords_;
+  delete[] grad_;
+  delete[] error_;
 }
 
 void

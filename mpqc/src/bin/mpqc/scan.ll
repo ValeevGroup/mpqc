@@ -17,6 +17,10 @@ using namespace sc;
 #define YY_NO_UNISTD_H
 extern "C" int MPQCInwrap();
 
+#ifndef yywrap
+#  define yywrap MPQCInwrap
+#endif
+
 static inline char *
 cstr(char *yytext)
 {

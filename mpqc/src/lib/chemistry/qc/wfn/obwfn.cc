@@ -339,13 +339,27 @@ OneBodyWavefunction::hcore_guess()
 RefSCMatrix
 OneBodyWavefunction::hcore_guess(RefDiagSCMatrix &val)
 {
-  RefSymmSCMatrix hcore_oso(oso_dimension(), basis_matrixkit());
-  hcore_oso->assign(0.0);
-  hcore_oso->accumulate_transform(so_to_orthog_so(), core_hamiltonian());
-
   RefSCMatrix vec(oso_dimension(), oso_dimension(), basis_matrixkit());
   val = basis_matrixkit()->diagmatrix(oso_dimension());
-  hcore_oso.diagonalize(val,vec);
+
+  // I'm about to do something strange, but it will only work
+  // if the SO and orthogonal SO dimensions are equivalent.  This
+  // is not the case for canonical orthogonalization when there
+  // are linear dependencies.
+  if (so_dimension()->equiv(oso_dimension())) {
+    // Yes, this is diagonalizing Hcore in a nonorthogonal basis
+    // and does not really make any sense--except it seems to
+    // always give a better initial guess.  I don't understand
+    // why it works better.
+    core_hamiltonian().diagonalize(val,vec);
+  }
+  else {
+    RefSymmSCMatrix hcore_oso(oso_dimension(), basis_matrixkit());
+    hcore_oso->assign(0.0);
+    hcore_oso->accumulate_transform(so_to_orthog_so(), core_hamiltonian());
+
+    hcore_oso.diagonalize(val,vec);
+  }
 
   return vec;
 }

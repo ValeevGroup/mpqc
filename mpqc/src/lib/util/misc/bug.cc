@@ -498,7 +498,7 @@ Debugger::traceback(const char *reason)
   // are no guarantees.
   void **stack = (void**) &bottom;
 
-  void **frame_pointer = (void**) stack[1];
+  void **frame_pointer = (void**) stack[3];
   while(frame_pointer >= botstack
         && frame_pointer < topstack
         && frame_pointer[1] >= bottext

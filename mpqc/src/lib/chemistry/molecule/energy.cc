@@ -329,6 +329,7 @@ MolecularEnergy::print(ostream&o)
 
 SavableState_REF_def(MolEnergyConvergence);
 #define CLASSNAME MolEnergyConvergence
+#define VERSION 2
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #define PARENTS public Convergence
@@ -352,6 +353,7 @@ MolEnergyConvergence::MolEnergyConvergence(StateIn&s):
   Convergence(s)
   maybe_SavableState(s)
 {
+  if (s.version(static_class_desc()) >= 2) s.get(cartesian_);
 }
 
 MolEnergyConvergence::MolEnergyConvergence(const RefKeyVal&keyval)
@@ -385,6 +387,7 @@ void
 MolEnergyConvergence::save_data_state(StateOut&s)
 {
   Convergence::save_data_state(s);
+  s.put(cartesian_);
 }
 
 void

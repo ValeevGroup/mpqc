@@ -267,21 +267,22 @@ TwoBodyMOIntsTransform_ijxy::compute()
     integral_ijrs = (double*) mem_->localdata();
     
     // If bs3_eq_bs4 -- only s>r integrals are produced
-    // Produce ijsr integrals, if needed
+    // Produce ijsr integrals too
     if (bs3_eq_bs4) {
-      for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
+      for(int te_type=0; te_type<num_te_types_; te_type++) {
         for (int i = 0; i<ni; i++) {
           for (int j = 0; j<rank2; j++) {
             int ij = i*rank2+j;
             int ij_local = ij/nproc;
             if (ij%nproc == me) {
               double* ijrs_ints = (double*) ((size_t)integral_ijrs + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
-              const double* rs_ptr = ijrs_ints;
-              double* sr_ptr = ijrs_ints;
+
               for (int r = 0; r<nbasis3; r++) {
+
                 const int smin = r+1;
-                rs_ptr += smin;
-                sr_ptr += smin*nbasis3;
+                const double* rs_ptr = ijrs_ints + r*nbasis4 + smin;
+                double* sr_ptr = ijrs_ints + smin*nbasis3 + r;
+
                 for (int s = smin; s<nbasis4; s++) {
                   const double ijrs = *rs_ptr++;
                   *sr_ptr = ijrs;
@@ -337,7 +338,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
             const double *rs_ptr = (const double*) ((size_t)integral_ijrs + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
 
             // third quarter transform
-            // xs = xr * rq
+            // xs = xr * rs
             const char notransp = 'n';
             const char transp = 't';
             const double one = 1.0;
@@ -346,7 +347,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
                       vector3[0],&rank3,&zero,xs_ints,&nbasis4);
 
             // copy the result back to integrals_ijsq
-            memcpy((void*)xs_ints,(const void*)rs_ptr,xs_size);
+            memcpy((void*)rs_ptr,(const void*)xs_ints,xs_size);
           }
         }
       }

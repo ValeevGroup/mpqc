@@ -45,7 +45,6 @@ using namespace std;
 using namespace sc;
 
 #define PRINT1Q 0
-#define PRINT2Q 0
 #define PRINT_NUM_TE_TYPES 1
 
 // The FAST_BUT_WRONG flags is useful for exercising the communications
@@ -158,7 +157,7 @@ TwoBodyMOIntsTransform_12Inds::run()
   /*-----------------------------
     Initialize work distribution
    -----------------------------*/
-  sc::exp::DistShellPair shellpairs(msg,nthread_,mythread_,lock_,bs3,bs4,dynamic);
+  sc::exp::DistShellPair shellpairs(msg,nthread_,mythread_,lock_,bs4,bs3,dynamic);
   shellpairs.set_debug(debug_);
   if (debug_) shellpairs.set_print_percent(print_percent/10.0);
   else shellpairs.set_print_percent(print_percent);
@@ -190,7 +189,7 @@ TwoBodyMOIntsTransform_12Inds::run()
 
   int R = 0;
   int S = 0;
-  while (shellpairs.get_task(R,S)) {
+  while (shellpairs.get_task(S,R)) {
     // if bs3_eq_bs4 then S >= R always (see sc::exp::DistShellPair)
     int nr = bs3->shell(R).nfunction();
     int r_offset = bs3->shell_to_function(R);
@@ -198,7 +197,7 @@ TwoBodyMOIntsTransform_12Inds::run()
     int ns = bs4->shell(S).nfunction();
     int s_offset = bs4->shell_to_function(S);
     
-    int nrs = nr*ns;
+    const int nrs = nr*ns;
 
     if (debug_ > 1 && (print_index++)%print_interval == 0) {
       lock_->lock();
@@ -226,7 +225,7 @@ TwoBodyMOIntsTransform_12Inds::run()
       int Qmax = (bs1_eq_bs2 ? P : nsh2-1);
       for (int Q=0; Q<=Qmax; Q++) {
 	int nq = bs2->shell(Q).nfunction();
-	int q_offset = bs3->shell_to_function(Q);
+	int q_offset = bs2->shell_to_function(Q);
         
 	// check if symmetry unique and compute degeneracy
 	int deg = p4list->in_p4(P,Q,R,S);
@@ -404,7 +403,7 @@ TwoBodyMOIntsTransform_12Inds::run()
           int ij_proc =  (i*rank2 + j)%nproc;
           int ij_index = (i*rank2 + j)/nproc;
           const size_t ijrs_start = (size_t)(num_te_types*ij_index + te_type) * memgrp_blksize;
-          size_t ijr_offset = (size_t)r_offset*nbasis4 + ijrs_start;
+          size_t ijr_offset = (size_t)s_offset + r_offset*nbasis4 + ijrs_start;
 
           for (int bf3 = 0; bf3 < nr; bf3++) {
             // Sum the ijrs_contrib to the appropriate place

@@ -162,7 +162,7 @@ TwoBodyMOIntsTransform_13Inds::run()
   /*-----------------------------
     Initialize work distribution
    -----------------------------*/
-  sc::exp::DistShellPair shellpairs(msg,nthread_,mythread_,lock_,bs3,bs4,dynamic);
+  sc::exp::DistShellPair shellpairs(msg,nthread_,mythread_,lock_,bs4,bs3,dynamic);
   shellpairs.set_debug(debug_);
   if (debug_) shellpairs.set_print_percent(print_percent/10.0);
   else shellpairs.set_print_percent(print_percent);
@@ -196,7 +196,7 @@ TwoBodyMOIntsTransform_13Inds::run()
 
   int R = 0;
   int S = 0;
-  while (shellpairs.get_task(R,S)) {
+  while (shellpairs.get_task(S,R)) {
     // if bs3_eq_bs4 then S >= R always (see sc::exp::DistShellPair)
     int nr = bs3->shell(R).nfunction();
     int r_offset = bs3->shell_to_function(R);
@@ -232,7 +232,7 @@ TwoBodyMOIntsTransform_13Inds::run()
       int Qmax = (bs1_eq_bs2 ? P : nsh2-1);
       for (int Q=0; Q<=Qmax; Q++) {
 	int nq = bs2->shell(Q).nfunction();
-	int q_offset = bs3->shell_to_function(Q);
+	int q_offset = bs2->shell_to_function(Q);
         
 	// check if symmetry unique and compute degeneracy
 	int deg = p4list->in_p4(P,Q,R,S);

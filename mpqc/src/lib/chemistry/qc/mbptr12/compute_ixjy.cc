@@ -49,7 +49,7 @@ using namespace sc;
 
 #define SINGLE_THREAD_E13   0
 #define PRINT2Q 0
-#define PRINT3Q 1
+#define PRINT3Q 0
 #define PRINT4Q 0
 #define PRINT_NUM_TE_TYPES 1
 #define WRITE_DOUBLES 0
@@ -276,9 +276,9 @@ TwoBodyMOIntsTransform_ixjy::compute()
               if (ij%nproc == me) {
                 const double* ijsq_ints = (const double*) ((size_t)integral_ijsq + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
                 for (int s = 0; s<nbasis4; s++) {
-                  double value = ijsx_ints[s*rank2+x];
+                  double value = ijsq_ints[s*rank2+q];
                   printf("2Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+restart_orbital,x,j,s,value);
+                         te_type,i+restart_orbital,q,j,s,value);
                 }
               }
             }
@@ -315,7 +315,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
                       sq_ptr,&nbasis2,&zero,sx_ints,&rank2);
 
             // copy the result back to integrals_ijsq
-            memcpy((void*)sx_ints,(const void*)sq_ptr,sx_size);
+            memcpy((void*)sq_ptr,(const void*)sx_ints,sx_size);
           }
         }
       }

@@ -48,7 +48,7 @@ using namespace std;
 using namespace sc;
 
 #define SINGLE_THREAD_E123   0
-#define PRINT3Q 1
+#define PRINT3Q 0
 #define PRINT4Q 0
 #define PRINT_NUM_TE_TYPES 1
 #define WRITE_DOUBLES 0

@@ -134,9 +134,6 @@ class SCF: public OneBodyWavefunction {
 
     void print(ostream&o=cout);
 
-    // nicely print n x 3 data that are stored in a vector
-    void print_natom_3(const RefSCVector &, const char *t=0, ostream&o=cout);
-
   protected:
     // the following are scratch and are not checkpointed
     RefSCMatrix scf_vector_;

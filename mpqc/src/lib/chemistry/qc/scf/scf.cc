@@ -213,31 +213,6 @@ SCF::print(ostream&o)
     << decindent << endl;
 }
 
-void
-SCF::print_natom_3(const RefSCVector &v, const char *title, ostream&o)
-{
-  int precision = 10;
-  int lwidth = precision + 4;
-  int n = v.n()/3;
-  if (title) {
-    o << node0 << indent << title << endl;
-    o << node0 << incindent;
-  }
-  for (int i=0,ii=0; i<n; i++) {
-    o << node0 << indent
-      << scprintf("%4d %3s",
-                  i+1,AtomInfo::symbol(molecule()->Z(i)));
-    for (int j=0; j<3; j++,ii++) {
-      o << node0 << scprintf(" % *.*f", lwidth,precision,double(v(ii)));
-    }
-    o << node0 << endl;
-  }
-  if (title) {
-    o << node0 << decindent;
-  }
-  o.flush();
-}
-
 //////////////////////////////////////////////////////////////////////////////
 
 void

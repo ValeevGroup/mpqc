@@ -50,12 +50,36 @@ class Result
     // This make sure that the datum is up to date.  If it is not then
     // Compute::compute() will be called.
     void update();
+  protected:
+    Result(StateIn&,Compute*);
+    virtual void save_data_state(StateOut&);
   public:
     Result(Compute*c);
+    virtual ~Result();
     int& compute();
     int compute(int c);
     int& computed();
     int needed();
+};
+
+// This is like result but the accuracy with which a result was computed
+// as well as the desired accuracy are stored.  A computed_ datum always
+// has an actual accuracy greater than or equal to the computed accuracy.
+class AccResult: public Result
+{
+  private:
+    double _actual_accuracy;
+    double _desired_accuracy;
+  protected:
+    AccResult(StateIn&,Compute*);
+    virtual void save_data_state(StateOut&);
+  public:
+    AccResult(Compute*c);
+    ~AccResult();
+    double actual_accuracy();
+    double desired_accuracy();
+    void set_desired_accuracy(double);
+    void set_actual_accuracy(double);
 };
 
 // This provide access to the result.  Before the result is
@@ -74,26 +98,47 @@ class Result ## T: public Result {					      \
     inline void operator=(T& a) { _result = a; };			      \
 }
 
-#define Result_dec(T)							      \
-class Result ## T: public Result {					      \
+#define _Result_dec(PREFIX,BASE,T,PUBLIC)				      \
+class PREFIX ## T: public BASE {					      \
   private:								      \
     T _result;								      \
   public:								      \
-    Result ## T (Compute*c);						      \
+    PREFIX ## T (Compute*c);						      \
     operator T&();							      \
     T* operator ->();							      \
     T& result();							      \
     T& result_noupdate();						      \
     void operator=(T& a);						      \
+    PUBLIC								      \
 }
 
-#define Result_def(T)							      \
-Result ## T::Result ## T (Compute*c):Result(c) {};			      \
-Result ## T::operator T&() { update(); return _result; };		      \
-T* Result ## T::operator ->() { update(); return &_result; };		      \
-T& Result ## T::result() { update(); return _result; };			      \
-T& Result ## T::result_noupdate() { return _result; };			      \
-void Result ## T::operator=(T& a) { _result = a; };
+#define Result_dec(T) _Result_dec(Result,Result,T,)
+#define AccResult_dec(T) _Result_dec(AccResult,AccResult,T,)
+#define SSAccResult_dec(T) _Result_dec(AccResult,AccResult,T,\
+                                    void save_data_state(StateOut&);\
+                                    AccResult ## T (StateIn&,Compute*);)
+
+#define _Result_def(PREFIX,BASE,T,OTHER)				      \
+PREFIX ## T:: PREFIX ## T (Compute*c): BASE (c) {};			      \
+PREFIX ## T::operator T&() { update(); return _result; };		      \
+T* PREFIX ## T::operator ->() { update(); return &_result; };		      \
+T& PREFIX ## T::result() { update(); return _result; };			      \
+T& PREFIX ## T::result_noupdate() { return _result; };			      \
+void PREFIX ## T::operator=(T& a) { _result = a; };			      \
+OTHER
+
+#define Result_def(T) _Result_def(Result,Result,T,)
+#define AccResult_def(T) _Result_def(AccResult,AccResult,T,)
+#define SSAccResult_def(T) _Result_def(AccResult,AccResult,T,		      \
+void AccResult ## T::save_data_state(StateOut&s)			      \
+{									      \
+  AccResult::save_data_state(s);					      \
+  _result.save_data_state(s);						      \
+}									      \
+AccResult ## T::AccResult ## T(StateIn&s,Compute*c):			      \
+  AccResult(s,c) COMPUTE_H_COMMA  _result(s){})
+
+#define COMPUTE_H_COMMA ,
 
 // these are for builtin types like int, double, etc since the ARM says
 // operator->() must return a class object
@@ -110,26 +155,46 @@ class Result ## T: public Result {					      \
     inline void operator=(T& a) { _result = a; };			      \
 }
 
-#define Result_dec_nc(T)						      \
-class Result ## T: public Result {					      \
+#define _Result_dec_nc(PREFIX,BASE,T,PUBLIC)				      \
+class PREFIX ## T: public BASE {					      \
   private:								      \
     T _result;								      \
   public:								      \
-    Result ## T (Compute*c);						      \
+    PREFIX ## T (Compute*c);						      \
     operator T&();							      \
     T* pointer();							      \
     T& result();							      \
     T& result_noupdate();						      \
     void operator=(T& a);						      \
+    PUBLIC								      \
 }
 
-#define Result_def_nc(T)						      \
-Result ## T::Result ## T (Compute*c):Result(c) {};			      \
-Result ## T::operator T&() { update(); return _result; };		      \
-T* Result ## T::pointer() { update(); return &_result; };		      \
-T& Result ## T::result() { update(); return _result; };			      \
-T& Result ## T::result_noupdate() { return _result; };			      \
-void Result ## T::operator=(T& a) { _result = a; };
+#define Result_dec_nc(T) _Result_dec_nc(Result,Result,T,)
+#define AccResult_dec_nc(T) _Result_dec_nc(AccResult,AccResult,T,)
+#define SSAccResult_dec_nc(T) _Result_dec_nc(AccResult,AccResult,T,\
+                                       void save_data_state(StateOut&);\
+                                       AccResult ## T (StateIn&,Compute*);)
+
+#define _Result_def_nc(PREFIX,BASE,T,OTHER)				      \
+PREFIX ## T::PREFIX ## T (Compute*c): BASE (c) {};			      \
+PREFIX ## T::operator T&() { update(); return _result; };		      \
+T* PREFIX ## T::pointer() { update(); return &_result; };		      \
+T& PREFIX ## T::result() { update(); return _result; };			      \
+T& PREFIX ## T::result_noupdate() { return _result; };			      \
+void PREFIX ## T::operator=(T& a) { _result = a; };			      \
+OTHER
+
+#define Result_def_nc(T) _Result_def_nc(Result,Result,T,)
+#define AccResult_def_nc(T) _Result_def_nc(AccResult,AccResult,T,)
+#define SSAccResult_def_nc(T) _Result_def_nc(AccResult,AccResult,T,	      \
+void AccResult ## T::save_data_state(StateOut&s)			      \
+{									      \
+  AccResult::save_data_state(s);					      \
+  s.put(_result);							      \
+}									      \
+AccResult ## T::AccResult ## T(StateIn&s,Compute*c):			      \
+  AccResult(s,c){s.get(_result);}					      \
+)
 
 #ifdef INLINE_FUNCTIONS
 #include <util/misc/compute_i.h>
@@ -148,5 +213,6 @@ void Result ## T::operator=(T& a) { _result = a; };
 Result_dec_nc(int);
 Result_dec_nc(float);
 Result_dec_nc(double);
+SSAccResult_dec_nc(double);
 
 #endif

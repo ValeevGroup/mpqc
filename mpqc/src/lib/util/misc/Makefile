@@ -36,7 +36,7 @@ DEPENDINCLUDE = $(INC) $(GENINC)
 default:: $(DEPENDINCLUDE)
 default:: libmisc.a
 
-comptest: comptest.cc libmisc.a
+comptest: comptest.cc libmisc.a ../state/libstate.a
 	$(CXX) $(CXXFLAGS) $^ -o comptest
 
 scotest: scotest.cc libmisc.a

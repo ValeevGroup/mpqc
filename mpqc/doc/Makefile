@@ -22,8 +22,8 @@ NROFF_SED = sed 's/\\(bu/o/'
 
 .PHONY: all
 all:: html
-ifdef ($(DOXYGEN_MAN),YES)
-all:: man1 man2
+ifeq ($(DOXYGEN_MAN),YES)
+all:: man1 man3
 endif
 
 .PHONY: man1

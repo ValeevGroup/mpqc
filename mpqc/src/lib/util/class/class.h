@@ -65,7 +65,8 @@ class ParentClasses
     ParentClasses(const ParentClasses&);
     operator=(const ParentClasses&);
   public:
-    ParentClasses(const char*);
+    ParentClasses();
+    void init(const char*);
     ~ParentClasses();
     ParentClass& parent(int i) { return *_classes[i]; }
     const ParentClass& parent(int i) const { return *_classes[i]; }
@@ -80,9 +81,11 @@ class RefKeyVal;
 class StateIn;
 
 class ClassDesc: public Identity {
-    friend class ParentClasses; // ParentClasses initializes all_
+    friend class ParentClasses;
   private:
     static ClassKeyClassDescPMap* all_;
+    static char * classlib_search_path_;
+    static ClassKeySet* unresolved_parents_;
 
     char* classname_;
     int version_;
@@ -120,6 +123,7 @@ class ClassDesc: public Identity {
     // create an object using the statein constructor
     DescribedClass* create(StateIn&) const;
 
+    static int load_class(const char* classname);
 };
 
 ARRAY_dec(ClassDescP);

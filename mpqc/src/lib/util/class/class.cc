@@ -5,6 +5,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#ifdef HAVE_DLFCN
+#include <dlfcn.h>
+#endif // HAVE_DLFCN
 
 #include "class.h"
 
@@ -15,6 +19,8 @@
 #include "classkeyImplSet.h"
 
 ClassKeyClassDescPMap* ClassDesc::all_ = 0;
+char * ClassDesc::classlib_search_path_ = 0;
+ClassKeySet* ClassDesc::unresolved_parents_ = 0;
 
 /////////////////////////////////////////////////////////////////
 
@@ -129,13 +135,15 @@ void ParentClass::change_classdesc(ClassDesc*n)
 
 /////////////////////////////////////////////////////////////////
 
-ParentClasses::ParentClasses(const char* parents):
+ParentClasses::ParentClasses():
   _n(0),
   _classes(0)
 {
-  // The first ParentClasses CTOR call initializes the set of all ClassDesc's
-  if (!ClassDesc::all_) ClassDesc::all_ = new MAPCTOR;
+}
 
+void
+ParentClasses::init(const char* parents)
+{
   // if parents is empty then we are done
   if (!parents || strlen(parents) == 0) return;
 
@@ -166,6 +174,7 @@ ParentClasses::ParentClasses(const char* parents):
           // parent's parents   ' for braindead compiler
           if (!ClassDesc::all()[parentkey]) {
               ClassDesc::all()[parentkey] = new ClassDesc(token);
+              ClassDesc::unresolved_parents_->add(token);
             }
           ParentClass* p = new ParentClass(ClassDesc::all()[parentkey],
                                            access,
@@ -221,12 +230,31 @@ ClassDesc::ClassDesc(char* name, int version,
                      ):
   classname_(0),
   version_(version),
-  parents_(parents),
   children_(0),
   ctor_(ctor),
   keyvalctor_(keyvalctor),
   stateinctor_(stateinctor)
 {
+  // make sure that the static members have been initialized
+  if (!all_) {
+      all_ = new MAPCTOR;
+      unresolved_parents_ = new SETCTOR;
+      const char* tmp = getenv("LD_LIBRARY_PATH");
+      printf("tmp = %s\n",tmp);
+      if (tmp) {
+          // Needed for misbehaving getenv's.
+          if (strncmp(tmp, "LD_LIBRARY_PATH=", 16) == 0) {
+              tmp = strchr(tmp,'=');
+              tmp++;
+            }
+        }
+      else tmp = ".";
+      printf("tmp (after = stripped) = %s\n",tmp);
+      classlib_search_path_ = ::strcpy(new char[strlen(tmp)+1],tmp);
+      printf("path = %s\n",tmp);
+    }
+  
+  parents_.init(parents);
 
   classname_ = ::strcpy(new char[strlen(name)+1],name);
 
@@ -265,6 +293,7 @@ ClassDesc::ClassDesc(char* name, int version,
         }
 
       delete (*all_)[key];
+      unresolved_parents_->del(key);
     }
   (*all_)[key] = this;
 }
@@ -361,6 +390,102 @@ ClassDesc::list_all_classes()
 DescribedClass* ClassDesc::create_described_class() const
 {
     return create();
+}
+
+// Returns 0 for success and -1 for failure.
+int
+ClassDesc::load_class(const char* classname)
+{
+  // See if the class has already been loaded.
+  if (name_to_class_desc(classname) != 0) {
+      return 0;
+    }
+  
+#if HAVE_DLFCN
+  // make a copy of the library search list
+  char* path = new char[strlen(classlib_search_path_) + 1];
+  strcpy(path, classlib_search_path_);
+
+  // go through each directory in the library search list
+  char* dir = strtok(path,":");
+  while (dir) {
+      // find the 'classes' files
+      char* filename = new char[strlen(dir) + 8 + 1];
+      strcpy(filename,dir);
+      strcat(filename,"/classes");
+      printf("ClassDesc::load_class looking for \"%s\"\n", filename);
+      FILE* fp = fopen(filename, "r");
+      delete[] filename;
+
+      if (fp) {
+          // read the lines in the classes file
+          const int bufsize = 10000;
+          char buf[bufsize];
+          while(fgets(buf, bufsize, fp)) {
+              if (buf[0] != '\0' && buf[strlen(buf)-1] == '\n') {
+                  buf[strlen(buf)-1] = '\0';
+                }
+              char* lib = strtok(buf," ");
+              char* testclassname = strtok(0," ");
+              printf("lib = \"%s\"\n", lib);
+              while(testclassname) {
+                  printf("classname = \"%s\"\n", testclassname);
+                  if (strcmp(testclassname,classname) == 0) {
+                      // found it
+                      char* libname = new char[strlen(lib) + strlen(dir) + 2];
+                      strcpy(libname, dir);
+                      strcat(libname, "/");
+                      strcat(libname, lib);
+                      // load the libraries this lib depends upon
+
+                      // i should look in the library's .dep file to
+                      // get the dependencies, but this makes it a little
+                      // difficult to make sure the same library doesn't
+                      // get loaded twice (which is important) so for now
+                      // i'll just wait until after i load the library and
+                      // then look in the unresolved parents set
+                      // and load parents until nothing is left
+
+                      // load the library
+                      printf("loading \"%s\"\n", libname);
+                      dlopen(libname, RTLD_LAZY);
+
+                      // load code for parents
+                      while (unresolved_parents_->length()) {
+                          load_class(unresolved_parents_->operator()
+                                     (unresolved_parents_->first()).name());
+                        }
+
+                      fclose(fp);
+                      delete[] path;
+                      // make sure it worked.
+                      if (name_to_class_desc(classname) == 0) {
+                          fprintf(stderr,
+                                  "load of \"%s\" from \"%s\" failed\n",
+                                  classname, libname);
+                          delete[] libname;
+                          return -1;
+                        }
+                      printf("loaded \"%s\" from \"%s\"\n",
+                             classname, libname);
+                      delete[] libname;
+                      return 0;
+                    }
+                  testclassname = strtok(0," ");
+                }
+            }
+        }
+      
+      fclose(fp);
+      dir = strtok(0, ":");
+    }
+
+  delete[] path;
+#endif // HAVE_DLFCN
+
+  fprintf(stderr,"ClassDesc::load_class(\"%s\"): load failed\n", classname);
+
+  return -1;
 }
 
 ////////////////////////////////////////////////////

@@ -19,6 +19,8 @@ GENCXXSRC = classMap.cc class$(MAPIMPL)Map.cc classkeySet.cc \
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(GENCXXSRC:%.cc=%.o)
 GENSRC = $(GENCXXSRC)
 
+CLASSES = DescribedClass
+
 INC = class.h
 GENINC = classMap.h classImplMap.h classkeySet.h classkeyImplSet.h \
          classRAVLMap.h classkeyAVLSet.h \
@@ -35,6 +37,7 @@ TESTCXXSRC = classtest.cc
 DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h $(TESTCXXSRC)
 
 default:: $(DEPENDINCLUDE)
+default:: dlinfo
 default:: $(TOPDIR)/lib/libclass.a
 ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libclass.so

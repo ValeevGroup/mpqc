@@ -38,7 +38,7 @@ REQUIREDCXXSRC = mstate.cc \
          memamsg.cc memproc.cc \
          pregtime.cc thread.cc memiter.cc
 
-OPTIONALCXXSRC = messshm.cc messpvm.cc messmpi.cc memshm.cc \
+OPTIONALCXXSRC = messshm.cc messmpi.cc memshm.cc \
                  memmtmpi.cc
 
 CXXSRC := $(REQUIREDCXXSRC)
@@ -47,17 +47,8 @@ ifeq ($(HAVE_SYSV_IPC),yes)
   CXXSRC += messshm.cc memshm.cc globcnt.cc
 endif
 
-ifeq ($(HAVE_PVM),yes)
-  CXXSRC += messpvm.cc
-endif
 ifeq ($(HAVE_MPI),yes)
   CXXSRC += messmpi.cc memmtmpi.cc
-endif
-ifeq ($(HAVE_PUMA_MPI2),yes)
-  CXXSRC += thpuma.cc
-endif
-ifeq ($(HAVE_MPI2_ONE_SIDED),yes)
-  CXXSRC += memmpi2.cc
 endif
 ifeq ($(HAVE_PTHREAD),yes)
   CXXSRC += thpthd.cc

@@ -47,9 +47,6 @@
 #if defined(HAVE_MPI)
 #  include <util/group/messmpi.h>
 #  include <util/group/memmtmpi.h>
-#  if defined(DEFAULT_MPI2)
-#    include <util/group/memmpi2.h>
-#  endif
 #endif
 
 using namespace std;
@@ -280,10 +277,6 @@ MemoryGrp::get_default_memorygrp()
 
   Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
 
-#if defined(HAVE_MPI) && defined(DEFAULT_MPI2)
-  default_memorygrp = new MPI2MemoryGrp(msg);
-  return default_memorygrp.pointer();
-#endif
 #if defined(HAVE_MPI) && defined(DEFAULT_MTMPI)
   Ref<ThreadGrp> thr = ThreadGrp::get_default_threadgrp();
   default_memorygrp = new MTMPIMemoryGrp(msg,thr);

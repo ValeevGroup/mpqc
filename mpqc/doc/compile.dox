@@ -116,11 +116,10 @@ Useful options to configure include:
   optimization options.
 
 <dt><tt>--with-default-parallel</tt><dd>Gives the default parallism
-  specializations.  Can be <tt>none</tt> for no default, <tt>mpi2</tt> for
-  MPI2MemoryGrp (MPI-2 1-sided must work) and MPIMessageGrp
-  specializations, or <tt>mtmpi</tt> for MTMPIMemoryGrp (MPI must be fully
-  thread-safe) and MPIMessageGrp specializations.  The parallelism model
-  can be overridden with command line arguments or environmental variables.
+  specializations.  Can be <tt>none</tt> for no default or <tt>mtmpi</tt>
+  for MTMPIMemoryGrp (MPI must be fully thread-safe) and MPIMessageGrp
+  specializations.  The parallelism model can be overridden with command
+  line arguments or environmental variables.
 
 <dt><tt>--enable-always-use-mpi</tt>This can be given if MPIMessageGrp
   is to be the only MessageGrp that will be used.  This option should

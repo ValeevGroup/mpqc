@@ -36,12 +36,6 @@ endif
 
 -include $(TOPDIR)/lib/LocalMakefile
 
-SPLIT_MAKEFILE_LIST := $(subst /, ,$(MAKEFILE_LIST))
-LAST_MAKEFILE := $(word $(words $(SPLIT_MAKEFILE_LIST)),$(SPLIT_MAKEFILE_LIST))
-ifeq ($(LAST_MAKEFILE),LocalMakefile)
-LOCALMAKEFILE_FOUND = yes
-endif
-
 ifneq ($(LOCALMAKEFILE_OPTIONAL),yes)
 
 ifneq ($(LOCALMAKEFILE_FOUND),yes)

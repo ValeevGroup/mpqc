@@ -16,10 +16,8 @@ AC_DEFINE_UNQUOTED(HOST_ARCH, "$host")
 AC_DEFINE_UNQUOTED(TARGET_ARCH, "$target")
 
 define([default_prefix_dash],ifelse(sc_buildid, ,[],[-]))
-ifelse(sc_buildid, ,
-  define([default_prefix],builtin(format,"/usr/local/mpqc/%s",sc_version)),
-  define([default_prefix],builtin(format,"/usr/local/mpqc/%s%s%s",
-                          sc_version,default_prefix_dash,sc_buildid)))
+define([default_prefix],builtin(format,"/usr/local/mpqc/%s%s%s",
+                        sc_version,default_prefix_dash,sc_buildid))
 
 AC_PREFIX_DEFAULT(default_prefix)
 SC_VERSION=sc_version

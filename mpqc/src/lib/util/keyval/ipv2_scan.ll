@@ -38,6 +38,9 @@
 
 using namespace sc;
 
+#define YY_NO_UNISTD_H
+extern "C" int IPV2wrap();
+
 %}
 string  [A-Za-z0-9_\.*+-/]*
 qstring \"[^"\n]+\"

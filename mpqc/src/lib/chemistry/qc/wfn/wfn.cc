@@ -343,6 +343,7 @@ Wavefunction::compute_overlap_eig()
   RefSCMatrix U(M.dim(), M.dim(), M.kit());
   RefDiagSCMatrix m(M.dim(), M.kit());
   M.diagonalize(m,U);
+  M = 0;
 
   RefSCElementMaxAbs maxabsop = new SCElementMaxAbs;
   m.element_op(maxabsop);

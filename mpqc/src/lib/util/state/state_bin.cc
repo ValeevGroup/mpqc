@@ -70,8 +70,7 @@ StateInBin::~StateInBin()
 
 int StateOutBin::put_array_void(const void*p,int size)
 {
-  stream_.write((const char *)p, size);
-  if (stream_.fail()) {
+  if (buf_->sputn((const char *)p,size) != size) {
       cerr << "StateOutBin::put_array_void: failed" << endl;
       abort();
     }
@@ -80,8 +79,7 @@ int StateOutBin::put_array_void(const void*p,int size)
 
 int StateInBin::get_array_void(void*p,int size)
 {
-  stream_.read((char *)p, size);
-  if (stream_.fail()) {
+  if (buf_->sgetn((char*)p,size) != size) {
       cerr << "StateInBin::get_array_void: failed" << endl;
       abort();
     }

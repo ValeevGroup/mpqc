@@ -101,8 +101,9 @@ no_array()
 int
 StateInText::read(char*s)
 {
-  stream_ >> s;
-  if (stream_.fail()) {
+  istream in(buf_);
+  in >> s;
+  if (in.fail()) {
       cerr << "StateInText::read(char*): failed" << endl;
       abort();
     }
@@ -112,8 +113,9 @@ StateInText::read(char*s)
 int
 StateInText::read(int&i)
 {
-  stream_ >> i;
-  if (stream_.fail()) {
+  istream in(buf_);
+  in >> i;
+  if (in.fail()) {
       cerr << "StateInText::read(int&): failed\n" << endl;
       abort();
     }
@@ -123,8 +125,9 @@ StateInText::read(int&i)
 int
 StateInText::read(float&f)
 {
-  stream_ >> f;
-  if (stream_.fail()) {
+  istream in(buf_);
+  in >> f;
+  if (in.fail()) {
       cerr << "StateInText::read(float&): failed" << endl;
       abort();
     }
@@ -134,8 +137,9 @@ StateInText::read(float&f)
 int
 StateInText::read(double&d)
 {
-  stream_ >> d;
-  if (stream_.fail()) {
+  istream in(buf_);
+  in >> d;
+  if (in.fail()) {
       cerr << "StateInText::read(double&): failed" << endl;
       abort();
     }
@@ -155,22 +159,24 @@ StateInText::abort()
 
 int StateOutText::put(const ClassDesc*cd)
 {
+  ostream out(buf_);
   //
   // write out parent info
   if (!_classidmap->contains((ClassDesc*)cd)) {
       putparents(cd);
-      stream_ << " version of class " << cd->name()
-              << " is " << cd->version() << endl;
-      stream_.flush();
+      out << " version of class " << cd->name()
+          << " is " << cd->version() << endl;
+      out.flush();
       _classidmap->operator[]((ClassDesc*)cd) = _nextclassid++;
     }
-  stream_ << "object of class " << cd->name() << " being written" << endl;
-  stream_.flush();
+  out << "object of class " << cd->name() << " being written" << endl;
+  out.flush();
   return 0;
   }
 void
 StateOutText::putparents(const ClassDesc*cd)
 {
+  ostream out(buf_);
   const ParentClasses& parents = cd->parents();
 
   for (int i=0; i<parents.n(); i++) {
@@ -178,21 +184,22 @@ StateOutText::putparents(const ClassDesc*cd)
       ClassDesc*tmp = (ClassDesc*) parents[i].classdesc();
       if (!_classidmap->contains(tmp)) {
           putparents(tmp);
-          stream_ << " version of class " << tmp->name()
-                  << " is " << tmp->version() << endl;
-          stream_.flush();
+          out << " version of class " << tmp->name()
+              << " is " << tmp->version() << endl;
+          out.flush();
           _classidmap->operator[](tmp) = _nextclassid++;
         }
     }
 }
 int StateInText::get(const ClassDesc**cd)
 {
+  istream in(buf_);
   const int line_length = 512;
   char line[line_length];
 
   // if a list of class descriptors exists then read it in
   
-  stream_.getline(line,line_length); _newlines++;
+  in.getline(line,line_length); _newlines++;
   while (strncmp(line,"object",6)) {
       char name[line_length];
       int version;
@@ -207,7 +214,7 @@ int StateInText::get(const ClassDesc**cd)
           _version.reset_length(position + 10);
         }
       _version[position] = version;
-      stream_.getline(line,line_length); _newlines++;
+      in.getline(line,line_length); _newlines++;
     }
 
   // get the class name for the object
@@ -370,9 +377,10 @@ int StateInText::get(double*&s)
 
 int StateOutText::putpointer(void*p)
 {
+  ostream out(buf_);
   if (p == 0) {
-      stream_ << "reference to null" << endl;
-      stream_.flush();
+      out << "reference to null" << endl;
+      out.flush();
       return 0;
     }
   StateDataPtr dp(p);
@@ -382,22 +390,23 @@ int StateOutText::putpointer(void*p)
           dp.assign_num(next_pointer_number++);
           ps_->add(dp);
         }
-      stream_ << "writing object " << dp.num() << endl;
-      stream_.flush();
+      out << "writing object " << dp.num() << endl;
+      out.flush();
       return 1;
     }
   else {
-      stream_ << "reference to object " << (*this->ps_)(ind).num() << endl;
-      stream_.flush();
+      out << "reference to object " << (*this->ps_)(ind).num() << endl;
+      out.flush();
       return 0;
     }
 }
 int StateInText::getpointer(void**p)
 {
+  istream in(buf_);
   const int line_length = 512;
   char line[line_length];
 
-  stream_.getline(line,line_length);
+  in.getline(line,line_length);
   _newlines++;
 
   if (!strcmp("reference to null",line)) {
@@ -430,13 +439,15 @@ int StateInText::getpointer(void**p)
 void
 StateOutText::start_array()
 {
-  if (!_no_array) { stream_.put(' '); stream_.put('<'); }
+  ostream out(buf_);
+  if (!_no_array) { out.put(' '); out.put('<'); }
 }
 void
 StateInText::start_array()
 {
+  istream in(buf_);
   if (!_no_array) {
-      if (stream_.get() != ' ' || stream_.get() != '<') {
+      if (in.get() != ' ' || in.get() != '<') {
           cerr << "StateInText: expected a \" <\"" << endl;
           abort();
         }
@@ -446,8 +457,9 @@ StateInText::start_array()
 void
 StateOutText::end_array()
 {
+  ostream out(buf_);
   if (!_no_array) {
-      stream_.put(' '); stream_.put('>');
+      out.put(' '); out.put('>');
     }
   else {
       _no_array = 0;
@@ -456,8 +468,9 @@ StateOutText::end_array()
 void
 StateInText::end_array()
 {
+  istream in(buf_);
   if (!_no_array) {
-      if (stream_.get() != ' ' || stream_.get() != '>') {
+      if (in.get() != ' ' || in.get() != '>') {
           cerr << "StateInText: expected a \"> \"" << endl;
           abort();
         }
@@ -470,21 +483,23 @@ StateInText::end_array()
 void
 StateOutText::newline()
 {
+  ostream out(buf_);
   if (_no_newline) {
       _no_newline = 0;
       return;
     }
-  stream_ << endl;
-  stream_.flush();
+  out << endl;
+  out.flush();
 }
 void
 StateInText::newline()
 {
+  istream in(buf_);
   if (_no_newline) {
       _no_newline = 0;
       return;
     }
-  if (stream_.get() != '\n') {
+  if (in.get() != '\n') {
       cerr << "StateInText: expected newline" << endl;
       abort();
     }
@@ -536,19 +551,21 @@ int StateInText::getstring(char*&s)
 
 int StateOutText::put_array_char(const char*d,int size)
 {
+  ostream out(buf_);
   start_array();
   int nwrit=size+1;
-  for (int i=0; i<size; i++) { stream_.put(d[i]); }
+  for (int i=0; i<size; i++) { out.put(d[i]); }
   end_array();
   newline();
   return nwrit;
 }
 int StateInText::get_array_char(char*d,int size)
 {
+  istream in(buf_);
   start_array();
   int ch;
   for (int i=0; i<size; i++) {
-      ch = stream_.get();
+      ch = in.get();
       if (ch == EOF) {
           cerr << "StateInText::get_array_char: EOF while reading array"
                << endl;
@@ -563,10 +580,11 @@ int StateInText::get_array_char(char*d,int size)
 
 int StateOutText::put_array_int(const int*d,int size)
 {
+  ostream out(buf_);
   start_array();
   int nwrit=0;
-  for (int i=0; i<size; i++) { stream_ << ' ' << d[i]; nwrit++; }
-  stream_.flush();
+  for (int i=0; i<size; i++) { out << ' ' << d[i]; nwrit++; }
+  out.flush();
   end_array();
   newline();
   return nwrit;
@@ -586,16 +604,17 @@ int StateInText::get_array_int(int*d,int size)
 
 int StateOutText::put_array_float(const float*d,int size)
 {
+  ostream out(buf_);
   start_array();
   int nwrit=0;
   for (int i=0; i<size; i++) {
-      stream_.setf(ios::scientific);
-      stream_.width(20);
-      stream_.precision(15);
-      stream_ << ' ' << d[i];
+      out.setf(ios::scientific);
+      out.width(20);
+      out.precision(15);
+      out << ' ' << d[i];
       nwrit++;
     }
-  stream_.flush();
+  out.flush();
   end_array();
   newline();
   return nwrit;
@@ -615,16 +634,17 @@ int StateInText::get_array_float(float*d,int size)
 
 int StateOutText::put_array_double(const double*d,int size)
 {
+  ostream out(buf_);
   start_array();
   int nwrit=0;
   for (int i=0; i<size; i++) {
-      stream_.setf(ios::scientific);
-      stream_.width(20);
-      stream_.precision(15);
-      stream_ << ' ' << d[i];
+      out.setf(ios::scientific);
+      out.width(20);
+      out.precision(15);
+      out << ' ' << d[i];
       nwrit++;
     }
-  stream_.flush();
+  out.flush();
   end_array();
   newline();
   return nwrit;

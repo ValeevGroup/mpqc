@@ -34,17 +34,17 @@
 #include <util/state/classdImplMap.h>
 
 StateOutFile::StateOutFile() :
-  opened_(0), buf_(cout.rdbuf()), stream_(cout.rdbuf())
+  opened_(0), buf_(cout.rdbuf())
 {
 }
 
 StateOutFile::StateOutFile(ostream& s) :
-  opened_(0), buf_(s.rdbuf()), stream_(s.rdbuf())
+  opened_(0), buf_(s.rdbuf())
 {
 }
 
-static streambuf*
-getoutbuf(const char *path)
+StateOutFile::StateOutFile(const char * path) :
+  opened_(1)
 {
   filebuf *fbuf = new filebuf();
   fbuf->open(path,ios::out);
@@ -52,13 +52,7 @@ getoutbuf(const char *path)
       cerr << "ERROR: StateOutFile: problems opening " << path << endl;
       abort();
     }
-  return fbuf;
-}
-
-StateOutFile::StateOutFile(const char * path) :
-  opened_(1), stream_(getoutbuf(path))
-{
-  buf_ = stream_.rdbuf();
+  buf_ = fbuf;
 }
 
 StateOutFile::~StateOutFile()
@@ -68,7 +62,12 @@ StateOutFile::~StateOutFile()
     }
 }
 
-void StateOutFile::flush() { stream_.flush(); }
+void StateOutFile::flush()
+{
+  // ostream needed due to out-of-date streambuf implementations
+  ostream o(buf_);
+  o.flush();
+}
 void StateOutFile::close()
 {
   if(opened_) delete buf_;
@@ -82,39 +81,34 @@ void StateOutFile::rewind() { if(buf_) buf_->seekoff(0,ios::beg); }
 
 int StateOutFile::open(const char *path)
 {
-//  if (opened_) close();
-//
-//  filebuf *fbuf = new filebuf();
-//  fbuf->open(path, ios::out);
-//  if (!fbuf->is_open()) {
-//      cerr << "ERROR: StateOutFile: problems opening " << path << endl;
-//      abort();
-//    }
-//  buf_ = fbuf;
-//  stream_.rdbuf(buf_);
-//
-//  opened_ = 1;
-//  return 0;
-  cerr << "StateOutFile::open is disabled to maintain compatibility" << endl
-       << "with older C++ iostream libraries." << endl;
-  abort();
-  return -1;
+  if (opened_) close();
+
+  filebuf *fbuf = new filebuf();
+  fbuf->open(path, ios::out);
+  if (!fbuf->is_open()) {
+      cerr << "ERROR: StateOutFile: problems opening " << path << endl;
+      abort();
+    }
+  buf_ = fbuf;
+
+  opened_ = 1;
+  return 0;
 }
 
 ////////////////////////////////////
 
 StateInFile::StateInFile() :
-  opened_(0), buf_(cin.rdbuf()), stream_(cin.rdbuf())
+  opened_(0), buf_(cin.rdbuf())
 {
 }
 
 StateInFile::StateInFile(istream& s) :
-  opened_(0), buf_(s.rdbuf()), stream_(s.rdbuf())
+  opened_(0), buf_(s.rdbuf())
 {
 }
 
-static streambuf*
-getinbuf(const char *path)
+StateInFile::StateInFile(const char * path) :
+  opened_(1)
 {
   filebuf *fbuf = new filebuf();
   fbuf->open(path,ios::in);
@@ -122,13 +116,7 @@ getinbuf(const char *path)
       cerr << "ERROR: StateInFile: problems opening " << path << endl;
       abort();
     }
-  return fbuf;
-}
-
-StateInFile::StateInFile(const char * path) :
-  opened_(1), stream_(getinbuf(path))
-{
-  buf_ = stream_.rdbuf();
+  buf_ = fbuf;
 }
 
 StateInFile::~StateInFile()
@@ -150,23 +138,18 @@ void StateInFile::rewind() { if(buf_) buf_->seekoff(0,ios::beg); }
 
 int StateInFile::open(const char *path)
 {
-//  if (opened_) close();
-//
-//  filebuf *fbuf = new filebuf();
-//  fbuf->open(path, ios::in);
-//  if (!fbuf->is_open()) {
-//      cerr << "ERROR: StateInFile: problems opening " << path << endl;
-//      abort();
-//    }
-//  buf_ = fbuf;
-//  stream_.rdbuf(buf_);
-//
-//  opened_ = 1;
-//  return 0;
-  cerr << "StateInFile::open is disabled to maintain compatibility" << endl
-       << "with older C++ iostream libraries." << endl;
-  abort();
-  return -1;
+  if (opened_) close();
+
+  filebuf *fbuf = new filebuf();
+  fbuf->open(path, ios::in);
+  if (!fbuf->is_open()) {
+      cerr << "ERROR: StateInFile: problems opening " << path << endl;
+      abort();
+    }
+  buf_ = fbuf;
+
+  opened_ = 1;
+  return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////

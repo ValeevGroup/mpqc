@@ -384,7 +384,6 @@ class StateOutFile: public StateOut {
   protected:
     int opened_;
     streambuf *buf_;
-    ostream stream_;
   public:
     //. State information will be written to \srccd{stdout}.
     StateOutFile();
@@ -418,7 +417,6 @@ class StateInFile: public StateIn {
   protected:
     int opened_;
     streambuf *buf_;
-    istream stream_;
   public:
     //. State information will be obtained from \srccd{stdin}.
     StateInFile();

@@ -101,7 +101,7 @@ install_mpqcic:: mpqcic
 mpqcic: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
-g92: g92.o run_g92.o g92freq.o mpqc_int.o $(LIBS)
+mpqcg92: g92.o run_g92.o g92freq.o mpqc_int.o $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
 writeavs: writeavs.o $(LIBS)

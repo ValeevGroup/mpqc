@@ -75,12 +75,12 @@ ExtendedHuckelWfn::ExtendedHuckelWfn(const Ref<KeyVal>&keyval):
 
     if (keyval->exists("docc",i)) {
       docc_[i] = keyval->intvalue("docc",i);
-      computed_charge -= 2;
+      computed_charge -= 2*docc_[i];
       user_occ_ = 1;
       }
     if (keyval->exists("socc",i)) {
       socc_[i] = keyval->intvalue("socc",i);
-      computed_charge -= 1;
+      computed_charge -= 1*socc_[i];
       user_occ_ = 1;
       }
   }

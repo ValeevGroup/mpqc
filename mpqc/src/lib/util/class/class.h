@@ -143,10 +143,10 @@ class  RefDescribedClassBase {
     RefDescribedClassBase();
     RefDescribedClassBase(const RefDescribedClassBase&);
     RefDescribedClassBase& operator=(const RefDescribedClassBase&);
-    virtual DescribedClass* parentpointer() = 0;
-    virtual const DescribedClass* parentpointer() const = 0;
+    virtual DescribedClass* parentpointer() const = 0;
     virtual ~RefDescribedClassBase ();
     int operator==( const RefDescribedClassBase &a) const;
+    int operator!=( const RefDescribedClassBase &a) const;
     int operator>=( const RefDescribedClassBase &a) const;
     int operator<=( const RefDescribedClassBase &a) const;
     int operator>( const RefDescribedClassBase &a) const;
@@ -186,53 +186,45 @@ class  refname : public RefDescribedClassBase  {			      \
   private:								      \
     T* p;								      \
   public:								      \
-    DescribedClass* parentpointer();					      \
-    const DescribedClass* parentpointer() const;			      \
-    T* operator->();							      \
-    const T* operator->() const;					      \
-    T* pointer();							      \
-    const T* pointer() const;						      \
+    DescribedClass* parentpointer() const;			      \
+    T* operator->() const;					      \
+    T* pointer() const;						      \
     DCREF_TYPE_CAST_DEC(refname,T);			\
     DCREF_CONST_TYPE_CAST_DEC(refname,T);			\
-    T& operator *();							      \
-    const T& operator *() const;					      \
+    T& operator *() const;					      \
     refname ();								      \
     refname (T*a);							      \
     refname (const refname &a);						      \
     refname (const RefDescribedClassBase &);				      \
     ~refname ();							      \
-    int null();								      \
-    int nonnull();							      \
-    void require_nonnull();						      \
+    int null() const;							      \
+    int nonnull() const;						      \
+    void require_nonnull() const;					      \
     refname& operator=(T* cr);						      \
     refname& operator=(const RefDescribedClassBase & c);		      \
     refname& operator=(const refname & c);				      \
     void assign_pointer(T* cr);						      \
-    void  ref_info(FILE*fp=stdout);					      \
-    void warn(const char *);						      \
+    void  ref_info(FILE*fp=stdout) const;				      \
+    void warn(const char *) const;					      \
     void clear();							      \
-    void check_pointer();						      \
+    void check_pointer() const;						      \
 }
 #define DescribedClass_named_REF_def(refname,T)				      \
-T* refname :: operator->() { return p; };				      \
-const T* refname :: operator->() const { return p; };			      \
-T* refname :: pointer() { return p; };					      \
-const T* refname :: pointer() const { return p; };			      \
+T* refname :: operator->() const { return p; };			      \
+T* refname :: pointer() const { return p; };			      \
 DCREF_TYPE_CAST_DEF(refname,T);				\
 DCREF_CONST_TYPE_CAST_DEF(refname,T);				\
-T& refname :: operator *() { return *p; };				      \
-const T& refname :: operator *() const { return *p; };			      \
-int refname :: null() { return p == 0; };				      \
-int refname :: nonnull() { return p != 0; };				      \
-void refname :: require_nonnull()					      \
+T& refname :: operator *() const { return *p; };			      \
+int refname :: null() const { return p == 0; };				      \
+int refname :: nonnull() const { return p != 0; };			      \
+void refname :: require_nonnull() const					      \
 {									      \
   if (p == 0) {								      \
       fprintf(stderr,#refname": have null reference where nonnull needed\n"); \
       abort();								      \
     }									      \
 };									      \
-DescribedClass* refname :: parentpointer() { return p; }		      \
-const DescribedClass* refname :: parentpointer() const { return p; }	      \
+DescribedClass* refname :: parentpointer() const { return p; }	      \
 refname :: refname (): p(0) {}						      \
 refname :: refname (T*a): p(a)						      \
 {									      \
@@ -272,7 +264,7 @@ refname :: clear()							      \
   p = 0;								      \
 }									      \
 void									      \
-refname :: warn ( const char * msg)					      \
+refname :: warn ( const char * msg) const				      \
 {									      \
   fprintf(stderr,"WARNING: %s\n",msg);					      \
 }									      \
@@ -308,13 +300,13 @@ void refname :: assign_pointer(T* cr)					      \
   p = cr;								      \
   if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
-void refname :: check_pointer()						      \
+void refname :: check_pointer() const					      \
 {									      \
   if (p && p->nreference() <= 0) {					      \
       warn("Ref" # T ": bad reference count in referenced object\n");	      \
     }									      \
 }									      \
-void refname :: ref_info(FILE*fp)					      \
+void refname :: ref_info(FILE*fp) const					      \
 {									      \
   if (nonnull()) fprintf(fp,"nreference() = %d\n",p->nreference());	      \
   else fprintf(fp,"reference is null\n");				      \

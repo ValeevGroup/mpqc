@@ -460,6 +460,9 @@ RefDescribedClassBase::~RefDescribedClassBase()
 int RefDescribedClassBase::operator==( const RefDescribedClassBase &a) const {
   return parentpointer() == a.parentpointer();
 };
+int RefDescribedClassBase::operator!=( const RefDescribedClassBase &a) const {
+  return parentpointer() != a.parentpointer();
+};
 int RefDescribedClassBase::operator>=( const RefDescribedClassBase &a) const {
   return parentpointer() >= a.parentpointer();
 };

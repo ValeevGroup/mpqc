@@ -7,7 +7,7 @@
 
 template <class T>
 T **
-new_c_array2(int l, int m)
+new_c_array2(int l, int m, T)
 {
   T *a = 0;
   T **b = 0;
@@ -19,7 +19,7 @@ new_c_array2(int l, int m)
 
 template <class T>
 T **
-new_zero_c_array2(int l, int m)
+new_zero_c_array2(int l, int m, T)
 {
   T *a = 0;
   T **b = 0;
@@ -44,7 +44,7 @@ delete_c_array2(T**b)
 
 template <class T>
 T ***
-new_c_array3(int l, int m, int n)
+new_c_array3(int l, int m, int n, T)
 {
   T *a = 0;
   T **b = 0;
@@ -63,7 +63,7 @@ new_c_array3(int l, int m, int n)
 
 template <class T>
 T ***
-new_zero_c_array3(int l, int m, int n)
+new_zero_c_array3(int l, int m, int n, T)
 {
   T *a = 0;
   T **b = 0;

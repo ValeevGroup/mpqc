@@ -156,7 +156,7 @@ Int1eV3::overlap_1der(int ish, int jsh,
   nj = gshell2->nfunction();
 
 #if 0
-  printf("zeroing %d*%d*3 elements of buff\n",ni,nj);
+  cout << scprintf("zeroing %d*%d*3 elements of buff\n",ni,nj);
 #endif
   for (i=0; i<ni*nj*3; i++) {
     buff[i] = 0.0;
@@ -1224,7 +1224,7 @@ Int1eV3::int_shell_nuclear_nonhf_1der(int ish, int jsh,
   nj = gshell2->nfunction();
 
 #if 0
-  printf("int_shell_nuclear_nonhf_1der: zeroing %d doubles in buff\n",ni*nj*3);
+  cout << scprintf("int_shell_nuclear_nonhf_1der: zeroing %d doubles in buff\n",ni*nj*3);
 #endif
   for (i=0; i<ni*nj*3; i++) {
     buff[i] = 0.0;
@@ -1731,5 +1731,5 @@ Int1eV3::comp_prim_dipole(int im, int jm, int km,
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ")
+// eval: (c-set-style "CLJ-CONDENSED")
 // End:

@@ -152,7 +152,7 @@ Int2eV3::shiftint(int am1, int am2, int am3, int am4)
   double *buffer;
 
 #if 0
-  printf(" S[%d(%d),%d(%d),%d(%d),%d(%d)]",
+  cout << scprintf(" S[%d(%d),%d(%d),%d(%d),%d(%d)]",
          am1,g1,
          am2,g2,
          am3,g3,
@@ -422,7 +422,7 @@ Int2eV3::shiftam_34(double *I0001, int am1, int am2, int am3, int am4)
                          * CmD[2];
 #if 0
    if (cartindex1234 == 4) {
-     printf(" building with % f + % f * % f ",
+     cout << scprintf(" building with % f + % f * % f ",
                          I0010[  INT_CARTINDEX(am1,i1,j1) * size23p14m1
                                + INT_CARTINDEX(am2,i2,j2) * size3p14m1
                                + INT_CARTINDEX(am3+1,i3,j3) * size4m1
@@ -438,7 +438,7 @@ Int2eV3::shiftam_34(double *I0001, int am1, int am2, int am3, int am4)
 
 #if 0
                   if ((!am1) == (!am2) == am3 == am4) {
-                    printf("assigned I0001[%d] = % f\n",
+                    cout << scprintf("assigned I0001[%d] = % f\n",
                            cartindex1234,
                            I0001[cartindex1234]);
                     }
@@ -464,5 +464,5 @@ Int2eV3::shiftam_34(double *I0001, int am1, int am2, int am3, int am4)
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ")
+// eval: (c-set-style "CLJ-CONDENSED")
 // End:

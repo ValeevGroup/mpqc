@@ -200,10 +200,10 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 #endif
 
 #if 0
-  printf("on entry: (%d,%d,%d,%d) am=(%d,%d,%d,%d) perm = %d\n",
-         *psh1, *psh2, *psh3, *psh4,
-         am1,am2,am3,am4,
-         !(INT_NOPERM&flags));
+  cout << scprintf("on entry: (%d,%d,%d,%d) am=(%d,%d,%d,%d) perm = %d\n",
+                   *psh1, *psh2, *psh3, *psh4,
+                   am1,am2,am3,am4,
+                   !(INT_NOPERM&flags));
 #endif
 
   /* Convert the integral to the most efficient form. */
@@ -357,8 +357,8 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     }
 
 #if 0
-  printf("perm info: p12 = %d, p34 = %d, p13p24 = %d, eAB = %d\n",
-         p12,p34,p13p24,eAB);
+  cout << scprintf("perm info: p12 = %d, p34 = %d, p13p24 = %d, eAB = %d\n",
+                   p12,p34,p13p24,eAB);
 #endif
 
   /* If the centers were permuted, then the int_expweighted variable may
@@ -398,7 +398,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 
   /* Buildam up on center 1 and 3. */
 #if 0
-  printf("C:");
+  cout << scprintf("C:");
 #endif
   int_buildgcam(minam1,minam2,minam3,minam4,
                 am1,am2,am3,am4,
@@ -542,7 +542,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     ogc1 += INT_NCART(tam1);
     }
 #if 0
-  printf("\n");
+  cout << scprintf("\n");
 #endif
 
   if (   !int_unit2
@@ -556,7 +556,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   post_computation:
 
 #if 0
-  printf("before unpermute: am=(%d,%d,%d,%d)\n",am1,am2,am3,am4);
+  cout << scprintf("before unpermute: am=(%d,%d,%d,%d)\n",am1,am2,am3,am4);
 #endif
 
   /* Unpermute all of the permuted quantities. */
@@ -628,7 +628,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 #endif
 
 #if 0
-  printf("on exit: am=(%d,%d,%d,%d)\n",am1,am2,am3,am4);
+  cout << scprintf("on exit: am=(%d,%d,%d,%d)\n",am1,am2,am3,am4);
 #endif
   }
 
@@ -1021,7 +1021,7 @@ Int2eV3::compute_erep_1der(int flags, double *buffer,
             +(oc4+INT_CARTINDEX(am[3]+DCTEST(3),i[3]+DCTEST(3),j[3]))
             ];
     if (1 || INT_NONZERO(tmp)) {
-      printf("x: ((%d%d%d)(%d%d%d)(%d%d%d)(%d%d%d)) += ((%d%d%d)(%d%d%d)(%d%d%d)(%d%d%d)) (%f) (from %5d)\n",
+      cout << scprintf("x: ((%d%d%d)(%d%d%d)(%d%d%d)(%d%d%d)) += ((%d%d%d)(%d%d%d)(%d%d%d)(%d%d%d)) (%f) (from %5d)\n",
              i[0],j[0],k[0],
              i[1],j[1],k[1],
              i[2],j[2],k[2],
@@ -1080,7 +1080,7 @@ Int2eV3::nonredundant_erep(double *buffer, int e12, int e34, int e13e24,
   int i,j,k,l;
 
 #ifdef I860
-  if(mynode0() == -1 ) { printf("junk\n");}
+  if(mynode0() == -1 ) { cout << scprintf("junk\n");}
 #endif
   redundant_index = *red_off;
   nonredundant_index = *nonred_off;
@@ -1349,7 +1349,7 @@ Int2eV3::compute_erep_bound1der(int flags, double *buffer,
   END_ALLDERLOOPS(+)
 
 #if 0
-  printf("after -DCT1 buffer[5] is %12.8f\n",buffer[5]);
+  cout << scprintf("after -DCT1 buffer[5] is %12.8f\n",buffer[5]);
 #endif
 
   /* Compute the next contribution to the integrals. */
@@ -1408,7 +1408,7 @@ Int2eV3::compute_erep_bound1der(int flags, double *buffer,
     END_ALLDERLOOPS(+)
 
 #if 0
-  printf("after +DCT1 buffer[5] is %12.8f\n",buffer[5]);
+  cout << scprintf("after +DCT1 buffer[5] is %12.8f\n",buffer[5]);
 #endif
 
   /* END_DERLOOP must be redefined here because it previously depended
@@ -1486,7 +1486,7 @@ Int2eV3::compute_erep_bound1der(int flags, double *buffer,
     END_ALLDERLOOPS(+)
 
 #if 0
-  printf("after +DCT2 buffer[5] is %12.8f\n",buffer[5]);
+  cout << scprintf("after +DCT2 buffer[5] is %12.8f\n",buffer[5]);
 #endif
   }
 
@@ -1494,5 +1494,5 @@ Int2eV3::compute_erep_bound1der(int flags, double *buffer,
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ")
+// eval: (c-set-style "CLJ-CONDENSED")
 // End:

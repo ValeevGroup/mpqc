@@ -131,5 +131,5 @@ IntV3::atom_to_an(char *atom)
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ")
+// eval: (c-set-style "CLJ-CONDENSED")
 // End:

@@ -73,5 +73,5 @@ Int2eV3::~Int2eV3()
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ")
+// eval: (c-set-style "CLJ-CONDENSED")
 // End:

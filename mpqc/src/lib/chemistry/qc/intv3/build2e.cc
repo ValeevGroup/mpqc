@@ -579,12 +579,12 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
   double *con_ints;
 
 #if 0
-  printf("not_gcs: %d%d%d%d\n",
-         int_expweight1,
-         int_expweight2,
-         int_expweight3,
-         int_expweight4
-         );
+  cout << scprintf("not_gcs: %d%d%d%d\n",
+                   int_expweight1,
+                   int_expweight2,
+                   int_expweight3,
+                   int_expweight4
+      );
 #endif
 
           /* Sum thru all possible contractions. */
@@ -1563,5 +1563,5 @@ Int2eV3::choose_center(int am12, int am34, int m)
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ")
+// eval: (c-set-style "CLJ-CONDENSED")
 // End:

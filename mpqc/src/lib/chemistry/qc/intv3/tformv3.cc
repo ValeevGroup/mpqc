@@ -236,7 +236,7 @@ do_sparse_transform2(double *source, double *target,
                       target[offtarget] += coef * source[offsource];
 #if PRINT
                       if (fabs(coef * source[offsource])>1.0e-15) {
-                          printf("%3.1f * %15.11f [%d] += [%d] -> %15.11f\n",
+                          cout << scprintf("%3.1f * %15.11f [%d] += [%d] -> %15.11f\n",
                                  coef, source[offsource], offsource,
                                  offtarget, target[offtarget]);
                         }
@@ -522,14 +522,14 @@ do_gencon_sparse_transform_2e(double *integrals, double *target, int index,
 #if PRINT
     {
       double *tmp = integrals;
-      printf("Before transform of index %d (%dx%dx%dx%d)\n",
+      cout << scprintf("Before transform of index %d (%dx%dx%dx%d)\n",
              index, nsource1, nsource2, nsource3, nsource4);
       for (i=0; i<nsource1; i++) {
           for (j=0; j<nsource2; j++) {
               for (k=0; k<nsource3; k++) {
                   for (l=0; l<nsource4; l++) {
                       if (fabs(*tmp)>1.e-15) {
-                          printf("(%d %d|%d %d) = %15.11lf\n",i,j,k,l,*tmp);
+                          cout << scprintf("(%d %d|%d %d) = %15.11lf\n",i,j,k,l,*tmp);
                         }
                       tmp++;
                     }
@@ -602,14 +602,14 @@ do_gencon_sparse_transform_2e(double *integrals, double *target, int index,
 #if PRINT
     {
       double *tmp = integrals;
-      printf("After transform of index %d (%dx%dx%dx%d)\n",
+      cout << scprintf("After transform of index %d (%dx%dx%dx%d)\n",
              index, ntarget1, ntarget2, ntarget3, ntarget4);
       for (i=0; i<ntarget1; i++) {
           for (j=0; j<ntarget2; j++) {
               for (k=0; k<ntarget3; k++) {
                   for (l=0; l<ntarget4; l++) {
                       if (fabs(*tmp)>1.e-15) {
-                          printf("(%d %d|%d %d) = %15.11lf\n",i,j,k,l,*tmp);
+                          cout << scprintf("(%d %d|%d %d) = %15.11lf\n",i,j,k,l,*tmp);
                         }
                       tmp++;
                     }

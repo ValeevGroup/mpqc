@@ -246,5 +246,5 @@ FJT::values(int J,double wval)
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ")
+// eval: (c-set-style "CLJ-CONDENSED")
 // End:

@@ -402,5 +402,5 @@ Int2eV3::compute_prim_2(RefGaussianBasisSet cs1,RefGaussianBasisSet cs2)
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ")
+// eval: (c-set-style "CLJ-CONDENSED")
 // End:

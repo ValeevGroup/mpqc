@@ -86,7 +86,7 @@ Int2eV3::int_init_bounds_1der_nocomp()
   int nsht=nshell*(nshell+1)/2;
 
   if (!int_derivative_bounds) {
-    printf("requested der bounds but space not allocated\n");
+    cerr << "requested der bounds but space not allocated" << endl;
     exit(1);
     }
 
@@ -179,7 +179,7 @@ int
 Int2eV3::int_erep_0bound_1der()
 {
 #if 0
-  printf("int_erep_0bound_1der(): Q: %4d R: %4d\n", int_Q,int_R);
+  cout << scprintf("int_erep_0bound_1der(): Q: %4d R: %4d\n", int_Q,int_R);
 #endif
   return 1 + int_Q + int_R;
   }
@@ -195,8 +195,8 @@ Int2eV3::int_erep_2bound_1der(int s1, int s2)
   int b2 = int_Q + int_Rvec[ij];
 
 #if 0
-  printf("int_erep_2bound_1der(%d,%d): Q: %4d R: %4d\n",s1,s2,
-        int_Qvec[ij],int_Rvec[ij]);
+  cout << scprintf("int_erep_2bound_1der(%d,%d): Q: %4d R: %4d\n",s1,s2,
+                   int_Qvec[ij],int_Rvec[ij]);
 #endif
 
   /* The actual bound is Qij R + Q Rij
@@ -238,9 +238,9 @@ Int2eV3::erep_4bound_1der(int s1, int s2, int s3, int s4)
   int b2 = Qkl + Rij;
 
 #if 0
-  printf("int_erep_4bound_1der(%d,%d,%d,%d): Q: %4d %4d R: %4d %4d\n",
-         s1,s2,s3,s4,
-         int_Qvec[ij],int_Qvec[kl],int_Rvec[ij],int_Rvec[kl]);
+  cout << scprintf("int_erep_4bound_1der(%d,%d,%d,%d): Q: %4d %4d R: %4d %4d\n",
+                   s1,s2,s3,s4,
+                   int_Qvec[ij],int_Qvec[kl],int_Rvec[ij],int_Rvec[kl]);
 #endif
 
   /* The actual bound is Qij Rkl + Qkl Rij
@@ -316,7 +316,7 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
         nint = size[0]*size[1]*size[0]*size[1];
         max = find_max(int_buffer,nint);
 #if 0
-        printf("max for %d %d (size %d) is %15.11f\n", sh1, sh2, nint, max);
+        cout << scprintf("max for %d %d (size %d) is %15.11f\n", sh1, sh2, nint, max);
 #endif
         }
       else if (flag == COMPUTE_R) {
@@ -324,18 +324,19 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
         int_erep_bound1der(0,sh1,sh2,&nint);
         max1 = find_max(int_buffer,nint);
 #if 0
-        printf("bound(%d) for (%d,%d) is %12.8f int_buffer =",
-               flag,sh1,sh2,max1);
-        for (i=0; (i<nint)&&(i<27); i++) printf(" %12.8f",int_buffer[i]);
-        if (nint > 27) printf(" ...");
-        printf("\n");
+        cout << scprintf("bound(%d) for (%d,%d) is %12.8f int_buffer =",
+                         flag,sh1,sh2,max1);
+        for (i=0; (i<nint)&&(i<27); i++)
+          cout << scprintf(" %12.8f",int_buffer[i]);
+        if (nint > 27) cout << scprintf(" ...");
+        cout << scprintf("\n");
 #endif
         int_erep_bound1der(0,sh2,sh1,&nint);
         max2 = find_max(int_buffer,nint);
         max = (max1>max2)?max1:max2;
         }
       else {
-        printf("bad bound flag\n"); exit(1);
+        cout << scprintf("bad bound flag\n"); exit(1);
         }
 
     /* Compute the partial bound value. */
@@ -353,11 +354,11 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
       if (flag == COMPUTE_R) vec[shellij]++;
       if (vec[shellij]>*overall) *overall = vec[shellij];
 #if 0
-      printf("bound(%d) for (%d,%d) is %4d int_buffer =",
-             flag,sh1,sh2,vec[shellij]);
-      for (i=0; (i<nint)&&(i<27); i++) printf(" %12.8f",int_buffer[i]);
-      if (nint > 27) printf(" ...");
-      printf("\n");
+      cout << scprintf("bound(%d) for (%d,%d) is %4d int_buffer =",
+                       flag,sh1,sh2,vec[shellij]);
+      for (i=0; (i<nint)&&(i<27); i++) cout << scprintf(" %12.8f",int_buffer[i]);
+      if (nint > 27) cout << scprintf(" ...");
+      cout << scprintf("\n");
 #endif
   int_integral_storage = old_int_integral_storage;
 
@@ -391,5 +392,5 @@ Int2eV3::logbound_to_bound(int value)
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ")
+// eval: (c-set-style "CLJ-CONDENSED")
 // End:

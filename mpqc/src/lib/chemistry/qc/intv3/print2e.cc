@@ -185,5 +185,5 @@ Int2eV3::int_print_intermediates(ostream &o)
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ")
+// eval: (c-set-style "CLJ-CONDENSED")
 // End:

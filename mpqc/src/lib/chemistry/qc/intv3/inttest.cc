@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <util/misc/formio.h>
 #include <util/misc/regtime.h>
 #include <util/keyval/keyval.h>
 #include <chemistry/qc/intv3/int1e.h>
@@ -104,22 +105,22 @@ main()
   int permute = keyval->booleanvalue("permute");
   tim->enter("overlap");
   if (tkeyval->booleanvalue("overlap")) {
-      printf("testing overlap:\n");
+      cout << scprintf("testing overlap:\n");
       test_int_shell_1e(tkeyval, int1ev3, Int1eV3::overlap, permute);
     }
   tim->change("kinetic");
   if (tkeyval->booleanvalue("kinetic")) {
-      printf("testing kinetic:\n");
+      cout << scprintf("testing kinetic:\n");
       test_int_shell_1e(tkeyval, int1ev3, Int1eV3::kinetic, permute);
     }
   tim->change("hcore");
   if (tkeyval->booleanvalue("hcore")) {
-      printf("testing hcore:\n");
+      cout << scprintf("testing hcore:\n");
       test_int_shell_1e(tkeyval, int1ev3, Int1eV3::hcore, permute);
     }
   tim->change("nuclear");
   if (tkeyval->booleanvalue("nuclear")) {
-      printf("testing nuclear:\n");
+      cout << scprintf("testing nuclear:\n");
       test_int_shell_1e(tkeyval, int1ev3, Int1eV3::nuclear, permute);
     }
   tim->change("3 center");
@@ -178,18 +179,18 @@ do_shell_test_1e(const RefInt1eV3 &int1ev3,
   for (a=0; a<na; a++) {
       for (int b=0; b<nb; b++) {
           if (fabs(buf[ii] - pbuf[a + na*b]) > 1.0e-13) {
-              printf("----- 1e perm failed:"
-                     "<%d %d|%d %d>:"
-                     " %18.14f != %18.14f "
-                     "<%d %d|%d %d>\n",
-                     i, a, j, b,
-                     buf[ii],
-                     pbuf[a + na*b],
-                     j, b, i, a);
+              cout << scprintf("----- 1e perm failed:"
+                               "<%d %d|%d %d>:"
+                               " %18.14f != %18.14f "
+                               "<%d %d|%d %d>\n",
+                               i, a, j, b,
+                               buf[ii],
+                               pbuf[a + na*b],
+                               j, b, i, a);
             }
           if (fabs(buf[ii]) > 1.0e-15) {
-              printf(" <(%d %d)|(%d %d)> = %15.11f\n",
-                     i,a,j,b, buf[ii]);
+              cout << scprintf(" <(%d %d)|(%d %d)> = %15.11f\n",
+                               i,a,j,b, buf[ii]);
             }
           ii++;
         }
@@ -243,8 +244,8 @@ test_3_center(const RefKeyVal& keyval, const RefInt2eV3 &int2ev3)
           for (k=0; k<sizes[0]; k++) {
               for (l=0; l<sizes[1]; l++) {
                   if (fabs(buffer[ii])>1.0e-15)
-                      printf(" ((%d %d)|(%d %d)) = %15.11f\n",
-                             sh[0],k,sh[1],l, buffer[ii]);
+                      cout << scprintf(" ((%d %d)|(%d %d)) = %15.11f\n",
+                                       sh[0],k,sh[1],l, buffer[ii]);
                   ii++;
                 }
             }
@@ -264,8 +265,9 @@ test_3_center(const RefKeyVal& keyval, const RefInt2eV3 &int2ev3)
                   for (l=0; l<sizes[1]; l++) {
                       for (n=0; n<sizes[2]; n++) {
                           if (fabs(buffer[ii])>1.0e-15)
-                              printf(" ((%d %d)|(%d %d)(%d %d)) = %15.11f\n",
-                                     sh[0],k,sh[1],l,sh[2],n, buffer[ii]);
+                              cout << scprintf(
+                                  " ((%d %d)|(%d %d)(%d %d)) = %15.11f\n",
+                                  sh[0],k,sh[1],l,sh[2],n, buffer[ii]);
                           ii++;
                         }
                     }
@@ -329,7 +331,7 @@ check_shell_perm(const RefInt2eV3 &int2ev3, double *integrals,
               for (i[3]=0; i[3]<psizes[3]; i[3]++) {
                   if (fabs(buff[i[ip[0]]][i[ip[1]]][i[ip[2]]][i[ip[3]]]
                            - integrals[index]) > 1.0e-13) {
-                      printf("perm %d %d %d %d failed:"
+                      cout << scprintf("perm %d %d %d %d failed:"
                              "((%d %d)(%d %d)|(%d %d)(%d %d)):"
                              " %18.14f != %18.14f "
                              "((%d %d)(%d %d)|(%d %d)(%d %d))\n",
@@ -381,7 +383,7 @@ do_shell_quartet_test(const RefInt2eV3 &int2ev3,
                       maxintegral = absint;
                     }
                   if (bounds &&  absint > integralbound) {
-                      printf("((%d %d)(%d %d)|(%d %d)(%d %d)) = %15.11f, "
+                      cout << scprintf("((%d %d)(%d %d)|(%d %d)(%d %d)) = %15.11f, "
                              "bound = %15.11f\n",
                              sh[0], ii, sh[1], jj, sh[2], kk, sh[3], ll,
                              buffer[ibuf], integralbound);
@@ -389,7 +391,7 @@ do_shell_quartet_test(const RefInt2eV3 &int2ev3,
                     }
                   if (print && (absint > 1.0e-9
                                 || (bounds && integralbound > 1.0e-9))) {
-                      printf(" ((%d %d)(%d %d)|(%d %d)(%d %d))"
+                      cout << scprintf(" ((%d %d)(%d %d)|(%d %d)(%d %d))"
                              " = %15.11f",
                              sh[0],ii,
                              sh[1],jj,
@@ -397,10 +399,10 @@ do_shell_quartet_test(const RefInt2eV3 &int2ev3,
                              sh[3],ll,
                              buffer[ibuf]);
                       if (bounds) {
-                          printf(" (%2d%% of bound)",
+                          cout << scprintf(" (%2d%% of bound)",
                                  (int)(100*(absint/integralbound)));
                         }
-                      printf("\n");
+                      cout << scprintf("\n");
                     }
                   ibuf++;
                 }
@@ -433,14 +435,14 @@ do_shell_quartet_test(const RefInt2eV3 &int2ev3,
           badbound = 1;
         }
       if (badbound || printbounds) {
-          printf("max(%d,%d,%d,%d)=%7.4f, bnd=%7.4f, "
+          cout << scprintf("max(%d,%d,%d,%d)=%7.4f, bnd=%7.4f, "
                  "bnd(%d,%d,*,*)=%7.4f, bnd(*,*,%d,%d)=%7.4f\n",
                  i, j, k, l, maxintegral, integralbound,
                  i,j, int2ev3->logbound_to_bound(boundij),
                  k,l, int2ev3->logbound_to_bound(boundkl));
         }
       if (badbound) {
-          printf("ERROR: bad bound\n");
+          cout << scprintf("ERROR: bad bound\n");
           abort();
         }
     }
@@ -472,8 +474,8 @@ test_4_center(const RefKeyVal& keyval, const RefInt2eV3 &int2ev3)
 {
   int i;
 
-  printf("4 center test:\n");
-  printf("  on entry int2ev3 used %d bytes\n", int2ev3->used_storage());
+  cout << scprintf("4 center test:\n");
+  cout << scprintf("  on entry int2ev3 used %d bytes\n", int2ev3->used_storage());
 
   int2ev3->set_permute(0);
   int2ev3->set_redundant(1);
@@ -486,12 +488,12 @@ test_4_center(const RefKeyVal& keyval, const RefInt2eV3 &int2ev3)
   int permute = keyval->booleanvalue("permute");
   int printbounds = keyval->booleanvalue("printbounds");
 
-  printf("  storage   = %d\n", storage);
-  printf("  niter     = %d\n", niter);
-  printf("  print     = %d\n", print);
-  printf("  bounds    = %d\n", bounds);
-  printf("  permute   = %d\n", permute);
-  printf("printbounds = %d\n", printbounds);
+  cout << scprintf("  storage   = %d\n", storage);
+  cout << scprintf("  niter     = %d\n", niter);
+  cout << scprintf("  print     = %d\n", print);
+  cout << scprintf("  bounds    = %d\n", bounds);
+  cout << scprintf("  permute   = %d\n", permute);
+  cout << scprintf("printbounds = %d\n", printbounds);
 
   if (bounds) int2ev3->init_bounds();
 
@@ -550,7 +552,7 @@ do_shell_quartet_der_test(const RefInt2eV3 &int2ev3,
                               maxintegral = absint;
                             }
                           if (bounds &&  absint > integralbound) {
-                              printf("((%d %d)(%d %d)|(%d %d)(%d %d))"
+                              cout << scprintf("((%d %d)(%d %d)|(%d %d)(%d %d))"
                                      " = %15.11f, bound = %15.11f\n",
                                      sh[0], ii, sh[1], jj,
                                      sh[2], kk, sh[3], ll,
@@ -558,7 +560,7 @@ do_shell_quartet_der_test(const RefInt2eV3 &int2ev3,
                               abort();
                             }
                           if (print && absint > 1.0e-15) {
-                              printf(" ((%d %d)(%d %d)"
+                              cout << scprintf(" ((%d %d)(%d %d)"
                                      "|(%d %d)(%d %d))(%d %d)"
                                      " = %15.11f\n",
                                      sh[0],ii,
@@ -585,14 +587,14 @@ do_shell_quartet_der_test(const RefInt2eV3 &int2ev3,
           badbound = 1;
         }
       if (badbound || printbounds) {
-          printf("max(%d,%d,%d,%d)=%7.4f, bnd=%7.4f, "
+          cout << scprintf("max(%d,%d,%d,%d)=%7.4f, bnd=%7.4f, "
                  "bnd(%d,%d,*,*)=%8.4f, bnd(*,*,%d,%d)=%8.4f\n",
                  i, j, k, l, maxintegral, integralbound,
                  i,j, int2ev3->logbound_to_bound(boundij),
                  k,l, int2ev3->logbound_to_bound(boundkl));
         }
       if (badbound) {
-          printf("ERROR: bad bound\n");
+          cout << scprintf("ERROR: bad bound\n");
           abort();
         }
     }
@@ -636,12 +638,12 @@ test_4der_center(const RefKeyVal& keyval, const RefInt2eV3 &int2ev3)
   int printbounds = keyval->booleanvalue("printbounds");
   int permute = keyval->booleanvalue("permute");
 
-  printf("4 center derivative test:\n");
-  printf("  niter      = %d\n", niter);
-  printf("  print      = %d\n", print);
-  printf("  bounds     = %d\n", bounds);
-  printf("printbounds  = %d\n", printbounds);
-  printf("  permute    = %d\n", permute);
+  cout << scprintf("4 center derivative test:\n");
+  cout << scprintf("  niter      = %d\n", niter);
+  cout << scprintf("  print      = %d\n", print);
+  cout << scprintf("  bounds     = %d\n", bounds);
+  cout << scprintf("printbounds  = %d\n", printbounds);
+  cout << scprintf("  permute    = %d\n", permute);
 
   if (bounds) int2ev3->init_bounds_1der();
 

@@ -1,0 +1,503 @@
+#!/usr/bin/env perl
+#eval 'exec perl $0 $*'
+#    if 0;
+
+$prefix = '@prefix@';
+$exec_prefix = "@exec_prefix@";
+$bindir = "@bindir@";
+
+use POSIX;
+
+if ($prefix eq '@' . 'prefix@') {
+    $configurerun = 0;
+}
+else {
+    $configurerun = 1;
+}
+
+# The path to the MPQC executable
+if ($configurerun) {
+    $mpqc = "$bindir/mpqc";
+}
+else {
+    $mpqc = "mpqc";
+}
+
+# The path to the MPQC executable if it is to be run from the object
+# directory.
+if (!$configurerun) {
+    $mpqcobj = "mpqc";
+}
+else {
+    $mpqcobj = '@compiledir@/src/bin/mpqc/mpqc';
+}
+
+# This is the number of jobs that will be run concurrently.
+$maxjobs = "1";
+
+# The threadgrp specialization
+$threadgrp = "proc";
+
+# The message specialization
+$messagegrp = "proc";
+$have_mpi = '@HAVE_MPI@';
+if ("$have_mpi" eq "yes") {
+    $messagegrp = "mpi";
+}
+
+# The mpi launch command
+$launch = '@LAUNCH@';
+
+# The number of tasks
+$ntask = 1;
+
+# A filename with a list of nodes.
+$nodefile = "";
+
+# A command line argument with a list of nodes.
+$nodes = "";
+
+# A format string to convert a node number to a node name
+$nodename = "%d";
+
+# The number of processes each job will use.
+$nprocperjob = 1;
+
+# The number of threads each process will use.
+$nthreadperproc = 1;
+
+# The number of processes to run on each node.
+$nprocpernode = 1;
+
+# Files machining the given regex will be run sequentially,
+# in alphabetical order.
+$seq = "";
+
+# A regex for files to exclude from the runs
+$exclude = "";
+
+# If true, then mpqc with all inputs in the current directory.
+$readdir = "";
+
+# If this is set to one, then a set of extra exclusions will be
+# included.  This is only useful for the running test suite.
+$small = 0;
+
+# If true, then print out a list of files that would be run
+$printfiles = 0;
+
+# If true, then print out the number of files that would be run
+$count = 0;
+
+# If true, then print out help info and exit
+$help = 0;
+
+# If true, then don't actually run anything
+$debug = 0;
+
+# If true, then print out extra info.
+$verbose = 0;
+
+# If true, then overwrite output files that seem up-to-date
+$rerun = 0;
+
+# If true, then do not overwrite any output file.
+$onlynew = 0;
+
+# If true, then generate unique output file names.
+$autoout = 0;
+
+# If true, run mpqc from the object directory
+$objdir = 0;
+
+######################################################################
+
+use Getopt::Long;
+
+if (!GetOptions("small!" => \$small,
+                "thread=s" => \$thread,
+                "messagegrp=s" => \$messagegrp,
+                "nprocperjob=i" => \$nprocperjob,
+                "nthreadperproc=i" => \$nthreadperproc,
+                "nprocpernode=i" => \$nprocpernode,
+                "seq=s" => \$seq,
+                "maxjobs=i" => \$maxjobs,
+                "mpqc=s" => \$mpqc,
+                "readdir=s" => \$readdir,
+                "nodefile=s" => \$nodefile,
+                "nodes=s" => \$nodes,
+                "nodename=s" => \$nodename,
+                "exclude=s" => \$exclude,
+                "help!" => \$help,
+                "printfiles!" => \$printfiles,
+                "rerun!" => \$rerun,
+                "onlynew!" => \$onlynew,
+                "autoout!" => \$autoout,
+                "objdir!" => \$objdir,
+                "count!" => \$count,
+                "debug!" => \$debug,
+                "verbose!" => \$verbose,
+      )) {
+    $help=1;
+}
+
+if ("$launch" eq '@' . 'LAUNCH@') {
+    if ("$messagegrp" eq "mpi") {
+        $launch = "mpirun [-hf %NODEFILE%] -n %NPROC% %MPQC% -o %OUTPUT% %INPUT%";
+    }
+    else {
+        $launch = "%MPQC% -o %OUTPUT% %INPUT%";
+    }
+}
+
+######################################################################
+
+if ($help) {
+    print  "Usage: $ARGV[0] [options] [file1.in] [file2.in] ...\n";
+    print  "Options:\n";
+    print  "  --mpqc path        the mpqc executable to use (value: $mpqc)\n";
+    print  "  --objdir           run the mpqc exec in the object dir (value: $objdir)\n";
+    print  "  --small            skip big runs in verification suite (value: $small)\n";
+    print  "  --maxjobs n        run n jobs at a time (value: $maxjobs)\n";
+    print  "  --nprocperjob n    run with n procs per job (value: $nprocperjob)\n";
+    print  "  --nprocpernode n   run with n procs per node (value: $nprocpernode)\n";
+    print  "  --nthreadperproc n use n threads per process (value: $nthreadperproc)\n";
+    print  "  --thread grp       use the given threading layer (value: $thread)\n";
+    print  "                     proc: does a single threaded run\n";
+    print  "                     posix: use POSIX threads\n";
+    print  "  --messagegrp grp   use the given communication layer (value: $messagegrp)\n";
+    print  "                     proc: does a single processor run\n";
+    print  "                     mpi: use MPI\n";
+    printf "  --launch cmd       use the given cmd to launch jobs--see below (value: %s)\n",
+          (($launch eq "")?"<not set>":$launch);
+    printf "  --nodefile file    a file listing nodes to use (value: %s)\n",
+          (($nodefile eq "")?"<not set>":$nodefile);
+    printf "  --nodes nodes      a command line list of machines to use (value: %s)\n",
+          (($nodes eq "")?"<not set>":$nodes);
+    printf "                     groups can be given as 8-10,12,15-17 for example\n";
+    printf "  --nodename fmt     converts node num to name (value: %s)\n", $nodename;
+    printf "  --seq regex        run inputs matching reqex sequentially (value: %s)\n",
+          (("$seq" eq "")?"<not set>":"$seq");
+    printf "  --exclude regex    exclude files matching regex (value: %s)\n",
+          (("$exclude" eq "")?"<not set>":"$exclude");
+    printf "  --readdir dir      run mpqc on dir/*.in files (value: %s)\n",
+          (($readdir eq "")?"<not set>":$readdir);
+    print  "  --count            print the number of input files that would be run\n";
+    print  "  --printfiles       print the list of input files that would be run\n";
+    print  "  --rerun            overwrite output file, even if up-to-date\n";
+    print  "  --onlynew          do not overwrite output file, even if not up-to-date\n";
+    print  "  --autoout          generate unique output filenames\n";
+    print  "  --verbose          print out what action is to be taken on each file\n";
+    print  "  --debug            don't actually run mpqc\n";
+    print  "  --help             print this help\n";
+    print  "\n";
+    print  "The launch command can contain special strings that will be substituted.\n";
+    print  "These are:\n";
+    print  "  %MPQC%     The MPQC program.\n";
+    print  "  %INPUT%    The input filename.\n";
+    print  "  %OUTPUT%   The output filename.\n";
+    print  "  %NPROC%    The number of processes to start.\n";
+    print  "  %NODEFILE% The name of a file containing the node names.\n";
+    print  "  %NODELIST% A comma separated list of node names.\n";
+    print  "  For these last two, if they are contained within square brackets\n";
+    print  "  and a substitution is not available, then everything within the\n";
+    print  "  the brackets is removed.\n";
+    print  "Examples of the launch argument:\n";
+    print  "  mpirun [-hf %NODEFILE%] -n %NPROC% %MPQC% -o %OUTPUT% %INPUT%\n";
+    print  "  mpirun [-H %NODELIST%] -n %NPROC% %MPQC% -o %OUTPUT% %INPUT%\n";
+    exit 0;
+}
+
+######################################################################
+
+if ($objdir) {
+    $mpqc = $mpqcobj;
+}
+
+######################################################################
+
+if ($messagegrp eq "proc" && $nprocperjob > 1) {
+    $messagegrp = "mpi";
+}
+
+if ($messagegrp eq "proc") {
+  $ENV{"MESSAGEGRP"} = "<ProcMessageGrp>:()";
+}
+elsif ($messagegrp eq "mpi") {
+  $ENV{"MESSAGEGRP"} = "<MPIMessageGrp>:()";
+}
+
+@nodelist = ();
+if ($nodes ne "") {
+    $nodes =~ s/-/../g;
+    foreach my $i (eval $nodes) {
+        $nodelist[$#nodelist + 1] = sprintf "$nodename", $i;
+    }
+}
+if ("$nodefile" ne "" && -f "$nodefile") {
+    open(NODEFILE,"<$nodefile");
+    while(<NODEFILE>) {
+        if (/(\S+)/) {
+            $nodelist[$#nodelist + 1] = $1;
+        }
+    }
+    close(NODEFILE);
+}
+
+@jobnodes = ();
+%jobnnodes = {};
+%nodelist = {};
+%nodefile = {};
+$ijob = 0;
+foreach my $i (0..$#nodelist-1) {
+    $jobnnodes[$ijob++]++;
+    if ($ijob >= $maxjobs) { $ijob = 0; }
+}
+
+$nodesbegin = 0;
+foreach my $i (0..$maxjobs-1) {
+    if ($jobnnodes[$i] > POSIX::ceil($nprocperjob / $nprocpernode)) {
+        $jobnnodes[$i] = POSIX::ceil($nprocperjob / $nprocpernode);
+    }
+    my $nodesend = $nodesbegin + $jobnnodes[$i];
+    my @slice = (@nodelist)[$nodesbegin..($nodesend-1)];
+    $jobnodes{$i} = \@slice;
+    $nodesbegin = $nodesend;
+    foreach my $j (@slice) {
+        if ($nodelist{$i} eq "") { $nodelist{$i} = $j; }
+        else { $nodelist{$i} = sprintf "%s,%s", $nodelist{$i}, $j; }
+    }
+    $nodefile{$i} = ".tmp.nodefile.$$.$i";
+    open(NODEFILE,">" . $nodefile{$i});
+    foreach my $j (@slice) {
+        printf NODEFILE "%s\n", $j;
+    }
+    close(NODEFILE);
+}
+
+######################################################################
+
+if ($threadgrp eq "proc" && $nthreadperproc > 1) {
+    $threadgrp = "posix";
+}
+
+if ($threadgrp eq "proc") {
+  $ENV{"THREADGRP"} = "<ProcThreadGrp>:()";
+}
+elsif ($threadgrp eq "posix") {
+  $ENV{"MEMORYGRP"} = "<PthreadThreadGrp>:(num_threads=$nthreadperproc)";
+}
+
+######################################################################
+
+# autoflush output
+$| = 1;
+
+@files = get_file_list();
+
+if ($count) {
+    printf "%d\n", $#files + 1;
+    exit;
+}
+
+if ($printfiles) {
+    foreach my $i (@files) {
+        printf "%s\n", "$i";
+    }
+    exit;
+}
+
+
+printf "Running a maximum of %d jobs at a time.\n", $maxjobs;
+printf "Running %d processes per job.\n", $nprocperjob;
+printf "Running %d threads per process.\n", $nthreadperproc;
+foreach my $i (0..$maxjobs-1) {
+    print "Nodes in slot $i:";
+    foreach my $j (@{$jobnodes{$i}}) {
+        printf " \"%s\"", $j;
+    }
+    print "\n";
+}
+printenvvar("MESSAGEGRP");
+printenvvar("THREADGRP");
+printenvvar("MEMORYGRP");
+
+# this is the list of available run slots
+# each slot permits running on the nodes listed in jobnodes
+@availjobs = (0..$maxjobs-1);
+%pidtojob = {};
+
+$thecount = 0;
+$n = 0;
+
+foreach my $file (@files) {
+    my $out = outfile("$file");
+    if ("$seq" ne "") {
+        $can_run_concurrent = ! ($file =~ /$seq/);
+    }
+    my $cmd = "$launch";
+    $cmd =~ s/%MPQC%/$mpqc/;
+    $cmd =~ s/%NPROC%/$nprocperjob/;
+    $cmd =~ s/%INPUT%/$file/;
+    $cmd =~ s/%OUTPUT%/$out/;
+
+    $jobslot = pop(@availjobs);
+    $cmd = substitute_optional_parameter($cmd, "%NODELIST%", $nodelist{$jobslot});
+    $cmd = substitute_optional_parameter($cmd, "%NODEFILE%", $nodefile{$jobslot});
+
+    if (! $can_run_concurrent || $maxjobs == 1) {
+        printf "starting in slot %d: %s\n", $jobslot, "$cmd";
+        $cmd = "true" if ($debug);
+        $pid = fork();
+        $pidtojob{$pid} = $jobslot;
+        if ($pid == 0) {
+            exec("$cmd");
+            die "exec returned";
+        }
+        waitpid($pid,'');
+        delete $pidtojob{$pid};
+        push @availjobs, $jobslot;
+    }
+    else {
+        printf "backgrounding in slot %d: %s\n", $jobslot, "$cmd";
+        $cmd = "true" if ($debug);
+        $pid = fork();
+        $pidtojob{$pid} = $jobslot;
+        if ($pid == 0) {
+            exec("$cmd");
+            die "exec returned";
+        }
+        $n = $n + 1;
+    }
+    while ($n >= $maxjobs) {
+        $pid = wait();
+        $jobslot = $pidtojob{$pid};
+        delete $pidtojob{$pid};
+        push @availjobs, $jobslot;
+        $n = $n - 1;
+    }
+}
+
+foreach $i (1..$n) { wait(); }
+
+foreach $i (values(%nodefile)) {
+    unlink "$i";
+}
+
+sub get_file_list {
+    my @dirfiles;
+    my @argfiles;
+
+    if ($readdir ne "") {
+        opendir(DIR,"$readdir");
+        @tdirfiles = sort(readdir(DIR));
+        foreach my $j (@tdirfiles) {
+            if (!($j =~ /\.in$/)) {
+                $dirfiles[$#dirfiles] = $j;
+            }
+        }
+        closedir(DIR);
+    }
+
+    @argfiles = sort(@ARGV);
+
+    my @allfiles = (@dirfiles, @argfiles);
+
+    my @files;
+
+    foreach my $in (@allfiles) {
+        my $out = outfile("$in");
+        $issmall = (!($in =~ /ccpc?v[dtq5]z/));
+        if ($in =~ /^(cl|hsos|u)scf_.*6311gss/) {
+            $issmall = 0;
+        }
+        if ($in =~ /^basis2_/) {
+            $issmall = 0;
+        }
+        if ($in =~ /^orthog_.*(hfs|zapt2|mp2)/) {
+            $issmall = 0;
+        }
+        if ($in =~ /^dft_/) {
+            $issmall = 0;
+        }
+        if ($in =~ /^symm1_cub/) {
+            $issmall = 0;
+        }
+        if ($in =~ /^methods_/) {
+            $issmall = 0;
+        }
+        if ($in =~ /^mbpt_mp2r12_c6h6_multipass/) {
+            $issmall = 0;
+        }
+        if ($exclude ne "" && $in =~ /$exclude/) { 
+            if ($verbose) {
+                print "$in: excluded by --exclude option\n";
+            }
+        }
+        if (!$rerun
+            && (-f $out)
+            && ($onlynew
+                || (-M $out < -M $in && (! -f "$mpqc" || -M $out < -M "$mpqc")))) {
+            if ($verbose) {
+                print "$in: skipping: $out up-to-date\n";
+            }
+        }
+        elsif ($small && ! $issmall) {
+            if ($verbose) {
+                print "$in: skipping due to --small option\n";
+            }
+        }
+        else {
+            if ($verbose) {
+                print "$in: will be run\n";
+            }
+            $files[$#files+1] = $in;
+        }
+    }
+
+    return @files;
+}
+
+sub outfile {
+    my $in = shift;
+
+    my $out;
+    if ($autoout) {
+        $out = $in;
+        $out =~ s/\.[^.]*$//;
+        $out = sprintf "%s.out.%03d.%02d", $out, $nprocperjob, $nthreadperproc;
+        my $outversion = 1;
+        while (-f "$out") {
+            $outversion++;
+            $out = sprintf "%s.out.%03d.%02d", $out, $nprocperjob, $nthreadperproc;
+        }
+    }
+    else {
+        $out = "$in";
+        $out =~ s/\.[^.]*$/.out/;
+    }
+
+    return $out;
+}
+
+sub printenvvar {
+    my $envvar = shift;
+    if (exists($ENV{$envvar})) {
+        printf "Using %s = \"%s\"\n", $envvar, $ENV{$envvar};
+    }
+}
+
+sub substitute_optional_parameter {
+    my $str = shift;
+    my $name = shift;
+    my $value = shift;
+    if ($value ne "") {
+        $str =~ s/\[([^[]*$name[^[]*)\]/$1/;
+        $str =~ s/$name/$value/;
+    }
+    else {
+        $str =~ s/\[([^[]*$name[^[]*)\]//;
+    }
+    return $str;
+}
+

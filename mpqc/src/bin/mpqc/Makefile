@@ -81,6 +81,7 @@ install_devel:: $(TOPDIR)/lib/libmpqc.$(LIBSUF)
 install:: mpqc
 	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)
 	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(installroot)$(bindir)
+	$(INSTALL) $(INSTALLSCRIPTOPT) mpqcrun $(installroot)$(bindir)/mpqcrun
 
 install::
 	/bin/rm -f $(installroot)$(bindir)/chkmpqcout
@@ -97,6 +98,7 @@ distclean::
 	/bin/rm -f mpqc
 	/bin/rm -f parse.tmp*
 	/bin/rm -f $(GENCXXSRC) $(GENINC) parse.output
+	/bin/rm -f mpqcrun
 
 ifneq ($(BUILDING_IN_SRCDIR),yes)
 ifeq ($(wildcard parse.cc),parse.cc)

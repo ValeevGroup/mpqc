@@ -19,6 +19,7 @@ parallel communication, matrix algebra, among others.
 \section userref Command Reference
 <ul>
   <li> \ref mpqc
+  <li> \ref mpqcrun
   <li> \ref scpr
   <li> \ref scls
   <li> \ref molrender

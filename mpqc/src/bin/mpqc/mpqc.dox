@@ -10,7 +10,7 @@ This documentation is divided into the following chapters:
 <ul>
   <li> \ref mpqcover
   <li> \ref mpqccomp
-  <li> \ref mpqcrun
+  <li> \ref mpqcrunning
   <li> \ref mpqcinp
   <li> \ref mpqcval
   <li> \ref mpqcpsi
@@ -22,7 +22,7 @@ This documentation is divided into the following chapters:
 \if man
 <ul>
   <li> \ref mpqcover
-  <li> \ref mpqcrun
+  <li> \ref mpqcrunning
   <li> \ref mpqcinp
   <li> \ref mpqcval
   <li> \ref mpqcpsi

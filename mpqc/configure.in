@@ -454,6 +454,11 @@ if test X$ac_srcdir_defaulted = Xyes; then
   esac
 fi
 
+dnl --------- Get the path to the compile dir. ---------
+
+compiledir=`pwd`
+AC_SUBST(compiledir)
+
 dnl --------- Checks for programs. ---------
 AC_PROG_LN_S
 AC_PROG_INSTALL
@@ -1703,5 +1708,6 @@ dnl --------- Create the stub Makefiles. ---------
 
 $PERL $srcdir/bin/objectdir.pl $EXCLUDED_DIRS $srcdir
 
-AC_OUTPUT(lib/LocalMakefile bin/sc-config bin/mkf77sym.pl doc/doxygen.cfg doc/doxygen.man1.cfg doc/doxygen.man3.cfg)
+AC_OUTPUT(lib/LocalMakefile bin/sc-config bin/mkf77sym.pl src/bin/mpqc/mpqcrun doc/doxygen.cfg doc/doxygen.man1.cfg doc/doxygen.man3.cfg)
 chmod +x bin/sc-config
+chmod +x src/bin/mpqc/mpqcrun

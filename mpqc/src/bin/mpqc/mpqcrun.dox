@@ -1,322 +1,111 @@
 
-/** \page mpqcrun Running MPQC
+/** \page mpqcrun
 
-This chapter explains how to run mpqc in a variety of environments.
+The mpqcrun program simplifies running MPQC.
 
-The first two sections give general information on running MPQC:
+\if man
+<h1>Synopsis</h1>
 
-<ul>
-  <li> \ref mpqccomline
-  <li> \ref mpqcenv
-</ul>
+<pre>
+mpqcrun [options] [file1.in] [file2.in] ...
+</pre>
+\endif
 
-The final sections given specific information on running MPQC in
-different environments:
+<h1>Description</h1>
 
-<ul>
-  <li> \ref mpqcshmem
-  <li> \ref mpqcpthr
-  <li> \ref mpqcmpi
-  <li> \ref mpqcmp2
-  <li> \ref mpqcmp2r12
-</ul>
+The mpqcrun program simplifies the task of running MPQC on multiple input
+files.  It is primarily design to run the validation suite, however, is
+general enough to be useful in other situations.  If multiple nodes or
+processors are present, it can be used to manage multiple invocations of
+MPQC.
 
-\section mpqccomline Command Line Options
+<h1>Running mpqcrun</h1>
 
-  MPQC can be given options followed by an optional input file
-name.  If the input file name is not given, it will default to
-"mpqc.in".  The following command line options are recognized:
+mpqcrun takes the following command line options:
 
 <dl>
 
-  <dt><tt>-o</tt><dd>Gives the name of the output file.  The default is the
-                console.
-
-  <dt><tt>-i</tt><dd>Convert a simple input file to an object oriented
-                input file and write the result to the ouput.  No
-                calculations are done.
-
-  <dt><tt>-messagegrp</tt><dd>A ParsedKeyVal specification of a MessageGrp
-                object.  The default depends on how MPQC was compiled.
-
-  <dt><tt>-memorygrp</tt><dd>A ParsedKeyVal specification of a MemoryGrp
-                object.  The default depends on how MPQC was compiled.
-
-  <dt><tt>-threadgrp</tt><dd>A ParsedKeyVal specification of a ThreadGrp
-                object.  The default depends on how MPQC was compiled.
-
-  <dt><tt>-integral</tt><dd>A ParsedKeyVal specification of an Integral
-                object. The default is IntegralV3. Note that some
-                MolecularEnergy specializations require specific choices
-                of Integral specializations and may not work with IntegralV3.
-
-  <dt><tt>-l</tt><dd>Sets a limit on the number of basis functions.  The
-                default is zero, which means an unlimited number of basis
-                functions.
-
-  <dt><tt>-W</tt><dd>Sets the working directory.  The default is the
-                current directory.
-
-  <dt><tt>-c</tt><dd>Check the input and exit.
-
-  <dt><tt>-v</tt><dd>Print the version number.
-
-  <dt><tt>-w</tt><dd>Print the warranty information (there is no warranty).
-
-  <dt><tt>-d</tt><dd>If a debugger object was given in the input, start the
-                debugger running as soon as MPQC is started.
-
-  <dt><tt>-h</tt><dd>Print a list of options.
-
-  <dt><tt>-f</tt><dd>The name of an object-oriented input file.  The
-                default is <tt>mpqc.in</tt>.  This cannot be used if
-                another input file is specified.  This option is
-                deprecated, as both input file formats can be read
-                by given the input file name on the command line
-                without any option flags.
+  <dt><tt>--mpqc</tt> path<dd>The mpqc executable to use.
+  <dt><tt>--objdir</tt><dd>Run the mpqc executable in the compile directory,
+                           rather than the install directory.
+  <dt><tt>--small</tt><dd>Skip big runs in verification suite.
+  <dt><tt>--maxjobs</tt> n<dd>Run n jobs at a time.
+  <dt><tt>--nprocperjob</tt> n<dd>Run with n processes per job.
+  <dt><tt>--nprocpernode</tt> n<dd>Run with n processes per node.
+  <dt><tt>--nthreadperproc</tt> n<dd>Use n threads per process.
+  <dt><tt>--thread</tt> grp<dd>Use the given threading layer.
+  <dl>
+       <dt>grp=<tt>proc</tt><dd>Do a single threaded run.
+       <dt>grp=<tt>posix</tt><dd>Use POSIX threads.
+  </dl>
+  <dt><tt>--messagegrp</tt> grp<dd>Use the given communication layer
+  <dl>
+        <dt>grp=<tt>proc</tt><dd>Does a single processor run.
+        <dt>grp=<tt>mpi</tt><dd>Use MPI.
+  </dl>
+  <dt><tt>--launch</tt> cmd<dd>Use the given command to launch jobs. See below.
+  <dt><tt>--nodefile</tt> file<dd>Specifies a file listing nodes to use.
+  <dt><tt>--nodes</tt> nodes<dd>Specifies list of machines to use.
+                                A range of nodes can be given with two
+                                integers separated by a dash.  Groups of
+                                nodes can be separated by a comma.
+  <dt><tt>--nodename</tt> fmt<dd>This is a format string that converts the
+                                 node number to its name.
+  <dt><tt>--seq</tt> regex<dd>Run inputs matching reqex sequentially.
+                              This is useful when one input requires that
+                              another be run first, and maxjobs is more than
+                              one.
+  <dt><tt>--exclude</tt> regex<dd>Exclude files matching regex.
+  <dt><tt>--readdir</tt> dir<dd>Run mpqc on all files matching dir/*.in.
+  <dt><tt>--count</tt><dd>Print the number of input files that would be run.
+  <dt><tt>--printfiles</tt><dd>Print the list of input files that would be run.
+  <dt><tt>--rerun</tt><dd>Overwrite output file, even if up-to-date.
+  <dt><tt>--onlynew</tt><dd>Do not overwrite output file, even if not up-to-date.
+  <dt><tt>--autoout</tt><dd>Generate unique output filenames.
+  <dt><tt>--verbose</tt><dd>Print out what action is to be taken on each file.
+  <dt><tt>--debug</tt><dd>Don't actually run mpqc.
+  <dt><tt>--help</tt><dd>Print the documentation.
 
 </dl>
 
-Some MPI environments do not pass the command line to slave programs, but
-supply it when MPI_Init is called.  To make MPQC call MPI_Init with the
-correct arguments as early as possible use the configure option
-<tt>--enable-always-use-mpi</tt>.
-
-\section mpqcenv Environmental Variables
-
-MPQC looks at five environmental variables to set up
-communication, find library files, and specify the default Integral
-object.  Machine specific libraries
-and utilities to run programs in parallel might look
-at other environment variables as well.  The five that
-apply on all platforms are:
-
+The cmd given with the <tt>--launch</tt> option can contain special strings
+that will be substituted:
 <dl>
-
-  <dt><tt>SCLIBDIR</tt><dd>The name of the library directory.  See the
-                     GaussianBasisSet documentation and look below for more
-                     information.
-
-  <dt><tt>MESSAGEGRP</tt><dd>A ParsedKeyVal specification of a MessageGrp
-                     object.  The default depends on how MPQC was compiled.
-                     See the MessageGrp class documentation for more
-                     information.
-
-  <dt><tt>MEMORYGRP</tt><dd>A ParsedKeyVal specification of a MemoryGrp
-                     object.  The default depends on how MPQC was compiled
-                     and the MessageGrp in use.
-
-  <dt><tt>THREADGRP</tt><dd>A ParsedKeyVal specification of a ThreadGrp
-                     object.  The default depends on how MPQC was compiled.
-
-  <dt><tt>INTEGRAL</tt><dd>A ParsedKeyVal specification of an Integral
-                object. The default is IntegralV3. Note that some
-                MolecularEnergy specializations require specific choices
-                of Integral specializations and may not work with IntegralV3.
-
+  <dt><tt>\%MPQC%</tt><dd>The MPQC program to run.
+  <dt><tt>\%INPUT%</tt><dd>The input filename.
+  <dt><tt>\%OUTPUT%</tt><dd>The output filename.
+  <dt><tt>\%NPROC%</tt><dd>The number of processes to start.
+  <dt><tt>\%NODEFILE%</tt><dd>The name of a file containing the node names.
+  <dt><tt>\%NODELIST%</tt><dd>A comma separated list of node names.
 </dl>
 
-By default, MPQC tries to find library files first in the <tt>lib</tt>
-subdirectory of the installation directory and then the source code
-directory.  If the library files cannot be found, MPQC must be notified of
-the new location with the environmental variable <tt>SCLIBDIR</tt>.
+For these last two, if they are contained within square brackets
+and a substitution is not available, then everything within the
+the brackets is removed.
 
-For example, if you need to run MPQC on a machine that doesn't have the
-source code distribution in the same place as it was located on the machine
-on which MPQC is compiled you must do something like the following on the
-machine with the source code:
-
+This argument will launch MPI jobs giving mpirun a nodefile.
 <pre>
-cd mpqc/lib
-tar cvf ../sclib.tar basis atominfo.kv
+  --launch "mpirun [-hf %NODEFILE%] -n %NPROC% %MPQC% -o %OUTPUT% %INPUT%"
 </pre>
 
-Then transfer <tt>sclib.tar</tt> to the machine on which you want to run MPQC
-and do something like
-
+This argument will launch MPI jobs giving mpirun list of hosts on the
+command line.
 <pre>
-mkdir ~/sclib
-cd ~/sclib
-tar xvf ../sclib.tar
-setenv SCLIBDIR ~/sclib
+  --launch "mpirun [-H %NODELIST%] -n %NPROC% %MPQC% -o %OUTPUT% %INPUT%"
 </pre>
 
-The <tt>setenv</tt> command is specific to the C-shell.  You will need to
-do what is appropriate for your shell.
+<h1>License</h1>
 
-The other three keywords specify objects.  This is done by giving a mini
-ParsedKeyVal input in a string.  The object is anonymous, that is, no
-keyword is associated with it.  Here is an example:
+mpqcrun is open-source software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your option)
+any later version.
 
-<pre>
-setenv MESSAGEGRP "<ShmMessageGrp>:(n = 4)"
-</pre>
+<h1>Warranty</h1>
 
-\section mpqcshmem Shared Memory Multiprocessor with SysV IPC
-
-By default, MPQC will run on only one CPU.  To specify more, you can give a
-ShmMessageGrp object on the command line.
-The following would run mpqc in four processes:
-<pre>
-mpqc -messagegrp "<ShmMessageGrp>:(n = 4)" input_file
-</pre>
-
-Alternately, the ShmMessageGrp object can
-be given as an environmental variable:
-<pre>
-setenv MESSAGEGRP "<ShmMessageGrp>:(n = 4)"
-mpqc input_file
-</pre>
-
-If MPQC should unexpectedly die, shared memory segments and semaphores will
-be left on the machine.  These should be promptly cleaned up or other jobs
-may be prevented from running successfully.  To see if you have any of
-these resources allocated, use the <tt>ipcs</tt> command.  The output will
-look something like:
-
-<pre>
-IPC status from /dev/kmem as of Wed Mar 13 14:42:18 1996
-T     ID     KEY        MODE       OWNER    GROUP
-Message Queues:
-Shared Memory:
-m 288800 0x00000000 --rw-------  cljanss     user
-Semaphores:
-s    390 0x00000000 --ra-------  cljanss     user
-s    391 0x00000000 --ra-------  cljanss     user
-</pre>
-
-To remove the IPC resources used by <tt>cljanss</tt> in
-the above example on IRIX, type:
-
-<pre>
-ipcrm -m 288800
-ipcrm -s 390
-ipcrm -s 391
-</pre>
-
-And on Linux, type:
-
-<pre>
-ipcrm shm 288800
-ipcrm sem 390
-ipcrm sem 391
-</pre>
-
-\section mpqcpthr Shared Memory Multiprocessor with POSIX Threads
-
-By default, MPQC will run with only one thread.  To specify more, you can
-give a PthreadThreadGrp object on the command line.  MPQC is not
-parallelized to as large an extent with threads as it is with the more
-conventional distributed memory model, so you might not get the best
-performance using this technique.  On the other the memory overhead is
-lower and no interprocess communication is needed.
-
-The following would run MPQC in four threads:
-
-<pre>
-mpqc -threadgrp "<PthreadThreadGrp>:(num_threads = 4)" input_file
-</pre>
-
-Alternately, the PthreadThreadGrp object can
-be given as an environmental variable:
-<pre>
-setenv THREADGRP "<PthreadThreadGrp>:(num_threads = 4)"
-mpqc input_file
-</pre>
-
-\section mpqcmpi Shared or Distributed Memory Multiprocessor with MPI
-
-A MPIMessageGrp object is used to run using MPI.  The number of nodes used
-is determined by the MPI run-time and is not specified as input data to
-MPIMessageGrp.
-
-<pre>
-mpqc -messagegrp "<MPIMessageGrp>:()" input_file
-</pre>
-
-Alternately, the MPIMessageGrp object can
-be given as an environmental variable:
-<pre>
-setenv MESSAGEGRP "<MPIMessageGrp>:()"
-mpqc input_file
-</pre>
-
-Usually, a special command is needed to start MPI jobs; typically it is
-named <tt>mpirun</tt>.
-
-\section mpqcmp2 Special Notes for MP2 Gradients
-
-The MP2 gradient algorithm uses MemoryGrp object to access distributed
-shared memory.  The MTMPIMemoryGrp class is the most efficient and reliable
-implementation of MemoryGrp.  It requires a multi-thread aware MPI
-implementation, which is still not common.  To run MP2 gradients on a
-machine with POSIX threads and an multi-thread aware MPI, use:
-
-<pre>
-mpqc -messagegrp "<MPIMessageGrp>:()" \
-     -threadgrp "<PthreadThreadGrp>:()" \
-     -memorygrp "<MTMPIMemoryGrp>:()" \
-     input_file
-</pre>
-
-or
-
-<pre>
-setenv MESSAGEGRP "<MPIMessageGrp>:()"
-setenv THREADGRP "<PthreadThreadGrp>:()"
-setenv MEMORYGRP "<MTMPIMemoryGrp>:()"
-mpqc input_file
-</pre>
-
-\section mpqcmp2r12 Special Notes for MP2-R12 energies
-
-<p>
-<b>Distributed Memory</b>
-
-The MP2-R12 energy algorithm is similar to the MP2 energy algorithm that uses
-MemoryGrp object to access distributed memory. Hence the MTMPIMemoryGrp is the
-recommended implementation of MemoryGrp for such computations (see \ref mpqcmp2).
-</p>
-
-<p>
-<b>Disk I/O</b>
-
-In contrast to the MP2 energy and gradient algorithms, the MP2-R12 energy algorithm
-may have to use disk to store transformed MO integrals if a single pass through
-the AO integrals is not possible due to insufficient memory. The best option in such case
-is to increase the total amount of memory available to the computation by either
-increasing the number of tasks or the amount of memory per task or both.
-
-When increasing memory further is not possible, the user has to specify which
-type of disk I/O should be used for the MP2-R12 energy algorithm. It is done through
-the <tt>r12ints</tt> keyword in input for the MBPT2_R12 object. The default choice
-is to use POSIX I/O on the node on which task 0 resides. This kind of disk I/O
-is guaranteed to work on all parallel machines, provided there's enough disk space
-on the node. However, this is hardly most efficient on machines with
-some sort of parallel I/O available.
-On machines which have an efficient implementation of MPI-IO
-the <tt>r12ints</tt> should be set instead to <tt>mpi-mem</tt>.
-This will force the MBPT2_R12
-object to use MPI-IO for disk I/O. It is user's responsibility to make sure
-that the MO integrals file resides on an MPI-IO-compatible file system.
-Hence the <tt>r12ints_file</tt> keyword, which specifies the name of the MO integrals
-file, should be set to a location which is guaranteed to work properly with MPI-IO.
-For example, on IBM SP and other IBM machines which have General Parallel File System
-(GPFS), the user should set <tt>r12ints = mpi-mem</tt> and <tt>r12ints_file</tt>
-to a file on a GPFS file system.
-</p>
-
-<p>
-<b>Integral object</b>
-<br>
-
-At the moment, MBPT2_R12 objects require specific specialization of Integral,
-IntegralCints. Thus in order to compute MP2-R12 energies, your version of MPQC
-needs to be compiled with support for IntegralCints.  A free, open-source
-library called <tt>libint</tt> is a prerequisite for IntegralCints\if html (see \ref compile)\endif.
-In order to use IntegralCints as the default Integral object,
-add <tt>-integral "<IntegralCints>:()"</tt> to the command line,
-or set environmental variable <tt>INTEGRAL</tt> to <tt>"<IntegralCints>:()"</tt>.
-</p>
+mpqcrun is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
 
 */

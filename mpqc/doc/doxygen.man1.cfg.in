@@ -372,7 +372,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = mpqc.man.dox @top_srcdir@/src/bin/scls/scls.dox @top_srcdir@/src/bin/scpr/scpr.dox @top_srcdir@/src/bin/molrender/molrender.dox @top_srcdir@/bin
+INPUT                  = mpqc.man.dox @top_srcdir@/src/bin/mpqc/mpqcrun.dox @top_srcdir@/src/bin/scls/scls.dox @top_srcdir@/src/bin/scpr/scpr.dox @top_srcdir@/src/bin/molrender/molrender.dox @top_srcdir@/bin
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 

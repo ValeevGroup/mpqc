@@ -45,7 +45,7 @@ init_dmt(centers_t *centers)
   nshtr = nshell * (nshell+1) / 2;
 
   shellmap = (int *) malloc(sizeof(int)*nshell);
-  bzero(shellmap,sizeof(int)*nshell);
+  memset(shellmap,'\0',sizeof(int)*nshell);
 
   for (i=0; i < nshell; i++) shellmap[i] = INT_SH_NFUNC(centers,i);
 

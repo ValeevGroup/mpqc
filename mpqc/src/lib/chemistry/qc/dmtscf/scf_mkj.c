@@ -88,7 +88,7 @@ FILE *outfile;
     return -1;
   }
 
-  bzero(gtmp,sizeof(double)*scf_info->nbatri);
+  memset(gtmp,'\0',sizeof(double)*scf_info->nbatri);
 
  /* form shnfunc array */
 

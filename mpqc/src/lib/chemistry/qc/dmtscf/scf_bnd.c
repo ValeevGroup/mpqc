@@ -39,7 +39,7 @@ double *intbuf;
     return -1;
   }
 
-  bzero(scf_bnd_Qvec,sizeof(signed char)*nsht);
+  memset(scf_bnd_Qvec,'\0',sizeof(signed char)*nsht);
 
   compute_Q(cs1,intbuf);
 

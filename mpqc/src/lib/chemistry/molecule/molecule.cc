@@ -4,6 +4,8 @@
 #endif
 
 #include <math.h>
+#include <string.h>
+
 #include "molecule.h"
 #include "localdef.h"
 #include <math/scmat/local.h>
@@ -495,8 +497,8 @@ mol_transform_to_principal_axes(Molecule& mol)
   for (int i=0; i < 3; i++) {
     inert[i] = new double[3];
     evecs[i] = new double[3];
-    bzero(inert[i],sizeof(double)*3);
-    bzero(evecs[i],sizeof(double)*3);
+    memset(inert[i],'\0',sizeof(double)*3);
+    memset(evecs[i],'\0',sizeof(double)*3);
   }
 
   AtomicCenter ac;

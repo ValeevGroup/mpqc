@@ -39,12 +39,6 @@
 
 //////////////////////////////////////////////////////////////////////
 
-#if defined(I860)
-extern "C" void bzero(void*,int);
-#endif
-
-//////////////////////////////////////////////////////////////////////
-
 SavableState_REF_def(SimpleCo);
 
 #define CLASSNAME SimpleCo
@@ -69,7 +63,7 @@ SimpleCo::SimpleCo(int na, const char *re) :
   IntCoor(re),
   natoms_(na), atoms(0)
 {
-  atoms=new int[na]; bzero(atoms,sizeof(int)*na);
+  atoms=new int[na]; memset(atoms,'\0',sizeof(int)*na);
 }
 
 SimpleCo::SimpleCo(KeyVal&kv,int na) :
@@ -77,7 +71,7 @@ SimpleCo::SimpleCo(KeyVal&kv,int na) :
   natoms_(na), atoms(0)
 {
   atoms=new int[na];
-  bzero(atoms,sizeof(int)*na);
+  memset(atoms,'\0',sizeof(int)*na);
 
   label_=kv.pcharvalue(0);
   for (int i=0; i<na; i++) {

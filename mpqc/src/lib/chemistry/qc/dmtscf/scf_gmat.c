@@ -384,7 +384,7 @@ double **gmato;
     return -1;
   }
 
-  bzero(*gmat,sizeof(double)*scf_info->nbatri);
+  memset(*gmat,'\0',sizeof(double)*scf_info->nbatri);
 
   if (scf_info->iopen) {
     (*gmato) = (double *) malloc(sizeof(double)*scf_info->nbatri);
@@ -399,7 +399,7 @@ double **gmato;
       return -1;
     }
 
-  bzero(*gmato,sizeof(double)*scf_info->nbatri);
+  memset(*gmato,'\0',sizeof(double)*scf_info->nbatri);
   }
 
   return 0;

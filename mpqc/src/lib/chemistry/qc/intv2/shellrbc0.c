@@ -1,5 +1,8 @@
 /* $Log$
- * Revision 1.3  1994/08/26 22:45:47  etseidl
+ * Revision 1.4  1994/10/13 22:26:42  etseidl
+ * replace bzero with memset
+ *
+ * Revision 1.3  1994/08/26  22:45:47  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -52,7 +55,7 @@ int _root;
     if(rbcast0_test_pointer(_type,_root,sizeof(double *))!=NULL) {
       _shell->exp = (double *) malloc(sizeof(double )*_shell->nprim);
       sgen_chkmalloc(_shell->exp);
-      bzero(_shell->exp,sizeof(double )*_shell->nprim);
+      memset(_shell->exp,'\0',sizeof(double )*_shell->nprim);
       rbcast0_double((_shell->exp),_type,_root,
         sizeof(double)*_shell->nprim);
       }
@@ -65,7 +68,7 @@ int _root;
       _shell->type = 
         (shell_type_t *) malloc(sizeof(shell_type_t )*_shell->ncon);
       sgen_chkmalloc(_shell->type);
-      bzero(_shell->type,sizeof(shell_type_t )*_shell->ncon);
+      memset(_shell->type,'\0',sizeof(shell_type_t )*_shell->ncon);
       for (i=0; i<_shell->ncon; i++)  {
         rbcast0_shell_type(&(_shell->type[i]),_type,_root);
         }
@@ -78,13 +81,13 @@ int _root;
     if(rbcast0_test_pointer(_type,_root,sizeof(double **))!=NULL) {
       _shell->coef = (double **) malloc(sizeof(double *)*_shell->ncon);
       sgen_chkmalloc(_shell->coef);
-      bzero(_shell->coef,sizeof(double *)*_shell->ncon);
+      memset(_shell->coef,'\0',sizeof(double *)*_shell->ncon);
       for (i=0; i<_shell->ncon; i++)  {
         if(_shell->nprim!=0) {
           if(rbcast0_test_pointer(_type,_root,sizeof(double *))!=NULL) {
             _shell->coef[i] = (double *) malloc(sizeof(double )*_shell->nprim);
             sgen_chkmalloc(_shell->coef[i]);
-            bzero(_shell->coef[i],sizeof(double )*_shell->nprim);
+            memset(_shell->coef[i],'\0',sizeof(double )*_shell->nprim);
             rbcast0_double((_shell->coef[i]),_type,_root,
               sizeof(double)*_shell->nprim);
             }
@@ -102,13 +105,13 @@ int _root;
     if(rbcast0_test_pointer(_type,_root,sizeof(double **))!=NULL) {
       _shell->norm = (double **) malloc(sizeof(double *)*_shell->ncon);
       sgen_chkmalloc(_shell->norm);
-      bzero(_shell->norm,sizeof(double *)*_shell->ncon);
+      memset(_shell->norm,'\0',sizeof(double *)*_shell->ncon);
       for (i=0; i<_shell->ncon; i++)  {
         if((nfunc=INT_NCART(_shell->type[i].am))!=0) {
           if(rbcast0_test_pointer(_type,_root,sizeof(double *))!=NULL) {
             _shell->norm[i] = (double *) malloc(sizeof(double )*nfunc);
             sgen_chkmalloc(_shell->norm[i]);
-            bzero(_shell->norm[i],sizeof(double )*nfunc);
+            memset(_shell->norm[i],'\0',sizeof(double )*nfunc);
             rbcast0_double((_shell->norm[i]),_type,_root,sizeof(double)*nfunc);
             }
           }

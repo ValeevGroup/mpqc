@@ -17,10 +17,6 @@ extern "C" {
 #include <comm/picl/picl.h>
 #include <comm/picl/ext/piclext.h>
 #include <util/misc/libmisc.h>
-
-#if defined(I860) || defined(SGI)
-void bzero(void*,int);
-#endif
 };
 
 #include <util/keyval/keyval.h>
@@ -517,7 +513,7 @@ init_dmt(centers_t *centers, scf_struct_t *scf_info, sym_struct_t *sym_info)
   int nshtr=nshell*(nshell+1)/2;
 
   int *shellmap = new int[nshell];
-  bzero(shellmap,sizeof(int)*nshell);
+  memset(shellmap,'\0',sizeof(int)*nshell);
 
   for (int i=0; i < centers->nshell ; i++)
     shellmap[i] = INT_SH_NFUNC(centers,i);

@@ -1,5 +1,8 @@
 /* $Log$
- * Revision 1.3  1994/08/26 22:45:48  etseidl
+ * Revision 1.4  1994/10/13 22:26:44  etseidl
+ * replace bzero with memset
+ *
+ * Revision 1.3  1994/08/26  22:45:48  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -51,7 +54,7 @@ int _from;
   if(_shell->nprim!=0) {
     if(recv0_test_pointer(_type,_from,sizeof(double *))!=NULL) {
       _shell->exp = (double *) malloc(sizeof(double )*_shell->nprim);
-      bzero(_shell->exp,sizeof(double )*_shell->nprim);
+      memset(_shell->exp,'\0',sizeof(double )*_shell->nprim);
       recv0_double((_shell->exp),_type,_from,
         sizeof(double)*_shell->nprim);
       }
@@ -63,7 +66,7 @@ int _from;
     if(recv0_test_pointer(_type,_from,sizeof(shell_type_t *))!=NULL) {
       _shell->type = 
         (shell_type_t *) malloc(sizeof(shell_type_t )*_shell->ncon);
-      bzero(_shell->type,sizeof(shell_type_t )*_shell->ncon);
+      memset(_shell->type,'\0',sizeof(shell_type_t )*_shell->ncon);
       for (i=0; i<_shell->ncon; i++)  {
         recv0_shell_type(&(_shell->type[i]),_type,_from);
         }
@@ -75,12 +78,12 @@ int _from;
   if(_shell->ncon!=0) {
     if(recv0_test_pointer(_type,_from,sizeof(double **))!=NULL) {
       _shell->coef = (double **) malloc(sizeof(double *)*_shell->ncon);
-      bzero(_shell->coef,sizeof(double *)*_shell->ncon);
+      memset(_shell->coef,'\0',sizeof(double *)*_shell->ncon);
       for (i=0; i<_shell->ncon; i++)  {
         if(_shell->nprim!=0) {
           if(recv0_test_pointer(_type,_from,sizeof(double *))!=NULL) {
             _shell->coef[i] = (double *) malloc(sizeof(double )*_shell->nprim);
-            bzero(_shell->coef[i],sizeof(double )*_shell->nprim);
+            memset(_shell->coef[i],'\0',sizeof(double )*_shell->nprim);
             recv0_double((_shell->coef[i]),_type,_from,
               sizeof(double)*_shell->nprim);
             }
@@ -97,12 +100,12 @@ int _from;
   if(_shell->ncon!=0) {
     if(recv0_test_pointer(_type,_from,sizeof(double **))!=NULL) {
       _shell->norm = (double **) malloc(sizeof(double *)*_shell->ncon);
-      bzero(_shell->norm,sizeof(double *)*_shell->ncon);
+      memset(_shell->norm,'\0',sizeof(double *)*_shell->ncon);
       for (i=0; i<_shell->ncon; i++)  {
         if((nfunc=INT_NCART(_shell->type[i].am))!=0) {
           if(recv0_test_pointer(_type,_from,sizeof(double *))!=NULL) {
             _shell->norm[i] = (double *) malloc(sizeof(double )*nfunc);
-            bzero(_shell->norm[i],sizeof(double )*nfunc);
+            memset(_shell->norm[i],'\0',sizeof(double )*nfunc);
             recv0_double((_shell->norm[i]),_type,_from,sizeof(double)*nfunc);
             }
           }

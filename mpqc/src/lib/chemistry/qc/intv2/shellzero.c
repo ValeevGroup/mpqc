@@ -1,5 +1,8 @@
 /* $Log$
- * Revision 1.3  1994/08/26 22:45:53  etseidl
+ * Revision 1.4  1994/10/13 22:26:45  etseidl
+ * replace bzero with memset
+ *
+ * Revision 1.3  1994/08/26  22:45:53  etseidl
  * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
  * fread/fwrite modules
  *
@@ -40,7 +43,7 @@ shell_t *_shell;
 
   if(_shell->nprim!=0) {
     if(_shell->exp!=NULL) {
-      bzero(_shell->exp,sizeof(double)*_shell->nprim);
+      memset(_shell->exp,'\0',sizeof(double)*_shell->nprim);
       }
     }
 
@@ -57,7 +60,7 @@ shell_t *_shell;
       for (i=0; i<_shell->ncon; i++)  {
         if(_shell->nprim!=0) {
           if(_shell->coef[i]!=NULL) {
-            bzero(_shell->coef[i],sizeof(double)*_shell->nprim);
+            memset(_shell->coef[i],'\0',sizeof(double)*_shell->nprim);
             }
           }
         }
@@ -70,7 +73,7 @@ shell_t *_shell;
       for (i=0; i<_shell->ncon; i++)  {
         if((nfunc=INT_NCART(_shell->type[i].am))!=0) {
           if(_shell->norm[i]!=NULL) {
-            bzero(_shell->norm[i],sizeof(double)*nfunc);
+            memset(_shell->norm[i],'\0',sizeof(double)*nfunc);
             }
           }
         }

@@ -1,14 +1,15 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:52:59  etseidl
- * Initial revision
+ * Revision 1.2  1994/08/26 22:47:59  etseidl
+ * get rid of rcsids
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:00  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.1  1992/06/17  21:29:23  jannsen
  * moved from libdmt/matrix.web
  *
  * */
-
-static char rcsid[]="$Id$";
 
 #include <stdio.h>
 #include <tmpl.h>

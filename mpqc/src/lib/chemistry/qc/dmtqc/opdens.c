@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:52:59  etseidl
- * Initial revision
+ * Revision 1.2  1994/08/26 22:48:00  etseidl
+ * get rid of rcsids
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:00  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.2  1992/06/17  21:37:21  jannsen
  * cleaned up for saber-c and converted to ngl loops
@@ -15,8 +18,6 @@
  * Revision 1.1  1992/02/13  00:46:55  seidl
  * Initial revision
  * */
-
-static char rcsid[]="$Id$";
 
 #include <stdio.h>
 #include <tmpl.h>

@@ -397,8 +397,8 @@ opt2v2lb(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     fprintf(outfile,"Memory allocated: %i\n", mem_alloc);
     fprintf(outfile,"Memory used     : %lf\n", A*ni*ni+B*ni+C);
     if (A*ni*ni + B*ni +C > mem_alloc) {
-      fprintf(outfile,"Problems with memory allocation: 
-                       Using more memory than allocated\n");
+      fprintf(outfile,"Problems with memory allocation: "
+                       "Using more memory than allocated\n");
       abort();
       }
     }

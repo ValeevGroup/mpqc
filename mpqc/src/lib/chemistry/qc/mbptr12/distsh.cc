@@ -169,7 +169,7 @@ DistShellPairR12::serve_tasks()
   for (S=0; S<nsh1; S++) {
     int Rmax = (bs1_eq_bs2_ ? S : nsh2-1);
     for (R=0; R<=Rmax; R++) {
-      cost[index] = bs1_->shell(S).nfunction()*bs1_->shell(R).nfunction();
+      cost[index] = bs1_->shell(S).nfunction()*bs2_->shell(R).nfunction();
       Svec[index] = S;
       Rvec[index] = R;
       Ivec[index] = index;

@@ -186,9 +186,7 @@ R12A_GRT_12Qtr::run()
   }
 
   // Assuming all basis sets are the same (bs1_eq_bs2 and bs3_eq_bs4)
-  canonical_aaaa c4(bs1_,bs2_,bs3_,bs4_);
-  Ref<GPetite4<canonical_aaaa> > p4list
-    = new GPetite4<canonical_aaaa>(bs1_,bs2_,bs3_,bs4_,c4);
+  Ref<GenPetite4> p4list = construct_gpetite(bs1_,bs2_,bs3_,bs4_);
 
 #if FAST_BUT_WRONG
   for(te_type=0;te_type<num_te_types;te_type++) {

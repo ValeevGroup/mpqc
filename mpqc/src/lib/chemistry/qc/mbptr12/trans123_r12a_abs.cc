@@ -48,7 +48,7 @@ extern BiggestContribs biggest_ints_1;
 #define USE_SYMMETRY 1
 #define PRINT1Q 0
 #define PRINT2Q 0
-#define PRINT_NUM_TE_TYPES 4
+#define PRINT_NUM_TE_TYPES 1
 #define PRINT_BIGGEST_INTS_NUM_TE_TYPES 1
 
 R12A_ABS_123Qtr::R12A_ABS_123Qtr(int mythread_a, int nthread_a,
@@ -176,9 +176,7 @@ R12A_ABS_123Qtr::run()
   }
 
   // Assuming bs1_eq_bs2
-  canonical_aabc c4(bs1_,bs2_,bs3_,bs4_);
-  Ref<GPetite4<canonical_aabc> > p4list
-    = new GPetite4<canonical_aabc>(bs1_,bs2_,bs3_,bs4_,c4);
+  Ref<GenPetite4> p4list = construct_gpetite(bs1_,bs2_,bs3_,bs4_);
 
   R = 0;
   S = 0;

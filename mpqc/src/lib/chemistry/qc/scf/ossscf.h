@@ -78,8 +78,6 @@ class OSSSCF: public SCF {
 
   protected:
     // these are temporary data, so they should not be checkpointed
-    RefTwoBodyInt tbi_;
-
     RefSymmSCMatrix cl_dens_;
     RefSymmSCMatrix cl_dens_diff_;
     RefSymmSCMatrix cl_gmat_;

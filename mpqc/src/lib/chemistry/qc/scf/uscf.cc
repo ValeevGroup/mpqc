@@ -612,9 +612,7 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
 void
 UnrestrictedSCF::init_vector()
 {
-  // initialize the two electron integral classes
-  tbi_ = integral()->electron_repulsion();
-  tbi_->set_integral_storage(integral()->storage_unused());
+  init_threads();
 
   // allocate storage for other temp matrices
   densa_ = hcore_.clone();
@@ -653,7 +651,7 @@ UnrestrictedSCF::init_vector()
 void
 UnrestrictedSCF::done_vector()
 {
-  tbi_=0;
+  done_threads();
   
   hcore_ = 0;
   gmata_ = 0;

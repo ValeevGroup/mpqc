@@ -153,11 +153,92 @@ TCHF::ao_fock(double accuracy)
     
     delete[] pmaxb;
     
-    LocalTCContribution lclc(gmata, pmata, gmatb, pmatb,
-                             kmata, opmata, kmatb, opmatb);
-    LocalGBuild<LocalTCContribution>
-      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
-    gb.run();
+//      LocalTCContribution lclc(gmata, pmata, gmatb, pmatb,
+//                               kmata, opmata, kmatb, opmatb);
+//      LocalGBuild<LocalTCContribution>
+//        gb(lclc, tbi_, pl, basis(), scf_grp_, pmax,
+//           desired_value_accuracy()/100.0);
+//      gb.run();
+    int nthread = threadgrp_->nthread();
+    LocalGBuild<LocalTCContribution> **gblds =
+      new LocalGBuild<LocalTCContribution>*[nthread];
+    LocalTCContribution **conts = new LocalTCContribution*[nthread];
+    
+    double **gmatas = new double*[nthread];
+    gmatas[0] = gmata;
+    double **gmatbs = new double*[nthread];
+    gmatbs[0] = gmatb;
+    double **kmatas = new double*[nthread];
+    kmatas[0] = kmata;
+    double **kmatbs = new double*[nthread];
+    kmatbs[0] = kmatb;
+    
+    RefGaussianBasisSet bs = basis();
+    int ntri = i_offset(bs->nbasis());
+
+    for (i=0; i < nthread; i++) {
+      if (i) {
+        gmatas[i] = new double[ntri];
+        memset(gmatas[i], 0, sizeof(double)*ntri);
+        gmatbs[i] = new double[ntri];
+        memset(gmatbs[i], 0, sizeof(double)*ntri);
+        kmatas[i] = new double[ntri];
+        memset(kmatas[i], 0, sizeof(double)*ntri);
+        kmatbs[i] = new double[ntri];
+        memset(kmatbs[i], 0, sizeof(double)*ntri);
+      }
+      conts[i] = new LocalTCContribution(gmatas[i], pmata, gmatbs[i], pmatb,
+                                         kmatas[i], opmata, kmatbs[i], opmatb);
+      gblds[i] = new LocalGBuild<LocalTCContribution>(*conts[i], tbis_[i],
+        pl, bs, scf_grp_, pmax, desired_value_accuracy()/100.0, nthread, i
+        );
+
+      threadgrp_->add_thread(i, gblds[i]);
+    }
+
+    tim_enter("start thread");
+    if (threadgrp_->start_threads() < 0) {
+      cerr << node0 << indent
+           << "TCHF: error starting threads" << endl;
+      abort();
+    }
+    tim_exit("start thread");
+
+    tim_enter("stop thread");
+    if (threadgrp_->wait_threads() < 0) {
+      cerr << node0 << indent
+           << "TCHF: error waiting for threads" << endl;
+      abort();
+    }
+    tim_exit("stop thread");
+      
+    double tnint=0;
+    for (i=0; i < nthread; i++) {
+      tnint += gblds[i]->tnint;
+
+      if (i) {
+        for (int j=0; j < ntri; j++) {
+          gmata[j] += gmatas[i][j];
+          gmatb[j] += gmatbs[i][j];
+          kmata[j] += kmatas[i][j];
+          kmatb[j] += kmatbs[i][j];
+        }
+        delete[] gmatas[i];
+        delete[] gmatbs[i];
+        delete[] kmatas[i];
+        delete[] kmatbs[i];
+      }
+
+      delete gblds[i];
+      delete conts[i];
+    }
+
+    delete[] gmatas;
+    delete[] gmatbs;
+    delete[] kmatas;
+    delete[] kmatbs;
+    delete[] gblds;
+    delete[] conts;
 
     delete[] pmax;
 
@@ -284,8 +365,8 @@ TCHF::two_body_energy(double &ec, double &ex)
     tim_exit("local data");
 
     // initialize the two electron integral classes
-    tbi_ = integral()->electron_repulsion();
-    tbi_->set_integral_storage(0);
+    RefTwoBodyInt tbi = integral()->electron_repulsion();
+    tbi->set_integral_storage(0);
 
     tim_enter("init pmax");
     signed char * pmax = init_pmax(pmata);
@@ -293,12 +374,11 @@ TCHF::two_body_energy(double &ec, double &ex)
   
     LocalTCEnergyContribution lclc(pmata,pmatb,spmata,spmatb);
     LocalGBuild<LocalTCEnergyContribution>
-      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
+      gb(lclc, tbi, pl, basis(), scf_grp_, pmax,
+         desired_value_accuracy()/100.0);
     gb.run();
 
     delete[] pmax;
-
-    tbi_ = 0;
 
     printf("%20.10f %20.10f\n", lclc.eca, lclc.exa);
     printf("%20.10f %20.10f\n", lclc.ecb, lclc.exb);

@@ -57,10 +57,6 @@ class CLHF: public CLSCF {
     int gradient_implemented() const;
 
   protected:
-    RefTwoBodyInt* tbis_; // a two body integral evaluator for each thread
-
-    void init_vector();
-    void done_vector();
     void ao_fock(double accuracy);
     void two_body_deriv(double*);
 };

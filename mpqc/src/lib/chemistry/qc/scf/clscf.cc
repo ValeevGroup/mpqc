@@ -361,15 +361,15 @@ CLSCF::symmetry_changed()
 void
 CLSCF::init_vector()
 {
+  init_threads();
+
   // initialize the two electron integral classes
-  tbi_ = integral()->electron_repulsion();
   cout << node0 << indent
        << "integral intermediate storage = " << integral()->storage_used()
        << " bytes" << endl;
   cout << node0 << indent
        << "integral cache = " << integral()->storage_unused()
        << " bytes" << endl;
-  tbi_->set_integral_storage(integral()->storage_unused());
 
   // allocate storage for other temp matrices
   cl_dens_ = hcore_.clone();
@@ -398,13 +398,13 @@ CLSCF::init_vector()
 void
 CLSCF::done_vector()
 {
+  done_threads();
+
   if (accumddh_.nonnull()) {
       accumddh_->print_summary();
       accumddh_->done();
   }
 
-  tbi_=0;
-  
   cl_gmat_ = 0;
   cl_dens_ = 0;
   cl_dens_diff_ = 0;

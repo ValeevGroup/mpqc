@@ -200,10 +200,64 @@ CLKS::ao_fock(double accuracy)
     signed char * pmax = init_pmax(pmat);
     tim_exit("init pmax");
   
-    LocalCLKSContribution lclc(gmat, pmat, functional_->a0());
-    LocalGBuild<LocalCLKSContribution>
-      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
-    gb.run();
+//      LocalCLKSContribution lclc(gmat, pmat, functional_->a0());
+//      LocalGBuild<LocalCLKSContribution>
+//        gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
+//      gb.run();
+    int i;
+    int nthread = threadgrp_->nthread();
+    LocalGBuild<LocalCLKSContribution> **gblds =
+      new LocalGBuild<LocalCLKSContribution>*[nthread];
+    LocalCLKSContribution **conts = new LocalCLKSContribution*[nthread];
+    
+    double **gmats = new double*[nthread];
+    gmats[0] = gmat;
+    
+    RefGaussianBasisSet bs = basis();
+    int ntri = i_offset(bs->nbasis());
+
+    for (i=0; i < nthread; i++) {
+      if (i) {
+        gmats[i] = new double[ntri];
+        memset(gmats[i], 0, sizeof(double)*ntri);
+      }
+      conts[i] = new LocalCLKSContribution(gmats[i], pmat, functional_->a0());
+      gblds[i] = new LocalGBuild<LocalCLKSContribution>(*conts[i], tbis_[i],
+        pl, bs, scf_grp_, pmax, desired_value_accuracy()/100.0, nthread, i
+        );
+
+      threadgrp_->add_thread(i, gblds[i]);
+    }
+
+    tim_enter("start thread");
+    if (threadgrp_->start_threads() < 0) {
+      cerr << node0 << indent
+           << "CLKS: error starting threads" << endl;
+      abort();
+    }
+    tim_exit("start thread");
+
+    tim_enter("stop thread");
+    if (threadgrp_->wait_threads() < 0) {
+      cerr << node0 << indent
+           << "CLKS: error waiting for threads" << endl;
+      abort();
+    }
+    tim_exit("stop thread");
+      
+    for (i=0; i < nthread; i++) {
+      if (i) {
+        for (int j=0; j < ntri; j++)
+          gmat[j] += gmats[i][j];
+        delete[] gmats[i];
+      }
+      delete gblds[i];
+      delete conts[i];
+    }
+
+    delete[] gmats;
+    delete[] gblds;
+    delete[] conts;
 
     delete[] pmax;
 
@@ -277,8 +331,8 @@ CLKS::two_body_energy(double &ec, double &ex)
     tim_exit("local data");
 
     // initialize the two electron integral classes
-    tbi_ = integral()->electron_repulsion();
-    tbi_->set_integral_storage(0);
+    RefTwoBodyInt tbi = integral()->electron_repulsion();
+    tbi->set_integral_storage(0);
 
     tim_enter("init pmax");
     signed char * pmax = init_pmax(pmat);
@@ -287,12 +341,11 @@ CLKS::two_body_energy(double &ec, double &ex)
     LocalCLKSEnergyContribution lclc(pmat, functional_->a0());
     RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalCLKSEnergyContribution>
-      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
+      gb(lclc, tbi, pl, basis(), scf_grp_, pmax,
+         desired_value_accuracy()/100.0);
     gb.run();
 
     delete[] pmax;
-
-    tbi_ = 0;
 
     ec = lclc.ec;
     ex = lclc.ex;

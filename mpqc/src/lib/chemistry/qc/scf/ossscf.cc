@@ -442,9 +442,7 @@ OSSSCF::symmetry_changed()
 void
 OSSSCF::init_vector()
 {
-  // initialize the two electron integral classes
-  tbi_ = integral()->electron_repulsion();
-  tbi_->set_integral_storage(integral()->storage_unused());
+  init_threads();
 
   // allocate storage for other temp matrices
   cl_dens_ = hcore_.clone();
@@ -494,7 +492,7 @@ OSSSCF::init_vector()
 void
 OSSSCF::done_vector()
 {
-  tbi_=0;
+  done_threads();
   
   cl_gmat_ = 0;
   cl_dens_ = 0;

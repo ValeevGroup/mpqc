@@ -248,10 +248,77 @@ HSOSKS::ao_fock(double accuracy)
 
     signed char * pmax = init_pmax(pmat);
   
-    LocalHSOSKSContribution lclc(gmat, pmat, gmato, pmato, functional_->a0());
-    LocalGBuild<LocalHSOSKSContribution>
-      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
-    gb.run();
+//      LocalHSOSKSContribution lclc(gmat, pmat, gmato, pmato, functional_->a0());
+//      LocalGBuild<LocalHSOSKSContribution>
+//        gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
+//      gb.run();
+    int i;
+    int nthread = threadgrp_->nthread();
+    LocalGBuild<LocalHSOSKSContribution> **gblds =
+      new LocalGBuild<LocalHSOSKSContribution>*[nthread];
+    LocalHSOSKSContribution **conts = new LocalHSOSKSContribution*[nthread];
+    
+    double **gmats = new double*[nthread];
+    gmats[0] = gmat;
+    double **gmatos = new double*[nthread];
+    gmatos[0] = gmato;
+    
+    RefGaussianBasisSet bs = basis();
+    int ntri = i_offset(bs->nbasis());
+
+    for (i=0; i < nthread; i++) {
+      if (i) {
+        gmats[i] = new double[ntri];
+        memset(gmats[i], 0, sizeof(double)*ntri);
+        gmatos[i] = new double[ntri];
+        memset(gmatos[i], 0, sizeof(double)*ntri);
+      }
+      conts[i] = new LocalHSOSKSContribution(gmats[i], pmat, gmatos[i], pmato,
+                                             functional_->a0());
+      gblds[i] = new LocalGBuild<LocalHSOSKSContribution>(*conts[i], tbis_[i],
+        pl, bs, scf_grp_, pmax, desired_value_accuracy()/100.0, nthread, i
+        );
+
+      threadgrp_->add_thread(i, gblds[i]);
+    }
+
+    tim_enter("start thread");
+    if (threadgrp_->start_threads() < 0) {
+      cerr << node0 << indent
+           << "HSOSKS: error starting threads" << endl;
+      abort();
+    }
+    tim_exit("start thread");
+
+    tim_enter("stop thread");
+    if (threadgrp_->wait_threads() < 0) {
+      cerr << node0 << indent
+           << "HSOSKS: error waiting for threads" << endl;
+      abort();
+    }
+    tim_exit("stop thread");
+      
+    double tnint=0;
+    for (i=0; i < nthread; i++) {
+      tnint += gblds[i]->tnint;
+
+      if (i) {
+        for (int j=0; j < ntri; j++) {
+          gmat[j] += gmats[i][j];
+          gmato[j] += gmatos[i][j];
+        }
+        delete[] gmats[i];
+        delete[] gmatos[i];
+      }
+
+      delete gblds[i];
+      delete conts[i];
+    }
+
+    delete[] gmats;
+    delete[] gmatos;
+    delete[] gblds;
+    delete[] conts;
 
     delete[] pmax;
 
@@ -350,21 +417,19 @@ HSOSKS::two_body_energy(double &ec, double &ex)
     tim_exit("local data");
 
     // initialize the two electron integral classes
-    tbi_ = integral()->electron_repulsion();
-    tbi_->set_integral_storage(0);
+    RefTwoBodyInt tbi = integral()->electron_repulsion();
+    tbi->set_integral_storage(0);
 
     signed char * pmax = init_pmax(dpmat);
   
     LocalHSOSKSEnergyContribution lclc(dpmat, spmat, functional_->a0());
     RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalHSOSKSEnergyContribution>
-      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax,
+      gb(lclc, tbi, pl, basis(), scf_grp_, pmax,
          desired_value_accuracy()/100.0);
     gb.run();
 
     delete[] pmax;
-
-    tbi_ = 0;
 
     ec = lclc.ec;
     ex = lclc.ex;

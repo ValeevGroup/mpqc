@@ -650,6 +650,31 @@ SCF::two_body_energy(double &ec, double &ex)
 
 /////////////////////////////////////////////////////////////////////////////
 
+void
+SCF::init_threads()
+{
+  int nthread = threadgrp_->nthread();
+  int int_store = integral()->storage_unused()/nthread;
+  
+  // initialize the two electron integral classes
+  tbis_ = new RefTwoBodyInt[nthread];
+  for (int i=0; i < nthread; i++) {
+    tbis_[i] = integral()->electron_repulsion();
+    tbis_[i]->set_integral_storage(int_store);
+  }
+
+}
+
+void
+SCF::done_threads()
+{
+  for (int i=0; i < threadgrp_->nthread(); i++) tbis_[i] = 0;
+  delete[] tbis_;
+  tbis_ = 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 // Local Variables:
 // mode: c++
 // c-file-style: "ETS"

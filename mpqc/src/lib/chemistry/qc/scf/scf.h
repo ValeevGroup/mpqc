@@ -72,8 +72,11 @@ class SCF: public OneBodyWavefunction {
     RefMessageGrp scf_grp_;
     RefThreadGrp threadgrp_;
     int local_;
+
+    RefTwoBodyInt* tbis_; // a two body integral evaluator for each thread
+    virtual void init_threads();
+    virtual void done_threads();
     
-  protected:
     // implement the Compute::compute() function
     virtual void compute();
 

@@ -99,33 +99,6 @@ CLHF::print(ostream&o) const
 //////////////////////////////////////////////////////////////////////////////
 
 void
-CLHF::init_vector()
-{
-  CLSCF::init_vector();
-  
-  int nthread = threadgrp_->nthread();
-  int int_store = integral()->storage_unused()/nthread;
-  
-  // initialize the two electron integral classes
-  tbis_ = new RefTwoBodyInt[nthread];
-  for (int i=0; i < nthread; i++) {
-    tbis_[i] = integral()->electron_repulsion();
-    tbis_[i]->set_integral_storage(int_store);
-  }
-
-}
-
-void
-CLHF::done_vector()
-{
-  CLSCF::done_vector();
-  
-  for (int i=0; i < threadgrp_->nthread(); i++) tbis_[i] = 0;
-  delete[] tbis_;
-  tbis_ = 0;
-}
-
-void
 CLHF::ao_fock(double accuracy)
 {
   int i;
@@ -291,8 +264,8 @@ CLHF::two_body_energy(double &ec, double &ex)
     tim_exit("local data");
 
     // initialize the two electron integral classes
-    tbi_ = integral()->electron_repulsion();
-    tbi_->set_integral_storage(0);
+    RefTwoBodyInt tbi = integral()->electron_repulsion();
+    tbi->set_integral_storage(0);
 
     tim_enter("init pmax");
     signed char * pmax = init_pmax(pmat);
@@ -301,12 +274,11 @@ CLHF::two_body_energy(double &ec, double &ex)
     LocalCLHFEnergyContribution lclc(pmat);
     RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalCLHFEnergyContribution>
-      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
+      gb(lclc, tbi, pl, basis(), scf_grp_, pmax,
+         desired_value_accuracy()/100.0);
     gb.run();
 
     delete[] pmax;
-
-    tbi_ = 0;
 
     ec = lclc.ec;
     ex = lclc.ex;

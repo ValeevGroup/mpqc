@@ -981,7 +981,7 @@ sub input_string() {
         else {
             $refmethod = "HSOSHF";
         }
-        $mole = append_reference($mole,"CLHF",$charge,$mult,$memory,$orthog_method,
+        $mole = append_reference($mole,$refmethod,$charge,$mult,$memory,$orthog_method,
                                  $lindep_tol,$docc,$socc,0,"STO-3G");
     }
     elsif (! ($basis =~ /^STO/

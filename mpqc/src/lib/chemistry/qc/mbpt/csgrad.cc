@@ -268,8 +268,6 @@ MBPT2::compute_cs_grad()
     abort();
     }
 
-  escf = reference_->energy();
-
   ////////////////////////////////////////////////////////
   // Compute batch size ni for mp2 loops;
   //
@@ -322,10 +320,43 @@ MBPT2::compute_cs_grad()
          << endl;
     }
 
+  int nijmax = 0;
+  index = 0;
+  for (i=0; i<ni; i++) {
+      for (j=0; j<nocc; j++) {
+          if (index++ % nproc == me) nijmax++;
+        }
+    }
+
+  // Compute the storage remaining for the integral routines
+  int dyn_mem = compute_cs_dynamic_memory(ni,nocc_act);
+  int mem_remaining = mem_alloc - (dyn_mem + mem_static);
+  if (mem_remaining < 0) mem_remaining = 0;
+
+  cout << indent << node0
+       << scprintf("Memory available per node:      %i Bytes",mem_alloc)
+       << endl;
+  cout << indent << node0
+       << scprintf("Static memory used per node:    %i Bytes",mem_static)
+       << endl;
+  cout << indent << node0
+       << scprintf("Total memory used per node:     %i Bytes",
+                   dyn_mem+mem_static)
+       << endl;
+  cout << indent << node0
+       << scprintf("Memory required for one pass:   %i Bytes",
+                   compute_cs_dynamic_memory(nocc_act,nocc_act)+mem_static)
+       << endl;
+  cout << indent << node0
+       << scprintf("Batch size:                     %i", ni)
+       << endl;
+
   ////////////////////////////////////////////////
   // The scf vector is distributed between nodes;
   // put a copy of the scf vector on each node;
   ////////////////////////////////////////////////
+
+  escf = reference_->energy();
 
   RefSCMatrix Scf_Vec;
   RefDiagSCMatrix evalmat;
@@ -433,37 +464,6 @@ MBPT2::compute_cs_grad()
          << scprintf("node %i, begin loop over i-batches",me) << endl;
     }
   // end of debug print
-
-  int nijmax = 0;
-  index = 0;
-  for (i=0; i<ni; i++) {
-      for (j=0; j<nocc; j++) {
-          if (index++ % nproc == me) nijmax++;
-        }
-    }
-
-  // Compute the storage remaining for the integral routines
-  int dyn_mem = compute_cs_dynamic_memory(ni,nocc_act);
-  int mem_remaining = mem_alloc - (dyn_mem + mem_static);
-  if (mem_remaining < 0) mem_remaining = 0;
-
-  cout << indent << node0
-       << scprintf("Memory available per node:      %i Bytes",mem_alloc)
-       << endl;
-  cout << indent << node0
-       << scprintf("Static memory used per node:    %i Bytes",mem_static)
-       << endl;
-  cout << indent << node0
-       << scprintf("Total memory used per node:     %i Bytes",
-                   dyn_mem+mem_static)
-       << endl;
-  cout << indent << node0
-       << scprintf("Memory required for one pass:   %i Bytes",
-                   compute_cs_dynamic_memory(nocc_act,nocc_act)+mem_static)
-       << endl;
-  cout << indent << node0
-       << scprintf("Batch size:                     %i", ni)
-       << endl;
 
   // Initialize the integrals
   integral()->set_storage(mem_remaining);

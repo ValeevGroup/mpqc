@@ -193,7 +193,8 @@ NLP1::save_data_state(StateOut&s)
 RefSCVector
 NLP1::gradient()
 {
-  return _gradient;
+  RefSCVector ret = _gradient.result();
+  return ret;
 }
 
 int

@@ -79,6 +79,7 @@ sub parse_g94 {
     my $havefreq = 0;
     my $freq = [];
     my $ifreq = 0;
+    my $b3pw91energy = "";
     while (<$out>) {
         s/^ *[0-9]+:// if ($have_nodenum);
         if (/^\s*SCF Done:  E\(RHF\) =\s*$fltrx\s/) {
@@ -90,6 +91,10 @@ sub parse_g94 {
         elsif (/^\s*CCSD\(T\)\s*=\s*$fltrx/) {
             $ccsd_tenergy = $1;
             $ccsd_tenergy =~ s/[DdE]/e/;
+        }
+        elsif (/E\(RB\+HF-PW91\)\s*=\s*$fltrx/) {
+            $b3pw91energy = $1;
+            $b3pw91energy =~ s/[DdE]/e/;
         }
         elsif (/^\s*T1 Diagnostic\s*=\s*$fltrx/) {
             $t1norm = $1;
@@ -128,6 +133,7 @@ sub parse_g94 {
     }
     $self->{"scfenergy"} = $scfenergy;
     $self->{"mp2energy"} = $mp2energy;
+    $self->{"b3pw91energy"} = $b3pw91energy;
     $self->{"optconverged"} = $optconverged;
     if ($optconverged) {
         $self->{"optmolecule"} = $molecule;
@@ -145,6 +151,9 @@ sub parse_g94 {
     }
     elsif ($method eq "CCSD(T)") {
         $self->{"energy"} = $ccsd_tenergy;
+    }
+    elsif ($method eq "B3-PW91") {
+        $self->{"energy"} = $b3pw91energy;
     }
     elsif ($method eq "SCF"
            || $method eq "ROSCF") {

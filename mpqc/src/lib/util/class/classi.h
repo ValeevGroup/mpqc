@@ -65,7 +65,7 @@ CLASSNAME::require_castdown(DescribedClass*p,const char * errmsg,...)
   return t;
 }
 CLASSNAME*
-CLASSNAME::castdown(RefDescribedClass&p)
+CLASSNAME::castdown(const RefDescribedClass&p)
 {
   if (p.null()) return 0;
   return (CLASSNAME*) p->_castdown(CLASSNAME::static_class_desc());

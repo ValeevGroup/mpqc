@@ -12,7 +12,7 @@
     void* _castdown(const ClassDesc*);
     static CLASSNAME* require_castdown(DescribedClass*p,const char*,...);
     static CLASSNAME* castdown(DescribedClass*p);
-    static CLASSNAME* castdown(RefDescribedClass&p);
+    static CLASSNAME* castdown(const RefDescribedClass&p);
     static const ClassDesc* static_class_desc();
     const ClassDesc* class_desc() const;
 #ifdef HAVE_CTOR

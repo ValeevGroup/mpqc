@@ -85,15 +85,15 @@ ios&
 SCFormIO::indent(ios&o)
 {
   if (!ready_) init();
-  if (debug_) {
-      char nn[24];
-      sprintf(nn,"node %5d:",grp_->me());
-      for (int i=0; i < strlen(nn); i++) o.rdbuf()->sputc(nn[i]);
-    }
   long &skip = o.iword(skip_indent_);
   if (skip) {
       skip--;
       return o;
+    }
+  if (debug_) {
+      char nn[24];
+      sprintf(nn,"node %5d:",grp_->me());
+      for (int i=0; i < strlen(nn); i++) o.rdbuf()->sputc(nn[i]);
     }
   long n = o.iword(nindent_);
   for (int i=0; i<n; i++) o.rdbuf()->sputc(' ');

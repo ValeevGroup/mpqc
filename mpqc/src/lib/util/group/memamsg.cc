@@ -98,7 +98,7 @@ MemoryDataRequest::assign(Request r, int node,
 }
 
 const char *
-MemoryDataRequest::request_string()
+MemoryDataRequest::request_string() const
 {
   switch (request()) {
   case MemoryDataRequest::Deactivate:
@@ -117,21 +117,21 @@ MemoryDataRequest::request_string()
 }
 
 void
-MemoryDataRequest::print(const char *msg)
+MemoryDataRequest::print(const char *msg, ostream & o) const
 {
   if (msg == 0) msg = "";
 
-  cout.flush();
+  o.flush();
   if (request() == Sync) {
-      cout << scprintf("%s \"%s\" %d-%d reactivate = %d\n",
+      o << scprintf("%s \"%s\" %d-%d reactivate = %d\n",
               msg, request_string(), node(), serial_number(), reactivate());
     }
   else {
-      cout << scprintf("%s \"%s\" offset = %5d, %5d bytes, %d-%d\n",
+      o << scprintf("%s \"%s\" offset = %5d, %5d bytes, %d-%d\n",
               msg, request_string(),
               offset(), size(), node(), serial_number());
     }
-  cout.flush();
+  o.flush();
 }
 
 void

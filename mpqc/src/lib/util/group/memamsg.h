@@ -70,7 +70,7 @@ class MemoryDataRequest {
     void *data() const { return (void *) data_; }
     int nbytes() const { return sizeof(int)*NData; }
 
-    const char *request_string();
+    const char *request_string() const;
 
     MemoryDataRequest::Request request() const { return (Request) data_[0]; }
     int node() const { return data_[1]; }
@@ -83,7 +83,7 @@ class MemoryDataRequest {
 
     void operator =(const MemoryDataRequest &r);
 
-    void print(const char* msg = 0);
+    void print(const char* msg = 0, ostream & o = cout) const;
 };
 
 class MemoryDataRequestQueue {

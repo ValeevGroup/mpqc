@@ -19,16 +19,16 @@ mole: [
       )
     % Wavefunction input
     basis<GaussianBasisSet>: (
-        basisdir = "/usr/people/etseidl/basis/"
-        basisfiles = [ basis.ipv2 v2g90.ipv2 ]
+        %basisdir = "/usr/people/cljanss/src/SC/lib/"
+        %basisfiles = [ v2g90supp.ipv2 v2g90.ipv2 ]
         molecule = $..:molecule
-        name = dz
+        name = sto3g
       )
     % OneBodyWavefunction input
     % MPSCF input
     local_P = yes
     restart = no
-    projected_guess = yes
+    %projected_guess = yes
     pbasis<GaussianBasisSet>: (
         molecule = $..:molecule
         name = sto3g

@@ -33,6 +33,7 @@ NLP0::_castdown(const ClassDesc*cd)
 NLP0::NLP0():
   _value(this)
 {
+  _matrixkit = SCMatrixKit::default_matrixkit();
   _value.set_desired_accuracy(DBL_EPSILON);
 }
 

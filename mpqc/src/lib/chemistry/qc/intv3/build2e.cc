@@ -51,10 +51,10 @@ stack_alignment_check(void *ptr, const char *where)
 #  define stack_alignment_check(ptr,where)
 #endif
 
-#ifdef __i386__
+#if defined(__i386__) && defined(__GNUG__)
 //#define FIX_STACK __asm__ __volatile__("andl\t$0xfffffff8,%esp\n\t")
-#define FIX_STACK __asm__ __volatile__("andl\t$0xfffffff8,%esp\n\t"); \
-                  __asm__ __volatile__("addl\t$-4,%esp\n\t")
+#define FIX_STACK __asm__("andl\t$0xfffffff8,%esp\n\t"); \
+                  __asm__("addl\t$-4,%esp\n\t")
 //#define FIX_STACK
 #define A8 __attribute__ ((aligned (8)))
 #else

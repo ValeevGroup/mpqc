@@ -1,6 +1,31 @@
+//
+// formio.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #include <util/misc/formio.h>
-#include <util/group/message.h>
 
 #include <stdio.h> // for vsprintf
 #include <string.h>
@@ -13,8 +38,9 @@ long SCFormIO::indent_size_ = 0;
 long SCFormIO::skip_indent_ = 0;
 int SCFormIO::node_to_print_ = 0;
 int SCFormIO::debug_ = 0;
+int SCFormIO::parallel_ = 0;
+int SCFormIO::me_ = 0;
 ofstream SCFormIO::nullstream_;
-RefMessageGrp SCFormIO::grp_;
 
 char *
 SCFormIO::fileext_to_filename(const char *ext)
@@ -61,9 +87,10 @@ SCFormIO::set_debug(int n)
 }
 
 void
-SCFormIO::set_messagegrp(const RefMessageGrp& g)
+SCFormIO::init_mp(int me)
 {
-  grp_ = g;
+  me_ = me;
+  parallel_=1;
 }
   
 void
@@ -94,9 +121,9 @@ SCFormIO::indent(ios&o)
       skip--;
       return o;
     }
-  if (debug_ && grp_.nonnull()) {
+  if (debug_ && parallel_) {
       char nn[24];
-      sprintf(nn,"node %5d:",grp_->me());
+      sprintf(nn,"node %5d:",me_);
       for (int i=0; i < strlen(nn); i++) o.rdbuf()->sputc(nn[i]);
     }
   long n = o.iword(nindent_);
@@ -157,7 +184,7 @@ SCFormIO::node0(ostream& o)
   if (!ready_) init();
   
   if (!debug_ && node_to_print_ >= 0
-      && grp_.nonnull() && node_to_print_ != grp_->me())
+      && parallel_ && node_to_print_ != me_)
     return nullstream_;
 
   return o;
@@ -220,3 +247,10 @@ operator<<(ostream& o, const scprintf& s)
   o << s.str << flush;
   return o;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

@@ -14,14 +14,14 @@ capabilities with Psi energies and gradients.
 This chapter explains how to use Psi from MPQC.
 
 <ul>
-  <li> \ref works
+  <li> \ref psiworks
   <li> \ref psienv
   <li> \ref psiinp
   <li> \ref psiexenv
   <li> \ref psiwfn
 </ul>
 
-\section works How the MPQC-Psi interface works
+\section psiworks How the MPQC-Psi interface works
 
 The current version of the interface is rather slim. It is only possible to
 import energies and gradients computed with Psi into MPQC, i.e. wave functions

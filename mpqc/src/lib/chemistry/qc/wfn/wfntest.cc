@@ -37,6 +37,8 @@ using namespace std;
 // Force linkages:
 static ForceLink<HCoreWfn> fl0;
 
+#include <chemistry/molecule/linkage.h>
+
 main(int argc, char *argv[])
 {
   const char *input = (argc > 1) ? argv[1] : SRCDIR "/wfntest.kv";

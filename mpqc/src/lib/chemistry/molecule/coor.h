@@ -278,6 +278,9 @@ class MolecularCoor: public SavableState
     //texi Given an Hessian, return the inverse of that hessian.  For singular
     // matrices this should return the generalized inverse.
     virtual RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&) = 0;
+
+    //texi Returns the number of constrained coordinates.
+    virtual int nconstrained();
 };
 SavableState_REF_dec(MolecularCoor);
 
@@ -383,6 +386,7 @@ class IntMolecularCoor: public MolecularCoor
     virtual int to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
     virtual void print(SCostream& =SCostream::cout);
     virtual void print_simples(SCostream& =SCostream::cout);
+    int nconstrained();
 };
 
 /////////////////////////////////////////////////////////////////////////

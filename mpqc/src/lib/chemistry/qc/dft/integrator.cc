@@ -1646,27 +1646,28 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
   SavableState(s),
   DenIntegrator(s)
 {
-  
-  s.get(prune_grid_);
-  s.get(gridtype_);
-  s.get(user_defined_grids_);
-  s.get(npruned_partitions_);
-  s.get(dynamic_grids_);
   s.get(natomic_rows_);
   s.get(max_gridtype_);
+  s.get(prune_grid_);
+  s.get(gridtype_);
+  s.get(npruned_partitions_);
+  s.get(user_defined_grids_);
+  s.get(dynamic_grids_);
+
+  ExEnv::out() << "natomic_rows_ = " << natomic_rows_ << endl;
+  ExEnv::out() << "max_gridtype_ = " << max_gridtype_ << endl;
+  ExEnv::out() << "prune_grid_ = " << prune_grid_ << endl;
+  ExEnv::out() << "gridtype_ = " << gridtype_ << endl;
+  ExEnv::out() << "npruned_partitions_ = " << npruned_partitions_ << endl;
+  ExEnv::out() << "user_defined_grids_ = " << user_defined_grids_ << endl;
+  ExEnv::out() << "dynamic_grids_ = " << dynamic_grids_ << endl;
   
-  if (user_defined_grids_) {
-      radial_user_.restore_state(s);
-      angular_user_.restore_state(s);
-    }
-  else {
-      radial_user_ = new EulerMaclaurinRadialIntegrator;
-      angular_user_ = new LebedevLaikovIntegrator;
-    }
-  
+
+  ExEnv::out() << "In StateIn Constructor!" << endl;
   weight_ = new BeckeIntegrationWeight;
 
   int i;
+  grid_accuracy_ = new double[max_gridtype_];
   grid_accuracy_[0] = 1e-4;
   for (i=1; i<max_gridtype_; i++) grid_accuracy_[i] = grid_accuracy_[i-1]*1e-1;
 
@@ -1676,6 +1677,15 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
   for (i=0; i<natomic_rows_; i++) Alpha_coeffs_[i] = tmp + i*(npruned_partitions_-1);
   s.get_array_double(Alpha_coeffs_[0], natomic_rows_*(npruned_partitions_-1));
 
+  if (user_defined_grids_) {
+      radial_user_.restore_state(s);
+      angular_user_.restore_state(s);
+    }
+  else {
+      radial_user_ = new EulerMaclaurinRadialIntegrator;
+      angular_user_ = new LebedevLaikovIntegrator;
+    }
+
   init_default_grids();    
   set_grids();
 
@@ -1684,7 +1694,10 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
 RadialAngularIntegrator::RadialAngularIntegrator()
 {
   weight_  = new BeckeIntegrationWeight;
-
+  ExEnv::out() << "In Default Constructor" << endl;
+  radial_user_ = new EulerMaclaurinRadialIntegrator;
+  angular_user_ = new LebedevLaikovIntegrator;
+  
   init_parameters();
   init_default_grids();
   set_grids();
@@ -1704,7 +1717,8 @@ RadialAngularIntegrator::RadialAngularIntegrator(const RefKeyVal& keyval):
 
   weight_ = keyval->describedclassvalue("weight");
   if (weight_.null()) weight_ = new BeckeIntegrationWeight;
-
+  ExEnv::out() << "In RefKeyVal Constructor" << endl;
+  
   init_parameters(keyval);
   init_default_grids();
   set_grids();
@@ -1733,13 +1747,22 @@ RadialAngularIntegrator::save_data_state(StateOut& s)
   s.put(natomic_rows_);
   s.put(max_gridtype_);
   s.put(prune_grid_);
-  s.put_array_double(Alpha_coeffs_[0],natomic_rows_*(npruned_partitions_-1));
   s.put(gridtype_);
-  s.put(nr_points_[0], natomic_rows_*max_gridtype_);
-  s.put(nw_lvalue_, natomic_rows_);
+//  s.put(nr_points_[0], natomic_rows_*max_gridtype_);
+//  s.put(nw_lvalue_, natomic_rows_);
   s.put(npruned_partitions_);
   s.put(user_defined_grids_);
   s.put(dynamic_grids_);
+  s.put_array_double(Alpha_coeffs_[0],natomic_rows_*(npruned_partitions_-1));
+  
+  ExEnv::out() << "natomic_rows_ = " << natomic_rows_ << endl;
+  ExEnv::out() << "max_gridtype_ = " << max_gridtype_ << endl;
+  ExEnv::out() << "prune_grid_ = " << prune_grid_ << endl;
+  ExEnv::out() << "gridtype_ = " << gridtype_ << endl;
+  ExEnv::out() << "npruned_partitions_ = " << npruned_partitions_ << endl;
+  ExEnv::out() << "user_defined_grids_ = " << user_defined_grids_ << endl;
+  ExEnv::out() << "dynamic_grids_ = " << dynamic_grids_ << endl;
+  
 //  s.put(radial_);
 //  s.put(angular_);
 //  s.put(weight_);
@@ -1765,9 +1788,10 @@ RadialAngularIntegrator::init_parameters(void)
   user_defined_grids_ = 0;
   npruned_partitions_ = 5;
   dynamic_grids_ = 1;
-  grid_accuracy_ = new double[max_gridtype_];
-  natomic_rows_ = 5;
   max_gridtype_ = 5;
+  natomic_rows_ = 5;
+  grid_accuracy_ = new double[max_gridtype_];
+  
   int i;
   grid_accuracy_[0] = 1e-4;
   for (i=1; i<max_gridtype_; i++) grid_accuracy_[i] = grid_accuracy_[i-1]*1e-1;
@@ -1907,6 +1931,9 @@ RadialAngularIntegrator::init_pruning_coefficients(void)
 {
   // Set up Alpha arrays for pruning
   int i;
+
+  //ExEnv::out() << "npruned_partitions = " << npruned_partitions_ << endl;
+  //ExEnv::out() << "natomic_rows = " << natomic_rows_ << endl;
   int num_boundaries = npruned_partitions_-1;
   double *tmp = new double[natomic_rows_*num_boundaries];
   memset((void *)tmp, 0, sizeof(double)*natomic_rows_*num_boundaries);

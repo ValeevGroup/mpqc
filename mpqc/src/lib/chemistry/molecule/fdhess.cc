@@ -60,7 +60,7 @@ FinDispMolecularHessian::FinDispMolecularHessian(const Ref<MolecularEnergy> &e):
   only_totally_symmetric_ = 0;
   eliminate_cubic_terms_ = 1;
   do_null_displacement_ = 1;
-  disp_ = 1.0e-3;
+  disp_ = 1.0e-2;
   ndisp_ = 0;
   debug_ = 0;
   gradients_ = 0;

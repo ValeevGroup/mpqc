@@ -90,10 +90,9 @@ GRTCints::GRTCints(Integral *integral,
     target_ints_buffer_[te_type] = target_ints_buffer_[te_type-1] + max_target_size;
     cart_ints_[te_type] = cart_ints_[te_type-1] + max_cart_target_size;
   }
-  if (bs1_->max_nfunction_in_shell() != bs1_->max_ncartesian_in_shell() ||
-      bs2_->max_nfunction_in_shell() != bs2_->max_ncartesian_in_shell() ||
-      bs3_->max_nfunction_in_shell() != bs3_->max_ncartesian_in_shell() ||
-      bs4_->max_nfunction_in_shell() != bs4_->max_ncartesian_in_shell()) {
+  if (bs1_->has_pure() || bs2_->has_pure() || bs3_->has_pure() || bs4_->has_pure() ||
+      bs1_->max_ncontraction() != 1 || bs2_->max_ncontraction() != 1 ||
+      bs3_->max_ncontraction() != 1 || bs4_->max_ncontraction() != 1) {
     sphharm_ints_ = new double[max_target_size];
     storage_needed += max_target_size*sizeof(double);
   }
@@ -185,10 +184,9 @@ GRTCints::storage_required(const Ref<GaussianBasisSet>& b1,
   storage_required += libr12_storage_required(lmax,max_num_prim_comb)*sizeof(REALTYPE) +
     num_te_types_*(max_target_size+max_cart_target_size)*sizeof(double);
 
-  if (bs1->max_nfunction_in_shell() != bs1->max_ncartesian_in_shell() ||
-      bs2->max_nfunction_in_shell() != bs2->max_ncartesian_in_shell() ||
-      bs3->max_nfunction_in_shell() != bs3->max_ncartesian_in_shell() ||
-      bs4->max_nfunction_in_shell() != bs4->max_ncartesian_in_shell()) {
+  if (bs1->has_pure() || bs2->has_pure() || bs3->has_pure() || bs4->has_pure() ||
+      bs1->max_ncontraction() != 1 || bs2->max_ncontraction() != 1 ||
+      bs3->max_ncontraction() != 1 || bs4->max_ncontraction() != 1) {
     storage_required += max_target_size*sizeof(double);
   }
 

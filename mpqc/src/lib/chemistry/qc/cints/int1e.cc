@@ -62,8 +62,7 @@ Int1eCints::Int1eCints(Integral *integral,
   max_cart_doublet_size_ = bs1_->max_ncartesian_in_shell() * bs2_->max_ncartesian_in_shell();
   // These are target integrals in Cartesian basis and in by-contraction-doublets order
   cart_ints_ = new double[ntypes_*max_cart_doublet_size_];
-  if (bs1_->max_nfunction_in_shell() != bs1_->max_ncartesian_in_shell() ||
-      bs2_->max_nfunction_in_shell() != bs2_->max_ncartesian_in_shell()) {
+  if (bs1_->has_pure() || bs2_->has_pure() || bs1_->max_ncontraction() != 1 || bs2_->max_ncontraction() != 1) {
     // These are target integrals in spherical harmonics basis and in by-contraction-doublets order
     sphharm_ints_ = new double[ntypes_*max_doublet_size_];
     // compute how much space one contraction doublet may need

@@ -9,6 +9,12 @@
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/rot.h>
+#include <chemistry/qc/integral/integralv2.h>
+
+#include <util/group/picl.h>
+extern "C" {
+#include <util/misc/timer.h>
+}
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -217,7 +223,7 @@ PetiteList::init(const RefGaussianBasisSet &gb)
   for (i=0; i < _nirrep; i++) {
     double t=0;
     for (int g=0; g < _ng; g++)
-      t += ct[i][g]*red_rep[g];
+      t += ct.gamma(i).character(g)*red_rep[g];
 
     _nbf_in_ir[i] = ((int) (t+0.5))/_ng;
   }
@@ -311,7 +317,8 @@ PetiteList::print(FILE *o)
   fprintf(o,"\n");
   CharacterTable ct = _gbs->molecule()->point_group().char_table();
   for (i=0; i < _nirrep; i++)
-    fprintf(o,"  %5d functions of %s symmetry\n",_nbf_in_ir[i],ct[i].symbol());
+    fprintf(o,"  %5d functions of %s symmetry\n",_nbf_in_ir[i],
+            ct.gamma(i).symbol());
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -350,6 +357,7 @@ class lin_comb {
     int numsh() const { return _nsh; }
     int bfnum(int i) const { return fn[i]; }
     double& coef(int i, int j) { return c[i][j]; }
+    double * coef(int i) { return c[i]; }
     void print() const {
       for (int i=0; i < _nsh; i++) {
         printf("%2d",fn[i]);
@@ -363,6 +371,8 @@ class lin_comb {
 RefSCMatrix
 PetiteList::aotoso()
 {
+  tim_enter("aotoso");
+  
   int i, d, ii, jj, g, fn, s, c, ir, f;
 
   GaussianBasisSet& gbs = *_gbs.pointer();
@@ -378,37 +388,41 @@ PetiteList::aotoso()
   // ncomp is the number of symmetry blocks we have
   int ncomp=0;
   for (i=0; i < _nirrep; i++)
-    ncomp += ct[i].degeneracy();
+    ncomp += ct.gamma(i).degeneracy();
   
-  // fao is the first SO in a block, saoelem is the current SO in a block,
-  // and maxsao is the last SO in a block
-  int *fao = new int[ncomp];
+  // array of RefSCMatrices which will hold the dependent dodads
+  RefSCMatrix tmats[ncomp];
+  
+  // saoelem is the current SO in a block
   int *saoelem = new int[ncomp];
-  int *maxsao = new int[ncomp];
+  memset(saoelem,0,sizeof(int)*ncomp);
 
-  saoelem[0]=0;
-  maxsao[0]=_nbf_in_ir[0];
-  fao[0]=0;
-  
-  ii=1;
-  for (i=1; i < _nirrep; i++) {
-    for (d=0; d < ct[i].degeneracy(); d++,ii++) {
-      maxsao[ii] = maxsao[ii-1]+_nbf_in_ir[i];
-      saoelem[ii] = maxsao[ii-1];
-      fao[ii] = saoelem[ii];
+  int *whichir = new int[ncomp];
+  int *whichcmp = new int[ncomp];
+  for (i=ii=0; i < _nirrep; i++) {
+    for (int j=0; j < ct.gamma(i).degeneracy(); j++,ii++) {
+      whichir[ii] = i;
+      whichcmp[ii] = j;
     }
   }
-    
+  
   double *blc = new double[gbs.nbasis()];
 
   // loop over all unique shells
+  tim_enter("doit");
   for (i=0; i < _natom; i++) {
     for (s=0; s < gbs.nshell_on_center(i); s++) {
       int shell_i = gbs.shell_on_center(i,s);
       
-      if (!_p1[shell_i])
+      for (g=0; g < _ng; g++) {
+        if (_shell_map[shell_i][g] < shell_i)
+          break;
+      }
+      
+      if (g != _ng)
         continue;
       
+      tim_enter("lin comb");
       // form linear combinations of the basis functions in this shell
       lin_comb **lc = new lin_comb*[_ng];
       
@@ -439,79 +453,215 @@ PetiteList::aotoso()
           func_i += gbs(i,s).nfunction(c);
           func_j += gbs(i,s).nfunction(c);
         }
+#define DEBUG 0
+#if DEBUG
+        lcg.print();
+#endif
       }
+      tim_exit("lin comb");
 
+#if DEBUG
+      printf("\n");
+#endif
+      
       // now operate on the linear combinations with the projection operators
       // for each irrep to form the SO's
+      tim_enter("form");
       int irnum=0;
       for (ir=0; ir < ct.nirrep(); ir++) {
         for (fn=0; fn < gbs(i,s).nfunction(); fn++) {
-          for (d=0; d < ct[ir].nproj(); d++) {
-
-            int comp = d % ct[ir].degeneracy();
-
-            // form the projection for this irrep
-            memset(blc,0,sizeof(double)*gbs.nbasis());
-            for (g=0; g < _ng; g++) {
-              lin_comb& lcg = *lc[g];
-
-              for (f=0; f < gbs.nbasis(); f++)
-                blc[f] += ct[ir](d,g)*lcg.coef(fn,f);
-            }
-
-            // normalize the linear combination if c1 is non-zero
-            double c1=0;
-            for (ii=0; ii < gbs.nbasis(); ii++)
-              c1 += blc[ii]*blc[ii];
-
-            if (c1 > 1.0e-3) {
-              c1 = 1.0/sqrt(c1);
-              for (ii=0; ii < gbs.nbasis(); ii++)
-                blc[ii] *= c1;
-            } else {
-              continue;
-            }
-
-            // check to see if this SO has already been generated
-            int saw_so=0;
-            for (jj=fao[irnum];
-                 jj < saoelem[irnum+ct[ir].degeneracy()-1]; jj++) {
-              double t=0;
-              for (ii=0; ii < gbs.nbasis(); ii++)
-                t += blc[ii]*ret.get_element(ii,jj);
-
-              if (fabs(t) > 0.1) {
-                saw_so=1;
-                break;
-              }
-            }
-
-            if (saw_so)
-              continue;
-
-            int tir = saoelem[irnum+comp];
-            if (tir >= maxsao[irnum+comp])
-              continue;
+          for (d=0; d < ct.gamma(ir).degeneracy(); d++) {
+            // if this is a point group with a complex E representation,
+            // then only do the first set of projections for E
+            if (d && ct.complex() && ct.gamma(ir).degeneracy()==2)
+              break;
             
-            for (ii=0; ii < gbs.nbasis(); ii++)
-              ret.set_element(ii,tir,blc[ii]);
+            for (int comp=0; comp < ct.gamma(ir).degeneracy(); comp++) {
 
-            saoelem[irnum+comp]++;
+              // form the projection for this irrep
+              tim_enter("project");
+              memset(blc,0,sizeof(double)*gbs.nbasis());
+              for (g=0; g < _ng; g++) {
+                double ccdg = ct.gamma(ir).p(comp,d,g);
+                lin_comb& lcg = *lc[g];
+                double *coef_fn = lcg.coef(fn);
+
+                for (f=0; f < gbs.nbasis(); f++)
+                  blc[f] += ccdg*coef_fn[f];
+              }
+              tim_exit("project");
+
+              // normalize the linear combination if c1 is non-zero
+              tim_enter("norm");
+              double c1=0;
+              for (ii=0; ii < gbs.nbasis(); ii++)
+                c1 += blc[ii]*blc[ii];
+
+              if (c1 > 1.0e-3) {
+                c1 = 1.0/sqrt(c1);
+                for (ii=0; ii < gbs.nbasis(); ii++)
+                  blc[ii] *= c1;
+                tim_exit("norm");
+              } else {
+                tim_exit("norm");
+                continue;
+              }
+#if DEBUG
+              {
+                printf(" %5d %5d ",ir,comp);
+                for (int gg=0; gg < gbs.nbasis(); gg++)
+                  printf(" %7.3f",blc[gg]);
+                printf("\n");
+              }
+#endif
+              // add this to the doober
+              tim_enter("dims");
+              int tir = saoelem[irnum+comp];
+              RefSCDimension cdim = gbs.matrixkit()->dimension(tir+1);
+              RefSCMatrix ntmat = gbs.basisdim()->create_matrix(cdim);
+              tim_exit("dims");
+
+              if (tmats[irnum+comp].nonnull()) {
+                tim_enter("assign");
+                ntmat.assign_subblock(tmats[irnum+comp],0,gbs.nbasis()-1,
+                                      0,tir);
+                tim_exit("assign");
+              }
+            
+              tim_enter("insert");
+              for (ii=0; ii < gbs.nbasis(); ii++)
+                ntmat.set_element(ii,tir,blc[ii]);
+              tim_exit("insert");
+            
+              tim_enter("copy");
+              tmats[irnum+comp] = ntmat;
+              tim_exit("copy");
+              
+              saoelem[irnum+comp]++;
+            }
           }
         }
 
-        irnum += ct[ir].degeneracy();
+        irnum += ct.gamma(ir).degeneracy();
       }
+      tim_exit("form");
+#if DEBUG
+      printf("\n");
+#endif
 
       for (g=0; g < _ng; g++)
         delete lc[g];
       delete lc;
     }
   }
+  tim_exit("doit");
+
+  tim_enter("finish");
+  int gooble=0;
+  for (i=0; i < ncomp; i++) {
+    ir = whichir[i];
+    int cmp = whichcmp[i];
+    RefSCMatrix tmat = tmats[i];
+
+    if (tmat.null())
+      continue;
+    
+    if (saoelem[i] == _nbf_in_ir[ir]) {
+      // if we found the right number, do nothing else
+
+      ret.assign_subblock(tmat, 0, ret.rowdim().n()-1,
+                          gooble, gooble+tmat.coldim().n()-1);
+      gooble += tmat.coldim().n();
+
+    } else if (saoelem[i] < _nbf_in_ir[ir]) {
+      // if we found too few, there are big problems
+      
+      fprintf(stderr,"trouble making SO's for irrep %s\n",
+              ct.gamma(ir).symbol());
+      fprintf(stderr,"  only found %d out of %d SO's\n",
+              saoelem[i], _nbf_in_ir[ir]);
+      abort();
+
+    } else {
+      // if we found too many, try using svd to get rid of redundant
+      // SO's
+      
+      //char lab[80];
+      //sprintf(lab,"tmat %s",ct.gamma(ir).symbol());
+      //tmat.print(lab);
+
+      RefSCMatrix U(tmat.rowdim(), tmat.rowdim());
+      RefSCMatrix V(tmat.coldim(), tmat.coldim());
+      RefDiagSCMatrix sigma(tmat.coldim());
+      tmat->svd_this(U.pointer(), sigma.pointer(), V.pointer());
+
+      int nonzero=0;
+      for (int j=0; j < tmat.coldim().n(); j++) {
+        if (sigma.get_element(j) > 1.0e-8)
+          nonzero++;
+      }
+
+      //sprintf(lab,"U %s",ct.gamma(ir).symbol());
+      //U.get_subblock(0,gbs.nbasis()-1,0,nonzero-1).print(lab);
+
+      //sprintf(lab,"sigma %s",ct.gamma(ir).symbol());
+      //sigma.print(lab);
+
+      //sprintf(lab,"V %s",ct.gamma(ir).symbol());
+      //V.get_subblock(0,V.rowdim().n()-1,0,nonzero-1).print(lab);
+    
+      // if there are still too many, try getting rid of what we don't want
+      if (nonzero > _nbf_in_ir[ir]) {
+        nonzero=_nbf_in_ir[ir];
+      }
+        
+      ret.assign_subblock(U, 0, ret.rowdim().n()-1,
+                          gooble, gooble+nonzero-1);
+
+      //sprintf(lab,"ret %s",ct.gamma(ir).symbol());
+      //ret.print(lab);
+
+      gooble += nonzero;
+    }
+  }
+  tim_exit("finish");
+
+#if 1
+  tim_enter("orthog");
+  RefSymmSCMatrix S(gbs.basisdim());
+  S.assign(0.0);
+
+  tim_enter("overlap");
+  RefSCElementOp op = new GaussianOverlapIntv2(_gbs);
+  S.element_op(op);
+  op=0;
+  tim_exit("overlap");
+
+  tim_enter("schmidt");
+  ret->schmidt_orthog(S.pointer(), gbs.nbasis());
+  S=0;
+  tim_exit("schmidt");
+  tim_exit("orthog");
+#endif
 
   delete[] blc;
   delete[] saoelem;
-  delete[] maxsao;
+  delete[] whichir;
+
+  tim_exit("aotoso");
+
+  {
+    int nproc,me,host;
+    int top,ord,dir;
+    RefMessageGrp grp;
+
+    grp = MessageGrp::get_default_messagegrp();
+
+    open0_messagegrp(&nproc,&me,&host,grp);
+    setarc0(&nproc,&top,&ord,&dir);
+
+    tim_print(0);
+  }
 
   return ret;
 }

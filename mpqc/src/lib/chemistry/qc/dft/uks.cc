@@ -343,9 +343,8 @@ UKS::two_body_deriv(double * tbgrad)
   double *dftgrad = new double[natom3];
   memset(dftgrad,0,sizeof(double)*natom3);
   tim_enter("integration");
-  RefPetiteList pl = integral()->petite_list(basis());
-  RefSymmSCMatrix ao_dens_a = pl->to_AO_basis(densa_);
-  RefSymmSCMatrix ao_dens_b = pl->to_AO_basis(densb_);
+  RefSymmSCMatrix ao_dens_a = alpha_ao_density();
+  RefSymmSCMatrix ao_dens_b = beta_ao_density();
   integrator_->set_wavefunction(this);
   integrator_->set_compute_potential_integrals(0);
   integrator_->integrate(functional_, ao_dens_a, ao_dens_b, dftgrad);

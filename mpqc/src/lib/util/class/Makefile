@@ -49,6 +49,7 @@ clasmacr.h: clastmpl.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > clasmacr.h
 
 # a test program
+LD = $(CXX)
 classtest: classtest.o libclass.$(LIBSUF) libcontainer.$(LIBSUF) libmisc.$(LIBSUF)
 	$(LD) $(LDFLAGS) -o classtest $^ $(SYSLIBS)
 

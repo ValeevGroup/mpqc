@@ -43,7 +43,7 @@
 // members of IntMolecularCoor
 
 #define CLASSNAME IntMolecularCoor
-#define VERSION 5
+#define VERSION 6
 #define PARENTS public MolecularCoor
 #include <util/state/statei.h>
 #include <util/class/classia.h>
@@ -154,6 +154,9 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
   fixed_.restore_state(s);
   followed_.restore_state(s);
 
+  if (s.version(static_class_desc()) >= 6)
+      watched_.restore_state(s);
+
   bonds_.restore_state(s);
   bends_.restore_state(s);
   tors_.restore_state(s);
@@ -186,6 +189,7 @@ IntMolecularCoor::new_coords()
   extras_ = new SetIntCoor;
   fixed_ = new SetIntCoor;
   followed_ = 0;
+  watched_ = 0;
 }
 
 void
@@ -196,6 +200,7 @@ IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
   fixed_ = keyval->describedclassvalue("fixed");
   if (fixed_.null()) fixed_ = new SetIntCoor;
   followed_ = keyval->describedclassvalue("followed");
+  watched_ = keyval->describedclassvalue("watched");
 
   decouple_bonds_ = keyval->booleanvalue("decouple_bonds");
   decouple_bends_ = keyval->booleanvalue("decouple_bends");
@@ -407,6 +412,14 @@ IntMolecularCoor::init()
                        kappa2);
     }
 #endif
+
+  if (watched_.nonnull()) {
+      cout << node0 << endl
+           << indent << "Watched coordinate(s):\n" << incindent;
+      watched_->update_values(molecule_);
+      watched_->print(molecule_,cout);
+      cout << node0 << decindent;
+    }
 }
 
 static int
@@ -732,6 +745,7 @@ IntMolecularCoor::save_data_state(StateOut&s)
 
   fixed_.save_state(s);
   followed_.save_state(s);
+  watched_.save_state(s);
 
   bonds_.save_state(s);
   bends_.save_state(s);
@@ -895,7 +909,17 @@ IntMolecularCoor::to_cartesian(const RefSCVector&new_internal)
       all_internal(i) = constant_->coor(j)->value();
     }
 
-  return all_to_cartesian(all_internal);
+  int ret = all_to_cartesian(all_internal);
+
+  if (watched_.nonnull()) {
+      cout << node0 << endl
+           << indent << "Watched coordinate(s):\n" << incindent;
+      watched_->update_values(molecule_);
+      watched_->print(molecule_,cout);
+      cout << node0 << decindent;
+    }
+  
+  return ret;
 }
 
 int
@@ -1093,6 +1117,11 @@ IntMolecularCoor::print_simples(ostream& os)
     if (followed_.nonnull()) {
       os << node0 << indent << "Followed:\n" << incindent;
       followed_->print(molecule_,os);
+      os << node0 << decindent;
+    }
+    if (watched_.nonnull()) {
+      os << node0 << indent << "Watched:\n" << incindent;
+      watched_->print(molecule_,os);
       os << node0 << decindent;
     }
   }

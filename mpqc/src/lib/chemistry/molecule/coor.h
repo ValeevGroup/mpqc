@@ -403,6 +403,7 @@ class IntMolecularCoor: public MolecularCoor
     RefSetIntCoor constant_; // the constant internal coordinates
     
     RefSetIntCoor fixed_;
+    RefSetIntCoor watched_;
     RefIntCoor followed_;
 
     // these are all of the basic coordinates

@@ -2230,9 +2230,6 @@ L130:
 static int
 eig3_(double *ea, double *eb, double *a, double *b, double *y, double *z)
 {
-    /* Builtin functions */
-    double sqrt();
-
     /* Local variables */
     static real c, s, t;
 

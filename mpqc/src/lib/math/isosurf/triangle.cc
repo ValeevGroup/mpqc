@@ -66,9 +66,6 @@
 //
 
 REF_def(Triangle);
-ARRAY_def(RefTriangle);
-SET_def(RefTriangle);
-ARRAYSET_def(RefTriangle);
 
 Triangle::Triangle(const RefEdge& v1, const RefEdge& v2, const RefEdge& v3,
                    unsigned int orientation0)

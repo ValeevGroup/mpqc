@@ -255,14 +255,6 @@ ParentClasses::change_parent(ClassDesc*oldcd,ClassDesc*newcd)
 
 ////////////////////////////////////////////////////////////////////////
 
-ARRAY_def(ClassDescP);
-SET_def(ClassDescP);
-ARRAYSET_def(ClassDescP);
-
-ARRAY_def(CClassDescP);
-SET_def(CClassDescP);
-ARRAYSET_def(CClassDescP);
-
 ClassDesc::ClassDesc(char* name, int version,
                      char* parents,
                      DescribedClass* (*ctor)(),
@@ -771,10 +763,6 @@ operator <<(ostream&o, const DCRefBase &ref)
 }
 
 DescribedClass_REF_def(DescribedClass);
-ARRAY_def(RefDescribedClass);
-SET_def(RefDescribedClass);
-ARRAYSET_def(RefDescribedClass);
-
 
 /////////////////////////////////////////////////////////////////////////////
 

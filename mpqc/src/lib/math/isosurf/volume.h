@@ -78,9 +78,6 @@ class Volume: public Function {
 };
 
 SavableState_REF_dec(Volume);
-ARRAY_dec(RefVolume);
-SET_dec(RefVolume);
-ARRAYSET_dec(RefVolume);
 
 #ifdef INLINE_FUNCTIONS
 #include <math/isosurf/volume_i.h>

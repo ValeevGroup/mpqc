@@ -1426,9 +1426,6 @@ RefDiagSCMatrix::restore(StateIn&s)
 ///////////////////////////////////////////////////////////////////
 // RefSCVector members
 
-ARRAY_def(RefSCVector);
-SET_def(RefSCVector);
-
 RefSCVector::RefSCVector()
 {
 }

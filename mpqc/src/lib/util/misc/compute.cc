@@ -40,7 +40,6 @@ template class Result<double>;
 template class NCAccResult<double>;
 #endif
 
-ARRAY_def(ResultInfoP);
 SET_def(ResultInfoP);
 
 Compute::Compute()

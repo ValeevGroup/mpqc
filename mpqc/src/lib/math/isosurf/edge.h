@@ -77,10 +77,7 @@ class Edge: public VRefCount {
 };
 
 REF_dec(Edge);
-ARRAY_dec(RefEdge);
 SET_dec(RefEdge);
-ARRAYSET_dec(RefEdge);
-ARRAY_dec(ArraysetRefEdge);
 
 #endif
 

@@ -77,7 +77,6 @@ Shape::_castdown(const ClassDesc*cd)
 }
 
 SavableState_REF_def(Shape);
-ARRAY_def(RefShape);
 SET_def(RefShape);
 ARRAYSET_def(RefShape);
 
@@ -240,7 +239,6 @@ SphereShape::~SphereShape()
 }
 
 REF_def(SphereShape);
-ARRAY_def(RefSphereShape);
 SET_def(RefSphereShape);
 ARRAYSET_def(RefSphereShape);
 

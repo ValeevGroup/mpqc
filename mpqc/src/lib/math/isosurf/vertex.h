@@ -62,10 +62,8 @@ class Vertex: public VRefCount {
 };
 
 REF_dec(Vertex);
-ARRAY_dec(RefVertex);
 SET_dec(RefVertex);
 ARRAYSET_dec(RefVertex);
-ARRAY_dec(ArraysetRefVertex);
 
 #endif
 

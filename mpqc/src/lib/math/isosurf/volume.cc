@@ -213,9 +213,6 @@ Volume::get_x(SCVector3& x)
 }
 
 SavableState_REF_def(Volume);
-ARRAY_def(RefVolume);
-SET_def(RefVolume);
-ARRAYSET_def(RefVolume);
 
 /////////////////////////////////////////////////////////////////////////////
 

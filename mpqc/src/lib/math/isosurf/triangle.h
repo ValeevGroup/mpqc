@@ -94,9 +94,6 @@ class Triangle: public VRefCount {
 };
 
 REF_dec(Triangle);
-ARRAY_dec(RefTriangle);
-SET_dec(RefTriangle);
-ARRAYSET_dec(RefTriangle);
 
 class TriangleIntegrator: public DescribedClass {
 #   define CLASSNAME TriangleIntegrator

@@ -126,8 +126,6 @@ class RefSCVector: public RefDCSCVector {
     void restore(StateIn&);
 };
 RefSCVector operator*(double,const RefSCVector&);
-ARRAY_dec(RefSCVector);
-SET_dec(RefSCVector);
 
 class RefSymmSCMatrix;
 class RefDiagSCMatrix;

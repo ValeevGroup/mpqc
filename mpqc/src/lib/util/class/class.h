@@ -197,14 +197,6 @@ class ClassDesc: public Identity {
     static int load_class(const char* classname);
 };
 
-ARRAY_dec(ClassDescP);
-SET_dec(ClassDescP);
-ARRAYSET_dec(ClassDescP);
-
-ARRAY_dec(CClassDescP);
-SET_dec(CClassDescP);
-ARRAYSET_dec(CClassDescP);
-
 //. Classes which need runtime information about themselves and
 //. their relationship to other classes can virtually inherit
 //. from \clsnm{DescribedClass}.  This will provide the class
@@ -345,9 +337,6 @@ DCRefBase::dereference(VRefCount *p)
 #endif
 
 DescribedClass_REF_dec(DescribedClass);
-ARRAY_dec(RefDescribedClass);
-SET_dec(RefDescribedClass);
-ARRAYSET_dec(RefDescribedClass);
 
 #endif
 

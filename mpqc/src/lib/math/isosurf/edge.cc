@@ -36,10 +36,7 @@
 // Edge
 
 REF_def(Edge);
-ARRAY_def(RefEdge);
 SET_def(RefEdge);
-ARRAYSET_def(RefEdge);
-ARRAY_def(ArraysetRefEdge);
 
 Edge::Edge(const RefVertex &p1,
      const RefVertex &p2,

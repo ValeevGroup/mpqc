@@ -59,7 +59,6 @@ class Shape: public Volume {
 };
 
 SavableState_REF_dec(Shape);
-ARRAY_dec(RefShape);
 SET_dec(RefShape);
 ARRAYSET_dec(RefShape);
 
@@ -106,7 +105,6 @@ SphereShape::origin(const SCVector3& o)
 }
 
 REF_dec(SphereShape);
-ARRAY_dec(RefSphereShape);
 SET_dec(RefSphereShape);
 ARRAYSET_dec(RefSphereShape);
 

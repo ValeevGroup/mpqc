@@ -42,7 +42,6 @@ class StateOut;
 
 typedef ResultInfo* ResultInfoP;
 
-ARRAY_dec(ResultInfoP);
 SET_dec(ResultInfoP);
 
 class Compute

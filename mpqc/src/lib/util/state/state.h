@@ -464,9 +464,6 @@ static SavableState * att_hack_job(StateIn&si)
 // basic types can be declared.
 
 SSB_ARRAY_dec(int);
-SSB_ARRAY2_dec(int);
-SSB_ARRAY_dec(double);
-SSB_ARRAY2_dec(double);
 
 #endif
 

@@ -33,7 +33,7 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 CXXSRC = symop.cc rep.cc irrep.cc chartab.cc pointgrp.cc \
-         maketab.cc tetra.cc ico.cc
+         maketab.cc tetra.cc ico.cc corrtab.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 

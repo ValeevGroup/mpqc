@@ -206,6 +206,7 @@ sub parse_mpqc {
     my $s2norm = "";
     my $to_angstrom = 0.52917706;
     my $geometry_conversion = $to_angstrom;
+    my $error = "";
     while (<$out>) {
         s/^ *[0-9]+:// if ($have_nodenum);
         if ($state eq "read grad" && $wante) {
@@ -355,24 +356,41 @@ sub parse_mpqc {
     $self->{"ok"} = 0;
     if ($self->{"energy"} ne "") {
         if ($qcinput->optimize()) {
-            $self->{"ok"} = 1 if $self->{"optconverged"};
+            if ($self->{"optconverged"}) {
+                $self->{"ok"} = 1;
+            }
+            else {
+                $error = "$error geom not converged\n";
+            }
         }
         else {
             $self->{"ok"} = 1;
         }
         if ($qcinput->frequencies() && ! $havefreq) {
             $self->{"ok"} = 0;
-            #printf "not OK because no freq\n";
+            $error = "$error no freq\n";
         }
     }
     else {
-        #printf "not OK because no energy\n";
+        $error = "$error no energy\n";
     }
+
+    if (! $qcinput->ok()) {
+        $self->{"ok"} = 0;
+        $error = "$error qcinput error: $qcinput->{'error'}";
+    }
+
+    $self->{"error"} = $error;
 }
 
 sub ok {
     my $self = shift;
     $self->{"ok"}
+}
+
+sub error {
+    my $self = shift;
+    $self->{"error"};
 }
 
 sub exists {

@@ -362,6 +362,12 @@ CLSCF::init_vector()
 {
   // initialize the two electron integral classes
   tbi_ = integral()->electron_repulsion();
+  cout << node0 << indent
+       << "integral intermediate storage = " << integral()->storage_used()
+       << " bytes" << endl;
+  cout << node0 << indent
+       << "integral cache = " << integral()->storage_unused()
+       << " bytes" << endl;
   tbi_->set_integral_storage(integral()->storage_unused());
 
   // allocate storage for other temp matrices

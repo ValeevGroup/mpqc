@@ -40,6 +40,8 @@
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/dercent.h>
 
+class Integral;
+
 ////////////////////////////////////////////////////////////////////////////
 
 class EfieldDotVectorData: public VRefCount
@@ -91,12 +93,16 @@ REF_dec(PointChargeData);
 // compute integrals between two basis functions.
 class OneBodyInt : public VRefCount {
   protected:
+    // this is who created me
+    Integral *integral_;
+
     RefGaussianBasisSet bs1_;
     RefGaussianBasisSet bs2_;
 
     double *buffer_;
 
-    OneBodyInt(const RefGaussianBasisSet&b1,
+    OneBodyInt(Integral *integral,
+               const RefGaussianBasisSet&b1,
                const RefGaussianBasisSet&b2 = 0);
 
   public:
@@ -282,14 +288,18 @@ class OneBody3IntOp: public SCElementOp3 {
 
 class OneBodyDerivInt : public VRefCount {
   protected:
+    // this is who created me
+    Integral *integral_;
+
     RefGaussianBasisSet bs1;
     RefGaussianBasisSet bs2;
 
     double *buffer_;
 
   public:
-    OneBodyDerivInt(const RefGaussianBasisSet&b);
-    OneBodyDerivInt(const RefGaussianBasisSet&b1,
+    OneBodyDerivInt(Integral *, const RefGaussianBasisSet&b);
+    OneBodyDerivInt(Integral *,
+                    const RefGaussianBasisSet&b1,
                     const RefGaussianBasisSet&b2);
     virtual ~OneBodyDerivInt();
   

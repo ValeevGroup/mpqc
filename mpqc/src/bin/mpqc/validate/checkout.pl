@@ -140,14 +140,16 @@ sub check {
                     #print_vecvec($result->npashellpop());
                 }
                 if ($result->s2large_coef() && $cresult->s2large_coef()) {
-                    my $maxerror = compare_vecs($result->s2large_coef(),
-                                                $cresult->s2large_coef());
+                    my $maxerror
+                        = compare_vecs_magnitude($result->s2large_coef(),
+                                                 $cresult->s2large_coef());
                     printf " S2L:%d", $maxerror;
                     print "*" if ($maxerror <= 8);
+                    my $n = n_nonzero_in_vec($result->s2large_coef());
                     my $xok = compare_string_vecs($result->s2large_i(),
-                                                  $cresult->s2large_i())
+                                                  $cresult->s2large_i(),$n)
                         && compare_string_vecs($result->s2large_a(),
-                                               $cresult->s2large_a());
+                                               $cresult->s2large_a(),$n);
                     #printf "coef\n";
                     #print_vec($result->s2large_coef());
                     #printf "i\n";
@@ -158,20 +160,22 @@ sub check {
                     else { print " X:*" }
                 }
                 if ($result->d1large_coef() && $cresult->d1large_coef()) {
-                    my $maxerror = compare_vecs($result->d1large_coef(),
-                                                $cresult->d1large_coef());
+                    my $maxerror
+                        = compare_vecs_magnitude($result->d1large_coef(),
+                                                 $cresult->d1large_coef());
                     printf " D1L:%d", $maxerror;
                     print "*" if ($maxerror <= 8);
+                    my $n = n_nonzero_in_vec($result->d1large_coef());
                     my $xok = compare_string_vecs($result->d1large_i(),
-                                                  $cresult->d1large_i())
+                                                  $cresult->d1large_i(),$n)
                         && compare_string_vecs($result->d1large_j(),
-                                               $cresult->d1large_j())
+                                               $cresult->d1large_j(),$n)
                         && compare_string_vecs($result->d1large_a(),
-                                               $cresult->d1large_a())
+                                               $cresult->d1large_a(),$n)
                         && compare_string_vecs($result->d1large_b(),
-                                               $cresult->d1large_b())
+                                               $cresult->d1large_b(),$n)
                         && compare_string_vecs($result->d1large_spin(),
-                                               $cresult->d1large_spin());
+                                               $cresult->d1large_spin(),$n);
                     if ($xok) { print " X:OK" }
                     else { print " X:*" }
                     #printf "coef\n";
@@ -221,6 +225,20 @@ sub compare_numbers {
     $ldiff;
 }
 
+# counts how many elements until we get to the first
+# element equal to zero
+sub n_nonzero_in_vec {
+    my $vref = shift;
+    my @v = @{$vref};
+    my $n = 0;
+    my $e1;
+    while (($e1 = shift @v1)) {
+        last if (abs($e1) < 1.0e-6);
+        $n = $n + 1;
+    }
+    $n;
+}
+
 sub compare_vecs {
     my $v1ref = shift;
     my $v2ref = shift;
@@ -237,6 +255,34 @@ sub compare_vecs {
     while (($e1 = shift @v1)
            &&($e2 = shift @v2)) {
         my $diff = abs($e2-$e1);
+        my $ldiff;
+        if ($diff == 0) {
+            $ldiff = 99;
+        }
+        else {
+            $ldiff = -log($diff)/$log10;
+        }
+        if ($ldiff < $maxerror) { $maxerror = $ldiff; }
+    }
+    $maxerror;
+}
+
+sub compare_vecs_magnitude {
+    my $v1ref = shift;
+    my $v2ref = shift;
+    my @v1 = @{$v1ref};
+    my @v2 = @{$v2ref};
+    my $e1, $e2;
+    my $maxerror = 99;
+    my $nv1 = @v1;
+    my $nv2 = @v2;
+    if ($nv1 != $nv2) {
+        printf "compare_vecs_magnitude: vecs not of equal length\n";
+        exit 1;
+    }
+    while (($e1 = shift @v1)
+           &&($e2 = shift @v2)) {
+        my $diff = abs(abs($e2)-abs($e1));
         my $ldiff;
         if ($diff == 0) {
             $ldiff = 99;
@@ -270,10 +316,12 @@ sub compare_vecvecs {
     $maxerror;
 }
 
-# returns 1 if the vecs are identical
+# returns 1 if the vecs are identical for as many elements
+# are given in the third argument
 sub compare_string_vecs {
     my $v1ref = shift;
     my $v2ref = shift;
+    my $n = shift;
     my @v1 = @{$v1ref};
     my @v2 = @{$v2ref};
     my $nv1 = @v1;
@@ -283,9 +331,11 @@ sub compare_string_vecs {
         exit 1;
     }
     my $e1, $e2;
+    my $i = 0;
     while (($e1 = shift @v1)
-           &&($e2 = shift @v2)) {
+           &&($e2 = shift @v2) && $i < $n) {
         if ($e1 ne $e2) { return 0; }
+        $i = $i + 1;
     }
     1;
 }

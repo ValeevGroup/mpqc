@@ -5,8 +5,10 @@ test_basis:
      4-31G 4-31G* 4-31G**
      6-31G 6-31G* 6-31G** 6-31++G 6-31++G* 6-31++G**
      6-311G 6-311G* 6-311G** 6-311++G**
-     cc-pVDZ cc-pVTZ cc-pVQZ
-     aug-cc-pVDZ aug-cc-pVTZ aug-cc-pVQZ
+     cc-pVDZ cc-pVTZ cc-pVQZ cc-pV5Z
+     aug-cc-pVDZ aug-cc-pVTZ aug-cc-pVQZ aug-cc-pV5Z
+     cc-pCVDZ cc-pCVTZ cc-pCVQZ cc-pCV5Z
+     aug-cc-pCVDZ aug-cc-pCVTZ aug-cc-pCVQZ aug-cc-pCV5Z
 test_method: scf
 #test_calc: opt
 gradient: yes

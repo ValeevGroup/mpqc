@@ -36,24 +36,32 @@
 #include <chemistry/qc/basis/transform.h>
 #include <chemistry/qc/intv3/macros.h>
 
+class Integral;
+
 /* integrals and target may overlap */
-void intv3_transform_1e(double *integrals, double *target,
-                        GaussianShell *sh1, GaussianShell *sh2);
+void intv3_transform_1e(Integral *,
+                        double *integrals, double *target,
+                        GaussianShell *sh1, GaussianShell *sh2
+                        );
 
 /* integrals and target may not overlap */
-void intv3_accum_transform_1e(double *integrals, double *target,
+void intv3_accum_transform_1e(Integral *,
+                              double *integrals, double *target,
                               GaussianShell *sh1, GaussianShell *sh2);
 
 /* integrals and target may overlap */
-void intv3_transform_1e_xyz(double *integrals, double *target,
+void intv3_transform_1e_xyz(Integral *,
+                            double *integrals, double *target,
                             GaussianShell *sh1, GaussianShell *sh2);
 
 /* integrals and target may not overlap */
-void intv3_accum_transform_1e_xyz(double *integrals, double *target,
+void intv3_accum_transform_1e_xyz(Integral *,
+                                  double *integrals, double *target,
                                   GaussianShell *sh1, GaussianShell *sh2);
 
 /* integrals and target may overlap */
-void intv3_transform_2e(double *integrals, double *target,
+void intv3_transform_2e(Integral *,
+                        double *integrals, double *target,
                         GaussianShell *sh1, GaussianShell *sh2,
                         GaussianShell *sh3, GaussianShell *sh4);
 
@@ -82,21 +90,13 @@ class SphericalTransformV3 : public SphericalTransform {
 
 class ISphericalTransformV3 : public ISphericalTransform {
   public:
-    ISphericalTransformV3(int l) {
-      n_ = 0;
-      l_ = l;
-      components_ = 0;
+    ISphericalTransformV3(int l, int subl=-1):ISphericalTransform(l,subl) {
       init();
     }
 
     SphericalTransformComponent * new_components() {
       return new SphericalTransformComponentV3[n_+1];
     }
-};
-
-class SphericalTransformIterV3 : public SphericalTransformIter {
-  public:
-    SphericalTransformIterV3(int l, int inverse=0, int subl=-1);
 };
 
 #endif

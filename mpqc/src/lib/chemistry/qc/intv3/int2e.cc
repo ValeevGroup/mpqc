@@ -29,17 +29,18 @@
 #pragma implementation
 #endif
 
+#include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/intv3/int2e.h>
 #include <chemistry/qc/intv3/utils.h>
 
-Int2eV3::Int2eV3(const RefGaussianBasisSet& b1,
+Int2eV3::Int2eV3(Integral *integral,
+                 const RefGaussianBasisSet& b1,
                  const RefGaussianBasisSet& b2,
                  const RefGaussianBasisSet& b3,
                  const RefGaussianBasisSet& b4,
-                 const RefMessageGrp& grp,
                  int order, int storage) :
-  store(0), int_Qvec(0), int_Rvec(0),
-  grp_(grp)
+  integral_(integral), store(0), int_Qvec(0), int_Rvec(0),
+  grp_(integral->messagegrp())
 {
   bs1_ = b1;
   bs2_ = b2;

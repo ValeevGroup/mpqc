@@ -36,8 +36,12 @@
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/intv3/fjt.h>
 
+class Integral;
+
 class Int1eV3: public VRefCount {
   protected:
+    Integral *integral_;
+
     RefGaussianBasisSet bs1_;
     RefGaussianBasisSet bs2_;
     double *fjttable_;
@@ -157,7 +161,8 @@ class Int1eV3: public VRefCount {
     void int_done_offsets1();
 
   public:
-    Int1eV3(const RefGaussianBasisSet&,
+    Int1eV3(Integral *,
+            const RefGaussianBasisSet&,
             const RefGaussianBasisSet&,
             int order);
     ~Int1eV3();

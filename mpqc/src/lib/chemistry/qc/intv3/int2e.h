@@ -43,6 +43,8 @@
 #include <chemistry/qc/intv3/array.h>
 #include <chemistry/qc/intv3/macros.h>
 
+class Integral;
+
 #define CHECK_INTEGRAL_ALGORITHM 0
 
 class ShiftIntermediates {
@@ -77,6 +79,8 @@ class ShiftIntermediates {
 
 class Int2eV3: public VRefCount {
   protected:
+    Integral *integral_;
+
     BuildIntV3 build;
     RefIntegralStorer storer;
 
@@ -339,11 +343,11 @@ class Int2eV3: public VRefCount {
     int used_storage_shift_;
 
   public:
-    Int2eV3(const RefGaussianBasisSet&,
+    Int2eV3(Integral *,
             const RefGaussianBasisSet&,
             const RefGaussianBasisSet&,
             const RefGaussianBasisSet&,
-            const RefMessageGrp&,
+            const RefGaussianBasisSet&,
             int order, int storage);
     ~Int2eV3();
 

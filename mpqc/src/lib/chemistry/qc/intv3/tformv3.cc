@@ -34,44 +34,10 @@
 #include <math.h>
 
 #include <util/misc/formio.h>
+#include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/tformv3.h>
 #include <chemistry/qc/intv3/utils.h>
-
-////////////////////////////////////////////////////////////////////////////
-
-// initialize the transformations
-static SphericalTransformV3 trans2(2);
-static SphericalTransformV3 trans20(2,0);
-static SphericalTransformV3 trans3(3);
-static SphericalTransformV3 trans4(4);
-
-static ISphericalTransformV3 itrans2(2);
-static ISphericalTransformV3 itrans3(3);
-static ISphericalTransformV3 itrans4(4);
-
-SphericalTransformIterV3::SphericalTransformIterV3(int l, int inverse,
-                                                   int subl)
-{
-  if (subl==-1) subl = l;
-  if (l==2 && subl == l) {
-    if (inverse) transform_ = &itrans2;
-    else transform_ = &trans2;
-  } else if (l==2 && subl == 0 && !inverse) {
-    transform_ = &trans20;
-  } else if (l==3 && subl == l) {
-    if (inverse) transform_ = &itrans3;
-    else transform_ = &trans3;
-  } else if (l==4 && subl == l) {
-    if (inverse) transform_ = &itrans4;
-    else transform_ = &trans4;
-  } else {
-    cerr << "SphericalTransformIterV3: cannot handle l = " << l
-         << " inverse = " << inverse
-         << " subl = " << subl;
-    abort();
-  }
-}
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -285,7 +251,8 @@ copy_to_source(double *integrals, int nsource)
 #endif
 
 static void
-do_transform_1e(double *integrals, GaussianShell *sh1, GaussianShell *sh2,
+do_transform_1e(Integral *integ,
+                double *integrals, GaussianShell *sh1, GaussianShell *sh2,
                 int chunk)
 {
   int i, j;
@@ -328,7 +295,8 @@ do_transform_1e(double *integrals, GaussianShell *sh1, GaussianShell *sh2,
               nfuncj = sh2->nfunction(j);
 
               if (sh1->is_pure(i)) {
-                  SphericalTransformIterV3 trans(sh1->am(i));
+                  SphericalTransformIter
+                      trans(integ->spherical_transform(sh1->am(i)));
                   do_sparse_transform11(source, integrals, chunk,
                                         trans,
                                         ogc1,
@@ -367,7 +335,8 @@ do_transform_1e(double *integrals, GaussianShell *sh1, GaussianShell *sh2,
               nfuncj = sh2->nfunction(j);
 
               if (sh2->is_pure(j)) {
-                  SphericalTransformIterV3 trans(sh2->am(j));
+                  SphericalTransformIter
+                      trans(integ->spherical_transform(sh2->am(j)));
                   do_sparse_transform12(source, integrals, chunk,
                                         trans,
                                         INT_NPURE(am1), ogc1,
@@ -392,12 +361,13 @@ do_transform_1e(double *integrals, GaussianShell *sh1, GaussianShell *sh2,
 
 /* it is ok for integrals and target to overlap */
 static void
-transform_1e(double *integrals, double *target,
+transform_1e(Integral *integ,
+             double *integrals, double *target,
              GaussianShell *sh1, GaussianShell *sh2, int chunk)
 {
   int ntarget;
 
-  do_transform_1e(integrals, sh1, sh2, chunk);
+  do_transform_1e(integ, integrals, sh1, sh2, chunk);
 
   /* copy the integrals to the target, if necessary */
   ntarget = sh1->nfunction() * sh2->nfunction();
@@ -408,12 +378,13 @@ transform_1e(double *integrals, double *target,
 
 /* it is not ok for integrals and target to overlap */
 static void
-accum_transform_1e(double *integrals, double *target,
+accum_transform_1e(Integral *integ,
+                   double *integrals, double *target,
                    GaussianShell *sh1, GaussianShell *sh2, int chunk)
 {
   int i, ntarget;
 
-  do_transform_1e(integrals, sh1, sh2, chunk);
+  do_transform_1e(integ, integrals, sh1, sh2, chunk);
 
   /* accum the integrals to the target */
   ntarget = sh1->nfunction() * sh2->nfunction() * chunk;
@@ -421,35 +392,40 @@ accum_transform_1e(double *integrals, double *target,
 }
 
 void
-intv3_transform_1e(double *integrals, double *target,
+intv3_transform_1e(Integral*integ,
+                   double *integrals, double *target,
                    GaussianShell *sh1, GaussianShell *sh2)
 {
-  transform_1e(integrals, target, sh1, sh2, 1);
+  transform_1e(integ, integrals, target, sh1, sh2, 1);
 }
 
 void
-intv3_accum_transform_1e(double *integrals, double *target,
+intv3_accum_transform_1e(Integral*integ,
+                         double *integrals, double *target,
                          GaussianShell *sh1, GaussianShell *sh2)
 {
-  accum_transform_1e(integrals, target, sh1, sh2, 1);
+  accum_transform_1e(integ, integrals, target, sh1, sh2, 1);
 }
 
 void
-intv3_transform_1e_xyz(double *integrals, double *target,
+intv3_transform_1e_xyz(Integral*integ,
+                       double *integrals, double *target,
                        GaussianShell *sh1, GaussianShell *sh2)
 {
-  transform_1e(integrals, target, sh1, sh2, 3);
+  transform_1e(integ, integrals, target, sh1, sh2, 3);
 }
 
 void
-intv3_accum_transform_1e_xyz(double *integrals, double *target,
+intv3_accum_transform_1e_xyz(Integral*integ,
+                             double *integrals, double *target,
                              GaussianShell *sh1, GaussianShell *sh2)
 {
-  accum_transform_1e(integrals, target, sh1, sh2, 3);
+  accum_transform_1e(integ, integrals, target, sh1, sh2, 3);
 }
 
 static void
-do_gencon_sparse_transform_2e(double *integrals, double *target,
+do_gencon_sparse_transform_2e(Integral*integ,
+                              double *integrals, double *target,
                               int index,
                               GaussianShell *sh1, GaussianShell *sh2,
                               GaussianShell *sh3, GaussianShell *sh4)
@@ -602,8 +578,8 @@ do_gencon_sparse_transform_2e(double *integrals, double *target,
                   ncartl = INT_NCART(am4);
 
                   if (shell->is_pure(*tgencon)) {
-                      SphericalTransformIterV3
-                          trans(shell->am(*tgencon));
+                      SphericalTransformIter
+                        trans(integ->spherical_transform(shell->am(*tgencon)));
                       do_sparse_transform2(source, target,
                                            index, trans,
                                            ncart[index], nfunc[index],
@@ -659,7 +635,7 @@ do_gencon_sparse_transform_2e(double *integrals, double *target,
 }
 
 void
-intv3_transform_2e(double *integrals, double *target,
+intv3_transform_2e(Integral *integ, double *integrals, double *target,
                  GaussianShell *sh1, GaussianShell *sh2,
                  GaussianShell *sh3, GaussianShell *sh4)
 {
@@ -669,19 +645,23 @@ intv3_transform_2e(double *integrals, double *target,
   int pure4 = sh4->has_pure();
 
   if (pure1) {
-      do_gencon_sparse_transform_2e(integrals, target, 0, sh1, sh2, sh3, sh4);
+      do_gencon_sparse_transform_2e(integ,
+                                    integrals, target, 0, sh1, sh2, sh3, sh4);
       integrals = target;
     }
   if (pure2) {
-      do_gencon_sparse_transform_2e(integrals, target, 1, sh1, sh2, sh3, sh4);
+      do_gencon_sparse_transform_2e(integ,
+                                    integrals, target, 1, sh1, sh2, sh3, sh4);
       integrals = target;
     }
   if (pure3) {
-      do_gencon_sparse_transform_2e(integrals, target, 2, sh1, sh2, sh3, sh4);
+      do_gencon_sparse_transform_2e(integ,
+                                    integrals, target, 2, sh1, sh2, sh3, sh4);
       integrals = target;
     }
   if (pure4) {
-      do_gencon_sparse_transform_2e(integrals, target, 3, sh1, sh2, sh3, sh4);
+      do_gencon_sparse_transform_2e(integ,
+                                    integrals, target, 3, sh1, sh2, sh3, sh4);
       integrals = target;
     }
 

@@ -75,9 +75,11 @@ nnmb_atom(int z, int l)
   else if (l==2) {
       if (z <= 20) return 0;
     }
+  else if (l==3) {
+      if (z <= 56) return 0;
+    }
   else {
-      cerr << "NAO: l too large" << endl;
-      abort();
+      return 0;
     }
   cerr << "NAO: z too big" << endl;
   abort();
@@ -340,7 +342,7 @@ Wavefunction::nao()
 # endif
 
   // Step 2a. Transform to solid harmonics.
-  // -- for now program will abort if basis does not use only S.H.
+  // -- for now program will abort if basis does not use only S.H and cart d.
   RefSCDimension aodim = P.dim();
   RefSCMatrix Tdfg(aodim, aodim, matrixkit());
   Tdfg->unit();

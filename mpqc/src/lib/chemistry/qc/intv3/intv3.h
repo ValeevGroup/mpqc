@@ -33,12 +33,22 @@
 #include <math/topology/pointbag.h>
 #include <chemistry/qc/basis/integral.h>
 
+class SphericalTransformV3;
+class ISphericalTransformV3;
+
 class IntegralV3 : public Integral {
 #   define CLASSNAME IntegralV3
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
+  private:
+    int maxl_;
+    SphericalTransformV3 ***st_;
+    ISphericalTransformV3 ***ist_;
+
+    void free_transforms();
+    void initialize_transforms();
   public:
     IntegralV3(const RefGaussianBasisSet &b1=0,
                const RefGaussianBasisSet &b2=0,
@@ -46,6 +56,7 @@ class IntegralV3 : public Integral {
                const RefGaussianBasisSet &b4=0);
     IntegralV3(StateIn&);
     IntegralV3(const RefKeyVal&);
+    ~IntegralV3();
 
     void save_data_state(StateOut&);
     
@@ -55,6 +66,8 @@ class IntegralV3 : public Integral {
     SphericalTransformIter * new_spherical_transform_iter(int l,
                                                           int inv=0,
                                                           int subl=-1);
+    const SphericalTransform * spherical_transform(int l,
+                                                   int inv=0, int subl=-1);
     
     RefOneBodyInt overlap();
 
@@ -81,6 +94,11 @@ class IntegralV3 : public Integral {
     RefTwoBodyInt electron_repulsion();
 
     RefTwoBodyDerivInt electron_repulsion_deriv();
+
+    void set_basis(const RefGaussianBasisSet &b1,
+                   const RefGaussianBasisSet &b2 = 0,
+                   const RefGaussianBasisSet &b3 = 0,
+                   const RefGaussianBasisSet &b4 = 0);
 };
 
 

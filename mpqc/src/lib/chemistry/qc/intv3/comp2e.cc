@@ -652,7 +652,7 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
 
   /* Transform to pure am (if requested in the centers structure). */
   if (!(flags&INT_NOPURE)) {
-      intv3_transform_2e(int_buffer, int_buffer,
+      intv3_transform_2e(integral_, int_buffer, int_buffer,
                          &bs1_->shell(sh1),
                          int_unit2?int_unit_shell:&bs2_->shell(sh2),
                          &bs3_->shell(sh3),
@@ -872,7 +872,7 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
   current_buffer = user_int_buffer;
   current_pure_buffer = user_int_buffer;
   for (i=0; i<3*der_centers->n; i++) {
-      intv3_transform_2e(current_buffer, current_pure_buffer,
+      intv3_transform_2e(integral_, current_buffer, current_pure_buffer,
                        shell1, shell2, shell3, shell4);
       current_buffer = &current_buffer[ncart];
       current_pure_buffer = &current_pure_buffer[nints];
@@ -1906,7 +1906,7 @@ Int2eV3::int_erep_bound1der(int flags, int bsh1, int bsh2, int *size)
   current_buffer = user_int_buffer;
   current_pure_buffer = user_int_buffer;
   for (i=0; i<3; i++) {
-      intv3_transform_2e(current_buffer, current_pure_buffer,
+      intv3_transform_2e(integral_, current_buffer, current_pure_buffer,
                        &bs1_->shell(sh1),
                        &bs2_->shell(sh2),
                        &bs3_->shell(sh3),

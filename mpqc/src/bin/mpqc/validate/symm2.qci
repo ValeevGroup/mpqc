@@ -1,5 +1,5 @@
 
-test_basis: cc-pVDZ cc-pVTZ cc-pVQZ
+test_basis: cc-pVDZ cc-pVTZ cc-pVQZ cc-pV5Z
 test_method: scf
 gradient: yes
 test_molecule:          c2h2 c2h2 c2h2 c2h2 c2h2 c2h2

@@ -108,8 +108,10 @@ PointChargeData::~PointChargeData()
 
 ///////////////////////////////////////////////////////////////////////
 
-OneBodyInt::OneBodyInt(const RefGaussianBasisSet&bs1,
+OneBodyInt::OneBodyInt(Integral* integral,
+                       const RefGaussianBasisSet&bs1,
                        const RefGaussianBasisSet&bs2) :
+  integral_(integral),
   bs1_(bs1), bs2_(bs2)
 {
   buffer_ = 0;
@@ -647,7 +649,9 @@ OneBody3IntOp::has_side_effects_in_arg2()
 
 ///////////////////////////////////////////////////////////////////////
 
-OneBodyDerivInt::OneBodyDerivInt(const RefGaussianBasisSet&b) :
+OneBodyDerivInt::OneBodyDerivInt(Integral *integral,
+                                 const RefGaussianBasisSet&b) :
+  integral_(integral),
   bs1(b), bs2(b)
 {
   // allocate a buffer
@@ -661,8 +665,10 @@ OneBodyDerivInt::OneBodyDerivInt(const RefGaussianBasisSet&b) :
   }
 }
 
-OneBodyDerivInt::OneBodyDerivInt(const RefGaussianBasisSet&b1,
+OneBodyDerivInt::OneBodyDerivInt(Integral *integral,
+                                 const RefGaussianBasisSet&b1,
                                  const RefGaussianBasisSet&b2) :
+  integral_(integral),
   bs1(b1), bs2(b2)
 {
   buffer_ = 0;

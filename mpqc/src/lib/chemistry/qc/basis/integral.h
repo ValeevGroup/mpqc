@@ -46,6 +46,7 @@ class CartesianIter;
 class RedundantCartesianIter;
 class RedundantCartesianSubIter;
 class SphericalTransformIter;
+class SphericalTransform;
 class PointBag_double;
 
 SavableState_REF_fwddec(SCElementOp);
@@ -107,6 +108,9 @@ class Integral : public SavableState {
     virtual SphericalTransformIter *
                   new_spherical_transform_iter(int l,
                                                int inv=0, int subl=-1) =0;
+    virtual const SphericalTransform *
+                  spherical_transform(int l,
+                                      int inv=0, int subl=-1) =0;
     
     virtual RefOneBodyInt overlap() =0;
     

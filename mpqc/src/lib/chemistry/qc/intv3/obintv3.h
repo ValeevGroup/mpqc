@@ -41,7 +41,8 @@ class OneBodyIntV3 : public OneBodyInt {
     typedef void (Int1eV3::*IntegralFunction)(int,int);
     IntegralFunction intfunc_;
   public:
-    OneBodyIntV3(const RefGaussianBasisSet&, const RefGaussianBasisSet&,
+    OneBodyIntV3(Integral*,
+                 const RefGaussianBasisSet&, const RefGaussianBasisSet&,
                  IntegralFunction);
     ~OneBodyIntV3();
     void compute_shell(int,int);
@@ -53,7 +54,8 @@ class PointChargeIntV3 : public OneBodyInt
     RefInt1eV3 int1ev3_;
     RefPointChargeData data_;
   public:
-    PointChargeIntV3(const RefGaussianBasisSet&,
+    PointChargeIntV3(Integral*,
+                     const RefGaussianBasisSet&,
                      const RefGaussianBasisSet&,
                      const RefPointChargeData&);
     ~PointChargeIntV3();
@@ -66,7 +68,8 @@ class EfieldDotVectorIntV3: public OneBodyInt
     RefInt1eV3 int1ev3_;
     RefEfieldDotVectorData data_;
   public:
-    EfieldDotVectorIntV3(const RefGaussianBasisSet&,
+    EfieldDotVectorIntV3(Integral*,
+                         const RefGaussianBasisSet&,
                          const RefGaussianBasisSet&,
                          const RefEfieldDotVectorData&);
     ~EfieldDotVectorIntV3();
@@ -79,7 +82,8 @@ class DipoleIntV3: public OneBodyInt
     RefInt1eV3 int1ev3_;
     RefDipoleData data_;
   public:
-    DipoleIntV3(const RefGaussianBasisSet&,
+    DipoleIntV3(Integral*,
+                const RefGaussianBasisSet&,
                 const RefGaussianBasisSet&,
                 const RefDipoleData&);
     ~DipoleIntV3();
@@ -94,7 +98,8 @@ class OneBodyDerivIntV3 : public OneBodyDerivInt {
     typedef void (Int1eV3::*IntegralFunction)(int,int,int,int);
     IntegralFunction intfunc_;
   public:
-    OneBodyDerivIntV3(const RefGaussianBasisSet&,
+    OneBodyDerivIntV3(Integral*,
+                      const RefGaussianBasisSet&,
                       const RefGaussianBasisSet&,
                       IntegralFunction);
     ~OneBodyDerivIntV3();

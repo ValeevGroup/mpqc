@@ -85,7 +85,7 @@ class SphericalTransform {
 class ISphericalTransform: public SphericalTransform {
   protected:
     ISphericalTransform();
-    ISphericalTransform(int l);
+    ISphericalTransform(int l,int subl=-1);
     void init();
 };
 
@@ -100,7 +100,7 @@ class SphericalTransformIter {
     
   public:
     SphericalTransformIter();
-    SphericalTransformIter(SphericalTransform*);
+    SphericalTransformIter(const SphericalTransform*);
 
     void begin() { i_ = 0; }
     void start() { begin(); }

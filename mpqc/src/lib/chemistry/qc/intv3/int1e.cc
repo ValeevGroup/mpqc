@@ -32,10 +32,13 @@
 #include <chemistry/qc/intv3/int1e.h>
 #include <chemistry/qc/intv3/utils.h>
 
-Int1eV3::Int1eV3(const RefGaussianBasisSet&b1,
+Int1eV3::Int1eV3(Integral *integral,
+                 const RefGaussianBasisSet&b1,
                  const RefGaussianBasisSet&b2,
                  int order)
 {
+  integral_ = integral;
+
   exponent_weighted = -1;
   scale_shell_result = 0;
   result_scale_factor = 1.0;

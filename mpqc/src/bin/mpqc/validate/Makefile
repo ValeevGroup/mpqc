@@ -241,7 +241,7 @@ checksymm1:
 .PHONY: checksymm2
 checksymm2:
 	@echo Consistency checks on symmetry test series 2:
-	@for b in ccpvdz ccpvtz ccpvqz; \
+	@for b in ccpvdz ccpvtz ccpvqz ccpv5z; \
 	do (\
 	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}ci}.out;\
 	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}c2}.out;\

@@ -4,7 +4,7 @@
 
 typedef int dmt_matrix;
 typedef int mdescr;
-typedef int bool;
+typedef int booln;
 
 #define MAXARGS 50
 

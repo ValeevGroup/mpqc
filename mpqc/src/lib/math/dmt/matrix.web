@@ -1,6 +1,9 @@
 %
 % $Log$
-% Revision 1.6  1994/08/26 21:03:14  etseidl
+% Revision 1.7  1994/09/01 18:42:24  cljanss
+% Changed bool type to booln to avoid conflict with the C++ builtin 'bool'.
+%
+% Revision 1.6  1994/08/26  21:03:14  etseidl
 % fix some warnings
 %
 % Revision 1.5  1994/08/16  19:53:15  etseidl
@@ -241,8 +244,8 @@ say ``private'' instead of static when  I hide a
 procedure or variable name in
  a file, and explicitly declare the rest to be ``public.''
 I also like to declare
-variables of type ``bool'' to hold TRUE or FALSE
-values.  The |bool| typedef appears in ``matrix.h''.
+variables of type ``booln'' to hold TRUE or FALSE
+values.  The |booln| typedef appears in ``matrix.h''.
 
 @d private static
 @d public
@@ -1949,7 +1952,7 @@ is printed to |stdout|.
 void write_matrix (fname, m, binp)
 char *fname; 			/* The name of the file to be written. */
 mdescr m;   			/* The matrix to write. */
-bool binp; 			/* Binary? 0/1 $\rightarrow$ text/binary. */
+booln binp; 			/* Binary? 0/1 $\rightarrow$ text/binary. */
 {
   void dmt_free();
   int ncols = dmt_size(m);		/* Size of the matrix. */
@@ -2507,7 +2510,7 @@ double scale;
 
 @<Public higher level routines.@>=
 
-GLOBAL_FUNCTION bool
+GLOBAL_FUNCTION booln
 dmt_equal(m1, m2)
 mdescr m1;
 mdescr m2;
@@ -2517,7 +2520,7 @@ mdescr m2;
     return (eql_mat (m1, m2));
   } else {
     mdescr tmp, t;
-    bool rv;
+    booln rv;
     if (dmt_distribution (m1) == SCATTERED) {
       t = m2; tmp = dmt_columns("Temp for dmt_equal", m1);
     } else {
@@ -2531,7 +2534,7 @@ mdescr m2;
 
 @ Are two same-distributed matrices equal?
 @<Private support...@>=
-LOCAL_FUNCTION bool
+LOCAL_FUNCTION booln
 eql_mat(m1, m2)
 mdescr m1;
 mdescr m2;
@@ -2634,12 +2637,12 @@ mdescr m2;
 
 @<Public higher level routines.@>=
 
-GLOBAL_FUNCTION bool
+GLOBAL_FUNCTION booln
 dmt_symmp (m1) 
 mdescr m1; 
 {
   int n = dmt_size(m1);
-  bool rval;
+  booln rval;
   mdescr temp = dmt_create("dmt_symmp temp mat", n, COLUMNS);
   dmt_copy (m1, temp); dmt_transpose (temp);
   rval = dmt_equal(m1, temp);
@@ -2651,12 +2654,12 @@ mdescr m1;
 
 @<Public higher level routines.@>=
 
-GLOBAL_FUNCTION bool
+GLOBAL_FUNCTION booln
 dmt_asymmp (m1) 
 mdescr m1; 
 {
   int n = dmt_size(m1);
-  bool rval;
+  booln rval;
   mdescr temp = dmt_create("dmt_symmp temp mat", n, COLUMNS);
   dmt_copy (m1, temp); dmt_transpose (temp);
   dmt_scale (temp, -1.0);
@@ -2671,7 +2674,7 @@ mdescr m1;
 
 @<Public higher level routines.@>=
 
-GLOBAL_FUNCTION bool
+GLOBAL_FUNCTION booln
 dmt_zerop (m1)
 mdescr m1;
 {

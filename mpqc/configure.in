@@ -234,6 +234,7 @@ AC_CHECK_PROGS(CXX, g++ c++ gcc CC cxx xlC, gcc)
 dnl sees if CXX is a GNU compiler
 AC_PROG_CXX
 AC_PROG_F77
+AC_F77_LIBRARY_LDFLAGS
 AC_PROG_CPP
 AC_PROG_CXXCPP
 AC_CHECK_PROG(AR,ar,ar)

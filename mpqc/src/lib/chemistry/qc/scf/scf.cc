@@ -168,7 +168,7 @@ SCF::print(ostream&o)
 }
 
 void
-SCF::print_natom_3(const RefSCVector &v, const char *title = 0, ostream&o=cout)
+SCF::print_natom_3(const RefSCVector &v, const char *title, ostream&o)
 {
   int precision = 10;
   int lwidth = precision + 4;

@@ -767,73 +767,84 @@ Molecule::num_unique_atoms()
   return nu;
 }
 
-// I hate small numbers...they make my teeth itch.  Let's go through
-// all the atoms, and find coordinates which are close to zero ( < 1.0e-5)
-// and set these to zero.  this is cheating, but who cares
-
-static void
-get_rid_of_annoying_numbers(Molecule* mol)
-{
-  for (int i=0; i < mol->natom(); i++) {
-    for (int j=0; j < 3; j++) {
-      if (fabs(mol->atom(i)[j]) < 5.0e-2) mol->atom(i).point()[j]=0;
-    }
-  }
-}
-
 // given a molecule, make sure that equivalent centers have coordinates
 // that really map into each other
 
 void
 Molecule::cleanup_molecule()
 {
-  // this may have already been done, but let's first move to the principal
-  // axes
-//   transform_to_principal_axes(0);
-//   symmetrize();
-
   // if symmetry is c1, do nothing else
   if (!strcmp(point_group().symbol(),"c1")) return;
-
-  get_rid_of_annoying_numbers(this);
 
   // now let's find out how many unique atoms there are and who they are
   int nuniq = num_unique_atoms();
   int *uniq = find_unique_atoms();
 
-  Point up,np;
+  Point up,np,ap;
   SymmetryOperation so;
   CharacterTable ct = point_group().char_table();
 
-  // grab the coordinates of each unique atom and stuff into up
+  // first clean up the unique atoms by replacing each coordinate with the
+  // average of coordinates obtained by applying all symmetry operations to
+  // the original atom, iff the new atom ends up near the original atom
   for (int i=0; i < nuniq; i++) {
-    up = atom(uniq[i]).point();
-
-   // subject up to all symmetry ops...find the atom this maps to and
-   // reset it's coordinates. skip E.
-    for (int g=1; g < ct.order(); g++) {
-      so = ct.symm_operation(g);
-      for (int ii=0; ii < 3; ii++) {
-        np[ii]=0;
-        for (int jj=0; jj < 3; jj++) np[ii] += so(ii,jj) * up[jj];
-      }
-
-      for (int j=0; j < natom(); j++) {
-        if (dist(np,atom(j).point()) < 0.1) {
-          //cout << scprintf("gamma(%d)*atom(%d)(%f,%f,%f) = atom(%d)(%f,%f,%f)\n",
-          //                  g,uniq[i],up[0],up[1],up[2],j,np[0],np[1],np[2]);
-
-          atom(j)[0] = np[0];
-          atom(j)[1] = np[1];
-          atom(j)[2] = np[2];
-          break;
+      // up will store the original coordinates of unique atom i
+      up = atom(uniq[i]).point();
+      // ap will hold the average coordinate (times the number of coordinates)
+      // initialize it to the E result
+      ap = up;
+      int ncoor = 1;
+      // loop through all sym ops except E
+      for (int g=1; g < ct.order(); g++) {
+          so = ct.symm_operation(g);
+          for (int ii=0; ii < 3; ii++) {
+              np[ii]=0;
+              for (int jj=0; jj < 3; jj++) np[ii] += so(ii,jj) * up[jj];
+            }
+          if (dist(np,up) < 0.1) {
+              for (int jj=0; jj < 3; jj++) ap[jj] += np[jj];
+              ncoor++;
+            }
         }
-      }
+      // replace the unique coordinate with the average coordinate
+      atom(uniq[i])[0] = ap[0] / ncoor;
+      atom(uniq[i])[1] = ap[1] / ncoor;
+      atom(uniq[i])[2] = ap[2] / ncoor;
     }
-  }
 
- // one last pass to make me happy
-  get_rid_of_annoying_numbers(this);
+  // find the atoms equivalent to each unique atom and eliminate
+  // numerical errors that may be in the equivalent atom's coordinates
+
+  // loop through unique atoms
+  for (int i=0; i < nuniq; i++) {
+      // up will store the coordinates of unique atom i
+      up = atom(uniq[i]).point();
+
+      // loop through all sym ops except E
+      for (int g=1; g < ct.order(); g++) {
+          so = ct.symm_operation(g);
+          for (int ii=0; ii < 3; ii++) {
+              np[ii]=0;
+              for (int jj=0; jj < 3; jj++) np[ii] += so(ii,jj) * up[jj];
+            }
+
+          // loop through equivalent atoms
+          for (int j=0; j < natom(); j++) {
+              int k;
+              for (k=0; k < nuniq; k++) {
+                  if (uniq[k] == j) break;
+                }
+              // skip j if it is unique
+              if (k < nuniq) continue;
+              // see if j is generated from i
+              if (dist(np,atom(j).point()) < 0.1) {
+                  atom(j)[0] = np[0];
+                  atom(j)[1] = np[1];
+                  atom(j)[2] = np[2];
+                }
+            }
+        }
+    }
 }
 
 ///////////////////////////////////////////////////////////////////

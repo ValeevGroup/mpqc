@@ -456,6 +456,7 @@ class IntMolecularCoor: public MolecularCoor
     int form_print_simples_;
     int form_print_variable_;
     int form_print_constant_;
+    int form_print_molecule_;
   public:
     IntMolecularCoor(StateIn&);
     IntMolecularCoor(RefMolecule&mol);

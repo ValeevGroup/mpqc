@@ -43,7 +43,7 @@
 // members of IntMolecularCoor
 
 #define CLASSNAME IntMolecularCoor
-#define VERSION 4
+#define VERSION 5
 #define PARENTS public MolecularCoor
 #include <util/state/statei.h>
 #include <util/class/classia.h>
@@ -74,7 +74,8 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
   decouple_bends_(0),
   form_print_simples_(0),
   form_print_variable_(0),
-  form_print_constant_(0)
+  form_print_constant_(0),
+  form_print_molecule_(0)
 {
   new_coords();
   generator_ = new IntCoorGen(mol);
@@ -134,6 +135,12 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
     form_print_simples_ = 0;
     form_print_variable_ = 0;
     form_print_constant_ = 0;
+  }
+  
+  if (s.version(static_class_desc()) >= 5) {
+    s.get(form_print_molecule_);
+  } else {
+    form_print_molecule_ = 0;
   }
 
   dim_.restore_state(s);
@@ -256,6 +263,8 @@ IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
   if (keyval->error() != KeyVal::OK) form_print_variable_ = 0;
   form_print_constant_ = keyval->booleanvalue("form:print_constant");
   if (keyval->error() != KeyVal::OK) form_print_constant_ = 0;
+  form_print_molecule_ = keyval->booleanvalue("form:print_molecule");
+  if (keyval->error() != KeyVal::OK) form_print_molecule_ = 0;
 }
 
 void
@@ -711,6 +720,7 @@ IntMolecularCoor::save_data_state(StateOut&s)
   s.put(form_print_simples_);
   s.put(form_print_variable_);
   s.put(form_print_constant_);
+  s.put(form_print_molecule_);
 
   dim_.save_state(s);
   dvc_.save_state(s);
@@ -837,6 +847,9 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
           molecule[i/3][i%3] += cartesian_displacement(i);
 #endif          
         }
+
+      // fix symmetry breaking due to numerical round-off
+      molecule.cleanup_molecule();
 
       // check for convergence
       RefSCElementMaxAbs maxabs = new SCElementMaxAbs();

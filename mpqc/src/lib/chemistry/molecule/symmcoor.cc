@@ -409,6 +409,7 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
   delete[] is_totally_symmetric;
   fixed_ = saved_fixed_;
 
+  if (form_print_molecule_) molecule_->print();
   if (form_print_simples_) print_simples(cout);
   if (form_print_variable_) print_variable(cout);
   if (form_print_constant_) print_constant(cout);

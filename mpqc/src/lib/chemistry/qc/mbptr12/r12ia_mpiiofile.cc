@@ -42,7 +42,7 @@ using namespace sc;
 
 static ClassDesc R12IntsAcc_MPIIOFile_cd(
   typeid(R12IntsAcc_MPIIOFile),"R12IntsAcc_MPIIOFile",1,"public R12IntsAcc",
-  0, 0, create<R12IntsAcc_MPIIOFile>);
+  0, 0, 0);
 
 R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char* filename, int nte_types, int nbasis1, int nbasis2,
 					   int nocc, int nfzc, bool restart) :
@@ -55,7 +55,7 @@ R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char* file
 }
 
 R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(StateIn& si) :
-  R12IntsAcc(si)
+  SavableState(si), R12IntsAcc(si)
 {
   mem_ = MemoryGrp::get_default_memorygrp();
   si.getstring(filename_);
@@ -189,6 +189,15 @@ R12IntsAcc_MPIIOFile::release_pair_block(int i, int j, tbint_type oper_type)
 
 ///////////////////////////////////////////////////////////////
 
+static ClassDesc R12IntsAcc_MPIIOFile_Ind_cd(
+  typeid(R12IntsAcc_MPIIOFile_Ind),"R12IntsAcc_MPIIOFile_Ind",1,"public R12IntsAcc",
+  0, 0, create<R12IntsAcc_MPIIOFile_Ind>);
+
+R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(StateIn& si) :
+  SavableState(si), R12IntsAcc_MPIIOFile(si)
+{
+}
+
 R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(Ref<MemoryGrp>& mem, const char* filename, int num_te_types, int nbasis1, int nbasis2,
 						   int nocc, int nfzc, bool restart) :
   R12IntsAcc_MPIIOFile(mem,filename,num_te_types,nbasis1,nbasis2,nocc,nfzc,restart)
@@ -197,6 +206,12 @@ R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(Ref<MemoryGrp>& mem, const ch
 
 R12IntsAcc_MPIIOFile_Ind::~R12IntsAcc_MPIIOFile_Ind()
 {
+}
+
+void
+R12IntsAcc_MPIIOFile_Ind::save_data_state(StateOut&so)
+{
+  R12IntsAcc_MPIIOFile::save_data_state(so);
 }
 
 void

@@ -112,7 +112,9 @@ class R12IntsAcc_MPIIOFile_Ind: public R12IntsAcc_MPIIOFile {
   public:
     R12IntsAcc_MPIIOFile_Ind(Ref<MemoryGrp>& mem, const char *filename, int num_te_types, int nbasis1, int nbasis2,
 			     int nocc, int nfzc, bool restart);
+    R12IntsAcc_MPIIOFile_Ind(StateIn&);
     ~R12IntsAcc_MPIIOFile_Ind();
+    void save_data_state(StateOut&);
 
     /// Stores all pair block of integrals held in mem.
     /// By default blocks are appended to the end of the same file, i.e.

@@ -269,12 +269,23 @@ Int2eV3::compute_bounds(int_bound_t *overall, int_bound_t *vec, int flag)
     exit(1);
     }
 
+  int nshell=bs1_->nshell();
+  int nsht=nshell*(nshell+1)/2;
+
+  int me = grp_->me();
+  int n = grp_->n();
+
+  for (int i=0; i<nsht; i++) vec[i] = 0;
+
   *overall = -126;
+  int sh12 = 0;
   for(sh1=0; sh1 < bs1_->nshell() ; sh1++) {
-    for(sh2=0; sh2 <= sh1 ; sh2++) {
-      compute_bounds_shell(overall,vec,flag,sh1,sh2);
+    for(sh2=0; sh2 <= sh1 ; sh2++,sh12++) {
+      if (sh12%n == me) compute_bounds_shell(overall,vec,flag,sh1,sh2);
       }
     }
+
+  grp_->sum(vec,nsht);
   }
 
 /* Compute the partial bound arrays, either Q or R can be computed

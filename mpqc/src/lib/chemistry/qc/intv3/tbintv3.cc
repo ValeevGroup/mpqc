@@ -36,7 +36,7 @@ TwoBodyIntV3::TwoBodyIntV3(Integral*integral,
                            int storage):
   TwoBodyInt(integral,b1,b2,b3,b4)
 {
-  int2ev3_ = new Int2eV3(b1,b2,b3,b4,0,storage);
+  int2ev3_ = new Int2eV3(b1,b2,b3,b4,integral->messagegrp(),0,storage);
   buffer_ = int2ev3_->buffer();
   integral_->adjust_storage(int2ev3_->used_storage());
 }
@@ -75,7 +75,7 @@ TwoBodyDerivIntV3::TwoBodyDerivIntV3(Integral*integral,
                                      int storage):
   TwoBodyDerivInt(integral,b1,b2,b3,b4)
 {
-  int2ev3_ = new Int2eV3(b1,b2,b3,b4,1,storage);
+  int2ev3_ = new Int2eV3(b1,b2,b3,b4,integral->messagegrp(),1,storage);
   buffer_ = int2ev3_->buffer();
   integral_->adjust_storage(int2ev3_->used_storage());
 }

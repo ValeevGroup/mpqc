@@ -36,8 +36,10 @@ Int2eV3::Int2eV3(const RefGaussianBasisSet& b1,
                  const RefGaussianBasisSet& b2,
                  const RefGaussianBasisSet& b3,
                  const RefGaussianBasisSet& b4,
+                 const RefMessageGrp& grp,
                  int order, int storage) :
-  store(0), int_Qvec(0), int_Rvec(0)
+  store(0), int_Qvec(0), int_Rvec(0),
+  grp_(grp)
 {
   bs1_ = b1;
   bs2_ = b2;

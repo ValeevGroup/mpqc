@@ -83,6 +83,8 @@ class Int2eV3: public VRefCount {
     RefGaussianBasisSet bs3_;
     RefGaussianBasisSet bs4_;
 
+    RefMessageGrp grp_;
+
     int bs1_shell_offset_;
     int bs2_shell_offset_;
     int bs3_shell_offset_;
@@ -338,6 +340,7 @@ class Int2eV3: public VRefCount {
             const RefGaussianBasisSet&,
             const RefGaussianBasisSet&,
             const RefGaussianBasisSet&,
+            const RefMessageGrp&,
             int order, int storage);
     ~Int2eV3();
 

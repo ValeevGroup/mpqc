@@ -41,6 +41,7 @@ class MPQCIn {
     MPQCInDatum<int> atom_charge_;
     MPQCInDatum<int> molecule_bohr_;
     MPQCInDatum<char *> basis_;
+    MPQCInDatum<char *> auxbasis_;
     MPQCInDatum<char *> method_;
     MPQCInDatum<char *> method_xc_;
     MPQCInDatum<char *> method_grid_;
@@ -56,7 +57,8 @@ class MPQCIn {
 
     void write_energy_object(std::ostream&, const char *keyword,
                              const char *method,
-                             const char *basis, int coor);
+                             const char *basis, int coor,
+                             bool need_cints = false);
     void write_basis_object(std::ostream&, const char *keyword,
                             const char *basis);
     void write_vector(std::ostream &ostrs,
@@ -86,6 +88,7 @@ class MPQCIn {
     void set_charge(char *);
     void set_method(char *);
     void set_basis(char *);
+    void set_auxbasis(char *);
     void set_multiplicity(char *);
     void set_optimize(int);
     void set_opt_type(int);

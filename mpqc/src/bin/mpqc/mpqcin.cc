@@ -26,6 +26,7 @@ MPQCIn::MPQCIn():
   mult_(1),
   charge_(0),
   basis_(0),
+  auxbasis_(0),
   method_(0),
   optimize_(0),
   gradient_(0),
@@ -53,6 +54,7 @@ MPQCIn::~MPQCIn()
 {
   delete lexer_;
   if (basis_.val()) free(basis_.val());
+  if (auxbasis_.val()) free(auxbasis_.val());
   if (method_.val()) free(method_.val());
   if (method_xc_.val()) free(method_xc_.val());
   if (method_grid_.val()) free(method_grid_.val());
@@ -203,6 +205,12 @@ void
 MPQCIn::set_basis(char *b)
 {
   basis_ = b;
+}
+
+void
+MPQCIn::set_auxbasis(char *b)
+{
+  auxbasis_ = b;
 }
 
 void
@@ -452,7 +460,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
                             const char *keyword,
                             const char *method,
                             const char *basis,
-                            int coor)
+                            int coor, bool need_cints)
 {
   int nelectron = int(mol_->nuclear_charge()+1e-6) - charge_.val();
   if (nelectron < 0) {
@@ -466,8 +474,10 @@ MPQCIn::write_energy_object(ostream &ostrs,
   const char *method_object = 0;
   const char *reference_method = 0;
   const char *guess_method = method;
+  const char *auxbasis_key = 0;
   int dft = 0;
   int uscf = 0;
+  ostringstream o_extra;
   if (method) {
       // Hartree-Fock methods
       if (!strcmp(method, "HF")) {
@@ -510,6 +520,30 @@ MPQCIn::write_energy_object(ostream &ostrs,
               error("MP2 can only be used with multiplicity 1: try ZAPT2");
             }
         }
+      // Perturbation Theory
+      else if (!strcmp(method, "MP2-R12/A")) {
+          need_cints = true;
+          auxbasis_key = "aux_basis";
+          guess_method = 0;
+          method_object = "MBPT2_R12";
+          reference_method = "HF";
+          o_extra << "stdapprox = \"A\"" << endl;
+          if (mult_.val() != 1) {
+              error("MP2-R12 can only be used with multiplicity 1");
+            }
+        }
+      // Perturbation Theory
+      else if (!strcmp(method, "MP2-R12/A'")) {
+          need_cints = true;
+          auxbasis_key = "aux_basis";
+          guess_method = 0;
+          method_object = "MBPT2_R12";
+          reference_method = "HF";
+          o_extra << "stdapprox = \"A'\"" << endl;
+          if (mult_.val() != 1) {
+              error("MP2-R12 can only be used with multiplicity 1");
+            }
+        }
       else if (!strcmp(method, "ZAPT2")) {
           guess_method = 0;
           method_object = "MBPT2";
@@ -526,6 +560,9 @@ MPQCIn::write_energy_object(ostream &ostrs,
   else error("no method given");
   ostrs << indent << keyword << "<" << method_object << ">: (" << endl;
   ostrs << incindent;
+  ostrs << indent << o_extra.str();
+  if (auxbasis_key) write_basis_object(ostrs, auxbasis_key, auxbasis_.val());
+  if (need_cints) ostrs << indent << "integrals<IntegralCints>: ()" << endl;
   ostrs << indent << "total_charge = " << charge_.val() << endl;
   ostrs << indent << "molecule = $:molecule" << endl;
   if (!strcmp(keyword, "mole") && !reference_method) {
@@ -575,18 +612,23 @@ MPQCIn::write_energy_object(ostream &ostrs,
     }
   if (dft || (!(basis
                 && !strncmp("STO",basis,3))
+              && !(basis
+                   && !strncmp("DZ",basis,2))
               && strncmp("STO",basis_.val(),3)
               && guess_method)) {
       if (frequencies_.val()) {
           ostrs << indent << "keep_guess_wavefunction = 1" << endl;;
         }
+      const char *guess_basis;
+      if (need_cints) guess_basis = "DZ (Dunning)";
+      else guess_basis = "STO-3G";
       write_energy_object(ostrs, "guess_wavefunction",
-                          guess_method, "STO-3G", 0);
+                          guess_method, guess_basis, 0, need_cints);
     }
   if (reference_method) {
       ostrs << indent << "nfzc = auto" << endl;;
       write_energy_object(ostrs, "reference",
-                          reference_method, 0, 0);
+                          reference_method, 0, 0, need_cints);
     }
   ostrs << decindent;
   ostrs << indent << ")" << endl;

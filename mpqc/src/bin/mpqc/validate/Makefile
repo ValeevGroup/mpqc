@@ -128,7 +128,8 @@ METHODSINPUTS := $(METHODSINPUTS:%=run/methods_%)
 
 INPUTINPUTS = \
 rksch2.in uksch2.in uhfch2opt.in rhfch2opt.in hfch2opt.in \
-hfh2ofreq.in ksh2oco.in ksh2o.in hfh2oopt.in
+hfh2ofreq.in ksh2oco.in ksh2o.in hfh2oopt.in \
+mp2h2o.in mp2r12ah2o.in mp2r12aph2o.in zapt2ch2.in
 INPUTINPUTS := $(INPUTINPUTS:%=run/input_%)
 
 ##############################################################################

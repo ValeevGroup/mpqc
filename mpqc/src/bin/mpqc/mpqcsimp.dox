@@ -75,6 +75,14 @@ The accepted keywords are:
      <dt><tt>UKS</tt><dd> Unrestricted Kohn-Sham.
      <dt><tt>MP2</tt><dd> Second order Moeller-Plesset perturbation theory.
                 Only available for <tt>multiplicity</tt> = 1.
+     <dt><tt>MP2-R12/A</tt><dd> The A version of MP2-R12.
+                Only available for <tt>multiplicity</tt> = 1.
+                An auxiliary basis should be specified.
+                No gradient, optimization, or frequencies are possible.
+     <dt><tt>MP2-R12/A'</tt><dd> The A' version of MP2-R12.
+                Only available for <tt>multiplicity</tt> = 1.
+                An auxiliary basis should be specified.
+                No gradient, optimization, or frequencies are possible.
      <dt><tt>ZAPT2</tt><dd>  Z-averaged perturbation theory.
                 Only available for <tt>multiplicity</tt> > 1.  No gradient,
                 optimization, or frequencies are possible.
@@ -102,6 +110,10 @@ The accepted keywords are:
 <dt><tt>basis</tt><dd> Specifies the basis set.  There is no default.  See
   the table in the GaussianBasisSet class documentation for the
   available basis sets.
+
+<dt><tt>auxbasis</tt><dd> Specifies the auxiliary basis set for MP2-R12
+  methods.  There is no default.  See the table in the GaussianBasisSet
+  class documentation for the available basis sets.
 
 <dt><tt>restart</tt><dd> Set to <tt>yes</tt> to restart an optimization.
   The default is <tt>no</tt>.

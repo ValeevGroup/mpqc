@@ -37,7 +37,7 @@ cstr(char *yytext)
 }
 
 %}
-string  [A-Za-z0-9_\.*+-/]*
+string  [A-Za-z0-9_\.*+-/']*
 qstring \"[^"\n]+\"
 %%
 "molecule"      { return T_MOLECULE; }
@@ -50,6 +50,7 @@ qstring \"[^"\n]+\"
 "charge"        { return T_CHARGE; }
 "method"        { return T_METHOD; }
 "basis"         { return T_BASIS; }
+"auxbasis"      { return T_AUXBASIS; }
 "cartesian"     { return T_CARTESIAN; }
 "internal"      { return T_INTERNAL; }
 "redundant"     { return T_REDUNDANT; }

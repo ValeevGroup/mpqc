@@ -31,7 +31,7 @@ int yydebug =1;
   std::vector<int> *nniv;
   }
 
-%token T_MOLECULE T_MULTIPLICITY T_CHARGE T_METHOD T_BASIS T_EQUALS
+%token T_MOLECULE T_MULTIPLICITY T_CHARGE T_METHOD T_BASIS T_AUXBASIS T_EQUALS
 %token T_OPTIMIZE T_GRADIENT T_BEG_OPT T_END_OPT T_CARTESIAN T_INTERNAL
 %token T_REDUNDANT T_RESTART T_CHECKPOINT T_COLON T_XC T_SYMMETRY
 %token T_BOHR T_ANGSTROM T_GRID T_FREQUENCIES
@@ -63,6 +63,8 @@ assignment:     T_MOLECULE T_COLON              { begin_molecule(); }
                                                 { set_method($3); }
             |   T_BASIS T_COLON string
                                                 { set_basis($3); }
+            |   T_AUXBASIS T_COLON string
+                                                { set_auxbasis($3); }
             |   T_OPTIMIZE T_COLON bool optimize_options_list
                                                 { set_optimize($3); }
             |   T_GRADIENT T_COLON bool

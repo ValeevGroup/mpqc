@@ -94,7 +94,7 @@ main(int argc, char** argv)
       RefDescribedClass volume = new ConnollyShape2(tmpkv.pointer());
       tmpkv->clear();
       tmpkv->assignboolean("verbose", !quiet);
-      RefDescribedClass trisurf = new TriangulatedSurface(tmpkv);
+      RefDescribedClass trisurf = new TriangulatedSurface(tmpkv.pointer());
       tmpkv->clear();
       tmpkv->assign("surface", trisurf);
       tmpkv->assign("volume", volume);

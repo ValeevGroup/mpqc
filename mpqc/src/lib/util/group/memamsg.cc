@@ -399,7 +399,7 @@ ActiveMsgMemoryGrp::sum_reduction(double *data, int doffset, int dsize)
 {
   int offset = doffset * sizeof(double);
   int size = dsize * sizeof(double);
-  // Locks are usually implicit, assuming that only active message
+  // Locks are usually implicit, assuming that only one active message
   // handler is active at a time.
   if (use_locks_for_reduction_) {
       send_lock_request(MemoryLockRequest::Reduce, offset, size);

@@ -87,6 +87,9 @@ class SavableState: virtual public DescribedClass {
   protected:
     SavableState();
     SavableState(const SavableState&);
+#ifndef __GNUC__
+  public:
+#endif
     SavableState& operator=(const SavableState&);
   public:
     virtual ~SavableState();

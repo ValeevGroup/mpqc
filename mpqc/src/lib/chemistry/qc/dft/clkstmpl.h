@@ -76,20 +76,3 @@ class LocalCLKSEnergyContribution {
       ex -= a0*0.5*val*pmat[ij]*pmat[kl];
     }
 };
-
-class LocalCLKSGradContribution {
-  private:
-    double * const pmat;
-
-  public:
-    LocalCLKSGradContribution(double *p) : pmat(p) {}
-    ~LocalCLKSGradContribution() {}
-
-    inline double cont1(int ij, int kl) {
-      return pmat[ij]*pmat[kl];
-    }
-
-    inline double cont2(int ij, int kl) {
-      return pmat[ij]*pmat[kl];
-    }
-};

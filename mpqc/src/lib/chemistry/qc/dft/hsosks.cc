@@ -1,5 +1,6 @@
 //
-// clks.cc --- implementation of the closed shell Kohn-Sham SCF class
+// hsosks.cc --- implementation of restricted open shell Kohn-Sham SCF
+// derived from clks.cc
 //
 // Copyright (C) 1997 Limit Point Systems, Inc.
 //
@@ -39,39 +40,40 @@
 
 #include <chemistry/qc/basis/petite.h>
 
-#include <chemistry/qc/dft/clks.h>
+#include <chemistry/qc/dft/hsosks.h>
 #include <chemistry/qc/scf/lgbuild.h>
 #include <chemistry/qc/scf/ltbgrad.h>
+#include <chemistry/qc/scf/effh.h>
 
-#include <chemistry/qc/dft/clkstmpl.h>
+#include <chemistry/qc/dft/hsoskstmpl.h>
 
 ///////////////////////////////////////////////////////////////////////////
-// CLKS
+// HSOSKS
 
-#define CLASSNAME CLKS
+#define CLASSNAME HSOSKS
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
 #define PARENTS public SCF
 #include <util/class/classi.h>
 void *
-CLKS::_castdown(const ClassDesc*cd)
+HSOSKS::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = CLSCF::_castdown(cd);
+  casts[0] = HSOSSCF::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
-CLKS::CLKS(StateIn& s) :
+HSOSKS::HSOSKS(StateIn& s) :
   SavableState(s),
-  CLSCF(s)
+  HSOSSCF(s)
 {
   exc_=0;
   integrator_ = new Murray93Integrator();
   functional_ = new SlaterXFunctional();
 }
 
-CLKS::CLKS(const RefKeyVal& keyval) :
-  CLSCF(keyval)
+HSOSKS::HSOSKS(const RefKeyVal& keyval) :
+  HSOSSCF(keyval)
 {
   exc_=0;
   integrator_ = keyval->describedclassvalue("integrator");
@@ -81,34 +83,35 @@ CLKS::CLKS(const RefKeyVal& keyval) :
   if (functional_.null()) functional_ = new SlaterXFunctional();
 }
 
-CLKS::~CLKS()
+HSOSKS::~HSOSKS()
 {
 }
 
 void
-CLKS::save_data_state(StateOut& s)
+HSOSKS::save_data_state(StateOut& s)
 {
-  CLSCF::save_data_state(s);
+  HSOSSCF::save_data_state(s);
 }
 
 int
-CLKS::value_implemented() const
+HSOSKS::value_implemented() const
 {
   return 1;
 }
 
 int
-CLKS::gradient_implemented() const
+HSOSKS::gradient_implemented() const
 {
   return 1;
 }
 
 void
-CLKS::print(ostream&o) const
+HSOSKS::print(ostream&o) const
 {
-  o << node0 << indent << "Closed Shell Kohn-Sham (CLKS) Parameters:" << endl;
+  o << node0 << indent
+    << "Restricted Open Shell Kohn-Sham (HSOSKS) Parameters:" << endl;
   o << incindent;
-  CLSCF::print(o);
+  HSOSSCF::print(o);
   o << node0 << indent << "Functional:" << endl;
   o << incindent;
   functional_->print(o);
@@ -120,174 +123,207 @@ CLKS::print(ostream&o) const
   o << decindent;
 }
 
-RefSymmSCMatrix
-CLKS::density()
-{
-  RefSymmSCMatrix dens(so_dimension(), basis_matrixkit());
-  so_density(dens, 2.0);
-  dens.scale(2.0);
-  return dens;
-}
-
 double
-CLKS::scf_energy()
+HSOSKS::scf_energy()
 {
-  double ehf = CLSCF::scf_energy();
+  double ehf = HSOSSCF::scf_energy();
   return ehf+exc_;
 }
 
 RefSymmSCMatrix
-CLKS::effective_fock()
+HSOSKS::effective_fock()
 {
-  RefSymmSCMatrix fa = fock(0) + vxc_;
+  RefSymmSCMatrix vxc_cl = vxc_a_ + vxc_b_;
+  RefSymmSCMatrix vxc_op = vxc_a_ - vxc_b_;
 
   RefSymmSCMatrix mofock(oso_dimension(), basis_matrixkit());
   mofock.assign(0.0);
 
-  // use eigenvectors if scf_vector_ is null
-  if (oso_scf_vector_.null())
-    mofock.accumulate_transform(eigenvectors(), fa,
+  RefSymmSCMatrix mofocko(oso_dimension(), basis_matrixkit());
+  mofocko.assign(0.0);
+
+  // use eigenvectors if oso_scf_vector_ is null
+  if (oso_scf_vector_.null()) {
+    mofock.accumulate_transform(eigenvectors(), fock(0)+vxc_cl,
                                 SCMatrix::TransposeTransform);
-  else
-    mofock.accumulate_transform(so_to_orthog_so().t() * oso_scf_vector_, fa,
+    mofocko.accumulate_transform(eigenvectors(), fock(1)+vxc_op,
+                                 SCMatrix::TransposeTransform);
+  } else {
+    RefSCMatrix so_to_oso_tr = so_to_orthog_so().t();
+    mofock.accumulate_transform(so_to_oso_tr * oso_scf_vector_,
+                                fock(0)+vxc_cl,
                                 SCMatrix::TransposeTransform);
+    mofocko.accumulate_transform(so_to_oso_tr * oso_scf_vector_,
+                                 fock(1)+vxc_op,
+                                 SCMatrix::TransposeTransform);
+  }
+
+  RefSCElementOp2 op = new GSGeneralEffH(this);
+  mofock.element_op(op, mofocko);
 
   return mofock;
 }
 
 RefSCExtrapData
-CLKS::extrap_data()
+HSOSKS::extrap_data()
 {
   RefSCExtrapData data =
-    new SymmSCMatrix2SCExtrapData(cl_fock_.result_noupdate(), vxc_);
+    new SymmSCMatrix4SCExtrapData(cl_fock_.result_noupdate(),
+                                  op_fock_.result_noupdate(),
+                                  vxc_a_, vxc_b_);
   return data;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 void
-CLKS::ao_fock()
+HSOSKS::ao_fock()
 {
   RefPetiteList pl = integral()->petite_list(basis());
   
   // calculate G.  First transform cl_dens_diff_ to the AO basis, then
   // scale the off-diagonal elements by 2.0
-  tim_enter("setup");
   RefSymmSCMatrix dd = cl_dens_diff_;
   cl_dens_diff_ = pl->to_AO_basis(dd);
   cl_dens_diff_->scale(2.0);
   cl_dens_diff_->scale_diagonal(0.5);
-  tim_exit("setup");
 
+  RefSymmSCMatrix ddo = op_dens_diff_;
+  op_dens_diff_ = pl->to_AO_basis(ddo);
+  op_dens_diff_->scale(2.0);
+  op_dens_diff_->scale_diagonal(0.5);
+  
   // now try to figure out the matrix specialization we're dealing with
   // if we're using Local matrices, then there's just one subblock, or
   // see if we can convert G and P to local matrices
-
   if (local_ || local_dens_) {
+    double *gmat, *gmato, *pmat, *pmato;
+    
     // grab the data pointers from the G and P matrices
-    double *gmat, *pmat;
-    tim_enter("local data");
     RefSymmSCMatrix gtmp = get_local_data(cl_gmat_, gmat, SCF::Accum);
     RefSymmSCMatrix ptmp = get_local_data(cl_dens_diff_, pmat, SCF::Read);
-    tim_exit("local data");
+    RefSymmSCMatrix gotmp = get_local_data(op_gmat_, gmato, SCF::Accum);
+    RefSymmSCMatrix potmp = get_local_data(op_dens_diff_, pmato, SCF::Read);
 
-    tim_enter("init pmax");
     signed char * pmax = init_pmax(pmat);
-    tim_exit("init pmax");
   
-    LocalCLKSContribution lclc(gmat, pmat, functional_->a0());
-    LocalGBuild<LocalCLKSContribution>
+    LocalHSOSKSContribution lclc(gmat, pmat, gmato, pmato, functional_->a0());
+    LocalGBuild<LocalHSOSKSContribution>
       gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
     gb.run();
 
     delete[] pmax;
 
-    // if we're running on multiple processors, then sum the G matrix
-    tim_enter("sum");
-    if (scf_grp_->n() > 1)
+    // if we're running on multiple processors, then sum the G matrices
+    if (scf_grp_->n() > 1) {
       scf_grp_->sum(gmat, i_offset(basis()->nbasis()));
-    tim_exit("sum");
-
+      scf_grp_->sum(gmato, i_offset(basis()->nbasis()));
+    }
+    
     // if we're running on multiple processors, or we don't have local
     // matrices, then accumulate gtmp back into G
-    tim_enter("accum");
-    if (!local_ || scf_grp_->n() > 1)
+    if (!local_ || scf_grp_->n() > 1) {
       cl_gmat_->convert_accumulate(gtmp);
-    tim_exit("accum");
+      op_gmat_->convert_accumulate(gotmp);
+    }
   }
 
   // for now quit
   else {
-    cout << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
-  
+
   tim_enter("integrate");
-  cl_dens_diff_ = pl->to_AO_basis(cl_dens_);
-  cl_dens_diff_.scale(0.5);
+  RefSymmSCMatrix dens_a = alpha_density();
+  RefSymmSCMatrix dens_b = beta_density();
   integrator_->set_wavefunction(this);
   integrator_->set_compute_potential_integrals(1);
-  integrator_->integrate(functional_, cl_dens_diff_, cl_dens_diff_);
+  integrator_->integrate(functional_, dens_a, dens_b);
   exc_ = integrator_->value();
-  RefSymmSCMatrix vxa = cl_gmat_.clone();
-  vxa->assign((double*)integrator_->alpha_vmat());
-  vxa = pl->to_SO_basis(vxa);
-  vxc_ = vxa;
+  vxc_a_ = dens_a.clone();
+  vxc_a_->assign((double*)integrator_->alpha_vmat());
+  vxc_a_ = pl->to_SO_basis(vxc_a_);
+  vxc_b_ = vxc_a_.clone();
+  vxc_b_->assign((double*)integrator_->beta_vmat());
+  vxc_b_ = pl->to_SO_basis(vxc_a_);
   // must unset the wavefunction so we don't have a circular list that
   // will not be freed with the reference counting memory manager
   integrator_->set_wavefunction(0);
   tim_exit("integrate");
-
-  tim_enter("symm");
+  
   // get rid of AO delta P
   cl_dens_diff_ = dd;
   dd = cl_dens_diff_.clone();
+
+  op_dens_diff_ = ddo;
+  ddo = op_dens_diff_.clone();
 
   // now symmetrize the skeleton G matrix, placing the result in dd
   RefSymmSCMatrix skel_gmat = cl_gmat_.copy();
   skel_gmat.scale(1.0/(double)pl->order());
   pl->symmetrize(skel_gmat,dd);
-  tim_exit("symm");
-  
+
+  skel_gmat = op_gmat_.copy();
+  skel_gmat.scale(1.0/(double)pl->order());
+  pl->symmetrize(skel_gmat,ddo);
   
   // F = H+G
   cl_fock_.result_noupdate().assign(hcore_);
   cl_fock_.result_noupdate().accumulate(dd);
-  accumddh_->accum(cl_fock_.result_noupdate());
+
+  // Fo = H+G-Go
+  op_fock_.result_noupdate().assign(cl_fock_.result_noupdate());
+  ddo.scale(-1.0);
+  op_fock_.result_noupdate().accumulate(ddo);
+  ddo=0;
+
+  dd.assign(0.0);
+  accumddh_->accum(dd);
+  cl_fock_.result_noupdate().accumulate(dd);
+  op_fock_.result_noupdate().accumulate(dd);
+  dd=0;
+
   cl_fock_.computed()=1;
+  op_fock_.computed()=1;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
 void
-CLKS::two_body_energy(double &ec, double &ex)
+HSOSKS::two_body_energy(double &ec, double &ex)
 {
-  tim_enter("clks e2");
+  tim_enter("hsosks e2");
   ec = 0.0;
   ex = 0.0;
-
   if (local_ || local_dens_) {
     // grab the data pointers from the G and P matrices
-    double *pmat;
+    double *dpmat;
+    double *spmat;
     tim_enter("local data");
-    RefSymmSCMatrix dens = ao_density();
-    dens->scale(2.0);
-    dens->scale_diagonal(0.5);
-    RefSymmSCMatrix ptmp = get_local_data(dens, pmat, SCF::Read);
+    RefSymmSCMatrix ddens = beta_ao_density();
+    RefSymmSCMatrix sdens = alpha_ao_density() - ddens;
+    ddens->scale(2.0);
+    ddens->accumulate(sdens);
+    ddens->scale(2.0);
+    ddens->scale_diagonal(0.5);
+    sdens->scale(2.0);
+    sdens->scale_diagonal(0.5);
+    RefSymmSCMatrix dptmp = get_local_data(ddens, dpmat, SCF::Read);
+    RefSymmSCMatrix sptmp = get_local_data(sdens, spmat, SCF::Read);
     tim_exit("local data");
 
     // initialize the two electron integral classes
     tbi_ = integral()->electron_repulsion();
     tbi_->set_integral_storage(0);
 
-    tim_enter("init pmax");
-    signed char * pmax = init_pmax(pmat);
-    tim_exit("init pmax");
+    signed char * pmax = init_pmax(dpmat);
   
-    LocalCLKSEnergyContribution lclc(pmat, functional_->a0());
+    LocalHSOSKSEnergyContribution lclc(dpmat, spmat, functional_->a0());
     RefPetiteList pl = integral()->petite_list();
-    LocalGBuild<LocalCLKSEnergyContribution>
-      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
+    LocalGBuild<LocalHSOSKSEnergyContribution>
+      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax,
+         desired_value_accuracy()/100.0);
     gb.run();
 
     delete[] pmax;
@@ -298,16 +334,16 @@ CLKS::two_body_energy(double &ec, double &ex)
     ex = lclc.ex;
   }
   else {
-    cout << node0 << indent << "Cannot yet use anything but Local matrices\n";
+    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
-  tim_exit("clks e2");
+  tim_exit("hsoshf e2");
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
 void
-CLKS::two_body_deriv(double * tbgrad)
+HSOSKS::two_body_deriv(double * tbgrad)
 {
   tim_enter("grad");
 

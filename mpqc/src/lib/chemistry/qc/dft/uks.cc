@@ -100,7 +100,7 @@ UKS::value_implemented() const
 int
 UKS::gradient_implemented() const
 {
-  return 0;
+  return 1;
 }
 
 double
@@ -316,36 +316,37 @@ UKS::ao_fock()
 void
 UKS::two_body_deriv(double * tbgrad)
 {
-  RefSCElementMaxAbs m = new SCElementMaxAbs;
-  densa_.element_op(m);
-  double pmax = m->result();
-  m=0;
+  tim_enter("grad");
 
-  // now try to figure out the matrix specialization we're dealing with.
-  // if we're using Local matrices, then there's just one subblock, or
-  // see if we can convert P to local matrices
+  int natom3 = 3*molecule()->natom();
 
-  if (local_ || local_dens_) {
-    // grab the data pointers from the P matrices
-    double *pmata, *pmatb;
-    RefSymmSCMatrix ptmpa = get_local_data(densa_, pmata, SCF::Read);
-    RefSymmSCMatrix ptmpb = get_local_data(densb_, pmatb, SCF::Read);
-  
-    LocalUKSGradContribution l(pmata,pmatb);
-    RefTwoBodyDerivInt tbi = integral()->electron_repulsion_deriv();
-    RefPetiteList pl = integral()->petite_list();
-    LocalTBGrad<LocalUKSGradContribution> tb(l, tbi, pl, basis(),scf_grp_,
-                                             tbgrad, pmax, desired_gradient_accuracy());
-    tb.run();
-    scf_grp_->sum(tbgrad,3 * basis()->molecule()->natom());
-  }
+  tim_enter("two-body");
+  double *hfgrad = new double[natom3];
+  memset(hfgrad,0,sizeof(double)*natom3);
+  two_body_deriv_hf(hfgrad,functional_->a0());
+  print_natom_3(hfgrad, "Two-body contribution to DFT gradient");
+  tim_exit("two-body");
 
-  // for now quit
-  else {
-    cout << node0 << indent
-         << "UKS::two_body_deriv: can't do gradient yet\n";
-    abort();
-  }
+  double *dftgrad = new double[natom3];
+  memset(dftgrad,0,sizeof(double)*natom3);
+  tim_enter("integration");
+  RefPetiteList pl = integral()->petite_list(basis());
+  RefSymmSCMatrix aodens = gradient_density();
+  aodens.scale(0.5);
+  integrator_->set_wavefunction(this);
+  integrator_->set_compute_potential_integrals(0);
+  integrator_->integrate(functional_, aodens, aodens, dftgrad);
+  // must unset the wavefunction so we don't have a circular list that
+  // will not be freed with the reference counting memory manager
+  integrator_->set_wavefunction(0);
+  tim_exit("integration");
+  print_natom_3(dftgrad, "E-X contribution to DFT gradient");
+
+  for (int i=0; i<natom3; i++) tbgrad[i] += dftgrad[i] + hfgrad[i];
+  delete[] dftgrad;
+  delete[] hfgrad;
+
+  tim_exit("grad");
 }
 
 /////////////////////////////////////////////////////////////////////////////

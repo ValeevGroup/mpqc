@@ -295,28 +295,7 @@ DenIntegrator::get_density(double *dmat, PointInputData::SpinData &d)
 
       d.lap_rho = d.hes_rho[XX] + d.hes_rho[YY] + d.hes_rho[ZZ];
 
-      d.gamma = norm(d.del_rho);
-      if (d.gamma > 1.0e-10) {
-          d.del_gamma[X] = (d.del_rho[X]*d.hes_rho[XX]
-                               + d.del_rho[Y]*d.hes_rho[YX]
-                               + d.del_rho[Z]*d.hes_rho[ZX]
-              )/d.gamma;
-          d.del_gamma[Y] = (d.del_rho[X]*d.hes_rho[YX]
-                               + d.del_rho[Y]*d.hes_rho[YY]
-                               + d.del_rho[Z]*d.hes_rho[ZY]
-              )/d.gamma;
-          d.del_gamma[Z] = (d.del_rho[X]*d.hes_rho[ZX]
-                               + d.del_rho[Y]*d.hes_rho[ZY]
-                               + d.del_rho[Z]*d.hes_rho[ZZ]
-              )/d.gamma;
-        }
-      else {
-          d.del_gamma[X] = d.del_gamma[Y] = d.del_gamma[Z] = 0.0;
-        }
-      d.del_rho_del_gamma = 0.0;
-      for (i=0; i<3; i++)
-          d.del_rho_del_gamma += d.del_rho[i]*d.del_gamma[i];
-
+      d.gamma = dot(d.del_rho,d.del_rho);
     }
   else {
       double tmp = 0.0;
@@ -333,14 +312,14 @@ DenIntegrator::get_density(double *dmat, PointInputData::SpinData &d)
 
       d.rho = tmp;
     }
-  d.rho_13 = pow(d.rho, 1./3.);
 }
 
 double
 DenIntegrator::do_point(int acenter, const SCVector3 &r,
                         const RefDenFunctional &func,
                         double weight, double multiplier,
-                        double *nuclear_gradient, double *w_gradient)
+                        double *nuclear_gradient,
+                        double *f_gradient, double *w_gradient)
 {
   int i,j,k;
   double w_mult = weight * multiplier;
@@ -360,17 +339,27 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
   PointInputData id(r);
 
   get_density(alpha_dmat_, id.a);
-
-  if (!spin_polarized_) {
-      id.b = id.a;
-    }
-  else {
+  if (spin_polarized_) {
       get_density(beta_dmat_, id.b);
+      if (need_gradient_) {
+          id.gamma_ab = id.a.del_rho[0]*id.b.del_rho[0]
+                      + id.a.del_rho[1]*id.b.del_rho[1] 
+                      + id.a.del_rho[2]*id.b.del_rho[2];
+        }
     }
+  id.compute_derived(spin_polarized_);
 
   PointOutputData od;
-  if ( (id.a.rho + id.b.rho) > 1e2*DBL_EPSILON)  
-    func->point(id, od);
+  if ( (id.a.rho + id.b.rho) > 1e2*DBL_EPSILON) {
+      if (nuclear_gradient == 0) {
+          func->point(id, od);
+        }
+      else {
+          func->gradient(id, od, f_gradient, acenter, wavefunction()->basis(),
+                         alpha_dmat_, (spin_polarized_?beta_dmat_:alpha_dmat_),
+                         bs_values_, bsg_values_, bsh_values_);
+        }
+    }
   else return id.a.rho + id.b.rho;
   
   value_ += od.energy * w_mult;
@@ -452,76 +441,8 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
             }
         }
       // the contribution from (df/dx) w
-      if (need_gradient_) {
-          RefGaussianBasisSet basis = wavefunction()->basis();
-          int jk=0;
-          double drhoa = w_mult*od.df_drho_a;
-          double drhob = w_mult*od.df_drho_b;
-          for (int nu=0; nu < nbasis_; nu++) {
-              double dfa_phi_nu = drhoa * bs_values_[nu];
-              double dfb_phi_nu = drhob * bs_values_[nu];
-              for (int mu=0; mu<nbasis_; mu++) {
-                  int atom
-                      = basis->shell_to_center(basis->function_to_shell(mu));
-                  if (atom==acenter) continue;
-                  int numu = (nu>mu?((nu*(nu+1))/2+mu):((mu*(mu+1))/2+nu));
-                  double rho_b, rho_a = alpha_dmat_[numu];
-                  if (spin_polarized_) rho_b = beta_dmat_[numu];
-                  else rho_b = rho_a;
-                  int ixyz;
-                  double xnumu = 0.0;
-                  int iixyz = 0;
-                  for (ixyz=0; ixyz<3; ixyz++) {
-                      xnumu += bsg_values_[nu*3+ixyz]*bsg_values_[mu*3+ixyz]
-                             + bs_values_[nu]*bsh_values_[mu*6+iixyz];
-                      iixyz += ixyz+2;
-                    }
-                  xnumu *= w_mult;
-                  for (ixyz=0; ixyz<3; ixyz++) {
-     double contrib = 
-            - 2.0 * (rho_a * (dfa_phi_nu*bsg_values_[mu*3+ixyz]
-                              -xnumu*(2.0*od.df_dgamma_aa * id.a.del_rho[ixyz]
-                                      +od.df_dgamma_ab * id.b.del_rho[ixyz]))
-                    +rho_b * (dfb_phi_nu*bsg_values_[mu*3+ixyz]
-                              -xnumu*(2.0*od.df_dgamma_bb * id.b.del_rho[ixyz]
-                                +od.df_dgamma_ab * id.a.del_rho[ixyz])));
-     nuclear_gradient[3*atom+ixyz] += contrib;
-                    }
-                }
-            }
-        }
-      else {
-          RefGaussianBasisSet basis = wavefunction()->basis();
-          int jk=0;
-          double drhoa = w_mult*od.df_drho_a;
-          double drhob = w_mult*od.df_drho_b;
-          double coef;
-          if (spin_polarized_) coef = 2.0;
-          else coef = 4.0;
-          for (int nu=0; nu < nbasis_; nu++) {
-              double dfa_phi_nu = drhoa * bs_values_[nu];
-              double dfb_phi_nu = drhob * bs_values_[nu];
-              for (int mu=0; mu<nbasis_; mu++) {
-                  int atom
-                      = basis->shell_to_center(basis->function_to_shell(mu));
-                  if (atom==acenter) continue;
-                  int numu = (nu>mu?((nu*(nu+1))/2+mu):((mu*(mu+1))/2+nu));
-                  double rho_a = alpha_dmat_[numu];
-                  for (int ixyz=0; ixyz<3; ixyz++) {
-                      nuclear_gradient[3*atom+ixyz]
-                          -= coef * rho_a * dfa_phi_nu
-                          * bsg_values_[mu*3+ixyz];
-                    }
-                  if (spin_polarized_) {
-                      double rho_b = beta_dmat_[numu];
-                      for (int ixyz=0; ixyz<3; ixyz++) {
-                          nuclear_gradient[3*atom+ixyz]
-                              -= coef * rho_b * dfb_phi_nu
-                              * bsg_values_[mu*3+ixyz];
-                        }
-                    }
-                }
-            }
+      for (i=0; i<natom_*3; i++) {
+          nuclear_gradient[i] += f_gradient[i] * w_mult;
         }
     }
 
@@ -650,6 +571,21 @@ IntegrationWeight::test(int icenter, SCVector3 &point)
     }
   delete[] fd_grad_w;
   delete[] an_grad_w;  
+}
+
+void
+IntegrationWeight::test()
+{
+  SCVector3 point;
+  for (int icenter=0; icenter<mol_->natom(); icenter++) {
+      for (point[0]=-1; point[0]<=1; point[0]++) {
+          for (point[1]=-1; point[1]<=1; point[1]++) {
+              for (point[2]=-1; point[2]<=1; point[2]++) {
+                  test(icenter, point);
+                }
+            }
+        }
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -1086,8 +1022,10 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
   for (icenter=0; icenter<ncenters; icenter++) nr[icenter] = nr_;
 
   double *w_gradient = 0;
+  double *f_gradient = 0;
   if (nuclear_gradient) {
       w_gradient = new double[ncenters*3];
+      f_gradient = new double[ncenters*3];
     }
 
   SCVector3 *centers = new SCVector3[ncenters];
@@ -1188,7 +1126,7 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
 
                   if (do_point(icenter, integration_point, denfunc,
                                w, multiplier,
-                               nuclear_gradient, w_gradient)
+                               nuclear_gradient, f_gradient, w_gradient)
                       * int_volume < 1e2*DBL_EPSILON
                       && int_volume > 1e2*DBL_EPSILON) {
                       r_done=1;
@@ -1214,6 +1152,7 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
           << "Total integration points = " << point_count_total << endl;
     //cout << scprintf(" Value of integral = %16.14f", value()) << endl;
 
+    delete[] f_gradient;
     delete[] w_gradient;
     delete[] theta_quad_points;
     delete[] bragg_radius;

@@ -13,15 +13,13 @@
 
 #include <chemistry/qc/dft/clkstmpl.h>
 #include <chemistry/qc/dft/ukstmpl.h>
+#include <chemistry/qc/dft/hsoskstmpl.h>
 
 
 template class GBuild<LocalUKSContribution>;
 template class GBuild<LocalUKSEnergyContribution>;
 template class LocalGBuild<LocalUKSContribution>;
 template class LocalGBuild<LocalUKSEnergyContribution>;
-
-template class TBGrad<LocalUKSGradContribution>;
-template class LocalTBGrad<LocalUKSGradContribution>;
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -31,7 +29,12 @@ template class GBuild<LocalCLKSEnergyContribution>;
 template class LocalGBuild<LocalCLKSContribution>;
 template class LocalGBuild<LocalCLKSEnergyContribution>;
 
-template class TBGrad<LocalCLKSGradContribution>;
-template class LocalTBGrad<LocalCLKSGradContribution>;
+///////////////////////////////////////////////////////////////////////////
+
+template class GBuild<LocalHSOSKSContribution>;
+template class GBuild<LocalHSOSKSEnergyContribution>;
+
+template class LocalGBuild<LocalHSOSKSContribution>;
+template class LocalGBuild<LocalHSOSKSEnergyContribution>;
 
 #endif

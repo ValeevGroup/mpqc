@@ -16,6 +16,33 @@ li<Molecule>: (
   }
 )
 
+heh<Molecule>: (
+  symmetry = C1
+  unit = angstrom
+  { atoms geometry } = {
+    He    [     0.00000000     0.00000000     1.00000000 ]
+    H     [     0.00000000     0.00000000    -1.00000000 ]
+  }
+)
+
+hehe<Molecule>: (
+  symmetry = C1
+  unit = angstrom
+  { atoms geometry } = {
+    He    [     0.00000000     0.00000000     1.00000000 ]
+    He    [     0.00000000     0.00000000    -1.00000000 ]
+  }
+)
+
+hehy<Molecule>: (
+  symmetry = C1
+  unit = angstrom
+  { atoms geometry } = {
+    He    [     0.00000000       1.00000000  0.00000000  ]
+    H     [     0.00000000      -1.00000000  0.00000000  ]
+  }
+)
+
 he<Molecule>: (
   symmetry = d2h
   unit = angstrom
@@ -45,10 +72,34 @@ h2o<Molecule>: (
 
 nel<NElFunctional>:()
 
-murray93<Murray93Integrator>:(
-  nr = 40
-  ntheta = 16
-  nphi = 16
+xalpha<XalphaFunctional>: ()
+
+hfb<SumDenFunctional>: (
+  coefs = [ 1.0 1.0 ]
+  funcs: [
+     <SlaterXFunctional>: ()
+     <Becke88XFunctional>: ()
+  ]
+)
+
+blyp<SumDenFunctional>: (
+  coefs = [ 1.0 1.0 1.0 ]
+  funcs: [
+     <SlaterXFunctional>: ()
+     <Becke88XFunctional>: ()
+     <LYPCFunctional>: ()
+    ]
+)
+
+b3lyp<SumDenFunctional>: (
+  coefs = [ 0.8 0.72 0.19 0.81]
+  a0 = 0.2
+  funcs: [
+     <SlaterXFunctional>: ()
+     <Becke88XFunctional>: ()
+     <VWN3LCFunctional>: ()
+     <LYPCFunctional>: ()
+    ]
 )
 
 basis<GaussianBasisSet>: (
@@ -60,8 +111,8 @@ basis<GaussianBasisSet>: (
   molecule = $..:molecule
 )
 
-clwfn<CLSCF>:(
-  molecule = $:he
+clwfn<CLHF>:(
+  molecule = $:molecule
   basis = $:basis
   memory = 16000000
 )
@@ -72,46 +123,27 @@ oswfn<HSOSSCF>:(
   memory = 16000000
 )
 
-wfn = $:clwfn
-molecule = $:wfn:molecule
-
-hfacm<HFACM>:(
-  integrator = $:murray93
+clks<CLKS>: (
+  value_accuracy = 1.0e-8
   molecule = $:molecule
   basis = $:basis
-  memory = 16000000
-  hf = $:wfn
-  xa0 = 0.0
-  xfunctional<SumDenFunctional>: (
-    coefs = [
-      1.0
-      ]
-    funcs: [
-      <XalphaFunctional>:()
-      ]
-  )
-  a0 = 0.20
-  %a0 = 0.0
-  functional<SumDenFunctional>: (
-    coefs = [
-       1.00
-       1.00
-      -0.20  % should equal -a0
-       0.72
-       0.81
-      ]
-    funcs: [
-      <LSDAXFunctional>:()
-      <LSDACFunctional>:()
-      <LSDAXFunctional>:()
-      <Becke88Functional>:()
-      <PW91Functional>:()
-      ]
+  functional = $:functional
+  guess_wavefunction<CLHF>: (
+    molecule = $:molecule
+    basis<GaussianBasisSet>: (
+      name = "STO-3G"
+      molecule = $:molecule
+    )
   )
 )
 
-functional = $:nel
-integrator = $:murray93
+wfn = $:clwfn
+%dft = $:clks
+molecule = $:h2o
+% HFB works for h2o/3-21G hehe/3-21G
+% BLYP works dE/dx == DE/Dx for hehe/3-21G h2o/3-21G
+% B3LYP fails dE/dx == DE/Dx for hehe/3-21G
+functional = $:b3lyp
 
 basis: (
  helium: test: [

@@ -45,21 +45,23 @@ struct PointInputData {
         double rho_13;
 
         double del_rho[3];
-        // gamma = |del rho|
+        // gamma = (del rho).(del rho)
         double gamma;
 
         // hessian of rho
         double hes_rho[6];
-        // del |del rho|
-        double del_gamma[3];
         // del^2 rho
         double lap_rho;
-        // (del rho).(del |del rho|)
-        double del_rho_del_gamma;
     };
     SpinData a, b;
 
+    // gamma_ab = (del rho_a).(del rho_b)
+    double gamma_ab;
+
     const SCVector3 &r;
+
+    // fill in derived quantities
+    void compute_derived(int spin_polarized);
 
     PointInputData(const SCVector3& r_): r(r_) {}
 };
@@ -90,6 +92,8 @@ class DenFunctional: virtual public SavableState {
     int compute_potential_;
     double a0_;  // for ACM functionals
 
+    void do_fd_point(PointInputData&id,double&in,double&out,
+                     double lower_bound, double upper_bound);
   public:
     DenFunctional();
     DenFunctional(const RefKeyVal &);
@@ -109,8 +113,18 @@ class DenFunctional: virtual public SavableState {
     virtual int need_density_gradient();
 
     virtual void point(const PointInputData&, PointOutputData&) = 0;
+    void gradient(const PointInputData&, PointOutputData&,
+                  double *gradient, int acenter,
+                  const RefGaussianBasisSet &basis,
+                  const double *dmat_a, const double *dmat_b,
+                  const double *bs_values, const double *bsg_values,
+                  const double *bsh_values);
 
     double a0() const { return a0_; }
+
+    void fd_point(const PointInputData&, PointOutputData&);
+    void test(const PointInputData &);
+    void test();
 };
 SavableState_REF_dec(DenFunctional);
 

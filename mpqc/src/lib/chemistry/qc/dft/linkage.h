@@ -32,6 +32,7 @@
 
 #include <chemistry/qc/dft/clks.h>
 #include <chemistry/qc/dft/uks.h>
+#include <chemistry/qc/dft/hsosks.h>
 #include <chemistry/qc/dft/hfacm.h>
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/functional.h>
@@ -59,6 +60,7 @@ const ClassDesc &dft_force_link_t_ = VWN1LCFunctional::class_desc_;
 const ClassDesc &dft_force_link_u_ = VWN2LCFunctional::class_desc_;
 const ClassDesc &dft_force_link_v_ = VWN4LCFunctional::class_desc_;
 const ClassDesc &dft_force_link_w_ = PW91CFunctional::class_desc_;
+const ClassDesc &dft_force_link_x_ = HSOSKS::class_desc_;
 
 #endif /* __PIC__ */
 

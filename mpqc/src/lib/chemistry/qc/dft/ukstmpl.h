@@ -89,22 +89,3 @@ class LocalUKSEnergyContribution {
       cont3(ij,kl,val);
     }
 };
-
-class LocalUKSGradContribution {
-  private:
-    double * const pmata;
-    double * const pmatb;
-
-  public:
-    LocalUKSGradContribution(double *a, double *b) : pmata(a), pmatb(b) {}
-    ~LocalUKSGradContribution() {}
-
-    inline double cont1(int ij, int kl) {
-      return (pmata[ij]*pmata[kl])+(pmatb[ij]*pmatb[kl]) +
-             (pmata[ij]*pmatb[kl])+(pmatb[ij]*pmata[kl]);
-    }
-
-    inline double cont2(int ij, int kl) {
-      return 2*((pmata[ij]*pmata[kl])+(pmatb[ij]*pmatb[kl]));
-    }
-};

@@ -70,7 +70,7 @@ class DenIntegrator: virtual public SavableState {
     void done_integration();
     double do_point(int acenter, const SCVector3 &r, const RefDenFunctional &,
                     double weight, double multiplier, double *nuclear_gradient,
-                    double *w_gradient);
+                    double *f_gradient, double *w_gradient);
   public:
     DenIntegrator();
     DenIntegrator(const RefKeyVal &);
@@ -115,6 +115,7 @@ class IntegrationWeight: virtual public SavableState {
     void save_data_state(StateOut &);
 
     void test(int icenter, SCVector3 &point);
+    void test();
 
     virtual void init(const RefMolecule &, double tolerance);
     virtual void done();

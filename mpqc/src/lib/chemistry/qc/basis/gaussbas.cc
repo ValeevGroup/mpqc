@@ -342,12 +342,11 @@ GaussianBasisSet::convert_to_centers_t(const Molecule*mol) const
       c->center[icenter].basis.shell =
 	(shell_t*)malloc(sizeof(shell_t)*nshell_on_center(icenter));
       shell_t*shell = c->center[icenter].basis.shell;
-      int ishell = 0;
+      int ishell;
       for (ishell = 0; ishell < center_to_nshell_[icenter]; ishell++) {
-	  int nprim = shell[ishell].nprim
-            = operator()(icenter,ishell).nprimitive();
-          int ncon = shell[ishell].ncon
-            = operator()(icenter,ishell).ncontraction();
+          const GaussianShell &igshell = operator()(icenter, ishell);
+          int nprim = shell[ishell].nprim = igshell.nprimitive();
+          int ncon = shell[ishell].ncon = igshell.ncontraction();
           shell[ishell].exp = (double*)malloc(sizeof(double)*nprim);
           shell[ishell].type
             = (shell_type_t*)malloc(sizeof(shell_type_t)*ncon);

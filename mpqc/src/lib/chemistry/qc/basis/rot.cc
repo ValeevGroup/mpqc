@@ -122,6 +122,11 @@ Rotation::init(int a, SymmetryOperation&so)
 void
 Rotation::init_pure(int a, SymmetryOperation&so)
 {
+  if (a < 2) {
+    init(a,so);
+    return;
+  }
+
   done();
 
   _am=a;
@@ -144,27 +149,6 @@ Rotation::init_pure(int a, SymmetryOperation&so)
       for (J.start(); J; J.next()) {
           double coef = I.coef()*J.coef();
           double tmp = 0.0;
-#if 0
-          printf("T(%d,%d) += %6.4f", I.bfn(), J.bfn(), coef);
-          double tmp2 = coef;
-          int iJ, lJ[3];
-          for (m=0; m < 3; m++) {
-              lI[m] = I.l(m);
-              lJ[m] = J.l(m);
-            }
-          
-          for (m=0; m < _am; m++) {
-              for (iI=0; lI[iI]==0; iI++);
-              lI[iI]--;
-              for (iJ=0; lJ[iJ]==0; iJ++);
-              lJ[iJ]--;
-              tmp2 *= so(iI,iJ);
-              printf(" * so(%d,%d) [=%4.2f]",
-                     iI,iJ,so(iI,iJ));
-            }
-          printf(" = %8.6f\n", tmp2);
-          tmp += tmp2;
-#else          
           for (K.start(J.a(), J.b(), J.c()); K; K.next()) {
               //printf("T(%d,%d) += %6.4f", I.bfn(), J.bfn(), coef);
               double tmp2 = coef;
@@ -183,7 +167,6 @@ Rotation::init_pure(int a, SymmetryOperation&so)
               //printf(" = %8.6f\n", tmp2);
               tmp += tmp2;
             }
-#endif
           r[I.bfn()][J.bfn()] += tmp;
         }
     }

@@ -246,6 +246,14 @@ main(int argc, char *argv[])
   
   int ready_for_freq = 1;
   if (mole.nonnull()) {
+    if ((do_opt || do_grad) && !mole->gradient_implemented()) {
+      cout << node0 << indent
+           << "WARNING: optimization or gradient requested but the given"
+           << endl
+           << "         MolecularEnergy object cannot do gradients."
+           << endl;
+    }
+
     if (do_opt && opt.nonnull() && mole->gradient_implemented()) {
       int result = opt->optimize();
       if (result) {

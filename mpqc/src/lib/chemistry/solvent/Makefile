@@ -34,7 +34,9 @@ endif
 
 interface:: $(DEPENDINCLUDE)
 
-bemtest: $(TESTOBJ) $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+
+bemtest: $(TESTOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o bemtest $^ $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

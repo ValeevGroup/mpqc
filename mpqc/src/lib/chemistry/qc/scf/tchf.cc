@@ -390,6 +390,7 @@ TCHF::ao_fock()
     abort();
   }
   
+  da=0;
   db=0;
   oda=0;
   odb=0;
@@ -417,13 +418,14 @@ TCHF::ao_fock()
   // Fb = H+Gb
   fockb_.result_noupdate().accumulate(hcore_);
 
-  da.assign(0.0);
-  accumddh_->accum(da);
-  focka_.result_noupdate().accumulate(da);
-  fockb_.result_noupdate().accumulate(da);
-  ka_.result_noupdate().accumulate(da);
-  kb_.result_noupdate().accumulate(da);
-  da=0;
+  RefSymmSCMatrix ddh = hcore_.clone();
+  ddh.assign(0.0);
+  accumddh_->accum(ddh);
+  focka_.result_noupdate().accumulate(ddh);
+  fockb_.result_noupdate().accumulate(ddh);
+  ka_.result_noupdate().accumulate(ddh);
+  kb_.result_noupdate().accumulate(ddh);
+  ddh=0;
 
   focka_.computed()=1;
   fockb_.computed()=1;

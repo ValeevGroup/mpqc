@@ -59,9 +59,19 @@ class ThreadLock : public RefCount {
  */
 class ThreadLockHolder {
     Ref<ThreadLock> lock_;
+    bool locked_;
   public:
-    ThreadLockHolder(const Ref<ThreadLock> &l): lock_(l) { lock_->lock(); }
-    ~ThreadLockHolder() { lock_->unlock(); }
+    /// Acquires the lock.
+    ThreadLockHolder(const Ref<ThreadLock> &l): lock_(l) {
+      lock_->lock();
+      locked_ = true;
+    }
+    /// Release the lock before the DTOR is called, if it is still held.
+    void unlock() { if (locked_) { lock_->unlock(); locked_ = false; } }
+    /// Acquire the lock once more.
+    void lock() { if (!locked_) { lock_->lock(); locked_ = true; } }
+    /// Releases the lock if it is still held.
+    ~ThreadLockHolder() { unlock(); }
 };
 
 /** The Thread abstract class defines an interface which must be

@@ -164,6 +164,11 @@ Optimize::set_checkpoint_file(const char *path)
     ckpt_file=0;
 }
   
+void
+Optimize::set_function(const RefFunction& f)
+{
+  function_ = f;
+}
 
 #ifndef OPTSTATEOUT
 #define OPTSTATEOUT StateOutBin

@@ -72,6 +72,9 @@ class Optimize: virtual_base public SavableState {
     void set_checkpoint();
     void set_checkpoint_file(const char*);
 
+    //. Set the function to be optimized
+    void set_function(const RefFunction&);
+    
     //. Set the iteration limit.
     void set_max_iterations(int);
   

@@ -468,7 +468,7 @@ OverlapOrthog::compute_orthog_trans()
     orthog_dim_.print();
     if (debug_ > 1) {
       orthog_trans_.print("basis to orthog basis");
-      orthog_trans_inverse_.print("basos to orthog basis inverse");
+      orthog_trans_inverse_.print("basis to orthog basis inverse");
       (orthog_trans_*overlap_
        *orthog_trans_.t()).print("X*S*X'",ExEnv::out0(),14);
       (orthog_trans_inverse_.t()*overlap_.gi()

@@ -34,4 +34,12 @@ ifneq ($(origin installroot),'command line')
   installroot=
 endif
 
-include $(TOPDIR)/lib/LocalMakefile
+-include $(TOPDIR)/lib/LocalMakefile
+
+ifneq ($(LOCALMAKEFILE_OPTIONAL),yes)
+
+ifneq ($(LOCALMAKEFILE_FOUND),yes)
+$(error LocalMakefile not found.  First run configure in the top-level directory you want object code to be placed and then run make there)
+endif
+
+endif

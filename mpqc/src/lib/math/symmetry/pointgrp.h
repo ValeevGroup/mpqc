@@ -218,6 +218,9 @@ class IrreducibleRepresentation {
     //texi Returns the degeneracy of the irrep.
     int degeneracy() const { return degen; }
 
+    //texi Returns the value of complex_.
+    int complex() const { return complex_; }
+
     //texi Returns the number of projection operators for the irrep.
     int nproj() const { return degen*degen; }
 

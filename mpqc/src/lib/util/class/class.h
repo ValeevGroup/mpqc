@@ -4,6 +4,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <util/container/ref.h>
 #include <util/container/array.h>
 #include <util/container/set.h>
@@ -146,8 +147,8 @@ class  RefDescribedClassBase {
     int operator>( RefDescribedClassBase &a);
     int operator<( RefDescribedClassBase &a);
 };
-#define DescribedClass_REF_dec(T)					      \
-class  Ref ## T : public RefDescribedClassBase  {			      \
+#define DescribedClass_named_REF_dec(refname,T)				      \
+class  refname : public RefDescribedClassBase  {			      \
   private:								      \
     T* p;								      \
   public:								      \
@@ -160,36 +161,44 @@ class  Ref ## T : public RefDescribedClassBase  {			      \
     const operator T*() const;						      \
     T& operator *();							      \
     const T& operator *() const;					      \
-    Ref ## T ();							      \
-    Ref ## T (T*a);							      \
-    Ref ## T ( Ref ## T &a);						      \
-    Ref ## T ( RefDescribedClassBase &);				      \
-    ~Ref ## T ();							      \
+    refname ();								      \
+    refname (T*a);							      \
+    refname ( refname &a);						      \
+    refname ( RefDescribedClassBase &);					      \
+    ~refname ();							      \
     int null();								      \
     int nonnull();							      \
-    Ref ## T  operator=(T* cr);						      \
-    Ref ## T  operator=( RefDescribedClassBase & c);			      \
-    Ref ## T  operator=( Ref ## T & c);					      \
+    void require_nonnull();						      \
+    refname& operator=(T* cr);						      \
+    refname& operator=( RefDescribedClassBase & c);			      \
+    refname& operator=( refname & c);					      \
     void assign_pointer(T* cr);						      \
     void  ref_info(FILE*fp=stdout);					      \
     void warn(const char *);						      \
     void clear();							      \
     void check_pointer();						      \
 }
-#define DescribedClass_REF_def(T)					      \
-T* Ref ## T :: operator->() { return p; };				      \
-const T* Ref ## T :: operator->() const { return p; };			      \
-T* Ref ## T :: pointer() { return p; };					      \
-const T* Ref ## T :: pointer() const { return p; };			      \
-Ref ## T :: operator T*() { return p; };				      \
-Ref ## T :: const operator T*() const { return p; };			      \
-T& Ref ## T :: operator *() { return *p; };				      \
-const T& Ref ## T :: operator *() const { return *p; };			      \
-int Ref ## T :: null() { return p == 0; };				      \
-int Ref ## T :: nonnull() { return p != 0; };				      \
-DescribedClass* Ref ## T :: parentpointer() { return p; }		      \
-Ref ## T :: Ref ## T (): p(0) {}					      \
-Ref ## T :: Ref ## T (T*a): p(a)					      \
+#define DescribedClass_named_REF_def(refname,T)				      \
+T* refname :: operator->() { return p; };				      \
+const T* refname :: operator->() const { return p; };			      \
+T* refname :: pointer() { return p; };					      \
+const T* refname :: pointer() const { return p; };			      \
+refname :: operator T*() { return p; };					      \
+refname :: const operator T*() const { return p; };			      \
+T& refname :: operator *() { return *p; };				      \
+const T& refname :: operator *() const { return *p; };			      \
+int refname :: null() { return p == 0; };				      \
+int refname :: nonnull() { return p != 0; };				      \
+void refname :: require_nonnull()					      \
+{									      \
+  if (p == 0) {								      \
+      fprintf(stderr,#refname": have null reference where nonnull needed\n"); \
+      abort();								      \
+    }									      \
+};									      \
+DescribedClass* refname :: parentpointer() { return p; }		      \
+refname :: refname (): p(0) {}						      \
+refname :: refname (T*a): p(a)						      \
 {									      \
   if (REF_CHECK_STACK && (void*) p > sbrk(0)) {				      \
       warn("Ref" # T ": creating a reference to stack data");		      \
@@ -197,23 +206,23 @@ Ref ## T :: Ref ## T (T*a): p(a)					      \
   if (p) p->reference();						      \
   if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
-Ref ## T :: Ref ## T ( Ref ## T &a): p(a.p)				      \
+refname :: refname ( refname &a): p(a.p)				      \
 {									      \
   if (p) p->reference();						      \
   if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
-Ref ## T :: Ref ## T ( RefDescribedClassBase &a)			      \
+refname :: refname ( RefDescribedClassBase &a)				      \
 {									      \
   p = T::castdown(a.parentpointer());					      \
   if (p) p->reference();						      \
   if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
-Ref ## T :: ~Ref ## T ()						      \
+refname :: ~refname ()							      \
 {									      \
   clear();								      \
 }									      \
 void									      \
-Ref ## T :: clear()							      \
+refname :: clear()							      \
 {									      \
   if (REF_CHECK_POINTER) check_pointer();				      \
   if (p && p->dereference()<=0) {					      \
@@ -227,11 +236,11 @@ Ref ## T :: clear()							      \
   p = 0;								      \
 }									      \
 void									      \
-Ref ## T :: warn ( const char * msg)					      \
+refname :: warn ( const char * msg)					      \
 {									      \
   fprintf(stderr,"WARNING: %s\n",msg);					      \
 }									      \
-Ref ## T  Ref ## T :: operator=( Ref ## T & c)				      \
+refname& refname :: operator=( refname & c)				      \
 {									      \
   if (c.p) c.p->reference();						      \
   clear();								      \
@@ -239,7 +248,7 @@ Ref ## T  Ref ## T :: operator=( Ref ## T & c)				      \
   if (REF_CHECK_POINTER) check_pointer();				      \
   return *this;								      \
 }									      \
-Ref ## T  Ref ## T :: operator=(T* cr)					      \
+refname& refname :: operator=(T* cr)					      \
 {									      \
   if (cr) cr->reference();						      \
   clear();								      \
@@ -247,7 +256,7 @@ Ref ## T  Ref ## T :: operator=(T* cr)					      \
   if (REF_CHECK_POINTER) check_pointer();				      \
   return *this;								      \
 }									      \
-Ref ## T  Ref ## T :: operator=( RefDescribedClassBase & c)		      \
+refname& refname :: operator=( RefDescribedClassBase & c)		      \
 {									      \
   T* cr = T::castdown(c.parentpointer());				      \
   if (cr) cr->reference();						      \
@@ -256,24 +265,29 @@ Ref ## T  Ref ## T :: operator=( RefDescribedClassBase & c)		      \
   if (REF_CHECK_POINTER) check_pointer();				      \
   return *this;								      \
 }									      \
-void Ref ## T :: assign_pointer(T* cr)					      \
+void refname :: assign_pointer(T* cr)					      \
 {									      \
   if (cr) cr->reference();						      \
   clear();								      \
   p = cr;								      \
   if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
-void Ref ## T :: check_pointer()					      \
+void refname :: check_pointer()						      \
 {									      \
   if (p && p->nreference() <= 0) {					      \
       warn("Ref" # T ": bad reference count in referenced object\n");	      \
     }									      \
 }									      \
-void Ref ## T :: ref_info(FILE*fp=stdout)				      \
+void refname :: ref_info(FILE*fp=stdout)				      \
 {									      \
   if (nonnull()) fprintf(fp,"nreference() = %d\n",p->nreference());	      \
   else fprintf(fp,"reference is null\n");				      \
 }
+
+// These macros choose a default name for the reference class formed from
+// "Ref" followed by the type name.
+#define DescribedClass_REF_dec(T) DescribedClass_named_REF_dec(Ref ## T, T)
+#define DescribedClass_REF_def(T) DescribedClass_named_REF_def(Ref ## T, T)
 
 
 DescribedClass_REF_dec(DescribedClass);

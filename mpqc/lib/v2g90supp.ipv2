@@ -12,6 +12,7 @@ basis: (
   oxygen    : sto-3g : [ get = sto3g ]
   flourine  : sto-3g : [ get = sto3g ]
   neon      : sto-3g : [ get = sto3g ]
+  silicon   : sto-3g : [ get = sto3g ]
   phosphorus: sto-3g : [ get = sto3g ]
 
   hydrogen  : 3-21 : [ get = 321 ]
@@ -24,6 +25,7 @@ basis: (
   oxygen    : 3-21 : [ get = 321 ]
   flourine  : 3-21 : [ get = 321 ]
   neon      : 3-21 : [ get = 321 ]
+  silicon   : 3-21 : [ get = 321 ]
   phosphorus: 3-21 : [ get = 321 ]
 
   hydrogen  : 6-31 : [ get = 631 ]
@@ -36,6 +38,7 @@ basis: (
   oxygen    : 6-31 : [ get = 631 ]
   flourine  : 6-31 : [ get = 631 ]
   neon      : 6-31 : [ get = 631 ]
+  silicon   : 6-31 : [ get = 631 ]
   phosphorus: 6-31 : [ get = 631 ]
 
   hydrogen  : 6-31s : [ get = 631 ]
@@ -48,6 +51,7 @@ basis: (
   oxygen    : 6-31s : [ get = 631 get = 631s ]
   flourine  : 6-31s : [ get = 631 get = 631s ]
   neon      : 6-31s : [ get = 631 get = 631s ]
+  silicon   : 6-31s : [ get = 631 get = 631s ]
   phosphorus: 6-31s : [ get = 631 get = 631s ]
 
   hydrogen  : 6-31ss : [ get = 631 get = 631ss]
@@ -60,18 +64,7 @@ basis: (
   oxygen    : 6-31ss : [ get = 631 get = 631s ]
   flourine  : 6-31ss : [ get = 631 get = 631s ]
   neon      : 6-31ss : [ get = 631 get = 631s ]
-  phosphorus: 6-31ss : [ get = 631 get = 631s ]
-
-  hydrogen  : 6-31ss : [ get = 631 get = 631ss]
-  helium    : 6-31ss : [ get = 631 get = 631ss]
-  lithium   : 6-31ss : [ get = 631 get = 631s ]
-  beryllium : 6-31ss : [ get = 631 get = 631s ]
-  boron     : 6-31ss : [ get = 631 get = 631s ]
-  carbon    : 6-31ss : [ get = 631 get = 631s ]
-  nitrogen  : 6-31ss : [ get = 631 get = 631s ]
-  oxygen    : 6-31ss : [ get = 631 get = 631s ]
-  flourine  : 6-31ss : [ get = 631 get = 631s ]
-  neon      : 6-31ss : [ get = 631 get = 631s ]
+  silicon   : 6-31ss : [ get = 631 get = 631s ]
   phosphorus: 6-31ss : [ get = 631 get = 631s ]
 
   hydrogen  : 6-311 : [ get = 6311 ]
@@ -84,6 +77,7 @@ basis: (
   oxygen    : 6-311 : [ get = 6311 ]
   flourine  : 6-311 : [ get = 6311 ]
   neon      : 6-311 : [ get = 6311 ]
+  silicon   : 6-311 : [ get = 6311 ]
   phosphorus: 6-311 : [ get = 6311 ]
 
   hydrogen  : 6-311s : [ get = 6311 ]
@@ -96,6 +90,7 @@ basis: (
   oxygen    : 6-311s : [ get = 6311 get = 6311s ]
   flourine  : 6-311s : [ get = 6311 get = 6311s ]
   neon      : 6-311s : [ get = 6311 get = 6311s ]
+  silicon   : 6-311s : [ get = 6311 get = 6311s ]
   phosphorus: 6-311s : [ get = 6311 get = 6311s ]
 
   hydrogen  : 6-311ss : [ get = 6311 get = 6311ss]
@@ -108,6 +103,7 @@ basis: (
   oxygen    : 6-311ss : [ get = 6311 get = 6311s ]
   flourine  : 6-311ss : [ get = 6311 get = 6311s ]
   neon      : 6-311ss : [ get = 6311 get = 6311s ]
+  silicon   : 6-311ss : [ get = 6311 get = 6311s ]
   phosphorus: 6-311ss : [ get = 6311 get = 6311s ]
   )
 

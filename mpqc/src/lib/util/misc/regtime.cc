@@ -342,8 +342,10 @@ RegionTimer::RegionTimer(const RefKeyVal &keyval)
 #endif
 
 #if HAVE_FLOPS
-  if (perf_reset() || perf_set_config(0, PERF_FLOPS) || perf_start())
-      flops_ = 0;
+  if (flops_) {
+      if (perf_reset() || perf_set_config(0, PERF_FLOPS) || perf_start())
+          flops_ = 0;
+    }
 #endif
 
   char *topname = keyval->pcharvalue("name", defname);

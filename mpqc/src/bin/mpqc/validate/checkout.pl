@@ -105,7 +105,7 @@ sub check {
                     printf " S2N:%d", $maxerror;
                     print "*" if ($maxerror <= 8);
                 }
-                if (!$result->degenerate() &&
+                if (!$cresult->degenerate() &&
                     $result->s2matrix1norm() && $cresult->s2matrix1norm()) {
                     my $maxerror = compare_numbers($result->s2matrix1norm(),
                                                    $cresult->s2matrix1norm());
@@ -124,7 +124,7 @@ sub check {
                     printf " D2:%d", $maxerror;
                     print "*" if ($maxerror <= 8);
                 }
-                if (!$result->degenerate() &&
+                if (!$cresult->degenerate() &&
                     $result->s2matrixinfnorm() && $cresult->s2matrixinfnorm()){
                     my $maxerror = compare_numbers($result->s2matrixinfnorm(),
                                                  $cresult->s2matrixinfnorm());
@@ -147,7 +147,7 @@ sub check {
                     #printf "npashellpop\n";
                     #print_vecvec($result->npashellpop());
                 }
-                if (!$result->degenerate() &&
+                if (!$cresult->degenerate() &&
                     $result->s2large_coef() && $cresult->s2large_coef()) {
                     my $maxerror
                         = compare_vecs_magnitude($result->s2large_coef(),
@@ -168,7 +168,7 @@ sub check {
                     if ($xok) { print " X:OK" }
                     else { print " X:*" }
                 }
-                if (!$result->degenerate() &&
+                if (!$cresult->degenerate() &&
                     $result->d1large_coef() && $cresult->d1large_coef()) {
                     my $maxerror
                         = compare_vecs_magnitude($result->d1large_coef(),

@@ -226,12 +226,29 @@ while ($_ = &next_line) {
 	} elsif ($tag eq 'include') {
 	    if (/^\@include\s+($FILERE)\s*$/o) {
 		$file = $1;
-		$file = "$docu_dir/$file" unless -e $file;
 		if (-e $file) {
 		    &open($file);
 		    print "# including $file\n" if $verbose;
+		} elsif (-e "$docu_dir/$file") {
+                    $file = "$docu_dir/$file";
+		    &open($file);
+		    print "# including $file\n" if $verbose;
 		} else {
-		    warn "Can't find $file, skipping";
+                    $foundfile = 0;
+                    @texinputs = split(/:/,$ENV{'TEXINPUTS'});
+                    for (@texinputs) {
+                        if (-e "$_/$file") {
+                            $file = "$_/$file";
+                            $foundfile = 1;
+                            last;
+                        }
+                    }
+                    if ($foundfile) {
+                        &open($file);
+                        print "# including $file\n" if $verbose;
+                    } else {
+                        warn "Can't find $file, skipping";
+                    }
 		}
 		next;
 	    } else {

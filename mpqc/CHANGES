@@ -3,6 +3,15 @@
 
 Following is a brief summary of changes made in each release of MPQC.
 
+  * 2004-12-17: MPQC-2.2.3
+     o Documention errors and omissions corrected.
+     o Command man pages generated automatically.
+     o Will now compile with MPICH2.
+     o Maintain symmetry in optimizations of large molecules.
+     o Fixed density value computations.
+     o Port to Cray X1 (correctness of results not checked).
+     o Port to G5/OS X (correctness of results not checked).
+
   * 2004-04-28: MPQC-2.2.2
      o Can now compile with GCC 3.4.0.
      o Switched from ieee_{set,get}_fp_control to fenv functions.

@@ -15,7 +15,7 @@ MAN_SED_PAGE = (sed s.*/..)
 # all the documentation is stuck into a single man page.  The opening
 # comment is also removed, because all the pages have to be combined into a
 # single comment to suit doxygen.
-MAN_SED_SEC = (sed s.^*/.\<br\>. | sed 's+\\subsection+\\subsubsection+'| sed 's+\\section+\\subsection+' | sed 's+/**.*\\page+\\section+')
+MAN_SED_SEC = (sed 's.^*/.\<br\>.' | sed 's+\\subsection+\\subsubsection+'| sed 's+\\section+\\subsection+' | sed 's+/\**.*\\page+\\section+')
 
 # This makes the bullets into an 'o', which looks better in the text man pages.
 NROFF_SED = sed 's/\\(bu/o/'

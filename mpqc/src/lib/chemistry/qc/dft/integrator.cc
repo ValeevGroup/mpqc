@@ -467,7 +467,7 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
           for (j=0; j<cs.size(); j++) {
               int jsh = cs[j].shell;
               int ijsh = (ish>jsh)?((ish*(ish+1))/2+jsh):((jsh*(jsh+1))/2+ish);
-              if (cs[i].bound*cs[j].bound*dmat_bound_[ijsh] > accuracy_) {
+              if (cs[i].bound*cs[j].bound*dmat_bound_[ijsh] > 0.00001*accuracy_) {
                   contrib = 1;
                   break;
                 }
@@ -1688,6 +1688,7 @@ RadialAngularIntegrator::~RadialAngularIntegrator()
   delete[] angular_grid_;
   delete[] nr_points_;
   delete[] nw_lvalue_;
+  delete[] grid_accuracy_;
 }
 
 void
@@ -1698,7 +1699,12 @@ RadialAngularIntegrator::init_parameters(void)
   gridtype_ = 2;
   user_defined_grids_ = 0;
   npruned_partitions_ = 5;
-
+  dynamic_grids_ = 1;
+  grid_accuracy_ = new double[5];
+  int i;
+  grid_accuracy_[0] = 1e-4;
+  for (i=1; i<5; i++) grid_accuracy_[i] = grid_accuracy_[i-1]*1e-1;
+    
   init_pruning_coefficients();
   
 }
@@ -1727,7 +1733,14 @@ RadialAngularIntegrator::init_parameters(const RefKeyVal& keyval)
     }
   else gridtype_ = 2;
 
-  // ExEnv::out() << " gridtype = " << gridtype_ << endl;
+  // ExEnv::out << " gridtype = " << gridtype_ << endl;
+
+  dynamic_grids_ = keyval->intvalue("dynamic");
+  if (keyval->error() != KeyVal::OK) dynamic_grids_ = 1;
+  grid_accuracy_ = new double[5];
+  int i;
+  grid_accuracy_[0] = 1e-4;
+  for (i=1; i<5; i++) grid_accuracy_[i] = grid_accuracy_[i-1]*1e-1;
   
   init_pruning_coefficients(keyval);
   
@@ -1776,8 +1789,9 @@ RadialAngularIntegrator::set_grids(void)
       for (j=0; j<npruned_partitions_; j++) {
           // ExEnv::out() << "\t j = " << j << endl;
           for (k=0; k<=gridtype_; k++) {
-              // ExEnv::out() << "i = " << i << " j = " << j << " k = " << k << " lvalue = " << lvalue << endl;
-              //offset = angular_grid_offset(k);  // lvalue offset from reference xcoarse value
+              // ExEnv::out << "i = " << i << " j = " << j << " k = " << k << " lvalue = " << lvalue << endl;
+              offset_gridtype = angular_grid_offset(k);
+              // ExEnv::out << " offset_gridtype = " << offset_gridtype << endl;
               //ExEnv::out() << " offset = " << offset << endl;
               if ( (lvalue+offset_gridtype)<29 && i<=1 ) {
                   // First row grid too small for pruning
@@ -1803,6 +1817,14 @@ RadialAngularIntegrator::set_grids(void)
             }
         }
     }
+
+/*
+  for (i=0; i<atomic_rows; i++)
+      for (j=0; j<npruned_partitions_; j++)
+          for (k=0; k<=gridtype_; k++)
+              cout << " angular_grid_[" << i << "][" << j << "][" << k << "]->nw = "
+                   << angular_grid_[i][j][k]->nw() << endl;
+*/
 }
 
 void
@@ -1953,12 +1975,18 @@ RefRadialIntegrator
 RadialAngularIntegrator::get_radial_grid(int charge)
 {
   if (!user_defined_grids_) {
-      // ExEnv::out() << " get_radial_grid: gridtype = " << gridtype_ << endl;
-      if (charge<3) return radial_grid_[0][gridtype_];
-      else if (charge<11) return radial_grid_[1][gridtype_];
-      else if (charge<19) return radial_grid_[2][gridtype_];
-      else if (charge<37) return radial_grid_[3][gridtype_];
-      else if (charge<55) return radial_grid_[4][gridtype_];
+
+      int select_grid;
+      
+      if (dynamic_grids_) select_grid = select_dynamic_grid();
+      else select_grid = gridtype_;
+      //ExEnv::out << "RAI::get_radial_grid -> select_grid = " << select_grid;
+      
+      if (charge<3) return radial_grid_[0][select_grid];
+      else if (charge<11) return radial_grid_[1][select_grid];
+      else if (charge<19) return radial_grid_[2][select_grid];
+      else if (charge<37) return radial_grid_[3][select_grid];
+      else if (charge<55) return radial_grid_[4][select_grid];
       else {
           ExEnv::out() << " No default radial grids for atomic charge " << charge << endl;
           abort();
@@ -1969,6 +1997,25 @@ RadialAngularIntegrator::get_radial_grid(int charge)
 
 }
 
+int
+RadialAngularIntegrator::select_dynamic_grid(void)
+{
+  double accuracy = get_accuracy();
+  // accurate_grid = gridtype_ to get original non-dynamic version
+  // cout << " accuracy = " << accuracy << endl;
+  int select_grid;
+  int i;
+
+  if (accuracy >= grid_accuracy_[0]) select_grid=0;
+  else if (accuracy <= grid_accuracy_[gridtype_]) select_grid=gridtype_;
+  else {
+      for (i=gridtype_; i>=0; i--)
+          if (accuracy >= grid_accuracy_[i]) select_grid=i;
+    }
+      
+  // cout << " select_grid = " << select_grid << endl;
+  return select_grid;
+}  
 int
 RadialAngularIntegrator::get_atomic_row(int i)
 {
@@ -1990,6 +2037,13 @@ RadialAngularIntegrator::get_angular_grid(double radius, double bragg_radius,
 {
   int atomic_row, i, maxgrid=0, nw, maxgrid_index;
 
+  int select_grid;
+  if (dynamic_grids_) select_grid = select_dynamic_grid();
+  else select_grid = gridtype_;
+
+  //cout << "RAI::get_angular_grid -> select_grid = " << select_grid;
+  //cout << " prune_grid_ = " << prune_grid_
+  //     << "  user_defined_grids_ = " << user_defined_grids_ << endl;
   atomic_row = get_atomic_row(charge);
   if (!prune_grid_ && !user_defined_grids_) {
       for (i=0; i<npruned_partitions_; i++) {
@@ -2016,13 +2070,12 @@ RadialAngularIntegrator::get_angular_grid(double radius, double bragg_radius,
           ExEnv::out() << " No partitioning parameters for atomic number " << charge << endl;
           exit(0);
         }
-  
       // gridtype_ will need to be adjusted for dynamic grids  
-      if (radius<Alpha[0]*bragg_radius) return angular_grid_[atomic_row][0][gridtype_];
-      if (radius<Alpha[1]*bragg_radius) return angular_grid_[atomic_row][1][gridtype_];
-      if (radius<Alpha[2]*bragg_radius) return angular_grid_[atomic_row][2][gridtype_];
-      if (radius<Alpha[3]*bragg_radius) return angular_grid_[atomic_row][3][gridtype_];
-      else return angular_grid_[atomic_row][4][gridtype_];
+      if (radius<Alpha[0]*bragg_radius) return angular_grid_[atomic_row][0][select_grid];
+      if (radius<Alpha[1]*bragg_radius) return angular_grid_[atomic_row][1][select_grid];
+      if (radius<Alpha[2]*bragg_radius) return angular_grid_[atomic_row][2][select_grid];
+      if (radius<Alpha[3]*bragg_radius) return angular_grid_[atomic_row][3][select_grid];
+      else return angular_grid_[atomic_row][4][select_grid];
     }
 
   else {

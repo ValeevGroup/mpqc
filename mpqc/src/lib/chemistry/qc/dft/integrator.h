@@ -103,7 +103,7 @@ class DenIntegrator: virtual public SavableState {
 
     /// Sets the accuracy to use in the integration.
     void set_accuracy(double a) { accuracy_ = a; }
-
+    double get_accuracy(void) {return accuracy_; }
     /** Call with non zero if the potential integrals are to be computed.
         They can be returned with the vmat() member. */
     void set_compute_potential_integrals(int);
@@ -397,6 +397,8 @@ class RadialAngularIntegrator: public DenIntegrator {
     int **nr_points_, *nw_lvalue_;
     int npruned_partitions_;
     int user_defined_grids_;
+    double *grid_accuracy_;
+    int dynamic_grids_;
   protected:
     RefRadialIntegrator radial_;
     RefAngularIntegrator angular_;
@@ -428,6 +430,7 @@ class RadialAngularIntegrator: public DenIntegrator {
     void init_parameters(const RefKeyVal& keyval);
     void init_pruning_coefficients(const RefKeyVal& keyval);
     void init_pruning_coefficients(void);
+    int select_dynamic_grid(void);
 };
     
 #endif

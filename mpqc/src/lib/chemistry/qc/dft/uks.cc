@@ -332,7 +332,7 @@ UKS::ao_fock(double accuracy)
   diff_densa_ = pl->to_AO_basis(densa_);
   diff_densb_ = pl->to_AO_basis(densb_);
   integrator_->set_compute_potential_integrals(1);
-  integrator_->set_accuracy(0.00001*accuracy);
+  integrator_->set_accuracy(accuracy);
   integrator_->integrate(functional_, diff_densa_, diff_densb_);
   exc_ = integrator_->value();
   RefSymmSCMatrix vxa = gmata_.clone();
@@ -401,7 +401,7 @@ UKS::two_body_deriv(double * tbgrad)
   RefSymmSCMatrix ao_dens_b = beta_ao_density();
   integrator_->init(this);
   integrator_->set_compute_potential_integrals(0);
-  integrator_->set_accuracy(0.00001*desired_gradient_accuracy());
+  integrator_->set_accuracy(desired_gradient_accuracy());
   integrator_->integrate(functional_, ao_dens_a, ao_dens_b, dftgrad);
   integrator_->done();
   print_natom_3(dftgrad, "E-X contribution to DFT gradient");

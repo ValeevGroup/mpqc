@@ -284,7 +284,7 @@ CLKS::ao_fock(double accuracy)
   cl_dens_diff_ = pl->to_AO_basis(cl_dens_);
   cl_dens_diff_.scale(0.5);
   integrator_->set_compute_potential_integrals(1);
-  integrator_->set_accuracy(0.00001*accuracy);
+  integrator_->set_accuracy(accuracy);
   integrator_->integrate(functional_, cl_dens_diff_, cl_dens_diff_);
   exc_ = integrator_->value();
   RefSymmSCMatrix vxa = cl_gmat_.clone();
@@ -380,7 +380,7 @@ CLKS::two_body_deriv(double * tbgrad)
   aodens.scale(0.5);
   integrator_->set_compute_potential_integrals(0);
   integrator_->init(this);
-  integrator_->set_accuracy(0.00001*desired_gradient_accuracy());
+  integrator_->set_accuracy(desired_gradient_accuracy());
   integrator_->integrate(functional_, aodens, aodens, dftgrad);
   integrator_->done();
   print_natom_3(dftgrad, "E-X contribution to DFT gradient");

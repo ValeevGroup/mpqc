@@ -56,6 +56,7 @@ class LocalSCVector: public SCVector {
     void save_data_state(StateOut&);
     void assign(double);
     void assign(SCVector*);
+    void assign(const double*);
 
     RefSCDimension dim();
     void set_element(int,double);

@@ -234,8 +234,10 @@ RefSCDimension::operator=(const RefSCDimension & c)
 int
 RefSCDimension::n()
 {
-  if (null()) return 0;
-  return pointer()->n();
+  int result;
+  if (null()) result = 0;
+  else result = pointer()->n();
+  return result;
 }
 
 RefSCDimension::operator int()

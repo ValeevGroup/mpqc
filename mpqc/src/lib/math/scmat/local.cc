@@ -598,14 +598,14 @@ LocalSCVector::accumulate(SCVector*a)
       abort();
     }
 
-  int nelem = n();
+  int nelem = d->n();
   for (int i=0; i<nelem; i++) block->data[i] += la->block->data[i];
 }
 
 void
 LocalSCVector::assign(double a)
 {
-  int nelem = n();
+  int nelem = d->n();
   for (int i=0; i<nelem; i++) block->data[i] = a;
 }
 
@@ -614,18 +614,25 @@ LocalSCVector::assign(SCVector*a)
 {
   // make sure that the argument is of the correct type
   LocalSCVector* la
-    = LocalSCVector::require_castdown(a,"LocalSCVector::accumulate");
+    = LocalSCVector::require_castdown(a,"LocalSCVector::assign");
 
   // make sure that the dimensions match
   if (!(this->dim() == la->dim())) {
       fprintf(stderr,"LocalSCVector::"
-              "accumulate(SCVector*a):\n");
+              "assign(SCVector*a):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
     }
 
-  int nelem = n();
+  int nelem = d->n();
   for (int i=0; i<nelem; i++) block->data[i] = la->block->data[i];
+}
+
+void
+LocalSCVector::assign(const double*a)
+{
+  int nelem = d->n();
+  for (int i=0; i<nelem; i++) block->data[i] = a[i];
 }
 
 double
@@ -643,7 +650,7 @@ LocalSCVector::scalar_product(SCVector*a)
       abort();
     }
 
-  int nelem = n();
+  int nelem = d->n();
   double result = 0.0;
   for (int i=0; i<nelem; i++) result += block->data[i] * la->block->data[i];
   return result;

@@ -190,6 +190,8 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
   else if (msg->class_desc() == ParagonMessageGrp::static_class_desc()) {
 #ifdef HAVE_HRECV
       grp = new ParagonMemoryGrp(msg);
+#elif defined(HAVE_PUMA_MPI2)
+      grp = new PumaMemoryGrp(msg);
 #else
       grp = new IParagonMemoryGrp(msg);
 #endif

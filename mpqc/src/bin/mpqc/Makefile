@@ -53,6 +53,9 @@ endif
 ifeq ($(HAVE_LIBDERIV),yes)
   XLIBS += -lderiv
 endif
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+  LTLINKBINOPTS += -R$(CCAFE_LIB)
+endif
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(XDEF) $(SRCDIR)/LIBS.h)
 

@@ -74,6 +74,7 @@
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
+#include <util/misc/ccaenv.h>
 #include <util/render/render.h>
 
 #include <math/optimize/opt.h>
@@ -229,6 +230,10 @@ try_main(int argc, char *argv[])
   options.enroll("i", GetLongOpt::NoValue, "convert simple to OO input", 0);
   options.enroll("d", GetLongOpt::NoValue, "debug", 0);
   options.enroll("h", GetLongOpt::NoValue, "print this message", 0);
+  options.enroll("cca-path", GetLongOpt::OptionalValue, 
+                 "cca component path", "");
+  options.enroll("cca-load", GetLongOpt::OptionalValue,
+                 "cca components to load", "");
 
   int optind = options.parse(argc, argv);
 
@@ -619,6 +624,19 @@ try_main(int argc, char *argv[])
   int print_mole = keyval->booleanvalue("print_mole",truevalue);
   
   int print_timings = keyval->booleanvalue("print_timings",truevalue);
+
+  // initialize cca framework
+  string cca_path(options.retrieve("cca-path"));
+  string cca_load(options.retrieve("cca-load"));
+  KeyValValuestring emptystring("");
+  if(cca_path.size()==0)
+    cca_path = keyval->stringvalue("cca-path",emptystring);
+  if(cca_load.size()==0)
+    cca_load = keyval->stringvalue("cca-load",emptystring);
+  string cca_args = " --path " + cca_path + " --load " + cca_load;
+  ExEnv::out0() << endl << indent << "Initializing CCA framework with args: " 
+                << endl << indent << cca_args << endl;
+  CCAEnv::init( cca_args );
   
   // sanity checks for the benefit of reasonable looking output
   if (opt.null()) do_opt=0;

@@ -116,6 +116,7 @@ MBPT2::compute()
 {
   init_variables();
 
+  reference_->set_desired_value_accuracy(desired_value_accuracy()/100.);
   if (do_gradient()) {
       if (nsocc) {
           cerr << "MBPT2: cannot compute open shell gradients" << endl;

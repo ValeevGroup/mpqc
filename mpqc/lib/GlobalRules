@@ -62,8 +62,8 @@ endif
 
 ifeq ($(BIN_OR_LIB),BIN)
 
-$(TARGET_TO_MAKE): $(BINOBJ) $(LIBS) $(SYSLIBS)
-	$(LD) $(LDFLAGS) $^ -o $(@F)
+$(TARGET_TO_MAKE): $(BINOBJ) $(LIBS)
+	$(LD) $(LDFLAGS) $^ -o $(@F) $(SYSLIBS)
 
 install: install_target
 

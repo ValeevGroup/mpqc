@@ -73,7 +73,8 @@ PsiWfn::compute()
   double grad_acc = desired_gradient_accuracy();
   if (energy_acc > 1.0e-6) energy_acc = 1.0e-6;
   if (grad_acc > 1.0e-7) grad_acc = 1.0e-7;
-  if (do_gradient() && energy_acc > grad_acc/10.0) energy_acc = grad_acc/10.0;
+  if (gradient_needed() && energy_acc > grad_acc/10.0)
+      energy_acc = grad_acc/10.0;
 
   if (!psi_in.test()){
       write_input((int)-log10(energy_acc));
@@ -88,7 +89,7 @@ PsiWfn::compute()
     }
 
   // read output
-  if (do_gradient()) {
+  if (gradient_needed()) {
       int i, j, ii;
       int *reorder;
       double tol = 1e-6;
@@ -132,14 +133,15 @@ PsiWfn::compute()
       delete[] reorder;
       print_natom_3(g, "Reordered FILE11 Gradient");
       set_gradient(g);
-      set_actual_gradient_accuracy(desired_gradient_accuracy());
+      set_actual_gradient_accuracy(grad_acc);
       set_energy(file11.energy());
+      set_actual_value_accuracy(energy_acc);
     }
   else {
       double r = read_energy();
       set_energy(r);
+      set_actual_value_accuracy(energy_acc);
     }
-  set_actual_value_accuracy(energy_acc);
 }
 
 double
@@ -182,7 +184,7 @@ PsiWfn::gradient_implemented()
 void
 PsiWfn::write_basic_input(int conv, const char *wfn)
 {
-  const char *dertype = do_gradient() ? "FIRST" : "NONE";
+  const char *dertype = gradient_needed() ? "FIRST" : "NONE";
   psi_in.write_defaults(dertype, wfn);
   psi_in.write_input();
   psi_in.write_basis();

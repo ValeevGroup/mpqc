@@ -74,10 +74,11 @@ Orbital::compute()
 {
   SCVector3 r;
   get_x(r);
-  if (do_value()) {
+  if (value_needed()) {
       set_value(fabs(wfn_->orbital(r, orbital_)));
+      set_actual_value_accuracy(desired_value_accuracy());
     }
-  if (do_gradient() || do_hessian()) {
+  if (gradient_needed() || hessian_needed()) {
       cerr << node0 << indent
            << "Orbital::compute(): gradient & hessian not implemented\n";
       abort();

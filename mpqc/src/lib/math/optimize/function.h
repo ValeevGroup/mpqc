@@ -103,9 +103,6 @@ class Function: virtual_base public SavableState, public Compute {
     //time \srccd{compute()} is called.  Return a nonzero number
     //if the value was previously to be computed.
     int do_value(int);
-    //. Return a nonzero number if the value is to be computed
-    //when \srccd{compute()} is called.
-    int do_value();
 
     //. Set the accuracy to which the value is to be computed.
     virtual void set_desired_value_accuracy(double);
@@ -119,7 +116,6 @@ class Function: virtual_base public SavableState, public Compute {
     virtual RefSCVector gradient();
     int gradient_needed();
     int do_gradient(int);
-    int do_gradient();
     virtual void set_desired_gradient_accuracy(double);
     virtual double actual_gradient_accuracy();
     virtual double desired_gradient_accuracy();
@@ -129,7 +125,6 @@ class Function: virtual_base public SavableState, public Compute {
     virtual RefSymmSCMatrix hessian();
     int hessian_needed();
     int do_hessian(int);
-    int do_hessian();
     virtual void set_desired_hessian_accuracy(double);
     virtual double actual_hessian_accuracy();
     virtual double desired_hessian_accuracy();

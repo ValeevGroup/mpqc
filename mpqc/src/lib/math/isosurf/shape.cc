@@ -100,17 +100,22 @@ Shape::compute()
 {
   SCVector3 r;
   get_x(r);
-  if (do_gradient()) {
+  if (gradient_needed()) {
       if (!gradient_implemented()) {
           cerr << "Shape::compute: gradient not implemented" << endl;
           abort();
         }
       SCVector3 v;
       set_value(distance_to_surface(r,&v));
+      set_actual_value_accuracy(desired_value_accuracy());
       set_gradient(v);
+      set_actual_gradient_accuracy(desired_gradient_accuracy());
     }
-  else if (do_value()) set_value(distance_to_surface(r));
-  if (do_hessian()) {
+  else if (value_needed()) {
+      set_value(distance_to_surface(r));
+      set_actual_value_accuracy(desired_value_accuracy());
+    }
+  if (hessian_needed()) {
       cerr << "Shape::compute(): can't do hessian yet" << endl;
       abort();
     }

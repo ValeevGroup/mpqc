@@ -186,12 +186,6 @@ Function::value_needed()
 }
 
 int
-Function::do_value()
-{
-  return value_.compute();
-}
-
-int
 Function::do_value(int f)
 {
   return value_.compute(f);
@@ -242,12 +236,6 @@ Function::gradient_needed()
 }
 
 int
-Function::do_gradient()
-{
-  return gradient_.compute();
-}
-
-int
 Function::do_gradient(int f)
 {
   return gradient_.compute(f);
@@ -294,12 +282,6 @@ int
 Function::hessian_needed()
 {
   return hessian_.needed();
-}
-
-int
-Function::do_hessian()
-{
-  return hessian_.compute();
 }
 
 int
@@ -357,11 +339,20 @@ Function::actual_hessian_accuracy()
 void
 Function::print(ostream&o)
 {
+  const char *computed = " (computed)";
+  const char *notcomputed = "";
   o << node0 << indent << "Function Parameters:\n" << incindent
-    << indent << scprintf("value_accuracy = %e\n",desired_value_accuracy())
-    << indent << scprintf("gradient_accuracy = %e\n",
-                          desired_gradient_accuracy())
-    << indent << scprintf("hessian_accuracy = %e\n",desired_hessian_accuracy())
+    << indent << scprintf("value_accuracy    = %e (%e)%s\n",
+                          actual_value_accuracy(), desired_value_accuracy(),
+                          (value_.computed()?computed:notcomputed))
+    << indent << scprintf("gradient_accuracy = %e (%e)%s\n",
+                          actual_gradient_accuracy(),
+                          desired_gradient_accuracy(),
+                          (gradient_.computed()?computed:notcomputed))
+    << indent << scprintf("hessian_accuracy  = %e (%e)%s\n",
+                          actual_hessian_accuracy(),
+                          desired_hessian_accuracy(),
+                          (hessian_.computed()?computed:notcomputed))
     << decindent << endl;
 }
 

@@ -30,6 +30,7 @@
 #endif
 
 #include <float.h>
+#include <util/misc/formio.h>
 #include <util/misc/compute.h>
 #include <util/state/state.h>
 
@@ -80,7 +81,7 @@ ResultInfo::update() {
       _c->compute();
       compute() = oldcompute;
       if (!computed()) {
-          cerr << "Result::compute: nothing was computed" << endl;
+          cerr << "ResultInfo::update: nothing was computed" << endl;
           abort();
         }
     }
@@ -130,6 +131,12 @@ ResultInfo::operator=(const ResultInfo&r)
   return *this;
 }
 
+int
+ResultInfo::needed()
+{
+  return _compute && (!_computed);
+}
+
 /////////////////////////////////////////////////////////////////////////
 
 AccResultInfo::AccResultInfo(Compute*c):
@@ -169,11 +176,6 @@ void
 AccResultInfo::set_actual_accuracy(double a)
 {
   _actual_accuracy = a;
-  if (_desired_accuracy < _actual_accuracy) {
-      cerr << "AccResult: setting actual accuracy greater than "
-           << "desired accuracy" << endl;
-      abort();
-    }
   computed() = 1;
 }
 
@@ -214,6 +216,30 @@ AccResultInfo::operator=(const AccResultInfo&a)
   _actual_accuracy=a._actual_accuracy;
   _desired_accuracy=a._desired_accuracy;
   return *this;
+}
+
+int
+AccResultInfo::needed()
+{
+  return compute() && !computed_to_desired_accuracy();
+}
+
+void
+AccResultInfo::update() {
+  if (!computed_to_desired_accuracy()) {
+      int oldcompute = compute(1);
+      _c->compute();
+      compute() = oldcompute;
+      if (!computed()) {
+          cerr << "AccResultInfo::update: nothing was computed" << endl;
+          abort();
+        }
+      if (_actual_accuracy > _desired_accuracy) {
+          cout << node0 << indent
+               << "WARNING: AccResultInfo::update: desired accuracy not achieved"
+               << endl;
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////

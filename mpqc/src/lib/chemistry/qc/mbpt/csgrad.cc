@@ -213,7 +213,7 @@ MBPT2::compute_cs_grad()
   BiggestContribs biggest_coefs(5,10);
   CharacterTable ct = molecule()->point_group()->char_table();
 
-  int dograd = do_gradient();
+  int dograd = gradient_needed();
 
   // this controls how often mem->catchup is called
   int catchup_ctr;
@@ -1830,6 +1830,8 @@ MBPT2::compute_cs_grad()
          << ", using mp" << endl;
     }
   set_energy(emp2);
+  set_actual_value_accuracy(reference_->actual_value_accuracy()
+                            *ref_to_mp2_acc);
 
   RefSCDimension nocc_act_dim(new SCDimension(nocc_act));
   RefSCDimension nvir_act_dim(new SCDimension(nvir_act));

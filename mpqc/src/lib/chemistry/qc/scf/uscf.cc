@@ -865,7 +865,7 @@ UnrestrictedSCF::extrap_error()
 
 ///////////////////////////////////////////////////////////////////////////
 
-void
+double
 UnrestrictedSCF::compute_vector(double& eelec)
 {
   tim_enter("vector");
@@ -898,11 +898,12 @@ UnrestrictedSCF::compute_vector(double& eelec)
   RefDiagSCMatrix evalsa(basis_dimension(), basis_matrixkit());
   RefDiagSCMatrix evalsb(basis_dimension(), basis_matrixkit());
 
+  double delta = 1.0;
   int iter;
   for (iter=0; iter < maxiter_; iter++) {
     // form the density from the current vector 
     tim_enter("density");
-    double delta = new_density();
+    delta = new_density();
     tim_exit("density");
     
     // check convergence
@@ -986,16 +987,20 @@ UnrestrictedSCF::compute_vector(double& eelec)
       
   eigenvalues_ = evalsa;
   eigenvalues_.computed() = 1;
+  eigenvalues_.set_actual_accuracy(delta);
   evalsa = 0;
   
   eigenvectors_ = scf_vector_;
   eigenvectors_.computed() = 1;
+  eigenvectors_.set_actual_accuracy(delta);
   
   cb_ = scf_vectorb_;
   cb_.computed() = 1;
+  cb_.set_actual_accuracy(delta);
 
   eb_ = evalsb;
   eb_.computed() = 1;
+  eb_.set_actual_accuracy(delta);
   evalsb = 0;
   
   {
@@ -1032,6 +1037,8 @@ UnrestrictedSCF::compute_vector(double& eelec)
 
   tim_exit("vector");
   //tim_print(0);
+
+  return delta;
 }
 
 ////////////////////////////////////////////////////////////////////////////

@@ -559,16 +559,19 @@ SumMolecularEnergy::compute()
   int *old_do_gradient = new int[n_];
   int *old_do_hessian = new int[n_];
 
-  for (i=0; i<n_; i++) old_do_value[i] = mole_[i]->do_value(do_value());
-  for (i=0; i<n_; i++) old_do_gradient[i]=mole_[i]->do_gradient(do_gradient());
-  for (i=0; i<n_; i++) old_do_hessian[i] = mole_[i]->do_hessian(do_hessian());
+  for (i=0; i<n_; i++)
+      old_do_value[i] = mole_[i]->do_value(value_.compute());
+  for (i=0; i<n_; i++)
+      old_do_gradient[i]=mole_[i]->do_gradient(gradient_.compute());
+  for (i=0; i<n_; i++)
+      old_do_hessian[i] = mole_[i]->do_hessian(hessian_.compute());
 
   cout << node0 << indent
        << "SumMolecularEnergy: compute" << endl;
 
   cout << incindent;
 
-  if (do_value()) {
+  if (value_needed()) {
       double val = 0.0;
       for (i=0; i<n_; i++) {
           val += coef_[i] * mole_[i]->value();
@@ -586,14 +589,14 @@ SumMolecularEnergy::compute()
            << scprintf("  = % 16.12f", val) << endl;
       set_energy(val);
     }
-  if (do_gradient()) {
+  if (gradient_needed()) {
       RefSCVector gradientvec = matrixkit()->vector(moldim());
       gradientvec->assign(0.0);
       for (i=0; i<n_; i++)
           gradientvec.accumulate(coef_[i] * mole_[i]->gradient());
       set_gradient(gradientvec);
     }
-  if (do_hessian()) {
+  if (hessian_needed()) {
       RefSymmSCMatrix hessianmat = matrixkit()->symmmatrix(moldim());
       hessianmat->assign(0.0);
       for (i=0; i<n_; i++)

@@ -43,7 +43,7 @@
 
 ///////////////////////////////////////////////////////////////////////////
 
-void
+double
 SCF::compute_vector(double& eelec)
 {
   tim_enter("vector");
@@ -73,11 +73,12 @@ SCF::compute_vector(double& eelec)
 
   RefDiagSCMatrix evals(basis_dimension(), basis_matrixkit());
 
+  double delta = 1.0;
   int iter;
   for (iter=0; iter < maxiter_; iter++) {
     // form the density from the current vector 
     tim_enter("density");
-    double delta = new_density();
+    delta = new_density();
     tim_exit("density");
     
     // check convergence
@@ -145,6 +146,7 @@ SCF::compute_vector(double& eelec)
       
   eigenvalues_ = evals;
   eigenvalues_.computed() = 1;
+  eigenvalues_.set_actual_accuracy(delta);
 
   // search for HOMO and LUMO
   // first convert evals to something we can deal with easily
@@ -218,7 +220,8 @@ SCF::compute_vector(double& eelec)
   
   eigenvectors_ = scf_vector_;
   eigenvectors_.computed() = 1;
-  
+  eigenvectors_.set_actual_accuracy(delta);
+
   // now clean up
   done_vector();
   hcore_ = 0;
@@ -228,6 +231,8 @@ SCF::compute_vector(double& eelec)
 
   tim_exit("vector");
   //tim_print(0);
+
+  return delta;
 }
 
 ////////////////////////////////////////////////////////////////////////////

@@ -71,16 +71,19 @@ ElectronDensity::compute()
   SCVector3 r;
   get_x(r);
   // do_gradient will automatically cause the value to be computed
-  if (do_gradient()) {
+  if (gradient_needed()) {
       double v[3];
       set_value(wfn_->density_gradient(r,v));
+      set_actual_value_accuracy(desired_value_accuracy());
       SCVector3 d(v);
       set_gradient(d);
+      set_actual_gradient_accuracy(desired_gradient_accuracy());
     }
-  else if (do_value()) {
+  else if (value_needed()) {
       set_value(wfn_->density(r));
+      set_actual_value_accuracy(desired_value_accuracy());
     }
-  if (do_hessian()) {
+  if (hessian_needed()) {
       cerr << node0 << indent
            << "ElectronDensity::compute(): hessian isn't yet implemented\n";
       abort();

@@ -779,9 +779,13 @@ MBPT2::compute_hsos_v1()
 
   if (method_ && !strcmp(method_,"opt1")) {
     set_energy(eopt1);
+    set_actual_value_accuracy(reference_->actual_value_accuracy()
+                              *ref_to_mp2_acc);
     }
   else if (method_ && !strcmp(method_,"opt2")) {
     set_energy(eopt2);
+    set_actual_value_accuracy(reference_->actual_value_accuracy()
+                              *ref_to_mp2_acc);
     }
   else {
     if (!(!method_ || !strcmp(method_,"zapt"))) {
@@ -790,6 +794,8 @@ MBPT2::compute_hsos_v1()
            << ", using zapt" << endl;
       }
     set_energy(ezapt2);
+    set_actual_value_accuracy(reference_->actual_value_accuracy()
+                              *ref_to_mp2_acc);
     }
 
   free(trans_int1);

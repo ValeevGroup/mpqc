@@ -47,6 +47,8 @@ class MBPT2: public Wavefunction {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
+#define ref_to_mp2_acc 100.0
+
     int debug_;
     RefSCF reference_;
     RefMemoryGrp mem;

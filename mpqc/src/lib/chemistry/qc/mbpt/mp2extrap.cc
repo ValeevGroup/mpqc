@@ -122,19 +122,25 @@ MP2BasisExtrap::compute()
   int *old_do_gradient = new int[n_];
   int *old_do_hessian = new int[n_];
 
-  for (i=0; i<n_; i++) old_do_value[i] = mole_[i]->do_value(do_value());
-  for (i=0; i<n_; i++) old_do_gradient[i]=mole_[i]->do_gradient(do_gradient());
-  for (i=0; i<n_; i++) old_do_hessian[i] = mole_[i]->do_hessian(do_hessian());
+  for (i=0; i<n_; i++)
+      old_do_value[i] = mole_[i]->do_value(value_.compute());
+  for (i=0; i<n_; i++)
+      old_do_gradient[i]=mole_[i]->do_gradient(gradient_.compute());
+  for (i=0; i<n_; i++)
+      old_do_hessian[i] = mole_[i]->do_hessian(hessian_.compute());
 
   cout << node0 << indent
        << "MP2BasisExtrap: compute" << endl;
 
   cout << incindent;
 
-  if (do_value()) {
+  if (value_needed()) {
       double val = 0.0;
+      double accuracy = 0.0;
       for (i=0; i<n_; i++) {
           val += coef_[i] * mbpt2[i]->corr_energy();
+          if (mbpt2[i]->actual_value_accuracy() > accuracy)
+              accuracy = mbpt2[i]->actual_value_accuracy();
         }
       val += mbpt2[2]->ref_energy();
       cout << node0 << endl << indent
@@ -153,19 +159,25 @@ MP2BasisExtrap::compute()
       cout << node0 << indent
            << scprintf("  = % 16.12f", val) << endl;
       set_energy(val);
+      set_actual_value_accuracy(accuracy);
     }
-  if (do_gradient()) {
+  if (gradient_needed()) {
       RefSCVector gradientvec = matrixkit()->vector(moldim());
       gradientvec->assign(0.0);
-      for (i=0; i<n_; i++)
+      double accuracy = 0.0;
+      for (i=0; i<n_; i++) {
           gradientvec.accumulate(coef_[i] * mbpt2[i]->corr_energy_gradient());
+          if (mbpt2[i]->actual_gradient_accuracy() > accuracy)
+              accuracy = mbpt2[i]->actual_gradient_accuracy();
+        }
       gradientvec.accumulate(mbpt2[2]->ref_energy_gradient());
       print_natom_3(mbpt2[2]->gradient(),
                     "Total MP2 Gradient with Largest Basis Set");
       print_natom_3(gradientvec,"Total Extrapolated MP2 Gradient");
       set_gradient(gradientvec);
+      set_actual_gradient_accuracy(accuracy);
     }
-  if (do_hessian()) {
+  if (hessian_needed()) {
     cout << node0 << "ERROR: MP2BasisExtrap: cannot do hessian" << endl;
     abort();
     }

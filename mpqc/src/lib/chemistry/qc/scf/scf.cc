@@ -223,12 +223,15 @@ SCF::compute()
   local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit().pointer()) ||
             ReplSCMatrixKit::castdown(basis()->matrixkit().pointer())) ? 1:0;
   
+  const double hess_to_grad_acc = 1.0/100.0;
   if (hessian_needed())
-    set_desired_gradient_accuracy(desired_hessian_accuracy()/100.0);
+    set_desired_gradient_accuracy(desired_hessian_accuracy()*hess_to_grad_acc);
 
+  const double grad_to_val_acc = 1.0/100.0;
   if (gradient_needed())
-    set_desired_value_accuracy(desired_gradient_accuracy()/100.0);
+    set_desired_value_accuracy(desired_gradient_accuracy()*grad_to_val_acc);
 
+  double delta;
   if (value_needed()) {
     cout << node0 << endl << indent
          << scprintf("SCF::compute: energy accuracy = %10.7e\n",
@@ -236,7 +239,7 @@ SCF::compute()
          << endl;
 
     double eelec;
-    compute_vector(eelec);
+    delta = compute_vector(eelec);
       
     // this will be done elsewhere eventually
     double nucrep = molecule()->nuclear_repulsion_energy();
@@ -247,7 +250,10 @@ SCF::compute()
          << endl;
 
     set_energy(eelec+eother+nucrep);
-    set_actual_value_accuracy(desired_value_accuracy());
+    set_actual_value_accuracy(delta);
+  }
+  else {
+    delta = actual_value_accuracy();
   }
 
   if (gradient_needed()) {
@@ -262,7 +268,7 @@ SCF::compute()
     print_natom_3(gradient,"Total Gradient:");
     set_gradient(gradient);
 
-    set_actual_gradient_accuracy(desired_gradient_accuracy());
+    set_actual_gradient_accuracy(delta/grad_to_val_acc);
   }
   
   if (hessian_needed()) {
@@ -276,7 +282,7 @@ SCF::compute()
     compute_hessian(hessian);
     set_hessian(hessian);
 
-    set_actual_hessian_accuracy(desired_hessian_accuracy());
+    set_actual_hessian_accuracy(delta/grad_to_val_acc/hess_to_grad_acc);
   }
 }
 

@@ -48,6 +48,7 @@ SET_dec(ResultInfoP);
 class Compute
 {
    friend class ResultInfo;
+   friend class AccResultInfo;
   private:
     SetResultInfoP _results;
     void add(ResultInfo*);
@@ -75,14 +76,13 @@ class Compute
 // to use Result_dec.
 class ResultInfo
 {
-  private:
+  protected:
     int _compute;
     int _computed;
     Compute* _c;
-  protected:
     // This make sure that the datum is up to date.  If it is not then
     // Compute::compute() will be called.
-    void update();
+    virtual void update();
   protected:
     ResultInfo(StateIn&,Compute*);
     ResultInfo(const ResultInfo&,Compute*);
@@ -95,12 +95,13 @@ class ResultInfo
     int& compute() { return _compute; }
     int compute(int c) { int r = _compute; _compute = c; return r; }
     int& computed() { return _computed; }
-    int needed() { return _compute && (!_computed); }
+    virtual int needed();
 };
 
-// This is like result but the accuracy with which a result was computed
-// as well as the desired accuracy are stored.  A computed_ datum always
-// has an actual accuracy greater than or equal to the computed accuracy.
+// This is like result but the accuracy with which a result was computed as
+// well as the desired accuracy are stored.  A _computed datum may has an
+// actual accuracy greater than, equal to, or less than the computed
+// accuracy.
 class AccResultInfo: public ResultInfo
 {
   private:
@@ -112,6 +113,7 @@ class AccResultInfo: public ResultInfo
     virtual void save_data_state(StateOut&);
     virtual void restore_state(StateIn&);
     AccResultInfo& operator=(const AccResultInfo&);
+    void update();
   public:
     AccResultInfo(Compute*c);
     ~AccResultInfo();
@@ -119,6 +121,9 @@ class AccResultInfo: public ResultInfo
     double desired_accuracy() const;
     void set_desired_accuracy(double);
     void set_actual_accuracy(double);
+    int computed_to_desired_accuracy()
+        { return computed() && _actual_accuracy <= _desired_accuracy; }
+    int needed();
 };
 
 #include <util/misc/comptmpl.h>

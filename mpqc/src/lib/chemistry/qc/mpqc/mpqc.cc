@@ -286,7 +286,6 @@ void
 MPSCF::compute()
 {
   int i,j;
-  int errcod;
 
   // Adjust the value accuracy if gradients are needed and set up
   // minimal accuracies.
@@ -446,9 +445,7 @@ static void
 mkcostvec(centers_t *centers,sym_struct_t *sym_info,dmt_cost_t *costvec)
 {
   int flags;
-  int i,j;
-  int ij,kl,ijkl;
-  int Qvecij;
+  int i,j,ij;
   double *intbuf;
   extern signed char *scf_bnd_Qvec;
 

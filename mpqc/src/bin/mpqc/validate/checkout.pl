@@ -7,6 +7,12 @@ require QCResult;
 my $file1 = shift;
 my $file2 = shift;
 
+# for AIX, which isn't processing the {,} in the argument
+if ($file1 =~ /(.*){(.*),(.*)}(.*)/) {
+    $file1 = "$1$2$4";
+    $file2 = "$1$3$4";
+}
+
 check($file1, $file2);
 
 # Takes the name of the output file as the first argument.  It must end in

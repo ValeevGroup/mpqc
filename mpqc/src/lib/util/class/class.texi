@@ -12,11 +12,12 @@ mechanism is provided.
 @menu
 * The DescribedClass Class:: The abstract base class describing classes.
 * The ClassDesc Class:: Each DescribedClass has a ClassDesc instance.
+* The DescribedClass Ref Macros:: References to DescribedClass objects.
 @end menu
 
 @c ---------------------------------------------------------------------
 
-@node The DescribedClass Class, , The Class Library, The Class Library
+@node The DescribedClass Class, The ClassDesc Class, The Class Library, The Class Library
 @section The DescribedClass Class
 @clindex DescribedClass
 
@@ -71,7 +72,7 @@ This returns the unique @code{ClassDesc} pointer for @code{Client}.
 
 @c ---------------------------------------------------------------------
 
-@node The ClassDesc Class, , , The Class Library
+@node The ClassDesc Class, The DescribedClass Ref Macros, The DescribedClass Class, The Class Library
 @section The ClassDesc Class
 @clindex ClassDesc
 
@@ -88,21 +89,103 @@ programmers must be careful when using this information before
 
 The @code{ClassDesc} class has these members:
 @table @code
-@item char* name()
+@item const char* name() const
 Returns the name of the class.
 
-@item int version()
+@item int version() const
 Returns the version number of the class.
 
 @item static ClassDesc* name_to_class_desc(const char*)
-Given the name of the class, return a pointer to the class
-descriptor.
+Given the name of the class, return a pointer to the class descriptor.
 
-@item DescribedClass* create_described_class()
+@item DescribedClass* create() const
 Create an instance of @code{DescribedClass} with exact type equal to the
-class to which this class descriptor belongs.
+class to which this class descriptor belongs.  The constructor which
+takes no arguments is used.  If this constructor doesn't exist or a
+static function that calls it with @code{new} wasn't passed to this
+@code{ClassDesc}, then @samp{0} will be returned.
+
+@item DescribedClass* create(StateIn&) const
+Create an instance of @code{DescribedClass} with exact type equal to the
+class to which this class descriptor belongs.  The @code{StateIn&}
+constructor is used (@pxref{The SavableState Library}).  If this
+constructor doesn't exist or a static function that calls it with
+@code{new} wasn't passed to this @code{ClassDesc}, then @samp{0} will be
+returned.
+
+@item DescribedClass* create(KeyVal&) const
+Create an instance of @code{DescribedClass} with exact type equal to the
+class to which this class descriptor belongs.  The @code{KeyVal&}
+constructor is used (@pxref{The KeyVal Library}).  If this constructor
+doesn't exist or
+a static function that calls it with @code{new} wasn't passed to
+this @code{ClassDesc}, then @samp{0} will be returned.
 
 @item static void list_all_classes()
 Writes a list of all of the classes to @code{stdout}.  This is useful
 for debugging.
+
+@item DescribedClass* create_described_class() const
+This member has been replaced by @code{create()}.
 @end table
+
+@c ---------------------------------------------------------------------
+
+@node The DescribedClass Ref Macros, , The ClassDesc Class, The Class Library
+@section The DescribedClass Reference Macros
+@mcindex DescribedClass_REF_dec
+@mcindex DescribedClass_REF_def
+
+The @code{DescribedClass} Reference Macros provide the memory management
+facilities of the standard Reference Macros (@pxref{The Ref Library});
+however, these macros provide new implementations of
+constructor and assignment operators that take advantage of the
+castdown ability of @code{DescribedClass}.  The standard reference
+classes allows only assignment to references of the same exact type
+or pointers of the same exact type of the contained object.  The
+@code{DescribedClass} reference macros have constructor and assignment
+operators that take @code{DescribedClass} references and pointers as
+arguments.  They use the contained type's static @code{castdown}
+operator to convert the target
+@code{DescribedClass} object into an object of the same exact type.
+If the cast fails a reference to null is assigned.
+
+Here is an example:
+
+@example
+#include <util/class/class.h>
+
+class A: virtual public DescribedClass {
+ // all the stuff needed for a DescribedClass omitted
+};
+DescribedClass_REF_dec(A);
+
+class B: public A {
+ // all the stuff needed for a DescribedClass omitted
+};
+DescribedClass_REF_dec(B);
+
+DescribedClass_REF_def(A);
+DescribedClass_REF_def(B);
+
+int
+main()
+{
+  RefA a1(new B);
+  RefB b1;
+
+  // a1 and b1 will refer to the same object
+  b1 = a1;
+
+  RefA a2(new A)
+  RefB b2;
+
+  // b2 will refer to null since a2 does not refer to a B type object.
+  b2 = a2;
+
+  return 0;
+}
+
+@end example
+
+

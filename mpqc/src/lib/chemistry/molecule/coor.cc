@@ -15,12 +15,12 @@ extern "C" {
 ////////////////////////////////////////////////////////////////////////////
 
 #define CLASSNAME IntCoor
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
 #define CLASSNAME SetIntCoor
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #define HAVE_CTOR
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -35,7 +35,7 @@ extern "C" {
 #include <util/class/classi.h>
 
 #define CLASSNAME MolecularCoor
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
@@ -79,7 +79,7 @@ IntCoor::IntCoor(const RefKeyVal&keyval)
 }
 
 IntCoor::IntCoor(StateIn& si):
-  SavableState(si,IntCoor::class_desc_)
+  SavableState(si)
 {
   si.get(value_);
   si.getstring(label_);
@@ -170,7 +170,7 @@ SetIntCoor::SetIntCoor(const RefKeyVal& keyval)
 }
 
 SetIntCoor::SetIntCoor(StateIn& s):
-  SavableState(s,SetIntCoor::class_desc_)
+  SavableState(s)
 {
   int n;
   s.get(n);
@@ -214,7 +214,8 @@ SetIntCoor::add(const RefSetIntCoor& coor)
 void
 SetIntCoor::del(const RefIntCoor& coor)
 {
-  coor_.del(coor);
+  RefIntCoor tmp(coor);
+  coor_.del(tmp);
 }
 
 void
@@ -389,7 +390,6 @@ SumIntCoor::SumIntCoor(const RefKeyVal&keyval):
 }
 
 SumIntCoor::SumIntCoor(StateIn&s):
-  SavableState(s,SumIntCoor::class_desc_),
   IntCoor(s)
 {
   int n;
@@ -589,7 +589,7 @@ MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
 }
 
 MolecularCoor::MolecularCoor(StateIn&s):
-  SavableState(s,MolecularCoor::class_desc_)
+  SavableState(s)
 {
   molecule_.restore_state(s);
 }

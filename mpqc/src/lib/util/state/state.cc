@@ -20,7 +20,7 @@
 DescribedClass_REF_def(SavableState);
 
 #define CLASSNAME SavableState
-#define PARENTS virtual public DescribedClass
+#define PARENTS public DescribedClass
 #include <util/class/classia.h>
 void *
 SavableState::_castdown(const ClassDesc*cd)
@@ -43,15 +43,11 @@ SavableState& SavableState::operator=(const SavableState&)
   return *this;
 }
 
-SavableState::SavableState(StateIn&si,const ClassDesc& cd)
+SavableState::SavableState(StateIn&si)
 {
   // In case si is looking for the next pointer, let it know i
   // have one.
   si.havepointer(this);
-  //si.get_version(&cd);
-  // the order of the above two doesn't matter since when i are looking
-  // for a pointer i already have the version info and the get_version
-  // is ignored
 
   // The following gets the version of this class and all of the
   // parent classes.  This is only needed for restoring objects
@@ -60,13 +56,6 @@ SavableState::SavableState(StateIn&si,const ClassDesc& cd)
   if (si.need_classdesc()) {
       const ClassDesc* tcd;
       si.get(&tcd);
-      if (!eq(&cd,tcd)) {
-          fprintf(stderr,"SavableState:\n");
-          fprintf(stderr,"  Restored object \"%s\" "
-                  "doesn't match saved object %s\n",
-                  tcd?tcd->name():"(null)", cd.name());
-          abort();
-        }
     }
 }
 
@@ -146,7 +135,7 @@ SavableState::save_data_state(StateOut& so)
 DescribedClass_REF_def(StateOut);
 
 #define CLASSNAME StateOut
-#define PARENTS virtual public DescribedClass
+#define PARENTS public DescribedClass
 #include <util/class/classia.h>
 void *
 StateOut::_castdown(const ClassDesc*cd)
@@ -202,7 +191,7 @@ int StateOut::put(double r) { return put_array_double((double*)&r,1); }
 DescribedClass_REF_def(StateIn);
 
 #define CLASSNAME StateIn
-#define PARENTS virtual public DescribedClass
+#define PARENTS public DescribedClass
 #include <util/class/classia.h>
 void *
 StateIn::_castdown(const ClassDesc*cd)

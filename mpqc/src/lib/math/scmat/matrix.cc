@@ -13,7 +13,7 @@
 SavableState_REF_def(SCElementOp);
 
 #define CLASSNAME SCElementOp
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
@@ -88,7 +88,7 @@ SCElementOp::process(SCVectorSimpleBlock* a)
 SavableState_REF_def(SCElementOp2);
 
 #define CLASSNAME SCElementOp2
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
@@ -170,7 +170,7 @@ SCElementOp2::process(SCVectorSimpleBlock* a,SCVectorSimpleBlock* b)
 SavableState_REF_def(SCElementOp3);
 
 #define CLASSNAME SCElementOp3
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 

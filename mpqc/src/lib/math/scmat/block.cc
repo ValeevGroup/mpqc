@@ -11,7 +11,7 @@
 SavableState_REF_def(SCMatrixBlock);
 
 #define CLASSNAME SCMatrixBlock
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
@@ -52,7 +52,7 @@ SCMatrixRectBlock::SCMatrixRectBlock(int is, int ie, int js, int je):
 }
 
 SCMatrixRectBlock::SCMatrixRectBlock(StateIn&s):
-  SavableState(s,SCMatrixRectBlock::class_desc_)
+  SCMatrixBlock(s)
 {
   s.get(istart);
   s.get(jstart);
@@ -103,7 +103,7 @@ SCMatrixLTriBlock::SCMatrixLTriBlock(int s,int e):
 }
 
 SCMatrixLTriBlock::SCMatrixLTriBlock(StateIn&s):
-  SavableState(s,SCMatrixLTriBlock::class_desc_)
+  SCMatrixBlock(s)
 {
   s.get(start);
   s.get(end);
@@ -159,7 +159,7 @@ SCMatrixDiagBlock::SCMatrixDiagBlock(int is, int ie,int js):
 }
 
 SCMatrixDiagBlock::SCMatrixDiagBlock(StateIn&s):
-  SavableState(s,SCMatrixDiagBlock::class_desc_)
+  SCMatrixBlock(s)
 {
   s.get(istart);
   s.get(jstart);
@@ -208,7 +208,7 @@ SCVectorSimpleBlock::SCVectorSimpleBlock(int s, int e):
 }
 
 SCVectorSimpleBlock::SCVectorSimpleBlock(StateIn&s):
-  SavableState(s,SCVectorSimpleBlock::class_desc_)
+  SCMatrixBlock(s)
 {
   s.get(istart);
   s.get(iend);

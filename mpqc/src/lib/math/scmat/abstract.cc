@@ -16,7 +16,7 @@
 // SCDimension members
 
 #define CLASSNAME SCDimension
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
@@ -46,13 +46,13 @@ SCDimension::~SCDimension()
 // SCElementScale members
 
 #define CLASSNAME SCElementScale
-#define PARENTS       virtual public SCElementOp
+#define PARENTS   public SCElementOp
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 SCElementScale::SCElementScale(double a):scale(a) {}
 SCElementScale::SCElementScale(StateIn&s):
-  SavableState(s,SCElementScale::class_desc_)
+  SCElementOp(s)
 {
   s.get(scale);
 }
@@ -81,13 +81,13 @@ SCElementScale::process(SCMatrixBlockIter&i)
 // SCDestructiveElementProduct members
 
 #define CLASSNAME SCDestructiveElementProduct
-#define PARENTS       virtual public SCElementOp2
+#define PARENTS   public SCElementOp2
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 SCDestructiveElementProduct::SCDestructiveElementProduct() {}
 SCDestructiveElementProduct::SCDestructiveElementProduct(StateIn&s):
-  SavableState(s,SCDestructiveElementProduct::class_desc_)
+  SCElementOp2(s)
 {
 }
 void
@@ -115,14 +115,14 @@ SCDestructiveElementProduct::process(SCMatrixBlockIter&i,
 // SCElementInvert members
 
 #define CLASSNAME SCElementInvert
-#define PARENTS       virtual public SCElementOp
+#define PARENTS   public SCElementOp
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 SCElementInvert::SCElementInvert() {}
 SCElementInvert::SCElementInvert(double a) {}
 SCElementInvert::SCElementInvert(StateIn&s):
-  SavableState(s,SCElementInvert::class_desc_)
+  SCElementOp(s)
 {
 }
 void
@@ -149,14 +149,14 @@ SCElementInvert::process(SCMatrixBlockIter&i)
 // SCElementSquareRoot members
 
 #define CLASSNAME SCElementSquareRoot
-#define PARENTS       virtual public SCElementOp
+#define PARENTS   public SCElementOp
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 SCElementSquareRoot::SCElementSquareRoot() {}
 SCElementSquareRoot::SCElementSquareRoot(double a) {}
 SCElementSquareRoot::SCElementSquareRoot(StateIn&s):
-  SavableState(s,SCElementSquareRoot::class_desc_)
+  SCElementOp(s)
 {
 }
 void
@@ -184,14 +184,14 @@ SCElementSquareRoot::process(SCMatrixBlockIter&i)
 
 SavableState_REF_def(SCElementMaxAbs);
 #define CLASSNAME SCElementMaxAbs
-#define PARENTS       virtual public SCElementOp
+#define PARENTS   public SCElementOp
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 
 SCElementMaxAbs::SCElementMaxAbs():r(0.0) {}
 SCElementMaxAbs::SCElementMaxAbs(StateIn&s):
-  SavableState(s,SCElementMaxAbs::class_desc_)
+  SCElementOp(s)
 {
   s.get(r);
 }
@@ -236,13 +236,13 @@ SCElementMaxAbs::collect(RefSCElementOp&op)
 // SCElementAssign members
 
 #define CLASSNAME SCElementAssign
-#define PARENTS       virtual public SCElementOp
+#define PARENTS   public SCElementOp
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 SCElementAssign::SCElementAssign(double a):assign(a) {}
 SCElementAssign::SCElementAssign(StateIn&s):
-  SavableState(s,SCElementAssign::class_desc_)
+  SCElementOp(s)
 {
   s.get(assign);
 }
@@ -271,13 +271,13 @@ SCElementAssign::process(SCMatrixBlockIter&i)
 // SCElementShiftDiagonal members
 
 #define CLASSNAME SCElementShiftDiagonal
-#define PARENTS       virtual public SCDiagElementOp
+#define PARENTS   public SCElementOp
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 SCElementShiftDiagonal::SCElementShiftDiagonal(double a):shift_diagonal(a) {}
 SCElementShiftDiagonal::SCElementShiftDiagonal(StateIn&s):
-  SavableState(s,SCElementShiftDiagonal::class_desc_)
+  SCElementOp(s)
 {
   s.get(shift_diagonal);
 }
@@ -306,7 +306,7 @@ SCElementShiftDiagonal::process(SCMatrixBlockIter&i)
 // SCMatrix members
 
 #define CLASSNAME SCMatrix
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
@@ -319,7 +319,7 @@ SCMatrix::~SCMatrix()
 }
 
 SCMatrix::SCMatrix(StateIn&s):
-  SavableState(s,SCMatrix::class_desc_)
+  SavableState(s)
 {
 }
 
@@ -494,7 +494,7 @@ SCMatrix::copy()
 // SymmSCMatrix member functions
 
 #define CLASSNAME SymmSCMatrix
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
@@ -503,7 +503,7 @@ SymmSCMatrix::SymmSCMatrix()
 }
 
 SymmSCMatrix::SymmSCMatrix(StateIn&s):
-  SavableState(s,SymmSCMatrix::class_desc_)
+  SavableState(s)
 {
 }
 
@@ -646,7 +646,7 @@ SymmSCMatrix::copy()
 // DiagSCMatrix member functions
 
 #define CLASSNAME DiagSCMatrix
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
@@ -655,7 +655,7 @@ DiagSCMatrix::DiagSCMatrix()
 }
 
 DiagSCMatrix::DiagSCMatrix(StateIn&s):
-  SavableState(s,DiagSCMatrix::class_desc_)
+  SavableState(s)
 {
 }
 
@@ -752,7 +752,7 @@ DiagSCMatrix::copy()
 /////////////////////////////////////////////////////////////////////////
 
 #define CLASSNAME SCVector
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
@@ -765,7 +765,7 @@ SCVector::~SCVector()
 }
 
 SCVector::SCVector(StateIn&s):
-  SavableState(s,SCVector::class_desc_)
+  SavableState(s)
 {
 }
 

@@ -27,8 +27,7 @@ class PointBag_double;
 //#include "atomcentXPlex.h"
 
 // Generic Molecule
-class Molecule :
-  virtual public SavableState
+class Molecule: public SavableState
 {
 #   define CLASSNAME Molecule
 #   define HAVE_CTOR

@@ -8,12 +8,13 @@
 
 #include <util/state/state.h>
 
-class SCMatrixBlock: virtual public SavableState {
+class SCMatrixBlock: public SavableState {
 #   define CLASSNAME SCMatrixBlock
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   public:
     SCMatrixBlock();
+    SCMatrixBlock(StateIn&s): SavableState(s) {}
     virtual ~SCMatrixBlock();
 };
 

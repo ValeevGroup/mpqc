@@ -11,7 +11,7 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/result.h>
 
-class NLP0: virtual public SavableState, public Compute {
+class NLP0: virtual_base public SavableState, public Compute {
 #   define CLASSNAME NLP0
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>

@@ -12,7 +12,7 @@
 #pragma implementation "clastmpl"
 #endif
 
-#define A_parents virtual public SavableState
+#define A_parents virtual_base public SavableState
 class A: A_parents {
 #   define CLASSNAME A
 #   define HAVE_CTOR
@@ -65,7 +65,7 @@ A::A(const RefKeyVal&keyval):
   array[3] = 8;
 }
 A::A(StateIn&s):
-  SavableState(s,A::class_desc_)
+  SavableState(s)
 {
   char* junk;
   s.get(d);
@@ -139,8 +139,8 @@ B::B(const RefKeyVal&keyval):
 {
 }
 B::B(StateIn&s):
-  SavableState(s,B::class_desc_),
   A(s)
+  maybe_SavableState(s)
 {
   s.get(ib);
 }
@@ -166,7 +166,7 @@ B::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-#define C_parents virtual public SavableState
+#define C_parents virtual_base public SavableState
 class C: C_parents {
 #   define CLASSNAME C 
 #   define HAVE_CTOR
@@ -198,7 +198,7 @@ C::C(const RefKeyVal&keyval):
 {
 }
 C::C(StateIn&s):
-  SavableState(s,C::class_desc_)
+  SavableState(s)
 {
   s.get(ic);
 }
@@ -223,6 +223,7 @@ C::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+#ifndef NO_VIRTUAL_BASES
 #define D_parents public B, public C
 class D: D_parents {
 #   define CLASSNAME D
@@ -247,12 +248,14 @@ class D: D_parents {
     {
       B::print(s);
       C::print(s);
-      s << "D::a:\n";  da()->print(s);
-#ifndef TYPE_CONV_BUG
-      if ( _a == A::castdown(db().pointer()) )
-#else
+      s << "D::a:\n";
+      if (da().nonnull()) {
+          da()->print(s);
+        }
+      else {
+          s << "null\n";
+        }
       if ( _a.pointer() == A::castdown(db().pointer())) 
-#endif
         {
           cout << "a == b\n";
         }
@@ -277,9 +280,9 @@ D::D(const RefKeyVal&keyval):
 {
 }
 D::D(StateIn&s):
-  SavableState(s,D::class_desc_),
   B(s),
   C(s)
+  maybe_SavableState(s)
 {
   int* nullref;
   s.get(nullref);
@@ -313,6 +316,7 @@ D::_castdown(const ClassDesc*cd)
   casts[1] = C::_castdown(cd);
   return do_castdowns(casts,cd);
 }
+#endif // ! NO_VIRTUAL_BASES
 
 #define StateOutType StateOutText
 #define StateInType StateInText
@@ -329,18 +333,20 @@ main()
   ra = 0;
 
   A a;
-  cout << "A name:" << a.class_name() << '\n';
+  cout << "A name:" << a.class_name() << endl;
 
+#ifndef NO_VIRTUAL_BASES
   D d;
-  cout << "D name:" << d.class_name() << '\n';
+  cout << "D name:" << d.class_name() << endl;
 
-  cout << "&d = " << (void*) &d << '\n';
-  cout << "D::castdown(&d) = " << (void*) D::castdown(&d) << '\n';
-  cout << "B::castdown(&d) = " << (void*) B::castdown(&d) << '\n';
-  cout << "A::castdown(&d) = " << (void*) A::castdown(&d) << '\n';
-  cout << "C::castdown(&d) = " << (void*) C::castdown(&d) << '\n';
+  cout << "&d = " << (void*) &d << endl;
+  cout << "D::castdown(&d) = " << (void*) D::castdown(&d) << endl;
+  cout << "B::castdown(&d) = " << (void*) B::castdown(&d) << endl;
+  cout << "A::castdown(&d) = " << (void*) A::castdown(&d) << endl;
+  cout << "C::castdown(&d) = " << (void*) C::castdown(&d) << endl;
   cout << "DescribedClass::castdown(&d) = "
-       << (void*) DescribedClass::castdown(&d) << '\n';
+       << (void*) DescribedClass::castdown(&d) << endl;
+#endif
 
   RefAssignedKeyVal akv (new AssignedKeyVal);
 
@@ -350,36 +356,38 @@ main()
 #define stringize(arg) # arg
 #define show( arg ) do{cout<<"   " stringize(arg) "="<<(arg);}while(0)
 
-  show( akv->exists(":x") );  show( akv->errormsg() ); cout << '\n';
-  show( akv->exists(":z") );  show (akv->errormsg() ); cout << '\n';
-  show( akv->intvalue(":y") );  show( akv->errormsg() ); cout << '\n';
-  show( akv->doublevalue(":x") );  show( akv->errormsg() ); cout << '\n';
-  show( akv->intvalue(":x") );  show (akv->errormsg() ); cout << '\n';
-  show( akv->intvalue("x") );  show (akv->errormsg() ); cout << '\n';
-  show( akv->intvalue(":z") );  show (akv->errormsg() ); cout << '\n';
+  show( akv->exists(":x") );  show( akv->errormsg() ); cout << endl;
+  show( akv->exists(":z") );  show (akv->errormsg() ); cout << endl;
+  show( akv->intvalue(":y") );  show( akv->errormsg() ); cout << endl;
+  show( akv->doublevalue(":x") );  show( akv->errormsg() ); cout << endl;
+  show( akv->intvalue(":x") );  show (akv->errormsg() ); cout << endl;
+  show( akv->intvalue("x") );  show (akv->errormsg() ); cout << endl;
+  show( akv->intvalue(":z") );  show (akv->errormsg() ); cout << endl;
 
   RefKeyVal pkv = new ParsedKeyVal(SRCDIR "/statetest.in");
 
-  show( pkv->exists(":x") );  show( pkv->errormsg() ); cout << '\n';
-  show( pkv->exists(":z") );  show (pkv->errormsg() ); cout << '\n';
-  show( pkv->intvalue(":y") );  show( pkv->errormsg() ); cout << '\n';
-  show( pkv->doublevalue(":x") );  show( pkv->errormsg() ); cout << '\n';
-  show( pkv->intvalue(":x") );  show (pkv->errormsg() ); cout << '\n';
-  show( pkv->intvalue("x") );  show (pkv->errormsg() ); cout << '\n';
-  show( pkv->intvalue(":z") );  show (pkv->errormsg() ); cout << '\n';
+  show( pkv->exists(":x") );  show( pkv->errormsg() ); cout << endl;
+  show( pkv->exists(":z") );  show (pkv->errormsg() ); cout << endl;
+  show( pkv->intvalue(":y") );  show( pkv->errormsg() ); cout << endl;
+  show( pkv->doublevalue(":x") );  show( pkv->errormsg() ); cout << endl;
+  show( pkv->intvalue(":x") );  show (pkv->errormsg() ); cout << endl;
+  show( pkv->intvalue("x") );  show (pkv->errormsg() ); cout << endl;
+  show( pkv->intvalue(":z") );  show (pkv->errormsg() ); cout << endl;
 
+#ifndef NO_VIRTUAL_BASES
   RefDescribedClass rdc = pkv->describedclassvalue("test:object");
-  show (pkv->errormsg() ); cout << '\n';
-  show( rdc.pointer() ); cout << '\n';
+  show (pkv->errormsg() ); cout << endl;
+  show( rdc.pointer() ); cout << endl;
   ra = A::castdown(rdc);
-  show( ra.pointer() ); cout << '\n';
+  show( ra.pointer() ); cout << endl;
 
-  show( pkv->intvalue(":test:object:d") ); cout << '\n';
+  show( pkv->intvalue(":test:object:d") ); cout << endl;
+#endif // ! NO_VIRTUAL_BASES
 
   //pkv->dump();
 
-  show( ra.pointer() ); cout << '\n';
-  if (ra.nonnull()) { ra->print(); cout << '\n'; }
+  show( ra.pointer() ); cout << endl;
+  if (ra.nonnull()) { ra->print(); cout << endl; }
 
   ////////////////////////////////////////////////////////////////////
   // state tests
@@ -392,7 +400,9 @@ main()
   soa.forget_references();
   ra->save_object_state(soa);
   soa.flush();
+#ifndef NO_VIRTUAL_BASES
   ra = A::castdown(rdc);
+#endif // ! NO_VIRTUAL_BASES
   StateOutText so("statetest.out");
   ra.save_state(so);
   RefA ra2;
@@ -404,11 +414,11 @@ main()
   StateInType sia("statetest.a.out");
   ra = new A(sia);
   ra = new A(sia);
-  if (ra.nonnull()) { ra->print(); cout << '\n'; }
+  if (ra.nonnull()) { ra->print(); cout << endl; }
   StateInText si("statetest.out");
   //ra = A::restore_state(si);
   ra.restore_state(si);
   ra2.restore_state(si);
-  if (ra.nonnull()) { ra->print(); cout << '\n'; }
+  if (ra.nonnull()) { ra->print(); cout << endl; }
   cout << "ra2.nonnull() = " << ra2.nonnull() << "(should be 0)\n";
 }

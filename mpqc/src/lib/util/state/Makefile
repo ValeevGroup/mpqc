@@ -3,6 +3,7 @@ ifndef SRCDIR
   SRCDIR=.
 endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+LD = $(CXX)
 
 SETIMPL = AVL
 MAPIMPL = RAVL

@@ -25,12 +25,13 @@ typedef class SSRefSCElementOp3 RefSCElementOp3;
 
 class RefSCDimension;
 
-class SCDimension: virtual public SavableState {
+class SCDimension: public SavableState {
 #   define CLASSNAME SCDimension
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   public:
     SCDimension();
+    SCDimension(StateIn&s): SavableState(s) {}
     virtual ~SCDimension();
     virtual int n() = 0;
     virtual SCMatrix* create_matrix(SCDimension*) = 0;
@@ -40,7 +41,7 @@ class SCDimension: virtual public SavableState {
     virtual SCVector* create_vector() = 0;
 };
 
-class SCVector: virtual public SavableState {
+class SCVector: public SavableState {
 #   define CLASSNAME SCVector
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
@@ -78,7 +79,7 @@ class SCVector: virtual public SavableState {
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 };
 
-class SCMatrix: virtual public SavableState {
+class SCMatrix: public SavableState {
 #   define CLASSNAME SCMatrix
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
@@ -131,7 +132,7 @@ class SCMatrix: virtual public SavableState {
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 };
 
-class SymmSCMatrix: virtual public SavableState {
+class SymmSCMatrix: public SavableState {
 #   define CLASSNAME SymmSCMatrix
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
@@ -179,7 +180,7 @@ class SymmSCMatrix: virtual public SavableState {
     virtual double scalar_product(SCVector*) = 0;
 };
 
-class DiagSCMatrix: virtual public SavableState {
+class DiagSCMatrix: public SavableState {
 #   define CLASSNAME DiagSCMatrix
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>

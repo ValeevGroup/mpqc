@@ -14,6 +14,16 @@
 // Identifier, and the shorthand boolean operations may have to
 // be modified for some different architectures.
 
+// Normally Identity must be inherited from virtually if multiple
+// inheritance is to be used.  This breaks certain compilers so
+// NO_VIRTUAL_BASES must be defined in these cases.  Not everything
+// will work under these circumstances.
+#ifdef NO_VIRTUAL_BASES
+#  define virtual_base
+#else
+#  define virtual_base virtual
+#endif
+
 class Identity;
 class Identifier {
   private:

@@ -17,7 +17,7 @@ const char* GaussianShell::AMTYPES = "SPDFGHIJKL";
 SavableState_REF_def(GaussianShell);
 
 #define CLASSNAME GaussianShell
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
@@ -104,7 +104,7 @@ GaussianShell::GaussianShell(const RefKeyVal&keyval)
 }
 
 GaussianShell::GaussianShell(StateIn&s):
-  SavableState(s,GaussianShell::class_desc_)
+  SavableState(s)
 {
   s.get(nprim);
   s.get(ncon);

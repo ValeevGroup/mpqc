@@ -73,8 +73,8 @@ EFCOpt::EFCOpt(const RefKeyVal&keyval):
 }
 
 EFCOpt::EFCOpt(StateIn&s):
-  SavableState(s,EFCOpt::class_desc_),
   Optimize(s)
+  maybe_SavableState(s)
 {
   s.get(tstate);
   s.get(modef);

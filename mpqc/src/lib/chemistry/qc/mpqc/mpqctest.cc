@@ -8,6 +8,7 @@
 #include <math/optimize/qnewton.h>
 #include <math/optimize/gdiis.h>
 #include <math/optimize/efc.h>
+#include <math/optimize/update.h>
 #include <chemistry/molecule/molshape.h>
 #include <chemistry/solvent/bem.h>
 
@@ -20,6 +21,7 @@ const ClassDesc &fl3 = GDIISOpt::class_desc_;
 const ClassDesc &fl4 = EFCOpt::class_desc_;
 const ClassDesc &fl5 = ConnollyShape2::class_desc_;
 const ClassDesc &fl6 = BEMSolvent::class_desc_;
+const ClassDesc &fl7 = BFGSUpdate::class_desc_;
 #endif
 
 void die()

@@ -26,8 +26,7 @@
 							      
 #define ANGSTROMS_TO_AU 1.0/0.52917706;
 
-class ChemicalElement :
-  virtual public SavableState
+class ChemicalElement: public SavableState
 {
 #   define CLASSNAME ChemicalElement
 #   define HAVE_STATEIN_CTOR

@@ -11,7 +11,7 @@
 DescribedClass_REF_def(ChemicalElement);
 
 #define CLASSNAME ChemicalElement
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
@@ -95,7 +95,7 @@ void ChemicalElement::save_data_state(StateOut& so)
 }
 
 ChemicalElement::ChemicalElement(StateIn& si):
-  SavableState(si,ChemicalElement::class_desc_)
+  SavableState(si)
 {
   si.get(Z_);
 }

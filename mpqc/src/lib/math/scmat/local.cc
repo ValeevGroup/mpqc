@@ -40,7 +40,7 @@ LocalSCDimension::LocalSCDimension(int n): n_(n)
 }
 
 LocalSCDimension::LocalSCDimension(StateIn&s):
-  SavableState(s,LocalSCDimension::class_desc_)
+  SCDimension(s)
 {
   s.get(n_);
 }
@@ -122,8 +122,7 @@ LocalSCMatrix::LocalSCMatrix(LocalSCDimension*a,LocalSCDimension*b):
 }
 
 LocalSCMatrix::LocalSCMatrix(StateIn&s):
-  SCMatrix(s),
-  SavableState(s,LocalSCMatrix::class_desc_)
+  SCMatrix(s)
 {
   d1.restore_state(s);
   d2.restore_state(s);
@@ -513,8 +512,7 @@ LocalSCVector::LocalSCVector(LocalSCDimension*a):
 }
 
 LocalSCVector::LocalSCVector(StateIn&s):
-  SCVector(s),
-  SavableState(s,LocalSCVector::class_desc_)
+  SCVector(s)
 {
   d.restore_state(s);
   block.restore_state(s);

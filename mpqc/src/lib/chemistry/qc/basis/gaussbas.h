@@ -20,7 +20,7 @@ class GaussianShell;
 class RefKeyVal;
 class cart_point;
 
-class GaussianBasisSet: virtual public SavableState
+class GaussianBasisSet: public SavableState
 {
 #   define CLASSNAME GaussianBasisSet
 #   define HAVE_KEYVAL_CTOR
@@ -101,7 +101,7 @@ class GaussianBasisSet: virtual public SavableState
     // this is useful in computing the overlap, for example.
     centers_t* convert_to_centers_t(const Molecule*) const;
     centers_t* convert_to_centers_t(const RefMolecule&mol) const {
-        convert_to_centers_t(mol.pointer());
+        return convert_to_centers_t(mol.pointer());
       }
     //operator struct struct_centers*();
 

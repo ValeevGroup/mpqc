@@ -23,12 +23,13 @@ class SCMatrixLTriBlock;
 class SCMatrixDiagBlock;
 class SCVectorSimpleBlock;
 
-class SCElementOp: virtual public SavableState {
+class SCElementOp: public SavableState {
 #   define CLASSNAME SCElementOp
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   public:
     SCElementOp();
+    SCElementOp(StateIn&s): SavableState(s) {}
     virtual ~SCElementOp();
     // If duplicates of |SCElementOp| are made then if |has_collect| returns
     // true then collect is called in such a way that each duplicated
@@ -46,12 +47,13 @@ class SCElementOp: virtual public SavableState {
 DCRef_declare(SCElementOp);
 SSRef_declare(SCElementOp);
 
-class SCElementOp2: virtual public SavableState {
+class SCElementOp2: public SavableState {
 #   define CLASSNAME SCElementOp2
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   public:
     SCElementOp2();
+    SCElementOp2(StateIn&s): SavableState(s) {}
     virtual ~SCElementOp2();
     // If duplicates of |SCElementOp2| are made then if |has_collect| returns
     // true then collect is called in such a way that each duplicated
@@ -69,12 +71,13 @@ class SCElementOp2: virtual public SavableState {
 DCRef_declare(SCElementOp2);
 SSRef_declare(SCElementOp2);
 
-class SCElementOp3: virtual public SavableState {
+class SCElementOp3: public SavableState {
 #   define CLASSNAME SCElementOp3
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   public:
     SCElementOp3();
+    SCElementOp3(StateIn&s): SavableState(s) {}
     virtual ~SCElementOp3();
     // If duplicates of |SCElementOp3| are made then if |has_collect| returns
     // true then collect is called in such a way that each duplicated
@@ -102,7 +105,7 @@ class SCElementOp3: virtual public SavableState {
 DCRef_declare(SCElementOp3);
 SSRef_declare(SCElementOp3);
 
-class SCDestructiveElementProduct: virtual public SCElementOp2 {
+class SCDestructiveElementProduct: public SCElementOp2 {
 #   define CLASSNAME SCDestructiveElementProduct
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -115,7 +118,7 @@ class SCDestructiveElementProduct: virtual public SCElementOp2 {
     void process(SCMatrixBlockIter&,SCMatrixBlockIter&);
 };
 
-class SCElementScale: virtual public SCElementOp {
+class SCElementScale: public SCElementOp {
 #   define CLASSNAME SCElementScale
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -130,7 +133,7 @@ class SCElementScale: virtual public SCElementOp {
     void process(SCMatrixBlockIter&);
 };
 
-class SCElementAssign: virtual public SCElementOp {
+class SCElementAssign: public SCElementOp {
 #   define CLASSNAME SCElementAssign
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -145,7 +148,7 @@ class SCElementAssign: virtual public SCElementOp {
     void process(SCMatrixBlockIter&);
 };
 
-class SCElementSquareRoot: virtual public SCElementOp {
+class SCElementSquareRoot: public SCElementOp {
 #   define CLASSNAME SCElementSquareRoot
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -159,7 +162,7 @@ class SCElementSquareRoot: virtual public SCElementOp {
     void process(SCMatrixBlockIter&);
 };
 
-class SCElementInvert: virtual public SCElementOp {
+class SCElementInvert: public SCElementOp {
 #   define CLASSNAME SCElementInvert
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -173,7 +176,7 @@ class SCElementInvert: virtual public SCElementOp {
     void process(SCMatrixBlockIter&);
 };
 
-class SCElementShiftDiagonal: virtual public SCElementOp {
+class SCElementShiftDiagonal: public SCElementOp {
 #   define CLASSNAME SCElementShiftDiagonal
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
@@ -188,7 +191,7 @@ class SCElementShiftDiagonal: virtual public SCElementOp {
     void process(SCMatrixBlockIter&);
 };
 
-class SCElementMaxAbs: virtual public SCElementOp {
+class SCElementMaxAbs: public SCElementOp {
 #   define CLASSNAME SCElementMaxAbs
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>

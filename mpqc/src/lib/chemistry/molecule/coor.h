@@ -16,7 +16,7 @@
 
 class SSRefIntCoor;
 typedef class SSRefIntCoor RefIntCoor;
-class IntCoor: virtual public SavableState {
+class IntCoor: public SavableState {
 #   define CLASSNAME IntCoor
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
@@ -89,7 +89,7 @@ class SumIntCoor: public IntCoor {
 
 class SSRefSetIntCoor;
 typedef class SSRefSetIntCoor RefSetIntCoor;
-class SetIntCoor: virtual public SavableState {
+class SetIntCoor: public SavableState {
 #   define CLASSNAME SetIntCoor
 #   define HAVE_CTOR
 #   define HAVE_KEYVAL_CTOR
@@ -125,7 +125,7 @@ class SetIntCoor: virtual public SavableState {
 };
 SavableState_REF_dec(SetIntCoor);
 
-class MolecularCoor: virtual public SavableState
+class MolecularCoor: public SavableState
 {
 #   define CLASSNAME MolecularCoor
 #   include <util/state/stated.h>

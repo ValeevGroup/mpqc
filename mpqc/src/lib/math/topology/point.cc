@@ -35,7 +35,7 @@ const double& cart_point::z() const { return r[2]; };
 
 
 #define CLASSNAME Point
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
@@ -114,7 +114,7 @@ Point::Point(const RefKeyVal&k)
 }
 
 Point::Point(StateIn&s):
-  SavableState(s,Point::class_desc_)
+  SavableState(s)
 {
   s.get(dim);
   if (dim > 0) s.get(x);

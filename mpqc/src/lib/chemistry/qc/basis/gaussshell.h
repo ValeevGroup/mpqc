@@ -31,7 +31,7 @@ class CartesianIter
 };
 
 class RefKeyVal;
-class GaussianShell: virtual public SavableState
+class GaussianShell: public SavableState
 {
 #   define CLASSNAME GaussianShell
 #   define HAVE_KEYVAL_CTOR

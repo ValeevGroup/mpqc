@@ -16,7 +16,7 @@ extern "C" {
 SavableState_REF_def(MolecularEnergy);
 
 #define CLASSNAME MolecularEnergy
-#define PARENTS virtual public NLP2
+#define PARENTS public NLP2
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 void *
@@ -114,9 +114,9 @@ MolecularEnergy::~MolecularEnergy()
 }
 
 MolecularEnergy::MolecularEnergy(StateIn&s):
-  SavableState(s,MolecularEnergy::class_desc_),
   NLP2(s),
   _energy(_value)
+  maybe_SavableState(s)
 {
   _mc.restore_state(s);
   _moldim.restore_state(s);

@@ -387,7 +387,7 @@ int CharacterTable::parse_symbol()
 ////////////////////////////////////////////////////////////////////////
 
 #define CLASSNAME PointGroup
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #define HAVE_CTOR
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -459,7 +459,7 @@ PointGroup::PointGroup(const RefKeyVal& kv)
 
 PointGroup::PointGroup(StateIn& si) :
   symb(0),
-  SavableState(si,PointGroup::class_desc_),
+  SavableState(si),
   origin_(si)
 {
   si.getstring(symb);

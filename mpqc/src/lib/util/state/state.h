@@ -28,7 +28,20 @@
 class StateIn;
 class StateOut;
 
-class SavableState: virtual public DescribedClass {
+// If multiple inheritance is used, SavableState should be a virtual
+// parent.  This breaks some compilers so the virtual_base macro should
+// be used instead of the virtual keyword (see identity.h).  Since for StateIn
+// CTORs the SavableState base class must be initialized with the
+// StateIn object, the following macro should be used to determine if
+// nondirect descendants of SavableState need to call the SavableState
+// CTOR.  b might be a : or , and s is the StateIn
+#ifdef NO_VIRTUAL_BASES
+#  define maybe_SavableState(s)
+#else
+#  define maybe_SavableState(s) ,SavableState(s)
+#endif
+
+class SavableState: public DescribedClass {
 #   define CLASSNAME SavableState
 #   include <util/class/classda.h>
   protected:
@@ -77,7 +90,7 @@ class SavableState: virtual public DescribedClass {
     // save_data_state listed above.  All derived class StateIn&
     // constructors must invoke the SavableState(StateIn&) constructor.
   protected:
-    SavableState(StateIn&,const ClassDesc&);
+    SavableState(StateIn&);
   };
 DescribedClass_REF_dec(SavableState);
 
@@ -87,7 +100,7 @@ class StateDataPtrSet;
 class StateDataNumSet;
 class ClassDescPintMap;
 
-class StateOut: virtual public DescribedClass {
+class StateOut: public DescribedClass {
 #   define CLASSNAME StateOut
 #   include <util/class/classda.h>
   private:
@@ -132,7 +145,7 @@ class StateOut: virtual public DescribedClass {
   };
 DescribedClass_REF_dec(StateOut);
 
-class StateIn: virtual public DescribedClass {
+class StateIn: public DescribedClass {
 #   define CLASSNAME StateIn
 #   include <util/class/classda.h>
   private:
@@ -183,7 +196,7 @@ DescribedClass_REF_dec(StateIn);
 
 ////////////////////////////////////////////////////////////////////
 
-class StateOutFile: virtual public StateOut {
+class StateOutFile: public StateOut {
   private:
     // do not allow copy constructor or assignment
     StateOutFile(const StateOutFile&);
@@ -203,7 +216,7 @@ class StateOutFile: virtual public StateOut {
     virtual int open(const char *, const char * = "w");
   };
 
-class StateInFile: virtual public StateIn {
+class StateInFile: public StateIn {
   private:
     // do not allow copy constructor or assignment
     StateInFile(const StateInFile&);
@@ -330,7 +343,7 @@ class StateInBin: public StateInFile {
 
 ////////////////////////////////////////////////////////////////////
 
-class StateOutXDR : virtual public StateOut, public QCXDR {
+class StateOutXDR : public StateOut, public QCXDR {
   private:
     // do not allow copy constructor or assignment
     StateOutXDR(const StateOutXDR&);
@@ -362,7 +375,7 @@ class StateOutBinXDR : public StateOutBin,
     ~StateOutBinXDR();
 };
 
-class StateInXDR : virtual public StateIn, public QCXDR {
+class StateInXDR : public StateIn, public QCXDR {
   private:
     // do not allow copy constructor or assignment
     StateInXDR(const StateInXDR&);

@@ -51,12 +51,12 @@ Wavefunction::~Wavefunction()
 }
 
 Wavefunction::Wavefunction(StateIn&s):
-  SavableState(s,Wavefunction::class_desc_),
   MolecularEnergy(s),
   _natural_orbitals(this),
   _natural_density(this),
   bs_values(0),
   bsg_values(0)
+  maybe_SavableState(s)
 {
   _gbs.restore_state(s);
   _basisdim.restore_state(s);

@@ -64,7 +64,6 @@ CartMolecularCoor::CartMolecularCoor(const RefKeyVal& keyval):
 }
 
 CartMolecularCoor::CartMolecularCoor(StateIn& s):
-  SavableState(s,CartMolecularCoor::class_desc_),
   MolecularCoor(s)
 {
   dim_.restore_state(s);

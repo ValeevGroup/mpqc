@@ -6,7 +6,7 @@ test: (
   object_a<A>: (
     a = 4
     )
-  object_b<B>: (
+  xobject_b<B>: (
     A: a = 111
     b = 121
     )

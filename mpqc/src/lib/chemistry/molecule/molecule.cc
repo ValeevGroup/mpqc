@@ -14,7 +14,7 @@
 SavableState_REF_def(Molecule);
 
 #define CLASSNAME Molecule
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #define HAVE_CTOR
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -335,7 +335,7 @@ void Molecule::save_data_state(StateOut& so)
 Molecule::Molecule(StateIn& si):
   atoms(0),
   natoms(0),
-  SavableState(si,Molecule::class_desc_)
+  SavableState(si)
 {
   PointGroup tpg(si);
   pg=tpg;

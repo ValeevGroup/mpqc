@@ -60,8 +60,8 @@ QNewtonOpt::QNewtonOpt(const RefKeyVal&keyval):
 }
 
 QNewtonOpt::QNewtonOpt(StateIn&s):
-  SavableState(s,QNewtonOpt::class_desc_),
   Optimize(s)
+  maybe_SavableState(s)
 {
   nlp_.restore_state(s);
   ihessian_.restore_state(s);

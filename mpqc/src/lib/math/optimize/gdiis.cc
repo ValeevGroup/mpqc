@@ -88,8 +88,8 @@ GDIISOpt::GDIISOpt(const RefKeyVal&keyval):
 }
 
 GDIISOpt::GDIISOpt(StateIn&s):
-  SavableState(s,GDIISOpt::class_desc_),
   Optimize(s)
+  maybe_SavableState(s)
 {
   s.get(nsave);
   s.get(diis_iter);

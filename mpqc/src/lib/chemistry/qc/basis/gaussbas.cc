@@ -11,7 +11,7 @@
 SavableState_REF_def(GaussianBasisSet);
 
 #define CLASSNAME GaussianBasisSet
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
@@ -64,7 +64,7 @@ GaussianBasisSet::GaussianBasisSet(RefMolecule&molecule,
 }
 
 GaussianBasisSet::GaussianBasisSet(StateIn&s):
-  SavableState(s,GaussianBasisSet::class_desc_),
+  SavableState(s),
   center_to_r_(s),
   center_to_nshell_(s)
 {

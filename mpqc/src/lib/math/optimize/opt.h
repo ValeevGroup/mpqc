@@ -13,7 +13,7 @@
 
 ////////////////////////////////////////////////////////////////////////
 
-class Optimize: virtual public SavableState {
+class Optimize: virtual_base public SavableState {
 #   define CLASSNAME Optimize
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>

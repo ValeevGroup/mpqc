@@ -128,8 +128,7 @@ class CharacterTable {
 
 /////////////////////////////////////////////////////////////
 
-class PointGroup
-  : virtual public DescribedClass, virtual public SavableState {
+class PointGroup: public SavableState {
 #   define CLASSNAME PointGroup
 #   define HAVE_CTOR
 #   define HAVE_KEYVAL_CTOR

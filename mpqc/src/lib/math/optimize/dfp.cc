@@ -43,8 +43,8 @@ DFPUpdate::DFPUpdate(const RefKeyVal&keyval):
 }
 
 DFPUpdate::DFPUpdate(StateIn&s):
-  SavableState(s,DFPUpdate::class_desc_),
   HessianUpdate(s)
+  maybe_SavableState(s)
 {
   xprev.restore_state(s);
   gprev.restore_state(s);
@@ -117,8 +117,8 @@ BFGSUpdate::BFGSUpdate(const RefKeyVal&keyval):
 }
 
 BFGSUpdate::BFGSUpdate(StateIn&s):
-  SavableState(s,BFGSUpdate::class_desc_),
   DFPUpdate(s)
+  maybe_SavableState(s)
 {
 }
 

@@ -55,6 +55,7 @@ MPSCF::_castdown(const ClassDesc*cd)
 
 void MPSCF::init(int which)
 {
+  FILE* test_vec;
   switch(which) {
   case 0:
     break;
@@ -140,7 +141,7 @@ void MPSCF::init(int which)
 
     // if restart, then read in old scf vector if it exists
 
-    FILE* test_vec = fopen(vecfile,"r");
+    test_vec = fopen(vecfile,"r");
     if (test_vec && scf_info.restart) {
       fclose(test_vec);
       dmt_read(vecfile,Scf_Vec);
@@ -266,11 +267,11 @@ MPSCF::~MPSCF()
 }
 
 MPSCF::MPSCF(StateIn&s):
-  SavableState(s,MPSCF::class_desc_),
   OneBodyWavefunction(s),
   _scf(this),
   _exchange_energy(this),
   _eigenvectors(this)
+  maybe_SavableState(s)
 {
   // make sure only one MPSCF object exists
   if (active) {

@@ -11,8 +11,7 @@
 #include <chemistry/molecule/chemelem.h>
 #include <math/topology/point.h>
 
-class AtomicCenter :
-  virtual public SavableState
+class AtomicCenter: public SavableState
 {
 #   define CLASSNAME AtomicCenter
 #   define HAVE_CTOR

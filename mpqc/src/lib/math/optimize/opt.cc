@@ -12,7 +12,7 @@ extern "C" {
 
 SavableState_REF_def(Optimize);
 #define CLASSNAME Optimize
-#define PARENTS virtual public SavableState
+#define PARENTS virtual_base public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
@@ -38,7 +38,7 @@ Optimize::Optimize()
 }
 
 Optimize::Optimize(StateIn&s):
-  SavableState(s,Optimize::class_desc_)
+  SavableState(s)
 {
   s.get(max_iterations_);
   n_iterations_ = 0;
@@ -92,8 +92,8 @@ LineOpt::LineOpt()
 }
 
 LineOpt::LineOpt(StateIn&s):
-  SavableState(s,LineOpt::class_desc_),
   Optimize(s)
+  maybe_SavableState(s)
 {
   search_direction_.restore_state(s);
 }

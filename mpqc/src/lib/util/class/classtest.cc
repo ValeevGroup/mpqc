@@ -7,7 +7,7 @@
 
 #undef SIMPLE_TEST
 
-#define A_parents virtual public DescribedClass
+#define A_parents virtual_base public DescribedClass
 class A: A_parents {
 #define CLASSNAME A
 #include <util/class/classd.h>
@@ -53,7 +53,7 @@ B::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-#define C_parents virtual public DescribedClass
+#define C_parents virtual_base public DescribedClass
 class C: C_parents {
 #define CLASSNAME C 
 #include <util/class/classd.h>
@@ -75,8 +75,8 @@ C::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-#define GNU_BUG_VIRTUAL virtual
-#define D_parents GNU_BUG_VIRTUAL public B, GNU_BUG_VIRTUAL public C
+#ifndef NO_VIRTUAL_BASES
+#define D_parents public B, public C
 class D: D_parents {
 #define CLASSNAME D
 #define HAVE_CTOR
@@ -101,6 +101,7 @@ D::_castdown(const ClassDesc*cd)
   casts[1] =  C::_castdown(cd);
   return do_castdowns(casts,cd);
 }
+#endif
 
 #endif /* ! SIMPLE_TEST */
 
@@ -108,24 +109,61 @@ DescribedClass_REF_dec(A);
 #ifndef SIMPLE_TEST
 DescribedClass_REF_dec(B);
 DescribedClass_REF_dec(C);
+#ifndef NO_VIRTUAL_BASES
 DescribedClass_REF_dec(D);
+#endif
 #endif /* ! SIMPLE_TEST */
 
 DescribedClass_REF_def(A);
 #ifndef SIMPLE_TEST
 DescribedClass_REF_def(B);
 DescribedClass_REF_def(C);
+#ifndef NO_VIRTUAL_BASES
 DescribedClass_REF_def(D);
+#endif
 #endif /* ! SIMPLE_TEST */
 
 main()
 {
   ClassDesc::list_all_classes();
 
+  cout << "using 0" << endl;
+  const RefDescribedClass descl2(0);
+  RefA aaa;
+  cout << "getting aaaa" << endl;
+  A* aaaa = 0; //aaa.pointer();
+  cout << "using aaaa" << endl;
+  const RefDescribedClass descl((aaaa==(A*)0)?(DescribedClass*)0:aaaa);
+  cout << "using aaa.pointer()" << endl;
+  const RefDescribedClass descl3((aaa.pointer()==(A*)0)?(DescribedClass*)0:aaa.pointer());
+
   A a;
   cout << "A name:" << a.class_name() << '\n';
 
+#ifndef NO_VIRTUAL_BASES
   D* dtst = D::castdown(ClassDesc::name_to_class_desc("D")->create());
+
+  // check the compiler's handling of virtual inheritance
+  D* dt = new D;
+  C* ct = dt;
+  B* bt = dt;
+  cout << "virtual inheritance test:" << endl;
+  dt->reference();
+  cout << "The following three numbers should be equal:" << endl;
+  cout << ' ' << dt->nreference()
+       << ' ' << ct->nreference()
+       << ' ' << bt->nreference() << endl;
+  ct->reference();
+  cout << "The following three numbers should be equal:" << endl;
+  cout << ' ' << dt->nreference()
+       << ' ' << ct->nreference()
+       << ' ' << bt->nreference() << endl;
+  bt->reference();
+  cout << "The following three numbers should be equal:" << endl;
+  cout << ' ' << dt->nreference()
+       << ' ' << ct->nreference()
+       << ' ' << bt->nreference() << endl;
+  cout << "done with virtual inheritance test:" << endl;
 
 #ifndef SIMPLE_TEST
   D d;
@@ -152,5 +190,7 @@ main()
   cout << "dref.pointer() is " << dref.pointer() << '\n';
   cout << "aref == dref gives " << (aref == dref) << '\n';
 #endif /* ! SIMPLE_TEST */
+
+#endif // ! NO_VIRTUAL_BASES
 
 }

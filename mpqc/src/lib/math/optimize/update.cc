@@ -12,7 +12,7 @@ extern "C" {
 
 SavableState_REF_def(HessianUpdate);
 #define CLASSNAME HessianUpdate
-#define PARENTS virtual public SavableState
+#define PARENTS virtual_base public SavableState
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
@@ -32,7 +32,7 @@ HessianUpdate::HessianUpdate() : inverse_hessian_(0)
 }
 
 HessianUpdate::HessianUpdate(StateIn&s):
-  SavableState(s,HessianUpdate::class_desc_)
+  SavableState(s)
 {
   s.get(inverse_hessian_);
 }

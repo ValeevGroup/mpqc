@@ -16,7 +16,7 @@
 //  x and g may be reversed (see Schlegel, ab initio Methods in Quantum
 //  Chemistry I, 1987, p 10
 
-class HessianUpdate: virtual public SavableState {
+class HessianUpdate: virtual_base public SavableState {
 #   define CLASSNAME HessianUpdate
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>

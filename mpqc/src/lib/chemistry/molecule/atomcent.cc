@@ -10,7 +10,7 @@
 DescribedClass_REF_def(AtomicCenter);
 
 #define CLASSNAME AtomicCenter
-#define PARENTS virtual public SavableState
+#define PARENTS public SavableState
 #define HAVE_CTOR
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
@@ -74,7 +74,7 @@ void AtomicCenter::save_data_state(StateOut& so)
 }
 
 AtomicCenter::AtomicCenter(StateIn& si):
-  SavableState(si,AtomicCenter::class_desc_),
+  SavableState(si),
   p(si),
   element_(si)
 {

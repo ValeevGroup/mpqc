@@ -17,7 +17,7 @@
 SavableState_REF_def(NLP0);
 
 #define CLASSNAME NLP0
-#define PARENTS virtual public SavableState
+#define PARENTS virtual_base public SavableState
 #include <util/state/statei.h>
 #include <util/class/classi.h>
 
@@ -51,7 +51,7 @@ NLP0::NLP0(const RefKeyVal&kv):
 }
 
 NLP0::NLP0(StateIn&s):
-  SavableState(s,NLP0::class_desc_),
+  SavableState(s),
   _value(s,this)
 {
   _dim.restore_state(s);
@@ -173,9 +173,9 @@ NLP1::NLP1(const RefKeyVal&kv):
 }
 
 NLP1::NLP1(StateIn&s):
-  SavableState(s,NLP1::class_desc_),
   NLP0(s),
   _gradient(s,this)
+  maybe_SavableState(s)
 {
 }
 
@@ -282,9 +282,9 @@ NLP2::NLP2(const RefKeyVal&kv):
 }
 
 NLP2::NLP2(StateIn&s):
-  SavableState(s,NLP2::class_desc_),
   NLP1(s),
   _hessian(s,this)
+  maybe_SavableState(s)
 {
 }
 

@@ -35,8 +35,8 @@ PowellUpdate::PowellUpdate(const RefKeyVal&keyval):
 }
 
 PowellUpdate::PowellUpdate(StateIn&s):
-  SavableState(s,PowellUpdate::class_desc_),
   HessianUpdate(s)
+  maybe_SavableState(s)
 {
   xprev.restore_state(s);
   gprev.restore_state(s);

@@ -177,7 +177,7 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     void print(const char* title=0,ostream& out=cout, int =10);
 };
 
-class LocalDiagSCMatrix: virtual public DiagSCMatrix {
+class LocalDiagSCMatrix: public DiagSCMatrix {
     friend LocalSCMatrix;
     friend LocalSymmSCMatrix;
     friend LocalSCVector;

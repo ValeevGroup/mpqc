@@ -135,8 +135,8 @@ istream& operator >> (istream& s, vec2& v) {
     if (c == '|') {
 	s >> v_tmp[VX] >> v_tmp[VY];
 	while (s >> c && isspace(c)) ;
-	if (c != '|')
-	    s.set(_bad);
+	//if (c != '|')
+	//    s.set(_bad);
 	}
     else {
 	s.putback(c);
@@ -301,8 +301,8 @@ istream& operator >> (istream& s, vec3& v) {
     if (c == '|') {
 	s >> v_tmp[VX] >> v_tmp[VY] >> v_tmp[VZ];
 	while (s >> c && isspace(c)) ;
-	if (c != '|')
-	    s.set(_bad);
+	//if (c != '|')
+	//    s.set(_bad);
 	}
     else {
 	s.putback(c);
@@ -456,8 +456,8 @@ istream& operator >> (istream& s, vec4& v) {
     if (c == '|') {
 	s >> v_tmp[VX] >> v_tmp[VY] >> v_tmp[VZ] >> v_tmp[VW];
 	while (s >> c && isspace(c)) ;
-	if (c != '|')
-	    s.set(_bad);
+	//if (c != '|')
+	//    s.set(_bad);
 	}
     else {
 	s.putback(c);

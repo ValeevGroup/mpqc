@@ -19,7 +19,7 @@
 class RefSCVector;
 class RefKeyVal;
 
-class Point : virtual public SavableState
+class Point : public SavableState
 {
 #   define CLASSNAME Point
 #   define HAVE_KEYVAL_CTOR

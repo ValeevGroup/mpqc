@@ -26,13 +26,10 @@ extern "C" {
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/molecule/molecule.h>
 
-extern "C" {
-#include "scf_ffo.gbl"
-#include "opt2_fock.gbl"
-}
+#include <chemistry/qc/mbpt/opt2.h>
+#include <chemistry/qc/mbpt/mp2grad.h>
 
 #include "mpqc_int.h"
-#include "opt2.h"
 
 // Force linkages:
 #ifndef __PIC__
@@ -144,7 +141,7 @@ main(int argc, char *argv[])
 {
   int errcod, geom_code=-1;
   
-  int do_scf, do_grad, do_mp2, do_opt2_v1, do_opt2_v2, do_opt2v2lb;
+  int do_scf, do_grad, do_mp2, do_opt2_v1, do_opt2_v2, do_opt2v2lb, do_mp2grad;
   int read_geom, opt_geom, nopt, proper;
   int save_fock, save_vector, print_geometry, make_pdb=0;
   int localp, throttle, sync_loop, node_timings;
@@ -172,6 +169,8 @@ main(int argc, char *argv[])
  // initialize the picl routines
   RefMessageGrp grp = init_mp(filename, argc, argv);
 
+  //debug_init(argv[0]);
+
  // initialize timing for mpqc
 
   tim_enter("mpqcnode");
@@ -180,8 +179,6 @@ main(int argc, char *argv[])
   RefKeyVal keyval;
 
   int nfzc, nfzv, mem_alloc;
-
-  RefSCDimension dnatom3;
 
   if (mynode0() == 0) {
     fprintf(outfile,
@@ -221,16 +218,6 @@ main(int argc, char *argv[])
     }
     scfkv=0;
 
-    // Read in opt2 stuff
-
-    RefKeyVal opt2input(new PrefixKeyVal(":opt2 :mpqc :default", keyval));
-    nfzc = opt2input->intvalue("frozen_docc");
-    nfzv = opt2input->intvalue("frozen_uocc");
-    mem_alloc = opt2input->intvalue("mem");
-    if (!mem_alloc) mem_alloc = 8000000;
-
-    opt2input = 0;
-
    // read input, and initialize various structs
 
     do_grad=0;
@@ -239,6 +226,20 @@ main(int argc, char *argv[])
 
     do_scf = 1;
     if (keyval->exists("do_scf")) do_scf = keyval->booleanvalue("do_scf");
+
+    // Read in mbpt stuff
+    RefKeyVal mbptinput;
+    if (do_grad) {
+        mbptinput = new PrefixKeyVal(":opt2 :mbpt :mpqc :default", keyval);
+      }
+    else {
+        mbptinput = new PrefixKeyVal(":mp2grad :mbpt :mpqc :default", keyval);
+      }
+    nfzc = mbptinput->intvalue("frozen_docc");
+    nfzv = mbptinput->intvalue("frozen_uocc");
+    mem_alloc = mbptinput->intvalue("mem");
+    if (!mem_alloc) mem_alloc = 8000000;
+    mbptinput = 0;
 
     proper = 1;
     if (keyval->exists("properties"))
@@ -269,6 +270,24 @@ main(int argc, char *argv[])
     do_opt2v2lb = 0;
     if (keyval->exists("opt2v2lb"))
       do_opt2v2lb = keyval->booleanvalue("opt2v2lb");
+
+    if (do_opt2_v1 || do_opt2_v2 || do_opt2v2lb) do_mp2 = 1;
+
+    // Read in mbpt stuff
+    if (do_mp2) {
+        RefKeyVal mbptinput;
+        if (do_grad) {
+            mbptinput = new PrefixKeyVal(":opt2 :mbpt :mpqc :default", keyval);
+          }
+        else {
+            mbptinput = new PrefixKeyVal(":mp2grad :mbpt :mpqc :default",
+                                         keyval);
+          }
+        nfzc = mbptinput->intvalue("frozen_docc");
+        nfzv = mbptinput->intvalue("frozen_uocc");
+        mem_alloc = mbptinput->intvalue("mem");
+        if (!mem_alloc) mem_alloc = 8000000;
+      }
 
     read_geom = 0;
     if (keyval->exists("read_geometry"))
@@ -416,11 +435,13 @@ main(int argc, char *argv[])
     
       fkv = new PrefixKeyVal(":force :default",keyval);
     }
-    
-    if (scf_info.iopen)
-      dmt_force_osscf_keyval_init(fkv.pointer(),outfile);
-    else
-      dmt_force_csscf_keyval_init(fkv.pointer(),outfile);
+
+    if (!do_mp2) {
+        if (scf_info.iopen)
+            dmt_force_osscf_keyval_init(fkv.pointer(),outfile);
+        else
+            dmt_force_csscf_keyval_init(fkv.pointer(),outfile);
+      }
 
     allocbn_double_matrix(&gradient,"n1 n2",3,centers.n);
   }
@@ -464,6 +485,12 @@ main(int argc, char *argv[])
   
   tim_exit("input");
 
+  if (!do_scf && do_grad && do_mp2) {
+      if (mynode0()==0)
+          fprintf(stderr,"Must do scf before mp2 gradient. Program exits\n");
+      clean_and_exit(grp);
+    }
+
  // if we need vector, get one
   if (do_scf) {
 
@@ -496,14 +523,22 @@ main(int argc, char *argv[])
       if (mynode0() == 0) fprintf(outfile,"\n");
 
       if (geom_code == GEOM_COMPUTE_GRADIENT) {
-        if (!scf_info.iopen) {
+        if (do_mp2) {
+            mbpt_mp2_gradient(scf_info, sym_info, centers,
+                              nfzc, nfzv,
+                              Scf_Vec, Fock, FockO,
+                              mem_alloc, outfile, grp,
+                              gradient);
+          }
+        else if (!scf_info.iopen) {
           dmt_force_csscf(outfile, Fock, Scf_Vec,
                           &centers, &sym_info, scf_info.nclosed, &gradient);
-        } else {
+          }
+        else {
           dmt_force_osscf(outfile, Fock, FockO, Scf_Vec,
                           &centers, &sym_info, scf_info.nclosed,
                           scf_info.nopen, &gradient);
-        }
+          }
 
         if (mynode0()==0) {
           fprintf(outfile,"\n");
@@ -523,10 +558,18 @@ main(int argc, char *argv[])
       }
     
       else if (do_grad) {
-        if (!scf_info.iopen) {
+        if (do_mp2) {
+            mbpt_mp2_gradient(scf_info, sym_info, centers,
+                              nfzc, nfzv,
+                              Scf_Vec, Fock, FockO,
+                              mem_alloc, outfile, grp,
+                              gradient);
+          }
+        else if (!scf_info.iopen) {
           dmt_force_csscf(outfile, Fock, Scf_Vec,
                           &centers, &sym_info, scf_info.nclosed, &gradient);
-        } else {
+          }
+        else {
           dmt_force_osscf(outfile, Fock, FockO, Scf_Vec,
                           &centers, &sym_info, scf_info.nclosed,
                           scf_info.nopen, &gradient);
@@ -670,105 +713,20 @@ main(int argc, char *argv[])
   }
 #endif
 
-  if (do_opt2_v1 || do_opt2_v2 || do_opt2v2lb) {
-    dmt_matrix S = dmt_create("libscfv3 overlap matrix",scf_info.nbfao,SCATTERED);
-    dmt_matrix SAHALF;
-    dmt_matrix SC;
-    dmt_matrix EVECS;
-    dmt_matrix SCR;
-    double_vector_t occ_num;
-    double_vector_t evals;
-    dmt_matrix SCR1,SCR2,SCR3;
-    // this got free'ed somewhere
-    if(scf_info.iopen)
-      FockO = dmt_create("opt2 open fock matrix",scf_info.nbfao,SCATTERED);
-    SCR1 = dmt_create("opt2:scr1",scf_info.nbfao,COLUMNS);
-    SCR2 = dmt_create("opt2:scr2",scf_info.nbfao,COLUMNS);
-    SCR3 = dmt_create("opt2:scr3",scf_info.nbfao,COLUMNS);
-
-    if (!do_scf) {
-        char filename[512];
-        sprintf(filename,"%s.fock",scf_info.fname);
-        dmt_read(filename, Fock);
-        if (scf_info.iopen) {
-            sprintf(filename,"%s.focko",scf_info.fname);
-            dmt_read(filename,FockO);
-          }
-      }
-
-    tim_enter("opt2");
-
-    scf_ffo(S, &scf_info, &sym_info, &centers, Scf_Vec, Fock, FockO);
-
-    if (scf_info.iopen) {
-      scf_make_opt2_fock(&scf_info,Fock,FockO,Scf_Vec,SCR1,SCR2,SCR3);
-      dmt_free(SCR3);
-      dmt_copy(Fock,SCR1); /* dmt_diag needs a columns dist. matrix */
-      allocbn_double_vector(&evals,"n",scf_info.nbfao);
-      dmt_diag(SCR1,SCR2,evals.d); /*SCR2 transforms from old to new mo basis */
-      dmt_copy(Scf_Vec,SCR1);
-      dmt_transpose(SCR1);
-      dmt_mult(SCR1,SCR2,Scf_Vec);
-      dmt_free(SCR1);
-      dmt_free(SCR2);
-      }
-    else {
-      /* form 'sahalf' matrix sahalf = u*ei^-0.5*u~ */
-      allocbn_double_vector(&evals,"n",scf_info.nbfao);
-      SAHALF= dmt_create("libscfv3 scf_core_guess scr4",scf_info.nbfao,COLUMNS);      EVECS = dmt_create("libscfv3 scf_core_guess scr3",scf_info.nbfao,COLUMNS);      SCR = dmt_create("libscfv3 scf_core_guess scr5",scf_info.nbfao,COLUMNS);
-      SC = dmt_columns("libscfv3 scf_core_guess scr1",S);
-      /* diagonalize overlap matrix */
-      dmt_diag(SC,EVECS,evals.d);
-      /* form SAHALF matrix (s^(-1/2), Sz&Ostl p. 143) */
-      for(int i=0; i < scf_info.nbfao; i++) evals.d[i] = 1.0/sqrt(evals.d[i]);
-      dmt_fill(SAHALF,0.0);
-      dmt_set_diagonal(SAHALF,evals.d);
-      /* form the orthogonalization matrix S^(-1/2) (Szabo&Ostlund p. 143)
-       * (called SAHALF here) */
-      dmt_transpose(EVECS);
-      dmt_mult(SAHALF,EVECS,SCR);
-      dmt_mult(EVECS,SCR,SAHALF);
-      dmt_free(EVECS);
-      dmt_free(SC);
-      dmt_free(SCR);
-      dmt_free(S);
-      dmt_copy(Fock,SCR1); /* need a columns distr. matrix */
-      dmt_mult(SCR1,SAHALF,SCR2);
-      dmt_mult(SAHALF,SCR2,SCR3);
-      /* SCR3 is now the Fock matrix in the orthogonalized ao basis */
-      dmt_diag(SCR3,Scf_Vec,evals.d);
-      dmt_copy(Scf_Vec,SCR1);
-      dmt_mult(SAHALF,SCR1,Scf_Vec); /* Sz&Ostl p.146 point 9 */
-      dmt_free(SCR1);
-      dmt_free(SCR2);
-      dmt_free(SCR3);
-      }
-
-    if (do_opt2_v1) {
-        sync0();
-        tim_enter("opt2_v1");
-        opt2_v1(&centers,&scf_info,Scf_Vec,&evals,nfzc,nfzv,mem_alloc,
-                    outfile);
-        tim_exit("opt2_v1");
-      }
-    if (do_opt2_v2) {
-        sync0();
-        tim_enter("opt2_v2");
-        opt2_v2(&centers,&scf_info,Scf_Vec,&evals,nfzc,nfzv,mem_alloc,
-                    outfile);
-        tim_exit("opt2_v2");
-      }
-    if (do_opt2v2lb) {
-        sync0();
-        tim_enter("opt2v2lb");
-        opt2v2lb(&centers,&scf_info,Scf_Vec,&evals,nfzc,nfzv,mem_alloc,
-                    outfile);
-        tim_exit("opt2v2lb");
-      }
-
-    free_double_vector(&evals);
-
-    tim_exit("opt2");
+  if (do_mp2 && !do_grad) {
+      if (!do_scf) {
+          char filename[512];
+          sprintf(filename,"%s.fock",scf_info.fname);
+          dmt_read(filename, Fock);
+          if (scf_info.iopen) {
+              sprintf(filename,"%s.focko",scf_info.fname);
+              dmt_read(filename,FockO);
+            }
+        }
+      mbpt_opt2(centers,scf_info,sym_info,Scf_Vec,Fock,FockO,
+                nfzc,nfzv,mem_alloc,
+                do_opt2_v1, do_opt2_v2, do_opt2v2lb,
+                outfile);
     }
 
   tim_print(node_timings);
@@ -779,7 +737,6 @@ main(int argc, char *argv[])
 
   return 0;
 }
-
 
 static void
 read_geometry(centers_t& centers, const RefKeyVal& keyval, FILE *outfp)

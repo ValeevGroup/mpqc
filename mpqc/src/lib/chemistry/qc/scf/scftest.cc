@@ -98,7 +98,8 @@ main(int argc, char**argv)
       }
     } else if (mole->value_implemented()) {
       o << " value of mole is ";
-      o << mole->energy();
+      o << mole->energy() << endl;
+      printf("%20.15f\n",mole->energy());
     }
   }
 

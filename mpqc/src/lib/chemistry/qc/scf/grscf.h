@@ -41,8 +41,25 @@ class GRSCF: public OneBodyWavefunction
     char *ckptdir;
     char *fname;
 
+    // these are temporary data, so they should not be checkpointed
+    RefSymmSCMatrix _gr_dens;
+    RefSymmSCMatrix _gr_dens_diff;
+    RefSymmSCMatrix _gr_op_dens;
+    RefSymmSCMatrix _gr_op_dens_diff;
+    RefSymmSCMatrix _gr_gmat;
+    RefSymmSCMatrix _gr_op_gmat;
+    RefSymmSCMatrix _gr_hcore;
+    RefSymmSCMatrix _gr_fock;
+    RefSymmSCMatrix _gr_op_fock;
+    RefDiagSCMatrix _gr_evals;
+    RefSCMatrix _gr_vector;
+    RefSCMatrix _gr_nvector;
+    
     void init();
-    void compute();
+    virtual void compute();
+    virtual void do_vector(double&,double&);
+    virtual void form_ao_fock(double&);
+    virtual double scf_energy();
     
   public:
     GRSCF(StateIn&);

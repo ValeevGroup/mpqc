@@ -384,11 +384,15 @@ Debugger::debug(const char *reason)
       system(cmd);
       // wait until the debugger is ready
       if (sleep_) {
-          ExEnv::outn() << "Sleeping " << sleep_
+          ExEnv::outn() << prefix_ << "Sleeping " << sleep_
                << " seconds to wait for debugger ..." << endl;
           sleep(sleep_);
       }
-      if (wait_for_debugger_) while(!debugger_ready_);
+      if (wait_for_debugger_) {
+          ExEnv::outn() << prefix_
+                        << ": Spinning until debugger_ready_ is set ..." << endl;
+          while(!debugger_ready_);
+        }
     }
 #endif
 }
@@ -473,11 +477,23 @@ void
 Debugger::traceback(const char *reason)
 {
 #ifdef HAVE_BACKTRACE
-  ExEnv::outn() << prefix_ << "Debugger::traceback:" << std::endl;
+  ExEnv::outn() << prefix_ << "Debugger::traceback(using backtrace):";
+  if (reason) ExEnv::outn() << reason;
+  else ExEnv::outn() << "no reason given";
+  ExEnv::outn() << endl;
+
   const int n = 100;
   void *p[n];
   int nret = backtrace(p,n);
-  backtrace_symbols_fd(p, nret, 0);
+  if (nret == 0) {
+      ExEnv::outn() << prefix_ << "backtrace returned no state information" << std::endl;
+    }
+  for (int i=0; i<nret; i++) {
+      ExEnv::outn() << prefix_
+                    << "frame " << i
+                    << ": return address = " << p[i]
+                    << std::endl;
+    }
 #else // HAVE_BACKTRACE
 #if SIMPLE_STACK
   int bottom = 0x1234;

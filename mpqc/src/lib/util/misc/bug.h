@@ -48,7 +48,7 @@ class Debugger: public SavableState {
     char *prefix_;
     char *exec_;
     char *cmd_;
-    int debugger_ready_;
+    volatile int debugger_ready_;
 
     int debug_;
     int traceback_;

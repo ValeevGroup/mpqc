@@ -264,12 +264,20 @@ main()
 
   cout << "Testing string keyvals" << endl;
   Ref<ParsedKeyVal> strkv = new ParsedKeyVal();
+  cout << "  parsing" << endl;
   strkv->parse_string("<B>:(b=123456)");
+  cout << "  reading" << endl;
   Ref<B> strb; strb << strkv->describedclassvalue();
-  if (strb.nonnull()) { strb->print(); cout << endl; }
+  if (strb.nonnull()) {
+      cout << "  printing" << endl;
+      strb->print(); cout << endl;
+    }
 
+  cout << "Testing parsed keyvals TOP keyword" << endl;
   strkv = new ParsedKeyVal();
+  cout << "  parsing" << endl;
   strkv->parse_string("TOP=24");
+  cout << "  reading" << endl;
   int strkvint = strkv->intvalue();
   cout << "strkvint = " << strkvint << endl;
 

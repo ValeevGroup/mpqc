@@ -54,22 +54,23 @@ class.
 
 <dt><tt>checkpoint</tt> </dt> <dd> The value of this keyword is boolean.
 
-        <dl>
+        <ul>
 
-        <dt><tt>true</tt> and optimization is to be performed </dt>
-        <dd>
+        <li><tt>true</tt> and optimization is to be performed <br>
+
         <tt>opt</tt> object will be checkpointed after each iteration.
-        The checkpoint file suffix is <tt>.ckpt</tt>.
-        </dd>
+        The checkpoint file suffix is ".ckpt".
 
-        <dt><tt>true</tt> and optimization is not performed </dt>
-        <dd>
-        <tt>mole</tt> object will be checkpointed. The manner in which
+        <li><tt>true</tt> and optimization is not performed <br>
+
+        <tt>mole</tt> object will be checkpointed at intermediate points.
+        The manner in which
         <tt>mole</tt> will be checkpointed depends on its particular type.
-        The checkpoint file suffix is <tt>.wfn.ckpt</tt>.
-        </dd>
+        The checkpoint file suffix is usually ".wfn", however
+        in general it will depend on the particular specialization of
+        <tt>MolecularEnergy</tt>.
 
-        </dl>
+        </ul>
 
         The default is to not checkpoint.
         </dd>
@@ -80,9 +81,9 @@ class.
         The default is 1, which means to checkpoint after every iteration.
 
 <dt><tt>savestate</tt><dd> The value of this keyword is boolean.  If true,
-        then the states of the optimizer and wavefunction objects will be
-        saved after the calculation completes.  The output file suffix is
-        <tt>.wfn</tt>.  The default is to save state.
+        then the states of the Optimize and MolecularEnergy objects will be
+        saved after the calculation completes.  The output file suffixes are
+        ".ckpt" and ".wfn", respectively.  The default is to save state.
 
 <dt><tt>restart</tt><dd> The value of this keyword is boolean.  If true,
         mpqc will attempt to restart the calculation.  If the checkpoint
@@ -90,10 +91,12 @@ class.
         were false. The default is true.
 
 <dt><tt>restart_file</tt><dd> This gives the name of a file from which
-        restart information is read.  If the file name ends in
-        <tt>.wfn</tt> the MolecularEnergy object will be restored.
-        Otherwise, the Optimize object will be restored.  The default file
-        name is formed by appending <tt>.ckpt</tt> to the input file name
+        restart information is read. If the file name ends with ".wfn"
+        then MPQC will try to restore a <tt>MolecularEnergy</tt> object from it
+        and query for the <tt>opt</tt> object in the input file.
+        If the file name ends with ".ckpt" MPQC will try to restore an <tt>Optimize</tt>
+        object from this file. The default file
+        name is formed by appending ".ckpt" to the input file name
         with the extension removed.
 
 <dt><tt>do_energy</tt><dd> The value of this keyword is boolean.  If true a
@@ -302,6 +305,10 @@ of the samples inputs shown here can be found in the directory
   <li> \ref mpqcoosampfixopt
   <li> \ref mpqcoosampts
   <li> \ref mpqcoosamptshess
+  <li> \ref mpqcoosamphfckpt
+  <li> \ref mpqcoosampmp2r12ckpt
+  <li> \ref mpqcoosamphfgradfromwfn
+  <li> \ref mpqcoosampmp2usinghfwfn
 </ul>
 
 \subsection mpqcoosamphf Hartree-Fock Energy
@@ -1032,5 +1039,202 @@ mpqc: (
   )
 )
 </pre>
+
+
+\subsection mpqcoosamphfckpt Hartree-Fock energy with intermediate checkpointing
+
+The following two sections demonstrate how MPQC can be used to save the <tt>mole</tt> object
+periodically.
+This input will compute the Hartree-Fock energy of water while saving
+the <tt>mole</tt> object every 3 iterations.
+
+<pre>
+% emacs should use -*- KeyVal -*- mode
+% molecule specification
+molecule<Molecule>: (
+  symmetry = C2V
+  unit = angstrom
+  { atoms geometry } = {
+    O     [     0.00000000     0.00000000     0.37000000 ]
+    H     [     0.78000000     0.00000000    -0.18000000 ]
+    H     [    -0.78000000     0.00000000    -0.18000000 ]
+  }
+)
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "STO-3G"
+  molecule = $:molecule
+)
+mpqc: (
+  checkpoint = yes
+  filename = "h2o-rhf-STO3G"
+  checkpoint_freq = 3
+  savestate = no
+  % method for computing the molecule's energy
+  mole<CLHF>: (
+    molecule = $:molecule
+    basis = $:basis
+    memory = 16000000
+  )
+)
+</pre>
+
+The <tt>mole</tt> object will be saved to files named "h2o-rhf-STO3G.wfn.<iter#>.tmp"
+where <iter#> is the SCF iteration number (3, 6, etc.). Only the most recent file is kept,
+files from previous iterations are removed automatically. Keyword <tt>filename</tt>
+here is used to set the default file name prefix.
+
+\subsection mpqcoosampmp2r12ckpt MP2-R12 energy with intermediate checkpointing
+
+The following input will compute the MP2-R12 energy of water in standard approximation A'
+(MP2-R12/A') while saving the <tt>mole</tt> object at intermediate checkpoints.
+
+<pre>
+% emacs should use -*- KeyVal -*- mode
+% molecule specification
+molecule<Molecule>: (
+  symmetry = C2V
+  unit = angstrom
+  { atoms geometry } = {
+    O     [     0.00000000     0.00000000     0.37000000 ]
+    H     [     0.78000000     0.00000000    -0.18000000 ]
+    H     [    -0.78000000     0.00000000    -0.18000000 ]
+  }
+)
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "cc-pVDZ"
+  molecule = $:molecule
+)
+% auxiliary basis set specification
+abasis<GaussianBasisSet>: (
+  name = "aug-cc-pVDZ"
+  molecule = $:molecule
+)
+mpqc: (
+  checkpoint = yes
+  filename = "h2o-mp2r12ap-vdz-avdz"
+  savestate = no
+  % method for computing the molecule's energy
+  mole<MBPT2_R12>: (
+    molecule = $:molecule
+    basis = $:basis
+    aux_basis = $:abasis
+    stdapprox = "A'"
+    nfzc = 1
+    memory = 16000000
+    integrals<IntegralCints>:()
+    % reference wavefunction
+    reference<CLHF>: (
+      molecule = $:molecule
+      basis = $:basis
+      memory = 16000000
+      integrals<IntegralCints>:()
+    )
+  )
+)
+</pre>
+
+The <tt>mole</tt> object will be saved to a file named <tt>h2o-mp2r12ap-vdz-avdz.wfn"</tt>.
+Keyword <tt>filename</tt> here is used to set the default file name prefix.
+Objects of the <tt>MBPT2_R12</tt> type are checkpointed after the HF procedure,
+after the first integrals (SBS) transformation, and after the optional second (ABS)
+transformation.
+
+\subsection mpqcoosamphfgradfromwfn HF gradient computed from a previously computed HF wave funtion
+
+The following will illustrate how to reuse previously computed <tt>MolecularEnergy</tt> objects
+in subsequent computations. The first input computes Hartree-Fock energy for water
+and saves the <tt>mole</tt> object to file <tt>h2o-rhf-sto3g.wfn</tt>.
+
+<pre>
+% emacs should use -*- KeyVal -*- mode
+% molecule specification
+molecule<Molecule>: (
+  symmetry = C2V
+  unit = angstrom
+  { atoms geometry } = {
+    O     [     0.00000000     0.00000000     0.37000000 ]
+    H     [     0.78000000     0.00000000    -0.18000000 ]
+    H     [    -0.78000000     0.00000000    -0.18000000 ]
+  }
+)
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "STO-3G"
+  molecule = $:molecule
+)
+mpqc: (
+  checkpoint = no
+  savestate = yes
+  filename = "h2o-rhf-sto3g"
+  % method for computing the molecule's energy
+  mole<CLHF>: (
+    molecule = $:molecule
+    basis = $:basis
+    memory = 16000000
+  )
+)
+</pre>
+
+The second input reuses the <tt>mole</tt> object from the previous run
+to compute the gradient of the Hartree-Fock energy.
+
+<pre>
+% emacs should use -*- KeyVal -*- mode
+mpqc: (
+  checkpoint = no
+  savestate = no
+  restart = yes
+  restart_file = "h2o-rhf-sto3g.wfn"
+  do_gradient = yes
+)
+</pre>
+
+\subsection mpqcoosampmp2usinghfwfn MP2 Energy computed using precomputed Hartree-Fock wave function
+
+The following input will compute the MP2 energy of water using a saved Hartree-Fock wave function
+obtained using the first input from \ref mpqcoosamphfgradfromwfn.
+
+<pre>
+% emacs should use -*- KeyVal -*- mode
+% molecule specification
+molecule<Molecule>: (
+  symmetry = C2V
+  unit = angstrom
+  { atoms geometry } = {
+    O     [     0.00000000     0.00000000     0.37000000 ]
+    H     [     0.78000000     0.00000000    -0.18000000 ]
+    H     [    -0.78000000     0.00000000    -0.18000000 ]
+  }
+)
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "STO-3G"
+  molecule = $:molecule
+)
+% wave function file object specification
+wfnfile<BcastStateInBin>:file = "h2o-rhf-sto3g.wfn"
+mpqc: (
+  checkpoint = no
+  savestate = no
+  % method for computing the molecule's energy
+  mole<MBPT2>: (
+    molecule = $:molecule
+    basis = $:basis
+    memory = 16000000
+    % reference wavefunction
+    reference<SavableStateProxy>: (
+      statein = $:wfnfile
+      object = "CLHF"
+    )
+  )
+)
+</pre>
+
+Note that now object <tt>reference</tt> is of type <tt>SavableStateProxy</tt>,
+rather than <tt>CLHF</tt>. <tt>SavableStateProxy</tt> is a special object type
+that can be converted at runtime into the desired type (in this case, <tt>CLHF</tt>,
+as indicated by <tt>object</tt>).
 
 */

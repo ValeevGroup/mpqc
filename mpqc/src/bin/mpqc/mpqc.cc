@@ -532,8 +532,8 @@ try_main(int argc, char *argv[])
     wfn_file = new char[strlen(molname)+6];
     sprintf(wfn_file,"%s.wfn",molname);
   }
-  char *mole_ckpt_file = new char[strlen(wfn_file)+6];
-  sprintf(mole_ckpt_file,"%s.ckpt",wfn_file);
+  char *mole_ckpt_file = new char[strlen(wfn_file)+1];
+  sprintf(mole_ckpt_file,"%s",wfn_file);
 
   int restart = keyval->booleanvalue("restart",truevalue);
 

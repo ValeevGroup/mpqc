@@ -123,7 +123,8 @@ SCF::SCF(const RefKeyVal& keyval) :
   if (accumddh_.null())
     accumddh_ = new AccumHNull;
   
-  storage_ = keyval->intvalue("memory");
+  KeyValValueint defaultmem(8000000);
+  storage_ = keyval->intvalue("memory",defaultmem);
   
   if (keyval->exists("local_density"))
     local_dens_ = keyval->booleanvalue("local_density");

@@ -342,7 +342,9 @@ case $target in
     fi
     AC_MSG_RESULT("mips-sgi-irix5")
   ;;
+changequote(<<, >>)dnl
   mips4-sgi-irix6.[01]* | r8000-sgi-irix6.[01]* | r10000-sgi-irix6.[01]*)
+changequote([, ])dnl
     if test X$GCC != Xyes; then
       COPTIONS_OPT="-O2 \
         -OPT:const_copy_limit=40000:fold_arith_limit=40000:global_limit=40000"
@@ -366,8 +368,9 @@ case $target in
     fi
     AC_MSG_RESULT("mips4-sgi-irix r8000-sgi-irix or r10000-sgi-irix")
   ;;
-  changequote(<<, >>)dnl
+changequote(<<, >>)dnl
   i[56]86-*)
+changequote([, ])dnl
     if test X$GCC = Xyes; then
       COPTIONS_OPT="-O2 -malign-loops=2 -malign-jumps=2 -malign-functions=2 -malign-double"
     fi
@@ -376,7 +379,6 @@ case $target in
     fi
     AC_MSG_RESULT("i586 or i686")
   ;;
-  changequote([, ])dnl
   i860-intel-*)
     if test X$GCC != Xyes; then
       COPTIONS_OPT="-O3 -Knoieee"
@@ -854,7 +856,9 @@ case $target in
     LDFLAGS="$LDFLAGS -mnx -mnoieee"
     AC_MSG_RESULT(osf paragon)
   ;;
+changequote(<<, >>)dnl
   mips4-sgi-irix6.[01]* | r8000-sgi-irix6.[01]* | r10000-sgi-irix6.[01]*)
+changequote([, ])dnl
     if test X$CXX = XCC; then
       CXX="\$(SRCTOPDIR)/bin/CCfix CC"
     fi

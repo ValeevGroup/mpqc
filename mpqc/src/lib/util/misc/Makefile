@@ -37,11 +37,11 @@ BIN_OR_LIB = LIB
 
 CSRC = ieee.c checkalloc.c mtype.c
 
-CXXSRC = compute.cc formio.cc bug.cc regtime.cc
+CXXSRC = compute.cc formio.cc bug.cc regtime.cc exenv.cc
 
 TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc
 
-INC = libmisc.h memory.h timer.h compute.h ieee.h bug.h
+INC = libmisc.h memory.h timer.h compute.h ieee.h bug.h exenv.h
 
 DISTFILES = $(CSRC) $(CXXSRC) $(TESTSRC) $(INC) Makefile LIBS.h
 

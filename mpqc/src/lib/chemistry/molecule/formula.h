@@ -32,6 +32,9 @@
 
 #include <chemistry/molecule/molecule.h>
 
+//. The \clsnm{MolecularFormula} class is used to calculate the molecular
+// formula of a \clsnmref{Molecule}.  There is only one constructor which
+// takes \clsnm{RefMolecule} as input.
 class MolecularFormula {
   private:
     const int nelem_ = 105;
@@ -39,9 +42,12 @@ class MolecularFormula {
     char *form_;
     
   public:
+    //. This constructor takes a \clsnm{RefMolecule} as its argument.
     MolecularFormula(const RefMolecule&);
+
     ~MolecularFormula();
 
+    //. Returns a null terminated string containing the molecular formula.
     const char * formula() const;
 };
 

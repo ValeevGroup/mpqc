@@ -194,11 +194,40 @@ BEMSolvent::normalize_charge(double enclosed_charge, double* charges)
   double expected_charge = enclosed_charge
                          * (1.0/dielectric_constant_ - 1.0);
   double charge = 0.0;
+  double charge_pos = 0.0;
+  double charge_neg = 0.0;
   int n = ncharge();
-  for (i=0; i<n; i++) charge += charges[i];
-  if (fabs(charge) > 1.0e-4) {
-      double charge_correction = expected_charge/charge;
-      for (i=0; i<n; i++) charges[i] *= charge_correction;
+  for (i=0; i<n; i++) {
+      charge += charges[i];
+      if (charges[i] > 0.0) charge_pos += charges[i];
+      else charge_neg += charges[i];
+    }
+
+  double scale_pos = 1.0;
+  double scale_neg = 1.0;
+  if (charge_pos > 1.0e-4 && charge_neg < -1.0e-4) {
+      scale_pos += (expected_charge-charge)/(2.0*charge_pos);
+      scale_neg += (expected_charge-charge)/(2.0*charge_neg);
+    }
+  else if (charge_pos > 1.0e-4) {
+      scale_pos += (expected_charge-charge)/charge_pos;
+    }
+  else if (charge_neg < -1.0e-4) {
+      scale_neg += (expected_charge-charge)/charge_neg;
+    }
+
+  double new_charge = 0.0;
+  for (i=0; i<n; i++) {
+      if (charges[i] > 0.0) charges[i] *= scale_pos;
+      else charges[i] *= scale_neg;
+      new_charge += charges[i];
+    }
+
+  if (fabs(new_charge - expected_charge) > 1.0e-3) {
+      cout << "BEMSolvent:normalize_charge: failed:" << endl
+           << "new_charge = " << new_charge << endl
+           << "expected_charge = " << expected_charge << endl;
+      abort();
     }
 
   if (debug_) {
@@ -364,6 +393,26 @@ BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
   tim_enter("stoq");
   surface_charge_density_to_charges(charges);
   tim_exit("stoq");
+}
+
+double
+BEMSolvent::nuclear_charge_interaction_energy(double *nuclear_charge,
+                                              double** charge_positions,
+                                              double* charge)
+{
+  double energy = 0.0;
+  int natom = solute_->natom();
+  for (int i=0; i<natom; i++) {
+      for (int j=0; j<ncharge(); j++) {
+          double r2 = 0.0;
+          for (int k=0; k<3; k++) {
+              double r = charge_positions[j][k] - solute_->r(i,k);
+              r2 += r*r;
+            }
+          energy += nuclear_charge[i] * charge[j] / sqrt(r2);
+        }
+    }
+  return energy;
 }
 
 double

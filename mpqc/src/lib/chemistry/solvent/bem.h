@@ -116,6 +116,11 @@ class BEMSolvent: public DescribedClass {
     // the surface if the given total charge were enclosed within it.
     void normalize_charge(double enclosed_charge, double* charges);
 
+    // Given charges and nuclear charges compute their interation energy.
+    double nuclear_charge_interaction_energy(double *nuclear_charge,
+                                             double** charge_positions,
+                                             double* charge);
+
     // Given charges compute the interaction energy between the nuclei
     // and the point charges.
     double nuclear_interaction_energy(double** charge_positions,

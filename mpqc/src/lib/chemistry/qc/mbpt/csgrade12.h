@@ -58,12 +58,6 @@ class CSGradErep12Qtr: public Thread {
     double **scf_vector;
     int debug;
     int dynamic_;
-
-    void run_dynamic();
-    void run_static();
-    void run_task_manager();
-    void run_task_runner();
-    int get_task(int &S, int &R);
   public:
     CSGradErep12Qtr(int mythread_a, int nthread_a,
                     int me_a, int nproc_a,

@@ -519,9 +519,9 @@ mol_transform_to_principal_axes(Molecule& mol)
 
  // cleanup evecs
   for (i=0; i < 3; i++) {
-    for (int j=0; j <= i; j++) {
+    for (int j=0; j < 3; j++) {
       if (fabs(evecs[i][j]) < 1.0e-5) {
-        evecs[i][j]=evecs[j][i]=0.0;
+        evecs[i][j]=0.0;
       }
     }
   }
@@ -535,9 +535,15 @@ mol_transform_to_principal_axes(Molecule& mol)
     mol.atom(i)[2] = evecs[0][2]*x + evecs[1][2]*y + evecs[2][2]*z;
   }
 
-  for (i=0; i < 3; i++)
-    for (int j=0; j < 3; j++)
-      mol.point_group().symm_frame()[i][j] = evecs[i][j];
+  SymmetryOperation tso=mol.point_group().symm_frame();
+
+  for (i=0; i < 3; i++) {
+    for (int j=0; j < 3; j++) {
+      double t=0;
+      for (int k=0; k < 3; k++) t += tso[i][k]*evecs[k][j];
+      mol.point_group().symm_frame()[i][j] = t;
+    }
+  }
 }
 
 // returns an array containing indices of the unique atoms

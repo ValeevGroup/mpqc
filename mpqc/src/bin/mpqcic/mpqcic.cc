@@ -86,7 +86,7 @@ main(int argc, char *argv[])
 
 /* turn out the lights */
 
-#if defined(I860)
+#if defined(I860) && !defined(PARAGON)
   led(0);
 #endif
 
@@ -737,3 +737,14 @@ read_geometry(centers_t& centers, RefKeyVal keyval, FILE *outfp)
 
   list=0;
 }
+
+#if defined(SUNMOS)
+extern "C" {
+void * sbrk(int) { int *foo = (int*) 0x7fffffff;  return (void*) foo; }
+
+int openlog() { return 0; }
+int syslog() { return 0; }
+
+int atexit(void(*func)(void)) { return 0; }
+}
+#endif

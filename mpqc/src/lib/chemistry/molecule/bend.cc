@@ -88,8 +88,12 @@ double BendSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
   if(bmat) {
     double uu,ww,vv;
     double si=s2(co);
-    double r1i = 1.0/(si*dist(m[a].point(),m[b].point()));
-    double r2i = 1.0/(si*dist(m[c].point(),m[b].point()));
+    double r1i, r2i;
+    if (si > 1.0e-4) {
+        r1i = 1.0/(si*dist(m[a].point(),m[b].point()));
+        r2i = 1.0/(si*dist(m[c].point(),m[b].point()));
+      }
+    else {r1i = 0.0; r2i = 0.0;}
 #if OLD_BMAT
     r1i /= bohr;
     r2i /= bohr;

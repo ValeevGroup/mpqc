@@ -92,6 +92,10 @@ class Molecule: public SavableState
     //texi @code{const} version of the above.
     const AtomicCenter& atom(int) const;
 
+    //texi Returns the index of the atom with the given @var{label}.
+    // If the label cannot be found @code{-1} is returned.
+    int atom_label_to_index(const char *label) const;
+
     //texi Returns a @code{PointBag_double*} containing the nuclear charges
     // of the atoms.
     PointBag_double* charges() const;

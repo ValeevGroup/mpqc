@@ -74,14 +74,32 @@ SimpleCo::SimpleCo(const RefKeyVal&kv,int na) :
   memset(atoms,'\0',sizeof(int)*na);
 
   if (kv->count() == 0) {
-      for (int i=0; i<na; i++) {
+      int i;
+      for (i=0; i<na; i++) {
           atoms[i] = kv->intvalue("atoms",i);
-          if (kv->error() != KeyVal::OK) {
-              fprintf(stderr,"%s::%s(const RefKeyVal&): missing an atom\n",
-                      class_name(),class_name());
-              kv->errortrace();
-              abort();
+          if (kv->error() != KeyVal::OK) break;
+        }
+      if (i == 0) {
+          // couldn't find any atoms so look for a molecule and atom labels
+          RefMolecule mol = kv->describedclassvalue("molecule");
+          if (mol.nonnull()) {
+              for (i=0; i<na; i++) {
+                  char *label = kv->pcharvalue("atom_labels", i);
+                  if (kv->error() != KeyVal::OK) break;
+                  atoms[i] = mol->atom_label_to_index(label) + 1;
+                  delete[] label;
+                  if (atoms[i] == 0) break;
+                }
             }
+        }
+      if (i != na) {
+          fprintf(stderr,
+                  "%s::%s(const RefKeyVal&): missing one of the atoms "
+                  "or atom_labels (requires a molecule too) "
+                  "or an atom label was invalid\n",
+                  class_name(),class_name());
+          kv->errortrace();
+          abort();
         }
     }
   else {

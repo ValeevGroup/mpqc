@@ -50,26 +50,32 @@ main()
   //exit(0);
 
   printf("getting simp:\n");
-  RefKeyVal ppkv = new PrefixKeyVal("simp",kv);
-  SetIntCoor simp(ppkv);
-  simp.update_values(mol);
+  RefSetIntCoor simp = kv->describedclassvalue("simp");
+  RefIntCoorGen gen = kv->describedclassvalue("generator");
+  if (gen.nonnull()) {
+      gen->print();
+    }
+  printf("simp before update:\n");
+  simp->print(mol);
+  simp->update_values(mol);
   printf("simp:\n");
-  simp.print(mol);
+  simp->print(mol);
 
   // compare the analytic bmatrix to the finite displacement bmatrix
-  RefKeyVal pppkv = new PrefixKeyVal("bmat_test",kv);
-  SetIntCoor bmat_test(pppkv);
-  RefSCDimension dnc(new LocalSCDimension(bmat_test.n()));
+  RefSetIntCoor bmat_test = kv->describedclassvalue("bmat_test");
+  RefSCDimension dnc(new LocalSCDimension(bmat_test->n()));
   RefSCDimension dn3(new LocalSCDimension(mol->natom()*3));
   RefSCMatrix bmatrix(dnc,dn3);
   RefSCMatrix fd_bmatrix(dnc,dn3);
   printf("testing bmat with:\n");
-  bmat_test.update_values(mol);
-  bmat_test.print();
-  bmat_test.bmat(mol,bmatrix);
-  bmat_test.fd_bmat(mol,fd_bmatrix);
+  bmat_test->update_values(mol);
+  bmat_test->print();
+  bmat_test->bmat(mol,bmatrix);
+  bmat_test->fd_bmat(mol,fd_bmatrix);
   cout << "test bmatrix:\n";
   bmatrix.print();
+  cout << "fd bmatrix:\n";
+  fd_bmatrix.print();
   cout << "difference between test and finite displacement bmatrix:\n";
   (fd_bmatrix - bmatrix).print();
 
@@ -80,32 +86,37 @@ main()
   
   // now we get ambitious
   RefMolecularCoor mc = kv->describedclassvalue("molcoor");
-
   cout.flush();
   cerr.flush();
   fflush(stdout);
   fflush(stderr);
 
-  mc->print();
+  if (mc.nonnull()) {
+      mc->print();
 
-  cout.flush();
-  cerr.flush();
-  fflush(stdout);
-  fflush(stderr);
+      cout.flush();
+      cerr.flush();
+      fflush(stdout);
+      fflush(stderr);
 
-//   do_displacement(mc,0);
-//   do_displacement(mc,1);
-//   do_displacement(mc,2);
-//   do_displacement(mc,3);
+      // do_displacement(mc,0);
+      // do_displacement(mc,1);
+      // do_displacement(mc,2);
+      // do_displacement(mc,3);
 
-  RefSymmSCMatrix hessian(mc->dim());
-  mc->guess_hessian(hessian);
+      RefSymmSCMatrix hessian(mc->dim());
+      mc->guess_hessian(hessian);
 
-//   cout << "The guess hessian:\n";
-//   hessian.print();
+      // cout << "The guess hessian:\n";
+      // hessian.print();
+    }
 
   RefMolecularEnergy me = kv->describedclassvalue("energy");
-  if (me.nonnull()) me->print();
+  if (me.nonnull()) {
+      me->print();
+    }
+
+  return 0;
 }
 
 

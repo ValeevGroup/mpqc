@@ -65,8 +65,6 @@ void
 RedundMolecularCoor::guess_hessian(RefSymmSCMatrix&hessian)
 {
   variable_->guess_hessian(molecule_,hessian);
-  variable_->print();
-  all_->print();
 }
 
 RefSymmSCMatrix

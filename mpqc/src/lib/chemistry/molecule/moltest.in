@@ -112,7 +112,18 @@ small_molecule<Molecule>: (
        }
   )
 
-molecule = $:small_molecule
+linear_molecule<Molecule>: (
+    angstrom = no
+    { atoms                  geometry                } =
+    {
+       H   [       0.000000    0.100000    2.000000 ]
+       C   [       0.000000    0.000000    1.000000 ]
+       C   [       0.000000    0.000000   -1.000000 ]
+       H   [       0.000000    0.200000   -2.000000 ]
+       }
+  )
+
+molecule = $:linear_molecule
 
 big_molcoor<SymmMolecularCoor>: (
   molecule = $:big_molecule
@@ -142,6 +153,10 @@ small_molcoor<SymmMolecularCoor>: (
     <StreSimpleCo>: ( atoms = [ 2 3 ] label = "r(HH)" value = 1.5 )
     %<StreSimpleCo>: ( atoms = [ 1 3 ] label = "r(OH)" value = 2.2 )
     ]
+  )
+
+small_redund_molcoor<RedundMolecularCoor>: (
+  molecule = $:small_molecule
   )
 
 medium_molcoor<SymmMolecularCoor>: (
@@ -196,9 +211,9 @@ medium_molcoor<SymmMolecularCoor>: (
   extra_bonds = [ 12 6  12 15  14 15  11 14 ]
   )
 
-molcoor = $:medium_molcoor
+molcoor = $:small_redund_molcoor
 
-simp<SetIntCoor>: [
+custom_simp<SetIntCoor>: [
     <StreSimpleCo> = [ "st____1" 1 2 ]
     <StreSimpleCo> = [ "st2" 1 3 ]
     <SumIntCoor>: (
@@ -222,19 +237,19 @@ simp<SetIntCoor>: [
        )
   ]
 
-bmat_test<SetIntCoor>: [
-    <StreSimpleCo> = [ "st1" 1 2 ]
-    <StreSimpleCo> = [ "st2" 1 3 ]
-    <BendSimpleCo> = [ "b1"  2 1 3]
-    <SumIntCoor>: (
-        label = "linearcomb"
-        { coef  coor } = {
-          1.0   $:bmat_test:0
-         -1.0   $:bmat_test:1
-         +1.0   $:bmat_test:2
-         }
-       )
-  ]
+generator<IntCoorGen>: (
+    molecule = $:molecule
+    linear_tors = yes
+    linear_tors_threshold = 90.0
+  )
+
+generated_simp<SetIntCoor>: (
+  generator = $:generator
+  )
+
+simp = $:generated_simp
+
+bmat_test = $:simp
 
 renderer<OOGLRender>: (
     filename = "moltest.oogl"

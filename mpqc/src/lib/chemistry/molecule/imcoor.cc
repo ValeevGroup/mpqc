@@ -15,15 +15,7 @@ extern "C" {
 #define DEFAULT_SIMPLE_TOLERANCE 1.0e-3
 
 #define USE_SVD 1
-
-static void add_bonds(RefSetIntCoor&, BitArray&, Molecule&);
-static void add_bends(RefSetIntCoor&, BitArray&, Molecule&);
-static void add_tors(RefSetIntCoor&, BitArray&, Molecule&);
-static void add_out(RefSetIntCoor&, BitArray&, Molecule&);
-
-static int linear(Molecule&,int,int,int);
-static int hterminal(Molecule&, BitArray&, int);
-static int nearest_contact(int,Molecule&);
+#define VERBOSE 0
 
 ///////////////////////////////////////////////////////////////////////////
 // members of IntMolecularCoor
@@ -53,13 +45,12 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
   scale_bends_(1.0),
   scale_tors_(1.0),
   scale_outs_(1.0),
-  nextra_bonds_(0),
-  extra_bonds_(0),
   max_update_steps_(100),
   max_update_disp_(0.5),
   given_fixed_values_(0)
 {
   new_coords();
+  generator_ = new IntCoorGen(mol);
 }
 
 IntMolecularCoor::IntMolecularCoor(const RefKeyVal& keyval):
@@ -85,8 +76,7 @@ IntMolecularCoor::IntMolecularCoor(const RefKeyVal& keyval):
 IntMolecularCoor::IntMolecularCoor(StateIn& s):
   MolecularCoor(s)
 {
-  s.get(nextra_bonds_);
-  s.get(extra_bonds_);
+  generator_.restore_state(s);
 
   if (s.version(static_class_desc()) >= 2) {
     //printf("IntMolecularCoor::IntMolecularCoor(StateIn& s): new version\n");
@@ -160,23 +150,29 @@ IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
   max_update_disp_ = keyval->doublevalue("max_update_disp");
   if (keyval->error() != KeyVal::OK) max_update_disp_ = 0.5;
 
-  // the extra_bonds list is given as a vector of atom numbers
-  // (atom numbering starts at 1)
-  nextra_bonds_ = keyval->count("extra_bonds");
-  nextra_bonds_ /= 2;
-  if (nextra_bonds_) {
-      extra_bonds_ = new int[nextra_bonds_*2];
-      for (int i=0; i<nextra_bonds_*2; i++) {
-          extra_bonds_[i] = keyval->intvalue("extra_bonds",i);
-          if (keyval->error() != KeyVal::OK) {
-              fprintf(stderr,"IntMolecularCoor:: keyval CTOR: "
-                      "problem reading \"extra_bonds:%d\"\n",i);
-              abort();
+  generator_ = keyval->describedclassvalue("generator");
+
+  if (generator_.null()) {
+      // the extra_bonds list is given as a vector of atom numbers
+      // (atom numbering starts at 1)
+      int nextra_bonds = keyval->count("extra_bonds");
+      nextra_bonds /= 2;
+      int *extra_bonds;
+      if (nextra_bonds) {
+          extra_bonds = new int[nextra_bonds*2];
+          for (int i=0; i<nextra_bonds*2; i++) {
+              extra_bonds[i] = keyval->intvalue("extra_bonds",i);
+              if (keyval->error() != KeyVal::OK) {
+                  fprintf(stderr,"IntMolecularCoor:: keyval CTOR: "
+                          "problem reading \"extra_bonds:%d\"\n",i);
+                  abort();
+                }
             }
         }
-    }
-  else {
-      extra_bonds_ = 0;
+      else {
+          extra_bonds = 0;
+        }
+      generator_ = new IntCoorGen(molecule_, nextra_bonds, extra_bonds);
     }
           
 
@@ -207,55 +203,36 @@ IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
 void
 IntMolecularCoor::init()
 {
-  Molecule& m = *molecule_.pointer();
+  RefSetIntCoor redundant = new SetIntCoor;
+  generator_->generate(redundant);
 
-  // let's go through the geometry and find all the close contacts
-  // bonds is a lower triangle matrix of 1's and 0's indicating whether
-  // there is a bond between atoms i and j
-
-  BitArray bonds(m.natom(),m.natom());
-
+  // sort out the simple coordinates by type
   int i;
-  for(i=0; i < m.natom(); i++) {
-      double at_rad_i = m[i].element().atomic_radius();
-
-      for(int j=0; j < i; j++) {
-          double at_rad_j = m[j].element().atomic_radius();
-
-          if (dist(m[i].point(),m[j].point()) < 1.1*(at_rad_i+at_rad_j))
-            bonds.set(i,j);
+  for (i=0; i<redundant->n(); i++) {
+      RefIntCoor coor = redundant->coor(i);
+      all_->add(coor);
+      if (coor->class_desc()
+          == StreSimpleCo::static_class_desc()) {
+          bonds_->add(coor);
+        }
+      else if (coor->class_desc()
+               == BendSimpleCo::static_class_desc()) {
+          bends_->add(coor);
+        }
+      else if (coor->class_desc()
+               == TorsSimpleCo::static_class_desc()
+               || coor->class_desc()
+               == ScaledTorsSimpleCo::static_class_desc()) {
+          tors_->add(coor);
+        }
+      else if (coor->class_desc()
+               == OutSimpleCo::static_class_desc()) {
+          outs_->add(coor);
+        }
+      else {
+          extras_->add(coor);
         }
     }
-
-  for (i=0; i<nextra_bonds_; i++) {
-      bonds.set(extra_bonds_[i*2]-1,extra_bonds_[i*2+1]-1);
-    }
-
-  // check for atoms bound to nothing
-  for (i=0; i < m.natom(); i++) {
-    int bound=0;
-    for (int j=0; j < m.natom(); j++) {
-      if (bonds(i,j)) {
-        bound=1;
-        break;
-      }
-    }
-    if (!bound) {
-      int j = nearest_contact(i,m);
-      fprintf(stderr,"\n  Warning!:  atom %d is not bound to anything.\n",i+1);
-      fprintf(stderr,
-              "             You may wish to add an entry to extra_bonds.\n");
-      fprintf(stderr,
-              "             Atom %d is only %f angstroms away...\n\n",j+1,
-              bohr*dist(m[i].point(),m[j].point()));
-    }
-  }
-      
-  // compute the simple internal coordinates by type
-  add_bonds(bonds_,bonds,m);
-  add_bends(bends_,bonds,m);
-  add_tors(tors_,bonds,m);
-  add_out(outs_,bonds,m);
 
   if (given_fixed_values_) {
       // save the given coordinate values
@@ -301,6 +278,39 @@ IntMolecularCoor::init()
   dim_ = matrixkit_->dimension(variable_->n(), "Nvar");
   dvc_ = matrixkit_->dimension(variable_->n()+constant_->n(),
                                "Nvar+Nconst");
+#if 1
+    {
+      const double epsilon = 0.001;
+
+      // compute the condition number
+      RefSCMatrix B(dim_, dnatom3_);
+      variable_->bmat(molecule_, B);
+
+      // Compute the singular value decomposition of B
+      RefSCMatrix U(dim_,dim_);
+      RefSCMatrix V(dnatom3_,dnatom3_);
+      RefSCDimension min;
+      if (dnatom3_.n()<dim_.n()) min = dnatom3_;
+      else min = dim_;
+      int nmin = min.n();
+      RefDiagSCMatrix sigma(min);
+      B.svd(U,sigma,V);
+
+      // Compute the epsilon rank of B
+      int i, rank = 0;
+      for (i=0; i<nmin; i++) {
+          if (sigma(i) > epsilon) rank++;
+        }
+
+      if (rank != dim_.n()) {
+          printf("IntMolecularCoor::init: rank changed\n");
+        }
+
+      double kappa2 = sigma(0)/sigma(dim_.n()-1);
+
+      printf("IntMolecularCoor::init: condition number = %14.8f\n", kappa2);
+    }
+#endif
 }
 
 static int
@@ -463,7 +473,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
       // check that fixed coordinates be totally symmetric
       if (Ktmp.nrow() != count_nonzero(totally_symmetric_fixed, ts_eps)) {
           fprintf(stderr, "WARNING: only %d of %d fixed coordinates are"
-                  "totally symmetric\n",
+                  " totally symmetric\n",
                   count_nonzero(totally_symmetric_fixed, ts_eps), dfixed.n());
         }
 
@@ -661,7 +671,6 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
 
 IntMolecularCoor::~IntMolecularCoor()
 {
-  if (extra_bonds_) delete[] extra_bonds_;
 }
 
 void
@@ -669,8 +678,7 @@ IntMolecularCoor::save_data_state(StateOut&s)
 {
   MolecularCoor::save_data_state(s);
 
-  s.put(nextra_bonds_);
-  s.put(extra_bonds_,2*nextra_bonds_);
+  generator_.save_state(s);
 
   s.put(max_update_steps_);
   s.put(max_update_disp_);
@@ -723,28 +731,26 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
   // compute the internal coordinate displacements
   RefSCVector old_internal(dvc_);
 
-  all_to_internal(old_internal);
-
   RefSCMatrix internal_to_cart_disp;
+  double maxabs_cart_diff = 0.0;
   for (int step = 0; step < max_update_steps_; step++) {
       // compute the old internal coordinates
       all_to_internal(old_internal);
 
+#if VERBOSE
+      SCostream::cout << "Coordinates on step " << step << ":" << endl;
+      variable_->print();
+#endif
+
       // the displacements
       RefSCVector displacement = new_internal - old_internal;
-      RefSCElementMaxAbs maxabs = new SCElementMaxAbs();
-      RefSCElementOp op = maxabs;
-      displacement.element_op(op);
-      if (maxabs->result() < cartesian_tolerance_) {
 
-          constant_->update_values(molecule_);
-          variable_->update_values(molecule_);
-
-          return 0;
-        }
-
-      if ((update_bmat_ && (maxabs->result()>update_tolerance))
+      if ((update_bmat_ && maxabs_cart_diff>update_tolerance)
           || internal_to_cart_disp.null()) {
+#if VERBOSE
+          SCostream::cout << "updating bmatrix" << endl;
+#endif
+
           int i;
           RefSCMatrix bmat(dvc_,dnatom3_);
 
@@ -806,6 +812,19 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
           molecule[i/3][i%3] += cartesian_displacement(i);
 #endif          
         }
+
+      // check for convergence
+      RefSCElementMaxAbs maxabs = new SCElementMaxAbs();
+      RefSCElementOp op = maxabs;
+      cartesian_displacement.element_op(op);
+      maxabs_cart_diff = maxabs->result();
+      if (maxabs_cart_diff < cartesian_tolerance_) {
+
+          constant_->update_values(molecule_);
+          variable_->update_values(molecule_);
+
+          return 0;
+        }
     }
 
   cout.flush();
@@ -831,6 +850,13 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
 int
 IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
 {
+  if (new_internal.dim().n() != dim_.n()
+      || dvc_.n() != variable_->n() + constant_->n()
+      || new_internal.dim().n() != variable_->n()) {
+      fprintf(stderr,"to_cartesian: internal error in dim\n");
+      abort();
+    }
+
   RefSCVector all_internal(dvc_);
 
   int i,j;
@@ -846,6 +872,13 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
 int
 IntMolecularCoor::all_to_internal(RefSCVector&internal)
 {
+  if (internal.dim().n() != dvc_.n()
+      || dim_.n() != variable_->n()
+      || dvc_.n() != variable_->n() + constant_->n()) {
+      fprintf(stderr,"all_to_internal: internal error in dim\n");
+      abort();
+    }
+
   variable_->update_values(molecule_);
   constant_->update_values(molecule_);
    
@@ -865,6 +898,12 @@ IntMolecularCoor::all_to_internal(RefSCVector&internal)
 int
 IntMolecularCoor::to_internal(RefSCVector&internal)
 {
+  if (internal.dim().n() != dim_.n()
+      || dim_.n() != variable_->n()) {
+      fprintf(stderr,"to_internal: internal error in dim\n");
+      abort();
+    }
+
   variable_->update_values(molecule_);
    
   int n = dim_.n();
@@ -953,185 +992,10 @@ IntMolecularCoor::nconstrained()
   return fixed_->n();
 }
 
-///////////////////////////////////////////////////////////////////////////
-// auxillary functions of IntMolecularCoor
-
-/*
- * the following are translations of functions written by Gregory Humphreys
- * at the NIH
- */
-
-/*
- * for each bonded pair, add an entry to the simple coord list
- */
-
-static void
-add_bonds(RefSetIntCoor& list, BitArray& bonds, Molecule& m)
-{
-  int i,j,ij;
-  int labelc=0;
-  char label[80];
-
-  for(i=ij=0; i < m.natom(); i++) {
-    for(j=0; j <= i; j++,ij++) {
-      if(bonds[ij]) {
-        labelc++;
-        sprintf(label,"s%d",labelc);
-        list->add(new Stre(label,j+1,i+1));
-        }
-      }
-    }
-  }
-
-/*
- * for each pair of bonds sharing an atom, add a bend to the simple
- * coord list
- *
- * check each bend to see if it is linear.  if so, then we'll have to add
- * in-plane and out-of-plane linear bends as well
- *
- * let's do this later...I think I only want to do this for symmetric
- * tops, but I'm not sure...anyway, for now, let's just eliminate linear
- * bends so things like co2 won't blow up
- */
-
-static int
-linear(Molecule& m, int i, int j, int k)
-{
-  double dij = dist(m[i].point(),m[j].point());
-  double dik = dist(m[i].point(),m[k].point());
-  double djk = dist(m[j].point(),m[k].point());
-
- // if dij+djk==dik, then this bug is linear
-  if((dij+djk - dik) < 1.0e-5) return 1;
-  
-  return 0;
-  }
-
-static void
-add_bends(RefSetIntCoor& list, BitArray& bonds, Molecule& m)
-{
-  int i,j,k;
-  int labelc=0;
-  char label[80];
-
-  int n = m.natom();
-
-  for(i=0; i < n; i++) {
-    for(j=0; j < n; j++) {
-      if(bonds(i,j)) {
-        for(k=0; k < i; k++) {
-          if(bonds(j,k)) {
-            if(linear(m,i,j,k)) continue;
-
-	    labelc++;
-	    sprintf(label,"b%d",labelc);
-	    list->add(new Bend(label,k+1,j+1,i+1));
-	    }
-          }
-	}
-      }
-    }
-  }
-
-/*
- * for each pair of bends which share a common bond, add a torsion
- */
-
-/*
- * just look at the heavy-atom skeleton. return true if i is a terminal
- * atom.
- */
-
-static int
-hterminal(Molecule& m, BitArray& bonds, int i)
-{
-  int nh=0;
-  for (int j=0; j < m.natom(); j++)
-    if (bonds(i,j) && m[j].element().mass() > 1.1) nh++;
-  return (nh==1);
-}
-
-static void
-add_tors(RefSetIntCoor& list, BitArray& bonds, Molecule& m)
-{
-  int i,j,k,l;
-  int labelc=0;
-  char label[80];
-
-  int n = m.natom();
-
-  for(j=0; j < n; j++) {
-    for(k=0; k < j; k++) {
-      if(bonds(j,k)) {
-        for(i=0; i < n; i++) {
-          if(k==i) continue;
-
-         // no hydrogen torsions, ok?
-	  if (m[i].element().mass() < 1.1 && !hterminal(m,bonds,j)) continue;
-
-          if (bonds(j,i)) {
-	    if (linear(m,i,j,k)) continue;
-
-            for (l=0; l < n; l++) {
-              if (l==j || l==i) continue;
-
-             // no hydrogen torsions, ok?
-	      if (m[l].element().mass() < 1.1 && !hterminal(m,bonds,k))
-                continue;
-
-              if (bonds(k,l)) {
-		if(linear(m,j,k,l)) continue;
-
-		labelc++;
-		sprintf(label,"t%d",labelc);
-		list->add(new Tors(label,l+1,k+1,j+1,i+1));
-		}
-	      }
-	    }
-          }
-	}
-      }
-    }
-  }
-
-static void
-add_out(RefSetIntCoor& list, BitArray& bonds, Molecule& m)
-{
-  int i,j,k,l;
-  int labelc=0;
-  char label[80];
-
-  int n = m.natom();
-
- // first find all tri-coordinate atoms
-  for(i=0; i < n; i++) {
-    if(bonds.degree(i)!=3) continue;
-
-   // then look for terminal atoms connected to i
-    for(j=0; j < n; j++) {
-      if(bonds(i,j) && bonds.degree(j)==1) {
-
-        for(k=0; k < n; k++) {
-          if(k!=j && bonds(i,k)) {
-            for(l=0; l < k; l++) {
-              if(l!=j && bonds(i,l)) {
-		labelc++;
-		sprintf(label,"o%d",labelc);
-		list->add(new Out(label,j+1,i+1,l+1,k+1));
-		}
-	      }
-	    }
-          }
-	}
-      }
-    }
-  }
-
 void
 IntMolecularCoor::print(SCostream& os)
 {
-  os.indent() << "Parameters:\n";
+  os.indent() << "IntMolecularCoor Parameters:\n";
   os++;
   os.indent() << "update_bmat = " << (update_bmat_?"yes":"no") << endl;
   os.indent() << "scale_bonds = " << scale_bonds_ << endl;
@@ -1179,23 +1043,4 @@ IntMolecularCoor::print_simples(SCostream& os)
   if (followed_.nonnull()) {
     os.indent() << "Followed:\n"; os++; followed_->print(molecule_,os); os--;
   }
-}
-
-static int
-nearest_contact(int i, Molecule& m)
-{
-  double d=-1.0;
-  int n=0;
-  
-  for (int j=0; j < m.natom(); j++) {
-    double td = dist(m[i].point(),m[j].point());
-    if (j==i)
-      continue;
-    else if (d < 0 || td < d) {
-      d = td;
-      n = j;
-    }
-  }
-  
-  return n;
 }

@@ -4,6 +4,7 @@ extern "C" {
 };
 
 #include <math/scmat/matrix.h>
+#include <math/scmat/elemop.h>
 #include <chemistry/molecule/localdef.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
@@ -11,6 +12,189 @@ extern "C" {
 
 #include <math/topology/bitarray.h>
 
+#define VERBOSE 0
+
+///////////////////////////////////////////////////////////////////////////
+// SymmCoorTransform
+
+class SymmCoorTransform: public NonlinearTransform {
+  private:
+    RefMolecule molecule_;
+    RefSCDimension dnatom3_;
+    RefSetIntCoor oldintcoor_;
+    RefSetIntCoor newintcoor_;
+    RefSCMatrixKit matrixkit_;
+    int transform_hessian_;
+  public:
+    SymmCoorTransform(const RefMolecule& molecule,
+                      const RefSCDimension& dnatom3,
+                      const RefSCMatrixKit& kit,
+                      const RefSetIntCoor& oldintcoor,
+                      const RefSetIntCoor& newintcoor,
+                      int transform_hessian);
+    void to_cartesian(const RefSCVector& new_internal);
+    void transform_coordinates(const RefSCVector& x);
+    void transform_hessian(const RefSymmSCMatrix& h);
+};
+
+SymmCoorTransform::SymmCoorTransform(const RefMolecule& molecule,
+                                     const RefSCDimension& dnatom3,
+                                     const RefSCMatrixKit& kit,
+                                     const RefSetIntCoor& oldintcoor,
+                                     const RefSetIntCoor& newintcoor,
+                                     int transform_hessian)
+{
+  molecule_ = new Molecule(*molecule.pointer());
+  dnatom3_ = dnatom3;
+  matrixkit_ = kit;
+  oldintcoor_ = oldintcoor;
+  newintcoor_ = newintcoor;
+  transform_hessian_ = transform_hessian;
+}
+
+void
+SymmCoorTransform::to_cartesian(const RefSCVector& new_internal)
+{
+  // get a reference to Molecule for convenience
+  Molecule& molecule = *(molecule_.pointer());
+
+  RefSCDimension dim = new_internal.dim();
+
+  // don't bother updating the bmatrix when the error is less than this
+  const double update_tolerance = 1.0e-3;
+  const double cartesian_tolerance = 1.0e-8;
+
+  // compute the internal coordinate displacements
+  RefSCVector old_internal(new_internal.dim());
+
+  RefSCMatrix internal_to_cart_disp;
+  double maxabs_cart_diff = 0.0;
+  for (int step = 0; step < 100; step++) {
+      // compute the old internal coordinates
+      oldintcoor_->update_values(molecule_);
+      oldintcoor_->values_to_vector(old_internal);
+
+      // the displacements
+      RefSCVector displacement = new_internal - old_internal;
+
+      if (maxabs_cart_diff>update_tolerance
+          || internal_to_cart_disp.null()) {
+
+          int i;
+          RefSCMatrix bmat(dim,dnatom3_);
+
+          // form the bmatrix
+          oldintcoor_->bmat(molecule_,bmat);
+
+          // Compute the singular value decomposition of B
+          RefSCMatrix U(dim,dim);
+          RefSCMatrix V(dnatom3_,dnatom3_);
+          RefSCDimension min;
+          if (dnatom3_.n()<dim.n()) min = dnatom3_;
+          else min = dim;
+          int nmin = min.n();
+          RefDiagSCMatrix sigma(min);
+          bmat.svd(U,sigma,V);
+
+          // compute the epsilon rank of B
+          int rank = 0;
+          for (i=0; i<nmin; i++) {
+              if (fabs(sigma(i)) > 0.0001) rank++;
+            }
+
+          RefSCDimension drank = matrixkit_->dimension(rank);
+          RefDiagSCMatrix sigma_i(drank);
+          for (i=0; i<rank; i++) {
+              sigma_i(i) = 1.0/sigma(i);
+            }
+          RefSCMatrix Ur(dim, drank);
+          RefSCMatrix Vr(dnatom3_, drank);
+          Ur.assign_subblock(U,0, dim.n()-1, 0, drank.n()-1, 0, 0);
+          Vr.assign_subblock(V,0, dnatom3_.n()-1, 0, drank.n()-1, 0, 0);
+          internal_to_cart_disp = Vr * sigma_i * Ur.t();
+        }
+
+      // compute the cartesian displacements
+      RefSCVector cartesian_displacement = internal_to_cart_disp*displacement;
+      // update the geometry
+      for (int i=0; i < dnatom3_.n(); i++) {
+          molecule[i/3][i%3] += cartesian_displacement(i);
+        }
+
+      // check for convergence
+      RefSCElementMaxAbs maxabs = new SCElementMaxAbs();
+      RefSCElementOp op = maxabs;
+      cartesian_displacement.element_op(op);
+      maxabs_cart_diff = maxabs->result();
+      if (maxabs_cart_diff < cartesian_tolerance) {
+          oldintcoor_->update_values(molecule_);
+          return;
+        }
+    }
+
+  printf("WARNING: SymmCoorTransform"
+         "::to_cartesian(RefSCVector&):"
+         " too many iterations in geometry update\n");
+
+  fflush(stderr);
+
+  new_internal.print("SymmCoorTransform: desired internal coordinates");
+  (new_internal
+   - old_internal).print("SymmCoorTransform: difference of desired and actual coordinates");
+
+  abort();
+}
+
+void
+SymmCoorTransform::transform_coordinates(const RefSCVector& x)
+{
+  if (x.null()) return;
+
+  RefSCDimension dim = x.dim();
+
+  // using the old coordinates update molecule
+  to_cartesian(x);
+
+  // compute the new coordinates
+  newintcoor_->update_values(molecule_);
+  newintcoor_->values_to_vector(x);
+
+  // compute the linear transformation information
+
+  // the old B matrix
+  RefSCMatrix B(dim, dnatom3_);
+  oldintcoor_->bmat(molecule_, B);
+
+  // get the B matrix for the new coordinates
+  RefSCMatrix Bnew(dim, dnatom3_);
+  newintcoor_->update_values(molecule_);
+  newintcoor_->bmat(molecule_, Bnew);
+
+  // the transform from cartesian to new internal coordinates
+  RefSymmSCMatrix bmbt(dim);
+  bmbt.assign(0.0);
+  bmbt.accumulate_symmetric_product(Bnew);
+  RefSCMatrix cart_to_new_internal = bmbt.gi() * Bnew;
+  Bnew = 0;
+  bmbt = 0;
+
+  linear_transform_ = cart_to_new_internal * B.t();
+#if VERBOSE
+  linear_transform_.print("old internal to new");
+#endif
+}
+
+void
+SymmCoorTransform::transform_hessian(const RefSymmSCMatrix& h)
+{
+  if (transform_hessian_) {
+      NonlinearTransform::transform_hessian(h);
+    }
+  else {
+      printf("WARNING: SymmCoorTransform::transform_hessian: "
+             "skipping hessian transform");
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////
 // members of SymmMolecularCoor
@@ -39,11 +223,23 @@ SymmMolecularCoor::SymmMolecularCoor(const RefKeyVal& keyval):
   IntMolecularCoor(keyval)
 {
   init();
+
+  int itmp;
+  double dtmp;
+  itmp = keyval->booleanvalue("change_coordinates");
+  if (keyval->error() == KeyVal::OK) change_coordinates_ = itmp;
+  itmp = keyval->booleanvalue("transform_hessian");
+  if (keyval->error() == KeyVal::OK) transform_hessian_ = itmp;
+  dtmp = keyval->doublevalue("max_kappa2");
+  if (keyval->error() == KeyVal::OK) max_kappa2_ = dtmp;
 }
 
 SymmMolecularCoor::SymmMolecularCoor(StateIn& s):
   IntMolecularCoor(s)
 {
+  s.get(change_coordinates_);
+  s.get(transform_hessian_);
+  s.get(max_kappa2_);
 }
 
 SymmMolecularCoor::~SymmMolecularCoor()
@@ -54,6 +250,18 @@ void
 SymmMolecularCoor::save_data_state(StateOut&s)
 {
   IntMolecularCoor::save_data_state(s);
+  s.put(change_coordinates_);
+  s.put(transform_hessian_);
+  s.put(max_kappa2_);
+}
+
+void
+SymmMolecularCoor::init()
+{
+  IntMolecularCoor::init();
+  change_coordinates_ = 0;
+  max_kappa2_ = 10.0;
+  transform_hessian_ = 1;
 }
 
 void
@@ -65,12 +273,10 @@ SymmMolecularCoor::form_coordinates()
   int ntors = tors_->n();
   int nouts = outs_->n();
   int nextras = extras_->n();
-  for (i=0; i<nbonds; i++) all_->add(bonds_->coor(i));
-  for (i=0; i<nbends; i++) all_->add(bends_->coor(i));
-  for (i=0; i<ntors; i++) all_->add(tors_->coor(i));
-  for (i=0; i<nouts; i++) all_->add(outs_->coor(i));
-  for (i=0; i<nextras; i++) all_->add(extras_->coor(i));
 
+  RefSetIntCoor saved_fixed_ = fixed_;
+  fixed_ = new SetIntCoor;
+  fixed_->add(fixed_);
   // if we're following coordinates, add them to the fixed list
   if (followed_.nonnull())
     fixed_->add(followed_);
@@ -179,8 +385,8 @@ SymmMolecularCoor::form_coordinates()
     << "    found " << constant_->n() << " constant coordinates\n";
   cout.flush();
 
-
   delete[] is_totally_symmetric;
+  fixed_ = saved_fixed_;
 }
 
 void
@@ -223,4 +429,80 @@ RefSymmSCMatrix
 SymmMolecularCoor::inverse_hessian(RefSymmSCMatrix& hessian)
 {
   return hessian.gi();
+}
+
+// Possibly change to a new coordinate system
+RefNonlinearTransform
+SymmMolecularCoor::change_coordinates()
+{
+  if (dim_.n() == 0 || !change_coordinates_) return new IdentityTransform;
+
+  const double epsilon = 0.001;
+
+  // compute the condition number of the old coordinate system at the
+  // current point
+  RefSCMatrix B(dim_, dnatom3_);
+  variable_->bmat(molecule_, B);
+
+  // Compute the singular value decomposition of B
+  RefSCMatrix U(dim_,dim_);
+  RefSCMatrix V(dnatom3_,dnatom3_);
+  RefSCDimension min;
+  if (dnatom3_.n()<dim_.n()) min = dnatom3_;
+  else min = dim_;
+  int nmin = min.n();
+  RefDiagSCMatrix sigma(min);
+  B.svd(U,sigma,V);
+
+  // Compute the epsilon rank of B
+  int i, rank = 0;
+  for (i=0; i<nmin; i++) {
+      if (sigma(i) > epsilon) rank++;
+    }
+  // the rank could get bigger if there is a fixed coordinate
+  if (rank < dim_.n() || ((fixed_.null()
+                           || fixed_->n() == 0) && rank != dim_.n())) {
+      printf("SymmMolecularCoor::change_coordinates: disallowed rank change\n");
+      abort();
+    }
+  if (rank != dim_.n()) {
+      printf("SymmMolecularCoor::change_coordinates: rank changed\n");
+    }
+
+  double kappa2 = sigma(0)/sigma(dim_.n()-1);
+
+  printf("SymmMolecularCoor: condition number = %14.8f (max = %14.8f)\n",
+         kappa2, max_kappa2_);
+
+  if (kappa2 > max_kappa2_) {
+      RefSetIntCoor oldvariable = new SetIntCoor;
+      oldvariable->add(variable_);
+
+      // form the new variable coordinates
+      form_coordinates();
+
+      SymmCoorTransform *trans = new SymmCoorTransform(molecule_,
+                                                       dnatom3_,
+                                                       matrixkit_,
+                                                       oldvariable,
+                                                       variable_,
+                                                       transform_hessian_);
+      return trans;
+    }
+
+  return new IdentityTransform;
+}
+
+void
+SymmMolecularCoor::print(SCostream& os)
+{
+  os.indent() << "SymmMolecularCoor Parameters:\n";
+  os++;
+  os.indent() << "change_coordinates = "
+              << (change_coordinates_?"yes":"no") << endl;
+  os.indent() << "transform_hessian = "
+              << (transform_hessian_?"yes":"no") << endl;
+  os.indent() << "max_kappa2 = "
+              << max_kappa2_ << endl;
+  os--;
 }

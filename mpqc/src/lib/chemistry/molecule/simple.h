@@ -36,6 +36,8 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
 
+#include <math/scmat/vector3.h>
+
 //////////////////////////////////////////////////////////////////////////
 
 //texi
@@ -120,7 +122,7 @@ SavableState_REF_dec(SimpleCo);
     void save_data_state(StateOut&);                                          \
   private:
 
-#define SimpleCo_IMPL(classname)					      \
+#define SimpleCo_IMPL_eq(classname)					      \
 SimpleCo& classname::operator=(const SimpleCo& c)			      \
 {									      \
   classname *cp = classname::castdown((SimpleCo*)&c);			      \
@@ -133,15 +135,24 @@ SimpleCo& classname::operator=(const SimpleCo& c)			      \
     }									      \
 									      \
   return *this;								      \
-  }									      \
+  }
+
+#define SimpleCo_IMPL_StateIn(classname)				      \
 classname::classname(StateIn&si):					      \
   SimpleCo(si)								      \
 {									      \
-}									      \
+}
+
+#define SimpleCo_IMPL_save_data_state(classname)			      \
 void classname::save_data_state(StateOut&so)				      \
 {									      \
   SimpleCo::save_data_state(so);					      \
 }
+
+#define SimpleCo_IMPL(classname)		\
+        SimpleCo_IMPL_eq(classname)		\
+        SimpleCo_IMPL_StateIn(classname)	\
+        SimpleCo_IMPL_save_data_state(classname)
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -264,6 +275,49 @@ SimpleCo_DECLARE(TorsSimpleCo)
   };
 
 typedef TorsSimpleCo Tors;
+
+/////////////////////////////////////////////////////////////////////////
+
+//texi
+// @code{ScaledTorsSimpleCo} is used to describe the angle between the plains
+// abc and bcd described by atoms a, b, c, and d.  It is scaled so it makes
+// sense when the abc or bcd atoms are nearly colinear.
+class ScaledTorsSimpleCo : public SimpleCo { 
+#   define CLASSNAME ScaledTorsSimpleCo
+#   define HAVE_CTOR
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+SimpleCo_DECLARE(ScaledTorsSimpleCo)
+  private:
+    double old_torsion_;
+  public:
+    ScaledTorsSimpleCo();
+    ScaledTorsSimpleCo(const ScaledTorsSimpleCo&);
+    //texi This constructor takes a string containing a label, and four
+    // integers a, b, c, and d which give the indices of the atoms involved in
+    // the torsion angle abcd. Atom numbering begins at atom 1, not atom 0.
+    ScaledTorsSimpleCo(const char *refr, int, int, int, int);
+    //texi The KeyVal constructor.  This calls the @code{SimpleCo} keyval
+    // constructor with an integer argument of 4 (@ref{The SimpleCo KeyVal
+    // Constructor}).
+    ScaledTorsSimpleCo(const RefKeyVal&);
+
+    ~ScaledTorsSimpleCo();
+
+    //texi Always returns the string "TORS".
+    const char * ctype() const;
+    
+    //texi Returns the value of the angle abc in radians.
+    double radians() const;
+    //texi Returns the value of the angle abc in degrees.
+    double degrees() const;
+    //texi Returns the value of the angle abc in degrees.
+    double preferred_value() const;
+  };
+
+typedef ScaledTorsSimpleCo ScaledTors;
 
 /////////////////////////////////////////////////////////////////////////
 

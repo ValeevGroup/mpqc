@@ -12,6 +12,7 @@
 #include <util/container/array.h>
 #include <util/container/set.h>
 #include <math/scmat/matrix.h>
+#include <math/optimize/transform.h>
 #include <chemistry/molecule/molecule.h>
 
 class SSRefIntCoor;
@@ -193,9 +194,64 @@ class SetIntCoor: public SavableState {
     //texi Recalculate the values of the internal coordinates in the set.
     virtual void update_values(RefMolecule&);
     //texi Copy the values of the internal coordinates to a vector.
-    virtual void values_to_vector(RefSCVector&);
+    virtual void values_to_vector(const RefSCVector&);
 };
 SavableState_REF_dec(SetIntCoor);
+
+//////////////////////////////////////////////////////////////////////////
+
+class BitArray;
+
+//texi
+// @code{IntCoorGen} generates a set of simple internal coordinates given a
+// molecule.
+class IntCoorGen: public SavableState
+{
+#   define CLASSNAME IntCoorGen
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    RefMolecule molecule_;
+    int linear_bends_;
+    int linear_tors_;
+    int linear_stors_;
+    int nextra_bonds_;
+    int *extra_bonds_;
+    double linear_bend_thres_;
+    double linear_tors_thres_;
+    double radius_scale_factor_;
+
+    double cos_ijk(Molecule& m, int i, int j, int k);
+    int hterminal(Molecule& m, BitArray& bonds, int i);
+    int nearest_contact(int i, Molecule& m);
+
+    void add_bonds(const RefSetIntCoor& list, BitArray& bonds, Molecule& m);
+    void add_bends(const RefSetIntCoor& list, BitArray& bonds, Molecule& m);
+    void add_tors(const RefSetIntCoor& list, BitArray& bonds, Molecule& m);
+    void add_out(const RefSetIntCoor& list, BitArray& bonds, Molecule& m);
+  public:
+    //texi Create an @code{IntCoorGen} given a @{Molecule} and, optionally,
+    // extra bonds.  @code{IntCoorGen} keeps a reference to @var{extra_bonds}
+    // and deletes it when the destructor is called.
+    IntCoorGen(const RefMolecule&, int nextra_bonds=0, int *extra_bonds=0);
+    //texi Standard constructors for @code{IntCoorGen}.
+    IntCoorGen(const RefKeyVal&);
+    IntCoorGen(StateIn&);
+
+    ~IntCoorGen();
+
+    //texi Standard member.
+    void save_data_state(StateOut&);
+
+    //texi This generates a set of internal coordinates.
+    virtual void generate(const RefSetIntCoor&);
+
+    //texi Print out information about this.
+    virtual void print(SCostream& out=SCostream::cout);
+};
+SavableState_REF_dec(IntCoorGen);
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -281,6 +337,12 @@ class MolecularCoor: public SavableState
 
     //texi Returns the number of constrained coordinates.
     virtual int nconstrained();
+
+    //texi When this is called, @code{MoleculeCoor} may select a new
+    // internal coordinate system and return a transform to it.
+    // The default action is
+    // to not change anything and return an @code{IdentityTransform}.
+    virtual RefNonlinearTransform change_coordinates();
 };
 SavableState_REF_dec(MolecularCoor);
 
@@ -298,6 +360,8 @@ class IntMolecularCoor: public MolecularCoor
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   protected:
+    RefIntCoorGen generator_;
+
     void form_K_matrices(RefSCDimension& dredundant,
                          RefSCDimension& dfixed,
                          RefSCMatrix& K,
@@ -318,7 +382,9 @@ class IntMolecularCoor: public MolecularCoor
     RefSetIntCoor bends_;
     RefSetIntCoor tors_;
     RefSetIntCoor outs_;
-    RefSetIntCoor extras_; // these are provided by the user
+    // these are provided by the user or generated coordinates that
+    // could not be assigned to any of the above catagories
+    RefSetIntCoor extras_;
 
     RefSetIntCoor all_;
 
@@ -403,7 +469,15 @@ class SymmMolecularCoor: public IntMolecularCoor
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
+  protected:
+    // true if coordinates should be changed during optimization
+    int change_coordinates_;
+    // true if hessian should be transformed too (should always be true)
+    int transform_hessian_;
+    // max value for the condition number if coordinates can be changed
+    double max_kappa2_;
 
+    void init();
   public:
     SymmMolecularCoor(RefMolecule&mol);
     SymmMolecularCoor(StateIn&);
@@ -422,6 +496,12 @@ class SymmMolecularCoor: public IntMolecularCoor
     void guess_hessian(RefSymmSCMatrix&hessian);
     //texi Invert the hessian.
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
+
+    //texi This overrides @code{MoleculeCoor}'s @code{change\_coordinates}
+    // and might transform to a new set of coordinates.
+    RefNonlinearTransform change_coordinates();
+
+    void print(SCostream& =SCostream::cout);
 };
 
 /////////////////////////////////////////////////////////////////////////

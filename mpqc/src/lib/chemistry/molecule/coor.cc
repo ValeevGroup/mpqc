@@ -11,6 +11,9 @@ extern "C" {
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/simple.h>
+#include <chemistry/molecule/localdef.h>
+
+#include <math/topology/bitarray.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -22,6 +25,13 @@ extern "C" {
 #define CLASSNAME SetIntCoor
 #define PARENTS public SavableState
 #define HAVE_CTOR
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+#define CLASSNAME IntCoorGen
+#define PARENTS public SavableState
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
@@ -179,9 +189,21 @@ SetIntCoor::SetIntCoor()
 SetIntCoor::SetIntCoor(const RefKeyVal& keyval)
 {
   int n = keyval->count();
-  if (!n) {
+
+  RefIntCoorGen gen = keyval->describedclassvalue("generator");
+
+  if (gen.null() && !n) {
       fprintf(stderr,"SetIntCoor::SetIntCoor: bad input\n");
       abort();
+    }
+
+  if (gen.nonnull()) {
+      // Make sure that gen doesn't delete me before my reference
+      // count gets incremented.
+      this->reference();
+      gen->generate(this);
+      // Now it is safe to decrement my reference count back down to zero.
+      this->dereference();
     }
 
   for (int i=0; i<n; i++) {
@@ -363,7 +385,7 @@ SetIntCoor::update_values(RefMolecule&mol)
 }
 
 void
-SetIntCoor::values_to_vector(RefSCVector&v)
+SetIntCoor::values_to_vector(const RefSCVector&v)
 {
   for (int i=0; i<coor_.length(); i++) {
       v(i) = coor_[i]->value();
@@ -658,4 +680,388 @@ int
 MolecularCoor::nconstrained()
 {
   return 0;
+}
+
+// The default action is to never change the coordinates.
+RefNonlinearTransform
+MolecularCoor::change_coordinates()
+{
+  return new IdentityTransform;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// members of IntCoorGen
+
+SavableState_REF_def(SetIntCoor);
+
+void *
+IntCoorGen::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+IntCoorGen::IntCoorGen(const RefMolecule& mol,
+                       int nextra_bonds, int *extra_bonds)
+{
+  molecule_ = mol;
+  nextra_bonds_ = nextra_bonds;
+  extra_bonds_ = extra_bonds;
+  radius_scale_factor_ = 1.1;
+  linear_bend_thres_ = cos(5.0*M_PI/360.0);
+  linear_tors_thres_ = cos(5.0*M_PI/360.0);
+  linear_bends_ = 1;
+  linear_tors_ = 0;
+  linear_stors_ = 1;
+}
+
+IntCoorGen::IntCoorGen(const RefKeyVal& keyval)
+{
+  molecule_ = keyval->describedclassvalue("molecule");
+
+  radius_scale_factor_ = keyval->doublevalue("radius_scale_factor");
+  if (keyval->error() != KeyVal::OK) radius_scale_factor_ = 1.1;
+
+  // degrees
+  linear_bend_thres_ = keyval->doublevalue("linear_bend_threshold");
+  if (keyval->error() != KeyVal::OK)
+      linear_bend_thres_ = 5.0;
+
+  // entered in degrees; stored as cos(theta)
+  linear_tors_thres_ = keyval->doublevalue("linear_tors_threshold");
+  if (keyval->error() != KeyVal::OK)
+      linear_tors_thres_ = 5.0;
+
+  linear_bends_ = keyval->booleanvalue("linear_bends");
+  if (keyval->error() != KeyVal::OK) linear_bends_ = 1;
+
+  linear_tors_ = keyval->booleanvalue("linear_tors");
+  if (keyval->error() != KeyVal::OK) linear_tors_ = 0;
+
+  linear_stors_ = keyval->booleanvalue("linear_stors");
+  if (keyval->error() != KeyVal::OK) linear_stors_ = 1;
+
+  // the extra_bonds list is given as a vector of atom numbers
+  // (atom numbering starts at 1)
+  nextra_bonds_ = keyval->count("extra_bonds");
+  nextra_bonds_ /= 2;
+  if (nextra_bonds_) {
+      extra_bonds_ = new int[nextra_bonds_*2];
+      for (int i=0; i<nextra_bonds_*2; i++) {
+          extra_bonds_[i] = keyval->intvalue("extra_bonds",i);
+          if (keyval->error() != KeyVal::OK) {
+              fprintf(stderr,"IntCoorGen:: keyval CTOR: "
+                      "problem reading \"extra_bonds:%d\"\n",i);
+              abort();
+            }
+        }
+    }
+  else {
+      extra_bonds_ = 0;
+    }
+}
+
+IntCoorGen::IntCoorGen(StateIn& s):
+  SavableState(s)
+{
+  molecule_.restore_state(s);
+  s.get(linear_bends_);
+  s.get(linear_tors_);
+  s.get(linear_stors_);
+  s.get(linear_bend_thres_);
+  s.get(linear_tors_thres_);
+  s.get(nextra_bonds_);
+  s.get(extra_bonds_);
+  s.get(radius_scale_factor_);
+}
+
+IntCoorGen::~IntCoorGen()
+{
+  if (extra_bonds_) delete[] extra_bonds_;
+}
+
+void
+IntCoorGen::save_data_state(StateOut& s)
+{
+  molecule_.save_state(s);
+  s.put(linear_bends_);
+  s.put(linear_tors_);
+  s.put(linear_stors_);
+  s.put(linear_bend_thres_);
+  s.put(linear_tors_thres_);
+  s.put(nextra_bonds_);
+  s.put(extra_bonds_,2*nextra_bonds_);
+  s.put(radius_scale_factor_);
+}
+
+void
+IntCoorGen::print(SCostream& out)
+{
+  out << "IntCoorGen:" << endl;
+  out++;
+  out.indent() << "linear_bends = " << linear_bends_ << endl;
+  out.indent() << "linear_tors = " << linear_tors_ << endl;
+  out.indent() << "linear_stors = " << linear_stors_ << endl;
+  out.indent() << "linear_bend_threshold = " << linear_bend_thres_ << endl;
+  out.indent() << "linear_tors_threshold = " << linear_tors_thres_ << endl;
+  out.indent() << "radius_scale_factor = " << radius_scale_factor_ << endl;
+  out.indent() << "nextra_bonds = " << nextra_bonds_ << endl;
+  out--;
+}
+
+void
+IntCoorGen::generate(const RefSetIntCoor& sic)
+{
+  Molecule& m = *molecule_.pointer();
+
+  // let's go through the geometry and find all the close contacts
+  // bonds is a lower triangle matrix of 1's and 0's indicating whether
+  // there is a bond between atoms i and j
+
+  BitArray bonds(m.natom(),m.natom());
+
+  int i;
+  for(i=0; i < m.natom(); i++) {
+      double at_rad_i = m[i].element().atomic_radius();
+
+      for(int j=0; j < i; j++) {
+          double at_rad_j = m[j].element().atomic_radius();
+
+          if (dist(m[i].point(),m[j].point())
+              < radius_scale_factor_*(at_rad_i+at_rad_j))
+            bonds.set(i,j);
+        }
+    }
+
+  for (i=0; i<nextra_bonds_; i++) {
+      bonds.set(extra_bonds_[i*2]-1,extra_bonds_[i*2+1]-1);
+    }
+
+  // check for atoms bound to nothing
+  for (i=0; i < m.natom(); i++) {
+    int bound=0;
+    for (int j=0; j < m.natom(); j++) {
+      if (bonds(i,j)) {
+        bound=1;
+        break;
+      }
+    }
+    if (!bound) {
+      int j = nearest_contact(i,m);
+      fprintf(stderr,"\n  Warning!:  atom %d is not bound to anything.\n",i+1);
+      fprintf(stderr,
+              "             You may wish to add an entry to extra_bonds.\n");
+      fprintf(stderr,
+              "             Atom %d is only %f angstroms away...\n\n",j+1,
+              bohr*dist(m[i].point(),m[j].point()));
+    }
+  }
+      
+  // compute the simple internal coordinates by type
+  add_bonds(sic,bonds,m);
+  add_bends(sic,bonds,m);
+  add_tors(sic,bonds,m);
+  add_out(sic,bonds,m);
+}
+
+///////////////////////////////////////////////////////////////////////////
+// auxillary functions of IntCoorGen
+
+/*
+ * the following are translations of functions written by Gregory Humphreys
+ * at the NIH
+ */
+
+/*
+ * for each bonded pair, add an entry to the simple coord list
+ */
+
+void
+IntCoorGen::add_bonds(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
+{
+  int i,j,ij;
+  int labelc=0;
+  char label[80];
+
+  for(i=ij=0; i < m.natom(); i++) {
+    for(j=0; j <= i; j++,ij++) {
+      if(bonds[ij]) {
+        labelc++;
+        sprintf(label,"s%d",labelc);
+        list->add(new Stre(label,j+1,i+1));
+        }
+      }
+    }
+  }
+
+/*
+ * return 1 if all three atoms are nearly on the same line.
+ */
+
+// returns fabs(cos(theta_ijk))
+double
+IntCoorGen::cos_ijk(Molecule& m, int i, int j, int k)
+{
+  SCVector3 a, b, c;
+  int xyz;
+  for (xyz=0; xyz<3; xyz++) {
+      a[xyz] = m[i].point()[xyz];
+      b[xyz] = m[j].point()[xyz];
+      c[xyz] = m[k].point()[xyz];
+    }
+  SCVector3 ab = a - b;
+  SCVector3 cb = c - b;
+  return fabs(ab.dot(cb)/(ab.norm()*cb.norm()));
+}
+
+void
+IntCoorGen::add_bends(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
+{
+  int i,j,k;
+  int labelc=0;
+  char label[80];
+
+  int n = m.natom();
+
+  double thres = cos(linear_bend_thres_*M_PI/180.0);
+
+  for(i=0; i < n; i++) {
+    for(j=0; j < n; j++) {
+      if(bonds(i,j)) {
+        for(k=0; k < i; k++) {
+          if(bonds(j,k)) {
+            if (linear_bends_ || (cos_ijk(m,i,j,k) < thres)) {
+              labelc++;
+              sprintf(label,"b%d",labelc);
+              list->add(new Bend(label,k+1,j+1,i+1));
+              }
+	    }
+          }
+	}
+      }
+    }
+  }
+
+/*
+ * for each pair of bends which share a common bond, add a torsion
+ */
+
+/*
+ * just look at the heavy-atom skeleton. return true if i is a terminal
+ * atom.
+ */
+
+int
+IntCoorGen::hterminal(Molecule& m, BitArray& bonds, int i)
+{
+  int nh=0;
+  for (int j=0; j < m.natom(); j++)
+    if (bonds(i,j) && m[j].element().mass() > 1.1) nh++;
+  return (nh==1);
+}
+
+void
+IntCoorGen::add_tors(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
+{
+  int i,j,k,l;
+  int labelc=0;
+  char label[80];
+
+  int n = m.natom();
+
+  double thres = cos(linear_tors_thres_*M_PI/180.0);
+
+  for(j=0; j < n; j++) {
+    for(k=0; k < j; k++) {
+      if(bonds(j,k)) {
+        for(i=0; i < n; i++) {
+          if(k==i) continue;
+
+         // no hydrogen torsions, ok?
+	  if (m[i].element().mass() < 1.1 && !hterminal(m,bonds,j)) continue;
+
+          if (bonds(j,i)) {
+            int is_linear = 0;
+	    if (cos_ijk(m,i,j,k)>=thres) is_linear = 1;
+
+            for (l=0; l < n; l++) {
+              if (l==j || l==i) continue;
+
+             // no hydrogen torsions, ok?
+	      if (m[l].element().mass() < 1.1 && !hterminal(m,bonds,k))
+                continue;
+
+              if (bonds(k,l)) {
+		if(cos_ijk(m,j,k,l)>=thres) is_linear = 1;
+
+                if (is_linear && linear_stors_) {
+                    labelc++;
+                    sprintf(label,"st%d",labelc);
+                    list->add(new ScaledTors(label,l+1,k+1,j+1,i+1));
+                  }
+                if (!is_linear || linear_tors_) {
+                    labelc++;
+                    sprintf(label,"t%d",labelc);
+                    list->add(new Tors(label,l+1,k+1,j+1,i+1));
+                  }
+		}
+	      }
+	    }
+          }
+	}
+      }
+    }
+  }
+
+void
+IntCoorGen::add_out(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
+{
+  int i,j,k,l;
+  int labelc=0;
+  char label[80];
+
+  int n = m.natom();
+
+ // first find all tri-coordinate atoms
+  for(i=0; i < n; i++) {
+    if(bonds.degree(i)!=3) continue;
+
+   // then look for terminal atoms connected to i
+    for(j=0; j < n; j++) {
+      if(bonds(i,j) && bonds.degree(j)==1) {
+
+        for(k=0; k < n; k++) {
+          if(k!=j && bonds(i,k)) {
+            for(l=0; l < k; l++) {
+              if(l!=j && bonds(i,l)) {
+		labelc++;
+		sprintf(label,"o%d",labelc);
+		list->add(new Out(label,j+1,i+1,l+1,k+1));
+		}
+	      }
+	    }
+          }
+	}
+      }
+    }
+  }
+
+int
+IntCoorGen::nearest_contact(int i, Molecule& m)
+{
+  double d=-1.0;
+  int n=0;
+  
+  for (int j=0; j < m.natom(); j++) {
+    double td = dist(m[i].point(),m[j].point());
+    if (j==i)
+      continue;
+    else if (d < 0 || td < d) {
+      d = td;
+      n = j;
+    }
+  }
+  
+  return n;
 }

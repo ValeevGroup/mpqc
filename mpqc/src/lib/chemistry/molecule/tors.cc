@@ -113,10 +113,8 @@ double TorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
   // 3pi/2 <--> -pi/2 boundary...if so, then we add or subtract 2pi as
   // needed to prevent the transformation from internals to cartesians
   // from blowing up
-  if(fabs(oldval) > 0.1) {
-    while(oldval-value_ > 6.0) value_ += tpi;
-    while(oldval-value_ < -6.0) value_ -= tpi;
-    }
+  while(oldval-value_ > (pi + 1.0e-8)) value_ += tpi;
+  while(oldval-value_ < -(pi + 1.0e-8)) value_ -= tpi;
 
   value_ = -value_;
 
@@ -138,8 +136,10 @@ double TorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
     r3 *= bohr;
 #endif    
     for (int j=0; j < 3; j++) {
-      uu = z1[j]/(r1*si);
-      zz = z2[j]/(r3*si2);
+      if (si > 1.0e-5) uu = z1[j]/(r1*si);
+      else uu = 0.0;
+      if (si2 > 1.0e-5) zz = z2[j]/(r3*si2);
+      else zz = 0.0;
       vv = (r1*co/r2-1.0)*uu-zz*r3*co2/r2;
       ww = -uu-vv-zz;
       bmat[a*3+j] += coeff*uu;

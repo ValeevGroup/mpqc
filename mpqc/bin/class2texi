@@ -1,0 +1,61 @@
+#!/usr/bin/perl
+# Use -*-perl-*- mode in emacs.
+
+$gettingdoc = 0;
+$doc = '';
+%item = ();
+while(<>) {
+    if ($gettingdoc) {
+        if (/^[ \t]*\/\/[ \t]*(.*)/) {
+            $doc = "$doc\n$1";
+        }
+        else {
+            /[ \t]*(.*);[ \t]*/;
+            $member = $1;
+            $item{$interface} = "$item{$interface}\@item $member$doc\n";
+            $doc = '';
+            $gettingdoc = 0;
+        }
+    }
+    elsif (/^[ \t]*class[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/) {
+        $class = $1;
+        $interface = 'pri';
+        $private = '';
+        $protected = '';
+        $public = '';
+        do write_doc();
+    }
+    elsif (/^[ \t]*private[ \t]*:/) {
+        $interface = 'pri';
+    }
+    elsif (/^[ \t]*public[ \t]*:/) {
+        $interface = 'pub';
+    }
+    elsif (/^[ \t]*protected[ \t]*:/) {
+        $interface = 'pro';
+    }
+    elsif (/^[ \t]*\/\/[Tt][Ee][Xx][Ii][ \t]+(.*)/) {
+        $gettingdoc = 1;
+        $doc = "$doc\n$1";
+    }
+    elsif (/^[ \t]*\/\/[Tt][Ee][Xx][Ii][ \t]*$/) {
+        $gettingdoc = 1;
+    }
+
+}
+
+do write_doc();
+
+sub write_doc {
+    for (keys(%item)) {
+        $filename = "$class" . "_" . "$_" . ".texi";
+        if (!open(OUTPUT, ">$filename")) {
+            die "Can't open $filename: $!";
+        }
+        print OUTPUT "\@table \@code\n";
+        print OUTPUT $item{$_};
+        print OUTPUT "\@end table\n";
+        close(OUTPUT);
+    }
+    %item = ();
+}

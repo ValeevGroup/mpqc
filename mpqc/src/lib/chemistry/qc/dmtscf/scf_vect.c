@@ -59,104 +59,22 @@ dmt_matrix Scf_Vec;
 centers_t *oldcenters;
 FILE *outfile;
 {
-  int j;
   int nbasis=scf_info->nbfao;
-  char vecfile[512],fockfile[512],fockofile[512],oldvecfile[512];
+  char vecfile[512],fockfile[512],fockofile[512];
 
-  dmt_matrix S,T,V,Hcore;
+  dmt_matrix S,Hcore;
   double *occ_num, *evals;
 
   assert(dmt_distribution(Scf_Vec) == COLUMNS);
   assert(dmt_distribution(Fock) == SCATTERED);
   if (scf_info->iopen) assert(dmt_distribution(FockO) == SCATTERED);
 
- /* what are the names of the checkpoint files? */
-
-  sprintf(vecfile,"%s%s.scfvec",scf_info->ckptdir,scf_info->fname);
-  sprintf(fockfile,"%s%s.fock",scf_info->ckptdir,scf_info->fname);
-  sprintf(fockofile,"%s%s.focko",scf_info->ckptdir,scf_info->fname);
-
- /* the oldvec file should be in the current directory */
-
-  sprintf(oldvecfile,"./%s.oldvec",scf_info->fname);
-
- /* calculate one-electron integrals */
+ /* create matrices to hold one-electron integrals */
 
   S = dmt_create("dmtscf overlap matrix",nbasis,SCATTERED);
-  T = dmt_create("dmtscf kinetic matrix",nbasis,SCATTERED);
-  V = dmt_create("dmtscf potential matrix",nbasis,SCATTERED);
   Hcore = dmt_create("dmtscf hcore matrix",nbasis,SCATTERED);
 
-  if (scf_oeis(scf_info,centers,S,T,V,Hcore,outfile) < 0) {
-    fprintf(stderr,"scf_vector:  trouble forming one-electron integrals\n");
-    return -1;
-  }
-
- /* we don't need the T and V matrices any longer, so free up the memory */
-  dmt_free(T);
-  dmt_free(V);
-
- /* get old vector if there is one, otherwise, construct a guess */
-
-  if (scf_info->restart) {
-    if (mynode0()==0 && outfile)
-      fprintf(outfile,"\n  scf_vect: using old vector\n\n");
-
-  } else if (scf_info->warmrestart) {
-    dmt_read(vecfile,Scf_Vec);
-    if (mynode0()==0 && outfile) {
-      fprintf(outfile,"\n  scf_vect: read vector from checkpoint file %s\n\n",
-                      vecfile);
-    }
-
-  } else if (scf_info->proj_vector) {
-    dmt_matrix Sahalf;
-
-    tim_enter("proj_vector");
-    if (mynode0()==0 && outfile)
-      fprintf(outfile,"\n  scf_vect: forming projection of old scf vector\n\n");
-
-    Sahalf = dmt_create("scf_vect scratch matrix",nbasis,COLUMNS);
-
-    if (scf_core_guess(scf_info,Scf_Vec,Hcore,S,Sahalf) < 0) {
-      fprintf(stderr,"scf_vector:  trouble forming guess scf vector\n");
-      return -1;
-    }
-
-    if (scf_project_vector(centers,scf_info,Scf_Vec,S,Sahalf,oldvecfile,
-                                oldcenters,outfile) < 0) {
-      fprintf(stderr,"scf_vector: "
-                     "trouble forming projected guess scf vector\n");
-      return -1;
-    }
-
-    dmt_free(Sahalf);
-    tim_exit("proj_vector");
-
-  } else {
-    dmt_matrix Sahalf;
-
-    if (scf_info->print_flg & 16) tim_print(0);
-
-    if (mynode0()==0 && outfile) {
-      fprintf(outfile,"\n");
-      fprintf(outfile,"  first run, so defaulting to core-hamiltonian guess");
-      fprintf(outfile,"\n\n");
-    }
-
-    Sahalf = dmt_create("scf_vect scratch matrix",nbasis,COLUMNS);
-
-    if (scf_core_guess(scf_info,Scf_Vec,Hcore,S,Sahalf) < 0) {
-      fprintf(stderr,"scf_vector: trouble forming guess scf vector\n");
-      return -1;
-    }
-
-    dmt_free(Sahalf);
-  }
-
-  if (mynode0()==0 && outfile) fflush(outfile);
-
-/* set up occupation numbers and initialize eigenvalues */
+ /* grab memory for eigenvalues and occupation numbers */
 
   evals = (double *) malloc(sizeof(double)*nbasis);
   if (!evals) {
@@ -170,19 +88,11 @@ FILE *outfile;
     return -1;
   }
 
-  for (j=0; j < scf_info->nclosed ; j++)                occ_num[j]=2.0;
-  for (; j < scf_info->nclosed+scf_info->nopen ; j++)   occ_num[j]=1.0;
-  for (; j < nbasis ; j++)                              occ_num[j]=0.0;
-
- /* orthogonalize vector unless a projected guess was used, in which case
-  * the orthogonalization has already been done
-  */
-
-  if (!scf_info->proj_vector || scf_info->restart || scf_info->warmrestart) {
-    if (scf_schmidt(scf_info,Scf_Vec,S,0) < 0) {
-      fprintf(stderr,"scf_vector:  trouble orthogonalizing vector\n");
-      return -1;
-    }
+ /* now initialize one-electron integrals and scf vector */
+  if (scf_init_vector(scf_info,centers,Scf_Vec,S,Hcore,occ_num,
+                      oldcenters,outfile) < 0) {
+    fprintf(stderr,"scf_vector: trouble in scf_init_vector\n");
+    return -1;
   }
 
  /* now iterate */
@@ -253,4 +163,124 @@ int n;
       fprintf(outfile,"%13.6f",occ_num[i+j]);
     fprintf(outfile,"\n\n");
   }
+}
+
+GLOBAL_FUNCTION int
+scf_init_vector(scf_info,centers,Scf_Vec,S,Hcore,occ_num,oldcenters,outfile)
+scf_struct_t *scf_info;
+centers_t *centers;
+dmt_matrix Scf_Vec;
+dmt_matrix S;
+dmt_matrix Hcore;
+double *occ_num;
+centers_t *oldcenters;
+FILE *outfile;
+{
+  int j;
+  int nbasis=scf_info->nbfao;
+  char vecfile[512],oldvecfile[512];
+
+  dmt_matrix T,V;
+
+  assert(dmt_distribution(Scf_Vec) == COLUMNS);
+  assert(dmt_distribution(S) == SCATTERED);
+  assert(dmt_distribution(Hcore) == SCATTERED);
+
+ /* where are the vectors */
+  sprintf(vecfile,"%s%s.scfvec",scf_info->ckptdir,scf_info->fname);
+  sprintf(oldvecfile,"./%s.oldvec",scf_info->fname);
+
+ /* calculate one-electron integrals */
+
+  T = dmt_create("dmtscf kinetic matrix",nbasis,SCATTERED);
+  V = dmt_create("dmtscf potential matrix",nbasis,SCATTERED);
+
+  if (scf_oeis(scf_info,centers,S,T,V,Hcore,outfile) < 0) {
+    fprintf(stderr,"scf_init_vector:  "
+                   "trouble forming one-electron integrals\n");
+    return -1;
+  }
+
+ /* we don't need the T and V matrices any longer, so free up the memory */
+  dmt_free(T);
+  dmt_free(V);
+
+ /* get old vector if there is one, otherwise, construct a guess */
+
+  if (scf_info->restart) {
+    if (mynode0()==0 && outfile)
+      fprintf(outfile,"\n  scf_init_vector: using old vector\n\n");
+
+  } else if (scf_info->warmrestart) {
+    dmt_read(vecfile,Scf_Vec);
+    if (mynode0()==0 && outfile) {
+      fprintf(outfile,"\n  scf_init_vector: "
+                      "read vector from checkpoint file %s\n\n",vecfile);
+    }
+
+  } else if (scf_info->proj_vector) {
+    dmt_matrix Sahalf;
+
+    tim_enter("proj_vector");
+    if (mynode0()==0 && outfile)
+      fprintf(outfile,"\n  scf_init_vector: "
+                      "forming projection of old scf vector\n\n");
+
+    Sahalf = dmt_create("scf_vect scratch matrix",nbasis,COLUMNS);
+
+    if (scf_core_guess(scf_info,Scf_Vec,Hcore,S,Sahalf) < 0) {
+      fprintf(stderr,"scf_init_vector:  trouble forming guess scf vector\n");
+      return -1;
+    }
+
+    if (scf_project_vector(centers,scf_info,Scf_Vec,S,Sahalf,oldvecfile,
+                                oldcenters,outfile) < 0) {
+      fprintf(stderr,"scf_init_vector: "
+                     "trouble forming projected guess scf vector\n");
+      return -1;
+    }
+
+    dmt_free(Sahalf);
+    tim_exit("proj_vector");
+
+  } else {
+    dmt_matrix Sahalf;
+
+    if (scf_info->print_flg & 16) tim_print(0);
+
+    if (mynode0()==0 && outfile) {
+      fprintf(outfile,"\n");
+      fprintf(outfile,"  first run, so defaulting to core-hamiltonian guess");
+      fprintf(outfile,"\n\n");
+    }
+
+    Sahalf = dmt_create("scf_vect scratch matrix",nbasis,COLUMNS);
+
+    if (scf_core_guess(scf_info,Scf_Vec,Hcore,S,Sahalf) < 0) {
+      fprintf(stderr,"scf_init_vector: trouble forming guess scf vector\n");
+      return -1;
+    }
+
+    dmt_free(Sahalf);
+  }
+
+  if (mynode0()==0 && outfile) fflush(outfile);
+
+ /* set up occupation numbers and initialize eigenvalues */
+  for (j=0; j < scf_info->nclosed ; j++)                occ_num[j]=2.0;
+  for (; j < scf_info->nclosed+scf_info->nopen ; j++)   occ_num[j]=1.0;
+  for (; j < nbasis ; j++)                              occ_num[j]=0.0;
+
+ /* orthogonalize vector unless a projected guess was used, in which case
+  * the orthogonalization has already been done
+  */
+
+  if (!scf_info->proj_vector || scf_info->restart || scf_info->warmrestart) {
+    if (scf_schmidt(scf_info,Scf_Vec,S,0) < 0) {
+      fprintf(stderr,"scf_init_vector:  trouble orthogonalizing vector\n");
+      return -1;
+    }
+  }
+
+  return 0;
 }

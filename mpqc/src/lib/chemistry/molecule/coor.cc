@@ -937,7 +937,7 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
            << "You must add an entry to extra_bonds." << endl
            << "One of the groups consists of atoms:";
       for (iatom=atoms.first(); iatom; atoms.next(iatom)) {
-        cerr << node0 << " " << atoms(iatom);
+        cerr << node0 << " " << atoms(iatom) + 1;
         }
       cerr << node0 << endl;
       abort();

@@ -56,7 +56,7 @@ ExEnv::err()
 const char *
 ExEnv::program_name()
 {
-  if (*argc_ == 0) return 0;
+  if (argc_ == 0 || *argc_ == 0) return 0;
   char *start = strrchr((*argv_)[0],'/');
   if (!start) start = (*argv_)[0];
   else start++;

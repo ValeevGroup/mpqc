@@ -164,7 +164,7 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
     }
 
 #if defined(HAVE_MPI)
-  if (!strcmp(ExEnv::program_name(), "mpqc-mpi")) {
+  if (ExEnv::initialized() && !strcmp(ExEnv::program_name(), "mpqc-mpi")) {
       grp = new MPIMessageGrp;
       return grp;
   }

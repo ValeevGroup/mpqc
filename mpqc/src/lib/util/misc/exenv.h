@@ -49,6 +49,8 @@ class ExEnv {
   public:
     /// Set the argument count and vector.
     static void init(int &argcref, char **&argvref);
+    /// Return nonzero if ExEnv has been initialized.
+    static int initialized() { return argc_ != 0; }
     /// Return an reference to the argument count.
     static int &argc() { return *argc_; }
     /// Return an reference to the argument vector.

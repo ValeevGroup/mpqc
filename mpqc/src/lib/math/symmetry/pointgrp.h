@@ -34,7 +34,6 @@
 #include <util/keyval/keyval.h>
 #include <math/topology/point.h>
 
-
 class CharacterTable;
 
 //texi
@@ -53,10 +52,12 @@ class IrreducibleRepresentation {
     int nrot_;    // the number of rotations in this irrep
     int ntrans_;  // the number of translations in this irrep
     char *symb;   // mulliken symbol for this irrep
-    double *rep;  // the characters for this irrep
+    double **rep;  // the characters for this irrep
 
     //texi Sets all data members to zero.
     void init();
+    void new_rep();
+    void free_rep();
 
   public:
     IrreducibleRepresentation();
@@ -83,9 +84,14 @@ class IrreducibleRepresentation {
     //texi
     // Returns the character for the i'th symmetry operation of the point
     // group.
-    double character(int i) const { return rep[i]; }
+    double character(int i) const { return rep[0][i]; }
     //texi This is equivalent to the @b{character} member.
-    double operator[](int i) const { return rep[i]; }
+    double operator[](int i) const { return rep[0][i]; }
+    //texi
+    // Returns the character for the d'th contribution to the i'th symmetry
+    // operation of the point group.
+    double character(int d, int i) const { return rep[d][i]; }
+    double operator()(int d, int i) const { return rep[d][i]; }
 
     //texi
     // This prints the irrep to the given file, or stdout if none is given.

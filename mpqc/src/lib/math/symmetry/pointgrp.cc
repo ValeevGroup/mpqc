@@ -31,6 +31,8 @@
 
 #include <math/symmetry/pointgrp.h>
 
+/////////////////////////////////////////////////////////////////////////
+
 // this is for use by CharacterTable after making the gamma array...don't
 // call free for symb or rep, just make them zero
 
@@ -38,6 +40,27 @@ void IrreducibleRepresentation::init()
 {
   g=degen=nrot_=ntrans_=0;
   symb=0; rep=0;
+}
+
+void
+IrreducibleRepresentation::new_rep()
+{
+  free_rep();
+  rep = new double*[degen];
+  for (int i=0; i < degen; i++)
+    rep[i] = new double[g];
+}
+
+void
+IrreducibleRepresentation::free_rep()
+{
+  if (rep) {
+    for (int i=0; i < degen; i++)
+      if (rep[i])
+        delete[] rep[i];
+    delete[] rep;
+  }
+  rep=0;
 }
 
 IrreducibleRepresentation::IrreducibleRepresentation() :
@@ -49,8 +72,12 @@ IrreducibleRepresentation::IrreducibleRepresentation(
                                              int g_, int d, const char *lab)
   : g(g_), degen(d), nrot_(0), ntrans_(0), symb(0), rep(0)
 {
-  if(lab) { symb = new char[strlen(lab)+1]; strcpy(symb,lab); }
-  if(g) { rep = new double[g]; }
+  if (lab) {
+    symb = new char[strlen(lab)+1];
+    strcpy(symb,lab);
+  }
+  if (g && degen)
+    new_rep();
 }
 
 
@@ -63,33 +90,55 @@ IrreducibleRepresentation::IrreducibleRepresentation(
 
 IrreducibleRepresentation::~IrreducibleRepresentation()
 {
-  if (symb) delete[] symb;
-  if (rep) delete[] rep;
+  if (symb)
+    delete[] symb;
+  symb=0;
+  free_rep();
   init();
 }
 
 IrreducibleRepresentation&
 IrreducibleRepresentation::operator=(const IrreducibleRepresentation& ir)
 {
-  g = ir.g; degen = ir.degen; nrot_ = ir.nrot_; ntrans_ = ir.ntrans_;
+  g = ir.g;
+  degen = ir.degen;
+  nrot_ = ir.nrot_;
+  ntrans_ = ir.ntrans_;
 
-  if (symb) delete[] symb; symb=0;
-  if (ir.symb) { symb = new char[strlen(ir.symb)+1]; strcpy(symb,ir.symb); }
+  if (symb)
+    delete[] symb;
+  symb=0;
 
-  if (rep) delete[] rep;
-  rep = new double[g];
-  for(int i=0; i < g; i++) rep[i] = ir.rep[i];
+  if (ir.symb) {
+    symb = new char[strlen(ir.symb)+1];
+    strcpy(symb,ir.symb);
+  }
+
+  new_rep();
+  for (int d=0; d < degen; d++)
+    for (int i=0; i < g; i++)
+      rep[d][i] = ir.rep[d][i];
 
   return *this;
 }
 
 void IrreducibleRepresentation::print(FILE *fp, const char *off)
 {
-  if(!g) return;
+  if (!g)
+    return;
 
   fprintf(fp,"%s%-5s",off,symb);
-  for (int i=0; i < g; i++) fprintf(fp," %6.3f",rep[i]);
+  for (int i=0; i < g; i++)
+    fprintf(fp," %6.3f",rep[0][i]);
   fprintf(fp," | %d t, %d R\n",ntrans_,nrot_);
+  if (degen>1) {
+    for (int d=1; d < degen; d++) {
+      fprintf(fp,"%s     ",off);
+      for (int i=0; i < g; i++)
+        fprintf(fp," %6.3f",rep[d][i]);
+      fprintf(fp,"\n");
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////

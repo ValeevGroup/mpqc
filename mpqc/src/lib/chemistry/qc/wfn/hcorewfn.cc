@@ -37,7 +37,7 @@ HCoreWfn::HCoreWfn(const RefKeyVal&keyval):
   accumh = new AccumHCore;
   accumh->init(basis(),integral());
 
-  const CharacterTable& ct = molecule()->point_group().char_table();
+  CharacterTable ct = molecule()->point_group().char_table();
 
   nirrep_ = ct.ncomp();
   docc = new int[nirrep_];

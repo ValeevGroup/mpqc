@@ -28,7 +28,7 @@
 #include <util/ref/ref.h>
 #include <util/ref/reftestx.h>
 
-template class Ref<X>;
+//template class Ref<X>;
 
 int
 main()

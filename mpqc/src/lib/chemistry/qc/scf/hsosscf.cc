@@ -179,7 +179,7 @@ HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
     maxiter_ = 100;
 
   if (!keyval->exists("level_shift"))
-    level_shift_ = 1.0;
+    level_shift_ = 0.25;
 
   // now take care of memory stuff
   init_mem(4);

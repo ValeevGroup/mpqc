@@ -16,7 +16,7 @@ at any GNU software FTP repository.
          FORTRAN compiler is used to determine the linkage conventions for
          the BLAS libraries, however, you can turn off the use of a FORTRAN
          compiler by giving <tt>--without-f77</tt> as an option to the
-         configure script, however, this will cause problems unless you
+         configure script, however, this will not work unless you
          only want the utility libraries.  The compilers listed below are
          known to work.  Other ISO C++ compilers should work as well.
 
@@ -46,24 +46,36 @@ at any GNU software FTP repository.
 
        </ul>
 
-    <li> The Basic Linear Algebra Subprograms (BLAS) are required.  They
-         can be obtained from <a
+    <li> The Basic Linear Algebra Subprograms (BLAS) are required.  A
+         prepackaged version of BLAS is available for most machines.
+         Consult you operating system documentation for more information.
+         If precompiled BLAS routines are not available for your machine,
+         the source can be obtained from <a
          href="http://www.netlib.org/blas">http://www.netlib.org/blas</a>.
-         If the BLAS library is not named libblas.a or is not installed in
-         the default library search path, then configure must be given
-         --with-libs, --with-libdirs, or both.
+         The file blas.tgz contains the source for all of the BLAS
+         routines.  If the BLAS library is not named libblas.a or is not
+         installed in the default library search path, then configure must
+         be given --with-libs, --with-libdirs, or both.
 
-    <li> The Linear Algebra Package (LAPACK) 3.0 is required.  It can be
-         obtained from <a
+    <li> The Linear Algebra Package (LAPACK) 3.0 is required.  A
+         prepackaged version of LAPACK is available for most machines.
+         Consult you operating system documentation for more information.
+         If a precompiled LAPACK is not available for your machine, the
+         source can be obtained from <a
          href="http://www.netlib.org/lapack">http://www.netlib.org/lapack</a>.
-         If LAPACK library is not named liblapack.a or is not installed in
-         the default library search path, then configure must be given
-         --with-libs, --with-libdirs, or both.
+         The file lapack.tgz contains the source for all of the LAPACK
+         routines.  If the LAPACK library is not named liblapack.a or is
+         not installed in the default library search path, then configure
+         must be given --with-libs, --with-libdirs, or both.
 
-    <li> GNU flex, version 2.5.4a, patched: This is a lexical analyzer
-         generator used to generate code to read input files. A patch is
-         needed to support ISO C++: <a
-         href="http://aros.ca.sandia.gov/~cljanss/mpqc/distrib/patch-flex-2.5.4a-snl.gz">patch-flex-2.5.4a-snl.gz</a>.
+    <li> A lexical analyzer generator is required to generate code to read
+         input files.  Currently, <a
+         href="ftp://ftp.gnu.org/non-gnu/flex/">GNU flex, version
+         2.5.4a</a>, with a patch applied to the source, <a
+         href="http://aros.ca.sandia.gov/~cljanss/mpqc/distrib/patch-flex-2.5.4a-snl.gz">patch-flex-2.5.4a-snl.gz</a>,
+         is required.  Future versions of flex are under development that
+         will not require this patch.
+
          Make sure that <tt>FlexLexer.h</tt> from flex is in your include
          path. You may need to give the path to <tt>FlexLexer.h</tt> to
          configure with an argument that looks something like:

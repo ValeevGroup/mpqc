@@ -55,62 +55,63 @@ atomic gaussian orbitals.
 
 Following is a table with available basis sets listing the supported elements
 for each basis and the number of basis functions for H, $n_0$, first row,
-$n_1$, and second row, $n_2$, atoms:
+$n_1$, and second row, $n_2$, atoms.  Basis sets with non-alpha-numerical
+characters in their name must be given in quotes.
 
 \begin{tabular}{lcrrr}
-  \multicolumn{1}{c}{Basis Set}&
-   \multicolumn{1}{c}{Elements}&
-   \multicolumn{1}{c}{$n_0$}&
-   \multicolumn{1}{c}{$n_1$}&
-   \multicolumn{1}{c}{$n_2$} \\
-\verb*|STO-2G| & H-Ca & 1 & 5 & 9 \\
-\verb*|STO-3G| & H-Kr & 1 & 5 & 9 \\
-\verb*|STO-3G*| & H-Ar & 1 & 5 & 15 \\
-\verb*|STO-6G| & H-Kr & 1 & 5 & 9 \\
-\verb*|MINI (Huzinaga)| & H-Ca & 1 & 5 & 9 \\
-\verb*|MINI (Scaled)| & H-Ca & 1 & 5 & 9 \\
-\verb*|MIDI (Huzinaga)| & H-Na & 2 & 9 &  \\
-\verb*|DZ (Dunning)| & H, Li, B-Ne, Al-Cl & 2 & 10 & 18 \\
-\verb*|DZP (Dunning)| & H, Li, B-Ne, Al-Cl & 5 & 16 & 24 \\
-\verb*|DZP + Diffuse (Dunning)| & H, B-Ne & 6 & 19 &  \\
-\verb*|3-21G| & H-Kr & 2 & 9 & 13 \\
-\verb*|3-21G*| & H-Ar & 2 & 9 & 19 \\
-\verb*|3-21++G| & H-Ar & 3 & 13 & 17 \\
-\verb*|3-21++G*| & H-Ar & 3 & 13 & 23 \\
-\verb*|4-31G| & H-Ne, P-Cl & 2 & 9 & 13 \\
-\verb*|4-31G*| & H-Ne, P-Cl & 2 & 15 & 19 \\
-\verb*|4-31G**| & H-Ne, P-Cl & 5 & 15 & 19 \\
-\verb*|6-31G| & H-Ar & 2 & 9 & 13 \\
-\verb*|6-31G*| & H-Ar & 2 & 15 & 19 \\
-\verb*|6-31G**| & H-Ar & 5 & 15 & 19 \\
-\verb*|6-31+G*| & H-Ar & 2 & 19 & 23 \\
-\verb*|6-31++G| & H-Ar & 3 & 13 & 17 \\
-\verb*|6-31++G*| & H-Ar & 3 & 19 & 23 \\
-\verb*|6-31++G**| & H-Ar & 6 & 19 & 23 \\
-\verb*|6-311G| & H-Ar, Ga-Kr & 3 & 13 & 21 \\
-\verb*|6-311G*| & H-Ar, Ga-Kr & 3 & 19 & 27 \\
-\verb*|6-311G**| & H-Ar, Ga-Kr & 6 & 19 & 27 \\
-\verb*|6-311G(2df,2pd)| & H-Ne & 15 & 35 &  \\
-\verb*|6-311++G**| & H-Ne & 7 & 23 &  \\
-\verb*|6-311++G(2d,2p)| & H-Ne & 10 & 29 &  \\
-\verb*|6-311++G(3df,3pd)| & H-Ar & 19 & 45 & 53 \\
-\verb*|cc-pVDZ| & H, He, B-Ne, Al-Ar & 5 & 14 & 18 \\
-\verb*|cc-pVTZ| & H, He, B-Ne, Al-Ar & 14 & 30 & 34 \\
-\verb*|cc-pVQZ| & H, He, B-Ne, Al-Ar & 30 & 55 & 59 \\
-\verb*|cc-pV5Z| & H-Ne, Al-Ar & 55 & 91 & 95 \\
-\verb*|aug-cc-pVDZ| & H, He, B-Ne, Al-Ar & 9 & 23 & 27 \\
-\verb*|aug-cc-pVTZ| & H, He, B-Ne, Al-Ar & 23 & 46 & 50 \\
-\verb*|aug-cc-pVQZ| & H, He, B-Ne, Al-Ar & 46 & 80 & 84 \\
-\verb*|aug-cc-pV5Z| & H, He, B-Ne, Al-Ar & 80 & 127 & 131 \\
-\verb*|cc-pCVDZ| & B-Ne &  & 18 &  \\
-\verb*|cc-pCVTZ| & B-Ne &  & 43 &  \\
-\verb*|cc-pCVQZ| & B-Ne &  & 84 &  \\
-\verb*|cc-pCV5Z| & B-Ne &  & 145 &  \\
-\verb*|aug-cc-pCVDZ| & B-F &  & 27 &  \\
-\verb*|aug-cc-pCVTZ| & B-Ne &  & 59 &  \\
-\verb*|aug-cc-pCVQZ| & B-Ne &  & 109 &  \\
-\verb*|aug-cc-pCV5Z| & B-F &  & 181 &  \\
-\verb*|NASA Ames ANO| & H, B-Ne, Al, P, Ti, Fe, Ni & 30 & 55 & 59 \\
+  Basis Set&
+   Elements&
+   $n_0$&
+   $n_1$&
+   $n_2$ \\
+STO-2G & H-Ca & 1 & 5 & 9 \\
+STO-3G & H-Kr & 1 & 5 & 9 \\
+STO-3G* & H-Ar & 1 & 5 & 15 \\
+STO-6G & H-Kr & 1 & 5 & 9 \\
+MINI (Huzinaga) & H-Ca & 1 & 5 & 9 \\
+MINI (Scaled) & H-Ca & 1 & 5 & 9 \\
+MIDI (Huzinaga) & H-Na & 2 & 9 &  \\
+DZ (Dunning) & H, Li, B-Ne, Al-Cl & 2 & 10 & 18 \\
+DZP (Dunning) & H, Li, B-Ne, Al-Cl & 5 & 16 & 24 \\
+DZP + Diffuse (Dunning) & H, B-Ne & 6 & 19 &  \\
+3-21G & H-Kr & 2 & 9 & 13 \\
+3-21G* & H-Ar & 2 & 9 & 19 \\
+3-21++G & H-Ar & 3 & 13 & 17 \\
+3-21++G* & H-Ar & 3 & 13 & 23 \\
+4-31G & H-Ne, P-Cl & 2 & 9 & 13 \\
+4-31G* & H-Ne, P-Cl & 2 & 15 & 19 \\
+4-31G** & H-Ne, P-Cl & 5 & 15 & 19 \\
+6-31G & H-Ar & 2 & 9 & 13 \\
+6-31G* & H-Ar & 2 & 15 & 19 \\
+6-31G** & H-Ar & 5 & 15 & 19 \\
+6-31+G* & H-Ar & 2 & 19 & 23 \\
+6-31++G & H-Ar & 3 & 13 & 17 \\
+6-31++G* & H-Ar & 3 & 19 & 23 \\
+6-31++G** & H-Ar & 6 & 19 & 23 \\
+6-311G & H-Ar, Ga-Kr & 3 & 13 & 21 \\
+6-311G* & H-Ar, Ga-Kr & 3 & 19 & 27 \\
+6-311G** & H-Ar, Ga-Kr & 6 & 19 & 27 \\
+6-311G(2df,2pd) & H-Ne & 15 & 35 &  \\
+6-311++G** & H-Ne & 7 & 23 &  \\
+6-311++G(2d,2p) & H-Ne & 10 & 29 &  \\
+6-311++G(3df,3pd) & H-Ar & 19 & 45 & 53 \\
+cc-pVDZ & H, He, B-Ne, Al-Ar & 5 & 14 & 18 \\
+cc-pVTZ & H, He, B-Ne, Al-Ar & 14 & 30 & 34 \\
+cc-pVQZ & H, He, B-Ne, Al-Ar & 30 & 55 & 59 \\
+cc-pV5Z & H-Ne, Al-Ar & 55 & 91 & 95 \\
+aug-cc-pVDZ & H, He, B-Ne, Al-Ar & 9 & 23 & 27 \\
+aug-cc-pVTZ & H, He, B-Ne, Al-Ar & 23 & 46 & 50 \\
+aug-cc-pVQZ & H, He, B-Ne, Al-Ar & 46 & 80 & 84 \\
+aug-cc-pV5Z & H, He, B-Ne, Al-Ar & 80 & 127 & 131 \\
+cc-pCVDZ & B-Ne &  & 18 &  \\
+cc-pCVTZ & B-Ne &  & 43 &  \\
+cc-pCVQZ & B-Ne &  & 84 &  \\
+cc-pCV5Z & B-Ne &  & 145 &  \\
+aug-cc-pCVDZ & B-F &  & 27 &  \\
+aug-cc-pCVTZ & B-Ne &  & 59 &  \\
+aug-cc-pCVQZ & B-Ne &  & 109 &  \\
+aug-cc-pCV5Z & B-F &  & 181 &  \\
+NASA Ames ANO & H, B-Ne, Al, P, Ti, Fe, Ni & 30 & 55 & 59 \\
 \end{tabular}
 
 */
@@ -254,7 +255,7 @@ class GaussianBasisSet: public SavableState
         An example might be easier to understand.  This is a basis set
         specificition for STO-2G carbon:
 
-        <pre>
+        \begin{verbatim}
         basis: (
          carbon: "STO-2G": [
           (type: [(am = s)]
@@ -269,7 +270,7 @@ class GaussianBasisSet: public SavableState
            })
          ]
         )
-        </pre>
+        \end{verbatim}
      */
     GaussianBasisSet(const RefKeyVal&);
     GaussianBasisSet(StateIn&);

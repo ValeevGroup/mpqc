@@ -22,6 +22,7 @@ class SCVector3
     SCVector3(double p[3]) {
         _v[0] = p[0]; _v[1] = p[1]; _v[2] = p[2];
       }
+    SCVector3(double d) { _v[0] = d; _v[1] = d; _v[2] = d; }
     SCVector3(double x,double y,double z) {
         _v[0] = x; _v[1] = y; _v[2] = z;
       }
@@ -32,6 +33,12 @@ class SCVector3
     SCVector3(const RefKeyVal&);
     void normalize();
     SCVector3 operator*(double) const;
+    void operator = (const SCVector3& x) {
+        _v[0] = x._v[0];
+        _v[1] = x._v[1];
+        _v[2] = x._v[2];
+      }
+    void operator = (double d) { _v[0] = d; _v[1] = d; _v[2] = d; }
     void operator -= (const SCVector3& v) {
         _v[0] -= v._v[0];
         _v[1] -= v._v[1];
@@ -64,6 +71,7 @@ class SCVector3
     SCVector3 perp_unit(const SCVector3&) const;
     void spherical_coord(double theta, double phi, 
                          double r);
+    double maxabs() const;
     // this returns the length of the difference vector
     double dist(const SCVector3&) const;
     void rotate(double theta,SCVector3 &v);
@@ -88,6 +96,5 @@ SCVector3 operator*(double,const SCVector3&);
 #ifdef INLINE_FUNCTIONS
 #include <math/scmat/vector3_i.h>
 #endif
-
 
 #endif

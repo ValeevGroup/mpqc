@@ -154,6 +154,16 @@ void SCVector3::normalize()
   for (i=0; i<3; i++) _v[i] *= tmp;
 }
 
+double
+SCVector3::maxabs() const
+{
+  double result = fabs(_v[0]);
+  double tmp;
+  if ((tmp = fabs(_v[1])) > result) result = tmp;
+  if ((tmp = fabs(_v[2])) > result) result = tmp;
+  return result;
+}
+
 void SCVector3::print(FILE*fp) const
 {
   fprintf(fp,"{%8.5f %8.5f %8.5f}\n",x(),y(),z());

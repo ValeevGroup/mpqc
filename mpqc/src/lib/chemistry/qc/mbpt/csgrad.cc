@@ -356,7 +356,7 @@ MBPT2::compute_cs_grad()
   RefDiagSCMatrix evalmat;
   eigen(evalmat, Scf_Vec, occ);
 
-  if (debug_) {
+  if (debug_ > 1) {
     evalmat.print("eigenvalues");
     Scf_Vec.print("eigenvectors");
     }
@@ -512,7 +512,8 @@ MBPT2::compute_cs_grad()
       }
 
     // debug print
-    if (debug_) cout << indent << scprintf("node %i, nij = %i", me, nij)<<endl;
+    if (debug_)
+      cout << indent << "node " << me << ", nij = " << nij << endl;
     // end of debug print
 
     mem->sync(); // This must be here or gamma non-sep will be wrong when running
@@ -1630,7 +1631,7 @@ MBPT2::compute_cs_grad()
 
     mem->sync(); // Make sure all nodes are done before deleting arrays
 
-    if (debug_) {
+    if (debug_ > 1) {
       RefSCDimension ni_dim(new SCDimension(ni));
       RefSCDimension nbasis_dim(new SCDimension(nbasis));
       RefSCMatrix Lpi_mat(nbasis_dim, ni_dim, kit);
@@ -1868,7 +1869,7 @@ MBPT2::compute_cs_grad()
   init_cs_gmat();
   tim_enter("make_gmat for Laj");
   make_cs_gmat(Gmat, Dmat);
-  if (debug_) {
+  if (debug_ > 1) {
     Dmat_matrix.print("Dmat");
     Gmat.print("Gmat");
     }
@@ -1877,9 +1878,9 @@ MBPT2::compute_cs_grad()
   // Finish computation of Laj
   RefSCMatrix Laj_matrix(nocc_dim,nvir_dim,kit); // elements are ordered as j*nvir+a
   Laj_matrix->assign(Laj);
-  if (debug_) Laj_matrix->print("Laj (first bit)");
+  if (debug_ > 1) Laj_matrix->print("Laj (first bit)");
   Laj_matrix = Laj_matrix - 2*Co.t()*Gmat*Cv;
-  if (debug_) Laj_matrix->print("Laj (all of it)");
+  if (debug_ > 1) Laj_matrix->print("Laj (all of it)");
   Laj_matrix->convert(Laj);  // Put new Laj_matrix elements into Laj
 
   tim_exit("Laj");
@@ -2041,7 +2042,7 @@ MBPT2::compute_cs_grad()
   delete[] WHF;
   delete[] W2AO;
 
-  if (debug_) {
+  if (debug_ > 1) {
     RefSCMatrix tmpmat(basis()->basisdim(), basis()->basisdim(), kit);
     tmpmat->assign(PMP2);
     tmpmat.print("PMP2");

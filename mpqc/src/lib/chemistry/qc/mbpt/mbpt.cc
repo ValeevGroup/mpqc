@@ -136,6 +136,8 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
   algorithm_ = keyval->pcharvalue("algorithm");
 
   debug_ = keyval->booleanvalue("debug");
+  if (keyval->error() == KeyVal::WrongType)
+      debug_ = keyval->intvalue("debug");
 
   eliminate_in_gmat_ = 1;
 }

@@ -90,19 +90,17 @@ main()
   sprintf(infile,SRCDIR "/inttest.in");
 
   RefKeyVal pkv(new ParsedKeyVal(infile));
-  RefKeyVal keyval(new AggregateKeyVal(new PrefixKeyVal(":centers",pkv),
-                                       new PrefixKeyVal(":basis",pkv)));
   RefKeyVal tkeyval(new PrefixKeyVal(":test", pkv));
 
-  RefGaussianBasisSet basis = keyval->describedclassvalue("basis");
+  RefGaussianBasisSet basis = tkeyval->describedclassvalue("basis");
   RefMolecule mol = basis->molecule();
 
   int storage = tkeyval->intvalue("storage");
   RefInt1eV3 int1ev3 = new Int1eV3(basis,basis,1);
-  RefInt2eV3 int2ev3;// = new Int2eV3(basis,basis,basis,basis,
-        //               1, storage);
+  RefInt2eV3 int2ev3 = new Int2eV3(basis,basis,basis,basis,
+                                   1, storage);
 
-  int permute = keyval->booleanvalue("permute");
+  int permute = tkeyval->booleanvalue("permute");
   tim->enter("overlap");
   if (tkeyval->booleanvalue("overlap")) {
       cout << scprintf("testing overlap:\n");
@@ -166,7 +164,6 @@ do_shell_test_1e(const RefInt1eV3 &int1ev3,
 {
   int ii = 0;
   int a;
-  pbuf[na*nb] = 123.456;
   double *buffer = int1ev3->buffer();
   (int1ev3->*int_shell_1e)(i, j);
   for (a=0; a<na*nb; a++) {

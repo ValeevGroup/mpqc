@@ -1,73 +1,82 @@
 % Test -*- KeyVal -*- input for the integrals package.
 
-ne2sto3g: (
+molecule = $:ne2
+basisset = $:currentbas
+
+ne2<Molecule>: (
    { atoms    geometry } = {
       Ne  [ 0.0 0.0 -1.0 ]
       Ne  [ 0.0 0.0  1.0 ]
    }
-   basis = sto3g
- )
-
-h2o: (
-  molecule<Molecule>: (
-    symmetry=c1
-    { atoms geometry} = {
-      H  [   1.5  0.0  -0.3 ]
-      H  [  -1.5  0.0  -0.3 ]
-      O  [   0.0  0.0   1.0 ]
-     }
-  )
-  basis<GaussianBasisSet>: (
-    molecule = $..:molecule
-    name = "6-31G*"
-    puream = yes
-   )
 )
 
-heh: (
-  molecule<Molecule>: (
-    symmetry=c1
-    { atoms geometry} = {
-      He  [  -1.0  0.0  0.0 ]
-      H   [   1.0  0.0  0.0 ]
-     }
-  )
-  basis<GaussianBasisSet>: (
-    molecule = $..:molecule
-    name = test2
-    %name = sto3gd
-    puream = yes
-   )
+h2o<Molecule>: (
+  symmetry=c1
+  { atoms geometry} = {
+    H  [   1.5  0.0  -0.3 ]
+    H  [  -1.5  0.0  -0.3 ]
+    O  [   0.0  0.0   1.0 ]
+   }
 )
 
-htest: (
-   molecule<Molecule>: (
-       { atoms    geometry } = {
-          H  [ 0.0 0.0 0.0 ]
-       }
-    )
-   basis<GaussianBasisSet>: (
-       puream = yes
-       name = test
-       molecule = $..:molecule
-    )
- )
+heh<Molecule>: (
+  symmetry=c1
+  { atoms geometry} = {
+    He  [  -1.0  0.0  0.0 ]
+    H   [   1.0  0.0  0.0 ]
+  }
+)
 
-centers = $:h2o
+h<Molecule>: (
+  { atoms    geometry } = {
+     H  [ 0.0 0.0 0.0 ]
+  }
+)
+
+currentbas<GaussianBasisSet>: (
+  molecule = $:molecule
+  name = "cc-pVTZ"
+  puream = yes
+)
+
+631gs<GaussianBasisSet>: (
+  molecule = $:molecule
+  name = "6-31G*"
+  puream = yes
+)
+
+sto3g<GaussianBasisSet>: (
+  molecule = $:molecule
+  name = "STO-3G"
+  puream = yes
+)
+
+testbas2<GaussianBasisSet>: (
+  molecule = $:molecule
+  name = test2
+  puream = yes
+)
+
+testbas<GaussianBasisSet>: (
+  puream = yes
+  name = test
+  molecule = $:molecule
+)
 
 test: (
+   basis = $:basisset
    storage = 1000000
    print_centers = no
    overlap = yes
-   kinetic = no
-   hcore = no
-   nuclear = no
+   kinetic = yes
+   hcore = yes
+   nuclear = yes
    3 = no
-   bounds = no
-   4 = no
+   bounds = yes
+   4 = yes
    4der = no
-   print = no
-   printbounds = no
+   print = yes
+   printbounds = yes
    niter = 1
    permute = no
    %quartet = [0 0 0 1]

@@ -31,6 +31,8 @@
 #include <util/misc/formio.h>
 #include <util/misc/regtime.h>
 #include <util/keyval/keyval.h>
+#include <util/group/message.h>
+#include <util/group/pregtime.h>
 #include <chemistry/qc/intv3/int1e.h>
 #include <chemistry/qc/intv3/int2e.h>
 #include <chemistry/qc/intv3/intv3.h>
@@ -80,11 +82,16 @@ testint(const RefTwoBodyDerivInt& in)
     }
 }
 
-main()
+int
+main(int argc, char **argv)
 {
   int ii, i,j,k,l,m,n;
 
-  RefRegionTimer tim = new RegionTimer("inttest", 1, 1);
+  RefMessageGrp msg = MessageGrp::initial_messagegrp(argc,argv);
+  if (msg.null()) msg = new ProcMessageGrp();
+  MessageGrp::set_default_messagegrp(msg);
+
+  RefRegionTimer tim = new ParallelRegionTimer(msg,"inttest", 1, 1);
 
   char *infile = new char[strlen(SRCDIR)+strlen("/inttest.in")+1];
   sprintf(infile,SRCDIR "/inttest.in");
@@ -95,42 +102,48 @@ main()
   RefGaussianBasisSet basis = tkeyval->describedclassvalue("basis");
   RefMolecule mol = basis->molecule();
 
+  int tproc = tkeyval->intvalue("test_processor");
+  if (tproc >= msg->n()) tproc = 0;
+  int me = msg->me();
+
+  if (me == tproc) cout << "testing on processor " << tproc << endl;
+
   int storage = tkeyval->intvalue("storage");
   RefInt1eV3 int1ev3 = new Int1eV3(basis,basis,1);
-  RefInt2eV3 int2ev3 = new Int2eV3(basis,basis,basis,basis,
+  RefInt2eV3 int2ev3 = new Int2eV3(basis,basis,basis,basis,msg,
                                    1, storage);
 
   int permute = tkeyval->booleanvalue("permute");
   tim->enter("overlap");
-  if (tkeyval->booleanvalue("overlap")) {
+  if (me == tproc && tkeyval->booleanvalue("overlap")) {
       cout << scprintf("testing overlap:\n");
       test_int_shell_1e(tkeyval, int1ev3, Int1eV3::overlap, permute);
     }
   tim->change("kinetic");
-  if (tkeyval->booleanvalue("kinetic")) {
+  if (me == tproc && tkeyval->booleanvalue("kinetic")) {
       cout << scprintf("testing kinetic:\n");
       test_int_shell_1e(tkeyval, int1ev3, Int1eV3::kinetic, permute);
     }
   tim->change("hcore");
-  if (tkeyval->booleanvalue("hcore")) {
+  if (me == tproc && tkeyval->booleanvalue("hcore")) {
       cout << scprintf("testing hcore:\n");
       test_int_shell_1e(tkeyval, int1ev3, Int1eV3::hcore, permute);
     }
   tim->change("nuclear");
-  if (tkeyval->booleanvalue("nuclear")) {
+  if (me == tproc && tkeyval->booleanvalue("nuclear")) {
       cout << scprintf("testing nuclear:\n");
       test_int_shell_1e(tkeyval, int1ev3, Int1eV3::nuclear, permute);
     }
   tim->change("3 center");
-  if (tkeyval->booleanvalue("3")) {
+  if (me == tproc && tkeyval->booleanvalue("3")) {
       test_3_center(tkeyval, int2ev3);
     }
   tim->change("4 center");
-  if (tkeyval->booleanvalue("4")) {
+  if (me == tproc && tkeyval->booleanvalue("4")) {
       test_4_center(tkeyval, int2ev3);
     }
   tim->change("4 center der");
-  if (tkeyval->booleanvalue("4der")) {
+  if (me == tproc && tkeyval->booleanvalue("4der")) {
       test_4der_center(tkeyval, int2ev3);
     }
 

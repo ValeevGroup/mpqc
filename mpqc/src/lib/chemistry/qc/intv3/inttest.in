@@ -77,6 +77,7 @@ testbas<GaussianBasisSet>: (
 )
 
 test: (
+   test_processor = 1
    basis = $:basisset
    storage = 1000000
    print_centers = no
@@ -84,7 +85,7 @@ test: (
    kinetic = no
    hcore = no
    nuclear = no
-   3 = yes
+   3 = no
    bounds = yes
    4 = no
    4der = yes

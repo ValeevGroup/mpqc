@@ -8,18 +8,18 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libmisc
 BIN_OR_LIB = LIB
 
-WEBFILES = pathfopen.web rdmatrix.web timer.web
+WEBFILES = pathfopen.web rdmatrix.web
 .PRECIOUS: $(WEBFILES:%.web=%.c)
 
-CSRC = ieee.c prober.c assert.c machtype.c checkalloc.c mtype.c
+CSRC = ieee.c assert.c checkalloc.c mtype.c
 GENSRC = $(WEBFILES:%.web=%.c)
 
-CXXSRC = compute.cc error.cc formio.cc bug.cc
+CXXSRC = compute.cc error.cc formio.cc bug.cc regtime.cc
 
-TESTSRC = comptest.cc formiot.cc bugtest.cc
+TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc
 
 INC = assert.h libmisc.h memory.h timer.h compute.h ieee.h bug.h
-GENINC = machtype.gbl timer.gbl assert.gbl
+GENINC = assert.gbl
 
 DISTFILES = $(WEBFILES) $(CSRC) $(CXXSRC) $(TESTSRC) $(INC) Makefile LIBS.h
 
@@ -41,6 +41,9 @@ endif
 
 comptest: comptest.cc $(TOPDIR)/lib/libmisc.a $(TOPDIR)/lib/libstate.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o comptest
+
+tregtime: tregtime.cc $(TOPDIR)/lib/libmisc.a $(TOPDIR)/lib/libref.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o tregtime
 
 bugtest: bugtest.cc $(TOPDIR)/lib/libmisc.a \
 	$(TOPDIR)/lib/libkeyval.a $(TOPDIR)/lib/libstate.a \

@@ -30,7 +30,7 @@ class CartesianIter
     int bfn();
 };
 
-class KeyVal;
+class RefKeyVal;
 class GaussianShell: virtual public SavableState
 {
 #   define CLASSNAME GaussianShell
@@ -55,7 +55,7 @@ class GaussianShell: virtual public SavableState
     void convert_coef();
     void normalize_shell();
     void compute_nfunc();
-    PrimitiveType keyval_init(KeyVal&,int,int);
+    PrimitiveType keyval_init(const RefKeyVal&,int,int);
     static const char* amtypes;
     static const char* AMTYPES;
   public:
@@ -92,9 +92,9 @@ class GaussianShell: virtual public SavableState
                   GaussianType pure,
                   double** c,
                   PrimitiveType pt = GaussianShell::Normalized);
-    GaussianShell(KeyVal&);
+    GaussianShell(const RefKeyVal&);
     GaussianShell(StateIn&);
-    GaussianShell(KeyVal&,int pure);
+    GaussianShell(const RefKeyVal&,int pure);
     ~GaussianShell();
     void save_data_state(StateOut&);
     int nprimitive() const;

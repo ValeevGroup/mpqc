@@ -87,7 +87,7 @@ GaussianShell::GaussianShell(
   normalize_shell();
 }
 
-GaussianShell::GaussianShell(KeyVal&keyval)
+GaussianShell::GaussianShell(const RefKeyVal&keyval)
 {
   // read in the shell
   PrimitiveType pt = keyval_init(keyval,0,0);
@@ -135,7 +135,7 @@ GaussianShell::save_data_state(StateOut&s)
     }
 }
 
-GaussianShell::GaussianShell(KeyVal&keyval,int pure)
+GaussianShell::GaussianShell(const RefKeyVal&keyval,int pure)
 {
   // read in the shell
   PrimitiveType pt = keyval_init(keyval,1,pure);
@@ -152,22 +152,22 @@ GaussianShell::GaussianShell(KeyVal&keyval,int pure)
 }
 
 GaussianShell::PrimitiveType
-GaussianShell::keyval_init(KeyVal& keyval,int havepure,int pure)
+GaussianShell::keyval_init(const RefKeyVal& keyval,int havepure,int pure)
 {
-  ncon = keyval.count("type");
-  if (keyval.error() != KeyVal::OK) {
+  ncon = keyval->count("type");
+  if (keyval->error() != KeyVal::OK) {
       fprintf(stderr,"GaussianShell couldn't find the \"type\" array:\n");
-      keyval.dump(stderr);
+      keyval->dump(stderr);
       abort();
     }
-  nprim = keyval.count("exp");
-  if (keyval.error() != KeyVal::OK) {
+  nprim = keyval->count("exp");
+  if (keyval->error() != KeyVal::OK) {
       fprintf(stderr,"GaussianShell couldn't find the \"exp\" array:\n");
-      keyval.dump(stderr);
+      keyval->dump(stderr);
       abort();
     }
-  int normalized = keyval.booleanvalue("normalized");
-  if (keyval.error() != KeyVal::OK) normalized = 1;
+  int normalized = keyval->booleanvalue("normalized");
+  if (keyval->error() != KeyVal::OK) normalized = 1;
   
   l = new int[ncon];
   puream = new int[ncon];
@@ -176,22 +176,22 @@ GaussianShell::keyval_init(KeyVal& keyval,int havepure,int pure)
 
   int i,j;
   for (i=0; i<nprim; i++) {
-      exp[i] = keyval.doublevalue("exp",i);
-      if (keyval.error() != KeyVal::OK) {
+      exp[i] = keyval->doublevalue("exp",i);
+      if (keyval->error() != KeyVal::OK) {
           fprintf(stderr,"GaussianShell: error reading exp:%d: %s\n",
-                  i,keyval.errormsg());
-          keyval.errortrace(stderr);
+                  i,keyval->errormsg());
+          keyval->errortrace(stderr);
           exit(1);
         }
     }
   for (i=0; i<ncon; i++) {
-      PrefixKeyVal prefixkeyval("type",keyval,i);
+      RefKeyVal prefixkeyval = new PrefixKeyVal("type",keyval,i);
       coef[i] = new double[nprim];
-      char* am = prefixkeyval.pcharvalue("am");
-      if (prefixkeyval.error() != KeyVal::OK) {
+      char* am = prefixkeyval->pcharvalue("am");
+      if (prefixkeyval->error() != KeyVal::OK) {
           fprintf(stderr,"GaussianShell: error reading am: \"%s\"\n",
-                  prefixkeyval.errormsg());
-          prefixkeyval.errortrace(stderr);
+                  prefixkeyval->errormsg());
+          prefixkeyval->errortrace(stderr);
           exit(1);
         }
       l[i] = -1;
@@ -200,25 +200,25 @@ GaussianShell::keyval_init(KeyVal& keyval,int havepure,int pure)
 	}
       if (l[i] == -1 || strlen(am) != 1) {
           fprintf(stderr,"GaussianShell: bad angular momentum: \"%s\"\n", am);
-          prefixkeyval.errortrace(stderr);
+          prefixkeyval->errortrace(stderr);
           exit(1);
 	}
       if (havepure) puream[i] = pure;
       else {
-          puream[i] = prefixkeyval.intvalue("puream");
-          if (prefixkeyval.error() != KeyVal::OK) {
+          puream[i] = prefixkeyval->intvalue("puream");
+          if (prefixkeyval->error() != KeyVal::OK) {
               puream[i] = 0;
               //fprintf(stderr,"GaussianShell: error reading puream: \"%s\"\n",
-              //        prefixkeyval.errormsg());
+              //        prefixkeyval->errormsg());
               //exit(1);
             }
         }
       for (j=0; j<nprim; j++) {
-        coef[i][j] = keyval.doublevalue("coef",i,j);
-        if (keyval.error() != KeyVal::OK) {
+        coef[i][j] = keyval->doublevalue("coef",i,j);
+        if (keyval->error() != KeyVal::OK) {
             fprintf(stderr,"GaussianShell: error reading coef:%d:%d: %s\n",
-                    i,j,keyval.errormsg());
-            keyval.errortrace(stderr);
+                    i,j,keyval->errormsg());
+            keyval->errortrace(stderr);
             exit(1);
             }
         }

@@ -17,7 +17,7 @@
 #include <chemistry/qc/intv2/atoms.h>
 
 class GaussianShell;
-class KeyVal;
+class RefKeyVal;
 class cart_point;
 
 class GaussianBasisSet: virtual public SavableState
@@ -53,16 +53,16 @@ class GaussianBasisSet: virtual public SavableState
     int nbasis_;
     int nprim_;
 
-    void recursively_get_shell(int&,KeyVal&,
+    void recursively_get_shell(int&,const RefKeyVal&,
                                const char*,const char*,int,int,int);
 
-    void init(RefMolecule&,KeyVal&,
+    void init(RefMolecule&,const RefKeyVal&,
               const char* basisname,
               int have_userkeyval,
               int pure);
     void init2();
   public:
-    GaussianBasisSet(KeyVal&);
+    GaussianBasisSet(const RefKeyVal&);
     GaussianBasisSet(StateIn&);
     // pure is -1 if the pure from the basis set data is used.
     // Otherwise 0 is cartesian and 1 is pure am.

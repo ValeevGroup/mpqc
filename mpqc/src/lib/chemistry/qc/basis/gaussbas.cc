@@ -25,26 +25,26 @@ GaussianBasisSet::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-GaussianBasisSet::GaussianBasisSet(KeyVal&topkeyval)
+GaussianBasisSet::GaussianBasisSet(const RefKeyVal&topkeyval)
 {
   RefMolecule molecule =
     Molecule::require_castdown(topkeyval
-                               .describedclassvalue("molecule").pointer(),
+                               ->describedclassvalue("molecule").pointer(),
                                "molecule of wrong type");
   
-  char* basisname = topkeyval.pcharvalue("name");
+  char* basisname = topkeyval->pcharvalue("name");
 
   // see if the user requests pure am or cartesian functions
   int pure;
-  pure = topkeyval.booleanvalue("puream");
-  if (topkeyval.error() != KeyVal::OK) pure = -1;
+  pure = topkeyval->booleanvalue("puream");
+  if (topkeyval->error() != KeyVal::OK) pure = -1;
 
   // construct a keyval that contains the basis library
 
   // this ParsedKeyVal CTOR looks at the basisdir and basisfiles
   // variables to find out what basis set files are to be read in
-  ParsedKeyVal libkeyval("basis",topkeyval); libkeyval.unmanage();
-  AggregateKeyVal keyval(topkeyval,libkeyval); keyval.unmanage();
+  RefKeyVal libkeyval = new ParsedKeyVal("basis",topkeyval);
+  RefKeyVal keyval = new AggregateKeyVal(topkeyval,libkeyval);
 
   init(molecule,keyval,basisname,1,pure);
 
@@ -56,10 +56,11 @@ GaussianBasisSet::GaussianBasisSet(RefMolecule&molecule,
                                    int pure)
 {
   // construct a keyval that contains the basis library
-  ParsedKeyVal libkeyval(BASISDIR "/v2g90.ipv2"); libkeyval.unmanage();
-  libkeyval.read(BASISDIR "/v2g90supp.ipv2");
+  RefParsedKeyVal libkeyval = new ParsedKeyVal(BASISDIR "/v2g90.ipv2");
+  libkeyval->read(BASISDIR "/v2g90supp.ipv2");
 
-  init(molecule,libkeyval,basisname,0,pure);
+  RefKeyVal keyval(libkeyval.pointer());
+  init(molecule,keyval,basisname,0,pure);
 }
 
 GaussianBasisSet::GaussianBasisSet(StateIn&s):
@@ -96,7 +97,7 @@ GaussianBasisSet::save_data_state(StateOut&s)
 
 void
 GaussianBasisSet::init(RefMolecule&molecule,
-                       KeyVal&keyval,
+                       const RefKeyVal&keyval,
                        const char*basisname,
                        int have_userkeyval,
                        int pur)
@@ -121,7 +122,7 @@ GaussianBasisSet::init(RefMolecule&molecule,
       // see if there is a specific basisname for this atom
       char* sbasisname = 0;
       if (have_userkeyval) {
-          sbasisname = keyval.pcharvalue("basis",iatom);
+          sbasisname = keyval->pcharvalue("basis",iatom);
         }
       if (!sbasisname) {
           sbasisname = strcpy(new char[strlen(basisname)+1],basisname);
@@ -139,7 +140,7 @@ GaussianBasisSet::init(RefMolecule&molecule,
       // see if there is a specific basisname for this atom
       char* sbasisname = 0;
       if (have_userkeyval) {
-          sbasisname = keyval.pcharvalue("basis",iatom);
+          sbasisname = keyval->pcharvalue("basis",iatom);
         }
       if (!sbasisname) {
           sbasisname = strcpy(new char[strlen(basisname)+1],basisname);
@@ -210,7 +211,7 @@ GaussianBasisSet::init2()
 
 void
 GaussianBasisSet::
-  recursively_get_shell(int&ishell,KeyVal&keyval,
+  recursively_get_shell(int&ishell,const RefKeyVal&keyval,
 			const char*element,
 			const char*basisname,
 			int havepure,int pure,
@@ -220,24 +221,24 @@ GaussianBasisSet::
 
   sprintf(keyword,":basis:%s:%s",
 	  element,basisname);
-  int count = keyval.count(keyword);
-  if (keyval.error() != KeyVal::OK) {
+  int count = keyval->count(keyword);
+  if (keyval->error() != KeyVal::OK) {
       fprintf(stderr,"GaussianBasisSet:: couldn't find \"%s\":\n",
 	      keyword);
-      keyval.errortrace(stderr);
+      keyval->errortrace(stderr);
       exit(1);
     }
   if (!count) return;
   for (int j=0; j<count; j++) {
       sprintf(prefix,":basis:%s:%s",
 	      element,basisname);
-      PrefixKeyVal prefixkeyval(prefix,keyval,j); prefixkeyval.unmanage();
-      if (prefixkeyval.exists("get")) {
-          char* newbasis = prefixkeyval.pcharvalue("get");
+      RefKeyVal prefixkeyval = new PrefixKeyVal(prefix,keyval,j);
+      if (prefixkeyval->exists("get")) {
+          char* newbasis = prefixkeyval->pcharvalue("get");
           if (!newbasis) {
 	      fprintf(stderr,"GaussianBasisSet: error processing get for \"%s\"\n",
 		      prefix);
-              keyval.errortrace(stderr);
+              keyval->errortrace(stderr);
 	      exit(1);
 	    }
 	  recursively_get_shell(ishell,keyval,element,newbasis,havepure,pure,get);

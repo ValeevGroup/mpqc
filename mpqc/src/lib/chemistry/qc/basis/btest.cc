@@ -6,9 +6,9 @@
 
 main()
 {
-  ParsedKeyVal keyval(SRCDIR "/btest.in");
+  RefKeyVal keyval = new ParsedKeyVal(SRCDIR "/btest.in");
 
-  RefMolecule molecule = keyval.describedclassvalue("molecule");
+  RefMolecule molecule = keyval->describedclassvalue("molecule");
 
   RefGaussianBasisSet gbs = new GaussianBasisSet(molecule,"sto-3g");
 

@@ -6,11 +6,11 @@
 #pragma interface
 #endif
 
-#include <math/optimize/nlp.h>
+#include <math/optimize/function.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
 
-class Volume: public NLP2 {
+class Volume: public Function {
 #   define CLASSNAME Volume
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>

@@ -14,7 +14,7 @@ extern "C" {
 #include <math/isosurf/volume.h>
 
 #define CLASSNAME Volume
-#define PARENTS public NLP2
+#define PARENTS public Function
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 
@@ -22,18 +22,18 @@ void *
 Volume::_castdown(const ClassDesc*cd)
 {
   void* casts[1];
-  casts[0] = NLP2::_castdown(cd);
+  casts[0] = Function::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
 Volume::Volume():
   _interp_acc(1.0e-6)
 {
-  set_dimension(matrixkit()->dimension(3));
+  set_dimension(new SCDimension(3));
 }
 
 Volume::Volume(const RefKeyVal&keyval):
-  NLP2(keyval)
+  Function(keyval)
 {
   _interp_acc = keyval->doublevalue("interpolation_accuracy");
   if (keyval->error() != KeyVal::OK) _interp_acc = 1.0e-6;

@@ -6,9 +6,10 @@ while (<>) {
         # skip the emacs mode line
     }
     else {
-        s/<(.*)>/<\\clsnmref{$1}>/;
         s/{/\\{/g;
         s/}/\\}/g;
+        s/<(.*)>/<\\clsnmref{$1}>/;
+        s/\$/\\\$/g;
         print $_;
     }
 }

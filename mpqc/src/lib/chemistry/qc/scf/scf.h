@@ -91,7 +91,7 @@ class SCF: public OneBodyWavefunction {
 
     virtual RefSymmSCMatrix lagrangian() =0;
     virtual RefSymmSCMatrix gradient_density() =0;
-    virtual void make_gradient_contribution() =0;
+    virtual void two_body_deriv(const RefSCVector&) =0;
     
     ////////////////////////////////////////////////////////////////////////
     // do setup for hessian calculation

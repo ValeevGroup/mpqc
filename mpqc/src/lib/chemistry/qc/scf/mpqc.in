@@ -8,7 +8,7 @@
 
 mole<CLSCF>: (
   root = 2
-  integral_storage=32000000
+  integral_storage=64000000
 
   % Function
   value_accuracy = 1e-9
@@ -35,7 +35,7 @@ mole<CLSCF>: (
   )
 )
 
-molecule = $:sileth
+molecule = $:water
 
 coor = $:symcoor
 message = $:messageShm
@@ -55,14 +55,15 @@ xopt<QNewtonOpt>: (
 
 gbasis<GaussianBasisSet>: (
   molecule = $:molecule
+  %name = "6-311G**"
   %name = "6-31G*"
   %name = "6-31G"
   name = "STO-3G"
   %name = "aug-cc-pVTZ"
   %puream=yes
-  matrixkit<DistSCMatrixKit>: (
-    messagegrp = $:message
-  )
+  %matrixkit<ReplSCMatrixKit>: (
+  %  messagegrp = $:message
+  %)
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -70,13 +71,13 @@ gbasis<GaussianBasisSet>: (
 % message types
 %
 
-debug<Debugger>: (
+xdebug<Debugger>: (
 )
 
 message1<ProcMessageGrp>: ()
 
 messageShm<ShmMessageGrp>: (
-  n = 2
+  n = 1
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

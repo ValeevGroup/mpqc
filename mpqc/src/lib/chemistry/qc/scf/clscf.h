@@ -70,7 +70,7 @@ class CLSCF: public SCF {
 
     RefSymmSCMatrix lagrangian();
     RefSymmSCMatrix gradient_density();
-    void make_gradient_contribution();
+    void two_body_deriv(const RefSCVector&);
 
     // hessian things
     void init_hessian();

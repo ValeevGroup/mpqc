@@ -20,7 +20,6 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/lgbuild.h>
-#include <chemistry/qc/scf/plgbuild.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -66,7 +65,6 @@ class LocalCLContribution {
 #ifdef __GNUC__
 template class GBuild<LocalCLContribution>;
 template class LocalGBuild<LocalCLContribution>;
-template class ParallelLocalGBuild<LocalCLContribution>;
 #endif
 
 ///////////////////////////////////////////////////////////////////////////
@@ -486,8 +484,10 @@ CLSCF::ao_fock()
     double *pmat_data = pblock->data;
     char * pmax = init_pmax(pmat_data);
   
+    RefMessageGrp grp = MessageGrp::get_default_messagegrp();
     LocalCLContribution lclc(gmat_data, pmat_data);
-    LocalGBuild<LocalCLContribution> gb(lclc, tbi_, integral(), basis(), pmax);
+    LocalGBuild<LocalCLContribution>
+      gb(lclc, tbi_, integral(), basis(), grp, pmax);
     gb.build_gmat(desired_value_accuracy()/100.0);
 
     delete[] pmax;
@@ -529,7 +529,7 @@ CLSCF::ao_fock()
     char * pmax = init_pmax(pmat_data);
   
     LocalCLContribution lclc(gmat_data, pmat_data);
-    ParallelLocalGBuild<LocalCLContribution>
+    LocalGBuild<LocalCLContribution>
       gb(lclc, tbi_, integral(), basis(), grp, pmax);
     gb.build_gmat(desired_value_accuracy()/100.0);
 
@@ -697,7 +697,7 @@ CLSCF::gradient_density()
 }
 
 void
-CLSCF::make_gradient_contribution()
+CLSCF::two_body_deriv(const RefSCVector& tbgrad)
 {
 }
 

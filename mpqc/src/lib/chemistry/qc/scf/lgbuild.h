@@ -16,6 +16,7 @@
 template<class T>
 class LocalGBuild : public GBuild<T> {
   protected:
+    RefMessageGrp grp_;
     RefTwoBodyInt tbi_;
     RefIntegral integral_;
     RefGaussianBasisSet gbs_;
@@ -23,8 +24,9 @@ class LocalGBuild : public GBuild<T> {
     
   public:
     LocalGBuild(T& t, const RefTwoBodyInt& tbi, const RefIntegral ints,
-                const RefGaussianBasisSet& bs, char *pm) :
-      GBuild<T>(t), tbi_(tbi), integral_(ints), gbs_(bs), pmax(pm) {}
+                const RefGaussianBasisSet& bs, const RefMessageGrp& g,
+                char *pm) :
+      GBuild<T>(t), grp_(g), tbi_(tbi), integral_(ints), gbs_(bs), pmax(pm) {}
     ~LocalGBuild() {}
 
     void build_gmat(double accuracy) {
@@ -32,6 +34,8 @@ class LocalGBuild : public GBuild<T> {
 
       double tnint=0;
       int tol = (int) (log(accuracy)/log(2.0));
+      int me=grp_->me();
+      int nproc = grp_->n();
   
       RefPetiteList rpl = integral_->petite_list();
   
@@ -43,6 +47,7 @@ class LocalGBuild : public GBuild<T> {
       tbi.set_redundant(0);
       const double *intbuf = tbi.buffer();
 
+      int ijklind=0;
       for (int i=0; i < gbs.nshell(); i++) {
         if (!pl.in_p1(i))
           continue;
@@ -60,7 +65,10 @@ class LocalGBuild : public GBuild<T> {
           int nj=gbs(j).nfunction();
           int pmaxij = pmax[oij];
 
-          for (int k=0; k <= i; k++) {
+          for (int k=0; k <= i; k++, ijklind++) {
+            if (ijklind%nproc != me)
+              continue;
+            
             int fk=gbs.shell_to_function(k);
             int nk=gbs(k).nfunction();
 
@@ -297,7 +305,9 @@ class LocalGBuild : public GBuild<T> {
         }
       }
 
-      printf("%20.0f integrals\n",tnint);
+      grp_->sum(&tnint, 1, 0, 0);
+      if (me==0)
+        printf("%20.0f integrals\n",tnint);
 
       tim_exit("ao_gmat");
     }

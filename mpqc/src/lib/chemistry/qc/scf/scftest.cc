@@ -92,17 +92,16 @@ init_mp(const RefKeyVal& keyval)
 
   SCFormIO::set_printnode(0);
   SCFormIO::set_messagegrp(grp);
-  SCFormIO::set_debug(1);
+  //SCFormIO::set_debug(1);
+
+  SCFormIO::setindent(cout, 2);
+  SCFormIO::setindent(cerr, 2);
   
   return grp;
 }
 
 main(int argc, char**argv)
 {
-  // the output stream is standard out
-  SCFormIO::setindent(cout, 2);
-  SCFormIO::setindent(cerr, 2);
-
   char *input =      (argc > 1)? argv[1] : SRCDIR "/mpqc.in";
   char *keyword =    (argc > 2)? argv[2] : "mole";
   char *optkeyword = (argc > 3)? argv[3] : "opt";

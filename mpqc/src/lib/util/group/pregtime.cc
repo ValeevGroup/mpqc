@@ -189,18 +189,6 @@ ParallelRegionTimer::print(ostream &o) const
 
   int n = nregion();
 
-  int minn = n;
-  int maxn = n;
-  msg_->max(maxn);
-  msg_->min(minn);
-
-  if (maxn != minn) {
-      ExEnv::err0()
-           << "ParallelRegionTimer::print: differing number of regions"
-           << endl;
-      abort();
-    }
-
   double *cpu_time = 0;
   double *wall_time = 0;
   double *flops = 0;

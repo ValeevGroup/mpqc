@@ -1,0 +1,564 @@
+@c -*-texinfo-*-
+@c @node The Molecule Library, Concept Index, The Symmetry Library, Top
+@node The Molecule Library, Concept Index, The Symmetry Library, Top
+@chapter The Molecule Library
+@cindex molecule
+@cindex internal coordinate
+
+The molecule library provides a @code{Molecule} class to represent the 
+collection of atoms we chemists like to refer to as, a molecule.  It also
+comes with a @code{MolecularEnergy} class which can be used in energy
+calculations and geometry optimizations, and a set of classes which
+represent generic molecular coordinates.
+
+The following include files are provided by the symmetry library:
+
+@table @file
+@item molecule.h
+This is the file to include if you wish to use the @code{Molecule} class.
+
+@item coor.h
+Include this if you wish to use the internal coordinate classes.
+
+@item energy.h
+This contains the description of the @code{MolecularEnergy} class.  You should
+not need to include this unless you're writing a derived class for use in
+an optimizer.
+
+@item molinfo.h
+Include this for access to the @code{MolInfo} and @code{AtomInfo} classes.
+
+@end table
+
+
+@menu
+* The ChemicalElement Class::   
+* The AtomicCenter Class::      
+* The Molecule Class::          
+* The Molecular Coordinate Classes::  @c * The Molecular Energy Class::
+@c * The Info Classes::
+@c * Classes for Rendering Molecules::
+@end menu
+
+@c --------------------------------------------------------------------------
+@c --------------------------------------------------------------------------
+
+@node The ChemicalElement Class, The AtomicCenter Class, The Molecule Library, The Molecule Library
+@section The ChemicalElement Class
+@clindex ChemicalElement
+
+@include ChemicalElement.texi
+
+The public interface is:
+
+@include ChemicalElement.pub.texi
+
+@c --------------------------------------------------------------------------
+@c --------------------------------------------------------------------------
+
+@node The AtomicCenter Class, The Molecule Class, The ChemicalElement Class, The Molecule Library
+@section The AtomicCenter Class
+@clindex AtomicCenter
+
+@include AtomicCenter.texi
+
+The public interface is:
+
+@include AtomicCenter.pub.texi
+
+@c --------------------------------------------------------------------------
+@c --------------------------------------------------------------------------
+
+@node The Molecule Class, The Molecular Coordinate Classes, The AtomicCenter Class, The Molecule Library
+@section The Molecule Class
+@clindex Molecule
+
+@include Molecule.texi
+
+@menu
+* The Molecule Public Interface::  
+* The Molecule Private Interface::  
+* The Molecule KeyVal Constructor::  
+* Other Functions for Molecules::  
+@end menu
+
+@c --------------------------------------------------------------------------
+
+@node The Molecule Public Interface, The Molecule Private Interface, The Molecule Class, The Molecule Class
+@subsection The Molecule Public Interface
+
+The public interface is:
+
+@include Molecule.pub.texi
+
+@c --------------------------------------------------------------------------
+
+@node The Molecule Private Interface, The Molecule KeyVal Constructor, The Molecule Public Interface, The Molecule Class
+@subsection The Molecule Private Interface
+
+The private interface is:
+
+@include Molecule.pri.texi
+
+@c --------------------------------------------------------------------------
+
+@node The Molecule KeyVal Constructor, Other Functions for Molecules, The Molecule Private Interface, The Molecule Class
+@subsection The Molecule KeyVal Constructor
+
+Upon entry, the @code{Molecule} KeyVal constructor calls the KeyVal constructor
+for the contained @code{PointGroup} (@ref{The PointGroup KeyVal Constructor}).
+The @code{Molecule} KeyVal constructor then looks for the following keywords:
+
+@table @code
+@item @b{pdb}_@b{file @equiv{}} char *
+If found, this string is a path to a file containing a description of the
+molecule in the PDB format.  If a pdb file is used, all other KeyVal 
+information about the molecule is ignored.
+
+@item @b{[a]angstrom[s] @equiv{}} boolean
+If `true' then atomic coordinates are assumed to be in Angstrom units.  
+Otherwise atomic units are assumed.
+
+@item @b{geometry @equiv{}} array of array of doubles
+A natoms X 3 matrix containing the cartesian coordinates of the atoms.
+
+@item @b{atoms @equiv{}} array of strings
+An array of length natoms containing the names or atomic symbols of each
+atom (@ref{The ChemicalElement Class}).
+
+@item @b{atom}_@b{labels @equiv{}} array of strings
+An array of length natoms containing labels for each atom (@ref{The 
+AtomicCenter Class}).  These labels are entirely optional and are only used
+by the @code{print}() members.
+
+@item @b{redundant}_@b{atoms @equiv{}} boolean
+If `false', then the @b{geometry}, @b{atoms}, and @b{atom}_@b{labels} arrays
+are assumed to contain only the symmetry unique atoms, and the
+@code{symmetrize}() (@ref{The Molecule Public Interface}) member function
+will be called to generate all the atoms.  This is the default except
+for C1 molecules.  Set this to false if you have specified redundant
+atoms.
+
+@end table
+
+As an example, take the input for water:
+@example
+molecule<Molecule>: (
+  symmetry = c2v % for PointGroup constructor
+  angstrom = yes
+  atoms = [ o h ]
+  geometry = [
+    [ 0.0  0.0  0.0 ]
+    [ 0.7  0.0  0.5 ]
+  ]
+)
+@end example
+
+This could also be written as (@ref{ParsedKeyVal Tables}):
+@example
+molecule<Molecule>: (
+  symmetry = c2v
+  angstrom = yes
+  @{ atoms  geometry @} = @{
+    o      [ 0.0  0.0  0.0 ]
+    h      [ 0.7  0.0  0.5 ]
+  @}
+)
+@end example
+
+If you had a pdb file containing everything you need then just do this:
+@example
+molecule<Molecule>: (
+  pdb_file = "water.pdb"
+)
+@end example
+
+
+@c --------------------------------------------------------------------------
+
+@node Other Functions for Molecules,  , The Molecule KeyVal Constructor, The Molecule Class
+@subsection Other Functions for Molecules
+
+There are a few other functions declared in @code{molecule.h} which operate
+on Molecules.  They are:
+
+@table @code
+@item @b{mol}_@b{move}_@b{to}_@b{com}(RefMolecule&);
+Moves the molecule's center of mass to the origin.
+
+@item @b{mol}_@b{transform}_@b{to}_@b{principal}_@b{axes}(RefMolecule&, int trans_frame=1);
+Rotates the molecule such that the x, y, and z axes are aligned with the
+principal coordinate axes.  The symmetry frame will also be rotated if
+@code{trans_frame} is true (@ref{The PointGroup Class}).
+
+@item @b{mol}_@b{cleanup}_@b{molecule}(RefMolecule&);
+This function will take a molecule which is nearly symmetric and try to
+make it perfectly symmetric.  It doesn't always succeed.
+
+@item @b{mol}_@b{num}_@b{unique}_@b{atoms}(const RefMolecule&) @b{@result{}} int;
+This function returns the number of symmetry unique atoms in the molecule.
+
+@item @b{mol}_@b{find}_@b{unique}_@b{atoms}(const RefMolecule&) @b{@result{}} int *;
+This function returns an integer vector containing the indices of all the
+symmetry unique atoms in the molecule.
+
+@end table
+
+@c --------------------------------------------------------------------------
+@c --------------------------------------------------------------------------
+
+@node The Molecular Coordinate Classes,  , The Molecule Class, The Molecule Library
+@section The Molecular Coordinate Classes
+
+These are classes for describing the internal structure of molecules; eg.
+bond lengths, bond angles, etc.
+
+@menu
+* The IntCoor Class::           
+* The SumIntCoor Class::        
+* The SetIntCoor Class::        
+* The SimpleCo Class::          
+* The Simple Internal Coordinate Classes::  
+* The MolecularCoor Class::     
+* The IntMolecularCoor Class::  
+* The CartMolecularCoor Class::  
+* The SymmMolecularCoor Class::  
+* The RedundMolecularCoor Class::  
+@end menu
+
+@c --------------------------------------------------------------------------
+
+@node The IntCoor Class, The SumIntCoor Class, The Molecular Coordinate Classes, The Molecular Coordinate Classes
+@subsection The IntCoor Class
+
+@include IntCoor.texi
+
+@menu
+* The IntCoor Public Interface::  
+* The IntCoor KeyVal Constructor::  
+@end menu
+
+@c --------------------------------------------------------------------------
+
+@node The IntCoor Public Interface, The IntCoor KeyVal Constructor, The IntCoor Class, The IntCoor Class
+@subsubsection The IntCoor Public Interface
+
+The public interface is:
+@include IntCoor.pub.texi
+
+@c --------------------------------------------------------------------------
+
+@node The IntCoor KeyVal Constructor,  , The IntCoor Public Interface, The IntCoor Class
+@subsubsection The IntCoor KeyVal Constructor
+
+The @code{IntCoor} KeyVal constructor looks for the following keywords:
+
+@table @code
+@item @b{label @equiv{}} char *
+This is a string label for the coordinate.
+
+@item @b{value @equiv{}} double
+An optional @code{double} value for the coordinate.  Assumed to be bohr or
+radian units unless otherwise specified.
+
+@item @b{unit @equiv{}} string
+An optional string giving the units for @code{value}.  Can be ``bohr'',
+``angstrom'', ``radian'', or ``degree''.
+
+@end table
+
+@c --------------------------------------------------------------------------
+
+@node The SumIntCoor Class, The SetIntCoor Class, The IntCoor Class, The Molecular Coordinate Classes
+@subsection The SumIntCoor Class
+
+@include SumIntCoor.texi
+
+@menu
+* The SumIntCoor Public Interface::  
+* The SumIntCoor KeyVal Constructor::  
+@end menu
+
+@c --------------------------------------------------------------------------
+
+@node The SumIntCoor Public Interface, The SumIntCoor KeyVal Constructor, The SumIntCoor Class, The SumIntCoor Class
+@subsubsection The SumIntCoor Public Interface
+
+The public interface is:
+@include SumIntCoor.pub.texi
+
+@c --------------------------------------------------------------------------
+
+@node The SumIntCoor KeyVal Constructor,  , The SumIntCoor Public Interface, The SumIntCoor Class
+@subsubsection The SumIntCoor KeyVal Constructor
+
+Upon entry, the @code{SumIntCoor} KeyVal constructor calls the @code{IntCoor}
+KeyVal constructor (@ref{The IntCoor KeyVal Constructor}).
+The @code{SumIntCoor} KeyVal constructor then looks for the following keywords:
+
+@table @code
+@item @b{coor @equiv{}} array of @code{IntCoor}s
+These are the coordinates which serve as the basis for the linear combination.
+
+@item @b{coef @equiv{}} array of doubles
+These are the coefficients of the basis coordinates.
+
+@end table
+
+For example, here is the KeyVal input for the A1 stretch in water. This
+example makes use of a @code{SetIntCoor}, which will be discussed in the 
+next section (@ref{The SetIntCoor Class}), as well as some simple internal
+coordinates which are discussed later (@ref{The Simple Internal Coordinate
+Classes}).
+
+@example
+ohstr<SetIntCoor>: [
+  <StreSimpleCo>=[ "o-h1 stretch" 3 1 ]
+  <StreSimpleCo>=[ "o-h2 stretch" 3 2 ]
+]
+
+a1str<SumIntCoor>: (
+  label = "A1 O-H symmetric stretch"
+  @{ coef coor @} = @{
+    1.0  $:ohstr:0
+    1.0  $:ohstr:1
+  @}
+)
+@end example
+
+Water's A1 symmetric stretch could also be defined in the following manner.
+
+@example
+str1<StreSimpleCo> = [ "o-h1 stretch" 3 1 ]
+str2<StreSimpleCo> = [ "o-h2 stretch" 3 2 ]
+
+a1str<SumIntCoor>: (
+  label = "A1 O-H symmetric stretch"
+  @{ coef coor @} = @{
+    1.0  $:str1
+    1.0  $:str2
+  @}
+)
+@end example
+
+@c --------------------------------------------------------------------------
+
+@node The SetIntCoor Class, The SimpleCo Class, The SumIntCoor Class, The Molecular Coordinate Classes
+@subsection The SetIntCoor Class
+
+@include SetIntCoor.texi
+
+@menu
+* The SetIntCoor Public Interface::  
+* The SetIntCoor KeyVal Constructor::  
+@end menu
+
+@c --------------------------------------------------------------------------
+
+@node The SetIntCoor Public Interface, The SetIntCoor KeyVal Constructor, The SetIntCoor Class, The SetIntCoor Class
+@subsubsection The SetIntCoor Public Interface
+
+The public interface is:
+@include SetIntCoor.pub.texi
+
+@c --------------------------------------------------------------------------
+
+@node The SetIntCoor KeyVal Constructor,  , The SetIntCoor Public Interface, The SetIntCoor Class
+@subsubsection The SetIntCoor KeyVal Constructor
+
+The @code{SetIntCoor} KeyVal constructor doesn't have any keywords.  Instead
+it expects an array of internal coordinates.
+
+For example, here are two (of the many possible) ways to specify the internal
+coordinates for water:
+
+@example
+water1<SetIntCoor>: [
+  <StreSimpleCo>=[ "o-h1 stretch" 3 1 ]
+  <StreSimpleCo>=[ "o-h2 stretch" 3 2 ]
+  <BendSimpleCo>=[ "hoh bend" 1 3 2 ]
+]
+
+% this is the shorthand way to specify a simple coordinate
+str1<StreSimpleCo> = [ "o-h1 stretch" 3 1 ] 
+
+% here's an example of the hard way to do it
+str2<StreSimpleCo>: (
+  label = "o-h2 stretch"
+  atoms = [ 3 2 ]
+)
+
+bend<BendSimpleCo> = [ "hoh bend" 1 3 2 ]
+
+water2<SetIntCoor>: [
+  <StreSimpleCo>=$:str1
+  <StreSimpleCo>=$:str2
+  <BendSimpleCo>=$:bend
+]
+@end example
+
+@c --------------------------------------------------------------------------
+
+@node The SimpleCo Class, The Simple Internal Coordinate Classes, The SetIntCoor Class, The Molecular Coordinate Classes
+@subsection The SimpleCo Class
+
+@menu
+* The SimpleCo Public Interface::  
+* The SimpleCo KeyVal Constructor::  
+@end menu
+
+@node The SimpleCo Public Interface, The SimpleCo KeyVal Constructor, The SimpleCo Class, The SimpleCo Class
+@subsubsection The SimpleCo Public Interface
+
+@node The SimpleCo KeyVal Constructor,  , The SimpleCo Public Interface, The SimpleCo Class
+@subsubsection The SimpleCo KeyVal Constructor
+
+@c --------------------------------------------------------------------------
+
+@node The Simple Internal Coordinate Classes, The MolecularCoor Class, The SimpleCo Class, The Molecular Coordinate Classes
+@subsection The Simple Internal Coordinate Classes
+
+@menu
+* The StreSimpleCo Class::      
+* The BendSimpleCo Class::      
+* The TorsSimpleCo Class::      
+* The OutSimpleCo Class::       
+* The LinIPSimpleCo Class::     
+* The LinOPSimpleCo Class::     
+@end menu
+
+@c --------------------------------------------------------------------------
+
+@node The StreSimpleCo Class, The BendSimpleCo Class, The Simple Internal Coordinate Classes, The Simple Internal Coordinate Classes
+@subsubsection The StreSimpleCo Class
+
+@c --------------------------------------------------------------------------
+
+@node The BendSimpleCo Class, The TorsSimpleCo Class, The StreSimpleCo Class, The Simple Internal Coordinate Classes
+@subsubsection The BendSimpleCo Class
+
+@c --------------------------------------------------------------------------
+
+@node The TorsSimpleCo Class, The OutSimpleCo Class, The BendSimpleCo Class, The Simple Internal Coordinate Classes
+@subsubsection The TorsSimpleCo Class
+
+@c --------------------------------------------------------------------------
+
+@node The OutSimpleCo Class, The LinIPSimpleCo Class, The TorsSimpleCo Class, The Simple Internal Coordinate Classes
+@subsubsection The OutSimpleCo Class
+
+@c --------------------------------------------------------------------------
+
+@node The LinIPSimpleCo Class, The LinOPSimpleCo Class, The OutSimpleCo Class, The Simple Internal Coordinate Classes
+@subsubsection The LinIPSimpleCo Class
+
+@c --------------------------------------------------------------------------
+
+@node The LinOPSimpleCo Class,  , The LinIPSimpleCo Class, The Simple Internal Coordinate Classes
+@subsubsection The LinOPSimpleCo Class
+
+@c --------------------------------------------------------------------------
+
+@node The MolecularCoor Class, The IntMolecularCoor Class, The Simple Internal Coordinate Classes, The Molecular Coordinate Classes
+@subsection The MolecularCoor Class
+
+@menu
+* The MolecularCoor Public Interface::  
+* The MolecularCoor KeyVal Constructor::  
+@end menu
+
+@c --------------------------------------------------------------------------
+
+@node The MolecularCoor Public Interface, The MolecularCoor KeyVal Constructor, The MolecularCoor Class, The MolecularCoor Class
+@subsubsection The MolecularCoor Public Interface
+
+@c --------------------------------------------------------------------------
+
+@node The MolecularCoor KeyVal Constructor,  , The MolecularCoor Public Interface, The MolecularCoor Class
+@subsubsection The MolecularCoor KeyVal Constructor
+
+@c --------------------------------------------------------------------------
+
+@node The IntMolecularCoor Class, The CartMolecularCoor Class, The MolecularCoor Class, The Molecular Coordinate Classes
+@subsection The IntMolecularCoor Class
+
+@menu
+* The IntMolecularCoor Public Interface::  
+* The IntMolecularCoor Protected Interface::  
+* The IntMolecularCoor KeyVal Constructor::  
+@end menu
+
+@c --------------------------------------------------------------------------
+
+@node The IntMolecularCoor Public Interface, The IntMolecularCoor Protected Interface, The IntMolecularCoor Class, The IntMolecularCoor Class
+@subsubsection The IntMolecularCoor Public Interface
+
+@c --------------------------------------------------------------------------
+
+@node The IntMolecularCoor Protected Interface, The IntMolecularCoor KeyVal Constructor, The IntMolecularCoor Public Interface, The IntMolecularCoor Class
+@subsubsection The IntMolecularCoor Protected Interface
+
+@c --------------------------------------------------------------------------
+
+@node The IntMolecularCoor KeyVal Constructor,  , The IntMolecularCoor Protected Interface, The IntMolecularCoor Class
+@subsubsection The IntMolecularCoor KeyVal Constructor
+
+@c --------------------------------------------------------------------------
+
+@node The CartMolecularCoor Class, The SymmMolecularCoor Class, The IntMolecularCoor Class, The Molecular Coordinate Classes
+@subsection The CartMolecularCoor Class
+
+@menu
+* The CartMolecularCoor Public Interface::  
+* The CartMolecularCoor KeyVal Constructor::  
+@end menu
+
+@c --------------------------------------------------------------------------
+
+@node The CartMolecularCoor Public Interface, The CartMolecularCoor KeyVal Constructor, The CartMolecularCoor Class, The CartMolecularCoor Class
+@subsubsection The CartMolecularCoor Public Interface
+
+@c --------------------------------------------------------------------------
+
+@node The CartMolecularCoor KeyVal Constructor,  , The CartMolecularCoor Public Interface, The CartMolecularCoor Class
+@subsubsection The CartMolecularCoor KeyVal Constructor
+
+@c --------------------------------------------------------------------------
+
+@node The SymmMolecularCoor Class, The RedundMolecularCoor Class, The CartMolecularCoor Class, The Molecular Coordinate Classes
+@subsection The SymmMolecularCoor Class
+
+@menu
+* The SymmMolecularCoor Public Interface::  
+* The SymmMolecularCoor KeyVal Constructor::  
+@end menu
+
+@c --------------------------------------------------------------------------
+
+@node The SymmMolecularCoor Public Interface, The SymmMolecularCoor KeyVal Constructor, The SymmMolecularCoor Class, The SymmMolecularCoor Class
+@subsubsection The SymmMolecularCoor Public Interface
+
+@c --------------------------------------------------------------------------
+
+@node The SymmMolecularCoor KeyVal Constructor,  , The SymmMolecularCoor Public Interface, The SymmMolecularCoor Class
+@subsubsection The SymmMolecularCoor KeyVal Constructor
+
+@c --------------------------------------------------------------------------
+
+@node The RedundMolecularCoor Class,  , The SymmMolecularCoor Class, The Molecular Coordinate Classes
+@subsection The RedundMolecularCoor Class
+
+@c --------------------------------------------------------------------------
+
+@menu
+* The RedundMolecularCoor Public Interface::  
+* The RedundMolecularCoor KeyVal Constructor::  
+@end menu
+
+@node The RedundMolecularCoor Public Interface, The RedundMolecularCoor KeyVal Constructor, The RedundMolecularCoor Class, The RedundMolecularCoor Class
+@subsubsection The RedundMolecularCoor Public Interface
+
+@c --------------------------------------------------------------------------
+
+@node The RedundMolecularCoor KeyVal Constructor,  , The RedundMolecularCoor Public Interface, The RedundMolecularCoor Class
+@subsubsection The RedundMolecularCoor KeyVal Constructor

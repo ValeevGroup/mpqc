@@ -22,19 +22,19 @@ KEYVALDOC = KeyVal.texi KeyVal.pub.texi KeyVal.pro.texi
 MATRIXDOC = RefSCMatrix.texi RefSCMatrix.pub.texi \
             RefSymmSCMatrix.texi RefSymmSCMatrix.pub.texi \
             RefDiagSCMatrix.texi RefDiagSCMatrix.pub.texi \
-            RefLocalSCMatrix.texi RefLocalSCMatrix.pub.texi \
             RefSCVector.texi RefSCVector.pub.texi \
-            RefSCDimension.texi RefSCDimension.pub.texi \
-            RefSCMatrixKit.texi RefSCMatrixKit.pub.texi
+            RefSCDimension.texi RefSCDimension.pub.texi
+#            RefLocalSCMatrix.texi RefLocalSCMatrix.pub.texi \
+#            RefSCMatrixKit.texi RefSCMatrixKit.pub.texi
 
 # from math/scmat/abstract.h:
 ABSTRACTDOC = SCMatrix.texi SCMatrix.pub.texi \
               SymmSCMatrix.texi SymmSCMatrix.pub.texi \
               DiagSCMatrix.texi DiagSCMatrix.pub.texi \
-              LocalSCMatrix.texi LocalSCMatrix.pub.texi \
               SCVector.texi SCVector.pub.texi \
               SCDimension.texi SCDimension.pub.texi \
               SCMatrixKit.texi SCMatrixKit.pub.texi
+#              LocalSCMatrix.texi LocalSCMatrix.pub.texi \
 
 # from math/symmetry/pointgroup.h
 SYMMETRYDOC = SymmetryOperation.texi SymmetryOperation.pub.texi \
@@ -45,9 +45,26 @@ SYMMETRYDOC = SymmetryOperation.texi SymmetryOperation.pub.texi \
               CharacterTable.pri.texi \
               PointGroup.texi PointGroup.pub.texi
 
+# from chemistry/molecule/chemelem.h
+CHEMEDOC = ChemicalElement.texi ChemicalElement.pub.texi
+
+# from chemistry/molecule/chemelem.h
+ATOMDOC = AtomicCenter.texi AtomicCenter.pub.texi
+
+# from chemistry/molecule/molecule.h
+MOLDOC = Molecule.texi Molecule.pub.texi Molecule.pri.texi
+
+# from chemistry/molecule/coor.h
+COORDOC = IntCoor.texi IntCoor.pub.texi \
+          SumIntCoor.texi SumIntCoor.pub.texi \
+          SetIntCoor.texi SetIntCoor.pub.texi
+
 # These are all of texi files used to generate the documentation.
 # The top level document, SC.texi, must be first in the list.
-ALLDOC = $(DOC) $(KEYVALDOC) $(MATRIXDOC) $(ABSTRACTDOC) $(SYMMETRYDOC)
+GENDOC = $(KEYVALDOC) $(MATRIXDOC) $(ABSTRACTDOC) $(SYMMETRYDOC) \
+         $(CHEMEDOC) $(ATOMDOC) $(MOLDOC) $(COORDOC)
+
+ALLDOC = $(DOC) $(GENDOC)
 
 TEXIDIRS = $(SRCDIR)
 EXTRATEXINPUT = $(shell /bin/sh -f $(SRCDIR)/addcolon.sh $(TEXIDIRS))
@@ -86,7 +103,7 @@ clean distclean::
 	/bin/rm -f SC.mc SC.mcs
 	/bin/rm -f SC.pg SC.toc SC.tp SC.vr SC.ps
 	/bin/rm -f SC.*.bak
-	/bin/rm -f $(KEYVALDOC) $(MATRIXDOC) $(SYMMETRYDOC) $(ABSTRACTDOC)
+	/bin/rm -f $(GENDOC)
 
 $(KEYVALDOC): $(SRCLIBDIR)/util/keyval/keyval.h
 	$(C2T) $<
@@ -99,3 +116,16 @@ $(SYMMETRYDOC): $(SRCLIBDIR)/math/symmetry/pointgrp.h
 
 $(ABSTRACTDOC): $(SRCLIBDIR)/math/scmat/abstract.h
 	$(C2T) $<
+
+$(CHEMEDOC): $(SRCLIBDIR)/chemistry/molecule/chemelem.h
+	$(C2T) $<
+
+$(ATOMDOC): $(SRCLIBDIR)/chemistry/molecule/atomcent.h
+	$(C2T) $<
+
+$(MOLDOC): $(SRCLIBDIR)/chemistry/molecule/molecule.h
+	$(C2T) $<
+
+$(COORDOC): $(SRCLIBDIR)/chemistry/molecule/coor.h
+	$(C2T) $<
+

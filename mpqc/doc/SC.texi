@@ -44,6 +44,7 @@ This document describes the Scientific Computing Toolkit.
 * The Symmetry Library::        This provides point group information.
 
 --- Chemistry Libraries ---
+* The Molecule Library::        This provides point group information.
 
 --- Indices ---
 * Concept Index::               The concept index.
@@ -57,6 +58,7 @@ This document describes the Scientific Computing Toolkit.
 @include keyval.texi
 @include scmat.texi
 @include symmetry.texi
+@include molecule.texi
 @include idxcon.texi
 @include idxcls.texi
 @include idxmac.texi

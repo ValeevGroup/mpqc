@@ -1,6 +1,6 @@
 @c -*-texinfo-*-
-@c @node The Symmetry Library, Concept Index, The Matrix Library, Top
-@node The Symmetry Library, Concept Index, The Matrix Library, Top
+@c @node The Symmetry Library, The Molecule Library, The Matrix Library, Top
+@node The Symmetry Library, The Molecule Library, The Matrix Library, Top
 @chapter The Symmetry Library
 @cindex symmetry
 @cindex point group

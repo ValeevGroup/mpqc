@@ -11,9 +11,8 @@
 #include <chemistry/qc/scf/scfden.h>
 
 SCFDensity::SCFDensity(SCF *s, const RefSCMatrix&v, double o)
-  : scf_(s), occ(o)
+  : scf_(s), vec(v), occ(o)
 {
-  vec = BlockedSCMatrix::require_castdown(v,"SCFDensity");
 }
 
 SCFDensity::~SCFDensity()
@@ -21,20 +20,29 @@ SCFDensity::~SCFDensity()
 }
 
 int
-SCFDensity::has_side_effects() {
+SCFDensity::has_side_effects()
+{
   return 1;
 }
 
 void
-SCFDensity::set_occ(double o) {
+SCFDensity::set_occ(double o)
+{
   occ=o;
 }
 
 void
-SCFDensity::process(SCMatrixBlockIter& bi) {
-  int ir=current_block();
+SCFDensity::process(SCMatrixBlockIter& bi)
+{
+  int ir=0;
 
-  RefSCMatrix vir = vec->block(ir);
+  RefSCMatrix vir=vec;
+  
+  if (BlockedSCMatrix::castdown(vec)) {
+    ir=current_block();
+    vir = BlockedSCMatrix::castdown(vec)->block(ir);
+  }
+
   int nbasis=vir.ncol();
 
   if (!nbasis)

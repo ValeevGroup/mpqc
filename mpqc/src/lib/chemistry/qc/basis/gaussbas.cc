@@ -311,7 +311,10 @@ GaussianBasisSet::init2()
   if (matrixkit_.null())
     matrixkit_ = SCMatrixKit::default_matrixkit();
 
-  so_matrixkit_ = new BlockedSCMatrixKit(matrixkit_);
+  if (!strcmp(molecule_->point_group().symbol(),"c1"))
+    so_matrixkit_ = matrixkit_;
+  else
+    so_matrixkit_ = new BlockedSCMatrixKit(matrixkit_);
   
   if (basisdim_.null()) {
     int nb = nshell();

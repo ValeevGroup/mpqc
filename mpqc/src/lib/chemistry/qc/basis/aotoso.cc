@@ -253,6 +253,17 @@ PetiteList::aotoso_info()
   CharacterTable ct = mol.point_group().char_table();
   SymmetryOperation so;
 
+  if (c1_) {
+    SO_block *SOs = new SO_block[1];
+    SOs[0].set_length(gbs.nbasis());
+    for (i=0; i < gbs.nbasis(); i++) {
+      SOs[0].so[i].set_length(1);
+      SOs[0].so[i].cont[0].bfn=i;
+      SOs[0].so[i].cont[0].coef=1.0;
+    }
+    return SOs;
+  }
+
   // ncomp is the number of symmetry blocks we have. for point groups with
   // complex E representations, this will be cut in two eventually
   int ncomp=0;
@@ -276,6 +287,7 @@ PetiteList::aotoso_info()
   
   // SOs is an array of SO_blocks which holds the redundant SO's
   SO_block *SOs = new SO_block[ncomp];
+
   for (i=0; i < ncomp; i++) {
     ir = whichir[i];
     int len = (ct.gamma(ir).complex()) ? nbf_in_ir_[ir]/2 : nbf_in_ir_[ir];
@@ -511,54 +523,59 @@ PetiteList::aotoso()
   
   SO_block *sos = aotoso_info();
   
-  RefSCMatrixCompositeSubblockIter iter = (SCMatrixCompositeSubblockIter*)
-    aoso->local_blocks(SCMatrixSubblockIter::Write).pointer();
+  BlockedSCMatrix *aosop = BlockedSCMatrix::castdown(aoso);
 
-  for (iter->begin(); iter->ready(); iter->next()) {
-    SO_block& sob = sos[iter->current_block()];
+  for (int b=0; b < aosop->nblocks(); b++) {
+    RefSCMatrix aosb = aosop->block(b);
 
-    if (SCMatrixRectBlock::castdown(iter->block())) {
-      SCMatrixRectBlock *blk =
-        SCMatrixRectBlock::require_castdown(iter->block(),
-                                          "PetiteList::aotoso:blk");
-
-      int jlen = blk->jend-blk->jstart;
+    if (aosb.null())
+      continue;
     
-      for (int j=0; j < sob.len; j++) {
-        if (j < blk->jstart || j >= blk->jend)
-          continue;
-      
-        SO& soj = sob.so[j];
-      
-        for (int i=0; i < soj.len; i++) {
-          int ii=soj.cont[i].bfn;
-        
-          if (ii < blk->istart || ii >= blk->iend)
-            continue;
+    SO_block& sob = sos[b];
+    
+    RefSCMatrixSubblockIter iter =
+      aosb->local_blocks(SCMatrixSubblockIter::Write);
 
-          blk->data[(ii-blk->istart)*jlen+(j-blk->jstart)] = soj.cont[i].coef;
+    for (iter->begin(); iter->ready(); iter->next()) {
+      if (SCMatrixRectBlock::castdown(iter->block())) {
+        SCMatrixRectBlock *blk = SCMatrixRectBlock::castdown(iter->block());
+
+        int jlen = blk->jend-blk->jstart;
+    
+        for (int j=0; j < sob.len; j++) {
+          if (j < blk->jstart || j >= blk->jend)
+            continue;
+      
+          SO& soj = sob.so[j];
+      
+          for (int i=0; i < soj.len; i++) {
+            int ii=soj.cont[i].bfn;
+            
+            if (ii < blk->istart || ii >= blk->iend)
+              continue;
+
+            blk->data[(ii-blk->istart)*jlen+(j-blk->jstart)] =
+              soj.cont[i].coef;
+          }
         }
-      }
-    } else {
-      SCMatrixRectSubBlock *blk =
-        SCMatrixRectSubBlock::require_castdown(iter->block(),
-                                          "PetiteList::aotoso:blk");
+      } else {
+        SCMatrixRectSubBlock *blk =
+          SCMatrixRectSubBlock::castdown(iter->block());
 
-      int jlen = blk->jend-blk->jstart;
-    
-      for (int j=0; j < sob.len; j++) {
-        if (j < blk->jstart || j >= blk->jend)
-          continue;
-      
-        SO& soj = sob.so[j];
-      
-        for (int i=0; i < soj.len; i++) {
-          int ii=soj.cont[i].bfn;
-        
-          if (ii < blk->istart || ii >= blk->iend)
+        for (int j=0; j < sob.len; j++) {
+          if (j < blk->jstart || j >= blk->jend)
             continue;
+      
+          SO& soj = sob.so[j];
+      
+          for (int i=0; i < soj.len; i++) {
+            int ii=soj.cont[i].bfn;
+        
+            if (ii < blk->istart || ii >= blk->iend)
+              continue;
 
-          blk->data[ii*jlen+j] = soj.cont[i].coef;
+            blk->data[ii*blk->istride+j] = soj.cont[i].coef;
+          }
         }
       }
     }
@@ -570,12 +587,19 @@ PetiteList::aotoso()
 RefSCMatrix
 PetiteList::sotoao()
 {
-  return aotoso().i();
+  if (c1_)
+    return aotoso();
+  else
+    return aotoso().i();
 }
 
 RefSymmSCMatrix
 PetiteList::to_SO_basis(const RefSymmSCMatrix& a)
 {
+  // if C1, then do nothing
+  if (c1_)
+    return a;
+  
   RefSymmSCMatrix aomatrix = BlockedSymmSCMatrix::castdown(a);
   if (aomatrix.null()) {
     aomatrix = gbs_->so_matrixkit()->symmmatrix(AO_basisdim());
@@ -592,6 +616,10 @@ PetiteList::to_SO_basis(const RefSymmSCMatrix& a)
 RefSymmSCMatrix
 PetiteList::to_AO_basis(const RefSymmSCMatrix& somatrix)
 {
+  // if C1, then do nothing
+  if (c1_)
+    return somatrix;
+  
   RefSymmSCMatrix aomatrix(AO_basisdim(), gbs_->so_matrixkit());
   aomatrix.assign(0.0);
   aomatrix->accumulate_transform(sotoao().t(), somatrix);
@@ -626,6 +654,10 @@ PetiteList::evecs_to_SO_basis(const RefSCMatrix& aoev)
 RefSCMatrix
 PetiteList::evecs_to_AO_basis(const RefSCMatrix& soevecs)
 {
+  // if C1, then do nothing
+  if (c1_)
+    return soevecs;
+  
   RefSCMatrix aoev = aotoso() * soevecs;
 
   RefSCMatrix aoevecs(gbs_->basisdim(), gbs_->basisdim(), gbs_->matrixkit());
@@ -789,6 +821,12 @@ void
 PetiteList::symmetrize(const RefSymmSCMatrix& skel,
                        const RefSymmSCMatrix& sym)
 {
+  // if C1, then do nothing
+  if (c1_) {
+    sym->convert(skel);
+    return;
+  }
+  
   int b,c;
 
   GaussianBasisSet& gbs = *gbs_.pointer();
@@ -801,7 +839,7 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
     bskel->convert(skel);
   }
   
-  RefSCMatrix aoso = aotoso();
+  RefSCMatrix aoso = aotoso().t();
   BlockedSCMatrix *lu = BlockedSCMatrix::castdown(aoso);
 
   for (b=0; b < lu->nblocks(); b++) {
@@ -816,7 +854,8 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   }
 
   sym.assign(0.0);
-  sym.accumulate_transform(aoso.t(),bskel);
+  sym.accumulate_transform(aoso,bskel);
+  aoso=0;
 #else
   do_transform(skel,sym,gbs,*this,ct);
 #endif

@@ -68,6 +68,7 @@ class PetiteList : public VRefCount {
     int ng_;
     int nirrep_;
     int nblocks_;
+    int c1_;
 
     RefGaussianBasisSet gbs_;
     RefIntegral ints_;
@@ -88,16 +89,18 @@ class PetiteList : public VRefCount {
     ~PetiteList();
 
     int order() const { return ng_; }
-    int atom_map(int n, int g) const { return atom_map_[n][g]; }
-    int shell_map(int n, int g) const { return shell_map_[n][g]; }
-    int lambda(int ij) const { return (int) lamij_[ij]; }
-    int lambda(int i, int j) const { return (int) lamij_[ij_offset(i,j)]; }
+    int atom_map(int n, int g) const { return (c1_) ? n : atom_map_[n][g]; }
+    int shell_map(int n, int g) const { return (c1_) ? n : shell_map_[n][g]; }
+    int lambda(int ij) const { return (c1_) ? 1 : (int) lamij_[ij]; }
+    int lambda(int i, int j) const
+                          { return (c1_) ? 1 : (int) lamij_[ij_offset(i,j)]; }
 
-    int in_p1(int n) const { return (int) p1_[n]; }
-    int in_p2(int ij) const { return (int) lamij_[ij]; }
+    int in_p1(int n) const { return (c1_) ? 1 : (int) p1_[n]; }
+    int in_p2(int ij) const { return (c1_) ? 1 : (int) lamij_[ij]; }
     int in_p4(int ij, int kl, int i, int j, int k, int l) const;
     
-    int nfunction(int i) const { return nbf_in_ir_[i]; }
+    int nfunction(int i) const
+                            { return (c1_) ? gbs_->nbasis() : nbf_in_ir_[i]; }
 
     int nblocks() const { return nblocks_; }
 
@@ -135,6 +138,9 @@ class PetiteList : public VRefCount {
 inline int
 PetiteList::in_p4(int ij, int kl, int i, int j, int k, int l) const
 {
+  if (c1_)
+    return 1;
+  
   int ijkl = i_offset(ij)+kl;
   int nijkl=0;
 

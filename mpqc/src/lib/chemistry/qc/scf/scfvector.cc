@@ -18,6 +18,7 @@
 void
 SCF::compute_vector(double& eelec)
 {
+  tim_enter("vector");
   int i;
 
   // one day this should be in the input
@@ -35,7 +36,9 @@ SCF::compute_vector(double& eelec)
 
   for (int iter=0; iter < maxiter_; iter++) {
     // form the density from the current vector 
+    tim_enter("density");
     double delta = new_density();
+    tim_exit("density");
     
     // check convergence
     if (delta < desired_value_accuracy())
@@ -46,7 +49,9 @@ SCF::compute_vector(double& eelec)
       reset_density();
       
     // form the AO basis fock matrix
+    tim_enter("fock");
     ao_fock();
+    tim_exit("fock");
 
     // calculate the electronic energy
     eelec = scf_energy();
@@ -54,13 +59,16 @@ SCF::compute_vector(double& eelec)
            iter+1,eelec+nucrep,delta);
 
     // now extrapolate the fock matrix
+    tim_enter("extrap");
     RefSCExtrapData data = extrap_data();
     RefSCExtrapError error = extrap_error();
     extrap->extrapolate(data,error);
     data=0;
     error=0;
+    tim_exit("extrap");
 
     // diagonalize effective MO fock to get MO vector
+    tim_enter("evals");
     RefSCMatrix nvector = scf_vector_.clone();
     RefDiagSCMatrix evals(basis_dimension(), basis_matrixkit());
   
@@ -71,6 +79,7 @@ SCF::compute_vector(double& eelec)
     eff.element_op(level_shift);
     
     eff.diagonalize(evals,nvector);
+    tim_exit("evals");
 
     // now un-level shift eigenvalues
     level_shift->set_shift(-level_shift_);
@@ -86,7 +95,9 @@ SCF::compute_vector(double& eelec)
     nvector=0;
     
     // and orthogonalize vector
+    tim_enter("schmidt");
     scf_vector_->schmidt_orthog(overlap().pointer(),basis()->nbasis());
+    tim_exit("schmidt");
   }
       
   eigenvectors_ = scf_vector_;
@@ -96,6 +107,8 @@ SCF::compute_vector(double& eelec)
   done_vector();
 
   extrap = 0;
+  tim_exit("vector");
+  tim_print(0);
 }
 
 ////////////////////////////////////////////////////////////////////////////

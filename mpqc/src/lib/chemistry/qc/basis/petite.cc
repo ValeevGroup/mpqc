@@ -68,11 +68,25 @@ PetiteList::init()
   CharacterTable ct = mol.point_group().char_table();
   
   // initialize private members
+  c1_=0;
   ng_ = ct.order();
   natom_ = mol.natom();
   nshell_ = gbs.nshell();
   nirrep_ = ct.nirrep();
 
+  // if point group is C1, then zero everything
+  if (ng_==1) {
+    c1_=1;
+    nblocks_=1;
+
+    p1_=0;
+    atom_map_=0;
+    shell_map_=0;
+    lamij_=0;
+    nbf_in_ir_=0;
+    return;
+  }
+  
   // allocate storage for arrays
   p1_ = new char[nshell_];
   lamij_ = new char[i_offset(nshell_)];
@@ -212,6 +226,10 @@ PetiteList::init()
 RefSCDimension
 PetiteList::AO_basisdim()
 {
+  // return basis dimension if C1 symmetry
+  if (c1_)
+    return gbs_->basisdim();
+  
   RefSCDimension dim = new SCDimension(gbs_->nbasis(),1);
   dim->blocks()->set_subdim(0, gbs_->basisdim());
   return dim;
@@ -220,6 +238,10 @@ PetiteList::AO_basisdim()
 RefSCDimension
 PetiteList::SO_basisdim()
 {
+  // return basis dimension if C1 symmetry
+  if (c1_)
+    return gbs_->basisdim();
+
   int i, j, ii;
   
   // grab a reference to the basis set
@@ -245,11 +267,23 @@ PetiteList::SO_basisdim()
   delete[] nao;
 
   for (i=ii=0; i < nirrep_; i++) {
+    RefMessageGrp grp = MessageGrp::get_default_messagegrp();
+    int me=grp->me();
+    int np=grp->n();
+    int *subblksize = new int[np];
+    int nbas=nbf_in_ir_[i];
+    for (j=0; j < np; j++) {
+      if (j < nbas%np)
+        subblksize[j] = nbas/np + 1;
+      else
+        subblksize[j] = nbas/np;
+    }
+    
     int je = ct.gamma(i).complex() ? 1 : ct.gamma(i).degeneracy();
     for (j=0; j < je; j++,ii++) {
       char lab[24];
       sprintf(lab,"irrep %s comp %d", ct.gamma(i).symbol(), j);
-      ret->blocks()->set_subdim(ii, new SCDimension(nbf_in_ir_[i]));
+      ret->blocks()->set_subdim(ii, new SCDimension(nbas, np, subblksize));
     }
   }
 
@@ -263,6 +297,11 @@ PetiteList::print(FILE *o, int verbose)
 
   fprintf(o,"PetiteList:\n");
 
+  if (c1_) {
+    fprintf(o,"  is c1\n");
+    return;
+  }
+  
   if (verbose) {
     fprintf(o,"  natom_ = %d\n",natom_);
     fprintf(o,"  nshell_ = %d\n",nshell_);
@@ -324,27 +363,34 @@ PetiteList::r(int g)
   ret.assign(0.0);
   
   // this should be replaced with an element op at some point
-  for (int i=0; i < natom_; i++) {
-    int j = atom_map_[i][g];
+  if (c1_) {
+    for (int i=0; i < gbs.nbasis(); i++)
+      ret.set_element(i,i,1.0);
+    return ret;
 
-    for (int s=0; s < gbs.nshell_on_center(i); s++) {
-      int func_i = gbs.shell_to_function(gbs.shell_on_center(i,s));
-      int func_j = gbs.shell_to_function(gbs.shell_on_center(j,s));
+  } else {
+    for (int i=0; i < natom_; i++) {
+      int j = atom_map_[i][g];
+
+      for (int s=0; s < gbs.nshell_on_center(i); s++) {
+        int func_i = gbs.shell_to_function(gbs.shell_on_center(i,s));
+        int func_j = gbs.shell_to_function(gbs.shell_on_center(j,s));
       
-      for (int c=0; c < gbs(i,s).ncontraction(); c++) {
-        int am=gbs(i,s).am(c);
+        for (int c=0; c < gbs(i,s).ncontraction(); c++) {
+          int am=gbs(i,s).am(c);
 
-        if (am==0) {
-          ret.set_element(func_j,func_i,1.0);
-        } else {
-          ShellRotation rr(am,so,ints_,gbs(i,s).is_pure(c));
-          for (int ii=0; ii < rr.dim(); ii++)
-            for (int jj=0; jj < rr.dim(); jj++)
-              ret.set_element(func_j+jj,func_i+ii,rr(ii,jj));
+          if (am==0) {
+            ret.set_element(func_j,func_i,1.0);
+          } else {
+            ShellRotation rr(am,so,ints_,gbs(i,s).is_pure(c));
+            for (int ii=0; ii < rr.dim(); ii++)
+              for (int jj=0; jj < rr.dim(); jj++)
+                ret.set_element(func_j+jj,func_i+ii,rr(ii,jj));
+          }
+
+          func_i += gbs(i,s).nfunction(c);
+          func_j += gbs(i,s).nfunction(c);
         }
-
-        func_i += gbs(i,s).nfunction(c);
-        func_j += gbs(i,s).nfunction(c);
       }
     }
   }

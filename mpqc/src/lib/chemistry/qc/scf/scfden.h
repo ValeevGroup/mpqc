@@ -15,7 +15,7 @@
 class SCFDensity : public BlockedSCElementOp {
   private:
     SCF *scf_;
-    BlockedSCMatrix *vec;
+    RefSCMatrix vec;
     double occ;
 
   public:

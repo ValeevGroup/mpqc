@@ -26,7 +26,7 @@ mole<CLSCF>: (
   density_reset_freq = 5
   ckpt_dir = "./"
   filename = "test"
-  %maxiter=3
+  %maxiter=2
 
   extrap<DIIS>: (
     start = 5
@@ -35,13 +35,13 @@ mole<CLSCF>: (
   )
 )
 
-molecule = $:sileth
+molecule = $:water
 
 coor = $:symcoor
 
 xopt<QNewtonOpt>: (
   convergence = 1.0e-6
-  max_iterations = 19
+  max_iterations = 2
   function = $:mole
   transition_state=no
   update<BFGSUpdate>:()
@@ -60,9 +60,25 @@ gbasis<GaussianBasisSet>: (
   %name = "STO-3G"
   %name = "aug-cc-pVTZ"
   %puream=yes
-  xmatrixkit<ReplSCMatrixKit>: (
-    messagegrp = $:message
-  )
+  matrixkit = $:matrixkit
+)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% matrix kits
+%
+matrixkit = $:replmatrixkit
+
+localmatrixkit<LocalSCMatrixKit>: (
+  messagegrp = $:message
+)
+
+replmatrixkit<ReplSCMatrixKit>: (
+  messagegrp = $:message
+)
+
+distmatrixkit<DistSCMatrixKit>: (
+  messagegrp = $:message
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -73,7 +89,7 @@ gbasis<GaussianBasisSet>: (
 xdebug<Debugger>: (
 )
 
-message = $:messageShm
+message = $:message1
 message1<ProcMessageGrp>: ()
 
 messageShm<ShmMessageGrp>: (
@@ -87,14 +103,17 @@ messageShm<ShmMessageGrp>: (
 
 redcoor<RedundMolecularCoor>: (
   molecule = $:molecule
+  matrixkit = $:matrixkit
 )
 
 symcoor<SymmMolecularCoor>: (
   molecule = $:molecule
+  matrixkit = $:matrixkit
 )
 
 cartcoor<CartMolecularCoor>: (
   molecule = $:molecule
+  matrixkit = $:matrixkit
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -199,8 +218,8 @@ water_c1<Molecule>: (
 water<Molecule>: (
   symmetry=c2v
   { atoms geometry } = {
-      O    [  0.0000000000    0.0000000000    0.0000000000 ]
       H    [  1.5000000000    0.0000000000    1.0000000000 ]
+      O    [  0.0000000000    0.0000000000    0.0000000000 ]
   }
 )
 

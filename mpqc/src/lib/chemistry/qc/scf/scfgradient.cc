@@ -1,4 +1,6 @@
 
+#include <util/misc/timer.h>
+
 #include <math/scmat/offset.h>
 #include <math/scmat/local.h>
 
@@ -123,6 +125,7 @@ ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
 void
 SCF::compute_gradient(const RefSCVector& gradient)
 {
+  tim_enter("compute gradient");
   int i;
   
   init_gradient();
@@ -133,17 +136,20 @@ SCF::compute_gradient(const RefSCVector& gradient)
   memset(g,0,sizeof(double)*gradient.n());
 
   // do the nuclear contribution
+  tim_enter("nuc rep");
   nuc_repulsion(g, molecule());
 
   double *o = new double[n3];
   memset(o,0,sizeof(double)*gradient.n());
 
   // form overlap contribution
+  tim_change("overlap gradient");
   RefSymmSCMatrix dens = lagrangian();
   RefOneBodyDerivInt derint = integral()->overlap_deriv();
   ob_gradient(derint, o, dens, basis(), scf_grp_);
   
   // other one electron contributions
+  tim_change("one electron gradient");
   dens = gradient_density();
   derint = integral()->hcore_deriv();
   ob_gradient(derint, o, dens, basis(), scf_grp_);
@@ -157,8 +163,10 @@ SCF::compute_gradient(const RefSCVector& gradient)
   derint=0;
   
   // now calculate two electron contribution
+  tim_change("two electron gradient");
   memset(o,0,sizeof(double)*gradient.n());
   two_body_deriv(o);
+  tim_exit("two electron gradient");
 
   for (i=0; i < n3; i++) g[i] += o[i];
   
@@ -167,6 +175,8 @@ SCF::compute_gradient(const RefSCVector& gradient)
   delete[] o;
   
   done_gradient();
+  tim_exit("compute gradient");
+  tim_print(0);
 }
 
 //////////////////////////////////////////////////////////////////////////////

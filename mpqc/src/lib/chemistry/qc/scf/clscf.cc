@@ -206,6 +206,14 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
   if (user_occupations_)
     return;
   
+  if (nirrep_==1) {
+    if (!ndocc_) {
+      ndocc_=new int[1];
+      ndocc_[0]=tndocc_;
+    }
+    return;
+  }
+  
   int i,j;
   
   RefDiagSCMatrix evals;

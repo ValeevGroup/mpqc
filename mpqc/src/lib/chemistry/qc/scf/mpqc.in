@@ -3,7 +3,7 @@ nproc = 2
 molecule = $:ch2
 coor = $:symcoor
 message = $:message1
-basis_matrixkit = $:localmatrixkit
+basis_matrixkit = $:replmatrixkit
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -12,7 +12,7 @@ basis_matrixkit = $:localmatrixkit
 % can be CLSCF, HSOSSCF, OSSSCF, TCSCF, XSCF, MCSCF
 %
 
-mole<TCSCF>: (
+mole<TCHF>: (
   %matrixkit = $:localmatrixkit
   memory=32000000
 
@@ -46,7 +46,7 @@ mole<TCSCF>: (
   %guess_wavefunction = $:guess
 )
 
-guess<HSOSSCF>: (
+guess<HSOSHF>: (
   integral_storage=32000000
   value_accuracy = 1e-9
   molecule = $:molecule

@@ -258,6 +258,7 @@ class UnionShape: public Shape {
 
     int gradient_implemented() const;
 };
+SavableState_REF_dec(UnionShape);
 
 #endif
 

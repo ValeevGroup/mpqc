@@ -471,6 +471,10 @@ class ParsedKeyVal : public StringKeyVal {
     //. Cleanup, deleting the \clsnm{IPV2} object.
     ~ParsedKeyVal();
 
+    //. This is like the \srccd{ParsedKeyVal(const char*,const RefKeyVal&)}
+    // ctor, but writes the contents of the files to the given ostream.
+    static void cat_files(const char*,const RefKeyVal&,ostream &o);
+
     //. Read input data from the given filename, stream, or string.
     void read(const char*);
     void read(istream&);

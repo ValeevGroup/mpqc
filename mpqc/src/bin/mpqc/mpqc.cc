@@ -33,11 +33,14 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <fstream.h>
+#include <strstream.h>
 
 #include <util/options/GetLongOpt.h>
 #include <util/misc/newstring.h>
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>
+#include <util/group/thread.h>
 #include <util/group/pregtime.h>
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
@@ -92,10 +95,44 @@ main(int argc, char *argv[])
   // set the working dir
   if (strcmp(options.retrieve("W"),"."))
     chdir(options.retrieve("W"));
-  
-  // open keyval input
+
+  // get the message group.  first try the commandline and environment
+  RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
+  if (grp.nonnull())
+    MessageGrp::set_default_messagegrp(grp);
+  else
+    grp = MessageGrp::get_default_messagegrp();
+
+  // initialize keyval input
   const char *input = options.retrieve("f");
-  RefKeyVal pkv(new ParsedKeyVal(input));
+  RefParsedKeyVal parsedkv;
+  if (grp->n() == 1) {
+    parsedkv = new ParsedKeyVal(input);
+  }
+  else {
+    // read the input file on only node 0
+    parsedkv = new ParsedKeyVal();
+    char *in_char_array;
+    if (grp->me() == 0) {
+      ifstream is(input);
+      ostrstream ostrs;
+      is >> ostrs.rdbuf();
+      ostrs << ends;
+      in_char_array = ostrs.str();
+      int n = ostrs.pcount();
+      grp->bcast(n);
+      grp->bcast(in_char_array, n);
+    }
+    else {
+      int n;
+      grp->bcast(n);
+      in_char_array = new char[n];
+      grp->bcast(in_char_array, n);
+    }
+    parsedkv->parse_string(in_char_array);
+    delete[] in_char_array;
+  }
+  RefKeyVal pkv = parsedkv.pointer();
   RefKeyVal ppkv(new AggregateKeyVal(new PrefixKeyVal(":mpqc",pkv),
                                      new PrefixKeyVal(":default",pkv)));
   pkv = new ParsedKeyVal("input",ppkv);
@@ -109,20 +146,6 @@ main(int argc, char *argv[])
   strncpy(basename, input, nfilebase);
   basename[nfilebase] = '\0';
   SCFormIO::set_default_basename(basename);
-
-  // get the message group.  first try the commandline and environment
-  RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
-  
-  // if we still don't have a group, try reading the message group
-  // from the input
-  if (grp.null()) {
-    grp = keyval->describedclassvalue("message");
-  }
-
-  if (grp.nonnull())
-    MessageGrp::set_default_messagegrp(grp);
-  else
-    grp = MessageGrp::get_default_messagegrp();
 
   // get the thread group.  first try the commandline and environment
   RefThreadGrp thread = ThreadGrp::initial_threadgrp(argc, argv);

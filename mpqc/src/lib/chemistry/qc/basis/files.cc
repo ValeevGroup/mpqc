@@ -27,8 +27,12 @@
 
 #include <ctype.h>
 #include <string.h>
-#include <chemistry/qc/basis/files.h>
 #include <stdio.h>
+#include <fstream.h>
+#include <strstream.h>
+
+#include <util/group/message.h>
+#include <chemistry/qc/basis/files.h>
 
 BasisFileSet::BasisFileSet(const RefKeyVal& keyval)
 {
@@ -96,26 +100,61 @@ BasisFileSet::keyval(const RefKeyVal &keyval, const char *basisname)
     }
   filename[i] = '\0';
 
+  RefMessageGrp grp = MessageGrp::get_default_messagegrp();
+
   // find the basis file
   RefKeyVal newkeyval(keyval);
   for (i=0; i<2; i++) {
       if (!dir_[i]) continue;
-      char *path = new char[strlen(dir_[i]) + strlen(filename) + 5];
-      strcpy(path, dir_[i]);
-      strcat(path, "/");
-      strcat(path, filename);
-      strcat(path, ".kv");
+      if (grp->me() == 0) {
+          char *path = new char[strlen(dir_[i]) + strlen(filename) + 5];
+          strcpy(path, dir_[i]);
+          strcat(path, "/");
+          strcat(path, filename);
+          strcat(path, ".kv");
 
-      // test to see if the file can be opened read only.
-      FILE *fp = fopen(path, "r");
-      if (fp) {
-          fclose(fp);
-          RefKeyVal libkeyval = new ParsedKeyVal(path);
-          newkeyval = new AggregateKeyVal(keyval,libkeyval);
+          // test to see if the file can be opened read only.
+          ifstream is(path);
+          if (is.good()) {
+              int status = 1;
+              grp->bcast(status);
+              ostrstream ostrs;
+              is >> ostrs.rdbuf();
+              ostrs << ends;
+              char *in_char_array = ostrs.str();
+              int n = ostrs.pcount();
+              grp->bcast(n);
+              grp->bcast(in_char_array, n);
+              RefParsedKeyVal parsedkv = new ParsedKeyVal;
+              parsedkv->parse_string(in_char_array);
+              delete[] in_char_array;
+              RefKeyVal libkeyval = parsedkv.pointer();
+              newkeyval = new AggregateKeyVal(keyval,libkeyval);
+              delete[] path;
+              break;
+            }
+          else {
+              int status = 0;
+              grp->bcast(status);
+            }
           delete[] path;
-          break;
         }
-      delete[] path;
+      else {
+          int status;
+          grp->bcast(status);
+          if (status) {
+              int n;
+              grp->bcast(n);
+              char *in_char_array = new char[n];
+              grp->bcast(in_char_array, n);
+              RefParsedKeyVal parsedkv = new ParsedKeyVal;
+              parsedkv->parse_string(in_char_array);
+              delete[] in_char_array;
+              RefKeyVal libkeyval = parsedkv.pointer();
+              newkeyval = new AggregateKeyVal(keyval,libkeyval);
+              break;
+            }
+        }
     }
 
   // add the current basis set to basissets_

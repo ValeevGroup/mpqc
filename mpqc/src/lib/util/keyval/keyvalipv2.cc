@@ -125,6 +125,60 @@ nfp(0)
 }
 
 void
+ParsedKeyVal::cat_files(const char* keyprefix, const RefKeyVal& keyval,
+                        ostream &ostr)
+{
+  char* filespec = new char[strlen(keyprefix)+6];
+  strcpy(filespec,keyprefix);
+  strcat(filespec,"files");
+
+  char* dirspec = new char[strlen(keyprefix)+6];
+  strcpy(dirspec,keyprefix);
+  strcat(dirspec,"dir");
+
+  char* directory = keyval->pcharvalue(dirspec);
+  if (!directory) {
+      directory = getenv("SCLIBDIR");
+      if (directory) {
+          char *tmp = strchr(directory,'=');
+          if (!tmp) tmp = directory;
+          else tmp = &tmp[1];
+
+          directory = strcpy(new char[strlen(tmp)+1], tmp);
+        }
+      else {
+          directory = strcpy(new char[strlen(SRCLIBDIR)+1], SRCLIBDIR);
+        }
+    }
+
+  int nfiles = keyval->count(filespec);
+  for (int i=0; i<nfiles; i++) {
+      char* filename = keyval->pcharvalue(filespec,i);
+      char* fullname;
+      if (directory) {
+          fullname = new char[strlen(directory)+strlen(filename)+1];
+          strcpy(fullname,directory);
+          strcat(fullname,filename);
+        }
+      else {
+          fullname = filename;
+        }
+      ifstream is(fullname);
+      is >> ostr.rdbuf();
+      if (directory) {
+          delete[] filename;
+        }
+      delete[] fullname;
+    }
+
+  if (directory) delete[] directory;
+
+  delete[] dirspec;
+  delete[] filespec;
+
+}
+
+void
 ParsedKeyVal::read(const char* name)
 {
   ifstream infp(name,ios::in);

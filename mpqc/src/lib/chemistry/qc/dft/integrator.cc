@@ -149,40 +149,66 @@ DenIntegrator::init_integration(const RefDenFunctional &func)
 void
 DenIntegrator::get_density(double *dmat, double &den, double &den_grad_mag)
 {
+  int i, j;
+  double bvi, bvix, bviy, bviz;
+  double densij;
+  
   den = 0.0;
   den_grad_mag = 0.0;
-  int i, j;
-  SCVector3 grad;
-  grad[0] = grad[1] = grad[2] = 0.0;
-  for (i=0; i<nbasis_; i++) {
-      double tmp = 0.0;
-      double tmpg[3];
-      tmpg[0] = tmpg[1] = tmpg[2] = 0.0;
-      for (j=0; j<nbasis_; j++) {
-          int ij;
-          if (i>=j) ij = (i*(i+1))/2 + j;
-          else ij = (j*(j+1))/2 + i;
-          double densij = dmat[ij];
-          tmp += densij*bs_values_[i]*bs_values_[j];
-          if (need_gradient_) {
-              tmpg[0] += densij*bs_values_[i]*bsg_values_[j*3+0];
-              tmpg[1] += densij*bs_values_[i]*bsg_values_[j*3+1];
-              tmpg[2] += densij*bs_values_[i]*bsg_values_[j*3+2];
-            }
-        }
-      den += tmp;
-      if (need_gradient_) {
-          grad[0] += tmpg[0];
-          grad[1] += tmpg[1];
-          grad[2] += tmpg[2];
-        }
-    }
+
+  double tmp = 0.0;
 
   if (need_gradient_) {
-      grad[0] *= 2.0;
-      grad[1] *= 2.0;
-      grad[2] *= 2.0;
-      den_grad_mag = grad.norm();
+      double grad[3];
+      grad[0] = grad[1] = grad[2] = 0.0;
+
+      int ij=0;
+      for (i=0; i<nbasis_; i++) {
+          bvi = bs_values_[i];
+          bvix = bsg_values_[i*3];
+          bviy = bsg_values_[i*3+1];
+          bviz = bsg_values_[i*3+2];
+
+          for (j=0; j < i; j++,ij++) {
+              densij = dmat[ij];
+              double bvj = bs_values_[j];
+
+              tmp += 2.0*densij*bvi*bvj;
+              grad[0] += densij*(bvi*bsg_values_[j*3+0] + bvj*bvix);
+              grad[1] += densij*(bvi*bsg_values_[j*3+1] + bvj*bviy);
+              grad[2] += densij*(bvi*bsg_values_[j*3+2] + bvj*bviz);
+            }
+
+          densij = dmat[ij]*bvi;
+          tmp += densij*bvi;
+          grad[0] += densij*bvix;
+          grad[1] += densij*bviy;
+          grad[2] += densij*bviz;
+
+          ij++;
+        }
+
+
+      den = tmp;
+  
+      double x = grad[0] * 2.0;
+      double y = grad[1] * 2.0;
+      double z = grad[2] * 2.0;
+      den_grad_mag = sqrt(x*x+y*y+z*z);
+    }
+  else {
+      int ij=0;
+      for (i=0; i<nbasis_; i++) {
+          bvi = 2.0*bs_values_[i];
+
+          for (j=0; j < i; j++,ij++)
+              tmp += dmat[ij]*bvi*bs_values_[j];
+
+          tmp += 0.25*dmat[ij]*bvi*bvi;
+          ij++;
+        }
+
+      den = tmp;
     }
 }
 
@@ -244,7 +270,7 @@ DenIntegrator::do_point(const SCVector3 &r,
 
 // utility functions
 
-void
+static void
 gauleg(double x1, double x2, double x[], double w[], int n)
 {
   int m,j,i;
@@ -275,18 +301,15 @@ gauleg(double x1, double x2, double x[], double w[], int n)
     }
 }
 
-double
+static double
 convert_r(double q, double bragg_radius)
 {
   // Currently ignore atom types
-
-  double value;
-
-  value=q/(1-q);
+  double value=q/(1-q);
   return bragg_radius*value*value;
 }
 
-double
+static double
 calc_nu(SCVector3 &point, SCVector3 &center_a,
         SCVector3 &center_b, double bragg_radius_a, double bragg_radius_b)
 {
@@ -303,7 +326,7 @@ calc_nu(SCVector3 &point, SCVector3 &center_a,
   return nu;
 }
 
-double
+static double
 calc_s(double m)
 {
   double value, value2;
@@ -316,7 +339,7 @@ calc_s(double m)
   return value;
 }
 
-double
+static double
 calc_p(SCVector3 &point, int center_a, int ncenters,
        SCVector3 *centers, double *bragg_radius)
 {
@@ -333,7 +356,7 @@ calc_p(SCVector3 &point, int center_a, int ncenters,
     return p;
 }
 
-double
+static double
 calc_w(int this_center, SCVector3 &point, int ncenters,
        SCVector3 *centers, double *bragg_radius)
 {

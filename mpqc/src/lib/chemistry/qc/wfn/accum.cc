@@ -84,6 +84,12 @@ AccumH::done()
   wfn_ = 0;
 }
 
+double
+AccumH::e()
+{
+  return 0.0;
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // AccumHNull
 
@@ -205,6 +211,18 @@ SumAccumH::done()
 {
   for (int i=0; i < n_; i++)
     accums_[i]->done();
+}
+
+double
+SumAccumH::e()
+{
+  double te = 0.0;
+
+  for (int i=0; i < n_; i++) {
+    te += accums_[i]->e();
+  }
+    
+  return te;
 }
   
 /////////////////////////////////////////////////////////////////////////////

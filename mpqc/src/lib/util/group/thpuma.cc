@@ -100,7 +100,7 @@ PumaThreadGrp::start_threads()
   if (nthread_ > 1)
     cop(run_Thread_run, &flag_, (void*)threads_[1]);
 
-  threads_[0]->run();
+  if (threads_[0]) threads_[0]->run();
   
   return 0;
 }

@@ -159,8 +159,6 @@ QNewtonOpt::update()
   RefSCVector xcurrent;
   RefSCVector gcurrent;
 
-  function()->set_desired_gradient_accuracy(accuracy_);
-
   if( dynamic_grad_acc_ ) {
     // get the next gradient at the required level of accuracy.
     // usually only one pass is needed, unless we happen to find
@@ -168,15 +166,16 @@ QNewtonOpt::update()
     int accurate_enough;
     do {
         // compute the current point
+        function()->set_desired_gradient_accuracy(accuracy_);
         xcurrent = function()->get_x();
         gcurrent = function()->gradient().copy();
-
+      
         // compute the gradient convergence criterion now so i can see if
         // the accuracy needs to be tighter
         maxabs_gradient = gcurrent.maxabs();
         // compute the required accuracy
         accuracy_ = maxabs_gradient * maxabs_gradient_to_desired_accuracy;
-
+      
         if (accuracy_ < DBL_EPSILON) accuracy_ = DBL_EPSILON;
 
         // The roundoff_error_factor is thrown in to allow for round off making
@@ -355,10 +354,8 @@ QNewtonOpt::update()
     apply_transform(t);
   }
 
-  if( dynamic_grad_acc_ ) {
+  if( dynamic_grad_acc_ ) 
     function()->set_desired_gradient_accuracy(accuracy_);
-    if( lineopt_.null()) function()->set_desired_value_accuracy(accuracy_/100);
-  }
 
   return converged;
 }

@@ -249,12 +249,24 @@ Debugger::handle(int sig)
 void
 Debugger::handle_defaults()
 {
+#ifdef SIGSEGV
   handle(SIGSEGV);
+#endif
+#ifdef SIGFPE
   handle(SIGFPE);
+#endif
+#ifdef SIGQUIT
   handle(SIGQUIT);
+#endif
+#ifdef SIGIOT
   handle(SIGIOT);
+#endif
+#ifdef SIGINT
   handle(SIGINT);
+#endif
+#ifdef SIGHUP
   handle(SIGHUP);
+#endif
 #ifdef SIGBUS
   handle(SIGBUS);
 #endif

@@ -57,6 +57,8 @@ class AtomicCenter: public SavableState
     Point& point() { return p; };
     //. \srccd{const} version of the above.
     const Point& point() const { return p; };
+    //. Returns either the x, y, or z coordinate.
+    const double& r(int xyz) const { return p[xyz]; };
     //. Returns the label for this atom.
     const char * label() const { return label_; }
 

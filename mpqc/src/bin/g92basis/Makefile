@@ -1,4 +1,4 @@
-TOPDIR=../..
+TOPDIR=../../..
 ifndef SRCDIR
   SRCDIR=.
 endif

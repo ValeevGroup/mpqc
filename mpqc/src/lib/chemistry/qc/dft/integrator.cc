@@ -302,33 +302,9 @@ gauleg(double x1, double x2, double x[], double w[], int n)
 }
 
 static double
-convert_r(double q, double bragg_radius)
-{
-  // Currently ignore atom types
-  double value=q/(1-q);
-  return bragg_radius*value*value;
-}
-
-static double
-calc_nu(SCVector3 &point, SCVector3 &center_a,
-        SCVector3 &center_b, double bragg_radius_a, double bragg_radius_b)
-{
-  double mu = (point.dist(center_a)-point.dist(center_b))/
-              center_a.dist(center_b);
-
-  if (mu < -1) mu=-1.0;
-  if (mu > 1) mu=1.0;
-    
-  double chi=bragg_radius_a/bragg_radius_b;
-  double uab=(chi-1.)/(chi+1.);
-  double aab=uab/(uab*uab-1.);
-  double nu=mu+aab*(1.-mu*mu);
-  return nu;
-}
-
-static double
 calc_s(double m)
 {
+#if 1
   double value, value2;
   double a= -969969./262144.;
   double m2=m*m;
@@ -337,38 +313,51 @@ calc_s(double m)
   value = (1.+value2)/2.0;
     
   return value;
+#else
+  double m1 = 1.5*m - 0.5*m*m*m;
+  double m2 = 1.5*m1 - 0.5*m1*m1*m1;
+  double m3 = 1.5*m2 - 0.5*m2*m2*m2;
+  return 0.5*(1.0-m3);
+#endif  
 }
 
-static double
-calc_p(SCVector3 &point, int center_a, int ncenters,
-       SCVector3 *centers, double *bragg_radius)
-{
-    int center_b;
-    double p=1.0, nu_ab, s;
-    for (center_b=0; center_b < ncenters; center_b++) {
-	if (center_a != center_b) {
-	    nu_ab=calc_nu(point, centers[center_a], centers[center_b],
-                          bragg_radius[center_a], bragg_radius[center_b]);
-	    s=calc_s(nu_ab);
-	    p*=s;
-	}
-      }
-    return p;
-}
+static double **a_mat;
+static double **oorab;
 
 static double
 calc_w(int this_center, SCVector3 &point, int ncenters,
        SCVector3 *centers, double *bragg_radius)
 {
+  int icenter, jcenter;
   double p_sum=0, p_point, p_tmp;
     
-  int icenter;
   for (icenter=0; icenter<ncenters; icenter++) {
-      p_tmp=calc_p(point, icenter, ncenters, centers, bragg_radius);
+      double ra = point.dist(centers[icenter]);
+      double *ooraba = oorab[icenter];
+      double *aa = a_mat[icenter];
+
+      p_tmp = 1.0;
+      for (jcenter=0; jcenter < ncenters; jcenter++) {
+	if (icenter != jcenter) {
+            double mu = (ra-point.dist(centers[jcenter]))*ooraba[jcenter];
+
+            if (mu < -1.)
+                continue; // s(-1) == 1.0
+            else if (mu > 1.) {
+                p_tmp = 0; // s(1) == 0.0
+                break;
+              }
+            else
+                p_tmp *= calc_s(mu + aa[jcenter]*(1.-mu*mu));
+          }
+      }
+
       if (icenter==this_center)
           p_point=p_tmp; 
-      p_sum+=p_tmp;
+
+      p_sum += p_tmp;
     }
+
   return p_point/p_sum;
 }
 
@@ -408,7 +397,7 @@ Murray93Integrator::Murray93Integrator(const RefKeyVal& keyval):
   ntheta_ = keyval->intvalue("ntheta");
   if (ntheta_ == 0) ntheta_ = 16;
   nphi_ = keyval->intvalue("nphi");
-  if (nphi_ == 0) nphi_ = 16;
+  if (nphi_ == 0) nphi_ = 2*ntheta_;
 }
 
 Murray93Integrator::~Murray93Integrator()
@@ -451,6 +440,37 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc)
       bragg_radius[icenter] = mol->atom(icenter).element().bragg_radius();
     }
 
+  if (a_mat) {
+      delete[] a_mat[0];
+      delete[] a_mat;
+    }
+
+  if (oorab) {
+      delete[] oorab[0];
+      delete[] oorab;
+    }
+  
+  a_mat = new double*[ncenters];
+  a_mat[0] = new double[ncenters*ncenters];
+  oorab = new double*[ncenters];
+  oorab[0] = new double[ncenters*ncenters];
+
+  for (icenter=0; icenter < ncenters; icenter++) {
+      if (icenter) {
+          a_mat[icenter] = &a_mat[icenter-1][ncenters];
+          oorab[icenter] = &oorab[icenter-1][ncenters];
+        }
+
+      double bragg_radius_a = bragg_radius[icenter];
+      
+      for (int jcenter=0; jcenter < ncenters; jcenter++) {
+          double chi=bragg_radius_a/bragg_radius[jcenter];
+          double uab=(chi-1.)/(chi+1.);
+          a_mat[icenter][jcenter] = uab/(uab*uab-1.);
+          oorab[icenter][jcenter] = 1./centers[icenter].dist(centers[jcenter]);
+        }
+    }
+
   int ir, itheta, iphi;       // Loop indices for diff. integration dim
   int point_count;            // Counter for # integration points per center
   int point_count_total=0;    // Counter for # integration points
@@ -471,7 +491,6 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc)
   double *theta_quad_points =  new double[ntheta];
   double *theta_quad_weights = new double[ntheta];
   double *r_values = new double[nr_max];
-  double *q_values = new double[nr_max];
   double *dr_dq = new double[nr_max];
 
   // Precalcute theta Guass-Legendre abcissas and weights
@@ -482,6 +501,7 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc)
 
       // Precalculate radial integration points
       for (ir=0; ir < nr[icenter]; ir++) {
+#if 0
           // Gill's description of Murray's radial grid 
           // CPL 209 p 506
           double ii = ir+1.0;
@@ -489,12 +509,13 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc)
                        ii*ii/pow((double)nr[icenter]+1.0-ii,2.);
           dr_dq[ir]=2.0*bragg_radius[icenter]*(nr[icenter]+1.0)*
                     (nr[icenter]+1.0)*ii/pow(((double)nr[icenter]+1.0-ii),3.);
-
-          // My interpretation of Murray's radial grid
+#else
+          // Mike Colvin's interpretation of Murray's radial grid
           q=(double) ir/nr[icenter];
-          r_values[ir]=convert_r(q, bragg_radius[icenter]);
-          q_values[ir]=q;
+          double value=q/(1-q);
+          r_values[ir]=bragg_radius[icenter]*value*value;
           dr_dq[ir]=2.0*bragg_radius[icenter]*q*pow(1.0-q,-3.);
+#endif
         }
 
       center = centers[icenter];
@@ -546,11 +567,16 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc)
     delete[] theta_quad_points;
     delete[] theta_quad_weights;
     delete[] r_values;
-    delete[] q_values;
     delete[] dr_dq;
     delete[] bragg_radius;
     delete[] nr;
     delete[] centers;
+    delete[] a_mat[0];
+    delete[] a_mat;
+    a_mat=0;
+    delete[] oorab[0];
+    delete[] oorab;
+    oorab=0;
 }
 
 /////////////////////////////////////////////////////////////////////////////

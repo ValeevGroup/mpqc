@@ -252,7 +252,7 @@ Ref<MessageGrp> MPIMessageGrp::clone(void)
 }
 
 void
-MPIMessageGrp::raw_send(int target, void* data, int nbyte)
+MPIMessageGrp::raw_send(int target, const void* data, int nbyte)
 {
   if (debug_) {
       ExEnv::outn() << scprintf("%3d: MPI_Send"
@@ -262,7 +262,7 @@ MPIMessageGrp::raw_send(int target, void* data, int nbyte)
     }
   int ret;
 #ifndef USE_IMMEDIATE_MODE
-  ret = MPI_Send(data,nbyte,MPI_BYTE,target,0,commgrp);
+  ret = MPI_Send(const_cast<void*>(data),nbyte,MPI_BYTE,target,0,commgrp);
 #else
   MPI_Request mpireq;
   MPI_Status status;
@@ -308,7 +308,7 @@ MPIMessageGrp::raw_recv(int sender, void* data, int nbyte)
 }
 
 void
-MPIMessageGrp::raw_sendt(int target, int type, void* data, int nbyte)
+MPIMessageGrp::raw_sendt(int target, int type, const void* data, int nbyte)
 {
   type = (type<<1) + 1;
   if (debug_) {
@@ -319,7 +319,7 @@ MPIMessageGrp::raw_sendt(int target, int type, void* data, int nbyte)
     }
   int ret;
 #ifndef USE_IMMEDIATE_MODE
-  ret = MPI_Send(data,nbyte,MPI_BYTE,target,type,commgrp);
+  ret = MPI_Send(const_cast<void*>(data),nbyte,MPI_BYTE,target,type,commgrp);
 #else
   MPI_Request mpireq;
   MPI_Status status;

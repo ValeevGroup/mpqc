@@ -86,7 +86,7 @@ class SymmetryOperation {
     double& operator()(int i, int j) { return d[i][j]; }
 
     //. const version of the above
-    const double operator()(int i, int j) const { return d[i][j]; }
+    double operator()(int i, int j) const { return d[i][j]; }
 
     //. zero out the symop
     void zero() { memset(d,0,sizeof(double)*9); }
@@ -164,7 +164,7 @@ class SymRep {
     // matrix
     double& operator()(int i, int j) { return d[i][j]; }
     //. const version of the above
-    const double operator()(int i, int j) const { return d[i][j]; }
+    double operator()(int i, int j) const { return d[i][j]; }
 
     //. zero out the symop
     void zero() { memset(d,0,sizeof(double)*25); }

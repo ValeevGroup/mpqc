@@ -2,7 +2,7 @@
 #include <string.h>
 #ifdef __GNUC__
 #include <streambuf.h>
-#elif defined(SGI)
+#else
 #include <fstream.h>
 typedef int streamsize;
 #endif

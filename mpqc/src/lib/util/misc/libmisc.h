@@ -21,6 +21,10 @@ void debug_start(char*);
 void check_alloc(void*,char*);
 int mtype_get();
 
+#ifndef __GNUC__
+void lib_error_handler(const char*, const char *msg);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

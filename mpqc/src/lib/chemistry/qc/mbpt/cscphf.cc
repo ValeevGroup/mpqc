@@ -336,8 +336,11 @@ MBPT2::cs_cphf(double **scf_vector,
     if (debug_)
       ExEnv::out() << node0 << indent
            << scprintf("norm(P[niter]) = %12.10lf", tmp_val1) << endl;
-    if (tmp_val1 < epsilon) {  // Converged
-      // if new vector is zero
+    if (tmp_val1 < epsilon) {  // Converged (if norm of new vector is zero)
+      ExEnv::out() << node0 << indent
+                   << scprintf("CPHF: iter = %2d rms(P) = %12.10f eps = %12.10f",
+                               niter, tmp_val1, epsilon)
+                   << endl << endl;
       break;
       }
 

@@ -247,8 +247,8 @@ DistShellPair::get_task(int &S, int &R)
       }
     if (print_index_++%print_interval_ == 0) {
       if (mythread_ == 0 && msg_->me() == 0) {
-        ExEnv::out() << indent
-             << scprintf("working on shell pair (%3d %3d), %4.1f%% complete",
+        ExEnv::out() << indent 
+             << scprintf("  working on shell pair (%3d %3d), %4.1f%% complete",
                          S,R,(double)(print_index_*100)/ntask_)
              << endl;
         }

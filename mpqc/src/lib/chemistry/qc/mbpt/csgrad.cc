@@ -42,6 +42,7 @@
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbpt/util.h>
 #include <chemistry/qc/mbpt/csgrade12.h>
+#include <chemistry/qc/mbpt/csgrad34qb.h>
 #include <chemistry/qc/mbpt/csgrads2pdm.h>
 
 using namespace std;
@@ -135,12 +136,10 @@ MBPT2::compute_cs_grad()
 
   int aoint_computed = 0; 
   int aointder_computed = 0; 
-  int derset, xyz;
+  int xyz;
   int natom = molecule()->natom();     // the number of atoms
   int int_index;
   int mem_static;    // static memory in bytes
-  int qp, sr;
-  int factor_pqrs;
   int ij_proc;          // the processor which has ij pair
   int ij_index;         // of the ij pairs on a proc, this ij pair is number ij_index
                         // (i.e., ij_index < nij)
@@ -152,7 +151,6 @@ MBPT2::compute_cs_grad()
 
   double *evals;              // scf eigenvalues
   const double *intbuf;       // 2-electron AO integral buffer
-  const double *intderbuf=0;  // 2-electron AO integral derivative buffer
   double *iajb_ptr, *ibja_ptr, *iakb_ptr, *ibka_ptr;
   double *iajc_ptr, *ibjc_ptr, *icjb_ptr, *icja_ptr;
   double *ijkb_ptr, *ibkj_ptr;
@@ -166,7 +164,6 @@ MBPT2::compute_cs_grad()
   double emp2=0.0;
   int tol;                    // log2 of the erep tolerance
                               // (erep < 2^tol => discard)
-  double dtol;                // non-log2 version of the above
   double *Wkj=0,*Wab=0,*Waj=0;// occ-occ, vir-vir and vir-occ parts of 
                               // second order correction to MP2
                               // energy weighted density matrix
@@ -180,18 +177,13 @@ MBPT2::compute_cs_grad()
   double *d2vir_mat_ptr;
   double *wkj_ptr, *wjk_ptr, *wab_ptr, *wba_ptr, *waj_ptr=0;
   double *laj_ptr, *lpi_ptr, *lqi_ptr;
-  double *gamma_iajs, *gamma_iajs_tmp, *gamma_iqrs; 
+  double *gamma_iajs, *gamma_iajs_tmp; 
                               // partially back-transformed non-sep 2PDM's
   double *gamma_iqjs_tmp;
-  double *gamma_pqrs;
   double *gamma_iajs_ptr;
-  double *gamma_iqjs_ptr, *gamma_irjq_ptr;
-  double *gamma_iqrs_ptr, *gamma_iprs_ptr;
-  double *gamma_iqsr_ptr;
-  double *gamma_pqrs_ptr;
+  double *gamma_iqjs_ptr;
   double *gammabuf;           // buffer used for sending elements of gamma_iqjs
   double *mo_intbuf;          // buffer used for sending mo integrals
-  double *grad_ptr1, *grad_ptr2;
   double tmpval, tmpval1;
   double *P2AO, *W2AO;
   double *p2ao_ptr, *w2ao_ptr;
@@ -228,15 +220,9 @@ MBPT2::compute_cs_grad()
 
   int dograd = gradient_needed();
 
-  // this controls how often mem->catchup is called
-  int catchup_ctr=0;
-  const int catchup_mask = 3;
-
   tim_enter("mp2-mem");
 
   nfuncmax = basis()->max_nfunction_in_shell();
-
-  DerivCenters der_centers;
 
   nshell = basis()->nshell();
 
@@ -252,7 +238,6 @@ MBPT2::compute_cs_grad()
     ExEnv::out() << indent << scprintf("nproc = %i", nproc) << endl;
 
   tol = (int) (-10.0/log10(2.0));  // discard ereps smaller than 10^-10
-  dtol = 1.0e-10;
 
   nocc = 0;
   for (i=0; i<oso_dimension()->n(); i++) {
@@ -552,9 +537,11 @@ MBPT2::compute_cs_grad()
     }
   tbint_ = tbints_[0];
   intbuf = tbint_->buffer();
-  if (dograd) {
-    tbintder_ = integral()->electron_repulsion_deriv();
-    intderbuf = tbintder_->buffer();
+  if (dograd || do_d1_) {
+    tbintder_ = new Ref<TwoBodyDerivInt>[thr_->nthread()];
+    for (i=0; i<thr_->nthread(); i++) {
+      tbintder_[i] = integral()->electron_repulsion_deriv();
+      }
     }
 
   int mem_integral_intermediates = integral()->storage_used();
@@ -592,17 +579,28 @@ MBPT2::compute_cs_grad()
   Ref<ThreadLock> lock = thr_->new_lock();
   CSGradErep12Qtr** e12thread = new CSGradErep12Qtr*[thr_->nthread()];
   for (i=0; i<thr_->nthread(); i++) {
-      e12thread[i] = new CSGradErep12Qtr(i, thr_->nthread(), me, nproc,
-                                         mem, msg_, lock, basis(), tbints_[i],
-                                         ni, nocc, scf_vector, tol, debug_,
-                                         dynamic_);
+    e12thread[i] = new CSGradErep12Qtr(i, thr_->nthread(), me, nproc,
+                                       mem, msg_, lock, basis(), tbints_[i],
+                                       nocc, scf_vector, tol, debug_,
+                                       dynamic_);
     }
+
+    CSGrad34Qbtr** qbt34thread;
+    if (dograd || do_d1_) {
+      qbt34thread = new CSGrad34Qbtr*[thr_->nthread()];
+      for (i=0; i<thr_->nthread(); i++) {
+        qbt34thread[i] = new CSGrad34Qbtr(i, thr_->nthread(), me, nproc,
+                                          mem, msg_, lock, basis(), tbints_[i],
+                                          tbintder_[i], nocc, nfzc, scf_vector,
+                                          tol, debug_, dynamic_, dograd, natom);
+        }
+      }
 
   tim_enter("mp2 passes");
   for (pass=0; pass<npass; pass++) {
 
-    if (debug_) {
-      ExEnv::out() << indent << me << " beginning pass " << pass << endl;
+    if (me == 0) {
+      ExEnv::out() << indent << "Beginning pass " << pass+1 << endl;
       }
 
     i_offset = restart_orbital_memgrp_ + pass*ni + nfzc;
@@ -644,17 +642,16 @@ MBPT2::compute_cs_grad()
 
     index = 0;
 
-    // debug print
-    if (debug_ && me == 0) {
+    if (me == 0) {
       ExEnv::out() << indent
-           << scprintf("Begin loop over shells (erep, 1.+2. qt)") << endl;
+           << scprintf("Begin loop over shells (erep, 1.+2. q.t.)") << endl;
       }
-    // end of debug print
 
     // Do the two eletron integrals and the first two quarter transformations
     tim_enter("erep+1.qt+2.qt");
     for (i=0; i<thr_->nthread(); i++) {
       e12thread[i]->set_i_offset(i_offset);
+      e12thread[i]->set_ni(ni);
       //e12thread[i]->run();
       thr_->add_thread(i,e12thread[i]);
       }
@@ -662,11 +659,9 @@ MBPT2::compute_cs_grad()
     thr_->wait_threads();
     tim_exit("erep+1.qt+2.qt");
 
-    // debug print
-    if (debug_ && me == 0) {
+    if (me == 0) {
       ExEnv::out() << indent << "End of loop over shells" << endl;
       }
-    // end of debug print
 
     mem->lock(0);
     mem->sync();  // Make sure iqjs is complete on each node before continuing
@@ -676,11 +671,9 @@ MBPT2::compute_cs_grad()
     // Allocate and initialize some arrays
     ixjs_tmp = new double[nbasis];
 
-    // debug print
     if (me == 0) {
       ExEnv::out() << indent << "Begin third q.t." << endl;
       }
-    // end of debug print
 
     tim_enter("3. q.t.");
     // Begin third quarter transformation;
@@ -732,11 +725,9 @@ MBPT2::compute_cs_grad()
     // end of third quarter transformation
     tim_exit("3. q.t.");
 
-    // debug print
     if (me == 0) {
       ExEnv::out() << indent << "End of third q.t." << endl;
       }
-    // end of debug print
 
     delete[] ixjs_tmp;
 
@@ -750,11 +741,9 @@ MBPT2::compute_cs_grad()
     integral_ikja = new double[nvir_act];
     // in ikja: i,j act; k act or frz; a act.
 
-    // debug print
     if (me == 0) {
       ExEnv::out() << indent << "Begin fourth q.t." << endl;
       }
-    // end of debug print
 
     // Begin fourth quarter transformation
     // generating MO integrals (ov|ov), (ov|oo) and (oo|ov)
@@ -828,11 +817,9 @@ MBPT2::compute_cs_grad()
     // end of fourth quarter transformation
     tim_exit("4. q.t.");
 
-    // debug print
     if (me == 0) {
       ExEnv::out() << indent << "End of fourth q.t." << endl;
       }
-    // end of debug print
 
     // The array integral_ixjs has now been overwritten by MO integrals
     // iajy and ikja, so rename the array mo_int
@@ -1365,297 +1352,41 @@ MBPT2::compute_cs_grad()
     // End of 1. and 2. quarter back-transformation
     /////////////////////////////////////////////////
 
-    // Allocate various arrays
-    gamma_iqrs = new double[ni*nbasis*nfuncmax*nfuncmax];
-    if (!gamma_iqrs) {
-      ExEnv::err() << "Could not allocate gamma_iqrs" << endl;
-      abort();
-      }
-    gamma_pqrs = new double[nfuncmax*nfuncmax*nfuncmax*nfuncmax];
-    if (!gamma_pqrs) {
-      ExEnv::err() << "Could not allocate gamma_pqrs" << endl;
-      abort();
-      }
-
     Lpi = new double[nbasis*ni];
     bzerofast(Lpi,nbasis*ni);
 
-    if (debug_ && me == 0) {
+    if (me == 0) {
       ExEnv::out() << indent << "Begin third and fourth q.b.t." << endl;
       }
 
-    ////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////
     // Perform third and fourth quarter back-transformation
-    // and compute contrib. to gradient from non-sep 2PDM
-    ////////////////////////////////////////////////////////
+    // and compute contribution to gradient from non-sep 2PDM
+    //////////////////////////////////////////////////////////
 
-    index = 0;
+    tim_enter("3.qbt+4.qbt+non-sep contrib.");
+    for (i=0; i<thr_->nthread(); i++) {
+      qbt34thread[i]->set_i_offset(i_offset);
+      qbt34thread[i]->set_ni(ni);
+      thr_->add_thread(i,qbt34thread[i]);
+      }
+    thr_->start_threads();
+    thr_->wait_threads();
+    tim_exit("3.qbt+4.qbt+non-sep contrib.");
+    // Add thread contributions to Lpi and ginter
+    for (i=0; i<thr_->nthread(); i++) {
+      double *Lpi_thread = qbt34thread[i]->get_Lpi();
+      double **ginter_thread = qbt34thread[i]->get_ginter();
+      for (j=0; j<nbasis*ni; j++) Lpi[j] += Lpi_thread[j];
+      for (j=0; j<natom; j++) {
+        for (k=0; k<3; k++) {
+          ginter[j][k] += ginter_thread[j][k];
+          }
+        }
+      aointder_computed += qbt34thread[i]->get_aointder_computed();
+      }
 
-    for (S=0; S<nshell; S++) {
-      ns = basis()->shell(S).nfunction();
-      s_offset = basis()->shell_to_function(S);
-
-      for (R=0; R<=S; R++) {
-        nr = basis()->shell(R).nfunction();
-        r_offset = basis()->shell_to_function(R);
-
-        // If both PQRS and PQRS derivative are zero, skip to next R
-        if (tbint_->log2_shell_bound(R,S) < tol
-            && (dograd && tbintder_->log2_shell_bound(R,S) < tol)) continue;
-
-        if (index++ % nproc == me) {
-
-          tim_enter("3. q.b.t.");
-          // Begin third quarter back-transformation.
-
-          bzerofast(gamma_iqrs,ni*nbasis*nfuncmax*nfuncmax);
-
-          for (i=0; i<ni; i++) {
-            for (jloop=me; jloop<me+nocc_act; jloop++) {
-              // stagger j's to minimize contention
-              j = jloop%nocc_act + nfzc;  // j runs from nfzc to nocc
-              ij_proc =  (i*nocc + j)%nproc; // ij_proc has this ij pair
-              ij_index = (i*nocc + j)/nproc;
-
-              offset = s_offset*nbasis + ij_index*nbasis*nbasis;
-              // Send for elements gamma_iqjs, if necessary
-              gammabuf = (double*) membuf_remote.readonly_on_node(offset,
-                                                                  nbasis * ns,
-                                                                  ij_proc);
-              for (bf1=0; bf1<nr; bf1++) {
-                c_rj = scf_vector[bf1 + r_offset][j];
-                gamma_iqjs_ptr = gammabuf;
-                for (bf2=0; bf2<ns; bf2++) {
-                  gamma_iqrs_ptr = &gamma_iqrs[bf2 + ns*nbasis*(bf1 + nr*i)];
-                  for (q=0; q<nbasis; q++) {
-                    *gamma_iqrs_ptr += c_rj * *gamma_iqjs_ptr++;
-                    gamma_iqrs_ptr += ns;
-                    } // exit q loop
-                  }   // exit bf2 loop
-                }     // exit bf1 loop
-
-              membuf_remote.release();
-
-              offset = r_offset*nbasis + ij_index*nbasis*nbasis;
-              // Send for elements gamma_irjq, if necessary
-              gammabuf = (double*) membuf_remote.readonly_on_node(offset,
-                                                                  nbasis*nr,
-                                                                  ij_proc);
-              for (bf1=0; bf1<ns; bf1++) {
-                s = bf1 + s_offset;
-                c_sj = &scf_vector[s][j];
-                gamma_irjq_ptr = gammabuf;
-                for (bf2=0; bf2<nr; bf2++) {
-                  r = bf2 + r_offset;
-                  if (r != s) {
-                    gamma_iqsr_ptr = &gamma_iqrs[bf1 + ns*nbasis*(bf2 + nr*i)];
-                    for (q=0; q<nbasis; q++) {
-                      *gamma_iqsr_ptr += *c_sj * *gamma_irjq_ptr++;
-                      gamma_iqsr_ptr += ns;
-                      } // exit q loop
-                    }   // endif
-                  else gamma_irjq_ptr += nbasis;
-                  }     // exit bf2 loop
-                }       // exit bf1 loop
-
-              membuf_remote.release();
-
-              }         // exit j loop
-            }           // exit i loop
-
-          // end of third quarter back-transformation
-          // we now have gamma_iqrs (symmetrized)
-          // for i-batch, all q, s in S, r in R
-          tim_exit("3. q.b.t.");
-
-          // only do this if integral is nonzero
-          if (tbint_->log2_shell_bound(R,S) >= tol) {
-
-            // Compute contrib to Laj from (ov|vv) integrals
-            // (done in AO basis to avoid generating (ov|vv);
-            // here, generate Lpi for i-batch; later, transform
-            // Lpi to get contribution to Laj
-            tim_enter("(ov|vv) contrib to Laj");
-            for (Q=0; Q<nshell; Q++) {
-              nq = basis()->shell(Q).nfunction();
-              q_offset = basis()->shell_to_function(Q);
-              for (P=0; P<=Q; P++) {
-                np = basis()->shell(P).nfunction();
-                p_offset = basis()->shell_to_function(P);
-             // if (scf_erep_bound(P,Q,R,S) < tol) {
-             //   continue;  // skip ereps less than tol
-             //   }
-                if (tbint_->log2_shell_bound(P,Q,R,S) < tol) {
-                  continue;  // skip ereps less than tol
-                  }
-                tim_enter("erep");
-                tbint_->compute_shell(P,Q,R,S);
-                tim_exit("erep");
-
-                mem->catchup();
-
-                offset = nr*ns*nbasis;
-                int_index = 0;
-
-                for (bf1 = 0; bf1 < np; bf1++) {
-                  p = p_offset + bf1;
-                  for (bf2 = 0; bf2 < nq; bf2++) {
-                    q = q_offset + bf2;
-
-                    if (q < p) {
-                      int_index = ns*nr*(bf2+1 + nq*bf1);
-                      continue; // skip to next q value
-                      }
-
-                    for (bf3 = 0; bf3 < nr; bf3++) {
-                      r = r_offset + bf3;
-
-                      for (bf4 = 0; bf4 < ns; bf4++) {
-
-                        if (fabs(intbuf[int_index]) > dtol) {
-                          s = s_offset + bf4;
-
-                          if (s < r) {
-                            int_index++;
-                            continue; // skip to next bf4 value
-                            }
-
-                          gamma_iqrs_ptr = &gamma_iqrs[bf4 + ns*(q + nbasis*bf3)];
-                          gamma_iprs_ptr = &gamma_iqrs[bf4 + ns*(p + nbasis*bf3)];
-                          pqrs = intbuf[int_index];
-
-                          lpi_ptr = &Lpi[p*ni];
-                          lqi_ptr = &Lpi[q*ni];
-
-                          for (i=0; i<ni; i++) {
-                            *lpi_ptr++ -= pqrs**gamma_iqrs_ptr;
-                            if (p != q) {
-                              *lqi_ptr++ -= pqrs**gamma_iprs_ptr;
-                              }
-                            gamma_iqrs_ptr += offset;
-                            gamma_iprs_ptr += offset;
-                            } // exit i loop
-                          // every so often process outstanding messages
-                          if ((catchup_ctr++
-                              & catchup_mask) == 0) mem->catchup();
-                          }   // endif
-
-                        int_index++;
-                        }     // exit bf4 loop
-                      }       // exit bf3 loop
-                    }         // exit bf2 loop
-                  }           // exit bf1 loop
-
-                }             // exit P loop
-              }               // exit Q loop
-            tim_exit("(ov|vv) contrib to Laj");
-            }                 // endif
-
-          if (!dograd) continue;
-
-          if (tbintder_->log2_shell_bound(R,S) >= tol) {
-
-            for (Q=0; Q<=S; Q++) {
-              nq = basis()->shell(Q).nfunction();
-              q_offset = basis()->shell_to_function(Q);
-
-              for (P=0; P<=(Q==S ? R:Q); P++) {
-                np = basis()->shell(P).nfunction();
-                p_offset = basis()->shell_to_function(P);
-
-                // If integral derivative is less than threshold skip to next P
-                if (tbintder_->log2_shell_bound(P,Q,R,S) < tol) continue;
-                aointder_computed++;
-
-                tim_enter("4. q.b.t.");
-                bzerofast(gamma_pqrs,nfuncmax*nfuncmax*nfuncmax*nfuncmax);
-
-                offset = nr*ns*nbasis;
-
-                // Begin fourth quarter back-transformation
-                gamma_pqrs_ptr = gamma_pqrs;
-                for (bf1=0; bf1<np; bf1++) {
-                  p = bf1 + p_offset;
-                  for (bf2=0; bf2<nr; bf2++) {
-                    for (bf3=0; bf3<nq; bf3++) {
-                      q = bf3 + q_offset;
-                      for (bf4=0; bf4<ns; bf4++) {
-                        c_pi = &scf_vector[p][i_offset];
-                        c_qi = &scf_vector[q][i_offset];
-                        gamma_iqrs_ptr = &gamma_iqrs[bf4 + ns*(q + nbasis*bf2)];
-                        gamma_iprs_ptr = &gamma_iqrs[bf4 + ns*(p + nbasis*bf2)];
-                        tmpval = 0.0;
-                        for (i=0; i<ni; i++) {
-                          tmpval += *c_pi * *gamma_iqrs_ptr;
-                          if (p!=q) tmpval += *c_qi * *gamma_iprs_ptr;
-                          c_pi++;
-                          c_qi++;
-                          gamma_iqrs_ptr += offset;
-                          gamma_iprs_ptr += offset;
-                          } // exit i loop
-                        *gamma_pqrs_ptr += tmpval;
-                        gamma_pqrs_ptr++;
-                        }   // exit bf4 loop
-                      }     // exit bf3 loop
-                    }       // exit bf2 loop
-                  }         // exit bf1 loop
-                // end of fourth quarter back-transformation
-                tim_exit("4. q.b.t.");
-                // (we now have the contribution from one i-batch to the
-                // non-separable part of the 2PDM for one shell block PQRS)
-
-                // Evaluate derivative integrals
-                tim_enter("erep derivs");
-                tbintder_->compute_shell(P,Q,R,S,der_centers);
-                tim_exit("erep derivs");
-
-                mem->catchup();
-
-                // Compute contribution to gradient from non-sep 2PDM
-                // (i.e., contract derivative integrals with gamma_pqrs)
-                int_index = 0;
-                tim_enter("non-sep 2PDM contrib.");
-                for (derset=0; derset<der_centers.n(); derset++) {
-                  for (xyz=0; xyz<3; xyz++) {
-                    grad_ptr1 = &ginter[der_centers.atom(derset)][xyz];
-                    grad_ptr2 = &ginter[der_centers.omitted_atom()][xyz];
-                    for (bf1=0; bf1<np; bf1++) {
-                      p = bf1 + p_offset;
-                      for (bf2=0; bf2<nq; bf2++) {
-                        q = bf2 + q_offset;
-                        qp = q*(q+1)/2 + p;
-                        for (bf3=0; bf3<nr; bf3++) {
-                          r = bf3 + r_offset;
-                          gamma_pqrs_ptr = &gamma_pqrs[ns*(bf2 + nq*(bf3 + nr*bf1))];
-                          for (bf4=0; bf4<ns; bf4++) {
-                            s = bf4 + s_offset;
-                            sr = s*(s+1)/2 + r;
-                            if (q == s && p == r) factor_pqrs = 1;
-                            else factor_pqrs = 2;
-                            tmpval = intderbuf[int_index]*factor_pqrs**gamma_pqrs_ptr;
-                            gamma_pqrs_ptr++;
-                            if (q>=p && s>=r && (P != R || Q != S || sr >= qp)) {
-                              *grad_ptr1 += tmpval;
-                              if (der_centers.has_omitted_center())
-                                *grad_ptr2 -= tmpval;
-                               }
-                            int_index++;
-                            } // exit bf4 loop
-                          }   // exit bf3 loop
-                        }     // exit bf2 loop
-                      }       // exit bf1 loop
-                    }         // exit xyz loop
-                  }           // exit derset loop
-                tim_exit("non-sep 2PDM contrib.");
-
-                } // exit P loop
-              }   // exit Q loop
-            }     // endif
-          }       // endif
-        }         // exit R loop
-      }           // exit S loop
-
-    if (debug_ && me == 0) {
+    if (me == 0) {
       ExEnv::out() << indent << "End of third and fourth q.b.t." << endl;
       }
 
@@ -1692,14 +1423,16 @@ MBPT2::compute_cs_grad()
 
     delete[] Lpi;
 
-    delete[] gamma_iqrs;
-    delete[] gamma_pqrs;
-
-    if (debug_ && me == 0) {
-      ExEnv::out() << indent << "Done with pass " << pass << endl;
+    if (me == 0) {
+      ExEnv::out() << indent << "Done with pass " << pass+1 << endl;
       }
     }           // exit loop over i-batches (pass)
   tim_exit("mp2 passes");
+
+  for (i=0; i<thr_->nthread(); i++) {
+    delete qbt34thread[i];
+    }
+  delete[] qbt34thread;
 
   mem->set_localsize(0);
 
@@ -2294,19 +2027,16 @@ MBPT2::compute_cs_grad()
   zero_gradients(hf_ginter, natom, 3);
   tim_enter("sep 2PDM contrib.");
 
-  Ref<TwoBodyDerivInt> *tbintder = new Ref<TwoBodyDerivInt>[thr_->nthread()];
   CSGradS2PDM** s2pdmthread = new CSGradS2PDM*[thr_->nthread()];
   for (i=0; i<thr_->nthread(); i++) {
-      tbintder[i] = integral()->electron_repulsion_deriv();
       s2pdmthread[i] = new CSGradS2PDM(i, thr_->nthread(), me, nproc,
-                                       lock, basis(), tbintder[i],
+                                       lock, basis(), tbintder_[i],
                                        PHF, P2AO, tol, debug_, dynamic_);
       thr_->add_thread(i,s2pdmthread[i]);
     }
   thr_->start_threads();
   thr_->wait_threads();
   for (i=0; i<thr_->nthread(); i++) {
-      tbintder[i] = 0;
       s2pdmthread[i]->accum_mp2_contrib(ginter);
       s2pdmthread[i]->accum_hf_contrib(hf_ginter);
       delete s2pdmthread[i];
@@ -2314,7 +2044,6 @@ MBPT2::compute_cs_grad()
   sum_gradients(msg_, ginter, molecule()->natom(), 3);
   sum_gradients(msg_, hf_ginter, molecule()->natom(), 3);
   delete[] s2pdmthread;
-  delete[] tbintder;
 
   tim_exit("sep 2PDM contrib.");
   delete[] P2AO;
@@ -2335,7 +2064,10 @@ MBPT2::compute_cs_grad()
 
   // Done with two-electron integrals
   tbint_ = 0;
-  tbintder_ = 0;
+  if (dograd || do_d1_) {
+    delete[] tbintder_;
+    tbintder_ = 0;
+    }
 
   /////////////////////////////////////////////////////////////
   // Compute the one-electron contribution to the MP2 gradient

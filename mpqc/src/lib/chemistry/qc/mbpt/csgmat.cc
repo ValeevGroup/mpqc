@@ -221,7 +221,7 @@ MBPT2::make_cs_gmat_new(RefSymmSCMatrix& Gmat,
   delete[] pmax;
       
   msg_->sum(&tnint, 1, 0, 0);
-  ExEnv::out() << node0 << indent << scprintf("%20.0f integrals\n", tnint);
+  //ExEnv::out() << node0 << indent << scprintf("%20.0f integrals\n", tnint);
 
   // if we're running on multiple processors, then sum the G matrix
   if (msg_->n() > 1)

@@ -57,7 +57,7 @@ class MBPT2: public Wavefunction {
     const double *intbuf_;
     Ref<TwoBodyInt> tbint_;
     Ref<TwoBodyInt> *tbints_;
-    Ref<TwoBodyDerivInt> tbintder_;
+    Ref<TwoBodyDerivInt> *tbintder_;
     int nbasis;
     Ref<MessageGrp> msg_;
     int nvir, nocc, nsocc;

@@ -1,10 +1,10 @@
 //
-// csgrade12.h
+// csgrad34qb.h
 // based on csgrad.cc
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
-// Author: Ida Nielsen <ida@kemi.aau.dk>
+// Author: Ida Nielsen <ibniels@ca.sandia.gov>
 // Maintainer: LPS
 //
 // This file is part of the SC Toolkit.
@@ -26,8 +26,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_mbpt_csgrade12_h
-#define _chemistry_qc_mbpt_csgrade12_h
+#ifndef _chemistry_qc_mbpt_csgrad34qb_h
+#define _chemistry_qc_mbpt_csgrad34qb_h
 
 #ifdef __GNUC__
 #pragma interface
@@ -38,13 +38,12 @@
 #include <util/group/thread.h>
 #include <chemistry/qc/basis/integral.h>
 
-#define PRINT_BIGGEST_INTS 0
-
-class CSGradErep12Qtr: public Thread {
+class CSGrad34Qbtr: public Thread {
   private:
     Ref<MessageGrp> msg;
     Ref<MemoryGrp> mem;
     Ref<TwoBodyInt> tbint;
+    Ref<TwoBodyDerivInt> tbintder;
     Ref<GaussianBasisSet> basis;
     Ref<ThreadLock> lock;
     Ref<RegionTimer> timer;
@@ -52,32 +51,40 @@ class CSGradErep12Qtr: public Thread {
     int nthread;
     int ni;
     int nocc;
+    int nfzc;
     int i_offset;
-    int aoint_computed;
+    int aointder_computed;
     int me;
     int nproc;
     double tol;
     double **scf_vector;
     int debug;
     int dynamic_;
+    int dograd;
+    int natom;
+    double *Lpi;
+    double **ginter;
   public:
-    CSGradErep12Qtr(int mythread_a, int nthread_a,
-                    int me_a, int nproc_a,
-                    const Ref<MemoryGrp> &mem_a,
-                    const Ref<MessageGrp> &msg_a,
-                    const Ref<ThreadLock> &lock_a,
-                    const Ref<GaussianBasisSet> &basis_a,
-                    const Ref<TwoBodyInt> &tbint_a,
-                    int nocc_a,
-                    double **scf_vector_a,
-                    double tol_a, int debug_a,
-                    int dynamic_a);
-    ~CSGradErep12Qtr();
+    CSGrad34Qbtr(int mythread_a, int nthread_a,
+                 int me_a, int nproc_a,
+                 const Ref<MemoryGrp> &mem_a,
+                 const Ref<MessageGrp> &msg_a,
+                 const Ref<ThreadLock> &lock_a,
+                 const Ref<GaussianBasisSet> &basis_a,
+                 const Ref<TwoBodyInt> &tbint_a,
+                 const Ref<TwoBodyDerivInt> &tbintder_a,
+                 int nocc_a, int nfzc_a,
+                 double **scf_vector_a,
+                 double tol_a, int debug_a,
+                 int dynamic_a, int dograd_a, int natom_a);
+    ~CSGrad34Qbtr();
 
     void set_i_offset(int ioff) { i_offset = ioff; }
     void set_ni(int nivalue) { ni = nivalue; }
-
     void run();
+    double *get_Lpi() { return Lpi ;}
+    double **get_ginter() { return ginter ;}
+    int get_aointder_computed() { return aointder_computed ;}
 };
 
 #endif

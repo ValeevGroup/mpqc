@@ -94,7 +94,7 @@ CSGradErep12Qtr::CSGradErep12Qtr(int mythread_a, int nthread_a,
                                  const Ref<ThreadLock> &lock_a,
                                  const Ref<GaussianBasisSet> &basis_a,
                                  const Ref<TwoBodyInt> &tbint_a,
-                                 int ni_a, int nocc_a,
+                                 int nocc_a,
                                  double **scf_vector_a,
                                  double tol_a, int debug_a,
                                  int dynamic_a)
@@ -105,7 +105,6 @@ CSGradErep12Qtr::CSGradErep12Qtr(int mythread_a, int nthread_a,
   lock = lock_a;
   basis = basis_a;
   tbint = tbint_a;
-  ni = ni_a;
   nocc = nocc_a;
   me = me_a;
   nproc = nproc_a;

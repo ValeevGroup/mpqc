@@ -160,8 +160,106 @@ class SumDenFunctional: public DenFunctional {
     void print(ostream& =cout) const;
 };
 
-/** The SlaterXFunctional computes energies and densities
-    using the Slater exchange term. */
+// The LSDACFunctional computes energies and densities
+//    using the designated local correlation functional.
+class LSDACFunctional: public DenFunctional {
+#   define CLASSNAME LSDACFunctional
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
+  protected:
+  public:
+    LSDACFunctional();
+    LSDACFunctional(const RefKeyVal &);
+    LSDACFunctional(StateIn &);
+    ~LSDACFunctional();
+    void save_data_state(StateOut &);
+
+    void point(const PointInputData&, PointOutputData&);
+    virtual 
+      void point_lc(const PointInputData&, PointOutputData&, 
+                    double &ec_local, double &decrs, double &deczeta) = 0;
+
+};
+SavableState_REF_dec(LSDACFunctional);
+
+// The Perdew-Burke-Ernzerhof (PBE) Correlation Functional
+// computes energies and densities using the designated
+// local correlation functional.
+class PBECFunctional: public DenFunctional {
+#   define CLASSNAME PBECFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>  
+  protected:
+    RefLSDACFunctional local_;
+    double gamma_;
+    double beta_;
+  public:
+    PBECFunctional();
+    PBECFunctional(const RefKeyVal &);
+    PBECFunctional(StateIn &);
+    ~PBECFunctional();
+    void save_data_state(StateOut &);
+    int need_density_gradient();
+    void point(const PointInputData&, PointOutputData&);
+  
+};
+
+// The Perdew-Wang 1991 Correlation Functional computes energies and densities
+//    using the designated local correlation functional.
+class PW91CFunctional: public DenFunctional {
+#   define CLASSNAME PW91CFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>  
+  protected:
+    RefLSDACFunctional local_;
+  public:
+    PW91CFunctional();
+    PW91CFunctional(const RefKeyVal &);
+    PW91CFunctional(StateIn &);
+    ~PW91CFunctional();
+    void save_data_state(StateOut &);
+    int need_density_gradient();
+    double Cxc(double rs);
+    double dCxc_drho(double rs, double drs_drho, double Cxcrs);
+
+    void point(const PointInputData&, PointOutputData&);
+  
+};
+
+// The Perdew 1986 (P86) Correlation Functional computes energies and densities
+//    using the designated local correlation functional.
+class P86CFunctional: public DenFunctional {
+#   define CLASSNAME P86CFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>  
+  protected:
+    double a_;
+    double C1_;
+    double C2_;
+    double C3_;
+    double C4_;
+    double C5_;
+    double C6_;
+    double C7_;
+  public:
+    P86CFunctional();
+    P86CFunctional(const RefKeyVal &);
+    P86CFunctional(StateIn &);
+    ~P86CFunctional();
+    void save_data_state(StateOut &);
+    int need_density_gradient();
+    void point(const PointInputData&, PointOutputData&);
+  
+};
+
+// The SlaterXFunctional computes energies and densities
+// using the Slater exchange term. 
 class SlaterXFunctional: public DenFunctional {
 #   define CLASSNAME SlaterXFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -179,56 +277,133 @@ class SlaterXFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-/** The VWN5CFunctional computes energies and densities using the
-    VWN5 (LSDA) correlation term (from Vosko, Wilk, and Nusair). */
-class VWN5CFunctional: public DenFunctional {
-#   define CLASSNAME VWN5CFunctional
+/** The VWN1LCFunctional computes energies and densities using the
+    VWN1 local correlation term (from Vosko, Wilk, and Nusair). */
+class VWN1LCFunctional: public LSDACFunctional {
+#   define CLASSNAME VWN1LCFunctional
 #   define HAVE_KEYVAL_CTOR
- #   define HAVE_STATEIN_CTOR
+#   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    int vwn_; 
-    double A_, x0_, b_, c_;
+    double Ap_, x0p_, bp_, cp_, Af_, x0f_, bf_, cf_;
     double F(double x, double A, double x0, double b, double c);
     double dFdr_s(double x, double A, double x0, double b, double c);
   public:
-    VWN5CFunctional();
-    VWN5CFunctional(const RefKeyVal &);
-    VWN5CFunctional(StateIn &);
-    ~VWN5CFunctional();
+    VWN1LCFunctional();
+    VWN1LCFunctional(const RefKeyVal &);
+    VWN1LCFunctional(StateIn &);
+    ~VWN1LCFunctional();
     void save_data_state(StateOut &);
 
-    void point(const PointInputData&, PointOutputData&);
+    void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
 };
 
-/** The VWN3CFunctional computes energies and densities using the
-    VWN3 (LSDA) correlation term (from Vosko, Wilk, and Nusair). */
-class VWN3CFunctional: public DenFunctional {
-#   define CLASSNAME VWN3CFunctional
+/** The VWN2LCFunctional computes energies and densities using the
+    VWN2 local correlation term (from Vosko, Wilk, and Nusair). */
+class VWN2LCFunctional: public LSDACFunctional {
+#   define CLASSNAME VWN2LCFunctional
 #   define HAVE_KEYVAL_CTOR
- #   define HAVE_STATEIN_CTOR
+#   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    int vwn_; 
-    double A_, x0_, b_, c_;
+    double Ap_, Af_, A_alpha_;
+    double x0p_mc_, bp_mc_, cp_mc_, x0f_mc_, bf_mc_, cf_mc_;
+    double x0p_rpa_, bp_rpa_, cp_rpa_, x0f_rpa_, bf_rpa_, cf_rpa_;
+    double x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_, x0_alpha_rpa_, b_alpha_rpa_, c_alpha_rpa_;
     double F(double x, double A, double x0, double b, double c);
     double dFdr_s(double x, double A, double x0, double b, double c);
   public:
-    VWN3CFunctional();
-    VWN3CFunctional(const RefKeyVal &);
-    VWN3CFunctional(StateIn &);
-    ~VWN3CFunctional();
+    VWN2LCFunctional();
+    VWN2LCFunctional(const RefKeyVal &);
+    VWN2LCFunctional(StateIn &);
+    ~VWN2LCFunctional();
     void save_data_state(StateOut &);
 
-    void point(const PointInputData&, PointOutputData&);
+    void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
 };
 
-//    The PW91LCFunctional computes energies and densities using the
-//    PW91 local (LSDA) correlation term from J. P. Perdew and Y. Wang.
+
+/** The VWN3LCFunctional computes energies and densities using the
+    VWN3 local correlation term (from Vosko, Wilk, and Nusair). */
+class VWN3LCFunctional: public LSDACFunctional {
+#   define CLASSNAME VWN3LCFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    double Ap_, Af_, A_alpha_;
+    double x0p_mc_, bp_mc_, cp_mc_, x0f_mc_, bf_mc_, cf_mc_;
+    double x0p_rpa_, bp_rpa_, cp_rpa_, x0f_rpa_, bf_rpa_, cf_rpa_;
+    double x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_, x0_alpha_rpa_, b_alpha_rpa_, c_alpha_rpa_;
+    double F(double x, double A, double x0, double b, double c);
+    double dFdr_s(double x, double A, double x0, double b, double c);
+  public:
+    VWN3LCFunctional();
+    VWN3LCFunctional(const RefKeyVal &);
+    VWN3LCFunctional(StateIn &);
+    ~VWN3LCFunctional();
+    void save_data_state(StateOut &);
+
+    void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
+};
+
+/** The VWN4LCFunctional computes energies and densities using the
+    VWN4 local correlation term (from Vosko, Wilk, and Nusair). */
+class VWN4LCFunctional: public LSDACFunctional {
+#   define CLASSNAME VWN4LCFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    double Ap_, Af_, A_alpha_;
+    double x0p_mc_, bp_mc_, cp_mc_, x0f_mc_, bf_mc_, cf_mc_;
+    double x0p_rpa_, bp_rpa_, cp_rpa_, x0f_rpa_, bf_rpa_, cf_rpa_;
+    double x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_, x0_alpha_rpa_, b_alpha_rpa_, c_alpha_rpa_;
+    double F(double x, double A, double x0, double b, double c);
+    double dFdr_s(double x, double A, double x0, double b, double c);
+  public:
+    VWN4LCFunctional();
+    VWN4LCFunctional(const RefKeyVal &);
+    VWN4LCFunctional(StateIn &);
+    ~VWN4LCFunctional();
+    void save_data_state(StateOut &);
+
+    void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
+};
+
+/** The VWN5LCFunctional computes energies and densities using the
+    VWN5 local correlation term (from Vosko, Wilk, and Nusair). */
+class VWN5LCFunctional: public LSDACFunctional {
+#   define CLASSNAME VWN5LCFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    double Ap_, Af_, A_alpha_;
+    double x0p_mc_, bp_mc_, cp_mc_, x0f_mc_, bf_mc_, cf_mc_;
+    double x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_;
+    double F(double x, double A, double x0, double b, double c);
+    double dFdr_s(double x, double A, double x0, double b, double c);
+  public:
+    VWN5LCFunctional();
+    VWN5LCFunctional(const RefKeyVal &);
+    VWN5LCFunctional(StateIn &);
+    ~VWN5LCFunctional();
+    void save_data_state(StateOut &);
+
+    void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
+};
+
+//    The PW92LCFunctional computes energies and densities using the
+//    PW92 local (LSDA) correlation term from J. P. Perdew and Y. Wang.
 //    Phys. Rev. B, 45, 13244, 1992 
-class PW92LCFunctional: public DenFunctional {
+//    This local correlation functional is used in PW91 and PBE.
+class PW92LCFunctional: public LSDACFunctional {
 #   define CLASSNAME PW92LCFunctional
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
@@ -246,7 +421,34 @@ class PW92LCFunctional: public DenFunctional {
     ~PW92LCFunctional();
     void save_data_state(StateOut &);
 
-    void point(const PointInputData&, PointOutputData&);
+    void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
+};
+
+//    The PZ81LCFunctional computes energies and densities using the
+//    PZ81 local (LSDA) correlation term from
+//    J. P. Perdew and A. Zunger, Phys. Rev. B, 23, 5048, 1981.
+//    This local correlation functional is used in P86.
+class PZ81LCFunctional: public LSDACFunctional {
+#   define CLASSNAME PZ81LCFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    double Fec_rsgt1(double rs, double beta_1, double beta_2, double gamma);
+    double dFec_rsgt1_drho(double rs, double beta_1, double beta_2, double gamma,
+                           double &dec_drs);
+    double Fec_rslt1(double rs, double A, double B, double C, double D);
+    double dFec_rslt1_drho(double rs, double A, double B, double C, double D,
+                           double &dec_drs);
+  public:
+    PZ81LCFunctional();
+    PZ81LCFunctional(const RefKeyVal &);
+    PZ81LCFunctional(StateIn &);
+    ~PZ81LCFunctional();
+    void save_data_state(StateOut &);
+
+    void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
 };
 
 /** The XalphaFunctional computes energies and densities
@@ -322,7 +524,57 @@ class LYPCFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-// The Perdue-Burke-Ernzerhof 1996 (PBE) exchange functional
+// The Perdew-Wang 1986 (PW86) Exchange functional
+class PW86XFunctional: public DenFunctional {
+#   define CLASSNAME PW86XFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    double a_;
+    double b_;
+    double c_;
+    double m_;
+  public:
+    PW86XFunctional();
+    PW86XFunctional(const RefKeyVal &);
+    PW86XFunctional(StateIn &);
+    ~PW86XFunctional();
+    void save_data_state(StateOut &);
+
+    int need_density_gradient();
+
+    void point(const PointInputData&, PointOutputData&);
+};
+
+// The Perdew-Wang 1991 (PW91) Exchange functional
+class PW91XFunctional: public DenFunctional {
+#   define CLASSNAME PW91XFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    double a1_;
+    double a2_;
+    double a3_;
+    double a4_;
+    double a5_;
+    double b_;
+  public:
+    PW91XFunctional();
+    PW91XFunctional(const RefKeyVal &);
+    PW91XFunctional(StateIn &);
+    ~PW91XFunctional();
+    void save_data_state(StateOut &);
+
+    int need_density_gradient();
+
+    void point(const PointInputData&, PointOutputData&);
+};
+
+// The Perdew-Burke-Ernzerhof 1996 (PBE) exchange functional
 class PBEXFunctional: public DenFunctional {
 #   define CLASSNAME PBEXFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -344,43 +596,26 @@ class PBEXFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 };
 
-#if 0
-// The PW91 Correlation Functional computes energies and densities
-//    using the Lee, Yang, and Parr functional.
-// - MLL - What in the heck does LYP have to do with this? 
-// The uses the PW91 correlation functional with local correlation
-// functional of PW92.
-class PW91CFunctional: public DenFunctional {
-#   define CLASSNAME PW91CFunctional
+// The Gill 1996 (G96) exchange functional
+class G96XFunctional: public DenFunctional {
+#   define CLASSNAME G96XFunctional
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    void CORPW91(double RS, double ZET, double G, double T,
-                 double UU, double VV, double WW,
-                 double EC, double ECRS, double ECZET,
-                 double& H, double& DVCUP, double& DVCDN);
-    void CORLSD(double RS,double ZET,
-                double &EC,
-                double &VCUP,double &VCDN,
-                double &ECRS,double &ECZET,
-                double &ALFC);
-    void GCOR(double A,double A1,
-              double B1, double B2, double B3, double B4,
-              double P, double RS, double &GG, double &GGRS);
+    double b_;
   public:
-    PW91CFunctional();
-    PW91CFunctional(const RefKeyVal &);
-    PW91CFunctional(StateIn &);
-    ~PW91CFunctional();
+    G96XFunctional();
+    G96XFunctional(const RefKeyVal &);
+    G96XFunctional(StateIn &);
+    ~G96XFunctional();
     void save_data_state(StateOut &);
 
     int need_density_gradient();
 
     void point(const PointInputData&, PointOutputData&);
 };
-#endif
 
 #endif
 

@@ -362,8 +362,10 @@ DenIntegrator::do_point(const SCVector3 &r,
     }
 
   PointOutputData od;
-  func->point(id, od);
-
+  if ( (id.a.rho + id.b.rho) > 1e2*DBL_EPSILON)  
+    func->point(id, od);
+  else return id.a.rho + id.b.rho;
+  
   value_ += od.energy * weight;
 
   if (compute_potential_integrals_) {
@@ -373,7 +375,7 @@ DenIntegrator::do_point(const SCVector3 &r,
           gradsa[0] = weight*(2.0*od.df_dgamma_aa*id.a.del_rho[0] +
                                   od.df_dgamma_ab*id.b.del_rho[0]);
           gradsa[1] = weight*(2.0*od.df_dgamma_aa*id.a.del_rho[1] +
-                                  od.df_dgamma_ab*id.b.del_rho[1]);
+                                 od.df_dgamma_ab*id.b.del_rho[1]);
           gradsa[2] = weight*(2.0*od.df_dgamma_aa*id.a.del_rho[2] +
                                   od.df_dgamma_ab*id.b.del_rho[2]);
           double drhoa = weight*od.df_drho_a, drhob=0.0;
@@ -741,8 +743,8 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
                                     * 2.0 * M_PI / ((double)nphi);
 
                   if (do_point(integration_point, denfunc, multiplier)
-                      * int_volume < DBL_EPSILON
-                      && int_volume > DBL_EPSILON) {
+                      * int_volume < 1e2*DBL_EPSILON
+                      && int_volume > 1e2*DBL_EPSILON) {
                       r_done=1;
                       break;
                     }

@@ -25,8 +25,11 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <util/class/class.h>
-#include <util/state/state.h>
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
+#include <util/state/state_bin.h>
 
 StateOutBin::StateOutBin() :
   StateOutFile()
@@ -52,6 +55,8 @@ StateOutBin::StateOutBin(const char *path) :
 
 StateOutBin::~StateOutBin()
 {
+  // must close here since close() is overridden in this class
+  close();
 }
 
 int
@@ -60,6 +65,20 @@ StateOutBin::open(const char *f)
   int r = StateOutFile::open(f);
   put_header();
   return r;
+}
+
+void
+StateOutBin::close()
+{
+  if (buf_) {
+      int dir_loc = tell();
+      seek(dir_loc_loc_);
+      put_array_int(&dir_loc,1);
+      seek(dir_loc);
+      put_directory();
+    }
+
+  StateOutFile::close();
 }
 
 int
@@ -81,37 +100,71 @@ StateOutBin::seekable()
   return 1;
 }
 
+int
+StateOutBin::use_directory()
+{
+  return 1;
+}
+
 ////////////////////////////////////////////////////////////////
 
 StateInBin::StateInBin() :
   StateInFile()
 {
+  file_position_ = 0;
 }
 
 StateInBin::StateInBin(istream& s) :
   StateInFile(s)
 {
+  file_position_ = 0;
   get_header();
+  find_and_get_directory();
 }
 
 StateInBin::StateInBin(const char *path) :
   StateInFile(path)
 {
+  file_position_ = 0;
   get_header();
+  find_and_get_directory();
 }
 
 StateInBin::~StateInBin()
 {
 }
 
+int
+StateInBin::open(const char *f)
+{
+  file_position_ = 0;
+  int r = StateInFile::open(f);
+  get_header();
+  find_and_get_directory();
+  return r;
+}
+
+int
+StateInBin::tell()
+{
+  return file_position_;
+}
+
 void
 StateInBin::seek(int loc)
 {
+  file_position_ = loc;
   buf_->pubseekoff(loc,ios::beg,ios::in);
 }
 
 int
 StateInBin::seekable()
+{
+  return 1;
+}
+
+int
+StateInBin::use_directory()
 {
   return 1;
 }
@@ -134,6 +187,7 @@ int StateInBin::get_array_void(void*p,int size)
       cerr << "StateInBin::get_array_void: failed" << endl;
       abort();
     }
+  file_position_ += size;
   return size;
 }
 

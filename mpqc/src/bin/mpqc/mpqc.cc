@@ -16,10 +16,10 @@
 // MPQC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// along with the MPQC; see the file COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 // The U.S. Government is granted a limited license as per AL 91-7.
@@ -39,6 +39,7 @@
 #include <util/options/GetLongOpt.h>
 #include <util/misc/newstring.h>
 #include <util/keyval/keyval.h>
+#include <util/state/state_bin.h>
 #include <util/group/message.h>
 #include <util/group/mstate.h>
 #include <util/group/thread.h>
@@ -68,7 +69,6 @@
 #endif
 
 #include "version.h"
-#include "disclaimer.h"
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -124,34 +124,50 @@ main(int argc, char *argv[])
   options.enroll("c", GetLongOpt::NoValue, "check input then exit", 0);
   options.enroll("v", GetLongOpt::NoValue, "print the version number", 0);
   options.enroll("w", GetLongOpt::NoValue, "print the warranty", 0);
+  options.enroll("L", GetLongOpt::NoValue, "print the license", 0);
   options.enroll("d", GetLongOpt::NoValue, "debug", 0);
   options.enroll("h", GetLongOpt::NoValue, "print this message", 0);
 
   options.parse(argc, argv);
 
-  // set the working dir
-  if (strcmp(options.retrieve("W"),"."))
-    chdir(options.retrieve("W"));
-
   if (options.retrieve("h")) {
-    cout << node0 << endl
-         << indent << "MPQC version " << MPQC_VERSION << endl << endl;
+    cout << node0
+         << indent << "MPQC version " << MPQC_VERSION << endl
+         << indent << "compiled for " << TARGET_ARCH << endl
+         << SCFormIO::copyright << endl;
     options.usage(cout);
     exit(0);
   }
   
   if (options.retrieve("v")) {
-    cout << node0 << endl
-         << indent << "MPQC version " << MPQC_VERSION << endl << endl;
+    cout << node0
+         << indent << "MPQC version " << MPQC_VERSION << endl
+         << indent << "compiled for " << TARGET_ARCH << endl
+         << SCFormIO::copyright;
     exit(0);
   }
   
   if (options.retrieve("w")) {
-    cout << node0 << endl
-         << indent << "MPQC version " << MPQC_VERSION << endl << endl;
-    print_disclaimer(cout);
+    cout << node0
+         << indent << "MPQC version " << MPQC_VERSION << endl
+         << indent << "compiled for " << TARGET_ARCH << endl
+         << SCFormIO::copyright << endl
+         << SCFormIO::warranty;
     exit(0);
   }
+  
+  if (options.retrieve("L")) {
+    cout << node0
+         << indent << "MPQC version " << MPQC_VERSION << endl
+         << indent << "compiled for " << TARGET_ARCH << endl
+         << SCFormIO::copyright << endl
+         << SCFormIO::license;
+    exit(0);
+  }
+
+  // set the working dir
+  if (strcmp(options.retrieve("W"),"."))
+    chdir(options.retrieve("W"));
 
   // get the message group.  first try the commandline and environment
   RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
@@ -265,6 +281,9 @@ main(int argc, char *argv[])
   cout << node0 << indent
        << scprintf("Running on a %s with %d nodes.", TARGET_ARCH, grp->n())
        << endl << endl;
+
+  cout << node0 << indent
+       << "Using " << grp->class_name() << " for communications." << endl;
 
   // check for a molecular energy and optimizer
   char * molname = keyval->pcharvalue("filename");

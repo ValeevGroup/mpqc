@@ -29,84 +29,185 @@
 #pragma implementation
 #endif
 
+#include <ctype.h>
+
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/stateptrImplSet.h>
 #include <util/state/statenumImplSet.h>
+#include <util/state/classdImplMap.h>
 
-// Returns the number of the new object, if this object is new.
-// If the object is found then zero is returned.
-int StateIn::getpointer(void**p)
+int
+StateIn::dir_getobject(RefSavableState &p, const char *name)
 {
-  int refnum;
-  get(refnum);
-  if (refnum == 0) {
-    *p = 0;
-    //cout << "StateOut::getpointer: pointer is 0" << endl;
-    return 0;
+  int r=0;
+
+  p = 0;
+
+  if (!use_directory()) {
+      cerr << "ERROR: StateIn: no directory to get object from" << endl;
+      abort();
     }
-  StateDataNum num(refnum);
-  Pix ind = (ps_?ps_->seek(num):0);
-  //cout << "StateOut::getpointer: looking for " << refnum << " and got "
-  //     << (int)ind << endl;
-  if (ind == 0) {
-    *p = 0;
-    return refnum;
+
+  // find the class name and/or object number
+  const char *colon = strrchr(name,':');
+  int number = 1;
+  char *classname = 0;
+  if (colon == 0) {
+      if (isdigit(*name)) number = atoi(name);
+      else classname = strcpy(new char[strlen(name)+1], name);
     }
   else {
-    *p = ((*this->ps_)(ind)).ptr;
-    //cout << "StateOut::getpointer: pointer is made 0x"
-    //     << setbase(16) << *p << endl;
-    return 0;
+      number = atoi(&colon[1]);
+      classname = strcpy(new char[strlen(name)+1], name);
+      *strrchr(classname,':') = '\0';
     }
-  }
 
-void StateIn::nextobject(int objnum)
-{
-  _nextobject = objnum;
+  const ClassDesc *cd = 0;
+  if (classname) {
+      cd = ClassDesc::name_to_class_desc(classname);
+      if (!cd) {
+          cerr << "ERROR: StateIn: class " << classname << " unknown" << endl;
+          abort();
+        }
+      delete[] classname;
+    }
+
+  int classid;
+  if (cd) classid = classidmap_->operator[]((ClassDesc*)cd);
+  else classid = -1;
+
+  Pix i;
+  int nfound = 0;
+  for (i=ps_->first(); i; ps_->next(i)) {
+      if (classid == -1 || ps_->operator()(i).type == classid) nfound++;
+      if (nfound == number) {
+          if (ps_->operator()(i).ptr.nonnull()) {
+              p = ps_->operator()(i).ptr;
+            }
+          else {
+              seek(ps_->operator()(i).offset);
+              r += getobject(p);
+            }
+          return r;
+        }
+    }
+
+  return r;
 }
 
-void StateIn::havepointer(void*p)
+int
+StateIn::getobject(RefSavableState &p)
 {
-  if (_nextobject) {
-      havepointer(_nextobject,p);
-      _nextobject = 0;
+  int r=0;
+  int refnum;
+  r += get(refnum);
+  if (refnum == 0) {
+      // reference to null
+      p = 0;
+    }
+  else {
+      StateDataNum num(refnum);
+      Pix ind = ps_->seek(num);
+      if (ind == 0 && use_directory()) {
+          cerr << "ERROR: StateIn: directory missing object number "
+               << refnum << endl;
+          abort();
+        }
+      if (ind == 0 || ps_->operator()(ind).ptr.null()) {
+          // object has not yet been read in
+          if (use_directory()) {
+              seek(ps_->operator()(ind).offset);
+              int trefnum;
+              get(trefnum);
+              if (trefnum != refnum) {
+                  cerr << "StateIn: didn't find expected reference" << endl;
+                  abort();
+                }
+            }
+          const ClassDesc *cd;
+          r += get(&cd);
+          have_classdesc();
+          nextobject(refnum);
+          DescribedClass *dc = cd->create(*this);
+          p = SavableState::castdown(dc);
+          if (use_directory()) {
+              ps_->operator()(ind).ptr = p;
+            }
+        }
+      else {
+          // object already exists
+          p = ps_->operator()(ind).ptr;
+          if (use_directory() && tell() == ps_->operator()(ind).offset) {
+              seek(tell() + ps_->operator()(ind).size);
+            }
+        }
+    }
+  return r;
+}
+
+void
+StateIn::nextobject(int objnum)
+{
+  expected_object_num_ = objnum;
+}
+
+void
+StateIn::haveobject(const RefSavableState &p)
+{
+  if (expected_object_num_) {
+      haveobject(expected_object_num_,p);
+      expected_object_num_ = 0;
     }
 }
 
-void StateIn::havepointer(int objnum,void*p)
+void
+StateIn::haveobject(int objnum,const RefSavableState &p)
 {
   StateDataNum num(objnum,p);
-  ps_->add(num);
-}
-
-// Returns 0 if the object has already been written.
-// Returns the object number if the object must yet be written.
-// Otherwise 0 is returned.
-int StateOut::putpointer(void*p)
-{
-  if (p == 0) {
-    put(0);
-    return 0;
-    }
-  StateDataPtr dp(p);
-  Pix ind = ps_->seek(dp);
-  //cout << "StateOut::putpointer: ind = " << (int)ind << " for 0x"
-  //     << setbase(16) << p << endl;
-  if (ind == 0 || (*this->ps_)(ind).can_refer == 0) {
-      int current_pointer_number = next_pointer_number++;
-      dp.num = current_pointer_number;
-      dp.can_refer = !copy_references_;
-      dp.offset = tell();
-      dp.size = dp.offset; // this must be corrected later
-      ps_->add(dp);
-      put(dp.num);
-      return current_pointer_number;
+  Pix ind = ps_->seek(num);
+  if (ind == 0) {
+      ps_->add(num);
     }
   else {
-      put((*this->ps_)(ind).num);
-      return 0;
+      ps_->operator()(ind).ptr = p;
     }
+}
+
+int
+StateOut::putobject(const RefSavableState &p)
+{
+  int r=0;
+  if (p.null()) {
+      // reference to null
+      r += put(0);
+    }
+  else {
+      StateDataPtr dp(p);
+      Pix ind = ps_->seek(dp);
+      if (ind == 0 || copy_references_) {
+          // object has not been written yet
+          dp.num = next_object_number_++;
+          dp.offset = tell();
+          r += put(dp.num);
+          const ClassDesc *cd = p->class_desc();
+          r += put(cd);
+          dp.type = classidmap_->operator[]((ClassDesc*)cd);
+          if (!copy_references_) ps_->add(dp);
+          have_classdesc();
+          p->save_vbase_state(*this);
+          p->save_data_state(*this);
+          if (!copy_references_) {
+              Pix ind = ps_->seek(dp);
+              ps_->operator()(ind).size = tell() - ps_->operator()(ind).offset;
+            }
+        }
+      else {
+          // object has already been written
+          r += put(ps_->operator()(ind).num);
+        }
+    }
+  return r;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -117,12 +218,12 @@ StateData::StateData(int n): num(n), ptr(0)
   init();
 }
 
-StateData::StateData(void *p): num(0), ptr(p)
+StateData::StateData(const RefSavableState &p): num(0), ptr(p)
 {
   init();
 }
 
-StateData::StateData(int n, void *p): num(n), ptr(p)
+StateData::StateData(int n, const RefSavableState &p): num(n), ptr(p)
 {
   init();
 }
@@ -133,8 +234,6 @@ StateData::init()
   size = 0;
   type = 0;
   offset = 0;
-  next_reference = 0;
-  can_refer = 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////

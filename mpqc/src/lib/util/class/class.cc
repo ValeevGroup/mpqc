@@ -39,6 +39,8 @@
 #include <dlfcn.h>
 #endif // HAVE_DLFCN_H
 
+#include <util/misc/formio.h>
+
 #include <util/class/class.h>
 
 #include <util/class/classMap.h>
@@ -608,6 +610,12 @@ int DescribedClass::class_version() const
     return class_desc()->version();
 }
 
+void
+DescribedClass::print(ostream &o)
+{
+  o << indent << "Object of type " << class_name() << endl;
+}
+
 ///////////////////////////////////////////////////////////////////////
 // DCRefBase members
 
@@ -759,6 +767,20 @@ DCRefBase::dereference(VRefCount *p)
   if (p && p->dereference()<=0) {
       delete p;
     }
+}
+
+ostream &
+operator <<(ostream&o, const DCRefBase &ref)
+{
+  DescribedClass *dc = ref.parentpointer();
+  if (dc) {
+      dc->print(o);
+    }
+  else {
+      o << indent << "reference to null" << endl;
+    }
+
+  return o;
 }
 
 DescribedClass_REF_def(DescribedClass);

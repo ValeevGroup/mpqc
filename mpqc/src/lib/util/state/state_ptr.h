@@ -34,25 +34,23 @@
 
 class StateData {
   public:
-    void* ptr;
+    RefSavableState ptr;
     int num;
     int size;
     int type;
     int offset;
-    int next_reference;
-    int can_refer;
   private:
     void init();
   public:
     StateData(int n);
-    StateData(void *p);
-    StateData(int n, void *p);
+    StateData(const RefSavableState &p);
+    StateData(int n, const RefSavableState &p);
 };
 
 class StateDataNum: public StateData {
   public:
     StateDataNum(int n):StateData(n) {}
-    StateDataNum(int n,void*p):StateData(n,p) {}
+    StateDataNum(int n,const RefSavableState &p):StateData(n,p) {}
     int operator==(const StateDataNum&n) const { return num == n.num; }
     int compare(const StateDataNum&n) const;
   };
@@ -64,15 +62,10 @@ inline int StateDataNum::compare(const StateDataNum&p) const
 
 class StateDataPtr: public StateData {
   public:
-    StateDataPtr(void*p):StateData(p) {}
+    StateDataPtr(const RefSavableState&p):StateData(p) {}
     int operator==(const StateDataPtr&p) const { return ptr == p.ptr; }
-    int compare(const StateDataPtr&p) const;
+    int compare(const StateDataPtr&p) const { return ptr.compare(p.ptr); }
   };
-
-inline int StateDataPtr::compare(const StateDataPtr&p) const
-{
-  return (p.ptr == ptr)?0:((p.ptr<ptr)?1:-1);
-}
 
 #endif
 

@@ -34,7 +34,7 @@
 #include <math/optimize/diis.h>
 
 #define CLASSNAME DIIS
-#define VERSION 2
+#define VERSION 3
 #define PARENTS public SelfConsistentExtrapolation
 #define HAVE_STATEIN_CTOR
 #define HAVE_KEYVAL_CTOR
@@ -103,19 +103,34 @@ DIIS::DIIS(StateIn& s) :
   }
   s.get(damping_factor);
 
-  s.get(btemp);
+  // alloc storage for arrays
+  btemp = new double[ndiis+1];
 
   bold = new double*[ndiis];
   for (i=0; i < ndiis; i++)
-    s.get(bold[i]);
-  
+    bold[i] = new double[ndiis];
+
   bmat = new double*[ndiis+1];
   for (i=0; i <= ndiis; i++)
-    s.get(bmat[i]);
-  
+    bmat[i] = new double[ndiis+1];
+
   diism_data = new RefSCExtrapData[ndiis];
   diism_error = new RefSCExtrapError[ndiis];
-  for (i=0; i < ndiis; i++) {
+
+  // read arrays
+  int ndat = iter;
+  if (iter > ndiis) ndat = ndiis;
+  if (s.version(static_class_desc()) < 3) ndat = ndiis;
+
+  s.get_array_double(btemp,ndat+1);
+
+  for (i=0; i < ndat; i++)
+    s.get_array_double(bold[i],ndat);
+  
+  for (i=0; i <= ndat; i++)
+    s.get_array_double(bmat[i],ndat+1);
+  
+  for (i=0; i < ndat; i++) {
     diism_data[i].restore_state(s);
     diism_error[i].restore_state(s);
   }
@@ -198,15 +213,18 @@ DIIS::save_data_state(StateOut& s)
   s.put(ngroupdiis);
   s.put(damping_factor);
 
-  s.put(btemp, ndiis+1);
+  int ndat = iter;
+  if (iter > ndiis) ndat = ndiis;
 
-  for (i=0; i < ndiis; i++)
-    s.put(bold[i], ndiis);
+  s.put_array_double(btemp, ndat+1);
+
+  for (i=0; i < ndat; i++)
+    s.put_array_double(bold[i], ndat);
   
-  for (i=0; i <= ndiis; i++)
-    s.put(bmat[i], ndiis+1);
+  for (i=0; i <= ndat; i++)
+    s.put_array_double(bmat[i], ndat+1);
   
-  for (i=0; i < ndiis; i++) {
+  for (i=0; i < ndat; i++) {
     diism_data[i].save_state(s);
     diism_error[i].save_state(s);
   }

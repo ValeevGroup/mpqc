@@ -35,17 +35,7 @@
 void
 CLASSNAME::save_object_state(StateOut&so)
 {
-  if (class_desc() != static_class_desc()) {
-      cerr <<  "Warning:"
-           << stringize(CLASSNAME)
-           << "::save_object_state: "
-           << "exact type not known -- object not saved" << endl;
-      return;
-    }
-  // save the version info
-  //so.put_version(static_class_desc());
-  save_vbase_state(so);
-  save_data_state(so);
+  save_object_state_(so,static_class_desc());
 }
 
 CLASSNAME*

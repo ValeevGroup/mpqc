@@ -36,6 +36,7 @@
 #include <util/state/translate.h>
 #include <util/state/stateptrImplSet.h>
 #include <util/state/statenumImplSet.h>
+#include <util/state/classdatImplMap.h>
 
 // This sets up a communication buffer.  It is made up of a of
 // an integer that gives the number of bytes used in the buffer
@@ -545,23 +546,17 @@ BcastStateInBin::close()
   nbuf = 0;
   ibuf = 0;
 
-  _cd.clear();
+  classidmap_->clear();
+  nextclassid_ = 0;
+  classdatamap_->clear();
   ps_->clear();
-}
-
-void
-BcastStateInBin::rewind()
-{
-  if (grp->me() == 0 && buf_) {
-      buf_->seekoff(0,ios::beg);
-    }
-  nbuf = 0;
-  ibuf = 0;
 }
 
 int
 BcastStateInBin::open(const char *path)
 {
+  file_position_ = 0;
+
   if (grp->me() == 0) { 
       if (opened_) close();
 
@@ -579,14 +574,22 @@ BcastStateInBin::open(const char *path)
   ibuf = 0;
 
   get_header();
+  find_and_get_directory();
 
   return 0;
+}
+
+int
+BcastStateInBin::tell()
+{
+  return file_position_;
 }
 
 void
 BcastStateInBin::seek(int loc)
 {
-  buf_->pubseekoff(loc,ios::beg,ios::in);
+  file_position_ = loc;
+  if (grp->me() == 0) buf_->pubseekoff(loc,ios::beg,ios::in);
   nbuf = 0;
   ibuf = 0;
 }
@@ -595,6 +598,20 @@ int
 BcastStateInBin::seekable()
 {
   return 1;
+}
+
+int
+BcastStateInBin::use_directory()
+{
+  return 1;
+}
+
+int
+BcastStateInBin::get_array_void(void* vd, int n)
+{
+  MsgStateBufRecv::get_array_void(vd, n);
+  file_position_ += n;
+  return n;
 }
 
 /////////////////////////////////////////////////////////////////////////////

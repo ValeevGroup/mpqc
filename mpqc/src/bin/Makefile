@@ -5,6 +5,6 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-SUBDIRS = mpqc
+SUBDIRS = mpqc scpr scls
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs

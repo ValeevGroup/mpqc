@@ -7,11 +7,11 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 INCLUDE += -I. -I$(SRCDIR)
 CXXINCLUDE += -I. -I$(SRCDIR)
 
-TARGET_TO_MAKE = mpqc
+TARGET_TO_MAKE = scls
 
-CXXSRC = mpqc.cc
+CXXSRC = scls.cc
 CSRC =
-INC =
+INC = 
 
 DEPENDINCLUDE = $(INC)
 
@@ -19,13 +19,9 @@ BINOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)
 
 DISTFILES = $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
-default:: mpqc
+default:: scls
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-
-ifeq ($(ARCH),I860)
-  DEFINES += -DLINPACKD=-lkmath
-endif
 
 #################################################################
 
@@ -33,10 +29,7 @@ default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-install_mpqcic:: mpqc
-	$(INSTALL) $(INSTALLBINOPTS) $< $(BINDIR)
-
-mpqc: $(BINOBJ) $(LIBS)
+scls: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
 #################################################################
@@ -45,4 +38,3 @@ $(BINOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(BINOBJ:.o=.d)
 endif
-

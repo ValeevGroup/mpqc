@@ -73,7 +73,7 @@ clasmacr.h: clastmpl.h $(TMPL2MACDEP)
 
 # a test program
 LD = $(CXX)
-classtest: classtest.o libclass.$(LIBSUF) libcontainer.$(LIBSUF) libref.$(LIBSUF)
+classtest: classtest.o libclass.$(LIBSUF) libcontainer.$(LIBSUF) libref.$(LIBSUF) libmisc.$(LIBSUF)
 	$(LD) $(LDFLAGS) -o classtest $^ $(SYSLIBS)
 
 bug: bug.cc

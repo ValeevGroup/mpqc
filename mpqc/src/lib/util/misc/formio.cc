@@ -37,6 +37,7 @@ int  SCFormIO::ready_ = 0;
 long SCFormIO::nindent_ = 0;
 long SCFormIO::indent_size_ = 0;
 long SCFormIO::skip_indent_ = 0;
+long SCFormIO::verbose_ = 0;
 int SCFormIO::node_to_print_ = 0;
 int SCFormIO::debug_ = 0;
 int SCFormIO::parallel_ = 0;
@@ -102,13 +103,16 @@ SCFormIO::init()
   nindent_ = ios::xalloc();
   indent_size_ = ios::xalloc();
   skip_indent_ = ios::xalloc();
+  verbose_ = ios::xalloc();
 
   cout.iword(skip_indent_) = 0;
   cout.iword(indent_size_) = 0;
   cout.iword(nindent_) = 0;
+  cout.iword(verbose_) = 0;
   cerr.iword(skip_indent_) = 0;
   cerr.iword(indent_size_) = 0;
   cerr.iword(nindent_) = 0;
+  cerr.iword(verbose_) = 0;
 
   if (nullstream_.bad() || nullstream_.fail())
     nullstream_.open("/dev/null");
@@ -116,6 +120,7 @@ SCFormIO::init()
   nullstream_.iword(skip_indent_) = 0;
   nullstream_.iword(indent_size_) = 0;
   nullstream_.iword(nindent_) = 0;
+  nullstream_.iword(verbose_) = 0;
 }
 
 ios&
@@ -176,6 +181,20 @@ SCFormIO::setindent(ios&o, long n)
   o.iword(nindent_) = n;
 }
 
+long
+SCFormIO::getverbose(ios&o)
+{
+  if (!ready_) init();
+  return o.iword(verbose_);
+}
+
+void
+SCFormIO::setverbose(ios&o, long n)
+{
+  if (!ready_) init();
+  o.iword(verbose_) = n;
+}
+
 ios&
 SCFormIO::skipnextindent(ios&o)
 {
@@ -192,6 +211,48 @@ SCFormIO::node0(ostream& o)
   if (!debug_ && node_to_print_ >= 0
       && parallel_ && node_to_print_ != me_)
     return nullstream_;
+
+  return o;
+}
+
+ostream&
+SCFormIO::copyright(ostream& o)
+{
+  o << indent
+    << "Copyright (C) 1997 Limit Point Systems, Inc. and others."
+    << endl;
+
+  return o;
+}
+
+ostream&
+SCFormIO::license(ostream& o)
+{
+  o << indent
+    << "This program is free software; you can redistribute it and/or modify"
+    << endl << indent
+    << "it under the terms of the GNU General Public License as published by"
+    << endl << indent
+    << "the Free Software Foundation; either version 2 of the License, or"
+    << endl << indent
+    << "(at your option) any later version."
+    << endl;
+
+  return o;
+}
+
+ostream&
+SCFormIO::warranty(ostream& o)
+{
+  o << indent
+    << "This program is distributed in the hope that it will be useful,"
+    << endl << indent
+    << "but WITHOUT ANY WARRANTY; without even the implied warranty of"
+    << endl << indent
+    << "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
+    << endl << indent
+    << "GNU General Public License for more details."
+    << endl;
 
   return o;
 }
@@ -224,6 +285,24 @@ ostream&
 node0(ostream& o)
 {
   return SCFormIO::node0(o);
+}
+
+ostream&
+copyright(ostream& o)
+{
+  return SCFormIO::copyright(o);
+}
+
+ostream&
+warranty(ostream& o)
+{
+  return SCFormIO::warranty(o);
+}
+
+ostream&
+license(ostream& o)
+{
+  return SCFormIO::license(o);
 }
 
 /////////////////////////////////////////////////////////////////////////////

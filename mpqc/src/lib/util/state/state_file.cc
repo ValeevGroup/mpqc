@@ -25,13 +25,17 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include <fstream.h>
 
-#include <util/class/class.h>
-#include <util/state/state.h>
+#include <util/state/state_file.h>
 
 #include <util/state/statenumSet.h>
 #include <util/state/classdImplMap.h>
+#include <util/state/classdatImplMap.h>
 #include <util/state/stateptrImplSet.h>
 
 StateOutFile::StateOutFile() :
@@ -66,14 +70,12 @@ void StateOutFile::close()
   if(opened_) delete buf_;
   opened_=0; buf_=0;
 
-  _classidmap->clear();
-  _nextclassid=0;
+  classidmap_->clear();
+  nextclassid_=0;
 
   ps_->clear();
-  next_pointer_number = 1;
+  next_object_number_ = 1;
 }
-
-void StateOutFile::rewind() { if(buf_) buf_->seekoff(0,ios::beg); }
 
 int StateOutFile::open(const char *path)
 {
@@ -103,8 +105,7 @@ StateInFile::StateInFile(istream& s) :
 {
 }
 
-StateInFile::StateInFile(const char * path) :
-  opened_(1)
+StateInFile::StateInFile(const char * path)
 {
   opened_ = 0;
   open(path);
@@ -120,10 +121,11 @@ void StateInFile::close()
   if(opened_) delete buf_;
   opened_=0; buf_=0;
 
-  _cd.clear();
+  classidmap_->clear();
+  nextclassid_ = 0;
+  classdatamap_->clear();
   ps_->clear();
 }
-void StateInFile::rewind() { if(buf_) buf_->seekoff(0,ios::beg); }
 
 int StateInFile::open(const char *path)
 {

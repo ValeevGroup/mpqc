@@ -302,11 +302,6 @@ MessageGrp::initialize(int me, int n)
         }
     }
 
-  if (me_ == 0) {
-    cout << "MessageGrp(" << class_name() << "): registered "
-         << nclass_ << " classes and " << n_ << " nodes" << endl;
-    }
-
   this->dereference();
 }
 

@@ -285,6 +285,7 @@ class MessageGrp: public DescribedClass {
     //. about that mapping.
     int classdesc_to_index(const ClassDesc*);
     const ClassDesc* index_to_classdesc(int);
+    int nclass() const { return nclass_; }
 };
 DescribedClass_REF_dec(MessageGrp);
 

@@ -42,7 +42,7 @@
 SavableState_REF_def(Molecule);
 
 #define CLASSNAME Molecule
-#define VERSION 3
+#define VERSION 4
 #define PARENTS public SavableState
 #define HAVE_CTOR
 #define HAVE_KEYVAL_CTOR
@@ -414,11 +414,11 @@ void Molecule::save_data_state(StateOut& so)
   atominfo_.save_state(so);
   if (natoms_) {
       so.put(Z_, natoms_);
-      so.put(r_[0], natoms_*3);
+      so.put_array_double(r_[0], natoms_*3);
     }
   if (mass_) {
       so.put(1);
-      so.put(mass_, natoms_);
+      so.put_array_double(mass_, natoms_);
     }
   else {
       so.put(0);
@@ -438,7 +438,7 @@ Molecule::Molecule(StateIn& si):
   r_(0), natoms_(0), Z_(0), mass_(0), labels_(0),
   SavableState(si)
 {
-  if (si.version(static_class_desc()) < 3) {
+  if (si.version(static_class_desc()) < 4) {
       cerr << "Molecule: cannot restore from old molecules" << endl;
       abort();
     }
@@ -449,7 +449,8 @@ Molecule::Molecule(StateIn& si):
   if (natoms_) {
       si.get(Z_);
       r_ = new double*[natoms_];
-      si.get(r_[0]);
+      r_[0] = new double[natoms_*3];
+      si.get_array_double(r_[0],natoms_*3);
       for (int i=1; i<natoms_; i++) {
           r_[i] = &(r_[0][i*3]);
         }
@@ -457,7 +458,8 @@ Molecule::Molecule(StateIn& si):
   int test;
   si.get(test);
   if (test) {
-      si.get(mass_);
+      mass_ = new double[natoms_];
+      si.get_array_double(mass_, natoms_);
     }
   si.get(test);
   if (test){

@@ -40,18 +40,20 @@ CXXSRC = state.cc state_bin.cc proxy.cc \
 
 GENCXXSRC = stateptrSet.cc \
             stateptr$(SETIMPL)Set.cc statenumSet.cc statenum$(SETIMPL)Set.cc \
-            classdMap.cc classd$(MAPIMPL)Map.cc
+            classdMap.cc classd$(MAPIMPL)Map.cc \
+            classdatMap.cc classdat$(MAPIMPL)Map.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(GENCXXSRC:%.cc=%.o)
 GENSRC = $(GENCXXSRC)
 
-INC =  LIBS.h state.h state_debug.h state_net.h state_ptr.h \
+INC =  LIBS.h state.h state_debug.h state_ptr.h \
        statenumdefs.h stateptrdefs.h translate.h classddefs.h \
-       stattmpl.h
+       stattmpl.h state_bin.h state_file.h state_text.h
 GENINC = stateptrImplSet.h statenumImplSet.h \
          stateptrSet.h stateptr$(SETIMPL)Set.h statenumSet.h \
          statenum$(SETIMPL)Set.h \
          classdImplMap.h classdMap.h classd$(MAPIMPL)Map.h \
+         classdatImplMap.h classdatMap.h classdat$(MAPIMPL)Map.h \
          statmacr.h
 
 DEPENDINCLUDE = $(INC) $(GENINC)
@@ -86,6 +88,7 @@ endif
 stateptrSet.cc stateptrSet.h:
 	$(GENCLASS) StateDataPtr val Set stateptr
 	$(PREPEND_HEADER) stateptrSet.h "#include <util/state/state_ptr.h>"
+	$(PREPEND_HEADER) stateptrSet.h "#include <util/state/state.h>"
 	$(PREPEND_HEADER) stateptrSet.h "#include <util/state/stateptrdefs.h>"
 	/bin/mv stateptrSet.h tmp.stateptrSet.h
 	grep -v "#include \"stateptrdefs.h\"" < tmp.stateptrSet.h > stateptrSet.h
@@ -94,6 +97,7 @@ stateptrSet.cc stateptrSet.h:
 stateptr$(SETIMPL)Set.cc stateptr$(SETIMPL)Set.h:
 	$(GENCLASS) StateDataPtr val $(SETIMPL)Set stateptr
 	$(PREPEND_HEADER) stateptr$(SETIMPL)Set.h "#include <util/state/state_ptr.h>"
+	$(PREPEND_HEADER) stateptr$(SETIMPL)Set.h "#include <util/state/state.h>"
 
 stateptrImplSet.h:
 	echo "#include <util/state/stateptr$(SETIMPL)Set.h>" > stateptrImplSet.h
@@ -102,6 +106,7 @@ stateptrImplSet.h:
 statenumSet.cc statenumSet.h:
 	$(GENCLASS) StateDataNum val Set statenum
 	$(PREPEND_HEADER) statenumSet.h "#include <util/state/state_ptr.h>"
+	$(PREPEND_HEADER) statenumSet.h "#include <util/state/state.h>"
 	$(PREPEND_HEADER) statenumSet.h "#include <util/state/statenumdefs.h>"
 	/bin/mv statenumSet.h tmp.statenumSet.h
 	grep -v "#include \"statenumdefs.h\"" < tmp.statenumSet.h > statenumSet.h
@@ -110,6 +115,7 @@ statenumSet.cc statenumSet.h:
 statenum$(SETIMPL)Set.cc statenum$(SETIMPL)Set.h:
 	$(GENCLASS) StateDataNum val $(SETIMPL)Set statenum
 	$(PREPEND_HEADER) statenum$(SETIMPL)Set.h "#include <util/state/state_ptr.h>"
+	$(PREPEND_HEADER) statenum$(SETIMPL)Set.h "#include <util/state/state.h>"
 
 statenumImplSet.h:
 	echo "#include <util/state/statenum$(SETIMPL)Set.h>" > statenumImplSet.h
@@ -132,4 +138,22 @@ classd$(MAPIMPL)Map.cc classd$(MAPIMPL)Map.h:
 classdImplMap.h:
 	echo "#include <util/state/classd$(MAPIMPL)Map.h>" > classdImplMap.h
 	echo "#define ClassDescPintMap_CTOR ClassDescPint"$(MAPIMPL)"Map(0)" >> classdImplMap.h
+
+##########################################################################
+
+classdatMap.cc classdatMap.h:
+	$(GENCLASS) -2 int val StateClassData val Map classdat
+	$(PREPEND_HEADER) classdatMap.h "#include <util/state/state.h>"
+	$(PREPEND_HEADER) classdatMap.h "#include <util/container/pixintdefs.h>"
+	/bin/mv classdatMap.h tmp.classdatMap.h
+	grep -v "#include \"classdatdefs.h\"" < tmp.classdatMap.h > classdatMap.h
+	/bin/rm tmp.classdatMap.h
+
+classdat$(MAPIMPL)Map.cc classdat$(MAPIMPL)Map.h:
+	$(GENCLASS) -2 int val StateClassData val $(MAPIMPL)Map classdat
+	$(PREPEND_HEADER) classdat$(MAPIMPL)Map.h "#include <util/state/state.h>"
+
+classdatImplMap.h:
+	echo "#include <util/state/classdat$(MAPIMPL)Map.h>" > classdatImplMap.h
+	echo "#define intStateClassDataMap_CTOR intStateClassData"$(MAPIMPL)"Map(StateClassData(-1,0))" >> classdatImplMap.h
 

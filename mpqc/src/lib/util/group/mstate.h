@@ -262,9 +262,11 @@ class BcastStateInBin: public MsgStateBufRecv {
     void operator=(const BcastStateRecv&);
   protected:
     int opened_;
+    int file_position_;
     streambuf *buf_;
 
     void next_buffer();
+    int get_array_void(void*, int);
   public:
     //. Create the \clsnm{BcastStateRecv}.
     BcastStateInBin(const RefMessageGrp&, const char *filename);
@@ -273,10 +275,11 @@ class BcastStateInBin: public MsgStateBufRecv {
 
     virtual int open(const char *name);
     virtual void close();
-    virtual void rewind();
 
     void seek(int loc);
     int seekable();
+    int tell();
+    int use_directory();
 };
 
 #endif

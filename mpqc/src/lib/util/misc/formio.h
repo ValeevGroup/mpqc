@@ -38,6 +38,7 @@ class SCFormIO {
     static long nindent_;
     static long indent_size_;
     static long skip_indent_;
+    static long verbose_;
     static int node_to_print_;
     static int debug_;
     static int parallel_;
@@ -51,6 +52,8 @@ class SCFormIO {
     static ios& skipnextindent(ios&o);
     static ostream& node0(ostream&o);
 
+    static void setverbose(ios&o, long v);
+    static long getverbose(ios&o);
     static void setindent(ios&o, long column);
     static long getindent(ios&o);
     static void set_printnode(int);
@@ -60,6 +63,10 @@ class SCFormIO {
     static void set_default_basename(const char *);
     static const char *default_basename();
     static char *fileext_to_filename(const char *extension);
+
+    static ostream& license(ostream&);
+    static ostream& warranty(ostream&);
+    static ostream& copyright(ostream&);
 };
 
 ios& indent(ios&);

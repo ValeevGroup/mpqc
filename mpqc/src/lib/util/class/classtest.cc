@@ -29,6 +29,7 @@
 
 #include <iostream.h>
 
+#include <util/misc/formio.h>
 #include <util/class/class.h>
 
 #undef SIMPLE_TEST
@@ -153,7 +154,7 @@ main()
 {
   ClassDesc::list_all_classes();
 
-  cout << "using 0" << endl;
+  cout << node0 << indent << "using 0" << endl;
   const RefDescribedClass descl2(0);
   RefA aaa;
   cout << "getting aaaa" << endl;

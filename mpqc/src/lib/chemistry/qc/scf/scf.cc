@@ -34,6 +34,7 @@
 #include <sys/stat.h>
 
 #include <util/misc/formio.h>
+#include <util/state/state_bin.h>
 
 #include <math/scmat/local.h>
 #include <math/scmat/repl.h>

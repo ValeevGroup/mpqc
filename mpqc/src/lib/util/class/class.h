@@ -248,6 +248,7 @@ class DescribedClass : public VRefCount {
     //. This is a helper function that the programmer must override
     //. for derived types.
     virtual void* _castdown(const ClassDesc*);
+    virtual void print(ostream& =cout);
   };
 
 //. \clsnm{DCRefBase} provides a few utility routines common to all
@@ -288,6 +289,7 @@ class DCRefBase: private RefBase {
     void ref_info(ostream& os) const;
     void check_pointer() const;
 };
+ostream &operator<<(ostream&,const DCRefBase&);
 
 // These files declare template and macro smart pointer classes for
 // DescribedClass objects.  They use macros from util/ref/ref.h.

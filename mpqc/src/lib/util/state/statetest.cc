@@ -30,6 +30,8 @@
 #include <new.h>
 #include <iostream.h>
 
+#include <util/misc/formio.h>
+
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
 #include <util/state/state.h>
@@ -37,6 +39,26 @@
 #ifdef __GNUG__
 #pragma implementation "stattmpl"
 #pragma implementation "clastmpl"
+#endif
+
+#if 0 // normally 0
+#  define StateOutTypeA StateOutText
+#  define StateInTypeA StateInText
+#  include <util/state/state_text.h>
+#else
+#  define StateOutTypeA StateOutBin
+#  define StateInTypeA StateInBin
+#  include <util/state/state_bin.h>
+#endif
+
+#if 0 // normally 0
+#  define StateOutTypeB StateOutBin
+#  define StateInTypeB StateInBin
+#  include <util/state/state_bin.h>
+#else
+#  define StateOutTypeB StateOutText
+#  define StateInTypeB StateInText
+#  include <util/state/state_text.h>
 #endif
 
 #define A_parents virtual_base public SavableState
@@ -275,8 +297,10 @@ class D: D_parents {
     int id;
     RefA _a;
     RefB _b;
-    double *d1;
-    double *d2;
+    char *cdat;
+    int *idat;
+    float *fdat;
+    double *ddat;
   public:
     D();
     D(const RefKeyVal&);
@@ -312,7 +336,6 @@ SavableState_REF_def(D);
 D::D():
   id(4)
 {
-  d1 = d2 = new double[4];
 }
 D::D(const RefKeyVal&keyval):
   B(new PrefixKeyVal("B",keyval)),
@@ -321,37 +344,54 @@ D::D(const RefKeyVal&keyval):
   _a(A::castdown(keyval->describedclassvalue("a"))),
   _b(B::castdown(keyval->describedclassvalue("b")))
 {
-  d1 = d2 = new double[4];
-  for (int i=0; i<4; i++) d1[i] = 0.5*i;
+  ddat = new double[4];
+  fdat = new float[4];
+  idat = new int[4];
+  cdat = new char[4];
+  cdat[0]=(cdat[1]=(cdat[2]=(cdat[3]='a')+1)+1)+1;
+  idat[0]=(idat[1]=(idat[2]=(idat[3]=1)+1)+1)+1;
+  fdat[0]=(fdat[1]=(fdat[2]=(fdat[3]=1.0)+1)+1)+1;
+  ddat[0]=(ddat[1]=(ddat[2]=(ddat[3]=1.0)+1)+1)+1;
 }
 D::D(StateIn&s):
   B(s),
   C(s)
   maybe_SavableState(s)
 {
-  int* nullref;
-  s.get(nullref);
   s.get(id);
+  char *junk;
+  s.getstring(junk);
+  delete[] junk;
   _a.restore_state(s);
+  s.getstring(junk);
+  delete[] junk;
   _b.restore_state(s);
-  s.get(d1);
-  s.get(d2);
+  s.get(ddat);
+  s.get(fdat);
+  s.get(idat);
+  s.get(cdat);
 }
 void
 D::save_data_state(StateOut&s)
 {
   B::save_data_state(s);
   C::save_data_state(s);
-  s.put((int*)0,0);
   s.put(id);
+  s.putstring("here begins _a");
   _a.save_state(s);
+  s.putstring("here begins _b");
   _b.save_state(s);
-  s.put(d1,4);
-  s.put(d2,4);
+  s.put(ddat,4);
+  s.put(fdat,4);
+  s.put(idat,4);
+  s.put(cdat,4);
 }
 D::~D()
 {
-  delete[] d1;
+  delete[] ddat;
+  delete[] fdat;
+  delete[] idat;
+  delete[] cdat;
 }
 
 #define CLASSNAME D
@@ -370,14 +410,6 @@ D::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 #endif // ! NO_VIRTUAL_BASES
-
-#if 0
-#  define StateOutType StateOutText
-#  define StateInType StateInText
-#else
-#  define StateOutType StateOutBin
-#  define StateInType StateInBin
-#endif
 
 int
 main()
@@ -450,39 +482,71 @@ main()
   ////////////////////////////////////////////////////////////////////
   // state tests
 
-  cout << " -- saving state --\n";
+  cout << " ------------- saving state ----------------" << endl;
 
-  StateOutType soa("statetest.a.out");
+  cout << " --- saving to A ---" << endl;
+  StateOutTypeA soa("statetest.a.out");
   ra = new A(new PrefixKeyVal("test:object_a",pkv));
   cout << "  first a" << endl;
   ra->save_object_state(soa);
   soa.forget_references();
   cout << "  second a" << endl;
   ra->save_object_state(soa);
-  soa.flush();
 #ifndef NO_VIRTUAL_BASES
   ra = A::castdown(rdc);
 #endif // ! NO_VIRTUAL_BASES
-  StateOutText so("statetest.out");
+  ra->save_state(soa);
+  soa.flush();
+  soa.close();
+  cout << " --- saving to B ---" << endl;
+  StateOutTypeB so("statetest.out");
   ra.save_state(so);
   RefA ra2;
   ra2.save_state(so);
-  so.flush();
+  so.close();
 
-  cout << " -- restoring state --\n";
+  cout << " ------------- restoring state ----------------" << endl;
 
-  StateInType sia("statetest.a.out");
+  cout << " --- restoring from A ---" << endl;
+  StateInTypeA sia("statetest.a.out");
   cout << "  first a" << endl;
   ra = new A(sia);
   cout << "  second a" << endl;
   ra = new A(sia);
+  cout << "  last object" << endl;
+  ra.restore_state(sia);
   if (ra.nonnull()) { ra->print(); cout << endl; }
-  StateInText si("statetest.out");
+  if (sia.use_directory()) {
+      cout << " --- restoring from A's directory ---" << endl;
+      ra.restore_state(sia,"B:1");
+      cout << "B:1 classname = " << ra->class_name() << endl;
+    }
+  sia.close();
+  cout << " --- restoring from B ---" << endl;
+  StateInTypeB si("statetest.out");
   //ra = A::restore_state(si);
   ra.restore_state(si);
   ra2.restore_state(si);
   if (ra.nonnull()) { ra->print(); cout << endl; }
   cout << "ra2.nonnull() = " << ra2.nonnull() << "(should be 0)\n";
+  si.close();
+
+  if (sia.use_directory()) {
+      sia.open("statetest.a.out");
+      cout << node0 << indent
+           << " --- restoring from A's directory (2) ---" << endl;
+      ra.restore_state(sia,"B:1");
+      cout << node0 << indent
+           << "B:1 classname = " << ra->class_name() << endl;
+      RefA ra3;
+      ra3.restore_state(sia,"B:1");
+      cout << node0 << indent
+           <<"first B:1: " << (void*) ra.pointer()
+           << " second B:1: " << (void*) ra3.pointer()
+           << endl;
+    }
+  cout << node0 << indent << "objects in sia" << endl;
+  sia.list_objects();
 
   return 0;
 }

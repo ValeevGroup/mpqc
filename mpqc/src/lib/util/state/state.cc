@@ -33,6 +33,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include <util/misc/formio.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/translate.h>
@@ -41,8 +42,8 @@
 #include <util/state/statenumSet.h>
 #include <util/state/stateptrImplSet.h>
 #include <util/state/statenumImplSet.h>
-
 #include <util/state/classdImplMap.h>
+#include <util/state/classdatImplMap.h>
 
 /////////////////////////////////////////////////////////////////
 
@@ -76,7 +77,11 @@ SavableState::SavableState(StateIn&si)
 {
   // In case si is looking for the next pointer, let it know i
   // have one.
-  si.havepointer(this);
+  reference();
+  RefSavableState th(this);
+  si.haveobject(th);
+  th = 0;
+  dereference();
 
   // The following gets the version of this class and all of the
   // parent classes.  This is only needed for restoring objects
@@ -101,48 +106,37 @@ SavableState::save_state(StateOut&so)
 void
 SavableState::save_state(SavableState*th,StateOut&so)
 {
-  // save the pointer
-  if (so.putpointer(th)) {
-      // The pointer hasn't been written yet, so write it.
-      
-      // Save the class descriptor for the exact type and all base classes
-      // (base classes are needed to get the version information correct).
-      so.put(th->class_desc());
-
-      so.have_classdesc();
-      
-      // save the object
-      th->save_vbase_state(so);
-      th->save_data_state(so);
-    }
+  so.putobject(th);
 }
 
 SavableState*
-SavableState::restore_state(StateIn&si)
+SavableState::restore_state(StateIn&si, const char *name)
 {
   // restore the pointer
-  SavableState* ss;
-  int objnum = si.getpointer((void**)&ss);
-  if (objnum) {
-      // The object doesn't yet exist, so create it
-
-      // Get the class descriptor (and all parent class descriptors are
-      // retrieved too).
-      const ClassDesc* cd;
-      si.get(&cd);
-
-      // Tell si that the next pointer corresponds to objnum.
-      // (The SavableState(StateIn&) CTOR will call havepointer
-      // with the this pointer.)
-      si.nextobject(objnum);
-
-      si.have_classdesc();
-      DescribedClass* dc = cd->create(si);
-      //cout << "dc = 0x" << setbase(16) << dc << endl;
-      ss = SavableState::castdown(dc);
+  RefSavableState ss;
+  if (name) si.dir_getobject(ss, name);
+  else si.getobject(ss);
+  SavableState *ret = ss.pointer();
+  if (ret) {
+      ret->reference();
+      ss = 0;
+      ret->dereference();
     }
-  //cout << "ss = 0x" << setbase(16) << ss << endl;
-  return ss;
+  return ret;
+}
+
+void
+SavableState::save_object_state_(StateOut&so, const ClassDesc *cd)
+{
+  if (class_desc() != cd) {
+      cerr <<  "Warning:"
+           << cd->name()
+           << "::save_object_state: "
+           << "exact type not known -- object not saved" << endl;
+      return;
+    }
+  save_vbase_state(so);
+  save_data_state(so);
 }
 
 void
@@ -181,11 +175,11 @@ StateOut::_castdown(const ClassDesc*cd)
 }
 
 StateOut::StateOut() :
-  next_pointer_number(1),
+  next_object_number_(1),
   ps_(new StateDataPtr_CTOR),
   copy_references_(0),
-  _classidmap(new ClassDescPintMap_CTOR),
-  _nextclassid(0),
+  classidmap_(new ClassDescPintMap_CTOR),
+  nextclassid_(0),
   have_cd_(0),
   node_to_node_(0),
   translate_(new TranslateDataOut(this, new TranslateDataBigEndian))
@@ -208,7 +202,7 @@ StateOut::operator=(const StateOut&)
 StateOut::~StateOut()
 {
   delete ps_;
-  delete _classidmap;
+  delete classidmap_;
   delete translate_;
 }
 
@@ -230,6 +224,12 @@ StateOut::seek(int loc)
 
 int
 StateOut::seekable()
+{
+  return 0;
+}
+
+int
+StateOut::use_directory()
 {
   return 0;
 }
@@ -293,9 +293,12 @@ StateIn::operator=(const StateIn&)
 
 StateIn::StateIn() :
   ps_(new StateDataNum_CTOR),
-  _nextobject(0),
+  classidmap_(new ClassDescPintMap_CTOR),
+  classdatamap_(new intStateClassDataMap_CTOR),
+  expected_object_num_(0),
   have_cd_(0),
   node_to_node_(0),
+  nextclassid_(0),
   translate_(new TranslateDataIn(this, new TranslateDataBigEndian))
 {
 }
@@ -304,6 +307,14 @@ StateIn::~StateIn()
 {
   delete ps_;
   delete translate_;
+  delete classidmap_;
+  delete classdatamap_;
+}
+
+int
+StateIn::tell()
+{
+  return 0;
 }
 
 void
@@ -313,6 +324,12 @@ StateIn::seek(int loc)
 
 int
 StateIn::seekable()
+{
+  return 0;
+}
+
+int
+StateIn::use_directory()
 {
   return 0;
 }
@@ -352,9 +369,7 @@ int StateIn::get(double&r) { return get_array_double(&r,1); }
 // again, they will be written in their entirety.
 void StateOut::forget_references()
 {
-  for (Pix i=ps_->first(); i; ps_->next(i)) {
-      ps_->operator()(i).can_refer = 0;
-    }
+  ps_->clear();
 }
 
 // This deletes all references to objects, so if they are output
@@ -414,6 +429,15 @@ StateOut::put_header()
   gettimeofday(&tv,0);
   int date = (int) tv.tv_sec;
   put_array_int(&date,1);
+
+  // record the position of the directory locator
+  dir_loc_loc_ = tell();
+
+  // the directory location defaults to 0 (no directory)
+  int dir_loc = 0;
+  // however, if a directory is to be used make dir_loc -1 (invalid)
+  if (use_directory()) dir_loc = -1;
+  put_array_int(&dir_loc,1);
 }
 
 void
@@ -428,268 +452,403 @@ StateIn::get_header()
       abort();
     }
 
-  char format;
-  get_array_char(&format,1);
+  get_array_char(&format_,1);
   // switch to the new format
-  if (translate_->translator()->format_code() != format) {
+  if (translate_->translator()->format_code() != format_) {
       delete translate_;
-      translate_ = new TranslateDataIn(this,TranslateData::vctor(format));
+      translate_ = new TranslateDataIn(this,TranslateData::vctor(format_));
     }
 
-  int version;
-  get_array_int(&version,1);
+  get_array_int(&version_,1);
 
-  char userid[9];
-  get_array_char(userid,9);
+  get_array_char(userid_,9);
 
-  int date;
-  get_array_int(&date,1);
+  get_array_int(&date_,1);
+
+  // get the directory location
+  get_array_int(&dir_loc_,1);
+  if (dir_loc_ == -1) {
+      cerr << "ERROR: StateIn: directory corrupted" << endl;
+      abort();
+    }
 }
 
 /////////////////////////////////////////////////////////////////
 
-int StateOut::putstring(char*s)
+void
+StateOut::put_directory()
 {
-  if (putpointer((void*)s)) {
-      if (s) {
-	  int size = strlen(s)+1;
-	  put(size);
-	  return put_array_char(s,size);
-	}
-      else {
-	  put((int)0);
-	}
+  Pix i;
+
+  // write the class information
+  put(classidmap_->length());
+  for (i=classidmap_->first(); i; classidmap_->next(i)) {
+      const ClassDesc *cd = classidmap_->key(i);
+      int classid = classidmap_->contents(i);
+      putstring(cd->name());
+      put(cd->version());
+      put(classid);
+      //cout << "PUT CLASS:"
+      //     << " NAME = " << cd->name()
+      //     << " VERSION = " << cd->version()
+      //     << " ID = " << classid << endl;
     }
-  return 0;
+
+  // write the object information
+  put(ps_->length());
+  for (i=ps_->first(); i; ps_->next(i)) {
+      const StateDataPtr& ptr = ps_->operator()(i);
+      put(ptr.num);
+      put(ptr.type);
+      put(ptr.offset);
+      put(ptr.size);
+      //cout << "PUT OBJECT:"
+      //     << " NUM = " << ptr.num
+      //     << " TYPE = " << ptr.type
+      //     << " OFFSET = " << ptr.offset
+      //     << " SIZE = " << ptr.size
+      //     << endl;
+    }
+}
+
+void
+StateIn::get_directory()
+{
+  int i, length;
+
+  // read the type information
+  get(length);
+  for (i=0; i<length; i++) {
+      char *name;
+      int version, classid;
+      getstring(name);
+      get(version);
+      get(classid);
+      //cout << "GET CLASS:"
+      //     << " NAME = " << name
+      //     << " VERSION = " << version
+      //     << " ID = " << classid << endl;
+      ClassDesc* tmp = ClassDesc::name_to_class_desc(name);
+
+      classidmap_->operator[](tmp) = classid;
+      StateClassData classdat(version,tmp,name);
+      classdatamap_->operator[](classid) = classdat;
+    }
+
+  // read the object information
+  get(length);
+  for (i=0; i<length; i++) {
+      int n;
+      get(n);
+      StateDataNum num(n);
+      get(num.type);
+      get(num.offset);
+      get(num.size);
+      //cout << "GET OBJECT:"
+      //     << " NUM = " << num.num
+      //     << " TYPE = " << num.type
+      //     << " OFFSET = " << num.offset
+      //     << " SIZE = " << num.size
+      //     << endl;
+      ps_->add(num);
+      classdatamap_->operator[](num.type).ninstance++;
+    }
+}
+
+void
+StateIn::find_and_get_directory()
+{
+  if (directory_location()) {
+      int original_loc = tell();
+      seek(directory_location());
+      get_directory();
+      seek(original_loc);
+    }
+}
+
+/////////////////////////////////////////////////////////////////
+
+int StateOut::putstring(const char*s)
+{
+  int r=0;
+  if (s) {
+      int size = strlen(s)+1;
+      r += put(size);
+      r += put_array_char(s,size-1);
+    }
+  else {
+      r += put((int)0);
+    }
+  return r;
 }
 
 int StateIn::getstring(char*&s)
 {
-  int objnum;
-  if (objnum = getpointer((void**)&s)) {
-      int size;
-      get(size);
-      if (size) {
-	  s = new char[size];
-	  havepointer(objnum,s);
-	  return get_array_char(s,size);
-	}
-      else {
-	  s = 0;
-	}
+  int r=0;
+  int size;
+  r += get(size);
+  if (size) {
+      s = new char[size];
+      r += get_array_char(s,size-1);
+      s[size-1] = '\0';
     }
-  return 0;
+  else {
+      s = 0;
+    }
+  return r;
 }
 
 /////////////////////////////////////////////////////////////////
 
-int StateOut::put(char*s,int size)
+int StateOut::put(const char*s,int size)
 {
-  if (putpointer((void*)s)) {
-    if (s) {
-      put(size);
-      return put_array_char(s,size);
-      }
-    else {
-      put((int)0);
-      }
+  int r=0;
+  if (s) {
+      r += put(size);
+      r += put_array_char(s,size);
     }
-  return 0;
-  }
+  else {
+      r += put((int)0);
+    }
+  return r;
+}
 
 int StateIn::get(char*&s)
 {
-  int objnum;
-  if (objnum = getpointer((void**)&s)) {
-    int size;
-    get(size);
-    if (size) {
+  int r=0;
+  int size;
+  r += get(size);
+  if (size) {
       s = new char[size];
-      havepointer(objnum,s);
-      return get_array_char(s,size);
-      }
-    else {
-      s = 0;
-      }
+      r += get_array_char(s,size);
     }
-  return 0;
-  }
+  else {
+      s = 0;
+    }
+  return r;
+}
 
 /////////////////////////////////////////////////////////////////
 
-int StateOut::put(int*s,int size)
+int StateOut::put(const int*s,int size)
 {
-  if (putpointer((void*)s)) {
-    if (s) { put(size); return put_array_int(s,size); }
-    else put((int)0);
+  int r=0;
+  if (s) {
+      r += put(size);
+      r += put_array_int(s,size);
     }
-  return 0;
-  }
+  else {
+      r += put((int)0);
+    }
+  return r;
+}
 
 int StateIn::get(int*&s)
 {
-  int objnum;
-  if (objnum = getpointer((void**)&s)) {
-    int size; get(size);
-    if (size) {
+  int r=0;
+  int size;
+  r += get(size);
+  if (size) {
       s = new int[size];
-      havepointer(objnum,(void*)s);
-      return get_array_int(s,size);
-      }
-    else s = 0;
+      r += get_array_int(s,size);
     }
-  return 0;
-  }
+  else {
+      s = 0;
+    }
+  return r;
+}
 
 /////////////////////////////////////////////////////////////////
 
-int StateOut::put(float*s,int size)
+int StateOut::put(const float*s,int size)
 {
-  if (putpointer((void*)s)) {
-    if (s) { put(size); return put_array_float(s,size); }
-    else put((int)0);
+  int r=0;
+  if (s) {
+      r += put(size);
+      r += put_array_float(s,size);
     }
-  return 0;
-  }
+  else {
+      r += put((int)0);
+    }
+  return r;
+}
 
 int StateIn::get(float*&s)
 {
-  int objnum;
-  if (objnum = getpointer((void**)&s)) {
-    int size; get(size);
-    if (size) {
+  int r=0;
+  int size;
+  r += get(size);
+  if (size) {
       s = new float[size];
-      havepointer(objnum,(void*)s);
-      return get_array_float(s,size);
-      }
-    else s = 0;
+      r += get_array_float(s,size);
     }
-  return 0;
-  }
+  else {
+      s = 0;
+    }
+  return r;
+}
 
 /////////////////////////////////////////////////////////////////
 
-int StateOut::put(double*s,int size)
+int StateOut::put(const double*s,int size)
 {
-  if (putpointer((void*)s)) {
-    if (s) { put(size); return put_array_double(s,size); }
-    else put((int)0);
+  int r=0;
+  if (s) {
+      r += put(size);
+      r += put_array_double(s,size);
     }
-  return 0;
-  }
+  else {
+      r += put((int)0);
+    }
+  return r;
+}
 
 int StateIn::get(double*&s)
 {
-  int objnum;
-  if (objnum = getpointer((void**)&s)) {
-    int size; get(size);
-    if (size) {
+  int r=0;
+  int size;
+  r += get(size);
+  if (size) {
       s = new double[size];
-      havepointer(objnum,(void*)s);
-      return get_array_double(s,size);
-      }
-    else s = 0;
+      r += get_array_double(s,size);
     }
-  return 0;
-  }
+  else {
+      s = 0;
+    }
+  return r;
+}
+
+/////////////////////////////////////////////////////////////////
 
 int StateIn::version(const ClassDesc* cd)
 {
-  int position = _cd.iseek(cd);
-  if (position >= 0) {
-      return _version[position];
-    }
-  return -1;
+  int classid = classidmap_->operator[]((ClassDesc*)cd);
+  return classdatamap_->operator[](classid).version;
 }
 
-int StateIn::get_version(const ClassDesc*cd)
-{
-  if (!_cd.contains((const ClassDescP&)cd)) {
-      const ClassDesc *tmp;
-      get(&tmp);
-    }
-  return 0;
-}
 int StateIn::get(const ClassDesc**cd)
 {
+  int r=0;
 
   // if a list of class descriptors exist then read it in 
-  int size;
-  get(size);
-  while (size) {
-      char* name = new char[size+1];
-      get_array_char(name,size);
-      name[size] = '\0';
-      int version;
-      get(version);
-      //cout << "just got \"" << name << "\" " << version << endl;
-      ClassDesc* tmp = ClassDesc::name_to_class_desc(name);
-      // save the class descriptor and the version
-      _cd.add(tmp);
-      int position = _cd.iseek(tmp);
-      if (_version.length() <= position) {
-          _version.reset_length(position + 10);
+  if (!use_directory()) {
+      int size;
+      r += get(size);
+      while (size) {
+          char* name = new char[size+1];
+          r += get_array_char(name,size);
+          name[size] = '\0';
+          int version;
+          r += get(version);
+          ClassDesc* tmp = ClassDesc::name_to_class_desc(name);
+          // save the class descriptor and the version
+          int classid = nextclassid_++;
+          classidmap_->operator[]((ClassDesc*)tmp) = classid;
+          StateClassData classdat(version,tmp,name);
+          classdatamap_->operator[](classid) = classdat;
+          r += get(size);
         }
-      _version[position] = version;
-      delete[] name;
-      get(size);
     }
 
   // get the class id for the object
   int classid;
-  get(classid);
+  r += get(classid);
+
+  Pix ind = classdatamap_->seek(classid);
+  if (ind == 0) {
+      cerr << "ERROR: StateIn: couldn't find class descriptor for classid "
+           << classid << endl;
+      abort();
+    }
 
   // convert the class id into the class descriptor
-  *cd = _cd[classid];
-  
-  return 0;
-  }
+  *cd = classdatamap_->contents(ind).classdesc;
 
-int StateOut::put_version(const ClassDesc*cd)
-{
-  if (!_classidmap->contains((ClassDesc*)cd)) {
-      put(cd);
-    }
-  return 0;
+  return r;
 }
+
 int StateOut::put(const ClassDesc*cd)
 {
+  int r=0;
   // write out parent info
-  if (!_classidmap->contains((ClassDesc*)cd)) {
-      putparents(cd);
-      const char* name = cd->name();
-      int size = strlen(name);
-      put(size);
-      put_array_char(name,size);
-      put(cd->version());
-      _classidmap->operator[]((ClassDesc*)cd) = _nextclassid++;
+  if (!classidmap_->contains((ClassDesc*)cd)) {
+      r += putparents(cd);
+      if (!use_directory()) {
+          const char* name = cd->name();
+          int size = strlen(name);
+          r += put(size);
+          r += put_array_char(name,size);
+          r += put(cd->version());
+        }
+      classidmap_->operator[]((ClassDesc*)cd) = nextclassid_++;
     }
-  // write out a 0 to indicate the end of the list
-  put((int)0);
+  if (!use_directory()) {
+      // write out a 0 to indicate the end of the list
+      r += put((int)0);
+    }
   // the cast is needed to de-const-ify cd
-  put(_classidmap->operator[]((ClassDesc*)cd));
-  return 0;
+  r += put(classidmap_->operator[]((ClassDesc*)cd));
+  return r;
   }
 
-void
+int
 StateOut::putparents(const ClassDesc*cd)
 {
+  int r=0;
   const ParentClasses& parents = cd->parents();
 
   for (int i=0; i<parents.n(); i++) {
       // the cast is needed to de-const-ify the class descriptor
       ClassDesc*tmp = (ClassDesc*) parents[i].classdesc();
-      if (!_classidmap->contains(tmp)) {
-          putparents(tmp);
-          const char* name = tmp->name();
-          int size = strlen(name);
-          put(size);
-          put_array_char(name,size);
-          put(tmp->version());
-          _classidmap->operator[](tmp) = _nextclassid++;
+      if (!classidmap_->contains(tmp)) {
+          r += putparents(tmp);
+          if (!use_directory()) {
+              const char* name = tmp->name();
+              int size = strlen(name);
+              r += put(size);
+              r += put_array_char(name,size);
+              r += put(tmp->version());
+            }
+          classidmap_->operator[]((ClassDesc*)tmp) = nextclassid_++;
         }
     }
 
+  return r;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+void
+StateIn::list_objects(ostream &o)
+{
+  Pix i;
+  if (SCFormIO::getverbose(o)) {
+      int ii = 1;
+      for (i=ps_->first(); i; ps_->next(i),ii++) {
+          StateDataNum &num(ps_->operator()(i));
+          Pix dati = classdatamap_->seek(num.type);
+          const char *classname = classdatamap_->contents(dati).name;
+          o << indent
+            << "object " << ii
+            << " at offset " << num.offset
+            << " is of type " << classname
+            << endl;
+        }
+    }
+  else {
+      int ntot = 0;
+      for (i=classdatamap_->first(); i; classdatamap_->next(i)) {
+          StateClassData &dat = classdatamap_->contents(i);
+          if (dat.ninstance > 0) {
+              o << indent << dat.ninstance
+                << " "
+                << dat.name
+                << endl;
+              ntot += dat.ninstance;
+            }
+        }
+      o << indent << "total of " << ntot << endl;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -708,13 +867,36 @@ SSRefBase::save_state(StateOut&so)
 }
 
 void
-SSRefBase::check_castdown_result(void* t, SavableState *ss)
+SSRefBase::check_castdown_result(void* t, SavableState *ss,
+                                 const ClassDesc *cd)
 {
   if (!t && ss) {
-      cerr << "SSRef::restore_state() got type \"" << ss->class_name()
-           << "\"" << endl;
+      cerr << node0
+           << "SSRef::restore_state() got type \"" << ss->class_name()
+           << "\""
+           << " but expected \""
+           << cd->name()
+           << "\""
+           << endl;
         abort();
     }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+StateClassData::~StateClassData()
+{
+  delete[] name;
+}
+
+StateClassData &
+StateClassData::operator=(const StateClassData &d)
+{
+  version = d.version;
+  classdesc = d.classdesc;
+  ninstance = d.ninstance;
+  if (d.name) name = strcpy(new char[strlen(d.name)+1], d.name);
+  else name = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////

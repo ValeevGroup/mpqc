@@ -1,8 +1,24 @@
 
+% for mpqcic
+
+mpqc:(
+  frozen_docc = 1
+)
+
+default:(
+  basis = $:basis
+  molecule = $:molecule
+  dertype = first
+  mp2 = yes
+)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 nproc = 2
 molecule = $:water_c1
 coor = $:symcoor
 message = $:message1
+basis = $:321gbasis
 basis_matrixkit = $:localmatrixkit
 reference = $:clscf_reference
 
@@ -19,20 +35,15 @@ mole<MBPT2>: (
 
   % MolecularEnergy input
   molecule = $:molecule
-  basis<GaussianBasisSet>: (
-    molecule = $:molecule
-    %name = "6-31G*"
-    name = "STO-3G"
-    %puream=yes
-    matrixkit = $:basis_matrixkit
-  )
+  basis = $:basis
 
   % comment out coor if molecule is an atom
   coor = $:coor
 
   % MBPT2
-  debug = yes
+  debug = no
   reference = $:reference
+  nfzc = 1
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -49,13 +60,7 @@ hsosscf_reference<HSOSSCF>: (
 
   % MolecularEnergy input
   molecule = $:molecule
-  basis<GaussianBasisSet>: (
-    molecule = $:molecule
-    %name = "6-31G*"
-    name = "STO-3G"
-    %puream=yes
-    matrixkit = $:basis_matrixkit
-  )
+  basis = $:basis
 
   % SCF input
   %total_charge = 1
@@ -74,12 +79,7 @@ hsosscf_guess<HSOSSCF>: (
   molecule = $:molecule
   coor = $:coor
 
-  basis = $:mole:basis
-  xbasis<GaussianBasisSet>: (
-    matrixkit = $:basis_matrixkit
-    molecule = $:molecule
-    name = "STO-3G"
-  )
+  basis = $:basis
 )
 
 clscf_reference<CLSCF>: (
@@ -90,13 +90,7 @@ clscf_reference<CLSCF>: (
 
   % MolecularEnergy input
   molecule = $:molecule
-  basis<GaussianBasisSet>: (
-    molecule = $:molecule
-    %name = "6-31G*"
-    name = "STO-3G"
-    %puream=yes
-    matrixkit = $:basis_matrixkit
-  )
+  basis = $:basis
 
   % SCF input
   %total_charge = 1
@@ -115,12 +109,7 @@ clscf_guess<CLSCF>: (
   molecule = $:molecule
   coor = $:coor
 
-  basis = $:mole:basis
-  xbasis<GaussianBasisSet>: (
-    matrixkit = $:basis_matrixkit
-    molecule = $:molecule
-    name = "STO-3G"
-  )
+  basis = $:basis
 )
 
 xopt<QNewtonOpt>: (
@@ -129,6 +118,22 @@ xopt<QNewtonOpt>: (
   function = $:mole
   transition_state=no
   update<BFGSUpdate>:()
+)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% basis sets
+%
+sto3gbasis<GaussianBasisSet>: (
+  molecule = $:molecule
+  name = "STO-3G"
+  matrixkit = $:basis_matrixkit
+)
+
+321gbasis<GaussianBasisSet>: (
+  molecule = $:molecule
+  name = "3-21G"
+  matrixkit = $:basis_matrixkit
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -189,6 +194,14 @@ ch2_c1<Molecule>: (
       C  [   0.0  0.0   0.0 ]
       H  [   1.5  0.0   1.0 ]
       H  [  -1.5  0.0   1.0 ]
+  }
+)
+
+h2_c1<Molecule>: (
+  symmetry=c1
+  { atoms geometry } = {
+      H  [  0.0  0.0   0.5 ]
+      H  [  0.0  0.0  -0.5 ]
   }
 )
 
@@ -352,19 +365,6 @@ sileth<Molecule>: (
     h   [ 0.00000000 -3.78418965  1.65770850]
     h   [-4.13743057  0.00000000  2.26831382]
   }
-)
-
-basis:(
-  oxygen: "foo": [
-    (type: [am = s]
-            {exp               coef:0} = {
-       1.307093214e+02   1.543289673e-01
-       2.380886605e+01   5.353281423e-01
-       6.443608313e+00   4.446345422e-01})
-    (type: [am = d ] 
-            {exp               coef:0   } = {
-       1.169596125e+00   6.076837186e-01})
-    ]
 )
 
 %

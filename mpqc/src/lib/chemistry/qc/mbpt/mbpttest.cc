@@ -135,6 +135,7 @@ main(int argc, char**argv)
   tim->exit("input");
 
   if (mole.nonnull()) {
+    cout << "energy: " << mole->energy() << endl;
     if (mole->gradient_implemented()) {
       if (opt.nonnull()) {
         opt->optimize();
@@ -161,4 +162,4 @@ main(int argc, char**argv)
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ")
+// eval: (c-set-style "CLJ-CONDENSED")

@@ -225,10 +225,23 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs)
       vecs = vecs_mo1_mo2.t() * vecs_so_mo1.t() * so_ao;
     }
   else {
-      RefSCMatrix vecs_so_mo2 = reference_->eigenvectors();
+      // get the closed shell AO fock matrices
+      RefSymmSCMatrix fock_c_so = reference_->fock(0);
+
+      // transform the AO fock matrices to the MO basis
+      RefSymmSCMatrix fock_c_mo1 = fock_c_so.clone();
+      RefSCMatrix vecs_so_mo1 = reference_->eigenvectors();
+
+      fock_c_mo1.assign(0.0);
+      fock_c_mo1.accumulate_transform(vecs_so_mo1.t(), fock_c_so);
+      fock_c_so = 0;
+
+      // diagonalize the fock matrix
+      vals = fock_c_mo1.eigvals();
+
+      // compute the AO to new MO scf vector
       RefSCMatrix so_ao = reference_->integral()->petite_list()->sotoao();
-      vecs = vecs_so_mo2.t() * so_ao;
-      vals = reference_->fock(0).eigvals();
+      vecs = vecs_so_mo1.t() * so_ao;
     }
 }
 

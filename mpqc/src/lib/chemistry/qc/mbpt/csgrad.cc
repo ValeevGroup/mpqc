@@ -182,6 +182,12 @@ MBPT2::compute_cs_grad()
   double **gradient, *gradient_dat;  // The MP2 gradient
   double **ginter;    // Intermediates for the MP2 gradient
 
+  if (molecule()->point_group().order() != 1) {
+    // need to reorder the eigenvalues and possibly fix some bugs
+    cout << "MP2 closed shell gradients only works for C1 symmetry" << endl;
+    abort();
+    }
+
   nfuncmax = basis()->max_nfunction_in_shell();
 
   DerivCenters der_centers;
@@ -281,7 +287,7 @@ MBPT2::compute_cs_grad()
     }
 
   double *scf_vector_dat = new double[nbasis*nbasis];
-  Scf_Vec->convert(scf_vector_dat);
+  Scf_Vec.t()->convert(scf_vector_dat);
 
   evals = new double[nbasis];
   double** scf_vector = new double*[nbasis];
@@ -293,7 +299,7 @@ MBPT2::compute_cs_grad()
       idoc++;
       }
     else {
-      evals[ivir] = evalmat(i);
+      evals[ivir+nocc] = evalmat(i);
       scf_vector[ivir+nocc] = &scf_vector_dat[i*nbasis];
       ivir++;
       }
@@ -339,13 +345,17 @@ MBPT2::compute_cs_grad()
 
   if (me == 0) zero_gradients(gradient, natom, 3);
 
-  // Debug print
-  if (debug_ && me == 0) {
+  if (me == 0) {
     for (j=0; j<nbasis; j++) {
-      cout << scprintf("evals,j: %15.10lf %i", evals[j],j) << endl;
+      cout << indent
+           << scprintf("eigenvalue[%3d] = %15.10lf", j, evals[j]);
+      if (j < nfzc) cout << " (frozen docc)";
+      else if (j < nocc_act + nfzc) cout << " (active docc)";
+      else if (j < nvir_act + nocc_act + nfzc) cout << " (active uocc)";
+      else cout << " (frozen uocc)";
+      cout << endl;
       }
     }
-  // End of debug print
 
   if (nproc > 1) iqjs_buf = new double[2 + nfuncmax*nbasis];
 
@@ -1343,7 +1353,7 @@ MBPT2::compute_cs_grad()
 
                       for (bf4 = 0; bf4 < ns; bf4++) {
 
-                        if (fabs(intderbuf[int_index]) > dtol) {
+                        if (fabs(intbuf[int_index]) > dtol) {
                           s = s_offset + bf4;
 
                           if (s < r) {
@@ -1440,7 +1450,7 @@ MBPT2::compute_cs_grad()
                 tim_enter("non-sep 2PDM contrib.");
                 for (derset=0; derset<der_centers.n(); derset++) {
                   for (xyz=0; xyz<3; xyz++) {
-                    grad_ptr1 = &ginter[der_centers.center(derset)][xyz];
+                    grad_ptr1 = &ginter[der_centers.atom(derset)][xyz];
                     grad_ptr2 = &ginter[der_centers.omitted_atom()][xyz];
                     for (bf1=0; bf1<np; bf1++) {
                       p = bf1 + p_offset;
@@ -1459,7 +1469,8 @@ MBPT2::compute_cs_grad()
                             gamma_pqrs_ptr++;
                             if (q>=p && s>=r && (P != R || Q != S || sr >= qp)) {
                               *grad_ptr1 += tmpval;
-                              *grad_ptr2 -= tmpval;
+                              if (der_centers.has_omitted_center())
+                                *grad_ptr2 -= tmpval;
                                }
                             int_index++;
                             } // exit bf4 loop
@@ -1476,6 +1487,14 @@ MBPT2::compute_cs_grad()
           }       // endif
         }         // exit R loop
       }           // exit S loop
+
+    if (debug_) {
+      RefSCDimension ni_dim(new SCDimension(ni));
+      RefSCDimension nbasis_dim(new SCDimension(nbasis));
+      RefSCMatrix Lpi_mat(nbasis_dim, ni_dim, kit);
+      Lpi_mat->assign(Lpi);
+      Lpi_mat.print("Lpi");
+      }
 
     // Back-transform Lpi to MO basis
     lpi_ptr = Lpi;
@@ -1682,12 +1701,18 @@ MBPT2::compute_cs_grad()
   init_cs_gmat();
   tim_enter("make_gmat for Laj");
   make_cs_gmat(Gmat, Dmat);
+  if (debug_) {
+    Dmat_matrix.print("Dmat");
+    Gmat.print("Gmat");
+    }
   tim_exit("make_gmat for Laj");
 
   // Finish computation of Laj
   RefSCMatrix Laj_matrix(nocc_dim,nvir_dim,kit); // elements are ordered as j*nvir+a
   Laj_matrix->assign(Laj);
+  if (debug_) Laj_matrix->print("Laj (first bit)");
   Laj_matrix = Laj_matrix - 2*Co.t()*Gmat*Cv;
+  if (debug_) Laj_matrix->print("Laj (all of it)");
   Laj_matrix->convert(Laj);  // Put new Laj_matrix elements into Laj
 
   tim_exit("Laj");
@@ -1848,6 +1873,18 @@ MBPT2::compute_cs_grad()
     }
   delete[] WHF;
   delete[] W2AO;
+
+  if (debug_) {
+    RefSCMatrix tmpmat(basis()->basisdim(), basis()->basisdim(), kit);
+    tmpmat->assign(PMP2);
+    tmpmat.print("PMP2");
+    tmpmat->assign(P2AO);
+    tmpmat.print("P2AO");
+    tmpmat->assign(PHF);
+    tmpmat.print("PHF");
+    tmpmat->assign(WMP2);
+    tmpmat.print("WMP2");
+    }
 
   ////////////////////////////////////////////////
   // Compute the contribution to the MP2 gradient 
@@ -2195,7 +2232,7 @@ MBPT2::s2pdm_contrib(const double *intderbuf, double *PHF,
 
         for (P=0; P<=(S==Q ? R:Q); P++) {
           // If integral derivative is 0, skip to next P
-          if (tbint_->log2_shell_bound(P,Q,R,S) < tol) continue;
+          if (tbintder_->log2_shell_bound(P,Q,R,S) < tol) continue;
 
           index++;
 
@@ -2269,8 +2306,9 @@ MBPT2::s2pdm_contrib(const double *intderbuf, double *PHF,
             for (derset=0; derset<der_centers.n(); derset++) {
 
               for (xyz=0; xyz<3; xyz++) {
-                grad_ptr1 = &ginter[der_centers.center(derset)][xyz];
-                grad_ptr2 = &ginter[der_centers.omitted_atom()][xyz];
+                grad_ptr1 = &ginter[der_centers.atom(derset)][xyz];
+                if (der_centers.has_omitted_center())
+                  grad_ptr2 = &ginter[der_centers.omitted_atom()][xyz];
 
                 gammasym_ptr = gammasym_pqrs;
                 for (bf1=0; bf1<np; bf1++) {
@@ -2327,7 +2365,7 @@ static void
 accum_gradients(double **g, double **f, int n1, int n2)
 {
   for (int i=0; i<n1; i++) {
-    for (int j=0; j<3; j++) g[i][j] = f[i][j];
+    for (int j=0; j<3; j++) g[i][j] += f[i][j];
     }
 }
 

@@ -83,6 +83,8 @@ class IntV3Arraydoublep3 {
     ~IntV3Arraydoublep3();
     void set_dim(int n1, int n2, int n3);
     double *&operator()(int i,int j,int k) { return data_[i][j][k]; }
+    double **operator()(int i,int j) { return data_[i][j]; }
+    double ***operator()(int i) { return data_[i]; }
     void print(ostream &);
     int nbyte() const;
 };
@@ -110,6 +112,8 @@ class IntV3Arrayint3 {
     ~IntV3Arrayint3();
     void set_dim(int n1, int n2, int n3);
     int &operator()(int i,int j,int k) { return data_[i][j][k]; }
+    int *operator()(int i,int j) { return data_[i][j]; }
+    int **operator()(int i) { return data_[i]; }
     void print(ostream &);
     int nbyte() const;
 };

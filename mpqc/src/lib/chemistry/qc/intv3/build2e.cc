@@ -35,8 +35,25 @@
 #include <chemistry/qc/intv3/utils.h>
 #include <chemistry/qc/intv3/int2e.h>
 
+#define CHECK_STACK_ALIGNMENT 0
+#if CHECK_STACK_ALIGNMENT
+static void
+stack_alignment_error(void *ptr, const char *where)
+{
+  cout << "UNALIGNED STACK: " << where << ": " << ptr << endl;
+}
+static inline void
+stack_alignment_check(void *ptr, const char *where)
+{
+  if ((unsigned)ptr & 7) stack_alignment_error(ptr,where);
+}
+#else
+#  define stack_alignment_check(ptr,where)
+#endif
+
 #ifdef __i386__
-#define FIX_STACK __asm__ __volatile__("andl\t$0xfffffff8,%esp\n\t")
+//#define FIX_STACK __asm__ __volatile__("andl\t$0xfffffff8,%esp\n\t")
+#define FIX_STACK
 #else
 #define FIX_STACK
 #endif
@@ -557,14 +574,17 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
   for (ci=0; ci<nc1; ci++) {
     int mlower = int_shell1->am(ci) + dam1;
     if (mlower < 0) continue;
+    IntV3Arraydoublep2 ***e0f0_i = e0f0_con_ints_array[ci];
     for (cj=0; cj<nc2; cj++) {
       int mupper = mlower + int_shell2->am(cj) + dam2;
       if (mupper < mlower) continue;
       if (mlower < minam1) mlower = minam1;
       if (mupper > maxam12) mupper = maxam12;
+      IntV3Arraydoublep2 **e0f0_ij = e0f0_i[cj];
       for (ck=0; ck<nc3; ck++) {
         int nlower = int_shell3->am(ck) + dam3;
         if (nlower < 0) continue;
+        IntV3Arraydoublep2 *e0f0_ijk = e0f0_ij[ck];
         for (cl=0; cl<nc4; cl++) {
           int nupper = nlower + int_shell4->am(cl) + dam4;
           if (nupper < nlower) continue;
@@ -698,7 +718,7 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
             for (m=mlower; m<=mupper; m++) {
               int o;
               int sizec = contract_length(m,nlower,nupper);
-              con_ints = e0f0_con_ints_array[ci][cj][ck][cl](m,nlower);
+              con_ints = e0f0_ijk[cl](m,nlower);
               bufferprim = build.int_v_list(m,nlower,0);
 
               for (o=sizec; o!=0; o--) {
@@ -713,7 +733,7 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
             for (m=mlower; m<=mupper; m++) {
               int o;
               int sizec = contract_length(m,nlower,nupper);
-              con_ints = e0f0_con_ints_array[ci][cj][ck][cl](m,nlower);
+              con_ints = e0f0_ijk[cl](m,nlower);
               bufferprim = build.int_v_list(m,nlower,0);
 
               for (o=sizec; o!=0; o--) {
@@ -854,16 +874,19 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
     int mlower = int_shell1->am(ci) + dam1;
     if (mlower < 0) continue;
     coef0 = int_shell1->coefficient_unnorm(ci,i)*c0scale;
+    IntV3Arraydoublep2 ***e0f0_i = e0f0_con_ints_array[ci];
     for (cj=0; cj<nc2; cj++) {
       int mupper = mlower + int_shell2->am(cj) + dam2;
       if (mupper < mlower) continue;
       if (mlower < minam1) mlower = minam1;
       if (mupper > maxam12) mupper = maxam12;
       coef1 = int_shell2->coefficient_unnorm(cj,j)*coef0;
+      IntV3Arraydoublep2 **e0f0_ij = e0f0_i[cj];
       for (ck=0; ck<nc3; ck++) {
         int nlower = int_shell3->am(ck) + dam3;
         if (nlower < 0) continue;
         coef2 = int_shell3->coefficient_unnorm(ck,k)*coef1;
+        IntV3Arraydoublep2 *e0f0_ijk = e0f0_ij[ck];
         for (cl=0; cl<nc4; cl++) {
           int nupper = nlower + int_shell4->am(cl) + dam4;
           if (nupper < nlower) continue;
@@ -876,9 +899,8 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
             for (m=mlower; m<=mupper; m++) {
               int o;
               int sizec = contract_length(m,nlower,nupper);
-              con_ints = e0f0_con_ints_array[ci][cj][ck][cl](m,nlower);
+              con_ints = e0f0_ijk[cl](m,nlower);
               bufferprim = build.int_v_list(m,nlower,0);
-
               /* Sum the integrals into the contracted integrals. */
 #ifdef SUNMOS
               for (o=0; o < sizec; o++) {
@@ -896,9 +918,8 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
             for (m=mlower; m<=mupper; m++) {
               int o;
               int sizec = contract_length(m,nlower,nupper);
-              con_ints = e0f0_con_ints_array[ci][cj][ck][cl](m,nlower);
+              con_ints = e0f0_ijk[cl](m,nlower);
               bufferprim = build.int_v_list(m,nlower,0);
-
               /* Write the integrals to the contracted integrals. */
 #ifdef SUNMOS
               for (o=0; o < sizec; o++) {
@@ -1210,19 +1231,16 @@ Int2eV3::gen_shell_intermediates(int sh1, int sh2, int sh3, int sh4)
 
 /* This builds up the primitive integrals of the type [x0|y0](m). */
 double *
-Int2eV3::buildprim(int am12, int am34, int m)
+Int2eV3::buildprim(int am12, int am34, int m, int &haveint, double *buffer)
 {
   FIX_STACK;
-  double *buffer;
 
   /* Is this no integral? */
-  if ((am12 < 0) || (am34 < 0)) return 0;
+  // this check is done before the call
+  //if ((am12 < 0) || (am34 < 0)) return 0;
 
   /* Is this integral on the list of computed integrals? */
-  if (inthave(am12,am34,m)) return build.int_v_list(am12,am34,m);
-
-  /* Find the preallocated storage for the integrals. */
-  buffer = build.int_v_list(am12,am34,m);
+  if (haveint) return buffer;
 
   /* Should we build on center 1 or center 3. */
   if (choose_center(am12,am34,m) == 1) {
@@ -1235,7 +1253,7 @@ Int2eV3::buildprim(int am12, int am34, int m)
     }
 
   /* Put the integrals in the list of computed integrals. */
-  inthave(am12,am34,m) = 1;
+  haveint = 1;
 
   return buffer;
   }
@@ -1259,16 +1277,27 @@ Int2eV3::buildprim_1(double *I00, int am12, int am34, int m)
   int i34, j34, k34;
 
   /* Construct the needed intermediate integrals. */
-  I10 = (am12?buildprim(am12 - 1, am34, m):0);
-  I11 = (am12?buildprim(am12 - 1, am34, m + 1):0);
-  I20 = ((am12>1)?buildprim(am12 - 2, am34, m):0);
-  I21 = ((am12>1)?buildprim(am12 - 2, am34, m + 1):0);
-  I31 = ((am12&&am34)?buildprim(am12 - 1, am34 - 1, m + 1):0);
+  int **inthave_i = inthave(am12-1);
+  int *inthave_ij = inthave_i[am34];
+  double ***vint_i = build.int_v_list(am12-1);
+  double **vint_ij = vint_i[am34];
+  I10 = buildprim(am12 - 1, am34, m, inthave_ij[m], vint_ij[m]);
+  I11 = buildprim(am12 - 1, am34, m + 1, inthave_ij[m+1], vint_ij[m+1]);
+  if (am34) {
+    I31 = buildprim(am12 - 1, am34 - 1, m + 1,
+                      inthave_i[am34-1][m+1], vint_i[am34-1][m+1]);
+    }
+  if (am12>1) {
+    inthave_ij = inthave(am12-2,am34);
+    vint_ij = build.int_v_list(am12-2,am34);
+    I20 = buildprim(am12 - 2, am34, m, inthave_ij[m], vint_ij[m]);
+    I21 = buildprim(am12 - 2, am34, m + 1, inthave_ij[m+1], vint_ij[m+1]);
+    }
 
   /* The size of the am34 group of primitives. */
-  size34 = INT_NCART(am34);
+  size34 = INT_NCART_NN(am34);
   /* The size of the group of primitives with ang. mom. = am34 - 1 */
-  size34m1 = INT_NCART(am34-1);
+  size34m1 = INT_NCART_DEC(am34,size34);
 
   // Some local intermediates
   double half_ooze = 0.5 * build.int_v_ooze;
@@ -1276,6 +1305,8 @@ Int2eV3::buildprim_1(double *I00, int am12, int am34, int m)
   double W0_m_p120 = build.int_v_W0 - build.int_v_p120;
   double p120_m_r10 = build.int_v_p120 - build.int_v_r10;
   double oo2zeta12 = build.int_v_oo2zeta12;
+
+  stack_alignment_check(&half_ooze, "buildprim_1: half_ooze");
 
   /* Construct the new integrals. */
   cartindex12 = 0;
@@ -1410,73 +1441,75 @@ Int2eV3::buildprim_1(double *I00, int am12, int am34, int m)
 
   // the i12==1 case (build on x)
   i12 = 1;
-  for (k12=0; k12<=am12-i12; k12++) {
-    j12 = am12 - i12 - k12;
-    int i12x1 = cartindex12-am12-1;//=INT_CARTINDEX(am12-1,i12-1,j12)
-    int i12x1s34 = i12x1*size34;
-    int i12x1s34m1 = i12x1*size34m1;
-    double *I10i = &I10[i12x1s34];
-    double *I11i = &I11[i12x1s34];
-    double *I31i = &I31[i12x1s34m1];
-    double *I00i = &I00[cartindex1234];
-    for (cartindex34=0; cartindex34<size34; cartindex34++) {
-      I00i[cartindex34]
-        = I10i[cartindex34] * p120_m_r10
-        + I11i[cartindex34] * W0_m_p120;
-      }
+  int i12x1 = cartindex12-am12-1;//=INT_CARTINDEX(am12-1,i12-1,am12-i12)
+  int i12x1s34 = i12x1*size34;
+  int i12x1s34m1 = i12x1*size34m1;
+  I00i = &I00[cartindex1234];
+  I10i = &I10[i12x1s34];
+  I11i = &I11[i12x1s34];
+  //for (k12=0; k12<=am12-i12; k12++)
+  int k12_cartindex34;
+  int nk12_size34 = am12*size34;
+  for (k12_cartindex34=0; k12_cartindex34<nk12_size34; k12_cartindex34++) {
+    *I00i++ = *I10i++ * p120_m_r10 + *I11i++ * W0_m_p120;
+    }
+  I00i = &I00[cartindex1234];
+  I31i = &I31[i12x1s34m1];
+  for (k12=0; k12<am12; k12++) {
     // skip over i34==0
     double *I00is=&I00i[am34+1];
     double i34_half_ooze = half_ooze;
-    int i34x1=0;//=INT_CARTINDEX(am34-1,i34-1,j34)
     for (i34=1; i34<=am34; i34++) {
-      for (k34=0; k34<=am34-i34; k34++) {
-        I00is[i34x1] +=  i34_half_ooze * I31i[i34x1];
-        i34x1++;
+      for (k34=i34; k34<=am34; k34++) { // index_k34 = true_k34 + i34
+        *I00is++ +=  i34_half_ooze * *I31i++;
         }
       i34_half_ooze += half_ooze;
       }
-    cartindex12++;
-    cartindex1234+=size34;
+    I00i += size34;
     }
+  cartindex12 += am12;
+  cartindex1234 += am12*size34;
   // the i12>1 case (build on x)
+  if (am12<2) return;
   double i12m1_oo2zeta12 = oo2zeta12;
+  i12x1 = cartindex12-am12-1;
+  i12x1s34 = i12x1*size34;
+  i12x1s34m1 = i12x1*size34m1;
+  int i12x2s34 = (cartindex12-am12-am12-1)*size34;
+  I10i = &I10[i12x1s34];
+  I11i = &I11[i12x1s34];
+  double *I20i = &I20[i12x2s34];
+  double *I21i = &I21[i12x2s34];
+  I31i = &I31[i12x1s34m1];
+  I00i = &I00[cartindex1234];
+  for (i12=2; i12<=am12; i12++) {
+    int sizek12_size34 = (am12-i12+1)*size34;
+    int k12_c34;
+    for (k12_c34=0; k12_c34<sizek12_size34; k12_c34++) {
+      *I00i++
+        = *I10i++ * p120_m_r10
+        + *I11i++ * W0_m_p120
+        + i12m1_oo2zeta12 * (*I20i++
+                             - *I21i++
+                             * zeta34_ooze);
+      }
+    i12m1_oo2zeta12 += oo2zeta12;
+    }
+  I31i = &I31[i12x1s34m1];
+  I00i = &I00[cartindex1234];
   for (i12=2; i12<=am12; i12++) {
     for (k12=0; k12<=am12-i12; k12++) {
-      j12 = am12 - i12 - k12;
-      int i12x1 = cartindex12-am12-1;//=INT_CARTINDEX(am12-1,i12-1,j12)
-      int i12x1s34 = i12x1*size34;
-      int i12x1s34m1 = i12x1*size34m1;
-      int i12x2s34 = (cartindex12-am12-am12-1)*size34;
-                    // = INT_CARTINDEX(am12-2,i12-2,j12)*size34
-      double *I10i = &I10[i12x1s34];
-      double *I11i = &I11[i12x1s34];
-      double *I20i = &I20[i12x2s34];
-      double *I21i = &I21[i12x2s34];
-      double *I31i = &I31[i12x1s34m1];
-      double *I00i = &I00[cartindex1234];
-      for (cartindex34=0; cartindex34<size34; cartindex34++) {
-        I00i[cartindex34]
-          = I10i[cartindex34] * p120_m_r10
-          + I11i[cartindex34] * W0_m_p120
-          + i12m1_oo2zeta12 * (I20i[cartindex34]
-                               - I21i[cartindex34]
-                               * zeta34_ooze);
-        }
       // skip over i34==0
       double *I00is=&I00i[am34+1];
       double i34_half_ooze = half_ooze;
-      int i34x1=0;//=INT_CARTINDEX(am34-1,i34-1,j34)
       for (i34=1; i34<=am34; i34++) {
         for (k34=0; k34<=am34-i34; k34++) {
-          I00is[i34x1] +=  i34_half_ooze * I31i[i34x1];
-          i34x1++;
+          *I00is++ += i34_half_ooze * *I31i++;
           }
         i34_half_ooze += half_ooze;
         }
-      cartindex12++;
-      cartindex1234+=size34;
+      I00i += size34;
       }
-    i12m1_oo2zeta12 += oo2zeta12;
     }
   }
 
@@ -1501,15 +1534,25 @@ Int2eV3::buildprim_3(double *I00, int am12, int am34, int m)
   double *I10o,*I11o,*I20o,*I21o;
 
   /* Construct the needed intermediate integrals. */
-  I10 = (am34?buildprim(am12, am34 - 1, m):0);
-  I11 = (am34?buildprim(am12, am34 - 1, m + 1):0);
-  I20 = ((am34>1)?buildprim(am12, am34 - 2, m):0);
-  I21 = ((am34>1)?buildprim(am12, am34 - 2, m + 1):0);
-  I31 = ((am34&&am12)?buildprim(am12 - 1, am34 - 1, m + 1):0);
+  int **inthave_i = inthave(am12);
+  int *inthave_ij = inthave_i[am34-1];
+  double ***vint_i = build.int_v_list(am12);
+  double **vint_ij = vint_i[am34-1];
+  I10 = buildprim(am12, am34 - 1, m, inthave_ij[m], vint_ij[m]);
+  I11 = buildprim(am12, am34 - 1, m + 1, inthave_ij[m+1], vint_ij[m+1]);
+  if (am12) {
+    I31 = buildprim(am12 - 1, am34 - 1, m + 1);
+    }
+  if (am34>1) {
+    int *inthave_ij = inthave_i[am34-2];
+    double **vint_ij = vint_i[am34-2];
+    I20 = buildprim(am12, am34 - 2, m, inthave_ij[m], vint_ij[m]);
+    I21 = buildprim(am12, am34 - 2, m + 1, inthave_ij[m+1], vint_ij[m+1]);
+    }
 
   /* The size of the group of primitives with ang. mom. = am34 - 1 */
-  size34 = INT_NCART(am34);
-  size34m1 = INT_NCART(am34-1);
+  size34 = INT_NCART_NN(am34);
+  size34m1 = INT_NCART_DEC(am34,size34);
   size34m2 = INT_NCART(am34-2);
 
   // Useful constants
@@ -1523,6 +1566,8 @@ Int2eV3::buildprim_3(double *I00, int am12, int am34, int m)
   double zeta12_ooze = build.int_v_zeta12 * build.int_v_ooze;
   double half_ooze = 0.5 * build.int_v_ooze;
 
+  stack_alignment_check(&p340_m_r30, "buildprim_3: p340_m_r30");
+
   /* Construct the new integrals. */
   cartindex12 = 0;
   double *I00o = I00; // points the current target integral
@@ -1531,14 +1576,14 @@ Int2eV3::buildprim_3(double *I00, int am12, int am34, int m)
       j12 = am12 - i12 - k12;
       I10o = &I10[cartindex12*size34m1];
       I11o = &I11[cartindex12*size34m1];
-      if (I20) I20o = &I20[cartindex12*size34m2];
-      if (I21) I21o = &I21[cartindex12*size34m2];
       //int cartindex34 = 0;
       // i34 == 0, k34 == 0, j34 = am34
       /* ------------------ Build from the y position. */
       /* I10 I11 and I21 */
       *I00o = *I10o * p341_m_r31 + *I11o * W1_m_p341;
       if (am34>1) {
+        I20o = &I20[cartindex12*size34m2];
+        I21o = &I21[cartindex12*size34m2];
         *I00o += (am34 - 1) * oo2zeta34 * (*I20o
                                            - *I21o * zeta12_ooze);
         }

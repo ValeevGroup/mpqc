@@ -203,6 +203,8 @@ class Int2eV3: public VRefCount {
                                  int am, double norm);
     void gen_shell_intermediates(int sh1, int sh2, int sh3, int sh4);
     double * buildprim(int am12, int am34, int m);
+    double * buildprim(int am12, int am34, int m,
+                       int&haveint, double *buffer);
     void buildprim_1(double *I00, int am12, int am34, int m);
     void buildprim_3(double *I00, int am12, int am34, int m);
     void init_inthave(int am12, int am34);
@@ -446,6 +448,13 @@ class Int2eV3: public VRefCount {
     GaussianBasisSet * pcs4() const { return int_cs4.pointer(); }
 };
 REF_dec(Int2eV3);
+
+inline double *
+Int2eV3::buildprim(int am12, int am34, int m)
+{
+  return buildprim(am12,am34,m,
+                   inthave(am12,am34,m), build.int_v_list(am12,am34,m));
+}
 
 #endif
 

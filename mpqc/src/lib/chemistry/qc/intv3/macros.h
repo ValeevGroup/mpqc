@@ -26,6 +26,9 @@
  */
 
 /* $Log$
+ * Revision 1.4  1998/02/03 15:30:18  cljanss
+ * More performance enhancements.
+ *
  * Revision 1.3  1996/10/25 23:35:44  etseidl
  * add copyleft notice
  *
@@ -132,6 +135,15 @@
  * formula: (am*(am+1))/2 + am+1;
  */
 #define INT_NCART(am) ((am>=0)?((((am)+2)*((am)+1))>>1):0)
+
+/* Like INT_NCART, but only for nonnegative arguments. */
+#define INT_NCART_NN(am) ((((am)+2)*((am)+1))>>1)
+
+/* For a given ang. mom., am, with n cartesian functions, compute the
+ * number of cartesian functions for am+1 or am-1
+ */
+#define INT_NCART_DEC(am,n) ((n)-(am)-1)
+#define INT_NCART_INC(am,n) ((n)+(am)+2)
 
 /* Computes the number of pure angular momentum functions in a shell
  * given am = total angular momentum

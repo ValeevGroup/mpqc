@@ -113,12 +113,18 @@ computations.
 <dt><tt>frozen_uocc</tt><dd> An optional array of integers that specifies
 the number of unoccupied orbitals in each irrep frozen in correlated
 computations.
+<dt><tt>total_charge</tt><dd> The total charge of the system. This keyword is
+queried only if neither <tt>docc</tt> nor <tt>socc</tt> are given. 
+<dt><tt>multiplicity</tt><dd> The spin multiplicity of the system (2*M_S+1).
+This keyword is queried only if neither <tt>docc</tt> nor <tt>socc</tt>
+are given.
 <dt><tt>memory</tt><dd> The number of bytes of memory Psi modules
 associated with this PsiWavefunction are allowed to use. Default is
 2000000 (2 million bytes, approximately 2 MB).
 </dl>
-Note that keywords <tt>docc</tt>, <tt>socc</tt>, <tt>frozen_docc</tt>, and <tt>frozen_uocc</tt>
-are used by appropriate specializations of PsiWavefunctions, i.e. PsiCLHF only checks for <tt>docc</tt>,
+Note that keywords <tt>docc</tt>, <tt>socc</tt>, <tt>frozen_docc</tt>, <tt>frozen_uocc</tt>,
+<tt>total_charge</tt>, and <tt>multiplicity</tt> are used by appropriate specializations
+of PsiWavefunctions, i.e. PsiCLHF only checks for <tt>docc</tt>,
 etc.
 
 PsiWavefunction specializations PsiCCSD and PsiCCSD_T also look for keyword
@@ -196,7 +202,8 @@ Here are a few examples of PsiWavefunctions:
       psienv = $..:psienv
       molecule = $..:molecule
       basis = $..:basis
-      docc = [ 3 0 1 1 ] socc = [ 0 0 0 0 ]
+      total_charge = 0
+      multiplicity = 1
     )
   )
 </pre>

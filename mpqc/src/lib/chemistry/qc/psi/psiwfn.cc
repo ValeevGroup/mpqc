@@ -37,6 +37,23 @@ PsiWavefunction::PsiWavefunction(const Ref<KeyVal>&keyval):
   socc_ = read_occ(keyval,"socc",nirrep_);
   frozen_docc_ = read_occ(keyval,"frozen_docc",nirrep_);
   frozen_uocc_ = read_occ(keyval,"frozen_uocc",nirrep_);
+  if (!docc_ || !socc_) {
+    if (keyval->exists("total_charge") && keyval->exists("multiplicity")) {
+      charge_ = keyval->intvalue("total_charge");
+      multp_ = keyval->intvalue("multiplicity");
+      if (multp_ < 1) {
+	ExEnv::err0() << indent
+		      << "ERROR: PsiWavefunction: valid multiplicity has to be >= 1" << endl;
+	abort();
+      }
+    }
+    else {
+      ExEnv::err0() << indent
+		    << "ERROR: PsiWavefunction: multiplicity and total_charge need "
+		    << "to be specified when docc (socc) are missing" << endl;
+      abort();
+    }
+  }
 
   int bytes = keyval->intvalue("memory");
   if (bytes <= 2000000)
@@ -142,6 +159,7 @@ PsiWavefunction::write_basic_input(int conv)
   psiinput->write_keyword("default:memory",memory_);
   psiinput->begin_section("input");
   psiinput->write_keyword("no_reorient","true");
+  psiinput->write_keyword("keep_ref_frame","true");
   psiinput->write_basis(basis());
   if (basis()->max_nfunction_in_shell() != basis()->max_ncartesian_in_shell())
     psiinput->write_keyword("puream","true");
@@ -209,9 +227,9 @@ static ClassDesc PsiCLHF_cd(
 PsiCLHF::PsiCLHF(const Ref<KeyVal>&keyval):
   PsiSCF(keyval)
 {
-  if (!docc_) {
+  if (!docc_ && multp_ != 1) {
     ExEnv::err0() << indent
-		  << "ERROR: PsiCLHF: did not find docc array" << endl;
+		  << "ERROR: PsiCLHF: multiplicity should be 1 for CLHF wave function" << endl;
     abort();
   }
 }
@@ -233,6 +251,10 @@ PsiCLHF::write_basic_input(int convergence)
   input->write_keyword("default:reference","rhf");
   if (docc_)
     input->write_keyword_array("default:docc",nirrep_,docc_);
+  else {
+    input->write_keyword("default:multp",multp_);
+    input->write_keyword("default:multp",charge_);
+  }
 }
 
 void
@@ -255,14 +277,9 @@ static ClassDesc PsiHSOSHF_cd(
 PsiHSOSHF::PsiHSOSHF(const Ref<KeyVal>&keyval):
   PsiSCF(keyval)
 {
-  if (!docc_) {
+  if ((!docc_ || !socc_) && multp_ == 1) {
     ExEnv::err0() << indent
-		  << "ERROR: PsiHSOSHF: did not find docc array" << endl;
-    abort();
-  }
-  if (!socc_) {
-    ExEnv::err0() << indent
-		  << "ERROR: PsiHSOSHF: did not find socc array" << endl;
+		  << "ERROR: PsiHSOSHF: multiplicity should be > 1 for HSOSHF wave function" << endl;
     abort();
   }
 }
@@ -309,16 +326,6 @@ static ClassDesc PsiUHF_cd(
 PsiUHF::PsiUHF(const Ref<KeyVal>&keyval):
   PsiSCF(keyval)
 {
-  if (!docc_) {
-    ExEnv::err0() << indent
-		  << "ERROR: PsiUHF: did not find docc array" << endl;
-    abort();
-  }
-  if (!socc_) {
-    ExEnv::err0() << indent
-		  << "ERROR: PsiUHF: did not find socc array" << endl;
-    abort();
-  }
 }
 
 PsiUHF::~PsiUHF()

@@ -29,6 +29,8 @@ class PsiWavefunction: public Wavefunction {
     int *socc_;
     int *frozen_docc_;
     int *frozen_uocc_;
+    int multp_;
+    int charge_;
     char *memory_;
     /// Prepares a complete Psi input file. The input file is assumed to have been opened.
     virtual void write_input(int conv) =0;

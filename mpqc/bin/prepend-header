@@ -3,7 +3,7 @@
 # usage: prepend file string1 ... stringn 
 #
 
-if [ $(($# < 2)) = 1 ]; then 
+if [ $# -lt ]; then 
   echo incorrect usage ; exit 1;
 fi
 

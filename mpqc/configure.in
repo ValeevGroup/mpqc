@@ -876,10 +876,10 @@ if test X$HAVE_PTHREAD = Xyes; then
   AC_CHECK_FUNC(pthread_attr_setstacksize)
 fi
 
-AC_CHECK_LIB(dl,exit)
-AC_CHECK_LIB(sun,exit)
-AC_CHECK_LIB(m,exit)
-AC_CHECK_LIB(fl,exit)
+AC_CHECK_LIB(dl,main)
+AC_CHECK_LIB(sun,main)
+AC_CHECK_LIB(m,main)
+AC_CHECK_LIB(fl,main)
 AC_CHECK_HEADER(perf.h,[
   AC_CHECK_LIB(perf,perf_set_config,[
     HAVE_PERF=yes
@@ -918,7 +918,7 @@ if test X$PARALLEL = Xyes; then
 
   dnl ----- check for the pvm library
   AC_CHECK_HEADER(pvm.h,[
-    AC_CHECK_LIB(pvm,exit,HAVE_PVM=yes)
+    AC_CHECK_LIB(pvm,main,HAVE_PVM=yes)
     ]
   )
   if test X$HAVE_PVM = Xyes; then

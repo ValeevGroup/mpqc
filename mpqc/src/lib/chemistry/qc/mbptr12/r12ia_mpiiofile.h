@@ -101,7 +101,7 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
 class R12IntsAcc_MPIIOFile_Ind: public R12IntsAcc_MPIIOFile {
 
   public:
-    R12IntsAcc_MPIIOFile_Ind(Ref<MemoryGrp>& mem, char *filename, int num_te_types, int nbasis1, int nbasis2,
+    R12IntsAcc_MPIIOFile_Ind(Ref<MemoryGrp>& mem, const char *filename, int num_te_types, int nbasis1, int nbasis2,
 			     int nocc, int nfzc, bool restart);
     ~R12IntsAcc_MPIIOFile_Ind();
 

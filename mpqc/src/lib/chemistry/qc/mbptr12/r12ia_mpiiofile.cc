@@ -39,9 +39,9 @@ using namespace sc;
 
 ///////////////////////////////////////////////////////////////
 
-R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char* filename, int num_te_types, int nbasis1, int nbasis2,
+R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char* filename, int nte_types, int nbasis1, int nbasis2,
 					   int nocc, int nfzc, bool restart) :
-    R12IntsAcc(num_te_types, nbasis1, nbasis2, nocc, nfzc), datafile_(MPI_FILE_NULL)
+    R12IntsAcc(nte_types, nbasis1, nbasis2, nocc, nfzc), datafile_(MPI_FILE_NULL)
 {
   mem_ = mem;
   int errcod;
@@ -122,7 +122,7 @@ R12IntsAcc_MPIIOFile::release_pair_block(int i, int j, tbint_type oper_type)
 
 ///////////////////////////////////////////////////////////////
 
-R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(Ref<MemoryGrp>& mem, char* filename, int num_te_types, int nbasis1, int nbasis2,
+R12IntsAcc_MPIIOFile_Ind::R12IntsAcc_MPIIOFile_Ind(Ref<MemoryGrp>& mem, const char* filename, int num_te_types, int nbasis1, int nbasis2,
 						   int nocc, int nfzc, bool restart) :
   R12IntsAcc_MPIIOFile(mem,filename,num_te_types,nbasis1,nbasis2,nocc,nfzc,restart)
 {

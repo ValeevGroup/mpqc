@@ -1,6 +1,10 @@
 
 /* $Log$
- * Revision 1.2  1993/12/30 13:32:47  etseidl
+ * Revision 1.3  1994/08/26 22:45:21  etseidl
+ * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
+ * fread/fwrite modules
+ *
+ * Revision 1.2  1993/12/30  13:32:47  etseidl
  * mostly rcs id stuff
  *
  * Revision 1.5  1993/04/28  00:31:15  jannsen
@@ -44,7 +48,6 @@
  * Revision 1.1  1991/06/16  16:40:07  janssen
  * Initial revision
  * */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,6 +63,7 @@ static char *rcsid = "$Id$";
 
 /*#include "initialize.gbl"*/
 #include "int_fjt.gbl"
+#include "utils.gbl"
 
 /* The NCUBE exp function cannot handle large negative arguments. */
 #ifndef NCUBE
@@ -1288,7 +1292,7 @@ centers_t *cs1;
 centers_t *cs2;
 double_matrix_t *hcore;
 {
-  int i,j,k,l,m;
+  int i,j,k,l;
   int ioff,joff;
   int index;
 

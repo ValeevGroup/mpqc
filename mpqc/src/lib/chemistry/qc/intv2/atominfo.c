@@ -1,6 +1,10 @@
 
 /* $Log$
- * Revision 1.2  1994/01/14 10:50:51  seidl
+ * Revision 1.3  1994/08/26 22:45:07  etseidl
+ * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
+ * fread/fwrite modules
+ *
+ * Revision 1.2  1994/01/14  10:50:51  seidl
  * add xenon to atominfo struct
  *
  * Revision 1.1.1.1  1993/12/29  12:53:02  etseidl
@@ -39,7 +43,6 @@
  * Revision 1.1  1991/06/16  16:40:07  janssen
  * Initial revision
  * */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>

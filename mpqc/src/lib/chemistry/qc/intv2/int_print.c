@@ -1,6 +1,10 @@
 
 /* $Log$
- * Revision 1.2  1993/12/30 13:32:55  etseidl
+ * Revision 1.3  1994/08/26 22:45:38  etseidl
+ * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
+ * fread/fwrite modules
+ *
+ * Revision 1.2  1993/12/30  13:32:55  etseidl
  * mostly rcs id stuff
  *
  * Revision 1.3  1992/06/17  22:04:50  jannsen
@@ -28,7 +32,6 @@
  * Revision 1.1  1991/06/16  16:40:07  janssen
  * Initial revision
  * */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
 #include <tmpl.h>
@@ -110,6 +113,7 @@ centers_t *centers;
  * This prints out integrals using the offset arrays in the
  * centers structure.  Only nonzero integrals are printed.
  */
+GLOBAL_FUNCTION VOID
 int_offset_print(fp,buffer,c1,s1,c2,s2,c3,s3,c4,s4)
 FILE *fp;
 double *buffer;
@@ -177,7 +181,7 @@ int e34;
       for (k=0; k<=INT_MAX3(e13e24,i,n3); k++) {
         for (l=0; l<=INT_MAX4(e13e24,e34,i,j,k,n4); l++) {
           if (INT_NONZERO(buffer[index]))
-            fprintf(fp," (%2d %2d|%2d %2d) = %11.7lf\n",
+            fprintf(fp," (%2d %2d|%2d %2d) = %11.7f\n",
                     o1+i,o2+j,o3+k,o4+l,buffer[index]);
           index++;
           }
@@ -251,7 +255,7 @@ int e34;
       for (k=0; k<=INT_MAX3(e13e24,i,n3); k++) {
         for (l=0; l<=INT_MAX4(e13e24,e34,i,j,k,n4); l++) {
           if (INT_NONZERO(buffer[index]))
-            fprintf(fp," (%2d %2d|%2d %2d) = (%4d) = %11.7lf\n",
+            fprintf(fp," (%2d %2d|%2d %2d) = (%4d) = %11.7f\n",
                     i,j,k,l,index,buffer[index]);
           index++;
           }

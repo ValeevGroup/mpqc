@@ -2,7 +2,11 @@
 /* These utility routines assist in reading in the basis functions. */
 
 /* $Log$
- * Revision 1.4  1994/08/24 16:05:25  etseidl
+ * Revision 1.5  1994/08/26 22:45:09  etseidl
+ * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
+ * fread/fwrite modules
+ *
+ * Revision 1.4  1994/08/24  16:05:25  etseidl
  * get rid of ip functions, they have been replaced by keyval equivalents
  *
  * Revision 1.3  1994/05/27  23:44:12  cljanss
@@ -44,7 +48,6 @@
  * Revision 1.1  1991/06/16  16:40:07  janssen
  * Initial revision
  * */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>

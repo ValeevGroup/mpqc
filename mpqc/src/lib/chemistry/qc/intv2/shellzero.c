@@ -1,5 +1,9 @@
 /* $Log$
- * Revision 1.2  1993/12/30 13:33:08  etseidl
+ * Revision 1.3  1994/08/26 22:45:53  etseidl
+ * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
+ * fread/fwrite modules
+ *
+ * Revision 1.2  1993/12/30  13:33:08  etseidl
  * mostly rcs id stuff
  *
  * Revision 1.3  1992/06/17  22:05:19  jannsen
@@ -15,9 +19,8 @@
  * Initial revision
  * */
 
-static char rcsid[]="$Id$";
-
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include <tmpl.h>
 #include <util/sgen/sgen.h>

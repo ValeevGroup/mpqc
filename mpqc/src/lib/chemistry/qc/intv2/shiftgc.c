@@ -4,7 +4,11 @@
  * center 3 to 4. */
 
 /* $Log$
- * Revision 1.2  1993/12/30 13:33:09  etseidl
+ * Revision 1.3  1994/08/26 22:45:54  etseidl
+ * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
+ * fread/fwrite modules
+ *
+ * Revision 1.2  1993/12/30  13:33:09  etseidl
  * mostly rcs id stuff
  *
  * Revision 1.4  1992/06/17  22:05:20  jannsen
@@ -48,7 +52,6 @@
  * Revision 1.1  1991/06/16  16:40:07  janssen
  * Initial revision
  * */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
 #include <tmpl.h>
@@ -245,6 +248,10 @@ int am4;
  */
 LOCAL_FUNCTION int
 choose_shift(am1,am2,am3,am4)
+int am1;
+int am2;
+int am3;
+int am4;
 {
   int nneed2 = 0;
   int nneed4 = 0;
@@ -547,7 +554,7 @@ int *j;
 LOCAL_FUNCTION VOID
 fail()
 {
-  fprintf(stderr,"failing module:\n%s\n",rcsid);
+  fprintf(stderr,"failing module:\n%s\n",__FILE__);
   exit(1);
   }
 

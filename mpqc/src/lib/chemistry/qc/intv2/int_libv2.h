@@ -1,6 +1,10 @@
 
 /* $Log$
- * Revision 1.6  1994/08/25 16:49:15  etseidl
+ * Revision 1.7  1994/08/26 22:45:36  etseidl
+ * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
+ * fread/fwrite modules
+ *
+ * Revision 1.6  1994/08/25  16:49:15  etseidl
  * fix error in prototype for int_read_basis()
  *
  * Revision 1.5  1994/08/24  16:07:02  etseidl
@@ -62,8 +66,6 @@ extern "C" {
 #include <chemistry/qc/intv2/atomsbc0.h>
 #include <chemistry/qc/intv2/atomsrbc0.h>
 #include <chemistry/qc/intv2/atomssbc0.h>
-#include <chemistry/qc/intv2/atomsbrd.h>
-#include <chemistry/qc/intv2/atomsbwr.h>
 #include <chemistry/qc/intv2/atomsallc.h>
 #include <chemistry/qc/intv2/atomsinit.h>
 #include <chemistry/qc/intv2/atomsprnt.h>

@@ -35,15 +35,14 @@ CSRC = bounds.c storage.c  buildgc.c  comp_1e.c  comp_0e.c  normalize.c  \
 CXXSRC = basisk.cc
 
 XCSRC = shellprnt.c  shellrbc0.c  shellrcv0.c  shellsbc0.c  shellsnd0.c  \
-        shellasgn.c  shellbrd.c  shellbwr.c  shellfrd.c  shellfwr.c \
-        shellzero.c
+        shellasgn.c  shellzero.c
 
 SGENFILE = atoms.sgen
 
 SGENSRC = \
-  atomsallc.c atomsbc0.c atomsbrd.c atomsbwr.c atomsfree.c \
+  atomsallc.c atomsbc0.c atomsfree.c \
   atomsinit.c atomsprnt.c atomsrbc0.c atomssbc0.c \
-  atomsfrd.c atomsfwr.c atomsiseq.c atomsasgn.c atomssnd0.c \
+  atomsiseq.c atomsasgn.c atomssnd0.c \
   atomsrcv0.c atomszero.c
 
 INC = bounds.h buildinter.h fjttable.h genbuild.h \

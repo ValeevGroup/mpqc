@@ -1,6 +1,6 @@
 
-default_modules(free alloc bread bwrite print init bcast0 rbcast0
-                sbcast0 fread fwrite assign iseq zero send0 recv0);
+default_modules(free alloc print init bcast0 rbcast0
+                sbcast0 assign iseq zero send0 recv0);
 
 shell_type (!print) {
   int am;
@@ -17,8 +17,7 @@ shell_type (!print) {
 //   pcoef is the p contraction coef of an sp pair
 //   norm is a vector of normalization constants for each function in the shell
 //     norm must be allocated and freed explicitly by the user
-shell (!bread !bwrite !print !rbcast0 !sbcast0 !fread !fwrite !assign
-       !zero !send0 !recv0) {
+shell (!print !rbcast0 !sbcast0 !assign !zero !send0 !recv0) {
   int nprim;
   int ncon;
   int nfunc;

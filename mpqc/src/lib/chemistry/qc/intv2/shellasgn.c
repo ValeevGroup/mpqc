@@ -1,5 +1,9 @@
 /* $Log$
- * Revision 1.3  1994/05/27 18:13:51  cljanss
+ * Revision 1.4  1994/08/26 22:45:43  etseidl
+ * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
+ * fread/fwrite modules
+ *
+ * Revision 1.3  1994/05/27  18:13:51  cljanss
  * Fixed a bug that could lead to SEGV, etc, when assigning shells.
  *
  * Revision 1.2  1993/12/30  13:32:59  etseidl
@@ -17,8 +21,6 @@
  * Revision 1.1  1992/01/17  12:47:20  seidl
  * Initial revision
  * */
-
-static char rcsid[]="$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>

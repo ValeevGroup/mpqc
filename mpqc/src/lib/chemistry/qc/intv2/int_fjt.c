@@ -7,7 +7,11 @@
  */
 
 /* $Log$
- * Revision 1.2  1993/12/30 13:32:51  etseidl
+ * Revision 1.3  1994/08/26 22:45:34  etseidl
+ * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
+ * fread/fwrite modules
+ *
+ * Revision 1.2  1993/12/30  13:32:51  etseidl
  * mostly rcs id stuff
  *
  * Revision 1.4  1992/06/17  22:04:46  jannsen
@@ -39,7 +43,6 @@
  * Revision 1.1  91/06/16  16:40:07  janssen
  * Initial revision
  *  */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>

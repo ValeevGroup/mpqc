@@ -1,6 +1,10 @@
 
 /* $Log$
- * Revision 1.3  1994/05/27 23:51:21  cljanss
+ * Revision 1.4  1994/08/26 22:45:31  etseidl
+ * fix a bunch of warnings, get rid of rcs id's, get rid of bread/bwrite and
+ * fread/fwrite modules
+ *
+ * Revision 1.3  1994/05/27  23:51:21  cljanss
  * Added support for 2 and 3 center 2 electron integrals.  Added a test porgram.
  *
  * Revision 1.2  1993/12/30  13:32:50  etseidl
@@ -55,7 +59,6 @@
  * Revision 1.1  1991/06/16  16:40:07  janssen
  * Initial revision
  * */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -524,7 +527,7 @@ centers_t *cs2;
 LOCAL_FUNCTION VOID
 fail()
 {
-  fprintf(stderr,"failing module:\n%s\n",rcsid);
+  fprintf(stderr,"failing module:\n%s\n",__FILE__);
   exit(1);
   }
 

@@ -39,14 +39,15 @@ const double& cart_point::z() const { return r[2]; };
 void *
 Point::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
 // Constructors
 Point::Point(int in_dim) {dim=in_dim; x=new double[dim];}
 
-Point::Point(const double *y, int in_dim=3)
+Point::Point(const double *y, int in_dim)
 {
     dim = in_dim;
     if (dim > 0) {

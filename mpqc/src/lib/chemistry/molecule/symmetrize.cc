@@ -79,6 +79,14 @@ main(int argc, char *argv[])
   ExEnv::out() << "cleaned molecule transformed to principle axes\n";
   mol->print();
 
+  ExEnv::out() << "resymmetrized molecule\n";
+  mol->symmetrize();
+  mol->print();
+
+  mol->transform_to_symmetry_frame();
+  ExEnv::out() << "cleaned molecule transformed to symmetry frame\n";
+  mol->print();
+
   ExEnv::out() << scprintf("\nnunique=%d: ",nunique);
   for (i=0; i < nunique; i++) ExEnv::out() << scprintf(" %d",mol->unique(i)+1);
   ExEnv::out() << endl;

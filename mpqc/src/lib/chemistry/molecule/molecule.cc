@@ -812,7 +812,7 @@ Molecule::transform_to_principal_axes(int trans_frame)
   double *inert[3], inert_dat[9], *evecs[3], evecs_dat[9];
   double evals[3];
 
-  int i;
+  int i,j,k;
   for (i=0; i < 3; i++) {
     inert[i] = &inert_dat[i*3];
     evecs[i] = &evecs_dat[i*3];
@@ -855,14 +855,17 @@ Molecule::transform_to_principal_axes(int trans_frame)
     }
   }
 
-  double x,y,z;
-  for (i=0; i < natom(); i++) {
-    x = r(i,0); y = r(i,1); z = r(i,2);
-
-    r_[i][0] = evecs[0][0]*x + evecs[1][0]*y + evecs[2][0]*z;
-    r_[i][1] = evecs[0][1]*x + evecs[1][1]*y + evecs[2][1]*z;
-    r_[i][2] = evecs[0][2]*x + evecs[1][2]*y + evecs[2][2]*z;
-  }
+  for (i=0; i<natom(); i++) {
+      double a[3];
+      a[0] = r(i,0); a[1] = r(i,1); a[2] = r(i,2);
+      for (j=0; j<3; j++) {
+          double e = 0.0;
+          for (k=0; k<3; k++) {
+              e += a[k] * evecs[k][j];
+            }
+          r_[i][j] = e;
+        }
+    }
 
   if (!trans_frame) return;
   
@@ -871,11 +874,45 @@ Molecule::transform_to_principal_axes(int trans_frame)
   for (i=0; i < 3; i++) {
     for (int j=0; j < 3; j++) {
       double t=0;
-      for (int k=0; k < 3; k++) t += tso[i][k]*evecs[k][j];
-      
+      for (int k=0; k < 3; k++) t += tso[k][j]*evecs[k][i];
       pg_->symm_frame()[i][j] = t;
     }
   }
+}
+
+void
+Molecule::transform_to_symmetry_frame()
+{
+  int i,j,k;
+  double t[3][3];
+
+  SymmetryOperation tso=point_group()->symm_frame();
+
+  for (i=0; i<3; i++) {
+      for (j=0; j<3; j++) {
+          t[i][j] = tso[i][j];
+        }
+    }
+
+  for (i=0; i<natom(); i++) {
+      double a[3];
+      a[0] = r(i,0); a[1] = r(i,1); a[2] = r(i,2);
+      for (j=0; j<3; j++) {
+          double e = 0.0;
+          for (k=0; k<3; k++) {
+              e += a[k] * t[k][j];
+            }
+          r_[i][j] = e;
+        }
+    }
+
+  for (i=0; i<3; i++) {
+      for (j=0; j<3; j++) {
+          double e=0;
+          for (k=0; k<3; k++) e += tso[k][j]*t[k][i];
+          pg_->symm_frame()[i][j] = e;
+        }
+    }
 }
 
 // given a molecule, make sure that equivalent centers have coordinates

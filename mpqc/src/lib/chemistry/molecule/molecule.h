@@ -246,6 +246,7 @@ class Molecule: public SavableState
     void translate(const double *r);
     void move_to_com();
     void transform_to_principal_axes(int trans_frame=1);
+    void transform_to_symmetry_frame();
     void print_pdb(ostream& =ExEnv::out(), char *title =0) const;
 
     void read_pdb(const char *filename);

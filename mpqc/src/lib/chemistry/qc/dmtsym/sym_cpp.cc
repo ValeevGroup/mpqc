@@ -1,16 +1,22 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
+#include <math.h>
+
 #include <math/symmetry/pointgrp.h>
 #include <util/misc/libmisc.h>
+#include <util/keyval/keyval.h>
+#include <util/keyval/ipv2c.h>
 
 extern "C" {
 #include <tmpl.h>
 #include <math/array/math_lib.h>
+}
+
 #include <chemistry/qc/intv2/int_libv2.h>
 
+extern "C" {
 #include "symm_mac.h"
 #include "symm.h"
 
@@ -20,6 +26,12 @@ extern "C" {
 #include "syminit.gbl"
 }
 
+////////////////////////////////////////////////////////////////////////////
+//
+// given a reference to a point group and an initialized centers struct
+// containing all atoms (not just the unique ones), fill in all the info
+// in sym_info
+//
 int
 sym_struct_from_pg(const PointGroup& pg, centers_t& centers,
                    sym_struct_t& sym_info)
@@ -41,10 +53,42 @@ sym_struct_from_pg(const PointGroup& pg, centers_t& centers,
         trans.d[g][i][j] = so(i,j);
   }
 
-  if (sym_make_sym_struct(&centers,&sym_info,pg.symbol(),&trans) < 0) {
+  char *pgrp = strdup(pg.symbol());
+
+  if (sym_make_sym_struct(&centers,&sym_info,pgrp,&trans) < 0) {
     fprintf(stderr,"sym_struct_from_pg: sym_make_sym_struct failed\n");
     return -1;
   }
 
+  free(pgrp);
+
   return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////
+//
+// given a keyval, read the input to get the unique centers, and then
+// calculate all atoms and place in centers, and also initialize sym_info
+//
+
+int
+sym_init_centers(KeyVal& keyval, centers_t& centers, sym_struct_t& sym_info)
+{
+  centers_t unique_centers;
+  int errcod;
+  int nat;
+  int i,j;
+
+  char *point_group = keyval.pcharvalue("symmetry");
+
+  int_read_centers(keyval,unique_centers);
+
+  errcod =
+    sym_init_given_centers(&unique_centers,&centers,&sym_info,point_group);
+
+  if (errcod < 0) fprintf(stderr,"sym_init_centers: could not init centers\n");
+
+  free_centers(&unique_centers);
+
+  return errcod;
 }

@@ -54,7 +54,8 @@ static void
 sum_gradients(double_matrix_t *f, int nproc);
 
 static int
-compute_batchsize(int mem_alloc, int mem_static, int nproc, FILE* outfile);
+compute_batchsize(int mem_alloc, int mem_static, int nocc_act,
+                  int nproc, FILE* outfile);
 
 extern "C" {
  int malloc_chain_check(int);
@@ -71,7 +72,7 @@ static int nij;        // number of i,j pairs on a node (for e.g., mo_int)
 static double *mo_int; // MO integrals of type (ov|ov)
                        // (and these integrals divided by
                        // orbital energy denominators)
-static double *integral_iqjs;
+static double *integral_iqjs; // half-transformed integrals
 static double *iqjs_buf;
 
 #define PRINT1Q 0
@@ -128,7 +129,9 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
   int_initialize_offsets2(centers,centers,centers,centers);
 
+  int nocc_act, nvir_act;
   int i, j, k;
+  int ii, bb;
   int x, y;
   int isize, jsize;
   int a, b, c;
@@ -282,44 +285,27 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   tol = (int) (-10.0/log10(2.0));  // discard ereps smaller than 10^-10
 
   nocc = scf_info->nclosed;
+  nocc_act = nocc - nfzc;
+  nvir  = nbasis - nocc;
+  nvir_act = nvir - nfzv;
 
   // Do a few preliminary tests to make sure the desired calculation
   // can be done (and appears to be meaningful!)
 
-  if (nocc == 0) {
+  if (nocc_act <= 0) {
     if (me == 0) {
-      fprintf(outfile,"There are no occupied orbitals; program exiting\n");
+      fprintf(outfile,"There are no active occupied orbitals; program exiting\n");
       }
     abort();
     }
 
-
-  if (nfzc != 0) {
+  if (nvir_act <= 0) {
     if (me == 0) {
-      fprintf(outfile,"The number of frozen core orbitals is nonzero;\n"
-                      "no orbitals can be frozen currently; program exits\n");
+      fprintf(outfile,"There are no active virtual orbitals; program exiting\n");
       }
     abort();
     }
 
-  if (nfzv != 0) {
-    if (me == 0) {
-      fprintf(outfile,"The number of frozen virtual orbitals is nonzero;\n"
-                      "no orbitals can be frozen currently; program exits\n");
-      }
-    abort();
-    }
-
-  nvir  = nbasis - nocc - nfzc - nfzv; 
-
-  if (nvir == 0) {
-    if (me == 0) {
-      fprintf(outfile,"There are no virtual orbitals; program exiting\n");
-      }
-    abort();
-    }
-
-  nocc = nocc - nfzc;
 
   ////////////////////////////////////////////////////////
   // Compute batch size ni for mp2 loops;
@@ -333,27 +319,29 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     mem_static = sizeof(double)*(nbasis*nbasis + 6*natom + nocc*(nocc+1)/2
                                + nvir*(nvir+1)/2 + nocc*nocc + nvir*nvir
                                + 2*nocc*nvir + 2+nbasis*nfuncmax);
-    ni = compute_batchsize(mem_alloc, mem_static, nproc, outfile); 
+    ni = compute_batchsize(mem_alloc, mem_static, nocc_act, nproc, outfile); 
     }
 
   // Send value of ni to other nodes
   msg->bcast(ni);
 
-  if (nocc == ni) {
+  if (ni == nocc_act) {
     npass = 1;
     rest = 0;
     }
-
   else {
-    rest = nocc%ni;
-    npass = (nocc - rest)/ni + 1;
+    rest = nocc_act%ni;
+    npass = (nocc_act - rest)/ni + 1;
     if (rest == 0) npass--;
     }
 
   if (me == 0) {
-    fprintf(outfile," npass  rest  nbasis  nshell  nfuncmax  nocc  nvir\n");
-    fprintf(outfile,"  %-4i   %-3i   %-5i    %-4i     %-3i     %-3i    %-3i\n",
-            npass,rest,nbasis,nshell,nfuncmax,nocc,nvir);
+    fprintf(outfile," npass  rest  nbasis  nshell  nfuncmax\n");
+    fprintf(outfile,"  %-4i   %-3i   %-5i    %-4i     %-3i\n",
+            npass,rest,nbasis,nshell,nfuncmax);
+    fprintf(outfile," nocc   nvir   nfzc   nfzv\n");
+    fprintf(outfile,"  %-4i   %-4i   %-4i   %-4i\n",
+            nocc,nvir,nfzc,nfzv);
     }
 
   ////////////////////////////////////////////////
@@ -373,11 +361,11 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
     dmt_ngl_create_inner(loop,0);
     while(dmt_ngl_next_inner_m(loop,&iind,&isize,&k,&jsize,&col)) {
-      if (k >= nfzc && k < nocc+nfzc) {
-        for (i=0; i < nbasis; i++) scf_vector[i][k-nfzc] = col[i];
+      if (k >= 0 && k < nocc) {
+        for (i=0; i < nbasis; i++) scf_vector[i][k] = col[i];
         }
-      if (k >= nocc+nfzc && k < nbasis-nfzv) {
-        for (i=0; i < nbasis; i++) scf_vector[i][k-nfzc] = col[i];
+      if (k >= nocc && k < nbasis) {
+        for (i=0; i < nbasis; i++) scf_vector[i][k] = col[i];
         }
       }
     }
@@ -452,11 +440,11 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
   for (pass=0; pass<npass; pass++) {
 
-    i_offset = pass*ni;
+    i_offset = pass*ni + nfzc;
     if ((pass == npass - 1) && (rest != 0)) ni = rest;
 
     // Compute number of of i,j pairs on each node for
-    // mo_int, gamma_iajs and more ?
+    // two-el integrals and non-sep 2PDM elements 
     index = 0;
     nij = 0;
     for (i=0; i<ni; i++) {
@@ -536,7 +524,8 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
               tim_exit("erep");
 
               tim_enter("1. q.t.");
-              // Begin first quarter transformation
+              // Begin first quarter transformation;
+              // generate (iq|rs) for i active
 
               offset = nr*ns*nbasis;
               pqrs_ptr = intbuf;
@@ -609,7 +598,8 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 #endif
 
           tim_enter("2. q.t.");
-          // Begin second quarter transformation
+          // Begin second quarter transformation;
+          // generate (iq|jr) for i active and j active or frozen
           for (i=0; i<ni; i++) {
             for (j=0; j<nocc; j++) {
 
@@ -717,7 +707,8 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     // end of debug print
 
     tim_enter("3. q.t.");
-    // Begin third quarter transformation
+    // Begin third quarter transformation;
+    // generate (ix|js) for i act, j act or frz, and x any MO (act or frz)
     index = 0;
     ij_index = 0;
     for (i=0; i<ni; i++) {
@@ -762,12 +753,14 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     delete[] ixjs_tmp;
 
     // The array of half-transformed integrals integral_iqjs has now
-    // been overwritten by three-quarter transformed integrals iajs,
-    // and ikjs; rename the array integral_ixjs, where x = any MO
+    // been overwritten by three-quarter transformed integrals ixjs;
+    // rename the array integral_ixjs, where x = any MO
     integral_ixjs = integral_iqjs;
 
     integral_iajy = new double[nbasis];
-    integral_ikja = new double[nvir];
+    // in iajy: i act; a,j act or frz; y act or frz occ or virt.
+    integral_ikja = new double[nvir_act];
+    // in ikja: i,j act; k act or frz; a act.
 
     // debug print
     if (me == 0) {
@@ -806,31 +799,33 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
               } // exit y loop
             }   // exit a loop
 
-          for (k=0; k<nocc; k++) {
-            bzerofast(integral_ikja, nvir);
-            ikjs_ptr = &integral_ixjs[k + nbasis*nbasis*ij_index];
-            for (s=0; s<nbasis; s++) {
-              c_sa = &scf_vector[s][nocc];
+          if (j >= nfzc) {
+            for (k=0; k<nocc; k++) {
+              bzerofast(integral_ikja, nvir_act);
+              ikjs_ptr = &integral_ixjs[k + nbasis*nbasis*ij_index];
+              for (s=0; s<nbasis; s++) {
+                c_sa = &scf_vector[s][nocc];
+                ikja_ptr = integral_ikja;
+                for (a=0; a<nvir_act; a++) {
+                  *ikja_ptr++ += *c_sa++ * *ikjs_ptr;
+                  } // exit a loop 
+                ikjs_ptr += nbasis;
+                }   // exit s loop 
+              // Put integral_ikja into ixjs for one i,k,j while
+              // overwriting elements of ixjs
+              ikjs_ptr = &integral_ixjs[k + nbasis*(nocc + nbasis*ij_index)];
               ikja_ptr = integral_ikja;
-              for (a=0; a<nvir; a++) {
-                *ikja_ptr++ += *c_sa++ * *ikjs_ptr;
+              for (a=0; a<nvir_act; a++) {
+                *ikjs_ptr = *ikja_ptr++;
+                ikjs_ptr += nbasis;
                 } // exit a loop 
-              ikjs_ptr += nbasis;
-              }   // exit s loop 
-            // Put integral_ikja into ixjs for one i,k,j while
-            // overwriting elements of ixjs
-            ikjs_ptr = &integral_ixjs[k + nbasis*(nocc + nbasis*ij_index)];
-            ikja_ptr = integral_ikja;
-            for (a=0; a<nvir; a++) {
-              *ikjs_ptr = *ikja_ptr++;
-              ikjs_ptr += nbasis;
-              } // exit a loop 
-            }     // exit k loop 
+              }   // exit k loop 
+            }     //endif
 
-        ij_index++;
-        }   // endif
-      }     // exit j loop
-    }       // exit i loop
+          ij_index++;
+          }   // endif
+        }     // exit j loop
+      }       // exit i loop
     // end of fourth quarter transformation
     tim_exit("4. q.t.");
 
@@ -850,29 +845,35 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
     // Divide the (ia|jb) MO integrals by the term 
     // evals[i]+evals[j]-evals[a]-evals[b]
-    // and keep these integrals in mo_int
+    // and keep these integrals in mo_int;
+    // do this only for active i, j, a, and b
     tim_enter("divide (ia|jb)'s");
 
     index = 0;
     ij_index = 0;
     for (i=0; i<ni; i++) {
+      ii = i+i_offset;
       for (j=0; j<nocc; j++) {
         if (index++ % nproc == me) {
-          for (b=0; b<nvir; b++) {
-            iajb_ptr = &mo_int[nocc + nbasis*(b+nocc + nbasis*ij_index)];
-            for (a=0; a<nvir; a++) {
-             *iajb_ptr++ /= evals[i+i_offset]+evals[j]-evals[a+nocc]-evals[b+nocc];
-              } // exit a loop
-            }   // exit b loop
+          if (j>=nfzc) {
+            for (b=0; b<nvir_act; b++) {
+              iajb_ptr = &mo_int[nocc + nbasis*(b+nocc + nbasis*ij_index)];
+              bb = b+nocc;
+              for (a=0; a<nvir_act; a++) {
+               *iajb_ptr++ /= evals[ii]+evals[j]-evals[a+nocc]-evals[bb];
+                } // exit a loop
+              }   // exit b loop
+            }     // endif
           ij_index++;
-          }     // endif
-        }       // exit j loop
-      }         // exit i loop
+          }       // endif
+        }         // exit j loop
+      }           // exit i loop
     tim_exit("divide (ia|jb)'s");
 
     // We now have the fully transformed integrals (ia|jb)
-    // (divided by the proper orbital energy denominators)
-    // for one batch of i, all j<nocc, and all a<nvir and b<nvir;
+    // divided by the proper orbital energy denominators
+    // for one batch of i, all j<nocc, and all a<nvir and b<nvir,
+    // where i, j, a, and b are all active;
     // compute contribution to the MP2 correlation energy
     // from these integrals 
 
@@ -884,21 +885,23 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
       for (j=0; j<nocc; j++) {
         if (index++ % nproc == me) {
 
-          for (b=0; b<nvir; b++) {
-            iajb_ptr = &mo_int[nocc + nbasis*(b+nocc + nbasis*ij_index)];
-            ibja_ptr = &mo_int[b+nocc + nbasis*(nocc + nbasis*ij_index)];
-            for (a=0; a<nvir; a++) {
-              delta_ijab = evals[i_offset+i]+evals[j]-evals[nocc+a]-evals[nocc+b];
-              ecorr_mp2 += *iajb_ptr*(2**iajb_ptr - *ibja_ptr)*delta_ijab;
-              iajb_ptr++;
-              ibja_ptr += nbasis;;
-              } // exit a loop
-            }   // exit b loop
+          if (j>=nfzc) {
+            for (b=0; b<nvir_act; b++) {
+              iajb_ptr = &mo_int[nocc + nbasis*(b+nocc + nbasis*ij_index)];
+              ibja_ptr = &mo_int[b+nocc + nbasis*(nocc + nbasis*ij_index)];
+              for (a=0; a<nvir_act; a++) {
+                delta_ijab = evals[i_offset+i]+evals[j]-evals[nocc+a]-evals[nocc+b];
+                ecorr_mp2 += *iajb_ptr*(2**iajb_ptr - *ibja_ptr)*delta_ijab;
+                iajb_ptr++;
+                ibja_ptr += nbasis;;
+                } // exit a loop
+              }   // exit b loop
+            }     // endif
 
           ij_index++;
-          }     // endif
-        }       // exit j loop
-      }         // exit i loop
+          }       // endif
+        }         // exit j loop
+      }           // exit i loop
     tim_exit("compute ecorr");
 
     // debug print
@@ -922,40 +925,45 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     for (i=0; i<ni; i++) {
       for (j=0; j<nocc; j++) {
         if (index++ % nproc == me) {
-          for (kloop=me; kloop<me+nocc; kloop++) {
-            // stagger k's to minimize contention
-            k = kloop%nocc;
-            if (k>=j) pkj_ptr = &Pkj[k*(k+1)/2 + j];
-            wjk_ptr = &Wkj[j*nocc + k];
-            // Send for iakb, if necessary
-            ik_index = (i*nocc + k)/nproc;
-            ik_proc = (i*nocc + k)%nproc;
-            ik_offset = nocc + nocc*nbasis + nbasis*nbasis*ik_index;
-            mo_intbuf = (double*) membuf_remote.readonly_on_node(ik_offset,
-                                                                 nbasis*nvir-nocc,
-                                                                 ik_proc);
-            for (a=0; a<nvir; a++) {
-              ibja_ptr = &mo_int[nocc + nbasis*(a+nocc + nbasis*ij_index)];
-              iajb_ptr = &mo_int[a+nocc + nbasis*(nocc + nbasis*ij_index)];
-              /* if (ik_proc == me) iakb_ptr = &mo_int[a + ik_offset];
-              else */
+
+          if (j>=nfzc) {
+            for (kloop=me; kloop<me+nocc; kloop++) {
+              // stagger k's to minimize contention
+              k = kloop%nocc;
+              if (k<=j) pkj_ptr = &Pkj[j*(j+1)/2 + k];
+              wjk_ptr = &Wkj[j*nocc + k];
+              // Send for iakb, if necessary
+              ik_index = (i*nocc + k)/nproc;
+              ik_proc = (i*nocc + k)%nproc;
+              ik_offset = nocc + nocc*nbasis + nbasis*nbasis*ik_index;
+              mo_intbuf = (double*) membuf_remote.readonly_on_node(ik_offset,
+                                                                   nbasis*nvir-nocc,
+                                                                   ik_proc);
+              for (a=0; a<nvir_act; a++) {
+                ibja_ptr = &mo_int[nocc + nbasis*(a+nocc + nbasis*ij_index)];
+                iajb_ptr = &mo_int[a+nocc + nbasis*(nocc + nbasis*ij_index)];
                 iakb_ptr = &mo_intbuf[a];
-              for (b=0; b<nvir; b++) {
-                tmpval = 2**iakb_ptr * (*ibja_ptr++ - 2 * *iajb_ptr);
-                iakb_ptr += nbasis;
-                iajb_ptr += nbasis;
-                if (k>=j) *pkj_ptr += tmpval;
-                delta_ijab = evals[i_offset+i]+evals[j]-evals[nocc+a]-evals[nocc+b];
-                *wjk_ptr += tmpval*delta_ijab;
-                } // exit b loop
-              }   // exit a loop
-            mo_intbuf = 0;
-            membuf_remote.release();
-            }     // end kloop loop
+                for (b=0; b<nvir_act; b++) {
+                  tmpval = 2**iakb_ptr * (*ibja_ptr++ - 2 * *iajb_ptr);
+                  iakb_ptr += nbasis;
+                  iajb_ptr += nbasis;
+                  if (k<nfzc && k<=j) *pkj_ptr += tmpval/(evals[k]-evals[j]);
+                  else if (k<=j) *pkj_ptr += tmpval;
+                  if (k>=nfzc) {
+                    delta_ijab = evals[i_offset+i]+evals[j]-evals[nocc+a]-evals[nocc+b];
+                    *wjk_ptr += tmpval*delta_ijab;
+                    } 
+                  } // exit b loop
+                }   // exit a loop
+              mo_intbuf = 0;
+              membuf_remote.release();
+              }     // end kloop loop
+            }       // endif
+
           ij_index++;
-          }       // endif
-        }         // exit j loop
-      }           // exit i loop
+          }         // endif
+        }           // exit j loop
+      }             // exit i loop
     tim_exit("Pkj and Wkj");
 
     // debug print
@@ -973,36 +981,56 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     for (i=0; i<ni; i++) {
       for (j=0; j<nocc; j++) {
         if (index++ % nproc == me) {
-          offset = nocc + nocc*nbasis + nbasis*nbasis*ij_index;
-          for (a=0; a<nvir; a++) {
-            pab_ptr = &Pab[a*(a+1)/2];
-            for (b=0; b<=a; b++) {
-              wab_ptr = &Wab[a*nvir + b];
-              wba_ptr = &Wab[b*nvir + a];
-              ibjc_ptr = &mo_int[offset + b];
-              icjb_ptr = &mo_int[offset + b*nbasis];
-              iajc_ptr = &mo_int[offset + a];
-              icja_ptr = &mo_int[offset + a*nbasis];
-              for (c=0; c<nvir; c++) {
-                *pab_ptr += 2**iajc_ptr * (2 * *ibjc_ptr - *icjb_ptr);
-                if (a == b) {
-                  delta_ijac = evals[i_offset+i]+evals[j]-evals[nocc+a]-evals[nocc+c];
-                  *wab_ptr += 2**ibjc_ptr*(*icja_ptr - 2 * *iajc_ptr)*delta_ijac;
-                  }
-                else {
-                  delta_ijbc = evals[i_offset+i]+evals[j]-evals[nocc+b]-evals[nocc+c];
-                  delta_ijac = evals[i_offset+i]+evals[j]-evals[nocc+a]-evals[nocc+c];
-                  *wab_ptr += 2**ibjc_ptr * (*icja_ptr - 2 * *iajc_ptr)*delta_ijac;
-                  *wba_ptr += 2**iajc_ptr * (*icjb_ptr - 2 * *ibjc_ptr)*delta_ijbc;
-                  }
-                iajc_ptr += nbasis;
-                ibjc_ptr += nbasis;
-                icja_ptr++;
-                icjb_ptr++;
-                } // exit c loop
-              pab_ptr++;
-              }   // exit b loop
-            }     // exit a loop
+          if (j>=nfzc) {
+
+            offset = nocc + nocc*nbasis + nbasis*nbasis*ij_index;
+            for (a=0; a<nvir_act; a++) {
+              pab_ptr = &Pab[a*(a+1)/2];
+              for (b=0; b<=a; b++) {  // active-active part of Pab and Wab
+                wab_ptr = &Wab[a*nvir + b];
+                wba_ptr = &Wab[b*nvir + a];
+                ibjc_ptr = &mo_int[offset + b];
+                icjb_ptr = &mo_int[offset + b*nbasis];
+                iajc_ptr = &mo_int[offset + a];
+                icja_ptr = &mo_int[offset + a*nbasis];
+                for (c=0; c<nvir_act; c++) {
+                  *pab_ptr += 2**iajc_ptr * (2 * *ibjc_ptr - *icjb_ptr);
+                  if (a == b) {
+                    delta_ijac = evals[i_offset+i]+evals[j]-evals[nocc+a]-evals[nocc+c];
+                    *wab_ptr += 2**ibjc_ptr*(*icja_ptr - 2 * *iajc_ptr)*delta_ijac;
+                    }
+                  else {
+                    delta_ijbc = evals[i_offset+i]+evals[j]-evals[nocc+b]-evals[nocc+c];
+                    delta_ijac = evals[i_offset+i]+evals[j]-evals[nocc+a]-evals[nocc+c];
+                    *wab_ptr += 2**ibjc_ptr * (*icja_ptr - 2 * *iajc_ptr)*delta_ijac;
+                    *wba_ptr += 2**iajc_ptr * (*icjb_ptr - 2 * *ibjc_ptr)*delta_ijbc;
+                    }
+                  iajc_ptr += nbasis;
+                  ibjc_ptr += nbasis;
+                  icja_ptr++;
+                  icjb_ptr++;
+                  } // exit c loop
+                pab_ptr++;
+                }   // exit b loop
+              }     // exit a loop
+
+            for (a=0; a<nfzv; a++) {        // active-frozen part of Pab
+              pab_ptr = &Pab[(a+nvir_act)*(a+nvir_act+1)/2];
+              for (b=0; b<nvir_act; b++) {
+                tmpval = evals[nocc+b] - evals[nocc+nvir_act+a];
+                ibjc_ptr = &mo_int[offset+b];
+                iajc_ptr = &mo_int[offset+a+nvir_act];
+                icja_ptr = &mo_int[offset+(a+nvir_act)*nbasis];
+                for (c=0; c<nvir_act; c++) {
+                  *pab_ptr += 2**ibjc_ptr*(2**iajc_ptr - *icja_ptr++)/tmpval;
+                  ibjc_ptr += nbasis;
+                  iajc_ptr += nbasis;
+                  }  // exit c loop
+                pab_ptr++;
+                }    // exit b loop
+              }      // exit a loop
+
+            }        // endif
           ij_index++;
           }     // endif
         }       // exit j loop
@@ -1018,7 +1046,9 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
     ///////////////////////////////////////
     // Update Waj and Laj with contrib. 
-    // from (oo|ov) and (ov|oo) integrals
+    // from (oo|ov) and (ov|oo) integrals;
+    // here a is active and j is active or
+    // frozen
     ///////////////////////////////////////
     tim_enter("Waj and Laj");
 
@@ -1028,25 +1058,27 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     for (i=0; i<ni; i++) {
       for (k=0; k<nocc; k++) {
         if (index++ % nproc == me) {
-          offset = nbasis*nocc + nbasis*nbasis*ik_index;
-          for (j=0; j<nocc; j++) {
-            for (b=0; b<nvir; b++) {
-              ibka_ptr = &mo_int[b+nocc + offset];
-              ijkb_ptr = &mo_int[j + nbasis*b + offset];
-              waj_ptr = &Waj[j*nvir]; // order as j*nvir+a to make loops more efficient
-              laj_ptr = &Laj[j*nvir];
-              for (a=0; a<nvir; a++) {
-                tmpval = 2**ibka_ptr * *ijkb_ptr;
-                ibka_ptr += nbasis;
-                *waj_ptr++ += tmpval;
-                *laj_ptr++ -= tmpval; // This term had the wrong sign in Frisch's paper
-                } // exit a loop
-              }   // exit b loop
-            }     // exit j loop
+          if (k>=nfzc) {
+            offset = nbasis*nocc + nbasis*nbasis*ik_index;
+            for (j=0; j<nocc; j++) {
+              for (b=0; b<nvir_act; b++) {
+                ibka_ptr = &mo_int[b+nocc + offset];
+                ijkb_ptr = &mo_int[j + nbasis*b + offset];
+                waj_ptr = &Waj[j*nvir]; // order as j*nvir+a to make loops more efficient
+                laj_ptr = &Laj[j*nvir];
+                for (a=0; a<nvir_act; a++) {
+                  tmpval = 2**ibka_ptr * *ijkb_ptr;
+                  ibka_ptr += nbasis;
+                  *waj_ptr++ += tmpval;
+                  *laj_ptr++ -= tmpval; // This term had the wrong sign in Frisch's paper
+                  } // exit a loop
+                }   // exit b loop
+              }     // exit j loop
+            }       // endif
           ik_index++;
-          }       // endif
-        }         // exit k loop
-      }           // exit i loop
+          }         // endif
+        }           // exit k loop
+      }             // exit i loop
 
     // (ov|oo) contribution
     index = 0;
@@ -1054,21 +1086,23 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     for (i=0; i<ni; i++) {
       for (k=0; k<nocc; k++) {
         if (index++ % nproc == me) {
-          offset = nocc + nbasis*nbasis*ik_index;
-          for (b=0; b<nvir; b++) {
-            for (j=0; j<nocc; j++) {
-              ibkj_ptr = &mo_int[offset + b + j*nbasis];
-              ibka_ptr = &mo_int[offset + b + nocc*nbasis];
-              waj_ptr = &Waj[j*nvir];
-              laj_ptr = &Laj[j*nvir];
-              for (a=0; a<nvir; a++) {
-                tmpval = 4 * *ibka_ptr * *ibkj_ptr;
-                ibka_ptr += nbasis;
-                *waj_ptr++ -= tmpval;
-                *laj_ptr++ += tmpval; // This term had the wrong sign in Frisch's paper
-                } // exit a loop
-              }   // exit j loop
-            }     // exit b loop
+          if (k>=nfzc) {
+            offset = nocc + nbasis*nbasis*ik_index;
+            for (b=0; b<nvir_act; b++) {
+              for (j=0; j<nocc; j++) {
+                ibkj_ptr = &mo_int[offset + b + j*nbasis];
+                ibka_ptr = &mo_int[offset + b + nocc*nbasis];
+                waj_ptr = &Waj[j*nvir];
+                laj_ptr = &Laj[j*nvir];
+                for (a=0; a<nvir_act; a++) {
+                  tmpval = 4 * *ibka_ptr * *ibkj_ptr;
+                  ibka_ptr += nbasis;
+                  *waj_ptr++ -= tmpval;
+                  *laj_ptr++ += tmpval; // This term had the wrong sign in Frisch's paper
+                  } // exit a loop
+                }   // exit j loop
+              }     // exit b loop
+            }       // endif
           ik_index++;
           }       // endif
         }         // exit k loop
@@ -1093,7 +1127,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
     mo_int = membuf.readwrite_on_node(0, nij*nbasis*nbasis);
 
-    gamma_iajs_tmp = new double[nbasis*nvir];
+    gamma_iajs_tmp = new double[nbasis*nvir_act];
     if (!gamma_iajs_tmp) {
       fprintf(outfile,"Could not allocate gamma_iajs_tmp\n");
       abort();
@@ -1106,11 +1140,12 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
       }
     // end of debug print
 
-    /////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////
     // Perform first and second quarter back-transformation.
     // Each node produces gamma_iajs, and gamma_iqjs 
-    // for a subset of i and j, all a and all s
-    /////////////////////////////////////////////////////////
+    // for a subset of i and j, all a and all s;
+    // the back-transf. is done only for active i, j, a, and b
+    ///////////////////////////////////////////////////////////
 
     // Begin first quarter back-transformation
     tim_enter("1. q.b.t.");
@@ -1119,32 +1154,34 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     for (i=0; i<ni; i++) {
       for (j=0; j<nocc; j++) {
         if (index++ % nproc == me) {
-          bzerofast(gamma_iajs_tmp,nbasis*nvir);
-          offset = nocc + nocc*nbasis + nbasis*nbasis*ij_index;
+          if (j>=nfzc) {
+            bzerofast(gamma_iajs_tmp,nbasis*nvir_act);
+            offset = nocc + nocc*nbasis + nbasis*nbasis*ij_index;
 
-          for (a=0; a<nvir; a++) {
-            for (s=0; s<nbasis; s++) {
-              c_sb = &scf_vector[s][nocc];
-              gamma_iajs_ptr = &gamma_iajs_tmp[s*nvir + a];
-              ibja_ptr = &mo_int[a*nbasis + offset];
-              iajb_ptr = &mo_int[a + offset];
+            for (a=0; a<nvir_act; a++) {
+              for (s=0; s<nbasis; s++) {
+                c_sb = &scf_vector[s][nocc];
+                gamma_iajs_ptr = &gamma_iajs_tmp[s*nvir_act + a];
+                ibja_ptr = &mo_int[a*nbasis + offset];
+                iajb_ptr = &mo_int[a + offset];
 
-              for (b=0; b<nvir; b++) {
-                *gamma_iajs_ptr += 2**c_sb++ * (2**iajb_ptr - *ibja_ptr++);
-                iajb_ptr += nbasis;
-                } // exit b loop
-              }   // exit s loop
-            }     // exit a loop
-          // Put gamma_iajs_tmp into mo_int for one i,j
-          // while overwriting mo_int
-          gamma_iajs_ptr = gamma_iajs_tmp;
-          for (y=0; y<nbasis; y++) {
-            iajy_ptr = &mo_int[nocc + nbasis*(y + nbasis*ij_index)];
-            for (a=0; a<nvir; a++) {
-              *iajy_ptr++ = *gamma_iajs_ptr++;
+                for (b=0; b<nvir_act; b++) {
+                  *gamma_iajs_ptr += 2**c_sb++ * (2**iajb_ptr - *ibja_ptr++);
+                  iajb_ptr += nbasis;
+                  } // exit b loop
+                }   // exit s loop
+              }     // exit a loop
+            // Put gamma_iajs_tmp into mo_int for one i,j
+            // while overwriting mo_int
+            gamma_iajs_ptr = gamma_iajs_tmp;
+            for (y=0; y<nbasis; y++) {
+              iajy_ptr = &mo_int[nocc + nbasis*(y + nbasis*ij_index)];
+              for (a=0; a<nvir_act; a++) {
+                *iajy_ptr++ = *gamma_iajs_ptr++;
+                }
               }
-            }
 
+            }     // endif
           ij_index++;
           }       // endif
         }         // exit j loop
@@ -1154,7 +1191,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
     // debug print
     if (me == 0) {
-      fprintf(stdout,"End 1+2qbt\n");
+      fprintf(stdout,"End 1+2 qbt\n");
       fflush(outfile);
       }
     // end of debug print
@@ -1185,29 +1222,30 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     for (i=0; i<ni; i++) {
       for (j=0; j<nocc; j++) {
         if (index++ % nproc == me) {
-          offset = nbasis*nbasis*ij_index;
+          if (j>=nfzc) {
+            offset = nbasis*nbasis*ij_index;
 
-          for (s=0; s<nbasis; s++) {
-            bzerofast(gamma_iqjs_tmp,nbasis);
-            for (q=0; q<nbasis; q++) {
-              gamma_iqjs_ptr = &gamma_iqjs_tmp[q];
-              gamma_iajs_ptr = &gamma_iajs[nocc + s*nbasis + offset];
-              c_qa = &scf_vector[q][nocc];
+            for (s=0; s<nbasis; s++) {
+              bzerofast(gamma_iqjs_tmp,nbasis);
+              for (q=0; q<nbasis; q++) {
+                gamma_iqjs_ptr = &gamma_iqjs_tmp[q];
+                gamma_iajs_ptr = &gamma_iajs[nocc + s*nbasis + offset];
+                c_qa = &scf_vector[q][nocc];
 
-              for (a=0; a<nvir; a++) {
-                *gamma_iqjs_ptr += *c_qa++ * *gamma_iajs_ptr++;
-                } // exit a loop
-              }   // exit q loop
-            // Put gamma_iqjs_tmp into gamma_iajs for one i,j,s
-            // while overwriting gamma_iajs
-            gamma_iajs_ptr = &gamma_iajs[s*nbasis + offset];
-            gamma_iqjs_ptr = gamma_iqjs_tmp;
-            for (q=0; q<nbasis; q++) {
-              *gamma_iajs_ptr++ = *gamma_iqjs_ptr++;
-              }
+                for (a=0; a<nvir_act; a++) {
+                  *gamma_iqjs_ptr += *c_qa++ * *gamma_iajs_ptr++;
+                  } // exit a loop
+                }   // exit q loop
+              // Put gamma_iqjs_tmp into gamma_iajs for one i,j,s
+              // while overwriting gamma_iajs
+              gamma_iajs_ptr = &gamma_iajs[s*nbasis + offset];
+              gamma_iqjs_ptr = gamma_iqjs_tmp;
+              for (q=0; q<nbasis; q++) {
+                *gamma_iajs_ptr++ = *gamma_iqjs_ptr++;
+                }
+              }   // exit s loop
 
-            }     // exit s loop
-
+            }     // endif
           ij_index++;
           }       // endif
         }         // exit j loop
@@ -1223,7 +1261,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
                  // deleted prematurely
 
     // The quarter back-transformed elements gamma_iajs have now been
-    // overwritten by the half back-transformed elements gamma_iqjs, so rename
+    // overwritten by the half back-transformed elements gamma_iqjs
 
     delete[] gamma_iqjs_tmp;
 
@@ -1272,18 +1310,17 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
           bzerofast(gamma_iqrs,ni*nbasis*nfuncmax*nfuncmax);
 
           for (i=0; i<ni; i++) {
-            for (jloop=me; jloop<me+nocc; jloop++) {
+            for (jloop=me; jloop<me+nocc_act; jloop++) {
               // stagger j's to minimize contention
-              j = jloop%nocc;
-
+              j = jloop%nocc_act + nfzc;  // j runs from nfzc to nocc
               ij_proc =  (i*nocc + j)%nproc; // ij_proc has this ij pair
               ij_index = (i*nocc + j)/nproc;
-              offset = s_offset*nbasis + ij_index*nbasis*nbasis;
 
+              offset = s_offset*nbasis + ij_index*nbasis*nbasis;
+              // Send for elements gamma_iqjs, if necessary
               gammabuf = (double*) membuf_remote.readonly_on_node(offset,
                                                                   nbasis * ns,
                                                                   ij_proc);
-
               for (bf1=0; bf1<nr; bf1++) {
                 c_rj = scf_vector[bf1 + r_offset][j];
                 gamma_iqjs_ptr = gammabuf;
@@ -1299,12 +1336,10 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
               membuf_remote.release();
 
               offset = r_offset*nbasis + ij_index*nbasis*nbasis;
-              // Send for gamma_irjq, if necessary (in array gamma_iqjs)
-
+              // Send for elements gamma_irjq, if necessary
               gammabuf = (double*) membuf_remote.readonly_on_node(offset,
                                                                   nbasis*nr,
                                                                   ij_proc);
-
               for (bf1=0; bf1<ns; bf1++) {
                 s = bf1 + s_offset;
                 c_sj = &scf_vector[s][j];
@@ -1335,7 +1370,9 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
           if (int_erep_2bound(R,S) >= tol) {  // only do this if integral is nonzero
 
             // Compute contrib to Laj from (ov|vv) integrals
-            // (done in AO basis to avoid generating (ov|vv)
+            // (done in AO basis to avoid generating (ov|vv);
+            // here, generate Lpi for i-batch; later, transform
+            // Lpi to get contribution to Laj
             tim_enter("(ov|vv) contrib to Laj");
             for (Q=0; Q<nshell; Q++) {
               nq = INT_SH_NFUNC((centers),Q);
@@ -1579,7 +1616,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     fprintf(outfile,"Number of shell quartets for which AO integral derivatives\n"
                     "were computed: %i\n",aointder_computed);
 
-    fprintf(outfile,"ROHF energy [au]:                  %13.8lf\n", escf);
+    fprintf(outfile,"RHF energy [au]:                   %13.8lf\n", escf);
     fprintf(outfile,"MP2 correlation energy [au]:       %13.8lf\n", ecorr_mp2);
     fprintf(outfile,"MP2 energy [au]:                   %13.8lf\n", emp2);
     fflush(outfile);
@@ -1607,18 +1644,31 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   // Finish computation of Wab
   tim_enter("Pab and Wab");
   pab_ptr = Pab;
-  for (a=0; a<nvir; a++) {
+  for (a=0; a<nvir_act; a++) {  // active-active part of Wab
     wba_ptr = &Wab[a];
     wab_ptr = &Wab[a*nvir];
     for (b=0; b<=a; b++) {
       if (a==b) {
-        *wab_ptr++ -= evals[nocc+a]**pab_ptr++;
+        *wab_ptr -= evals[nocc+a]**pab_ptr;
         }
       else {
-        *wab_ptr++ -= evals[nocc+a]**pab_ptr;
-        *wba_ptr   -= evals[nocc+b]**pab_ptr;
-        pab_ptr++;
-        }
+        *wab_ptr -= evals[nocc+a]**pab_ptr;
+        *wba_ptr -= evals[nocc+b]**pab_ptr;
+        } 
+      pab_ptr++;
+      wab_ptr++;
+      wba_ptr += nvir;
+      } // exit b loop
+    }   // exit a loop
+  for (a=0; a<nfzv; a++) {  // active-frozen part of Wab
+    wba_ptr = &Wab[nvir_act+a];
+    wab_ptr = &Wab[(nvir_act+a)*nvir];
+    pab_ptr = &Pab[(nvir_act+a)*(nvir_act+a+1)/2];
+    for (b=0; b<nvir_act; b++) {
+      *wab_ptr -= evals[nocc+b]**pab_ptr;
+      *wba_ptr -= evals[nocc+b]**pab_ptr;
+      pab_ptr++;
+      wab_ptr++;
       wba_ptr += nvir;
       } // exit b loop
     }   // exit a loop
@@ -1628,7 +1678,6 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   Wab_matrix->assign(Wab); // Put elements of Wab into Wab_matrix
   free(Wab);
 
-
   // Update Wkj with contribution from Pkj
   tim_enter("Pkj and Wkj");
   pkj_ptr = Pkj;
@@ -1636,8 +1685,19 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     wjk_ptr = &Wkj[k];
     wkj_ptr = &Wkj[k*nocc];
     for (j=0; j<=k; j++) {
+      if (k<nfzc && j<nfzc) {   // don't want both j and k frozen
+        wkj_ptr++;
+        wjk_ptr += nocc;
+        pkj_ptr++;
+        continue;
+        }
       if (j==k) {
         *wkj_ptr++ -= evals[k]**pkj_ptr++;
+        }
+      else if (j<nfzc) {
+        *wkj_ptr++ -= evals[k]**pkj_ptr;
+        *wjk_ptr   -= evals[k]**pkj_ptr;
+        pkj_ptr++;
         }
       else {
         *wkj_ptr++ -= evals[k]**pkj_ptr;
@@ -1654,6 +1714,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   /////////////////////////////////
 
   tim_enter("Laj");
+
   RefSCMatrix Cv(nbasis_dim, nvir_dim, kit); // virtual block of scf_vector
   RefSCMatrix Co(nbasis_dim, nocc_dim, kit); // occupied block of scf_vector
   for (p=0; p<nbasis; p++) {
@@ -1663,7 +1724,6 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
       else Cv->set_element(p, q-nocc, *c_pq++);
       }
     }
-
 
   // Compute the density-like matrix Dmat_matrix
   RefSymmSCMatrix Pab_matrix(nvir_dim,kit);
@@ -1675,9 +1735,6 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   free(Pkj);
   Dmat_matrix = Cv*Pab_matrix*Cv.t() + Co*Pkj_matrix*Co.t();
   // We now have the density-like matrix Dmat_matrix
-
-
-  // Need to synchronize all nodes here ?
 
   // Compute the G matrix
   Dmat = new double[nbasis*nbasis];
@@ -2355,7 +2412,8 @@ sum_gradients(double_matrix_t *f, int nproc)
 // affect the batch size.
 /////////////////////////////////////
 static int
-compute_batchsize(int mem_alloc, int mem_static, int nproc, FILE* outfile)
+compute_batchsize(int mem_alloc, int mem_static, int nocc_act,
+                  int nproc, FILE* outfile)
 {
   int index;
   int mem1, mem2, mem3;
@@ -2405,7 +2463,7 @@ compute_batchsize(int mem_alloc, int mem_static, int nproc, FILE* outfile)
 
   ni = 2;
   dyn_used = maxdyn;
-  while (ni<=nocc) {
+  while (ni<=nocc_act) {
     // compute nij
     nij_local = 0;
     index = 0;
@@ -2430,7 +2488,7 @@ compute_batchsize(int mem_alloc, int mem_static, int nproc, FILE* outfile)
     else dyn_used = maxdyn;
     ni++;
     }
-  if (ni > nocc) ni = nocc;
+  if (ni > nocc_act) ni = nocc_act;
 
   fprintf(outfile,"Memory available per node:   %i Bytes\n",mem_alloc);
   fprintf(outfile,"Static memory used per node: %i Bytes\n",mem_static);

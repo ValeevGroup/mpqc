@@ -30,6 +30,7 @@
 #endif
 
 #include <stdlib.h>
+#include <fstream.h>
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
@@ -298,6 +299,146 @@ MolecularEnergy*
 MolecularHessian::energy() const
 {
   return 0;
+}
+
+void
+MolecularHessian::write_cartesian_hessian(const char *filename,
+                                          const RefMolecule &mol,
+                                          const RefSymmSCMatrix &hess)
+{
+  int ntri = (3*mol->natom()*(3*mol->natom()+1))/2;
+  double *hessv = new double[ntri];
+  hess->convert(hessv);
+  if (MessageGrp::get_default_messagegrp()->me() == 0) {
+      int i,j;
+      ofstream out(filename);
+      // file format is version text 1
+      out << "Hessian VT1" << endl;
+      out << mol->natom() << " atoms" << endl;
+      for (i=0; i<mol->natom(); i++) {
+          out << scprintf("%2d % 15.12f % 15.12f % 15.12f",
+                          mol->Z(i), mol->r(i,0), mol->r(i,1), mol->r(i,2))
+              << endl;
+          
+        }
+      const int nrow = 5;
+      for (i=0; i<ntri; ) {
+          for (j=0; j<nrow && i<ntri; j++,i++) {
+              if (j>0) out << " ";
+              out << scprintf("% 15.12f", hessv[i]);
+            }
+          out << endl;
+        }
+      out << "End Hessian" << endl;
+    }
+  delete[] hessv;
+}
+
+void
+MolecularHessian::read_cartesian_hessian(const char *filename,
+                                         const RefMolecule &mol,
+                                         const RefSymmSCMatrix &hess)
+{
+  int ntri = (3*mol->natom()*(3*mol->natom()+1))/2;
+  double *hessv = new double[ntri];
+  RefMessageGrp grp = MessageGrp::get_default_messagegrp();
+  if (grp->me() == 0) {
+      int i;
+      ifstream in(filename);
+      const int nline = 100;
+      char linebuf[nline];
+      in.getline(linebuf, nline);
+      if (strcmp(linebuf,"Hessian VT1")) {
+          cout << "MolecularHessian: not given a hessian file" << endl;
+          abort();
+        }
+      int natom;
+      in >> natom;
+      if (natom != mol->natom()) {
+          cout << "MolecularHessian: wrong number of atoms in hessianfile"
+               << endl;
+          abort();
+        }
+      in.getline(linebuf,nline);
+      cout << "READ: should be atoms: " << linebuf << endl;
+      for (i=0; i<mol->natom(); i++) {
+          int Z;
+          double x, y, z;
+          in >> Z >> x >> y >> z;
+          cout << "READ: " << Z << " " << x << " " << y << " " << z << endl;
+        }
+      for (i=0; i<ntri; i++) {
+          in >> hessv[i];
+          cout << "READ: hess[" << i << "] = " << hessv[i] << endl;
+        }
+      in.getline(linebuf, nline);
+      cout << "READ: last line = " << linebuf << endl;
+      if (strcmp(linebuf,"End Hessian")) {
+          // try once more since there could be a left over new line
+          in.getline(linebuf, nline);
+          if (strcmp(linebuf,"End Hessian")) {
+              cout << "READ: last line = " << linebuf << endl;
+              cout << "MolecularHessian: hessian file seems to be truncated"
+                   << endl;
+              abort();
+            }
+        }
+    }
+  grp->bcast(hessv,ntri);
+  hess->assign(hessv);
+  delete[] hessv;
+}
+
+/////////////////////////////////////////////////////////////////
+// ReadMolecularHessian
+
+#define CLASSNAME ReadMolecularHessian
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#define PARENTS public MolecularHessian
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+ReadMolecularHessian::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = MolecularHessian::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+ReadMolecularHessian::ReadMolecularHessian(const RefKeyVal&keyval):
+  MolecularHessian(keyval)
+{
+  KeyValValueString default_filename(SCFormIO::fileext_to_filename(".hess"),
+                                     KeyValValueString::Steal);
+  filename_ = keyval->pcharvalue("filename", default_filename);
+}
+
+ReadMolecularHessian::ReadMolecularHessian(StateIn&s):
+  MolecularHessian(s)
+  maybe_SavableState(s)
+{
+  s.getstring(filename_);
+}
+
+ReadMolecularHessian::~ReadMolecularHessian()
+{
+  delete[] filename_;
+}
+
+void
+ReadMolecularHessian::save_data_state(StateOut&s)
+{
+  MolecularHessian::save_data_state(s);
+  s.putstring(filename_);
+}
+
+RefSymmSCMatrix
+ReadMolecularHessian::cartesian_hessian()
+{
+  RefSymmSCMatrix hess = matrixkit()->symmmatrix(d3natom());
+  read_cartesian_hessian(filename_, mol_, hess);
+  return hess;
 }
 
 /////////////////////////////////////////////////////////////////

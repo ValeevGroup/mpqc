@@ -528,6 +528,11 @@ main(int argc, char *argv[])
     }
 
     if (xhessian.nonnull()) {
+      char *hessfile = SCFormIO::fileext_to_filename(".hess");
+      MolecularHessian::write_cartesian_hessian(hessfile,
+                                                mole->molecule(), xhessian);
+      delete[] hessfile;
+
       molfreq->compute_frequencies(xhessian);
       // DEGENERACY IS NOT CORRECT FOR NON-SINGLET CASES:
       molfreq->thermochemistry(1);

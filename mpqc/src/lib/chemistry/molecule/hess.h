@@ -72,8 +72,35 @@ class MolecularHessian: virtual_base public SavableState {
     static RefSCMatrix cartesian_to_symmetry(const RefMolecule &m,
                                              RefPointGroup pg = 0,
                                              RefSCMatrixKit kit = 0);
+
+    //. Write the hessian in a simple text format.
+    static void write_cartesian_hessian(const char *filename,
+                                        const RefMolecule &m,
+                                        const RefSymmSCMatrix &hess);
+
+    //. Read the hessian from a simple text format.
+    static void read_cartesian_hessian(const char *filename,
+                                       const RefMolecule &m,
+                                       const RefSymmSCMatrix &hess);
 };
 SavableState_REF_dec(MolecularHessian);
+
+class ReadMolecularHessian: public MolecularHessian {
+#   define CLASSNAME ReadMolecularHessian
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    char *filename_;
+  public:
+    ReadMolecularHessian(const RefKeyVal&);
+    ReadMolecularHessian(StateIn&);
+    ~ReadMolecularHessian();
+    void save_data_state(StateOut&);
+
+    RefSymmSCMatrix cartesian_hessian();
+};
 
 class GuessMolecularHessian: public MolecularHessian {
 #   define CLASSNAME GuessMolecularHessian

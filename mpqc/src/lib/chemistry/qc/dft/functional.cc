@@ -309,6 +309,7 @@ DenFunctional::fd_point(const PointInputData&id, PointOutputData&od)
 
   double g_ab_lbound = -0.5*(ga+gb);
   if (-sga*sgb > g_ab_lbound) g_ab_lbound = -sga*sgb;
+  // if (-sga*sgb < g_ab_lbound) g_ab_lbound = -sga*sgb;
   double g_ab_ubound = sga*sgb;
 
   do_fd_point(tid, tid.a.rho, od.df_drho_a, 0.0, 10.0);
@@ -779,7 +780,7 @@ PW92LCFunctional::dFdr_s(double x, double A, double alpha_1, double beta_1, doub
 {
   double x2 = x*x; // r_s
   double Q_0 = -2.*A*(1. + alpha_1*x2);
-  double Q_1 =  2.*A*(beta_1 * x + beta_2 * x2 + beta_3*x*x2 + beta_4 * pow(x2,p));
+  double Q_1 =  2.*A*(beta_1 * x + beta_2 * x2 + beta_3*x*x2 + beta_4 * pow(x2,p+1.));
   double Q_1prime = A * 
            ( beta_1 * 1./x + 2.*beta_2 + 3.*beta_3*x + 2.*(p+1.)*beta_4*pow(x2,p));
   double res = -2.*A*alpha_1*log(1. + 1./Q_1) - Q_0*Q_1prime/(Q_1*Q_1 + Q_1);
@@ -801,7 +802,8 @@ PW92LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   double rho = id.a.rho + id.b.rho;
   double zeta = (id.a.rho - id.b.rho)/rho;
   double x = pow(3./(4.*M_PI*rho), sixth);
-
+  double rs = x*x;
+  
   double epc    = F(x, 0.0310907,  0.21370, 7.5957,  3.5876, 1.6382,  0.49294, 1.00);
   double efc    = F(x, 0.01554535, 0.20548, 14.1189, 6.1977, 3.3662,  0.62517, 1.00);
   double alphac = F(x, 0.0168869, 0.11125, 10.357,  3.6231, 0.88026, 0.49671, 1.00);
@@ -820,7 +822,7 @@ PW92LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
       double depc_dr_s0 = 
              dFdr_s(x, 0.0310907, 0.21370, 7.5957, 3.5876, 1.6382, 0.49294, 1.00);
       double dec_dr_s = depc_dr_s0;
-      od.df_drho_a = od.df_drho_b = ec - (x/3.)*dec_dr_s;
+      od.df_drho_a = od.df_drho_b = ec - (rs/3.)*dec_dr_s;
       decrs = dec_dr_s;
       deczeta = 0.;
     }
@@ -838,8 +840,8 @@ PW92LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
             - pow((1-zeta),one_third))/(pow(2.,one_third)-1);
       double dec_dzeta = 4.* zeta3 * f * (efc - epc - (-alphac/fpp0))
               + fp * (zeta4 * (efc - epc) + (1-zeta4)*(-alphac/fpp0));
-      od.df_drho_a = ec - (x/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
-      od.df_drho_b = ec - (x/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
+      od.df_drho_a = ec - (rs/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
+      od.df_drho_b = ec - (rs/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
       decrs = dec_dr_s;
       deczeta = dec_dzeta;
       } 
@@ -1140,7 +1142,8 @@ VWN1LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   double rho = id.a.rho + id.b.rho;
   double zeta = (id.a.rho - id.b.rho)/rho;
   double x = pow(3./(4.*M_PI*rho), sixth);
-
+  double rs = x*x;
+  
   double epc    = F(x, Ap_, x0p_, bp_, cp_);
   double efc    = F(x, Af_, x0f_, bf_, cf_);
 
@@ -1156,7 +1159,7 @@ VWN1LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
     if (!spin_polarized_) {
       double depc_dr_s0 = dFdr_s(x, Ap_, x0p_, bp_, cp_);
       double dec_dr_s = depc_dr_s0;
-      od.df_drho_a = od.df_drho_b = ec - (x/3.)*dec_dr_s;
+      od.df_drho_a = od.df_drho_b = ec - (rs/3.)*dec_dr_s;
       decrs = dec_dr_s;
       deczeta = 0.;
     }
@@ -1169,10 +1172,10 @@ VWN1LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
       double dec_dr_s = depc_dr_s0 + f * (defc_dr_s1 - depc_dr_s0);
       double fp = two_thirds * (pow((1+zeta),one_third) 
             - pow((1-zeta),one_third))/(pow(2.,one_third)-1);
-      double dec_dzeta = depc_dr_s0 + fp * (efc - epc) + f * (defc_dr_s1 - depc_dr_s0);
-             
-      od.df_drho_a = ec - (x/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
-      od.df_drho_b = ec - (x/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
+      // double dec_dzeta = depc_dr_s0 + fp * (efc - epc) + f * (defc_dr_s1 - depc_dr_s0);
+      double dec_dzeta = fp * (efc - epc);       
+      od.df_drho_a = ec - (rs/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
+      od.df_drho_b = ec - (rs/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
       decrs = dec_dr_s;
       deczeta = dec_dzeta;
       } 
@@ -1319,7 +1322,8 @@ VWN2LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   double rho = id.a.rho + id.b.rho;
   double zeta = (id.a.rho - id.b.rho)/rho;
   double x = pow(3./(4.*M_PI*rho), sixth);
- 
+  double rs = x*x;
+  
   // Monte Carlo fitting parameters 
   double epc_mc    = F(x, Ap_, x0p_mc_, bp_mc_, cp_mc_);
   double efc_mc    = F(x, Af_, x0f_mc_, bf_mc_, cf_mc_);
@@ -1360,7 +1364,7 @@ VWN2LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
       double ddelta_e_rpa = defc_dr_s1_rpa - depc_dr_s0_rpa;
       double ddeltae_rpa_dr_s = f / fpp0 * (1 - zeta4)* dalphac_dr_s_rpa 
                     + f * zeta4 * ddelta_e_rpa;
-      double ddeltae_rpa_dzeta = dalphac_dr_s_rpa / fpp0 * 
+      double ddeltae_rpa_dzeta = alphac_rpa / fpp0 * 
         ( fp * (1.-zeta4) - 4.* f * zeta*zeta2) 
         + delta_e_rpa * ( fp*zeta4 + 4.*f*zeta*zeta2);
               
@@ -1375,8 +1379,8 @@ VWN2LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
       
       double dec_dzeta = ddeltae_rpa_dzeta + fp * (ddelta_e_mc - ddelta_e_rpa);
                        
-      od.df_drho_a = ec - (x/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
-      od.df_drho_b = ec - (x/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
+      od.df_drho_a = ec - (rs/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
+      od.df_drho_b = ec - (rs/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
       decrs = dec_dr_s;
       deczeta = dec_dzeta;
     }
@@ -1523,7 +1527,8 @@ VWN3LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   double rho = id.a.rho + id.b.rho;
   double zeta = (id.a.rho - id.b.rho)/rho;
   double x = pow(3./(4.*M_PI*rho), sixth);
- 
+  double rs = x*x;
+  
   // Monte Carlo fitting parameters 
   double epc_mc    = F(x, Ap_, x0p_mc_, bp_mc_, cp_mc_);
   double efc_mc    = F(x, Af_, x0f_mc_, bf_mc_, cf_mc_);
@@ -1542,7 +1547,8 @@ VWN3LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   double delta_erpa_rszeta = alphac_rpa * f / fpp0 * (1. + beta * zeta4);
   double delta_ec = delta_e_mc/delta_e_rpa * delta_erpa_rszeta;
   double ec = epc_rpa + delta_ec;
-
+  // double ec = epc_mc + delta_ec;
+  
   od.energy = ec * rho;
   ec_local = ec;
 
@@ -1564,7 +1570,7 @@ VWN3LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
       double ddelta_e_rpa = defc_dr_s1_rpa - depc_dr_s0_rpa;
       double ddeltae_rpa_dr_s = f / fpp0 * (1 - zeta4)* dalphac_dr_s_rpa 
                     + f * zeta4 * ddelta_e_rpa;
-      double ddeltae_rpa_dzeta = dalphac_dr_s_rpa / fpp0 * 
+      double ddeltae_rpa_dzeta = alphac_rpa / fpp0 * 
         ( fp * (1.-zeta4) - 4.* f * zeta*zeta2) 
         + delta_e_rpa * ( fp*zeta4 + 4.*f*zeta*zeta2);
               
@@ -1580,8 +1586,8 @@ VWN3LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
         - delta_erpa_rszeta*delta_e_mc/(delta_e_rpa*delta_e_rpa)* ddelta_e_rpa;
       double dec_dzeta = delta_e_mc / delta_e_rpa * ddeltae_rpa_dzeta;      
  
-      od.df_drho_a = ec - (x/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
-      od.df_drho_b = ec - (x/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
+      od.df_drho_a = ec - (rs/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
+      od.df_drho_b = ec - (rs/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
       decrs = dec_dr_s;
       deczeta = dec_dzeta;
     }
@@ -1728,7 +1734,8 @@ VWN4LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   double rho = id.a.rho + id.b.rho;
   double zeta = (id.a.rho - id.b.rho)/rho;
   double x = pow(3./(4.*M_PI*rho), sixth);
- 
+  double rs = x*x;
+  
   // Monte Carlo fitting parameters 
   double epc_mc    = F(x, Ap_, x0p_mc_, bp_mc_, cp_mc_);
   double efc_mc    = F(x, Af_, x0f_mc_, bf_mc_, cf_mc_);
@@ -1747,6 +1754,7 @@ VWN4LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   double delta_erpa_rszeta = alphac_rpa * f / fpp0 * (1. + beta * zeta4);
   double delta_ec = delta_e_mc/delta_e_rpa * delta_erpa_rszeta;
   // Is the epc used below suppose to be from the mc or rpa data?
+  // We will use the mc data for now.
   double ec = epc_mc + delta_ec;
 
   od.energy = ec * rho;
@@ -1769,14 +1777,15 @@ VWN4LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
       
       // RPA fitting parameters
       double ddelta_e_rpa = defc_dr_s1_rpa - depc_dr_s0_rpa;
+      double ddelta_e_mc = defc_dr_s1_mc - depc_dr_s0_mc;
       double ddeltae_rpa_dr_s = f / fpp0 * (1 - zeta4)* dalphac_dr_s_rpa 
-                    + f * zeta4 * ddelta_e_rpa;
-      double ddeltae_rpa_dzeta = dalphac_dr_s_rpa / fpp0 * 
+                    + f * zeta4 * ddelta_e_mc;
+      double ddeltae_rpa_dzeta = alphac_rpa / fpp0 * 
         ( fp * (1.-zeta4) - 4.* f * zeta*zeta2) 
-        + delta_e_rpa * ( fp*zeta4 + 4.*f*zeta*zeta2);
+        + delta_e_mc * ( fp*zeta4 + 4.*f*zeta*zeta2);
               
       // Monte Carlo fitting parameters
-      double ddelta_e_mc = defc_dr_s1_mc - depc_dr_s0_mc;
+      // double ddelta_e_mc = defc_dr_s1_mc - depc_dr_s0_mc;
       // double dec_dr_s_mc = depc_dr_s0*(1 - f*zeta4) + defc_dr_s1 * f * zeta4
       //                   + dalphac_dr_s * f / fpp0 * (1 - zeta4);
       // double dec_dzeta_mc = 4.* zeta3 * f * (efc_mc - epc_mc - (alphac_mc/fpp0))
@@ -1787,8 +1796,8 @@ VWN4LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
         - delta_erpa_rszeta*delta_e_mc/(delta_e_rpa*delta_e_rpa)* ddelta_e_rpa;
       double dec_dzeta = delta_e_mc / delta_e_rpa * ddeltae_rpa_dzeta;      
  
-      od.df_drho_a = ec - (x/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
-      od.df_drho_b = ec - (x/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
+      od.df_drho_a = ec - (rs/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
+      od.df_drho_b = ec - (rs/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
       decrs = dec_dr_s;
       deczeta = dec_dzeta;
     }
@@ -1916,6 +1925,7 @@ VWN5LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   double rho = id.a.rho + id.b.rho;
   double zeta = (id.a.rho - id.b.rho)/rho;
   double x = pow(3./(4.*M_PI*rho), sixth);
+  double rs = x*x;
 
   double epc    = F(x, Ap_, x0p_mc_, bp_mc_, cp_mc_);
   double efc    = F(x, Af_, x0f_mc_, bf_mc_, cf_mc_);
@@ -1935,7 +1945,7 @@ VWN5LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
     if (!spin_polarized_) {
       double depc_dr_s0 = dFdr_s(x, Ap_, x0p_mc_, bp_mc_, cp_mc_); 
       double dec_dr_s = depc_dr_s0;
-      od.df_drho_a = od.df_drho_b = ec - (x/3.)*dec_dr_s;
+      od.df_drho_a = od.df_drho_b = ec - (rs/3.)*dec_dr_s;
       decrs = dec_dr_s;
       deczeta = 0.;
     }
@@ -1950,8 +1960,8 @@ VWN5LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
             - pow((1-zeta),one_third))/(pow(2.,one_third)-1);
       double dec_dzeta = 4.* zeta3 * f * (efc - epc - (alphac/fpp0))
               + fp * (zeta4 * (efc - epc) + (1-zeta4)*(alphac/fpp0));
-      od.df_drho_a = ec - (x/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
-      od.df_drho_b = ec - (x/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
+      od.df_drho_a = ec - (rs/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
+      od.df_drho_b = ec - (rs/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
       decrs = dec_dr_s;
       deczeta = dec_dzeta;
       } 
@@ -2263,11 +2273,14 @@ LYPCFunctional::point(const PointInputData &id,
     if (compute_potential_) {
        double dens4_3 = pow(dens,-4./3.);
        double expo = exp(-c*dens1_3);
-       double ddelta_drho_a = -dens4_3/3.*( c + d/(denom*denom)); 
-       double domega_drho_a = expo/(3.*denom*pow(dens,15./3.) ) *
-                             ( c + d/denom - 11.*pow(dens,1./3.) );
-       double df1_drho_a = -4.*a*id.b.rho/(dens*denom)
-                * (1.-(id.a.rho*(1.+2./3.*d*dens1_3))/(dens*denom)); 
+       // double ddelta_drho_a = -dens4_3/3.*( c + d/(denom*denom)); 
+       double ddelta_drho_a = 1./3* (d*d*dens4_3*dens1_3/(denom*denom)
+                                     - delta/dens);
+       double domega_drho_a = -1./3.*omega*dens4_3*(11./dens1_3 - c - d/denom);
+       //double domega_drho_a = expo/(3.*denom*pow(dens,15./3.) ) *
+       //                      ( c + d/denom - 11.*pow(dens,1./3.) );
+       double df1_drho_a = -4.*a*dens_ab/(dens*denom)
+                         * (1./3.*d*dens4_3/denom + 1/id.a.rho - 1./dens); 
        double  df2_drho_a = -domega_drho_a*a*b*intermediate_3 
                 - omega*a*b*( id.b.rho/18.* intermediate_1
                 + dens_ab/18.*(144.*pow(2.,2./3.)*cf*8./3.*pow(id.a.rho,5./3.)
@@ -2285,9 +2298,9 @@ LYPCFunctional::point(const PointInputData &id,
        od.df_dgamma_bb = od.df_dgamma_aa;
        if (spin_polarized_) {
           double ddelta_drho_b = ddelta_drho_a;
-          double domega_drho_b = domega_drho_b;
-          double df1_drho_b = -4.*id.a.rho/(dens*denom)
-                   * (1.-(id.b.rho*(1.+2./3.*d*dens1_3))/(dens*denom));
+          double domega_drho_b = domega_drho_a;
+          double df1_drho_b = -4.*a*dens_ab/(dens*denom)
+                            * (1./3.*d*dens4_3/denom + 1./id.b.rho - 1./dens);
           double df2_drho_b = -domega_drho_b*a*b*intermediate_3 
                   - omega*a*b*( id.a.rho/18.* intermediate_1 
                   + dens_ab/18.*(144.*pow(2.,2./3.)*cf*8./3.*pow(id.b.rho,5./3.)
@@ -2519,6 +2532,7 @@ PBECFunctional::point(const PointInputData &id,
   double phi = 0.5*( pow((1.+zeta),(2./3.)) + pow((1.-zeta),(2./3.)) );
   double phi2 = phi*phi;
   double phi3 = phi2*phi;
+  double phi4 = phi3*phi;
   double kf = pow( (3.*M_PI*M_PI*rho), (1./3.) );
   double ks = pow( (4.*kf/M_PI), (1./2.) );
   double gamma_aa = id.a.gamma;
@@ -2550,18 +2564,19 @@ PBECFunctional::point(const PointInputData &id,
       double q3p = pow( (1.-zeta), -1./3.);
       double dphi_drhoa = 1./3. * dzeta_drhoa * (q3 - q3p);
       double dphi3_drhoa = 3.*phi2*dphi_drhoa;
-      double dt_drhoa = -7./6.*t/rho;
+      double dt_drhoa = -t*(dphi_drhoa/phi + 7./6.*1./rho);
       double dt2_drhoa = 2.*t*dt_drhoa;
       double dt4_drhoa = 4.*t3*dt_drhoa;
       double dexp_drhoa = exp(-ec_local/(gamma_*phi3)) *
-                          (-1./phi * dec_local_drhoa + 3.*ec_local*dphi_drhoa);
-      double dA_drhoa = -A2/(beta_*phi3) * dexp_drhoa;
+                          (-dec_local_drhoa/(gamma_*phi3)
+                           + 3.*ec_local*dphi_drhoa/(gamma_*phi4));
+      double dA_drhoa = -A2/ratio*dexp_drhoa;
       double dA2_drhoa = 2. * A * dA_drhoa;
       double dX_drhoa = ratio*dt2_drhoa*q1/q2 + ratio*t2 *
                         ( (dA_drhoa*t2 + A*dt2_drhoa)/q2 -
                           q1/(q2*q2)*(dA_drhoa*t2+A*dt2_drhoa+dA2_drhoa*t4
-                                      + A2*dt4_drhoa));
-      double dHpbe_drhoa = 3.*phi2*dphi_drhoa*log(X) + gamma_*phi3/X*dX_drhoa;
+                                      + A2*dt4_drhoa) );
+      double dHpbe_drhoa = 3.*phi2*gamma_*dphi_drhoa*log(X) + gamma_*phi3/X*dX_drhoa;
       double dfpbe_drhoa = Hpbe + rho*dHpbe_drhoa;
       od.df_drho_a = dfpbe_drhoa;
       
@@ -2571,36 +2586,50 @@ PBECFunctional::point(const PointInputData &id,
       double dec_local_drhob = dec_local_rs*drs_drhob + dec_local_zeta*dzeta_drhob;
       double dphi_drhob = 1./3. * dzeta_drhob * (q3 - q3p);
       double dphi3_drhob = 3.*phi2*dphi_drhob;
-      double dt_drhob = dt_drhoa;
-      double dt2_drhob = dt2_drhoa;
-      double dt4_drhob = dt4_drhoa;
+      double dt_drhob = -t*(dphi_drhob/phi + 7./6.*1./rho);
+      double dt2_drhob = 2.*t*dt_drhob;
+      double dt4_drhob = 4.*t3*dt_drhob;
       double dexp_drhob = exp(-ec_local/(gamma_*phi3)) *
-                          (-1./phi * dec_local_drhob + 3.*ec_local*dphi_drhob);
-      double dA_drhob = -A2/(beta_*phi3) * dexp_drhob;
+                          (-dec_local_drhob/(gamma_*phi3)
+                           + 3.*ec_local*dphi_drhob/(gamma_*phi4));
+      double dA_drhob = -A2/ratio*dexp_drhob;
       double dA2_drhob = 2.*A*dA_drhob;
       double dX_drhob = ratio*dt2_drhob*q1/q2 + ratio*t2 *
                         ( (dA_drhob*t2 + A*dt2_drhob)/q2 -
                           q1/(q2*q2)*(dA_drhob*t2+A*dt2_drhob+dA2_drhob*t4
-                                      + A2*dt4_drhob));
-      double dHpbe_drhob = 3.*phi2*dphi_drhob*log(X) + gamma_*phi3/X*dX_drhob;
+                                      + A2*dt4_drhob) );
+      double dHpbe_drhob = 3.*phi2*gamma_*dphi_drhob*log(X) + gamma_*phi3/X*dX_drhob;
       double dfpbe_drhob = Hpbe + rho*dHpbe_drhob;
       od.df_drho_b = dfpbe_drhob;
       
       // d_dgamma_aa part
-      double dt_dgamma_aa = 0.5*t/(gamma_total*gamma_total);
+      double tdt_dgamma_aa = 0.5/( (2.*ks*phi*rho)*(2.*ks*phi*rho) );
+      // double dt_dgamma_aa = 0.5*t/(gamma_total*gamma_total);
       // double dt2_dgamma_aa = 2.*t*dt_dgamma_aa;
       // double dt4_dgamma_aa = 4.*t3*dt_dgamma_aa;
-      double dX_tmp =2.*t*ratio*q1/q2 *(1.+ A*t2*(1./q1 - (1.+2.*A*t2)/q2)); 
-      double dX_dgamma_aa = dX_tmp*dt_dgamma_aa;
+      // double dX_tmp =2.*t*ratio*q1/q2 *(1.+ A*t2*(1./q1 - (1.+2.*A*t2)/q2)); 
+      // double dX_dgamma_aa = dX_tmp*dt_dgamma_aa;
+      // double dX_dgamma_aa = pow( (1./(2.*ks*phi*rho)), 2.)*ratio*q1/q2
+      //                      *(1.+ A*t2*(1./q1 - (1.+2.*A*t2)/q2));
+      double dX_dgamma_aa = 2.*ratio*tdt_dgamma_aa*q1/q2
+                          + ratio*t2*tdt_dgamma_aa*
+                            (2.*A/q2 - (2.*A + 4.*A2*t2)*q1/(q2*q2));
       double dHpbe_dgamma_aa = gamma_*phi3/X * dX_dgamma_aa;
       double dfpbe_dgamma_aa = rho*dHpbe_dgamma_aa;
       od.df_dgamma_aa = dfpbe_dgamma_aa;
+      
       // d_dgamma_bb part is equal to the aa part for closed and open shell.
       od.df_dgamma_bb = od.df_dgamma_aa;
       
       // d_dgamma_ab part
-      double dt_dgamma_ab = t/(gamma_total*gamma_total);
-      double dX_dgamma_ab = dX_tmp*dt_dgamma_ab;
+      double tdt_dgamma_ab = 1./( (2.*ks*phi*rho)*(2.*ks*phi*rho) );
+      // double dt_dgamma_ab = t/(gamma_total*gamma_total);
+      // double dX_dgamma_ab = dX_tmp*dt_dgamma_ab;
+      // double dX_dgamma_ab = 2.*pow( (1./(2.*ks*phi*rho)), 2.)*ratio*q1/q2
+      //                      *(1.+ A*t2*(1./q1 - (1.+2.*A*t2)/q2));
+      double dX_dgamma_ab = 2.*ratio*tdt_dgamma_ab*q1/q2
+                          + ratio*t2*tdt_dgamma_ab*
+                            (2.*A/q2 - (2.*A + 4.*A2*t2)*q1/(q2*q2));
       double dHpbe_dgamma_ab = gamma_*phi3/X*dX_dgamma_ab;
       double dfpbe_dgamma_ab = rho*dHpbe_dgamma_ab;
       od.df_dgamma_ab = dfpbe_dgamma_ab;
@@ -2754,12 +2783,13 @@ PW91CFunctional::point(const PointInputData &id,
   double H1pw91 = Y*g3*t2*expH1;
   double Hpw91 = H0pw91 + H1pw91;
   double ec = rho * Hpw91;
+
   od.energy = ec;
 
   double rs2 = rs*rs;
   double rs3 = rs2*rs;
   double rs4 = rs3*rs;
-  
+
   if (compute_potential_) {
       // d_drhoa part
       double dzeta_drhoa = 1./rho * (1. - zeta);
@@ -2776,8 +2806,9 @@ PW91CFunctional::point(const PointInputData &id,
       double dt4_drhoa = 4.*t3*dt_drhoa;
       double dks2_drhoa = 2.*ks*dks_drhoa;
       double dkf2_drhoa = 2.*kf*dkf_drhoa;
-      double dAexp_drhoa = Aexp * A_factor * ( -dec_local_drhoa/(g3*beta)
-                                    + ec_local/(g3*g3*beta2*beta) * 3.*g2*beta2*dg_drhoa );
+      // double dAexp_drhoa = Aexp * A_factor * ( -dec_local_drhoa/(g3*beta)
+      //                       + ec_local/(g3*g3*beta2*beta) * 3.*g2*beta2*dg_drhoa );
+      double dAexp_drhoa = -A_factor/beta*Aexp * (dec_local_drhoa/g3 - 3.*ec_local*dg_drhoa/g4);
       double dA_drhoa = -A/(Aexp - 1.) * dAexp_drhoa;
       double dA2_drhoa = 2. * A * dA_drhoa;
       double dX_drhoa = (2.*t*dt_drhoa + dA_drhoa*t4 + 4.*A*t3*dt_drhoa)/q2
@@ -2789,14 +2820,15 @@ PW91CFunctional::point(const PointInputData &id,
       double dexpH1_drhoa = -dZ_drhoa*expH1;
       double dY_drhoa = nu * dCcrs_drhoa;
       double dH1pw91_drhoa = dY_drhoa*g3*t2*expH1 + Y *
-                             (3.*g2*dg_drhoa*t2*expH1 + 2.*g3*t*dt_drhoa*expH1 + g3*t2*dexpH1_drhoa);
+                             (3.*g2*dg_drhoa*t2*expH1 + 2.*g3*t*dt_drhoa*expH1
+                              + g3*t2*dexpH1_drhoa);
       double dHpw91_drhoa = dH0pw91_drhoa + dH1pw91_drhoa;
       double dfpw91_drhoa = Hpw91 + rho*dHpw91_drhoa;
       od.df_drho_a = dfpw91_drhoa;
           
       if (spin_polarized_) {
         // d_drhob part
-        double dzeta_drhob = 1./rho * (1. - zeta);
+        double dzeta_drhob = 1./rho * (-1. - zeta);
         double drs_drhob = -rs/(3.*rho);
         double dec_local_drhob = dec_local_rs*drs_drhob + dec_local_zeta*dzeta_drhob;
         double q3 = pow( (1.+zeta), -1./3.);
@@ -2805,7 +2837,8 @@ PW91CFunctional::point(const PointInputData &id,
         double dg3_drhob = 3.*g2*dg_drhob;
         double dkf_drhob = -9.*M_PI/4. * drs_drhob/rs2;
         double dks_drhob = 2./(M_PI*ks)*dkf_drhob;
-        double dt_drhob = -t/(2.*g*ks*rho) * (2.*dg_drhob*ks*rho + 2.*g*dks_drhob*rho + 2.*g*ks);
+        double dt_drhob = -t/(2.*g*ks*rho) *
+                          (2.*dg_drhob*ks*rho + 2.*g*dks_drhob*rho + 2.*g*ks);
         double dt2_drhob = 2.*t*dt_drhob;
         double dt4_drhob = 4.*t3*dt_drhob;
         double dks2_drhob = 2.*ks*dks_drhob;
@@ -2823,7 +2856,8 @@ PW91CFunctional::point(const PointInputData &id,
         double dexpH1_drhob = -dZ_drhob*expH1;
         double dY_drhob = nu*dCcrs_drhob;
         double dH1pw91_drhob = dY_drhob*g3*t2*expH1 + Y *
-                             (3.*g2*dg_drhob*t2*expH1 + 2.*g3*t*dt_drhob*expH1 + g3*t2*dexpH1_drhob);
+                             (3.*g2*dg_drhob*t2*expH1 + 2.*g3*t*dt_drhob*expH1
+                              + g3*t2*dexpH1_drhob);
         double dHpw91_drhob = dH0pw91_drhob + dH1pw91_drhob;
         double dfpw91_drhob = Hpw91 + rho*dHpw91_drhob;
         od.df_drho_b = dfpw91_drhob;
@@ -2929,16 +2963,21 @@ void
   double rhoa = 2. * id.a.rho;
   double k_Fa = pow( (3.*M_PI*M_PI*rhoa), (1./3.) );
   double e_xa_unif = -3. * k_Fa / (4.*M_PI);
-  double gamma_aa = 2. * sqrt(id.a.gamma);
+  double gamma_aa = sqrt(2.*id.a.gamma);
   double sa = gamma_aa/(2. * k_Fa * rhoa);
   double sa2 = sa*sa;
 
   double f_xa = 1. + kappa_ - kappa_ / ( 1. + (mu_*sa2/kappa_) );
   double ex = 0.5 * rhoa * e_xa_unif * f_xa;
   if (compute_potential_) {
-    od.df_drho_a = 0.5 * 4./3. * e_xa_unif * 
-         ( f_xa - 2. * mu_ * sa2 * pow((1. + (mu_*sa2)/kappa_),-2.));
-    od.df_dgamma_aa = -0.5 * rhoa * e_xa_unif * mu_ * sa2 / id.a.gamma * 
+    double dex_unif_drhoa = e_xa_unif / (3.*id.a.rho);
+    double dsa_drhoa = -4./3. * sa / id.a.rho;
+    double dFs_drhoa = kappa_ / pow( ( 1. + (mu_*sa2/kappa_)), 2.) *
+                       mu_/kappa_ * 2.*sa*dsa_drhoa;
+    double dEx_drhoa = 2.*e_xa_unif*f_xa + rhoa*f_xa*dex_unif_drhoa
+                     + rhoa*e_xa_unif*dFs_drhoa;
+    od.df_drho_a = 0.5 * dEx_drhoa;
+    od.df_dgamma_aa = 0.5 * rhoa * e_xa_unif * mu_ * sa2 / id.a.gamma * 
                       pow( (1. + mu_*sa2/kappa_), -2.);
     od.df_drho_b = od.df_drho_a;
     od.df_dgamma_bb = od.df_dgamma_aa;
@@ -2949,15 +2988,20 @@ void
     double rhob = 2. * id.b.rho;
     double k_Fb = pow( (3.*M_PI*M_PI*rhob), (1./3.) );
     double e_xb_unif = -3.*k_Fb/(4.*M_PI);
-    double gamma_bb = 2.*sqrt(id.b.gamma);
+    double gamma_bb = sqrt(2.*id.b.gamma);
     double sb = gamma_bb/(2.*k_Fb*rhob);
     double sb2 = sb*sb;
     double f_xb = 1. + kappa_ - kappa_ /( 1. + (mu_*sb2/kappa_) );
     ex += 0.5 * rhob * e_xb_unif * f_xb;
     if (compute_potential_) {
-      od.df_drho_b = 0.5 * 4./3. * e_xb_unif * 
-              ( f_xb - 2.*mu_*sb2 * pow((1. + (mu_*sb2)/kappa_),-2.));
-      od.df_dgamma_bb = -0.5 * rhob * e_xb_unif * mu_ * sb2 / id.b.gamma *
+      double dex_unif_drhob = e_xb_unif / (3.*id.b.rho);
+      double dsb_drhob = -4./3. * sb/id.b.rho;
+      double dFs_drhob = kappa_ / pow( ( 1. + (mu_*sb2/kappa_)), 2.) *
+                       mu_/kappa_ * 2.*sb*dsb_drhob;
+      double dEx_drhob = 2.*e_xb_unif*f_xb + rhob*f_xb*dex_unif_drhob
+                     + rhob*e_xb_unif*dFs_drhob;
+      od.df_drho_b = 0.5 * dEx_drhob;
+      od.df_dgamma_bb = 0.5 * rhob * e_xb_unif * mu_ * sb2 / id.b.gamma *
               pow( (1. + mu_*sb2/kappa_), -2.);
     }
   }
@@ -3209,6 +3253,7 @@ void
   double r_sa2 = r_sa*r_sa;
   double s_factor = pow( ((9.*M_PI)/4.),(1./3.) );
   double k_Fa = s_factor * 1./r_sa;
+  // double k_Fa = pow( (3.*M_PI*M_PI*rhoa), (1./3.) );
   double rhoa43 = pow(rhoa, (4./3.));
   double rhoa13 = pow(rhoa, (1./3.));
   double Ax = -3./4.*pow( (3./M_PI), (1./3.) );
@@ -3225,11 +3270,13 @@ void
   double ex = 0.5 * fpw86xa;
 
   if (compute_potential_) {
-    double drs_drhoa = -r_sa/(3.*rhoa);
-    double dsa_drhoa = sa * (1./r_sa*drs_drhoa - 1./rhoa);
+    double drs_drhoa = -pow( (3./(4.*M_PI)), (1./3.) ) / 3. * pow(id.a.rho, -4./3.);
+    double dsa_drhoa = id.a.gamma/( pow(2., 4./3.)*pow( (3.*M_PI*M_PI), 1./3.) ) *
+                                    -4./3.* pow(id.a.rho, 1./3.);
     double dFxa_drhoa = m_ * pow(F1a, (m_-1.)) *
                         ( 2.*a_*sa*dsa_drhoa + 4.*b_*sa3*dsa_drhoa + 6.*c_*sa5*dsa_drhoa);
-    double dfpw86xa_drhoa = Ax * ( 4./3. * rhoa13 * Fxa + rhoa43 * dFxa_drhoa );
+    double dfpw86xa_drhoa = Ax * ( pow(2., 4./3.)*4./3.*pow(id.a.rho,1./3.)*Fxa
+                                   + rhoa43 * dFxa_drhoa );
                            
     od.df_drho_a = 0.5 * dfpw86xa_drhoa; 
 

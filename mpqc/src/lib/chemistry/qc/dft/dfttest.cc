@@ -302,6 +302,13 @@ fd_e_test(const RefWavefunction &wfn)
 int
 main(int argc, char**argv)
 {
+
+// #if defined(__i386__) && defined(__GNUC__)
+  // make floating point errors cause an exception (except for denormalized
+  // operands, since small numbers are denormalized)
+//  asm("fldcw %0" : : "o" (0x372));
+//#endif
+
   int i;
   char *input = (argc > 1)? argv[1] : SRCDIR "/dfttest.in";
 
@@ -318,6 +325,13 @@ main(int argc, char**argv)
   RefDenFunctional funcs[] = {
     new SlaterXFunctional,
     new Becke88XFunctional,
+    new VWN1LCFunctional,
+    new VWN2LCFunctional,
+    new VWN3LCFunctional,
+    new VWN4LCFunctional,
+    new VWN5LCFunctional,
+    new PW92LCFunctional,
+    new PZ81LCFunctional,
     new PBECFunctional,
     new PW91CFunctional,
     new P86CFunctional,
@@ -327,13 +341,6 @@ main(int argc, char**argv)
     new PW91XFunctional,
     new PBEXFunctional,
     new G96XFunctional,
-    new VWN1LCFunctional,
-    new VWN2LCFunctional,
-    new VWN3LCFunctional,
-    new VWN4LCFunctional,
-    new VWN5LCFunctional,
-    new PW92LCFunctional,
-    new PZ81LCFunctional,
     0
   };
   for (i=0; funcs[i]; i++) {

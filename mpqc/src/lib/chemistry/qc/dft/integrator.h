@@ -156,6 +156,36 @@ class BeckeIntegrationWeight: public IntegrationWeight {
     double w(int center, SCVector3 &point, double *grad_w = 0);
 };
 
+/* class EMLIntegrator: public DenIntegrator {
+#   define CLASSNAME EMLIntegrator
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    int nr_;
+    int ntheta_;
+    int nphi_;
+    int Ktheta_;
+
+    RefIntegrationWeight weight_;
+    
+  public:
+    EMLIntegrator();
+    EMLIntegrator(const RefKeyVal &);
+    EMLIntegrator(StateIn &);
+    ~EMLIntegrator()
+    void save_data_state(StateOut &);
+
+    void integrate(const RefDenFunctional &,
+                   const RefSymmSCMatrix& densa =0,
+                   const RefSymmSCMatrix& densb =0,
+                   double *nuclear_gradient = 0);
+
+    void print(ostream & =cout) const;
+};
+*/
+
 // Based on C.W. Murray, et al. Mol. Phys. 78, No. 4, 997-1014, 1993
 class Murray93Integrator: public DenIntegrator {
 #   define CLASSNAME Murray93Integrator

@@ -225,9 +225,13 @@ class Wavefunction: public MolecularEnergy {
 
     /// Returns the orthogonalization method
     OverlapOrthog::OrthogMethod orthog_method() const;
+    /// (Re)Sets the orthogonalization method and makes this obsolete
+    void set_orthog_method(const OverlapOrthog::OrthogMethod&);
 
     /// Returns the tolerance for linear dependencies.
     double lindep_tol() const;
+    /// Re(Sets) the tolerance for linear dependencies.
+    void set_lindep_tol(double);
 
     void obsolete();
 

@@ -1069,10 +1069,26 @@ Wavefunction::orthog_method() const
   return orthog_method_;
 }
 
+void
+Wavefunction::set_orthog_method(const OverlapOrthog::OrthogMethod& omethod)
+{
+  orthog_method_ = omethod;
+  init_orthog();
+  obsolete();
+}
+
 double
 Wavefunction::lindep_tol() const
 {
   return lindep_tol_;
+}
+
+void
+Wavefunction::set_lindep_tol(double lindep_tol)
+{
+  lindep_tol_ = lindep_tol;
+  init_orthog();
+  obsolete();
 }
 
 void

@@ -23,9 +23,8 @@
 #define QUERY_FUNCTION_CONV_IMPL(type,property,unit_conversion) \
   INLINE const type ChemicalElement::property() const \
   { return atom_info[Z_].property * unit_conversion; }
-
 							      
-const double ang_to_au = 1.0/0.52917706;
+#define ANGSTROMS_TO_AU 1.0/0.52917706;
 
 class ChemicalElement :
   virtual public SavableState

@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <float.h>
 #include <util/misc/compute.h>
 #include <util/state/state.h>
 

@@ -24,6 +24,8 @@ class refname: public RefDC ## T {					      \
     refname& operator=( RefDescribedClassBase & c);			      \
     refname& operator=( refname & c);					      \
     ~refname();								      \
+    refname(StateIn&);							      \
+    void save_data_state(StateOut&);					      \
     void save_state(StateOut&);						      \
     void restore_state(StateIn&);					      \
 };
@@ -48,6 +50,14 @@ refname& refname :: operator=( refname & c)				      \
 {									      \
   RefDC ## T::operator=(c);						      \
   return *this;								      \
+}									      \
+refname :: refname (StateIn&s)						      \
+{									      \
+  restore_state(s);							      \
+}									      \
+void refname :: save_data_state(StateOut&s)				      \
+{									      \
+  save_state(s);							      \
 }									      \
 void refname :: save_state(StateOut&so)					      \
 {									      \

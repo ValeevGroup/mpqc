@@ -31,7 +31,7 @@
 #define _libQC_xdr_h
 
 extern "C" {
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(SGI)
 #include <limits.h>  // use the gnu limits.h
 #else
 #include <sys/limits.h>

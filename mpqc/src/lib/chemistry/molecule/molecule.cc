@@ -292,9 +292,15 @@ Molecule::print(ostream& os)
          << scprintf(" %3d", i+1)
          << scprintf(" %5s", get_atom(i).element().symbol());
       if (have_label) {
+          const char *lab = get_atom(i).label();
+          if (lab == 0) lab = "";
+          char  *qlab = new char[strlen(lab)+3];
+          strcpy(qlab,"\"");
+          strcat(qlab,lab);
+          strcat(qlab,"\"");
           os << node0
-             << scprintf(" \"%9s\"",
-                         (get_atom(i).label())?get_atom(i).label():"");
+             << scprintf(" %11s",qlab);
+          delete[] qlab;
         }
       os << node0
          << scprintf(" [% 16.10f", conv * get_atom(i)[0])

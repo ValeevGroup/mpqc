@@ -522,11 +522,19 @@ OneBodyWavefunction::beta_eigenvalues()
 int
 OneBodyWavefunction::nelectron()
 {
+  int nbasis = basis()->nbasis();
   double tocc = 0.0;
-  for (int i=0; i<nirrep_; i++) {
-    tocc += occupations_[i];
+  if (!spin_polarized()) {
+    for (int i=0; i<nbasis; i++) {
+      tocc += occupation(i);
+    }
   }
-  return (tocc<0?int(tocc-0.5):int(tocc+0.5));
+  else {
+    for (int i=0; i<nbasis; i++) {
+      tocc += alpha_occupation(i) + beta_occupation(i);
+    }
+  }
+  return int(tocc+0.5);
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -66,7 +66,7 @@ PetiteList::in_p4(int ij, int kl, int i, int j, int k, int l) const
     int gkl = ioff(_shell_map[k][g],_shell_map[l][g]);
     int gijkl = ioff(gij,gkl);
 
-    if (gijkl > ijkl)
+    if (gijkl < ijkl)
       return 0;
     else if (gijkl == ijkl)
       nijkl++;

@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <util/misc/formio.h>
 #include <util/keyval/ipv2.h>
 #include <util/keyval/keyval.h>
 
@@ -260,31 +261,41 @@ ParsedKeyVal::truekeyword(const char*key)
   else return result;
 }
 
-void ParsedKeyVal::errortrace(ostream&fp,int n)
+void ParsedKeyVal::errortrace(ostream&fp)
 {
-  offset(fp,n); fp << "ParsedKeyVal: error: \"" << errormsg() << "\"" << endl;
+  fp << indent << "ParsedKeyVal: error: \"" << errormsg() << "\"" << endl;
   if (nfp) {
-      offset(fp,n);
-      fp << "    reading from " << nfp << " files with unknown names" << endl;
+      fp << indent
+         << "    reading from " << nfp << " files with unknown names" << endl;
     }
   for (int i=0; i<nfile; i++) {
-      offset(fp,n); fp << "    reading from \"" << file[i] << "\"" << endl;
+      fp << indent << "    reading from \"" << file[i] << "\"" << endl;
     }
 }
 
-void ParsedKeyVal::dump(ostream&fp,int n)
+void ParsedKeyVal::dump(ostream&fp)
 {
-  offset(fp,n); fp << "ParsedKeyVal: error: \"" << errormsg() << "\"" << endl;
+  fp << indent << "ParsedKeyVal: error: \"" << errormsg() << "\"" << endl;
   if (nfp) {
-      offset(fp,n);
-      fp << "    reading from " << nfp << " files with unknown names" << endl;
+      fp << indent
+         << "    reading from " << nfp << " files with unknown names" << endl;
     }
   for (int i=0; i<nfile; i++) {
-      offset(fp,n); fp << "    reading from \"" << file[i] << "\"" << endl;
+      fp << indent << "    reading from \"" << file[i] << "\"" << endl;
     }
-  offset(fp,n); fp << "The IPV2 tree:" << endl;
+  fp << indent << "The IPV2 tree:" << endl;
   ipv2->print_tree(fp);
 
+}
+
+void ParsedKeyVal::print_unseen(ostream&fp)
+{
+  ipv2->print_unseen(fp);
+}
+
+int ParsedKeyVal::have_unseen()
+{
+  return ipv2->have_unseen();
 }
 
 /////////////////////////////////////////////////////////////////////////////

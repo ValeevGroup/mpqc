@@ -47,6 +47,7 @@ IPV2::ip_alloc_keyword_tree()
   result->truename = 0;
   result->value = 0;
   result->variable = 0;
+  result->seen = 0;
 
   return result;
   }

@@ -32,6 +32,7 @@ extern "C" {
 
 #include <iostream.h>
 
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <util/keyval/keyvalImplMap.h>
 #include <util/class/proxy.h>
@@ -139,15 +140,15 @@ StringKeyVal::key_value(const char* key)
 }
 
 void
-StringKeyVal::errortrace(ostream&o,int n)
+StringKeyVal::errortrace(ostream&o)
 {
-  offset(o,n); o << "StringKeyVal: error: \"" << errormsg() << "\"" << endl;
+  o << indent << "StringKeyVal: error: \"" << errormsg() << "\"" << endl;
 }
 
 void
-StringKeyVal::dump(ostream&o,int n)
+StringKeyVal::dump(ostream&o)
 {
-  offset(o,n); o << "StringKeyVal: error: \"" << errormsg() << "\"" << endl;
+  o << indent << "StringKeyVal: error: \"" << errormsg() << "\"" << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

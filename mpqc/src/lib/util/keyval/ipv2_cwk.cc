@@ -108,7 +108,7 @@ IPV2::cwk_add(const char* keyword)
             << endl;
     for (I=ip_cwk; I!=NULL; I=I->p) {
         *ip_out << "  ";
-        ip_print_keyword(*ip_out,I->kt);
+        print_keyword(*ip_out,I->kt);
         *ip_out << endl;
       }
     *ip_out << "  }" << endl;
@@ -276,6 +276,7 @@ IPV2::ip_descend_tree(ip_keyword_tree_t* kt,const char* keyword)
           return NULL;
         }
       else if (!strcmp(token,I->keyword)) {
+        I->seen = 1;
         if (I->variable) I = ip_descend_tree(I,I->variable);
         token = tok.tok();
         if (token == NULL) return I;
@@ -294,7 +295,7 @@ IPV2::ip_descend_tree(ip_keyword_tree_t* kt,const char* keyword)
 
   if (r && ip_keyword) {
     *ip_out << "IP_KEYWORD from ip_descend_tree: ";
-    ip_print_keyword(*ip_out,r);
+    print_keyword(*ip_out,r);
     *ip_out << endl;
     }
 
@@ -311,7 +312,7 @@ IPV2::ip_key_value(const char* keyword)
 
   if (kt && ip_keyword) {
     *ip_out << "IP_KEYWORD from ip_key_value: ";
-    ip_print_keyword(*ip_out,kt);
+    print_keyword(*ip_out,kt);
     *ip_out << endl;
     }
 

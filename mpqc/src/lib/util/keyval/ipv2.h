@@ -57,6 +57,7 @@ struct ip_keyword_tree_struct {
   char *variable;  /* If this node points to another name, this
                     * is the name, otherwise NULL. */
   char *value;
+  int seen;
   };
 
 struct ip_keyword_tree_list_struct {
@@ -160,10 +161,7 @@ class IPV2
   void ip_cwk_karray_add(int,...);
   ip_keyword_tree_t* ip_karray_descend_v(ip_keyword_tree_t*,int,int*);
   ip_keyword_tree_t* ip_karray_descend(ip_keyword_tree_t*,int,...);
-  void ip_print_keyword(ostream&,ip_keyword_tree_t*);
-  void ip_print_tree(ostream&,ip_keyword_tree_t*);
-  void ip_print_tree_(ostream&,ip_keyword_tree_t*,int);
-  void ip_indent(ostream&,int);
+  void print_tree_(ostream&,ip_keyword_tree_t*);
   int ip_special_characters(char*);
   char* ip_append_keystrings(char*,char*);
   void ip_pop_karray();
@@ -223,8 +221,10 @@ class IPV2
   IPV2::Status count_v(const char*,int*,int,int*);
 
   // some routines for debugging
-  void print_keyword(ostream&f=cerr,ip_keyword_tree_t*k=0);
-  void print_tree(ostream&f=cerr,ip_keyword_tree_t*k=0);
+  void print_keyword(ostream&f=cout,ip_keyword_tree_t*k=0);
+  void print_tree(ostream&f=cout,ip_keyword_tree_t*k=0);
+  void print_unseen(ostream&f=cout,ip_keyword_tree_t*k=0);
+  int have_unseen(ip_keyword_tree_t*k=0);
 };
 
 #endif

@@ -638,6 +638,16 @@ main(int argc, char *argv[])
          << endl;
   }
 
+  if (parsedkv->have_unseen()) {
+    cout << node0 << indent
+         << "The following keywords in \"" << input << "\" were ignored:"
+         << endl;
+    cout << incindent;
+    parsedkv->print_unseen(cout<<node0);
+    cout << decindent;
+    cout << node0 << endl;
+  }
+
   if (print_timings)
     tim->print(cout);
 

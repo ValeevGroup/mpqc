@@ -95,9 +95,6 @@ class KeyVal: public VRefCount {
     //. Set the current error condition.
     void seterror(KeyValError err);
 
-    void offset(ostream& fp,int n); // Put n ' ' into fp.
-    enum {OffsetDelta=4};
-
     //. Ultimately called by \srccd{exists}.
     virtual int    key_exists(const char*) = 0;
     //. Ultimately called by \srccd{count}.
@@ -223,8 +220,15 @@ class KeyVal: public VRefCount {
     //. Return a textual representation of the current error.
     char*  errormsg();
 
-    virtual void errortrace(ostream&fp=cerr,int offset = 0);
-    virtual void dump(ostream&fp=cerr,int offset = 0);
+    virtual void errortrace(ostream&fp=cerr);
+    virtual void dump(ostream&fp=cerr);
+
+    //. Print keywords that were never looked at, if possible.
+    virtual void print_unseen(ostream&fp=cout);
+    //. Return 1 if there were unseen keywords, 0 if there are
+    //none, or -1 this keyval doesn't keep track of unseen
+    //keywords.
+    virtual int have_unseen();
 };
 
 REF_dec(KeyVal);
@@ -382,8 +386,8 @@ class StringKeyVal: public KeyVal {
     virtual const char* truekeyword(const char*);
     int    key_exists(const char*);
 
-    virtual void errortrace(ostream&fp=cerr,int offset = 0);
-    virtual void dump(ostream&fp=cerr,int offset = 0);
+    virtual void errortrace(ostream&fp=cerr);
+    virtual void dump(ostream&fp=cerr);
 };
 
 class AggregateKeyVal : public KeyVal {
@@ -403,8 +407,8 @@ class AggregateKeyVal : public KeyVal {
     ~AggregateKeyVal();
     int    key_exists(const char*);
     RefKeyValValue key_value(const char*);
-    void errortrace(ostream&fp=cerr, int offset = 0);
-    void dump(ostream&fp=cerr,int offset = 0);
+    void errortrace(ostream&fp=cerr);
+    void dump(ostream&fp=cerr);
 };
 
 class PrefixKeyVal : public KeyVal {
@@ -435,8 +439,8 @@ class PrefixKeyVal : public KeyVal {
     ~PrefixKeyVal();
     int    key_exists(const char*);
     RefKeyValValue key_value(const char*);
-    void errortrace(ostream&fp=cerr, int offset = 0);
-    void dump(ostream&fp=cerr,int offset = 0);
+    void errortrace(ostream&fp=cerr);
+    void dump(ostream&fp=cerr);
 };
 
 class IPV2;
@@ -484,8 +488,10 @@ class ParsedKeyVal : public StringKeyVal {
     const char* stringvalue(const char*);
     const char* classname(const char*);
     const char* truekeyword(const char*);
-    void errortrace(ostream&fp=cerr, int offset = 0);
-    void dump(ostream&fp=cerr,int offset = 0);
+    void errortrace(ostream&fp=cerr);
+    void dump(ostream&fp=cerr);
+    void print_unseen(ostream&fp=cout);
+    int have_unseen();
 };
 
 REF_dec(ParsedKeyVal);

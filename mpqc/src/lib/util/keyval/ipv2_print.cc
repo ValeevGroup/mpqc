@@ -26,50 +26,50 @@
 //
 
 #include <iostream.h>
+#include <util/misc/formio.h>
 #include <util/keyval/ipv2.h>
 
-#define N_INDENT 2
-
 void
-IPV2::ip_print_keyword(ostream&fp,ip_keyword_tree_t*st)
+IPV2::print_keyword(ostream&fp,ip_keyword_tree_t*st)
 {
-  if (st->up) ip_print_keyword(fp,st->up);
-  fp << st->keyword << ":";
+  if (st) {
+    if (st->up) print_keyword(fp,st->up);
+    fp << st->keyword << ":";
+    }
   }
 
 /* This prints out a keyword tree, tree.  If tree is NULL then ip_tree
  * is printed out. */
 void
-IPV2::ip_print_tree(ostream&fp,ip_keyword_tree_t*tree)
+IPV2::print_tree(ostream&fp,ip_keyword_tree_t*tree)
 {
   if (!tree) tree = ip_tree;
   if (!tree) return;
 
-  ip_print_tree_(fp,tree,0);
+  print_tree_(fp,tree);
   }
 
 
 /* This prints out a keyword tree, tree.  If tree is NULL then ip_tree
- * is printed out.  Indent is used to record how deep in the tree we
- * are, so we know how far to indent things. */
+ * is printed out. */
 void
-IPV2::ip_print_tree_(ostream&fp,ip_keyword_tree_t*tree,int indent)
+IPV2::print_tree_(ostream&fp,ip_keyword_tree_t*tree)
 {
   ip_keyword_tree_t *I;
 
   I=tree;
   do {
     //if (I->value && I->down) {
-    //  warn("ip_print_tree: tree has both value and subtrees - can't print");
+    //  warn("print_tree: tree has both value and subtrees - can't print");
     //  warn("keyword is %s, value is %s, subtree key is %s\n",
     //       I->keyword,I->value,I->down->keyword);
     //  }
 
     if (!I->keyword) {
-      warn("ip_print_tree: tree has no keyword - impossible");
+      warn("print_tree: tree has no keyword - impossible");
       }
 
-    ip_indent(fp,indent);
+    fp << indent;
     if (ip_special_characters(I->keyword)) {
       fp << "\"" << I->keyword << "\"" << endl;
       }
@@ -98,22 +98,54 @@ IPV2::ip_print_tree_(ostream&fp,ip_keyword_tree_t*tree,int indent)
       }
     if (I->down) {
       fp << ": (" << endl;
-      ip_print_tree_(fp,I->down,indent + N_INDENT);
-      ip_indent(fp,indent + N_INDENT);
-      fp << ")" << endl;
+      fp << incindent;
+      print_tree_(fp,I->down);
+      fp << decindent;
+      fp << indent << ")" << endl;
       }
 
     } while ((I = I->across) != tree);
 
   }
 
+/* This prints out a keyword tree, tree.  If tree is NULL then ip_tree
+ * is printed out. */
 void
-IPV2::ip_indent(ostream&fp,int n)
+IPV2::print_unseen(ostream&fp,ip_keyword_tree_t*I)
 {
-  int i;
+  if (!I) I = ip_tree;
+  if (!I) return;
+  ip_keyword_tree_t *start = I;
+  do {
+      if (!I->seen) {
+          fp << indent;
+          print_keyword(fp,I->up);
+          fp << I->keyword << endl;
+        }
+      else if (I->down) {
+          print_unseen(fp,I->down);
+        }
+    } while ((I = I->across) != start);
+}
 
-  for (i=0; i<n; i++) fp << " ";
-  }
+/* This prints out a keyword tree, tree.  If tree is NULL then ip_tree
+ * is printed out. */
+int
+IPV2::have_unseen(ip_keyword_tree_t*I)
+{
+  if (!I) I = ip_tree;
+  if (!I) return 0;
+  ip_keyword_tree_t *start = I;
+  do {
+      if (!I->seen) {
+          return 1;
+        }
+      else if (I->down) {
+          if (have_unseen(I->down)) return 1;
+        }
+    } while ((I = I->across) != start);
+  return 0;
+}
 
 int
 IPV2::ip_special_characters(char*keyword)

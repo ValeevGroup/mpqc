@@ -29,6 +29,7 @@ extern "C" {
 #include <ctype.h>
 #include <stdlib.h>
 }
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 
 /////////////////////////////////////////////////////////////////////
@@ -100,27 +101,29 @@ AggregateKeyVal::key_exists(const char* key)
 }
 
 void
-AggregateKeyVal::errortrace(ostream&fp,int n)
+AggregateKeyVal::errortrace(ostream&fp)
 {
-  offset(fp,n);
-  fp << "AggregateKeyVal: error: \"" << errormsg() << "\"" << endl;
+  fp << indent << "AggregateKeyVal: error: \"" << errormsg() << "\"" << endl;
   for (int i = 0; i<4; i++) {
       if (kv[i].nonnull()) {
-          offset(fp,n); fp << "  KeyVal #" << i << ":" << endl;
-          kv[i]->errortrace(fp,n+OffsetDelta);
+          fp << indent << "  KeyVal #" << i << ":" << endl;
+          fp << incindent;
+          kv[i]->errortrace(fp);
+          fp << decindent;
         }
     }
 }
 
 void
-AggregateKeyVal::dump(ostream&fp,int n)
+AggregateKeyVal::dump(ostream&fp)
 {
-  offset(fp,n);
-  fp << "AggregateKeyVal: error: \"" << errormsg() << "\"" << endl;
+  fp << indent << "AggregateKeyVal: error: \"" << errormsg() << "\"" << endl;
   for (int i = 0; i<4; i++) {
       if (kv[i].nonnull()) {
-          offset(fp,n); fp << "  KeyVal #" << i << ":" << endl;
-          kv[i]->dump(fp,n+OffsetDelta);
+          fp << indent << "  KeyVal #" << i << ":" << endl;
+          fp << incindent;
+          kv[i]->dump(fp);
+          fp << decindent;
         }
     }
 }

@@ -110,19 +110,6 @@ IPV2::global()
   return global_;
 }
 
-  // some routines for debugging
-void
-IPV2::print_keyword(ostream&f,ip_keyword_tree_t*k)
-{
-  ip_print_keyword(f,k);
-}
-
-void
-IPV2::print_tree(ostream&f,ip_keyword_tree_t*k)
-{
-  ip_print_tree(f,k);
-}
-
 /* Show position. */
 void
 IPV2::showpos()

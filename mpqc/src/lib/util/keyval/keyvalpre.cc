@@ -30,6 +30,7 @@ extern "C" {
 #include <stdlib.h>
 #include <stdio.h>
 }
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 
 //////////////////////////////////////////////////////////////////////
@@ -175,22 +176,26 @@ PrefixKeyVal::~PrefixKeyVal()
     }
 }
 
-void PrefixKeyVal::errortrace(ostream&fp,int n)
+void PrefixKeyVal::errortrace(ostream&fp)
 {
-  offset(fp,n); fp << "PrefixKeyVal: error: \"" << errormsg() << "\"" << endl;
-  offset(fp,n); fp << "  prefix:" << endl;
-  offset(fp,n); fp << "    \"" << prefix << "\"" << endl;
-  offset(fp,n); fp << "  keyval:" << endl;
-  keyval->errortrace(fp,n + OffsetDelta);
+  fp << indent << "PrefixKeyVal: error: \"" << errormsg() << "\"" << endl;
+  fp << indent << "  prefix:" << endl;
+  fp << indent << "    \"" << prefix << "\"" << endl;
+  fp << indent << "  keyval:" << endl;
+  fp << incindent;
+  keyval->errortrace(fp);
+  fp << decindent;
 }
 
-void PrefixKeyVal::dump(ostream&fp,int n)
+void PrefixKeyVal::dump(ostream&fp)
 {
-  offset(fp,n); fp << "PrefixKeyVal: error: \"" << errormsg() << "\"" << endl;
-  offset(fp,n); fp << "  prefixes:" << endl;
-  offset(fp,n); fp << "    \"" << prefix << "\"" << endl;
-  offset(fp,n); fp << "  keyval:" << endl;
-  keyval->dump(fp,n + OffsetDelta);
+  fp << indent << "PrefixKeyVal: error: \"" << errormsg() << "\"" << endl;
+  fp << indent << "  prefixes:" << endl;
+  fp << indent << "    \"" << prefix << "\"" << endl;
+  fp << indent << "  keyval:" << endl;
+  fp << incindent;
+  keyval->dump(fp);
+  fp << decindent;
 }
 
 int PrefixKeyVal::getnewprefixkey(const char*key,char*newkey)

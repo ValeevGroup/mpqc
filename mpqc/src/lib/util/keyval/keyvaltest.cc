@@ -30,6 +30,7 @@
 #include <iostream.h>
 #include <fstream.h>
 
+#include <util/misc/formio.h>
 #include <util/class/class.h>
 #include <util/keyval/ipv2.h>
 #include <util/keyval/keyval.h>
@@ -282,6 +283,12 @@ main()
 
   RefKeyVal pkv = new ParsedKeyVal(SRCDIR "/keyvaltest.in");
 
+  cout << "Initial unseen keywords:" << endl;
+  cout << incindent;
+  pkv->print_unseen(cout);
+  cout << decindent;
+  cout << "done" << endl;
+
   show( pkv->exists(":x") );  show( pkv->errormsg() ); cout << '\n';
   show( pkv->exists(":z") );  show (pkv->errormsg() ); cout << '\n';
   show( pkv->intvalue(":y") );  show( pkv->errormsg() ); cout << '\n';
@@ -301,6 +308,14 @@ main()
   show( pkv->intvalue(":test:object:d") ); cout << '\n';
 
   pkv->dump();
+
+  cout << "Final unseen keywords:" << endl;
+  pkv->exists("forref");
+  pkv->exists("testintco");
+  cout << incindent;
+  pkv->print_unseen(cout);
+  cout << decindent;
+  cout << "done" << endl;
 
   show( ra.pointer() ); cout << '\n';
   if (ra.nonnull()) { ra->print(); cout << '\n'; }

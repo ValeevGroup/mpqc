@@ -37,6 +37,7 @@ extern "C" {
 
 #include <iostream.h>
 
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 
 ////////////////////////////////////////////////////////////////////////
@@ -422,21 +423,24 @@ RefDescribedClass KeyVal::Va_describedclassvalue(const char* key,int narg,...)
   return key_describedclassvalue(newkey);
   }
 
-void KeyVal::offset(ostream&fp,int n)
+void KeyVal::errortrace(ostream&fp)
 {
-  for (int i=0; i<n; i++) {
-      fp << " ";
-    }
+  fp << indent << "KeyVal: error: \"" << errormsg() << "\"" << endl;
 }
 
-void KeyVal::errortrace(ostream&fp,int n)
+void KeyVal::dump(ostream&fp)
 {
-  offset(fp,n); fp << "KeyVal: error: \"" << errormsg() << "\"" << endl;
+  fp << indent << "KeyVal: error: \"" << errormsg() << "\"" << endl;
 }
 
-void KeyVal::dump(ostream&fp,int n)
+void KeyVal::print_unseen(ostream&fp)
 {
-  offset(fp,n); fp << "KeyVal: error: \"" << errormsg() << "\"" << endl;
+  fp << indent << "(this keyval does not record unread variables)" << endl;
+}
+
+int KeyVal::have_unseen()
+{
+  return -1;
 }
 
 // here are some inline candidates that are here for now because

@@ -1,4 +1,5 @@
 
+#include <math.h>
 #include "molecule.h"
 
 DescribedClass_REF_def(Molecule);
@@ -40,36 +41,87 @@ Molecule::Molecule(KeyVal&input):
 atoms(0),
 natoms(0)
 {
+  const double ang_to_bohr = 1.0/0.52917706;
 
-  // get the number of atoms and make sure that the geometry and the
-  // atoms array have the same number of atoms.
-  int natom = input.count("geometry");
-  if (natom != input.count("atoms")) {
-      fprintf(stderr,"Molecule: size of \"geometry\" != size of \"atoms\"\n");
-      return;
+  if (input.exists("pdb_file")) {
+      const int LineLength = 85;
+      char line[LineLength];
+      char* filename = input.pcharvalue("pdb_file");
+      FILE*fp = fopen(filename,"r");
+      if (!fp) {
+          fprintf(stderr,
+                  "Molecule::Molecule(KeyVal&input): pdb file not found\n");
+          abort();
+        }
+      int i=0;
+      while(fgets(line,LineLength,fp)) {
+          if (!strncmp(line,"HETA",4) || !strncmp(line,"ATOM",4)) {
+              char atomsym[3];
+              // find the atomic symbol
+              if (line[12] == ' ') {
+                  atomsym[0] = line[13];
+                  atomsym[1] = '\0';
+                }
+              else {
+                  atomsym[0] = line[12];
+                  atomsym[1] = line[13];
+                  atomsym[2] = '\0';
+                }
+              // skip dummy atoms
+              if (!strcmp(atomsym,"Q")) continue;
+              char position[9];
+              position[8] = '\0';
+              // x
+              strncpy(position,&line[30],8);
+              double x = atof(position);
+              // y
+              strncpy(position,&line[38],8);
+              double y = atof(position);
+              // z
+              strncpy(position,&line[46],8);
+              double z = atof(position);
+              AtomicCenter ac(atomsym,
+                              x*ang_to_bohr,
+                              y*ang_to_bohr,
+                              z*ang_to_bohr,
+                              0);
+              add_atom(i,ac);
+              i++;
+            }
+        }
+      fclose(fp);
     }
+  else {
+      // get the number of atoms and make sure that the geometry and the
+      // atoms array have the same number of atoms.
+      int natom = input.count("geometry");
+      if (natom != input.count("atoms")) {
+          fprintf(stderr,"Molecule: size of \"geometry\" != size of \"atoms\"\n");
+          return;
+        }
 
-  int aangstroms = input.booleanvalue("angstrom");
-  if (input.error() != KeyVal::OK) {
-    aangstroms = input.booleanvalue("aangstrom");
-    }
-  double conv = 1.0;
-  if (aangstroms) {
-      conv = 1.0/0.52917706;
-    }
-  int i;
-  for (i=0; i<natom; i++) {
-      char* name;
-      char* labels;
-      AtomicCenter ac(name = input.pcharvalue("atoms",i),
-		      input.doublevalue("geometry",i,0)*conv,
-		      input.doublevalue("geometry",i,1)*conv,
-		      input.doublevalue("geometry",i,2)*conv,
-                      labels = input.pcharvalue("atom_labels",i)
-		      );
-      delete[] name;
-      delete[] labels;
-      add_atom(i,ac);
+      int aangstroms = input.booleanvalue("angstrom");
+      if (input.error() != KeyVal::OK) {
+          aangstroms = input.booleanvalue("aangstrom");
+        }
+      double conv = 1.0;
+      if (aangstroms) {
+          conv = ang_to_bohr;
+        }
+      int i;
+      for (i=0; i<natom; i++) {
+          char* name;
+          char* labels;
+          AtomicCenter ac(name = input.pcharvalue("atoms",i),
+                          input.doublevalue("geometry",i,0)*conv,
+                          input.doublevalue("geometry",i,1)*conv,
+                          input.doublevalue("geometry",i,2)*conv,
+                          labels = input.pcharvalue("atom_labels",i)
+                          );
+          delete[] name;
+          delete[] labels;
+          add_atom(i,ac);
+        }
     }
 }
 
@@ -219,6 +271,7 @@ Molecule::Molecule(StateIn& si):
   int natom;
   si.get(natom);
   natoms=0;
+  atoms = 0;
   for (int i=0; i < natom; i++) {
       AtomicCenter ac(si);
       add_atom(i,ac);

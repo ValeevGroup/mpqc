@@ -509,10 +509,14 @@ Molecule::symmetrize()
   SymmetryOperation so;
   int nnew=0;
 
-  newmol->add_atom(nnew,this->atom(0));
-  nnew++;
+  // first off, copy the un-symmetrized molecule into the new one
+  int i;
+  for (i=0; i < this->natom(); i++) {
+    newmol->add_atom(nnew,this->atom(i));
+    nnew++;
+  }
   
-  for (int i=0; i < this->natom(); i++) {
+  for (i=0; i < this->natom(); i++) {
     AtomicCenter ac = this->atom(i);
 
     for (int g=0; g < ct.order(); g++) {

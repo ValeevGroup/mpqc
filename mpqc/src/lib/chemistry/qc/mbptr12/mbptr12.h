@@ -132,9 +132,10 @@ class MBPT2_R12: public MBPT2 {
 	of the identity. Default is to use the same basis as for the orbital expansion.
 
         <dt><tt>abs_method</tt><dd> This string specifies whether the old ABS method, introduced
-        by Klopper and Samson, or the new ABS variant, introduced by EV, should be used.
-	Valid values are "KS" (Klopper and Samson), "KS+", "EV", and "EV+", where the "+" labels
-	a method where the union of OBS and ABS is used to construct the RI basis. The default is "KS+".
+        by Klopper and Samson, or the new ABS variant, CABS, introduced by Valeev, should be used.
+	Valid values are "ABS" (Klopper and Samson), "ABS+", "CABS", and "CABS+", where the "+" labels
+	a method where the union of OBS and ABS is used to construct the RI basis. The default is "ABS".
+        The default in 2.3.0 and later will be "CABS+".
 
 	<dt><tt>r12ints</tt><dd> This specifies how to store transformed MO integrals.
 	Valid values are:

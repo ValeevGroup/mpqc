@@ -47,22 +47,22 @@ R12IntEvalInfo::construct_ri_basis_(bool safe)
 {
   if (bs_aux_->equiv(bs_)) {
     bs_ri_ = bs_;
-    if (abs_method_ == LinearR12::ABS_EV ||
-	abs_method_ == LinearR12::ABS_EVPlus)
-      throw std::runtime_error("R12IntEvalInfo::construct_ri_basis_ -- ABS methods EV and EV+ can only be used when ABS != OBS");
+    if (abs_method_ == LinearR12::ABS_CABS ||
+	abs_method_ == LinearR12::ABS_CABSPlus)
+      throw std::runtime_error("R12IntEvalInfo::construct_ri_basis_ -- ABS methods CABS and CABS+ can only be used when ABS != OBS");
   }
   else {
     switch(abs_method_) {
-      case LinearR12::ABS_KS:
+      case LinearR12::ABS_ABS:
 	construct_ri_basis_ks_(safe);
 	break;
-      case LinearR12::ABS_KSPlus:
+      case LinearR12::ABS_ABSPlus:
 	construct_ri_basis_ksplus_(safe);
 	break;
-      case LinearR12::ABS_EV:
+      case LinearR12::ABS_CABS:
 	construct_ri_basis_ev_(safe);
 	break;
-      case LinearR12::ABS_EVPlus:
+      case LinearR12::ABS_CABSPlus:
 	construct_ri_basis_evplus_(safe);
 	break;
       default:

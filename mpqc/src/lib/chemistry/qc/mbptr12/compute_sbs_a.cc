@@ -170,8 +170,8 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
   double pfac_xy_1, pfac_xy_2;
   if (two_basis_form &&
-      ( abs_method == LinearR12::ABS_KS ||
-        abs_method == LinearR12::ABS_KSPlus ) ) {
+      ( abs_method == LinearR12::ABS_ABS ||
+        abs_method == LinearR12::ABS_ABSPlus ) ) {
     pfac_xy_1 = 0.5;
     pfac_xy_2 = -0.5;
   }

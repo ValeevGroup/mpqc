@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <iostream.h>
 
-#include <math/nihmatrix/nihmatrix.h>
+#include <math/scmat/local.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
@@ -68,6 +68,21 @@ class IrreducibleRepresentation {
 
 /////////////////////////////////////////////////////////////
 
+class SymmetryOperation {
+  private:
+    double d[3][3];
+
+  public:
+    SymmetryOperation();
+    ~SymmetryOperation();
+
+    inline double trace() { return d[0][0]+d[1][1]+d[2][2]; }
+    inline double* operator[](int i) { return d[i]; }
+    inline double& operator()(int i, int j) { return d[i][j]; }
+
+    void print(FILE* =stdout);
+};
+
 class CharacterTable {
   public:
     enum pgroups {C1, CS, CI, CN, CNV, CNH, DN, DND, DNH, SN, T, TH, TD, O,
@@ -79,7 +94,7 @@ class CharacterTable {
     pgroups pg;                          // the class of the point group
     int nirrep_;                         // the number of irreps in this pg
     IrreducibleRepresentation *gamma_;   // an array of irreps
-    DMatrix *symop;                      // the matrices describing sym ops
+    SymmetryOperation *symop;            // the matrices describing sym ops
     char *symb;                          // the Schoenflies symbol for the pg
 
     int parse_symbol();
@@ -97,7 +112,7 @@ class CharacterTable {
     inline int order() const { return g; }
     inline const char * symbol() const { return symb; }
     inline IrreducibleRepresentation& gamma(int i) { return gamma_[i]; }
-    inline DMatrix& symm_operation(int i) { return symop[i]; }
+    inline SymmetryOperation& symm_operation(int i) { return symop[i]; }
 
     inline IrreducibleRepresentation& operator[](int i) { return gamma_[i]; }
 

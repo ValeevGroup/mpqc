@@ -55,19 +55,6 @@ class MPIMessageGrp: public MessageGrp {
     /// Currently each commgrp is a dup of MPI_COMM_WORLD
     MPI_Comm commgrp;
     
-#if HAVE_P4
-    int nlocal;     // the number of processes on the master cluster
-    int nremote;    // the number of remote clusters
-    char *master;   // the name of the master cluster
-    char * jobid;   // a unique job name selected by the user
-
-    struct p4_cluster {
-        char *hostname;  // name of the remote cluster
-        int nslaves;     // the number of slaves on the remote cluster
-    } *remote_clusters;
-
-    struct p4_cluster * my_node_info(const char[], int&);
-#endif
     /// Not thread-safe due to race condition on nmpi_grps variable.
     void init(MPI_Comm comm, int *argc=0, char ***argv=0);
   public:

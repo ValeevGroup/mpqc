@@ -974,19 +974,18 @@ if test X$PARALLEL = Xyes; then
   AC_LANG_CPLUSPLUS
   dnl Must use try_link since check_header runs cpp which doesn't
   dnl always find mpi.h (if mpicc and no -I is used for example)
-  AC_TRY_LINK([#include <mpi.h>],[],
-    AC_CHECK_FUNC(MPI_Init,HAVE_MPI=yes,[
-      AC_CHECK_LIB(mpi,MPI_Init,[HAVE_MPI=yes;LIBS="-lmpi $LIBS"],[
-        AC_CHECK_LIB(mpich,MPI_Init,[HAVE_MPI=yes;LIBS="-lmpich $LIBS"])
-        ]
-      )]
-    )
-  )
+  AC_TRY_LINK([#include <mpi.h>],have_mpi_h=yes,have_mpi_h=no)
+  if test "$have_mpi_h" = yes; then
+    AC_CHECK_FUNC(MPI_Init,HAVE_MPI=yes,HAVE_MPI=no)
+    if test "$HAVE_MPI" = no; then
+      AC_CHECK_LIB(mpi,MPI_Init,[HAVE_MPI=yes;LIBS="-lmpi $LIBS"])
+    fi
+    if test "$HAVE_MPI" = no; then
+      AC_CHECK_LIB(mpich,MPI_Init,[HAVE_MPI=yes;LIBS="-lmpich $LIBS"])
+    fi
+  fi
   if test X$HAVE_MPI = Xyes; then
     AC_DEFINE(HAVE_MPI)
-    dnl ----- check for functions that might be in an mpi library
-    AC_CHECK_FUNC(mpc_rcvncall,[HAVE_MPL=yes;AC_DEFINE(HAVE_MPL)])
-    AC_CHECK_FUNC(p4_initenv,[HAVE_P4=yes;AC_DEFINE(HAVE_P4)])
   fi
   AC_LANG_RESTORE
 fi
@@ -1002,8 +1001,6 @@ if test $DEFAULT_PARALLEL = mtmpi -a X$HAVE_MPI != Xyes; then
 fi
 
 AC_SUBST(HAVE_PERF)
-AC_SUBST(HAVE_MPL)
-AC_SUBST(HAVE_P4)
 AC_SUBST(HAVE_MPI)
 AC_SUBST(HAVE_PTHREAD)
 AC_SUBST(EXTRADEFINES)

@@ -4,15 +4,41 @@
 ARCH = L486
 
 DEFINES += -DL486
+DEFINES += -DTYPE_CONV_BUG
 
-COPTIONS = -V 2.5.8 -O -m486
-COPTIONS_NOOPT = -V 2.5.8 -m486
-COPTIONS_DEBUG = -V 2.5.8 -g -m486
+COPTIONS = -O -m486
+COPTIONS_NOOPT = -m486
+COPTIONS_DEBUG = -g -m486
 
-CXXOPTIONS = -V 2.5.8 -O -m486
-CXXOPTIONS_NOOPT = -V 2.5.8 -m486
-CXXOPTIONS_DEBUG = -V 2.5.8 -g -m486
+CXXOPTIONS = -O -m486
+CXXOPTIONS_NOOPT = -m486
+CXXOPTIONS_DEBUG = -g -m486
 
 SYSLIBS = -lm -lfl
 OTHERLIBS =
 
+ELF = yes
+
+ifeq ($(ELF),yes)
+CC = gcc-elf
+CXX = gcc-elf
+LD = gcc-elf
+AR = /usr/i486-linuxelf/bin/ar
+RANLIB = /usr/i486-linuxelf/bin/ranlib
+SH_LD = gcc-elf
+
+LIBSUF = so
+
+SYSLIBS = -lg++ -lm -lfl -lc
+
+SH_LDFLAGS = -shared -Wl,-soname -Wl,$(TARGET_TO_MAKE).so.$(ELF_MAJOR)
+
+COPTIONS += -fPIC
+COPTIONS_NOOPT += -fPIC
+COPTIONS_DEBUG += -fPIC
+
+CXXOPTIONS += -fPIC
+CXXOPTIONS_NOOPT += -fPIC
+CXXOPTIONS_DEBUG += -fPIC
+
+endif

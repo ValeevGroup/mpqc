@@ -24,7 +24,8 @@ class A: A_parents {
 void *
 A::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { DescribedClass::_castdown(cd) };
+  void* casts[1];
+  casts[0] =  DescribedClass::_castdown(cd) ;
   return do_castdowns(casts,cd);
 }
 
@@ -47,7 +48,8 @@ class B: B_parents {
 void *
 B::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { A::_castdown(cd) };
+  void* casts[1];
+  casts[0] =   A::_castdown(cd) ;
   return do_castdowns(casts,cd);
 }
 
@@ -68,7 +70,8 @@ class C: C_parents {
 void *
 C::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { DescribedClass::_castdown(cd) };
+  void* casts[1];
+  casts[0] =   DescribedClass::_castdown(cd) ;
   return do_castdowns(casts,cd);
 }
 
@@ -90,7 +93,9 @@ class D: D_parents {
 void *
 D::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { B::_castdown(cd), C::_castdown(cd) };
+  void* casts[2];
+  casts[0] =  B::_castdown(cd);
+  casts[1] =  C::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

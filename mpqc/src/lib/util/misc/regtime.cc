@@ -33,6 +33,8 @@
 #  include <scconfig.h>
 #endif
 
+#include <stdexcept>
+
 #include <math.h>
 #include <iostream>
 #include <iomanip>
@@ -387,22 +389,34 @@ RegionTimer::enter(const char *name)
 }
 
 void
-RegionTimer::exit(const char *name)
+RegionTimer::exit(const char *name, bool do_not_throw)
 {
   if (!current_ || (name && strcmp(name, current_->name()))) {
-      ExEnv::errn() << "TimeRegion::exit(\"" << name << "\"):"
-           << " current region"
-           << " (\"" << current_->name() << "\")"
-           << " doesn't match name"
-           << endl;
-      abort();
+      if (do_not_throw) {
+          // we have an error but cannot throw.  ignore this call
+          return;
+        }
+      else {
+          ExEnv::errn() << "TimeRegion::exit(\"" << name << "\"):"
+                        << " current region"
+                        << " (\"" << current_->name() << "\")"
+                        << " doesn't match name"
+                        << endl;
+          throw std::runtime_error("RegionTimer: region mismatch");
+        }
     }
   if (cpu_time_) current_->cpu_exit(get_cpu_time());
   if (wall_time_) current_->wall_exit(get_wall_time());
   if (flops_) current_->flops_exit(get_flops());
   if (! current_->up()) {
-      ExEnv::errn() << "RegionTimer::exit: already at top level" << endl;
-      abort();
+      if (do_not_throw) {
+          // we have an error but cannot throw.  ignore this call
+          return;
+        }
+      else {
+          ExEnv::errn() << "RegionTimer::exit: already at top level" << endl;
+          throw std::runtime_error("RegionTimer: tried to exit top level");
+        }
     }
   current_ = current_->up();
 }
@@ -686,7 +700,7 @@ Timer::Timer(const Ref<RegionTimer>&t, const char *name):
 Timer::~Timer()
 {
   if (active_) {
-      timer_->exit(name_.c_str());
+      timer_->exit(name_.c_str(), true);
     }
 }
 

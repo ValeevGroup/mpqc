@@ -103,7 +103,7 @@ class RegionTimer: public DescribedClass {
     ~RegionTimer();
     void enter(const char * = 0);
     void change(const char *newname, const char * oldname = 0);
-    void exit(const char * = 0);
+    void exit(const char * = 0, bool do_not_throw = false);
     void set_default(const char *);
     void unset_default();
     void enter_default();

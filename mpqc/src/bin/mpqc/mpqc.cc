@@ -236,6 +236,7 @@ main(int argc, char *argv[])
            << "Beginning displacement " << i << ":" << endl;
       molfreq->displace(i);
 
+      mole->obsolete();
       RefSCVector gradv = mole->gradient();
       molfreq->set_gradient(i, gradv);
     }
@@ -246,7 +247,14 @@ main(int argc, char *argv[])
     tim->exit("frequencies");
   }
 
-  mole->print(cout);
+  if (mole.nonnull()) {
+    mole->print(cout);
+  }
+  else {
+    cout << node0 << "mpqc: The molecular energy object is null" << endl
+         << " make sure \"mole\" specificies a MolecularEnergy derivative"
+         << endl;
+  }
 
   ckptfile = new char[strlen(molname+5)];
   sprintf(ckptfile, "%s.wfn",molname);

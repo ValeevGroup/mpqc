@@ -68,6 +68,7 @@ Optimize::Optimize(StateIn&s):
   s.get(ckpt_);
   s.getstring(ckpt_file);
   s.get(max_iterations_);
+  s.get(max_stepsize_);
   n_iterations_ = 0;
   conv_.restore_state(s);
   function_.restore_state(s);
@@ -82,9 +83,14 @@ Optimize::Optimize(const RefKeyVal&keyval)
     ckpt_file = new char[13];
     strcpy(ckpt_file,"opt_ckpt.dat");
   }
+
   max_iterations_ = keyval->intvalue("max_iterations");
   if (keyval->error() != KeyVal::OK) max_iterations_ = 10;
   n_iterations_ = 0;
+
+  max_stepsize_ = keyval->intvalue("max_stepsize");
+  if (keyval->error() != KeyVal::OK) max_stepsize_ = 0.6;
+
   function_ = keyval->describedclassvalue("function");
 
   conv_ = keyval->describedclassvalue("convergence");
@@ -109,6 +115,7 @@ Optimize::save_data_state(StateOut&s)
   s.put(ckpt_);
   s.putstring(ckpt_file);
   s.put(max_iterations_);
+  s.put(max_stepsize_);
   conv_.save_state(s);
   function_.save_state(s);
 }

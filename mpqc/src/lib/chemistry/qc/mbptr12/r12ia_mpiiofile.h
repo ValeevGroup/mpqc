@@ -77,9 +77,11 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
 
     /// Stores an ij pair block of integrals to the file
     void store_pair_block(int i, int j, double *ints);
-    /// Commit the content of the accumulator for reading - deactivate the associated MemoryGrp
-    /// This is a collective operation
+    /** Commit the content of the accumulator for reading - deactivate the associated MemoryGrp
+        and activate the accumulator. This is a collective operation. */
     void commit();
+    /// Call when ready to read content
+    void activate();
     /// Done reading content - activate the associated MemoryGrp
     /// This is a collective operation
     void deactivate();

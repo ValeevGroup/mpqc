@@ -159,8 +159,11 @@ R12IntsAcc_MemoryGrp::store_pair_block(int i, int j, double *ints)
 void
 R12IntsAcc_MemoryGrp::deactivate()
 {
+  R12IntsAcc::deactivate();
   mem_->sync();
   mem_->set_localsize(0);
+  // so that this accumator cannot be activated again
+  committed_ = false;
 }
     
 double *

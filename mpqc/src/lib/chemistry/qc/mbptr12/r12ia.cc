@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <stdexcept>
 #include <stdlib.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
@@ -51,6 +52,7 @@ R12IntsAcc::R12IntsAcc(int num_te_types, int ni, int nj, int nx, int ny) :
   blksize_ = nxy_*sizeof(double);
   blocksize_ = blksize_*num_te_types_;
   committed_ = false;
+  active_ = false;
   next_orbital_ = 0;
 }
 
@@ -62,6 +64,7 @@ R12IntsAcc::R12IntsAcc(StateIn& si) : SavableState(si)
   si.get(nx_);
   si.get(ny_);
   int committed; si.get(committed); committed_ = (bool) committed;
+  int active; si.get(active); active_ = (bool) active;
   si.get(next_orbital_);
 
   nxy_ = nx_ * ny_;
@@ -82,7 +85,35 @@ void R12IntsAcc::save_data_state(StateOut& so)
   so.put(nx_);
   so.put(ny_);
   so.put((int)committed_);
+  so.put((int)active_);
   so.put(next_orbital_);
+}
+
+void
+R12IntsAcc::commit()
+{
+  if (!committed_)
+    committed_ = true;
+  else
+    throw std::runtime_error("R12IntsAcc::commit() -- accumulator has already been committed");
+  activate();
+}
+
+void
+R12IntsAcc::activate()
+{
+  if (active_)
+    throw std::runtime_error("R12IntsAcc::activate() -- accumulator is already active");
+  if (is_committed())
+    active_ = true;
+  else
+    throw std::runtime_error("R12IntsAcc::activate() -- accumulator hasn't been committed yet");
+}
+
+void
+R12IntsAcc::deactivate()
+{
+  active_ = false;
 }
 
 int R12IntsAcc::next_orbital() const

@@ -223,6 +223,12 @@ R12IntsAcc_Node0File::commit()
   mem_->sync();
   mem_->deactivate();
   R12IntsAcc::commit();
+}
+
+void
+R12IntsAcc_Node0File::activate()
+{
+  R12IntsAcc::activate();
   datafile_ = open(filename_, O_RDONLY);
 }
 
@@ -231,6 +237,7 @@ R12IntsAcc_Node0File::deactivate()
 {
   mem_->activate();
   close(datafile_);
+  R12IntsAcc::deactivate();
 }
 
 double *

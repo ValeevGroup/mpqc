@@ -77,6 +77,7 @@ class R12IntsAcc: virtual public SavableState {
     
     int next_orbital_;  // The first index of the next batch to be stored
     bool committed_;    // Whether all data has been written out and ready to be read
+    bool active_;       // Whether ready to read data
 
     /// The index of the first orbital in the next integrals batch to be stored
     void inc_next_orbital(int ni);
@@ -116,11 +117,15 @@ class R12IntsAcc: virtual public SavableState {
     /// Stores an ij pair block of integrals (assumes the block resides locally)
     virtual void store_pair_block(int i, int j, double *ints)=0;
     /// Commit the content of the accumulator for reading
-    virtual void commit() { committed_ = true; };
+    virtual void commit();
     /// Has the content of the accumulator been commited for reading?
-    bool is_committed() { return committed_; };
+    bool is_committed() { return committed_; }
+    /// Call before starting to read content
+    virtual void activate();
     /// Call when done reading content
-    virtual void deactivate() {};
+    virtual void deactivate();
+    /// Check if can read content
+    const bool is_active() { return active_; }
     /// Retrieves an ij pair block of integrals
     virtual double* retrieve_pair_block(int i, int j, tbint_type oper_type) =0;
     /// Releases an ij pair block of integrals (if needed)

@@ -158,6 +158,12 @@ R12IntsAcc_MPIIOFile::commit()
   mem_->sync();
   mem_->deactivate();
   R12IntsAcc::commit();
+}
+
+void
+R12IntsAcc_MPIIOFile::activate()
+{
+  R12IntsAcc::activate();
   int errcod = MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_RDONLY | MPI_MODE_DELETE_ON_CLOSE, MPI_INFO_NULL, &datafile_);
   check_error_code_(errcod);
 }
@@ -168,6 +174,7 @@ R12IntsAcc_MPIIOFile::deactivate()
   mem_->activate();
   int errcod = MPI_File_close(&datafile_);
   check_error_code_(errcod);
+  R12IntsAcc::deactivate();
 }
 
 void

@@ -85,9 +85,11 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
     void store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t blksize = 0);
     /// Stores an ij pair block of integrals to the file
     void store_pair_block(int i, int j, double *ints);
-    /// Commit the content of the accumulator for reading - deactivate the associated MemoryGrp
-    /// This is a collective operation
+    /** Commit the content of the accumulator for reading - deactivate the associated MemoryGrp
+        and activate the accumulator. This is a collective operation. */
     void commit();
+    /// Call when ready to start reading content
+    void activate();
     /// Done reading content - activate the associated MemoryGrp
     /// This is a collective operation
     void deactivate();

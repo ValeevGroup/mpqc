@@ -76,7 +76,7 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
     /// Stores an ij pair block of integrals (assumes the block resides locally)
     void store_pair_block(int i, int j, double *ints);
     /// Done reading content - call set_localsize(0) on the associated MemoryGrp
-    /// This is a collective operation
+    /// This is a collective operation. This accumulator cannot be activated again.
     void deactivate();
     /// Retrieves an ij pair block of integrals
     double* retrieve_pair_block(int i, int j, tbint_type oper_type);

@@ -170,6 +170,21 @@ DenIntegrator::init_integration(const RefDenFunctional &func,
 }
 
 void
+DenIntegrator::done_integration()
+{
+  RefMessageGrp msg = MessageGrp::get_default_messagegrp();
+
+  msg->sum(value_);
+  if (compute_potential_integrals_) {
+      int ntri = (nbasis_*(nbasis_+1))/2;
+      msg->sum(alpha_vmat_,ntri);
+      if (spin_polarized_) {
+          msg->sum(beta_vmat_,ntri);
+        }
+    }
+}
+
+void
 DenIntegrator::get_density(double *dmat, double &den, double dengrad[3])
 {
   int i, j;
@@ -600,7 +615,14 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
   double *r_values = new double[nr_max];
   double *dr_dq = new double[nr_max];
 
+  RefMessageGrp msg = MessageGrp::get_default_messagegrp();
+  int nproc = msg->n();
+  int me = msg->me();
+  int parallel_counter = 0;
+
   for (icenter=0; icenter < ncenters; icenter++) {
+      if (! (parallel_counter++%nproc == me)) continue;
+
       point_count=0;
       center = centers[icenter];
       int r_done = 0;
@@ -672,6 +694,9 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
         }
       point_count_total+=point_count;
     }
+
+  msg->sum(point_count_total);
+  done_integration();
 
      cout << node0 << indent
           << "Total integration points = " << point_count_total << endl;

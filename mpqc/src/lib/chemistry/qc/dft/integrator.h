@@ -63,6 +63,7 @@ class DenIntegrator: virtual_base public SavableState {
     void init_integration(const RefDenFunctional &func,
                           const RefSymmSCMatrix& densa,
                           const RefSymmSCMatrix& densb);
+    void done_integration();
     double do_point(const SCVector3 &r, const RefDenFunctional &,
                     double weight);
   public:

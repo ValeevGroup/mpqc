@@ -296,6 +296,8 @@ OneBodyWavefunction::density()
   }
 
   return density_.result_noupdate();
+#else
+  return 0;
 #endif
 }
 

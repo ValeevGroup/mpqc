@@ -84,6 +84,7 @@ HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
   cl_fock_(this),
   op_fock_(this)
 {
+  int i;
   int me = scf_grp_->me();
   
   cl_fock_.compute()=0;
@@ -96,7 +97,7 @@ HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
   int Znuc=0;
   PointBag_double *z = molecule()->charges();
   
-  for (Pix i=z->first(); i; z->next(i)) Znuc += (int) z->get(i);
+  for (Pix p=z->first(); p; z->next(p)) Znuc += (int) z->get(p);
 
   // check to see if this is to be a charged molecule
   int charge = keyval->intvalue("total_charge");
@@ -141,7 +142,7 @@ HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
     ndocc_ = new int[nirrep_];
     nsocc_ = new int[nirrep_];
     user_occupations_=1;
-    for (int i=0; i < nirrep_; i++) {
+    for (i=0; i < nirrep_; i++) {
       ndocc_[i] = keyval->intvalue("docc",i);
       nsocc_[i] = keyval->intvalue("socc",i);
     }
@@ -152,7 +153,6 @@ HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
     set_occupations(0);
   }
 
-  int i;
   cout << node0 << indent << "docc = [";
   for (i=0; i < nirrep_; i++)
     cout << node0 << " " << ndocc_[i];

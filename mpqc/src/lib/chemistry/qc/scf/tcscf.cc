@@ -114,7 +114,7 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
   int Znuc=0;
   PointBag_double *z = molecule()->charges();
   
-  for (Pix i=z->first(); i; z->next(i)) Znuc += (int) z->get(i);
+  for (Pix p=z->first(); p; z->next(p)) Znuc += (int) z->get(p);
 
   // check to see if this is to be a charged molecule
   int charge = keyval->intvalue("total_charge");

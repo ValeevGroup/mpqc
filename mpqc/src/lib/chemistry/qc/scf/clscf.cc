@@ -73,6 +73,7 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
   SCF(keyval),
   cl_fock_(this)
 {
+  int i;
   int me = scf_grp_->me();
   
   cl_fock_.compute()=0;
@@ -82,7 +83,7 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
   int Znuc=0;
   PointBag_double *z = molecule()->charges();
   
-  for (Pix i=z->first(); i; z->next(i)) Znuc += (int) z->get(i);
+  for (Pix p=z->first(); p; z->next(p)) Znuc += (int) z->get(p);
 
   // check to see if this is to be a charged molecule
   int charge = keyval->intvalue("total_charge");
@@ -109,7 +110,7 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
   if (keyval->exists("docc")) {
     ndocc_ = new int[nirrep_];
     user_occupations_=1;
-    for (int i=0; i < nirrep_; i++) {
+    for (i=0; i < nirrep_; i++) {
       ndocc_[i]=0;
 
       if (keyval->exists("docc",i))
@@ -122,7 +123,7 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
   }
 
   cout << node0 << indent << "docc = [";
-  for (int i=0; i < nirrep_; i++)
+  for (i=0; i < nirrep_; i++)
     cout << node0 << " " << ndocc_[i];
   cout << node0 << " ]\n";
 

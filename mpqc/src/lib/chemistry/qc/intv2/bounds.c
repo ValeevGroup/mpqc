@@ -1,5 +1,9 @@
 
 /* $Log$
+ * Revision 1.8  1995/10/25 21:15:46  cljanss
+ * Cleaned up and added int_bound_to_double.  Fixed a bug that made bounds
+ * underestimated by at most a factor of 4.
+ *
  * Revision 1.7  1995/09/21 18:19:20  ibniels
  * Added function int_erep_2bound
  *
@@ -271,79 +275,20 @@ int_bound_t *overall;
 int_bound_t *vec;
 int flag;
 {
-  int nint;
-  int shellij;
   int sh1,sh2;
-  int shells[4],size[4];
-  double max;
-  double tol = pow(2.0,-126.0);
-  double loginv = 1.0/log(2.0);
-  centers_t *cs1;
-  int erep_flags = INT_EREP|INT_REDUND|INT_NOPERM|INT_NOBCHK;
-  int old_int_integral_storage = int_integral_storage;
-  int_integral_storage = 0;
+  centers_t *cs1 = int_cs1;
 
-  cs1 = int_cs1;
   if ((cs1 != int_cs2)&&(cs1 != int_cs3)&&(cs1 != int_cs4)) {
     fprintf(stderr,"bounds.compute_bounds: all centers must be the same\n");
     exit(1);
     }
 
-  shellij=0;
   *overall = -126;
   for(sh1=0; sh1 < cs1->nshell ; sh1++) {
-    shells[0]=shells[2]=sh1;
-    for(sh2=0; sh2 <= sh1 ; sh2++,shellij++) {
-      shells[1]=shells[3]=sh2;
-
-      if (flag == COMPUTE_Q) {
-        int_erep_v(erep_flags,shells,size);
-        nint = size[0]*size[1]*size[0]*size[1];
-        max = find_max(int_buffer,nint);
-        }
-      else if (flag == COMPUTE_R) {
-        double max1,max2;
-        int_erep_bound1der(erep_flags,sh1,sh2,&nint);
-        max1 = find_max(int_buffer,nint);
-#if 0
-        printf("bound(%d) for (%d,%d) is %12.8f int_buffer =",
-               flag,sh1,sh2,max1);
-        for (i=0; (i<nint)&&(i<27); i++) printf(" %12.8f",int_buffer[i]);
-        if (nint > 27) printf(" ...");
-        printf("\n");
-#endif
-        int_erep_bound1der(erep_flags,sh2,sh1,&nint);
-        max2 = find_max(int_buffer,nint);
-        max = (max1>max2)?max1:max2;
-        }
-      else {
-        printf("bad bound flag\n"); exit(1);
-        }
-
-    /* Compute the partial bound value. */
-      max = sqrt(max);
-      if (max>tol) {
-        vec[shellij] = (int_bound_t) (log(max)*loginv);
-        }
-      else {
-        vec[shellij] = (int_bound_t) -126;
-        }
-
-    /* Multiply R contributions by a factor of two to account for
-     * fact that contributions from both centers must be accounted
-     * for. */
-      if (flag == COMPUTE_R) vec[shellij]++;
-      if (vec[shellij]>*overall) *overall = vec[shellij];
-#if 0
-      printf("bound(%d) for (%d,%d) is %4d int_buffer =",
-             flag,sh1,sh2,vec[shellij]);
-      for (i=0; (i<nint)&&(i<27); i++) printf(" %12.8f",int_buffer[i]);
-      if (nint > 27) printf(" ...");
-      printf("\n");
-#endif
+    for(sh2=0; sh2 <= sh1 ; sh2++) {
+      compute_bounds_shell(overall,vec,flag,sh1,sh2);
       }
     }
-  int_integral_storage = old_int_integral_storage;
   }
 
 /* Compute the partial bound arrays, either Q or R can be computed
@@ -387,6 +332,9 @@ int sh2;
         int_erep_v(erep_flags,shells,size);
         nint = size[0]*size[1]*size[0]*size[1];
         max = find_max(int_buffer,nint);
+#if 0
+        printf("max for %d %d (size %d) is %15.11f\n", sh1, sh2, nint, max);
+#endif
         }
       else if (flag == COMPUTE_R) {
         double max1,max2;
@@ -410,7 +358,7 @@ int sh2;
     /* Compute the partial bound value. */
       max = sqrt(max);
       if (max>tol) {
-        vec[shellij] = (int_bound_t) (log(max)*loginv);
+        vec[shellij] = (int_bound_t) (log(max)*loginv + 0.999999999);
         }
       else {
         vec[shellij] = (int_bound_t) -126;
@@ -443,6 +391,15 @@ double value;
 
   if (value > tol) res = log(value)*loginv;
   else res = -126;
+  return res;
+  }
+
+/* This function is used to convert a bound to a double. */
+GLOBAL_FUNCTION double
+int_bound_to_double(bound)
+int bound;
+{
+  double res = pow(2.0,bound);
   return res;
   }
 

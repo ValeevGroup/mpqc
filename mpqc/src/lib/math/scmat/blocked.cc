@@ -137,7 +137,7 @@ BlockedSCMatrixKit::vector(const RefSCDimension&d)
 /////////////////////////////////////////////////////////////////////////////
 
 #define CLASSNAME BlockedSCElementOp
-#define PARENTS public SCElementOP
+#define PARENTS public SCElementOp
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 void *
@@ -166,7 +166,7 @@ BlockedSCElementOp::current_block() const
 }
 
 #define CLASSNAME BlockedSCElementOp2
-#define PARENTS public SCElementOP2
+#define PARENTS public SCElementOp2
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 void *
@@ -195,7 +195,7 @@ BlockedSCElementOp2::current_block() const
 }
 
 #define CLASSNAME BlockedSCElementOp3
-#define PARENTS public SCElementOP3
+#define PARENTS public SCElementOp3
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 void *

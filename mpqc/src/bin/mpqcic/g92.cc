@@ -185,9 +185,10 @@ main(int argc, char *argv[])
     RefSCDimension dim3 = new LocalSCDimension(dim1->n() * dim2->n());
     RefSCVector normals = dim3->create_vector();
     RefSCVector freqs = dim2->create_vector();
+    RefSCVector fc = dim3->create_vector();
     
     if (g92_freq_driver(molname, mol, g92kv, 0, energy, gradient, freqs,
-                        normals, nmodes, nimag) < 0) {
+                        normals, fc, nmodes, nimag) < 0) {
       fprintf(stderr,"could not do g92 freqs\n");
     }
 

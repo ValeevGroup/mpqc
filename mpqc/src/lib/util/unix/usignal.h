@@ -29,7 +29,7 @@
 #include <signal.h>
 
 #if defined(SGI)
-#ifdef __GNUC__
+#if defined(__GNUC__) && __GNUC_MINOR__ < 6
 typedef  void  Sigfunc(int,...);  /* for signal handlers */
 #else
 typedef  void  Sigfunc(...);  /* for signal handlers */

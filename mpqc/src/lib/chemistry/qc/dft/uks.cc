@@ -113,18 +113,6 @@ UKS::scf_energy()
   mvb.scale(-1.0);
   fockb_.result_noupdate().accumulate(mvb);
   double ehf = UnrestrictedSCF::scf_energy();
-  hcore_.print("Hcore");
-  alpha_ao_density().print("Da AO");
-  beta_ao_density().print("Db AO");
-  alpha_density().print("Da");
-  beta_density().print("Db");
-  vaxc_.print("VAXC");
-  vbxc_.print("VBXC");
-  focka_.result_noupdate().print("FockA");
-  fockb_.result_noupdate().print("FockB");
-  cout << scprintf("E(USCF) = %12.8f", ehf) << endl;
-  cout << scprintf("E(X-C) = %12.8f", exc_) << endl;
-  cout << indent << scprintf("E(TOTAL)   = %12.8f", ehf+exc_) << endl;
   focka_.result_noupdate().accumulate(vaxc_);
   fockb_.result_noupdate().accumulate(vbxc_);
   return ehf + exc_;
@@ -278,7 +266,6 @@ UKS::ao_fock()
   integrator_->set_compute_potential_integrals(1);
   integrator_->integrate(functional_, diff_densa_, diff_densb_);
   exc_ = integrator_->value();
-  cout << indent << scprintf("E(X-C) = %12.8f", exc_) << endl;
   RefSymmSCMatrix vxa = gmata_.clone();
   RefSymmSCMatrix vxb = gmatb_.clone();
   vxa->assign((double*)integrator_->alpha_vmat());

@@ -138,6 +138,9 @@ class GaussianBasisSet: public SavableState
     int nprim_;
     bool has_pure_;
 
+    GaussianBasisSet(const char* name, const Ref<Molecule>& molecule, const Ref<SCMatrixKit>& matrixkit, const RefSCDimension& basisdim,
+		     const int ncenter, const int nshell, GaussianShell** shell);
+
     void recursively_get_shell(int&,Ref<KeyVal>&,
                                const char*,const char*,BasisFileSet&,
                                int,int,int);
@@ -279,6 +282,9 @@ class GaussianBasisSet: public SavableState
     GaussianBasisSet(const Ref<KeyVal>&);
     GaussianBasisSet(StateIn&);
     virtual ~GaussianBasisSet();
+
+    /// Constructs a GaussianBasisSet object that is a "concatenation" of this object with B
+    Ref<GaussianBasisSet> operator+(const Ref<GaussianBasisSet>& B);
 
     void save_data_state(StateOut&);
 

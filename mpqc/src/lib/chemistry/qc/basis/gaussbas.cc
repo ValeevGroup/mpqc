@@ -30,6 +30,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdexcept>
 
 #include <scconfig.h>
 #ifdef HAVE_SSTREAM
@@ -169,6 +170,76 @@ GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
     }
 
   init2();
+}
+
+GaussianBasisSet::GaussianBasisSet(const char* name, const Ref<Molecule>& molecule, const Ref<SCMatrixKit>& matrixkit, const RefSCDimension& basisdim,
+				   const int ncenter, const int nshell, GaussianShell** shell) :
+  molecule_(molecule),
+  matrixkit_(matrixkit),
+  basisdim_(basisdim),
+  ncenter_(ncenter),
+  nshell_(nshell),
+  shell_(shell)
+{
+  name_ = new_string(name);
+  center_to_nshell_.resize(ncenter_);
+  
+  init2();
+}
+
+Ref<GaussianBasisSet>
+GaussianBasisSet::operator+(const Ref<GaussianBasisSet>& B)
+{
+  GaussianBasisSet* b = B.pointer();
+  if (molecule_.pointer() != b->molecule_.pointer())
+    throw std::runtime_error("GaussianBasisSet::operator+ -- cannot concatenate basis sets, molecules are different");
+
+  Ref<Molecule> molecule = molecule_;
+  Ref<SCMatrixKit> matrixkit = matrixkit_;
+  const int ncenter = ncenter_;
+  const int nshell = nshell_ + b->nshell_;
+
+  GaussianShell** shell = new GaussianShell*[nshell];
+  int* func_per_shell = new int[nshell];
+  for (int i=0; i<nshell; i++) {
+     const GaussianShell* gsi;
+    if (i < nshell_)
+      gsi = shell_[i];
+    else
+      gsi = b->shell_[i];
+
+    int nc=gsi->ncontraction();
+    int np=gsi->nprimitive();
+    func_per_shell[i] = gsi->nfunction();
+    
+    int *ams = new int[nc];
+    int *pure = new int[nc];
+    double *exps = new double[np];
+    double **coefs = new double*[nc];
+    
+    for (int j=0; j < nc; j++) {
+      ams[j] = gsi->am(j);
+      pure[j] = gsi->is_pure(j);
+      coefs[j] = new double[np];
+      for (int k=0; k < np; k++)
+	coefs[j][k] = gsi->coefficient_unnorm(j,k);
+    }
+    
+    for (int j=0; j < np; j++)
+      exps[j] = gsi->exponent(j);
+    
+    shell[i] = new GaussianShell(nc, np, exps, ams, pure, coefs,
+				 GaussianShell::Unnormalized);
+  }
+
+  int nbas = nbasis() + b->nbasis();
+  RefSCDimension basisdim = new SCDimension(nbas, nshell, func_per_shell, "basis set dimension");
+
+  Ref<GaussianBasisSet> AplusB = new GaussianBasisSet("", molecule, matrixkit, basisdim, ncenter, nshell, shell);
+
+  delete[] func_per_shell;
+
+  return AplusB;
 }
 
 GaussianBasisSet::GaussianBasisSet(StateIn&s):

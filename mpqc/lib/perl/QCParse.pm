@@ -334,7 +334,9 @@ sub charge {
     $_ = $self->{"parser"}->value("charge");
     s/^\s+//;
     s/\s+$//;
-    if (! /\d+/) {
+    s/^\+//;
+    if (/^$/) { $_ = "0"; }
+    if (! /^-?\d+$/) {
         $self->error("Bad charge: $_ (using 0)\n");
         $_ = "0";
     }
@@ -384,7 +386,7 @@ sub state {
 sub mult {
     my $self = shift;
     $_ = $self->state();
-    s/(\d)\D.*$/\1/;
+    s/^\s*(\d+)/\1/;
     if (/^\s*$/) {
         $_ = 1;
     }
@@ -559,7 +561,9 @@ package MPQCInputWriter;
               "OPT2[2]" => "MBPT2",
               "ZAPT2" => "MBPT2",
               "ROSCF" => "SCF",
-              "SCF" => "SCF" );
+              "SCF" => "SCF",
+              "UHF" => "UHF",
+             );
 %mbpt2map = ("MP2" => "mp",
              "OPT1[2]" => "opt1",
              "OPT2[2]" => "opt2",
@@ -603,7 +607,7 @@ sub input_string() {
     printf "MPQCInputWriter: natom = %d\n", $qcinput->n_atom() if ($debug);
     my $i;
     for ($i = 0; $i < $qcinput->n_atom(); $i++) {
-        $mol = sprintf "%s\n    %s     [ %14.8f %14.8f %14.8f ]",
+        $mol = sprintf "%s\n    %2s     [ %14.8f %14.8f %14.8f ]",
                        $mol, $qcinput->element($i),
                        $qcinput->position($i,0),
                        $qcinput->position($i,1),
@@ -643,8 +647,12 @@ sub input_string() {
     $coor = "$coor$fixed";
     $coor = "$coor\n  )\n";
 
+    my $charge = $qcinput->charge();
+    my $mult = $qcinput->mult();
+
     my $memory = $qcinput->memory();
-    my $method = $methodmap{uc($qcinput->method())};
+    my $inputmethod = $methodmap{uc($qcinput->method())};
+    my $method = "$inputmethod";
     $method = "SCF" if ($method eq "");
     if ($method eq "SCF") {
         if ($qcinput->mult() == 1) {
@@ -667,7 +675,9 @@ sub input_string() {
     $mole = "$mole\n    basis = \$:basis";
     $mole = "$mole\n    coor = \$..:coor";
     $mole = "$mole\n    memory = $memory";
-    if ($methodmap{uc($qcinput->method())} eq "SCF") {
+    if ($inputmethod eq "SCF" || $inputmethod eq "UHF") {
+        $mole = "$mole\n    total_charge = $charge";
+        $mole = "$mole\n    multiplicity = $mult";
         $mole = "$mole\n    print_npa = yes";
     }
     if ($method eq "MBPT2") {
@@ -687,12 +697,16 @@ sub input_string() {
         $mole = "$mole\n    reference<$refmethod>: (";
         $mole = "$mole\n      molecule = \$:molecule";
         $mole = "$mole\n      basis = \$:basis";
+        $mole = "$mole\n      total_charge = $charge";
+        $mole = "$mole\n      multiplicity = $mult";
         $mole = "$mole\n      memory = $memory";
         if (! ($basis =~ /^STO/
                || $basis =~ /^MI/
                || $basis =~ /^\d-\d1G$/)) {
             $mole = "$mole\n      guess_wavefunction<$refmethod>: (";
             $mole = "$mole\n        molecule = \$:molecule";
+            $mole = "$mole\n        total_charge = $charge";
+            $mole = "$mole\n        multiplicity = $mult";
             $mole = "$mole\n        basis<GaussianBasisSet>: (";
             $mole = "$mole\n          molecule = \$:molecule";
             $mole = "$mole\n          name = \"STO-3G\"";
@@ -707,6 +721,8 @@ sub input_string() {
               || $basis =~ /^\d-\d1G$/)) {
         $mole = "$mole\n    guess_wavefunction<$method>: (";
         $mole = "$mole\n      molecule = \$:molecule";
+        $mole = "$mole\n      total_charge = $charge";
+        $mole = "$mole\n      multiplicity = $mult";
         $mole = "$mole\n      basis<GaussianBasisSet>: (";
         $mole = "$mole\n        molecule = \$:molecule";
         $mole = "$mole\n        name = \"STO-3G\"";
@@ -765,7 +781,16 @@ sub input_string() {
     $mpqcstart = sprintf ("%s  savestate = %s\n",
                           $mpqcstart,bool_to_yesno($qcinput->checkpoint()));
     my $mpqcstop = ")\n";
-    "$mol$basis$mpqcstart$coor$mole$opt$freq$mpqcstop";
+    my $emacs = "% Emacs should use -*- KeyVal -*- mode\n";
+    my $warn = "% this file was automatically generated\n";
+    my $lab = $qcinput->label();
+    my $label = "";
+    if (! $lab =~ /^\s*$/) {
+        $label = "% label: $lab";
+        $label =~ s/\n/\n% label: /g;
+        $label = "$label\n";
+    }
+    "$emacs$warn$label$mol$basis$mpqcstart$coor$mole$opt$freq$mpqcstop";
 }
 
 sub mpqc_fixed_coor {
@@ -844,7 +869,8 @@ package G94InputWriter;
               "OPT2[2]" => "MP2",
               "ZAPT2" => "MB2",
               "SCF" => "SCF",
-              "ROSCF" => "ROSCF"
+              "ROSCF" => "ROSCF",
+              "UHF" => "UHF",
               );
 
 sub new {

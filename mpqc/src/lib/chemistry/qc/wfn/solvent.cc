@@ -85,7 +85,7 @@ NElInShapeFunctional::point(const PointInputData &id,
 {
   vol_->set_x(id.r);
   if (vol_->value() <= isoval_) {
-      od.energy = id.rho_a + id.rho_b;
+      od.energy = id.a.rho + id.b.rho;
     }
   else {
       od.energy = 0.0;

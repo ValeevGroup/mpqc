@@ -68,23 +68,30 @@ LinOPSimpleCo::_castdown(const ClassDesc*cd)
 }
 SimpleCo_IMPL(LinOPSimpleCo)
 
-LinOPSimpleCo::LinOPSimpleCo() : SimpleCo(4) {}
+LinOPSimpleCo::LinOPSimpleCo() : SimpleCo(3), u2(3)
+{
+  u2[0] = 0.0; u2[1] = 1.0; u2[2] = 0.0;
+}
 
 LinOPSimpleCo::LinOPSimpleCo(const LinOPSimpleCo& s)
-  : SimpleCo(4)
+  : SimpleCo(3), u2(3)
 {
   *this=s;
 }
 
-LinOPSimpleCo::LinOPSimpleCo(const char *refr, int a1, int a2, int a3, int a4)
-  : SimpleCo(4,refr)
+LinOPSimpleCo::LinOPSimpleCo(const char *refr, int a1, int a2, int a3,
+                             const Point &u)
+  : SimpleCo(3,refr), u2(u)
 {
-  atoms[0]=a1; atoms[1]=a2; atoms[2]=a3; atoms[3]=a4;
+  atoms[0]=a1; atoms[1]=a2; atoms[2]=a3;
+  normalize(u2);
 }
 
 LinOPSimpleCo::LinOPSimpleCo(const RefKeyVal &kv) :
-  SimpleCo(kv,4)
+  SimpleCo(kv,3), u2(3)
 {
+  for (int i=0; i<3; i++) u2[i] = kv->doublevalue("u",i);
+  normalize(u2);
 }
 
 LinOPSimpleCo::~LinOPSimpleCo()
@@ -99,6 +106,7 @@ LinOPSimpleCo::operator=(const LinOPSimpleCo& s)
   strcpy(label_,s.label_);
   atoms[0]=s.atoms[0]; atoms[1]=s.atoms[1]; atoms[2]=s.atoms[2];
   atoms[3]=s.atoms[3];
+  u2 = s.u2;
   return *this;
 }
 
@@ -106,10 +114,9 @@ double
 LinOPSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 {
   int a=atoms[0]-1; int b=atoms[1]-1; int c=atoms[2]-1; int d=atoms[3]-1;
-  Point u1(3),u2(3),u3(3),z1(3);
+  Point u1(3),u3(3),z1(3);
 
   norm(u1,m[a].point(),m[b].point());
-  norm(u2,m[d].point(),m[b].point());
   norm(u3,m[c].point(),m[b].point());
   normal(u2,u1,z1);
 

@@ -56,6 +56,7 @@
 #include <util/class/classi.h>
 
 #define CLASSNAME IntCoorGen
+#define VERSION 2
 #define PARENTS public SavableState
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -733,7 +734,8 @@ IntCoorGen::IntCoorGen(const RefMolecule& mol,
   radius_scale_factor_ = 1.1;
   linear_bend_thres_ = cos(5.0*M_PI/360.0);
   linear_tors_thres_ = cos(5.0*M_PI/360.0);
-  linear_bends_ = 1;
+  linear_bends_ = 0;
+  linear_lbends_ = 1;
   linear_tors_ = 0;
   linear_stors_ = 1;
 }
@@ -756,7 +758,10 @@ IntCoorGen::IntCoorGen(const RefKeyVal& keyval)
       linear_tors_thres_ = 5.0;
 
   linear_bends_ = keyval->booleanvalue("linear_bends");
-  if (keyval->error() != KeyVal::OK) linear_bends_ = 1;
+  if (keyval->error() != KeyVal::OK) linear_bends_ = 0;
+
+  linear_lbends_ = keyval->booleanvalue("linear_lbends");
+  if (keyval->error() != KeyVal::OK) linear_lbends_ = 1;
 
   linear_tors_ = keyval->booleanvalue("linear_tors");
   if (keyval->error() != KeyVal::OK) linear_tors_ = 0;
@@ -790,6 +795,9 @@ IntCoorGen::IntCoorGen(StateIn& s):
 {
   molecule_.restore_state(s);
   s.get(linear_bends_);
+  if (s.version(static_class_desc()) >= 2) {
+      s.get(linear_lbends_);
+    }
   s.get(linear_tors_);
   s.get(linear_stors_);
   s.get(linear_bend_thres_);
@@ -809,6 +817,7 @@ IntCoorGen::save_data_state(StateOut& s)
 {
   molecule_.save_state(s);
   s.put(linear_bends_);
+  s.put(linear_lbends_);
   s.put(linear_tors_);
   s.put(linear_stors_);
   s.put(linear_bend_thres_);
@@ -823,6 +832,7 @@ IntCoorGen::print(ostream& out)
 {
   out << node0 << indent << "IntCoorGen:" << endl << incindent
       << indent << "linear_bends = " << linear_bends_ << endl
+      << indent << "linear_lbends = " << linear_lbends_ << endl
       << indent << "linear_tors = " << linear_tors_ << endl
       << indent << "linear_stors = " << linear_stors_ << endl
       << indent << scprintf("linear_bend_threshold = %f\n",linear_bend_thres_)
@@ -964,10 +974,46 @@ IntCoorGen::add_bends(const RefSetIntCoor& list, BitArray& bonds, Molecule& m)
       if(bonds(i,j)) {
         for(k=0; k < i; k++) {
           if(bonds(j,k)) {
-            if (linear_bends_ || (cos_ijk(m,i,j,k) < thres)) {
+            int is_linear = (cos_ijk(m,i,j,k) >= thres);
+            if (linear_bends_ || !is_linear) {
               labelc++;
               sprintf(label,"b%d",labelc);
               list->add(new Bend(label,k+1,j+1,i+1));
+              }
+            if (linear_lbends_ && is_linear) {
+              // find a unit vector roughly perp to the bonds
+              Point u(3);
+              // first try to find another atom, that'll help keep one of
+              // the coordinates totally symmetric in some cases
+              int most_perp_atom = -1;
+              double cos_most_perp = thres;
+              for (int l=0; l < n; l++) {
+                if (l == i || l == j || l == k) continue;
+                double tmp = cos_ijk(m,i,j,l);
+                if (tmp < cos_most_perp) {
+                  cos_most_perp = tmp;
+                  most_perp_atom = l;
+                  }
+                }
+              if (most_perp_atom != -1) {
+                norm(u,m[j].point(),m[most_perp_atom].point());
+                }
+              else {
+                SCVector3 b1, b2, uv;
+                int ii;
+                for (ii=0; ii<3; ii++) {
+                  b1[ii] = m.atom(i)[ii] - m.atom(j)[ii];
+                  b2[ii] = m.atom(k)[ii] - m.atom(j)[ii];
+                  }
+                uv = b1.perp_unit(b2);
+                for (ii=0; ii<3; ii++) u[ii] = uv[ii];
+                }
+              labelc++;
+              sprintf(label,"b%d",labelc);
+              list->add(new LinIP(label,k+1,j+1,i+1,u));
+              labelc++;
+              sprintf(label,"b%d",labelc);
+              list->add(new LinOP(label,k+1,j+1,i+1,u));
               }
 	    }
           }
@@ -1103,5 +1149,5 @@ IntCoorGen::nearest_contact(int i, Molecule& m)
 
 // Local Variables:
 // mode: c++
-// eval: (c-set-style "CLJ")
+// eval: (c-set-style "CLJ-CONDENSED")
 // End:

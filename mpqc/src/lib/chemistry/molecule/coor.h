@@ -240,6 +240,7 @@ class IntCoorGen: public SavableState
     RefMolecule molecule_;
     
     int linear_bends_;
+    int linear_lbends_;
     int linear_tors_;
     int linear_stors_;
     int nextra_bonds_;

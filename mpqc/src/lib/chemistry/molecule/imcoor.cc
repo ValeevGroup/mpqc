@@ -272,8 +272,9 @@ IntMolecularCoor::init()
           == StreSimpleCo::static_class_desc()) {
           bonds_->add(coor);
         }
-      else if (coor->class_desc()
-               == BendSimpleCo::static_class_desc()) {
+      else if (coor->class_desc() == BendSimpleCo::static_class_desc()
+               || coor->class_desc() == LinIPSimpleCo::static_class_desc()
+               || coor->class_desc() == LinOPSimpleCo::static_class_desc()) {
           bends_->add(coor);
         }
       else if (coor->class_desc()

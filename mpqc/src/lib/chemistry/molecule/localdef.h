@@ -106,6 +106,15 @@ scalar(const double a[], const double b[])
 
 ///////////////////////////////////////////////////////////
 
+static inline void
+normalize(Point& u)
+{
+  double x = 1.0/sqrt(scalar(u,u));
+  u[0] *= x; u[1] *= x; u[2] *= x;
+}
+
+///////////////////////////////////////////////////////////
+
 // given vectors a and b, returns a unit vector directed along the difference
 // of the two vectors
 static inline void

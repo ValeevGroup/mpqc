@@ -357,7 +357,7 @@ typedef OutSimpleCo Out;
 
 //.
 // \clsnm{LinIPSimpleCo} is used to describe the distortion of linear
-// angles.  It is intended for use in finite displacement calculations.
+// angles.
 class LinIPSimpleCo : public SimpleCo { 
 #   define CLASSNAME LinIPSimpleCo
 #   define HAVE_CTOR
@@ -366,16 +366,19 @@ class LinIPSimpleCo : public SimpleCo {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
 SimpleCo_DECLARE(LinIPSimpleCo)
+  private:
+    Point u2;
   public:
     LinIPSimpleCo();
     LinIPSimpleCo(const LinIPSimpleCo&);
-    //. This constructor takes a string containing a label, and four
-    // integers a, b, c, and d which give the indices of the atoms involved in
-    // the linear angle abc.  d is an atom in the plane of the
-    // distortion.  Atom numbering begins at atom 1, not atom 0.
-    LinIPSimpleCo(const char *refr, int, int, int, int);
+    //. This constructor takes a string containing a label, and three
+    // integers a, b, and d which give the indices of the atoms involved in
+    // the linear angle abc.  The last argument, u, is a unit vector
+    // used to defined the direction in which distortion is measured.
+    // Atom numbering begins at atom 1, not atom 0.
+    LinIPSimpleCo(const char *refr, int, int, int, const Point &u);
     //. The \clsnmref{KeyVal} constructor.  This calls the \clsnm{SimpleCo} keyval
-    // constructor with an integer argument of 4.
+    // constructor with an integer argument of 3.
     LinIPSimpleCo(const RefKeyVal&);
 
     ~LinIPSimpleCo();
@@ -396,8 +399,8 @@ typedef LinIPSimpleCo LinIP;
 /////////////////////////////////////////////////////////////////////////
 
 //.
-// \clsnm{LinIPSimpleCo} is used to describe the distortion of linear
-// angles.  It is intended for use in finite displacement calculations.
+// \clsnm{LinOPSimpleCo} is used to describe the distortion of linear
+// angles.
 class LinOPSimpleCo : public SimpleCo { 
 #   define CLASSNAME LinOPSimpleCo
 #   define HAVE_CTOR
@@ -406,16 +409,19 @@ class LinOPSimpleCo : public SimpleCo {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
 SimpleCo_DECLARE(LinOPSimpleCo)
+  private:
+    Point u2;
   public:
     LinOPSimpleCo();
     LinOPSimpleCo(const LinOPSimpleCo&);
-    //. This constructor takes a string containing a label, and four
-    // integers a, b, c, and d which give the indices of the atoms involved in
-    // the linear angle abc.  d is an atom perpendicular to the plane of the
-    // distortion.  Atom numbering begins at atom 1, not atom 0.
-    LinOPSimpleCo(const char *refr, int =0, int =0, int =0, int =0);
+    //. This constructor takes a string containing a label, and three
+    // integers a, b, and c which give the indices of the atoms involved in
+    // the linear angle abc.  The last argument, u, is a unit vector used to
+    // defined the direction perpendicular to the direction in which
+    // distortion is measured.  Atom numbering begins at atom 1, not atom 0.
+    LinOPSimpleCo(const char *refr, int, int, int, const Point &u);
     //. The \clsnmref{KeyVal} constructor.  This calls the
-    //\clsnmref{SimpleCo} keyval constructor with an integer argument of 4.
+    //\clsnmref{SimpleCo} keyval constructor with an integer argument of 3.
     LinOPSimpleCo(const RefKeyVal&);
 
     ~LinOPSimpleCo();

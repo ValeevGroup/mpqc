@@ -26,7 +26,10 @@ ifeq ($(ARCH),SUNMOS)
 endif
 
 default:: $(DEPENDINCLUDE)
-default:: libmpqc.a
+default:: $(TOPDIR)/lib/libmpqc.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libmpqc.so
+endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -1,4 +1,4 @@
-chemistry/qc/wfn/libwfn.a
+libwfn.LIBSUF
 #include <util/misc/LIBS.h>
 #include <math/scmat/LIBS.h>
 #include <math/topology/LIBS.h>

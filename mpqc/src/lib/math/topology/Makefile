@@ -21,7 +21,10 @@ TARGET_TO_MAKE = libtopology
 DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h
 
 default:: $(DEPENDINCLUDE)
-default:: libtopology.a
+default:: $(TOPDIR)/lib/libtopology.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libtopology.so
+endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

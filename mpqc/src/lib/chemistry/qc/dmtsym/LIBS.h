@@ -1,4 +1,4 @@
-chemistry/qc/dmtsym/libdmtsym.a
+libdmtsym.LIBSUF
 #include <math/array/LIBS.h>
 #include <math/dmt/LIBS.h>
 #include <math/symmetry/LIBS.h>

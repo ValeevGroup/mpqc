@@ -1,4 +1,4 @@
-chemistry/qc/force/libforce.a
+libforce.LIBSUF
 #include <chemistry/qc/dmtsym/LIBS.h>
 #include <chemistry/qc/dmtqc/LIBS.h>
 #include <chemistry/qc/intv2/LIBS.h>

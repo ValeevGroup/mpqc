@@ -30,7 +30,10 @@ LIBOBJ= $(SRCS:%.c=%.$(OBJSUF)) $(CXXSRC:%.cc=%.$(OBJSUF))
 ################################################################3
 
 default:: $(DEPENDINCLUDE)
-default:: libforce.a
+default:: $(TOPDIR)/lib/libforce.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libforce.so
+endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -1,1 +1,1 @@
-util/options/liboptions.a
+liboptions.LIBSUF

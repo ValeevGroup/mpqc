@@ -25,7 +25,10 @@ TARGET_TO_MAKE = libunix
 DISTFILES = $(CSRC) $(CXXSRC) $(INC) Makefile LIBS.h
 
 default:: $(DEPENDINCLUDE)
-default:: libunix.a
+default:: $(TOPDIR)/lib/libunix.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libunix.so
+endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

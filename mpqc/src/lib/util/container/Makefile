@@ -37,7 +37,10 @@ BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libcontainer
 
 default:: $(DEPENDINCLUDE)
-default:: libcontainer.a
+default:: $(TOPDIR)/lib/libcontainer.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libcontainer.so
+endif
 
 interface:: $(DEPENDINCLUDE)
 
@@ -62,20 +65,20 @@ asetmacr.h: asettmpl.h $(TMPL2MACDEP)
 refmacr.h: reftmpl.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > refmacr.h
 
-settest: settest.o libcontainer.a
-	$(CXX) $(CXXFLAGS) -o settest $^
+settest: settest.o libcontainer.$(LIBSUF)
+	$(CXX) $(LDFLAGS) -o settest $^
 
-gnutest: gnutest.o libcontainer.a
-	$(CXX) $(CXXFLAGS) -o gnutest $^
+gnutest: gnutest.o libcontainer.$(LIBSUF)
+	$(CXX) $(LDFLAGS) -o gnutest $^
 
-artest: artest.o libcontainer.a
-	$(CXX) $(CXXFLAGS) -o artest $^
+artest: artest.o libcontainer.$(LIBSUF)
+	$(CXX) $(LDFLAGS) -o artest $^
 
-settestt: settestt.o libcontainer.a
-	$(CXX) $(CXXFLAGS) -o settestt $^
+settestt: settestt.o libcontainer.$(LIBSUF)
+	$(CXX) $(LDFLAGS) -o settestt $^
 
-reftest: reftest.o reftestx.o libcontainer.a ../misc/libmisc.a
-	$(CXX) $(CXXFLAGS) -o reftest $^
+reftest: reftest.o reftestx.o libcontainer.$(LIBSUF) libmisc.$(LIBSUF)
+	$(CXX) $(LDFLAGS) -o reftest $^
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

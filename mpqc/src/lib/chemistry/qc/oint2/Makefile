@@ -140,7 +140,10 @@ endif
 
 LIBOBJ = $(LIBSRC:%.c=%.$(OBJSUF))
 
-default:: liboint2.a
+default:: $(TOPDIR)/lib/liboint2.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/liboint2.so
+endif
 
 DISTFILES = Makefile $(LIBSRC1) $(LIBSRC2) $(LIBSRC3)
 

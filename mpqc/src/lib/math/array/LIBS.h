@@ -1,2 +1,2 @@
-math/array/libarray.a
+libarray.LIBSUF
 #include <util/sgen/LIBS.h>

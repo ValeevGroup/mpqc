@@ -1,4 +1,4 @@
-chemistry/qc/basis/libbasis.a
+libbasis.LIBSUF
 #include <chemistry/molecule/LIBS.h>
 #include <chemistry/qc/integral/LIBS.h>
 #include <math/scmat/LIBS.h>

@@ -9,7 +9,10 @@ TARGET_TO_MAKE = liboptions
 
 LIBOBJ = GetLongOpt.o
 
-default:: liboptions.a
+default:: $(TOPDIR)/lib/liboptions.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/liboptions.so
+endif
 
 sample: README.o liboptions.a
 	$(CXX) -o $@ $^

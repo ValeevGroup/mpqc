@@ -37,7 +37,10 @@ DEPENDINCLUDE = $(GENINC) $(SGENINC) $(INC)
 ############################################################3
 
 default:: $(DEPENDINCLUDE)
-default:: libarray.a
+default:: $(TOPDIR)/lib/libarray.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libarray.so
+endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -22,7 +22,10 @@ DISTFILES = $(CSRC) $(INC) Makefile LIBS.h
 #############################################################
 
 default:: $(DEPENDINCLUDE)
-default:: libdmtqc.a
+default:: $(TOPDIR)/lib/libdmtqc.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libdmtqc.so
+endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

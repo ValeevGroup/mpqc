@@ -16,7 +16,10 @@ DISTFILES = $(CSRC) Makefile LIBS.h
 
 LIBOBJ := $(LIBSRC:%.c=%.$(OBJSUF))
 
-default:: linpackd.a
+default:: $(TOPDIR)/lib/linpackd.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/linpackd.so
+endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -35,7 +35,10 @@ TESTCXXSRC = classtest.cc
 DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h $(TESTCXXSRC)
 
 default:: $(DEPENDINCLUDE)
-default:: libclass.a
+default:: $(TOPDIR)/lib/libclass.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libclass.so
+endif
 
 interface:: $(DEPENDINCLUDE)
 
@@ -43,8 +46,9 @@ clasmacr.h: clastmpl.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > clasmacr.h
 
 # a test program
-classtest: classtest.o libclass.a ../misc/libmisc.a ../container/libcontainer.a
-	$(CXX) $(CXXFLAGS) -o classtest $^ $(SYSLIBS)
+classtest: classtest.o libclass.$(LIBSUF) libcontainer.$(LIBSUF)
+	$(LD) $(LDFLAGS) -o classtest $^ $(SYSLIBS)
+
 bug: bug.cc
 	$(CXX) $(CXXFLAGS) -o bug $^
 

@@ -1,2 +1,2 @@
-chemistry/qc/dmtqc/libdmtqc.a
+libdmtqc.LIBSUF
 #include <math/dmt/LIBS.h>

@@ -39,7 +39,10 @@ DISTFILES = $(CSRC) $(INC) scf.sgen Makefile LIBS.h
 ###################################################################
 
 default:: $(DEPENDINCLUDE)
-default:: libdmtscf.a
+default:: $(TOPDIR)/lib/libdmtscf.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libdmtscf.so
+endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

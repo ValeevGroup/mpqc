@@ -15,7 +15,10 @@ SRCS = integral.cc integralv2.cc ortho.cc
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
-default:: integral.a
+default:: $(TOPDIR)/lib/integral.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/integral.so
+endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

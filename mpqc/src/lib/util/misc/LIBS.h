@@ -1,1 +1,1 @@
-util/misc/libmisc.a
+libmisc.LIBSUF

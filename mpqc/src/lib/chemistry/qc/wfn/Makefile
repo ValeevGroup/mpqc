@@ -15,7 +15,10 @@ SRCS = wfn.cc densval.cc natorbval.cc obwfn.cc density.cc
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
-default:: libwfn.a
+default:: $(TOPDIR)/lib/libwfn.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libwfn.so
+endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

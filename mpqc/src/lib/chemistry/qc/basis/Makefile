@@ -26,7 +26,10 @@ DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
 LIBOBJ= $(CXXSRC:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
-default:: libbasis.a
+default:: $(TOPDIR)/lib/libbasis.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libbasis.so
+endif
 
 btest: $(TESTOBJ) libbasis.a \
 	 $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)

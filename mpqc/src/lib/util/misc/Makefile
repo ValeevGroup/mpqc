@@ -34,7 +34,10 @@ DEPENDINCLUDE = $(INC) $(GENINC)
 #####################################################################
 
 default:: $(DEPENDINCLUDE)
-default:: libmisc.a
+default:: $(TOPDIR)/lib/libmisc.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libmisc.so
+endif
 
 comptest: comptest.cc libmisc.a ../state/libstate.a
 	$(CXX) $(CXXFLAGS) $^ -o comptest

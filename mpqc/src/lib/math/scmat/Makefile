@@ -7,7 +7,10 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 
 default:: $(DEPENDINCLUDE)
-default:: libscmat.a
+default:: $(TOPDIR)/lib/libscmat.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libscmat.so
+endif
 
 CXXSRC = abstract.cc   local.cc      local2.cc  matrix.cc \
          blkiter.cc    matrix_i.cc   result.cc \

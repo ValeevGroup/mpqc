@@ -20,7 +20,10 @@ DISTFILES = $(CSRC) $(INC) Makefile LIBS.h
 ##############################################
 
 default:: $(DEPENDINCLUDE)
-default:: libsgen.a
+default:: $(TOPDIR)/lib/libsgen.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libsgen.so
+endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

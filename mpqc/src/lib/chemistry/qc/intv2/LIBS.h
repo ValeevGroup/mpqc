@@ -1,4 +1,4 @@
-chemistry/qc/intv2/libintv2.a
+libintv2.LIBSUF
 #include <math/array/LIBS.h>
 #include <util/keyval/LIBS.h>
 #include <util/sgen/LIBS.h>

@@ -1,3 +1,3 @@
-util/keyval/libkeyval.a
+libkeyval.LIBSUF
 #include <util/container/LIBS.h>
 #include <util/class/LIBS.h>

@@ -1,4 +1,4 @@
-chemistry/qc/mpqc/libmpqc.a
+libmpqc.LIBSUF
 #include <chemistry/qc/wfn/LIBS.h>
 #include <chemistry/qc/dmtscf/LIBS.h>
 #include <chemistry/qc/force/LIBS.h>

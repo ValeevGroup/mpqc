@@ -34,7 +34,10 @@ BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libstate
 
 default:: $(DEPENDINCLUDE)
-default:: libstate.a
+default:: $(TOPDIR)/lib/libstate.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libstate.so
+endif
 
 interface:: $(DEPENDINCLUDE)
 
@@ -44,8 +47,8 @@ statmacr.h: stattmpl.h $(TMPL2MACDEP)
 statetest.o: statetest.cc
 	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-statetest: statetest.o libstate.a ../keyval/libkeyval.a ../class/libclass.a ../container/libcontainer.a ../misc/libmisc.a
-	$(CXX) $(CXXFLAGS) -o statetest $^ $(SYSLIBS)
+statetest: statetest.o libstate.$(LIBSUF) libkeyval.$(LIBSUF) libclass.$(LIBSUF) libcontainer.$(LIBSUF)
+	$(LD) $(LDFLAGS) -o statetest $^ $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -1,2 +1,2 @@
-comm/picl/shm/piclshm.a
+piclshm.LIBSUF
 #include <util/misc/LIBS.h>

@@ -1,4 +1,4 @@
-math/scmat/libscmat.a
+libscmat.LIBSUF
 #include <util/state/LIBS.h>
 #include <util/keyval/LIBS.h>
 #include <util/class/LIBS.h>

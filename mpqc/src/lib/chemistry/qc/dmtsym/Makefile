@@ -33,7 +33,10 @@ DEPENDINCLUDE = $(SGENINC) $(GENINC) $(INC)
 #####################################################################
 
 default:: $(DEPENDINCLUDE)
-default:: libdmtsym.a
+default:: $(TOPDIR)/lib/libdmtsym.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libdmtsym.so
+endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

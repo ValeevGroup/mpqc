@@ -35,7 +35,10 @@ LIBOBJ = $(LIBCSRC:%.c=%.$(OBJSUF)) $(FSRC:%.f=%.$(OBJSUF))
 ###################################################################
 
 default:: $(DEPENDINCLUDE)
-default:: libdmt.a
+default:: $(TOPDIR)/lib/libdmt.a
+ifeq ($(ELF),yes)
+default:: $(TOPDIR)/lib/libdmt.so
+endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

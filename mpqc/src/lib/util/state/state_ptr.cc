@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include <util/class/class.h>
 #include "state.h"
 #include "stateptrImplSet.h"

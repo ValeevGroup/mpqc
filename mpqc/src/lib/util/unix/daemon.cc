@@ -19,6 +19,10 @@
  *      November, 1992
  */
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>

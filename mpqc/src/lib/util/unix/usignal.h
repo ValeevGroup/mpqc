@@ -22,6 +22,9 @@
 #ifndef _libQC_usignal_h
 #define _libQC_usignal_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
 
 #include <signal.h>
 

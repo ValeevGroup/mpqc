@@ -22,6 +22,10 @@
  *      October, 1992
  */
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 
 #include <util/state/state.h>
 

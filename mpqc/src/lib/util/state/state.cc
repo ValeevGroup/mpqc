@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include <stdlib.h>
 
 #include <util/class/class.h>

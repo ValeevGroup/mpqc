@@ -2,6 +2,10 @@
 #ifndef _libqc_state_ptr_h
 #define _libqc_state_ptr_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 class StateDataNum {
   private:
     int num_;

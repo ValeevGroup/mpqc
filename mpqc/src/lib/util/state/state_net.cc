@@ -19,6 +19,10 @@
  *      October, 1992
  */
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include <iostream.h>
 #include <string.h>
 #include <util/unix/cct_cprot.h>

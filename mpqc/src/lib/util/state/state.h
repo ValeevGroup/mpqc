@@ -2,6 +2,10 @@
 #ifndef _libqc_state_h
 #define _libqc_state_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -22,6 +22,10 @@
 #ifndef _libQC_daemon_h
 #define _libQC_daemon_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #include <util/unix/cct_cprot.h>
 #include <util/unix/usignal.h>
 

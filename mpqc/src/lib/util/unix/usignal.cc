@@ -19,6 +19,9 @@
  *      November, 1992
  */
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
 
 #include <signal.h>
 #include "usignal.h"

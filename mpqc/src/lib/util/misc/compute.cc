@@ -1,9 +1,9 @@
 
 #include "compute.h"
 
-Result_def(int);
-Result_def(float);
-Result_def(double);
+Result_def_nc(int);
+Result_def_nc(float);
+Result_def_nc(double);
 
 ARRAY_def(ResultP);
 SET_def(ResultP);

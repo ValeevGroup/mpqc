@@ -130,7 +130,6 @@ GaussianPointChargeIntJF::compute_shell(int i,int j,double*buf)
       double oo2gam = 0.5*oogam;
 
       double K_peint = 2*M_PI*oogam*exp(-a1*a2*ab2*oogam);
-      double prefact = 0.5*K_peint*sqrt(M_PI*oogam);
 
       double P[3], PA[3], PB[3];
 
@@ -157,12 +156,12 @@ GaussianPointChargeIntJF::compute_shell(int i,int j,double*buf)
           double jnorm = gsj.coefficient_unnorm(cj,pj);
           int amj = gsj.am(cj);
 
-          double norm_prefact = inorm*jnorm*prefact;
           double K_norm = inorm*jnorm*K_peint;
           
           init_peint(ami, amj, pi, pj, gam, oo2gam, K_norm, P, PA, PB);
 
           int ij=ioffset;
+          int index=0;
           for (int ii=0; ii <= ami; ii++) {
             int l1 = ami-ii;
 
@@ -174,11 +173,11 @@ GaussianPointChargeIntJF::compute_shell(int i,int j,double*buf)
               for (int kk=0; kk <= amj; kk++) {
                 int l2 = amj-kk;
 
-                for (int ll=0; ll <= kk; ll++,ijkl++) {
+                for (int ll=0; ll <= kk; ll++,ijkl++,index++) {
                   int m2 = kk-ll;
                   int n2 = ll;
 
-                  buf[ijkl] += -vint[ami][amj][0][ij-ioffset];
+                  buf[ijkl] += -vint[ami][amj][0][index];
                 }
               }
             }
@@ -241,9 +240,9 @@ GaussianPointChargeIntJF::init_peint(int am1, int am2, int pi, int pj,
     t = gam*pc2;
 
     // zero out the flags for all intermediates below this target class
-    for (i=0; i<=am1; i++){
-      for (j=0; j<=am2; j++){
-        for (k=0; k<=(am1+am2-i-j); k++){
+    for (i=0; i <= am1; i++) {
+      for (j=0; j <= am2; j++) {
+        for (k=0; k <= (am1+am2-i-j); k++) {
           vint_done[i][j][k] = 0;
         }
       }

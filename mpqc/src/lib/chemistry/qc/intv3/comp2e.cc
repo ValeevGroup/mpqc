@@ -219,74 +219,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
   p34 = 0;
   p13p24 = 0;
 
-#undef OLD_PERMUTATION_ALGORITHM
-#ifdef OLD_PERMUTATION_ALGORITHM
-  if (am2 > am1) {
-    p12 = 1;
-    iswtch(&am1,&am2);iswtch(&sh1,&sh2);iswtch(psh1,psh2);iswtch(&osh1,&osh2);
-    iswtch(&dam1,&dam2);
-    iswtch(&minam1,&minam2);
-    pswtch((void**)&int_shell1,(void**)&int_shell2);
-    swtch(pbs1,pbs2);
-    }
-  if (am4 > am3) {
-    p34 = 1;
-    iswtch(&am3,&am4);iswtch(&sh3,&sh4);iswtch(psh3,psh4);iswtch(&osh3,&osh4);
-    iswtch(&dam3,&dam4);
-    iswtch(&minam3,&minam4);
-    pswtch((void**)&int_shell3,(void**)&int_shell4);
-    swtch(pbs3,pbs4);
-    }
-  if (!(int_unit2||int_unit4) && (osh1 == osh4) && (osh2 == osh3) && (osh1 != osh2)) {
-    /* Don't make the permutation unless we won't override what was
-     * decided above about p34. */
-    if (am4 == am3) {
-      p34 = 1;
-      iswtch(&am3,&am4);iswtch(&sh3,&sh4);iswtch(psh3,psh4);iswtch(&osh3,&osh4);
-      iswtch(&dam3,&dam4);
-      iswtch(&minam3,&minam4);
-      pswtch((void**)&int_shell3,(void**)&int_shell4);
-      swtch(pbs3,pbs4);
-      }
-    }
-  if ((am3 > am1)||((am3 == am1)&&(am4 > am2))) {
-    p13p24 = 1;
-    iswtch(&am1,&am3);iswtch(&sh1,&sh3);iswtch(psh1,psh3);iswtch(&osh1,&osh3);
-    iswtch(&am2,&am4);iswtch(&sh2,&sh4);iswtch(psh2,psh4);iswtch(&osh2,&osh4);
-    iswtch(&int_unit2,&int_unit4);
-    iswtch(&am12,&am34);
-    iswtch(&dam1,&dam3);
-    iswtch(&minam1,&minam3);
-    pswtch((void**)&int_shell1,(void**)&int_shell3);
-    swtch(pbs1,pbs3);
-    iswtch(&dam2,&dam4);
-    iswtch(&minam2,&minam4);
-    pswtch((void**)&int_shell2,(void**)&int_shell4);
-    swtch(pbs2,pbs4);
-    }
-  /* This tries to make centers A and B equivalent, if possible. */
-  else if (  (am3 == am1)
-           &&(am4 == am2)
-           && !int_unit2
-           && !int_unit4
-           &&(!(  (bs1_ == bs2_)
-                &&(bs1_->shell_to_center(sh1)==bs2_->shell_to_center(sh2))))
-           &&(   (bs3_ == bs4_)
-               &&(bs3_->shell_to_center(sh3)==bs4_->shell_to_center(sh4)))) {
-    p13p24 = 1;
-    iswtch(&am1,&am3);iswtch(&sh1,&sh3);iswtch(psh1,psh3);iswtch(&osh1,&osh3);
-    iswtch(&am2,&am4);iswtch(&sh2,&sh4);iswtch(psh2,psh4);iswtch(&osh2,&osh4);
-    iswtch(&am12,&am34);
-    iswtch(&dam1,&dam3);
-    iswtch(&minam1,&minam3);
-    pswtch((void**)&int_shell1,(void**)&int_shell3);
-    swtch(pbs1,pbs3);
-    iswtch(&dam2,&dam4);
-    iswtch(&minam2,&minam4);
-    pswtch((void**)&int_shell2,(void**)&int_shell4);
-    swtch(pbs2,pbs4);
-    }
-#else /* OLD_PERMUTATION_ALGORITHM */
   if (am2 > am1) {
     p12 = 1;
     iswtch(&am1,&am2);iswtch(&sh1,&sh2);iswtch(psh1,psh2);iswtch(&osh1,&osh2);
@@ -353,7 +285,6 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     pswtch((void**)&int_shell2,(void**)&int_shell4);
     swtch(pbs2,pbs4);
     }
-#endif /* OLD_PERMUTATION_ALGORITHM */
 
   if (  int_unit2
         ||((pbs1 == pbs2)
@@ -742,11 +673,12 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
   int i,j;
   GaussianShell *shell1,*shell2,*shell3,*shell4;
   GaussianBasisSet *ucs[4]; /* The centers struct for the unique centers. */
-  int ush[4];         /* The shells for the unique centers. */
   int unum[4];        /* The number of times that this unique center occurs. */
   int uam[4];         /* The total angular momentum on each unique center. */
   int am[4];
   int osh[4];
+  int cen[4];
+  int ucen[4];
   int ncart;
   double *current_pure_buffer;
 
@@ -783,15 +715,17 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
   osh[2] = psh3 + bs3_shell_offset_;
   osh[3] = psh4 + bs4_shell_offset_;
 
+  for (i=0; i<4; i++) cen[i] = cs[i]->shell_to_center(sh[i]);
+
   /* This macro returns true if two shell centers are the same. */
-#define SC(cs1,sh1,cs2,sh2) (((cs1)==(cs2))&&((cs1)->shell_to_center(sh1)==(cs1)->shell_to_center(sh2)))
+#define SC(cs1,shc1,cs2,shc2) (((cs1)==(cs2))&&((shc1)==(shc2)))
 
   /* Build the list of unique centers structures and shells. */
   n_unique = 0;
   for (i=0; i<4; i++) {
     int unique = 1;
     for (j=0; j<n_unique; j++) {
-      if (SC(ucs[j],ush[j],cs[i],sh[i])) {
+      if (SC(ucs[j],ucen[j],cs[i],cen[i])) {
         unique = 0;
         uam[j] += am[i];
         unum[j]++;
@@ -800,7 +734,7 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
       }
     if (unique) {
       ucs[n_unique] = cs[i];
-      ush[n_unique] = sh[i];
+      ucen[n_unique] = cen[i];
       uam[n_unique] = am[i];
       unum[n_unique] = 1;
       n_unique++;
@@ -848,11 +782,11 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
     if (i==omit) continue;
 
     der_centers->cs[der_centers->n] = ucs[i];
-    der_centers->num[der_centers->n] = ucs[i]->shell_to_center(ush[i]);
+    der_centers->num[der_centers->n] = ucen[i];
     der_centers->n++;
 
     for (j=0; j<4; j++) {
-      if (SC(ucs[i],ush[i],cs[j],sh[j])) {
+      if (SC(ucs[i],ucen[i],cs[j],cen[j])) {
         int old_perm = permute();
         set_permute(0);
         compute_erep_1der(0,current_buffer,
@@ -866,7 +800,7 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
 
   /* Put the information about the omitted center into der_centers. */
   der_centers->ocs = ucs[omit];
-  der_centers->onum = ucs[omit]->shell_to_center(ush[omit]);
+  der_centers->onum = ucen[omit];
 
   /* Transform to pure am. */
   current_buffer = user_int_buffer;

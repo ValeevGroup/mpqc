@@ -74,7 +74,9 @@
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
-#include <util/misc/ccaenv.h>
+#ifdef HAVE_CHEMISTRY_CCA
+  #include <util/misc/ccaenv.h>
+#endif
 #include <util/render/render.h>
 
 #include <math/optimize/opt.h>
@@ -625,6 +627,7 @@ try_main(int argc, char *argv[])
   
   int print_timings = keyval->booleanvalue("print_timings",truevalue);
 
+#ifdef HAVE_CHEMISTRY_CCA
   // initialize cca framework
   string cca_path(options.retrieve("cca-path"));
   string cca_load(options.retrieve("cca-load"));
@@ -633,10 +636,13 @@ try_main(int argc, char *argv[])
     cca_path = keyval->stringvalue("cca-path",emptystring);
   if(cca_load.size()==0)
     cca_load = keyval->stringvalue("cca-load",emptystring);
-  string cca_args = " --path " + cca_path + " --load " + cca_load;
-  ExEnv::out0() << endl << indent << "Initializing CCA framework with args: " 
-                << endl << indent << cca_args << endl;
-  CCAEnv::init( cca_args );
+  if( (cca_load.size()+cca_path.size()) > 0 ) {
+    string cca_args = " --path " + cca_path + " --load " + cca_load;
+    ExEnv::out0() << endl << indent << "Initializing CCA framework with args: " 
+                  << endl << indent << cca_args << endl;
+    CCAEnv::init( cca_args );
+  }
+#endif
   
   // sanity checks for the benefit of reasonable looking output
   if (opt.null()) do_opt=0;

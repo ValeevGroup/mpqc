@@ -90,6 +90,7 @@ out_of_memory()
 int
 main(int argc, char *argv[])
 {
+  KeyValValueboolean truevalue(1), falsevalue(0);
   int i;
   const char *devnull = "/dev/null";
   atexit(clean_up);
@@ -125,6 +126,7 @@ main(int argc, char *argv[])
   options.enroll("v", GetLongOpt::NoValue, "print the version number", 0);
   options.enroll("w", GetLongOpt::NoValue, "print the warranty", 0);
   options.enroll("L", GetLongOpt::NoValue, "print the license", 0);
+  options.enroll("k", GetLongOpt::NoValue, "print key/value assignments", 0);
   options.enroll("d", GetLongOpt::NoValue, "debug", 0);
   options.enroll("h", GetLongOpt::NoValue, "print this message", 0);
 
@@ -205,13 +207,9 @@ main(int argc, char *argv[])
     parsedkv->parse_string(in_char_array);
     delete[] in_char_array;
   }
-  RefKeyVal pkv = parsedkv.pointer();
-  RefKeyVal ppkv(new AggregateKeyVal(new PrefixKeyVal(":mpqc",pkv),
-                                     new PrefixKeyVal(":default",pkv)));
-  pkv = new ParsedKeyVal("input",ppkv);
-  RefKeyVal keyval = new AggregateKeyVal(ppkv,pkv);
 
-  pkv = ppkv = 0;
+  if (options.retrieve("k")) parsedkv->verbose(1);
+  RefKeyVal keyval = new PrefixKeyVal("mpqc",parsedkv.pointer());
 
   // get the basename for output files
   int nfilebase = (int) (strrchr(input, '.') - input);
@@ -219,20 +217,6 @@ main(int argc, char *argv[])
   strncpy(basename, input, nfilebase);
   basename[nfilebase] = '\0';
   SCFormIO::set_default_basename(basename);
-
-  // get the thread group.  first try the commandline and environment
-  RefThreadGrp thread = ThreadGrp::initial_threadgrp(argc, argv);
-  
-  // if we still don't have a group, try reading the thread group
-  // from the input
-  if (thread.null()) {
-    thread = keyval->describedclassvalue("thread");
-  }
-
-  if (thread.nonnull())
-    ThreadGrp::set_default_threadgrp(thread);
-  else
-    thread = ThreadGrp::get_default_threadgrp();
 
   // set up output classes
   SCFormIO::setindent(cout, 2);
@@ -251,21 +235,6 @@ main(int argc, char *argv[])
 
   tim->enter("input");
   
-  // now set up the debugger
-  RefDebugger debugger = keyval->describedclassvalue("debug");
-  if (debugger.nonnull()) {
-    Debugger::set_default_debugger(debugger);
-    debugger->set_exec(argv[0]);
-    debugger->set_prefix(grp->me());
-    if (options.retrieve("d"))
-      debugger->debug("Starting debugger because -d given on command line.");
-  }
-
-  // now check to see what matrix kit to use
-  if (keyval->exists("matrixkit"))
-    SCMatrixKit::set_default_matrixkit(
-      keyval->describedclassvalue("matrixkit"));
-  
   // announce ourselves
   const char title1[] = "MPQC: Massively Parallel Quantum Chemistry";
   int ntitle1 = sizeof(title1);
@@ -282,36 +251,55 @@ main(int argc, char *argv[])
        << scprintf("Running on a %s with %d nodes.", TARGET_ARCH, grp->n())
        << endl << endl;
 
+  // get the thread group.  first try the commandline and environment
+  RefThreadGrp thread = ThreadGrp::initial_threadgrp(argc, argv);
+  
+  // if we still don't have a group, try reading the thread group
+  // from the input
+  if (thread.null()) {
+    thread = keyval->describedclassvalue("thread");
+  }
+
+  if (thread.nonnull())
+    ThreadGrp::set_default_threadgrp(thread);
+  else
+    thread = ThreadGrp::get_default_threadgrp();
+
   cout << node0 << indent
        << "Using " << grp->class_name() << " for communications." << endl
        << indent
        << "Using " << thread->class_name() << " for threading." << endl;
 
+  // now set up the debugger
+  RefDebugger debugger = keyval->describedclassvalue("debug");
+  if (debugger.nonnull()) {
+    Debugger::set_default_debugger(debugger);
+    debugger->set_exec(argv[0]);
+    debugger->set_prefix(grp->me());
+    if (options.retrieve("d"))
+      debugger->debug("Starting debugger because -d given on command line.");
+  }
+
+  // now check to see what matrix kit to use
+  if (keyval->exists("matrixkit"))
+    SCMatrixKit::set_default_matrixkit(
+      keyval->describedclassvalue("matrixkit"));
+
   // check for a molecular energy and optimizer
-  char * molname = keyval->pcharvalue("filename");
-  if (!molname)
-    molname = new_string(basename);
+  KeyValValueString molnamedef(basename);
+  char * molname = keyval->pcharvalue("filename", molnamedef);
 
   char * ckptfile = new char[strlen(molname)+6];
   sprintf(ckptfile,"%s.ckpt",molname);
   
-  char * restartfile = keyval->pcharvalue("restart_file");
-  if (keyval->error() != KeyVal::OK) {
-    restartfile = new char[strlen(ckptfile)+1];
-    strcpy(restartfile, ckptfile);
-  }
+  KeyValValueString restartfiledef(ckptfile);
+  char * restartfile = keyval->pcharvalue("restart_file", restartfiledef);
   
-  int restart = 1;
-  if (keyval->exists("restart"))
-    restart = keyval->booleanvalue("restart");
+  int restart = keyval->booleanvalue("restart",truevalue);
 
-  int checkpoint = keyval->booleanvalue("checkpoint");
-  if (keyval->error() != KeyVal::OK)
-    checkpoint=1;
+  int checkpoint = keyval->booleanvalue("checkpoint",truevalue);
 
-  int savestate = keyval->booleanvalue("savestate");
-  if (keyval->error() != KeyVal::OK)
-    savestate=1;
+  int savestate = keyval->booleanvalue("savestate",truevalue);
 
   struct stat sb;
   RefMolecularEnergy mole;
@@ -407,29 +395,17 @@ main(int argc, char *argv[])
   
   tim->change("calc");
 
-  int do_energy = keyval->booleanvalue("do_energy");
-  if (keyval->error() != KeyVal::OK)
-    do_energy=1;
+  int do_energy = keyval->booleanvalue("do_energy",truevalue);
   
-  int do_grad = keyval->booleanvalue("do_gradient");
-  if (keyval->error() != KeyVal::OK)
-    do_grad=0;
+  int do_grad = keyval->booleanvalue("do_gradient",falsevalue);
 
-  int do_opt = keyval->booleanvalue("optimize");
-  if (keyval->error() != KeyVal::OK)
-    do_opt=1;
+  int do_opt = keyval->booleanvalue("optimize",truevalue);
   
-  int do_pdb = keyval->booleanvalue("write_pdb");
-  if (keyval->error() != KeyVal::OK)
-    do_pdb=0;
+  int do_pdb = keyval->booleanvalue("write_pdb",falsevalue);
   
-  int print_mole = keyval->booleanvalue("print_mole");
-  if (keyval->error() != KeyVal::OK)
-    print_mole=1;
+  int print_mole = keyval->booleanvalue("print_mole",truevalue);
   
-  int print_timings = keyval->booleanvalue("print_timings");
-  if (keyval->error() != KeyVal::OK)
-    print_timings=1;
+  int print_timings = keyval->booleanvalue("print_timings",truevalue);
   
   // sanity checks for the benefit of reasonable looking output
   if (opt.null())

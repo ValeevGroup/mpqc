@@ -424,7 +424,7 @@ AtomInfo::load_values(std::map<int,std::vector<double> >&values,
       int Z = elements_[elem].Z;
       values[Z].resize(3);
       for (int j=0; j<3; j++) {
-          val = pkeyval->doublevalue(elements_[Z].symbol,j);
+          val = pkeyval->doublevalue(elements_[elem].symbol,j);
           if (pkeyval->error() != KeyVal::OK) {
               if (!override) values[Z][j] = def[j];
             }
@@ -438,10 +438,10 @@ AtomInfo::load_values(std::map<int,std::vector<double> >&values,
                       prefix = "";
                       have_overridden = 1;
                     }
-                  char *strval = pkeyval->pcharvalue(elements_[Z].symbol,j);
+                  char *strval = pkeyval->pcharvalue(elements_[elem].symbol,j);
                   char assignment[256];
                   sprintf(assignment,"%s%s:%d=%s",
-                          prefix, elements_[Z].symbol, j, strval);
+                          prefix, elements_[elem].symbol, j, strval);
                   delete[] strval;
                   add_overridden_value(assignment);
                 }

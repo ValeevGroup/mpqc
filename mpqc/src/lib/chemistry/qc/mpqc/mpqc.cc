@@ -446,16 +446,9 @@ static void
 mkcostvec(centers_t *centers,sym_struct_t *sym_info,dmt_cost_t *costvec)
 {
   int flags;
-  int i,j,k,l;
+  int i,j;
   int ij,kl,ijkl;
-  int ioffi,ioffij;
-  int g,gi,gj,gk,gl,gij,gkl,gijkl;
-  int Qvecij,bound,cost;
-  int nb;
-  int leavel;
-  int use_symmetry=(sym_info->g>1);
-  int nproc=numnodes0();
-  int me=mynode0();
+  int Qvecij;
   double *intbuf;
   extern signed char *scf_bnd_Qvec;
 

@@ -140,8 +140,8 @@ ScaledTorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
   // 3pi/2 <--> -pi/2 boundary...if so, then we add or subtract 2pi as
   // needed to prevent the transformation from internals to cartesians
   // from blowing up
-  while(old_torsion_ + tors_value > pi + 1.0e-6) tors_value -= tpi;
-  while(old_torsion_ + tors_value < -(pi + 1.0e-6)) tors_value += tpi;
+  while(old_torsion_ - tors_value > pi + 1.0e-6) tors_value += tpi;
+  while(old_torsion_ - tors_value < -(pi + 1.0e-6)) tors_value -= tpi;
 
   // This differs from a normal torsion by the factor
   // scalar(u1,u2)*scalar(u2,u3).  This prevents the

@@ -97,8 +97,8 @@ void
 IPV2::append_from_input(const char*prefix,FILE*outfile)
 {
   char keyword[KEYWORD_LENGTH];
-  char *dir;
-  char *file;
+  const char *dir;
+  const char *file;
   char dirfile[512];
   int i,nfile;
   FILE *infile;

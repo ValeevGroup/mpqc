@@ -33,7 +33,7 @@ IPV2::boolean(const char *keyword,int *boolean,int n,...)
 IPV2::Status
 IPV2::boolean_v(const char* keyword,int* boolean,int n,int* v)
 {
-  char *val;
+  const char *val;
   Status errcod;
   char copy[10],*s;
 
@@ -130,7 +130,7 @@ IPV2::data(const char *keyword,const char *conv,void *value,int n,...)
 IPV2::Status
 IPV2::data_v(const char* keyword,const char* conv,void* value,int n,int*v)
 {
-  char *val;
+  const char *val;
   Status errcod;
 
   if ((errcod = value_v(keyword,&val,n,v))!=0) return errcod;
@@ -287,7 +287,7 @@ IPV2::string(const char *keyword,char **value,int n,...)
 IPV2::Status
 IPV2::string_v(const char* keyword,char** value,int n,int *v)
 {
-  char *val;
+  const char *val;
   Status errcod;
 
   if ((errcod = value_v(keyword,&val,n,v))!=0) return errcod;

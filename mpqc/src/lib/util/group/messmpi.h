@@ -57,7 +57,7 @@ class MPIMessageGrp: public MessageGrp {
     struct p4_cluster * my_node_info(const char[], int&);
 #endif
     
-    void init();
+    void init(int argc=-1, char **argv=0);
   public:
     MPIMessageGrp();
     MPIMessageGrp(const RefKeyVal&);

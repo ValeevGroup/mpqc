@@ -26,8 +26,11 @@
 //
 
 #include <stdio.h> // for sprintf
+#include <unistd.h> // for fchdir etc.
 
 #include <mpi.h>
+extern int MPI_Initialized(int *); // missing in mpi.h
+
 #include <util/keyval/keyval.h>
 #include <util/group/messmpi.h>
 #include <util/misc/formio.h>
@@ -78,7 +81,18 @@ MPIMessageGrp::MPIMessageGrp()
 MPIMessageGrp::MPIMessageGrp(const RefKeyVal& keyval):
   MessageGrp(keyval)
 {
-  init();
+  int argc = -1;
+  char **argv = 0;
+  if (keyval->exists("argv")) {
+      argc = keyval->count("argv");
+      argv = new char*[argc+1];
+      argv[argc] = 0;
+      for (int arg=0; arg<argc; arg++) {
+          argv[arg] = keyval->pcharvalue("argv",arg);
+        }
+    }
+
+  init(argc, argv);
 
   if (keyval->booleanvalue("errors_return")) {
       if (me()==0)
@@ -93,24 +107,31 @@ MPIMessageGrp::MPIMessageGrp(const RefKeyVal& keyval):
 }
 
 void
-MPIMessageGrp::init()
+MPIMessageGrp::init(int argc,char **argv)
 {
   int me, nproc;
-  int argc;
-  char **argv;
-
-  argc = 1;
-  argv = new char*[argc+1];
-  argv[0] = "-mpiB4"; // reduce the internal buffer since a user buffer is used
-  argv[1] = 0;
 
   if (debug_) {
       cerr << "MPIMessageGrp::init: entered" << endl;
     }
 
-#ifndef HAVE_P4
-  MPI_Init(&argc, &argv);
-#endif
+  int flag;
+  MPI_Initialized(&flag);
+  if (!flag) {
+      if (argc < 0) {
+          argc = 1;
+          argv = new char*[argc+1];
+          // reduce the internal buffer since a user buffer is used
+          argv[0] = "-mpiB4";
+          argv[1] = 0;
+        }
+      // This dot business is to work around problems with some MPI
+      // implementations.
+      int dot = open(".",O_RDONLY);
+      MPI_Init(&argc, &argv);
+      fchdir(dot);
+      close(dot);
+    }
   MPI_Comm_rank(MPI_COMM_WORLD,&me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
   bufsize = 4000000;

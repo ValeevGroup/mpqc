@@ -164,14 +164,14 @@ class LocalTBGrad : public TBGrad<T> {
                           double qint = buf[indijkl]*qijkl;
 
                           contrib = cscl*qint*
-                            contribution.cont1(ij_offset(ii,jj),
+                            TBGrad<T>::contribution.cont1(ij_offset(ii,jj),
                                                ij_offset(kk,ll));
 
                           tx += contrib;
                           to -= contrib;
 
                           contrib = escl*qint*
-                            contribution.cont2(ij_offset(ii,kk),
+                            TBGrad<T>::contribution.cont2(ij_offset(ii,kk),
                                                ij_offset(jj,ll));
 
                           tx += contrib;
@@ -179,7 +179,7 @@ class LocalTBGrad : public TBGrad<T> {
 
                           if (i!=j && k!=l) {
                             contrib = escl*qint*
-                              contribution.cont2(ij_offset(ii,ll),
+                              TBGrad<T>::contribution.cont2(ij_offset(ii,ll),
                                                  ij_offset(jj,kk));
 
                             tx += contrib;

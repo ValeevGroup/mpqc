@@ -97,7 +97,7 @@ AtomInfo::AtomInfo(const RefKeyVal& pkeyval):
   MolInfo(pkeyval)
 {
   keyval = new PrefixKeyVal(":molinfo:atoms", keyval);
-  for (int i=0; i<MaxZ; i++) {
+  for (int i=0; i<ATOMINFO_MAXZ; i++) {
       have_radius[i] = have_rgb[i] = 0;
       rgb_vals[i][0] = rgb_vals[i][1] = rgb_vals[i][2] = 0.0;
       radius_vals[i] = 0.0;
@@ -160,8 +160,8 @@ int
 AtomInfo::get_zindex(const ChemicalElement& atom)
 {
   int Zindex = atom.number() - 1;
-  if (Zindex >= MaxZ) {
-      fprintf(stderr,"AtomInfo: MaxZ exceeded\n");
+  if (Zindex >= ATOMINFO_MAXZ) {
+      fprintf(stderr,"AtomInfo: ATOMINFO_MAXZ exceeded\n");
       abort();
     }
   return Zindex;

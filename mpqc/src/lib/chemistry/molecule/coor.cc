@@ -223,7 +223,8 @@ void
 SetIntCoor::del(const RefSetIntCoor& coor)
 {
   for (int i=0; i<coor->n(); i++) {
-      coor_.del(coor->coor(i));
+      RefIntCoor c = coor->coor(i);
+      coor_.del(c);
     }
 }
 

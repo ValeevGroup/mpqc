@@ -310,14 +310,16 @@ IntMolecularCoor::form_coordinates()
 
       for(int j=0; j < nredundant; j++) {
           if(pow(K(j,i),2.0) > simple_tolerance_) {
-              coordinate->add(all_->coor(j),K(j,i));
+              RefIntCoor c = all_->coor(j);
+              coordinate->add(c,K(j,i));
             }
         }
       // now put the contribution from the fixed coordinates in the
       // coordinate list
       for(j=0; j < nfixed; j++) {
           if(pow(Kfixed(j,i),2.0) > simple_tolerance_) {
-              coordinate->add(fixed_->coor(j),Kfixed(j,i));
+              RefIntCoor c = fixed_->coor(j);
+              coordinate->add(c,Kfixed(j,i));
             }
         }
 

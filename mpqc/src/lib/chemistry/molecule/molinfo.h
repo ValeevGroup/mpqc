@@ -21,17 +21,17 @@ class MolInfo: public DescribedClass {
 };
 DescribedClass_REF_dec(MolInfo);
 
+#define ATOMINFO_MAXZ 100
 class AtomInfo: public MolInfo {
 #   define CLASSNAME AtomInfo
 #   define HAVE_KEYVAL_CTOR
 #   include <util/class/classd.h>
   private:
     // certain values are cached here for fast access
-    const int MaxZ = 100;
-    double radius_vals[MaxZ];
-    int have_radius[MaxZ];
-    double rgb_vals[MaxZ][3];
-    int have_rgb[MaxZ];
+    double radius_vals[ATOMINFO_MAXZ];
+    int have_radius[ATOMINFO_MAXZ];
+    double rgb_vals[ATOMINFO_MAXZ][3];
+    int have_rgb[ATOMINFO_MAXZ];
     int get_zindex(const ChemicalElement&);
 
     // these items are cached for quick lookup

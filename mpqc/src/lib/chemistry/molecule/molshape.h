@@ -106,6 +106,7 @@ class CS2Sphere
     static void print_counts(FILE*fp = stdout);
 };
 
+#define CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM 10
 class ConnollyShape2: public Shape {
 #   define CLASSNAME ConnollyShape2
 #   define HAVE_KEYVAL_CTOR
@@ -120,8 +121,7 @@ class ConnollyShape2: public Shape {
 #if COUNT_CONNOLLY2
     static int n_total_;
     static int n_inside_vdw_;
-    const int n_with_nsphere_dim_ = 10;
-    static int n_with_nsphere_[n_with_nsphere_dim_];
+    static int n_with_nsphere_[CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM];
 #endif
 
   public:

@@ -172,7 +172,7 @@ ConnollyShape2::ConnollyShape2(const RefKeyVal&keyval)
 #if COUNT_CONNOLLY2
 int ConnollyShape2::n_total_ = 0;
 int ConnollyShape2::n_inside_vdw_ = 0;
-int ConnollyShape2::n_with_nsphere_[n_with_nsphere_dim_];
+int ConnollyShape2::n_with_nsphere_[CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM];
 #endif
 
 void
@@ -184,12 +184,12 @@ ConnollyShape2::print_counts(FILE*fp)
           n_total_);
   fprintf(fp,"  n_inside_vdw = %d\n",
           n_inside_vdw_);
-  for (int i=0; i<n_with_nsphere_dim_-1; i++) {
+  for (int i=0; i<CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM-1; i++) {
       fprintf(fp,"  n with nsphere = %2d: %d\n",
               i, n_with_nsphere_[i]);
     }
   fprintf(fp,"  n with nsphere >= %d: %d\n",
-          n_with_nsphere_dim_-1, n_with_nsphere_[n_with_nsphere_dim_-1]);
+          CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM-1, n_with_nsphere_[CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM-1]);
 #else
   fprintf(fp,"  No count information is available.\n");
 #endif
@@ -259,8 +259,8 @@ ConnollyShape2::distance_to_surface(const SCVector3&r, SCVector3*grad) const
     }
 
 #if COUNT_CONNOLLY2
-  if (n_local_spheres >= n_with_nsphere_dim_) {
-      n_with_nsphere_[n_with_nsphere_dim_-1]++;
+  if (n_local_spheres >= CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM) {
+      n_with_nsphere_[CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM-1]++;
     }
   else {
       n_with_nsphere_[n_local_spheres]++;

@@ -40,6 +40,8 @@
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/wfn/obwfn.h>
 
+#define SCF_CHECK_BOUNDS 0
+
 ////////////////////////////////////////////////////////////////////////////
 
 class SCF: public OneBodyWavefunction {

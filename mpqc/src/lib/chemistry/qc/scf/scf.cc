@@ -30,6 +30,7 @@
 #endif
 
 #include <math.h>
+#include <limits.h>
 #include <sys/stat.h>
 
 #include <util/misc/formio.h>
@@ -59,6 +60,8 @@ SCF::SCF(StateIn& s) :
   OneBodyWavefunction(s)
   maybe_SavableState(s)
 {
+  debug_ = 0;
+
   s.get(maxiter_);
   s.get(dens_reset_freq_);
   s.get(reset_occ_);
@@ -273,7 +276,7 @@ SCF::init_pmax(double *pmat_data)
       double maxp=0, tmp;
 
       for (int i=istart; i < iend; i++) {
-        int ijoff = i_offset(i);
+        int ijoff = i_offset(i) + jstart;
         for (int j=jstart; j < ((ish==jsh) ? i+1 : jend); j++,ijoff++)
           if ((tmp=fabs(pmat_data[ijoff])) > maxp)
             maxp=tmp;
@@ -282,7 +285,10 @@ SCF::init_pmax(double *pmat_data)
       if (maxp <= tol)
         maxp=tol;
 
-      pmax[ij] = (signed char) (log(maxp)*l2inv);
+      long power = long(log(maxp)*l2inv);
+      if (power < SCHAR_MIN) pmax[ij] = SCHAR_MIN;
+      else if (power > SCHAR_MAX) pmax[ij] = SCHAR_MAX;
+      else pmax[ij] = (signed char) power;
     }
   }
 

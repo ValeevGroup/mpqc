@@ -32,6 +32,8 @@
 #pragma interface
 #endif
 
+#include <chemistry/qc/scf/scf.h>
+
 template<class T>
 class GBuild {
   protected:

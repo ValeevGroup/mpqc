@@ -32,6 +32,8 @@
 #pragma interface
 #endif
 
+#include <chemistry/qc/scf/scf.h>
+
 ///////////////////////////////////////////////////////////////////////////
 
 class LocalHSOSContribution {
@@ -41,10 +43,13 @@ class LocalHSOSContribution {
     double * const pmat;
     double * const pmato;
 
+    double bound;
   public:
     LocalHSOSContribution(double *g, double *p, double *go, double *po) :
-      gmat(g), pmat(p), gmato(go), pmato(po) {}
+      gmat(g), pmat(p), gmato(go), pmato(po), bound(0.0) {}
     ~LocalHSOSContribution() {}
+
+    void set_bound(double b) { bound = b; }
 
     inline void cont1(int ij, int kl, double val) {
       gmat[ij] += val*pmat[kl];

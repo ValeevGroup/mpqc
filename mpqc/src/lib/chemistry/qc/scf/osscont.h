@@ -32,6 +32,8 @@
 #pragma interface
 #endif
 
+#include <chemistry/qc/scf/scf.h>
+
 ///////////////////////////////////////////////////////////////////////////
 
 class LocalOSSContribution {
@@ -44,11 +46,15 @@ class LocalOSSContribution {
     double * const pmata;
     double * const pmatb;
 
+    double bound;
   public:
     LocalOSSContribution(double *g, double *p, double *ga, double *pa,
                          double *gb, double *pb) :
-      gmat(g), pmat(p), gmata(ga), pmata(pa), gmatb(gb), pmatb(pb) {}
+      gmat(g), pmat(p), gmata(ga), pmata(pa), gmatb(gb), pmatb(pb),
+      bound(0.0) {}
     ~LocalOSSContribution() {}
+
+    void set_bound(double b) { bound = b; }
 
     inline void cont1(int ij, int kl, double val) {
       gmat[ij] += val*pmat[kl];

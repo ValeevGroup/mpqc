@@ -32,6 +32,8 @@
 #pragma interface
 #endif
 
+#include <chemistry/qc/scf/scf.h>
+
 ///////////////////////////////////////////////////////////////////////////
 
 class LocalTCContribution {
@@ -46,12 +48,15 @@ class LocalTCContribution {
     double * const opmata;
     double * const opmatb;
 
+    double bound;
   public:
     LocalTCContribution(double *ga, double *pa, double *gb, double *pb,
                         double *ka, double *opa, double *kb, double *opb) :
       gmata(ga), pmata(pa), gmatb(gb), pmatb(pb),
       kmata(ka), opmata(opa), kmatb(kb), opmatb(opb) {}
     ~LocalTCContribution() {}
+
+    void set_bound(double b) { bound = b; }
 
     inline void cont1(int ij, int kl, double val) {
       gmata[ij] += val*pmata[kl];

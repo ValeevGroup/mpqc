@@ -32,44 +32,103 @@
 #pragma interface
 #endif
 
+#include <chemistry/qc/scf/scf.h>
+
 ///////////////////////////////////////////////////////////////////////////
 
 class LocalCLContribution {
   private:
     double * const gmat;
     double * const pmat;
-
+    double bound;
   public:
-    LocalCLContribution(double *g, double *p) : gmat(g), pmat(p) {}
+    LocalCLContribution(double *g, double *p) : gmat(g), pmat(p), bound(0.0) {}
     ~LocalCLContribution() {}
+
+    void set_bound(double b) { bound = b; }
 
     inline void cont1(int ij, int kl, double val) {
       gmat[ij] += val*pmat[kl];
       gmat[kl] += val*pmat[ij];
+#if SCF_CHECK_BOUNDS
+      if (fabs(val*pmat[kl]) > bound
+          || fabs(val*pmat[ij]) > bound) {
+        cerr << "val=" << val
+             << ", pmat[" << kl << "]=" << pmat[kl]
+             << ", pmat[" << ij << "]=" << pmat[ij]
+             << ", bound=" << bound
+             << endl;
+        abort();
+      }
+#endif
     }
     
     inline void cont2(int ij, int kl, double val) {
       val *= -0.25;
       gmat[ij] += val*pmat[kl];
       gmat[kl] += val*pmat[ij];
+#if SCF_CHECK_BOUNDS
+      if (fabs(val*pmat[kl]) > bound
+          || fabs(val*pmat[ij]) > bound) {
+        cerr << "val=" << val
+             << ", pmat[" << kl << "]=" << pmat[kl]
+             << ", pmat[" << ij << "]=" << pmat[ij]
+             << ", bound=" << bound
+             << endl;
+        abort();
+      }
+#endif
     }
     
     inline void cont3(int ij, int kl, double val) {
       val *= -0.5;
       gmat[ij] += val*pmat[kl];
       gmat[kl] += val*pmat[ij];
+#if SCF_CHECK_BOUNDS
+      if (fabs(val*pmat[kl]) > bound
+          || fabs(val*pmat[ij]) > bound) {
+        cerr << "val=" << val
+             << ", pmat[" << kl << "]=" << pmat[kl]
+             << ", pmat[" << ij << "]=" << pmat[ij]
+             << ", bound=" << bound
+             << endl;
+        abort();
+      }
+#endif
     }
     
     inline void cont4(int ij, int kl, double val) {
       val *= 0.75;
       gmat[ij] += val*pmat[kl];
       gmat[kl] += val*pmat[ij];
+#if SCF_CHECK_BOUNDS
+      if (fabs(val*pmat[kl]) > bound
+          || fabs(val*pmat[ij]) > bound) {
+        cerr << "val=" << val
+             << ", pmat[" << kl << "]=" << pmat[kl]
+             << ", pmat[" << ij << "]=" << pmat[ij]
+             << ", bound=" << bound
+             << endl;
+        abort();
+      }
+#endif
     }
     
     inline void cont5(int ij, int kl, double val) {
       val *= 0.5;
       gmat[ij] += val*pmat[kl];
       gmat[kl] += val*pmat[ij];
+#if SCF_CHECK_BOUNDS
+      if (fabs(val*pmat[kl]) > bound
+          || fabs(val*pmat[ij]) > bound) {
+        cerr << "val=" << val
+             << ", pmat[" << kl << "]=" << pmat[kl]
+             << ", pmat[" << ij << "]=" << pmat[ij]
+             << ", bound=" << bound
+             << endl;
+        abort();
+      }
+#endif
     }
 };
 

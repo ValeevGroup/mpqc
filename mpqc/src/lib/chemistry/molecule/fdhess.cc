@@ -556,14 +556,13 @@ FinDispMolecularHessian::cartesian_hessian()
 
     mole_->obsolete();
     double original_accuracy;
-    if (accuracy_ > 0.0) {
-      original_accuracy = mole_->desired_gradient_accuracy();
+    original_accuracy = mole_->desired_gradient_accuracy();
+    if (accuracy_ > 0.0)
       mole_->set_desired_gradient_accuracy(accuracy_);
-      }
+    else
+      mole_->set_desired_gradient_accuracy(disp_/1000.0);
     RefSCVector gradv = mole_->get_cartesian_gradient();
-    if (accuracy_ > 0.0) {
-      mole_->set_desired_gradient_accuracy(original_accuracy);
-      }
+    mole_->set_desired_gradient_accuracy(original_accuracy);
     set_gradient(i, gradv);
 
     if (checkpoint_) {

@@ -804,7 +804,7 @@ main(int argc, char *argv[])
                 outfile);
     }
 
-  cout << "Timing Summary:" << endl;
+  if (msg->me() == 0) cout << "Timing Summary:" << endl;
   tim->print();
 
   RegionTimer::set_default_regiontimer(0);

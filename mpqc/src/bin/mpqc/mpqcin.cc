@@ -52,17 +52,17 @@ MPQCIn::MPQCIn():
 MPQCIn::~MPQCIn()
 {
   delete lexer_;
-  free(basis_.val());
-  free(method_.val());
-  free(method_xc_.val());
-  free(method_grid_.val());
-  free(symmetry_.val());
-  free(alpha_.val());
-  free(beta_.val());
-  free(docc_.val());
-  free(socc_.val());
-  free(frozen_docc_.val());
-  free(frozen_uocc_.val());
+  if (basis_.val()) free(basis_.val());
+  if (method_.val()) free(method_.val());
+  if (method_xc_.val()) free(method_xc_.val());
+  if (method_grid_.val()) free(method_grid_.val());
+  if (symmetry_.val()) free(symmetry_.val());
+  if (alpha_.val()) free(alpha_.val());
+  if (beta_.val()) free(beta_.val());
+  if (docc_.val()) free(docc_.val());
+  if (socc_.val()) free(socc_.val());
+  if (frozen_docc_.val()) free(frozen_docc_.val());
+  if (frozen_uocc_.val()) free(frozen_uocc_.val());
 }
 
 void

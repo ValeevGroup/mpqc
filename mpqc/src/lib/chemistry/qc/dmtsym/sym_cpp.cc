@@ -7,7 +7,7 @@
 #include <math/symmetry/pointgrp.h>
 #include <util/misc/libmisc.h>
 #include <util/keyval/keyval.h>
-#include <chemistry/qc/basis/petite.h>
+#include <chemistry/qc/basis/symgaussbas.h>
 #include <chemistry/qc/basis/rot.h>
 
 extern "C" {
@@ -132,9 +132,12 @@ sym_struct_from_gbs(const RefGaussianBasisSet& gbs, sym_struct_t& sym_info)
     }
   }
 
-  PointGroup& pg = gbs->molecule()->point_group();
+  SymmGaussianBasisSet *sgbs =
+    SymmGaussianBasisSet::require_castdown(gbs,"sym_struct_from_gbs");
+                                                                      
+  PointGroup& pg = sgbs->molecule()->point_group();
   CharacterTable ct = pg.char_table();
-  PetiteList pl(gbs);
+  PetiteList& pl = sgbs->petite_list();
   
   char *point_group = strdup(pg.symbol());
   

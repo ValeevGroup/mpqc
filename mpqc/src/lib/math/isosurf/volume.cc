@@ -27,9 +27,9 @@ Volume::_castdown(const ClassDesc*cd)
 }
 
 Volume::Volume():
-  NLP2(new LocalSCDimension(3)),
   _interp_acc(1.0e-6)
 {
+  set_dimension(matrixkit()->dimension(3));
 }
 
 Volume::Volume(const RefKeyVal&keyval):

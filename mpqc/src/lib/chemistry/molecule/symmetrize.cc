@@ -36,13 +36,21 @@ main(int argc, char *argv[])
 {
   int i;
 
-  char *infile = (argv[1]) ? argv[1] : "mpqc.in";
+  if (argc < 2) {
+    cerr << "usage: " << argv[0]
+         << " input_file { keyword { tolerance } }" << endl;
+    cerr << "  default keyword = \"molecule\"" << endl;
+    cerr << "  default tolerance = \"1.0e-4\"" << endl;
+    return 1;
+  }
+
+  char *infile = argv[1];
   RefKeyVal kv(new ParsedKeyVal(infile));
 
-  char *keyword = argc>2?argv[2]:"molecule";
+  const char *keyword = argc>2?argv[2]:"molecule";
   RefMolecule mol = kv->describedclassvalue(keyword);
 
-  char *ctol = argc>3?argv[3]:"1.0e-4";
+  const char *ctol = argc>3?argv[3]:"1.0e-4";
   double tol = atof(ctol);
 
   cout << "Original molecule:" << endl;
@@ -68,14 +76,14 @@ main(int argc, char *argv[])
   int nunique = mol->nunique();
 
   mol->transform_to_principal_axes();
-  cout << "cleaned molecule transformed to principle axis\n";
+  cout << "cleaned molecule transformed to principle axes\n";
   mol->print();
 
   cout << scprintf("\nnunique=%d: ",nunique);
   for (i=0; i < nunique; i++) cout << scprintf(" %d",mol->unique(i)+1);
   cout << endl;
   
-  exit(0);
+  return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -23,7 +23,9 @@
 
 #if REF_CHECK_STACK
 #include <unistd.h>
+#ifndef HAVE_SBRK_DEC
 extern "C" void * sbrk(int);
+#endif
 #define DO_REF_CHECK_STACK(p) (((void*) (p) > sbrk(0)) && (p)->managed())
 #else
 #define DO_REF_CHECK_STACK(p) (0)

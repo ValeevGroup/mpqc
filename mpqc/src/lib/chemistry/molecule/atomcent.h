@@ -31,7 +31,9 @@ class AtomicCenter :
     inline double& operator[](int i) { return p[i]; };
     inline operator int() { return element_.number(); };
     inline ChemicalElement& element() { return element_; };
+    inline const ChemicalElement& element() const { return element_; };
     inline Point& point() { return p; };
+    inline const Point& point() const { return p; };
     inline const char * label() const { return label_; }
 
     void save_data_state(StateOut&);

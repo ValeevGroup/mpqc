@@ -480,10 +480,7 @@ scf_make_old_centers(KeyVal& topkeyval, centers_t& centers,
                                         centers_t& oldcenters)
 {
   int i;
-  int count;
   int errcod;
-  int basis_array;
-  char *bset;
 
   if (mynode0() == 0) {
    // create a keyval which will look in the :project section of the input

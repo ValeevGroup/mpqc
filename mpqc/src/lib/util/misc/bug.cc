@@ -105,16 +105,29 @@ Debugger::Debugger(const RefKeyVal &keyval)
 
   debug_ = keyval->booleanvalue("debug");
   if (keyval->error() != KeyVal::OK) debug_ = 1;
+
   traceback_ = keyval->booleanvalue("traceback");
   if (keyval->error() != KeyVal::OK) traceback_ = 1;
+
   exit_on_signal_ = keyval->booleanvalue("exit");
   if (keyval->error() != KeyVal::OK) traceback_ = 1;
+
   wait_for_debugger_ = keyval->booleanvalue("wait_for_debugger");
   if (keyval->error() != KeyVal::OK) wait_for_debugger_ = 1;
+
   cmd_ = keyval->pcharvalue("cmd");
+
   prefix_ = keyval->pcharvalue("prefix");
+
   if (keyval->booleanvalue("handle_defaults")) handle_defaults();
+  if (keyval->error() != KeyVal::OK) handle_defaults();
+
   if (cmd_ == 0) default_cmd();
+
+  if (prefix_ == 0) {
+      prefix_ = new char[1];
+      prefix_[0] = '\0';
+    }
 }
 
 Debugger::~Debugger()
@@ -251,6 +264,10 @@ Debugger::default_cmd()
 #endif
   int has_x11_display = (getenv("DISPLAY") != 0);
 
+#ifdef PARAGON
+  has_x11_display = 0;
+#endif
+
   if (!gcc && sizeof(void*) == 8 && has_x11_display) {
       set_cmd("xterm -title \"$(PREFIX)$(EXEC)\" -e dbx -p $(PID) $(EXEC) &");
     }
@@ -350,7 +367,7 @@ Debugger::got_signal(int sig)
       cout << prefix_ << "Debugger: continuing" << endl;
     }
 
-  handle(sig);
+  //handle(sig);
 }
 
 void

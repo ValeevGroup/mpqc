@@ -180,6 +180,8 @@ main(int argc, char *argv[])
       string def(&argv[i][2]);
       string symbol(def);
       string value(def);
+      if (symbol.find("=") < 0 || symbol.find("=") > symbol.length())
+        continue;
       symbol.remove(symbol.find("="),symbol.size()-symbol.find("=")+1);
       def.remove(0, def.find("=") + 1);
       if (debug) cout << "Defining " << symbol << " to be " << def << endl;

@@ -48,13 +48,13 @@ extern "C" int
 ImplicitSurfacePolygonizer_add_triangle_to_current(int i1, int i2, int i3,
                                                    VERTICES v)
 {
-  ImplicitSurfacePolygonizer::add_triangle_to_current(i1, i2, i3, v);
+  return ImplicitSurfacePolygonizer::add_triangle_to_current(i1, i2, i3, v);
 }
 
 extern "C" double
 ImplicitSurfacePolygonizer_value_of_current(double x,double y,double z)
 {
-  ImplicitSurfacePolygonizer::value_of_current(x,y,z);
+  return ImplicitSurfacePolygonizer::value_of_current(x,y,z);
 }
 
 ////////////////////////////////////////////////////////////////////////////

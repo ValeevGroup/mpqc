@@ -145,6 +145,7 @@ get_input(const RefKeyVal& keyval)
   fprintf(outfp,"  intco:max_force           = %g\n",conv_maxf);
   fprintf(outfp,"  intco:rms_force           = %g\n",conv_rmsf);
   fprintf(outfp,"\n");
+  fflush(outfp);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -243,9 +244,11 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
   fflush(outfp);
   if (print_internal) {
     fprintf(outfp,"\n Initial internal coordinates\n\n");
+    fflush(outfp);
     coor->print();
   } else {
     fprintf(outfp,"\n Initial simple internal coordinates\n\n");
+    fflush(outfp);
     coor->print_simples();
   }
   fprintf(outfp,"\n");
@@ -264,12 +267,15 @@ Geom_done_mpqc(const RefKeyVal& keyval, int converged)
   else
     fprintf(outfp,"\nNonconverged Simple Internal Coordinates\n");
 
+  fflush(outfp);
+  
   coor->print_simples();
-  fprintf(outfp,"\n");
 
-  fprintf(outfp,"Final cartesian coordinates\n\nMolecule:\n");
+  fprintf(outfp,"\nFinal cartesian coordinates\n\nMolecule:\n");
+  fflush(outfp);
   mol->print();
   fprintf(outfp,"\n");
+  fflush(outfp);
 
   coor=0;
   mol=0;
@@ -434,6 +440,7 @@ Geom_update_mpqc(RefSCVector& grad, const RefKeyVal& keyval)
     fprintf(outfp,"\n the geometry is converged\n");
 
     fprintf(outfp,"\n converged geometry\n");
+    fflush(outfp);
     mol->print();
 
     return GEOM_DONE;
@@ -458,6 +465,7 @@ Geom_update_mpqc(RefSCVector& grad, const RefKeyVal& keyval)
   fprintf(outfp," rms force               = %15.10g\n",rmsforce);
   fprintf(outfp," max disp                = %15.10g\n",maxdisp);
   fprintf(outfp," rms disp                = %15.10g\n",rmsdisp);
+  fflush(outfp);
 
   // now transform new internal coords back to cartesian coordinates
   Molecule foo_save = *(mol.pointer());
@@ -469,8 +477,8 @@ Geom_update_mpqc(RefSCVector& grad, const RefKeyVal& keyval)
       (*mol.pointer())[i/3][i%3] = foo_save[i/3][i%3]-cart_grad[i];
   }
 
-  printf("\nnew molecular coordinates\n");
-  fflush(stdout);
+  fprintf(outfp,"\nnew molecular coordinates\n");
+  fflush(outfp);
   mol->print();
 
   // checkpoint

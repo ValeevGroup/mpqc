@@ -40,6 +40,8 @@
 
 #include "mpqc_int.h"
 
+#define VERBOSE 0
+
 #define STATEOUT StateOutBinXDR
 #define STATEIN StateInBinXDR
 // #define STATEOUT StateOutBin
@@ -61,18 +63,21 @@ static RefSCVector xn;
 static RefSCVector gn;
 static RefSCVector cart_grad;
 static RefSCVector last_mode;
+static double oldenergy = 0.0;
 
 RefSCDimension di, dc;
 
 static int iter=1;
 
+static int checkpoint_geom=1;
 static int print_hessian=0;
 static int print_internal=0;
-static int cartesians=0;
 static int tstate=0;
 static int efc=0;
 static int modef=0;
+static int use_internal_forces=-1;
 
+static double conv_energy=1.0e-6;
 static double conv_crit=1.0e-6;
 static double conv_rmsf=1.0e-5;
 static double conv_maxf=4.0e-5;
@@ -91,27 +96,36 @@ static double rmsdisp=0;
 static void
 get_input(const RefKeyVal& keyval)
 {
+  if (keyval->exists("delta_energy")) {
+    double conv = fabs(keyval->doublevalue("delta_energy"));
+    if (conv >= 1.0) conv_energy = pow(10.0,-conv);
+    else conv_energy = conv;
+  }
+
   if (keyval->exists("rms_force")) {
-    int conv = keyval->intvalue("rms_force");
-    conv_rmsf = pow(10.0,(double)-conv);
+    double conv = fabs(keyval->doublevalue("rms_force"));
+    if (conv >= 1.0) conv_rmsf = pow(10.0,-conv);
+    else conv_rmsf = conv;
   }
 
   if (keyval->exists("max_force")) {
-    int conv = keyval->intvalue("max_force");
-    conv_maxf = pow(10.0,(double)-conv);
+    double conv = fabs(keyval->doublevalue("max_force"));
+    if (conv >= 1.0) conv_maxf = pow(10.0,-conv);
+    else conv_maxf = conv;
   }
 
   if (keyval->exists("convergence")) {
-    int conv = keyval->intvalue("convergence");
-    conv_crit = pow(10.0,(double)-conv);
+    double conv = fabs(keyval->doublevalue("convergence"));
+    if (conv >= 1.0) conv_crit = pow(10.0,-conv);
+    else conv_crit = conv;
   }
 
   if (keyval->exists("maxstepsize")) {
     maxstepsize = keyval->doublevalue("maxstepsize");
   }
 
-  if (keyval->exists("cartesians")) {
-    cartesians = keyval->booleanvalue("cartesians");
+  if (keyval->exists("checkpoint")) {
+    checkpoint_geom = keyval->booleanvalue("checkpoint");
   }
 
   if (keyval->exists("print_hessian")) {
@@ -125,6 +139,10 @@ get_input(const RefKeyVal& keyval)
   if (keyval->exists("eigenvector_following")) {
     efc = keyval->booleanvalue("eigenvector_following");
   }
+
+  if (keyval->exists("use_internal_forces")) {
+    use_internal_forces = keyval->booleanvalue("use_internal_forces");
+  }
   
   if (keyval->exists("transition_state")) {
     efc = 1;
@@ -136,7 +154,6 @@ get_input(const RefKeyVal& keyval)
 
   fprintf(outfp,"  intco:print_hessian       = %d\n",print_hessian);
   fprintf(outfp,"  intco:print_internal      = %d\n",print_internal);
-  fprintf(outfp,"  intco:cartesians          = %d\n",cartesians);
   fprintf(outfp,"  intco:transition_state    = %d\n",tstate);
   fprintf(outfp,"  intco:mode_following      = %d\n",modef);
   fprintf(outfp,"  intco:maxstepsize         = %g\n",maxstepsize);
@@ -144,6 +161,7 @@ get_input(const RefKeyVal& keyval)
   fprintf(outfp,"  intco:convergence         = %g\n",conv_crit);
   fprintf(outfp,"  intco:max_force           = %g\n",conv_maxf);
   fprintf(outfp,"  intco:rms_force           = %g\n",conv_rmsf);
+  fprintf(outfp,"  intco:delta_energy        = %g\n",conv_energy);
   fprintf(outfp,"\n");
   fflush(outfp);
 }
@@ -169,8 +187,6 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
   struct stat buf;
 
   if (stat("geom.dat",&buf) < 0 || buf.st_size==0) {
-    STATEOUT so("geom.dat","w+");
-
    // read coor and update from the input
     coor = keyval->describedclassvalue("coor");
     if (coor.null())
@@ -205,16 +221,19 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
     cart_grad->assign(0.0);
     
    // save it all to disk
-    so.put(iter);
-    mol.save_state(so);
-    coor.save_state(so);
-    update.save_state(so);
-    dc.save_state(so);
-    di.save_state(so);
-    xn.save_state(so);
-    gn.save_state(so);
-    cart_grad.save_state(so);
-    hessian.save_state(so);
+    if (checkpoint_geom) {
+        STATEOUT so("geom.dat","w+");
+        so.put(iter);
+        mol.save_state(so);
+        coor.save_state(so);
+        update.save_state(so);
+        dc.save_state(so);
+        di.save_state(so);
+        xn.save_state(so);
+        gn.save_state(so);
+        cart_grad.save_state(so);
+        hessian.save_state(so);
+      }
   }  else {
     STATEIN si("geom.dat","r+");
 
@@ -235,6 +254,12 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
     fprintf(outfp,
             "\n restarting geometry optimization at iteration %d\n",iter);
   }
+
+  if (use_internal_forces == -1) {
+      if (coor->nconstrained()) use_internal_forces = 1;
+      else use_internal_forces = 0;
+    }
+  fprintf(outfp,"  intco:use_internal_forces = %d\n", use_internal_forces);
 
   fprintf(outfp,"\n Initial geometry in Geom_init_mpqc\n");
   fprintf(outfp,"Molecule:\n");
@@ -271,7 +296,8 @@ Geom_done_mpqc(const RefKeyVal& keyval, int converged)
   
   coor->print_simples();
 
-  fprintf(outfp,"\nFinal cartesian coordinates\n\nMolecule:\n");
+  fprintf(outfp,"\nFinal cartesian coordinates after %d iterations\n\n",iter);
+  fprintf(outfp,"Molecule:\n");
   fflush(outfp);
   mol->print();
   fprintf(outfp,"\n");
@@ -288,21 +314,11 @@ Geom_dim_natom3()
 }
 
 int
-Geom_update_mpqc(RefSCVector& grad, const RefKeyVal& keyval)
+Geom_update_mpqc(double energy, RefSCVector& grad, const RefKeyVal& keyval)
 {
   int i,j,ij;
 
   cart_grad.assign(grad);
-    
-  // find rms and max force
-  rmsforce=0;
-  maxforce=0;
-  for (i=0; i < cart_grad.n(); i++) {
-    double d = fabs(cart_grad(i));
-    rmsforce += d*d;
-    maxforce = (d>maxforce) ? d : maxforce;
-  }
-  rmsforce = sqrt(rmsforce/cart_grad.n());
 
   // transform cartesian coordinates to internal coordinates 
   coor->to_internal(xn);
@@ -314,9 +330,47 @@ Geom_update_mpqc(RefSCVector& grad, const RefKeyVal& keyval)
   if (print_internal)
     gn.print("internal coordinate gradients");
 
+  // find rms and max force
+  rmsforce=0;
+  maxforce=0;
+  RefSCVector conv_grad;
+  if (use_internal_forces) conv_grad = gn;
+  else conv_grad = cart_grad;
+  for (i=0; i < conv_grad.n(); i++) {
+    double d = fabs(conv_grad(i));
+    rmsforce += d*d;
+    maxforce = (d>maxforce) ? d : maxforce;
+  }
+  rmsforce = sqrt(rmsforce/conv_grad.n());
+
   // update the inverse hessian
   RefNLP2 nlp = 0;
   update->update(hessian,nlp,xn,gn);
+
+  // possibly transform to a new coordinate system
+  RefNonlinearTransform trans = coor->change_coordinates();
+
+#if VERBOSE
+  xn.print("xn before");
+  gn.print("gn before");
+  hessian.print("hessian before");
+#endif
+
+  update->apply_transform(trans);
+  trans->transform_coordinates(xn);
+  trans->transform_gradient(gn);
+  if (efc) {
+      trans->transform_hessian(hessian);
+    }
+  else {
+      trans->transform_ihessian(hessian);
+    }
+
+#if VERBOSE
+  xn.print("xn after");
+  gn.print("gn after");
+  hessian.print("hessian after");
+#endif
 
   RefSCVector xdisp(hessian.dim());
   
@@ -435,11 +489,20 @@ Geom_update_mpqc(RefSCVector& grad, const RefKeyVal& keyval)
     iconv = (xg>iconv) ? xg : iconv;
   }
   iconv /= 2.0;
+
+  double delta_energy = energy - oldenergy;
+  oldenergy = energy;
   
-  if (iconv < conv_crit && rmsforce < conv_rmsf && maxforce < conv_maxf) {
-    fprintf(outfp,"\n max of 1/2 idisp*iforce = %15.10g\n",iconv);
-    fprintf(outfp," max force               = %15.10g\n",maxforce);
-    fprintf(outfp," rms force               = %15.10g\n",rmsforce);
+  if (fabs(delta_energy) < conv_energy
+      && iconv < conv_crit && rmsforce < conv_rmsf && maxforce < conv_maxf) {
+    fprintf(outfp,"\n max of 1/2 idisp*iforce = %15.10g (%5.2g)\n",
+            iconv, conv_crit);
+    fprintf(outfp," max force               = %15.10g (%5.2g)\n",
+            maxforce, conv_maxf);
+    fprintf(outfp," rms force               = %15.10g (%5.2g)\n",
+            rmsforce, conv_rmsf);
+    fprintf(outfp," delta energy            = %15.10g (%5.2g)\n",
+            delta_energy, conv_energy);
     fprintf(outfp,"\n the geometry is converged\n");
 
     fprintf(outfp,"\n converged geometry\n");
@@ -485,18 +548,20 @@ Geom_update_mpqc(RefSCVector& grad, const RefKeyVal& keyval)
   mol->print();
 
   // checkpoint
-  STATEOUT so("geom.dat","w+");
   iter++;
-  so.put(iter);
-  mol.save_state(so);
-  coor.save_state(so);
-  update.save_state(so);
-  dc.save_state(so);
-  di.save_state(so);
-  xn.save_state(so);
-  gn.save_state(so);
-  cart_grad.save_state(so);
-  hessian.save_state(so);
+  if (checkpoint_geom) {
+      STATEOUT so("geom.dat","w+");
+      so.put(iter);
+      mol.save_state(so);
+      coor.save_state(so);
+      update.save_state(so);
+      dc.save_state(so);
+      di.save_state(so);
+      xn.save_state(so);
+      gn.save_state(so);
+      cart_grad.save_state(so);
+      hessian.save_state(so);
+    }
 
   return GEOM_COMPUTE_GRADIENT;
 }

@@ -44,7 +44,7 @@ RefSCDimension Geom_dim_natom3();
 
 int Geom_init_mpqc(RefMolecule&, const RefKeyVal&);
 
-int Geom_update_mpqc(RefSCVector&, const RefKeyVal&);
+int Geom_update_mpqc(double, RefSCVector&, const RefKeyVal&);
 
 void Geom_done_mpqc(const RefKeyVal&, int converged);
 void Geom_write_pdb(const RefKeyVal&, RefMolecule&, char * =0);

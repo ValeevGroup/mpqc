@@ -150,6 +150,8 @@ main(int argc, char *argv[])
   char *dertype="none";
   double dens;
 
+  double energy = 0.0;
+
   RefMolecule mol;
   RefGaussianBasisSet gbs;
   
@@ -198,6 +200,10 @@ main(int argc, char *argv[])
     pkv = ppkv = 0;
 
     gbs = keyval->describedclassvalue("basis");
+    if (gbs.null()) {
+        fprintf(stderr,"mpqcic: couldn't read \"basis\"\n");
+        abort();
+      }
     tcenters = gbs->convert_to_centers_t();
 
     mol = gbs->molecule();
@@ -524,6 +530,7 @@ main(int argc, char *argv[])
       errcod = scf_vector(&scf_info, &sym_info, &centers, Fock, FockO, Scf_Vec,
                           &oldcenters, outfile);
       tim_exit("scf_vect");
+      energy = scf_info.nuc_rep + scf_info.e_elec;
 
       if (errcod != 0) {
         fprintf(outfile,"trouble forming scf vector\n");
@@ -545,7 +552,7 @@ main(int argc, char *argv[])
                               nfzc, nfzv,
                               Scf_Vec, Fock, FockO,
                               mem_alloc, outfile, grp,
-                              gradient);
+                              energy, gradient);
           }
         else if (!scf_info.iopen) {
           dmt_force_csscf(outfile, Fock, Scf_Vec,
@@ -569,7 +576,7 @@ main(int argc, char *argv[])
             }
           }
           
-          geom_code = Geom_update_mpqc(gradv, keyval);
+          geom_code = Geom_update_mpqc(energy, gradv, keyval);
           reset_centers(centers,mol);
         }
       }
@@ -580,7 +587,7 @@ main(int argc, char *argv[])
                               nfzc, nfzv,
                               Scf_Vec, Fock, FockO,
                               mem_alloc, outfile, grp,
-                              gradient);
+                              energy, gradient);
           }
         else if (!scf_info.iopen) {
           dmt_force_csscf(outfile, Fock, Scf_Vec,

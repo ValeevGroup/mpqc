@@ -1,3 +1,4 @@
+# Emacs should use -*- Makefile -*- mode.
 
 # The global GNU Makefile used to set up for any machine
 

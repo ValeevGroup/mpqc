@@ -1,3 +1,4 @@
+# Emacs should use -*- Makefile -*- mode.
 
 #################################################
 #
@@ -50,8 +51,8 @@ $(TOPDIR)/lib/$(TARGET_TO_MAKE).a: $(LIBOBJ)
 .PHONY:	dlinfo
 dlinfo::
 ifneq ($(CLASSES),none)
-dlinfo:: # $(TOPDIR)/lib/$(TARGET_TO_MAKE).dep
-	$(MKCLASSES) $(TOPDIR)/lib/classes $(TARGET_TO_MAKE).so $(CLASSES)
+#dlinfo:: # $(TOPDIR)/lib/$(TARGET_TO_MAKE).dep
+#	$(MKCLASSES) $(TOPDIR)/lib/classes $(TARGET_TO_MAKE).so $(CLASSES)
 
 default:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).a
 ifeq ($(ELF),yes)

@@ -163,6 +163,7 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
       ExEnv::err() << node0 << "MBPT2::MBPT2: no reference wavefunction" << endl;
       abort();
     }
+  copy_orthog_info(reference_);
   nfzc = keyval->intvalue("nfzc");
   char *nfzc_charval = keyval->pcharvalue("nfzc");
   if (nfzc_charval && !strcmp(nfzc_charval, "auto")) {
@@ -370,8 +371,10 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
       RefSymmSCMatrix fock_o_so = reference_->fock(1);
 
       // transform the AO fock matrices to the MO basis
-      RefSymmSCMatrix fock_c_mo1 = fock_c_so.clone();
-      RefSymmSCMatrix fock_o_mo1 = fock_o_so.clone();
+      RefSymmSCMatrix fock_c_mo1
+          = basis_matrixkit()->symmmatrix(oso_dimension());
+      RefSymmSCMatrix fock_o_mo1
+          = basis_matrixkit()->symmmatrix(oso_dimension());
       RefSCMatrix vecs_so_mo1 = reference_->eigenvectors();
 
       fock_c_mo1.assign(0.0);
@@ -435,7 +438,8 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
       RefSymmSCMatrix fock_c_so = reference_->fock(0);
 
       // transform the AO fock matrices to the MO basis
-      RefSymmSCMatrix fock_c_mo1 = fock_c_so.clone();
+      RefSymmSCMatrix fock_c_mo1
+          = basis_matrixkit()->symmmatrix(oso_dimension());
       RefSCMatrix vecs_so_mo1 = reference_->eigenvectors();
 
       fock_c_mo1.assign(0.0);
@@ -561,11 +565,11 @@ void
 MBPT2::init_variables()
 {
   nbasis = so_dimension()->n();
-  int noso = oso_dimension()->n();
-  if (nbasis != noso) {
-      ExEnv::out() << "MBPT2: Noso != Nbasis: MBPT2 not checked for this case" << endl;
-      abort();
-    }
+  noso = oso_dimension()->n();
+//    if (nbasis != noso) {
+//        ExEnv::out() << "MBPT2: Noso != Nbasis: MBPT2 not checked for this case" << endl;
+//        abort();
+//      }
   nocc = nvir = nsocc = 0;
   for (int i=0; i<noso; i++) {
     if (reference_->occupation(i) == 2.0) nocc++;

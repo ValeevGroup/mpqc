@@ -245,7 +245,7 @@ MBPT2::compute_cs_grad()
     }
 
   nocc_act = nocc - nfzc;
-  nvir  = nbasis - nocc;
+  nvir  = noso - nocc;
   nvir_act = nvir - nfzv;
 
   // Do a few preliminary tests to make sure the desired calculation
@@ -294,7 +294,7 @@ MBPT2::compute_cs_grad()
   //
   ////////////////////////////////////////////////////////
   if (me == 0) {
-    mem_static = nbasis*nbasis; // scf vector
+    mem_static = nbasis*noso; // scf vector
     mem_static += 2*nbasis*nfuncmax; // iqjs & iqjr
     if (dograd) {
       mem_static += 9*natom; // gradient & ginter & hf_ginter
@@ -417,27 +417,16 @@ MBPT2::compute_cs_grad()
     Scf_Vec.print("eigenvectors");
     }
 
-  double *scf_vector_dat = new double[nbasis*nbasis];
+  double *scf_vector_dat = new double[nbasis*noso];
   Scf_Vec.t()->convert(scf_vector_dat);
 
-  int *orbital_map = new int[nbasis];
-  evals = new double[nbasis];
+  evals = new double[noso];
   double** scf_vector = new double*[nbasis];
-  int idoc=0, ivir=0;
-  const double epsilon = 1.0e-4;
   for (i=0; i<nbasis; i++) {
-    if (occ(i) >= 2.0 - epsilon) {
-      evals[idoc] = evalmat(i);
-      scf_vector[idoc] = &scf_vector_dat[i*nbasis];
-      orbital_map[idoc] = i;
-      idoc++;
-      }
-    else {
-      evals[ivir+nocc] = evalmat(i);
-      scf_vector[ivir+nocc] = &scf_vector_dat[i*nbasis];
-      orbital_map[ivir+nocc] = i;
-      ivir++;
-      }
+    scf_vector[i] = &scf_vector_dat[i*noso];
+    }
+  for (i=0; i<noso; i++) {
+      evals[i] = evalmat(i);
     }
 
   Scf_Vec = 0;
@@ -507,7 +496,7 @@ MBPT2::compute_cs_grad()
     }
 
   if (debug_ > 2 && me == 0) {
-    for (j=0; j<nbasis; j++) {
+    for (j=0; j<noso; j++) {
       ExEnv::out() << indent
            << scprintf("eigenvalue[%3d] = %15.10lf", j, evals[j]);
       if (j < nfzc) ExEnv::out() << " (frozen docc)";
@@ -699,7 +688,7 @@ MBPT2::compute_cs_grad()
                 biggest_ints_2s.insert(tmpval,i+i_offset,j,s,q);
                 }
 #endif
-              for (x=0; x<nbasis; x++) {
+              for (x=0; x<noso; x++) {
                 *ixjs_ptr++ += *c_qx++ * tmpval;
                 }
               }   // exit q loop
@@ -709,7 +698,7 @@ MBPT2::compute_cs_grad()
             // integrals ixjs
             integral_iqjs_ptr = &integral_iqjs[nbasis*(s + nbasis*ij_index)];
             ixjs_ptr = ixjs_tmp;
-            for (x=0; x<nbasis; x++) {
+            for (x=0; x<noso; x++) {
 #if PRINT_BIGGEST_INTS
               if (x>=nocc) {
                 biggest_ints_3a.insert(*ixjs_ptr,i+i_offset,j,s,x-nocc);
@@ -736,7 +725,7 @@ MBPT2::compute_cs_grad()
     // rename the array integral_ixjs, where x = any MO
     integral_ixjs = integral_iqjs;
 
-    integral_iajy = new double[nbasis];
+    integral_iajy = new double[noso];
     // in iajy: i act; a,j act or frz; y act or frz occ or virt.
     integral_ikja = new double[nvir_act];
     // in ikja: i,j act; k act or frz; a act.
@@ -755,7 +744,7 @@ MBPT2::compute_cs_grad()
         if (index++ % nproc == me) {
 
           for (a=0; a<nvir; a++) {
-            bzerofast(integral_iajy, nbasis);
+            bzerofast(integral_iajy, noso);
             iajs_ptr = &integral_ixjs[a+nocc + nbasis*nbasis*ij_index];
             for (s=0; s<nbasis; s++) {
               c_sy = scf_vector[s];
@@ -770,7 +759,7 @@ MBPT2::compute_cs_grad()
                      << endl;
                 }
 #endif
-              for (y=0; y<nbasis; y++) {
+              for (y=0; y<noso; y++) {
                 *iajy_ptr++ += *c_sy++ * tmpval;
                 } // exit y loop
               iajs_ptr += nbasis;
@@ -779,7 +768,7 @@ MBPT2::compute_cs_grad()
             // overwriting elements of ixjs
             iajs_ptr = &integral_ixjs[a+nocc + nbasis*nbasis*ij_index];
             iajy_ptr = integral_iajy;
-            for (y=0; y<nbasis; y++) {
+            for (y=0; y<noso; y++) {
               *iajs_ptr = *iajy_ptr++;
               iajs_ptr += nbasis;
               } // exit y loop
@@ -1529,10 +1518,10 @@ MBPT2::compute_cs_grad()
              << endl;
         }
       for (i=0; i<biggest_coefs.ncontrib(); i++) {
-        int i0 = orbital_map[biggest_coefs.indices(i)[0]];
-        int i1 = orbital_map[biggest_coefs.indices(i)[1]];
-        int i2 = orbital_map[biggest_coefs.indices(i)[2] + nocc];
-        int i3 = orbital_map[biggest_coefs.indices(i)[3] + nocc];
+        int i0 = biggest_coefs.indices(i)[0];
+        int i1 = biggest_coefs.indices(i)[1];
+        int i2 = biggest_coefs.indices(i)[2] + nocc;
+        int i3 = biggest_coefs.indices(i)[3] + nocc;
         int spincase = biggest_coefs.indices(i)[4];
         ExEnv::out() << indent
              << scprintf("  %2d %12.8f %2d %3s %2d %3s -> %2d %3s %2d %3s (%s)",
@@ -1598,6 +1587,7 @@ MBPT2::compute_cs_grad()
   RefSCDimension nvir_dim(new SCDimension(nvir,1));
   nvir_dim->blocks()->set_subdim(0, new SCDimension(nvir));
   RefSCDimension nbasis_dim = ao_dimension()->blocks()->subdim(0);
+  RefSCDimension noso_dim(new SCDimension(noso,1));
 
   if (dograd || do_d1_) {
     msg_->sum(Laj,nvir*nocc);
@@ -1656,8 +1646,8 @@ MBPT2::compute_cs_grad()
            << indent << "Largest S2 values (unique determinants):" << endl;
       }
     for (i=0; i<biggest_t1.ncontrib(); i++) {
-      int i0 = orbital_map[biggest_t1.indices(i)[0]];
-      int i1 = orbital_map[biggest_t1.indices(i)[1] + nocc];
+      int i0 = biggest_t1.indices(i)[0];
+      int i1 = biggest_t1.indices(i)[1] + nocc;
       ExEnv::out() << node0
            << indent << scprintf("  %2d %12.8f %2d %3s -> %2d %3s",
                                  i+1, biggest_t1.val(i),
@@ -1682,7 +1672,6 @@ MBPT2::compute_cs_grad()
     delete[] scf_vector;
     delete[] scf_vector_dat;
     delete[] evals;
-    delete[] orbital_map;
     tim_exit("mp2-mem");
     return;
     }
@@ -1809,7 +1798,7 @@ MBPT2::compute_cs_grad()
   RefSCMatrix Co(nbasis_dim, nocc_dim, kit); // occupied block of scf_vector
   for (p=0; p<nbasis; p++) {
     c_pq = scf_vector[p];
-    for (q=0; q<nbasis; q++) {
+    for (q=0; q<noso; q++) {
       if (q<nocc) Co->set_element(p, q, *c_pq++);
       else Cv->set_element(p, q-nocc, *c_pq++);
       }
@@ -1911,29 +1900,29 @@ MBPT2::compute_cs_grad()
   // the density matrix and energy weighted
   // density matrix in the AO basis
   RefSCMatrix P2AO_matrix(nbasis_dim, nbasis_dim, kit);
-  RefSCMatrix P2MO_matrix(nbasis_dim, nbasis_dim, kit);
+  RefSCMatrix P2MO_matrix(noso_dim, noso_dim, kit);
   RefSCMatrix W2AO_matrix(nbasis_dim, nbasis_dim, kit);
-  RefSCMatrix W2MO_matrix(nbasis_dim, nbasis_dim, kit);
-  RefSCMatrix SCF_matrix(nbasis_dim, nbasis_dim, kit);
+  RefSCMatrix W2MO_matrix(noso_dim, noso_dim, kit);
+  RefSCMatrix SCF_matrix(nbasis_dim, noso_dim, kit);
   for (i=0; i<nocc; i++) {
     for (j=0; j<nocc; j++) {
       P2MO_matrix->set_element(i,j,Pkj_matrix->get_element(i,j));
       W2MO_matrix->set_element(i,j,Wkj_matrix->get_element(i,j));
       SCF_matrix->set_element(i,j,Co->get_element(i,j));
       }
-    for (j=nocc; j<nbasis; j++) {
+    for (j=nocc; j<noso; j++) {
       P2MO_matrix->set_element(i,j,Paj_matrix->get_element(j-nocc,i));
       W2MO_matrix->set_element(i,j,Waj_matrix->get_element(i,j-nocc));
       SCF_matrix->set_element(i,j,Cv->get_element(i,j-nocc));
       }
     }
-  for (i=nocc; i<nbasis; i++) {
+  for (i=nocc; i<noso; i++) {
     for (j=0; j<nocc; j++) {
       P2MO_matrix->set_element(i,j,Paj_matrix->get_element(i-nocc,j));
       W2MO_matrix->set_element(i,j,Waj_matrix->get_element(j,i-nocc));
       SCF_matrix->set_element(i,j,Co->get_element(i,j));
       }
-    for (j=nocc; j<nbasis; j++) {
+    for (j=nocc; j<noso; j++) {
       P2MO_matrix->set_element(i,j,Pab_matrix->get_element(i-nocc,j-nocc));
       W2MO_matrix->set_element(i,j,Wab_matrix->get_element(i-nocc,j-nocc));
       SCF_matrix->set_element(i,j,Cv->get_element(i,j-nocc));
@@ -2169,7 +2158,6 @@ MBPT2::compute_cs_grad()
   delete[] scf_vector;
   delete[] scf_vector_dat;
   delete[] evals;
-  delete[] orbital_map;
 
   tim_exit("mp2-mem");
   }

@@ -99,6 +99,8 @@ class Wavefunction: public MolecularEnergy {
 
     double min_orthog_res() const { return min_orthog_res_; }
     double max_orthog_res() const { return max_orthog_res_; }
+
+    void copy_orthog_info(const Ref<Wavefunction> &);
     
   public:
     Wavefunction(StateIn&);

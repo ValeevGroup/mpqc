@@ -518,6 +518,15 @@ Wavefunction::compute_overlap_eig(RefSCMatrix& overlap_eigvec,
       delete[] pm;
     }
 
+  if (nlindep > 0 && orthog_method_ == Symmetric) {
+    ExEnv::out() << node0 << indent
+                 << "WARNING: " << nlindep
+                 << " basis function"
+                 << (sodim_.n()-osodim_.n()>1?"s":"")
+                 << " ignored in symmetric orthogonalization."
+                 << endl;
+  }
+
   // make sure all nodes end up with exactly the same data
   MessageGrp::get_default_messagegrp()->bcast(nfunctot);
   MessageGrp::get_default_messagegrp()->bcast(nfunc, bm->nblocks());
@@ -878,6 +887,22 @@ Wavefunction::obsolete()
   orthog_trans_inverse_ = 0;
 
   MolecularEnergy::obsolete();
+}
+
+void
+Wavefunction::copy_orthog_info(const Ref<Wavefunction>&wfn)
+{
+  if (orthog_trans_.nonnull() || orthog_trans_inverse_.nonnull()) {
+    ExEnv::err() << "WARNING: Wavefunction: orthogonalization info changing"
+                 << endl;
+  }
+  orthog_trans_ = wfn->so_to_orthog_so().copy();
+  orthog_trans_inverse_ = wfn->so_to_orthog_so_inverse().copy();
+  lindep_tol_ = wfn->lindep_tol_;
+  orthog_method_ = wfn->orthog_method_;
+  osodim_ = wfn->osodim_;
+  min_orthog_res_ = wfn->min_orthog_res_;
+  max_orthog_res_ = wfn->max_orthog_res_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

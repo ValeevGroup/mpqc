@@ -131,7 +131,7 @@ MBPT2::cs_cphf(double **scf_vector,
     }
 
   for (i=0; i<nbasis; i++) {
-    for (j=0; j<nbasis; j++) {
+    for (j=0; j<noso; j++) {
       if (j<nocc) Co(i,j) = scf_vector[i][j];
       else Cv(i,j-nocc) = scf_vector[i][j];
       }

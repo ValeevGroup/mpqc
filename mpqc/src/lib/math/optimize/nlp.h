@@ -125,6 +125,11 @@ class NLP2: public NLP1 {
     virtual void guess_hessian(RefSymmSCMatrix&);
 
     virtual void print(SCostream& =SCostream::cout);
+
+    // information about the availability of values, gradients, and hessians
+    virtual int value_implemented();
+    virtual int gradient_implemented();
+    virtual int hessian_implemented();
 };
 SavableState_REF_dec(NLP2);
 

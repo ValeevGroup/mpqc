@@ -358,4 +358,22 @@ NLP2::print(SCostream&o)
   o.indent(); o << "hessian_accuracy = " << desired_hessian_accuracy() << endl;
 }
 
+int
+NLP2::value_implemented()
+{
+  return 0;
+}
+
+int
+NLP2::gradient_implemented()
+{
+  return 0;
+}
+
+int
+NLP2::hessian_implemented()
+{
+  return 0;
+}
+
 ///////////////////////////////////////////////////////////////////////////

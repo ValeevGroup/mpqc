@@ -42,7 +42,7 @@ statmacr.h: stattmpl.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > statmacr.h
 
 statetest.o: statetest.cc
-	$(CXX) $(CXXFLAGS) $(INCLUDE) -DSRCDIR=\"$(SRCDIR)\" -c $<
+	$(CXX) $(CXXFLAGS) $(DEFINES) $(INCLUDE) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 statetest: statetest.o libkeyval.$(LIBSUF) libmisc.$(LIBSUF) \
            libgroup.$(LIBSUF) libstate.$(LIBSUF) libclass.$(LIBSUF) \

@@ -55,7 +55,7 @@ CLSCF::_castdown(const ClassDesc*cd)
 
 CLSCF::CLSCF(StateIn& s) :
   SCF(s),
-  cl_fock_(s,this)
+  cl_fock_(this)
   maybe_SavableState(s)
 {
   cl_fock_.result_noupdate() =

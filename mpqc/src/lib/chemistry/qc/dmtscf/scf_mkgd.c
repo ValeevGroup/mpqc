@@ -1,6 +1,6 @@
 
 #define SHELLS 125
-#define HSOS 0
+#define HSOS 1
 
 /* Calculates two-electron integrals on the fly and sticks them into the
  * appropriate part of the G matrix
@@ -75,6 +75,12 @@ FILE *outfile;
   char *shnfunc;
   signed char *maxp=0;
 
+#if !HSOS
+  if (scf_info->iopen) {
+    fprintf(stderr,"oops, this version cannot do open shells\n");
+    return -1;
+  }
+#endif
 
  /* start timing */
   tim_enter("scf_mkgd");

@@ -65,7 +65,7 @@ FJT::FJT(int max)
   /* Allocate storage for gtable and int_fjttable. */
   int_fjttable = new double[maxj+1];
   gtable = new double*[ngtable()];
-  for (i=0; i<maxj+7; i++) {
+  for (i=0; i<ngtable(); i++) {
       gtable[i] = new double[TABLESIZE];
     }
 

@@ -35,7 +35,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libintv3
 BIN_OR_LIB = LIB
 
-TESTCSRC = inttest.cc
+TESTCSRC = inttest.cc fjttest.cc
 
 CXXSRC = fjt.cc offsets.cc tformv3.cc \
          int1e.cc comp1e.cc \
@@ -63,12 +63,19 @@ interface:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
+fjttest: fjttest.o \
+	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+	$(CXX) $(LDFLAGS) -o fjttest $^ $(SYSLIBS)
+
 inttest: inttest.o \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(CXX) $(LDFLAGS) -o inttest $^ $(SYSLIBS)
 
 inttest.o: inttest.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
+targetclean::
+	-rm -f inttest fjttest
 
 $(TESTOBJ:.o=.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

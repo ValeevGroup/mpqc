@@ -79,9 +79,11 @@ endif
 #### yacc and lex ####
 # (only works with bison and flex)
 ipv2_parse.cc ipv2_parse.h: ipv2_parse.yy
-	$(BISON) -v -d -o ipv2_parse.cc $^
-	/bin/mv ipv2_parse.cc.h ipv2_parse.h
-	-@rm -f ipv2_parse.cc.output
+	$(BISON) -v -d -o ipv2_parse.tmp $^
+	sed "s/^int yyparse.*;$$//" < ipv2_parse.tmp > ipv2_parse.cc
+	/bin/mv ipv2_parse.tmp.h ipv2_parse.h
+	-@rm -f ipv2_parse.tmp
+	-@rm -f ipv2_parse.output
 
 ipv2_scan.cc: ipv2_scan.ll
 	$(FLEX) -L -t $^ | grep -v "extern FILE .yyin" \

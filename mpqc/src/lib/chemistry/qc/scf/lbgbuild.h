@@ -52,6 +52,7 @@ class LocalLBGBuild : public GBuild<T> {
 
     void build_gmat(double accuracy) {
       tim_enter("ao_gmat");
+      tim_set_default("quartet");
 
       double tnint=0;
       int tol = (int) (log(accuracy)/log(2.0));
@@ -87,11 +88,11 @@ class LocalLBGBuild : public GBuild<T> {
             
             inds[1]=j;
 
-            tim_enter("quartet");
+            tim_enter_default();
             int from;
             grp_->recvt(2323, &from, 1);
             grp_->sendt(from, 3232, inds, 4);
-            tim_exit("quartet");
+            tim_exit_default();
           }
         }
 
@@ -154,9 +155,9 @@ class LocalLBGBuild : public GBuild<T> {
             if (!qijkl)
               continue;
 
-            tim_enter("quartet");
+            tim_enter_default();
             tbi.compute_shell(i,j,k,l);
-            tim_exit("quartet");
+            tim_exit_default();
 
             int e12 = (i==j);
             int e34 = (k==l);

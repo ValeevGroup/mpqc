@@ -62,6 +62,7 @@ class LocalTBGrad : public TBGrad<T> {
     
     void build_tbgrad(double * tbgrad, double pmax, double accuracy) {
       tim_enter("two electron gradient");
+      tim_set_default("quartet");
 
       int me = grp_->me();
       int nproc = grp_->n();
@@ -120,9 +121,9 @@ class LocalTBGrad : public TBGrad<T> {
               int fl=gbs.shell_to_function(l);
 
               DerivCenters cent;
-              tim_enter("quartet");
+              tim_enter_default();
               tbi.compute_shell(i,j,k,l,cent);
-              tim_exit("quartet");
+              tim_exit_default();
 
               const double * buf = tbi.buffer();
           

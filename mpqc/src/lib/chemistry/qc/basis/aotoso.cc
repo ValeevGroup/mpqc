@@ -577,7 +577,7 @@ RefSymmSCMatrix
 PetiteList::to_SO_basis(const RefSymmSCMatrix& a)
 {
   RefSymmSCMatrix aomatrix = BlockedSymmSCMatrix::castdown(a);
-  if (aomatrix.null) {
+  if (aomatrix.null()) {
     aomatrix = gbs_->so_matrixkit()->symmmatrix(AO_basisdim());
     aomatrix->convert(a);
   }
@@ -609,7 +609,7 @@ PetiteList::evecs_to_SO_basis(const RefSCMatrix& aoev)
   abort();
   
   RefSCMatrix aoevecs = BlockedSCMatrix::castdown(aoev);
-  if (aoevecs.null) {
+  if (aoevecs.null()) {
     aoevecs = gbs_->so_matrixkit()->matrix(AO_basisdim(), AO_basisdim());
     aoevecs->convert(aoev);
   }

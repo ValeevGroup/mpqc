@@ -500,9 +500,9 @@ R12IntEvalInfo::construct_ortho_comp_jv_()
   orthog_ri_so = orthog_ri_so.t();
   orthog_ri_ = plist_ri->evecs_to_AO_basis(orthog_ri_so);
   orthog_ri_so = 0;
-  ExEnv::out0() << decindent;
 
   if (debug_ > 1) (scf_vec_ri_bm * orthog_ri_).print("C * S(OBS/RI-BS) * U");
+  ExEnv::out0() << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -560,6 +560,8 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
    //
    int nblocks = C12.nblock();
    double toler = ref_->lindep_tol();
+   double min_sigma = 1.0;
+   double max_sigma = 0.0;
    int* nvec_per_block = new int[nblocks];
    // basis for orthogonal complement is a vector of nvecs by nao_ri
    // we don't know nvecs yet, so use noso_ri
@@ -592,11 +594,17 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
        V = (orthog_ri_b*V).t();
 
        // Figure out how many sigmas are too small, i.e. how many vectors from RI overlap
-       // only weakly with OBS
+       // only weakly with OBS.
+       // NOTE: Sigma values returned by svd() are in descending order
        int nzeros = 0;
        for(int s=0; s<nsigmas; s++) {
-         if (Sigma(s) < toler)
+         double sigma = Sigma(s);
+         if (sigma < toler)
            nzeros++;
+         if (sigma < min_sigma)
+           min_sigma = sigma;
+         if (sigma > max_sigma)
+           max_sigma = sigma;
        }
 
        // number of vectors that span the orthogonal space
@@ -640,7 +648,7 @@ on orthogonal complement to OBS. Modify/increase your auxiliary basis.");
    ExEnv::out0() << indent
                  << nlindep << " basis function"
                  << (nlindep>1?"s":"")
-                 << " SVD-projected out of RI-BS."
+                 << " projected out of RI-BS."
                  << endl;
    ExEnv::out0() << indent
                  << "n(basis):        ";
@@ -648,6 +656,13 @@ on orthogonal complement to OBS. Modify/increase your auxiliary basis.");
      ExEnv::out0() << scprintf(" %5d", orthog_dim->blocks()->size(i));
    }
    ExEnv::out0() << endl;
+   ExEnv::out0() << indent
+                 << "Maximum singular value = "
+                 << max_sigma << endl
+                 << indent
+                 << "Minimum singular value = "
+                 << min_sigma << endl;
+   ExEnv::out0() << decindent;
 
    delete[] vecs;
    delete[] nvec_per_block;

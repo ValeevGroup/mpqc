@@ -1,0 +1,35 @@
+
+Covariant type conformance is used in member functions.  This is
+indicated with the "current" type which is the type of the
+overriding class.
+
+The 
+
+SCMatrix
+  // concrete:
+  CTOR()
+
+  // abstract:
+  int nrow()
+  int ncol()
+  double& element(int,int)
+  current clone()
+  current rowcol_clone(current) // and related functions
+  void multiply(current, current)
+  void transpose()
+  void set(double)
+  void set(current)
+
+  // notable missing functions
+  int resize(int,int) // resize isn't possible for all matrix types
+  
+LocalSCMatrix: SCMatrix
+  // concrete:
+  CTOR(int,int)
+  implementations of all of SCMatrix's abstract functions
+  
+DistributedSCMatrix: SCMatrix
+  // concrete:
+  CTOR(DistributionMap,DistributionMap)
+  implementations of all of SCMatrix's abstract functions
+

@@ -171,6 +171,10 @@ class BcastState {
     // until the buffer is full.
     void flush();
 
+    //texi Call the @code{StateOut} or @code{StateIn}
+    // @code{forget_references} member.
+    void forget_references();
+
     //texi Controls the amount of data that is buffered before it is
     // sent.
     void set_buffer_size(int);

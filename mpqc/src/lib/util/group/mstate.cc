@@ -387,8 +387,8 @@ BcastState::BcastState(const RefMessageGrp &grp, int source)
 
 BcastState::~BcastState()
 {
-  delete[] recv_;
-  delete[] send_;
+  delete recv_;
+  delete send_;
 }
 
 void
@@ -438,5 +438,12 @@ void
 BcastState::set_buffer_size(int n)
 {
   if (send_) send_->set_buffer_size(n);
-  if (recv_) send_->set_buffer_size(n);
+  if (recv_) recv_->set_buffer_size(n);
+}
+
+void
+BcastState::forget_references()
+{
+  if (send_) send_->forget_references();
+  if (recv_) recv_->forget_references();
 }

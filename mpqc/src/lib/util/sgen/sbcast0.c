@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:40  etseidl
- * Initial revision
+ * Revision 1.2  1994/08/25 22:48:27  etseidl
+ * remove rcsids and fix some warnings
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:41  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.4  1992/07/20  18:35:48  seidl
  * add code to make sure a string is non-null
@@ -27,12 +30,12 @@
  * Revision 1.1  91/11/18  18:16:32  cljanss
  * Initial revision
  *  */
-static char *rcsid = "$Id$";
 
 #define NO_TEMPLATES
 #include <stdio.h>
 #include <tmpl.h>
 #include <comm/picl/picl.h>
+#include <comm/picl/ext/piclext.h>
 #include "sgen.h"
 
 #include "bcast0.h"
@@ -83,7 +86,7 @@ int root;
 int size;
 {
   PRINT('s',TYPENOINC(),root,size);
-  PRINT_DATA('s',"%lf\n",*buff);
+  PRINT_DATA('s',"%f\n",*buff);
 #if 0
 #if defined(SUN) && defined(NIH)
   HTOCD(buff,size/sizeof(double));

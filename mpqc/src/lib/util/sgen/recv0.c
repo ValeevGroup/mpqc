@@ -2,8 +2,11 @@
 /* really just a copy of clj's rbcast0 routines */
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:40  etseidl
- * Initial revision
+ * Revision 1.2  1994/08/25 22:48:26  etseidl
+ * remove rcsids and fix some warnings
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:41  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.3  1992/07/20  18:35:51  seidl
  * add code to make sure a string is non-null
@@ -21,13 +24,13 @@
  * Initial revision
  * */
 
-static char rcsid[] = "$Id$";
 
 #define NO_TEMPLATES
 #include <stdio.h>
 #include <stdlib.h>
 #include <tmpl.h>
 #include <comm/picl/picl.h>
+#include <comm/picl/ext/piclext.h>
 #include "sgen.h"
 
 #include "sndrcv0.h"
@@ -79,7 +82,7 @@ int size;
   CTOHD(buff,size/sizeof(double));
 #endif
 #endif
-  PRINT_DATA('r',"%lf\n",*buff);
+  PRINT_DATA('r',"%f\n",*buff);
   }
 
 /* rbcast0_int.c,v

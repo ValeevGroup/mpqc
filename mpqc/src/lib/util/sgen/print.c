@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:40  etseidl
- * Initial revision
+ * Revision 1.2  1994/08/25 22:48:23  etseidl
+ * remove rcsids and fix some warnings
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:41  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.4  1992/10/09  19:34:02  seidl
  * print strings in quotes
@@ -15,7 +18,6 @@
  * Revision 1.1  91/11/18  18:17:28  cljanss
  * Initial revision
  *  */
-static char *rcsid = "$Id$";
 
 #include <stdio.h>
 #include "sgen.h"

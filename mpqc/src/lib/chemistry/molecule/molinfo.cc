@@ -1,5 +1,7 @@
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "molinfo.h"
 
 ////////////////////////////////////////////////////////////////////////
@@ -19,8 +21,23 @@ MolInfo::_castdown(const ClassDesc*cd)
 
 MolInfo::MolInfo(const RefKeyVal& pkeyval)
 {
-  RefKeyVal libkeyval = new ParsedKeyVal("molinfo",pkeyval);
-  keyval = new AggregateKeyVal(pkeyval,libkeyval);
+  const char* libdir;
+  if (pkeyval->exists("molinfofiles")) {
+      RefKeyVal libkeyval = new ParsedKeyVal("molinfo",pkeyval);
+      keyval = new AggregateKeyVal(pkeyval,libkeyval);
+    }
+  else if (libdir = getenv("SCLIBDIR")) {
+      const char* molinfo = "molinfo.ipv2";
+      libdir = strchr(libdir,'=') + 1;
+      char *filename = new char[strlen(libdir) + strlen(molinfo) + 1];
+      strcpy(filename, libdir);
+      strcat(filename, molinfo);
+      keyval = new ParsedKeyVal(filename);
+      delete[] filename;
+    }
+  else {
+      keyval = new ParsedKeyVal(SRCLIBDIR "molinfo.ipv2");
+    }
 }
 
 MolInfo::~MolInfo()

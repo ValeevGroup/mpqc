@@ -4,7 +4,7 @@ ifndef SRCDIR
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
-DEFINES += -DSRCDIR=\"$(SRCDIR)\"
+DEFINES += -DSRCDIR=\"$(SRCDIR)\" -DSRCLIBDIR=\"$(SRCLIBDIR)\"
 
 CXXSRC = atomcent.cc chemelem.cc molecule.cc \
          simple.cc stre.cc bend.cc out.cc tors.cc linip.cc linop.cc \

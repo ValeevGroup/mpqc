@@ -12,6 +12,7 @@
 #endif
 #ifdef HAVE_CHEMISTRY_CCA
 #  include <chemistry/qc/intcca/LIBS.h>
+#  include <util/misc/LIBS.h>
 #endif
 #include <chemistry/qc/mbpt/LIBS.h>
 #include <chemistry/qc/dft/LIBS.h>

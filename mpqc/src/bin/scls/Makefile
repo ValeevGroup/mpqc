@@ -23,12 +23,10 @@ DISTFILES = $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 default:: scls
 
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
-  ifeq ($(ENABLESHARED),yes)
-    LTLINKBINOPTS += -L../../../lib/cca -R$(libdir)/cca -lSCchemistry
-  endif
+  XDEF += -DHAVE_CHEMISTRY_CCA
 endif
 
-LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(XDEF) $(SRCDIR)/LIBS.h)
 
 #################################################################
 

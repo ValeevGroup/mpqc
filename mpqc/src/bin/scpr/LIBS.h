@@ -4,6 +4,9 @@
  #    include <chemistry/qc/mbptr12/LIBS.h>
  #endif
 #endif
+#ifdef HAVE_CHEMISTRY_CCA
+#  include <util/misc/LIBS.h>
+#endif
 #include <chemistry/qc/mbpt/LIBS.h>
 #include <chemistry/qc/dft/LIBS.h>
 #include <chemistry/qc/scf/LIBS.h>

@@ -177,6 +177,32 @@ namespace MPQC {
 
 
     /**
+     * Starts up a component presence in the calling framework.
+     * @param Svc the component instance's handle on the framework world.
+     * Contracts concerning Svc and setServices:
+     * 
+     * The component interaction with the CCA framework
+     * and Ports begins on the call to setServices by the framework.
+     * 
+     * This function is called exactly once for each instance created
+     * by the framework.
+     * 
+     * The argument Svc will never be nil/null.
+     * 
+     * Those uses ports which are automatically connected by the framework
+     * (so-called service-ports) may be obtained via getPort during
+     * setServices.
+     */
+    void
+    setServices (
+      /*in*/ ::gov::cca::Services services
+    )
+    throw ( 
+      ::gov::cca::CCAException
+    );
+
+
+    /**
      * Set the theory name for Model's created with get_model.
      * @param theory A string giving the name of the theory, for example, B3LYP.
      */
@@ -242,32 +268,6 @@ namespace MPQC {
     int32_t
     finalize() throw () 
     ;
-
-    /**
-     * Starts up a component presence in the calling framework.
-     * @param Svc the component instance's handle on the framework world.
-     * Contracts concerning Svc and setServices:
-     * 
-     * The component interaction with the CCA framework
-     * and Ports begins on the call to setServices by the framework.
-     * 
-     * This function is called exactly once for each instance created
-     * by the framework.
-     * 
-     * The argument Svc will never be nil/null.
-     * 
-     * Those uses ports which are automatically connected by the framework
-     * (so-called service-ports) may be obtained via getPort during
-     * setServices.
-     */
-    void
-    setServices (
-      /*in*/ ::gov::cca::Services services
-    )
-    throw ( 
-      ::gov::cca::CCAException
-    );
-
   };  // end class Chemistry_QC_ModelFactory_impl
 
 } // end namespace MPQC

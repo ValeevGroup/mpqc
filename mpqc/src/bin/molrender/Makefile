@@ -23,13 +23,10 @@ DISTFILES = $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h molrender.in
 default:: molrender
 
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
-  ifeq ($(ENABLESHARED),yes)
-    LTLINKLIBOPTS += -L../../../lib/cca -R$(libdir)/cca -lSCchemistry
-    LTLINKBINOPTS += -L../../../lib/cca -R$(libdir)/cca -lSCchemistry
-  endif
+  DEFINES += -DHAVE_CHEMISTRY_CCA
 endif
 
-LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

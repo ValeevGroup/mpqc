@@ -38,21 +38,6 @@
 
 namespace sc {
 
-/** The ShmMessageGrp class is an implementation of MessageGrp that
-allows multiple process to be started that communicate with shared memory.
-This only provides improved performance if you have multiple CPU's in a
-symmetric multiprocessor configuration.  Nonetheless, it is quite useful on
-a single CPU for tracking down bugs.
-
-The ShmMessageGrp KeyVal constructor takes a single keyword that specifies
-the number of processors.  Here is an example of a ParsedKeyVal input
-that creates a ShmMessageGrp that runs on four processors:
-
-<pre>
-message<ShmMessageGrp>: n = 4
-</pre>
-
-*/
 #define SHMCOMMBUFSIZE 1500000
 
 /* Set the maximum number of processors (including the host). */
@@ -74,6 +59,12 @@ struct msgbuf_struct {
 };
 typedef struct msgbuf_struct msgbuf_t;
 
+/** The ShmMessageGrp class is an implementation of MessageGrp that
+allows multiple process to be started that communicate with shared memory.
+This only provides improved performance if you have multiple CPU's in a
+symmetric multiprocessor configuration.  Nonetheless, it is quite useful on
+a single CPU for tracking down bugs.
+*/
 class ShmMessageGrp: public intMessageGrp {
   protected:
     void basic_send(int target, int type, void* data, int nbyte);
@@ -101,8 +92,19 @@ class ShmMessageGrp: public intMessageGrp {
     void print_buffer(int node, int me);
 #endif
   public:
-    ShmMessageGrp(); // read nprocs from environmental variable NUMPROC
+    /// Reads the number of processors from environmental variable NUMPROC.
+    ShmMessageGrp();
+    /** The ShmMessageGrp KeyVal constructor takes a single keyword that
+       specifies the number of processors.  Here is an example of a
+       ParsedKeyVal input that creates a ShmMessageGrp that runs on four
+       processors:
+
+       <pre>
+       message<ShmMessageGrp>: n = 4
+       </pre>
+    */
     ShmMessageGrp(const Ref<KeyVal>&);
+    /// Initialize ShmMessageGrp to use nprocs processors.
     ShmMessageGrp(int nprocs);
     ~ShmMessageGrp();
     void sync();

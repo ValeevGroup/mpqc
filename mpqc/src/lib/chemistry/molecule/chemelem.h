@@ -21,6 +21,8 @@
   { return atom_info[Z_].property * unit_conversion; }
 
 							      
+static const double ang_to_au = 1.0/0.52917706;
+
 class ChemicalElement :
   virtual public SavableState
 {
@@ -52,7 +54,6 @@ class ChemicalElement :
   
     static int max_atomic_number;
     static atom_info_type atom_info[];
-    const double ang_to_au = 1.0/0.52917706;
 
   public:
     ChemicalElement(int Z=1);

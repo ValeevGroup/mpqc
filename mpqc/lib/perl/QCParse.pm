@@ -952,11 +952,14 @@ sub input_string() {
         $mole = sprintf "%s\n    stdapprox = \"%s\"", $mole, $stdapprox;
         $mole = "$mole\n    integrals<IntegralCints>: ()";
         $mole = "$mole\n    nfzc = $fzc";
-        my $basis = "% auxiliary basis set specification";
-        $mole = "$mole\n    aux_basis<GaussianBasisSet>: (";
-        $mole = sprintf "%s\n      name = \"%s\"", $mole, $auxbasis;
-        $mole = "$mole\n      molecule = \$:molecule";
-        $mole = "$mole\n    )\n";
+        # don't write an auxbasis if the auxbasis is the same as the basis set.
+        # this will speed up the calculation
+        if ("$auxbasis" ne "" && "$auxbasis" ne $qcinput->basis()) {
+            $mole = "$mole\n    aux_basis<GaussianBasisSet>: (";
+            $mole = sprintf "%s\n      name = \"%s\"", $mole, $auxbasis;
+            $mole = "$mole\n      molecule = \$:molecule";
+            $mole = "$mole\n    )\n";
+        }
         $mole = append_reference($mole,"CLHF",$charge,$mult,$memory,$orthog_method,
                                  $lindep_tol,$docc,$socc,1,"DZ (Dunning)");
     }

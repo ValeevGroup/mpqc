@@ -138,7 +138,7 @@ main(int argc, char**argv)
       }
     } else if (mole->value_implemented()) {
       cout << node0 << indent
-           << scprintf("value of mole is %20.15f\n\n", mole->energy());
+           << scprintf("value of mole is %15.10f\n\n", mole->energy());
     }
   }
 

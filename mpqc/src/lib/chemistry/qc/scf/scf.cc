@@ -243,7 +243,7 @@ SCF::compute()
     double eother = 0.0;
     if (accumddh_.nonnull()) eother = accumddh_->e();
     cout << node0 << endl << indent
-         << scprintf("total scf energy = %20.15f", eelec+eother+nucrep)
+         << scprintf("total scf energy = %15.10f", eelec+eother+nucrep)
          << endl;
 
     set_energy(eelec+eother+nucrep);

@@ -112,8 +112,10 @@ include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:.$(OBJSUF)=.d)
 endif
 
 # need babel headers generated
-ifneq ($(DODEPEND),no)
-include ../../chemistry/cca/.babel-stamp
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+  ifneq ($(DODEPEND),no)
+    include ../../chemistry/cca/.babel-stamp
+  endif
 endif
 ../../chemistry/cca/.babel-stamp:
 	cd ../../chemistry/cca; $(MAKE) .babel-stamp

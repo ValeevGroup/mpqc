@@ -1,22 +1,25 @@
 
+#include <iostream.h>
+
 #include <math.h>
 
 #include <tmpl.h>
 #include <util/misc/libmisc.h>
-#include <util/group/picl.h>
+#include <util/group/message.h>
 
 #include <math/scmat/disthql.h>
 #include <math/linpackd/linpackd.h>
 
 static void dist_diagonalize_(int n, int m, double *a, double *d, double *e,
                               double *sigma, double *z, double *v, double *w,
-                              int *ind);
+                              int *ind, const RefMessageGrp&);
 static void
 pimtql2_ (double *d,double *e,int *sn,double *z,int *sm,int *info);
 
 static double absol(double x);
 
-static void pflip(int id,int n,int m,int p,double *ar,double *ac,double *w);
+static void pflip(int id,int n,int m,int p,double *ar,double *ac,double *w,
+                  const RefMessageGrp&);
 
 static double epslon (double x);
 
@@ -24,14 +27,16 @@ static void update(double *z,int m,double c,double s);
 
 static void
 ptred2_(double *a, int *lda, int *n, int *m, int *p, int *id,
-        double *d, double *e, double *z, double *work);
+        double *d, double *e, double *z, double *work,
+        const RefMessageGrp& grp);
 
 static void
 ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
              double *d,double *e,double *z,double *work);
 static void
 ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
-               double *d, double *e, double *z, double *work);
+               double *d, double *e, double *z, double *work,
+               const RefMessageGrp&);
 
 /* ******************************************************** */
 /* Function of this subroutine :                            */ 
@@ -53,7 +58,7 @@ dist_diagonalize(int n, int m, double *a, double *d, double *v,
   double *z = new double[n*m];
   double *w = new double[3*n];
   int *ind = new int[n];
-  dist_diagonalize_(n, m, a, d, e, sigma, z, v, w, ind);
+  dist_diagonalize_(n, m, a, d, e, sigma, z, v, w, ind, grp);
   delete[] e;
   delete[] sigma;
   delete[] z;
@@ -79,27 +84,28 @@ dist_diagonalize(int n, int m, double *a, double *d, double *v,
 /* -------------------------------------------------------- */
 static void
 dist_diagonalize_(int n, int m, double *a, double *d, double *e,
-                  double *sigma, double *z, double *v, double *w, int *ind)
+                  double *sigma, double *z, double *v, double *w, int *ind,
+                  const RefMessageGrp& grp)
 {
-  int id,i,info,one=1;
-  int nproc,host;
-
-  who0(&nproc,&id,&host);
+  int i,info,one=1;
+  int nproc = grp->n();
+  int id = grp->me();
 
  /* reduce A to tridiagonal matrix using Householder transformation */
 
-  ptred2_(&a[0],&n,&n,&m,&nproc,&id,&d[0],&e[0],&z[0],&w[0]);
+  ptred2_(&a[0],&n,&n,&m,&nproc,&id,&d[0],&e[0],&z[0],&w[0],grp);
 
  /* diagonalize tridiagonal matrix using implicit QL method */
 
   pimtql2_(d,e,&n,z,&m,&info);
-  if (info != 0) message0("Nonzero ierr from psytqr");
+  if (info != 0)
+    cerr << "Nonzero ierr from psytqr\n";
 
  /* rearrange the eigenvectors by transposition */
 
   i = m * n;
   dcopy_(&i,&z[0],&one,&a[0],&one);
-  pflip(id,n,m,nproc,&a[0],&v[0],&w[0]);
+  pflip(id,n,m,nproc,&a[0],&v[0],&w[0],grp);
 }
 
 /* ******************************************************** */
@@ -228,7 +234,8 @@ absol(double x)
 /* -------------------------------------------------------- */
 
 static void
-pflip(int id,int n,int m,int p,double *ar,double *ac,double *w)
+pflip(int id,int n,int m,int p,double *ar,double *ac,double *w,
+      const RefMessageGrp& grp)
 {
   int i,k,r,dpsize=sizeof(double),one=1;
 
@@ -239,7 +246,7 @@ pflip(int id,int n,int m,int p,double *ar,double *ac,double *w)
       dcopy_(&n,&ar[i],&m,&w[0],&one);
       i++;
     }
-    bcast0 (&w[0], n*dpsize, mtype_get(), r);
+    grp->raw_bcast(&w[0], n*dpsize, r);
     dcopy_(&m,&w[id],&p,&ac[k],&n);
   }
 }
@@ -282,10 +289,13 @@ update(double *z,int m,double c,double s)
 
 static void
 ptred2_(double *a, int *lda, int *n, int *m, int *p, int *id,
-        double *d, double *e, double *z, double *work)
+        double *d, double *e, double *z, double *work,
+        const RefMessageGrp& grp)
 {
-  if (0 && *p==1) ptred_single(a, lda, n, m, p, id, d, e, z, work);
-  else ptred_parallel(a, lda, n, m, p, id, d, e, z, work);
+  if (*p==1)
+    ptred_single(a, lda, n, m, p, id, d, e, z, work);
+  else
+    ptred_parallel(a, lda, n, m, p, id, d, e, z, work, grp);
 }
 
 /* ******************************************************** */
@@ -458,7 +468,8 @@ ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
 
 static void
 ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
-               double *d, double *e, double *z, double *work)
+               double *d, double *e, double *z, double *work,
+               const RefMessageGrp& grp)
 {
   int i, j, k, l, ld, r, dpsize = sizeof(double);
   int kp1l;
@@ -519,7 +530,7 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
 	a[kp1l] += 1.0;
         }
 
-      bcast0(&a[kp1l], (sn - k) * dpsize, mtype_get() , r);
+      grp->raw_bcast(&a[kp1l], (sn - k) * dpsize, r);
 
    /* this is the deferred update of the eigenvector matrix. It was
     * deferred from the last step to accelerate the sending of the Householder
@@ -545,7 +556,7 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
       ld += sp;
       }
     else {
-      bcast0(&d[k], (sn - k) * dpsize, mtype_get() , r);
+      grp->raw_bcast(&d[k], (sn - k) * dpsize, r);
       }
 
     beta = -d[k];
@@ -567,7 +578,7 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
 	daxpy_(&q, &d[i], &a[ij+1], &inc, &e[i + 1], &inc);
 	i += sp;
         }
-      gop1 (&e[k], sn-k, work, '+', mtype_get());
+      grp->sum(&e[k], sn-k, work);
 
       /* v = v/beta
        * gamma = v'*u/(2*beta)
@@ -619,6 +630,6 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
 
   /* collect the whole tridiagonal matrix at every node */
 
-  gop1(d, sn, work, '+', mtype_get());
-  gop1(e, sn, work, '+', mtype_get());
+  grp->sum(d, sn, work);
+  grp->sum(e, sn, work);
   }

@@ -370,7 +370,7 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
 void
 BlockedSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
 {
-  int i, zero;
+  int i, zero=0;
   
   const char* name = "BlockedSCMatrix::accumulate_product";
   // make sure that the arguments are of the correct type

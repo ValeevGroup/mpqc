@@ -90,6 +90,7 @@ class PetiteList : public VRefCount {
     PetiteList(const RefGaussianBasisSet&, const RefIntegral&);
     ~PetiteList();
 
+    int nirrep() const { return nirrep_; }
     int order() const { return ng_; }
     int atom_map(int n, int g) const { return (c1_) ? n : atom_map_[n][g]; }
     int shell_map(int n, int g) const { return (c1_) ? n : shell_map_[n][g]; }

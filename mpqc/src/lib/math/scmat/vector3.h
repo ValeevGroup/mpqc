@@ -45,7 +45,7 @@ class SCVector3
     double _v[3];
   public:
     SCVector3() {}
-    SCVector3(double p[3]) {
+    SCVector3(const double p[3]) {
         _v[0] = p[0]; _v[1] = p[1]; _v[2] = p[2];
       }
     SCVector3(double d) { _v[0] = d; _v[1] = d; _v[2] = d; }
@@ -110,6 +110,7 @@ class SCVector3
     double& operator () (int i) { return _v[i]; }
     const double& operator () (int i) const { return _v[i]; }
     const double* data() const { return _v; }
+    double* data() { return _v; }
     double& x() { return _v[0]; }
     double& y() { return _v[1]; }
     double& z() { return _v[2]; }

@@ -60,7 +60,7 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
     = GaussianBasisSet::require_castdown(keyval->describedclassvalue("basis").pointer(),
                                          "Wavefunction::Wavefunction\n");
 
-  _basisdim = new LocalSCDimension(_gbs->nbasis(), "AO-basis");
+  _basisdim = _gbs->basisdim();
 }
 
 Wavefunction::~Wavefunction()

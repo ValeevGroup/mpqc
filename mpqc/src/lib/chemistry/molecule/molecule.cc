@@ -359,13 +359,13 @@ const PointGroup& Molecule::point_group() const
   return pg;
 }
 
-Point Molecule::center_of_mass()
+RefPoint Molecule::center_of_mass()
 #ifdef __GNUC__
   return ret;
 #endif
 {
 #ifndef __GNUC__
-  Point ret;
+  RefPoint ret;
 #endif
   double X,Y,Z,M;
 
@@ -385,9 +385,10 @@ Point Molecule::center_of_mass()
 
   //printf("center of mass = %f %f %f\n",X,Y,Z);
 
-  ret[0] = X;
-  ret[1] = Y;
-  ret[2] = Z;
+  ret = new Point;
+  ret->operator[](0) = X;
+  ret->operator[](1) = Y;
+  ret->operator[](2) = Z;
 
 #ifndef __GNUC__
   return ret;
@@ -465,11 +466,11 @@ mol_symmetrize_molecule(Molecule& mol)
 void
 mol_move_to_com(Molecule& mol)
 {
-  Point com = mol.center_of_mass();
+  RefPoint com = mol.center_of_mass();
 
-  double X = com[0];
-  double Y = com[1];
-  double Z = com[2];
+  double X = com->operator[](0);
+  double Y = com->operator[](1);
+  double Z = com->operator[](2);
 
   for (int i=0; i < mol.natom(); i++) {
     mol.atom(i)[0] -= X;

@@ -75,7 +75,7 @@ class Molecule :
 
     PointGroup& point_group();
     const PointGroup& point_group() const;
-    Point center_of_mass();
+    RefPoint center_of_mass();
 
     void save_data_state(StateOut&);
 };

@@ -18,6 +18,7 @@
 extern "C" {
 #endif
 
+void debug_init(char*);
 void debug_start(char*);
 void check_alloc(void*,char*);
 int mtype_get();

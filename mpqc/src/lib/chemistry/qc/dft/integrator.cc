@@ -1868,13 +1868,9 @@ RadialAngularIntegrator::set_grids(void)
   angular_grid_ = new_c_array3(natomic_rows_, npruned_partitions_,
                                gridtype_+1, RefAngularIntegrator());
   
-  // zeroth and first row shifts for for pruning large l
-  int prune_formula_1[5] = {26, 18, 12, 0, 12};
+  int prune_formula_1[5] = {26, 18, 12, 0, 12};  // for H to Ne
+  int prune_formula_2[5] = {36, 24, 12, 0, 12};  // for Na and up
 
-  // second row and higher shifts for pruning large l
-  int prune_formula_2[5] = {36, 24, 12, 0, 12};
-
-  // multiplicative factors for pruning small l
   double prune_factor[5] = {0.1, 0.4, 0.6, 1.0, 0.6};
 
   if (npruned_partitions_ == 1) {
@@ -1897,14 +1893,20 @@ RadialAngularIntegrator::set_grids(void)
           for (k=0; k<=gridtype_; k++) {
               int grid_l = xcoarse_l_[i] + angular_grid_offset(k);
               int use_l;
-              if (i <=1 ) { // H to Ne
-                  if (grid_l < 29) use_l = int(prune_factor[j]*grid_l + 0.5);
-                  else use_l = grid_l-prune_formula_1[j];
-                }
-              else { // Na and up
-                  if (grid_l < 39) use_l = grid_l;
-                  else use_l = grid_l-prune_formula_2[j];
-                }
+
+              // the constant shift depends on the row and the partition
+              int prune_formula;
+              if (i<=1) prune_formula = prune_formula_1[j]; // H to Ne
+              else prune_formula = prune_formula_2[j];      // Na and up
+
+              // Compute the l to be used from both the constant shift and
+              // the multiplicative factor method.  Use the method giving
+              // the highest l.
+              int use_l_formula = grid_l - prune_formula;
+              int use_l_factor = int(grid_l*prune_factor[j] + 0.5);
+              if (use_l_formula > use_l_factor) use_l = use_l_formula;
+              else use_l = use_l_factor;
+
               angular_grid_[i][j][k]
                   = new LebedevLaikovIntegrator(Lebedev_Laikov_npoint(use_l));
 //                ExEnv::out() << " angular_grid_["
@@ -1992,12 +1994,14 @@ RadialAngularIntegrator::init_pruning_coefficients(const RefKeyVal& keyval)
 void
 RadialAngularIntegrator::init_alpha_coefficients(void)
 {
+  // assumes Alpha_coeffs_ is allocated and zeroed.
+
   Alpha_coeffs_[0][0] = 0.25;   Alpha_coeffs_[0][1] = 0.5;
   Alpha_coeffs_[0][2] = 0.9;    Alpha_coeffs_[0][3] = 4.5;
   Alpha_coeffs_[1][0] = 0.1667; Alpha_coeffs_[1][1] = 0.5;
   Alpha_coeffs_[1][2] = 0.8;    Alpha_coeffs_[1][3] = 4.5;
   Alpha_coeffs_[2][0] = 0.1;    Alpha_coeffs_[2][1] = 0.4;
-  Alpha_coeffs_[2][2] = 0.8;    Alpha_coeffs_[2][3] = 2.5;
+  Alpha_coeffs_[2][2] = 0.7;    Alpha_coeffs_[2][3] = 2.5;
 
   //  No pruning for atoms past second row
   int i;
@@ -2036,9 +2040,9 @@ RadialAngularIntegrator::init_default_grids(void)
 }
 
 int
-RadialAngularIntegrator::angular_grid_offset(int i)
+RadialAngularIntegrator::angular_grid_offset(int gridtype)
 {
-  switch (i) {
+  switch (gridtype) {
   case 0: return 0;
   case 1: return 6;
   case 2: return 12;

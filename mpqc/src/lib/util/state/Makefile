@@ -55,11 +55,11 @@ include $(LIBOBJ:.o=.d) statetest.d
 endif
 
 stateptrSet.cc stateptrSet.h:
-	genclass StateDataPtr val Set stateptr
+	$(GENCLASS) StateDataPtr val Set stateptr
 	prepend-header stateptrSet.h "#include \"state_ptr.h\""
 
 stateptr$(SETIMPL)Set.cc stateptr$(SETIMPL)Set.h:
-	genclass StateDataPtr val $(SETIMPL)Set stateptr
+	$(GENCLASS) StateDataPtr val $(SETIMPL)Set stateptr
 	prepend-header stateptr$(SETIMPL)Set.h "#include \"state_ptr.h\""
 
 stateptrImplSet.h:
@@ -67,11 +67,11 @@ stateptrImplSet.h:
 	echo "#define StateDataPtr_CTOR StateDataPtr"$(SETIMPL)"Set()" >> stateptrImplSet.h
 
 statenumSet.cc statenumSet.h:
-	genclass StateDataNum val Set statenum
+	$(GENCLASS) StateDataNum val Set statenum
 	prepend-header statenumSet.h "#include \"state_ptr.h\""
 
 statenum$(SETIMPL)Set.cc statenum$(SETIMPL)Set.h:
-	genclass StateDataNum val $(SETIMPL)Set statenum
+	$(GENCLASS) StateDataNum val $(SETIMPL)Set statenum
 	prepend-header statenum$(SETIMPL)Set.h "#include \"state_ptr.h\""
 
 statenumImplSet.h:
@@ -81,11 +81,11 @@ statenumImplSet.h:
 ##########################################################################
 
 classdMap.cc classdMap.h:
-	genclass -2 ClassDescP val int val Map classd
+	$(GENCLASS) -2 ClassDescP val int val Map classd
 	prepend-header classdMap.h "#include <util/class/class.h>"
 
 classd$(MAPIMPL)Map.cc classd$(MAPIMPL)Map.h:
-	genclass -2 ClassDescP val int val $(MAPIMPL)Map classd
+	$(GENCLASS) -2 ClassDescP val int val $(MAPIMPL)Map classd
 	prepend-header classd$(MAPIMPL)Map.h "#include <util/class/class.h>"
 
 classdImplMap.h:

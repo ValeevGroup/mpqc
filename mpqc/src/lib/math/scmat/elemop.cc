@@ -677,6 +677,47 @@ SCElementShiftDiagonal::has_side_effects()
 }
 
 /////////////////////////////////////////////////////////////////////////
+// SCElementScaleDiagonal members
+
+#define CLASSNAME SCElementScaleDiagonal
+#define PARENTS   public SCElementOp
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+SCElementScaleDiagonal::SCElementScaleDiagonal(double a):scale_diagonal(a) {}
+SCElementScaleDiagonal::SCElementScaleDiagonal(StateIn&s):
+  SCElementOp(s)
+{
+  s.get(scale_diagonal);
+}
+void
+SCElementScaleDiagonal::save_data_state(StateOut&s)
+{
+  s.put(scale_diagonal);
+}
+void *
+SCElementScaleDiagonal::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+SCElementScaleDiagonal::~SCElementScaleDiagonal() {}
+void
+SCElementScaleDiagonal::process(SCMatrixBlockIter&i)
+{
+  for (i.reset(); i; ++i) {
+      if (i.i() == i.j()) i.set(scale_diagonal*i.get());
+    }
+}
+
+int
+SCElementScaleDiagonal::has_side_effects()
+{
+  return 1;
+}
+
+/////////////////////////////////////////////////////////////////////////
 // SCElementDot members
 
 #define CLASSNAME SCElementDot

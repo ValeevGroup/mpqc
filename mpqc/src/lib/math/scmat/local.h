@@ -60,6 +60,7 @@ class LocalSCVector: public SCVector {
 
     RefSCDimension dim();
     void set_element(int,double);
+    void accumulate_element(int,double);
     double get_element(int);
     void accumulate_product(SymmSCMatrix*,SCVector*);
     void accumulate_product(SCMatrix*,SCVector*);
@@ -106,6 +107,7 @@ class LocalSCMatrix: public SCMatrix {
     RefSCDimension coldim();
     double get_element(int,int);
     void set_element(int,int,double);
+    void accumulate_element(int,int,double);
     SCMatrix * get_subblock(int,int,int,int);
     void assign_subblock(SCMatrix*, int,int,int,int);
     void accumulate_subblock(SCMatrix*, int,int,int,int);
@@ -165,6 +167,7 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     RefSCDimension dim();
     double get_element(int,int);
     void set_element(int,int,double);
+    void accumulate_element(int,int,double);
 
     SCMatrix * get_subblock(int,int,int,int);
     SymmSCMatrix * get_subblock(int,int);
@@ -225,6 +228,7 @@ class LocalDiagSCMatrix: public DiagSCMatrix {
     RefSCDimension dim();
     double get_element(int);
     void set_element(int,double);
+    void accumulate_element(int,double);
     void accumulate(DiagSCMatrix*);
     double invert_this();
     double determ_this();

@@ -99,6 +99,17 @@ LocalSCVector::set_element(int i,double a)
 }
 
 void
+LocalSCVector::accumulate_element(int i,double a)
+{
+  int size = block->iend - block->istart;
+  if (i < 0 || i >= size) {
+      fprintf(stderr,"LocalSCVector::accumulate_element: bad index\n");
+      abort();
+    }
+  block->data[i] += a;
+}
+
+void
 LocalSCVector::accumulate_product(SCMatrix*a,SCVector*b)
 {
   const char* name = "LocalSCVector::accumulate_product";

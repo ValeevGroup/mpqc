@@ -87,6 +87,12 @@ ReplSCVector::set_element(int i,double a)
 }
 
 void
+ReplSCVector::accumulate_element(int i,double a)
+{
+  vector[i] += a;
+}
+
+void
 ReplSCVector::accumulate_product(SCMatrix*a,SCVector*b)
 {
   const char* name = "ReplSCVector::accumulate_product";

@@ -116,6 +116,12 @@ LocalSymmSCMatrix::set_element(int i,int j,double a)
   block->data[compute_offset(i,j)] = a;
 }
 
+void
+LocalSymmSCMatrix::accumulate_element(int i,int j,double a)
+{
+  block->data[compute_offset(i,j)] += a;
+}
+
 SCMatrix *
 LocalSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
 {

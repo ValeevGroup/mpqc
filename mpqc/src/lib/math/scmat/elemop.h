@@ -211,6 +211,22 @@ class SCElementInvert: public SCElementOp {
     void process(SCMatrixBlockIter&);
 };
 
+class SCElementScaleDiagonal: public SCElementOp {
+#   define CLASSNAME SCElementScaleDiagonal
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    double scale_diagonal;
+  public:
+    SCElementScaleDiagonal(double a);
+    SCElementScaleDiagonal(StateIn&);
+    ~SCElementScaleDiagonal();
+    int has_side_effects();
+    void save_data_state(StateOut&);
+    void process(SCMatrixBlockIter&);
+};
+
 class SCElementShiftDiagonal: public SCElementOp {
 #   define CLASSNAME SCElementShiftDiagonal
 #   define HAVE_STATEIN_CTOR

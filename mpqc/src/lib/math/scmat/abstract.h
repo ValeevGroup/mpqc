@@ -95,6 +95,8 @@ class SCVector: public SavableState {
     virtual RefSCDimension dim() = 0;
     //texi Set element @var{i} to @var{val}.
     virtual void set_element(int,double) = 0;
+    //texi Add @var{val} to element @var{i}.
+    virtual void accumulate_element(int,double) = 0;
     //texi Return the value of element @var{i}.
     virtual double get_element(int) = 0;
     //texi Sum the result of @var{m} times @var{v} into @code{this}.
@@ -152,6 +154,8 @@ class SCMatrix: public SavableState {
     virtual void assign(SCMatrix* m);
     //texi Multiply all elements by @var{val}.
     virtual void scale(double val);
+    //texi Scale the diagonal elements by @var{val}.
+    virtual void scale_diagonal(double val);
     //texi Shift the diagonal elements by @var{val}.
     virtual void shift_diagonal(double val);
     //texi Make @code{this} equal to the unit matrix.
@@ -168,6 +172,7 @@ class SCMatrix: public SavableState {
     //texi Return or modify an element.
     virtual double get_element(int,int) = 0;
     virtual void set_element(int,int,double) = 0;
+    virtual void accumulate_element(int,int,double) = 0;
     
     //texi Return a subblock of @code{this}.  The subblock is defined as
     // the rows starting at @code{br} and ending at @code{er}, and the
@@ -256,6 +261,8 @@ class SymmSCMatrix: public SavableState {
     virtual void assign(SymmSCMatrix* m);
     //texi Multiply all elements by @var{val}.
     virtual void scale(double);
+    //texi Scale the diagonal elements by @var{val}.
+    virtual void scale_diagonal(double);
     //texi Shift the diagonal elements by @var{val}.
     virtual void shift_diagonal(double);
     //texi Make @code{this} equal to the unit matrix.
@@ -273,6 +280,7 @@ class SymmSCMatrix: public SavableState {
     //texi Return or modify an element.
     virtual double get_element(int,int) = 0;
     virtual void set_element(int,int,double) = 0;
+    virtual void accumulate_element(int,int,double) = 0;
 
     //texi Return a subblock of @code{this}.  The subblock is defined as
     // the rows starting at @code{br} and ending at @code{er}, and the
@@ -371,6 +379,7 @@ class DiagSCMatrix: public SavableState {
     //texi Return or modify an element.
     virtual double get_element(int) = 0;
     virtual void set_element(int,double) = 0;
+    virtual void accumulate_element(int,double) = 0;
     //texi Sum @var{m} into this.
     virtual void accumulate(DiagSCMatrix* m) = 0;
     //texi Return the trace.

@@ -87,6 +87,12 @@ ReplDiagSCMatrix::set_element(int i,double a)
 }
 
 void
+ReplDiagSCMatrix::accumulate_element(int i,double a)
+{
+  matrix[i] += a;
+}
+
+void
 ReplDiagSCMatrix::assign(double val)
 {
   int n = d->n();

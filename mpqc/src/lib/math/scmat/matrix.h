@@ -106,6 +106,7 @@ class RefSCVector: public RefSSSCVector {
     //texi These call the @code{SCMatrix} members of the same name
     // after checking for references to @code{0}.
     void set_element(int i,double val) const;
+    void accumulate_element(int i,double val) const;
     double get_element(int) const;
     int n() const;
     RefSCDimension dim() const;
@@ -226,6 +227,7 @@ class RefSCMatrix: public RefSSSCMatrix {
     RefSCDimension rowdim() const;
     RefSCDimension coldim() const;
     void set_element(int,int,double) const;
+    void accumulate_element(int,int,double) const;
     double get_element(int,int) const;
     void print(ostream&) const;
     void print(const char*title=0,ostream&out=cout, int =10) const;
@@ -288,6 +290,7 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     RefSymmSCMatrix clone() const;
     RefSymmSCMatrix copy() const;
     void set_element(int,int,double) const;
+    void accumulate_element(int,int,double) const;
     double get_element(int,int) const;
 
     RefSCMatrix get_subblock(int br, int er, int bc, int ec);
@@ -389,6 +392,7 @@ class RefDiagSCMatrix: public RefSSDiagSCMatrix {
     RefDiagSCMatrix clone() const;
     RefDiagSCMatrix copy() const;
     void set_element(int,double) const;
+    void accumulate_element(int,double) const;
     double get_element(int) const;
     void assign(const RefDiagSCMatrix&) const;
     void scale(double) const;

@@ -88,6 +88,12 @@ LocalDiagSCMatrix::set_element(int i,double a)
 }
 
 void
+LocalDiagSCMatrix::accumulate_element(int i,double a)
+{
+  block->data[i] += a;
+}
+
+void
 LocalDiagSCMatrix::accumulate(DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type

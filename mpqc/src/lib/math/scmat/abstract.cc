@@ -190,6 +190,13 @@ SCMatrix::scale(double a)
 }
 
 void
+SCMatrix::scale_diagonal(double a)
+{
+  RefSCElementOp op = new SCElementScaleDiagonal(a);
+  this->element_op(op);
+}
+
+void
 SCMatrix::shift_diagonal(double a)
 {
   RefSCElementOp op = new SCElementShiftDiagonal(a);
@@ -434,6 +441,13 @@ void
 SymmSCMatrix::scale(double a)
 {
   RefSCElementOp op = new SCElementScale(a);
+  this->element_op(op);
+}
+
+void
+SymmSCMatrix::scale_diagonal(double a)
+{
+  RefSCElementOp op = new SCElementScaleDiagonal(a);
   this->element_op(op);
 }
 

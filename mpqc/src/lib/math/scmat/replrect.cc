@@ -142,6 +142,13 @@ ReplSCMatrix::set_element(int i,int j,double a)
   matrix[off] = a;
 }
 
+void
+ReplSCMatrix::accumulate_element(int i,int j,double a)
+{
+  int off = compute_offset(i,j);
+  matrix[off] += a;
+}
+
 SCMatrix *
 ReplSCMatrix::get_subblock(int br, int er, int bc, int ec)
 {

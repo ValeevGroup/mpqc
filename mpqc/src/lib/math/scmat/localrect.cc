@@ -128,6 +128,13 @@ LocalSCMatrix::set_element(int i,int j,double a)
   block->data[off] = a;
 }
 
+void
+LocalSCMatrix::accumulate_element(int i,int j,double a)
+{
+  int off = compute_offset(i,j);
+  block->data[off] += a;
+}
+
 SCMatrix *
 LocalSCMatrix::get_subblock(int br, int er, int bc, int ec)
 {

@@ -116,6 +116,13 @@ RefSCMatrix::set_element(int i, int j, double a) const
   pointer()->set_element(i,j,a);
 }
 
+void
+RefSCMatrix::accumulate_element(int i, int j, double a) const
+{
+  require_nonnull();
+  pointer()->accumulate_element(i,j,a);
+}
+
 double
 RefSCMatrix::get_element(int i, int j) const
 {
@@ -570,6 +577,13 @@ RefSymmSCMatrix::set_element(int i, int j, double a) const
 {
   require_nonnull();
   pointer()->set_element(i,j,a);
+}
+
+void
+RefSymmSCMatrix::accumulate_element(int i, int j, double a) const
+{
+  require_nonnull();
+  pointer()->accumulate_element(i,j,a);
 }
 
 double
@@ -1037,6 +1051,13 @@ RefDiagSCMatrix::set_element(int i, double a) const
   pointer()->set_element(i,a);
 }
 
+void
+RefDiagSCMatrix::accumulate_element(int i, double a) const
+{
+  require_nonnull();
+  pointer()->accumulate_element(i,a);
+}
+
 double
 RefDiagSCMatrix::get_element(int i) const
 {
@@ -1313,6 +1334,13 @@ RefSCVector::set_element(int i, double a) const
 {
   require_nonnull();
   pointer()->set_element(i,a);
+}
+
+void
+RefSCVector::accumulate_element(int i, double a) const
+{
+  require_nonnull();
+  pointer()->accumulate_element(i,a);
 }
 
 double

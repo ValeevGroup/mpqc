@@ -124,6 +124,12 @@ ReplSymmSCMatrix::set_element(int i,int j,double a)
   matrix[compute_offset(i,j)] = a;
 }
 
+void
+ReplSymmSCMatrix::accumulate_element(int i,int j,double a)
+{
+  matrix[compute_offset(i,j)] += a;
+}
+
 SCMatrix *
 ReplSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
 {

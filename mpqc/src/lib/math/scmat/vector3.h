@@ -58,6 +58,7 @@ class SCVector3
     SCVector3(const RefSCVector&);
     SCVector3(const RefKeyVal&);
     void normalize();
+    SCVector3 operator -() { return SCVector3(-_v[0],-_v[1],-_v[2]); }
     SCVector3 operator*(double) const;
     void operator = (const double *x) {
         _v[0] = x[0];

@@ -13,7 +13,7 @@ class OneBodyWavefunction: public Wavefunction
 #   define CLASSNAME OneBodyWavefunction
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
- private:
+ protected:
     ResultRefSymmSCMatrix _density;
  public:
     OneBodyWavefunction(const RefKeyVal&);

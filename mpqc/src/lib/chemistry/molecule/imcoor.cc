@@ -320,10 +320,12 @@ IntMolecularCoor::form_coordinates()
   constant_->update_values(molecule_);
   variable_->update_values(molecule_);
 
+  fflush(stdout);
   cout << "IntMolecularCoor::form_variable_coordinates()\n"
     << " expected " << nunique << " coordinates\n"
     << " found " << variable_->n() << " variable coordinates\n"
     << " found " << constant_->n() << " constant coordinates\n";
+  cout.flush();
 
 
   delete[] is_totally_symmetric;
@@ -564,9 +566,6 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
   RefSCVector old_internal(dim_);
 
   to_internal(old_internal);
-  // internal displacements
-  SCostream::cout << "internal coordinate displacement\n";
-  (new_internal - old_internal).print();
 
   // form the set of all coordinates
   RefSetIntCoor variable_and_constant = new SetIntCoor();
@@ -586,7 +585,6 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
       RefSCElementOp op = maxabs;
       displacement.element_op(op);
       if (maxabs->result() < cartesian_tolerance) {
-          SCostream::cout << "internal -> cartesian in " << step << " steps\n";
           return;
         }
 
@@ -608,11 +606,6 @@ IntMolecularCoor::to_cartesian(RefSCVector&new_internal)
 
       // compute the cartesian displacements
       RefSCVector cartesian_displacement = bmat.t() * bmbt_i * vc_displacement;
-
-      //cout << "vc_displacement:\n";
-      //vc_displacement.print();
-      //cout << "cartesian_displacement:\n";
-      //cartesian_displacement.print();
 
       // update the geometry
       for(i=0; i < dnatom3_.n(); i++) {

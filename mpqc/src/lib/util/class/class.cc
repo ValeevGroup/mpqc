@@ -611,9 +611,16 @@ int DescribedClass::class_version() const
 }
 
 void
-DescribedClass::print(ostream &o)
+DescribedClass::print(ostream &o) const
 {
   o << indent << "Object of type " << class_name() << endl;
+}
+
+void
+DescribedClass::print(ostream &o)
+{
+  const DescribedClass *cthis = this;
+  cthis->print(o);
 }
 
 ///////////////////////////////////////////////////////////////////////

@@ -214,6 +214,11 @@
          (setq comment-cont ";;")
          (setq comment-end ";;")
          )
+        ((eq major-mode 'makefile-mode)
+         (setq comment-start "#")
+         (setq comment-cont "#")
+         (setq comment-end "#")
+         )
         ('t
          (setq comment-start copyleft-default-comment-start)
          (setq comment-cont copyleft-default-comment-cont)

@@ -26,6 +26,7 @@
 //
 
 #include <stdexcept>
+#include <sstream>
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
@@ -83,9 +84,9 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name)
   Ref<MOIndexSpace> mospace = ipjq_tform->space2();
 
   ExEnv::out0() << endl << indent
-                << "Entered " << mospace->name()
-                << " A (GEBC) intermediates evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
+                << "Entered \"" << mospace->name()
+                << "\" A (GEBC) intermediates evaluator" << endl;
+  ExEnv::out0() << incindent;
 
   int nocc_act = r12info_->nocc_act();
   int noso = mospace->rank();
@@ -334,10 +335,14 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name)
     }
 
   globally_sum_intermeds_();
+  
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent
+                << "Exited \"" << mospace->name()
+                << "\" A (GEBC) intermediates evaluator" << endl;
+
   tim_exit("mp2-r12a intermeds (symmetric term)");
   checkpoint_();
-  
-  return;
 }
 
 ////////////////////////////////////////////////////////////////////////////

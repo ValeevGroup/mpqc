@@ -70,8 +70,8 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
   int nproc = msg->n();
   
   ExEnv::out0() << endl << indent
-	       << "Entered OBS A (GEBC) intermediates evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
+                << "Entered OBS A (GEBC) intermediates evaluator" << endl;
+  ExEnv::out0() << incindent;
 
   // Do the AO->MO transform
   Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
@@ -375,10 +375,12 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
     }
 
   globally_sum_intermeds_();
+
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited OBS A (GEBC) intermediates evaluator" << endl;
+
   tim_exit("mp2-r12a intermeds");
   checkpoint_();
-  
-  return;
 }
 
 ////////////////////////////////////////////////////////////////////////////

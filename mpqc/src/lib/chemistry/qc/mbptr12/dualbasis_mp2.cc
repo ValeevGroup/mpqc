@@ -61,14 +61,13 @@ R12IntEval::compute_dualEmp2_()
   enum te_types {eri=0};
 
   tim_enter("dual-basis MP2 energy");
+  ExEnv::out0() << endl << indent
+	       << "Entered dual-basis MP2 energy evaluator" << endl;
+  ExEnv::out0() << incindent;
 
   int me = msg->me();
   int nproc = msg->n();
   
-  ExEnv::out0() << endl << indent
-	       << "Entered dual-basis MP2 energy evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
-
   // Do the AO->MO transform
   form_canonvir_space_();
   Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
@@ -161,6 +160,10 @@ R12IntEval::compute_dualEmp2_()
   ijpq_acc->deactivate();
   
   globally_sum_intermeds_();
+
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited dual-basis MP2 energy evaluator" << endl;
+
   tim_exit("dual-basis MP2 energy");
   checkpoint_();
   
@@ -179,14 +182,13 @@ R12IntEval::compute_dualEmp1_()
   enum te_types {eri=0};
 
   tim_enter("dual-basis MP1 energy");
+  ExEnv::out0() << endl << indent
+	       << "Entered dual-basis MP1 energy evaluator" << endl;
+  ExEnv::out0() << incindent;
 
   int me = msg->me();
   int nproc = msg->n();
   
-  ExEnv::out0() << endl << indent
-	       << "Entered dual-basis MP1 energy evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
-
   // Compute act.occ./aux.virt. Fock matrix
   form_canonvir_space_();
   Ref<MOIndexSpace> occ_space = r12info_->occ_space();
@@ -208,6 +210,9 @@ R12IntEval::compute_dualEmp1_()
                 << 2.0*emp1 << endl;
   ExEnv::out0() << indent << "HF energy estimated in new basis [au]   :   "
                 << r12info_->ref()->energy() - 2.0*emp1 << endl;
+
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << endl << "Exited dual-basis MP1 energy evaluator" << endl;
 
   tim_exit("dual-basis MP1 energy");
 }

@@ -35,8 +35,8 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libSCmbptr12
 BIN_OR_LIB = LIB
 
-CXXSRCS = mbptr12.cc trans12_grt.cc \
-  trans123_r12a_abs.cc r12ia.cc r12ia_memgrp.cc \
+CXXSRCS = mbptr12.cc \
+  r12ia.cc r12ia_memgrp.cc \
   r12ia_node0file.cc \
   vxb_eval_info.cc \
   compute_energy_a.cc mp2r12_energy.cc \

@@ -160,6 +160,8 @@ public:
 
   /// Prints out this
   void print(std::ostream&o=ExEnv::out0()) const;
+  /// Produces a short summary
+  void print_summary(std::ostream& os) const;
 
 };
 

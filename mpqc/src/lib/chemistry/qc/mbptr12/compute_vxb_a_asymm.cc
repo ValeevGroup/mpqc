@@ -26,6 +26,7 @@
 //
 
 #include <stdexcept>
+#include <sstream>
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
@@ -81,10 +82,13 @@ R12IntEval::contrib_to_VXB_a_asymm_(const std::string& tform_name)
   Ref<MOIndexSpace> mospace1 = ikjy_tform->space2();
   Ref<MOIndexSpace> mospace2 = ikjy_tform->space4();
 
+  ostringstream oss;
+  oss << "\"" << mospace1->name() << "\"/\"" << mospace2->name() << "\"";
+  std::string label = oss.str();
   ExEnv::out0() << endl << indent
-                << "Entered " << mospace1->name() << "/" << mospace2->name()
+                << "Entered " << label
                 << " A (GEBC) intermediates evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
+  ExEnv::out0() << incindent;
 
   const int rank2 = mospace1->rank();
   const int rank4 = mospace2->rank();
@@ -342,10 +346,14 @@ R12IntEval::contrib_to_VXB_a_asymm_(const std::string& tform_name)
     }
 
   globally_sum_intermeds_();
+
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent
+                << "Exited " << label
+                << " A (GEBC) intermediates evaluator" << endl;
+
   tim_exit("mp2-r12a intermeds (asymmetric term)");
   checkpoint_();
-  
-  return;
 }
 
 ////////////////////////////////////////////////////////////////////////////

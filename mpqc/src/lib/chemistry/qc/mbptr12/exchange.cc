@@ -64,7 +64,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   int nproc = msg->n();
   ExEnv::out0() << endl << indent
 	       << "Entered exchange matrix evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
+  ExEnv::out0() << incindent;
 
   // Do the AO->MO transform
   Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
@@ -144,12 +144,15 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   mnxy_acc->deactivate();
 
   msg->sum(K_xy,nbraket);
-  tim_exit("exchange");
   
   RefSCMatrix K(bra_space->coefs()->coldim(), ket_space->coefs()->coldim(), bra_space->coefs()->kit());
   K.assign(K_xy);
   delete[] K_xy;
   
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited exchange matrix evaluator" << endl;
+  tim_exit("exchange");
+
   return K;
 }
 

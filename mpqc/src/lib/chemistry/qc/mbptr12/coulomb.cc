@@ -63,8 +63,8 @@ R12IntEval::coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>
   int me = msg->me();
   int nproc = msg->n();
   ExEnv::out0() << endl << indent
-	       << "Entered coulomb matrix evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
+	       << "Entered Coulomb matrix evaluator" << endl;
+  ExEnv::out0() << incindent;
 
   // Do the AO->MO transform
   Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
@@ -81,7 +81,7 @@ R12IntEval::coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>
   const int nket = ket_space->rank();
   const int nbraket = nbra*nket;
 
-  ExEnv::out0() << indent << "Begin computation of coulomb matrix" << endl;
+  ExEnv::out0() << indent << "Begin computation of Coulomb matrix" << endl;
   if (debug_) {
     ExEnv::out0() << indent << "nbra = " << nbra << endl;
     ExEnv::out0() << indent << "nket = " << nket << endl;
@@ -140,15 +140,18 @@ R12IntEval::coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>
   tim_enter("MO ints retrieve");
   tim_exit("MO ints retrieve");
 
-  ExEnv::out0() << indent << "End of computation of coulomb matrix" << endl;
+  ExEnv::out0() << indent << "End of computation of Coulomb matrix" << endl;
   mnxy_acc->deactivate();
 
   msg->sum(J_xy,nbraket);
-  tim_exit("coulomb");
-  
+
   RefSCMatrix J(bra_space->coefs()->coldim(), ket_space->coefs()->coldim(), bra_space->coefs()->kit());
   J.assign(J_xy);
   delete[] J_xy;
+  
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited Coulomb matrix evaluator" << endl;
+  tim_exit("coulomb");
   
   return J;
 }

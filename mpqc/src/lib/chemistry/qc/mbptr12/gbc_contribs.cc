@@ -75,7 +75,7 @@ R12IntEval::compute_B_gbc_1_()
   int nproc = msg->n();
   ExEnv::out0() << endl << indent
     << "Entered B(GBC1) intermediate evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
+  ExEnv::out0() << incindent;
 
   RefSCMatrix B_gbc1_aa = Baa_.clone();  B_gbc1_aa.assign(0.0);
   RefSCMatrix B_gbc1_ab = Bab_.clone();  B_gbc1_ab.assign(0.0);
@@ -305,8 +305,6 @@ R12IntEval::compute_B_gbc_1_()
     ijMfa_acc->release_pair_block(l,k,R12IntsAcc::r12);
   }
 
-  ExEnv::out0() << indent << "Exited B(GBC1) intermediate evaluator" << endl;
-
   // Symmetrize the B contribution
   B_gbc1_aa.scale(0.5);
   B_gbc1_ab.scale(0.5);
@@ -316,6 +314,9 @@ R12IntEval::compute_B_gbc_1_()
   Bab_.accumulate(B_gbc1_ab); Bab_.accumulate(B_gbc1_ab.t());
 
   globally_sum_intermeds_();
+
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited B(GBC1) intermediate evaluator" << endl;
 
   tim_exit("B(GBC1) intermediate");
 }
@@ -345,7 +346,7 @@ R12IntEval::compute_B_gbc_2_()
   int nproc = msg->n();
   ExEnv::out0() << endl << indent
     << "Entered B(GBC2) intermediate evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
+  ExEnv::out0() << incindent;
 
   RefSCMatrix X_ijklF_ab = Bab_.clone();
   RefSCMatrix B_gbc2_aa = Baa_.clone();
@@ -613,8 +614,6 @@ R12IntEval::compute_B_gbc_2_()
     }
   }
 
-  ExEnv::out0() << indent << "Exited B(GBC2) intermediate evaluator" << endl;
-
   // Symmetrize the B contribution
   B_gbc2_aa.scale(0.5);
   B_gbc2_ab.scale(0.5);
@@ -628,8 +627,10 @@ R12IntEval::compute_B_gbc_2_()
 
   globally_sum_intermeds_();
 
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited B(GBC2) intermediate evaluator" << endl;
+
   tim_exit("B(GBC2) intermediate");
-  
 }
 
 ////////////////////////////////////////////////////////////////////////////

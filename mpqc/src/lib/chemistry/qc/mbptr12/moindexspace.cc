@@ -396,6 +396,22 @@ MOIndexSpace::print(ostream&o) const
   o << decindent;
 }
 
+void
+MOIndexSpace::print_summary(ostream& o) const
+{
+  o << indent << "MOIndexSpace \"" << name_ << "\":" << endl;
+  o << incindent;
+  o << indent << "GaussianBasisSet \"" << basis_->name() << "\""<< endl;
+  o << indent << "  rank  nbasis  nshell  nfuncmax" << endl;
+  o << indent << scprintf("  %-6i %-6i  %-6i   %-6i",
+                          rank_,
+                          basis_->nbasis(),
+                          basis_->nshell(),
+                          basis_->max_nfunction_in_shell()) << endl;
+  o << decindent;
+
+}
+
 /////////////////////////////////////////////////////////////////
 // Function dquicksort performs a quick sort (smaller -> larger) 
 // of the double data in item by the integer indices in index;

@@ -68,7 +68,7 @@ R12IntEval::compute_T2_vbsneqobs_()
   int nproc = msg->n();
   ExEnv::out0() << endl << indent
 	       << "Entered MP2 T2 amplitude evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
+  ExEnv::out0() << incindent;
 
   Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
   Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
@@ -163,11 +163,11 @@ R12IntEval::compute_T2_vbsneqobs_()
     ijab_acc->release_pair_block(i,j,R12IntsAcc::eri);
   }
 
-  ExEnv::out0() << indent << "Exited MP2 T2 amplitude evaluator" << endl;
-
   globally_sum_scmatrix_(T2aa_);
   globally_sum_scmatrix_(T2ab_);
 
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited MP2 T2 amplitude evaluator" << endl;
   tim_exit("mp2 t2 amplitudes");
 }
 
@@ -187,7 +187,7 @@ R12IntEval::compute_R_vbsneqobs_(const Ref<TwoBodyMOIntsTransform>& ipjq_tform, 
   int nproc = msg->n();
   ExEnv::out0() << endl << indent
     << "Entered R intermediate evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
+  ExEnv::out0() << incindent;
 
   Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
   Ref<MOIndexSpace> space2 = ipjq_tform->space2();
@@ -263,11 +263,11 @@ R12IntEval::compute_R_vbsneqobs_(const Ref<TwoBodyMOIntsTransform>& ipjq_tform, 
     ijpq_acc->release_pair_block(j,i,R12IntsAcc::r12);
   }
 
-  ExEnv::out0() << indent << "Exited R intermediate evaluator" << endl;
-
   globally_sum_scmatrix_(Raa);
   globally_sum_scmatrix_(Rab);
 
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited R intermediate evaluator" << endl;
   tim_exit("R intermediate");
 }
 

@@ -68,12 +68,13 @@ R12IntEval::compute_T2_()
 
   tim_enter("mp2 t2 amplitudes");
 
+  ExEnv::out0() << endl << indent
+                << "Entered MP2 T2 amplitude evaluator" << endl;
+  ExEnv::out0() << incindent;
+
   Ref<MessageGrp> msg = r12info_->msg();
   int me = msg->me();
   int nproc = msg->n();
-  ExEnv::out0() << endl << indent
-	       << "Entered MP2 T2 amplitude evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
 
   const int noso = r12info_->mo_space()->rank();
   const int nocc = r12info_->nocc();
@@ -178,8 +179,6 @@ R12IntEval::compute_T2_()
     ijpq_acc->release_pair_block(i,j,R12IntsAcc::eri);
   }
 
-  ExEnv::out0() << indent << "Exited MP2 T2 amplitude evaluator" << endl;
-
   globally_sum_intermeds_();
 
 #if TEST_T2
@@ -192,6 +191,9 @@ R12IntEval::compute_T2_()
   emp2pair_ab.print("Alpha-beta MP2 energies");
   abort();
 #endif
+
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited MP2 T2 amplitude evaluator" << endl;
 
   tim_exit("mp2 t2 amplitudes");
 }
@@ -222,8 +224,8 @@ differs from the basis set for occupieds");
   int me = msg->me();
   int nproc = msg->n();
   ExEnv::out0() << endl << indent
-    << "Entered R intermediate evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
+    << "Entered R amplitude evaluator" << endl;
+  ExEnv::out0() << incindent;
 
   const int noso = r12info_->mo_space()->rank();
   const int nocc = r12info_->nocc();
@@ -321,9 +323,10 @@ differs from the basis set for occupieds");
     ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12);
   }
 
-  ExEnv::out0() << indent << "Exited R intermediate evaluator" << endl;
-
   globally_sum_intermeds_();
+
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited R amplitude evaluator" << endl;
 
   tim_exit("R intermediate");
 }
@@ -347,7 +350,7 @@ R12IntEval::compute_A_simple_()
   int nproc = msg->n();
   ExEnv::out0() << endl << indent
     << "Entered A intermediate evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
+  ExEnv::out0() << incindent;
 
   const int noso = r12info_->mo_space()->rank();
   const int nocc = r12info_->nocc();
@@ -463,14 +466,15 @@ R12IntEval::compute_A_simple_()
     ijaBf_acc->release_pair_block(j,i,R12IntsAcc::r12);
   }
 
-  ExEnv::out0() << indent << "Exited A intermediate evaluator" << endl;
-
   globally_sum_intermeds_();
 
 #if TEST_A
   Aaa_.print("Alpha-alpha A intermediate");
   Aab_.print("Alpha-beta A intermediate");
 #endif
+
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited A intermediate evaluator" << endl;
 
   tim_exit("A intermediate");
 }

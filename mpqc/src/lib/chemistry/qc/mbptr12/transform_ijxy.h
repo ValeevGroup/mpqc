@@ -60,6 +60,9 @@ public:
 
   void save_data_state(StateOut&);
 
+  /// Implementation of TwoBodyMOIntsTransform::type()
+  std::string type() const { return "ijxy"; }
+
   /** Returns the number of bytes allocated for each ij-block of integrals of one type
     in MemoryGrp */
   const size_t memgrp_blksize() const;

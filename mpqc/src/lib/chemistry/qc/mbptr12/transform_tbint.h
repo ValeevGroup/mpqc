@@ -57,6 +57,11 @@ class TwoBodyMOIntsTransform : virtual public SavableState {
   virtual distsize_t compute_transform_dynamic_memory_(int ni) const = 0;
 
 protected:
+  /// Predefined enumerated type for the MO spaces
+  typedef struct {
+    enum {Space1, Space2, Space3, Space4};
+  } MOSpaces;
+
   std::string name_;
   Ref<MOIntsTransformFactory> factory_;
 
@@ -85,6 +90,9 @@ protected:
   size_t mem_static_;
   int batchsize_;
   int npass_;
+
+  /// returns index in range of space1_ where to start the transformation
+  unsigned int restart_orbital() const;
   
   // Compute used static memory and batch size
   void init_vars();
@@ -101,7 +109,23 @@ protected:
 
   // Compute the number of ij-pairs per this task
   static int compute_nij(const int rank_i, const int rank_j, const int nproc, const int me);
-  
+
+  /** Generates a report on memory for the transform : user-specified limits, projected and actual use.
+      Assumes formatting info from ExEnv::out0().
+   */
+  void memory_report(std::ostream& os = ExEnv::out0()) const;
+  /** Generates a report on MO spaces for the transform.
+      Assumes formatting info from ExEnv::out0().
+   */
+  void mospace_report(std::ostream& os = ExEnv::out0()) const;
+
+  /** Prints out standard header. Call at the beginning of compute().
+   */
+  void print_header(std::ostream& os = ExEnv::out0()) const;
+  /** Prints out standard footer. Call at the end of compute().
+   */
+  void print_footer(std::ostream& os = ExEnv::out0()) const;
+    
 public:
 
   TwoBodyMOIntsTransform(StateIn&);
@@ -114,6 +138,8 @@ public:
 
   /// Returns the name of the transform
   std::string name() const {return name_;}
+  /// Returns a short label which uniquely identifies the type of transform
+  virtual std::string type() const =0;
   /// Returns the MemoryGrp object
   Ref<MemoryGrp> mem() const;
   /// Returns the MessageGrp object
@@ -160,7 +186,7 @@ public:
   
   /// Make the transform obsolete. Next call to compute() will recompute
   virtual void obsolete();
-  
+
 };
 
 }

@@ -30,6 +30,7 @@
 #endif
 
 #include <stdexcept>
+#include <sstream>
 
 #include <util/misc/formio.h>
 #include <util/state/state_bin.h>
@@ -172,6 +173,11 @@ TwoBodyMOIntsTransform::dynamic() const {return dynamic_; }
 int
 TwoBodyMOIntsTransform::num_te_types() const { return num_te_types_; }
 
+unsigned int
+TwoBodyMOIntsTransform::restart_orbital() const {
+  return (ints_acc_.null() ? 0 : ints_acc_->next_orbital());
+}
+
 
 ///////////////////////////////////////////////////////
 // Compute the batchsize for the transformation
@@ -221,7 +227,6 @@ TwoBodyMOIntsTransform::init_vars()
   int rank_i = space1_->rank() - restart_orbital;
 
   mem_static_ = 0;
-  int ni = 0;
   if (me == 0) {
     // mem_static should include storage in MOIndexSpace
     mem_static_ = space1_->memory_in_use() +
@@ -237,9 +242,9 @@ TwoBodyMOIntsTransform::init_vars()
 
   // Send value of ni and mem_static to other nodes
   msg_->bcast(batchsize_);
-  double mem_static_double = (double) mem_static_;
+  double mem_static_double = static_cast<double>(mem_static_);
   msg_->bcast(mem_static_double);
-  mem_static_ = (size_t) mem_static_double;
+  mem_static_ = static_cast<size_t>(mem_static_double);
 
   if (batchsize_ == 0)
     throw std::runtime_error("TwoBodyMOIntsTransform::init_vars() -- batch size is 0: more memory or processors are needed");
@@ -251,8 +256,8 @@ TwoBodyMOIntsTransform::init_vars()
     rest = 0;
   }
   else {
-    rest = rank_i%ni;
-    npass_ = (rank_i - rest)/ni + 1;
+    rest = rank_i%batchsize_;
+    npass_ = (rank_i - rest)/batchsize_ + 1;
     if (rest == 0) npass_--;
   }
 }
@@ -306,6 +311,85 @@ TwoBodyMOIntsTransform::compute_nij(const int rank_i, const int rank_j, const in
   }
   
   return nij;
+}
+
+void
+TwoBodyMOIntsTransform::memory_report(std::ostream& os) const
+{
+  size_t mem_dyn = distsize_to_size(compute_transform_dynamic_memory_(batchsize_));
+  int restart_orbital = ints_acc_.nonnull() ? ints_acc_->next_orbital() : 0;
+  int rank_i_restart = space1_->rank() - restart_orbital;
+
+  os << indent
+     << "Memory available per node:      " << memory_ << " Bytes"
+     << endl;
+  os << indent
+     << "Static memory used per node:    " << mem_static_ << " Bytes"
+     << endl;
+  os << indent
+     << "Total memory used per node:     " << mem_dyn+mem_static_ << " Bytes"
+     << endl;
+  os << indent
+     << "Memory required for one pass:   "
+     << compute_transform_dynamic_memory_(rank_i_restart)+mem_static_
+     << " Bytes"
+     << endl;
+  os << indent
+     << "Minimum memory required:        "
+     << compute_transform_dynamic_memory_(1)+mem_static_
+     << " Bytes"
+     << endl;
+  os << indent
+     << "Number of passes:               " << (rank_i_restart+batchsize_-1)/batchsize_
+     << endl;
+  os << indent
+     << "Batch size:                     " << batchsize_
+     << endl;
+}
+
+void
+TwoBodyMOIntsTransform::mospace_report(std::ostream& os) const
+{
+  os << indent << "MO space 1" << endl << incindent;
+  space1_->print_summary(os);  os << decindent;
+  os << indent << "MO space 2" << endl << incindent;
+  space2_->print_summary(os);  os << decindent;
+  os << indent << "MO space 3" << endl << incindent;
+  space3_->print_summary(os);  os << decindent;
+  os << indent << "MO space 4" << endl << incindent;
+  space4_->print_summary(os);  os << decindent;
+}
+
+void
+TwoBodyMOIntsTransform::print_header(std::ostream& os) const
+{
+  if (debug_ >= 0)
+    os << indent << "Entered " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
+  os << incindent;
+
+  int nproc = msg_->n();
+  if (debug_ >= 1)
+    os << indent << scprintf("nproc = %i", nproc) << endl;
+  
+  if (restart_orbital() && debug_ >= 1) {
+    os << indent
+       << scprintf("Restarting at orbital %d",
+                   restart_orbital()) << endl;
+  }
+  
+  memory_report(os);
+  if (dynamic_)
+    os << indent << "Using dynamic load balancing." << endl;
+  if (debug_ >= 1)
+    mospace_report(os);
+}
+
+void
+TwoBodyMOIntsTransform::print_footer(std::ostream& os) const
+{
+  os << decindent;
+  if (debug_ >= 0)
+    os << indent << "Exited " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

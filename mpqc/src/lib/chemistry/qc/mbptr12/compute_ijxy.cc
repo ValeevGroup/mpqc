@@ -96,69 +96,18 @@ TwoBodyMOIntsTransform_ijxy::compute()
 
   int aoint_computed = 0; 
 
-  tim_enter("r12a-sbs-mem");
+  std::string tim_label("tbint_tform_");
+  tim_label += type(); tim_label += " "; tim_label += name();
+  tim_enter(tim_label.c_str());
 
-  int me = msg_->me();
-  int nproc = msg_->n();
+  print_header();
 
-  if (debug_ >= 0)
-    ExEnv::out0() << endl << indent
-                  << "Entered " << name_ << " integrals evaluator (type ijxy)" << endl;
-  if (debug_ >= 1)
-    ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
-
-  int restart_orbital = ints_acc_.null() ? 0 : ints_acc_->next_orbital();
-  if (restart_orbital && debug_ >= 1) {
-    ExEnv::out0() << indent
-                  << scprintf("Restarting at orbital %d",
-                              restart_orbital) << endl;
-  }
-  
   // Compute the storage remaining for the integral routines
   size_t dyn_mem = distsize_to_size(compute_transform_dynamic_memory_(batchsize_));
   
-  if (debug_ >= 1) {
-  ExEnv::out0() << indent
-		<< "Memory available per node:      " << memory_ << " Bytes"
-		<< endl;
-  ExEnv::out0() << indent
-		<< "Static memory used per node:    " << mem_static_ << " Bytes"
-		<< endl;
-  ExEnv::out0() << indent
-		<< "Total memory used per node:     " << dyn_mem+mem_static_ << " Bytes"
-		<< endl;
-  ExEnv::out0() << indent
-		<< "Memory required for one pass:   "
-		<< compute_transform_dynamic_memory_(rank1)+mem_static_
-		<< " Bytes"
-		<< endl;
-  ExEnv::out0() << indent
-		<< "Minimum memory required:        "
-		<< compute_transform_dynamic_memory_(1)+mem_static_
-		<< " Bytes"
-		<< endl;
-  ExEnv::out0() << indent
-		<< "Batch size:                     " << batchsize_
-		<< endl;
-  if (dynamic_)
-    ExEnv::out0() << indent << "Using dynamic load balancing." << endl;
-
-  /*
-  ExEnv::out0() << indent
-		<< scprintf(" npass  rest  nbasis  nshell  nfuncmax") << endl;
-  ExEnv::out0() << indent
-		<< scprintf("  %-4i   %-3i   %-5i    %-4i     %-3i",
-			    npass_,rest,nbasis,nshell,nfuncmax)
-		<< endl;
-  ExEnv::out0() << indent
-		<< scprintf(" nocc   nvir   nfzc   nfzv") << endl;
-  ExEnv::out0() << indent
-		<< scprintf("  %-4i   %-4i   %-4i   %-4i",
-			    nocc,nvir,nfzc,nfzv)
-		<< endl;
-  */
-  }
-  
+  int me = msg_->me();
+  int nproc = msg_->n();
+  const int restart_orb = restart_orbital();
   int nijmax = compute_nij(batchsize_,rank2,nproc,me);
   
   vector<int> mosym1 = space1_->mosym();
@@ -219,7 +168,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
     ExEnv::out0() << indent << "Beginning pass " << pass+1 << endl;
 
     int ni = batchsize_;
-    int i_offset = restart_orbital + pass*ni;
+    int i_offset = restart_orb + pass*ni;
     if (pass == npass_ - 1)
       ni = rank1 - batchsize_*(npass_-1);
 
@@ -309,7 +258,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
                 for (int s = 0; s<nbasis4; s++) {
                   double value = ijrs_ints[r*nbasis4+s];
                   printf("2Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+restart_orbital,j,r,s,value);
+                         te_type,i+restart_orb,j,r,s,value);
                 }
               }
             }
@@ -372,7 +321,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
                   for (int s = 0; s<nbasis4; s++) {
                   double value = ijxs_ints[x*nbasis4+s];
                   printf("3Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+restart_orbital,j,x,s,value);
+                         te_type,i+restart_orb,j,x,s,value);
                 }
               }
             }
@@ -428,7 +377,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
           int ij = i*rank2+j;
           int ij_local = ij/nproc;
           if (ij%nproc == me) {
-            const int ij_sym = mosym1[i+restart_orbital] ^ mosym2[j];
+            const int ij_sym = mosym1[i+restart_orb] ^ mosym2[j];
             for(int te_type=0; te_type<num_te_types_; te_type++) {
               double* ijxy_ptr = (double*) ((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
               for (int x = 0; x<rank3; x++) {
@@ -457,7 +406,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
                 for (int y = 0; y<rank4; y++) {
                   double value = ijxy_ints[x*rank4+y];
                   printf("4Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+restart_orbital,j,x,y,value);
+                         te_type,i+restart_orb,j,x,y,value);
                 }
               }
             }
@@ -498,7 +447,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
   delete[] vector3[0]; delete[] vector3;
   delete[] vector4[0]; delete[] vector4;
 
-  tim_exit("r12a-sbs-mem");
+  tim_exit(tim_label.c_str());
 
   if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint()) {
     StateOutBin stateout(top_mole_->checkpoint_file());
@@ -506,7 +455,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
   }
   
-  return;
+  print_footer();
 }
 
 

@@ -70,7 +70,7 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
   
   ExEnv::out0() << endl << indent
 	       << "Entered ABS A (GEBC) intermediates evaluator" << endl;
-  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
+  ExEnv::out0() << incindent;
 
   // Do the AO->MO transform
   Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
@@ -339,10 +339,12 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
     }
 
   globally_sum_intermeds_();
+  
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited ABS A (GEBC) intermediates evaluator" << endl;
+
   tim_exit("mp2-r12a intermeds");
   checkpoint_();
-  
-  return;
 }
 
 ////////////////////////////////////////////////////////////////////////////

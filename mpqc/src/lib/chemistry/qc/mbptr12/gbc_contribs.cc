@@ -308,8 +308,10 @@ R12IntEval::compute_B_gbc_1_()
   // Symmetrize the B contribution
   B_gbc1_aa.scale(0.5);
   B_gbc1_ab.scale(0.5);
-  B_gbc1_aa.print("Alpha-alpha B(GBC1) contribution");
-  B_gbc1_ab.print("Alpha-beta B(GBC1) contribution");
+  if (debug_ > 1) {
+    B_gbc1_aa.print("Alpha-alpha B(GBC1) contribution");
+    B_gbc1_ab.print("Alpha-beta B(GBC1) contribution");
+  }
   Baa_.accumulate(B_gbc1_aa); Baa_.accumulate(B_gbc1_aa.t());
   Bab_.accumulate(B_gbc1_ab); Bab_.accumulate(B_gbc1_ab.t());
 
@@ -368,7 +370,8 @@ R12IntEval::compute_B_gbc_2_()
   // compute r_{12}^2 operator in act.occ.pair/act.occ.-focc. basis
   RefSCMatrix R2 = compute_r2_(act_occ_space,factocc_space);
   // Compute contribution X += (r^2)_{ij}^{k l_f}
-  X_ijklF_ab.accumulate(R2);
+  if (me == 0)
+    X_ijklF_ab.accumulate(R2);
 
   //
   // Compute contribution X -= r_{ij}^{\alpha'm} r_{m\alpha'}^{k l_f}
@@ -573,6 +576,7 @@ R12IntEval::compute_B_gbc_2_()
     klfpq_acc->release_pair_block(k,l,R12IntsAcc::r12);
     klfpq_acc->release_pair_block(l,k,R12IntsAcc::r12);
   }
+  globally_sum_scmatrix_(X_ijklF_ab);
 #endif
 
   //
@@ -617,13 +621,12 @@ R12IntEval::compute_B_gbc_2_()
   // Symmetrize the B contribution
   B_gbc2_aa.scale(0.5);
   B_gbc2_ab.scale(0.5);
-  B_gbc2_aa.print("Alpha-alpha B(GBC2) contribution");
-  B_gbc2_ab.print("Alpha-beta B(GBC2) contribution");
+  if (debug_ > 1) {
+    B_gbc2_aa.print("Alpha-alpha B(GBC2) contribution");
+    B_gbc2_ab.print("Alpha-beta B(GBC2) contribution");
+  }
   Baa_.accumulate(B_gbc2_aa); Baa_.accumulate(B_gbc2_aa.t());
   Bab_.accumulate(B_gbc2_ab); Bab_.accumulate(B_gbc2_ab.t());
-
-  Xaa_.print("Alpha-alpha X");
-  Xab_.print("Alpha-beta X");
 
   globally_sum_intermeds_();
 

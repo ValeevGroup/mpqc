@@ -627,7 +627,8 @@ R12IntEval::form_focc_space_()
     Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
     
     RefSCMatrix F_ri_o = fock_(occ_space,ribs_space,occ_space);
-    F_ri_o.print("Fock matrix (RI-BS/occ.)");
+    if (debug_ > 1)
+      F_ri_o.print("Fock matrix (RI-BS/occ.)");
     focc_space_ = new MOIndexSpace("Fock-weighted occupied MOs sorted by energy",
                                    occ_space, ribs_space->coefs()*F_ri_o, ribs_space->basis());
   }
@@ -644,7 +645,8 @@ R12IntEval::form_factocc_space_()
     Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
     
     RefSCMatrix F_ri_ao = fock_(occ_space,ribs_space,act_occ_space);
-    F_ri_ao.print("Fock matrix (RI-BS/act.occ.)");
+    if (debug_ > 1)
+      F_ri_ao.print("Fock matrix (RI-BS/act.occ.)");
     factocc_space_ = new MOIndexSpace("Fock-weighted active occupied MOs sorted by energy",
                                       act_occ_space, ribs_space->coefs()*F_ri_ao, ribs_space->basis());
   }

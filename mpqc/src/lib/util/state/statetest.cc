@@ -27,7 +27,6 @@
 
 // a simple program to test the state stuff
 
-#include <new>
 #include <iostream>
 
 #include <util/misc/formio.h>
@@ -432,8 +431,6 @@ D::_castdown(const ClassDesc*cd)
 int
 main()
 {
-  set_new_handler(abort);
-
   RefA ra;
 
   ClassDesc::list_all_classes();

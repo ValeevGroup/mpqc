@@ -9,7 +9,8 @@ Int2eV3::Int2eV3(const RefGaussianBasisSet& b1,
                  const RefGaussianBasisSet& b2,
                  const RefGaussianBasisSet& b3,
                  const RefGaussianBasisSet& b4,
-                 int order, int storage)
+                 int order, int storage) :
+  store(0)
 {
 
   bs1_ = b1;

@@ -1,9 +1,8 @@
 
-#include "mpqc.h"
 #include <math/optimize/opt.h>
-#include <util/keyval/ipv2.h>
 #include <util/keyval/keyval.h>
 #include <new.h>
+#include "mpqc.h"
 
 // Force MPSCF linkage:
 const ClassDesc &tmp = MPSCF::class_desc_;
@@ -30,13 +29,8 @@ main(int argc, char**argv)
   // the output stream is standard out
   SCostream& o = SCostream::cout;
 
-  // use the same IPV2 for both the C IPV2 input and the keyval input
-  IPV2* ipv2 = new IPV2;
-  //IPV2::set_global(ipv2);
-  ParsedKeyVal* pkv;
-  RefKeyVal rpkv(pkv = new ParsedKeyVal(ipv2));
-  pkv->read( SRCDIR "/mpqc.in");
-  pkv = 0; // should only use rpkv
+  // open keyval input
+  RefKeyVal rpkv(new ParsedKeyVal(SRCDIR "/mpqc.in"));
 
   for (int i=0; rpkv->exists("mole",i); i++) {
       RefMolecularEnergy mole = rpkv->describedclassvalue("mole",i);

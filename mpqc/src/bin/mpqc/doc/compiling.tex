@@ -212,6 +212,17 @@ of digits to which the energies agree.  If they agree to all digits
 printed followed by the number of digits to which the gradients in least
 agreement agree.  Likewise if frequencies were computed.
 
+  If two numbers do not agree to the expected accuracy, then an asterisk,
+\type{*}, is printed after the number of digits in agreement.  There are a
+few cases where a \type{*} might appear, but the calculations do agree.
+These situations arise where there are degenerate orbitals and the
+quantities compared depend on the choice of the orbitals.  This will never
+happen for physical observables, like the energy and its derivatives;
+however, it can happen for the quantities printed with the labels
+\type{|S2|1}, \type{|S2|i}, \type{S2L}, and \type{D1L} in the \type{symm1}
+test series.
+
+
   Finally, you can do a detailed comparison of the contents of the
 \type{ref} and \type{run} subdirectories by typing \type{make diff}.
 

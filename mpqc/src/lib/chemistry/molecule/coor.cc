@@ -616,6 +616,12 @@ MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
 {
   molecule_ = keyval->describedclassvalue("molecule");
 
+  if (molecule_.null()) {
+      fprintf(stderr, "MolecularCoor(const RefKeyVal&keyval):"
+              " molecule not found\n");
+      abort();
+    }
+
   matrixkit_ = keyval->describedclassvalue("matrixkit");
   dnatom3_ = keyval->describedclassvalue("natom3");
 
@@ -646,4 +652,10 @@ MolecularCoor::save_data_state(StateOut&s)
   molecule_.save_state(s);
   matrixkit_.save_state(s);
   dnatom3_.save_state(s);
+}
+
+int
+MolecularCoor::nconstrained()
+{
+  return 0;
 }

@@ -25,12 +25,15 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <math.h>
+
 #include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/molecule/coor.h>
 #include <util/render/object.h>
 #include <util/render/oogl.h>
+#include <util/misc/formio.h>
 
 // force linkage of the taylor expansion energy evaluator
 #include <chemistry/molecule/taylor_f.h>
@@ -49,6 +52,8 @@ void do_displacement(RefMolecularCoor&mc,int i);
 int 
 main(int argc, char **argv)
 {
+  int i;
+
   RefKeyVal kv;
   if (argc == 2) {
       kv = new ParsedKeyVal(argv[1]);
@@ -72,7 +77,7 @@ main(int argc, char **argv)
   int * unique_atoms = mol->find_unique_atoms();
 
   cout << "nunique=%d: ",nunique;
-  for (int i=0; i < nunique; i++) cout << " " << unique_atoms[i]+1;
+  for (i=0; i < nunique; i++) cout << " " << unique_atoms[i]+1;
   cout << endl;
 
   mol->point_group().char_table().print();
@@ -111,8 +116,34 @@ main(int argc, char **argv)
   bmatrix.print();
   cout << "fd bmatrix:\n";
   fd_bmatrix.print();
+  RefSCMatrix diff = fd_bmatrix - bmatrix;
   cout << "difference between test and finite displacement bmatrix:\n";
-  (fd_bmatrix - bmatrix).print();
+  diff.print();
+  cout << "% difference between test and finite displacement bmatrix:\n";
+  for (i=0; i<diff.nrow(); i++) {
+      for (int j=0; j<diff.ncol(); j++) {
+          double denom = fabs(fd_bmatrix(i,j));
+          double num = fabs(diff(i,j));
+          if (denom < 0.000001) denom = 0.000001;
+          if (num < 0.00001) diff(i,j) = 0.0;
+          else diff(i,j) = 100.0 * fabs(diff(i,j))/denom;
+        }
+    }
+  diff.print();
+
+  cout << "testing for translational invariance of each coordinate:" << endl;
+  for (i=0; i<bmat_test->n(); i++) {
+      cout << "  coor " << scprintf("%2d",i) << ":";
+      for (int j=0; j<3; j++) {
+          double sum = 0.0;
+          for (int k=0; k<mol->natom(); k++) {
+              sum += bmatrix(i,k*3+j);
+            }
+          cout << scprintf(" % 16.12f",sum);
+        }
+      cout << endl;
+    }
+  bmatrix.gi().print("The inverse bmatrix");
 
   cout.flush();
   cerr.flush();

@@ -151,7 +151,24 @@ linear_molecule<Molecule>: (
        }
   )
 
-molecule = $:linear_molecule
+enediyne<Molecule>: (
+  symmetry = C2V
+  angstroms = no
+  { atoms geometry } = {
+    H [ -5.3870492639   -0.0000000000    1.3995052531 ]
+    H [  5.3870492639   -0.0000000000    1.3995052531 ]
+    C [ -4.1906139895   -0.0000000000   -0.2149062043 ]
+    C [  4.1906139895   -0.0000000000   -0.2149062043 ]
+    C [ -2.8240829859    0.0000000000   -2.0097148495 ]
+    C [  2.8240829859   -0.0000000000   -2.0097148495 ]
+    C [ -1.2579864521   -0.0000000000   -4.2267821010 ]
+    C [  1.2579864521    0.0000000000   -4.2267821010 ]
+    H [ -2.2391693577   -0.0000000000   -6.0205520984 ]
+    H [  2.2391693577   -0.0000000000   -6.0205520984 ]
+  }
+)
+
+molecule = $:enediyne
 
 big_molcoor<SymmMolecularCoor>: (
   molecule = $:big_molecule
@@ -267,8 +284,10 @@ custom_simp<SetIntCoor>: [
 
 generator<IntCoorGen>: (
     molecule = $:molecule
-    linear_tors = yes
-    linear_tors_threshold = 90.0
+    linear_bend = no
+    linear_bend_threshold = 10.0
+    linear_tors = no
+    linear_tors_threshold = 10.0
   )
 
 generated_simp<SetIntCoor>: (

@@ -35,6 +35,7 @@
 #include <iostream.h>
 
 #include <util/keyval/keyval.h>
+#include <util/misc/timer.h>
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/intv3/intv3.h>
@@ -45,6 +46,7 @@
 SavableState_REF_def(Wavefunction);
 
 #define CLASSNAME Wavefunction
+#define VERSION 2
 #define PARENTS public MolecularEnergy
 #include <util/state/statei.h>
 #include <util/class/classia.h>
@@ -77,6 +79,9 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
   hcore_.computed() = 0;
   natural_orbitals_.computed() = 0;
   natural_density_.computed() = 0;
+
+  print_nao_ = keyval->booleanvalue("print_nao");
+  print_npa_ = keyval->booleanvalue("print_npa");
 
   gbs_ = GaussianBasisSet::require_castdown(
     keyval->describedclassvalue("basis").pointer(),
@@ -114,6 +119,15 @@ Wavefunction::Wavefunction(StateIn&s):
   natural_orbitals_.computed() = 0;
   natural_density_.computed() = 0;
 
+  if (s.version(static_class_desc()) >= 2) {
+    s.get(print_nao_);
+    s.get(print_npa_);
+  }
+  else {
+    print_nao_ = 0;
+    print_npa_ = 0;
+  }
+
   gbs_.restore_state(s);
   integral_.restore_state(s);
 
@@ -143,6 +157,9 @@ Wavefunction::save_data_state(StateOut&s)
 
   // overlap and hcore integrals are cheap so don't store them.
   // same goes for natural orbitals
+
+  s.put(print_nao_);
+  s.put(print_npa_);
 
   gbs_.save_state(s);
   integral_.save_state(s);
@@ -312,6 +329,12 @@ Wavefunction::print(ostream&o)
 {
   MolecularEnergy::print(o);
   // the other stuff is a wee bit too big to print
+  if (print_nao_ || print_npa_) {
+    tim_enter("NAO");
+    RefSCMatrix naos = nao();
+    tim_exit("NAO");
+    if (print_nao_) naos.print("NAO");
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

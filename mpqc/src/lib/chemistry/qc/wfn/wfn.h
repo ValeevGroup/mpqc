@@ -59,6 +59,9 @@ class Wavefunction: public MolecularEnergy {
 
     RefGaussianBasisSet gbs_;
     RefIntegral integral_;
+
+    int print_nao_;
+    int print_npa_;
     
   public:
     Wavefunction(StateIn&);
@@ -82,6 +85,9 @@ class Wavefunction: public MolecularEnergy {
     virtual RefSymmSCMatrix density() = 0;
     virtual RefSCMatrix natural_orbitals();
     virtual RefDiagSCMatrix natural_density();
+
+    // returns the ao to nao transformation matrix
+    virtual RefSCMatrix nao();
 
     virtual RefSymmSCMatrix overlap();
     virtual RefSymmSCMatrix core_hamiltonian();

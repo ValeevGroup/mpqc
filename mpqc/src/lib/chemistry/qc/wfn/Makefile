@@ -36,7 +36,7 @@ TARGET_TO_MAKE = libwfn
 BIN_OR_LIB = LIB
 
 SRCS = wfn.cc densval.cc natorbval.cc obwfn.cc density.cc hcorewfn.cc \
-       accum.cc hcore.cc
+       accum.cc hcore.cc nao.cc
 
 CLASSES = ElectronDensity OneBodyWavefunction Wavefunction
 

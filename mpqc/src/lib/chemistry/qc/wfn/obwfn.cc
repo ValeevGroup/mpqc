@@ -340,57 +340,20 @@ OneBodyWavefunction::density(const SCVector3 &c)
 RefSymmSCMatrix
 OneBodyWavefunction::density()
 {
-#if 0
   if (!density_.computed()) {
-    RefSCMatrix vec = eigenvectors();
+    RefSCMatrix veci = eigenvectors().i();
     RefSymmSCMatrix newdensity(basis_dimension(), basis_matrixkit());
 
     int nbasis = basis()->nbasis();
-
-    // find out how many doubly occupied orbitals there should be
-    int ndocc = 0, nsocc=0;
-    for (int i=0; i < nbasis; i++) {
-      if (occupation(i) > 1.9)
-        ndocc++;
-      else if (occupation(i) > 0.9)
-        nsocc++;
-    }
   
-    // find out what type of matrices we're dealing with
-    if (LocalSCMatrix::castdown(vec.pointer())) {
-      LocalSCMatrix *lvec = LocalSCMatrix::require_castdown(
-        vec.pointer(), "OneBodyWavefunction::form_density");
-      LocalSymmSCMatrix *ldens = LocalSymmSCMatrix::require_castdown(
-        newdensity.pointer(), "OneBodyWavefunction::form_density");
+    for (int i=0; i < nbasis; i++) {
+      for (int j=0; j <= i; j++) {
+        int k;
+        double pt=0;
+        for (k=0; k < nbasis; k++)
+          pt += occupation(k)*veci.get_element(k,i)*veci.get_element(k,j);
 
-      for (int i=0; i < nbasis; i++) {
-        for (int j=0; j <= i; j++) {
-          double pt=0;
-          int k;
-          for (k=0; k < ndocc; k++)
-            pt += 2.0*lvec->get_element(i,k)*lvec->get_element(j,k);
-
-          double pto=0;
-          for (k=ndocc; k < ndocc+nsocc; k++)
-            pto += lvec->get_element(i,k)*lvec->get_element(j,k);
-
-          ldens->set_element(i,j,pt+pto);
-        }
-      }
-    } else {
-      for (int i=0; i < nbasis; i++) {
-        for (int j=0; j <= i; j++) {
-          int k;
-          double pt=0;
-          for (k=0; k < ndocc; k++)
-            pt += 2.0*vec.get_element(i,k)*vec.get_element(j,k);
-
-          double pto=0;
-          for (k=ndocc; k < ndocc+nsocc; k++)
-            pto += vec.get_element(i,k)*vec.get_element(j,k);
-
-          newdensity.set_element(i,j,pt+pto);
-        }
+        newdensity.set_element(i,j,pt);
       }
     }
 
@@ -399,9 +362,6 @@ OneBodyWavefunction::density()
   }
 
   return density_.result_noupdate();
-#else
-  return 0;
-#endif
 }
 
 // Function for returning an orbital value at a point

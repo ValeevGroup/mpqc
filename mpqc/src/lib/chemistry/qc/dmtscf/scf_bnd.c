@@ -43,7 +43,7 @@ double *intbuf;
 
   compute_Q(cs1,intbuf);
 
-  gsum0(scf_bnd_Qvec,nsht,0,mtype_get(),0);
+  gop0_sc(scf_bnd_Qvec,nsht,'+',mtype_get());
 
   return 0;
 }

@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.2  1993/12/30 13:32:55  etseidl
+ * Revision 1.3  1994/05/27 23:51:23  cljanss
+ * Added support for 2 and 3 center 2 electron integrals.  Added a test porgram.
+ *
+ * Revision 1.2  1993/12/30  13:32:55  etseidl
  * mostly rcs id stuff
  *
  * Revision 1.3  1992/05/26  20:25:21  jannsen
@@ -87,6 +90,15 @@ EXTERN int int_expweight1; /* For exponent weighted contractions. */
 EXTERN int int_expweight2; /* For exponent weighted contractions. */
 EXTERN int int_expweight3; /* For exponent weighted contractions. */
 EXTERN int int_expweight4; /* For exponent weighted contractions. */
+
+/* These are used to compute two and three center electron repulsion
+ * integrals.  int_unit2 is 1 if shell 2 is to have value one everywhere
+ * and int_unit4 is 1 if shell4 is to be a unit function.  Otherwise,
+ * they should be zero.
+ */
+EXTERN int int_unit2;
+EXTERN int int_unit4;
+EXTERN shell_t* int_unit_shell;
 
 #undef EXTERN
 #define _INTERMEDIATES_H

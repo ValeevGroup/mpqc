@@ -3,7 +3,10 @@
  */
 
 /* $Log$
- * Revision 1.2  1993/12/30 13:32:48  etseidl
+ * Revision 1.3  1994/05/27 23:51:18  cljanss
+ * Added support for 2 and 3 center 2 electron integrals.  Added a test porgram.
+ *
+ * Revision 1.2  1993/12/30  13:32:48  etseidl
  * mostly rcs id stuff
  *
  * Revision 1.5  1992/06/17  22:04:37  jannsen
@@ -206,20 +209,20 @@ int dam4;
 
   /* Compute the offset shell numbers. */
   osh1 = *psh1 + int_cs1->shell_offset;
-  osh2 = *psh2 + int_cs2->shell_offset;
+  if (!int_unit2) osh2 = *psh2 + int_cs2->shell_offset;
   osh3 = *psh3 + int_cs3->shell_offset;
-  osh4 = *psh4 + int_cs4->shell_offset;
+  if (!int_unit4) osh4 = *psh4 + int_cs4->shell_offset;
 
   sh1 = *psh1;
-  sh2 = *psh2;
+  if (!int_unit2) sh2 = *psh2;
   sh3 = *psh3;
-  sh4 = *psh4;
+  if (!int_unit4) sh4 = *psh4;
 
   /* Test the arguments to make sure that they are sensible. */
   if (   sh1 < 0 || sh1 >= int_cs1->nshell
-      || sh2 < 0 || sh2 >= int_cs2->nshell
+      ||( !int_unit2 && (sh2 < 0 || sh2 >= int_cs2->nshell))
       || sh3 < 0 || sh3 >= int_cs3->nshell
-      || sh4 < 0 || sh4 >= int_cs4->nshell) {
+      ||( !int_unit4 && (sh4 < 0 || sh4 >= int_cs4->nshell))) {
     fprintf(stderr,"compute_erep has been incorrectly used\n");
     fprintf(stderr,"shells (bounds): %d (%d), %d (%d), %d (%d), %d (%d)\n",
             sh1,int_cs1->nshell-1,
@@ -244,9 +247,9 @@ int dam4;
     if (!INT_NONZERO(bound)) {
       int i,bufsize;
       bufsize = INT_SH(int_cs1,sh1).nfunc
-              * INT_SH(int_cs2,sh2).nfunc
+              * (int_unit2?1:INT_SH(int_cs2,sh2).nfunc)
               * INT_SH(int_cs3,sh3).nfunc
-              * INT_SH(int_cs4,sh4).nfunc;
+              * (int_unit4?1:INT_SH(int_cs4,sh4).nfunc);
       for (i=0; i<bufsize; i++) int_buffer[i] = 0.0;
       return;
       }
@@ -256,12 +259,14 @@ int dam4;
   /* Set up pointers to the current shells. */
   int_shell1 = &int_cs1->center[int_cs1->center_num[sh1]]
                   .basis.shell[int_cs1->shell_num[sh1]];
-  int_shell2 = &int_cs2->center[int_cs2->center_num[sh2]]
+  if (!int_unit2) int_shell2 = &int_cs2->center[int_cs2->center_num[sh2]]
                   .basis.shell[int_cs2->shell_num[sh2]];
+  else int_shell2 = int_unit_shell;
   int_shell3 = &int_cs3->center[int_cs3->center_num[sh3]]
                   .basis.shell[int_cs3->shell_num[sh3]];
-  int_shell4 = &int_cs4->center[int_cs4->center_num[sh4]]
+  if (!int_unit4) int_shell4 = &int_cs4->center[int_cs4->center_num[sh4]]
                   .basis.shell[int_cs4->shell_num[sh4]];
+  else int_shell4 = int_unit_shell;
 
 
   /* Compute the maximum angular momentum on each centers to
@@ -337,7 +342,7 @@ int dam4;
     pswtch((VOID_PTR *)&int_shell3,(VOID_PTR *)&int_shell4);
     pswtch((VOID_PTR *)&pcs3,(VOID_PTR *)&pcs4);
     }
-  if ((osh1 == osh4) && (osh2 == osh3) && (osh1 != osh2)) {
+  if (!(int_unit2||int_unit4) && (osh1 == osh4) && (osh2 == osh3) && (osh1 != osh2)) {
     /* Don't make the permutation unless we won't override what was
      * decided above about p34. */
     if (am4 == am3) {
@@ -353,6 +358,7 @@ int dam4;
     p13p24 = 1;
     iswtch(&am1,&am3);iswtch(&sh1,&sh3);iswtch(psh1,psh3);iswtch(&osh1,&osh3);
     iswtch(&am2,&am4);iswtch(&sh2,&sh4);iswtch(psh2,psh4);iswtch(&osh2,&osh4);
+    iswtch(&int_unit2,&int_unit4);
     iswtch(&am12,&am34);
     iswtch(&dam1,&dam3);
     iswtch(&minam1,&minam3);
@@ -366,6 +372,8 @@ int dam4;
   /* This tries to make centers A and B equivalent, if possible. */
   else if (  (am3 == am1)
            &&(am4 == am2)
+           && !int_unit2
+           && !int_unit4
            &&(!(  (int_cs1 == int_cs2)
                 &&(int_cs1->center_num[sh1]==int_cs2->center_num[sh2])))
            &&(   (int_cs3 == int_cs4)
@@ -400,7 +408,7 @@ int dam4;
     pswtch((VOID_PTR *)&int_shell3,(VOID_PTR *)&int_shell4);
     pswtch((VOID_PTR *)&pcs3,(VOID_PTR *)&pcs4);
     }
-  if ((osh1 == osh4) && (osh2 == osh3) && (osh1 != osh2)) {
+  if (!(int_unit2||int_unit4) && (osh1 == osh4) && (osh2 == osh3) && (osh1 != osh2)) {
     /* Don't make the permutation unless we won't override what was
      * decided above about p34. */
     if (am4 == am3) {
@@ -416,6 +424,7 @@ int dam4;
     p13p24 = 1;
     iswtch(&am1,&am3);iswtch(&sh1,&sh3);iswtch(psh1,psh3);iswtch(&osh1,&osh3);
     iswtch(&am2,&am4);iswtch(&sh2,&sh4);iswtch(psh2,psh4);iswtch(&osh2,&osh4);
+    iswtch(&int_unit2,&int_unit4);
     iswtch(&am12,&am34);
     iswtch(&dam1,&dam3);
     iswtch(&minam1,&minam3);
@@ -429,6 +438,8 @@ int dam4;
   /* This tries to make centers A and B equivalent, if possible. */
   else if (  (am3 == am1)
            &&(am4 == am2)
+           && !int_unit2
+           && !int_unit4
            &&(minam1 == minam3)
            &&(!(  (int_cs1 == int_cs2)
                 &&(int_cs1->center_num[sh1]==int_cs2->center_num[sh2])))
@@ -449,8 +460,9 @@ int dam4;
     }
 #endif /* OLD_PERMUTATION_ALGORITHM */
 
-  if (  (pcs1 == pcs2)
-      &&(pcs1->center_num[sh1]==pcs2->center_num[sh2])) {
+  if (  int_unit2
+        ||((pcs1 == pcs2)
+          &&(pcs1->center_num[sh1]==pcs2->center_num[sh2]))) {
     eAB = 1;
     }
   else {
@@ -491,7 +503,9 @@ int dam4;
       fprintf(stderr,"cannot use integral storage and dam\n");
       fail();
       }
-    if (int_have_stored_integral(sh1,sh2,sh3,sh4,p12,p34,p13p24))
+    if (    !int_unit2
+         && !int_unit4
+         && int_have_stored_integral(sh1,sh2,sh3,sh4,p12,p34,p13p24))
       goto post_computation;
     }
 
@@ -730,7 +744,9 @@ int dam4;
   printf("\n");
 #endif
 
-  if (   int_integral_storage
+  if (   !int_unit2
+      && !int_unit4
+      && int_integral_storage
       && (size >= int_storage_threshold)) {
     if (int_integral_storage>=size+int_used_integral_storage) {
       int_store_integral(sh1,sh2,sh3,sh4,p12,p34,p13p24,size);
@@ -750,6 +766,7 @@ int dam4;
     if (p13p24) {
       iswtch(&sh1,&sh3);iswtch(psh1,psh3);iswtch(&osh1,&osh3);
       iswtch(&sh2,&sh4);iswtch(psh2,psh4);iswtch(&osh2,&osh4);
+      iswtch(&int_unit2,&int_unit4);
       iswtch(&am1,&am3);
       iswtch(&am2,&am4);
       iswtch(&am12,&am34);
@@ -784,9 +801,11 @@ int dam4;
       fprintf(stderr,"nonredundant integrals cannot be generated\n");
       fail();
       }
-    e12 = (osh1 == osh2);
-    e13e24 = ((osh1 == osh3) && (osh2 == osh4));
-    e34 = (osh3 == osh4);
+    e12 = (int_unit2?0:(osh1 == osh2));
+    e13e24 = ((osh1 == osh3)
+              && ((int_unit2 && int_unit4)
+                  || ((int_unit2||int_unit4)?0:(osh2 == osh4))));
+    e34 = (int_unit4?0:(osh3 == osh4));
     nonredundant_erep(int_buffer,e12,e34,e13e24,
                            int_shell1->nfunc,
                            int_shell2->nfunc,

@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.2  1993/12/30 13:32:53  etseidl
+ * Revision 1.3  1994/05/27 23:51:22  cljanss
+ * Added support for 2 and 3 center 2 electron integrals.  Added a test porgram.
+ *
+ * Revision 1.2  1993/12/30  13:32:53  etseidl
  * mostly rcs id stuff
  *
  * Revision 1.4  1993/04/28  00:32:04  jannsen
@@ -63,6 +66,7 @@ extern "C" {
 #include <chemistry/qc/intv2/int_types.h>
 #include <chemistry/qc/intv2/init2e.gbl>
 #include <chemistry/qc/intv2/comp_erep.gbl>
+#include <chemistry/qc/intv2/comp_erep23.gbl>
 #include <chemistry/qc/intv2/atominfo.gbl>
 #include <chemistry/qc/intv2/int_print.gbl>
 #include <chemistry/qc/intv2/offsets.gbl>

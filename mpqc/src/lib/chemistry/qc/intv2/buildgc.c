@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.2  1993/12/30 13:32:45  etseidl
+ * Revision 1.3  1994/05/27 23:51:14  cljanss
+ * Added support for 2 and 3 center 2 electron integrals.  Added a test porgram.
+ *
+ * Revision 1.2  1993/12/30  13:32:45  etseidl
  * mostly rcs id stuff
  *
  * Revision 1.6  1992/06/17  22:04:29  jannsen
@@ -717,18 +720,20 @@ int eAB;
 
   /* Compute the offset shell numbers. */
   osh1 = sh1 + int_cs1->shell_offset;
-  osh2 = sh2 + int_cs2->shell_offset;
+  if (!int_unit2) osh2 = sh2 + int_cs2->shell_offset;
   osh3 = sh3 + int_cs3->shell_offset;
-  osh4 = sh4 + int_cs4->shell_offset;
+  if (!int_unit4) osh4 = sh4 + int_cs4->shell_offset;
 
   nc1 = int_cs1->center[int_cs1->center_num[sh1]]
                  .basis.shell[int_cs1->shell_num[sh1]].ncon;
-  nc2 = int_cs2->center[int_cs2->center_num[sh2]]
-                 .basis.shell[int_cs2->shell_num[sh2]].ncon;
+  if (int_unit2) nc2 = 1;
+  else nc2 = int_cs2->center[int_cs2->center_num[sh2]]
+            .basis.shell[int_cs2->shell_num[sh2]].ncon;
   nc3 = int_cs3->center[int_cs3->center_num[sh3]]
                  .basis.shell[int_cs3->shell_num[sh3]].ncon;
-  nc4 = int_cs4->center[int_cs4->center_num[sh4]]
-                 .basis.shell[int_cs4->shell_num[sh4]].ncon;
+  if (int_unit4) nc4 = 1;
+  else nc4 = int_cs4->center[int_cs4->center_num[sh4]]
+            .basis.shell[int_cs4->shell_num[sh4]].ncon;
 
   /* Zero the target contracted integrals that the build routine
    * will accumulate into. */
@@ -1136,7 +1141,7 @@ int am;
   CONST double sqrt2pi54 = 5.9149671727956129;
   double conv_to_s;
 
-  if (int_store2) {
+  if (int_store2 && !int_unit2 && !int_unit4) {
     int_v_zeta12 = int_prim_zeta.d[opr1][opr2];
     int_v_zeta34 = int_prim_zeta.d[opr3][opr4];
     int_v_oo2zeta12 = int_prim_oo2zeta.d[opr1][opr2];
@@ -1348,7 +1353,7 @@ int sh2;
 int sh3;
 int sh4;
 {
-  if (int_store1) {
+  if (int_store1 && !int_unit2 && !int_unit4) {
     int_v_r10 = int_shell_r.dp[osh1][0];
     int_v_r11 = int_shell_r.dp[osh1][1];
     int_v_r12 = int_shell_r.dp[osh1][2];
@@ -1366,15 +1371,29 @@ int sh4;
     int_v_r10 = int_cs1->center[int_cs1->center_num[sh1]].r[0];
     int_v_r11 = int_cs1->center[int_cs1->center_num[sh1]].r[1];
     int_v_r12 = int_cs1->center[int_cs1->center_num[sh1]].r[2];
-    int_v_r20 = int_cs2->center[int_cs2->center_num[sh2]].r[0];
-    int_v_r21 = int_cs2->center[int_cs2->center_num[sh2]].r[1];
-    int_v_r22 = int_cs2->center[int_cs2->center_num[sh2]].r[2];
+    if (int_unit2) {
+        int_v_r20 = int_v_r10;
+        int_v_r21 = int_v_r11;
+        int_v_r22 = int_v_r12;
+      }
+    else {
+        int_v_r20 = int_cs2->center[int_cs2->center_num[sh2]].r[0];
+        int_v_r21 = int_cs2->center[int_cs2->center_num[sh2]].r[1];
+        int_v_r22 = int_cs2->center[int_cs2->center_num[sh2]].r[2];
+      }
     int_v_r30 = int_cs3->center[int_cs3->center_num[sh3]].r[0];
     int_v_r31 = int_cs3->center[int_cs3->center_num[sh3]].r[1];
     int_v_r32 = int_cs3->center[int_cs3->center_num[sh3]].r[2];
-    int_v_r40 = int_cs4->center[int_cs4->center_num[sh4]].r[0];
-    int_v_r41 = int_cs4->center[int_cs4->center_num[sh4]].r[1];
-    int_v_r42 = int_cs4->center[int_cs4->center_num[sh4]].r[2];
+    if (int_unit4) {
+        int_v_r40 = int_v_r30;
+        int_v_r41 = int_v_r31;
+        int_v_r42 = int_v_r32;
+      }
+    else {
+        int_v_r40 = int_cs4->center[int_cs4->center_num[sh4]].r[0];
+        int_v_r41 = int_cs4->center[int_cs4->center_num[sh4]].r[1];
+        int_v_r42 = int_cs4->center[int_cs4->center_num[sh4]].r[2];
+      }
     }
   }
 

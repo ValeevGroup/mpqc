@@ -33,9 +33,11 @@ ifeq ($(ARCH),I860)
   COPTIONS = -O3 -Knoieee -Mnoframe
 endif
 
+TESTCSRC = inttest.c
+
 CSRC = bounds.c storage.c  buildgc.c  comp_1e.c  comp_0e.c  normalize.c  \
        offsets.c int_fjt.c  init2e.c  atominfo.c  basis.c  comp_erep.c  \
-       shiftgc.c int_print.c utils.c
+       shiftgc.c int_print.c utils.c comp_erep23.c
 
 XCSRC = shellprnt.c  shellrbc0.c  shellrcv0.c  shellsbc0.c  shellsnd0.c  \
         shellasgn.c  shellbrd.c  shellbwr.c  shellfrd.c  shellfwr.c \
@@ -57,7 +59,7 @@ GENINC = MG.h $(CSRC:%.c=%.gbl) $(CSRC:%.c=%.lcl)
 LIBSRC = $(CSRC) $(XCSRC) $(SGENSRC)
 LIBOBJ = $(LIBSRC:%.c=%.$(OBJSUF))
 
-DISTFILES = $(CSRC) $(XCSRC) $(INC) atoms.sgen Makefile LIBS.h
+DISTFILES = $(TESTCSRC) $(CSRC) $(XCSRC) $(INC) atoms.sgen Makefile LIBS.h
 
 DEPENDINCLUDE = $(INC) $(GENINC) $(SGENINC)
 
@@ -68,9 +70,16 @@ default:: libintv2.a
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+inttest: inttest.o libintv2.a \
+	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+	$(CXX) $(LDFLAGS) -o inttest $^ $(SYSLIBS)
+
+inttest.o: inttest.c
+	$(CC) $(CFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
+$(TESTOBJ:.o=.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d)
+include $(LIBOBJ:.o=.d) $(TESTOBJ:.o=.d)
 endif
 
 #############################################################

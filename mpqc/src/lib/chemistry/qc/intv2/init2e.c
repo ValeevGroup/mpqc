@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.2  1993/12/30 13:32:50  etseidl
+ * Revision 1.3  1994/05/27 23:51:21  cljanss
+ * Added support for 2 and 3 center 2 electron integrals.  Added a test porgram.
+ *
+ * Revision 1.2  1993/12/30  13:32:50  etseidl
  * mostly rcs id stuff
  *
  * Revision 1.5  1992/06/17  22:04:43  jannsen
@@ -116,6 +119,10 @@ centers_t *cs4;
 {
   int nc1,nc2,nc3,nc4;
   int jmax,jmax1,jmax2,jmax3,jmax4;
+
+  /* Reset the variables used to get two and three center integrals. */
+  int_unit2 = 0;
+  int_unit4 = 0;
 
   /* Reset the integral storage variable. */
   int_integral_storage = 0;

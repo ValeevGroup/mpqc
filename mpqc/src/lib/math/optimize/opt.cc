@@ -69,12 +69,12 @@ Optimize::Optimize() :
 Optimize::Optimize(StateIn&s):
   SavableState(s)
 {
-  s.get(ckpt_);
+  s.get(ckpt_,"checkpoint");
   s.getstring(ckpt_file);
   s.get(max_iterations_,"max_iterations");
-  s.get(max_stepsize_);
+  s.get(max_stepsize_,"max_stepsize");
   if (s.version(static_class_desc()) > 1) {
-      s.get(print_timings_);
+      s.get(print_timings_,"print_timings");
     }
   n_iterations_ = 0;
   conv_.restore_state(s);

@@ -374,9 +374,37 @@ LocalSymmSCMatrix::scalar_product(SCVector*a)
 }
 
 void
-LocalSymmSCMatrix::element_op(const RefSCSymmElementOp& op)
+LocalSymmSCMatrix::element_op(const RefSCElementOp& op)
 {
   op->process(block.pointer());
+}
+
+void
+LocalSymmSCMatrix::element_op(const RefSCElementOp2& op,
+                              SymmSCMatrix* m)
+{
+  LocalSymmSCMatrix *lm
+      = LocalSymmSCMatrix::require_castdown(m,"LocalSymSCMatrix::element_op");
+  if (!lm || d != lm->d) {
+      fprintf(stderr,"LocalSymmSCMatrix: bad element_op\n");
+      abort();
+    }
+  op->process(block.pointer(), lm->block.pointer());
+}
+
+void
+LocalSymmSCMatrix::element_op(const RefSCElementOp3& op,
+                              SymmSCMatrix* m,SymmSCMatrix* n)
+{
+  LocalSymmSCMatrix *lm
+      = LocalSymmSCMatrix::require_castdown(m,"LocalSymSCMatrix::element_op");
+  LocalSymmSCMatrix *ln
+      = LocalSymmSCMatrix::require_castdown(n,"LocalSymSCMatrix::element_op");
+  if (!lm || !ln || d != lm->d || d != ln->d) {
+      fprintf(stderr,"LocalSymmSCMatrix: bad element_op\n");
+      abort();
+    }
+  op->process(block.pointer(), lm->block.pointer(), ln->block.pointer());
 }
 
 // from Ed Seidl at the NIH (with a bit of hacking)
@@ -410,7 +438,7 @@ LocalSymmSCMatrix::print(const char *title, ostream& os, int prec)
     os << "\n";
 
  // print the rows
-    for(i=0; i < n() ; i++) {
+    for(i=ii-1; i < n() ; i++) {
       os.width(5); os << i+1;
       for(j=ii-1; j<nn && j<=i; j++) { os.width(lwidth); os << rows[i][j]; }
       os << "\n";
@@ -567,9 +595,37 @@ LocalDiagSCMatrix::gen_invert_this()
 }
 
 void
-LocalDiagSCMatrix::element_op(const RefSCDiagElementOp& op)
+LocalDiagSCMatrix::element_op(const RefSCElementOp& op)
 {
   op->process(block.pointer());
+}
+
+void
+LocalDiagSCMatrix::element_op(const RefSCElementOp2& op,
+                              DiagSCMatrix* m)
+{
+  LocalDiagSCMatrix *lm
+      = LocalDiagSCMatrix::require_castdown(m,"LocalDiagSCMatrix::element_op");
+  if (!lm || d != lm->d) {
+      fprintf(stderr,"LocalDiagSCMatrix: bad element_op\n");
+      abort();
+    }
+  op->process(block.pointer(), lm->block.pointer());
+}
+
+void
+LocalDiagSCMatrix::element_op(const RefSCElementOp3& op,
+                              DiagSCMatrix* m,DiagSCMatrix* n)
+{
+  LocalDiagSCMatrix *lm
+      = LocalDiagSCMatrix::require_castdown(m,"LocalDiagSCMatrix::element_op");
+  LocalDiagSCMatrix *ln
+      = LocalDiagSCMatrix::require_castdown(n,"LocalDiagSCMatrix::element_op");
+  if (!lm || !ln || d != lm->d || d != ln->d) {
+      fprintf(stderr,"LocalDiagSCMatrix: bad element_op\n");
+      abort();
+    }
+  op->process(block.pointer(), lm->block.pointer(), ln->block.pointer());
 }
 
 // from Ed Seidl at the NIH (with a bit of hacking)

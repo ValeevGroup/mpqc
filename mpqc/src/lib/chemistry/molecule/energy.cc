@@ -82,6 +82,11 @@ MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
   if (keyval->error() != KeyVal::OK) print_molecule_when_changed_ = 1;
 
   mol_ = keyval->describedclassvalue("molecule");
+  if (mol_.null()) {
+      cerr << indent << "MolecularEnergy(Keyval): no molecule found"
+           << endl;
+      abort();
+    }
 
   moldim_ = new SCDimension(3 * mol_->natom(), "3Natom");
 

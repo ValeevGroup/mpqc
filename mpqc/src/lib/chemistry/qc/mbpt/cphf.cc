@@ -47,16 +47,18 @@ mbpt_cphf(centers_t *centers, scf_struct_t *scf_info, FILE *outfile,
   int niter;
   int dimP = nocc*nvir;
 
-  RefSCDimension nbasis_dim(new LocalSCDimension(nbasis));
-  RefSCDimension nvir_dim(new LocalSCDimension(nvir));
-  RefSCDimension nocc_dim(new LocalSCDimension(nocc));
+  RefSCMatrixKit kit = SCMatrixKit::default_matrixkit();
 
-  RefSCMatrix Cv(nbasis_dim,nvir_dim);
-  RefSCMatrix Co(nbasis_dim,nocc_dim);
-  RefSCMatrix D_matrix(nbasis_dim,nbasis_dim);
-  RefSCMatrix AP_matrix(nvir_dim,nocc_dim); // holds A*P[i-1]
-  RefSCMatrix P_matrix(nvir_dim, nocc_dim);
-  RefSymmSCMatrix G(nbasis_dim);
+  RefSCDimension nbasis_dim(new SCDimension(nbasis));
+  RefSCDimension nvir_dim(new SCDimension(nvir));
+  RefSCDimension nocc_dim(new SCDimension(nocc));
+
+  RefSCMatrix Cv(nbasis_dim,nvir_dim,kit);
+  RefSCMatrix Co(nbasis_dim,nocc_dim,kit);
+  RefSCMatrix D_matrix(nbasis_dim,nbasis_dim,kit);
+  RefSCMatrix AP_matrix(nvir_dim,nocc_dim,kit); // holds A*P[i-1]
+  RefSCMatrix P_matrix(nvir_dim, nocc_dim, kit);
+  RefSymmSCMatrix G(nbasis_dim,kit);
 
 
   double *projctn = new double[dimP];
@@ -362,11 +364,12 @@ compute_alpha(int dim, double **AP, double **alpha,
   double *ptr1, *ptr2;
   double *norm = new double[dim]; // contains norms of vectors P[i], i=0,dim
 
-  RefSCDimension C_dim(new LocalSCDimension(dim));
+  RefSCMatrixKit kit = SCMatrixKit::default_matrixkit();
+  RefSCDimension C_dim(new SCDimension(dim));
 
-  RefSCMatrix C(C_dim,C_dim);
-  RefSCVector B(C_dim);
-  RefSCVector X(C_dim);
+  RefSCMatrix C(C_dim,C_dim,kit);
+  RefSCVector B(C_dim,kit);
+  RefSCVector X(C_dim,kit);
 
   // Compute norms of vectors P[i] and put into norm
   for (i=0; i<dim; i++) norm[i] = 0.0;

@@ -121,6 +121,8 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   // New version of MP2 gradient program which uses the full
   // permutational symmetry of the two-electron integral derivatives
 
+  RefSCMatrixKit kit = SCMatrixKit::default_matrixkit();
+
   int_initialize_offsets2(centers,centers,centers,centers);
 
   int i, j, k;
@@ -1621,9 +1623,9 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   gop1(Waj,nvir*nocc,tmpmat,'+',3);
   delete[] tmpmat;
 
-  RefSCDimension nocc_dim(new LocalSCDimension(nocc));
-  RefSCDimension nvir_dim(new LocalSCDimension(nvir));
-  RefSCDimension nbasis_dim(new LocalSCDimension(nbasis));
+  RefSCDimension nocc_dim(new SCDimension(nocc));
+  RefSCDimension nvir_dim(new SCDimension(nvir));
+  RefSCDimension nbasis_dim(new SCDimension(nbasis));
 
 
   // Finish computation of Wab
@@ -1646,7 +1648,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     }   // exit a loop
   // Wab is now complete
   tim_exit("Pab and Wab");
-  RefSCMatrix Wab_matrix(nvir_dim, nvir_dim);
+  RefSCMatrix Wab_matrix(nvir_dim, nvir_dim, kit);
   Wab_matrix->assign(Wab); // Put elements of Wab into Wab_matrix
   free(Wab);
 
@@ -1676,8 +1678,8 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   /////////////////////////////////
 
   tim_enter("Laj");
-  RefSCMatrix Cv(nbasis_dim, nvir_dim); // virtual block of scf_vector
-  RefSCMatrix Co(nbasis_dim, nocc_dim); // occupied block of scf_vector
+  RefSCMatrix Cv(nbasis_dim, nvir_dim, kit); // virtual block of scf_vector
+  RefSCMatrix Co(nbasis_dim, nocc_dim, kit); // occupied block of scf_vector
   for (p=0; p<nbasis; p++) {
     c_pq = scf_vector[p];
     for (q=0; q<nbasis; q++) {
@@ -1688,9 +1690,9 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
 
   // Compute the density-like matrix Dmat_matrix
-  RefSymmSCMatrix Pab_matrix(nvir_dim);
-  RefSymmSCMatrix Pkj_matrix(nocc_dim);
-  RefSCMatrix Dmat_matrix(nbasis_dim,nbasis_dim);
+  RefSymmSCMatrix Pab_matrix(nvir_dim,kit);
+  RefSymmSCMatrix Pkj_matrix(nocc_dim,kit);
+  RefSCMatrix Dmat_matrix(nbasis_dim,nbasis_dim,kit);
   Pab_matrix->assign(Pab); // fill in elements of Pab_matrix from Pab
   free(Pab);
   Pkj_matrix->assign(Pkj); // fill in elements of Pkj_matrix from Pkj
@@ -1705,14 +1707,14 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   Dmat = new double[nbasis*nbasis];
   Dmat_matrix->convert(Dmat); // convert Dmat_matrix to Dmat (double*)
 
-  RefSymmSCMatrix Gmat(nbasis_dim);
+  RefSymmSCMatrix Gmat(nbasis_dim,kit);
   mbpt_init_gmat(centers, scf_info, intbuf);
   tim_enter("make_gmat for Laj");
   mbpt_make_gmat(scf_info, centers, Gmat, Dmat, outfile);
   tim_exit("make_gmat for Laj");
 
   // Finish computation of Laj
-  RefSCMatrix Laj_matrix(nocc_dim,nvir_dim); // elements are ordered as j*nvir+a
+  RefSCMatrix Laj_matrix(nocc_dim,nvir_dim,kit); // elements are ordered as j*nvir+a
   Laj_matrix->assign(Laj);
   Laj_matrix = Laj_matrix - 2*Co.t()*Gmat*Cv;
   Laj_matrix->convert(Laj);  // Put new Laj_matrix elements into Laj
@@ -1726,7 +1728,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   ////////////////////////////
   // Solve the CPHF equations
   ////////////////////////////
-  RefSCMatrix Paj_matrix(nvir_dim, nocc_dim);
+  RefSCMatrix Paj_matrix(nvir_dim, nocc_dim, kit);
   tim_enter("cphf");
   mbpt_cphf(centers, scf_info, outfile, nbasis, nvir, nocc, scf_vector,
             Laj, evals, Paj_matrix);
@@ -1743,7 +1745,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
       }
     }
   // Waj is now complete
-  RefSCMatrix Waj_matrix(nocc_dim, nvir_dim);
+  RefSCMatrix Waj_matrix(nocc_dim, nvir_dim, kit);
   Waj_matrix->assign(Waj); // Put elements of Waj into Waj_matrix
   // NB. Waj_matrix elements are ordered as j*nvir+a
   free(Waj);
@@ -1758,7 +1760,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   mbpt_make_gmat(scf_info, centers, Gmat, Dmat, outfile);
   tim_exit("make_gmat for Wkj");
   mbpt_done_gmat(centers, scf_info);
-  RefSCMatrix Wkj_matrix(nocc_dim, nocc_dim);
+  RefSCMatrix Wkj_matrix(nocc_dim, nocc_dim, kit);
   Wkj_matrix->assign(Wkj);
   Wkj_matrix = Wkj_matrix - 2*Co.t()*Gmat*Co;
   free(Wkj);
@@ -1778,11 +1780,11 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
   // Compute the second order correction to 
   // the density matrix and energy weighted
   // density matrix in the AO basis
-  RefSCMatrix P2AO_matrix(nbasis_dim, nbasis_dim);
-  RefSCMatrix P2MO_matrix(nbasis_dim, nbasis_dim);
-  RefSCMatrix W2AO_matrix(nbasis_dim, nbasis_dim);
-  RefSCMatrix W2MO_matrix(nbasis_dim, nbasis_dim);
-  RefSCMatrix SCF_matrix(nbasis_dim, nbasis_dim);
+  RefSCMatrix P2AO_matrix(nbasis_dim, nbasis_dim, kit);
+  RefSCMatrix P2MO_matrix(nbasis_dim, nbasis_dim, kit);
+  RefSCMatrix W2AO_matrix(nbasis_dim, nbasis_dim, kit);
+  RefSCMatrix W2MO_matrix(nbasis_dim, nbasis_dim, kit);
+  RefSCMatrix SCF_matrix(nbasis_dim, nbasis_dim, kit);
   for (i=0; i<nocc; i++) {
     for (j=0; j<nocc; j++) {
       P2MO_matrix->set_element(i,j,Pkj_matrix->get_element(i,j));

@@ -353,11 +353,20 @@ int errcod=0;
 int
 PSI_Input::write_geom()
 {
-int errcod;
+int i,errcod;
 char ts[133];
 
+    write_string("% original MPQC geometry:\n");
+    for (i=0; i < _mol->natom(); i++) {
+        sprintf(ts, "%% %3d % 14.12f % 14.12f % 14.12f\n",
+                _mol->Z(i),
+                _mol->r(i,0),
+                _mol->r(i,1),
+                _mol->r(i,2));
+        write_string(ts);
+      }
     write_string("geometry = (\n");
-    for (int i=0; i < _mol->nunique(); i++) {
+    for (i=0; i < _mol->nunique(); i++) {
         sprintf(ts, "  (% 14.12f % 14.12f % 14.12f)\n",
                 _mol->r(_mol->unique(i),0),
                 _mol->r(_mol->unique(i),1),
@@ -426,15 +435,6 @@ PSI_Input::write_orbvec(const CorrelationTable &corrtab,
         }
     }
 
-  if (!strcmp(corrtab.subgroup()->symbol(),"d2")) {
-      cout << node0 << indent
-           << "WARNING: PSI AXIS ORDERING IS WRONG FOR D2: SWAPPING X AND Y"
-           << endl;
-      int tmp = orbvecnew[2];
-      orbvecnew[2] = orbvecnew[3];
-      orbvecnew[3] = tmp;
-    }
-
   write_keyword(orbvec_name, corrtab.subn(), orbvecnew);
 
   delete[] orbvecnew;
@@ -446,6 +446,18 @@ PSI_Input::write_defaults(const char *dertype, const char *wavefn)
    char ts[133];
    int i;
    double *x_vec, *y_vec, *z_vec;
+
+   // PSI doesn't do d2 right. The X and Y axes are wrong and
+   // sometimes intsth fails.  So d2 gets lowered to c2.
+   if (!strcmp(_mol->point_group()->symbol(),"d2")) {
+       cout << node0 << indent
+            << "DOING D2 calc in C2 because of bugs in PSI"
+            << endl;
+       RefPointGroup newgrp(new PointGroup("c2",
+                                           _mol->point_group()->symm_frame(),
+                                           _mol->point_group()->origin()));
+       _mol->set_point_group(newgrp);
+     }
 
    int dograd = !strcmp(dertype,"FIRST");
 

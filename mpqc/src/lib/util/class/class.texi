@@ -1,0 +1,108 @@
+@c -*-texinfo-*-
+@node The Class Library, The DescribedClass Class, , Top
+@chapter The Class Library
+@cindex Class Library
+
+The class library provides abstract base classes, macros, and include
+files that collectively provide a mechanism that allows programmers
+to retrieve information about a class' name; parents; and default,
+@code{StateIn}, and @code{KeyVal} constructors.  Also, a castdown
+mechanism is provided.
+
+@menu
+* The DescribedClass Class:: The abstract base class describing classes.
+* The ClassDesc Class:: Each DescribedClass has a ClassDesc instance.
+@end menu
+
+@c ---------------------------------------------------------------------
+
+@node The DescribedClass Class, , The Class Library, The Class Library
+@section The DescribedClass Class
+@clindex DescribedClass
+
+Classes which need information about themselves and their relationship
+to other classes to be available at runtime can obtain this ability by
+virtually inheriting from @code{DescribedClass}.  This will provide the
+class with the ability to query its name, query its version, and perform
+safe castdown operations.  Furthermore, the class's static
+@code{ClassDesc} can be obtained which permits several other operations.
+
+The special nature of described classes require that the base class,
+@code{DescribedClass}, cannot provide everything needed.  To assist the
+user in setting up described classes several include files are provided.
+
+The @code{DescribedClass} class has the following interface:
+@table @code
+@item virtual ClassDesc* class_desc()=0
+This returns the unique pointer to the @code{ClassDesc} for the object.
+This is declared and implemented in the declaration include files.
+
+@item virtual void* _castdown(ClassDesc*)=0
+Given the @code{ClassDesc} for the class we wish to cast this class
+into, this will perform the castdown and return a @code{void*} to the
+appropiate subobject.  The function would not usually be used; it is
+better to use the static @code{castdown} member to perform castdowns.
+This function must be defined by the programmer.
+
+@item char* class_name()
+This returns a the name of the class.  The default implementation should
+be adequate.
+
+@item int class_version()
+This returns the version number of the class.  The default
+implementation should be adequate.
+@end table
+
+Additional members will appear in the interface of classes inheriting
+@code{DescribedClass} because of the declaration include files.  These
+additional members are:
+@table @code
+@item static DescribedClass* create_described_class()
+This will create an instance of @code{DescribedClass} with exact type
+@code{Client}.  The default constructor is used.
+
+@item static Client* castdown(DescribedClass*p)
+This will allow castdown operations from any @code{DescribedClass} to
+@code{Client}.  If the castdown cannot be done, then 0 will be returned.
+
+@item static ClassDesc* static_class_desc()
+This returns the unique @code{ClassDesc} pointer for @code{Client}.
+@end table
+
+@c ---------------------------------------------------------------------
+
+@node The ClassDesc Class, , , The Class Library
+@section The ClassDesc Class
+@clindex ClassDesc
+
+This class is used to contain information about classes.  Each described
+class has a static @code{ClassDesc} member.  This member has lists of
+the parents, children and virtual parents for each class.  The
+@code{ClassDesc} class also has a static member that is a list of all
+described classes in the system.  These lists are constructed as the
+constructors for the static @code{ClassDesc} members for each class are
+called and are completed before @code{main} is entered.  The lists will
+necessarily be incomplete or incorrect before @code{main} is entered so
+programmers must be careful when using this information before
+@code{main} is called.
+
+The @code{ClassDesc} class has these members:
+@table @code
+@item char* name()
+Returns the name of the class.
+
+@item int version()
+Returns the version number of the class.
+
+@item static ClassDesc* name_to_class_desc(const char*)
+Given the name of the class, return a pointer to the class
+descriptor.
+
+@item DescribedClass* create_described_class()
+Create an instance of @code{DescribedClass} with exact type equal to the
+class to which this class descriptor belongs.
+
+@item static void list_all_classes()
+Writes a list of all of the classes to @code{stdout}.  This is useful
+for debugging.
+@end table

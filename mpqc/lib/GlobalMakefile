@@ -36,6 +36,15 @@ THISDIR = $(subst $(shell cd $(TOPDIR); pwd)/src.lib/,,$(shell pwd))
 INCLUDE = -I. -I$(SRCDIR) -I$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/include
 CXXINCLUDE = -I. -I$(SRCDIR) -I$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/include
 
+# The perl language processor.
+PERL = perl
+
+# The template to macro converter dependency.
+TMPL2MACDEP = $(SRCDIR)/$(TOPDIR)/bin/tmpl2mac.pl
+
+# The template to macro converter command.
+TMPL2MAC = $(PERL) $(TMPL2MACDEP)
+
 #
 # the programs to convert a web file to C source or TeX source
 #

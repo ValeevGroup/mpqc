@@ -1,7 +1,7 @@
 //
-// tcscf.h --- definition of the two-configuration SCF class
+// uscf.h --- definition of the UnrestrictedSCF abstract base class
 //
-// Copyright (C) 1996 Limit Point Systems, Inc.
+// Copyright (C) 1997 Limit Point Systems, Inc.
 //
 // Author: Edward Seidl <seidl@janed.com>
 // Maintainer: LPS
@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_scf_tcscf_h
-#define _chemistry_qc_scf_tcscf_h
+#ifndef _chemistry_qc_scf_uscf_h
+#define _chemistry_qc_scf_uscf_h
 
 #ifdef __GNUC__
 #pragma interface
@@ -36,89 +36,93 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
-class TCSCF: public SCF {
-#   define CLASSNAME TCSCF
+class UnrestrictedSCF: public SCF {
+#   define CLASSNAME UnrestrictedSCF
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
- protected:
+  protected:
     int user_occupations_;
-    int tndocc_;
+    int tnalpha_;
+    int tnbeta_;
     int nirrep_;
-    int *ndocc_;
-    int osa_;
-    int osb_;
-
-    double occa_;
-    double occb_;
-
-    double ci1_;
-    double ci2_;
-
+    int *nalpha_;
+    int *nbeta_;
+    
+    AccResultRefSCMatrix cb_;
+    AccResultRefDiagSCMatrix eb_;
     ResultRefSymmSCMatrix focka_;
     ResultRefSymmSCMatrix fockb_;
-    ResultRefSymmSCMatrix ka_;
-    ResultRefSymmSCMatrix kb_;
+
+  protected:
+    RefSCExtrapError extrap_error();
+    void compute_vector(double&);
+    void initial_vector(int needv=1);
     
   public:
-    TCSCF(StateIn&);
-    TCSCF(const RefKeyVal&);
-    ~TCSCF();
+    UnrestrictedSCF(StateIn&);
+    UnrestrictedSCF(const RefKeyVal&);
+    ~UnrestrictedSCF();
 
     void save_data_state(StateOut&);
 
-    void print(ostream&o=cout);
+    RefSCMatrix eigenvectors();
+    RefDiagSCMatrix eigenvalues();
 
-    double occupation(int ir, int vectornum);
+    RefSCMatrix alpha_eigenvectors();
+    RefDiagSCMatrix alpha_eigenvalues();
+    RefSCMatrix beta_eigenvectors();
+    RefDiagSCMatrix beta_eigenvalues();
+
+    RefSymmSCMatrix alpha_density();
+    RefSymmSCMatrix beta_density();
+    RefSymmSCMatrix density();
+    
+    double occupation(int, int);
+    double alpha_occupation(int, int);
+    double beta_occupation(int, int);
+    
+    // both return 1
+    int spin_polarized();
+    int spin_unrestricted();
+    
+    void print(ostream&o=cout);
 
     int n_fock_matrices() const;
     RefSymmSCMatrix fock(int);
     RefSymmSCMatrix effective_fock();
-    RefSymmSCMatrix density();
-    RefSymmSCMatrix alpha_density();
-    RefSymmSCMatrix beta_density();
-
-    int spin_polarized();
-
+    
   protected:
     // these are temporary data, so they should not be checkpointed
     RefTwoBodyInt tbi_;
-
-    RefSymmSCMatrix cl_dens_;
-    RefSymmSCMatrix cl_dens_diff_;
-    RefSymmSCMatrix op_densa_;
-    RefSymmSCMatrix op_densa_diff_;
-    RefSymmSCMatrix op_densb_;
-    RefSymmSCMatrix op_densb_diff_;
-
-    RefSymmSCMatrix ao_gmata_;
-    RefSymmSCMatrix ao_gmatb_;
-    RefSymmSCMatrix ao_ka_;
-    RefSymmSCMatrix ao_kb_;
     
-    RefSymmSCMatrix cl_hcore_;
-    
-    void set_occupations(const RefDiagSCMatrix& evals);
+    RefSymmSCMatrix densa_;
+    RefSymmSCMatrix densb_;;
+    RefSymmSCMatrix gmata_;
+    RefSymmSCMatrix gmatb_;
+    RefSymmSCMatrix diff_densa_;
+    RefSymmSCMatrix diff_densb_;;
 
-    // scf things
+    RefSymmSCMatrix hcore_;
+
+    void set_occupations(const RefDiagSCMatrix&);
+    void set_occupations(const RefDiagSCMatrix&, const RefDiagSCMatrix&);
+
     void init_vector();
     void done_vector();
-    void reset_density();
     double new_density();
+    void reset_density();
     double scf_energy();
-
     RefSCExtrapData extrap_data();
-    
-    // gradient things
+
     void init_gradient();
     void done_gradient();
-
     RefSymmSCMatrix lagrangian();
     RefSymmSCMatrix gradient_density();
-
-    // hessian things
+    
     void init_hessian();
     void done_hessian();
 };
+SavableState_REF_dec(UnrestrictedSCF);
 
 #endif
 

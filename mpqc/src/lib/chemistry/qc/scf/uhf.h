@@ -1,7 +1,7 @@
 //
-// linkage.h
+// uhf.h --- definition of the unrestricted Hartree-Fock class
 //
-// Copyright (C) 1996 Limit Point Systems, Inc.
+// Copyright (C) 1997 Limit Point Systems, Inc.
 //
 // Author: Edward Seidl <seidl@janed.com>
 // Maintainer: LPS
@@ -25,26 +25,46 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_scf_linkage_h
-#define _chemistry_qc_scf_linkage_h
+#ifndef _chemistry_qc_scf_uhf_h
+#define _chemistry_qc_scf_uhf_h
 
-#ifndef __PIC__
+#ifdef __GNUC__
+#pragma interface
+#endif
 
-#include <chemistry/qc/scf/clhf.h>
-#include <chemistry/qc/scf/hsoshf.h>
-#include <chemistry/qc/scf/osshf.h>
-#include <chemistry/qc/scf/tchf.h>
-#include <chemistry/qc/scf/uhf.h>
+#include <chemistry/qc/scf/uscf.h>
 
-#include <math/scmat/linkage.h>
-#include <chemistry/molecule/linkage.h>
+////////////////////////////////////////////////////////////////////////////
 
-const ClassDesc &scf_force_link_a_ = CLHF::class_desc_;
-const ClassDesc &scf_force_link_b_ = HSOSHF::class_desc_;
-const ClassDesc &scf_force_link_c_ = OSSHF::class_desc_;
-const ClassDesc &scf_force_link_d_ = TCHF::class_desc_;
-const ClassDesc &scf_force_link_e_ = UHF::class_desc_;
+class UHF: public UnrestrictedSCF {
+#   define CLASSNAME UHF
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  public:
+    UHF(StateIn&);
+    UHF(const RefKeyVal&);
+    ~UHF();
 
-#endif /* __PIC__ */
+    void save_data_state(StateOut&);
+
+    void print(ostream&o=cout);
+
+    void two_body_energy(double &ec, double &ex);
+
+    int value_implemented();
+    int gradient_implemented();
+    int hessian_implemented();
+
+  protected:
+    void ao_fock();
+    void two_body_deriv(double*);
+};
 
 #endif
+
+// Local Variables:
+// mode: c++
+// c-file-style: "ETS"
+// End:

@@ -32,69 +32,7 @@
 #include <math/scmat/offset.h>
 #include <math/scmat/blkiter.h>
 
-#include <chemistry/qc/scf/scfden.h>
-
-SCFDensity::SCFDensity(SCF *s, const RefSCMatrix&v, double o)
-  : scf_(s), vec(v), occ(o)
-{
-}
-
-SCFDensity::~SCFDensity()
-{
-}
-
-int
-SCFDensity::has_side_effects()
-{
-  return 1;
-}
-
-void
-SCFDensity::set_occ(double o)
-{
-  occ=o;
-}
-
-void
-SCFDensity::process(SCMatrixBlockIter& bi)
-{
-  int ir=0;
-
-  RefSCMatrix vir=vec;
-  
-  if (BlockedSCMatrix::castdown(vec.pointer())) {
-    ir=current_block();
-    vir = BlockedSCMatrix::castdown(vec.pointer())->block(ir);
-  }
-
-  int nbasis=vir.ncol();
-
-  if (!nbasis)
-    return;
-      
-  double *ck = new double[nbasis];
-
-  // loop over columns of the scf vector
-  for (int k=0;  k < nbasis; k++) {
-    double occk = scf_->occupation(ir,k);
-    if (fabs(occk) < 1.0e-8)
-      break;
-    
-    if (fabs(occk-occ) > 1.0e-8)
-      continue;
-    
-    RefSCVector rck = vir.get_column(k);
-    rck->convert(ck);
-
-    for (bi.reset(); bi; bi++) {
-      bi.set(bi.get() + ck[bi.i()]*ck[bi.j()]);
-    }
-  }
-
-  delete[] ck;
-}
-
-//////////////////////////////////////////////////////////////////////////////
+#include <chemistry/qc/scf/scfops.h>
 
 SCFEnergy::SCFEnergy()
   : eelec(0), deferred_(0)
@@ -180,6 +118,58 @@ LevelShift::process(SCMatrixBlockIter& i)
     double occi = scf_->occupation(ir,i.i());
     
     if (occi==scf_->occupation(ir,0))
+      i.set(i.get()-shift);
+    else if (occi>0.0)
+      i.set(i.get()-0.5*shift);
+  }
+}
+
+ALevelShift::ALevelShift(SCF *s) :
+  LevelShift(s)
+{
+}
+
+ALevelShift::~ALevelShift()
+{
+}
+
+void
+ALevelShift::process(SCMatrixBlockIter& i)
+{
+  int ir=current_block();
+  for (i.reset(); i; i++) {
+    if (i.i() != i.j())
+      continue;
+    
+    double occi = scf_->alpha_occupation(ir,i.i());
+    
+    if (occi==scf_->alpha_occupation(ir,0))
+      i.set(i.get()-shift);
+    else if (occi>0.0)
+      i.set(i.get()-0.5*shift);
+  }
+}
+
+BLevelShift::BLevelShift(SCF *s) :
+  LevelShift(s)
+{
+}
+
+BLevelShift::~BLevelShift()
+{
+}
+
+void
+BLevelShift::process(SCMatrixBlockIter& i)
+{
+  int ir=current_block();
+  for (i.reset(); i; i++) {
+    if (i.i() != i.j())
+      continue;
+    
+    double occi = scf_->beta_occupation(ir,i.i());
+    
+    if (occi==scf_->beta_occupation(ir,0))
       i.set(i.get()-shift);
     else if (occi>0.0)
       i.set(i.get()-0.5*shift);

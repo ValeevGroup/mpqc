@@ -38,10 +38,8 @@
 
 class OSSSCF: public SCF {
 #   define CLASSNAME OSSSCF
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
-#   include <util/class/classd.h>
+#   include <util/class/classda.h>
  protected:
     int user_occupations_;
     int tndocc_;
@@ -68,10 +66,11 @@ class OSSSCF: public SCF {
     int n_fock_matrices() const;
     RefSymmSCMatrix fock(int);
     RefSymmSCMatrix effective_fock();
+    RefSymmSCMatrix density();
+    RefSymmSCMatrix alpha_density();
+    RefSymmSCMatrix beta_density();
 
-    int value_implemented();
-    int gradient_implemented();
-    int hessian_implemented();
+    int spin_polarized();
 
   protected:
     // these are temporary data, so they should not be checkpointed
@@ -98,8 +97,6 @@ class OSSSCF: public SCF {
     double new_density();
     double scf_energy();
 
-    void ao_fock();
-
     RefSCExtrapData extrap_data();
     
     // gradient things
@@ -108,14 +105,11 @@ class OSSSCF: public SCF {
 
     RefSymmSCMatrix lagrangian();
     RefSymmSCMatrix gradient_density();
-    void two_body_deriv(double*);
 
     // hessian things
-
     void init_hessian();
     void done_hessian();
 };
-SavableState_REF_dec(OSSSCF);
 
 #endif
 

@@ -41,7 +41,7 @@ class HSOSSCF: public SCF {
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
-#   include <util/class/classd.h>
+#   include <util/class/classda.h>
   protected:
     int user_occupations_;
     int tndocc_;
@@ -68,16 +68,12 @@ class HSOSSCF: public SCF {
     RefSymmSCMatrix fock(int);
     RefSymmSCMatrix effective_fock();
 
-    void two_body_energy(double &ec, double &ex);
-
-    int value_implemented();
-    int gradient_implemented();
-    int hessian_implemented();
-
     // returns 1
     int spin_polarized();
+    RefSymmSCMatrix density();
     RefSymmSCMatrix alpha_density();
     RefSymmSCMatrix beta_density();
+
   protected:
     // these are temporary data, so they should not be checkpointed
     RefTwoBodyInt tbi_;
@@ -100,8 +96,6 @@ class HSOSSCF: public SCF {
     double new_density();
     double scf_energy();
 
-    void ao_fock();
-
     RefSCExtrapData extrap_data();
     
     // gradient things
@@ -110,14 +104,11 @@ class HSOSSCF: public SCF {
 
     RefSymmSCMatrix lagrangian();
     RefSymmSCMatrix gradient_density();
-    void two_body_deriv(double*);
 
     // hessian things
     void init_hessian();
     void done_hessian();
-    
 };
-SavableState_REF_dec(HSOSSCF);
 
 #endif
 

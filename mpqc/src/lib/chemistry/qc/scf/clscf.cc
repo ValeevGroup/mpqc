@@ -27,7 +27,6 @@
 
 #ifdef __GNUC__
 #pragma implementation
-#pragma implementation "clcont.h"
 #endif
 
 #include <math.h>
@@ -37,6 +36,7 @@
 
 #include <math/scmat/block.h>
 #include <math/scmat/blocked.h>
+#include <math/scmat/blkiter.h>
 #include <math/scmat/local.h>
 
 #include <math/optimize/scextrapmat.h>
@@ -44,32 +44,15 @@
 #include <chemistry/qc/basis/petite.h>
 
 #include <chemistry/qc/scf/scflocal.h>
-#include <chemistry/qc/scf/scfden.h>
+#include <chemistry/qc/scf/scfops.h>
 #include <chemistry/qc/scf/clscf.h>
-#include <chemistry/qc/scf/clcont.h>
-#include <chemistry/qc/scf/lgbuild.h>
-#include <chemistry/qc/scf/lbgbuild.h>
-#include <chemistry/qc/scf/ltbgrad.h>
-
-///////////////////////////////////////////////////////////////////////////
-
-#ifdef __GNUC__
-template class GBuild<LocalCLContribution>;
-template class LocalGBuild<LocalCLContribution>;
-template class LocalLBGBuild<LocalCLContribution>;
-
-template class TBGrad<LocalCLGradContribution>;
-template class LocalTBGrad<LocalCLGradContribution>;
-#endif
 
 ///////////////////////////////////////////////////////////////////////////
 // CLSCF
 
 #define CLASSNAME CLSCF
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
 #define PARENTS public SCF
-#include <util/class/classi.h>
+#include <util/class/classia.h>
 void *
 CLSCF::_castdown(const ClassDesc*cd)
 {
@@ -212,24 +195,6 @@ CLSCF::fock(int n)
   }
 
   return cl_fock_.result();
-}
-
-int
-CLSCF::value_implemented()
-{
-  return 1;
-}
-
-int
-CLSCF::gradient_implemented()
-{
-  return 1;
-}
-
-int
-CLSCF::hessian_implemented()
-{
-  return 0;
 }
 
 int
@@ -404,6 +369,21 @@ CLSCF::reset_density()
   cl_dens_diff_.assign(cl_dens_);
 }
 
+RefSymmSCMatrix
+CLSCF::density()
+{
+  if (!density_.computed()) {
+    RefSymmSCMatrix dens(basis_dimension(), basis_matrixkit());
+    so_density(dens, 2.0);
+    dens.scale(2.0);
+
+    density_ = dens;
+    density_.computed() = 1;
+  }
+
+  return density_.result_noupdate();
+}
+
 double
 CLSCF::new_density()
 {
@@ -413,12 +393,7 @@ CLSCF::new_density()
   cl_dens_diff_.scale(-1.0);
   
   cl_dens_.assign(0.0);
-#if 0
-  RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
-  cl_dens_.element_op(op);
-#else
   so_density(cl_dens_, 2.0);
-#endif
   cl_dens_.scale(2.0);
 
   cl_dens_diff_.accumulate(cl_dens_);
@@ -470,175 +445,16 @@ CLSCF::effective_fock()
 
   // use eigenvectors if scf_vector_ is null
   if (scf_vector_.null())
-    mofock.accumulate_transform(eigenvectors().t(), fock(0));
+    mofock.accumulate_transform(eigenvectors(), fock(0),
+                                SCMatrix::TransposeTransform);
   else
-    mofock.accumulate_transform(scf_vector_.t(), fock(0));
+    mofock.accumulate_transform(scf_vector_, fock(0),
+                                SCMatrix::TransposeTransform);
 
   return mofock;
 }
 
 //////////////////////////////////////////////////////////////////////////////
-
-void
-CLSCF::ao_fock()
-{
-  RefPetiteList pl = integral()->petite_list(basis());
-  
-  // calculate G.  First transform cl_dens_diff_ to the AO basis, then
-  // scale the off-diagonal elements by 2.0
-  tim_enter("setup");
-  RefSymmSCMatrix dd = cl_dens_diff_;
-  cl_dens_diff_ = pl->to_AO_basis(dd);
-  cl_dens_diff_->scale(2.0);
-  cl_dens_diff_->scale_diagonal(0.5);
-  tim_exit("setup");
-
-  // now try to figure out the matrix specialization we're dealing with
-  // if we're using Local matrices, then there's just one subblock, or
-  // see if we can convert G and P to local matrices
-
-  if (local_ || local_dens_) {
-    // grab the data pointers from the G and P matrices
-    double *gmat, *pmat;
-    tim_enter("local data");
-    RefSymmSCMatrix gtmp = get_local_data(cl_gmat_, gmat, SCF::Accum);
-    RefSymmSCMatrix ptmp = get_local_data(cl_dens_diff_, pmat, SCF::Read);
-    tim_exit("local data");
-
-    tim_enter("init pmax");
-    signed char * pmax = init_pmax(pmat);
-    tim_exit("init pmax");
-  
-    LocalCLContribution lclc(gmat, pmat);
-    LocalGBuild<LocalCLContribution>
-      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
-    gb.build_gmat(desired_value_accuracy()/100.0);
-
-    delete[] pmax;
-
-    // if we're running on multiple processors, then sum the G matrix
-    tim_enter("sum");
-    if (scf_grp_->n() > 1)
-      scf_grp_->sum(gmat, i_offset(basis()->nbasis()));
-    tim_exit("sum");
-
-    // if we're running on multiple processors, or we don't have local
-    // matrices, then accumulate gtmp back into G
-    tim_enter("accum");
-    if (!local_ || scf_grp_->n() > 1)
-      cl_gmat_->convert_accumulate(gtmp);
-    tim_exit("accum");
-  }
-
-  // for now quit
-  else {
-    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
-    abort();
-  }
-  
-  tim_enter("symm");
-  // get rid of AO delta P
-  cl_dens_diff_ = dd;
-  dd = cl_dens_diff_.clone();
-
-  // now symmetrize the skeleton G matrix, placing the result in dd
-  RefSymmSCMatrix skel_gmat = cl_gmat_.copy();
-  skel_gmat.scale(1.0/(double)pl->order());
-  pl->symmetrize(skel_gmat,dd);
-  tim_exit("symm");
-  
-  // F = H+G
-  cl_fock_.result_noupdate().assign(cl_hcore_);
-  cl_fock_.result_noupdate().accumulate(dd);
-  cl_fock_.computed()=1;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-void
-CLSCF::two_body_energy(double &ec, double &ex)
-{
-  tim_enter("clscf e2");
-  ec = 0.0;
-  ex = 0.0;
-  if (local_ || local_dens_) {
-    // grab the data pointers from the G and P matrices
-    double *pmat;
-    tim_enter("local data");
-    RefSymmSCMatrix dens = ao_density();
-    RefSymmSCMatrix ptmp = get_local_data(dens, pmat, SCF::Read);
-    tim_exit("local data");
-
-    // initialize the two electron integral classes
-    tbi_ = integral()->electron_repulsion();
-    tbi_->set_integral_storage(0);
-
-    GaussianBasisSet& gbs = *basis().pointer();
-    TwoBodyInt& tbi = *tbi_.pointer();
-
-    const double *intbuf = tbi.buffer();
-
-    // POINT GROUP SYMMETRY IS NOT YET USED HERE
-    // INTEGRAL INDEX SYMMETRY IS NOT YET USED HERE
-    // BOUNDS ARE NOT YET USED HERE
-    // PARALLELISM NOT YET USED HERE
-    for (int i=0; i<gbs.nshell(); i++) {
-      int ni=gbs(i).nfunction();
-      int fi=gbs.shell_to_function(i);
-      for (int j=0; j<gbs.nshell(); j++) {
-        int nj=gbs(j).nfunction();
-        int fj=gbs.shell_to_function(j);
-        for (int k=0; k<gbs.nshell(); k++) {
-          int nk=gbs(k).nfunction();
-          int fk=gbs.shell_to_function(k);
-          int lmax = k;
-          if (k==i) lmax = j;
-          for (int l=0; l<gbs.nshell(); l++) {
-            int nl=gbs(l).nfunction();
-            int fl=gbs.shell_to_function(l);
-            tbi.compute_shell(i,j,k,l);
-            int index = 0;
-            for (int I=0, ii=fi; I<ni; I++, ii++) {
-              for (int J=0, jj=fj; J<nj; J++, jj++) {
-                int iijj;
-                if (ii > jj) iijj = (ii*(ii+1))/2 + jj;
-                else iijj = (jj*(jj+1))/2 + ii;
-                double pij = pmat[iijj];
-                for (int K=0, kk=fk; K<nk; K++, kk++) {
-                  int iikk;
-                  if (ii > kk) iikk = (ii*(ii+1))/2 + kk;
-                  else iikk = (kk*(kk+1))/2 + ii;
-                  double pik = pmat[iikk];
-                  for (int L=0, ll=fl; L<nl; L++, ll++, index++) {
-                    int kkll;
-                    if (kk > ll) kkll = (kk*(kk+1))/2 + ll;
-                    else kkll = (ll*(ll+1))/2 + kk;
-                    double pkl = pmat[kkll];
-                    int jjll;
-                    if (jj > ll) jjll = (jj*(jj+1))/2 + ll;
-                    else jjll = (ll*(ll+1))/2 + jj;
-                    double pjl = pmat[jjll];
-                    ec += 0.5 * pij * pkl * intbuf[index];
-                    ex += -0.25 * pik * pjl * intbuf[index];
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    tbi_ = 0;
-  }
-  else {
-    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
-    abort();
-  }
-  tim_exit("clscf e2");
-}
-
-/////////////////////////////////////////////////////////////////////////////
 
 void
 CLSCF::init_gradient()
@@ -685,8 +501,6 @@ CLSCF::lagrangian()
   // the MO lagrangian is just the eigenvalues of the occupied MO's
   RefSymmSCMatrix mofock = effective_fock();
 
-
-
   RefSCElementOp op = new CLLag(this);
   mofock.element_op(op);
   
@@ -709,46 +523,14 @@ CLSCF::gradient_density()
   cl_dens_ = basis_matrixkit()->symmmatrix(basis_dimension());
   cl_dens_.assign(0.0);
   
-  RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
-  cl_dens_.element_op(op);
+  so_density(cl_dens_, 2.0);
   cl_dens_.scale(2.0);
   
   RefPetiteList pl = integral()->petite_list(basis());
   
   cl_dens_ = pl->to_AO_basis(cl_dens_);
-  cl_dens_.scale(1.0);
 
   return cl_dens_;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-void
-CLSCF::two_body_deriv(double * tbgrad)
-{
-  RefSCElementMaxAbs m = new SCElementMaxAbs;
-  cl_dens_.element_op(m);
-  double pmax = m->result();
-  m=0;
-
-  // now try to figure out the matrix specialization we're dealing with.
-  // if we're using Local matrices, then there's just one subblock, or
-  // see if we can convert P to a local matrix
-  if (local_ || local_dens_) {
-    double *pmat;
-    RefSymmSCMatrix ptmp = get_local_data(cl_dens_, pmat, SCF::Read);
-
-    LocalCLGradContribution l(pmat);
-    LocalTBGrad<LocalCLGradContribution> tb(l, integral(), basis(), scf_grp_);
-    tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
-  }
-
-  // for now quit
-  else {
-    cerr << node0 << indent
-         << "CLSCF::two_body_deriv: can't do gradient yet\n";
-    abort();
-  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -27,7 +27,6 @@
 
 #ifdef __GNUC__
 #pragma implementation
-#pragma implementation "tccont.h"
 #endif
 
 #include <math.h>
@@ -37,6 +36,7 @@
 
 #include <math/scmat/block.h>
 #include <math/scmat/blocked.h>
+#include <math/scmat/blkiter.h>
 #include <math/scmat/local.h>
 
 #include <math/optimize/scextrapmat.h>
@@ -44,32 +44,17 @@
 #include <chemistry/qc/basis/petite.h>
 
 #include <chemistry/qc/scf/scflocal.h>
-#include <chemistry/qc/scf/scfden.h>
+#include <chemistry/qc/scf/scfops.h>
 #include <chemistry/qc/scf/effh.h>
 
 #include <chemistry/qc/scf/tcscf.h>
-#include <chemistry/qc/scf/tccont.h>
-#include <chemistry/qc/scf/lgbuild.h>
-#include <chemistry/qc/scf/ltbgrad.h>
-
-///////////////////////////////////////////////////////////////////////////
-
-#ifdef __GNUC__
-template class GBuild<LocalTCContribution>;
-template class LocalGBuild<LocalTCContribution>;
-
-template class TBGrad<LocalTCGradContribution>;
-template class LocalTBGrad<LocalTCGradContribution>;
-#endif
 
 ///////////////////////////////////////////////////////////////////////////
 // TCSCF
 
 #define CLASSNAME TCSCF
-#define HAVE_STATEIN_CTOR
-#define HAVE_KEYVAL_CTOR
 #define PARENTS public SCF
-#include <util/class/classi.h>
+#include <util/class/classia.h>
 void *
 TCSCF::_castdown(const ClassDesc*cd)
 {
@@ -237,6 +222,10 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
 
 TCSCF::~TCSCF()
 {
+  if (ndocc_) {
+    delete[] ndocc_;
+    ndocc_=0;
+  }
 }
 
 void
@@ -308,21 +297,9 @@ TCSCF::fock(int n)
 }
 
 int
-TCSCF::value_implemented()
+TCSCF::spin_polarized()
 {
   return 1;
-}
-
-int
-TCSCF::gradient_implemented()
-{
-  return 1;
-}
-
-int
-TCSCF::hessian_implemented()
-{
-  return 0;
 }
 
 void
@@ -571,6 +548,63 @@ TCSCF::done_vector()
   scf_vector_ = 0;
 }
 
+////////////////////////////////////////////////////////////////////////////
+
+RefSymmSCMatrix
+TCSCF::density()
+{
+  if (!density_.computed()) {
+    RefSymmSCMatrix dens(basis_dimension(), basis_matrixkit());
+    RefSymmSCMatrix dens1(basis_dimension(), basis_matrixkit());
+
+    so_density(dens, 2.0);
+    dens.scale(2.0);
+  
+    so_density(dens1, occa_);
+    dens1.scale(occa_);
+    dens.accumulate(dens1);
+  
+    so_density(dens1, occb_);
+    dens1.scale(occb_);
+    dens.accumulate(dens1);
+    
+    dens1=0;
+    
+    density_ = dens;
+    density_.computed() = 1;
+  }
+
+  return density_.result_noupdate();
+}
+
+RefSymmSCMatrix
+TCSCF::alpha_density()
+{
+  RefSymmSCMatrix dens(basis_dimension(), basis_matrixkit());
+  RefSymmSCMatrix dens1(basis_dimension(), basis_matrixkit());
+
+  so_density(dens, 2.0);
+  so_density(dens1, occa_);
+  dens.accumulate(dens1);
+
+  dens.scale(2.0);
+  return dens;
+}
+
+RefSymmSCMatrix
+TCSCF::beta_density()
+{
+  RefSymmSCMatrix dens(basis_dimension(), basis_matrixkit());
+  RefSymmSCMatrix dens1(basis_dimension(), basis_matrixkit());
+
+  so_density(dens, 2.0);
+  so_density(dens1, occb_);
+  dens.accumulate(dens1);
+
+  dens.scale(2.0);
+  return dens;
+}
+
 void
 TCSCF::reset_density()
 {
@@ -600,20 +634,14 @@ TCSCF::new_density()
   op_densb_diff_.assign(op_densb_);
   op_densb_diff_.scale(-1.0);
 
-  cl_dens_.assign(0.0);
-  RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
-  cl_dens_.element_op(op);
+  so_density(cl_dens_, 2.0);
   cl_dens_.scale(2.0);
 
-  op_densa_.assign(0.0);
-  op = new SCFDensity(this, scf_vector_, occa_);
-  op_densa_.element_op(op);
+  so_density(op_densa_, occa_);
   BlockedSymmSCMatrix::castdown(op_densa_.pointer())->block(osb_)->assign(0.0);
   op_densa_.scale(2.0);
 
-  op_densb_.assign(0.0);
-  op = new SCFDensity(this, scf_vector_, occb_);
-  op_densb_.element_op(op);
+  so_density(op_densb_, occb_);
   BlockedSymmSCMatrix::castdown(op_densb_.pointer())->block(osa_)->assign(0.0);
   op_densb_.scale(2.0);
 
@@ -691,7 +719,8 @@ TCSCF::scf_energy()
   ci2_ = hv.get_element(1,0);
   double c1c2 = ci1_*ci2_;
 
-  cout << node0 << indent << scprintf("c1 = %10.7f c2 = %10.7f\n", ci1_, ci2_);
+  cout << node0 << indent << scprintf("c1 = %10.7f c2 = %10.7f", ci1_, ci2_)
+       << endl;
   
   occa_ = 2*ci1_*ci1_;
   occb_ = 2*ci2_*ci2_;
@@ -735,15 +764,23 @@ TCSCF::effective_fock()
 
   // use eigenvectors if scf_vector_ is null
   if (scf_vector_.null()) {
-    mofocka.accumulate_transform(eigenvectors().t(), fock(0));
-    mofockb.accumulate_transform(eigenvectors().t(), fock(1));
-    moka.accumulate_transform(eigenvectors().t(), fock(2));
-    mokb.accumulate_transform(eigenvectors().t(), fock(3));
+    mofocka.accumulate_transform(eigenvectors(), fock(0),
+                                 SCMatrix::TransposeTransform);
+    mofockb.accumulate_transform(eigenvectors(), fock(1),
+                                 SCMatrix::TransposeTransform);
+    moka.accumulate_transform(eigenvectors(), fock(2),
+                              SCMatrix::TransposeTransform);
+    mokb.accumulate_transform(eigenvectors(), fock(3),
+                              SCMatrix::TransposeTransform);
   } else {
-    mofocka.accumulate_transform(scf_vector_.t(), fock(0));
-    mofockb.accumulate_transform(scf_vector_.t(), fock(1));
-    moka.accumulate_transform(scf_vector_.t(), fock(2));
-    mokb.accumulate_transform(scf_vector_.t(), fock(3));
+    mofocka.accumulate_transform(scf_vector_, fock(0),
+                                 SCMatrix::TransposeTransform);
+    mofockb.accumulate_transform(scf_vector_, fock(1),
+                                 SCMatrix::TransposeTransform);
+    moka.accumulate_transform(scf_vector_, fock(2),
+                              SCMatrix::TransposeTransform);
+    mokb.accumulate_transform(scf_vector_, fock(3),
+                              SCMatrix::TransposeTransform);
   }
   
   mofocka.scale(ci1_*ci1_);
@@ -807,127 +844,6 @@ TCSCF::effective_fock()
   return mofock;
 }
 
-//////////////////////////////////////////////////////////////////////////////
-
-void
-TCSCF::ao_fock()
-{
-  RefPetiteList pl = integral()->petite_list(basis());
-  
-  // calculate G.  First transform cl_dens_diff_ to the AO basis, then
-  // scale the off-diagonal elements by 2.0
-  RefSymmSCMatrix da = pl->to_AO_basis(cl_dens_diff_);
-  RefSymmSCMatrix db = da.copy();
-  RefSymmSCMatrix oda = pl->to_AO_basis(op_densa_diff_);
-  RefSymmSCMatrix odb = pl->to_AO_basis(op_densb_diff_);
-  da.accumulate(oda);
-  db.accumulate(odb);
-
-  da->scale(2.0);
-  da->scale_diagonal(0.5);
-  
-  db->scale(2.0);
-  db->scale_diagonal(0.5);
-  
-  oda->scale(2.0);
-  oda->scale_diagonal(0.5);
-  
-  odb->scale(2.0);
-  odb->scale_diagonal(0.5);
-  
-  // now try to figure out the matrix specialization we're dealing with
-  // if we're using Local matrices, then there's just one subblock, or
-  // see if we can convert G and P to local matrices
-  if (local_ || local_dens_) {
-
-    // grab the data pointers from the G and P matrices
-    double *gmata, *gmatb, *kmata, *kmatb, *pmata, *pmatb, *opmata, *opmatb;
-    RefSymmSCMatrix gatmp = get_local_data(ao_gmata_, gmata, SCF::Accum);
-    RefSymmSCMatrix patmp = get_local_data(da, pmata, SCF::Read);
-    RefSymmSCMatrix gbtmp = get_local_data(ao_gmatb_, gmatb, SCF::Accum);
-    RefSymmSCMatrix pbtmp = get_local_data(db, pmatb, SCF::Read);
-    RefSymmSCMatrix katmp = get_local_data(ao_ka_, kmata, SCF::Accum);
-    RefSymmSCMatrix opatmp = get_local_data(oda, opmata, SCF::Read);
-    RefSymmSCMatrix kbtmp = get_local_data(ao_kb_, kmatb, SCF::Accum);
-    RefSymmSCMatrix opbtmp = get_local_data(odb, opmatb, SCF::Read);
-    
-    signed char * pmax = init_pmax(pmata);
-    signed char * pmaxb = init_pmax(pmatb);
-  
-    int i;
-    for (i=0; i < i_offset(basis()->nshell()); i++) {
-      if (pmaxb[i] > pmax[i])
-        pmax[i]=pmaxb[i];
-    }
-    
-    delete[] pmaxb;
-    
-    LocalTCContribution lclc(gmata, pmata, gmatb, pmatb,
-                             kmata, opmata, kmatb, opmatb);
-    LocalGBuild<LocalTCContribution>
-      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
-    gb.build_gmat(desired_value_accuracy()/100.0);
-
-    delete[] pmax;
-
-    // if we're running on multiple processors, then sum the G matrices
-    if (scf_grp_->n() > 1) {
-      scf_grp_->sum(gmata, i_offset(basis()->nbasis()));
-      scf_grp_->sum(gmatb, i_offset(basis()->nbasis()));
-      scf_grp_->sum(kmata, i_offset(basis()->nbasis()));
-      scf_grp_->sum(kmatb, i_offset(basis()->nbasis()));
-    }
-    
-    // if we're running on multiple processors, or we don't have local
-    // matrices, then accumulate gtmp back into G
-    if (!local_ || scf_grp_->n() > 1) {
-      ao_gmata_->convert_accumulate(gatmp);
-      ao_gmatb_->convert_accumulate(gbtmp);
-      ao_ka_->convert_accumulate(katmp);
-      ao_kb_->convert_accumulate(kbtmp);
-    }
-  }
-
-  // for now quit
-  else {
-    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
-    abort();
-  }
-  
-  da=0;
-  db=0;
-  oda=0;
-  odb=0;
-
-  // now symmetrize the skeleton G matrix, placing the result in dd
-  RefSymmSCMatrix skel_gmat = ao_gmata_.copy();
-  skel_gmat.scale(1.0/(double)pl->order());
-  pl->symmetrize(skel_gmat,focka_.result_noupdate());
-  
-  skel_gmat = ao_gmatb_.copy();
-  skel_gmat.scale(1.0/(double)pl->order());
-  pl->symmetrize(skel_gmat,fockb_.result_noupdate());
-  
-  skel_gmat = ao_ka_.copy();
-  skel_gmat.scale(1.0/(double)pl->order());
-  pl->symmetrize(skel_gmat,ka_.result_noupdate());
-  
-  skel_gmat = ao_kb_.copy();
-  skel_gmat.scale(1.0/(double)pl->order());
-  pl->symmetrize(skel_gmat,kb_.result_noupdate());
-  
-  // Fa = H+Ga
-  focka_.result_noupdate().accumulate(cl_hcore_);
-
-  // Fb = H+Gb
-  fockb_.result_noupdate().accumulate(cl_hcore_);
-
-  focka_.computed()=1;
-  fockb_.computed()=1;
-  ka_.computed()=1;
-  kb_.computed()=1;
-}
-
 /////////////////////////////////////////////////////////////////////////////
 
 void
@@ -962,25 +878,29 @@ TCSCF::lagrangian()
 {
   RefSymmSCMatrix mofocka = focka_.result_noupdate().clone();
   mofocka.assign(0.0);
-  mofocka.accumulate_transform(scf_vector_.t(), focka_.result_noupdate());
+  mofocka.accumulate_transform(scf_vector_, focka_.result_noupdate(),
+                               SCMatrix::TransposeTransform);
   mofocka.scale(ci1_*ci1_);
 
   RefSymmSCMatrix mofockb = mofocka.clone();
   mofockb.assign(0.0);
-  mofockb.accumulate_transform(scf_vector_.t(), fockb_.result_noupdate());
+  mofockb.accumulate_transform(scf_vector_, fockb_.result_noupdate(),
+                               SCMatrix::TransposeTransform);
   mofockb.scale(ci2_*ci2_);
 
   // FOa = c1^2*Fa + c1c2*Kb
   RefSymmSCMatrix moka = mofocka.clone();
   moka.assign(0.0);
-  moka.accumulate_transform(scf_vector_.t(), kb_.result_noupdate());
+  moka.accumulate_transform(scf_vector_, kb_.result_noupdate(),
+                            SCMatrix::TransposeTransform);
   moka.scale(ci1_*ci2_);
   moka.accumulate(mofocka);
 
   // FOb = c1^2*Fb + c1c2*Ka
   RefSymmSCMatrix mokb = mofocka.clone();
   mokb.assign(0.0);
-  mokb.accumulate_transform(scf_vector_.t(), ka_.result_noupdate());
+  mokb.accumulate_transform(scf_vector_, ka_.result_noupdate(),
+                            SCMatrix::TransposeTransform);
   mokb.scale(ci1_*ci2_);
   mokb.accumulate(mofockb);
 
@@ -1020,20 +940,13 @@ TCSCF::gradient_density()
   op_densa_ = cl_dens_.clone();
   op_densb_ = cl_dens_.clone();
   
-  cl_dens_.assign(0.0);
-  op_densa_.assign(0.0);
-  op_densb_.assign(0.0);
-  
-  RefSCElementOp op = new SCFDensity(this, scf_vector_, 2.0);
-  cl_dens_.element_op(op);
+  so_density(cl_dens_, 2.0);
   cl_dens_.scale(2.0);
   
-  op = new SCFDensity(this, scf_vector_, occa_);
-  op_densa_.element_op(op);
+  so_density(op_densa_, occa_);
   op_densa_.scale(occa_);
   
-  op = new SCFDensity(this, scf_vector_, occb_);
-  op_densb_.element_op(op);
+  so_density(op_densb_, occb_);
   op_densb_.scale(occb_);
   
   BlockedSymmSCMatrix::castdown(op_densa_.pointer())->block(osb_)->assign(0.0);
@@ -1053,40 +966,6 @@ TCSCF::gradient_density()
   op_densb_.scale(2.0/occb_);
   
   return tdens;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-void
-TCSCF::two_body_deriv(double * tbgrad)
-{
-  RefSCElementMaxAbs m = new SCElementMaxAbs;
-  cl_dens_.element_op(m);
-  double pmax = m->result();
-  m=0;
-
-  // now try to figure out the matrix specialization we're dealing with.
-  // if we're using Local matrices, then there's just one subblock, or
-  // see if we can convert P to local matrices
-
-  if (local_ || local_dens_) {
-    // grab the data pointers from the P matrices
-    double *pmat, *pmata, *pmatb;
-    RefSymmSCMatrix ptmp = get_local_data(cl_dens_, pmat, SCF::Read);
-    RefSymmSCMatrix patmp = get_local_data(op_densa_, pmata, SCF::Read);
-    RefSymmSCMatrix pbtmp = get_local_data(op_densb_, pmatb, SCF::Read);
-  
-    LocalTCGradContribution l(pmat,pmata,pmatb,ci1_,ci2_);
-    LocalTBGrad<LocalTCGradContribution> tb(l, integral(), basis(), scf_grp_);
-    tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
-  }
-
-  // for now quit
-  else {
-    cerr << node0 << indent
-         << "TCSCF::two_body_deriv: can't do gradient yet\n";
-    abort();
-  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

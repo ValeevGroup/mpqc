@@ -30,6 +30,7 @@
 
 #include <math/scmat/offset.h>
 #include <math/scmat/blocked.h>
+#include <math/scmat/blkiter.h>
 
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
@@ -37,7 +38,7 @@
 #include <chemistry/qc/basis/symmint.h>
 
 #include <chemistry/qc/scf/scf.h>
-#include <chemistry/qc/scf/scfden.h>
+#include <chemistry/qc/scf/scfops.h>
 #include <chemistry/qc/scf/scflocal.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -66,7 +67,8 @@ SCF::compute_vector(double& eelec)
 
   RefDiagSCMatrix evals(basis_dimension(), basis_matrixkit());
 
-  for (int iter=0; iter < maxiter_; iter++) {
+  int iter;
+  for (iter=0; iter < maxiter_; iter++) {
     // form the density from the current vector 
     tim_enter("density");
     double delta = new_density();

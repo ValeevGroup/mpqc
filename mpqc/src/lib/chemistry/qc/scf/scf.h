@@ -32,15 +32,11 @@
 #pragma interface
 #endif
 
-#include <math/scmat/elemop.h>
-#include <math/scmat/block.h>
-#include <math/scmat/blkiter.h>
 #include <math/optimize/scextrap.h>
 
 #include <chemistry/qc/basis/tbint.h>
+#include <chemistry/qc/wfn/accum.h>
 #include <chemistry/qc/wfn/obwfn.h>
-
-#define SCF_CHECK_BOUNDS 0
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -48,15 +44,15 @@ class SCF: public OneBodyWavefunction {
 #   define CLASSNAME SCF
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
-  private:
+  protected:
     int need_vec_;
     int compute_guess_;
-    
-  protected:
+
     RefOneBodyWavefunction guess_wfn_;
     
-    RefSCMatrix scf_vector_;
     RefSelfConsistentExtrapolation extrap_;
+    
+    RefAccumH accumh_;
     
     int maxiter_;
     int dens_reset_freq_;
@@ -100,14 +96,14 @@ class SCF: public OneBodyWavefunction {
     // guess_wfn_, or use a core Hamiltonian guess.  Call this with needv
     // equal to 0 if you expect to call it twice with the same geometry
     // (eg. when calling from both set_occupations() and init_vector()).
-    void initial_vector(int needv=1);
+    virtual void initial_vector(int needv=1);
     
     // given the total number of density and fock matrices, figure out
     // how much memory that will require and then set the local_dens_
     // variable accordingly
     void init_mem(int);
     
-    void so_density(const RefSymmSCMatrix& d, double scale);
+    void so_density(const RefSymmSCMatrix& d, double occ, int alp=1);
     
   public:
     SCF(StateIn&);
@@ -119,6 +115,8 @@ class SCF: public OneBodyWavefunction {
     RefSCMatrix eigenvectors();
     RefDiagSCMatrix eigenvalues();
 
+    int spin_unrestricted(); // return 0
+    
     // return the number of AO Fock matrices needed
     virtual int n_fock_matrices() const =0;
 
@@ -137,6 +135,10 @@ class SCF: public OneBodyWavefunction {
     void print_natom_3(const RefSCVector &, const char *t=0, ostream&o=cout);
 
   protected:
+    // the following are scratch and are not checkpointed
+    RefSCMatrix scf_vector_;
+    RefSCMatrix scf_vectorb_; // only used if !spin_restricted
+
     ////////////////////////////////////////////////////////////////////////
     // pure virtual member functions follow
     

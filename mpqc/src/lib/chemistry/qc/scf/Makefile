@@ -34,10 +34,13 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libscf
 BIN_OR_LIB = LIB
 
-SRCS = scf.cc scfvector.cc scfgradient.cc scfden.cc effh.cc \
-       clscf.cc hsosscf.cc ossscf.cc tcscf.cc
+SRCS = scf.cc scfvector.cc scfgradient.cc scfops.cc effh.cc \
+       clscf.cc clhf.cc hsosscf.cc hsoshf.cc \
+       ossscf.cc osshf.cc tcscf.cc tchf.cc \
+       uscf.cc uhf.cc
 
-CLASSES = SCF CLSCF HSOSSCF
+CLASSES = SCF CLSCF HSOSSCF OSSSCF TCSCF UnrestrictedSCF \
+          CLHF HSOSHF OSSHF TCHF UHF
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 

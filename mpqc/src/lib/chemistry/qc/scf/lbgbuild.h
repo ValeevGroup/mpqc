@@ -144,12 +144,8 @@ class LocalLBGBuild : public GBuild<T> {
             if ((ptmp=pmax[ij_offset(j,l)]-2) > pmaxijkl) pmaxijkl=ptmp;
               
 
-#if SCF_CHECK_BOUNDS
-            contribution.set_bound(pow(2.0,double(tbi.log2_shell_bound(i,j,k,l)+pmaxijkl)));
-#else
             if (tbi.log2_shell_bound(i,j,k,l)+pmaxijkl < tol)
               continue;
-#endif
 
             int qijkl = pl.in_p4(oij,okl,i,j,k,l);
             if (!qijkl)

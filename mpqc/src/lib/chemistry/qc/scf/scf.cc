@@ -75,6 +75,7 @@ SCF::SCF(StateIn& s) :
   s.get(level_shift_);
 
   extrap_.restore_state(s);
+  accumh_.restore_state(s);
 
   scf_grp_ = basis()->matrixkit()->messagegrp();
 }
@@ -105,6 +106,10 @@ SCF::SCF(const RefKeyVal& keyval) :
   extrap_ = keyval->describedclassvalue("extrap");
   if (extrap_.null())
     extrap_ = new DIIS;
+
+  accumh_ = keyval->describedclassvalue("accumh");
+  if (accumh_.null())
+    accumh_ = new AccumHNull;
   
   storage_ = keyval->intvalue("memory");
 
@@ -159,6 +164,7 @@ SCF::save_data_state(StateOut& s)
   s.put(storage_);
   s.put(level_shift_);
   extrap_.save_state(s);
+  accumh_.save_state(s);
 }
 
 RefSCMatrix
@@ -171,6 +177,12 @@ RefDiagSCMatrix
 SCF::eigenvalues()
 {
   return eigenvalues_.result();
+}
+
+int
+SCF::spin_unrestricted()
+{
+  return 0;
 }
 
 void
@@ -216,8 +228,8 @@ SCF::compute()
 {
   int me=scf_grp_->me();
   
-  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit().pointer())
-            ||ReplSCMatrixKit::castdown(basis()->matrixkit().pointer())) ?1:0;
+  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit().pointer()) ||
+            ReplSCMatrixKit::castdown(basis()->matrixkit().pointer())) ? 1:0;
   
   if (hessian_needed())
     set_desired_gradient_accuracy(desired_hessian_accuracy()/100.0);
@@ -366,11 +378,11 @@ SCF::initial_vector(int needv)
           cout << incindent << incindent;
           SCF *g = SCF::castdown(guess_wfn_.pointer());
           if (!g || compute_guess_) {
-            eigenvectors_ = guess_wfn_->eigenvectors();
-            eigenvalues_ = guess_wfn_->eigenvalues();
+            eigenvectors_ = guess_wfn_->eigenvectors().copy();
+            eigenvalues_ = guess_wfn_->eigenvalues().copy();
           } else {
-            eigenvectors_ = g->eigenvectors_.result_noupdate();
-            eigenvalues_ = g->eigenvalues_.result_noupdate();
+            eigenvectors_ = g->eigenvectors_.result_noupdate().copy();
+            eigenvalues_ = g->eigenvalues_.result_noupdate().copy();
             eigenvectors_.result_noupdate()->schmidt_orthog(
               overlap().pointer(), basis()->nbasis());
           }
@@ -442,16 +454,33 @@ SCF::init_mem(int nm)
 /////////////////////////////////////////////////////////////////////////////
 
 void
-SCF::so_density(const RefSymmSCMatrix& d, double occ)
+SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
 {
   int i,j,k;
   int me=scf_grp_->me();
   int nproc=scf_grp_->n();
+  int uhf = spin_unrestricted();
+  
+  RefSCMatrix vector;
+  if (alp || !uhf)
+    vector = scf_vector_;
+  else
+    vector = scf_vectorb_;
+      
+  if (vector.null()) {
+    if (uhf) {
+      if (alp)
+        vector = alpha_eigenvectors();
+      else
+        vector = beta_eigenvectors();
+    } else
+      vector = eigenvectors();
+  }
   
   RefPetiteList pl = integral()->petite_list(basis());
   
   BlockedSCMatrix *bvec = BlockedSCMatrix::require_castdown(
-    scf_vector_, "SCF::so_density: blocked vector");
+    vector, "SCF::so_density: blocked vector");
 
   BlockedSymmSCMatrix *bd = BlockedSymmSCMatrix::require_castdown(
     d, "SCF::so_density: blocked density");
@@ -468,7 +497,13 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ)
     // figure out which columns of the scf vector we'll need
     int col0 = -1, coln = -1;
     for (i=0; i < nbasis; i++) {
-      double occi = occupation(ir, i);
+      double occi;
+      if (!uhf)
+        occi = occupation(ir, i);
+      else if (alp)
+        occi = alpha_occupation(ir, i);
+      else
+        occi = beta_occupation(ir, i);
 
       if (fabs(occi-occ) < 1.0e-8) {
         if (col0 == -1)
@@ -480,8 +515,10 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ)
       }
     }
 
-    if (col0 == -1)
+    if (col0 == -1) {
+      dir->assign(0.0);
       continue;
+    }
 
     if (coln == -1)
       coln = nbasis-1;

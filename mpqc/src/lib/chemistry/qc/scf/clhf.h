@@ -1,5 +1,5 @@
 //
-// linkage.h
+// clhf.h --- definition of the closed shell Hartree-Fock SCF class
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
@@ -25,26 +25,46 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_scf_linkage_h
-#define _chemistry_qc_scf_linkage_h
+#ifndef _chemistry_qc_scf_clhf_h
+#define _chemistry_qc_scf_clhf_h
 
-#ifndef __PIC__
+#ifdef __GNUC__
+#pragma interface
+#endif
 
-#include <chemistry/qc/scf/clhf.h>
-#include <chemistry/qc/scf/hsoshf.h>
-#include <chemistry/qc/scf/osshf.h>
-#include <chemistry/qc/scf/tchf.h>
-#include <chemistry/qc/scf/uhf.h>
+#include <chemistry/qc/scf/clscf.h>
 
-#include <math/scmat/linkage.h>
-#include <chemistry/molecule/linkage.h>
+////////////////////////////////////////////////////////////////////////////
 
-const ClassDesc &scf_force_link_a_ = CLHF::class_desc_;
-const ClassDesc &scf_force_link_b_ = HSOSHF::class_desc_;
-const ClassDesc &scf_force_link_c_ = OSSHF::class_desc_;
-const ClassDesc &scf_force_link_d_ = TCHF::class_desc_;
-const ClassDesc &scf_force_link_e_ = UHF::class_desc_;
+class CLHF: public CLSCF {
+#   define CLASSNAME CLHF
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  public:
+    CLHF(StateIn&);
+    CLHF(const RefKeyVal&);
+    ~CLHF();
 
-#endif /* __PIC__ */
+    void save_data_state(StateOut&);
+
+    void print(ostream&o=cout);
+
+    void two_body_energy(double &ec, double &ex);
+
+    int value_implemented();
+    int gradient_implemented();
+    int hessian_implemented();
+
+  protected:
+    void ao_fock();
+    void two_body_deriv(double*);
+};
 
 #endif
+
+// Local Variables:
+// mode: c++
+// c-file-style: "ETS"
+// End:

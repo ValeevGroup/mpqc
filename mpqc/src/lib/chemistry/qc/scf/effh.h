@@ -32,6 +32,7 @@
 #pragma interface
 #endif
 
+#include <math/scmat/blkiter.h>
 #include <math/scmat/blocked.h>
 #include <chemistry/qc/scf/scf.h>
 

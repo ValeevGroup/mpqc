@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_scf_scfden_h
-#define _chemistry_qc_scf_scfden_h
+#ifndef _chemistry_qc_scf_scfops_h
+#define _chemistry_qc_scf_scfops_h
 
 #ifdef __GNUC__
 #pragma interface
@@ -36,22 +36,6 @@
 #include <math/scmat/blocked.h>
 
 #include <chemistry/qc/scf/scf.h>
-
-class SCFDensity : public BlockedSCElementOp {
-  private:
-    SCF *scf_;
-    RefSCMatrix vec;
-    double occ;
-
-  public:
-    SCFDensity(SCF*, const RefSCMatrix&, double);
-    ~SCFDensity();
-
-    int has_side_effects();
-    void set_occ(double);
-
-    void process(SCMatrixBlockIter& bi);
-};
 
 class SCFEnergy : public SCElementOp2 {
   private:
@@ -72,7 +56,7 @@ class SCFEnergy : public SCElementOp2 {
 };
 
 class LevelShift : public BlockedSCElementOp {
-  private:
+  protected:
     SCF *scf_;
     double shift;
 
@@ -83,6 +67,20 @@ class LevelShift : public BlockedSCElementOp {
     int has_side_effects();
     void set_shift(double);
     
+    void process(SCMatrixBlockIter&);
+};
+
+class ALevelShift : public LevelShift {
+  public:
+    ALevelShift(SCF*);
+    ~ALevelShift();
+    void process(SCMatrixBlockIter&);
+};
+
+class BLevelShift : public LevelShift {
+  public:
+    BLevelShift(SCF*);
+    ~BLevelShift();
     void process(SCMatrixBlockIter&);
 };
 

@@ -132,10 +132,12 @@ TCSCF::do_gradient(const RefSCVector& gradient)
   
   moafock.set_element(_ndocc+1,_ndocc,0.0);
   moafock.scale(2.0);
+  moafock.print("mo lagrangian");
                       
   mobfock.assign(0.0);
   mobfock.accumulate_transform(_gr_vector,moafock);
   mobfock.scale(-1.0);
+  mobfock.print("ao lagrangian");
 
   moka=0;
   mokb=0;
@@ -204,7 +206,7 @@ TCSCF::do_gradient(const RefSCVector& gradient)
     
   mobfock=0;
 
-  // ovlp.print("overlap contribution");
+  ovlp.print("overlap contribution");
   gradient.accumulate(ovlp);
   
   // and now the one-electron contributions
@@ -260,9 +262,9 @@ TCSCF::do_gradient(const RefSCVector& gradient)
 
   moafock=0;
 
-  // oneelec.print("one electron contribution");
+  oneelec.print("one electron contribution");
   gradient.accumulate(oneelec);
-  // gradient.print("gradient sans two electron contribution");
+  gradient.print("gradient sans two electron contribution");
   
   // done with the one-electron stuff
   int_done_offsets1(centers,centers);
@@ -422,7 +424,7 @@ TCSCF::do_gradient(const RefSCVector& gradient)
     }
   }
 
-  // twoelec.print("two electron contribution");
+  twoelec.print("two electron contribution");
   gradient.accumulate(twoelec);
   // gradient.print("cartesian gradient");
 

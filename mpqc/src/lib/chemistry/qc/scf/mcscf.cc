@@ -55,6 +55,7 @@ MCSCF::init()
 
   aorb = _ndocc;
   borb = _ndocc+1;
+  root=2;
 }
 
 MCSCF::MCSCF(StateIn& s) :
@@ -109,6 +110,9 @@ MCSCF::MCSCF(const RefKeyVal& keyval) :
 
   if (keyval->exists("borb"))
     borb = keyval->intvalue("borb");
+
+  if (keyval->exists("root"))
+    root = keyval->intvalue("root");
 
   if (keyval->exists("ci1")) {
     ci1 = keyval->doublevalue("ci1");
@@ -315,8 +319,6 @@ MCSCF::compute()
 void
 MCSCF::do_vector(double& eelec, double& nucrep)
 {
-  root=2;
-  
   _gr_vector = _eigenvectors.result_noupdate();
   
   // allocate storage for the temp arrays
@@ -431,23 +433,45 @@ MCSCF::do_vector(double& eelec, double& nucrep)
     mob.assign(0.0);
     mob.accumulate_transform(_gr_vector.t(),foob);
     
+    RefSymmSCMatrix koa = foob.clone();
+    koa.assign(0.0);
+    koa.accumulate_transform(_gr_vector.t(),_ka);
+    koa.scale(2*ci1*ci3);
+    
+    RefSymmSCMatrix kob = foob.clone();
+    kob.assign(0.0);
+    kob.accumulate_transform(_gr_vector.t(),_kb);
+    kob.scale(2*ci1*ci3);
+    
     RefSymmSCMatrix mof = feff.clone();
     mof.assign(0.0);
     mof.accumulate_transform(_gr_vector.t(),feff);
 
     mo1.scale(2.0);
     mo2.scale(2.0);
-    moa.scale(2.0);
-    mob.scale(2.0);
+    moa.scale(2.0*ci2*ci2);
+    mob.scale(2.0*ci2*ci2);
     
     for (int j=0; j < _ndocc; j++) {
-      mof.set_element(aorb,j,mo2.get_element(aorb,j)+moa.get_element(aorb,j));
-      mof.set_element(borb,j,mo1.get_element(borb,j)+mob.get_element(borb,j));
+      mof.set_element(aorb,j,mo2.get_element(aorb,j)+
+                             moa.get_element(aorb,j)-
+                             kob.get_element(aorb,j)
+                             );
+      mof.set_element(borb,j,mo1.get_element(borb,j)+
+                             mob.get_element(borb,j)-
+                             koa.get_element(borb,j)
+                             );
     }
 
     for (int j=borb+1; j < nbasis; j++) {
-      mof.set_element(j,aorb,mo1.get_element(j,aorb)-moa.get_element(j,aorb));
-      mof.set_element(j,borb,mo2.get_element(j,borb)-mob.get_element(j,borb));
+      mof.set_element(j,aorb,mo1.get_element(j,aorb)-
+                             moa.get_element(j,aorb)+
+                             kob.get_element(j,aorb)
+                             );
+      mof.set_element(j,borb,mo2.get_element(j,borb)-
+                             mob.get_element(j,borb)+
+                             koa.get_element(j,borb)
+                             );
     }
     
     mof.diagonalize(_fock_evals,nvector);
@@ -464,15 +488,27 @@ MCSCF::do_vector(double& eelec, double& nucrep)
   if (ci1-ci3 < 0)
     s=-s;
   
+  printf("ci1 = %lf ci2 = %lf ci3 = %lf\n",ci1,ci2,ci3);
+
   double c1 = (s+1)/sqrt(2*(1+s*s));
   double c2 = (s-1)/sqrt(2*(1+s*s));
+
+  double theta;
+  double tan2theta = sqrt(2.0)*ci2;
+  double denon = ci1-ci3;
+  if (fabs(denon) < 1.0e-15) {
+    theta = 0.25 * 3.1415292654;
+  } else {
+    double ttheta = atan(tan2theta/denon);
+    theta = ttheta*0.5;
+  }
   
   RefSCVector ca = _gr_vector.get_column(aorb);
   RefSCVector cb = _gr_vector.get_column(borb);
   
   for (int i=0; i < nbasis; i++) {
-    double u = (ca.get_element(i)+cb.get_element(i))/sqrt(2.0);
-    double v = (ca.get_element(i)-cb.get_element(i))/sqrt(2.0);
+    double u = (cos(theta)*ca.get_element(i)+sin(theta)*cb.get_element(i));
+    double v = (sin(theta)*ca.get_element(i)-cos(theta)*cb.get_element(i));
     ca.set_element(i,u);
     cb.set_element(i,v);
   }

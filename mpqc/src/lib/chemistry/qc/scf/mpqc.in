@@ -7,6 +7,8 @@
 %
 
 mole<MCSCF>: (
+  root = 2
+
   % NLP... input
   value_accuracy = 1e-7
   gradient_accuracy = 1e-6

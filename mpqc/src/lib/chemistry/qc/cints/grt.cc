@@ -112,8 +112,9 @@ GRTCints::GRTCints(Integral *integral,
   //  ExEnv::errn() << scprintf("need %d bytes to store primitive pair data\n",primitive_pair_storage_estimate);
 #if STORE_PAIR_DATA
   shell_pairs12_ = new ShellPairsCints(bs1_,bs2_);
-  if ( (bs1_ == bs3_ && bs2_ == bs4_) ||
-       (bs1_ == bs4_ && bs2_ == bs3_) )
+  if ( (bs1_ == bs3_ && bs2_ == bs4_) /*||
+       // if this is (ab|ba) case -- should i try to save storage?
+       (bs1_ == bs4_ && bs2_ == bs3_)*/ )
     shell_pairs34_ = new ShellPairsCints(shell_pairs12_);
   else
     shell_pairs34_ = new ShellPairsCints(bs3_,bs4_);

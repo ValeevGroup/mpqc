@@ -378,7 +378,8 @@ IntMolecularCoor::init()
   dim_ = new SCDimension(variable_->n(), "Nvar");
   dvc_ = new SCDimension(variable_->n()+constant_->n(),
                          "Nvar+Nconst");
-#if 1
+
+#if 0 // this will always think the rank has changed with redundant coordinates
     {
       const double epsilon = 0.001;
 
@@ -404,6 +405,7 @@ IntMolecularCoor::init()
 
       if (rank != dim_.n()) {
           ExEnv::out() << node0 << indent << "IntMolecularCoor::init: rank changed\n";
+          sigma.print("sigma");
         }
 
       double kappa2 = sigma(0)/sigma(dim_.n()-1);

@@ -41,6 +41,8 @@
 #include <chemistry/qc/mbpt/util.h>
 #include <chemistry/qc/mbpt/csgrade12.h>
 
+#define WRITE_DOUBLES 0
+
 static void sum_gradients(const RefMessageGrp& msg, double **f, int n1, int n2);
 static void zero_gradients(double **f, int n1, int n2);
 static void accum_gradients(double **g, double **f, int n1, int n2);
@@ -813,6 +815,36 @@ MBPT2::compute_cs_grad()
     // where i, j, a, and b are all active;
     // compute contribution to the MP2 correlation energy
     // from these integrals 
+
+#if WRITE_DOUBLES
+    if (nproc > 1 || npass > 1) {
+      cout << "csgrad.cc: WRITE_DOUBLES set but case not allowed" << endl;
+      abort();
+      }
+    cout << "csgrad.cc: WRITING DOUBLES: CHECK ORDER" << endl;
+    char *doutname = SCFormIO::fileext_to_filename(".mp2");
+    FILE *dout = fopen(doutname,"w");
+    delete[] doutname;
+    fwrite(&nocc_act, sizeof(int), 1, dout);
+    fwrite(&nvir_act, sizeof(int), 1, dout);
+    for (j=nfzc; j<nocc; j++) {
+      for (b=0; b<nvir_act; b++) {
+        for (i=0; i<ni; i++) {
+          ij_index = nocc*i + j;
+          iajb_ptr = &mo_int[nocc + nbasis*(b+nocc + nbasis*ij_index)];
+          fwrite(iajb_ptr, sizeof(double), nvir_act, dout);
+//           for (a=0; a<nvir_act; a++) {
+//             if (fabs(iajb_ptr[a])>1.0e-8) {
+//               cout << scprintf(" (%2d %2d|%2d %2d) = %12.8f",
+//                                j+1-nfzc,b+1,i+1,a+1,iajb_ptr[a])
+//                    << endl;
+//               }
+//             }
+          }
+        }
+      }
+    fclose(dout);
+#endif
 
     tim_enter("compute ecorr");
 

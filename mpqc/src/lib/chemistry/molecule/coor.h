@@ -77,8 +77,9 @@ class IntCoor: public SavableState {
     virtual const char* label() const;
     //. Returns the value of the coordinate in atomic units or radians.
     virtual double value() const;
-    //. Returns the value of the coordinate in more familiar units (at
-    // least to those in the U.S.).
+    //. Sets the value of the coordinate in atomic units or radians.
+    virtual void set_value(double);
+    //. Returns the value of the coordinate in more familiar units.
     virtual double preferred_value() const;
     //. Returns a string representation of the type of coordinate this is.
     virtual const char* ctype() const = 0;
@@ -389,11 +390,10 @@ class IntMolecularCoor: public MolecularCoor
   protected:
     RefIntCoorGen generator_;
 
-    void form_K_matrices(RefSCDimension& dredundant,
-                         RefSCDimension& dfixed,
-                         RefSCMatrix& K,
-                         RefSCMatrix& Kfixed,
-                         int*& is_totally_symmetric);
+    void form_K_matrix(RefSCDimension& dredundant,
+                       RefSCDimension& dfixed,
+                       RefSCMatrix& K,
+                       int*& is_totally_symmetric);
 
     RefSCDimension dim_; // corresponds to the number of variable coordinates
     RefSCDimension dvc_; // the number of variable + constant coordinates

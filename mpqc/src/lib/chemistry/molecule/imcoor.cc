@@ -39,7 +39,6 @@
 
 #define DEFAULT_SIMPLE_TOLERANCE 1.0e-3
 
-#define USE_SVD 1
 #define VERBOSE 0
 
 ///////////////////////////////////////////////////////////////////////////
@@ -307,10 +306,20 @@ IntMolecularCoor::init()
           given_fixed_coords(i) = fixed_->coor(i)->value();
         }
 
+      // find the current fixed coordinates
+      RefSCVector current_fixed_coords(original_dfixed,matrixkit_);
+      fixed_->update_values(molecule_);
+      for (i=0; i<original_dfixed.n(); i++) {
+          current_fixed_coords(i) = fixed_->coor(i)->value();
+        }
+
+      // the difference between current fixed and desired fixed
+      RefSCVector diff_fixed_coords = given_fixed_coords-current_fixed_coords;
+
       // break up the displacement into several manageable steps
-      double maxabs = given_fixed_coords.maxabs();
+      double maxabs = diff_fixed_coords.maxabs();
       int nstep = int(maxabs/max_update_disp_) + 1;
-      given_fixed_coords.scale(1.0/nstep);
+      diff_fixed_coords.scale(1.0/nstep);
       cout << node0 << indent << "IntMolecularCoor: "
            << "displacing fixed coordinates to the requested values in "
            << nstep << " steps\n";
@@ -328,13 +337,19 @@ IntMolecularCoor::init()
           int j;
           for (j=0; j<original_dfixed.n(); j++,i++) {
               new_internal_coordinates(i)
-                  = istep * double(given_fixed_coords(j));
+                  = current_fixed_coords(j)+istep*double(diff_fixed_coords(j));
             }
           for (; j<constant_->n(); i++,j++) {
               new_internal_coordinates(i) = constant_->coor(j)->value();
             }
 
           all_to_cartesian(new_internal_coordinates);
+        }
+
+      // make sure that the coordinates have exactly the
+      // original values to avoid round-off error
+      for (i=0; i<original_dfixed.n(); i++) {
+          fixed_->coor(i)->set_value(given_fixed_coords(i));
         }
     }
 
@@ -390,7 +405,6 @@ count_nonzero(const RefSCVector &vec, double eps)
   return nz;
 }
 
-#if USE_SVD
 static RefSymmSCMatrix
 form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
                const RefSCVector& geom,
@@ -521,16 +535,13 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
 
   return proj_nullspace_B_perp;
 }
-#endif // USE_SVD
 
-// this allocates storage for and computes K, Kfixed, and is_totally_symmetric
-#if USE_SVD
+// this allocates storage for and computes K and is_totally_symmetric
 void
-IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
-                                  RefSCDimension& dfixed,
-                                  RefSCMatrix& K,
-                                  RefSCMatrix& Kfixed,
-                                  int*& is_totally_symmetric)
+IntMolecularCoor::form_K_matrix(RefSCDimension& dredundant,
+                                RefSCDimension& dfixed,
+                                RefSCMatrix& K,
+                                int*& is_totally_symmetric)
 {
   int i,j;
 
@@ -574,11 +585,6 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
       //                     count_nonzero(totally_symmetric_fixed, ts_eps),
       //                     dfixed.n());
       //  }
-
-      // Compute Kfixed
-      RefSCMatrix B(dcoor, dnatom3_, matrixkit_);
-      all_->bmat(molecule_, B);
-      Kfixed = B * null_bfixed_perp;
     }
 
   cout << node0 << indent << "Forming optimization coordinates:" << endl;
@@ -621,18 +627,26 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
   RefSCDimension dtot = new SCDimension(n_total);
   K = matrixkit_->matrix(dcoor, dtot);
   K.assign(0.0);
+  int istart=0, jstart=0;
   if (Kbond.nonnull()) {
+      if (debug_) Kbond.print("Kbond");
       K.assign_subblock(Kbond, 0, Kbond.nrow()-1, 0, Kbond.ncol()-1, 0, 0);
+      istart += Kbond.nrow();
+      jstart += Kbond.ncol();
     }
   if (Kbend.nonnull()) {
-      K.assign_subblock(Kbend, Kbond.nrow(), Kbond.nrow()+Kbend.nrow()-1,
-                        Kbond.ncol(), Kbond.ncol()+Kbend.ncol()-1, 0, 0);
+      if (debug_) Kbend.print("Kbend");
+      K.assign_subblock(Kbend, istart, istart+Kbend.nrow()-1,
+                        jstart, jstart+Kbend.ncol()-1, 0, 0);
+      istart += Kbend.nrow();
+      jstart += Kbend.ncol();
     }
   if (Kall.nonnull()) {
-      K.assign_subblock(Kall, 0, dcoor->n()-1,
-                        Kbond.ncol()+Kbend.ncol(),
-                        Kbond.ncol()+Kbend.ncol()+Kall.ncol()-1, 0, 0);
+      if (debug_) Kall.print("Kall");
+      K.assign_subblock(Kall, istart, istart+Kall.nrow()-1,
+                        jstart, jstart+Kall.ncol()-1, 0, 0);
     }
+  if (debug_) K.print("K");
 
   is_totally_symmetric = new int[K.ncol()];
   j=0;
@@ -643,7 +657,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
           else is_totally_symmetric[j] = 0;
         }
     }
-  if (Kbond.nonnull()) {
+  if (Kbend.nonnull()) {
       for (i=0; i<Kbend.ncol(); i++,j++) {
           if (fabs(totally_symmetric_bend(i)) > ts_eps)
               is_totally_symmetric[j] = 1;
@@ -670,181 +684,6 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
     }
 #endif
 }
-#else // USE_SVD
-void
-IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
-                                  RefSCDimension& dfixed,
-                                  RefSCMatrix& K,
-                                  RefSCMatrix& Kfixed,
-                                  int*& is_totally_symmetric)
-{
-  int i,j;
-  int natom3 = dnatom3_.n();
-
-  // form bmat for the set of redundant coordinates
-  RefSCMatrix bmat(dredundant,dnatom3_,matrixkit_);
-  all_->bmat(molecule_,bmat);
-  int nredundant = dredundant.n();
-
-  // scale the coordinates in the bmatrix
-  i=0;
-  int nbonds = bonds_->n();
-  int nbends = bends_->n();
-  int ntors = tors_->n();
-  int nouts = outs_->n();
-  // bonds
-  if (scale_bonds_ != 1.0) {
-      for (j=0; j<nbonds; i++,j++) {
-          for (int k=0; k<natom3; k++) {
-              bmat(i,k) = bmat(i,k) * scale_bonds_;
-            }
-        }
-    }
-  else {
-      i += nbonds;
-    }
-  // bends
-  if (scale_bends_ != 1.0) {
-      for (j=0; j<nbends; i++,j++) {
-          for (int k=0; k<natom3; k++) {
-              bmat(i,k) = bmat(i,k) * scale_bends_;
-            }
-        }
-    }
-  else {
-      i += nbends;
-    }
-  // torsions
-  if (scale_tors_ != 1.0) {
-      for (j=0; j<ntors; i++,j++) {
-          for (int k=0; k<natom3; k++) {
-              bmat(i,k) = bmat(i,k) * scale_tors_;
-            }
-        }
-    }
-  else {
-      i += ntors;
-    }
-  // out of plane
-  if (scale_outs_ != 1.0) {
-      for (j=0; j<nouts; i++,j++) {
-          for (int k=0; k<natom3; k++) {
-              bmat(i,k) = bmat(i,k) * scale_outs_;
-            }
-        }
-    }
-  else {
-      i += nouts;
-    }
-
-  // and form b*b~
-  RefSymmSCMatrix bmbt(dredundant,matrixkit_);
-  bmbt.assign(0.0);
-  bmbt.accumulate_symmetric_product(bmat);
-
-  // form the fixed part of the b matrix
-  RefSCMatrix bmat_fixed(dfixed,dnatom3_,matrixkit_);
-  fixed_->bmat(molecule_,bmat_fixed);
-  int nfixed = dfixed.n();
-
-  // and form the fixed b*b~
-  RefSymmSCMatrix bmbt_fixed(dfixed,matrixkit_);
-  bmbt_fixed.assign(0.0);
-  bmbt_fixed.accumulate_symmetric_product(bmat_fixed);
-
-  // need the cross terms in bmbt also
-  RefSCMatrix bmbt_fix_red;
-  if (nfixed != 0) bmbt_fix_red = bmat_fixed * bmat.t();
-
-  // orthogonalize the redundant coordinates to the fixed coordinates
-  RefSCMatrix redundant_ortho(dfixed,dredundant,matrixkit_);
-  for (i=0; i<nredundant; i++) {
-      for (j=0; j<nfixed; j++) {
-          redundant_ortho(j,i) = - (bmbt_fix_red(j,i)/bmbt_fixed(j,j));
-        }
-    }
-
-  // convert bmbt to the new coordinate system
-  if (nfixed != 0) {
-      bmbt.accumulate_transform(redundant_ortho.t(), bmbt_fixed);
-      bmbt.accumulate_symmetric_sum(redundant_ortho.t() * bmbt_fix_red);
-//       bmbt = bmbt
-//         + redundant_ortho.t() * bmbt_fixed * redundant_ortho
-//         + redundant_ortho.t() * bmbt_fix_red
-//         + bmbt_fix_red.t() * redundant_ortho;
-    }
-
-  // now diagonalize bmbt, this should give you the 3n-6(5) symmetrized
-  // internal coordinates
-  RefSCMatrix vecs(dredundant,dredundant,matrixkit_);
-  RefDiagSCMatrix vals(dredundant,matrixkit_);
-
-  bmbt.diagonalize(vals,vecs);
-
-  // ok, hopefully multiplying bmat*cart_coords will tell me which
-  // coordinates are have totally symmetric components
-  RefSCMatrix vecst = vecs.t();
-  RefSCMatrix bm = vecst * bmat;
-  // i'm done with bmat, get rid of it
-  bmat = 0;
-  RefSCVector geom(dnatom3_);
-  for(i=0; i < geom.n()/3; i++) {
-      geom(3*i) = molecule_->operator[](i).point()[0];
-      geom(3*i+1) = molecule_->operator[](i).point()[1];
-      geom(3*i+2) = molecule_->operator[](i).point()[2];
-    }
-  RefSCVector coords = bm * geom;
-
-  // release unneeded memory
-  geom = 0;
-  bm = 0;
-
-  // count the number of coordinates that have nonzero eigenvalues
-  int nonzero=0;
-  for(i=0; i < nredundant; i++) {
-      if(fabs(vals(i)) > coordinate_tolerance_) nonzero++;
-    }
-
-  // size K and Kfixed
-  RefSCDimension dnonzero = new SCDimension(nonzero, "Nnonzero");
-  K = dredundant->create_matrix(dnonzero); // nredundant x nonzero
-  K.assign(0.0);
-  Kfixed = dfixed->create_matrix(dnonzero); // nfixed x nonzero
-  Kfixed.assign(0.0);
-  is_totally_symmetric = new int[nonzero];
-
-  // generate K
-  int coordno=0;
-  for(i=0; i < nredundant; i++) {
-      // nonzero eigenvalues are the non-redundant coordinates
-      if(fabs(vals(i)) > coordinate_tolerance_) {
-
-          int nonzero=0;
-          for(j=0; j < nredundant; j++) {
-              if(pow(vecs(j,i),2.0) > simple_tolerance_) nonzero++;
-            }
-          if(!nonzero) {
-              cerr << node0 << indent
-                   << "Geom_form_K: no nonzero simple coordinates";
-              abort();
-            }
-
-          // bmat*cart_coords tells if a coordinate has a tot. symm. comp.
-          if (fabs(coords(i)) > symmetry_tolerance_)
-              is_totally_symmetric[coordno] = 1;
-          else is_totally_symmetric[coordno] = 0;
-
-          // construct the K arrays
-          int ii;
-          for(ii=0; ii < nredundant; ii++)
-            K(ii,coordno) = vecs(ii,i);
-          for(ii=0; ii < nfixed; ii++)
-            Kfixed(ii,coordno) = redundant_ortho(ii,i);
-          coordno++;
-        }
-    }
-}
-#endif // USE_SVD
 
 IntMolecularCoor::~IntMolecularCoor()
 {
@@ -973,17 +812,6 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
           Vr.assign_subblock(V,0, dnatom3_.n()-1, 0, drank.n()-1, 0, 0);
           internal_to_cart_disp = Vr * sigma_i * Ur.t();
 
-#if !USE_SVD
-          RefSymmSCMatrix bmbt(dvc_,matrixkit_);
-          RefSymmSCMatrix bmbt_i;
-
-          // form the initial inverse of bmatrix * bmatrix_t
-          bmbt.assign(0.0);
-          bmbt.accumulate_symmetric_product(bmat);
-          bmbt_i = bmbt.gi();
-
-          internal_to_cart_disp = bmat.t() * bmbt_i;
-#endif // !USE_SVD
         }
 
       // compute the cartesian displacements

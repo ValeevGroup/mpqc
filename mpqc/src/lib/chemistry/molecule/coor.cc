@@ -165,6 +165,12 @@ IntCoor::value() const
   return value_;
 }
 
+void
+IntCoor::set_value(double v)
+{
+  value_ = v;
+}
+
 #ifndef __GNUC__
 void
 IntCoor::print()

@@ -329,14 +329,9 @@ SymmMolecularCoor::form_coordinates()
   RefSCDimension dredundant = new SCDimension(nredundant, "Nredund");
   RefSCDimension dfixed = new SCDimension(nfixed, "Nfixed");
   RefSCMatrix K; // nredundant x nnonzero
-  RefSCMatrix Kfixed; // nfixed x nnonzero
   int* is_totally_symmetric; // nnonzero; if 1 coor has tot. symm. component
 
-  form_K_matrices(dredundant,
-                  dfixed,
-                  K,
-                  Kfixed,
-                  is_totally_symmetric);
+  form_K_matrix(dredundant, dfixed, K, is_totally_symmetric);
 
   RefSCDimension dnonzero = K.coldim();
   int nnonzero = dnonzero.n();
@@ -377,14 +372,11 @@ SymmMolecularCoor::form_coordinates()
           if(pow(K(j,i),2.0) > simple_tolerance_) {
               RefIntCoor c = all_->coor(j);
               coordinate->add(c,K(j,i));
-            }
-        }
-      // now put the contribution from the fixed coordinates in the
-      // coordinate list
-      for(j=0; j < nfixed; j++) {
-          if(pow(Kfixed(j,i),2.0) > simple_tolerance_) {
-              RefIntCoor c = fixed_->coor(j);
-              coordinate->add(c,Kfixed(j,i));
+              if (debug_) {
+                  cout << "added redund coor "
+                       << j << " to coor " << i << ":" << endl;
+                  c->print();
+                }
             }
         }
 

@@ -171,7 +171,7 @@ BSDSocket::~BSDSocket()
 // bind the local address to port "port"
 int BSDSocket::bind_socket(int port)
 {
-  bzero((char*)&laddr_,sizeof(laddr_));
+  memset((char*)&laddr_,'\0',sizeof(laddr_));
 
   laddr_.sin_family = AF_INET;
   laddr_.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -187,7 +187,7 @@ int BSDSocket::bind_socket(int port)
 // make connection to host "host" on port "port"
 int BSDSocket::connect_socket(const char *host,int port)
 {
-  bzero((char*)&raddr_,sizeof(raddr_));
+  memset((char*)&raddr_,'\0',sizeof(raddr_));
   raddrlen=sizeof(raddr_);
 
   struct hostent *he = gethostbyname(host);
@@ -377,7 +377,7 @@ int UnixSocket::unlink_socket()
 // bind the local address to the socket "path"
 int UnixSocket::bind_socket(const char *path)
 {
-  bzero((char*)&laddr_,sizeof(laddr_));
+  memset((char*)&laddr_,'\0',sizeof(laddr_));
 
   laddr_.sun_family = AF_UNIX;
   if(path)
@@ -398,7 +398,7 @@ int UnixSocket::bind_socket(const char *path)
 // make connection to socket "path"
 int UnixSocket::connect_socket(const char *path)
 {
-  bzero((char*)&raddr_,sizeof(raddr_));
+  memset((char*)&raddr_,'\0',sizeof(raddr_));
 
   raddr_.sun_family=AF_UNIX;
   strncpy(raddr_.sun_path,path,sizeof(raddr_.sun_path));

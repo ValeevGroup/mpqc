@@ -32,3 +32,19 @@ typedef struct ngl_list loop_t;
 
 #define COLUMNS   1
 #define SCATTERED 2
+
+struct dmt_block_info {
+  int i;
+  int j;
+  int magnitude; /* the value of Qvec for this block */
+  int ami;
+  int amj;
+  int nconi;
+  int nconj;
+  int nprimi;
+  int nprimj;
+  int dimi;
+  int dimj;
+};
+typedef struct dmt_block_info dmt_cost_t;
+

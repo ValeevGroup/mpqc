@@ -1,4 +1,6 @@
 
+#include <string.h>
+
 #include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>
 #include <new.h>
@@ -29,8 +31,10 @@ main(int argc, char**argv)
   // the output stream is standard out
   SCostream& o = SCostream::cout;
 
+  char *input = (argv[1]) ? argv[1] : strdup(SRCDIR "/mpqc.in");
+
   // open keyval input
-  RefKeyVal rpkv(new ParsedKeyVal(SRCDIR "/mpqc.in"));
+  RefKeyVal rpkv(new ParsedKeyVal(input));
 
   for (int i=0; rpkv->exists("mole",i); i++) {
       RefMolecularEnergy mole = rpkv->describedclassvalue("mole",i);

@@ -373,7 +373,6 @@ SumIntCoor::SumIntCoor(StateIn&s):
 
   coef_.set_length(n);
   coor_.set_length(n);
-  RefIntCoor tmp;
   for (int i=0; i<n; i++) {
       s.get(coef_[i]);
       coor_[i].restore_state(s);

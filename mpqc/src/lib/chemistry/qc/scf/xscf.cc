@@ -577,8 +577,13 @@ XSCF::do_vector(double& eelec, double& nucrep)
   printf("sab = %lf, ci1 = %lf, ci2 = %lf\n",sab,ci1,ci2);
   printf("occa = %lf, occb = %lf\n",occa,occb);
   
+  _gr_vector.print("scfx vector");
+
   _gr_vector.assign_column(_ca,aorb);
   _gr_vector.assign_column(_cb,borb);
+  _gr_vector->schmidt_orthog(ovlp.pointer(),basis()->nbasis());
+  
+  _gr_vector.print("ortho vector");
   
   _eigenvectors = _gr_vector;
   

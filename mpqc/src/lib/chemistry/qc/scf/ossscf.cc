@@ -6,6 +6,7 @@
 #include <util/misc/newstring.h>
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
+#include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/ossscf.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -231,7 +232,7 @@ OSSSCF::compute()
   if (_energy.needed()) {
     if (_eigenvectors.result_noupdate().null()) {
       // start from core guess
-      HCoreWfn hcwfn(*this);
+      CLSCF hcwfn(*this);
       RefSCMatrix vec = hcwfn.eigenvectors();
 
       _eigenvectors = vec;
@@ -480,6 +481,8 @@ OSSSCF::do_vector(double& eelec, double& nucrep)
     _gr_vector->schmidt_orthog(overlap().pointer(),basis()->nbasis());
   }
       
+  _gr_vector.print("converged vector");
+  
   _eigenvectors = _gr_vector;
   
   int_done_bounds();

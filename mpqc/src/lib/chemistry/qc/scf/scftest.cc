@@ -104,7 +104,7 @@ main(int argc, char**argv)
         //opt->print(o);
         opt->optimize();
       } else {
-        o << "opt is null\n";
+        mole->gradient().print("gradient");
       }
     } else if (mole->value_implemented()) {
       o << " value of mole is ";

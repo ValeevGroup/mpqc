@@ -42,9 +42,7 @@ class MCSCF: public OneBodyWavefunction
     RefSymmSCMatrix _ka;
     RefSymmSCMatrix _kb;
 
-    RefDiagSCMatrix _fock_evalsc;
-    RefDiagSCMatrix _fock_evalsa;
-    RefDiagSCMatrix _fock_evalsb;
+    RefDiagSCMatrix _fock_evals;
     
     int _ndocc;
     int aorb;
@@ -55,9 +53,9 @@ class MCSCF: public OneBodyWavefunction
 
     double ci1;
     double ci2;
+    double ci3;
 
-    double sab;
-    double eop;
+    int root;
     
     int _density_reset_freq;
 
@@ -73,8 +71,6 @@ class MCSCF: public OneBodyWavefunction
     RefSymmSCMatrix _densb;
     RefSymmSCMatrix _densab;
     RefSymmSCMatrix _densab2;
-    RefSCVector _ca;
-    RefSCVector _cb;
 
     RefSymmSCMatrix _gr_hcore;
     RefSCMatrix _gr_vector;

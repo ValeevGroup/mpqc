@@ -15,8 +15,6 @@ dens2(const RefSCMatrix& vec,
       const RefSymmSCMatrix& densb,
       const RefSymmSCMatrix& densab1,
       const RefSymmSCMatrix& densab2,
-      const RefSCVector& _ca,
-      const RefSCVector& _cb,
       int nbasis, int ndocc, int aorb, int borb)
 {
   // find out what type of matrices we're dealing with
@@ -40,15 +38,10 @@ dens2(const RefSCMatrix& vec,
         for (int k=0; k < ndocc; k++)
           pt += lvec->get_element(i,k)*lvec->get_element(j,k);
 
-#if 1
-        double ptoa=_ca->get_element(i)*_ca->get_element(j);
-        double ptob=_cb->get_element(i)*_cb->get_element(j);
-#else
         double ptoa=lvec->get_element(i,aorb)*lvec->get_element(j,aorb);
         double ptob=lvec->get_element(i,borb)*lvec->get_element(j,borb);
-#endif
-        double ptoab=_ca->get_element(i)*_cb->get_element(j)
-                    +_ca->get_element(j)*_cb->get_element(i);
+        double ptoab=lvec->get_element(i,aorb)*lvec->get_element(j,borb)
+                    +lvec->get_element(j,aorb)*lvec->get_element(i,borb);
 
         ldensc->set_element(i,j,pt);
         ldensa->set_element(i,j,ptoa);
@@ -74,7 +67,7 @@ MCSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
   for (int i=0; i < centers->nshell; i++)
     shnfunc[i] = INT_SH_NFUNC((centers),i);
 
-  dens2(_gr_vector,_densc,_densa,_densb,_densab2,_densab,_ca,_cb,
+  dens2(_gr_vector,_densc,_densa,_densb,_densab2,_densab,
         basis()->nbasis(),_ndocc,aorb,borb);
   
   _densc->scale(2.0);
@@ -854,6 +847,9 @@ MCSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
     h31 += 0.5*_densa.get_element(i,i)*_kb.get_element(i,i);
   }
 
+  h32 /= 2.0;
+  h21 /= 2.0;
+  
   RefSCDimension l3 = new LocalSCDimension(3);
   RefSymmSCMatrix h = l3->create_symmmatrix();
   RefSCMatrix hv = l3->create_matrix(l3);
@@ -866,71 +862,16 @@ MCSCF::form_ao_fock(centers_t *centers, double *intbuf, double& eelec)
   h.set_element(2,1,h32);
   h.set_element(2,2,h33);
 
-  h.print("ci matrix");
+  //h.print("ci matrix");
   h.diagonalize(hl,hv);
-  hv.print("ci coeffs");
-  hl.print("ci evals");
+  //hv.print("ci coeffs");
+  //hl.print("ci evals");
   
-  double mci1=hv.get_element(0,0);
-  double mci2=hv.get_element(1,0);
-  double mci3=hv.get_element(2,0);
+  ci1=hv.get_element(0,root-1);
+  ci2=hv.get_element(1,root-1);
+  ci3=hv.get_element(2,root-1);
   
-  double e = mci1*mci1*h11 + mci2*mci2*h22 + mci3*mci3*h33 +
-             2*(mci1*mci2*h21 + mci1*mci3*h31 + mci2*mci3*h32);
-  printf("e1 = %lf\n",e);
-  
-  mci1=hv.get_element(0,1);
-  mci2=hv.get_element(1,1);
-  mci3=hv.get_element(2,1);
-  
-  e = mci1*mci1*h11 + mci2*mci2*h22 + mci3*mci3*h33 +
-             2*(mci1*mci2*h21 + mci1*mci3*h31 + mci2*mci3*h32);
-  printf("e2 = %lf\n",e);
-  
-  double hab = 0;
-  double jkab = 0;
-  for (int i=0; i < basis()->nbasis(); i++) {
-    for (int j=0; j < i; j++) {
-      hab += _ca.get_element(i)*_cb.get_element(j)*
-             _gr_hcore.get_element(i,j);
-      hab += _ca.get_element(j)*_cb.get_element(i)*
-             _gr_hcore.get_element(i,j);
-      jkab += 0.5*_densa.get_element(i,j)*(_fockb.get_element(i,j)+
-                                           3*_kb.get_element(i,j));
-    }
-    hab += _ca.get_element(i)*_cb.get_element(i)*_gr_hcore.get_element(i,i);
-    jkab += _densa.get_element(i,i)*0.25*(_fockb.get_element(i,i)+
-                                         3*_kb.get_element(i,i));
-  }
-
-  double alpha = 1.0/(1.0+sab*sab);
-  
-  double e1 = 2.0*alpha*sab*hab;
-  double e2 = alpha*jkab;
-  eop = 2.0*sab*hab+jkab;
-  
-  for (int i=0; i < basis()->nbasis(); i++) {
-    for (int j=0; j < i; j++) {
-      e1 += (2.0*_densc.get_element(i,j) + alpha*_densab2.get_element(i,j))*
-            _gr_hcore.get_element(i,j);
-      e2 += _densc.get_element(i,j)*_fockc.get_element(i,j) +
-            alpha*(_densab2.get_element(i,j)*_fockc.get_element(i,j)+
-                   2.0*sab*_densc.get_element(i,j)*_fockab.get_element(i,j));
-      eop += _densab2.get_element(i,j)*_gr_hcore.get_element(i,j) +
-             _densab2.get_element(i,j)*_fockc.get_element(i,j) +
-             2.0*sab*_densc.get_element(i,j)*_fockab.get_element(i,j);
-    }
-    e1 += (2.0*_densc.get_element(i,i) + alpha*_densab2.get_element(i,i))*
-          0.5*_gr_hcore.get_element(i,i);
-    e2 += 0.5*_densc.get_element(i,i)*_fockc.get_element(i,i) +
-          0.5*alpha*(_densab2.get_element(i,i)*_fockc.get_element(i,i)+
-                 2.0*sab*_densc.get_element(i,i)*_fockab.get_element(i,i));
-    eop += 0.5*_densab2.get_element(i,i)*_gr_hcore.get_element(i,i) +
-           0.5*_densab2.get_element(i,i)*_fockc.get_element(i,i) +
-           sab*_densc.get_element(i,i)*_fockab.get_element(i,i);
-  }
-  
-  printf("sab = %lf\n",sab);
-  eelec = e1 + e2;
-  
+  double e = ci1*ci1*h11 + ci2*ci2*h22 + ci3*ci3*h33 +
+             2*(ci1*ci2*h21 + ci1*ci3*h31 + ci2*ci3*h32);
+  eelec = e;
 }

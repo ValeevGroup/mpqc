@@ -25,11 +25,19 @@ mole<MCSCF>: (
 )
 
 
-basis = $:631gsbasis
-molecule = $:he
+basis = $:stobasis
+molecule = $:ch2
 
 coor = $:symcoor
 message = $:message1
+
+xopt<QNewtonOpt>: (
+  convergence = 1.0e-5
+  max_iterations = 3
+  function = $:mole
+  transition_state=no
+  update<BFGSUpdate>:()
+)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -86,10 +94,10 @@ cartcoor<CartMolecularCoor>: (
 ch2<Molecule>: (
   symmetry=c2v
   { atoms geometry } = {
-      %H  [   1.5  0.0   1.0 ]
-      %C  [   0.0  0.0   0.0 ]
-      h [ 1.8733588697    0.0000000000    0.9423746499 ]
-      c [ 0.0000000000    0.0000000000    0.1152507002 ]
+      H  [   1.5  0.0   1.0 ]
+      C  [   0.0  0.0   0.0 ]
+      %h [ 1.8733588697    0.0000000000    0.9423746499 ]
+      %c [ 0.0000000000    0.0000000000    0.1152507002 ]
   }
 )
 
@@ -106,13 +114,6 @@ he<Molecule>: (
   { atoms geometry } = {
      he [ 0 0 0 ]
   }
-)
-opt<QNewtonOpt>: (
-  convergence = 1.0e-5
-  max_iterations = 3
-  function = $:mole
-  transition_state=no
-  update<BFGSUpdate>:()
 )
 
 basis:(

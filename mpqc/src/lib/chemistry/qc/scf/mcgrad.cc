@@ -65,18 +65,25 @@ MCSCF::do_gradient(const RefSCVector& gradient)
 
   memset(alpha,0,sizeof(double)*16);
 
+  double s = (ci1+ci3)/sqrt((ci1-ci3)*(ci1-ci3) + 2*ci2*ci2);
+  if (ci1-ci3 < 0)
+    s=-s;
+  
+  double c1 = (s+1)/sqrt(2*(1+s*s));
+  double c2 = (s-1)/sqrt(2*(1+s*s));
+  
   alpha[0][0] = 1.0;
-  alpha[1][0] = alpha[0][1] = ci1*ci1;
-  alpha[2][0] = alpha[0][2] = ci2*ci2;
-  alpha[1][1] = 0.5*ci1*ci1;
-  alpha[2][2] = 0.5*ci2*ci2;
+  alpha[1][0] = alpha[0][1] = c1*c1;
+  alpha[2][0] = alpha[0][2] = c2*c2;
+  alpha[1][1] = 0.5*c1*c1;
+  alpha[2][2] = 0.5*c2*c2;
 
   memset(beta,0,sizeof(double)*16);
 
   beta[0][0] = -1.0;
-  beta[1][0] = beta[0][1] = -ci1*ci1;
-  beta[2][0] = beta[0][2] = -ci2*ci2;
-  beta[2][1] = beta[1][2] = ci1*ci2;
+  beta[1][0] = beta[0][1] = -c1*c1;
+  beta[2][0] = beta[0][2] = -c2*c2;
+  beta[2][1] = beta[1][2] = c1*c2;
 
   // grab a reference to the scf_vector, presumably it is current
   _gr_vector = _eigenvectors.result_noupdate();
@@ -91,22 +98,22 @@ MCSCF::do_gradient(const RefSCVector& gradient)
   RefSymmSCMatrix moafock = _focka.clone();
   moafock.assign(0.0);
   moafock.accumulate_transform(_gr_vector.t(),_focka);
-  moafock.scale(ci1*ci1);
+  moafock.scale(c1*c1);
   
   RefSymmSCMatrix mobfock = _fockb.clone();
   mobfock.assign(0.0);
   mobfock.accumulate_transform(_gr_vector.t(),_fockb);
-  mobfock.scale(ci2*ci2);
+  mobfock.scale(c2*c2);
   
   RefSymmSCMatrix moka = _ka.clone();
   moka.assign(0.0);
   moka.accumulate_transform(_gr_vector.t(),_ka);
-  moka.scale(ci1*ci2);
+  moka.scale(c1*c2);
 
   RefSymmSCMatrix mokb = _kb.clone();
   mokb.assign(0.0);
   mokb.accumulate_transform(_gr_vector.t(),_kb);
-  mokb.scale(ci1*ci2);
+  mokb.scale(c1*c2);
 
   // now form the MO lagrangian
   //       c    o   v
@@ -125,15 +132,17 @@ MCSCF::do_gradient(const RefSCVector& gradient)
   moafock.set_element(_ndocc+1,_ndocc+1,
                       mobfock.get_element(_ndocc+1,_ndocc+1)+
                       moka.get_element(_ndocc+1,_ndocc+1));
+  moafock.set_element(_ndocc+1,_ndocc,
+                      mobfock.get_element(_ndocc+1,_ndocc)+
+                      moka.get_element(_ndocc+1,_ndocc));
 
   for (int i=_ndocc+2; i < basis()->nbasis(); i++)
     for (int j=0; j <= i; j++)
       moafock.set_element(i,j,0.0);
   
-  moafock.set_element(_ndocc+1,_ndocc,0.0);
   moafock.scale(2.0);
                       
-  //moafock.print("mo lagrangian");
+  moafock.print("mo lagrangian");
 
   mobfock.assign(0.0);
   mobfock.accumulate_transform(_gr_vector,moafock);
@@ -141,7 +150,7 @@ MCSCF::do_gradient(const RefSCVector& gradient)
 
   moka=0;
   mokb=0;
-  //mobfock.print("ao lagrangian");
+  mobfock.print("ao lagrangian");
 
   // zero out gradient
   gradient.assign(0.0);
@@ -207,7 +216,7 @@ MCSCF::do_gradient(const RefSCVector& gradient)
     
   mobfock=0;
 
-  //ovlp.print("overlap contribution");
+  ovlp.print("overlap contribution");
   gradient.accumulate(ovlp);
   
   // and now the one-electron contributions
@@ -267,9 +276,9 @@ MCSCF::do_gradient(const RefSCVector& gradient)
 
   moafock=0;
 
-  //oneelec.print("one electron contribution");
+  oneelec.print("one electron contribution");
   gradient.accumulate(oneelec);
-  //gradient.print("gradient sans two electron contribution");
+  gradient.print("gradient sans two electron contribution");
   
   // done with the one-electron stuff
   int_done_offsets1(centers,centers);
@@ -429,7 +438,7 @@ MCSCF::do_gradient(const RefSCVector& gradient)
     }
   }
 
-  //twoelec.print("two electron contribution");
+  twoelec.print("two electron contribution");
   gradient.accumulate(twoelec);
   // gradient.print("cartesian gradient");
 

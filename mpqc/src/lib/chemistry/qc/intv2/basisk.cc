@@ -44,8 +44,8 @@ int_read_basis(const RefKeyVal& topkeyval,char *atom, const char *bname,
   // this ParsedKeyVal CTOR looks at the basisdir and basisfiles
   // variables to find out what basis set files are to be read in
   RefKeyVal libkeyval = new ParsedKeyVal("basis",topkeyval);
-  RefKeyVal prekeyval = new PrefixKeyVal(":basis",libkeyval);
-  RefKeyVal keyval = new AggregateKeyVal(prekeyval,libkeyval);
+  RefKeyVal aggkeyval = new AggregateKeyVal(topkeyval,libkeyval);
+  RefKeyVal keyval = new PrefixKeyVal(":basis",aggkeyval);
 
   int tmp=0;
   basis.n = read_shells(keyval,atom,bname,basis,tmp,COUNT);
@@ -170,6 +170,7 @@ read_shells(const RefKeyVal& keyval, const char *atom, const char *bname,
   int nelem = keyval->count(key);
   if (keyval->error() != KeyVal::OK) {
     fprintf(stderr,"read_shells: could not count %s\n",key);
+    keyval->dump();
     return -1;
   }
 

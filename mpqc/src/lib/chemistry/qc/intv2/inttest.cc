@@ -10,6 +10,10 @@ extern "C" {
 #include <util/keyval/keyval.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 
+void test_3_center(const RefKeyVal&, centers_t&);
+void test_4_center(const RefKeyVal&, centers_t&);
+void test_4der_center(const RefKeyVal&, centers_t&);
+
 main()
 {
   int ii, i,j,k,l,m,n;
@@ -24,16 +28,30 @@ main()
 
   int_read_centers(keyval,centers);
 
-  pkv = keyval = 0;
-
   int_normalize_centers(&centers);
   int_initialize_offsets2(&centers,&centers,&centers,&centers);
+  
+  if (keyval->booleanvalue(":test:print")) print_centers(stdout,&centers);
+
+  if (keyval->booleanvalue(":test:3")) test_3_center(keyval, centers);
+  if (keyval->booleanvalue(":test:4")) test_4_center(keyval, centers);
+  if (keyval->booleanvalue(":test:4der")) test_4der_center(keyval, centers);
+
+  int_done_offsets2(&centers,&centers,&centers,&centers);
+
+  pkv = keyval = 0;
+
+  return 0;
+}
+
+void
+test_3_center(const RefKeyVal& keyval, centers_t& centers)
+{
+  int ii, i,j,k,l,m,n;
 
   int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2|INT_NOPERM|INT_REDUND;
   double *buffer =
     int_initialize_erep(flags,0,&centers,&centers,&centers,&centers);
-  
-  print_centers(stdout,&centers);
 
   for (i=0; i<centers.nshell; i++) {
       for (j=0; j<centers.nshell; j++) {
@@ -77,7 +95,104 @@ main()
     }
 
   int_done_erep();
-  int_done_offsets2(&centers,&centers,&centers,&centers);
+}
 
-  exit(0);
+void
+test_4_center(const RefKeyVal& keyval, centers_t& centers)
+{
+  int ii,jj,kk,ll, i,j,k,l, ibuf;
+
+  int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2|INT_NOPERM|INT_REDUND;
+  double *buffer =
+    int_initialize_erep(flags,0,&centers,&centers,&centers,&centers);
+
+  for (i=0; i<centers.nshell; i++) {
+      for (j=0; j<centers.nshell; j++) {
+          for (k=0; k<centers.nshell; k++) {
+              for (l=0; l<centers.nshell; l++) {
+                  int sh[4], sizes[4];
+                  sh[0] = i;
+                  sh[1] = j;
+                  sh[2] = k;
+                  sh[3] = l;
+                  int_erep_v(flags,sh,sizes);
+                  ibuf = 0;
+                  for (ii=0; ii<sizes[0]; ii++) {
+                      for (jj=0; jj<sizes[1]; jj++) {
+                          for (kk=0; kk<sizes[2]; kk++) {
+                              for (ll=0; ll<sizes[3]; ll++) {
+                                  if (INT_NONZERO(buffer[ibuf])) {
+                                      printf(" ((%d %d)(%d %d)|(%d %d)(%d %d))"
+                                             " = %15.11f\n",
+                                             sh[0],ii,
+                                             sh[1],jj,
+                                             sh[2],kk,
+                                             sh[3],ll,
+                                             buffer[ibuf]);
+                                    }
+                                  ibuf++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+  int_done_erep();
+}
+
+void
+test_4der_center(const RefKeyVal& keyval, centers_t& centers)
+{
+  int ii,jj,kk,ll, i,j,k,l, ibuf, ider, xyz;
+  der_centers_t dercenters;
+
+  int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2|INT_NOPERM|INT_REDUND;
+  double *buffer =
+    int_initialize_erep(flags,1,&centers,&centers,&centers,&centers);
+
+  for (i=0; i<centers.nshell; i++) {
+      for (j=0; j<centers.nshell; j++) {
+          for (k=0; k<centers.nshell; k++) {
+              for (l=0; l<centers.nshell; l++) {
+                  int sh[4], sizes[4];
+                  sh[0] = i;
+                  sh[1] = j;
+                  sh[2] = k;
+                  sh[3] = l;
+                  int_erep_all1der_v(flags,sh,sizes,&dercenters);
+                  ibuf = 0;
+                  for (ider=0; ider<dercenters.n; ider++) {
+                      for (ii=0; ii<sizes[0]; ii++) {
+                          for (jj=0; jj<sizes[1]; jj++) {
+                              for (kk=0; kk<sizes[2]; kk++) {
+                                  for (ll=0; ll<sizes[3]; ll++) {
+                                      for (xyz=0; xyz<3; xyz++) {
+                                          if (INT_NONZERO(buffer[ibuf])) {
+                                              printf(" ((%d %d)(%d %d)"
+                                                     "|(%d %d)(%d %d))(%d %d)"
+                                                     " = %15.11f\n",
+                                                     sh[0],ii,
+                                                     sh[1],jj,
+                                                     sh[2],kk,
+                                                     sh[3],ll,
+                                                     dercenters.num[ider], xyz,
+                                                     buffer[ibuf]
+                                                  );
+                                            }
+                                          ibuf++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+  int_done_erep();
 }

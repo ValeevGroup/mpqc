@@ -2,10 +2,17 @@
 
 centers: (
    { atoms    geometry } = {
-      H   [ 0.0 0.0 -500.0 ]
-      H   [ 0.0 0.0  500.0 ]
+      Ne  [ 0.0 0.0 -1.0 ]
+      Ne  [ 0.0 0.0  1.0 ]
    }
    basis = sto3g
+ )
+
+test: (
+   print = yes
+   3 = no
+   4 = no
+   4der = yes
  )
 
 % a few basis sets for convenience

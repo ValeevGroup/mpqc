@@ -757,10 +757,10 @@ IntCoorGen::IntCoorGen(const RefKeyVal& keyval)
   if (keyval->error() != KeyVal::OK)
       linear_tors_thres_ = 5.0;
 
-  linear_bends_ = keyval->booleanvalue("linear_bends");
+  linear_bends_ = keyval->booleanvalue("linear_bend");
   if (keyval->error() != KeyVal::OK) linear_bends_ = 0;
 
-  linear_lbends_ = keyval->booleanvalue("linear_lbends");
+  linear_lbends_ = keyval->booleanvalue("linear_lbend");
   if (keyval->error() != KeyVal::OK) linear_lbends_ = 1;
 
   linear_tors_ = keyval->booleanvalue("linear_tors");

@@ -14,7 +14,7 @@ $dir = "";
   "STO-2G" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
   "STO-3G" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36],
   "STO-3G*" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],
-  "STO-6G" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36],
+  "STO-6G" => [1,2,3,4,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36],
   "MINI (Huzinaga)" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
   "MINI (Scaled)" => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
   "MIDI (Huzinaga)" => [1,2,3,4,5,6,7,8,9,10,11],
@@ -115,10 +115,14 @@ sub process_file {
     init_var($test_vars, $parse, "calc", "energy");
     init_var($test_vars, $parse, "fzc", 0);
     init_var($test_vars, $parse, "fzv", 0);
+    init_var($test_vars, $parse, "docc", "auto");
+    init_var($test_vars, $parse, "socc", "auto");
     init_var($test_vars, $parse, "molecule", "molecule");
     my @molecule_symmetry = $parse->value_as_array("test_molecule_symmetry");
     my @molecule_fzc = $parse->value_as_array("test_molecule_fzc");
     my @molecule_fzv = $parse->value_as_array("test_molecule_fzv");
+    my @molecule_docc = $parse->value_as_array("test_molecule_docc");
+    my @molecule_socc = $parse->value_as_array("test_molecule_socc");
     my @molecule_followed = $parse->value_as_array("test_molecule_followed");
     my @molecule_fixed = $parse->value_as_array("test_molecule_fixed");
 
@@ -137,6 +141,8 @@ sub process_file {
         my $basis = $test_vars->{"basis"}->[$index->{"basis"}];
         my $fzc = $test_vars->{"fzc"}->[$index->{"fzc"}];
         my $fzv = $test_vars->{"fzv"}->[$index->{"fzv"}];
+        my $docc = $test_vars->{"docc"}->[$index->{"docc"}];
+        my $socc = $test_vars->{"socc"}->[$index->{"socc"}];
         my $method = $test_vars->{"method"}->[$index->{"method"}];
         my $calc = $test_vars->{"calc"}->[$index->{"calc"}];
         my $symmetry = $test_vars->{"symmetry"}->[$index->{"symmetry"}];
@@ -160,6 +166,13 @@ sub process_file {
             }
             if ($#molecule_fzv >= $molindex) {
                 $fzv = $molecule_fzv[$molindex];
+            }
+            # check for occupations
+            if ($#molecule_docc >= $molindex) {
+                $docc = $molecule_docc[$molindex];
+            }
+            if ($#molecule_socc >= $molindex) {
+                $socc = $molecule_socc[$molindex];
             }
             # check for fixed coordinates
             $fixed = $molecule_fixed[$molindex];
@@ -214,6 +227,8 @@ sub process_file {
         $parse->set_value("symmetry", $symmetry);
         $parse->set_value("fzc", $fzc);
         $parse->set_value("fzv", $fzv);
+        $parse->set_value("docc", $docc);
+        $parse->set_value("socc", $socc);
         $parse->set_value("molecule", $parse->value($molecule));
         $parse->set_value("fixed", $parse->value($fixed));
         $parse->set_value("followed", $parse->value($followed));

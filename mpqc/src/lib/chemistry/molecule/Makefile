@@ -33,7 +33,7 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 DEFINES += -DSRCDIR=\"$(SRCDIR)\" -DSRCLIBDIR=\"$(SRCLIBDIR)\"
 
-CXXSRC = molecule.cc \
+CXXSRC = molecule.cc molsymm.cc \
          simple.cc stre.cc bend.cc out.cc tors.cc stors.cc linip.cc linop.cc \
          energy.cc coor.cc imcoor.cc symmcoor.cc redund.cc cartcoor.cc \
          molshape.cc taylor.cc \

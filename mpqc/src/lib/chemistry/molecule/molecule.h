@@ -76,14 +76,14 @@ class Molecule: public SavableState
     void clear();
   public:
     Molecule();
-    Molecule(Molecule&);
+    Molecule(const Molecule&);
     Molecule(StateIn&);
     //. The \clsnmref{KeyVal} constructor.
     Molecule(const RefKeyVal&input);
 
     virtual ~Molecule();
 
-    Molecule& operator=(Molecule&);
+    Molecule& operator=(const Molecule&);
 
     //. Add an \clsnmref{AtomicCenter} to the \clsnm{Molecule}.
     void add_atom(int Z,double x,double y,double z,
@@ -106,7 +106,7 @@ class Molecule: public SavableState
 
     //. Takes an (x, y, z) postion and finds an atom within the
     //given tolerance distance.  If no atom is found -1 is returned.
-    int atom_at_position(double *, double tol = 0.05);
+    int atom_at_position(double *, double tol = 0.05) const;
 
     //. Returns the index of the atom with the given \vrbl{label}.
     // If the label cannot be found \srccd{-1} is returned.
@@ -124,13 +124,38 @@ class Molecule: public SavableState
     double nuclear_charge() const;
 
     //. Sets the \clsnmref{PointGroup} of the molecule.
-    void set_point_group(const RefPointGroup&);
+    void set_point_group(const RefPointGroup&, double tol=1.0e-7);
     //. Returns the \clsnmref{PointGroup} of the molecule.
-    const RefPointGroup point_group() const;
+    RefPointGroup point_group() const;
+
+    //. Find this molecules true point group (limited to abelian groups).
+    //If the point group of this molecule is set to the highest point
+    //group, then the origin must first be set to the center of mass.
+    RefPointGroup highest_point_group(double tol = 1.0e-8) const;
+
+    //. Return 1 if this given axis is a symmetry element for the molecule.
+    //The direction vector must be a unit vector.
+    int is_axis(SCVector3 &origin,
+                SCVector3 &udirection, int order, double tol=1.0e-8) const;
+
+    //. Return 1 if the given plane is a symmetry element for the molecule.
+    //The perpendicular vector must be a unit vector.
+    int is_plane(SCVector3 &origin, SCVector3 &uperp, double tol=1.0e-8) const;
+
+    //. Return 1 if the molecule has an inversion center.
+    int has_inversion(SCVector3 &origin, double tol = 1.0e-8) const;
+
+    //. Returns 1 if the molecule is linear, 0 otherwise.
+    int is_linear(double tolerance = 1.0e-5) const;
+    //. Returns 1 if the molecule is planar, 0 otherwise.
+    int is_planar(double tolerance = 1.0e-5) const;
+    //. Sets linear to 1 if the molecular is linear, 0 otherwise.
+    //Sets planar to 1 if the molecular is planar, 0 otherwise.
+    void is_linear_planar(int&linear,int&planar,double tol = 1.0e-5) const;
 
     //. Returns a \clsnm{SCVector3} containing the cartesian coordinates of
     // the center of mass for the molecule
-    SCVector3 center_of_mass();
+    SCVector3 center_of_mass() const;
 
     //. Returns the nuclear repulsion energy for the molecule
     double nuclear_repulsion_energy();
@@ -143,17 +168,25 @@ class Molecule: public SavableState
     void nuclear_efield(const double *position, double* efield);
     
     //. If the molecule contains only symmetry unique atoms, this function
-    // will generate the other, redundant atoms.
-    void symmetrize();
+    //will generate the other, redundant atoms.  The redundant atom
+    //will only be generated if there is no other atoms within a distance
+    //of tol.  If the is another atom and it is not identical, then
+    //abort will be called.
+    void symmetrize(double tol = 0.5);
 
+    //. This will try to carefully correct symmetry errors
+    //in molecules.  If any atom is out of place by more then
+    //tol, abort will be called.
+    void cleanup_molecule(double tol = 0.1);
+
+    void translate(const double *r);
     void move_to_com();
     void transform_to_principal_axes(int trans_frame=1);
-    void cleanup_molecule();
     void print_pdb(ostream& =cout, char *title =0);
 
     //. Compute the principal moments of inertia and, possibly, the
     // principal axes.
-    void principal_moments_of_inertia(double *evals, double **evecs=0);
+    void principal_moments_of_inertia(double *evals, double **evecs=0) const;
 
     int num_unique_atoms();
     int *find_unique_atoms();  // returns new'd array

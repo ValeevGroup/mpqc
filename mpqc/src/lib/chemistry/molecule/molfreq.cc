@@ -503,6 +503,8 @@ MolecularFrequencies::displace(int disp)
         }
     }
 
+  RefPointGroup newpg = mol_->highest_point_group();
+
   if (irrep == 0) {
       mol_->set_point_group(original_point_group_);
     }

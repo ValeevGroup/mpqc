@@ -38,22 +38,21 @@ main(int argc, char *argv[])
   char *infile = (argv[1]) ? argv[1] : "mpqc.in";
   RefKeyVal kv(new ParsedKeyVal(infile));
 
-  RefMolecule mol = kv->describedclassvalue("molecule");
+  char *keyword = argc>2?argv[2]:"molecule";
+  RefMolecule mol = kv->describedclassvalue(keyword);
 
-  mol->print();
+  RefPointGroup highestpg = mol->highest_point_group(1.0e-4);
+  cout << "Point Group is " << highestpg->symbol() << endl;
 
-  mol->move_to_com();
-  cout << "Molecule at com:\n";
+  mol->set_point_group(highestpg, 1.0e-3);
+
+  cout << "Molecule at com in highest point group:\n";
   mol->print();
   
-  mol->transform_to_principal_axes(0);
-  cout << "Molecule wrt principal axes:\n";
-  mol->print();
-  mol->point_group()->symm_frame().print();
-
-  mol->symmetrize();
-  cout << "symmetrized molecule\n";
-  mol->print();
+  //mol->transform_to_principal_axes(0);
+  //cout << "Molecule wrt principal axes:\n";
+  //mol->print();
+  //mol->point_group()->symm_frame().print();
 
   mol->cleanup_molecule();
   cout << "cleaned molecule\n";
@@ -66,16 +65,18 @@ main(int argc, char *argv[])
   for (i=0; i < nunique; i++) cout << scprintf(" %d",unique_atoms[i]+1);
   cout << endl;
 
-  RefMolecule unique = new Molecule;
-  for (i=0; i < nunique; i++)
-    unique->add_atom(mol->Z(unique_atoms[i]),
-                     mol->r(unique_atoms[i])[0],
-                     mol->r(unique_atoms[i])[1],
-                     mol->r(unique_atoms[i])[2]
-                     );
-
-  cout << "unique atoms\n";
-  unique->print();
+  // this doesn't handle isotopic substitutions right and
+  // gets the point group wrong:
+  //RefMolecule unique = new Molecule;
+  //for (i=0; i < nunique; i++)
+  //  unique->add_atom(mol->Z(unique_atoms[i]),
+  //                   mol->r(unique_atoms[i])[0],
+  //                   mol->r(unique_atoms[i])[1],
+  //                   mol->r(unique_atoms[i])[2]
+  //                   );
+  //
+  //cout << "unique atoms\n";
+  //unique->print();
   
   exit(0);
 }

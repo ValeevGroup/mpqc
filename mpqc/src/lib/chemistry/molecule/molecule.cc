@@ -65,7 +65,7 @@ Molecule::Molecule():
   geometry_units_ = new Units("bohr");
 }
 
-Molecule::Molecule(Molecule& mol):
+Molecule::Molecule(const Molecule& mol):
  r_(0), natoms_(0), Z_(0), mass_(0), labels_(0), charges_(0)
 {
   *this=mol;
@@ -102,7 +102,6 @@ Molecule::clear()
 Molecule::Molecule(const RefKeyVal&input):
  r_(0), natoms_(0), Z_(0), mass_(0), labels_(0), charges_(0)
 {
-  pg_ = new PointGroup(input);
   atominfo_ = input->describedclassvalue("atominfo");
   if (atominfo_.null()) atominfo_ = new AtomInfo;
   if (input->exists("pdb_file")) {
@@ -194,22 +193,39 @@ Molecule::Molecule(const RefKeyVal&input):
                    input->doublevalue("geometry",i,1)*conv,
                    input->doublevalue("geometry",i,2)*conv,
                    label = input->pcharvalue("atom_labels",i),
-                   0.0,
+                   input->doublevalue("mass",i),
                    have_charge, charge
               );
           delete[] name;
           delete[] label;
         }
     }
-    
-  // we'll assume that only unique atoms are given in the input unless
-  // told otherwise
-  if (!input->booleanvalue("redundant_atoms"))
-    symmetrize();
+
+  char *symmetry = input->pcharvalue("symmetry");
+  double symtol = input->doublevalue("symmetry_tolerance",
+                                     KeyValValuedouble(1.0e-4));
+  if (symmetry && !strcmp(symmetry,"auto")) {
+      set_point_group(highest_point_group(symtol), symtol*10.0);
+    }
+  else {
+      pg_ = new PointGroup(input);
+
+      // translate to the origin of the symmetry frame
+      double r[3];
+      for (int i=0; i<3; i++) {
+          r[i] = -pg_->origin()[i];
+          pg_->origin()[i] = 0;
+        }
+      translate(r);
+
+      if (input->booleanvalue("redundant_atoms")) cleanup_molecule(symtol);
+      else symmetrize();
+    }
+  delete[] symmetry;
 }
 
 Molecule&
-Molecule::operator=(Molecule& mol)
+Molecule::operator=(const Molecule& mol)
 {
   clear();
 
@@ -539,20 +555,31 @@ Molecule::Molecule(StateIn& si):
 }
 
 void
-Molecule::set_point_group(const RefPointGroup&ppg)
+Molecule::set_point_group(const RefPointGroup&ppg, double tol)
 {
+  cout << node0 << indent
+       << "Molecule: setting point group to " << ppg->symbol()
+       << endl;
   pg_ = new PointGroup(*ppg.pointer());
-  symmetrize();
+
+  double r[3];
+  for (int i=0; i<3; i++) {
+      r[i] = -pg_->origin()[i];
+      pg_->origin()[i] = 0;
+    }
+  translate(r);
+
+  cleanup_molecule(tol);
 }
 
-const RefPointGroup
+RefPointGroup
 Molecule::point_group() const
 {
   return pg_;
 }
 
 SCVector3
-Molecule::center_of_mass()
+Molecule::center_of_mass() const
 {
   SCVector3 ret;
   double M;
@@ -648,7 +675,7 @@ Molecule::nuclear_efield(const double *position, double *efield)
 }
 
 int
-Molecule::atom_at_position(double *v, double tol)
+Molecule::atom_at_position(double *v, double tol) const
 {
   SCVector3 p(v);
   for (int i=0; i < natom(); i++) {
@@ -688,7 +715,7 @@ is_unique(SCVector3& p, Molecule *mol)
 // then add the new atom if it isn't in the list already
 
 void
-Molecule::symmetrize()
+Molecule::symmetrize(double tol)
 {
   // if molecule is c1, don't do anything
   if (!strcmp(this->point_group()->symbol(),"c1")) {
@@ -712,8 +739,16 @@ Molecule::symmetrize()
         for (int jj=0; jj < 3; jj++) np[ii] += so(ii,jj) * ac[jj];
       }
 
-      if (is_unique(np,newmol)) {
+      int atom = newmol->atom_at_position(np.data(), tol);
+      if (atom < 0) {
         newmol->add_atom(Z_[i],np[0],np[1],np[2],label(i));
+      }
+      else {
+        if (Z(i) != newmol->Z(atom)
+            || fabs(mass(i)-newmol->mass(atom))>1.0e-10) {
+            cerr << node0 << "Molecule: symmetrize: atom mismatch" << endl;
+            abort();
+        }
       }
     }
   }
@@ -724,17 +759,22 @@ Molecule::symmetrize()
   delete newmol;
 }
 
+void
+Molecule::translate(const double *r)
+{
+  for (int i=0; i < natom(); i++) {
+    r_[i][0] += r[0];
+    r_[i][1] += r[1];
+    r_[i][2] += r[2];
+  }
+}
+
 // move the molecule to the center of mass
 void
 Molecule::move_to_com()
 {
-  SCVector3 com = center_of_mass();
-
-  for (int i=0; i < natom(); i++) {
-    r_[i][0] -= com[0];
-    r_[i][1] -= com[1];
-    r_[i][2] -= com[2];
-  }
+  SCVector3 com = -center_of_mass();
+  translate(com.data());
 }
 
 // find the 3 principal coordinate axes, and rotate the molecule to be 
@@ -742,8 +782,6 @@ Molecule::move_to_com()
 void
 Molecule::transform_to_principal_axes(int trans_frame)
 {
-  const double au_to_angs = 0.2800283608302436;
-
   // mol_move_to_com(mol);
 
   double *inert[3], inert_dat[9], *evecs[3], evecs_dat[9];
@@ -759,7 +797,7 @@ Molecule::transform_to_principal_axes(int trans_frame)
 
   for (i=0; i < natom(); i++) {
     SCVector3 ac(r(i));
-    double m=au_to_angs*mass(i);
+    double m=mass(i);
     inert[0][0] += m * (ac[1]*ac[1] + ac[2]*ac[2]);
     inert[1][0] -= m * ac[0]*ac[1];
     inert[1][1] += m * (ac[0]*ac[0] + ac[2]*ac[2]);
@@ -912,7 +950,7 @@ int
 Molecule::num_unique_atoms()
 {
  // if this is a c1 molecule, then return natom
-  if (!strcmp(point_group()->symbol(),"c1"))
+  if (!strcmp(point_group()->symbol(),"c1") || natom() == 0)
     return natom();
 
  // so that we don't have side effects, copy this to mol
@@ -957,7 +995,7 @@ Molecule::num_unique_atoms()
 // that really map into each other
 
 void
-Molecule::cleanup_molecule()
+Molecule::cleanup_molecule(double tol)
 {
   // if symmetry is c1, do nothing else
   if (!strcmp(point_group()->symbol(),"c1")) return;
@@ -1016,19 +1054,23 @@ Molecule::cleanup_molecule()
             }
 
           // loop through equivalent atoms
+          int found = 0;
           for (int j=0; j < natom(); j++) {
-              int k;
-              for (k=0; k < nuniq; k++) {
-                  if (uniq[k] == j) break;
-                }
-              // skip j if it is unique
-              if (k < nuniq) continue;
               // see if j is generated from i
-              if (np.dist(SCVector3(r(j))) < 0.1) {
+              if (np.dist(SCVector3(r(j))) < tol) {
                   r_[j][0] = np[0];
                   r_[j][1] = np[1];
                   r_[j][2] = np[2];
+                  found = 1;
                 }
+            }
+          if (!found) {
+              cerr << node0
+                   << "Molecule: cleanup: couldn't find atom at " << np << endl
+                   << "  transforming uniq atom " << i << " at " << up << endl
+                   << "  with symmetry op " << g << ":" << endl;
+              so.print(cerr << node0);
+              abort();
             }
         }
     }
@@ -1041,7 +1083,7 @@ Molecule::cleanup_molecule()
 ///////////////////////////////////////////////////////////////////
 
 void
-Molecule::principal_moments_of_inertia(double *evals, double **evecs)
+Molecule::principal_moments_of_inertia(double *evals, double **evecs) const
 {
 
   // The principal moments of inertia are computed in amu*angstrom^2
@@ -1068,14 +1110,14 @@ Molecule::principal_moments_of_inertia(double *evals, double **evecs)
     }
   memset(evals,'\0',sizeof(double)*3);
 
-  // translate molecule so origin becomes the center of mass
-  center_of_mass();
-  move_to_com();
+  SCVector3 com = center_of_mass();
 
   // compute inertia tensor
   SCVector3 ac;
   for (i=0; i<natom(); i++) {
     ac = r(i);
+    // compute moments of inertia wrt center of mass
+    for (j=0; j<3; j++) ac(j) -= com(j);
     double m=au_to_angs*mass(i);
     inert[0][0] += m * (ac[1]*ac[1] + ac[2]*ac[2]);
     inert[1][0] -= m * ac[0]*ac[1];

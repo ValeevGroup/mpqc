@@ -1,4 +1,4 @@
-%BASIS "6-311G**" CARTESIAN
+%BASIS "6-311++G(3df,3pd)" CARTESIAN
 basis:(
 %Elements                             References
 %--------                             ----------
@@ -9,12 +9,15 @@ basis:(
 %          R. C. Binning, Jr. L. Radom, J. Chem. Phys. 103, 6104 (1995).
 %Elements                             References
 %--------                             ----------
-%H - Ar:  R. Krishnan, J.S. Binkley, R. Seeger, J.A. Pople, J. Chem. Phys. 72,
-%         650 (1980)
+%H-Ne: M.J. Frisch, J.A. Pople and J.S. Binkley, J. Chem. Phys. 80, 3265 (1984)
+%Elements                             Reference
+%--------                             ----------
+%H, Li-Cl: T. Clark, J. Chandrasekhar, P.V.R. Schleyer, J. Comp. Chem. 4, 294
+%          (1983).
 %
 %
 % BASIS SET: (5s) -> [3s]
- hydrogen: "6-311G**": [
+ hydrogen: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
            33.86500000       0.02549380
@@ -29,15 +32,32 @@ basis:(
    {exp coef:0} = {
             0.10274100       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1p)
+% AUGMENTING FUNCTIONS: (3p,1d)
+  (type: [am = p]
+   {exp coef:0} = {
+           3.00000000      1.00000000
+   })
   (type: [am = p]
    {exp coef:0} = {
            0.75000000      1.00000000
    })
+  (type: [am = p]
+   {exp coef:0} = {
+           0.18750000      1.00000000
+   })
+  (type: [am = d]
+   {exp coef:0} = {
+           1.00000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse s)
+  (type: [am = s]
+   {exp coef:0} = {
+           0.03600000      1.00000000
+   })
  ]
 %
 % BASIS SET: (5s) -> [3s]
- helium: "6-311G**": [
+ helium: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
            98.12430000       0.02874520
@@ -52,15 +72,27 @@ basis:(
    {exp coef:0} = {
             0.24456400       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1p)
+% AUGMENTING FUNCTIONS: (3p,1d)
+  (type: [am = p]
+   {exp coef:0} = {
+           3.00000000      1.00000000
+   })
   (type: [am = p]
    {exp coef:0} = {
            0.75000000      1.00000000
    })
+  (type: [am = p]
+   {exp coef:0} = {
+           0.18750000      1.00000000
+   })
+  (type: [am = d]
+   {exp coef:0} = {
+           2.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (11s,5p) -> [4s,3p]
- lithium: "6-311G**": [
+ lithium: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
           900.46000000       0.00228704
@@ -84,15 +116,32 @@ basis:(
    {exp coef:1 coef:0} = {
             0.02436830       1.00000000       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           0.80000000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            0.20000000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.05000000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           0.15000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.00740000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (11s,5p) -> [4s,3p]
- beryllium: "6-311G**": [
+ beryllium: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
          1682.80000000       0.00228574
@@ -116,15 +165,32 @@ basis:(
    {exp coef:1 coef:0} = {
             0.05672850       1.00000000       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           1.02000000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            0.25500000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.06375000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           0.26000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.02070000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (11s,5p) -> [4s,3p]
- boron: "6-311G**": [
+ boron: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
          2858.89000000       0.00215375
@@ -148,15 +214,32 @@ basis:(
    {exp coef:1 coef:0} = {
             0.09885630       1.00000000       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           1.60400000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            0.40100000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.10025000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           0.50000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.03150000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (11s,5p) -> [4s,3p]
- carbon: "6-311G**": [
+ carbon: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
          4563.24000000       0.00196665
@@ -180,15 +263,32 @@ basis:(
    {exp coef:1 coef:0} = {
             0.14558500       1.00000000       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           2.50400000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            0.62600000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.15650000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           0.80000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.04380000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (11s,5p) -> [4s,3p]
- nitrogen: "6-311G**": [
+ nitrogen: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
          6293.48000000       0.00196979
@@ -212,15 +312,32 @@ basis:(
    {exp coef:1 coef:0} = {
             0.20087800       1.00000000       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           3.65200000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            0.91300000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.22825000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           1.00000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.06390000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (11s,5p) -> [4s,3p]
- oxygen: "6-311G**": [
+ oxygen: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
          8588.50000000       0.00189515
@@ -244,15 +361,32 @@ basis:(
    {exp coef:1 coef:0} = {
             0.25561100       1.00000000       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           5.16000000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            1.29200000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.32250000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           1.40000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.08450000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (11s,5p) -> [4s,3p]
- fluorine: "6-311G**": [
+ fluorine: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
         11427.10000000       0.00180093
@@ -276,15 +410,32 @@ basis:(
    {exp coef:1 coef:0} = {
             0.32189200       1.00000000       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           7.00000000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            1.75000000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.43750000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           1.85000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.10760000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (11s,5p) -> [4s,3p]
- neon: "6-311G**": [
+ neon: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
         13995.70000000       0.00183276
@@ -308,15 +459,32 @@ basis:(
    {exp coef:1 coef:0} = {
             0.39705700       1.00000000       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           9.21600000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            2.30400000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.57600000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           2.50000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.13000000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (12s,9p) -> [6s,5p]
- sodium: "6-311G**": [
+ sodium: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
         36166.40000000       0.00103200
@@ -372,15 +540,32 @@ basis:(
    {exp coef:0} = {
             0.01628500       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           0.70000000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            0.17500000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.04375000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           0.15000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.00760000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (12s,9p) -> [6s,5p]
- magnesium: "6-311G**": [
+ magnesium: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
         43866.50000000       0.00091800
@@ -436,15 +621,32 @@ basis:(
    {exp coef:0} = {
             0.03480900       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           0.70000000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            0.17500000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.04375000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           0.20000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.01460000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (12s,9p) -> [6s,5p]
- aluminum: "6-311G**": [
+ aluminum: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
         54866.48900000       0.00083900
@@ -500,15 +702,32 @@ basis:(
    {exp coef:0} = {
             0.04139700       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           1.30000000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            0.32500000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.08125000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           0.25000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.03180000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (12s,9p) -> [6s,5p]
- silicon: "6-311G**": [
+ silicon: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
         69379.23000000       0.00075700
@@ -564,15 +783,32 @@ basis:(
    {exp coef:0} = {
             0.06543200       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           1.80000000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            0.45000000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.11250000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           0.32000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.03310000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (12s,9p) -> [6s,5p]
- phosphorus: "6-311G**": [
+ phosphorus: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
         77492.40000000       0.00078100
@@ -628,15 +864,32 @@ basis:(
    {exp coef:0} = {
             0.06849300       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           2.20000000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            0.55000000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.13750000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           0.45000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.03480000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (12s,9p) -> [6s,5p]
- sulfur: "6-311G**": [
+ sulfur: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
         93413.40000000       0.00074300
@@ -692,15 +945,32 @@ basis:(
    {exp coef:0} = {
             0.07714100       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           2.60000000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            0.65000000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.16250000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           0.55000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.04050000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (12s,9p) -> [6s,5p]
- chlorine: "6-311G**": [
+ chlorine: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
        105819.00000000       0.00073800
@@ -757,15 +1027,32 @@ basis:(
    {exp coef:0} = {
             0.10943700       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           3.00000000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            0.75000000      1.00000000
    })
+  (type: [am = d]
+   {exp coef:0} = {
+           0.18750000      1.00000000
+   })
+  (type: [am = f]
+   {exp coef:0} = {
+           0.70000000      1.00000000
+   })
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.04830000      1.00000000      1.00000000
+   })
  ]
 %
 % BASIS SET: (12s,9p) -> [6s,5p]
- argon: "6-311G**": [
+ argon: "6-311++G(3df,3pd)": [
   (type: [am = s]
    {exp coef:0} = {
        118022.38000000       0.00074700
@@ -822,568 +1109,27 @@ basis:(
    {exp coef:0} = {
             0.14544900       1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
+% AUGMENTING FUNCTIONS: (3d,1f)
+  (type: [am = d]
+   {exp coef:0} = {
+           3.40000000      1.00000000
+   })
   (type: [am = d]
    {exp coef:0} = {
            0.85000000      1.00000000
    })
- ]
-%
-% BASIS SET: (14s,12p,5d) -> [8s,7p,2d]
- gallium: "6-311G**": [
-  (type: [am = s]
-   {exp coef:0} = {
-       333800.00000000       0.00083805
-        50100.00000000       0.00624660
-        11510.00000000       0.03202800
-         3292.00000000       0.12709000
-         1089.00000000       0.39092000
-          401.00000000       0.54643000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-          401.00000000       0.18078000
-          159.30000000       0.62239000
-           67.59000000       0.24953000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-           24.89000000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-           10.68000000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            3.38600000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            1.33100000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            0.18530000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            0.06621000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-         2181.00000000       0.02256500
-          515.40000000       0.18363000
-          164.80000000       0.85984000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-           61.40000000       0.34345000
-           24.98000000       0.50561000
-           10.44000000       0.26224000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-           10.44000000       0.06413000
-            5.58900000       0.37884000
-            2.51700000       0.61669000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            1.05300000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.29150000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.12100000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.03990000       1.00000000
-   })
   (type: [am = d]
    {exp coef:0} = {
-           67.14000000       0.03095700
-           18.94000000       0.17480000
-            6.42600000       0.44346000
-            2.19000000       0.56702000
+           0.21250000      1.00000000
    })
-  (type: [am = d]
+  (type: [am = f]
    {exp coef:0} = {
-            0.67250000       1.00000000
+           0.85000000      1.00000000
    })
-% AUGMENTING FUNCTIONS: (1d)
-  (type: [am = d]
-   {exp coef:0} = {
-           0.16900000      1.00000000
-   })
- ]
-%
-% BASIS SET: (14s,12p,5d) -> [8s,7p,2d]
- germanium: "6-311G**": [
-  (type: [am = s]
-   {exp coef:0} = {
-       357500.00000000       0.00083898
-        53670.00000000       0.00626350
-        12300.00000000       0.03203600
-         3512.00000000       0.12751000
-         1161.00000000       0.39165000
-          428.00000000       0.54528000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-          428.00000000       0.18160000
-          170.00000000       0.62248000
-           72.06000000       0.24872000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-           26.69000000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-           11.50000000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            3.74200000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            1.49900000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            0.22920000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            0.08675000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-         2345.00000000       0.02251400
-          554.20000000       0.18335000
-          177.30000000       0.86003000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-           66.13000000       0.34306000
-           26.90000000       0.50652000
-           11.26000000       0.26141000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-           11.26000000       0.06724600
-            6.11600000       0.37238000
-            2.81900000       0.61763000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            1.21100000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.35680000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.16210000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.06084000       1.00000000
-   })
-  (type: [am = d]
-   {exp coef:0} = {
-           74.84000000       0.03039000
-           21.23000000       0.17319000
-            7.29700000       0.44090000
-            2.54900000       0.56532000
-   })
-  (type: [am = d]
-   {exp coef:0} = {
-            0.81650000       1.00000000
-   })
-% AUGMENTING FUNCTIONS: (1d)
-  (type: [am = d]
-   {exp coef:0} = {
-           0.22800000      1.00000000
-   })
- ]
-%
-% BASIS SET: (14s,12p,5d) -> [8s,7p,2d]
- arsenic: "6-311G**": [
-  (type: [am = s]
-   {exp coef:0} = {
-       381200.00000000       0.00083327
-        57240.00000000       0.00621980
-        13110.00000000       0.03203000
-         3743.00000000       0.12729000
-         1238.00000000       0.39132000
-          456.30000000       0.54581000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-          456.30000000       0.18097000
-          181.40000000       0.62180000
-           77.07000000       0.24988000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-           28.57000000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-           12.36000000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            4.11700000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            1.67800000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            0.27610000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            0.11050000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-         2528.00000000       0.02227100
-          597.30000000       0.18199000
-          190.70000000       0.86133000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-           70.96000000       0.34338000
-           28.89000000       0.50598000
-           12.13000000       0.26128000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-           12.13000000       0.06853600
-            6.53300000       0.38282000
-            3.02800000       0.60599000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            1.34400000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.58230000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.25580000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.08651000       1.00000000
-   })
-  (type: [am = d]
-   {exp coef:0} = {
-           86.05000000       0.02798900
-           24.49000000       0.16502000
-            8.44200000       0.43736000
-            2.98100000       0.57255000
-   })
-  (type: [am = d]
-   {exp coef:0} = {
-            0.97900000       1.00000000
-   })
-% AUGMENTING FUNCTIONS: (1d)
-  (type: [am = d]
-   {exp coef:0} = {
-           0.26400000      1.00000000
-   })
- ]
-%
-% BASIS SET: (14s,12p,5d) -> [8s,7p,2d]
- selenium: "6-311G**": [
-  (type: [am = s]
-   {exp coef:0} = {
-       405400.00000000       0.00083100
-        60850.00000000       0.00623310
-        13910.00000000       0.03207100
-         3989.00000000       0.12636000
-         1324.00000000       0.38899000
-          487.00000000       0.54888000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-          487.00000000       0.17963000
-          193.20000000       0.62227000
-           82.19000000       0.25067000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-           30.52000000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-           13.25000000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            4.51000000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            1.86700000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            0.31900000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            0.11200000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-         2706.00000000       0.02214600
-          638.60000000       0.18180000
-          203.80000000       0.86155000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-           75.96000000       0.34243000
-           31.02000000       0.50541000
-           13.05000000       0.26237000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-           13.05000000       0.07016300
-            6.98600000       0.38419000
-            3.23400000       0.60368000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            1.47500000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.72750000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.28690000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.09679000       1.00000000
-   })
-  (type: [am = d]
-   {exp coef:0} = {
-           99.01000000       0.02559600
-           28.41000000       0.15459000
-            9.86300000       0.42878000
-            3.51400000       0.58620000
-   })
-  (type: [am = d]
-   {exp coef:0} = {
-            1.17100000       1.00000000
-   })
-% AUGMENTING FUNCTIONS: (1d)
-  (type: [am = d]
-   {exp coef:0} = {
-           0.30500000      1.00000000
-   })
- ]
-%
-% BASIS SET: (14s,12p,5d) -> [8s,7p,2d]
- bromine: "6-311G**": [
-  (type: [am = s]
-   {exp coef:0} = {
-       439700.00000000       0.00081300
-        66030.00000000       0.00628500
-        15140.00000000       0.03192000
-         4317.00000000       0.12880000
-         1414.00000000       0.39460000
-          523.90000000       0.54130000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-          523.90000000       0.18310000
-          207.70000000       0.61760000
-           86.54000000       0.25380000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-           30.52000000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-           12.98000000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            4.41200000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            1.86200000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            0.39320000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            0.14000000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-         2957.00000000       0.02226000
-          700.30000000       0.18020000
-          224.60000000       0.86240000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-           82.59000000       0.34400000
-           33.19000000       0.50710000
-           14.20000000       0.25900000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-           14.20000000       0.07965000
-            7.43800000       0.37340000
-            3.52600000       0.60490000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            1.59500000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.84620000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.31860000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.10960000       1.00000000
-   })
-  (type: [am = d]
-   {exp coef:0} = {
-          134.80000000       0.01831000
-           36.39000000       0.13500000
-           12.16000000       0.42610000
-            4.34100000       0.60430000
-   })
-  (type: [am = d]
-   {exp coef:0} = {
-            1.53500000       1.00000000
-   })
-% AUGMENTING FUNCTIONS: (1d)
-  (type: [am = d]
-   {exp coef:0} = {
-           0.41500000      1.00000000
-   })
- ]
-%
-% BASIS SET: (14s,12p,5d) -> [8s,7p,2d]
- krypton: "6-311G**": [
-  (type: [am = s]
-   {exp coef:0} = {
-       456200.00000000       0.00081110
-        68460.00000000       0.00625520
-        15650.00000000       0.03202200
-         4500.00000000       0.12546000
-         1497.00000000       0.38666000
-          550.50000000       0.55188000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-          550.50000000       0.17711000
-          218.20000000       0.62248000
-           92.97000000       0.25279000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-           34.59000000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-           15.12000000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            5.34600000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            2.27300000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            0.48410000       1.00000000
-   })
-  (type: [am = s]
-   {exp coef:0} = {
-            0.18490000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-         3074.00000000       0.02199800
-          725.70000000       0.18102000
-          231.50000000       0.86223000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-           86.45000000       0.34155000
-           35.55000000       0.50255000
-           15.14000000       0.26453000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-           15.14000000       0.07167000
-            8.03100000       0.39708000
-            3.79900000       0.58762000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            1.84900000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.86760000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.33290000       1.00000000
-   })
-  (type: [am = p]
-   {exp coef:0} = {
-            0.11990000       1.00000000
-   })
-  (type: [am = d]
-   {exp coef:0} = {
-          122.50000000       0.02337700
-           35.37000000       0.14610000
-           12.39000000       0.42230000
-            4.49600000       0.59452000
-   })
-  (type: [am = d]
-   {exp coef:0} = {
-            1.54600000       1.00000000
-   })
-% AUGMENTING FUNCTIONS: (1d)
-  (type: [am = d]
-   {exp coef:0} = {
-           0.39500000      1.00000000
+% AUGMENTING FUNCTIONS: (Diffuse sp)
+  (type: [am = p am = s]
+   {exp coef:1 coef:0} = {
+           0.06000000      1.00000000      1.00000000
    })
  ]
 )

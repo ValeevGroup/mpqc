@@ -9,7 +9,7 @@ DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 CXXSRC = atomcent.cc chemelem.cc molecule.cc \
          simple.cc stre.cc bend.cc out.cc tors.cc linip.cc linop.cc \
          energy.cc coor.cc \
-         molshape.cc chmelm_i.cc imcoor.cc taylor.cc
+         molshape.cc chmelm_i.cc imcoor.cc cartcoor.cc taylor.cc
 
 CLASSES = Molecule \
           AtomicCenter ChemicalElement \

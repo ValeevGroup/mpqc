@@ -227,4 +227,37 @@ class IntMolecularCoor: public MolecularCoor
     void guess_hessian(RefSymmSCMatrix&hessian);
 };
 
+/////////////////////////////////////////////////////////////////////////
+
+class CartMolecularCoor: public MolecularCoor
+{
+#   define CLASSNAME CartMolecularCoor
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+  protected:
+    RefSCDimension dim_; // the number of atoms x 3
+
+    virtual void init();
+  public:
+    CartMolecularCoor(RefMolecule&mol);
+    CartMolecularCoor(const RefKeyVal&);
+    CartMolecularCoor(StateIn&);
+    virtual ~CartMolecularCoor();
+  
+    void save_data_state(StateOut&);
+    virtual RefSCDimension dim();
+    virtual int to_cartesian(RefSCVector&internal);
+    virtual int to_internal(RefSCVector&internal);
+    virtual int to_cartesian(RefSCVector&cartesian,RefSCVector&internal);
+    virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian);
+    virtual int to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal);
+    virtual int to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
+    virtual void print(SCostream& =SCostream::cout);
+    virtual void print_simples(SCostream& =SCostream::cout);
+    void guess_hessian(RefSymmSCMatrix&hessian);
+};
+
 #endif

@@ -30,7 +30,7 @@
 #include <util/misc/formio.h>
 #include <chemistry/molecule/molecule.h>
 
-#define DEBUG
+#undef DEBUG
 
 int
 Molecule::has_inversion(SCVector3 &origin, double tol) const

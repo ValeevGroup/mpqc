@@ -415,7 +415,19 @@ MBPT2::compute_hsos_v1()
 *    begin opt2 loops                                                     *
 ***************************************************************************/
 
+  int work = ((nshell*(nshell+1))/2);
+  int print_interval = work/100;
+  int time_interval = work/10;
+  if (print_interval == 0) print_interval = 1;
+  if (work == 0) work = 1;
+
   for (pass=0; pass<npass; pass++) {
+    if (debug_) {
+      cout << node0 << indent << "Beginning pass " << pass << endl;
+      }
+
+    int print_index = 0;
+
     i_offset= pass*ni + restart_orbital_v1_;
     if ((pass == npass - 1) && (rest != 0)) ni = rest;
     bzerofast(trans_int3,nbasis*a_number*dim_ij);
@@ -429,6 +441,14 @@ MBPT2::compute_hsos_v1()
         tim_enter("bzerofast trans_int1");
         bzerofast(trans_int1,nfuncmax*nfuncmax*nbasis*ni);
         tim_exit("bzerofast trans_int1");
+
+        if (debug_ && (print_index++)%print_interval == 0) {
+          lock->lock();
+          cout << scprintf("%d: (PQ|%d %d) %d%%",
+                           me,R,S,(100*print_index)/work)
+               << endl;
+          lock->unlock();
+          }
 
         tim_enter("PQ loop");
 

@@ -112,14 +112,6 @@ HSOSV1Erep1Qtr::run()
   int shell_index = 0;
   int thindex = 0;
 
-  int work_per_thread = ((nshell*(nshell+1))/2)/(nproc*nthread);
-  int print_interval = work_per_thread/100;
-  int time_interval = work_per_thread/10;
-  int print_index = 0;
-  if (print_interval == 0) print_interval = 1;
-  if (time_interval == 0) time_interval = 1;
-  if (work_per_thread == 0) work_per_thread = 1;
-
   for (P = 0; P < basis->nshell(); P++) {
     int np = basis->shell(P).nfunction();
 
@@ -127,20 +119,6 @@ HSOSV1Erep1Qtr::run()
       shell_index++;
       if (shell_index%nproc != me) continue; 
       if (thindex++%nthread != mythread) continue;
-
-      if (debug && (print_index++)%print_interval == 0) {
-        lock->lock();
-        cout << scprintf("%d:%d: (PQ|%d %d) %d%%",
-                         me,mythread,R,S,(100*print_index)/work_per_thread)
-             << endl;
-        lock->unlock();
-        }
-      if (debug && (print_index)%time_interval == 0) {
-        lock->lock();
-        cout << scprintf("timer for %d:%d:",me,mythread) << endl;
-        timer->print();
-        lock->unlock();
-        }
 
       if (tbint->log2_shell_bound(P,Q,R,S) < tol) {
         continue;                           /* skip ereps less than tol */

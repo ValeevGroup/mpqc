@@ -414,9 +414,11 @@ ActiveMsgMemoryGrp::sum_reduction(double *data, int doffset, int dsize)
           double *tmp = (double*) i.data();
           PRINTF(("%d: summing %d doubles from 0x%x to 0x%x\n",
                   me(), chunkdsize, tmp, chunkdata));
+          long oldlock = lockcomm();
           for (int j=0; j<chunkdsize; j++) {
               *chunkdata++ += *tmp++;
             }
+          unlockcomm(oldlock);
         }
       else {
           sum_data((double*)i.data(), i.node(), i.offset(), i.size());
@@ -480,6 +482,17 @@ ActiveMsgMemoryGrp::wait_for_lock()
 {
   cerr << scprintf("%d: %s: cannot use memory locks\n", me(), class_name());
   abort();
+}
+
+long
+ActiveMsgMemoryGrp::lockcomm()
+{
+    return 0;
+}
+
+void
+ActiveMsgMemoryGrp::unlockcomm(long oldvalue)
+{
 }
 
 #endif

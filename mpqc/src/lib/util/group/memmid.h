@@ -81,8 +81,6 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
                  int node = -1 /*not needed except for debugging*/);
     void flush_queue(MemoryDataRequestQueue &q);
 
-    virtual long lockcomm() = 0;
-    virtual void unlockcomm(long oldvalue) = 0;
     virtual long send(void* data, int nbytes, int node, int type) = 0;
     virtual long recv(void* data, int nbytes, int node, int type) = 0;
     virtual void postrecv(void *data, int nbytes, int type) = 0;

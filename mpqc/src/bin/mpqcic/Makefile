@@ -9,7 +9,7 @@ LD = $(CXX)
 
 TARGET_TO_MAKE = mpqcic
 
-CXXSRC = mpqcic.cc mpqc_int.cc
+CXXSRC = mpqcic.cc mpqc_int.cc mp2.cc
 CSRC =
 INC = mpqc_int.h
 
@@ -75,7 +75,6 @@ endif
 default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
-
 
 mpqcicproc: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)

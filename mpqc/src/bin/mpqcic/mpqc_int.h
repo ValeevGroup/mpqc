@@ -49,7 +49,7 @@ int Scf_charges_from_esp(centers_t*,int,double_vector_t*,
                          double_vector_t*, expts_t*, double, int, FILE*,
                          const RefKeyVal&);
 
-int mp2_hah(centers_t*, scf_struct_t*, dmt_matrix, dmt_matrix, FILE*,
+int do_mp2(centers_t&, scf_struct_t&, dmt_matrix, dmt_matrix, FILE*,
             const RefKeyVal&);
 
 

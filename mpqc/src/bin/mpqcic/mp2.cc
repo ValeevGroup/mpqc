@@ -12,47 +12,25 @@ typedef int dmt_matrix;
 
 extern "C" {
 #include <comm/picl/picl.h>
+#include <comm/picl/ext/piclext.h>
 }
 
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/molecule.h>
-#include <chemistry/molecule/simple.h>
-#include <chemistry/molecule/symm.h>
-#include <chemistry/molecule/simpleQCList.h>
-#include <chemistry/molecule/symmQCList.h>
-#include <math/nihmatrix/nihmatrix.h>
-#include <math/nihmatrix/lmath.h>
 
 extern "C" {
 #include <chemistry/qc/dmtqc/libdmtqc.h>
 #include <util/misc/libmisc.h>
-#include <util/bio/libbio.h>
 }
 
 #include "mpqc_int.h"
 
-
-extern "C" {
- void scf_init_bounds(centers_t*,double*);
- int int_find_nfuncmax(centers_t*);
- int scf_erep_bound(int,int,int,int);
- void scf_done_bounds();
- int mynode0();
- int numnodes0();
- int cubedim0();
- void gop1(double*,int,double*,char,int);
- int gcollect(double*,int*,double*);
-#if defined(I860)
- void bzero(void*,int);
-#endif
-}
-
 /////////////////////////////////////////////////////////////////////
 
 int
-mp2_hah(centers_t *centers, scf_struct_t *scf_info,
+do_mp2(centers_t& centers, scf_struct_t& scf_info,
         dmt_matrix Scf_Vec, dmt_matrix Fock, FILE* outfile, RefKeyVal keyval)
 {
   tim_enter("init");
@@ -86,22 +64,22 @@ mp2_hah(centers_t *centers, scf_struct_t *scf_info,
   bcast0(&nfzc,sizeof(int),mtype_get(),0);
   bcast0(&nfzv,sizeof(int),mtype_get(),0);
 
-  int_initialize_offsets2(centers,centers,centers,centers);
+  int_initialize_offsets2(&centers,&centers,&centers,&centers);
 
   int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2;
 
   double *intbuf = 
-    int_initialize_erep(flags,0,centers,centers,centers,centers);
+    int_initialize_erep(flags,0,&centers,&centers,&centers,&centers);
 
-  scf_init_bounds(centers,intbuf);
+  scf_init_bounds(&centers,intbuf);
 
   int a,b;
   int i,j,k,l;
   int p,q,r,s;
   int P,Q,R,S;
   int bf1,bf2,bf3,bf4;
-  int nbasis=centers->nfunc;
-  int nfuncmax = int_find_nfuncmax(centers);
+  int nbasis=centers.nfunc;
+  int nfuncmax = int_find_nfuncmax(&centers);
   int nocc=0,nvir;
 
   if (me==0) {
@@ -109,7 +87,7 @@ mp2_hah(centers_t *centers, scf_struct_t *scf_info,
       for (i=0; i < keyval->count("docc"); i++)
         nocc += keyval->intvalue("docc",i);
     } else {
-      for (i=0; i < centers->n; i++) nocc += (int) centers->center[i].charge;
+      for (i=0; i < centers.n; i++) nocc += (int) centers.center[i].charge;
       nocc = (nocc%2) ? nocc/2 + 1 : nocc/2 ;
     }
   }
@@ -192,7 +170,7 @@ mp2_hah(centers_t *centers, scf_struct_t *scf_info,
     fprintf(outfile,  "       npass = %d\n",npass);
     fprintf(outfile,  "          ni = %d\n",ni);
     fprintf(outfile,  "         nij = %d\n",nij);
-    fprintf(outfile,  "      nshell = %d\n",centers->nshell);
+    fprintf(outfile,  "      nshell = %d\n",centers.nshell);
     fprintf(outfile,  "        nfzc = %d\n",nfzc);
     fprintf(outfile,  "        nfzv = %d\n",nfzv);
     fprintf(outfile,  "        nocc = %d\n",nocc);
@@ -240,25 +218,25 @@ mp2_hah(centers_t *centers, scf_struct_t *scf_info,
     if (pass < remaini) firsti = pass*ni;
     else firsti = remaini*(ni+1) + (pass-remaini)*ni;
 
-    bzero(T3,nij*nbasis*nvir*sizeof(double));
+    memcpy(T3,0,nij*nbasis*nvir*sizeof(double));
 
     int tol = (int) (-10.0/log10(2.0));
 
     tim_enter("RS loop");
     int int_index=0;
-    for (R=0; R < centers->nshell; R++) {
+    for (R=0; R < centers.nshell; R++) {
 
 if(me==0) printf(" %5d\n",R);
-      int nr = INT_SH_NFUNC((centers),R);
+      int nr = INT_SH_NFUNC((&centers),R);
 
       for (S=0; S <= R; S++) {
-        int ns = INT_SH_NFUNC((centers),S);
+        int ns = INT_SH_NFUNC((&centers),S);
 
-        bzero(T1,nr*ns*nbasis*ni*sizeof(double));
+        memcpy(T1,0,nr*ns*nbasis*ni*sizeof(double));
 
         tim_enter("PQ loop");
-        for (P=0; P < centers->nshell; P++) {
-          int np = INT_SH_NFUNC((centers),P);
+        for (P=0; P < centers.nshell; P++) {
+          int np = INT_SH_NFUNC((&centers),P);
 
           for (Q=0; Q <= P; Q++) {
             if (scf_erep_bound(P,Q,R,S) < tol){
@@ -269,7 +247,7 @@ if(me==0) printf(" %5d\n",R);
 
             if (int_index%nproc != me) continue;
 
-            int nq = INT_SH_NFUNC((centers),Q);
+            int nq = INT_SH_NFUNC((&centers),Q);
 
             tim_enter("erep");
             int_erep(INT_EREP|INT_NOBCHK|INT_NOPERM|INT_REDUND,&P,&Q,&R,&S);
@@ -279,10 +257,10 @@ if(me==0) printf(" %5d\n",R);
 
             tim_enter("a1 loop");
             for (bf1=0; bf1 < np; bf1++) {
-              p = centers->func_num[P] + bf1;
+              p = centers.func_num[P] + bf1;
 
               for (bf2=0; bf2 < nq ; bf2++) {
-                q = centers->func_num[Q] + bf2;
+                q = centers.func_num[Q] + bf2;
 
                 if (q > p) {
                   index += nr*ns;
@@ -321,7 +299,7 @@ if(me==0) printf(" %5d\n",R);
         gop1(T1,nr*ns*nbasis*ni,T2,'+',3);
         tim_exit("a1 sum");
 
-        bzero(T2,ni*nr*ns*nvir*sizeof(double));
+        memcpy(T2,0,ni*nr*ns*nvir*sizeof(double));
 
         tim_enter("a2 loop");
         for (a=0; a < mylena; a++) {
@@ -368,10 +346,10 @@ if(me==0) printf(" %5d\n",R);
 
         tim_enter("a3 loop");
         for (bf3=0; bf3 < nr ; bf3++) {
-          r = centers->func_num[R] + bf3;
+          r = centers.func_num[R] + bf3;
 
           for (bf4=0; bf4 <= ((R==S) ? bf3 : ns-1) ; bf4++) {
-            s = centers->func_num[S] + bf4;
+            s = centers.func_num[S] + bf4;
 
             double scal = (r==s) ? 0.5 : 1;
 
@@ -412,7 +390,7 @@ if(me==0) printf(" %5d\n",R);
 
         double eij = -evals[i+firsti]-evals[j];
 
-        bzero(ijab,sizeof(double)*nvir*nvir);
+        memcpy(ijab,0,sizeof(double)*nvir*nvir);
 
         for (s=0; s < nbasis; s++) {
           for (a=0; a < nvir; a++) {
@@ -454,7 +432,7 @@ if(me==0) printf(" %5d\n",R);
 
   scf_done_bounds();
   int_done_erep();
-  int_done_offsets2(centers,centers,centers,centers);
+  int_done_offsets2(&centers,&centers,&centers,&centers);
 
   delete[] evals;
   delete[] ijab;

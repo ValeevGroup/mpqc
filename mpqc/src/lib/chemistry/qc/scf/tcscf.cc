@@ -330,6 +330,10 @@ TCSCF::set_occupations(const RefDiagSCMatrix& ev)
   if (user_occupations_)
     return;
   
+  // don't change occupations in mid stream
+  if (ndocc_)
+    return;
+  
   int i,j;
   
   RefDiagSCMatrix evals;
@@ -506,7 +510,8 @@ TCSCF::init_vector()
 
   // test to see if we need a guess vector
   if (eigenvectors_.result_noupdate().null()) {
-    eigenvectors_ = hcore_guess();
+    initial_vector();
+
     focka_ = cl_hcore_.clone();
     focka_.result_noupdate().assign(0.0);
     fockb_ = cl_hcore_.clone();

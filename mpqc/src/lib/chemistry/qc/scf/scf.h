@@ -21,6 +21,8 @@ class SCF: public OneBodyWavefunction {
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   protected:
+    RefOneBodyWavefunction guess_wfn_;
+    
     RefSCMatrix scf_vector_;
     RefSelfConsistentExtrapolation extrap_;
     
@@ -55,6 +57,10 @@ class SCF: public OneBodyWavefunction {
     // set the double* to point to the local matrix's data.
     enum Access { Read, Write, Accum };
     RefSymmSCMatrix get_local_data(const RefSymmSCMatrix&, double*&, Access);
+    
+    // create the initial scf vector.  either use the eigenvectors in
+    // guess_wfn_, or use a core Hamiltonian guess.
+    void initial_vector();
     
   public:
     SCF(StateIn&);

@@ -332,9 +332,10 @@ CLSCF::init_vector()
   cl_gmat_ = basis()->matrixkit()->symmmatrix(basis()->basisdim());
   cl_gmat_.assign(0.0);
 
-  // test to see if we need a guess vector
+  // test to see if we need a guess vector.
   if (eigenvectors_.result_noupdate().null()) {
-    eigenvectors_ = hcore_guess();
+    initial_vector();
+    
     cl_fock_ = cl_hcore_.clone();
     cl_fock_.result_noupdate().assign(0.0);
   }

@@ -437,9 +437,10 @@ HSOSSCF::init_vector()
   op_gmat_ = cl_gmat_.clone();
   op_gmat_.assign(0.0);
 
-  // test to see if we need a guess vector
+  // test to see if we need a guess vector.
   if (eigenvectors_.result_noupdate().null()) {
-    eigenvectors_ = hcore_guess();
+    initial_vector();
+    
     cl_fock_ = cl_hcore_.clone();
     cl_fock_.result_noupdate().assign(0.0);
     op_fock_ = cl_hcore_.clone();

@@ -68,6 +68,8 @@ SCF::SCF(const RefKeyVal& keyval) :
   if (extrap_.null())
     extrap_ = new DIIS;
   
+  guess_wfn_ = keyval->describedclassvalue("guess_wavefunction");
+  
   integral()->set_storage(int_store_);
 
   scf_grp_ = basis()->matrixkit()->messagegrp();
@@ -237,4 +239,49 @@ SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
 
   p = LocalSymmSCMatrix::castdown(l)->get_data();
   return l;
+}
+
+void
+SCF::initial_vector()
+{
+  int me=scf_grp_->me();
+  
+  // if guess_wfn_ is non-null then try to get a guess vector from it.
+  // First check that the same basis is used...if not, then project the
+  // guess vector into the present basis.
+  // right now the check is crude...there should be an equiv member in
+  // GaussianBasisSet
+  if (guess_wfn_.nonnull()) {
+    if (guess_wfn_->basis()->nbasis() == basis()->nbasis()) {
+      if (me==0) {
+        cout << indent
+             << "Projecting guess wavefunction into the present basis set\n";
+      }
+      cout << incindent << incindent;
+      eigenvectors_ = guess_wfn_->eigenvectors();
+      cout << decindent << decindent;
+    } else {
+      if (me==0) {
+        cout << indent
+             << "Using guess wavefunction as starting vector\n";
+      }
+      cout << incindent << incindent;
+      eigenvectors_ = projected_eigenvectors(guess_wfn_);
+      cout << decindent << decindent;
+    }
+
+    // we should only have to do this once, so free up memory used
+    // for the old wavefunction
+    guess_wfn_=0;
+
+    if (me==0)
+      cout << endl;
+      
+  } else {
+    if (me==0) {
+      cout << indent
+           << "Starting from core Hamiltonian guess\n\n";
+    }
+    eigenvectors_ = hcore_guess();
+  }
 }

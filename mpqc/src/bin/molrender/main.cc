@@ -76,7 +76,6 @@ main(int argc, char** argv)
   keyval->assign("molecule", mol.pointer());
   keyval->assign("model", model);
 
-  tmpkv->assign("molinfofiles:0", SRCDIR "/../../lib/molinfo.ipv2");
   RefDescribedClass atominfo = new AtomInfo(tmpkv.pointer());
   keyval->assign("atominfo", atominfo);
   tmpkv->clear();

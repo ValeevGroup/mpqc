@@ -28,12 +28,12 @@ AccumDIH::AccumDIH()
 AccumDIH::AccumDIH(StateIn&s) :
   SavableState(s)
 {
-  _basis_set.restore_state(s);
-  _molecule.restore_state(s);
+  basis_set_.restore_state(s);
+  integral_.restore_state(s);
 }
 
 // for now I'm assuming that the specializations of AccumDIH will call
-// init() so we won't read in the molecule or basis set here
+// init() so we won't read in the integral or basis set here
 AccumDIH::AccumDIH(const RefKeyVal&)
 {
 }
@@ -45,16 +45,15 @@ AccumDIH::~AccumDIH()
 void
 AccumDIH::save_data_state(StateOut& s)
 {
-  _basis_set.save_state(s);
-  _molecule.save_state(s);
+  basis_set_.save_state(s);
+  integral_.save_state(s);
 }
 
 void
-AccumDIH::init(const RefGaussianBasisSet& b,
-               const RefMolecule& m)
+AccumDIH::init(const RefGaussianBasisSet& b, const RefIntegral& i)
 {
-  _basis_set = b;
-  _molecule = m;
+  basis_set_ = b;
+  integral_ = i;
 }
 
 void
@@ -83,12 +82,12 @@ AccumDDH::AccumDDH()
 AccumDDH::AccumDDH(StateIn& s) :
   SavableState(s)
 {
-  _basis_set.restore_state(s);
-  _molecule.restore_state(s);
+  basis_set_.restore_state(s);
+  integral_.restore_state(s);
 }
 
 // for now I'm assuming that the specializations of AccumDDH will call
-// init() so we won't read in the molecule or basis set here
+// init() so we won't read in the integral or basis set here
 AccumDDH::AccumDDH(const RefKeyVal&)
 {
 }
@@ -100,16 +99,15 @@ AccumDDH::~AccumDDH()
 void
 AccumDDH::save_data_state(StateOut& s)
 {
-  _basis_set.save_state(s);
-  _molecule.save_state(s);
+  basis_set_.save_state(s);
+  integral_.save_state(s);
 }
 
 void
-AccumDDH::init(const RefGaussianBasisSet& b,
-               const RefMolecule& m)
+AccumDDH::init(const RefGaussianBasisSet& b, const RefIntegral& i)
 {
-  _basis_set = b;
-  _molecule = m;
+  basis_set_ = b;
+  integral_ = i;
 }
 
 void

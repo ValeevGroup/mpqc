@@ -122,12 +122,12 @@ Wavefunction::natural_orbitals()
       RefSymmSCMatrix ortho = ao_to_orthog_ao();
       RefSymmSCMatrix orthoi = ortho.i();
 
-      RefSymmSCMatrix densortho(_basisdim);
+      RefSymmSCMatrix densortho(_basisdim, _gbs->matrixkit());
       densortho.assign(0.0);
       densortho.accumulate_transform(orthoi,dens);
 
-      RefSCMatrix natorb(_basisdim,_basisdim);
-      RefDiagSCMatrix natden(_basisdim);
+      RefSCMatrix natorb(_basisdim,_basisdim, _gbs->matrixkit());
+      RefDiagSCMatrix natden(_basisdim, _gbs->matrixkit());
       _natural_orbitals = natorb;
       _natural_density = natden;
 
@@ -150,8 +150,8 @@ Wavefunction::natural_density()
   if (!_natural_density.computed()) {
       RefSymmSCMatrix dens = density();
 
-      RefSCMatrix natorb(_basisdim,_basisdim);
-      RefDiagSCMatrix natden(_basisdim);
+      RefSCMatrix natorb(_basisdim,_basisdim, _gbs->matrixkit());
+      RefDiagSCMatrix natden(_basisdim, _gbs->matrixkit());
       _natural_orbitals = natorb;
       _natural_density = natden;
 
@@ -168,12 +168,10 @@ RefSymmSCMatrix
 Wavefunction::overlap()
 {
   if (!_overlap.computed()) {
-    RefSymmSCMatrix s(basis_dimension());
-    s.assign(0.0);
-
-    RefSCElementOp op = integral_->overlap_op(basis());
-    s.element_op(op);
-    op=0;
+    RefSymmSCMatrix s(basis_dimension(), _gbs->matrixkit());
+    RefSCElementOp ov = new OneBodyIntOp(integral()->overlap_int(_gbs));
+    s.element_op(ov);
+    ov=0;
 
     _overlap = s;
     _overlap.computed() = 1;
@@ -188,8 +186,8 @@ static void
 form_m_half(RefSymmSCMatrix& M)
 {
   // Diagonalize M to get m and U
-  RefSCMatrix U(M.dim(), M.dim());
-  RefDiagSCMatrix m(M.dim());
+  RefSCMatrix U(M.dim(), M.dim(), M.kit());
+  RefDiagSCMatrix m(M.dim(), M.kit());
   M.diagonalize(m,U);
 
   // take square root of all elements of m
@@ -222,6 +220,12 @@ RefGaussianBasisSet
 Wavefunction::basis()
 {
   return _gbs;
+}
+
+RefIntegral
+Wavefunction::integral()
+{
+  return integral_;
 }
 
 void

@@ -11,6 +11,7 @@
 #include <math/scmat/blkiter.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/gaussbas.h>
+#include <chemistry/qc/basis/integral.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -20,8 +21,9 @@ class AccumDIH: public SavableState {
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   protected:
-    RefGaussianBasisSet _basis_set;
-    RefMolecule _molecule;
+    RefGaussianBasisSet basis_set_;
+    RefIntegral integral_;
+
   public:
     AccumDIH();
     AccumDIH(StateIn&);
@@ -30,7 +32,7 @@ class AccumDIH: public SavableState {
 
     void save_data_state(StateOut&);
     
-    virtual void init(const RefGaussianBasisSet&, const RefMolecule&);
+    virtual void init(const RefGaussianBasisSet&, const RefIntegral&);
     virtual void accum(const RefSymmSCMatrix& h) =0;
     virtual void done();
 };
@@ -44,8 +46,9 @@ class AccumDDH: public SavableState {
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   protected:
-    RefGaussianBasisSet _basis_set;
-    RefMolecule _molecule;
+    RefGaussianBasisSet basis_set_;
+    RefIntegral integral_;
+    
   public:
     AccumDDH();
     AccumDDH(StateIn&);
@@ -54,7 +57,7 @@ class AccumDDH: public SavableState {
 
     void save_data_state(StateOut&);
     
-    virtual void init(const RefGaussianBasisSet&, const RefMolecule&);
+    virtual void init(const RefGaussianBasisSet&, const RefIntegral&);
     virtual void accum(const RefSymmSCMatrix& h,
                        const RefSymmSCMatrix& h_open) = 0;
     virtual void done();

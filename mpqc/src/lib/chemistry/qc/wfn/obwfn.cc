@@ -5,8 +5,9 @@
 
 #include <math/scmat/local.h>
 
+#include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/wfn/obwfn.h>
-#include <chemistry/qc/intv2/integralv2.h>
 
 SavableState_REF_def(OneBodyWavefunction);
 
@@ -75,8 +76,8 @@ static void
 form_m_half(RefSymmSCMatrix& M)
 {
   // Diagonalize M to get m and U
-  RefSCMatrix U(M.dim(), M.dim());
-  RefDiagSCMatrix m(M.dim());
+  RefSCMatrix U(M.dim(), M.dim(), M.kit());
+  RefDiagSCMatrix m(M.dim(), M.kit());
   M.diagonalize(m,U);
 
   // take square root of all elements of m
@@ -105,8 +106,9 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   //ovec.print("old wavefunction");
   
   // now form the overlap between the old basis and the new one
-  RefSCMatrix s2(basis_dimension(), ovec.rowdim());
-  RefSCElementOp op = new GaussianOverlapIntv2(basis(), owfn->basis());
+  RefSCMatrix s2(basis_dimension(), ovec.rowdim(), matrixkit());
+  RefSCElementOp op =
+    new OneBodyIntOp(integral()->overlap_int(basis(), owfn->basis()));
   s2.assign(0.0);
   s2.element_op(op);
   op = 0;
@@ -114,7 +116,7 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   //s2.print("overlap between new basis and old");
   
   // form C' = S2 * Cold
-  RefSCMatrix cprime(s2.rowdim(),ovec.coldim());
+  RefSCMatrix cprime(s2.rowdim(),ovec.coldim(),matrixkit());
   cprime.assign(0.0);
   cprime.accumulate_product(s2,ovec);
   //cprime.print("C' matrix");
@@ -134,7 +136,7 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   //D.print("D matrix");
   
   // we also need X = C'~ * S^-1 * C'
-  RefSymmSCMatrix X(cprime.coldim());
+  RefSymmSCMatrix X(cprime.coldim(),matrixkit());
   X.assign(0.0);
   X.accumulate_transform(cprime.t(),s);
   //X.print("X matrix");
@@ -179,7 +181,7 @@ OneBodyWavefunction::density()
 {
   if (!_density.computed()) {
     RefSCMatrix vec = eigenvectors();
-    RefSymmSCMatrix newdensity(basis_dimension());
+    RefSymmSCMatrix newdensity(basis_dimension(), matrixkit());
     form_density(vec,newdensity,0,0,0);
     _density = newdensity;
     _density.computed() = 1;

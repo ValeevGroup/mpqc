@@ -45,7 +45,7 @@ HCoreWfn::HCoreWfn(const RefKeyVal&keyval):
 {
   occ(_mol->charges(),ndocc,nsocc);
   _accumh = new AccumHCore;
-  _accumh->init(basis(),molecule());
+  _accumh->init(basis(),integral());
 }
 
 HCoreWfn::HCoreWfn(const OneBodyWavefunction& obwfn) :
@@ -53,7 +53,7 @@ HCoreWfn::HCoreWfn(const OneBodyWavefunction& obwfn) :
 {
   occ(_mol->charges(),ndocc,nsocc);
   _accumh = new AccumHCore;
-  _accumh->init(basis(),molecule());
+  _accumh->init(basis(),integral());
 }
 
 HCoreWfn::HCoreWfn(const HCoreWfn& hcwfn) :
@@ -90,12 +90,12 @@ HCoreWfn::eigenvectors()
   if (!_eigenvectors.computed()) {
 
     // create the core Hamiltonian Hcore
-    RefSymmSCMatrix h(basis_dimension());
+    RefSymmSCMatrix h(basis_dimension(), matrixkit());
     _accumh->accum(h);
   
     // diagonalize Hcore, and transform to S^-1/2 basis
-    RefSCMatrix vec(basis_dimension(), basis_dimension());
-    RefDiagSCMatrix val(basis_dimension());
+    RefSCMatrix vec(basis_dimension(), basis_dimension(), matrixkit());
+    RefDiagSCMatrix val(basis_dimension(), matrixkit());
     h.diagonalize(val,vec);
   
     vec = ao_to_orthog_ao()*vec;

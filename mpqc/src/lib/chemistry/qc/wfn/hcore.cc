@@ -48,12 +48,12 @@ AccumHCore::save_data_state(StateOut& s)
 void
 AccumHCore::accum(const RefSymmSCMatrix& h)
 {
+  RefSCElementOp hc = new OneBodyIntOp(integral_->kinetic_int(basis_set_));
   h.assign(0.0);
-  RefSCElementOp op = new GaussianKineticIntv2(_basis_set);
-  h.element_op(op);
-  op=0;
-  
-  op = new GaussianNuclearIntv2(_basis_set);
-  h.element_op(op);
-  op=0;
+  h.element_op(hc);
+  hc=0;
+
+  hc = new OneBodyIntOp(integral_->nuclear_int(basis_set_));
+  h.element_op(hc);
+  hc=0;
 }

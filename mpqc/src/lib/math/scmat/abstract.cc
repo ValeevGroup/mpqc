@@ -398,7 +398,8 @@ void
 SCMatrix::assign(const double*a)
 {
   int n = nrow();
-  const double **v = new double*[n];
+  // some compilers need the following cast
+  const double **v = (const double**) new double*[n];
   for (int i=0; i<n; i++) {
       v[i] = &a[i*n];
     }
@@ -545,7 +546,8 @@ void
 SymmSCMatrix::assign(const double*a)
 {
   int nr = n();
-  const double **v = new double*[nr];
+  // some compilers need the following cast
+  const double **v = (const double **) new double*[nr];
   int ioff= 0;
   for (int i=0; i<nr; i++) {
       v[i] = &a[ioff];

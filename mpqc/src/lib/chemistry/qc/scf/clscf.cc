@@ -19,6 +19,8 @@
 #include <math/optimize/scextrapmat.h>
 
 #include <chemistry/qc/basis/petite.h>
+
+#include <chemistry/qc/scf/scflocal.h>
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/clcont.h>
 #include <chemistry/qc/scf/lgbuild.h>
@@ -375,12 +377,38 @@ CLSCF::scf_energy()
   for (int ir=0; ir < fockp->nblocks(); ir++) {
     RefSymmSCMatrix dir = densp->block(ir);
     RefSymmSCMatrix fhir = fockp->block(ir);
-    
-    for (int i=0; i < fhir.n(); i++) {
-      for (int j=0; j < i; j++) {
-        eelec += dir.get_element(i,j)*fhir.get_element(i,j);
+
+    RefSCMatrixSubblockIter diter =
+      dir->local_blocks(SCMatrixSubblockIter::Read);
+    RefSCMatrixSubblockIter fiter =
+      dir->local_blocks(SCMatrixSubblockIter::Read);
+
+    SCMatrixJointSubblockIter subi(diter,fiter);
+
+    for (subi.begin(); subi.ready(); subi.next()) {
+      SCMatrixBlock *dblk=subi.block(0);
+      SCMatrixBlock *fblk=subi.block(1);
+
+      int istart, iend;
+      int jstart, jend;
+      double *ddata, *fdata;
+      int tri=0;
+
+      ddata = get_tri_block(dblk, istart, iend, jstart, jend, tri);
+      fdata = get_tri_block(fblk, istart, iend, jstart, jend, tri);
+
+      if (!ddata) {
+        fprintf(stderr,"CLSCF::scf_energy: oops...can't get data\n");
+        abort();
       }
-      eelec += 0.5*dir.get_element(i,i)*fhir.get_element(i,i);
+
+      int ij=0;
+      for (int i=istart; i < iend; i++) {
+        for (int j=jstart; j <= (tri ? i : jend-1); j++, ij++) {
+          eelec += (i==j) ? 0.5*ddata[ij]*fdata[ij] :
+                                ddata[ij]*fdata[ij];
+        }
+      }
     }
   }
 

@@ -125,7 +125,9 @@ main(int argc, char**argv)
         //opt->print(o);
         opt->optimize();
       } else {
+        tim->enter("gradient");
         mole->gradient().print("gradient");
+        tim->exit("gradient");
       }
     } else if (mole->value_implemented()) {
       tim->enter("energy");

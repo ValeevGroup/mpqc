@@ -2,7 +2,9 @@
 #include <math/scmat/offset.h>
 
 #include <chemistry/qc/basis/obint.h>
+
 #include <chemistry/qc/scf/scf.h>
+#include <chemistry/qc/scf/scflocal.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -37,27 +39,8 @@ ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
     int jstart, jend;
     int tri=0;
 
-    // dblk can either be an LTriBlock, LTriSubBlock, or RectSubBlock
-    // I don't think it can be a RectBlock
-    if (SCMatrixLTriBlock::castdown(dblk)) {
-      SCMatrixLTriBlock *ldblk = SCMatrixLTriBlock::castdown(dblk);
-      istart = ldblk->start; iend=ldblk->end;
-      jstart = ldblk->start; jend=ldblk->end;
-      ddata = ldblk->data;
-      tri=1;
-    } else if (SCMatrixLTriSubBlock::castdown(dblk)) {
-      SCMatrixLTriSubBlock *ldblk = SCMatrixLTriSubBlock::castdown(dblk);
-      istart = ldblk->istart; iend=ldblk->iend;
-      jstart = ldblk->jstart; jend=ldblk->jend;
-      ddata = ldblk->data;
-      tri=1;
-    } else if (SCMatrixRectSubBlock::castdown(dblk)) {
-      SCMatrixRectSubBlock *ldblk = SCMatrixRectSubBlock::castdown(dblk);
-      istart = ldblk->istart; iend=ldblk->iend;
-      jstart = ldblk->jstart; jend=ldblk->jend;
-      ddata = ldblk->data;
-      tri=1;
-    } else {
+    ddata = get_tri_block(dblk, istart, iend, jstart, jend, tri);
+    if (!ddata) {
       fprintf(stderr,"ob_gradient: can't figure out what density block is\n");
       abort();
     }

@@ -38,7 +38,7 @@ mole<HSOSSCF>: (
 molecule = $:ch2
 
 coor = $:symcoor
-message = $:messageShm
+message = $:message1
 
 xopt<QNewtonOpt>: (
   convergence = 1.0e-6
@@ -61,9 +61,9 @@ gbasis<GaussianBasisSet>: (
   name = "STO-3G"
   %name = "aug-cc-pVTZ"
   %puream=yes
-  matrixkit<ReplSCMatrixKit>: (
-    messagegrp = $:message
-  )
+  %matrixkit<ReplSCMatrixKit>: (
+  %  messagegrp = $:message
+  %)
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

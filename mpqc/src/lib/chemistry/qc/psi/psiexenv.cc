@@ -22,7 +22,7 @@ static ClassDesc PsiExEnv_cd(
 
 string PsiExEnv::inputname_("input.dat");
 string PsiExEnv::file11name_("file11.dat");
-int PsiExEnv::ckptfile_(30);
+int PsiExEnv::ckptfile_(32);
 string PsiExEnv::defaultcwd_("/tmp");
 string PsiExEnv::defaultfileprefix_("psi");
 string PsiExEnv::defaultpsiprefix_("/usr/local/psi/bin");
@@ -78,8 +78,8 @@ PsiExEnv::PsiExEnv(const Ref<KeyVal>& keyval)
   psiinput_ = new PsiInput(s);
   delete[] s;
 
-  s = new char[cwd_.size() + file11name_.size() + 2];
-  sprintf(s,"%s/%s",cwd_.c_str(),file11name_.c_str());
+  s = new char[cwd_.size() + fileprefix_.size() + file11name_.size() + 3];
+  sprintf(s,"%s/%s.%s",cwd_.c_str(),fileprefix_.c_str(),file11name_.c_str());
   psifile11_ = new PsiFile11(s);
   delete[] s;
 }
@@ -105,8 +105,8 @@ PsiExEnv::PsiExEnv(char *cwd, char *fileprefix, int nscratch, char **scratch):
   psiinput_ = new PsiInput(s);
   delete[] s;
 
-  s = new char[cwd_.size() + file11name_.size() + 2];
-  sprintf(s,"%s/%s",cwd_.c_str(),file11name_.c_str());
+  s = new char[cwd_.size() + fileprefix_.size() + file11name_.size() + 3];
+  sprintf(s,"%s/%s.%s",cwd_.c_str(),fileprefix_.c_str(),file11name_.c_str());
   psifile11_ = new PsiFile11(s);
   delete[] s;
 }
@@ -138,20 +138,23 @@ void PsiExEnv::add_to_path(const string& dir)
 int PsiExEnv::run_psi()
 {
   int errcod;
-  if (errcod = run_psi_module("input"))
+  if (errcod = run_psi_module("psi3")) {
     return errcod;
-  if (errcod = run_psi_module("psi"))
+  }
+  if (errcod = run_psi_module("psiclean")) {
     return errcod;
+  }
   return 0;
 }
 
 int PsiExEnv::run_psi_module(char *module)
 {
   int errcod;
-  char *module_cmd = new char[cwd_.size()+strlen(module)+psiprefix_.size()+stdout_.size()+stderr_.size()+36];
-  sprintf(module_cmd,"cd %s; %s/%s 1>> %s 2>> %s",cwd_.c_str(),psiprefix_.c_str(),module,stdout_.c_str(),stderr_.c_str());
+  char *module_cmd = new char[2*cwd_.size()+strlen(module)+psiprefix_.size()+fileprefix_.size()+stdout_.size()+stderr_.size()+40];
+  sprintf(module_cmd,"cd %s; %s/%s -p %s/%s 1>> %s 2>> %s",cwd_.c_str(),psiprefix_.c_str(),module,cwd_.c_str(),
+	  fileprefix_.c_str(),stdout_.c_str(),stderr_.c_str());
   if (errcod = system(module_cmd)) {
-      ExEnv::outn() << "PsiWavefunction: module " << module << " failed" << endl;
+      ExEnv::outn() << "PsiExEnv::run_psi_module -- module " << module << " failed" << endl;
       abort();
   }
   return errcod;

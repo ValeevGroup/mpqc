@@ -23,7 +23,7 @@ class PsiExEnv;
 class PsiFile11: public RefCount {
 
   string filename_;
-  std::ifstream file_;
+  std::fstream file_;
 
   // No default constructor
   PsiFile11() {};

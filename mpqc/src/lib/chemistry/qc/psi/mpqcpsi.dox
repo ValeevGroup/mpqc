@@ -1,10 +1,12 @@
 
 /** \page mpqcpsi Running Psi 3 from MPQC
 
-<a href="http://vergil.chemistry.gatech.edu/psi/">Psi 3</a>
+<a href="http://www.psicode.org/">Psi 3</a>
 is a suite of <i>ab initio</i> codes related to the
 original Psi package started in Prof. Fritz Schaefer's
-group at Berkeley. From now on we will refer to Psi 3 as simply Psi.
+group at UC Berkeley. Current version of MPQC works with stable
+versions of Psi 3 starting with 3.2.0.
+From now on we will refer to Psi 3 as simply Psi.
 Psi is written primarily in C and executes
 in serial mode only.
 The interface between Psi and MPQC is intended mainly for
@@ -68,18 +70,18 @@ of type PsiExEnv. The following keywords are used by its KeyVal constructor:
 <dl>
 <dt><tt>cwd</tt><dd> The directory where to keep Psi input, checkpoint, stdout, stderr, and other
 files. Default is <tt>/tmp</tt>.
-<dt><tt>fileprefix</tt><dd> The file prefix to use for Psi checkpoint and scratch files.
-Equivalent to keyword <tt>name</tt> in Psi <tt>default:files:default</tt> section.
+<dt><tt>fileprefix</tt><dd> The file prefix to use for Psi checkpoint, scratch, and some ASCII files.
+Equivalent to keyword <tt>name</tt> in Psi <tt>psi:files:default</tt> section.
 Defaults to <tt>psi</tt>.
 <dt><tt>stdout</tt><dd> The file into which to redirect standard output of Psi modules.
 Defaults to <tt>psi.stdout</tt>.
 <dt><tt>stderr</tt><dd> The file into which to redirect standard error of Psi modules.
 Defaults to <tt>psi.stderr</tt>.
 <dt><tt>nscratch</tt><dd> The number of locations over which to stripe Psi binary
-files. Equivalent to keyword <tt>nvolume</tt> in Psi <tt>default:files:default</tt> section.
+files. Equivalent to keyword <tt>nvolume</tt> in Psi <tt>psi:files:default</tt> section.
 Default is 1.
 <dt><tt>scratch</tt><dd> The locations over which to stripe Psi binary
-files. Equivalent to keyword <tt>volume<i>x</i></tt> in Psi <tt>default:files:default</tt> section.
+files. Equivalent to keyword <tt>volume<i>x</i></tt> in Psi <tt>psi:files:default</tt> section.
 There's no default.
 </dl>
 

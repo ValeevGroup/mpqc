@@ -33,6 +33,7 @@ PsiFile11::rewind()
 void
 PsiFile11::skip_lines(int n)
 {
+  // Lines in File11 are guaranteed to be 80 characters
   char line[100];
   for(int i=0; i<n; i++)
     file_.getline(line,100);
@@ -67,7 +68,7 @@ PsiFile11::remove()
 {
   if (file_.is_open())
     file_.close();
-  file_.open(filename_.c_str(),ios::trunc);
+  file_.open(filename_.c_str(),ios::out | ios::trunc);
   file_.close();
 }
 

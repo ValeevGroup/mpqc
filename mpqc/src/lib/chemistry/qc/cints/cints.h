@@ -4,7 +4,7 @@
 
 #include <chemistry/qc/basis/gaussbas.h>
 
-#define MAXAM 6
+#define MAXAM 5
 #define MAXCLASS 1000
 
 static inline int ioff(int i)

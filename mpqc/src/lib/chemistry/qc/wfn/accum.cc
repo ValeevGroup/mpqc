@@ -183,10 +183,10 @@ AccumEffectiveH::AccumEffectiveH()
 AccumEffectiveH::AccumEffectiveH(StateIn& s) :
   SCElementOp2(s)
 {
-  s.get(_dbegin);
-  s.get(_dfence);
-  s.get(_sbegin);
-  s.get(_sfence);
+  s.get(dbegin_);
+  s.get(dfence_);
+  s.get(sbegin_);
+  s.get(sfence_);
 }
 
 AccumEffectiveH::AccumEffectiveH(const RefKeyVal& keyval)
@@ -197,7 +197,7 @@ AccumEffectiveH::AccumEffectiveH(const RefKeyVal& keyval)
   for (int i=0; i<2; i++) {
     for (int j=0; j<3; j++) {
       for (int k=0; k<=j; k++) {
-        _coef[index(i,j,k)] = keyval->doublevalue(name[i], j, k);
+        coef_[index(i,j,k)] = keyval->doublevalue(name[i], j, k);
       }
     }
   }
@@ -223,8 +223,8 @@ AccumEffectiveH::index(int hindex, int shelli, int shellj)
 int
 AccumEffectiveH::shell(int ibasis)
 {
-  if (_dbegin <= ibasis && ibasis < _dfence) return 0;
-  if (_sbegin <= ibasis && ibasis < _sfence) return 1;
+  if (dbegin_ <= ibasis && ibasis < dfence_) return 0;
+  if (sbegin_ <= ibasis && ibasis < sfence_) return 1;
   return 2;
 }
 
@@ -232,10 +232,10 @@ void
 AccumEffectiveH::save_data_state(StateOut& s)
 {
   SCElementOp2::save_data_state(s);
-  s.put(_dbegin);
-  s.put(_dfence);
-  s.put(_sbegin);
-  s.put(_sfence);
+  s.put(dbegin_);
+  s.put(dfence_);
+  s.put(sbegin_);
+  s.put(sfence_);
 }
 
 void
@@ -244,21 +244,21 @@ AccumEffectiveH::process(SCMatrixBlockIter&i,SCMatrixBlockIter&j)
   for (i.reset(),j.reset(); i; ++i,++j) {
     int ri = shell(i.i());
     int rj = shell(j.j());
-    i.set(i.get() * _coef[index(0, ri, rj)]
-          + j.get() * _coef[index(1, ri, rj)]);
+    i.set(i.get() * coef_[index(0, ri, rj)]
+          + j.get() * coef_[index(1, ri, rj)]);
   }
 }
 
 void
 AccumEffectiveH::docc(int begin, int fence)
 {
-  _dbegin = begin;
-  _dfence = fence;
+  dbegin_ = begin;
+  dfence_ = fence;
 }
 
 void
 AccumEffectiveH::socc(int begin, int fence)
 {
-  _sbegin = begin;
-  _sfence = fence;
+  sbegin_ = begin;
+  sfence_ = fence;
 }

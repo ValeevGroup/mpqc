@@ -14,7 +14,7 @@ extern "C" {
 
 ElectronDensity::ElectronDensity(Wavefunction&wfn):
   Volume(),
-  _wfn(wfn)
+  wfn_(wfn)
 {
 }
 
@@ -30,12 +30,12 @@ ElectronDensity::compute()
   // do_gradient will automatically cause the value to be computed
   if (do_gradient()) {
       double v[3];
-      set_value(_wfn.density_gradient(r,v));
+      set_value(wfn_.density_gradient(r,v));
       SCVector3 d(v);
       set_gradient(d);
     }
   else if (do_value()) {
-      set_value(_wfn.density(r));
+      set_value(wfn_.density(r));
     }
   if (do_hessian()) {
       fprintf(stderr,"ElectronDensity::compute(): "
@@ -50,7 +50,7 @@ ElectronDensity::boundingbox(double valuemin,
                              double valuemax,
                              RefSCVector& p1, RefSCVector& p2)
 {
-  Molecule& mol = *_wfn.molecule();
+  Molecule& mol = *wfn_.molecule();
 
   if (mol.natom() == 0) {
       for (int i=0; i<3; i++) p1[i] = p2[i] = 0.0;

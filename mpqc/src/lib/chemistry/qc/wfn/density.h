@@ -11,7 +11,7 @@
 
 class ElectronDensity: public Volume {
   protected:
-    Wavefunction& _wfn;
+    Wavefunction& wfn_;
     virtual void compute();
   public:
     ElectronDensity(Wavefunction&);

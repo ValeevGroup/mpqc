@@ -91,21 +91,22 @@ class AccumEffectiveH: public SCElementOp2 {
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   protected:
-    double _coef[18];
-    int _dbegin;
-    int _dfence;
-    int _sbegin;
-    int _sfence;
+    double coef_[18];
+    int dbegin_;
+    int dfence_;
+    int sbegin_;
+    int sfence_;
 
     virtual void init() =0;
     
     // hindex is 0 for the closed and 1 for the open shell fock matrix
     // shelli and shellj are 0 for closed, 1 for open, and 2 for virtual
     int index(int hindex, int shelli, int shellj);
+
     // converts a basis function number to a shell number
     int shell(int ibasis);
 
-    double& coef(int i, int j, int k) { return _coef[index(i,j,k)]; }
+    double& coef(int i, int j, int k) { return coef_[index(i,j,k)]; }
 
   public:
     AccumEffectiveH();

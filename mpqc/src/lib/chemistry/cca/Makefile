@@ -93,7 +93,7 @@ BIN_OR_LIB = LIB
 TARGET_TO_MAKE = cca/libSCchemistry
 
 LIBOBJ = $(CCA_OBJS)
-CPPFLAGS += -I./ -I$(SRCDIR) -I$(CLASSIC_pkgincludedir)
+CPPFLAGS += -I./ -I$(SRCDIR) -I$(CCA_SPEC_CLASSIC_INCLUDE)
 ifeq ($(HAVE_LIBINT),yes)
   DEFINES += -DHAVE_CINTS
 endif

@@ -58,8 +58,9 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
     LTLINKBINOPTS += -R$(CCAFE_LIB) -R$(CCA_CHEM_LIB) -R$(libdir)/cca -lSCchemistry
   else
     XLIBS += -L$(CCA_CHEM_LIB) -lccachem_cxx_server -lccachem_cxx_client \
-             -L$(BABELLIB) -lsidl -L$(CCAFE_LIB) -lccafeCore -L../../../lib/cca -lSCchemistry \
-	     -lsidl -lcca -lccafeCore -lxml2 -lz 
+             -L$(BABEL_LIB) -lsidl -L$(CCAFE_LIB) -lccafeCore -L../../../lib/cca -lSCchemistry \
+	     -L$(CCA_SPEC_BABEL_LIB) -lsidl -lcca -lccafeCore -lxml2 -lz /home/jpkenny/install/vprof/vmonauto_gcc.o \
+	     /home/jpkenny/install/vprof/libvmon.a
   endif
   DEFINES += -DHAVE_CHEMISTRY_CCA
   CPPFLAGS += -I../../lib/chemistry/cca

@@ -66,7 +66,7 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
   CXXSRC += ccaenv.cc
   INC += ccaenv.h
   LTLINKLIBOPTS += -L$(CCAFE_LIB) -R$(CCAFE_LIB) -lccafeCore \
-    -L$(BABELLIB) -R$(BABELLIB) -lsidl
+    -L$(BABEL_LIB) -R$(BABEL_LIB) -lsidl
   CPPFLAGS += -I../../chemistry/cca
 endif
 

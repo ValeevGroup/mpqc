@@ -4,6 +4,7 @@ ifndef SRCDIR
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+include $(TOPDIR)/lib/Makedirlist
 INCLUDE += -I. -I$(SRCDIR)
 CXXINCLUDE += -I. -I$(SRCDIR)
 
@@ -20,6 +21,12 @@ BINOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(CSRC:%.c=%.$(OBJSUF))
 DISTFILES = $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: scls
+
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+  ifeq ($(ENABLESHARED),yes)
+    LTLINKBINOPTS += -L../../../lib/cca -R$(libdir)/cca -lSCchemistry
+  endif
+endif
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 

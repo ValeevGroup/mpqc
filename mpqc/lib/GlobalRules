@@ -290,7 +290,7 @@ $(EXTRA_CXX_SRCS): .babel-stamp
 	/bin/rm -f $(REPO)/MPQC* 
 	$(BABEL) -e'^sidl.*' -e'^gov.*' \
           -R$(CCA_CHEM_REPO) -R$(CCA_SPEC_BABEL_SHARE)/xml \
-          --text=xml -o$(REPO) $(SIDL_FILES)
+          -R$(CCAFE_SHARE)/xml --text=xml -o$(REPO) $(SIDL_FILES)
 	$(BABEL) $(BABEL_ARGS) $(BABEL_PACKAGES) $(BABEL_ENUMS) \
           $(BABEL_CLASSES)
 	@mv -f .babel-temp $@

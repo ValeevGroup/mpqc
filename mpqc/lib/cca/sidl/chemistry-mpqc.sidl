@@ -50,4 +50,12 @@ package MPQC version 0.2 {
   class ChemistryOpt_CoordinateModel implements-all ChemistryOpt.CoordinateModel,
     gov.cca.Component, gov.cca.Port{};
 
+  class ComponentFactory implements-all ccaffeine.ports.ComponentFactory {
+    void addDescription(in string className, in string classAlias);
+  };
+
+  class ComponentClassDescription implements-all gov.cca.ComponentClassDescription {
+    void initialize(in string className, in string classAlias);
+  };
+
 };

@@ -49,6 +49,8 @@
 
 /////////////////////////////////////////////////////////////////
 
+static void Geom_form_and_print_simples(RefKeyVal keyval, const char *msg);
+
 static FILE *outfp=stdout;
 static FILE *errfp=stderr;
 
@@ -56,6 +58,7 @@ static centers_t *centers;
 static Molecule mol;
 
 static RefSymmCoList symm_coords;
+static RefSymmCoList fixed;
 
 enum updates { NONE, BFGS, DFP, POWELL, MURT, BERNY };
 enum methods { POLACK, FLETCH, NEWTR, GDIIS, EFC };
@@ -77,6 +80,9 @@ static int justa1=1;
 static int update_hess=1;
 static int recalc_hess=0;
 static int use_gdiis=1;
+static int print_hessian=0;
+static int recompute_internal=0;
+static int print_internal=0;
 static double conv_crit=1.0e-6;
 static double conv_rmsf=1.0e-5;
 static double conv_maxf=4.0e-5;
@@ -178,6 +184,8 @@ Geom_init_mpqc(FILE *out, FILE *err, centers_t *cs, RefKeyVal keyval)
   // save it all to disk
     so.put(iter);
     symm_coords->save_state(so);
+    so.put(fixed.nonnull());
+    if (fixed.nonnull()) fixed->save_state(so);
     mol.save_object_state(so);
     intco.save_object_state(so);
     iforce.save_object_state(so);
@@ -192,6 +200,9 @@ Geom_init_mpqc(FILE *out, FILE *err, centers_t *cs, RefKeyVal keyval)
     fprintf(outfp,"\n restarting geometry optimization at iteration %d\n",iter);
 
     symm_coords = SymmCoList::restore_state(si);
+    int have_fixed;
+    si.get(have_fixed);
+    if (have_fixed) fixed = SymmCoList::restore_state(si);
     Molecule mol2(si); mol=mol2;
     DVector ic(si);    intco=ic;
     DVector ifc(si);    iforce=ifc;
@@ -215,9 +226,21 @@ Geom_init_mpqc(FILE *out, FILE *err, centers_t *cs, RefKeyVal keyval)
   }
 
 void
-Geom_done_mpqc(RefKeyVal keyval)
+Geom_done_mpqc(RefKeyVal keyval,int converged)
 {
   symm_coords = 0;
+
+  const char *msg;
+
+  if (converged) msg = "Converged Simple Internal Coordinates";
+  else msg = "Nonconverged Simple Internal Coordinates";
+
+  Geom_form_and_print_simples(keyval,msg);
+}
+
+static void
+Geom_form_and_print_simples(RefKeyVal keyval, const char *msg)
+{
 
   RefSimpleCoList list = Geom_form_simples(mol);
 
@@ -244,8 +267,13 @@ Geom_done_mpqc(RefKeyVal keyval)
 
   Geom_calc_simples(list,mol);
 
-  fprintf(outfp,"\n  Final internal coordinates\n");
+  fprintf(outfp,"\n%s\n",msg);
   Geom_print_pretty(list);
+
+  if (fixed) {
+      fprintf(outfp,"\nFixed Internal Coordinates\n");
+      Geom_print_pretty(fixed);
+    }
 }
 
 static void
@@ -298,6 +326,18 @@ get_input(RefKeyVal keyval)
     use_gdiis = keyval->booleanvalue("use_gdiis");
     }
 
+  if (keyval->exists("print_hessian")) {
+    print_hessian = keyval->booleanvalue("print_hessian");
+    }
+
+  if (keyval->exists("recompute_internal")) {
+    recompute_internal = keyval->booleanvalue("recompute_internal");
+    }
+
+  if (keyval->exists("print_internal")) {
+    print_internal = keyval->booleanvalue("print_internal");
+    }
+
   if (keyval->exists("gdiis_begin")) {
     int tmp = keyval->intvalue("gdiis_begin");
     gdiis_begin = pow(10.0,(double)-tmp);
@@ -312,6 +352,9 @@ get_input(RefKeyVal keyval)
   if (redundant > 0) justa1=0;
 
   fprintf(outfp,"\n  intco:use_gdiis           = %d\n",use_gdiis);
+  fprintf(outfp,"  intco:recompute_internal  = %d\n",recompute_internal);
+  fprintf(outfp,"  intco:print_hessian       = %d\n",print_hessian);
+  fprintf(outfp,"  intco:print_internal      = %d\n",print_internal);
   fprintf(outfp,"  intco:redundant           = %d\n",redundant);
   fprintf(outfp,"  intco:cartesians          = %d\n",cartesians);
   fprintf(outfp,"  intco:update_hessian      = %d\n",update_hess);
@@ -363,14 +406,51 @@ get_symmco(RefKeyVal keyval)
       }
     }
 
+  RefDescribedClass val = keyval->describedclassvalue("fixed");
+  fixed = val;
+  if (val.nonnull() && fixed.null()) {
+      fprintf(stderr,"could not convert type %s to SymmCoList\n",
+              val->class_name());
+      abort();
+    }
+  val = 0;
+
   if(keyval->count("symm")) {
     symm_coords = Geom_read_symm(keyval.pointer(),"symm",list);
-    if(!redundant) symm_coords = Geom_form_symm(mol,symm_coords,justa1);
+    if(!redundant)
+      symm_coords = Geom_form_symm(mol,symm_coords,justa1,fixed.pointer());
     }
   else if(redundant)
     symm_coords = Geom_symm_from_simple(list,1);
   else
-    symm_coords = Geom_form_symm(mol,list,justa1);
+    symm_coords = Geom_form_symm(mol,list,justa1,fixed.pointer());
+
+  if (symm_coords.nonnull() && print_internal) {
+       fprintf(outfp,"The variable internal coordinates:\n");
+       Geom_print_pretty(symm_coords);
+     }
+
+  // symm_coords = fixed + symm_coords;
+  RefSymmCoList new_symm_coords(new SymmCoList);
+  int nfixed;
+  if (fixed.nonnull()) {
+      nfixed = fixed->length();
+    }
+  else nfixed = 0;
+  int ngenerated = symm_coords->length();
+  for (int i=0; i<nfixed; i++) {
+      new_symm_coords->add(fixed->operator[](i));
+    }
+  for (i=0; i<ngenerated; i++) {
+      new_symm_coords->add(symm_coords->operator[](i));
+    }
+  symm_coords = new_symm_coords;
+
+  if (symm_coords.nonnull() && print_internal) {
+       fprintf(outfp,
+               "All internal coordinates (union of fixed and variable):\n");
+       Geom_print_pretty(symm_coords);
+     }
 
   if(!symm_coords) {
     err_msg("get_symmco: yikes!  no symmetrized internal coords");
@@ -408,9 +488,13 @@ get_symmco(RefKeyVal keyval)
 
   if(list) {
     if(firsttime) {
-      fprintf(outfp,"  Simple Internal Coordinates\n");
+      fprintf(outfp,"Initial Simple Internal Coordinates\n");
       Geom_calc_simples(list,mol);
       Geom_print_pretty(list);
+      if (fixed) {
+          fprintf(outfp,"\nFixed Internal Coordinates\n");
+          Geom_print_pretty(fixed);
+        }
       firsttime=0;
       }
     }
@@ -425,6 +509,7 @@ int
 Geom_update_mpqc(double energy, double_matrix_t *grad, double_matrix_t *hess,
                  RefKeyVal keyval)
 {
+  int nfixed = (fixed?fixed->length():0);
 
   oldiforce = iforce;
   oldintco = intco;
@@ -469,14 +554,67 @@ Geom_update_mpqc(double energy, double_matrix_t *grad, double_matrix_t *hess,
       }
     }
 
+  // if there are fixed coordinates, set their force to zero
+  for (i=0; i<nfixed; i++) {
+      iforce[i] = 0.0;
+      // use a nonzero diagonal
+      hessian(i,i) = 1.0;
+      oldhessian(i,i) = 1.0;
+      // and zero the coupling terms
+      for (int j=i+1;j<hessian.nrow(); j++) {
+          hessian(i,j) = 0.0;
+          hessian(j,i) = 0.0;
+          oldhessian(i,j) = 0.0;
+          oldhessian(j,i) = 0.0;
+        }
+    }
+
   if (update_hess)
     update_hessian(keyval);
+
+  if (print_hessian) {
+      printf("The hessian is (after udpate):\n");
+      hessian.print();
+    }
 
   if (use_gdiis) {
     gdiis_disp();
     }
   else { // the NR step
     idisp = -1*(hessian * iforce);
+    }
+
+  // if there are fixed coordinates, set their displacement to zero
+  for (i=0; i<nfixed; i++) {
+      idisp[i] = 0.0;
+    }
+
+  // Compute the rms and max force in internal coordinates if
+  // there are fixed coordinates.  Otherwise rms and max force
+  // correspond to cartesian coords.  Really the forces with
+  // the fixed coordinate forces set to zero should be backtransformed
+  // to cartesian coordinates to compute rms and max force.
+  if (fixed) {
+      double imaxforce_all = 0.0;
+      double irmsforce_all = 0.0;
+      double imaxforce_nonfixed = 0.0;
+      double irmsforce_nonfixed = 0.0;
+      int i;
+      for (i=0; i<nfixed; i++) {
+          if (fabs(iforce[i]) > imaxforce_all)
+            imaxforce_all = fabs(iforce[i]);
+          irmsforce_all += iforce[i]*iforce[i];
+        }
+      for (; i<iforce.dim(); i++) {
+          if (fabs(iforce[i]) > imaxforce_all)
+            imaxforce_all = fabs(iforce[i]);
+          irmsforce_all += iforce[i]*iforce[i];
+          if (fabs(iforce[i]) > imaxforce_nonfixed)
+            imaxforce_nonfixed = fabs(iforce[i]);
+          irmsforce_nonfixed += iforce[i]*iforce[i];
+        }
+      maxforce = irmsforce_nonfixed;
+      rmsforce = irmsforce_nonfixed;
     }
 
   // test the size of the displacement, and the other convergence criteria
@@ -521,12 +659,15 @@ Geom_update_mpqc(double energy, double_matrix_t *grad, double_matrix_t *hess,
     rmsdisp = sqrt(rmsdisp/idisp.dim());
     maxdisp = idisp.maxval()/0.52917706;
     }
-      
+
+  // abort if the displacement fails
   if (!cartesians && cartesian_disp(bmat) < 0) {
     fprintf(outfp,"\n could not update geometry, saving state and exiting\n");
     STATEOUT so("geom.dat");
     so.put(iter);
     symm_coords->save_state(so);
+    so.put(fixed.nonnull());
+    if (fixed.nonnull()) fixed->save_state(so);
     mol.save_object_state(so);
     intco.save_object_state(so);
     iforce.save_object_state(so);
@@ -534,28 +675,43 @@ Geom_update_mpqc(double energy, double_matrix_t *grad, double_matrix_t *hess,
     hessian.save_object_state(so);
     return GEOM_ABORT;
     }
-  else {
-    fprintf(outfp,"\n displacements and new internal coordinates\n");
-    for(i=0; i < intco.dim(); i++)
-      fprintf(outfp," %5d %15.10f %15.10f\n",i+1,idisp[i],intco[i]);
+  fprintf(outfp,"\n displacements and new internal coordinates\n");
+  for(i=0; i < intco.dim(); i++)
+    fprintf(outfp," %5d %15.10f %15.10f\n",i+1,idisp[i],intco[i]);
+  
+  fprintf(outfp,"\n max of 1/2 idisp*iforce = %15.10g\n",
+          (idisp * iforce).maxval()/2);
+  fprintf(outfp," max force               = %15.10g\n",maxforce);
+  fprintf(outfp," rms force               = %15.10g\n",rmsforce);
+  fprintf(outfp," max disp                = %15.10g\n",maxdisp);
+  fprintf(outfp," rms disp                = %15.10g\n",rmsdisp);
 
-    fprintf(outfp,"\n max of 1/2 idisp*iforce = %15.10g\n",
-			      (idisp * iforce).maxval()/2);
-    fprintf(outfp," max force               = %15.10g\n",maxforce);
-    fprintf(outfp," rms force               = %15.10g\n",rmsforce);
-    fprintf(outfp," max disp                = %15.10g\n",maxdisp);
-    fprintf(outfp," rms disp                = %15.10g\n",rmsdisp);
+  fprintf(outfp,"\n updated geometry\n");
+  mol.print(outfp);
 
-    fprintf(outfp,"\n updated geometry\n");
-    mol.print(outfp);
+  if (print_internal) {
+      Geom_form_and_print_simples(keyval,
+                                  "Updated Simple Internal Coordinates");
     }
 
+  // now that we have a geometry, let's make the list of symm coordinates
+  // if the user asks for it or fixed is nonnull
+  if(recompute_internal || fixed) {
+     if(get_symmco(keyval) < 0) {
+        err_msg("Geom_init_mpqc: yikes!  can't make symm coords");
+        return GEOM_ABORT;
+        }
+     }
+
+  //StateOutBinXDR so("geom.dat");
   STATEOUT so("geom.dat");
 
   iter++;
 
   so.put(iter);
   symm_coords->save_state(so);
+  so.put(fixed.nonnull());
+  if (fixed.nonnull()) fixed->save_state(so);
   mol.save_object_state(so);
   intco.save_object_state(so);
   iforce.save_object_state(so);

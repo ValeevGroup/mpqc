@@ -534,9 +534,14 @@ main(int argc, char *argv[])
     iter++;
     }
 
+  int geometry_converged;
   if(opt_geom && geom_code != GEOM_DONE && geom_code != GEOM_ABORT && me==0 &&
      iter==nopt) {
-    fprintf(outfile,"  Too many geometry iterations: quitting\n");
+      geometry_converged = 0;
+      fprintf(outfile,"  Too many geometry iterations: quitting\n");
+    }
+  else {
+      geometry_converged = 1;
     }
 
   if(save_fock) {
@@ -546,7 +551,7 @@ main(int argc, char *argv[])
 
 THERE:
 
-  if(opt_geom && me==0) Geom_done_mpqc(keyval);
+  if(opt_geom && me==0) Geom_done_mpqc(keyval,geometry_converged);
 
   if(do_grad) {
     if(scf_info.iopen) dmt_force_osscf_done();

@@ -40,7 +40,7 @@ extern "C" {
 
 int Geom_init_mpqc(FILE*,FILE*,centers_t*,RefKeyVal);
 int Geom_update_mpqc(double,double_matrix_t*,double_matrix_t*,RefKeyVal);
-void Geom_done_mpqc(RefKeyVal);
+void Geom_done_mpqc(RefKeyVal,int converged);
 
 int Scf_charges_from_esp(centers_t*,int,double_vector_t*,
                     double_vector_t*, expts_t*, double, int, FILE*,RefKeyVal);

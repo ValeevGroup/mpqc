@@ -53,7 +53,7 @@ class Optimize: virtual_base public SavableState {
     //. Returns information about the \clsnmref{Function} being optimized.
     RefFunction function() const { return function_; }
     RefSCMatrixKit matrixkit() const { return function_->matrixkit(); }
-    RefSCMatrixKit dimension() const { return function_->dimension(); }
+    RefSCDimension dimension() const { return function_->dimension(); }
 };
 SavableState_REF_dec(Optimize);
 

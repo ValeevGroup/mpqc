@@ -35,7 +35,7 @@ TARGET_TO_MAKE = libdft
 BIN_OR_LIB = LIB
 
 SRCS = functional.cc integrator.cc hfacm.cc \
-       clks.cc
+       clks.cc uks.cc
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 

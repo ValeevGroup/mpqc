@@ -15,7 +15,8 @@ g92_freq_driver(char *name_in, RefMolecule& mole,
                 const RefKeyVal &g92_keyval,
                 char *method, double &energy,
                 RefSCVector& gradient, RefSCVector &frequencies,
-                RefSCVector &normalmodes, int& nmodes, int& nimag)
+                RefSCVector &normalmodes, RefSCVector &forceconstants,
+                int& nmodes, int& nimag)
 {
     // Read necessary pieces from KeyVal
     // Read g92_method iff methd parameter not set
@@ -40,7 +41,7 @@ g92_freq_driver(char *name_in, RefMolecule& mole,
         int net_charge=0;
         for (int i=0; i<mole->natom(); i++)
             net_charge+=mole->atom(i).element().number();
-        if (net_charge%2 !=0)
+        if (net_charge%2 !=0 && !g92_keyval->exists("multiplicity"))
         {
             fprintf(stderr," Neutral closed shell molecule not possible\n");
             fprintf(stderr," You must add a g92:charge keyval\n");
@@ -115,7 +116,7 @@ g92_freq_driver(char *name_in, RefMolecule& mole,
 
     if (parse_g92_freq(name, g92_calc[runtype].parse_string, mole,
                        energy, gradient, frequencies, normalmodes,
-                       nmodes, nimag))
+                       forceconstants, nmodes, nimag))
     {
         fprintf(stderr,"Error parsing G92 Force calculation\n");
         fprintf(stderr,"Check output in %s.out\n",name);
@@ -229,7 +230,7 @@ int
 parse_g92_freq(char *prefix,char *parse_string, RefMolecule mole,
                double &energy, RefSCVector& gradient,
                RefSCVector& frequencies, RefSCVector &normalmodes,
-               int& nmodes, int& nimag)
+               RefSCVector &forceconstants, int& nmodes, int& nimag)
 {
     /* read and parse output file */
     FILE *fp_g92_output;
@@ -342,6 +343,84 @@ parse_g92_freq(char *prefix,char *parse_string, RefMolecule mole,
     }
     
     printf("Nmodes=%d\n",nmodes);
+
+    // Now go get the force constant matrix
+    while(fgets(line,120,fp_g92_output))
+    {
+        if (strstr(line,
+                   " FORCE CONSTANTS IN CARTESIAN COORDINATES (HARTREES/BOHR)."
+                   ))
+            goto found_fc;
+    }
+    fprintf(stderr,"Could not find force constants in G92 scf output\n");
+    fprintf(stderr,"Look at %s\n",outfilename);
+    return -1;
+    
+    // Parse out the Force contsants
+  found_fc:
+    count1=0;
+
+    // calculate ioffset array
+    int *ioff=(int *)malloc(natoms*3*sizeof(int));
+    ioff[0]=0;
+    for (int ii=1; ii<natoms*3;ii++)
+        ioff[ii]=ioff[ii-1]+3*natoms-ii+1;
+
+    nsets=3.*natoms/5;
+    if (nmodes%5) nsets++;
+    for (i=0; i<nsets; i++)
+    {
+        int nrows=(i==nsets-1 && (nmodes%5))?nmodes%5:5;
+
+        // Parse out numbered header
+        fgets(line,120,fp_g92_output);
+        word = strtok(line," ");
+        for (int j=0;j<nrows;j++)
+        {
+            count1++;
+            if (strtol(word, NULL, 10) != count1)
+            {
+                fprintf(stderr,"Error parsing force constants, count=%d\n",
+                        count1);
+                fprintf(stderr,"Error parsing force constants, look at %s\n",
+                        outfilename);
+                return -1;
+            }
+            word=strtok(NULL," ");
+        }
+
+        // Get force constants
+        for (int force_dim = i*5; force_dim < 3*natoms; force_dim++)
+        {
+            fgets(line,120,fp_g92_output);
+            
+            // Change the "D" to "E" in the force constants
+            int pntr=0;
+            while (line[pntr])
+            {
+                if (line[pntr]=='D') line[pntr]='E';
+                pntr++;
+            }
+
+            if (strtol(strtok(line," "),NULL,10)!=force_dim+1)
+            {
+                fprintf(stderr," Error parsing G92 force_constants output\n");
+                return -1;
+            }
+                
+            int ncols=(force_dim < (i+1)*5)?(force_dim-i*5+1):5;
+            for (int j=0;j<ncols;j++)
+            {
+                int fcoffset=ioff[i*5+j]+force_dim-i*5-j;
+                //printf("i=%d ioff[%d]=%d force_dim=%d j=%d fcoffset=%d\n",
+                //       i,i*5+j,ioff[i*5+j],force_dim,j,fcoffset);
+                forceconstants.set_element(fcoffset,
+                                           strtod(strtok(NULL," "),NULL));
+                total_count++;
+            }
+        }
+    }
+    
     // Now let's look for the archive entry
     while(fgets(line,120,fp_g92_output))
     {
@@ -409,40 +488,53 @@ parse_g92_freq(char *prefix,char *parse_string, RefMolecule mole,
 // Simple main to test run_g92
 main()
 {
-    char *name="1mbi";
-    int natoms=19;
-    char *atoms[]={"C","C","N","C","N","C","C","H","C","C",
-                   "N","H","H","C","H","H","H","H","H"};
-    int charge=1;
+    char *name="h2o";
+    int natoms=3;
+    char *atoms[]={"O","H","H"};
+//    char *atoms[]={"C","N","C","N","C","C","N","C","C","C",
+//                   "H","N","H","H","H","H","C","C","C","C",
+//                   "C","C","H","H","C","H","H","H"};
+    int charge=0;
     int multiplicity=1;
     double energy;
-    LocalSCDimension dim(19);
-    LocalSCDimension dimfreq(51);
-    LocalSCDimension dim2(2907);
+    LocalSCDimension dim(28);
+    LocalSCDimension dimfreq(78);
+    LocalSCDimension dim2(78*3*28);
+    LocalSCDimension dim3(85*42);
     RefSCVector gradient = new LocalSCVector(&dim);
     RefSCVector geom = new LocalSCVector(&dim);
     RefSCVector freq = new LocalSCVector(&dimfreq);
     RefSCVector normalmodes = new LocalSCVector(&dim2);
+    RefSCVector forceconstants = new LocalSCVector(&dim3);
     
-    AtomicCenter a1("C"  , -0.3605513998 ,  -0.0367641686  ,  0.0147926861 ,NULL);
-    AtomicCenter a2("C"  , -0.3147667922 ,  -0.0218332569  ,  2.8476409608 ,NULL);
-    AtomicCenter a3("N"  ,  1.8832840718 ,  -0.0339070724  , -0.9335183676 ,NULL);
-    AtomicCenter a4("C"  , -2.7589829999 ,   0.0431473081  , -1.2585755617 ,NULL);
-    AtomicCenter a5("N"  ,  2.0297956234 ,  -0.0001455266  ,  3.4807891018 ,NULL);
-    AtomicCenter a6("C"  ,  3.4008141314 ,  -0.3069073243  ,  1.1156665213 ,NULL);
-    AtomicCenter a7("C"  , -2.5959947997 ,   0.0911156949  ,  4.3063127063 ,NULL);
-    AtomicCenter a8("H"  , -2.8188912524 ,   0.0238432165  , -3.2842659790 ,NULL);
-    AtomicCenter a9("C"  , -4.8270216002 ,   0.1379091399  ,  0.1941044063 ,NULL);
+    AtomicCenter  a1("O"  ,  0.0000000000 ,   0.0000000000  ,  0.0000000000 ,NULL);
+    AtomicCenter  a2("H" ,  0.0000000000 ,   0.0000000000  ,  1.7901780000 ,NULL);
+    AtomicCenter  a3("H"  ,  0.0000000000 ,   1.7250750     , -0.4783862    ,NULL);
+    AtomicCenter  a4("N"  , -2.7589829999 ,   0.0431473081  , -1.2585755617 ,NULL);
+    AtomicCenter  a5("C"  ,  2.0297956234 ,  -0.0001455266  ,  3.4807891018 ,NULL);
+    AtomicCenter  a6("C"  ,  3.4008141314 ,  -0.3069073243  ,  1.1156665213 ,NULL);
+    AtomicCenter  a7("N"  , -2.5959947997 ,   0.0911156949  ,  4.3063127063 ,NULL);
+    AtomicCenter  a8("C"  , -2.8188912524 ,   0.0238432165  , -3.2842659790 ,NULL);
+    AtomicCenter  a9("C"  , -4.8270216002 ,   0.1379091399  ,  0.1941044063 ,NULL);
     AtomicCenter a10("C" ,  3.5647013727 ,  -0.2221123911  ,  5.6805410998 ,NULL);
-    AtomicCenter a11("N" ,  5.6135737940 ,  -1.0591150798  ,  1.4662313919 ,NULL);
-    AtomicCenter a12("H" , -2.5308437439 ,   0.1269304909  ,  6.3315010948 ,NULL);
+    AtomicCenter a11("H" ,  5.6135737940 ,  -1.0591150798  ,  1.4662313919 ,NULL);
+    AtomicCenter a12("N" , -2.5308437439 ,   0.1269304909  ,  6.3315010948 ,NULL);
     AtomicCenter a13("H" , -6.6619683656 ,   0.2095229711  , -0.6724861034 ,NULL);
-    AtomicCenter a14("C" , -4.7496587247 ,   0.1704403688  ,  2.9840462310 ,NULL);
+    AtomicCenter a14("H" , -4.7496587247 ,   0.1704403688  ,  2.9840462310 ,NULL);
     AtomicCenter a15("H" ,  2.5775316127 ,  -1.1076734509  ,  7.2210660123 ,NULL);
     AtomicCenter a16("H" ,  4.3963259769 ,   1.5874896722  ,  6.1462787592 ,NULL);
-    AtomicCenter a17("H" ,  6.8507089561 ,  -1.3574062121  ,  0.0658293996 ,NULL);
+    AtomicCenter a17("C" ,  6.8507089561 ,  -1.3574062121  ,  0.0658293996 ,NULL);
     AtomicCenter a18("H" ,  5.7350153987 ,  -1.1717726768  ,  3.6404193236 ,NULL);
-    AtomicCenter a19("H" , -6.5282305620 ,   0.2786975609  ,  3.9567978488 ,NULL);
+    AtomicCenter a19("C" , -6.5282305620 ,   0.2786975609  ,  3.9567978488 ,NULL);
+    AtomicCenter a20("C" , -4.7496587247 ,   0.1704403688  ,  2.9840462310 ,NULL);
+    AtomicCenter a21("C" ,  2.5775316127 ,  -1.1076734509  ,  7.2210660123 ,NULL);
+    AtomicCenter a22("C" ,  4.3963259769 ,   1.5874896722  ,  6.1462787592 ,NULL);
+    AtomicCenter a23("H" ,  6.8507089561 ,  -1.3574062121  ,  0.0658293996 ,NULL);
+    AtomicCenter a24("H" ,  5.7350153987 ,  -1.1717726768  ,  3.6404193236 ,NULL);
+    AtomicCenter a25("C" , -6.5282305620 ,   0.2786975609  ,  3.9567978488 ,NULL);
+    AtomicCenter a26("H" ,  6.8507089561 ,  -1.3574062121  ,  0.0658293996 ,NULL);
+    AtomicCenter a27("H" ,  5.7350153987 ,  -1.1717726768  ,  3.6404193236 ,NULL);
+    AtomicCenter a28("H" , -6.5282305620 ,   0.2786975609  ,  3.9567978488 ,NULL);
 
     // Set up molecule
     RefMolecule mole = new Molecule();
@@ -450,22 +542,31 @@ main()
     mole->add_atom(0,a1);
     mole->add_atom(1,a2);
     mole->add_atom(2,a3);
-    mole->add_atom(3,a4);
-    mole->add_atom(4,a5);
-    mole->add_atom(5,a6);
-    mole->add_atom(6,a7);
-    mole->add_atom(7,a8);
-    mole->add_atom(8,a9);
-    mole->add_atom(9,a10);
-    mole->add_atom(10,a11);
-    mole->add_atom(11,a12);
-    mole->add_atom(12,a13);
-    mole->add_atom(13,a14);
-    mole->add_atom(14,a15);
-    mole->add_atom(15,a16);
-    mole->add_atom(16,a17);
-    mole->add_atom(17,a18);
-    mole->add_atom(18,a19);
+//    mole->add_atom(3,a4);
+//    mole->add_atom(4,a5);
+//    mole->add_atom(5,a6);
+//    mole->add_atom(6,a7);
+//    mole->add_atom(7,a8);
+//    mole->add_atom(8,a9);
+//    mole->add_atom(9,a10);
+//    mole->add_atom(10,a11);
+//    mole->add_atom(11,a12);
+//    mole->add_atom(12,a13);
+//    mole->add_atom(13,a14);
+//    mole->add_atom(14,a15);
+//    mole->add_atom(15,a16);
+//    mole->add_atom(16,a17);
+//    mole->add_atom(17,a18);
+//    mole->add_atom(18,a19);
+//    mole->add_atom(19,a20);
+//    mole->add_atom(20,a21);
+//    mole->add_atom(21,a22);
+//    mole->add_atom(22,a23);
+//    mole->add_atom(23,a24);
+//    mole->add_atom(24,a25);
+//    mole->add_atom(25,a26);
+//    mole->add_atom(26,a27);
+//    mole->add_atom(27,a28);
     
     // Set up keyval
     char *filename="run_g92.in";
@@ -477,7 +578,8 @@ main()
     for (int j=0; j<1; j++)
     {
         int retval=g92_freq_driver(name, mole, refg92_keyval, method, energy,
-                                   gradient, freq, normalmodes, nmodes, nimag);
+                                   gradient, freq, normalmodes, 
+                                   forceconstants, nmodes, nimag);
         printf("Run #%d E=%lf\n",j,energy);
     }
     printf(" Nimag=%d, nmodes=%d\n",nimag, nmodes);
@@ -487,6 +589,18 @@ main()
         for (int j=0; j<natoms*3; j++)
             printf("Component  #%d = %lf\n",j,normalmodes.get_element(i*natoms*3+j));
     }
+    int    icount=0;
+    for (i=0; i<natoms*3; i++)
+    {
+        for (int j=i; j<natoms*3; j++)
+        {
+            printf("%d %lf\n",j,forceconstants.get_element(icount));
+            icount++;
+        }
+    }
     fflush(stdout);
 }
 #endif // TEST_MAIN
+
+
+

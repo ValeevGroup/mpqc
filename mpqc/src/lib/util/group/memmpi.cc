@@ -10,7 +10,6 @@
 #include <util/group/memmpi.h>
 
 #include <mpi.h>
-#include <mpproto.h>
 
 ///////////////////////////////////////////////////////////////////////
 // The MPIMemoryGrp class
@@ -110,7 +109,7 @@ long
 MPIMemoryGrp::recv(void* data, int nbytes, int node, int type)
 {
   int n;
-  if (node == -1) n = DONTCARE;
+  if (node == -1) n = MPI_ANY_SOURCE;
   else n = node;
   int t = type;
   int mid = get_mid();

@@ -66,6 +66,7 @@ EFCOpt::EFCOpt(const RefKeyVal&keyval):
     }
   }
   hessian_ = hessian;
+  last_mode_ = 0;
 }
 
 EFCOpt::EFCOpt(StateIn&s):
@@ -76,6 +77,7 @@ EFCOpt::EFCOpt(StateIn&s):
   nlp_.restore_state(s);
   hessian_.restore_state(s);
   update_.restore_state(s);
+  last_mode_.restore_state(s);
   s.get(convergence_);
   s.get(accuracy_);
   s.get(take_newton_step_);
@@ -94,6 +96,7 @@ EFCOpt::save_data_state(StateOut&s)
   nlp_.save_state(s);
   hessian_.save_state(s);
   update_.save_state(s);
+  last_mode_.save_state(s);
   s.put(convergence_);
   s.put(accuracy_);
   s.put(take_newton_step_);
@@ -173,8 +176,133 @@ EFCOpt::update()
     update_->update(hessian_,nlp_,xcurrent,gcurrent);
   }
 
-  // just take the Newton-Raphson step first iteration
-  RefSCVector xdisp = -1.0*(hessian_.i() * gcurrent);
+  // begin efc junk
+  // first diagonalize hessian
+  RefSCMatrix evecs(hessian_.dim(),hessian_.dim());
+  RefDiagSCMatrix evals(hessian_.dim());
+
+  hessian_.diagonalize(evals,evecs);
+  evals.print("hessian eigenvalues");
+  evecs.print("hessian eigenvectors");
+
+  // form gradient to local hessian modes F = Ug
+  RefSCVector F = evecs.t() * gcurrent;
+  F.print("F");
+
+  // figure out if hessian has the right number of negative eigenvalues
+  int ncoord = evals.n();
+  int npos=0,nneg=0;
+  for (i=0; i < ncoord; i++) {
+    if (evals.get_element(i) >= 0.0) npos++;
+    else nneg++;
+  }
+
+  RefSCVector xdisp(hessian_.dim());
+  xdisp.assign(0.0);
+  
+  // for now, we always take the P-RFO for tstate (could take NR if
+  // nneg==1, but we won't make that an option yet)
+  if (tstate) {
+    int mode = 0;
+    
+    if (nneg != 1)
+      printf("\nwarning!  hessian has wrong form\n");
+
+    // which mode are we following.  find mode with maximum overlap with
+    // last mode followed
+    double overlap=0;
+    if (last_mode_.nonnull()) {
+      for (i=0; i < ncoord; i++) {
+        double S=0;
+        for (j=0; j < ncoord; j++) {
+          S += fabs(last_mode_.get_element(j))*fabs(evecs.get_element(j,i));
+        }
+        if (S > overlap) {
+          mode = i;
+          overlap = S;
+        }
+      }
+    } else {
+      last_mode_ = hessian_.dim()->create_vector();
+    }
+    
+    for (i=0; i < ncoord; i++)
+      last_mode_(i) = evecs(i,mode);
+
+    printf("\n following mode %d\n",mode);
+    
+    // no mode following yet, just follow lowest mode
+    double bk = evals(mode);
+    double Fk = F(mode);
+    double lambda_p = 0.5*bk + 0.5*sqrt(bk*bk + 4*Fk*Fk);
+    
+    double lambda_n;
+    double nlambda=1.0;
+    do {
+      lambda_n=nlambda;
+      nlambda=0;
+      for (i=0; i < F.n(); i++) {
+        if (i==mode) continue;
+        
+        nlambda += F.get_element(i)*F.get_element(i) /
+                    (lambda_n - evals.get_element(i));
+      }
+    } while(fabs(nlambda-lambda_n) > 1.0e-8);
+
+    printf("lambda_p = %g\n",lambda_p);
+    printf("lambda_n = %g\n",lambda_n);
+
+    // form Xk
+    double Fkobkl = F(mode)/(evals(mode)-lambda_p);
+    for (j=0; j < F.n(); j++)
+      xdisp(j) = xdisp(j) - evecs(j,mode) * Fkobkl;
+    
+    // form displacement x = sum -Fi*Vi/(bi-lam)
+    for (i=0; i < F.n(); i++) {
+      if (i==mode) continue;
+      
+      double Fiobil = F(i) / (evals(i)-lambda_n);
+      for (j=0; j < F.n(); j++) {
+        xdisp(j) = xdisp(j) - evecs(j,i) * Fiobil;
+      }
+    }
+    
+ // minimum
+  } else {
+    // evaluate lambda
+    double lambda;
+    double nlambda=1.0;
+    do {
+      lambda=nlambda;
+      nlambda=0;
+      for (i=0; i < F.n(); i++) {
+        double Fi = F(i);
+        nlambda += Fi*Fi / (lambda - evals.get_element(i));
+      }
+    } while(fabs(nlambda-lambda) > 1.0e-8);
+    printf("lambda = %g\n",lambda);
+
+  // form displacement x = sum -Fi*Vi/(bi-lam)
+    for (i=0; i < F.n(); i++) {
+      double Fiobil = F(i) / (evals(i)-lambda);
+      for (j=0; j < F.n(); j++) {
+        xdisp(j) = xdisp(j) - evecs(j,i) * Fiobil;
+      }
+    }
+  }
+
+  // scale the displacement vector if it's too large
+  double tot = sqrt(xdisp.scalar_product(xdisp));
+  if (tot > 0.3) {
+    double scal = 0.3/tot;
+    printf("\n stepsize of %f is too big, scaling by %f\n",tot,scal);
+    xdisp.scale(scal);
+    tot *= scal;
+  }
+  printf("\n taking step of size %f\n",tot);
+                    
+  xdisp.print("xdisp");
+
   // try steepest descent
   // RefSCVector xdisp = -1.0*gcurrent;
   RefSCVector xnext = xcurrent + xdisp;

@@ -31,6 +31,7 @@ class EFCOpt: public Optimize {
     RefNLP2 nlp_;
     RefSymmSCMatrix hessian_;
     RefHessianUpdate update_;
+    RefSCVector last_mode_;
 
     int take_newton_step_;
   public:

@@ -18,7 +18,12 @@ library.dxx:
 binary.dxx:
 	$(PERL) ../bin/mkextradoc.pl ../src/bin $@
 
+.PHONY: veryclean
+veryclean:
+	/bin/rm -rf html include.dxx library.dxx binary.dxx
+	/bin/rm -rf *~
+
 .PHONY: clean
 clean:
-	/bin/rm -rf html include.dxx library.dxx binary.dxx
+	/bin/rm -rf include.dxx library.dxx binary.dxx
 	/bin/rm -rf *~

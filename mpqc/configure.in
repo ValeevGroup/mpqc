@@ -182,36 +182,34 @@ ELF_MINOR=0.1
 dnl -- does machine use elf format --
 
 changequote(<<, >>)dnl
-case $target in
-  mips*-sgi-irix[5-6]* | r8000-sgi-irix*)
-    ELF=yes
-    if test X$GXX = Xyes; then
+if test X$SHARED_LIBS = Xyes; then
+  case $target in
+    mips*-sgi-irix[5-6]* | r8000-sgi-irix*)
+      ELF=yes
+      if test X$GXX = Xyes; then
+        SH_LD="\$(CXX)"
+        LDFLAGS="-Wl,-rpath -Wl,\$(LIBDIR)"
+        SH_LDFLAGS="-elf -shared \
+          -Wl,-update_registry -Wl,\$(LIBDIR)/so_locations \
+          -Wl,-rdata_shared \
+          -Wl,-rpath -Wl,\$(LIBDIR) \
+          -Wl,-soname -Wl,\$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
+      else
+        LDFLAGS="-rpath \$(LIBDIR)"
+        SH_LDFLAGS="-elf -shared -rdata_shared -rpath \$(LIBDIR) \
+                     -update_registry \$(LIBDIR)/so_locations \
+                     -soname \$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
+      fi
+    ;;
+    *-linux)
+      ELF=yes
       SH_LD="\$(CXX)"
+      SH_LDFLAGS="-shared -Wl,-soname -Wl,\$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
       LDFLAGS="-Wl,-rpath -Wl,\$(LIBDIR)"
-      SH_LDFLAGS="-elf -shared \
-        -Wl,-update_registry -Wl,\$(LIBDIR)/so_locations \
-        -Wl,-rdata_shared \
-        -Wl,-rpath -Wl,\$(LIBDIR) \
-        -Wl,-soname -Wl,\$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
-    else
-      LDFLAGS="-rpath \$(LIBDIR)"
-      SH_LDFLAGS="-elf -shared -rdata_shared -rpath \$(LIBDIR) \
-                   -update_registry \$(LIBDIR)/so_locations \
-                   -soname \$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
-    fi
-  ;;
-  *-linux)
-    ELF=yes
-    SH_LD="\$(CXX)"
-    SH_LDFLAGS="-shared -Wl,-soname -Wl,\$(TARGET_TO_MAKE).so.\$(ELF_MAJOR)"
-    LDFLAGS="-Wl,-rpath -Wl,\$(LIBDIR)"
-  ;;
-esac
-changequote([, ])dnl
-
-if test X$SHARED_LIBS = Xno; then
-  ELF=no
+    ;;
+  esac
 fi
+changequote([, ])dnl
 
 if test X$ELF = Xyes; then
   if test X$GCC = Xyes; then
@@ -310,6 +308,30 @@ changequote([, ])dnl
       CXXOPTIONS_MISC="$CXXOPTIONS_MISC -m486"
     fi
     AC_MSG_RESULT(intel)
+  ;;
+  i860-intel-sunmos*)
+    if test X$GCC = Xyes; then
+      COPTIONS_MISC="$COPTIONS_MISC -msunmos"
+    else
+      COPTIONS_MISC="$COPTIONS_MISC -DSUNMOS -D__PUMAGON__"
+      COPTIONS_MISC="$COPTIONS_MISC -L$PARAGON_XDEV/paragon/lib-coff/sunmos"
+      COPTIONS_MISC="$COPTIONS_MISC -Wl,-d0x4000000,-k"
+      COPTIONS_MISC="$COPTIONS_MISC -YS,$PARAGON_XDEV/paragon/lib-coff/sunmos"
+      COPTIONS_MISC="$COPTIONS_MISC -lm -lsunmos -lm"
+    fi
+    if test X$GXX = Xyes; then
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -msunmos"
+    fi
+    AC_MSG_RESULT(paragon sunmos)
+  ;;
+  i860-intel-osf*)
+    if test X$GCC = Xyes; then
+      COPTIONS_MISC="$COPTIONS_MISC -mnx"
+    fi
+    if test X$GXX = Xyes; then
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -mnx"
+    fi
+    AC_MSG_RESULT(paragon osf)
   ;;
   *)
     AC_MSG_RESULT("none")
@@ -418,25 +440,26 @@ fi
 SC_C_BIGENDIAN
 
 dnl --------- Checks for libraries. ---------
-AC_CHECK_LIB(dl,main)
-AC_CHECK_LIB(sun,main)
-AC_CHECK_LIB(m,main)
-AC_CHECK_LIB(fl,main)
+AC_CHECK_LIB(dl,exit)
+AC_CHECK_LIB(sun,exit)
+AC_CHECK_LIB(m,exit)
+AC_CHECK_LIB(fl,exit)
 
-AC_CHECK_LIB(mpi,main)
-AC_CHECK_LIB(mpl,main)
-AC_CHECK_LIB(pvm,main)
+AC_CHECK_LIB(mpi,exit)
+AC_CHECK_LIB(mpl,exit)
+AC_CHECK_LIB(pvm,exit)
 
-AC_CHECK_LIB(nx,hrecv)
-if test X$ac_cv_lib_nx_hrecv = Xyes; then
+AC_CHECK_LIB(nx,hrecv,[
   HAVE_HRECV=yes
   HAVE_LIBNX=yes
+])
+
+if test X$ac_cv_lib_nx_hrecv = Xyes; then
   AC_DEFINE(HAVE_HRECV)
 else
-  AC_CHECK_LIB(nx,main)
-  if test X$ac_cv_lib_nx_main = Xyes; then
+  AC_CHECK_LIB(nx,exit,[
     HAVE_LIBNX=yes
-  fi
+  ])
 fi
 AC_SUBST(HAVE_HRECV)
 
@@ -450,19 +473,19 @@ AC_CHECK_HEADERS(cube.h nx.h mpi.h mpl.h pvm.h)
 
 dnl ---------- Make sure we got everything needed. -----------
 
-if test X$ac_cv_lib_mpi_main = Xyes -a X$ac_cv_header_mpi_h = Xyes; then
+if test X$ac_cv_lib_mpi_exit = Xyes -a X$ac_cv_header_mpi_h = Xyes; then
   HAVE_MPI=yes
   AC_DEFINE(HAVE_MPI)
 fi
 AC_SUBST(HAVE_MPI)
 
-if test X$ac_cv_lib_mpl_main = Xyes -a X$ac_cv_header_mpl_h = Xyes; then
+if test X$ac_cv_lib_mpl_exit = Xyes -a X$ac_cv_header_mpl_h = Xyes; then
   HAVE_MPL=yes
   AC_DEFINE(HAVE_MPL)
 fi
 AC_SUBST(HAVE_MPL)
 
-if test X$ac_cv_lib_pvm_main = Xyes -a X$ac_cv_header_pvm_h = Xyes; then
+if test X$ac_cv_lib_pvm_exit = Xyes -a X$ac_cv_header_pvm_h = Xyes; then
   HAVE_PVM=yes
   AC_DEFINE(HAVE_PVM)
 fi
@@ -539,6 +562,10 @@ dnl --------- Checks that must be done last. ---------
 
 AC_MSG_CHECKING([for special flags that must be set last])
 case $target in
+  i860-intel-sunmos*)
+    LDFLAGS="$LDFLAGS -msunmos -mnoieee"
+    AC_MSG_RESULT(paragon sunmos)
+  ;;
   i860-intel-osf*)
     LDFLAGS="$LDFLAGS -mnx -mnoieee"
     AC_MSG_RESULT(osf paragon)

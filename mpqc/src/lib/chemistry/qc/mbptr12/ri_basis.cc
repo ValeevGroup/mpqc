@@ -88,6 +88,7 @@ R12IntEvalInfo::construct_ri_basis_ksplus_(bool safe)
 {
   GaussianBasisSet& abs = *(bs_aux_.pointer());
   bs_ri_ = abs + bs_;
+  construct_orthog_ri_();
 }
 
 void

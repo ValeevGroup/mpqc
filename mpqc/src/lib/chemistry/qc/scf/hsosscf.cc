@@ -236,11 +236,18 @@ HSOSSCF::compute()
 
   if (_energy.needed()) {
     if (_eigenvectors.result_noupdate().null()) {
+      // make sure we don't accidentally compute the gradient or hessian
+      int gcomp = _gradient.compute(0);
+      int hcomp = _hessian.compute(0);
+
       // start from core guess
-      CLSCF hcwfn(*this);
+      HCoreWfn hcwfn(*this);
+      
       RefSCMatrix vec = hcwfn.eigenvectors();
 
       _eigenvectors = vec;
+      _gradient.compute(gcomp);
+      _hessian.compute(hcomp);
     }
 
     // schmidt orthogonalize the vector
@@ -386,7 +393,6 @@ HSOSSCF::do_vector(double& eelec, double& nucrep)
     printf("iter %5d energy = %20.15f delta = %15.10g\n",
            iter,eelec+nucrep,delta);
 
-#if 1
     // now extrapolate the fock matrix
     // first we form the error matrix which is the offdiagonal blocks of
     // the MO fock matrix
@@ -435,20 +441,6 @@ HSOSSCF::do_vector(double& eelec, double& nucrep)
     // diagonalize MO fock to get MO vector
     mofock.diagonalize(_fock_evals,nvector);
     mofock=0;
-#else
-    RefSymmSCMatrix mofock = _fock.clone();
-    mofock.assign(0.0);
-    mofock.accumulate_transform(_gr_vector.t(),_fock);
-
-    RefSymmSCMatrix moofock = _op_fock.clone();
-    moofock.assign(0.0);
-    moofock.accumulate_transform(_gr_vector.t(),_op_fock);
-
-    RefSymmSCMatrix eff_fock = mofock.copy();
-    eff_fock.element_op(_accumeffh,moofock);
-
-    eff_fock.diagonalize(_fock_evals,nvector);
-#endif
 
     // transform MO vector to AO basis
     _gr_vector = _gr_vector * nvector;
@@ -461,6 +453,7 @@ HSOSSCF::do_vector(double& eelec, double& nucrep)
   _fock_evals.print("evals");
   
   _eigenvectors = _gr_vector;
+  _eigenvectors.computed() = 1;
   
   int_done_bounds();
   int_done_erep();

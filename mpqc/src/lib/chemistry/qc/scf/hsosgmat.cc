@@ -121,8 +121,8 @@ HSOSSCF::form_ao_fock(centers_t *centers, double *intbuf)
           if (pmax[IOFF(j,l)]-2 > ijklpmx)
             ijklpmx = pmax[IOFF(j,k)]-2;
 
-          if (ijklpmx+ijbnd+klbnd < inttol)
-            continue;
+          // if (ijklpmx+ijbnd+klbnd < inttol)
+          //   continue;
 
           int s1=i, s2=j, s3=k, s4=l;
 

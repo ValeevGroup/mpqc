@@ -2,6 +2,7 @@
 #include <math/array/math_lib.h>
 #include <chemistry/qc/integral/integralv2.h>
 #include <chemistry/qc/intv2/int_libv2.h>
+#include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/scf/clscf.h>
 
 #define ioff(i) (((i)*((i)+1))>>1)
@@ -51,9 +52,17 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
   
   double tnint=0;
   
+  PetiteList pl(molecule(),basis());
+  
   for (int i=0; i < centers->nshell; i++) {
+    if (!pl.in_p1(i))
+      continue;
+    
     for (int j=0; j <= i; j++) {
       int ij = ioff(i)+j;
+      if (!pl.lambda(ij))
+        continue;
+      
       int ijbnd = int_Qvec[ij];
       int ijpmx = pmax[ij];
 
@@ -67,6 +76,8 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
         
         for (int l=0; l <= ((k==i)?j:k); l++) {
           int kl = ioff(k)+l;
+          int qijkl;
+
           int klbnd = int_Qvec[kl];
           int ijklpmx = (pmax[kl]>ijkpmx) ? pmax[kl] : ijkpmx;
 
@@ -79,6 +90,9 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
           if (ijklpmx+ijbnd+klbnd < inttol)
             continue;
 
+          if (!(qijkl=pl.in_p4(ij,kl,i,j,k,l)))
+            continue;
+          
           int s1=i, s2=j, s3=k, s4=l;
 
           int_erep(INT_EREP|INT_NOBCHK|INT_NOPERM,&s1,&s2,&s3,&s4);
@@ -118,7 +132,7 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
                         ii = k1; jj = l1; kk = i1; ll = j1;
                       }
 
-                      double pki_int = intbuf[index];
+                      double pki_int = (double) qijkl*intbuf[index];
                       double pkval;
 
                       int lij,lkl;
@@ -401,6 +415,15 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
   delete[] shnfunc;
   delete[] pmax;
 
+  //_gr_gmat.print("skel G matrix");
+
+  overlap().print("overlap");
+  overlap().diagonalize(_fock_evals,_gr_vector);
+  _gr_vector.print("overlap eigenvectors");
+  
+    
+  exit(0);
+  
   _fock.assign(_gr_gmat);
   _fock.accumulate(_gr_hcore);
 

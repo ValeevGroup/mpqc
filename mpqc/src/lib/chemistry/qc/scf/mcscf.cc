@@ -249,6 +249,10 @@ MCSCF::compute()
 
   if (_energy.needed()) {
     if (_eigenvectors.result_noupdate().null()) {
+      // make sure we don't accidentally compute the gradient or hessian
+      int gcomp = _gradient.compute(0);
+      int hcomp = _hessian.compute(0);
+
       // start from core guess
       CLSCF hcwfn(*this);
       RefSCMatrix vec = hcwfn.eigenvectors();
@@ -257,6 +261,8 @@ MCSCF::compute()
       vec->schmidt_orthog(overlap().pointer(),_ndocc+2);
 
       _eigenvectors = vec;
+      _gradient.compute(gcomp);
+      _hessian.compute(hcomp);
     }
 
     if (_fockc.null())
@@ -565,6 +571,7 @@ MCSCF::do_vector(double& eelec, double& nucrep)
   printf("occa = %lf, occb = %lf\n",occa,occb);
 
   _eigenvectors = _gr_vector;
+  _eigenvectors.computed() = 1;
   
   int_done_erep();
   int_done_offsets2(centers,centers,centers,centers);

@@ -231,11 +231,17 @@ OSSSCF::compute()
 
   if (_energy.needed()) {
     if (_eigenvectors.result_noupdate().null()) {
+      // make sure we don't accidentally compute the gradient or hessian
+      int gcomp = _gradient.compute(0);
+      int hcomp = _hessian.compute(0);
+
       // start from core guess
       CLSCF hcwfn(*this);
       RefSCMatrix vec = hcwfn.eigenvectors();
 
       _eigenvectors = vec;
+      _gradient.compute(gcomp);
+      _hessian.compute(hcomp);
     }
 
     // schmidt orthogonalize the vector
@@ -485,6 +491,7 @@ OSSSCF::do_vector(double& eelec, double& nucrep)
   _fock_evals.print("evals");
   
   _eigenvectors = _gr_vector;
+  _eigenvectors.computed() = 1;
   
   int_done_bounds();
   int_done_erep();

@@ -6,12 +6,12 @@
 % can be CLSCF, HSOSSCF, OSSSCF, TCSCF, XSCF, MCSCF
 %
 
-mole<MCSCF>: (
+mole<CLSCF>: (
   root = 2
 
   % NLP... input
   value_accuracy = 1e-14
-  gradient_accuracy = 1e-12
+  gradient_accuracy = 1e-7
 
   % MolecularEnergy input
   molecule = $:molecule
@@ -24,11 +24,18 @@ mole<MCSCF>: (
   density_reset_freq = 5
   ckpt_dir = "./"
   filename = "test"
+
+  extrap<DIIS>: (
+    start = 5
+    damping_factor = 0.02
+    n = 4
+  )
 )
 
 
-basis = $:stobasis
-molecule = $:coh2
+basis = $:631gsbasis
+%basis = $:stobasis
+molecule = $:water
 
 coor = $:symcoor
 message = $:message1
@@ -45,6 +52,13 @@ xopt<QNewtonOpt>: (
 %
 % basis sets
 %
+
+631gssbasis<GaussianBasisSet>: (
+  basisdir = "/net/midway/usr/people/etseidl/basis/"
+  basisfiles = [ v2g90.ipv2 ]
+  molecule = $:molecule
+  name = 631gss
+)
 
 631gsbasis<GaussianBasisSet>: (
   basisdir = "/net/midway/usr/people/etseidl/basis/"
@@ -106,23 +120,23 @@ ch2<Molecule>: (
 coh2<Molecule>: (
   symmetry=c2v
   { atoms geometry } = {
-      c  [   0.0  0.0   0.0 ]
-      o  [   0.0  0.0   2.8 ]
-      h  [   1.4  0.0  -1.0 ]
+      c  [   0.0           0.0   0.1879589819 ]
+      o  [   0.0           0.0   2.4872263970 ]
+      h  [   1.7507128195  0.0  -0.9375926894 ]
   }
 )
 
 cscoh2<Molecule>: (
   symmetry=cs
   { atoms geometry } = {
-      c  [   0.0  0.0   0.0 ]
-      o  [   0.0  2.8   0.0 ]
-      h  [   0.4 -0.8   1.4 ]
+      c  [   0.0   0.1879589819 0.0 ]
+      o  [   0.0   2.4872263970 0.0 ]
+      h  [   0.1  -0.9375926894 1.7507128195 ]
   }
 )
 
 water<Molecule>: (
-  symmetry=c2v
+  symmetry=c3
   { atoms geometry } = {
       H  [   1.5  0.0   1.0 ]
       O  [   0.0  0.0   0.0 ]

@@ -245,6 +245,10 @@ XSCF::compute()
 
   if (_energy.needed()) {
     if (_eigenvectors.result_noupdate().null()) {
+      // make sure we don't accidentally compute the gradient or hessian
+      int gcomp = _gradient.compute(0);
+      int hcomp = _hessian.compute(0);
+
       // start from core guess
       CLSCF hcwfn(*this);
       RefSCMatrix vec = hcwfn.eigenvectors();
@@ -253,6 +257,8 @@ XSCF::compute()
       vec->schmidt_orthog(overlap().pointer(),_ndocc+2);
 
       _eigenvectors = vec;
+      _gradient.compute(gcomp);
+      _hessian.compute(hcomp);
     } else {
       // we must already have an old vector (and sab I hope)
       _ca.scale(sqrt(2.0*(1.0+sab)));
@@ -589,6 +595,7 @@ XSCF::do_vector(double& eelec, double& nucrep)
   _fock_evalsb.print("evalsb");
   
   _eigenvectors = _gr_vector;
+  _eigenvectors.computed() = 1;
   
   int_done_erep();
   int_done_offsets2(centers,centers,centers,centers);

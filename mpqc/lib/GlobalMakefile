@@ -39,8 +39,8 @@ CXXINCLUDE = -I. -I$(SRCDIR) -I$(TOPDIR)/src.lib -I$(SRCDIR)/$(TOPDIR)/src.lib -
 #
 # the programs to convert a web file to C source or TeX source
 #
-CTANGLE = ceetangle
-CWEAVE = ceeweave
+CTANGLE = ctangle
+CWEAVE = cweave
 
 # The object code suffix
 OBJSUF = o

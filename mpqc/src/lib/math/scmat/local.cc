@@ -468,7 +468,7 @@ LocalSymmSCMatrix::LocalSymmSCMatrix(StateIn&s):
 {
   d.restore_state(s);
   block.restore_state(s);
-  if (rows) delete[] rows;
+  // if (rows) delete[] rows;
   rows = init_symm_rows(block->data,d->n());
 }
 

@@ -215,6 +215,7 @@ class StateIn: virtual public DescribedClass {
     virtual int get_array_float(float*p,int size);
     virtual int get_array_double(double*p,int size);
     //virtual int get(SavableState&ss);
+    void forget();
   };
 DescribedClass_REF_dec(StateIn);
 

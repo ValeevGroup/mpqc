@@ -219,6 +219,11 @@ void StateOut::forget()
   ps_->clear();
 }
 
+void StateIn::forget()
+{
+  ps_->clear();
+}
+
 /////////////////////////////////////////////////////////////////
 
 int StateOut::put_array_void(const void*p,int s)

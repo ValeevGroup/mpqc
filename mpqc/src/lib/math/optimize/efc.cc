@@ -304,7 +304,7 @@ EFCOpt::update()
 
   // scale the displacement vector if it's too large
   double tot = sqrt(xdisp.scalar_product(xdisp));
-  double maxstepsize=0.3;
+  double maxstepsize=0.6;
   if (tot > maxstepsize) {
     double scal = maxstepsize/tot;
     printf("\n stepsize of %f is too big, scaling by %f\n",tot,scal);

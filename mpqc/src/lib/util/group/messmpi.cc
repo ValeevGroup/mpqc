@@ -37,6 +37,8 @@ extern int MPI_Initialized(int *); // missing in mpi.h
 #include <util/misc/formio.h>
 #include <util/misc/newstring.h>
 
+MPI_Comm global_commgrp;
+
 using namespace std;
 using namespace sc;
 
@@ -176,8 +178,10 @@ MPIMessageGrp::init(MPI_Comm comm, int *argc, char ***argv)
 #ifdef HAVE_MPI_INIT_THREAD
       int provided, desired = SC_MPI_THREAD_LEVEL;
       MPI_Init_thread(inits_argc, inits_argv, desired, &provided);
-      if (provided != desired) {
-          ExEnv::out0() << indent
+      int me;
+      MPI_Comm_rank(MPI_COMM_WORLD, &me);
+      if (provided != desired && me == 0) {
+          ExEnv::outn() << indent
                         << "WARNING: desired "
                         << mpi_thread_string(desired)
                         << " MPI threading support but got "
@@ -194,6 +198,7 @@ MPIMessageGrp::init(MPI_Comm comm, int *argc, char ***argv)
     }
 
   MPI_Comm_dup(comm, &commgrp);
+  global_commgrp = commgrp;
 
    if (!nmpi_grps) {
       threadgrp = ThreadGrp::get_default_threadgrp();
@@ -455,6 +460,55 @@ MPIMessageGrp::reduce(signed char* d, int n, GrpReduce<signed char>& r,
   MessageGrp::reduce(d,n,r,scratch,target);
 }
 #endif
+
+#define SUMMEMBER(name, type, mpitype) \
+void \
+MPIMessageGrp::sum(type*d, int n, type*scratch, int target) \
+{ \
+ \
+  type *work; \
+  if (!scratch) work = new type[n]; \
+  else work = scratch; \
+ \
+  int ret; \
+ \
+  if (target == -1) { \
+      if (debug_) { \
+          ExEnv::outn() << scprintf("%3d: MPI_Allreduce" \
+          "(0x%08x, 0x%08x, %5d, %3d, MPI_SUM, commgrp)", \
+          me(), d, work, n, mpitype) \
+               << endl; \
+        } \
+      ret = MPI_Allreduce(d, work, n, mpitype, MPI_SUM, commgrp); \
+      if (debug_) \
+        ExEnv::outn() << scprintf("%3d: done with Allreduce", me()) << endl; \
+    } \
+  else { \
+      if (debug_) { \
+          ExEnv::outn() << scprintf("%3d: MPI_Reduce" \
+          "(0x%08x, 0x%08x, %5d, %3d, MPI_SUM, %3d, commgrp)", \
+          me(), d, work, n, mpitype, target) \
+               << endl; \
+        } \
+      ret = MPI_Reduce(d, work, n, mpitype, MPI_SUM, target, commgrp); \
+      if (debug_) \
+        ExEnv::outn() << scprintf("%3d: done with Reduce", me()) << endl; \
+    } \
+ \
+  if (ret != MPI_SUCCESS) { \
+      ExEnv::outn() << me() << ": MPIMessageGrp::sum(," \
+          << n << ",,," << target << "): mpi error:" << endl; \
+      print_error_and_abort(me(), ret); \
+    } \
+ \
+  if (target == -1 || target == me()) { \
+     for (int i=0; i<n; i++) d[i] = work[i]; \
+    } \
+ \
+  if (!scratch) delete[] work; \
+}
+SUMMEMBER(double, double, MPI_DOUBLE)
+SUMMEMBER(int, int, MPI_INT)
 
 void
 MPIMessageGrp::raw_bcast(void* data, int nbyte, int from)

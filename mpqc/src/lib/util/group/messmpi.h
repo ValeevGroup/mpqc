@@ -82,6 +82,9 @@ class MPIMessageGrp: public MessageGrp {
 
     void sync();
 
+    void sum(double*, int n, double*scratch = 0, int target = -1);
+    void sum(int*, int n, int*scratch = 0, int target = -1);
+
     void reduce(double*, int n, GrpReduce<double>&,
                 double*scratch = 0, int target = -1);
     void reduce(unsigned int*, int n, GrpReduce<unsigned int>&,

@@ -143,6 +143,9 @@ class StateIn:  public DescribedClass {
     
     /// This restores strings saved with StateOut::putstring.
     virtual int getstring(char*&);
+    
+    /// This restores a std::string object.
+    virtual int get(std::string&);
 
     /// These restore data saved with StateOut's put.  members.
     virtual int get(char&r, const char *keyword = 0);

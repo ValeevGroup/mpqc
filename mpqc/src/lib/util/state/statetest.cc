@@ -241,6 +241,7 @@ class D: public B, public C {
     int *idat;
     float *fdat;
     double *ddat;
+    std::string sdat;
   public:
     D();
     D(const Ref<KeyVal>&);
@@ -269,6 +270,7 @@ class D: public B, public C {
           s << "D::b:\n";  db()->print(s);
         }
       s << "D::d = " << d() << '\n';
+      s << "D::sdat = " << sdat << std::endl;
     }
 };
 
@@ -297,6 +299,7 @@ D::D(const Ref<KeyVal>&keyval):
   idat[0]=(idat[1]=(idat[2]=(idat[3]=1)+1)+1)+1;
   fdat[0]=(fdat[1]=(fdat[2]=(fdat[3]=1.0)+1)+1)+1;
   ddat[0]=(ddat[1]=(ddat[2]=(ddat[3]=1.0)+1)+1)+1;
+  sdat = "Test of std::string";
 }
 D::D(StateIn&s):
   SavableState(s),
@@ -318,6 +321,7 @@ D::D(StateIn&s):
   s.get(fdat);
   s.get(idat);
   s.get(cdat);
+  s.get(sdat);
 }
 void
 D::save_data_state(StateOut&s)
@@ -336,6 +340,7 @@ D::save_data_state(StateOut&s)
   s.put(fdat,4);
   s.put(idat,4);
   s.put(cdat,4);
+  s.put(sdat);
 }
 D::~D()
 {

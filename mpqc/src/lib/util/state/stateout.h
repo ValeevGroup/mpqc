@@ -101,6 +101,9 @@ class StateOut: public DescribedClass {
         by interpreting the character array as a character string. */
     virtual int putstring(const char*);
 
+    /// Write out a std::string object
+    virtual int put(const std::string &);
+
     /// Write the given datum.
     virtual int put(char r);
     virtual int put(unsigned int r);

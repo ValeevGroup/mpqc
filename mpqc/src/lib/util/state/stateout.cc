@@ -273,6 +273,13 @@ StateOut::putstring(const char*s)
 }
 
 int
+StateOut::put(const std::string &s)
+{
+  int r = putstring(s.c_str());
+  return r;
+}
+
+int
 StateOut::put(const char*s,int size)
 {
   int r=0;

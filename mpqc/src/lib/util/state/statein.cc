@@ -336,6 +336,17 @@ StateIn::getstring(char*&s)
 }
 
 int
+StateIn::get(std::string&s)
+{
+  char *cstr;
+  int r = getstring(cstr);
+  if (cstr) s = cstr;
+  else s.clear();
+  delete[] cstr;
+  return r;
+}
+
+int
 StateIn::get(char*&s)
 {
   int r=0;

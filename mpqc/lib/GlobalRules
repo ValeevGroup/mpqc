@@ -150,7 +150,7 @@ miscclean::
 	-rm -f *~
 
 oclean::
-	-rm -f *.o
+	-rm -rf *.o cxx_tmpl_repo
 
 dclean::
 	-rm -f *.d

@@ -1444,16 +1444,19 @@ RadialIntegrator::set_nr(int i)
   nr_ = i;
 }
 
-const int
-RadialIntegrator::get_nr(void)
+int
+RadialIntegrator::get_nr(void) const
 {
   return nr_;
 }
 
 void
-RadialIntegrator::print(ostream &o) 
+RadialIntegrator::print(ostream &o) const
 {
+  o << node0 << indent << class_name() << ":" << endl;
+  o << incindent;
   o << node0 << indent << scprintf("nr       = %5d", get_nr()) << endl;
+  o << decindent;
 }
 
 ///////////////////////////////////////
@@ -1493,26 +1496,6 @@ AngularIntegrator::save_data_state(StateOut& s)
 {
   cout << class_name() << ": cannot save state" << endl;
   abort();
-}
-
-int
-AngularIntegrator::get_ntheta(void)
-{
-}
-
-int
-AngularIntegrator::get_nphi(void)
-{
-}
-
-int
-AngularIntegrator::get_Ktheta(void)
-{
-}
-
-double
-AngularIntegrator::sin_theta(SCVector3 &point)
-{
 }
 
 ///////////////////////////////////////
@@ -1583,7 +1566,7 @@ EulerMaclaurinRadialIntegrator::set_dr_dq(double i)
 }
 
 double
-EulerMaclaurinRadialIntegrator::get_dr_dq(void)
+EulerMaclaurinRadialIntegrator::get_dr_dq(void) const
 {
   return dr_dq_;
 }
@@ -1595,12 +1578,12 @@ EulerMaclaurinRadialIntegrator::set_dr_dqr2(double i)
 }
 
 double
-EulerMaclaurinRadialIntegrator::get_dr_dqr2(void)
+EulerMaclaurinRadialIntegrator::get_dr_dqr2(void) const
 {
   return dr_dqr2_;
 }
 
-/////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 // LebedevAngularIntegrator
 #define CLASSNAME LebedevAngularIntegrator
 #define PARENTS public AngularIntegrator
@@ -1713,7 +1696,7 @@ LebedevAngularIntegrator::save_data_state(StateOut& s)
 }
 
 int
-LebedevAngularIntegrator::get_norder(void)
+LebedevAngularIntegrator::get_norder(void) const
 {
   return norder_;
 }
@@ -1725,7 +1708,7 @@ LebedevAngularIntegrator::set_norder(int i)
 }
 
 int
-LebedevAngularIntegrator::get_npoints(void)
+LebedevAngularIntegrator::get_npoints(void) const
 {
   return npoints_;
 }
@@ -1737,7 +1720,7 @@ LebedevAngularIntegrator::set_npoints(int i)
 }
 
 int
-LebedevAngularIntegrator::get_N1(void)
+LebedevAngularIntegrator::get_N1(void) const
 {
   return N1_;
 }
@@ -1749,7 +1732,7 @@ LebedevAngularIntegrator::set_N1(int i)
 }
 
 int
-LebedevAngularIntegrator::get_N2(void)
+LebedevAngularIntegrator::get_N2(void) const
 {
   return N2_;
 }
@@ -1761,7 +1744,7 @@ LebedevAngularIntegrator::set_N2(int i)
 }
 
 int
-LebedevAngularIntegrator::get_N3(void)
+LebedevAngularIntegrator::get_N3(void) const
 {
   return N3_;
 }
@@ -1773,7 +1756,7 @@ LebedevAngularIntegrator::set_N3(int i)
 }
 
 int
-LebedevAngularIntegrator::get_point_count(void)
+LebedevAngularIntegrator::get_point_count(void) const
 {
   return point_count_;
 }
@@ -1785,14 +1768,9 @@ LebedevAngularIntegrator::set_point_count(int i)
 }
 
 double
-LebedevAngularIntegrator::sin_theta(SCVector3 &point)
-{
-  return 0.0;
-}
-
-double
-LebedevAngularIntegrator::angular_point_cartesian(int iangular, SCVector3 &point,
-                                                  SCVector3 &integration_point)
+LebedevAngularIntegrator
+::angular_point_cartesian(int iangular, SCVector3 &point,
+                          SCVector3 &integration_point) const
 {
   double r = point.r();
   integration_point.x() = r*x_[iangular];
@@ -2077,7 +2055,7 @@ LebedevAngularIntegrator::build_grid(void)
 */  
   double *zero_array;
   zero_array = new double[N2];
-  for (int i=0; i<N2; i++) zero_array[i] = 0.0;
+  for (i=0; i<N2; i++) zero_array[i] = 0.0;
 
   double zero = 0.0;
   double one = 1.0;
@@ -2159,7 +2137,7 @@ LebedevAngularIntegrator::expand(double array[], int offset, double weight)
 }
 
 void
-LebedevAngularIntegrator::print(ostream &o)
+LebedevAngularIntegrator::print(ostream &o) const
 {
   o << node0 << indent << scprintf("norder   = %5d", get_norder()) << endl;
   o << node0 << indent << scprintf("nangular = %5d", get_npoints()) << endl;
@@ -2226,7 +2204,7 @@ GaussLegendreAngularIntegrator::save_data_state(StateOut& s)
 }
 
 int
-GaussLegendreAngularIntegrator::get_ntheta(void)
+GaussLegendreAngularIntegrator::get_ntheta(void) const
 {
   return ntheta_;
 }
@@ -2238,7 +2216,7 @@ GaussLegendreAngularIntegrator::set_ntheta(int i)
 }
 
 int
-GaussLegendreAngularIntegrator::get_nphi(void)
+GaussLegendreAngularIntegrator::get_nphi(void) const
 {
   return nphi_;
 }
@@ -2250,7 +2228,7 @@ GaussLegendreAngularIntegrator::set_nphi(int i)
 }
 
 int
-GaussLegendreAngularIntegrator::get_Ktheta(void)
+GaussLegendreAngularIntegrator::get_Ktheta(void) const
 {
   return Ktheta_;
 }
@@ -2262,7 +2240,7 @@ GaussLegendreAngularIntegrator::set_Ktheta(int i)
 }
 
 int
-GaussLegendreAngularIntegrator::get_ntheta_r(void)
+GaussLegendreAngularIntegrator::get_ntheta_r(void) const
 {
   return ntheta_r_;
 }
@@ -2274,7 +2252,7 @@ GaussLegendreAngularIntegrator::set_ntheta_r(int i)
 }
 
 int
-GaussLegendreAngularIntegrator::get_nphi_r(void)
+GaussLegendreAngularIntegrator::get_nphi_r(void) const
 {
   return nphi_r_;
 }
@@ -2286,7 +2264,7 @@ GaussLegendreAngularIntegrator::set_nphi_r(int i)
 }
 
 int
-GaussLegendreAngularIntegrator::get_Ktheta_r(void)
+GaussLegendreAngularIntegrator::get_Ktheta_r(void) const
 {
   return Ktheta_r_;
 }
@@ -2298,13 +2276,14 @@ GaussLegendreAngularIntegrator::set_Ktheta_r(int i)
 }
 
 double
-GaussLegendreAngularIntegrator::sin_theta(SCVector3 &point)
+GaussLegendreAngularIntegrator::sin_theta(SCVector3 &point) const
 {
   return sin(point.theta());
 }
 
 int
-GaussLegendreAngularIntegrator::num_angular_points(double r_value, int ir)
+GaussLegendreAngularIntegrator::num_angular_points(double r_value,
+                                                   int ir)
 {
   int Ktheta, ntheta, ntheta_r;
   
@@ -2362,8 +2341,9 @@ GaussLegendreAngularIntegrator::gauleg(double x1, double x2, int n)
 }
 
 double
-GaussLegendreAngularIntegrator::angular_point_cartesian(int iangular, SCVector3 &point,
-                                                        SCVector3 &integration_point)
+GaussLegendreAngularIntegrator
+::angular_point_cartesian(int iangular, SCVector3 &point,
+                          SCVector3 &integration_point) const
 {
   int itheta, iphi, nphi_r;
 
@@ -2377,7 +2357,7 @@ GaussLegendreAngularIntegrator::angular_point_cartesian(int iangular, SCVector3 
 }
 
 void
-GaussLegendreAngularIntegrator::print(ostream &o) 
+GaussLegendreAngularIntegrator::print(ostream &o) const
 {
   o << node0 << indent << scprintf("ntheta   = %5d", get_ntheta()) << endl;
   o << node0 << indent << scprintf("nphi     = %5d", get_nphi()) << endl;

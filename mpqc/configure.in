@@ -382,6 +382,19 @@ case $target in
     fi
     AC_MSG_RESULT("rs6000 or powerpc")
   ;;
+  alphaev56-dec-osf*)
+    if test X$GCC = Xyes; then
+      COPTIONS_OPT="-O3 -mcpu=ev56"
+    else
+      COPTIONS_OPT="-O5 -arch ev56"
+    fi
+    if test X$GXX = Xyes; then
+      CXXOPTIONS_OPT="-O3 -mcpu=ev56"
+    else
+      CXXOPTIONS_OPT="-O5 -arch ev56"
+    fi
+    AC_MSG_RESULT("alphaev56")
+  ;;
   mips*-sgi-irix5*)
     if test X$GCC != Xyes; then
       COPTIONS_OPT="-O -Olimit 2000"
@@ -565,9 +578,7 @@ changequote(<<, >>)dnl
       AC_MSG_RESULT("*-sgi-irix6.0*")
     ;;
     *-sgi-irix*)
-      if test X$GXX != Xyes; then
-        CXXOPTIONS_MISC="$CXXOPTIONS_MISC -ptused"
-      fi
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -ptused"
       AC_MSG_RESULT("*-sgi-irix*")
       ;;
     *)
@@ -591,13 +602,6 @@ else
 fi
 
 AC_SUBST(EXTRAINCLUDE)
-
-AC_SUBST(COPTIONS_OPT)
-AC_SUBST(COPTIONS_DBG)
-AC_SUBST(COPTIONS_MISC)
-AC_SUBST(CXXOPTIONS_OPT)
-AC_SUBST(CXXOPTIONS_DBG)
-AC_SUBST(CXXOPTIONS_MISC)
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
@@ -699,22 +703,44 @@ dnl -- libpthread should be linked in last.
 dnl -- Check on pthread_join since pthread_create, but not pthread_join,
 dnl -- seems to be in libc on IRIX and we must generate a -lpthread in LIBS.
 if test "(" X$PARALLEL = Xyes -a X$THREADS != Xno ")" -o X$THREADS = Xyes; then
-  dnl see if posix threads are automatically linked ...
-  AC_CHECK_HEADER(pthread.h,[
-    AC_CHECK_FUNC(pthread_join,HAVE_PTHREAD=yes,[
-      dnl ... otherwise see if posix threads are in -lpthread ...
-      AC_CHECK_LIB(pthread,pthread_join,[
-        HAVE_PTHREAD=yes;LIBS="-lpthread $LIBS"
-        ],[
-        dnl ... otherwise see if posix threads are in -lpthreads
-        AC_CHECK_LIB(pthreads,pthread_join,
-                     [HAVE_PTHREAD=yes;LIBS="-lpthreads $LIBS"])
-        ]
-      )
-      ]
-    )
-    ]
-  )
+
+AC_MSG_CHECKING([pthreads])
+dnl see if posix threads are automatically linked ...
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+LIBSSAV="$LIBS"
+AC_TRY_LINK([#include <pthread.h>],[pthread_join(0,0);],[
+HAVE_PTHREAD=yes],[
+HAVE_PTHREAD=no])
+AC_LANG_RESTORE
+
+dnl see if posix threads are in -lpthread
+if test $HAVE_PTHREAD = no; then
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+LIBSSAV="$LIBS"
+LIBS="$LIBS -lpthread"
+AC_TRY_LINK([#include <pthread.h>],[pthread_join(0,0);],[
+HAVE_PTHREAD=yes],[
+HAVE_PTHREAD=no
+LIBS="$LIBSSAV"])
+AC_LANG_RESTORE
+fi
+
+dnl see if posix threads are in -lpthreads
+if test $HAVE_PTHREAD = no; then
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+LIBSSAV="$LIBS"
+LIBS="$LIBS -lpthreads"
+AC_TRY_LINK([#include <pthread.h>],[pthread_join(0,0);],[
+HAVE_PTHREAD=yes],[
+HAVE_PTHREAD=no
+LIBS="$LIBSSAV"])
+AC_LANG_RESTORE
+fi
+
+AC_MSG_RESULT($HAVE_PTHREAD)
 fi
 if test X$HAVE_PTHREAD = Xyes; then
   AC_DEFINE(HAVE_PTHREAD)
@@ -832,9 +858,24 @@ AC_STRUCT_TM
 dnl --------- Checks for library functions. ---------
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(strerror sigfillset signal system fchdir getpwuid geteuid)
+AC_CHECK_FUNCS(strerror sigfillset signal system getpwuid geteuid)
 AC_CHECK_FUNCS(gethostname time ctime ieee_set_fp_control ieee_get_fp_control)
 AC_CHECK_FUNCS(setrlimit)
+
+dnl --------- Checks for a C++ linkable fchdir. ---------
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_MSG_CHECKING([fchdir])
+AC_TRY_COMPILE([#include <unistd.h>],[
+fchdir(0);
+],[HAVE_FCHDIR=yes
+AC_DEFINE(HAVE_FCHDIR)
+AC_MSG_RESULT(yes)],[
+AC_MSG_RESULT(no)
+HAVE_FCHDIR=no
+])
+AC_LANG_RESTORE
+AC_SUBST(HAVE_FCHDIR)
 
 dnl --------- Check for ios::fmtflags. ---------
 
@@ -864,6 +905,23 @@ AC_MSG_RESULT(yes)],[
 AC_MSG_RESULT(no)
 ])
 AC_LANG_RESTORE
+
+dnl --------- Check for sgetn. ---------
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_MSG_CHECKING([sgetn])
+AC_TRY_COMPILE([#include <streambuf.h>],[
+char *c=0;
+streambuf *s=0; s->sgetn(c,0);
+],[HAVE_SGETN=yes
+AC_DEFINE(HAVE_SGETN)
+AC_MSG_RESULT(yes)],[
+AC_MSG_RESULT(no)
+HAVE_SGETN=no
+])
+AC_LANG_RESTORE
+AC_SUBST(HAVE_SGETN)
 
 dnl --------- Check for pubseekoff. ---------
 
@@ -1036,6 +1094,13 @@ dnl --------- Checks that must be done last. ---------
 
 AC_MSG_CHECKING([for special flags that must be set last])
 case $target in
+  *-dec-osf*)
+    if test ! X$GXX = Xyes; then
+      CXXFLAGS="$CXXFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
+      LDFLAGS="$LDFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
+      AC_MSG_RESULT("*-dec-osf*")
+    fi
+  ;;
   i860-intel-puma*)
     LDFLAGS="$LDFLAGS -mpuma -mnoieee"
     AC_MSG_RESULT(paragon puma)

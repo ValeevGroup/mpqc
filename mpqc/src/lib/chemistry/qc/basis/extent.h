@@ -32,6 +32,7 @@
 #pragma interface
 #endif
 
+#include <float.h>
 #include <chemistry/qc/basis/basis.h>
 
 struct ExtentData {

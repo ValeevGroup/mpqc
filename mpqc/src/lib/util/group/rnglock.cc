@@ -47,6 +47,19 @@ RangeLockItem::operator new(size_t size, Pool * pool)
   else return ::operator new(size);
 }
 
+// void
+// RangeLockItem::operator delete(void* r, size_t, Pool *pool)
+// {
+//   if (pool) pool->release(r);
+//   else ::operator delete(r);
+// }
+
+// void
+// RangeLockItem::operator delete(void* r, size_t)
+// {
+//   ::operator delete(r);
+// }
+
 /////////////////////////////////////////////////////////////////////
 // Utility classes
 
@@ -85,6 +98,7 @@ RangeLock::~RangeLock()
 {
   for (RangeLockItem *i = root_; i;) {
       RangeLockItem *next = i->next;
+//      delete(i, pool_);
       if (pool_) {
           i->RangeLockItem::~RangeLockItem();
           pool_->release((void *)i);

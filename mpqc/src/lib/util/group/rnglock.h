@@ -47,7 +47,14 @@ class RangeLockItem {
       prev(p), next(n), start(s), fence(f), value(v) {}
     ~RangeLockItem() {};
 
-    void *operator new(size_t, Pool *);
+    static void *operator new(size_t, Pool *);
+    // these cannot be handled by many compilers
+    // gcc can use this (xlC rejects):
+    //static void operator delete(void *, size_t, Pool *);
+    // dec cxx reqires this to suppress a warning (gcc & xlC rejects this):
+    //static void operator delete(void *, Pool *);
+    // this is required if another delete is given above
+    //static void operator delete(void *, size_t);
 };
 
 class RangeLockValOp;

@@ -188,21 +188,21 @@ class RadialIntegrator: virtual public SavableState{
     void save_data_state(StateOut &);
 
     void set_nr(int i);
-    const int get_nr(void);
+    int get_nr(void) const;
     virtual double radial_value(int ir, int nr, double radii) = 0;
     virtual double radial_multiplier(int nr) = 0;
-    virtual double get_dr_dq(void) = 0;
-    virtual double get_dr_dqr2(void) = 0;
+    virtual double get_dr_dq(void) const = 0;
+    virtual double get_dr_dqr2(void) const = 0;
     virtual void set_dr_dq(double i) = 0;
     virtual void set_dr_dqr2(double i) = 0;
-    void print(ostream & =cout);
+    void print(ostream & =cout) const;
 };
 SavableState_REF_dec(RadialIntegrator);
 
 class AngularIntegrator: virtual public SavableState{
 #   define CLASSNAME AngularIntegrator
 #   include <util/state/stated.h>
-#   include <util/class/classd.h>
+#   include <util/class/classda.h>
   protected:
   public:
     AngularIntegrator();
@@ -211,15 +211,11 @@ class AngularIntegrator: virtual public SavableState{
     ~AngularIntegrator();
     void save_data_state(StateOut &);
 
-    virtual int get_ntheta(void);
-    virtual int get_nphi(void);
-    virtual int get_Ktheta(void);
     virtual int num_angular_points(double r_value, int ir) = 0;
     virtual void angular_weights(void) = 0;
     virtual double angular_point_cartesian(int iangular, SCVector3 &point,
-        SCVector3 &integration_point) = 0;
-    virtual double sin_theta(SCVector3 &point);
-    virtual void print(ostream & =cout) = 0;
+        SCVector3 &integration_point) const = 0;
+    virtual void print(ostream & =cout) const = 0;
 };
 SavableState_REF_dec(AngularIntegrator);
 
@@ -241,11 +237,10 @@ class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
 
     double radial_value(int ir, int nr, double radii);
     double radial_multiplier(int nr);
-    double get_dr_dq(void);
+    double get_dr_dq(void) const;
     void set_dr_dq(double i);
-    double get_dr_dqr2(void);
+    double get_dr_dqr2(void) const;
     void set_dr_dqr2(double i);
-    void print(ostream & =cout);
 };
 
 class LebedevAngularIntegrator: public AngularIntegrator {
@@ -268,27 +263,26 @@ class LebedevAngularIntegrator: public AngularIntegrator {
     ~LebedevAngularIntegrator();
     void save_data_state(StateOut &);
 
-    int get_norder(void);
+    int get_norder(void) const;
     void set_norder(int i);
-    int get_npoints(void);
+    int get_npoints(void) const;
     void set_npoints(int i);
-    int get_N1(void);
+    int get_N1(void) const;
     void set_N1(int i);
-    int get_N2(void);
+    int get_N2(void) const;
     void set_N2(int i);
-    int get_N3(void);
+    int get_N3(void) const;
     void set_N3(int i);
-    int get_point_count(void);
+    int get_point_count(void) const;
     void set_point_count(int i);
     double angular_point_cartesian(int iangular, SCVector3 &point,
-                                   SCVector3 &integration_point);
+                                   SCVector3 &integration_point) const;
     int num_angular_points(double r_value, int ir);
     void angular_weights(void);
     void build_grid(void);
     void generate_points(double weights[], int N, int nsets, double  u[], double v[], double w[]);
     void expand(double array[], int offset, double weight);
-    void print(ostream & =cout);
-    double sin_theta(SCVector3 &point);
+    void print(ostream & =cout) const;
 };
 
 class GaussLegendreAngularIntegrator: public AngularIntegrator {
@@ -313,25 +307,25 @@ class GaussLegendreAngularIntegrator: public AngularIntegrator {
     ~GaussLegendreAngularIntegrator();
     void save_data_state(StateOut &);
     
-    int get_ntheta(void);
+    int get_ntheta(void) const;
     void set_ntheta(int i);
-    int get_nphi(void);
+    int get_nphi(void) const;
     void set_nphi(int i);
-    int get_Ktheta(void);
+    int get_Ktheta(void) const;
     void set_Ktheta(int i);
-    int get_ntheta_r(void);
+    int get_ntheta_r(void) const;
     void set_ntheta_r(int i);
-    int get_nphi_r(void);
+    int get_nphi_r(void) const;
     void set_nphi_r(int i);
-    int get_Ktheta_r(void);
+    int get_Ktheta_r(void) const;
     void set_Ktheta_r(int i);
     int num_angular_points(double r_value, int ir);
     void angular_weights(void);
     double angular_point_cartesian(int iangular, SCVector3 &point,
-        SCVector3 &integration_point);
-    double sin_theta(SCVector3 &point);
+        SCVector3 &integration_point) const;
+    double sin_theta(SCVector3 &point) const;
     void gauleg(double x1, double x2, int n);    
-    void print(ostream & =cout);
+    void print(ostream & =cout) const;
 };
 
 class RadialAngularIntegrator: public DenIntegrator {

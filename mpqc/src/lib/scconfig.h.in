@@ -57,6 +57,9 @@
 /* Define if you have streambuf::pubseekoff (you should).  */
 #undef HAVE_PUBSEEKOFF
 
+/* Define if you have streambuf::sgetn (you should).  */
+#undef HAVE_SGETN
+
 /* Define if you have a public streambuf::seekoff.  */
 #undef HAVE_SEEKOFF
 

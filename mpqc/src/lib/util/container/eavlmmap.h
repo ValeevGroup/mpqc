@@ -61,13 +61,13 @@ class EAVLMMap {
     const K& key(const T* n) const { K& r = (n->*node_).key; return r; }
 #else    
     T*& rlink(T* n) const { return (n->*node_).rt; }
-    const T*& rlink(const T* n) const { return (n->*node_).rt; }
+    T* rlink(const T* n) const { return (n->*node_).rt; }
     T*& llink(T* n) const { return (n->*node_).lt; }
-    const T*& llink(const T* n) const { return (n->*node_).lt; }
+    T* llink(const T* n) const { return (n->*node_).lt; }
     T*& uplink(T* n) const { return (n->*node_).up; }
-    const T*& uplink(const T* n) const { return (n->*node_).up; }
+    T* uplink(const T* n) const { return (n->*node_).up; }
     int& balance(T* n) const { return (n->*node_).balance; }
-    const int& balance(const T* n) const { return (n->*node_).balance; }
+    int balance(const T* n) const { return (n->*node_).balance; }
     K& key(T* n) const { return (n->*node_).key; }
     const K& key(const T* n) const { return (n->*node_).key; }
 #endif
@@ -115,6 +115,7 @@ class EAVLMMap {
 
     T* start() const { return start_; }
     void next(const T*&) const;
+    void next(T*&) const;
 
     iterator begin() { return iterator(this,start()); }
     iterator end() { return iterator(this,0); }
@@ -330,6 +331,26 @@ void
 EAVLMMap<K,T>::next(const T*& node) const
 {
   const T* r;
+  if (r = rlink(node)) {
+      node = r;
+      while (r = llink(node)) node = r;
+      return;
+    }
+  while (r = uplink(node)) {
+      if (node == llink(r)) {
+          node = r;
+          return;
+        }
+      node = r;
+    }
+  node = 0;
+}
+
+template <class K, class T>
+void
+EAVLMMap<K,T>::next(T*& node) const
+{
+  T* r;
   if (r = rlink(node)) {
       node = r;
       while (r = llink(node)) node = r;

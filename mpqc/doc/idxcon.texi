@@ -1,4 +1,4 @@
-@node    Concept Index, Class Index, The Matrix Library, Top
+@node    Concept Index, Class Index, The Symmetry Library, Top
 @unnumbered Concept Index
 
 @printindex cp

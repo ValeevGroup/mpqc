@@ -1,0 +1,174 @@
+@c -*-texinfo-*-
+@c @node The Symmetry Library, Concept Index, The Matrix Library, Top
+@node The Symmetry Library, Concept Index, The Matrix Library, Top
+@chapter The Symmetry Library
+@cindex symmetry
+@cindex point group
+
+The symmetry library implements a few basic ideas in group theory.  Namely
+it provides a character table for a given point group.  Currently it does
+not support the cubic point groups (eg Td or Ih).  The only classes
+intended for public consumption are the @code{CharacterTable} and 
+@code{PointGroup} classes.  @code{PointGroup} stores the Schoenflies symbol
+for a point group, and can generate a @code{CharacterTable} on the fly.
+A @code{CharacterTable} contains @code{IrreducibleRepresentation}s and
+@code{SymmetryOperation}s.
+
+The following include files are provided by the symmetry library:
+
+@table @file
+@item pointgroup.h
+This is the only include file for the symmetry library.  It provides
+definitions for all of the symmetry-related classes.
+@end table
+
+@menu
+* The IrreducibleRepresentation Class::  
+* The SymmetryOperation Class::  
+* The CharacterTable Class::    
+* The PointGroup Class::        
+@end menu
+
+@c --------------------------------------------------------------------------
+@c --------------------------------------------------------------------------
+
+@node The IrreducibleRepresentation Class, The SymmetryOperation Class, The Symmetry Library, The Symmetry Library
+@section The IrreducibleRepresentation Class
+@clindex IrreducibleRepresentation
+
+@include IrreducibleRepresentation.texi
+
+@menu
+* The IrreducibleRepresentation Public Interface::
+* The IrreducibleRepresentation Private Interface::
+@end menu
+
+@c --------------------------------------------------------------------------
+
+@node The IrreducibleRepresentation Public Interface, The IrreducibleRepresentation Private Interface, The IrreducibleRepresentation Class, The IrreducibleRepresentation Class
+@subsection The IrreducibleRepresentation Public Interface
+
+The public interface is:
+@include IrreducibleRepresentation.pub.texi
+
+@c --------------------------------------------------------------------------
+
+@node The IrreducibleRepresentation Private Interface,  , The IrreducibleRepresentation Public Interface, The IrreducibleRepresentation Class
+@subsection The IrreducibleRepresentation Private Interface
+
+The private interface is:
+@include IrreducibleRepresentation.pri.texi
+
+@c --------------------------------------------------------------------------
+@c --------------------------------------------------------------------------
+
+@node The SymmetryOperation Class, The CharacterTable Class, The IrreducibleRepresentation Class, The Symmetry Library
+@section The SymmetryOperation Class
+@clindex SymmetryOperation
+
+@include SymmetryOperation.texi
+
+@menu
+* The SymmetryOperation Public Interface::  
+@end menu
+
+@c --------------------------------------------------------------------------
+
+@node The SymmetryOperation Public Interface,  , The SymmetryOperation Class, The SymmetryOperation Class
+@subsection The SymmetryOperation Public Interface
+
+The public interface is:
+@include SymmetryOperation.pub.texi
+
+@c --------------------------------------------------------------------------
+@c --------------------------------------------------------------------------
+
+@node The CharacterTable Class, The PointGroup Class, The SymmetryOperation Class, The Symmetry Library
+@section The CharacterTable Class
+@clindex CharacterTable
+
+@include CharacterTable.texi
+
+@menu
+* The CharacterTable Public Interface::  
+* The CharacterTable Private Interface::  
+@end menu
+
+@c --------------------------------------------------------------------------
+
+@node The CharacterTable Public Interface, The CharacterTable Private Interface, The CharacterTable Class, The CharacterTable Class
+@subsection The CharacterTable Public Interface
+The public interface is:
+@include CharacterTable.pub.texi
+
+@c --------------------------------------------------------------------------
+
+@node The CharacterTable Private Interface,  , The CharacterTable Public Interface, The CharacterTable Class
+@subsection The Private Interface
+The private interface is:
+@include CharacterTable.pri.texi
+
+@c --------------------------------------------------------------------------
+@c --------------------------------------------------------------------------
+
+@node The PointGroup Class,  , The CharacterTable Class, The Symmetry Library
+@section The PointGroup Class
+@clindex PointGroup
+
+@include PointGroup.texi
+
+@menu
+* The PointGroup Public Interface::  
+* The PointGroup KeyVal Constructor::  
+@end menu
+
+@c --------------------------------------------------------------------------
+
+@node The PointGroup Public Interface, The PointGroup KeyVal Constructor, The PointGroup Class, The PointGroup Class
+@subsection The PointGroup Public Interface
+
+The public interface is:
+@include PointGroup.pub.texi
+
+@c --------------------------------------------------------------------------
+
+@node The PointGroup KeyVal Constructor,  , The PointGroup Public Interface, The PointGroup Class
+@subsection The PointGroup KeyVal Constructor
+
+The @code{PointGroup} KeyVal constructor looks for three keywords:
+@code{symmetry}, @code{symmetry_frame}, and @code{origin}. @code{symmetry} is
+a string containing the Schoenflies symbol of the point group.  @code{origin}
+is an array of doubles which gives the x, y, and z coordinates of the origin
+of the symmetry frame.  @code{symmetry_frame} is an array of arrays of
+doubles which specify the principal axes for the transformation matrices.
+
+For example, a simple input which will use the default @code{origin} and
+@code{symmetry_frame} ((0,0,0) and the unit matrix, respectively), might
+look like this:
+
+@example
+default: (
+  symmetry = "c2v"
+)
+@end example
+
+Why would you ever want to specify the @code{symmetry_frame}?  By default,
+the principal rotation axis is taken to be the z axis.  If you already have
+a set of coordinates which assume that the rotation axis is the x axis,
+then you'll have to rotate your frame of reference, viz:
+
+@example
+default: (
+  symmetry = "c2v"
+  symmetry_frame = [
+    [ 0 0 1 ]
+    [ 0 1 0 ]
+    [ 1 0 0 ]
+  ]
+)
+@end example
+
+Would you ever want to specify the @code{origin}?  If you can think of a
+reason then let me know.
+
+

@@ -1,5 +1,5 @@
 @c -*-texinfo-*-
-@node The Matrix Library, Concept Index, The KeyVal Library, Top
+@node The Matrix Library, The Symmetry Library, The KeyVal Library, Top
 @chapter The Matrix Library
 @cindex matrix operations
 

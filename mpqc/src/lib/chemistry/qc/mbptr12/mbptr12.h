@@ -65,7 +65,9 @@ class MBPT2_R12: public MBPT2 {
     Ref<MP2R12Energy> r12ap_energy_;
     Ref<MP2R12Energy> r12b_energy_;
 
-    Ref<GaussianBasisSet> aux_basis_;
+    Ref<GaussianBasisSet> aux_basis_;   // This is the auxiliary basis set (ABS)
+    Ref<GaussianBasisSet> ri_basis_;    // This is the basis set used for the approximate resolution of the identity (either same
+                                        // as ABS or the usion of OBS and ABS) or for the resolution of the orthogonal complement to OBS
     Ref<SCVector> epair_0_, epair_1_;   // Singlet/triplet pair energies if spin-adapted
                                         // Alpha-beta/alpha-alpha pair energies if spin-orbital
 
@@ -85,8 +87,19 @@ class MBPT2_R12: public MBPT2 {
     // This checks if the integral factory is suitable for R12 calculations
     void check_integral_factory_();
 
-    /* calculate the MP2-R12 energy in std approximations A and A' */
+    // calculate the MP2-R12 energy in std approximations A and A'
     void compute_energy_a_();
+
+    // construct the RI basis based on abs_method
+    void construct_ri_basis_(bool safe);
+    void construct_ri_basis_ks_(bool safe);
+    void construct_ri_basis_ksplus_(bool safe);
+    void construct_ri_basis_ev_(bool safe);
+    void construct_ri_basis_evplus_(bool safe);
+    // Uses ri_basis to construct a basis that spans the orthogonal complement to the OBS
+    void construct_ortho_comp_();
+    // Returns true if ABS spans OBS
+    bool abs_spans_obs_();
 
   protected:
     // implement the Compute::compute() function,
@@ -133,7 +146,8 @@ class MBPT2_R12: public MBPT2 {
 
         <dt><tt>abs_method</tt><dd> This string specifies whether the old ABS method, introduced
         by Klopper and Samson, or the new ABS variant, introduced by EV, should be used.
-	Valid values are "KS" and "EV". The default is to use the new method.
+	Valid values are "KS" (Klopper and Samson), "KS+", "EV", and "EV+", where the "+" labels
+	a method where the union of OBS and ABS is used to construct the RI basis. The default is "KS+".
 
 	<dt><tt>r12ints</tt><dd> This specifies how to store transformed MO integrals.
 	Valid values are:
@@ -185,6 +199,7 @@ class MBPT2_R12: public MBPT2 {
     void save_data_state(StateOut&);
 
     Ref<GaussianBasisSet> aux_basis() const;
+    Ref<GaussianBasisSet> ri_basis() const;
     bool gebc() const;
     LinearR12::ABSMethod abs_method() const;
     LinearR12::StandardApproximation stdapprox() const;

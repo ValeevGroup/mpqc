@@ -56,6 +56,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   integral_ = mbptr12->integral();
   bs_ = mbptr12->basis();
   bs_aux_ = mbptr12->aux_basis();
+  bs_ri_ = mbptr12->ri_basis();
 
   matrixkit_ = SCMatrixKit::default_matrixkit();
   mem_ = MemoryGrp::get_default_memorygrp();

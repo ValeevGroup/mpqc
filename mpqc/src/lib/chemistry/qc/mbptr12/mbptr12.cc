@@ -60,6 +60,7 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   r12ap_energy_ << SavableState::restore_state(s);
   r12b_energy_ << SavableState::restore_state(s);
   aux_basis_ << SavableState::restore_state(s);
+  ri_basis_ << SavableState::restore_state(s);
   int gebc; s.get(gebc); gebc_ = (bool)gebc;
   if (s.version(::class_desc<MBPT2_R12>()) >= 2) {
     int absmethod; s.get(absmethod); abs_method_ = (LinearR12::ABSMethod)absmethod;
@@ -97,22 +98,38 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   if (gebc_ == false)
     throw std::runtime_error("MBPT2_R12::MBPT2_R12: gebc=false has not been implemented yet");
 
-  // Default is to use the old ABS method, of Klopper and Samson, to apply the resolution of the identity
-  // In the near future the default will be to use the new ABS method, ABS'.
-  char* abs_method_str = keyval->pcharvalue("abs_method",KeyValValuepchar("ks"));
+  // Default is to use the old ABS method, of Klopper and Samson, using the union of OBS and ABS
+  // to apply the resolution of the identity
+  char* abs_method_str = keyval->pcharvalue("abs_method",KeyValValuepchar(""));
+  bool user_abs_method_given = true;
+  if ( !strcmp(abs_method_str,"") ) {
+    abs_method_ = LinearR12::ABS_KSPlus;
+    user_abs_method_given = false;
+  }
   if ( !strcmp(abs_method_str,"KS") ||
        !strcmp(abs_method_str,"ks") ) {
     abs_method_ = LinearR12::ABS_KS;
   }
+  else if ( !strcmp(abs_method_str,"KS+") ||
+	    !strcmp(abs_method_str,"ks+") ) {
+    abs_method_ = LinearR12::ABS_KSPlus;
+  }
   else if ( !strcmp(abs_method_str,"EV") ||
 	    !strcmp(abs_method_str,"ev") ) {
     abs_method_ = LinearR12::ABS_EV;
+  }
+  else if ( !strcmp(abs_method_str,"EV+") ||
+	    !strcmp(abs_method_str,"ev+") ) {
+    abs_method_ = LinearR12::ABS_EVPlus;
   }
   else {
     delete[] abs_method_str;
     throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- unrecognized value for abs_method");
   }
   delete[] abs_method_str;
+  // Set RI basis based on abs_method_
+  // if user specified the abs method explicitly then ignore problematic cases
+  construct_ri_basis_(!user_abs_method_given);
 
   // Default method is MBPT2-R12/A
   char *sa_string = keyval->pcharvalue("stdapprox",KeyValValuepchar("A"));
@@ -211,6 +228,7 @@ MBPT2_R12::save_data_state(StateOut& s)
   SavableState::save_state(r12ap_energy_.pointer(),s);
   SavableState::save_state(r12b_energy_.pointer(),s);
   SavableState::save_state(aux_basis_.pointer(),s);
+  SavableState::save_state(ri_basis_.pointer(),s);
   s.put((int)gebc_);
   s.put((int)abs_method_);
   s.put((int)stdapprox_);
@@ -230,10 +248,16 @@ MBPT2_R12::print(ostream&o) const
   o << indent << "GBC and EBC assumed: " << (gebc_ ? "true" : "false") << endl;
   switch(abs_method_) {
   case LinearR12::ABS_KS :
-    o << indent << "ABS method variant: KS (Klopper and Samson)" << endl;
+    o << indent << "ABS method variant: KS  (Klopper and Samson)" << endl;
+    break;
+  case LinearR12::ABS_KSPlus :
+    o << indent << "ABS method variant: KS+ (Klopper and Samson using the union of OBS and ABS for RI)" << endl;
     break;
   case LinearR12::ABS_EV :
-    o << indent << "ABS method variant: EV (Edward Valeev)" << endl;
+    o << indent << "ABS method variant: EV  (Edward Valeev)" << endl;
+    break;
+  case LinearR12::ABS_EVPlus :
+    o << indent << "ABS method variant: EV+ (Edward Valeev using the union of OBS and ABS for RI)" << endl;
     break;
   }
   switch (stdapprox_) {
@@ -270,6 +294,8 @@ MBPT2_R12::print(ostream&o) const
   o << indent << "Transformed Integrals file: " << r12ints_file_ << endl << endl;
   o << indent << "Auxiliary Basis:" << endl;
   o << incindent; aux_basis_->print(o); o << decindent << endl;
+  o << indent << "RI Basis:" << endl;
+  o << incindent; ri_basis_->print(o); o << decindent << endl;
   MBPT2::print(o);
   o << decindent;
 }
@@ -330,6 +356,14 @@ Ref<GaussianBasisSet>
 MBPT2_R12::aux_basis() const
 {
   return aux_basis_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+Ref<GaussianBasisSet>
+MBPT2_R12::ri_basis() const
+{
+  return ri_basis_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

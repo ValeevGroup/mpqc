@@ -59,6 +59,7 @@ private:
   Ref<Integral> integral_;
   Ref<GaussianBasisSet> bs_;
   Ref<GaussianBasisSet> bs_aux_;
+  Ref<GaussianBasisSet> bs_ri_;
   Ref<SCMatrixKit> matrixkit_;
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
@@ -104,7 +105,7 @@ public:
   Ref<SCF> ref() const { return ref_; };
   Ref<Integral> integral() const { return integral_; };
   Ref<GaussianBasisSet> basis() const { return bs_; };
-  Ref<GaussianBasisSet> basis_aux() const { return bs_aux_; };
+  Ref<GaussianBasisSet> basis_ri() const { return bs_ri_; };
   Ref<SCMatrixKit> matrixkit() const { return matrixkit_; };
   Ref<MemoryGrp> mem() const { return mem_;};
   Ref<MessageGrp> msg() const { return msg_;};

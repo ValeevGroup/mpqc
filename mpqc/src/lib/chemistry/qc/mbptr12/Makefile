@@ -42,7 +42,7 @@ CXXSRCS = mbptr12.cc trans12_grt.cc \
 	  vxb_eval_abs_a.cc compute_abs_a.cc \
           vxb_eval_b.cc compute_all_b.cc \
 	  compute_energy_a.cc mp2r12_energy.cc \
-	  multipole_ints.cc
+	  multipole_ints.cc ri_basis.cc
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += r12ia_mpiiofile.cc

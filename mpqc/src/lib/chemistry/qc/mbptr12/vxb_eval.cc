@@ -254,7 +254,7 @@ void R12IntEval::compute()
   if (gebc_ && stdapprox_ != LinearR12::StdApprox_B) {
     eval_sbs_a_->compute(Vaa_,Xaa_,Baa_,Vab_,Xab_,Bab_,emp2pair_aa_,emp2pair_ab_);
   
-    if (r12info_->basis() != r12info_->basis_aux()) {
+    if (r12info_->basis() != r12info_->basis_ri()) {
       if (me == 0 && debug_ > 1) {
         Vaa_.print("Alpha-alpha SBS V matrix");
         Baa_.print("Alpha-alpha SBS B matrix");

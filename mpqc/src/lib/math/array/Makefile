@@ -38,6 +38,7 @@ DEPENDINCLUDE = $(GENINC) $(SGENINC) $(INC)
 
 default:: $(DEPENDINCLUDE)
 default:: $(TOPDIR)/lib/libarray.a
+interface:: $(DEPENDINCLUDE)
 ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libarray.so
 endif

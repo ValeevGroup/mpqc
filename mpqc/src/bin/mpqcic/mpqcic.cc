@@ -212,7 +212,8 @@ main(int argc, char *argv[])
       exit(1);
     }
 
-    RefKeyVal scfkv = new PrefixKeyVal(":scf :default",keyval);
+    RefKeyVal scfkv(new AggregateKeyVal(new PrefixKeyVal(":scf",keyval),
+                                        new PrefixKeyVal(":default",keyval)));
     if (scf_init_scf_struct(scfkv, centers, scf_info) < 0) {
       fprintf(stderr,"mpqcic:  could not form scf_info\n");
       exit(1);
@@ -231,10 +232,18 @@ main(int argc, char *argv[])
     // Read in mbpt stuff
     RefKeyVal mbptinput;
     if (do_grad) {
-        mbptinput = new PrefixKeyVal(":opt2 :mbpt :mpqc :default", keyval);
+        mbptinput = new AggregateKeyVal(new PrefixKeyVal(":opt2",keyval),
+                                        new PrefixKeyVal(":mbpt",keyval),
+                                        new PrefixKeyVal(":mpqc",keyval),
+                                        new PrefixKeyVal(":default",keyval)
+          );
       }
     else {
-        mbptinput = new PrefixKeyVal(":mp2grad :mbpt :mpqc :default", keyval);
+        mbptinput = new AggregateKeyVal(new PrefixKeyVal(":mp2grad",keyval),
+                                        new PrefixKeyVal(":mbpt",keyval),
+                                        new PrefixKeyVal(":mpqc",keyval),
+                                        new PrefixKeyVal(":default",keyval)
+          );
       }
     nfzc = mbptinput->intvalue("frozen_docc");
     nfzv = mbptinput->intvalue("frozen_uocc");
@@ -278,11 +287,18 @@ main(int argc, char *argv[])
     if (do_mp2) {
         RefKeyVal mbptinput;
         if (do_grad) {
-            mbptinput = new PrefixKeyVal(":opt2 :mbpt :mpqc :default", keyval);
+            mbptinput = new AggregateKeyVal(new PrefixKeyVal(":opt2",keyval),
+                                            new PrefixKeyVal(":mbpt",keyval),
+                                            new PrefixKeyVal(":mpqc",keyval),
+                                            new PrefixKeyVal(":default",keyval)
+              );
           }
         else {
-            mbptinput = new PrefixKeyVal(":mp2grad :mbpt :mpqc :default",
-                                         keyval);
+            mbptinput = new AggregateKeyVal(new PrefixKeyVal(":mp2grad",keyval),
+                                            new PrefixKeyVal(":mbpt",keyval),
+                                            new PrefixKeyVal(":mpqc",keyval),
+                                            new PrefixKeyVal(":default",keyval)
+              );
           }
         nfzc = mbptinput->intvalue("frozen_docc");
         nfzv = mbptinput->intvalue("frozen_uocc");
@@ -433,7 +449,8 @@ main(int argc, char *argv[])
     if (mynode0()==0) {
       fprintf(outfile,"\n");
     
-      fkv = new PrefixKeyVal(":force :default",keyval);
+      fkv = new AggregateKeyVal(new PrefixKeyVal(":force",keyval),
+                                new PrefixKeyVal(":default",keyval));
     }
 
     if (!do_mp2) {

@@ -50,11 +50,12 @@
 using namespace std;
 using namespace sc;
 
-// Computes the "extra" contribution to B that appears during the initial rearrangement
-
 void
 R12IntEval::compute_B_gbc_1_()
 {
+  if (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus)
+    throw std::runtime_error("R12IntEval::compute_B_gbc_1_() -- B(GBC1) term can only be computed using a CABS (or CABS+) approach");
+
   if (evaluated_)
     return;
 
@@ -324,6 +325,17 @@ R12IntEval::compute_B_gbc_1_()
   tim_exit("B(GBC1) intermediate");
 }
 
+
+void
+R12IntEval::compute_B_gbc_2_()
+{
+  if (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus)
+    throw std::runtime_error("R12IntEval::compute_B_gbc_2_() -- B(GBC2) term can only be computed using a CABS (or CABS+) approach");
+
+  if (evaluated_)
+    return;
+
+}
 
 ////////////////////////////////////////////////////////////////////////////
 

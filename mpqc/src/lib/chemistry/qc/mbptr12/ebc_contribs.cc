@@ -326,6 +326,9 @@ R12IntEval::compute_R_()
 void
 R12IntEval::compute_A_simple_()
 {
+  if (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus)
+    throw std::runtime_error("R12IntEval::compute_A_simple_() -- A intermediate can only be computed using a CABS (or CABS+) approach");
+
   if (evaluated_)
     return;
 

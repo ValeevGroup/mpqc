@@ -258,7 +258,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
                 for (int s = 0; s<nbasis4; s++) {
                   double value = ijrs_ints[r*nbasis4+s];
                   printf("2Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+restart_orb,j,r,s,value);
+                         te_type,i+i_offset,j,r,s,value);
                 }
               }
             }
@@ -321,7 +321,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
                   for (int s = 0; s<nbasis4; s++) {
                   double value = ijxs_ints[x*nbasis4+s];
                   printf("3Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+restart_orb,j,x,s,value);
+                         te_type,i+i_offset,j,x,s,value);
                 }
               }
             }
@@ -377,7 +377,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
           int ij = i*rank2+j;
           int ij_local = ij/nproc;
           if (ij%nproc == me) {
-            const int ij_sym = mosym1[i+restart_orb] ^ mosym2[j];
+            const int ij_sym = mosym1[i+i_offset] ^ mosym2[j];
             for(int te_type=0; te_type<num_te_types_; te_type++) {
               double* ijxy_ptr = (double*) ((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
               for (int x = 0; x<rank3; x++) {
@@ -406,7 +406,7 @@ TwoBodyMOIntsTransform_ijxy::compute()
                 for (int y = 0; y<rank4; y++) {
                   double value = ijxy_ints[x*rank4+y];
                   printf("4Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+restart_orb,j,x,y,value);
+                         te_type,i+i_offset,j,x,y,value);
                 }
               }
             }

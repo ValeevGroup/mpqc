@@ -49,7 +49,7 @@ using namespace sc;
 
 #define SINGLE_THREAD_E123   0
 #define PRINT3Q 0
-#define PRINT4Q 0
+#define PRINT4Q 1
 #define PRINT_NUM_TE_TYPES 1
 #define WRITE_DOUBLES 0
 
@@ -222,7 +222,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
                 for (int s = 0; s<nbasis4; s++) {
                   double value = ijsx_ints[s*rank2+x];
                   printf("3Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+restart_orb,x,j,s,value);
+                         te_type,i+i_offset,x,j,s,value);
                 }
               }
             }
@@ -278,7 +278,7 @@ TwoBodyMOIntsTransform_ikjy::compute()
           int ij = i*rank3+j;
           int ij_local = ij/nproc;
           if (ij%nproc == me) {
-            const int ij_sym = mosym1[i+restart_orb] ^ mosym3[j];
+            const int ij_sym = mosym1[i+i_offset] ^ mosym3[j];
             for(int te_type=0; te_type<num_te_types_; te_type++) {
               double* ijxy_ptr = (double *)((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
               for (int x = 0; x<rank2; x++) {
@@ -296,6 +296,11 @@ TwoBodyMOIntsTransform_ikjy::compute()
 
 #if PRINT4Q
     {
+      string filename = type() + "." + name_ + ".4q.dat";
+      ios_base::openmode mode = ios_base::trunc;
+      if (pass > 0)
+        mode = ios_base::app;
+      ofstream ints_file(filename.c_str(),mode);
       for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
         for (int i = 0; i<ni; i++) {
           for (int x = 0; x<rank2; x++) {
@@ -306,14 +311,15 @@ TwoBodyMOIntsTransform_ikjy::compute()
                 const double* ijxy_ints = (const double*)((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
                 for (int y = 0; y<rank4; y++) {
                   double value = ijxy_ints[x*rank4+y];
-                  printf("4Q: type = %d (%d %d|%d %d) = %12.8f\n",
-                         te_type,i+restart_orb,x,j,y,value);
+                  ints_file << scprintf("4Q: type = %d (%d %d|%d %d) = %12.8f\n",
+                                        te_type,i+i_offset,x,j,y,value);
                 }
               }
             }
           }
         }
       }
+      ints_file.close();
     }
 #endif
 

@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <limits.h>
 
 #include <util/misc/formio.h>
 #include <util/misc/timer.h>
@@ -519,6 +520,16 @@ MBPT2::compute_cs_grad()
     }
 
   mem->set_localsize(nijmax*nbasis*nbasis*sizeof(double));
+  if (debug_) {
+    cout << node0 << indent << "localsize = " << mem->localsize() << endl;
+    cout << node0 << indent << "totalsize = " << mem->totalsize() << endl;
+    }
+  if (mem->totalsize() > INT_MAX) {
+    cout << node0 << indent
+         << "WARNING: possible bug in MBPT2: totalsize = "
+         << mem->totalsize()
+         << endl;
+    }
 
   mem->lock(0);
 
@@ -2691,11 +2702,11 @@ MBPT2::compute_cs_dynamic_memory(int ni, int nocc_act)
   mem1 = sizeof(double)*((distsize_t)nij*nbasis*nbasis
                          + nbasis*nvir);
   mem2 = sizeof(double)*((distsize_t)thr_->nthread()*ni*nbasis*nfuncmax*nfuncmax
-                         + nij*nbasis*nbasis
+                         + (distsize_t)nij*nbasis*nbasis
                          + ni*nbasis + nbasis*nfuncmax
                          + 2*nfuncmax*nfuncmax*nfuncmax*nfuncmax);
   mem3 = sizeof(double)*((distsize_t)ni*nbasis*nfuncmax*nfuncmax
-                         + nij*nbasis*nbasis
+                         + (distsize_t)nij*nbasis*nbasis
                          + 2*(2 + nbasis*nfuncmax));
   tmp = (mem2>mem3 ? mem2:mem3);
   maxdyn = (mem1>tmp ? mem1:tmp);

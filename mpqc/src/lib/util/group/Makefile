@@ -32,9 +32,9 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 REQUIREDCXXSRC = mstate.cc \
-         message.cc messagei.cc messproc.cc messint.cc \
+         message.cc messproc.cc messint.cc \
          reduce.cc topology.cc hcube.cc \
-         rnglock.cc memory.cc memmsg.cc pool.cc memoryi.cc \
+         rnglock.cc memory.cc memmsg.cc pool.cc \
          memamsg.cc memproc.cc memmid.cc \
          pregtime.cc thread.cc memiter.cc
 

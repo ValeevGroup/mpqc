@@ -49,6 +49,7 @@
 // SCF
 
 #define CLASSNAME SCF
+#define VERSION 2
 #define PARENTS public OneBodyWavefunction
 #include <util/class/classia.h>
 void *
@@ -72,6 +73,10 @@ SCF::SCF(StateIn& s) :
   s.get(reset_occ_);
   s.get(local_dens_);
   s.get(storage_);
+  if (s.version(static_class_desc()) >= 2) {
+    s.get(print_all_evals_);
+    s.get(print_occ_evals_);
+  }
   s.get(level_shift_);
 
   extrap_.restore_state(s);
@@ -123,6 +128,9 @@ SCF::SCF(const RefKeyVal& keyval) :
   if (keyval->exists("local_density"))
     local_dens_ = keyval->booleanvalue("local_density");
     
+  print_all_evals_ = keyval->booleanvalue("print_evals");
+  print_occ_evals_ = keyval->booleanvalue("print_occupied_evals");
+  
   // first see if guess_wavefunction is a wavefunction, then check to
   // see if it's a string.
   if (keyval->exists("guess_wavefunction")) {
@@ -167,6 +175,8 @@ SCF::save_data_state(StateOut& s)
   s.put(reset_occ_);
   s.put(local_dens_);
   s.put(storage_);
+  s.put(print_all_evals_);
+  s.put(print_occ_evals_);
   s.put(level_shift_);
   extrap_.save_state(s);
   accumdih_.save_state(s);

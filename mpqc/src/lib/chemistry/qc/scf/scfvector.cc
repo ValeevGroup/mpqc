@@ -150,6 +150,7 @@ SCF::compute_vector(double& eelec)
                                                  "SCF::compute_vector");
   
   RefPetiteList pl = integral()->petite_list(basis());
+  CharacterTable ct = molecule()->point_group().char_table();
   
   int homo_ir, lumo_ir;
   int homo_mo, lumo_mo;
@@ -176,19 +177,30 @@ SCF::compute_vector(double& eelec)
         }
       }
 
-      delete[] vals;
+      if (print_all_evals_ || print_occ_evals_) {
+        cout << node0 << endl
+             << indent << ct.gamma(i).symbol() << endl << incindent;
+        for (int m=0; m < nf; m++) {
+          if (occupation(i,m) < 1e-8 && !print_all_evals_)
+            break;
+          cout << node0 << indent
+               << scprintf("%5d %10.5f %10.5f", m+1, vals[m], occupation(i,m))
+               << endl;
+        }
+        cout << node0 << decindent;
+      
+        delete[] vals;
+      }
     }
   }
 
-  CharacterTable ct = molecule()->point_group().char_table();
-  
   cout << node0 << endl << indent
-       << scprintf("HOMO is %d %s = %10.6f",
+       << scprintf("HOMO is %5d %3s = %10.6f",
                    homo_mo+1, 
                    ct.gamma(homo_ir).symbol(),
                    homo)
        << endl << indent
-       << scprintf("LUMO is %d %s = %10.6f",
+       << scprintf("LUMO is %5d %3s = %10.6f",
                    lumo_mo+1, 
                    ct.gamma(lumo_ir).symbol(),
                    lumo)

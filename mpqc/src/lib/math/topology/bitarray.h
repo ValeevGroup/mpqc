@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include <math/scmat/offset.h>
+
 //
 // class BitArray is used as the lower triangle of a boolean matrix.  rather
 // than storing an int or a char, just use one bit for each, so instead
@@ -42,25 +44,21 @@ class BitArray {
     int nm;
     int na;
 
-    inline unsigned int ioff(unsigned int i,unsigned int j) const {
-      return (i>j) ? (((i*(i+1)) >> 1) + j) : (((j*(j+1)) >> 1) + i);
-      }
-
   public:
     BitArray(int =0);
     BitArray(int =0, int =0);
     ~BitArray();
 
     inline void set(unsigned int i) { a[(i>>3)] |= (1 << (i&7)); }
-    inline void set(unsigned int i, unsigned int j) { set(ioff(i,j)); }
+    inline void set(unsigned int i, unsigned int j) { set(ij_offset(i,j)); }
 
     inline int is_set(unsigned int i, unsigned int j) const
-      { int ij = ioff(i,j); return (a[(ij>>3)] & (1 << (ij&7))); }
+      { int ij = ij_offset(i,j); return (a[(ij>>3)] & (1 << (ij&7))); }
     inline int is_set(unsigned int i) const
       { return (a[(i>>3)] & (1 << (i&7))); }
 
     inline int operator()(unsigned int i, unsigned int j) const
-      { int ij = ioff(i,j); return (a[(ij>>3)] & (1 << (ij&7))); }
+      { int ij = ij_offset(i,j); return (a[(ij>>3)] & (1 << (ij&7))); }
     inline int operator()(unsigned int i) const
       { return (a[(i>>3)] & (1 << (i&7))); }
     inline int operator[](unsigned int i) const
@@ -74,7 +72,7 @@ class BitArray {
       int nedge=0;
       for (int j=0; j < nm; j++) if ((*this)(i,j)) nedge++;
       return nedge;
-      }
+    }
 };
 
 

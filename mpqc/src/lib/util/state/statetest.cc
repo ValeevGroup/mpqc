@@ -36,8 +36,8 @@ class A: A_parents {
         << "}\n";
     }
 };
-DescribedClass_REF_dec(A);
-DescribedClass_REF_def(A);
+SavableState_REF_dec(A);
+SavableState_REF_def(A);
 A::A():
   i(1),
   array(new int[4]),
@@ -72,11 +72,17 @@ A::A(StateIn&s):
 void
 A::save_data_state(StateOut&s)
 {
+  const char* t1 = "test string";
+  const char* t2 = "test2\nstring";
+  char* t1c = strcpy(new char[strlen(t1)+1],t1);
+  char* t2c = strcpy(new char[strlen(t2)+1],t2);
   s.put(d);
-  s.putstring("test string");
+  s.putstring(t1c);
   s.put(i);
-  s.putstring("test2\nstring");
+  s.putstring(t2c);
   s.put(array,4);
+  delete[] t1c;
+  delete[] t2c;
 }
 
 #define CLASSNAME A
@@ -115,8 +121,8 @@ class B: B_parents {
       s << "B::b = " << b() << '\n';
     }
 };
-DescribedClass_REF_dec(B);
-DescribedClass_REF_def(B);
+SavableState_REF_dec(B);
+SavableState_REF_def(B);
 B::B():
   i(2)
 {
@@ -174,8 +180,8 @@ class C: C_parents {
       s << "C::c = " << c() << '\n';
     }
 };
-DescribedClass_REF_dec(C);
-DescribedClass_REF_def(C);
+SavableState_REF_dec(C);
+SavableState_REF_def(C);
 C::C():
   i(3)
 {
@@ -243,8 +249,8 @@ class D: D_parents {
       s << "D::d = " << d() << '\n';
     }
 };
-DescribedClass_REF_dec(D);
-DescribedClass_REF_def(D);
+SavableState_REF_dec(D);
+SavableState_REF_def(D);
 D::D():
   i(4)
 {
@@ -293,9 +299,19 @@ D::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+#define StateOutType StateOutText
+#define StateInType StateInText
+
+//#define StateOutType StateOutBinXDR
+//#define StateInType StateInBinXDR
+
 main()
 {
+  RefA ra;
+
   ClassDesc::list_all_classes();
+
+  ra = 0;
 
   A a;
   cout << "A name:" << a.class_name() << '\n';
@@ -310,7 +326,6 @@ main()
   cout << "C::castdown(&d) = " << (void*) C::castdown(&d) << '\n';
   cout << "DescribedClass::castdown(&d) = "
        << (void*) DescribedClass::castdown(&d) << '\n';
-
 
   AssignedKeyVal akv;
 
@@ -341,7 +356,7 @@ main()
   RefDescribedClass rdc = pkv.describedclassvalue("test:object");
   show (pkv.errormsg() ); cout << '\n';
   show( rdc.pointer() ); cout << '\n';
-  RefA ra(A::castdown(rdc));
+  ra = A::castdown(rdc);
   show( ra.pointer() ); cout << '\n';
 
   show( pkv.intvalue(":test:object:d") ); cout << '\n';
@@ -356,20 +371,17 @@ main()
 
   cout << " -- saving state --\n";
 
-#define StateOutType StateOutText
-#define StateInType StateInText
-
-//#define StateOutType StateOutBinXDR
-//#define StateInType StateInBinXDR
-
   StateOutType soa("statetest.a.out");
   ra = new A(PrefixKeyVal("test:object_a",pkv));
   ra->save_object_state(soa);
+  soa.forget();
   ra->save_object_state(soa);
   soa.flush();
   ra = A::castdown(rdc);
   StateOutText so("statetest.out");
-  ra->save_state(so);
+  ra.save_state(so);
+  RefA ra2;
+  ra2.save_state(so);
   so.flush();
 
   cout << " -- restoring state --\n";
@@ -379,6 +391,9 @@ main()
   ra = new A(sia);
   if (ra.nonnull()) { ra->print(); cout << '\n'; }
   StateInText si("statetest.out");
-  ra = A::restore_state(si);
+  //ra = A::restore_state(si);
+  ra.restore_state(si);
+  ra2.restore_state(si);
   if (ra.nonnull()) { ra->print(); cout << '\n'; }
+  cout << "ra2.nonnull() = " << ra2.nonnull() << "(should be 0)\n";
 }

@@ -39,6 +39,20 @@ extern "C" void * sbrk(int);
 #define const2 const
 #endif
 
+#ifdef TYPE_CONV_BUG
+#  define REF_TYPE_CAST_DEC(T)
+#  define REF_TYPE_CAST_DEF(T)
+#  define REF_CONST_TYPE_CAST_DEC(T)
+#  define REF_CONST_TYPE_CAST_DEF(T)
+#else
+#  define REF_TYPE_CAST_DEC(T) operator T*()
+#  define REF_TYPE_CAST_DEF(T) Ref ## T :: operator T*() { return p; }
+#  define REF_CONST_TYPE_CAST_DEC(T) \
+     const1 operator const2 T*() const
+#  define REF_CONST_TYPE_CAST_DEF(T) \
+     Ref ## T :: const1 operator const2 T*() const { return p; }
+#endif
+
 // The macro version of the reference counting class
 #define REF_dec_custom(T,custom)					      \
 class  Ref ## T  {							      \
@@ -49,8 +63,8 @@ class  Ref ## T  {							      \
     const T* operator->() const;					      \
     T* pointer();							      \
     const T* pointer() const;						      \
-    operator T*();							      \
-    const1 operator const2 T*() const;					      \
+    REF_TYPE_CAST_DEC(T);			\
+    REF_CONST_TYPE_CAST_DEC(T);			\
     T& operator *();							      \
     const T& operator *() const;					      \
     Ref ## T ();							      \
@@ -62,12 +76,12 @@ class  Ref ## T  {							      \
     Ref ## T& operator=( Ref ## T & c);					      \
     Ref ## T& operator=(T* cr);						      \
     void assign_pointer(T* cr);						      \
-    int operator==( Ref ## T &a);					      \
-    int operator==( T * a);						      \
-    int operator>=( Ref ## T &a);					      \
-    int operator<=( Ref ## T &a);					      \
-    int operator>( Ref ## T &a);					      \
-    int operator<( Ref ## T &a);					      \
+    int operator==(const Ref ## T &a) const;				      \
+    int operator==(const T * a) const;					      \
+    int operator>=(const Ref ## T &a) const;				      \
+    int operator<=(const Ref ## T &a) const;				      \
+    int operator>(const Ref ## T &a) const;				      \
+    int operator<(const Ref ## T &a) const;				      \
     void  ref_info(FILE*fp=stdout);					      \
     void warn(const char *);						      \
     void clear();							      \
@@ -82,18 +96,18 @@ T* Ref ## T :: operator->() { return p; }				      \
 const T* Ref ## T :: operator->() const { return p; }			      \
 T* Ref ## T :: pointer() { return p; }					      \
 const T* Ref ## T :: pointer() const { return p; }			      \
-Ref ## T :: operator T*() { return p; };				      \
-Ref ## T :: const1 operator const2 T*() const { return p; };		      \
+REF_TYPE_CAST_DEF(T);				\
+REF_CONST_TYPE_CAST_DEF(T);				\
 T& Ref ## T :: operator *() { return *p; };				      \
 const T& Ref ## T :: operator *() const { return *p; };			      \
 int Ref ## T :: null() { return p == 0; }				      \
 int Ref ## T :: nonnull() { return p != 0; }				      \
-int Ref ## T :: operator==( Ref ## T &a) { return p == a.p; }		      \
-int Ref ## T :: operator==( T * a) { return p == a; }			      \
-int Ref ## T :: operator>=( Ref ## T &a) { return p >= a.p; }		      \
-int Ref ## T :: operator<=( Ref ## T &a) { return p <= a.p; }		      \
-int Ref ## T :: operator>( Ref ## T &a) { return p > a.p; }		      \
-int Ref ## T :: operator<( Ref ## T &a) { return p < a.p; }		      \
+int Ref ## T :: operator==(const Ref ## T &a) const { return p == a.p; }      \
+int Ref ## T :: operator==(const  T * a) const { return p == a; }	      \
+int Ref ## T :: operator>=(const  Ref ## T &a) const { return p >= a.p; }     \
+int Ref ## T :: operator<=(const  Ref ## T &a) const { return p <= a.p; }     \
+int Ref ## T :: operator>(const  Ref ## T &a) const { return p > a.p; }	      \
+int Ref ## T :: operator<(const  Ref ## T &a) const { return p < a.p; }	      \
 Ref ## T :: Ref ## T (): p(0) {}					      \
 Ref ## T :: Ref ## T (T*a): p(a)					      \
 {									      \

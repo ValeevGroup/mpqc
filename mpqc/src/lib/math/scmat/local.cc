@@ -24,7 +24,7 @@ LocalSCDimension::LocalSCDimension(int n): n_(n)
 }
 
 LocalSCDimension::LocalSCDimension(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,LocalSCDimension::class_desc_)
 {
   s.get(n_);
 }
@@ -115,7 +115,7 @@ LocalSCMatrix::LocalSCMatrix(LocalSCDimension*a,LocalSCDimension*b):
 
 LocalSCMatrix::LocalSCMatrix(StateIn&s):
   SCMatrix(s),
-  SavableState(s,class_desc_)
+  SavableState(s,LocalSCMatrix::class_desc_)
 {
   d1.restore_state(s);
   d2.restore_state(s);
@@ -370,7 +370,7 @@ LocalSCMatrix::invert_this()
 void
 LocalSCMatrix::element_op(RefSCRectElementOp& op)
 {
-  op->process(block);
+  op->process(block.pointer());
 }
 
 // from Ed Seidl at the NIH
@@ -449,7 +449,7 @@ LocalSymmSCMatrix::LocalSymmSCMatrix(LocalSCDimension*a):
 
 LocalSymmSCMatrix::LocalSymmSCMatrix(StateIn&s):
   SymmSCMatrix(s),
-  SavableState(s,class_desc_)
+  SavableState(s,LocalSymmSCMatrix::class_desc_)
 {
   d.restore_state(s);
   block.restore_state(s);
@@ -708,7 +708,7 @@ LocalSymmSCMatrix::scalar_product(SCVector*a)
 void
 LocalSymmSCMatrix::element_op(RefSCSymmElementOp& op)
 {
-  op->process(block);
+  op->process(block.pointer());
 }
 
 // from Ed Seidl at the NIH (with a bit of hacking)
@@ -778,7 +778,7 @@ LocalDiagSCMatrix::LocalDiagSCMatrix(LocalSCDimension*a):
 
 LocalDiagSCMatrix::LocalDiagSCMatrix(StateIn&s):
   DiagSCMatrix(s),
-  SavableState(s,class_desc_)
+  SavableState(s,LocalDiagSCMatrix::class_desc_)
 {
   d.restore_state(s);
   block.restore_state(s);
@@ -873,7 +873,7 @@ LocalDiagSCMatrix::invert_this()
 void
 LocalDiagSCMatrix::element_op(RefSCDiagElementOp& op)
 {
-  op->process(block);
+  op->process(block.pointer());
 }
 
 // from Ed Seidl at the NIH (with a bit of hacking)
@@ -930,7 +930,7 @@ LocalSCVector::LocalSCVector(LocalSCDimension*a):
 
 LocalSCVector::LocalSCVector(StateIn&s):
   SCVector(s),
-  SavableState(s,class_desc_)
+  SavableState(s,LocalSCVector::class_desc_)
 {
   d.restore_state(s);
   block.restore_state(s);
@@ -1101,7 +1101,7 @@ LocalSCVector::scalar_product(SCVector*a)
 void
 LocalSCVector::element_op(RefSCVectorElementOp& op)
 {
-  op->process(block);
+  op->process(block.pointer());
 }
 
 // from Ed Seidl at the NIH (with a bit of hacking)

@@ -92,7 +92,7 @@ LineOpt::LineOpt()
 }
 
 LineOpt::LineOpt(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,LineOpt::class_desc_),
   Optimize(s)
 {
   search_direction_.restore_state(s);
@@ -186,7 +186,7 @@ DFPUpdate::DFPUpdate(KeyVal&keyval):
 }
 
 DFPUpdate::DFPUpdate(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,DFPUpdate::class_desc_),
   IHessianUpdate(s)
 {
   xprev.restore_state(s);

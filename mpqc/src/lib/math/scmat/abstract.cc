@@ -472,7 +472,7 @@ SCMatrix::print(ostream&o)
 SCMatrix*
 SCMatrix::clone()
 {
-  return rowdim()->create_matrix(coldim());
+  return rowdim()->create_matrix(coldim().pointer());
 }
 
 SCMatrix*

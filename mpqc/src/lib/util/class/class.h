@@ -144,15 +144,16 @@ class  RefDescribedClassBase {
     RefDescribedClassBase(const RefDescribedClassBase&);
     RefDescribedClassBase& operator=(const RefDescribedClassBase&);
     virtual DescribedClass* parentpointer() = 0;
+    virtual const DescribedClass* parentpointer() const = 0;
     virtual ~RefDescribedClassBase ();
-    int operator==( RefDescribedClassBase &a);
-    int operator>=( RefDescribedClassBase &a);
-    int operator<=( RefDescribedClassBase &a);
-    int operator>( RefDescribedClassBase &a);
-    int operator<( RefDescribedClassBase &a);
+    int operator==( const RefDescribedClassBase &a) const;
+    int operator>=( const RefDescribedClassBase &a) const;
+    int operator<=( const RefDescribedClassBase &a) const;
+    int operator>( const RefDescribedClassBase &a) const;
+    int operator<( const RefDescribedClassBase &a) const;
 };
 
-#ifdef __GNUC__
+#if defined(SWITCH_CONST_CAST)
 #undef const1
 #undef const2
 #define const1 const
@@ -164,6 +165,21 @@ class  RefDescribedClassBase {
 #define const2 const
 #endif
 
+#ifdef TYPE_CONV_BUG
+#  define DCREF_TYPE_CAST_DEC(refname,T)
+#  define DCREF_TYPE_CAST_DEF(refname,T)
+#  define DCREF_CONST_TYPE_CAST_DEC(refname,T)
+#  define DCREF_CONST_TYPE_CAST_DEF(refname,T)
+#else
+#  define DCREF_TYPE_CAST_DEC(refname,T) operator T*()
+#  define DCREF_TYPE_CAST_DEF(refname,T) refname :: operator T*() { return p; }
+#  define DCREF_CONST_TYPE_CAST_DEC(refname,T) \
+     const1 operator const2 T*() const
+#  define DCREF_CONST_TYPE_CAST_DEF(refname,T) \
+     refname :: const1 operator const2 T*() const { return p; }
+#endif
+
+
 // this uses macros from util/container/ref.h
 #define DescribedClass_named_REF_dec(refname,T)				      \
 class  refname : public RefDescribedClassBase  {			      \
@@ -171,12 +187,13 @@ class  refname : public RefDescribedClassBase  {			      \
     T* p;								      \
   public:								      \
     DescribedClass* parentpointer();					      \
+    const DescribedClass* parentpointer() const;			      \
     T* operator->();							      \
     const T* operator->() const;					      \
     T* pointer();							      \
     const T* pointer() const;						      \
-    operator T*();							      \
-    const1 operator const2 T*() const;					      \
+    DCREF_TYPE_CAST_DEC(refname,T);			\
+    DCREF_CONST_TYPE_CAST_DEC(refname,T);			\
     T& operator *();							      \
     const T& operator *() const;					      \
     refname ();								      \
@@ -201,8 +218,8 @@ T* refname :: operator->() { return p; };				      \
 const T* refname :: operator->() const { return p; };			      \
 T* refname :: pointer() { return p; };					      \
 const T* refname :: pointer() const { return p; };			      \
-refname :: operator T*() { return p; };					      \
-refname :: const1 operator const2 T*() const { return p; };		      \
+DCREF_TYPE_CAST_DEF(refname,T);				\
+DCREF_CONST_TYPE_CAST_DEF(refname,T);				\
 T& refname :: operator *() { return *p; };				      \
 const T& refname :: operator *() const { return *p; };			      \
 int refname :: null() { return p == 0; };				      \
@@ -215,6 +232,7 @@ void refname :: require_nonnull()					      \
     }									      \
 };									      \
 DescribedClass* refname :: parentpointer() { return p; }		      \
+const DescribedClass* refname :: parentpointer() const { return p; }	      \
 refname :: refname (): p(0) {}						      \
 refname :: refname (T*a): p(a)						      \
 {									      \

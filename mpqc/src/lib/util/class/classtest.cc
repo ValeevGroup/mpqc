@@ -36,9 +36,9 @@ class B: B_parents {
 #define CLASSNAME B 
 #include <util/class/classd.h>
   private:
-    int i;
+    int ib;
   public:
-    B():i(2) {};
+    B():ib(2) {};
     ~B() { cout << "B dtor\n"; };
 };
 
@@ -81,9 +81,9 @@ class D: D_parents {
 #define CLASSNAME D
 #include <util/class/classd.h>
   private:
-    int i;
+    int id;
   public:
-    D():i(4) {};
+    D():id(4) {};
     ~D() { cout << "D dtor\n"; };
 };
 
@@ -141,7 +141,7 @@ main()
   cout << "dref.pointer() is " << dref.pointer() << '\n';
   cout << "aref == dref gives " << (aref == dref) << '\n';
 
-  dref = aref;
+  dref.operator=(aref);
 
   cout << "aref.pointer() is " << aref.pointer() << '\n';
   cout << "dref.pointer() is " << dref.pointer() << '\n';

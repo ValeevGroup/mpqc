@@ -48,7 +48,7 @@ AggregateKeyVal::~AggregateKeyVal()
 RefKeyVal
 AggregateKeyVal::getkeyval(const char* keyword)
 {
-  for (int i=0; i<MaxKeyVal && kv[i]; i++) {
+  for (int i=0; i<MaxKeyVal && kv[i].nonnull(); i++) {
       kv[i]->exists(keyword);
       seterror(kv[i]->error());
       if (error() != KeyVal::UnknownKeyword) return kv[i];
@@ -59,7 +59,7 @@ AggregateKeyVal::getkeyval(const char* keyword)
 RefKeyValValue
 AggregateKeyVal::key_value(const char*arg)
 {
-  KeyVal* kval = getkeyval(arg);
+  KeyVal* kval = getkeyval(arg).pointer();
   if (kval) return kval->value(arg);
   else return 0;
 }
@@ -67,7 +67,7 @@ AggregateKeyVal::key_value(const char*arg)
 int
 AggregateKeyVal::key_exists(const char* key)
 {
-  KeyVal* kval = getkeyval(key);
+  KeyVal* kval = getkeyval(key).pointer();
   if (kval) return kval->exists(key);
   else return 0;
 }
@@ -77,7 +77,7 @@ AggregateKeyVal::errortrace(FILE*fp,int n)
 {
   offset(fp,n); fprintf(fp,"AggregateKeyVal: error: \"%s\"\n",errormsg());
   for (int i = 0; i<4; i++) {
-      if (kv[i]) {
+      if (kv[i].nonnull()) {
           offset(fp,n); fprintf(fp,"  KeyVal #%d:\n",i);
           kv[i]->errortrace(fp,n+OffsetDelta);
         }
@@ -89,7 +89,7 @@ AggregateKeyVal::dump(FILE*fp,int n)
 {
   offset(fp,n); fprintf(fp,"AggregateKeyVal: error: \"%s\"\n",errormsg());
   for (int i = 0; i<4; i++) {
-      if (kv[i]) {
+      if (kv[i].nonnull()) {
           offset(fp,n); fprintf(fp,"  KeyVal #%d:\n",i);
           kv[i]->dump(fp,n+OffsetDelta);
         }

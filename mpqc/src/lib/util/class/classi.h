@@ -43,7 +43,7 @@ const ClassDesc* CLASSNAME::static_class_desc()
 }
 const ClassDesc* CLASSNAME::class_desc() const
 {
-    return &class_desc_;
+    return &CLASSNAME::class_desc_;
 }
 CLASSNAME*
 CLASSNAME::castdown(DescribedClass*p)
@@ -71,25 +71,28 @@ CLASSNAME::require_castdown(DescribedClass*p,const char * errmsg,...)
 CLASSNAME*
 CLASSNAME::castdown(RefDescribedClass&p)
 {
-  if (!p) return 0;
+  if (p.null()) return 0;
   return (CLASSNAME*) p->_castdown(CLASSNAME::static_class_desc());
 }
 void *
 //CLASSNAME::do_castdowns(POINTER_TO_CASTDOWN*casts,const ClassDesc*cd)
 CLASSNAME::do_castdowns(void**casts,const ClassDesc*cd)
 {
-  if (cd == &class_desc_) {
+  if (cd == &CLASSNAME::class_desc_) {
       return this;
     }
   void* p = 0;
-  for (int i=0; i<class_desc_.parents().n(); i++) {
-      if (!class_desc_.parents()[i].access() == ParentClass::Private) {
+  for (int i=0; i<CLASSNAME::class_desc_.parents().n(); i++) {
+      if (!CLASSNAME::class_desc_.parents()[i].access()
+          == ParentClass::Private) {
           //void * tmp = casts[i](cd);
           void * tmp = casts[i];
           if (!tmp) continue;
           if (p && tmp != p) {
               fprintf(stderr,"%s: castdown to %s ambiguous (from %s)\n",
-                      class_desc_.name(),cd->name(),class_desc_.name());
+                      CLASSNAME::class_desc_.name(),
+                      cd->name(),
+                      CLASSNAME::class_desc_.name());
               fprintf(stderr," tmp = 0x%x p = 0x%x\n",tmp,p);
             }
           p = tmp;

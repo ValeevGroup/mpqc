@@ -29,27 +29,6 @@ static void getnewkey(char*newkey,const char*key,int n1,int n2,int n3,int n4)
   sprintf(newkey,"%s:%d:%d:%d:%d",key,n1,n2,n3,n4);
   }
 
-static void getnewkey(char*newkey,int n1)
-  {
-  sprintf(newkey,"%d",n1);
-  }
-
-static void getnewkey(char*newkey,int n1,int n2)
-  {
-  sprintf(newkey,"%d:%d",n1,n2);
-  }
-
-static void getnewkey(char*newkey,int n1,int n2,int n3)
-  {
-  sprintf(newkey,"%d:%d:%d",n1,n2,n3);
-  }
-
-static void getnewkey(char*newkey,int n1,int n2,int n3,int n4)
-  {
-  sprintf(newkey,"%d:%d:%d:%d",n1,n2,n3,n4);
-  }
-
-
 ///////////////////////////////////////////////////////////////////////
 // PrefixKeyVal
 
@@ -190,7 +169,6 @@ void PrefixKeyVal::dump(ostream&fp,int n)
 
 int PrefixKeyVal::getnewprefixkey(const char*key,char*newkey)
 {
-  int i;
   int result=0;
 
   if (key[0] == ':') {

@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.9  1995/10/25 21:19:46  cljanss
+ * Adding support for pure am.  Gradients don't yet work.
+ *
  * Revision 1.8  1995/09/13 22:53:41  etseidl
  * add int_accum_shell_kinetic
  *
@@ -84,6 +87,7 @@
 /*#include "initialize.gbl"*/
 #include <chemistry/qc/intv2/int_fjt.gbl>
 #include <chemistry/qc/intv2/utils.gbl>
+#include <chemistry/qc/intv2/transform.h>
 
 /* The NCUBE exp function cannot handle large negative arguments. */
 #ifndef NCUBE
@@ -125,6 +129,7 @@ static int third_centernum;
 
 static init_order = -1;
 static double *scratch = NULL;
+static double *cartesianbuffer = NULL;
 
 static int mu;
 
@@ -156,7 +161,7 @@ centers_t *cs2;
 
   int_initialize_fjt(jmax + 2*order);
 
-  nshell2 = int_find_nfuncmax(cs1)*int_find_nfuncmax(cs2);
+  nshell2 = int_find_ncartmax(cs1)*int_find_ncartmax(cs2);
 
   if (order == 0) {
     init_order = 0;
@@ -175,6 +180,7 @@ centers_t *cs2;
   printf("allocating %d doubles in init_1e\n",scratchsize);
 #endif
   scratch = (double *) malloc(scratchsize*sizeof(double));
+  cartesianbuffer = (double *) malloc(scratchsize*sizeof(double));
 
   /* Return the buffer in case the user has a use for a buffer
    * of such a size. */
@@ -187,55 +193,15 @@ int_done_1e()
   int_done_fjt();
   init_order = -1;
   free(scratch);
+  free(cartesianbuffer);
   scratch = NULL;
+  cartesianbuffer = NULL;
   }
 
 
 /* --------------------------------------------------------------- */
 /* ------------- Routines for the overlap matrix ----------------- */
 /* --------------------------------------------------------------- */
-
-/* This fills in an overlap matrix between basis functions.
- * The overall shell offsets are ignored if the two centers
- * data passed in are different, then the overlap matrix could
- * be rectangular.
- * cs1 = centers for the first index of the overlap matrix
- * cs2 = centers for the second index of the overlap matrix
- * overlap = the target overlap matrix
- */
-GLOBAL_FUNCTION VOID
-int_overlap(cs1,cs2,overlap)
-centers_t *cs1;
-centers_t *cs2;
-double_matrix_t *overlap;
-{
-  int c1,s1,i1,j1,k1;
-  int c2,s2,i2,j2,k2;
-  int cart1,cart2;
-  int gc1,gc2;
-  int index1,index2;
-  double shell1norm,shell2norm;
-
-  cart1 = 0;
-  FOR_SHELLS(cs1,c1,s1)
-    A = cs1->center[c1].r;
-    shell1 = &(cs1->center[c1].basis.shell[s1]);
-    FOR_GCCART(gc1,index1,i1,j1,k1,shell1)
-      shell1norm = shell1->norm[gc1][index1];
-      cart2 = 0;
-      FOR_SHELLS(cs2,c2,s2)
-        B = cs2->center[c2].r;
-        shell2 = &(cs2->center[c2].basis.shell[s2]);
-        FOR_GCCART(gc2,index2,i2,j2,k2,shell2)
-          shell2norm = shell2->norm[gc2][index2];
-          overlap->d[cart1][cart2] = shell1norm * shell2norm * comp_shell_overlap(gc1,i1,j1,k1,gc2,i2,j2,k2);
-          cart2++;
-          END_FOR_GCCART(index2)
-        END_FOR_SHELLS
-      cart1++;
-      END_FOR_GCCART(index1)
-    END_FOR_SHELLS
-  }
 
 /* This computes the overlap integrals between functions in two shells.
  * The result is placed in the buffer.
@@ -266,55 +232,12 @@ int jsh;
     shell1norm = shell1->norm[gc1][index1];
     FOR_GCCART(gc2,index2,i2,j2,k2,shell2)
       shell2norm = shell2->norm[gc2][index2];
-      buff[index] = shell1norm * shell2norm * comp_shell_overlap(gc1,i1,j1,k1,gc2,i2,j2,k2);
+      cartesianbuffer[index] = shell1norm * shell2norm * comp_shell_overlap(gc1,i1,j1,k1,gc2,i2,j2,k2);
       index++;
       END_FOR_GCCART(index2)
     END_FOR_GCCART(index1)
-  }
 
-/* This fills in a derivative overlap matrix between basis functions.
- * The overall shell offsets are ignored if the two centers
- * data passed in are different, then the overlap matrix could
- * be rectangular.
- * cs1 = centers for the first index of the overlap matrix
- * cs2 = centers for the second index of the overlap matrix
- * overlapder = the target overlap matrix
- */
-GLOBAL_FUNCTION VOID
-int_overlap_1der(cs1,cs2,overlapder,dercs,centernum)
-centers_t *cs1;
-centers_t *cs2;
-double_array3_t *overlapder;
-centers_t *dercs;
-int centernum;
-{
-  int i,j,k,l,m;
-  int ioff,joff;
-  int index;
-
-  ioff = 0;
-  for (i=0; i<cs1->nshell; i++) {
-    joff = 0;
-    for (j=0; j<cs2->nshell; j++) {
-      int_shell_overlap_1der(cs1,cs2,scratch,i,j,dercs,centernum);
-      index = 0;
-      for (k=0; k<INT_SH(cs1,i).nfunc; k++) {
-        for (l=0; l<INT_SH(cs2,j).nfunc; l++) {
-	      for (m=0; m<3; m++) {
-#if 0
-	        printf("overlapder->d[%d][%d][%d] = scratch[%d] = % f\n",
-	                m,ioff+k,joff+l,index,
-	                scratch[index]);
-#endif
-	        overlapder->d[m][ioff+k][joff+l] = scratch[index];
-            index++;
-	        }
-	      }
-	    }
-      joff += INT_SH(cs2,j).nfunc;
-      }
-    ioff += INT_SH(cs1,i).nfunc;
-    }
+  int_transform_1e(cartesianbuffer, buff, shell1, shell2);
   }
 
 /* This computes the overlap ints between functions in two shells.
@@ -526,48 +449,6 @@ int k2;
 /* ------------- Routines for the kinetic energy ----------------- */
 /* --------------------------------------------------------------- */
 
-/* This fills in an kinetic energy matrix between basis functions.
- * The overall shell offsets are ignored if the two centers
- * data passed in are different, then the kinetic energy matrix could
- * be rectangular.
- * cs1 = centers for the first index of the kinetic energy matrix
- * cs2 = centers for the second index of the kinetic energy matrix
- * kinetic = the target kinetic energy matrix
- */
-GLOBAL_FUNCTION VOID
-int_kinetic(cs1,cs2,kinetic)
-centers_t *cs1;
-centers_t *cs2;
-double_matrix_t *kinetic;
-{
-  int c1,s1,i1,j1,k1;
-  int c2,s2,i2,j2,k2;
-  int cart1,cart2,func1,func2;
-  int gc1,gc2;
-  double norm1,norm2;
-
-  func1 = 0;
-  FOR_SHELLS(cs1,c1,s1)
-    A = cs1->center[c1].r;
-    shell1 = &(cs1->center[c1].basis.shell[s1]);
-    FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
-      norm1 = shell1->norm[gc1][cart1];
-      func2 = 0;
-      FOR_SHELLS(cs2,c2,s2)
-        B = cs2->center[c2].r;
-        shell2 = &(cs2->center[c2].basis.shell[s2]);
-        FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
-          norm2 = shell2->norm[gc2][cart2];
-          kinetic->d[func1][func2] =   norm1 * norm2
-                                     * comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
-          func2++;
-          END_FOR_GCCART(cart2)
-        END_FOR_SHELLS
-      func1++;
-      END_FOR_GCCART(cart1);
-    END_FOR_SHELLS
-  }
-
 /* This computes the kinetic energy integrals between functions in two shells.
  * The result is placed in the buffer.
  */
@@ -598,10 +479,12 @@ int jsh;
     norm1 = shell1->norm[gc1][cart1];
     FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
       norm2 = shell2->norm[gc2][cart2];
-      buff[index] = norm1 * norm2 * comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
+      cartesianbuffer[index] = norm1 * norm2 * comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
       index++;
       END_FOR_GCCART(cart2)
     END_FOR_GCCART(cart1)
+
+  int_transform_1e(cartesianbuffer, buff, shell1, shell2);
   }
 
 GLOBAL_FUNCTION VOID
@@ -632,10 +515,11 @@ int jsh;
     norm1 = shell1->norm[gc1][cart1];
     FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
       norm2 = shell2->norm[gc2][cart2];
-      buff[index] += norm1 * norm2 * comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
+      cartesianbuffer[index] = norm1 * norm2 * comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
       index++;
       END_FOR_GCCART(cart2)
     END_FOR_GCCART(cart1)
+  int_accum_transform_1e(cartesianbuffer, buff, shell1, shell2);
   }
 
 /* This computes the kinetic energy derivative integrals between functions
@@ -678,6 +562,7 @@ double (*shell_function)();
   int index1,index2;
   double tmp[3];
   double shell1norm,shell2norm;
+  double *ctmp = cartesianbuffer;
 
   /* fprintf(stdout,"accum_shell_1der: working on ( %2d | %2d )",ish,jsh);
    * if (three_center) fprintf(stdout," third_centernum = %d\n",third_centernum);
@@ -774,16 +659,18 @@ printf("exp_w = %d, scale_sh = %d, result_scale_f = % f\n",
 #if 0
       printf("shell1norm = % f, shell2norm = % f\n",shell1norm,shell2norm);
 #endif
-      for (i=0; i<3; i++) buff[i] += shell1norm * shell2norm * tmp[i];
+      for (i=0; i<3; i++) ctmp[i] = shell1norm * shell2norm * tmp[i];
 
 #if 0
-      printf("buff = % f % f % f\n",buff[0],buff[1],buff[2]);
+      printf("ctmp = % f % f % f\n",ctmp[0],ctmp[1],ctmp[2]);
 #endif
 
       /* Increment the pointer to the xyz for the next atom. */
-      buff += 3;
+      ctmp += 3;
       END_FOR_GCCART(index2)
     END_FOR_GCCART(index1)
+
+  int_accum_transform_1e_xyz(cartesianbuffer, buff, shell1, shell2);
   }
 
 /* Compute the kinetic energy for the shell.  The arguments are the
@@ -919,69 +806,6 @@ int k2;
 /* --------------------------------------------------------------- */
 /* ------------- Routines for the nuclear attraction ------------- */
 /* --------------------------------------------------------------- */
-
-/* This fills in an nuclear attraction matrix between basis functions.
- * The overall shell offsets are ignored if the two centers
- * data passed in are different, then the nuclear attraction matrix could
- * be rectangular.
- * cs1 = centers for the first index of the nuclear attraction matrix
- * cs2 = centers for the second index of the nuclear attraction matrix
- * nuclear = the target nuclear attraction matrix
- */
-GLOBAL_FUNCTION VOID
-int_nuclear(cs1,cs2,nuclear)
-centers_t *cs1;
-centers_t *cs2;
-double_matrix_t *nuclear;
-{
-  int c1,s1,i1,j1,k1;
-  int c2,s2,i2,j2,k2;
-  int gc1,gc2;
-  int cart1,cart2,func1,func2;
-  int i;
-  double norm1,norm2;
-
-  if (!(init_order >= 0)) {
-    fprintf(stderr,"int_nuclear: one electron routines are not init'ed\n");
-    exit(1);
-    }
-
-  func1 = 0;
-  FOR_SHELLS(cs1,c1,s1)
-    A = cs1->center[c1].r;
-    shell1 = &(cs1->center[c1].basis.shell[s1]);
-    FOR_GCCART(gc1,cart1,i1,j1,k1,shell1)
-      norm1 = shell1->norm[gc1][cart1];
-      func2 = 0;
-      FOR_SHELLS(cs2,c2,s2)
-        B = cs2->center[c2].r;
-        shell2 = &(cs2->center[c2].basis.shell[s2]);
-        FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
-          norm2 = shell2->norm[gc2][cart2];
-          nuclear->d[func1][func2] = 0.0;
-          /* Loop thru the centers on cs1. */
-          for (i=0; i<cs1->n; i++) {
-            C = cs1->center[i].r;
-            nuclear->d[func1][func2] -=  comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                                       * cs1->center[i].charge;
-            }
-          /* Loop thru the centers on cs2 if necessary. */
-          if (cs2 != cs1) {
-            for (i=0; i<cs2->n; i++) {
-              C = cs2->center[i].r;
-              nuclear->d[func1][func2] -=  comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                                         * cs2->center[i].charge;
-              }
-            }
-          nuclear->d[func1][func2] *= norm1 * norm2;
-          func2++;
-          END_FOR_GCCART(cart2)
-        END_FOR_SHELLS
-      func1++;
-      END_FOR_GCCART(cart1)
-    END_FOR_SHELLS
-
-  }
 
 /* This computes the nuclear attraction derivative integrals between functions
  * in two shells.  The result is accumulated in the buffer which is ordered
@@ -1159,6 +983,7 @@ int jsh;
   double efield[3];
   int gc1,gc2;
   int index1,index2;
+  double *tmp = cartesianbuffer;
 
   if (!(init_order >= 1)) {
     fprintf(stderr,"accum_shell_efield: one electron routines are not init'ed\n");
@@ -1180,11 +1005,12 @@ int jsh;
       if (scale_shell_result) {
         for (i=0; i<3; i++) efield[i] *= result_scale_factor;
         }
-      for (i=0; i<3; i++) buff[i] += efield[i];
-      buff += 3;
+      for (i=0; i<3; i++) tmp[i] = efield[i];
+      tmp += 3;
       END_FOR_GCCART(index2)
     END_FOR_GCCART(index1)
 
+  int_accum_transform_1e_xyz(cartesianbuffer, buff, shell1, shell2);
   }
 
 /* This computes the nuc rep energy integrals between functions in two shells.
@@ -1224,26 +1050,27 @@ int jsh;
     norm1 = shell1->norm[gc1][cart1];
     FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
       norm2 = shell2->norm[gc2][cart2];
-      buff[index] = 0.0;
+      cartesianbuffer[index] = 0.0;
       /* Loop thru the centers on cs1. */
       for (i=0; i<cs1->n; i++) {
         C = cs1->center[i].r;
-        buff[index] -=  comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
+        cartesianbuffer[index] -= comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
                        * cs1->center[i].charge;
         }
       /* Loop thru the centers on cs2 if necessary. */
       if (cs2 != cs1) {
         for (i=0; i<cs2->n; i++) {
           C = cs2->center[i].r;
-          buff[index] -=  comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
+          cartesianbuffer[index]-=comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
                          * cs2->center[i].charge;
           }
         }
-      buff[index] *= norm1 * norm2;
+      cartesianbuffer[index] *= norm1 * norm2;
       index++;
       END_FOR_GCCART(cart2)
     END_FOR_GCCART(cart1)
 
+  int_transform_1e(cartesianbuffer, buff, shell1, shell2);
   }
 
 /* This computes the integrals between functions in two shells for
@@ -1295,11 +1122,12 @@ double** position;
         tmp -=  comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
                        * charge[i];
         }
-      buff[index] += tmp * norm1 * norm2;
+      cartesianbuffer[index] = tmp * norm1 * norm2;
       index++;
       END_FOR_GCCART(cart2)
     END_FOR_GCCART(cart1)
 
+  int_accum_transform_1e(cartesianbuffer, buff, shell1, shell2);
   }
 
 /* This computes the integrals between functions in two shells for
@@ -1343,18 +1171,19 @@ double** position;
     norm1 = shell1->norm[gc1][cart1];
     FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
       norm2 = shell2->norm[gc2][cart2];
-      buff[index] = 0.0;
+      cartesianbuffer[index] = 0.0;
       /* Loop thru the point charges. */
       for (i=0; i<ncharge; i++) {
         C = position[i];
-        buff[index] -=  comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                       * charge[i];
+        cartesianbuffer[index] -= comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
+                                * charge[i];
         }
-      buff[index] *= norm1 * norm2;
+      cartesianbuffer[index] *= norm1 * norm2;
       index++;
       END_FOR_GCCART(cart2)
     END_FOR_GCCART(cart1)
 
+  int_transform_1e(cartesianbuffer, buff, shell1, shell2);
   }
 
 
@@ -1395,290 +1224,27 @@ int jsh;
     norm1 = shell1->norm[gc1][cart1];
     FOR_GCCART(gc2,cart2,i2,j2,k2,shell2)
       norm2 = shell2->norm[gc2][cart2];
-      buff[index] = comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
+      cartesianbuffer[index] = comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
       /* Loop thru the centers on cs1. */
       for (i=0; i<cs1->n; i++) {
         C = cs1->center[i].r;
-        buff[index] -=  comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                       * cs1->center[i].charge;
+        cartesianbuffer[index] -= comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
+                                * cs1->center[i].charge;
         }
       /* Loop thru the centers on cs2 if necessary. */
       if (cs2 != cs1) {
         for (i=0; i<cs2->n; i++) {
           C = cs2->center[i].r;
-          buff[index] -=  comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                         * cs2->center[i].charge;
+          cartesianbuffer[index]-=comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
+                                * cs2->center[i].charge;
           }
         }
-      buff[index] *= norm1 * norm2;
+      cartesianbuffer[index] *= norm1 * norm2;
       index++;
       END_FOR_GCCART(cart2)
     END_FOR_GCCART(cart1)
 
-  }
-
-/* This computes the 1e Hamiltonian deriv ints between all functions for
- * the given center.  The result is placed in hcoreder.
- */
-GLOBAL_FUNCTION VOID
-int_hcore(cs1,cs2,hcore)
-centers_t *cs1;
-centers_t *cs2;
-double_matrix_t *hcore;
-{
-  int i,j,k,l;
-  int ioff,joff;
-  int index;
-
-  ioff = 0;
-  for (i=0; i<cs1->nshell; i++) {
-    joff = 0;
-    for (j=0; j<cs2->nshell; j++) {
-      int_shell_hcore(cs1,cs2,scratch,i,j);
-      index = 0;
-      for (k=0; k<INT_SH(cs1,i).nfunc; k++) {
-        for (l=0; l<INT_SH(cs2,j).nfunc; l++) {
-          hcore->d[ioff+k][joff+l] = scratch[index];
-          index++;
-          }
-        }
-      joff += INT_SH(cs2,j).nfunc;
-      }
-    ioff += INT_SH(cs1,i).nfunc;
-    }
-  }
-
-/* This computes the 1e Hamiltonian deriv ints between all functions for
- * the given center.  The result is placed in hcoreder.
- */
-GLOBAL_FUNCTION VOID
-int_hcore_1der(cs1,cs2,hcoreder,dercs,centernum)
-centers_t *cs1;
-centers_t *cs2;
-double_array3_t *hcoreder;
-centers_t *dercs;
-int centernum;
-{
-  int i,j,k,l,m;
-  int ioff,joff;
-  int index;
-
-  ioff = 0;
-  for (i=0; i<cs1->nshell; i++) {
-    joff = 0;
-    for (j=0; j<cs2->nshell; j++) {
-      int_shell_hcore_1der(cs1,cs2,scratch,i,j,dercs,centernum);
-      index = 0;
-      for (k=0; k<INT_SH(cs1,i).nfunc; k++) {
-        for (l=0; l<INT_SH(cs2,j).nfunc; l++) {
-          for (m=0; m<3; m++) {
-            hcoreder->d[m][ioff+k][joff+l] = scratch[index];
-            index++;
-            }
-          }
-        }
-      joff += INT_SH(cs2,j).nfunc;
-      }
-    ioff += INT_SH(cs1,i).nfunc;
-    }
-  }
-
-/* This computes the kinetic energy deriv ints between all functions for
- * the given center.  The result is placed in hcoreder.
- */
-GLOBAL_FUNCTION VOID
-int_kinetic_1der(cs1,cs2,kineticder,dercs,centernum)
-centers_t *cs1;
-centers_t *cs2;
-double_array3_t *kineticder;
-centers_t *dercs;
-int centernum;
-{
-  int i,j,k,l,m;
-  int ioff,joff;
-  int index;
-
-  ioff = 0;
-  for (i=0; i<cs1->nshell; i++) {
-    joff = 0;
-    for (j=0; j<cs2->nshell; j++) {
-      int_shell_kinetic_1der(cs1,cs2,scratch,i,j,dercs,centernum);
-      index = 0;
-      for (k=0; k<INT_SH(cs1,i).nfunc; k++) {
-        for (l=0; l<INT_SH(cs2,j).nfunc; l++) {
-          for (m=0; m<3; m++) {
-            kineticder->d[m][ioff+k][joff+l] = scratch[index];
-            index++;
-            }
-          }
-        }
-      joff += INT_SH(cs2,j).nfunc;
-      }
-    ioff += INT_SH(cs1,i).nfunc;
-    }
-  }
-
-/* This computes the nuclear energy deriv ints between all functions for
- * the given center.  The result is placed in hcoreder.
- */
-GLOBAL_FUNCTION VOID
-int_nuclear_1der(cs1,cs2,nuclearder,dercs,centernum)
-centers_t *cs1;
-centers_t *cs2;
-double_array3_t *nuclearder;
-centers_t *dercs;
-int centernum;
-{
-  int i,j,k,l,m;
-  int ioff,joff;
-  int index;
-
-  ioff = 0;
-  for (i=0; i<cs1->nshell; i++) {
-    joff = 0;
-    for (j=0; j<cs2->nshell; j++) {
-      int_shell_nuclear_1der(cs1,cs2,scratch,i,j,dercs,centernum);
-      index = 0;
-      for (k=0; k<INT_SH(cs1,i).nfunc; k++) {
-        for (l=0; l<INT_SH(cs2,j).nfunc; l++) {
-          for (m=0; m<3; m++) {
-            nuclearder->d[m][ioff+k][joff+l] = scratch[index];
-            index++;
-            }
-          }
-        }
-      joff += INT_SH(cs2,j).nfunc;
-      }
-    ioff += INT_SH(cs1,i).nfunc;
-    }
-  }
-
-/* This computes the nuclear energy deriv ints between all functions for
- * the given center.  Only the Hellman-Feynman part is computed.
- * Unlike int_nuclear_hf_1der, the entire Hellman-Feynman contribs are
- * computed.  The result is placed in nuclearder.
- */
-GLOBAL_FUNCTION VOID
-int_nuclear_hft_1der(cs1,cs2,nuclearder,dercs,centernum)
-centers_t *cs1;
-centers_t *cs2;
-double_array3_t *nuclearder;
-centers_t *dercs;
-int centernum;
-{
-  int i,j,k,l,m;
-  int ioff,joff;
-  int index;
-
-  ioff = 0;
-  for (i=0; i<cs1->nshell; i++) {
-    joff = 0;
-    for (j=0; j<cs2->nshell; j++) {
-      int_shell_nuclear_hf_1der(cs1,cs2,scratch,i,j,dercs,centernum);
-      int_accum_shell_nuclear_hfc_1der(cs1,cs2,scratch,i,j,dercs,centernum);
-      index = 0;
-      for (k=0; k<INT_SH(cs1,i).nfunc; k++) {
-        for (l=0; l<INT_SH(cs2,j).nfunc; l++) {
-          for (m=0; m<3; m++) {
-            /* fprintf(stdout,"(%d|%d)  nuclearder[%d][%d][%d] = % 12.8lf\n",
-             *         i,j,m,ioff+k,ioff+l,scratch[index]);
-             */
-            nuclearder->d[m][ioff+k][joff+l] = scratch[index];
-            index++;
-            }
-              }
-            }
-      joff += INT_SH(cs2,j).nfunc;
-      }
-    ioff += INT_SH(cs1,i).nfunc;
-    }
-  }
-
-/* This computes the nuclear energy deriv ints between all functions for
- * the given center.  Only the Hellman-Feynman part is computed.
- * The result is placed in nuclearder.
- */
-GLOBAL_FUNCTION VOID
-int_nuclear_hf_1der(cs1,cs2,nuclearder,dercs,centernum)
-centers_t *cs1;
-centers_t *cs2;
-double_array3_t *nuclearder;
-centers_t *dercs;
-int centernum;
-{
-  int i,j,k,l,m;
-  int ioff,joff;
-  int index;
-
-  ioff = 0;
-  for (i=0; i<cs1->nshell; i++) {
-    joff = 0;
-    for (j=0; j<cs2->nshell; j++) {
-      int_shell_nuclear_hf_1der(cs1,cs2,scratch,i,j,dercs,centernum);
-      index = 0;
-      for (k=0; k<INT_SH(cs1,i).nfunc; k++) {
-        for (l=0; l<INT_SH(cs2,j).nfunc; l++) {
-          for (m=0; m<3; m++) {
-            /* fprintf(stdout,"(%d|%d)  nuclearder[%d][%d][%d] = % 12.8lf\n",
-             *         i,j,m,ioff+k,ioff+l,scratch[index]);
-             */
-            nuclearder->d[m][ioff+k][joff+l] = scratch[index];
-            index++;
-            }
-              }
-            }
-      joff += INT_SH(cs2,j).nfunc;
-      }
-    ioff += INT_SH(cs1,i).nfunc;
-    }
-  }
-
-/* This computes the nuclear energy deriv ints between all functions for
- * the given center.  Only the non Hellman-Feynman part is computed.
- * The result is placed in nuclearder.
- */
-GLOBAL_FUNCTION VOID
-int_nuclear_nonhf_1der(cs1,cs2,nuclearder,dercs,centernum)
-centers_t *cs1;
-centers_t *cs2;
-double_array3_t *nuclearder;
-centers_t *dercs;
-int centernum;
-{
-  int i,j,k,l,m;
-  int ioff,joff;
-  int index;
-
-  ioff = 0;
-  for (i=0; i<cs1->nshell; i++) {
-    joff = 0;
-    for (j=0; j<cs2->nshell; j++) {
-      int_shell_nuclear_nonhf_1der(cs1,cs2,scratch,i,j,dercs,centernum);
-      index = 0;
-      for (k=0; k<INT_SH(cs1,i).nfunc; k++) {
-        for (l=0; l<INT_SH(cs2,j).nfunc; l++) {
-#if 0
-          if ((ioff+k>nuclearder->n2) || (joff+l>nuclearder->n3)) {
-            fprintf(stderr,
-              "int_nuclear_nonhf_1der: exceeded bound for nuclearder array\n");
-            exit(1);
-            }
-#endif
-          for (m=0; m<3; m++) {
-#if 0
-            printf("nuclearder->d[%d][%d][%d] = scratch[%d] = % f\n",
-                    m,ioff+k,joff+l,index,
-                    scratch[index]);
-#endif
-            nuclearder->d[m][ioff+k][joff+l] = scratch[index];
-            index++;
-            }
-              }
-            }
-      joff += INT_SH(cs2,j).nfunc;
-      }
-    ioff += INT_SH(cs1,i).nfunc;
-    }
+  int_transform_1e(cartesianbuffer, buff, shell1, shell2);
   }
 
 /* This computes the 1e Hamiltonian deriv ints between functions in two shells.
@@ -2271,11 +1837,12 @@ double *com;
       shell2norm = shell2->norm[gc2][index2];
       comp_shell_dipole(dipole,gc1,i1,j1,k1,gc2,i2,j2,k2);
       for(mu=0; mu < 3; mu++) {
-        buff[index] += shell1norm * shell2norm * dipole[mu];
+        cartesianbuffer[index] = shell1norm * shell2norm * dipole[mu];
         index++;
         }
       END_FOR_GCCART(index2)
     END_FOR_GCCART(index1)
+  int_accum_transform_1e_xyz(cartesianbuffer, buff, shell1, shell2);
   }
 
 LOCAL_FUNCTION void

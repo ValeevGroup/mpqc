@@ -1,5 +1,8 @@
 /* $Log$
- * Revision 1.5  1995/03/17 01:49:38  cljanss
+ * Revision 1.6  1995/10/25 21:19:58  cljanss
+ * Adding support for pure am.  Gradients don't yet work.
+ *
+ * Revision 1.5  1995/03/17  01:49:38  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -48,7 +51,7 @@ shell_t *_shell;
 int _type;
 int _from;
 {
-  int nfunc;
+  int ncart;
   typedef int boolean;
   typedef char * string;
   int * recv0_test_pointer();
@@ -109,11 +112,11 @@ int _from;
       _shell->norm = (double **) malloc(sizeof(double *)*_shell->ncon);
       memset(_shell->norm,'\0',sizeof(double *)*_shell->ncon);
       for (i=0; i<_shell->ncon; i++)  {
-        if((nfunc=INT_NCART(_shell->type[i].am))!=0) {
+        if((ncart=INT_NCART(_shell->type[i].am))!=0) {
           if(recv0_test_pointer(_type,_from,sizeof(double *))!=NULL) {
-            _shell->norm[i] = (double *) malloc(sizeof(double )*nfunc);
-            memset(_shell->norm[i],'\0',sizeof(double )*nfunc);
-            recv0_double((_shell->norm[i]),_type,_from,sizeof(double)*nfunc);
+            _shell->norm[i] = (double *) malloc(sizeof(double )*ncart);
+            memset(_shell->norm[i],'\0',sizeof(double )*ncart);
+            recv0_double((_shell->norm[i]),_type,_from,sizeof(double)*ncart);
             }
           }
         else _shell->norm[i] = NULL;

@@ -1,5 +1,8 @@
 /* $Log$
- * Revision 1.4  1995/03/17 01:49:40  cljanss
+ * Revision 1.5  1995/10/25 21:20:00  cljanss
+ * Adding support for pure am.  Gradients don't yet work.
+ *
+ * Revision 1.4  1995/03/17  01:49:40  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -43,7 +46,7 @@ shell_t *_shell;
 int _type;
 int _dest;
 {
-  int nfunc;
+  int ncart;
   typedef int boolean;
   typedef char * string;
   int i;
@@ -89,10 +92,10 @@ int _dest;
     send0_pointer(&(_shell->norm),_type,_dest,sizeof(double **));
     if(_shell->norm!=NULL) {
       for (i=0; i<_shell->ncon; i++)  {
-        if((nfunc=INT_NCART(_shell->type[i].am))!=0) {
+        if((ncart=INT_NCART(_shell->type[i].am))!=0) {
           send0_pointer(&(_shell->norm[i]),_type,_dest,sizeof(double *));
           if(_shell->norm[i]!=NULL) {
-            send0_double((_shell->norm[i]),_type,_dest,sizeof(double)*nfunc);
+            send0_double((_shell->norm[i]),_type,_dest,sizeof(double)*ncart);
             }
           }
         }

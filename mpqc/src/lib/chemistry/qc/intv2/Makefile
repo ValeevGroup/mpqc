@@ -30,7 +30,7 @@ TESTCSRC = inttest.cc
 
 CSRC = bounds.c buildgc.c  comp_1e.c  comp_0e.c  normalize.c  \
        offsets.c int_fjt.c  init2e.c  atominfo.c  basis.c  comp_erep.c  \
-       shiftgc.c int_print.c utils.c comp_erep23.c
+       shiftgc.c int_print.c utils.c comp_erep23.c transform.c
 
 CXXSRC = basisk.cc storage.cc
 
@@ -45,7 +45,7 @@ SGENSRC = \
   atomsiseq.c atomsasgn.c atomssnd0.c \
   atomsrcv0.c atomszero.c
 
-INC = bounds.h buildinter.h fjttable.h genbuild.h \
+INC = bounds.h buildinter.h fjttable.h genbuild.h transform.h \
       storage.h int_flags.h int_libv2.h int_macros.h int_types.h inter.h
 SGENINC = $(SGENSRC:%.c=%.h)
 GENINC = MG.h $(CSRC:%.c=%.gbl) $(CSRC:%.c=%.lcl)

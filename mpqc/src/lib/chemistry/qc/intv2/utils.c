@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.4  1995/03/17 01:49:44  cljanss
+ * Revision 1.5  1995/10/25 21:20:01  cljanss
+ * Adding support for pure am.  Gradients don't yet work.
+ *
+ * Revision 1.4  1995/03/17  01:49:44  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -31,12 +34,31 @@
 #include <chemistry/qc/intv2/utils.gbl>
 #include <chemistry/qc/intv2/utils.lcl>
 
+/* Compute the number of cartesian functions in a shell. */
+GLOBAL_FUNCTION int
+int_ncart(sh)
+    shell_t *sh;
+{
+  int i;
+  int ret = 0;
+  for (i=0; i<sh->ncon; i++) {
+      ret += INT_NCART(sh->type[i].am);
+    }
+  return ret;
+}
 
 GLOBAL_FUNCTION int
 int_find_nfuncmax(cs)
 centers_t *cs;
 {
   return int_find_nfuncmax_aminc(cs,0);
+  }
+
+GLOBAL_FUNCTION int
+int_find_ncartmax(cs)
+centers_t *cs;
+{
+  return int_find_ncartmax_aminc(cs,0);
   }
 
 GLOBAL_FUNCTION int
@@ -112,7 +134,8 @@ int aminc;
     for (j=0; j<cs->center[i].basis.n; j++) {
       nfunc = 0;
       for (k=0; k<cs->center[i].basis.shell[j].ncon; k++) {
-        nfunc += INT_NCART(cs->center[i].basis.shell[j].type[k].am+aminc);
+        nfunc += INT_NFUNC(cs->center[i].basis.shell[j].type[k].puream,
+                           cs->center[i].basis.shell[j].type[k].am+aminc);
         }
       if ((aminc == 0) && (cs->center[i].basis.shell[j].nfunc != nfunc)) {
         fprintf(stderr,"error: nfunc not init'ed for a shell\n");
@@ -123,6 +146,30 @@ int aminc;
     }
 
   return nfuncmax;
+  }
+
+/* Finds the maximum number of cartesian functions in a shell given that the
+ * angular momentum will be increment by aminc for all functions
+ * in that shell. */
+GLOBAL_FUNCTION int
+int_find_ncartmax_aminc(cs,aminc)
+centers_t *cs;
+int aminc;
+{
+  int i,j,k,ncartmax,ncart;
+
+  ncartmax = 0;
+  for (i=0; i<cs->n; i++) {
+    for (j=0; j<cs->center[i].basis.n; j++) {
+      ncart = 0;
+      for (k=0; k<cs->center[i].basis.shell[j].ncon; k++) {
+        ncart += INT_NCART(cs->center[i].basis.shell[j].type[k].am+aminc);
+        }
+      if (ncart > ncartmax) ncartmax = ncart;
+      }
+    }
+
+  return ncartmax;
   }
 
 GLOBAL_FUNCTION int

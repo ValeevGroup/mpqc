@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.7  1995/10/25 21:19:49  cljanss
+ * Adding support for pure am.  Gradients don't yet work.
+ *
  * Revision 1.6  1995/08/21 19:36:20  cljanss
  * 1) New integral storage scheme using AVL trees.
  * 2) Updated bounds routines so the SCF program could use them.
@@ -280,20 +283,20 @@ centers_t *cs4;
   int_init_shiftgc(order,jmax1,jmax2,jmax3,jmax4);
 
   /* Allocate storage for the integral buffer. */
-  int_maxsize = int_find_nfuncmax(cs1)
-               *int_find_nfuncmax(cs2)
-               *int_find_nfuncmax(cs3)
-               *int_find_nfuncmax(cs4);
+  int_maxsize = int_find_ncartmax(cs1)
+               *int_find_ncartmax(cs2)
+               *int_find_ncartmax(cs3)
+               *int_find_ncartmax(cs4);
   if (order==0) {
     int_buffer = (double *) malloc(sizeof(double) * int_maxsize);
     int_derint_buffer = NULL;
     }
   else if (order==1) {
     int nderint;
-    nderint = int_find_nfuncmax_aminc(cs1,1)
-             *int_find_nfuncmax_aminc(cs2,1)
-             *int_find_nfuncmax_aminc(cs3,1)
-             *int_find_nfuncmax_aminc(cs4,1);
+    nderint = int_find_ncartmax_aminc(cs1,1)
+             *int_find_ncartmax_aminc(cs2,1)
+             *int_find_ncartmax_aminc(cs3,1)
+             *int_find_ncartmax_aminc(cs4,1);
  
     /* Allocate the integral buffers. */
     int_buffer = (double *) malloc(sizeof(double) * 9*int_maxsize);

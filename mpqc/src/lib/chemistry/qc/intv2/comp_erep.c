@@ -3,6 +3,9 @@
  */
 
 /* $Log$
+ * Revision 1.8  1995/10/25 21:19:48  cljanss
+ * Adding support for pure am.  Gradients don't yet work.
+ *
  * Revision 1.7  1995/08/21 19:36:20  cljanss
  * 1) New integral storage scheme using AVL trees.
  * 2) Updated bounds routines so the SCF program could use them.
@@ -759,6 +762,16 @@ int dam4;
       }
     }
 
+  /* Transform to pure am (if requested in the centers structure). */
+  if (!(flags&INT_NOPURE)) {
+      int_transform_2e(int_buffer, int_buffer,
+                       &INT_SH(int_cs1,sh1),
+                       &INT_SH(int_cs2,sh2),
+                       &INT_SH(int_cs3,sh3),
+                       &INT_SH(int_cs4,sh4));
+    }
+
+
   /* Remove the redundant integrals, unless INT_REDUND is specified. */
   if (!(flags&INT_REDUND)) {
     int redundant_offset = 0;
@@ -790,7 +803,7 @@ int dam4;
 #endif
   }
 
-/* This computes the one electron derivatives for all unique
+/* This computes the two electron derivatives for all unique
  * centers in the passed shell quartet.  One center in
  * the set of unique centers is not included.  This can
  * be computed as minus the sum of the other derivatives.
@@ -849,6 +862,8 @@ der_centers_t *der_centers;
   int uam[4];         /* The total angular momentum on each unique center. */
   int am[4];
   int osh[4];
+  int ncart;
+  double *current_pure_buffer;
 
   cs[0] = int_cs1;
   cs[1] = int_cs2;
@@ -869,6 +884,11 @@ der_centers_t *der_centers;
                   .basis.shell[int_cs3->shell_num[*psh3]];
   shell4 = &int_cs4->center[int_cs4->center_num[*psh4]]
                   .basis.shell[int_cs4->shell_num[*psh4]];
+
+  /* Number of cartesian and pure integrals. */
+  ncart = int_ncart(shell1)*int_ncart(shell2)
+         *int_ncart(shell3)*int_ncart(shell4);
+  nints = shell1->nfunc * shell2->nfunc * shell3->nfunc * shell4->nfunc;
 
   am[0] = int_find_jmax_shell(shell1);
   am[1] = int_find_jmax_shell(shell2);
@@ -936,8 +956,7 @@ der_centers_t *der_centers;
   int_buffer = int_derint_buffer;
 
   /* Zero out the result integrals. */
-  nints = shell1->nfunc * shell2->nfunc * shell3->nfunc * shell4->nfunc;
-  for (i=0; i<3*(n_unique-1)*nints; i++) user_int_buffer[i] = 0.0;
+  for (i=0; i<3*(n_unique-1)*ncart; i++) user_int_buffer[i] = 0.0;
 
   /* Loop thru the unique centers, computing the integrals and
    * skip the derivative on the unique center specified by omit. */
@@ -957,7 +976,7 @@ der_centers_t *der_centers;
         }
       }
 
-    current_buffer = &current_buffer[3*nints];
+    current_buffer = &current_buffer[3*ncart];
     }
 
   /* Put the information about the omitted center into der_centers. */
@@ -968,7 +987,17 @@ der_centers_t *der_centers;
   current_buffer = user_int_buffer;
   for (i=0; i<3*der_centers->n; i++) {
     normalize_erep(current_buffer,shell1,shell2,shell3,shell4);
-    current_buffer = &current_buffer[nints];
+    current_buffer = &current_buffer[ncart];
+    }
+
+  /* Transform to pure am. */
+  current_buffer = user_int_buffer;
+  current_pure_buffer = user_int_buffer;
+  for (i=0; i<3*der_centers->n; i++) {
+      int_transform_2e(current_buffer, current_pure_buffer,
+                       shell1, shell2, shell3, shell4);
+      current_buffer = &current_buffer[ncart];
+      current_pure_buffer = &current_pure_buffer[nints];
     }
 
   /* Eliminate redundant integrals, unless flags specifies otherwise. */
@@ -1069,7 +1098,8 @@ int dercenter;
   sizep34 = sizep4 * sizep3;
   sizep234 = sizep34 * sizep2;
 
-  compute_erep(flags|INT_NOPERM|INT_REDUND|INT_NOBCHK,0,psh1,psh2,psh3,psh4,
+  compute_erep(flags|INT_NOPERM|INT_REDUND|INT_NOBCHK|INT_NOPURE,
+               0,psh1,psh2,psh3,psh4,
                    -DCTEST(0),
                    -DCTEST(1),
                    -DCTEST(2),
@@ -1148,7 +1178,8 @@ int dercenter;
   else if (dercenter==1) int_expweight2 = 1;
   else if (dercenter==2) int_expweight3 = 1;
   else if (dercenter==3) int_expweight4 = 1;
-  compute_erep(flags|INT_NOPERM|INT_REDUND|INT_NOBCHK,0,psh1,psh2,psh3,psh4,
+  compute_erep(flags|INT_NOPERM|INT_REDUND|INT_NOBCHK|INT_NOPURE,
+               0,psh1,psh2,psh3,psh4,
                      DCTEST(0),
                      DCTEST(1),
                      DCTEST(2),
@@ -1425,6 +1456,8 @@ int *size;
   int *psh2 = &sh2;
   int *psh3 = &sh3;
   int *psh4 = &sh4;
+  int ncart;
+  double *current_pure_buffer;
 
   /* Set up pointers to the current shells. */
   shell1 = &int_cs1->center[int_cs1->center_num[*psh1]]
@@ -1435,6 +1468,11 @@ int *size;
                   .basis.shell[int_cs3->shell_num[*psh3]];
   shell4 = &int_cs4->center[int_cs4->center_num[*psh4]]
                   .basis.shell[int_cs4->shell_num[*psh4]];
+
+  /* Number of cartesian and pure integrals. */
+  ncart = int_ncart(shell1)*int_ncart(shell2)
+         *int_ncart(shell3)*int_ncart(shell4);
+  nints = shell1->nfunc * shell2->nfunc * shell3->nfunc * shell4->nfunc;
 
   /* Compute the offset shell numbers. */
   osh[0] = *psh1 + int_cs1->shell_offset;
@@ -1447,21 +1485,33 @@ int *size;
   int_buffer = int_derint_buffer;
 
   /* Zero out the result integrals. */
-  nints = shell1->nfunc * shell2->nfunc * shell3->nfunc * shell4->nfunc;
-  for (i=0; i<3*nints; i++) user_int_buffer[i] = 0.0;
+  for (i=0; i<3*ncart; i++) user_int_buffer[i] = 0.0;
 
   /* Set the size so it is available to the caller. */
   *size = nints * 3;
 
   current_buffer = user_int_buffer;
-  compute_erep_bound1der(flags|INT_NOPERM,current_buffer,
+  compute_erep_bound1der(flags|INT_NOPERM|INT_NOPURE,current_buffer,
                           psh1,psh2,psh3,psh4);
 
   /* Normalize the integrals. */
   current_buffer = user_int_buffer;
   for (i=0; i<3; i++) {
     normalize_erep(current_buffer,shell1,shell2,shell3,shell4);
-    current_buffer = &current_buffer[nints];
+    current_buffer = &current_buffer[ncart];
+    }
+
+  /* Transform to pure am. */
+  current_buffer = user_int_buffer;
+  current_pure_buffer = user_int_buffer;
+  for (i=0; i<3; i++) {
+      int_transform_2e(current_buffer, current_pure_buffer,
+                       &INT_SH(int_cs1,sh1),
+                       &INT_SH(int_cs2,sh2),
+                       &INT_SH(int_cs3,sh3),
+                       &INT_SH(int_cs4,sh4));
+      current_buffer = &current_buffer[ncart];
+      current_pure_buffer = &current_pure_buffer[nints];
     }
 
   /* Eliminate redundant integrals, unless flags specifies otherwise. */

@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.2  1993/12/30 13:32:52  etseidl
+ * Revision 1.3  1995/10/25 21:19:50  cljanss
+ * Adding support for pure am.  Gradients don't yet work.
+ *
+ * Revision 1.2  1993/12/30  13:32:52  etseidl
  * mostly rcs id stuff
  *
  * Revision 1.2  1992/05/26  20:25:19  jannsen
@@ -44,6 +47,7 @@
 #define INT_NOSTR2  32 /* Do not store the O(n^2) intermediates, recompute them as needed. */
 #define INT_NOSTRB  64 /* Do not store the bounds checking array. */
 #define INT_NODERB 128 /* Do not prepare the routines for derivative bounds. */
+#define INT_NOPURE 256 /* Internal use only. */
 
 #define INT_TYPE_SP 1 /* This is an sp shell. */
 

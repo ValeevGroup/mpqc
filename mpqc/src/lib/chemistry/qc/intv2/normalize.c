@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.4  1995/03/17 01:49:34  cljanss
+ * Revision 1.5  1995/10/25 21:19:54  cljanss
+ * Adding support for pure am.  Gradients don't yet work.
+ *
+ * Revision 1.4  1995/03/17  01:49:34  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -68,12 +71,14 @@ centers_t *centers;
       int k;
       shell->nfunc = 0;
       for (k=0; k<shell->ncon; k++)
-        shell->nfunc += INT_NCART(shell->type[k].am);
+        shell->nfunc += INT_NFUNC(shell->type[k].puream,shell->type[k].am);
       int_normalize_shell(shell);
       }
     }
   }
 
+/* This only normalizes the cartesian components.  If pure angular
+ * momentum is used the basis function will not be normalized. */
 GLOBAL_FUNCTION VOID
 int_normalize_shell(shell)
 shell_t *shell;
@@ -95,12 +100,6 @@ shell_t *shell;
   shell->norm = (double **) malloc(sizeof(double*)*shell->ncon);
 
   for (gc=0; gc<shell->ncon; gc++) {
-    if (shell->type[gc].puream) {
-      fprintf(stderr,"int_normalize_shell: cannot handle puream:\n");
-      print_shell(stderr,shell);
-      exit(1);
-      }
-
     /* Convert the contraction coefficients
      * from contraction coefficients for normalized primitives
      * to contraction coefficients for unnormalized primitives.
@@ -183,12 +182,6 @@ int gc;
 {
   int i,j;
   double result,c,ss;
-
-  if (shell->type[gc].puream) {
-    fprintf(stderr,"int_shell_normalization: cannot handle puream:\n");
-    print_shell(stderr,shell);
-    exit(1);
-    }
 
   result = 0.0;
   for (i=0; i<shell->nprim; i++) {

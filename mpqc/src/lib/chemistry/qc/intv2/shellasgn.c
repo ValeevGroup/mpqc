@@ -1,5 +1,8 @@
 /* $Log$
- * Revision 1.5  1995/03/17 01:49:36  cljanss
+ * Revision 1.6  1995/10/25 21:19:55  cljanss
+ * Adding support for pure am.  Gradients don't yet work.
+ *
+ * Revision 1.5  1995/03/17  01:49:36  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -50,7 +53,7 @@ shell_t *_shell_2;
   typedef int boolean;
   typedef char * string;
   int i,j;
-  int nfunc;
+  int ncart;
 
   _shell_1->nprim=_shell_2->nprim;
   _shell_1->ncon=_shell_2->ncon;
@@ -109,11 +112,11 @@ shell_t *_shell_2;
       _shell_1->norm = (double **) malloc(sizeof(double *)*_shell_2->ncon);
       if(_shell_1->norm==NULL) return(-1);
       for (i=0; i<_shell_2->ncon; i++)  {
-        if((nfunc=INT_NCART(_shell_2->type[i].am))!=0) {
+        if((ncart=INT_NCART(_shell_2->type[i].am))!=0) {
           if(_shell_2->norm[i]!=NULL) {
-            _shell_1->norm[i] = (double *) malloc(sizeof(double)*nfunc);
+            _shell_1->norm[i] = (double *) malloc(sizeof(double)*ncart);
             if(_shell_1->norm[i]==NULL) return(-1);
-            for(j=0;j<nfunc;j++)
+            for(j=0;j<ncart;j++)
               _shell_1->norm[i][j]=_shell_2->norm[i][j];
             }
           }

@@ -1,5 +1,8 @@
 /* $Log$
- * Revision 1.4  1995/03/17 01:49:36  cljanss
+ * Revision 1.5  1995/10/25 21:19:56  cljanss
+ * Adding support for pure am.  Gradients don't yet work.
+ *
+ * Revision 1.4  1995/03/17  01:49:36  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -45,7 +48,7 @@ print_shell(fp,_shell)
 FILE *fp;
 shell_t *_shell;
 {
-  int nfunc;
+  int ncart;
   int i,j;
   int orig_indent = sgen_print_nindent;
 
@@ -143,8 +146,8 @@ shell_t *_shell;
       if (i!=0) SPI;
       fprintf(fp,"[");
       sgen_print_nindent += 1;
-      nfunc=INT_NCART(_shell->type[i].am);
-      for (j=0; j<nfunc; j++)  {
+      ncart=INT_NCART(_shell->type[i].am);
+      for (j=0; j<ncart; j++)  {
         print_double(fp,&(_shell->norm[i][j]));
         if(!((j+1)%8) && j) {
           fprintf(fp,"\n");

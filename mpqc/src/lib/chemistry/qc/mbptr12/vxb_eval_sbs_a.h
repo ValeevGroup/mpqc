@@ -44,8 +44,10 @@ class R12IntEvalInfo;
 
 class R12IntEval_sbs_A : virtual public SavableState {
 
+  // Calculation information (number of basis functions, R12 approximation, etc.)
   Ref<R12IntEvalInfo> r12info_;
 
+  //
   bool evaluated_;
   int current_orbital_;
   int restart_orbital_;
@@ -62,6 +64,8 @@ public:
   void save_data_state(StateOut&);
   void obsolete();
 
+  /** Evaluate OBS contributions to the R12 intermediates V, X, and B in
+      spinorbital pair basis, and MP2 pair energies */
   void compute(RefSCMatrix& Vaa,
 	       RefSCMatrix& Xaa,
 	       RefSCMatrix& Baa,

@@ -38,11 +38,12 @@
 namespace sc {
 
 
-  /** Class R12IntEval_abs_A evaluates R12 intermediates for the auxiliary-basis part of
-      the two-basis MP2-R12 theory in standard approximations A and A' */
+  /** Class R12IntEval_abs_A evaluates the ABS part of R12 intermediates for
+      the ABS and CABS MP2-R12 theories in standard approximations A and A' */
 
 class R12IntEval_abs_A : virtual public SavableState {
 
+  // Calculation information (number of basis functions, R12 approximation, etc.)
   Ref<R12IntEvalInfo> r12info_;
 
   bool evaluated_;
@@ -61,6 +62,8 @@ public:
   void save_data_state(StateOut&);
   void obsolete();
 
+  /** Evaluate 1-index ABS contributions to the R12 intermediates V, X, and B in
+      spinorbital pair basis. */
   void compute(RefSCMatrix& Vaa,
 	       RefSCMatrix& Xaa,
 	       RefSCMatrix& Baa,

@@ -50,6 +50,7 @@ class R12IntEvalInfo : virtual public SavableState {
 
 public:
 
+  /// Describes the method of storing transformed MO integrals. See MBPT2_R12.
   enum StoreMethod { mem_posix = 0, posix = 1, mem_mpi = 2, mpi = 3, mem_only = 4 };
 
 private:
@@ -114,23 +115,38 @@ private:
 
 public:
   R12IntEvalInfo(StateIn&);
+  /// Constructs an R12IntEvalInfo object using data from the MBPT2_R12 object
   R12IntEvalInfo(MBPT2_R12*);
   ~R12IntEvalInfo();
 
   void save_data_state(StateOut&);
 
+  /** Sets whether to use dynamic load balancing in parallel MO transformations.
+      Default is no */
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; };
+  /// Sets how frequently updates of progress are printed out. Default is 10%
   void set_print_percent(double print_percent) { print_percent_ = print_percent; };
+  /// Set debug level. Default is 0.
   void set_debug_level(int debug) { debug_ = debug; };
+  /** Sets the method of storing transformed MO integrals. Default depends on
+      how the object was constructed. */
   void set_ints_method(const StoreMethod method) { ints_method_ = method; };
+  /** Sets name of the file used to store transformed integrals.
+      Default depends on how the object was constructed. */
   void set_ints_file(const char* filename) { ints_file_ = strdup(filename); };
+  /** Sets the amount of memory to use for the calculation. Default is
+      determined by DEFAULT_SC_MEMORY. */
   void set_memory(size_t nbytes) { if (nbytes >= 0) memory_ = nbytes; };
+  /** Sets the ABS approach to be used (ABS or CABS).
+      Default depends on how the object was constructed. */
   void set_absmethod(LinearR12::ABSMethod abs_method);
 
   Wavefunction* wfn() const { return wfn_; };
   Ref<SCF> ref() const { return ref_; };
   Ref<Integral> integral() const { return integral_; };
+  /// Returns the orbital basis set (OBS) object
   Ref<GaussianBasisSet> basis() const { return bs_; };
+  /// Returns the resolution-of-the-identity basis set (RIBS) object
   Ref<GaussianBasisSet> basis_ri() const { return bs_ri_; };
   Ref<SCMatrixKit> matrixkit() const { return matrixkit_; };
   Ref<MemoryGrp> mem() const { return mem_;};

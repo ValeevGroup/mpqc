@@ -48,11 +48,14 @@ class R12IntEval_sbs_A;
 class R12IntEval_abs_A;
 class R12IntEval_B;
 
-  /** Class R12IntEval is the top-level R12 intermediate evaluator */
+  /** R12IntEval is the top-level class which computes intermediates occuring in linear R12 theories.
+      Wavefunction classes that implement linear R12 methods should not directly use other low-level classes
+      to evaluate the intermediates, but should use R12IntEval instead.
+  */
 
 class R12IntEval : virtual public SavableState {
 
-  /// This describes the state of the evaluator - whether it's been evaluated or not
+  // This describes the state of the evaluator - whether it's been evaluated or not
   bool evaluated_;
   
   Ref<R12IntEvalInfo> r12info_;
@@ -74,6 +77,7 @@ class R12IntEval : virtual public SavableState {
 public:
 
   R12IntEval(StateIn&);
+  /// This constructor uses MBPT2_R12 class to instantiate R12IntEval.
   R12IntEval(MBPT2_R12*);
   ~R12IntEval();
 
@@ -96,16 +100,26 @@ public:
   RefSCDimension dim_s() const;
   RefSCDimension dim_t() const;
 
-  RefSCMatrix V_aa();
-  RefSCMatrix X_aa();
-  RefSCMatrix B_aa();
-  RefSCMatrix V_ab();
-  RefSCMatrix X_ab();
-  RefSCMatrix B_ab();
-  RefSCVector emp2_aa();
-  RefSCVector emp2_ab();
-  
+  /// This function causes the intermediate matrices to be computed.
   void compute();
+
+  /// Returns alpha-alpha block of the V intermediate matrix.
+  RefSCMatrix V_aa();
+  /// Returns alpha-alpha block of the X intermediate matrix.
+  RefSCMatrix X_aa();
+  /// Returns alpha-alpha block of the B intermediate matrix.
+  RefSCMatrix B_aa();
+  /// Returns alpha-beta block of the V intermediate matrix.
+  RefSCMatrix V_ab();
+  /// Returns alpha-beta block of the X intermediate matrix.
+  RefSCMatrix X_ab();
+  /// Returns alpha-beta block of the B intermediate matrix.
+  RefSCMatrix B_ab();
+  /// Returns alpha-alpha MP2 pair energies.
+  RefSCVector emp2_aa();
+  /// Returns alpha-beta MP2 pair energies.
+  RefSCVector emp2_ab();
+
   RefDiagSCMatrix evals() const;
 	       
 };

@@ -11,13 +11,7 @@ ifeq ($(LEX),flex)
 DEFINES := $(DEFINES) -DFLEX
 endif
 
-COPTIONS = $(COPTIONS_DEBUG)
 CFLAGS = $(COPTIONS) $(INCLUDE) $(DEFINES)
-
-ifeq ($(ARCH),SGI)
-#CC = $(GCC)
-#COPTIONS = $(GCOPTIONS)
-endif
 
 ifeq ($(LEX),lex)
 LIBS = -ly

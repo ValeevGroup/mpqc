@@ -25,8 +25,9 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-mpqctest: mpqctest.o \
-	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+
+mpqctest: mpqctest.o $(LIBS)
 	$(CXX) $(LDFLAGS) -o mpqctest $^ $(SYSLIBS)
 
 mpqctest.o: mpqctest.cc

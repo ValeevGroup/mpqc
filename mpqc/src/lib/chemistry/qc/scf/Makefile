@@ -23,13 +23,9 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-libs: $(SRCDIR)/LIBS.h
-	$(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h > libs
+LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
-scftest:: libs
-	@echo "making scftest"
-
-scftest:: scftest.o $(shell cat libs)
+scftest:: scftest.o $(LIBS)
 	$(CXX) $(LDFLAGS) -o scftest $^ $(SYSLIBS)
 
 scftest.o: scftest.cc

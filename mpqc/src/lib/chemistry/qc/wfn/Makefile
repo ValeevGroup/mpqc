@@ -24,13 +24,9 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-libs: $(SRCDIR)/LIBS.h
-	$(LISTLIBS) $(MPQCLIBSDEFINE) $(INCLUDE) $(SRCDIR)/LIBS.h > libs
+LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
-wfntest:: libs
-	@echo "making wfntest"
-
-wfntest:: wfntest.o $(shell cat libs)
+wfntest:: wfntest.o $(LIBS)
 	$(CXX) $(LDFLAGS) -o wfntest $^ $(SYSLIBS)
 
 wfntest.o: wfntest.cc

@@ -25,13 +25,9 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-libs: $(SRCDIR)/LIBS.h
-	$(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h > libs
+LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
-g92test:: libs
-	@echo "makeing g92test"
-
-g92test:: g92test.o $(shell cat libs)
+g92test:: g92test.o $(LIBS)
 	$(CXX) $(LDFLAGS) -o g92test $^ $(SYSLIBS)
 
 g92test.o: g92test.cc

@@ -52,10 +52,7 @@ default:: libs
 
 interface:: $(DEPENDINCLUDE)
 
-LIBS = $(shell cat libs)
-
-libs:
-	 $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h > libs
+LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
 LD = $(CXX)
 

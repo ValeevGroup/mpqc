@@ -17,15 +17,20 @@ typedef int streamsize;
 SCostream SCostream::cout(1);
 SCostream SCostream::cerr(2);
 
+#ifdef __GNUC__
+#define do_system_write sys_write
+#else
+#define do_system_write xsputn
+#endif
+
 // see if a sensible filebuf can be created
 class SCfilebuf: public filebuf {
   private:
     int _column;
   protected:
-    streamsize sys_write(const char*, streamsize);
+    streamsize do_system_write(const char*, streamsize);
   public:
     SCfilebuf(int);
-    streamsize xsputn(const char* s, streamsize n);
     int get_column();
 };
 
@@ -36,18 +41,10 @@ SCfilebuf::SCfilebuf(int fd):
 }
 
 streamsize
-SCfilebuf::xsputn(const char* s, streamsize n)
-{
-//   fprintf(debug, "xsputn called n = %d\n",n);
-  streamsize ret = filebuf::xsputn(s, n);
-  return ret;
-}
-
-streamsize
-SCfilebuf::sys_write(const char* s, streamsize n)
+SCfilebuf::do_system_write(const char* s, streamsize n)
 {
 //   fprintf(debug, "sys_write called n = %d\n",n);
-  streamsize ret = filebuf::sys_write(s, n);
+  streamsize ret = filebuf::do_system_write(s, n);
 
   // find the last newline in s
   for (int i=n-1; i>=0; i--) {
@@ -131,7 +128,11 @@ SCostream::get_column()
 {
   // flush updates SCfilebuf's _column
   flush();
+#ifdef __GNUC__
   return rdbuf()->get_column();
+#else
+  return 0;
+#endif
 }
 
 void

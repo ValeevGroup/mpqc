@@ -180,7 +180,7 @@ MBPT2::print(ostream&o)
   o << incindent;
   Wavefunction::print(o);
   o << node0 << indent << "Reference Wavefunction:" << endl;
-  o << incindent; reference_->print(o); o << decindent << endl;
+  o << incindent; reference_->print(o); o << decindent << node0 << endl;
   o << decindent;
 }
 

@@ -96,15 +96,25 @@ MBPT2_R12::compute_energy_a_()
     
     // Alpha-alpha pairs
     RefSCMatrix Baa_ij = localkit->matrix(dim_aa,dim_aa);
+
+    // In MP2-R12/A the B matrix is the same for all pairs
+    if (stdapprox_ == LinearR12::StdApprox_A) {
+      Baa_ij.assign(Baa);
+      if (debug_ > 1)
+        Baa_ij.print("Inverse alpha-alpha B matrix");
+      Baa_ij->gen_invert_this();
+    }
+
     int ij=0;
     for(int i=0; i<nocc_act; i++)
       for(int j=0; j<i; j++, ij++) {
 	
 	RefSCVector Vaa_ij = Vaa.get_column(ij);
-	
+
+        // In MP2-R12/A' matrices B are pair-specific:	
 	// Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
-	Baa_ij.assign(Baa);
 	if (stdapprox_ == LinearR12::StdApprox_Ap) { 
+          Baa_ij.assign(Baa);
 	  int kl=0;
 	  for(int k=0; k<nocc_act; k++)
 	    for(int l=0; l<k; l++, kl++) {
@@ -116,15 +126,13 @@ MBPT2_R12::compute_energy_a_()
 		  Baa_ij.accumulate_element(kl,ow,fx);
 		}
 	    }
-	  if (debug_ > 1) {
+	  if (debug_ > 1)
 	    Baa_ij.print("Full A' alpha-alpha B matrix");
-	  }
-	}
-	// For some reason invert_this doesn't work here
-	Baa_ij->gen_invert_this();
+
+	  Baa_ij->gen_invert_this();
 	
-	if (debug_ > 1) {
-	  Baa_ij.print("Inverse alpha-alpha B matrix");
+	  if (debug_ > 1)
+	    Baa_ij.print("Inverse A' alpha-alpha B matrix");
 	}
 	
 	double eaa_ij = -2.0*Vaa_ij.dot(Baa_ij * Vaa_ij);
@@ -135,18 +143,29 @@ MBPT2_R12::compute_energy_a_()
     Baa_ij=0;
     epair_aa->assign(emp2_aa);
     epair_aa->accumulate(er12_aa);
-  
+ 
+ 
     // Alpha-beta pairs
     RefSCMatrix Bab_ij = localkit->matrix(dim_ab,dim_ab);
+
+    // In MP2-R12/A the B matrix is the same for all pairs
+    if (stdapprox_ == LinearR12::StdApprox_A) {
+      Bab_ij.assign(Bab);
+      if (debug_ > 1)
+        Bab_ij.print("Inverse alpha-beta B matrix");
+      Bab_ij->gen_invert_this();
+    }
+
     ij=0;
     for(int i=0; i<nocc_act; i++)
       for(int j=0; j<nocc_act; j++, ij++) {
 	
 	RefSCVector Vab_ij = Vab.get_column(ij);
 	
+        // In MP2-R12/A' matrices B are pair-specific:
 	// Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
-	Bab_ij.assign(Bab);
 	if (stdapprox_ == LinearR12::StdApprox_Ap) {
+          Bab_ij.assign(Bab);
 	  int kl=0;
 	  for(int k=0; k<nocc_act; k++)
 	    for(int l=0; l<nocc_act; l++, kl++) {
@@ -158,15 +177,13 @@ MBPT2_R12::compute_energy_a_()
 		  Bab_ij.accumulate_element(kl,ow,fx);
 		}
 	    }
-	  if (debug_ > 1) {
+	  if (debug_ > 1)
 	    Bab_ij.print("Full A' alpha-beta B matrix");
-	  }
-	}
-	// For some reason invert_this doesn't work here
-	Bab_ij->gen_invert_this();
+
+	  Bab_ij->gen_invert_this();
 	
-	if (debug_ > 1) {
-	  Bab_ij.print("Inverse alpha-beta B matrix");
+	  if (debug_ > 1)
+	    Bab_ij.print("Inverse A' alpha-beta B matrix");
 	}
 	
 	double eab_ij = -1.0*Vab_ij.dot(Bab_ij * Vab_ij);

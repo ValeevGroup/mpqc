@@ -50,6 +50,12 @@
 // REF_CHECK_MIN_NREF:  If this is 1 the reference count is checked before
 // it is decremented to make sure it isn't already zero.
 //
+// USE_LOCKS:  If this is 1 then critical regions are locked before they
+// are entered.  This prevents erroneous behavior when multiple threads
+// share reference counted objects.  This will slow down certain operations,
+// so it should be set to 0 if your application does not need to be thread
+// safe.
+//
 // If a macro is undefined, then the behaviour is architecture
 // dependent--usually, the macro will be set to 1 in this case.
 // For maximum efficiency and for normal operation after the program is
@@ -127,6 +133,10 @@
 #define REF_CHECK_MIN_NREF 1
 #endif
 
+#ifndef USE_LOCKS
+#define USE_LOCKS 0
+#endif
+
 #if REF_CHECK_STACK
 #include <unistd.h>
 #ifndef HAVE_SBRK_DEC
@@ -142,6 +152,16 @@ extern "C" void * sbrk(ssize_t);
 #else // REF_MANAGE
 #define DO_REF_UNMANAGE(p)
 #endif // REF_MANAGE
+
+#if USE_LOCKS
+#define __REF_LOCK__(p) p->lock_ptr()
+#define __REF_UNLOCK__(p) p->unlock_ptr()
+#define __REF_INITLOCK__() ref_lock_ = 0xff
+#else
+#define __REF_LOCK__(p)
+#define __REF_UNLOCK__(p)
+#define __REF_INITLOCK__()
+#endif
 
 typedef unsigned long refcount_t;
 
@@ -189,6 +209,9 @@ class RefCount: public Identity {
 #   endif
     unsigned int _reference_count_;
 #endif
+#if USE_LOCKS
+    unsigned char ref_lock_;
+#endif
 
     void error(const char*) const;
     void too_many_refs() const;
@@ -213,17 +236,27 @@ class RefCount: public Identity {
 #       if REF_CHECKSUM
         update_checksum();
 #       endif
+        __REF_INITLOCK__();
       }
     RefCount(const RefCount&): _reference_count_(0) {
 #       if REF_CHECKSUM
         update_checksum();
 #       endif
+        __REF_INITLOCK__();
       }
 
     // Assigment should not overwrite the reference count.
     RefCount& operator=(const RefCount&) { return *this; }
   public:
     virtual ~RefCount();
+
+    /// Lock this object.
+    int lock_ptr();
+    /// Unlock this object.
+    int unlock_ptr();
+
+    /// start and stop using locks on this object
+    void use_locks(bool inVal);
 
     /// Return the reference count.
     refcount_t nreference() const {
@@ -314,7 +347,7 @@ class RefBase {
     void ref_info(std::ostream& os) const;
     void check_pointer() const;
     void reference(RefCount *);
-    void dereference(RefCount *);
+    int dereference(RefCount *);
   public:
     virtual ~RefBase();
     /// Returns the DescribedClass pointer for the contained object.
@@ -345,19 +378,34 @@ class  Ref  : public RefBase {
     /// Create a reference to a null object.
     Ref(): p(0) {}
     /// Create a reference to the object a.
-    Ref(T*a): p(a)
+    Ref(T*a) : p(0)
     {
-      reference(p);
+      if (a) {
+          __REF_LOCK__(a);
+          p = a;
+          reference(p);
+          __REF_UNLOCK__(a);
+        }
     }
     /// Create a reference to the object referred to by a.
-    Ref(const Ref<T> &a): p(a.pointer())
+    Ref(const Ref<T> &a) : p(0)
     {
-      reference(p);
+      if (a.pointer()) {
+          __REF_LOCK__(a.pointer());
+          p = a.pointer();
+          reference(p);
+          __REF_UNLOCK__(a.pointer());
+        }
     }
     /// Create a reference to the object referred to by a.
-    template <class A> Ref(const Ref<A> &a): p(a.pointer())
+    template <class A> Ref(const Ref<A> &a): p(0)
     {
-      reference(p);
+      if (a.pointer()) {
+          __REF_LOCK__(a.pointer());
+          p = a.pointer();
+          reference(p);
+          __REF_UNLOCK__(a.pointer());
+        }
     }
 //      /** Create a reference to the object a.  Do a
 //          dynamic_cast to convert a to the appropiate type. */
@@ -415,30 +463,54 @@ class  Ref  : public RefBase {
     /// Refer to the null object.
     void clear()
     {
-      dereference(p);
-      p = 0;
+      if (p) {
+          __REF_LOCK__(p);
+          int ref = dereference(p);
+          __REF_UNLOCK__(p);
+          if (ref == 0)
+              delete p;
+          p = 0;
+        }
     }
     /// Assignment to c.
     Ref<T>& operator=(const Ref<T> & c)
     {
-      if (c.pointer()) c.pointer()->reference();
-      clear();
-      p=c.pointer();
+      if (c.pointer()) {
+          __REF_LOCK__(c.pointer());
+          c.pointer()->reference();
+          __REF_UNLOCK__(c.pointer());
+          clear();
+          p=c.pointer();
+        }
+      else {
+          clear();
+        }
       return *this;
     }
     /// Assignment to c.
     template <class A> Ref<T>& operator=(const Ref<A> & c)
     {
-      if (c.pointer()) c.pointer()->reference();
-      clear();
-      p=c.pointer();
+      if (c.pointer()) {
+          __REF_LOCK__(c.pointer());
+          c.pointer()->reference();
+          __REF_UNLOCK__(c.pointer());
+          clear();
+          p=c.pointer();
+        }
+      else {
+          clear();
+        }
       return *this;
     }
     /// Assignment to the object that a references using dynamic_cast.
     Ref<T>& operator<<(const RefBase&a) {
         T* cr = dynamic_cast<T*>(a.parentpointer());
-        reference(cr);
-        clear();
+        if (cr) {
+            __REF_LOCK__(cr);
+            reference(cr);
+            __REF_UNLOCK__(cr);
+            clear();
+          }
         p = cr;
         return *this;
       }
@@ -461,11 +533,13 @@ class  Ref  : public RefBase {
     void assign_pointer(T* cr)
     {
       if (cr) {
+          __REF_LOCK__(cr);
           if (DO_REF_CHECK_STACK(cr)) {
               DO_REF_UNMANAGE(cr);
               warn_ref_to_stack();
             }
           cr->reference();
+          __REF_UNLOCK__(cr);
         }
       clear();
       p = cr;

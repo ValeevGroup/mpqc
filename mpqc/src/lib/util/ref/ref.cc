@@ -34,6 +34,131 @@
 
 using namespace std;
 
+#if USE_LOCKS
+
+#if HAVE_STHREAD
+
+#include <synch.h>
+#include <thread.h>
+
+typedef mutex_t sc_lock_t;
+
+static unsigned int __base_nlock__;
+static int __base_locker__;
+
+static int
+__init_lock__(sc_lock_t* inLock, int inCount)
+{
+    for (int i=0; i < inCount; i++)
+        mutex_init(&inLock[i], USYNC_THREAD, 0);
+    return 1;
+}
+
+#define __LOCK(l) mutex_lock(&l)
+#define __UNLOCK(l) mutex_unlock(&l)
+
+#elif HAVE_PTHREAD
+
+#include <pthread.h>
+
+typedef pthread_mutex_t sc_lock_t;
+
+static int
+__init_lock__(sc_lock_t* inLock, int inCount)
+{
+    for (int i=0; i < inCount; i++)
+        pthread_mutex_init(&inLock[i], 0);
+    return 1;
+}
+
+#define __LOCK(l) pthread_mutex_lock(&l)
+#define __UNLOCK(l) pthread_mutex_unlock(&l)
+
+#elif HAVE_CREATETHREAD
+
+#include <windows.h>
+
+typedef HANDLE sc_lock_t;
+
+HANDLE __base_lock__ = 0;
+
+static int
+__init_lock__(sc_lock_t* inLock, int inCount)
+{
+    for (int i=0; i < inCount; i++)
+        inLock[i] = CreateMutex(0, FALSE, 0);
+    return 1;
+}
+
+// windows threads are recursive, so no fanciness is required
+#define __LOCK(l) WaitForSingleObject(l, INFINITE)
+#define __UNLOCK(l) ReleaseMutex(l)
+
+#else /* !PTHREAD && !STHREAD  && !CREATETHREAD */
+
+#define __LOCK(l) 0
+#define __UNLOCK(l) 0
+
+#endif /* HAVE_STHREAD */
+
+/*
+ * this is the number of locks to use in the round-robin.
+ * since an unsigned char is used for the lock handle,
+ * this cannot be greater than 255.
+ */
+#define NLOCKS 128
+
+static sc_lock_t sRefLocks[NLOCKS];
+static int sRefLocksInit = __init_lock__(sRefLocks, NLOCKS);
+static unsigned char sRefLock = 0;
+
+#else /* !USE_LOCKS */
+
+#define __LOCK(l) 0
+#define __UNLOCK(l) 0
+
+#endif /* !USE_LOCKS */
+
+int
+RefCount::lock_ptr()
+{
+#if USE_LOCKS
+    if (ref_lock_ == 0xff)
+        return 1;
+    return __LOCK(sRefLocks[ref_lock_]);
+#else
+    return 1;
+#endif    
+}
+
+int
+RefCount::unlock_ptr()
+{
+#if USE_LOCKS
+    if (ref_lock_ == 0xff)
+        return 1;
+    return __UNLOCK(sRefLocks[ref_lock_]);
+#else
+    return 1;
+#endif    
+}
+
+void
+RefCount::use_locks(bool inVal)
+{
+#if USE_LOCKS
+    if (inVal) {
+        ref_lock_ = sRefLock;
+        sRefLock++;
+        if (sRefLock >= NLOCKS)
+            sRefLock = 0;
+    }
+    else
+        ref_lock_ = 0xff;
+#endif
+}
+
+
 void
 RefCount::error(const char * w) const
 {
@@ -152,12 +277,13 @@ RefBase::reference(RefCount *p)
     }
 }
 
-void
+int
 RefBase::dereference(RefCount *p)
 {
-  if (p && p->dereference()<=0) {
-      delete p;
-    }
+  if (p) 
+      return p->dereference();
+  else
+      return -1;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -69,6 +69,13 @@ threads.  However, the Ref's themselves are not thread-safe.
 For example, a static Ref cannot be simultaneously modified from
 multiple threads.
 
+Because there is an overhead associated with locking access to an
+object's reference count, locking is not turned on by default,
+and, thus, making and deleting references to an object in
+multiple threads is not thread-safe by default.  The
+RefCount::use_locks member is passed a bool value to turn locking
+on and off on a per object basis.
+
 \section refcust Customizing the Reference Counting Package
 
   The behaviour of the package can be modified at compile time

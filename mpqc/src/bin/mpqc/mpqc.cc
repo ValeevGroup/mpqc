@@ -245,10 +245,12 @@ main(int argc, char *argv[])
     SCFormIO::set_debug(1);
 
   // initialize timing for mpqc
-  RefRegionTimer tim = new ParallelRegionTimer(grp,"mpqc",1,1);
+  RefRegionTimer tim;
+  if (keyval->exists("timer")) tim = keyval->describedclassvalue("timer");
+  else                         tim = new ParallelRegionTimer(grp,"mpqc",1,1);
   RegionTimer::set_default_regiontimer(tim);
 
-  tim->enter("input");
+  if (tim.nonnull()) tim->enter("input");
   
   // announce ourselves
   const char title1[] = "MPQC: Massively Parallel Quantum Chemistry";
@@ -394,7 +396,7 @@ main(int argc, char *argv[])
     exit(0);
   }
   
-  tim->change("calc");
+  if (tim.nonnull()) tim->change("calc");
 
   int do_energy = keyval->booleanvalue("do_energy",truevalue);
   
@@ -465,7 +467,8 @@ main(int argc, char *argv[])
            << scprintf("Value of the MolecularEnergy: %15.10f",
                        mole->energy())
            << endl << endl;
-      mole->gradient().print("Gradient of the MolecularEnergy:");
+      // the mole should have printed out the gradient since do_gradient == 1
+      //mole->gradient().print("Gradient of the MolecularEnergy:");
     } else if (do_energy && mole->value_implemented()) {
       cout << node0 << endl << indent
            << scprintf("Value of the MolecularEnergy: %15.10f",
@@ -474,7 +477,7 @@ main(int argc, char *argv[])
     }
   }
 
-  tim->exit("calc");
+  if (tim.nonnull()) tim->exit("calc");
 
   // save this before doing the frequency stuff since that obsoletes the
   // function stuff
@@ -552,17 +555,17 @@ main(int argc, char *argv[])
   RefRenderedObject rendered = keyval->describedclassvalue("rendered");
   RefAnimatedObject animated = keyval->describedclassvalue("rendered");
   if (renderer.nonnull() && rendered.nonnull()) {
-    tim->enter("render");
+    if (tim.nonnull()) tim->enter("render");
     if (grp->me() == 0) renderer->render(rendered);
-    tim->exit("render");
+    if (tim.nonnull()) tim->exit("render");
   }
   else if (renderer.nonnull() && animated.nonnull()) {
-    tim->enter("render");
+    if (tim.nonnull()) tim->enter("render");
     if (grp->me() == 0) renderer->animate(animated);
-    tim->exit("render");
+    if (tim.nonnull()) tim->exit("render");
   }
   else if (renderer.nonnull()) {
-    tim->enter("render");
+    if (tim.nonnull()) tim->enter("render");
     int n = keyval->count("rendered");
     for (i=0; i<n; i++) {
       rendered = keyval->describedclassvalue("rendered",i);
@@ -586,14 +589,14 @@ main(int argc, char *argv[])
         if (grp->me() == 0) renderer->animate(animated);
       }
     }
-    tim->exit("render");
+    if (tim.nonnull()) tim->exit("render");
   }
   RefMolFreqAnimate molfreqanim = keyval->describedclassvalue("animate_modes");
   if (ready_for_freq && molfreq.nonnull()
       && molfreqanim.nonnull() && renderer.nonnull()) {
-    tim->enter("render");
+    if (tim.nonnull()) tim->enter("render");
     molfreq->animate(renderer, molfreqanim);
-    tim->exit("render");
+    if (tim.nonnull()) tim->exit("render");
   }
 
   if (mole.nonnull()) {
@@ -626,7 +629,7 @@ main(int argc, char *argv[])
   }
 
   if (print_timings)
-    tim->print(cout);
+    if (tim.nonnull()) tim->print(cout);
 
   delete[] basename;
   delete[] molname;

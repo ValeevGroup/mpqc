@@ -69,6 +69,7 @@ int getrusage (
   struct rusage *RUsage); }
 #endif
 
+#include <util/keyval/keyval.h>
 #include <util/misc/regtime.h>
 #include <util/misc/timer.h>
 
@@ -265,6 +266,34 @@ TimedRegion::wall_exit(double t)
 }
 
 //////////////////////////////////////////////////////////////////////
+
+#define CLASSNAME RegionTimer
+#define PARENTS public DescribedClass
+#define HAVE_KEYVAL_CTOR
+#include <util/class/classi.h>
+void *
+RegionTimer::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] =  DescribedClass::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+RegionTimer::RegionTimer(const RefKeyVal &keyval)
+{
+  KeyValValueboolean yes(1);
+  KeyValValueboolean no(0);
+  KeyValValuepchar defname("total");
+
+  wall_time_ = keyval->booleanvalue("wall_time",yes);
+  cpu_time_ = keyval->booleanvalue("cpu_time",yes);
+
+  char *topname = keyval->pcharvalue("name", defname);
+  top_ = new TimedRegion(topname);
+  if (cpu_time_) top_->cpu_enter(get_cpu_time());
+  if (wall_time_) top_->wall_enter(get_wall_time());
+  current_ = top_;
+}
 
 RegionTimer::RegionTimer(const char *topname, int cpu_time, int wall_time):
   cpu_time_(0),

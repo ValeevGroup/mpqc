@@ -39,6 +39,24 @@
 #include <util/misc/formio.h>
 #include <util/group/pregtime.h>
 
+#define CLASSNAME ParallelRegionTimer
+#define PARENTS public RegionTimer
+#define HAVE_KEYVAL_CTOR
+#include <util/class/classi.h>
+void *
+ParallelRegionTimer::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] =  RegionTimer::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+ParallelRegionTimer::ParallelRegionTimer(const RefKeyVal &keyval):
+  RegionTimer(keyval)
+{
+  msg_ = MessageGrp::get_default_messagegrp();
+}
+
 ParallelRegionTimer::ParallelRegionTimer(const RefMessageGrp&msg,
                                          const char *topname,
                                          int cpu_time, int wall_time):

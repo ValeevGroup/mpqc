@@ -116,6 +116,7 @@ namespace MPQC {
     StringParameter *package_param_;
     ConfigurableParameterPort* setup_parameters(
       ConfigurableParameterFactory *cpf);
+    std::string package_;
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._implementation)
 
   private:
@@ -206,6 +207,18 @@ namespace MPQC {
     ::Chemistry::Molecule
     get_molecule() throw () 
     ;
+
+    /**
+     * Set the integral package
+     * @param The integral package 
+     */
+    void
+    set_integral_package (
+      /*in*/ const ::std::string& label
+    )
+    throw () 
+    ;
+
 
     /**
      * Get a 2-center integral evaluator

@@ -14,36 +14,12 @@
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._includes)
 #include <iostream>
 #include <sstream>
-
-using namespace std;
+#pragma implementation "ccaiter.h"
+#include <ccaiter.h>
 
 Ref<GaussianBasisSet> basis_cca_to_sc(Molecular&);
 
-// same as cints, but cints might not be compiled
-class CartesianIterCCA : public CartesianIter {
-  int *avec, *bvec, *cvec;
-  public:
-    CartesianIterCCA(int l) : CartesianIter(l) {}
-    void start() {
-      bfn_=b_=c_=0;
-      a_=l_;
-    }
-    void next() {
-      if (c_ < l_ - a_) {
-        b_--;
-        c_++;
-      }
-      else {
-        a_--;
-        c_ = 0;
-        b_ = l_ - a_;
-      }
-      bfn_++;
-    }
-    operator int() {
-      return (a_ >= 0);
-    }
-};
+using namespace std;
 
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._includes)
 
@@ -311,8 +287,8 @@ MPQC::IntegralEvaluator2_impl::initialize_reorder_intv3()
   for( int i=1; i<=maxam; ++i) {
 
     sc::CartesianIter *v3iter = integral_->new_cartesian_iter(i);
-    CartesianIterCCA iter(i);
-    CartesianIterCCA *ccaiter = &iter;
+    MPQC::CartesianIterCCA iter(i);
+    MPQC::CartesianIterCCA *ccaiter = &iter;
     ccaiter->start();
     int ncf = ccaiter->n();
     

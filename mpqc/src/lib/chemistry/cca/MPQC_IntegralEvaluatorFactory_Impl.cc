@@ -182,6 +182,20 @@ throw ()
 }
 
 /**
+ * Set the integral package
+ * @param The integral package 
+ */
+void
+MPQC::IntegralEvaluatorFactory_impl::set_integral_package (
+  /*in*/ const ::std::string& label ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.set_integral_package)
+  package_ = label;
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.set_integral_package)
+}
+
+/**
  * Get a 2-center integral evaluator
  * @param label String specifying integral type
  * @param max_deriv Maximum derivative that will be computed
@@ -199,8 +213,9 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator2)
   MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
-  string package( package_param_->getValueString() );
-  eval.set_integral_package( package );
+  if( package_.size() == 0 )
+    package_ =  package_param_->getValueString();
+  eval.set_integral_package( package_ );
   eval.initialize( bs1, bs2, label, max_deriv );
   return eval;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator2)
@@ -226,8 +241,9 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator3)
   MPQC::IntegralEvaluator3 eval = MPQC::IntegralEvaluator3::_create();
-  string package = std::string( package_param_->getValueString() );
-  eval.set_integral_package( package );
+  if( package_.size() == 0 ) 
+    package_ = package_param_->getValueString();
+  eval.set_integral_package( package_ );
   eval.initialize( bs1, bs2, bs3, label, max_deriv );
   return eval;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator3)
@@ -255,8 +271,9 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator4)
   MPQC::IntegralEvaluator4 eval = MPQC::IntegralEvaluator4::_create();
-  string package = std::string( package_param_->getValueString() );
-  eval.set_integral_package( package );
+  if( package_.size() == 0 )
+    package_ = package_param_->getValueString();
+  eval.set_integral_package( package_ );
   eval.initialize( bs1, bs2, bs3, bs4, label, max_deriv );
   return eval;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator4)

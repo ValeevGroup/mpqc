@@ -51,7 +51,7 @@ BABEL_CLASSES = \
   MPQC.ChemistryOpt_CoordinateModel
 
 EXTRA_CXX_SRCS = socket.cc except.cc basis_cca_to_sc.cc
-EXTRA_INCLUDES = socket.h except.h
+EXTRA_INCLUDES = socket.h except.h ccaiter.h
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 DEFINES += -DSRCDIR=\"$(SRCDIR)\"
@@ -91,7 +91,7 @@ BIN_OR_LIB = LIB
 TARGET_TO_MAKE = cca/libSCchemistry
 
 LIBOBJ = $(CCA_OBJS)
-CPPFLAGS += -I./ -I$(CLASSIC_pkgincludedir)
+CPPFLAGS += -I./ -I$(SRCDIR) -I$(CLASSIC_pkgincludedir)
 ifeq ($(HAVE_LIBINT),yes)
   DEFINES += -DHAVE_CINTS
 endif

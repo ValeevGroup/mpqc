@@ -115,9 +115,12 @@ DFPUpdate::update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
           xdisp.symmetric_outer_product()*(1.0/xdisp_gdisp)
           - ihessian_gdisp.symmetric_outer_product()*(1.0/gdisp_ihessian_gdisp)
           );
+      xprev.assign(xnew);
+      gprev.assign(gnew);
+    } else {
+      xprev = xnew.copy();
+      gprev = gnew.copy();
     }
-  xprev = xnew;
-  gprev = gnew;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -160,7 +163,7 @@ void
 BFGSUpdate::update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
                    RefSCVector&xnew,RefSCVector&gnew)
 {
-  if (xprev.nonnull()) {
+    if (xprev.nonnull()) {
       RefSCVector xdisp = xnew-xprev;
       RefSCVector gdisp = gnew-gprev;
       RefSCVector ihessian_gdisp = ihessian * gdisp;
@@ -175,7 +178,10 @@ BFGSUpdate::update(RefSymmSCMatrix&ihessian,RefNLP2&nlp,
           // BFGS part
           + u.symmetric_outer_product() * gdisp_ihessian_gdisp
           );
+      xprev.assign(xnew);
+      gprev.assign(gnew);
+    } else {
+      xprev = xnew.copy();
+      gprev = gnew.copy();
     }
-  xprev = xnew;
-  gprev = gnew;
 }

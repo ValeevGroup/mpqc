@@ -28,6 +28,11 @@ ifeq ($(ARCH),SGI)
   DEFAULT = mpqcicproc
 endif
 
+ifeq ($(ARCH),SUNMOS)
+  MPQCLIBSDEFINE=-DUSE_PICLPARAGON
+  DEFAULT=mpqcic
+endif
+
 ifeq ($(ARCH),PARAGON)
   MPQCLIBSDEFINE=-DUSE_PICLPARAGON
   DEFAULT=mpqcic

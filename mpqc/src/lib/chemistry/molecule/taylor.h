@@ -43,8 +43,6 @@ class TaylorMolecularEnergy: public MolecularEnergy {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    void compute_energy(double&);
-    
     // the coordinates
     RefSetIntCoor coordinates_;
 
@@ -62,6 +60,9 @@ class TaylorMolecularEnergy: public MolecularEnergy {
 
     // the energy at the expansion point
     double e0_;
+
+    // the maximum order derivative that can be computed
+    int maxorder_;
   public:
     TaylorMolecularEnergy(const RefKeyVal&);
     TaylorMolecularEnergy(StateIn&);
@@ -69,6 +70,9 @@ class TaylorMolecularEnergy: public MolecularEnergy {
     void save_data_state(StateOut&);
     void print(ostream& = cout);
     void compute();
+    int value_implemented();
+    int gradient_implemented();
+    int hessian_implemented();
 };
 
 #endif

@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <util/misc/formio.h>
 #include <math/scmat/local.h>
 #include <chemistry/molecule/taylor.h>
 
@@ -52,20 +53,34 @@ TaylorMolecularEnergy::TaylorMolecularEnergy(const RefKeyVal&keyval):
   MolecularEnergy(keyval)
 {
   coordinates_ = keyval->describedclassvalue("coordinates");
-  dim_ = new SCDimension(coordinates_->n());
-  expansion_point_ = matrixkit()->vector(dim_);
-  coordinates_->update_values(molecule());
-  coordinates_->values_to_vector(expansion_point_);
+  // if coordinates is nonnull use cartesian coordinates
+  if (coordinates_.nonnull()) {
+      dim_ = new SCDimension(coordinates_->n());
+    }
+  else {
+      dim_ = moldim();
+    }
+  if (coordinates_.nonnull()) {
+      expansion_point_ = matrixkit()->vector(dim_);
+      coordinates_->update_values(molecule());
+      coordinates_->values_to_vector(expansion_point_);
+    }
+  else {
+      expansion_point_ = get_cartesian_x();
+    }
 
   e0_ = keyval->doublevalue("e0");
 
   int n_fc = keyval->count("force_constants");
   force_constant_index_.set_length(n_fc);
   force_constant_value_.set_length(n_fc);
+  maxorder_ = 0;
   for (int i=0; i<n_fc; i++) {
       int order = keyval->count("force_constants", i) - 1;
-      force_constant_value_[i] = keyval->doublevalue("force_constants",order);
+      force_constant_value_[i] = keyval->doublevalue("force_constants",
+                                                     i,order);
       force_constant_index_[i].set_length(order);
+      if (maxorder_ < order) maxorder_ = order;
       for (int j=0; j<order; j++) {
           force_constant_index_[i][j]
               = keyval->intvalue("force_constants",i,j) - 1;
@@ -95,38 +110,27 @@ void
 TaylorMolecularEnergy::print(ostream&o)
 {
   MolecularEnergy::print(o);
-  coordinates_->print(molecule(), o);
+  if (coordinates_.nonnull()) coordinates_->print(molecule(), o);
   int nfc = force_constant_index_.length();
+  o << indent << "Force Constants:" << endl;
+  o << incindent;
   for (int i=0; i<nfc; i++) {
       int order = force_constant_index_[i].length();
       for (int j=0; j<order; j++) {
-          o << " " << force_constant_index_[i][j];
+          o << indent << scprintf("%5d",force_constant_index_[i][j]+1);
         }
-      o << " " << force_constant_value_[i] << endl;
+      o << indent
+        << scprintf(" %*.*f",14,10,force_constant_value_[i])
+        << endl;
     }
-}
-
-void
-TaylorMolecularEnergy::compute()
-{
-  if (value_needed()) {
-      double e;
-      compute_energy(e);
-      set_value(e);
-    }
-  else if (gradient_needed()) {
-      abort();
-    }
-  else if (hessian_needed()) {
-      abort();
-    }
+  o << decindent;
 }
 
 // this is used by the factor function
 static int
 factorial(int i)
 {
-  if (i>2) return 1;
+  if (i<2) return 1;
   return i*factorial(i-1);
 }
 
@@ -158,23 +162,73 @@ factor(Arrayint&indices)
 }
 
 void
-TaylorMolecularEnergy::compute_energy(double&energy)
+TaylorMolecularEnergy::compute()
 {
-  RefSCVector geometry = expansion_point_.clone();
+  RefSCVector geometry;
 
-  coordinates_->update_values(molecule());
-  coordinates_->values_to_vector(geometry);
+  if (coordinates_.nonnull()) {
+      coordinates_->update_values(molecule());
+      geometry = expansion_point_.clone();
+      coordinates_->values_to_vector(geometry);
+    }
+  else {
+      geometry = get_cartesian_x();
+    }
+
   RefSCVector displacement = geometry - expansion_point_;
 
-  energy = e0_;
-
-  for (int i=0; i<force_constant_index_.length(); i++) {
-      double term =  force_constant_value_[i]
-                   * factor(force_constant_index_[i]);
-      for (int j=0; j<force_constant_index_[i].length(); j++) {
-          term *= displacement(force_constant_index_[i][j]);
+  if (value_needed()) {
+      double e = e0_;
+      for (int i=0; i<force_constant_index_.length(); i++) {
+          double term =  force_constant_value_[i]
+                       * factor(force_constant_index_[i]);
+          for (int j=0; j<force_constant_index_[i].length(); j++) {
+              term *= displacement(force_constant_index_[i][j]);
+            }
+          e += term;
         }
+      set_energy(e);
+      set_actual_value_accuracy(desired_value_accuracy());
     }
+  if (gradient_needed()) {
+      RefSCVector gradient = expansion_point_.clone();
+      gradient.assign(0.0);
+
+      for (int i=0; i<force_constant_index_.length(); i++) {
+          double f =  force_constant_value_[i]
+                    * factor(force_constant_index_[i]);
+          for (int k=0; k<force_constant_index_[i].length(); k++) {
+              double t = 1.0;
+              for (int l=0; l<force_constant_index_[i].length(); l++) {
+                  if (l == k) continue;
+                  t *= displacement(force_constant_index_[i][l]);
+                }
+              gradient.accumulate_element(force_constant_index_[i][k],f*t);
+            }
+        }
+
+      // this will only work for cartesian coordinates
+      set_gradient(gradient);
+      set_actual_gradient_accuracy(desired_gradient_accuracy());
+    }
+}
+
+int
+TaylorMolecularEnergy::value_implemented()
+{
+  return 1;
+}
+
+int
+TaylorMolecularEnergy::gradient_implemented()
+{
+  return coordinates_.null() && maxorder_ >= 1;
+}
+
+int
+TaylorMolecularEnergy::hessian_implemented()
+{
+  return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////

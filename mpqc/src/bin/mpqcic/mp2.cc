@@ -100,9 +100,14 @@ mp2_hah(centers_t *centers, scf_struct_t *scf_info,
   int nfuncmax = int_find_nfuncmax(centers);
   int nocc=0,nvir;
 
-  for (i=0; i < centers->n; i++) nocc += (int) centers->center[i].charge;
+  if (keyval->exists("docc")) {
+    for (i=0; i < keyval->count("docc"); i++)
+      nocc += keyval->intvalue("docc",i);
+  } else {
+    for (i=0; i < centers->n; i++) nocc += (int) centers->center[i].charge;
+    nocc = (nocc%2) ? nocc/2 + 1 : nocc/2 ;
+  }
 
-  nocc /= 2;
   nvir = nbasis-nocc;
 
   nvir -= nfzv;

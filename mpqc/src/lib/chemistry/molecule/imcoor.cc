@@ -22,7 +22,7 @@ extern "C" {
 // members of IntMolecularCoor
 
 #define CLASSNAME IntMolecularCoor
-#define VERSION 2
+#define VERSION 3
 #define PARENTS public MolecularCoor
 #include <util/state/statei.h>
 #include <util/class/classia.h>
@@ -65,7 +65,9 @@ IntMolecularCoor::IntMolecularCoor(const RefKeyVal& keyval):
   scale_bonds_(1.0),
   scale_bends_(1.0),
   scale_tors_(1.0),
-  scale_outs_(1.0)
+  scale_outs_(1.0),
+  decouple_bonds_(0),
+  decouple_bends_(0)
 {
   // intialize the coordinate sets
   new_coords();
@@ -79,6 +81,15 @@ IntMolecularCoor::IntMolecularCoor(StateIn& s):
 {
   generator_.restore_state(s);
 
+  if (s.version(static_class_desc()) >= 3) {
+      s.get(decouple_bonds_);
+      s.get(decouple_bends_);
+    }
+  else {
+      decouple_bonds_ = 0;
+      decouple_bends_ = 0;
+    }
+  
   if (s.version(static_class_desc()) >= 2) {
     //printf("IntMolecularCoor::IntMolecularCoor(StateIn& s): new version\n");
     s.get(max_update_steps_);
@@ -142,6 +153,9 @@ IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
   fixed_ = keyval->describedclassvalue("fixed");
   if (fixed_.null()) fixed_ = new SetIntCoor;
   followed_ = keyval->describedclassvalue("followed");
+
+  decouple_bonds_ = keyval->booleanvalue("decouple_bonds");
+  decouple_bends_ = keyval->booleanvalue("decouple_bends");
 
   given_fixed_values_ = keyval->booleanvalue("have_fixed_values");
 
@@ -211,7 +225,6 @@ IntMolecularCoor::init()
   int i;
   for (i=0; i<redundant->n(); i++) {
       RefIntCoor coor = redundant->coor(i);
-      all_->add(coor);
       if (coor->class_desc()
           == StreSimpleCo::static_class_desc()) {
           bonds_->add(coor);
@@ -234,6 +247,12 @@ IntMolecularCoor::init()
           extras_->add(coor);
         }
     }
+
+  all_->add(bonds_);
+  all_->add(bends_);
+  all_->add(tors_);
+  all_->add(outs_);
+  all_->add(extras_);
 
   if (given_fixed_values_) {
       // save the given coordinate values
@@ -442,7 +461,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
                                    RefSCMatrix& Kfixed,
                                    int*& is_totally_symmetric)
 {
-  int i;
+  int i,j;
 
   // The cutoff for whether or not a coordinate is considered totally symmetric
   double ts_eps = 0.0001;
@@ -455,6 +474,8 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
       geom(3*i+1) = molecule_->operator[](i).point()[1];
       geom(3*i+2) = molecule_->operator[](i).point()[2];
     }
+
+  RefSCDimension dcoor = matrixkit_->dimension(all_->n());
 
   // this keeps track of the total projection for the b matrices
   RefSCMatrix projection;
@@ -479,21 +500,101 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
         }
 
       // Compute Kfixed
-      RefSCDimension dcoor = matrixkit_->dimension(all_->n());
       RefSCMatrix B(dcoor, dnatom3_);
       all_->bmat(molecule_, B);
       Kfixed = B * null_bfixed_perp;
     }
 
+#define DECOUPLE 1
+#if DECOUPLE
+  int n_total = 0;
+
+  int n_totally_symmetric_bond = 0;
+  RefSCVector totally_symmetric_bond;
+  RefSCMatrix Kbond;
+  if (decouple_bonds_) {
+      cout << "looking for bonds" << endl;
+      form_partial_K(bonds_, molecule_, geom, 0.1, dnatom3_, matrixkit_,
+                     projection, totally_symmetric_bond, Kbond);
+      n_totally_symmetric_bond = count_nonzero(totally_symmetric_bond, ts_eps);
+      if (Kbond.nonnull()) n_total += Kbond.ncol();
+    }
+
+  int n_totally_symmetric_bend = 0;
+  RefSCVector totally_symmetric_bend;
+  RefSCMatrix Kbend;
+  if (decouple_bends_) {
+      cout << "looking for bends" << endl;
+      form_partial_K(bends_, molecule_, geom, 0.1, dnatom3_, matrixkit_,
+                     projection, totally_symmetric_bend, Kbend);
+      n_totally_symmetric_bend = count_nonzero(totally_symmetric_bend, ts_eps);
+      if (Kbend.nonnull()) n_total += Kbend.ncol();
+    }
+
+  if (decouple_bonds_ || decouple_bends_) {
+      cout << "looking for remaining coordinates" << endl;
+    }
+  RefSCVector totally_symmetric_all;
+  RefSCMatrix Kall;
+  // I hope the IntCoorSet keeps the ordering
+  form_partial_K(all_, molecule_, geom, 0.001, dnatom3_, matrixkit_,
+                 projection, totally_symmetric_all, Kall);
+  int n_totally_symmetric_all = count_nonzero(totally_symmetric_all, ts_eps);
+  if (Kall.nonnull()) n_total += Kall.ncol();
+
+  // This requires that all_ coordinates is made up of first bonds,
+  // bends, and finally the rest of the coordinates.
+  RefSCDimension dtot = matrixkit_->dimension(n_total);
+  K = matrixkit_->matrix(dcoor, dtot);
+  K.assign(0.0);
+  if (Kbond.nonnull()) {
+      K.assign_subblock(Kbond, 0, Kbond.nrow()-1, 0, Kbond.ncol()-1, 0, 0);
+    }
+  if (Kbend.nonnull()) {
+      K.assign_subblock(Kbend, Kbond.nrow(), Kbond.nrow()+Kbend.nrow()-1,
+                        Kbond.ncol(), Kbond.ncol()+Kbend.ncol()-1, 0, 0);
+    }
+  if (Kall.nonnull()) {
+      K.assign_subblock(Kall, 0, dcoor->n()-1,
+                        Kbond.ncol()+Kbend.ncol(),
+                        Kbond.ncol()+Kbend.ncol()+Kall.ncol()-1, 0, 0);
+    }
+
+  is_totally_symmetric = new int[K.ncol()];
+  j=0;
+  if (Kbond.nonnull()) {
+      for (i=0; i<Kbond.ncol(); i++,j++) {
+          if (fabs(totally_symmetric_bond(i)) > ts_eps)
+              is_totally_symmetric[j] = 1;
+          else is_totally_symmetric[j] = 0;
+        }
+    }
+  if (Kbond.nonnull()) {
+      for (i=0; i<Kbend.ncol(); i++,j++) {
+          if (fabs(totally_symmetric_bend(i)) > ts_eps)
+              is_totally_symmetric[j] = 1;
+          else is_totally_symmetric[j] = 0;
+        }
+    }
+  if (Kall.nonnull()) {
+      for (i=0; i<Kall.ncol(); i++,j++) {
+          if (fabs(totally_symmetric_all(i)) > ts_eps)
+              is_totally_symmetric[j] = 1;
+          else is_totally_symmetric[j] = 0;
+        }
+    }
+#else
   RefSCVector totally_symmetric_all;
   form_partial_K(all_, molecule_, geom, 0.001, dnatom3_, matrixkit_,
                  projection, totally_symmetric_all, K);
   int n_totally_symmetric_all = count_nonzero(totally_symmetric_all, ts_eps);
+
   is_totally_symmetric = new int[K.ncol()];
   for (i=0; i<K.ncol(); i++) {
       if (fabs(totally_symmetric_all(i)) > ts_eps) is_totally_symmetric[i] = 1;
       else is_totally_symmetric[i] = 0;
     }
+#endif
 }
 #else // USE_SVD
 void
@@ -680,6 +781,9 @@ IntMolecularCoor::save_data_state(StateOut&s)
   MolecularCoor::save_data_state(s);
 
   generator_.save_state(s);
+
+  s.put(decouple_bonds_);
+  s.put(decouple_bends_);
 
   s.put(max_update_steps_);
   s.put(max_update_disp_);

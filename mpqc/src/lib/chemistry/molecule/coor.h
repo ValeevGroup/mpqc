@@ -406,6 +406,9 @@ class IntMolecularCoor: public MolecularCoor
 
     int given_fixed_values_; // if true make molecule have given fixed values
 
+    int decouple_bonds_;
+    int decouple_bends_;
+
     int max_update_steps_;
     double max_update_disp_;
 

@@ -1,4 +1,7 @@
 
+#ifndef _util_container_avl_h
+#define _util_container_avl_h
+
 #include <stdio.h>
 #include <math.h>
 
@@ -999,3 +1002,5 @@ main()
 }
 
 #endif // TEST
+
+#endif

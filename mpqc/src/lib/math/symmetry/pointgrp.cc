@@ -440,6 +440,8 @@ int CharacterTable::parse_symbol()
     } else {
       g = 60; pg = I; nirrep_ = 5;
     }
+
+    return 0;
   }
 
   return -1;

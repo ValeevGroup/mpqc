@@ -127,6 +127,9 @@ class SymmetryOperation {
     //texi const version of the above
     const double operator()(int i, int j) const { return d[i][j]; }
 
+    //texi zero out the symop
+    void zero() { memset(d,0,sizeof(double)*9); }
+
     //texi print the matrix 
     void print(FILE* =stdout) const;
 };

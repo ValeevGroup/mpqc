@@ -1221,6 +1221,14 @@ int CharacterTable::make_table()
     oh();
     break;
 
+  case I:
+    this->i();
+    break;
+
+  case IH:
+    ih();
+    break;
+
   default:
     return -1;
 

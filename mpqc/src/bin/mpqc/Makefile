@@ -34,10 +34,6 @@ endif
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(XDEF) $(SRCDIR)/LIBS.h)
 
-ifeq ($(ARCH),I860)
-  DEFINES += -DLINPACKD=-lkmath
-endif
-
 #################################################################
 
 default:: $(DEPENDINCLUDE)
@@ -51,6 +47,9 @@ $(TOPDIR)/lib/libmpqc.a: $(BINOBJ)
 	/bin/rm -f $@
 	$(AR) $(ARFLAGS) $@ $^
 	$(RANLIB) $@
+
+$(TOPDIR)/lib/libmpqc.la: $(BINOBJ)
+	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKLIBOPTS)
 
 install_devel:: $(TOPDIR)/lib/libmpqc.$(LIBSUF)
 	$(INSTALL) $(INSTALLDIROPT) $(libdir)

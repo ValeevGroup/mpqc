@@ -7,17 +7,19 @@ extern "C" {
 
 #include <tmpl.h>
 
+#include <comm/picl/picl.h>
+#include <comm/picl/ext/piclext.h>
+
 #include <math/array/math_lib.h>
-#include <chemistry/qc/intv2/int_libv2.h>
 #include <util/misc/libmisc.h>
 }
 
+#include <util/keyval/keyval.h>
+
+#include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 #include <scf_dmt.h>
 
-#include <util/keyval/ipv2.h>
-#include <util/keyval/ipv2c.h>
-#include <util/keyval/keyval.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -33,73 +35,8 @@ newstring(const char *s)
 
 ///////////////////////////////////////////////////////////////////////////
 //
-// this is a C stub which calls the keyval version scf_init_scf_kv().
-// because scf_init_scf_kv() calls sym_init_centers(), ip_initialize()
-// must also have been called.
-// 
-// input:
-//   centers  = pointer to uninitialized centers struct
-//   scf_info = pointer to uninitialized scf struct
-//   sym_info = pointer to uninitialized sym struct
-//   input    = string containing name of input file
-//
-// on return:
-//   centers, scf_info, and sym_info are completely initialized
-//
-// return 0 on success, -1 on failure
-//
-
-extern "C" int
-scf_init_scf(centers_t *centers, scf_struct_t *scf_info,
-             sym_struct_t *sym_info, char *input)
-{
-  RefKeyVal rpkv(new ParsedKeyVal(input));
-  RefKeyVal keyval(new PrefixKeyVal(":scf :default",*rpkv.pointer()));
-  RefKeyVal extension(new ParsedKeyVal("input",*keyval.pointer()));
-  RefKeyVal agg(new AggregateKeyVal(*rpkv.pointer(),*extension.pointer()));
-
-  keyval = new PrefixKeyVal(":scf :default",*agg.pointer());
-
-  rpkv = extension = agg = 0;
-
-  return scf_init_scf_kv(*keyval.pointer(), *centers, *scf_info, *sym_info);
-}
-
-///////////////////////////////////////////////////////////////////////////
-//
-// this is a C stub which calls the keyval version scf_init_scf_struct_kv().
-// 
-// input:
-//   centers  = pointer to an initialized centers struct
-//   scf_info = pointer to uninitialized scf struct
-//   input    = string containing name of input file
-//
-// on return:
-//   scf_info is completely initialized
-//
-// return 0 on success, -1 on failure
-//
-
-extern "C" int
-scf_init_scf_struct(centers_t *centers, scf_struct_t *scf_info, char *input)
-{
-  RefKeyVal rpkv(new ParsedKeyVal(input));
-  RefKeyVal keyval(new PrefixKeyVal(":scf :default",*rpkv.pointer()));
-  RefKeyVal extension(new ParsedKeyVal("input",*keyval.pointer()));
-  RefKeyVal agg(new AggregateKeyVal(*rpkv.pointer(),*extension.pointer()));
-
-  keyval = new PrefixKeyVal(":scf :default",*agg.pointer());
-
-  rpkv = extension = agg = 0;
-
-  return scf_init_scf_struct_kv(*keyval.pointer(), *centers, *scf_info);
-}
-
-///////////////////////////////////////////////////////////////////////////
-//
 // use this if you're lazy.  given just a keyval, initialize centers,
 // sym_info, and scf_info by reading the input
-// you must call ip_initialize() before calling this
 //
 // input:
 //   keyval = a reference to a keyval (preferably a parsed one)
@@ -114,36 +51,18 @@ scf_init_scf_struct(centers_t *centers, scf_struct_t *scf_info, char *input)
 //
 
 int
-scf_init_scf_kv(KeyVal& keyval, centers_t& centers, scf_struct_t& scf_info,
-                sym_struct_t& sym_info)
+scf_init_scf(KeyVal& keyval, centers_t& centers, scf_struct_t& scf_info,
+             sym_struct_t& sym_info)
 {
 
- // get the point group of the molecule
-  char *pg = keyval.pcharvalue("symmetry");
-  if (keyval.error() != KeyVal::OK) pg = newstring("c1");
-
- // HACK HACK HACK.  one day all traces of libipv2 will be removed from
- // the code.  but until that day, we need the following.
-  ip_cwk_push();
-  ip_cwk_add(":default");
-  ip_cwk_add(":scf");
-
-  if (keyval.exists("basisfiles")) ip_append_from_input("basis",stderr);
-
- // now let's initialize the centers struct and the sym_struct
-  if (sym_init_centers(&centers,&sym_info,pg) < 0) {
-    fprintf(stderr,"scf_init_scf:  trouble in sym_init_centers\n");
-
-    delete[] pg;
-    ip_cwk_pop();
+ // initialize the centers struct and the sym_struct
+  if (sym_init_centers(keyval,centers,sym_info) < 0) {
+    fprintf(stderr,"scf_init_scf:  trouble in sym_init_centers_kv\n");
     return -1;
   }
 
-  delete[] pg;
-  ip_cwk_pop();
-
  // and then fill in the scf struct
-  if (scf_init_scf_struct_kv(keyval,centers,scf_info) < 0) {
+  if (scf_init_scf_struct(keyval,centers,scf_info) < 0) {
     fprintf(stderr,"scf_init_scf:  trouble in scf_init_scf_struct\n");
     return -1;
   }
@@ -168,8 +87,7 @@ scf_init_scf_kv(KeyVal& keyval, centers_t& centers, scf_struct_t& scf_info,
 //
 
 int
-scf_init_scf_struct_kv(KeyVal& keyval, centers_t& centers,
-                       scf_struct_t& scf_info)
+scf_init_scf_struct(KeyVal& keyval, centers_t& centers,scf_struct_t& scf_info)
 {
   int i;
   double nuclear_charge;
@@ -539,4 +457,104 @@ scf_print_options(FILE* outfile, scf_struct_t& scf_info)
     fprintf(outfile,"        %d  %d       %f     %f\n",1,1,
                  scf_info.alpha,-scf_info.beta);
   }
+}
+
+/////////////////////////////////////////////////////////////////////////
+
+/*****************************************************************************
+ *
+ * construct a centers struct using the old basis set.  
+ *
+ * input:
+ *   centers = pointer to initialized centers struct
+ *   oldcenters = pointer to uninitialized centers struct
+ *
+ * on return:
+ *   oldcenters contains copy of centers but with old basis set
+ *
+ * return 0 on success, -1 on failure
+ */
+
+int
+scf_make_old_centers(KeyVal& topkeyval, centers_t& centers,
+                                        centers_t& oldcenters)
+{
+  int i;
+  int count;
+  int errcod;
+  int basis_array;
+  char *bset;
+
+  if (mynode0() == 0) {
+   // create a keyval which will look in the :project section of the input
+    PrefixKeyVal pkv(":project",topkeyval); pkv.unmanage();
+    AggregateKeyVal keyval(pkv,topkeyval); keyval.unmanage();
+
+   // read the value of oldbasis.
+    char *oldbasis = keyval.pcharvalue("oldbasis");
+    if (keyval.error() != KeyVal::OK) {
+      fprintf(stderr,"scf_make_old_centers: there is no oldbasis\n");
+      goto the_place_where_errors_go;
+    }
+
+   // now allocate memory for oldcenters
+    errcod=allocbn_centers(&oldcenters,"n",centers.n);
+    if (errcod != 0) {
+      fprintf(stderr,"scf_make_old_centers: could not allocate oldcenters\n");
+      goto the_place_where_errors_go;
+    }
+
+  // and then copy much of centers into oldcenters, but hold off on the
+  // basis set info
+    for (i=0; i < centers.n; i++) {
+      center_t *center = &oldcenters.center[i];
+
+      errcod = allocbn_center(center,"atom charge",
+                              centers.center[i].atom,
+                              centers.center[i].charge);
+      if (errcod!=0) {
+        fprintf(stderr,"scf_make_old_centers: could not alloc center %d\n",i);
+        goto the_place_where_errors_go;
+      }
+
+      center->r[0]=centers.center[i].r[0];
+      center->r[1]=centers.center[i].r[1];
+      center->r[2]=centers.center[i].r[2];
+
+      if (int_read_basis(keyval,sym_to_atom(center->atom),
+                                        oldbasis,center->basis) < 0) {
+        fprintf(stderr,"scf_make_old_centers: could not read basis %d\n",i);
+        goto the_place_where_errors_go;
+      }
+    }
+
+    int_normalize_centers(&oldcenters);
+
+    errcod=0;
+    bcast0(&errcod,sizeof(int),mtype_get(),0);
+
+  /* broadcast old centers struct to nodes */
+
+    bcast0_centers(&oldcenters,0,0);
+
+   /* if we get here all is done */
+
+    return 0;
+
+   /* if we get here something went wrong */
+the_place_where_errors_go:
+    errcod=-1;
+    bcast0(&errcod,sizeof(int),mtype_get(),0);
+
+ /* the other nodes just sit around and wait to see what happened */
+  } else {
+    bcast0(&errcod,sizeof(int),mtype_get(),0);
+  }
+
+  if (errcod != 0) return -1;
+
+ /* get oldcenters from node 0 */
+  bcast0_centers(&oldcenters,0,0);
+
+  return 0;
 }

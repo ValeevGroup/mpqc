@@ -138,11 +138,11 @@ Volume::failure(const char * msg)
 void
 Volume::set_gradient(const SCVector3& g)
 {
-  RefSCVector& grad = _gradient.result_noupdate();
+  RefSCVector grad(dimension(), matrixkit());
   grad.set_element(0, g[0]);
   grad.set_element(1, g[1]);
   grad.set_element(2, g[2]);
-  _gradient.computed() = 1;
+  set_gradient(grad);
 }
 
 void
@@ -157,10 +157,11 @@ Volume::get_gradient(SCVector3& g)
 void
 Volume::set_x(const SCVector3& x)
 {
-  _x.set_element(0, x[0]);
-  _x.set_element(1, x[1]);
-  _x.set_element(2, x[2]);
-  obsolete();
+  RefSCVector xx(dimension(), matrixkit());
+  xx.set_element(0, x[0]);
+  xx.set_element(1, x[1]);
+  xx.set_element(2, x[2]);
+  set_x(xx);
 }
 
 void

@@ -414,6 +414,11 @@ class Int2eV3: public VRefCount {
     RefGaussianBasisSet cs2() const { return int_cs2; }
     RefGaussianBasisSet cs3() const { return int_cs3; }
     RefGaussianBasisSet cs4() const { return int_cs4; }
+
+    GaussianBasisSet * pcs1() const { return int_cs1.pointer(); }
+    GaussianBasisSet * pcs2() const { return int_cs2.pointer(); }
+    GaussianBasisSet * pcs3() const { return int_cs3.pointer(); }
+    GaussianBasisSet * pcs4() const { return int_cs4.pointer(); }
 };
 REF_dec(Int2eV3);
 

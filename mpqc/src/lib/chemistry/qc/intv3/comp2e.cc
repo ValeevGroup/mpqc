@@ -736,12 +736,12 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
   int nints;
   double *user_int_buffer;
   int omit;
-  RefGaussianBasisSet cs[4];
+  GaussianBasisSet *cs[4];
   int sh[4];
   int n_unique;
   int i,j;
   GaussianShell *shell1,*shell2,*shell3,*shell4;
-  RefGaussianBasisSet ucs[4]; /* The centers struct for the unique centers. */
+  GaussianBasisSet *ucs[4]; /* The centers struct for the unique centers. */
   int ush[4];         /* The shells for the unique centers. */
   int unum[4];        /* The number of times that this unique center occurs. */
   int uam[4];         /* The total angular momentum on each unique center. */
@@ -750,10 +750,10 @@ Int2eV3::erep_all1der(int &psh1, int &psh2, int &psh3, int &psh4,
   int ncart;
   double *current_pure_buffer;
 
-  cs[0] = bs1_;
-  cs[1] = bs2_;
-  cs[2] = bs3_;
-  cs[3] = bs4_;
+  cs[0] = bs1_.pointer();
+  cs[1] = bs2_.pointer();
+  cs[2] = bs3_.pointer();
+  cs[3] = bs4_.pointer();
 
   sh[0] = psh1;
   sh[1] = psh2;

@@ -36,9 +36,9 @@
 class der_centersv3_t {
   public:
     int n;
-    RefGaussianBasisSet cs[4];
+    GaussianBasisSet *cs[4];
     int num[4];
-    RefGaussianBasisSet ocs; /* The omitted center's centers_t. */
+    GaussianBasisSet *ocs; /* The omitted center's centers_t. */
     int onum;        /* The omitted center's number. */
 };
 

@@ -52,7 +52,7 @@ if a string is given, then we open the requested file.
 
   if (strlen (fname) == 0) f = stdin;
   else f = fopen (fname, "r");
-  if (f == (FILE *) -1) {
+  if (f == 0) {
     fprintf (stderr, "Couldn't open file %s\n", fname);
     exit(1);
   }

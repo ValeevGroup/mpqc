@@ -136,8 +136,8 @@ StateOut::_castdown(const ClassDesc*cd)
 }
 
 StateOut::StateOut() :
-  ps_(new StateDataPtr_CTOR),
   next_pointer_number(1),
+  ps_(new StateDataPtr_CTOR),
   _classidmap(new ClassDescPintMap_CTOR),
   _nextclassid(0)
 {

@@ -87,7 +87,7 @@ CLASSNAME::do_castdowns(void**casts,const ClassDesc*cd)
                       CLASSNAME::class_desc_.name(),
                       cd->name(),
                       CLASSNAME::class_desc_.name());
-              fprintf(stderr," tmp = 0x%x p = 0x%x\n",tmp,p);
+              fprintf(stderr," tmp = 0x%lx p = 0x%lx\n",(long)tmp,(long)p);
             }
           p = tmp;
         }

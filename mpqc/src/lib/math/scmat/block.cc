@@ -1156,7 +1156,11 @@ SCMatrixJointSubblockIter::ready()
   for (int i=0; i<niters_; i++) {
       nready += (iters_[i]->ready()?1:0);
     }
-  if (nready == niters_) return 1;
+
+  if (nready == niters_)
+    return 1;
+  else if (!nready)
+    return 0;
   else {
       cerr << "SCMatrixJointSubblockIter: incompatible iterators" << endl;
       abort();

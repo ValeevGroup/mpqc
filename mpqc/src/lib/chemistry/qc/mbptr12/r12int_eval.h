@@ -62,6 +62,15 @@ class R12IntEval : virtual public SavableState {
   bool spinadapted_;
   int debug_;
 
+  /// Fock-weighted occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
+  Ref<MOIndexSpace> focc_space_;
+  /// Form Fock-weighted occupied space
+  void form_focc_space_();
+  /// Fock-weighted active occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
+  Ref<MOIndexSpace> factocc_space_;
+  /// Form Fock-weighted active occupied space
+  void form_factocc_space_();
+
   // (act.occ. OBS| act.occ. OBS) transform
   Ref<TwoBodyMOIntsTransform> ipjq_tform_;
   // (act.occ. occ.| act.occ. RI-BS) transform
@@ -72,7 +81,11 @@ class R12IntEval : virtual public SavableState {
   /// Set intermediates to zero + add the "diagonal" contributions
   void init_intermeds_();
   /// Compute r^2 contribution to X
-  void r2_contrib_to_X_();
+  void r2_contrib_to_X_orig_();
+  /// Compute r^2 contribution to X using compute_r2_()
+  void r2_contrib_to_X_new_();
+  /// Compute <space1 space1|r_{12}^2|space1 space2> matrix
+  RefSCMatrix compute_r2_(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
   /// Compute the Fock matrix between 2 spaces
   RefSCMatrix fock_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
                     const Ref<MOIndexSpace>& ket_space);

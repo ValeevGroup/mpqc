@@ -40,7 +40,7 @@
 using namespace std;
 using namespace sc;
 
-#define TEST_FOCK 1
+#define TEST_FOCK 0
 
 inline int max(int a,int b) { return (a > b) ? a : b;}
 
@@ -333,14 +333,95 @@ R12IntEval::init_intermeds_()
 
   Xaa_.assign(0.0);
   Xab_.assign(0.0);
-  r2_contrib_to_X_();
+  //r2_contrib_to_X_orig_();
+  r2_contrib_to_X_new_();
 
   emp2pair_aa_.assign(0.0);
   emp2pair_ab_.assign(0.0);
 }
 
+/// Compute <space1 space1|r_{12}^2|space1 space2>
+RefSCMatrix
+R12IntEval::compute_r2_(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2)
+{
+  /*-----------------------------------------------------
+    Compute overlap, dipole, quadrupole moment integrals
+   -----------------------------------------------------*/
+  RefSCMatrix S_11, MX_11, MY_11, MZ_11, MXX_11, MYY_11, MZZ_11;
+  r12info_->compute_multipole_ints(space1, space1, MX_11, MY_11, MZ_11, MXX_11, MYY_11, MZZ_11);
+  r12info_->compute_overlap_ints(space1, space1, S_11);
+
+  RefSCMatrix S_12, MX_12, MY_12, MZ_12, MXX_12, MYY_12, MZZ_12;
+  if (space1 == space2) {
+    S_12 = S_11;
+    MX_12 = MX_11;
+    MY_12 = MY_11;
+    MZ_12 = MZ_11;
+    MXX_12 = MXX_11;
+    MYY_12 = MYY_11;
+    MZZ_12 = MZZ_11;
+  }
+  else {
+    r12info_->compute_multipole_ints(space1, space2, MX_12, MY_12, MZ_12, MXX_12, MYY_12, MZZ_12);
+    r12info_->compute_overlap_ints(space1, space2, S_12);
+  }
+  if (debug_)
+    ExEnv::out0() << indent << "Computed overlap and multipole moment integrals" << endl;
+
+  const int nproc = r12info_->msg()->n();
+  const int me = r12info_->msg()->me();
+
+  const int n1 = space1->rank();
+  const int n2 = space2->rank();
+  const int n12 = n1*n2;
+  const int n1112 = n1*n1*n12;
+  double* r2_array = new double[n1112];
+  memset(r2_array,0,n1112*sizeof(double));
+
+  int ij = 0;
+  double* ijkl_ptr = r2_array;
+  for(int i=0; i<n1; i++)
+    for(int j=0; j<n1; j++, ij++) {
+
+    int ij_proc = ij%nproc;
+    if (ij_proc != me) {
+      ijkl_ptr += n12;
+      continue;
+    }
+
+    int kl=0;
+    for(int k=0; k<n1; k++)
+      for(int l=0; l<n2; l++, kl++, ijkl_ptr++) {
+
+        double r1r1_ik = -1.0*(MXX_11->get_element(i,k) + MYY_11->get_element(i,k) + MZZ_11->get_element(i,k));
+        double r1r1_jl = -1.0*(MXX_12->get_element(j,l) + MYY_12->get_element(j,l) + MZZ_12->get_element(j,l));
+        double r1r2_ijkl = MX_11->get_element(i,k)*MX_12->get_element(j,l) +
+          MY_11->get_element(i,k)*MY_12->get_element(j,l) +
+          MZ_11->get_element(i,k)*MZ_12->get_element(j,l);
+        double S_ik = S_11.get_element(i,k);
+        double S_jl = S_12.get_element(j,l);
+        
+        double R2_ijkl = r1r1_ik * S_jl + r1r1_jl * S_ik - 2.0*r1r2_ijkl;
+        *ijkl_ptr = R2_ijkl;
+      }
+    }
+
+  r12info_->msg()->sum(r2_array,n1112);
+
+  MOPairIterFactory pair_factory;
+  RefSCDimension dim_ij = pair_factory.scdim_ab(space1,space1);
+  RefSCDimension dim_kl = pair_factory.scdim_ab(space1,space2);
+
+  Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
+  RefSCMatrix R2 = local_matrix_kit->matrix(dim_ij, dim_kl);
+  R2.assign(r2_array);
+
+  return R2;
+}
+
+
 void
-R12IntEval::r2_contrib_to_X_()
+R12IntEval::r2_contrib_to_X_orig_()
 {
   /*---------------------------------------------------------------
     Compute dipole and quadrupole moment integrals in act MO basis
@@ -422,6 +503,72 @@ R12IntEval::r2_contrib_to_X_()
   }          
 }
 
+void
+R12IntEval::r2_contrib_to_X_new_()
+{
+  // compute r_{12}^2 operator in act.occ.pair/act.occ.pair basis
+  RefSCMatrix R2 = compute_r2_(r12info_->act_occ_space(),r12info_->act_occ_space());
+
+  Xab_.accumulate(R2);
+
+  MOPairIter_SD ij_iter(r12info_->act_occ_space());
+  MOPairIter_SD kl_iter(r12info_->act_occ_space());
+
+  for(kl_iter.start();int(kl_iter);kl_iter.next()) {
+
+    const int kl_aa = kl_iter.ij_aa();
+    if (kl_aa == -1)
+      continue;
+    const int kl_ab = kl_iter.ij_ab();
+
+    for(ij_iter.start();int(ij_iter);ij_iter.next()) {
+
+      const int ij_aa = ij_iter.ij_aa();
+      const int ij_ab = ij_iter.ij_ab();
+      const int ji_ab = ij_iter.ji_ab();
+
+      if (ij_aa != -1) {
+        double Xaa_ijkl = R2.get_element(ij_ab,kl_ab) - R2.get_element(ji_ab,kl_ab);
+        Xaa_.accumulate_element(ij_aa,kl_aa,Xaa_ijkl);
+      }
+
+    }
+  }
+}
+
+void
+R12IntEval::form_focc_space_()
+{
+  // compute the Fock matrix between the complement and all occupieds and
+  // create the new Fock-weighted space
+  if (focc_space_.null()) {
+    Ref<MOIndexSpace> occ_space = r12info_->occ_space();
+    Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
+    
+    RefSCMatrix F_ri_o = fock_(occ_space,ribs_space,occ_space);
+    F_ri_o.print("Fock matrix (RI-BS/occ.)");
+    focc_space_ = new MOIndexSpace("Fock-weighted occupied MOs sorted by energy",
+                                   occ_space, ribs_space->coefs()*F_ri_o, ribs_space->basis());
+  }
+}
+
+void
+R12IntEval::form_factocc_space_()
+{
+  // compute the Fock matrix between the complement and active occupieds and
+  // create the new Fock-weighted space
+  if (factocc_space_.null()) {
+    Ref<MOIndexSpace> occ_space = r12info_->occ_space();
+    Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
+    Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
+    
+    RefSCMatrix F_ri_ao = fock_(occ_space,ribs_space,act_occ_space);
+    F_ri_ao.print("Fock matrix (RI-BS/act.occ.)");
+    factocc_space_ = new MOIndexSpace("Fock-weighted active occupied MOs sorted by energy",
+                                      act_occ_space, ribs_space->coefs()*F_ri_ao, ribs_space->basis());
+  }
+}
+
 const int
 R12IntEval::tasks_with_ints_(const Ref<R12IntsAcc> ints_acc, vector<int>& map_to_twi)
 {
@@ -459,15 +606,15 @@ R12IntEval::compute()
   obs_contrib_to_VXB_gebc_();
   if (r12info_->basis() != r12info_->basis_ri())
     abs1_contrib_to_VXB_gebc_();
-
+  
 #if TEST_FOCK
   if (!evaluated_) {
     RefSCMatrix F = fock_(r12info_->occ_space(),r12info_->obs_space(),r12info_->obs_space());
     F.print("Fock matrix in OBS");
     r12info_->obs_space()->evals().print("OBS eigenvalues");
 
-    RefSCMatrix F_ri = fock_(r12info_->occ_space(),r12info_->ribs_space(),r12info_->ribs_space());
-    F_ri.print("Fock matrix in RI-BS");
+    RefSCMatrix F_obs_ri = fock_(r12info_->occ_space(),r12info_->obs_space(),r12info_->ribs_space());
+    F_obs_ri.print("Fock matrix in OBS/RI-BS");
   }
 #endif
 
@@ -478,9 +625,10 @@ R12IntEval::compute()
     compute_R_();
     AR_contrib_to_B_();
   }
-
+  
   if (!gbc_) {
     compute_B_gbc_1_();
+    compute_B_gbc_2_();
   }
 
   evaluated_ = true;

@@ -82,12 +82,12 @@ CXX=$withval
 
 AC_ARG_WITH(ranlib,
 [  --with-ranlib           Gives the name of the ranlib program.],
-CXX=$withval
+RANLIB=$withval
 )
 
 AC_ARG_WITH(ar,
 [  --with-ar               Names the archive creator.],
-CXX=$withval
+AR=$withval
 )
 
 AC_ARG_WITH(include,
@@ -240,7 +240,7 @@ case $target in
       AC_DEFINE(NO_VIRTUAL_BASES)
     fi
   ;;
-changequote(<<, >>)dnl
+  changequote(<<, >>)dnl
   i[56]86-*)
     if test X$GCC = Xyes; then
       COPTIONS_OPT="-O2 -malign-loops=2 -malign-jumps=2 -malign-functions=2"
@@ -249,7 +249,12 @@ changequote(<<, >>)dnl
       CXXOPTIONS_OPT="-O2 -malign-loops=2 -malign-jumps=2 -malign-functions=2"
     fi
   ;;
-changequote([, ])dnl
+  changequote([, ])dnl
+  i860-intel-*)
+    if test X$GCC != Xyes; then
+      COPTIONS_OPT="-O3 -Knoieee"
+    fi
+  ;;
 esac
 
 dnl -- special architecture options --
@@ -524,6 +529,19 @@ AC_TRY_LINK([
 AC_MSG_RESULT(no),
 AC_DEFINE(SEMCTL_REQUIRES_SEMUN) AC_MSG_RESULT(yes))
 AC_LANG_RESTORE
+
+dnl --------- Checks that must be done last. ---------
+
+AC_MSG_CHECKING([for special flags that must be set last])
+case $target in
+  i860-intel-osf*)
+    LDFLAGS="$LDFLAGS -mnx -mnoieee"
+    AC_MSG_RESULT(osf paragon)
+  ;;
+  *)
+    AC_MSG_RESULT(none)
+  ;;
+esac
 
 dnl --------- Create the stub Makefiles. ---------
 

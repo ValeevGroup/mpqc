@@ -2,7 +2,7 @@
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-libdir=@libdir@
+libdir=@sclibdir@
 includedir=@scincludedir@
 LIBSUF=@LIBSUF@
 exec_prefix_set=no
@@ -52,7 +52,7 @@ for i in $all_sclibs; do
 done
 
 usage="\
-Usage: sc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--buildid] [--so-version] [--datadir] [--libs] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags] [--f77] [--f77flags] [--libtool] [--ltlink] [--ltlinklibopts] [--ltlinkbinopts] [--ltcomp] [--ltinst]"
+Usage: sc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--buildid] [--so-version] [--datadir] [--libs] [--libdir] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags] [--f77] [--f77flags] [--libtool] [--ltlink] [--ltlinklibopts] [--ltlinkbinopts] [--ltcomp] [--ltinst]"
 
 if test $# -eq 0; then
       echo "${usage}" 1>&2

@@ -502,14 +502,19 @@ AC_SUBST(compiledir)
 dnl --------- Need actual paths for substitution outside of a makefile. ---------
 
 if test $exec_prefix = "NONE"; then
-  bindir=$prefix/bin;
-  libdir=$prefix/lib;
+  if test $prefix = "NONE"; then
+    scbindir=$ac_default_prefix/bin;
+    sclibdir=$ac_default_prefix/lib;
+  else
+    scbindir=$prefix/bin;
+    sclibdir=$prefix/lib;
+  fi
 else
-  bindir=$exec_prefix/bin
-  libdir=$exec_prefix/lib
+  scbindir=$exec_prefix/bin
+  sclibdir=$exec_prefix/lib
 fi
-AC_SUBST(bindir)
-AC_SUBST(libdir)
+AC_SUBST(scbindir)
+AC_SUBST(sclibdir)
 
 dnl --------- Checks for programs. ---------
 AC_PROG_LN_S

@@ -396,7 +396,9 @@ class AggregateKeyVal : public KeyVal {
   public:
     /** These contructors create an AggregateKeyVal that is formed from
         several other KeyVal objects.  The search order is keyval1,
-        keyval2, and so on. */
+        keyval2, and so on.  All KeyVal objects including and after the
+        first null KeyVal will be ignored.
+    */
     //@{
     AggregateKeyVal(const Ref<KeyVal>& keyval1);
     AggregateKeyVal(const Ref<KeyVal>& keyval1,const Ref<KeyVal>& keyval2);

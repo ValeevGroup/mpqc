@@ -19,7 +19,7 @@ extern "C" {
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
-#include <util/misc/libmisc.h>
+#include <util/group/pregtime.h>
 #include <util/misc/bug.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
@@ -198,8 +198,9 @@ main(int argc, char *argv[])
 
  // initialize timing for mpqc
 
-  tim_enter("mpqcnode");
-  tim_enter("input");
+  RefRegionTimer tim = new ParallelRegionTimer(msg,"mpqcic",1,1);
+  RegionTimer::set_default_regiontimer(tim);
+  tim->enter("input");
 
   RefKeyVal keyval;
 
@@ -517,7 +518,7 @@ main(int argc, char *argv[])
   }
 
   if (opt_geom) {
-    bcast0(&geom_code,sizeof(int),mtype_get(),0);
+    msg->bcast(geom_code);
 
     if (geom_code==GEOM_ABORT || geom_code==GEOM_DONE) {
       fprintf(outfile,"mpqcnode: geom_code says you are done or in trouble\n");
@@ -554,7 +555,7 @@ main(int argc, char *argv[])
     scf_info.restart = 0;
   }
   
-  tim_exit("input");
+  tim->exit("input");
 
   if (!do_scf && do_grad && do_mp2) {
       if (mynode0()==0)
@@ -571,14 +572,14 @@ main(int argc, char *argv[])
 
       // broadcast new geometry information */
       for (int i=0; i < centers.n; i++)
-        bcast0(centers.center[i].r,sizeof(double)*3,mtype_get(),0);
+        msg->bcast(centers.center[i].r,3);
 
       // calculate new scf_vector
 
-      tim_enter("scf_vect");
+      tim->enter("scf_vect");
       errcod = scf_vector(&scf_info, &sym_info, &centers, Fock, FockO, Scf_Vec,
                           &oldcenters, outfile);
-      tim_exit("scf_vect");
+      tim->exit("scf_vect");
       energy = scf_info.nuc_rep + scf_info.e_elec;
 
       if (errcod != 0) {
@@ -650,7 +651,7 @@ main(int argc, char *argv[])
         }
       }
 
-      bcast0(&geom_code,sizeof(geom_code),mtype_get(),0);
+      msg->bcast(geom_code);
       iter++;
     }
 
@@ -694,7 +695,7 @@ main(int argc, char *argv[])
  /* print out some useful stuff */
 #if 0
   if (proper) {
-    tim_enter("properties");
+    tim->enter("properties");
     int nat=centers.n;
     int natr=nat*(nat+1)/2;
     double_vector_t dipole,charge,mcharge,lcharge;
@@ -776,14 +777,14 @@ main(int argc, char *argv[])
     free_double_matrix(&bond_indx);
     free_double_matrix(&bond_pops);
     free_expts(&mulpts);
-    tim_exit("properties");
+    tim->exit("properties");
   }
 
   if (do_mp2) {
     if (!do_scf) dmt_read(fockfile,FOCK);
-    tim_enter("mp2");
+    tim->enter("mp2");
     mp2_hah(&centers,&scf_info,SCF_VEC,FOCK,outfile,keyval);
-    tim_exit("mp2");
+    tim->exit("mp2");
   }
 #endif
 
@@ -803,7 +804,11 @@ main(int argc, char *argv[])
                 outfile);
     }
 
-  tim_print(node_timings);
+  cout << "Timing Summary:" << endl;
+  tim->print();
+
+  RegionTimer::set_default_regiontimer(0);
+  tim = 0;
 
   fflush(outfile);
 

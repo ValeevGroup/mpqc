@@ -14,6 +14,7 @@ class SSBArray2: public Array2<Type> {
         s.get(_length0);
         s.get(_length1);
         if (_length0&&_length1) s.get(_array);
+        _managed=1;
       }
     void save_object_state(StateOut&s) {
         s.put(_length0);

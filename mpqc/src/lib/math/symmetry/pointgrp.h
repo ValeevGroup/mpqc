@@ -482,6 +482,7 @@ class PointGroup: public SavableState {
 
     void save_data_state(StateOut& so);
 };
+SavableState_REF_dec(PointGroup);
 
 #endif
 

@@ -194,17 +194,17 @@ static void getnewkey(char*newkey,const char*key,int n1,int n2)
   else  sprintf(newkey,"%d:%d",n1,n2);
   }
 
-static void getnewkey(char*newkey,const char*key,int n1,int n2,int n3)
-  {
-  if (key) sprintf(newkey,"%s:%d:%d:%d",key,n1,n2,n3);
-  else sprintf(newkey,"%d:%d:%d",n1,n2,n3);
-  }
+//static void getnewkey(char*newkey,const char*key,int n1,int n2,int n3)
+//  {
+//  if (key) sprintf(newkey,"%s:%d:%d:%d",key,n1,n2,n3);
+//  else sprintf(newkey,"%d:%d:%d",n1,n2,n3);
+//  }
 
-static void getnewkey(char*newkey,const char*key,int n1,int n2,int n3,int n4)
-  {
-  if (key) sprintf(newkey,"%s:%d:%d:%d:%d",key,n1,n2,n3,n4);
-  else  sprintf(newkey,"%d:%d:%d:%d",n1,n2,n3,n4);
-  }
+//static void getnewkey(char*newkey,const char*key,int n1,int n2,int n3,int n4)
+//  {
+//  if (key) sprintf(newkey,"%s:%d:%d:%d:%d",key,n1,n2,n3,n4);
+//  else  sprintf(newkey,"%d:%d:%d:%d",n1,n2,n3,n4);
+//  }
 
 // For vectors:
 int KeyVal::exists(const char* key,int n1)

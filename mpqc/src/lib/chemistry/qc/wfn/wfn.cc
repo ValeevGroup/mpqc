@@ -64,8 +64,10 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
   // MolecularEnergy(new AggregateKeyVal(keyval,
   //                                     new PrefixKeyVal("basis", keyval))),
   MolecularEnergy(keyval),
-  have_overlap_eig_(0),
   overlap_(this),
+  overlap_eigvec_(this),
+  overlap_isqrt_eigval_(this),
+  overlap_sqrt_eigval_(this),
   hcore_(this),
   natural_orbitals_(this),
   natural_density_(this),
@@ -73,11 +75,17 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
   bsg_values(0)
 {
   overlap_.compute() = 0;
+  overlap_eigvec_.compute() = 0;
+  overlap_isqrt_eigval_.compute() = 0;
+  overlap_sqrt_eigval_.compute() = 0;
   hcore_.compute() = 0;
   natural_orbitals_.compute() = 0;
   natural_density_.compute() = 0;
 
   overlap_.computed() = 0;
+  overlap_eigvec_.computed() = 0;
+  overlap_isqrt_eigval_.computed() = 0;
+  overlap_sqrt_eigval_.computed() = 0;
   hcore_.computed() = 0;
   natural_orbitals_.computed() = 0;
   natural_density_.computed() = 0;
@@ -111,8 +119,10 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
 Wavefunction::Wavefunction(StateIn&s):
   maybe_SavableState(s)
   MolecularEnergy(s),
-  have_overlap_eig_(0),
   overlap_(this),
+  overlap_isqrt_eigval_(this),
+  overlap_sqrt_eigval_(this),
+  overlap_eigvec_(this),
   hcore_(this),
   natural_orbitals_(this),
   natural_density_(this),
@@ -122,11 +132,17 @@ Wavefunction::Wavefunction(StateIn&s):
   debug_ = 0;
 
   overlap_.compute() = 0;
+  overlap_eigvec_.compute() = 0;
+  overlap_isqrt_eigval_.compute() = 0;
+  overlap_sqrt_eigval_.compute() = 0;
   hcore_.compute() = 0;
   natural_orbitals_.compute() = 0;
   natural_density_.compute() = 0;
 
   overlap_.computed() = 0;
+  overlap_eigvec_.computed() = 0;
+  overlap_isqrt_eigval_.computed() = 0;
+  overlap_sqrt_eigval_.computed() = 0;
   hcore_.computed() = 0;
   natural_orbitals_.computed() = 0;
   natural_density_.computed() = 0;
@@ -161,14 +177,16 @@ Wavefunction::Wavefunction(StateIn&s):
 void
 Wavefunction::symmetry_changed()
 {
+  MolecularEnergy::symmetry_changed();
+
   RefPetiteList pl = integral_->petite_list();
   sodim_ = pl->SO_basisdim();
   aodim_ = pl->SO_basisdim();
   osodim_ = 0;
-  have_overlap_eig_ = 0;
-  overlap_isqrt_eigval_ = 0;
-  overlap_sqrt_eigval_ = 0;
-  overlap_eigvec_ = 0;
+  overlap_.result_noupdate() = 0;
+  overlap_isqrt_eigval_.result_noupdate() = 0;
+  overlap_sqrt_eigval_.result_noupdate() = 0;
+  overlap_eigvec_.result_noupdate() = 0;
   basiskit_ = gbs_->so_matrixkit();
 }
 
@@ -394,11 +412,12 @@ Wavefunction::compute_overlap_eig()
 
   overlap_eigvec_ = basis_matrixkit()->matrix(sodim_, osodim_);
   if (symm_orthog_) {
-      overlap_eigvec_.assign(U);
+      overlap_eigvec_.result_noupdate().assign(U);
     }
   else {
       BlockedSCMatrix *bev
-          = BlockedSCMatrix::castdown(overlap_eigvec_.pointer());
+          = BlockedSCMatrix::castdown(overlap_eigvec_.result_noupdate()
+                                      .pointer());
       BlockedSCMatrix *bU
           = BlockedSCMatrix::castdown(U.pointer());
       int ifunc = 0;
@@ -412,11 +431,14 @@ Wavefunction::compute_overlap_eig()
             }
         }
     }
+  overlap_eigvec_.computed() = 1;
 
   overlap_sqrt_eigval_ = basis_matrixkit()->diagmatrix(osodim_);
-  overlap_sqrt_eigval_->assign(pm_sqrt);
+  overlap_sqrt_eigval_.result_noupdate()->assign(pm_sqrt);
+  overlap_sqrt_eigval_.computed() = 1;
   overlap_isqrt_eigval_ = basis_matrixkit()->diagmatrix(osodim_);
-  overlap_isqrt_eigval_->assign(pm_isqrt);
+  overlap_isqrt_eigval_.result_noupdate()->assign(pm_isqrt);
+  overlap_isqrt_eigval_.computed() = 1;
 
   delete[] nfunc;
   delete[] pm_sqrt;
@@ -434,23 +456,24 @@ Wavefunction::compute_overlap_eig()
   cout << node0 << indent
        << "overlap eigenvalue max/min = " << maxabs/minabs
        << endl;
-
-  have_overlap_eig_ = 1;
 }
 
 // returns the orthogonalization matrix
 RefSCMatrix
 Wavefunction::so_to_orthog_so()
 {
-  if (!have_overlap_eig_) compute_overlap_eig();
+  if (!overlap_eigvec_.computed()) compute_overlap_eig();
 
   RefSCMatrix trans;
 
   if (symm_orthog_) {
-    trans = overlap_eigvec_ * overlap_isqrt_eigval_ * overlap_eigvec_.t();
+    trans = overlap_eigvec_.result_noupdate()
+      * overlap_isqrt_eigval_.result_noupdate()
+      * overlap_eigvec_.result_noupdate().t();
   }
   else {
-    trans = overlap_isqrt_eigval_ * overlap_eigvec_.t();
+    trans = overlap_isqrt_eigval_.result_noupdate()
+      * overlap_eigvec_.result_noupdate().t();
   }
 
   return trans;
@@ -459,15 +482,18 @@ Wavefunction::so_to_orthog_so()
 RefSCMatrix
 Wavefunction::so_to_orthog_so_inverse()
 {
-  if (!have_overlap_eig_) compute_overlap_eig();
+  if (!overlap_eigvec_.computed()) compute_overlap_eig();
 
   RefSCMatrix trans;
 
   if (symm_orthog_) {
-    trans = overlap_eigvec_ * overlap_sqrt_eigval_ * overlap_eigvec_.t();
+    trans = overlap_eigvec_.result_noupdate()
+      * overlap_sqrt_eigval_.result_noupdate()
+      * overlap_eigvec_.result_noupdate().t();
   }
   else {
-    trans = overlap_eigvec_ * overlap_sqrt_eigval_;
+    trans = overlap_eigvec_.result_noupdate()
+      * overlap_sqrt_eigval_.result_noupdate();
   }
 
   return trans;
@@ -500,7 +526,7 @@ Wavefunction::ao_dimension()
 RefSCDimension
 Wavefunction::oso_dimension()
 {
-  if (!have_overlap_eig_) compute_overlap_eig();
+  if (!overlap_eigvec_.computed()) compute_overlap_eig();
   return osodim_;
 }
 

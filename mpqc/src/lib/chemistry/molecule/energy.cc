@@ -370,6 +370,7 @@ MolecularEnergy::hessian_implemented() const
 void
 MolecularEnergy::symmetry_changed()
 {
+  obsolete();
 }
 
 RefNonlinearTransform

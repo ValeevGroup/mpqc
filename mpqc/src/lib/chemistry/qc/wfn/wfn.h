@@ -52,10 +52,9 @@ class Wavefunction: public MolecularEnergy {
     RefSCDimension osodim_;
     RefSCMatrixKit basiskit_;
 
-    int have_overlap_eig_;
-    RefSCMatrix overlap_eigvec_;
-    RefDiagSCMatrix overlap_isqrt_eigval_;
-    RefDiagSCMatrix overlap_sqrt_eigval_;
+    ResultRefSCMatrix overlap_eigvec_;
+    ResultRefDiagSCMatrix overlap_isqrt_eigval_;
+    ResultRefDiagSCMatrix overlap_sqrt_eigval_;
     
     ResultRefSymmSCMatrix overlap_;
     ResultRefSymmSCMatrix hcore_;

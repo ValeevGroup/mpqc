@@ -72,7 +72,7 @@ ElectronDensity::compute()
 void
 ElectronDensity::boundingbox(double valuemin,
                              double valuemax,
-                             RefSCVector& p1, RefSCVector& p2)
+                             SCVector3& p1, SCVector3& p2)
 {
   Molecule& mol = *wfn_.molecule();
 

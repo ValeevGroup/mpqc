@@ -110,6 +110,7 @@ Molecule::init_symmetry_info(double tol)
         SCVector3 aj(r(uniq));
         if (np.dist(aj) < tol
             && Z(uniq) == Z(i)
+            && fabs(charge(uniq)-charge(i)) < tol
             && fabs(mass(uniq)-mass(i)) < tol) {
           i_is_unique = 0;
           i_equiv = j;
@@ -165,6 +166,7 @@ Molecule::has_inversion(SCVector3 &origin, double tol) const
     int atom = atom_at_position(inverted.data(), tol);
     if (atom < 0
         || Z(atom) != Z(i)
+        || fabs(charge(atom)-charge(i)) > tol
         || fabs(mass(atom)-mass(i)) > tol) {
       return 0;
       }
@@ -183,6 +185,7 @@ Molecule::is_plane(SCVector3 &origin, SCVector3 &uperp, double tol) const
     int atom = atom_at_position(A.data(), tol);
     if (atom < 0
         || Z(atom) != Z(i)
+        || fabs(charge(atom)-charge(i)) > tol
         || fabs(mass(atom)-mass(i)) > tol) {
       //cout << "  is_plane: rejected (atom " << i << ")" << endl;
       return 0;
@@ -205,6 +208,7 @@ Molecule::is_axis(SCVector3 &origin, SCVector3 &axis,
       int atom = atom_at_position(R.data(), tol);
       if (atom < 0
           || Z(atom) != Z(i)
+          || fabs(charge(atom)-charge(i)) > tol
           || fabs(mass(atom)-mass(i)) > tol) {
         //cout << "  is_axis: rejected (atom " << i << ")" << endl;
         return 0;

@@ -1,6 +1,10 @@
 
-#include <stdio.h>
+#include <iostream.h>
+#include <iomanip.h>
+
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 #include <math/scmat/cmatrix.h>
@@ -42,7 +46,7 @@ LocalSCVector::get_element(int i)
 {
   int size = block->iend - block->istart;
   if (i < 0 || i >= size) {
-      fprintf(stderr,"LocalSCVector::get_element: bad index\n");
+      cerr << indent << "LocalSCVector::get_element: bad index\n";
       abort();
     }
   return block->data[i];
@@ -53,7 +57,7 @@ LocalSCVector::set_element(int i,double a)
 {
   int size = block->iend - block->istart;
   if (i < 0 || i >= size) {
-      fprintf(stderr,"LocalSCVector::set_element: bad index\n");
+      cerr << indent << "LocalSCVector::set_element: bad index\n";
       abort();
     }
   block->data[i] = a;
@@ -64,7 +68,7 @@ LocalSCVector::accumulate_element(int i,double a)
 {
   int size = block->iend - block->istart;
   if (i < 0 || i >= size) {
-      fprintf(stderr,"LocalSCVector::accumulate_element: bad index\n");
+      cerr << indent << "LocalSCVector::accumulate_element: bad index\n";
       abort();
     }
   block->data[i] += a;
@@ -80,9 +84,9 @@ LocalSCVector::accumulate_product(SCMatrix*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
-      fprintf(stderr,"LocalSCVector::"
-              "accumulate_product(SCMatrix*a,SCVector*b):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent
+           << "LocalSCVector:: accumulate_product(SCMatrix*a,SCVector*b): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -103,9 +107,9 @@ LocalSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim()) || !la->dim()->equiv(lb->dim())) {
-      fprintf(stderr,"LocalSCVector::"
-              "accumulate_product(SymmSCMatrix*a,SCVector*b):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent
+           << "LocalSCVector:: accumulate_product(SymmSCMatrix*a,SCVector*b): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -136,8 +140,8 @@ LocalSCVector::accumulate(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      fprintf(stderr,"LocalSCVector::accumulate(SCVector*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "LocalSCVector::accumulate(SCVector*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -156,8 +160,8 @@ LocalSCVector::accumulate(SCMatrix*a)
   // make sure that the dimensions match
   if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)
         || (la->coldim()->equiv(dim()) && la->rowdim()->n() == 1))) {
-      fprintf(stderr,"LocalSCVector::accumulate(SCMatrix*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "LocalSCVector::accumulate(SCMatrix*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -183,8 +187,8 @@ LocalSCVector::assign(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      fprintf(stderr,"LocalSCVector::assign(SCVector*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "LocalSCVector::assign(SCVector*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -210,8 +214,8 @@ LocalSCVector::scalar_product(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      fprintf(stderr,"LocalSCVector::scalar_product(SCVector*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "LocalSCVector::scalar_product(SCVector*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -236,7 +240,7 @@ LocalSCVector::element_op(const RefSCElementOp2& op,
       = LocalSCVector::require_castdown(m, "LocalSCVector::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      fprintf(stderr,"LocalSCVector: bad element_op\n");
+      cerr << indent << "LocalSCVector: bad element_op\n";
       abort();
     }
   op->process_spec(block.pointer(), lm->block.pointer());
@@ -252,7 +256,7 @@ LocalSCVector::element_op(const RefSCElementOp3& op,
       = LocalSCVector::require_castdown(n, "LocalSCVector::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      fprintf(stderr,"LocalSCVector: bad element_op\n");
+      cerr << indent << "LocalSCVector: bad element_op\n";
       abort();
     }
   op->process_spec(block.pointer(), lm->block.pointer(), ln->block.pointer());
@@ -266,25 +270,27 @@ LocalSCVector::print(const char *title, ostream& os, int prec)
   int lwidth;
   double max=this->maxabs();
 
-  max=(max==0.0)?1.0:log10(max);
-  if(max < 0.0) max=1.0;
+  max = (max==0.0) ? 1.0 : log10(max);
+  if (max < 0.0) max=1.0;
 
-  lwidth = prec+5+(int) max;
+  lwidth = prec + 5 + (int) max;
 
   os.setf(ios::fixed,ios::floatfield); os.precision(prec);
   os.setf(ios::right,ios::adjustfield);
 
-  if(title) os << "\n" << title << "\n";
-  else os << "\n";
+  if (title)
+    os << endl << indent << title << endl;
+  else
+    os << endl;
 
-  if(n()==0) { os << " empty vector\n"; return; }
+  if (n()==0) {
+    os << indent << "empty vector\n";
+    return;
+  }
 
-  for (i=0; i<n(); i++) {
-      os.width(5); os << i+1;
-      os.width(lwidth); os << block->data[i];
-      os << "\n";
-    }
-  os << "\n";
+  for (i=0; i<n(); i++)
+    os << indent << setw(5) << i+1 << setw(lwidth) << block->data[i] << endl;
+  os << endl;
 
   os.flush();
 }
@@ -301,7 +307,7 @@ RefSCMatrixSubblockIter
 LocalSCVector::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
-      cerr << "LocalVectorSCMatrix::all_blocks: "
+      cerr << indent << "LocalVectorSCMatrix::all_blocks: "
            << "Write access permitted for local blocks only"
            << endl;
       abort();

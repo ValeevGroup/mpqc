@@ -1,6 +1,10 @@
 
-#include <stdio.h>
+#include <iostream.h>
+#include <iomanip.h>
+
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 #include <math/scmat/cmatrix.h>
@@ -64,8 +68,8 @@ LocalDiagSCMatrix::accumulate(DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      fprintf(stderr,"LocalDiagSCMatrix::accumulate(SCMatrix*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "LocalDiagSCMatrix::accumulate(SCMatrix*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -137,7 +141,7 @@ LocalDiagSCMatrix::element_op(const RefSCElementOp2& op,
       = LocalDiagSCMatrix::require_castdown(m,"LocalDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      fprintf(stderr,"LocalDiagSCMatrix: bad element_op\n");
+      cerr << indent << "LocalDiagSCMatrix: bad element_op\n";
       abort();
     }
   op->process_spec(block.pointer(), lm->block.pointer());
@@ -153,7 +157,7 @@ LocalDiagSCMatrix::element_op(const RefSCElementOp3& op,
       = LocalDiagSCMatrix::require_castdown(n,"LocalDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      fprintf(stderr,"LocalDiagSCMatrix: bad element_op\n");
+      cerr << indent << "LocalDiagSCMatrix: bad element_op\n";
       abort();
     }
   op->process_spec(block.pointer(), lm->block.pointer(), ln->block.pointer());
@@ -167,25 +171,27 @@ LocalDiagSCMatrix::print(const char *title, ostream& os, int prec)
   int lwidth;
   double max=this->maxabs();
 
-  max=(max==0.0)?1.0:log10(max);
-  if(max < 0.0) max=1.0;
+  max = (max==0.0) ? 1.0 : log10(max);
+  if (max < 0.0) max=1.0;
 
-  lwidth = prec+5+(int) max;
+  lwidth = prec + 5 + (int) max;
 
   os.setf(ios::fixed,ios::floatfield); os.precision(prec);
   os.setf(ios::right,ios::adjustfield);
 
-  if(title) os << "\n" << title << "\n";
-  else os << "\n";
+  if (title)
+    os << endl << indent << title << endl;
+  else
+    os << endl;
 
-  if(n()==0) { os << " empty matrix\n"; return; }
+  if (n()==0) {
+    os << indent << "empty matrix\n";
+    return;
+  }
 
-  for (i=0; i<n(); i++) {
-      os.width(5); os << i+1;
-      os.width(lwidth); os << block->data[i];
-      os << "\n";
-    }
-  os << "\n";
+  for (i=0; i<n(); i++)
+    os << indent << setw(5) << i+1 << setw(lwidth) << block->data[i] << endl;
+  os << endl;
 
   os.flush();
 }
@@ -202,7 +208,7 @@ RefSCMatrixSubblockIter
 LocalDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
-      cerr << "LocalDiagSCMatrix::all_blocks: "
+      cerr << indent << "LocalDiagSCMatrix::all_blocks: "
            << "Write access permitted for local blocks only"
            << endl;
       abort();

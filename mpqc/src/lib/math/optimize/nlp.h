@@ -28,9 +28,12 @@ class NLP0: virtual_base public SavableState, public Compute {
   public:
     NLP0();
     NLP0(StateIn&);
+    NLP0(const NLP0&);
     NLP0(const RefKeyVal&);
     virtual ~NLP0();
 
+    NLP0 & operator=(const NLP0&);
+    
     RefSCMatrixKit matrixkit();
     RefSCDimension dimension();
 
@@ -81,9 +84,12 @@ class NLP1: public NLP0 {
   public:
     NLP1();
     NLP1(StateIn&);
+    NLP1(const NLP1&);
     NLP1(const RefKeyVal&);
     virtual ~NLP1();
 
+    NLP1 & operator=(const NLP1&);
+    
     virtual void save_data_state(StateOut&);
 
     virtual RefSCVector gradient();
@@ -113,9 +119,12 @@ class NLP2: public NLP1 {
   public:
     NLP2();
     NLP2(StateIn&);
+    NLP2(const NLP2&);
     NLP2(const RefKeyVal&);
     virtual ~NLP2();
 
+    NLP2 & operator=(const NLP2&);
+    
     void save_data_state(StateOut&);
 
     virtual RefSymmSCMatrix hessian();

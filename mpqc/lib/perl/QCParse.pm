@@ -427,6 +427,18 @@ sub basis {
     $_;
 }
 
+sub auxbasis {
+    my $self = shift;
+    $_ = $self->{"parser"}->value("auxbasis");
+    s/^\s+//;
+    s/\s+$//;
+    if ($_ eq "") {
+        $self->error("No auxiliary basis given (using default).\n");
+        $_ = "STO-3G";
+    }
+    $_;
+}
+
 sub grid {
     my $self = shift;
     $_ = $self->{"parser"}->value("grid");
@@ -625,7 +637,9 @@ sub write_qcinput {
 
 package MPQCInputWriter;
 @ISA = qw( InputWriter );
-%methodmap = ("MP2" => "MBPT2",
+%methodmap = ("MP2-R12/A" => "MBPT2_R12",
+              "MP2-R12/A'" => "MBPT2_R12",
+              "MP2" => "MBPT2",
               "OPT1[2]" => "MBPT2",
               "OPT2[2]" => "MBPT2",
               "ZAPT2" => "MBPT2",
@@ -704,6 +718,9 @@ package MPQCInputWriter;
               "UBP86"    => "DFT",
               "UBPW91"   => "DFT",
              );
+%mbpt2r12stdapproxmap = ("MP2-R12/A" => "A",
+                         "MP2-R12/A'" => "A'",
+                         );
 %mbpt2map = ("MP2" => "mp",
              "OPT1[2]" => "opt1",
              "OPT2[2]" => "opt2",
@@ -927,7 +944,23 @@ sub input_string() {
         && $grid ne "default") {
         $mole = "$mole\n    integrator<RadialAngularIntegrator>: (grid = $grid)";
     }
-    if ($method eq "MBPT2") {
+    if ($method eq "MBPT2_R12") {
+        my $stdapprox = $mbpt2r12stdapproxmap{uc($qcinput->method())};
+        my $auxbasis = $qcinput->auxbasis();
+        my $fzc = $qcinput->fzc();
+
+        $mole = sprintf "%s\n    stdapprox = \"%s\"", $mole, $stdapprox;
+        $mole = "$mole\n    integrals<IntegralCints>: ()";
+        $mole = "$mole\n    nfzc = $fzc";
+        my $basis = "% auxiliary basis set specification";
+        $mole = "$mole\n    aux_basis<GaussianBasisSet>: (";
+        $mole = sprintf "%s\n      name = \"%s\"", $mole, $auxbasis;
+        $mole = "$mole\n      molecule = \$:molecule";
+        $mole = "$mole\n    )\n";
+        $mole = append_reference($mole,"CLHF",$charge,$mult,$memory,$orthog_method,
+                                 $lindep_tol,$docc,$socc);
+    }
+    elsif ($method eq "MBPT2") {
         my $fzc = $qcinput->fzc();
         my $fzv = $qcinput->fzv();
         my $mbpt2method = $mbpt2map{uc($qcinput->method())};
@@ -945,37 +978,8 @@ sub input_string() {
         else {
             $refmethod = "HSOSHF";
         }
-        $mole = "$mole\n    reference<$refmethod>: (";
-        $mole = "$mole\n      molecule = \$:molecule";
-        $mole = "$mole\n      basis = \$:basis";
-        $mole = "$mole\n      total_charge = $charge";
-        $mole = "$mole\n      multiplicity = $mult";
-        $mole = "$mole\n      memory = $memory";
-        if ($orthog_method ne "" ) {
-            $mole = "$mole\n      orthog_method = $orthog_method";
-        }
-        if ($lindep_tol ne "" ) {
-            $mole = "$mole\n      lindep_tol = $lindep_tol";
-        }
-        if ($docc ne "") {$mole = "$mole\n      $docc";}
-        if ($socc ne "") {$mole = "$mole\n      $socc";}
-        if (! ($basis =~ /^STO/
-               || $basis =~ /^MI/
-               || $basis =~ /^\d-\d1G$/)) {
-            $mole = "$mole\n      guess_wavefunction<$refmethod>: (";
-            $mole = "$mole\n        molecule = \$:molecule";
-            $mole = "$mole\n        total_charge = $charge";
-            $mole = "$mole\n        multiplicity = $mult";
-            if ($docc ne "") {$mole = "$mole\n        $docc";}
-            if ($socc ne "") {$mole = "$mole\n        $socc";}
-            $mole = "$mole\n        basis<GaussianBasisSet>: (";
-            $mole = "$mole\n          molecule = \$:molecule";
-            $mole = "$mole\n          name = \"STO-3G\"";
-            $mole = "$mole\n        )";
-            $mole = "$mole\n        memory = $memory";
-            $mole = "$mole\n      )";
-        }
-        $mole = "$mole\n    )";
+        $mole = append_reference($mole,"CLHF",$charge,$mult,$memory,$orthog_method,
+                                 $lindep_tol,$docc,$socc);
     }
     elsif (! ($basis =~ /^STO/
               || $basis =~ /^MI/
@@ -1135,6 +1139,50 @@ sub mpqc_coor {
 sub bool_to_yesno {
     if (shift) { return "yes"; }
     else { return "no"; }
+}
+
+sub append_reference {
+    my $mole = shift;
+    my $refmethod = shift;
+    my $charge = shift;
+    my $mult = shift;
+    my $memory = shift;
+    my $orthog_method = shift;
+    my $lindep_tol = shift;
+    my $docc = shift;
+    my $socc = shift;
+    $mole = "$mole\n    reference<$refmethod>: (";
+    $mole = "$mole\n      molecule = \$:molecule";
+    $mole = "$mole\n      basis = \$:basis";
+    $mole = "$mole\n      total_charge = $charge";
+    $mole = "$mole\n      multiplicity = $mult";
+    $mole = "$mole\n      memory = $memory";
+    if ($orthog_method ne "" ) {
+        $mole = "$mole\n      orthog_method = $orthog_method";
+    }
+    if ($lindep_tol ne "" ) {
+        $mole = "$mole\n      lindep_tol = $lindep_tol";
+    }
+    if ($docc ne "") {$mole = "$mole\n      $docc";}
+    if ($socc ne "") {$mole = "$mole\n      $socc";}
+    if (! ($basis =~ /^STO/
+           || $basis =~ /^MI/
+           || $basis =~ /^\d-\d1G$/)) {
+        $mole = "$mole\n      guess_wavefunction<$refmethod>: (";
+        $mole = "$mole\n        molecule = \$:molecule";
+        $mole = "$mole\n        total_charge = $charge";
+        $mole = "$mole\n        multiplicity = $mult";
+        if ($docc ne "") {$mole = "$mole\n        $docc";}
+        if ($socc ne "") {$mole = "$mole\n        $socc";}
+        $mole = "$mole\n        basis<GaussianBasisSet>: (";
+        $mole = "$mole\n          molecule = \$:molecule";
+        $mole = "$mole\n          name = \"STO-3G\"";
+        $mole = "$mole\n        )";
+        $mole = "$mole\n        memory = $memory";
+        $mole = "$mole\n      )";
+    }
+    $mole = "$mole\n    )";
+    return $mole;
 }
 
 1;

@@ -110,6 +110,7 @@ sub process_file {
 
     my $test_vars = {};
     init_var($test_vars, $parse, "basis", "STO-3G");
+    init_var($test_vars, $parse, "auxbasis", "");
     init_var($test_vars, $parse, "grid", "default");
     init_var($test_vars, $parse, "symmetry", "C1");
     init_var($test_vars, $parse, "method", "SCF");
@@ -146,6 +147,7 @@ sub process_file {
     # but is much easier to maintain
     do {
         my $basis = $test_vars->{"basis"}->[$index->{"basis"}];
+        my $auxbasis = $test_vars->{"auxbasis"}->[$index->{"auxbasis"}];
         my $grid = $test_vars->{"grid"}->[$index->{"grid"}];
         my $fzc = $test_vars->{"fzc"}->[$index->{"fzc"}];
         my $fzv = $test_vars->{"fzv"}->[$index->{"fzv"}];
@@ -242,6 +244,7 @@ sub process_file {
 
         my $fextra = ""; # extra filename modifiers
         $parse->set_value("basis", $basis);
+        $parse->set_value("auxbasis", $auxbasis);
         $parse->set_value("grid", $grid);
         $parse->set_value("method", $method);
         $parse->set_value("symmetry", $symmetry);
@@ -312,9 +315,10 @@ sub process_file {
         my $inputfile;
         $method = tofilename($method);
         $basis = tofilename($basis);
+        $auxbasis = tofilename($auxbasis);
         $symmetry = tofilename($symmetry);
         if ($grid eq "default") {$grid = "";}
-        my $basename = "$dir$file\_$fmol$method$grid$fzc$fzv$basis$symmetry$fcalc$fextra";
+        my $basename = "$dir$file\_$fmol$method$grid$fzc$fzv$basis$auxbasis$symmetry$fcalc$fextra";
         my $writer;
 
         if ($package eq "g94") {
@@ -402,5 +406,7 @@ sub tofilename {
     $raw =~ s/ //g;
     $raw =~ s/\*/s/g;
     $raw =~ s/\+/p/g;
+    $raw =~ s/\'/prime/g;
+    $raw =~ s./.slash.g;
     $raw;
 }

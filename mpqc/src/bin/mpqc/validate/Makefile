@@ -29,6 +29,10 @@ H2OMP2MASTER=h2omp2.qci
 H2OMP2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(H2OMP2MASTER))
 H2OMP2OUTPUTS = $(H2OMP2INPUTS:%.$(INSUF)=%.out)
 
+MP2R12MASTER=mp2r12.qci
+MP2R12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(MP2R12MASTER))
+MP2R12OUTPUTS = $(MP2R12INPUTS:%.$(INSUF)=%.out)
+
 H2OFRQMASTER=h2ofrq.qci
 H2OFRQINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(H2OFRQMASTER))
 H2OFRQOUTPUTS = $(H2OFRQINPUTS:%.$(INSUF)=%.out)
@@ -130,6 +134,7 @@ INPUTINPUTS := $(INPUTINPUTS:%=run/input_%)
 ##############################################################################
 
 ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
+	    $(MP2R12INPUTS) \
             $(ORTHOGINPUTS) $(BASIS1INPUTS) $(BASIS2INPUTS) \
             $(DFTINPUTS) \
             $(OPTINPUTS) $(OPTTSINPUTS) \
@@ -149,7 +154,7 @@ default::
 	@echo \'make diff\' to use the diff program to compare outputs
 
 .PHONY: inputs
-inputs:: h2o h2omp2 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
+inputs:: h2o h2omp2 mp2r12 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
 inputs:: methods clscf uscf hsosscf input dft orthog
 
 .PHONY: h2o
@@ -157,6 +162,9 @@ h2o: stamp-h2o
 
 .PHONY: h2omp2
 h2omp2: stamp-h2omp2
+
+.PHONY: mp2r12
+mp2r12: stamp-mp2r12
 
 .PHONY: h2ofrq
 h2ofrq: stamp-h2ofrq
@@ -216,6 +224,10 @@ stamp-h2o: $(RUN) $(H2OMASTER) $(INPUTGENDEPS)
 stamp-h2omp2: $(RUN) $(H2OMP2MASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(H2OMP2MASTER)
 	touch stamp-h2omp2
+
+stamp-mp2r12: $(RUN) $(MP2R12MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(MP2R12MASTER)
+	touch stamp-mp2r12
 
 stamp-h2ofrq: $(RUN) $(H2OFRQMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(H2OFRQMASTER)

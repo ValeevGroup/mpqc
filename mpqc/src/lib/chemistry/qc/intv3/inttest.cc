@@ -82,6 +82,34 @@ testint(const RefTwoBodyDerivInt& in)
     }
 }
 
+void
+do_bounds_stats(const RefKeyVal& keyval,
+                const RefInt2eV3 &int2ev3)
+{
+  int i,j;
+  int nshell = int2ev3->basis()->nshell();
+  int eps = -10;
+  int *nonzero = new int[nshell];
+  for (i=0; i<nshell; i++) {
+      if (i==0) nonzero[i] = 0;
+      else nonzero[i] = nonzero[i-1];
+      for (j=0; j<=i; j++) {
+          if (int2ev3->erep_4bound(i,j,-1,-1) > eps) {
+              nonzero[i]++;
+            }
+        }
+    }
+  for (i=0; i<nshell; i++) {
+      int natom = 1 + int2ev3->basis()->shell_to_center(i);
+      int npq = (i*(i+1))/2;
+      cout<<scprintf("nsh=%2d nat=%2d npq=%4d npq>eps=%4d npq>eps/nsh=%9.4f /nat=%9.4f",
+                     i, natom, npq, nonzero[i], double(nonzero[i])/i,
+                     double(nonzero[i])/natom)
+          << endl;
+    }
+  delete[] nonzero;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -145,6 +173,10 @@ main(int argc, char **argv)
   tim->change("4 center der");
   if (me == tproc && tkeyval->booleanvalue("4der")) {
       test_4der_center(tkeyval, int2ev3);
+    }
+  tim->change("bound stats");
+  if (me == tproc && tkeyval->booleanvalue("boundstats")) {
+      do_bounds_stats(tkeyval, int2ev3);
     }
 
   tim->change("IntegralV3");
@@ -465,17 +497,82 @@ do_4_center_test(const RefInt2eV3 &int2ev3, int print, int printbounds,
 {
   int ii,jj,kk,ll, i,j,k,l, ibuf;
   int nshell = int2ev3->basis()->nshell();
+  int unique = keyval->booleanvalue("unique");
+  int timestats = keyval->booleanvalue("timestats");
+  RefRegionTimer timer = new RegionTimer();
 
-  for (i=0; i<nshell; i++) {
-      for (j=0; j<nshell; j++) {
-          for (k=0; k<nshell; k++) {
-              for (l=0; l<nshell; l++) {
-                  do_shell_quartet_test(int2ev3, print, printbounds,
-                                        bounds, permute,
-                                        keyval, i, j, k, l);
+  if (!timestats) {
+      for (i=0; i<nshell; i++) {
+          int jmax = nshell - 1;
+          if (unique) jmax = i;
+          for (j=0; j<=jmax; j++) {
+              int kmax = nshell - 1;
+              if (unique) kmax = i;
+              for (k=0; k<=kmax; k++) {
+                  int lmax = nshell - 1;
+                  if (unique) {
+                      if (k==i) lmax = j;
+                      else lmax = k;
+                    }
+                  for (l=0; l<=lmax; l++) {
+                      do_shell_quartet_test(int2ev3, print, printbounds,
+                                            bounds, permute,
+                                            keyval, i, j, k, l);
+                    }
                 }
             }
         }
+    }
+  if (timestats && nshell) {
+      unsigned short seed = 1234;
+      seed48(&seed);
+      const int nsample = 5000;
+      const int ntrials = 50;
+      double times[ntrials];
+      for (i=0; i<ntrials; i++) {
+          double t1 = timer->get_cpu_time();
+          for (j=0; j<nsample; j++) {
+              // pick an integral at random
+              int ish = int(drand48()*nshell);
+              int jsh = int(drand48()*ish);
+              int ksh = int(drand48()*ish);
+              int lsh;
+              if (ish==ksh) lsh = int(drand48()*jsh);
+              else lsh = int(drand48()*ksh);
+              int sh[4], sizes[4];
+              if (ish >= nshell) ish = nshell-1;
+              if (jsh >= nshell) jsh = nshell-1;
+              if (ksh >= nshell) ksh = nshell-1;
+              if (lsh >= nshell) lsh = nshell-1;
+              sh[0] = ish;
+              sh[1] = jsh;
+              sh[2] = ksh;
+              sh[3] = lsh;
+              int2ev3->erep(sh,sizes);
+            }
+          double t2 = timer->get_cpu_time();
+          times[i] = t2-t1;
+        }
+      double ave = 0.0;
+      for (i=0; i<ntrials; i++) {
+          ave += times[i];
+        }
+      ave /= ntrials;
+      double sigma2 = 0.0;
+      for (i=0; i<ntrials; i++) {
+          double diff = times[i] - ave;
+          sigma2 += diff*diff;
+        }
+      double sigma = sqrt(sigma2/ntrials);
+      // adjust sigma and ave from the trial average results to
+      // the integral results
+      ave /= nsample;
+      sigma /= sqrt(double(nsample));
+      cout << scprintf(" ave = %10.8f sigma = %10.8f (microsecs)\n"
+                       " sigma/ave = %10.4f",
+                       ave*1e6, sigma*1e6,
+                       sigma/ave)
+           << endl;
     }
 }
 
@@ -492,6 +589,7 @@ test_4_center(const RefKeyVal& keyval, const RefInt2eV3 &int2ev3)
 
   int storage = keyval->intvalue("storage") - int2ev3->used_storage();
   if (storage < 0) storage = 0;
+  if (keyval->booleanvalue("store_integrals")) storage = 0;
   int niter = keyval->intvalue("niter");
   int print = keyval->booleanvalue("print");
   int bounds = keyval->booleanvalue("bounds");

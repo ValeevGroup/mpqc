@@ -269,8 +269,7 @@ main(int argc, char *argv[])
   for (i=0; i<(80-ntitle2)/2; i++) cout << node0 << ' ';
   cout << node0 << title2 << endl << endl;
   cout << node0 << indent
-       << scprintf("Running on a %s with %d nodes.", TARGET_ARCH, grp->n())
-       << endl << endl;
+       << scprintf("Running on a %s.", TARGET_ARCH) << endl;
 
   // get the thread group.  first try the commandline and environment
   RefThreadGrp thread = ThreadGrp::initial_threadgrp(argc, argv);
@@ -288,10 +287,10 @@ main(int argc, char *argv[])
 
   cout << node0 << indent
        << "Using " << grp->class_name()
-       << " for message passing (nproc = " << grp->n() << ")." << endl
+       << " for message passing (number of nodes = " << grp->n() << ")." << endl
        << indent
        << "Using " << thread->class_name()
-       << " for threading (nthread = " << thread->nthread() << ")." << endl
+       << " for threading (number of threads = " << thread->nthread() << ")." << endl
        << indent
        << "Total number of processors = " << grp->n() * thread->nthread() << endl;
 

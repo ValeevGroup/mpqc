@@ -51,6 +51,7 @@ MPLMemoryGrp::lock()
 {
   int oldvalue;
   mpc_lockrnc(1, &oldvalue);
+  if (debug_) cout << ">>>> mpc_lockrnc(1," << oldvalue << ") (lock)" << endl;
   return oldvalue;
 }
 
@@ -59,6 +60,8 @@ MPLMemoryGrp::unlock(long oldvalue)
 {
   int old = oldvalue;
   mpc_lockrnc(old, &old);
+  if (debug_) cout << ">>>> mpc_lockrnc(" << oldvalue
+                   << "," << old << ") (unlock)" << endl;
 }
 
 long
@@ -66,6 +69,11 @@ MPLMemoryGrp::send(void* data, int nbytes, int node, int type)
 {
   int mid;
   mpc_send(data, nbytes, node, type, &mid);
+  if (debug_) cout << ">>>> mpc_send(,"
+                   << nbytes << ","
+                   << node << ","
+                   << type << ","
+                   << mid << ")" << endl;
   return mid;
 }
 
@@ -78,7 +86,11 @@ MPLMemoryGrp::recv(void* data, int nbytes, int node, int type)
   int t = type;
   int mid;
   mpc_recv(data, nbytes, &n, &t, &mid);
-  if (debug_) printf("MPLMemoryGrp:: recv mid = %d\n", mid);
+  if (debug_) cout << ">>>> mpc_recv(,"
+                   << nbytes << ","
+                   << n << ","
+                   << t << ","
+                   << mid << ")" << endl;
   return mid;
 }
 
@@ -90,7 +102,12 @@ MPLMemoryGrp::postrecv(void *data, int nbytes, int type)
   mpc_rcvncall(data, nbytes,
                (int*)&global_source, (int*)&global_type, (int*)&global_mid,
                mpl_memory_handler);
-  if (debug_) printf("MPLMemoryGrp:: postrecv mid = %d\n", global_mid);
+  if (debug_) cout << ">>>> mpc_rcvncall(,"
+                   << nbytes << ","
+                   << ","
+                   << global_type << ","
+                   << global_mid << ","
+                   << ")" << endl;
   return global_mid;
 }
 
@@ -107,9 +124,9 @@ MPLMemoryGrp::wait(long mid1, long mid2)
       sleep(1);
       abort();
     }
-  if (debug_) printf("MPLMemoryGrp: imid = %d, global_mid = %d "
-                     "DONTCARE = %d count = %d\n",
-                     imid, global_mid, DONTCARE, count);
+  if (debug_) cout << ">>>> mpc_wait("
+                   << imid << ","
+                   << count << ")" << endl;
   return (long)imid;
 }
 

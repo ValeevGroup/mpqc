@@ -423,9 +423,9 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
     foo.accumulate_transform(r,_gr_gmat);
   }
   foo.scale(1.0/_mol->point_group().char_table().order());
-  _gr_gmat.assign(foo);
 
-  _fock.assign(_gr_gmat);
+  _fock.assign(foo);
   _fock.accumulate(_gr_hcore);
+  foo = 0;
 
 }

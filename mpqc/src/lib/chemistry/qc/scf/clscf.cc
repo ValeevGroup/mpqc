@@ -333,10 +333,10 @@ CLSCF::do_vector(double& eelec, double& nucrep)
     if (delta < _energy.desired_accuracy()) break;
 
     // reset the density from time to time
-    //if (iter && !iter%10) {
+    if (iter && !(iter%10)) {
       _gr_gmat.assign(0.0);
       _gr_dens_diff.assign(_gr_dens);
-    //}
+    }
       
     // scale the off-diagonal elements of the density matrix
     _gr_dens_diff->scale(2.0);

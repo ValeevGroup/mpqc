@@ -61,7 +61,7 @@ class auto_vec {
     /** Creates a new auto_vec for a vector, d, of type T.
         The d argument must be created with the vector new
         operator: new T[...]. */
-    explicit auto_vec(T*d) throw(): d_(d) {}
+    explicit auto_vec(T*d = 0) throw(): d_(d) {}
 
     /** Create a auto_vec, transferring the storage from another. */
     auto_vec(auto_vec &av) throw(): d_(av.release()) {}

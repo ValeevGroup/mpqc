@@ -166,7 +166,7 @@ MBPT2_R12::~MBPT2_R12()
   r12a_energy_ = 0;
   r12ap_energy_ = 0;
   r12b_energy_ = 0;
-  delete[] r12ints_file_;
+  free(r12ints_file_);
 }
 
 void
@@ -222,7 +222,7 @@ MBPT2_R12::print(ostream&o) const
     throw std::runtime_error("MBPT2_R12::print -- invalid value of r12ints_method_");
   }
   o << indent << "How to Store Transformed Integrals: " << r12ints_str << endl << endl;
-  delete[] r12ints_str;
+  free(r12ints_str);
   o << indent << "Transformed Integrals file: " << r12ints_file_ << endl << endl;
   o << indent << "Auxiliary Basis:" << endl;
   o << incindent; aux_basis_->print(o); o << decindent << endl;

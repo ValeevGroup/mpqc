@@ -144,7 +144,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put((int)dynamic_);
 }
 
-const char* R12IntEvalInfo::ints_file() const
+char* R12IntEvalInfo::ints_file() const
 {
   return strdup(ints_file_);
 }

@@ -379,7 +379,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
   Ref<R12IntsAcc> r12intsacc;
   R12IntEvalInfo::StoreMethod ints_method = r12info()->ints_method();
-  const char *r12ints_file = r12info()->ints_file();
+  char *r12ints_file = r12info()->ints_file();
   bool restart = (restart_orbital_ > 0);
 
   switch (ints_method) {
@@ -422,7 +422,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   default:
     throw std::runtime_error("R12IntEval_sbs_A::compute -- invalid integrals store method");
   }
-  delete[] r12ints_file;
+  free(r12ints_file);
 
 
   /*-----------------------------------

@@ -108,7 +108,7 @@ public:
   bool dynamic() const { return dynamic_; };
   int debug_level() const { return debug_; };
   const StoreMethod ints_method() const { return ints_method_; };
-  const char* ints_file() const;
+  char* ints_file() const;
   const size_t memory() const { return memory_; };
 
   const int nocc() const { return nocc_;};

@@ -585,8 +585,8 @@ Wavefunction::compute_overlap_eig(RefSCMatrix& overlap_eigvec,
   if (debug_ > 1) {
     overlap().print("S");
     overlap_eigvec.print("S eigvec");
-    overlap_isqrt_eigval.print("s^(-1/2) eigvec");
-    overlap_sqrt_eigval.print("s^(1/2) eigvec");
+    overlap_isqrt_eigval.print("s^(-1/2) eigval");
+    overlap_sqrt_eigval.print("s^(1/2) eigval");
   }
 }
 

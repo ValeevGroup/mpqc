@@ -193,7 +193,7 @@ class GaussianBasisSet: public SavableState
 
         <dt><tt>basisdir</tt><dd> A string giving a directory where basis
         set data files are to be sought.  See the text below for a complete
-        description of what directors are consulted.
+        description of what directories are consulted.
 
         <dt><tt>basisfiles</tt><dd> Each keyword in this vector of files is
         appended to the directory specified with basisdir and basis set

@@ -430,7 +430,7 @@ OverlapOrthog::compute_orthog_trans()
   }
 
   ExEnv::out0() << indent
-               << "n(basis): ";
+               << "n(basis):        ";
   for (int i=0; i<dim_->blocks()->nblock(); i++) {
     ExEnv::out0() << scprintf(" %5d", dim_->blocks()->size(i));
   }

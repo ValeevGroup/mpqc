@@ -1974,7 +1974,7 @@ MBPT2::compute_cs_grad()
   delete[] tmpmat;
 
   // Compute D2 diagnostic (d2_diag) from matrices d2_occ_mat and d2_vir_mat
-  if (me == 0 && do_d2_) {
+  if (do_d2_) {
     RefSymmSCMatrix D2occ_mat(nocc_act_dim, kit);
     RefSymmSCMatrix D2vir_mat(nvir_act_dim,kit);
     D2occ_mat->assign(d2occ_mat);
@@ -1982,9 +1982,8 @@ MBPT2::compute_cs_grad()
     d2o = sqrt(D2occ_mat.eigvals().get_element(nocc_act-1));
     d2v = sqrt(D2vir_mat.eigvals().get_element(nvir_act-1));
     d2_diag = (d2o > d2v ? d2o:d2v);
-    cout << endl << indent <<  scprintf("D2(MP1) = %12.8f", d2_diag) << endl << endl;
-    }
-  if (do_d2_) {
+    cout << node0 << endl
+         << indent <<  scprintf("D2(MP1) = %12.8f", d2_diag) << endl << endl;
     delete[] d2occ_mat;
     delete[] d2vir_mat;
   }

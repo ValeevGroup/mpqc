@@ -174,6 +174,10 @@ class  RefDescribedClassBase: private RefBase {
 #define DescribedClass_REF_dec(T) DescribedClass_named_REF_dec(Ref ## T,T)
 #define DescribedClass_REF_def(T) DescribedClass_named_REF_def(Ref ## T,T)
 
+// This does forward declarations of REF classes.
+#define DescribedClass_REF_fwddec(T) class DCRef ## T; \
+                                     typedef class DCRef ## T Ref ## T;
+
 DescribedClass_REF_dec(DescribedClass);
 ARRAY_dec(RefDescribedClass);
 SET_dec(RefDescribedClass);

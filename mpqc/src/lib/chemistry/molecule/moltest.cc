@@ -34,16 +34,16 @@ main(int argc, char **argv)
 
   RefMolecule mol = kv->describedclassvalue("molecule");
 
-  mol_cleanup_molecule(mol);
+  mol->cleanup_molecule();
   printf("Clean Molecule:\n");
   mol->print();
 
-  mol_transform_to_principal_axes(mol);
+  mol->transform_to_principal_axes();
   printf("Clean Molecule wrt principal axes:\n");
   mol->print();
 
-  int nunique = mol_num_unique_atoms(mol);
-  int * unique_atoms = mol_find_unique_atoms(mol);
+  int nunique = mol->num_unique_atoms();
+  int * unique_atoms = mol->find_unique_atoms();
 
   printf("nunique=%d: ",nunique);
   for (int i=0; i < nunique; i++) printf(" %d",unique_atoms[i]+1);
@@ -127,7 +127,7 @@ main(int argc, char **argv)
 
   RefMolecularFrequencies mf = kv->describedclassvalue("freq");
   if (mf.nonnull()) {
-      mf->print_frequencies();
+      mf->compute_displacements();
     }
 
   return 0;

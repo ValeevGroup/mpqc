@@ -30,7 +30,7 @@ wfntest:: wfntest.o $(LIBS)
 	$(CXX) $(LDFLAGS) -o wfntest $^ $(SYSLIBS)
 
 wfntest.o: wfntest.cc
-	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

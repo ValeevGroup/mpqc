@@ -26,10 +26,13 @@
 //
 
 #include <util/misc/formio.h>
+#include <util/group/pregtime.h>
 #include <util/group/messshm.h>
 #include <math/scmat/repl.h>
 
+#ifdef HAVE_SYSV_IPC
 ClassDesc* f0 = &ShmMessageGrp::class_desc_;
+#endif
 #ifdef HAVE_MPI
 #include <util/group/messmpi.h>
 ClassDesc* f1 = &MPIMessageGrp::class_desc_;
@@ -40,7 +43,12 @@ void matrixtest(RefSCMatrixKit kit, RefKeyVal keyval,
 
 main(int argc, char** argv)
 {
-  RefKeyVal keyval = new ParsedKeyVal(SRCDIR "/matrixtest.in");
+  char *infile = SRCDIR "/matrixtest.in";
+  
+  if (argc > 1)
+      infile = argv[1];
+
+  RefKeyVal keyval = new ParsedKeyVal(infile);
 
   RefMessageGrp msg = MessageGrp::initial_messagegrp(argc, argv);
 
@@ -54,6 +62,12 @@ main(int argc, char** argv)
     }
 
   MessageGrp::set_default_messagegrp(msg);
+  RefRegionTimer tim = new ParallelRegionTimer(msg,"matrixtest",1,1);
+  RegionTimer::set_default_regiontimer(tim);
+
+  SCFormIO::set_printnode(0);
+  if (msg->n() > 1)
+    SCFormIO::init_mp(msg->me());
 
   RefSCMatrixKit kit = new ReplSCMatrixKit;
   RefSCDimension d1(keyval->describedclassvalue("d1"));

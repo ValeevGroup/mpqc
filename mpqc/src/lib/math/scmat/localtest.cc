@@ -25,25 +25,40 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <util/misc/formio.h>
+#include <util/group/pregtime.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 
 void matrixtest(RefSCMatrixKit kit, RefKeyVal keyval,
                 RefSCDimension d1,RefSCDimension d2,RefSCDimension d3);
 
-main()
+main(int argc, char *argv[])
 {
-  int i;
+  char *infile = SRCDIR "/matrixtest.in";
+  
+  if (argc > 1)
+      infile = argv[1];
 
-  RefKeyVal keyval = new ParsedKeyVal(SRCDIR "/matrixtest.in");
+  RefKeyVal keyval = new ParsedKeyVal(infile);
+
+  RefMessageGrp msg = MessageGrp::get_default_messagegrp();
+
+  RefRegionTimer tim = new ParallelRegionTimer(msg,"matrixtest",1,1);
+  RegionTimer::set_default_regiontimer(tim);
+
+  SCFormIO::set_printnode(0);
+
   RefSCMatrixKit kit = new LocalSCMatrixKit;
+  RefSCDimension d1(keyval->describedclassvalue("d1"));
+  RefSCDimension d2(keyval->describedclassvalue("d2"));
+  RefSCDimension d3(keyval->describedclassvalue("d3"));
 
-  matrixtest(kit,keyval,0,0,0);
+  matrixtest(kit,keyval,d1,d2,d3);
 
-  // SVD is tested here since its not implemented for other specializations
-
-  RefSCDimension m(keyval->describedclassvalue("d1"));
-  RefSCDimension n(keyval->describedclassvalue("d2"));
+#if 0
+  RefSCDimension m = d1;
+  RefSCDimension n = d2;
   RefSCDimension p = ((m.n() < n.n()) ? m:n);
   RefSCMatrix A(m,n,kit);
   RefSCMatrix U(m,m,kit);
@@ -65,6 +80,7 @@ main()
   sigmamat.assign(0.0);
   for (i=0; i<p.n(); i++) sigmamat(i,i) = sigma(i);
   (U*sigmamat*V.t()).print("U*sigmamat*V.t()");
+#endif  
 
   return 0;
 }

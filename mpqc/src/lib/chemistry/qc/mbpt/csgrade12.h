@@ -38,6 +38,8 @@
 #include <util/group/thread.h>
 #include <chemistry/qc/basis/integral.h>
 
+#define PRINT_BIGGEST_INTS 0
+
 class CSGradErep12Qtr: public Thread {
   private:
     RefMessageGrp msg;

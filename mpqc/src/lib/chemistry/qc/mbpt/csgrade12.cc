@@ -38,7 +38,7 @@
 #include <chemistry/qc/mbpt/distsh.h>
 
 #include <chemistry/qc/mbpt/util.h>
-extern BiggestContribs biggest_ints_1(4,40);
+extern BiggestContribs biggest_ints_1;
 
 #define PRINT1Q 0
 
@@ -288,6 +288,7 @@ CSGradErep12Qtr::run()
       lock->unlock();
       }
 #endif
+#if PRINT_BIGGEST_INTS
       {
       lock->lock();
       double *tmp = integral_iqrs;
@@ -305,6 +306,7 @@ CSGradErep12Qtr::run()
         }
       lock->unlock();
       }
+#endif
 
     timer->enter("2. q.t.");
     // Begin second quarter transformation;

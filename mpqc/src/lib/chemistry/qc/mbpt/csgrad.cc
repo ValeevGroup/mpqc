@@ -42,7 +42,6 @@
 #include <chemistry/qc/mbpt/util.h>
 #include <chemistry/qc/mbpt/csgrade12.h>
 
-#define PRINT_BIGGEST_INTS 1
 #if PRINT_BIGGEST_INTS
 BiggestContribs biggest_ints_1(4,40);
 #endif

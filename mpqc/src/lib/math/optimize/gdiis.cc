@@ -261,16 +261,16 @@ GDIISOpt::update()
          << scprintf("taking step of size %f", tot) << endl;
     
     RefSCVector xnext = xcurrent + xdisp;
-    function()->set_x(xnext);
     
-    // compute the convergence criteria
-    double con_crit1 = fabs(xdisp.scalar_product(gcurrent));
-    double con_crit2 = maxabs_gradient;
-    double con_crit3 = xdisp.maxabs();
+    conv_->reset();
+    conv_->get_grad(function());
+    conv_->get_x(function());
 
-    return ((con_crit1 <= convergence_)
-            && (con_crit2 <= convergence_)
-            && (con_crit3 <= convergence_));
+    function()->set_x(xnext);
+  
+    conv_->get_nextx(function());
+
+    return conv_->converged();
   }
 
   // form the error vectors

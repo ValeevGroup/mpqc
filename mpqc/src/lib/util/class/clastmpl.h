@@ -34,7 +34,7 @@
  template, however it provides new implementations of
  constructor and assignment operators that take advantage
  of the castdown ability of DescribedClass.  The
- standard reference classes allows only assignment to
+ standard reference class, Ref, allows only assignment to
  references or pointers to objects of the same exact type
  as the contained object.  DCRef has constructor
  and assignment operators that take generic

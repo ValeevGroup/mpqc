@@ -365,10 +365,9 @@ SCF::initial_vector(int needv)
       // if guess_wfn_ is non-null then try to get a guess vector from it.
       // First check that the same basis is used...if not, then project the
       // guess vector into the present basis.
-      // right now the check is crude...there should be an equiv member in
-      // GaussianBasisSet
       if (guess_wfn_.nonnull()) {
-        if (guess_wfn_->basis()->nbasis() == basis()->nbasis()) {
+        if (basis()->equiv(guess_wfn_->basis())
+            &&orthog_method() == guess_wfn_->orthog_method()) {
           cout << node0 << indent
                << "Using guess wavefunction as starting vector" << endl;
 

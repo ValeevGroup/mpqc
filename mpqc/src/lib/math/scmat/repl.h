@@ -18,7 +18,7 @@ class ReplSCMatrixKit: public SCMatrixKit {
 #   define HAVE_KEYVAL_CTOR
 //#   include <util/state/stated.h>
 #   include <util/class/classd.h>
-  private:
+  protected:
     RefMessageGrp grp_;
   public:
     ReplSCMatrixKit();
@@ -34,7 +34,7 @@ class ReplSCDimension: public SCDimension {
 #   define CLASSNAME ReplSCDimension
 //#   include <util/state/stated.h>
 #   include <util/class/classd.h>
-  private:
+  protected:
     int n_;
     int* blocks_;
     int nblocks_;
@@ -56,6 +56,19 @@ class ReplSCDimension: public SCDimension {
 };
 SavableState_REF_dec(ReplSCDimension);
 
+class ReplSCMatrixListSubblockIter: public SCMatrixListSubblockIter {
+  protected:
+    RefMessageGrp grp_;
+    double *data_;
+    int ndata_;
+  public:
+    ReplSCMatrixListSubblockIter(Access,
+                             const RefSCMatrixBlockList &list,
+                             const RefMessageGrp &grp,
+                             double *data, int ndata);
+    ~ReplSCMatrixListSubblockIter();
+};
+
 class ReplSCVector: public SCVector {
     friend class ReplSCMatrix;
     friend class ReplSymmSCMatrix;
@@ -63,7 +76,7 @@ class ReplSCVector: public SCVector {
 #   define CLASSNAME ReplSCVector
 //#   include <util/state/stated.h>
 #   include <util/class/classd.h>
-  private:
+  protected:
     RefReplSCDimension d;
     RefSCMatrixBlockList blocklist;
     double* vector;
@@ -94,8 +107,8 @@ class ReplSCVector: public SCVector {
 
     RefMessageGrp messagegrp() { return d->messagegrp(); }
 
-    RefSCMatrixSubblockIter local_blocks();
-    RefSCMatrixSubblockIter all_blocks();
+    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
+    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class ReplSCMatrix: public SCMatrix {
@@ -105,13 +118,13 @@ class ReplSCMatrix: public SCMatrix {
 #   define CLASSNAME ReplSCMatrix
 //#   include <util/state/stated.h>
 #   include <util/class/classd.h>
-  private:
+  protected:
     RefReplSCDimension d1;
     RefReplSCDimension d2;
     RefSCMatrixBlockList blocklist;
     double* matrix;
     double** rows;
-  private:
+  protected:
     // utility functions
     int compute_offset(int,int);
     void init_blocklist();
@@ -160,8 +173,8 @@ class ReplSCMatrix: public SCMatrix {
 
     RefMessageGrp messagegrp() { return d1->messagegrp(); }
 
-    RefSCMatrixSubblockIter local_blocks();
-    RefSCMatrixSubblockIter all_blocks();
+    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
+    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class ReplSymmSCMatrix: public SymmSCMatrix {
@@ -171,12 +184,12 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
 #   define CLASSNAME ReplSymmSCMatrix
 //#   include <util/state/stated.h>
 #   include <util/class/classd.h>
-  private:
+  protected:
     RefReplSCDimension d;
     RefSCMatrixBlockList blocklist;
     double* matrix;
     double** rows;
-  private:
+  protected:
     // utility functions
     int compute_offset(int,int);
     void init_blocklist();
@@ -228,8 +241,8 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
 
     RefMessageGrp messagegrp() { return d->messagegrp(); }
 
-    RefSCMatrixSubblockIter local_blocks();
-    RefSCMatrixSubblockIter all_blocks();
+    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
+    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class ReplDiagSCMatrix: public DiagSCMatrix {
@@ -239,7 +252,7 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
 #   define CLASSNAME ReplDiagSCMatrix
 //#   include <util/state/stated.h>
 #   include <util/class/classd.h>
-  private:
+  protected:
     RefReplSCDimension d;
     RefSCMatrixBlockList blocklist;
     void init_blocklist();
@@ -272,8 +285,8 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
 
     RefMessageGrp messagegrp() { return d->messagegrp(); }
 
-    RefSCMatrixSubblockIter local_blocks();
-    RefSCMatrixSubblockIter all_blocks();
+    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
+    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 };
 
 #endif

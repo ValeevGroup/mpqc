@@ -309,15 +309,21 @@ LocalSCVector::print(const char *title, ostream& os, int prec)
 }
 
 RefSCMatrixSubblockIter
-LocalSCVector::local_blocks()
+LocalSCVector::local_blocks(SCMatrixSubblockIter::Access access)
 {
   RefSCMatrixSubblockIter iter
-      = new SCMatrixSimpleSubblockIter(block.pointer());
+      = new SCMatrixSimpleSubblockIter(access, block.pointer());
   return iter;
 }
 
 RefSCMatrixSubblockIter
-LocalSCVector::all_blocks()
+LocalSCVector::all_blocks(SCMatrixSubblockIter::Access access)
 {
-  return local_blocks();
+  if (access == SCMatrixSubblockIter::Write) {
+      cerr << "LocalVectorSCMatrix::all_blocks: "
+           << "Write access permitted for local blocks only"
+           << endl;
+      abort();
+    }
+  return local_blocks(access);
 }

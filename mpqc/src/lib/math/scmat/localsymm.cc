@@ -652,15 +652,21 @@ LocalSymmSCMatrix::print(const char *title, ostream& os, int prec)
 }
 
 RefSCMatrixSubblockIter
-LocalSymmSCMatrix::local_blocks()
+LocalSymmSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
   RefSCMatrixSubblockIter iter
-      = new SCMatrixSimpleSubblockIter(block.pointer());
+      = new SCMatrixSimpleSubblockIter(access, block.pointer());
   return iter;
 }
 
 RefSCMatrixSubblockIter
-LocalSymmSCMatrix::all_blocks()
+LocalSymmSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
-  return local_blocks();
+  if (access == SCMatrixSubblockIter::Write) {
+      cerr << "LocalSymmSCMatrix::all_blocks: "
+           << "Write access permitted for local blocks only"
+           << endl;
+      abort();
+    }
+  return local_blocks(access);
 }

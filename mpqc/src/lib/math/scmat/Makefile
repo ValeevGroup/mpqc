@@ -20,6 +20,8 @@ CXXSRC = \
          block.cc      blkiter.cc    elemop.cc     result.cc \
          matrix3.cc    vector3.cc    vector3_i.cc
 
+#         dist.cc       distrect.cc   distdiag.cc   distsymm.cc   distvect.cc 
+
 CSRC = cmatrix.c svd.c
 
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o) 

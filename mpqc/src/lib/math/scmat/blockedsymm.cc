@@ -558,24 +558,24 @@ BlockedSymmSCMatrix::block(int i)
 }
 
 RefSCMatrixSubblockIter
-BlockedSymmSCMatrix::local_blocks()
+BlockedSymmSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
   RefSCMatrixCompositeSubblockIter iter
-      = new SCMatrixCompositeSubblockIter(nblocks());
+      = new SCMatrixCompositeSubblockIter(access,nblocks());
   for (int i=0; i<nblocks(); i++) {
-      iter->set_iter(i, block(i)->local_blocks());
+      iter->set_iter(i, block(i)->local_blocks(access));
     }
   RefSCMatrixSubblockIter ret = iter.pointer();
   return ret;
 }
 
 RefSCMatrixSubblockIter
-BlockedSymmSCMatrix::all_blocks()
+BlockedSymmSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   RefSCMatrixCompositeSubblockIter iter
-      = new SCMatrixCompositeSubblockIter(nblocks());
+      = new SCMatrixCompositeSubblockIter(access,nblocks());
   for (int i=0; i<nblocks(); i++) {
-      iter->set_iter(i, block(i)->all_blocks());
+      iter->set_iter(i, block(i)->all_blocks(access));
     }
   RefSCMatrixSubblockIter ret = iter.pointer();
   return ret;

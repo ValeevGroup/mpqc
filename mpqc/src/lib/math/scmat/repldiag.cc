@@ -259,3 +259,27 @@ ReplDiagSCMatrix::print(const char *title, ostream& os, int prec)
 
   os.flush();
 }
+
+RefSCMatrixSubblockIter
+ReplDiagSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
+{
+  return new ReplSCMatrixListSubblockIter(access, blocklist,
+                                          messagegrp(),
+                                          matrix, d->n());
+}
+
+RefSCMatrixSubblockIter
+ReplDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
+{
+  if (access == SCMatrixSubblockIter::Write) {
+      cerr << "ReplDiagSCMatrix::all_blocks: "
+           << "Write access permitted for local blocks only"
+           << endl;
+      abort();
+    }
+  RefSCMatrixBlockList allblocklist = new SCMatrixBlockList();
+  allblocklist->insert(new SCMatrixDiagSubBlock(0, d->n(), 0, matrix));
+  return new ReplSCMatrixListSubblockIter(access, allblocklist,
+                                          messagegrp(),
+                                          matrix, d->n());
+}

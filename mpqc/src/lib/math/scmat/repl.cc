@@ -137,3 +137,30 @@ ReplSCDimension::create_vector()
 }
 
 SavableState_REF_def(ReplSCDimension);
+
+/////////////////////////////////////////////////////////////////////////////
+// ReplSCMatrixKit member functions
+
+ReplSCMatrixListSubblockIter::ReplSCMatrixListSubblockIter(
+    Access access,
+    const RefSCMatrixBlockList &list,
+    const RefMessageGrp &grp,
+    double *data,
+    int ndata
+    ):
+  SCMatrixListSubblockIter(access_, list),
+  grp_(grp),
+  data_(data),
+  ndata_(ndata)
+{
+  if (access == Write || (access == Read && grp->me() != 0)) {
+      for (int i=0; i<ndata; i++) data[i] = 0.0;
+    }
+}
+
+ReplSCMatrixListSubblockIter::~ReplSCMatrixListSubblockIter()
+{
+  if (access() == Write || access() == Accum) {
+      grp_->sum(data_,ndata_);
+    }
+}

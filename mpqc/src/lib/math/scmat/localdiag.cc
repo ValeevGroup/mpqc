@@ -229,15 +229,21 @@ LocalDiagSCMatrix::print(const char *title, ostream& os, int prec)
 }
 
 RefSCMatrixSubblockIter
-LocalDiagSCMatrix::local_blocks()
+LocalDiagSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
 {
   RefSCMatrixSubblockIter iter
-      = new SCMatrixSimpleSubblockIter(block.pointer());
+      = new SCMatrixSimpleSubblockIter(access, block.pointer());
   return iter;
 }
 
 RefSCMatrixSubblockIter
-LocalDiagSCMatrix::all_blocks()
+LocalDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
-  return local_blocks();
+  if (access == SCMatrixSubblockIter::Write) {
+      cerr << "LocalDiagSCMatrix::all_blocks: "
+           << "Write access permitted for local blocks only"
+           << endl;
+      abort();
+    }
+  return local_blocks(access);
 }

@@ -319,3 +319,27 @@ ReplSCVector::print(const char *title, ostream& os, int prec)
 
   os.flush();
 }
+
+RefSCMatrixSubblockIter
+ReplSCVector::local_blocks(SCMatrixSubblockIter::Access access)
+{
+  return new ReplSCMatrixListSubblockIter(access, blocklist,
+                                          messagegrp(),
+                                          vector, d->n());
+}
+
+RefSCMatrixSubblockIter
+ReplSCVector::all_blocks(SCMatrixSubblockIter::Access access)
+{
+  if (access == SCMatrixSubblockIter::Write) {
+      cerr << "ReplSCVector::all_blocks: "
+           << "Write access permitted for local blocks only"
+           << endl;
+      abort();
+    }
+  RefSCMatrixBlockList allblocklist = new SCMatrixBlockList();
+  allblocklist->insert(new SCVectorSimpleSubBlock(0, d->n(), 0, vector));
+  return new ReplSCMatrixListSubblockIter(access, allblocklist,
+                                          messagegrp(),
+                                          vector, d->n());
+}

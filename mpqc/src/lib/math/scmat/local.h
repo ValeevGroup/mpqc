@@ -74,8 +74,8 @@ class LocalSCVector: public SCVector {
                     SCVector*,SCVector*);
     void print(const char* title=0,ostream& out=cout, int =10);
 
-    RefSCMatrixSubblockIter local_blocks();
-    RefSCMatrixSubblockIter all_blocks();
+    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
+    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class LocalSCMatrix: public SCMatrix {
@@ -141,8 +141,8 @@ class LocalSCMatrix: public SCMatrix {
                     SCMatrix*,SCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
 
-    RefSCMatrixSubblockIter local_blocks();
-    RefSCMatrixSubblockIter all_blocks();
+    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
+    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class LocalSymmSCMatrix: public SymmSCMatrix {
@@ -209,8 +209,8 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
                     SymmSCMatrix*,SymmSCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
 
-    RefSCMatrixSubblockIter local_blocks();
-    RefSCMatrixSubblockIter all_blocks();
+    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
+    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class LocalDiagSCMatrix: public DiagSCMatrix {
@@ -253,8 +253,8 @@ class LocalDiagSCMatrix: public DiagSCMatrix {
                     DiagSCMatrix*,DiagSCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
 
-    RefSCMatrixSubblockIter local_blocks();
-    RefSCMatrixSubblockIter all_blocks();
+    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
+    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class LocalSCMatrixKit: public SCMatrixKit {

@@ -691,3 +691,28 @@ ReplSymmSCMatrix::print(const char *title, ostream& os, int prec)
     ii=kk;
     }
 }
+
+RefSCMatrixSubblockIter
+ReplSymmSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
+{
+  return new ReplSCMatrixListSubblockIter(access, blocklist,
+                                          messagegrp(),
+                                          matrix, (d->n()*(d->n()+1))/2);
+}
+
+RefSCMatrixSubblockIter
+ReplSymmSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
+{
+  if (access == SCMatrixSubblockIter::Write) {
+      cerr << "ReplSymmSCMatrix::all_blocks: "
+           << "Write access permitted for local blocks only"
+           << endl;
+      abort();
+    }
+  RefSCMatrixBlockList allblocklist = new SCMatrixBlockList();
+  allblocklist->insert(new SCMatrixLTriSubBlock(0, d->n(),
+                                                0, d->n(), matrix));
+  return new ReplSCMatrixListSubblockIter(access, allblocklist,
+                                          messagegrp(),
+                                          matrix, (d->n()*(d->n()+1))/2);
+}

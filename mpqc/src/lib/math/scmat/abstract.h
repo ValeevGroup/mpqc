@@ -127,10 +127,13 @@ class SCVector: public SavableState {
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 
     //texi Returns iterators for the local (rapidly accessible)
-    // blocks used in this vector.
-    virtual RefSCMatrixSubblockIter local_blocks() = 0;
+    // blocks used in this vector.  Only one iterator is allowed
+    // for a matrix is it has @code{Accum} or @code{Write}
+    // access is allowed.  Multiple @code{Read} iterators are permitted.
+    virtual RefSCMatrixSubblockIter local_blocks(
+        SCMatrixSubblockIter::Access) = 0;
     //texi Returns iterators for the all blocks used in this vector.
-    virtual RefSCMatrixSubblockIter all_blocks() = 0;
+    virtual RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access) = 0;
 };
 
 //texi The @code{SCMatrix} class is the abstract base class for general
@@ -259,9 +262,11 @@ class SCMatrix: public SavableState {
 
     //texi Returns iterators for the local (rapidly accessible)
     // blocks used in this matrix.
-    virtual RefSCMatrixSubblockIter local_blocks() = 0;
+    virtual RefSCMatrixSubblockIter local_blocks(
+        SCMatrixSubblockIter::Access) = 0;
     //texi Returns iterators for the all blocks used in this matrix.
-    virtual RefSCMatrixSubblockIter all_blocks() = 0;
+    virtual RefSCMatrixSubblockIter all_blocks(
+        SCMatrixSubblockIter::Access) = 0;
 };
 
 //texi The @code{SymmSCMatrix} class is the abstract base class for symmetric
@@ -378,9 +383,11 @@ class SymmSCMatrix: public SavableState {
 
     //texi Returns iterators for the local (rapidly accessible)
     // blocks used in this matrix.
-    virtual RefSCMatrixSubblockIter local_blocks() = 0;
+    virtual RefSCMatrixSubblockIter local_blocks(
+        SCMatrixSubblockIter::Access) = 0;
     //texi Returns iterators for the all blocks used in this matrix.
-    virtual RefSCMatrixSubblockIter all_blocks() = 0;
+    virtual RefSCMatrixSubblockIter all_blocks(
+        SCMatrixSubblockIter::Access) = 0;
 };
 
 //texi The @code{SymmSCMatrix} class is the abstract base class for diagonal
@@ -451,9 +458,11 @@ class DiagSCMatrix: public SavableState {
 
     //texi Returns iterators for the local (rapidly accessible)
     // blocks used in this matrix.
-    virtual RefSCMatrixSubblockIter local_blocks() = 0;
+    virtual RefSCMatrixSubblockIter local_blocks(
+        SCMatrixSubblockIter::Access) = 0;
     //texi Returns iterators for the all blocks used in this matrix.
-    virtual RefSCMatrixSubblockIter all_blocks() = 0;
+    virtual RefSCMatrixSubblockIter all_blocks(
+        SCMatrixSubblockIter::Access) = 0;
 };
 
 //texi The @code{SCMatrixKit} class produces specialized matrices and

@@ -764,10 +764,17 @@ SCVectorSimpleSubBlock::process(SCElementOp3*op,
 }
 
 ///////////////////////////////////////////////////////////////////////
+// SCMatrixSubblockIter
+
+// inlined or pure virtual
+
+///////////////////////////////////////////////////////////////////////
 // SCMatrixSimpleSubblockIter
 
 SCMatrixSimpleSubblockIter::SCMatrixSimpleSubblockIter(
-    const RefSCMatrixBlock &b)
+    Access access_,
+    const RefSCMatrixBlock &b):
+  SCMatrixSubblockIter(access_)
 {
   block_ = b;
 }
@@ -801,8 +808,10 @@ SCMatrixSimpleSubblockIter::block()
 // SCMatrixListSubblockIter
 
 SCMatrixListSubblockIter::SCMatrixListSubblockIter(
+    Access access,
     const RefSCMatrixBlockList &list
     ):
+  SCMatrixSubblockIter(access),
   list_(list)
 {
 }
@@ -834,6 +843,11 @@ SCMatrixListSubblockIter::block()
 ///////////////////////////////////////////////////////////////////////
 // SCMatrixNullSubblockIter
 
+SCMatrixNullSubblockIter::SCMatrixNullSubblockIter():
+  SCMatrixSubblockIter(None)
+{
+}
+
 void
 SCMatrixNullSubblockIter::begin()
 {
@@ -861,7 +875,8 @@ SCMatrixNullSubblockIter::block()
 
 SCMatrixCompositeSubblockIter::SCMatrixCompositeSubblockIter(
     RefSCMatrixSubblockIter& i1,
-    RefSCMatrixSubblockIter& i2)
+    RefSCMatrixSubblockIter& i2):
+  SCMatrixSubblockIter(None)
 {
   niters_ = 0;
   if (i1.nonnull()) { niters_++; }
@@ -870,10 +885,21 @@ SCMatrixCompositeSubblockIter::SCMatrixCompositeSubblockIter(
   iiter_ = 0;
   if (i1.nonnull()) { iters_[iiter_] = i1; iiter_++; }
   if (i2.nonnull()) { iters_[iiter_] = i2; iiter_++; }
+
+  if (niters_) access_ = iters_[0]->access();
+  for (int i=0; i<niters_; i++) {
+      if (iters_[i]->access() != access_) {
+          cerr << "SCMatrixCompositeSubblockIter: access not compatible"
+               << endl;
+          abort();
+        }
+    }
 }
 
 SCMatrixCompositeSubblockIter::SCMatrixCompositeSubblockIter(
-    int niters)
+    Access access_,
+    int niters):
+  SCMatrixSubblockIter(access_)
 {
   niters_ = niters;
   iters_ = new RefSCMatrixSubblockIter[niters_];
@@ -889,6 +915,11 @@ SCMatrixCompositeSubblockIter::set_iter(int i,
                                         const RefSCMatrixSubblockIter& iter)
 {
   iters_[i] = iter;
+  if (iters_[i]->access() != access_) {
+      cerr << "SCMatrixCompositeSubblockIter: access not compatible"
+           << endl;
+      abort();
+    }
 }
 
 void
@@ -939,7 +970,8 @@ SCMatrixJointSubblockIter::SCMatrixJointSubblockIter(
     RefSCMatrixSubblockIter& i2,
     RefSCMatrixSubblockIter& i3,
     RefSCMatrixSubblockIter& i4,
-    RefSCMatrixSubblockIter& i5)
+    RefSCMatrixSubblockIter& i5):
+  SCMatrixSubblockIter(None)
 {
   niters_ = 0;
   if (i1.nonnull()) { niters_++; }

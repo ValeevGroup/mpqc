@@ -133,8 +133,8 @@ class BlockedSCVector: public SCVector {
     int nblocks() const;
     RefSCVector block(int);
 
-    RefSCMatrixSubblockIter local_blocks();
-    RefSCMatrixSubblockIter all_blocks();
+    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
+    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class BlockedSCMatrix: public SCMatrix {
@@ -213,8 +213,8 @@ class BlockedSCMatrix: public SCMatrix {
     int nblocks() const;
     RefSCMatrix block(int);
 
-    RefSCMatrixSubblockIter local_blocks();
-    RefSCMatrixSubblockIter all_blocks();
+    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
+    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class BlockedSymmSCMatrix: public SymmSCMatrix {
@@ -288,8 +288,8 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     int nblocks() const;
     RefSymmSCMatrix block(int);
 
-    RefSCMatrixSubblockIter local_blocks();
-    RefSCMatrixSubblockIter all_blocks();
+    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
+    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class BlockedDiagSCMatrix: public DiagSCMatrix {
@@ -342,8 +342,8 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
     int nblocks() const;
     RefDiagSCMatrix block(int);
 
-    RefSCMatrixSubblockIter local_blocks();
-    RefSCMatrixSubblockIter all_blocks();
+    RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
+    RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 };
 
 class BlockedSCElementOp : public SCElementOp {

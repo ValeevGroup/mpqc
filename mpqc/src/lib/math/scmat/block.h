@@ -262,19 +262,27 @@ SavableState_REF_dec(SCMatrixDiagSubBlock);
 
 class SCMatrixSubblockIter: public VRefCount {
   public:
+    enum Access { Read, Write, Accum, None };
+  protected:
+    Access access_;
+  public:
+    // the block iter's destructor before the elements of
+    // the matrix are accessed in any way
+    SCMatrixSubblockIter(Access access): access_(access) {}
     virtual void begin() = 0;
     virtual int ready() = 0;
     virtual void next() = 0;
     virtual SCMatrixBlock *block() = 0;
+    Access access() const { return access_; }
 };
 REF_dec(SCMatrixSubblockIter);
 
 class SCMatrixSimpleSubblockIter: public SCMatrixSubblockIter {
-  private:
+  protected:
     RefSCMatrixBlock block_;
     int ready_;
   public:
-    SCMatrixSimpleSubblockIter(const RefSCMatrixBlock &b);
+    SCMatrixSimpleSubblockIter(Access, const RefSCMatrixBlock &b);
     void begin();
     int ready();
     void next();
@@ -282,11 +290,11 @@ class SCMatrixSimpleSubblockIter: public SCMatrixSubblockIter {
 };
 
 class SCMatrixListSubblockIter: public SCMatrixSubblockIter {
-  private:
+  protected:
     RefSCMatrixBlockList list_;
     SCMatrixBlockListIter iter_;
   public:
-    SCMatrixListSubblockIter(const RefSCMatrixBlockList &list);
+    SCMatrixListSubblockIter(Access, const RefSCMatrixBlockList &list);
     void begin();
     int ready();
     void next();
@@ -295,6 +303,7 @@ class SCMatrixListSubblockIter: public SCMatrixSubblockIter {
 
 class SCMatrixNullSubblockIter: public SCMatrixSubblockIter {
   public:
+    SCMatrixNullSubblockIter();
     void begin();
     int ready();
     void next();
@@ -307,7 +316,7 @@ class SCMatrixCompositeSubblockIter: public SCMatrixSubblockIter {
     RefSCMatrixSubblockIter *iters_;
     int iiter_;
   public:
-    SCMatrixCompositeSubblockIter(int niter);
+    SCMatrixCompositeSubblockIter(Access, int niter);
     SCMatrixCompositeSubblockIter(RefSCMatrixSubblockIter&,
                                   RefSCMatrixSubblockIter&);
     ~SCMatrixCompositeSubblockIter();

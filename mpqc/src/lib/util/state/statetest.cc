@@ -243,7 +243,12 @@ class D: D_parents {
       B::print(s);
       C::print(s);
       s << "D::a:\n";  da()->print(s);
-      if ( _a.pointer() == A::castdown(db().pointer()) ) {
+#ifndef TYPE_CONV_BUG
+      if ( _a == A::castdown(db().pointer()) )
+#else
+      if ( _a.pointer() == A::castdown(db().pointer())) 
+#endif
+        {
           cout << "a == b\n";
         }
       else {

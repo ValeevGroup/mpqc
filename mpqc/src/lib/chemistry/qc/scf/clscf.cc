@@ -183,30 +183,22 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
     evals = ev;
 
   // first convert evals to something we can deal with easily
-  LocalDiagSCMatrix *lvals = LocalDiagSCMatrix::castdown(evals);
-  if (!lvals) {
-    lvals = new LocalDiagSCMatrix(basis()->basisdim(),
-                                  new LocalSCMatrixKit());
-    lvals->convert(evals);
-  }
-
+  BlockedDiagSCMatrix *evalsb = BlockedDiagSCMatrix::require_castdown(evals,
+                                                 "CLSCF::set_occupations");
+  
   RefPetiteList pl = integral()->petite_list(basis());
   
   double **vals = new double*[nirrep_];
-  for (i=j=0; i < nirrep_; i++) {
+  for (i=0; i < nirrep_; i++) {
     int nf=pl->nfunction(i);
     if (nf) {
       vals[i] = new double[nf];
-      for (int k=0; k < nf; k++,j++)
-        vals[i][k] = lvals->get_element(j);
+      evalsb->block(i)->convert(vals[i]);
     } else {
       vals[i] = 0;
     }
   }
 
-  if (!LocalDiagSCMatrix::castdown(evals))
-    delete lvals;
-  
   // now loop to find the tndocc_ lowest eigenvalues and populate those
   // MO's
   int *newocc = new int[nirrep_];
@@ -383,11 +375,10 @@ CLSCF::new_density()
     ddir.accumulate(dir);
     
     // now calculate rms delta d
-    RefSCMatrixSubblockIter dditer =
-      ddir->local_blocks(SCMatrixSubblockIter::Read);
+    diter = ddir->local_blocks(SCMatrixSubblockIter::Read);
 
-    for (dditer->begin(); dditer->ready(); dditer->next()) {
-      SCMatrixBlock *dblk = dditer->block();
+    for (diter->begin(); diter->ready(); diter->next()) {
+      SCMatrixBlock *dblk = diter->block();
 
       ddata = get_tri_block(dblk, istart, iend, jstart, jend, tri);
       if (!ddata) {
@@ -416,7 +407,7 @@ CLSCF::scf_energy()
     cl_dens_, "CLSCF::scf_energy: density");
 
   BlockedSymmSCMatrix *fockp = BlockedSymmSCMatrix::require_castdown(
-    t, "CLSCF::new_density: H+F");
+    t, "CLSCF::scf_energy: H+F");
 
   double eelec=0;
   for (int ir=0; ir < fockp->nblocks(); ir++) {
@@ -592,58 +583,6 @@ CLSCF::ao_fock()
   cl_fock_.accumulate(dd);
 }
 
-RefSCExtrapError
-CLSCF::extrap_error()
-{
-  RefSymmSCMatrix mofock = effective_fock();
-  
-  BlockedSymmSCMatrix *moerror = BlockedSymmSCMatrix::require_castdown(
-    mofock,"CLSCF::extrap_error: moerror");
-
-  for (int ir=0; ir < moerror->nblocks(); ir++) {
-    RefSymmSCMatrix moeir = moerror->block(ir);
-
-    if (!moeir.n())
-      continue;
-    
-    RefSCMatrixSubblockIter eiter =
-      moeir->local_blocks(SCMatrixSubblockIter::Write);
-
-    for (eiter->begin(); eiter->ready(); eiter->next()) {
-      SCMatrixBlock *eblk = eiter->block();
-
-      int istart, iend, jstart, jend, tri;
-      double *edata = get_tri_block(eblk, istart, iend, jstart, jend, tri);
-
-      if (!edata) {
-        fprintf(stderr,"CLSCF::extrap_error: can't get data\n");
-        abort();
-      }
-    
-      int ij=0;
-      for (int i=istart; i < iend; i++) {
-        double occi = occupation(ir,i);
-
-        for (int j=jstart; j <= (tri ? i : jend-1); j++, ij++) {
-          double occj = occupation(ir,j);
-          if (occi==occj)
-            edata[ij] = 0.0;
-        }
-      }
-    }
-  }
-
-  RefSymmSCMatrix aoerror = cl_fock_.clone();
-  aoerror.assign(0.0);
-  aoerror.accumulate_transform(scf_vector_,mofock);
-  moerror=0;
-
-  RefSCExtrapError error = new SymmSCMatrixSCExtrapError(aoerror);
-  aoerror=0;
-
-  return error;
-}
-
 RefSCExtrapData
 CLSCF::extrap_data()
 {
@@ -727,10 +666,10 @@ CLSCF::gradient_density()
   cl_dens_.assign(0.0);
   
   BlockedSCMatrix *vecp = BlockedSCMatrix::require_castdown(
-    scf_vector_, "CLSCF::new_density: scf_vector");
+    scf_vector_, "CLSCF::gradient_density: scf_vector");
 
   BlockedSymmSCMatrix *densp = BlockedSymmSCMatrix::require_castdown(
-    cl_dens_, "CLSCF::new_density: density");
+    cl_dens_, "CLSCF::gradient_density: density");
 
   RefPetiteList pl = integral()->petite_list(basis());
   

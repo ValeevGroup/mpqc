@@ -36,6 +36,9 @@ class SCF: public OneBodyWavefunction {
     // calculate the scf vector
     virtual void compute_vector(double&);
 
+    // return the DIIS error matrices
+    virtual RefSCExtrapError extrap_error();
+
     // calculate the scf gradient
     virtual void compute_gradient(const RefSCVector&);
     
@@ -74,9 +77,6 @@ class SCF: public OneBodyWavefunction {
     // return the scf electronic energy
     virtual double scf_energy() =0;
     
-    // return the DIIS error matrices
-    virtual RefSCExtrapError extrap_error() =0;
-
     // return the DIIS data matrices
     virtual RefSCExtrapData extrap_data() =0;
     

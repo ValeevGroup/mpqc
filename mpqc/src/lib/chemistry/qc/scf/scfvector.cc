@@ -8,6 +8,7 @@
 #include <chemistry/qc/basis/symmint.h>
 
 #include <chemistry/qc/scf/scf.h>
+#include <chemistry/qc/scf/scflocal.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -78,4 +79,57 @@ SCF::compute_vector(double& eelec)
   done_vector();
 
   extrap = 0;
+}
+
+
+RefSCExtrapError
+SCF::extrap_error()
+{
+  RefSymmSCMatrix mofock = effective_fock();
+  
+  BlockedSymmSCMatrix *moerror = BlockedSymmSCMatrix::require_castdown(
+    mofock,"SCF::extrap_error: moerror");
+
+  for (int ir=0; ir < moerror->nblocks(); ir++) {
+    RefSymmSCMatrix moeir = moerror->block(ir);
+
+    if (!moeir.n())
+      continue;
+    
+    RefSCMatrixSubblockIter eiter =
+      moeir->local_blocks(SCMatrixSubblockIter::Write);
+
+    for (eiter->begin(); eiter->ready(); eiter->next()) {
+      SCMatrixBlock *eblk = eiter->block();
+
+      int istart, iend, jstart, jend, tri;
+      double *edata = get_tri_block(eblk, istart, iend, jstart, jend, tri);
+
+      if (!edata) {
+        fprintf(stderr,"SCF::extrap_error: can't get data\n");
+        abort();
+      }
+    
+      int ij=0;
+      for (int i=istart; i < iend; i++) {
+        double occi = occupation(ir,i);
+
+        for (int j=jstart; j <= (tri ? i : jend-1); j++, ij++) {
+          double occj = occupation(ir,j);
+          if (occi==occj)
+            edata[ij] = 0.0;
+        }
+      }
+    }
+  }
+
+  RefSymmSCMatrix aoerror = mofock.clone();
+  aoerror.assign(0.0);
+  aoerror.accumulate_transform(scf_vector_,mofock);
+  moerror=0;
+
+  RefSCExtrapError error = new SymmSCMatrixSCExtrapError(aoerror);
+  aoerror=0;
+
+  return error;
 }

@@ -60,7 +60,6 @@ class CLSCF: public SCF {
 
     void ao_fock();
 
-    RefSCExtrapError extrap_error();
     RefSCExtrapData extrap_data();
     RefSymmSCMatrix effective_fock();
     

@@ -388,7 +388,7 @@ checksymm3:
 .PHONY: check
 check:
 	@echo Comparing outputs in run and ref directories:
-	$(CHECKOUT) -d ref
+	$(CHECKOUT) -d ref run
 
 # Check all outputs files defined in this makefile in the ref directory
 # with those in the run directory.  This will break on some platforms

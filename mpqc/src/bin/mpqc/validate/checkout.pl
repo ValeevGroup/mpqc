@@ -18,12 +18,14 @@ elsif ($ARGV[0] eq "-d") {
     shift;
     my $dir = $ARGV[0];
     shift;
+    my $rundir = $ARGV[0];
+    shift;
     opendir(DIR,"$dir");
     my @files = sort(readdir(DIR));
     closedir(DIR);
     foreach $file (@files) {
         if ($file =~ /.out$/) {
-            check("$dir/$file", "run/$file");
+            check("$dir/$file", "$rundir/$file");
         }
     }
 }

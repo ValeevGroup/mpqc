@@ -97,9 +97,8 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   if (gebc_ == false)
     throw std::runtime_error("MBPT2_R12::MBPT2_R12: gebc=false has not been implemented yet");
 
-  // Default is to use the old ABS method, of Klopper and Samson, using the union of OBS and ABS
-  // to apply the resolution of the identity
-  char* abs_method_str = keyval->pcharvalue("abs_method",KeyValValuepchar("KS+"));
+  // For now the default is to use the old ABS method, of Klopper and Samson
+  char* abs_method_str = keyval->pcharvalue("abs_method",KeyValValuepchar("KS"));
   if ( !strcmp(abs_method_str,"KS") ||
        !strcmp(abs_method_str,"ks") ) {
     abs_method_ = LinearR12::ABS_KS;

@@ -943,47 +943,35 @@ IntMolecularCoor::print_simples(SCostream& os)
 void
 IntMolecularCoor::guess_hessian(RefSymmSCMatrix&hessian)
 {
+  // first form diagonal hessian in redundant internal coordinates
   RefSCDimension rdim = new LocalSCDimension(all_->n());
   RefSymmSCMatrix rhessian(rdim);
   rhessian.assign(0.0);
   all_->guess_hessian(molecule_,rhessian);
-  //rhessian.print("rhessian");
 
+  // create redundant coordinate bmat
   RefSCDimension dn3 = molecule_->dim_natom3();
-  RefSCMatrix bmat(rdim,dn3);
-  all_->bmat(molecule_,bmat);
-  //bmat.print("bmat");
-  
-  RefSymmSCMatrix chess(dn3);
-  chess.assign(0.0);
-  chess.accumulate_transform(bmat.t(),rhessian);
+  RefSCMatrix bmatr(rdim,dn3);
+  all_->bmat(molecule_,bmatr);
 
-  //chess.print("chess");
-
-  rdim = new LocalSCDimension(variable_->n());
-  bmat= rdim->create_matrix(dn3);
+  // then form the variable coordinate bmat
+  RefSCDimension dredundant = new LocalSCDimension(variable_->n());
+  RefSCMatrix bmat(dredundant,dn3);
   variable_->bmat(molecule_,bmat);
-  //bmat.print("bmat");
-  
-  RefSymmSCMatrix bmbt(rdim);
+
+  // and (B*B+)^-1
+  RefSymmSCMatrix bmbt(dredundant);
   bmbt.assign(0.0);
   bmbt.accumulate_symmetric_product(bmat);
   bmbt = bmbt.gi();
-  //bmbt.print("inv bmbt");
-  
-  RefSCMatrix b = bmbt * bmat;
+
+  // now transform redundant hessian to internal coordinates
+  // Hc = Br+ * Hr * Br
+  // Hi = (B*B+)^-1 * B * Hc * B+ * (B*B+)^-1+
+  //    = bmbt_inv*B*Br+ * Hr * Br*B+*bmbt_inv+
+  //    = b * Hr * b+  (b = (B*B+)^-1 * B * Br+)
+  RefSCMatrix b = bmbt * bmat * bmatr.t();
   
   hessian.assign(0.0);
-  hessian.accumulate_transform(b,chess);
-  //hessian.print("hessian");
-
-#if 0
-  hessian.assign(0.0);
-
-  for (int i=0; i<variable_->n(); i++) {
-      hessian(i,i) = variable_->coor(i)->force_constant(molecule_);
-    }
-
-  //hessian.print("hessian");
-#endif  
+  hessian.accumulate_transform(b,rhessian);
 }

@@ -27,6 +27,7 @@
 
 #include <stdio.h> // for sprintf
 #include <unistd.h> // for fchdir etc.
+#include <fcntl.h> // for open on AIX
 
 #include <mpi.h>
 extern int MPI_Initialized(int *); // missing in mpi.h

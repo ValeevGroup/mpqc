@@ -39,6 +39,8 @@
 #include <util/container/array.h>
 
 //#include <util/container/settmpl.h> // The template set declaration.
+#include <util/container/gnuset.h>
+#include <util/container/gnuavlse.h>
 #include <util/container/setmacr.h> // The macro set declaration.
 #define SET_dec(Type) Set_declare(Type)
 #define SET_def(Type)

@@ -40,7 +40,7 @@ GENCXXSRC = pixvpMap.cc pixvp$(MAPIMPL)Map.cc \
             pixintMap.cc pixint$(MAPIMPL)Map.cc \
             intpixMap.cc intpix$(MAPIMPL)Map.cc
 
-REALCXXSRC = array.cc set.cc voidptr.cc avl.cc error.cc
+REALCXXSRC = array.cc set.cc voidptr.cc gnuavlse.cc avl.cc error.cc
 
 GENSRC = $(GENCXXSRC)
 
@@ -51,7 +51,7 @@ LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = pixmap.h pixvpdefs.h ptrset.h voidptr.h voidptrdefs.h \
       set.h array.h artem.h ar2tem.h ssarmac.h ssar2mac.h \
-      pixintdefs.h avl.h refset.h
+      gnuset.h gnuavlse.h pixintdefs.h avl.h refset.h
 
 GENINC = $(GENCXXSRC:%.cc=%.h) setmacr.h asetmacr.h \
          armac.h ar2mac.h ssarmac.h ssar2mac.h
@@ -87,6 +87,9 @@ asetmacr.h: asettmpl.h $(TMPL2MACDEP)
 
 settest: settest.o libcontainer.$(LIBSUF) libmisc.$(LIBSUF) libref.$(LIBSUF)
 	$(CXX) $(LDFLAGS) -o settest $^
+
+gnutest: gnutest.o libcontainer.$(LIBSUF)
+	$(CXX) $(LDFLAGS) -o gnutest $^
 
 artest: artest.o libcontainer.$(LIBSUF)
 	$(CXX) $(LDFLAGS) -o artest $^

@@ -131,3 +131,4 @@ void StreSimpleCo::print(FILE *of, const char *pad) const
   fprintf(of,"%s  len   = %lf\n",pad,value());
   fflush(of);
   }
+

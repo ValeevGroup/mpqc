@@ -101,9 +101,8 @@ LocalDiagSCMatrix::accumulate(DiagSCMatrix*a)
     = LocalDiagSCMatrix::require_castdown(a,"LocalDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
-      fprintf(stderr,"LocalDiagSCMatrix::"
-              "accumulate(SCMatrix*a):\n");
+  if (!dim()->equiv(la->dim())) {
+      fprintf(stderr,"LocalDiagSCMatrix::accumulate(SCMatrix*a):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
     }
@@ -174,7 +173,8 @@ LocalDiagSCMatrix::element_op(const RefSCElementOp2& op,
 {
   LocalDiagSCMatrix *lm
       = LocalDiagSCMatrix::require_castdown(m,"LocalDiagSCMatrix::element_op");
-  if (!lm || d != lm->d) {
+
+  if (!dim()->equiv(lm->dim())) {
       fprintf(stderr,"LocalDiagSCMatrix: bad element_op\n");
       abort();
     }
@@ -189,7 +189,8 @@ LocalDiagSCMatrix::element_op(const RefSCElementOp3& op,
       = LocalDiagSCMatrix::require_castdown(m,"LocalDiagSCMatrix::element_op");
   LocalDiagSCMatrix *ln
       = LocalDiagSCMatrix::require_castdown(n,"LocalDiagSCMatrix::element_op");
-  if (!lm || !ln || d != lm->d || d != ln->d) {
+
+  if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
       fprintf(stderr,"LocalDiagSCMatrix: bad element_op\n");
       abort();
     }

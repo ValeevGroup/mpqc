@@ -251,8 +251,7 @@ BlockedSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
   BlockedSCVector* lb = BlockedSCVector::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->dim())
-      || !(this->coldim() == b->dim())) {
+  if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(lb->dim())) {
     fprintf(stderr,"BlockedSCMatrix::"
             "accumulate_outer_product(SCVector*a,SCVector*b):\n");
     fprintf(stderr,"dimensions don't match\n");
@@ -272,9 +271,8 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
   BlockedSCMatrix* lb = BlockedSCMatrix::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->rowdim())
-      || !(this->coldim() == b->coldim())
-      || !(a->coldim() == b->rowdim())) {
+  if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->coldim()) ||
+      !la->coldim()->equiv(lb->rowdim())) {
     fprintf(stderr,"BlockedSCMatrix::"
             "accumulate_product(SCMatrix*a,SCMatrix*b):\n");
     fprintf(stderr,"dimensions don't match\n");
@@ -294,9 +292,8 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
   BlockedSymmSCMatrix* lb = BlockedSymmSCMatrix::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->rowdim())
-      || !(this->coldim() == b->dim())
-      || !(a->coldim() == b->dim())) {
+  if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
+      !la->coldim()->equiv(lb->dim())) {
     fprintf(stderr,"BlockedSCMatrix::"
             "accumulate_product(SCMatrix*a,SymmSCMatrix*b):\n");
     fprintf(stderr,"dimensions don't match\n");
@@ -316,9 +313,8 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
   BlockedDiagSCMatrix* lb = BlockedDiagSCMatrix::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->rowdim())
-      || !(this->coldim() == b->dim())
-      || !(a->coldim() == b->dim())) {
+  if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
+      !la->coldim()->equiv(lb->dim())) {
     fprintf(stderr,"BlockedSCMatrix::"
             "accumulate_product(SCMatrix*a,DiagSCMatrix*b):\n");
     fprintf(stderr,"dimensions don't match\n");
@@ -337,10 +333,8 @@ BlockedSCMatrix::accumulate(SCMatrix*a)
     = BlockedSCMatrix::require_castdown(a,"BlockedSCMatrix::accumulate");
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->rowdim())
-      || !(this->coldim() == a->coldim())) {
-    fprintf(stderr,"BlockedSCMatrix::"
-            "accumulate(SCMatrix*a):\n");
+  if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
+    fprintf(stderr,"BlockedSCMatrix::accumulate(SCMatrix*a):\n");
     fprintf(stderr,"dimensions don't match\n");
     abort();
   }
@@ -418,18 +412,22 @@ BlockedSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
 double
 BlockedSCMatrix::solve_this(SCVector*v)
 {
+  double res=1;
+  
   BlockedSCVector* lv =
     BlockedSCVector::require_castdown(v,"BlockedSCMatrix::solve_this");
   
   // make sure that the dimensions match
-  if (!(this->rowdim() == v->dim())) {
+  if (!rowdim()->equiv(lv->dim())) {
     fprintf(stderr,"BlockedSCMatrix::solve_this(SCVector*v):\n");
     fprintf(stderr,"dimensions don't match\n");
     abort();
   }
 
   for (int i=0; i < d1->nblocks(); i++)
-    mats_[i]->solve_this(lv->vecs_[i].pointer());
+    res *= mats_[i]->solve_this(lv->vecs_[i].pointer());
+
+  return res;
 }
 
 void
@@ -439,7 +437,7 @@ BlockedSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
     BlockedSymmSCMatrix::require_castdown(S,"BlockedSCMatrix::schmidt_orthog");
   
   // make sure that the dimensions match
-  if (!(this->rowdim() == S->dim())) {
+  if (!rowdim()->equiv(lS->dim())) {
     fprintf(stderr,"BlockedSCMatrix::schmidt_orthog():\n");
     fprintf(stderr,"dimensions don't match\n");
     abort();
@@ -462,7 +460,8 @@ BlockedSCMatrix::element_op(const RefSCElementOp2& op,
 {
   BlockedSCMatrix *lm
       = BlockedSCMatrix::require_castdown(m,"BlockedSCMatrix::element_op");
-  if (!lm || d1 != lm->d1 || d2 != lm->d2) {
+
+  if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
     fprintf(stderr,"BlockedSCMatrix: bad element_op\n");
     abort();
   }
@@ -479,8 +478,9 @@ BlockedSCMatrix::element_op(const RefSCElementOp3& op,
       = BlockedSCMatrix::require_castdown(m,"BlockedSCMatrix::element_op");
   BlockedSCMatrix *ln
       = BlockedSCMatrix::require_castdown(n,"BlockedSCMatrix::element_op");
-  if (!lm || !ln
-      || d1 != lm->d1 || d2 != lm->d2 || d1 != ln->d1 || d2 != ln->d2) {
+
+  if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
+      !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
     fprintf(stderr,"BlockedSCMatrix: bad element_op\n");
     abort();
   }
@@ -490,11 +490,11 @@ BlockedSCMatrix::element_op(const RefSCElementOp3& op,
                             ln->mats_[i].pointer());
 }
 
-// from Ed Seidl at the NIH
 void
 BlockedSCMatrix::print(const char *title, ostream& os, int prec)
 {
-  char *newtitle = new char[strlen(title) + 80];
+  int len = (title) ? strlen(title) : 0;
+  char *newtitle = new char[len + 80];
 
   for (int i=0; i < d1->nblocks(); i++) {
     sprintf(newtitle,"%s:  block %d",title,i+1);

@@ -364,9 +364,8 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
   ReplSCMatrix* lb = ReplSCMatrix::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->rowdim())
-      || !(this->coldim() == b->coldim())
-      || !(a->coldim() == b->rowdim())) {
+  if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->coldim()) ||
+      !la->coldim()->equiv(lb->rowdim())) {
       fprintf(stderr,"ReplSCMatrix::"
               "accumulate_product(SCMatrix*a,SCMatrix*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -397,8 +396,7 @@ ReplSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
   ReplSCVector* lb = ReplSCVector::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->dim())
-      || !(this->coldim() == b->dim())) {
+  if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(lb->dim())) {
       fprintf(stderr,"ReplSCMatrix::"
               "accumulate_outer_product(SCVector*a,SCVector*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -427,9 +425,8 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
   ReplSymmSCMatrix* lb = ReplSymmSCMatrix::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->rowdim())
-      || !(this->coldim() == b->dim())
-      || !(a->coldim() == b->dim())) {
+  if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
+      !la->coldim()->equiv(lb->dim())) {
       fprintf(stderr,"ReplSCMatrix::"
               "accumulate_product(SCMatrix*a,SymmSCMatrix*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -463,9 +460,8 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
   ReplDiagSCMatrix* lb = ReplDiagSCMatrix::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->rowdim())
-      || !(this->coldim() == b->dim())
-      || !(a->coldim() == b->dim())) {
+  if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
+      !la->coldim()->equiv(lb->dim())) {
       fprintf(stderr,"ReplSCMatrix::"
               "accumulate_product(SCMatrix*a,DiagSCMatrix*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -493,10 +489,8 @@ ReplSCMatrix::accumulate(SCMatrix*a)
     = ReplSCMatrix::require_castdown(a,"ReplSCMatrix::accumulate");
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->rowdim())
-      || !(this->coldim() == a->coldim())) {
-      fprintf(stderr,"ReplSCMatrix::"
-              "accumulate(SCMatrix*a):\n");
+  if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
+      fprintf(stderr,"ReplSCMatrix::accumulate(SCMatrix*a):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
     }
@@ -567,7 +561,7 @@ ReplSCMatrix::solve_this(SCVector*v)
     ReplSCVector::require_castdown(v,"ReplSCMatrix::solve_this");
   
   // make sure that the dimensions match
-  if (!(this->rowdim() == v->dim())) {
+  if (!rowdim()->equiv(lv->dim())) {
       fprintf(stderr,"ReplSCMatrix::solve_this(SCVector*v):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
@@ -583,7 +577,7 @@ ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
     ReplSymmSCMatrix::require_castdown(S,"ReplSCMatrix::schmidt_orthog");
   
   // make sure that the dimensions match
-  if (!(this->rowdim() == S->dim())) {
+  if (!rowdim()->equiv(lS->dim())) {
       fprintf(stderr,"ReplSCMatrix::schmidt_orthog():\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
@@ -609,7 +603,8 @@ ReplSCMatrix::element_op(const RefSCElementOp2& op,
 {
   ReplSCMatrix *lm
       = ReplSCMatrix::require_castdown(m,"ReplSCMatrix::element_op");
-  if (!lm || d1 != lm->d1 || d2 != lm->d2) {
+
+  if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
       fprintf(stderr,"ReplSCMatrix: bad element_op\n");
       abort();
     }
@@ -633,8 +628,9 @@ ReplSCMatrix::element_op(const RefSCElementOp3& op,
       = ReplSCMatrix::require_castdown(m,"ReplSCMatrix::element_op");
   ReplSCMatrix *ln
       = ReplSCMatrix::require_castdown(n,"ReplSCMatrix::element_op");
-  if (!lm || !ln
-      || d1 != lm->d1 || d2 != lm->d2 || d1 != ln->d1 || d2 != ln->d2) {
+
+  if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
+      !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
       fprintf(stderr,"ReplSCMatrix: bad element_op\n");
       abort();
     }

@@ -24,6 +24,7 @@ class LocalSCDimension: public SCDimension {
     LocalSCDimension(StateIn&);
     ~LocalSCDimension();
     void save_data_state(StateOut&);
+    int equiv(SCDimension*) const;
     int n();
     SCMatrix* create_matrix(SCDimension*);
     SymmSCMatrix* create_symmmatrix();

@@ -15,8 +15,8 @@ endif
 CXXSRC = \
          repl.cc       replrect.cc   repldiag.cc   replsymm.cc   replvect.cc \
          local.cc      localrect.cc  localdiag.cc  localsymm.cc  localvect.cc \
-         abstract.cc   matrix.cc     matrix_i.cc \
-         blocked.cc blockedvect.cc blockedrect.cc \
+         abstract.cc   matrix.cc     matrix_i.cc    blocked.cc \
+         blockedvect.cc blockedrect.cc blockeddiag.cc blockedsymm.cc \
          block.cc      blkiter.cc    elemop.cc     result.cc \
          matrix3.cc    vector3.cc    vector3_i.cc
 
@@ -52,6 +52,10 @@ localtest: localtest.o $(TESTOBJ) \
 repltest: repltest.o $(TESTOBJ) \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(CXX) $(CXXFLAGS) -o repltest $^ $(SYSLIBS) 
+
+blockedtest: blockedtest.o $(TESTOBJ) \
+	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+	$(CXX) $(CXXFLAGS) -o blockedtest $^ $(SYSLIBS) 
 
 repltest.o: repltest.cc
 	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< -o $@

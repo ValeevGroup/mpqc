@@ -10,6 +10,3 @@ SSAccResult_def(RefSCMatrix);
 SSAccResult_def(RefSymmSCMatrix);
 SSAccResult_def(RefDiagSCMatrix);
 SSAccResult_def(RefSCVector);
-
-
-

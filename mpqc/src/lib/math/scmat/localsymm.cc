@@ -330,9 +330,8 @@ LocalSymmSCMatrix::accumulate(SymmSCMatrix*a)
     = LocalSymmSCMatrix::require_castdown(a,"LocalSymmSCMatrix::accumulate");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
-      fprintf(stderr,"LocalSymmSCMatrix::"
-              "accumulate(SCMatrix*a):\n");
+  if (!dim()->equiv(la->dim())) {
+      fprintf(stderr,"LocalSymmSCMatrix::accumulate(SCMatrix*a):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
     }
@@ -368,7 +367,7 @@ LocalSymmSCMatrix::solve_this(SCVector*v)
     LocalSCVector::require_castdown(v,"LocalSymmSCMatrix::solve_this");
   
   // make sure that the dimensions match
-  if (!(this->dim() == v->dim())) {
+  if (!dim()->equiv(lv->dim())) {
       fprintf(stderr,"LocalSymmSCMatrix::solve_this(SCVector*v):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
@@ -406,8 +405,8 @@ LocalSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
   LocalDiagSCMatrix* la = LocalDiagSCMatrix::require_castdown(a,name);
   LocalSCMatrix* lb = LocalSCMatrix::require_castdown(b,name);
 
-  if (   (la&&(!(la->dim() == dim())))
-      || (lb&&(!(lb->coldim() == dim()) || !(lb->rowdim() == dim())))) {
+  if (!dim()->equiv(la->dim()) ||
+      !dim()->equiv(lb->coldim()) || !dim()->equiv(lb->rowdim())) {
       fprintf(stderr,"LocalSymmSCMatrix::"
               "diagonalize(DiagSCMatrix*a,SCMatrix*b): bad dims");
       abort();
@@ -444,7 +443,7 @@ LocalSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)
     = LocalSCMatrix::require_castdown(a,"LocalSymmSCMatrix::"
                                           "accumulate_symmetric_product");
 
-  if (!(la->rowdim() == dim())) {
+  if (!dim()->equiv(la->rowdim())) {
       fprintf(stderr,"LocalSymmSCMatrix::"
               "accumulate_symmetric_product(SCMatrix*a): bad dim");
       abort();
@@ -462,7 +461,7 @@ LocalSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
     = LocalSCMatrix::require_castdown(a,"LocalSymmSCMatrix::"
                                           "accumulate_symmetric_sum");
 
-  if (!(la->rowdim() == dim()) || !(la->coldim() == dim())) {
+  if (!dim()->equiv(la->rowdim()) || !dim()->equiv(la->coldim())) {
       fprintf(stderr,"LocalSymmSCMatrix::"
               "accumulate_symmetric_sum(SCMatrix*a): bad dim");
       abort();
@@ -486,7 +485,7 @@ LocalSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
     = LocalSCVector::require_castdown(a,"LocalSymmSCMatrix::"
                                       "accumulate_symmetric_outer_product");
 
-  if (!(la->dim() == dim())) {
+  if (!dim()->equiv(la->dim())) {
       fprintf(stderr,"LocalSymmSCMatrix::"
               "accumulate_symmetric_outer_product(SCMatrix*a): bad dim");
       abort();
@@ -514,7 +513,7 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
                                           class_name());
 
   // check the dimensions
-  if (n() != la->nrow() || la->ncol() != lb->n()) {
+  if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
       fprintf(stderr,"LocalSymmSCMatrix::accumulate_transform: bad dim\n");
       abort();
     }
@@ -535,7 +534,7 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
                                           class_name());
 
   // check the dimensions
-  if (n() != la->nrow() || la->ncol() != lb->n()) {
+  if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
       fprintf(stderr,"LocalSymmSCMatrix::accumulate_transform: bad dim\n");
       abort();
     }
@@ -551,9 +550,8 @@ LocalSymmSCMatrix::scalar_product(SCVector*a)
     = LocalSCVector::require_castdown(a,"LocalSCVector::scalar_product");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
-      fprintf(stderr,"LocalSCVector::"
-              "scale_product(SCVector*a):\n");
+  if (!dim()->equiv(la->dim())) {
+      fprintf(stderr,"LocalSCVector::scalar_product(SCVector*a):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
     }
@@ -582,7 +580,8 @@ LocalSymmSCMatrix::element_op(const RefSCElementOp2& op,
 {
   LocalSymmSCMatrix *lm
       = LocalSymmSCMatrix::require_castdown(m,"LocalSymSCMatrix::element_op");
-  if (!lm || d != lm->d) {
+
+  if (!dim()->equiv(lm->dim())) {
       fprintf(stderr,"LocalSymmSCMatrix: bad element_op\n");
       abort();
     }
@@ -597,7 +596,8 @@ LocalSymmSCMatrix::element_op(const RefSCElementOp3& op,
       = LocalSymmSCMatrix::require_castdown(m,"LocalSymSCMatrix::element_op");
   LocalSymmSCMatrix *ln
       = LocalSymmSCMatrix::require_castdown(n,"LocalSymSCMatrix::element_op");
-  if (!lm || !ln || d != lm->d || d != ln->d) {
+
+  if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
       fprintf(stderr,"LocalSymmSCMatrix: bad element_op\n");
       abort();
     }

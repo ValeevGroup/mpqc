@@ -135,6 +135,18 @@ LocalSCDimension::~LocalSCDimension()
 }
 
 int
+LocalSCDimension::equiv(SCDimension*a) const
+{
+  // for now require another LocalSCDimension
+  LocalSCDimension *la = LocalSCDimension::castdown(a);
+
+  if (!la || n_ != la->n_)
+    return 0;
+
+  return 1;
+}
+
+int
 LocalSCDimension::n()
 {
   return n_;

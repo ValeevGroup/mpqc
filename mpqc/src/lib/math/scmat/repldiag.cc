@@ -107,7 +107,7 @@ ReplDiagSCMatrix::accumulate(DiagSCMatrix*a)
     = ReplDiagSCMatrix::require_castdown(a,"ReplDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
+  if (!dim()->equiv(la->dim())) {
       fprintf(stderr,"ReplDiagSCMatrix::"
               "accumulate(SCMatrix*a):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -181,7 +181,8 @@ ReplDiagSCMatrix::element_op(const RefSCElementOp2& op,
 {
   ReplDiagSCMatrix *lm
       = ReplDiagSCMatrix::require_castdown(m,"ReplDiagSCMatrix::element_op");
-  if (!lm || d != lm->d) {
+
+  if (!dim()->equiv(lm->dim())) {
       fprintf(stderr,"ReplDiagSCMatrix: bad element_op\n");
       abort();
     }
@@ -205,7 +206,8 @@ ReplDiagSCMatrix::element_op(const RefSCElementOp3& op,
       = ReplDiagSCMatrix::require_castdown(m,"ReplDiagSCMatrix::element_op");
   ReplDiagSCMatrix *ln
       = ReplDiagSCMatrix::require_castdown(n,"ReplDiagSCMatrix::element_op");
-  if (!lm || !ln || d != lm->d || d != ln->d) {
+
+  if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
       fprintf(stderr,"ReplDiagSCMatrix: bad element_op\n");
       abort();
     }

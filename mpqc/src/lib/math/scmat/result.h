@@ -17,5 +17,4 @@ typedef AccResultRefSCMatrix ResultRefSCMatrix;
 typedef AccResultRefSymmSCMatrix ResultRefSymmSCMatrix;
 typedef AccResultRefDiagSCMatrix ResultRefDiagSCMatrix;
 typedef AccResultRefSCVector ResultRefSCVector;
-
 #endif

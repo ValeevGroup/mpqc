@@ -65,6 +65,8 @@ class BlockedSCDimension: public SCDimension {
 
     void save_data_state(StateOut&);
 
+    int equiv(SCDimension*) const;
+    
     int n();
     int n(int) const;
     int nblocks() const;
@@ -221,21 +223,21 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     RefBlockedSCDimension d;
     RefSymmSCMatrix *mats_;
 
-  private:
-    // utility functions
-    int compute_offset(int,int);
-    void resize(int n);
+    void resize(BlockedSCDimension*);
+
   public:
     BlockedSymmSCMatrix();
-    BlockedSymmSCMatrix(const RefKeyVal&);
     BlockedSymmSCMatrix(StateIn&);
+    BlockedSymmSCMatrix(const RefKeyVal&);
     BlockedSymmSCMatrix(BlockedSCDimension*);
     ~BlockedSymmSCMatrix();
 
     // implementations and overrides of virtual functions
     void save_data_state(StateOut&);
+
     RefSCDimension dim();
     RefSCDimension dim(int);
+
     double get_element(int,int);
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
@@ -250,26 +252,28 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     void assign_row(SCVector *v, int i);
     void accumulate_row(SCVector *v, int i);
 
-    void accumulate_product(SCMatrix*,SCMatrix*);
-    void accumulate(SymmSCMatrix*);
     double invert_this();
-    double solve_this(SCVector*);
-    double trace();
     double determ_this();
+    double trace();
+    double solve_this(SCVector*);
     void gen_invert_this();
 
     double scalar_product(SCVector*);
     void diagonalize(DiagSCMatrix*,SCMatrix*);
+
+    void accumulate(SymmSCMatrix*);
     void accumulate_symmetric_outer_product(SCVector*);
     void accumulate_symmetric_product(SCMatrix*);
     void accumulate_symmetric_sum(SCMatrix*);
     void accumulate_transform(SCMatrix*,SymmSCMatrix*);
     void accumulate_transform(SCMatrix*,DiagSCMatrix*);
+
     void element_op(const RefSCElementOp&);
     void element_op(const RefSCElementOp2&,
                     SymmSCMatrix*);
     void element_op(const RefSCElementOp3&,
                     SymmSCMatrix*,SymmSCMatrix*);
+
     void print(const char* title=0,ostream& out=cout, int =10);
 };
 
@@ -286,7 +290,8 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
   private:
     RefBlockedSCDimension d;
     RefDiagSCMatrix *mats_;
-    void resize(int n);
+
+    void resize(BlockedSCDimension*);
 
   public:
     BlockedDiagSCMatrix();
@@ -297,11 +302,15 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
 
     // implementations and overrides of virtual functions
     void save_data_state(StateOut&);
+
     RefSCDimension dim();
+    RefSCDimension dim(int);
+
     double get_element(int);
     void set_element(int,double);
     void accumulate_element(int,double);
     void accumulate(DiagSCMatrix*);
+
     double invert_this();
     double determ_this();
     double trace();

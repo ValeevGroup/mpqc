@@ -357,9 +357,8 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
   LocalSCMatrix* lb = LocalSCMatrix::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->rowdim())
-      || !(this->coldim() == b->coldim())
-      || !(a->coldim() == b->rowdim())) {
+  if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->coldim()) ||
+      !la->coldim()->equiv(lb->rowdim())) {
       fprintf(stderr,"LocalSCMatrix::"
               "accumulate_product(SCMatrix*a,SCMatrix*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -384,8 +383,7 @@ LocalSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
   LocalSCVector* lb = LocalSCVector::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->dim())
-      || !(this->coldim() == b->dim())) {
+  if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(lb->dim())) {
       fprintf(stderr,"LocalSCMatrix::"
               "accumulate_outer_product(SCVector*a,SCVector*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -414,9 +412,8 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
   LocalSymmSCMatrix* lb = LocalSymmSCMatrix::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->rowdim())
-      || !(this->coldim() == b->dim())
-      || !(a->coldim() == b->dim())) {
+  if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
+      !la->coldim()->equiv(lb->dim())) {
       fprintf(stderr,"LocalSCMatrix::"
               "accumulate_product(SCMatrix*a,SymmSCMatrix*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -450,9 +447,8 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
   LocalDiagSCMatrix* lb = LocalDiagSCMatrix::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->rowdim())
-      || !(this->coldim() == b->dim())
-      || !(a->coldim() == b->dim())) {
+  if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
+      !la->coldim()->equiv(lb->dim())) {
       fprintf(stderr,"LocalSCMatrix::"
               "accumulate_product(SCMatrix*a,DiagSCMatrix*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -480,10 +476,8 @@ LocalSCMatrix::accumulate(SCMatrix*a)
     = LocalSCMatrix::require_castdown(a,"LocalSCMatrix::accumulate");
 
   // make sure that the dimensions match
-  if (!(this->rowdim() == a->rowdim())
-      || !(this->coldim() == a->coldim())) {
-      fprintf(stderr,"LocalSCMatrix::"
-              "accumulate(SCMatrix*a):\n");
+  if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
+      fprintf(stderr,"LocalSCMatrix::accumulate(SCMatrix*a):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
     }
@@ -562,17 +556,20 @@ LocalSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
   int n = ndim.n();
 
   RefSCDimension pdim;
-  if (m == n && m == sigma->dim().n()) pdim = sigma->dim();
-  else if (m<n) pdim = mdim;
-  else pdim = ndim;
+  if (m == n && m == sigma->dim().n())
+    pdim = sigma->dim();
+  else if (m<n)
+    pdim = mdim;
+  else
+    pdim = ndim;
 
   int p = pdim.n();
 
-  if (   U->rowdim() != mdim
-      || U->coldim() != mdim
-      || V->rowdim() != ndim
-      || V->coldim() != ndim
-      || sigma->dim() != pdim) {
+  if (!mdim->equiv(lU->rowdim()) ||
+      !mdim->equiv(lU->coldim()) ||
+      !ndim->equiv(lV->rowdim()) ||
+      !ndim->equiv(lV->coldim()) ||
+      !pdim->equiv(sigma->dim())) {
       fprintf(stderr,"LocalSCMatrix: svd_this: dimension mismatch\n");
       abort();
     }
@@ -625,7 +622,7 @@ LocalSCMatrix::solve_this(SCVector*v)
     LocalSCVector::require_castdown(v,"LocalSCMatrix::solve_this");
   
   // make sure that the dimensions match
-  if (!(this->rowdim() == v->dim())) {
+  if (!rowdim()->equiv(lv->dim())) {
       fprintf(stderr,"LocalSCMatrix::solve_this(SCVector*v):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
@@ -641,7 +638,7 @@ LocalSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
     LocalSymmSCMatrix::require_castdown(S,"LocalSCMatrix::schmidt_orthog");
   
   // make sure that the dimensions match
-  if (!(this->rowdim() == S->dim())) {
+  if (!rowdim()->equiv(lS->dim())) {
       fprintf(stderr,"LocalSCMatrix::schmidt_orthog():\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
@@ -662,7 +659,8 @@ LocalSCMatrix::element_op(const RefSCElementOp2& op,
 {
   LocalSCMatrix *lm
       = LocalSCMatrix::require_castdown(m,"LocalSCMatrix::element_op");
-  if (!lm || d1 != lm->d1 || d2 != lm->d2) {
+
+  if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
       fprintf(stderr,"LocalSCMatrix: bad element_op\n");
       abort();
     }
@@ -677,8 +675,9 @@ LocalSCMatrix::element_op(const RefSCElementOp3& op,
       = LocalSCMatrix::require_castdown(m,"LocalSCMatrix::element_op");
   LocalSCMatrix *ln
       = LocalSCMatrix::require_castdown(n,"LocalSCMatrix::element_op");
-  if (!lm || !ln
-      || d1 != lm->d1 || d2 != lm->d2 || d1 != ln->d1 || d2 != ln->d2) {
+
+  if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
+      !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
       fprintf(stderr,"LocalSCMatrix: bad element_op\n");
       abort();
     }

@@ -152,6 +152,7 @@ BlockedSCDimension::init(const RefSCMatrixKit& mk, int *nb, const char *name)
     newnb[0] = n_;
     init(mk,newnb,name);
     delete[] newnb;
+    return;
   }
 
   dims_ = new RefSCDimension[nblocks_];
@@ -174,7 +175,10 @@ BlockedSCDimension::init(const RefSCMatrixKit& mk, int *nb, const char *name)
 BlockedSCDimension::BlockedSCDimension(const RefSCMatrixKit& mk,
                                        int n, int *nelem, const char* name) :
   SCDimension(name),
-  nblocks_(n)
+  nblocks_(n),
+  dims_(0),
+  first_(0),
+  last_(0)
 {
   init(mk, nelem, name);
 }
@@ -182,14 +186,19 @@ BlockedSCDimension::BlockedSCDimension(const RefSCMatrixKit& mk,
 BlockedSCDimension::BlockedSCDimension(const RefSCMatrixKit& mk,
                                        int n, const char* name) :
   SCDimension(name),
-  n_(n)
+  n_(n),
+  dims_(0),
+  first_(0),
+  last_(0)
 {
   nblocks_=1;
   init(mk, 0, name);
 }
 
 BlockedSCDimension::BlockedSCDimension(StateIn&s):
-  SCDimension(s)
+  SCDimension(s),
+  first_(0),
+  last_(0)
 {
   s.get(n_);
   s.get(nblocks_);
@@ -222,6 +231,24 @@ BlockedSCDimension::~BlockedSCDimension()
 {
   n_=nblocks_=0;
   init(0,0,0);
+}
+
+int
+BlockedSCDimension::equiv(SCDimension *a) const
+{
+  BlockedSCDimension *ba = BlockedSCDimension::castdown(a);
+
+  if (!ba || ba->n_ != n_ || ba->nblocks_ != nblocks_)
+    return 0;
+
+  for (int i=0; i < nblocks_; i++) {
+    if (first_[i] != ba->first_[i] ||
+        last_[i] != ba->last_[i] ||
+        !dims_[i]->equiv(ba->dims_[i].pointer()))
+      return 0;
+  }
+
+  return 1;
 }
 
 int

@@ -121,14 +121,14 @@ BlockedSCVector::assign(SCVector*a)
     = BlockedSCVector::require_castdown(a,"BlockedSCVector::assign");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
+  if (!dim()->equiv(la->dim())) {
     fprintf(stderr,"BlockedSCVector::assign(SCVector*a):\n");
     fprintf(stderr,"dimensions don't match\n");
     abort();
   }
 
   for (int i=0; i < d->nblocks(); i++)
-    vecs_[i]->assign(la->vecs_[i].pointer());
+    vecs_[i]->assign(la->vecs_[i]);
 }
 
 void
@@ -186,8 +186,7 @@ BlockedSCVector::accumulate_product(SCMatrix*a,SCVector*b)
   BlockedSCVector* lb = BlockedSCVector::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->dim() == a->rowdim())
-      || !(a->coldim() == b->dim())) {
+  if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
     fprintf(stderr,"BlockedSCVector::"
             "accumulate_product(SCMatrix*a,SCVector*b):\n");
     fprintf(stderr,"dimensions don't match\n");
@@ -207,8 +206,7 @@ BlockedSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
   BlockedSCVector* lb = BlockedSCVector::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->dim() == a->dim())
-      || !(a->dim() == b->dim())) {
+  if (!dim()->equiv(la->dim()) || !la->dim()->equiv(lb->dim())) {
     fprintf(stderr,"BlockedSCVector::"
             "accumulate_product(SymmSCMatrix*a,SCVector*b):\n");
     fprintf(stderr,"dimensions don't match\n");
@@ -227,9 +225,8 @@ BlockedSCVector::accumulate(SCVector*a)
     = BlockedSCVector::require_castdown(a,"BlockedSCVector::accumulate");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
-    fprintf(stderr,"BlockedSCVector::"
-            "accumulate(SCVector*a):\n");
+  if (!dim()->equiv(la->dim())) {
+    fprintf(stderr,"BlockedSCVector::accumulate(SCVector*a):\n");
     fprintf(stderr,"dimensions don't match\n");
     abort();
   }
@@ -246,7 +243,7 @@ BlockedSCVector::scalar_product(SCVector*a)
     = BlockedSCVector::require_castdown(a,"BlockedSCVector::scalar_product");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
+  if (!dim()->equiv(la->dim())) {
     fprintf(stderr,"BlockedSCVector::scale_product(SCVector*a):\n");
     fprintf(stderr,"dimensions don't match\n");
     abort();
@@ -273,7 +270,8 @@ BlockedSCVector::element_op(const RefSCElementOp2& op,
 {
   BlockedSCVector *lm
       = BlockedSCVector::require_castdown(m, "BlockedSCVector::element_op");
-  if (!lm || d != lm->d) {
+
+  if (!dim()->equiv(lm->dim())) {
     fprintf(stderr,"BlockedSCVector: bad element_op\n");
     abort();
   }
@@ -291,20 +289,21 @@ BlockedSCVector::element_op(const RefSCElementOp3& op,
   BlockedSCVector *ln
       = BlockedSCVector::require_castdown(n, "BlockedSCVector::element_op");
 
-  if (!lm || !ln || d != lm->d || d != ln->d) {
+  if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
     fprintf(stderr,"BlockedSCVector: bad element_op\n");
     abort();
   }
 
   for (int i=0; i < d->nblocks(); i++)
-    vecs_[i]->element_op(op, lm->vecs_[i]);
+    vecs_[i]->element_op(op, lm->vecs_[i], ln->vecs_[i]);
 }
 
 // from Ed Seidl at the NIH (with a bit of hacking)
 void
 BlockedSCVector::print(const char *title, ostream& os, int prec)
 {
-  char *newtitle = new char[strlen(title) + 80];
+  int len = (title) ? strlen(title) : 0;
+  char *newtitle = new char[len + 80];
 
   for (int i=0; i < d->nblocks(); i++) {
     sprintf(newtitle,"%s:  block %d",title,i+1);

@@ -117,6 +117,24 @@ ReplSCDimension::~ReplSCDimension()
 }
 
 int
+ReplSCDimension::equiv(SCDimension *a) const
+{
+  ReplSCDimension *ra = ReplSCDimension::castdown(a);
+
+  if (!ra)
+    return 0;
+
+  if (n_ != ra->n_ || nblocks_ != ra->nblocks_)
+    return 0;
+
+  for (int i=0; i < nblocks_; i++)
+    if (blocks_[i] != ra->blocks_[i])
+      return 0;
+
+  return grp_==ra->grp_;
+}
+
+int
 ReplSCDimension::n()
 {
   return n_;

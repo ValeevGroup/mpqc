@@ -42,6 +42,9 @@ class SCDimension: public SavableState {
     virtual ~SCDimension();
     void save_data_state(StateOut&);
 
+    //texi Test to see if two dimensions are equivalent.
+    virtual int equiv(SCDimension*) const = 0;
+    
     //texi Return the dimension.
     virtual int n() = 0;
     //texi Create matrices or vectors.

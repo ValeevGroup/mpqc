@@ -48,6 +48,7 @@ class ReplSCDimension: public SCDimension {
   public:
     ReplSCDimension(int n, const RefMessageGrp&, const char* name = 0);
     ~ReplSCDimension();
+    int equiv(SCDimension*) const;
     int n();
     SCMatrix* create_matrix(SCDimension*);
     SymmSCMatrix* create_symmmatrix();

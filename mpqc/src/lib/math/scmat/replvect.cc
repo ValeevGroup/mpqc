@@ -101,8 +101,7 @@ ReplSCVector::accumulate_product(SCMatrix*a,SCVector*b)
   ReplSCVector* lb = ReplSCVector::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->dim() == a->rowdim())
-      || !(a->coldim() == b->dim())) {
+  if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
       fprintf(stderr,"ReplSCVector::"
               "accumulate_product(SCMatrix*a,SCVector*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -125,8 +124,7 @@ ReplSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
   ReplSCVector* lb = ReplSCVector::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->dim() == a->dim())
-      || !(a->dim() == b->dim())) {
+  if (!dim()->equiv(la->dim()) || !la->dim()->equiv(lb->dim())) {
       fprintf(stderr,"ReplSCVector::"
               "accumulate_product(SymmSCMatrix*a,SCVector*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -158,9 +156,8 @@ ReplSCVector::accumulate(SCVector*a)
     = ReplSCVector::require_castdown(a,"ReplSCVector::accumulate");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
-      fprintf(stderr,"ReplSCVector::"
-              "accumulate(SCVector*a):\n");
+  if (!dim()->equiv(la->dim())) {
+      fprintf(stderr,"ReplSCVector::accumulate(SCVector*a):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
     }
@@ -186,9 +183,8 @@ ReplSCVector::assign(SCVector*a)
     = ReplSCVector::require_castdown(a,"ReplSCVector::assign");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
-      fprintf(stderr,"ReplSCVector::"
-              "assign(SCVector*a):\n");
+  if (!dim()->equiv(la->dim())) {
+      fprintf(stderr,"ReplSCVector::assign(SCVector*a):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
     }
@@ -214,9 +210,8 @@ ReplSCVector::scalar_product(SCVector*a)
     = ReplSCVector::require_castdown(a,"ReplSCVector::scalar_product");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
-      fprintf(stderr,"ReplSCVector::"
-              "scale_product(SCVector*a):\n");
+  if (!dim()->equiv(la->dim())) {
+      fprintf(stderr,"ReplSCVector::scalar_product(SCVector*a):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
     }
@@ -245,10 +240,12 @@ ReplSCVector::element_op(const RefSCElementOp2& op,
 {
   ReplSCVector *lm
       = ReplSCVector::require_castdown(m, "ReplSCVector::element_op");
-  if (!lm || d != lm->d) {
+
+  if (!dim()->equiv(lm->dim())) {
       fprintf(stderr,"ReplSCVector: bad element_op\n");
       abort();
     }
+
   if (op->has_side_effects()) before_elemop();
   if (op->has_side_effects_in_arg()) lm->before_elemop();
   SCMatrixBlockListIter i, j;
@@ -269,7 +266,8 @@ ReplSCVector::element_op(const RefSCElementOp3& op,
       = ReplSCVector::require_castdown(m, "ReplSCVector::element_op");
   ReplSCVector *ln
       = ReplSCVector::require_castdown(n, "ReplSCVector::element_op");
-  if (!lm || !ln || d != lm->d || d != ln->d) {
+
+  if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
       fprintf(stderr,"ReplSCVector: bad element_op\n");
       abort();
     }

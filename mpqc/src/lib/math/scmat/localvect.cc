@@ -118,8 +118,7 @@ LocalSCVector::accumulate_product(SCMatrix*a,SCVector*b)
   LocalSCVector* lb = LocalSCVector::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->dim() == a->rowdim())
-      || !(a->coldim() == b->dim())) {
+  if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
       fprintf(stderr,"LocalSCVector::"
               "accumulate_product(SCMatrix*a,SCVector*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -142,8 +141,7 @@ LocalSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
   LocalSCVector* lb = LocalSCVector::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (!(this->dim() == a->dim())
-      || !(a->dim() == b->dim())) {
+  if (!dim()->equiv(la->dim()) || !la->dim()->equiv(lb->dim())) {
       fprintf(stderr,"LocalSCVector::"
               "accumulate_product(SymmSCMatrix*a,SCVector*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -176,9 +174,8 @@ LocalSCVector::accumulate(SCVector*a)
     = LocalSCVector::require_castdown(a,"LocalSCVector::accumulate");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
-      fprintf(stderr,"LocalSCVector::"
-              "accumulate(SCVector*a):\n");
+  if (!dim()->equiv(la->dim())) {
+      fprintf(stderr,"LocalSCVector::accumulate(SCVector*a):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
     }
@@ -204,9 +201,8 @@ LocalSCVector::assign(SCVector*a)
     = LocalSCVector::require_castdown(a,"LocalSCVector::assign");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
-      fprintf(stderr,"LocalSCVector::"
-              "assign(SCVector*a):\n");
+  if (!dim()->equiv(la->dim())) {
+      fprintf(stderr,"LocalSCVector::assign(SCVector*a):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
     }
@@ -232,9 +228,8 @@ LocalSCVector::scalar_product(SCVector*a)
     = LocalSCVector::require_castdown(a,"LocalSCVector::scalar_product");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
-      fprintf(stderr,"LocalSCVector::"
-              "scale_product(SCVector*a):\n");
+  if (!dim()->equiv(la->dim())) {
+      fprintf(stderr,"LocalSCVector::scalar_product(SCVector*a):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
     }
@@ -258,7 +253,8 @@ LocalSCVector::element_op(const RefSCElementOp2& op,
 {
   LocalSCVector *lm
       = LocalSCVector::require_castdown(m, "LocalSCVector::element_op");
-  if (!lm || d != lm->d) {
+
+  if (!dim()->equiv(lm->dim())) {
       fprintf(stderr,"LocalSCVector: bad element_op\n");
       abort();
     }
@@ -273,7 +269,8 @@ LocalSCVector::element_op(const RefSCElementOp3& op,
       = LocalSCVector::require_castdown(m, "LocalSCVector::element_op");
   LocalSCVector *ln
       = LocalSCVector::require_castdown(n, "LocalSCVector::element_op");
-  if (!lm || !ln || d != lm->d || d != ln->d) {
+
+  if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
       fprintf(stderr,"LocalSCVector: bad element_op\n");
       abort();
     }

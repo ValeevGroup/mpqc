@@ -345,9 +345,8 @@ ReplSymmSCMatrix::accumulate(SymmSCMatrix*a)
     = ReplSymmSCMatrix::require_castdown(a,"ReplSymmSCMatrix::accumulate");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
-      fprintf(stderr,"ReplSymmSCMatrix::"
-              "accumulate(SCMatrix*a):\n");
+  if (!dim()->equiv(la->dim())) {
+      fprintf(stderr,"ReplSymmSCMatrix::accumulate(SCMatrix*a):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
     }
@@ -383,7 +382,7 @@ ReplSymmSCMatrix::solve_this(SCVector*v)
     ReplSCVector::require_castdown(v,"ReplSymmSCMatrix::solve_this");
   
   // make sure that the dimensions match
-  if (!(this->dim() == v->dim())) {
+  if (!dim()->equiv(lv->dim())) {
       fprintf(stderr,"ReplSymmSCMatrix::solve_this(SCVector*v):\n");
       fprintf(stderr,"dimensions don't match\n");
       abort();
@@ -421,8 +420,8 @@ ReplSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
   ReplDiagSCMatrix* la = ReplDiagSCMatrix::require_castdown(a,name);
   ReplSCMatrix* lb = ReplSCMatrix::require_castdown(b,name);
 
-  if (   (la&&(!(la->dim() == dim())))
-      || (lb&&(!(lb->coldim() == dim()) || !(lb->rowdim() == dim())))) {
+  if (!dim()->equiv(la->dim()) ||
+      !dim()->equiv(lb->coldim()) || !dim()->equiv(lb->rowdim())) {
       fprintf(stderr,"ReplSymmSCMatrix::"
               "diagonalize(DiagSCMatrix*a,SCMatrix*b): bad dims");
       abort();
@@ -459,7 +458,7 @@ ReplSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)
     = ReplSCMatrix::require_castdown(a,"ReplSymmSCMatrix::"
                                           "accumulate_symmetric_product");
 
-  if (!(la->rowdim() == dim())) {
+  if (!dim()->equiv(la->rowdim())) {
       fprintf(stderr,"ReplSymmSCMatrix::"
               "accumulate_symmetric_product(SCMatrix*a): bad dim");
       abort();
@@ -477,7 +476,7 @@ ReplSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
     = ReplSCMatrix::require_castdown(a,"ReplSymmSCMatrix::"
                                           "accumulate_symmetric_sum");
 
-  if (!(la->rowdim() == dim()) || !(la->coldim() == dim())) {
+  if (!dim()->equiv(la->rowdim()) || !dim()->equiv(la->coldim())) {
       fprintf(stderr,"ReplSymmSCMatrix::"
               "accumulate_symmetric_sum(SCMatrix*a): bad dim");
       abort();
@@ -501,7 +500,7 @@ ReplSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
     = ReplSCVector::require_castdown(a,"ReplSymmSCMatrix::"
                                       "accumulate_symmetric_outer_product");
 
-  if (!(la->dim() == dim())) {
+  if (!dim()->equiv(la->dim())) {
       fprintf(stderr,"ReplSymmSCMatrix::"
               "accumulate_symmetric_outer_product(SCMatrix*a): bad dim");
       abort();
@@ -529,7 +528,7 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
                                           class_name());
 
   // check the dimensions
-  if (n() != la->nrow() || la->ncol() != lb->n()) {
+  if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
       fprintf(stderr,"ReplSymmSCMatrix::accumulate_transform: bad dim\n");
       abort();
     }
@@ -550,7 +549,7 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
                                           class_name());
 
   // check the dimensions
-  if (n() != la->nrow() || la->ncol() != lb->n()) {
+  if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
       fprintf(stderr,"ReplSymmSCMatrix::accumulate_transform: bad dim\n");
       abort();
     }
@@ -566,7 +565,7 @@ ReplSymmSCMatrix::scalar_product(SCVector*a)
     = ReplSCVector::require_castdown(a,"ReplSCVector::scalar_product");
 
   // make sure that the dimensions match
-  if (!(this->dim() == la->dim())) {
+  if (!dim()->equiv(la->dim())) {
       fprintf(stderr,"ReplSCVector::"
               "scale_product(SCVector*a):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -602,7 +601,8 @@ ReplSymmSCMatrix::element_op(const RefSCElementOp2& op,
 {
   ReplSymmSCMatrix *lm
       = ReplSymmSCMatrix::require_castdown(m,"ReplSymSCMatrix::element_op");
-  if (!lm || d != lm->d) {
+
+  if (!dim()->equiv(lm->dim())) {
       fprintf(stderr,"ReplSymmSCMatrix: bad element_op\n");
       abort();
     }
@@ -626,7 +626,8 @@ ReplSymmSCMatrix::element_op(const RefSCElementOp3& op,
       = ReplSymmSCMatrix::require_castdown(m,"ReplSymSCMatrix::element_op");
   ReplSymmSCMatrix *ln
       = ReplSymmSCMatrix::require_castdown(n,"ReplSymSCMatrix::element_op");
-  if (!lm || !ln || d != lm->d || d != ln->d) {
+
+  if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
       fprintf(stderr,"ReplSymmSCMatrix: bad element_op\n");
       abort();
     }

@@ -45,7 +45,7 @@ default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h) /home/mlleinin/src/vprof/vmonauto.o
 
 dfttest:: dfttest.o $(LIBS)
 	$(CXX) $(LDFLAGS) -o dfttest $^ $(SYSLIBS)

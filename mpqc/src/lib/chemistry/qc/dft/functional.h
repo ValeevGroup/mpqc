@@ -335,6 +335,38 @@ class P86CFunctional: public DenFunctional {
   
 };
 
+
+// The Perdew 1986 (P86) Correlation Functional computes energies and densities
+//    using the designated local correlation functional.
+class NewP86CFunctional: public DenFunctional {
+#   define CLASSNAME NewP86CFunctional
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>  
+  protected:
+    double a_;
+    double C1_;
+    double C2_;
+    double C3_;
+    double C4_;
+    double C5_;
+    double C6_;
+    double C7_;
+    void init_constants();
+    double rho_deriv(double rho_a, double rho_b, double mdr);
+    double gab_deriv(double rho_a, double rho_b, double mdr);
+
+  public:
+    NewP86CFunctional();
+    NewP86CFunctional(const RefKeyVal &);
+    NewP86CFunctional(StateIn &);
+    ~NewP86CFunctional();
+    void save_data_state(StateOut &);
+    int need_density_gradient();
+    void point(const PointInputData&, PointOutputData&);
+};
+
 // Implements the Slater exchange functional.
 class SlaterXFunctional: public DenFunctional {
 #   define CLASSNAME SlaterXFunctional
@@ -349,7 +381,6 @@ class SlaterXFunctional: public DenFunctional {
     SlaterXFunctional(StateIn &);
     ~SlaterXFunctional();
     void save_data_state(StateOut &);
-
     void point(const PointInputData&, PointOutputData&);
 };
 
@@ -386,26 +417,6 @@ class VWNLCFunctional: public LSDACFunctional {
     virtual
       void point_lc(const PointInputData&, PointOutputData&, double &, double &, double &);
 };
-/** The VWNTestLCFunctional computes energies and densities using the
-    VWNTest local correlation term (from Vosko, Wilk, and Nusair). */
-class VWNTestLCFunctional: public VWNLCFunctional {
-#   define CLASSNAME VWNTestLCFunctional
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  protected:
-    int monte_carlo_prefactor_;
-  public:
-    VWNTestLCFunctional();
-    VWNTestLCFunctional(const RefKeyVal &);
-    VWNTestLCFunctional(StateIn &);
-    ~VWNTestLCFunctional();
-    void save_data_state(StateOut &);
-
-    void point_lc(const PointInputData&, PointOutputData&,
-                  double &, double &, double &);
-};
     
 /** The VWN1LCFunctional computes energies and densities using the
     VWN1 local correlation term (from Vosko, Wilk, and Nusair). */
@@ -419,6 +430,7 @@ class VWN1LCFunctional: public VWNLCFunctional {
     double x0p_, bp_, cp_, x0f_, bf_, cf_;
   public:
     VWN1LCFunctional();
+    VWN1LCFunctional(int i);
     VWN1LCFunctional(const RefKeyVal &);
     VWN1LCFunctional(StateIn &);
     ~VWN1LCFunctional();
@@ -458,7 +470,8 @@ class VWN3LCFunctional: public VWNLCFunctional {
 #   include <util/class/classd.h>
   protected:
     int monte_carlo_prefactor_;
-   public:
+    int monte_carlo_e0_;
+  public:
     VWN3LCFunctional();
     VWN3LCFunctional(const RefKeyVal &);
     VWN3LCFunctional(StateIn &);
@@ -477,7 +490,8 @@ class VWN4LCFunctional: public VWNLCFunctional {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-   public:
+    int monte_carlo_prefactor_;
+  public:
     VWN4LCFunctional();
     VWN4LCFunctional(const RefKeyVal &);
     VWN4LCFunctional(StateIn &);

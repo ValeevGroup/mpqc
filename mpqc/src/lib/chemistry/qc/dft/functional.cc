@@ -756,6 +756,13 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           funcs_[2] = new P86CFunctional;
           funcs_[3] = new PZ81LCFunctional;
         }
+      else if (!strcmp(name_,"BNewP86")) {
+          init_arrays(4);
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new Becke88XFunctional;
+          funcs_[2] = new NewP86CFunctional;
+          funcs_[3] = new PZ81LCFunctional;
+        }
       else if (!strcmp(name_,"B3LYP")) {
           init_arrays(4);
           a0_ = 0.2;
@@ -765,7 +772,7 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           coefs_[3] = 0.81;
           funcs_[0] = new SlaterXFunctional;
           funcs_[1] = new Becke88XFunctional;
-          funcs_[2] = new VWN3LCFunctional;
+          funcs_[2] = new VWN1LCFunctional(1);
           funcs_[3] = new LYPCFunctional;
         }
       else if (!strcmp(name_,"B3LYP(VWN5)")) {
@@ -1497,6 +1504,27 @@ VWN1LCFunctional::VWN1LCFunctional()
   cf_  = cf_mc_;
 }
 
+VWN1LCFunctional::VWN1LCFunctional(int i)
+{
+  if (i) {
+      x0p_ = x0p_rpa_;
+      bp_  = bp_rpa_;
+      cp_  = cp_rpa_;
+      x0f_ = x0f_rpa_;
+      bf_  = bf_rpa_;
+      cf_  = cf_rpa_;
+    }
+  else {
+      x0p_ = x0p_mc_;
+      bp_  = bp_mc_;
+      cp_  = cp_mc_;
+      x0f_ = x0f_mc_;
+      bf_  = bf_mc_;
+      cf_  = cf_mc_;
+    }
+  
+}
+
 VWN1LCFunctional::VWN1LCFunctional(const RefKeyVal& keyval):
   VWNLCFunctional(keyval)
 {
@@ -1650,7 +1678,7 @@ VWN2LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   // Monte Carlo fitting parameters 
   double epc_mc    = F(x, Ap_, x0p_mc_, bp_mc_, cp_mc_);
   double efc_mc    = F(x, Af_, x0f_mc_, bf_mc_, cf_mc_);
-  double alphac_mc = F(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
+  //double alphac_mc = F(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
   // RPA fitting parameters
   double epc_rpa    = F(x, Ap_, x0p_rpa_, bp_rpa_, cp_rpa_);
   double efc_rpa    = F(x, Af_, x0f_rpa_, bf_rpa_, cf_rpa_);
@@ -1664,7 +1692,7 @@ VWN2LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   double beta = (fpp0*delta_e_rpa / alphac_rpa) - 1.;
   double delta_erpa_rszeta = alphac_rpa * f / fpp0 * (1. + beta * zeta4);
   double delta_ec =  delta_erpa_rszeta + f*(delta_e_mc - delta_e_rpa);
-  double ec = epc_rpa + delta_ec;
+  double ec = epc_mc + delta_ec;
 
   od.energy = ec * rho;
   ec_local = ec;
@@ -1700,7 +1728,7 @@ VWN2LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
       
       double dec_dr_s = depc_dr_s0_mc + ddeltae_rpa_dr_s + f * (ddelta_e_mc - ddelta_e_rpa);
       
-      double dec_dzeta = ddeltae_rpa_dzeta + fp * (ddelta_e_mc - ddelta_e_rpa);
+      double dec_dzeta = ddeltae_rpa_dzeta + fp * (delta_e_mc - delta_e_rpa);
                        
       od.df_drho_a = ec - (rs/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
       od.df_drho_b = ec - (rs/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
@@ -1731,11 +1759,13 @@ VWN3LCFunctional::VWN3LCFunctional(StateIn& s):
   VWNLCFunctional(s)
 {
   s.get(monte_carlo_prefactor_);
+  s.get(monte_carlo_e0_);
 }
 
 VWN3LCFunctional::VWN3LCFunctional()
 {
   monte_carlo_prefactor_ = 1;
+  monte_carlo_e0_ = 1;
 }
 
 VWN3LCFunctional::VWN3LCFunctional(const RefKeyVal& keyval):
@@ -1743,6 +1773,8 @@ VWN3LCFunctional::VWN3LCFunctional(const RefKeyVal& keyval):
 {
     monte_carlo_prefactor_ = keyval->booleanvalue("monte_carlo_prefactor",
                                                   KeyValValueboolean(1));
+    monte_carlo_e0_ = keyval->booleanvalue("monte_carlo_e0",
+                                           KeyValValueboolean(1));
 }
 
 VWN3LCFunctional::~VWN3LCFunctional()
@@ -1754,6 +1786,7 @@ VWN3LCFunctional::save_data_state(StateOut& s)
 {
   VWNLCFunctional::save_data_state(s);
   s.put(monte_carlo_prefactor_);
+  s.put(monte_carlo_e0_);
 }
 
 // based on the equations given on a NIST WWW site
@@ -1776,7 +1809,7 @@ VWN3LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   // Monte Carlo fitting parameters 
   double epc0_mc    = F(x, Ap_, x0p_mc_, bp_mc_, cp_mc_);
   double efc1_mc    = F(x, Af_, x0f_mc_, bf_mc_, cf_mc_);
-  double alphac_mc = F(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
+  // double alphac_mc = F(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
   // RPA fitting parameters
   double epc0_rpa    = F(x, Ap_, x0p_rpa_, bp_rpa_, cp_rpa_);
   double efc1_rpa    = F(x, Af_, x0f_rpa_, bf_rpa_, cf_rpa_);
@@ -1787,12 +1820,15 @@ VWN3LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   double zeta4 = zeta2*zeta2;
   double delta_e_rpa = efc1_rpa - epc0_rpa;
   double delta_e_mc  = efc1_mc  - epc0_mc;
-  double beta = fpp0 * delta_e_rpa / alphac_rpa - 1.;
-  double delta_erpa_rszeta = alphac_rpa * f / fpp0 * (1. + beta * zeta4);
+  double delta_erpa_rszeta = alphac_rpa * f / fpp0 * (1.-zeta4) + f * zeta4 * delta_e_rpa;
   double delta_ec;
   if (!monte_carlo_prefactor_) delta_ec = delta_erpa_rszeta;
   else delta_ec = delta_e_mc/delta_e_rpa * delta_erpa_rszeta;
-  double ec = epc0_rpa + delta_ec;
+
+  double ec;
+  if (monte_carlo_e0_) ec = epc0_mc;
+  else ec = epc0_rpa;
+  ec += delta_ec;
   
   od.energy = ec * rho;
   ec_local = ec;
@@ -1802,7 +1838,7 @@ VWN3LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
       // Monte Carlo fitting parameters
       double depc_dr_s0_mc = dFdr_s(x, Ap_, x0p_mc_, bp_mc_, cp_mc_);
       double defc_dr_s1_mc = dFdr_s(x, Af_, x0f_mc_, bf_mc_, cf_mc_);
-      double dalphac_dr_s_mc = dFdr_s(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
+      // double dalphac_dr_s_mc = dFdr_s(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
       // RPA fitting parameters
       double depc_dr_s0_rpa = dFdr_s(x, Ap_, x0p_rpa_, bp_rpa_, cp_rpa_);
       double defc_dr_s1_rpa = dFdr_s(x, Af_, x0f_rpa_, bf_rpa_, cf_rpa_);
@@ -1816,161 +1852,27 @@ VWN3LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
       double ddeltae_rpa_dr_s = f / fpp0 * (1 - zeta4)* dalphac_dr_s_rpa 
                     + f * zeta4 * ddelta_e_rpa;
       double ddeltae_rpa_dzeta = alphac_rpa / fpp0 * 
-        ( fp * (1.-zeta4) - 4.* f * zeta*zeta2) 
-        + delta_e_rpa * ( fp*zeta4 + 4.*f*zeta*zeta2);
+         ( fp * (1.-zeta4) - 4.* f * zeta*zeta2) 
+      + delta_e_rpa * ( fp*zeta4 + 4.*f*zeta*zeta2 );
 
-      // Monte Carlo fitting parameters
-      double ddelta_e_mc = defc_dr_s1_mc - depc_dr_s0_mc;
-      // double dec_dr_s_mc = depc_dr_s0*(1 - f*zeta4) + defc_dr_s1 * f * zeta4
-      //                   + dalphac_dr_s * f / fpp0 * (1 - zeta4);
-      // double dec_dzeta_mc = 4.* zeta3 * f * (efc_mc - epc_mc - (alphac_mc/fpp0))
-      //        + fp * (zeta4 * (efc_mc - epc_mc) + (1-zeta4)*(alphac_mc/fpp0));
-      
-      double dec_dzeta, dec_dr_s;
-      if (!monte_carlo_prefactor_) {
-        dec_dzeta = ddeltae_rpa_dzeta;
-        dec_dr_s = depc_dr_s0_rpa + ddeltae_rpa_dr_s;
-        }
-      else {
-        dec_dzeta = delta_e_mc / delta_e_rpa * ddeltae_rpa_dzeta;
-        dec_dr_s = depc_dr_s0_rpa + delta_erpa_rszeta/delta_e_rpa * ddelta_e_mc
-                   + delta_e_mc/delta_e_rpa * ddeltae_rpa_dr_s 
-                   - delta_erpa_rszeta*delta_e_mc/(delta_e_rpa*delta_e_rpa)* ddelta_e_rpa;
-        }        
-        
-      //dec_dr_s = depc_dr_s0_rpa + dalphac_dr_s_rpa*f*(1.-zeta4) + fpp0*f*zeta4*ddelta_e_rpa;
-      //dec_dzeta = alphac_rpa*fp*(1-zeta4) + alphac_rpa*f*(1.-4.*zeta3)
-      //            + fpp0*fp*delta_e_rpa*zeta4 + fpp0*f*delta_e_rpa*4.*zeta3
-      //            + fpp0*f*zeta4*ddelta_e_rpa;
-      od.df_drho_a = ec - (rs/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
-      od.df_drho_b = ec - (rs/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
-      decrs = dec_dr_s;
-      deczeta = dec_dzeta;
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// VWNTestLCFunctional
-// Coded by Matt Leininger
-#define CLASSNAME VWNTestLCFunctional
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public VWNLCFunctional
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-VWNTestLCFunctional::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = VWNLCFunctional::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-VWNTestLCFunctional::VWNTestLCFunctional(StateIn& s):
-  SavableState(s),
-  VWNLCFunctional(s)
-{
-  s.get(monte_carlo_prefactor_);
-}
-
-VWNTestLCFunctional::VWNTestLCFunctional()
-{
-  monte_carlo_prefactor_ = 0;
-}
-
-VWNTestLCFunctional::VWNTestLCFunctional(const RefKeyVal& keyval):
-  VWNLCFunctional(keyval)
-{
-  monte_carlo_prefactor_ = keyval->booleanvalue("monte_carlo_prefactor",
-                                                KeyValValueboolean(0));
-}
-
-VWNTestLCFunctional::~VWNTestLCFunctional()
-{
-}
-
-void
-VWNTestLCFunctional::save_data_state(StateOut& s)
-{
-  VWNLCFunctional::save_data_state(s);
-  s.put(monte_carlo_prefactor_);
-}
-
-// based on the equations given on a NIST WWW site
-void
-VWNTestLCFunctional::point_lc(const PointInputData &id, PointOutputData &od, 
-                          double &ec_local, double &decrs, double &deczeta)
-{
-  od.zero();
-  const double fpp0 = 4./9. / (pow(2., (1./3.)) - 1.);
-  const double sixth = 1./6.;
-  const double four_thirds = 4./3.;
-  const double one_third = 1./3.;
-  const double two_thirds = 2./3.;
-
-  double rho = id.a.rho + id.b.rho;
-  double zeta = (id.a.rho - id.b.rho)/rho;
-  double x = pow(3./(4.*M_PI*rho), sixth);
-  double rs = x*x;
-  
-  // Monte Carlo fitting parameters 
-  double epc0_mc    = F(x, Ap_, x0p_mc_, bp_mc_, cp_mc_);
-  double efc1_mc    = F(x, Af_, x0f_mc_, bf_mc_, cf_mc_);
-  double alphac_mc = F(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
-  // RPA fitting parameters
-  double epc0_rpa    = F(x, Ap_, x0p_rpa_, bp_rpa_, cp_rpa_);
-  double efc1_rpa    = F(x, Af_, x0f_rpa_, bf_rpa_, cf_rpa_);
-  double alphac_rpa = F(x, A_alpha_, x0_alpha_rpa_, b_alpha_rpa_, c_alpha_rpa_);
-   
-  double g = 9./8.* ( pow(1.+zeta, four_thirds) + pow(1.-zeta, four_thirds) - 2. );
-  double zeta2 = zeta*zeta;
-  double zeta4 = zeta2*zeta2;
-  double delta_e_rpa = efc1_rpa - epc0_rpa;
-  double delta_e_mc  = efc1_mc  - epc0_mc;
-  double beta = fpp0 * delta_e_rpa / alphac_rpa - 1.;
-  double delta_erpa_rszeta = alphac_rpa * g * (1. + beta * zeta4);
-  double delta_ec;
-  if (!monte_carlo_prefactor_) delta_ec = delta_erpa_rszeta;
-  else delta_ec = delta_e_mc/delta_e_rpa * delta_erpa_rszeta;
-  double ec = epc0_rpa + delta_ec;
-  
-  od.energy = ec * rho;
-  ec_local = ec;
-
-  if (compute_potential_) {
-      double zeta3 = zeta2*zeta;
-      // Monte Carlo fitting parameters
-      double depc_dr_s0_mc = dFdr_s(x, Ap_, x0p_mc_, bp_mc_, cp_mc_);
-      double defc_dr_s1_mc = dFdr_s(x, Af_, x0f_mc_, bf_mc_, cf_mc_);
-      double dalphac_dr_s_mc = dFdr_s(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
-      // RPA fitting parameters
-      double depc_dr_s0_rpa = dFdr_s(x, Ap_, x0p_rpa_, bp_rpa_, cp_rpa_);
-      double defc_dr_s1_rpa = dFdr_s(x, Af_, x0f_rpa_, bf_rpa_, cf_rpa_);
-      double dalphac_dr_s_rpa = dFdr_s(x, A_alpha_, x0_alpha_rpa_, b_alpha_rpa_, c_alpha_rpa_);
-      // double dalphac_dr_s_rpa = dFdr_s(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
-      
-      double gp = 3./2. * (pow((1+zeta),one_third) - pow((1-zeta),one_third));
-      
-      // RPA fitting parameters
-      double ddelta_e_rpa = defc_dr_s1_rpa - depc_dr_s0_rpa;
-      double ddeltae_rpa_dr_s = g *(1 - zeta4) * dalphac_dr_s_rpa 
-                    + fpp0*g*zeta4 * ddelta_e_rpa;
-      double ddeltae_rpa_dzeta = alphac_rpa*( gp * (1.-zeta4) - 4.*g*zeta*zeta2) 
-                                 + delta_e_rpa * fpp0* ( gp*zeta4 + 4.*g*zeta*zeta2);
-              
       // Monte Carlo fitting parameters
       double ddelta_e_mc = defc_dr_s1_mc - depc_dr_s0_mc;
       
       double dec_dzeta, dec_dr_s;
       if (!monte_carlo_prefactor_) {
         dec_dzeta = ddeltae_rpa_dzeta;
-        dec_dr_s = depc_dr_s0_rpa + ddeltae_rpa_dr_s;
+        if (monte_carlo_e0_) dec_dr_s = depc_dr_s0_mc;
+        else dec_dr_s = depc_dr_s0_rpa;
+        dec_dr_s += ddeltae_rpa_dr_s;
         }
       else {
         dec_dzeta = delta_e_mc / delta_e_rpa * ddeltae_rpa_dzeta;
-        dec_dr_s = depc_dr_s0_rpa + delta_erpa_rszeta/delta_e_rpa * ddelta_e_mc
+        if (monte_carlo_e0_) dec_dr_s = depc_dr_s0_mc;
+        else dec_dr_s = depc_dr_s0_rpa;
+        dec_dr_s += delta_erpa_rszeta/delta_e_rpa * ddelta_e_mc
                    + delta_e_mc/delta_e_rpa * ddeltae_rpa_dr_s 
-                   - delta_erpa_rszeta*delta_e_mc/(delta_e_rpa*delta_e_rpa)* ddelta_e_rpa;
+                   - delta_erpa_rszeta*delta_e_mc/(delta_e_rpa*delta_e_rpa)
+                   * ddelta_e_rpa;
         }        
         
       od.df_drho_a = ec - (rs/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
@@ -2001,15 +1903,19 @@ VWN4LCFunctional::VWN4LCFunctional(StateIn& s):
   SavableState(s),
   VWNLCFunctional(s)
 {
+  s.get(monte_carlo_prefactor_);
 }
 
 VWN4LCFunctional::VWN4LCFunctional()
 {
+  monte_carlo_prefactor_ = 0;
 }
 
 VWN4LCFunctional::VWN4LCFunctional(const RefKeyVal& keyval):
   VWNLCFunctional(keyval)
 {
+  monte_carlo_prefactor_ = keyval->booleanvalue("monte_carlo_prefactor",
+                                                KeyValValueboolean(0));
 }
 
 VWN4LCFunctional::~VWN4LCFunctional()
@@ -2020,6 +1926,7 @@ void
 VWN4LCFunctional::save_data_state(StateOut& s)
 {
   VWNLCFunctional::save_data_state(s);
+  s.put(monte_carlo_prefactor_);
 }
 
 // based on the equations given on a NIST WWW site
@@ -2042,7 +1949,7 @@ VWN4LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   // Monte Carlo fitting parameters 
   double epc_mc    = F(x, Ap_, x0p_mc_, bp_mc_, cp_mc_);
   double efc_mc    = F(x, Af_, x0f_mc_, bf_mc_, cf_mc_);
-  double alphac_mc = F(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
+  // double alphac_mc = F(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
   // RPA fitting parameters
   double epc_rpa    = F(x, Ap_, x0p_rpa_, bp_rpa_, cp_rpa_);
   double efc_rpa    = F(x, Af_, x0f_rpa_, bf_rpa_, cf_rpa_);
@@ -2053,13 +1960,17 @@ VWN4LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   double zeta4 = zeta2*zeta2;
   double delta_e_rpa = efc_rpa - epc_rpa;
   double delta_e_mc  = efc_mc - epc_mc;
-  double beta = fpp0 * delta_e_mc / alphac_rpa - 1.;
-  double delta_erpa_rszeta = alphac_rpa * f / fpp0 * (1. + beta * zeta4);
-  double delta_ec = delta_e_mc/delta_e_rpa * delta_erpa_rszeta;
-  // Is the epc used below suppose to be from the mc or rpa data?
-  // We will use the mc data for now.
+  // double beta = fpp0 * delta_e_mc / alphac_rpa - 1.;
+  // double delta_erpa_rszeta = alphac_rpa * f / fpp0 * (1. + beta * zeta4);
+  // use delta_e_rpa here instead of delta_e_mc to get VWN3
+  double delta_erpa_rszeta = alphac_rpa * f / fpp0 * (1. - zeta4)
+                           + f * delta_e_mc * zeta4;
+  double delta_ec;
+  if (!monte_carlo_prefactor_) delta_ec = delta_erpa_rszeta;
+  else delta_ec = delta_e_mc/delta_e_rpa * delta_erpa_rszeta;
+  // double ec = epc_rpa + delta_ec;
   double ec = epc_mc + delta_ec;
-
+  
   od.energy = ec * rho;
   ec_local = ec;
 
@@ -2068,7 +1979,7 @@ VWN4LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
       // Monte Carlo fitting parameters
       double depc_dr_s0_mc = dFdr_s(x, Ap_, x0p_mc_, bp_mc_, cp_mc_);
       double defc_dr_s1_mc = dFdr_s(x, Af_, x0f_mc_, bf_mc_, cf_mc_);
-      double dalphac_dr_s_mc = dFdr_s(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
+      // double dalphac_dr_s_mc = dFdr_s(x, A_alpha_, x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_);
       // RPA fitting parameters
       double depc_dr_s0_rpa = dFdr_s(x, Ap_, x0p_rpa_, bp_rpa_, cp_rpa_);
       double defc_dr_s1_rpa = dFdr_s(x, Af_, x0f_rpa_, bf_rpa_, cf_rpa_);
@@ -2078,29 +1989,31 @@ VWN4LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
       double fp = two_thirds * (pow((1+zeta),one_third)
              - pow((1-zeta),one_third))/(pow(2.,one_third)-1);
       
-      // RPA fitting parameters
       double ddelta_e_rpa = defc_dr_s1_rpa - depc_dr_s0_rpa;
       double ddelta_e_mc = defc_dr_s1_mc - depc_dr_s0_mc;
+      // use ddelta_e_rpa here instead of ddelta_e_mc to get VWN3
       double ddeltae_rpa_dr_s = f / fpp0 * (1 - zeta4)* dalphac_dr_s_rpa 
                     + f * zeta4 * ddelta_e_mc;
+      // use ddelta_e_rpa here instead of ddelta_e_mc to get VWN3
       double ddeltae_rpa_dzeta = alphac_rpa / fpp0 * 
-        ( fp * (1.-zeta4) - 4.* f * zeta*zeta2) 
-        + delta_e_mc * ( fp*zeta4 + 4.*f*zeta*zeta2);
-              
-      // Monte Carlo fitting parameters
-      // double ddelta_e_mc = defc_dr_s1_mc - depc_dr_s0_mc;
-      // double dec_dr_s_mc = depc_dr_s0*(1 - f*zeta4) + defc_dr_s1 * f * zeta4
-      //                   + dalphac_dr_s * f / fpp0 * (1 - zeta4);
-      // double dec_dzeta_mc = 4.* zeta3 * f * (efc_mc - epc_mc - (alphac_mc/fpp0))
-      //        + fp * (zeta4 * (efc_mc - epc_mc) + (1-zeta4)*(alphac_mc/fpp0));
+        ( fp * (1.-zeta4) - 4.* f * zeta3) 
+        + delta_e_mc * ( fp*zeta4 + 4.*f*zeta3);
+
+      double dec_dzeta, dec_dr_s;
+      if (!monte_carlo_prefactor_) {
+          // dec_dr_s = depc_dr_s0_rpa + ddeltae_rpa_dr_s;
+          dec_dr_s = depc_dr_s0_mc + ddeltae_rpa_dr_s;
+          dec_dzeta = ddeltae_rpa_dzeta;
+        }
+      else {
+          dec_dr_s = depc_dr_s0_rpa + delta_erpa_rszeta/delta_e_rpa * ddelta_e_mc
+                   + delta_e_mc/delta_e_rpa * ddeltae_rpa_dr_s 
+                   - delta_erpa_rszeta*delta_e_mc/(delta_e_rpa*delta_e_rpa)* ddelta_e_rpa;
+          dec_dzeta = delta_e_mc / delta_e_rpa * ddeltae_rpa_dzeta;      
+        }
       
-      double dec_dr_s = depc_dr_s0_mc + delta_erpa_rszeta/delta_e_rpa * ddelta_e_mc
-        + delta_e_mc/delta_e_rpa * ddeltae_rpa_dr_s 
-        - delta_erpa_rszeta*delta_e_mc/(delta_e_rpa*delta_e_rpa)* ddelta_e_rpa;
-      double dec_dzeta = delta_e_mc / delta_e_rpa * ddeltae_rpa_dzeta;      
- 
-      od.df_drho_a = ec - (rs/3.)*dec_dr_s - (zeta-1)*dec_dzeta;
-      od.df_drho_b = ec - (rs/3.)*dec_dr_s - (zeta+1)*dec_dzeta;
+      od.df_drho_a = ec - (rs/3.)*dec_dr_s - (zeta-1.)*dec_dzeta;
+      od.df_drho_b = ec - (rs/3.)*dec_dr_s - (zeta+1.)*dec_dzeta;
       decrs = dec_dr_s;
       deczeta = dec_dzeta;
     }
@@ -2773,6 +2686,216 @@ P86CFunctional::point(const PointInputData &id,
       od.df_dgamma_ab = dfp86_dgamma_ab;
 
    }   
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Perdew 1986 (P86) Correlation Functional
+// J. P. Perdew, PRB, 33, 8822, 1986.
+// C. W. Murray, N. C. Handy and G. J. Laming, Mol. Phys., 78, 997, 1993.
+// 
+// Coded by Matt Leininger
+
+#define CLASSNAME NewP86CFunctional
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#define PARENTS public DenFunctional
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+NewP86CFunctional::_castdown(const ClassDesc*cd)
+ {
+  void* casts[1];
+  casts[0] = DenFunctional::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+NewP86CFunctional::NewP86CFunctional(StateIn& s):
+  SavableState(s),
+  DenFunctional(s)
+{
+  s.get(a_);
+  s.get(C1_);
+  s.get(C2_);
+  s.get(C3_);
+  s.get(C4_);
+  s.get(C5_);
+  s.get(C6_);
+  s.get(C7_);
+}
+
+NewP86CFunctional::NewP86CFunctional()
+{
+  init_constants();
+}
+
+NewP86CFunctional::NewP86CFunctional(const RefKeyVal& keyval):
+  DenFunctional(keyval)
+{
+  init_constants();
+  a_ = keyval->doublevalue("a", KeyValValuedouble(a_));
+  C1_ = keyval->doublevalue("C1", KeyValValuedouble(C1_));
+  C2_ = keyval->doublevalue("C2", KeyValValuedouble(C2_));
+  C3_ = keyval->doublevalue("C3", KeyValValuedouble(C3_));
+  C4_ = keyval->doublevalue("C4", KeyValValuedouble(C4_));
+  C5_ = keyval->doublevalue("C5", KeyValValuedouble(C5_));
+  C6_ = keyval->doublevalue("C6", KeyValValuedouble(C6_));
+  C7_ = keyval->doublevalue("C7", KeyValValuedouble(C7_));
+}
+
+NewP86CFunctional::~NewP86CFunctional()
+{
+}
+
+void
+NewP86CFunctional::save_data_state(StateOut& s)
+{
+  DenFunctional::save_data_state(s);
+  s.put(a_);
+  s.put(C1_);
+  s.put(C2_);
+  s.put(C3_);
+  s.put(C4_);
+  s.put(C5_);
+  s.put(C6_);
+  s.put(C7_);
+}
+
+void
+NewP86CFunctional::init_constants()
+{
+  a_ = 1.745*0.11;
+  C1_ = 0.001667;
+  C2_ = 0.002568;
+  C3_ = 0.023266;
+  C4_ = 7.389e-6;
+  C5_ = 8.723;
+  C6_ = 0.472;
+  C7_ = 1e4*C4_;
+}
+
+int
+NewP86CFunctional::need_density_gradient()
+{
+  return 1;
+}
+
+double
+NewP86CFunctional::rho_deriv(double rho_a, double rho_b, double mdr)
+{
+  double ra0,ra1,ra2,ra3,ra4,ra5,ra6,ra7,ra8,ra9,ra10,ra11,ra12,ra13,ra14,
+      ra15,ra16,ra17,ra18,ra19,ra20;
+  double c_infin, c_1, c_2, c_3, c_4, c_5, c_6, c_7;
+  
+  c_infin = C1_ + C2_;
+  c_1 = C1_; c_2 = C2_; c_3 = C3_; c_4 = C4_; c_5 = C5_; c_6 = C6_; c_7 = C7_;
+ 
+  ra0 = pow(mdr,2.0);
+  ra1 = rho_b+rho_a;
+  ra2 = 1/pow(ra1,1.3333333333333333);
+  ra3 = -(1.0*rho_b)+rho_a;
+  ra4 = 1/ra1;
+//  ra4 = 1/pow(ra1,1.0);
+  ra5 = -(1.0*ra3*ra4)+1.0;
+  ra6 = ra3*ra4+1.0;
+  ra7 = 0.3149802624737183*pow(ra6,1.6666666666666667)+
+        0.3149802624737183*pow(ra5,1.6666666666666667);
+  ra8 = 1/pow(ra7,0.5);
+  ra9 = 1/(ra1*ra1);
+  ra10 = 1/pow(ra1,1.6666666666666667);
+  ra11 = 1/pow(ra1,0.66666666666666663);
+  ra12 = 1/pow(ra1,0.33333333333333331);
+  ra13 = 0.62035049089940009*c_3*ra12+0.38483473155912662*c_4*ra11+c_2;
+  ra14 = 0.62035049089940009*c_5*ra12+0.38483473155912662*c_6*ra11
+        +0.238732414637843*c_7*ra4+1.0;
+  ra15 = 1/ra14;
+  ra16 = (-(0.20678349696646667*c_3*ra2)-(0.25655648770608441*c_4*ra10))*ra15-
+         ((1.0*(-(0.20678349696646667*c_5*ra2)-(0.25655648770608441*c_6*ra10)-
+                (0.238732414637843*c_7*ra9))*ra13)/pow(ra14,2.0));
+  ra17 = 1/pow(ra1,1.1666666666666667);
+  ra18 = ra13*ra15+c_1;
+  ra19 = 1/ra18;
+  ra20 = exp(-1.0*a_*c_infin*mdr*ra17*ra19);
+  double dp86c_drho_a = 0.79370052598409979*ra0*ra2*ra8*ra18*
+                        ((1.1666666666666667*a_*c_infin*mdr*ra19)/pow(ra1,2.1666666666666665)
+                         +(a_*c_infin*mdr*ra17*ra16)/ra18*ra18)*
+                        ra20-((1.0582673679787997*ra0*ra8*ra18*ra20)/
+                              pow(ra1,2.3333333333333335))-
+        ((0.3968502629920499*ra0*ra2*(0.52496710412286385*(ra4-(1.0*ra3*ra9))*
+        pow(ra6,0.66666666666666663)+0.52496710412286385*(-(1.0*ra4)+ra3*ra9)
+       *pow(ra5,0.66666666666666663))*ra18*ra20)/pow(ra7,1.5))+
+                        0.79370052598409979*ra0*ra2*ra8*ra16*ra20;
+
+  return dp86c_drho_a;
+}
+
+double
+NewP86CFunctional::gab_deriv(double rho_a, double rho_b, double mdr)
+{
+  double c_infin, c_1, c_2, c_3, c_4, c_5, c_6, c_7;
+  
+  c_infin = C1_ + C2_;
+  c_1 = C1_; c_2 = C2_; c_3 = C3_; c_4 = C4_; c_5 = C5_; c_6 = C6_; c_7 = C7_;
+
+  double g0,g1,g2,g3,g4,g5,g6,g7;
+  g0 = rho_b+rho_a;
+  g1 = -(1.0*rho_b)+rho_a;
+  g2 = 1/g0;
+  g3 = 1/pow(0.3149802624737183*pow(g1*g2+1.0,1.6666666666666667
+      )+0.3149802624737183*pow(-(1.0*g1*g2)+1.0,
+                               1.6666666666666667),0.5);
+  g4 = 1/pow(g0,0.66666666666666663);
+  g5 = 1/pow(g0,0.33333333333333331);
+  g6 = (0.62035049089940009*c_3*g5+0.38483473155912662*c_4*g4+c_2)
+      /pow(0.62035049089940009*c_5*g5+0.38483473155912662*c_6*g4+
+           0.238732414637843*c_7*g2+1.0,1.0)+c_1;
+  g7 = exp(-1.0*a_*c_infin*mdr*1.0/pow(g0,1.1666666666666667)*1.0/g6);
+  double dp86c_dmdr = (1.5874010519681996*mdr*g3*g6*g7)/pow(g0,1.3333333333333333)
+                     -((0.79370052598409979*a_*c_infin*pow(mdr,2.0)*g3*g7)/pow(g0,2.5));
+
+  return dp86c_dmdr/mdr;
+}
+
+void
+NewP86CFunctional::point(const PointInputData &id,
+                         PointOutputData &od)
+{
+  od.zero();
+
+  // Precalculate terms for efficiency
+  double rho = id.a.rho + id.b.rho;
+  double rs = pow( (3./(4.*M_PI*rho)), (1./3.));
+  double zet = (id.a.rho - id.b.rho)/rho;
+  double c_infin = C1_ + C2_;
+  double gamma_aa = id.a.gamma;
+  double gamma_bb = id.b.gamma;
+  double gamma_ab = id.gamma_ab;
+  double mdr = sqrt(gamma_aa + gamma_bb + 2.*gamma_ab);
+
+  double e0 = 1/pow(rho,0.66666666666666663);
+  double e1 = 1/pow(rho,0.33333333333333331);
+  double e2 = (0.62035049089940009*C3_*e1+0.38483473155912662*C4_*e0+C2_)
+     /(0.62035049089940009*C5_*e1+0.38483473155912662*C6_*e0+(
+         0.238732414637843*C7_)/rho+1.0)+C1_;
+  double fp86 = (0.79370052598409979*pow(mdr,2.0)*e2)*exp(-1.0*a_*
+     c_infin*mdr*1.0/e2*1.0/pow(rho,1.1666666666666667)
+     )/pow(rho,1.3333333333333333)/pow(0.3149802624737183*pow(zet+
+     1.0,1.6666666666666667)+0.3149802624737183*pow(-(1.0*zet)+
+     1.0,1.6666666666666667),0.5);
+  od.energy += fp86;
+
+  if (compute_potential_) {
+      double dfp86_drhoa = rho_deriv(id.a.rho, id.b.rho, mdr);
+      double dfp86_drhob = rho_deriv(id.b.rho, id.a.rho, mdr);
+      double dfp86_dgab = gab_deriv(id.a.rho, id.b.rho, mdr);
+      
+      od.df_drho_a += dfp86_drhoa;
+      od.df_drho_b += dfp86_drhob;
+      od.df_dgamma_ab += dfp86_dgab;
+      od.df_dgamma_aa += 0.5*od.df_dgamma_ab;
+      od.df_dgamma_bb += 0.5*od.df_dgamma_ab;
+   }   
+  
 }
 
 /////////////////////////////////////////////////////////////////////////////

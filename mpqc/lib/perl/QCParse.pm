@@ -724,7 +724,7 @@ sub input_string() {
     printf "MPQCInputWriter: natom = %d\n", $qcinput->n_atom() if ($debug);
     my $i;
     for ($i = 0; $i < $qcinput->n_atom(); $i++) {
-        $mol = sprintf "%s\n    %2s     [ %14.8f %14.8f %14.8f ]",
+        $mol = sprintf "%s\n    %2s     [ %18.12f %18.12f %18.12f ]",
                        $mol, $qcinput->element($i),
                        $qcinput->position($i,0),
                        $qcinput->position($i,1),

@@ -24,7 +24,7 @@ LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = pixmap.h pixvpdefs.h ptrset.h voidptr.h voidptrdefs.h \
       set.h array.h ref.h reftestx.h artem.h ar2tem.h ssarmac.h ssar2mac.h \
-      gnuset.h gnuavlse.h pixintdefs.h
+      gnuset.h gnuavlse.h pixintdefs.h avl.h
 
 GENINC = $(GENCXXSRC:%.cc=%.h) setmacr.h asetmacr.h refmacr.h \
          armac.h ar2mac.h ssarmac.h ssar2mac.h

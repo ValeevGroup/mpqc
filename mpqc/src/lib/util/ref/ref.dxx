@@ -22,7 +22,7 @@ automate memory management.  In this approach, a count of how
 many pointers point to an object is attached to that object.
 This count is managed by a smart pointer class which mimics
 the behavior of C++ pointers by providing
-\srccd{operator->()}.  This class has a pointer to the
+#operator->()#.  This class has a pointer to the
 reference counted object and increments the reference count of
 objects when they are assigned to it while decrementing the
 counts of the objects that are displaced by these assigments.
@@ -38,7 +38,7 @@ the automated reference mechanism finish the work.
 The reference library provides smart pointers and a base class that
 can be used to maintain reference counts to objects.  For an
 object to be reference counted its class must inherit from
-the VRefCount class.  This adds \srccd{sizeof(int)} bytes
+the VRefCount class.  This adds #sizeof(int)# bytes
 of overhead per object and makes the destructor virtual (so a vtable
 will be added to objects of the class, if there wasn't already a virtual
 member in the class).
@@ -96,7 +96,7 @@ This can also be done by defining REF\_OPTIMIZE.
   An include file can be used to set these options as well.  This has
 the advantage that dependency checking will force an automatic
 recompile of all affected files if the options change.  This is done
-in the \filnm{<config.h>} producing by the automated configuration
+in the file scconfig.h, which is produced by the automated configuration
 procedure.
 
   Note that all source code that uses references must be compiled with

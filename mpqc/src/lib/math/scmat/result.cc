@@ -1,8 +1,11 @@
 
 #include <math/scmat/result.h>
+#include <util/state/state.h>
 
-Result_def(RefSCMatrix);
-Result_def(RefSymmSCMatrix);
-Result_def(RefDiagSCMatrix);
-Result_def(RefSCVector);
+SSAccResult_def(RefSCMatrix);
+SSAccResult_def(RefSymmSCMatrix);
+SSAccResult_def(RefDiagSCMatrix);
+SSAccResult_def(RefSCVector);
+
+
 

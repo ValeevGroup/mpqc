@@ -5,9 +5,14 @@
 #include <util/misc/compute.h>
 #include <math/scmat/matrix.h>
 
-Result_dec(RefSCMatrix);
-Result_dec(RefSymmSCMatrix);
-Result_dec(RefDiagSCMatrix);
-Result_dec(RefSCVector);
+SSAccResult_dec(RefSCMatrix);
+SSAccResult_dec(RefSymmSCMatrix);
+SSAccResult_dec(RefDiagSCMatrix);
+SSAccResult_dec(RefSCVector);
+
+typedef AccResultRefSCMatrix ResultRefSCMatrix;
+typedef AccResultRefSymmSCMatrix ResultRefSymmSCMatrix;
+typedef AccResultRefDiagSCMatrix ResultRefDiagSCMatrix;
+typedef AccResultRefSCVector ResultRefSCVector;
 
 #endif

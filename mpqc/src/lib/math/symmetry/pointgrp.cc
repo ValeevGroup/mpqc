@@ -90,6 +90,26 @@ void IrreducibleRepresentation::print(FILE *fp, const char *off)
 
 ////////////////////////////////////////////////////////////////////////
 
+SymmetryOperation::SymmetryOperation()
+{
+  memset(d,'\0',sizeof(double)*9);
+}
+
+SymmetryOperation::~SymmetryOperation()
+{
+}
+
+void
+SymmetryOperation::print(FILE* outfile)
+{
+  fprintf(outfile,"        1          2          3\n");
+  fprintf(outfile,"  1  %10.7f %10.7f %10.7f\n",d[0][0],d[0][1],d[0][2]);
+  fprintf(outfile,"  2  %10.7f %10.7f %10.7f\n",d[1][0],d[1][1],d[1][2]);
+  fprintf(outfile,"  3  %10.7f %10.7f %10.7f\n",d[2][0],d[2][1],d[2][2]);
+}
+
+////////////////////////////////////////////////////////////////////////
+
 CharacterTable::CharacterTable()
   : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symb(0), symop(0)
 {
@@ -127,9 +147,8 @@ CharacterTable& CharacterTable::operator=(const CharacterTable& ct)
 
   if (symop) delete[] symop; symop=0;
   if (ct.symop) {
-    symop = new DMatrix[g];
+    symop = new SymmetryOperation[g];
     for (int i=0; i < g; i++) {
-      symop[i].resize(3,3);
       symop[i] = ct.symop[i];
     }
   }
@@ -149,7 +168,7 @@ void CharacterTable::print(FILE *fp, const char *off)
   for (int i=0; i < nirrep_; i++)
     gamma_[i].print(fp,myoff);
 
-  //for(i=0; i < g; i++) symop[i].print();
+  for(i=0; i < g; i++) symop[i].print();
 }
 
 
@@ -196,13 +215,13 @@ int CharacterTable::parse_symbol()
   if (symb[0] == 'c') {
     int nab,ne;
 
-    if (symb[1] == NULL) return -1;
+    if (symb[1] == '\0') return -1;
 
     nt = atoi(&symb[1]);
     ne = (nt%2) ? nt/2 : nt/2-1;
     nab = (nt%2) ? 1 : 2;
 
-    if (symb[2] != NULL) {
+    if (symb[2] != '\0') {
       if(symb[2] == 'v') {
         g  = 2*nt; pg = CNV; nirrep_ = 2*nab + ne;
 	}
@@ -223,13 +242,13 @@ int CharacterTable::parse_symbol()
   if (symb[0] == 'd') {
     int nab,ne;
 
-    if(symb[1] == NULL) return -1;
+    if(symb[1] == '\0') return -1;
 
     nt = atoi(&symb[1]);
     ne = (nt%2) ? nt/2 : nt/2-1;
     nab = (nt%2) ? 1 : 2;
 
-    if (symb[2] != NULL) {
+    if (symb[2] != '\0') {
       if (symb[2] == 'd') {
         g = 4*nt; pg = DND; nirrep_ = nt+3;
         }
@@ -248,7 +267,7 @@ int CharacterTable::parse_symbol()
     }
 
   if (symb[0] == 's') {
-    if (symb[1] == NULL) return -1;
+    if (symb[1] == '\0') return -1;
 
     nt = atoi(&symb[1]);
 
@@ -261,7 +280,7 @@ int CharacterTable::parse_symbol()
     }
 
   if (symb[0] == 't') {
-    if (symb[1] != NULL) {
+    if (symb[1] != '\0') {
       if (symb[1] == 'd') {
         g = 24; pg = TD; nirrep_ = 5;
         }
@@ -280,7 +299,7 @@ int CharacterTable::parse_symbol()
     }
 
   if (symb[0] == 'o') {
-    if (symb[1] != NULL) {
+    if (symb[1] != '\0') {
       if (symb[1] == 'h') {
         pg = OH; g = 48; nirrep_ = 10;
         }
@@ -296,7 +315,7 @@ int CharacterTable::parse_symbol()
     }
 
   if (symb[0] == 'i') {
-    if (symb[1] != NULL) {
+    if (symb[1] != '\0') {
       if (symb[1] == 'h') {
         g = 120; pg = IH; nirrep_ = 10;
         }

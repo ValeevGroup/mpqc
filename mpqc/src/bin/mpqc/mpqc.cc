@@ -478,6 +478,8 @@ main(int argc, char *argv[])
   KeyValValueString restartfiledef(ckptfile);
   char * restartfile = keyval->pcharvalue("restart_file", restartfiledef);
   
+  char * wfn_file = keyval->pcharvalue("wfn_file");
+  
   int restart = keyval->booleanvalue("restart",truevalue);
 
   int checkpoint = keyval->booleanvalue("checkpoint",truevalue);
@@ -687,19 +689,22 @@ main(int argc, char *argv[])
 
     if (mole.nonnull()) {
       if (grp->me() == 0) {
-        ckptfile = new char[strlen(molname)+6];
-        sprintf(ckptfile,"%s.wfn",molname);
+        if (wfn_file == 0) {
+          wfn_file = new char[strlen(molname)+6];
+          sprintf(wfn_file,"%s.wfn",molname);
+        }
       }
       else {
-        ckptfile = new char[strlen(devnull)+1];
-        strcpy(ckptfile, devnull);
+        delete[] wfn_file;
+        wfn_file = new char[strlen(devnull)+1];
+        strcpy(wfn_file, devnull);
       }
   
-      StateOutBin so(ckptfile);
+      StateOutBin so(wfn_file);
       mole.save_state(so);
       so.close();
 
-      delete[] ckptfile;
+      delete[] wfn_file;
     }
   }
 

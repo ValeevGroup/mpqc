@@ -36,6 +36,7 @@
 #undef SCF_CHECK_BOUNDS
 #undef SCF_DONT_USE_BOUNDS
 
+#include <scconfig.h>
 #include <chemistry/qc/scf/gbuild.h>
 
 namespace sc {
@@ -51,7 +52,7 @@ class LocalGBuild : public GBuild<T> {
     GaussianBasisSet *gbs_;
     PetiteList *rpl_;
 
-    signed char *pmax;
+    signed char * restrictxx pmax;
     int threadno_;
     int nthread_;
     double accuracy_;

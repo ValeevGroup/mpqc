@@ -1,4 +1,5 @@
 
+#include <scconfig.h>
 #include <util/misc/exenv.h>
 
 #undef SCF_CHECK_BOUNDS
@@ -13,8 +14,8 @@ namespace sc {
 
 class LocalCLHFContribution {
   private:
-    double * const gmat;
-    double * const pmat;
+    double * const restrictxx gmat;
+    double * const restrictxx pmat;
 
     double ibound_;
     double pbound_;

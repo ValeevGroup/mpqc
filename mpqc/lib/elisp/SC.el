@@ -127,6 +127,11 @@
     ))
 )
 
+(defun clj-condensed-style ()
+  "Change to condensed C indentation"
+  (interactive)
+  (c-set-style "CLJ-CONDENSED")
+  )
 (defun clj-style ()
   "Change to insane C indentation"
   (interactive)
@@ -140,16 +145,19 @@
 
 (define-key c-mode-map "\C-ce" 'ets-style)
 (define-key c-mode-map "\C-cj" 'clj-style)
+(define-key c-mode-map "\C-cc" 'clj-condensed-style)
 (define-key c-mode-map "\C-j"  'reindent-then-newline-and-indent)
 (define-key c-mode-map "\C-m"  'newline-and-indent)
 
 (define-key c++-mode-map "\C-ce" 'ets-style)
 (define-key c++-mode-map "\C-cj" 'clj-style)
+(define-key c++-mode-map "\C-cc" 'clj-condensed-style)
 (define-key c++-mode-map "\C-j"  'reindent-then-newline-and-indent)
 (define-key c++-mode-map "\C-m"  'newline-and-indent)
 
 (define-key java-mode-map "\C-ce" 'ets-style)
 (define-key java-mode-map "\C-cj" 'clj-style)
+(define-key java-mode-map "\C-cc" 'clj-condensed-style)
 (define-key java-mode-map "\C-j"  'reindent-then-newline-and-indent)
 (define-key java-mode-map "\C-m"  'newline-and-indent)
 

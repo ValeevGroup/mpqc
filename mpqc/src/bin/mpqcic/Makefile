@@ -101,6 +101,12 @@ install_mpqcic:: mpqcic
 mpqcic: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
+writeavs: writeavs.o $(LIBS)
+	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
+
+calcesp: calcesp.o $(LIBS)
+	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
+
 
 #################################################################
 

@@ -64,12 +64,15 @@ int StateOut::putpointer(void*p)
   Pix ind = (ps_?ps_->seek(dp):0);
   //printf("StateOut::putpointer: ind = %d for 0x%x\n",(int)ind,p);
   if (ind == 0) {
-    ind = (ps_?ps_->add(dp):1);
-    put(int(ind));
-    return 1;
+      if (ps_) {
+          dp.assign_num(next_pointer_number++);
+          ps_->add(dp);
+        }
+      put(dp.num());
+      return 1;
     }
   else {
-    put(int(ind));
-    return 0;
+      put((*ps_)(ind).num());
+      return 0;
     }
-  }
+}

@@ -162,6 +162,7 @@ class StateOut: virtual public DescribedClass {
     StateOut(const StateOut&);
     void operator=(const StateOut&);
   protected:
+    int next_pointer_number;
     StateDataPtrSet* ps_;
     ClassDescPintMap* _classidmap;
     int _nextclassid;

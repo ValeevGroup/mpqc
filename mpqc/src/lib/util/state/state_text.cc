@@ -343,13 +343,16 @@ int StateOutText::putpointer(void*p)
   StateDataPtr dp(p);
   Pix ind = (ps_?ps_->seek(dp):0);
   if (ind == 0) {
-      ind = (ps_?ps_->add(dp):1);
-      fprintf(fp_,"writing object %d\n",int(ind));
+      if (ps_) {
+          dp.assign_num(next_pointer_number++);
+          ps_->add(dp);
+        }
+      fprintf(fp_,"writing object %d\n",dp.num());
       fflush(fp_);
       return 1;
     }
   else {
-      fprintf(fp_,"reference to object %d\n",int(ind));
+      fprintf(fp_,"reference to object %d\n",(*ps_)(ind).num());
       fflush(fp_);
       return 0;
     }

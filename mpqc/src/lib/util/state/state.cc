@@ -137,6 +137,7 @@ StateOut::_castdown(const ClassDesc*cd)
 
 StateOut::StateOut() :
   ps_(new StateDataPtr_CTOR),
+  next_pointer_number(1),
   _classidmap(new ClassDescPintMap_CTOR),
   _nextclassid(0)
 {
@@ -228,6 +229,7 @@ int StateIn::get(double&r) { return get_array_double(&r,1); }
 // again, they will be written in their entirety.
 void StateOut::forget_references()
 {
+  next_pointer_number = 1;
   if (ps_) ps_->clear();
 }
 

@@ -16,7 +16,7 @@ class A: A_parents {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    int i;
+    int ia;
     int* array;
     double d;
   public:
@@ -24,7 +24,7 @@ class A: A_parents {
     A(KeyVal&);
     A(StateIn&);
     void save_data_state(StateOut&);
-    inline int& a() { return i; };
+    inline int& a() { return ia; };
     virtual void print (ostream&s = cout)
     {
       s << "A::a = " << a() << '\n';
@@ -39,7 +39,7 @@ class A: A_parents {
 SavableState_REF_dec(A);
 SavableState_REF_def(A);
 A::A():
-  i(1),
+  ia(1),
   array(new int[4]),
   d(-1.24)
 {
@@ -49,7 +49,7 @@ A::A():
   array[3] = 1;
 }
 A::A(KeyVal&keyval):
-  i(keyval.intvalue("a")),
+  ia(keyval.intvalue("a")),
   array(new int[4]),
   d(-1.24)
 
@@ -60,12 +60,12 @@ A::A(KeyVal&keyval):
   array[3] = 8;
 }
 A::A(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,A::class_desc_)
 {
   char* junk;
   s.get(d);
   s.getstring(junk); delete[] junk;
-  s.get(i);
+  s.get(ia);
   s.getstring(junk); delete[] junk;
   s.get(array);
 }
@@ -78,7 +78,7 @@ A::save_data_state(StateOut&s)
   char* t2c = strcpy(new char[strlen(t2)+1],t2);
   s.put(d);
   s.putstring(t1c);
-  s.put(i);
+  s.put(ia);
   s.putstring(t2c);
   s.put(array,4);
   delete[] t1c;
@@ -109,13 +109,13 @@ class B: B_parents {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    int i;
+    int ib;
   public:
     B();
     B(KeyVal&);
     B(StateIn&);
     void save_data_state(StateOut&);
-    inline int& b() { return i; };
+    inline int& b() { return ib; };
     virtual void print (ostream&s = cout)
     {
       A::print(s);
@@ -125,25 +125,25 @@ class B: B_parents {
 SavableState_REF_dec(B);
 SavableState_REF_def(B);
 B::B():
-  i(2)
+  ib(2)
 {
 }
 B::B(KeyVal&keyval):
   A(PrefixKeyVal("A",keyval)),
-  i(keyval.intvalue("b"))
+  ib(keyval.intvalue("b"))
 {
 }
 B::B(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,B::class_desc_),
   A(s)
 {
-  s.get(i);
+  s.get(ib);
 }
 void
 B::save_data_state(StateOut&s)
 {
   A::save_data_state(s);
-  s.put(i);
+  s.put(ib);
 }
 
 #define CLASSNAME B
@@ -170,13 +170,13 @@ class C: C_parents {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    int i;
+    int ic;
   public:
     C();
     C(KeyVal&keyval);
     C(StateIn&);
     void save_data_state(StateOut&);
-    inline int& c() { return i; };
+    inline int& c() { return ic; };
     virtual void print (ostream&s = cout)
     {
       s << "C::c = " << c() << '\n';
@@ -185,22 +185,22 @@ class C: C_parents {
 SavableState_REF_dec(C);
 SavableState_REF_def(C);
 C::C():
-  i(3)
+  ic(3)
 {
 }
 C::C(KeyVal&keyval):
-  i(keyval.intvalue("c"))
+  ic(keyval.intvalue("c"))
 {
 }
 C::C(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,C::class_desc_)
 {
-  s.get(i);
+  s.get(ic);
 }
 void
 C::save_data_state(StateOut&s)
 {
-  s.put(i);
+  s.put(ic);
 }
 
 #define CLASSNAME C
@@ -227,7 +227,7 @@ class D: D_parents {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    int i;
+    int id;
     RefA _a;
     RefB _b;
   public:
@@ -235,7 +235,7 @@ class D: D_parents {
     D(KeyVal&);
     D(StateIn&);
     void save_data_state(StateOut&);
-    inline int& d() { return i; }
+    inline int& d() { return id; }
     inline RefA da() { return _a; }
     inline RefB db() { return _b; }
     virtual void print (ostream&s = cout)
@@ -243,7 +243,7 @@ class D: D_parents {
       B::print(s);
       C::print(s);
       s << "D::a:\n";  da()->print(s);
-      if ( _a == A::castdown(db().pointer()) ) {
+      if ( _a.pointer() == A::castdown(db().pointer()) ) {
           cout << "a == b\n";
         }
       else {
@@ -255,25 +255,25 @@ class D: D_parents {
 SavableState_REF_dec(D);
 SavableState_REF_def(D);
 D::D():
-  i(4)
+  id(4)
 {
 }
 D::D(KeyVal&keyval):
   B(PrefixKeyVal("B",keyval)),
   C(PrefixKeyVal("C",keyval)),
-  i(keyval.intvalue("d")),
+  id(keyval.intvalue("d")),
   _a(A::castdown(keyval.describedclassvalue("a"))),
   _b(B::castdown(keyval.describedclassvalue("b")))
 {
 }
 D::D(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,D::class_desc_),
   B(s),
   C(s)
 {
   int* nullref;
   s.get(nullref);
-  s.get(i);
+  s.get(id);
   _a = A::restore_state(s);
   _b = B::restore_state(s);
 }
@@ -283,7 +283,7 @@ D::save_data_state(StateOut&s)
   B::save_data_state(s);
   C::save_data_state(s);
   s.put((int*)0,0);
-  s.put(i);
+  s.put(id);
   _a->save_state(s);
   _b->save_state(s);
 }

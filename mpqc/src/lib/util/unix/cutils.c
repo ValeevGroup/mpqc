@@ -235,6 +235,7 @@ log_doit(int errnoflag, int priority, const char *fmt, va_list ap)
 
 /**************************************************************/
 
+#if !defined(SUNMOS)
 
 static struct errordesc {
   int val;
@@ -527,6 +528,7 @@ strerror(int error)
   return(mesg);
   }
 
+#endif
 /**************************************************************/
 
 /*

@@ -67,4 +67,5 @@ main(int argc, char**argv)
           o << "opt[" << i << "] is null\n";
         }
     }
+  return 0;
 }

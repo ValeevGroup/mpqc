@@ -37,9 +37,9 @@ int yydebug =1;
 %token T_REDUNDANT T_RESTART T_CHECKPOINT T_COLON T_XC T_SYMMETRY
 %token T_BOHR T_ANGSTROM T_GRID T_FREQUENCIES
 %token T_DOCC T_SOCC T_FROZEN_DOCC T_FROZEN_UOCC T_ALPHA T_BETA
-%token <str> T_STRING T_FLOAT T_INT
+%token <str> T_STRING
 %token <i> T_BOOL
-%type <str> float int string
+%type <str> string
 %type <i> bool
 %type <nniv> nonnegative_int_vector nonnegative_int_sequence
 
@@ -170,15 +170,6 @@ method_option:
             ;
 
 string:         T_STRING                        { $$ = $1; }
-                | float                         { $$ = $1; }
-                | int                           { $$ = $1; }
-            ;
-
-float:          T_FLOAT                         { $$ = $1; }
-            |   T_INT                           { $$ = $1; }
-            ;
-
-int:            T_INT                           { $$ = $1; }
             ;
 
 bool:           T_BOOL                          { $$ = $1; }

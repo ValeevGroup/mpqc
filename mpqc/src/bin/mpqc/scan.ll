@@ -29,13 +29,7 @@ cstr(char *yytext)
 %}
 string  [A-Za-z0-9_\.*+-/]*
 qstring \"[^"\n]+\"
-int     (-)?[0-9]+
-float   (-)?(([0-9]*\.[0-9]+|[0-9]+\.)([eE][+-]?[0-9]+)?|[0-9]+([eE][+-]?[0-9]+))
 %%
-{int}           { yylval.str=cstr(yytext);
-                  return T_INT; }
-{float}         { yylval.str=cstr(yytext);
-                  return T_FLOAT; }
 "molecule"      { return T_MOLECULE; }
 "multiplicity"  { return T_MULTIPLICITY; }
 "optimize"      { return T_OPTIMIZE; }

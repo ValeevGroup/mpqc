@@ -53,7 +53,7 @@ install:: mpqc
 
 distclean::
 	/bin/rm -f mpqc
-	/bin/rm -f $(GENCXXSRC) $(GENINC)
+	/bin/rm -f $(GENCXXSRC) $(GENINC) parse.output
 
 # (only works with bison and flex)
 parse.cc parse.h: parse.yy
@@ -65,8 +65,8 @@ parse.cc parse.h: parse.yy
 	cat parse.tmp.h \
 		| sed "s/yylval/MPQCInylval/g" \
 		> parse.h
+	/bin/mv parse.tmp.output parse.output
 	-@rm -f parse.tmp parse.tmp.h
-	-@rm -f parse.output
 
 scan.cc: scan.ll
 	echo "#ifdef HAVE_CONFIG_H"  > scan.cc

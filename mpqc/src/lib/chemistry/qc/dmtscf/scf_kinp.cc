@@ -323,9 +323,9 @@ scf_init_scf_struct(const RefKeyVal& keyval, centers_t& centers,
  // these control whether or not the O(N) and O(N^2) integral
  // intermediates are stored.  the default is true
  //
-  scf_info.int_store1 = keyval->intvalue("int_store1");
+  scf_info.int_store1 = keyval->booleanvalue("int_store1");
   if (keyval->error() != KeyVal::OK) scf_info.int_store1 = 1;
-  scf_info.int_store2 = keyval->intvalue("int_store2");
+  scf_info.int_store2 = keyval->booleanvalue("int_store2");
   if (keyval->error() != KeyVal::OK) scf_info.int_store2 = 1;
 
  //

@@ -236,7 +236,9 @@ try_main(int argc, char *argv[])
   options.enroll("threadgrp", GetLongOpt::MandatoryValue,
                  "which thread group to use", 0);
   options.enroll("memorygrp", GetLongOpt::MandatoryValue,
-                 "which thread group to use", 0);
+                 "which memory group to use", 0);
+  options.enroll("integral", GetLongOpt::MandatoryValue,
+                 "which integral evaluator to use", 0);
   options.enroll("l", GetLongOpt::MandatoryValue, "basis set limit", "0");
   options.enroll("W", GetLongOpt::MandatoryValue,
                  "set the working directory", ".");

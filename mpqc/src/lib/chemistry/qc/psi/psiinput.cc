@@ -430,6 +430,15 @@ PSI_Input::write_orbvec(const CorrelationTable &corrtab,
         }
     }
 
+  if (!strcmp(corrtab.subgroup()->symbol(),"d2")) {
+      cout << node0 << indent
+           << "WARNING: PSI AXIS ORDERING IS WRONG FOR D2: SWAPPING X AND Y"
+           << endl;
+      int tmp = orbvecnew[2];
+      orbvecnew[2] = orbvecnew[3];
+      orbvecnew[3] = tmp;
+    }
+
   write_keyword(orbvec_name, corrtab.subn(), orbvecnew);
 
   delete[] orbvecnew;
@@ -474,28 +483,20 @@ PSI_Input::write_defaults(const char *dertype, const char *wavefn)
    delete[] y_vec;
    delete[] z_vec;
 
-   if (!_mol->point_group()->equiv(_origpg)) {
-       // perhaps the symmetry has been lowered
-       // make sure that the occupation vectors are still correct
-       CorrelationTable corrtab;
-       int rc;
-       if (rc = corrtab.initialize_table(_origpg, _mol->point_group())) {
-           cerr << node0
-                << "ERROR: couldn't initialize correlation table:" << endl
-                << "  " << corrtab.error(rc) << endl;
-           abort();
-         }
-       write_orbvec(corrtab, "docc", docc);
-       write_orbvec(corrtab, "socc", socc);
-       write_orbvec(corrtab, "frozen_docc", frozen_docc);
-       write_orbvec(corrtab, "frozen_uocc", frozen_uocc);
+   // perhaps the symmetry has been lowered
+   // make sure that the occupation vectors are still correct
+   CorrelationTable corrtab;
+   int rc;
+   if (rc = corrtab.initialize_table(_origpg, _mol->point_group())) {
+       cerr << node0
+            << "ERROR: couldn't initialize correlation table:" << endl
+            << "  " << corrtab.error(rc) << endl;
+       abort();
      }
-   else {
-       write_keyword("docc", nirrep, docc);
-       write_keyword("socc", nirrep, socc);
-       write_keyword("frozen_docc", nirrep, frozen_docc);
-       write_keyword("frozen_uocc", nirrep, frozen_uocc);
-     }
+   write_orbvec(corrtab, "docc", docc);
+   write_orbvec(corrtab, "socc", socc);
+   write_orbvec(corrtab, "frozen_docc", frozen_docc);
+   write_orbvec(corrtab, "frozen_uocc", frozen_uocc);
 
    if (ex_lvl) write_keyword("ex_lvl", ex_lvl);
    begin_section("files");

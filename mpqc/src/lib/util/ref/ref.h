@@ -124,7 +124,9 @@
 #endif
 
 #ifndef REF_USE_LOCKS
-#define REF_USE_LOCKS 1
+#  if HAVE_STHREAD || HAVE_CREATETHREAD || HAVE_PTHREAD
+#    define REF_USE_LOCKS 1
+#  endif
 #endif
 
 #if REF_CHECK_STACK

@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #ifndef _util_misc_compute_h
 #define _util_misc_compute_h
 

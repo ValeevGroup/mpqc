@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include "compute.h"
 #include <util/state/state.h>
 

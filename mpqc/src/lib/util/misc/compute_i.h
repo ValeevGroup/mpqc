@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #ifdef INLINE_FUNCTIONS
 #define INLINE inline
 #else

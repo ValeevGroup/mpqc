@@ -1,6 +1,7 @@
 
 #include <string.h>
 #ifdef __GNUC__
+#pragma implementation
 #include <streambuf.h>
 #else
 #include <fstream.h>

@@ -276,6 +276,13 @@ AC_ARG_WITH(ar,
 AR=$withval
 )
 
+ARFLAGS=r
+AC_ARG_WITH(ar-flags,
+[  --with-ar-flags         Flags for the the archive creator.],
+ARFLAGS=$withval
+)
+AC_SUBST(ARFLAGS)
+
 AC_ARG_WITH(ld,
 [  --with-ld               Names the object linker.],
 LD=$withval

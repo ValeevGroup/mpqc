@@ -14,6 +14,7 @@
 
 class IParagonMemoryGrp: public MIDMemoryGrp {
 #define CLASSNAME IParagonMemoryGrp
+#define HAVE_KEYVAL_CTOR
 #include <util/class/classd.h>
   private:
     long lock();
@@ -24,6 +25,7 @@ class IParagonMemoryGrp: public MIDMemoryGrp {
     long wait(long, long = -1);
   public:
     IParagonMemoryGrp(const RefMessageGrp& msg);
+    IParagonMemoryGrp(const RefKeyVal& keyval);
     ~IParagonMemoryGrp();
 };
 

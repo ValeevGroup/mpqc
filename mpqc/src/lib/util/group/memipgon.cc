@@ -38,6 +38,7 @@ void msgwait(long);
 // The IParagonMemoryGrp class
 
 #define CLASSNAME IParagonMemoryGrp
+#define HAVE_KEYVAL_CTOR
 #define PARENTS public MIDMemoryGrp
 #include <util/class/classi.h>
 void *
@@ -50,6 +51,13 @@ IParagonMemoryGrp::_castdown(const ClassDesc*cd)
 
 IParagonMemoryGrp::IParagonMemoryGrp(const RefMessageGrp& msg):
   MIDMemoryGrp(msg)
+{
+  use_acknowledgments_ = 0;
+  use_active_messages_ = 0;
+}
+
+IParagonMemoryGrp::IParagonMemoryGrp(const RefKeyVal& keyval):
+  MIDMemoryGrp(keyval)
 {
   use_acknowledgments_ = 0;
   use_active_messages_ = 0;

@@ -4,8 +4,8 @@
  */
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:15  etseidl
- * Initial revision
+ * Revision 1.2  1993/12/30 13:31:15  etseidl
+ * merge in clj changes, do global sum of exchange energy in scf_ex.c
  *
  * Revision 1.5  1992/06/23  20:04:21  seidl
  * change dmt matrices to uppercase,
@@ -274,7 +274,8 @@ FILE *_outfile;
 
   bmat.d[0][0] = 0.0;
   btemp.d[0] = -1.0;
-  norm = 1.0/bold.d[0][0];
+  if (bold.d[0][0] > 1.e-10) norm = 1.0/bold.d[0][0];
+  else norm = 1.0;
   for (i=1; i <= last+1 ; i++) {
     bmat.d[i][0]=bmat.d[0][i] = -1.0;
     btemp.d[i] = 0.0;
@@ -299,7 +300,8 @@ FILE *_outfile;
 
       bmat.d[0][0] = 0.0;
       btemp.d[0] = -1.0;
-      norm=1.0/bold.d[try][try];
+      if (bold.d[try][try] > 1.e-10) norm=1.0/bold.d[try][try];
+      else norm = 1.0;
       for (i=1; i <= _scf_info->ndiis-try ; i++) {
         bmat.d[i][0]=bmat.d[0][i] = -1.0;
         for (j=1; j <= i ; j++) {

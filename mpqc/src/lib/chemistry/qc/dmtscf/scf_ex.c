@@ -2,8 +2,11 @@
 /* This computes the exchange energy of the wavefunction. */
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:14  etseidl
- * Initial revision
+ * Revision 1.2  1993/12/30 13:31:17  etseidl
+ * merge in clj changes, do global sum of exchange energy in scf_ex.c
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:15  etseidl
+ * SC source tree 0.1
  *
  */
 
@@ -143,6 +146,11 @@ dmt_matrix PMAT;
   printf("exchange2 is %14.8f\n",-0.25*exchange2);
  */
 
-  printf("The exchange energy is %14.8f\n",-0.25*(exchange1+exchange2));
+  gsum0(&exchange1,1,5,mtype_get(),0);
+  gsum0(&exchange2,1,5,mtype_get(),0);
+
+  if (mynode0()==0)
+    printf("\n  The exchange energy is %14.8f\n",-0.25*(exchange1+exchange2));
+
   tim_exit("scf_ex");
 }

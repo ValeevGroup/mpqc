@@ -1,7 +1,7 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:15  etseidl
- * Initial revision
+ * Revision 1.2  1993/12/30 13:31:18  etseidl
+ * merge in clj changes, do global sum of exchange energy in scf_ex.c
  *
  * Revision 1.16  1992/06/29  17:48:08  seidl
  * use scf_schmidt() for non-local_p as well
@@ -274,7 +274,10 @@ FILE *_outfile;
           }
         }
 
-      if(mynode0()==0) fprintf(_outfile,"\n  converged\n");
+      if(mynode0()==0) {
+          fprintf(_outfile,"\n  converged scf energy is %20.10f au\n",
+                  _scf_info->nuc_rep + _scf_info->e_elec);
+        }
       return(0);
       }
 

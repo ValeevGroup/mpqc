@@ -65,6 +65,16 @@ DFPUpdate::DFPUpdate()
 DFPUpdate::DFPUpdate(const RefKeyVal&keyval):
   HessianUpdate(keyval)
 {
+  if (keyval->exists("xprev") && keyval->exists("gprev")) {
+    RefSCMatrixKit k = SCMatrixKit::default_matrixkit();
+    RefSCDimension dim = new SCDimension(keyval->count("xprev"));
+    xprev = k->vector(dim);
+    gprev = k->vector(dim);
+    for (int i=0; i<dim.n(); i++) {
+      xprev(i) = keyval->doublevalue("xprev",i);
+      gprev(i) = keyval->doublevalue("gprev",i);
+    }
+  }
 }
 
 DFPUpdate::DFPUpdate(StateIn&s):
@@ -133,6 +143,16 @@ DFPUpdate::apply_transform(const RefNonlinearTransform& trans)
   if (trans.null()) return;
   trans->transform_coordinates(xprev);
   trans->transform_gradient(gprev);
+}
+
+void
+DFPUpdate::set_inverse(void)
+{
+  HessianUpdate::set_inverse();
+  RefSCVector tmp;
+  tmp = xprev;
+  xprev = gprev;
+  gprev = tmp;
 }
 
 /////////////////////////////////////////////////////////////////////////

@@ -49,7 +49,7 @@ class R12IntEval_abs_A : virtual public SavableState {
   int restart_orbital_;
 
   /* utility functions */
-  int compute_transform_batchsize_(size_t mem_dynamic, int nocc_act, const int num_te_types);
+  int compute_transform_batchsize_(size_t mem_alloc, size_t mem_static, int nocc_act, const int num_te_types);
   distsize_t compute_transform_dynamic_memory_(int ni, int nocc_act, const int num_te_types);
 
 public:

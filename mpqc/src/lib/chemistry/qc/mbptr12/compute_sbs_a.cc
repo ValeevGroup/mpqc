@@ -210,8 +210,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     mem_static *= sizeof(double);
     int nthreads = thr->nthread();
     mem_static += nthreads * integral->storage_required_grt(bs); // integral evaluators
-    size_t mem_dynamic = mem_alloc - mem_static;
-    ni = compute_transform_batchsize_(mem_dynamic, nocc_act-restart_orbital_, num_te_types); 
+    ni = compute_transform_batchsize_(mem_alloc, mem_static, nocc_act-restart_orbital_, num_te_types); 
   }
 
   int max_norb = nocc_act - restart_orbital_;
@@ -1236,18 +1235,14 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 // affect the batch size.
 ///////////////////////////////////////////////////////
 int
-R12IntEval_sbs_A::compute_transform_batchsize_(size_t mem_dyn, int nocc_act, const int num_te_types)
+R12IntEval_sbs_A::compute_transform_batchsize_(size_t mem_alloc, size_t mem_static, int nocc_act, const int num_te_types)
 {
-  ///////////////////////////////////////
-  // the largest memory requirement will
-  // either occur just before the end of
-  // the 1. q.b.t. (mem1) or just before
-  // the end of the i-batch loop (mem2)
-  ///////////////////////////////////////
-
   // Check is have enough for even static objects
-  if (mem_dyn <= 0)
+  size_t mem_dyn = 0.0;
+  if (mem_alloc <= mem_static)
     return 0;
+  else
+    mem_dyn = mem_alloc - mem_static;
 
   // Determine if calculation is possible at all (i.e., if ni=1 possible)
   int ni = 1;
@@ -1303,8 +1298,8 @@ R12IntEval_sbs_A::compute_transform_dynamic_memory_(int ni, int nocc_act, const 
   int nthread = r12info()->thr()->nthread();
 
   distsize_t memsize = sizeof(double)*(num_te_types*((distsize_t)nthread * ni * nbasis * nfuncmax * nfuncmax // iqrs
-						     + (distsize_t)nij*2*nbasis*nfuncmax  // ijsq and ijrq buffers
-						     + (distsize_t)nij*nbasis*nbasis // iqjs_contrib - buffer of half and higher
+						     + (distsize_t)nij * 2 * nbasis * nfuncmax  // iqjs and iqjr buffers
+						     + (distsize_t)nij * nbasis * nbasis // iqjs_contrib - buffer of half and higher
 						     // transformed integrals
 						     )
 				       );

@@ -200,12 +200,11 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   size_t mem_static = 0;
   int ni = 0;
   if (me == 0) {
-    mem_static = nbasis*noso; // scf vector
+    mem_static = nbasis*noso + nbasis_aux*nbasis_aux; // scf vector + aux_basis orthogonalizer
     mem_static *= sizeof(double);
     int nthreads = thr->nthread();
     mem_static += nthreads * integral->storage_required_grt(bs,bs,bs,bs_aux); // integral evaluators
-    size_t mem_dynamic = mem_alloc - mem_static;
-    ni = compute_transform_batchsize_(mem_dynamic, nocc_act-restart_orbital_, num_te_types); 
+    ni = compute_transform_batchsize_(mem_alloc, mem_static, nocc_act-restart_orbital_, num_te_types); 
   }
 
   int max_norb = nocc_act - restart_orbital_;
@@ -267,10 +266,10 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   }
 
   ExEnv::out0() << indent
-		<< scprintf(" npass  rest  nbasis  nshell  nfuncmax") << endl;
+		<< scprintf(" npass  rest  nbasis  nshell  nfuncmax  nbasis(ABS) nshell(ABS) nfuncmax(ABS)") << endl;
   ExEnv::out0() << indent
-		<< scprintf("  %-4i   %-3i   %-5i    %-4i     %-3i",
-			    npass,rest,nbasis,nshell,nfuncmax)
+		<< scprintf("  %-4i   %-3i   %-5i    %-4i     %-3i   %-5i        %-4i         %-3i",
+			    npass,rest,nbasis,nshell,nfuncmax,nbasis_aux,nshell_aux,nfuncmax_aux)
 		<< endl;
   ExEnv::out0() << indent
 		<< scprintf(" nocc   nvir   nfzc   nfzv") << endl;
@@ -1202,18 +1201,14 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 // affect the batch size.
 ///////////////////////////////////////////////////////
 int
-R12IntEval_abs_A::compute_transform_batchsize_(size_t mem_dyn, int nocc_act, const int num_te_types)
+R12IntEval_abs_A::compute_transform_batchsize_(size_t mem_alloc, size_t mem_static, int nocc_act, const int num_te_types)
 {
-  ///////////////////////////////////////
-  // the largest memory requirement will
-  // either occur just before the end of
-  // the 1. q.b.t. (mem1) or just before
-  // the end of the i-batch loop (mem2)
-  ///////////////////////////////////////
-
   // Check is have enough for even static objects
-  if (mem_dyn <= 0)
+  size_t mem_dyn = 0;
+  if (mem_alloc <= mem_static)
     return 0;
+  else
+    mem_dyn = mem_alloc - mem_static;
 
   // Determine if calculation is possible at all (i.e., if ni=1 possible)
   int ni = 1;
@@ -1266,13 +1261,18 @@ R12IntEval_abs_A::compute_transform_dynamic_memory_(int ni, int nocc_act, const 
 
   int nbasis = r12info()->basis()->nbasis();
   int nfuncmax = r12info()->basis()->max_nfunction_in_shell();
+  int nbasis_aux = r12info()->basis_aux()->nbasis();
+  int nfuncmax_aux = r12info()->basis_aux()->max_nfunction_in_shell();
   int nthread = r12info()->thr()->nthread();
+  int nocc = r12info()->nocc();
 
-  distsize_t memsize = sizeof(double)*(num_te_types*((distsize_t)nthread * ni * nbasis * nfuncmax * nfuncmax // iqrs
-						     + (distsize_t)nij*2*nbasis*nfuncmax  // ijsq and ijrq buffers
-						     + (distsize_t)nij*nbasis*nbasis // iqjs_contrib - buffer of half and higher
+  distsize_t memsize = sizeof(double)*(num_te_types*((distsize_t)nthread * ni * nbasis * nfuncmax * nfuncmax_aux // iqrs
+						     + (distsize_t)ni * nocc * nfuncmax_aux * nfuncmax_aux  // ikrs
+						     + (distsize_t)nij * nocc * nbasis_aux // ikjs - buffer of 3 q.t. and higher
 						     // transformed integrals
 						     )
+				       + (distsize_t)nocc * nfuncmax_aux // ks
+				       + (distsize_t)nocc * nbasis_aux // kx
 				       );
   return memsize;
 }

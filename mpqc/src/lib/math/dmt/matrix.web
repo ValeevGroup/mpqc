@@ -1,6 +1,9 @@
 %
 % $Log$
-% Revision 1.2  1993/12/30 13:18:39  etseidl
+% Revision 1.3  1994/02/23 02:19:24  cljanss
+% Converted from spiderweb to cweb.
+%
+% Revision 1.2  1993/12/30  13:18:39  etseidl
 % merge in clj diffs
 %
 % Revision 1.13  1993/04/27  21:58:45  jannsen
@@ -231,10 +234,10 @@ I also like to declare
 variables of type ``bool'' to hold TRUE or FALSE
 values.  The |bool| typedef appears in ``matrix.h''.
 
-@d private=static
-@d public=
-@d TRUE=1
-@d FALSE=0
+@d private static
+@d public
+@d TRUE 1
+@d FALSE 0
 @f private static
 @f public static
 @c
@@ -298,7 +301,7 @@ error handling routines and the like.  The real ``meat'' of the
 package begins in the next section.
 
 Fix up some lint gripes.
-@d Printf=(void)printf
+@d Printf (void)printf
 
 @ A litle |min| macro:
 @<Outer block...@>=
@@ -421,7 +424,7 @@ top-level description of the structure {\bf matrix} used to represent arays.
 The set of defined matrices
 is held in an array of these structures.
 @f matrix int
-@d MAX_MATRICES=50
+@d MAX_MATRICES 50
 @<Decls for arrays@> = 
 struct matrixstruct {@/
     @<Members in |struct matrix|@>@;
@@ -471,7 +474,7 @@ Each matrix has a descriptive title that is supplied
 to the matrix creation operations.  I imagine here a
 useful title like ``2-e portion of Fock matrix''
 
-@d MAX_TITLE=128
+@d MAX_TITLE 128
 
 @<Members in |struct matrix|@>=
     char title[MAX_TITLE];
@@ -510,8 +513,8 @@ mdescr id;
 @ The state of a matrix descriptor may be either
 |STATE_OK| or  |STATE_UNDEF|.
 
-@d STATE_OK=1
-@d STATE_UNDEF=0
+@d STATE_OK 1
+@d STATE_UNDEF 0
 
 @<Members in |struct matrix|@>=
     char state;
@@ -703,7 +706,7 @@ struct mapstruct {
     int col_start;   		/* Starting index of local columns. */
 } ;
 @ The maps are held in an array of |struct map|'s.
-@d MAX_MAPS=5
+@d MAX_MAPS 5
 @f map int
 @<Decls for maps@> = 
 typedef struct mapstruct map;
@@ -1686,12 +1689,12 @@ initialize_ipc_stuff()
 
 @ The message types used by \.{libdmt} (the nestable general loop routines
 use their own, computed, types):
-@d MTYPE_BASE     = 401
-@d MTYPE_NLOCAL   = MTYPE_BASE+5
-@d MTYPE_LOOPSYNC = MTYPE_BASE+6
-@d MTYPE_LOOP     = MTYPE_BASE+11
-@d MTYPE_MAP      = MTYPE_BASE+1000
-@d MTYPE_NGL      = MTYPE_BASE+2000
+@d MTYPE_BASE     401
+@d MTYPE_NLOCAL   MTYPE_BASE+5
+@d MTYPE_LOOPSYNC MTYPE_BASE+6
+@d MTYPE_LOOP     MTYPE_BASE+11
+@d MTYPE_MAP      MTYPE_BASE+1000
+@d MTYPE_NGL      MTYPE_BASE+2000
 
 @ Especially for debugging, we sometimes need to have
 every processor do something, only do it one at a time.

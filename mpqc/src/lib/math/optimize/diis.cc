@@ -41,6 +41,7 @@ DIIS::DIIS()
 {
   ndiis = 5;
   start = 1;
+  damping_factor = 0;
 
   init();
 }

@@ -39,7 +39,8 @@ LocalSCDimension::save_data_state(StateOut&s)
 void *
 LocalSCDimension::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCDimension::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SCDimension::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -145,7 +146,8 @@ LocalSCMatrix::save_data_state(StateOut&s)
 void *
 LocalSCMatrix::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCMatrix::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SCMatrix::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -207,9 +209,9 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
   LocalSCMatrix* lb = LocalSCMatrix::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (this->rowdim() != a->rowdim()
-      || this->coldim() != b->coldim()
-      || a->coldim() != b->rowdim()) {
+  if (!(this->rowdim() == a->rowdim())
+      || !(this->coldim() == b->coldim())
+      || !(a->coldim() == b->rowdim())) {
       fprintf(stderr,"LocalSCMatrix::"
               "accumulate_product(SCMatrix*a,SCMatrix*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -234,8 +236,8 @@ LocalSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
   LocalSCVector* lb = LocalSCVector::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (this->rowdim() != a->dim()
-      || this->coldim() != b->dim()) {
+  if (!(this->rowdim() == a->dim())
+      || !(this->coldim() == b->dim())) {
       fprintf(stderr,"LocalSCMatrix::"
               "accumulate_outer_product(SCVector*a,SCVector*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -263,9 +265,9 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
   LocalSymmSCMatrix* lb = LocalSymmSCMatrix::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (this->rowdim() != a->rowdim()
-      || this->coldim() != b->dim()
-      || a->coldim() != b->dim()) {
+  if (!(this->rowdim() == a->rowdim())
+      || !(this->coldim() == b->dim())
+      || !(a->coldim() == b->dim())) {
       fprintf(stderr,"LocalSCMatrix::"
               "accumulate_product(SCMatrix*a,SymmSCMatrix*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -298,9 +300,9 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
   LocalDiagSCMatrix* lb = LocalDiagSCMatrix::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (this->rowdim() != a->rowdim()
-      || this->coldim() != b->dim()
-      || a->coldim() != b->dim()) {
+  if (!(this->rowdim() == a->rowdim())
+      || !(this->coldim() == b->dim())
+      || !(a->coldim() == b->dim())) {
       fprintf(stderr,"LocalSCMatrix::"
               "accumulate_product(SCMatrix*a,DiagSCMatrix*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -327,8 +329,8 @@ LocalSCMatrix::accumulate(SCMatrix*a)
     = LocalSCMatrix::require_castdown(a,"LocalSCMatrix::accumulate");
 
   // make sure that the dimensions match
-  if (this->rowdim() != a->rowdim()
-      || this->coldim() != a->coldim()) {
+  if (!(this->rowdim() == a->rowdim())
+      || !(this->coldim() == a->coldim())) {
       fprintf(stderr,"LocalSCMatrix::"
               "accumulate(SCMatrix*a):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -475,7 +477,8 @@ LocalSymmSCMatrix::save_data_state(StateOut&s)
 void *
 LocalSymmSCMatrix::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SymmSCMatrix::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SymmSCMatrix::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -530,7 +533,7 @@ LocalSymmSCMatrix::accumulate(SymmSCMatrix*a)
     = LocalSymmSCMatrix::require_castdown(a,"LocalSymmSCMatrix::accumulate");
 
   // make sure that the dimensions match
-  if (this->dim() != la->dim()) {
+  if (!(this->dim() == la->dim())) {
       fprintf(stderr,"LocalSymmSCMatrix::"
               "accumulate(SCMatrix*a):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -555,8 +558,8 @@ LocalSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
   LocalDiagSCMatrix* la = LocalDiagSCMatrix::require_castdown(a,name);
   LocalSCMatrix* lb = LocalSCMatrix::require_castdown(b,name);
 
-  if (   (la&&(la->dim() != dim()))
-      || (lb&&(lb->coldim() != dim() || lb->rowdim() != dim()))) {
+  if (   (la&&(!(la->dim() == dim())))
+      || (lb&&(!(lb->coldim() == dim()) || !(lb->rowdim() == dim())))) {
       fprintf(stderr,"LocalSymmSCMatrix::"
               "diagonalize(DiagSCMatrix*a,SCMatrix*b): bad dims");
       abort();
@@ -593,7 +596,7 @@ LocalSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)
     = LocalSCMatrix::require_castdown(a,"LocalSymmSCMatrix::"
                                           "accumulate_symmetric_product");
 
-  if (la->rowdim() != dim()) {
+  if (!(la->rowdim() == dim())) {
       fprintf(stderr,"LocalSymmSCMatrix::"
               "accumulate_symmetric_product(SCMatrix*a): bad dim");
       abort();
@@ -611,7 +614,7 @@ LocalSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
     = LocalSCMatrix::require_castdown(a,"LocalSymmSCMatrix::"
                                           "accumulate_symmetric_sum");
 
-  if (la->rowdim() != dim() || la->coldim() != dim()) {
+  if (!(la->rowdim() == dim()) || !(la->coldim() == dim())) {
       fprintf(stderr,"LocalSymmSCMatrix::"
               "accumulate_symmetric_sum(SCMatrix*a): bad dim");
       abort();
@@ -635,7 +638,7 @@ LocalSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
     = LocalSCVector::require_castdown(a,"LocalSymmSCMatrix::"
                                       "accumulate_symmetric_outer_product");
 
-  if (la->dim() != dim()) {
+  if (!(la->dim() == dim())) {
       fprintf(stderr,"LocalSymmSCMatrix::"
               "accumulate_symmetric_outer_product(SCMatrix*a): bad dim");
       abort();
@@ -679,7 +682,7 @@ LocalSymmSCMatrix::scalar_product(SCVector*a)
     = LocalSCVector::require_castdown(a,"LocalSCVector::scalar_product");
 
   // make sure that the dimensions match
-  if (this->dim() != la->dim()) {
+  if (!(this->dim() == la->dim())) {
       fprintf(stderr,"LocalSCVector::"
               "scale_product(SCVector*a):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -798,7 +801,8 @@ LocalDiagSCMatrix::save_data_state(StateOut&s)
 void *
 LocalDiagSCMatrix::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { DiagSCMatrix::_castdown(cd) };
+  void* casts[1];
+  casts[0] = DiagSCMatrix::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -838,7 +842,7 @@ LocalDiagSCMatrix::accumulate(DiagSCMatrix*a)
     = LocalDiagSCMatrix::require_castdown(a,"LocalDiagSCMatrix::accumulate");
 
   // make sure that the dimensions match
-  if (this->dim() != la->dim()) {
+  if (!(this->dim() == la->dim())) {
       fprintf(stderr,"LocalDiagSCMatrix::"
               "accumulate(SCMatrix*a):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -955,7 +959,8 @@ LocalSCVector::save_data_state(StateOut&s)
 void *
 LocalSCVector::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SCVector::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SCVector::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -1000,8 +1005,8 @@ LocalSCVector::accumulate_product(SCMatrix*a,SCVector*b)
   LocalSCVector* lb = LocalSCVector::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (this->dim() != a->rowdim()
-      || a->coldim() != b->dim()) {
+  if (!(this->dim() == a->rowdim())
+      || !(a->coldim() == b->dim())) {
       fprintf(stderr,"LocalSCVector::"
               "accumulate_product(SCMatrix*a,SCVector*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -1024,8 +1029,8 @@ LocalSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
   LocalSCVector* lb = LocalSCVector::require_castdown(b,name);
 
   // make sure that the dimensions match
-  if (this->dim() != a->dim()
-      || a->dim() != b->dim()) {
+  if (!(this->dim() == a->dim())
+      || !(a->dim() == b->dim())) {
       fprintf(stderr,"LocalSCVector::"
               "accumulate_product(SymmSCMatrix*a,SCVector*b):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -1057,7 +1062,7 @@ LocalSCVector::accumulate(SCVector*a)
     = LocalSCVector::require_castdown(a,"LocalSCVector::accumulate");
 
   // make sure that the dimensions match
-  if (this->dim() != la->dim()) {
+  if (!(this->dim() == la->dim())) {
       fprintf(stderr,"LocalSCVector::"
               "accumulate(SCVector*a):\n");
       fprintf(stderr,"dimensions don't match\n");
@@ -1076,7 +1081,7 @@ LocalSCVector::scalar_product(SCVector*a)
     = LocalSCVector::require_castdown(a,"LocalSCVector::scalar_product");
 
   // make sure that the dimensions match
-  if (this->dim() != la->dim()) {
+  if (!(this->dim() == la->dim())) {
       fprintf(stderr,"LocalSCVector::"
               "scale_product(SCVector*a):\n");
       fprintf(stderr,"dimensions don't match\n");

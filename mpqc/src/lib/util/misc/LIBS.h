@@ -1,2 +1,2 @@
 libmisc.LIBSUF
-#include <util/group/LIBS.h>
+libgroup.LIBSUF

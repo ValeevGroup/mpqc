@@ -104,12 +104,12 @@ PointGroup::PointGroup(const char *s, SymmetryOperation& so)
 }
 
 PointGroup::PointGroup(const char *s, SymmetryOperation& so,
-                       const SCVector3& or)
+                       const SCVector3& origin)
   : symb(0)
 {
   set_symbol(s);
   frame = so;
-  origin_ = or;
+  origin_ = origin;
 }
 
 PointGroup::PointGroup(const RefKeyVal& kv)

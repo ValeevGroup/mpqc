@@ -355,7 +355,7 @@ ActiveMsgMemoryGrp::release_read(void *data, distsize_t offset, int size)
   if (use_locks_) {
       send_lock_request(MemoryLockRequest::RelRead, offset, size);
     }
-  delete[] data;
+  delete[] (char*) data;
 }
 
 void
@@ -380,7 +380,7 @@ ActiveMsgMemoryGrp::release_write(void *data, distsize_t offset, int size)
           replace_data(i.data(), i.node(), i.offset(), i.size());
         }
     }
-  delete[] data;
+  delete[] (char*) data;
 }
 
 void

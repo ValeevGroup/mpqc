@@ -20,6 +20,7 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/lgbuild.h>
+#include <chemistry/qc/scf/ltbgrad.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -612,6 +613,26 @@ CLSCF::effective_fock()
 
 /////////////////////////////////////////////////////////////////////////////
 
+class LocalCLGradContribution {
+  private:
+    double * const pmat;
+
+  public:
+    LocalCLGradContribution(double *p) : pmat(p) {}
+    ~LocalCLGradContribution() {}
+
+    inline double cont(int ij, int kl) {
+      return pmat[ij]*pmat[kl];
+    }
+};
+
+#ifdef __GNUC__
+template class TBGrad<LocalCLGradContribution>;
+template class LocalTBGrad<LocalCLGradContribution>;
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+
 void
 CLSCF::init_gradient()
 {
@@ -691,14 +712,64 @@ CLSCF::gradient_density()
     }
   }
   
-  RefSymmSCMatrix ao_dens = pl->to_AO_basis(cl_dens_);
+  cl_dens_ = pl->to_AO_basis(cl_dens_);
 
-  return ao_dens;
+  return cl_dens_;
 }
 
 void
 CLSCF::two_body_deriv(const RefSCVector& tbgrad)
 {
+  RefSCElementMaxAbs m = new SCElementMaxAbs();
+  cl_dens_.element_op(m);
+  double pmax = m->result();
+  m=0;
+
+  if (LocalSCMatrixKit::castdown(basis()->matrixkit())) {
+    // create block iterators for the G and P matrices
+    RefSCMatrixSubblockIter piter =
+      cl_dens_->local_blocks(SCMatrixSubblockIter::Read);
+    piter->begin();
+    SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
+
+    double *pmat_data = pblock->data;
+  
+    RefMessageGrp grp = MessageGrp::get_default_messagegrp();
+    LocalCLGradContribution lclc(pmat_data);
+    LocalTBGrad<LocalCLGradContribution> tb(lclc, integral(), basis(), grp);
+    tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
+  }
+
+  // see if we can convert G and P to local matrices
+  else if (basis()->nbasis() < 700) {
+    RefSCMatrixKit lkit = new LocalSCMatrixKit();
+    RefSCDimension ldim = new SCDimension(basis()->nbasis());
+    RefSymmSCMatrix ptmp = lkit->symmmatrix(ldim);
+
+    ptmp->convert(cl_dens_);
+    
+    RefMessageGrp grp;
+    if (ReplSCMatrixKit::castdown(basis()->matrixkit())) {
+      grp = ReplSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
+    } else if (DistSCMatrixKit::castdown(basis()->matrixkit())) {
+      grp = DistSCMatrixKit::castdown(basis()->matrixkit())->messagegrp();
+    } else {
+      fprintf(stderr,"don't know the matrix kit\n");
+      abort();
+    }
+    
+    // create block iterators for the G and P matrices
+    RefSCMatrixSubblockIter piter =
+      ptmp->local_blocks(SCMatrixSubblockIter::Read);
+    piter->begin();
+    SCMatrixLTriBlock *pblock = SCMatrixLTriBlock::castdown(piter->block());
+
+    double *pmat_data = pblock->data;
+  
+    LocalCLGradContribution lclc(pmat_data);
+    LocalTBGrad<LocalCLGradContribution> tb(lclc, integral(), basis(), grp);
+    tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

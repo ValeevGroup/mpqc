@@ -8,7 +8,7 @@
 
 mole<CLSCF>: (
   root = 2
-  integral_storage=64000000
+  integral_storage=32000000
 
   % Function
   value_accuracy = 1e-9
@@ -26,7 +26,7 @@ mole<CLSCF>: (
   density_reset_freq = 5
   ckpt_dir = "./"
   filename = "test"
-  maxiter=30
+  maxiter=10
 
   extrap<DIIS>: (
     start = 5
@@ -38,7 +38,7 @@ mole<CLSCF>: (
 molecule = $:water
 
 coor = $:symcoor
-message = $:messageShm
+message = $:message1
 
 xopt<QNewtonOpt>: (
   convergence = 1.0e-5

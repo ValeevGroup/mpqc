@@ -23,7 +23,7 @@ class LocalGBuild : public GBuild<T> {
     char *pmax;
     
   public:
-    LocalGBuild(T& t, const RefTwoBodyInt& tbi, const RefIntegral ints,
+    LocalGBuild(T& t, const RefTwoBodyInt& tbi, const RefIntegral& ints,
                 const RefGaussianBasisSet& bs, const RefMessageGrp& g,
                 char *pm) :
       GBuild<T>(t), grp_(g), tbi_(tbi), integral_(ints), gbs_(bs), pmax(pm) {}

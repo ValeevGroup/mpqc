@@ -1,4 +1,4 @@
-define([sc_version],[2.0.3])
+define([sc_version],[2.0.4])
 define([sc_buildid],[])
 define([sc_so_version],[2:0:0])
 

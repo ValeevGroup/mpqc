@@ -409,11 +409,11 @@ changequote([, ])dnl
   mips4-*)
     if test X$GCC = Xyes; then
       COPTIONS_MISC="$COPTIONS_MISC -mips4"
-      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -mips4 -ptused"
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -mips4"
     else
       LDFLAGS="$LDFLAGS -64"
       COPTIONS_MISC="$COPTIONS_MISC -64 -mips4"
-      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -mips4 -ptused"
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -mips4"
     fi
     AC_MSG_RESULT(mips4)
   ;;
@@ -424,7 +424,7 @@ changequote([, ])dnl
     else
       LDFLAGS="$LDFLAGS -64 -G0"
       COPTIONS_MISC="$COPTIONS_MISC -64 -G0 -mips4 -TARG:processor=r8000"
-      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -G0 -mips4 -TARG:processor=r8000 -ptused"
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -G0 -mips4 -TARG:processor=r8000"
     fi
     AC_MSG_RESULT(r8000)
   ;;
@@ -435,7 +435,7 @@ changequote([, ])dnl
     else
       LDFLAGS="$LDFLAGS -64 -G0"
       COPTIONS_MISC="$COPTIONS_MISC -64 -G0 -mips4 -r10000"
-      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -G0 -mips4 -r10000 -ptused"
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -64 -G0 -mips4 -r10000"
     fi
     AC_MSG_RESULT(r10000)
   ;;
@@ -863,6 +863,12 @@ changequote([, ])dnl
       CXX="\$(SRCTOPDIR)/bin/CCfix CC"
     fi
     AC_MSG_RESULT("old mips4-sgi-irix r8000-sgi-irix or r10000-sgi-irix")
+  ;;
+  mips4-sgi-irix* | r*-sgi-irix*)
+    if test X$CXX = XCC; then
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -ptused"
+    fi
+    AC_MSG_RESULT("mips4-sgi-irix r8000-sgi-irix or r10000-sgi-irix")
   ;;
   rs6000-*)
     if test X$CXX = XmpCC; then

@@ -62,6 +62,7 @@ class CSGradErep12Qtr: public Thread {
     double **scf_vector;
     int debug;
     int dynamic_;
+    int usep4_;
   public:
     CSGradErep12Qtr(int mythread_a, int nthread_a,
                     int me_a, int nproc_a,
@@ -73,7 +74,7 @@ class CSGradErep12Qtr: public Thread {
                     int nocc_a,
                     double **scf_vector_a,
                     double tol_a, int debug_a,
-                    int dynamic_a);
+                    int dynamic_a, int usep4);
     ~CSGradErep12Qtr();
 
     void set_i_offset(int ioff) { i_offset = ioff; }

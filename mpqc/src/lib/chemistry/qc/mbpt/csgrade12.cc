@@ -100,7 +100,8 @@ CSGradErep12Qtr::CSGradErep12Qtr(int mythread_a, int nthread_a,
                                  int nocc_a,
                                  double **scf_vector_a,
                                  double tol_a, int debug_a,
-                                 int dynamic_a)
+                                 int dynamic_a,
+                                 int usep4)
 {
   msg = msg_a;
   mythread = mythread_a;
@@ -116,6 +117,7 @@ CSGradErep12Qtr::CSGradErep12Qtr(int mythread_a, int nthread_a,
   scf_vector = scf_vector_a;
   debug = debug_a;
   dynamic_ = dynamic_a;
+  usep4_ = usep4;
 
   aoint_computed = 0;
   timer = new RegionTimer();
@@ -210,7 +212,9 @@ CSGradErep12Qtr::run()
         p_offset = basis->shell_to_function(P);
 
 	// check if symmetry unique and compute degeneracy
-	int deg = p4list->in_p4(P,Q,R,S);
+	int deg;
+        if (usep4_) deg = p4list->in_p4(P,Q,R,S);
+        else deg = 1;
 	double symfac = (double) deg;
 	if (deg == 0)
 	  continue;

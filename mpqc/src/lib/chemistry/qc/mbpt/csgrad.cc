@@ -570,13 +570,15 @@ MBPT2::compute_cs_grad()
 
   MemoryGrpBuf<double> membuf_remote(mem);
 
+  int usep4 = !dograd;
+
   Ref<ThreadLock> lock = thr_->new_lock();
   CSGradErep12Qtr** e12thread = new CSGradErep12Qtr*[thr_->nthread()];
   for (i=0; i<thr_->nthread(); i++) {
     e12thread[i] = new CSGradErep12Qtr(i, thr_->nthread(), me, nproc,
                                        mem, msg_, lock, basis(), tbints_[i],
                                        nocc, scf_vector, tol, debug_,
-                                       dynamic_);
+                                       dynamic_, usep4);
     }
 
     CSGrad34Qbtr** qbt34thread;
@@ -843,7 +845,7 @@ MBPT2::compute_cs_grad()
               bb = b+nocc;
               for (a=0; a<nvir_act; a++) {
 		// Zero out nonsymmetric integral, else divide by denominators
-	        if (( symorb_irrep_[ii] ^
+	        if (usep4 && ( symorb_irrep_[ii] ^
 		      symorb_irrep_[j] ^
 		      symorb_irrep_[a+nocc] ^
 		      symorb_irrep_[bb]) ) {

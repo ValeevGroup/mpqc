@@ -838,6 +838,9 @@ TriangulatedImplicitSurface(const RefKeyVal&keyval):
   isovalue_ = keyval->doublevalue("value");
   if (keyval->error() != KeyVal::OK) isovalue_ = 0.0;
 
+  fix_orientation_ = keyval->booleanvalue("fix_orientation");
+  if (keyval->error() != KeyVal::OK) fix_orientation_ = 1;
+
   remove_short_edges_ = keyval->booleanvalue("remove_short_edges");
   if (keyval->error() != KeyVal::OK) remove_short_edges_ = 1;
 
@@ -875,7 +878,7 @@ TriangulatedImplicitSurface::init()
     }
 #endif
   if (_verbose) cout << "TriangulatedImplicitSurface: orientation" << endl;
-  fix_orientation();
+  if (fix_orientation_) fix_orientation();
 #if WRITE_OOGL
   if (_debug) {
       render(new OOGLRender("surffix.oogl"));
@@ -885,13 +888,13 @@ TriangulatedImplicitSurface::init()
       if (_verbose) cout << "TriangulatedImplicitSurface: short edges" << endl;
       remove_short_edges(short_edge_factor_*resolution_);
       if (_verbose) cout << "TriangulatedImplicitSurface: orientation" << endl;
-      fix_orientation();
+      if (fix_orientation_) fix_orientation();
     }
   if (remove_slender_triangles_) {
       if (_verbose) cout << "TriangulatedImplicitSurface: slender" << endl;
       remove_slender_triangles(slender_triangle_factor_);
       if (_verbose) cout << "TriangulatedImplicitSurface: orientation" << endl;
-      fix_orientation();
+      if (fix_orientation_) fix_orientation();
     }
 
   // see if a higher order approximation to the surface is required

@@ -228,6 +228,7 @@ class TriangulatedImplicitSurface: public TriangulatedSurface {
     RefVolume vol_;
     double isovalue_;
 
+    int fix_orientation_;
     int remove_short_edges_;
     double short_edge_factor_;
     int remove_slender_triangles_;

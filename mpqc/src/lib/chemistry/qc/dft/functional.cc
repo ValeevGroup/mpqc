@@ -768,6 +768,18 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           funcs_[2] = new VWN3LCFunctional;
           funcs_[3] = new LYPCFunctional;
         }
+      else if (!strcmp(name_,"B3LYP(VWN5)")) {
+          init_arrays(4);
+          a0_ = 0.2;
+          coefs_[0] = 0.8;
+          coefs_[1] = 0.72;
+          coefs_[2] = 0.19;
+          coefs_[3] = 0.81;
+          funcs_[0] = new SlaterXFunctional;
+          funcs_[1] = new Becke88XFunctional;
+          funcs_[2] = new VWN5LCFunctional;
+          funcs_[3] = new LYPCFunctional;
+        }
       else if (!strcmp(name_,"B3PW91")) {
           init_arrays(4);
           a0_ = 0.2;
@@ -1337,7 +1349,7 @@ VWNLCFunctional::VWNLCFunctional(const RefKeyVal& keyval):
                                      KeyValValuedouble(c_alpha_mc_));
 
   x0p_rpa_ = keyval->doublevalue("x0p_rpa", KeyValValuedouble(x0p_rpa_));
-  bp_rpa_  = keyval->doublevalue("bp_rpa", KeyValValuedouble(bf_rpa_));
+  bp_rpa_  = keyval->doublevalue("bp_rpa", KeyValValuedouble(bp_rpa_));
   cp_rpa_  = keyval->doublevalue("cp_rpa", KeyValValuedouble(cp_rpa_));
   x0f_rpa_ = keyval->doublevalue("x0f_rpa", KeyValValuedouble(x0f_rpa_));
   bf_rpa_  = keyval->doublevalue("bf_rpa", KeyValValuedouble(bf_rpa_));
@@ -1723,14 +1735,14 @@ VWN3LCFunctional::VWN3LCFunctional(StateIn& s):
 
 VWN3LCFunctional::VWN3LCFunctional()
 {
-  monte_carlo_prefactor_ = 0;
+  monte_carlo_prefactor_ = 1;
 }
 
 VWN3LCFunctional::VWN3LCFunctional(const RefKeyVal& keyval):
   VWNLCFunctional(keyval)
 {
     monte_carlo_prefactor_ = keyval->booleanvalue("monte_carlo_prefactor",
-                                                  KeyValValueboolean(0));
+                                                  KeyValValueboolean(1));
 }
 
 VWN3LCFunctional::~VWN3LCFunctional()

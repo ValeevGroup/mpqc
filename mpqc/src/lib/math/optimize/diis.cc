@@ -325,7 +325,7 @@ DIIS::extrapolate(const Ref<SCExtrapData>& data,
               norm = 1.0;
             }
 
-          for (i=1; i <= ndiis-trial ; i++) {
+          for (i=1; i <= last-trial+1 ; i++) {
               bmat[i][0]=bmat[0][i] = -1.0;
               for (j=1; j <= i ; j++) {
                   bmat[i][j]=bmat[j][i]=bold[i+trial-1][j+trial-1]*norm;

@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:01  etseidl
- * Initial revision
+ * Revision 1.2  1994/01/14 10:50:51  seidl
+ * add xenon to atominfo struct
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:02  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.3  1992/06/17  22:04:21  jannsen
  * cleaned up for saber-c
@@ -72,6 +75,7 @@ struct {
    {"sulfur",      "s",  16},
    {"chlorine",    "cl", 17},
    {"argon",       "ar", 18},
+   {"xenon",       "xe", 54},
    {NULL,          NULL,  0}
   };
 

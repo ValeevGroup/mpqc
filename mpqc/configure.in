@@ -974,7 +974,7 @@ if test X$PARALLEL = Xyes; then
   AC_LANG_CPLUSPLUS
   dnl Must use try_link since check_header runs cpp which doesn't
   dnl always find mpi.h (if mpicc and no -I is used for example)
-  AC_TRY_LINK([#include <mpi.h>],have_mpi_h=yes,have_mpi_h=no)
+  AC_TRY_LINK([#include <mpi.h>],[],have_mpi_h=yes,have_mpi_h=no)
   if test "$have_mpi_h" = yes; then
     AC_CHECK_FUNC(MPI_Init,HAVE_MPI=yes,HAVE_MPI=no)
     if test "$HAVE_MPI" = no; then

@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.4  1994/08/16 20:21:23  etseidl
+ * Revision 1.5  1994/08/24 16:07:02  etseidl
+ * no longer include atomsip.h, add prototypes for keyval functions
+ *
+ * Revision 1.4  1994/08/16  20:21:23  etseidl
  * include utils.gbl
  *
  * Revision 1.3  1994/05/27  23:51:22  cljanss
@@ -60,7 +63,6 @@ extern "C" {
 #include <chemistry/qc/intv2/atomsbwr.h>
 #include <chemistry/qc/intv2/atomsallc.h>
 #include <chemistry/qc/intv2/atomsinit.h>
-#include <chemistry/qc/intv2/atomsip.h>
 #include <chemistry/qc/intv2/atomsprnt.h>
 #include <chemistry/qc/intv2/atomsfree.h>
 #include <chemistry/qc/intv2/atomsasgn.h>
@@ -84,6 +86,11 @@ extern "C" {
 
 #ifdef __cplusplus
 }
+
+class KeyVal;
+int int_read_basis(KeyVal&, char*, const char*, basis_t*);
+int int_read_centers(KeyVal&, centers_t&);
+
 #endif
 
 

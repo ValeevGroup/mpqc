@@ -42,11 +42,15 @@
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/svd.h>
 
 using namespace std;
 using namespace sc;
+using namespace sc::exp;
 
 inline int max(int a,int b) { return (a > b) ? a : b;}
+
+#define USE_INVERT 0
 
 /*-------------
   MP2R12Energy
@@ -228,11 +232,11 @@ void MP2R12Energy::compute()
   // Get the intermediates
   RefSCMatrix Vaa = r12eval_->V_aa();
   RefSCMatrix Xaa = r12eval_->X_aa();
-  RefSCMatrix Baa = r12eval_->B_aa();
+  RefSymmSCMatrix Baa = r12eval_->B_aa();
   RefSCMatrix Aaa = r12eval_->A_aa();
   RefSCMatrix Vab = r12eval_->V_ab();
   RefSCMatrix Xab = r12eval_->X_ab();
-  RefSCMatrix Bab = r12eval_->B_ab();
+  RefSymmSCMatrix Bab = r12eval_->B_ab();
   RefSCMatrix Aab = r12eval_->A_ab();
   RefSCVector emp2_aa = r12eval_->emp2_aa();
   RefSCVector emp2_ab = r12eval_->emp2_ab();
@@ -265,12 +269,21 @@ void MP2R12Energy::compute()
   // Allocate the B matrix:
   // 1) in MP2-R12/A the B matrix is the same for all pairs
   // 2) int MP2-R12/A' the B matrix is pair-specific
-  RefSCMatrix Baa_ij = Baa.clone();
+  RefSymmSCMatrix Baa_ij = Baa.clone();
   if (stdapprox_ == LinearR12::StdApprox_A) {
+#if USE_INVERT
     Baa_ij->assign(Baa);
     Baa_ij->gen_invert_this();
     if (debug_ > 1)
       Baa_ij.print("Inverse alpha-alpha MP2-R12/A B matrix");
+#else
+    // solve B * C = V
+    RefSCMatrix Caa_kl_by_ij = Caa_.clone();
+    sc::exp::lapack_linsolv_symmnondef(Baa, Caa_kl_by_ij, Vaa);
+    Caa_kl_by_ij = Caa_kl_by_ij.t();
+    Caa_.assign(Caa_kl_by_ij);  Caa_kl_by_ij = 0;
+    Caa_.scale(-1.0);
+#endif
   }
 
   int ij=0;
@@ -292,6 +305,10 @@ void MP2R12Energy::compute()
             int ow=0;
             for(int o=0; o<nocc_act; o++)
               for(int w=0; w<o; w++, ow++) {
+
+                if (ow > kl)
+                  continue;
+
                 double fx = 0.5 * (evals_act_occ[k] + evals_act_occ[l] + evals_act_occ[o] + evals_act_occ[w]
                                    - 2.0*evals_act_occ[i] - 2.0*evals_act_occ[j]) *
                             Xaa.get_element(kl,ow);
@@ -317,17 +334,39 @@ void MP2R12Energy::compute()
         if (debug_ > 1)
           Baa_ij.print("Alpha-alpha MP2-R12/A' B matrix");
 
+#if USE_INVERT
         Baa_ij->gen_invert_this();
 
         if (debug_ > 1)
           Baa_ij.print("Inverse alpha-alpha MP2-R12/A' B matrix");
+#endif
+
       }
 
+#if USE_INVERT
       // The r12 amplitudes B^-1 * V
       RefSCVector Cij = -1.0*(Baa_ij * Vaa_ij);
       const int nkl = Cij.dim().n();
       for(int kl=0; kl<nkl; kl++)
         Caa_.set_element(ij,kl,Cij.get_element(kl));
+#else
+      RefSCVector Cij = Vaa_ij.clone();
+      if (stdapprox_ == LinearR12::StdApprox_A) {
+        double* v = new double[Cij.n()];
+        Caa_.get_row(ij).convert(v);
+        Cij.assign(v);
+        delete[] v;
+      }
+      else {
+        // solve B * C = V
+        Cij = Vaa_ij.clone();
+        sc::exp::lapack_linsolv_symmnondef(Baa_ij, Cij, Vaa_ij);
+        Cij.scale(-1.0);
+        const int nkl = Cij.dim().n();
+        for(int kl=0; kl<nkl; kl++)
+          Caa_.set_element(ij,kl,Cij.get_element(kl));
+      }
+#endif
       double eaa_ij = 2.0*Vaa_ij.dot(Cij);
       er12_aa_vec[ij] = eaa_ij;
     }
@@ -348,13 +387,22 @@ void MP2R12Energy::compute()
       Aab.print("Alpha-beta A matrix");
   }
 
-  RefSCMatrix Bab_ij = Bab.clone();
+  RefSymmSCMatrix Bab_ij = Bab.clone();
   // In MP2-R12/A the B matrix is the same for all pairs
   if (stdapprox_ == LinearR12::StdApprox_A) {
+#if USE_INVERT
     Bab_ij.assign(Bab);
     if (debug_ > 1)
       Bab_ij.print("Inverse alpha-beta MP2-R12/A B matrix");
     Bab_ij->gen_invert_this();
+#else
+    // solve B * C = V
+    RefSCMatrix Cab_kl_by_ij = Cab_.clone();
+    sc::exp::lapack_linsolv_symmnondef(Bab, Cab_kl_by_ij, Vab);
+    Cab_kl_by_ij = Cab_kl_by_ij.t();
+    Cab_.assign(Cab_kl_by_ij);  Cab_kl_by_ij = 0;
+    Cab_.scale(-1.0);
+#endif
   }
 
   ij=0;
@@ -376,6 +424,10 @@ void MP2R12Energy::compute()
             int ow=0;
             for(int o=0; o<nocc_act; o++)
               for(int w=0; w<nocc_act; w++, ow++) {
+
+                if (ow > kl)
+                  continue;
+
                 double fx = 0.5 * (evals_act_occ[k] + evals_act_occ[l] + evals_act_occ[o] + evals_act_occ[w]
                                    - 2.0*evals_act_occ[i] - 2.0*evals_act_occ[j]) *
                 Xab.get_element(kl,ow);
@@ -400,17 +452,39 @@ void MP2R12Energy::compute()
         if (debug_ > 1)
 	    Bab_ij.print("Alpha-beta MP2-R12/A' B matrix");
 
+#if USE_INVERT
         Bab_ij->gen_invert_this();
 
         if (debug_ > 1)
           Bab_ij.print("Inverse alpha-beta MP2-R12/A' B matrix");
+#endif
+
       }
 
+#if USE_INVERT
       // the r12 amplitudes B^-1 * V
       RefSCVector Cij = -1.0*(Bab_ij * Vab_ij);
       const int nkl = Cij.dim().n();
       for(int kl=0; kl<nkl; kl++)
         Cab_.set_element(ij,kl,Cij.get_element(kl));
+#else
+      RefSCVector Cij = Vab_ij.clone();
+      if (stdapprox_ == LinearR12::StdApprox_A) {
+        double* v = new double[Cij.n()];
+        Cab_.get_row(ij).convert(v);
+        Cij.assign(v);
+        delete[] v;
+      }
+      else {
+        // solve B * C = V
+        Cij = Vab_ij.clone();
+        sc::exp::lapack_linsolv_symmnondef(Bab_ij, Cij, Vab_ij);
+        Cij.scale(-1.0);
+        const int nkl = Cij.dim().n();
+        for(int kl=0; kl<nkl; kl++)
+          Cab_.set_element(ij,kl,Cij.get_element(kl));
+      }
+#endif
       double eab_ij = 1.0*Vab_ij.dot(Cij);
       er12_ab_vec[ij] = eab_ij;
     }

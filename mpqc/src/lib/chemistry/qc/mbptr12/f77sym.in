@@ -3,4 +3,5 @@
 #define F77_DAXPY
 #define F77_DDOT
 #define F77_DGESVD
+#define F77_DSPSVX
 

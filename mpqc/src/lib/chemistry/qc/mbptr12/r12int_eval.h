@@ -50,6 +50,8 @@ class R12IntEval : virtual public SavableState {
   // Calculation information (number of basis functions, R12 approximation, etc.)
   Ref<R12IntEvalInfo> r12info_;
 
+  // Note that intermediate B is symmetric but is stored as a full matrix to simplify the code
+  // that computes asymmetric form of B
   RefSCMatrix Vaa_, Vab_, Xaa_, Xab_, Baa_, Bab_, Aaa_, Aab_, T2aa_, T2ab_;
   RefSCMatrix Raa_, Rab_;    // Not sure if I'll compute and keep these explicitly later
   Ref<R12Amplitudes> Amps_;  // Amplitudes of various R12-contributed terms in pair functions
@@ -232,7 +234,7 @@ public:
   /// Returns alpha-alpha block of the X intermediate matrix.
   RefSCMatrix X_aa();
   /// Returns alpha-alpha block of the B intermediate matrix.
-  RefSCMatrix B_aa();
+  RefSymmSCMatrix B_aa();
   /// Returns alpha-alpha block of the A intermediate matrix. Returns 0 if EBC is assumed.
   RefSCMatrix A_aa();
   /// Returns alpha-alpha block of the MP2 T2 matrix. Returns 0 if EBC is assumed.
@@ -242,7 +244,7 @@ public:
   /// Returns alpha-beta block of the X intermediate matrix.
   RefSCMatrix X_ab();
   /// Returns alpha-beta block of the B intermediate matrix.
-  RefSCMatrix B_ab();
+  RefSymmSCMatrix B_ab();
   /// Returns alpha-beta block of the A intermediate matrix. Returns 0 if EBC is assumed
   RefSCMatrix A_ab();
   /// Returns alpha-beta block of the MP2 T2 matrix. Returns 0 if EBC is assumed

@@ -118,6 +118,149 @@ namespace sc {
       if (v_data) delete[] v_data;
     }
 
+
+    /** Uses LAPACK's DSPSVX to solve symmetric non-definite linear system AX = B, where B is a RefSCVector
+    */
+    void lapack_linsolv_symmnondef(const RefSymmSCMatrix& A,
+                                   RefSCVector& X,
+                                   const RefSCVector& B)
+    {
+      int n = A.n();
+      if (n != B.n())
+        throw std::runtime_error("lapack_linsolv_symmnondef() -- dimensions of A and B do not match");
+      if (n != X.n())
+        throw std::runtime_error("lapack_linsolv_symmnondef() -- dimensions of A and X do not match");
+
+      // convert A to packed upper triangular form
+      int ntri = n*(n+1)/2;
+      double* AP = new double[ntri];
+      A.convert(AP);
+      double* AFP = new double[ntri];
+      int* ipiv = new int[n];
+      double* BB = new double[n];
+      B.convert(BB);
+      double* XX = new double[n];
+
+      char fact = 'N';
+      char uplo = 'U';
+      int nrhs = 1;
+      double rcond = 0.0;
+      double* ferr = new double[1];
+      double* berr = new double[1];
+      double* work = new double[3*n];
+      int* iwork = new int[n];
+      int info = 0;
+      
+      F77_DSPSVX(&fact, &uplo, &n, &nrhs, AP, AFP, ipiv, BB, &n, XX, &n, &rcond, ferr, berr, work, iwork, &info);
+
+      if (info) {
+        
+        delete[] ferr;
+        delete[] berr;
+        delete[] work;
+        delete[] iwork;
+
+        delete[] AP;
+        delete[] AFP;
+        delete[] BB;
+        delete[] XX;
+
+        if (info > 0 && info <= n)
+          throw std::runtime_error("lapack_linsolv_symmnondef() -- matrix A has factors which are exactly zero");
+        if (info == n + 1)
+          throw std::runtime_error("lapack_linsolv_symmnondef() -- matrix A is singular");
+        if (info < 0)
+          throw std::runtime_error("lapack_linsolv_symmnondef() -- one of the arguments to F77_DSPSVX is invalid");
+      }
+      else {
+        X.assign(XX);
+
+        delete[] ferr;
+        delete[] berr;
+        delete[] work;
+        delete[] iwork;
+
+        delete[] AP;
+        delete[] AFP;
+        delete[] BB;
+        delete[] XX;
+      }
+    }
+
+    /** Uses LAPACK's DSPSVX to solve symmetric non-definite linear system AX = B, where B is a RefSCMatrix.
+        Dimensions of X and B must match.
+    */
+    void lapack_linsolv_symmnondef(const RefSymmSCMatrix& A,
+                                   RefSCMatrix& X,
+                                   const RefSCMatrix& B)
+    {
+      int n = A.n();
+      int nrhs = B.ncol();
+      if (n != B.nrow())
+        throw std::runtime_error("lapack_linsolv_symmnondef() -- dimensions of A and B do not match");
+      if (n != X.nrow())
+        throw std::runtime_error("lapack_linsolv_symmnondef() -- dimensions of A and X do not match");
+      if (X.ncol() != nrhs)
+        throw std::runtime_error("lapack_linsolv_symmnondef() -- dimensions of B and X do not match");
+
+      // convert A to packed upper triangular form
+      int ntri = n*(n+1)/2;
+      double* AP = new double[ntri];
+      A.convert(AP);
+      double* AFP = new double[ntri];
+      int* ipiv = new int[n];
+      double* BB = new double[nrhs*n];
+      B.t().convert(BB);
+      double* XX = new double[nrhs*n];
+
+      char fact = 'N';
+      char uplo = 'U';
+      double rcond = 0.0;
+      double* ferr = new double[nrhs];
+      double* berr = new double[nrhs];
+      double* work = new double[3*n];
+      int* iwork = new int[n];
+      int info = 0;
+      
+      F77_DSPSVX(&fact, &uplo, &n, &nrhs, AP, AFP, ipiv, BB, &n, XX, &n, &rcond, ferr, berr, work, iwork, &info);
+
+      if (info) {
+        
+        delete[] ferr;
+        delete[] berr;
+        delete[] work;
+        delete[] iwork;
+
+        delete[] AP;
+        delete[] AFP;
+        delete[] BB;
+        delete[] XX;
+
+        if (info > 0 && info <= n)
+          throw std::runtime_error("lapack_linsolv_symmnondef() -- matrix A has factors which are exactly zero");
+        if (info == n + 1)
+          throw std::runtime_error("lapack_linsolv_symmnondef() -- matrix A is singular");
+        if (info < 0)
+          throw std::runtime_error("lapack_linsolv_symmnondef() -- one of the arguments to F77_DSPSVX is invalid");
+      }
+      else {
+        RefSCMatrix Xt = X.t();
+        Xt.assign(XX);
+        X = Xt.t();
+        Xt = 0;
+
+        delete[] ferr;
+        delete[] berr;
+        delete[] work;
+        delete[] iwork;
+
+        delete[] AP;
+        delete[] AFP;
+        delete[] BB;
+        delete[] XX;
+      }
+    }
+
   };
 };
 

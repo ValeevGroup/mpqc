@@ -255,10 +255,23 @@ RefSCMatrix R12IntEval::X_aa()
   return Xaa_;
 }
 
-RefSCMatrix R12IntEval::B_aa()
+RefSymmSCMatrix R12IntEval::B_aa()
 {
   compute();
-  return Baa_;
+
+  // Extract lower triangle of the matrix
+  Ref<SCMatrixKit> kit = Baa_.kit();
+  RefSymmSCMatrix Baa = kit->symmmatrix(Baa_.rowdim());
+  int naa = Baa_.nrow();
+  double* baa = new double[naa*naa];
+  Baa_.convert(baa);
+  const double* baa_ptr = baa;
+  for(int i=0; i<naa; i++, baa_ptr += i)
+    for(int j=i; j<naa; j++, baa_ptr++)
+      Baa.set_element(i,j,*baa_ptr);
+  delete[] baa;
+
+  return Baa;
 }
 
 RefSCMatrix R12IntEval::A_aa()
@@ -287,10 +300,23 @@ RefSCMatrix R12IntEval::X_ab()
   return Xab_;
 }
 
-RefSCMatrix R12IntEval::B_ab()
+RefSymmSCMatrix R12IntEval::B_ab()
 {
   compute();
-  return Bab_;
+
+  // Extract lower triangle of the matrix
+  Ref<SCMatrixKit> kit = Bab_.kit();
+  RefSymmSCMatrix Bab = kit->symmmatrix(Bab_.rowdim());
+  int nab = Bab_.nrow();
+  double* bab = new double[nab*nab];
+  Bab_.convert(bab);
+  const double* bab_ptr = bab;
+  for(int i=0; i<nab; i++, bab_ptr += i)
+    for(int j=i; j<nab; j++, bab_ptr++)
+      Bab.set_element(i,j,*bab_ptr);
+  delete[] bab;
+
+  return Bab;
 }
 
 RefSCMatrix R12IntEval::A_ab()

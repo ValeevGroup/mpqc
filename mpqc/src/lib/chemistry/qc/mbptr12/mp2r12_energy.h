@@ -51,6 +51,7 @@ class MP2R12Energy : virtual public SavableState {
   bool evaluated_;
   
   RefSCVector er12_aa_, er12_ab_, emp2r12_aa_, emp2r12_ab_;
+  // The coefficients are stored ij by kl, where kl is the r12-multiplied pair
   RefSCMatrix Caa_, Cab_;
 
   double emp2tot_aa_() const;

@@ -48,6 +48,20 @@ namespace sc {
                     RefDiagSCMatrix& Sigma,
                     RefSCMatrix& V);
 
+    /** Uses LAPACK's DSPSVX to solve symmetric non-definite linear system AX = B, where
+        B is a single vector
+    */
+    void lapack_linsolv_symmnondef(const RefSymmSCMatrix& A,
+                                   RefSCVector& X,
+                                   const RefSCVector& B);
+
+    /** Uses LAPACK's DSPSVX to solve symmetric non-definite linear system AX = B, where
+        B is a set of vectors
+    */
+    void lapack_linsolv_symmnondef(const RefSymmSCMatrix& A,
+                                   RefSCMatrix& X,
+                                   const RefSCMatrix& B);
+
   }
 }
 

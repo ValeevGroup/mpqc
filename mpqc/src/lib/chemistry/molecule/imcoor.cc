@@ -697,6 +697,7 @@ IntMolecularCoor::to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal)
   RefSCMatrix bmat(dim_,cart.dim());
   variable_->bmat(molecule_,bmat);
   cart.accumulate_transform(bmat.t(),internal);
+  return 0;
 }
 
 int

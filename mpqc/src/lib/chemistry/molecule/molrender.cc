@@ -238,7 +238,7 @@ static void
 compute_color(int n, double* axyz, double* argb, double* arad,
               double x, double y, double z, Color& c)
 {
-  int i, j, k;
+  int i, j;
   const int maxclosest = 10;
   int closest[maxclosest];
   double distance2[maxclosest]; // the distance squared - radius squared

@@ -10,31 +10,6 @@ extern "C" {
 #include <chemistry/molecule/simple.h>
 
 ///////////////////////////////////////////////////////////////////////////
-// utility functions
-
-// this handles the inverse of matrices even if they are singular
-static RefSymmSCMatrix
-gen_inverse(RefSymmSCMatrix&mat)
-{
-  RefSCMatrix vecs(mat.dim(),mat.dim());
-  RefDiagSCMatrix vals(mat.dim());
-
-  mat.diagonalize(vals,vecs);
-
-
-  RefSymmSCMatrix lamd(mat.dim());
-  lamd.assign(0.0);
-  for(int i=0; i < lamd.n(); i++)
-    if(vals(i) > 1.0e-8) lamd(i,i) = 1.0/vals(i);
-
-  RefSymmSCMatrix lam(mat.dim());
-  lam.assign(0.0);
-  lam.accumulate_transform(vecs,lamd);
-
-  return lam;
-}
-
-///////////////////////////////////////////////////////////////////////////
 // members of CartMolecularCoor
 
 #define CLASSNAME CartMolecularCoor

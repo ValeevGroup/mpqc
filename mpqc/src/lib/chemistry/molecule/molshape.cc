@@ -248,7 +248,6 @@ ConnollyShape2::distance_to_surface(const SCVector3&r, double*grad) const
           n_inside_vdw_++;
 #endif
           return inside;
-          continue;
         }
       else if (distance < r_i + probe_r) {
           if (n_local_spheres == max_local_spheres) {
@@ -649,7 +648,6 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres) const
     // circles describing the intersections of every sphere with
     // s0 are included in at least one other sphere.
     double epsilon=1.e-8;
-    int surface_not_covered=0;
     for (i=0; i<n_spheres; i++)
     {
         // calculate radius of the intersection of s0 and s[i]
@@ -942,10 +940,6 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres) const
                 min_angle[0]=theta1;
                 max_angle[0]=theta2;
             }
-
-            double jx0=x0;
-            double jy0=y0;
-            double jz0=z0;
             
             // Initialize the interval object
             intvl.clear();

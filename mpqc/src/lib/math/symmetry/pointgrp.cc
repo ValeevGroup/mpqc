@@ -127,7 +127,7 @@ PointGroup::~PointGroup()
 }
 
 PointGroup&
-PointGroup::operator=(PointGroup& pg)
+PointGroup::operator=(const PointGroup& pg)
 {
   set_symbol(pg.symb);
   frame = pg.frame;

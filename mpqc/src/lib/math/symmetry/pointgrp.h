@@ -415,7 +415,7 @@ class PointGroup: public SavableState {
     PointGroup(PointGroup&);
     ~PointGroup();
 
-    PointGroup& operator=(PointGroup&);
+    PointGroup& operator=(const PointGroup&);
 
     //. Returns the \clsnmref{CharacterTable} for this point group.
     CharacterTable char_table() const;

@@ -50,11 +50,16 @@ class IsosurfaceGen {
 };
 
 class ImplicitSurfacePolygonizer: public IsosurfaceGen {
-  private:
     // These static data and members are used to interface to the
     // implicit.c routine provided in Graphics Gems IV.
     static ImplicitSurfacePolygonizer* current;
+    // The following should not really be used publically.
+    // they are public to permit access through internal
+    // C-language functions.
+  public:
+    /// For internal use only.
     static int add_triangle_to_current(int,int,int,VERTICES);
+    /// For internal use only.
     static double value_of_current(double x, double y, double z);
   protected:
     Ref<Volume> _volume;

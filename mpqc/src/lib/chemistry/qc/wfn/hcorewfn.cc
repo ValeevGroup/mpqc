@@ -105,9 +105,33 @@ HCoreWfn::save_data_state(StateOut&s)
 RefSCMatrix
 HCoreWfn::oso_eigenvectors()
 {
-  if (!oso_eigenvectors_.computed()) {
-    oso_eigenvectors_=hcore_guess();
+  if (!oso_eigenvectors_.computed() || !eigenvalues_.computed()) {
+    RefSymmSCMatrix hcore_oso(oso_dimension(), basis_matrixkit());
+    hcore_oso->assign(0.0);
+    hcore_oso->accumulate_transform(so_to_orthog_so(), core_hamiltonian());
+
+    if (debug_ > 1) {
+      core_hamiltonian().print("hcore in SO basis");
+    }
+
+    if (debug_ > 1) {
+      hcore_oso.print("hcore in ortho SO basis");
+    }
+
+    RefSCMatrix vec(oso_dimension(), oso_dimension(), basis_matrixkit());
+    RefDiagSCMatrix val(oso_dimension(), basis_matrixkit());
+
+    hcore_oso.diagonalize(val,vec);
+
+    if (debug_ > 1) {
+      val.print("hcore eigenvalues in ortho SO basis");
+      vec.print("hcore eigenvectors in ortho SO basis");
+    }
+    oso_eigenvectors_=vec;
     oso_eigenvectors_.computed() = 1;
+
+    eigenvalues_ = val;
+    eigenvalues_.computed() = 1;
   }
   
   return oso_eigenvectors_.result_noupdate();
@@ -117,8 +141,7 @@ RefDiagSCMatrix
 HCoreWfn::eigenvalues()
 {
   if (!eigenvalues_.computed()) {
-    eigenvalues_=core_hamiltonian().eigvals();
-    eigenvalues_.computed() = 1;
+    oso_eigenvectors();
   }
   
   return eigenvalues_.result_noupdate();
@@ -132,7 +155,8 @@ HCoreWfn::density()
     BlockedDiagSCMatrix *modens
       = BlockedDiagSCMatrix::castdown(mo_density.pointer());
     if (!modens) {
-      ExEnv::err() << node0 << indent << "HCoreWfn::density: basis weirdness" << endl;
+      ExEnv::err() << node0 << indent
+                   << "HCoreWfn::density: wrong MO matrix kit" << endl;
       abort();
     }
 
@@ -148,7 +172,7 @@ HCoreWfn::density()
 
     RefSymmSCMatrix dens(so_dimension(), basis_matrixkit());
     dens->assign(0.0);
-    dens->accumulate_transform(eigenvectors(), mo_density);
+    dens->accumulate_transform(mo_to_so(), mo_density);
 
     density_ = dens;
     density_.computed() = 1;
@@ -184,9 +208,22 @@ void
 HCoreWfn::compute()
 {
   eigenvectors();
-  set_energy(0.0);
+  RefSymmSCMatrix h_oso(oso_dimension(), basis_matrixkit());
+  h_oso.assign(0.0);
+  h_oso.accumulate_transform(so_to_orthog_so(),core_hamiltonian());
+  RefSymmSCMatrix p_oso(oso_dimension(), basis_matrixkit());
+  p_oso.assign(0.0);
+  p_oso.accumulate_transform(so_to_orthog_so(), density());
+  double e = (h_oso*p_oso).trace();
+  set_energy(e);
   set_actual_value_accuracy(desired_value_accuracy());
   return;
+}
+
+int
+HCoreWfn::value_implemented() const
+{
+  return 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -329,6 +329,30 @@ OneBodyWavefunction::projected_eigenvalues(const RefOneBodyWavefunction& owfn,
 }
 
 RefSCMatrix
+OneBodyWavefunction::so_to_mo()
+{
+  return orthog_so_to_mo() * so_to_orthog_so();
+}
+
+RefSCMatrix
+OneBodyWavefunction::orthog_so_to_mo()
+{
+  return oso_eigenvectors().t();
+}
+
+RefSCMatrix
+OneBodyWavefunction::mo_to_so()
+{
+  return so_to_orthog_so_inverse() * mo_to_orthog_so();
+}
+
+RefSCMatrix
+OneBodyWavefunction::mo_to_orthog_so()
+{
+  return oso_eigenvectors();
+}
+
+RefSCMatrix
 OneBodyWavefunction::eigenvectors()
 {
   return so_to_orthog_so().t() * oso_eigenvectors();

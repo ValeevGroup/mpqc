@@ -78,11 +78,19 @@ class OneBodyWavefunction: public Wavefunction {
 
     int nelectron();
 
-    /** Returns the SO to MO transformation matrix.  The
-        row index is the SO number and the col index is the MO number. */
+    /// Returns the SO to MO transformation matrix.
+    RefSCMatrix so_to_mo();
+    /// Returns the orthogonal-SO to MO transformation matrix.
+    RefSCMatrix orthog_so_to_mo();
+    /// Returns the MO to SO transformation matrix.
+    RefSCMatrix mo_to_so();
+    /** Returns the MO to orthogonal-SO transformation matrix.
+        This returns the same matrix as oso_eigenvectors(). */
+    RefSCMatrix mo_to_orthog_so();
+
+    /** Deprecated.  Use so_to_mo().t() instead. */
     RefSCMatrix eigenvectors();
-    /** Returns the orthogonal SO to MO transformation matrix.  The
-        row index is the SO number and the col index is the MO number. */
+    /** Returns the orthogonal MO to orthogonal-SO transformation matrix. */
     virtual RefSCMatrix oso_eigenvectors() = 0;
     /** Returns the MO basis eigenvalues. */
     virtual RefDiagSCMatrix eigenvalues() = 0;
@@ -167,6 +175,8 @@ class HCoreWfn: public OneBodyWavefunction {
     RefSymmSCMatrix density();
     int spin_polarized();
     int spin_unrestricted();
+
+    int value_implemented() const;
 };
 SavableState_REF_dec(HCoreWfn);
 

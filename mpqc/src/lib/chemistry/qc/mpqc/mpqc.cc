@@ -78,7 +78,7 @@ MPSCF::MPSCF(KeyVal&keyval):
     exit(1);
   }
 
-  if (scf_init_scf_struct_kv(keyval,centers,scf_info) < 0) {
+  if (scf_init_scf_struct(keyval,centers,scf_info) < 0) {
     fprintf(stderr,"MPSCF::MPSCF(KeyVal&):  could not form scf_info\n");
     exit(1);
   }
@@ -189,6 +189,7 @@ MPSCF::MPSCF(KeyVal&keyval):
     dmt_force_osscf_keyval_init(&keyval,outfile);
   else
     dmt_force_csscf_keyval_init(&keyval,outfile);
+  if (me==0) fprintf(outfile,"\n");
 
  // set the throttle for libdmt loops
   dmt_set_throttle(throttle);
@@ -206,7 +207,7 @@ MPSCF::MPSCF(KeyVal&keyval):
     FockO = dmt_nil();
 
   if (mynode0() == 0 && save_vector)
-      fprintf(outfile,"  scf vector will be written to file %s\n",vecfile);
+      fprintf(outfile,"  scf vector will be written to file %s\n\n",vecfile);
 
  // if restart, then read in old scf vector if it exists
 
@@ -214,20 +215,22 @@ MPSCF::MPSCF(KeyVal&keyval):
   if (test_vec && scf_info.restart) {
     fclose(test_vec);
     dmt_read(vecfile,Scf_Vec);
-    if(me==0) fprintf(outfile,"\n  read vector from file %s\n\n",vecfile);
+    if (me==0) fprintf(outfile,"\n  read vector from file %s\n\n",vecfile);
     scf_info.restart=1;
   } else if (test_vec) {
     fclose(test_vec);
   }
 
   tim_exit("input");
-  
 }
 
 MPSCF::~MPSCF()
 {
-  if(scf_info.iopen) dmt_force_osscf_done();
-  else dmt_force_csscf_done();
+  if (scf_info.iopen)
+    dmt_force_osscf_done();
+  else
+    dmt_force_csscf_done();
+
   tim_print(node_timings);
   clean_and_exit(host0());
   active = 0;
@@ -282,26 +285,30 @@ MPSCF::compute()
 
   // Adjust the value accuracy if gradients are needed and set up
   // minimal accuracies.
-  if (desired_value_accuracy() > 1.0e-4) set_desired_value_accuracy(1.0e-4);
+  if (desired_value_accuracy() > 1.0e-4)
+    set_desired_value_accuracy(1.0e-4);
+
   if (_gradient.compute()) {
-      if (desired_gradient_accuracy() > 1.0e-4)
-        set_desired_gradient_accuracy(1.0e-4);
-      if (desired_value_accuracy() > 0.1 * desired_gradient_accuracy()) {
-          set_desired_value_accuracy(0.1 * desired_gradient_accuracy());
-        }
+    if (desired_gradient_accuracy() > 1.0e-4)
+      set_desired_gradient_accuracy(1.0e-4);
+    if (desired_value_accuracy() > 0.1 * desired_gradient_accuracy()) {
+      set_desired_value_accuracy(0.1 * desired_gradient_accuracy());
     }
+  }
 
-  /* copy geometry from Molecule to centers */
-  for (i=0; i<centers.n; i++) {
-      for (j=0; j<3; j++) {
-          centers.center[i].r[j] = _mol->operator[](i)[j];
-        }
-    }
+  if (mynode0()==0) fprintf(outfile,"\n");
 
-  /* broadcast new geometry information */
-  for (i=0; i<centers.n; i++) {
-      bcast0(centers.center[i].r,sizeof(double)*3,mtype_get(),0);
+ // copy geometry from Molecule to centers
+  for (i=0; i < centers.n; i++) {
+    for (j=0; j < 3; j++) {
+      centers.center[i].r[j] = _mol->operator[](i)[j];
     }
+  }
+
+ // broadcast new geometry information
+  for (i=0; i < centers.n; i++) {
+    bcast0(centers.center[i].r,sizeof(double)*3,mtype_get(),0);
+  }
 
   // make sure everybody knows if we're to compute a vector
   bcast0(&_scf.compute(),sizeof(int),mtype_get(),0);
@@ -309,31 +316,31 @@ MPSCF::compute()
   bcast0(&_energy.compute(),sizeof(int),mtype_get(),0);
   bcast0(&_energy.computed(),sizeof(int),mtype_get(),0);
 
-  /* calculate new scf_vector */
+  // calculate new scf_vector
   if (_scf.needed() || _energy.needed()) {
-      tim_enter("scf_vect");
+    tim_enter("scf_vect");
 
-      scf_info.convergence = ((int) -log10(_energy.desired_accuracy())) + 1;
-      scf_info.intcut = scf_info.convergence + 1;
-      fprintf(outfile,"MPSCF: computing energy with integral cutoff 10^-%d"
+    scf_info.convergence = ((int) -log10(_energy.desired_accuracy())) + 1;
+    scf_info.intcut = scf_info.convergence + 1;
+    fprintf(outfile,"\n  MPSCF: computing energy with integral cutoff 10^-%d"
               " and convergence 10^-%d\n",
               scf_info.intcut,scf_info.convergence);
-      errcod = scf_vector(&scf_info,&sym_info,&centers,
-                          Fock,FockO,Scf_Vec,&oldcenters,outfile);
-      if(errcod != 0) {
-          fprintf(outfile,"trouble forming scf vector\n");
-          clean_and_exit(host);
-        }
 
-      if(save_vector) dmt_write(vecfile,Scf_Vec);
-
-      scf_info.restart=1;
-      _scf.computed() = 1;
-      set_energy(scf_info.nuc_rep+scf_info.e_elec);
-      _energy.set_actual_accuracy(_energy.desired_accuracy());
-
-      tim_exit("scf_vect");
+    if (scf_vector(&scf_info,&sym_info,&centers,
+                     Fock,FockO,Scf_Vec,&oldcenters,outfile) < 0) {
+      fprintf(stderr,"MPSCF::compute():  trouble forming scf vector\n");
+      clean_and_exit(host);
     }
+
+    if (save_vector) dmt_write(vecfile,Scf_Vec);
+
+    scf_info.restart=1;
+    _scf.computed() = 1;
+    set_energy(scf_info.nuc_rep+scf_info.e_elec);
+    _energy.set_actual_accuracy(_energy.desired_accuracy());
+
+    tim_exit("scf_vect");
+  }
 
   // make sure that everybody knows whether or not a gradient is needed.
   bcast0(&_gradient.compute(),sizeof(int),mtype_get(),0);
@@ -342,40 +349,41 @@ MPSCF::compute()
   // compute the gradient if needed
   double_matrix_t grad;
   allocbn_double_matrix(&grad,"n1 n2",3,centers.n);
-  if(_gradient.needed()) {
-      int cutoff = ((int) -log10(desired_gradient_accuracy())) + 1;
-      fprintf(outfile,"MPSCF: computing gradient with cutoff 10^-%d\n",cutoff);
-      if(!scf_info.iopen) {
-          dmt_force_csscf_threshold_10(cutoff);
-          dmt_force_csscf(outfile,Fock,Scf_Vec,
+  if (_gradient.needed()) {
+    int cutoff = ((int) -log10(desired_gradient_accuracy())) + 1;
+    fprintf(outfile,"\n");
+    fprintf(outfile,"  MPSCF: computing gradient with cutoff 10^-%d\n",cutoff);
+    if (!scf_info.iopen) {
+      dmt_force_csscf_threshold_10(cutoff);
+      dmt_force_csscf(outfile,Fock,Scf_Vec,
                           &centers,&sym_info,scf_info.nclosed,&grad);
-        }
-      else {
-          int ndoc=scf_info.nclosed;
-          int nsoc=scf_info.nopen;
-          dmt_force_osscf(outfile,Fock,FockO,Scf_Vec,
-                          &centers,&sym_info,ndoc,nsoc,&grad);
-        }
-      // convert the gradient to a SCVector
-      RefSCVector g(_moldim);
-      for (int ii=0,i=0; i<centers.n; i++) {
-          for (int j=0; j<3; j++,ii++) {
-              g(ii) = grad.d[j][i];
-            }
-        }
-      // update the gradient, converting to internal coordinates if needed
-      set_gradient(g);
-      _gradient.set_actual_accuracy(desired_gradient_accuracy());
+    } else {
+      int ndoc=scf_info.nclosed;
+      int nsoc=scf_info.nopen;
+      dmt_force_osscf(outfile,Fock,FockO,Scf_Vec,
+                      &centers,&sym_info,ndoc,nsoc,&grad);
     }
 
-  // compute the hessian if needed
-  if (_hessian.needed()) {
-      if (mynode0()==0) {
-          printf("A hessian was requested, but cannot be computed\n");
-          abort();
-        }
+    // convert the gradient to a SCVector
+    RefSCVector g(_moldim);
+    for (int ii=0,i=0; i<centers.n; i++) {
+      for (int j=0; j<3; j++,ii++) {
+        g(ii) = grad.d[j][i];
+      }
     }
-  
+
+    // update the gradient, converting to internal coordinates if needed
+    set_gradient(g);
+    _gradient.set_actual_accuracy(desired_gradient_accuracy());
+  }
+
+ // compute the hessian if needed
+  if (_hessian.needed()) {
+    if (mynode0()==0) {
+      fprintf(stderr,"A hessian was requested, but cannot be computed\n");
+      abort();
+    }
+  }
 }
 
 double

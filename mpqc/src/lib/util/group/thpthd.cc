@@ -126,11 +126,15 @@ PthreadThreadGrp::init_attr()
   pthread_attr_setdetachstate(attr_, PTHREAD_CREATE_UNDETACHED);
 #endif
   size_t minstacksize = 2097152;
-  size_t defstacksize;
+  size_t defstacksize = 1;
+#ifdef HAVE_PTHREAD_ATTR_GETSTACKSIZE
   pthread_attr_getstacksize(attr_, &defstacksize);
+#endif
+#ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
   if (defstacksize < minstacksize) {
     pthread_attr_setstacksize(attr_, minstacksize);
   }
+#endif
 }
 
 int

@@ -6,6 +6,8 @@
 #pragma interface
 #endif
 
+#include <util/misc/formio.h>
+
 #include <math/isosurf/shape.h>
 #include <chemistry/molecule/molinfo.h>
 #include <chemistry/molecule/molecule.h>
@@ -90,10 +92,11 @@ class CS2Sphere
     double radius(void) const {return _radius;}
 
     void recenter(const SCVector3 &v) { _v -= v; }
-    void print(FILE* fp=stdout) 
+    void print(ostream& os=cout) 
     {
-        fprintf(fp,"Rad=%lf, Center=(%lf,%lf,%lf), From origin=%lf\n",
-                _radius, _v[0], _v[1], _v[2], _v.norm());
+      os << node0 << indent
+         << scprintf("Rad=%lf, Center=(%lf,%lf,%lf), From origin=%lf\n",
+                     _radius, _v[0], _v[1], _v[2], _v.norm());
     }
 
     // Function to determine if there is any portion of this that 
@@ -103,7 +106,7 @@ class CS2Sphere
     int intersect(CS2Sphere *s,
                   int n_spheres) const;
 
-    static void print_counts(FILE*fp = stdout);
+    static void print_counts(ostream& = cout);
 };
 
 #define CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM 10
@@ -134,7 +137,11 @@ class ConnollyShape2: public Shape {
                      double valuemax,
                      SCVector3& p1, SCVector3& p2);
 
-    static void print_counts(FILE*fp = stdout);
+    static void print_counts(ostream& = cout);
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

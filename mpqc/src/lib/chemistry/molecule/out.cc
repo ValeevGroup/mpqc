@@ -49,13 +49,13 @@ OutSimpleCo::OutSimpleCo(const OutSimpleCo& s)
   : SimpleCo(4)
 {
   *this=s;
-  }
+}
 
 OutSimpleCo::OutSimpleCo(const char *refr, int a1, int a2, int a3, int a4)
   : SimpleCo(4,refr)
 {
   atoms[0]=a1; atoms[1]=a2; atoms[2]=a3; atoms[3]=a4;
-  }
+}
 
 OutSimpleCo::OutSimpleCo(const RefKeyVal &kv) :
   SimpleCo(kv,4)
@@ -66,7 +66,8 @@ OutSimpleCo::~OutSimpleCo()
 {
 }
 
-OutSimpleCo& OutSimpleCo::operator=(const OutSimpleCo& s)
+OutSimpleCo&
+OutSimpleCo::operator=(const OutSimpleCo& s)
 {
   if(label_) delete[] label_;
   label_=new char[strlen(s.label_)+1];
@@ -74,9 +75,10 @@ OutSimpleCo& OutSimpleCo::operator=(const OutSimpleCo& s)
   atoms[0]=s.atoms[0]; atoms[1]=s.atoms[1]; atoms[2]=s.atoms[2];
   atoms[3]=s.atoms[3];
   return *this;
-  }
+}
 
-double OutSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
+double
+OutSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 {
   int a=atoms[0]-1; int b=atoms[1]-1; int c=atoms[2]-1; int d=atoms[3]-1;
   Point u1(3),u2(3),u3(3),z1(3);
@@ -132,7 +134,8 @@ double OutSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 }
 
 
-double OutSimpleCo::calc_force_con(Molecule& m)
+double
+OutSimpleCo::calc_force_con(Molecule& m)
 {
   int x=atoms[0]-1;
   int a=atoms[1]-1; int b=atoms[2]-1; int c=atoms[3]-1;
@@ -184,3 +187,9 @@ OutSimpleCo::preferred_value() const
 {
   return value_*rtd;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -3,9 +3,10 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+
+#include <util/misc/formio.h>
 #include <chemistry/molecule/chemelem.h>
 
 DescribedClass_REF_def(ChemicalElement);
@@ -80,7 +81,7 @@ ChemicalElement::ChemicalElement(const char* name)
   // check to see if z value is OK, if not then the name must have been
   // invalid
   if (Z_ < 1 || Z_ > max_atomic_number) {
-      fprintf(stderr,"ChemicalElement: invalid name: %s\n",name);
+      cerr << node0 << sprintf("ChemicalElement: invalid name: %s\n",name);
       exit(1);
     }
 }
@@ -215,3 +216,9 @@ ChemicalElement::atom_info_type ChemicalElement::atom_info[]=
    {"hahnium",      "Ha",105,260.0000, 5,7,9,-273,-273, -1,0.00,-1.5,-1.5,-1.5,-1.5,-1.00},
    {"Unnamed",      "Un",106,263.0000, 6,7,9,-273,-273, -1,0.00,-1.5,-1.5,-1.5,-1.5,-1.00},
    {"Unnamed",      "Un",107,266.0000, 7,7,9,-273,-273, -1,0.00,-1.5,-1.5,-1.5,-1.5,-1.00}};
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

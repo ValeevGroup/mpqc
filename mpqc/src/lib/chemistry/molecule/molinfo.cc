@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <util/misc/formio.h>
 #include <chemistry/molecule/molinfo.h>
 
 ////////////////////////////////////////////////////////////////////////
@@ -123,8 +124,9 @@ AtomInfo::preload_values()
           radius_to_bohr_ = 1.0;
         }
       else {
-          fprintf(stderr,"AtomInfo: unknown radius_unit: \"%s\"\n",
-                  radius_unit);
+          cerr << node0 << indent
+               << scprintf("AtomInfo: unknown radius_unit: \"%s\"\n",
+                           radius_unit);
           abort();
         }
       delete[] radius_unit;
@@ -161,7 +163,7 @@ AtomInfo::get_zindex(const ChemicalElement& atom)
 {
   int Zindex = atom.number() - 1;
   if (Zindex >= ATOMINFO_MAXZ) {
-      fprintf(stderr,"AtomInfo: ATOMINFO_MAXZ exceeded\n");
+      cerr << node0 << indent << "AtomInfo: ATOMINFO_MAXZ exceeded\n";
       abort();
     }
   return Zindex;
@@ -175,12 +177,12 @@ AtomInfo::radius(const ChemicalElement& atom)
       radius_vals[zindex] = doublevalue(atom, "radius")
                           * radius_to_bohr_ * radius_scale_factor_;
       if (error() != KeyVal::OK) {
-          fprintf(stderr,"AtomInfo couldn't find a radius\n");
+          cerr << node0 << indent << "AtomInfo couldn't find a radius\n";
           keyval->dump();
           abort();
         }
       if (radius_vals[zindex] <= 1.0e-6) {
-          fprintf(stderr,"AtomInfo: got a tiny radius\n");
+          cerr << node0 << indent << "AtomInfo: got a tiny radius\n";
           abort();
         }
       have_radius[zindex] = 1;
@@ -218,3 +220,9 @@ AtomInfo::blue(const ChemicalElement& atom)
 {
   return rgb(atom, 2);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

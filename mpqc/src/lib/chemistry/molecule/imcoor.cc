@@ -1,8 +1,6 @@
 
 #include <math.h>
 
-#include <iomanip.h>
-
 #include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/elemop.h>
@@ -54,7 +52,6 @@ IntMolecularCoor::IntMolecularCoor(RefMolecule&mol):
 {
   new_coords();
   generator_ = new IntCoorGen(mol);
-  generator_->set_messagegrp(matrixkit()->messagegrp());
 }
 
 IntMolecularCoor::IntMolecularCoor(const RefKeyVal& keyval):
@@ -77,14 +74,12 @@ IntMolecularCoor::IntMolecularCoor(const RefKeyVal& keyval):
 
   // actually read the keyval info
   read_keyval(keyval);
-  generator_->set_messagegrp(matrixkit()->messagegrp());
 }
 
 IntMolecularCoor::IntMolecularCoor(StateIn& s):
   MolecularCoor(s)
 {
   generator_.restore_state(s);
-  generator_->set_messagegrp(matrixkit()->messagegrp());
 
   if (s.version(static_class_desc()) >= 3) {
       s.get(decouple_bonds_);
@@ -181,7 +176,7 @@ IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
           for (int i=0; i<nextra_bonds*2; i++) {
               extra_bonds[i] = keyval->intvalue("extra_bonds",i);
               if (keyval->error() != KeyVal::OK) {
-                  cerr << indent << "IntMolecularCoor:: keyval CTOR: "
+                  cerr << node0 << indent << "IntMolecularCoor:: keyval CTOR: "
                        << "problem reading \"extra_bonds:" << i << "\"\n";
                   abort();
                 }
@@ -221,8 +216,6 @@ IntMolecularCoor::read_keyval(const RefKeyVal& keyval)
 void
 IntMolecularCoor::init()
 {
-  int me = matrixkit()->messagegrp()->me();
-  
   RefSetIntCoor redundant = new SetIntCoor;
   generator_->generate(redundant);
 
@@ -272,10 +265,9 @@ IntMolecularCoor::init()
       double maxabs = given_fixed_coords.maxabs();
       int nstep = int(maxabs/max_update_disp_) + 1;
       given_fixed_coords.scale(1.0/nstep);
-      if (me==0)
-          cout << indent << "IntMolecularCoor: "
-               << "displacing fixed coordinates to the requested values in "
-               << nstep << " steps\n";
+      cout << node0 << indent << "IntMolecularCoor: "
+           << "displacing fixed coordinates to the requested values in "
+           << nstep << " steps\n";
       for (int istep=1; istep<=nstep; istep++) {
           form_coordinates();
 
@@ -329,16 +321,15 @@ IntMolecularCoor::init()
           if (sigma(i) > epsilon) rank++;
         }
 
-      if (rank != dim_.n() && me==0) {
-          cout << indent << "IntMolecularCoor::init: rank changed\n";
+      if (rank != dim_.n()) {
+          cout << node0 << indent << "IntMolecularCoor::init: rank changed\n";
         }
 
       double kappa2 = sigma(0)/sigma(dim_.n()-1);
 
-      if (me==0) {
-          cout << indent << "IntMolecularCoor::init: condition number = "
-               << setw(14) << setprecision(8) << kappa2 << endl;
-        }
+      cout << node0 << indent
+           << scprintf("IntMolecularCoor::init: condition number = %14.8f\n",
+                       kappa2);
     }
 #endif
 }
@@ -446,7 +437,7 @@ form_partial_K(const RefSetIntCoor& coor, RefMolecule& molecule,
 
       int ntotally_symmetric = count_nonzero(totally_symmetric,0.001);
       if (matrixkit->messagegrp()->me()==0)
-          cout << indent << "found " << ntotally_symmetric
+          cout << node0 << indent << "found " << ntotally_symmetric
                << " totally symmetric coordinates\n";
 
       // compute the cumulative projection
@@ -500,15 +491,18 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
                            Ktmp);
       // require that the epsilon rank equal the number of fixed coordinates
       if (Ktmp.nrow() != dfixed.n()) {
-          fprintf(stderr, "  ERROR: IntMolecularCoor: nfixed = %d rank = %d\n",
-                  dfixed.n(), Ktmp.ncol());
+          cerr << node0 << indent
+               << scprintf("ERROR: IntMolecularCoor: nfixed = %d rank = %d\n",
+                           dfixed.n(), Ktmp.ncol());
           abort();
         }
       // check that fixed coordinates be totally symmetric
       if (Ktmp.nrow() != count_nonzero(totally_symmetric_fixed, ts_eps)) {
-          fprintf(stderr, "  WARNING: only %d of %d fixed coordinates are"
-                  " totally symmetric\n",
-                  count_nonzero(totally_symmetric_fixed, ts_eps), dfixed.n());
+          cerr << node0 << indent
+               << scprintf("WARNING: only %d of %d fixed coordinates are"
+                           " totally symmetric\n",
+                           count_nonzero(totally_symmetric_fixed, ts_eps),
+                           dfixed.n());
         }
 
       // Compute Kfixed
@@ -524,7 +518,7 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
   RefSCVector totally_symmetric_bond;
   RefSCMatrix Kbond;
   if (decouple_bonds_) {
-      cout << indent << "looking for bonds" << endl;
+      cout << node0 << indent << "looking for bonds" << endl;
       form_partial_K(bonds_, molecule_, geom, 0.1, dnatom3_, matrixkit_,
                      projection, totally_symmetric_bond, Kbond);
       if (Kbond.nonnull()) n_total += Kbond.ncol();
@@ -533,14 +527,14 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
   RefSCVector totally_symmetric_bend;
   RefSCMatrix Kbend;
   if (decouple_bends_) {
-      cout << indent << "looking for bends" << endl;
+      cout << node0 << indent << "looking for bends" << endl;
       form_partial_K(bends_, molecule_, geom, 0.1, dnatom3_, matrixkit_,
                      projection, totally_symmetric_bend, Kbend);
       if (Kbend.nonnull()) n_total += Kbend.ncol();
     }
 
   if (decouple_bonds_ || decouple_bends_) {
-      cout << indent << "looking for remaining coordinates" << endl;
+      cout << node0 << indent << "looking for remaining coordinates" << endl;
     }
   RefSCVector totally_symmetric_all;
   RefSCMatrix Kall;
@@ -758,7 +752,8 @@ IntMolecularCoor::form_K_matrices(RefSCDimension& dredundant,
               if(pow(vecs(j,i),2.0) > simple_tolerance_) nonzero++;
             }
           if(!nonzero) {
-              fprintf(stderr,"  Geom_form_K: no nonzero simple coordinates");
+              cerr << node0 << indent
+                   << "Geom_form_K: no nonzero simple coordinates";
               abort();
             }
 
@@ -851,7 +846,7 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
       all_to_internal(old_internal);
 
 #if VERBOSE
-      cout << indent << "Coordinates on step " << step << ":" << endl;
+      cout << node0 << indent << "Coordinates on step " << step << ":" << endl;
       variable_->print();
 #endif
 
@@ -861,7 +856,7 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
       if ((update_bmat_ && maxabs_cart_diff>update_tolerance)
           || internal_to_cart_disp.null()) {
 #if VERBOSE
-          cout << indent << "updating bmatrix" << endl;
+          cout << node0 << indent << "updating bmatrix" << endl;
 #endif
 
           int i;
@@ -940,22 +935,13 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
         }
     }
 
-  cout.flush();
-  cerr.flush();
-  fflush(stdout);
-  fflush(stderr);
-
-  fprintf(stderr,"  WARNING: IntMolecularCoor"
-          "::all_to_cartesian(RefSCVector&):"
-          " too many iterations in geometry update\n");
-
-  fflush(stderr);
+  cerr << node0 << indent
+       << "WARNING: IntMolecularCoor::all_to_cartesian(RefSCVector&):"
+       << " too many iterations in geometry update" << endl;
 
   new_internal.print("desired internal coordinates");
   (new_internal
    - old_internal).print("difference of desired and actual coordinates");
-
-  cout.flush();
 
   return -1;
 }
@@ -966,7 +952,7 @@ IntMolecularCoor::to_cartesian(const RefSCVector&new_internal)
   if (new_internal.dim().n() != dim_.n()
       || dvc_.n() != variable_->n() + constant_->n()
       || new_internal.dim().n() != variable_->n()) {
-      fprintf(stderr,"  to_cartesian: internal error in dim\n");
+      cerr << node0 << indent << "to_cartesian: internal error in dim\n";
       abort();
     }
 
@@ -988,7 +974,7 @@ IntMolecularCoor::all_to_internal(RefSCVector&internal)
   if (internal.dim().n() != dvc_.n()
       || dim_.n() != variable_->n()
       || dvc_.n() != variable_->n() + constant_->n()) {
-      fprintf(stderr,"  all_to_internal: internal error in dim\n");
+      cerr << node0 << indent << "all_to_internal: internal error in dim\n";
       abort();
     }
 
@@ -1013,7 +999,7 @@ IntMolecularCoor::to_internal(RefSCVector&internal)
 {
   if (internal.dim().n() != dim_.n()
       || dim_.n() != variable_->n()) {
-      fprintf(stderr,"  to_internal: internal error in dim\n");
+      cerr << node0 << indent << "to_internal: internal error in dim\n";
       abort();
     }
 
@@ -1108,40 +1094,32 @@ IntMolecularCoor::nconstrained()
 void
 IntMolecularCoor::print(ostream& os)
 {
-  if (matrixkit()->messagegrp()->me()==0) {
-    os << indent << "IntMolecularCoor Parameters:\n";
-    os << incindent;
-    os << indent << "update_bmat = " << (update_bmat_?"yes":"no") << endl;
-    os << indent << "scale_bonds = " << scale_bonds_ << endl;
-    os << indent << "scale_bends = " << scale_bends_ << endl;
-    os << indent << "scale_tors = " << scale_tors_ << endl;
-    os << indent << "scale_outs = " << scale_outs_ << endl;
-    os << indent << "symmetry_tolerance = " << symmetry_tolerance_ << endl;
-    os << indent << "simple_tolerance = " << simple_tolerance_ << endl;
-    os << indent << "coordinate_tolerance = " << coordinate_tolerance_ << endl;
-    os << indent << "have_fixed_values = " << given_fixed_values_ << endl;
-    os << indent << "max_update_steps = " << max_update_steps_ << endl;
-    os << indent << "max_update_disp = " << max_update_disp_ << endl;
-    os << indent << "have_fixed_values = " << given_fixed_values_ << endl;
-    os << decindent;
-  
-    os << indent << "Molecule:\n";
-    os << incindent;
-    molecule_->print(os);
-    os << decindent << endl;
+  os << node0 << indent << "IntMolecularCoor Parameters:\n" << incindent
+     << indent << "update_bmat = " << (update_bmat_?"yes":"no") << endl
+     << indent << "scale_bonds = " << scale_bonds_ << endl
+     << indent << "scale_bends = " << scale_bends_ << endl
+     << indent << "scale_tors = " << scale_tors_ << endl
+     << indent << "scale_outs = " << scale_outs_ << endl
+     << indent << scprintf("symmetry_tolerance = %e\n",symmetry_tolerance_)
+     << indent << scprintf("simple_tolerance = %e\n",simple_tolerance_)
+     << indent << scprintf("coordinate_tolerance = %e\n",coordinate_tolerance_)
+     << indent << "have_fixed_values = " << given_fixed_values_ << endl
+     << indent << "max_update_steps = " << max_update_steps_ << endl
+     << indent << scprintf("max_update_disp = %f\n",max_update_disp_)
+     << indent << "have_fixed_values = " << given_fixed_values_ << endl
+     << decindent << endl;
 
-    print_simples(os);
+  molecule_->print(os);
+  os << node0 << endl;
 
-    os << endl << indent << "Variables:\n";
-    os << incindent;
-    variable_->print(molecule_,os);
-    os << decindent << endl;
+  print_simples(os);
 
-    os << indent << "Constants:\n";
-    os << incindent;
-    constant_->print(molecule_,os);
-    os << decindent << endl;
-  }
+  os << node0 << endl << indent << "Variables:\n" << incindent;
+  variable_->print(molecule_,os);
+
+  os << node0 << decindent << endl << indent << "Constants:\n" << incindent;
+  constant_->print(molecule_,os);
+  os << node0 << decindent << endl;
 }
 
 void
@@ -1149,32 +1127,45 @@ IntMolecularCoor::print_simples(ostream& os)
 {
   if (matrixkit()->messagegrp()->me()==0) {
     if (bonds_->n()) {
-      os << indent << "Bonds:\n";
-      os << incindent; bonds_->print(molecule_,os); os << decindent;
+      os << node0 << indent << "Bonds:\n" << incindent;
+      bonds_->print(molecule_,os);
+      os << node0 << decindent;
     }
     if (bends_->n()) {
-      os << indent << "Bends:\n";
-      os << incindent; bends_->print(molecule_,os); os << decindent;
+      os << node0 << indent << "Bends:\n" << incindent;
+      bends_->print(molecule_,os);
+      os << node0 << decindent;
     }
     if (tors_->n()) {
-      os << indent << "Torsions:\n";
-      os << incindent; tors_->print(molecule_,os); os << decindent;
+      os << node0 << indent << "Torsions:\n" << incindent;
+      tors_->print(molecule_,os);
+      os << node0 << decindent;
     }
     if (outs_->n()) {
-      os << indent << "Out of Plane:\n";
-      os << incindent; outs_->print(molecule_,os); os << decindent;
+      os << node0 << indent << "Out of Plane:\n" << incindent;
+      outs_->print(molecule_,os);
+      os << node0 << decindent;
     }
     if (extras_->n()) {
-      os << indent << "Extras:\n";
-      os << incindent; extras_->print(molecule_,os); os << decindent;
+      os << node0 << indent << "Extras:\n" << incindent;
+      extras_->print(molecule_,os);
+      os << node0 << decindent;
     }
     if (fixed_->n()) {
-      os << indent << "Fixed:\n";
-      os << incindent; fixed_->print(molecule_,os); os << decindent;
+      os << node0 << indent << "Fixed:\n" << incindent;
+      fixed_->print(molecule_,os);
+      os << node0 << decindent;
     }
     if (followed_.nonnull()) {
-      os << indent << "Followed:\n";
-      os << incindent; followed_->print(molecule_,os); os << decindent;
+      os << node0 << indent << "Followed:\n" << incindent;
+      followed_->print(molecule_,os);
+      os << node0 << decindent;
     }
   }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

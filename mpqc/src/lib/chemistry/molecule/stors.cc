@@ -2,6 +2,7 @@
 #include <string.h>
 #include <math.h>
 
+#include <util/misc/formio.h>
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/localdef.h>
 #include <chemistry/molecule/chemelem.h>
@@ -42,14 +43,14 @@ ScaledTorsSimpleCo::ScaledTorsSimpleCo(const ScaledTorsSimpleCo& s)
   : SimpleCo(4)
 {
   *this=s;
-  }
+}
 
 ScaledTorsSimpleCo::ScaledTorsSimpleCo(const char *refr,
                                        int a1, int a2, int a3, int a4)
   : SimpleCo(4,refr)
 {
   atoms[0]=a1; atoms[1]=a2; atoms[2]=a3; atoms[3]=a4;
-  }
+}
 
 ScaledTorsSimpleCo::~ScaledTorsSimpleCo()
 {
@@ -61,7 +62,8 @@ ScaledTorsSimpleCo::ScaledTorsSimpleCo(const RefKeyVal &kv):
   old_torsion_ = 0.0;
 }
 
-ScaledTorsSimpleCo& ScaledTorsSimpleCo::operator=(const ScaledTorsSimpleCo& s)
+ScaledTorsSimpleCo&
+ScaledTorsSimpleCo::operator=(const ScaledTorsSimpleCo& s)
 {
   if(label_) delete[] label_;
   label_=new char[strlen(s.label_)+1];
@@ -69,9 +71,10 @@ ScaledTorsSimpleCo& ScaledTorsSimpleCo::operator=(const ScaledTorsSimpleCo& s)
   atoms[0]=s.atoms[0]; atoms[1]=s.atoms[1]; atoms[2]=s.atoms[2];
   atoms[3]=s.atoms[3];
   return *this;
-  }
+}
 
-double ScaledTorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
+double
+ScaledTorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 {
   int i;
   int a=atoms[0]-1; int b=atoms[1]-1; int c=atoms[2]-1; int d=atoms[3]-1;
@@ -144,12 +147,15 @@ double ScaledTorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
       // use the chain rule to get the values for the scaled torsion
       static int first = 1;
       if (first) {
-          printf("uu = %12.8f colin = %12.8f sin_abc = %12.8f\n",
-                 uu, colin, sin_abc);
-          printf("tors_value = %12.8f (%12.8f deg)\n", tors_value,
-                 tors_value * 180.0/M_PI);
-          printf("cos_abc = %12.8f cos_bcd = %12.8f\n",
-                 cos_abc, cos_bcd);
+          cout << node0 << indent
+               << scprintf("uu = %12.8f colin = %12.8f sin_abc = %12.8f\n",
+                           uu, colin, sin_abc)
+               << indent
+               << scprintf("tors_value = %12.8f (%12.8f deg)\n", tors_value,
+                           tors_value * 180.0/M_PI)
+               << indent
+               << scprintf("cos_abc = %12.8f cos_bcd = %12.8f\n",
+                           cos_abc, cos_bcd);
         }
       uu = uu*colin;
       if (sin_abc > 1.0e-5) uu += tors_value
@@ -186,7 +192,8 @@ double ScaledTorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
   return value_;
 }
 
-double ScaledTorsSimpleCo::calc_force_con(Molecule& m)
+double
+ScaledTorsSimpleCo::calc_force_con(Molecule& m)
 {
   int a=atoms[1]-1; int b=atoms[2]-1;
 
@@ -229,3 +236,9 @@ ScaledTorsSimpleCo::preferred_value() const
 {
   return value_*rtd;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

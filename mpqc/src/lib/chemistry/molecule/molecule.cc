@@ -5,6 +5,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <util/misc/formio.h>
 #include <chemistry/molecule/molecule.h>
@@ -57,9 +58,9 @@ Molecule::Molecule(const RefKeyVal&input) :
       char* filename = input->pcharvalue("pdb_file");
       FILE*fp = fopen(filename,"r");
       if (!fp) {
-          fprintf(stderr,
-                  "Molecule::Molecule(const RefKeyVal&input): "
-                  "pdb file not found: \"%s\"\n", filename);
+          cerr << node0 << indent
+               << "Molecule::Molecule(const RefKeyVal&input): "
+               << scprintf("pdb file not found: \"%s\"\n", filename);
           abort();
         }
       int i=0;
@@ -126,9 +127,10 @@ Molecule::Molecule(const RefKeyVal&input) :
       // possible
       int natom = input->count("geometry");
       if (natom != input->count("atoms")) {
-        fprintf(stderr,"Molecule: size of \"geometry\" != size of \"atoms\"\n");
-        return;
-      }
+          cerr << node0 << indent
+               << "Molecule: size of \"geometry\" != size of \"atoms\"\n";
+          return;
+        }
 
       int i;
       for (i=0; i<natom; i++) {
@@ -222,55 +224,22 @@ Molecule::add_atom(int i,AtomicCenter& ac)
 void
 Molecule::print(ostream& os)
 {
-  int i;
-
-  os << indent;
-  os << "    n  atom  label          x               y               z"
-      "          mass\n";
-
-  os.setf(ios::fixed,ios::floatfield);
-  os.setf(ios::right,ios::adjustfield);
-
-  for (i=0; i<natom(); i++) {
-      os << indent;
-      os.precision(10);
-      os << ' ';
-      os.width(5);
-      os << i+1;
-      os.width(5);
-      os << get_atom(i).element().symbol();
-      os.width(8);
-      if (get_atom(i).label()) os << get_atom(i).label();
-      else os << " ";
-      for (int j=0; j<3; j++) {
-          os.width(16);
-          os << get_atom(i)[j];
-        }
-      os.precision(5);
-      os.width(10);
-      os << get_atom(i).element().mass();
-      os << endl;
-    }
-}
-
-void
-Molecule::print(FILE*fp)
-{
-  fprintf(fp,"Molecule:\n");
-  fprintf(fp,"    n  atom  label          x               y               z"
-             "          mass\n");
+  os << node0 << indent << "Molecule:" << endl << indent
+     << "  n  atom  label          x               y               z"
+     << "          mass\n";
 
   int i;
   for (i=0; i<natom(); i++) {
-      fprintf(fp," %5d%5s%8s%16.10f%16.10f%16.10f%10.5f\n",
-              i+1,
-	      get_atom(i).element().symbol(),
-	      (get_atom(i).label()) ? get_atom(i).label(): " ",
-	      get_atom(i)[0],
-	      get_atom(i)[1],
-	      get_atom(i)[2],
-              get_atom(i).element().mass()
-              );
+      os << node0 << indent
+         << scprintf("%5d%5s%8s%16.10f%16.10f%16.10f%10.5f\n",
+                     i+1,
+                     get_atom(i).element().symbol(),
+                     (get_atom(i).label()) ? get_atom(i).label(): " ",
+                     get_atom(i)[0],
+                     get_atom(i)[1],
+                     get_atom(i)[2],
+                     get_atom(i).element().mass()
+             );
     }
 }
 
@@ -903,3 +872,9 @@ Molecule::principal_moments_of_inertia(double *evals, double **evecs)
     delete[] inert[i];
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

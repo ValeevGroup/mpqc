@@ -3,9 +3,8 @@
 #pragma implementation
 #endif
 
-extern "C" {
-# include <math.h>
-  }
+#include <stdio.h>
+#include <math.h>
 
 #include <chemistry/molecule/molshape.h>
 #include <chemistry/molecule/molecule.h>
@@ -177,22 +176,24 @@ int ConnollyShape2::n_with_nsphere_[CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM];
 #endif
 
 void
-ConnollyShape2::print_counts(FILE*fp)
+ConnollyShape2::print_counts(ostream& os)
 {
-  fprintf(fp,"ConnollyShape2::print_counts():\n");
+  os << node0 << indent << "ConnollyShape2::print_counts():\n" << incindent;
 #if COUNT_CONNOLLY2
-  fprintf(fp,"  n_total = %d\n",
-          n_total_);
-  fprintf(fp,"  n_inside_vdw = %d\n",
-          n_inside_vdw_);
+  os << node0
+     << indent << "n_total = " << n_total_ << endl
+     << indent << "n_inside_vdw = " << n_inside_vdw_ << endl;
   for (int i=0; i<CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM-1; i++) {
-      fprintf(fp,"  n with nsphere = %2d: %d\n",
-              i, n_with_nsphere_[i]);
+      os << node0 << indent
+         << scprintf("n with nsphere = %2d: %d\n", i, n_with_nsphere_[i]);
     }
-  fprintf(fp,"  n with nsphere >= %d: %d\n",
-          CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM-1, n_with_nsphere_[CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM-1]);
+  os << node0 << indent
+     << scprintf("n with nsphere >= %d: %d\n",
+                 CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM-1,
+                 n_with_nsphere_[CONNOLLYSHAPE2_N_WITH_NSPHERE_DIM-1])
+     << decindent;
 #else
-  fprintf(fp,"  No count information is available.\n");
+  os << node0 << indent << "No count information is available.\n" << decindent;
 #endif
 }
 
@@ -250,8 +251,9 @@ ConnollyShape2::distance_to_surface(const SCVector3&r, SCVector3*grad) const
         }
       else if (distance < r_i + probe_r) {
           if (n_local_spheres == max_local_spheres) {
-              fprintf(stderr,"ConnollyShape2::distance_to_surface:"
-                      " max_local_spheres exceeded\n");
+              cerr << node0 << indent
+                   << "ConnollyShape2::distance_to_surface:"
+                   << " max_local_spheres exceeded\n";
               abort();
             }
           local_sphere[n_local_spheres] = sphere[i];
@@ -280,7 +282,8 @@ ConnollyShape2::boundingbox(double valuemin,
 {
   int i,j;
   if (valuemin < -1.0 || valuemax > 1.0) {
-      fprintf(stderr,"ConnollyShape2::boundingbox: value out of range\n");
+      cerr << node0 << indent
+           << "ConnollyShape2::boundingbox: value out of range\n";
       abort();
     }
 
@@ -428,7 +431,8 @@ class interval
         }
 
         // Shouldn't get here!
-        printf(" Found no matching cases in interval::compact()\n");
+        cerr << node0 << indent
+             << "Found no matching cases in interval::compact()\n";
         print();
         exit(1);
     }
@@ -476,9 +480,12 @@ class interval
     // Print out the currect state of the interval
     void print()
     {
-        printf(" _nsegs=%d; _max_segs=%d\n",_nsegs, _max_segs);
+        cout << node0 << indent
+             << scprintf(" _nsegs=%d; _max_segs=%d\n",_nsegs, _max_segs);
         for (int i=0; i<_nsegs; i++)
-            printf("min[%d]=%7.4lf, max[%d]=%7.4lf\n",i,_min[i],i,_max[i]); 
+            cout << node0 << indent
+                 << scprintf("min[%d]=%7.4lf, max[%d]=%7.4lf\n",
+                             i,_min[i],i,_max[i]); 
     }
 
     void clear() { _nsegs = 0; }
@@ -498,26 +505,27 @@ int CS2Sphere::n_totally_covered_ = 0;
 #endif
 
 void
-CS2Sphere::print_counts(FILE*fp)
+CS2Sphere::print_counts(ostream& os)
 {
-  fprintf(fp,"CS2Sphere::print_counts():\n");
+  os << node0 << indent << "CS2Sphere::print_counts():\n" << incindent;
 #if COUNT_CONNOLLY2
-  fprintf(fp,"  n_no_spheres = %d\n",
-          n_no_spheres_);
-  fprintf(fp,"  n_probe_enclosed_by_a_sphere = %d\n",
-          n_probe_enclosed_by_a_sphere_);
-  fprintf(fp,"  n_probe_center_not_enclosed = %d\n",
-          n_probe_center_not_enclosed_);
-  fprintf(fp,"  n_surface_of_s0_not_covered = %d\n",
-          n_surface_of_s0_not_covered_);
-  fprintf(fp,"  n_plane_totally_covered_ = %d\n",
-          n_plane_totally_covered_);
-  fprintf(fp,"  n_internal_edge_not_covered = %d\n",
-          n_internal_edge_not_covered_);
-  fprintf(fp,"  n_totally_covered = %d\n",
-          n_totally_covered_);
+  os << node0
+     << indent << "n_no_spheres = " << n_no_spheres_ << endl
+     << indent << "n_probe_enclosed_by_a_sphere = "
+               << n_probe_enclosed_by_a_sphere_ << endl
+     << indent << "n_probe_center_not_enclosed = "
+               << n_probe_center_not_enclosed_ << endl
+     << indent << "n_surface_of_s0_not_covered = "
+               << n_surface_of_s0_not_covered_ << endl
+     << indent << "n_plane_totally_covered_ = "
+               << n_plane_totally_covered_ << endl
+     << indent << "n_internal_edge_not_covered = "
+               << n_internal_edge_not_covered_ << endl
+     << indent << "n_totally_covered = " << n_totally_covered_ << endl
+     << decindent;
 #else
-  fprintf(fp,"  No count information is available.\n");
+  os << node0 << indent << "No count information is available.\n"
+     << decindent;
 #endif
 }
 
@@ -1088,4 +1096,8 @@ CS2Sphere::intersect(CS2Sphere *s, int n_spheres) const
     return 1;
 }
 
+/////////////////////////////////////////////////////////////////////////////
 
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

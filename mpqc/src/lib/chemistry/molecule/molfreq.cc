@@ -173,7 +173,7 @@ MolecularFrequencies::compute_displacements()
   for (i=0; i<nmin; i++) {
       if (sigmaext(i) > epsilonext) rankext++;
     }
-  cout << "The external rank is " << rankext << endl;
+  cout << node0 << indent << "The external rank is " << rankext << endl;
   // find the projection onto the externaldisp perp space
   if (rankext) {
       RefSCDimension drankext_tilde = new SCDimension(d3natom_.n() - rankext);
@@ -205,7 +205,8 @@ MolecularFrequencies::compute_displacements()
             }
           atom_map[i][g] = mol_->atom_at_position(np, 0.05);
           if (atom_map[i][g] < 0) {
-              cerr << "MolecularFrequencies: atom mapping bad" << endl;
+              cerr << node0 << indent
+                   << "MolecularFrequencies: atom mapping bad" << endl;
               abort();
             }
         }
@@ -257,7 +258,8 @@ MolecularFrequencies::compute_displacements()
           // Reassign cartdisp_ij to the orthonormal displacement
           cartdisp_ij = Ur;
           if (debug_) {
-              cout << "Irrep " << irrep.symbol() << " component " << j << endl;
+              cout << node0 << indent
+                   << "Irrep " << irrep.symbol() << " component " << j << endl;
               cartdisp_ij.print("cartdisp:",cout);
             }
           components[j] = cartdisp_ij;
@@ -315,7 +317,8 @@ MolecularFrequencies::get_disp(int disp, int &irrep, int &index, double &coef)
         }
       disp_offset += displacements_[i].ncol();
     }
-  cerr << "MolecularFrequencies::get_disp: bad disp number" << endl;
+  cerr << node0 << indent
+       << "MolecularFrequencies::get_disp: bad disp number" << endl;
   abort();
 }
 
@@ -375,7 +378,7 @@ MolecularFrequencies::compute_frequencies_from_gradients()
 {
   int i, coor;
 
-  cout << "Frequencies (cm-1; negative is imaginary):";
+  cout << node0 << indent << "Frequencies (cm-1; negative is imaginary):";
 
   // initial the frequency tables
   nfreq_ = new int[nirrep_];
@@ -477,7 +480,8 @@ MolecularFrequencies::do_freq_for_irrep(int irrep,
   ncbasis.svd(basU, bassigma, basV);
   for (i=0; i<ddim.n(); i++) {
       if (bassigma(i) < 1.e0-3) {
-          cerr << "MolecularFrequencies: displacements don't span"
+          cerr << node0 << indent
+               << "MolecularFrequencies: displacements don't span"
                << " normal coordinates"
                << endl;
           abort();
@@ -736,3 +740,9 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
   cout << "Electronic degeneracy: " << degeneracy << endl;
   cout << endl;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

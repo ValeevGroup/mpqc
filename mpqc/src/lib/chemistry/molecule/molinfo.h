@@ -58,3 +58,6 @@ DescribedClass_REF_dec(AtomInfo);
 
 #endif
 
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

@@ -48,13 +48,13 @@ BendSimpleCo::BendSimpleCo(const BendSimpleCo& s)
   : SimpleCo(3)
 {
   *this=s;
-  }
+}
 
 BendSimpleCo::BendSimpleCo(const char *refr, int a1, int a2, int a3)
   : SimpleCo(3,refr)
 {
   atoms[0]=a1; atoms[1]=a2; atoms[2]=a3;
-  }
+}
 
 BendSimpleCo::BendSimpleCo(const RefKeyVal &kv)
   : SimpleCo(kv,3)
@@ -65,15 +65,17 @@ BendSimpleCo::~BendSimpleCo()
 {
 }
 
-BendSimpleCo& BendSimpleCo::operator=(const BendSimpleCo& s)
+BendSimpleCo&
+BendSimpleCo::operator=(const BendSimpleCo& s)
 {
   if(label_) delete[] label_;
   label_=new char[strlen(s.label_)+1]; strcpy(label_,s.label_);
   atoms[0]=s.atoms[0]; atoms[1]=s.atoms[1]; atoms[2]=s.atoms[2];
   return *this;
-  }
+}
 
-double BendSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
+double
+BendSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 {
   Point u1(3),u2(3);
   int a=atoms[0]-1; int b=atoms[1]-1; int c=atoms[2]-1;
@@ -111,7 +113,8 @@ double BendSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
   return value_;
 }
 
-double BendSimpleCo::calc_force_con(Molecule& m)
+double
+BendSimpleCo::calc_force_con(Molecule& m)
 {
   int a=atoms[1]-1; int b=atoms[0]-1; int c=atoms[2]-1;
 
@@ -158,3 +161,9 @@ BendSimpleCo::preferred_value() const
 {
   return value_*rtd;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

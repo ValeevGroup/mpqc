@@ -49,13 +49,13 @@ StreSimpleCo::StreSimpleCo(const StreSimpleCo& s)
   : SimpleCo(2)
 {
   *this=s;
-  }
+}
 
 StreSimpleCo::StreSimpleCo(const char *re, int a1, int a2)
   : SimpleCo(2,re)
 {
   atoms[0]=a1; atoms[1]=a2;
-  }
+}
 
 StreSimpleCo::StreSimpleCo(const RefKeyVal &kv)
   : SimpleCo(kv,2)
@@ -66,16 +66,18 @@ StreSimpleCo::~StreSimpleCo()
 {
 }
 
-StreSimpleCo& StreSimpleCo::operator=(const StreSimpleCo& s)
+StreSimpleCo&
+StreSimpleCo::operator=(const StreSimpleCo& s)
 {
   if(label_) delete[] label_;
   label_=new char[strlen(s.label_)+1]; strcpy(label_,s.label_);
   atoms[0]=s.atoms[0]; atoms[1]=s.atoms[1];
 
   return *this;
-  }
+}
 
-double StreSimpleCo::calc_force_con(Molecule& m)
+double
+StreSimpleCo::calc_force_con(Molecule& m)
 {
   int a=atoms[0]-1; int b=atoms[1]-1;
   double rad_ab =   m[a].element().atomic_radius()
@@ -93,7 +95,8 @@ double StreSimpleCo::calc_force_con(Molecule& m)
 #endif  
 }
 
-double StreSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
+double
+StreSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 {
   int a=atoms[0]-1; int b=atoms[1]-1;
   value_ = dist(m[a].point(),m[b].point());
@@ -132,3 +135,9 @@ StreSimpleCo::preferred_value() const
 {
   return value_*0.52917706;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

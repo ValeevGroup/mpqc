@@ -35,19 +35,19 @@ main(int argc, char **argv)
   RefMolecule mol = kv->describedclassvalue("molecule");
 
   mol->cleanup_molecule();
-  printf("Clean Molecule:\n");
+  cout << "Clean Molecule:\n";
   mol->print();
 
   mol->transform_to_principal_axes();
-  printf("Clean Molecule wrt principal axes:\n");
+  cout << "Clean Molecule wrt principal axes:\n";
   mol->print();
 
   int nunique = mol->num_unique_atoms();
   int * unique_atoms = mol->find_unique_atoms();
 
-  printf("nunique=%d: ",nunique);
-  for (int i=0; i < nunique; i++) printf(" %d",unique_atoms[i]+1);
-  printf("\n");
+  cout << "nunique=%d: ",nunique;
+  for (int i=0; i < nunique; i++) cout << " " << unique_atoms[i]+1;
+  cout << endl;
 
   mol->point_group().char_table().print();
 
@@ -57,16 +57,16 @@ main(int argc, char **argv)
 
   //exit(0);
 
-  printf("getting simp:\n");
+  cout << "getting simp:\n";
   RefSetIntCoor simp = kv->describedclassvalue("simp");
   RefIntCoorGen gen = kv->describedclassvalue("generator");
   if (gen.nonnull()) {
       gen->print();
     }
-  printf("simp before update:\n");
+  cout << "simp before update:\n";
   simp->print(mol);
   simp->update_values(mol);
-  printf("simp:\n");
+  cout << "simp:\n";
   simp->print(mol);
 
   // compare the analytic bmatrix to the finite displacement bmatrix
@@ -76,7 +76,7 @@ main(int argc, char **argv)
   RefSCDimension dn3(new SCDimension(mol->natom()*3));
   RefSCMatrix bmatrix(dnc,dn3,kit);
   RefSCMatrix fd_bmatrix(dnc,dn3,kit);
-  printf("testing bmat with:\n");
+  cout << "testing bmat with:\n";
   bmat_test->update_values(mol);
   bmat_test->print();
   bmat_test->bmat(mol,bmatrix);
@@ -151,3 +151,9 @@ do_displacement(RefMolecularCoor&mc,int i)
   cout << "The actual new internal coordinates:\n";
   internal.print();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

@@ -1,9 +1,6 @@
 
-extern "C" {
 #include <math.h>
-};
 
-#include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
@@ -136,8 +133,7 @@ CartMolecularCoor::to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart)
 void
 CartMolecularCoor::print(ostream& os)
 {
-  os << indent << "Molecule:\n";
-  os << incindent; molecule_->print(os); os << decindent;
+  molecule_->print(os);
 }
 
 void
@@ -176,3 +172,9 @@ CartMolecularCoor::inverse_hessian(RefSymmSCMatrix& hessian)
 {
   return hessian.gi();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

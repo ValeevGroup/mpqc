@@ -99,7 +99,7 @@ IntCoor::IntCoor(const RefKeyVal&keyval)
           value_ *= M_PI/180.0;
         }
       else {
-          cerr << indent
+          cerr << node0 << indent
                << "IntCoor::IntCoor(KeyVal): unknown unit = \""
                << unit << "\"\n";
           abort();
@@ -155,12 +155,8 @@ IntCoor::print(RefMolecule mol, ostream& os)
   os.setf(ios::left,ios::adjustfield);
   os.width(10);
 
-  os << indent << ctype()
-               << " \""
-               << label()
-               << "\" "
-               << preferred_value()
-               << endl;
+  os << node0 << indent
+     << scprintf("%-5s \"%10s\" %15.10f\n",ctype(),label(),preferred_value());
 }
 
 double
@@ -193,7 +189,7 @@ SetIntCoor::SetIntCoor(const RefKeyVal& keyval)
   RefIntCoorGen gen = keyval->describedclassvalue("generator");
 
   if (gen.null() && !n) {
-      cerr << indent << "SetIntCoor::SetIntCoor: bad input\n";
+      cerr << node0 << indent << "SetIntCoor::SetIntCoor: bad input\n";
       abort();
     }
 
@@ -424,7 +420,7 @@ SumIntCoor::SumIntCoor(const RefKeyVal&keyval):
   int n = keyval->count(coor);
   int ncoef = keyval->count(coef);
   if (n != ncoef || !n) {
-      cerr << indent << "SumIntCoor::SumIntCoor: bad input\n";
+      cerr << node0 << indent << "SumIntCoor::SumIntCoor: bad input\n";
       abort();
     }
 
@@ -547,31 +543,18 @@ SumIntCoor::print()
 void
 SumIntCoor::print(RefMolecule mol, ostream& os)
 {
-  os.setf(ios::fixed,ios::floatfield);
-  os.precision(10);
-  os.setf(ios::left,ios::adjustfield);
-
   int initial_indent = SCFormIO::getindent(os);
   int i;
 
-  os.width(5);
-  os << indent << ctype()
-               << " ";
-  os.width(10);
-  os          << label()
-              << " ";
-  os.width(14);
-  os.setf(ios::right,ios::adjustfield);
-  os          << preferred_value()
-              << endl;
+  os << node0 << indent
+     << scprintf("%-5s %10s %14.10f\n",ctype(), label(), preferred_value());
 
   for(i=0; i<coor_.length(); i++) {
-      os << incindent;
-      os.width(14);
-      os << indent << coef_[i] << " ";
+      os << node0 << incindent
+         << indent << scprintf("%14.10f ",coef_[i]);
 
       SCFormIO::setindent(os, SCFormIO::getindent(os) + 15);
-      os << skipnextindent;
+      os << node0 << skipnextindent;
       coor_[i]->print(mol,os);
       SCFormIO::setindent(os, initial_indent);
     }
@@ -643,8 +626,8 @@ MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
   molecule_ = keyval->describedclassvalue("molecule");
 
   if (molecule_.null()) {
-      cerr << indent <<
-          "MolecularCoor(const RefKeyVal&keyval): molecule not found\n";
+      cerr << node0 << indent
+           << "MolecularCoor(const RefKeyVal&keyval): molecule not found\n";
       abort();
     }
 
@@ -655,7 +638,7 @@ MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
 
   if (dnatom3_.null()) dnatom3_ = new SCDimension(3*molecule_->natom());
   else if (dnatom3_->n() != 3 * molecule_->natom()) {
-      cerr << indent << "MolecularCoor(KeyVal): bad dnatom3 value\n";
+      cerr << node0 << indent << "MolecularCoor(KeyVal): bad dnatom3 value\n";
       abort();
     }
 }
@@ -708,7 +691,6 @@ IntCoorGen::_castdown(const ClassDesc*cd)
 IntCoorGen::IntCoorGen(const RefMolecule& mol,
                        int nextra_bonds, int *extra_bonds)
 {
-  grp_ = MessageGrp::get_default_messagegrp();
   molecule_ = mol;
   nextra_bonds_ = nextra_bonds;
   extra_bonds_ = extra_bonds;
@@ -722,10 +704,6 @@ IntCoorGen::IntCoorGen(const RefMolecule& mol,
 
 IntCoorGen::IntCoorGen(const RefKeyVal& keyval)
 {
-  grp_ = keyval->describedclassvalue("messagegrp");
-  if (grp_.null())
-      grp_ = MessageGrp::get_default_messagegrp();
-
   molecule_ = keyval->describedclassvalue("molecule");
 
   radius_scale_factor_ = keyval->doublevalue("radius_scale_factor");
@@ -759,7 +737,7 @@ IntCoorGen::IntCoorGen(const RefKeyVal& keyval)
       for (int i=0; i<nextra_bonds_*2; i++) {
           extra_bonds_[i] = keyval->intvalue("extra_bonds",i);
           if (keyval->error() != KeyVal::OK) {
-              cerr << indent
+              cerr << node0 << indent
                    << "IntCoorGen:: keyval CTOR: problem reading "
                    << "\"extra_bonds:" << i << "\"\n";
               abort();
@@ -774,7 +752,6 @@ IntCoorGen::IntCoorGen(const RefKeyVal& keyval)
 IntCoorGen::IntCoorGen(StateIn& s):
   SavableState(s)
 {
-  grp_ = MessageGrp::get_default_messagegrp();
   molecule_.restore_state(s);
   s.get(linear_bends_);
   s.get(linear_tors_);
@@ -808,16 +785,15 @@ IntCoorGen::save_data_state(StateOut& s)
 void
 IntCoorGen::print(ostream& out)
 {
-  out << "IntCoorGen:" << endl;
-  out << incindent;
-  out << indent << "linear_bends = " << linear_bends_ << endl;
-  out << indent << "linear_tors = " << linear_tors_ << endl;
-  out << indent << "linear_stors = " << linear_stors_ << endl;
-  out << indent << "linear_bend_threshold = " << linear_bend_thres_ << endl;
-  out << indent << "linear_tors_threshold = " << linear_tors_thres_ << endl;
-  out << indent << "radius_scale_factor = " << radius_scale_factor_ << endl;
-  out << indent << "nextra_bonds = " << nextra_bonds_ << endl;
-  out << decindent;
+  out << node0 << indent << "IntCoorGen:" << endl << incindent
+      << indent << "linear_bends = " << linear_bends_ << endl
+      << indent << "linear_tors = " << linear_tors_ << endl
+      << indent << "linear_stors = " << linear_stors_ << endl
+      << indent << scprintf("linear_bend_threshold = %f\n",linear_bend_thres_)
+      << indent << scprintf("linear_tors_threshold = %f\n",linear_tors_thres_)
+      << indent << scprintf("radius_scale_factor = %f\n",radius_scale_factor_)
+      << indent << "nextra_bonds = " << nextra_bonds_ << endl
+      << decindent;
 }
 
 void
@@ -850,25 +826,23 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
 
   // check for atoms bound to nothing
   for (i=0; i < m.natom(); i++) {
-    int bound=0;
-    for (int j=0; j < m.natom(); j++) {
-      if (bonds(i,j)) {
-        bound=1;
-        break;
-      }
+      int bound=0;
+      for (int j=0; j < m.natom(); j++) {
+          if (bonds(i,j)) {
+              bound=1;
+              break;
+            }
+        }
+      if (!bound) {
+          int j = nearest_contact(i,m);
+          cerr << node0 << endl << indent
+               << "Warning!:  atom " << i+1 << "is not bound to anything.\n"
+               << "           You may wish to add an entry to extra_bonds.\n"
+               << "           Atom " << j+1 << " is only "
+               << bohr*dist(m[i].point(),m[j].point())
+               << " angstroms away...\n\n";
+        }
     }
-    if (!bound) {
-      int j = nearest_contact(i,m);
-      if (grp_->me()==0) {
-        cerr << endl << indent
-             << "Warning!:  atom " << i+1 << "is not bound to anything.\n"
-             << "           You may wish to add an entry to extra_bonds.\n"
-             << "           Atom " << j+1 << " is only "
-             << bohr*dist(m[i].point(),m[j].point())
-             << " angstroms away...\n\n";
-      }
-    }
-  }
       
   // compute the simple internal coordinates by type
   add_bonds(sic,bonds,m);
@@ -876,9 +850,8 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
   add_tors(sic,bonds,m);
   add_out(sic,bonds,m);
 
-  if (grp_->me()==0)
-    cout << indent
-         << "IntCoorGen: generated " << sic->n() << " coordinates." << endl;
+  cout << node0 << indent
+       << "IntCoorGen: generated " << sic->n() << " coordinates." << endl;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -1081,3 +1054,9 @@ IntCoorGen::nearest_contact(int i, Molecule& m)
   
   return n;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

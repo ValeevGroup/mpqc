@@ -59,3 +59,7 @@ class RenderedMolecularSurface: public RenderedMolecule {
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

@@ -50,13 +50,13 @@ TorsSimpleCo::TorsSimpleCo(const TorsSimpleCo& s)
   : SimpleCo(4)
 {
   *this=s;
-  }
+}
 
 TorsSimpleCo::TorsSimpleCo(const char *refr, int a1, int a2, int a3, int a4)
   : SimpleCo(4,refr)
 {
   atoms[0]=a1; atoms[1]=a2; atoms[2]=a3; atoms[3]=a4;
-  }
+}
 
 TorsSimpleCo::~TorsSimpleCo()
 {
@@ -67,7 +67,8 @@ TorsSimpleCo::TorsSimpleCo(const RefKeyVal &kv):
 {
 }
 
-TorsSimpleCo& TorsSimpleCo::operator=(const TorsSimpleCo& s)
+TorsSimpleCo&
+TorsSimpleCo::operator=(const TorsSimpleCo& s)
 {
   if(label_) delete[] label_;
   label_=new char[strlen(s.label_)+1];
@@ -75,9 +76,10 @@ TorsSimpleCo& TorsSimpleCo::operator=(const TorsSimpleCo& s)
   atoms[0]=s.atoms[0]; atoms[1]=s.atoms[1]; atoms[2]=s.atoms[2];
   atoms[3]=s.atoms[3];
   return *this;
-  }
+}
 
-double TorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
+double
+TorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
 {
   int a=atoms[0]-1; int b=atoms[1]-1; int c=atoms[2]-1; int d=atoms[3]-1;
   Point u1(3),u2(3),u3(3),z1(3),z2(3);
@@ -152,7 +154,8 @@ double TorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
   return value_;
 }
 
-double TorsSimpleCo::calc_force_con(Molecule& m)
+double
+TorsSimpleCo::calc_force_con(Molecule& m)
 {
   int a=atoms[1]-1; int b=atoms[2]-1;
 
@@ -195,3 +198,9 @@ TorsSimpleCo::preferred_value() const
 {
   return value_*rtd;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

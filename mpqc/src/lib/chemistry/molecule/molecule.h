@@ -61,7 +61,7 @@ class Molecule: public SavableState
 
     //. Print information about the molecule.
     virtual void print(ostream& =cout);
-    virtual void print(FILE*);
+
     //. Returns the number of atoms in the molcule.
     int natom() const;
 
@@ -135,3 +135,7 @@ class Molecule: public SavableState
 SavableState_REF_dec(Molecule);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

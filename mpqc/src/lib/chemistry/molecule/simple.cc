@@ -23,7 +23,6 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
 #include <string.h>
 #include <math.h>
 
@@ -94,11 +93,12 @@ SimpleCo::SimpleCo(const RefKeyVal&kv,int na) :
             }
         }
       if (i != na) {
-          fprintf(stderr,
-                  "%s::%s(const RefKeyVal&): missing one of the atoms "
-                  "or atom_labels (requires a molecule too) "
-                  "or an atom label was invalid\n",
-                  class_name(),class_name());
+          cerr << node0 << indent
+               << scprintf(
+                   "%s::%s(const RefKeyVal&): missing one of the atoms "
+                   "or atom_labels (requires a molecule too) "
+                   "or an atom label was invalid\n",
+                   class_name(),class_name());
           kv->errortrace();
           abort();
         }
@@ -111,8 +111,9 @@ SimpleCo::SimpleCo(const RefKeyVal&kv,int na) :
       for (int i=0; i<na; i++) {
           atoms[i]=kv->intvalue(i+1);
           if (kv->error() != KeyVal::OK) {
-              fprintf(stderr,"%s::%s(const RefKeyVal&): missing an atom\n",
-                      class_name(),class_name());
+              cerr << node0 << indent
+                   << scprintf("%s::%s(const RefKeyVal&): missing an atom\n",
+                               class_name(),class_name());
               kv->errortrace();
               abort();
             }
@@ -215,40 +216,27 @@ SimpleCo::print()
 void
 SimpleCo::print(RefMolecule mol, ostream& os)
 {
-  os.setf(ios::fixed,ios::floatfield);
-  os.precision(10);
-  os.setf(ios::left,ios::adjustfield);
-  os.width(10);
-
-  os.width(5);
-  os << indent << ctype()
-               << " ";
-  os.width(10);
-  os          << (label()?label():"")
-              << " ";
-  os.width(14);
-  os.setf(ios::right,ios::adjustfield);
-  os          << preferred_value();
-
+  os << node0 << indent
+     << scprintf("%-5s %10s %14.10f", ctype(), (label()?label():""),
+                 preferred_value());
+  
   int i;
-  for (i=0; i<natoms(); i++) {
-      os.width(2);
-      os << " " << atoms[i];
-    }
+  for (i=0; i<natoms(); i++)
+      os << node0 << scprintf(" %2d", atoms[i]);
 
   if (mol.nonnull()) {
       char *separator = " ";
-      os << "  ";
+      os << node0 << "  ";
       for (i=0; i<(4-natoms()); i++) {
-          os << "   ";
+          os << node0 << "   ";
         }
       for (i=0; i<natoms(); i++) {
-          os << separator << mol->atom(atoms[i]-1).element().symbol();
+          os << node0 << separator << mol->atom(atoms[i]-1).element().symbol();
           separator = "-";
         }
     }
 
-  os << endl;
+  os << node0 << endl;
   
 }
 
@@ -267,3 +255,9 @@ SimpleCo::equivalent(RefIntCoor&c)
     }
   return 1;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

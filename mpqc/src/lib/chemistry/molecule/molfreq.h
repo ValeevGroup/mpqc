@@ -66,3 +66,7 @@ class MolecularFrequencies: public SavableState {
 SavableState_REF_dec(MolecularFrequencies);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

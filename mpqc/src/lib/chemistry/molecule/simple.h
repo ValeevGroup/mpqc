@@ -28,7 +28,6 @@
 
 
 #include <iostream.h>
-#include <stdio.h>
 
 #include <util/class/class.h>
 #include <util/state/state.h>
@@ -435,3 +434,7 @@ SimpleCo_DECLARE(LinOPSimpleCo)
 typedef LinOPSimpleCo LinOP;
 
 #endif /* _intco_simple_h */
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

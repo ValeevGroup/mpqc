@@ -7,10 +7,6 @@
 #endif
 
 // This class is a repository of element information
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-
 #include <util/class/class.h>
 #include <util/state/state.h>
 
@@ -128,3 +124,7 @@ DescribedClass_REF_dec(ChemicalElement);
 #endif
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

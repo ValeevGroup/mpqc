@@ -1,6 +1,7 @@
 
 #include <math.h>
 
+#include <util/misc/formio.h>
 #include <util/render/sphere.h>
 #include <util/render/polygons.h>
 #include <util/render/polylines.h>
@@ -28,12 +29,14 @@ RenderedMolecule::RenderedMolecule(const RefKeyVal& keyval):
   mol_(keyval->describedclassvalue("molecule"))
 {
   if (atominfo_.null()) {
-      fprintf(stderr,"RenderedMolecule: no \"atominfo\" in keyval\n");
+      cerr << node0 << indent
+           << "RenderedMolecule: no \"atominfo\" in keyval\n";
       abort();
     }
 
   if (mol_.null()) {
-      fprintf(stderr,"RenderedMolecule: no \"molecule\" in keyval\n");
+      cerr << node0 << indent
+           << "RenderedMolecule: no \"molecule\" in keyval\n";
       abort();
     }
 }
@@ -348,3 +351,9 @@ RenderedMolecularSurface::init()
 
   object_ = o.pointer();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

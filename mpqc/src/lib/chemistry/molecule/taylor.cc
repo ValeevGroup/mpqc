@@ -150,3 +150,9 @@ TaylorMolecularEnergy::compute_energy(double&energy)
         }
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

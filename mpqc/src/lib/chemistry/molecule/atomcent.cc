@@ -5,6 +5,7 @@
 
 #include <string.h>
 
+#include <util/misc/formio.h>
 #include <chemistry/molecule/atomcent.h>
 
 DescribedClass_REF_def(AtomicCenter);
@@ -81,10 +82,11 @@ AtomicCenter::AtomicCenter(StateIn& si):
   si.getstring(label_);
 }
 
-void AtomicCenter::print(FILE*fp)
+void AtomicCenter::print(ostream& os)
 {
-  fprintf(fp,"%2s",element().symbol());
-  point().print(fp);
+  os << node0 << indent
+     << scprintf("%2s",element().symbol());
+  point().print(os);
 }
 
 double
@@ -92,3 +94,9 @@ AtomicCenter::mass() const
 {
   return element_.mass();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

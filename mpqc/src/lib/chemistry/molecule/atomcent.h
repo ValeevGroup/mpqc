@@ -6,7 +6,7 @@
 #pragma interface
 #endif
 
-#include <stdio.h>
+#include <iostream.h>
 
 #include <chemistry/molecule/chemelem.h>
 #include <math/topology/point.h>
@@ -66,8 +66,12 @@ class AtomicCenter: public SavableState
     void save_data_state(StateOut&);
 
     //. Print information about the atom
-    void print(FILE*fp=stdout);
+    void print(ostream& =cout);
 };
 DescribedClass_REF_dec(AtomicCenter);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

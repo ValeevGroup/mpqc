@@ -6,9 +6,7 @@
 #pragma interface
 #endif
 
-extern "C" {
-#include <stdio.h>
-}
+#include <iostream.h>
 
 #include <math/optimize/function.h>
 #include <chemistry/molecule/molecule.h>
@@ -63,3 +61,7 @@ class MolecularEnergy: public Function {
 SavableState_REF_dec(MolecularEnergy);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

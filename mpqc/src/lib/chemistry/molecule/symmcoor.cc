@@ -1,7 +1,5 @@
 
-extern "C" {
 #include <math.h>
-};
 
 #include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
@@ -135,11 +133,9 @@ SymmCoorTransform::to_cartesian(const RefSCVector& new_internal)
         }
     }
 
-  printf("WARNING: SymmCoorTransform"
-         "::to_cartesian(RefSCVector&):"
-         " too many iterations in geometry update\n");
-
-  fflush(stderr);
+  cerr << node0 << indent
+       << "WARNING: SymmCoorTransform::to_cartesian(RefSCVector&):"
+       << " too many iterations in geometry update\n";
 
   new_internal.print("SymmCoorTransform: desired internal coordinates");
   (new_internal
@@ -195,8 +191,9 @@ SymmCoorTransform::transform_hessian(const RefSymmSCMatrix& h)
       NonlinearTransform::transform_hessian(h);
     }
   else {
-      printf("WARNING: SymmCoorTransform::transform_hessian: "
-             "skipping hessian transform");
+      cerr << node0 << indent
+           << "WARNING: SymmCoorTransform::transform_hessian: "
+           << "skipping hessian transform";
     }
 }
 
@@ -293,12 +290,13 @@ SymmMolecularCoor::form_coordinates()
   int nunique = n3 - 6; // need to detect linear
 
   if (nredundant < nunique) {
-      fprintf(stderr,"SymmMolecularCoor::form_coordinates: "
-              "found too few redundant coordinates\n");
-      fprintf(stderr,"nredundant = %d, 3n-6 = %d\n", nredundant, nunique);
-      fprintf(stderr,"  (the geometry is probably bad)\n");
-      fprintf(stderr,"Molecule:\n");
-      molecule_->print();
+      cerr << node0 << indent
+           << "SymmMolecularCoor::form_coordinates: "
+           << "found too few redundant coordinates\n"
+           << indent << scprintf("nredundant = %d, 3n-6 = %d\n",
+                                 nredundant, nunique)
+           << indent << "  (the geometry is probably bad)\n";
+      molecule_->print(cerr);
       abort();
     }
 
@@ -383,13 +381,12 @@ SymmMolecularCoor::form_coordinates()
   variable_->update_values(molecule_);
 
   fflush(stdout);
-  if (matrixkit()->messagegrp()->me()==0) {
-    cout << "  SymmMolecularCoor::form_variable_coordinates()\n"
-         << "    expected " << nunique << " coordinates\n"
-         << "    found " << variable_->n() << " variable coordinates\n"
-         << "    found " << constant_->n() << " constant coordinates\n";
-    cout.flush();
-  }
+  cout << node0 << incindent << indent
+       << "SymmMolecularCoor::form_variable_coordinates()\n" << incindent
+       << indent << "expected " << nunique << " coordinates\n"
+       << indent << "found " << variable_->n() << " variable coordinates\n"
+       << indent << "found " << constant_->n() << " constant coordinates\n"
+       << decindent << decindent << flush;
 
   delete[] is_totally_symmetric;
   fixed_ = saved_fixed_;
@@ -468,17 +465,22 @@ SymmMolecularCoor::change_coordinates()
   // the rank could get bigger if there is a fixed coordinate
   if (rank < dim_.n() || ((fixed_.null()
                            || fixed_->n() == 0) && rank != dim_.n())) {
-      printf("SymmMolecularCoor::change_coordinates: disallowed rank change\n");
+      cerr << node0 << indent
+           << "SymmMolecularCoor::change_coordinates: "
+           << "disallowed rank change\n";
       abort();
     }
   if (rank != dim_.n()) {
-      printf("SymmMolecularCoor::change_coordinates: rank changed\n");
+      cout << node0 << indent
+           << "SymmMolecularCoor::change_coordinates: rank changed\n";
     }
 
   double kappa2 = sigma(0)/sigma(dim_.n()-1);
 
-  printf("SymmMolecularCoor: condition number = %14.8f (max = %14.8f)\n",
-         kappa2, max_kappa2_);
+  cout << node0 << indent
+       << scprintf(
+           "SymmMolecularCoor: condition number = %14.8f (max = %14.8f)\n",
+           kappa2, max_kappa2_);
 
   if (kappa2 > max_kappa2_) {
       RefSetIntCoor oldvariable = new SetIntCoor;
@@ -504,15 +506,17 @@ SymmMolecularCoor::print(ostream& os)
 {
   IntMolecularCoor::print(os);
   
-  if (matrixkit()->messagegrp()->me()==0) {
-    os << indent << "SymmMolecularCoor Parameters:\n";
-    os << incindent;
-    os << indent << "change_coordinates = "
-       << (change_coordinates_?"yes":"no") << endl;
-    os << indent << "transform_hessian = "
-       << (transform_hessian_?"yes":"no") << endl;
-    os << indent << "max_kappa2 = "
-       << max_kappa2_ << endl;
-    os << decindent << endl;
-  }
+  os << node0 << indent << "SymmMolecularCoor Parameters:\n" << incindent
+     << indent << "change_coordinates = "
+     << (change_coordinates_?"yes":"no") << endl
+     << indent << "transform_hessian = "
+     << (transform_hessian_?"yes":"no") << endl
+     << indent << scprintf("max_kappa2 = %f",max_kappa2_) << endl
+     << decindent << endl;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

@@ -1,7 +1,5 @@
 
-extern "C" {
 #include <math.h>
-};
 
 #include <math/scmat/matrix.h>
 #include <math/scmat/local.h>
@@ -104,3 +102,9 @@ RedundMolecularCoor::inverse_hessian(RefSymmSCMatrix& hessian)
   thess.accumulate_transform(p,bmbt);
   return thess;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

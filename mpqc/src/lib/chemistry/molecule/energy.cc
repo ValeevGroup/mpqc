@@ -3,7 +3,6 @@
 #pragma implementation
 #endif
 
-#include <iostream.h>
 #include <stdlib.h>
 #include <math.h>
 
@@ -103,7 +102,7 @@ MolecularEnergy::save_data_state(StateOut&s)
 void
 MolecularEnergy::failure(const char * msg)
 {
-  cerr << indent << "MolecularEnergy::failure: " << msg << endl;
+  cerr << node0 << indent << "MolecularEnergy::failure: " << msg << endl;
   abort();
 }
 
@@ -222,22 +221,21 @@ MolecularEnergy::inverse_hessian(RefSymmSCMatrix&hessian)
 void
 MolecularEnergy::print(ostream&o)
 {
-  int me = matrixkit()->messagegrp()->me();
-  
   Function::print(o);
   if (mc_.nonnull()) {
-      if (me==0)
-          o << indent << "Molecular Coordinates:\n";
-      o << incindent;
+      o << node0 << indent << "Molecular Coordinates:\n" << incindent;
       mc_->print(o);
-      o << decindent;
+      o << node0 << decindent;
     }
   else {
-      if (me==0) {
-          o << indent << "Molecule:\n";
-          o << incindent;
-          mol_->print(o);
-          o << decindent << endl;
-        }
+      o << node0 << indent << "Molecule:\n" << incindent;
+      mol_->print(o);
+      o << node0 << decindent << endl;
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

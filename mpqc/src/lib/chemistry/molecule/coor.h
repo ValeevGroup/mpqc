@@ -4,8 +4,9 @@
 
 #ifdef __GNUC__
 #pragma interface
-#include <ostream.h>
 #endif
+
+#include <iostream.h>
 
 #include <util/container/array.h>
 #include <util/container/set.h>
@@ -210,7 +211,6 @@ class IntCoorGen: public SavableState
 #   include <util/class/classd.h>
   protected:
     RefMolecule molecule_;
-    RefMessageGrp grp_;
     
     int linear_bends_;
     int linear_tors_;
@@ -246,9 +246,6 @@ class IntCoorGen: public SavableState
     //. This generates a set of internal coordinates.
     virtual void generate(const RefSetIntCoor&);
 
-    //. Set the message group used by the coordinate generator
-    void set_messagegrp(const RefMessageGrp& g) { grp_=g; }
-    
     //. Print out information about this.
     virtual void print(ostream& out=cout);
 };
@@ -587,3 +584,7 @@ class CartMolecularCoor: public MolecularCoor
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")

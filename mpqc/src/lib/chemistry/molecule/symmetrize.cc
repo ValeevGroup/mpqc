@@ -1,7 +1,8 @@
 
-#include <stdio.h>
-#include <chemistry/molecule/molecule.h>
+#include <iostream.h>
 
+#include <util/misc/formio.h>
+#include <chemistry/molecule/molecule.h>
 
 int
 main(int argc, char *argv[])
@@ -13,39 +14,44 @@ main(int argc, char *argv[])
 
   RefMolecule mol = kv->describedclassvalue("molecule");
 
-  printf("Molecule:\n");
   mol->print();
 
   mol_move_to_com(mol);
-  printf("Molecule at com:\n");
+  cout << "Molecule at com:\n";
   mol->print();
   
   mol_transform_to_principal_axes(mol,0);
-  printf("Molecule wrt principal axes:\n");
+  cout << "Molecule wrt principal axes:\n";
   mol->print();
   mol->point_group().symm_frame().print();
 
   mol->symmetrize();
-  printf("symmetrized molecule\n");
+  cout << "symmetrized molecule\n";
   mol->print();
 
   mol_cleanup_molecule(mol);
-  printf("cleaned molecule\n");
+  cout << "cleaned molecule\n";
   mol->print();
   
   int nunique = mol_num_unique_atoms(mol);
   int * unique_atoms = mol_find_unique_atoms(mol);
 
-  printf("\nnunique=%d: ",nunique);
-  for (i=0; i < nunique; i++) printf(" %d",unique_atoms[i]+1);
-  printf("\n");
+  cout << scprintf("\nnunique=%d: ",nunique);
+  for (i=0; i < nunique; i++) cout << scprintf(" %d",unique_atoms[i]+1);
+  cout << endl;
 
   RefMolecule unique = new Molecule;
   for (i=0; i < nunique; i++)
     unique->add_atom(i,mol->atom(unique_atoms[i]));
 
-  printf("unique atoms\n");
+  cout << "unique atoms\n";
   unique->print();
   
   exit(0);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

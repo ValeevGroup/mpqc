@@ -415,6 +415,7 @@ R12IntEval::compute_r2_(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
   RefSCMatrix R2 = local_matrix_kit->matrix(dim_ij, dim_kl);
   R2.assign(r2_array);
+  delete[] r2_array;
 
   return R2;
 }

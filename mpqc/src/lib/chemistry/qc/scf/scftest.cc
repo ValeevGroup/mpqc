@@ -11,6 +11,7 @@
 
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>
+#include <util/group/picl.h>
 
 #include <math/optimize/qnewton.h>
 #include <math/optimize/gdiis.h>
@@ -22,10 +23,12 @@
 
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/scf/clscf.h>
+#include <chemistry/qc/scf/hsosscf.h>
 
 // Force linkages:
 #ifndef __PIC__
-const ClassDesc &fl0  = CLSCF::class_desc_;
+const ClassDesc &fl0a = CLSCF::class_desc_;
+const ClassDesc &fl0b = HSOSSCF::class_desc_;
 const ClassDesc &fl1a = RedundMolecularCoor::class_desc_;
 const ClassDesc &fl1b = CartMolecularCoor::class_desc_;
 const ClassDesc &fl1c = SymmMolecularCoor::class_desc_;
@@ -61,6 +64,10 @@ init_mp(const char *inputfile)
 
   if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
   else grp = MessageGrp::get_default_messagegrp();
+
+  // if intv2 is being used, then initialize the picl stuff
+  int np, me, host;
+  open0_messagegrp(&np, &me, &host, grp);
 
   return grp;
 }

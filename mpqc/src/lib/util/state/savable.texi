@@ -7,11 +7,7 @@
 Classes gain access to @code{SavableState}'s save and restore mechanisms
 through inheritance.  Virtual inheritance is recommended, since other classes
 in the inheritance hierarchy may also inherit from @code{SavableState},
-hopefully virtually as well.  The @code{SavableState} class needs information
-about your class through the @code{DescribedClass} class, so your class
-must also inherit from @code{DescribedClass}.  This inheritance must
-be virtual; otherwise, the castdown mechanism needed to support the
-correct restoration of duplicated pointers to objects will fail.
+hopefully virtually as well.
 
 @menu
 * SavableState Interface:: The interface for SavableState.
@@ -21,7 +17,6 @@ correct restoration of duplicated pointers to objects will fail.
 * SavableState Example with Virtual and Nonvirtual Inheritance::
 * SavableState Example with Pointers to SavableStates::
 * SavableState Example with Pointers to Data::
-* SavableState Example with a New Version::
 @end menu
 
 @c .....................................................................
@@ -29,129 +24,50 @@ correct restoration of duplicated pointers to objects will fail.
 @node SavableState Interface, , , The SavableState Class
 @subsection Interface
 
-The @code{SavableState} class has the following interface:
+The @code{SavableState} class has the following public interface:
 @table @code
 
 @item virtual void save_state(StateOut&)
 Save the state of the object as specified by the @code{StateOut} object.
-This routine does not actually write @code{Client}'s data and would
-usually not be overridden by @code{Client}.
+This routine saves the state of the object (with includes the
+nonvirtual bases), virtual bases, and type information.
+The default implementation should be adequate.
 
 @item virtual void save_vbase_state(StateOut&)
-This routine must invoke @code{save_parent_state} for
-the virtually inherited
-base classes of @code{Client}.  It is not necessary to invoke
-@code{save_state} for the @code{SavableState} or the
-@code{DescribedClass} classes.  The implementation provided by
+This routine must invoke @code{save_data_state} for all
+virtually inherited
+base classes, including those that are not
+direct parents.
+@footnote{This is similar to the way C++ constructors work for
+virtual base classes.}
+The @code{save_data_state} member for the @code{SavableState} and the
+@code{DescribedClass} virtual base classes should not
+be called.  The implementation provided by
 @code{SavableState} can be used when are no other virtually
-inherited bases for @code{Client}.
+inherited bases.
 
-@item virtual void save_data_state(StateOut&)
-If the @code{Client} class contains any information that is needed
-to restore state, or @code{Client} inherits from any class other
-than @code{SavableState} and @code{DescribedClass} that is itself
-a @code{SavableState} or has state information that must be saved,
-then @code{Client} must declare and implement a
+@item void save_data_state(StateOut&)
+If the class contains any information that is needed
+to restore state, or inherits nonvirtually from any class other
+than @code{SavableState} and @code{DescribedClass} that has
+state information that must be saved, then the class
+must declare and implement a
 @code{save_data_state} member (i.e. in nearly all cases).
 
-This routine first calls the @code{save_parent_state} member
-for all direct nonvirtual parents.  Then the @code{StateOut} object's
-members are used to save all the information about the class that is
-needed to restore the state.  Metainformation about the class,
-such as the version of the class and the name of the class (as needed
-to distingiush between the classes derived from a common parent) is
-not needed.  This information is provided automatically.  The
-@code{Client::save_parent_state} member
-only need save data needed to restore the member variables of
-@code{Client} to their original state.
+@item @var{CLASSNAME}(StateIn&)
+The @code{StateIn&} constructor must be declared and implemented for
+all classes.  It must restore the information saved by @code{save_data_state}.
 
-@item virtual void save_parent_state(StateOut&) = 0
-This member is called to save the state of parent classes.
-Thus, if @code{Client} inherits directly from @code{A} and virtually
-from @code{B}, then @code{Client::save_data_state} must
-call @code{A::save_parent_state} and
-@code{Client::save_vbase_state} must call
-@code{B::save_parent_state}.
+@item void save_object_state(StateOut&)
+This can be used for saving state when the exact type of the object is
+known for both the save and the restore.  To restore objects saved in
+this way the user must directly invoke the object's @code{StateIn&}
+constructor.
 
-An @code{A::save_parent_state} call saves @code{A}'s class
-descriptor (for version information) and then executes
-@code{A::save_data_state}.  It is recommended that this
-member be automatically declared and implemented with the
-use of the @code{SavableState_DECLARE} and
-@code{SavableState_IMPL} macros.
-
-@item virtual void save_member_state(StateOut&)
-This saves the version portion of @code{Client}'s class descriptor
-and then calls @code{save_vbase_state} and @code{save_data_state}.
-This member is called as needed by @code{StateOut::put} and need
-not be called by any of @code{Client}'s members.  The default
-implementation provided by @code{SavableState} should be adequate.
-@end table
-
-Corresponding to each state saving member is a member involved in
-restoring the state with the exception of @code{save_state}.  The
-@code{save_state} member is replaced by two alternative methods
-of restoring state.  With the first of these the @code{static}
-@code{Client}@code{*} @code{Client::restore_state(StateIn&)} member
-is used to restore the state of the object.  This
-member is automatically declared and implemented with the
-use of the @code{SavableState_DECLARE} and
-@code{SavableState_IMPL} macros.  The second method for restoring
-state is to use the @code{Client::Client(StateIn&)} constructor.
-This is also automatically declared and implemented with the above macros.
-
-The former of these two methods, @code{Client::restore_state(StateIn&)},
-can be used to restore objects that are of exact type @code{Client} or
-desendents of this class.  The latter, @code{Client::Client(StateIn&)},
-only restores objects of exact type @code{Client}.  Another important
-difference between these two methods is that different constructors are
-used.  The @code{restore_state} method uses the default constructor,
-@code{Client::Client()}.
-This must be kept in mind when writing the default constructor of
-@code{Client}.  After the object has been constructed
-@code{restore_vbase_state} and @code{restore_data_state} are used
-to restore the state.  With the @code{Client::Client(StateIn&)} constructor
-the default constructors for members and parent classes will be executed
-and then the state will be restored by @code{restore_vbase_state} and
-@code{restore_data_state}.
-
-@table @code
-
-@item virtual void restore_vbase_state(int,StateIn&)
-For each base class that @code{save_vbase_state} calls
-@code{save_parent_state}, this member must call
-@code{restore_parent_state}, in the same order.
-
-@item virtual void restore_data_state(int,StateIn&)
-This routine first calls the @code{restore_parent_state} member
-for all direct nonvirtual parents.  Then the @code{StateIn} object's
-members are used to restore all the needed information.
-The parent and member data must be restored in the same order
-that @code{save_data_state} saved the data.
-
-Pointers to objects are restored somewhat differently than other
-objects.  A class with a member @code{A* a;} would restore this
-pointer with @code{a = A::restore_state(si)} where @code{si}
-is the @code{StateIn} reference argument.
-
-@item virtual void restore_parent_state(StateIn&) = 0
-This member is called to restore the state of parent classes.
-Thus, if @code{Client} inherits directly from @code{A} and virtually
-from @code{B}, then @code{Client::restore_data_state} must
-call @code{A::restore_parent_state}.
-
-It is recommended that this
-member be automatically declared and implemented with the
-use of the @code{SavableState_DECLARE} and
-@code{SavableState_IMPL} macros.
-
-@item virtual void restore_member_state(StateIn&)
-This calls @code{restore_vbase_state} and @code{restore_data_state},
-after determining the version number of the objects.
-This member is called as needed by @code{StateIn::get} and need
-not be called by any of @code{Client}'s members.
-The default implementation
-provided by @code{SavableState} should be adequate.
+@item static @var{CLASSNAME}* restore_state(StateIn& @var{si})
+This restores objects saved with @code{save_state}.  The exact type of
+the next object in @var{si} can be any type publically derived from
+@var{CLASSNAME}.
 
 @end table
 
@@ -163,27 +79,34 @@ provided by @code{SavableState} should be adequate.
 Here is a simple example of the specification of a client, @code{C},
 of @code{SavableState}:
 @example
-class C: @{
-  DescribedClass_DECLARE(C)
-  SavableState_DECLARE(C)
+class C: virtual public SavableState @{
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
   private:
     int i;
+  public:
+    C(StateIn&);
+    void save_data_state(StateOut&);
   @};
 @end example
 
 Here is the implementation for the above:
 @example
-DescribedClass_IMPL(C,1,"","")
-SavableState_IMPL(C)
+#define CLASSNAME C
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
 void* C::_castdown(ClassDesc*cd)
   @{
-  if (&class_desc_ == cd) return this;
-  return 0;
+  void* casts[0];
+  return do_castdowns(casts);
   @}
 void C::save_data_state(StateOut&so) @{
   so.put(i);
   @}
-void C::restore_data_state(int version,StateIn&si) @{
+C::C(StateIn&si): SavableState(si,C::class_desc_) @{
   si.get(i);
   @}
 @end example
@@ -194,34 +117,39 @@ void C::restore_data_state(int version,StateIn&si) @{
 @subsection Example with Inheritance
 
 Here is an example of the specification of @code{C},
-where @code{C} nonvirtually inherits from another client of
-@code{SavableState}:
+where @code{C} nonvirtually inherits from another
+@code{SavableState} derivative:
 @example
-class C: public B,
-         virtual public DescribedClass,
-         virtual public SavableState @{
-  DescribedClass_DECLARE(C)
-  SavableState_DECLARE(C)
+class C: public B @{
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
   private:
     int i;
+  public:
+    C(StateIn&);
+    void save_data_state(StateOut&);
   @};
 @end example
 
 Here is the implementation for the above:
 @example
-DescribedClass_IMPL(C,1,"B","")
-SavableState_IMPL(C)
+#define CLASSNAME C
+#define PARENTS public B
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
 void* C::_castdown(ClassDesc*cd)
   @{
-  if (&class_desc_ == cd) return this;
-  return B::_castdown(cd);
+  void* casts[] = { B::_castdown(cd) };
+  return do_castdowns(casts);
   @}
 void C::save_data_state(StateOut&so) @{
-  B::save_parent_state(so);
+  B::save_data_state(so);
   so.put(i);
   @}
-void C::restore_data_state(int version,StateIn&si) @{
-  B::restore_parent_state(si);
+C::C(StateIn&si): SavableState(si,C::class_desc_), B(si)  @{
   si.get(i);
   @}
 @end example
@@ -237,43 +165,39 @@ where @code{C} nonvirtually inherits from another client of
 of @code{SavableState}:
 @example
 class C: public B,
-         virtual public E,
-         virtual public DescribedClass @{
-  DescribedClass_DECLARE(C)
-  SavableState_DECLARE(C)
+         virtual public E @{
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
   private:
     int i;
+  public:
+    C(StateIn&);
+    void save_data_state(StateOut&);
   @};
 @end example
 
 Here is the implementation for the above:
 @example
-DescribedClass_IMPL(C,1,"B","E")
-SavableState_IMPL(C)
+#define CLASSNAME C
+#define PARENTS public B, virtual public E
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
 void* C::_castdown(ClassDesc*cd)
   @{
-  if (&class_desc_ == cd) return this;
-  void* p1 = B::_castdown(cd);
-  void* p2 = E::_castdown(cd);
-  if (p1 == 0) return p2;
-  if (p2 == 0) return p1;
-  if (p1 != p2) @{
-    printf("ambiguous castdown for C\n");
-    @}
-  return p1;
+  void* casts[] = {B::_castdown(cd),E::_castdown(cd)};
+  return do_castdowns(casts);
   @}
 void C::save_vbase_state(StateOut&sio) @{
-  E::save_parent_state(sio);
-  @}
-void C::restore_vbase_state(int version,StateIn&sio) @{
-  E::restore_parent_state(sio);
+  E::save_data_state(sio);
   @}
 void C::save_data_state(StateOut&so) @{
   B::save_parent_state(so);
   so.put(i);
   @}
-void C::restore_data_state(int version,StateIn&si) @{
-  B::restore_parent_state(si);
+C::C(StateIn&si): SavableState(si,C::class_desc_), B(si), E(si) @{
   si.get(i);
   @}
 @end example
@@ -284,30 +208,37 @@ void C::restore_data_state(int version,StateIn&si) @{
 @subsection Example with Pointers to SavableStates
 
 Here is an example where @code{C} has data members which are
-pointers to clients of @code{SavableState}:
+pointers to derivatives of @code{SavableState}:
 @example
 class C: @{
-  DescribedClass_DECLARE(C)
-  SavableState_DECLARE(C)
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
   private:
     A* ap; // A is also a SavableState
+  public:
+    C(StateIn&);
+    void save_data_state(StateOut&);
   @};
 @end example
 
 Here is the implementation for the above:
 @example
-DescribedClass_IMPL(C,1,"","")
-SavableState_IMPL(C)
+#define CLASSNAME C
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
 void* C::_castdown(ClassDesc*cd)
   @{
-  if (&class_desc_ == cd) return this;
-  return 0;
+  void* casts[0];
+  return do_castdowns(casts);
   @}
 void C::save_data_state(StateOut&so) @{
   so.put(ap);
   @}
-void C::restore_data_state(int version,StateIn&si) @{
-  ap = B::restore_state(si);
+C::C(StateIn&si): SavableState(si,C::class_desc_) @{
+  ap = A::restore_state(si);
   @}
 @end example
 
@@ -317,28 +248,35 @@ void C::restore_data_state(int version,StateIn&si) @{
 @subsection Example with Pointers to Data
 
 Here is an example where @code{C} has data members which are
-pointers to clients of @code{SavableState}:
+pointers to data:
 @example
-class C: @{
-  DescribedClass_DECLARE(C)
-  SavableState_DECLARE(C)
+class C: virtual public SavableState @{
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
   private:
     int vecsize;
     double *vec;
     int n1;
     int n2;
     double **array;
+  public:
+    C(StateIn&);
+    void save_data_state(StateOut&);
   @};
 @end example
 
 Here is the implementation for the above:
 @example
-DescribedClass_IMPL(C,1,"","")
-SavableState_IMPL(C)
+#define CLASSNAME C
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
 void* C::_castdown(ClassDesc*cd)
   @{
-  if (&class_desc_ == cd) return this;
-  return 0;
+  void* casts[0];
+  return do_castdowns(casts);
   @}
 void C::save_data_state(StateOut&so) @{
   so.put(vecsize);
@@ -352,7 +290,7 @@ void C::save_data_state(StateOut&so) @{
       @}
     @}
   @}
-void C::restore_data_state(int version,StateIn&si) @{
+C::C(StateIn&si): SavableState(si,C::class_desc_) @{
   si.get(vecsize);
   si.get(vec);
 
@@ -366,47 +304,6 @@ void C::restore_data_state(int version,StateIn&si) @{
     for (int i=0; i<n1; i++) @{
       si.get(array[i],n2);
       @}
-    @}
-  @}
-@end example
-
-@c .....................................................................
-
-@node SavableState Example with a New Version, , , The SavableState Class
-@subsection Example with a New Version
-
-In this example @code{C} has modified its private parts to be
-a double instead of int, but it must still be able to restore
-old versions of the class.
-@example
-class C: @{
-  DescribedClass_DECLARE(C)
-  SavableState_DECLARE(C)
-  private:
-    double data;
-  @};
-@end example
-
-Here is the implementation for the above:
-@example
-DescribedClass_IMPL(C,2,"","")
-SavableState_IMPL(C)
-void* C::_castdown(ClassDesc*cd)
-  @{
-  if (&class_desc_ == cd) return this;
-  return 0;
-  @}
-void C::save_data_state(StateOut&so) @{
-  so.put(data);
-  @}
-void C::restore_data_state(int version,StateIn&si) @{
-  if (version == 1) @{
-    int idata;
-    si.get(idata);
-    data = idata;
-    @}
-  else @{
-    si.get(data);
     @}
   @}
 @end example

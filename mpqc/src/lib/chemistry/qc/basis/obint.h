@@ -206,6 +206,8 @@ class OneBodyIntOp: public SCElementOp {
     virtual void process(SCMatrixBlockIter&);
     virtual void process_spec(SCMatrixRectBlock*);
     virtual void process_spec(SCMatrixLTriBlock*);
+    virtual void process_spec(SCMatrixRectSubBlock*);
+    virtual void process_spec(SCMatrixLTriSubBlock*);
 
     int has_side_effects();
 };

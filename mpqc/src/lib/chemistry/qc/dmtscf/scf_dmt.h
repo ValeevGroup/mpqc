@@ -53,6 +53,12 @@ int scf_make_old_centers(const RefKeyVal&, centers_t&, centers_t&);
 
 void scf_print_options(FILE*, scf_struct_t&);
 
+class StateOut;
+class StateIn;
+
+void put_scf_struct(StateOut&, scf_struct_t&);
+void get_scf_struct(StateIn&, scf_struct_t&);
+
 #endif /* __cplusplus */
 
 #endif /* _scf_dmt_h */

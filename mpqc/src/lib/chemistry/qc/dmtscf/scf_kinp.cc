@@ -14,6 +14,7 @@ extern "C" {
 #include <util/misc/libmisc.h>
 }
 
+#include <util/state/state.h>
 #include <util/keyval/keyval.h>
 
 #include <chemistry/qc/intv2/int_libv2.h>
@@ -561,4 +562,137 @@ scf_make_old_centers(const RefKeyVal& topkeyval, centers_t& centers,
   bcast0_centers(&oldcenters,0,0);
 
   return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+
+void
+put_scf_struct(StateOut& so, scf_struct_t& scf_info)
+{
+  so.put(scf_info.hsos);
+  so.put(scf_info.singlet);
+  so.put(scf_info.special);
+  so.put(scf_info.twocon);
+  so.put(scf_info.use_symmetry);
+  so.put(scf_info.restart);
+  so.put(scf_info.warmrestart);
+  so.put(scf_info.proj_vector);
+  so.put(scf_info.diis_flg);
+  so.put(scf_info.ckpt_del);
+  so.put(scf_info.local_p);
+  so.put(scf_info.eliminate);
+  so.put(scf_info.exchange);
+  so.put(scf_info.load_bal);
+  so.put(scf_info.scdft);
+  so.put(scf_info.dft);
+  so.put(scf_info.debug);
+  so.put(scf_info.debug_node);
+
+  so.putstring(scf_info.ckptdir);
+  so.putstring(scf_info.fname);
+
+  so.put(scf_info.ckpt_freq);
+  so.put(scf_info.convergence);
+  so.put(scf_info.maxiter);
+  so.put(scf_info.intcut);
+  so.put(scf_info.int_store);
+  so.put(scf_info.p_reset_freq);
+  so.put(scf_info.ndiis);
+  so.put(scf_info.it_diis);
+  so.put(scf_info.fock_typ);
+  so.put(scf_info.print_flg);
+
+  so.put(scf_info.diisdamp);
+  so.put(scf_info.lvl_shift);
+
+  so.put(scf_info.iopen);
+  so.put(scf_info.converged);
+
+  so.put(scf_info.nbfao);
+  so.put(scf_info.nbfso);
+  so.put(scf_info.nbstri);
+  so.put(scf_info.nbatri);
+  so.put(scf_info.nsomax);
+  so.put(scf_info.mxcoef);
+  so.put(scf_info.mxcoef2);
+  so.put(scf_info.nclosed);
+  so.put(scf_info.nopen);
+
+  so.put(scf_info.nuc_rep);
+  so.put(scf_info.e_elec);
+  so.put(scf_info.diis_er);
+  so.put(scf_info.e_exc);
+
+  so.put(scf_info.alpha);
+  so.put(scf_info.beta);
+}
+
+void
+get_scf_struct(StateIn& si, scf_struct_t& scf_info)
+{
+  si.get(scf_info.hsos);
+  si.get(scf_info.singlet);
+  si.get(scf_info.special);
+  si.get(scf_info.twocon);
+  si.get(scf_info.use_symmetry);
+  si.get(scf_info.restart);
+  si.get(scf_info.warmrestart);
+  si.get(scf_info.proj_vector);
+  si.get(scf_info.diis_flg);
+  si.get(scf_info.ckpt_del);
+  si.get(scf_info.local_p);
+  si.get(scf_info.eliminate);
+  si.get(scf_info.exchange);
+  si.get(scf_info.load_bal);
+  si.get(scf_info.scdft);
+  si.get(scf_info.dft);
+  si.get(scf_info.debug);
+  si.get(scf_info.debug_node);
+
+  char *foo;
+  si.getstring(foo);
+  if (scf_info.ckptdir) free(scf_info.ckptdir);
+  scf_info.ckptdir = strdup(foo);
+  delete[] foo;
+
+  foo = 0;
+  si.getstring(foo);
+  if (scf_info.fname) free(scf_info.fname);
+  scf_info.fname = strdup(foo);
+  delete[] foo;
+
+  si.get(scf_info.ckpt_freq);
+  si.get(scf_info.convergence);
+  si.get(scf_info.maxiter);
+  si.get(scf_info.intcut);
+  si.get(scf_info.int_store);
+  si.get(scf_info.p_reset_freq);
+  si.get(scf_info.ndiis);
+  si.get(scf_info.it_diis);
+  si.get(scf_info.fock_typ);
+  si.get(scf_info.print_flg);
+
+  si.get(scf_info.diisdamp);
+  si.get(scf_info.lvl_shift);
+
+  si.get(scf_info.iopen);
+  si.get(scf_info.converged);
+
+  si.get(scf_info.nbfao);
+  si.get(scf_info.nbfso);
+  si.get(scf_info.nbstri);
+  si.get(scf_info.nbatri);
+  si.get(scf_info.nsomax);
+  si.get(scf_info.mxcoef);
+  si.get(scf_info.mxcoef2);
+  si.get(scf_info.nclosed);
+  si.get(scf_info.nopen);
+
+  si.get(scf_info.nuc_rep);
+  si.get(scf_info.e_elec);
+  si.get(scf_info.diis_er);
+  si.get(scf_info.e_exc);
+
+  si.get(scf_info.alpha);
+  si.get(scf_info.beta);
 }

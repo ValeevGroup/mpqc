@@ -68,9 +68,14 @@ class DistShellPairR12 {
     int print_interval_;
     int print_index_;
   public:
+    /** The DistShellPairR12 class is used to distribute shell pair indices among tasks.
+
+        Both static (round-robin) and dynamic methods are supported. The only difference
+        between DistShellPairR12 and DistShellPair is that the latter assumes both shell indices
+        belong to the same GaussianBasisSet and thus PQ is equivalent to QP. */
     DistShellPairR12(const Ref<MessageGrp> &, int nthread, int mythread,
-                  const Ref<ThreadLock> &,
-                  const Ref<GaussianBasisSet> &, const Ref<GaussianBasisSet> &);
+                  const Ref<ThreadLock>& lock,
+                  const Ref<GaussianBasisSet>& bs1, const Ref<GaussianBasisSet>& bs2);
     ~DistShellPairR12();
     /// Resets to the first shell pair.
     void init();
@@ -83,7 +88,10 @@ class DistShellPairR12 {
     /** Puts the current PQ shell pair into P and Q and returns 1.
         When there are no more shell pairs to be processed by this processor,
         0 is returned.  Once we start doing get_tasks, we have to go to the
-        end if dynamic load balancing is used. */
+        end if dynamic load balancing is used.
+
+        P belongs to bs2, and Q belongs to bs1. If (bs1 == bs2) then
+        P is greater or equal to Q. */
     int get_task(int &P, int &Q);
 };
 

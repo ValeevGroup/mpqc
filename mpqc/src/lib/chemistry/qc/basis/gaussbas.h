@@ -32,10 +32,10 @@
 #pragma interface
 #endif
 
+#include <vector>
 #include <iostream>
 
 #include <util/state/state.h>
-#include <util/state/array.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
@@ -116,8 +116,8 @@ class GaussianBasisSet: public SavableState
   private:
     char* name_;
     GaussianShell** shell_;
-    Arrayint shell_to_function_;
-    Arrayint function_to_shell_;
+    std::vector<int> shell_to_function_;
+    std::vector<int> function_to_shell_;
 
     Ref<Molecule> molecule_;
 
@@ -126,10 +126,10 @@ class GaussianBasisSet: public SavableState
     RefSCDimension basisdim_;
 
     int ncenter_;
-    SSBArrayint shell_to_center_;
-    SSBArrayint center_to_shell_;
-    SSBArrayint center_to_nshell_;
-    SSBArrayint center_to_nbasis_;
+    std::vector<int> shell_to_center_;
+    std::vector<int> center_to_shell_;
+    std::vector<int> center_to_nshell_;
+    std::vector<int> center_to_nbasis_;
 
     int nshell_;
     int nbasis_;
@@ -301,7 +301,7 @@ class GaussianBasisSet: public SavableState
         on that center. */
     int shell_on_center(int icenter, int shell) const;
     /// Return the center on which the given shell is located.
-    int shell_to_center(int ishell) const { return shell_to_center_(ishell); }
+    int shell_to_center(int ishell) const { return shell_to_center_[ishell]; }
     /// Return the number of basis functions.
     int nbasis() const { return nbasis_; }
     /// Return the number of basis functions on the given center.
@@ -325,7 +325,7 @@ class GaussianBasisSet: public SavableState
     int max_cartesian() const;
 
     /// Return the number of the first function in the given shell.
-    int shell_to_function(int i) const { return shell_to_function_(i); }
+    int shell_to_function(int i) const { return shell_to_function_[i]; }
     /// Return the shell to which the given function belongs.
     int function_to_shell(int i) const;
 

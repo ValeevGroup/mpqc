@@ -31,67 +31,36 @@
 #include <math/isosurf/shape.h>
 #include <math/isosurf/triangle.h>
 
-#ifdef HAVE_STL
 #include <vector>
-#endif
 
 using namespace sc;
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 
-#ifdef HAVE_STL
 template class vector<Ref<Vertex> >;
 template class vector<Ref<Edge> >;
 template class vector<Ref<Triangle> >;
-#else
-template class Array<Ref<Vertex> >;
-template class Array<Ref<Edge> >;
-template class Array<Ref<Triangle> >;
-#endif
 
 // Vertex
-template class EAVLMMapNode<Ref<Vertex>, AVLMapNode<Ref<Vertex>, int> >;
-template class EAVLMMap<Ref<Vertex>, AVLMapNode<Ref<Vertex>, int> >;
-template class AVLMapNode<Ref<Vertex>, int>;
-template class AVLMap<Ref<Vertex>, int>;
-template class AVLSet<Ref<Vertex> >;
+template class map<Ref<Vertex>, int>;
+template class set<Ref<Vertex> >;
 
 // Edge
-template class EAVLMMapNode<Ref<Edge>, AVLMapNode<Ref<Edge>, int> >;
-template class EAVLMMap<Ref<Edge>, AVLMapNode<Ref<Edge>, int> >;
-template class AVLMapNode<Ref<Edge>, int>;
-template class AVLMap<Ref<Edge>, int>;
-template class AVLSet<Ref<Edge> >;
+template class map<Ref<Edge>, int>;
+template class set<Ref<Edge> >;
 
 // Triangle
-template class EAVLMMapNode<Ref<Triangle>, AVLMapNode<Ref<Triangle>, int> >;
-template class EAVLMMap<Ref<Triangle>, AVLMapNode<Ref<Triangle>, int> >;
-template class AVLMapNode<Ref<Triangle>, int>;
-template class AVLMap<Ref<Triangle>, int>;
-template class AVLSet<Ref<Triangle> >;
+template class map<Ref<Triangle>, int>;
+template class set<Ref<Triangle> >;
 
 // Shape
-template class EAVLMMapNode<Ref<Shape>, AVLMapNode<Ref<Shape>, int> >;
-template class EAVLMMap<Ref<Shape>, AVLMapNode<Ref<Shape>, int> >;
-template class AVLMapNode<Ref<Shape>, int>;
-template class AVLMap<Ref<Shape>, int>;
-template class AVLSet<Ref<Shape> >;
+template class map<Ref<Shape>, int>;
+template class set<Ref<Shape> >;
 
 // (mixed)
-template class EAVLMMapNode<Ref<Vertex>, AVLMapNode<Ref<Vertex>, AVLSet<Ref<Edge> > > >;
-template class EAVLMMap<Ref<Vertex>, AVLMapNode<Ref<Vertex>, AVLSet<Ref<Edge> > > >;
-template class AVLMapNode<Ref<Vertex>, AVLSet<Ref<Edge> > >;
-template class AVLMap<Ref<Vertex>, AVLSet<Ref<Edge> > >;
-
-template class EAVLMMapNode<Ref<Vertex>, AVLMapNode<Ref<Vertex>, Ref<Edge> > >;
-template class EAVLMMap<Ref<Vertex>, AVLMapNode<Ref<Vertex>, Ref<Edge> > >;
-template class AVLMapNode<Ref<Vertex>, Ref<Edge> >;
-template class AVLMap<Ref<Vertex>, Ref<Edge> >;
-
-template class EAVLMMapNode<Ref<Vertex>, AVLMapNode<Ref<Vertex>, AVLSet<Ref<Triangle> > > >;
-template class EAVLMMap<Ref<Vertex>, AVLMapNode<Ref<Vertex>, AVLSet<Ref<Triangle> > > >;
-template class AVLMapNode<Ref<Vertex>, AVLSet<Ref<Triangle> > >;
-template class AVLMap<Ref<Vertex>, AVLSet<Ref<Triangle> > >;
+template class map<Ref<Vertex>, set<Ref<Edge> > >;
+template class map<Ref<Vertex>, Ref<Edge> >;
+template class map<Ref<Vertex>, set<Ref<Triangle> > >;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////

@@ -153,7 +153,7 @@ class ConnollyShape: public Shape {
     int n_spheres;
     Ref<AtomInfo> atominfo_;
 
-    Arrayint ***box_;
+    std::vector<int> ***box_;
     double l_;
     int xmax_;
     int ymax_;

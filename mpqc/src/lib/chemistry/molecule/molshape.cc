@@ -258,11 +258,11 @@ ConnollyShape::initialize(const Ref<Molecule>&mol,double probe_radius)
       ymax_ = (int)((upper[1]-lower[1])/l_);
       zmax_ = (int)((upper[2]-lower[2])/l_);
       // allocate the boxes
-      box_ = new Arrayint**[xmax_+1];
+      box_ = new std::vector<int>**[xmax_+1];
       for (i=0; i<=xmax_; i++) {
-          box_[i] = new Arrayint*[ymax_+1];
+          box_[i] = new std::vector<int>*[ymax_+1];
           for (int j=0; j<=ymax_; j++) {
-              box_[i][j] = new Arrayint[zmax_+1];
+              box_[i][j] = new std::vector<int>[zmax_+1];
             }
         }
       // put the spheres in the boxes
@@ -349,7 +349,7 @@ ConnollyShape::distance_to_surface(const SCVector3&r, SCVector3*grad) const
   int n_local_spheres = 0;
   int boxi, boxj, boxk;
   if (get_box(r,boxi,boxj,boxk)) {
-      Arrayint & box = box_[boxi][boxj][boxk];
+      std::vector<int> & box = box_[boxi][boxj][boxk];
       for (int ibox=0; ibox<box.size(); ibox++) {
           int i = box[ibox];
           double distance = sphere[i].distance(probe_centers);

@@ -33,6 +33,7 @@
 #endif
 
 #include <string>
+#include <vector>
 
 #include <util/class/class.h>
 #include <util/state/state.h>
@@ -126,6 +127,13 @@ class StateOut: public DescribedClass {
     virtual int put_array_int(const int*p,int size);
     virtual int put_array_float(const float*p,int size);
     virtual int put_array_double(const double*p,int size);
+
+    /// Write an STL vector of data.
+    template <class T>
+    int put(std::vector<T> &v) {
+      int l = v.size(); put(l);
+      if (l) { for (int i=0; i<l; i++) put(v[i]); }
+    }
 
     /** Don't keep track of pointers to objects.  Calling this
         causes duplicated references to objects to be copied.

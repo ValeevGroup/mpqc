@@ -32,6 +32,9 @@
 #pragma interface
 #endif
 
+#include <string>
+#include <vector>
+
 #include <util/state/state.h>
 #include <util/container/avlmap.h>
 #include <util/keyval/keyval.h>
@@ -167,6 +170,13 @@ class StateIn:  public DescribedClass {
     virtual int get_array_int(int*p,int size);
     virtual int get_array_float(float*p,int size);
     virtual int get_array_double(double*p,int size);
+
+    /// Read an STL vector of data.
+    template <class T>
+    int get(std::vector<T> &v) {
+      int l; get(l);
+      if (l) { v.resize(l); for (int i=0; i<l; i++) get(v[i]); }
+    }
 
     /** True if this is a node to node save/restore.  This is
         for classes that try to avoid saving databases

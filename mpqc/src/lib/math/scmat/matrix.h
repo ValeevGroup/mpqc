@@ -32,7 +32,6 @@
 #endif
 
 #include <iostream>
-#include <util/container/array.h>
 
 #include <math/scmat/abstract.h>
 

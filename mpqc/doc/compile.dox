@@ -138,10 +138,6 @@ Useful options to configure include:
 
 <dt><tt>--disable-static</tt><dd>Do not build libraries for static linking.
 
-<dt><tt>--enable-stl</tt><dd>Use the Standard Template Library for some of
-  the container classes.  Your compiler must have a working STL
-  implementation.
-
 <dt><tt>--enable-ref-debug</tt><dd>Check for overwrites and overflows of
   reference counts.  Implied by ``--enable-debug''.
 

@@ -68,7 +68,7 @@ double Edge::straight_length()
   return BA.norm();
 }
 
-void Edge::add_vertices(AVLSet<Ref<Vertex> >&set)
+void Edge::add_vertices(std::set<Ref<Vertex> >&set)
 {
   set.insert(_vertices[0]);
   set.insert(_vertices[_order]);

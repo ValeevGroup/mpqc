@@ -37,7 +37,6 @@
 
 #include <util/misc/scint.h>
 #include <util/ref/ref.h>
-#include <util/container/array.h>
 #include <math/scmat/blocked.h>
 #include <math/scmat/offset.h>
 #include <chemistry/molecule/molecule.h>

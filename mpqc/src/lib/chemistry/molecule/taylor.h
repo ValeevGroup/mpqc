@@ -46,8 +46,8 @@ class TaylorMolecularEnergy: public MolecularEnergy {
     // The force constants (only the unique ones are given) to arbitrary
     // order.  If nonunique force constants are put here, then the answer
     // will be wrong
-    ArrayArrayint force_constant_index_;
-    Arraydouble force_constant_value_;
+    std::vector<std::vector<int> > force_constant_index_;
+    std::vector<double> force_constant_value_;
     
     // the dimension of coordinates_;
     RefSCDimension dim_;

@@ -32,6 +32,8 @@
 #pragma interface
 #endif
 
+#include <vector>
+
 #include <math/isosurf/surf.h>
 
 namespace sc {
@@ -57,11 +59,8 @@ class ImplicitSurfacePolygonizer: public IsosurfaceGen {
   protected:
     Ref<Volume> _volume;
 
-#ifdef HAVE_STL
     std::vector<Ref<Vertex> >  _tmp_vertices;
-#else
-    Array<Ref<Vertex> >  _tmp_vertices;
-#endif
+
     TriangulatedSurface* _surf;
     double _value;
   public:

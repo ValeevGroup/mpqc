@@ -36,11 +36,8 @@
 #include <scconfig.h>
 #endif
 
-#ifdef HAVE_STL
 #include <vector>
-#endif
 
-#include <util/container/array.h>
 #include <math/isosurf/triangle.h>
 #include <math/isosurf/volume.h>
 #include <util/render/render.h>
@@ -65,15 +62,9 @@ class TriangulatedSurface: public DescribedClass {
     AVLMap<Ref<Triangle>,int> _triangle_to_index;
 
     // map integer indices to an object
-#ifdef HAVE_STL
     std::vector<Ref<Vertex> > _index_to_vertex;
     std::vector<Ref<Edge> > _index_to_edge;
     std::vector<Ref<Triangle> > _index_to_triangle;
-#else
-    Array<Ref<Vertex> > _index_to_vertex;
-    Array<Ref<Edge> > _index_to_edge;
-    Array<Ref<Triangle> > _index_to_triangle;
-#endif
 
     // mappings between array element numbers
     int** _triangle_vertex;
@@ -82,7 +73,7 @@ class TriangulatedSurface: public DescribedClass {
 
     // values for each of the vertices
     int _have_values;
-    Arraydouble _values;
+    std::vector<double> _values;
 
     // what to use to integrate over the surface, by default
     Ref<TriangleIntegrator> _integrator;

@@ -32,11 +32,11 @@
 #pragma interface
 #endif
 
+#include <set>
+
 #include <math/isosurf/volume.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
-#include <util/container/array.h>
-#include <util/container/avlset.h>
 
 namespace sc {
 
@@ -229,7 +229,7 @@ class Uncapped5SphereExclusionShape: public Shape
 /** A UnionShape is volume enclosed by a set of Shape's. */
 class UnionShape: public Shape {
   protected:
-    AVLSet<Ref<Shape> > _shapes;
+    std::set<Ref<Shape> > _shapes;
   public:
     void add_shape(Ref<Shape>);
     UnionShape();

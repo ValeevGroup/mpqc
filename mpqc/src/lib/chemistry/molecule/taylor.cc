@@ -77,15 +77,15 @@ TaylorMolecularEnergy::TaylorMolecularEnergy(const Ref<KeyVal>&keyval):
       maxorder_ = 2;
     }
 
-  force_constant_index_.set_length(n_fc1+n_fc);
-  force_constant_value_.set_length(n_fc1+n_fc);
+  force_constant_index_.resize(n_fc1+n_fc);
+  force_constant_value_.resize(n_fc1+n_fc);
   maxorder_ = 0;
   if (n_fc1 > 0) maxorder_ = 1;
 
   // first read in the short hand notation for first derivatives
   for (i=0; i<n_fc1; i++) {
       force_constant_value_[i] = keyval->doublevalue("force_constants_1", i);
-      force_constant_index_[i].set_length(1);
+      force_constant_index_[i].resize(1);
       force_constant_index_[i][0] = i;
     }
 
@@ -95,7 +95,7 @@ TaylorMolecularEnergy::TaylorMolecularEnergy(const Ref<KeyVal>&keyval):
       int ifc,j;
       for (ifc=i=0; i<moldim().n(); i++) {
           for (j=0; j<=i; j++, ifc++) {
-              force_constant_index_[n_fc1+ifc].set_length(2);
+              force_constant_index_[n_fc1+ifc].resize(2);
               force_constant_index_[n_fc1+ifc][0] = i;
               force_constant_index_[n_fc1+ifc][1] = j;
               force_constant_value_[n_fc1+ifc] = hess->get_element(i,j);
@@ -108,7 +108,7 @@ TaylorMolecularEnergy::TaylorMolecularEnergy(const Ref<KeyVal>&keyval):
           int order = keyval->count("force_constants", i) - 1;
           force_constant_value_[n_fc1+i]
               = keyval->doublevalue("force_constants", i,order);
-          force_constant_index_[n_fc1+i].set_length(order);
+          force_constant_index_[n_fc1+i].resize(order);
           if (maxorder_ < order) maxorder_ = order;
           for (int j=0; j<order; j++) {
               force_constant_index_[n_fc1+i][j]
@@ -167,9 +167,9 @@ factorial(int i)
 // Compute the factors such as 1/4!, etc. assuming that only unique
 // force constants we given.
 static double
-factor(Arrayint&indices)
+factor(std::vector<int>&indices)
 {
-  AVLMap<int,int> n_occur;
+  std::map<int,int> n_occur;
   int i;
   for (i=0; i<indices.size(); i++) {
       n_occur[indices[i]] = 0;
@@ -179,9 +179,9 @@ factor(Arrayint&indices)
     }
   int n_indices = indices.size();
   int int_factor = 1;
-  AVLMap<int,int>::iterator I;
+  std::map<int,int>::iterator I;
   for (I=n_occur.begin(); I!=n_occur.end(); I++) {
-      int n = I.data();
+      int n = I->second;
       int_factor *= factorial(n_indices)
                    /(factorial(n)*factorial(n_indices-n));
       n_indices -= n;

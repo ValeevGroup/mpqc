@@ -55,7 +55,7 @@ using namespace std;
 using namespace sc;
 
 static ClassDesc GaussianBasisSet_cd(
-  typeid(GaussianBasisSet),"GaussianBasisSet",2,"public SavableState",
+  typeid(GaussianBasisSet),"GaussianBasisSet",3,"public SavableState",
   0, create<GaussianBasisSet>, create<GaussianBasisSet>);
 
 GaussianBasisSet::GaussianBasisSet(const Ref<KeyVal>&topkeyval)
@@ -136,9 +136,9 @@ GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
   
   name_ = new_string(gbs.name_);
 
-  center_to_nshell_.set_length(ncenter_);
+  center_to_nshell_.resize(ncenter_);
   for (i=0; i < ncenter_; i++) {
-      center_to_nshell_(i) = gbs.center_to_nshell_(i);
+      center_to_nshell_[i] = gbs.center_to_nshell_[i];
     }
   
   shell_ = new GaussianShell*[nshell_];
@@ -172,13 +172,20 @@ GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
 }
 
 GaussianBasisSet::GaussianBasisSet(StateIn&s):
-  SavableState(s),
-  center_to_nshell_(s)
+  SavableState(s)
 {
   matrixkit_ = SCMatrixKit::default_matrixkit();
 
+  if (s.version(::class_desc<GaussianBasisSet>()) < 3) {
+      // read the duplicate length saved in older versions
+      int junk;
+      s.get(junk);
+    }
+  s.get(center_to_nshell_);
+
   molecule_ << SavableState::restore_state(s);
   basisdim_ << SavableState::restore_state(s);
+
 
   ncenter_ = center_to_nshell_.size();
   s.getstring(name_);
@@ -186,7 +193,7 @@ GaussianBasisSet::GaussianBasisSet(StateIn&s):
   nshell_ = 0;
   int i;
   for (i=0; i<ncenter_; i++) {
-      nshell_ += center_to_nshell_(i);
+      nshell_ += center_to_nshell_[i];
     }
   
   shell_ = new GaussianShell*[nshell_];
@@ -200,7 +207,7 @@ GaussianBasisSet::GaussianBasisSet(StateIn&s):
 void
 GaussianBasisSet::save_data_state(StateOut&s)
 {
-  center_to_nshell_.save_object_state(s);
+  s.put(center_to_nshell_);
 
   SavableState::save_state(molecule_.pointer(),s);
   SavableState::save_state(basisdim_.pointer(),s);
@@ -289,7 +296,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
   nshell_ = ishell;
   shell_ = new GaussianShell*[nshell_];
   ishell = 0;
-  center_to_nshell_.set_length(ncenter_);
+  center_to_nshell_.resize(ncenter_);
   for (iatom=0; iatom<ncenter_; iatom++) {
       if (skip_ghosts && molecule->charge(iatom) == 0.0) {
           center_to_nshell_[iatom] = 0;
@@ -354,9 +361,9 @@ void
 GaussianBasisSet::init2(int skip_ghosts)
 {
   // center_to_shell_ and shell_to_center_
-  shell_to_center_.set_length(nshell_);
-  center_to_shell_.set_length(ncenter_);
-  center_to_nbasis_.set_length(ncenter_);
+  shell_to_center_.resize(nshell_);
+  center_to_shell_.resize(ncenter_);
+  center_to_nbasis_.resize(ncenter_);
   int ishell = 0;
   for (int icenter=0; icenter<ncenter_; icenter++) {
       if (skip_ghosts && molecule()->charge(icenter) == 0.0) {
@@ -377,7 +384,7 @@ GaussianBasisSet::init2(int skip_ghosts)
      }
 
   // compute nbasis_ and shell_to_function_[]
-  shell_to_function_.set_length(nshell_);
+  shell_to_function_.resize(nshell_);
   nbasis_ = 0;
   nprim_ = 0;
   for (ishell=0; ishell<nshell_; ishell++) {
@@ -389,7 +396,7 @@ GaussianBasisSet::init2(int skip_ghosts)
   // would like to do this in function_to_shell(), but it is const
   int n = nbasis();
   int nsh = nshell();
-  function_to_shell_.set_length(n);
+  function_to_shell_.resize(n);
   int ifunc = 0;
   for (int i=0; i<nsh; i++) {
       int nfun = operator()(i).nfunction();
@@ -581,19 +588,19 @@ GaussianBasisSet::nbasis_on_center(int icenter) const
 int
 GaussianBasisSet::shell_on_center(int icenter, int ishell) const
 {
-  return center_to_shell_(icenter) + ishell;
+  return center_to_shell_[icenter] + ishell;
 }
 
 const GaussianShell&
 GaussianBasisSet::operator()(int icenter,int ishell) const
 {
-  return *shell_[center_to_shell_(icenter) + ishell];
+  return *shell_[center_to_shell_[icenter] + ishell];
 }
 
 GaussianShell&
 GaussianBasisSet::operator()(int icenter,int ishell)
 {
-  return *shell_[center_to_shell_(icenter) + ishell];
+  return *shell_[center_to_shell_[icenter] + ishell];
 }
 
 int

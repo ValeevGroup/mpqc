@@ -289,7 +289,7 @@ void
 TriangulatedSurface::compute_values(Ref<Volume>&vol)
 {
   int n = _vertices.length();
-  _values.set_length(n);
+  _values.resize(n);
 
   for (int i=0; i<n; i++) {
       vol->set_x(vertex(i)->point());

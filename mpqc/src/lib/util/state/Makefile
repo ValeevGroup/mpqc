@@ -34,14 +34,14 @@ LD = $(CXX)
 
 CXXSRC = state.cc statein.cc stateout.cc state_bin.cc proxy.cc \
          state_text.cc state_file.cc translate.cc \
-         tmplinst.cc array.cc
+         tmplinst.cc
 
 TESTPROGS = statetest
 
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 INC =  LIBS.h state.h statein.h stateout.h \
-       translate.h array.h \
+       translate.h \
        state_bin.h state_file.h state_text.h
 
 DEPENDINCLUDE = $(INC) $(GENINC)

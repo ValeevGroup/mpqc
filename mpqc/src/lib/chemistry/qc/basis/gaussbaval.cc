@@ -9,19 +9,26 @@
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/gaussshell.h>
 
-int GaussianBasisSet::values(const SCVector3& r, double* basis_values) const
+int
+GaussianBasisSet::values(const RefIntegral& ints,
+                         const SCVector3& r, double* basis_values) const
 {
-  return grad_values(r, 0, basis_values);
+  return grad_values(ints, r, 0, basis_values);
 }
 
-int GaussianBasisSet::grad_values(const SCVector3& r,
-                             double* g_values,
-                             double* basis_values) const
+int
+GaussianBasisSet::grad_values(const RefIntegral& ints,
+                              const SCVector3& r,
+                              double* g_values,
+                              double* basis_values) const
 {
     SCVector3 r_diff;
     int ishell = 0;
     int ibasis = 0;
     int nreturns;
+
+    // for convenience
+    const GaussianBasisSet& gbs = *this;
 
     // calculate the value of each basis
     for (int icenter=0; icenter < ncenter_; icenter++) 
@@ -46,33 +53,20 @@ int GaussianBasisSet::grad_values(const SCVector3& r,
 	for (int ish=0; ish < nshell; ish++) {
             if (basis_values && g_values)
               {
-#ifdef __GNUC__
-	        nreturns=operator()(ishell).grad_values(r_diff,
-#else
-	        nreturns=((GaussianShell)operator()(ishell)).grad_values(r_diff,
-#endif
-                                                        &g_values[ibasis*3],
-                                                        &basis_values[ibasis]);
+	        nreturns=gbs(ishell).grad_values(ints, r_diff,
+                                                 &g_values[ibasis*3],
+                                                 &basis_values[ibasis]);
               }
             else if (g_values)
               {
-#ifdef __GNUC__
-	        nreturns=operator()(ishell).grad_values(r_diff,
-#else
-	        nreturns=((GaussianShell)operator()(ishell)).grad_values(r_diff,
-#endif
-                                                        &g_values[ibasis*3],
-                                                        &basis_values[ibasis]);
+	        nreturns=gbs(ishell).grad_values(ints, r_diff,
+                                                 &g_values[ibasis*3],
+                                                 &basis_values[ibasis]);
               }
             else if (basis_values)
               {
-#ifdef __GNUC__
-	        nreturns=operator()(ishell).grad_values(r_diff,
-#else
-	        nreturns=((GaussianShell)operator()(ishell)).grad_values(r_diff,
-#endif
-                                                        0,
-                                                        &basis_values[ibasis]);
+	        nreturns=gbs(ishell).grad_values(ints, r_diff, 0,
+                                                 &basis_values[ibasis]);
               }
             ibasis += nreturns;
 	    ishell++;

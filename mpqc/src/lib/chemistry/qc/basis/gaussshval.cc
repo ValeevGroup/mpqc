@@ -7,20 +7,26 @@
 
 #include <math/topology/point.h>
 #include <chemistry/qc/basis/gaussshell.h>
+#include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/cartiter.h>
 
 #define MAX_NPRIM 20
 #define MAX_NCON  10
 #define MAX_AM    4
 
-int GaussianShell::values(const SCVector3& r, double* basis_values)
+int
+GaussianShell::values(const RefIntegral& ints,
+                      const SCVector3& r, double* basis_values)
 {
-  return grad_values(r, 0, basis_values);
+  return grad_values(ints, r, 0, basis_values);
 }
 
 // Returns a pointer to a vector of values of basis 
-int GaussianShell::grad_values(const SCVector3& r,
-                               double* g_values,
-                               double* basis_values) const
+int
+GaussianShell::grad_values(const RefIntegral& ints,
+                           const SCVector3& r,
+                           double* g_values,
+                           double* basis_values) const
 {
 
   // compute the maximum angular momentum component of the shell
@@ -103,12 +109,14 @@ int GaussianShell::grad_values(const SCVector3& r,
               i_basis++;
             }
           else {
-              CartesianIter j(l[i]);
+              CartesianIter *jp = ints->new_cartesian_iter(l[i]);
+              CartesianIter& j = *jp;
               for (j.start(); j; j.next()) {
                   basis_values[i_basis] = xs[j.a()]*ys[j.b()]*zs[j.c()]
                                          *precon[i];
                   i_basis++;
                 }
+              delete jp;
             }
         }
     }
@@ -128,7 +136,8 @@ int GaussianShell::grad_values(const SCVector3& r,
               i_grad++;
             }
           else {
-              CartesianIter j(l[i]);
+              CartesianIter *jp = ints->new_cartesian_iter(l[i]);
+              CartesianIter& j = *jp;
               for (j.start(); j; j.next()) {
                   double norm_precon = precon[i];
                   double norm_precon_g = precon_g[i];
@@ -150,6 +159,7 @@ int GaussianShell::grad_values(const SCVector3& r,
                     * xs[j.a()] * ys[j.b()] * zs[j.c()-1];
                   i_grad++;
                 }
+              delete jp;
             }
         }
     }

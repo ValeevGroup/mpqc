@@ -12,12 +12,11 @@
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
 
-// this is for centers_t*
-#include <chemistry/qc/intv2/atoms.h>
-
 class GaussianShell;
 class RefKeyVal;
 class BasisFileSet;
+
+SavableState_REF_fwddec(Integral)
 
 class GaussianBasisSet: public SavableState
 {
@@ -96,19 +95,16 @@ class GaussianBasisSet: public SavableState
     // access to r thru center number
     double r(int icenter,int xyz) const;
     
-    // converts the basis set to a centers_t for compatibility with libintv2
-    centers_t* convert_to_centers_t();
-
     // compute the value for this basis set at position r
-    int values(const SCVector3& r, double* basis_values) const;
-    int grad_values(const SCVector3& r,
+    int values(const RefIntegral&,
+               const SCVector3& r, double* basis_values) const;
+    int grad_values(const RefIntegral&, const SCVector3& r,
                     double*g_values,double* basis_values=0)const;
 
     // fill in matrix with a matrix that orthogonalizes the basis functions
-    // note: this member is provided in the integrals library
-    void ortho(const RefSCMatrix&ortho);
-    void ortho(const RefSCMatrix&ortho,
-               const RefSCMatrix&ortho_inverse);
+    void ortho(const RefIntegral&, const RefSCMatrix&ortho);
+    void ortho(const RefIntegral&,
+               const RefSCMatrix&ortho, const RefSCMatrix&ortho_inverse);
 
     void print(FILE*fp=stdout) const;
 };

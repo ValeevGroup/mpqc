@@ -6,6 +6,7 @@
 #pragma interface
 #endif
 
+#include <util/ref/ref.h>
 #include <util/container/array.h>
 #include <math/scmat/blocked.h>
 #include <chemistry/molecule/molecule.h>
@@ -57,9 +58,8 @@ struct SO_block {
 ////////////////////////////////////////////////////////////////////////////
 // this should only be used from within a SymmGaussianBasisSet
 
-class PetiteList {
-    friend class SymmGaussianBasisSet;
-
+class Integral;
+class PetiteList : public VRefCount {
   private:
     int natom_;
     int nshell_;
@@ -68,6 +68,7 @@ class PetiteList {
     int nblocks_;
 
     GaussianBasisSet& gbs_;
+    Integral& ints_;
     
     char *p1_;        // p1[n] is 1 if shell n is in the group P1
     int **atom_map_;  // atom_map[n][g] is the atom that symop g maps atom n
@@ -83,9 +84,10 @@ class PetiteList {
       { return (i>=j) ? ioff(i)+j : ioff(j)+i; }
     
     void init();
-    PetiteList(GaussianBasisSet&);
 
   public:
+    PetiteList(GaussianBasisSet&, Integral&);
+    PetiteList(const RefGaussianBasisSet&, Integral&);
     ~PetiteList();
 
     int order() const { return ng_; }
@@ -131,6 +133,8 @@ PetiteList::in_p4(int ij, int kl, int i, int j, int k, int l) const
 
   return ng_/nijkl;
 }
+
+REF_dec(PetiteList);
 
 #endif
     

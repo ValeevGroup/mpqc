@@ -12,12 +12,14 @@ DEFINES += -DBASISDIR=\"$(BASISDIR)/basis\" -DSRCDIR=\"$(SRCDIR)\"
 TARGET_TO_MAKE = libbasis
 BIN_OR_LIB = LIB
 
-CXXSRC = gaussbas.cc gaussshell.cc gaussshval.cc gaussbaval.cc \
-       gaussbas_i.cc gaussshe_i.cc files.cc petite.cc aotoso.cc rot.cc \
-       symgaussbas.cc
+CXXSRC = gaussbas.cc gaussbas_i.cc gaussshell.cc gaussshe_i.cc files.cc \
+         gaussbaval.cc gaussshval.cc cartiter.cc cartiter_i.cc \
+         transform.cc shellrot.cc integral.cc obint.cc petite.cc aotoso.cc \
+         symmint.cc ortho.cc
 
-INC = gaussbas.h gaussshe_i.h basis.h gaussbas_i.h gaussshell.h files.h \
-      petite.h rot.h symgaussbas.h
+INC = basis.h gaussbas.h guassshell.h gaussbas_i.h gaussshe_i.h files.h \
+      cartiter.h cartiter_i.h transform.h shellrot.h \
+      integral.h obint.h petite.h symmint.h
 
 TESTSRC = btest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.o)
@@ -33,8 +35,11 @@ ifeq ($(ELF),yes)
 default:: $(TOPDIR)/lib/libbasis.so
 endif
 
-btest: $(TESTOBJ) libintegral.a $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+btest: $(TESTOBJ) $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(LD) $(LDFLAGS) -o btest $^ $(SYSLIBS)
+
+clean::
+	rm -f btest btest.out
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

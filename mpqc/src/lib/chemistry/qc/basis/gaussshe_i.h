@@ -9,76 +9,6 @@
 #define INLINE
 #endif
 
-INLINE
-CartesianIter::CartesianIter(int l):l_(l)
-{
-}
-
-INLINE
-CartesianIter::~CartesianIter()
-{
-}
-
-INLINE int
-CartesianIter::n()
-{
-  return ((l_>=0)?((((l_)+2)*((l_)+1))>>1):0);
-}
-
-INLINE void
-CartesianIter::start()
-{
-  bfn_=a_=c_=0;
-}
-
-INLINE void
-CartesianIter::next()
-{
-  if (c_<l_-a_) c_++; else {c_=0; a_++;} bfn_++;
-}
-
-INLINE
-CartesianIter::operator int()
-{
-  return a_<=l_;
-}
-
-INLINE int
-CartesianIter::a()
-{
-  return a_;
-}
-
-INLINE int
-CartesianIter::b()
-{
-  return l_-a_-c_;
-}
-
-INLINE int
-CartesianIter::c()
-{
-  return c_;
-}
-
-INLINE int
-CartesianIter::l(int i)
-{
-  return i?(i==1?(l_-a_-c_):c_):a_;
-}
-
-INLINE int
-CartesianIter::l()
-{
-  return l_;
-}
-
-INLINE int
-CartesianIter::bfn()
-{
-  return bfn_;
-}
-
 INLINE int
 GaussianShell::nprimitive() const
 {
@@ -126,12 +56,6 @@ GaussianShell::coefficient_unnorm(int con,int prim) const
 {
   return coef[con][prim];
 }
-
-// INLINE double
-// GaussianShell::normalization(int con,int bfn) const
-// {
-//   return norm[con][bfn];
-// }
 
 INLINE double
 GaussianShell::exponent(int iprim) const

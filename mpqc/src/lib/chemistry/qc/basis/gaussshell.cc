@@ -10,6 +10,8 @@
 #include <util/keyval/keyval.h>
 
 #include <chemistry/qc/basis/gaussshell.h>
+#include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/cartiter.h>
 
 const char* GaussianShell::amtypes = "spdfghijkl";
 const char* GaussianShell::AMTYPES = "SPDFGHIJKL";
@@ -373,7 +375,8 @@ GaussianShell::relative_overlap(int con,
 }
 
 double
-GaussianShell::relative_overlap(int con, int func1, int func2) const
+GaussianShell::relative_overlap(const RefIntegral& ints,
+                                int con, int func1, int func2) const
 {
   if (puream[con]) {
       // depends on how intv2 currently normalizes things
@@ -382,16 +385,23 @@ GaussianShell::relative_overlap(int con, int func1, int func2) const
       abort();
     }
 
-  CartesianIter i1(l[con]);
-  CartesianIter i2(l[con]);
+  CartesianIter *i1p = ints->new_cartesian_iter(l[con]);
+  CartesianIter *i2p = ints->new_cartesian_iter(l[con]);
+
+  CartesianIter& i1 = *i1p;
+  CartesianIter& i2 = *i2p;
 
   int i;
   for (i1.start(), i=0; i<func1; i1.next(), i++);
   for (i2.start(), i=0; i<func2; i2.next(), i++);
 
-  return relative_overlap(con,
-                          i1.a(), i1.b(), i1.c(),
-                          i2.a(), i2.b(), i2.c());
+  double ret = relative_overlap(con, i1.a(), i1.b(), i1.c(),
+                                i2.a(), i2.b(), i2.c());
+
+  delete i1p;
+  delete i2p;
+
+  return ret;
 }
 
 void GaussianShell::print(FILE* fp) const
@@ -431,151 +441,4 @@ GaussianShell::~GaussianShell()
     }
 
   delete[] coef;
-}
-
-////////////////////////////////////////////////////////////////////////
-// RedundantCartianIter
-
-RedundantCartesianIter::RedundantCartesianIter(int l)
-{
-  l_ = l;
-  axis_ = new int[l_];
-}
-
-RedundantCartesianIter::~RedundantCartesianIter()
-{
-  delete[] axis_;
-}
-
-int
-RedundantCartesianIter::l(int axis)
-{
-  int i;
-  int r = 0;
-  for (i=0; i<l_; i++) if (axis_[i]==axis) r++;
-  return r;
-}
-
-int
-RedundantCartesianIter::bfn()
-{
-  int i = a();
-  int j = b();
-  int am = l();
-  return (((((((am)+1)<<1)-(i))*((i)+1))>>1)-(j)-1);
-}
-
-RedundantCartesianIter::operator int()
-{
-  return !done_;
-}
-
-void
-RedundantCartesianIter::start()
-{
-  if (l_==0) done_ = 1;
-  else done_ = 0;
-  int i;
-  for (i=0; i<l_; i++) {
-      axis_[i] = 0;
-    }
-}
-
-void
-RedundantCartesianIter::next()
-{
-  int i;
-  for (i=0; i<l_; i++) {
-      if (axis_[i] == 2) axis_[i] = 0;
-      else {
-          axis_[i]++;
-          return;
-        }
-    }
-  done_ = 1;
-}
-
-////////////////////////////////////////////////////////////////////////
-// RedundantCartianIter
-
-RedundantCartesianSubIter::RedundantCartesianSubIter(int l)
-{
-  l_ = l;
-  axis_ = new int[l_];
-}
-
-RedundantCartesianSubIter::~RedundantCartesianSubIter()
-{
-  delete[] axis_;
-}
-
-int
-RedundantCartesianSubIter::bfn()
-{
-  int i = a();
-  int j = b();
-  int am = l();
-  return (((((((am)+1)<<1)-(i))*((i)+1))>>1)-(j)-1);
-}
-
-RedundantCartesianSubIter::operator int()
-{
-  return !done_;
-}
-
-void
-RedundantCartesianSubIter::start(int a, int b, int c)
-{
-  if (l_ != a + b + c) {
-      fprintf(stderr, "RedundantCartesianSubIter::start: bad args\n");
-      abort();
-    }
-  if (l_==0) {
-      done_ = 1;
-      return;
-    }
-  else {
-      done_ = 0;
-    }
-  e_[0] = a;
-  e_[1] = b;
-  e_[2] = c;
-  int i;
-  for (i=0; i<l_; i++) {
-      axis_[i] = 0;
-    }
-  while (!done_ && !valid()) { advance(); }
-}
-
-void
-RedundantCartesianSubIter::next()
-{
-  advance();
-  while (!done_ && !valid()) { advance(); }
-}
-
-void
-RedundantCartesianSubIter::advance()
-{
-  int i;
-  for (i=0; i<l_; i++) {
-      if (axis_[i] == 2) axis_[i] = 0;
-      else {
-          axis_[i]++;
-          return;
-        }
-    }
-  done_ = 1;
-}
-
-int
-RedundantCartesianSubIter::valid()
-{
-  int t[3];
-  int i;
-
-  for (i=0; i<3; i++) t[i] = 0;
-  for (i=0; i<l_; i++) t[axis_[i]]++;
-
-  return t[0] == e_[0] && t[1] == e_[1] && t[2] == e_[2];
 }

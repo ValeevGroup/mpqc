@@ -3,55 +3,56 @@
 #pragma implementation
 #endif
 
-#include <chemistry/qc/basis/symgaussbas.h>
+#include <chemistry/qc/basis/symmint.h>
 
-SavableState_REF_def(SymmGaussianBasisSet);
+////////////////////////////////////////////////////////////////////////////
+// SymmOneBodyIntIter
 
-#define CLASSNAME SymmGaussianBasisSet
-#define PARENTS public GaussianBasisSet
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define VERSION 2
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-void *
-SymmGaussianBasisSet::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = GaussianBasisSet::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-SymmGaussianBasisSet::SymmGaussianBasisSet(const GaussianBasisSet& gbs)
-  : GaussianBasisSet(gbs), pl(*this)
+SymmOneBodyIntIter::SymmOneBodyIntIter(const RefPetiteList& p) :
+  pl(p)
 {
 }
 
-SymmGaussianBasisSet::SymmGaussianBasisSet(const RefKeyVal&topkeyval)
-  : GaussianBasisSet(topkeyval), pl(*this)
-{
-}
-
-SymmGaussianBasisSet::SymmGaussianBasisSet(StateIn&s):
-  GaussianBasisSet(s), pl(*this)
-{
-}
-
-SymmGaussianBasisSet::~SymmGaussianBasisSet()
+SymmOneBodyIntIter::~SymmOneBodyIntIter()
 {
 }
 
 void
-SymmGaussianBasisSet::save_data_state(StateOut&s)
+SymmOneBodyIntIter::next()
 {
-  GaussianBasisSet::save_data_state(s);
+  OneBodyIntIter::next();
+  while (!pl->lambda(icur,jcur))
+    OneBodyIntIter::next();
 }
 
-PetiteList&
-SymmGaussianBasisSet::petite_list()
+void
+SymmOneBodyIntIter::next_ltri()
 {
-  return pl;
+  OneBodyIntIter::next_ltri();
+  while (!pl->lambda(icur,jcur))
+    OneBodyIntIter::next_ltri();
+}
+
+void
+SymmOneBodyIntIter::start()
+{
+  OneBodyIntIter::start();
+  while (!pl->lambda(icur,jcur))
+    OneBodyIntIter::next();
+}
+
+void
+SymmOneBodyIntIter::start_ltri()
+{
+  OneBodyIntIter::start_ltri();
+  while (!pl->lambda(icur,jcur))
+    OneBodyIntIter::next_ltri();
+}
+
+double
+SymmOneBodyIntIter::scale() const
+{
+  return (double) pl->lambda(icur,jcur) / (double) pl->order();
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -61,10 +62,12 @@ SymmetryOrbitals::SymmetryOrbitals() :
 {
 }
 
-SymmetryOrbitals::SymmetryOrbitals(const RefSymmGaussianBasisSet& gbs) :
-  gbs_(gbs)
+SymmetryOrbitals::SymmetryOrbitals(const RefGaussianBasisSet& gbs,
+                                   const RefPetiteList& pl) :
+  gbs_(gbs),
+  pl_(pl)
 {
-  sos_ = gbs_->petite_list().aotoso();
+  sos_ = pl_->aotoso();
 
   CharacterTable ct = gbs_->molecule()->point_group().char_table();
   
@@ -120,14 +123,14 @@ SymmetryOrbitals::AO_basisdim()
 RefBlockedSCDimension
 SymmetryOrbitals::SO_basisdim()
 {
-  return gbs_->petite_list().SO_basisdim();
+  return pl_->SO_basisdim();
 }
   
 ////////////////////////////////////////////////////////////////////////////
 
 AOSO_Transformation::AOSO_Transformation(
-  const RefSymmGaussianBasisSet& gbs)
-  : sos(gbs)
+  const RefGaussianBasisSet& gbs, const RefPetiteList& pl)
+  : sos(gbs,pl)
 {
   ct = gbs->molecule()->point_group().char_table();
 }

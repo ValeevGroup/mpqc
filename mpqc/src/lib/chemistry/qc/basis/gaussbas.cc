@@ -9,7 +9,6 @@
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/files.h>
-#include <chemistry/qc/intv2/int_libv2.h>
 
 SavableState_REF_def(GaussianBasisSet);
 
@@ -433,75 +432,6 @@ GaussianShell&
 GaussianBasisSet::operator()(int icenter,int ishell)
 {
   return *shell[center_to_shell_(icenter) + ishell];
-}
-
-centers_t*
-GaussianBasisSet::convert_to_centers_t()
-{
-  centers_t* c;
-  c = (centers_t*)malloc(sizeof(centers_t));
-  c->n = ncenter();
-  c->center = (center_t*) malloc(sizeof(center_t)*ncenter());
-  c->center_num = 0;
-  c->shell_num = 0;
-  c->func_num = 0;
-  c->nfunc = 0;
-  c->nshell = 0;
-  c->nprim = 0;
-  c->func_offset = 0;
-  c->prim_offset = 0;
-  c->shell_offset = 0;
-
-  Molecule *mol = molecule_.pointer();
-  
-  for (int icenter = 0; icenter < ncenter_; icenter++) {
-      if (mol) {
-          const Molecule& molr = *mol;
-          c->center[icenter].atom = strdup(molr[icenter].element().symbol());
-          c->center[icenter].charge = molr[icenter].element().charge();
-        }
-      else {
-          c->center[icenter].atom = strdup("dummy");
-          c->center[icenter].charge = 0.0;
-        }
-      c->center[icenter].r = (double*)malloc(sizeof(double)*3);
-      for (int xyz=0; xyz<3; xyz++)
-        c->center[icenter].r[xyz]=r(icenter,xyz);
-      c->center[icenter].basis.n = nshell_on_center(icenter);
-      c->center[icenter].basis.name = strdup(name());
-      c->center[icenter].basis.shell =
-	(shell_t*)malloc(sizeof(shell_t)*nshell_on_center(icenter));
-      shell_t*shell = c->center[icenter].basis.shell;
-      int ishell;
-      for (ishell = 0; ishell < center_to_nshell_[icenter]; ishell++) {
-          const GaussianShell &igshell = operator()(icenter, ishell);
-          int nprim = shell[ishell].nprim = igshell.nprimitive();
-          int ncon = shell[ishell].ncon = igshell.ncontraction();
-          shell[ishell].exp = (double*)malloc(sizeof(double)*nprim);
-          shell[ishell].type
-            = (shell_type_t*)malloc(sizeof(shell_type_t)*ncon);
-	  shell[ishell].coef = (double**)malloc(sizeof(double*)*ncon);
-	  int i;
-	  for (i=0; i<ncon; i++) {
-	      shell[ishell].coef[i] = (double*)malloc(sizeof(double)*nprim);
-	      shell[ishell].type[i].am
-                = operator()(icenter,ishell).am(i);
-	      shell[ishell].type[i].puream
-                = operator()(icenter,ishell).is_pure(i);
-	    }
-	  for (i=0; i<nprim; i++) {
-	      shell[ishell].exp[i]
-                = operator()(icenter,ishell).exponent(i);
-	      int j;
-	      for (j=0; j<ncon; j++) {
-		  shell[ishell].coef[j][i]
-		    = operator()(icenter,ishell).coefficient_norm(j,i);
-		}
-	    }
-	}
-    }
-  int_initialize_centers(c);
-  return c;
 }
 
 void GaussianBasisSet::print(FILE*fp) const

@@ -1,34 +1,33 @@
 
-#ifndef _chemistry_qc_basis_symgaussbas_h
-#define _chemistry_qc_basis_symgaussbas_h
+#ifndef _chemistry_qc_integral_symmint_h
+#define _chemistry_qc_integral_symmint_h
 
 #ifdef __GNUC__
 #pragma interface
 #endif
 
-#include <chemistry/qc/basis/gaussbas.h>
+#include <util/state/state.h>
+#include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/petite.h>
 
-class SymmGaussianBasisSet: public GaussianBasisSet {
-#   define CLASSNAME SymmGaussianBasisSet
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  private:
-    PetiteList pl;
+////////////////////////////////////////////////////////////////////////////
+
+class SymmOneBodyIntIter : public OneBodyIntIter {
+  protected:
+    RefPetiteList pl;
     
   public:
-    SymmGaussianBasisSet(const GaussianBasisSet&);
-    SymmGaussianBasisSet(const RefKeyVal&);
-    SymmGaussianBasisSet(StateIn&);
-    ~SymmGaussianBasisSet();
-    void save_data_state(StateOut&);
+    SymmOneBodyIntIter(const RefPetiteList&);
+    ~SymmOneBodyIntIter();
 
-    PetiteList& petite_list();
+    void start();
+    void next();
+
+    void start_ltri();
+    void next_ltri();
+
+    double scale() const;
 };
-
-SavableState_REF_dec(SymmGaussianBasisSet);
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -39,11 +38,12 @@ class SymmetryOrbitals {
   private:
     SO_block *sos_;
     SO_block **som_;
-    RefSymmGaussianBasisSet gbs_;
+    RefGaussianBasisSet gbs_;
+    RefPetiteList pl_;
 
   public:
     SymmetryOrbitals();
-    SymmetryOrbitals(const RefSymmGaussianBasisSet&);
+    SymmetryOrbitals(const RefGaussianBasisSet&, const RefPetiteList&);
     ~SymmetryOrbitals();
 
     void print(FILE* =stdout);
@@ -72,7 +72,7 @@ class AOSO_Transformation : public BlockedSCElementOp {
     CharacterTable ct;
 
   public:
-    AOSO_Transformation(const RefSymmGaussianBasisSet&);
+    AOSO_Transformation(const RefGaussianBasisSet&, const RefPetiteList&);
 
     void process(SCMatrixBlockIter&);
     void process(SCMatrixRectBlock*);

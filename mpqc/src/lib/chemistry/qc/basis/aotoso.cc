@@ -1,8 +1,8 @@
 
-#include <chemistry/qc/basis/gaussbas.h>
-#include <chemistry/qc/basis/gaussshell.h>
+#include <chemistry/qc/basis/basis.h>
+#include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/shellrot.h>
 #include <chemistry/qc/basis/petite.h>
-#include <chemistry/qc/basis/rot.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -235,6 +235,7 @@ struct lin_comb {
     }
 };
 
+#if 0
 struct shell_overlap {
     int nf;
     double **c;
@@ -289,6 +290,7 @@ struct shell_overlap {
       }
     }
 };
+#endif
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -336,7 +338,7 @@ PetiteList::aotoso()
   double *blc = new double[gbs_.nbasis()];
   lin_comb **lc = new lin_comb*[ng_];
 
-  shell_overlap sov;
+  //shell_overlap sov;
 
   // loop over all unique shells
   for (i=0; i < natom_; i++) {
@@ -364,7 +366,7 @@ PetiteList::aotoso()
       for (c=0; c < gbs_(i,s).ncontraction(); c++) {
         if (gbs_(i,s).am(c) > 1 && gbs_(i,s).is_cartesian(c)) {
           cartfunc=1;
-          sov.init(gbs_(i,s));
+          //sov.init(gbs_(i,s));
           break;
         }
       }
@@ -394,7 +396,8 @@ PetiteList::aotoso()
           if (am==0) {
             lcg.c[fi][fi] = 1.0;
           } else {
-            Rotation rr(am,so,gbs_(i,s).is_pure(c));
+            ShellRotation rr =
+              ints_.shell_rotation(am,so,gbs_(i,s).is_pure(c));
             for (ii=0; ii < rr.dim(); ii++) {
               for (jj=0; jj < rr.dim(); jj++)
                 lcg.c[fi+ii][fi+jj] = rr(ii,jj);

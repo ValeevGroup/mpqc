@@ -10,74 +10,9 @@
 #include <util/state/state.h>
 #include <math/scmat/vector3.h>
 
-class CartesianIter
-{
-  private:
-    int a_;
-    int c_;
-    int l_;
-    int bfn_;
-  public:
-    CartesianIter(int l);
-    ~CartesianIter();
-    void start();
-    void next();
-    operator int();
-    int a();
-    int b();
-    int c();
-    int l(int i);
-    int l();
-    int bfn();
-    int n();
-};
-
-class RedundantCartesianIter {
-  private:
-    int done_;
-    int l_;
-    int *axis_;
-  public:
-    RedundantCartesianIter(int l);
-    ~RedundantCartesianIter();
-    void start();
-    void next();
-    operator int();
-    int bfn();
-    int l(int i);
-    int l() { return l_; }
-    int a() { return l(0); }
-    int b() { return l(1); }
-    int c() { return l(2); }
-    int axis(int i) { return axis_[i]; }
-};
-
-// Like RedundantCartesianIter, except a, b, and c are fixed to a given value
-class RedundantCartesianSubIter {
-  private:
-    int done_;
-    int l_;
-    int e_[3];
-    int *axis_;
-
-    void advance();
-    int valid();
-  public:
-    RedundantCartesianSubIter(int l);
-    ~RedundantCartesianSubIter();
-    void start(int a, int b, int c);
-    void next();
-    operator int();
-    int bfn();
-    int l(int i) { return e_[i]; }
-    int l() { return l_; }
-    int a() { return e_[0]; }
-    int b() { return e_[1]; }
-    int c() { return e_[2]; }
-    int axis(int i) { return axis_[i]; }
-};
-
 class RefKeyVal;
+SavableState_REF_fwddec(Integral)
+
 class GaussianShell: public SavableState
 {
 #   define CLASSNAME GaussianShell
@@ -157,19 +92,19 @@ class GaussianShell: public SavableState
     double coefficient_unnorm(int con,int prim) const;
     // returns the con coef for normalized primitives
     double coefficient_norm(int con,int prim) const;
-//     double normalization(int con,int bfn) const;
     double exponent(int iprim) const;
 
     // compute the value of this shell at offset r
-    int values(const SCVector3& r, double* basis_values);
-    int grad_values(const SCVector3& R,
+    int values(const RefIntegral&, const SCVector3& r, double* basis_values);
+    int grad_values(const RefIntegral&, const SCVector3& R,
                     double* g_values,
                     double* basis_values=0) const;
 
     // returns the intra-generalized-contraction overlap
     // matrix element <con func1|con func2> within an arbitrary
     // constant for the shell
-    double relative_overlap(int con, int func1, int func2) const;
+    double relative_overlap(const RefIntegral&,
+                            int con, int func1, int func2) const;
     double relative_overlap(int con,
                             int a1, int b1, int c1,
                             int a2, int b2, int c2) const;
@@ -182,5 +117,5 @@ SavableState_REF_dec(GaussianShell);
 #ifdef INLINE_FUNCTIONS
 #include <chemistry/qc/basis/gaussshe_i.h>
 #endif
-  
+
 #endif

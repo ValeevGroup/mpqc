@@ -4,15 +4,24 @@
 #endif
 
 #include <chemistry/molecule/localdef.h>
-#include <chemistry/qc/basis/gaussbas.h>
-#include <chemistry/qc/basis/gaussshell.h>
+
+#include <chemistry/qc/basis/basis.h>
+#include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/petite.h>
-#include <chemistry/qc/basis/rot.h>
+#include <chemistry/qc/basis/shellrot.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
-PetiteList::PetiteList(GaussianBasisSet &gbs) :
-  gbs_(gbs)
+PetiteList::PetiteList(const RefGaussianBasisSet &gbs, Integral& ints) :
+  gbs_(*gbs.pointer()),
+  ints_(ints)
+{
+  init();
+}
+
+PetiteList::PetiteList(GaussianBasisSet &gbs, Integral& ints) :
+  gbs_(gbs),
+  ints_(ints)
 {
   init();
 }
@@ -186,7 +195,7 @@ PetiteList::init()
           if (am==0)
             red_rep[g] += 1.0;
           else {
-            Rotation r(am,so,gbs_(i,s).is_pure(c));
+            ShellRotation r(am,so,ints_,gbs_(i,s).is_pure(c));
             red_rep[g] += r.trace();
           }
         }
@@ -331,7 +340,7 @@ PetiteList::r(int g)
         if (am==0) {
           ret.set_element(func_j,func_i,1.0);
         } else {
-          Rotation rr(am,so,gbs_(i,s).is_pure(c));
+          ShellRotation rr(am,so,ints_,gbs_(i,s).is_pure(c));
           for (int ii=0; ii < rr.dim(); ii++)
             for (int jj=0; jj < rr.dim(); jj++)
               ret.set_element(func_j+jj,func_i+ii,rr(ii,jj));

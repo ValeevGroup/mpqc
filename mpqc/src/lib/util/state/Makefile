@@ -35,7 +35,7 @@ LD = $(CXX)
 SETIMPL = AVL
 MAPIMPL = RAVL
 
-CXXSRC = state.cc state_bin.cc \
+CXXSRC = state.cc state_bin.cc proxy.cc \
          state_ptr.cc state_text.cc state_xdr.cc state_file.cc qc_xdr_i.cc
 
 GENCXXSRC = stateptrSet.cc \

@@ -32,14 +32,14 @@ OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
   Wavefunction(s),
   _density(this)
 {
-  abort();
+  //abort();
 }
 
 void
 OneBodyWavefunction::save_data_state(StateOut&s)
 {
   Wavefunction::save_data_state(s);
-  abort();
+  //abort();
 }
 
 double OneBodyWavefunction::density(cart_point&c)

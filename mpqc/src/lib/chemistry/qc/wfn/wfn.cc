@@ -58,14 +58,16 @@ Wavefunction::Wavefunction(StateIn&s):
   bs_values(0),
   bsg_values(0)
 {
-  abort();
+  _gbs.restore_state(s);
+  _basisdim.restore_state(s);
 }
 
 void
 Wavefunction::save_data_state(StateOut&s)
 {
   MolecularEnergy::save_data_state(s);
-  abort();
+  _gbs.save_state(s);
+  _basisdim.save_state(s);
 }
 
 RefSCMatrix

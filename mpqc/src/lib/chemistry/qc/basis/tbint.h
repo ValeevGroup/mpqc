@@ -106,6 +106,8 @@ class TwoBodyInt : public RefCount {
       of r12 operator, r12t1 and r12t2 are integrals of [r12,T1] and
       [r12,T2] operators */
     enum tbint_type { eri=0, r12=1, r12t1=2, r12t2=3};
+  /// The total number of such types
+    static const int num_tbint_types = 4;
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.  Some TwoBodyInt specializations have more than

@@ -26,8 +26,7 @@ private int debug_node;
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 
 @* Debugger control.  This package can arrange to start
 up the debugger over the calling process.  You must

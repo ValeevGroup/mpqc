@@ -11,10 +11,10 @@ extern "C" {
 #include <util/sgen/sgen.h>
 #include <math/dmt/libdmt.h>
 #include <math/array/math_lib.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
 }
 
+#include <util/group/picl.h>
+#include <util/group/message.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
@@ -25,6 +25,9 @@ extern "C" {
 #include <chemistry/qc/force/libforce.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/molecule/molecule.h>
+#if defined(PARAGON)
+#  include <util/group/messpgon.h>
+#endif
 
 extern "C" {
 #include "scf_ffo.gbl"
@@ -33,6 +36,18 @@ extern "C" {
 
 #include "mpqc_int.h"
 #include "opt2.h"
+
+// Force linkages:
+#ifndef __PIC__
+# ifndef PARAGON
+#   include <util/group/messshm.h>
+    const ClassDesc &fl0 = ShmMessageGrp::class_desc_;
+    const ClassDesc &fl1 = ProcMessageGrp::class_desc_;
+# endif
+# ifdef PARAGON
+    const ClassDesc &fl2 = ParagonMessageGrp::class_desc_;
+# endif
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -50,14 +65,30 @@ clean_and_exit()
   exit(0);
 }
 
-static void
-init_mp()
+static RefMessageGrp
+init_mp(const char *inputfile)
 {
   int nproc,me,host;
   int top,ord,dir;
+  RefMessageGrp grp;
+
+  // if we are on a paragon then use a ParagonMessageGrp
+  // otherwise read the message group from the input file
+#if defined(PARAGON)
+  grp = new ParagonMessageGrp;
+#else
+  RefKeyVal keyval = new ParsedKeyVal(inputfile);
+  grp = keyval->describedclassvalue("message");
+  keyval = 0;
+#endif
+
+  if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
+  else grp = MessageGrp::get_default_messagegrp();
 
   open0(&nproc,&me,&host);
   setarc0(&nproc,&top,&ord,&dir);
+
+  return grp;
 }
 
 static void
@@ -133,17 +164,17 @@ main(int argc, char *argv[])
   
   struct stat stbuf;
 
+  FILE *outfile = stdout;
+  
+  char *filename = (argv[1]) ? argv[1] : "mpqc.in";
+
  // initialize the picl routines
-  init_mp();
+  RefMessageGrp grp = init_mp(filename);
 
  // initialize timing for mpqc
 
   tim_enter("mpqcnode");
   tim_enter("input");
-
-  FILE *outfile = stdout;
-  
-  char *filename = (argv[1]) ? argv[1] : "mpqc.in";
 
   RefKeyVal keyval;
 

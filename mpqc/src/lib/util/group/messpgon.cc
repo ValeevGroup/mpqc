@@ -81,5 +81,5 @@ ParagonMessageGrp::last_size()
 int
 ParagonMessageGrp::last_type()
 {
-  return msgtype_typ(infonode(), infotype());
+  return msgtype_typ(infotype());
 }

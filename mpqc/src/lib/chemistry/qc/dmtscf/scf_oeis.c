@@ -1,8 +1,7 @@
 
 #include <stdio.h>
 #include <tmpl.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 #include <math/dmt/libdmt.h>
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>

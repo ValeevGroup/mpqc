@@ -1,6 +1,9 @@
 %
 % $Log$
-% Revision 1.7  1995/03/17 01:49:06  cljanss
+% Revision 1.8  1995/03/18 00:10:28  cljanss
+% Using util/group to provide picl support.  Deleted the comm directory.
+%
+% Revision 1.7  1995/03/17  01:49:06  cljanss
 % Removed -I. and -I$(SRCDIR) from the default include path in
 % GlobalMakefile to avoid name conflicts with system include files.
 % Modified files under src.lib to include all files relative to src.lib.
@@ -235,8 +238,7 @@ array holding the lower triangle of matrix m.
 
 @ The PICL communication routines' definitions.
 @<Include files.@>=
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 
 @ The C prototype generation facility, \.{tmpl}, is used in this file and
 the libraries, so we must include its header file.

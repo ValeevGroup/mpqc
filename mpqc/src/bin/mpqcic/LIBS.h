@@ -4,4 +4,4 @@
 #include <chemistry/molecule/LIBS.h>
 #include <chemistry/qc/basis/LIBS.h>
 #include <util/misc/LIBS.h>
-#include <comm/picl/ext/LIBS.h>
+#include <util/group/LIBS.h>

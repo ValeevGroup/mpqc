@@ -11,7 +11,7 @@ typedef int dmt_matrix;
 #include <tmpl.h>
 
 extern "C" {
-#include <comm/picl/picl.h>
+#include <util/group/picl.h>
 }
 
 #include <util/class/class.h>

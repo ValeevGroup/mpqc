@@ -2,7 +2,10 @@
 /* really just a copy of clj's rbcast0 routines */
 
 /* $Log$
- * Revision 1.3  1995/03/17 01:51:42  cljanss
+ * Revision 1.4  1995/03/18 00:11:28  cljanss
+ * Using util/group to provide picl support.  Deleted the comm directory.
+ *
+ * Revision 1.3  1995/03/17  01:51:42  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -36,8 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <tmpl.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 #include <util/sgen/sgen.h>
 
 #include <util/sgen/sndrcv0.h>

@@ -11,12 +11,12 @@ typedef int dmt_matrix;
 #include <tmpl.h>
 
 extern "C" {
-#include <comm/picl/picl.h>
 #ifdef PARAGON
 #include <nx.h>
 #endif
 }
 
+#include <util/group/picl.h>
 #include <tmpl.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
@@ -33,14 +33,10 @@ extern "C" {
 }
 
 extern "C" {
- int mynode0();
- int numnodes0();
  int int_find_nfuncmax(centers_t*);
  int scf_init_bounds(centers_t*,double*);
  int scf_erep_bound(int,int,int,int);
  void scf_done_bounds();
- void gop1(double*,int,double*,char,int);
- int gcollect(double*,int*,double*);
 }
 
 static void iqs(int *item,int *index,int left,int right);

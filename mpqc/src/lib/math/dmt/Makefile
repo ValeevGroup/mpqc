@@ -23,6 +23,8 @@ INC = libdmt.h matrix.h
 
 DISTFILES = matrix.web $(CSRC) $(INC) LIBS.h
 
+.PRECIOUS: matrix.c
+
 GENSRC = matrix.c
 GENINC = matrix.gbl
 

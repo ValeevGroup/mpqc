@@ -43,6 +43,23 @@ MessageGrp::~MessageGrp()
   if (index_to_classdesc_) delete[] index_to_classdesc_;
 }
 
+static RefMessageGrp default_messagegrp;
+
+void
+MessageGrp::set_default_messagegrp(const RefMessageGrp& grp)
+{
+  default_messagegrp = grp;
+}
+
+MessageGrp*
+MessageGrp::get_default_messagegrp()
+{
+  if (default_messagegrp.null()) {
+      default_messagegrp = new ProcMessageGrp;
+    }
+  return default_messagegrp.pointer();
+}
+
 void
 MessageGrp::initialize(int me, int n)
 {

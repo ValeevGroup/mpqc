@@ -7,19 +7,18 @@ extern "C" {
 
 #include <tmpl.h>
 
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
-
 #include <math/array/math_lib.h>
 #include <util/misc/libmisc.h>
 }
+
+#include <util/group/picl.h>
 
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
 
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
-#include <scf_dmt.h>
+#include <chemistry/qc/dmtscf/scf_dmt.h>
 
 
 ///////////////////////////////////////////////////////////////////////////

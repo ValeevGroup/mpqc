@@ -1,6 +1,9 @@
 %
 % $Log$
-% Revision 1.10  1995/03/17 01:50:12  cljanss
+% Revision 1.11  1995/03/18 00:11:02  cljanss
+% Using util/group to provide picl support.  Deleted the comm directory.
+%
+% Revision 1.10  1995/03/17  01:50:12  cljanss
 % Removed -I. and -I$(SRCDIR) from the default include path in
 % GlobalMakefile to avoid name conflicts with system include files.
 % Modified files under src.lib to include all files relative to src.lib.
@@ -274,8 +277,7 @@ values.  The |booln| typedef appears in ``matrix.h''.
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 
 
 @ My slightly modified version of |"assert.h"| calls the |debug| package

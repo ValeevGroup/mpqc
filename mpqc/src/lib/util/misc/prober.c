@@ -1,7 +1,6 @@
 
 #include <stdio.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 
 int
 prober(start,end)

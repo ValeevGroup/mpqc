@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.2  1994/10/18 23:03:43  etseidl
+ * Revision 1.3  1995/03/18 00:09:56  cljanss
+ * Using util/group to provide picl support.  Deleted the comm directory.
+ *
+ * Revision 1.2  1994/10/18  23:03:43  etseidl
  * fix many warnings, use memset rather than bzero
  *
  * Revision 1.1.1.1  1993/12/29  12:53:57  etseidl
@@ -71,7 +74,7 @@ bcast0_gen()
   fprintf(output,"\n");
   fprintf(output,"#include <stdio.h>\n");
   fprintf(output,"#include <util/sgen/sgen.h>\n");
-  fprintf(output,"#include <comm/picl/picl.h>\n");
+  fprintf(output,"#include <util/group/picl.h>\n");
   fprintf(output,"#include \"%s.h\"\n",BaseName);
   fprintf(output,"#include \"%sbc0.h\"\n",BaseName);
   fprintf(output,"#include \"%ssbc0.h\"\n",BaseName);

@@ -3,8 +3,7 @@
 #include <tmpl.h>
 #include <math.h>
 #include <util/misc/libmisc.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 #include <math/dmt/libdmt.h>
 #include <chemistry/qc/dmtscf/scf.h>
 

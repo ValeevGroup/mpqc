@@ -8,8 +8,7 @@
 #include <util/misc/libmisc.h>
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 
 #include <chemistry/qc/dmtscf/scf_bnd.gbl>
 #include <chemistry/qc/dmtscf/scf_bnd.lcl>

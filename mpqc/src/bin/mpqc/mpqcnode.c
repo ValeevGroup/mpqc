@@ -19,8 +19,7 @@
 #include <chemistry/qc/dmtscf/scf_dmt.h>
 #include <chemistry/qc/force/libforce.h>
 #include <chemistry/qc/geom/libgeom.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 
 #define ioff(i) ((i)*((i)+1)/2)
 #define IOFF(i,j) ((i)>(j)) ? ioff((i))+(j) : ioff((j))+(i)

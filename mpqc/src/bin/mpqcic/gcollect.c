@@ -3,8 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 
 #if defined(I860) && !defined(PARAGON)
 #include <cube.h>

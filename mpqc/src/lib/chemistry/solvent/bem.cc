@@ -232,8 +232,8 @@ BEMSolvent::init_system_matrix()
       // loop thru all the vertices
       for (i = 0; i<n; i++) {
           RefVertex v = surf_->vertex(i);
-          SCVector3& pv = v->point();
-          SCVector3& nv = v->normal();
+          const SCVector3& pv = v->point();
+          const SCVector3& nv = v->normal();
           SCVector3 diff(pv - surfpv);
           double normal_component = diff.dot(nv);
           double diff2 = diff.dot(diff);

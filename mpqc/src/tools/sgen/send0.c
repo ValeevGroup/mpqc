@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:57  etseidl
- * Initial revision
+ * Revision 1.2  1995/03/18 00:09:59  cljanss
+ * Using util/group to provide picl support.  Deleted the comm directory.
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:58  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.3  1992/07/20  18:37:44  seidl
  * add support for string arrays
@@ -41,5 +44,5 @@ send0_gen()
 
   general_write_gen("snd0","send0","send0",
                  protoargsfmt,funcargsfmt,funcdecsfmt,elemargsfmt,
-                 selemargsfmt,useoffsets,"#include <comm/picl/picl.h>\n");
+                 selemargsfmt,useoffsets,"#include <util/group/picl.h>\n");
  }

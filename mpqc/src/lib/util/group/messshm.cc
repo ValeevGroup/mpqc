@@ -7,6 +7,8 @@
 
 #include <util/group/messshm.h>
 
+//#define DEBUG
+
 #ifndef SEM_A
 #  define SEM_A 0200
 #endif
@@ -357,24 +359,27 @@ static void release_write(int node)
   seminc.sem_num = 0;
 }
 
-
-static void print_buffer(int node)
+#ifdef DEBUG
+static void print_buffer(int node, int me)
 {
   int i;
   msgbuf_t *message;
   message = (msgbuf_t*)commbuf[node]->buf;
 
-  printf("Printing buffer for node %d\n",node);
+  printf("Printing buffer for node %d on node %d\n",node,me);
   for (i=0; i<commbuf[node]->nmsg; i++) {
-      printf(" bytes,type,from = %6d, %6d, %3d\n",
+      printf(" on node %2d: to=%2d, bytes=%6d, type=%10d, from=%2d\n",
+             me,
+             node,
              message->size,
              message->type,
              message->from);
+      fflush(stdout);
       message = NEXT_MESSAGE(message);
     }
 
 }
- 
+#endif
 
 int
 ShmMessageGrp::basic_probe(int msgtype)
@@ -409,8 +414,9 @@ ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
   msgbuf_t *message,*lastmessage;
 
 #ifdef DEBUG
-  print_buffer(0);
-  print_buffer(1);
+  printf("node %2d recv type 0x%08x length %6d\n",
+         me(), type, bytes);
+  print_buffer(me(),me());
 #endif
 
   reset_send(me());
@@ -431,8 +437,6 @@ ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
     }
 
   if (bytes < message->size) {
-      //print_buffer(me());
-      //debug_start("recv buffer too small");
       fprintf(stderr,"messshm.cc: recv buffer too small\n");
       abort();
     }
@@ -467,6 +471,11 @@ ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
 {
   int i;
   msgbuf_t *availmsg;
+
+#ifdef DEBUG
+  printf("node %2d send to %2d type 0x%08x length %6d\n",
+         me(), dest, type, bytes);
+#endif
 
   if (dest>=n()) {
       //debug_start("bad destination");
@@ -531,5 +540,5 @@ ShmMessageGrp::last_size()
 int
 ShmMessageGrp::last_type()
 {
-  return msgtype_typ(last_source_, last_type_);
+  return msgtype_typ(last_type_);
 }

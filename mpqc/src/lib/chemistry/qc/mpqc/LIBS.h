@@ -5,7 +5,7 @@ libmpqc.LIBSUF
 #include <chemistry/qc/force/LIBS.h>
 #include <chemistry/solvent/LIBS.h>
 #include <chemistry/molecule/LIBS.h>
-#include <comm/picl/ext/LIBS.h>
+#include <util/group/LIBS.h>
 #include <util/misc/LIBS.h>
 #include <util/keyval/LIBS.h>
 

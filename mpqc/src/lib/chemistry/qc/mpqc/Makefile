@@ -16,15 +16,6 @@ TESTSRCS = mpqctest.cc
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 
-ifeq ($(ARCH),PARAGON)
-  MPQCLIBSDEFINE=-DUSE_PICLPARAGON
-  DEFAULT=mpqcic
-endif
-ifeq ($(ARCH),SUNMOS)
-  MPQCLIBSDEFINE=-DUSE_PICLPARAGON
-  DEFAULT=mpqcic
-endif
-
 default:: $(DEPENDINCLUDE)
 default:: dlinfo
 default:: $(TOPDIR)/lib/libmpqc.a
@@ -35,7 +26,7 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 mpqctest: mpqctest.o \
-	$(shell $(LISTLIBS) $(MPQCLIBSDEFINE) $(INCLUDE) $(SRCDIR)/LIBS.h)
+	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(CXX) $(LDFLAGS) -o mpqctest $^ $(SYSLIBS)
 
 mpqctest.o: mpqctest.cc

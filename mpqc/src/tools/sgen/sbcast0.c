@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.2  1994/10/18 23:03:59  etseidl
+ * Revision 1.3  1995/03/18 00:09:58  cljanss
+ * Using util/group to provide picl support.  Deleted the comm directory.
+ *
+ * Revision 1.2  1994/10/18  23:03:59  etseidl
  * fix many warnings, use memset rather than bzero
  *
  * Revision 1.1.1.1  1993/12/29  12:53:58  etseidl
@@ -53,5 +56,5 @@ sbcast0_gen()
 
   general_write_gen("sbc0","sbcast0","sbcast0",
                  protoargsfmt,funcargsfmt,funcdecsfmt,elemargsfmt,
-                 selemargsfmt,useoffsets,"#include <comm/picl/picl.h>\n");
+                 selemargsfmt,useoffsets,"#include <util/group/picl.h>\n");
  }

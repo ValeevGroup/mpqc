@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.3  1995/03/17 01:51:44  cljanss
+ * Revision 1.4  1995/03/18 00:11:31  cljanss
+ * Using util/group to provide picl support.  Deleted the comm directory.
+ *
+ * Revision 1.3  1995/03/17  01:51:44  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
  * Modified files under src.lib to include all files relative to src.lib.
@@ -33,7 +36,7 @@
  *  */
 
 #include <stdio.h>
-#include <comm/picl/picl.h>
+#include <util/group/picl.h>
 #include <util/sgen/sgen.h>
 
 #define ALLOC_GLOBALS

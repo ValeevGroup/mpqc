@@ -65,6 +65,33 @@ void barrier0( ARGS0 );
 int gray0( ARGS1(int) );
 int ginv0( ARGS1(int) );
 
+/****************************************************************************/
+/* These routines are not a part picl, but their use crept into the code.   */
+
+#if !defined(PARAGON)
+int cubedim( ARGS0 );
+int mynode ( ARGS0 );
+int numnodes( ARGS0 );
+int infocount( ARGS0 );
+#endif
+int mynode0( ARGS0 );
+int cubedim0( ARGS0 );
+int numnodes0( ARGS0 );
+
+int loop_out_neigh( ARGS0 );
+int my_loop_index( ARGS0 );
+int loop_in_neigh( ARGS0 );
+int loop_neigh( ARGS1(int) );
+void gop0( ARGS4(double*,int,int,int) );
+void gop1( ARGS5(double*,int,double*,int,int) );
+void gop0_sc( ARGS4(signed char*,int,int,int) );
+
+void picl_prober( ARGS0 );
+
+#ifdef I860
+void gdcomb(ARGS5(int,double*,double*,int,int));
+#endif
+
 #undef ARGS0
 #undef ARGS1
 #undef ARGS2

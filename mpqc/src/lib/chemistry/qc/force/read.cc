@@ -1,9 +1,8 @@
 
 extern "C" {
 #include <stdio.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
 }
+#include <util/group/picl.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
 #include <util/keyval/ipv2c.h>

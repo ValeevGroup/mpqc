@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.1  1995/01/12 02:50:33  ibniels
+ * Revision 1.2  1995/03/18 00:09:50  cljanss
+ * Using util/group to provide picl support.  Deleted the comm directory.
+ *
+ * Revision 1.1  1995/01/12  02:50:33  ibniels
  * Added opt2 and zapt2(2) capability
  *
  * Revision 1.1.1.1  1993/12/29  12:53:16  etseidl
@@ -51,8 +54,7 @@ static char rcsid[]="$Id$";
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 #include <chemistry/qc/dmtscf/scf_dmt.h>
 #include <chemistry/qc/force/libforce.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 
 #include "opt2_fock.gbl"
 #include "opt2_fock.lcl"

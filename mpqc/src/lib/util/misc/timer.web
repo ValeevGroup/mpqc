@@ -40,8 +40,7 @@ was, in fact, a count of some event.  Handy.
 #include <stdlib.h>
 #include <string.h>
 #include <tmpl.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 #define UTIL_ASSERT
 #include <util/misc/assert.h>
 #define TIMING

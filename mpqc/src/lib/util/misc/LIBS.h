@@ -1,2 +1,2 @@
 libmisc.LIBSUF
-#include <comm/picl/ext/LIBS.h>
+#include <util/group/LIBS.h>

@@ -14,6 +14,14 @@ template class GrpReduce<short>;
 template class GrpReduce<char>;
 template class GrpReduce<unsigned char>;
 
+template class GrpFunctionReduce<double>;
+template class GrpFunctionReduce<int>;
+template class GrpFunctionReduce<long>;
+template class GrpFunctionReduce<float>;
+template class GrpFunctionReduce<short>;
+template class GrpFunctionReduce<char>;
+template class GrpFunctionReduce<unsigned char>;
+
 template class GrpMinReduce<double>;
 template class GrpMinReduce<int>;
 template class GrpMinReduce<long>;
@@ -191,8 +199,8 @@ MessageGrp::reduce(double* data, int n, GrpReduce<double>& red,
         }
       if (i->recv()) {
           recv(i->recvfrom(), scratch, n);
+          red.reduce(data, scratch, n);
         }
-      red.reduce(data, scratch, n);
     }
 
   if (target == -1) {
@@ -220,8 +228,8 @@ MessageGrp::reduce(int* data, int n, GrpReduce<int>& red,
         }
       if (i->recv()) {
           recv(i->recvfrom(), scratch, n);
+          red.reduce(data, scratch, n);
         }
-      red.reduce(data, scratch, n);
     }
 
   if (target == -1) {
@@ -249,8 +257,8 @@ MessageGrp::reduce(char* data, int n, GrpReduce<char>& red,
         }
       if (i->recv()) {
           recv(i->recvfrom(), scratch, n);
+          red.reduce(data, scratch, n);
         }
-      red.reduce(data, scratch, n);
     }
 
   if (target == -1) {
@@ -278,8 +286,8 @@ MessageGrp::reduce(unsigned char* data, int n, GrpReduce<unsigned char>& red,
         }
       if (i->recv()) {
           recv(i->recvfrom(), scratch, n);
+          red.reduce(data, scratch, n);
         }
-      red.reduce(data, scratch, n);
     }
 
   if (target == -1) {
@@ -307,8 +315,8 @@ MessageGrp::reduce(short* data, int n, GrpReduce<short>& red,
         }
       if (i->recv()) {
           recv(i->recvfrom(), scratch, n);
+          red.reduce(data, scratch, n);
         }
-      red.reduce(data, scratch, n);
     }
 
   if (target == -1) {
@@ -336,8 +344,8 @@ MessageGrp::reduce(float* data, int n, GrpReduce<float>& red,
         }
       if (i->recv()) {
           recv(i->recvfrom(), scratch, n);
+          red.reduce(data, scratch, n);
         }
-      red.reduce(data, scratch, n);
     }
 
   if (target == -1) {
@@ -365,8 +373,8 @@ MessageGrp::reduce(long* data, int n, GrpReduce<long>& red,
         }
       if (i->recv()) {
           recv(i->recvfrom(), scratch, n);
+          red.reduce(data, scratch, n);
         }
-      red.reduce(data, scratch, n);
     }
 
   if (target == -1) {

@@ -136,6 +136,7 @@ main(int argc, char**argv)
   grp->sync();
 
   if (grp->me() == 0) {
+      test_hcube(3, 0, 1);
       test_hcube(39, 0, 1);
       test_hcube(16, 0, 1);
       test_hcube(17, 4, 1);

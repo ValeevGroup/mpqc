@@ -131,6 +131,11 @@ class MessageGrp: public DescribedClass {
     int me() { return me_; }
     int n() { return n_; }
 
+    // The default message group contains the primary message group to
+    // be used by an application.
+    static void set_default_messagegrp(const RefMessageGrp&);
+    static MessageGrp* get_default_messagegrp();
+
     // send messages sequentially to the target
     virtual void send(int target, double* data, int ndata);
     virtual void send(int target, int* data, int ndata);
@@ -296,8 +301,8 @@ class intMessageGrp: public MessageGrp {
     int typ_shift;
     int src_shift;
 
-    int msgtype_typ(int source, int msgtype);
-    int typ_msgtype(int source, int usrtype);
+    int msgtype_typ(int msgtype);
+    int typ_msgtype(int usrtype);
     int seq_msgtype(int source, int seq);
 
     // The next sequence number for each node is stored in these.

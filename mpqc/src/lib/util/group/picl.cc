@@ -73,7 +73,7 @@ open0(int*numproc, int*me, int*host)
   *numproc = 1;
   *me = 0;
   *host = -1;
-  global_messagegrp = new ProcMessageGrp();
+  global_messagegrp = MessageGrp::get_default_messagegrp();
 }
 
 void
@@ -157,14 +157,16 @@ void tcomb(T*target, T*source, int ndata)
   (*global_comb)((void*)target,(void*)source,ndata,global_datatype);
 }
 
+typedef void (*combroutine)(void *, void *, int, int);
+
 void
 gcomb0(void*buf, int items, int datatype, int msgtype, int root,
-       void(*comb)(void*target,void*source,int ndata, int datatype))
+       combroutine comb)
 {
   global_comb = comb;
   global_datatype = datatype;
 
-  switch(msgtype) {
+  switch(datatype) {
   case 0:
       {
         void (*tmptcomb)(char*,char*,int) = tcomb;
@@ -217,7 +219,7 @@ gcomb0(void*buf, int items, int datatype, int msgtype, int root,
 void
 gor0(void*buf, int items, int datatype, int msgtype, int root)
 {
-  switch(msgtype) {
+  switch(datatype) {
   case 0:
       { GrpArithmeticOrReduce<char> r;
         global_messagegrp->reduce((char*)buf, items, r, (char*)0, root);}
@@ -243,7 +245,7 @@ gor0(void*buf, int items, int datatype, int msgtype, int root)
 void
 gxor0(void*buf, int items, int datatype, int msgtype, int root)
 {
-  switch(msgtype) {
+  switch(datatype) {
   case 0:
       { GrpArithmeticXOrReduce<char> r;
         global_messagegrp->reduce((char*)buf, items, r, (char*)0, root);}
@@ -269,7 +271,7 @@ gxor0(void*buf, int items, int datatype, int msgtype, int root)
 void
 gand0(void*buf, int items, int datatype, int msgtype, int root)
 {
-  switch(msgtype) {
+  switch(datatype) {
   case 0:
       { GrpArithmeticAndReduce<char> r;
         global_messagegrp->reduce((char*)buf, items, r, (char*)0, root);}
@@ -295,7 +297,7 @@ gand0(void*buf, int items, int datatype, int msgtype, int root)
 void
 gmax0(void*buf, int items, int datatype, int msgtype, int root)
 {
-  switch(msgtype) {
+  switch(datatype) {
   case 0:
       { GrpMaxReduce<char> r;
         global_messagegrp->reduce((char*)buf, items, r, (char*)0, root);}
@@ -329,7 +331,7 @@ gmax0(void*buf, int items, int datatype, int msgtype, int root)
 void
 gprod0(void*buf, int items, int datatype, int msgtype, int root)
 {
-  switch(msgtype) {
+  switch(datatype) {
   case 0:
       { GrpProductReduce<char> r;
         global_messagegrp->reduce((char*)buf, items, r, (char*)0, root);}
@@ -363,7 +365,7 @@ gprod0(void*buf, int items, int datatype, int msgtype, int root)
 void
 gsum0(void*buf, int items, int datatype, int msgtype, int root)
 {
-  switch(msgtype) {
+  switch(datatype) {
   case 0:
       { GrpSumReduce<char> r;
         global_messagegrp->reduce((char*)buf, items, r, (char*)0, root);}
@@ -397,7 +399,7 @@ gsum0(void*buf, int items, int datatype, int msgtype, int root)
 void
 gmin0(void*buf, int items, int datatype, int msgtype, int root)
 {
-  switch(msgtype) {
+  switch(datatype) {
   case 0:
       { GrpMinReduce<char> r;
         global_messagegrp->reduce((char*)buf, items, r, (char*)0, root);}
@@ -451,4 +453,313 @@ ginv0(int i)
       i ^= k ;
     }
   return (i) ;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// These routines are not a part of picl, but their use crept into the code.
+
+#if defined(PARAGON)
+# include <nx.h>
+  // things missing from nx.h:
+  extern "C" {
+    void gdlow(double x[], long n, double work[]);
+    void gdhigh(double x[], long n, double work[]);
+    void gdsum(double x[], long n, double work[]);
+  }
+#elif defined(I860)
+# include <cube.h>
+#endif
+
+#ifdef I860
+/* the following is a fast global sum for long vectors.
+ * It was written by Stan Erwin, an Intel employee at the NIH.
+ *
+ * FORCE_TYPE is defined in <cube.h>
+ *
+ * modifications of van de Geijn's gdcomp to
+ * 1. vectorize the add (via a daxpy call)
+ * 2. change the three trip protocol to a 2 trip protocal using
+ *    force types and control messages
+ */
+
+void
+gdcomb(int n, double* x, double* y, int dim, int idim)
+{
+  int i,ibit, l1, l2 , me, tempdim,msgid,msgid2,dummy,ione;
+  double done;
+  ione = 1;
+  done = 1.0;
+  me = mynode();
+
+  if (dim == idim) return;
+
+  l1 = n/2;
+  l2 = n-l1;
+  ibit = 1<<dim;
+  if ((me&ibit) == 0) {
+    msgid = _irecv(FORCE_TYPE + me^ibit,&y[l1], l2*sizeof(double));
+    _csend(me,dummy, 0, me^ibit,0);
+    _crecv(me^ibit,dummy, 0);
+    msgid2 = _isend(FORCE_TYPE + me,x, l1*sizeof(double), me^ibit,0);
+    _msgwait(msgid);
+
+    daxpy_(&l2, &done, &(y[l1]), &ione, &(x[l1]), &ione);
+
+    tempdim = dim + 1;
+    _msgwait(msgid2);
+
+    gdcomb(l2, &x[l1], &y[l1],tempdim,idim);
+
+    msgid = _irecv(FORCE_TYPE + me^ibit,x, l1*sizeof(double));
+    _csend(me,dummy, 0, me^ibit,0);
+    _crecv(me^ibit,dummy, 0);
+    _csend(FORCE_TYPE + me,&x[l1], l2*sizeof(double), me^ibit,0);
+    _msgwait(msgid);
+    }
+  else {
+    msgid = _irecv(FORCE_TYPE + me^ibit,y,l1*sizeof(double));
+    _csend(me,dummy, 0, me^ibit,0);
+    _crecv(me^ibit,dummy, 0);
+    msgid2 =_isend(FORCE_TYPE + me,&x[l1], l2*sizeof(double), me^ibit,0);
+    _msgwait(msgid);
+
+    daxpy_(&l1, &done, y, &ione, x, &ione);
+
+    tempdim = dim + 1;
+    _msgwait(msgid2);
+
+    gdcomb(l1, x, y,tempdim,idim);
+
+    msgid = _irecv(FORCE_TYPE + me^ibit,&x[l1], l2*sizeof(double));
+    _csend(me,dummy, 0, me^ibit,0);
+    _crecv(me^ibit,dummy, 0);
+    _csend(FORCE_TYPE + me,x, l1*sizeof(double), me^ibit,0);
+    _msgwait(msgid);
+    }
+  }
+
+#endif // I860
+
+void gop1(double* val, int len, double* tmp, int op, int type)
+{
+#if defined(PARAGON)
+  switch (op) {
+    case 'm':
+      gdlow(val,len,tmp);
+      break;
+    case 'M':
+      gdhigh(val,len,tmp);
+      break;
+    case '+':
+      gdsum(val,len,tmp);
+      break;
+    }
+#elif defined(I860)
+  switch (op) {
+    case 'm':
+      gmin0(val,len,5,type,0);
+      bcast0(val,len,type,0);
+      break;
+    case 'M':
+      gmax0(val,len,5,type,0);
+      bcast0(val,len,type,0);
+      break;
+    case '+':
+      gdcomb(len,val,tmp,0,cubedim0());
+      break;
+    }
+#else
+  switch (op) {
+    case 'm':
+      gmin0(val,len,5,type,0);
+      break;
+    case 'M':
+      gmax0(val,len,5,type,0);
+      break;
+    case '+':
+      gsum0(val,len,5,type,0);
+      break;
+    }
+  bcast0(val,len*sizeof(double),type,0);
+#endif
+
+}
+
+void gop0(double *val,int len,int op,int type)
+{
+  double *tmp = (double*)malloc(sizeof(double)*len);
+  if (!tmp) {
+      fprintf(stderr,"gop0: couldn't allocate %d bytes\n",len);
+      exit(1);
+    }
+  gop1(val,len,tmp,op,type);
+  free(tmp);
+}
+
+/* These routines are used to implement a gop0 for signed chars. */
+static void min_schar (signed char*x,signed char*t,int l,int type)
+{
+  int i;
+  for (i=0; i<l; i++) { if (t[i] < x[i]) x[i] = t[i]; }
+}
+static void max_schar (signed char*x,signed char*t,int l,int type)
+{
+  int i;
+  for (i=0; i<l; i++) { if (t[i] > x[i]) x[i] = t[i]; }
+}
+static void sum_schar (signed char*x,signed char*t,int l,int type)
+{
+  int i;
+  for (i=0; i<l; i++) x[i] += t[i];
+}
+
+/* A gop0 for signed chars. */
+void gop0_sc(signed char*val,int len,int op,int type)
+{
+  switch (op) {
+    case 'm':
+      gcomb0(val,len,0,type,0,(combroutine)min_schar);
+      break;
+    case 'M':
+      gcomb0(val,len,0,type,0,(combroutine)max_schar);
+      break;
+    case '+':
+      gcomb0(val,len,0,type,0,(combroutine)sum_schar);
+      break;
+    }
+  bcast0(val,len,type,0);
+}
+
+#if !defined(I860)
+int cubedim_() {
+  int n,p,me, host,i=0;
+  who0(&p,&me,&host);
+  n=p;
+  while (n > 0) {n >>= 1; i++;}
+  return (i-1);
+}
+#ifndef NCUBE
+int cubedim() {
+  int n,p,me, host,i=0;
+  who0(&p,&me,&host);
+  n=p;
+  while (n > 0) {n >>= 1; i++;}
+  return (i-1);
+}
+int mynode() {
+  int p, me, host;
+  who0(&p, &me, &host);
+  return (me);
+}
+int mynode_() {
+  int p, me, host;
+  who0(&p, &me, &host);
+  return (me);
+}
+#endif /*NCUBE*/
+int numnodes_() {
+  int p, me, host;
+  who0(&p, &me, &host);
+  return (p);
+}
+int numnodes() {
+  int p, me, host;
+  who0(&p, &me, &host);
+  return (p);
+}
+
+int infocount() {
+  int bytes,type,source;
+  recvinfo0(&bytes,&type,&source);
+  return(bytes);
+}
+#endif /* !I860 */
+
+int mynode0() {
+  int p, me, host;
+  who0(&p, &me, &host);
+  return (me);
+}
+int mynode0_() {
+  int p, me, host;
+  who0(&p, &me, &host);
+  return (me);
+}
+
+int cubedim0_() {
+  int n,p,me, host,i=0;
+  who0(&p,&me,&host);
+  n=p;
+  while (n > 0) {n >>= 1; i++;}
+  return (i-1);
+}
+int cubedim0() {
+  int n,p,me, host,i=0;
+  who0(&p,&me,&host);
+  n=p;
+  while (n > 0) {n >>= 1; i++;}
+  return (i-1);
+}
+int numnodes0_() {
+  int p, me, host;
+  who0(&p, &me, &host);
+  return (p);
+}
+int numnodes0() {
+  int p, me, host;
+  who0(&p, &me, &host);
+  return (p);
+}
+
+int loop_neigh(int offset)
+{
+  int nproc,top,ord,dir,me,host;
+  int result;
+  getarc0(&nproc,&top,&ord,&dir);
+  who0(&nproc,&me,&host);
+
+  /* hypercube topology */
+  if (top == 1) {
+    while (offset < 0) offset += nproc;
+    result = gray0((my_loop_index() + offset) % nproc);
+    }
+  /* all other topologies */
+  else {
+      result = (me + offset)%nproc;
+      if (result < 0) result += nproc;
+    }
+  return result;
+}
+
+int loop_out_neigh() { return loop_neigh(1); }
+
+int loop_in_neigh() { return loop_neigh(-1); }
+
+int my_loop_index()
+{
+  int nproc,top,ord,dir,me,host;
+  int result;
+  getarc0(&nproc,&top,&ord,&dir);
+  who0(&nproc,&me,&host);
+
+  if (top == 1) {
+      result = ginv0(me);
+    }
+  else {
+      result = me;
+    }
+  return result;
+}
+
+void
+picl_prober()
+{
+  int bytes,type,source;
+
+  if (!probe0(-1)) return;
+
+  recvinfo0(&bytes,&type,&source);
+
+  printf("On node %3d found a message of type %3d, bytes %3d, from %3d\n",
+         mynode0(),type,bytes,source);
 }

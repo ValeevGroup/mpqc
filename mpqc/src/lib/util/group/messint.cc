@@ -54,8 +54,9 @@ intMessageGrp::initialize(int me, int n, int nbits)
       abort();
     }
 
-  // The bits available to user defined messages overlap with the seq bits.
-  typ_nbit = seq_nbit;
+  // The bits available to user defined messages overlap
+  // with the seq and the src bits.
+  typ_nbit = seq_nbit + src_nbit;
 
   // Compute the shifts needed to construct a message type.
   seq_shift = 0;
@@ -73,15 +74,15 @@ intMessageGrp::initialize(int me, int n, int nbits)
 }
 
 int
-intMessageGrp::msgtype_typ(int source, int msgtype)
+intMessageGrp::msgtype_typ(int msgtype)
 {
   return msgtype>>typ_shift & typ_mask;
 }
 
 int
-intMessageGrp::typ_msgtype(int source, int usrtype)
+intMessageGrp::typ_msgtype(int usrtype)
 {
-  return source<<src_shift | usrtype<<typ_shift | 1<<ctl_shift;
+  return usrtype<<typ_shift | 1<<ctl_shift;
 }
 
 int
@@ -124,17 +125,17 @@ intMessageGrp::raw_recv(int sender, void* data, int nbyte)
 void
 intMessageGrp::raw_sendt(int target, int msgtype, void* data, int nbyte)
 {
-  basic_send(target, typ_msgtype(me(),msgtype), data, nbyte);
+  basic_send(target, typ_msgtype(msgtype), data, nbyte);
 }
 
 void
 intMessageGrp::raw_recvt(int type, void* data, int nbyte)
 {
-  basic_recv(typ_msgtype(me(),type), data, nbyte);
+  basic_recv(typ_msgtype(type), data, nbyte);
 }
 
 int
 intMessageGrp::probet(int type)
 {
-  return basic_probe(typ_msgtype(me(),type));
+  return basic_probe(typ_msgtype(type));
 }

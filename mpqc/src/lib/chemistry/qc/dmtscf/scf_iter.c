@@ -4,8 +4,7 @@
 #include <math.h>
 
 #include <tmpl.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 #include <math/dmt/libdmt.h>
 #include <util/misc/libmisc.h>
 #include <math/array/math_lib.h>

@@ -5,8 +5,7 @@
 extern "C" {
 #include <tmpl.h>
 
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 
 #include <util/misc/libmisc.h>
 #include <math/dmt/matrix.h>

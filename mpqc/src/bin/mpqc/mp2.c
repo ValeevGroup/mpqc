@@ -8,7 +8,7 @@
 
 #include <tmpl.h>
 
-#include <comm/picl/picl.h>
+#include <util/group/picl.h>
 
 #include <util/ipv2/ip_libv2.h>
 #include <util/sgen/sgen.h>
@@ -21,8 +21,6 @@
 #include <chemistry/qc/dmtscf/scf_dmt.h>
 #include <chemistry/qc/force/libforce.h>
 #include <chemistry/qc/geom/libgeom.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
 #include <chemistry/qc/dmtqc/libdmtqc.h>
 
 #if defined(I860)

@@ -6,4 +6,4 @@ libforce.LIBSUF
 #include <math/dmt/LIBS.h>
 #include <util/keyval/LIBS.h>
 #include <util/misc/LIBS.h>
-#include <comm/picl/ext/LIBS.h>
+#include <util/group/LIBS.h>

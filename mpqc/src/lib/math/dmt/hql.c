@@ -21,8 +21,7 @@
 
 #include <tmpl.h>
 #include <util/misc/libmisc.h>
-#include <comm/picl/picl.h>
-#include <comm/picl/ext/piclext.h>
+#include <util/group/picl.h>
 
 static double absol();
 static double epslon ();

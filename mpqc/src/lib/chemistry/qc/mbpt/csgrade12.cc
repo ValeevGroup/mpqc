@@ -216,8 +216,10 @@ CSGradErep12Qtr::get_task(int &S, int &R)
 {
   int SR[2];
 
+  lock->lock();
   msg->sendt(0,18101,&me,1);
   msg->recvt(18102,SR,2);
+  lock->unlock();
 
   S = SR[0];
   R = SR[1];

@@ -159,6 +159,7 @@ sub parse_mpqc {
     my $grad;
     my $ngrad;
     my $state = "none";
+    my $molecularenergy = "";
     while (<$out>) {
         if ($state eq "read grad" && $wante) {
             if (/^\s*([0-9]+\s+[A-Za-z]+\s+)?([\-\.0-9]+)\s+([\-\.0-9]+)\s+([\-\.0-9]+)/) {
@@ -166,6 +167,10 @@ sub parse_mpqc {
                 $grad->[$ngrad + 1] = $3;
                 $grad->[$ngrad + 2] = $4;
                 $ngrad = $ngrad + 3;
+            }
+            elsif (/^\s*([0-9]+\s+)?([\-\.0-9]+)/) {
+                $grad->[$ngrad] = $2;
+                $ngrad = $ngrad + 1;
             }
             else {
                 $self->{"grad"} = $grad;
@@ -188,6 +193,9 @@ sub parse_mpqc {
         elsif ($wante && /MP2 energy .*:\s+$fltrx/) {
             $mp2energy = $1;
         }
+        elsif ($wante && /Value of the MolecularEnergy:\s+$fltrx/) {
+            $molecularenergy = $1;
+        }
         elsif (/The optimization has converged/) {
             $optconverged = 1;
         }
@@ -207,7 +215,8 @@ sub parse_mpqc {
             }
             $molecule = new Molecule($molstr);
         }
-        elsif (/^\s+Total (MP2 )?[Gg]radient/) {
+        elsif (/^\s+Total (MP2 )?[Gg]radient/
+               || /^\s*Gradient of the MolecularEnergy:/) {
             $state = "read grad";
             $grad = [];
             $ngrad = 0;
@@ -239,6 +248,7 @@ sub parse_mpqc {
     $self->{"zapt2energy"} = $zapt2energy;
     $self->{"mp2energy"} = $mp2energy;
     $self->{"optconverged"} = $optconverged;
+    $self->{"molecularenergy"} = $molecularenergy;
     if ($optconverged) {
         $self->{"optmolecule"} = $molecule;
     }
@@ -258,15 +268,19 @@ sub parse_mpqc {
             $self->{"energy"} = $zapt2energy;
         }
     }
-    elsif ($method eq "OPT1") {
+    elsif ($method eq "OPT1[2]") {
         $self->{"energy"} = $opt1energy;
     }
-    elsif ($method eq "OPT2") {
+    elsif ($method eq "OPT2[2]") {
         $self->{"energy"} = $opt2energy;
     }
-    elsif ($method eq "SCF"
-           || $method eq "ROSCF") {
+    elsif ($qcinput->ok()
+           && ($method eq "SCF" || $method eq "ROSCF")) {
         $self->{"energy"} = $scfenergy;
+    }
+
+    if ($self->{"energy"} eq "") {
+        $self->{"energy"} = $self->{"molecularenergy"};
     }
 
     $self->{"ok"} = 0;
@@ -296,6 +310,11 @@ sub exists {
 sub input {
     my $self = shift;
     $self->{"qcinput"}
+}
+
+sub inputok {
+    my $self = shift;
+    $self->{"qcinput"}->ok();
 }
 
 sub energy {

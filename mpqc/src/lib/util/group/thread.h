@@ -53,7 +53,8 @@ class Thread {
     Thread();
     virtual ~Thread();
 
-    virtual void run(void*) =0;
+    static void *run_Thread_run(void*thread);
+    virtual void run() =0;
 };
     
 DescribedClass_REF_fwddec(ThreadGrp);

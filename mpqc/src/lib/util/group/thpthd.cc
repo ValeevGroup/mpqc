@@ -115,7 +115,7 @@ PthreadThreadGrp::start_threads()
 {
   for (int i=0; i < nthread_; i++) {
     int res = pthread_create(&pthreads_[i], 0,
-                             (void *(*)(void*))threads_[i]->run,
+                             Thread::run_Thread_run,
                              (void*) threads_[i]);
     if (res) {
       cerr << indent << "thread death " << res << endl;

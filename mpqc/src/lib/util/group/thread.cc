@@ -53,6 +53,13 @@ Thread::~Thread()
 {
 }
 
+void *
+Thread::run_Thread_run(void* vth)
+{
+  ((Thread*)vth)->run();
+  return 0;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // ThreadGrp members
 
@@ -238,7 +245,7 @@ ProcThreadGrp::~ProcThreadGrp()
 int
 ProcThreadGrp::start_threads()
 {
-  threads_[0]->run(threads_[0]);
+  threads_[0]->run();
   return 0;
 }
 

@@ -87,14 +87,20 @@ PumaThreadGrp::~PumaThreadGrp()
 {
 }
 
+static void
+run_Thread_run(void *thread)
+{
+  Thread::run_Thread_run(thread);
+}
+
 int
 PumaThreadGrp::start_threads()
 {
   flag_=0;
   if (nthread_ > 1)
-    cop((void (*)(void*))threads_[1]->run, &flag_, (void*)threads_[1]);
+    cop(run_Thread_run, &flag_, (void*)threads_[1]);
 
-  threads_[0]->run(threads_[0]);
+  threads_[0]->run();
   
   return 0;
 }

@@ -101,6 +101,9 @@ main(int argc, char**argv)
 
   tim->enter("input");
   
+  if (rpkv->exists("matrixkit"))
+    SCMatrixKit::set_default_matrixkit(rpkv->describedclassvalue("matrixkit"));
+  
   struct stat sb;
   RefMolecularEnergy mole;
   RefOptimize opt;

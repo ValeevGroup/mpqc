@@ -186,9 +186,23 @@ Int2eV3::int_initialize_erep(int storage, int order,
     }
   else {
     cout << node0 << indent
-         << "Int2eV3: not storing O(N^2) intemediates due to lack of memory"
+         << "Int2eV3: not storing O(N^2) intermediates due to lack of memory"
          << endl;
     int_store2 = 0;
+    }
+
+  if (used_storage_ > storage || !int_store1 || !int_store2) {
+    cout << node0
+         << indent << "Int2eV3: wanted more storage than given" << endl
+         << indent << "  given  storage = " << storage << endl
+         << indent << "  build  storage = " << used_storage_build_ << endl
+         << indent << "  shift  storage = " << used_storage_shift_ << endl
+         << indent << "  used   storage = " << used_storage_ << endl
+         << indent << "  O(N)   storage = " << size_inter_1
+         <<           (int_store1?"":" (not used)") << endl
+         << indent << "  O(N^2) storage = " << size_inter_2
+         <<           (int_store2?"":" (not used)") << endl
+         << endl;
     }
 
   /* Allocate storage for the intermediates. */
@@ -260,16 +274,6 @@ Int2eV3::int_initialize_erep(int storage, int order,
       compute_prim_2(cs4,cs3);
       compute_prim_2(cs4,cs4);
       }
-    }
-
-  if (used_storage_ > storage) {
-    cout << node0
-         << indent << "Int2eV3: required more storage than given" << endl
-         << indent << "  given storage = " << storage << endl
-         << indent << "  build storage = " << used_storage_build_ << endl
-         << indent << "  shift storage = " << used_storage_shift_ << endl
-         << indent << "  used  storage = " << used_storage_ << endl
-         << endl;
     }
 
   return int_buffer;

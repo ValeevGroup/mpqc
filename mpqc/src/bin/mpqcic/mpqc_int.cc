@@ -312,7 +312,7 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
   }
 
  // scale the displacement vector if it's too large
-  double tot = xdisp.scalar_product(xdisp);
+  double tot = sqrt(xdisp.scalar_product(xdisp));
   if (tot > maxstepsize) {
     double scal = maxstepsize/tot;
     fprintf(outfp,"\n stepsize of %f is too big, scaling by %f\n",tot,scal);

@@ -44,7 +44,7 @@ SavableState_REF_def(MolecularEnergy);
 
 #define CLASSNAME MolecularEnergy
 #define PARENTS public Function
-#define VERSION 3
+#define VERSION 4
 #include <util/state/statei.h>
 #include <util/class/classia.h>
 void *
@@ -62,6 +62,7 @@ MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
   mc_ = mole.mc_;
   moldim_ = mole.moldim_;
   mol_ = mole.mol_;
+  initial_pg_ = new PointGroup(mol_->point_group());
 }
 
 MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
@@ -77,6 +78,8 @@ MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
            << endl;
       abort();
     }
+
+  initial_pg_ = new PointGroup(mol_->point_group());
 
   hess_ = keyval->describedclassvalue("hessian");
 
@@ -132,6 +135,8 @@ MolecularEnergy::MolecularEnergy(StateIn&s):
       hess_.restore_state(s);
       guesshess_.restore_state(s);
     }
+  if (s.version(static_class_desc()) >= 4) initial_pg_.restore_state(s);
+  else initial_pg_ = new PointGroup(mol_->point_group());
 }
 
 MolecularEnergy&
@@ -142,6 +147,7 @@ MolecularEnergy::operator=(const MolecularEnergy& mole)
   moldim_ = mole.moldim_;
   mol_ = mole.mol_;
   print_molecule_when_changed_ = mole.print_molecule_when_changed_;
+  initial_pg_ = new PointGroup(mole.initial_pg_);
   return *this;
 }
 
@@ -155,6 +161,7 @@ MolecularEnergy::save_data_state(StateOut&s)
   s.put(print_molecule_when_changed_);
   hess_.save_state(s);
   guesshess_.save_state(s);
+  initial_pg_.save_state(s);
 }
 
 void

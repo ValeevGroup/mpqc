@@ -57,6 +57,8 @@ class MolecularEnergy: public Function {
     RefSCVector cartesian_gradient_;
     RefSymmSCMatrix cartesian_hessian_;
   protected:
+    RefPointGroup initial_pg_;
+
     void failure(const char *);
 
     //. This is just a wrapper around set_value().

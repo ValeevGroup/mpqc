@@ -60,6 +60,7 @@ class HFACM: public Wavefunction {
     ~HFACM();
     void save_data_state(StateOut& s);
 
+    int nelectron();
     int spin_polarized();
     RefSymmSCMatrix density();
     RefSymmSCMatrix alpha_density();

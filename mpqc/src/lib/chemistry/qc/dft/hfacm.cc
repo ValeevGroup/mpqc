@@ -194,6 +194,12 @@ HFACM::hessian_implemented()
   return 0;
 }
 
+int
+HFACM::nelectron()
+{
+  return scf_->nelectron();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

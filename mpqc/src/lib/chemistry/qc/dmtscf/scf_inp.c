@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:14  etseidl
- * Initial revision
+ * Revision 1.2  1994/01/19 13:15:00  seidl
+ * add option to use a more load balanced gmat routine.
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:15  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.15  1992/06/17  21:54:15  jannsen
  * cleaned up for saber-c
@@ -239,6 +242,10 @@ FILE *_outfile;
   angs=0;
   errcod = ip_boolean("angstrom",&angs,0);
 
+ /* use (nproc-1) nodes for gmat calculation (better load balance) */
+  _scf_info->load_bal=0;
+  errcod = ip_boolean("load_balance_gmat",&_scf_info->load_bal,0);
+
  /* should the exchange energy be computed separately? */
   _scf_info->exchange=0;
   errcod = ip_boolean("exchange",&_scf_info->exchange,0);
@@ -432,6 +439,10 @@ FILE *_outfile;
   fprintf(_outfile,"    local_P          = %s\n",PBOOL(_scf_info->local_p));
   if(_scf_info->print_flg) 
     fprintf(_outfile,"    print_flag       = %d\n",_scf_info->print_flg);
+  if(_scf_info->load_bal) 
+    fprintf(_outfile,"    load_balance_gmat= %s\n",PBOOL(_scf_info->load_bal));
+  if(_scf_info->exchange) 
+    fprintf(_outfile,"    exchange         = %s\n",PBOOL(_scf_info->exchange));
   if(_scf_info->cheat) 
     fprintf(_outfile,"    cheat            = %s\n",PBOOL(_scf_info->cheat));
   if(_scf_info->debug) 

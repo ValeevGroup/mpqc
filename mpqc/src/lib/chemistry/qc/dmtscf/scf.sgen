@@ -1,7 +1,10 @@
 //
 // $Log$
-// Revision 1.1  1993/12/29 12:53:14  etseidl
-// Initial revision
+// Revision 1.2  1994/01/19 13:14:43  seidl
+// add option to use a more load balanced gmat routine.
+//
+// Revision 1.1.1.1  1993/12/29  12:53:15  etseidl
+// SC source tree 0.1
 //
 // Revision 1.9  1992/07/09  15:40:03  seidl
 // add expts and exmul for extended mulliken analysis
@@ -78,6 +81,7 @@ scf_struct {
   boolean proj_vector;    // if true, form guess vector from old basis set
   boolean cheat;          // if true, use big threshold in early iterations
   boolean exchange;       // if true, print the exchange energy contribution
+  boolean load_bal;       // if true, use better load balancing gmat algor.
   boolean debug;
   boolean debug_node;
 

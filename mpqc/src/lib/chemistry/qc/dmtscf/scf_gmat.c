@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:15  etseidl
- * Initial revision
+ * Revision 1.2  1994/01/19 13:14:52  seidl
+ * add option to use a more load balanced gmat routine.
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:16  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.12  1992/06/23  20:04:30  seidl
  * change dmt matrices to uppercase,
@@ -98,6 +101,7 @@ static char rcsid[] = "$Id$";
 #endif
 
 #include "scf_mkgd.gbl"
+#include "scf_mkgdlb.gbl"
 #include "scf_loopg.gbl"
 #include "scf_bnd.gbl"
 
@@ -207,8 +211,13 @@ FILE *_outfile;
   if(_scf_info->local_p) {
 
   /* calculate integrals directly and stuff into the g matrix */
-    errcod = scf_make_g_d(_centers,_irreps,_scf_info,_sym_info,
+    if (_scf_info->load_bal)
+      errcod = scf_make_g_d_lb(_centers,_irreps,_scf_info,_sym_info,
                &gtmp,&gtmpo,&ptmp,&ptmpo,maxp,intbuf,_iter,_outfile);
+    else
+      errcod = scf_make_g_d(_centers,_irreps,_scf_info,_sym_info,
+               &gtmp,&gtmpo,&ptmp,&ptmpo,maxp,intbuf,_iter,_outfile);
+
     if(errcod != 0) {
       fprintf(_outfile,"scf_iter: trouble forming gmat 2\n");
       return(-1);

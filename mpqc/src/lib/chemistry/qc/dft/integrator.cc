@@ -2046,6 +2046,7 @@ LebedevAngularIntegrator::build_grid(void)
   double norm = A1*6.0 + A2*12.0 + A3*8.0;
   int j;
 
+/*
   // Norm of the Lebedev Weights
   for (j=0; j<N1; j++) norm += 24.0*B[j];
   for (j=0; j<N2; j++) norm += 24.0*C[j];
@@ -2073,7 +2074,7 @@ LebedevAngularIntegrator::build_grid(void)
       cout << "Dk points norm[" << j << "] = " << scprintf("%20.15f",norm) << endl;
       //u[j] *= norm; v[j] *= norm; w[j] *= norm;
     }
-  
+*/  
   double *zero_array;
   zero_array = new double[N2];
   for (int i=0; i<N2; i++) zero_array[i] = 0.0;

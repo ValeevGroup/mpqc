@@ -33,6 +33,7 @@
 
 #include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>
+#include <util/misc/formio.h>
 
 SavableState_REF_def(Optimize);
 #define CLASSNAME Optimize
@@ -92,6 +93,11 @@ Optimize::Optimize(const RefKeyVal&keyval)
   if (keyval->error() != KeyVal::OK) max_stepsize_ = 0.6;
 
   function_ = keyval->describedclassvalue("function");
+  if (function_.null()) {
+      cerr << node0 << "Optimize requires a function keyword" << endl;
+      cerr << node0 << "which is an object of type Function" << endl;
+      abort();
+    }
 
   conv_ = keyval->describedclassvalue("convergence");
   if (conv_.null()) {

@@ -6,9 +6,9 @@
 // Force linkages:
 const ClassDesc &fl0 = HCoreWfn::class_desc_;
 
-main()
+main(int argc, char *argv[])
 {
-  char *input = "wfntest.in";
+  char *input = (argc > 1) ? argv[1] : SRCDIR "/wfntest.kv";
 
   RefKeyVal rpkv(new ParsedKeyVal(input));
   
@@ -20,6 +20,10 @@ main()
     fprintf(stderr,"wfn is null\n");
     exit(1);
   }
+
+  wfn->overlap()->print("overlap");
+  wfn->core_hamiltonian()->print("Hcore");
+  wfn->hcore_guess()->print("guess vector");
 
   wfn->print(o);
   o << endl;

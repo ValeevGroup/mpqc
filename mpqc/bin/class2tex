@@ -87,8 +87,8 @@ sub write_doc {
         || $item{'pro'} ne ''
         || $item{'pub'} ne '') {
         $template_param =~ s/_/\\_/g;
-        if (!open(OUTPUT, ">$class.cls.tex")) {
-            die "Can't open $class.cls.tex: $!";
+        if (!open(OUTPUT, ">doc/$class.cls.tex")) {
+            die "Can't open doc/$class.cls.tex: $!";
         }
         print "writing $class.cls.tex\n";
         if ($template_param eq '') {

@@ -99,7 +99,7 @@ doc::
 	if test -d doc; then \
 	  for i in $(SRCDIR)/*.h; \
 	    do \
-	      (cd doc; $(CLASS2TEX) $(CLASS2TEXFLAGS) $${i}); \
+	      ($(CLASS2TEX) $(CLASS2TEXFLAGS) $${i}); \
 	    done \
 	fi
 

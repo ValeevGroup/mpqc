@@ -58,7 +58,6 @@ SCF::compute_vector(double& eelec)
   
     RefSymmSCMatrix eff = effective_fock();
     eff.diagonalize(evals,nvector);
-    evals.print("fock evals");
     set_occupations(evals);
 
     eff=0;

@@ -1096,13 +1096,16 @@ LIBS="$LIBSSAV $FLIBS"
 LIBBLAS=""
 F77_DGEMM=`$PERL $srcdir/bin/mkf77sym.pl.in -method $F77_SYMBOLS DAXPY`
 AC_CHECK_FUNC($F77_DGEMM,HAVE_BLAS=yes,[
-  AC_CHECK_LIB(blas,$F77_DGEMM,[HAVE_BLAS=yes;LIBBLAS="-lblas"]
+  AC_CHECK_LIB(essl,$F77_DGEMM,[HAVE_BLAS=yes;LIBBLAS="-lessl"],
+    AC_CHECK_LIB(blas,$F77_DGEMM,[HAVE_BLAS=yes;LIBBLAS="-lblas"])
   )]
 )
 AC_SUBST(HAVE_BLAS)
 if test X$HAVE_BLAS != Xyes; then
   echo "WARNING: Could not link to the BLAS library.  It can be obtained at"
-  echo "http://www.netlib.org/blas"
+  echo "http://www.netlib.org/blas.  Use --with-libdir and/or --with-libs"
+  echo "to specify the name of the library."
+  AC_MSG_ERROR([BLAS is required to complete the build])
 fi
 
 LIBS="$LIBSSAV $LIBBLAS $FLIBS"
@@ -1115,8 +1118,10 @@ AC_CHECK_FUNC($F77_DGESVD,HAVE_LAPACK=yes,[
 )
 AC_SUBST(HAVE_LAPACK)
 if test X$HAVE_LAPACK != Xyes; then
-  echo "WARNING: Could not link to the LAPACK library.  It can be obtained at"
-  echo "http://www.netlib.org/lapack"
+  echo "Could not link to the LAPACK library.  It can be obtained at"
+  echo "http://www.netlib.org/lapack.  Use --with-libdir and/or --with-libs"
+  echo "to specify the name of the library."
+  AC_MSG_ERROR([LAPACK is required to complete the build])
 fi
 
 LIBS="$LIBSSAV $LIBLAPACK $LIBBLAS"

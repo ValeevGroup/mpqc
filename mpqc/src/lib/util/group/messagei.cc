@@ -68,7 +68,7 @@ MessageGrp::get_default_messagegrp()
 MessageGrp *
 MessageGrp::initial_messagegrp(int &argc, char** argv)
 {
-  MessageGrp *grp;
+  MessageGrp *grp = 0;
 
   char *keyval_string = 0;
 
@@ -137,11 +137,11 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
   // if certain libraries have been compiled in, use those message groups
 #if defined(HAVE_NX)
   grp = new ParagonMessageGrp;
-  if (grp->n() == 1) return new ProcMessageGrp;
+  if (grp->n() == 1) { delete grp; return new ProcMessageGrp; }
   else return grp;
 #elif defined(HAVE_MPI)
   grp = new MPIMessageGrp;
-  if (grp->n() == 1) return new ProcMessageGrp;
+  if (grp->n() == 1) { delete grp; return new ProcMessageGrp; }
   else return grp;
 #endif
   return 0;

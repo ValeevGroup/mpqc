@@ -6,6 +6,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 TARGET_TO_MAKE = mkclasses
 BIN_OR_LIB = BIN
+LD = $(CXX)
 
 DISTFILES = $(CXXFILES)
 

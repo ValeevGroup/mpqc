@@ -22,7 +22,7 @@ main(int argc, char** argv)
   dbname = argv[1];
   libname = argv[2];
 
-  classes_length = 0;
+  classes_length = 1;
   for (i=3; i<argc; i++) {
       classes_length += strlen(argv[i]) + 1;
     }

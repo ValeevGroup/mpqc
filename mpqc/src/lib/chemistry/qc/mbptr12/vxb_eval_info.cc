@@ -137,6 +137,8 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     ribs_space_ << SavableState::restore_state(si);
     act_occ_space_ << SavableState::restore_state(si);
     occ_space_ << SavableState::restore_state(si);
+    act_vir_space_ << SavableState::restore_state(si);
+    vir_space_ << SavableState::restore_state(si);
     tfactory_ << SavableState::restore_state(si);
   }
 
@@ -180,6 +182,8 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(ribs_space_.pointer(),so);
   SavableState::save_state(act_occ_space_.pointer(),so);
   SavableState::save_state(occ_space_.pointer(),so);
+  SavableState::save_state(act_vir_space_.pointer(),so);
+  SavableState::save_state(vir_space_.pointer(),so);
   SavableState::save_state(tfactory_.pointer(),so);
 }
 
@@ -426,6 +430,8 @@ void R12IntEvalInfo::eigen2_(RefDiagSCMatrix &vals, RefSCMatrix &vecs, int*& orb
   obs_space_ = new MOIndexSpace("MOs sorted by energy", vecs, bs_, vals, 0, 0);
   act_occ_space_ = new MOIndexSpace("active occupied MOs sorted by energy", vecs, bs_, vals, nfzc_, noso_ - nocc_);
   occ_space_ = new MOIndexSpace("occupied MOs sorted by energy", vecs, bs_, vals, 0, noso_ - nocc_);
+  act_vir_space_ = new MOIndexSpace("active unoccupied MOs sorted by energy", vecs, bs_, vals, nocc_, nfzv_);
+  vir_space_ = new MOIndexSpace("unoccupied MOs sorted by energy", vecs, bs_, vals, nocc_, 0);
 
   vecs = obs_space_->coefs().t();
   vals = obs_space_->evals();

@@ -99,6 +99,8 @@ private:
   Ref<MOIndexSpace> ribs_space_;
   Ref<MOIndexSpace> act_occ_space_;
   Ref<MOIndexSpace> occ_space_;
+  Ref<MOIndexSpace> act_vir_space_;
+  Ref<MOIndexSpace> vir_space_;
   Ref<MOIntsTransformFactory> tfactory_;
 
   // construct the RI basis based on abs_method
@@ -176,6 +178,7 @@ public:
   const int noso() const { return noso_;};
   const int nfzc() const { return nfzc_;};
   const int nfzv() const { return nfzv_;};
+  const int nvir_act() const { return noso_ - nocc_ - nfzv_;};
 
   LinearR12::ABSMethod abs_method() const { return abs_method_; };
 
@@ -184,12 +187,16 @@ public:
   int *orbsym() const { return orbsym_; };
   RefSCMatrix orthog_ri();
   
-  /// Returns the MOIndexSpace object for OBS
+  /// Returns the MOIndexSpace object for energy-sorted MOs in OBS
   Ref<MOIndexSpace> obs_space() const { return obs_space_; };
   /// Returns the MOIndexSpace object for the active occupied MOs
   Ref<MOIndexSpace> act_occ_space() const { return act_occ_space_; };
+  /// Returns the MOIndexSpace object for the active unoccupied MOs
+  Ref<MOIndexSpace> act_vir_space() const { return act_vir_space_; };
   /// Returns the MOIndexSpace object for all occupied MOs
   Ref<MOIndexSpace> occ_space() const { return occ_space_; };
+  /// Returns the MOIndexSpace object for all unoccupied MOs
+  Ref<MOIndexSpace> vir_space() const { return vir_space_; };
   /// Returns the MOIndexSpace object for ABS
   Ref<MOIndexSpace> abs_space() const { return abs_space_; };
   /// Returns the MOIndexSpace object for RI-BS

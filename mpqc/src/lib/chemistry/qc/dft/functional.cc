@@ -243,11 +243,11 @@ SumDenFunctional::need_density_gradient()
 }
 
 void
-SumDenFunctional::set_spin_polarized(int i)
+SumDenFunctional::set_spin_polarized(int p)
 {
-  spin_polarized_ = i;
+  spin_polarized_ = p;
   for (int i=0; i < n_; i++)
-      funcs_[i]->set_spin_polarized(i);
+      funcs_[i]->set_spin_polarized(p);
 }
 
 void

@@ -66,7 +66,7 @@ IPV2::~IPV2()
   free_keyword_tree_list(ip_cwk);
 }
 
-void IPV2::read(istream&in,ostream&out,const char *filename)
+void IPV2::read(std::istream&in,std::ostream&out,const char *filename)
 {
   delete[] filename_;
   if (filename) {

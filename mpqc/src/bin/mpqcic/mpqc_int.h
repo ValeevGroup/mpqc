@@ -23,32 +23,34 @@
 #ifndef _libGeom_mpqc_int_h
 #define _libGeom_mpqc_int_h
 
+enum geom_codes { GEOM_DONE, GEOM_ABORT, GEOM_COMPUTE_ENERGY,
+                  GEOM_COMPUTE_GRADIENT, GEOM_COMPUTE_HESSIAN };
+
 #include <stdio.h>
 
-#include <util/keyval/keyval.h>
-
-#ifdef __cplusplus
 extern "C" {
-#endif
-
 #include <tmpl.h>
 #include <math/array/math_lib.h>
 #include <math/dmt/libdmt.h>
+}
+
+#include <util/keyval/keyval.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 #include <chemistry/qc/dmtscf/scf_dmt.h>
 
-int Geom_init_mpqc(FILE*,FILE*,centers_t*,RefKeyVal);
-int Geom_update_mpqc(double,double_matrix_t*,double_matrix_t*,RefKeyVal);
-void Geom_done_mpqc(RefKeyVal,int converged);
+int Geom_init_mpqc(RefMolecule&, const RefKeyVal&);
+
+int Geom_update_mpqc(double_matrix_t*, const RefKeyVal&);
+
+void Geom_done_mpqc(const RefKeyVal&, int converged);
 
 int Scf_charges_from_esp(centers_t*,int,double_vector_t*,
-                    double_vector_t*, expts_t*, double, int, FILE*,RefKeyVal);
+                         double_vector_t*, expts_t*, double, int, FILE*,
+                         const RefKeyVal&);
 
-int mp2_hah(centers_t*,scf_struct_t*,dmt_matrix,dmt_matrix,FILE*,RefKeyVal);
+int mp2_hah(centers_t*, scf_struct_t*, dmt_matrix, dmt_matrix, FILE*,
+            const RefKeyVal&);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif

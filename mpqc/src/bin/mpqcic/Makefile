@@ -8,10 +8,9 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 LD = $(CXX)
 
 TARGET_TO_MAKE = mpqcic
-#BIN_OR_LIB = BIN
 
-CXXSRC = mpqcic.cc mpqc_int.cc esp.cc mp2.cc
-CSRC = gcollect.c
+CXXSRC = mpqcic.cc mpqc_int.cc
+CSRC =
 INC = mpqc_int.h
 
 DEPENDINCLUDE = $(INC)
@@ -51,10 +50,6 @@ endif
 
 
 LIBS := $(shell $(LISTLIBS) $(MPQCLIBSDEFINE) $(INCLUDE) $(SRCDIR)/LIBS.h)
-#PROCLIBS = $(shell $(LISTLIBS) -DUSE_PICLPROC $(INCLUDE) $(SRCDIR)/LIBS.h)
-#PVMLIBS = $(shell $(LISTLIBS) -DUSE_PICLPVM $(INCLUDE) $(SRCDIR)/LIBS.h)
-#SHMLIBS = $(shell $(LISTLIBS) -DUSE_PICLSHM $(INCLUDE) $(SRCDIR)/LIBS.h)
-
 
 ifeq ($(ARCH),NCUBE_V2)
   CFLAGS := $(CFLAGS) -Ncomm  500000 -Nheap 2500000 -Nstack 64000 -d 1

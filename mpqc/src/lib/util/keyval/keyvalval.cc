@@ -287,7 +287,7 @@ KeyValValuepchar::pcharvalue(const char*&val) const
 void
 KeyValValuepchar::print(ostream&o) const
 {
-  o << _val;
+  o << (_val?_val:"(null)");
 }
 
 /////////////////////////////////////////////////////////////////////////

@@ -124,7 +124,6 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   Ref<Integral> integral = r12info()->integral();
   Ref<GaussianBasisSet> bs = r12info()->basis();
   bool two_basis_form = (bs != r12info()->basis_aux());
-  Ref<SCMatrixKit> kit = bs->matrixkit();
   Ref<MessageGrp> msg = r12info()->msg();
   Ref<MemoryGrp> mem = r12info()->mem();
   Ref<ThreadGrp> thr = r12info()->thr();

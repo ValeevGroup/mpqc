@@ -780,6 +780,7 @@ Molecule::cleanup_molecule()
   int nuniq = num_unique_atoms();
   int *uniq = find_unique_atoms();
 
+  int i;
   Point up,np,ap;
   SymmetryOperation so;
   CharacterTable ct = point_group().char_table();
@@ -787,7 +788,7 @@ Molecule::cleanup_molecule()
   // first clean up the unique atoms by replacing each coordinate with the
   // average of coordinates obtained by applying all symmetry operations to
   // the original atom, iff the new atom ends up near the original atom
-  for (int i=0; i < nuniq; i++) {
+  for (i=0; i < nuniq; i++) {
       // up will store the original coordinates of unique atom i
       up = atom(uniq[i]).point();
       // ap will hold the average coordinate (times the number of coordinates)
@@ -816,7 +817,7 @@ Molecule::cleanup_molecule()
   // numerical errors that may be in the equivalent atom's coordinates
 
   // loop through unique atoms
-  for (int i=0; i < nuniq; i++) {
+  for (i=0; i < nuniq; i++) {
       // up will store the coordinates of unique atom i
       up = atom(uniq[i]).point();
 

@@ -105,6 +105,22 @@ sub check {
                     printf " S2N:%d", $maxerror;
                     print "*" if ($maxerror <= 8);
                 }
+                if ($result->npacharge() && $cresult->npacharge()) {
+                    my $maxerror = compare_vecs($result->npacharge(),
+                                                $cresult->npacharge());
+                    printf " NPAq:%d", $maxerror;
+                    print "*" if ($maxerror <= 5);
+                    #printf "npacharge\n";
+                    #print_vec($result->npacharge());
+                }
+                if ($result->npashellpop() && $cresult->npashellpop()) {
+                    my $maxerror = compare_vecvecs($result->npashellpop(),
+                                                   $cresult->npashellpop());
+                    printf " NPAp:%d", $maxerror;
+                    print "*" if ($maxerror <= 5);
+                    #printf "npashellpop\n";
+                    #print_vecvec($result->npashellpop());
+                }
                 if ($result->s2large_coef() && $cresult->s2large_coef()) {
                     my $maxerror = compare_vecs($result->s2large_coef(),
                                                 $cresult->s2large_coef());
@@ -194,7 +210,6 @@ sub compare_vecs {
     my @v2 = @{$v2ref};
     my $e1, $e2;
     my $maxerror = 99;
-    my $log10 = log(10.0);
     my $nv1 = @v1;
     my $nv2 = @v2;
     if ($nv1 != $nv2) {
@@ -211,6 +226,27 @@ sub compare_vecs {
         else {
             $ldiff = -log($diff)/$log10;
         }
+        if ($ldiff < $maxerror) { $maxerror = $ldiff; }
+    }
+    $maxerror;
+}
+
+sub compare_vecvecs {
+    my $v1ref = shift;
+    my $v2ref = shift;
+    my @v1 = @{$v1ref};
+    my @v2 = @{$v2ref};
+    my $e1, $e2;
+    my $maxerror = 99;
+    my $nv1 = @v1;
+    my $nv2 = @v2;
+    if ($nv1 != $nv2) {
+        die "compare_vecvecs: vecs not of equal length\n";
+    }
+    while (($e1 = shift @v1)
+           &&($e2 = shift @v2)) {
+        my $diff = abs($e2-$e1);
+        my $ldiff = compare_vecs($e1,$e2);
         if ($ldiff < $maxerror) { $maxerror = $ldiff; }
     }
     $maxerror;
@@ -242,6 +278,20 @@ sub print_vec {
     my $e1;
     while ($e1 = shift @v1) {
         printf " %12.8f\n", $e1;
+    }
+}
+
+sub print_vecvec {
+    my $v1ref = shift;
+    my @v1 = @{$v1ref};
+    my $e1;
+    while ($e1 = shift @v1) {
+        my @v2 = @{$e1};
+        my $e2;
+        while ($e2 = shift @v2) {
+            printf " %12.8f", $e2;
+        }
+        printf "\n";
     }
 }
 

@@ -33,12 +33,12 @@ PointBag_double::PointBag_double()
 PointBag_double::PointBag_double(PointBag_double&b)
 {
   for (Pix i=b.first(); i!=0; b.next(i)) {
-      add(*((PointBagElem_double*) b.impl(i)));
+      add(*((PointBagElem_double*) &b.impl(i)));
     }
 }
 PointBag_double::~PointBag_double()
 {
   for (Pix i=first(); i!=0; next(i)) {
-      delete (PointBagElem_double*) impl(i);
+      delete (PointBagElem_double*) &impl(i);
     }
 }

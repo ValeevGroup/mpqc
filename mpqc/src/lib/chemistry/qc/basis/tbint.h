@@ -95,6 +95,8 @@ class TwoBodyInt : public VRefCount {
 
     // this storage is used to cache computed integrals
     virtual void set_integral_storage(int storage);
+
+    Integral *integral() const { return integral_; }
 };
 
 REF_dec(TwoBodyInt);

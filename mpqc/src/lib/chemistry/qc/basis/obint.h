@@ -133,6 +133,8 @@ class OneBodyInt : public VRefCount {
     //. This is called for one body integrals that take data to let
     // them know that the data they reference has changed.
     virtual void reinitialize();
+
+    Integral *integral() const { return integral_; }
 };
 
 REF_dec(OneBodyInt);

@@ -40,6 +40,7 @@ cstr(char *yytext)
 string  [A-Za-z0-9_\.*+-/']*
 qstring \"[^"\n]+\"
 %%
+"memory"        { return T_MEMORY; }
 "molecule"      { return T_MOLECULE; }
 "multiplicity"  { return T_MULTIPLICITY; }
 "optimize"      { return T_OPTIMIZE; }

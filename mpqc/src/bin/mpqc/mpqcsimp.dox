@@ -155,6 +155,12 @@ The accepted keywords are:
   virtual orbitals in each irreducible representation.  In the latter case
   the symmetry must be given and not be <tt>auto</tt>.
 
+<dt><tt>memory</tt><dd> Gives a hint for the amount of memory in bytes that
+  can be used.  This is typically a lower bound, more memory will be used
+  in practice and the exact amount cannot be precisely controlled.  The
+  format is a fixed or floating point number optionally followed (without
+  spaces) by one of the following suffixes: KB, MB, GB, KIB, MIB, or GIB.
+
 </dl>
 
 */

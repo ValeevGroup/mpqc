@@ -39,6 +39,7 @@ MPQCIn::MPQCIn():
   method_xc_(0),
   method_grid_(0),
   symmetry_(0),
+  memory_(0),
   molecule_bohr_(0),
   alpha_(0),
   beta_(0),  
@@ -59,6 +60,7 @@ MPQCIn::~MPQCIn()
   if (method_xc_.val()) free(method_xc_.val());
   if (method_grid_.val()) free(method_grid_.val());
   if (symmetry_.val()) free(symmetry_.val());
+  if (memory_.val()) free(memory_.val());
   if (alpha_.val()) free(alpha_.val());
   if (beta_.val()) free(beta_.val());
   if (docc_.val()) free(docc_.val());
@@ -221,6 +223,12 @@ MPQCIn::set_symmetry(char *s)
       Ref<PointGroup> p = new PointGroup(s);
       nirrep_ = p->char_table().nirrep();
     }
+}
+
+void
+MPQCIn::set_memory(char *s)
+{
+  memory_ = s;
 }
 
 void
@@ -567,6 +575,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
   if (need_cints) ostrs << indent << "integrals<IntegralCints>: ()" << endl;
   ostrs << indent << "total_charge = " << charge_.val() << endl;
   ostrs << indent << "molecule = $:molecule" << endl;
+  if (memory_.val()) ostrs << indent << "memory = " << memory_.val() << endl;
   if (!strcmp(keyword, "mole") && !reference_method) {
       ostrs << indent << "print_npa = 1" << endl;
     }

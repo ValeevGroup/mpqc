@@ -46,6 +46,7 @@ class MPQCIn {
     MPQCInDatum<char *> method_xc_;
     MPQCInDatum<char *> method_grid_;
     MPQCInDatum<char *> symmetry_;
+    MPQCInDatum<char *> memory_;
     MPQCInDatum<std::vector<int> *> alpha_;
     MPQCInDatum<std::vector<int> *> beta_;
     MPQCInDatum<std::vector<int> *> docc_;
@@ -90,6 +91,7 @@ class MPQCIn {
     void set_basis(char *);
     void set_auxbasis(char *);
     void set_multiplicity(char *);
+    void set_memory(char *);
     void set_optimize(int);
     void set_opt_type(int);
     void set_atom_charge(char *);

@@ -2442,15 +2442,18 @@ P86CFunctional::point(const PointInputData &id,
       od.df_drho_b = dfp86_drhob;
 
       // gamma part of potential
-      double dPhi_dgamma_aa = Phi/(2.*gamma_total2);
-      double dPhi_dgamma_bb = dPhi_dgamma_aa;
-      double dfp86_dgamma_aa = fp86*(1./gamma_total2 - dPhi_dgamma_aa);
+      // double dPhi_dgamma_aa = Phi/(2.*gamma_total2);
+      // double dPhi_dgamma_bb = dPhi_dgamma_aa;
+      // double dfp86_dgamma_aa = fp86*(1./gamma_total2 - dPhi_dgamma_aa);
+      double prefactor = exp(-Phi)*C_rho/( fzeta*rho43 );
+      double dfp86_dgamma_aa = prefactor * (1.-Phi/2.);
       double dfp86_dgamma_bb = dfp86_dgamma_aa;
       od.df_dgamma_aa = dfp86_dgamma_aa;
       od.df_dgamma_bb = dfp86_dgamma_bb;
 
-      double dPhi_dgamma_ab = 2.*dPhi_dgamma_aa;
-      double dfp86_dgamma_ab = fp86*(2./gamma_total2 - dPhi_dgamma_ab);
+      // double dPhi_dgamma_ab = 2.*dPhi_dgamma_aa;
+      // double dfp86_dgamma_ab = fp86*(2./gamma_total2 - dPhi_dgamma_ab);
+      double dfp86_dgamma_ab = prefactor * (2.-Phi);
       od.df_dgamma_ab = dfp86_dgamma_ab;
 
    }   

@@ -19,11 +19,12 @@ GENSRC = $(GENCXXSRC)
 
 INC =  LIBS.h state.h state_debug.h state_net.h state_ptr.h \
        statenumdefs.h stateptrdefs.h qc_xdr.h classddefs.h \
-       qc_xdr_i.h
+       qc_xdr_i.h stattmpl.h
 GENINC = stateptrImplSet.h statenumImplSet.h \
          stateptrSet.h stateptr$(SETIMPL)Set.h statenumSet.h \
          statenum$(SETIMPL)Set.h \
-         classdImplMap.h classdMap.h classd$(MAPIMPL)Map.h
+         classdImplMap.h classdMap.h classd$(MAPIMPL)Map.h \
+         statmacr.h
 
 DEPENDINCLUDE = $(INC) $(GENINC)
 
@@ -34,6 +35,11 @@ TARGET_TO_MAKE = libstate
 
 default:: $(DEPENDINCLUDE)
 default:: libstate.a
+
+interface:: $(DEPENDINCLUDE)
+
+statmacr.h: stattmpl.h $(TMPL2MACDEP)
+	$(TMPL2MAC) $< > statmacr.h
 
 statetest.o: statetest.cc
 	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<

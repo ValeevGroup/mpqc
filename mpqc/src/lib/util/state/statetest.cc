@@ -7,6 +7,11 @@
 #include <util/keyval/keyval.h>
 #include <util/state/state.h>
 
+#ifdef __GNUG__
+#pragma implementation "stattmpl"
+#pragma implementation "clastmpl"
+#endif
+
 #define A_parents virtual public SavableState
 class A: A_parents {
 #   define CLASSNAME A

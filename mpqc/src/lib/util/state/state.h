@@ -13,84 +13,17 @@
 #include <util/state/qc_xdr.h>
 #include <util/container/array.h>
 
+// Include the smart pointer to SavableState templates and macros.
+#include <util/state/stattmpl.h>
+#include <util/state/statmacr.h>
+
 #define SavableState_REF_dec(T) SavableState_named_REF_dec(Ref ## T,T)
 #define SavableState_REF_def(T) SavableState_named_REF_def(Ref ## T,T)
 
 #define SavableState_named_REF_dec(refname,T)				      \
-DescribedClass_named_REF_dec(RefDC ## T, T);				      \
-class refname: public RefDC ## T {					      \
-  public:								      \
-    refname();								      \
-    refname(const refname&);						      \
-    refname(T *);							      \
-    refname(const RefDescribedClassBase&);				      \
-    refname& operator=(T* cr);						      \
-    refname& operator=(const RefDescribedClassBase & c);		      \
-    refname& operator=(const refname & c);				      \
-    ~refname();								      \
-    refname(StateIn&);							      \
-    void save_data_state(StateOut&);					      \
-    void save_state(StateOut&);						      \
-    void restore_state(StateIn&);					      \
-};
-#define SavableState_named_REF_def(refname,T)				      \
-DescribedClass_named_REF_def(RefDC ## T, T)				      \
-refname :: refname() {}							      \
-refname :: refname (const refname & o): RefDC ## T (o) {}		      \
-refname :: refname (T * o): RefDC ## T (o) {}				      \
-refname :: refname (const RefDescribedClassBase&o): RefDC ## T (o) {}	      \
-refname :: ~refname () {}						      \
-refname& refname :: operator=(T* cr)					      \
-{									      \
-  RefDC ## T::operator=(cr);						      \
-  return *this;								      \
-}									      \
-refname& refname :: operator=(const RefDescribedClassBase & c)		      \
-{									      \
-  RefDC ## T::operator=(c);						      \
-  return *this;								      \
-}									      \
-refname& refname :: operator=(const refname & c)			      \
-{									      \
-  RefDC ## T::operator=(c);						      \
-  return *this;								      \
-}									      \
-refname :: refname (StateIn&s)						      \
-{									      \
-  restore_state(s);							      \
-}									      \
-void refname :: save_data_state(StateOut&s)				      \
-{									      \
-  save_state(s);							      \
-}									      \
-void refname :: save_state(StateOut&so)					      \
-{									      \
-  if (so.putpointer(pointer())) {					      \
-      so.put(pointer()->class_desc());					      \
-      pointer()->save_vbase_state(so);					      \
-      pointer()->save_data_state(so);					      \
-    }									      \
-}									      \
-void refname::restore_state(StateIn&si)					      \
-{									      \
-  SavableState* ss;							      \
-  int objnum = si.getpointer((void**)&ss);				      \
-  if (objnum) {								      \
-      const ClassDesc* cd;						      \
-      si.get(&cd);							      \
-      si.nextobject(objnum);						      \
-      DescribedClass* dc = cd->create(si);				      \
-      ss = SavableState::castdown(dc);					      \
-    }									      \
-  T* t = T::castdown(ss);						      \
-  if (!t && ss) {							      \
-      fprintf(stderr,							      \
-           "Ref" # T "::restore_state() got type \"%s\"\n",ss->class_name()); \
-      abort();								      \
-    }									      \
-  assign_pointer(t);							      \
-}
-
+   DCRef_declare(T); SSRef_declare(T); typedef class SSRef ## T refname;
+//#define SavableState_named_REF_dec(refname,T) typedef class SSRef<T> refname;
+#define SavableState_named_REF_def(refname,T)
 
 class StateIn;
 class StateOut;

@@ -50,6 +50,8 @@
 // Force linkages:
 #include <chemistry/qc/scf/linkage.h>
 
+using namespace std;
+
 Ref<RegionTimer> tim;
 Ref<MessageGrp> grp;
 

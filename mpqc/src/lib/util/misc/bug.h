@@ -59,6 +59,7 @@ class Debugger: public SavableState {
     int exit_on_signal_;
     int sleep_;
     int wait_for_debugger_;
+    int handle_sigint_;
     int *mysigs_;
 
     void init();

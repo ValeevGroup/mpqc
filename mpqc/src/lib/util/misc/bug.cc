@@ -154,6 +154,9 @@ Debugger::Debugger(const RefKeyVal &keyval)
 
   prefix_ = keyval->pcharvalue("prefix");
 
+  handle_sigint_ = keyval->booleanvalue("handle_sigint");
+  if (keyval->error() != KeyVal::OK) handle_sigint_=1;
+  
   if (keyval->booleanvalue("handle_defaults")) handle_defaults();
   if (keyval->error() != KeyVal::OK) handle_defaults();
 
@@ -189,6 +192,7 @@ Debugger::Debugger(StateIn&s):
   s.get(traceback_);
   s.get(exit_on_signal_);
   s.get(wait_for_debugger_);
+  s.get(handle_sigint_);
 
   int i, nsig, tmp;
   s.get(nsig);
@@ -209,6 +213,7 @@ Debugger::save_data_state(StateOut&s)
   s.put(traceback_);
   s.put(exit_on_signal_);
   s.put(wait_for_debugger_);
+  s.put(handle_sigint_);
 
   int i, nsig = 0;
   for (i=0; i<NSIG; i++) if (mysigs_[i]) nsig++;
@@ -262,7 +267,8 @@ Debugger::handle_defaults()
   handle(SIGIOT);
 #endif
 #ifdef SIGINT
-  handle(SIGINT);
+  if (handle_sigint_)
+      handle(SIGINT);
 #endif
 #ifdef SIGHUP
   handle(SIGHUP);

@@ -315,7 +315,11 @@ CLSCF::do_vector(double& eelec, double& nucrep)
   double *intbuf = 
     int_initialize_erep(flags,0,centers,centers,centers,centers);
 
+#ifdef SGI
+  int_storage(12500000);
+#else
   int_storage(1000000);
+#endif
 
   int_init_bounds();
 

@@ -34,6 +34,7 @@ const ClassDesc &fl1c = SymmMolecularCoor::class_desc_;
 const ClassDesc &fl2 = QNewtonOpt::class_desc_;
 const ClassDesc &fl3 = GDIISOpt::class_desc_;
 const ClassDesc &fl4 = EFCOpt::class_desc_;
+const ClassDesc &fl5 = BFGSUpdate::class_desc_;
 # ifndef PARAGON
 #   include <util/group/messshm.h>
     const ClassDesc &fl8 = ShmMessageGrp::class_desc_;

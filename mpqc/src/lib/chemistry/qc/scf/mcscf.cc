@@ -290,12 +290,14 @@ MCSCF::compute()
     
     printf("\n  MCSCF::compute: energy accuracy = %g\n\n",
            _energy.desired_accuracy());
+    fflush(stdout);
 
     double eelec,nucrep;
     do_vector(eelec,nucrep);
       
     // this will be done elsewhere eventually
     printf("  total scf energy = %20.15f\n",eelec+nucrep);
+    fflush(stdout);
 
     set_energy(eelec+nucrep);
     _energy.set_actual_accuracy(_energy.desired_accuracy());
@@ -306,9 +308,11 @@ MCSCF::compute()
 
     printf("\n  MCSCF::compute: gradient accuracy = %g\n\n",
            _gradient.desired_accuracy());
+    fflush(stdout);
 
     do_gradient(gradient);
     gradient.print("cartesian gradient");
+    fflush(stdout);
     set_gradient(gradient);
 
     _gradient.set_actual_accuracy(_gradient.desired_accuracy());
@@ -372,7 +376,11 @@ MCSCF::do_vector(double& eelec, double& nucrep)
   double *intbuf = 
     int_initialize_erep(flags,0,centers,centers,centers,centers);
 
+#ifdef SGI
+  int_storage(12500000);
+#else
   int_storage(1000000);
+#endif
 
   int_init_bounds();
 
@@ -388,8 +396,10 @@ MCSCF::do_vector(double& eelec, double& nucrep)
     if (fabs(olde-eelec) < 1.0e-13)
       break;
 
+    printf("ci1 = %g ci2 = %g ci3 = %g\n",ci1,ci2,ci3);
     printf("iter %5d energy = %20.15f delta = %15.10g\n",
            iter,eelec+nucrep,olde-eelec);
+    fflush(stdout);
 
     RefSymmSCMatrix fa = _gr_hcore.copy();
     fa.accumulate(_fockc);
@@ -529,6 +539,7 @@ MCSCF::do_vector(double& eelec, double& nucrep)
     s=-s;
   
   printf("ci1 = %lf ci2 = %lf ci3 = %lf\n",ci1,ci2,ci3);
+  fflush(stdout);
 
   double c1 = (s+1)/sqrt(2*(1+s*s));
   double c2 = (s-1)/sqrt(2*(1+s*s));
@@ -570,6 +581,7 @@ MCSCF::do_vector(double& eelec, double& nucrep)
   
   printf("s = %lf, ci1 = %lf, ci2 = %lf\n",s,c1,c2);
   printf("occa = %lf, occb = %lf\n",occa,occb);
+  fflush(stdout);
 
   _eigenvectors = _gr_vector;
   _eigenvectors.computed() = 1;

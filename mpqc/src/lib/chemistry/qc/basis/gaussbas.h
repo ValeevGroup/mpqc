@@ -160,6 +160,19 @@ class GaussianBasisSet: public SavableState
                      GaussianShell** shell,
                      const std::vector<int>& center_to_nshell);
 
+    // Counts shells in this basis for this chemical element
+    int count_shells_(Ref<KeyVal>& keyval, const char* elemname, const char* sbasisname, BasisFileSet& bases,
+		      int havepure, int pure);
+    // Constructs this basis
+    void get_shells_(int& ishell, Ref<KeyVal>& keyval, const char* elemname, const char* sbasisname, BasisFileSet& bases,
+		     int havepure, int pure);
+    // Counts shells in an even-tempered primitive basis
+    int count_even_temp_shells_(Ref<KeyVal>& keyval, const char* elemname, const char* sbasisname,
+                                int havepure, int pure);
+    // Constructs an even-tempered primitive basis
+    void get_even_temp_shells_(int& ishell, Ref<KeyVal>& keyval, const char* elemname, const char* sbasisname,
+                               int havepure, int pure);
+    // Constructs basis set specified as an array of shells
     void recursively_get_shell(int&,Ref<KeyVal>&,
                                const char*,const char*,BasisFileSet&,
                                int,int,int);
@@ -245,10 +258,14 @@ class GaussianBasisSet: public SavableState
         necessary to copy the library files to your machine and set the
         SCLIBDIR environmental variable.
 
-        The basis set itself is also given in the ParsedKeyVal format.  It
-        is a vector of shells with the keyword :basis: followed by the
+        The basis set itself is also given in the ParsedKeyVal format. There are two
+        recognized formats for basis sets:
+        <dl>
+
+        <dt>array of shells<dd> One must specify the keyword :basis: followed by the
         lowercase atomic name followed by : followed by the basis set name
-        (which may need to be placed inside double quotes).  Each shell
+        (which may need to be placed inside double quotes). The value for the keyword
+        is an array of shells. Each shell
         reads the following keywords:
 
         <dl>
@@ -279,7 +296,7 @@ class GaussianBasisSet: public SavableState
 
         </dl>
 
-        An example might be easier to understand.  This is a basis set
+        <dd>An example might be easier to understand.  This is a basis set
         specificition for STO-2G carbon:
 
         <pre>
@@ -297,7 +314,48 @@ class GaussianBasisSet: public SavableState
            })
          ]
         )
-        </pre> */
+        </pre>
+
+        <dt>basis set of even-tempered primitive Gaussians<dd>
+        Such basis set format is given as a group of keywords. The name of the group is :basis: followed by the
+        lowercase atomic name followed by : followed by the basis set name
+        (which may need to be placed inside double quotes).
+        The group of keywords must contain vectors <tt>am</tt> and <tt>nprim</tt>,
+        which specify the angular momentum and the number of shells in each
+        block of even-tempered primitives. In addition, one must provide any
+        two of the following vectors:
+
+        <dl>
+          <dt><tt>first_exp</tt><dd> The exponent of the "tightest" primitive Gaussian in the block.
+
+          <dt><tt>last_exp</tt><dd> The exponent of the most "diffuse" primitive Gaussian in the block.
+
+          <dt><tt>exp_ratio</tt><dd> The ratio of exponents of consecutive primitive Gaussians
+          in the block.
+
+        </dl>
+
+        <dd>Note that the dimensions of each vector must be the same.
+
+        Here's an example of a basis set composed of 2 blocks of even-tempered s-functions
+        and 1 block of even-tempered p-functions.
+
+        <pre>
+        basis: (
+         neon: "20s5s13p":(
+
+           am = [ 0 0 1 ]
+           nprim = [ 20 5 13 ]
+           first_exp = [ 1000.0 0.1  70.0 ]
+           last_exp =  [    1.0 0.01  0.1 ]
+
+         )
+        )
+        </pre>
+
+        </dl>
+
+        */
     GaussianBasisSet(const Ref<KeyVal>&);
     GaussianBasisSet(StateIn&);
     virtual ~GaussianBasisSet();

@@ -388,9 +388,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
             }
           sbasisname = strcpy(new char[strlen(name_)+1],name_);
         }
-      recursively_get_shell(ishell,keyval,
-                            AtomInfo::name(Z),
-                            sbasisname,bases,havepure,pure,0);
+      ishell += count_shells_(keyval, AtomInfo::name(Z), sbasisname, bases, havepure, pure);
       delete[] sbasisname;
     }
   nshell_ = ishell;
@@ -431,9 +429,7 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
         }
 
       int ishell_old = ishell;
-      recursively_get_shell(ishell,keyval,
-                            AtomInfo::name(Z),
-                            sbasisname,bases,havepure,pure,1);
+      get_shells_(ishell, keyval, AtomInfo::name(Z), sbasisname, bases, havepure, pure);
 
       center_to_nshell_[iatom] = ishell - ishell_old;
 
@@ -535,6 +531,229 @@ GaussianBasisSet::set_matrixkit(const Ref<SCMatrixKit>& mk)
   so_matrixkit_ = new BlockedSCMatrixKit(matrixkit_);
 }
 
+
+int
+GaussianBasisSet::count_shells_(Ref<KeyVal>& keyval, const char* element, const char* basisname, BasisFileSet& bases,
+				int havepure, int pure)
+{
+  int nshell = 0;
+  char keyword[KeyVal::MaxKeywordLength];
+
+  sprintf(keyword,":basis:%s:%s",element,basisname);
+  bool exists = keyval->exists(keyword);
+  if (!exists) {
+    keyval = bases.keyval(keyval, basisname);
+    exists = keyval->exists(keyword);
+    if (!exists) {
+      ExEnv::err0() << indent
+                    << scprintf("GaussianBasisSet::count_shells_ couldn't find \"%s\":\n", keyword);
+      keyval->errortrace(ExEnv::err0());
+      throw std::runtime_error("GaussianBasisSet::count_shells_ -- couldn't find the basis set");
+    }
+  }
+
+  // Check if the basis set is an array of shells
+  keyval->count(keyword);
+  if (keyval->error() != KeyVal::OK) {
+    nshell = count_even_temp_shells_(keyval, element, basisname, havepure, pure);
+  }
+  else {
+    recursively_get_shell(nshell, keyval, element, basisname,
+                          bases, havepure, pure, 0);
+  }
+
+  return nshell;
+}
+
+void
+GaussianBasisSet::get_shells_(int& ishell, Ref<KeyVal>& keyval, const char* element, const char* basisname, BasisFileSet& bases,
+			      int havepure, int pure)
+{
+  char keyword[KeyVal::MaxKeywordLength];
+
+  sprintf(keyword,":basis:%s:%s:am",
+          element,basisname);
+  if (keyval->exists(keyword)) {
+    get_even_temp_shells_(ishell, keyval, element, basisname, havepure, pure);
+  }
+  else {
+    recursively_get_shell(ishell, keyval, element, basisname,
+                          bases, havepure, pure, 1);
+  }
+}
+
+
+int
+GaussianBasisSet::count_even_temp_shells_(Ref<KeyVal>& keyval, const char* element, const char* basisname,
+                                          int havepure, int pure)
+{
+  int nshell;
+  char keyword[KeyVal::MaxKeywordLength];
+
+  sprintf(keyword,":basis:%s:%s:am",element,basisname);
+  if (!keyval->exists(keyword)) {
+    sprintf(keyword,":basis:%s:%s",element,basisname);
+    ExEnv::err0() << indent
+                  << scprintf("GaussianBasisSet::count_even_temp_shells_ -- couldn't read \"%s\":\n", keyword);
+    throw std::runtime_error("GaussianBasisSet::count_even_temp_shells_ -- basis set specification is invalid");
+  }
+
+  // count the number of even-tempered primitive blocks
+  int nblocks = keyval->count(keyword) - 1;
+  if (keyval->error() != KeyVal::OK) {
+    ExEnv::err0() << indent
+                  << scprintf("GaussianBasisSet::count_even_temp_shells_ -- couldn't read \"%s\":\n", keyword);
+    throw std::runtime_error("GaussianBasisSet::count_even_temp_shells_ -- failed to read am");
+  }
+  if (nblocks == -1)
+    return 0;
+
+  sprintf(keyword,":basis:%s:%s:nprim", element, basisname);
+  int j = keyval->count(keyword) - 1;
+  if (nblocks != j) {
+    ExEnv::err0() << indent
+                  << scprintf("GaussianBasisSet::count_even_temp_shells_ -- problem reading \"%s\":\n", keyword);
+    throw std::runtime_error("GaussianBasisSet::count_even_temp_shells_ -- am and nprim have different dimensions");
+  }
+
+  for(int b=0; b<=nblocks; b++) {
+    sprintf(keyword,":basis:%s:%s:nprim:%d", element, basisname, b);
+    int nprim = keyval->intvalue(keyword);
+    if (nprim <= 0) {
+      ExEnv::err0() << indent
+                    << scprintf("GaussianBasisSet::count_even_temp_shells_ -- problem with \"%s\":\n", keyword);
+      throw std::runtime_error("GaussianBasisSet::count_shells_ -- the number of primitives has to be positive");
+    }
+    nshell += nprim;
+  }
+
+  return nshell;
+}
+
+
+void
+GaussianBasisSet::get_even_temp_shells_(int& ishell, Ref<KeyVal>& keyval, const char* element, const char* basisname,
+                                          int havepure, int pure)
+{
+  char keyword[KeyVal::MaxKeywordLength];
+
+  // count the number of even-tempered primitive blocks
+  int nblocks = keyval->count(keyword) - 1;
+  if (keyval->error() != KeyVal::OK) {
+    ExEnv::err0() << indent
+                  << scprintf("GaussianBasisSet::get_even_temp_shells_ -- couldn't read \"%s\":\n", keyword);
+    throw std::runtime_error("GaussianBasisSet::get_even_temp_shells_ -- failed to read am");
+  }
+  if (nblocks == -1)
+    return;
+
+  sprintf(keyword,":basis:%s:%s:nprim", element, basisname);
+  int j = keyval->count(keyword) - 1;
+  if (nblocks != j) {
+    ExEnv::err0() << indent
+                  << scprintf("GaussianBasisSet::get_even_temp_shells_ -- problem reading \"%s\":\n", keyword);
+    throw std::runtime_error("GaussianBasisSet::get_even_temp_shells_ -- am and nprim have different dimensions");
+  }
+
+  sprintf(keyword,":basis:%s:%s:last_exp", element, basisname);
+  bool have_last_exp = keyval->exists(keyword);
+
+  sprintf(keyword,":basis:%s:%s:first_exp", element, basisname);
+  bool have_first_exp = keyval->exists(keyword);
+
+  sprintf(keyword,":basis:%s:%s:exp_ratio", element, basisname);
+  bool have_exp_ratio = keyval->exists(keyword);
+
+  if ( !have_first_exp && !have_last_exp )
+    throw std::runtime_error("GaussianBasisSet::get_even_temp_shells_ -- neither last_exp nor first_exp has been specified");
+
+  if ( have_first_exp && have_last_exp && have_exp_ratio)
+    throw std::runtime_error("GaussianBasisSet::get_even_temp_shells_ -- only two of (last_exp,first_exp,exp_ratio) can be specified");
+
+  if ( !have_first_exp && !have_last_exp && have_exp_ratio)
+    throw std::runtime_error("GaussianBasisSet::get_even_temp_shells_ -- any two of (last_exp,first_exp,exp_ratio) must be specified");
+
+  for(int b=0; b<=nblocks; b++) {
+
+    sprintf(keyword,":basis:%s:%s:nprim:%d", element, basisname, b);
+    int nprim = keyval->intvalue(keyword);
+    if (nprim <= 0) {
+      ExEnv::err0() << indent
+                    << scprintf("GaussianBasisSet::get_even_temp_shells_ -- problem with \"%s\":\n", keyword);
+      throw std::runtime_error("GaussianBasisSet::get_even_temp_shells_ -- the number of primitives has to be positive");
+    }
+
+    sprintf(keyword,":basis:%s:%s:am:%d", element, basisname, b);
+    int l = keyval->intvalue(keyword);
+    if (l < 0) {
+      ExEnv::err0() << indent
+                    << scprintf("GaussianBasisSet::get_even_temp_shells_ -- problem with \"%s\":\n", keyword);
+      throw std::runtime_error("GaussianBasisSet::get_even_temp_shells_ -- angular momentum has to be non-negative");
+    }
+
+    double alpha0, alphaN, beta;
+    if (have_first_exp) {
+      sprintf(keyword,":basis:%s:%s:first_exp:%d", element, basisname, b);
+      alpha0 = keyval->doublevalue(keyword);
+      if (alpha0 <= 0.0) {
+        ExEnv::err0() << indent
+                      << scprintf("GaussianBasisSet::get_even_temp_shells_ -- problem with \"%s\":\n", keyword);
+        throw std::runtime_error("GaussianBasisSet::get_even_temp_shells_ -- orbital exponents have to be positive");
+      }
+    }
+      
+    if (have_last_exp) {
+      sprintf(keyword,":basis:%s:%s:last_exp:%d", element, basisname, b);
+      alphaN = keyval->doublevalue(keyword);
+      if (alphaN <= 0.0) {
+        ExEnv::err0() << indent
+                      << scprintf("GaussianBasisSet::get_even_temp_shells_ -- problem with \"%s\":\n", keyword);
+        throw std::runtime_error("GaussianBasisSet::get_even_temp_shells_ -- orbital exponents have to be positive");
+      }
+    }
+
+    if (have_last_exp && have_first_exp) {
+      if (alphaN > alpha0) {
+        ExEnv::err0() << indent
+                      << scprintf("GaussianBasisSet::get_even_temp_shells_ -- problem with \"%s\":\n", keyword);
+        throw std::runtime_error("GaussianBasisSet::get_even_temp_shells_ -- last_exps[i] must be smaller than first_exp[i]");
+      }
+      beta = pow(alpha0/alphaN,1.0/nprim);
+    }
+    else {
+      sprintf(keyword,":basis:%s:%s:exp_ratio:%d", element, basisname, b);
+      beta = keyval->doublevalue(keyword);
+      if (beta <= 1.0) {
+        ExEnv::err0() << indent
+                      << scprintf("GaussianBasisSet::get_even_temp_shells_ -- problem with \"%s\":\n", keyword);
+        throw std::runtime_error("GaussianBasisSet::get_even_temp_shells_ -- exponent ratio has to be greater than 1.0");
+      }
+      if (have_last_exp)
+        alpha0 = alphaN * pow(beta,nprim-1);
+    }
+
+    double alpha = alpha0;
+    for(int p=0; p<nprim; p++, alpha /= beta ) {
+      int* am = new int[1];
+      double* exps = new double[1];
+      double** coeffs = new double*[1];
+      coeffs[0] = new double[1];
+
+      exps[0] = alpha;
+      am[0] = l;
+      coeffs[0][0] = 1.0;
+
+      if (l <= 1)
+        shell_[ishell] = new GaussianShell(1,1,exps,am,GaussianShell::Cartesian,coeffs,GaussianShell::Normalized);
+      else if (havepure)
+        shell_[ishell] = new GaussianShell(1,1,exps,am,GaussianShell::Pure,coeffs,GaussianShell::Normalized);
+      else
+        shell_[ishell] = new GaussianShell(1,1,exps,am,GaussianShell::Cartesian,coeffs,GaussianShell::Normalized);
+      ishell++;
+    }
+  }
+}
+
 void
 GaussianBasisSet::
   recursively_get_shell(int&ishell,Ref<KeyVal>&keyval,
@@ -557,7 +776,7 @@ GaussianBasisSet::
       ExEnv::err0() << indent
            << scprintf("GaussianBasisSet:: couldn't find \"%s\":\n", keyword);
       keyval->errortrace(ExEnv::err0());
-      exit(1);
+      throw std::runtime_error("GaussianBasisSet::recursively_get_shell -- couldn't find the basis set");
     }
   if (!count) return;
   for (int j=0; j<count; j++) {

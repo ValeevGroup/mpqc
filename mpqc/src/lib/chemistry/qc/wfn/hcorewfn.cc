@@ -28,6 +28,8 @@
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 
+#include <math/scmat/blocked.h>
+
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/petite.h>
@@ -57,8 +59,10 @@ HCoreWfn::HCoreWfn(StateIn& s) :
   OneBodyWavefunction(s)
 {
   s.get(nirrep_);
-  s.get(docc);
-  s.get(socc);
+  s.get(docc_);
+  s.get(socc_);
+  s.get(user_occ_);
+  s.get(total_charge_);
 }
 
 HCoreWfn::HCoreWfn(const RefKeyVal&keyval):
@@ -67,30 +71,52 @@ HCoreWfn::HCoreWfn(const RefKeyVal&keyval):
   CharacterTable ct = molecule()->point_group()->char_table();
 
   nirrep_ = ct.ncomp();
-  docc = new int[nirrep_];
-  socc = new int[nirrep_];
+  docc_ = new int[nirrep_];
+  socc_ = new int[nirrep_];
+
+  user_occ_ = 0;
+  total_charge_ = keyval->intvalue("total_charge");
+
+  int nuclear_charge = int(molecule()->nuclear_charge());
+  int computed_charge = nuclear_charge;
 
   for (int i=0; i < nirrep_; i++) {
-    docc[i]=0;
-    socc[i]=0;
+    docc_[i]=0;
+    socc_[i]=0;
 
-    if (keyval->exists("docc",i))
-      docc[i] = keyval->intvalue("docc",i);
-    if (keyval->exists("socc",i))
-      socc[i] = keyval->intvalue("socc",i);
+    if (keyval->exists("docc",i)) {
+      docc_[i] = keyval->intvalue("docc",i);
+      computed_charge += 2;
+      user_occ_ = 1;
+      }
+    if (keyval->exists("socc",i)) {
+      socc_[i] = keyval->intvalue("socc",i);
+      computed_charge += 1;
+      user_occ_ = 1;
+      }
+  }
+  if (!keyval->exists("total_charge")) {
+    if (user_occ_) total_charge_ = computed_charge;
+    else total_charge_ = 0;
+    }
+  else if (total_charge_ != computed_charge && user_occ_) {
+    ExEnv::err() << node0 << indent
+                 << "ERROR: HCoreWfn: total_charge != computed_charge"
+                 << endl;
+    abort();
+    }
+  if (total_charge_ > nuclear_charge) {
+    ExEnv::err() << node0 << indent
+                 << "ERROR: HCoreWfn: total_charge > nuclear_charge"
+                 << endl;
+    abort();
   }
 }
 
 HCoreWfn::~HCoreWfn()
 {
-  if (docc) {
-    delete[] docc;
-    docc=0;
-  }
-  if (socc) {
-    delete[] socc;
-    socc=0;
-  }
+  delete[] docc_;
+  delete[] socc_;
 }
 
 void
@@ -98,8 +124,10 @@ HCoreWfn::save_data_state(StateOut&s)
 {
   OneBodyWavefunction::save_data_state(s);
   s.put(nirrep_);
-  s.put(docc,nirrep_);
-  s.put(socc,nirrep_);
+  s.put(docc_,nirrep_);
+  s.put(socc_,nirrep_);
+  s.put(user_occ_);
+  s.put(total_charge_);
 }
 
 RefSCMatrix
@@ -132,6 +160,21 @@ HCoreWfn::oso_eigenvectors()
 
     eigenvalues_ = val;
     eigenvalues_.computed() = 1;
+
+    if (!user_occ_) {
+      int nelectron = int(molecule()->nuclear_charge()) - total_charge_;
+      int ndocc = nelectron/2;
+      int nsocc = nelectron%2;
+      fill_occ(val, ndocc, docc_, nsocc, socc_);
+
+      ExEnv::out() << node0 << indent << "docc = [";
+      for (int i=0; i<nirrep_; i++) ExEnv::out() << node0 << " " << docc_[i];
+      ExEnv::out() << node0 << "]" << endl;
+
+      ExEnv::out() << node0 << indent << "socc = [";
+      for (int i=0; i<nirrep_; i++) ExEnv::out() << node0 << " " << socc_[i];
+      ExEnv::out() << node0 << "]" << endl;
+      }
   }
   
   return oso_eigenvectors_.result_noupdate();
@@ -151,6 +194,7 @@ RefSymmSCMatrix
 HCoreWfn::density()
 {
   if (!density_.computed()) {
+    RefSCMatrix mo_to_so = this->mo_to_so();
     RefDiagSCMatrix mo_density(oso_dimension(), basis_matrixkit());
     BlockedDiagSCMatrix *modens
       = BlockedDiagSCMatrix::castdown(mo_density.pointer());
@@ -164,15 +208,19 @@ HCoreWfn::density()
     for (int iblock=0; iblock < modens->nblocks(); iblock++) {
       RefDiagSCMatrix modens_ib = modens->block(iblock);
       int i;
-      for (i=0; i < docc[iblock]; i++)
+      for (i=0; i < docc_[iblock]; i++)
         modens_ib->set_element(i, 2.0);
-      for ( ; i < docc[iblock]+socc[iblock]; i++)
+      for ( ; i < docc_[iblock]+socc_[iblock]; i++)
         modens_ib->set_element(i, 1.0);
     }
 
+    if (debug_ > 1) mo_density.print("MO Density");
+
     RefSymmSCMatrix dens(so_dimension(), basis_matrixkit());
     dens->assign(0.0);
-    dens->accumulate_transform(mo_to_so(), mo_density);
+    dens->accumulate_transform(mo_to_so, mo_density);
+
+    if (debug_ > 1) dens.print("SO Density");
 
     density_ = dens;
     density_.computed() = 1;
@@ -184,9 +232,9 @@ HCoreWfn::density()
 double
 HCoreWfn::occupation(int ir, int i)
 {
-  if (i < docc[ir])
+  if (i < docc_[ir])
     return 2.0;
-  else if (i < docc[ir]+socc[ir])
+  else if (i < docc_[ir]+socc_[ir])
     return 1.0;
   else
     return 0.0;
@@ -207,14 +255,17 @@ HCoreWfn::spin_unrestricted()
 void
 HCoreWfn::compute()
 {
-  eigenvectors();
   RefSymmSCMatrix h_oso(oso_dimension(), basis_matrixkit());
   h_oso.assign(0.0);
   h_oso.accumulate_transform(so_to_orthog_so(),core_hamiltonian());
   RefSymmSCMatrix p_oso(oso_dimension(), basis_matrixkit());
   p_oso.assign(0.0);
   p_oso.accumulate_transform(so_to_orthog_so(), density());
+  if (debug_ > 1) p_oso.print("OSO Density");
+  if (debug_ > 1) h_oso.print("OSO Hamiltonian");
   double e = (h_oso*p_oso).trace();
+  if (debug_ > 0)
+    ExEnv::out() << node0 << indent << "HCoreWfn: e = " << e << endl;
   set_energy(e);
   set_actual_value_accuracy(desired_value_accuracy());
   return;
@@ -224,6 +275,50 @@ int
 HCoreWfn::value_implemented() const
 {
   return 1;
+}
+
+void
+HCoreWfn::fill_occ(const RefDiagSCMatrix &evals,int ndocc,int *docc,
+                   int nsocc, int *socc)
+{
+  BlockedDiagSCMatrix *bval
+    = BlockedDiagSCMatrix::require_castdown(evals.pointer(),
+                                            "HCoreWave: getting occupations");
+  int nblock = bval->nblocks();
+  if (nblock != nirrep_) {
+    ExEnv::err() << "ERROR: HCoreWfn: fill_occ: nblock != nirrep" << endl
+                 << "  nblock = " << nblock << endl
+                 << "  nirrep = " << nirrep_ << endl;
+    abort();
+  }
+  memset(docc,0,sizeof(docc[0])*nblock);
+  memset(socc,0,sizeof(socc[0])*nblock);
+  for (int i=0; i<ndocc; i++) {
+    double lowest;
+    int lowest_j = -1;
+    for (int j=0; j<nblock; j++) {
+      RefDiagSCMatrix block = bval->block(j);
+      if (block.null()) continue;
+      double current = block->get_element(docc[j]);
+      if (lowest_j < 0 || lowest > current) {
+        lowest = current;
+        lowest_j = j;
+      }
+    }
+    docc[lowest_j]++;
+  }
+  for (int i=0; i<nsocc; i++) {
+    double lowest;
+    int lowest_j = -1;
+    for (int j=0; j<nblock; j++) {
+      double current = bval->block(j)->get_element(docc[j]+socc[j]);
+      if (lowest_j < 0 || lowest > current) {
+        lowest = current;
+        lowest_j = j;
+      }
+    }
+    socc[lowest_j]++;
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -156,9 +156,14 @@ class HCoreWfn: public OneBodyWavefunction {
 #   include <util/class/classd.h>
   private:
     int nirrep_;
-    int *docc;
-    int *socc;
-    
+    int *docc_;
+    int *socc_;
+    int total_charge_;
+    int user_occ_;
+
+    void fill_occ(const RefDiagSCMatrix &evals,
+                  int ndocc, int *docc, int nsocc = 0, int *socc = 0);
+
     void compute();
 
   public:

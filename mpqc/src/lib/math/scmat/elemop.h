@@ -350,6 +350,28 @@ class SCElementMaxAbs: public SCElementOp {
 };
 SavableState_REF_dec(SCElementMaxAbs);
 
+class SCElementSumAbs: public SCElementOp {
+#   define CLASSNAME SCElementSumAbs
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    int deferred_;
+    double r;
+  public:
+    SCElementSumAbs();
+    SCElementSumAbs(StateIn&);
+    ~SCElementSumAbs();
+    void save_data_state(StateOut&);
+    void process(SCMatrixBlockIter&);
+    int has_collect();
+    void defer_collect(int);
+    void collect(const RefMessageGrp&);
+    double result();
+    void init() { r = 0.0; }
+};
+SavableState_REF_dec(SCElementSumAbs);
+
 class SCElementDot: public SCElementOp {
 #   define CLASSNAME SCElementDot
 #   define HAVE_STATEIN_CTOR

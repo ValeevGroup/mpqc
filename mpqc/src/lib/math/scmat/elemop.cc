@@ -709,6 +709,66 @@ SCElementMaxAbs::collect(const RefMessageGrp&msg)
 }
 
 /////////////////////////////////////////////////////////////////////////
+// SCElementSumAbs members
+
+SavableState_REF_def(SCElementSumAbs);
+#define CLASSNAME SCElementSumAbs
+#define PARENTS   public SCElementOp
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+SCElementSumAbs::SCElementSumAbs():r(0.0), deferred_(0) {}
+SCElementSumAbs::SCElementSumAbs(StateIn&s):
+  SCElementOp(s)
+{
+  s.get(r);
+  s.get(deferred_);
+}
+void
+SCElementSumAbs::save_data_state(StateOut&s)
+{
+  s.put(r);
+  s.put(deferred_);
+}
+void *
+SCElementSumAbs::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+SCElementSumAbs::~SCElementSumAbs() {}
+void
+SCElementSumAbs::process(SCMatrixBlockIter&i)
+{
+  for (i.reset(); i; ++i) {
+      r += fabs(i.get());
+    }
+}
+double
+SCElementSumAbs::result()
+{
+  return r;
+}
+int
+SCElementSumAbs::has_collect()
+{
+  return 1;
+}
+void
+SCElementSumAbs::defer_collect(int h)
+{
+  deferred_=h;
+}
+void
+SCElementSumAbs::collect(const RefMessageGrp&msg)
+{
+  if (!deferred_)
+    msg->sum(r);
+}
+
+/////////////////////////////////////////////////////////////////////////
 // SCElementAssign members
 
 #define CLASSNAME SCElementAssign

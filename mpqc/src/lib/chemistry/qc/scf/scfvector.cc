@@ -153,7 +153,7 @@ SCF::compute_vector(double& eelec)
   CharacterTable ct = molecule()->point_group().char_table();
   
   int homo_ir, lumo_ir;
-  int homo_mo, lumo_mo;
+  int homo_mo = -1, lumo_mo = -1;
   double homo=-1e99, lumo=1e99;
   for (i=0; i < pl->nirrep(); i++) {
     int nf=pl->nfunction(i);
@@ -194,17 +194,22 @@ SCF::compute_vector(double& eelec)
     }
   }
 
-  cout << node0 << endl << indent
-       << scprintf("HOMO is %5d %3s = %10.6f",
-                   homo_mo+1, 
-                   ct.gamma(homo_ir).symbol(),
-                   homo)
-       << endl << indent
-       << scprintf("LUMO is %5d %3s = %10.6f",
-                   lumo_mo+1, 
-                   ct.gamma(lumo_ir).symbol(),
-                   lumo)
-       << endl;
+  if (homo_mo >= 0) {
+    cout << node0 << endl << indent
+         << scprintf("HOMO is %5d %3s = %10.6f",
+                     homo_mo+1, 
+                     ct.gamma(homo_ir).symbol(),
+                     homo)
+         << endl;
+  }
+  if (lumo_mo >= 0) {
+    cout << node0 << indent
+         << scprintf("LUMO is %5d %3s = %10.6f",
+                     lumo_mo+1, 
+                     ct.gamma(lumo_ir).symbol(),
+                     lumo)
+         << endl;
+  }
 
   // free up evals
   evals = 0;

@@ -137,6 +137,11 @@ class MBPT2_R12: public MBPT2 {
 	a method where the union of OBS and ABS is used to construct the RI basis. The default is "ABS".
         The default in 2.3.0 and later will be "CABS+".
 
+        <dt><tt>lindep_tol</tt><dd> The tolerance used to detect linearly
+        dependent basis functions in the RI basis set.
+        The precise meaning depends on the
+        orthogonalization method.  The default value is 1e-8.
+
 	<dt><tt>r12ints</tt><dd> This specifies how to store transformed MO integrals.
 	Valid values are:
 

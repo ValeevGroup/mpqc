@@ -526,8 +526,8 @@ MolecularFrequencies::displace(int disp)
        << "Displacement point group: " << endl
        << incindent << displacement_point_group_ << decindent;
   cout << node0 << indent
-       << "Molecular point group: " << endl
-       << incindent << mol_->point_group() << decindent;
+       << "Displaced molecule: " << endl
+       << incindent << mol_ << decindent;
 #endif
 
   cout << node0 << indent

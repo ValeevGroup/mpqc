@@ -75,6 +75,14 @@ matrixtest(RefSCDimension d1,RefSCDimension d2,RefSCDimension d3)
   f.eigvals().print("f.eigvals()");
   f.i().print("f.i()");
 
+  RefSymmSCMatrix h(d3);
+  for (i=0; i<d3.n(); i++) {
+    for (j=0; j<=i; j++) {
+      h(i,j) = f(i,j);
+    }
+  }
+  h.print("h should be equal to f");
+
   RefSCMatrix g(d3,d3);
   for (i=0; i<d3.n(); i++) {
       for (j=0; j<d3.n(); j++) {

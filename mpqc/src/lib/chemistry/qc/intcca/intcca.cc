@@ -28,6 +28,7 @@
 #include <stdexcept>
 
 #include <util/state/stateio.h>
+#include <util/misc/ccaenv.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/intcca/intcca.h>
 #include <chemistry/qc/intcca/obintcca.h>
@@ -39,7 +40,7 @@ using namespace Chemistry::QC::GaussianBasis;
 
 static ClassDesc IntegralCCA_cd(
   typeid(IntegralCCA),"IntegralCCA",1,"public Integral",
-  0, 0, create<IntegralCCA>);
+  0, create<IntegralCCA>, create<IntegralCCA>);
 
 extern Ref<Integral> default_integral;
 
@@ -66,17 +67,69 @@ IntegralCCA::IntegralCCA(IntegralEvaluatorFactory eval_factory, bool use_opaque,
   initialize_transforms();
 }
 
+IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
+  Integral(keyval)
+{
+
+  initialize_transforms();
+
+  string buffer = keyval->stringvalue("integral_buffer");
+  if ( keyval->error() != KeyVal::OK ) buffer = "opaque";
+  if ( buffer == "opaque" ) use_opaque_ = 1;
+  else if ( buffer == "array" ) use_opaque_ = 0;
+  else {
+    ExEnv::err0() << indent << "unrecognized integral buffer type" << endl;
+    abort();
+  }
+
+  factory_type_ = keyval->stringvalue("evaluator_factory");
+  if ( keyval->error() != KeyVal::OK ) {
+    ExEnv::err0() << indent << "evaluator factory is required" << endl;
+    abort();
+  }
+
+  sc_molecule_ << keyval->describedclassvalue("molecule");
+  if (sc_molecule_.null()) {
+      ExEnv::err0() << indent << "molecule is required" << endl;
+      abort();
+  }
+
+  ccaffeine::AbstractFramework &framework_ = *CCAEnv::get_framework(); 
+
+  // framework setup
+  type_map_ = framework_.createTypeMap();
+  services_ = framework_.getServices("uber","UberComponent",type_map_);
+  my_id_    = services_.getComponentID();
+  services_.registerUsesPort("bs","gov.cca.BuilderService",type_map_);
+  bs_ = services_.getPort("bs");
+
+  // get eval factory
+  fac_id_ = bs_.createInstance("evaluator_factory",factory_type_,type_map_);
+  services_.registerUsesPort("IntegralEvaluatorFactory",
+                             "Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory",
+                             type_map_);
+  fac_con_ = bs_.connect(my_id_,"IntegralEvaluatorFactory",
+                        fac_id_,"IntegralEvaluatorFactory");
+  eval_factory_ = services_.getPort("IntegralEvaluatorFactory");
+
+  // set molecule on factory
+  molecule_ = Chemistry::Chemistry_Molecule::_create();
+  molecule_.initialize(sc_molecule_->natom(),"bohr");
+  for( int i=0; i<sc_molecule_->natom(); ++i ) {
+    molecule_.set_atomic_number( i, sc_molecule_->Z(i) );
+    for( int j=0; j<3; ++j ) {
+      molecule_.set_cart_coor( i, j, sc_molecule_->r(i,j) );
+    }
+  }
+  eval_factory_.set_molecule(molecule_);
+
+}
+
 IntegralCCA::IntegralCCA(StateIn& s) :
   Integral(s)
 {
   initialize_transforms();
 }
-
-//IntegralCCA::IntegralCCA(const Ref<KeyVal>& k) :
-//  Integral(k)
-//{
-//  initialize_transforms();
-//}
 
 void
 IntegralCCA::save_data_state(StateOut& s)

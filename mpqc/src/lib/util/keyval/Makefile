@@ -87,11 +87,11 @@ ipv2_parse.cc: ipv2_parse.yy
 	if test -f ipv2_parse.tmp.cc.h; then \
 	  echo "Older bison detected."; \
 	  /bin/mv ipv2_parse.tmp.cc.h ipv2_parse.h; \
-	  /bin/mv ipv2_parse.tmp.cc.output ipv2_parse.output \
+	  /bin/mv ipv2_parse.tmp.cc.output ipv2_parse.output; \
 	else \
 	  echo "Newer bison detected."; \
 	  /bin/mv ipv2_parse.tmp.hh ipv2_parse.h; \
-	  /bin/mv ipv2_parse.tmp.output ipv2_parse.output \
+	  /bin/mv ipv2_parse.tmp.output ipv2_parse.output; \
 	fi
 	-@rm -f ipv2_parse.tmp*
 

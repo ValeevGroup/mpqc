@@ -5,7 +5,10 @@
  * code. */
 
 /* $Log$
- * Revision 1.4  1994/10/21 20:39:49  cljanss
+ * Revision 1.5  1994/10/31 17:55:34  etseidl
+ * include string.h in generated c file
+ *
+ * Revision 1.4  1994/10/21  20:39:49  cljanss
  * Work arounds for IRIX 6.0 IDO/C++ bugs.
  *
  * Revision 1.3  1994/10/18  23:03:49  etseidl
@@ -140,6 +143,7 @@ char *extra_includes;
   fprintf(output,"\n");
   fprintf(output,"#include <stdio.h>\n");
   fprintf(output,"#include <stdlib.h>\n");
+  fprintf(output,"#include <string.h>\n");
   fprintf(output,"#include <util/sgen/sgen.h>\n");
   if (extra_includes) fprintf(output,"%s",extra_includes);
   fprintf(output,"#include \"%s.h\"\n",BaseName);

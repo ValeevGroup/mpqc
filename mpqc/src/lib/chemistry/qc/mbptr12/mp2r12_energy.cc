@@ -259,241 +259,245 @@ void MP2R12Energy::compute()
   //
   // Alpha-alpha pairs
   //
-  if (debug_ > 1) {
-    Vaa.print("Alpha-alpha V matrix");
-    Baa.print("Alpha-alpha MP2-R12/A B matrix");
-    if (ebc == false)
-      Aaa.print("Alpha-alpha A matrix");
-  }
+  if (naa > 0) {
+    if (debug_ > 1) {
+      Vaa.print("Alpha-alpha V matrix");
+      Baa.print("Alpha-alpha MP2-R12/A B matrix");
+      if (ebc == false)
+        Aaa.print("Alpha-alpha A matrix");
+    }
 
-  // Allocate the B matrix:
-  // 1) in MP2-R12/A the B matrix is the same for all pairs
-  // 2) int MP2-R12/A' the B matrix is pair-specific
-  RefSymmSCMatrix Baa_ij = Baa.clone();
-  if (stdapprox_ == LinearR12::StdApprox_A) {
+    // Allocate the B matrix:
+    // 1) in MP2-R12/A the B matrix is the same for all pairs
+    // 2) int MP2-R12/A' the B matrix is pair-specific
+    RefSymmSCMatrix Baa_ij = Baa.clone();
+    if (stdapprox_ == LinearR12::StdApprox_A) {
 #if USE_INVERT
-    Baa_ij->assign(Baa);
-    Baa_ij->gen_invert_this();
-    if (debug_ > 1)
-      Baa_ij.print("Inverse alpha-alpha MP2-R12/A B matrix");
+      Baa_ij->assign(Baa);
+      Baa_ij->gen_invert_this();
+      if (debug_ > 1)
+        Baa_ij.print("Inverse alpha-alpha MP2-R12/A B matrix");
 #else
-    // solve B * C = V
-    RefSCMatrix Caa_kl_by_ij = Caa_.clone();
-    sc::exp::lapack_linsolv_symmnondef(Baa, Caa_kl_by_ij, Vaa);
-    Caa_kl_by_ij = Caa_kl_by_ij.t();
-    Caa_.assign(Caa_kl_by_ij);  Caa_kl_by_ij = 0;
-    Caa_.scale(-1.0);
+      // solve B * C = V
+      RefSCMatrix Caa_kl_by_ij = Caa_.clone();
+      sc::exp::lapack_linsolv_symmnondef(Baa, Caa_kl_by_ij, Vaa);
+      Caa_kl_by_ij = Caa_kl_by_ij.t();
+      Caa_.assign(Caa_kl_by_ij);  Caa_kl_by_ij = 0;
+      Caa_.scale(-1.0);
 #endif
-  }
-
-  int ij=0;
-  for(int i=0; i<nocc_act; i++)
-    for(int j=0; j<i; j++, ij++) {
-
-      if (ij%ntasks != me)
-        continue;
-
-      RefSCVector Vaa_ij = Vaa.get_column(ij);
-
-      // In MP2-R12/A' matrices B are pair-specific:
-      // Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
-      if (stdapprox_ == LinearR12::StdApprox_Ap) {
-        Baa_ij.assign(Baa);
-        int kl=0;
-        for(int k=0; k<nocc_act; k++)
-          for(int l=0; l<k; l++, kl++) {
-            int ow=0;
-            for(int o=0; o<nocc_act; o++)
-              for(int w=0; w<o; w++, ow++) {
-
-                if (ow > kl)
-                  continue;
-
-                double fx = 0.5 * (evals_act_occ[k] + evals_act_occ[l] + evals_act_occ[o] + evals_act_occ[w]
-                                   - 2.0*evals_act_occ[i] - 2.0*evals_act_occ[j]) *
-                            Xaa.get_element(kl,ow);
-
-                Baa_ij.accumulate_element(kl,ow,fx);
-
-                // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
-                if (ebc == false) {
-                  double fy = 0.0;
-                  int cd=0;
-                  for(int c=0; c<nvir_act; c++)
-                    for(int d=0; d<c; d++, cd++) {
-
-                      fy -= Aaa.get_element(kl,cd)*Aaa.get_element(ow,cd)/(evals_act_vir[c] + evals_act_vir[d]
-                                                                         - evals_act_occ[i] - evals_act_occ[j]);
-                    }
-
-                  Baa_ij.accumulate_element(kl,ow,fy);
+    }
+    
+    int ij=0;
+    for(int i=0; i<nocc_act; i++)
+      for(int j=0; j<i; j++, ij++) {
+        
+        if (ij%ntasks != me)
+          continue;
+        
+        RefSCVector Vaa_ij = Vaa.get_column(ij);
+        
+        // In MP2-R12/A' matrices B are pair-specific:
+        // Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
+        if (stdapprox_ == LinearR12::StdApprox_Ap) {
+          Baa_ij.assign(Baa);
+          int kl=0;
+          for(int k=0; k<nocc_act; k++)
+            for(int l=0; l<k; l++, kl++) {
+              int ow=0;
+              for(int o=0; o<nocc_act; o++)
+                for(int w=0; w<o; w++, ow++) {
+                  
+                  if (ow > kl)
+                    continue;
+                  
+                  double fx = 0.5 * (evals_act_occ[k] + evals_act_occ[l] + evals_act_occ[o] + evals_act_occ[w]
+                                     - 2.0*evals_act_occ[i] - 2.0*evals_act_occ[j]) *
+                    Xaa.get_element(kl,ow);
+                  
+                  Baa_ij.accumulate_element(kl,ow,fx);
+                  
+                  // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
+                  if (ebc == false) {
+                    double fy = 0.0;
+                    int cd=0;
+                    for(int c=0; c<nvir_act; c++)
+                      for(int d=0; d<c; d++, cd++) {
+                        
+                        fy -= Aaa.get_element(kl,cd)*Aaa.get_element(ow,cd)/(evals_act_vir[c] + evals_act_vir[d]
+                                                                             - evals_act_occ[i] - evals_act_occ[j]);
+                      }
+                    
+                    Baa_ij.accumulate_element(kl,ow,fy);
+                  }
+                  
                 }
-
-              }
-          }
-        if (debug_ > 1)
-          Baa_ij.print("Alpha-alpha MP2-R12/A' B matrix");
-
+            }
+          if (debug_ > 1)
+            Baa_ij.print("Alpha-alpha MP2-R12/A' B matrix");
+          
 #if USE_INVERT
-        Baa_ij->gen_invert_this();
-
-        if (debug_ > 1)
-          Baa_ij.print("Inverse alpha-alpha MP2-R12/A' B matrix");
+          Baa_ij->gen_invert_this();
+          
+          if (debug_ > 1)
+            Baa_ij.print("Inverse alpha-alpha MP2-R12/A' B matrix");
 #endif
-
-      }
-
+          
+        }
+        
 #if USE_INVERT
-      // The r12 amplitudes B^-1 * V
-      RefSCVector Cij = -1.0*(Baa_ij * Vaa_ij);
-      const int nkl = Cij.dim().n();
-      for(int kl=0; kl<nkl; kl++)
-        Caa_.set_element(ij,kl,Cij.get_element(kl));
-#else
-      RefSCVector Cij = Vaa_ij.clone();
-      if (stdapprox_ == LinearR12::StdApprox_A) {
-        double* v = new double[Cij.n()];
-        Caa_.get_row(ij).convert(v);
-        Cij.assign(v);
-        delete[] v;
-      }
-      else {
-        // solve B * C = V
-        Cij = Vaa_ij.clone();
-        sc::exp::lapack_linsolv_symmnondef(Baa_ij, Cij, Vaa_ij);
-        Cij.scale(-1.0);
+        // The r12 amplitudes B^-1 * V
+        RefSCVector Cij = -1.0*(Baa_ij * Vaa_ij);
         const int nkl = Cij.dim().n();
         for(int kl=0; kl<nkl; kl++)
           Caa_.set_element(ij,kl,Cij.get_element(kl));
-      }
+#else
+        RefSCVector Cij = Vaa_ij.clone();
+        if (stdapprox_ == LinearR12::StdApprox_A) {
+          double* v = new double[Cij.n()];
+          Caa_.get_row(ij).convert(v);
+          Cij.assign(v);
+          delete[] v;
+        }
+        else {
+          // solve B * C = V
+          Cij = Vaa_ij.clone();
+          sc::exp::lapack_linsolv_symmnondef(Baa_ij, Cij, Vaa_ij);
+          Cij.scale(-1.0);
+          const int nkl = Cij.dim().n();
+          for(int kl=0; kl<nkl; kl++)
+            Caa_.set_element(ij,kl,Cij.get_element(kl));
+        }
 #endif
-      double eaa_ij = 2.0*Vaa_ij.dot(Cij);
-      er12_aa_vec[ij] = eaa_ij;
-    }
-  Baa_ij = 0;
-  msg->sum(er12_aa_vec,naa,0,-1);
-  er12_aa_->assign(er12_aa_vec);
-  emp2r12_aa_->assign(emp2_aa);
-  emp2r12_aa_->accumulate(er12_aa_);
-  delete[] er12_aa_vec;
+        double eaa_ij = 2.0*Vaa_ij.dot(Cij);
+        er12_aa_vec[ij] = eaa_ij;
+      }
+    Baa_ij = 0;
+    msg->sum(er12_aa_vec,naa,0,-1);
+    er12_aa_->assign(er12_aa_vec);
+    emp2r12_aa_->assign(emp2_aa);
+    emp2r12_aa_->accumulate(er12_aa_);
+    delete[] er12_aa_vec;
+  }
 
   //
   // Alpha-beta pairs
   //
-  if (debug_ > 1) {
-    Vab.print("Alpha-beta V matrix");
-    Bab.print("Alpha-beta MP2-R12/A B matrix");
-    if (ebc == false)
-      Aab.print("Alpha-beta A matrix");
-  }
-
-  RefSymmSCMatrix Bab_ij = Bab.clone();
-  // In MP2-R12/A the B matrix is the same for all pairs
-  if (stdapprox_ == LinearR12::StdApprox_A) {
+  if (nab > 0) {
+    if (debug_ > 1) {
+      Vab.print("Alpha-beta V matrix");
+      Bab.print("Alpha-beta MP2-R12/A B matrix");
+      if (ebc == false)
+        Aab.print("Alpha-beta A matrix");
+    }
+    
+    RefSymmSCMatrix Bab_ij = Bab.clone();
+    // In MP2-R12/A the B matrix is the same for all pairs
+    if (stdapprox_ == LinearR12::StdApprox_A) {
 #if USE_INVERT
-    Bab_ij.assign(Bab);
-    if (debug_ > 1)
-      Bab_ij.print("Inverse alpha-beta MP2-R12/A B matrix");
-    Bab_ij->gen_invert_this();
+      Bab_ij.assign(Bab);
+      if (debug_ > 1)
+        Bab_ij.print("Inverse alpha-beta MP2-R12/A B matrix");
+      Bab_ij->gen_invert_this();
 #else
-    // solve B * C = V
-    RefSCMatrix Cab_kl_by_ij = Cab_.clone();
-    sc::exp::lapack_linsolv_symmnondef(Bab, Cab_kl_by_ij, Vab);
-    Cab_kl_by_ij = Cab_kl_by_ij.t();
-    Cab_.assign(Cab_kl_by_ij);  Cab_kl_by_ij = 0;
-    Cab_.scale(-1.0);
+      // solve B * C = V
+      RefSCMatrix Cab_kl_by_ij = Cab_.clone();
+      sc::exp::lapack_linsolv_symmnondef(Bab, Cab_kl_by_ij, Vab);
+      Cab_kl_by_ij = Cab_kl_by_ij.t();
+      Cab_.assign(Cab_kl_by_ij);  Cab_kl_by_ij = 0;
+      Cab_.scale(-1.0);
 #endif
-  }
-
-  ij=0;
-  for(int i=0; i<nocc_act; i++)
-    for(int j=0; j<nocc_act; j++, ij++) {
-
-      if (ij%ntasks != me)
-        continue;
-
-      RefSCVector Vab_ij = Vab.get_column(ij);
-
-      // In MP2-R12/A' matrices B are pair-specific:
-      // Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
-      if (stdapprox_ == LinearR12::StdApprox_Ap) {
-        Bab_ij.assign(Bab);
-        int kl=0;
-        for(int k=0; k<nocc_act; k++)
-          for(int l=0; l<nocc_act; l++, kl++) {
-            int ow=0;
-            for(int o=0; o<nocc_act; o++)
-              for(int w=0; w<nocc_act; w++, ow++) {
-
-                if (ow > kl)
-                  continue;
-
-                double fx = 0.5 * (evals_act_occ[k] + evals_act_occ[l] + evals_act_occ[o] + evals_act_occ[w]
-                                   - 2.0*evals_act_occ[i] - 2.0*evals_act_occ[j]) *
-                Xab.get_element(kl,ow);
-                Bab_ij.accumulate_element(kl,ow,fx);
-
-                // If EBC is not assumed add Akl,cd*Acd,ow/(ec+ed-ei-ej)
-                if (ebc == false) {
-                  double fy = 0.0;
-                  int cd=0;
-                  for(int c=0; c<nvir_act; c++)
-                    for(int d=0; d<nvir_act; d++, cd++) {
-
-                      fy -= Aab.get_element(kl,cd)*Aab.get_element(ow,cd)/(evals_act_vir[c] + evals_act_vir[d]
-                                                                           - evals_act_occ[i] - evals_act_occ[j]);
-                    }
-
-                  Bab_ij.accumulate_element(kl,ow,fy);
+    }
+    
+    int ij=0;
+    for(int i=0; i<nocc_act; i++)
+      for(int j=0; j<nocc_act; j++, ij++) {
+        
+        if (ij%ntasks != me)
+          continue;
+        
+        RefSCVector Vab_ij = Vab.get_column(ij);
+        
+        // In MP2-R12/A' matrices B are pair-specific:
+        // Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
+        if (stdapprox_ == LinearR12::StdApprox_Ap) {
+          Bab_ij.assign(Bab);
+          int kl=0;
+          for(int k=0; k<nocc_act; k++)
+            for(int l=0; l<nocc_act; l++, kl++) {
+              int ow=0;
+              for(int o=0; o<nocc_act; o++)
+                for(int w=0; w<nocc_act; w++, ow++) {
+                  
+                  if (ow > kl)
+                    continue;
+                  
+                  double fx = 0.5 * (evals_act_occ[k] + evals_act_occ[l] + evals_act_occ[o] + evals_act_occ[w]
+                                     - 2.0*evals_act_occ[i] - 2.0*evals_act_occ[j]) *
+                    Xab.get_element(kl,ow);
+                  Bab_ij.accumulate_element(kl,ow,fx);
+                  
+                  // If EBC is not assumed add Akl,cd*Acd,ow/(ec+ed-ei-ej)
+                  if (ebc == false) {
+                    double fy = 0.0;
+                    int cd=0;
+                    for(int c=0; c<nvir_act; c++)
+                      for(int d=0; d<nvir_act; d++, cd++) {
+                        
+                        fy -= Aab.get_element(kl,cd)*Aab.get_element(ow,cd)/(evals_act_vir[c] + evals_act_vir[d]
+                                                                             - evals_act_occ[i] - evals_act_occ[j]);
+                      }
+                    
+                    Bab_ij.accumulate_element(kl,ow,fy);
+                  }
+                  
                 }
-
-              }
-          }
-        if (debug_ > 1)
+            }
+          if (debug_ > 1)
 	    Bab_ij.print("Alpha-beta MP2-R12/A' B matrix");
-
+          
 #if USE_INVERT
-        Bab_ij->gen_invert_this();
-
-        if (debug_ > 1)
-          Bab_ij.print("Inverse alpha-beta MP2-R12/A' B matrix");
+          Bab_ij->gen_invert_this();
+          
+          if (debug_ > 1)
+            Bab_ij.print("Inverse alpha-beta MP2-R12/A' B matrix");
 #endif
-
-      }
+          
+        }
 
 #if USE_INVERT
-      // the r12 amplitudes B^-1 * V
-      RefSCVector Cij = -1.0*(Bab_ij * Vab_ij);
-      const int nkl = Cij.dim().n();
-      for(int kl=0; kl<nkl; kl++)
-        Cab_.set_element(ij,kl,Cij.get_element(kl));
-#else
-      RefSCVector Cij = Vab_ij.clone();
-      if (stdapprox_ == LinearR12::StdApprox_A) {
-        double* v = new double[Cij.n()];
-        Cab_.get_row(ij).convert(v);
-        Cij.assign(v);
-        delete[] v;
-      }
-      else {
-        // solve B * C = V
-        Cij = Vab_ij.clone();
-        sc::exp::lapack_linsolv_symmnondef(Bab_ij, Cij, Vab_ij);
-        Cij.scale(-1.0);
+        // the r12 amplitudes B^-1 * V
+        RefSCVector Cij = -1.0*(Bab_ij * Vab_ij);
         const int nkl = Cij.dim().n();
         for(int kl=0; kl<nkl; kl++)
           Cab_.set_element(ij,kl,Cij.get_element(kl));
-      }
+#else
+        RefSCVector Cij = Vab_ij.clone();
+        if (stdapprox_ == LinearR12::StdApprox_A) {
+          double* v = new double[Cij.n()];
+          Cab_.get_row(ij).convert(v);
+          Cij.assign(v);
+          delete[] v;
+        }
+        else {
+          // solve B * C = V
+          Cij = Vab_ij.clone();
+          sc::exp::lapack_linsolv_symmnondef(Bab_ij, Cij, Vab_ij);
+          Cij.scale(-1.0);
+          const int nkl = Cij.dim().n();
+          for(int kl=0; kl<nkl; kl++)
+            Cab_.set_element(ij,kl,Cij.get_element(kl));
+        }
 #endif
-      double eab_ij = 1.0*Vab_ij.dot(Cij);
-      er12_ab_vec[ij] = eab_ij;
-    }
-  Bab_ij=0;
-  msg->sum(er12_ab_vec,nab,0,-1);
-  er12_ab_->assign(er12_ab_vec);
-  emp2r12_ab_->assign(emp2_ab);
-  emp2r12_ab_->accumulate(er12_ab_);
-  delete[] er12_ab_vec;
+        double eab_ij = 1.0*Vab_ij.dot(Cij);
+        er12_ab_vec[ij] = eab_ij;
+      }
+    Bab_ij=0;
+    msg->sum(er12_ab_vec,nab,0,-1);
+    er12_ab_->assign(er12_ab_vec);
+    emp2r12_ab_->assign(emp2_ab);
+    emp2r12_ab_->accumulate(er12_ab_);
+    delete[] er12_ab_vec;
+  }
 
   evaluated_ = true;
   

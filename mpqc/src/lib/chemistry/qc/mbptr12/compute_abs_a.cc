@@ -1051,62 +1051,60 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     ExEnv::out0() << indent << "Computed intermediates V, X, and T" << endl;
 
   if (nproc > 1) {
-    // Use MemoryGrp to send all contributions to intermediates V, X, and T to node 0
-    msg->sum(Vaa_ijkl,naa*naa,0,0);
-    msg->sum(Vab_ijkl,nab*nab,0,0);
-    msg->sum(Xaa_ijkl,naa*naa,0,0);
-    msg->sum(Xab_ijkl,nab*nab,0,0);
-    msg->sum(Taa_ijkl,naa*naa,0,0);
-    msg->sum(Tab_ijkl,nab*nab,0,0);
+    // Use MemoryGrp to accumulate contributions to intermediates V, X, and T on all nodes
+    msg->sum(Vaa_ijkl,naa*naa,0,-1);
+    msg->sum(Vab_ijkl,nab*nab,0,-1);
+    msg->sum(Xaa_ijkl,naa*naa,0,-1);
+    msg->sum(Xab_ijkl,nab*nab,0,-1);
+    msg->sum(Taa_ijkl,naa*naa,0,-1);
+    msg->sum(Tab_ijkl,nab*nab,0,-1);
   }
 
   if (debug_)
-    ExEnv::out0() << indent << "Gathered intermediates V, X, and T on node 0" << endl;
+    ExEnv::out0() << indent << "Gathered intermediates V, X, and T" << endl;
 
   // Add intermediates contribution to their global values
-  if (me == 0) {
-    for(int ij=0;ij<naa;ij++)
-      for(int kl=0;kl<=ij;kl++) {
-	int ijkl = ij*naa+kl;
-	int klij = kl*naa+ij;
-	double velem = Vaa->get_element(ij,kl) + Vaa_ijkl[ijkl];
-	Vaa->set_element(ij,kl,velem);
-	if (ij != kl) {
-	  velem = Vaa->get_element(kl,ij) + Vaa_ijkl[klij];
-	  Vaa->set_element(kl,ij,velem);
-	}
-	double xelem = Xaa->get_element(ij,kl) + Xaa_ijkl[ijkl];
-	Xaa->set_element(ij,kl,xelem);
-	if (ij != kl) {
-	  xelem = Xaa->get_element(kl,ij) + Xaa_ijkl[klij];
-	  Xaa->set_element(kl,ij,xelem);
-	}
-	double belem = Baa->get_element(ij,kl) + 0.5*(Taa_ijkl[ijkl] + Taa_ijkl[klij]);
-	Baa->set_element(ij,kl,belem);
-	Baa->set_element(kl,ij,belem);
+  for(int ij=0;ij<naa;ij++)
+    for(int kl=0;kl<=ij;kl++) {
+      int ijkl = ij*naa+kl;
+      int klij = kl*naa+ij;
+      double velem = Vaa->get_element(ij,kl) + Vaa_ijkl[ijkl];
+      Vaa->set_element(ij,kl,velem);
+      if (ij != kl) {
+        velem = Vaa->get_element(kl,ij) + Vaa_ijkl[klij];
+        Vaa->set_element(kl,ij,velem);
       }
-    
-    for(int ij=0;ij<nab;ij++)
-      for(int kl=0;kl<=ij;kl++) {
-	int ijkl = ij*nab+kl;
-	int klij = kl*nab+ij;
-	double velem = Vab->get_element(ij,kl) + Vab_ijkl[ijkl];
-	Vab->set_element(ij,kl,velem);
-	if (ij != kl) {
-	  velem = Vab->get_element(kl,ij) + Vab_ijkl[klij];
-	  Vab->set_element(kl,ij,velem);
-	}
-	double xelem = Xab->get_element(ij,kl) + Xab_ijkl[ijkl];
-	Xab->set_element(ij,kl,xelem);
-	if (ij != kl) {
-	  xelem = Xab->get_element(kl,ij) + Xab_ijkl[klij];
-	  Xab->set_element(kl,ij,xelem);
-	}
-	double belem = Bab->get_element(ij,kl) + 0.5*(Tab_ijkl[ijkl] + Tab_ijkl[klij]);
-	Bab->set_element(ij,kl,belem);
-	Bab->set_element(kl,ij,belem);
+      double xelem = Xaa->get_element(ij,kl) + Xaa_ijkl[ijkl];
+      Xaa->set_element(ij,kl,xelem);
+      if (ij != kl) {
+        xelem = Xaa->get_element(kl,ij) + Xaa_ijkl[klij];
+        Xaa->set_element(kl,ij,xelem);
       }
-  }
+      double belem = Baa->get_element(ij,kl) + 0.5*(Taa_ijkl[ijkl] + Taa_ijkl[klij]);
+      Baa->set_element(ij,kl,belem);
+      Baa->set_element(kl,ij,belem);
+    }
+
+  for(int ij=0;ij<nab;ij++)
+    for(int kl=0;kl<=ij;kl++) {
+      int ijkl = ij*nab+kl;
+      int klij = kl*nab+ij;
+      double velem = Vab->get_element(ij,kl) + Vab_ijkl[ijkl];
+      Vab->set_element(ij,kl,velem);
+      if (ij != kl) {
+        velem = Vab->get_element(kl,ij) + Vab_ijkl[klij];
+        Vab->set_element(kl,ij,velem);
+      }
+      double xelem = Xab->get_element(ij,kl) + Xab_ijkl[ijkl];
+      Xab->set_element(ij,kl,xelem);
+      if (ij != kl) {
+        xelem = Xab->get_element(kl,ij) + Xab_ijkl[klij];
+        Xab->set_element(kl,ij,xelem);
+      }
+      double belem = Bab->get_element(ij,kl) + 0.5*(Tab_ijkl[ijkl] + Tab_ijkl[klij]);
+      Bab->set_element(ij,kl,belem);
+      Bab->set_element(kl,ij,belem);
+    }
   msg->sum(aoint_computed);
 
   if (me == 0 && mole->if_to_checkpoint() && r12intsacc->can_restart()) {
@@ -1123,11 +1121,10 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   biggest_ints_3.combine(msg);
 #endif
 
-  if (me == 0) {
 #if PRINT_BIGGEST_INTS
     ExEnv::out0() << "biggest 1/4 transformed ints" << endl;
     for (int i=0; i<biggest_ints_1.ncontrib(); i++) {
-      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::out0() << scprintf("%3d %3d %3d %3d %16.12f",
 				biggest_ints_1.indices(i)[0],
 				biggest_ints_1.indices(i)[1],
 				biggest_ints_1.indices(i)[2],
@@ -1138,7 +1135,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     }
     ExEnv::out0() << "biggest 2/4 transformed ints" << endl;
     for (int i=0; i<biggest_ints_2.ncontrib(); i++) {
-      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::out0() << scprintf("%3d %3d %3d %3d %16.12f",
 				biggest_ints_2.indices(i)[0],
 				biggest_ints_2.indices(i)[1],
 				biggest_ints_2.indices(i)[2],
@@ -1149,7 +1146,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     }
     ExEnv::out0() << "restricted 2/4 transformed ints" << endl;
     for (int i=0; i<biggest_ints_2s.ncontrib(); i++) {
-      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::out0() << scprintf("%3d %3d %3d %3d %16.12f",
 				biggest_ints_2s.indices(i)[0],
 				biggest_ints_2s.indices(i)[1],
 				biggest_ints_2s.indices(i)[2],
@@ -1160,7 +1157,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     }
     ExEnv::out0() << "biggest 3/4 transformed ints (in 3.)" << endl;
     for (int i=0; i<biggest_ints_3a.ncontrib(); i++) {
-      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::out0() << scprintf("%3d %3d %3d %3d %16.12f",
 				biggest_ints_3a.indices(i)[0],
 				biggest_ints_3a.indices(i)[1],
 				biggest_ints_3a.indices(i)[2],
@@ -1171,7 +1168,7 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     }
     ExEnv::out0() << "biggest 3/4 transformed ints (in 4.)" << endl;
     for (int i=0; i<biggest_ints_3.ncontrib(); i++) {
-      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
+      ExEnv::out0() << scprintf("%3d %3d %3d %3d %16.12f",
 				biggest_ints_3.indices(i)[0],
 				biggest_ints_3.indices(i)[1],
 				biggest_ints_3.indices(i)[2],
@@ -1194,7 +1191,6 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 		    << indent << "were computed: " << aoint_computed
 		    << endl;
     }
-  }
   
   /*--------------------------
     Cleanup

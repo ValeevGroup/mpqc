@@ -1064,13 +1064,13 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   
   // If running in distributed environment use Message group to collect intermediates and pair energies on node 0
   if (nproc > 1) {
-    // should only collect contributions from the nodes that computed the intermediates
-    msg->sum(Vaa_ijkl,naa*naa,0,0);
-    msg->sum(Vab_ijkl,nab*nab,0,0);
-    msg->sum(Xaa_ijkl,naa*naa,0,0);
-    msg->sum(Xab_ijkl,nab*nab,0,0);
-    msg->sum(Taa_ijkl,naa*naa,0,0);
-    msg->sum(Tab_ijkl,nab*nab,0,0);
+    // collect contributions from the nodes that computed the intermediates and broadcast to all nodes
+    msg->sum(Vaa_ijkl,naa*naa,0,-1);
+    msg->sum(Vab_ijkl,nab*nab,0,-1);
+    msg->sum(Xaa_ijkl,naa*naa,0,-1);
+    msg->sum(Xab_ijkl,nab*nab,0,-1);
+    msg->sum(Taa_ijkl,naa*naa,0,-1);
+    msg->sum(Tab_ijkl,nab*nab,0,-1);
 
     int naa = emp2_aa.dim().n();
     int nab = emp2_ab.dim().n();
@@ -1080,64 +1080,60 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     bzerofast(epair_ab,nab);
     emp2_aa.convert(epair_aa);
     emp2_ab.convert(epair_ab);
-    msg->sum(epair_aa,naa,0,0);
-    msg->sum(epair_ab,nab,0,0);
+    msg->sum(epair_aa,naa,0,-1);
+    msg->sum(epair_ab,nab,0,-1);
     msg->sync();
-    if (me == 0) {
-      emp2_aa.assign(epair_aa);
-      emp2_ab.assign(epair_ab);
-    }
+    emp2_aa.assign(epair_aa);
+    emp2_ab.assign(epair_ab);
     delete[] epair_aa;
     delete[] epair_ab;
   }
   
   if (debug_)
-    ExEnv::out0() << indent << "Gathered intermediates V, X, and T and MP2 pair energies on node 0" << endl;
+    ExEnv::out0() << indent << "Gathered intermediates V, X, and T and MP2 pair energies" << endl;
   
   // Add intermediates contribution to their global values
-  if (me == 0) {
-    for(int ij=0;ij<naa;ij++)
-      for(int kl=0;kl<=ij;kl++) {
-	int ijkl = ij*naa+kl;
-	int klij = kl*naa+ij;
-	double velem = Vaa->get_element(ij,kl) + Vaa_ijkl[ijkl];
-	Vaa->set_element(ij,kl,velem);
-	if (ij != kl) {
-	  velem = Vaa->get_element(kl,ij) + Vaa_ijkl[klij];
-	  Vaa->set_element(kl,ij,velem);
-	}
-	double xelem = Xaa->get_element(ij,kl) + Xaa_ijkl[ijkl];
-	Xaa->set_element(ij,kl,xelem);
-	if (ij != kl) {
-	  xelem = Xaa->get_element(kl,ij) + Xaa_ijkl[klij];
-	  Xaa->set_element(kl,ij,xelem);
-	}
-	double belem = Baa->get_element(ij,kl) + 0.5*(Taa_ijkl[ijkl] + Taa_ijkl[klij]);
-	Baa->set_element(ij,kl,belem);
-	Baa->set_element(kl,ij,belem);
+  for(int ij=0;ij<naa;ij++)
+    for(int kl=0;kl<=ij;kl++) {
+      int ijkl = ij*naa+kl;
+      int klij = kl*naa+ij;
+      double velem = Vaa->get_element(ij,kl) + Vaa_ijkl[ijkl];
+      Vaa->set_element(ij,kl,velem);
+      if (ij != kl) {
+        velem = Vaa->get_element(kl,ij) + Vaa_ijkl[klij];
+        Vaa->set_element(kl,ij,velem);
       }
-    
-    for(int ij=0;ij<nab;ij++)
-      for(int kl=0;kl<=ij;kl++) {
-	int ijkl = ij*nab+kl;
-	int klij = kl*nab+ij;
-	double velem = Vab->get_element(ij,kl) + Vab_ijkl[ijkl];
-	Vab->set_element(ij,kl,velem);
-	if (ij != kl) {
-	  velem = Vab->get_element(kl,ij) + Vab_ijkl[klij];
-	  Vab->set_element(kl,ij,velem);
-	}
-	double xelem = Xab->get_element(ij,kl) + Xab_ijkl[ijkl];
-	Xab->set_element(ij,kl,xelem);
-	if (ij != kl) {
-	  xelem = Xab->get_element(kl,ij) + Xab_ijkl[klij];
-	  Xab->set_element(kl,ij,xelem);
-	}
-	double belem = Bab->get_element(ij,kl) + 0.5*(Tab_ijkl[ijkl] + Tab_ijkl[klij]);
-	Bab->set_element(ij,kl,belem);
-	Bab->set_element(kl,ij,belem);
+      double xelem = Xaa->get_element(ij,kl) + Xaa_ijkl[ijkl];
+      Xaa->set_element(ij,kl,xelem);
+      if (ij != kl) {
+        xelem = Xaa->get_element(kl,ij) + Xaa_ijkl[klij];
+        Xaa->set_element(kl,ij,xelem);
       }
-  }
+      double belem = Baa->get_element(ij,kl) + 0.5*(Taa_ijkl[ijkl] + Taa_ijkl[klij]);
+      Baa->set_element(ij,kl,belem);
+      Baa->set_element(kl,ij,belem);
+    }
+
+  for(int ij=0;ij<nab;ij++)
+    for(int kl=0;kl<=ij;kl++) {
+      int ijkl = ij*nab+kl;
+      int klij = kl*nab+ij;
+      double velem = Vab->get_element(ij,kl) + Vab_ijkl[ijkl];
+      Vab->set_element(ij,kl,velem);
+      if (ij != kl) {
+        velem = Vab->get_element(kl,ij) + Vab_ijkl[klij];
+        Vab->set_element(kl,ij,velem);
+      }
+      double xelem = Xab->get_element(ij,kl) + Xab_ijkl[ijkl];
+      Xab->set_element(ij,kl,xelem);
+      if (ij != kl) {
+        xelem = Xab->get_element(kl,ij) + Xab_ijkl[klij];
+        Xab->set_element(kl,ij,xelem);
+      }
+      double belem = Bab->get_element(ij,kl) + 0.5*(Tab_ijkl[ijkl] + Tab_ijkl[klij]);
+      Bab->set_element(ij,kl,belem);
+      Bab->set_element(kl,ij,belem);
+    }
   msg->sum(aoint_computed);
 
   if (me == 0 && mole->if_to_checkpoint() && r12intsacc->can_restart()) {
@@ -1154,77 +1150,75 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
   biggest_ints_3.combine(msg);
 #endif
 
-  if (me == 0) {
 #if PRINT_BIGGEST_INTS
-    ExEnv::out0() << "biggest 1/4 transformed ints" << endl;
-    for (int i=0; i<biggest_ints_1.ncontrib(); i++) {
-      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
-				biggest_ints_1.indices(i)[0],
-				biggest_ints_1.indices(i)[1],
-				biggest_ints_1.indices(i)[2],
-				biggest_ints_1.indices(i)[3],
-				biggest_ints_1.val(i)
-				)
-		    << endl;
-    }
-    ExEnv::out0() << "biggest 2/4 transformed ints" << endl;
-    for (int i=0; i<biggest_ints_2.ncontrib(); i++) {
-      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
-				biggest_ints_2.indices(i)[0],
-				biggest_ints_2.indices(i)[1],
-				biggest_ints_2.indices(i)[2],
-				biggest_ints_2.indices(i)[3],
-				biggest_ints_2.val(i)
-				)
-		    << endl;
-    }
-    ExEnv::out0() << "restricted 2/4 transformed ints" << endl;
-    for (int i=0; i<biggest_ints_2s.ncontrib(); i++) {
-      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
-				biggest_ints_2s.indices(i)[0],
-				biggest_ints_2s.indices(i)[1],
-				biggest_ints_2s.indices(i)[2],
-				biggest_ints_2s.indices(i)[3],
-				biggest_ints_2s.val(i)
-				)
-		    << endl;
-    }
-    ExEnv::out0() << "biggest 3/4 transformed ints (in 3.)" << endl;
-    for (int i=0; i<biggest_ints_3a.ncontrib(); i++) {
-      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
-				biggest_ints_3a.indices(i)[0],
-				biggest_ints_3a.indices(i)[1],
-				biggest_ints_3a.indices(i)[2],
-				biggest_ints_3a.indices(i)[3],
-				biggest_ints_3a.val(i)
-				)
-		    << endl;
-    }
-    ExEnv::out0() << "biggest 3/4 transformed ints (in 4.)" << endl;
-    for (int i=0; i<biggest_ints_3.ncontrib(); i++) {
-      ExEnv::outn() << scprintf("%3d %3d %3d %3d %16.12f",
-				biggest_ints_3.indices(i)[0],
-				biggest_ints_3.indices(i)[1],
-				biggest_ints_3.indices(i)[2],
-				biggest_ints_3.indices(i)[3],
-				biggest_ints_3.val(i)
-				)
-		    << endl;
-    }
+  ExEnv::out0() << "biggest 1/4 transformed ints" << endl;
+  for (int i=0; i<biggest_ints_1.ncontrib(); i++) {
+    ExEnv::out0() << scprintf("%3d %3d %3d %3d %16.12f",
+                              biggest_ints_1.indices(i)[0],
+                              biggest_ints_1.indices(i)[1],
+                              biggest_ints_1.indices(i)[2],
+                              biggest_ints_1.indices(i)[3],
+                              biggest_ints_1.val(i)
+                              )
+    << endl;
+  }
+  ExEnv::out0() << "biggest 2/4 transformed ints" << endl;
+  for (int i=0; i<biggest_ints_2.ncontrib(); i++) {
+    ExEnv::out0() << scprintf("%3d %3d %3d %3d %16.12f",
+                              biggest_ints_2.indices(i)[0],
+                              biggest_ints_2.indices(i)[1],
+                              biggest_ints_2.indices(i)[2],
+                              biggest_ints_2.indices(i)[3],
+                              biggest_ints_2.val(i)
+                              )
+    << endl;
+  }
+  ExEnv::out0() << "restricted 2/4 transformed ints" << endl;
+  for (int i=0; i<biggest_ints_2s.ncontrib(); i++) {
+    ExEnv::out0() << scprintf("%3d %3d %3d %3d %16.12f",
+                              biggest_ints_2s.indices(i)[0],
+                              biggest_ints_2s.indices(i)[1],
+                              biggest_ints_2s.indices(i)[2],
+                              biggest_ints_2s.indices(i)[3],
+                              biggest_ints_2s.val(i)
+                              )
+    << endl;
+  }
+  ExEnv::out0() << "biggest 3/4 transformed ints (in 3.)" << endl;
+  for (int i=0; i<biggest_ints_3a.ncontrib(); i++) {
+    ExEnv::out0() << scprintf("%3d %3d %3d %3d %16.12f",
+                              biggest_ints_3a.indices(i)[0],
+                              biggest_ints_3a.indices(i)[1],
+                              biggest_ints_3a.indices(i)[2],
+                              biggest_ints_3a.indices(i)[3],
+                              biggest_ints_3a.val(i)
+                              )
+    << endl;
+  }
+  ExEnv::out0() << "biggest 3/4 transformed ints (in 4.)" << endl;
+  for (int i=0; i<biggest_ints_3.ncontrib(); i++) {
+  ExEnv::out0() << scprintf("%3d %3d %3d %3d %16.12f",
+                            biggest_ints_3.indices(i)[0],
+                            biggest_ints_3.indices(i)[1],
+                            biggest_ints_3.indices(i)[2],
+                            biggest_ints_3.indices(i)[3],
+                            biggest_ints_3.val(i)
+                            )
+    << endl;
+  }
 #endif
-    
-    // Print out various energies etc.
-    
-    if (debug_) {
-      ExEnv::out0() << indent << "Number of shell quartets for which AO integrals\n"
-		    << indent << "would have been computed without bounds checking: "
-		    << npass*nshell*nshell*(nshell+1)*(nshell+1)/2
-		    << endl;
-      
-      ExEnv::out0() << indent << "Number of shell quartets for which AO integrals\n"
-		    << indent << "were computed: " << aoint_computed
-		    << endl;
-    }
+
+  // Print out various energies etc.
+
+  if (debug_) {
+    ExEnv::out0() << indent << "Number of shell quartets for which AO integrals\n"
+    << indent << "would have been computed without bounds checking: "
+    << npass*nshell*nshell*(nshell+1)*(nshell+1)/2
+    << endl;
+
+    ExEnv::out0() << indent << "Number of shell quartets for which AO integrals\n"
+    << indent << "were computed: " << aoint_computed
+    << endl;
   }
   
   /*--------
@@ -1264,7 +1258,7 @@ int
 R12IntEval_sbs_A::compute_transform_batchsize_(size_t mem_alloc, size_t mem_static, int nocc_act, const int num_te_types)
 {
   // Check is have enough for even static objects
-  size_t mem_dyn = 0.0;
+  size_t mem_dyn = 0;
   if (mem_alloc <= mem_static)
     return 0;
   else

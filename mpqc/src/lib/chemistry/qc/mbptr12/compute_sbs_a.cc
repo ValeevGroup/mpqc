@@ -64,7 +64,7 @@ using namespace sc;
 #define PRINT3Q 0
 #define PRINT4Q 0
 #define PRINT4Q_MP2 0
-#define PRINT_NUM_TE_TYPES 3
+#define PRINT_NUM_TE_TYPES 1
 #define PRINT_R12_INTERMED 0
 
 #if PRINT_BIGGEST_INTS
@@ -721,7 +721,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
       for (int i = 0; i<ni; i++) {
 	for (int j = 0; j<nocc_act; j++) {
 	  if (index++ % nproc == me) {
-	    double *integral_ij_offset = mo_int + num_te_types*nbasis*nbasis*ij_index;
+	    double *integral_ij_offset = mo_int + nbasis*nbasis*(ij_index*num_te_types);
 	    for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++,integral_ij_offset+=nbasis*nbasis) {
 	      for (int y = 0; y < noso; y++) {
 		double *integral_ijyx_ptr = integral_ij_offset + y*nbasis;

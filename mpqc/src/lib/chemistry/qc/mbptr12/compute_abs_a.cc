@@ -62,7 +62,7 @@ using namespace sc;
 #define PRINT3Q 0
 #define PRINT4Q 0
 #define PRINT4Q_MP2 0
-#define PRINT_NUM_TE_TYPES 4
+#define PRINT_NUM_TE_TYPES 1
 #define PRINT_R12_INTERMED 0
 
 #if PRINT_BIGGEST_INTS

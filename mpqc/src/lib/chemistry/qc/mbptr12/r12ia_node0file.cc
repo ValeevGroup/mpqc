@@ -90,7 +90,7 @@ R12IntsAcc_Node0File::~R12IntsAcc_Node0File()
       
   // Destroy the file
   unlink(filename_);
-  delete[] filename_;
+  free(filename_);
 }
 
 void

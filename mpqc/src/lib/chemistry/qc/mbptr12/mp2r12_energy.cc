@@ -533,6 +533,8 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
 
   so.flush();
 
+  free(SA_str);
+  
   return;
 }
 

@@ -85,7 +85,7 @@ R12IntsAcc_MPIIOFile::~R12IntsAcc_MPIIOFile()
 	}
     }
   delete[] pairblk_;
-  delete[] filename_;
+  free(filename_);
 }
 
 void

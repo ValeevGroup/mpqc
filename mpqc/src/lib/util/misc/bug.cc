@@ -71,33 +71,32 @@ handler(int sig)
   if (signals[sig]) signals[sig]->got_signal(sig);
 }
 
-static char *
-append(char *cmd, const char *a)
+static void
+append(char *cmd, const char *a, int len)
 {
-  int len = strlen(a)+1;
-  if (cmd) len += strlen(cmd);
-  char *n = new char[len];
-  n[0] = '\0';
-  if (cmd) strcat(n,cmd);
-  strcat(n,a);
-  return n;
+  int l = strlen(cmd) + strlen(a)+1;
+  if (l > len) {
+      cout << "Debugger: command string too long" << endl;
+      abort();
+    }
+  strcat(cmd,a);
 }
 
-static char *
-append(char *cmd, char a)
+static void
+append(char *cmd, char a, int len)
 {
   char aa[2];
   aa[0] = a;
   aa[1] = '\0';
-  return append(cmd, aa);
+  append(cmd, aa, len);
 }
 
-static char *
-append(char *cmd, int i)
+static void
+append(char *cmd, int i, int len)
 {
   char a[128];
   sprintf(a,"%d",i);
-  return append(cmd, a);
+  append(cmd, a, len);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -360,22 +359,24 @@ Debugger::debug(const char *reason)
   if (cmd_) {
       int pid = getpid();
       // contruct the command name
-      char *cmd = 0;
+      const int cmdlen = 512;
+      char cmd[cmdlen];
+      cmd[0] = '\0';
       for (char *c=cmd_; *c;) {
           if (!strncmp("$(PID)",c,6)) {
-              cmd = append(cmd,pid);
+              append(cmd,pid,cmdlen);
               c += 6;
             }
           else if (!strncmp("$(EXEC)",c,7)) {
-              if (exec_) cmd = append(cmd,exec_);
+              if (exec_) append(cmd,exec_,cmdlen);
               c += 7;
             }
           else if (!strncmp("$(PREFIX)",c,9)) {
-              if (prefix_) cmd = append(cmd,prefix_);
+              if (prefix_) append(cmd,prefix_,cmdlen);
               c += 9;
             }
           else {
-              cmd = append(cmd,*c);
+              append(cmd,*c,cmdlen);
               c++;
             }
         }

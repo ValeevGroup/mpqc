@@ -637,14 +637,14 @@ SumDenFunctional::print(ostream& o) const
 {
   o << node0
     << indent << "Sum of Functionals:" << endl;
-  o << incindent;
+  o << node0 << incindent;
   for (int i=0; i<n_; i++) {
       o << node0 << indent << scprintf("%+18.16f",coefs_[i]) << endl;
-      o << incindent;
-      funcs_[i]->print(o);
-      o << decindent;
+      o << node0 << incindent;
+      funcs_[i]->print(o << node0);
+      o << node0 << decindent;
     }
-  o << decindent;
+  o << node0 << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -115,17 +115,17 @@ HSOSKS::print(ostream&o) const
 {
   o << node0 << indent
     << "Restricted Open Shell Kohn-Sham (HSOSKS) Parameters:" << endl;
-  o << incindent;
-  HSOSSCF::print(o);
+  o << node0 << incindent;
+  HSOSSCF::print(o << node0);
   o << node0 << indent << "Functional:" << endl;
-  o << incindent;
-  functional_->print(o);
-  o << decindent;
+  o << node0 << incindent;
+  functional_->print(o << node0);
+  o << node0 << decindent;
   o << node0 << indent << "Integrator:" << endl;
-  o << incindent;
-  integrator_->print(o);
-  o << decindent;
-  o << decindent;
+  o << node0 << incindent;
+  integrator_->print(o << node0);
+  o << node0 << decindent;
+  o << node0 << decindent;
 }
 
 double

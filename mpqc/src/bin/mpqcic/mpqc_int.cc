@@ -56,8 +56,9 @@ static RefMolecularCoor coor;
 static RefIHessianUpdate update;
 
 static RefSymmSCMatrix hessian;
-static RefSCVector xn, xprev;
-static RefSCVector gn, gprev;
+static RefSCVector xn;
+static RefSCVector gn;
+static RefSCVector cart_grad;
 
 RefLocalSCDimension di, dc;
 
@@ -230,9 +231,11 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
 
     xn = new LocalSCVector(di.pointer());
     gn = new LocalSCVector(di.pointer());
+    cart_grad = new LocalSCVector(dc.pointer());
 
     coor->to_internal(xn);
     gn->assign(0.0);
+    cart_grad->assign(0.0);
     
    // save it all to disk
     so.put(iter);
@@ -243,18 +246,20 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
     di.save_state(so);
     xn.save_state(so);
     gn.save_state(so);
+    cart_grad.save_state(so);
     hessian.save_state(so);
   }  else {
     STATEIN si("geom.dat","r+");
 
     si.get(iter);
-    mol.restore_state(si); 
+    mol.restore_state(si);
     coor.restore_state(si);
     update.restore_state(si);
     dc.restore_state(si);
     di.restore_state(si);
     xn.restore_state(si);
     gn.restore_state(si);
+    cart_grad.restore_state(si);
     hessian.restore_state(si);
 
    // make sure molecule and mol refer to the same object
@@ -266,11 +271,14 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
 
   fprintf(outfp,"\n Initial geometry in Geom_init_mpqc\n");
   fprintf(outfp,"Molecule:\n");
+  fflush(outfp);
   mol->print();
   
   fprintf(outfp,"\n Initial simple internal coordinates\n\n");
+  fflush(outfp);
   coor->print_simples();
   fprintf(outfp,"\n");
+  fflush(outfp);
 
   return GEOM_COMPUTE_GRADIENT;
 }
@@ -302,8 +310,6 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
 {
   int i,j,ij;
   
-  RefSCVector cgrad = new LocalSCVector(dc.pointer());
-  
   // find rms and max force
   rmsforce=0;
   maxforce=0;
@@ -312,17 +318,17 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
       double d = fabs(grad->d[i][j]);
       rmsforce += d*d;
       maxforce = (d>maxforce) ? d : maxforce;
-      cgrad->set_element(ij,grad->d[i][j]);
+      cart_grad->set_element(ij,grad->d[i][j]);
       }
     }
   rmsforce = sqrt(rmsforce/(grad->n1*grad->n2));
 
   coor->to_internal(xn);
-  coor->to_internal(gn,cgrad);
-
   xn.print("internal coordinates");
-  gn.print("internal coordinate gradients");
 
+  coor->to_internal(gn,cart_grad);
+  gn.print("internal coordinate gradients");
+  
   RefNLP2 nlp = 0;
   update->update(hessian,nlp,xn,gn);
 
@@ -390,7 +396,8 @@ Geom_update_mpqc(double_matrix_t *grad, const RefKeyVal& keyval)
   di.save_state(so);
   xn.save_state(so);
   gn.save_state(so);
+  cart_grad.save_state(so);
   hessian.save_state(so);
-  
+
   return GEOM_COMPUTE_GRADIENT;
 }

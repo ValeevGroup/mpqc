@@ -194,7 +194,7 @@ GaussianBasisSet::GaussianBasisSet(const char* name,
 }
 
 Ref<GaussianBasisSet>
-GaussianBasisSet::concatenate(const Ref<GaussianBasisSet>& B)
+GaussianBasisSet::operator+(const Ref<GaussianBasisSet>& B)
 {
   GaussianBasisSet* b = B.pointer();
   if (molecule_.pointer() != b->molecule_.pointer())

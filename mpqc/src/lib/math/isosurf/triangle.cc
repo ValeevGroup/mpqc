@@ -160,7 +160,7 @@ Triangle::interpolate(double r,double s,const RefVertex&result,SCVector3&dA)
 {
   TriInterpCoefKey key(_order, r, s);
   RefTriInterpCoef coef = new TriInterpCoef(key);
-  return interpolate(coef, r, s, result, dA);
+  interpolate(coef, r, s, result, dA);
 }
 
 void

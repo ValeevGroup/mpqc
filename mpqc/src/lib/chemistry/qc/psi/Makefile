@@ -8,7 +8,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libpsi
 BIN_OR_LIB = LIB
 
-SRCS = psi.cc file11.cc psiinput.cc psici.cc psiccsd.cc psiccsd_t.cc psiccsdt.cc
+SRCS = psi.cc file11.cc psiinput.cc
 CSRCS = read11.c
 
 TESTSRCS = psitest.cc
@@ -26,7 +26,7 @@ psitest: psitest.o  \
 	$(CXX) $(LDFLAGS) -o psitest $^ $(SYSLIBS)
 
 psitest.o: psitest.cc
-	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 print: 
 	echo $(SRCDIR)

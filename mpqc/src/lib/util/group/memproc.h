@@ -36,6 +36,8 @@
 
 #include <util/group/memmsg.h>
 
+/** The ProcMessageGrp concrete class provides an implementation of
+MemoryGrp for a single processor. */
 class ProcMemoryGrp: public MemoryGrp {
 #define CLASSNAME ProcMemoryGrp
 #define HAVE_KEYVAL_CTOR

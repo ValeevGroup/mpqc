@@ -34,6 +34,12 @@
 
 #include <util/group/memmid.h>
 
+/** The MPLMemoryGrp is a concrete implementation of MIDMemoryGrp that uses
+MPI 1.1 calls plus the mp_recvncall routine in the IBM SP Message Passing
+Library to implement active messages.  It provides good performance.
+Recent IBM SP machines no local support the mp_recvncall routines; in those
+cases use MTMPIMemoryGrp instead. */
+
 class MPLMemoryGrp: public MIDMemoryGrp {
 #define CLASSNAME MPLMemoryGrp
 #define HAVE_KEYVAL_CTOR

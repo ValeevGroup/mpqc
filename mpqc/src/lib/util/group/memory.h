@@ -111,8 +111,63 @@ typedef long distssize_t;
 inline size_t distsize_to_size(const distsize_t &a) {return a;}
 #endif
 
-/** The MemoryGrp abstract class provides the appearance of global
-    shared memory in a parallel machine. */
+/** The MessageGrp abstract class provides a way of accessing distributed
+memory in a parallel machine.  Several specializations are available.  For
+one processor, ProcMemoryGrp provides a simple stub implementation.
+Otherwise, the specializations that work well are ShmMemoryGrp,
+ParagonMemoryGrp, and MPLMemoryGrp.  If your parallel operation system and
+libraries do not directly support active messages or global shared memory
+you can try IParagonMemoryGrp or MPIMemoryGrp, as is appropriate.  However,
+these latter specializations do not always work and perform poorly.
+
+If a MemoryGrp is not given to the program, then one will be automatically
+chosen depending on which MessageGrp is used by default, the type of
+machine on which the code was compiled, and what options were given at
+configuration time.  The following rules are applied until the first
+matching set of criteria are found.
+
+\begin{itemize}
+
+   \item If a ParagonMessageGrp is used then:
+
+     \begin{itemize}
+
+        \item If the machine supports the full NX library (that is, it
+           includes the hrecv function), then ParagonMemoryGrp
+           will be used.  The NX library is typically found on Intel
+           Paragons and IPSC machines.
+
+        \item If the machine is an Intel Paragon running the Puma OS and
+           it supports MPI2 one-sided communication, then
+           PumaMemoryGrp will be used.
+
+        \item If the machine supports the NX library subset without hrecv,
+           then IParagonMemoryGrp is used.
+
+     \end{itemize}
+
+   \item If an MPIMessageGrp is used then:
+
+     \begin{itemize}
+
+        \item If the has the Message Passing Library then
+           MPLMemoryGrp is used.
+
+        \item Otherwise, MPIMemoryGrp is used.
+
+     \end{itemize}
+
+   \item If an ShmMessageGrp is used, then a
+      ShmMemoryGrp is used.
+
+   \item If there is only one processor, then ProcMemoryGrp is
+       used.
+
+   \item Otherwise, no memory group can be created.
+
+\end{itemize}
+
+*/
 class MemoryGrp: public DescribedClass {
 #define CLASSNAME MemoryGrp
 #include <util/class/classda.h>

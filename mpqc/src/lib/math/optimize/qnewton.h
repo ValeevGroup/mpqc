@@ -42,6 +42,8 @@
 // //////////////////////////////////////////////////////////////////////
 // newton and related methods
 
+
+/** The QNewtonOpt implements a quasi-Newton optimization scheme. */
 class QNewtonOpt: public Optimize {
 #   define CLASSNAME QNewtonOpt
 #   define HAVE_KEYVAL_CTOR
@@ -62,6 +64,39 @@ class QNewtonOpt: public Optimize {
     int print_x_;
     int print_gradient_;
   public:
+    /** @memo The KeyVal constructor.
+        The KeyVal constructor reads the following keywords:
+        \begin{description}
+
+        \item[update] This gives a HessianUpdate object.  The default is to
+        not update the hessian.
+
+        \item[hessian] By default, the guess hessian is obtained from the
+        Function object.  This keyword specifies an lower triangle array
+        (the second index must be less than or equal to than the first)
+        that replaces the guess hessian.  If some of the elements are not
+        given, elements from the guess hessian will be used.
+
+        \item[lineopt] This gives a LineOpt object for doing line
+        optimizations in the Newton direction.  The default is to skip the
+        line optimizations.
+
+        \item[accuracy] The accuracy with which the first gradient will be
+        computed.  If this is too large, it may be necessary to evaluate
+        the first gradient point twice.  If it is too small, it may take
+        longer to evaluate the first point. The default is 0.0001.
+
+        \item[print_x] If true, print the coordinates each iteration.  The
+        default is false.
+
+        \item[print_gradient] If true, print the gradient each
+        iteration. The default is false.
+
+        \item[print_hessian] If true, print the approximate hessian each
+        iteration. The default is false.
+
+        \end{description}
+    */
     QNewtonOpt(const RefKeyVal&);
     QNewtonOpt(StateIn&);
     ~QNewtonOpt();

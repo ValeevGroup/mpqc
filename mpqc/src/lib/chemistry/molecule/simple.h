@@ -39,9 +39,45 @@
 
 // ////////////////////////////////////////////////////////////////////////
 
-/** The SimpleCo class is an abstract base class for the simple internal
-    coordinates.  SimpleCo itself inherits from IntCoor.  Like IntCoor,
-    SimpleCo is a SavableState and has StateIn and KeyVal constructors. */
+/**
+The SimpleCo abstract class describes a simple internal coordinate
+of a molecule.  The number atoms involved can be 2, 3 or 4 and is
+determined by the specialization of SimpleCo.
+
+There are three ways to specify the atoms involved in the internal
+coordinate.  The first way is a shorthand notation, just a vector of a
+label followed by the atom numbers (starting at 1) is given.  For example,
+a stretch between two atoms, 1 and 2, is given, in the
+ParsedKeyVal format, as
+\begin{verbatim}
+  stretch<StreSimpleCo>: [ R12 1 2 ]
+\end{verbatim}
+
+The other two ways to specify the atoms are more general.  With them, it is
+possible to give parameters for the IntCoor base class (and thus
+give the value of the coordinate).  In the first of these input formats, a
+vector associated with the keyword atoms gives the atom numbers.
+The following specification for stretch is equivalent to that
+above:
+\begin{verbatim}
+  stretch<StreSimpleCo>:( label = R12 atoms = [ 1 2 ] )
+\end{verbatim}
+
+In the second, a vector, atom_labels, is given along with a
+Molecule object.  The atom labels are looked up in the
+Molecule object to find the atom numbers.
+The following specification for stretch is equivalent to those
+above:
+\begin{verbatim}
+  molecule<Molecule>: (
+    { atom_labels atoms   geometry      } = {
+          H1         H   [ 1.0 0.0 0.0 ]
+          H2         H   [-1.0 0.0 0.0 ] } )
+  stretch<StreSimpleCo>:( label = R12
+                          atom_labels = [ H1 H2 ]
+                          molecule = $molecule )
+\end{verbatim}
+ */
 class SimpleCo : public IntCoor {
 #   define CLASSNAME SimpleCo
 #   include <util/state/stated.h>
@@ -147,7 +183,15 @@ void classname::save_data_state(StateOut&so)				      \
 
 // ///////////////////////////////////////////////////////////////////////
 
-/// StreSimpleCo is used to describe distances between atoms.
+/**
+The StreSimpleCo class describes an stretch internal coordinate of a
+molecule.  The input is described in the documentation of its parent
+class SimpleCo.
+
+Designating the two atoms as $a$ and $b$ and their cartesian positions as
+$\bar{r}_a$ and $\bar{r}_b$, the value of the coordinate, $r$, is
+\[ r = \| \bar{r}_a - \bar{r}_b \| \]
+ */
 class StreSimpleCo : public SimpleCo {
 #   define CLASSNAME StreSimpleCo
 #   define HAVE_CTOR
@@ -186,8 +230,19 @@ typedef StreSimpleCo Stre;
 
 static const double rtd = 180.0/3.14159265358979323846;
 
-/** BendSimpleCo is used to describe the angle abc formed by three atoms
-    a, b, and c. */
+/** The BendSimpleCo class describes an bend internal coordinate of a
+molecule.  The input is described in the documentation of its parent class
+SimpleCo.
+
+Designating the three atoms as $a$, $b$, and $c$ and their cartesian
+positions as $\bar{r}_a$, $\bar{r}_b$, and $\bar{r}_c$, the value of the
+coordinate, $\theta$, is given by
+
+\[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|} \]
+\[ \bar{u}_{cb} = \frac{\bar{r}_c - \bar{r}_b}{\| \bar{r}_c - \bar{r}_b \|} \]
+\[ \theta       = \arccos ( \bar{u}_{ab} \cdot \bar{u}_{cb} ) \]
+
+*/
 class BendSimpleCo : public SimpleCo { 
 #   define CLASSNAME BendSimpleCo
 #   define HAVE_CTOR
@@ -224,8 +279,29 @@ typedef BendSimpleCo Bend;
 
 // ///////////////////////////////////////////////////////////////////////
 
-/** TorsSimpleCo is used to describe the angle between the plains
-    abc and bcd described by atoms a, b, c, and d. */
+/**
+   
+The TorsSimpleCo class describes an torsion internal coordinate of a
+molecule.  The input is described in the documentation of its parent
+class SimpleCo.
+
+Designating the four atoms as $a$, $b$, $c$, and $d$ and their cartesian
+positions as $\bar{r}_a$, $\bar{r}_b$, $\bar{r}_c$, and $\bar{r}_d$, the
+value of the coordinate, $\tau$, is given by
+
+\[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|} \]
+\[ \bar{u}_{cb} = \frac{\bar{r}_c - \bar{r}_b}{\| \bar{r}_c - \bar{r}_b \|} \]
+\[ \bar{u}_{cd} = \frac{\bar{r}_c - \bar{r}_d}{\| \bar{r}_c - \bar{r}_b \|} \]
+\[ \bar{n}_{abc}= \frac{\bar{u}_{ab} \times \bar{u}_{cb}}
+                       {\| \bar{u}_{ab} \times \bar{u}_{cb} \|} \]
+\[ \bar{n}_{bcd}= \frac{\bar{u}_{cd} \times \bar{u}_{bc}}
+                       {\| \bar{u}_{cd} \times \bar{u}_{bc} \|} \]
+\[ s            = \cases{1, &if $(\bar{n}_{abc}\times\bar{n}_{bcd})
+                                  \cdot \bar{u}_{cb} > 0$;\cr
+                         -1, &otherwise.\cr} \]
+\[ \tau         = s \arccos ( - \bar{n}_{abc} \cdot \bar{n}_{bcd} ) \]
+
+*/
 class TorsSimpleCo : public SimpleCo { 
 #   define CLASSNAME TorsSimpleCo
 #   define HAVE_CTOR
@@ -262,9 +338,31 @@ typedef TorsSimpleCo Tors;
 
 // ///////////////////////////////////////////////////////////////////////
 
-/** ScaledTorsSimpleCo is used to describe the angle between the plains
-    abc and bcd described by atoms a, b, c, and d.  It is scaled so it makes
-    sense when the abc or bcd atoms are nearly colinear. */
+/**
+The ScaledTorsSimpleCo class describes an scaled torsion internal
+coordinate of a molecule.  The scaled torsion is more stable that ordinary
+torsions (see the TorsSimpleCo class) in describing situations
+where one of the torsions plane's is given by three near linear atoms.
+
+Designating the four atoms as $a$, $b$, $c$, and $d$ and their cartesian
+positions as $\bar{r}_a$, $\bar{r}_b$, $\bar{r}_c$, and $\bar{r}_d$, the
+value of the coordinate, $\tau_s$, is given by
+
+\[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\]
+\[ \bar{u}_{cb} = \frac{\bar{r}_c - \bar{r}_b}{\| \bar{r}_c - \bar{r}_b \|}\]
+\[ \bar{u}_{cd} = \frac{\bar{r}_c - \bar{r}_d}{\| \bar{r}_c - \bar{r}_b \|}\]
+\[ \bar{n}_{abc}= \frac{\bar{u}_{ab} \times \bar{u}_{cb}}
+                       {\| \bar{u}_{ab} \times \bar{u}_{cb} \|}\]
+\[ \bar{n}_{bcd}= \frac{\bar{u}_{cd} \times \bar{u}_{cb}}
+                       {\| \bar{u}_{cd} \times \bar{u}_{cb} \|}\]
+\[ s            = \cases{-1, &if $(\bar{n}_{abc}\times\bar{n}_{bcd})
+                                  \cdot \bar{u}_{cb} > 0$;\cr
+                         1, &otherwise.\cr}\]
+\[ \tau_s       = s \sqrt{\left(1-(\bar{u}_{ab} \cdot \bar{u}_{cb}\right)^2)
+                        \left(1-(\bar{u}_{cb} \cdot \bar{u}_{cd}\right)^2)}
+                  \arccos ( - \bar{n}_{abc} \cdot \bar{n}_{bcd} )\]
+
+ */
 class ScaledTorsSimpleCo : public SimpleCo { 
 #   define CLASSNAME ScaledTorsSimpleCo
 #   define HAVE_CTOR
@@ -303,8 +401,23 @@ typedef ScaledTorsSimpleCo ScaledTors;
 
 // ///////////////////////////////////////////////////////////////////////
 
-/** OutSimpleCo is used to describe the out of plane angle formed by
-    the bond a-b, and the plane bcd. */
+/*
+The OutSimpleCo class describes an out-of-plane internal coordinate
+of a molecule.  The input is described in the documentation of its parent
+class SimpleCo.
+
+Designating the four atoms as $a$, $b$, $c$, and $d$ and their cartesian
+positions as $\bar{r}_a$, $\bar{r}_b$, $\bar{r}_c$, and $\bar{r}_d$, the
+value of the coordinate, $\tau$, is given by
+
+\[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\]
+\[ \bar{u}_{cb} = \frac{\bar{r}_b - \bar{r}_c}{\| \bar{r}_c - \bar{r}_b \|}\]
+\[ \bar{u}_{db} = \frac{\bar{r}_c - \bar{r}_d}{\| \bar{r}_c - \bar{r}_b \|}\]
+\[ \bar{n}_{bcd}= \frac{\bar{u}_{cb} \times \bar{u}_{db}}
+                     {\| \bar{u}_{cb} \times \bar{u}_{db} \|}\]
+\[ \phi         = \arcsin ( \bar{u}_{ab} \cdot \bar{n}_{bcd} )\]
+
+*/
 class OutSimpleCo : public SimpleCo { 
 #   define CLASSNAME OutSimpleCo
 #   define HAVE_CTOR
@@ -342,7 +455,27 @@ typedef OutSimpleCo Out;
 
 // ///////////////////////////////////////////////////////////////////////
 
-/** LinIPSimpleCo is used to describe the distortion of linear angles. */
+/** The LinIPSimpleCo class describes an in-plane component of a linear
+bend internal coordinate of a molecule.  The input is described in the
+documentation of its parent class SimpleCo.  A vector, $\bar{u}$, given as
+the keyword \keywd{u}, that is not colinear with either $\bar{r}_a -
+\bar{r}_b$ or $\bar{r}_b - \bar{r}_c$ must be provided, where $\bar{r}_a$,
+$\bar{r}_b$, and $\bar{r}_c$ are the positions of the first, second, and
+third atoms, respectively.
+
+  Usually, LinIPSimpleCo is used with a corresponding LinOPSimpleCo, which
+is given exactly the same u.
+
+Designating the three atoms as $a$, $b$, and $c$ and their cartesian
+positions as $\bar{r}_a$, $\bar{r}_b$, and $\bar{r}_c$, the value of the
+coordinate, $\theta_i$, is given by
+
+\[  \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\]
+\[  \bar{u}_{cb} = \frac{\bar{r}_b - \bar{r}_c}{\| \bar{r}_c - \bar{r}_b \|}\]
+\[  \theta_i     = \pi - \arccos ( \bar{u}_{ab} \cdot \bar{u} )
+                    - \arccos ( \bar{u}_{cb} \cdot \bar{u} )\]
+
+*/
 class LinIPSimpleCo : public SimpleCo { 
 #   define CLASSNAME LinIPSimpleCo
 #   define HAVE_CTOR
@@ -383,8 +516,30 @@ typedef LinIPSimpleCo LinIP;
 
 // ///////////////////////////////////////////////////////////////////////
 
-/** LinOPSimpleCo is used to describe the distortion of linear
-    angles. */
+/** The LinOPSimpleCo class describes an out-of-plane component of a linear
+bend internal coordinate of a molecule.  The input is described in the
+documentation of its parent class SimpleCo.  A vector, $\bar{u}$, given as
+the keyword u, that is not colinear with either $\bar{r}_a - \bar{r}_b$ or
+$\bar{r}_b - \bar{r}_c$ must be provided, where $\bar{r}_a$, $\bar{r}_b$,
+and $\bar{r}_c$ are the positions of the first, second, and third atoms,
+respectively.
+
+  Usually, LinOPSimpleCo is used with a corresponding LinIPSimpleCo, which
+is given exactly the same u.
+
+Designating the three atoms as $a$, $b$, and $c$ and their cartesian
+positions as $\bar{r}_a$, $\bar{r}_b$, and $\bar{r}_c$, the value of the
+coordinate, $\theta_o$, is given by
+
+
+\[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\]
+\[ \bar{u}_{cb} = \frac{\bar{r}_b - \bar{r}_c}{\| \bar{r}_c - \bar{r}_b \|}\]
+\[ \bar{n}      = \frac{\bar{u} \times \bar{u}_{ab}}
+                       {\| \bar{u} \times \bar{u}_{ab} \|}\]
+\[ \theta_o     = \pi - \arccos ( \bar{u}_{ab} \cdot \bar{n} )
+                      - \arccos ( \bar{u}_{cb} \cdot \bar{n} )\]
+
+*/
 class LinOPSimpleCo : public SimpleCo { 
 #   define CLASSNAME LinOPSimpleCo
 #   define HAVE_CTOR

@@ -84,13 +84,24 @@ sub dodir {
             }
             &dodir("$dir/$file", "$objdir/$file", $nexttop);
         }
-        elsif ("$file" eq "Makefile") {
+        elsif ("$file" eq "Makefile" && isobjectdirmake("$dir/file")) {
             #print "Found $dir/Makefile\n";
             local($nextdir);
             &domake("$topdir$dir", "$objdir/$file");
             &doconfigfiles("$objdir");
         }
     }
+}
+
+sub isobjectdirmake {
+    local($file) = shift;
+    open(MAKEFILE,"<$file");
+    while (<MAKEFILE>) {
+        if (/SRCDIR/) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 sub doconfigfiles {

@@ -30,6 +30,8 @@
 
 #include <util/group/message.h>
 
+/** The MPIMessageGrp class is an concrete implementation of MessageGrp
+that uses the MPI 1 library.  */
 class MPIMessageGrp: public MessageGrp {
 #define CLASSNAME MPIMessageGrp
 #define HAVE_CTOR

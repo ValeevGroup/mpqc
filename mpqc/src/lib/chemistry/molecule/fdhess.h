@@ -37,6 +37,7 @@
 #include <chemistry/molecule/hess.h>
 #include <chemistry/molecule/energy.h>
 
+/// Computes the molecular hessian by finite displacements of gradients.
 class FinDispMolecularHessian: public MolecularHessian {
 #   define CLASSNAME FinDispMolecularHessian
 #   define HAVE_KEYVAL_CTOR

@@ -49,6 +49,70 @@ SavableState_REF_fwddec(Integral)
 class CartesianIter;
 class SphericalTransformIter;
 
+/** The GaussianBasisSet class is used describe a basis set composed of
+atomic gaussian orbitals.
+
+Following is a table with available basis sets listing the supported elements
+for each basis and the number of basis functions for H, $n_0$, first row,
+$n_1$, and second row, $n_2$, atoms:
+
+\begin{tabular}{lcrrr}
+  \multicolumn{1}{c}{Basis Set}&
+   \multicolumn{1}{c}{Elements}&
+   \multicolumn{1}{c}{$n_0$}&
+   \multicolumn{1}{c}{$n_1$}&
+   \multicolumn{1}{c}{$n_2$} \\
+\verb*|STO-2G| & H-Ca & 1 & 5 & 9 \\
+\verb*|STO-3G| & H-Kr & 1 & 5 & 9 \\
+\verb*|STO-3G*| & H-Ar & 1 & 5 & 15 \\
+\verb*|STO-6G| & H-Kr & 1 & 5 & 9 \\
+\verb*|MINI (Huzinaga)| & H-Ca & 1 & 5 & 9 \\
+\verb*|MINI (Scaled)| & H-Ca & 1 & 5 & 9 \\
+\verb*|MIDI (Huzinaga)| & H-Na & 2 & 9 &  \\
+\verb*|DZ (Dunning)| & H, Li, B-Ne, Al-Cl & 2 & 10 & 18 \\
+\verb*|DZP (Dunning)| & H, Li, B-Ne, Al-Cl & 5 & 16 & 24 \\
+\verb*|DZP + Diffuse (Dunning)| & H, B-Ne & 6 & 19 &  \\
+\verb*|3-21G| & H-Kr & 2 & 9 & 13 \\
+\verb*|3-21G*| & H-Ar & 2 & 9 & 19 \\
+\verb*|3-21++G| & H-Ar & 3 & 13 & 17 \\
+\verb*|3-21++G*| & H-Ar & 3 & 13 & 23 \\
+\verb*|4-31G| & H-Ne, P-Cl & 2 & 9 & 13 \\
+\verb*|4-31G*| & H-Ne, P-Cl & 2 & 15 & 19 \\
+\verb*|4-31G**| & H-Ne, P-Cl & 5 & 15 & 19 \\
+\verb*|6-31G| & H-Ar & 2 & 9 & 13 \\
+\verb*|6-31G*| & H-Ar & 2 & 15 & 19 \\
+\verb*|6-31G**| & H-Ar & 5 & 15 & 19 \\
+\verb*|6-31+G*| & H-Ar & 2 & 19 & 23 \\
+\verb*|6-31++G| & H-Ar & 3 & 13 & 17 \\
+\verb*|6-31++G*| & H-Ar & 3 & 19 & 23 \\
+\verb*|6-31++G**| & H-Ar & 6 & 19 & 23 \\
+\verb*|6-311G| & H-Ar, Ga-Kr & 3 & 13 & 21 \\
+\verb*|6-311G*| & H-Ar, Ga-Kr & 3 & 19 & 27 \\
+\verb*|6-311G**| & H-Ar, Ga-Kr & 6 & 19 & 27 \\
+\verb*|6-311G(2df,2pd)| & H-Ne & 15 & 35 &  \\
+\verb*|6-311++G**| & H-Ne & 7 & 23 &  \\
+\verb*|6-311++G(2d,2p)| & H-Ne & 10 & 29 &  \\
+\verb*|6-311++G(3df,3pd)| & H-Ar & 19 & 45 & 53 \\
+\verb*|cc-pVDZ| & H, He, B-Ne, Al-Ar & 5 & 14 & 18 \\
+\verb*|cc-pVTZ| & H, He, B-Ne, Al-Ar & 14 & 30 & 34 \\
+\verb*|cc-pVQZ| & H, He, B-Ne, Al-Ar & 30 & 55 & 59 \\
+\verb*|cc-pV5Z| & H-Ne, Al-Ar & 55 & 91 & 95 \\
+\verb*|aug-cc-pVDZ| & H, He, B-Ne, Al-Ar & 9 & 23 & 27 \\
+\verb*|aug-cc-pVTZ| & H, He, B-Ne, Al-Ar & 23 & 46 & 50 \\
+\verb*|aug-cc-pVQZ| & H, He, B-Ne, Al-Ar & 46 & 80 & 84 \\
+\verb*|aug-cc-pV5Z| & H, He, B-Ne, Al-Ar & 80 & 127 & 131 \\
+\verb*|cc-pCVDZ| & B-Ne &  & 18 &  \\
+\verb*|cc-pCVTZ| & B-Ne &  & 43 &  \\
+\verb*|cc-pCVQZ| & B-Ne &  & 84 &  \\
+\verb*|cc-pCV5Z| & B-Ne &  & 145 &  \\
+\verb*|aug-cc-pCVDZ| & B-F &  & 27 &  \\
+\verb*|aug-cc-pCVTZ| & B-Ne &  & 59 &  \\
+\verb*|aug-cc-pCVQZ| & B-Ne &  & 109 &  \\
+\verb*|aug-cc-pCV5Z| & B-F &  & 181 &  \\
+\verb*|NASA Ames ANO| & H, B-Ne, Al, P, Ti, Fe, Ni & 30 & 55 & 59 \\
+\end{tabular}
+
+*/
 class GaussianBasisSet: public SavableState
 {
 #   define CLASSNAME GaussianBasisSet
@@ -98,6 +162,114 @@ class GaussianBasisSet: public SavableState
     virtual void set_matrixkit(const RefSCMatrixKit&);
     
   public:
+    /** @memo The KeyVal constructor.
+
+        \begin{description}
+
+        \item[molecule] The gives a Molecule object.  The is no default.
+
+        \item[puream] If this boolean parameter is true then 5D, 7F,
+        etc. will be used.  Otherwise all cartesian functions will be used.
+        The default depends on the particular basis set.
+
+        \item[name] This is a string giving the name of the basis set.  The
+        above table of basis sets gives some of the recognized basis set
+        names.  It may be necessary to put the name in double quotes. There
+        is no default.
+
+        \item[basis] This is a vector of basis set names that can give a
+        different basis set to each atom in the molecule.  If the element
+        vector is given, then it gives different basis sets to different
+        elements.  The default is to give every atom the basis set
+        specified in name.
+
+        \item[element] This is a vector of elements.  If it is given then
+        it must have the same number of entries as the basis vector.
+
+        \item[basisdir] A string giving a directory where basis set data
+        files are to be sought.  See the text below for a complete
+        description of what directors are consulted.
+
+        \item[basisfiles] Each keyword in this vector of files is appended
+        to the directory specified with basisdir and basis set data is read
+        from them.
+
+        \item[matrixkit] Specifies a SCMatrixKit object.  It is usually not
+        necessary to give this keyword, as the default action should get
+        the correct SCMatrixKit.
+
+        \end{description}
+
+        Several files in various directories are checked for basis set
+        data.  First, basis sets can be given by the user in the basis
+        section at the top level of the main input file.  Next, if a path
+        is given with the basisdir keyword, then all of the files given
+        with the basisfiles keyword are read in after appending their names
+        to the value of basisdir.  Basis sets can be given in these files
+        in the basis section at the top level as well.  If the named basis
+        set still cannot be found, then GaussianBasisSet will try convert
+        the basis set name to a file name and check first in the directory
+        given by basisdir.  Next it checks for the environment variable
+        SCLIBDIR.  If it is set it will look for the basis file in
+        \$SCLIBDIR/basis.  Otherwise it will look in the source code
+        distribution in the directory SC/lib/basis.  If the executable has
+        changed machines or the source code has be moved, then it may be
+        necessary to copy the library files to your machine and set the
+        SCLIBDIR environmental variable.
+
+        The basis set itself is also given in the ParsedKeyVal format.  It
+        is a vector of shells with the keyword :basis: followed by the
+        lowercase atomic name followed by : followed by the basis set name
+        (which may need to be placed inside double quotes).  Each shell
+        reads the following keywords:
+
+        \begin{description}
+
+        \item[type] This is a vector{pkvarray} that describes each
+        component of this shell.  For each element the following two
+        keywords are read:
+
+        \begin{description}
+
+          \item[am] The angular momentum of the component.  This can be
+          given as the letter designation, s, p, d, etc.  There is no
+          default.
+
+          \item[puream] If this boolean parameter is true then 5D, 7F,
+          etc. shells are used.  The default is false.  This parameter can
+          be overridden in the GaussianBasisSet specification.
+
+        \end{description}
+
+        \item[exp] This is a vector giving the exponents of the primitive
+        Gaussian functions.
+
+        \item[coef] This is a matrix giving the coeffients of the primitive
+        Gaussian functions.  The first index gives the component number of
+        the shell and the second gives the primitive number.
+
+        \end{description}
+
+        An example might be easier to understand.  This is a basis set
+        specificition for STO-2G carbon:
+
+        \begin{verbatim}
+        basis: (
+         carbon: "STO-2G": [
+          (type: [(am = s)]
+           {      exp      coef:0 } = {
+              27.38503303 0.43012850
+               4.87452205 0.67891353
+           })
+          (type: [(am = p) (am = s)]
+           {     exp      coef:1     coef:0 } = {
+               1.13674819 0.04947177 0.51154071
+               0.28830936 0.96378241 0.61281990
+           })
+         ]
+        )
+        \end{verbatim}
+     */
     GaussianBasisSet(const RefKeyVal&);
     GaussianBasisSet(StateIn&);
     virtual ~GaussianBasisSet();

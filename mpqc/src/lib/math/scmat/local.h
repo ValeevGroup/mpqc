@@ -42,6 +42,8 @@ class LocalSCMatrix;
 class LocalSymmSCMatrix;
 class LocalDiagSCMatrix;
 
+/** The LocalSCMatrixKit produces matrices that work in a single processor
+environment.  */
 class LocalSCMatrixKit: public SCMatrixKit {
 #   define CLASSNAME LocalSCMatrixKit
 #   define HAVE_KEYVAL_CTOR

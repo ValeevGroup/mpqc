@@ -417,19 +417,13 @@ class CharacterTable {
 
 SavableState_REF_fwddec(PointGroup);
 
-/** The PointGroup class is really a place holder for a
- CharacterTable.  It contains a string representation of the
- Schoenflies symbol of a point group, a frame of reference for the symmetry
- operation transformation matrices, and a point of origin.  The origin is
- not respected by the symmetry operations, so if you want to use a point
- group with a nonzero origin, first translate all your coordinates to the
- origin and then set the origin to zero.
-
- PointGroup is the only class in libsymmetry which is a
- SavableState.  I did this to save space...it takes less than a
- second to generate a character table from the Schoenflies symbol, but
- the character table for Ih will occupy a great deal of memory.  Best to
- free up that memory when it's not needed.  */
+/** The PointGroup class is really a place holder for a CharacterTable.  It
+ contains a string representation of the Schoenflies symbol of a point
+ group, a frame of reference for the symmetry operation transformation
+ matrices, and a point of origin.  The origin is not respected by the
+ symmetry operations, so if you want to use a point group with a nonzero
+ origin, first translate all your coordinates to the origin and then set
+ the origin to zero.  */
 class PointGroup: public SavableState {
 #   define CLASSNAME PointGroup
 #   define HAVE_CTOR
@@ -453,7 +447,40 @@ class PointGroup: public SavableState {
     /** Like the above, but this constructor also takes a point of origin
         as an argument. */
     PointGroup(const char*,SymmetryOperation&,const SCVector3&);
-    /// The KeyVal constructor.
+    /** The PointGroup KeyVal constructor looks for three keywords:
+       symmetry, symmetry_frame, and origin. symmetry is a string
+       containing the Schoenflies symbol of the point group.  origin is an
+       array of doubles which gives the x, y, and z coordinates of the
+       origin of the symmetry frame.  symmetry_frame is a 3 by 3 array of
+       arrays of doubles which specify the principal axes for the
+       transformation matrices as a unitary rotation.
+
+       For example, a simple input which will use the default origin and
+       symmetry_frame ((0,0,0) and the unit matrix, respectively), might
+       look like this:
+
+       \begin{verbatim}
+       pointgrp<PointGroup>: (
+         symmetry = "c2v"
+       )
+       \end{verbatim}
+
+       By default, the principal rotation axis is taken to be the z axis.
+       If you already have a set of coordinates which assume that the
+       rotation axis is the x axis, then you'll have to rotate your frame
+       of reference with symmetry_frame:
+
+       \begin{verbatim}
+       pointgrp<PointGroup>: (
+         symmetry = "c2v"
+         symmetry_frame = [
+           [ 0 0 1 ]
+           [ 0 1 0 ]
+           [ 1 0 0 ]
+         ]
+       )
+       \end{verbatim}
+     */
     PointGroup(const RefKeyVal&);
 
     PointGroup(StateIn&);

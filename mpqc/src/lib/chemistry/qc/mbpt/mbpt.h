@@ -41,6 +41,8 @@
 
 // //////////////////////////////////////////////////////////////////////////
 
+/** The MBPT2 class implements several second-order perturbation theory
+methods. */
 class MBPT2: public Wavefunction {
 #   define CLASSNAME MBPT2
 #   define HAVE_KEYVAL_CTOR
@@ -138,6 +140,87 @@ class MBPT2: public Wavefunction {
     void compute_cs_grad();
   public:
     MBPT2(StateIn&);
+    /** @memo The KeyVal constructor.
+        \begin{description}
+
+        \item[reference] This gives the reference wavefunction.  It must be
+        an object of type CLSCF for closed-shell molecules and HSOSSCF for
+        open-shell molecules.  The is no default.
+
+        \item[nfzc] The number of frozen core orbitals.  The default is 0.
+        If no atoms have an atomic number greater than 30, then the number
+        of orbitals to be frozen can be automatically determined by
+        specifying \keywd{nfzc = auto}.
+
+        \item[nfzv] The number of frozen virtual orbitals.  The default is
+        0.
+
+        \item[memory] The amount of memory, in bytes, that each processor
+        may use.
+
+        \item[method] This gives a string that must take on one of the
+        values below.  The default is mp for closed-shell systems and zapt
+        for open-shell systems.
+
+        \begin{description}
+
+          \item[mp] Use M\o{}ller-Plesset perturbation theory.  This is
+          only valid for closed-shell systems.  Energies and gradients can
+          be computed with this method.
+
+          \item[opt1] Use the OPT1 variant of open-shell perturbation
+          theory.  Only energies can be computed for open-shell systems.
+
+          \item[opt2] Use the OPT2 variant of open-shell perturbation
+          theory.  Only energies can be computed for open-shell systems.
+
+          \item[zapt] Use the ZAPT variant of open-shell perturbation
+          theory.  Only energies can be computed for open-shell systems.
+
+        \end{description}
+
+        \item[algorithm] This gives a string that must take on one of the
+        values given below.  The default is memgrp for closed-shell
+        systems.  For open-shell systems v1 is used for a small number of
+        processors and v2 is used otherwise.
+
+        \begin{description}
+
+          \item[memgrp] Use the distributed shared memory algorithm (which
+          uses a MemoryGrp object).  This is only valid for MP2 energies
+          and gradients.
+
+          \item[v1] Use algorithm V1.  Only energies can be computed.  The
+          maximum number of processors that can be utilized is the number
+          of virtual orbitals.  This algorithm computes few integrals than
+          the others, but has higher communication requirements.
+
+          \item[v2] Use algorithm V2.  Only energies can be computed.  The
+          maximum number of processors that can be utilized is the number
+          of shells.
+
+          \item[v2lb] Use a modified V2 algorithm that may compute more two
+          electron integrals, but may get better load balance on the
+          $O(n_\mathrm{basis}^5)$ part of the calculation.  Only energies
+          can be computed.  This is recommended only for computations
+          involving large molecules (where the transformation is dominant)
+          on very many processors (approaching the number of shells).
+
+        \end{description}
+
+        The v1 and v2 algorithms are discussed in Ida M. B. Nielsen and
+        Edward T. Seidl, J. Comp. Chem. 16, 1301 (1995).  The memgrp
+        algorithm is discussed in Ida M. B. Nielsen, Chem. Phys. Lett. 255,
+        210 (1996).
+
+        \item[memorygrp] A MemoryGrp object is used by the memgrp
+        algorithm.  If this is not given the program will try to find an
+        appropriate default.
+
+        \item[debug] If this is nonzero, extra information is written to
+        the output.  The default is 0.
+
+        \end{description} */
     MBPT2(const RefKeyVal&);
     ~MBPT2();
 

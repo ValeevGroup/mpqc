@@ -34,6 +34,7 @@
 
 #include <math/optimize/scextrap.h>
 
+/** The DIIS class provides DIIS extrapolation. */
 class DIIS: public SelfConsistentExtrapolation {
 #   define CLASSNAME DIIS
 #   define HAVE_STATEIN_CTOR
@@ -64,6 +65,30 @@ class DIIS: public SelfConsistentExtrapolation {
   public:
     DIIS(int strt=1, int ndi=5, double dmp =0, int ngr=1, int ngrdiis=1);
     DIIS(StateIn&);
+    /** The DIIS KeyVal constructor recognizes the following keywords:
+
+        \begin{description}
+
+        \item[n] This integer maximum number of data sets to retain.  The
+        default is 5.
+
+        \item[start] The DIIS extrapolation will begin on the iteration
+        given by this integer.  The default is 1.
+
+        \item[damping_factor] This nonnegative floating point number is
+        used to dampen the DIIS extrapolation.  The default is 0.0.
+
+        \item[ngroup] The number of iterations in a DIIS group.  DIIS
+        extrapolation is only used for the first ngroupdiis of these
+        interations.  The default is 1.  If ngroup is 1 and ngroupdiis is
+        greater than 0, then DIIS will be used on all iterations after and
+        including the start iteration.
+
+        \item[ngroupdiis] The number of DIIS extrapolations to do at the
+        beginning of an iteration group.  See the documentation for ngroup.
+
+        \end{description}
+    */
     DIIS(const RefKeyVal&);
     ~DIIS();
 

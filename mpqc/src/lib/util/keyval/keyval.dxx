@@ -1,34 +1,41 @@
 
-\section{The \clsnm{ParsedKeyVal} Input Format}
-\label{ParsedKeyVal}
-\label{KeyVal}
-\index{ParsedKeyVal}
-\index{KeyVal}
+/**@name The KeyVal Library
 
-The \clsnm{KeyVal} class provides a means for users to associate keywords
-with values.  \clsnm{ParsedKeyVal} is a specialization of \clsnm{KeyVal}
-that permits keyword/value associations in text such as an input file or a
-command line string.
+*/
+
+//@{
+
+/**@name The ParsedKeyVal Input Format
+
+The KeyVal class provides a means for users to associate keywords with
+values.  ParsedKeyVal is a specialization of KeyVal that permits
+keyword/value associations in text such as an input file or a command line
+string.
 
 The package is flexible enough to allow complex structures and arrays as
 well as objects to be read from an input file.
 
-\subsection{Assignment}
+*/
 
-As an example of the use of \clsnmref{ParsedKeyVal}, consider the following
+//@{
+
+/**@name Assignment
+
+As an example of the use of ParsedKeyVal, consider the following
 input:
 \begin{verbatim}
 x_coordinate = 1.0
 y_coordinate = 2.0
 x_coordinate = 3.0
 \end{verbatim}
-Two assignements will be made.  The keyword \verb|x_coordinate| will be
-associated with the value \verb|1.0| and the keyword \verb|y_coordinate|
-will be assigned to \verb|2.0|.  The third line in the above input
-will have no effect since \verb|x_coordinate| was assigned previously.
+Two assignements will be made.  The keyword #x_coordinate# will be
+associated with the value #1.0# and the keyword #y_coordinate#
+will be assigned to #2.0#.  The third line in the above input
+will have no effect since #x_coordinate# was assigned previously.
 
-\subsection{Keyword Grouping}
-\label{pkvgroup}
+*/
+
+/**@name Keyword Grouping
 
 Lets imagine that we have a program which needs to read in the
 characteristics of animals.  There are lots of animals so it might be
@@ -53,8 +60,8 @@ bird: (
   )
 \end{verbatim}
 
-This sample illustrates the use of \vrbl{keyword} \verb|=| \vrbl{value}
-assignments and the keyword grouping operators \verb|(| and \verb|)|.
+This sample illustrates the use of keyword #=# value
+assignments and the keyword grouping operators #(# and #)#.
 The keywords in this example are
 \begin{verbatim}
 reptile:alligator:legs
@@ -66,14 +73,14 @@ bird:owl:flys
 bird:owl:extinct
 \end{verbatim}
 
-The \verb|:|'s occuring in these keywords break the keywords into
+The #:#'s occuring in these keywords break the keywords into
 smaller logical units called keyword segments.  The sole purpose of this
 is to allow persons writing input files to group the input into easy to
 read sections.  In the above example there are two main sections, the
 reptile section and the bird section.  The reptile section takes the
-form \verb|reptile| \verb|:| \verb|(| \vrbl{keyword} \verb|=| \vrbl{value}
-assignments \verb|)|.  Each of the keywords found between the
-parentheses has the \verb|reptile:| prefix attached to it.  Within each
+form #reptile# #:# #(# keyword #=# value
+assignments #)#.  Each of the keywords found between the
+parentheses has the #reptile:# prefix attached to it.  Within each
 of these sections further keyword groupings can be used, as many and as
 deeply nested as the user wants.
 
@@ -81,14 +88,15 @@ Keyword grouping is also useful when you need many different programs to
 read from the same input file.  Each program can be assigned its own
 unique section.
 
-\subsection{Array Construction}
-\label{pkvarray}
+*/
 
-Input for an array is specified in the input by forming a \htmlref{keyword
-group}{pkvgroup}.  The name of the group is the name of the array and the
+/**@name Array Construction
+
+Input for an array is specified in the input by forming a keyword
+group.  The name of the group is the name of the array and the
 grouped keywords are the integers $i$, such that $0 \leq i < n$, where $n$
 is the number of elements in the array.  For example, an array, called
-\verb|array|, of length 3 could be given as follows:
+#array#, of length 3 could be given as follows:
 \begin{verbatim}
 array: (
   0 = 5.4
@@ -96,8 +104,8 @@ array: (
   2 = 3.7
   )
 \end{verbatim}
-The numbers \verb|0|, \verb|1|, and \verb|2| in this example are keyword
-segments which serve as indices of \verb|array|.  However, this syntax
+The numbers #0#, #1#, and #2# in this example are keyword
+segments which serve as indices of #array#.  However, this syntax
 is somewhat awkward and array construction operators have been provided
 to simplify the input for this case.  The following input is equivalent
 to the above input:
@@ -133,21 +141,17 @@ ltriarray = [ [ 5.4  ]
               [ 0.1 0.0 3.7 ] ]
 \end{verbatim}
 
-%It would be nice to just extend an array that is already defined.  This
-%feature has not been implemented; however, user demand for it might
-%result in its implementation.  The operators reserved for this purpose
-%are \verb|+[| and \verb|]|.
+*/
 
-\subsection{Table Construction}
-\label{pkvtable}
+/**@name Table Construction
 
-Although the \htmlref{array construction operators}{pkvarray} will suit
+Although the array construction operators will suit
 most requirements for enumerated lists of data, in some cases the input can
 still look ugly.  This can, in some cases, be fixed with the table
-construction operators, \verb|{| and \verb|}|.
+construction operators, #{# and #}#.
 
 Suppose a few long vectors of the same length are needed and the data in
-the \verb|i|th element of each array is related or somehow belong
+the #i#th element of each array is related or somehow belong
 together.  If the arrays are so long that the width of a page is
 exceeded, then data that should be seen next to each other are no longer
 adjacent.  The way this problem can be fixed is to arrange the data
@@ -176,14 +180,15 @@ balls: (
 \end{verbatim}
 The length and width of the table can be anything the user desires.
 
-\subsection{Value Substitution}
-\label{ParsedKeyValvalsub}
+*/
+
+/**@name Value Substitution
 
 Occasionally, a user may need to repeat some value several times in an
 input file.  If the value must be changed, it would be nice to only
 change the value in one place.  The value substitution feature of
-\clsnmref{ParsedKeyVal} always the user to do this.  Any place a value can
-occur the user can place a \verb|$|.  Following this a keyword must be
+ParsedKeyVal always the user to do this.  Any place a value can
+occur the user can place a #$#.  Following this a keyword must be
 given.  This keyword must have been assigned before the attempt is made
 to use its value in a value substitution.
 
@@ -234,37 +239,39 @@ It can be seen from this that value substitution can result in entire
 keyword segment hierarchies being copied, as well as simple
 substitutions.
 
+*/
 
-\subsection{Expression Evaluation}
+/**@name Expression Evaluation
 
-Suppose your program requires several parameters \verb|x1|, \verb|x2|,
-and \verb|x3|.  Furthermore, suppose that their ratios remain fixed for
+Suppose your program requires several parameters #x1#, #x2#,
+and #x3#.  Furthermore, suppose that their ratios remain fixed for
 all the runs of the program that you desire.  It would be best to
 specify some scale factor in the input that would be the only thing that
 has to be changed from run to run.  If you don't want to or cannot
 modify the program, then this can be done directly with
-\clsnmref{ParsedKeyVal} as follows
+ParsedKeyVal as follows
 \begin{verbatim}
 scale = 1.234
 x1 = ( $:scale *  1.2 )
 x2 = ( $:scale *  9.2 )
 x3 = ( $:scale * -2.0 )
 \end{verbatim}
-So we see that to the right of the ``\verb|=|'' the characters
-``\verb|(|'' and ``\verb|)|'' are the expression construction operators.
+So we see that to the right of the ``#=#'' the characters
+``#(#'' and ``#)#'' are the expression construction operators.
 This is in contrast to their function when they are to the left of the
-``\verb|=|'', where they are the keyword grouping operators.
+``#=#'', where they are the keyword grouping operators.
 
 The expression must be binary and the data is all converted
 to double.  If you use the expression construction operators to produce
 data that the program expects to be integer, you will certainly get the
 wrong answers (unless the desired value happens to be zero).
 
-\subsection{Objects}
-\label{pkvobject}
+*/
+
+/**@name Objects
 
 An instance of an object can be can be specified by surrounding it's
-classname with the ``\verb|<|'' and ``\verb|>|'' operators immediately
+classname with the ``#<#'' and ``#>#'' operators immediately
 after the keyword naming the data.
 
 A pointer to a single object can be associated with multiple keywords by
@@ -276,9 +283,9 @@ using
 This is accomplished by holding references to all objects once they are
 read in.
 
-Consider a linked list class, \clsnm{A}, which reads from the keyword
-\verb|next| a reference to an object of class \clsnm{A}.  Input for such an
-object, read from keyword \verb|a1|, follows:
+Consider a linked list class, A, which reads from the keyword
+#next# a reference to an object of class A.  Input for such an
+object, read from keyword #a1#, follows:
 \begin{verbatim}
 a1<A>: (
     next<A>: (
@@ -291,8 +298,13 @@ a1<A>: (
 a2 = $:a
 \end{verbatim}
 
-The \verb|a1| list would contain two \verb|A| objects followed by a
-\verb|B| object followed by another \verb|A| object.  The \verb|a2| list
-refers to exactly the same object as \verb|a1| (not a copy of
-\verb|a1|).
+The #a1# list would contain two #A# objects followed by a
+#B# object followed by another #A# object.  The #a2# list
+refers to exactly the same object as #a1# (not a copy of
+#a1#).
 
+*/
+
+//@}
+
+//@}

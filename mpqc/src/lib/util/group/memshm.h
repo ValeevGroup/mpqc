@@ -40,8 +40,10 @@
 #include <util/group/globcnt.h>
 #include <util/group/memmsg.h>
 
-/** Uses SysV IPC to implement a memory group.
- */
+
+/** The ShmMemoryGrp concrete class provides an implementation of
+MsgMemoryGrp.  It uses SYSV IPC to provided shared memory in a system that
+provide shared memory in hardware.  It is very fast and reliable. */
 class ShmMemoryGrp: public MsgMemoryGrp {
 #define CLASSNAME ShmMemoryGrp
 #define HAVE_KEYVAL_CTOR

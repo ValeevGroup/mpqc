@@ -71,6 +71,11 @@ class SCExtrapError: public SavableState {
 };
 SavableState_REF_dec(SCExtrapError);
 
+/** The SelfConsistentExtrapolation abstract class is used to iteratively
+solve equations requiring a self consistent solution, such as,
+
+\[ \bar{x}' = f(\bar{x}) \]
+*/
 class SelfConsistentExtrapolation: public SavableState {
 #   define CLASSNAME SelfConsistentExtrapolation
 #   include <util/state/stated.h>
@@ -84,6 +89,9 @@ class SelfConsistentExtrapolation: public SavableState {
   public:
     SelfConsistentExtrapolation();
     SelfConsistentExtrapolation(StateIn&);
+    /** The only keyword read is #tolerance#, which is usually not needed
+        since the objects using SelfConsistentExtrapolation should set the
+        tolerances as needed.  */
     SelfConsistentExtrapolation(const RefKeyVal&);
     ~SelfConsistentExtrapolation();
 

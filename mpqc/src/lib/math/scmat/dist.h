@@ -39,6 +39,8 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/abstract.h>
 
+/** The DistSCMatrixKit produces matrices that work in a many processor
+environment.  The matrix is distributed across all nodes. */
 class DistSCMatrixKit: public SCMatrixKit {
 #   define CLASSNAME DistSCMatrixKit
 #   define HAVE_CTOR

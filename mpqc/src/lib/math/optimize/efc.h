@@ -39,9 +39,11 @@
 #include <math/optimize/opt.h>
 #include <math/optimize/update.h>
 
-// //////////////////////////////////////////////////////////////////////
-// eigenvector following a la Baker (JCC Vol 7, No 4, 385-395, 1986)
-
+/**
+The EFCOpt class implements
+eigenvector following as described by Baker in J. Comput. Chem., Vol 7, No
+4, 385-395, 1986.
+*/
 class EFCOpt: public Optimize {
 #   define CLASSNAME EFCOpt
 #   define HAVE_KEYVAL_CTOR
@@ -61,6 +63,31 @@ class EFCOpt: public Optimize {
     RefSCVector last_mode_;
 
   public:
+    /** The KeyVal constructor reads the following keywords:
+
+        \begin{description}
+
+        \item[update] This gives an HessianUpdate object.  The default is
+        to not update the hessian.
+
+        \item[transition_state] If this is true than a transition state
+        search will be performed. The default is false.
+
+        \item[mode_following] If this is true, then the initial search
+        direction for a transition state search will be choosen to similar
+        to the first coordinate of the Function.  The default is false.
+
+        \item[hessian] By default, the guess hessian is obtained from the
+        Function object.  This keyword specifies an lower triangle array
+        (the second index must be less than or equal to than the first)
+        that replaces the guess hessian.  If some of the elements are not
+        given, elements from the guess hessian will be used.
+
+        \item[accuracy] The accuracy with which the first gradient will be
+        computed.  If this is too large, it may be necessary to evaluate
+        the first gradient point twice.  If it is too small, it may take
+        longer to evaluate the first point. The default is 0.0001.
+    */
     EFCOpt(const RefKeyVal&);
     EFCOpt(StateIn&);
     ~EFCOpt();

@@ -38,6 +38,11 @@
 #include <util/container/array.h>
 #include <util/container/avlset.h>
 
+/** A Shape is a Volume represents an 3D solid.  The value of the Shape at
+each point in space is the distance to the surface.  The distance is
+negative if the point is inside the solid.  For Shape specializations that
+cannot compute the distance to the surface, the value will be 1.0 outside
+and -1.0 inside the solid. */
 class Shape: public Volume {
 #   define CLASSNAME Shape
 #   include <util/state/stated.h>
@@ -241,6 +246,7 @@ class Uncapped5SphereExclusionShape: public Shape
     int gradient_implemented() const;
 };
 
+/** A UnionShape is volume enclosed by a set of Shape's. */
 class UnionShape: public Shape {
 #   define CLASSNAME UnionShape
 #   include <util/state/stated.h>

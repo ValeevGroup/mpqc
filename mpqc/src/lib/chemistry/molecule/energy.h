@@ -40,9 +40,10 @@
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/hess.h>
 
-/** The MolecularEnergy abstract class is a Function
-    specialization that can optionally transform the cartesian molecule
-    geometry, gradient, and hessian into an internal coordinate system. */
+
+/** The MolecularEnergy abstract class inherits from the Function class.
+It computes the energy of the molecule as a function of the geometry.  The
+coordinate system used can be either internal or cartesian.  */
 class MolecularEnergy: public Function {
 #   define CLASSNAME MolecularEnergy
 #   include <util/state/stated.h>
@@ -75,6 +76,31 @@ class MolecularEnergy: public Function {
     int print_molecule_when_changed_;
   public:
     MolecularEnergy(const MolecularEnergy&);
+    /** @memo The KeyVal constructor.
+        \begin{description}
+
+        \item[molecule] A Molecule object.  There is no default.
+
+        \item[coor] A MolecularCoor object that describes the coordinates.
+        If this is not given cartesian coordinates will be used.  For
+        convenience, two keywords needed by the MolecularCoor object are
+        automatically provided: natom3 and matrixkit.
+
+        \item[value_accuracy] Sets the accuracy to which values are
+        computed.  The default is 1.0e-6 atomic units.
+
+        \item[gradient_accuracy] Sets the accuracy to which gradients are
+        computed.  The default is 1.0e-6 atomic units.
+
+        \item[hessian_accuracy] Sets the accuracy to which hessians are
+        computed.  The default is 1.0e-4 atomic units.
+
+        \item[print_molecule_when_changed] If true, then whenever the
+        molecule's coordinates are updated they will be printed.  The
+        default is true.
+
+        \end{description}
+    */
     MolecularEnergy(const RefKeyVal&);
     MolecularEnergy(StateIn&);
     ~MolecularEnergy();
@@ -149,6 +175,27 @@ class SumMolecularEnergy: public MolecularEnergy {
 };
 SavableState_REF_dec(SumMolecularEnergy);
 
+/* The MolEnergyConvergence class derives from the Convergence class.  The
+MolEnergyConvergence class allows the user to request that cartesian
+coordinates be used in evaluating the convergence criteria.  This is
+useful, since the internal coordinates can be somewhat arbitary.  If the
+optimization is constrained, then the fixed internal coordinates will be
+projected out of the cartesian gradients.  The input is similar to that for
+Convergence class with the exception that giving none of the convergence
+criteria keywords is the same as providing the following input to the
+KeyVal constructor:
+
+\begin{verbatim}
+  conv<MolEnergyConvergence>: (
+    max_disp = 1.0e-4
+    max_grad = 1.0e-4
+    graddisp = 1.0e-4
+  )
+\end{verbatim}
+
+For MolEnergyConverence to work, the Function object given to the Optimizer
+object must derive from MolecularEnergy.
+*/
 class MolEnergyConvergence: public Convergence {
 #   define CLASSNAME MolEnergyConvergence
 #   define HAVE_KEYVAL_CTOR
@@ -164,6 +211,21 @@ class MolEnergyConvergence: public Convergence {
     // Standard constructors and destructor.
     MolEnergyConvergence();
     MolEnergyConvergence(StateIn&);
+    /** @memo The KeyVal constructor.
+
+        In addition to the keywords read by Convergence, the following
+        keywords are examined:
+
+        \begin{description}
+
+        \item[energy] The MolecularEnergy object.  This is required.
+
+        \item[cartesian] If true, cartesian displacements and gradients
+        will be compared to the convergence criteria.  The default is true.
+
+        \end{description}
+
+     */
     MolEnergyConvergence(const RefKeyVal&);
     virtual ~MolEnergyConvergence();
 

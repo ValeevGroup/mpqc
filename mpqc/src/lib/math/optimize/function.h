@@ -77,10 +77,29 @@ class Function: virtual_base public SavableState, public Compute {
 
     void do_change_coordinates(const RefNonlinearTransform&);
   public:
-    /// The standard constructors and destructor.
     Function();
+    /// Restore the state of a Function object.
     Function(StateIn&);
+    /// Make a copy of the argument.
     Function(const Function&);
+
+    /** The keyval constructor reads the following keywords:
+        \begin{description}
+
+        \item[matrixkit] Gives a SCMatrixKit
+        object.  If it is not specified, a default SCMatrixKit is selected.
+
+        \item[value_accuracy] Sets the accuracy to which values are
+        computed.  The default is the machine accuracy.
+
+        \item[gradient_accuracy] Sets the accuracy to which gradients are
+        computed.  The default is the machine accuracy.
+
+        \item[hessian_accuracy] Sets the accuracy to which hessians are
+        computed.  The default is the machine accuracy.
+
+        \end{description}
+    */
     Function(const RefKeyVal&, double funcacc = DBL_EPSILON,
              double gradacc = DBL_EPSILON, double hessacc = DBL_EPSILON);
     virtual ~Function();

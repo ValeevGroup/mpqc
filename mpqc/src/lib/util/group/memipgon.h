@@ -34,8 +34,12 @@
 
 #include <util/group/memmid.h>
 
-// This is a memory group that uses the paragon NX library,
-// but doesn't use hrecv.  Instead irecv and isend are used.
+/** The IParagonMemoryGrp is a concrete implementation of MIDMemoryGrp that
+uses NX library calls (omitting hrecv) to provide simulated active
+messages, which are in turn used by the ActiveMsgMemoryGrp base class to
+implement global shared memory.  The NX library is typically the case on
+Intel Paragon machines.  Most Paragons implement the full NX library and on
+these machines ParagonMemoryGrp should be used instead.  */
 
 class IParagonMemoryGrp: public MIDMemoryGrp {
 #define CLASSNAME IParagonMemoryGrp

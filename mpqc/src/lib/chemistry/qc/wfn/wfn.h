@@ -41,6 +41,7 @@
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/integral.h>
 
+/** A Wavefunction is a MolecularEnergy that utilizies a GaussianBasisSet. */
 class Wavefunction: public MolecularEnergy {
 #   define CLASSNAME Wavefunction
 #   include <util/state/stated.h>
@@ -69,6 +70,27 @@ class Wavefunction: public MolecularEnergy {
     
   public:
     Wavefunction(StateIn&);
+    /** @memo The KeyVal constructor.
+
+        \begin{description}
+
+        \item[basis] Specifies a GaussianBasisSet object.  There is no
+        default.
+
+        \item[integral] Specifies an Integral object that computes the two
+        electron integrals.  The default is a IntegralV3 object.
+
+        \item[print_nao] This specifies a boolean value.  If true the
+        natural atomic orbitals will be printed.  Not all wavefunction will
+        be able to do this.  The default is false.
+
+        \item[print_npa] This specifies a boolean value.  If true the
+        natural population analysis will be printed.  Not all wavefunction
+        will be able to do this.  The default is true if print_nao is true,
+        otherwise it is false.
+
+        \end{description}
+     */
     Wavefunction(const RefKeyVal&);
     virtual ~Wavefunction();
 

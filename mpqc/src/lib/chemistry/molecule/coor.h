@@ -42,12 +42,8 @@
 class SSRefIntCoor;
 typedef class SSRefIntCoor RefIntCoor;
 
-/** IntCoor is an abstract base class.  From it are derived the simple
-    internal coordinate classes (derivatives of SimpleCo) and a class
-    describing linear combinations of internal coordinates (SumIntCoor).
-
-    IntCoor is a SavableState and has a StateIn constructor, as well as a
-    KeyVal constructor. */
+/** The IntCoor abstract class describes an internal coordinate of a
+molecule. */
 class IntCoor: public SavableState {
 #   define CLASSNAME IntCoor
 #   include <util/state/stated.h>
@@ -64,7 +60,22 @@ class IntCoor: public SavableState {
     /** This constructor takes a string containing a label for the
         internal coordinate.  The string is copied. */
     IntCoor(const char* label = 0);
-    /// The KeyVal constructor.
+    /** @memo The KeyVal constructor.
+        \begin{description}
+
+        \item[label] A label for the coordinate using only to identify the
+        coordinate to the user in printouts.  The default is no label.
+
+        \item[value] A value for the coordinate.  In the way that
+        coordinates are usually used, the default is to compute a value
+        from the cartesian coordinates in a Molecule object.
+
+        \item[unit] The unit in which the value is given.  This can be
+        bohr, anstrom, radian, and degree.  The default is bohr for lengths
+        and radian for angles.
+
+        \end{description}
+    */
     IntCoor(const RefKeyVal&);
     
     virtual ~IntCoor();
@@ -99,9 +110,19 @@ SavableState_REF_dec(IntCoor);
 ARRAY_dec(RefIntCoor);
 
 /** SumIntCoor is used to construct linear combinations of internal
-    coordinates.  Normally one will use simple internal coordinates, such
-    as bond lengths and angles.  SumIntCoor inherits from IntCoor, so it is
-    a SavableState.  SumIntCoor has StateIn and KeyVal constructors. */
+coordinates.
+
+The following is a sample ParsedKeyVal input for a SumIntCoor object:
+\begin{verbatim}
+  sumintcoor<SumIntCoor>: (
+    coor: [
+      <StreSimpleCo>:( atoms = [ 1 2 ] )
+      <StreSimpleCo>:( atoms = [ 2 3 ] )
+      ]
+    coef = [ 1.0 1.0 ]
+    )
+\end{verbatim}
+*/
 class SumIntCoor: public IntCoor {
 #   define CLASSNAME SumIntCoor
 #   define HAVE_KEYVAL_CTOR
@@ -116,7 +137,17 @@ class SumIntCoor: public IntCoor {
     /** This constructor takes a string containing a label for this
         coordinate. */
     SumIntCoor(const char *);
-    /// The KeyVal constructor.
+    /** @memo The KeyVal constructor.
+        \begin{description}
+
+        \item[coor] A vector of IntCoor objects that define the summed
+        coordinates.
+
+        \item[coef] A vector of floating point numbers that gives the
+        coefficients of the summed coordinates.
+
+        \end{description}
+    */
     SumIntCoor(const RefKeyVal&);
 
     ~SumIntCoor();
@@ -150,9 +181,26 @@ class SumIntCoor: public IntCoor {
 class SSRefSetIntCoor;
 typedef class SSRefSetIntCoor RefSetIntCoor;
 
-/** SetIntCoor is a class which holds sets of internal coordinates, be they
-    simple internal coordinates or combinations of coordinates.  SetIntCoor
-    is a SavableState, and has StateIn and KeyVal constructors. */
+/** The SetIntCoor class describes a set of internal coordinates.
+It can automatically generate these coordinates using a integral coordinate
+generator object (see the IntCoorGen class) or the internal
+coordinates can be explicity given.
+
+The following is a sample ParsedKeyVal input for
+a SetIntCoor object.
+\begin{verbatim}
+  setintcoor<SetIntCoor>: [
+    <SumIntCoor>: (
+      coor: [
+        <StreSimpleCo>:( atoms = [ 1 2 ] )
+        <StreSimpleCo>:( atoms = [ 2 3 ] )
+        ]
+      coef = [ 1.0 1.0 ]
+      )
+    <BendSimpleCo>:( atoms = [ 1 2 3 ] )
+  ]
+\end{verbatim}
+*/
 class SetIntCoor: public SavableState {
 #   define CLASSNAME SetIntCoor
 #   define HAVE_CTOR
@@ -165,7 +213,17 @@ class SetIntCoor: public SavableState {
   public:
     SetIntCoor();
     SetIntCoor(StateIn&);
-    /// The KeyVal constructor.
+    /** @memo The KeyVal constructor.
+        \begin{description}
+
+        \item[generator] A IntCoorGen object that will be used to generate
+        the internal coordinates.
+
+        \item[i] A sequence of integer keywords, all $i$ for $0 \leq i < n$,
+        can be assigned to IntCoor objects.
+
+        \end{description}
+    */
     SetIntCoor(const RefKeyVal&);
 
     virtual ~SetIntCoor();
@@ -205,7 +263,7 @@ SavableState_REF_dec(SetIntCoor);
 class BitArrayLTri;
 
 /** IntCoorGen generates a set of simple internal coordinates
-    given a molecule. */
+    for a molecule. */
 class IntCoorGen: public SavableState
 {
 #   define CLASSNAME IntCoorGen
@@ -239,7 +297,47 @@ class IntCoorGen: public SavableState
         IntCoorGen keeps a reference to extra and deletes it when the
         destructor is called. */
     IntCoorGen(const RefMolecule&, int nextra=0, int *extra=0);
-    /// Standard constructors for IntCoorGen.
+    /** @memo The KeyVal constructor.
+        \begin{description}
+
+        \item[molecule] A Molecule object.  There is no default.
+
+        \item[radius_scale_factor] If the distance between two atoms is
+        less than the radius scale factor times the sum of the atoms'
+        atomic radii, then a bond is placed between the two atoms for the
+        purpose of finding internal coordinates.  The default is 1.1.
+
+        \item[linear_bend_threshold] A bend angle in degress greater than
+        180 minus this keyword's floating point value is considered a
+        linear bend. The default is 5.0.
+
+        \item[linear_tors_threshold] The angles formed by atoms a-b-c and
+        b-c-d are checked for near linearity.  If an angle in degrees is
+        greater than 180 minus this keyword's floating point value, then
+        the torsion is classified as a linear torsion. The default is 5.0.
+
+        \item[linear_bend] Generate BendSimpleCo objects to describe linear
+        bends.  The default is false.
+
+        \item[linear_lbend] Generate pairs of LinIPSimpleCo and
+        LinIPSimpleCo objects to describe linear bends.  The default is
+        true.
+
+        \item[linear_tors] Generate TorsSimpleCo objects to described
+        linear torsions.  The default is false.
+
+        \item[linear_stors] Generate ScaledTorsSimpleCo objects to
+        described linear torsions.  The default is true.
+
+
+        \item[extra_bonds] This is a vector of atom numbers, where elements
+        $2 (i-1) + 1$ and $2 i$ specify the atoms which are bound in extra
+        bond $i$.  The extra_bonds keyword should only be needed for weakly
+        interacting fragments, otherwise all the needed bonds will be
+        found.
+
+        \end{description}
+    */
     IntCoorGen(const RefKeyVal&);
     IntCoorGen(StateIn&);
 
@@ -258,10 +356,10 @@ SavableState_REF_dec(IntCoorGen);
 
 // ////////////////////////////////////////////////////////////////////////
 
-/** MolecularCoor is a virtual base class for a set of classes used to
-    describe coordinates for molecules useful in optimizing geometries
-    (among other things).  MolecularCoor is a SavableState and has StateIn
-    and KeyVal constructors. */
+
+/** The MolecularCoor abstract class describes the coordinate system used
+to describe a molecule.  It is used to convert a molecule's cartesian
+coordinates to and from this coordinate system. */
 class MolecularCoor: public SavableState
 {
 #   define CLASSNAME MolecularCoor
@@ -276,8 +374,22 @@ class MolecularCoor: public SavableState
   public:
     MolecularCoor(RefMolecule&);
     MolecularCoor(StateIn&);
+    /** @memo The KeyVal constructor.
+        \begin{description}
 
-    /// The KeyVal constructor.
+        \item[molecule] A Molecule object.  There is no default.
+
+        \item[debug] An integer which, if nonzero, will cause extra output.
+
+        \item[matrixkit] A SCMatrixKit object.  It is usually unnecessary
+        to give this keyword.
+
+        \item[natom3] An SCDimension object for the dimension of the vector
+        of cartesian coordinates.  It is usually unnecessary to give this
+        keyword.
+
+        \end{description}
+     */
     MolecularCoor(const RefKeyVal&);
 
     virtual ~MolecularCoor();
@@ -356,11 +468,8 @@ class MolecularCoor: public SavableState
 };
 SavableState_REF_dec(MolecularCoor);
 
-/** IntMolecularCoor is a virtual base class for the internal coordinate
-    classes.  Internal coordinates are very useful in geometry
-    optimizations, and are also used to describe the normal vibrational
-    modes in spectroscopy.  IntMolecularCoor is a SavableState and has
-    StateIn and KeyVal constructors. */
+/** The IntMolecularCoor abstract class describes a molecule's coordinates
+in terms of internal coordinates. */
 class IntMolecularCoor: public MolecularCoor
 {
 #   define CLASSNAME IntMolecularCoor
@@ -441,7 +550,111 @@ class IntMolecularCoor: public MolecularCoor
   public:
     IntMolecularCoor(StateIn&);
     IntMolecularCoor(RefMolecule&mol);
-    /// The KeyVal constructor.
+    /** @memo The KeyVal constructor.
+        \begin{description}
+
+        \item[variable] Gives a SetIntCoor object that specifies the
+        internal coordinates that can be varied. If this is not given, the
+        variable coordinates will be generated.
+
+        \item[followed] Gives a IntCoor object that specifies a coordinate
+        to used as the first coordinate in the variable coordinate list.
+        The remaining coordinates will be automatically generated.  The
+        default is no followed coordinate.  This option is usually used to
+        set the initial search direction for a transition state
+        optimization, where it is used in conjunction with the
+        mode_following keyword read by the EFCOpt class.
+
+        \item[fixed] Gives a SetIntCoor object that specifies the internal
+        coordinates that will be fixed.  The default is no fixed
+        coordinates.
+
+        \item[watched] Gives a SetIntCoor object that specifies internal
+        coordinates that will be printed out whenever the coordinates are
+        changed.  The default is none.
+
+        \item[have_fixed_values] If true, then values for the fixed
+        coordinates must be given in fixed and an attempt will be made to
+        displace the initial geometry to the given fixed values. The
+        default is false.
+
+        \item[extra_bonds] This is only read if the generator keyword is
+        not given.  It is a vector of atom numbers, where elements
+        $(i-1)\times 2 + 1$ and $i\times 2$ specify the atoms which are
+        bound in extra bond $i$.  The extra_bonds keyword should only be
+        needed for weakly interacting fragments, otherwise all the needed
+        bonds will be found.
+
+        \item[generator] Specifies an IntCoorGen object that creates
+        simple, redundant internal coordinates. If this keyword is not
+        given, then a vector giving extra bonds to be added is read from
+        extra_bonds and this is used to create an IntCoorGen object.
+
+        \item[decouple_bonds] Automatically generated internal coordinates
+        are linear combinations of possibly any mix of simple internal
+        coordinates.  If decouple_bonds is true, an attempt will be made to
+        form some of the internal coordinates from just stretch simple
+        coordinates.  The default is false.
+
+        \item[decouple_bends] This is like decouple_bonds except it applies
+        to the bend-like coordinates.  The default is false.
+
+        \item[max_update_disp] The maximum displacement to be used in the
+        displacement to fixed internal coordinates values.  Larger
+        displacements will be broken into several smaller displacements and
+        new coordinates will be formed for each of these displacments. This
+        is only used when fixed and have_fixed_values are given.  The
+        default is 0.5.
+
+        \item[max_update_steps] The maximum number of steps permitted to
+        convert internal coordinate displacements to cartesian coordinate
+        displacements.  The default is 100.
+               
+        \item[update_bmat] Displacements in internal coordinates are
+        converted to a cartesian displacements interatively.  If there are
+        large changes in the cartesian coordinates during conversion, then
+        recompute the $B$ matrix, which is using to do the conversion.  The
+        default is false.
+
+        \item[only_totally_symmetric] If a simple test reveals that an
+        internal coordinate is not totally symmetric, then it will not be
+        added to the internal coordinate list.  The default is true.
+               
+        \item[simple_tolerance] The internal coordinates are formed as
+        linear combinations of simple, redundant internal coordinates.
+        Coordinates with coefficients smaller then simple_tolerance will be
+        omitted. The default is 1.0e-3.
+
+        \item[cartesian_tolerance] The tolerance for conversion of internal
+        coordinate displacements to cartesian displacements.  The default
+        is 1.0e-12.
+               
+        \item[\keywd{form:print_simple}] Print the simple internal
+        coordinates.  The default is false.
+               
+        \item[form:print_variable] Print the variable internal coordinates.
+        The default is false.
+               
+        \item[form:print_constant] Print the constant internal coordinates.
+        The default is false.
+               
+        \item[form:print_molecule] Print the molecule when forming
+        coordinates.  The default is false.
+               
+        \item[scale_bonds] Obsolete.  The default value is 1.0.
+
+        \item[scale_bends] Obsolete.  The default value is 1.0.
+               
+        \item[scale_tors] Obsolete.  The default value is 1.0.
+
+        \item[scale_outs] Obsolete.  The default value is 1.0.
+
+        \item[symmetry_tolerance] Obsolete.  The default is 1.0e-5.
+
+        \item[coordinate_tolerance] Obsolete.  The default is 1.0e-7.
+
+        \end{description}
+     */
     IntMolecularCoor(const RefKeyVal&);
 
     virtual ~IntMolecularCoor();
@@ -476,10 +689,15 @@ class IntMolecularCoor: public MolecularCoor
 
 // ///////////////////////////////////////////////////////////////////////
 
-/** The SymmMolecularCoor class implements symmetry adapted linear
-    combinations of internal coordinates.  SymmMolecularCoor is a
-    SavableState and has StateIn and KeyVal constructors.
-    SymmMolecularCoor is derived from IntMolecularCoor. */
+/** The SymmMolecularCoor class derives from IntMolecularCoor.  It provides
+a unique set of totally symmetric internal coordinates.  Giving an
+MolecularEnergy object a coor is usually the best way to optimize a
+molecular structure.  However, for some classes of molecules
+SymmMolecularCoor doesn't work very well.  For example, enediyne can cause
+problems.  In these cases, cartesian coordinates (obtained by not giving
+the MolecularEnergy object the coor keyword) might be better or you can
+manually specify the coordinates that the SymmMolecularCoor object uses
+with the variable keyword (see the IntMolecularCoor class description).  */
 class SymmMolecularCoor: public IntMolecularCoor
 {
 #   define CLASSNAME SymmMolecularCoor
@@ -499,7 +717,25 @@ class SymmMolecularCoor: public IntMolecularCoor
   public:
     SymmMolecularCoor(RefMolecule&mol);
     SymmMolecularCoor(StateIn&);
-    /// The KeyVal constructor.
+    /** @memo The KeyVal constructor.
+        \begin{description}
+
+        \item[change_coordinates] If true, the quality of the internal
+        coordinates will be checked periodically and if they are beginning
+        to become linearly dependent a new set of internal coordinates will
+        be computed.  The default is false.
+
+        \item[max_kappa2] A measure of the quality of the internal
+        coordinates.  Values of the 2-norm condition, $\kappa_2$, larger
+        than max_kappa2 are considered linearly dependent.  The default is
+        10.0.
+
+        \item[transform_hessian] If true, the hessian will be transformed
+        every time the internal coordinates are formed.  The default is
+        true.
+
+        \end{description}
+     */
     SymmMolecularCoor(const RefKeyVal&);
 
     virtual ~SymmMolecularCoor();
@@ -523,10 +759,8 @@ class SymmMolecularCoor: public IntMolecularCoor
 
 // ///////////////////////////////////////////////////////////////////////
 
-/** The RedundMolecularCoor class implements redundant sets of internal
-    coordinates. RedundMolecularCoor is a SavableState has StateIn and
-    KeyVal constructors.  RedundMolecularCoor is derived from
-    IntMolecularCoor. */
+/** The RedundMolecularCoor class provides a redundant set of simple
+internal coordinates. */
 class RedundMolecularCoor: public IntMolecularCoor
 {
 #   define CLASSNAME RedundMolecularCoor

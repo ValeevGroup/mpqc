@@ -36,6 +36,7 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
 
+/** A Volume is a Function of three variables. */
 class Volume: public Function {
 #   define CLASSNAME Volume
 #   include <util/state/stated.h>

@@ -35,7 +35,7 @@
 #include <util/group/message.h>
 #include <util/group/memory.h>
 
-// A memory grp that initializes its data using a messagegrp.
+/** A MsgMemoryGrp that initializes its data using a messagegrp. */
 class MsgMemoryGrp: public MemoryGrp {
 #define CLASSNAME MsgMemoryGrp
 #include <util/class/classda.h>

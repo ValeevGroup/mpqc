@@ -52,6 +52,9 @@ class RefSCDimension;
 
 DescribedClass_REF_fwddec(SCMatrixKit);
 
+/** The SCMatrixKit abstract class acts as a factory for producing
+matrices.  By using one of these, the program makes sure that all of the
+matrices are consistent.  */
 class SCMatrixKit: public DescribedClass {
 #   define CLASSNAME SCMatrixKit
 #   include <util/class/classda.h>

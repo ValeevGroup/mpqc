@@ -44,6 +44,12 @@ class RefNonlinearTransform;
 //  x and g may be reversed (see Schlegel, ab initio Methods in Quantum
 //  Chemistry I, 1987, p 10
 
+
+/** The HessianUpdate abstract class is used to specify a hessian update
+scheme.  It is used, for example, by QNewtonOpt objects.  Based on the
+value of inverse_hessian_ x and g may be reversed (see Schlegel, Ab initio
+Methods in Quantum Chemistry I, 1987, p 10).
+*/
 class HessianUpdate: virtual_base public SavableState {
 #   define CLASSNAME HessianUpdate
 #   include <util/state/stated.h>
@@ -63,6 +69,8 @@ class HessianUpdate: virtual_base public SavableState {
 };
 SavableState_REF_dec(HessianUpdate);
 
+/** The DFPUpdate class is used to specify a Davidson, Fletcher, and Powell
+hessian update scheme.  */
 class DFPUpdate: public HessianUpdate {
 #   define CLASSNAME DFPUpdate
 #   define HAVE_CTOR
@@ -76,6 +84,19 @@ class DFPUpdate: public HessianUpdate {
   public:
     DFPUpdate();
     DFPUpdate(StateIn&);
+    /** The KeyVal constructor reads the following keywords:
+    
+    \begin{description}
+
+    \item[xprev] The previous coordinates can be given (but is not
+    recommended).  The default is none.
+
+    \item[gprev] The previous gradient can be given (but is not
+    recommended).  The default is none.
+
+    \end{description}
+
+    */
     DFPUpdate(const RefKeyVal&);
     void save_data_state(StateOut&);
     ~DFPUpdate();
@@ -85,6 +106,9 @@ class DFPUpdate: public HessianUpdate {
     void set_inverse();
 };
 
+/** The DFPUpdate class is used to specify a Broyden, Fletcher, Goldfarb,
+and Shanno hessian update scheme.  This hessian update method is the
+recommended method for use with QNewtonOpt objects.  */
 class BFGSUpdate: public DFPUpdate {
 #   define CLASSNAME BFGSUpdate
 #   define HAVE_CTOR
@@ -102,6 +126,10 @@ class BFGSUpdate: public DFPUpdate {
                 const RefSCVector&xnew,const RefSCVector&gnew);
 };
 
+/** The PowellUpdate class is used to specify a Powell hessian update.
+This hessian update method is the recommended method for use with
+transition state searches (the EFCOpt class can be used for transition
+state searches).  */
 class PowellUpdate: public HessianUpdate {
 #   define CLASSNAME PowellUpdate
 #   define HAVE_CTOR

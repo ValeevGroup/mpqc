@@ -62,6 +62,18 @@ class SCBlockInfo: public SavableState {
     /// Create a SCBlockInfo object.
     SCBlockInfo(int n, int nblocks = 0, const int *blocksizes = 0);
     SCBlockInfo(StateIn&);
+    /** @memo The KeyVal constructor.
+        \begin{description}
+
+        \item[sizes] This is a vector giving the size of each subblock.
+        There is no default.
+
+        \item[subdims] If this vector is given there is must be entry for
+        each entry in the sizes vector.  Each entry is an SCDimension
+        object.  The default is to not store subdimension information.
+
+        \end{description}
+     */
     SCBlockInfo(const RefKeyVal& keyval);
 
     ~SCBlockInfo();
@@ -115,6 +127,17 @@ class SCDimension: public SavableState {
     SCDimension(const RefSCBlockInfo&, const char *name = 0);
     SCDimension(int n, int nblocks, const int *blocksizes = 0,
                 const char* name = 0);
+    /** @memo The KeyVal constructor.
+        \begin{description}
+
+        \item[n] This gives size of the dimension.  One of n or blocks is
+        required.
+
+        \item[blocks] The block information for the dimension can be given
+        as a SCBlockInfo object.  One of n or blocks is required.
+
+        \end{description}
+    */
     SCDimension(const RefKeyVal&);
     SCDimension(StateIn&s);
 

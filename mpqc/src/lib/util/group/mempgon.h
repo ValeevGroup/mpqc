@@ -34,6 +34,10 @@
 
 #include <util/group/memamsg.h>
 
+
+/** The ParagonMemoryGrp concrete class specializes the ActiveMsgMemoryGrp
+class for machines that implement the full NX library, which is typically
+the case on Intel Paragon machines.  */
 class ParagonMemoryGrp: public ActiveMsgMemoryGrp {
 #define CLASSNAME ParagonMemoryGrp
 #define HAVE_KEYVAL_CTOR

@@ -30,6 +30,9 @@
 
 #include <util/group/message.h>
 
+/** The ParagonMessageGrp class is an concrete implementation of MessageGrp
+that uses the NX library, available on Intel Paragons.
+*/
 class ParagonMessageGrp: public intMessageGrp {
 #define CLASSNAME ParagonMessageGrp
 #define HAVE_KEYVAL_CTOR

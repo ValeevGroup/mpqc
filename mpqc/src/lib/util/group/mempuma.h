@@ -36,6 +36,9 @@
 
 #include <mpi.h>
 
+/** The PumaMemoryGrp concrete class specializes the ActiveMsgMemoryGrp
+class for the Intel Paragon running the Puma OS.  This implementation
+is buggy.  */
 class PumaMemoryGrp: public ActiveMsgMemoryGrp {
 #define CLASSNAME PumaMemoryGrp
 #define HAVE_KEYVAL_CTOR

@@ -35,6 +35,12 @@
 #include <util/group/memmid.h>
 #include <mpi.h>
 
+/** The MPIMemoryGrp is a concrete implementation of MIDMemoryGrp that uses
+MPI 1 calls to provide simulated active messages, which are in turn used by
+the ActiveMsgMemoryGrp base class to implement global shared memory.
+Unfortunately, this class interacts badly with most MPI implementions, so
+you will probably have very limited success using it.  */
+
 class MPIMemoryGrp: public MIDMemoryGrp {
 #define CLASSNAME MPIMemoryGrp
 #define HAVE_KEYVAL_CTOR

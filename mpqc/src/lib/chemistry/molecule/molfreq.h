@@ -43,8 +43,8 @@ DescribedClass_REF_fwddec(RenderedObject);
 DescribedClass_REF_fwddec(RenderedMolecule);
 DescribedClass_REF_fwddec(MolFreqAnimate);
 
-/** The MolecularFrequencies class is used to compute the molecule
-    hessian and frequencies from gradients computed at finite displacements. */
+/** The MolecularFrequencies class is used to compute the molecular
+frequencies and thermodynamic information. */
 class MolecularFrequencies: public SavableState {
 #   define CLASSNAME MolecularFrequencies
 #   define HAVE_STATEIN_CTOR
@@ -78,6 +78,32 @@ class MolecularFrequencies: public SavableState {
                            const RefSymmSCMatrix &dhessian,
                            const RefSCMatrix &dtranst);
   public:
+    /** @memo The KeyVal constructor.
+
+        \begin{description}
+
+        \item[mole] A MolecularEnergy object.  If this is not given then
+        molecule must be given.
+
+        \item[molecule] A Molecule object.  If this is not given then mole
+        must be given.
+
+        \item[point_group] A PointGroup object.  This is the point group
+        used to compute the finite displacements.  Since some
+        MolecularEnergy objects cannot handle changes in the molecule's
+        point group, the molecule must be given $C_1$ symmetry for
+        frequency calculations.  In this case, the point_group keyword can
+        be given to reduce number of the displacements needed to compute
+        the frequencies.  If this is not given then the point group of the
+        molecule is used.
+
+        \item[debug] An integer which, if nonzero, will cause extra output.
+
+        \item[displacement] The amount that coordinates will be displaced.
+        The default is 0.001.
+
+        \end{description}
+     */
     MolecularFrequencies(const RefKeyVal &);
     MolecularFrequencies(StateIn &);
     ~MolecularFrequencies();

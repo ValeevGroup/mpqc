@@ -34,9 +34,9 @@
 
 #include <util/group/memamsg.h>
 
-// This is used for memory handler that use message identifiers to
-// keep track of messages.
-
+/** The MIDMemoryGrp abstract class specializes the ActiveMsgMemoryGrp
+class.  This is for active message systems that manipulate messages in
+terms of long int message identifiers.  */
 class MIDMemoryGrp: public ActiveMsgMemoryGrp {
 #define CLASSNAME MIDMemoryGrp
 #include <util/class/classd.h>

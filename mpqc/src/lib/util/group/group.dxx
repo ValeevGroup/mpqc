@@ -1,0 +1,31 @@
+
+/**@name The Group Library
+
+The group library provides two important abstract base classes for
+communications.  The MessageGrp class is the for standard message passing
+with explicit sends and receives on all involved nodes.  A generic
+technique for doing global operations is provided.  Common global
+reductions, such as a global sum, are directly provided for convenience.
+The MessageGrp class has specializations that permits its use on a wide
+variety of hardware:
+
+\begin{itemize}
+\item PVMMessageGrp uses the PVM package
+\item MPIMessageGrp uses the MPI library
+\item ParagonMessageGrp uses the Intel Paragon's NX library
+\item ShmMessageGrp uses System V IPC (for
+      symmetric multiprocessors)
+\end{itemize}
+
+The other abstract communication class of importance, MemoryGrp, provides
+the appearance of global shared memory.  Only where communications with
+System V IPC is available to all of the processes can real shared memory be
+used.  Otherwise active messages or fake active messages must be used to
+request pieces of memory that do not lie on the local node.  True active
+messages are available when using the OSF operating system on the Intel
+Paragon.  Otherwise the active messages are `faked' by checking for
+outstanding memory requests whenever a communications class member is
+called.  Faking active messages is not desirable and will be replaced by
+true active messages as more libraries are able to support them.
+
+*/

@@ -104,6 +104,8 @@ class MemoryDataRequestQueue {
     void clear() { n_ = 0; }
 };
 
+/** The ActiveMsgMemoryGrp abstract class specializes the MsgMemoryGrp
+class.  It uses active messages to implement global shared memory.  */
 class ActiveMsgMemoryGrp : public MsgMemoryGrp {
 #define CLASSNAME ActiveMsgMemoryGrp
 #include <util/class/classda.h>

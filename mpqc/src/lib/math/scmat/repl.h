@@ -38,6 +38,9 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/abstract.h>
 
+/** The ReplSCMatrixKit produces matrices that work in a many processor
+environment.  A copy of the entire matrix is stored on each node.
+*/
 class ReplSCMatrixKit: public SCMatrixKit {
 #   define CLASSNAME ReplSCMatrixKit
 #   define HAVE_CTOR

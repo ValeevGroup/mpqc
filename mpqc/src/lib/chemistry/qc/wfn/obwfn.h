@@ -35,6 +35,8 @@
 #include <chemistry/qc/wfn/wfn.h>
 
 SavableState_REF_fwddec(OneBodyWavefunction);
+/**A OneBodyWavefunction is a MolecularEnergy that solves an effective
+one-body problem. */
 class OneBodyWavefunction: public Wavefunction {
 #   define CLASSNAME OneBodyWavefunction
 #   include <util/state/stated.h>
@@ -59,6 +61,16 @@ class OneBodyWavefunction: public Wavefunction {
 
  public:
     OneBodyWavefunction(StateIn&);
+    /** @memo The KeyVal constructor.
+        \begin{description}
+
+        \item[eigenvector_accuracy] Gives the accuracy to which
+        eigenvectors are initially computed.  The default 1.0e-7.
+        Accuracies are usually adjusted as needed anyway, so it should not
+        be necessary to change this.
+
+        \end{description}
+    */
     OneBodyWavefunction(const RefKeyVal&);
     ~OneBodyWavefunction();
 

@@ -1,46 +1,24 @@
 
-\documentclass{report}
-
-\usepackage{html}
-\usepackage{verbatim}
-\usepackage{alltt}
-\usepackage{makeidx}
-\usepackage{scdoc}
-
-\setcounter{tocdepth}{1}
-
-\makeindex
-
-\begin{document}
-
-\title{The SC Programmer's Manual}
-
-\author{Curtis L. Janssen \and Edward T. Seidl \and Ida M. B. Nielsen
-        \and Michael E. Colvin}
-
-\date{\today}
-
-\maketitle
-
-\begin{abstract}
+/**@name The Scientific Computing Toolkit
 
 The Scientific Computing (SC) toolkit provides C++ class libraries of use
 in scientific computation.  Included are classes for managing memory,
 saving and restoring the state of objects, reading objects from an input
 file, parallel communication, matrix algebra, among others.
 
+High level routines for supporting quantum chemistry applications are
+provided with the full distribution of SC.
+
 SC runs on Unix compatible workstations (Intel/Linux, SGI/IRIX
 IBM RS/6000), symmetric multi-processors (Intel/Linux, SGI/IRIX),
 and massively parallel computers (IBM SP2, Intel Paragon).
 
-\end{abstract}
+@memo A C++ Library and Programs for Scientific Computing and Quantum Chemistry
+*/
 
-\tableofcontents
+//@{
 
-\part{Overview}
-
-\chapter{Introduction}
-
+/**@name Introduction
 The Scientific Computing (SC) toolkit provides C++ class libraries for
 scientific computation.  Included are classes for managing memory, saving
 and restoring the state of objects, reading objects from an input file,
@@ -60,165 +38,179 @@ Parallel Quantum Chemistry (MPQC) program.  While, currently, MPQC nad SC
 are distributed together, the toolkit code is independent of the quantum
 chemistry code.  The classes provided in src/lib/util do not require those
 in src/lib/math or src/lib/chemistry and the src/lib/math classes do not
-require src/lib/chemistry.  To compile SC on your machine refer to the
-MPQC User Manual.
+require src/lib/chemistry.
+ */
 
-\chapter{The Source Distribution}
+/**@name The Source Distribution
 
 \begin{description}
-\item[\filnm{bin}]  This directory mainly contains commands that
+\item[{\tt bin}]  This directory mainly contains commands that
   are used to help with the compilation of SC.
 
-\item[\filnm{include/libg++-stub}]  This provides a few include
+\item[{\tt include/libg++-stub}]  This provides a few include
   files taken from GNU libg++.
 
-\item[\filnm{lib/basis}] The Gaussian basis set data files are in this
+\item[{\tt lib/basis}] The Gaussian basis set data files are in this
   directory.
 
-\item[\filnm{lib/elisp}] If you are an emacs user, some useful
+\item[{\tt lib/elisp}] If you are an emacs user, some useful
   modes and C++ programming style specifications can be found
   here.
 
-\item[\filnm{lib/perl}] Perl modules that are used by the MPQC
+\item[{\tt lib/perl}] Perl modules that are used by the MPQC
   validation suite are found here.
 
-\item[\filnm{lib/texinputs}] A style file for the SC documenation
+\item[{\tt lib/texinputs}] A style file for the SC documenation
   is located in this directory.
   
-\item[\filnm{src/tools/mkclasses}]  This is intended to generate a
+\item[{\tt src/tools/mkclasses}]  This is intended to generate a
   database for dynamic class library loading, but currently isn't used.
 
-\item[\filnm{src/lib/util/options}]
+\item[{\tt src/lib/util/options}]
   This contains the GetLongOpt command line argument parsing facility
   written by S. Manoharan, with some modifications.
 
-\item[\filnm{src/lib/util/ref}]
+\item[{\tt src/lib/util/ref}]
   This library provides memory management for objects.
 
-\item[\filnm{src/lib/util/container}] This library provides container
+\item[{\tt src/lib/util/container}] This library provides container
   classes.  Some of these classes are not very efficient and it is likely
   that they will be replaced by the C++ Standard Template Library when it
   is supported fully by more compilers.
 
-\item[\filnm{src/lib/util/misc}] This contains a variety of independent
+\item[{\tt src/lib/util/misc}] This contains a variety of independent
   classes that don't belong anywhere else.  Classes to assist with
   debugging, provide information about hte execution environment, help make
   the output prettier, maintain detailed timing information, etc. are
   provided.
 
-\item[\filnm{src/lib/util/class}] This library provides base classes for
+\item[{\tt src/lib/util/class}] This library provides base classes for
   classes that require a common interface for obtaining meta-information
   about the class.  This meta-information includes the class name,
   meta-information about the parent class and derived classes that have
   been linked into the executable, pointers to functions that can create
   instances of the class, and so on.
 
-\item[\filnm{src/lib/util/keyval}] This library provides classes that read
+\item[{\tt src/lib/util/keyval}] This library provides classes that read
   keyword/value pairs from an input file.
 
-\item[\filnm{src/lib/util/state}] The state library provides a base class
+\item[{\tt src/lib/util/state}] The state library provides a base class
   for persistent objects and classes to read and write these objects to a
   stream.
 
-\item[\filnm{src/lib/util/group}] This group library provides classes to
+\item[{\tt src/lib/util/group}] This group library provides classes to
   communicate between nodes of a parallel machine.  Message passing,
   distributed shared memory, and multi-threaded models are supported.
 
-\item[\filnm{src/lib/util/render}] This library provides an abstract
+\item[{\tt src/lib/util/render}] This library provides an abstract
   interface to rendering packages.  This code is not currently used and
   will likely change quite a bit in the future.
 
-\item[\filnm{src/lib/math/linpackd}] This library contains double precision
+\item[{\tt src/lib/math/linpackd}] This library contains double precision
   C versions of some of the linpack routines.
 
-\item[\filnm{src/lib/math/scmat}] This library defines an abstract matrix
+\item[{\tt src/lib/math/scmat}] This library defines an abstract matrix
   class and supplies concrete implementations of parallel replicated and
   distributed matrices.
 
-\item[\filnm{src/lib/math/optimize}] The optimize library provides classes
+\item[{\tt src/lib/math/optimize}] The optimize library provides classes
   to perform optimizations and base classes for objects that compute a
   scalar quantity as a function of several coordinates.
 
-\item[\filnm{src/lib/math/topology}] These utility classes will be replaced
+\item[{\tt src/lib/math/topology}] These utility classes will be replaced
   in a future release of SC.
 
-\item[\filnm{src/lib/math/isosurf}] This library can be used to compute a
+\item[{\tt src/lib/math/isosurf}] This library can be used to compute a
   triangulated approximation to an isosurface.
 
-\item[\filnm{src/lib/math/symmetry}] The symmetry library contains classes
+\item[{\tt src/lib/math/symmetry}] The symmetry library contains classes
   useful for describing point group symmetry.
 
-\item[\filnm{src/lib/chemistry/molecule}] This library has classes to
+\item[{\tt src/lib/chemistry/molecule}] This library has classes to
   describe molecules and internal molecular coordinate systems. A base
   class for classes that map the molecular coordinates to an energy is
   provided to permit the optimization of the molecular coordinates.
   The internals of many of these classes will be revised in the
   next release.
 
-\item[\filnm{src/lib/chemistry/solvent}]  This code can be used to
+\item[{\tt src/lib/chemistry/solvent}]  This code can be used to
   describe solvated molecules.  It is still in its infancy and
   is not yet used by any other part of SC.
 
-\item[\filnm{src/lib/chemistry/qc/basis}] The basis library has classes
+\item[{\tt src/lib/chemistry/qc/basis}] The basis library has classes
   that describe Gaussian basis sets and base classes for libraries that
   compute integrals involving these functions.
 
-\item[\filnm{src/lib/chemistry/qc/oint3}] This library is comprised of
+\item[{\tt src/lib/chemistry/qc/oint3}] This library is comprised of
   machine generated code that is only used by the intv3 library.
 
-\item[\filnm{src/lib/chemistry/qc/intv3}] The intv3 library computes
+\item[{\tt src/lib/chemistry/qc/intv3}] The intv3 library computes
   integrals involving Gaussian basis functions.
 
-\item[\filnm{src/lib/chemistry/qc/wfn}] The wfn library contains base
+\item[{\tt src/lib/chemistry/qc/wfn}] The wfn library contains base
   classes for classes that, given a molecule and a basis set, compute the
   energy and other properties of the molecule.
 
-\item[\filnm{src/lib/chemistry/qc/scf}] The scf library is used to compute
+\item[{\tt src/lib/chemistry/qc/scf}] The scf library is used to compute
   Hartree-Fock energies and gradients.
 
-\item[\filnm{src/lib/chemistry/qc/mbpt}] This library computes second-order
+\item[{\tt src/lib/chemistry/qc/mbpt}] This library computes second-order
   perturbation theory energies and gradients.
 
-\item[\filnm{src/lib/chemistry/qc/psi}] This provides an example of
+\item[{\tt src/lib/chemistry/qc/psi}] This provides an example of
   interfacing MPQC to an external quantum chemistry package.  It
   is not compiled by default.
 
-\item[\filnm{src/lib/chemistry/qc/g92}] This is another example of
+\item[{\tt src/lib/chemistry/qc/g92}] This is another example of
   interfacing MPQC to an external quantum chemistry package.  It
   is not compiled by default and is out-of-date.  The psi library
   provides a better example.
 
-\item[\filnm{src/bin/mpqc}]
+\item[{\tt src/bin/mpqc}]
   The Massively Parallel Quantum Chemistry program is in this directory.
 
-\item[\filnm{src/bin/molrender}]
+\item[{\tt src/bin/molrender}]
   This is a (probably nonfunctional) example of the use of the render
   library.
 
-\item[\filnm{src/bin/orbixme}]
+\item[{\tt src/bin/orbixme}]
   An example of using Corba and SC.  This hasn't been used in quite
   some time and probably won't compile.
 
 \end{description}
 
-\part{Utility Libraries}
+ */
 
-\input{util/ref/doc/refdoc.tex}
-\input{util/class/doc/class.tex}
-\input{util/state/doc/state.tex}
-\input{util/group/doc/group.tex}
-\input{util/keyval/doc/keyvaldoc.tex}
+/**@name Compiling
+  @memo Instructions for compiling SC.
+  */
 
-\part{Math Libraries}
+//@{
+  //@Include: compiling.dxx
+//@}
 
-\input{math/scmat/doc/scmat.tex}
-\input{math/optimize/doc/opt.tex}
-\input{math/symmetry/doc/symmetry.tex}
+/**@name Library Documentation
+  @memo Additional documentation for selected libraries.
+  */
 
-\part{Chemistry Libraries}
+//@{
+  //@Include: library.dxx
+//@}
 
-\input{chemistry/molecule/doc/moldoc.tex}
+/**@name Binary Documentation
+  @memo Additional documentation for accompanying executables.
+  */
 
-\printindex
+//@{
+  //@Include: binary.dxx
+//@}
 
-\end{document}
+/**@name Include Files
+  @memo A listing, by directory, of documented include files.
+  */
+
+//@{
+  //@Include: include.dxx
+//@}
+
+//@}

@@ -56,9 +56,34 @@ class Optimize: virtual_base public SavableState {
     RefFunction function_;
     RefConvergence conv_;
   public:
-    /// Standard constructors and destructor.
     Optimize();
+    /// Restore the state of a Function object.
     Optimize(StateIn&);
+
+    /** The KeyVal constructor reads the following information:
+
+        \begin{description}
+
+        \item[checkpoint] If true, the optimization will be checkpointed.
+        The default is false.
+
+        \item[checkpoint_file] The name of the checkpoint file.  The name
+        defaults to opt_ckpt.dat.
+
+        \item[max_iterations] The maximum number of interations.
+        The default is 10.
+
+        \item[max_stepsize] The maximum stepsize.  The default is 0.6.
+
+        \item[function] A Function object.  There is no default.
+
+        \item[convergence] This can be either a floating point number or a
+        Convergence object.  If it is a floating point number then it is
+        the convergence criterion.  See the description Convergence class
+        for the default.
+
+        \end{description}
+    */
     Optimize(const RefKeyVal&);
     virtual ~Optimize();
 
@@ -93,6 +118,8 @@ class Optimize: virtual_base public SavableState {
 };
 SavableState_REF_dec(Optimize);
 
+/** The LineOpt abstract class is used to perform one dimensional
+optimizations.*/
 class LineOpt: public Optimize {
 #   define CLASSNAME LineOpt
 #   include <util/state/stated.h>

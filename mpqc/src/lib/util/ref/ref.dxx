@@ -1,25 +1,20 @@
 
-\chapter{The Reference Library}
-\index{pointers}
-\index{smart pointers}
-\index{reference counting}
-\index{memory management}
-\index{circular lists}
+/**@name The Reference Library
 
 It is fairly easy in C++ to create a pointer to an object that
 actually references invalid memory.  One common way to do this
-is to create an object with \srccd{new} and store that
+is to create an object with new and store that
 object's pointer.  Then the pointer is given to another
 object's member function as an argument which keeps a copy of
 the pointer for future use.  After the member function
 returns, the routine that originally created the object
-\srccd{delete}'s it, not knowing that another object has since
+delete's it, not knowing that another object has since
 created a reference to the object.  The result of using the
-\srccd{delete}'ed object is unpredictable and would likely be
+delete'ed object is unpredictable and would likely be
 a program crash.  It is up to the programmer to provide the
 logic necessary to avoid this problem.  The programmer must
-also deal with the problem of calling to \srccd{delete}
-operator on any \srccd{new}'ed memory when it is no longer
+also deal with the problem of calling to delete
+operator on any new'ed memory when it is no longer
 referenced.
 
 Reference counting is one technique that can be applied to
@@ -31,7 +26,7 @@ the behavior of C++ pointers by providing
 reference counted object and increments the reference count of
 objects when they are assigned to it while decrementing the
 counts of the objects that are displaced by these assigments.
-The smart pointer class automatically \srccd{delete}'s the
+The smart pointer class automatically delete's the
 object when its reference count drops to zero.
 
 A deficiency of this method is that unreferenced circular
@@ -43,47 +38,51 @@ the automated reference mechanism finish the work.
 The reference library provides smart pointers and a base class that
 can be used to maintain reference counts to objects.  For an
 object to be reference counted its class must inherit from
-the \clsnm{VRefCount} class.  This adds \srccd{sizeof(int)} bytes
+the VRefCount class.  This adds \srccd{sizeof(int)} bytes
 of overhead per object and makes the destructor virtual (so a vtable
 will be added to objects of the class, if there wasn't already a virtual
 member in the class).
 
 The smart pointers that maintain the reference counts are
-provided by the \clsnmref{Ref} class template.  Users of
+provided by the Ref class template.  Users of
 compilers that have problems with class templates can instead
-use classes created with the \srccd{cpp} macros \srccd{REF\_dec} and
-\srccd{REF\_def}.  These macros take the name of the reference counted
+use classes created with the cpp macros REF\_dec and
+REF\_def.  These macros take the name of the reference counted
 class as the only argument and declare the interface
 and define the members of the new Ref class.
-The \srccd{REF\_dec} macro takes a class name as an argument and
+The REF\_dec macro takes a class name as an argument and
 constructs a new class declaration which is formed by appending the
-class name to \srccd{Ref}.  This macro would usually be invoked in the
+class name to Ref.  This macro would usually be invoked in the
 same header file that gives the declaration for that reference counted
 class.  The implementation of the members for this class are generated
-by using the \srccd{REF\_def} which also takes the class name as the
+by using the REF\_def which also takes the class name as the
 argument.  This should be given in one of the source files relating to
 that class and should not be placed in the header file.  The
-\srccd{REF\_dec} macro must be followed by a semicolon.
+REF\_dec macro must be followed by a semicolon.
 
-\section{Customizing the Reference Counting Package}
+*/
+
+//@{
+
+/**@name Customizing the Reference Counting Package
 
   The behaviour of the package can be modified at compile time
 with the following five macros, each of which should be undefined, 0, or 1:
 
 \begin{description}
-\item[\srccd{REF\_CHECK\_STACK}]
+\item[REF\_CHECK\_STACK]
   If this is 1, referenced objects are checked to see if they
   reside on the stack, in which case storage for the object is not managed,
   if management is enabled.
-\item[\srccd{REF\_CHECKSUM}]
+\item[REF\_CHECKSUM]
   If this is 1, checksums of the reference count are kept
   and checked to see if an object has been overwritten.
-\item[\srccd{REF\_MANAGE}]
+\item[REF\_MANAGE]
   If this is 1, the unmanage member is enabled.
-\item[\srccd{REF\_CHECK\_MAX\_NREF}]
+\item[REF\_CHECK\_MAX\_NREF]
   If this is 1, the reference count is checked before
   it is incremented to make sure it isn't too big.
-\item[\srccd{REF\_CHECK\_MIN\_NREF}]
+\item[REF\_CHECK\_MIN\_NREF]
   If this is 1, the reference count is checked before
   it is decremented to make sure it isn't already zero.
 \end{description}
@@ -92,7 +91,7 @@ If a macro is undefined, then the behaviour is architecture
 dependent---usually, the macro will be set to 1 in this case.
 For maximum efficiency and for normal operation after the program is
 debugged, compile with all of the above macros defined to zero.
-This can also be done by defining \srccd{REF\_OPTIMIZE}.
+This can also be done by defining REF\_OPTIMIZE.
 
   An include file can be used to set these options as well.  This has
 the advantage that dependency checking will force an automatic
@@ -101,24 +100,26 @@ in the \filnm{<config.h>} producing by the automated configuration
 procedure.
 
   Note that all source code that uses references must be compiled with
-the same value for \srccd{REF\_CHECKSUM} and \srccd{REF\_MANAGE}.
+the same value for REF\_CHECKSUM and REF\_MANAGE.
 Changing these can change the storage layout and the interpretation of
 the reference count data.
 
-\section{A Reference Example}
+*/
+
+/**@name A Reference Example
 
 Following is a simple example of how to manage memory with reference
 counts.
 
-\begin{alltt}
+\begin{verbatim}
 #include <util/container/ref.h>
 
-class A: virtual public \clsnmref{VRefCount} \{
-\};
+class A: virtual public VRefCount {
+};
 REF_dec(A);
 
-class B: public A \{
-\};
+class B: public A {
+};
 REF_dec(B);
 
 REF_def(A);
@@ -126,7 +127,7 @@ REF_def(B);
 
 int
 main()
-\{
+{
   RefA a1(new A);
   RefA a2;
 
@@ -151,5 +152,11 @@ main()
   // The B object will be deleted here because all of the references
   // to it go out of scope and destroyed.
   return 0;
-\}
-\end{alltt}
+}
+\end{verbatim}
+
+*/
+
+//@}
+
+ */

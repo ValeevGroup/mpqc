@@ -52,9 +52,8 @@ class PointBag_double;
 SavableState_REF_fwddec(SCElementOp);
 SavableState_REF_fwddec(SCElementOp3);
 
-// some useful things to have that depend on the underlying integrals
-// package
-
+/** The Integral abstract class acts as a factory to provide objects that
+compute one and two electron integrals.  */
 class Integral : public SavableState {
 #   define CLASSNAME Integral
 #   include <util/state/stated.h>

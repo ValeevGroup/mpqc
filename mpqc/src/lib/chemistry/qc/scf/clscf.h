@@ -36,6 +36,8 @@
 
 // //////////////////////////////////////////////////////////////////////////
 
+/** The CLSCF class is a base for classes implementing a self-consistent
+procedure for closed-shell molecules. */
 class CLSCF: public SCF {
 #   define CLASSNAME CLSCF
 #   include <util/state/stated.h>
@@ -52,6 +54,19 @@ class CLSCF: public SCF {
 
   public:
     CLSCF(StateIn&);
+    /** @memo The KeyVal constructor:
+        \begin{description}
+
+        \item[total_charge] This integer gives the total charge of the
+        molecule.  The default is 0.
+
+        \item[docc] This vector of integers gives the total number of
+        doubly occupied orbitals of each irreducible representation.  By
+        default, this will be chosen to make the molecule uncharged and the
+        electrons will be distributed among the irreducible representations
+        according to the orbital energies.
+
+        \end{description} */
     CLSCF(const RefKeyVal&);
     ~CLSCF();
 

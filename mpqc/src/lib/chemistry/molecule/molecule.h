@@ -45,9 +45,57 @@
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/atominfo.h>
 
-/** The Molecule class provides information about a molecule.  Molecule is
-     a SavableState and has a StateIn constructor.  Molecule also has a
-     KeyVal constructor. */
+/**
+The Molecule class contains information about molecules.  It has a
+KeyVal constructor that can create a new molecule from either a
+PDB file or from a list of Cartesian coordinates.
+
+The following ParsedKeyVal input reads from the PDB
+file #h2o.pdb#:
+\begin{verbatim}
+molecule<Molecule>: (
+   pdb_file = "h2o.pdb"
+ )
+\end{verbatim}
+
+The following input explicitly gives the atom coordinates, using the
+ParsedKeyVal table notation:
+\begin{verbatim}
+molecule<Molecule>: (
+    unit=angstrom
+    { atom_labels atoms           geometry            } = {
+          O1         O   [ 0.000000000 0  0.369372944 ]
+          H1         H   [ 0.783975899 0 -0.184686472 ]
+          H2         H   [-0.783975899 0 -0.184686472 ]
+     }
+    )
+  )
+\end{verbatim}
+The default units are Bohr with can be overridden with
+#unit=angstrom#.  The #atom_labels# array can be
+omitted.  The #atoms# and #geometry# arrays
+are required.
+
+The Molecule class has a PointGroup
+member object, which also has a KeyVal constructor
+that is called when a Molecule is made.  The
+following example constructs a molecule with $C_{2v}$ symmetry:
+\begin{verbatim}
+molecule<Molecule>: (
+    symmetry=c2v
+    unit=angstrom
+    { atoms         geometry            } = {
+        O   [0.000000000 0  0.369372944 ]
+        H   [0.783975899 0 -0.184686472 ]
+     }
+    )
+  )
+\end{verbatim}
+Only the symmetry unique atoms need to be specified.  Nonunique
+atoms can be given too, however, numerical errors in the
+geometry specification can result in the generation of extra
+atoms so be careful.
+*/
 class Molecule: public SavableState
 {
 #   define CLASSNAME Molecule
@@ -129,7 +177,7 @@ class Molecule: public SavableState
 
     /// Sets the PointGroup of the molecule.
     void set_point_group(const RefPointGroup&, double tol=1.0e-7);
-    /// Returns the \clsnmref{PointGroup} of the molecule.
+    /// Returns the PointGroup of the molecule.
     RefPointGroup point_group() const;
 
     /** Find this molecules true point group (limited to abelian groups).
@@ -208,7 +256,7 @@ class Molecule: public SavableState
     /// Return the maximum atomic number.
     int max_z();
 
-    /// Return the molecules \clsnmref{AtomInfo} object.
+    /// Return the molecules AtomInfo object.
     RefAtomInfo atominfo() const { return atominfo_; }
 
     void save_data_state(StateOut&);

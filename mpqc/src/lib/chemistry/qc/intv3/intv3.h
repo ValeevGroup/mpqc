@@ -35,6 +35,7 @@
 class SphericalTransformV3;
 class ISphericalTransformV3;
 
+/** IntegralV3 computes integrals between Gaussian basis functions. */
 class IntegralV3 : public Integral {
 #   define CLASSNAME IntegralV3
 #   define HAVE_KEYVAL_CTOR

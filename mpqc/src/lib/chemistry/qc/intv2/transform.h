@@ -25,10 +25,11 @@ class SphericalTransform {
         double coef() const { return coef_; }
         void init(int a, int b, int c, double coef, int pureindex);
     };
-  private:
+  protected:
     int n_;
     int l_;
     Component *components_;
+    SphericalTransform();
   public:
     SphericalTransform(int l);
     ~SphericalTransform();
@@ -44,23 +45,35 @@ class SphericalTransform {
     void add(int a, int b, int c, double coef, int pureindex);
 };
 
+// The inverse transforms
+class ISphericalTransform: public SphericalTransform {
+  public:
+    ISphericalTransform(int l);
+};
+
 class SphericalTransformIter {
   private:
     const SphericalTransform *transform_;
 
     int i_;
   public:
-    SphericalTransformIter(int l);
+    SphericalTransformIter(SphericalTransform*);
+    SphericalTransformIter(int l, int inverse = 0);
     void begin() { i_ = 0; }
+    void start() { begin(); }
     void next() { i_++; }
     int ready() { return i_ < transform_->n(); }
+    operator int() { return ready(); }
     int l() { return transform_->l(); }
     int cartindex() { return transform_->cartindex(i_); }
     int pureindex() { return transform_->pureindex(i_); }
+    int bfn() { return pureindex(); }
     double coef() { return transform_->coef(i_); }
     int a() { return transform_->a(i_); }
     int b() { return transform_->b(i_); }
     int c() { return transform_->c(i_); }
+    int l(int i) { return i?(i==1?b():c()):a(); }
+    int n() { return 2*l() + 1; }
 };
 
 #endif

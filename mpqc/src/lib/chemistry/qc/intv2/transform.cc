@@ -7,6 +7,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
+extern "C" {
+#include <math/array/matrix.h>
+#include <math/array/matrixzero.h>
+#include <math/array/matrixprnt.h>
+#include <math/array/matrixallc.h>
+}
+
 #include <chemistry/qc/intv2/int_macros.h>
 #include <chemistry/qc/intv2/atoms.h>
 #include <chemistry/qc/intv2/transform.h>
@@ -20,6 +28,10 @@ static SphericalTransform trans2(2);
 static SphericalTransform trans3(3);
 static SphericalTransform trans4(4);
 
+static ISphericalTransform itrans2(2);
+static ISphericalTransform itrans3(3);
+static ISphericalTransform itrans4(4);
+
 void
 SphericalTransform::Component::init(int a, int b, int c, double coef,
                                     int pureindex)
@@ -30,6 +42,13 @@ SphericalTransform::Component::init(int a, int b, int c, double coef,
   coef_ = coef;
   pureindex_ = pureindex;
   cartindex_ = INT_CARTINDEX(a+b+c,a,b);
+}
+
+SphericalTransform::SphericalTransform()
+{
+  n_ = 0;
+  l_ = 0;
+  components_ = 0;
 }
 
 SphericalTransform::SphericalTransform(int l)
@@ -54,6 +73,7 @@ SphericalTransform::SphericalTransform(int l)
       add(1,0,1,  1.0 * sqrt(3.0), i);
     }
   else if (l==3) {
+#if 0
       add(0,0,3,  2.0 * sqrt(0.25), i);
       add(2,0,1, -3.0 * sqrt(0.25), i);
       add(0,2,1, -3.0 * sqrt(0.25), i);
@@ -76,8 +96,33 @@ SphericalTransform::SphericalTransform(int l)
       i++;
       add(0,3,0,  1.0 * sqrt(0.625), i);
       add(2,1,0, -3.0 * sqrt(0.625), i);
+#else
+      add(0,0,3,  2.0, i);
+      add(2,0,1, -3.0, i);
+      add(0,2,1, -3.0, i);
+      i++;           
+      add(1,0,2,  4.0, i);
+      add(3,0,0, -1.2, i);
+      add(1,2,0, -0.4, i);
+      i++;           
+      add(0,1,2,  4.0, i);
+      add(0,3,0, -1.2, i);
+      add(2,1,0, -0.4, i);
+      i++;           
+      add(2,0,1,  1.0, i);
+      add(0,2,1, -1.0, i);
+      i++;           
+      add(1,1,1,  1.0, i);
+      i++;           
+      add(3,0,0,  1.0, i);
+      add(1,2,0, -3.0, i);
+      i++;           
+      add(0,3,0,  1.0, i);
+      add(2,1,0, -3.0, i);
+#endif
     }
   else if (l==4) {
+#if 0
       add(0,0,4,  8.0 * sqrt(1.0/64.0), i);
       add(4,0,0,  3.0 * sqrt(1.0/64.0), i);
       add(0,4,0,  3.0 * sqrt(1.0/64.0), i);
@@ -114,6 +159,44 @@ SphericalTransform::SphericalTransform(int l)
       i++;
       add(3,1,0,  1.0 * sqrt(8.75), i);
       add(1,3,0, -1.0 * sqrt(8.75), i);
+#else
+      add(0,0,4,  8.0, i);
+      add(4,0,0,  3.0 + 15.0/19.0, i);
+      add(0,4,0,  3.0 + 15.0/19.0, i);
+      add(2,0,2,-24.0, i);
+      add(0,2,2,-24.0, i);
+      add(2,2,0,  6.0 - 6.0 * 15.0/19.0, i);
+      i++;
+      add(1,0,3,  4.0, i);
+      add(3,0,1, -3.6, i);
+      add(1,2,1, -1.2, i);
+      i++;
+      add(0,1,3,  4.0, i);
+      add(0,3,1, -3.6, i);
+      add(2,1,1, -1.2, i);
+      i++;
+      add(2,0,2,  6.0, i);
+      add(0,2,2, -6.0, i);
+      add(4,0,0, -1.0, i);
+      add(0,4,0,  1.0, i);
+      i++;
+      add(1,1,2,  6.0, i);
+      add(3,1,0, -1.0, i);
+      add(1,3,0, -1.0, i);
+      i++;
+      add(1,2,1,  3.0, i);
+      add(3,0,1, -1.0, i);
+      i++;
+      add(2,1,1,  3.0, i);
+      add(0,3,1, -1.0, i);
+      i++;
+      add(2,2,0,  6.0, i);
+      add(4,0,0, -1.0, i);
+      add(0,4,0, -1.0, i);
+      i++;
+      add(3,1,0,  1.0, i);
+      add(1,3,0, -1.0, i);
+#endif
     }
   else {
       fprintf(stderr, "SphericalTransform: cannot handle l = %d\n", l);
@@ -138,21 +221,84 @@ SphericalTransform::add(int a, int b, int c, double coef, int pureindex)
   n_++;
 }
 
-SphericalTransformIter::SphericalTransformIter(int l)
+SphericalTransformIter::SphericalTransformIter(SphericalTransform*t)
+{
+  transform_ = t;
+}
+
+SphericalTransformIter::SphericalTransformIter(int l, int inverse)
 {
   if (l==2) {
-      transform_ = &trans2;
+      if (inverse) transform_ = &itrans2;
+      else transform_ = &trans2;
     }
   else if (l==3) {
-      transform_ = &trans3;
+      if (inverse) transform_ = &itrans3;
+      else transform_ = &trans3;
     }
   else if (l==4) {
-      transform_ = &trans4;
+      if (inverse) transform_ = &itrans4;
+      else transform_ = &trans4;
     }
   else {
       fprintf(stderr, "SphericalTransformIter: cannot handle l = %d\n", l);
       abort();
     }
+}
+
+ISphericalTransform::ISphericalTransform(int l)
+{
+#if 1
+  l_ = l;
+  
+  // this transform is orthogonal, but not normalized
+  SphericalTransform t(l);
+
+  double *norm = new double[2*l+1];
+  int i;
+  for (i=0; i<2*l+1; i++) norm[i] = 0.0;
+
+  SphericalTransformIter I(&t);
+
+  for (I.begin(); I.ready(); I.next()) {
+      norm[I.pureindex()] += I.coef()*I.coef();
+    }
+
+  for (i=0; i<2*l+1; i++) norm[i] = 1.0/norm[i];
+
+  for (I.begin(); I.ready(); I.next()) {
+      add(I.a(), I.b(), I.c(), I.coef()*norm[I.pureindex()], I.pureindex());
+    }
+
+  delete[] norm;
+#else
+  int ncart = 2*l+1;
+  int npure = ((l+1)*(l+2))>>1;
+
+  double_matrix_t T;
+  //zero_double_matrix(&T);
+  T.n1 = 0;
+  T.n2 = 0;
+  T.d = 0;
+  allocbn_double_matrix(&T,"n1 n2",npure, ncart);
+
+  SphericalTransform t(l);
+
+  SphericalTransformIter I(&t);
+
+  int i,j;
+  for (i=0; i<npure; i++) {
+      for (j=0; j<ncart; j++) {
+          T.d[i][j] = 0.0;
+        }
+    }
+
+  for (I.begin(); I.ready(); I.next()) {
+      T.d[I.pureindex()][I.cartindex()] = I.coef();
+    }
+
+  print_double_matrix(stdout, &T);
+#endif
 }
 
 static double *source = 0;

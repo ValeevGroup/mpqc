@@ -422,6 +422,31 @@ GaussianBasisSet::max_angular_momentum() const
 }
 
 int
+GaussianBasisSet::max_cartesian() const
+{
+  int i;
+  int max = 0;
+  for (i=0; i<nshell_; i++) {
+      int maxshi = shell_[i]->max_cartesian();
+      if (max < maxshi) max = maxshi;
+    }
+  return max;
+}
+
+int
+GaussianBasisSet::max_am_for_contraction(int con) const
+{
+  int i;
+  int max = 0;
+  for (i=0; i<nshell_; i++) {
+      if (shell_[i]->ncontraction() <= con) continue;
+      int maxshi = shell_[i]->am(con);
+      if (max < maxshi) max = maxshi;
+    }
+  return max;
+}
+
+int
 GaussianBasisSet::function_to_shell(int func) const
 {
   return function_to_shell_[func];

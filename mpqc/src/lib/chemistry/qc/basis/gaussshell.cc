@@ -33,14 +33,6 @@ GaussianShell::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-int
-GaussianShell::max_am() const
-{
-  int r = 0;
-  for (int i=0; i<ncon; i++) if (r<l[i]) r = l[i];
-  return r;
-}
-
 // this GaussianShell ctor allocates and computes normalization constants
 // and computes nfunc
 GaussianShell::GaussianShell(
@@ -247,6 +239,33 @@ int GaussianShell::max_angular_momentum() const
       if (max < maxi) max = maxi;
     }
   return max;
+}
+
+int GaussianShell::max_cartesian() const
+{
+  int max = 0;
+  for (int i=0; i<ncontraction(); i++) {
+      int maxi = ncartesian(i);
+      if (max < maxi) max = maxi;
+    }
+  return max;
+}
+
+int GaussianShell::ncartesian() const
+{
+  int ret = 0;
+  for (int i=0; i<ncontraction(); i++) {
+      ret += ncartesian(i);
+    }
+  return ret;
+}
+
+int GaussianShell::has_pure() const
+{
+  for (int i=0; i<ncontraction(); i++) {
+      if (is_pure(i)) return 1;
+    }
+  return 0;
 }
 
 int GaussianShell::nfunction(int con) const

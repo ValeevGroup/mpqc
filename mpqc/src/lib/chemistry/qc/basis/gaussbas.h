@@ -85,6 +85,10 @@ class GaussianBasisSet: public SavableState
 
     int max_nfunction_in_shell() const;
     int max_angular_momentum() const;
+    // This is only need by integrals routines to set up
+    // intermediate arrays.
+    int max_am_for_contraction(int con) const;
+    int max_cartesian() const;
 
     int shell_to_function(int i) const;
     int function_to_shell(int i) const;

@@ -82,13 +82,16 @@ class GaussianShell: public SavableState
     int ncontraction() const;
     int nfunction() const;
     int max_angular_momentum() const;
+    int max_cartesian() const;
     int am(int con) const;
-    int max_am() const;
+    int max_am() const { return max_angular_momentum(); }
     char amchar(int con) const;
     int nfunction(int con) const;
+    int ncartesian() const;
     int ncartesian(int con) const;
     int is_cartesian(int con) const;
     int is_pure(int con) const;
+    int has_pure() const;
     // returns the con coef for unnormalized primitives
     double coefficient_unnorm(int con,int prim) const;
     // returns the con coef for normalized primitives

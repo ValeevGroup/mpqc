@@ -3,10 +3,13 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
+#include <iostream.h>
+#include <iomanip.h>
+#include <math.h>
+
+#include <util/misc/formio.h>
 #include <math/scmat/matrix3.h>
 #include <math/scmat/vector3.h>
-#include <math.h>
 
 ////////////////////////////////////////////////////////////////////////
 // DMatrix3
@@ -16,7 +19,7 @@
 SCMatrix3::SCMatrix3(const RefSCMatrix&x)
 {
   if (x.dim().n() != 3) {
-      fprintf(stderr,"SCMatrix3::SCMatrix3(RefSCMatrix&): bad length\n");
+      cerr << indent "SCMatrix3::SCMatrix3(RefSCMatrix&): bad length\n";
       abort();
     }
   _v[0] = x.get_element(0);
@@ -184,11 +187,20 @@ SCMatrix3 SCMatrix3::operator-(const SCMatrix3&v) const
 }
 
 
-void SCMatrix3::print(FILE*fp) const
+void SCMatrix3::print(ostream& os) const
 {
-  fprintf(fp,"{%8.5f %8.5f %8.5f}\n",operator()(0,0),operator()(0,1),operator()(0,2));
-  fprintf(fp,"{%8.5f %8.5f %8.5f}\n",operator()(1,0),operator()(1,1),operator()(1,2));
-  fprintf(fp,"{%8.5f %8.5f %8.5f}\n",operator()(2,0),operator()(2,1),operator()(2,2));
+  os << indent << "{"
+     << setw(8) << setprecision(5) << operator()(0,0) << " "
+     << setw(8) << setprecision(5) << operator()(0,1) << " "
+     << setw(8) << setprecision(5) << operator()(0,2) << "}\n";
+  os << indent << "{"
+     << setw(8) << setprecision(5) << operator()(1,0) << " "
+     << setw(8) << setprecision(5) << operator()(1,1) << " "
+     << setw(8) << setprecision(5) << operator()(1,2) << "}\n";
+  os << indent << "{"
+     << setw(8) << setprecision(5) << operator()(2,0) << " "
+     << setw(8) << setprecision(5) << operator()(2,1) << " "
+     << setw(8) << setprecision(5) << operator()(2,2) << "}\n";
 }
 
 

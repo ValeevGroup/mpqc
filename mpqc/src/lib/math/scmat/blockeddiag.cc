@@ -1,6 +1,7 @@
 
-#include <stdio.h>
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/blocked.h>
 #include <math/scmat/cmatrix.h>
@@ -86,8 +87,8 @@ BlockedDiagSCMatrix::accumulate(DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-    fprintf(stderr,"BlockedDiagSCMatrix:: accumulate(SCMatrix*a):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent << "BlockedDiagSCMatrix:: accumulate(SCMatrix*a): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -167,7 +168,7 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp2& op,
   BlockedDiagSCMatrix *lm = BlockedDiagSCMatrix::require_castdown(m,
                                     "BlockedDiagSCMatrix::element_op");
   if (!dim()->equiv(lm->dim())) {
-    fprintf(stderr,"BlockedDiagSCMatrix: bad element_op\n");
+    cerr << indent << "BlockedDiagSCMatrix: bad element_op\n";
     abort();
   }
 
@@ -198,7 +199,7 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp3& op,
                                       "BlockedDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-    fprintf(stderr,"BlockedDiagSCMatrix: bad element_op\n");
+    cerr << indent << "BlockedDiagSCMatrix: bad element_op\n";
     abort();
   }
 
@@ -303,7 +304,8 @@ BlockedDiagSCMatrix::restore(StateIn& s)
   int ndimt, ndim = n();
   s.get(ndimt);
   if (ndimt != ndim) {
-      cerr << "BlockedDiagSCMatrix::restore(): bad dimension" << endl;
+      cerr << indent
+           << "BlockedDiagSCMatrix::restore(): bad dimension" << endl;
       abort();
     }
   int has_subblocks;
@@ -312,7 +314,8 @@ BlockedDiagSCMatrix::restore(StateIn& s)
       int nblock;
       s.get(nblock);
       if (nblock != nblocks()) {
-          cerr << "BlockedDiagSCMatrix::restore(): nblock differs\n" << endl;
+          cerr << indent
+               << "BlockedDiagSCMatrix::restore(): nblock differs\n" << endl;
           abort();
         }
       for (int i=0; i<nblocks(); i++) {
@@ -320,7 +323,8 @@ BlockedDiagSCMatrix::restore(StateIn& s)
         }
     }
   else {
-      cerr << "BlockedDiagSCMatrix::restore(): no subblocks--cannot restore"
+      cerr << indent
+           << "BlockedDiagSCMatrix::restore(): no subblocks--cannot restore"
            << endl;
       abort();
     }

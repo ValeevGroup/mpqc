@@ -1,6 +1,7 @@
 
-#include <stdio.h>
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/blocked.h>
 #include <math/scmat/cmatrix.h>
@@ -101,7 +102,7 @@ BlockedSymmSCMatrix::accumulate_element(int i,int j,double a)
 SCMatrix *
 BlockedSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
 {
-  fprintf(stderr,"BlockedSymmSCMatrix::get_subblock: cannot get subblock\n");
+  cerr << indent << "BlockedSymmSCMatrix::get_subblock: cannot get subblock\n";
   abort();
   return 0;
 }
@@ -109,7 +110,7 @@ BlockedSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
 SymmSCMatrix *
 BlockedSymmSCMatrix::get_subblock(int br, int er)
 {
-  fprintf(stderr,"BlockedSymmSCMatrix::get_subblock: cannot get subblock\n");
+  cerr << indent << "BlockedSymmSCMatrix::get_subblock: cannot get subblock\n";
   abort();
   return 0;
 }
@@ -118,16 +119,16 @@ void
 BlockedSymmSCMatrix::assign_subblock(SCMatrix*sb,
                                      int br, int er, int bc, int ec)
 {
-  fprintf(stderr,"BlockedSymmSCMatrix::assign_subblock:"
-          " cannot assign subblock\n");
+  cerr << indent << "BlockedSymmSCMatrix::assign_subblock:"
+       << " cannot assign subblock\n";
   abort();
 }
 
 void
 BlockedSymmSCMatrix::assign_subblock(SymmSCMatrix*sb, int br, int er)
 {
-  fprintf(stderr,"BlockedSymmSCMatrix::assign_subblock:"
-          " cannot assign subblock\n");
+  cerr << indent << "BlockedSymmSCMatrix::assign_subblock:"
+                 << " cannot assign subblock\n";
   abort();
 }
 
@@ -135,23 +136,23 @@ void
 BlockedSymmSCMatrix::accumulate_subblock(SCMatrix*sb,
                                          int br, int er, int bc, int ec)
 {
-  fprintf(stderr,"BlockedSymmSCMatrix::accumulate_subblock:"
-          " cannot accumulate subblock\n");
+  cerr << indent << "BlockedSymmSCMatrix::accumulate_subblock:"
+                 << " cannot accumulate subblock\n";
   abort();
 }
 
 void
 BlockedSymmSCMatrix::accumulate_subblock(SymmSCMatrix*sb, int br, int er)
 {
-  fprintf(stderr,"BlockedSymmSCMatrix::accumulate_subblock:"
-          " cannot accumulate subblock\n");
+  cerr << indent << "BlockedSymmSCMatrix::accumulate_subblock:"
+                 << " cannot accumulate subblock\n";
   abort();
 }
 
 SCVector *
 BlockedSymmSCMatrix::get_row(int i)
 {
-  fprintf(stderr,"BlockedSymmSCMatrix::get_row: cannot get row\n");
+  cerr << indent << "BlockedSymmSCMatrix::get_row: cannot get row\n";
   abort();
 
   return 0;
@@ -160,15 +161,15 @@ BlockedSymmSCMatrix::get_row(int i)
 void
 BlockedSymmSCMatrix::assign_row(SCVector *v, int i)
 {
-  fprintf(stderr,"BlockedSymmSCMatrix::assign_row: cannot assign row\n");
+  cerr << indent << "BlockedSymmSCMatrix::assign_row: cannot assign row\n";
   abort();
 }
 
 void
 BlockedSymmSCMatrix::accumulate_row(SCVector *v, int i)
 {
-  fprintf(stderr,"BlockedSymmSCMatrix::accumulate_row:"
-          " cannot accumulate row\n");
+  cerr << indent << "BlockedSymmSCMatrix::accumulate_row:"
+                 << " cannot accumulate row\n";
   abort();
 }
 
@@ -218,8 +219,8 @@ BlockedSymmSCMatrix::solve_this(SCVector*v)
   
   // make sure that the dimensions match
   if (!dim()->equiv(lv->dim())) {
-    fprintf(stderr,"BlockedSymmSCMatrix::solve_this(SCVector*v):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent << "BlockedSymmSCMatrix::solve_this(SCVector*v): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -247,8 +248,8 @@ BlockedSymmSCMatrix::scalar_product(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-    fprintf(stderr,"BlockedSCVector::scale_product(SCVector*a):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent << "BlockedSCVector::scale_product(SCVector*a): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -270,8 +271,8 @@ BlockedSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
 
   if (!dim()->equiv(la->dim()) ||
       !dim()->equiv(lb->coldim()) || !dim()->equiv(lb->rowdim())) {
-    fprintf(stderr,"BlockedSymmSCMatrix::"
-            "diagonalize(DiagSCMatrix*a,SCMatrix*b): bad dims");
+    cerr << indent << "BlockedSymmSCMatrix::"
+         << "diagonalize(DiagSCMatrix*a,SCMatrix*b): bad dims\n";
     abort();
   }
 
@@ -289,8 +290,8 @@ BlockedSymmSCMatrix::accumulate(SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-    fprintf(stderr,"BlockedSymmSCMatrix::accumulate(SCMatrix*a):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent << "BlockedSymmSCMatrix::accumulate(SCMatrix*a): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -311,8 +312,8 @@ BlockedSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)
                                           "accumulate_symmetric_product");
 
   if (!dim()->equiv(la->rowdim())) {
-    fprintf(stderr,"BlockedSymmSCMatrix::"
-            "accumulate_symmetric_product(SCMatrix*a): bad dim");
+    cerr << indent << "BlockedSymmSCMatrix::"
+         << "accumulate_symmetric_product(SCMatrix*a): bad dim\n";
     abort();
   }
 
@@ -336,8 +337,8 @@ BlockedSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
                                           "accumulate_symmetric_sum");
 
   if (!dim()->equiv(la->rowdim()) || !dim()->equiv(la->coldim())) {
-    fprintf(stderr,"BlockedSymmSCMatrix::"
-            "accumulate_symmetric_sum(SCMatrix*a): bad dim");
+    cerr << indent << "BlockedSymmSCMatrix::"
+         << "accumulate_symmetric_sum(SCMatrix*a): bad dim\n";
     abort();
   }
 
@@ -355,8 +356,8 @@ BlockedSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
                                       "accumulate_symmetric_outer_product");
 
   if (!dim()->equiv(la->dim())) {
-    fprintf(stderr,"BlockedSymmSCMatrix::"
-            "accumulate_symmetric_outer_product(SCMatrix*a): bad dim");
+    cerr << indent << "BlockedSymmSCMatrix::"
+         << "accumulate_symmetric_outer_product(SCMatrix*a): bad dim\n";
     abort();
   }
 
@@ -380,7 +381,7 @@ BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,SymmSCMatrix*b)
 
   // check the dimensions
   if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
-    fprintf(stderr,"BlockedSymmSCMatrix::accumulate_transform: bad dim\n");
+    cerr << indent << "BlockedSymmSCMatrix::accumulate_transform: bad dim\n";
     abort();
   }
 
@@ -416,7 +417,7 @@ BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
 
   // check the dimensions
   if (!dim()->equiv(la->rowdim()) || !lb->dim()->equiv(la->coldim())) {
-    fprintf(stderr,"BlockedSymmSCMatrix::accumulate_transform: bad dim\n");
+    cerr << indent << "BlockedSymmSCMatrix::accumulate_transform: bad dim\n";
     abort();
   }
 
@@ -463,7 +464,7 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp2& op,
   BlockedSymmSCMatrix *lm = BlockedSymmSCMatrix::require_castdown(m,
                                           "BlockedSymSCMatrix::element_op");
   if (!dim()->equiv(lm->dim())) {
-    fprintf(stderr,"BlockedSymmSCMatrix: bad element_op\n");
+    cerr << indent << "BlockedSymmSCMatrix: bad element_op\n";
     abort();
   }
 
@@ -494,7 +495,7 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp3& op,
                                         "BlockedSymSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-    fprintf(stderr,"BlockedSymmSCMatrix: bad element_op\n");
+    cerr << indent << "BlockedSymmSCMatrix: bad element_op\n";
     abort();
   }
 
@@ -600,7 +601,8 @@ BlockedSymmSCMatrix::restore(StateIn& s)
   int ndimt, ndim = n();
   s.get(ndimt);
   if (ndimt != ndim) {
-      cerr << "BlockedSymmSCMatrix::restore(): bad dimension" << endl;
+      cerr << indent
+           << "BlockedSymmSCMatrix::restore(): bad dimension" << endl;
       abort();
     }
   int has_subblocks;
@@ -609,7 +611,8 @@ BlockedSymmSCMatrix::restore(StateIn& s)
       int nblock;
       s.get(nblock);
       if (nblock != nblocks()) {
-          cerr << "BlockedSymmSCMatrix::restore(): nblock differs\n" << endl;
+          cerr << indent
+               << "BlockedSymmSCMatrix::restore(): nblock differs\n" << endl;
           abort();
         }
       for (int i=0; i<nblocks(); i++) {
@@ -617,7 +620,8 @@ BlockedSymmSCMatrix::restore(StateIn& s)
         }
     }
   else {
-      cerr << "BlockedSymmSCMatrix::restore(): no subblocks--cannot restore"
+      cerr << indent
+           << "BlockedSymmSCMatrix::restore(): no subblocks--cannot restore"
            << endl;
       abort();
     }

@@ -3,7 +3,6 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
 #include <math.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>

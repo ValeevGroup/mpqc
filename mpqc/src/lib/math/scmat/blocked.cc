@@ -3,8 +3,9 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/blocked.h>
 #include <math/scmat/cmatrix.h>
@@ -48,14 +49,16 @@ BlockedSCMatrixKit::matrix(const RefSCDimension&d1, const RefSCDimension&d2)
   int i;
   for (i=0; i<d1->blocks()->nblock(); i++) {
       if (d1->blocks()->subdim(i).null()) {
-          cerr << "BlockedSCMatrixKit: given a dim without subdim info"
+          cerr << indent
+               << "BlockedSCMatrixKit: given a dim without subdim info"
                << endl;
           abort();
         }
     }
   for (i=0; i<d2->blocks()->nblock(); i++) {
       if (d2->blocks()->subdim(i).null()) {
-          cerr << "BlockedSCMatrixKit: given a dim without subdim info"
+          cerr << indent
+               << "BlockedSCMatrixKit: given a dim without subdim info"
                << endl;
           abort();
         }
@@ -68,7 +71,8 @@ BlockedSCMatrixKit::symmmatrix(const RefSCDimension&d)
 {
   for (int i=0; i<d->blocks()->nblock(); i++) {
       if (d->blocks()->subdim(i).null()) {
-          cerr << "BlockedSCMatrixKit: given a dim without subdim info"
+          cerr << indent
+               << "BlockedSCMatrixKit: given a dim without subdim info"
                << endl;
           abort();
         }
@@ -81,7 +85,8 @@ BlockedSCMatrixKit::diagmatrix(const RefSCDimension&d)
 {
   for (int i=0; i<d->blocks()->nblock(); i++) {
       if (d->blocks()->subdim(i).null()) {
-          cerr << "BlockedSCMatrixKit: given a dim without subdim info"
+          cerr << indent
+               << "BlockedSCMatrixKit: given a dim without subdim info"
                << endl;
           abort();
         }
@@ -94,7 +99,8 @@ BlockedSCMatrixKit::vector(const RefSCDimension&d)
 {
   for (int i=0; i<d->blocks()->nblock(); i++) {
       if (d->blocks()->subdim(i).null()) {
-          cerr << "BlockedSCMatrixKit: given a dim without subdim info"
+          cerr << indent
+               << "BlockedSCMatrixKit: given a dim without subdim info"
                << endl;
           abort();
         }

@@ -17,8 +17,6 @@ class ReplSCMatrixKit: public SCMatrixKit {
 #   define HAVE_CTOR
 #   define HAVE_KEYVAL_CTOR
 #   include <util/class/classd.h>
-  protected:
-    RefMessageGrp grp_;
   public:
     ReplSCMatrixKit();
     ReplSCMatrixKit(const RefKeyVal&);
@@ -27,8 +25,6 @@ class ReplSCMatrixKit: public SCMatrixKit {
     SymmSCMatrix* symmmatrix(const RefSCDimension&);
     DiagSCMatrix* diagmatrix(const RefSCDimension&);
     SCVector* vector(const RefSCDimension&);
-
-    RefMessageGrp messagegrp() const { return grp_; }
 };
 DescribedClass_REF_dec(ReplSCMatrixKit);
 
@@ -83,7 +79,6 @@ class ReplSCVector: public SCVector {
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 
     RefReplSCMatrixKit skit();
-    RefMessageGrp messagegrp();
 };
 
 class ReplSCMatrix: public SCMatrix {
@@ -150,7 +145,6 @@ class ReplSCMatrix: public SCMatrix {
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 
     RefReplSCMatrixKit skit();
-    RefMessageGrp messagegrp();
 };
 
 class ReplSymmSCMatrix: public SymmSCMatrix {
@@ -217,7 +211,6 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 
     RefReplSCMatrixKit skit();
-    RefMessageGrp messagegrp();
 };
 
 class ReplDiagSCMatrix: public DiagSCMatrix {
@@ -259,7 +252,6 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
 
     RefReplSCMatrixKit skit();
-    RefMessageGrp messagegrp();
 };
 
 #endif

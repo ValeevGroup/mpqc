@@ -1,6 +1,10 @@
 
-#include <stdio.h>
+#include <iostream.h>
+#include <iomanip.h>
+
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/repl.h>
 #include <math/scmat/cmatrix.h>
@@ -111,7 +115,7 @@ int
 ReplSCMatrix::compute_offset(int i,int j)
 {
   if (i<0 || j<0 || i>=d1->n() || j>=d2->n()) {
-      fprintf(stderr,"ReplSCMatrix: index out of bounds\n");
+      cerr << indent << "ReplSCMatrix: index out of bounds\n";
       abort();
     }
   return i*(d2->n()) + j;
@@ -145,8 +149,9 @@ ReplSCMatrix::get_subblock(int br, int er, int bc, int ec)
   int nscol = ec-bc+1;
 
   if (nsrow > nrow() || nscol > ncol()) {
-    fprintf(stderr,"ReplSCMatrix::get_subblock: trying to get too big a"
-            "subblock (%d,%d) from (%d,%d)\n",nsrow,nscol,nrow(),ncol());
+    cerr << indent << "ReplSCMatrix::get_subblock: trying to get too big a"
+         << "subblock (" << nsrow << "," << nscol
+         << ") from (" << nrow() << "," << ncol() << ")\n";
     abort();
   }
   
@@ -156,8 +161,8 @@ ReplSCMatrix::get_subblock(int br, int er, int bc, int ec)
   SCMatrix * sb = kit()->matrix(dnrow,dncol);
   sb->assign(0.0);
 
-  ReplSCMatrix *lsb = ReplSCMatrix::require_castdown(sb,
-                                      "ReplSCMatrix::get_subblock");
+  ReplSCMatrix *lsb =
+    ReplSCMatrix::require_castdown(sb, "ReplSCMatrix::get_subblock");
 
   for (int i=0; i < nsrow; i++)
     for (int j=0; j < nscol; j++)
@@ -177,8 +182,10 @@ ReplSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
   int nscol = ec-bc+1;
 
   if (nsrow > nrow() || nscol > ncol()) {
-    fprintf(stderr,"ReplSCMatrix::assign_subblock: trying to assign too big a"
-            " subblock (%d,%d) to (%d,%d)\n",nsrow,nscol,nrow(),ncol());
+    cerr << indent
+         << "ReplSCMatrix::assign_subblock: trying to assign too big a"
+         << "subblock (" << nsrow << "," << nscol
+         << ") to (" << nrow() << "," << ncol() << ")\n";
     abort();
   }
   
@@ -198,9 +205,10 @@ ReplSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
   int nscol = ec-bc+1;
 
   if (nsrow > nrow() || nscol > ncol()) {
-    fprintf(stderr,"ReplSCMatrix::accumulate_subblock: trying to accumulate"
-            " too big a subblock (%d,%d) to (%d,%d)\n",
-            nsrow,nscol,nrow(),ncol());
+    cerr << indent
+         << "ReplSCMatrix::accumulate_subblock: trying to accumulate to big a"
+         << "subblock (" << nsrow << "," << nscol
+         << ") to (" << nrow() << "," << ncol() << ")\n";
     abort();
   }
   
@@ -213,15 +221,15 @@ SCVector *
 ReplSCMatrix::get_row(int i)
 {
   if (i >= nrow()) {
-    fprintf(stderr,"ReplSCMatrix::get_row: trying to get invalid row"
-            "%d max %d\n",i,nrow());
+    cerr << indent << "ReplSCMatrix::get_row: trying to get invalid row "
+         << i << " max " << nrow() << endl;
     abort();
   }
   
   SCVector * v = kit()->vector(coldim());
 
-  ReplSCVector *lv = ReplSCVector::require_castdown(v,
-                                               "ReplSCMatrix::get_row");
+  ReplSCVector *lv =
+    ReplSCVector::require_castdown(v, "ReplSCMatrix::get_row");
 
   for (int j=0; j < ncol(); j++)
     lv->set_element(j,rows[i][j]);
@@ -233,19 +241,19 @@ void
 ReplSCMatrix::assign_row(SCVector *v, int i)
 {
   if (i >= nrow()) {
-    fprintf(stderr,"ReplSCMatrix::assign_row: trying to assign invalid row"
-            "%d max %d\n",i,nrow());
+    cerr << indent << "ReplSCMatrix::assign_row: trying to assign invalid row "
+         << i << " max " << nrow() << endl;
     abort();
   }
   
   if (v->n() != ncol()) {
-    fprintf(stderr,"ReplSCMatrix::assign_row: vector is wrong size"
-            "is %d, should be %d\n",v->n(),ncol());
+    cerr << indent << "ReplSCMatrix::assign_row: vector is wrong size, "
+         << "is " << v->n() << ", should be " << ncol() << endl;
     abort();
   }
   
-  ReplSCVector *lv = ReplSCVector::require_castdown(v,
-                                               "ReplSCMatrix::assign_row");
+  ReplSCVector *lv =
+    ReplSCVector::require_castdown(v, "ReplSCMatrix::assign_row");
 
   for (int j=0; j < ncol(); j++)
     rows[i][j] = lv->get_element(j);
@@ -255,19 +263,20 @@ void
 ReplSCMatrix::accumulate_row(SCVector *v, int i)
 {
   if (i >= nrow()) {
-    fprintf(stderr,"ReplSCMatrix::accumulate_row: trying to assign invalid "
-                   "row %d max %d\n",i,nrow());
+    cerr << indent
+         << "ReplSCMatrix::accumulate_row: trying to accumulate invalid row "
+         << i << " max " << nrow() << endl;
     abort();
   }
   
   if (v->n() != ncol()) {
-    fprintf(stderr,"ReplSCMatrix::accumulate_row: vector is wrong size"
-            "is %d, should be %d\n",v->n(),ncol());
+    cerr << indent << "ReplSCMatrix::accumulate_row: vector is wrong size, "
+         << "is " << v->n() << ", should be " << ncol() << endl;
     abort();
   }
   
-  ReplSCVector *lv = ReplSCVector::require_castdown(v,
-                                            "ReplSCMatrix::accumulate_row");
+  ReplSCVector *lv =
+    ReplSCVector::require_castdown(v, "ReplSCMatrix::accumulate_row");
 
   for (int j=0; j < ncol(); j++)
     rows[i][j] += lv->get_element(j);
@@ -277,15 +286,15 @@ SCVector *
 ReplSCMatrix::get_column(int i)
 {
   if (i >= ncol()) {
-    fprintf(stderr,"ReplSCMatrix::get_column: trying to get invalid column"
-            "%d max %d\n",i,ncol());
+    cerr << indent << "ReplSCMatrix::get_column: trying to get invalid column "
+         << i << " max " << ncol() << endl;
     abort();
   }
   
   SCVector * v = kit()->vector(rowdim());
 
-  ReplSCVector *lv = ReplSCVector::require_castdown(v,
-                                               "ReplSCMatrix::get_column");
+  ReplSCVector *lv =
+    ReplSCVector::require_castdown(v, "ReplSCMatrix::get_column");
 
   for (int j=0; j < nrow(); j++)
     lv->set_element(j,rows[j][i]);
@@ -297,19 +306,20 @@ void
 ReplSCMatrix::assign_column(SCVector *v, int i)
 {
   if (i >= ncol()) {
-    fprintf(stderr,"ReplSCMatrix::assign_column: trying to assign invalid "
-            "column %d max %d\n",i,ncol());
+    cerr << indent
+         << "ReplSCMatrix::assign_column: trying to assign invalid column "
+         << i << " max " << ncol() << endl;
     abort();
   }
   
   if (v->n() != nrow()) {
-    fprintf(stderr,"ReplSCMatrix::assign_column: vector is wrong size"
-            "is %d, should be %d\n",v->n(),nrow());
+    cerr << indent << "ReplSCMatrix::assign_column: vector is wrong size, "
+         << "is " << v->n() << ", should be " << nrow() << endl;
     abort();
   }
   
-  ReplSCVector *lv = ReplSCVector::require_castdown(v,
-                                               "ReplSCMatrix::assign_column");
+  ReplSCVector *lv =
+    ReplSCVector::require_castdown(v, "ReplSCMatrix::assign_column");
 
   for (int j=0; j < nrow(); j++)
     rows[j][i] = lv->get_element(j);
@@ -319,19 +329,20 @@ void
 ReplSCMatrix::accumulate_column(SCVector *v, int i)
 {
   if (i >= ncol()) {
-    fprintf(stderr,"ReplSCMatrix::accumulate_column: trying to assign invalid"
-            " column %d max %d\n",i,ncol());
+    cerr << indent
+         << "ReplSCMatrix::accumulate_column: trying to accumulate invalid"
+         << " column" << i << " max " << ncol() << endl;
     abort();
   }
   
   if (v->n() != nrow()) {
-    fprintf(stderr,"ReplSCMatrix::accumulate_column: vector is wrong size"
-            "is %d, should be %d\n",v->n(),nrow());
+    cerr << indent << "ReplSCMatrix::accumulate_column: vector is wrong size, "
+         << "is " << v->n() << ", should be " << nrow() << endl;
     abort();
   }
   
-  ReplSCVector *lv = ReplSCVector::require_castdown(v,
-                                     "ReplSCMatrix::accumulate_column");
+  ReplSCVector *lv =
+    ReplSCVector::require_castdown(v, "ReplSCMatrix::accumulate_column");
 
   for (int j=0; j < nrow(); j++)
     rows[j][i] += lv->get_element(j);
@@ -355,9 +366,9 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->coldim()) ||
       !la->coldim()->equiv(lb->rowdim())) {
-      fprintf(stderr,"ReplSCMatrix::"
-              "accumulate_product(SCMatrix*a,SCMatrix*b):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent
+           << "ReplSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -386,9 +397,9 @@ ReplSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(lb->dim())) {
-      fprintf(stderr,"ReplSCMatrix::"
-              "accumulate_outer_product(SCVector*a,SCVector*b):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent
+           << "ReplSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -416,9 +427,9 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
-      fprintf(stderr,"ReplSCMatrix::"
-              "accumulate_product(SCMatrix*a,SymmSCMatrix*b):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent
+           << "ReplSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -451,9 +462,9 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
-      fprintf(stderr,"ReplSCMatrix::"
-              "accumulate_product(SCMatrix*a,DiagSCMatrix*b):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent
+           << "ReplSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -479,8 +490,8 @@ ReplSCMatrix::accumulate(SCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
-      fprintf(stderr,"ReplSCMatrix::accumulate(SCMatrix*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "ReplSCMatrix::accumulate(SCMatrix*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -498,8 +509,8 @@ ReplSCMatrix::accumulate(SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-      fprintf(stderr,"ReplSCMatrix::accumulate(SymmSCMatrix*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "ReplSCMatrix::accumulate(SymmSCMatrix*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -526,8 +537,8 @@ ReplSCMatrix::accumulate(DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-      fprintf(stderr,"ReplSCMatrix::accumulate(DiagSCMatrix*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "ReplSCMatrix::accumulate(DiagSCMatrix*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -549,8 +560,8 @@ ReplSCMatrix::accumulate(SCVector*a)
   // make sure that the dimensions match
   if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)
         || (coldim()->equiv(la->dim()) && rowdim()->n() == 1))) {
-      fprintf(stderr,"ReplSCMatrix::accumulate(SCVector*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "ReplSCMatrix::accumulate(SCVector*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -579,7 +590,7 @@ double
 ReplSCMatrix::invert_this()
 {
   if (nrow() != ncol()) {
-      fprintf(stderr,"ReplSCMatrix::invert_this: matrix is not square\n");
+      cerr << indent << "ReplSCMatrix::invert_this: matrix is not square\n";
       abort();
     }
   return cmat_invert(rows,0,nrow());
@@ -588,7 +599,7 @@ ReplSCMatrix::invert_this()
 void
 ReplSCMatrix::gen_invert_this()
 {
-  fprintf(stderr,"ReplSCMatrix::gen_invert_this: SVD not implemented yet");
+  cerr << indent << "ReplSCMatrix::gen_invert_this: SVD not implemented yet";
   abort();
 }
 
@@ -596,7 +607,7 @@ double
 ReplSCMatrix::determ_this()
 {
   if (nrow() != ncol()) {
-    fprintf(stderr,"ReplSCMatrix::determ_this: matrix is not square\n");
+    cerr << indent << "ReplSCMatrix::determ_this: matrix is not square\n";
     abort();
   }
   return cmat_determ(rows,0,nrow());
@@ -606,7 +617,7 @@ double
 ReplSCMatrix::trace()
 {
   if (nrow() != ncol()) {
-    fprintf(stderr,"ReplSCMatrix::trace: matrix is not square\n");
+    cerr << indent << "ReplSCMatrix::trace: matrix is not square\n";
     abort();
   }
   double ret=0;
@@ -646,7 +657,7 @@ ReplSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
       !ndim->equiv(lV->rowdim()) ||
       !ndim->equiv(lV->coldim()) ||
       !pdim->equiv(sigma->dim())) {
-      fprintf(stderr,"ReplSCMatrix: svd_this: dimension mismatch\n");
+      cerr << indent << "ReplSCMatrix: svd_this: dimension mismatch\n";
       abort();
     }
 
@@ -699,8 +710,8 @@ ReplSCMatrix::solve_this(SCVector*v)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lv->dim())) {
-      fprintf(stderr,"ReplSCMatrix::solve_this(SCVector*v):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "ReplSCMatrix::solve_this(SCVector*v): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -715,8 +726,8 @@ ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lS->dim())) {
-      fprintf(stderr,"ReplSCMatrix::schmidt_orthog():\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "ReplSCMatrix::schmidt_orthog(): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -743,7 +754,7 @@ ReplSCMatrix::element_op(const RefSCElementOp2& op,
       = ReplSCMatrix::require_castdown(m,"ReplSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
-      fprintf(stderr,"ReplSCMatrix: bad element_op\n");
+      cerr << indent << "ReplSCMatrix: bad element_op\n";
       abort();
     }
   if (op->has_side_effects()) before_elemop();
@@ -770,7 +781,7 @@ ReplSCMatrix::element_op(const RefSCElementOp3& op,
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
       !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
-      fprintf(stderr,"ReplSCMatrix: bad element_op\n");
+      cerr << indent << "ReplSCMatrix: bad element_op\n";
       abort();
     }
   if (op->has_side_effects()) before_elemop();
@@ -801,38 +812,52 @@ ReplSCMatrix::print(const char *title, ostream& os, int prec)
 
   if (messagegrp()->me() != 0) return;
 
-  max=(max==0.0)?1.0:log10(max);
-  if(max < 0.0) max=1.0;
+  max = (max==0.0) ? 1.0 : log10(max);
+  if (max < 0.0) max=1.0;
 
-  lwidth = prec+5+(int) max; width = 75/lwidth;
+  lwidth = prec + 5 + (int) max;
+  width = 75/(lwidth+SCFormIO::getindent(os));
 
   os.setf(ios::fixed,ios::floatfield); os.precision(prec);
   os.setf(ios::right,ios::adjustfield);
 
-  if(title) os << "\n" << title << "\n";
-  else os << "\n";
+  if (title)
+    os << endl << indent << title << endl;
+  else
+    os << endl;
 
-  if(nrow()==0 || ncol()==0) { os << " empty matrix\n"; return; }
+  if (nrow()==0 || ncol()==0) {
+    os << indent << "empty matrix\n";
+    return;
+  }
 
-  for(ii=jj=0;;) {
-    ii++; jj++; kk=width*jj;
-    nn=(ncol()>kk)?kk:ncol();
+  for (ii=jj=0;;) {
+    ii++; jj++;
+    kk=width*jj;
+    nn = (ncol() > kk) ? kk : ncol();
 
- // print column indices
-    for(i=ii; i <= nn; i++) { os.width(lwidth); os << i; }
-    os << "\n";
+    // print column indices
+    os << indent;
+    for (i=ii; i <= nn; i++)
+      os << setw(lwidth) << i;
+    os << endl;
 
- // print the rows
-    for(i=0; i < nrow() ; i++) {
-      os.width(5); os << i+1;
-      for(j=ii-1; j < nn; j++) { os.width(lwidth); os << rows[i][j]; }
-      os << "\n";
-      }
-    os << "\n";
-
-    if(ncol()<=kk) { os.flush(); return; }
-    ii=kk;
+    // print the rows
+    for (i=0; i < nrow() ; i++) {
+      os << setw(5) << i+1;
+      for (j=ii-1; j < nn; j++)
+        os << setw(lwidth) << rows[i][j];
+      os << endl;
     }
+    os << endl;
+
+    if (ncol() <= kk) {
+      os.flush();
+      return;
+    }
+
+    ii=kk;
+  }
 }
 
 RefSCMatrixSubblockIter
@@ -847,7 +872,7 @@ RefSCMatrixSubblockIter
 ReplSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
-      cerr << "ReplSCMatrix::all_blocks: "
+      cerr << indent << "ReplSCMatrix::all_blocks: "
            << "Write access permitted for local blocks only"
            << endl;
       abort();
@@ -864,10 +889,4 @@ RefReplSCMatrixKit
 ReplSCMatrix::skit()
 {
   return ReplSCMatrixKit::castdown(kit().pointer());
-}
-
-RefMessageGrp
-ReplSCMatrix::messagegrp()
-{
-  return skit()->messagegrp();
 }

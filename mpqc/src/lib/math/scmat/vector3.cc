@@ -3,10 +3,14 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
+#include <iostream.h>
+#include <iomanip.h>
+
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 
 ////////////////////////////////////////////////////////////////////////
@@ -22,7 +26,7 @@ SCVector3::SCVector3(const RefKeyVal&keyval)
 SCVector3::SCVector3(const RefSCVector&x)
 {
   if (x.dim().n() != 3) {
-      fprintf(stderr,"SCVector3::SCVector3(RefSCVEctor&): bad length\n");
+      cerr << indent << "SCVector3::SCVector3(RefSCVEctor&): bad length\n";
       abort();
     }
   _v[0] = x.get_element(0);
@@ -164,9 +168,10 @@ SCVector3::maxabs() const
   return result;
 }
 
-void SCVector3::print(FILE*fp) const
+void SCVector3::print(ostream& os) const
 {
-  fprintf(fp,"{%8.5f %8.5f %8.5f}\n",x(),y(),z());
+  os << indent
+     << setw(8) << setprecision(5) << x() << " "
+     << setw(8) << setprecision(5) << y() << " "
+     << setw(8) << setprecision(5) << z() << "}\n";
 }
-
-

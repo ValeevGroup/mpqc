@@ -1,6 +1,7 @@
 
-#include <stdio.h>
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/blocked.h>
 #include <math/scmat/cmatrix.h>
@@ -74,8 +75,8 @@ BlockedSCVector::assign(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-    fprintf(stderr,"BlockedSCVector::assign(SCVector*a):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent << "BlockedSCVector::assign(SCVector*a): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -97,7 +98,7 @@ BlockedSCVector::get_element(int i)
 {
   int size = d->n();
   if (i < 0 || i >= size) {
-    fprintf(stderr,"BlockedSCVector::get_element: bad index\n");
+    cerr << indent << "BlockedSCVector::get_element: bad index\n";
     abort();
   }
 
@@ -111,7 +112,7 @@ BlockedSCVector::set_element(int i,double a)
 {
   int size = d->n();
   if (i < 0 || i >= size) {
-    fprintf(stderr,"BlockedSCVector::set_element: bad index\n");
+    cerr << indent << "BlockedSCVector::set_element: bad index\n";
     abort();
   }
 
@@ -125,7 +126,7 @@ BlockedSCVector::accumulate_element(int i,double a)
 {
   int size = d->n();
   if (i < 0 || i >= size) {
-    fprintf(stderr,"BlockedSCVector::accumulate_element: bad index\n");
+    cerr << indent << "BlockedSCVector::accumulate_element: bad index\n";
     abort();
   }
 
@@ -144,9 +145,9 @@ BlockedSCVector::accumulate_product(SCMatrix*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
-    fprintf(stderr,"BlockedSCVector::"
-            "accumulate_product(SCMatrix*a,SCVector*b):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent
+         << "BlockedSCVector::accumulate_product(SCMatrix*a,SCVector*b): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -165,9 +166,9 @@ BlockedSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim()) || !la->dim()->equiv(lb->dim())) {
-    fprintf(stderr,"BlockedSCVector::"
-            "accumulate_product(SymmSCMatrix*a,SCVector*b):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent
+         << "BlockedSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -185,8 +186,8 @@ BlockedSCVector::accumulate(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-    fprintf(stderr,"BlockedSCVector::accumulate(SCVector*a):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent << "BlockedSCVector::accumulate(SCVector*a): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -205,8 +206,8 @@ BlockedSCVector::accumulate(SCMatrix*a)
   // make sure that the dimensions match
   if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)
         || (la->coldim()->equiv(dim()) && la->rowdim()->n() == 1))) {
-    fprintf(stderr,"BlockedSCVector::accumulate(SCMatrix*a):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent << "BlockedSCVector::accumulate(SCMatrix*a): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -224,8 +225,8 @@ BlockedSCVector::scalar_product(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-    fprintf(stderr,"BlockedSCVector::scale_product(SCVector*a):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent << "BlockedSCVector::scale_product(SCVector*a): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -266,7 +267,7 @@ BlockedSCVector::element_op(const RefSCElementOp2& op,
       = BlockedSCVector::require_castdown(m, "BlockedSCVector::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-    fprintf(stderr,"BlockedSCVector: bad element_op\n");
+    cerr << indent << "BlockedSCVector: bad element_op\n";
     abort();
   }
 
@@ -297,7 +298,7 @@ BlockedSCVector::element_op(const RefSCElementOp3& op,
       = BlockedSCVector::require_castdown(n, "BlockedSCVector::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-    fprintf(stderr,"BlockedSCVector: bad element_op\n");
+    cerr << indent << "BlockedSCVector: bad element_op\n";
     abort();
   }
 
@@ -402,7 +403,7 @@ BlockedSCVector::restore(StateIn&s)
   int ndimt, ndim = n();
   s.get(ndimt);
   if (ndimt != ndim) {
-      cerr << "BlockedSCVector::restore(): bad dimension" << endl;
+      cerr << indent << "BlockedSCVector::restore(): bad dimension" << endl;
       abort();
     }
   int has_subblocks;
@@ -411,7 +412,8 @@ BlockedSCVector::restore(StateIn&s)
       int nblock;
       s.get(nblock);
       if (nblock != nblocks()) {
-          cerr << "BlockedSCVector::restore(): nblock differs\n" << endl;
+          cerr << indent
+               << "BlockedSCVector::restore(): nblock differs\n" << endl;
           abort();
         }
       for (int i=0; i<nblocks(); i++) {
@@ -419,7 +421,8 @@ BlockedSCVector::restore(StateIn&s)
         }
     }
   else {
-      cerr << "BlockedSCVector::restore(): no subblocks--cannot restore"
+      cerr << indent
+           << "BlockedSCVector::restore(): no subblocks--cannot restore"
            << endl;
       abort();
     }

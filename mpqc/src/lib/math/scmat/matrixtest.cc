@@ -1,7 +1,6 @@
 
 #include <iostream.h>
 #include <math.h>
-#include <stdio.h>
 #include <util/misc/libmisc.h>
 #include <util/group/picl.h>
 #include <math/scmat/matrix.h>

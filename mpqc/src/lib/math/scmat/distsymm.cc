@@ -1,6 +1,8 @@
 
-#include <stdio.h>
+#include <iostream.h>
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/dist.h>
 #include <math/scmat/cmatrix.h>
@@ -36,7 +38,7 @@ int
 DistSymmSCMatrix::block_to_node(int i, int j)
 {
   if (j>i) {
-      cerr << "DistSymmSCMatrix::block_to_node: j>i" << endl;
+      cerr << indent << "DistSymmSCMatrix::block_to_node: j>i" << endl;
       abort();
     }
 
@@ -47,7 +49,7 @@ RefSCMatrixBlock
 DistSymmSCMatrix::block_to_block(int i, int j)
 {
   if (j>i) {
-      cerr << "DistSymmSCMatrix::block_to_block: j>i" << endl;
+      cerr << indent << "DistSymmSCMatrix::block_to_block: j>i" << endl;
       abort();
     }
 
@@ -62,7 +64,7 @@ DistSymmSCMatrix::block_to_block(int i, int j)
           return I.block();
     }
 
-  cerr << "DistSymmSCMatrix::block_to_block: internal error" << endl;
+  cerr << indent << "DistSymmSCMatrix::block_to_block: internal error" << endl;
   abort();
   return 0;
 }
@@ -247,8 +249,8 @@ DistSymmSCMatrix::accumulate(SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      fprintf(stderr,"DistSymmSCMatrix::accumulate(SCMatrix*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "DistSymmSCMatrix::accumulate(SCMatrix*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -258,7 +260,8 @@ DistSymmSCMatrix::accumulate(SymmSCMatrix*a)
        i1++,i2++) {
       int n = i1.block()->ndat();
       if (n != i2.block()->ndat()) {
-          cerr << "DistSymmSCMatrixListSubblockIter::accumulate block "
+          cerr << indent
+               << "DistSymmSCMatrixListSubblockIter::accumulate block "
                << "mismatch: internal error" << endl;
           abort();
         }
@@ -323,8 +326,8 @@ DistSymmSCMatrix::solve_this(SCVector*v)
   
   // make sure that the dimensions match
   if (!dim()->equiv(lv->dim())) {
-      fprintf(stderr,"DistSymmSCMatrix::solve_this(SCVector*v):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "DistSymmSCMatrix::solve_this(SCVector*v): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -391,8 +394,8 @@ DistSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
                                           "accumulate_symmetric_sum");
 
   if (!dim()->equiv(la->rowdim()) || !dim()->equiv(la->coldim())) {
-      fprintf(stderr,"DistSymmSCMatrix::"
-              "accumulate_symmetric_sum(SCMatrix*a): bad dim");
+      cerr << indent << "DistSymmSCMatrix::"
+           << "accumulate_symmetric_sum(SCMatrix*a): bad dim\n";
       abort();
     }
 
@@ -463,7 +466,7 @@ DistSymmSCMatrix::element_op(const RefSCElementOp2& op,
       = DistSymmSCMatrix::require_castdown(m,"DistSymSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      fprintf(stderr,"DistSymmSCMatrix: bad element_op\n");
+      cerr << indent << "DistSymmSCMatrix: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j;
@@ -485,7 +488,7 @@ DistSymmSCMatrix::element_op(const RefSCElementOp3& op,
       = DistSymmSCMatrix::require_castdown(n,"DistSymSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      fprintf(stderr,"DistSymmSCMatrix: bad element_op\n");
+      cerr << indent << "DistSymmSCMatrix: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j, k;
@@ -521,10 +524,4 @@ RefDistSCMatrixKit
 DistSymmSCMatrix::skit()
 {
   return DistSCMatrixKit::castdown(kit().pointer());
-}
-
-RefMessageGrp
-DistSymmSCMatrix::messagegrp()
-{
-  return skit()->messagegrp();
 }

@@ -4,6 +4,8 @@
 #endif
 
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
@@ -28,10 +30,13 @@ SCMatrixKit::_castdown(const ClassDesc*cd)
 
 SCMatrixKit::SCMatrixKit()
 {
+  grp_ = MessageGrp::get_default_messagegrp();
 }
 
-SCMatrixKit::SCMatrixKit(const RefKeyVal&)
+SCMatrixKit::SCMatrixKit(const RefKeyVal& keyval)
 {
+  grp_ = keyval->describedclassvalue("messagegrp");
+  if (grp_.null()) grp_ = MessageGrp::get_default_messagegrp();
 }
 
 SCMatrixKit::~SCMatrixKit()
@@ -70,6 +75,12 @@ SCMatrixKit::restore_vector(StateIn& s, const RefSCDimension& d)
   SCVector *r = vector(d);
   r->restore(s);
   return r;
+}
+
+RefMessageGrp
+SCMatrixKit::messagegrp() const
+{
+  return grp_;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -325,7 +336,7 @@ SCMatrix::copy()
 void
 SCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
 {
-  fprintf(stderr,"%s: SVD not implemented\n", class_name());
+  cerr << indent << class_name() << ": SVD not implemented\n";
   abort();
 }
 
@@ -347,6 +358,12 @@ SCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
   brect->accumulate(b);
   accumulate_product(a,brect);
   delete brect;
+}
+
+RefMessageGrp
+SCMatrix::messagegrp()
+{
+  return kit_->messagegrp();
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -660,6 +677,12 @@ SymmSCMatrix::scalar_product(SCVector *v)
   return v2->scalar_product(v);
 }
 
+RefMessageGrp
+SymmSCMatrix::messagegrp()
+{
+  return kit_->messagegrp();
+}
+
 /////////////////////////////////////////////////////////////////////////
 // DiagSCMatrix member functions
 
@@ -807,6 +830,12 @@ DiagSCMatrix::copy()
   return result;
 }
 
+RefMessageGrp
+DiagSCMatrix::messagegrp()
+{
+  return kit_->messagegrp();
+}
+
 /////////////////////////////////////////////////////////////////////////
 // These member are used by the abstract SCVector classes.
 /////////////////////////////////////////////////////////////////////////
@@ -941,7 +970,8 @@ SCVector::normalize()
   double norm = sqrt(scalar_product(this));
   if (norm > 1.e-20) norm = 1.0/norm;
   else {
-      fprintf(stderr,"SCVector::normalize: tried to normalize tiny vector\n");
+      cerr << indent
+           << "SCVector::normalize: tried to normalize tiny vector\n";
       abort();
     }
   scale(norm);
@@ -968,4 +998,10 @@ SCVector::accumulate_product(SymmSCMatrix *m, SCVector *v)
   mrect->assign(0.0);
   mrect->accumulate(m);
   accumulate_product(mrect.pointer(), v);
+}
+
+RefMessageGrp
+SCVector::messagegrp()
+{
+  return kit_->messagegrp();
 }

@@ -3,8 +3,8 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
 #include <math.h>
+
 #include <util/keyval/keyval.h>
 #include <math/scmat/repl.h>
 #include <math/scmat/cmatrix.h>
@@ -28,14 +28,11 @@ ReplSCMatrixKit::_castdown(const ClassDesc*cd)
 
 ReplSCMatrixKit::ReplSCMatrixKit()
 {
-  grp_ = MessageGrp::get_default_messagegrp();
 }
 
 ReplSCMatrixKit::ReplSCMatrixKit(const RefKeyVal& keyval):
   SCMatrixKit(keyval)
 {
-  grp_ = keyval->describedclassvalue("messagegrp");
-  if (grp_.null()) grp_ = MessageGrp::get_default_messagegrp();
 }
 
 ReplSCMatrixKit::~ReplSCMatrixKit()

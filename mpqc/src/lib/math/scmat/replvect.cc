@@ -1,6 +1,10 @@
 
-#include <stdio.h>
+#include <iostream.h>
+#include <iomanip.h>
+
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/repl.h>
 #include <math/scmat/cmatrix.h>
@@ -98,9 +102,9 @@ ReplSCVector::accumulate_product(SCMatrix*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
-      fprintf(stderr,"ReplSCVector::"
-              "accumulate_product(SCMatrix*a,SCVector*b):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent
+           << "ReplSCVector::accumulate_product(SCMatrix*a,SCVector*b): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -121,9 +125,9 @@ ReplSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim()) || !la->dim()->equiv(lb->dim())) {
-      fprintf(stderr,"ReplSCVector::"
-              "accumulate_product(SymmSCMatrix*a,SCVector*b):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent
+           << "ReplSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -153,8 +157,8 @@ ReplSCVector::accumulate(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      fprintf(stderr,"ReplSCVector::accumulate(SCVector*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "ReplSCVector::accumulate(SCVector*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -173,8 +177,8 @@ ReplSCVector::accumulate(SCMatrix*a)
   // make sure that the dimensions match
   if (!((la->rowdim()->equiv(dim()) && la->coldim()->n() == 1)
         || (la->coldim()->equiv(dim()) && la->rowdim()->n() == 1))) {
-      fprintf(stderr,"ReplSCVector::accumulate(SCMatrix*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "ReplSCVector::accumulate(SCMatrix*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -200,8 +204,8 @@ ReplSCVector::assign(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      fprintf(stderr,"ReplSCVector::assign(SCVector*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "ReplSCVector::assign(SCVector*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -227,8 +231,8 @@ ReplSCVector::scalar_product(SCVector*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      fprintf(stderr,"ReplSCVector::scalar_product(SCVector*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "ReplSCVector::scalar_product(SCVector*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -259,7 +263,7 @@ ReplSCVector::element_op(const RefSCElementOp2& op,
       = ReplSCVector::require_castdown(m, "ReplSCVector::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      fprintf(stderr,"ReplSCVector: bad element_op\n");
+      cerr << indent << "ReplSCVector: bad element_op\n";
       abort();
     }
 
@@ -286,7 +290,7 @@ ReplSCVector::element_op(const RefSCElementOp3& op,
       = ReplSCVector::require_castdown(n, "ReplSCVector::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      fprintf(stderr,"ReplSCVector: bad element_op\n");
+      cerr << indent << "ReplSCVector: bad element_op\n";
       abort();
     }
   if (op->has_side_effects()) before_elemop();
@@ -316,25 +320,27 @@ ReplSCVector::print(const char *title, ostream& os, int prec)
 
   if (messagegrp()->me() != 0) return;
 
-  max=(max==0.0)?1.0:log10(max);
-  if(max < 0.0) max=1.0;
+  max = (max==0.0) ? 1.0 : log10(max);
+  if (max < 0.0) max=1.0;
 
-  lwidth = prec+5+(int) max;
+  lwidth = prec + 5 + (int) max;
 
   os.setf(ios::fixed,ios::floatfield); os.precision(prec);
   os.setf(ios::right,ios::adjustfield);
 
-  if(title) os << "\n" << title << "\n";
-  else os << "\n";
+  if (title)
+    os << endl << indent << title << endl;
+  else
+    os << endl;
 
-  if(n()==0) { os << " empty vector\n"; return; }
+  if (n()==0) {
+    os << indent << "empty vector\n";
+    return;
+  }
 
-  for (i=0; i<n(); i++) {
-      os.width(5); os << i+1;
-      os.width(lwidth); os << vector[i];
-      os << "\n";
-    }
-  os << "\n";
+  for (i=0; i < n(); i++)
+    os << indent << setw(5) << i+1 << setw(lwidth) << vector[i] << endl;
+  os << endl;
 
   os.flush();
 }
@@ -351,7 +357,7 @@ RefSCMatrixSubblockIter
 ReplSCVector::all_blocks(SCMatrixSubblockIter::Access access)
 {
   if (access == SCMatrixSubblockIter::Write) {
-      cerr << "ReplSCVector::all_blocks: "
+      cerr << indent << "ReplSCVector::all_blocks: "
            << "Write access permitted for local blocks only"
            << endl;
       abort();
@@ -367,10 +373,4 @@ RefReplSCMatrixKit
 ReplSCVector::skit()
 {
   return ReplSCMatrixKit::castdown(kit().pointer());
-}
-
-RefMessageGrp
-ReplSCVector::messagegrp()
-{
-  return skit()->messagegrp();
 }

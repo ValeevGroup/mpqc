@@ -1,7 +1,9 @@
 
-#include <stdio.h>
+#include <iostream.h>
 #include <math.h>
+
 #include <util/misc/bug.h>
+#include <util/misc/formio.h>
 #include <util/group/messshm.h>
 #include <math/scmat/dist.h>
 
@@ -24,7 +26,7 @@ main(int argc, char** argv)
       msg = keyval->describedclassvalue("messagegrp");
 
       if (msg.null()) {
-          fprintf(stderr,"Couldn't initialize MessageGrp\n");
+          cerr << indent << "Couldn't initialize MessageGrp\n";
           abort();
         }
     }

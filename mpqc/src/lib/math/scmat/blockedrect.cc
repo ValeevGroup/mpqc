@@ -1,6 +1,7 @@
 
-#include <stdio.h>
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/blocked.h>
 #include <math/scmat/cmatrix.h>
@@ -62,7 +63,7 @@ BlockedSCMatrix::resize(SCDimension *a, SCDimension *b)
                                   d2->blocks()->subdim(i));
 
   } else {
-    fprintf(stderr,"BlockedSCMatrix::resize: wrong number of blocks\n");
+    cerr << indent << "BlockedSCMatrix::resize: wrong number of blocks\n";
     abort();
   }
 
@@ -155,7 +156,7 @@ BlockedSCMatrix::accumulate_element(int i,int j,double a)
 SCMatrix *
 BlockedSCMatrix::get_subblock(int br, int er, int bc, int ec)
 {
-  fprintf(stderr,"BlockedSCMatrix::get_subblock: cannot get subblock\n");
+  cerr << indent << "BlockedSCMatrix::get_subblock: cannot get subblock\n";
   abort();
   return 0;
 }
@@ -164,7 +165,8 @@ void
 BlockedSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec,
                                int source_br, int source_bc)
 {
-  fprintf(stderr,"BlockedSCMatrix::assign_subblock: cannot assign subblock\n");
+  cerr << indent
+       << "BlockedSCMatrix::assign_subblock: cannot assign subblock\n";
   abort();
 }
 
@@ -173,15 +175,15 @@ BlockedSCMatrix::accumulate_subblock(SCMatrix*sb,
                                      int br, int er, int bc, int ec,
                                      int source_br, int source_bc)
 {
-  fprintf(stderr,"BlockedSCMatrix::accumulate_subblock:"
-          " cannot accumulate subblock\n");
+  cerr << indent << "BlockedSCMatrix::accumulate_subblock:"
+       << " cannot accumulate subblock\n";
   abort();
 }
 
 SCVector *
 BlockedSCMatrix::get_row(int i)
 {
-  fprintf(stderr,"BlockedSCMatrix::get_row: cannot get row\n");
+  cerr << indent << "BlockedSCMatrix::get_row: cannot get row\n";
   abort();
 
   return 0;
@@ -190,21 +192,21 @@ BlockedSCMatrix::get_row(int i)
 void
 BlockedSCMatrix::assign_row(SCVector *v, int i)
 {
-  fprintf(stderr,"BlockedSCMatrix::assign_row: cannot assign row\n");
+  cerr << indent << "BlockedSCMatrix::assign_row: cannot assign row\n";
   abort();
 }
 
 void
 BlockedSCMatrix::accumulate_row(SCVector *v, int i)
 {
-  fprintf(stderr,"BlockedSCMatrix::accumulate_row: cannot accumulate row\n");
+  cerr << indent << "BlockedSCMatrix::accumulate_row: cannot accumulate row\n";
   abort();
 }
 
 SCVector *
 BlockedSCMatrix::get_column(int i)
 {
-  fprintf(stderr,"BlockedSCMatrix::get_column: cannot get column\n");
+  cerr << indent << "BlockedSCMatrix::get_column: cannot get column\n";
   abort();
 
   return 0;
@@ -213,14 +215,15 @@ BlockedSCMatrix::get_column(int i)
 void
 BlockedSCMatrix::assign_column(SCVector *v, int i)
 {
-  fprintf(stderr,"BlockedSCMatrix::assign_column: cannot assign column\n");
+  cerr << indent << "BlockedSCMatrix::assign_column: cannot assign column\n";
   abort();
 }
 
 void
 BlockedSCMatrix::accumulate_column(SCVector *v, int i)
 {
-  fprintf(stderr,"BlockedSCMatrix::accumulate_column: cannot accumulate column\n");
+  cerr << indent
+       << "BlockedSCMatrix::accumulate_column: cannot accumulate column\n";
   abort();
 }
 
@@ -236,9 +239,9 @@ BlockedSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(lb->dim())) {
-    fprintf(stderr,"BlockedSCMatrix::"
-            "accumulate_outer_product(SCVector*a,SCVector*b):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent
+         << "BlockedSCMatrix::accumulate_outer_product(SCVector*,SCVector*): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -260,9 +263,9 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->coldim()) ||
       !la->coldim()->equiv(lb->rowdim())) {
-    fprintf(stderr,"BlockedSCMatrix::"
-            "accumulate_product(SCMatrix*a,SCMatrix*b):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent
+         << "BlockedSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -298,9 +301,9 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
-    fprintf(stderr,"BlockedSCMatrix::"
-            "accumulate_product(SCMatrix*a,SymmSCMatrix*b):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent
+         << "BlockedSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -327,9 +330,9 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(lb->dim()) ||
       !la->coldim()->equiv(lb->dim())) {
-    fprintf(stderr,"BlockedSCMatrix::"
-            "accumulate_product(SCMatrix*a,DiagSCMatrix*b):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent
+         << "BlockedSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -351,8 +354,8 @@ BlockedSCMatrix::accumulate(SCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
-    fprintf(stderr,"BlockedSCMatrix::accumulate(SCMatrix*a):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent << "BlockedSCMatrix::accumulate(SCMatrix*a): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -370,8 +373,8 @@ BlockedSCMatrix::accumulate(SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-    fprintf(stderr,"BlockedSCMatrix::accumulate(SymmSCMatrix*a):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent << "BlockedSCMatrix::accumulate(SymmSCMatrix*a): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -389,8 +392,8 @@ BlockedSCMatrix::accumulate(DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-    fprintf(stderr,"BlockedSCMatrix::accumulate(DiagSCMatrix*a):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent << "BlockedSCMatrix::accumulate(DiagSCMatrix*a): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -409,8 +412,8 @@ BlockedSCMatrix::accumulate(SCVector*a)
   // make sure that the dimensions match
   if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)
         || (coldim()->equiv(la->dim()) && rowdim()->n() == 1))) {
-    fprintf(stderr,"BlockedSCMatrix::accumulate(SCVector*a):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent << "BlockedSCMatrix::accumulate(SCVector*a): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -447,7 +450,8 @@ BlockedSCMatrix::invert_this()
 
   // ok, let's make sure that the matrix is at least square
   if (d1->n() != d2->n()) {
-    fprintf(stderr,"BlockedSCMatrix::invert_this: SVD not implemented yet");
+    cerr << indent
+         << "BlockedSCMatrix::invert_this: SVD not implemented yet\n";
     abort();
   }
 
@@ -485,7 +489,8 @@ BlockedSCMatrix::invert_this()
     return res;
 
   } else {
-    fprintf(stderr,"BlockedSCMatrix::invert_this: SVD not implemented yet");
+    cerr << indent
+         << "BlockedSCMatrix::invert_this: SVD not implemented yet\n";
     abort();
   }
 
@@ -495,7 +500,8 @@ BlockedSCMatrix::invert_this()
 void
 BlockedSCMatrix::gen_invert_this()
 {
-  fprintf(stderr,"BlockedSCMatrix::gen_invert_this: SVD not implemented yet");
+  cerr << indent
+       << "BlockedSCMatrix::gen_invert_this: SVD not implemented yet\n";
   abort();
 }
 
@@ -547,8 +553,8 @@ BlockedSCMatrix::solve_this(SCVector*v)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lv->dim())) {
-    fprintf(stderr,"BlockedSCMatrix::solve_this(SCVector*v):\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent << "BlockedSCMatrix::solve_this(SCVector*v): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -567,8 +573,8 @@ BlockedSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lS->dim())) {
-    fprintf(stderr,"BlockedSCMatrix::schmidt_orthog():\n");
-    fprintf(stderr,"dimensions don't match\n");
+    cerr << indent << "BlockedSCMatrix::schmidt_orthog(): "
+         << "dimensions don't match\n";
     abort();
   }
 
@@ -604,7 +610,7 @@ BlockedSCMatrix::element_op(const RefSCElementOp2& op,
     = BlockedSCMatrix::require_castdown(m,"BlockedSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
-    fprintf(stderr,"BlockedSCMatrix: bad element_op\n");
+    cerr << indent << "BlockedSCMatrix: bad element_op\n";
     abort();
   }
 
@@ -634,7 +640,7 @@ BlockedSCMatrix::element_op(const RefSCElementOp3& op,
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
       !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
-    fprintf(stderr,"BlockedSCMatrix: bad element_op\n");
+    cerr << indent << "BlockedSCMatrix: bad element_op\n";
     abort();
   }
 
@@ -748,7 +754,7 @@ BlockedSCMatrix::restore(StateIn& s)
   s.get(nrt);
   s.get(nct);
   if (nrt != nr || nct != nc) {
-      cerr << "BlockedSCMatrix::restore(): bad dimensions" << endl;
+      cerr << indent << "BlockedSCMatrix::restore(): bad dimensions" << endl;
       abort();
     }
   int has_subblocks;
@@ -757,7 +763,8 @@ BlockedSCMatrix::restore(StateIn& s)
       int nblock;
       s.get(nblock);
       if (nblock != nblocks()) {
-          cerr << "BlockedSCMatrix::restore(): nblock differs\n" << endl;
+          cerr << indent
+               << "BlockedSCMatrix::restore(): nblock differs\n" << endl;
           abort();
         }
       for (int i=0; i<nblocks(); i++) {
@@ -765,7 +772,8 @@ BlockedSCMatrix::restore(StateIn& s)
         }
     }
   else {
-      cerr << "BlockedSCMatrix::restore(): no subblocks--cannot restore"
+      cerr << indent
+           << "BlockedSCMatrix::restore(): no subblocks--cannot restore"
            << endl;
       abort();
     }

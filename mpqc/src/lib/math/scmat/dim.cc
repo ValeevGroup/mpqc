@@ -3,8 +3,8 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
 #include <math.h>
+
 #include <util/keyval/keyval.h>
 #include <math/scmat/dim.h>
 #include <util/misc/formio.h>
@@ -13,7 +13,7 @@
 static void
 fail(const char *s)
 {
-  cerr << "math/scmat/dim.cc: " << s << endl;
+  cerr << indent << "math/scmat/dim.cc: " << s << endl;
   abort();
 }
 

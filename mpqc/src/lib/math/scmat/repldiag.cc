@@ -1,6 +1,10 @@
 
-#include <stdio.h>
+#include <iostream.h>
+#include <iomanip.h>
+
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/repl.h>
 #include <math/scmat/cmatrix.h>
@@ -104,9 +108,8 @@ ReplDiagSCMatrix::accumulate(DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      fprintf(stderr,"ReplDiagSCMatrix::"
-              "accumulate(SCMatrix*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "ReplDiagSCMatrix::accumulate(SCMatrix*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -180,7 +183,7 @@ ReplDiagSCMatrix::element_op(const RefSCElementOp2& op,
       = ReplDiagSCMatrix::require_castdown(m,"ReplDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      fprintf(stderr,"ReplDiagSCMatrix: bad element_op\n");
+      cerr << indent << "ReplDiagSCMatrix: bad element_op\n";
       abort();
     }
   if (op->has_side_effects()) before_elemop();
@@ -206,7 +209,7 @@ ReplDiagSCMatrix::element_op(const RefSCElementOp3& op,
       = ReplDiagSCMatrix::require_castdown(n,"ReplDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      fprintf(stderr,"ReplDiagSCMatrix: bad element_op\n");
+      cerr << indent << "ReplDiagSCMatrix: bad element_op\n";
       abort();
     }
   if (op->has_side_effects()) before_elemop();
@@ -236,25 +239,27 @@ ReplDiagSCMatrix::print(const char *title, ostream& os, int prec)
 
   if (messagegrp()->me() != 0) return;
 
-  max=(max==0.0)?1.0:log10(max);
-  if(max < 0.0) max=1.0;
+  max = (max==0.0) ? 1.0 : log10(max);
+  if (max < 0.0) max=1.0;
 
   lwidth = prec+5+(int) max;
 
   os.setf(ios::fixed,ios::floatfield); os.precision(prec);
   os.setf(ios::right,ios::adjustfield);
 
-  if(title) os << "\n" << title << "\n";
-  else os << "\n";
+  if (title)
+    os << endl << indent << title << endl;
+  else
+    os << endl;
 
-  if(n()==0) { os << " empty matrix\n"; return; }
+  if (n()==0) {
+    os << indent << "empty matrix\n";
+    return;
+  }
 
-  for (i=0; i<n(); i++) {
-      os.width(5); os << i+1;
-      os.width(lwidth); os << matrix[i];
-      os << "\n";
-    }
-  os << "\n";
+  for (i=0; i<n(); i++)
+    os << indent << setw(5) << i+1 << setw(lwidth) << matrix[i] << endl;
+  os << endl;
 
   os.flush();
 }
@@ -287,10 +292,4 @@ RefReplSCMatrixKit
 ReplDiagSCMatrix::skit()
 {
   return ReplSCMatrixKit::castdown(kit().pointer());
-}
-
-RefMessageGrp
-ReplDiagSCMatrix::messagegrp()
-{
-  return skit()->messagegrp();
 }

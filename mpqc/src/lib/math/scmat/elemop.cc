@@ -3,9 +3,10 @@
 #pragma implementation
 #endif
 
-#include <iostream.h>
 #include <stdlib.h>
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
@@ -868,14 +869,14 @@ SCElementDot::SCElementDot(double**a, double**b, int n):
 
 SCElementDot::SCElementDot(StateIn&s)
 {
-  fprintf(stderr,"SCElementDot does not permit StateIn CTOR\n");
+  cerr << indent << "SCElementDot does not permit StateIn CTOR\n";
   abort();
 }
 
 void
 SCElementDot::save_data_state(StateOut&s)
 {
-  fprintf(stderr,"SCElementDot does not permit save_data_state\n");
+  cerr << indent << "SCElementDot does not permit save_data_state\n";
   abort();
 }
 

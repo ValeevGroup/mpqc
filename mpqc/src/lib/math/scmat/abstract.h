@@ -6,6 +6,8 @@
 #pragma interface
 #endif
 
+#include <util/group/message.h>
+
 #include <util/state/state.h>
 #include <math/scmat/dim.h>
 #include <math/scmat/block.h>
@@ -32,6 +34,9 @@ DescribedClass_REF_fwddec(SCMatrixKit);
 class SCMatrixKit: public DescribedClass {
 #   define CLASSNAME SCMatrixKit
 #   include <util/class/classda.h>
+  protected:
+    RefMessageGrp grp_;
+    
   public:
     SCMatrixKit();
     SCMatrixKit(const RefKeyVal&);
@@ -42,6 +47,8 @@ class SCMatrixKit: public DescribedClass {
     //. default has been changed with \srccd{set\_default\_matrixkit}.
     static SCMatrixKit* default_matrixkit();
     static void set_default_matrixkit(const RefSCMatrixKit &);
+
+    RefMessageGrp messagegrp() const;
 
     //. Given the dimensions, create matrices or vectors.
     virtual SCMatrix* matrix(const RefSCDimension&,const RefSCDimension&) = 0;
@@ -139,6 +146,9 @@ class SCVector: public DescribedClass {
     virtual void print(ostream&);
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 
+    //. Returns the message group used by the matrix kit
+    RefMessageGrp messagegrp();
+    
     //. Returns iterators for the local (rapidly accessible)
     //. blocks used in this vector.  Only one iterator is allowed
     //. for a matrix is it has \srccd{Accum} or \srccd{Write}
@@ -282,6 +292,9 @@ class SCMatrix: public DescribedClass {
     virtual void print(ostream&);
     virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
 
+    //. Returns the message group used by the matrix kit
+    RefMessageGrp messagegrp();
+    
     //. Returns iterators for the local (rapidly accessible)
     //. blocks used in this matrix.
     virtual RefSCMatrixSubblockIter local_blocks(
@@ -411,6 +424,9 @@ class SymmSCMatrix: public DescribedClass {
     virtual void print(ostream&);
     virtual void print(const char* title=0,ostream& out=cout, int =10);
 
+    //. Returns the message group used by the matrix kit
+    RefMessageGrp messagegrp();
+    
     //. Returns iterators for the local (rapidly accessible)
     //. blocks used in this matrix.
     virtual RefSCMatrixSubblockIter local_blocks(
@@ -493,6 +509,9 @@ class DiagSCMatrix: public DescribedClass {
     virtual void print(ostream&);
     virtual void print(const char* title=0,ostream& out=cout, int =10);
 
+    //. Returns the message group used by the matrix kit
+    RefMessageGrp messagegrp();
+    
     //. Returns iterators for the local (rapidly accessible)
     //. blocks used in this matrix.
     virtual RefSCMatrixSubblockIter local_blocks(

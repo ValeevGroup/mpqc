@@ -1,9 +1,10 @@
 
 #include <iostream.h>
 #include <iomanip.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/dist.h>
 #include <math/scmat/cmatrix.h>
@@ -16,7 +17,7 @@
 static void
 fail(const char *m)
 {
-  cerr << "distrect.cc: error: " << m << endl;
+  cerr << indent << "distrect.cc: error: " << m << endl;
   abort();
 }
 
@@ -62,7 +63,7 @@ DistSCMatrix::block_to_block(int i, int j)
           return I.block();
     }
 
-  cerr << "DistSCMatrix::block_to_block: internal error" << endl;
+  cerr << indent << "DistSCMatrix::block_to_block: internal error" << endl;
   abort();
   return 0;
 }
@@ -226,8 +227,8 @@ DistSCMatrix::accumulate(SCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->rowdim()) || !coldim()->equiv(la->coldim())) {
-      fprintf(stderr,"DistSCMatrix::accumulate(SCMatrix*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -237,7 +238,8 @@ DistSCMatrix::accumulate(SCMatrix*a)
        i1++,i2++) {
       int n = i1.block()->ndat();
       if (n != i2.block()->ndat()) {
-          cerr << "DistSCMatrixListSubblockIter::accumulate block mismatch: "
+          cerr << indent
+               << "DistSCMatrixListSubblockIter::accumulate block mismatch: "
                << "internal error" << endl;
           abort();
         }
@@ -258,8 +260,8 @@ DistSCMatrix::accumulate(SymmSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-      fprintf(stderr,"DistSCMatrix::accumulate(SCMatrix*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -326,8 +328,8 @@ DistSCMatrix::accumulate(DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(la->dim())) {
-      fprintf(stderr,"DistSCMatrix::accumulate(SCMatrix*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "DistSCMatrix::accumulate(SCMatrix*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -358,8 +360,8 @@ DistSCMatrix::accumulate(SCVector*a)
   // make sure that the dimensions match
   if (!((rowdim()->equiv(la->dim()) && coldim()->n() == 1)
         || (coldim()->equiv(la->dim()) && rowdim()->n() == 1))) {
-      fprintf(stderr,"DistSCMatrix::accumulate(SCVector*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "DistSCMatrix::accumulate(SCVector*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -369,8 +371,8 @@ DistSCMatrix::accumulate(SCVector*a)
        I++,J++) {
       int n = I.block()->ndat();
       if (n != J.block()->ndat()) {
-          cerr << "DistSCMatrix::accumulate(SCVector*a): "
-              "block lists do not match" << endl;
+          cerr << indent << "DistSCMatrix::accumulate(SCVector*a): "
+               << "block lists do not match" << endl;
           abort();
         }
       double *dati = I.block()->dat();
@@ -390,9 +392,9 @@ DistSCMatrix::accumulate_product(SCMatrix*pa,SCMatrix*pb)
   // make sure that the dimensions match
   if (!rowdim()->equiv(a->rowdim()) || !coldim()->equiv(b->coldim()) ||
       !a->coldim()->equiv(b->rowdim())) {
-      fprintf(stderr,"DistSCMatrix::"
-              "accumulate_product(SCMatrix*a,SCMatrix*b):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent
+           << "DistSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -595,9 +597,9 @@ DistSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
 
   // make sure that the dimensions match
   if (!rowdim()->equiv(la->dim()) || !coldim()->equiv(lb->dim())) {
-      fprintf(stderr,"DistSCMatrix::"
-              "accumulate_outer_product(SCVector*a,SCVector*b):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent
+           << "DistSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -666,7 +668,7 @@ double
 DistSCMatrix::invert_this()
 {
   if (nrow() != ncol()) {
-      fprintf(stderr,"DistSCMatrix::invert_this: matrix is not square\n");
+      cerr << indent << "DistSCMatrix::invert_this: matrix is not square\n";
       abort();
     }
   RefSymmSCMatrix refs = kit()->symmmatrix(d1);
@@ -690,7 +692,7 @@ double
 DistSCMatrix::determ_this()
 {
   if (nrow() != ncol()) {
-    fprintf(stderr,"DistSCMatrix::determ_this: matrix is not square\n");
+    cerr << indent << "DistSCMatrix::determ_this: matrix is not square\n";
     abort();
   }
   return invert_this();
@@ -700,7 +702,7 @@ double
 DistSCMatrix::trace()
 {
   if (nrow() != ncol()) {
-    fprintf(stderr,"DistSCMatrix::trace: matrix is not square\n");
+    cerr << indent << "DistSCMatrix::trace: matrix is not square\n";
     abort();
   }
 
@@ -727,8 +729,8 @@ DistSCMatrix::solve_this(SCVector*v)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(v->dim())) {
-      fprintf(stderr,"DistSCMatrix::solve_this(SCVector*v):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "DistSCMatrix::solve_this(SCVector*v): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -745,8 +747,8 @@ DistSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
   
   // make sure that the dimensions match
   if (!rowdim()->equiv(lS->dim())) {
-      fprintf(stderr,"DistSCMatrix::schmidt_orthog():\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "DistSCMatrix::schmidt_orthog(): "
+           << "dimensions don't match\n";
       abort();
     }
 }
@@ -771,7 +773,7 @@ DistSCMatrix::element_op(const RefSCElementOp2& op,
       = DistSCMatrix::require_castdown(m,"DistSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
-      fprintf(stderr,"DistSCMatrix: bad element_op\n");
+      cerr << indent << "DistSCMatrix: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j;
@@ -794,7 +796,7 @@ DistSCMatrix::element_op(const RefSCElementOp3& op,
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
       !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
-      fprintf(stderr,"DistSCMatrix: bad element_op\n");
+      cerr << indent << "DistSCMatrix: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j, k;
@@ -817,8 +819,8 @@ DistSCMatrix::print(const char *title, ostream& os, int prec)
 
   int me = messagegrp()->me();
 
-  max=(max==0.0)?1.0:log10(max);
-  if(max < 0.0) max=1.0;
+  max = (max==0.0) ? 1.0 : log10(max);
+  if (max < 0.0) max=1.0;
 
   lwidth = prec+5+(int) max;
 
@@ -826,12 +828,12 @@ DistSCMatrix::print(const char *title, ostream& os, int prec)
   os.setf(ios::right,ios::adjustfield);
 
   if (messagegrp()->me() == 0) {
-      if(title) os << endl << title << endl;
+      if (title) os << endl << indent << title << endl;
       else os << endl;
     }
 
-  if(nrow()==0 || ncol()==0) {
-      if (me == 0) os << " empty matrix\n";
+  if (nrow()==0 || ncol()==0) {
+      if (me == 0) os << indent << "empty matrix\n";
       return;
     }
 
@@ -845,11 +847,12 @@ DistSCMatrix::print(const char *title, ostream& os, int prec)
       messagegrp()->recv(me-1, tmp);
     }
   else {
+      os << indent;
       for (i=0; i<nc; i++) os << setw(lwidth) << i;
       os << endl;
     }
   for (i=0; i<nvec; i++) {
-      os << setw(5) << i+vecoff;
+      os << indent << setw(5) << i+vecoff;
       for (j=0; j<nc; j++) os << setw(lwidth) << vec[i][j];
       os << endl;
     }
@@ -887,10 +890,4 @@ RefDistSCMatrixKit
 DistSCMatrix::skit()
 {
   return DistSCMatrixKit::castdown(kit().pointer());
-}
-
-RefMessageGrp
-DistSCMatrix::messagegrp()
-{
-  return skit()->messagegrp();
 }

@@ -1,6 +1,8 @@
 
-#include <stdio.h>
+#include <iostream.h>
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/dist.h>
 #include <math/scmat/cmatrix.h>
@@ -49,7 +51,8 @@ DistDiagSCMatrix::block_to_block(int i)
           return I.block();
     }
 
-  cerr << "DistDiagSCMatrix::block_to_block: internal error" << endl;
+  cerr << indent
+       << "DistDiagSCMatrix::block_to_block: internal error" << endl;
   abort();
   return 0;
 }
@@ -158,9 +161,8 @@ DistDiagSCMatrix::accumulate(DiagSCMatrix*a)
 
   // make sure that the dimensions match
   if (!dim()->equiv(la->dim())) {
-      fprintf(stderr,"DistDiagSCMatrix::"
-              "accumulate(SCMatrix*a):\n");
-      fprintf(stderr,"dimensions don't match\n");
+      cerr << indent << "DistDiagSCMatrix::accumulate(SCMatrix*a): "
+           << "dimensions don't match\n";
       abort();
     }
 
@@ -170,7 +172,7 @@ DistDiagSCMatrix::accumulate(DiagSCMatrix*a)
        i1++,i2++) {
       int n = i1.block()->ndat();
       if (n != i2.block()->ndat()) {
-          cerr << "DistDiagSCMatrix::accumulate "
+          cerr << indent << "DistDiagSCMatrix::accumulate "
                << "mismatch: internal error" << endl;
           abort();
         }
@@ -267,7 +269,7 @@ DistDiagSCMatrix::element_op(const RefSCElementOp2& op,
       = DistDiagSCMatrix::require_castdown(m,"DistDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim())) {
-      fprintf(stderr,"DistDiagSCMatrix: bad element_op\n");
+      cerr << indent << "DistDiagSCMatrix: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j;
@@ -289,7 +291,7 @@ DistDiagSCMatrix::element_op(const RefSCElementOp3& op,
       = DistDiagSCMatrix::require_castdown(n,"DistDiagSCMatrix::element_op");
 
   if (!dim()->equiv(lm->dim()) || !dim()->equiv(ln->dim())) {
-      fprintf(stderr,"DistDiagSCMatrix: bad element_op\n");
+      cerr << indent << "DistDiagSCMatrix: bad element_op\n";
       abort();
     }
   SCMatrixBlockListIter i, j, k;
@@ -318,17 +320,11 @@ DistDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
 void
 DistDiagSCMatrix::error(const char *msg)
 {
-  cerr << "DistDiagSCMatrix: error: " << msg << endl;
+  cerr << indent << "DistDiagSCMatrix: error: " << msg << endl;
 }
 
 RefDistSCMatrixKit
 DistDiagSCMatrix::skit()
 {
   return DistSCMatrixKit::castdown(kit().pointer());
-}
-
-RefMessageGrp
-DistDiagSCMatrix::messagegrp()
-{
-  return skit()->messagegrp();
 }

@@ -3,7 +3,7 @@
 #pragma implementation
 #endif
 
-#include <iostream.h>
+#include <util/misc/formio.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/block.h>
 
@@ -413,7 +413,7 @@ SCVectorSimpleBlockIter::i()
 int
 SCVectorSimpleBlockIter::j()
 {
-  fprintf(stderr,"SCVectorSimpleBlockIter::j() attempted to find j value\n");
+  cerr << indent << "SCVectorSimpleBlockIter::j() attempted to find j value\n";
   abort();
   return 0;
 }
@@ -472,8 +472,8 @@ SCVectorSimpleSubBlockIter::i()
 int
 SCVectorSimpleSubBlockIter::j()
 {
-  fprintf(stderr,"SCVectorSimpleSubBlockIter::j():"
-          "attempted to find j value\n");
+  cerr << indent
+       << "SCVectorSimpleSubBlockIter::j(): attempted to find j value\n";
   abort();
   return 0;
 }

@@ -5,7 +5,7 @@
 #pragma interface
 #endif
 
-#include <stdio.h>
+#include <iostream.h>
 #include <math.h>
 
 class RefSCVector;
@@ -89,7 +89,7 @@ class SCVector3
     const double& x() const { return _v[0]; }
     const double& y() const { return _v[1]; }
     const double& z() const { return _v[2]; }
-    void print(FILE*fp=stdout) const;
+    void print(ostream& =cout) const;
 };
 SCVector3 operator*(double,const SCVector3&);
 

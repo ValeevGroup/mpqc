@@ -3,8 +3,10 @@
 #pragma implementation
 #endif
 
-#include <stdio.h>
+#include <iostream.h>
 #include <math.h>
+
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/dist.h>
 #include <math/scmat/cmatrix.h>
@@ -27,15 +29,15 @@ DistSCMatrixKit::_castdown(const ClassDesc*cd)
 
 DistSCMatrixKit::DistSCMatrixKit(const RefMessageGrp &grp)
 {
-  if (grp.null()) grp_ = MessageGrp::get_default_messagegrp();
-  else grp_ = grp;
+  // if grp is nonnull, then reset grp_ (it gets set to the default in the
+  // default SCMatrixKit constructor
+  if (grp.nonnull())
+    grp_ = grp;
 }
 
 DistSCMatrixKit::DistSCMatrixKit(const RefKeyVal& keyval):
   SCMatrixKit(keyval)
 {
-  grp_ = keyval->describedclassvalue("messagegrp");
-  if (grp_.null()) grp_ = MessageGrp::get_default_messagegrp();
 }
 
 DistSCMatrixKit::~DistSCMatrixKit()
@@ -83,7 +85,8 @@ DistSCMatrixListSubblockIter::DistSCMatrixListSubblockIter(
   in_(grp)
 {
   if (access == Write) {
-      cerr << "DistSCMatrixListSubblockIter: write access not allowed"
+      cerr << indent
+           << "DistSCMatrixListSubblockIter: write access not allowed"
            << endl;
       abort();
     }
@@ -102,7 +105,7 @@ DistSCMatrixListSubblockIter::begin()
 {
   if (step_ == grp_->n()) step_ = 0;
   else if (step_ != 0) {
-      cerr << "DistSCMatrixListSubblockIter::begin(): "
+      cerr << indent << "DistSCMatrixListSubblockIter::begin(): "
            << "step != 0: tried to begin in middle of iteration"
            << endl;
       abort();
@@ -148,7 +151,8 @@ DistSCMatrixListSubblockIter::~DistSCMatrixListSubblockIter()
            i1++,i2++) {
           int n = i1.block()->ndat();
           if (n != i2.block()->ndat()) {
-              cerr << "DistSCMatrixListSubblockIter: block mismatch: "
+              cerr << indent
+                   << "DistSCMatrixListSubblockIter: block mismatch: "
                    << "internal error" << endl;
               abort();
             }

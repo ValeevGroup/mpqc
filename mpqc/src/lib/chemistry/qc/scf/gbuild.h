@@ -32,18 +32,18 @@
 #pragma interface
 #endif
 
+#include <util/group/thread.h>
 #include <chemistry/qc/scf/scf.h>
 
 template<class T>
-class GBuild {
+class GBuild : public Thread {
   protected:
     T& contribution;
 
+    double accuracy_;
   public:
     GBuild(T&t) : contribution(t) {}
     virtual ~GBuild() {}
-
-    virtual void build_gmat(double accuracy) =0;
 };
 
 #endif

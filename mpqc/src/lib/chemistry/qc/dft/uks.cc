@@ -169,9 +169,10 @@ UKS::two_body_energy(double &ec, double &ex)
     signed char * pmax = init_pmax(apmat);
   
     LocalUKSEnergyContribution lclc(apmat, bpmat, 0);
+    RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalUKSEnergyContribution>
-      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
-    gb.build_gmat(desired_value_accuracy()/100.0);
+      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
+    gb.run();
 
     delete[] pmax;
 
@@ -221,9 +222,10 @@ UKS::ao_fock()
     signed char * pmax = init_pmax(pmat);
   
     LocalUKSContribution lclc(gmat, pmat, gmato, pmato, 0);
+    RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalUKSContribution>
-      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
-    gb.build_gmat(desired_value_accuracy()/100.0);
+      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
+    gb.run();
 
     delete[] pmax;
 
@@ -320,8 +322,12 @@ UKS::two_body_deriv(double * tbgrad)
     RefSymmSCMatrix ptmpb = get_local_data(densb_, pmatb, SCF::Read);
   
     LocalUKSGradContribution l(pmata,pmatb);
-    LocalTBGrad<LocalUKSGradContribution> tb(l, integral(), basis(),scf_grp_);
-    tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
+    RefTwoBodyDerivInt tbi = integral()->electron_repulsion_deriv();
+    RefPetiteList pl = integral()->petite_list();
+    LocalTBGrad<LocalUKSGradContribution> tb(l, tbi, pl, basis(),scf_grp_,
+                                             tbgrad, pmax, desired_gradient_accuracy());
+    tb.run();
+    scf_grp_->sum(tbgrad,3 * basis()->molecule()->natom());
   }
 
   // for now quit

@@ -36,40 +36,51 @@
 
 template<class T>
 class LocalGBuild : public GBuild<T> {
+  public:
+    double tnint;
+    
   protected:
-    RefMessageGrp grp_;
-    RefTwoBodyInt tbi_;
-    RefIntegral integral_;
-    RefGaussianBasisSet gbs_;
+    MessageGrp *grp_;
+    TwoBodyInt *tbi_;
+    GaussianBasisSet *gbs_;
+    PetiteList *rpl_;
+
     signed char *pmax;
+    int threadno_;
+    int nthread_;
+    double accuracy_;
     
   public:
-    LocalGBuild(T& t, const RefTwoBodyInt& tbi, const RefIntegral& ints,
+    LocalGBuild(T& t, const RefTwoBodyInt& tbi, const RefPetiteList& rpl,
                 const RefGaussianBasisSet& bs, const RefMessageGrp& g,
-                signed char *pm) :
-      GBuild<T>(t), grp_(g), tbi_(tbi), integral_(ints), gbs_(bs), pmax(pm) {}
+                signed char *pm, double acc, int nt=1, int tn=0) :
+      GBuild<T>(t),
+      pmax(pm), nthread_(nt), threadno_(tn), accuracy_(acc)
+    {
+      grp_ = g.pointer();
+      tbi_ = tbi.pointer();
+      rpl_ = rpl.pointer();
+      gbs_ = bs.pointer();
+    }
     ~LocalGBuild() {}
 
-    void build_gmat(double accuracy) {
-      tim_enter("ao_gmat");
-      //tim_set_default("quartet");
-
-      double tnint=0;
-      int tol = (int) (log(accuracy)/log(2.0));
+    void run() {
+      int tol = (int) (log(accuracy_)/log(2.0));
       int me=grp_->me();
       int nproc = grp_->n();
   
-      RefPetiteList rpl = integral_->petite_list();
-  
       // grab references for speed
-      GaussianBasisSet& gbs = *gbs_.pointer();
-      PetiteList& pl = *rpl.pointer();
-      TwoBodyInt& tbi = *tbi_.pointer();
+      GaussianBasisSet& gbs = *gbs_;
+      PetiteList& pl = *rpl_;
+      TwoBodyInt& tbi = *tbi_;
 
       tbi.set_redundant(0);
       const double *intbuf = tbi.buffer();
 
+      tnint=0;
+      int threadind=0;
       int ijklind=0;
+
       for (int i=0; i < gbs.nshell(); i++) {
         if (!pl.in_p1(i))
           continue;
@@ -90,6 +101,10 @@ class LocalGBuild : public GBuild<T> {
           for (int k=0; k <= i; k++, ijklind++) {
             if (ijklind%nproc != me)
               continue;
+
+            threadind++;
+            if (threadind % nthread_ != threadno_)
+              continue;
             
             int fk=gbs.shell_to_function(k);
             int nk=gbs(k).nfunction();
@@ -106,8 +121,12 @@ class LocalGBuild : public GBuild<T> {
               if ((ptmp=pmax[ij_offset(j,l)]-2) > pmaxijkl) pmaxijkl=ptmp;
               
 
+#if SCF_CHECK_BOUNDS
+              contribution.set_bound(pow(2.0,double(tbi.log2_shell_bound(i,j,k,l)+pmaxijkl)));
+#else
               if (tbi.log2_shell_bound(i,j,k,l)+pmaxijkl < tol)
                 continue;
+#endif
 
               int qijkl = pl.in_p4(oij,okl,i,j,k,l);
               if (!qijkl)
@@ -136,11 +155,15 @@ class LocalGBuild : public GBuild<T> {
                                 : ((e13e24)&&(K==I)) ? J : nl-1);
 
                     for (L=0, ll=fl; L <= lend; L++, ll++, index++) {
-                      double pki_int = intbuf[index];
 
-                      if ((pki_int>0?pki_int:-pki_int) < 1.0e-15)
+                      if (fabs(intbuf[index]) < 1.0e-15)
                         continue;
 
+                      double pki_int = intbuf[index];
+
+                      if (isnan(pki_int))
+                        abort();
+                      
                       if (qijkl > 1)
                         pki_int *= qijkl;
 
@@ -327,11 +350,6 @@ class LocalGBuild : public GBuild<T> {
           }
         }
       }
-
-      grp_->sum(&tnint, 1, 0, 0);
-      cout << node0 << indent << scprintf("%20.0f integrals\n", tnint);
-
-      tim_exit("ao_gmat");
     }
 };
 

@@ -62,6 +62,7 @@
 
 // Force linkages:
 #include <chemistry/qc/wfn/linkage.h>
+#include <chemistry/qc/scf/linkage.h>
 #include <chemistry/qc/dft/linkage.h>
 #include <chemistry/qc/mbpt/linkage.h>
 //#include <chemistry/qc/psi/linkage.h>

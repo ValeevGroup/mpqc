@@ -128,9 +128,10 @@ UHF::two_body_energy(double &ec, double &ex)
     signed char * pmax = init_pmax(apmat);
   
     LocalUHFEnergyContribution lclc(apmat, bpmat);
+    RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalUHFEnergyContribution>
-      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
-    gb.build_gmat(desired_value_accuracy()/100.0);
+      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
+    gb.run();
 
     delete[] pmax;
 
@@ -180,9 +181,10 @@ UHF::ao_fock()
     signed char * pmax = init_pmax(pmat);
   
     LocalUHFContribution lclc(gmat, pmat, gmato, pmato);
+    RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalUHFContribution>
-      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
-    gb.build_gmat(desired_value_accuracy()/100.0);
+      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
+    gb.run();
 
     delete[] pmax;
 
@@ -260,8 +262,12 @@ UHF::two_body_deriv(double * tbgrad)
     RefSymmSCMatrix ptmpb = get_local_data(densb_, pmatb, SCF::Read);
   
     LocalUHFGradContribution l(pmata,pmatb);
-    LocalTBGrad<LocalUHFGradContribution> tb(l, integral(), basis(),scf_grp_);
-    tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
+    RefTwoBodyDerivInt tbi = integral()->electron_repulsion_deriv();
+    RefPetiteList pl = integral()->petite_list();
+    LocalTBGrad<LocalUHFGradContribution> tb(l, tbi, pl, basis(), scf_grp_,
+                                             tbgrad, pmax, desired_gradient_accuracy());
+    tb.run();
+    scf_grp_->sum(tbgrad,3 * basis()->molecule()->natom());
   }
 
   // for now quit

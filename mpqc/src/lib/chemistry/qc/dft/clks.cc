@@ -185,9 +185,10 @@ CLKS::ao_fock()
     tim_exit("init pmax");
   
     LocalCLKSContribution lclc(gmat, pmat, functional_->a0());
+    RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalCLKSContribution>
-      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
-    gb.build_gmat(desired_value_accuracy()/100.0);
+      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
+    gb.run();
 
     delete[] pmax;
 
@@ -271,9 +272,10 @@ CLKS::two_body_energy(double &ec, double &ex)
     tim_exit("init pmax");
   
     LocalCLKSEnergyContribution lclc(pmat, functional_->a0());
+    RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalCLKSEnergyContribution>
-      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
-    gb.build_gmat(desired_value_accuracy()/100.0);
+      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
+    gb.run();
 
     delete[] pmax;
 
@@ -307,9 +309,12 @@ CLKS::two_body_deriv(double * tbgrad)
     RefSymmSCMatrix ptmp = get_local_data(cl_dens_, pmat, SCF::Read);
 
     LocalCLKSGradContribution l(pmat);
+    RefTwoBodyDerivInt tbi = integral()->electron_repulsion_deriv();
+    RefPetiteList pl = integral()->petite_list();
     LocalTBGrad<LocalCLKSGradContribution>
-      tb(l, integral(), basis(), scf_grp_);
-    tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
+      tb(l, tbi, pl, basis(), scf_grp_, tbgrad, pmax, desired_gradient_accuracy());
+    tb.run();
+    scf_grp_->sum(tbgrad,3 * basis()->molecule()->natom());
   }
 
   // for now quit

@@ -129,9 +129,10 @@ HSOSHF::two_body_energy(double &ec, double &ex)
     signed char * pmax = init_pmax(dpmat);
   
     LocalHSOSEnergyContribution lclc(dpmat, spmat);
+    RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalHSOSEnergyContribution>
-      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
-    gb.build_gmat(desired_value_accuracy()/100.0);
+      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
+    gb.run();
 
     delete[] pmax;
 
@@ -181,9 +182,10 @@ HSOSHF::ao_fock()
     signed char * pmax = init_pmax(pmat);
   
     LocalHSOSContribution lclc(gmat, pmat, gmato, pmato);
+    RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalHSOSContribution>
-      gb(lclc, tbi_, integral(), basis(), scf_grp_, pmax);
-    gb.build_gmat(desired_value_accuracy()/100.0);
+      gb(lclc, tbi_, pl, basis(), scf_grp_, pmax, desired_value_accuracy()/100.0);
+    gb.run();
 
     delete[] pmax;
 
@@ -264,8 +266,12 @@ HSOSHF::two_body_deriv(double * tbgrad)
     RefSymmSCMatrix potmp = get_local_data(op_dens_, pmato, SCF::Read);
   
     LocalHSOSGradContribution l(pmat,pmato);
-    LocalTBGrad<LocalHSOSGradContribution> tb(l, integral(), basis(),scf_grp_);
-    tb.build_tbgrad(tbgrad, pmax, desired_gradient_accuracy());
+    RefTwoBodyDerivInt tbi = integral()->electron_repulsion_deriv();
+    RefPetiteList pl = integral()->petite_list();
+    LocalTBGrad<LocalHSOSGradContribution> tb(l, tbi, pl, basis(), scf_grp_, tbgrad,
+                                              pmax, desired_gradient_accuracy());
+    tb.run();
+    scf_grp_->sum(tbgrad,3 * basis()->molecule()->natom());
   }
 
   // for now quit

@@ -44,45 +44,58 @@
   
 template<class T>
 class LocalTBGrad : public TBGrad<T> {
+  public:
+    double *tbgrad;
+
   protected:
-    RefMessageGrp grp_;
-    RefTwoBodyDerivInt tbi_;
-    RefIntegral integral_;
-    RefGaussianBasisSet gbs_;
+    MessageGrp *grp_;
+    TwoBodyDerivInt *tbi_;
+    GaussianBasisSet *gbs_;
+    PetiteList *rpl_;
+    Molecule *mol_;
+
+    double pmax_;
+    double accuracy_;
+
+    int threadno_;
+    int nthread_;
 
   public:
-    LocalTBGrad(T& t, const RefIntegral& ints, const RefGaussianBasisSet& bs,
-                const RefMessageGrp& g) :
-      TBGrad<T>(t), grp_(g), integral_(ints), gbs_(bs)
+    LocalTBGrad(T& t, const RefTwoBodyDerivInt& tbdi, const RefPetiteList& pl,
+                const RefGaussianBasisSet& bs, const RefMessageGrp& g,
+                double *tbg, double pm, double a, int nt = 1, int tn = 0) :
+      TBGrad<T>(t),
+      tbgrad(tbg), pmax_(pm), accuracy_(a), nthread_(nt), threadno_(tn)
     {
-      tbi_ = integral_->electron_repulsion_deriv();
+      grp_ = g.pointer();
+      gbs_ = bs.pointer();
+      rpl_ = pl.pointer();
+      tbi_ = tbdi.pointer();
+      mol_ = gbs_->molecule().pointer();
     }
 
     ~LocalTBGrad() {}
     
-    void build_tbgrad(double * tbgrad, double pmax, double accuracy) {
-      tim_enter("two electron gradient");
-      tim_set_default("quartet");
-
+    void run() {
       int me = grp_->me();
       int nproc = grp_->n();
       
       // grab ref for convenience
-      GaussianBasisSet& gbs = *gbs_.pointer();
-      Molecule& mol = *gbs.molecule().pointer();
-      RefPetiteList rpl = integral_->petite_list();
-      PetiteList& pl = *rpl.pointer();
-      TwoBodyDerivInt& tbi = *tbi_.pointer();
+      GaussianBasisSet& gbs = *gbs_;
+      Molecule& mol = *mol_;
+      PetiteList& pl = *rpl_;
+      TwoBodyDerivInt& tbi = *tbi_;
       
       // create vector to hold skeleton gradient
       double *tbint = new double[mol.natom()*3];
       memset(tbint, 0, sizeof(double)*mol.natom()*3);
 
       // for bounds checking
-      int PPmax = (int) (log(6.0*pmax*pmax)/log(2.0));
-      int threshold = (int) (log(accuracy)/log(2.0));
+      int PPmax = (int) (log(6.0*pmax_*pmax_)/log(2.0));
+      int threshold = (int) (log(accuracy_)/log(2.0));
   
       int kindex=0;
+      int threadind=0;
       for (int i=0; i < gbs.nshell(); i++) {
         if (!pl.in_p1(i))
           continue;
@@ -105,6 +118,10 @@ class LocalTBGrad : public TBGrad<T> {
             if (kindex%nproc != me)
               continue;
             
+            threadind++;
+            if (threadind % nthread_ != threadno_)
+              continue;
+            
             int nk=gbs(k).nfunction();
             int fk=gbs.shell_to_function(k);
     
@@ -121,9 +138,7 @@ class LocalTBGrad : public TBGrad<T> {
               int fl=gbs.shell_to_function(l);
 
               DerivCenters cent;
-              tim_enter_default();
               tbi.compute_shell(i,j,k,l,cent);
-              tim_exit_default();
 
               const double * buf = tbi.buffer();
           
@@ -138,6 +153,9 @@ class LocalTBGrad : public TBGrad<T> {
                 int ix=cent.atom(x);
                 int io=cent.omitted_atom();
                 for (int ixyz=0; ixyz < 3; ixyz++) {
+                  double tx = tbint[ixyz+ix*3];
+                  double to = tbint[ixyz+io*3];
+                  
                   for (int ip=0, ii=fi; ip < ni; ip++, ii++) {
                     for (int jp=0, jj=fj; jp < nj; jp++, jj++) {
                       for (int kp=0, kk=fk; kp < nk; kp++, kk++) {
@@ -149,37 +167,37 @@ class LocalTBGrad : public TBGrad<T> {
                             contribution.cont1(ij_offset(ii,jj),
                                                ij_offset(kk,ll));
 
-                          tbint[ixyz+ix*3] += contrib;
-                          tbint[ixyz+io*3] -= contrib;
+                          tx += contrib;
+                          to -= contrib;
 
                           contrib = escl*qint*
                             contribution.cont2(ij_offset(ii,kk),
                                                ij_offset(jj,ll));
 
-                          tbint[ixyz+ix*3] += contrib;
-                          tbint[ixyz+io*3] -= contrib;
+                          tx += contrib;
+                          to -= contrib;
 
                           if (i!=j && k!=l) {
                             contrib = escl*qint*
                               contribution.cont2(ij_offset(ii,ll),
                                                  ij_offset(jj,kk));
 
-                            tbint[ixyz+ix*3] += contrib;
-                            tbint[ixyz+io*3] -= contrib;
+                            tx += contrib;
+                            to -= contrib;
                           }
                         }
                       }
                     }
                   }
+
+                  tbint[ixyz+ix*3] = tx;
+                  tbint[ixyz+io*3] = to;
                 }
               }
             }
           }
         }
       }
-      
-      if (nproc > 1)
-        grp_->sum(tbint, mol.natom()*3);
       
       CharacterTable ct = mol.point_group()->char_table();
       SymmetryOperation so;
@@ -207,8 +225,6 @@ class LocalTBGrad : public TBGrad<T> {
       }
     
       delete[] tbint;
-      
-      tim_exit("two electron gradient");
     }
 };
 

@@ -753,6 +753,15 @@ sub input_string() {
         $mole = "$mole\n      memory = $memory";
         $mole = "$mole\n    )";
     }
+    if ($qcinput->frequencies()) {
+        $mole = "$mole\n    hessian<FinDispMolecularHessian>: (";
+        if ($symmetry ne "C1") {
+            $mole="$mole\n      point_group<PointGroup>: symmetry = $symmetry";
+        }
+        $mole = "$mole\n      checkpoint = no";
+        $mole = "$mole\n      restart = no";
+        $mole = "$mole\n    )";
+    }
     $mole = "$mole\n  )\n";
 
     my $opt;

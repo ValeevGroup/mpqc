@@ -54,9 +54,11 @@ Int2eV3::Int2eV3(const RefGaussianBasisSet& b1,
 
   int_initialize_offsets2(int_cs1,int_cs2,int_cs3,int_cs4);
   int_initialize_erep(storage,order,int_cs1,int_cs2,int_cs3,int_cs4);
-  if ((storage-used_storage_) > 0) {
+  if (order==0 && ((storage-used_storage_) > 0)) {
     init_bounds();
     init_storage(storage-used_storage_);
+  } else if (order==1) {
+    init_bounds_1der();
   }
 }
 
@@ -67,5 +69,6 @@ Int2eV3::~Int2eV3()
   if (int_integral_storage) {
     done_storage();
     done_bounds();
+    done_bounds_1der();
   }
 }

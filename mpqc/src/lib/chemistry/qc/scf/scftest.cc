@@ -14,7 +14,6 @@
 
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>
-#include <util/group/picl.h>
 #include <util/group/pregtime.h>
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
@@ -91,10 +90,6 @@ init_mp(const RefKeyVal& keyval)
     debugger->debug("curt is a hog");
   }
   
-  // if intv2 is being used, then initialize the picl stuff
-  int np, me, host;
-  //open0_messagegrp(&np, &me, &host, grp);
-
   tim = new ParallelRegionTimer(grp,"scftest",1,0);
   RegionTimer::set_default_regiontimer(tim);
   

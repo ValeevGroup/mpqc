@@ -1010,7 +1010,7 @@ if test -n $F77 ; then
   echo "      subroutine ffunc()" > ffunc.f
   echo "      return" >> ffunc.f
   echo "      end" >> ffunc.f
-  $F77 -c ffunc.f
+  $F77 -c ffunc.f 1>/dev/null 2>/dev/null
   echo "main(){ FF(); return 0; }" > flink.c
   if $CC -o flink -DFF=ffunc flink.c ffunc.o 1>/dev/null 2>/dev/null; then
     AC_MSG_RESULT(same as C)

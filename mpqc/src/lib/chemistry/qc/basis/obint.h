@@ -66,9 +66,25 @@ REF_dec(DipoleData);
 
 class PointChargeData: public VRefCount
 {
+  private:
+    int ncharges_;
+    const double *charges_;
+    const double *const*positions_;
+    double *alloced_charges_;
+    double **alloced_positions_;
+
   public:
-    PointBag_double* charges;
-    PointChargeData(PointBag_double* c): charges(c) {}
+    PointChargeData(PointBag_double* c);
+    // If copy_data is 0, the passed positions and charges will
+    // be stored (but not freed).
+    PointChargeData(int ncharge,
+                    const double *const*positions, const double *charges,
+                    int copy_data = 0);
+    ~PointChargeData();
+
+    int ncharges() const { return ncharges_; }
+    const double *charges() const { return charges_; }
+    const double *const*positions() const { return positions_; }
 };
 REF_dec(PointChargeData);
 

@@ -51,9 +51,6 @@ class PointChargeIntV3 : public OneBodyInt
 {
   protected:
     RefInt1eV3 int1ev3_;
-    int ncharge;
-    double** position;
-    double* charge;
     RefPointChargeData data_;
   public:
     PointChargeIntV3(const RefGaussianBasisSet&,
@@ -61,8 +58,6 @@ class PointChargeIntV3 : public OneBodyInt
                      const RefPointChargeData&);
     ~PointChargeIntV3();
     void compute_shell(int,int);
-
-    void reinitialize();
 };
 
 class EfieldDotVectorIntV3: public OneBodyInt

@@ -68,6 +68,65 @@ DipoleData::set_origin(double*o)
 
 ///////////////////////////////////////////////////////////////////////
 
+PointChargeData::PointChargeData(PointBag_double* c)
+{
+  ncharges_ = c->length();
+  alloced_positions_ = new double*[ncharges_];
+  alloced_charges_ = new double[ncharges_];
+  double *tmp = new double[ncharges_*3];
+  Pix pix=c->first();
+  for (int i=0; i<ncharges_; i++) {
+    alloced_positions_[i] = tmp;
+    alloced_charges_[i] = c->get(pix);
+    for (int j=0; j<3; j++) {
+      *tmp++ = c->point(pix)[j];
+    }
+    c->next(pix);
+  }
+  positions_ = alloced_positions_;
+  charges_ = alloced_charges_;
+}
+
+PointChargeData::PointChargeData(int ncharges,
+                                 const double *const*positions,
+                                 const double *charges,
+                                 int copy_data)
+{
+  ncharges_ = ncharges;
+  if (copy_data) {
+    alloced_positions_ = new double*[ncharges];
+    alloced_charges_ = new double[ncharges];
+    memcpy(alloced_charges_, charges, sizeof(double)*ncharges);
+    double *tmp = new double[ncharges*3];
+    for (int i=0; i<ncharges; i++) {
+      alloced_positions_[i] = tmp;
+      for (int j=0; j<3; j++) {
+        *tmp++ = positions[i][j];
+      }
+    }
+    positions_ = alloced_positions_;
+    charges_ = alloced_charges_;
+  }
+  else {
+    charges_ = charges;
+    alloced_charges_ = 0;
+    alloced_positions_ = 0;
+    charges_ = charges;
+    positions_ = positions;
+  }
+}
+
+PointChargeData::~PointChargeData()
+{
+  if (alloced_positions_) {
+    delete[] alloced_positions_[0];
+    delete[] alloced_positions_;
+  }
+  delete[] alloced_charges_;
+}
+
+///////////////////////////////////////////////////////////////////////
+
 OneBodyInt::OneBodyInt(const RefGaussianBasisSet&bs1,
                        const RefGaussianBasisSet&bs2) :
   bs1_(bs1), bs2_(bs2)

@@ -896,8 +896,8 @@ Int1eV3::nuclear(int ish, int jsh)
  */
 void
 Int1eV3::int_accum_shell_point_charge(int ish, int jsh,
-                                      int ncharge, double* charge,
-                                      double** position)
+                                      int ncharge, const double* charge,
+                                      const double*const* position)
 {
   int i;
   int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;
@@ -946,7 +946,8 @@ Int1eV3::int_accum_shell_point_charge(int ish, int jsh,
  */
 void
 Int1eV3::point_charge(int ish, int jsh,
-                                int ncharge, double* charge, double** position)
+                      int ncharge,
+                      const double* charge, const double*const* position)
 {
   int i;
   int c1,s1,i1,j1,k1,c2,s2,i2,j2,k2;

@@ -58,10 +58,7 @@ PointChargeIntV3::PointChargeIntV3(
     const RefGaussianBasisSet&bs2,
     const RefPointChargeData&dat):
   OneBodyInt(bs1,bs2),
-  data_(dat),
-  ncharge(0),
-  charge(0),
-  position(0)
+  data_(dat)
 {
   int1ev3_ = new Int1eV3(bs1,bs2,0);
   buffer_ = int1ev3_->buffer();
@@ -69,51 +66,15 @@ PointChargeIntV3::PointChargeIntV3(
 
 PointChargeIntV3::~PointChargeIntV3()
 {
-  for (int i=0; i<ncharge; i++) {
-      delete position[i];
-    }
-  if (ncharge) {
-      delete[] charge;
-      delete[] position;
-    }
-}
-
-void
-PointChargeIntV3::reinitialize()
-{
-  PointBag_double *charges = data_->charges;
-
-  int nchargenew = charges->length();
-
-  int realloc_charges;
-  if (charges->length() != ncharge) {
-      ncharge = charges->length();
-      realloc_charges = 1;
-    }
-  else {
-      realloc_charges = 0;
-    }
-
-  if (ncharge && realloc_charges) {
-    position = new double*[ncharge];
-    charge = new double[ncharge];
-  }
-  
-  int i = 0;
-  for (Pix pix= charges->first(); pix!=0; charges->next(pix)) {
-    if (realloc_charges) position[i] = new double[3];
-    charge[i] = charges->get(pix);
-    for (int j=0; j<3; j++) {
-      position[i][j] = charges->point(pix)[j];
-    }
-    i++;
-  }
 }
 
 void
 PointChargeIntV3::compute_shell(int i,int j)
 {
-  int1ev3_->point_charge(i,j,ncharge,charge,position);
+  int1ev3_->point_charge(i,j,
+                         data_->ncharges(),
+                         data_->charges(),
+                         data_->positions());
 }
 
 ////////////////////////////////////////////////////////////////////////////

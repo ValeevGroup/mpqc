@@ -140,8 +140,8 @@ class Int1eV3: public VRefCount {
     void int_accum_shell_efield(int ish, int jsh,
                                 double *position);
     void int_accum_shell_point_charge(int ish, int jsh,
-                                      int ncharge, double* charge,
-                                      double** position);
+                                      int ncharge, const double* charge,
+                                      const double*const* position);
     void int_shell_nuclear_hf_1der(int ish, int jsh,
                                    RefGaussianBasisSet dercs,
                                    int centernum);
@@ -173,8 +173,8 @@ class Int1eV3: public VRefCount {
     void hcore(int ish, int jsh);
     void efield(int ish, int jsh, double position[3]);
     void point_charge(int ish, int jsh,
-                      int ncharge, double* charge,
-                      double** position);
+                      int ncharge, const double* charge,
+                      const double*const* position);
     void dipole(int ish, int jsh,
                 double *com);
 

@@ -923,7 +923,7 @@ dnl AC_CHECK_SIZEOF(void*)
 
 dnl This version works on more machines without the need to run
 dnl a test program.
-AC_DEFUN(SC_C_BIGENDIAN,
+AC_DEFUN([SC_C_BIGENDIAN],
 [AC_CHECK_HEADERS(fp.h endian.h machine/endian.h sys/endian.h sys/machine.h)
 AC_CACHE_CHECK(whether byte ordering is bigendian, sc_cv_c_bigendian,
 [sc_cv_c_bigendian=unknown

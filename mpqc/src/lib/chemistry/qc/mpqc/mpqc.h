@@ -7,8 +7,8 @@ extern "C" {
 #include <math/dmt/libdmt.h>
 #include <math/array/math_lib.h>
 #include <chemistry/qc/intv2/int_libv2.h>
-#include <chemistry/qc/dmtsym/sym_dmt.h>
 };
+#include <chemistry/qc/dmtsym/sym_dmt.h>
 #include <chemistry/qc/dmtscf/scf_dmt.h>
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/molecule/energy.h>

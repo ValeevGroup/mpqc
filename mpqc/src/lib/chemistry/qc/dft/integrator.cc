@@ -1686,7 +1686,7 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
   grid_accuracy_[0] = 1e-4;
   for (i=1; i<max_gridtype_; i++) grid_accuracy_[i] = grid_accuracy_[i-1]*1e-1;
 
-  Alpha_coeffs_ = new_c_array2<double>(natomic_rows_,npruned_partitions_-1,
+  Alpha_coeffs_ = new_c_array2(natomic_rows_,npruned_partitions_-1,
                                        double(0));
   s.get_array_double(Alpha_coeffs_[0], natomic_rows_*(npruned_partitions_-1));
 
@@ -1740,10 +1740,10 @@ RadialAngularIntegrator::RadialAngularIntegrator(const RefKeyVal& keyval):
 
 RadialAngularIntegrator::~RadialAngularIntegrator()
 {
-  delete_c_array2<double>(Alpha_coeffs_);
-  delete_c_array2<RefRadialIntegrator>(radial_grid_);
-  delete_c_array3<RefAngularIntegrator>(angular_grid_);
-  delete_c_array2<int>(nr_points_);
+  delete_c_array2(Alpha_coeffs_);
+  delete_c_array2(radial_grid_);
+  delete_c_array3(angular_grid_);
+  delete_c_array2(nr_points_);
   delete[] xcoarse_l_;
   delete[] grid_accuracy_;
 }
@@ -1853,12 +1853,10 @@ RadialAngularIntegrator::set_grids(void)
 {
   int i, j, k;
 
-  radial_grid_ = new_c_array2<RefRadialIntegrator>(natomic_rows_,gridtype_+1,
+  radial_grid_ = new_c_array2(natomic_rows_,gridtype_+1,
                                                    RefRadialIntegrator());
-  angular_grid_ = new_c_array3<RefAngularIntegrator>(natomic_rows_,
-                                                     npruned_partitions_,
-                                                     gridtype_+1,
-                                                     RefRadialIntegrator());
+  angular_grid_ = new_c_array3(natomic_rows_, npruned_partitions_,
+                               gridtype_+1, RefAngularIntegrator());
   
   // zeroth and first row shifts for for pruning large l
   int prune_formula_1[5] = {26, 18, 12, 0, 12};
@@ -1923,7 +1921,7 @@ RadialAngularIntegrator::init_pruning_coefficients(void)
   //ExEnv::out() << "npruned_partitions = " << npruned_partitions_ << endl;
   //ExEnv::out() << "natomic_rows = " << natomic_rows_ << endl;
   int num_boundaries = npruned_partitions_-1;
-  Alpha_coeffs_ = new_zero_c_array2<double>(natomic_rows_, num_boundaries,
+  Alpha_coeffs_ = new_zero_c_array2(natomic_rows_, num_boundaries,
                                             double(0));
 
   // set pruning cutoff variables - Alpha -> radial shell cutoffs
@@ -1948,7 +1946,7 @@ RadialAngularIntegrator::init_pruning_coefficients(const RefKeyVal& keyval)
 
       // set pruning cutoff variables - Alpha -> radial shell cutoffs
       int num_boundaries = npruned_partitions_-1;
-      Alpha_coeffs_ = new_zero_c_array2<double>(natomic_rows_, num_boundaries,
+      Alpha_coeffs_ = new_zero_c_array2(natomic_rows_, num_boundaries,
                                                 double(0));
       int alpha_rows = keyval->count("alpha_coeffs");
       if (keyval->error() != KeyVal::OK) {
@@ -1976,7 +1974,7 @@ RadialAngularIntegrator::init_pruning_coefficients(const RefKeyVal& keyval)
     }
   else {
       npruned_partitions_ = 1;
-      Alpha_coeffs_ = new_zero_c_array2<double>(natomic_rows_,0,
+      Alpha_coeffs_ = new_zero_c_array2(natomic_rows_,0,
                                                 double(0));
     }
 }
@@ -2002,7 +2000,7 @@ RadialAngularIntegrator::init_default_grids(void)
 {
   xcoarse_l_ = new int[natomic_rows_];
 
-  nr_points_ = new_c_array2<int>(natomic_rows_,max_gridtype_,int(0));
+  nr_points_ = new_c_array2(natomic_rows_,max_gridtype_,int(0));
 
   // Set angular momentum level of reference xcoarse grids for each atomic row
   xcoarse_l_[0] = 11; xcoarse_l_[1] = 17; xcoarse_l_[2] = 21;
@@ -2036,7 +2034,9 @@ RadialAngularIntegrator::angular_grid_offset(int i)
   case 2: return 12;
   case 3: return 30;
   case 4: return 42;
+  default: abort();
     }
+  return 0;
 }
 
 RefRadialIntegrator
@@ -2061,7 +2061,7 @@ RadialAngularIntegrator::get_radial_grid(int charge)
         }
     }
 
-  else return radial_user_;
+  return radial_user_;
 
 }
 

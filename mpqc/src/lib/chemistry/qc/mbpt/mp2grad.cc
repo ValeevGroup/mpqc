@@ -547,8 +547,6 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
 
                       if (s < r) {
                         pqrs_ptr++;
-                        iprs_ptr++;
-                        iqrs_ptr++;
                         continue; // skip to next bf4 value
                         }
 
@@ -568,8 +566,6 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
                         }   // endif
 
                       pqrs_ptr++;
-                      iprs_ptr++;
-                      iqrs_ptr++;
                       } // exit bf4 loop
                     }   // exit bf3 loop
                   }     // exit bf2 loop

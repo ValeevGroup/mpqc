@@ -408,7 +408,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
       
     case R12IntEvalInfo::posix:
       ExEnv::out0() << indent << "Will use POSIX I/O on node 0 to handle transformed integrals" << endl;
-      r12intsacc_ = new R12IntsAcc_Node0File(mem,r12ints_file,num_te_types,nbasis,nbasis,nocc_act,restart);
+      r12intsacc_ = new R12IntsAcc_Node0File(mem,r12ints_file,num_te_types,nbasis,nbasis,nocc_act);
       break;
 
     #if HAVE_MPIIO
@@ -422,7 +422,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
     case R12IntEvalInfo::mpi:
       ExEnv::out0() << indent << "Will use MPI-IO (individual I/O) to handle transformed integrals" << endl;
-      r12intsacc_ = new R12IntsAcc_MPIIOFile_Ind(mem,r12ints_file,num_te_types,nbasis,nbasis,nocc_act,restart);
+      r12intsacc_ = new R12IntsAcc_MPIIOFile_Ind(mem,r12ints_file,num_te_types,nbasis,nbasis,nocc_act);
       break;
 #endif
   

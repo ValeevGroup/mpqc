@@ -70,7 +70,7 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
 
   public:
     R12IntsAcc_Node0File(Ref<MemoryGrp>& mem, const char *filename, int num_te_types, int nbasis1, int nbasis2,
-			 int nocc_act, bool restart);
+			 int nocc_act);
     R12IntsAcc_Node0File(StateIn&);
     ~R12IntsAcc_Node0File();
     void save_data_state(StateOut&);

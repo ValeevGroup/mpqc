@@ -49,13 +49,13 @@ static ClassDesc R12IntsAcc_Node0File_cd(
   0, 0, create<R12IntsAcc_Node0File>);
 
 R12IntsAcc_Node0File::R12IntsAcc_Node0File(Ref<MemoryGrp>& mem, const char* filename, int num_te_types,
-					   int nbasis1, int nbasis2, int nocc_act, bool restart) :
+					   int nbasis1, int nbasis2, int nocc_act) :
   R12IntsAcc(num_te_types, nbasis1, nbasis2, nocc_act)
 {
   mem_ = mem;
   filename_ = strdup(filename);
   
-  init(restart);
+  init(false);
 }
 
 R12IntsAcc_Node0File::R12IntsAcc_Node0File(StateIn& si) :

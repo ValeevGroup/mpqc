@@ -8,6 +8,8 @@
 #include <util/container/array.h>
 #include <util/container/set.h>
 
+extern "C" void * sbrk(int);
+
 class ClassKeyClassDescPMap;
 class ClassKeySet;
 class DescribedClass;
@@ -25,8 +27,8 @@ class ClassKey {
     ClassKey& operator=(const ClassKey&);
     int operator==(ClassKey& ck);
     int hash() const;
-    inline int cmp(ClassKey&ck) const { return strcmp(classname_,ck.classname_); }
-    inline char* name() const {return classname_;}
+    int cmp(ClassKey&ck) const;
+    char* name() const;
   };
 
 class ClassDesc;
@@ -41,11 +43,12 @@ class ParentClass
     ClassDesc* _classdesc;
   public:
     ParentClass(ClassDesc*,Access access = Private,int is_virtual = 0);
+    ParentClass(const ParentClass&);
     ~ParentClass();
-    inline int is_virtual() const { return _is_virtual; };
-    inline Access access() const { return _access; };
-    inline const ClassDesc* classdesc() const { return _classdesc; };
-    inline void change_classdesc(ClassDesc*n) { _classdesc = n; };
+    int is_virtual() const;
+    Access access() const;
+    const ClassDesc* classdesc() const;
+    void change_classdesc(ClassDesc*n);
 };
 
 class ParentClasses
@@ -54,12 +57,15 @@ class ParentClasses
     int _n;
     ParentClass** _classes;
     void add(ParentClass*);
+    // do not allow copy constructor or assignment
+    ParentClasses(const ParentClasses&);
+    operator=(const ParentClasses&);
   public:
     ParentClasses(const char*);
     ~ParentClasses();
-    inline const ParentClass& parent(int i) const { return *_classes[i]; };
-    inline const ParentClass& operator[](int i) const { return *_classes[i]; };
-    inline int n() const { return _n; };
+    const ParentClass& parent(int i) const;
+    const ParentClass& operator[](int i) const;
+    int n() const;
     void change_parent(ClassDesc*oldcd,ClassDesc*newcd);
 };
     
@@ -78,18 +84,22 @@ class ClassDesc {
     DescribedClass* (*stateinctor_)(StateIn&);
 
     void change_parent(ClassDesc*oldcd,ClassDesc*newcd);
+
+    // do not allow copy constructor or assignment
+    ClassDesc(const ClassDesc&);
+    operator=(const ClassDesc&);
   public:
     ClassDesc(char*,int=1,char* p=0,
               DescribedClass* (*ctor)()=0,
               DescribedClass* (*keyvalctor)(KeyVal&)=0,
               DescribedClass* (*stateinctor)(StateIn&)=0);
     ~ClassDesc();
-    inline const ParentClasses& parents() const { return parents_; };
-    inline const char* name() const { return classname_; }
-    inline int version() const { return version_; }
     static void list_all_classes();
     static const ClassDesc* name_to_class_desc(const char*);
-    inline DescribedClass* create_described_class() const { return create(); };
+    const ParentClasses& parents() const;
+    const char* name() const;
+    int version() const;
+    DescribedClass* create_described_class() const;
 
     // create an object using the default constructor
     DescribedClass* create() const;
@@ -111,35 +121,30 @@ class DescribedClass : public VRefCount {
   private:
     static ClassDesc class_desc_;
   public:
+    DescribedClass();
+    DescribedClass(const DescribedClass&);
+    DescribedClass& operator=(const DescribedClass&);
     static DescribedClass* castdown(DescribedClass*);
     static const ClassDesc* static_class_desc();
     virtual ~DescribedClass();
     virtual const ClassDesc* class_desc() const;
     virtual void* _castdown(const ClassDesc*);
-    inline const char* class_name() const { return class_desc()->name(); }
-    inline int class_version() const { return class_desc()->version(); }
+    const char* class_name() const;
+    int class_version() const;
   };
 
 class  RefDescribedClassBase {
   public:
-    inline RefDescribedClassBase() {};
+    RefDescribedClassBase();
+    RefDescribedClassBase(const RefDescribedClassBase&);
+    RefDescribedClassBase& operator=(const RefDescribedClassBase&);
     virtual DescribedClass* parentpointer() = 0;
     virtual ~RefDescribedClassBase ();
-    inline int operator==( RefDescribedClassBase &a) {
-        return parentpointer() == a.parentpointer();
-      };
-    inline int operator>=( RefDescribedClassBase &a) {
-        return parentpointer() >= a.parentpointer();
-      };
-    inline int operator<=( RefDescribedClassBase &a) {
-        return parentpointer() <= a.parentpointer();
-      };
-    inline int operator>( RefDescribedClassBase &a) {
-        return parentpointer() > a.parentpointer();
-      };
-    inline int operator<( RefDescribedClassBase &a) {
-        return parentpointer() < a.parentpointer();
-      };
+    int operator==( RefDescribedClassBase &a);
+    int operator>=( RefDescribedClassBase &a);
+    int operator<=( RefDescribedClassBase &a);
+    int operator>( RefDescribedClassBase &a);
+    int operator<( RefDescribedClassBase &a);
 };
 #define DescribedClass_REF_dec(T)					      \
 class  Ref ## T : public RefDescribedClassBase  {			      \
@@ -147,77 +152,129 @@ class  Ref ## T : public RefDescribedClassBase  {			      \
     T* p;								      \
   public:								      \
     DescribedClass* parentpointer();					      \
-    inline T* operator->() { return p; };				      \
-    inline const T* operator->() const { return p; };			      \
-    inline T* pointer() { return p; };					      \
-    inline const T* pointer() const { return p; };			      \
-    inline operator T*() { return p; };					      \
-    inline const operator T*() const { return p; };			      \
-    inline T& operator *() { return *p; };				      \
-    inline const T& operator *() const { return *p; };			      \
+    T* operator->();							      \
+    const T* operator->() const;					      \
+    T* pointer();							      \
+    const T* pointer() const;						      \
+    operator T*();							      \
+    const operator T*() const;						      \
+    T& operator *();							      \
+    const T& operator *() const;					      \
     Ref ## T ();							      \
     Ref ## T (T*a);							      \
     Ref ## T ( Ref ## T &a);						      \
     Ref ## T ( RefDescribedClassBase &);				      \
     ~Ref ## T ();							      \
-    inline int null() { return p == 0; };				      \
-    inline int nonnull() { return p != 0; };				      \
+    int null();								      \
+    int nonnull();							      \
     Ref ## T  operator=(T* cr);						      \
     Ref ## T  operator=( RefDescribedClassBase & c);			      \
     Ref ## T  operator=( Ref ## T & c);					      \
     void assign_pointer(T* cr);						      \
     void  ref_info(FILE*fp=stdout);					      \
+    void warn(const char *);						      \
+    void clear();							      \
+    void check_pointer();						      \
 }
 #define DescribedClass_REF_def(T)					      \
+T* Ref ## T :: operator->() { return p; };				      \
+const T* Ref ## T :: operator->() const { return p; };			      \
+T* Ref ## T :: pointer() { return p; };					      \
+const T* Ref ## T :: pointer() const { return p; };			      \
+Ref ## T :: operator T*() { return p; };				      \
+Ref ## T :: const operator T*() const { return p; };			      \
+T& Ref ## T :: operator *() { return *p; };				      \
+const T& Ref ## T :: operator *() const { return *p; };			      \
+int Ref ## T :: null() { return p == 0; };				      \
+int Ref ## T :: nonnull() { return p != 0; };				      \
 DescribedClass* Ref ## T :: parentpointer() { return p; }		      \
 Ref ## T :: Ref ## T (): p(0) {}					      \
-Ref ## T :: Ref ## T (T*a): p(a) { if (p) p->count++; }			      \
-Ref ## T :: Ref ## T ( Ref ## T &a): p(a.p) { if (p) p->count++; }	      \
+Ref ## T :: Ref ## T (T*a): p(a)					      \
+{									      \
+  if (REF_CHECK_STACK && (void*) p > sbrk(0)) {				      \
+      warn("Ref" # T ": creating a reference to stack data");		      \
+    }									      \
+  if (p) p->reference();						      \
+  if (REF_CHECK_POINTER) check_pointer();				      \
+}									      \
+Ref ## T :: Ref ## T ( Ref ## T &a): p(a.p)				      \
+{									      \
+  if (p) p->reference();						      \
+  if (REF_CHECK_POINTER) check_pointer();				      \
+}									      \
 Ref ## T :: Ref ## T ( RefDescribedClassBase &a)			      \
 {									      \
   p = T::castdown(a.parentpointer());					      \
-  if (p) p->count++;							      \
+  if (p) p->reference();						      \
+  if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
-Ref ## T :: ~Ref ## T () { if (p && --p->count<=0) delete p; }		      \
+Ref ## T :: ~Ref ## T ()						      \
+{									      \
+  clear();								      \
+}									      \
+void									      \
+Ref ## T :: clear()							      \
+{									      \
+  if (REF_CHECK_POINTER) check_pointer();				      \
+  if (p && p->dereference()<=0) {					      \
+      if (REF_CHECK_STACK && (void*) p > sbrk(0)) {			      \
+          warn("Ref" # T ": skipping delete of object on the stack");	      \
+        }								      \
+      else {								      \
+           delete p;							      \
+         }								      \
+    }									      \
+  p = 0;								      \
+}									      \
+void									      \
+Ref ## T :: warn ( const char * msg)					      \
+{									      \
+  fprintf(stderr,"WARNING: %s\n",msg);					      \
+}									      \
 Ref ## T  Ref ## T :: operator=( Ref ## T & c)				      \
 {									      \
-  if (   p								      \
-         && --p->count <= 0						      \
-         && p != c.p)							      \
-    delete p;								      \
+  if (c.p) c.p->reference();						      \
+  clear();								      \
   p=c.p;								      \
-  if (p) p->count++;							      \
-  return *this;								      \
-}									      \
-Ref ## T  Ref ## T :: operator=( RefDescribedClassBase & c)		      \
-{									      \
-  T* newp = T::castdown(c.parentpointer());				      \
-  if (   p								      \
-         && --p->count <= 0						      \
-         && p != newp)							      \
-    delete p;								      \
-  p=newp;								      \
-  if (p) p->count++;							      \
+  if (REF_CHECK_POINTER) check_pointer();				      \
   return *this;								      \
 }									      \
 Ref ## T  Ref ## T :: operator=(T* cr)					      \
 {									      \
-  if (p && --p->count <= 0 && p != cr) delete p;			      \
-  p=cr;									      \
-  if (p) p->count++;							      \
+  if (cr) cr->reference();						      \
+  clear();								      \
+  p = cr;								      \
+  if (REF_CHECK_POINTER) check_pointer();				      \
+  return *this;								      \
+}									      \
+Ref ## T  Ref ## T :: operator=( RefDescribedClassBase & c)		      \
+{									      \
+  T* cr = T::castdown(c.parentpointer());				      \
+  if (cr) cr->reference();						      \
+  clear();								      \
+  p = cr;								      \
+  if (REF_CHECK_POINTER) check_pointer();				      \
   return *this;								      \
 }									      \
 void Ref ## T :: assign_pointer(T* cr)					      \
 {									      \
-  if (p && --p->count <= 0 && p != cr) delete p;			      \
-  p=cr;									      \
-  if (p) p->count++;							      \
+  if (cr) cr->reference();						      \
+  clear();								      \
+  p = cr;								      \
+  if (REF_CHECK_POINTER) check_pointer();				      \
+}									      \
+void Ref ## T :: check_pointer()					      \
+{									      \
+  if (p && p->nreference() <= 0) {					      \
+      warn("Ref" # T ": bad reference count in referenced object\n");	      \
+    }									      \
 }									      \
 void Ref ## T :: ref_info(FILE*fp=stdout)				      \
 {									      \
-  if (nonnull()) fprintf(fp,"count = %d\n",p->count);			      \
+  if (nonnull()) fprintf(fp,"nreference() = %d\n",p->nreference());	      \
   else fprintf(fp,"reference is null\n");				      \
 }
+
 
 DescribedClass_REF_dec(DescribedClass);
 ARRAY_dec(RefDescribedClass);

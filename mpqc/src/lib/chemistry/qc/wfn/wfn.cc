@@ -13,7 +13,10 @@ extern "C" {
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
+#include <chemistry/qc/integral/integralv2.h>
 #include <chemistry/qc/wfn/wfn.h>
+
+SavableState_REF_def(Wavefunction);
 
 #define CLASSNAME Wavefunction
 #define PARENTS public MolecularEnergy
@@ -27,13 +30,27 @@ Wavefunction::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+Wavefunction::Wavefunction(const Wavefunction& wfn) :
+  MolecularEnergy(wfn),
+  _overlap(wfn._overlap,this),
+  _natural_orbitals(wfn._natural_orbitals,this),
+  _natural_density(wfn._natural_density,this),
+  bs_values(0),
+  bsg_values(0)
+{
+  _basisdim = wfn._basisdim;
+  _gbs = wfn._gbs;
+}
+
 Wavefunction::Wavefunction(const RefKeyVal&keyval):
   MolecularEnergy(keyval),
+  _overlap(this),
   _natural_orbitals(this),
   _natural_density(this),
   bs_values(0),
   bsg_values(0)
 {
+  _overlap.compute() = 0;
   _natural_orbitals.compute() = 0;
   _natural_density.compute() = 0;
 
@@ -52,8 +69,9 @@ Wavefunction::~Wavefunction()
 
 Wavefunction::Wavefunction(StateIn&s):
   MolecularEnergy(s),
-  _natural_orbitals(this),
-  _natural_density(this),
+  _overlap(s,this),
+  _natural_orbitals(s,this),
+  _natural_density(s,this),
   bs_values(0),
   bsg_values(0)
   maybe_SavableState(s)
@@ -62,10 +80,25 @@ Wavefunction::Wavefunction(StateIn&s):
   _basisdim.restore_state(s);
 }
 
+Wavefunction&
+Wavefunction::operator=(const Wavefunction& wfn)
+{
+  MolecularEnergy::operator=(wfn);
+  _basisdim = wfn._basisdim;
+  _gbs = wfn._gbs;
+  _overlap = wfn._overlap;
+  _natural_orbitals = wfn._natural_orbitals;
+  _natural_density = wfn._natural_density;
+  return *this;
+}
+
 void
 Wavefunction::save_data_state(StateOut&s)
 {
   MolecularEnergy::save_data_state(s);
+  _overlap.save_data_state(s);
+  _natural_orbitals.save_data_state(s);
+  _natural_density.save_data_state(s);
   _gbs.save_state(s);
   _basisdim.save_state(s);
 }
@@ -121,6 +154,24 @@ Wavefunction::natural_density()
     }
 
   return _natural_density;
+}
+
+RefSymmSCMatrix
+Wavefunction::overlap()
+{
+  if (!_overlap.computed()) {
+    RefSymmSCMatrix s(basis_dimension());
+    s.assign(0.0);
+
+    RefSCElementOp op = new GaussianOverlapIntv2(basis());
+    s.element_op(op);
+    op=0;
+
+    _overlap = s;
+    _overlap.computed() = 1;
+  }
+
+  return _overlap;
 }
 
 RefGaussianBasisSet

@@ -25,6 +25,18 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
+libs: $(SRCDIR)/LIBS.h
+	$(LISTLIBS) $(MPQCLIBSDEFINE) $(INCLUDE) $(SRCDIR)/LIBS.h > libs
+
+wfntest:: libs
+	@echo "making wfntest"
+
+wfntest:: wfntest.o $(shell cat libs)
+	$(CXX) $(LDFLAGS) -o wfntest $^ $(SYSLIBS)
+
+wfntest.o: wfntest.cc
+	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.o=.d)

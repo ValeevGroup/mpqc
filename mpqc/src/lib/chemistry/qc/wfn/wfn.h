@@ -20,6 +20,7 @@ class Wavefunction: public MolecularEnergy
 #   include <util/class/classda.h>
  private:
     RefSCDimension _basisdim;
+    ResultRefSymmSCMatrix _overlap;
     ResultRefSCMatrix _natural_orbitals;
     ResultRefDiagSCMatrix _natural_density;
 
@@ -27,9 +28,13 @@ class Wavefunction: public MolecularEnergy
     double* bsg_values;
     RefGaussianBasisSet _gbs;
  public:
+    Wavefunction(const Wavefunction&);
     Wavefunction(const RefKeyVal&);
     Wavefunction(StateIn&);
     virtual ~Wavefunction();
+
+    Wavefunction & operator=(const Wavefunction&);
+    
     void save_data_state(StateOut&);
 
     void print(SCostream& =SCostream::cout);
@@ -47,9 +52,11 @@ class Wavefunction: public MolecularEnergy
     virtual RefSymmSCMatrix density() = 0;
     virtual RefSCMatrix natural_orbitals();
     virtual RefDiagSCMatrix natural_density();
+    virtual RefSymmSCMatrix overlap();
     RefGaussianBasisSet basis();
 
     RefSCDimension basis_dimension() { return _basisdim; }
 };
+SavableState_REF_dec(Wavefunction);
 
 #endif

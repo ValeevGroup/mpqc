@@ -181,7 +181,7 @@ Wavefunction::symmetry_changed()
 
   Ref<PetiteList> pl = integral_->petite_list();
   sodim_ = pl->SO_basisdim();
-  aodim_ = pl->SO_basisdim();
+  aodim_ = pl->AO_basisdim();
   osodim_ = 0;
   overlap_.result_noupdate() = 0;
   overlap_isqrt_eigval_.result_noupdate() = 0;

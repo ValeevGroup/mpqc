@@ -40,7 +40,8 @@ int parse_g92(char *prefix, char *parse_string, int natoms, double & energy,
 int g92_freq_driver(char *name_in, RefMolecule&, const RefKeyVal&,
                     char *method, double &energy,
                     RefSCVector& gradient, RefSCVector &frequencies,
-                    RefSCVector &normalmodes, int &nmodes, int &nimag);
+                    RefSCVector &normalmodes, RefSCVector &forceconstants,
+                    int &nmodes, int &nimag);
 
 int run_g92_freq(char *prefix, int runtype, char *basis, int memory,
                  int chk_guess,char *scratch, char *g92_dir, RefMolecule &mole,
@@ -49,6 +50,6 @@ int run_g92_freq(char *prefix, int runtype, char *basis, int memory,
 int parse_g92_freq(char *prefix,char *parse_string, RefMolecule mole,
                    double &energy, RefSCVector& gradient,
                    RefSCVector& frequencies, RefSCVector &normalmodes,
-                   int &nmodes, int &nimag);
+                   RefSCVector &forceconstants, int &nmodes, int &nimag);
 
 #endif

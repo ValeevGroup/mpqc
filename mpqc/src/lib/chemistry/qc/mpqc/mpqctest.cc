@@ -1,6 +1,9 @@
 
 #include <string.h>
 
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <util/keyval/keyval.h>
 #include <new.h>
 #include "mpqc.h"
@@ -51,14 +54,25 @@ main(int argc, char**argv)
   char *keyword =    (argc > 2)? argv[2] : "mole";
   char *optkeyword = (argc > 3)? argv[3] : "opt";
 
-  // open keyval input
-  RefKeyVal rpkv(new ParsedKeyVal(input));
+  struct stat sb;
+  RefMolecularEnergy mole;
+  RefOptimize opt;
 
-  RefMolecularEnergy mole = rpkv->describedclassvalue(keyword);
+  if (stat("mpqctest.ckpt",&sb)==0 && sb.st_size) {
+    StateInText si("mpqctest.ckpt");
+    opt.restore_state(si);
+    mole = opt->nlp();
+  } else {
+    // open keyval input
+    RefKeyVal rpkv(new ParsedKeyVal(input));
+
+    mole = rpkv->describedclassvalue(keyword);
+    opt = rpkv->describedclassvalue(optkeyword);
+    opt->set_checkpoint();
+    opt->set_checkpoint_file("mpqctest.ckpt");
+  }
 
   if (mole->gradient_implemented()) {
-      RefOptimize opt = rpkv->describedclassvalue(optkeyword);
-
       if (opt.nonnull()) {
           //opt->print(o);
           opt->optimize();

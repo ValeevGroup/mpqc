@@ -50,8 +50,8 @@ DIIS::init()
 DIIS::DIIS(int strt, int ndi, double dmp) :
   btemp(0), bold(0), bmat(0), diism_data(0), diism_error(0)
 {
-  ndiis = strt;
-  start = ndi;
+  start = strt;
+  ndiis = ndi;
   damping_factor = dmp;
 
   init();

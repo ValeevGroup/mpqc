@@ -60,7 +60,7 @@ interface:: $(DEPENDINCLUDE)
 refmacr.h: reftmpl.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > refmacr.h
 
-reftest: reftest.o reftestx.o libref.$(LIBSUF)
+reftest: reftest.o reftestx.o libref.$(LIBSUF) libmisc.$(LIBSUF)
 	$(CXX) $(LDFLAGS) -o reftest $^
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

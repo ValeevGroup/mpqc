@@ -612,7 +612,7 @@ MBPT2::compute_cs_grad()
     // Do the two eletron integrals and the first two quarter transformations
     tim_enter("erep+1.qt+2.qt");
     for (i=0; i<thr_->nthread(); i++) {
-      e12thread[i]->set_i_offset(pass*ni + nfzc);
+      e12thread[i]->set_i_offset(i_offset);
       //e12thread[i]->run();
       thr_->add_thread(i,e12thread[i]);
       }

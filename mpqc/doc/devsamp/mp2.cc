@@ -67,6 +67,7 @@ MP2::compute(void)
 
 void
 MP2::obsolete(void) {
+  Wavefunction::obsolete();
   ref_mp2_wfn_->obsolete();
 }
 

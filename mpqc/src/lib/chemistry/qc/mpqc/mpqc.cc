@@ -26,6 +26,7 @@ extern "C" {
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/force/libforce.h>
 #include <chemistry/qc/dmtscf/scf_dmt.h>
+#include <chemistry/qc/integral/integralv2.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -199,6 +200,9 @@ MPSCF::MPSCF(const RefKeyVal&keyval):
     set_desired_hessian_accuracy(1.0e-8);
   }
 
+  // see if we're to do a solvation calculation
+  solvent_ = keyval->describedclassvalue("solvent");
+
   // make sure only one MPSCF object exists
   if (active) {
     fprintf(stderr,"only one MPSCF allowed\n");
@@ -360,6 +364,18 @@ MPSCF::compute()
     _mol->print(outfile);
   }
 
+  if (solvent_.nonnull()) {
+      fprintf(outfile,"  initializing the solvent\n");
+      if (_gradient.compute()) {
+          fprintf(stderr,
+                  "  ERROR: MPSCF cannot do gradients with a solvent\n");
+          abort();
+        }
+      tim_enter("solvent init");
+      solvent_->init();
+      tim_exit("solvent init");
+    }
+
   // Adjust the value accuracy if gradients are needed and set up
   // minimal accuracies.
   if (desired_value_accuracy() > 1.0e-4)
@@ -403,11 +419,191 @@ MPSCF::compute()
               " and convergence 10^-%d\n",
               scf_info.intcut,scf_info.convergence);
 
+    tim_enter("scf vector");
     if (scf_vector(&scf_info,&sym_info,&centers,
-                     Fock,FockO,Scf_Vec,&oldcenters,outfile) < 0) {
-      fprintf(stderr,"MPSCF::compute():  trouble forming scf vector\n");
-      clean_and_exit(host);
-    }
+                   Fock,FockO,Scf_Vec,&oldcenters,outfile) < 0) {
+        fprintf(stderr,"MPSCF::compute():  trouble forming scf vector\n");
+        clean_and_exit(host);
+      }
+    tim_exit("scf vector");
+
+    if (solvent_.nonnull()) {
+        RefSCElementOp2 destructive_element_product
+            = new SCDestructiveElementProduct;
+        scf_info.ncharge = solvent_->ncharge();
+        scf_info.nxyz = 3;
+        scf_info.charge = solvent_->alloc_charges();
+        scf_info.chargex = solvent_->alloc_charge_positions();
+        double **normals = solvent_->alloc_normals();
+        double *efield_dot_normals = solvent_->alloc_efield_dot_normals();
+        solvent_->normals(normals);
+        solvent_->charge_positions(scf_info.chargex);
+        fprintf(stderr,"WARNING: iterating scf_vector 1 times\n");
+        for (int i=0; i<1; i++) {
+            int j;
+            tim_enter("Efield");
+            scfvec_to_eigenvectors();
+            // at each charge position compute the efield dot normal
+            _density.computed() = 0;
+            RefSymmSCMatrix DAO = density();
+            RefSymmSCMatrix efieldAO(DAO.dim());
+            GaussianEfieldDotVectorIntv2 *edotnv2
+                = new GaussianEfieldDotVectorIntv2(basis(), molecule());
+            RefSCElementOp edotn_op = edotnv2;
+//             // BEGIN DEBUG
+//             cout.flush();
+//             fflush(stdout);
+//             DAO.print("AO Density Matrix");
+//             cout.flush();
+//             fflush(stdout);
+//             // END DEBUG
+//             // BEGIN DEBUG compute the contained charge from the efield
+//             // at serval points in space
+//             double xn[3]; xn[0] = 1.0; xn[1] = 0.0; xn[2] = 0.0;
+//             double x[3]; x[0] = 0.01; x[1] = 0.0; x[2] = 0.0;
+//             fflush(stdout);
+//             cout.flush();
+//             for (j=0; j<10; j++) {
+//                 int k;
+//                 x[0] *= 2.0;
+//                 edotnv2->position(x);
+//                 edotnv2->vector(xn);
+//                 double nuclear_efield[3];
+//                 int_nuclear_efield(&centers, &centers,
+//                                    x, nuclear_efield);
+//                 efieldAO.element_op(edotn_op);
+//                 fflush(stdout);
+//                 cout.flush();
+//                 efieldAO.print("Efield AO");
+//                 efieldAO.element_op(destructive_element_product, DAO);
+//                 efieldAO.print("Efield AO . DAO");
+//                 fflush(stdout);
+//                 cout.flush();
+//                 double efield = 0.0;
+//                 for (k=0; k<efieldAO.n(); k++) {
+//                     efield += efieldAO.get_element(k,k);
+//                     for (int l=0; l<k; l++) {
+//                         efield += 2.0 * efieldAO.get_element(k,l);
+//                       }
+//                   }
+//                 double area = 4.0 * M_PI * x[0] * x[0];
+//                 double factor = 1.0 / (M_PI * 4.0);
+//                 double charge = (efield + nuclear_efield[0]) * area * factor;
+//                 printf("Ee = %15.10f En = %15.10f\n",
+//                        efield, nuclear_efield[0]);
+//                 printf("charge(%5.3f) = %15.10f\n", x[0], charge);
+//               }
+//             fflush(stdout);
+//             cout.flush();
+//             // END DEBUG
+            for (j=0; j<scf_info.ncharge; j++) {
+                int k;
+//                 // BEGIN DEBUG
+//                 printf("Doing charge %d\n", j);
+//                 cout.flush();
+//                 fflush(stdout);
+//                 // END DEBUG
+                edotnv2->position(scf_info.chargex[j]);
+//                 // BEGIN DEBUG compute the exact normals for now
+//                 double tmp = 0.0;
+//                 for (k=0; k<3; k++) {
+//                     normals[j][k] = scf_info.chargex[j][k];
+//                     tmp += normals[j][k] * normals[j][k];
+//                   }
+//                 printf("r = %15.10f\n", sqrt(tmp));
+//                 tmp = 1.0/sqrt(tmp);
+//                 for (k=0; k<3; k++) {
+//                     normals[j][k] *= tmp;
+//                   }
+//                 // END DEBUG compute the exact normals for now
+                edotnv2->vector(normals[j]);
+                efieldAO.assign(0.0);
+                efieldAO.element_op(edotn_op);
+//                 // BEGIN DEBUG
+//                 cout.flush();
+//                 fflush(stdout);
+//                 efieldAO.print("AO efield Matrix");
+//                 cout.flush();
+//                 fflush(stdout);
+//                 // END DEBUG
+                efieldAO.element_op(destructive_element_product, DAO);
+                double nuclear_efield[3];
+                int_nuclear_efield(&centers, &centers,
+                                   scf_info.chargex[j], nuclear_efield);
+                efield_dot_normals[j] = 0.0;
+                for (k=0; k<3; k++) {
+                    efield_dot_normals[j] += normals[j][k] * nuclear_efield[k];
+                  }
+                for (k=0; k<efieldAO.n(); k++) {
+                    efield_dot_normals[j] += efieldAO.get_element(k,k);
+                    for (int l=0; l<k; l++) {
+                        efield_dot_normals[j] += 2.0*efieldAO.get_element(k,l);
+                      }
+                  }
+              }
+            // This will free memory used by the 1e integral routines, which
+            // is necessary before the call to scf_vector.
+            edotnv2 = 0;
+            edotn_op = 0;
+            tim_exit("Efield");
+
+            tim_enter("charges");
+            solvent_->compute_charges(efield_dot_normals, scf_info.charge);
+            tim_exit("charges");
+            tim_enter("normalize charges");
+            double nuclear_charge = 0.0;
+            for (int k=0; k < molecule()->natom(); k++)
+                nuclear_charge += molecule()->atom(k).element().charge();
+            solvent_->normalize_charge(nuclear_charge
+                                       -2*scf_info.nclosed-scf_info.nopen,
+                                       scf_info.charge);
+            tim_exit("normalize charges");
+
+            tim_enter("polarization charge");
+            fprintf(outfile, " surface polarization charge = %15.10e\n",
+                    solvent_->polarization_charge(scf_info.charge));
+            tim_exit("polarization charge");
+
+            tim_enter("scf vector");
+            if (scf_vector(&scf_info,&sym_info,&centers,
+                           Fock,FockO,Scf_Vec,&oldcenters,outfile) < 0) {
+                fprintf(stderr,"MPSCF::compute():"
+                        " trouble forming scf vector (with solvent)\n");
+                clean_and_exit(host);
+              }
+            tim_exit("scf vector");
+
+            tim_enter("surface-self");
+            double surfself
+                = solvent_->self_interaction_energy(scf_info.chargex,
+                                                    scf_info.charge);
+            tim_exit("surface-self");
+
+            tim_enter("surface-nuclear");
+            double surfnuc = solvent_->nuclear_interaction_energy(
+                scf_info.chargex, scf_info.charge);
+            tim_exit("surface-nuclear");
+
+            fprintf(outfile, "nucrep   = %20.10f\n", scf_info.nuc_rep);
+            fprintf(outfile, "eelec    = %20.10f\n", scf_info.e_elec);
+            fprintf(outfile, "surfself = %20.10f\n", surfself);
+            fprintf(outfile, "surfnuc  = %20.10f\n", surfnuc);
+            fprintf(outfile,
+                    "scf + nonelectronic surface interactions = %20.10f\n",
+                    scf_info.nuc_rep
+                    + scf_info.e_elec
+                    + surfnuc + surfself);
+          }
+
+        solvent_->free_normals(normals);
+        solvent_->free_charges(scf_info.charge);
+        solvent_->free_charge_positions(scf_info.chargex);
+        scf_info.ncharge = 0;
+        scf_info.nxyz = 0;
+        scf_info.charge = 0;
+        scf_info.chargex = 0;
+        solvent_->done();
+      }
 
     if (save_vector) dmt_write(vecfile,Scf_Vec);
 
@@ -606,3 +802,44 @@ init_dmt(centers_t *centers, scf_struct_t *scf_info, sym_struct_t *sym_info)
   int_done_offsets1(centers,centers);
   int_done_1e();
 }
+
+int
+MPSCF::value_implemented()
+{
+  return 1;
+}
+
+int
+MPSCF::gradient_implemented()
+{
+  return solvent_.null();
+}
+
+void
+MPSCF::scfvec_to_eigenvectors()
+{
+  int nbasis = basis()->nbasis();
+
+  if (_eigenvectors.result_noupdate().null()) {
+      RefSCMatrix tmp(basis_dimension(),basis_dimension());
+      _eigenvectors.result_noupdate() = tmp;
+    }
+
+  RefSCMatrix eig = _eigenvectors.result_noupdate();
+  
+  loop_t *loop = dmt_ngl_create("%mr", Scf_Vec);
+  while (dmt_ngl_next(loop)) {
+      int irow, ijunk, isz, junksz;
+      double *row;
+      dmt_ngl_create_inner(loop,0);
+      while(dmt_ngl_next_inner_m(loop,&ijunk,&isz,&irow,&junksz,&row)) {
+          for (int i=0; i < nbasis; i++) {
+              eig(irow, i) = row[i];
+            }
+        }
+    }
+  dmt_ngl_kill(loop);
+
+  _eigenvectors.computed() = 1;
+}
+

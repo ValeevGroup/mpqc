@@ -44,8 +44,8 @@ class A: virtual public DescribedClass {
   public:
     A();
     A(const Ref<KeyVal>&keyval);
-    inline int& a() { return i; };
-    virtual void print (ostream&s = cout)
+    inline const int& a() const { return i; };
+    virtual void print (ostream&s = cout) const
     {
       s << "A::a = " << a() << '\n';
     }
@@ -69,8 +69,8 @@ class B: public A {
   public:
     B();
     B(const Ref<KeyVal>&keyval);
-    inline int& b() { return b_; };
-    virtual void print (ostream&s = cout)
+    inline const int& b() const { return b_; };
+    virtual void print (ostream&s = cout) const
     {
       A::print(s);
       s << "B::b = " << b() << '\n';
@@ -95,8 +95,8 @@ class C: virtual public DescribedClass {
   public:
     C();
     C(const Ref<KeyVal>&keyval);
-    inline int& c() { return i; };
-    virtual void print (ostream&s = cout)
+    inline const int& c() const { return i; };
+    virtual void print (ostream&s = cout) const
     {
       s << "C::c = " << c() << '\n';
     }
@@ -122,10 +122,10 @@ class D: public B, public C {
   public:
     D();
     D(const Ref<KeyVal>&keyval);
-    inline int& d() { return d_; }
-    inline Ref<A> da() { return d_a_; }
-    inline Ref<B> db() { return d_b_; }
-    virtual void print (ostream&s = cout)
+    inline const int& d() const { return d_; }
+    inline Ref<A> da() const { return d_a_; }
+    inline Ref<B> db() const { return d_b_; }
+    virtual void print (ostream&s = cout) const
     {
       B::print(s);
       C::print(s);

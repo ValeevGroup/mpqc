@@ -258,7 +258,7 @@ MBPT2::cs_cphf(double **scf_vector,
     for (j=0; j<dimP; j++) {
        tmp_val2 = *ptr1++ - *ptr2++;
        tmp_val1 += tmp_val2*tmp_val2;
-       if (abs(tmp_val2) > maxabs) maxabs = abs(tmp_val2);
+       if (fabs(tmp_val2) > maxabs) maxabs = fabs(tmp_val2);
        }
     if (debug_) {
       cout << node0 << indent << scprintf("RMS(P2aj_new-P2aj_old) = %12.10lf",

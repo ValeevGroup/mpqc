@@ -37,7 +37,8 @@ BIN_OR_LIB = LIB
 SRCS = scf.cc scfvector.cc scfgradient.cc scfops.cc effh.cc \
        clscf.cc clhf.cc hsosscf.cc hsoshf.cc \
        ossscf.cc osshf.cc tcscf.cc tchf.cc \
-       uscf.cc uhf.cc
+       uscf.cc uhf.cc \
+       tmplinst.cc
 
 CLASSES = SCF CLSCF HSOSSCF OSSSCF TCSCF UnrestrictedSCF \
           CLHF HSOSHF OSSHF TCHF UHF

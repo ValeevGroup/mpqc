@@ -855,19 +855,19 @@ TriangulatedSurfaceIntegrator::
 void
 TriangulatedSurfaceIntegrator::use_default_integrator()
 {
-  _integrator = TriangulatedSurface::integrator;
+  _integrator = &TriangulatedSurface::integrator;
 }
 
 void
 TriangulatedSurfaceIntegrator::use_fast_integrator()
 {
-  _integrator = TriangulatedSurface::fast_integrator;
+  _integrator = &TriangulatedSurface::fast_integrator;
 }
 
 void
 TriangulatedSurfaceIntegrator::use_accurate_integrator()
 {
-  _integrator = TriangulatedSurface::accurate_integrator;
+  _integrator = &TriangulatedSurface::accurate_integrator;
 }
 
 /////////////////////////////////////////////////////////////////////////

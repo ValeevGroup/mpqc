@@ -94,7 +94,7 @@ GaussianShell::GaussianShell(
   coef(c)
 {
   puream = new int [ncontraction()];
-  for (int i=0; i<ncontraction(); i++) puream[i] = (pt == Pure);
+  for (int i=0; i<ncontraction(); i++) puream[i] = (pure == Pure);
 
   // Compute the number of basis functions in this shell
   compute_nfunc();

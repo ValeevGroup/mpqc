@@ -304,7 +304,7 @@ Int2eV3::int_init_buildgc(int order,
       for (k=0; k<4; k++) {
         for (l=0; l<4; l++) {
           for (m=0; m<2; m++) {
-    build_routine[i][j][k][l][m] = BuildIntV3::impossible_integral;
+    build_routine[i][j][k][l][m] = &BuildIntV3::impossible_integral;
             }
           }
         }
@@ -312,8 +312,8 @@ Int2eV3::int_init_buildgc(int order,
     }
 
 #define ASSIGN_BUILD(ii,j,k,l) \
-  build_routine[ii][j][k][l][0]= BuildIntV3::i ## ii ## j ## k ## l ;\
-  build_routine[ii][j][k][l][1]= BuildIntV3::i ## ii ## j ## k ## l ## eAB;
+  build_routine[ii][j][k][l][0]= &BuildIntV3::i ## ii ## j ## k ## l ;\
+  build_routine[ii][j][k][l][1]= &BuildIntV3::i ## ii ## j ## k ## l ## eAB;
 #if (MG == 1) || (MG == 2) || (MG == 3) || (MG == 4)
   ASSIGN_BUILD(0,1,0,0)
   ASSIGN_BUILD(0,1,0,1)
@@ -610,7 +610,7 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
             if (build_routine[minam1]
                              [maxam12]
                              [minam3]
-                             [maxam34][eAB]==BuildIntV3::impossible_integral){
+                             [maxam34][eAB]==&BuildIntV3::impossible_integral){
               cerr << scprintf("trying to build with int2v%d%d%d%d (exact)\n",
                       minam1,maxam12,minam3,maxam34);
               }
@@ -637,7 +637,7 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
                              [backmaxam12]
                              [backminam3]
                              [backmaxam34][eAB]
-                == BuildIntV3::impossible_integral) {
+                == &BuildIntV3::impossible_integral) {
               cerr << scprintf("trying to build with int2v%d%d%d%d\n",
                       backminam1,backmaxam12,backminam3,backmaxam34);
               }
@@ -779,7 +779,7 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
             have_all_ints = 1;
             }
           else if ((minam1<=MG)&&(minam3<=MG)&&(maxam12<=MG)&&(maxam34<=MG)) {
-            if (brptr == BuildIntV3::impossible_integral) {
+            if (brptr == &BuildIntV3::impossible_integral) {
               cerr << scprintf("trying to build with int2v%d%d%d%d (exact)\n",
                       minam1,maxam12,minam3,maxam34);
               }
@@ -804,7 +804,7 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
                        [backminam1][backmaxam12][backminam3][backmaxam34][eAB];
 
             /* We cannot build everything, so build what we can. */
-            if (brptr2 == BuildIntV3::impossible_integral) {
+            if (brptr2 == &BuildIntV3::impossible_integral) {
               cerr << scprintf("trying to build with int2v%d%d%d%d\n",
                       backminam1,backmaxam12,backminam3,backmaxam34);
               }

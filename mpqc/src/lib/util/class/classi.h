@@ -44,17 +44,17 @@ ClassDesc CLASSNAME::class_desc_(stringize(CLASSNAME),
                                  VERSION,
                                  stringize2(PARENTS),
 #ifdef HAVE_CTOR
-                                 CLASSNAME::create,
+                                 &CLASSNAME::create,
 #else
                                  0,
 #endif
 #ifdef HAVE_KEYVAL_CTOR
-                                 CLASSNAME::create,
+                                 &CLASSNAME::create,
 #else
                                  0,
 #endif
 #ifdef HAVE_STATEIN_CTOR
-                                 CLASSNAME::create
+                                 &CLASSNAME::create
 #else
                                  0
 #endif

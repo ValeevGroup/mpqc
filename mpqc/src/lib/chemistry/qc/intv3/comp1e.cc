@@ -173,7 +173,7 @@ void
 Int1eV3::int_accum_shell_overlap_1der(int ish, int jsh,
                                       RefGaussianBasisSet dercs, int centernum)
 {
-  accum_shell_1der(buff,ish,jsh,dercs,centernum,Int1eV3::comp_shell_overlap);
+  accum_shell_1der(buff,ish,jsh,dercs,centernum,&Int1eV3::comp_shell_overlap);
   }
 
 /* Compute the overlap for the shell.  The arguments are the
@@ -375,7 +375,7 @@ void
 Int1eV3::int_accum_shell_kinetic_1der(int ish, int jsh,
                                       RefGaussianBasisSet dercs, int centernum)
 {
-  accum_shell_1der(buff,ish,jsh,dercs,centernum,Int1eV3::comp_shell_kinetic);
+  accum_shell_1der(buff,ish,jsh,dercs,centernum,&Int1eV3::comp_shell_kinetic);
   }
 
 /* This computes the basis function part of 
@@ -707,7 +707,7 @@ Int1eV3::int_accum_shell_nuclear_nonhf_1der(int ish, int jsh,
     scale_shell_result = 1;
     result_scale_factor = -bs1_->molecule()->Z(i);
     accum_shell_1der(buff,ish,jsh,dercs,centernum,
-                     Int1eV3::comp_shell_nuclear);
+                     &Int1eV3::comp_shell_nuclear);
     scale_shell_result = 0;
     }
   if (bs2_!=bs1_) {
@@ -720,7 +720,7 @@ Int1eV3::int_accum_shell_nuclear_nonhf_1der(int ish, int jsh,
       scale_shell_result = 1;
       result_scale_factor = -bs2_->molecule()->Z(i);
       accum_shell_1der(buff,ish,jsh,dercs,centernum,
-                       Int1eV3::comp_shell_nuclear);
+                       &Int1eV3::comp_shell_nuclear);
       scale_shell_result = 0;
       }
     }

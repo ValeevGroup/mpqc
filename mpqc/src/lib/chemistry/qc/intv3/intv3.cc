@@ -96,25 +96,25 @@ IntegralV3::new_spherical_transform_iter(int l, int inv, int subl)
 RefOneBodyInt
 IntegralV3::overlap()
 {
-  return new OneBodyIntV3(bs1_, bs2_, Int1eV3::overlap);
+  return new OneBodyIntV3(bs1_, bs2_, &Int1eV3::overlap);
 }
 
 RefOneBodyInt
 IntegralV3::kinetic()
 {
-  return new OneBodyIntV3(bs1_, bs2_, Int1eV3::kinetic);
+  return new OneBodyIntV3(bs1_, bs2_, &Int1eV3::kinetic);
 }
 
 RefOneBodyInt
 IntegralV3::nuclear()
 {
-  return new OneBodyIntV3(bs1_, bs2_, Int1eV3::nuclear);
+  return new OneBodyIntV3(bs1_, bs2_, &Int1eV3::nuclear);
 }
 
 RefOneBodyInt
 IntegralV3::hcore()
 {
-  return new OneBodyIntV3(bs1_, bs2_, Int1eV3::hcore);
+  return new OneBodyIntV3(bs1_, bs2_, &Int1eV3::hcore);
 }
 
 RefOneBodyInt
@@ -138,25 +138,25 @@ IntegralV3::dipole(const RefDipoleData& dat)
 RefOneBodyDerivInt
 IntegralV3::overlap_deriv()
 {
-  return new OneBodyDerivIntV3(bs1_, bs2_, Int1eV3::overlap_1der);
+  return new OneBodyDerivIntV3(bs1_, bs2_, &Int1eV3::overlap_1der);
 }
 
 RefOneBodyDerivInt
 IntegralV3::kinetic_deriv()
 {
-  return new OneBodyDerivIntV3(bs1_, bs2_, Int1eV3::kinetic_1der);
+  return new OneBodyDerivIntV3(bs1_, bs2_, &Int1eV3::kinetic_1der);
 }
 
 RefOneBodyDerivInt
 IntegralV3::nuclear_deriv()
 {
-  return new OneBodyDerivIntV3(bs1_, bs2_, Int1eV3::nuclear_1der);
+  return new OneBodyDerivIntV3(bs1_, bs2_, &Int1eV3::nuclear_1der);
 }
 
 RefOneBodyDerivInt
 IntegralV3::hcore_deriv()
 {
-  return new OneBodyDerivIntV3(bs1_, bs2_, Int1eV3::hcore_1der);
+  return new OneBodyDerivIntV3(bs1_, bs2_, &Int1eV3::hcore_1der);
 }
 
 RefTwoBodyInt

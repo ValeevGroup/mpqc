@@ -36,6 +36,9 @@ SUBDIRS = basis oint3 intv3 wfn scf dft mbpt
 ifeq ($(HAVE_CHEMISTRY_QC_PSI),yes)
 SUBDIRS := $(SUBDIRS) psi
 endif
+ifeq ($(HAVE_CHEMISTRY_QC_CC),yes)
+SUBDIRS := $(SUBDIRS) cc
+endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 

@@ -30,6 +30,7 @@
 #endif
 
 #include <stdexcept>
+#include <algorithm>
 #include <stdlib.h>
 #include <util/misc/formio.h>
 #include <chemistry/qc/basis/petite.h>
@@ -449,15 +450,43 @@ MOIndexSpace::dqs(double *item,int *index,int left,int right)
   if (i<right) dqs(item,index,i,right);
 }
 
+namespace {
+  // use this to compute permutation corresponding to a sort
+  class IndexedValue {
+    int index_;
+    double value_;
+    static const double small_diff = 1.0e-12;
+  public:
+    IndexedValue(int index, double value) : index_(index), value_(value) {}
+    int index() const { return index_; }
+    double value() const { return value_; }
+
+    bool operator<(const IndexedValue& a) const {
+      if (fabs(value_-a.value_) < small_diff)
+        return false;
+      else
+        return value_ < a.value_;
+    }
+  };
+
+};
+
+
 void
 MOIndexSpace::dquicksort(double *item,int *index,int n)
 {
-  int i;
   if (n<=0) return;
-  for (i=0; i<n; i++) {
-    index[i] = i;
+  typedef vector<IndexedValue> vectype;
+  typedef vector<IndexedValue>::iterator iter;
+  vector<IndexedValue> vals;
+  for (int i=0; i<n; i++) {
+    IndexedValue val(i,item[i]);
+    vals.push_back(val);
   }
-  dqs(item,index,0,n-1);
+  stable_sort(vals.begin(),vals.end());
+  for (int i=0; i<n; i++) {
+    index[i] = vals.at(i).index();
+  }
 }
 
 

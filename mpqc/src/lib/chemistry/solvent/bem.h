@@ -132,6 +132,8 @@ class BEMSolvent: public DescribedClass {
     // this never needs to be called explicitly, but is here now for debugging
     void init_system_matrix();
 
+    RefTriangulatedImplicitSurface surface() const { return surf_; }
+
     RefSCMatrixKit matrixkit() { return matrixkit_; }
 };
 DescribedClass_REF_dec(BEMSolvent);

@@ -123,7 +123,7 @@ PthreadThreadGrp::init_attr()
 #if defined(PTHREAD_CREATE_UNDETACHED)
   pthread_attr_setdetachstate(attr_, PTHREAD_CREATE_UNDETACHED);
 #elif defined(PTHREAD_CREATE_JOINABLE)
-  pthread_attr_setdetachstate(attr_, PTHREAD_CREATE_UNDETACHED);
+  pthread_attr_setdetachstate(attr_, PTHREAD_CREATE_JOINABLE);
 #endif
   size_t minstacksize = 2097152;
   size_t defstacksize = 1;

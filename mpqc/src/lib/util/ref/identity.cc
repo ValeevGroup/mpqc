@@ -36,7 +36,7 @@
 void
 Identifier::print(ostream &o) const
 {
-  o << id;
+  o << (unsigned long) id;
 }
 
 ostream &

@@ -370,12 +370,10 @@ changequote([, ])dnl
   ;;
   mips4-sgi-irix* | r8000-sgi-irix* | r10000-sgi-irix*)
     if test X$GCC != Xyes; then
-      COPTIONS_OPT="-O2 \
-        -OPT:fprop_limit=2000:const_copy_limit=20000:fold_arith_limit=20000:global_limit=20000"
+      COPTIONS_OPT="-O3 -Ofast -OPT:const_copy_limit=20000"
     fi
     if test X$GXX != Xyes; then
-      CXXOPTIONS_OPT="-O2 \
-        -OPT:fprop_limit=2000:const_copy_limit=20000:fold_arith_limit=20000:global_limit=20000"
+      CXXOPTIONS_OPT="-O3 -Ofast -OPT:const_copy_limit=20000"
       AC_DEFINE(NO_VIRTUAL_BASES)
     fi
     AC_MSG_RESULT("mips4-sgi-irix r8000-sgi-irix or r10000-sgi-irix")

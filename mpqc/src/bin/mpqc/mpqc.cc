@@ -85,6 +85,7 @@ static void
 clean_up(void)
 {
   MessageGrp::set_default_messagegrp(0);
+  ThreadGrp::set_default_threadgrp(0);
   SCMatrixKit::set_default_matrixkit(0);
   RegionTimer::set_default_regiontimer(0);
 }
@@ -661,6 +662,20 @@ main(int argc, char *argv[])
   delete[] molname;
   SCFormIO::set_default_basename(0);
 
+  molfreqanim = 0;
+  animated = 0;
+  rendered = 0;
+  renderer = 0;
+  molfreq = 0;
+  molhess = 0;
+  opt = 0;
+  mole = 0;
+  debugger = 0;
+  thread = 0;
+  tim = 0;
+  keyval = 0;
+  parsedkv = 0;
+  grp = 0;
   clean_up();
 
   return 0;

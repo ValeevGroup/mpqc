@@ -119,6 +119,9 @@ Int2eV3::done_bounds_1der()
 int
 Int2eV3::erep_4bound(int s1, int s2, int s3, int s4)
 {
+  if (!int_Qvec)
+      return 256;
+  
   int Qij;
   int Qkl;
   if (s1 >= 0 && s2 >= 0) {
@@ -138,6 +141,9 @@ Int2eV3::erep_4bound(int s1, int s2, int s3, int s4)
 int
 Int2eV3::int_erep_2bound(int s1, int s2)
 {
+  if (!int_Qvec)
+      return 128;
+  
   int ij=(s1>s2) ? ((s1*(s1+1))>>1)+s2 : ((s2*(s2+1))>>1)+s1;
 
   return((int) int_Qvec[ij]);
@@ -155,6 +161,9 @@ Int2eV3::int_erep_0bound_1der()
 int
 Int2eV3::int_erep_2bound_1der(int s1, int s2)
 {
+  if (!int_Qvec || !int_Rvec)
+      return 128;
+
   int ij=(s1>s2) ? ((s1*(s1+1))>>1)+s2 : ((s2*(s2+1))>>1)+s1;
   int b1 = int_Qvec[ij] + int_R;
   int b2 = int_Q + int_Rvec[ij];
@@ -175,6 +184,9 @@ Int2eV3::int_erep_2bound_1der(int s1, int s2)
 int
 Int2eV3::erep_4bound_1der(int s1, int s2, int s3, int s4)
 {
+  if (!int_Qvec || !int_Rvec)
+      return 256;
+
   int Qij, Qkl, Rij, Rkl;
 
   if (s1 >= 0 && s2 >= 0) {

@@ -40,6 +40,7 @@
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
+#include <util/misc/units.h>
 #include <math/topology/point.h>
 #include <math/topology/pointbag.h>
 #include <math/symmetry/pointgrp.h>
@@ -69,6 +70,8 @@ class Molecule: public SavableState
     AtomicCenter& get_atom(int i);
     //. \srccd{const} version of the above.
     const AtomicCenter& get_atom(int) const;
+
+    RefUnits geometry_units_;
   public:
     Molecule();
     Molecule(Molecule&);
@@ -125,6 +128,9 @@ class Molecule: public SavableState
     //charges of the atoms.
     PointBag_double* charges() const;
 
+    //. Returns the total nuclear charge.
+    int nuclear_charge() const;
+
     //. Sets the \clsnmref{PointGroup} of the molecule.
     void set_point_group(const PointGroup&);
     //. Returns the \clsnmref{PointGroup} of the molecule.
@@ -156,6 +162,12 @@ class Molecule: public SavableState
 
     int num_unique_atoms();
     int *find_unique_atoms();  // returns new'd array
+
+    //. Return the number of core electrons.
+    int n_core_electrons();
+
+    //. Return the maximum atomic number.
+    int max_z();
 
     void save_data_state(StateOut&);
 };

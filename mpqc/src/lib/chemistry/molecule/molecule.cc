@@ -35,12 +35,14 @@
 
 #include <util/misc/formio.h>
 #include <chemistry/molecule/molecule.h>
+#include <chemistry/molecule/formula.h>
 #include <chemistry/molecule/localdef.h>
 #include <math/scmat/cmatrix.h>
 
 SavableState_REF_def(Molecule);
 
 #define CLASSNAME Molecule
+#define VERSION 2
 #define PARENTS public SavableState
 #define HAVE_CTOR
 #define HAVE_KEYVAL_CTOR
@@ -58,6 +60,7 @@ Molecule::_castdown(const ClassDesc*cd)
 Molecule::Molecule() :
   atoms(0), natoms(0)
 {
+  geometry_units_ = new Units("bohr");
 }
 
 Molecule::Molecule(Molecule& mol) :
@@ -76,9 +79,9 @@ Molecule::~Molecule()
 Molecule::Molecule(const RefKeyVal&input) :
   pg(input), atoms(0), natoms(0)
 {
-  const double ang_to_bohr = 1.0/0.52917706;
-
   if (input->exists("pdb_file")) {
+      geometry_units_ = new Units("angstrom");
+      double ang_to_bohr = geometry_units_->to_atomic_units();
       const int LineLength = 85;
       char line[LineLength];
       char* filename = input->pcharvalue("pdb_file");
@@ -128,22 +131,20 @@ Molecule::Molecule(const RefKeyVal&input) :
       fclose(fp);
     }
   else {
-    // first let's see if the input is in bohr or angstrom units
-      int aangstroms = input->booleanvalue("angstrom");
-      if (input->error() != KeyVal::OK) {
-        aangstroms = input->booleanvalue("aangstrom");
-      }
-      if (input->error() != KeyVal::OK) {
-        aangstroms = input->booleanvalue("angstroms");
-      }
-      if (input->error() != KeyVal::OK) {
-        aangstroms = input->booleanvalue("aangstroms");
-      }
-        
-      double conv = 1.0;
-      if (aangstroms) {
-          conv = ang_to_bohr;
+      // check for old style units input first
+      if (input->booleanvalue("angstrom")
+          ||input->booleanvalue("angstroms")
+          ||input->booleanvalue("aangstrom")
+          ||input->booleanvalue("aangstroms")) {
+          geometry_units_ = new Units("angstrom");
         }
+      // check for new style units input
+      else {
+          geometry_units_ = new Units(input->pcharvalue("unit"),
+                                      Units::Steal);
+        }
+        
+      double conv = geometry_units_->to_atomic_units();
 
       // get the number of atoms and make sure that the geometry and the
       // atoms array have the same number of atoms.
@@ -191,6 +192,8 @@ Molecule& Molecule::operator=(Molecule& mol)
        AtomicCenter ac = mol[i];
        add_atom(i,ac);
     }
+
+  geometry_units_ = new Units(mol.geometry_units_->string_rep());
 
   return *this;
 }
@@ -250,22 +253,66 @@ Molecule::add_atom(int i,AtomicCenter& ac)
 void
 Molecule::print(ostream& os)
 {
-  os << node0 << indent
-     << "  n  atom  label          x               y               z"
-     << "          mass\n";
-
   int i;
+
+  double conv = geometry_units_->from_atomic_units();
+
+  int have_label = 0;
+  for (i=0; i<natom(); i++) if (get_atom(i).label()) have_label = 1;
+
+  // Be careful here, since MolecularFormula requires a smart
+  // pointer that might try to delete this if i'm not referenced.
+  reference();
+  MolecularFormula *mf = new MolecularFormula(this);
+  cout << node0 << indent
+       << "Molecular formula: " << mf->formula() << endl;
+  delete mf;
+  dereference();
+
+  os << node0 << indent << "molecule<Molecule>: (" << endl;
+  os << incindent;
+  os << node0 << indent
+     << "symmetry = " << pg.symbol() << endl;
+  if (geometry_units_->string_rep()) {
+      os << node0 << indent
+         << "unit = \"" << geometry_units_->string_rep() << "\""
+         << endl;
+    }
+  os << node0 << indent
+     << scprintf("{%3s", "n")
+     << scprintf(" %5s", "atoms");
+  if (have_label) os << node0 << scprintf(" %11s", "atom_labels");
+  os << node0
+     << scprintf("  %16s", "")
+     << scprintf(" %16s", "geometry   ")
+     << scprintf(" %16s ", "");
+  os << node0 << "}={" << endl;
   for (i=0; i<natom(); i++) {
       os << node0 << indent
-         << scprintf("%5d%5s%8s%16.10f%16.10f%16.10f%10.5f\n",
-                     i+1,
-                     get_atom(i).element().symbol(),
-                     (get_atom(i).label()) ? get_atom(i).label(): " ",
-                     get_atom(i)[0],
-                     get_atom(i)[1],
-                     get_atom(i)[2],
-                     get_atom(i).element().mass()
-             );
+         << scprintf(" %3d", i+1)
+         << scprintf(" %5s", get_atom(i).element().symbol());
+      if (have_label) {
+          os << node0
+             << scprintf(" \"%9s\"",
+                         (get_atom(i).label())?get_atom(i).label():"");
+        }
+      os << node0
+         << scprintf(" [% 16.10f", conv * get_atom(i)[0])
+         << scprintf(" % 16.10f", conv * get_atom(i)[1])
+         << scprintf(" % 16.10f]", conv * get_atom(i)[2])
+         << endl;
+    }
+  os << node0 << indent << "}" << endl;
+  os << decindent;
+  os << node0 << indent << ")" << endl;
+
+  os << node0 << indent << "Atomic Masses:" << endl;
+  for (i=0; i<natom(); i+=5) {
+      os << node0 << indent;
+      for (int j=i; j<i+5 && j<natom(); j++) {
+          os << node0 << scprintf(" %10.5f", get_atom(i).element().mass());
+        }
+      os << node0 << endl;
     }
 }
 
@@ -319,6 +366,16 @@ PointBag_double* Molecule::charges() const
   return result;
 }
 
+int
+Molecule::nuclear_charge() const
+{
+  int i, c = 0;
+  for (i=0; i<natom(); i++) {
+      c += get_atom(i).element().number();
+    }
+  return c;
+}
+
 void Molecule::save_data_state(StateOut& so)
 {
   pg.save_object_state(so);
@@ -326,6 +383,8 @@ void Molecule::save_data_state(StateOut& so)
   for (int i=0; i < natoms; i++) {
       get_atom(i).save_object_state(so);
     }
+
+  geometry_units_.save_state(so);
 }
 
 Molecule::Molecule(StateIn& si):
@@ -341,6 +400,10 @@ Molecule::Molecule(StateIn& si):
   for (int i=0; i < natom; i++) {
       AtomicCenter ac(si);
       add_atom(i,ac);
+    }
+
+  if (si.version(static_class_desc()) >= 2) {
+      geometry_units_.restore_state(si);
     }
 }
 
@@ -529,7 +592,9 @@ Molecule::symmetrize()
     }
   }
   
+  RefUnits saved_units = geometry_units_;
   *this = *newmol;
+  geometry_units_ = saved_units;
   delete newmol;
 }
 
@@ -911,10 +976,44 @@ Molecule::principal_moments_of_inertia(double *evals, double **evecs)
     }
 }
 
+int
+Molecule::n_core_electrons()
+{
+  int i,n=0;
+  for (i=0; i<natom(); i++) {
+      int z = get_atom(i).element().number();
+      if (z > 2) n += 2;
+      if (z > 10) n += 8;
+      if (z > 18) n += 8;
+      if (z > 30) n += 10;
+      if (z > 36) n += 8;
+      if (z > 48) n += 10;
+      if (z > 54) n += 8;
+      if (z > 72) {
+          cerr << "Molecule::n_core_electrons: atomic number too large"
+               << endl;
+          abort();
+        }
+    }
+  return n;
+}
+
+int
+Molecule::max_z()
+{
+  int i, maxz=0;
+  for (i=0; i<natom(); i++) {
+      int z = get_atom(i).element().number();
+      if (z>maxz) maxz = z;
+    }
+  return maxz;
+}
+
 void
 Molecule::print_pdb(ostream& os, char *title)
 {
-  double bohr = 0.52917706;
+  RefUnits u = new Units("angstrom");
+  double bohr = u->from_atomic_units();
 
   if (title)
       os << node0 << scprintf("%-10s%-60s\n","COMPND",title);

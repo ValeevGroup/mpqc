@@ -240,9 +240,9 @@ sub process_file {
         }
 
         my $inputfile;
-        my $method = tofilename($method);
-        my $basis = tofilename($basis);
-        my $symmetry = tofilename($symmetry);
+        $method = tofilename($method);
+        $basis = tofilename($basis);
+        $symmetry = tofilename($symmetry);
         my $basename = "$dir$file\_$fmol$method$fzc$fzv$basis$symmetry$fcalc";
         my $writer;
 

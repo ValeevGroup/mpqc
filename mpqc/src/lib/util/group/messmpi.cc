@@ -3,6 +3,7 @@
 #include <util/keyval/keyval.h>
 #include <util/group/messmpi.h>
 #include <util/misc/formio.h>
+#include <util/misc/newstring.h>
 
 //#define MPI_SEND_ROUTINE MPI_Ssend // hangs
 //#define MPI_SEND_ROUTINE MPI_Send // hangs
@@ -29,18 +30,170 @@ MPIMessageGrp::MPIMessageGrp()
 MPIMessageGrp::MPIMessageGrp(const RefKeyVal& keyval):
   MessageGrp(keyval)
 {
+#if HAVE_P4
+  nlocal=keyval->intvalue("nlocal");
+  if (keyval->error() != KeyVal::OK)
+      nlocal=1;
+
+  nremote=keyval->count("remote_clusters");
+  if (nremote) {
+      remote_clusters = new p4_cluster[nremote];
+      for (int i=0; i < nremote; i++) {
+          remote_clusters[i].hostname =
+                                   keyval->pcharvalue("remote_clusters",i,0);
+          if (keyval->error() != KeyVal::OK) {
+              cerr << indent
+                   << "MPIMessageGrp(RefKeyVal): bad hostname" << endl;
+              abort();
+            }
+
+          remote_clusters[i].nslaves = keyval->intvalue("remote_clusters",i,1);
+          if (keyval->error() != KeyVal::OK) {
+              cerr << indent
+                   << "MPIMessageGrp(RefKeyVal): bad nslaves" << endl;
+              abort();
+            }
+        }
+    }
+  else {
+      remote_clusters=0;
+    }
+
+  master=keyval->pcharvalue("master");
+  if (keyval->error() != 0) {
+      if (nremote) {
+          cerr << indent
+               << "MPIMessageGrp(RefKeyVal): need master" << endl;
+          abort();
+        }
+      else {
+          char hostname[80];
+          if (gethostname(hostname,79) < 0) {
+              cerr << indent
+                   << "MPIMessageGrp(RefKeyVal): could not get hostname"
+                   << endl;
+              abort();
+            }
+          master=new_string(hostname);
+        }
+    }
+
+  jobid=keyval->pcharvalue("job_id");
+  if (keyval->error() != 0) {
+      cerr << "MPIMessageGrp(RefKeyVal): no job_id in input" << endl;
+      abort();
+    }
+#endif
+
   init();
 }
+
+#if HAVE_P4
+struct MPIMessageGrp::p4_cluster *
+MPIMessageGrp::my_node_info(const char hostname[], int& nodenum)
+{
+  for (nodenum=1; nodenum <= nremote; nodenum++) {
+      if (strcmp(hostname,remote_clusters[nodenum-1].hostname)==0)
+          return &remote_clusters[nodenum-1];
+    }
+  return 0;
+}
+#endif
 
 void
 MPIMessageGrp::init()
 {
   int me, nproc;
-  int argc = 1;
+  int argc;
   char **argv;
-  argv = new char*[2];
+
+#if HAVE_P4
+  int am_slave = (getenv("SCSLAVE")!= 0);
+  char hostname[80];
+  if (gethostname(hostname,79) < 0) {
+      cerr << indent
+           << "MPIMessageGrp::init: could not get hostname" << endl;
+      abort();
+    }
+
+  char numprocs[12], numnodes[12], nodenum[12];
+  char **nslaves = new char*[nremote];
+  
+  if (!am_slave) {
+      sprintf(numprocs,"%d",nlocal);
+      sprintf(numnodes,"%d",nremote+1);
+      sprintf(nodenum,"%d",0);
+
+      argc = 16+4*nremote;
+      argv = new char*[argc+1];
+      argv[0] = "scprog";
+      argv[1] = "-execer_id";
+      argv[2] = "SC";
+      argv[3] = "-master_host";
+      argv[4] = master;
+      argv[5] = "-my_hostname";
+      argv[6] = hostname; 
+      argv[7] = "-my_nodenum";
+      argv[8] = nodenum;
+      argv[9] = "-my_numprocs";
+      argv[10] = numprocs;
+      argv[11] = "-total_numnodes";
+      argv[12] = numnodes;
+      argv[13] = "-jobid";
+      argv[14] = jobid;
+      argv[15] = "-remote_info";
+
+      int a=16;
+      for (int i=0; i < nremote; i++) {
+          nslaves[i] = new char[12];
+          sprintf(nslaves[i],"%d",remote_clusters[i].nslaves);
+
+          argv[a++] = remote_clusters[i].hostname;
+          argv[a++] = "0";
+          argv[a++] = nslaves[i];
+          argv[a++] = "0";
+        }
+      
+      argv[argc] = 0;
+    }
+  else {
+      int mynum;
+      struct p4_cluster *my_node = my_node_info(hostname, mynum);
+      if (!my_node) {
+          cerr << indent
+               << "MPIMessageGrp:init: my_node is null" << endl;
+          abort();
+        }
+              
+      sprintf(numprocs,"%d",my_node->nslaves);
+      sprintf(numnodes,"%d",nremote+1);
+      sprintf(nodenum,"%d",mynum);
+      
+      argc = 15;
+      argv = new char*[argc+1];
+      argv[0] = "scprog";
+      argv[1] = "-execer_id";
+      argv[2] = "SC";
+      argv[3] = "-master_host";
+      argv[4] = master;
+      argv[5] = "-my_hostname";
+      argv[6] = hostname; 
+      argv[7] = "-my_nodenum";
+      argv[8] = nodenum;
+      argv[9] = "-my_numprocs";
+      argv[10] = numprocs;
+      argv[11] = "-total_numnodes";
+      argv[12] = numnodes;
+      argv[13] = "-jobid";
+      argv[14] = jobid;
+      argv[15] = 0;
+    }
+#else  
+  argc = 1;
+  argv = new char*[argc+1];
   argv[0] = "-mpiB4"; // reduce the internal buffer since a user buffer is used
   argv[1] = 0;
+#endif
 
   if (debug_) {
       cerr << "MPIMessageGrp::init: entered" << endl;
@@ -57,6 +210,14 @@ MPIMessageGrp::init()
   if (debug_) {
       cerr << me << ": MPIMessageGrp::init: done" << endl;
     }
+
+#if HAVE_P4
+  if (!am_slave)
+      for (int i=0; i < nremote; i++)
+          delete[] nslaves[i];
+  delete[] nslaves;
+  delete[] argv;
+#endif  
 }
 
 MPIMessageGrp::~MPIMessageGrp()
@@ -64,6 +225,25 @@ MPIMessageGrp::~MPIMessageGrp()
   MPI_Buffer_detach(&buf, &bufsize);
   delete[] (char*) buf;
   MPI_Finalize();
+
+#if HAVE_P4
+  if (master) {
+      delete[] master;
+      master=0;
+    }
+
+  if (jobid) {
+      delete[] jobid;
+      jobid=0;
+    }
+
+  if (nremote && remote_clusters) {
+      for (int i=0; i < nremote; i++)
+          delete[] remote_clusters[i].hostname;
+      delete[] remote_clusters;
+      remote_clusters=0;
+    }
+#endif
 }
 
 void

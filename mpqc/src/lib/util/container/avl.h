@@ -15,6 +15,7 @@ class EAVLNode {
 };
 
 template <class T>
+inline int
 compare(const T& k1, const T& k2)
 {
   return (k1<k2?-1:(k1==k2?0:1));

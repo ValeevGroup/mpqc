@@ -383,3 +383,24 @@ MessageGrp::reduce(long* data, int n, GrpReduce<long>& red,
 
   if (!passed_scratch) delete[] scratch;
 }
+
+#ifdef __GNUG__
+#define INSTANTIATE_DO_X(func,type) \
+    template void func(MessageGrp*, type *, int, type *, int)
+
+INSTANTIATE_DO_X(do_sum,int);
+INSTANTIATE_DO_X(do_sum,double);
+INSTANTIATE_DO_X(do_sum,char);
+INSTANTIATE_DO_X(do_sum,unsigned char);
+
+INSTANTIATE_DO_X(do_max,int);
+INSTANTIATE_DO_X(do_max,double);
+INSTANTIATE_DO_X(do_max,char);
+INSTANTIATE_DO_X(do_max,unsigned char);
+
+INSTANTIATE_DO_X(do_min,int);
+INSTANTIATE_DO_X(do_min,double);
+INSTANTIATE_DO_X(do_min,char);
+INSTANTIATE_DO_X(do_min,unsigned char);
+
+#endif

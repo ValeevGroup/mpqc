@@ -20,6 +20,12 @@
 
 #define PRINT_STORED 0
 
+#ifdef __GNUC__
+// instantiate the templates needed for integral storage
+template class EAVLList<IntegralLink,IntegralKey>;
+template class EAVLList<IntegralLink,int>;
+#endif
+
 /////////////////////////////////////////////////////////////////////////
 // IntegralLink members
 
@@ -257,9 +263,6 @@ void
 int_done_storage()
 {
   if (storer.nonnull()) {
-#ifndef i860
-      storer->print_stats();
-#endif
       storer->done();
     }
   int_integral_storage = 0;

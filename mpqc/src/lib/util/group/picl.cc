@@ -811,3 +811,14 @@ picl_prober()
   printf("On node %3d found a message of type %3d, bytes %3d, from %3d\n",
          mynode0(),type,bytes,source);
 }
+
+#ifdef __GNUG__
+#define INSTANTIATE_TCOMB(type) \
+  template void tcomb(type *, type *, int)
+INSTANTIATE_TCOMB(char);
+INSTANTIATE_TCOMB(short);
+INSTANTIATE_TCOMB(int);
+INSTANTIATE_TCOMB(long);
+INSTANTIATE_TCOMB(float);
+INSTANTIATE_TCOMB(double);
+#endif

@@ -12,6 +12,33 @@ extern "C" {
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
 
+////////////////////////////////////////////////////////////////////////////
+
+#define CLASSNAME IntCoor
+#define PARENTS virtual public SavableState
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+
+#define CLASSNAME SetIntCoor
+#define PARENTS virtual public SavableState
+#define HAVE_CTOR
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+#define CLASSNAME SumIntCoor
+#define PARENTS public IntCoor
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+#define CLASSNAME MolecularCoor
+#define PARENTS virtual public SavableState
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+
 ///////////////////////////////////////////////////////////////////////////
 // members of IntCoor
 
@@ -23,10 +50,6 @@ ARRAY_def(RefIntCoor);
 SET_def(RefIntCoor);
 ARRAYSET_def(RefIntCoor);
 
-#define CLASSNAME IntCoor
-#define PARENTS virtual public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
 void *
 IntCoor::_castdown(const ClassDesc*cd)
 {
@@ -121,13 +144,6 @@ IntCoor::preferred_value() const
 
 SavableState_REF_def(SetIntCoor);
 
-#define CLASSNAME SetIntCoor
-#define PARENTS virtual public SavableState
-#define HAVE_CTOR
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
 void *
 SetIntCoor::_castdown(const ClassDesc*cd)
 {
@@ -326,12 +342,6 @@ SetIntCoor::clear()
 ///////////////////////////////////////////////////////////////////////////
 // members of SumIntCoor
 
-#define CLASSNAME SumIntCoor
-#define PARENTS public IntCoor
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
 void *
 SumIntCoor::_castdown(const ClassDesc*cd)
 {
@@ -546,10 +556,6 @@ SumIntCoor::bmat(RefMolecule&molecule,RefSCVector&bmat,double coef)
 
 SavableState_REF_def(MolecularCoor);
 
-#define CLASSNAME MolecularCoor
-#define PARENTS virtual public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
 void *
 MolecularCoor::_castdown(const ClassDesc*cd)
 {

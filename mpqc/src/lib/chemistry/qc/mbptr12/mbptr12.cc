@@ -131,7 +131,7 @@ MBPT2_R12::~MBPT2_R12()
   r12a_energy_ = 0;
   r12ap_energy_ = 0;
   r12b_energy_ = 0;
-  delete[] r12ints_file_;
+  free(r12ints_file_);
 }
 
 void

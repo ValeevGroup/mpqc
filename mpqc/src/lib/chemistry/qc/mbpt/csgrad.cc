@@ -324,6 +324,11 @@ MBPT2::compute_cs_grad()
     abort();
     }
 
+  if (dynamic_) {
+    cout << node0 << indent << "Using dynamic load balancing." << endl;
+    }
+    
+
   if (ni == nocc_act) {
     npass = 1;
     rest = 0;
@@ -517,7 +522,6 @@ MBPT2::compute_cs_grad()
 
   mem->lock(0);
 
-  MemoryGrpBuf<double> membuf(mem);
   MemoryGrpBuf<double> membuf_remote(mem);
 
   RefThreadLock lock = thr_->new_lock();
@@ -565,12 +569,11 @@ MBPT2::compute_cs_grad()
 
     // Allocate (and initialize) some arrays
 
-    integral_iqjs = membuf.writeonly_on_node(0, nij*nbasis*nbasis);
+    integral_iqjs = (double*) mem->localdata();
 
     bzerofast(integral_iqjs, nij*nbasis*nbasis);
 
     integral_iqjs = 0;
-    membuf.release();
     mem->lock(1);
     mem->sync();
 
@@ -603,37 +606,7 @@ MBPT2::compute_cs_grad()
     mem->lock(0);
     mem->sync();  // Make sure iqjs is complete on each node before continuing
 
-    integral_iqjs = membuf.readwrite_on_node(0, nij*nbasis*nbasis);
-
-//     if (me == 0) {
-//         const int maxint = 300;
-//         int index = 0;
-//         int nint = 0;
-//         const double *tmpint;
-//         for (i=0; i<ni; i++) {
-//             for (j=0; j<nocc; j++) {
-//                 ij_proc =  (i*nocc + j)%nproc; // ij_proc has this ij pair
-//                 ij_index = (i*nocc + j)/nproc;
-//                 ij_offset = ij_index*nbasis*nbasis;
-//                 tmpint = membuf.readonly_on_node(ij_offset, 1, ij_proc);
-//                 for (s=0; s<nbasis; s++) {
-//                     for (q=0; q<nbasis; q++) {
-//                         printf("(%d %d|%d %d) = %12.5f (node %d)\n",
-//                                i,q,j,s, *tmpint, ij_proc);
-//                         tmpint++;
-//                         nint++;
-//                         if (nint > maxint) break;
-//                       }
-//                     if (nint > maxint) break;
-//                   }
-//                 membuf.release();
-//                 if (nint > maxint) break;
-//               }
-//             if (nint > maxint) break;
-//           }
-//       }
-//     fflush(stdout);
-//     mem->sync();
+    integral_iqjs = (double*) mem->localdata();
 
     // Allocate and initialize some arrays
     ixjs_tmp = new double[nbasis];
@@ -906,13 +879,12 @@ MBPT2::compute_cs_grad()
       }
 
     integral_iqjs = 0;
-    membuf.release();
     mem->sync(); // Make sure MO integrals are complete on all nodes before continuing
 
     // don't go beyond this point if only the energy is needed
     if (!dograd && !dos2_) continue;
 
-    mo_int = (double*) membuf.readonly_on_node(0, nij*nbasis*nbasis);
+    mo_int = (double*) mem->localdata();
 
     if (!dograd) goto compute_L;
 
@@ -1119,11 +1091,10 @@ MBPT2::compute_cs_grad()
     // end of debug print
 
     mo_int = 0;
-    membuf.release();
 
     mem->sync(); // Need to synchronize before deleting mo_intbuf
 
-    mo_int = membuf.readwrite_on_node(0, nij*nbasis*nbasis);
+    mo_int = (double*) mem->localdata();
 
     gamma_iajs_tmp = new double[nbasis*nvir_act];
     if (!gamma_iajs_tmp) {
@@ -1195,7 +1166,6 @@ MBPT2::compute_cs_grad()
     // end of debug print
 
     mo_int = 0;
-    membuf.release();
 
     mem->sync(); // Make sure all nodes are done with gamma_iajs_tmp before renaming
 
@@ -1203,7 +1173,7 @@ MBPT2::compute_cs_grad()
 
     // The array mo_int has now been overwritten by the quarter 
     // back-transformed non-sep 2PDM gamma_iajs, so rename
-    gamma_iajs = membuf.readwrite_on_node(0, nij*nbasis*nbasis);
+    gamma_iajs = (double*) mem->localdata();
 
     gamma_iqjs_tmp = new double[nbasis];
     if (!gamma_iqjs_tmp) {
@@ -1262,7 +1232,6 @@ MBPT2::compute_cs_grad()
       }
 
     gamma_iajs = 0;
-    membuf.release();
     
     mem->sync(); // Keep this here to make sure all nodes have gamma_iqjs
                  // before it is needed below, and that gamma_iajs is not

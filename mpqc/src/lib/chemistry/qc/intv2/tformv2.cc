@@ -17,9 +17,37 @@ extern "C" {
 
 #include <chemistry/qc/intv2/int_macros.h>
 #include <chemistry/qc/intv2/tformv2.h>
-#include <chemistry/qc/intv2/integralv2.h>
-
 #include <chemistry/qc/intv2/utils.gbl>
+
+////////////////////////////////////////////////////////////////////////////
+
+// initialize the transformations
+static SphericalTransformV2 trans2(2);
+static SphericalTransformV2 trans3(3);
+static SphericalTransformV2 trans4(4);
+
+static ISphericalTransformV2 itrans2(2);
+static ISphericalTransformV2 itrans3(3);
+static ISphericalTransformV2 itrans4(4);
+
+SphericalTransformIterV2::SphericalTransformIterV2(int l, int inverse)
+{
+  if (l==2) {
+    if (inverse) transform_ = &itrans2;
+    else transform_ = &trans2;
+  } else if (l==3) {
+    if (inverse) transform_ = &itrans3;
+    else transform_ = &trans3;
+  } else if (l==4) {
+    if (inverse) transform_ = &itrans4;
+    else transform_ = &trans4;
+  } else {
+    fprintf(stderr, "SphericalTransformIterV2: cannot handle l = %d\n", l);
+    abort();
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////
 
 #define PRINT 0
 

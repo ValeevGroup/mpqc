@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.12  1996/04/15 15:49:01  etseidl
+ * add {One,Two}BodyDerivInt, split c++ stuff into more files
+ *
  * Revision 1.11  1996/03/29 01:13:38  etseidl
  * moved SphericalTransformIter to basis.  Replaced it with
  * SphericalTransformIterV2.  Also moved integralv2 from integral to here
@@ -109,13 +112,7 @@ extern "C" {
 #ifdef __cplusplus
 }
 
-#include <chemistry/qc/basis/basis.h>
-
-class RefKeyVal;
-int int_read_basis(const RefKeyVal&, char*, const char*, basis_t&);
-int int_read_centers(const RefKeyVal&, centers_t&);
-
-centers_t * int_centers_from_gbs(const RefGaussianBasisSet&);
+#include <chemistry/qc/intv2/int_cplus.h>
 
 #endif
 

@@ -178,6 +178,7 @@ class LSDACFunctional: public DenFunctional {
 #   include <util/class/classd.h>
   protected:
     double F(double x, double A, double x0, double b, double c);
+    double dFdr_s(double x, double A, double x0, double b, double c);
   public:
     LSDACFunctional();
     LSDACFunctional(const RefKeyVal &);

@@ -31,15 +31,28 @@
 #include <math/isosurf/shape.h>
 #include <math/isosurf/triangle.h>
 
+#ifdef HAVE_STL
+#include <vector>
+#endif
+
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
+
+#ifdef HAVE_STL
+template class vector<RefVertex>;
+template class vector<RefEdge>;
+template class vector<RefTriangle>;
+#else
+template class Array<RefVertex>;
+template class Array<RefEdge>;
+template class Array<RefTriangle>;
+#endif
+
 // Vertex
 template class EAVLMMapNode<RefVertex, AVLMapNode<RefVertex, int> >;
 template class EAVLMMap<RefVertex, AVLMapNode<RefVertex, int> >;
 template class AVLMapNode<RefVertex, int>;
 template class AVLMap<RefVertex, int>;
 template class AVLSet<RefVertex>;
-
-template class Array<RefVertex>;
 
 // Edge
 template class EAVLMMapNode<RefEdge, AVLMapNode<RefEdge, int> >;
@@ -48,16 +61,12 @@ template class AVLMapNode<RefEdge, int>;
 template class AVLMap<RefEdge, int>;
 template class AVLSet<RefEdge>;
 
-template class Array<RefEdge>;
-
 // Triangle
 template class EAVLMMapNode<RefTriangle, AVLMapNode<RefTriangle, int> >;
 template class EAVLMMap<RefTriangle, AVLMapNode<RefTriangle, int> >;
 template class AVLMapNode<RefTriangle, int>;
 template class AVLMap<RefTriangle, int>;
 template class AVLSet<RefTriangle>;
-
-template class Array<RefTriangle>;
 
 // Shape
 template class EAVLMMapNode<RefShape, AVLMapNode<RefShape, int> >;

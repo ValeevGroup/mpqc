@@ -162,6 +162,15 @@ class ConnollyShape: public Shape {
     int n_spheres;
     RefAtomInfo atominfo_;
 
+    Arrayint ***box_;
+    double l_;
+    int xmax_;
+    int ymax_;
+    int zmax_;
+    SCVector3 lower_;
+
+    int get_box(const SCVector3 &v, int &x, int &y, int &z) const;
+
 #if COUNT_CONNOLLY
     static int n_total_;
     static int n_inside_vdw_;
@@ -172,6 +181,7 @@ class ConnollyShape: public Shape {
     ConnollyShape(const RefKeyVal&);
     ~ConnollyShape();
     void initialize(const RefMolecule&,double probe_radius);
+    void clear();
     double distance_to_surface(const SCVector3&r,
                                SCVector3*grad=0) const;
     void boundingbox(double valuemin,

@@ -272,7 +272,7 @@ RenderedMolecularSurface::RenderedMolecularSurface(const RefKeyVal& keyval):
   colorizer_ = keyval->describedclassvalue("colorizer");
   if (colorizer_.null())
       colorizer_ = new AtomProximityColorizer(mol_,atominfo_);
-  init();
+  init(0);
 }
 
 RenderedMolecularSurface::~RenderedMolecularSurface()
@@ -282,8 +282,14 @@ RenderedMolecularSurface::~RenderedMolecularSurface()
 void
 RenderedMolecularSurface::init()
 {
+  init(1);
+}
+
+void
+RenderedMolecularSurface::init(int reinit_surf)
+{
   int i, ij, j;
-  surf_->init();
+  if (reinit_surf || !surf_->inited()) surf_->init();
   int nvertex = surf_->nvertex();
   int ntriangle = surf_->ntriangle();
   int natom = mol_->natom();

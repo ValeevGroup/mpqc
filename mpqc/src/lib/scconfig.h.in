@@ -167,6 +167,10 @@
  */
 #undef HAVE_SCALABLE_BLAS
 
+/* Define if you have a working Standard Template Library.
+ */
+#undef HAVE_STL
+
 /* Define if virtual base classes do not work. */
 #undef NO_VIRTUAL_BASES
 

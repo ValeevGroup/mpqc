@@ -258,7 +258,7 @@ SetIntCoor::~SetIntCoor()
 void
 SetIntCoor::save_data_state(StateOut& s)
 {
-  int n = coor_.length();
+  int n = coor_.size();
   s.put(n);
 
   for (int i=0; i<n; i++) {
@@ -289,7 +289,7 @@ SetIntCoor::pop()
 int
 SetIntCoor::n() const
 {
-  return coor_.length();
+  return coor_.size();
 }
 
 RefIntCoor
@@ -382,7 +382,7 @@ SetIntCoor::print_details(const RefMolecule &mol, ostream& os) const
 {
   int i;
 
-  for(i=0; i<coor_.length(); i++) {
+  for(i=0; i<coor_.size(); i++) {
       coor_[i]->print_details(mol,os);
     }
 }
@@ -390,7 +390,7 @@ SetIntCoor::print_details(const RefMolecule &mol, ostream& os) const
 void
 SetIntCoor::update_values(const RefMolecule&mol)
 {
-  for (int i=0; i<coor_.length(); i++) {
+  for (int i=0; i<coor_.size(); i++) {
       coor_[i]->update_value(mol);
     }
 }
@@ -398,7 +398,7 @@ SetIntCoor::update_values(const RefMolecule&mol)
 void
 SetIntCoor::values_to_vector(const RefSCVector&v)
 {
-  for (int i=0; i<coor_.length(); i++) {
+  for (int i=0; i<coor_.size(); i++) {
       v(i) = coor_[i]->value();
     }
 }  
@@ -465,9 +465,9 @@ SumIntCoor::~SumIntCoor()
 void
 SumIntCoor::save_data_state(StateOut&s)
 {
-  int n = coef_.length();
+  int n = coef_.size();
   IntCoor::save_data_state(s);
-  s.put(coef_.length());
+  s.put(coef_.size());
 
   for (int i=0; i<n; i++) {
       s.put(coef_[i]);
@@ -478,7 +478,7 @@ SumIntCoor::save_data_state(StateOut&s)
 int
 SumIntCoor::n()
 {
-  return coef_.length();
+  return coef_.size();
 }
 
 void
@@ -487,21 +487,21 @@ SumIntCoor::add(RefIntCoor&coor,double coef)
   // if a sum is added to a sum, unfold the nested sum
   SumIntCoor* scoor = SumIntCoor::castdown(coor.pointer());
   if (scoor) {
-      int l = scoor->coor_.length();
+      int l = scoor->coor_.size();
       for (int i=0; i<l; i++) {
           add(scoor->coor_[i],coef * scoor->coef_[i]);
         }
     }
   else {
-      int l = coef_.length();
+      int l = coef_.size();
       for (int i=0; i<l; i++) {
           if (coor_[i]->equivalent(coor)) {
               coef_[i] += coef;
               return;
             }
         }
-      coef_.reset_length(l+1);
-      coor_.reset_length(l+1);
+      coef_.resize(l+1);
+      coor_.resize(l+1);
       coef_[l] = coef;
       coor_[l] = coor;
     }
@@ -518,7 +518,7 @@ void
 SumIntCoor::normalize()
 {
   int i;
-  int n = coef_.length();
+  int n = coef_.size();
   double norm = 0.0;
 
   double biggest = 0.0;
@@ -555,7 +555,7 @@ SumIntCoor::print_details(const RefMolecule &mol, ostream& os) const
      << scprintf("%-5s %10s %14.10f\n",ctype(),
                  (label()?label():""), preferred_value());
 
-  for(i=0; i<coor_.length(); i++) {
+  for(i=0; i<coor_.size(); i++) {
       os << node0 << incindent
          << indent << scprintf("%14.10f ",coef_[i]);
 

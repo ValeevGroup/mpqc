@@ -41,7 +41,8 @@ class Array {
     Array(Type* data,int size):_length(size),_managed(0),_array(data){}
     Array(int size):_length(0),_array(0) { set_length(size); }
     ~Array() { clear(); }
-    int length() const { return _length; };
+    //int length() const { return _length; };
+    int size() const { return _length; };
     void clear() { set_length(0); }
     void set_length(int size) {
         if (_array && _managed) delete[] _array;
@@ -50,7 +51,7 @@ class Array {
         else _array = 0;
         _length = size;
       }
-    void reset_length(int size) {
+    void resize(int size) {
         Type*tmp=_array;
         if (size) _array = new Type [ size ];
         else _array = 0;
@@ -90,11 +91,11 @@ class Array {
         return _array[i];
       }
     void push_back(const Type &d) {
-        reset_length(_length+1);
+        resize(_length+1);
         _array[_length-1] = d;
     }
     void pop_back() {
-        set_length(_length-1);
+        resize(_length-1);
     }
 };
 

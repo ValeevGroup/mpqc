@@ -150,7 +150,7 @@ DiscreteConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
   ////////////////////// Leave out the other shapes
   //return;
 
-  for (i=0; i<spheres.length(); i++) {
+  for (i=0; i<spheres.size(); i++) {
       for (int j=0; j<i; j++) {
           RefShape th =
             UncappedTorusHoleShape::newUncappedTorusHoleShape(probe_radius,
@@ -198,6 +198,7 @@ ConnollyShape::_castdown(const ClassDesc*cd)
 
 ConnollyShape::ConnollyShape(const RefKeyVal&keyval)
 {
+  box_ = 0;
   sphere = 0;
   RefMolecule mol = keyval->describedclassvalue("molecule");
   probe_r = keyval->doublevalue("probe_radius");
@@ -243,7 +244,8 @@ ConnollyShape::print_counts(ostream& os)
 void
 ConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
 {
-  if (sphere) delete[] sphere;
+  clear();
+
   n_spheres = mol->natom();
   sphere = new CS2Sphere[n_spheres];
 
@@ -251,17 +253,99 @@ ConnollyShape::initialize(const RefMolecule&mol,double probe_radius)
   if (atominfo_.null()) a = mol->atominfo();
   else a = atominfo_;
 
-  for (int i=0; i<n_spheres; i++) {
+  int i;
+  for (i=0; i<n_spheres; i++) {
       SCVector3 r(mol->r(i));
       sphere[i].initialize(r,radius_scale_factor_*find_atom_size(a,
                                             mol->Z(i))
                               + probe_r);
     }
+
+  // initialize a grid of lists of local spheres
+  if (n_spheres) {
+      // find the bounding box
+      SCVector3 lower(sphere[0].center()), upper(sphere[0].center());
+      for (i=0; i<n_spheres; i++) {
+          SCVector3 l(sphere[i].center()), u(sphere[i].center());
+          for (int j=0; j<3; j++) {
+              l[j] -= probe_r + sphere[i].radius();
+              u[j] += probe_r + sphere[i].radius();
+              if (l[j]<lower[j]) lower[j] = l[j];
+              if (u[j]>upper[j]) upper[j] = u[j];
+            }
+        }
+      // compute the parameters for converting x, y, z into a box number
+      lower_ = lower;
+      l_ = 10.0;
+      xmax_ = (int)((upper[0]-lower[0])/l_);
+      ymax_ = (int)((upper[1]-lower[1])/l_);
+      zmax_ = (int)((upper[2]-lower[2])/l_);
+      // allocate the boxes
+      box_ = new Arrayint**[xmax_+1];
+      for (i=0; i<=xmax_; i++) {
+          box_[i] = new Arrayint*[ymax_+1];
+          for (int j=0; j<=ymax_; j++) {
+              box_[i][j] = new Arrayint[zmax_+1];
+            }
+        }
+      // put the spheres in the boxes
+      for (i=0; i<n_spheres; i++) {
+          int ixmin, iymin, izmin, ixmax, iymax, izmax;
+          SCVector3 l(sphere[i].center()), u(sphere[i].center());
+          for (int j=0; j<3; j++) {
+              l[j] -= probe_r + sphere[i].radius();
+              u[j] += probe_r + sphere[i].radius();
+            }
+          get_box(l,ixmin,iymin,izmin);
+          get_box(u,ixmax,iymax,izmax);
+          for (int ii=ixmin; ii<=ixmax; ii++) {
+              for (int jj=iymin; jj<=iymax; jj++) {
+                  for (int kk=izmin; kk<=izmax; kk++) {
+                      box_[ii][jj][kk].push_back(i);
+                    }
+                }
+            }
+        }
+    }
+}
+
+int
+ConnollyShape::get_box(const SCVector3 &v, int &x, int &y, int &z) const
+{
+  if (!box_) return 0;
+  SCVector3 pos = v-lower_;
+  x = (int)(pos[0]/l_);
+  y = (int)(pos[1]/l_);
+  z = (int)(pos[2]/l_);
+  if (x<0) x=0;
+  if (y<0) y=0;
+  if (z<0) z=0;
+  if (x>xmax_) x=xmax_;
+  if (y>ymax_) y=ymax_;
+  if (z>zmax_) z=zmax_;
+  return 1;
 }
 
 ConnollyShape::~ConnollyShape()
 {
-  if (sphere) delete[] sphere;
+  clear();
+}
+
+void
+ConnollyShape::clear()
+{
+  delete[] sphere;
+  sphere = 0;
+  if (box_) {
+      for (int i=0; i<=xmax_; i++) {
+          for (int j=0; j<=ymax_; j++) {
+              delete[] box_[i][j];
+            }
+          delete[] box_[i];
+        }
+      delete[] box_;
+      box_ = 0;
+    }
 }
 
 double
@@ -286,24 +370,29 @@ ConnollyShape::distance_to_surface(const SCVector3&r, SCVector3*grad) const
 
   // find out which spheres are near the probe_centers sphere
   int n_local_spheres = 0;
-  for (int i=0; i<n_spheres; i++) {
-      double distance = sphere[i].distance(probe_centers);
-      double r_i = sphere[i].radius();
-      if (distance < r_i - probe_r) {
+  int boxi, boxj, boxk;
+  if (get_box(r,boxi,boxj,boxk)) {
+      Arrayint & box = box_[boxi][boxj][boxk];
+      for (int ibox=0; ibox<box.size(); ibox++) {
+          int i = box[ibox];
+          double distance = sphere[i].distance(probe_centers);
+          double r_i = sphere[i].radius();
+          if (distance < r_i + probe_r) {
+              if (distance < r_i - probe_r) {
 #if COUNT_CONNOLLY
-          n_inside_vdw_++;
+                  n_inside_vdw_++;
 #endif
-          return inside;
-        }
-      else if (distance < r_i + probe_r) {
-          if (n_local_spheres == max_local_spheres) {
-              cerr << node0 << indent
-                   << "ConnollyShape::distance_to_surface:"
-                   << " max_local_spheres exceeded\n";
-              abort();
+                  return inside;
+                }
+              if (n_local_spheres == max_local_spheres) {
+                  cerr << node0 << indent
+                       << "ConnollyShape::distance_to_surface:"
+                       << " max_local_spheres exceeded\n";
+                  abort();
+                }
+              local_sphere[n_local_spheres] = sphere[i];
+              n_local_spheres++;
             }
-          local_sphere[n_local_spheres] = sphere[i];
-          n_local_spheres++;
         }
     }
 

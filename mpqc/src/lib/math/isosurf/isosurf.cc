@@ -31,9 +31,9 @@
 
 #include <iostream.h>
 
-#include <math/scmat/vector3.h>
 #include <math/isosurf/isosurf.h>
 #include <math/isosurf/implicit.h>
+#include <math/scmat/vector3.h>
 
 ////////////////////////////////////////////////////////////////////////////
 // IsosurfaceGen members
@@ -169,8 +169,8 @@ int
 ImplicitSurfacePolygonizer::add_triangle_to_current(int i1, int i2, int i3,
                                                    VERTICES v)
 {
-  int oldlength = current->_tmp_vertices.length();
-  current->_tmp_vertices.reset_length(v.count);
+  int oldlength = current->_tmp_vertices.size();
+  current->_tmp_vertices.resize(v.count);
   for (int i=oldlength; i<v.count; i++) {
       SCVector3 newpoint;
       newpoint[0] = v.ptr[i].position.x;
@@ -189,6 +189,22 @@ ImplicitSurfacePolygonizer::add_triangle_to_current(int i1, int i2, int i3,
   RefVertex v2 = current->_tmp_vertices[i2];
   RefVertex v3 = current->_tmp_vertices[i3];
   
+  static int tricnt = 0;
+  if (++tricnt%100 == 0) {
+      cout << "adding triangle " << tricnt << endl;
+      cout << "  ntri = " << setw(10) << current->_surf->ntriangle()
+           << " bytes = "
+           << setw(10) << current->_surf->ntriangle() * sizeof(Triangle)
+           << endl;
+      cout << "  nedg = " << setw(10) << current->_surf->nedge()
+           << " bytes = "
+           << setw(10) << current->_surf->nedge() * sizeof(Edge)
+           << endl;
+      cout << "  nver = " << setw(10) << current->_surf->nvertex()
+           << " bytes = "
+           << setw(10) << current->_surf->nvertex() * sizeof(Vertex)
+           << endl;
+    }
   current->_surf->add_triangle(v1,v2,v3);
 
   return 1;

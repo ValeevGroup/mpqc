@@ -148,11 +148,11 @@ TaylorMolecularEnergy::print(ostream&o) const
 {
   MolecularEnergy::print(o);
   if (coordinates_.nonnull()) coordinates_->print_details(molecule(), o);
-  int nfc = force_constant_index_.length();
+  int nfc = force_constant_index_.size();
   o << indent << "Force Constants:" << endl;
   o << incindent;
   for (int i=0; i<nfc; i++) {
-      int order = force_constant_index_[i].length();
+      int order = force_constant_index_[i].size();
       for (int j=0; j<order; j++) {
           o << indent << scprintf("%5d",force_constant_index_[i][j]+1);
         }
@@ -178,13 +178,13 @@ factor(Arrayint&indices)
 {
   AVLMap<int,int> n_occur;
   int i;
-  for (i=0; i<indices.length(); i++) {
+  for (i=0; i<indices.size(); i++) {
       n_occur[indices[i]] = 0;
     }
-  for (i=0; i<indices.length(); i++) {
+  for (i=0; i<indices.size(); i++) {
       n_occur[indices[i]]++;
     }
-  int n_indices = indices.length();
+  int n_indices = indices.size();
   int int_factor = 1;
   AVLMap<int,int>::iterator I;
   for (I=n_occur.begin(); I!=n_occur.end(); I++) {
@@ -193,7 +193,7 @@ factor(Arrayint&indices)
                    /(factorial(n)*factorial(n_indices-n));
       n_indices -= n;
     }
-  double term = ((double)int_factor) / factorial(indices.length());
+  double term = ((double)int_factor) / factorial(indices.size());
   return term;
 }
 
@@ -215,10 +215,10 @@ TaylorMolecularEnergy::compute()
 
   if (value_needed()) {
       double e = e0_;
-      for (int i=0; i<force_constant_index_.length(); i++) {
+      for (int i=0; i<force_constant_index_.size(); i++) {
           double term =  force_constant_value_[i]
                        * factor(force_constant_index_[i]);
-          for (int j=0; j<force_constant_index_[i].length(); j++) {
+          for (int j=0; j<force_constant_index_[i].size(); j++) {
               term *= displacement(force_constant_index_[i][j]);
             }
           e += term;
@@ -230,12 +230,12 @@ TaylorMolecularEnergy::compute()
       RefSCVector gradient = expansion_point_.clone();
       gradient.assign(0.0);
 
-      for (int i=0; i<force_constant_index_.length(); i++) {
+      for (int i=0; i<force_constant_index_.size(); i++) {
           double f =  force_constant_value_[i]
                     * factor(force_constant_index_[i]);
-          for (int k=0; k<force_constant_index_[i].length(); k++) {
+          for (int k=0; k<force_constant_index_[i].size(); k++) {
               double t = 1.0;
-              for (int l=0; l<force_constant_index_[i].length(); l++) {
+              for (int l=0; l<force_constant_index_[i].size(); l++) {
                   if (l == k) continue;
                   t *= displacement(force_constant_index_[i][l]);
                 }

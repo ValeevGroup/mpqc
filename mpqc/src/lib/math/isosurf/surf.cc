@@ -408,7 +408,7 @@ TriangulatedSurface::add_vertex(const RefVertex&t)
   if (i != _vertices.length()) {
       _index_to_vertex.push_back(t);
       _vertex_to_index[t] = i;
-      if (_index_to_vertex.length() != _vertex_to_index.length()) {
+      if (_index_to_vertex.size() != _vertex_to_index.length()) {
           cerr << "TriangulatedSurface::add_vertex: length mismatch" << endl;
           abort();
         }
@@ -423,7 +423,7 @@ TriangulatedSurface::add_edge(const RefEdge&t)
   if (i != _edges.length()) {
       _index_to_edge.push_back(t);
       _edge_to_index[t] = i;
-      if (_index_to_edge.length() != _edge_to_index.length()) {
+      if (_index_to_edge.size() != _edge_to_index.length()) {
           cerr << "TriangulatedSurface::add_edge: length mismatch" << endl;
           abort();
         }
@@ -439,7 +439,7 @@ TriangulatedSurface::add_triangle(const RefTriangle&t)
   if (i != _triangles.length()) {
       _index_to_triangle.push_back(t);
       _triangle_to_index[t] = i;
-      if (_index_to_triangle.length() != _triangle_to_index.length()) {
+      if (_index_to_triangle.size() != _triangle_to_index.length()) {
           cerr << "TriangulatedSurface::add_triangle: length mismatch" << endl;
           abort();
         }
@@ -683,19 +683,19 @@ TriangulatedSurface::recompute_index_maps()
   _index_to_edge.clear();
   _index_to_triangle.clear();
 
-  _index_to_vertex.set_length(_vertices.length());
+  _index_to_vertex.resize(_vertices.length());
   for (i=0, iv = _vertices.begin(); iv != _vertices.end(); i++, iv++) {
       _vertex_to_index[*iv] = i;
       _index_to_vertex[i] = *iv;
     }
 
-  _index_to_edge.set_length(_edges.length());
+  _index_to_edge.resize(_edges.length());
   for (i=0, ie = _edges.begin(); ie != _edges.end(); i++, ie++) {
       _edge_to_index[*ie] = i;
       _index_to_edge[i] = *ie;
     }
 
-  _index_to_triangle.set_length(_triangles.length());
+  _index_to_triangle.resize(_triangles.length());
   for (i=0, it = _triangles.begin(); it != _triangles.end(); i++, it++) {
       _triangle_to_index[*it] = i;
       _index_to_triangle[i] = *it;
@@ -876,6 +876,8 @@ TriangulatedImplicitSurface::
 TriangulatedImplicitSurface(const RefKeyVal&keyval):
   TriangulatedSurface(keyval)
 {
+  inited_ = 0;
+
   vol_ = keyval->describedclassvalue("volume");
   if (keyval->error() != KeyVal::OK) {
       cerr << "TriangulatedImplicitSurface(const RefKeyVal&keyval): "
@@ -966,6 +968,7 @@ TriangulatedImplicitSurface::init()
           triangle(i)->set_order(order_, vol_, isovalue_);
         }
     }
+  inited_ = 1;
   if (_verbose) cout << "TriangulatedImplicitSurface: init done" << endl;
 }
 

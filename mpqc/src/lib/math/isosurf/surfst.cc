@@ -433,19 +433,19 @@ TriangulatedSurface::remove_slender_triangles(
   _index_to_edge.clear();
   _index_to_triangle.clear();
 
-  _index_to_vertex.set_length(_vertices.length());
+  _index_to_vertex.resize(_vertices.length());
   for (i=0, iv = _vertices.begin(); iv != _vertices.end(); i++, iv++) {
       _vertex_to_index[*iv] = i;
       _index_to_vertex[i] = *iv;
     }
 
-  _index_to_edge.set_length(_edges.length());
+  _index_to_edge.resize(_edges.length());
   for (i=0, ie = _edges.begin(); ie != _edges.end(); i++, ie++) {
       _edge_to_index[*ie] = i;
       _index_to_edge[i] = *ie;
     }
 
-  _index_to_triangle.set_length(_triangles.length());
+  _index_to_triangle.resize(_triangles.length());
   for (i=0, it = _triangles.begin(); it != _triangles.end(); i++, it++) {
       _triangle_to_index[*it] = i;
       _index_to_triangle[i] = *it;

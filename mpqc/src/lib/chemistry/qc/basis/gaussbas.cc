@@ -170,7 +170,7 @@ GaussianBasisSet::GaussianBasisSet(StateIn&s):
   molecule_.restore_state(s);
   basisdim_.restore_state(s);
 
-  ncenter_ = center_to_nshell_.length();
+  ncenter_ = center_to_nshell_.size();
   s.getstring(name_);
 
   nshell_ = 0;

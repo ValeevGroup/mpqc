@@ -32,6 +32,15 @@
 #pragma interface
 #endif
 
+#ifdef HAVE_CONFIG_H
+#include <scconfig.h>
+#endif
+
+#ifdef HAVE_STL
+#include <vector>
+#endif
+
+#include <util/container/array.h>
 #include <math/isosurf/triangle.h>
 #include <math/isosurf/volume.h>
 #include <util/render/render.h>
@@ -59,9 +68,15 @@ class TriangulatedSurface: public DescribedClass {
     AVLMap<RefTriangle,int> _triangle_to_index;
 
     // map integer indices to an object
+#ifdef HAVE_STL
+    vector<RefVertex> _index_to_vertex;
+    vector<RefEdge> _index_to_edge;
+    vector<RefTriangle> _index_to_triangle;
+#else
     Array<RefVertex> _index_to_vertex;
     Array<RefEdge> _index_to_edge;
     Array<RefTriangle> _index_to_triangle;
+#endif
 
     // mappings between array element numbers
     int** _triangle_vertex;
@@ -254,6 +269,8 @@ class TriangulatedImplicitSurface: public TriangulatedSurface {
     double resolution_;
 
     int order_;
+
+    int inited_;
   public:
     TriangulatedImplicitSurface(const RefKeyVal&);
     ~TriangulatedImplicitSurface();
@@ -262,6 +279,7 @@ class TriangulatedImplicitSurface: public TriangulatedSurface {
     double isovalue() const { return isovalue_; }
 
     void init();
+    int inited() const { return inited_; }
 };
 DescribedClass_REF_dec(TriangulatedImplicitSurface);
 

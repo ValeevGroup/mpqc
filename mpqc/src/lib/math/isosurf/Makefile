@@ -57,6 +57,9 @@ DISTFILES = isotest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: $(DEPENDINCLUDE)
 
+tmplinst.o: tmplinst.cc
+	$(CXX) $(CXXFLAGS:-fno-implicit-templates=) $(CPPFLAGS) -c $<
+
 isotest.o: isotest.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 

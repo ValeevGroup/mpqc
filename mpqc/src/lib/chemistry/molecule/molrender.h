@@ -123,6 +123,7 @@ class RenderedMolecularSurface: public RenderedMolecule {
     RenderedMolecularSurface(const RefKeyVal& keyval);
     ~RenderedMolecularSurface();
 
+    void init(int reinit_surf);
     void init();
 };
 

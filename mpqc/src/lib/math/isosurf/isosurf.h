@@ -32,7 +32,6 @@
 #pragma interface
 #endif
 
-#include <util/container/array.h>
 #include <math/isosurf/surf.h>
 
 class IsosurfaceGen {
@@ -56,7 +55,11 @@ class ImplicitSurfacePolygonizer: public IsosurfaceGen {
   protected:
     RefVolume _volume;
 
+#ifdef HAVE_STL
+    vector<RefVertex>  _tmp_vertices;
+#else
     Array<RefVertex>  _tmp_vertices;
+#endif
     TriangulatedSurface* _surf;
     double _value;
   public:

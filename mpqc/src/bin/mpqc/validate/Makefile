@@ -79,7 +79,8 @@ MBPTINPUTS := $(MBPTINPUTS:%=run/%)
 MBPTOUTPUTS = $(MBPTINPUTS:%.$(INSUF)=%.out)
 
 METHODSINPUTS = \
-  clks_b88.in clks_lsdax.in clks_xa.in uks_b88.in uks_lsdax.in uks_xa.in \
+  clks_b88.in clks_lsdax.in clks_xa.in clks_blyp.in clks_b3lyp.in \
+  uks_b88.in uks_lsdax.in uks_xa.in uks_blyp.in uks_b3lyp.in \
   clhf.in hsoshf.in uhf.in osshf.in tchf.in
 METHODSINPUTS := $(METHODSINPUTS:%=run/methods_%)
 

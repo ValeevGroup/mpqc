@@ -310,7 +310,7 @@ Molecule::print(ostream& os)
   for (i=0; i<natom(); i+=5) {
       os << node0 << indent;
       for (int j=i; j<i+5 && j<natom(); j++) {
-          os << node0 << scprintf(" %10.5f", get_atom(i).element().mass());
+          os << node0 << scprintf(" %10.5f", get_atom(j).element().mass());
         }
       os << node0 << endl;
     }

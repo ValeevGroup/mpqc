@@ -90,7 +90,9 @@ clean_up(void)
 static void
 out_of_memory()
 {
-  cerr << "ERROR: out of memory" << endl;
+  cerr << "ERROR: mpqc: out of memory" << endl;
+  cout.flush();
+  cerr.flush();
   abort();
 }
 
@@ -102,6 +104,12 @@ main(int argc, char *argv[])
   const char *devnull = "/dev/null";
   atexit(clean_up);
   set_new_handler(out_of_memory);
+
+#if defined(__i386__) && defined(__GNUC__)
+  // make floating point errors cause an exception (except for denormalized
+  // operands, since small numbers are denormalized)
+  asm("fldcw %0" : : "o" (0x372));
+#endif
 
   ExEnv::set_args(argc, argv);
 

@@ -110,6 +110,9 @@ $rerun = 0;
 $onlynew = 0;
 
 # If true, then generate unique output file names.
+$uniqout = 0;
+
+# If true, then generate output file names.
 $autoout = 0;
 
 # If true, run mpqc from the object directory
@@ -139,6 +142,7 @@ if (!GetOptions("small!" => \$small,
                 "printfiles!" => \$printfiles,
                 "rerun!" => \$rerun,
                 "onlynew!" => \$onlynew,
+                "uniqout!" => \$uniqout,
                 "autoout!" => \$autoout,
                 "objdir!" => \$objdir,
                 "count!" => \$count,
@@ -150,10 +154,10 @@ if (!GetOptions("small!" => \$small,
 
 if ("$launch" eq '@' . 'LAUNCH@') {
     if ("$messagegrp" eq "mpi") {
-        $launch = "mpirun [-hf %NODEFILE%] -n %NPROC% %MPQC% -o %OUTPUT% %INPUT%";
+        $launch = "mpirun [-hf %NODEFILE%] -n %NPROC% %MPQC% [-o %OUTPUT%] %INPUT%";
     }
     else {
-        $launch = "%MPQC% -o %OUTPUT% %INPUT%";
+        $launch = "%MPQC% [-o %OUTPUT%] %INPUT%";
     }
 }
 
@@ -200,7 +204,8 @@ if ($help) {
     print  "  --printfiles       print the list of input files that would be run\n";
     print  "  --rerun            overwrite output file, even if up-to-date\n";
     print  "  --onlynew          do not overwrite output file, even if not up-to-date\n";
-    print  "  --autoout          generate unique output filenames\n";
+    print  "  --uniqout          generate unique output filenames\n";
+    print  "  --autoout          generate output filenames\n";
     print  "  --verbose          print out what action is to be taken on each file\n";
     print  "  --debug            don't actually run mpqc\n";
     print  "  --help             print this help\n";
@@ -404,8 +409,8 @@ sub jobrunner {
         $cmd =~ s/%MPQC%/$mpqc/;
         $cmd =~ s/%NPROC%/$nprocperjob/;
         $cmd =~ s/%INPUT%/$file/;
-        $cmd =~ s/%OUTPUT%/$out/;
 
+        $cmd = substitute_optional_parameter($cmd, "%OUTPUT%", "$out");
         $cmd = substitute_optional_parameter($cmd, "%NODELIST%", $nodelist{$jobslot});
         $cmd = substitute_optional_parameter($cmd, "%NODEFILE%", $nodefile{$jobslot});
 
@@ -501,7 +506,7 @@ sub outfile {
     my $in = shift;
 
     my $out;
-    if ($autoout) {
+    if ($uniqout) {
         $out = $in;
         $out =~ s/\.[^.]*$//;
         $out = sprintf "%s.out.%03d.%02d", $out, $nprocperjob, $nthreadperproc;
@@ -511,9 +516,15 @@ sub outfile {
             $out = sprintf "%s.out.%03d.%02d", $out, $nprocperjob, $nthreadperproc;
         }
     }
-    else {
+    elsif ($autoout) {
         $out = "$in";
         $out =~ s/\.[^.]*$/.out/;
+        if ("$out" eq "$in") {
+            $out = "$in".out;
+        }
+    }
+    else {
+        $out = "";
     }
 
     return $out;

@@ -70,7 +70,9 @@ mpqcrun takes the following command line options:
   <dt><tt>--printfiles</tt><dd>Print the list of input files that would be run.
   <dt><tt>--rerun</tt><dd>Overwrite output file, even if up-to-date.
   <dt><tt>--onlynew</tt><dd>Do not overwrite output file, even if not up-to-date.
-  <dt><tt>--autoout</tt><dd>Generate unique output filenames.
+  <dt><tt>--uniqout</tt><dd>Generate unique output filenames.
+  <dt><tt>--autoout</tt><dd>Generate output filenames by replacing
+                            the suffix with "out".
   <dt><tt>--verbose</tt><dd>Print out what action is to be taken on each file.
   <dt><tt>--debug</tt><dd>Don't actually run mpqc.
   <dt><tt>--help</tt><dd>Print the documentation.

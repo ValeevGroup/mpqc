@@ -407,6 +407,9 @@ Function::change_coordinates()
 void
 Function::do_change_coordinates(const RefNonlinearTransform &t)
 {
+  if (t.null())
+      return;
+  
   t->transform_coordinates(x_);
   obsolete();
 }

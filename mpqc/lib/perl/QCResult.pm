@@ -207,6 +207,11 @@ sub parse_mpqc {
     my $to_angstrom = 0.52917706;
     my $geometry_conversion = $to_angstrom;
     my $error = "";
+    my $ccsd_energy = "";
+    my $ccsd_t_energy = "";
+    my $t1norm = "";
+    my $t12norm = "";
+    my $psioutput = "";
     while (<$out>) {
         s/^ *[0-9]+:// if ($have_nodenum);
         if ($state eq "read grad" && $wante) {
@@ -240,6 +245,31 @@ sub parse_mpqc {
         }
         elsif ($wante && /MP2 energy .*:\s+$fltrx/) {
             $mp2energy = $1;
+        }
+        elsif (/CSCF: An SCF program written in C/) {
+            $psioutput = 1;
+        }
+        elsif ($psioutput && $wante
+               && /total energy       =\s*$fltrx/) {
+            $scfenergy = $1;
+        }
+        elsif ($psioutput && $wante
+               && /\s*ITER\s+CORRELATION ENERGY\s+T1 2-NORM\s+T1 DIAG/) {
+            # this is a PSI CC output embedded in an MPQC output
+            # grab iteration 0
+            my $ecorr;
+            <$out>;
+            while (<$out>) {
+                if (/^\s*\d+\s+$fltrx\s+$fltrx\s+$fltrx/) {
+                    $ecorr = $1;
+                    $t12norm = $2;
+                    $t1norm = $3;
+                }
+                else {
+                    last;
+                }
+            }
+            $ccsd_energy = $ecorr + $scfenergy;
         }
         elsif ($wante && /Value of the MolecularEnergy:\s+$fltrx/) {
             $molecularenergy = $1;
@@ -412,7 +442,11 @@ sub parse_mpqc {
             $havefreq = 1;
         }
     }
+    $self->{"t1norm"} = $t1norm;
+    $self->{"t1matrix2norm"} = $t12norm;
     $self->{"s2norm"} = $s2norm;
+    $self->{"ccsdenergy"} = $ccsd_energy;
+    $self->{"ccsd_tenergy"} = $ccsd_t_energy;
     $self->{"scfenergy"} = $scfenergy;
     $self->{"opt1energy"} = $opt1energy;
     $self->{"opt2energy"} = $opt2energy;
@@ -445,6 +479,12 @@ sub parse_mpqc {
     }
     elsif ($method eq "OPT2[2]") {
         $self->{"energy"} = $opt2energy;
+    }
+    elsif ($method eq "CCSD") {
+        $self->{"energy"} = $ccsd_energy;
+    }
+    elsif ($method eq "CCSD(T)") {
+        $self->{"energy"} = $ccsd_t_energy;
     }
     elsif ($qcinput->ok()
            && ($method eq "SCF" || $method eq "ROSCF")) {
@@ -538,6 +578,11 @@ sub s2matrixinfnorm {
 sub t1norm {
     my $self = shift;
     $self->{"t1norm"}
+}
+
+sub t1matrix2norm {
+    my $self = shift;
+    $self->{"t1matrix2norm"}
 }
 
 sub optmolecule {

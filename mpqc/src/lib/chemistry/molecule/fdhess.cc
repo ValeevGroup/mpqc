@@ -68,6 +68,7 @@ FinDispMolecularHessian::FinDispMolecularHessian(const RefMolecularEnergy &e):
   eliminate_cubic_terms_ = 1;
   do_null_displacement_ = 1;
   disp_ = 1.0e-3;
+  ndisp_ = 0;
   debug_ = 0;
   gradients_ = 0;
   accuracy_ = -1.0;
@@ -112,6 +113,7 @@ FinDispMolecularHessian::FinDispMolecularHessian(const RefKeyVal&keyval):
   accuracy_ = keyval->doublevalue("gradient_accuracy",KeyValValuedouble(-1.0));
 
   gradients_ = 0;
+  ndisp_ = 0;
 }
 
 FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
@@ -215,8 +217,9 @@ FinDispMolecularHessian::restart()
         restart_=0;
         return;
       }
-    
-    // make sure we change the symmetry info everywhere in the MolE
+    }
+
+  if (ndisp_) {
     int irrep, index;
     double coef;
     get_disp(ndisplacements_done(), irrep, index, coef);
@@ -247,21 +250,23 @@ FinDispMolecularHessian::restore_displacements(StateIn& s)
   s.get(eliminate_cubic_terms_);
   s.get(do_null_displacement_);
 
-  RefSCDimension symrow, symcol;
-  symrow.restore_state(s);
-  symcol.restore_state(s);
-  RefSCMatrixKit symkit = new BlockedSCMatrixKit(matrixkit());
-  symbasis_ = symkit->matrix(symrow,symcol);
-  symbasis_.restore(s);
+  if (ndisp_) {
+    RefSCDimension symrow, symcol;
+    symrow.restore_state(s);
+    symcol.restore_state(s);
+    RefSCMatrixKit symkit = new BlockedSCMatrixKit(matrixkit());
+    symbasis_ = symkit->matrix(symrow,symcol);
+    symbasis_.restore(s);
 
-  delete[] gradients_;
-  gradients_ = new RefSCVector[ndisplace()];
-  for (i=0; i < ndisp_; i++) {
-    int ndisp;
-    s.get(ndisp);
-    RefSCDimension ddisp = new SCDimension(ndisp);
-    gradients_[i] = matrixkit()->vector(ddisp);
-    gradients_[i].restore(s);
+    delete[] gradients_;
+    gradients_ = new RefSCVector[ndisplace()];
+    for (i=0; i < ndisp_; i++) {
+      int ndisp;
+      s.get(ndisp);
+      RefSCDimension ddisp = new SCDimension(ndisp);
+      gradients_[i] = matrixkit()->vector(ddisp);
+      gradients_[i].restore(s);
+      }
     }
 }
 
@@ -280,13 +285,15 @@ FinDispMolecularHessian::checkpoint_displacements(StateOut& s)
   s.put(eliminate_cubic_terms_);
   s.put(do_null_displacement_);
 
-  symbasis_.rowdim().save_state(s);
-  symbasis_.coldim().save_state(s);
-  symbasis_.save(s);
+  if (ndisp_) {
+    symbasis_.rowdim().save_state(s);
+    symbasis_.coldim().save_state(s);
+    symbasis_.save(s);
 
-  for (i=0; i < ndisp_; i++) {
-    s.put(gradients_[i].n());
-    gradients_[i].save(s);
+    for (i=0; i < ndisp_; i++) {
+      s.put(gradients_[i].n());
+      gradients_[i].save(s);
+      }
     }
 }
 

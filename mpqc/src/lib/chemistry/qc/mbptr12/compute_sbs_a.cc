@@ -777,7 +777,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 		biggest_coefs.insert(*iajb_ptr,i_offset+i,j,a,b,1212);
 	      } // endif
 	      double tmpval;
-	      if (i != j) {
+	      if (ii != jj) {
 		tmpval = (*iajb_ptr - *ibja_ptr)*(*iajb_ptr - *ibja_ptr)/delta_ijab;
 		eaa += tmpval;
 	      }

@@ -105,7 +105,8 @@ double TorsSimpleCo::calc_intco(Molecule& m, double *bmat, double coeff)
   u1[2]=z1[0]*z2[1]-z1[1]*z2[0];
   double co2=scalar(u1,u2);
 
-  if ((co+1.0) < 1.0e-8) co= -1.0;
+  if ((co+1.0) < 1.0e-18) co= -1.0;
+  if ((co-1.0) > 1.0e-18) co = 1.0;
 
   // save the old value of the torsion so we can make sure the discontinuity
   // at -pi/2 doesn't bite us

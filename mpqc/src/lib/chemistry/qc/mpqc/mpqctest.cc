@@ -5,6 +5,9 @@
 #include <util/keyval/keyval.h>
 #include <new.h>
 
+// Force MPSCF linkage:
+const ClassDesc &tmp = MPSCF::class_desc_;
+
 void die()
 {
   fprintf(stderr,"die\n");

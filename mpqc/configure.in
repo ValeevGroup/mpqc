@@ -1232,18 +1232,20 @@ AC_LANG_RESTORE
 dnl --------- Checks that must be done last. ---------
 
 AC_MSG_CHECKING([for special flags that must be set last])
+TMPLREPO=
+TMPLINLIB=no
 case $target in
   alpha*)
     if test ! X$GXX = Xyes; then
-      CXXFLAGS="$CXXFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
-      LDFLAGS="$LDFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
+      TMPLREPO=cxx_repository
+      TMPLINLIB=yes
       AC_MSG_RESULT("alpha* non-GNU C++")
     fi
   ;;
   *-dec-osf*)
     if test ! X$GXX = Xyes; then
-      CXXFLAGS="$CXXFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
-      LDFLAGS="$LDFLAGS -ptr \$(TOPDIR)/cxx_tmpl_repo"
+      TMPLREPO=cxx_repository
+      TMPLINLIB=yes
       AC_MSG_RESULT("*-dec-osf* non-GNU C++")
     fi
   ;;
@@ -1291,6 +1293,8 @@ changequote([, ])dnl
     AC_MSG_RESULT(none)
   ;;
 esac
+AC_SUBST(TMPLREPO)
+AC_SUBST(TMPLINLIB)
 
 dnl --------- Shared library configuration. ---------
 

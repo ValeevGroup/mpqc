@@ -267,8 +267,8 @@ SCMatrixLTriSubBlockIter::operator ++()
     }
   if (j_ >= block->jend) {
       j_ = block->jstart;
+      block_index += i_;
       i_++;
-      block_index += block->istart - 1;
     }
 }
 

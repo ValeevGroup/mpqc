@@ -368,7 +368,7 @@ class VWNTestLCFunctional: public VWNLCFunctional {
     
 /** The VWN1LCFunctional computes energies and densities using the
     VWN1 local correlation term (from Vosko, Wilk, and Nusair). */
-class VWN1LCFunctional: public LSDACFunctional {
+class VWN1LCFunctional: public VWNLCFunctional {
 #   define CLASSNAME VWN1LCFunctional
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
@@ -376,8 +376,6 @@ class VWN1LCFunctional: public LSDACFunctional {
 #   include <util/class/classd.h>
   protected:
     double Ap_, x0p_, bp_, cp_, Af_, x0f_, bf_, cf_;
-    double F(double x, double A, double x0, double b, double c);
-    double dFdr_s(double x, double A, double x0, double b, double c);
   public:
     VWN1LCFunctional();
     VWN1LCFunctional(const RefKeyVal &);
@@ -390,19 +388,13 @@ class VWN1LCFunctional: public LSDACFunctional {
 
 /** The VWN2LCFunctional computes energies and densities using the
     VWN2 local correlation term (from Vosko, Wilk, and Nusair). */
-class VWN2LCFunctional: public LSDACFunctional {
+class VWN2LCFunctional: public VWNLCFunctional {
 #   define CLASSNAME VWN2LCFunctional
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    double Ap_, Af_, A_alpha_;
-    double x0p_mc_, bp_mc_, cp_mc_, x0f_mc_, bf_mc_, cf_mc_;
-    double x0p_rpa_, bp_rpa_, cp_rpa_, x0f_rpa_, bf_rpa_, cf_rpa_;
-    double x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_, x0_alpha_rpa_, b_alpha_rpa_, c_alpha_rpa_;
-    double F(double x, double A, double x0, double b, double c);
-    double dFdr_s(double x, double A, double x0, double b, double c);
   public:
     VWN2LCFunctional();
     VWN2LCFunctional(const RefKeyVal &);
@@ -416,7 +408,7 @@ class VWN2LCFunctional: public LSDACFunctional {
 
 /** The VWN3LCFunctional computes energies and densities using the
     VWN3 local correlation term (from Vosko, Wilk, and Nusair). */
-class VWN3LCFunctional: public LSDACFunctional {
+class VWN3LCFunctional: public VWNLCFunctional {
 #   define CLASSNAME VWN3LCFunctional
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
@@ -424,13 +416,7 @@ class VWN3LCFunctional: public LSDACFunctional {
 #   include <util/class/classd.h>
   protected:
     int monte_carlo_prefactor_;
-    double Ap_, Af_, A_alpha_;
-    double x0p_mc_, bp_mc_, cp_mc_, x0f_mc_, bf_mc_, cf_mc_;
-    double x0p_rpa_, bp_rpa_, cp_rpa_, x0f_rpa_, bf_rpa_, cf_rpa_;
-    double x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_, x0_alpha_rpa_, b_alpha_rpa_, c_alpha_rpa_;
-    double F(double x, double A, double x0, double b, double c);
-    double dFdr_s(double x, double A, double x0, double b, double c);
-  public:
+   public:
     VWN3LCFunctional();
     VWN3LCFunctional(const RefKeyVal &);
     VWN3LCFunctional(StateIn &);
@@ -442,20 +428,14 @@ class VWN3LCFunctional: public LSDACFunctional {
 
 /** The VWN4LCFunctional computes energies and densities using the
     VWN4 local correlation term (from Vosko, Wilk, and Nusair). */
-class VWN4LCFunctional: public LSDACFunctional {
+class VWN4LCFunctional: public VWNLCFunctional {
 #   define CLASSNAME VWN4LCFunctional
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    double Ap_, Af_, A_alpha_;
-    double x0p_mc_, bp_mc_, cp_mc_, x0f_mc_, bf_mc_, cf_mc_;
-    double x0p_rpa_, bp_rpa_, cp_rpa_, x0f_rpa_, bf_rpa_, cf_rpa_;
-    double x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_, x0_alpha_rpa_, b_alpha_rpa_, c_alpha_rpa_;
-    double F(double x, double A, double x0, double b, double c);
-    double dFdr_s(double x, double A, double x0, double b, double c);
-  public:
+   public:
     VWN4LCFunctional();
     VWN4LCFunctional(const RefKeyVal &);
     VWN4LCFunctional(StateIn &);
@@ -467,18 +447,13 @@ class VWN4LCFunctional: public LSDACFunctional {
 
 /** The VWN5LCFunctional computes energies and densities using the
     VWN5 local correlation term (from Vosko, Wilk, and Nusair). */
-class VWN5LCFunctional: public LSDACFunctional {
+class VWN5LCFunctional: public VWNLCFunctional {
 #   define CLASSNAME VWN5LCFunctional
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    double Ap_, Af_, A_alpha_;
-    double x0p_mc_, bp_mc_, cp_mc_, x0f_mc_, bf_mc_, cf_mc_;
-    double x0_alpha_mc_, b_alpha_mc_, c_alpha_mc_;
-    double F(double x, double A, double x0, double b, double c);
-    double dFdr_s(double x, double A, double x0, double b, double c);
   public:
     VWN5LCFunctional();
     VWN5LCFunctional(const RefKeyVal &);

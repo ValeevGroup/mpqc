@@ -544,14 +544,14 @@ ShmMemoryGrp::clear_release_count()
 }
 
 void
-ShmMemoryGrp::print(ostream &o)
+ShmMemoryGrp::print(ostream &o) const
 {
   MemoryGrp::print(o);
   if (me() == 0) {
       if (use_locks_) {
-          obtain_lock();
+          ((ShmMemoryGrp*)this)->obtain_lock();
           //rangelock_->print(fp);
-          release_lock();
+          ((ShmMemoryGrp*)this)->release_lock();
         }
     }
 }

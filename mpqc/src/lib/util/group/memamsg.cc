@@ -463,7 +463,7 @@ ActiveMsgMemoryGrp::release_write(void *data, int offset, int size)
 }
 
 void
-ActiveMsgMemoryGrp::print(ostream &o)
+ActiveMsgMemoryGrp::print(ostream &o) const
 {
   MemoryGrp::print(o);
 }

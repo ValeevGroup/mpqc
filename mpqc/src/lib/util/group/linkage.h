@@ -34,8 +34,11 @@
 #include <scconfig.h>
 #endif
 
+#include <util/group/memproc.h>
+
 namespace sc {
-static ForceLink<ProcMessageGrp> group_force_link_;
+static ForceLink<ProcMessageGrp> group_force_link_0_;
+static ForceLink<ProcMemoryGrp> group_force_link_1_;
 }
 
 # ifdef HAVE_SYSV_IPC

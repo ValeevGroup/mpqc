@@ -2430,15 +2430,32 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
       threadgrp_->add_thread(i, threads[i]);
     }
 
+  //for (i=0; i<nthread; i++) {
+  //    ExEnv::out() << "Intial Thread " << i
+  //                 << ": point count = " << threads[i]->point_count()
+  //                 << " total density = " << threads[i]->total_density()
+  //                 << " value = " << threads[i]->value()
+  //                 << endl;
+  //}
+
   // run threads
   threadgrp_->start_threads();
   threadgrp_->wait_threads();
+  //for (i=0; i<nthread; i++) {
+  //    cout << "Running thread " << i << endl;
+  //    threads[i]->run();
+  //  }
 
   // sum results
   int point_count_total = 0;
   double total_density = 0.0;
   value_ = 0.0;
   for (i=0; i<nthread; i++) {
+      //ExEnv::out() << "Thread " << i
+      //             << ": point count = " << threads[i]->point_count()
+      //             << " total density = " << threads[i]->total_density()
+      //             << " value = " << threads[i]->value()
+      //             << endl;
       point_count_total += threads[i]->point_count();
       total_density += threads[i]->total_density();
       value_ += threads[i]->value();

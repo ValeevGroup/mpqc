@@ -479,6 +479,8 @@ HSOSKS::two_body_deriv(double * tbgrad)
   integrator_->done();
   //print_natom_3(dftgrad, "E-X contribution to DFT gradient");
 
+  scf_grp_->sum(dftgrad, natom3);
+
   for (int i=0; i<natom3; i++) tbgrad[i] += dftgrad[i] + hfgrad[i];
   delete[] dftgrad;
   delete[] hfgrad;

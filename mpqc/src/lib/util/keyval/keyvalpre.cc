@@ -65,50 +65,37 @@ keyval(kv)
   setup(prefix,0,0,0,0,0);
 }
 
-void PrefixKeyVal::setup(const char*prefix,int n_dim,int n1,int n2,int n3,int n4)
+void PrefixKeyVal::setup(const char*pref,int n_dim,int n1,int n2,int n3,int n4)
 {
-  char* prefix_ = strdup(prefix);
-  char* token;
-  int i;
-  for (i=0,token = strtok(prefix_," "); token; i++,token=strtok(0," "));
-  nprefix = i;
-  free(prefix_);
-  if (!nprefix) {
-      prefices = 0;
+  if (!pref) {
+      prefix = 0;
     }
   else {
-      prefix_ = strdup(prefix);
-      prefices = new char*[nprefix];
-      for (i=0,token = strtok(prefix_," "); token; i++,token=strtok(0," ")) {
-        char newtoken[MaxKeywordLength];
-        if (n_dim == 0) strcpy(newtoken,token);
-        else if (n_dim == 1) getnewkey(newtoken,token,n1);
-        else if (n_dim == 2) getnewkey(newtoken,token,n1,n2);
-        else if (n_dim == 3) getnewkey(newtoken,token,n1,n2,n3);
-        else if (n_dim == 4) getnewkey(newtoken,token,n1,n2,n3,n4);
-        prefices[i] = new char[strlen(newtoken)+1];
-        strcpy(prefices[i],newtoken);
-        }
-      free(prefix_);
+      char newtoken[MaxKeywordLength];
+      if (n_dim == 0) strcpy(newtoken,pref);
+      else if (n_dim == 1) getnewkey(newtoken,pref,n1);
+      else if (n_dim == 2) getnewkey(newtoken,pref,n1,n2);
+      else if (n_dim == 3) getnewkey(newtoken,pref,n1,n2,n3);
+      else if (n_dim == 4) getnewkey(newtoken,pref,n1,n2,n3,n4);
+      prefix = new char[strlen(newtoken)+1];
+      strcpy(prefix,newtoken);
     }
   return;
 }
 
 PrefixKeyVal::~PrefixKeyVal()
 {
-  for (int i=0; i<nprefix; i++) {
-      free(prefices[i]);
+  if (prefix) {
+      delete[] prefix;
+      prefix=0;
     }
-  delete[] prefices;
 }
 
 void PrefixKeyVal::errortrace(ostream&fp,int n)
 {
   offset(fp,n); fp << "PrefixKeyVal: error: \"" << errormsg() << "\"" << endl;
-  offset(fp,n); fp << "  prefixes:" << endl;
-  for (int i=0; i<nprefix; i++) {
-      offset(fp,n); fp << "    \"" << prefices[i] << "\"" << endl;
-    }
+  offset(fp,n); fp << "  prefix:" << endl;
+  offset(fp,n); fp << "    \"" << prefix << "\"" << endl;
   offset(fp,n); fp << "  keyval:" << endl;
   keyval->errortrace(fp,n + OffsetDelta);
 }
@@ -117,9 +104,7 @@ void PrefixKeyVal::dump(ostream&fp,int n)
 {
   offset(fp,n); fp << "PrefixKeyVal: error: \"" << errormsg() << "\"" << endl;
   offset(fp,n); fp << "  prefixes:" << endl;
-  for (int i=0; i<nprefix; i++) {
-      offset(fp,n); fp << "    \"" << prefices[i] << "\"" << endl;
-    }
+  offset(fp,n); fp << "    \"" << prefix << "\"" << endl;
   offset(fp,n); fp << "  keyval:" << endl;
   keyval->dump(fp,n + OffsetDelta);
 }
@@ -130,17 +115,14 @@ int PrefixKeyVal::getnewprefixkey(const char*key,char*newkey)
   int result=0;
 
   if (key[0] == ':') {
-    strcpy(newkey,key);
-    result = keyval->exists(key);
-    seterror(keyval->error());
+      strcpy(newkey,key);
+      result = keyval->exists(key);
+      seterror(keyval->error());
     }
   else {
-      for (i=0; i<nprefix; i++) {
-          sprintf(newkey,"%s:%s",prefices[i],key);
-          result = keyval->exists(newkey);
-          seterror(keyval->error());
-          if (error() != KeyVal::UnknownKeyword) break;
-        }
+      sprintf(newkey,"%s:%s",prefix,key);
+      result = keyval->exists(newkey);
+      seterror(keyval->error());
     }
   return result;
 }

@@ -384,8 +384,7 @@ class AggregateKeyVal : public KeyVal {
 
 class PrefixKeyVal : public KeyVal {
   private:
-    int nprefix;
-    char** prefices;
+    char* prefix;
     RefKeyVal keyval;
     void setup(const char*,int,int,int,int,int);
     int getnewprefixkey(const char*key,char*newkey);

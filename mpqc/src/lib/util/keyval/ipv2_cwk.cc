@@ -232,7 +232,8 @@ IPV2::ip_descend_tree(ip_keyword_tree_t* kt,const char* keyword)
     }
 
   r = kt;
-  IPV2StrTok tok(ch, ": \t");
+  //IPV2StrTok tok(ch, ": \t");
+  IPV2StrTok tok(ch, ":");
   token = tok.tok();
   while ((r != NULL) && (token != NULL)) {
     /* Transverse the circular list. */

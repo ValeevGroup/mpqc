@@ -5,7 +5,6 @@
 #include <comm/picl/ext/piclext.h>
 #include <math/dmt/libdmt.h>
 #include <math/array/math_lib.h>
-#include <util/bio/libbio.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 #include "scf.h"

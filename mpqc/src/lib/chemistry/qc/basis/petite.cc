@@ -146,9 +146,9 @@ PetiteList::init(const RefGaussianBasisSet &gb)
   for (i=0; i < _nshell; i++) {
     int leave=0;
 
-    // we want the highest numbered shell in a group of equivalent shells
+    // we want the lowest numbered shell in a group of equivalent shells
     for (int g=0; g < _ng; g++)
-      if (_shell_map[i][g] > i) {
+      if (_shell_map[i][g] < i) {
         leave=1;
         break;
       }
@@ -172,7 +172,7 @@ PetiteList::init(const RefGaussianBasisSet &gb)
         int gi = _shell_map[i][g];
         int gj = _shell_map[j][g];
         int gij = ioff(gi,gj);
-        if (gij > ij) {
+        if (gij < ij) {
           leave=1;
           break;
         }
@@ -221,6 +221,8 @@ PetiteList::init(const RefGaussianBasisSet &gb)
       t += ct[i][g]*red_rep[g];
 
     _nbf_in_ir[i] = ((int) (t+0.5))/_ng;
+    if (!ct.complex())
+      _nbf_in_ir[i] *= (int)(ct[i].degeneracy()+0.5);
   }
 
   delete[] red_rep;
@@ -261,6 +263,53 @@ PetiteList::r(int g)
     }
   }
   return ret;
+}
+
+void
+PetiteList::print(FILE *o)
+{
+  fprintf(o,"PetiteList:\n");
+  fprintf(o,"  _natom = %d\n",_natom);
+  fprintf(o,"  _nshell = %d\n",_nshell);
+  fprintf(o,"  _ng = %d\n",_ng);
+  fprintf(o,"  _nirrep = %d\n",_nirrep);
+
+  fprintf(o,"\n");
+  fprintf(o,"  _atom_map = \n");
+  int i;
+  for (i=0; i < _natom; i++) {
+    fprintf(o,"    ");
+    for (int g=0; g < _ng; g++)
+      fprintf(o,"%5d ",_atom_map[i][g]);
+    fprintf(o,"\n");
+  }
+
+  fprintf(o,"\n");
+  fprintf(o,"  _shell_map = \n");
+  for (i=0; i < _nshell; i++) {
+    fprintf(o,"    ");
+    for (int g=0; g < _ng; g++)
+      fprintf(o,"%5d ",_shell_map[i][g]);
+    fprintf(o,"\n");
+  }
+
+  fprintf(o,"\n");
+  fprintf(o,"  _p1 = \n");
+  for (i=0; i < _nshell; i++)
+    fprintf(o,"    %5d\n",_p1[i]);
+    
+  fprintf(o,"  _lamij = \n");
+  for (i=0; i < _nshell; i++) {
+    fprintf(o,"    ");
+    for (int j=0; j <= i; j++)
+      fprintf(o,"%5d ",_lamij[ioff(i)+j]);
+    fprintf(o,"\n");
+  }
+  
+  fprintf(o,"\n");
+  CharacterTable ct = _gbs->molecule()->point_group().char_table();
+  for (int i=0; i < _nirrep; i++)
+    fprintf(o,"  %5d functions of %s symmetry\n",_nbf_in_ir[i],ct[i].symbol());
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -312,6 +361,7 @@ PetiteList::aotoso()
   // create the character table for the point group
   CharacterTable ct = mol.point_group().char_table();
   SymmetryOperation so;
+  ct.print();
   
   double *red_rep = new double[_ng];
   int *ninir = new int[_nirrep];
@@ -402,22 +452,13 @@ PetiteList::aotoso()
           func_i += gbs(i,s).nfunction(c);
           func_j += gbs(i,s).nfunction(c);
         }
-
-#if 0
-        for (int ii=0; ii < lcg.numsh(); ii++) {
-          printf("%5d",lcg.bfnum(ii));
-          for (int jj=0; jj < lcg.numbf(); jj++)
-            printf(" %10.7f",lcg.coef(ii,jj));
-          printf("\n");
-        }
-#endif
       }
 
       // form the combinations
       double *blc = new double[gbs.nbasis()];
       
       for (int ir=0; ir < ct.nirrep(); ir++) {
-        printf("irrep %s\n",ct[ir].symbol());
+        //printf("irrep %s\n",ct[ir].symbol());
         
         for (int fn=0; fn < gbs(i,s).nfunction(); fn++) {
           memset(blc,0,sizeof(double)*gbs.nbasis());
@@ -437,13 +478,44 @@ PetiteList::aotoso()
             continue;
           
           c1 = 1.0/sqrt(c1);
-          for (int ii=0; ii < gbs.nbasis(); ii++) {
+          
+          for (int ii=0; ii < gbs.nbasis(); ii++)
             blc[ii] *= c1;
+
+          // check to see if we already have this SO (it happens sometimes,
+          // so sue me).
+          int break_this=0;
+          for (int jj=0;  jj < saoelem[ir]; jj++) {
+            double t=0;
+            for (int ii=0; ii < gbs.nbasis(); ii++)
+              t += blc[ii]*ret.get_element(ii,jj);
+            if (fabs(t) > .9) {
+              break_this=1;
+              break;
+            }
+          }
+
+          if (break_this)
+            break;
+
+          for (int ii=0; ii < gbs.nbasis(); ii++) {
             ret.set_element(ii,saoelem[ir],blc[ii]);
           }
           saoelem[ir]++;
           
-#if 1
+          // if this is a degenerate irrep and this shell is not centered at
+          // the origin, then look for the second component (T's are right
+          // out!).
+          if (neqs==1 || ct[ir].degeneracy() < 1.5)
+            continue;
+          
+          // find a symop which doesn't map i into itself
+          int g=0;
+          while (_atom_map[i][g]==i) g++;
+          int j=_atom_map[i][g];
+          
+          saoelem[ir]++;
+#if 0
           printf("  %d",lc[0]->bfnum(fn));
           for (int ii=0; ii < gbs.nbasis(); ii++)
             printf(" %10.7f",blc[ii]);
@@ -452,58 +524,18 @@ PetiteList::aotoso()
         }
       }
 
+      delete[] blc;
+      for (int g=0; g < _ng; g++)
+        delete lc[g];
+      delete lc;
     }
   }
 
+  delete[] red_rep;
+  delete[] ninir;
+  delete[] saoelem;
 
   return ret;
 }
     
 ////////////////////////////////////////////////////////////////////////////
-
-void
-PetiteList::print(FILE *o)
-{
-  fprintf(o,"PetiteList:\n");
-  fprintf(o,"  _natom = %d\n",_natom);
-  fprintf(o,"  _nshell = %d\n",_nshell);
-  fprintf(o,"  _ng = %d\n",_ng);
-  fprintf(o,"  _nirrep = %d\n",_nirrep);
-
-  fprintf(o,"\n");
-  fprintf(o,"  _atom_map = \n");
-  int i;
-  for (i=0; i < _natom; i++) {
-    fprintf(o,"    ");
-    for (int g=0; g < _ng; g++)
-      fprintf(o,"%5d ",_atom_map[i][g]);
-    fprintf(o,"\n");
-  }
-
-  fprintf(o,"\n");
-  fprintf(o,"  _shell_map = \n");
-  for (i=0; i < _nshell; i++) {
-    fprintf(o,"    ");
-    for (int g=0; g < _ng; g++)
-      fprintf(o,"%5d ",_shell_map[i][g]);
-    fprintf(o,"\n");
-  }
-
-  fprintf(o,"\n");
-  fprintf(o,"  _p1 = \n");
-  for (i=0; i < _nshell; i++)
-    fprintf(o,"    %5d\n",_p1[i]);
-    
-  fprintf(o,"  _lamij = \n");
-  for (i=0; i < _nshell; i++) {
-    fprintf(o,"    ");
-    for (int j=0; j <= i; j++)
-      fprintf(o,"%5d ",_lamij[ioff(i)+j]);
-    fprintf(o,"\n");
-  }
-  
-  fprintf(o,"\n");
-  CharacterTable ct = _gbs->molecule()->point_group().char_table();
-  for (int i=0; i < _nirrep; i++)
-    fprintf(o,"  %5d functions of %s symmetry\n",_nbf_in_ir[i],ct[i].symbol());
-}

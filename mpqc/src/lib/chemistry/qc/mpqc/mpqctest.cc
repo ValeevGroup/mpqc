@@ -72,13 +72,16 @@ main(int argc, char**argv)
     opt->set_checkpoint_file("mpqctest.ckpt");
   }
 
-  if (mole->gradient_implemented()) {
-      if (opt.nonnull()) {
-          //opt->print(o);
-          opt->optimize();
-        } else {
-            o << "opt is null\n";
-          }
+  if (mole.nonnull()) {
+      printf("mole->energy() = %15.7f\n", mole->energy());
+      if (mole->gradient_implemented()) {
+          if (opt.nonnull()) {
+              //opt->print(o);
+              opt->optimize();
+            } else {
+                o << "opt is null\n";
+              }
+        }
     }
 
   return 0;

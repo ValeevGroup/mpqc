@@ -6,89 +6,98 @@
 #pragma interface
 #endif
 
-#include <math/scmat/elemop.h>
-#include <math/scmat/block.h>
-#include <math/scmat/blkiter.h>
-#include <math/optimize/scextrap.h>
-#include <chemistry/qc/wfn/obwfn.h>
-#include <chemistry/qc/wfn/effh.h>
-
-#include <math/array/math_lib.h>
-#include <chemistry/qc/intv2/int_libv2.h>
+#include <chemistry/qc/scf/scf.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
-class TCSCF: public OneBodyWavefunction
-{
+class TCSCF: public SCF {
 #   define CLASSNAME TCSCF
 #   define HAVE_KEYVAL_CTOR
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
  protected:
-    RefSelfConsistentExtrapolation _extrap;
-    RefSCExtrapData _data;
-    RefSCExtrapError _error;
+    int user_occupations_;
+    int tndocc_;
+    int nirrep_;
+    int *ndocc_;
+    int osa_;
+    int osb_;
+    int local_;
 
-    RefAccumDIH _accumdih;
-    RefAccumDDH _accumddh;
-    RefAccumEffectiveH _accumeffh;
+    double occa_;
+    double occb_;
 
-    RefSymmSCMatrix _focka;
-    RefSymmSCMatrix _fockb;
-    RefSymmSCMatrix _ka;
-    RefSymmSCMatrix _kb;
-    RefDiagSCMatrix _fock_evals;
-    
-    int _ndocc;
+    double ci1_;
+    double ci2_;
 
-    double occa;
-    double occb;
-
-    double ci1;
-    double ci2;
-
-    int _density_reset_freq;
-
-    int _maxiter;
-    int _eliminate;
-
-    char *ckptdir;
-    char *fname;
-
-    // these are temporary data, so they should not be checkpointed
-    RefSymmSCMatrix _gr_dens;
-    RefSymmSCMatrix _gr_opa_dens;
-    RefSymmSCMatrix _gr_opb_dens;
-    RefSymmSCMatrix _gr_hcore;
-    RefSCMatrix _gr_vector;
-    
-    void init();
-    void compute();
-    void do_vector(double&,double&);
-    void form_ao_fock(centers_t *, double*, double&);
-    void do_gradient(const RefSCVector&);
+    ResultRefSymmSCMatrix focka_;
+    ResultRefSymmSCMatrix fockb_;
+    ResultRefSymmSCMatrix ka_;
+    ResultRefSymmSCMatrix kb_;
     
   public:
     TCSCF(StateIn&);
-    TCSCF(const TCSCF&);
     TCSCF(const RefKeyVal&);
-    TCSCF(const OneBodyWavefunction&);
     ~TCSCF();
 
-    TCSCF& operator=(const TCSCF&);
-    
     void save_data_state(StateOut&);
 
     void print(ostream&o=cout);
 
-    RefSCMatrix eigenvectors();
+    double occupation(int ir, int vectornum);
 
-    double occupation(int vectornum);
+    int n_fock_matrices() const;
+    RefSymmSCMatrix fock(int);
+    RefSymmSCMatrix effective_fock();
 
     int value_implemented();
     int gradient_implemented();
     int hessian_implemented();
+
+  protected:
+    // these are temporary data, so they should not be checkpointed
+    RefTwoBodyInt tbi_;
+
+    RefSymmSCMatrix cl_dens_;
+    RefSymmSCMatrix cl_dens_diff_;
+    RefSymmSCMatrix op_densa_;
+    RefSymmSCMatrix op_densa_diff_;
+    RefSymmSCMatrix op_densb_;
+    RefSymmSCMatrix op_densb_diff_;
+
+    RefSymmSCMatrix ao_gmata_;
+    RefSymmSCMatrix ao_gmatb_;
+    RefSymmSCMatrix ao_ka_;
+    RefSymmSCMatrix ao_kb_;
+    
+    RefSymmSCMatrix cl_hcore_;
+    
+    void set_occupations(const RefDiagSCMatrix& evals);
+
+    // scf things
+    void init_vector();
+    void done_vector();
+    void reset_density();
+    double new_density();
+    double scf_energy();
+
+    void ao_fock();
+
+    RefSCExtrapData extrap_data();
+    
+    // gradient things
+    void init_gradient();
+    void done_gradient();
+
+    RefSymmSCMatrix lagrangian();
+    RefSymmSCMatrix gradient_density();
+    void two_body_deriv(double*);
+
+    // hessian things
+
+    void init_hessian();
+    void done_hessian();
 };
 SavableState_REF_dec(TCSCF);
 

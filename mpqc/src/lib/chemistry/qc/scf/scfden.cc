@@ -155,9 +155,9 @@ LevelShift::process(SCMatrixBlockIter& i)
     
     double occi = scf_->occupation(ir,i.i());
     
-    if (occi==2.0)
+    if (occi==scf_->occupation(ir,0))
       i.set(i.get()-shift);
-    else if (occi==1.0)
+    else if (occi>0.0)
       i.set(i.get()-0.5*shift);
   }
 }

@@ -6,13 +6,14 @@
 % can be CLSCF, HSOSSCF, OSSSCF, TCSCF, XSCF, MCSCF
 %
 
-mole<CLSCF>: (
+mole<TCSCF>: (
+  level_shift=0.0
   root = 2
   integral_storage=32000000
 
   % Function
   value_accuracy = 1e-9
-  gradient_accuracy = 1e-7
+  gradient_accuracy = 1e-12
 
   % MolecularEnergy input
   molecule = $:molecule
@@ -35,16 +36,17 @@ mole<CLSCF>: (
   )
 )
 
-molecule = $:water
+molecule = $:ch2
 
 coor = $:symcoor
 
 xopt<QNewtonOpt>: (
   convergence = 1.0e-6
-  max_iterations = 2
+  max_iterations = 20
   function = $:mole
   transition_state=no
   update<BFGSUpdate>:()
+  matrixkit = $:matrixkit
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -55,9 +57,9 @@ xopt<QNewtonOpt>: (
 gbasis<GaussianBasisSet>: (
   molecule = $:molecule
   %name = "6-311G**"
-  name = "6-31G*"
+  %name = "6-31G*"
   %name = "6-31G"
-  %name = "STO-3G"
+  name = "STO-3G"
   %name = "aug-cc-pVTZ"
   %puream=yes
   matrixkit = $:matrixkit
@@ -67,7 +69,7 @@ gbasis<GaussianBasisSet>: (
 %
 % matrix kits
 %
-matrixkit = $:replmatrixkit
+matrixkit = $:localmatrixkit
 
 localmatrixkit<LocalSCMatrixKit>: (
   messagegrp = $:message

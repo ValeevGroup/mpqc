@@ -31,6 +31,7 @@
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/hsosscf.h>
 #include <chemistry/qc/scf/ossscf.h>
+#include <chemistry/qc/scf/tcscf.h>
 
 #include <math/scmat/repl.h>
 #include <math/scmat/dist.h>
@@ -40,15 +41,20 @@
 const ClassDesc &fl0a = CLSCF::class_desc_;
 const ClassDesc &fl0b = HSOSSCF::class_desc_;
 const ClassDesc &fl0c = OSSSCF::class_desc_;
+const ClassDesc &fl0d = TCSCF::class_desc_;
+
 const ClassDesc &fl1a = RedundMolecularCoor::class_desc_;
 const ClassDesc &fl1b = CartMolecularCoor::class_desc_;
 const ClassDesc &fl1c = SymmMolecularCoor::class_desc_;
+
 const ClassDesc &fl2 = QNewtonOpt::class_desc_;
 const ClassDesc &fl3 = GDIISOpt::class_desc_;
 const ClassDesc &fl4 = EFCOpt::class_desc_;
 const ClassDesc &fl5 = BFGSUpdate::class_desc_;
+
 const ClassDesc &fl6 = ReplSCMatrixKit::class_desc_;
 const ClassDesc &fl7 = DistSCMatrixKit::class_desc_;
+
 # ifdef HAVE_SYSV_IPC
 #   include <util/group/messshm.h>
     const ClassDesc &fl8 = ShmMessageGrp::class_desc_;

@@ -15,23 +15,14 @@ class Rotation {
     int _am;
     double **r;
     
-    void done() {
-      if (r) {
-        for (int i=0; i < _n; i++) {
-          if (r[i]) delete[] r[i];
-        }
-        delete[] r;
-        r=0;
-      }
-      _n=0;
-    }
+    void done();
 
   public:
-    inline void init(int a, SymmetryOperation&so);
+    void init(int a, SymmetryOperation&so);
     void init_pure(int a, SymmetryOperation&so);
     
     Rotation(int a, SymmetryOperation& so, int pure = 0);
-    ~Rotation() { done(); }
+    ~Rotation();
 
     int am() const { return _am; }
     int dim() const { return _n; }
@@ -41,66 +32,8 @@ class Rotation {
     
     void print() const;
     
-    inline double trace() const {
-      double t=0;
-      for (int i=0; i < _n; i++)
-        t += r[i][i];
-      return t;
-    }
+    double trace() const;
 };
 
-
-// Compute the transformation matrices for general cartesian shells
-// using the P (xyz) transformation matrix.  This is done as a
-// matrix outer product, keeping only the unique terms.
-// Written by clj...blame him
-inline void
-Rotation::init(int a, SymmetryOperation&so)
-{
-  done();
-
-  _am=a;
-  
-  CartesianIter I(_am);
-  RedundantCartesianIter J(_am);
-  int lI[3];
-  int k, iI;
-  
-  _n = I.n();
-  r = new double*[_n];
-
-  for (I.start(); I; I.next()) {
-    r[I.bfn()] = new double[_n];
-    memset(r[I.bfn()],0,sizeof(double)*_n);
-
-    for (J.start(); J; J.next()) {
-      double tmp = 1.0;
-
-      for (k=0; k < 3; k++) {
-        lI[k] = I.l(k);
-      }
-      
-      for (k=0; k < _am; k++) {
-        for (iI=0; lI[iI]==0; iI++);
-        lI[iI]--;
-        tmp *= so(iI,J.axis(k));
-      }
-
-      r[I.bfn()][J.bfn()] += tmp;
-    }
-  }
-}
-
-inline void
-Rotation::print() const
-{
-  for (int i=0; i < _n; i++) {
-    printf("%5d ",i+1);
-    for (int j=0; j < _n; j++) {
-      printf(" %10.7f",r[i][j]);
-    }
-    printf("\n");
-  }
-}
 
 #endif

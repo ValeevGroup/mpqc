@@ -6,13 +6,73 @@
 #include <chemistry/qc/intv2/transform.h>
 #include <chemistry/qc/basis/rot.h>
 
+void
+Rotation::done() {
+  if (r) {
+    for (int i=0; i < _n; i++) {
+      if (r[i]) delete[] r[i];
+    }
+    delete[] r;
+    r=0;
+  }
+  _n=0;
+}
+
 Rotation::Rotation(int a, SymmetryOperation& so, int pure):
   _am(0),
   _n(0),
   r(0)
 {
-  if (pure) init_pure(a,so);
-  else init(a,so);
+  if (pure)
+    init_pure(a,so);
+  else
+    init(a,so);
+}
+
+Rotation::~Rotation()
+{
+  done();
+}
+
+// Compute the transformation matrices for general cartesian shells
+// using the P (xyz) transformation matrix.  This is done as a
+// matrix outer product, keeping only the unique terms.
+// Written by clj...blame him
+void
+Rotation::init(int a, SymmetryOperation&so)
+{
+  done();
+
+  _am=a;
+  
+  CartesianIter I(_am);
+  RedundantCartesianIter J(_am);
+  int lI[3];
+  int k, iI;
+  
+  _n = I.n();
+  r = new double*[_n];
+
+  for (I.start(); I; I.next()) {
+    r[I.bfn()] = new double[_n];
+    memset(r[I.bfn()],0,sizeof(double)*_n);
+
+    for (J.start(); J; J.next()) {
+      double tmp = 1.0;
+
+      for (k=0; k < 3; k++) {
+        lI[k] = I.l(k);
+      }
+      
+      for (k=0; k < _am; k++) {
+        for (iI=0; lI[iI]==0; iI++);
+        lI[iI]--;
+        tmp *= so(iI,J.axis(k));
+      }
+
+      r[I.bfn()][J.bfn()] += tmp;
+    }
+  }
 }
 
 // Compute the transformation matrices for general pure am
@@ -86,4 +146,24 @@ Rotation::init_pure(int a, SymmetryOperation&so)
           r[I.bfn()][J.bfn()] += tmp;
         }
     }
+}
+
+double
+Rotation::trace() const {
+  double t=0;
+  for (int i=0; i < _n; i++)
+    t += r[i][i];
+  return t;
+}
+
+void
+Rotation::print() const
+{
+  for (int i=0; i < _n; i++) {
+    printf("%5d ",i+1);
+    for (int j=0; j < _n; j++) {
+      printf(" %10.7f",r[i][j]);
+    }
+    printf("\n");
+  }
 }

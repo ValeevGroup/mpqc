@@ -572,13 +572,14 @@ sub outfile {
 
     my $out;
     if ($uniqout) {
-        $out = "$in";
-        $out =~ s/\.[^.]*$//;
-        $out = sprintf "%s.out.%03d.%02d", "$out", $nprocperjob, $nthreadperproc;
+        my $outbase = "$in";
+        $outbase =~ s/\.[^.]*$//;
+        $out = sprintf "%s.out.%03d.%02d", "$outbase", $nprocperjob, $nthreadperproc;
         my $outversion = 1;
         while (-f "$out") {
             $outversion++;
-            $out = sprintf "%s.out.%03d.%02d", "$out", $nprocperjob, $nthreadperproc;
+            $out = sprintf "%s.out.%03d.%02d.%02d", "$outbase", $nprocperjob, $nthreadperproc,
+                   $outversion;
         }
     }
     elsif ($autoout) {

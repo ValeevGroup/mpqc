@@ -122,6 +122,7 @@ class RefSCVector: public Ref<SCVector> {
     void print(const char*title=0,
                std::ostream&out=ExEnv::out0(), int precision=10) const;
     void save(StateOut&);
+    /// Restores the matrix from StateIn object. The vector must have been initialized already.
     void restore(StateIn&);
 };
 RefSCVector operator*(double,const RefSCVector&);
@@ -226,6 +227,7 @@ class RefSCMatrix: public Ref<SCMatrix> {
                std::ostream&out=ExEnv::out0(), int =10) const;
     double trace() const;
     void save(StateOut&);
+    /// Restores the matrix from StateIn object. The matrix must have been initialized already.
     void restore(StateIn&);
 
     /** Compute the singular value decomposition,  this = U sigma V.t().
@@ -343,6 +345,7 @@ class RefSymmSCMatrix: public Ref<SymmSCMatrix> {
     void print(const char*title=0,
                std::ostream&out=ExEnv::out0(), int =10) const;
     void save(StateOut&);
+    /// Restores the matrix from StateIn object. The matrix must have been initialized already.
     void restore(StateIn&);
 
     /** Solves this x = v.  Overwrites v with x. */
@@ -432,6 +435,7 @@ class RefDiagSCMatrix: public Ref<DiagSCMatrix> {
     void print(const char*title=0,
                std::ostream&out=ExEnv::out0(), int =10) const;
     void save(StateOut&);
+    /// Restores the matrix from StateIn object. The matrix must have been initialized already.
     void restore(StateIn&);
     /// Returns the determinant of the referenced matrix.
     double determ() const;

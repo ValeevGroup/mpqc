@@ -781,7 +781,7 @@ IntMolecularCoor::all_to_cartesian(const RefMolecule &mol,
       if (debug_) {
           ExEnv::out() << node0
                << indent << "Coordinates on step " << step << ":" << endl;
-          variable_->print();
+          variable_->print_details(0,ExEnv::out());
         }
 
       // the displacements

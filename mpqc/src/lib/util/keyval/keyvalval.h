@@ -31,6 +31,8 @@
 #pragma interface
 #endif
 
+#include <string>
+
 #include <util/class/class.h>
 
 namespace sc {
@@ -50,6 +52,7 @@ class KeyValValue: public RefCount {
     virtual KeyValValue::KeyValValueError intvalue(int&) const;
     virtual KeyValValue::KeyValValueError sizevalue(size_t&) const;
     virtual KeyValValue::KeyValValueError pcharvalue(const char*&) const;
+    virtual KeyValValue::KeyValValueError stringvalue(std::string&) const;
     virtual KeyValValue::KeyValValueError describedclassvalue(Ref<DescribedClass>&) const;
     virtual void print(std::ostream &o=ExEnv::out0()) const;
 };
@@ -138,6 +141,20 @@ class KeyValValuepchar: public KeyValValue {
     KeyValValuepchar(const KeyValValuepchar&);
     ~KeyValValuepchar();
     KeyValValue::KeyValValueError pcharvalue(const char*&) const;
+    KeyValValue::KeyValValueError stringvalue(std::string&) const;
+    void print(std::ostream &o=ExEnv::out0()) const;
+};
+
+class KeyValValuestring: public KeyValValue {
+  private:
+    std::string _val;
+  public:
+    KeyValValuestring() {}
+    KeyValValuestring(const std::string&);
+    KeyValValuestring(const KeyValValuestring&);
+    ~KeyValValuestring();
+    KeyValValue::KeyValValueError pcharvalue(const char*&) const;
+    KeyValValue::KeyValValueError stringvalue(std::string&) const;
     void print(std::ostream &o=ExEnv::out0()) const;
 };
 
@@ -176,6 +193,7 @@ class KeyValValueString: public KeyValValue {
     KeyValValue::KeyValValueError intvalue(int&) const;
     KeyValValue::KeyValValueError sizevalue(size_t&) const;
     KeyValValue::KeyValValueError pcharvalue(const char*&) const;
+    KeyValValue::KeyValValueError stringvalue(std::string&) const;
     void print(std::ostream &o=ExEnv::out0()) const;
 };
 

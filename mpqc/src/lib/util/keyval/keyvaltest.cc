@@ -232,6 +232,16 @@ main()
       cout << "memory:" << i << " = " << pkv->sizevalue("memory",i) << endl;
     }
 
+  show( pkv->exists(":s1") );  show( pkv->errormsg() ); cout << '\n';
+  show( pkv->exists(":s2") );  show( pkv->errormsg() ); cout << '\n';
+  show( pkv->stringvalue(":s1") );  show( pkv->errormsg() ); cout << '\n';
+  show( pkv->stringvalue(":s2") );  show( pkv->errormsg() ); cout << '\n';
+  char *tmp;
+  show( tmp=pkv->pcharvalue(":s1") );  show( pkv->errormsg() ); cout << '\n';
+  delete[] tmp;
+  show( tmp=pkv->pcharvalue(":s2") );  show( pkv->errormsg() ); cout << '\n';
+  delete[] tmp;
+
   show( pkv->exists(":x") );  show( pkv->errormsg() ); cout << '\n';
   show( pkv->exists(":z") );  show (pkv->errormsg() ); cout << '\n';
   show( pkv->intvalue(":y") );  show( pkv->errormsg() ); cout << '\n';

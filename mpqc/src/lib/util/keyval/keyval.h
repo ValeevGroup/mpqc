@@ -32,6 +32,8 @@
 #endif
 
 #include <iostream>
+#include <string>
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -132,6 +134,9 @@ class KeyVal: public RefCount {
     virtual size_t key_sizevalue(const char* key,const KeyValValue& def);
     /// Ultimately called by pcharvalue.
     virtual char*  key_pcharvalue(const char* key,const KeyValValue& def);
+    /// Ultimately called by stringvalue.
+    virtual std::string key_stringvalue(const char* key,
+                                        const KeyValValue& def);
     /// Ultimately called by describedclassvalue.
     virtual Ref<DescribedClass> key_describedclassvalue(const char* key,
                                                       const KeyValValue& def);
@@ -176,6 +181,9 @@ class KeyVal: public RefCount {
         value. Storage for the copy is obtained with new. */
     char*  pcharvalue(const char* key = 0,
                       const KeyValValue& def=KeyValValuepchar());
+    /** Returns a string representation of the key's value. */
+    std::string stringvalue(const char* key = 0,
+                            const KeyValValue& def=KeyValValuestring());
     /// Returns a reference to an object of type DescribedClass.
     Ref<DescribedClass> describedclassvalue(const char* key = 0,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
@@ -197,6 +205,8 @@ class KeyVal: public RefCount {
                      const KeyValValue& def=KeyValValuesize());
     char*  pcharvalue(const char* key,int,
                       const KeyValValue& def=KeyValValuepchar());
+    std::string stringvalue(const char* key,int,
+                            const KeyValValue& def=KeyValValuestring());
     Ref<DescribedClass> describedclassvalue(const char* key,int,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
 
@@ -216,6 +226,8 @@ class KeyVal: public RefCount {
                      const KeyValValue& def=KeyValValuesize());
     char*  pcharvalue(int i,
                       const KeyValValue& def=KeyValValuepchar());
+    std::string stringvalue(int i,
+                            const KeyValValue& def=KeyValValuestring());
     Ref<DescribedClass> describedclassvalue(int i,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
 
@@ -236,6 +248,8 @@ class KeyVal: public RefCount {
                      const KeyValValue& def=KeyValValuesize());
     char*  pcharvalue(const char* key,int,int,
                       const KeyValValue& def=KeyValValuepchar());
+    std::string stringvalue(const char* key,int,int,
+                            const KeyValValue& def=KeyValValuestring());
     Ref<DescribedClass> describedclassvalue(const char* key,int,int,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
 
@@ -255,6 +269,8 @@ class KeyVal: public RefCount {
                      const KeyValValue& def=KeyValValuesize());
     char*  pcharvalue(int i,int j,
                       const KeyValValue& def=KeyValValuepchar());
+    std::string stringvalue(int i,int j,
+                            const KeyValValue& def=KeyValValuestring());
     Ref<DescribedClass> describedclassvalue(int i,int j,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
 
@@ -268,6 +284,7 @@ class KeyVal: public RefCount {
     int    Va_intvalue(const char* key,int,...);
     size_t Va_sizevalue(const char* key,int,...);
     char*  Va_pcharvalue(const char* key,int,...);
+    std::string Va_stringvalue(const char* key,int,...);
     Ref<DescribedClass> Va_describedclassvalue(const char* key,int,...);
 
     /// Return the current error condition.

@@ -105,6 +105,14 @@ KeyValValue::pcharvalue(const char*& val) const
 }
 
 KeyValValue::KeyValValueError
+KeyValValue::stringvalue(std::string& val) const
+{
+  KeyValValuestring def;
+  def.stringvalue(val);
+  return KeyValValue::WrongType;
+}
+
+KeyValValue::KeyValValueError
 KeyValValue::describedclassvalue(Ref<DescribedClass>& val) const
 {
   KeyValValueRefDescribedClass def;
@@ -283,11 +291,49 @@ KeyValValuepchar::pcharvalue(const char*&val) const
   val = _val;
   return KeyValValue::OK;
 }
+KeyValValue::KeyValValueError
+KeyValValuepchar::stringvalue(std::string&val) const
+{
+  val = _val;
+  return KeyValValue::OK;
+}
 
 void
 KeyValValuepchar::print(ostream&o) const
 {
-  o << (_val?_val:"(null)");
+  o << _val;
+}
+
+/////////////////////////////////////////////////////////////////////////
+
+KeyValValuestring::KeyValValuestring(const std::string &val):
+  _val(val)
+{
+}
+KeyValValuestring::KeyValValuestring(const KeyValValuestring&val):
+  _val(val._val)
+{
+}
+KeyValValuestring::~KeyValValuestring()
+{
+}
+KeyValValue::KeyValValueError
+KeyValValuestring::pcharvalue(const char*&val) const
+{
+  val = _val.c_str();
+  return KeyValValue::OK;
+}
+KeyValValue::KeyValValueError
+KeyValValuestring::stringvalue(std::string&val) const
+{
+  val = _val;
+  return KeyValValue::OK;
+}
+
+void
+KeyValValuestring::print(ostream&o) const
+{
+  o << _val;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -475,6 +521,12 @@ KeyValValueString::sizevalue(size_t&val) const
 }
 KeyValValue::KeyValValueError
 KeyValValueString::pcharvalue(const char*&val) const
+{
+  val = _val;
+  return KeyValValue::OK;
+}
+KeyValValue::KeyValValueError
+KeyValValueString::stringvalue(std::string&val) const
 {
   val = _val;
   return KeyValValue::OK;

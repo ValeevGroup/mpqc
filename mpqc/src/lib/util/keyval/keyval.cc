@@ -178,6 +178,20 @@ KeyVal::key_pcharvalue(const char* key, const KeyValValue& def)
   if (result) return strcpy(new char[strlen(result)+1], result);
   else return 0;
 }
+std::string
+KeyVal::key_stringvalue(const char* key, const KeyValValue& def)
+{
+  Ref<KeyValValue> val(key_value(key,def));
+  std::string result;
+  if (val.nonnull()) {
+      seterror(val->stringvalue(result));
+    }
+  else {
+      KeyValValue::KeyValValueError err = def.stringvalue(result);
+      if (error() == OK) seterror(err);
+    }
+  return result;
+}
 Ref<DescribedClass>
 KeyVal::key_describedclassvalue(const char* key, const KeyValValue& def)
 {
@@ -243,6 +257,11 @@ char*
 KeyVal::pcharvalue(const char*key,const KeyValValue& def)
 {
   return key_pcharvalue(key,def);
+}
+std::string
+KeyVal::stringvalue(const char*key,const KeyValValue& def)
+{
+  return key_stringvalue(key,def);
 }
 Ref<DescribedClass>
 KeyVal::describedclassvalue(const char*key,const KeyValValue& def)
@@ -329,6 +348,12 @@ char* KeyVal::pcharvalue(const char* key,int n1,const KeyValValue& def)
   getnewkey(newkey,key,n1);
   return key_pcharvalue(newkey,def);
   }
+std::string KeyVal::stringvalue(const char* key,int n1,const KeyValValue& def)
+  {
+  char newkey[MaxKeywordLength];
+  getnewkey(newkey,key,n1);
+  return key_stringvalue(newkey,def);
+  }
 Ref<DescribedClass> KeyVal::describedclassvalue(const char* key,int n1,
                                               const KeyValValue& def)
   {
@@ -398,6 +423,13 @@ char* KeyVal::pcharvalue(const char* key,int n1,int n2,
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1,n2);
   return key_pcharvalue(newkey,def);
+  }
+std::string KeyVal::stringvalue(const char* key,int n1,int n2,
+                                const KeyValValue& def)
+  {
+  char newkey[MaxKeywordLength];
+  getnewkey(newkey,key,n1,n2);
+  return key_stringvalue(newkey,def);
   }
 Ref<DescribedClass> KeyVal::describedclassvalue(const char* key,int n1,int n2,
                                               const KeyValValue& def)
@@ -484,6 +516,13 @@ char* KeyVal::Va_pcharvalue(const char* key,int narg,...)
   char newkey[MaxKeywordLength];
   getnewvakey(newkey,key,narg);
   return key_pcharvalue(newkey,KeyValValuepchar());
+  }
+std::string KeyVal::Va_stringvalue(const char* key,int narg,...)
+  {
+  va_list args;
+  char newkey[MaxKeywordLength];
+  getnewvakey(newkey,key,narg);
+  return key_stringvalue(newkey,KeyValValuestring());
   }
 Ref<DescribedClass> KeyVal::Va_describedclassvalue(const char* key,int narg,...)
   {
@@ -590,6 +629,12 @@ KeyVal::pcharvalue(int i,const KeyValValue& def)
   return pcharvalue((const char*)0,i,def);
 }
 
+std::string
+KeyVal::stringvalue(int i,const KeyValValue& def)
+{
+  return stringvalue((const char*)0,i,def);
+}
+
 Ref<DescribedClass>
 KeyVal::describedclassvalue(int i,const KeyValValue& def)
 {
@@ -648,6 +693,12 @@ char*
 KeyVal::pcharvalue(int i,int j,const KeyValValue& def)
 {
   return pcharvalue((const char*)0,i,j,def);
+}
+
+std::string
+KeyVal::stringvalue(int i,int j,const KeyValValue& def)
+{
+  return stringvalue((const char*)0,i,j,def);
 }
 
 Ref<DescribedClass>

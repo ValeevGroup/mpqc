@@ -22,76 +22,85 @@ is documented in \ref keyval.  It is basically a free
 format input that associates keywords and logical groupings of keywords
 with values.  The values can be scalars, arrays, or objects.
 
-The keywords recognized by MPQC begin with the mpqc prefix.
-That is, they must be nested between an <tt>mpqc:(</tt> and a <tt>)</tt>.
-Alternately, each keyword can be individually prefixed by <tt>mpqc:</tt>.
-If they are not found with the mpqc prefix, the prefix
-<tt>default</tt> will also be considered.  The primary keywords are given
-below.  Some of the keywords specify objects, in which
-case the object will require more ParsedKeyVal input.  These objects
-are created from the input by using their ParsedKeyVal constructors.
-These constructors are documented with the source code documentation
-for the class.
+The keywords recognized by MPQC begin with the mpqc prefix.  That is, they
+must be nested between an <tt>mpqc:(</tt> and a <tt>)</tt>.  Alternately,
+each keyword can be individually prefixed by <tt>mpqc:</tt>.  The primary
+keywords are given below.  Some of the keywords specify objects, in which
+case the object will require more ParsedKeyVal input.  These objects are
+created from the input by using their ParsedKeyVal constructors.  These
+constructors are documented with the source code documentation for the
+class.
 
 <dl>
-<dt><tt>mole</tt><dd> This is the most important keyword for mpqc.
-        It specifies the MolecularEnergy
-        object.  This is an object that knows how to
-        compute the energy of a molecule.  The specializations of
-        MolecularEnergy that are most commonly used here are
-        CLHF, HSOSHF, and MBPT2.
+
+<dt><tt>mole</tt><dd> This is the most important keyword for MPQC.  It
+        specifies the MolecularEnergy object.  This is an object that knows
+        how to compute the energy of a molecule.  The specializations of
+        MolecularEnergy that are most commonly used are CLKS, HSOSKS, UKS,
+        CLHF, HSOSHF, UHF, and MBPT2.
+
 <dt><tt>opt</tt><dd> This keyword must be specified for optimizations.  It
-        specifies an Optimize object.
-        Usually, QNewtonOpt is best for finding minima and
-        EFCOpt is best for transition states.
-<dt><tt>freq</tt><dd> This keyword must be specified to compute frequencies.
-        It specifies an MolecularFrequencies
-        object.
-<dt><tt>thread</tt><dd> This specifies an object of type
-        ThreadGrp that can be used to advantage on shared-memory
-        multiprocessor machines for certain types of calculations.  This
-        keyword can be overridden by giving the ThreadGrp in the
-        environment or command line.  See
-        the section on running MPQC
-        for more information.
+        specifies an Optimize object.  Usually, QNewtonOpt is best for
+        finding minima and EFCOpt is best for transition states.
+
+<dt><tt>freq</tt><dd> This keyword must be specified to compute
+        frequencies.  It specifies a MolecularFrequencies object.
+
+<dt><tt>thread</tt><dd> This specifies an object of type ThreadGrp that can
+        be used to advantage on shared-memory multiprocessor machines for
+        certain types of calculations.  This keyword can be overridden by
+        giving the ThreadGrp in the environment or command line.  See the
+        section on running MPQC for more information.
+
 <dt><tt>checkpoint</tt><dd> The value of this keyword is boolean.  If true,
-        then optimizations will be checkpointed after each iteraction.  The
-        default is to checkpoint.
+        then optimizations will be checkpointed after each iteration.  The
+        checkpoint file suffice is <tt>.ckpt</tt>.  The default is to
+        checkpoint.
+
 <dt><tt>savestate</tt><dd> The value of this keyword is boolean.  If true,
         then the states of the optimizer and wavefunction objects will be
-        saved after the calculation completes.  The default is to save
-        state.
-<dt><tt>restart</tt><dd> The value of this keyword is boolean.  If true
-        mpqc will attempt to restart the calculation.  If the
-        checkpoint file is not found, the calculation will continue as if
-        the value were false. The default is true.
+        saved after the calculation completes.  The output file suffix is
+        <tt>.wfn</tt>.  The default is to save state.
+
+<dt><tt>restart</tt><dd> The value of this keyword is boolean.  If true,
+        mpqc will attempt to restart the calculation.  If the checkpoint
+        file is not found, the calculation will continue as if the value
+        were false. The default is true.
+
 <dt><tt>restart_file</tt><dd> This gives the name of a file from which
         restart information is read.  If the file name ends in
-        <tt>.wfn</tt> the mole object will be restored.  Otherwise,
-        the opt object will be restored.  The default file name
-        is formed by appending <tt>.ckpt</tt> to the input file name
+        <tt>.wfn</tt> the MolecularEnergy object will be restored.
+        Otherwise, the Optimize object will be restored.  The default file
+        name is formed by appending <tt>.ckpt</tt> to the input file name
         with the extension removed.
-<dt><tt>do_energy</tt><dd> The value of this keyword is boolean.  If
-        true a single point energy calculation will be done for the
-        MolecularEnergy object given with the mole
-        keyword.  The default is true.
-<dt><tt>do_gradient</tt><dd> The value of this keyword is boolean.  If
-        true a single point gradient calculation will be done for the
-        MolecularEnergy object given with the mole
-        keyword.  The default is false.
-<dt><tt>optimize</tt><dd> The value of this keyword is boolean.  If
-        true and the opt keyword was set to a valid value,
-        then an optimization will be performed.  The default is true.
-<dt><tt>write_pdb</tt><dd> The value of this keyword is boolean.  If
-        true a PDB file with the molecular coordinates will be written.
-<dt><tt>filename</tt><dd> The value of this keyword is a string that
-        gives a name from which checkpoint and other filenames are
-        constructed.  The default is the basename of the input file.
-<dt><tt>print_timings</tt><dd> If this is true, timing information
-        is printed at the end of the run.  The default is true.
+
+<dt><tt>do_energy</tt><dd> The value of this keyword is boolean.  If true a
+        single point energy calculation will be done for the
+        MolecularEnergy object given with the mole keyword.  The default is
+        true.
+
+<dt><tt>do_gradient</tt><dd> The value of this keyword is boolean.  If true
+        a single point gradient calculation will be done for the
+        MolecularEnergy object given with the mole keyword.  The default is
+        false.
+
+<dt><tt>optimize</tt><dd> The value of this keyword is boolean.  If true
+        and the opt keyword was set to a valid value, then an optimization
+        will be performed.  The default is true.
+
+<dt><tt>write_pdb</tt><dd> The value of this keyword is boolean.  If true a
+        PDB file with the molecular coordinates will be written.
+
+<dt><tt>filename</tt><dd> The value of this keyword is a string that gives
+        a name from which checkpoint and other filenames are constructed.
+        The default is the basename of the input file.
+
+<dt><tt>print_timings</tt><dd> If this is true, timing information is
+        printed at the end of the run.  The default is true.
+
 </dl>
 
-There also some utility keywords that tell mpqc some technical
+There are also some utility keywords that tell mpqc some technical
 details about how to do the calculation:
 <dl>
 <dt><tt>debug</tt><dd> This optional keyword gives a Debugger
@@ -134,28 +143,27 @@ mpqc: (
 )
 </pre>
 
-We start with a descriptive comment.  Comments begin
-with a <tt>%</tt>.  Everything beginning with the <tt>%</tt> to the end
-of the line are ignored.
+We start with a descriptive comment.  Comments begin with a <tt>%</tt>.
+Everything from the <tt>%</tt> to the end of the line is ignored.
 
 <pre>
 % This input does a Hartree-Fock calculation on water.
 </pre>
 
-Now lets set up a Molecule object.  The name of the object comes
-first, it is <tt>molecule</tt>.  Then in angle brackets comes the type of the
-molecule, which is the class Molecule.  The completed keyword is
-followed by a <tt>:</tt> and then several pieces of input grouped between a pair
-of matching parentheses.  These parentheses contain the information that
-will be given to Molecule KeyVal constructor.
+Now lets set up a Molecule object.  The name of the object comes first, it
+is <tt>molecule</tt>.  Then, in angle brackets, comes the type of the
+molecule, which is the class Molecule.  The keyword and class name are
+followed by a <tt>:</tt> and then several pieces of input grouped between a
+pair of matching parentheses.  These parentheses contain the information
+that will be given to Molecule KeyVal constructor.
 
 <pre>
 molecule<Molecule>: (
 </pre>
 
-The point group of the molecule is needed.  This is done by
-assigning <tt>symmetry</tt> to a case insensitive Schoenflies symbol
-that is used to initialize a PointGroup object.
+The point group of the molecule is needed.  This is done by assigning
+<tt>symmetry</tt> to a case insensitive Schoenflies symbol that is used to
+initialize a PointGroup object.  An Abelian point group should be used.
 
 <pre>
   symmetry = C2V
@@ -205,14 +213,14 @@ keywords will be grouped in the <tt>mpqc</tt> section of the input
 mpqc: (
 </pre>
 
-Next we create specify the <tt>mole</tt> keyword which specifies a specialization
-of the MolecularEnergy class.  In this case we will do a Hartree-Fock
-calculation.  That is done with an object of type CLHF.  The keywords
-that CLHF accepts are given with the documentation for the CLHF
-class, usually in the description of the <tt>const RefKeyVal&</tt> constructor for
-the class.  Also with the CLHF documentation is a list of parent
-classes.  Each of the parent classes may also have input.  This input is
-included with the rest of the input for the child class.
+Next we give the <tt>mole</tt> keyword which provides a specialization of
+the MolecularEnergy class.  In this case we will do a closed-shell
+Hartree-Fock calculation.  That is done with an object of type CLHF.  The
+keywords that CLHF accepts are given with the documentation for the CLHF
+class, usually in the description of the <tt>const RefKeyVal&</tt>
+constructor for the class.  Also with the CLHF documentation is a list of
+parent classes.  Each of the parent classes may also have input.  This
+input is included with the rest of the input for the child class.
 
 <pre>
   mole<CLHF>: (
@@ -348,7 +356,7 @@ mpqc: (
 \subsection mpqcoosamphfopt Hartree-Fock Optimization
 
 The following input will optimize the geometry of water using
-the quasi-newton method.
+the quasi-Newton method.
 
 <pre>
 % emacs should use -*- KeyVal -*- mode
@@ -399,7 +407,7 @@ mpqc: (
 \subsection mpqcoosamphessopt Optimization with a Computed Guess Hessian
 
 The following input will optimize the geometry of water using
-the quasi-newton method.  The guess hessian will be computed
+the quasi-Newton method.  The guess Hessian will be computed
 at a lower level of theory.
 
 <pre>
@@ -465,9 +473,9 @@ mpqc: (
 \subsection mpqcoosampoptnewt Optimization Using Newton's Method
 
 The following input will optimize the geometry of water using the Newton's
-method.  The hessian will be computed at each step in the optimization.
-However, hessian recomputation is usually not worth the cost; try using the
-computed hessian as a guess hessian for a quasi-Newton method before
+method.  The Hessian will be computed at each step in the optimization.
+However, Hessian recomputation is usually not worth the cost; try using the
+computed Hessian as a guess Hessian for a quasi-Newton method before
 resorting to a Newton optimization.
 
 <pre>
@@ -578,10 +586,10 @@ mpqc: (
 
 The following example shows several features that are really independent.
 The variable coordinates are explicitly given, rather than generated
-automatically.  This is especially useful when a guess hessian is to be
-provided, as it is here.  This hessian, as given by the user, is not
+automatically.  This is especially useful when a guess Hessian is to be
+provided, as it is here.  This Hessian, as given by the user, is not
 complete and the QNewtonOpt object will fill in the missing
-values using a guess the hessian provided by the MolecularEnergy
+values using a guess the Hessian provided by the MolecularEnergy
 object.  Also, fixed coordinates are given in this sample input.
 
 <pre>
@@ -882,7 +890,7 @@ mpqc: (
 This example shows a transition state optimization of the N-inversion in
 \f$\mathrm{CH}_3\mathrm{NH}_2\f$ using mode following.  The initial geometry
 was obtained by doing a few fixed coordinate optimizations along the
-inversion coordinate.  An approximate guess hessian will be computed, which
+inversion coordinate.  An approximate guess Hessian will be computed, which
 makes the optimiziation converge much faster in this case.
 
 <pre>

@@ -56,6 +56,7 @@ class ClassDesc;
 typedef ClassDesc* ClassDescP;
 typedef const ClassDesc* CClassDescP;
 
+/// Provides a key into a map of classes.
 class ClassKey {
   private:
     char* classname_;
@@ -74,6 +75,7 @@ class ClassKey {
 
 class ClassDesc;
 
+/// Gives one parent class of a class.
 class ParentClass
 {
   public:
@@ -92,6 +94,7 @@ class ParentClass
     void change_classdesc(ClassDesc*n);
 };
 
+/// Gives a list of parent classes of a class.
 class ParentClasses
 {
   private:
@@ -125,7 +128,8 @@ class StateIn;
  a list of all described classes in the system.  These
  lists are constructed as the constructors for the static
  ClassDesc members for each class are called and
- are completed before main is entered.
+ are completed before main is entered.  See \ref class for
+ more information.
 */
 class ClassDesc: public Identity {
     friend class ParentClasses;
@@ -199,7 +203,8 @@ class ClassDesc: public Identity {
     DescribedClass.  This will provide the class with the ability to query
     its name, query its version, and perform safe castdown operations.
     Furthermore, the class's static ClassDesc can be obtained
-    which permits several other operations. */
+    which permits several other operations.  See \ref class for
+    more information. */
 class DescribedClass : public VRefCount {
   private:
     static ClassDesc class_desc_;

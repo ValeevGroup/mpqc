@@ -396,7 +396,8 @@ class PrefixKeyVal : public KeyVal {
 
 class IPV2;
 /** Converts textual information into keyword/value assocations.  The
-    parsing is done with an IPV2 object */
+    parsing is done with an IPV2 object.  The \ref keyval for more
+    information on the input format.  */
 class ParsedKeyVal : public StringKeyVal {
   private:
     int nfile;

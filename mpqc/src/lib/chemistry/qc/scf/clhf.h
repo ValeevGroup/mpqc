@@ -36,6 +36,7 @@
 
 // //////////////////////////////////////////////////////////////////////////
 
+/// CLHF is a Hartree-Fock specialization of CLSCF.
 class CLHF: public CLSCF {
 #   define CLASSNAME CLHF
 #   define HAVE_KEYVAL_CTOR

@@ -1,9 +1,14 @@
 
 /** \page develop Developing Code Using SC
 
-   In addition to the executables, the Scientific Computing Toolkit
-   libraries and include files can be installed on your machine.
-   This is described in the \ref compile section of this manual.
+In addition to the executables, the Scientific Computing toolkit libraries
+and include files can be installed on your machine.  This is described in
+the \ref compile section of this manual.
+
+The <tt>sc-config</tt> program can be use to obtain the compilers, compiler
+options, and libraries needed to use the SC toolkit from your program.
+This utility is discussed below, along with how the SC toolkit must be
+initialized in your <tt>main</tt> subroutine.
 
 <ul>
   <li> \ref scconfig
@@ -21,7 +26,7 @@ and installed.  The following information is available:
      <dt><tt>--libs</tt><dd> The libraries and library paths needed to link.
      <dt><tt>--cppflags</tt><dd> The include directories.
      <dt><tt>--cc</tt><dd> The C compiler.
-     <dt><tt>--cflags</tt><dd> The C flags.
+     <dt><tt>--cflags</tt><dd> The C compiler flags.
      <dt><tt>--cxx</tt><dd> The C++ compiler.
      <dt><tt>--cxxflags</tt><dd> The C++ compiler flags.
      <dt><tt>--f77</tt><dd> The FORTRAN 77 compiler.
@@ -59,10 +64,11 @@ this, use the following code:
   ExEnv::set_out(outstream);
 </pre>
 
-MPI is allowed wait until MPI_Init to fill in argc and argv, so we may have
-to call MPI_Init before we even know that we ready to construct
-MPIMessageGrp.  So if an MPIMessageGrp is needed, it is up to the developer
-to call MPI_Init to get the argument list for certain MPI implementations.
+MPI is allowed wait until MPI_Init is called to fill in argc and argv, so
+you may have to call MPI_Init before you even know that we ready to
+construct MPIMessageGrp.  So if an MPIMessageGrp is needed, it is up to the
+developer to call MPI_Init to get the argument list for certain MPI
+implementations.
 
 <pre>
   MPI_Init(&argc, &argv);
@@ -70,20 +76,22 @@ to call MPI_Init to get the argument list for certain MPI implementations.
 
 When files are read and written, an extension is added to a
 basename to construct the file name.  The default is "SC".
-To use another basename, make the following call:
+To use another basename, make the following call, where
+<tt>basename</tt> is a <tt>const char *</tt>:
 
 <pre>
   SCFormIO::set_default_basename(basename);
 </pre>
 
 If your job might run in parallel, then make the following
-call or the nodes will print redundant information.
+call or the nodes will print redundant information.  The
+<tt>myproc</tt> argument is the rank of the called node.
 
 <pre>
   SCFormIO::init_mp(myproc);
 </pre>
 
-This segment of code sets up the threading object:
+This segment of code sets up an object object to provide multi-threading:
 
 <pre>
   RefThreadGrp thread = ThreadGrp::initial_threadgrp(argc, argv);

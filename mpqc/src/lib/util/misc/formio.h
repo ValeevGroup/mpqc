@@ -31,6 +31,8 @@
 #include <iostream.h>
 #include <fstream.h>
 
+/** This utility class is used to print only on node 0 and to
+    provide attractive indentation of output. */
 class SCFormIO {
   private:
     static char *default_basename_;
@@ -84,6 +86,8 @@ ostream& node0(ostream&);
 
 // ///////////////////////////////////////////////////////////////////////////
 
+/** This class allows <tt>printf</tt> like output to put sent
+    to an <tt>ostream</tt>. */
 class scprintf {
   private:
     char str[1024];

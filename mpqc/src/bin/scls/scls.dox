@@ -1,9 +1,12 @@
 
 /** \page scls The scls Program
 
+The scpr program is used to list objects in checkpoint files.
+See \ref state for more information.
+
 <h1>Compiling scls</h1>
  scls is distributed with the SC Toolkit.  scls will automatically
-be compiled when SC is compiled.  See the \Ref{Compiling}
+be compiled when SC is compiled.  See \ref compile
 for more information.
 
 <h1>Running scls</h1>

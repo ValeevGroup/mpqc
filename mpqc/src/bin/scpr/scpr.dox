@@ -1,10 +1,13 @@
 
 /** \page scpr The scpr Program
 
+The scpr program is used to print out objects in checkpoint files.
+See \ref state for more information.
+
 <h1>Compiling scpr</h1>
 
  scpr is distributed with the SC Toolkit.  scpr will automatically
-be compiled when SC is compiled.  See the \Ref{Compiling}
+be compiled when SC is compiled.  See \ref compile
 for more information.
 
 <h1>Running scpr</h1>

@@ -1,31 +1,68 @@
 
 /** \page group The Group Library
 
-The group library provides two important abstract base classes for
-communications.  The MessageGrp class is the for standard message passing
-with explicit sends and receives on all involved nodes.  A generic
-technique for doing global operations is provided.  Common global
-reductions, such as a global sum, are directly provided for convenience.
-The MessageGrp class has specializations that permits its use on a wide
-variety of hardware:
+The group library provides three mechanisms for parallel execution and
+communication.  These are:
 
 <ul>
-<li> PVMMessageGrp uses the PVM package
-<li> MPIMessageGrp uses the MPI library
-<li> ParagonMessageGrp uses the Intel Paragon's NX library
-<li> ShmMessageGrp uses System V IPC (for
-      symmetric multiprocessors)
+  <li> \ref messagepassing
+  <li> \ref distmemory
+  <li> \ref multithreading
 </ul>
 
-The other abstract communication class of importance, MemoryGrp, provides
-the appearance of global shared memory.  Only where communications with
-System V IPC is available to all of the processes can real shared memory be
-used.  Otherwise active messages or fake active messages must be used to
-request pieces of memory that do not lie on the local node.  True active
-messages are available when using the OSF operating system on the Intel
-Paragon.  Otherwise the active messages are `faked' by checking for
-outstanding memory requests whenever a communications class member is
-called.  Faking active messages is not desirable and will be replaced by
-true active messages as more libraries are able to support them.
+\section messagepassing Message Passing
+
+The MessageGrp class is the ancestor for classes that provide the passing
+of messages between processes.  There are three important specializations
+of this class:
+
+<dl>
+
+  <dt>ProcMessageGrp<dd>Provides a dummy MessageGrp for single processor
+                        case.
+
+  <dt>MPIMessageGrp<dd>Implements MessageGrp using the Message Passing
+                       Interface (MPI) library.
+
+  <dt>ShmMessageGrp<dd>Implements MessageGrp using SysV Interprocess
+                       communication.
+
+</dl>
+
+Due to the widespread acceptance of MPI and the large number of features
+that it supports, the MessageGrp specialization may one day be eliminated.
+
+\section distmemory Distributed Shared Memory
+
+The MemoryGrp class is the ancestor for classes that permit access to the
+memory in different processes, possible on difference machines.  There are
+three important specializations of this class:
+
+<dl>
+
+  <dt>ProcMemoryGrp<dd>Provides a dummy MemoryGrp for single processor
+                       case.
+
+  <dt>MTMPIMemoryGrp<dd> This works reliably and efficiently, however,
+                         requires POSIX threads and a thread-safe MPI
+                         implementation.
+
+</dl>
+
+\section multithreading Multi-Threading
+
+The ThreadGrp class is the ancestor of classes that provide
+multiple-threads within a single address space.  There are
+three important specializations of this class:
+
+<dl>
+
+  <dt>ProcThreadGrp<dd>Provides a dummy ThreadGrp for the single thread
+                       case.
+
+  <dt>PthreadThreadGrp<dd> This is a ThreadGrp that uses POSIX threads.
+
+</dl>
+
 
 */

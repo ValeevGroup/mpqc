@@ -13,7 +13,8 @@ input files are divided into several categories:
 
   <dt><tt>h2omp2</tt><dd>Tests that further exercise MP2.
 
-  <dt><tt>h2ofrq</tt><dd>Tests of h2o frequencies with a variety of methods.
+  <dt><tt>h2ofrq</tt><dd>Tests of H<sub>2</sub>O frequencies with a variety
+        of methods.
 
   <dt><tt>mbpt</tt><dd>These tests exercise MP2 as well as the open-shell
         perturbation theory methods.  The various available
@@ -42,7 +43,7 @@ input files are divided into several categories:
 
   <dt><tt>uscf</tt><dd>More tests of methods based on UnrestrictedSCF.
 
-  <dt><tt>dft</tt><dd>More test of the DFT methods.
+  <dt><tt>dft</tt><dd>More tests of the CLKS method.
 
 </dl>
 
@@ -65,13 +66,13 @@ will be created before they are needed.
 results by typing <tt>make checkrun</tt> in the
 <tt>src/bin/mpqc/validate</tt> directory.  This will first do some
 consistency checks between pairs of files selected from the <tt>ckpt</tt>,
-<tt>mbpt</tt>, <tt>symm1</tt>, and <tt>symm2</tt> groups of calculations
-(see below for a discussion of the output for comparison of two files).
-Then each file is individually checked.  An <tt>ok</tt> is printed next the
-test name, if it looks like the calculation made it to the end.  A
-<tt>missing</tt> means the output file could not be found.  A <tt>failed</tt>
-means that the output file has problems (or the calculation may still be
-running).
+<tt>dft</tt>, <tt>mbpt</tt>, <tt>symm1</tt>, and <tt>symm2</tt> groups of
+calculations (see below for a discussion of the output for comparison of
+two files).  Then each file is individually checked.  An <tt>ok</tt> is
+printed next the test name, if it looks like the calculation made it to the
+end.  A <tt>missing</tt> means the output file could not be found.  A
+<tt>failed</tt> means that the output file has problems (or the calculation
+may still be running).
 
   Next you will want to see if your compiled MPQC produces the same answer
 as ours.  Note that our reference validation suite has not been verified
@@ -83,9 +84,7 @@ MPQC.  Obtain it (hopefully it is available where you got the source code)
 and untar it in the <tt>src/bin/mpqc/validate</tt> subdirectory of your
 MPQC object code directory.  This will create the <tt>ref</tt>
 subdirectory.  Now you can type <tt>make check</tt> and outputs in the
-<tt>ref</tt> and <tt>run</tt> directories will be pairwise compared.  On
-some machines, notably Linux, you can use <tt>make fastcheck</tt> instead
-of <tt>make check</tt> and the comparisons will run considerably faster.
+<tt>ref</tt> and <tt>run</tt> directories will be pairwise compared.
 
   When files are pairwise compared first the status (<tt>ok</tt>,
 <tt>missing</tt>, or <tt>failed</tt>) for each file is printed.  If both
@@ -93,7 +92,8 @@ statuses are <tt>ok</tt> then an <tt>E:</tt> is printed followed by the
 number of digits to which the energies agree.  If they agree to all digits
 <tt>99</tt> is printed.  If a gradient was computed, then <tt>Grad:</tt> is
 printed followed by the number of digits to which the gradients in least
-agreement agree.  Likewise if frequencies were computed.
+agreement agree.  Other properties checked in this way include frequencies,
+diagnostics, and populations.
 
   If two numbers do not agree to the expected accuracy, then an asterisk,
 <tt>*</tt>, is printed after the number of digits in agreement.

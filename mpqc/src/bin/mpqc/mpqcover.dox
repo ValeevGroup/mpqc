@@ -13,10 +13,6 @@ methods for optimizing molecules in either Cartesian or internal
 coordinates.
 
 MPQC is designed using object-oriented programming techniques and
-implemented in the C++ programming language.  This design has propagated
-even to the input of MPQC which is object-oriented as well.  The user
-specifies a group of objects that the program creates when it starts.  MPQC
-manipulates the objects to produce energies, gradients, geometries, and
-properties.
+implemented in the C++ programming language.
 
 */

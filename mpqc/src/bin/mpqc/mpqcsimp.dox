@@ -67,11 +67,11 @@ The accepted keywords are:
      <dt><tt>HF</tt><dd> Hartree-Fock.  Unrestricted HF is used if
         <tt>multiplicity</tt> > 1
      <dt><tt>RHF</tt><dd> Restricted Hartree-Fock.
-     <dt><tt>UHF</tt><dd> Unestricted Hartree-Fock.
+     <dt><tt>UHF</tt><dd> Unrestricted Hartree-Fock.
      <dt><tt>KS</tt><dd> Kohn-Sham.  Unrestricted KS is used if
         <tt>multiplicity</tt> > 1
      <dt><tt>RKS</tt><dd> Restricted Kohn-Sham.
-     <dt><tt>UKS</tt><dd> Unestricted Kohn-Sham.
+     <dt><tt>UKS</tt><dd> Unrestricted Kohn-Sham.
      <dt><tt>MP2</tt><dd> Second order Moeller-Plesset perturbation theory.
                 Only available for <tt>multiplicity</tt> = 1.
      <dt><tt>ZAPT2</tt><dd>  Z-averaged perturbation theory.
@@ -133,12 +133,14 @@ The accepted keywords are:
   unrestricted.
 
 <dt><tt>frozen_docc</tt><dd> Gives the number of frozen core orbitals.  Can
-  be each a single integer or a parenthesized list giving the frozen core
-  orbitals in each irreducible representation.
+  be either a single integer or a parenthesized list giving the frozen core
+  orbitals in each irreducible representation.  In the latter case the
+  symmetry must be given and not be <tt>auto</tt>.
 
 <dt><tt>frozen_uocc</tt><dd> Gives the number of frozen virtual orbitals.
-  Can be each a single integer or a parenthesized list giving the frozen
-  virtual orbitals in each irreducible representation.
+  Can be either a single integer or a parenthesized list giving the frozen
+  virtual orbitals in each irreducible representation.  In the latter case
+  the symmetry must be given and not be <tt>auto</tt>.
 
 </dl>
 

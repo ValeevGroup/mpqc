@@ -3,9 +3,17 @@
 
 This chapter explains how to run mpqc in a variety of environments.
 
+The first two sections give general information on running MPQC:
+
 <ul>
   <li> \ref mpqccomline
   <li> \ref mpqcenv
+</ul>
+
+The final sections given specific information on running MPQC in
+different environments:
+
+<ul>
   <li> \ref mpqcshmem
   <li> \ref mpqcpthr
   <li> \ref mpqcmpi
@@ -26,11 +34,6 @@ name.  If the input file name is not given, it will default to
   <dt><tt>-i</tt><dd>Convert a simple input file to an object oriented
                 input file and write the result to the ouput.  No
                 calculations are done.
-
-  <dt><tt>-f</tt><dd>The name of an object-oriented input file.  The
-                default is <tt>mpqc.in</tt>.  This cannot be used if
-                another input file is specified.  This option is
-                deprecated.
 
   <dt><tt>-messagegrp</tt><dd>A ParsedKeyVal specification of a MessageGrp
                 object.  The default depends on how MPQC was compiled.
@@ -54,10 +57,17 @@ name.  If the input file name is not given, it will default to
 
   <dt><tt>-w</tt><dd>Print the warranty information (there is no warranty).
 
-  <dt><tt>-d</tt><dd>If a debugger object was given in the input start the
+  <dt><tt>-d</tt><dd>If a debugger object was given in the input, start the
                 debugger running as soon as MPQC is started.
 
   <dt><tt>-h</tt><dd>Print a list of options.
+
+  <dt><tt>-f</tt><dd>The name of an object-oriented input file.  The
+                default is <tt>mpqc.in</tt>.  This cannot be used if
+                another input file is specified.  This option is
+                deprecated, as both input file formats can be read
+                by given the input file name on the command line
+                without any option flags.
 
 </dl>
 
@@ -76,8 +86,7 @@ apply on all platforms are:
 
 <dl>
 
-  <dt><tt>SCLIBDIR</tt><dd>The name of the library directory.  The default
-                     is the directory in the source distribution.  See the
+  <dt><tt>SCLIBDIR</tt><dd>The name of the library directory.  See the
                      GaussianBasisSet documentation and look below for more
                      information.
 
@@ -95,24 +104,23 @@ apply on all platforms are:
 
 </dl>
 
-By default, MPQC tries to find library files first in the installation
-directory and then in the source code distribution directory.  If the
-library files cannot be found, MPQC must be notified of the new location
-with the environmental variable #SCLIBDIR#.  In the source code
-distribution this directory is #SC/lib#.
+By default, MPQC tries to find library files first in the <tt>lib</tt>
+subdirectory of the installation directory and then the source code
+directory.  If the library files cannot be found, MPQC must be notified of
+the new location with the environmental variable <tt>SCLIBDIR</tt>.
 
-For example if you need to run MPQC on a machine that doesn't
-have the source code distribution in the same place as it was
-located on the machine on which MPQC is compiled you must do the
-following on the machine with the source code:
+For example, if you need to run MPQC on a machine that doesn't have the
+source code distribution in the same place as it was located on the machine
+on which MPQC is compiled you must do something like the following on the
+machine with the source code:
 
 <pre>
-cd SC/lib
+cd mpqc/lib
 tar cvf ../sclib.tar basis atominfo.kv
 </pre>
 
-Then transfer #sclib.tar# to the machine that you want to run
-MPQC on and do something like
+Then transfer <tt>sclib.tar</tt> to the machine on which you want to run MPQC
+and do something like
 
 <pre>
 mkdir ~/sclib
@@ -121,13 +129,12 @@ tar xvf ../sclib.tar
 setenv SCLIBDIR ~/sclib
 </pre>
 
-The setenv command is specific to the C-shell.  You will need to
+The <tt>setenv</tt> command is specific to the C-shell.  You will need to
 do what is appropriate for your shell.
 
-The other three keywords specify objects.  This is done by
-giving a mini \Ref{ParsedKeyVal} input in a string.  The
-object is anonymous, that is, no keyword is associated with it.
-Here is an example:
+The other three keywords specify objects.  This is done by giving a mini
+ParsedKeyVal input in a string.  The object is anonymous, that is, no
+keyword is associated with it.  Here is an example:
 
 <pre>
 setenv MESSAGEGRP "<ShmMessageGrp>:(n = 4)"
@@ -149,12 +156,11 @@ setenv MESSAGEGRP "<ShmMessageGrp>:(n = 4)"
 mpqc input_file
 </pre>
 
-If MPQC should unexpectedly die, shared memory segments and
-semaphores will be left on the machine.  These should be promptly
-cleaned up or other jobs may be prevented from running.  To
-see if you have any of these resources allocated, use the
-<tt>ipcs</tt> command.  The output will look something
-like:
+If MPQC should unexpectedly die, shared memory segments and semaphores will
+be left on the machine.  These should be promptly cleaned up or other jobs
+may be prevented from running successfully.  To see if you have any of
+these resources allocated, use the <tt>ipcs</tt> command.  The output will
+look something like:
 
 <pre>
 IPC status from /dev/kmem as of Wed Mar 13 14:42:18 1996
@@ -186,13 +192,14 @@ ipcrm sem 391
 
 \section mpqcpthr Shared Memory Multiprocessor with POSIX Threads
 
-By default, MPQC will run with only one thread.  To specify more,
-you can give a PthreadThreadGrp object on the command line.
-MPQC is not parallelized to as large an extent with threads as it
-is with the more conventional distributed memory model, so you
-might not get the best performance using this technique.
+By default, MPQC will run with only one thread.  To specify more, you can
+give a PthreadThreadGrp object on the command line.  MPQC is not
+parallelized to as large an extent with threads as it is with the more
+conventional distributed memory model, so you might not get the best
+performance using this technique.  On the other the memory overhead is
+lower and no interprocess communication is needed.
 
-The following would run mpqc in four threads:
+The following would run MPQC in four threads:
 
 <pre>
 mpqc -threadgrp "<PthreadThreadGrp>:(num_threads = 4)" input_file
@@ -207,9 +214,9 @@ mpqc input_file
 
 \section mpqcmpi Shared or Distributed Memory Multiprocessor with MPI
 
-A MPIMessageGrp object is used to run using MPI.  The
-number of nodes used is determined by the MPI run-time and is not
-specified as input data to MPIMessageGrp.
+A MPIMessageGrp object is used to run using MPI.  The number of nodes used
+is determined by the MPI run-time and is not specified as input data to
+MPIMessageGrp.
 
 <pre>
 mpqc -messagegrp "<MPIMessageGrp>:()" input_file
@@ -222,15 +229,16 @@ setenv MESSAGEGRP "<MPIMessageGrp>:()"
 mpqc input_file
 </pre>
 
+Usually, a special command is needed to start MPI jobs; typically it is
+named <tt>mpirun</tt>.
+
 \section mpqcmp2 Special Notes for MP2 Gradients
 
-The MP2 gradient algorithm uses MemoryGrp object to access
-distributed shared memory.  The MTMPIMemoryGrp class is the
-most efficient and reliable implementation of MemoryGrp.
-It requires a multi-thread aware MPI implementation, which are
-still not common (the IBM SP does support it).  To run MP2
-gradients on a machine with POSIX threads and an multi-thread
-aware MPI, use:
+The MP2 gradient algorithm uses MemoryGrp object to access distributed
+shared memory.  The MTMPIMemoryGrp class is the most efficient and reliable
+implementation of MemoryGrp.  It requires a multi-thread aware MPI
+implementation, which is still not common.  To run MP2 gradients on a
+machine with POSIX threads and an multi-thread aware MPI, use:
 
 <pre>
 mpqc -messagegrp "<MPIMessageGrp>:()" \

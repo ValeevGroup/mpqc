@@ -25,12 +25,15 @@
 
 <dt><tt>src/lib/util/container</tt><dd>This library provides container
   classes.  Some of these classes are not very efficient and it is likely
-  that they will be replaced by the C++ Standard Template Library when it
-  is supported fully by more compilers.
+  that they will be replaced by the C++ Standard Template Library (STL)
+  when it is supported fully by more compilers.  If your C++ implementation
+  supports the STL you can configure with the <tt>--enable-stl</tt> option
+  to use STL containers in place of the containers provided by this
+  library.
 
 <dt><tt>src/lib/util/misc</tt><dd>This contains a variety of independent
   classes that don't belong anywhere else.  Here one can find classes to
-  assist with debugging, provide information about hte execution
+  assist with debugging, provide information about the execution
   environment, help make the output prettier, maintain detailed timing
   information, etc.
 

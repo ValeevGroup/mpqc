@@ -236,7 +236,7 @@ class SumDenFunctional: public DenFunctional {
                    + 0.8 SlaterXFunctional
                    + 0.72 Becke88XFunctional
                    + 0.19 P86CFunctional
-                   + 0.81 VWN1LCFunctional(1) <td>        <td>          
+                   + 0.81 VWN1LCFunctional (1)<td>        <td>          
 <tr><td>PBE     <td> PBEXFunctional
                     +PBECFunctional           <td>        <td> xpbe96 cpbe96 
 <tr><td>PW91    <td> PW91XFunctional

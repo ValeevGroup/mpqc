@@ -36,6 +36,7 @@
 
 // //////////////////////////////////////////////////////////////////////////
 
+/// HSOSHF is a Hartree-Fock specialization of HSOSSCF.
 class HSOSHF: public HSOSSCF {
 #   define CLASSNAME HSOSHF
 #   define HAVE_KEYVAL_CTOR

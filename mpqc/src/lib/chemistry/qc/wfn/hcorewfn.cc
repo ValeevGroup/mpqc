@@ -115,6 +115,17 @@ HCoreWfn::eigenvectors()
   return eigenvectors_.result_noupdate();
 }
 
+RefDiagSCMatrix
+HCoreWfn::eigenvalues()
+{
+  if (!eigenvalues_.computed()) {
+    eigenvalues_=core_hamiltonian().eigvals();
+    eigenvalues_.computed() = 1;
+  }
+  
+  return eigenvalues_.result_noupdate();
+}
+
 double
 HCoreWfn::occupation(int ir, int i)
 {

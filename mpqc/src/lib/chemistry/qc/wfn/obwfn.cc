@@ -59,23 +59,28 @@ OneBodyWavefunction::_castdown(const ClassDesc*cd)
 OneBodyWavefunction::OneBodyWavefunction(const RefKeyVal&keyval):
   Wavefunction(keyval),
   eigenvectors_(this),
+  eigenvalues_(this),
   density_(this),
   nirrep_(0),
   nvecperirrep_(0)
 {
-  eigenvectors_.set_desired_accuracy(
-    keyval->doublevalue("eigenvector_accuracy"));
+  double acc = keyval->doublevalue("eigenvector_accuracy");
+  if (keyval->error() != KeyVal::OK)
+    acc = 1.0e-7;
+  
+  eigenvectors_.set_desired_accuracy(acc);
+  eigenvalues_.set_desired_accuracy(acc);
 
-  if (eigenvectors_.desired_accuracy() > 1.0e-7)
-    eigenvectors_.set_desired_accuracy(1.0e-7);
-
-  if (eigenvectors_.desired_accuracy() < DBL_EPSILON)
+  if (eigenvectors_.desired_accuracy() < DBL_EPSILON) {
     eigenvectors_.set_desired_accuracy(DBL_EPSILON);
+    eigenvalues_.set_desired_accuracy(DBL_EPSILON);
+  }
 }
 
 OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
   Wavefunction(s),
   eigenvectors_(this),
+  eigenvalues_(this),
   density_(this),
   nirrep_(0),
   nvecperirrep_(0)
@@ -85,6 +90,11 @@ OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
     basis_matrixkit()->matrix(basis_dimension(), basis_dimension());
   eigenvectors_.restore_state(s);
   eigenvectors_.result_noupdate().restore(s);
+
+  eigenvalues_.result_noupdate() =
+    basis_matrixkit()->diagmatrix(basis_dimension());
+  eigenvalues_.restore_state(s);
+  eigenvalues_.result_noupdate().restore(s);
 
   density_.result_noupdate() =
     basis_matrixkit()->symmmatrix(basis_dimension());
@@ -104,6 +114,9 @@ OneBodyWavefunction::save_data_state(StateOut&s)
 
   eigenvectors_.save_data_state(s);
   eigenvectors_.result_noupdate().save(s);
+
+  eigenvalues_.save_data_state(s);
+  eigenvalues_.result_noupdate().save(s);
 
   density_.save_data_state(s);
   density_.result_noupdate().save(s);
@@ -193,7 +206,7 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   for (int irrep=0; irrep < vecp->nblocks(); irrep++) {
     // find out how many occupied orbitals there should be
     int nocc = 0;
-    while (occupation(irrep,nocc) && nocc < plo->nfunction(irrep)) nocc++;
+    while (owfn->occupation(irrep,nocc) && nocc < plo->nfunction(irrep)) nocc++;
   
     if (!nocc)
       continue;
@@ -244,6 +257,65 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   }
 
   return vec;
+}
+
+// this is a hack for big basis sets where the core hamiltonian eigenvalues
+// are total garbage.  Use the old wavefunction's occupied eigenvalues, and
+// set all others to 99.
+
+RefDiagSCMatrix
+OneBodyWavefunction::projected_eigenvalues(const RefOneBodyWavefunction& owfn)
+{
+  // get the old eigenvalues and the new core hamiltonian evals
+  RefDiagSCMatrix oval = owfn->eigenvalues();
+  BlockedDiagSCMatrix *ovalp =
+    BlockedDiagSCMatrix::require_castdown(oval.pointer(),
+      "OneBodyWavefunction::projected_eigenvalues: oval"
+      );
+    
+  RefDiagSCMatrix val = core_hamiltonian().eigvals();
+  BlockedDiagSCMatrix *valp =
+    BlockedDiagSCMatrix::require_castdown(val.pointer(),
+      "OneBodyWavefunction::projected_eigenvalues: val"
+      );
+
+  RefPetiteList pl = integral()->petite_list(basis());
+  RefPetiteList plo = integral()->petite_list(owfn->basis());
+
+  for (int irrep=0; irrep < valp->nblocks(); irrep++) {
+    // find out how many occupied orbitals there should be
+    int nocc = 0;
+    while (owfn->occupation(irrep,nocc) && nocc < plo->nfunction(irrep)) nocc++;
+  
+    int nf = pl->nfunction(irrep);
+    int nfo = plo->nfunction(irrep);
+
+    if (!nf)
+      continue;
+    
+    double *vals = new double[pl->nfunction(irrep)];
+    valp->block(irrep)->convert(vals);
+
+    double *ovals;
+    if (nfo) {
+      ovals = new double[plo->nfunction(irrep)];
+      ovalp->block(irrep)->convert(ovals);
+    }
+    
+    int i;
+    for (i=0; i < nocc; i++)
+      vals[i] = ovals[i];
+    for (i=nocc; i < pl->nfunction(irrep); i++)
+      vals[i] = 99.0;
+
+    valp->block(irrep)->assign(vals);
+
+    delete[] vals;
+    if (nfo)
+      delete[] ovals;
+  }
+
+  return val;
 }
 
 RefSCMatrix

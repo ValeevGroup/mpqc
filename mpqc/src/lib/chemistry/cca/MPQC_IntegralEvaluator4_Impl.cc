@@ -82,6 +82,11 @@ throw ()
   bs3_ = basis_cca_to_sc( bs3 );
   bs4_ = basis_cca_to_sc( bs4 );
 
+  max_nshell4_ = bs1_->max_ncartesian_in_shell();
+  max_nshell4_ *= bs2_->max_ncartesian_in_shell();
+  max_nshell4_ *= bs3_->max_ncartesian_in_shell();
+  max_nshell4_ *= bs4_->max_ncartesian_in_shell();
+
   std::cout << "  initializing " << package_ << " " << evaluator_label_
             << " integral evaluator\n";
   if ( package_ == "intv3" ) {
@@ -139,11 +144,6 @@ throw ()
 
   sc_buffer_ = eval_->buffer();
 
-  max_nshell4_ = bs1_->max_ncartesian_in_shell();
-  max_nshell4_ *= bs2_->max_ncartesian_in_shell();
-  max_nshell4_ *= bs3_->max_ncartesian_in_shell();
-  max_nshell4_ *= bs4_->max_ncartesian_in_shell();
-
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.initialize)
 }
 
@@ -193,11 +193,11 @@ throw ()
     sc::GaussianShell &s4 = bs4_->shell(shellnum4);
     int nfunc = s1.nfunction() * s2.nfunction() * s3.nfunction() * s4.nfunction();
 
-    std::cout << "cca buffer:" << bufn_ << std::endl;
+    //std::cout << "cca buffer:" << bufn_ << std::endl;
     ++bufn_;
-    for( int i=0; i<nfunc; ++i)
-      std::cout << sc_buffer_[i] << std::endl;
-    std::cout << std::endl;
+    //for( int i=0; i<nfunc; ++i)
+    //  std::cout << sc_buffer_[i] << std::endl;
+    //std::cout << std::endl;
 
   }
   else {
@@ -293,10 +293,10 @@ MPQC::IntegralEvaluator4_impl::initialize_reorder_intv3()
       ccaiter->next();
     }
 
-    std::cout << "reorder am=" << i << std::endl;
-    for( int j=0; j<ncf; ++j)
-      std::cout << reorder_[i][j] << " ";
-    std::cout << std::endl;
+    //std::cout << "reorder am=" << i << std::endl;
+    //for( int j=0; j<ncf; ++j)
+    //  std::cout << reorder_[i][j] << " ";
+    //std::cout << std::endl;
 
     delete v3iter;
   }
@@ -309,7 +309,6 @@ MPQC::IntegralEvaluator4_impl::reorder_intv3(int64_t shellnum1,
                                              int64_t shellnum3,
                                              int64_t shellnum4)
 {
-
   double *buf = const_cast<double*>( sc_buffer_ );
 
   sc::GaussianShell &s1 = bs1_->shell(shellnum1);
@@ -321,16 +320,39 @@ MPQC::IntegralEvaluator4_impl::reorder_intv3(int64_t shellnum1,
   int nc3 = s3.ncontraction();
   int nc4 = s4.ncontraction();
 
+  // is the really necessary?
+  int reorder_needed=0;
+  for (int i=0; i<nc1; ++i) {
+    if( s1.am(i) == 1) reorder_needed=1;
+    else if( s1.am(i) > 1 && s1.is_cartesian(i) ) reorder_needed=1;
+  }
+  if (!reorder_needed)
+    for (int i=0; i<nc2; ++i) {
+      if( s2.am(i) == 1) reorder_needed=1;
+      else if( s2.am(i) > 1 && s2.is_cartesian(i) ) reorder_needed=1;
+    }
+  if (!reorder_needed)
+    for (int i=0; i<nc3; ++i) {
+      if( s3.am(i) == 1) reorder_needed=1;
+      else if( s3.am(i) > 1 && s3.is_cartesian(i) ) reorder_needed=1;
+    }
+  if (!reorder_needed)
+    for (int i=0; i<nc4; ++i) {
+      if( s4.am(i) == 1) reorder_needed=1;
+      else if( s4.am(i) > 1 && s4.is_cartesian(i) ) reorder_needed=1;
+    }
+  if( !reorder_needed ) return;
+
   // copy buffer into temp space
   int nfunc = s1.nfunction() * s2.nfunction() * s3.nfunction() * s4.nfunction();
   for( int i=0; i<nfunc; ++i) {
     temp_buffer_[i] = sc_buffer_[i];
   }
 
-  std::cout << "intv3 buffer:" << bufn_ << std::endl;
-  for( int i=0; i<nfunc; ++i) 
-     std::cout << temp_buffer_[i] << std::endl;
-  std::cout << endl;
+  //std::cout << "intv3 buffer:" << bufn_ << std::endl;
+  //for( int i=0; i<nfunc; ++i) 
+  //   std::cout << temp_buffer_[i] << std::endl;
+  //std::cout << endl;
 
   int index=0, con2_offset=0, con3_offset=0, con4_offset=0, con_offset,
       local2_offset, local3_offset, local4_offset, 
@@ -352,76 +374,86 @@ MPQC::IntegralEvaluator4_impl::reorder_intv3(int64_t shellnum1,
     temp += s2.nfunction(c2);
   con2_offset *= temp;
 
+  int s1_is_cart, s2_is_cart, s3_is_cart, s4_is_cart,
+      s1_nfunc, s2_nfunc, s3_nfunc, s4_nfunc;
+
   for( int c1=0; c1<nc1; ++c1 ) {
+
     c1_base = index;
-    std::cerr << "c1:" << c1 << " am=" << s1.am(c1) << " cartesian="
-              << s1.is_cartesian(c1) << std::endl;
+    s1_is_cart = s1.is_cartesian(c1);
+    s1_nfunc = s1.nfunction(c1);
 
-    for( int fc1=0; fc1<s1.nfunction(c1); ++fc1 ) {
+    for( int fc1=0; fc1<s1_nfunc; ++fc1 ) {
 
-      if( s1.is_cartesian(c1) )
+      if( s1_is_cart )
         c2_base = c1_base + reorder_[s1.am(c1)][fc1] * con2_offset;
       else
         c2_base = c1_base + fc1 * con2_offset;
-      std::cerr << "c2_base:" << c2_base << std::endl;
 
+      local2_offset = 0;
       for( int c2=0; c2<nc2; ++c2 ) {
-        std::cerr << "c2:" << c2 << " am=" << s2.am(c2) << std::endl;
 
-        if( c2==0 ) local2_offset = 0;
-        else local2_offset += s2.nfunction(c2-1);
-        std::cerr << "local2_offset:" << local2_offset << std::endl;
+        if( c2>0 ) local2_offset += s2.nfunction(c2-1);
+        s2_is_cart = s2.is_cartesian(c2);
+        s2_nfunc = s2.nfunction(c2);
 
-        for( int fc2=0; fc2<s2.nfunction(c2); ++fc2 ) {
+        for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
 
-          if( s2.is_cartesian(c2) )
+          if( s2_is_cart )
             c3_base = c2_base + (local2_offset + reorder_[s2.am(c2)][fc2]) 
                         * con3_offset;
           else
             c3_base = c2_base + (local2_offset + fc2) * con3_offset;
-          std::cerr << "c3_base:" << c3_base << std::endl;
 
+          local3_offset = 0;
           for( int c3=0; c3<nc3; ++c3 ) {
-            std::cerr << "c3:" << c3 << " am=" << s3.am(c3) << std::endl;
 
-            if( c3==0 ) local3_offset = 0;
-            else local3_offset += s3.nfunction(c3-1);
-            std::cerr << "local3_offset:" << local3_offset << std::endl;
+            if( c3>0 ) local3_offset += s3.nfunction(c3-1);
+            s3_is_cart = s3.is_cartesian(c3);
+            s3_nfunc = s3.nfunction(c3);
 
-            for( int fc3=0; fc3<s3.nfunction(c3); ++fc3 ) {
+            for( int fc3=0; fc3<s3_nfunc; ++fc3 ) {
 
-              if( s3.is_cartesian(c3) )
+              if( s3_is_cart )
                 c4_base = c3_base + (local3_offset + reorder_[s3.am(c3)][fc3])
                             * con4_offset;
               else
                 c4_base = c3_base + (local3_offset + fc3) * con4_offset;
-              std::cerr << "c4_base:" << c4_base << std::endl;
 
-              for( int c4=0; c4<nc4; ++c4 ) {
-                std::cerr << "c4:" << c4 << " am=" << s4.am(c4) << std::endl;
+              local4_offset = 0;
+              s4_nfunc = s4.nfunction(0);
+              if( s4.is_cartesian(0) ) 
+                for( int fc4=0; fc4<s4_nfunc; ++fc4) {
+                  buf[index] =
+                      temp_buffer_[ c4_base + local4_offset +
+                                   reorder_[s4.am(0)][fc4] ];
+                  ++index;
+                }
+              else 
+                for( int fc4=0; fc4<s4_nfunc; ++fc4) {
+                  buf[index] =
+                      temp_buffer_[ c4_base + local4_offset + fc4];
+                  ++index;
+                }
+    
+              for( int c4=1; c4<nc4; ++c4 ) {
 
-                if( c4==0 ) local4_offset = 0;
-                else local4_offset += s4.nfunction(c4-1);
-                std::cerr << "local4_offset:" << local4_offset << std::endl;
+                local4_offset += s4.nfunction(c4-1);
+                s4_is_cart = s4.is_cartesian(c4);
+                s4_nfunc = s4.nfunction(c4);
           
-                for( int fc4=0; fc4<s4.nfunction(c4); ++fc4 ) {
-
-                  if( s4.is_cartesian(c4) ) {
+                if( s4_is_cart ) 
+                  for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
                     buf[index] =
                       temp_buffer_[ c4_base + local4_offset + 
                                    reorder_[s4.am(c4)][fc4] ];
-                    std::cerr << "assigning index:" << index
-                              << " fc4:" << fc4 
-                              << " reorder:" << reorder_[s4.am(c4)][fc4]
-                              << std::endl;
+                    ++index;
                   }
-                  else {
+                else 
+                  for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
                     buf[index] = temp_buffer_[c4_base + local4_offset + fc4];
-                    std::cerr << "assigning index:" << index
-                              << " fc4:" << fc4 << std::endl;
+                    ++index;
                   }
-                  ++index;
-                }
               }
             }
           }

@@ -58,7 +58,7 @@ class HessianUpdate: virtual_base public SavableState {
     virtual ~HessianUpdate();
     virtual void update(const RefSymmSCMatrix&hessian,const RefFunction&,
                         const RefSCVector&xnew,const RefSCVector&gnew) = 0;
-    void set_inverse();
+    virtual void set_inverse();
     virtual void apply_transform(const RefNonlinearTransform&);
 };
 SavableState_REF_dec(HessianUpdate);
@@ -82,6 +82,7 @@ class DFPUpdate: public HessianUpdate {
     void update(const RefSymmSCMatrix&ihessian,const RefFunction&,
                 const RefSCVector&xnew,const RefSCVector&gnew);
     void apply_transform(const RefNonlinearTransform&);
+    void set_inverse();
 };
 
 class BFGSUpdate: public DFPUpdate {

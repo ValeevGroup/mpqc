@@ -56,6 +56,21 @@
 #include <refconfig.h>
 #endif
 
+#ifdef NULL_PTR_BUG
+// a bug work around for the 64 bit native SGI compiler.
+template <class RETURN, class ARG>
+inline RETURN*
+// The argument r is a dummy used to generate the return type of the template
+// it should be something like (DescribedClass*)0.
+politely_castup(ARG* a, RETURN* r) {
+    //return ((ARG*)a==(ARG*)0)?((RETURN*)0):a; // this works
+    //return ((ARG*)a==(ARG*)0)?0:a; // this fails
+    return (a==0)?((RETURN*)0):a; // this works
+}
+#else
+#  define politely_castup(x,y) (x)
+#endif
+
 #ifdef REF_OPTIMIZE
 #ifndef REF_CHECK_STACK
 # define REF_CHECK_STACK   0

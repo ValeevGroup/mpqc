@@ -84,7 +84,16 @@ SCF::SCF(const RefKeyVal& keyval) :
       struct stat sb;
       if (path && stat(path, &sb)==0 && sb.st_size) {
         StateInBinXDR s(path);
+
+        // reset the default matrixkit so that the matrices in the guess
+        // wavefunction will match those in this wavefunction
+        RefSCMatrixKit oldkit = SCMatrixKit::default_matrixkit();
+        SCMatrixKit::set_default_matrixkit(basis()->matrixkit());
+
         guess_wfn_.restore_state(s);
+
+        // go back to the original default matrixkit
+        SCMatrixKit::set_default_matrixkit(oldkit);
         delete[] path;
       }
     }
@@ -265,7 +274,7 @@ SCF::initial_vector()
   if (guess_wfn_.nonnull()) {
     if (guess_wfn_->basis()->nbasis() == basis()->nbasis()) {
       cout << node0 << indent
-           << "Projecting guess wavefunction into the present basis set\n";
+           << "Using guess wavefunction as starting vector\n";
 
       // indent output of eigenvectors() call if there is any
       cout << incindent << incindent;
@@ -273,7 +282,7 @@ SCF::initial_vector()
       cout << decindent << decindent;
     } else {
       cout << node0 << indent
-           << "Using guess wavefunction as starting vector\n";
+           << "Projecting guess wavefunction into the present basis set\n";
 
       // indent output of projected_eigenvectors() call if there is any
       cout << incindent << incindent;

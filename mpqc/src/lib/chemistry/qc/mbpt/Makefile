@@ -35,12 +35,10 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libmbpt
 BIN_OR_LIB = LIB
 
-CXXSRCS = mp2grad.cc cphf.cc ffo.cc opt2.cc opt2_v1.cc opt2_v2.cc opt2v2lb.cc \
-          gmat.cc \
-          mbpt.cc csgrad.cc csgmat.cc cscphf.cc \
+CXXSRCS = mbpt.cc csgrad.cc csgmat.cc cscphf.cc \
           hsosv1.cc hsosv2.cc hsosv2lb.cc
 
-CSRCS = opt2_fock.c bzerofast.c gcollect.c
+CSRCS = bzerofast.c
 
 LIBOBJ= $(CXXSRCS:%.cc=%.$(OBJSUF)) $(CSRCS:%.c=%.$(OBJSUF))
 

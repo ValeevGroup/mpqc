@@ -56,6 +56,10 @@
 #  include <util/group/memmpi.h>
 #endif
 
+#if defined(HAVE_PUMA_MPI2)
+#  include <util/group/mempuma.h>
+#endif
+
 //////////////////////////////////////////////////////////////////////
 // MemoryGrpBuf template instantiations
 
@@ -198,7 +202,11 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
 #endif
 #if defined(HAVE_MPI)
   else if (msg->class_desc() == MPIMessageGrp::static_class_desc()) {
+#if defined(HAVE_PUMA_MPI2)
+      grp = new PumaMemoryGrp(msg);
+#else
       grp = new MPIMemoryGrp(msg);
+#endif
     }
 #endif
 #ifdef HAVE_SYSV_IPC

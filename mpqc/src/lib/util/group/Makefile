@@ -52,6 +52,7 @@ ifeq ($(HAVE_HRECV),yes)
   CXXSRC += mempgon.cc
 endif
 endif
+
 ifeq ($(HAVE_PVM),yes)
   CXXSRC += messpvm.cc
 endif
@@ -61,11 +62,14 @@ endif
 ifeq ($(HAVE_MPL),yes)
   CXXSRC += memmpl.cc
 endif
+ifeq ($(HAVE_PUMA_MPI2),yes)
+  CXXSRC += mempuma.cc
+endif
 
 INC = pool.h message.h mstate.h topology.h picl.h \
       messshm.h messpvm.h messmpi.h \
       rnglock.h memory.h memmsg.h memshm.h pool.h memamsg.h memproc.h \
-      memmpl.h memmpi.h pregtime.h
+      memmpl.h memmpi.h mempuma.h pregtime.h
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 

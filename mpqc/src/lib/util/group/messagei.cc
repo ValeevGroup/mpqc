@@ -166,7 +166,11 @@ MessageGrp::initial_messagegrp(int &argc, char** argv)
     }
 
   // if certain libraries have been compiled in, use those message groups
-#if defined(HAVE_NX)
+#if defined(HAVE_PUMA_MPI2)
+  grp = new MPIMessageGrp;
+  if (grp->n() == 1) { delete grp; return new ProcMessageGrp; }
+  else return grp;
+#elif defined(HAVE_NX)
   grp = new ParagonMessageGrp;
   if (grp->n() == 1) { delete grp; return new ProcMessageGrp; }
   else return grp;

@@ -384,7 +384,6 @@ MPIMessageGrp::init()
       for (int i=0; i < nremote; i++)
           delete[] nslaves[i];
   delete[] nslaves;
-  //delete[] argv;
 #endif  
 }
 

@@ -24,6 +24,7 @@ extern "C" {
 
 #if defined(I860)
 int led(int);
+void bzero(void*,int);
 #endif
 }
 
@@ -103,6 +104,8 @@ main(int argc, char *argv[])
 
   outfile = stdout;
 
+  RefKeyVal keyval;
+
   if(me==0) {
     if(host0()!=0) {
       fprintf(outfile,"\n  loaded from host program\n");
@@ -115,6 +118,10 @@ main(int argc, char *argv[])
     fprintf(outfile,"  Running on a %s with %d nodes.\n",machine_type(),nproc);
     fflush(outfile);
 
+// various things still use the ipv2 routines to get input
+// so this hack is needed for now
+#define NEED_IPV2
+#ifdef NEED_IPV2
     infile = fopen("mpqc.in","r+");
     if (!infile) {
       perror("infile");
@@ -129,57 +136,91 @@ main(int argc, char *argv[])
     ip_cwk_clear();
     ip_cwk_add(":default");
     ip_cwk_add(":mpqc");
+#endif
+// If ipv2 also must read the input, then keyval specific things
+// will break it.  In this case the keyval specific input will
+// be read from keyval.in.
+#ifdef NEED_IPV2
+    ParsedKeyVal *pparsed = new ParsedKeyVal("mpqc.in");
+    pparsed->read("keyval.in");
+    RefKeyVal parsed(pparsed);
+#else
+    RefKeyVal parsed(new ParsedKeyVal("mpqc.in"));
+#endif
+    keyval = new PrefixKeyVal(":intco :mpqc :default",*parsed.pointer());
+    RefKeyVal extension(new ParsedKeyVal("input",*keyval.pointer()));
+    RefKeyVal agg(new AggregateKeyVal(*parsed.pointer(),*extension.pointer()));
+    keyval = new PrefixKeyVal(":intco :mpqc :default",*agg.pointer());
+
+    // drop references to the temporary keyvals
+    parsed = 0;
+    extension = 0;
+    agg = 0;
+
 
 /* read input, and initialize various structs */
 
     do_grad=0;
-    ip_string("dertype",&dertype,0);
+    if (keyval->exists("dertype")) dertype = keyval->pcharvalue("dertype");
     if(strcmp(dertype,"none")) do_grad=1;
 
     do_scf = 1;
-    errcod = ip_boolean("do_scf",&do_scf,0);
+    if (keyval->exists("do_scf")) do_scf = keyval->booleanvalue("do_scf");
 
     proper = 1;
-    errcod = ip_boolean("properties",&proper,0);
+    if (keyval->exists("properties"))
+      proper = keyval->booleanvalue("properties");
 
     localp = 0;
-    errcod = ip_boolean("local_P",&localp,0);
+    if (keyval->exists("local_P"))
+      localp = keyval->booleanvalue("local_P");
 
     print_geometry = 0;
-    errcod = ip_boolean("print_geometry",&print_geometry,0);
+    if (keyval->exists("print_geometry"))
+      print_geometry = keyval->booleanvalue("print_geometry");
 
     mp2 = 0;
-    errcod = ip_boolean("mp2",&mp2,0);
+    if (keyval->exists("mp2"))
+      mp2 = keyval->booleanvalue("mp2");
 
     opt_geom = 0;
-    errcod = ip_boolean("optimize_geometry",&opt_geom,0);
+    if (keyval->exists("optimize_geometry"))
+      opt_geom = keyval->booleanvalue("optimize_geometry");
     if(opt_geom) do_grad=1;
 
     nopt=1;
-    if(opt_geom) ip_data("nopt","%d",&nopt,0);
+    if(opt_geom) {
+      if (keyval->exists("nopt")) nopt = keyval->intvalue("nopt");
+      }
 
     throttle = 0;
-    ip_data("throttle","%d",&throttle,0);
+    if (keyval->exists("throttle")) throttle = keyval->intvalue("throttle");
 
     sync_loop = 1;
-    ip_data("sync_loop","%d",&sync_loop,0);
+    if (keyval->exists("sync_loop")) sync_loop = keyval->intvalue("sync_loop");
 
     save_fock=0;
-    errcod = ip_boolean("save_fock",&save_fock,0);
+    if (keyval->exists("save_fock"))
+      save_fock = keyval->booleanvalue("save_fock");
 
     save_vector=1;
-    errcod = ip_boolean("save_vector",&save_vector,0);
+    if (keyval->exists("save_vector"))
+      save_vector = keyval->booleanvalue("save_vector");
 
     node_timings=0;
-    errcod = ip_boolean("node_timings",&node_timings,0);
+    if (keyval->exists("node_timings"))
+      node_timings = keyval->booleanvalue("node_timings");
 
     restart=1;
-    errcod = ip_boolean("restart",&restart,0);
+    if (keyval->exists("restart"))
+      restart = keyval->booleanvalue("restart");
 
     dens=2.5;
-    errcod = ip_data("points_per_ang","%lf",&dens,0);
+    if (keyval->exists("points_per_ang"))
+      dens = keyval->doublevalue("points_per_ang");
 
-    errcod = ip_string("filename",&filename,0);
+    if (keyval->exists("filename"))
+      filename = keyval->pcharvalue("filename");
 
     fprintf(outfile,"\n  mpqc options:\n");
     fprintf(outfile,"    do_scf             = %s\n",(do_scf)?"YES":"NO");
@@ -217,14 +258,14 @@ main(int argc, char *argv[])
 
   /* read in user-defined labels for each atom */
   
-    errcod = ip_count("atom_labels",&count,0);
-    if(errcod == 0 && count==centers.n) {
+    count = keyval->count("atom_labels");
+    if(count==centers.n) {
       atom_labels = (char **) malloc(sizeof(char *)*centers.n);
       check_alloc(atom_labels,"mpqcnode: atom labels");
 
       char * tmp;
       for(i=0; i < count; i++) {
-        ip_string("atom_labels",&tmp,1,i);
+        tmp = keyval->pcharvalue("atom_labels");
         atom_labels[i]=tmp;
         }
       }
@@ -286,17 +327,7 @@ main(int argc, char *argv[])
 
   if(opt_geom && me==0) {
     fprintf(outfile,"\n");
-    geom_code = Geom_init_mpqc(outfile,outfile,&centers);
-
-#if 0
-    ip_cwk_add(":default");
-    ip_cwk_add(":mpqc");
-
-    ip_append_from_input("input",stdout);
-    ip_cwk_clear();
-    ip_cwk_add(":default");
-    ip_cwk_add(":mpqc");
-#endif
+    geom_code = Geom_init_mpqc(outfile,outfile,&centers,keyval);
     }
 
   if(opt_geom) {
@@ -357,7 +388,11 @@ main(int argc, char *argv[])
   tim_exit("input");
 
 /* release memory used by the input parser */
-    if(!scf_info.proj_vector) ip_done();
+#ifdef NEED_IPV2
+  if(!scf_info.proj_vector) ip_done();
+#endif
+  // keyval is needed by the Geom routines
+  //if (!scf_info.proj_vector) keyval = 0;
 
 /* skip scf if we already have a vector and just want properties */
   if (!do_scf) goto THERE;
@@ -414,7 +449,11 @@ main(int argc, char *argv[])
     if(save_vector) dmt_write(vecfile,SCF_VEC);
 
   /* release memory used by the input parser */
+#ifdef NEED_IPV2
     if(iter==0 && scf_info.proj_vector) ip_done();
+#endif
+    // keyval is needed by the Geom routines
+    //if(iter==0 && scf_info.proj_vector) keyval = 0;
 
     energy = scf_info.nuc_rep+scf_info.e_elec;
 
@@ -423,7 +462,7 @@ main(int argc, char *argv[])
     if(geom_code == GEOM_COMPUTE_ENERGY) {
       int_initialize_1e(0,0,&centers,&centers);
       int_initialize_offsets1(&centers,&centers);
-      if (mynode0()==0) geom_code = Geom_update_mpqc(energy,NULL,NULL);
+      if (mynode0()==0) geom_code = Geom_update_mpqc(energy,NULL,NULL,keyval);
       int_done_offsets1(&centers,&centers);
       int_done_1e();
       }
@@ -443,7 +482,8 @@ main(int argc, char *argv[])
 
       int_initialize_1e(0,0,&centers,&centers);
       int_initialize_offsets1(&centers,&centers);
-      if (mynode0()==0) geom_code = Geom_update_mpqc(energy,&gradient,NULL);
+      if (mynode0()==0)
+        geom_code = Geom_update_mpqc(energy,&gradient,NULL,keyval);
       int_done_offsets1(&centers,&centers);
       int_done_1e();
       }
@@ -484,7 +524,7 @@ main(int argc, char *argv[])
 
 THERE:
 
-  if(opt_geom && me==0) Geom_done_mpqc();
+  if(opt_geom && me==0) Geom_done_mpqc(keyval);
 
   if(do_grad) {
     if(scf_info.iopen) dmt_force_osscf_done();
@@ -494,6 +534,7 @@ THERE:
  /* print out some usefull stuff */
 
   if(proper) {
+    tim_enter("properties");
     int nat=centers.n;
     int natr=nat*(nat+1)/2;
     double_vector_t dipole,charge,mcharge,lcharge;
@@ -550,7 +591,7 @@ THERE:
       }
 
     Scf_charges_from_esp(&centers,SCF_VEC,&charge,&dipole,
-                                              &mulpts,dens,-1,outfile);
+                                              &mulpts,dens,-1,outfile,keyval);
 
     if(me==0) {
       char *atomlb;
@@ -576,12 +617,13 @@ THERE:
     free_double_matrix(&bond_pops);
     for(i=0; i < mulpts.n; i++) free_exmul(&mulpts.p[i]);
     free_expts(&mulpts);
+    tim_exit("properties");
     }
 
   if (mp2) {
     if (!do_scf) dmt_read(fockfile,FOCK);
     tim_enter("mp2");
-    mp2_hah(&centers,&scf_info,SCF_VEC,FOCK,outfile);
+    mp2_hah(&centers,&scf_info,SCF_VEC,FOCK,outfile,keyval);
     tim_exit("mp2");
     }
 

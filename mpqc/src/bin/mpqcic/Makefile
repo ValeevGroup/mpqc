@@ -85,9 +85,6 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 mpqcicproc: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
-mpqcicparagon: $(BINOBJ) $(shell $(LISTLIBS) -DUSE_PICLPARAGON $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(LD) /home/midway/SUN4/lib/main_nx.o $^ -o $@ $(SYSLIBS) -lnx -ll
-
 install_mpqcicproc:: mpqcicproc
 	$(INSTALL) $(INSTALLBINOPTS) $< $(BINDIR)
 

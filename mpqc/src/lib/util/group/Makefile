@@ -88,33 +88,39 @@ memtest.o: memtest.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 memtest: memtest.o \
-	libgroup.a \
-	libkeyval.a \
-	libmisc.a \
-	libstate.a \
-	libclass.a \
-	libcontainer.a \
-	libref.a
+	libgroup.$(LIBSUF) \
+	libkeyval.$(LIBSUF) \
+	libmisc.$(LIBSUF) \
+	libstate.$(LIBSUF) \
+	libclass.$(LIBSUF) \
+	libcontainer.$(LIBSUF) \
+	libref.$(LIBSUF)
 	$(LD) $(LDFLAGS) -o memtest $^ $(SYSLIBS)
 
-pooltest: pooltest.o libmisc.a libgroup.a libkeyval.a libstate.a \
-          libclass.a libcontainer.a libref.a
+pooltest: pooltest.o \
+	libmisc.$(LIBSUF) \
+	libgroup.$(LIBSUF) \
+	libkeyval.$(LIBSUF) \
+	libstate.$(LIBSUF) \
+	libclass.$(LIBSUF) \
+	libcontainer.$(LIBSUF) \
+	libref.$(LIBSUF)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o pooltest $^ $(SYSLIBS)
 
-rnglocktest: rnglocktest.o libgroup.a
+rnglocktest: rnglocktest.o libgroup.$(LIBSUF)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o rnglocktest $^ $(SYSLIBS)
 
 messtest.o: messtest.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 messtest: messtest.o \
-	libgroup.a \
-	libkeyval.a \
-	libmisc.a \
-	libstate.a \
-	libclass.a \
-	libcontainer.a \
-	libref.a
+	libgroup.$(LIBSUF) \
+	libkeyval.$(LIBSUF) \
+	libmisc.$(LIBSUF) \
+	libstate.$(LIBSUF) \
+	libclass.$(LIBSUF) \
+	libcontainer.$(LIBSUF) \
+	libref.$(LIBSUF)
 	$(LD) $(LDFLAGS) -o messtest $^ $(SYSLIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
@@ -124,3 +130,5 @@ ifneq ($(DODEPEND),no)
 include $(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.o=.d)
 endif
 
+targetclean::
+	/bin/rm -f memtest rnglocktest messtest

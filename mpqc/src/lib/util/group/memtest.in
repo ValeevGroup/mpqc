@@ -1,5 +1,8 @@
 % Emacs should use -*- KeyVal -*- mode.
 
+debug<Debugger>:(
+  )
+
 procmessage<ProcMessageGrp>: ()
 
 shmmessage<ShmMessageGrp>: (

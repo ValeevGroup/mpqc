@@ -62,6 +62,9 @@ ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg):
   memory_ = 0;
   pool_ = 0;
   rangelock_ = 0;
+  nregion_ = 0;
+  shmid_ = 0;
+  attach_address_ = 0;
 }
 
 ShmMemoryGrp::ShmMemoryGrp(const RefKeyVal& keyval):
@@ -72,6 +75,9 @@ ShmMemoryGrp::ShmMemoryGrp(const RefKeyVal& keyval):
   memory_ = 0;
   pool_ = 0;
   rangelock_ = 0;
+  nregion_ = 0;
+  shmid_ = 0;
+  attach_address_ = 0;
 }
 
 void
@@ -85,27 +91,70 @@ ShmMemoryGrp::set_localsize(int localsize)
 
   update_ = new GlobalCounter[n()];
 
+  // allocate memory both the data and the Pool
+  int size = poolallocation + totalsize();
+  // compute the number of shared memory regions that will be needed
+  nregion_ = size/SHMMAX;
+  if (size%SHMMAX) nregion_++;
+  shmid_ = new int[nregion_];
+  attach_address_ = new void*[nregion_];
+
   if (me() == 0) {
 
-      // allocate memory both the data and the Pool
-      shmid_ = shmget(IPC_PRIVATE,
-                      poolallocation + totalsize(),
-                      IPC_CREAT | SHM_R | SHM_W);
-
-      if (shmid_ < 0) {
-          perror("shmget");
-          cerr << "ShmMemoryGrp: shmget failed -- aborting" << endl;
-          cerr << scprintf("shmget arguments: %d, %d, %d",
-                           IPC_PRIVATE,
-                           poolallocation + totalsize(),
-                           IPC_CREAT | SHM_R | SHM_W)
-               << endl;
-          abort();
+      int rsize = size;
+      int isize;
+      for (int i=0; rsize>0; i++,rsize-=isize) {
+          isize = rsize;
+          if (isize > SHMMAX) isize = SHMMAX;
+          else if (isize < SHMMIN) isize = SHMMIN;
+          if (debug_) {
+              cout << me() << ": ";
+              cout << "ShmMemoryGrp: getting segment with " << isize
+                   << " bytes" << endl;
+            }
+          shmid_[i] = shmget(IPC_PRIVATE, isize, IPC_CREAT | SHM_R | SHM_W);
+          if (shmid_[i] == -1) {
+              cout << me() << ": ";
+              cout << "ShmMemoryGrp: shmget failed for "
+                   << isize << " bytes: "
+                   << strerror(errno) << endl;
+              abort();
+            }
         }
 
-      // attach the shared segment.
-      memory_ = (void*) 0;
-      memory_ = shmat(shmid_,(SHMTYPE)memory_,0);
+      rsize = size;
+      void *ataddress = 0;
+      for (int i=0; rsize>0; i++,rsize-=isize) {
+          isize = rsize;
+          if (isize > SHMMAX) isize = SHMMAX;
+          else if (isize < SHMMIN) isize = SHMMIN;
+          if (debug_) {
+              cout << me() << ": ";
+              cout << "ShmMemoryGrp: attaching segment with "
+                   << isize << " bytes at address " << (void*)ataddress
+                   << endl;
+            }
+          attach_address_[i] = shmat(shmid_[i],(SHMTYPE)ataddress,0);
+          if (debug_) {
+              cout << me() << ": ";
+              cout << "ShmMemoryGrp: got address "
+                   << (void*)attach_address_[i]
+                   << endl;
+            }
+          if (attach_address_[i] == 0
+              || ataddress && attach_address_[i] != ataddress) {
+              cout << "ShmMemoryGrp: shmat: problem attaching using address: "
+                   << " " << (void*) ataddress
+                   << ": got address: "
+                   << (void*) attach_address_[i]
+                   << endl;
+              abort();
+            }
+          ataddress = attach_address_[i] + isize;
+        }
+
+      // attach the shared segments.
+      memory_ = (void*) attach_address_[0];
 
       // initialize the pool
       pool_ = new(memory_) Pool(poolallocation);
@@ -165,27 +214,40 @@ ShmMemoryGrp::set_localsize(int localsize)
         }
     }
 
-  msg_->bcast(&shmid_, 1);
+  msg_->bcast(shmid_, nregion_);
+  msg_->raw_bcast((void*)attach_address_, nregion_*sizeof(void*));
   msg_->raw_bcast((void*)&memory_, sizeof(void*));
   msg_->raw_bcast((void*)&pool_, sizeof(void*));
   msg_->raw_bcast((void*)&rangelock_, sizeof(void*));
 
-#ifdef DEBUG
-  cerr << scprintf("%d: memory = 0x%x shmid = %d\n",
-          me(), memory_, shmid_);
-#endif // DEBUG
-
+  if (debug_) {
+      cout << scprintf("%d: memory_ = 0x%x shmid_[0] = %d\n",
+                       me(), memory_, shmid_[0]);
+    }
+  
   if (me() != 0) {
-      // some versions of shmat return -1 for errors, bit 64 bit
-      // compilers with 32 bit int's will complain.
-      if ((memory_ = shmat(shmid_,(SHMTYPE)memory_,0)) == 0) {
-          cerr << scprintf("problem on node %d\n", me());
-          perror("ShmMemoryGrp::shmat");
-          abort();
-        }
+      for (int i=0; i<nregion_; i++) {
+          if (debug_) {
+              cout << me() << ": ";
+              cout << "ShmMemoryGrp: attaching segment at address "
+                   << (void*)attach_address_[i] << endl;
+            }
+          // some versions of shmat return -1 for errors, 64 bit
+          // compilers with 32 bit int's will complain.
+          void *tmp = shmat(shmid_[i],(SHMTYPE)attach_address_[i],0);
+          if (tmp != attach_address_[i]) {
+              cout << me() << ": ";
+              cout << "ShmMemoryGrp: shmat: problem attaching using address: "
+                   << " " << (void*) attach_address_[i]
+                   << ": got address: "
+                   << (void*) tmp
+                   << endl;
+              abort();
+            }
 #ifdef DEBUG
-      cerr << scprintf("%d: attached at 0x%x\n", me(), memory_);
+          cerr << scprintf("%d: attached at 0x%x\n", me(), attach_address_[i]);
 #endif // DEBUG
+        }
     }
 
   data_ = (void *) &((char*)memory_)[poolallocation];
@@ -194,19 +256,30 @@ ShmMemoryGrp::set_localsize(int localsize)
 void
 ShmMemoryGrp::cleanup()
 {
+
   if (memory_) {
-      shmdt((SHMTYPE)memory_);
+      for (int i=0; i<nregion_; i++) {
+          shmdt((SHMTYPE)attach_address_[i]);
+        }
 
       msg_->sync();
 
       if (me() == 0) {
-          shmctl(shmid_,IPC_RMID,0);
+          for (int i=0; i<nregion_; i++) {
+              shmctl(shmid_[i],IPC_RMID,0);
+            }
         }
       memory_ = 0;
     }
 
   delete[] update_;
   update_ = 0;
+
+  nregion_ = 0;
+  delete[] shmid_;
+  delete[] attach_address_;
+  shmid_ = 0;
+  attach_address_ = 0;
 }
 
 ShmMemoryGrp::~ShmMemoryGrp()

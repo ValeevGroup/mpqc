@@ -48,7 +48,9 @@ class ShmMemoryGrp: public MsgMemoryGrp {
 #define HAVE_KEYVAL_CTOR
 #include <util/class/classd.h>
   private:
-    int shmid_;
+    int nregion_;
+    int *shmid_;
+    void **attach_address_;
     GlobalCounter lock_;
     GlobalCounter *update_;
     void *data_;

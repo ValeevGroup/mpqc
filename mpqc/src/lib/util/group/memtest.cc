@@ -27,6 +27,7 @@
 
 #include <math.h>
 #include <util/misc/formio.h>
+#include <util/misc/bug.h>
 #include <util/group/message.h>
 #include <util/group/mstate.h>
 #include <util/group/hcube.h>
@@ -85,14 +86,14 @@ main(int argc, char**argv)
 {
   RefMessageGrp msg = MessageGrp::initial_messagegrp(argc, argv);
 
+  const char* input = SRCDIR "/memtest.in";
+  RefKeyVal keyval = new ParsedKeyVal(input);
+
   if (msg.null()) {
-      const char* input = SRCDIR "/memtest.in";
       const char* keyword = "message";
 
       if (argc >= 2) input = argv[1];
       if (argc >= 3) keyword = argv[2];
-
-      RefKeyVal keyval = new ParsedKeyVal(input);
 
       msg = keyval->describedclassvalue(keyword);
 
@@ -101,6 +102,15 @@ main(int argc, char**argv)
           abort();
         }
     }
+
+  // now set up the debugger
+  RefDebugger debugger = keyval->describedclassvalue(":debug");
+  if (debugger.nonnull()) {
+    debugger->set_exec(argv[0]);
+    debugger->set_prefix(msg->me());
+  }
+
+  keyval = 0;
 
   msg->sync();
 

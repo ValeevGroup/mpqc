@@ -184,9 +184,7 @@ atomic_charges_from_esp(centers_t *centers, Molecule& mol, dmt_matrix pmat,
 
   if (me==0) {
     avsfil.open("esp.dat","w");
-    }
 
-  if (me==0) {
     avsfil.put(mol.natom());
 
     for (i=0; i < mol.natom(); i++) {
@@ -283,6 +281,7 @@ atomic_charges_from_esp(centers_t *centers, Molecule& mol, dmt_matrix pmat,
             avsfil.put(zp);
             avsfil.flush();
             }
+          gsync();
 #endif
           npoints++;
           }

@@ -115,7 +115,8 @@ MBPTINPUTS = \
  mbpt_mp2v1.in      mbpt_opt12v2.in    mbpt_opt22v2lb.in \
  mbpt_mp2v2.in      mbpt_opt12v2lb.in  mbpt_zapt2v1.in \
  mbpt_mp2v2lb.in    mbpt_opt22v1.in    mbpt_zapt2v2.in \
- mbpt_mp2mem_mp.in  mbpt_mp2v2_mp.in   mbpt_mp2mem_c1.in  mbpt_mp2mem_auto.in
+ mbpt_mp2mem_mp.in  mbpt_mp2v2_mp.in   mbpt_mp2mem_c1.in  mbpt_mp2mem_auto.in \
+ mbpt_mp2r12_ne2.in mbpt_mp2r12_ne2_posix.in mbpt_mp2r12_ne2_multipass.in mbpt_mp2r12_ne2_tz.in
 MBPTINPUTS := $(MBPTINPUTS:%=run/%)
 MBPTOUTPUTS = $(MBPTINPUTS:%.$(INSUF)=%.out)
 
@@ -344,6 +345,8 @@ checkmbpt:
 	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,mem}.out
 	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,mem_c1}.out
 	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,mem_auto}.out
+	@$(CHECKOUT) $(RUN)/mbpt_mp2r12_ne2{,_posix}.out
+	@$(CHECKOUT) $(RUN)/mbpt_mp2r12_ne2{,_multipass}.out
 
 .PHONY: checkdft
 checkdft:

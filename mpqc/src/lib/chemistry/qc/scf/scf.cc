@@ -46,7 +46,7 @@ SCF::save_data_state(StateOut& s)
 RefSCMatrix
 SCF::eigenvectors()
 {
-  return eigenvectors_;
+  return eigenvectors_.result();
 }
 
 void

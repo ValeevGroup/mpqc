@@ -50,7 +50,7 @@ class MBPT2: public Wavefunction {
     Ref<SCF> reference_;
     Ref<MemoryGrp> mem;
     int nfzc, nfzv;
-    unsigned int mem_alloc;
+    size_t mem_alloc;
 
     double cphf_epsilon_;
     int eliminate_in_gmat_;

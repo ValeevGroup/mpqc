@@ -126,6 +126,8 @@ class KeyVal: public RefCount {
     virtual char   key_charvalue(const char* key,const KeyValValue& def);
     /// Ultimately called by intvalue.
     virtual int    key_intvalue(const char* key,const KeyValValue& def);
+    /// Ultimately called by sizevalue.
+    virtual size_t key_sizevalue(const char* key,const KeyValValue& def);
     /// Ultimately called by pcharvalue.
     virtual char*  key_pcharvalue(const char* key,const KeyValValue& def);
     /// Ultimately called by describedclassvalue.
@@ -165,6 +167,9 @@ class KeyVal: public RefCount {
     /// Returns the int value of key.
     int    intvalue(const char* key = 0,
                     const KeyValValue& def=KeyValValueint());
+    /// Returns the size_t value of key.
+    size_t sizevalue(const char* key = 0,
+                     const KeyValValue& def=KeyValValuesize());
     /** Returns a copy of the string representation of the key's
         value. Storage for the copy is obtained with new. */
     char*  pcharvalue(const char* key = 0,
@@ -186,6 +191,8 @@ class KeyVal: public RefCount {
                      const KeyValValue& def=KeyValValuechar());
     int    intvalue(const char* key,int,
                     const KeyValValue& def=KeyValValueint());
+    size_t sizevalue(const char* key,int,
+                     const KeyValValue& def=KeyValValuesize());
     char*  pcharvalue(const char* key,int,
                       const KeyValValue& def=KeyValValuepchar());
     Ref<DescribedClass> describedclassvalue(const char* key,int,
@@ -203,6 +210,8 @@ class KeyVal: public RefCount {
                      const KeyValValue& def=KeyValValuechar());
     int    intvalue(int i,
                     const KeyValValue& def=KeyValValueint());
+    size_t sizevalue(int i,
+                     const KeyValValue& def=KeyValValuesize());
     char*  pcharvalue(int i,
                       const KeyValValue& def=KeyValValuepchar());
     Ref<DescribedClass> describedclassvalue(int i,
@@ -221,6 +230,8 @@ class KeyVal: public RefCount {
                      const KeyValValue& def=KeyValValuechar());
     int    intvalue(const char* key,int,int,
                     const KeyValValue& def=KeyValValueint());
+    size_t sizevalue(const char* key,int,int,
+                     const KeyValValue& def=KeyValValuesize());
     char*  pcharvalue(const char* key,int,int,
                       const KeyValValue& def=KeyValValuepchar());
     Ref<DescribedClass> describedclassvalue(const char* key,int,int,
@@ -238,6 +249,8 @@ class KeyVal: public RefCount {
                      const KeyValValue& def=KeyValValuechar());
     int    intvalue(int i,int j,
                     const KeyValValue& def=KeyValValueint());
+    size_t sizevalue(int i,int j,
+                     const KeyValValue& def=KeyValValuesize());
     char*  pcharvalue(int i,int j,
                       const KeyValValue& def=KeyValValuepchar());
     Ref<DescribedClass> describedclassvalue(int i,int j,
@@ -251,6 +264,7 @@ class KeyVal: public RefCount {
     float  Va_floatvalue(const char* key,int,...);
     char   Va_charvalue(const char* key,int,...);
     int    Va_intvalue(const char* key,int,...);
+    size_t Va_sizevalue(const char* key,int,...);
     char*  Va_pcharvalue(const char* key,int,...);
     Ref<DescribedClass> Va_describedclassvalue(const char* key,int,...);
 

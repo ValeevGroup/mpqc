@@ -32,6 +32,8 @@
 #pragma interface
 #endif
 
+#include <stddef.h>
+
 #include <util/state/state.h>
 #include <util/group/message.h>
 #include <chemistry/qc/basis/basis.h>
@@ -66,8 +68,8 @@ class Integral : public SavableState {
 
     // the maximum number of bytes that should be used for
     // storing intermediates
-    int storage_;
-    int storage_used_;
+    size_t storage_;
+    size_t storage_used_;
 
     Ref<MessageGrp> grp_;
   public:
@@ -79,15 +81,15 @@ class Integral : public SavableState {
     void save_data_state(StateOut&);
 
     /// Sets the total amount of storage, in bytes, that is available.
-    void set_storage(int i) { storage_=i; };
+    void set_storage(size_t i) { storage_=i; };
     /// Returns how much storage has been used.
-    int storage_used() { return storage_used_; }
+    size_t storage_used() { return storage_used_; }
     /// Returns how much storage was not needed.
-    int storage_unused();
+    size_t storage_unused();
 
     /** The specific integral classes use this to tell Integral
         how much memory they are using/freeing. */
-    void adjust_storage(int s) { storage_used_ += s; }
+    void adjust_storage(ptrdiff_t s) { storage_used_ += s; }
 
     /// Return the PetiteList object.
     Ref<PetiteList> petite_list();

@@ -115,10 +115,10 @@ Integral::set_basis(const Ref<GaussianBasisSet> &b1,
   if (bs4_.null()) bs4_ = bs3_;
 }
 
-int
+size_t
 Integral::storage_unused()
 {
-  int tmp=storage_-storage_used_;
+  ptrdiff_t tmp=storage_-storage_used_;
   return (tmp<0?0:tmp);
 }
       

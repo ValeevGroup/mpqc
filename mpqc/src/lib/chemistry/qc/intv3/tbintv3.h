@@ -42,14 +42,14 @@ class TwoBodyIntV3 : public TwoBodyInt {
                  const Ref<GaussianBasisSet>&b2,
                  const Ref<GaussianBasisSet>&b3,
                  const Ref<GaussianBasisSet>&b4,
-                 int storage);
+                 size_t storage);
     ~TwoBodyIntV3();
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int);
 
-    int storage_used() { return int2ev3_->storage_used(); }
-    void set_integral_storage(int storage);
+    size_t storage_used() { return int2ev3_->storage_used(); }
+    void set_integral_storage(size_t storage);
 };
 
 /** This implements electron repulsion derivative integrals in the IntV3
@@ -64,13 +64,13 @@ class TwoBodyDerivIntV3 : public TwoBodyDerivInt {
                       const Ref<GaussianBasisSet>&b2,
                       const Ref<GaussianBasisSet>&b3,
                       const Ref<GaussianBasisSet>&b4,
-                      int storage);
+                      size_t storage);
     ~TwoBodyDerivIntV3();
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int,DerivCenters&);
 
-    int storage_used() { return int2ev3_->storage_used(); }
+    size_t storage_used() { return int2ev3_->storage_used(); }
 };
 
 #endif

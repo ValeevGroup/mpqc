@@ -33,7 +33,7 @@ TwoBodyIntV3::TwoBodyIntV3(Integral*integral,
                            const Ref<GaussianBasisSet>& b2,
                            const Ref<GaussianBasisSet>& b3,
                            const Ref<GaussianBasisSet>& b4,
-                           int storage):
+                           size_t storage):
   TwoBodyInt(integral,b1,b2,b3,b4)
 {
   int2ev3_ = new Int2eV3(integral,b1,b2,b3,b4,0,storage);
@@ -60,7 +60,7 @@ TwoBodyIntV3::log2_shell_bound(int is, int js, int ks, int ls)
 }
 
 void
-TwoBodyIntV3::set_integral_storage(int storage)
+TwoBodyIntV3::set_integral_storage(size_t storage)
 {
   int2ev3_->init_storage(storage);
 }
@@ -72,7 +72,7 @@ TwoBodyDerivIntV3::TwoBodyDerivIntV3(Integral*integral,
                                      const Ref<GaussianBasisSet>& b2,
                                      const Ref<GaussianBasisSet>& b3,
                                      const Ref<GaussianBasisSet>& b4,
-                                     int storage):
+                                     size_t storage):
   TwoBodyDerivInt(integral,b1,b2,b3,b4)
 {
   int2ev3_ = new Int2eV3(integral,b1,b2,b3,b4,1,storage);

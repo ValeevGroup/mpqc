@@ -60,7 +60,7 @@ class SCF: public OneBodyWavefunction {
     int dens_reset_freq_;
     int reset_occ_;
     int local_dens_;
-    int storage_;
+    size_t storage_;
     int print_all_evals_;
     int print_occ_evals_;
     

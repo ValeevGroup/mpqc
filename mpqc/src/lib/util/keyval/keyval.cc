@@ -120,6 +120,20 @@ KeyVal::key_intvalue(const char* key, const KeyValValue& def)
     }
   return result;
 }
+size_t
+KeyVal::key_sizevalue(const char* key, const KeyValValue& def)
+{
+  Ref<KeyValValue> val(key_value(key,def));
+  size_t result;
+  if (val.nonnull()) {
+      seterror(val->sizevalue(result));
+    }
+  else {
+      KeyValValue::KeyValValueError err = def.sizevalue(result);
+      if (error() == OK) seterror(err);
+    }
+  return result;
+}
 float
 KeyVal::key_floatvalue(const char* key, const KeyValValue& def)
 {
@@ -219,6 +233,11 @@ KeyVal::intvalue(const char*key,const KeyValValue& def)
 {
   return key_intvalue(key,def);
 }
+size_t
+KeyVal::sizevalue(const char*key,const KeyValValue& def)
+{
+  return key_sizevalue(key,def);
+}
 char*
 KeyVal::pcharvalue(const char*key,const KeyValValue& def)
 {
@@ -291,6 +310,12 @@ int KeyVal::intvalue(const char* key,int n1,const KeyValValue& def)
   getnewkey(newkey,key,n1);
   return key_intvalue(newkey,def);
   }
+size_t KeyVal::sizevalue(const char* key,int n1,const KeyValValue& def)
+  {
+  char newkey[MaxKeywordLength];
+  getnewkey(newkey,key,n1);
+  return key_sizevalue(newkey,def);
+  }
 int KeyVal::booleanvalue(const char* key,int n1,const KeyValValue& def)
   {
   char newkey[MaxKeywordLength];
@@ -351,6 +376,13 @@ int KeyVal::intvalue(const char* key,int n1,int n2,
   char newkey[MaxKeywordLength];
   getnewkey(newkey,key,n1,n2);
   return key_intvalue(newkey,def);
+  }
+size_t KeyVal::sizevalue(const char* key,int n1,int n2,
+                         const KeyValValue& def)
+  {
+  char newkey[MaxKeywordLength];
+  getnewkey(newkey,key,n1,n2);
+  return key_sizevalue(newkey,def);
   }
 int KeyVal::booleanvalue(const char* key,int n1,int n2,
                          const KeyValValue& def)
@@ -437,6 +469,13 @@ int KeyVal::Va_intvalue(const char* key,int narg,...)
   char newkey[MaxKeywordLength];
   getnewvakey(newkey,key,narg);
   return key_intvalue(newkey,KeyValValueint());
+  }
+size_t KeyVal::Va_sizevalue(const char* key,int narg,...)
+  {
+  va_list args;
+  char newkey[MaxKeywordLength];
+  getnewvakey(newkey,key,narg);
+  return key_sizevalue(newkey,KeyValValuesize());
   }
 char* KeyVal::Va_pcharvalue(const char* key,int narg,...)
   {
@@ -538,6 +577,12 @@ KeyVal::intvalue(int i,const KeyValValue& def)
   return intvalue((const char*)0,i,def);
 }
 
+size_t
+KeyVal::sizevalue(int i,const KeyValValue& def)
+{
+  return sizevalue((const char*)0,i,def);
+}
+
 char*
 KeyVal::pcharvalue(int i,const KeyValValue& def)
 {
@@ -590,6 +635,12 @@ int
 KeyVal::intvalue(int i,int j,const KeyValValue& def)
 {
   return intvalue((const char*)0,i,j,def);
+}
+
+size_t
+KeyVal::sizevalue(int i,int j,const KeyValValue& def)
+{
+  return sizevalue((const char*)0,i,j,def);
 }
 
 char*

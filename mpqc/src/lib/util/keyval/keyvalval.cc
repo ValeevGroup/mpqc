@@ -88,6 +88,14 @@ KeyValValue::intvalue(int& val) const
 }
 
 KeyValValue::KeyValValueError
+KeyValValue::sizevalue(size_t& val) const
+{
+  KeyValValuesize def;
+  def.sizevalue(val);
+  return KeyValValue::WrongType;
+}
+
+KeyValValue::KeyValValueError
 KeyValValue::pcharvalue(const char*& val) const
 {
   KeyValValuepchar def;
@@ -227,6 +235,29 @@ KeyValValueint::intvalue(int&val) const
 
 void
 KeyValValueint::print(ostream&o) const
+{
+  o << _val;
+}
+
+/////////////////////////////////////////////////////////////////////////
+
+KeyValValuesize::KeyValValuesize(const KeyValValuesize&val):
+  _val(val._val)
+{
+}
+KeyValValuesize::~KeyValValuesize()
+{
+}
+
+KeyValValue::KeyValValueError
+KeyValValuesize::sizevalue(size_t&val) const
+{
+  val = _val;
+  return KeyValValue::OK;
+}
+
+void
+KeyValValuesize::print(ostream&o) const
 {
   o << _val;
 }
@@ -385,6 +416,60 @@ KeyValValue::KeyValValueError
 KeyValValueString::intvalue(int&val) const
 {
   val = atoi(_val);
+  return KeyValValue::OK;
+}
+KeyValValue::KeyValValueError
+KeyValValueString::sizevalue(size_t&val) const
+{
+  int n = ::strlen(_val);
+  int gotdigitspace = 0;
+  int gotdigit = 0;
+  int gotdecimal = 0;
+  int denom = 1;
+  val = 0;
+  for (int i=0; i<n; i++) {
+      if (isdigit(_val[i]) && !gotdigitspace) {
+          char tmp[2]; tmp[0] = _val[i]; tmp[1] = '\0';
+          val = val * 10 + atoi(tmp);
+          gotdigit = 1;
+          if (gotdecimal) denom *= 10;
+        }
+      else if (_val[i] == '.' && !gotdigitspace && !gotdecimal) {
+          gotdecimal = 1;
+        }
+      else if (_val[i] == ' ') {
+          if (gotdigit) gotdigitspace = 1;
+        }
+      else if (strcmp(&_val[i],"KIB") == 0) {
+          val *= 1024;
+          i+=2;
+        }
+      else if (strcmp(&_val[i],"MIB") == 0) {
+          val *= 1048576;
+          i+=2;
+        }
+      else if (strcmp(&_val[i],"GIB") == 0) {
+          val *= 1073741824;
+          i+=2;
+        }
+      else if (strcmp(&_val[i],"KB") == 0) {
+          val *= 1000;
+          i++;
+        }
+      else if (strcmp(&_val[i],"MB") == 0) {
+          val *= 1000000;
+          i++;
+        }
+      else if (strcmp(&_val[i],"GB") == 0) {
+          val *= 1000000000;
+          i++;
+        }
+      else {
+          val = 0;
+          return KeyValValue::WrongType;
+        }
+    }
+  val /= denom;
   return KeyValValue::OK;
 }
 KeyValValue::KeyValValueError

@@ -1,5 +1,8 @@
 % Emacs should use -*- KeyVal -*- mode.
 
+% check size type
+memory = [ 12345 102KB "103 KB" 1.23KB "1.23 KB" 1MB 1GB 1KIB 1MIB 1GIB ]
+
 % check forward references of variables
 forref: (
   x = $a

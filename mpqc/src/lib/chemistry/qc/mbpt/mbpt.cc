@@ -85,7 +85,7 @@ dquicksort(double *item,int *index,int n)
 // MBPT2
 
 static ClassDesc MBPT2_cd(
-  typeid(MBPT2),"MBPT2",7,"public Wavefunction",
+  typeid(MBPT2),"MBPT2",8,"public Wavefunction",
   0, create<MBPT2>, create<MBPT2>);
 
 MBPT2::MBPT2(StateIn& s):
@@ -95,7 +95,16 @@ MBPT2::MBPT2(StateIn& s):
   reference_ << SavableState::restore_state(s);
   s.get(nfzc);
   s.get(nfzv);
-  s.get(mem_alloc);
+  if (s.version(::class_desc<MBPT2>()) >= 8) {
+      double dmem_alloc;
+      s.get(dmem_alloc);
+      mem_alloc = size_t(dmem_alloc);
+    }
+  else {
+      unsigned int imem_alloc;
+      s.get(imem_alloc);
+      mem_alloc = imem_alloc;
+    }
   s.getstring(method_);
   s.getstring(algorithm_);
 
@@ -178,7 +187,7 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
     }
   delete[] nfzc_charval;
   nfzv = keyval->intvalue("nfzv");
-  mem_alloc = keyval->intvalue("memory");
+  mem_alloc = keyval->sizevalue("memory");
   if (keyval->error() != KeyVal::OK) {
       // by default, take half of the memory
       mem_alloc = ExEnv::memory()/2;
@@ -234,7 +243,8 @@ MBPT2::save_data_state(StateOut& s)
   SavableState::save_state(reference_.pointer(),s);
   s.put(nfzc);
   s.put(nfzv);
-  s.put(mem_alloc);
+  double dmem_alloc = mem_alloc;
+  s.put(dmem_alloc);
   s.putstring(method_);
   s.putstring(algorithm_);
   s.put(do_d1_);

@@ -120,7 +120,7 @@ class TwoBodyInt : public RefCount {
     //@}
 
     /// This storage is used to cache computed integrals.
-    virtual void set_integral_storage(int storage);
+    virtual void set_integral_storage(size_t storage);
 
     /// Return the integral factory that was used to create this object.
     Integral *integral() const { return integral_; }

@@ -53,7 +53,7 @@ using namespace std;
 // SCF
 
 static ClassDesc SCF_cd(
-  typeid(SCF),"SCF",2,"public OneBodyWavefunction",
+  typeid(SCF),"SCF",3,"public OneBodyWavefunction",
   0, 0, 0);
 
 SCF::SCF(StateIn& s) :
@@ -67,7 +67,16 @@ SCF::SCF(StateIn& s) :
   s.get(dens_reset_freq_);
   s.get(reset_occ_);
   s.get(local_dens_);
-  s.get(storage_);
+  if (s.version(::class_desc<SCF>()) >= 3) {
+    double dstorage;
+    s.get(dstorage);
+    storage_ = size_t(dstorage);
+  }
+  else {
+    unsigned int istorage;
+    s.get(istorage);
+    storage_ = istorage;
+  }
   if (s.version(::class_desc<SCF>()) >= 2) {
     s.get(print_all_evals_);
     s.get(print_occ_evals_);
@@ -117,8 +126,8 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
   if (accumddh_.null())
     accumddh_ = new AccumHNull;
   
-  KeyValValueint defaultmem(8000000);
-  storage_ = keyval->intvalue("memory",defaultmem);
+  KeyValValuesize defaultmem(8000000);
+  storage_ = keyval->sizevalue("memory",defaultmem);
   
   if (keyval->exists("local_density"))
     local_dens_ = keyval->booleanvalue("local_density");
@@ -171,6 +180,8 @@ SCF::save_data_state(StateOut& s)
   s.put(reset_occ_);
   s.put(local_dens_);
   s.put(storage_);
+  double dstorage = storage_;
+  s.put(dstorage);
   s.put(print_all_evals_);
   s.put(print_occ_evals_);
   s.put(level_shift_);
@@ -421,7 +432,7 @@ SCF::init_mem(int nm)
     return;
   }
   
-  int nmem = i_offset(basis()->nbasis())*nm*sizeof(double);
+  size_t nmem = i_offset(basis()->nbasis())*nm*sizeof(double);
 
   // if we're actually using local matrices, then there's no choice
   if (dynamic_cast<LocalSCMatrixKit*>(basis()->matrixkit().pointer())
@@ -663,7 +674,7 @@ void
 SCF::init_threads()
 {
   int nthread = threadgrp_->nthread();
-  int int_store = integral()->storage_unused()/nthread;
+  size_t int_store = integral()->storage_unused()/nthread;
   
   // initialize the two electron integral classes
   tbis_ = new Ref<TwoBodyInt>[nthread];

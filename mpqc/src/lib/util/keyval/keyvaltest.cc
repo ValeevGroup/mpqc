@@ -226,6 +226,11 @@ main()
   cout << decindent;
   cout << "done" << endl;
 
+  // size tests
+  for (int i=0; i < pkv->count("memory"); i++) {
+      cout << "memory:" << i << " = " << pkv->sizevalue("memory",i) << endl;
+    }
+
   show( pkv->exists(":x") );  show( pkv->errormsg() ); cout << '\n';
   show( pkv->exists(":z") );  show (pkv->errormsg() ); cout << '\n';
   show( pkv->intvalue(":y") );  show( pkv->errormsg() ); cout << '\n';

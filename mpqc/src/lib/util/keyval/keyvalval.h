@@ -46,6 +46,7 @@ class KeyValValue: public RefCount {
     virtual KeyValValue::KeyValValueError floatvalue(float&) const;
     virtual KeyValValue::KeyValValueError charvalue(char&) const;
     virtual KeyValValue::KeyValValueError intvalue(int&) const;
+    virtual KeyValValue::KeyValValueError sizevalue(size_t&) const;
     virtual KeyValValue::KeyValValueError pcharvalue(const char*&) const;
     virtual KeyValValue::KeyValValueError describedclassvalue(Ref<DescribedClass>&) const;
     virtual void print(std::ostream &o=ExEnv::out()) const;
@@ -114,6 +115,18 @@ class KeyValValueint: public KeyValValue {
     void print(std::ostream &o=ExEnv::out()) const;
 };
 
+class KeyValValuesize: public KeyValValue {
+  private:
+    size_t _val;
+  public:
+    KeyValValuesize(): _val(0) {}
+    KeyValValuesize(int v): _val(v) {}
+    KeyValValuesize(const KeyValValuesize&);
+    ~KeyValValuesize();
+    KeyValValue::KeyValValueError sizevalue(size_t&) const;
+    void print(std::ostream &o=ExEnv::out()) const;
+};
+
 class KeyValValuepchar: public KeyValValue {
   private:
     char* _val;
@@ -159,6 +172,7 @@ class KeyValValueString: public KeyValValue {
     KeyValValue::KeyValValueError floatvalue(float&) const;
     KeyValValue::KeyValValueError charvalue(char&) const;
     KeyValValue::KeyValValueError intvalue(int&) const;
+    KeyValValue::KeyValValueError sizevalue(size_t&) const;
     KeyValValue::KeyValValueError pcharvalue(const char*&) const;
     void print(std::ostream &o=ExEnv::out()) const;
 };

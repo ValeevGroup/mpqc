@@ -152,7 +152,7 @@ TwoBodyInt::buffer() const
 }
 
 void
-TwoBodyInt::set_integral_storage(int storage)
+TwoBodyInt::set_integral_storage(size_t storage)
 {
 }
 

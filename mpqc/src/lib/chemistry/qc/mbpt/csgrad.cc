@@ -143,7 +143,7 @@ MBPT2::compute_cs_grad()
   int xyz;
   int natom = molecule()->natom();     // the number of atoms
   int int_index;
-  int mem_static;    // static memory in bytes
+  size_t mem_static;    // static memory in bytes
   int ij_proc;          // the processor which has ij pair
   int ij_index;         // of the ij pairs on a proc, this ij pair is number ij_index
                         // (i.e., ij_index < nij)
@@ -329,7 +329,9 @@ MBPT2::compute_cs_grad()
 
   // Send value of ni and mem_static to other nodes
   msg_->bcast(ni);
-  msg_->bcast(mem_static);
+  double dmem_static = mem_static;
+  msg_->bcast(dmem_static);
+  mem_static = size_t(dmem_static);
 
   // Compute the storage remaining for the integral routines
   size_t dyn_mem = distsize_to_size(compute_cs_dynamic_memory(ni,nocc_act));
@@ -2410,7 +2412,7 @@ accum_gradients(double **g, double **f, int n1, int n2)
 int
 MBPT2::compute_cs_batchsize(int mem_static, int nocc_act)
 {
-  unsigned int mem_dyn;   // dynamic memory available
+  size_t mem_dyn;   // dynamic memory available
   distsize_t maxdyn;
   int ni;
 

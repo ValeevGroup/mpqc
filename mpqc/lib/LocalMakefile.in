@@ -35,6 +35,12 @@ INSTALL = @INSTALL@
 INSTALLLIBOPT = -m 0644
 INSTALLBINOPT = -m 0755 -s
 
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+libdir=@libdir@
+includedir=@includedir@
+
 FLEX = @FLEX@
 BISON = @BISON@
 RANLIB = @RANLIB@

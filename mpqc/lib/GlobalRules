@@ -79,8 +79,8 @@ install: install_inc install_target
 install_inc::
 
 install_target:: $(TARGET_TO_MAKE).$(LIBSUF)
-	$(INSTALL) $(INSTALLLIBOPT) $(TARGET_TO_MAKE).$(LIBSUF) $(LIBDIR)
-	$(RANLIB) $(LIBDIR)/$(TARGET_TO_MAKE).$(LIBSUF)
+	$(INSTALL) $(INSTALLLIBOPT) $(TARGET_TO_MAKE).$(LIBSUF) $(libdir)
+	$(RANLIB) $(libdir)/$(TARGET_TO_MAKE).$(LIBSUF)
 endif
 
 ifeq ($(BIN_OR_LIB),BIN)
@@ -91,7 +91,7 @@ $(TARGET_TO_MAKE): $(BINOBJ) $(LIBS)
 install: install_target
 
 install_target: $(TARGET_TO_MAKE)
-	$(INSTALL) $(INSTALLBINOPT) $(TARGET_TO_MAKE) $(BINDIR)
+	$(INSTALL) $(INSTALLBINOPT) $(TARGET_TO_MAKE) $(bindir)
 endif
 
 .PHONY: doc

@@ -370,10 +370,16 @@ main(int argc, char *argv[])
         ready_for_freq = 0;
       }
     } else if (do_grad && mole->gradient_implemented()) {
-      mole->gradient().print("gradient");
+      mole->do_gradient(1);
+      cout << node0 << indent
+           << scprintf("Value of the MolecularEnergy: %20.15f\n",
+                       mole->energy())
+           << endl;
+      mole->gradient().print("Gradient of the MolecularEnergy:");
     } else if (do_energy && mole->value_implemented()) {
       cout << node0 << indent
-           << scprintf("value of mole is %20.15f\n", mole->energy())
+           << scprintf("Value of the MolecularEnergy: %20.15f\n",
+                       mole->energy())
            << endl;
     }
   }

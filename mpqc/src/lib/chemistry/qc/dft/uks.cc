@@ -68,6 +68,10 @@ UKS::UKS(StateIn& s) :
   exc_=0;
   integrator_.restore_state(s);
   functional_.restore_state(s);
+  vaxc_ = basis_matrixkit()->symmmatrix(so_dimension());
+  vaxc_.restore(s);
+  vbxc_ = basis_matrixkit()->symmmatrix(so_dimension());
+  vbxc_.restore(s);
 }
 
 UKS::UKS(const RefKeyVal& keyval) :
@@ -94,6 +98,8 @@ UKS::save_data_state(StateOut& s)
   UnrestrictedSCF::save_data_state(s);
   integrator_.save_state(s);
   functional_.save_state(s);
+  vaxc_.save(s);
+  vbxc_.save(s);
 }
 
 int

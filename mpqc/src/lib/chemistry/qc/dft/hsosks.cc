@@ -71,6 +71,10 @@ HSOSKS::HSOSKS(StateIn& s) :
   exc_=0;
   integrator_.restore_state(s);
   functional_.restore_state(s);
+  vxc_a_ = basis_matrixkit()->symmmatrix(so_dimension());
+  vxc_a_.restore(s);
+  vxc_b_ = basis_matrixkit()->symmmatrix(so_dimension());
+  vxc_b_.restore(s);
 }
 
 HSOSKS::HSOSKS(const RefKeyVal& keyval) :
@@ -97,6 +101,8 @@ HSOSKS::save_data_state(StateOut& s)
   HSOSSCF::save_data_state(s);
   integrator_.save_state(s);
   functional_.save_state(s);
+  vxc_a_.save(s);
+  vxc_b_.save(s);
 }
 
 int

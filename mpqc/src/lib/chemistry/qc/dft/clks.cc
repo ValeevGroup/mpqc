@@ -68,6 +68,8 @@ CLKS::CLKS(StateIn& s) :
   exc_=0;
   integrator_.restore_state(s);
   functional_.restore_state(s);
+  vxc_ = basis_matrixkit()->symmmatrix(so_dimension());
+  vxc_.restore(s);
 }
 
 CLKS::CLKS(const RefKeyVal& keyval) :
@@ -94,6 +96,7 @@ CLKS::save_data_state(StateOut& s)
   CLSCF::save_data_state(s);
   integrator_.save_state(s);
   functional_.save_state(s);
+  vxc_.save(s);
 }
 
 int

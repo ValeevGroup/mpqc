@@ -1509,6 +1509,15 @@ case $target in
       AC_MSG_RESULT("alpha* non-GNU C++")
     fi
   ;;
+  *-cray-unicos*)
+    if test ! X$GXX = Xyes; then
+      # This is to quickly get things running.
+      # A more sophisticated template instantiation model would be better.
+      # The conform flag isn't really related to templates, but it needed
+      # to get Cray's C++ compiler to support standard C++.
+      CXXFLAGS="$CXXFLAGS -h simple_templates -h conform"
+    fi
+  ;;
   *-dec-osf*)
     if test ! X$GXX = Xyes; then
       TMPLREPO=cxx_repository

@@ -164,6 +164,10 @@ Units::parse_unit()
                ||eq(unitstring, "Hartree")
                ||eq(unitstring, "Hartrees")) {
         }
+      else if (eq(unitstring, "ev")
+               ||eq(unitstring, "eV")) {
+          factor = 1.0/27.2113834; // physics.nist.gov/constants
+        }
       else if (eq(unitstring, "radian")
                ||eq(unitstring, "radians")) {
         }

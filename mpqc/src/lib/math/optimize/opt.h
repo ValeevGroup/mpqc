@@ -48,9 +48,6 @@ class Optimize: virtual public SavableState {
   protected:
     int max_iterations_;
     int n_iterations_;
-    int n_values_;
-    int n_gradients_;
-    int n_hessians_;
     int ckpt_;
     int print_timings_;
     double max_stepsize_;
@@ -118,11 +115,6 @@ class Optimize: virtual public SavableState {
     Ref<SCMatrixKit> matrixkit() const { return function_->matrixkit(); }
     RefSCDimension dimension() const { return function_->dimension(); }
 
-    int n_iterations() { return n_iterations_; }
-    int n_values() { return n_values_; }
-    int n_gradients() { return n_gradients_; }
-    int n_hessians() { return n_hessians_; }
-
 };
 
 
@@ -149,13 +141,21 @@ class LineOpt: public Optimize {
     ~LineOpt();
     void save_data_state(StateOut&);
 
+    /** Initializes the line search object. Argument is a search direction.
+      * Use of this method assumes the Optimize base class already has a 
+      * function object (got it from a keyval or elsewhere). */
     void init(RefSCVector& direction);
+    /** Initializes the line search object. First argument is a search 
+      * direction, second argument is a function object to optimize.
+      * Use this method when a function must be passed to the Optimize 
+      * base class. */
     void init(RefSCVector& direction, Ref<Function> function);
+    /// Applies a nonlinear transform.
     void apply_transform(const Ref<NonlinearTransform>&);
   
-    /// Returns decrease factor for sufficient decrease test
+    /// Returns factor for sufficient decrease test
     double decrease_factor() { return decrease_factor_; }
-    /// Sets decrease factor for sufficient decrease test
+    /// Sets factor for sufficient decrease test
     double set_decrease_factor( double factor ) 
     { double temp = decrease_factor_; decrease_factor_ = factor; return temp; }
 };

@@ -128,9 +128,6 @@ void
 Optimize::init()
 {
   n_iterations_ = 0;
-  n_values_ = 0;
-  n_gradients_ = 0;
-  n_hessians_ = 0;
 }
 
 void
@@ -205,6 +202,7 @@ LineOpt::LineOpt(StateIn&s):
 LineOpt::LineOpt(const Ref<KeyVal>&keyval)
 {
   decrease_factor_ = keyval->doublevalue("decrease_factor");	
+  if (keyval->error() != KeyVal::OK) decrease_factor_ = 0.1;
 }
 
 LineOpt::~LineOpt()
@@ -272,88 +270,106 @@ Backtrack::Backtrack(const Ref<KeyVal>& keyval)
   : LineOpt(keyval)
 { 
   backtrack_factor_ = keyval->doublevalue("backtrack_factor");
-  if (keyval->error() != KeyVal::OK) backtrack_factor_ = 0.25;
-  max_iterations_ = keyval->intvalue("max_iterations");
-  if (keyval->error() != KeyVal::OK) max_iterations_ = int(1.0/backtrack_factor_);
+  if (keyval->error() != KeyVal::OK) backtrack_factor_ = 0.1;
 }
 
 int
 Backtrack::update() {
   
-  RefSCVector xnext;
   deque<double> values;
-  int sufficient = 0;
-  int using_step;
+  int acceptable=0;
+  int descent=1;
   int took_step=0;
+  int using_step;
 
   RefSCVector backtrack = -1.0 * backtrack_factor_ * search_direction_;
   RefSCVector step = search_direction_.copy();
   
-  ++n_values_;
+  // check if line search is needed
   if( sufficient_decrease(step) ) {
     ExEnv::out0() << endl << indent << 
-      "unscaled initial step yields sufficient decrease" << endl;
+      "Unscaled initial step yields sufficient decrease." << endl;
     return 1;
   }
 
   ExEnv::out0() << endl << indent 
-    << "unscaled initial step does not yield a sufficient decrease"
+    << "Unscaled initial step does not yield a sufficient decrease."
     << endl << indent
-    << "initiating backtracking line search" << endl; 
+    << "Initiating backtracking line search." << endl; 
 
-   for(int i=0; i<max_iterations_; ++i) {
+  // perform a simple backtrack
+  values.push_back( function()->value() );  
+  for(int i=0; i<max_iterations_ && !acceptable && descent; ++i) {
 
-    // perform a simple backtrack
-    values.push_back( function()->value() );
     step = step + backtrack;
-    ++n_values_;
-    ++took_step;
-    if( sufficient_decrease(step) ) {
-      ExEnv::out0() << endl << indent << "Backtrack " << i+1 
-        << " yields a sufficient decrease." << endl;
-      sufficient = 1;
-      using_step = i+1;
-      i = max_iterations_;
+
+    if ( sqrt(step.scalar_product(step)) >= 0.1 * 
+	 sqrt(search_direction_.scalar_product(search_direction_)) ) {
+
+      ++took_step;    
+      if( sufficient_decrease(step) ) {
+	ExEnv::out0() << endl << indent << "Backtrack " << i+1 
+		      << " yields a sufficient decrease." << endl;
+	acceptable = 1; 
+	using_step = i+1;
+      }
+      
+      else if ( values.back() < function()->value() ) {
+	ExEnv::out0() << endl << indent << "Backtrack " << i+1 
+		      << " increases value; terminating search." << endl;
+	acceptable = 1;
+	using_step = i;
+      }
+      
+      else {
+	ExEnv::out0() << endl << indent << "Backtrack " << i+1 
+		      << " does not yield a sufficient decrease." << endl;
+	using_step = i+1;
+      }
+
       values.push_back( function()->value() );
     }
 
-    else if ( values.back() < function()->value() ) {
-      values.push_back( function()->value() );
-      ExEnv::out0() << endl << indent << "Backtrack " << i+1 
-        << " increases value; terminating search." << endl;
-      using_step = i;
-      i = max_iterations_;
+    else { 
+      ExEnv::out0() << indent << 
+	"Search direction does not appear to be a descent direction;" <<
+	" terminating search." << endl;
+      descent = 0;
     }
+  }
+	     
 
-    else {
-      ExEnv::out0() << endl << indent << "Backtrack " << i+1 
-        << " does not yield a sufficient decrease." << endl;
-      using_step = i+1;
-    }
-  }    
-
-  if ( !sufficient ) ExEnv::out0() << indent 
-    << "Terminating backtrack without finding a sufficient decrease." << endl;
+  if ( !acceptable && descent ) {
+    ExEnv::out0() << indent << 
+      "Maximum number of backtrack iterations has been exceeded." << endl;
+    acceptable = 1;
+  }
  
-  ExEnv::out0() << indent <<
-    "initial step    " << " value: " << scprintf("%15.10lf", values.front());
-  values.pop_front();
-  for(int i=0; i < took_step; ++i) { 
-    ExEnv::out0() << endl << indent <<
-      "backtrack step " << i+1 << " value: " << 
-      scprintf("%15.10lf", values.front());
+  for(int i=0; i <= took_step; ++i) {
+    if(i==0) ExEnv::out0() << indent << "initial step    " << " value: ";
+    else ExEnv::out0() << indent << "backtrack step " << i << " value: ";
+    ExEnv::out0() << scprintf("%15.10lf", values.front()) << endl;
     values.pop_front();
   }
-  ExEnv::out0() << endl << indent <<
-    "Using step " << using_step << endl;
 
-  if( using_step != took_step ) {
-    function()->set_x( function()->get_x() - backtrack );
+  if(descent) { 
+    ExEnv::out0() << indent << "Using step " << using_step << endl;
+   
+    // use next to last step if value went up
+    if( using_step != took_step ) {
+      function()->set_x( function()->get_x() - backtrack );
+      Ref<NonlinearTransform> t = function()->change_coordinates();
+      apply_transform(t);
+    }
+  }
+  else {
+    function()->set_x( initial_x_ );
     Ref<NonlinearTransform> t = function()->change_coordinates();
     apply_transform(t);
   }
 
-  return sufficient;
+  // returning 0 only if search direction is not descent direction
+  return acceptable;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -74,6 +74,8 @@ QNewtonOpt::QNewtonOpt(const Ref<KeyVal>&keyval):
   if (keyval->error() != KeyVal::OK) dynamic_grad_acc_ = 1;
   force_search_ = keyval->booleanvalue("force_search");
   if (keyval->error() != KeyVal::OK) force_search_ = 0;
+  restart_ = keyval->booleanvalue("restart");
+  if (keyval->error() != KeyVal::OK) restart_ = 1;
 
   RefSymmSCMatrix hessian(dimension(),matrixkit());
   // get a guess hessian from the function
@@ -142,8 +144,6 @@ QNewtonOpt::init()
   Optimize::init();
   take_newton_step_ = 1;
   maxabs_gradient = -1.0;
-  n_value_search_ = 0;
-  n_gradient_search_ = 0;
 }
 
 int
@@ -159,6 +159,8 @@ QNewtonOpt::update()
   RefSCVector xcurrent;
   RefSCVector gcurrent;
 
+  function()->set_desired_gradient_accuracy(accuracy_);
+
   if( dynamic_grad_acc_ ) {
     // get the next gradient at the required level of accuracy.
     // usually only one pass is needed, unless we happen to find
@@ -166,8 +168,6 @@ QNewtonOpt::update()
     int accurate_enough;
     do {
         // compute the current point
-        function()->set_desired_gradient_accuracy(accuracy_);
-
         xcurrent = function()->get_x();
         gcurrent = function()->gradient().copy();
 
@@ -189,8 +189,8 @@ QNewtonOpt::update()
 
         if (!accurate_enough) {
           ExEnv::out0().unsetf(ios::fixed);
-          ExEnv::out0() << indent
-               << "NOTICE: function()->actual_gradient_accuracy() > accuracy_:\n"
+          ExEnv::out0() << indent << 
+	       "NOTICE: function()->actual_gradient_accuracy() > accuracy_:\n"
                << indent
                << scprintf(
                  "        function()->actual_gradient_accuracy() = %15.8e",
@@ -200,6 +200,8 @@ QNewtonOpt::update()
                  accuracy_) << endl;
         }
      } while(!accurate_enough);
+    // increase accuracy, since the next gradient will be smaller
+    accuracy_ = maxabs_gradient * maxabs_gradient_to_next_desired_accuracy;
   }
   else {
     xcurrent = function()->get_x();
@@ -215,6 +217,92 @@ QNewtonOpt::update()
   // update the hessian
   if(update_.nonnull())
     update_->update(ihessian_,function(),xcurrent,gcurrent);
+
+  conv_->reset();
+  conv_->get_grad(function());
+  conv_->get_x(function());
+
+  // compute the quadratic step
+  RefSCVector xdisp = -1.0*(ihessian_ * gcurrent);
+  RefSCVector xnext = xcurrent + xdisp;
+
+  // either do a lineopt or check stepsize
+  double tot;
+  if(lineopt_.nonnull()) {
+
+    // perform a search
+    double factor;
+    if( n_iterations_ == 0 && force_search_ ) 
+      factor = lineopt_->set_decrease_factor(1.0);
+    lineopt_->init(xdisp,function());
+    // reset value acc here so line search "precomputes" are 
+    // accurate enough for subsequent gradient evals
+    function()->set_desired_value_accuracy(accuracy_/100);
+    int acceptable = lineopt_->update();
+    if( n_iterations_ == 0 && force_search_ )
+      lineopt_->set_decrease_factor( factor );
+
+    if( !acceptable ) {
+      if( force_search_ ) factor = lineopt_->set_decrease_factor(1.0);
+
+      // try a new guess hessian
+      if( restart_ ) {
+	ExEnv::out0() << endl << indent << 
+	  "Restarting Hessian approximation" << endl;
+	RefSymmSCMatrix hessian(dimension(),matrixkit());
+	function()->guess_hessian(hessian);
+	ihessian_ = function()->inverse_hessian(hessian);
+	xdisp = -1.0 * (ihessian_ * gcurrent);
+	lineopt_->init(xdisp,function());
+	acceptable = lineopt_->update();
+      }
+      
+      // try steepest descent direction
+      if( !acceptable ) {
+	ExEnv::out0() << endl << indent << 
+	  "Trying steepest descent direction." << endl;
+	xdisp = -1.0 * gcurrent;
+	lineopt_->init(xdisp,function());
+	acceptable = lineopt_->update();
+      }
+
+      // give up and use steepest descent step
+      if( !acceptable ) {
+	ExEnv::out0() << endl << indent << 
+	  "Resorting to unscaled steepest descent step." << endl;
+	function()->set_x(xcurrent + xdisp);
+	Ref<NonlinearTransform> t = function()->change_coordinates();
+	apply_transform(t);
+      }
+
+      if( force_search_ ) lineopt_->set_decrease_factor( factor );
+    }
+
+    xnext = function()->get_x();
+    xdisp = xnext - xcurrent;
+    tot = sqrt(xdisp.scalar_product(xdisp));
+  }
+  else {
+
+    tot = sqrt(xdisp.scalar_product(xdisp));
+
+    if ( tot > max_stepsize_ ) {
+      if( restrict_ ) {
+	double scal = max_stepsize_/tot;
+	ExEnv::out0() << endl << indent <<
+	  scprintf("stepsize of %f is too big, scaling by %f",tot,scal)
+	  << endl;
+	xdisp.scale(scal);
+	tot *= scal;
+      }
+      else {
+	ExEnv::out0() << endl << indent <<
+	  scprintf("stepsize of %f is too big, but scaling is disabled",tot)
+	  << endl;
+      }
+    }
+    xnext = xcurrent + xdisp;
+  }
 
   if (print_hessian_) {
     RefSymmSCMatrix hessian = ihessian_.gi();
@@ -248,76 +336,11 @@ QNewtonOpt::update()
     ExEnv::out0() << " ]" << endl;
   }
 
-  // compute the quadratic step
-  RefSCVector xdisp = -1.0*(ihessian_ * gcurrent);
-  RefSCVector xnext = xcurrent + xdisp;
-
   // check for convergence
-  conv_->reset();
-  conv_->get_grad(function());
-  conv_->get_x(function());
   conv_->set_nextx(xnext);
   int converged = conv_->converged();
-  if (converged) {
-    ExEnv::out0() << indent << n_iterations_ + 1 << 
-      " optimization iterations performed: " << incindent << indent <<
-      n_iterations_ + n_value_search_ + 1 << " function evaluations" << 
-      endl << indent <<
-      n_iterations_ + n_gradient_search_ + 1 << " gradient evaluations" << 
-      endl << decindent;
-    return converged;
-  }
+  if (converged) return converged;
 
-  // either do a lineopt or check stepsize
-  double tot;
-  if(lineopt_.nonnull()) {
-
-    double factor;
-    if( n_iterations_ == 0 && force_search_ ) 
-      factor = lineopt_->set_decrease_factor(1.0);
-
-    lineopt_->init(xdisp,function());
-    lineopt_->update();
-    xnext = function()->get_x();
-    xdisp = xnext - xcurrent;
-    tot = sqrt(xdisp.scalar_product(xdisp));
-
-    if( n_iterations_ == 0 && force_search_ )
-      lineopt_->set_decrease_factor( factor );
-
-    // mess here is needed to keep account of total 
-    // value/gradient evaluations
-    n_value_search_ += lineopt_->n_values();
-    n_gradient_search_ += lineopt_->n_gradients();
-    // if quantity !needed, then line search has precomputed it
-    int previous = function()->do_value(1);
-    if( !function()->value_needed() ) --n_value_search_;
-    function()->do_value(previous);
-    previous = function_->do_gradient(1);
-    if( !function()->gradient_needed() ) --n_gradient_search_;
-    function_->do_gradient(previous);
-
-  }
-  else {
-
-    tot = sqrt(xdisp.scalar_product(xdisp));
-
-    if ( tot > max_stepsize_ ) {
-      if( restrict_ ) {
-	double scal = max_stepsize_/tot;
-	ExEnv::out0() << endl << indent <<
-	  scprintf("stepsize of %f is too big, scaling by %f",tot,scal)
-	  << endl;
-	xdisp.scale(scal);
-	tot *= scal;
-      }
-      else {
-	ExEnv::out0() << endl << indent <<
-	  scprintf("stepsize of %f is too big, but scaling is disabled",tot)
-	  << endl;
-      }
-    }
-  }
   ExEnv::out0() << indent
 		<< scprintf("taking step of size %f", tot) << endl;
   ExEnv::out0() << indent << "Optimization iteration " 
@@ -332,11 +355,11 @@ QNewtonOpt::update()
     apply_transform(t);
   }
 
-  // make the next gradient computed more accurate, since it will
-  // be smaller
-  if( dynamic_grad_acc_ ) 
-    accuracy_ = maxabs_gradient * maxabs_gradient_to_next_desired_accuracy;
-  
+  if( dynamic_grad_acc_ ) {
+    function()->set_desired_gradient_accuracy(accuracy_);
+    if( lineopt_.null()) function()->set_desired_value_accuracy(accuracy_/100);
+  }
+
   return converged;
 }
 

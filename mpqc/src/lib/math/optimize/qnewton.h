@@ -65,8 +65,7 @@ class QNewtonOpt: public Optimize {
     int restrict_;
     int dynamic_grad_acc_;
     int force_search_;
-    int n_value_search_;
-    int n_gradient_search_;
+    int restart_;
 
   public:
     /** The KeyVal constructor.

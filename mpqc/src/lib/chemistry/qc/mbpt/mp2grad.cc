@@ -35,7 +35,7 @@ extern "C" {
 static int
 mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
         double_vector_t *_evals, int nfzc, int nfzv, int mem,FILE* outfile,
-        RefMessageGrp msg, double_matrix_t *);
+        RefMessageGrp msg, double &energy, double_matrix_t *);
 
 static void
 s2pdm_contrib(double *intbuf, centers_t *centers, double *PHF, double *P2AO,
@@ -116,7 +116,7 @@ print_contrib(double tmpval, int num, int onum,
 static int
 mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
      double_vector_t *_evals, int nfzc, int nfzv, int mem_alloc, FILE* outfile,
-        RefMessageGrp msg, double_matrix_t *gradientt)
+        RefMessageGrp msg, double &energy, double_matrix_t *gradientt)
 {
 
   // New version of MP2 gradient program which uses the full
@@ -1640,7 +1640,7 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     fprintf(outfile,"MP2 energy [au]:                   %13.8lf\n", emp2);
     fflush(outfile);
     }
-
+  energy = emp2;
 
   ////////////////////////////////////////////////////////
   // Add contributions from all nodes to various matrices
@@ -2511,7 +2511,8 @@ mbpt_mp2_gradient(scf_struct_t &scf_info,
                   dmt_matrix Scf_Vec, dmt_matrix Fock, dmt_matrix FockO,
                   int mem_alloc,
                   FILE *outfile,
-                  RefMessageGrp &grp, double_matrix_t &gradient)
+                  RefMessageGrp &grp,
+                  double &energy, double_matrix_t &gradient)
 {
   dmt_matrix S = dmt_create("libscfv3 overlap matrix",scf_info.nbfao,SCATTERED);
   dmt_matrix SAHALF;
@@ -2566,7 +2567,7 @@ mbpt_mp2_gradient(scf_struct_t &scf_info,
 
   tim_enter("mp2grad");
   mp2grad(&centers,&scf_info,Scf_Vec,&evals,nfzc,nfzv,mem_alloc,outfile,
-          grp,&gradient);
+          grp,energy,&gradient);
   tim_exit("mp2grad");
        
   free_double_vector(&evals);

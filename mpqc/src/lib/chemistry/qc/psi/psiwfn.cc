@@ -6,7 +6,6 @@
 #include <math.h>
 
 #include <util/keyval/keyval.h>
-#include <util/misc/libmisc.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <math/scmat/matrix.h>

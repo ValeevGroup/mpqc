@@ -28,9 +28,7 @@
 #ifndef _util_misc_timer_h
 #define _util_misc_timer_h
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace sc {
 
   void tim_enter(const char *);
   void tim_exit(const char *);
@@ -40,8 +38,6 @@ extern "C" {
   void tim_exit_default();
   void tim_print(int);
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* _util_misc_timer_h */

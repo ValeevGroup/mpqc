@@ -38,13 +38,13 @@ CXXFLAGS := $(CXXFLAGS:-fno-implicit-templates=)
 TARGET_TO_MAKE = libSCmisc
 BIN_OR_LIB = LIB
 
-CSRC = ieee.c checkalloc.c mtype.c
+CSRC =
 
-CXXSRC = compute.cc formio.cc bug.cc regtime.cc exenv.cc units.cc
+CXXSRC = compute.cc formio.cc bug.cc regtime.cc exenv.cc units.cc ieee.cc
 
 TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc unittest.cc
 
-INC = libmisc.h memory.h timer.h compute.h ieee.h bug.h exenv.h
+INC = timer.h compute.h ieee.h bug.h exenv.h
 
 DISTFILES = $(CSRC) $(CXXSRC) $(TESTSRC) $(INC) Makefile LIBS.h
 

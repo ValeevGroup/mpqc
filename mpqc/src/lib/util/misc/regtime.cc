@@ -131,8 +131,6 @@ class TimedRegion {
     void get_depth(int *, int depth = 0);
 };
 
-}
-
 //////////////////////////////////////////////////////////////////////
 
 TimedRegion::TimedRegion(const char *name)
@@ -701,7 +699,7 @@ RegionTimer::set_default_regiontimer(const Ref<RegionTimer>& t)
 }
 
 //////////////////////////////////////////////////////////////////////
-// C compatibility routines
+// Shorthand to manipulate the global region timer
 
 void
 tim_enter(const char *name) {
@@ -742,6 +740,8 @@ void
 tim_print(int)
 {
   if (default_regtimer.nonnull()) default_regtimer->print();
+}
+
 }
 
 /////////////////////////////////////////////////////////////////////////////

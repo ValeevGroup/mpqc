@@ -27,10 +27,10 @@
 
 #include <iostream>
 #include <math.h>
-#include <util/misc/libmisc.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
+#include <util/misc/timer.h>
 
 using namespace std;
 using namespace sc;

@@ -3,7 +3,6 @@
 
 #include <math.h>
 
-#include <util/misc/libmisc.h>
 #include <util/group/message.h>
 
 #include <math/scmat/disthql.h>

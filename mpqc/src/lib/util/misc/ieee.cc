@@ -1,5 +1,5 @@
 /*
- * checkalloc.c
+ * ieee.c
  *
  * Copyright (C) 1996 Limit Point Systems, Inc.
  *
@@ -25,19 +25,29 @@
  * The U.S. Government is granted a limited license as per AL 91-7.
  */
 
-#include <stdio.h>
-#include <assert.h>
+#include <util/misc/ieee.h>
 
-void check_alloc (addr, str)
-void *addr;
-char *str;
+#ifdef SGI
+#include <sys/fpu.h>
+namespace sc {
+void
+ieee_trap_errors()
 {
-  if (addr != 0) return;
-  printf ("Allocation for %s failed\n", str);
-#ifndef I860
-  assert (0);
-#else
-  exit(0);
-#endif
-  }
+  union fpc_csr fc;
 
+  fc.fc_word = get_fpc_csr();
+  fc.fc_struct.en_divide0 = 1;
+  fc.fc_struct.en_invalid = 1;
+  fc.fc_struct.en_overflow = 1;
+  set_fpc_csr(fc.fc_word);
+}
+}
+
+#else
+namespace sc {
+void
+ieee_trap_errors()
+{
+}
+} 
+#endif

@@ -413,6 +413,10 @@ MBPT2::compute_cs_grad()
 
   for (pass=0; pass<npass; pass++) {
 
+    if (debug_) {
+      cout << indent << "Beginning pass " << pass << endl;
+      }
+
     i_offset = pass*ni + nfzc;
     if ((pass == npass - 1) && (rest != 0)) ni = rest;
 
@@ -596,7 +600,7 @@ MBPT2::compute_cs_grad()
                     iqrs_ptr += ns;
                     } // exit q loop
                   // every so often process outstanding messages
-                  if (catchup_ctr++ & catchup_mask == 0) mem->catchup();
+                  if (catchup_ctr++ && catchup_mask == 0) mem->catchup();
                   }   // exit bf2 loop
                 }     // exit bf1 loop
 
@@ -1153,7 +1157,7 @@ MBPT2::compute_cs_grad()
 
     // debug print
     if (debug_ && me == 0) {
-      cout << indent << "End 1+2 qbt" << endl;
+      cout << indent << "End 1. qbt" << endl;
       }
     // end of debug print
 
@@ -1172,6 +1176,10 @@ MBPT2::compute_cs_grad()
     if (!gamma_iqjs_tmp) {
       cerr << "Could not allocate gamma_iqjs_tmp" << endl;
       abort();
+      }
+
+    if (debug_ && me == 0) {
+      cout << indent << "Begin 2. qbt" << endl;
       }
 
     // Begin second quarter back-transformation
@@ -1214,6 +1222,10 @@ MBPT2::compute_cs_grad()
     tim_exit("2. q.b.t.");
     // end of second quarter back-transformation
 
+    if (debug_ && me == 0) {
+      cout << indent << "End 2. qbt" << endl;
+      }
+
     gamma_iajs = 0;
     membuf.release();
     
@@ -1244,6 +1256,10 @@ MBPT2::compute_cs_grad()
 
     Lpi = new double[nbasis*ni];
     bzerofast(Lpi,nbasis*ni);
+
+    if (debug_ && me == 0) {
+      cout << indent << "Begin 3. and 4. qbt" << endl;
+      }
 
     ////////////////////////////////////////////////////////
     // Perform third and fourth quarter back-transformation
@@ -1353,6 +1369,8 @@ MBPT2::compute_cs_grad()
                 tbint_->compute_shell(P,Q,R,S);
                 tim_exit("erep");
 
+                mem->catchup();
+
                 offset = nr*ns*nbasis;
                 int_index = 0;
 
@@ -1394,7 +1412,9 @@ MBPT2::compute_cs_grad()
                             gamma_iqrs_ptr += offset;
                             gamma_iprs_ptr += offset;
                             } // exit i loop
-
+                          // every so often process outstanding messages
+                          if (catchup_ctr++
+                              && catchup_mask == 0) mem->catchup();
                           }   // endif
 
                         int_index++;
@@ -1462,6 +1482,8 @@ MBPT2::compute_cs_grad()
                 tbintder_->compute_shell(P,Q,R,S,der_centers);
                 tim_exit("erep derivs");
 
+                mem->catchup();
+
                 // Compute contribution to gradient from non-sep 2PDM
                 // (i.e., contract derivative integrals with gamma_pqrs)
                 int_index = 0;
@@ -1506,12 +1528,22 @@ MBPT2::compute_cs_grad()
         }         // exit R loop
       }           // exit S loop
 
+    if (debug_ && me == 0) {
+      cout << indent << "End 3. and 4. qbt" << endl;
+      }
+
+    mem->sync(); // Make sure all nodes are done before deleting arrays
+
     if (debug_) {
       RefSCDimension ni_dim(new SCDimension(ni));
       RefSCDimension nbasis_dim(new SCDimension(nbasis));
       RefSCMatrix Lpi_mat(nbasis_dim, ni_dim, kit);
       Lpi_mat->assign(Lpi);
       Lpi_mat.print("Lpi");
+      }
+
+    if (debug_ && me == 0) {
+      cout << indent << "Back-transform Lpi" << endl;
       }
 
     // Back-transform Lpi to MO basis
@@ -1529,12 +1561,14 @@ MBPT2::compute_cs_grad()
 
 //  malloc_chain_check(1);
 
-    mem->sync(); // Make sure all nodes are done before deleting arrays
-
     delete[] Lpi;
 
     delete[] gamma_iqrs;
     delete[] gamma_pqrs;
+
+    if (debug_ && me == 0) {
+      cout << indent << "Done with pass " << pass << endl;
+      }
 
     }           // exit loop over i-batches (pass)
 

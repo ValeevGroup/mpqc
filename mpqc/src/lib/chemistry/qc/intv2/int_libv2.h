@@ -1,6 +1,9 @@
 
 /* $Log$
- * Revision 1.3  1994/05/27 23:51:22  cljanss
+ * Revision 1.4  1994/08/16 20:21:23  etseidl
+ * include utils.gbl
+ *
+ * Revision 1.3  1994/05/27  23:51:22  cljanss
  * Added support for 2 and 3 center 2 electron integrals.  Added a test porgram.
  *
  * Revision 1.2  1993/12/30  13:32:53  etseidl
@@ -77,6 +80,7 @@ extern "C" {
 #include <chemistry/qc/intv2/bounds.h>
 #include <chemistry/qc/intv2/normalize.gbl>
 #include <chemistry/qc/intv2/basis.gbl>
+#include <chemistry/qc/intv2/utils.gbl>
 
 #ifdef __cplusplus
 }

@@ -15,7 +15,8 @@ molecule<\clsnmref{Molecule}>: (
  )
 \end{alltt}
 
-The following input explicitly gives the atom coordinates:
+The following input explicitly gives the atom coordinates, using the
+\clsnmref{ParsedKeyVal} \htmlref{table}{pkvtable} notation:
 \begin{alltt}
 molecule<\clsnmref{Molecule}>: (
     angstrom=yes
@@ -62,14 +63,14 @@ molecule as a function of the geometry.  The coordinate system
 used can be either internal or cartesian.
 
 \begin{description}
-  \item[\keywd{molecule}] A \clsnmref{Molecule} object.  There is no
-    default.
+  \item[\keywd{molecule}] A \clsnmref{Molecule}
+    \htmlref{object}{pkvobject}.  There is no default.
 
-  \item[\keywd{coor}] A \clsnmref{MolecularCoor} that describes the
-    coordinates.  If this is not given cartesian coordinates will be used.
-    For convenience, two keywords needed by the \clsnmref{MolecularCoor}
-    object are automatically provided: \keywd{natom3} and
-    \keywd{matrixkit}.
+  \item[\keywd{coor}] A \clsnmref{MolecularCoor}
+    \htmlref{object}{pkvobject} that describes the coordinates.  If this is
+    not given cartesian coordinates will be used.  For convenience, two
+    keywords needed by the \clsnmref{MolecularCoor} object are
+    automatically provided: \keywd{natom3} and \keywd{matrixkit}.
 
   \item[\keywd{value\_accuracy}] Sets the accuracy to which values are
     computed.  The default is 1.0e-6 atomic units.
@@ -94,18 +95,19 @@ used to describe a molecule.  It is used to convert a molecule's cartesian
 coordinates to and from this coordinate system.
 
 \begin{description}
-  \item[\keywd{molecule}] A \clsnmref{Molecule} object.  There is no
-    default.
+  \item[\keywd{molecule}] A \clsnmref{Molecule}
+    \htmlref{object}{pkvobject}.  There is no default.
 
   \item[\keywd{debug}] An integer which, if nonzero, will cause extra
     output.
 
-  \item[\keywd{matrixkit}] A \clsnmref{SCMatrixKit} object.  It is
-    usually unnecessary to give this keyword.
+  \item[\keywd{matrixkit}] A \clsnmref{SCMatrixKit}
+    \htmlref{object}{pkvobject}.  It is usually unnecessary to give this
+    keyword.
 
-  \item[\keywd{natom3}] An \clsnmref{SCDimensionObject} for dimension
-    of the vector of cartesian coordinates.  It is
-    usually unnecessary to give this keyword.
+  \item[\keywd{natom3}] An \clsnmref{SCDimension}
+    \htmlref{object}{pkvobject} for the dimension of the vector of
+    cartesian coordinates.  It is usually unnecessary to give this keyword.
 \end{description}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -117,18 +119,19 @@ The \clsnm{IntMolecularCoor} abstract class inherits from the
 terms of internal coordinates.
 
 \begin{description}
-  \item[\keywd{variable}] Gives a \clsnmref{SetIntCoor} object that
-    specifies the internal coordinates that can be varied. If this is not
-    given, the variable coordinates will be generated.
+  \item[\keywd{variable}] Gives a \clsnmref{SetIntCoor}
+    \htmlref{object}{pkvobject} that specifies the internal coordinates
+    that can be varied. If this is not given, the variable coordinates will
+    be generated.
 
-  \item[\keywd{followed}] Gives a \clsnmref{SetIntCoor} object that
-    specifies coordinates to include in the variable coordinate list.  The
-    remaining coordinates will be automatically generated.  The default is
-    no followed coordinates.
+  \item[\keywd{followed}] Gives a \clsnmref{SetIntCoor}
+    \htmlref{object}{pkvobject} that specifies coordinates to include in
+    the variable coordinate list.  The remaining coordinates will be
+    automatically generated.  The default is no followed coordinates.
 
-  \item[\keywd{fixed}] Gives a \clsnmref{SetIntCoor} object that specifies
-    the internal coordinates that will be fixed.  The default is no
-    fixed coordinates.
+  \item[\keywd{fixed}] Gives a \clsnmref{SetIntCoor}
+    \htmlref{object}{pkvobject} that specifies the internal coordinates
+    that will be fixed.  The default is no fixed coordinates.
 
   \item[\keywd{have\_fixed\_values}] If true, then values for the fixed
     coordinates must be given in \keywd{fixed} and an attempt will be made
@@ -136,17 +139,17 @@ terms of internal coordinates.
     is false.
 
   \item[\keywd{extra\_bonds}] This is only read if the \keywd{generator}
-     keyword is not given.  It is a vector of atom numbers, where elements
-     $(i-1)\times 2 + 1$ and $i\times 2$ specify the atoms which are
-     bound in extra bond $i$.  The \keywd{extra\_bonds} keyword should only
-     be needed for weakly interacting fragments, otherwise all the needed
-     bonds will be found.
+     keyword is not given.  It is a \htmlref{vector}{pkvarray} of atom
+     numbers, where elements $(i-1)\times 2 + 1$ and $i\times 2$ specify
+     the atoms which are bound in extra bond $i$.  The \keywd{extra\_bonds}
+     keyword should only be needed for weakly interacting fragments,
+     otherwise all the needed bonds will be found.
 
-  \item[\keywd{generator}] Specifies an \clsnmref{IntCoorGen} object that
-    creates simple, redundant internal coordinates. If this keyword is not
-    given, then a vector giving extra bonds to be added is read from
-    \keywd{extra\_bonds} and this is used to create an
-    \clsnmref{IntCoorGen} object.
+  \item[\keywd{generator}] Specifies an \clsnmref{IntCoorGen}
+    \htmlref{object}{pkvobject} that creates simple, redundant internal
+    coordinates. If this keyword is not given, then a vector giving extra
+    bonds to be added is read from \keywd{extra\_bonds} and this is used to
+    create an \clsnmref{IntCoorGen} object.
 
   \item[\keywd{decouple\_bonds}] Automatically generated internal
     coordinates are linear combinations of possibly any mix of simple
@@ -259,8 +262,8 @@ The \clsnm{IntCoorGen} class is used to construct a set of internal
 coordinates for a molecule.
 
 \begin{description}
-  \item[\keywd{molecule}] A \clsnmref{Molecule} object.  There is no
-    default.
+  \item[\keywd{molecule}] A \clsnmref{Molecule}
+    \htmlref{object}{pkvobject}.  There is no default.
 
   \item[\keywd{radius\_scale\_factor}] If the distance between two atoms is
       less than the radius scale factor times the sum of the atoms' atomic
@@ -290,11 +293,11 @@ coordinates for a molecule.
       objects to described linear torsions.  The default is true.
 
 
-  \item[\keywd{extra\_bonds}] This is a vector of atom numbers, where
-     elements $2 (i-1) + 1$ and $2 i$ specify the atoms which
-     are bound in extra bond $i$.  The \keywd{extra\_bonds} keyword should
-     only be needed for weakly interacting fragments, otherwise all the
-     needed bonds will be found.
+  \item[\keywd{extra\_bonds}] This is a \htmlref{vector}{pkvarray} of atom
+     numbers, where elements $2 (i-1) + 1$ and $2 i$ specify the atoms
+     which are bound in extra bond $i$.  The \keywd{extra\_bonds} keyword
+     should only be needed for weakly interacting fragments, otherwise all
+     the needed bonds will be found.
 
 \end{description}
 
@@ -524,11 +527,11 @@ The \clsnm{SumIntCoor} class specifies a linear combination of
 \clsnmref{IntCoor} objects.  The following keywords are recognized:
 
 \begin{description}
-  \item[\keywd{coor}] A vector of \clsnmref{IntCoor} objects that define
-    the summed coordinates.
+  \item[\keywd{coor}] A \htmlref{vector}{pkvarray} of \clsnmref{IntCoor}
+    \htmlref{objects}{pkvobject} that define the summed coordinates.
 
-  \item[\keywd{coef}] A vector of floating point numbers that gives the
-    coefficients of the summed coordinates.
+  \item[\keywd{coef}] A \htmlref{vector}{pkvarray} of floating point
+    numbers that gives the coefficients of the summed coordinates.
 
 \end{description}
 
@@ -558,8 +561,9 @@ coordinates can be explicity given.  Internal coordinate classes include:
 \clsnmref{OutSimpleCo}.
 
 \begin{description}
-  \item[\keywd{generator}] A \clsnmref{IntCoorGen} object that will be
-    used to generate the internal coordinates.
+  \item[\keywd{generator}] A \clsnmref{IntCoorGen}
+    \htmlref{object}{pkvobject} that will be used to generate the internal
+    coordinates.
 
   \item[\vrbl{i}] A sequence of integer keywords, all $i$ for $0 \leq i <
     n$, can be assign to \clsnmref{IntCoor} objects.
@@ -589,11 +593,13 @@ The \clsnm{MolecularFrequencies} class is used to generate vibrational
 frequencies and compute thermodynamic information for a molecule.
 
 \begin{description}
-  \item[\keywd{mole}] A \clsnmref{MolecularEnergy} object.  If this is not
-    given then \keywd{molecule} must be given.
+  \item[\keywd{mole}] A \clsnmref{MolecularEnergy}
+    \htmlref{object}{pkvobject}.  If this is not given then
+    \keywd{molecule} must be given.
 
-  \item[\keywd{molecule}] A \clsnmref{Molecule} object.  If this is not
-    given than \keywd{mole} must be given.
+  \item[\keywd{molecule}] A \clsnmref{Molecule}
+    \htmlref{object}{pkvobject}.  If this is not given than \keywd{mole}
+    must be given.
 
   \item[\keywd{debug}] An integer which, if nonzero, will cause extra
     output.

@@ -44,21 +44,73 @@ basis set atomic composed of atomic gaussian orbitals.
 
 \end{description}
 
-Several files directories are checked for basis set data.  First, basis
-sets can be given by the user in the \keywd{basis} section at the top level
-of the main input file.  Next, if a path is given with the \keywd{basisdir}
-keyword, then all of the files given with the \keywd{basisfiles} keyword
-are read in after appending their names to the value of \keywd{basisdir}.
-Basis sets can be given in these files in the \keywd{basis} section at the
-top level as well.  If the named basis set still cannot be found, then
-\clsnm{GaussianBasisSet} will try convert the basis set name to a file name
-and check first in the directory given by \keywd{basisdir}.  Next it checks
-for the environment variable \verb|SCLIBDIR|.  If it is set it will look
-for the basis file in \filnm{\$SCLIBDIR/basis}.  Otherwise it will look in
-the source code distribution in the directory \filnm{SC/lib/basis}.  If the
-executable has changed machines or the source code has be moved, then it
-may be necessary to copy the library files to your machine and set the
-\verb|SCLIBDIR| environmental variable.
+Several files in various directories are checked for basis set data.
+First, basis sets can be given by the user in the \keywd{basis} section at
+the top level of the main input file.  Next, if a path is given with the
+\keywd{basisdir} keyword, then all of the files given with the
+\keywd{basisfiles} keyword are read in after appending their names to the
+value of \keywd{basisdir}.  Basis sets can be given in these files in the
+\keywd{basis} section at the top level as well.  If the named basis set
+still cannot be found, then \clsnm{GaussianBasisSet} will try convert the
+basis set name to a file name and check first in the directory given by
+\keywd{basisdir}.  Next it checks for the environment variable
+\verb|SCLIBDIR|.  If it is set it will look for the basis file in
+\filnm{\$SCLIBDIR/basis}.  Otherwise it will look in the source code
+distribution in the directory \filnm{SC/lib/basis}.  If the executable has
+changed machines or the source code has be moved, then it may be necessary
+to copy the library files to your machine and set the \verb|SCLIBDIR|
+environmental variable.
+
+The basis set itself is also given in the \clsnmref{ParsedKeyVal} format.
+It is a \htmlref{vector}{pkvarray} of shells with the keyword
+\keywd{:basis:} followed by the lowercase atomic name followed by \keywd{:}
+followed by the basis set name (which may need to be placed inside double
+quotes).  Each shell reads the following keywords:
+\begin{description}
+  \item[\keywd{type}] This is a \htmlref{vector}{pkvarray} that describes
+    each component of this shell.  For each element the following two
+    keywords are read:
+
+  \begin{description}
+
+    \item[\keywd{am}] The angular momentum of the component.  This can be
+       given as the letter designation, \keywd{s}, \keywd{p}, \keywd{d},
+       etc.  There is no default.
+
+    \item[\keywd{puream}] If this boolean parameter is true then 5D, 7F,
+       etc. shells are used.  The default is false.  This parameter can be
+       overridden in the \clsnmref{GaussianBasisSet} specification.
+
+  \end{description}
+
+  \item[\keywd{exp}]  This is a \htmlref{vector}{pkvarray} giving the
+     exponents of the primitive Gaussian functions.
+
+  \item[\keywd{coef}] This is a \htmlref{matrix}{pkvarray} giving the
+     coeffients of the primitive Gaussian functions.  The first index gives
+     the component number of the shell and the second gives the primitive
+     number.
+
+\end{description}
+
+An example might be easier to understand.  This is a basis set specificition
+for STO-2G carbon:
+\begin{alltt}
+basis: (
+ carbon: "STO-2G": [
+  (type: [(am = s)]
+   \{      exp      coef:0\} = \{
+      27.38503303 0.43012850
+       4.87452205 0.67891353
+   \})
+  (type: [(am = p) (am = s)]
+   \{     exp      coef:1     coef:0\} = \{
+       1.13674819 0.04947177 0.51154071
+       0.28830936 0.96378241 0.61281990
+   \})
+ ]
+)
+\end{alltt}
 
 \begin{table}
 \caption{Available Basis Sets}

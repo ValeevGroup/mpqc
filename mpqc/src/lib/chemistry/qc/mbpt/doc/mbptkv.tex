@@ -9,8 +9,9 @@ The \clsnm{MBPT2} class derives from \clsnmref{Wavefunction}.
 
 \begin{description}
   \item[\keywd{reference}] This gives the reference wavefunction.  It must
-     be an object of type \clsnmref{CLSCF} for closed-shell molecules and
-     \clsnmref{HSOSSCF} for open-shell molecules.  The is no default.
+     be an \htmlref{object}{pkvobject} of type \clsnmref{CLSCF} for
+     closed-shell molecules and \clsnmref{HSOSSCF} for open-shell
+     molecules.  The is no default.
 
   \item[\keywd{nfzc}] The number of frozen core orbitals.  The default
      is 0.
@@ -18,7 +19,8 @@ The \clsnm{MBPT2} class derives from \clsnmref{Wavefunction}.
   \item[\keywd{nfzv}] The number of frozen virtual orbitals.  The default
      is 0.
 
-  \item[\keywd{memory}] The amount of memory that each processor may use.
+  \item[\keywd{memory}] The amount of memory, in bytes, that each processor
+     may use.
 
   \item[\keywd{method}] This gives a string that must take on one of the
      values below.  The default is \keywd{mp} for closed-shell systems
@@ -62,9 +64,10 @@ The \clsnm{MBPT2} class derives from \clsnmref{Wavefunction}.
 
      \end{description}
 
-  \item[\keywd{memorygrp}] A \clsnmref{MemoryGrp} object that is used by
-     the \type{memgrp} algorithm.  If this is not given the program will
-     try to find an appropriate default.
+  \item[\keywd{memorygrp}] A \clsnmref{MemoryGrp}
+     \htmlref{object}{pkvobject} that is used by the \type{memgrp}
+     algorithm.  If this is not given the program will try to find an
+     appropriate default.
 
   \item[\keywd{debug}] If this is nonzero, extra information is written to
      the output.  The default is 0.

@@ -21,8 +21,8 @@ The \clsnm{SCF} abstract class derives from \clsnmref{OneBodyWavefunction}.
 
   \item[\keywd{level\_shift}] The default is 0.
 
-  \item[\keywd{extrap}] This specifies an object of type
-     \clsnmref{SelfConsistentExtrapolation}.  The default is a
+  \item[\keywd{extrap}] This specifies an \htmlref{object}{pkvobject} of
+     type \clsnmref{SelfConsistentExtrapolation}.  The default is a
      \clsnmref{DIIS} object.
 
   \item[\keywd{memory}] The amount of memory that each processor may use.
@@ -37,10 +37,10 @@ The \clsnm{SCF} abstract class derives from \clsnmref{OneBodyWavefunction}.
 
   \item[\keywd{guess\_wavefunction}] This specifies the initial guess for
      the solution to the SCF equations.  This can be either a
-     \clsnmref{OneBodyWavefunction} object or the name of file that
-     contains the saved state of a \clsnmref{OneBodyWavefunction} object.
-     By default the one-electron hamiltonian will be diagonalized to obtain
-     the initial guess.
+     \clsnmref{OneBodyWavefunction} \htmlref{object}{pkvobject} or the name
+     of file that contains the saved state of a
+     \clsnmref{OneBodyWavefunction} object.  By default the one-electron
+     hamiltonian will be diagonalized to obtain the initial guess.
 
 \end{description}
 
@@ -55,11 +55,11 @@ input for the \clsnmref{SCF} parent class, \clsnm{CLSCF} objects read the
 following input:
 
 \begin{description}
-  \item[\keywd{docc}] This vector of integers gives the total number of
-     doubly occupied orbitals of each irreducible representation.  By
-     default, this will be chosen to make the molecule uncharged and the
-     electrons will be distributed among the irreducible representations
-     according to the orbital energies.
+  \item[\keywd{docc}] This \htmlref{vector}{pkvarray} of integers gives the
+     total number of doubly occupied orbitals of each irreducible
+     representation.  By default, this will be chosen to make the molecule
+     uncharged and the electrons will be distributed among the irreducible
+     representations according to the orbital energies.
 
 \end{description}
 
@@ -92,20 +92,20 @@ objects read the following input:
      occupied orbitals $n_\mathrm{docc}$.  The default $n_\mathrm{docc} =
      (c - n_\mathrm{socc})/2$.
 
-  \item[\keywd{socc}] This vector of integers gives the total number of
-     singly occupied orbitals of each irreducible representation.  By
-     default, the $n_\mathrm{socc}$ singly occupied orbitals will be
-     distributed according to orbital eigenvalues.  If \keywd{socc} is
-     given, then \keywd{docc} must be given and they override
-     \keywd{nsocc}, \keywd{multiplicity}, \keywd{ndocc}, and
+  \item[\keywd{socc}] This \htmlref{vector}{pkvarray} of integers gives the
+     total number of singly occupied orbitals of each irreducible
+     representation.  By default, the $n_\mathrm{socc}$ singly occupied
+     orbitals will be distributed according to orbital eigenvalues.  If
+     \keywd{socc} is given, then \keywd{docc} must be given and they
+     override \keywd{nsocc}, \keywd{multiplicity}, \keywd{ndocc}, and
      \keywd{total\_charge}.
 
-  \item[\keywd{docc}] This vector of integers gives the total number of
-     doubly occupied orbitals of each irreducible representation.  By
-     default, the $n_\mathrm{docc}$ singly occupied orbitals will be
-     distributed according to orbital eigenvalues.  If \keywd{docc} is
-     given, then \keywd{socc} must be given and they override
-     \keywd{nsocc}, \keywd{multiplicity}, \keywd{ndocc}, and
+  \item[\keywd{docc}] This \htmlref{vector}{pkvarray} of integers gives the
+     total number of doubly occupied orbitals of each irreducible
+     representation.  By default, the $n_\mathrm{docc}$ singly occupied
+     orbitals will be distributed according to orbital eigenvalues.  If
+     \keywd{docc} is given, then \keywd{socc} must be given and they
+     override \keywd{nsocc}, \keywd{multiplicity}, \keywd{ndocc}, and
      \keywd{total\_charge}.
 
   \item[\keywd{maxiter}] This has the same meaning as in the parent

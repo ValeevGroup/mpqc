@@ -9,9 +9,9 @@ parameters.  Its \clsnmref{KeyVal} constructor reads the
 following information:
 
 \begin{description}
-  \item[\keywd{matrixkit}] Gives a \clsnmref{SCMatrixKit} object.
-    If it is not specified, a default \clsnmref{SCMatrixKit}
-    is selected.
+  \item[\keywd{matrixkit}] Gives a \clsnmref{SCMatrixKit}
+    \htmlref{object}{pkvobject}.  If it is not specified, a default
+    \clsnmref{SCMatrixKit} is selected.
 
   \item[\keywd{value\_accuracy}] Sets the accuracy to which values are
     computed.  The default is the machine accuracy.
@@ -44,13 +44,13 @@ the following information:
 
   \item[\keywd{max\_stepsize}] The maximum stepsize.  The default is 0.6.
 
-  \item[\keywd{function}] A \clsnmref{Function} object.  There is
-     no default.
+  \item[\keywd{function}] A \clsnmref{Function}
+     \htmlref{object}{pkvobject}.  There is no default.
 
-  \item[\keywd{convergence}] This can be either a floating point number
-     or a \clsnmref{Convergence} object.  If it is a floating point
-     number then it is the convergence criterion.  See the description
-     \clsnmref{Convergence} class for the default.
+  \item[\keywd{convergence}] This can be either a floating point number or
+     a \clsnmref{Convergence} \htmlref{object}{pkvobject}.  If it is a
+     floating point number then it is the convergence criterion.  See the
+     description \clsnmref{Convergence} class for the default.
 
 \end{description}
 
@@ -111,22 +111,24 @@ The \clsnm{QNewtonOpt} class derives from \clsnmref{Optimize}.  It
 implements a quasi-Newton optimization scheme.
 
 \begin{description}
-  \item[\keywd{update}] This gives a \clsnmref{HessianUpdate} object.
-     The default is to not update the hessian.
+  \item[\keywd{update}] This gives a \clsnmref{HessianUpdate}
+     \htmlref{object}{pkvobject}.  The default is to not update the
+     hessian.
 
   \item[\keywd{hessian}] By default, the guess hessian is obtained from the
-     \clsnmref{Function} object.  This keyword specifies an lower triangle
-     array (the second index must be less than or equal to than the first)
-     that replaces the guess hessian.  If some of the elements are not
-     given, elements from the guess hessian will be used.
+     \clsnmref{Function} \htmlref{object}{pkvobject}.  This keyword
+     specifies an lower triangle \htmlref{array}{pkvarray} (the second
+     index must be less than or equal to than the first) that replaces the
+     guess hessian.  If some of the elements are not given, elements from
+     the guess hessian will be used.
 
-  \item[\keywd{lineopt}] This gives a \clsnmref{LineOpt} object for doing
-     line optimizations in the Newton direction.  The default is to skip
-     the line optimizations.
+  \item[\keywd{lineopt}] This gives a \clsnmref{LineOpt}
+     \htmlref{object}{pkvobject} for doing line optimizations in the Newton
+     direction.  The default is to skip the line optimizations.
 
   \item[\keywd{accuracy}] The accuracy with which the first gradient will
-     be computed.  If this is two large, it may be necessary to evaluate
-     the first gradient point twice.  If it is two small, it may take
+     be computed.  If this is too large, it may be necessary to evaluate
+     the first gradient point twice.  If it is too small, it may take
      longer to evaluate the first point. The default is 0.0001.
 
   \item[\keywd{print\_x}] If true, print the coordinates each iteration.
@@ -149,8 +151,9 @@ eigenvector following as described by Baker in J. Comput. Chem., Vol 7, No
 4, 385-395, 1986.
 
 \begin{description}
-  \item[\keywd{update}] This gives an \clsnmref{HessianUpdate} object.
-     The default is to not update the hessian.
+  \item[\keywd{update}] This gives an \clsnmref{HessianUpdate}
+     \htmlref{object}{pkvobject}.  The default is to not update the
+     hessian.
 
   \item[\keywd{transition\_state}] If this is true than a transition
      state search will be performed. The default is false.
@@ -158,14 +161,15 @@ eigenvector following as described by Baker in J. Comput. Chem., Vol 7, No
   \item[\keywd{mode\_following}] The default is false.
 
   \item[\keywd{hessian}] By default, the guess hessian is obtained from the
-     \clsnmref{Function} object.  This keyword specifies an lower triangle
-     array (the second index must be less than or equal to than the first)
-     that replaces the guess hessian.  If some of the elements are not
-     given, elements from the guess hessian will be used.
+     \clsnmref{Function} \htmlref{object}{pkvobject}.  This keyword
+     specifies an lower triangle \htmlref{array}{pkvarray} (the second
+     index must be less than or equal to than the first) that replaces the
+     guess hessian.  If some of the elements are not given, elements from
+     the guess hessian will be used.
 
   \item[\keywd{accuracy}] The accuracy with which the first gradient will
-     be computed.  If this is two large, it may be necessary to evaluate
-     the first gradient point twice.  If it is two small, it may take
+     be computed.  If this is too large, it may be necessary to evaluate
+     the first gradient point twice.  If it is too small, it may take
      longer to evaluate the first point. The default is 0.0001.
 
 \end{description}

@@ -27,6 +27,8 @@
 
 #include <signal.h>
 
+#include <util/misc/math.h>
+
 #include <util/misc/formio.h>
 #include <util/group/pregtime.h>
 #include <chemistry/qc/dft/functional.h>

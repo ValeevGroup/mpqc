@@ -30,7 +30,7 @@
 #endif
 
 #include <stdio.h>
-#include <math.h>
+#include <util/misc/math.h>
 #include <vector>
 
 #include <chemistry/molecule/molshape.h>

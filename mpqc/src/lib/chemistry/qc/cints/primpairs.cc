@@ -29,6 +29,8 @@
 #pragma implementation
 #endif
 
+#include <util/misc/math.h>
+
 #include <util/misc/formio.h>
 #include <util/ref/ref.h>
 #include <chemistry/qc/basis/gaussshell.h>

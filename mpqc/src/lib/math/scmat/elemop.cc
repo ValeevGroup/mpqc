@@ -592,6 +592,12 @@ SCElementInvert::collect(const Ref<MessageGrp>&msg)
   if (!deferred_)
     msg->sum(nbelowthreshold_);
 }
+void
+SCElementInvert::collect(const Ref<SCElementOp>&op)
+{
+  throw std::runtime_error(
+      "SCElementInvert::collect(const Ref<SCElementOp> &): not implemented");
+}
 
 /////////////////////////////////////////////////////////////////////////
 // SCElementSquareRoot members
@@ -675,6 +681,12 @@ SCElementMaxAbs::collect(const Ref<MessageGrp>&msg)
   if (!deferred_)
     msg->max(r);
 }
+void
+SCElementMaxAbs::collect(const Ref<SCElementOp>&op)
+{
+  throw std::runtime_error(
+      "SCElementMaxAbs::collect(const Ref<SCElementOp> &): not implemented");
+}
 
 /////////////////////////////////////////////////////////////////////////
 // SCElementMin members
@@ -724,6 +736,12 @@ SCElementMinAbs::collect(const Ref<MessageGrp>&msg)
   if (!deferred_)
     msg->min(r);
 }
+void
+SCElementMinAbs::collect(const Ref<SCElementOp>&op)
+{
+  throw std::runtime_error(
+      "SCElementMinAbs::collect(const Ref<SCElementOp> &): not implemented");
+}
 
 /////////////////////////////////////////////////////////////////////////
 // SCElementSumAbs members
@@ -772,6 +790,12 @@ SCElementSumAbs::collect(const Ref<MessageGrp>&msg)
 {
   if (!deferred_)
     msg->sum(r);
+}
+void
+SCElementSumAbs::collect(const Ref<SCElementOp>&op)
+{
+  throw std::runtime_error(
+      "SCElementSumAbs::collect(const Ref<SCElementOp> &): not implemented");
 }
 
 /////////////////////////////////////////////////////////////////////////

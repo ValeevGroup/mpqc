@@ -29,7 +29,7 @@
 #pragma implementation
 #endif
 
-#include <math.h>
+#include <util/misc/math.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <util/group/message.h>

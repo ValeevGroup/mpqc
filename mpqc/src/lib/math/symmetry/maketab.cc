@@ -46,7 +46,7 @@
  *      June, 1993
  */
 
-#include <math.h>
+#include <util/misc/math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -55,11 +55,6 @@
 
 using namespace std;
 using namespace sc;
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
 
 /*
  * This function will generate a character table for the point group.

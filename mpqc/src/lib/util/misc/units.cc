@@ -29,7 +29,7 @@
 #pragma implementation
 #endif
 
-#include <math.h>
+#include <util/misc/math.h>
 #include <string.h>
 #include <util/misc/units.h>
 #include <util/state/stateio.h>

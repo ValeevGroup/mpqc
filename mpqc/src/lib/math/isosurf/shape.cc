@@ -30,19 +30,11 @@
 #endif
 
 #include <stdio.h>
-#include <math.h>
+#include <util/misc/math.h>
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/isosurf/shape.h>
-
-#ifndef M_LN2
-# define M_LN2          0.69314718055994530942  /* log_e 2 */
-#endif
-
-#ifndef M_PI_2
-# define M_PI_2         1.57079632679489661923  /* pi/2 */
-#endif
 
 using namespace std;
 using namespace sc;

@@ -1054,6 +1054,7 @@ if test X$HAVE_PTHREAD = Xyes; then
 fi
 
 AC_CHECK_LIB(dl,main)
+dnl commented out for Cray X1 (-lsun falsely detected)
 dnl AC_CHECK_LIB(sun,main)
 AC_CHECK_LIB(m,main)
 AC_CHECK_LIB(fl,main)

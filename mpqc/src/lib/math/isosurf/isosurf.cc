@@ -40,7 +40,7 @@ using namespace sc;
 
 // This static datum is used to interface to the implicit.c routine
 // provided in Graphics Gems IV.
-static ImplicitSurfacePolygonizer* current = 0;
+ImplicitSurfacePolygonizer* ImplicitSurfacePolygonizer::current = 0;
 
 // These functions are used to interface to the implicit.c routine provided
 // in Graphics Gems IV.

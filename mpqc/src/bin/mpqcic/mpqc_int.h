@@ -25,6 +25,8 @@
 
 #include <stdio.h>
 
+#include <util/keyval/keyval.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,14 +38,14 @@ extern "C" {
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 #include <chemistry/qc/dmtscf/scf_dmt.h>
 
-int Geom_init_mpqc(FILE*,FILE*,centers_t*);
-int Geom_update_mpqc(double,double_matrix_t*,double_matrix_t*);
-void Geom_done_mpqc();
+int Geom_init_mpqc(FILE*,FILE*,centers_t*,RefKeyVal);
+int Geom_update_mpqc(double,double_matrix_t*,double_matrix_t*,RefKeyVal);
+void Geom_done_mpqc(RefKeyVal);
 
 int Scf_charges_from_esp(centers_t*,int,double_vector_t*,
-                         double_vector_t*, expts_t*, double, int, FILE*);
+                    double_vector_t*, expts_t*, double, int, FILE*,RefKeyVal);
 
-int mp2_hah(centers_t*,scf_struct_t*,dmt_matrix,dmt_matrix,FILE*);
+int mp2_hah(centers_t*,scf_struct_t*,dmt_matrix,dmt_matrix,FILE*,RefKeyVal);
 
 #ifdef __cplusplus
 }

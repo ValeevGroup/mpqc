@@ -4,18 +4,18 @@
 \index{installing}
 
 
-These instructions are for a machine running unix or a clone. The codes
+These instructions are for a machine running Unix or a clone. The codes
 work under Linux, IRIX (4.0.5F, 5.3, 6.0.1), and AIX, at least.  The code
 can also be built under MS Windows NT using the Cygnus development tools.
 
 \section{Prerequisites}
  Make sure that you have the following programs available. Most can be
-found at any GNU software ftp repository.
+found at any GNU software FTP repository.
   \begin{itemize}
-    \item Compilers for the C and C++ languages are needed.
-          There are special considerations for non
-          GNU compilers. I currently use GNU gcc 2.7.2.f.1 on Linux Redhat 4.0
-          with a recent kernel and a few other updates. I also use
+    \item Compilers for the C and C++ languages are needed.  There are
+          special considerations for non GNU compilers. I currently use GNU
+          gcc 2.7.2.1 on Linux Redhat 4.1 with a recent kernel and a few
+          other updates, most important of which is glibc 2.0. I also use
           xlC on an SP2 routinely. Some compilers that work include:
       \begin{itemize}
         \item  gcc 2.7.2 (this should compile SC on any Unix-like platform)
@@ -99,11 +99,11 @@ target directory and run make.
  After you compile \exenm{listlibs} move it into your path and
 rerun \exenm{configure} so it will find the new executable.  Alternately,
 you can modify \filnm{lib/LocalMakefile} in your target directory.
-Change the line beginning with \type{LISTLIBS=} appropiately.
+Change the line beginning with \type{LISTLIBS=} appropriately.
 
 \section{Compiling MPQC}
 
- First you need to generate several include files to satisify
+ First you need to generate several include files to satisfy
 cross-dependencies between libraries.  Do these by changing directory into
 your target directory and type \type{make interface}.  If you get error
 messages in this step do a \type{make distclean} after correcting the
@@ -113,4 +113,86 @@ files remaining.
  Now you are ready to build the libraries and executable.  Do this
 by typing \type{make} in your target directory.  All the libraries and
 a single executable, \exenm{src/bin/mpqc/mpqc}, should be built.
+
+\section{Validating MPQC}
+
+ After you compile MPQC, you should run it through the validation suite.
+You should also run the validation suite if you upgrade your operating
+system software, since this could change shared libraries that are linking
+with MPQC and could affect the results.
+
+ The validation suite is in \filnm{src/bin/mpqc/validate}.  The
+input files are divided into several categories:
+\begin{description}
+  \item[\filnm{h2o}] These are simple tests that exercise many of MPQC's
+        features.
+
+  \item[\filnm{h2omp2}] Tests that further exercise MP2.
+
+  \item[\filnm{mbpt}] These tests exercise MP2 as well as the open-shell
+        perturbation theory methods.  The various available
+        algorithms are tested as well.
+
+  \item[\filnm{ckpt}] Tests the checkpoint and restart capabilities.
+
+  \item[\filnm{symm1}] Tests of point group symmetry.
+
+  \item[\filnm{symm2}] More point group symmetry tests.  These use basis
+        sets with higher angular momentum than \filnm{symm1}.
+
+  \item[\filnm{basis1}] A variety of basis sets are tested for first row
+        atoms along with hydrogen and helium.
+
+  \item[\filnm{basis2}] Basis sets test for second row atoms.
+
+\end{description}
+
+  To generate the input files change into the \filnm{src/bin/mpqc/validate}
+subdirectory of your object directory (where you compiled MPQC) and type
+\type{make inputs}.  This will create a \filnm{run} subdirectory containing
+MPQC input files ending with the \filnm{.in} suffix.  Files ending with a
+\filnm{.qci} suffix will also be placed in the \filnm{run} directory.
+These contain a description of the calculation that is used by the utility
+program that checks the results of the validation suite.
+
+  Next you need to run the calculations.  You might want to start with the
+\filnm{h2o} input files first since they shouldn't take too long to run.
+For the \filnm{ckpt} calculations you should run the calculations
+alphabetically by input file name.  This ensures that the checkpoint files
+will be created before they are needed.
+
+  While the test calculations are running you can begin monitoring the
+results by typing \type{make checkrun} in the \filnm{src/bin/mpqc/validate}
+directory.  This will first do some consistency checks between pairs of
+files selected from the \filnm{ckpt}, \filnm{mbpt}, \filnm{symm1}, and
+\filnm{symm2} groups of calculations (see below for a discussion of the
+output for comparison of two files).  Then each file is individually
+checked.  An \type{ok} is printed next the test name, if it looks like the
+calculation made it to the end.  A \type{missing} means the output file
+could not be found.  A \type{failed} means that the output file has
+problems (or the calculation may still be running).
+
+  Next you will want to see if your compiled MPQC produces the same answer
+as ours.  Note that we don't say ``the correct answer'' here, because our
+reference validation suite has not been verified relative to a independent
+code, except for a few spot checks.  If you find that MPQC doesn't produce
+the same answer as another quantum chemistry program that you trust, then
+please promptly notify us and send all the details.  The reference
+validation suite is distributed separately from MPQC.  Obtain it (hopefully
+it is available where you got the source code) and untar it in the
+\filnm{src/bin/mpqc/validate} subdirectory of your MPQC object code
+directory.  This will create the \filnm{ref} subdirectory.  Now you can
+type \type{make check} and outputs in the \filnm{ref} and \filnm{run}
+directories will be pairwise compared.
+
+  When files are pairwise compared first the status (\type{ok},
+\type{missing}, or \type{failing}) for each file is printed.  If both
+statuses are \type{ok} then an \type{E:} is printed followed by the number
+of digits to which the results agree.  If they agree to all digits
+\type{99} is printed.  If a gradient was computed, then \type{Grad:} is
+printed followed by the number of digits to which the gradients in least
+agreement agree.  Likewise if frequencies were computed.
+
+  Finally, you can do a detailed comparison of the contents of the
+\type{ref} and \type{run} subdirectories by typing \type{make diff}.
 

@@ -18,6 +18,9 @@ L2HFLAGS=-dir mpqcuser \
 SAMPLEINPUTS = scf.in.tex scfopt.in.tex mp2.in.tex scffreq.in.tex \
                hbondopt.in.tex mancoor.in.tex fixed.in.tex ts.in.tex
 
+DOCFILES = classhier.tex compiling.tex input.tex mpqc.tex running.tex \
+           version.tex
+
 default:: mpqc.see
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
@@ -28,14 +31,14 @@ mpqc.see: mpqc.dvi
 mpqc.ps: mpqc.dvi
 	dvips -o $@ $^
 
-mpqc.dvi: mpqc.tex $(SAMPLEINPUTS)
+mpqc.dvi: mpqc.tex $(SAMPLEINPUTS) $(DOCFILES)
 	@echo env TEXINPUTS=$$TEXINPUTS
 	@echo TEXINPUTS=$$TEXINPUTS:$(EXTRA_TEXINPUTS)
 	TEXINPUTS=$$TEXINPUTS:$(EXTRA_TEXINPUTS) $(LATEX) $<
 	makeindex mpqc.idx
 	TEXINPUTS=$$TEXINPUTS:$(EXTRA_TEXINPUTS) $(LATEX) $<
 			      
-mpqc.html: mpqc.tex $(SAMPLEINPUTS)
+mpqc.html: mpqc.tex $(SAMPLEINPUTS) $(DOCFILES)
 	TEXINPUTS=$$TEXINPUTS:$(EXTRA_TEXINPUTS) $(LATEX2HTML) $(L2HFLAGS) $<
 
 targetclean::
@@ -43,3 +46,6 @@ targetclean::
 
 %.in.tex: $(SRCDIR)/../sample/%.in
 	$(PERL) $(SRCDIR)/mpqctotex.pl $^ > $@
+
+version.tex: $(SRCDIR)/../version.h
+	sed -e "s/.define MPQC_VERSION //" -e "s/\"//g" < $< > $@

@@ -1760,12 +1760,9 @@ dnl --------- CCA component configuration ---------
 
 if test $components == "yes"; then
 
-  if test $HAVE_MPIPP == "no"; then
-    AC_MSG_ERROR([libmpi++ needed for cca components])
-  fi
-
-  if test $enable_shared == "no"; then
-    AC_MSG_ERROR([shared libraries (libtool) must be enabled for cca components])
+  if test $HAVE_MPI == "yes" &&
+     test $HAVE_MPIPP == "no"; then
+    AC_MSG_ERROR([libmpi++ needed for mpi cca components])
   fi
 
   if test -z $CCA_CHEM_CONFIG && ! test -x $CCA_CHEM_CONFIG; then
@@ -1857,6 +1854,12 @@ if test $components == "yes"; then
   fi
   AC_SUBST(CCAFE_LIBDIR)
   LIBS="-L$CCAFE_LIBDIR $LIBS"
+
+  CCAFE_SHAREDIR=`$CCAFE_CONFIG --var CCAFE_pkgdatadir`
+  if test -z $CCAFE_SHAREDIR || ! test -d $CCAFE_SHAREDIR; then
+    AC_MSG_ERROR([invalid result from $CCAFE_CONFIG --var CCAFE_pkgdatadir])
+  fi
+  AC_SUBST(CCAFE_SHAREDIR)
 
   CCAFE_CLASSIC_CCA_CONFIG=`$CCAFE_CONFIG --var CCAFE_CLASSIC_CCA_CONFIG`
   if test -z $CCAFE_CLASSIC_CCA_CONFIG ||

@@ -36,6 +36,7 @@
 #include <iostream.h>
 #include <iomanip.h>
 
+#include <util/misc/formio.h>
 #include <util/group/pregtime.h>
 
 ParallelRegionTimer::ParallelRegionTimer(const RefMessageGrp&msg,
@@ -70,7 +71,8 @@ ParallelRegionTimer::print(ostream &o)
   msg_->min(minn);
 
   if (maxn != minn) {
-      cerr << "ParallelRegionTimer::print: differing number of regions"
+      cerr << node0
+           << "ParallelRegionTimer::print: differing number of regions"
            << endl;
       abort();
     }

@@ -22,11 +22,23 @@ extern "C" {
 #include <comm/picl/picl.h>
 #include <comm/picl/ext/piclext.h>
 
+
 #if defined(I860)
 int led(int);
 void bzero(void*,int);
 #endif
 }
+
+#include <util/class/class.h>
+#include <util/state/state.h>
+#include <util/keyval/keyval.h>
+#include <chemistry/molecule/molecule.h>
+#include <chemistry/molecule/simple.h>
+#include <chemistry/molecule/symm.h>
+#include <chemistry/molecule/simpleQCList.h>
+#include <chemistry/molecule/symmQCList.h>
+#include <math/nihmatrix/nihmatrix.h>
+#include <math/nihmatrix/lmath.h>
 
 #include "mpqc_int.h"
 
@@ -35,6 +47,7 @@ void bzero(void*,int);
 
 static void clean_and_exit(int);
 static void mkcostvec(centers_t *centers,sym_struct_t *sym_info,int *costvec);
+static void read_geometry(centers_t& centers,FILE *outfp);
 
 int host;
 char* argv0;
@@ -44,7 +57,7 @@ main(int argc, char *argv[])
   int i;
   int errcod;
   int nproc,me,top,ord,dir;
-  int do_scf,do_grad,opt_geom,nopt,iter,proper;
+  int do_scf,do_grad,read_geom,opt_geom,nopt,iter,proper;
   int localp;
   int nshell,nshtr;
   int throttle,geom_code=-1,sync_loop;
@@ -66,6 +79,7 @@ main(int argc, char *argv[])
   sym_struct_t sym_info;
   scf_irreps_t irreps;
   centers_t centers;
+  struct stat stbuf;
 
   dmt_matrix SCF_VEC,FOCK,FOCKO;
   double_matrix_t gradient;
@@ -142,7 +156,6 @@ main(int argc, char *argv[])
 // be read from keyval.in.
 #ifdef NEED_IPV2
     ParsedKeyVal *pparsed = new ParsedKeyVal("mpqc.in");
-    struct stat stbuf;
     if (stat("keyval.in",&stbuf)==0 && stbuf.st_size!=0)
       pparsed->read("keyval.in");
     RefKeyVal parsed(pparsed);
@@ -184,6 +197,10 @@ main(int argc, char *argv[])
     mp2 = 0;
     if (keyval->exists("mp2"))
       mp2 = keyval->booleanvalue("mp2");
+
+    read_geom = 0;
+    if (keyval->exists("read_geometry"))
+      read_geom = keyval->booleanvalue("read_geometry");
 
     opt_geom = 0;
     if (keyval->exists("optimize_geometry"))
@@ -272,6 +289,14 @@ main(int argc, char *argv[])
         }
       }
     else atom_labels=NULL;
+
+    if(opt_geom) {
+      fprintf(outfile,"\n");
+      geom_code = Geom_init_mpqc(outfile,outfile,&centers,keyval);
+      }
+    else if (read_geom && stat("geom.dat",&stbuf)==0 && stbuf.st_size!=0) {
+      read_geometry(centers,outfile);
+      }
     }
 
   sgen_reset_bcast0();
@@ -325,11 +350,6 @@ main(int argc, char *argv[])
     else dmt_force_csscf_init(outfile);
 
     allocbn_double_matrix(&gradient,"n1 n2",3,centers.n);
-    }
-
-  if(opt_geom && me==0) {
-    fprintf(outfile,"\n");
-    geom_code = Geom_init_mpqc(outfile,outfile,&centers,keyval);
     }
 
   if(opt_geom) {
@@ -657,3 +677,27 @@ double ftn_i_dsign(double a, double b)
   return (((b)>=0.0)? (fabs(a)): (-fabs(a)));
 }
 #endif
+
+static void
+read_geometry(centers_t& centers,FILE *outfp)
+{
+  StateInBinXDR si("geom.dat","r+");
+
+  int iter;
+  si.get(iter);
+
+  fprintf(outfp,"\n using geometry from iteration %d\n",iter);
+
+  RefSymmCoList symm_coords;
+  symm_coords = SymmCoList::restore_state(si);
+
+  Molecule mol(si);
+
+  for(int i=0; i < centers.n; i++) {
+    centers.center[i].r[0] = mol[i][0];
+    centers.center[i].r[1] = mol[i][1];
+    centers.center[i].r[2] = mol[i][2];
+    }
+
+  mol.print(outfp);
+}

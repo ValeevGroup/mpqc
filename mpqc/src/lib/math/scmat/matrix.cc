@@ -1,241 +1,7 @@
 
+#include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/abstract.h>
-
-/////////////////////////////////////////////////////////////////////////////
-// SCMatrixBlock member functions
-
-#define CLASSNAME SCMatrixBlock
-#define PARENTS virtual public SavableState
-#include <util/state/statei.h>
-#include <util/class/classia.h>
-
-SCMatrixBlock::SCMatrixBlock()
-{
-}
-
-void *
-SCMatrixBlock::_castdown(const ClassDesc*cd)
-{
-  void* casts[] =  { SavableState::_castdown(cd) };
-  return do_castdowns(casts,cd);
-}
-
-SCMatrixBlock::~SCMatrixBlock()
-{
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// SCMatrixRectBlock member functions
-
-SavableState_REF_def(SCMatrixRectBlock);
-
-#define CLASSNAME SCMatrixRectBlock
-#define PARENTS public SCMatrixBlock
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-SCMatrixRectBlock::SCMatrixRectBlock(int is, int ie, int js, int je):
-  istart(is),
-  jstart(js),
-  iend(ie),
-  jend(je)
-{
-  data = new double[(ie-is)*(je-js)];
-}
-
-SCMatrixRectBlock::SCMatrixRectBlock(StateIn&s):
-  SavableState(s,class_desc_)
-{
-  s.get(istart);
-  s.get(jstart);
-  s.get(iend);
-  s.get(jend);
-  s.get(data);
-}
-
-void
-SCMatrixRectBlock::save_data_state(StateOut&s)
-{
-  s.put(istart);
-  s.put(jstart);
-  s.put(iend);
-  s.put(jend);
-  s.put(data,(iend-istart)*(jend-jstart));
-}
-
-void *
-SCMatrixRectBlock::_castdown(const ClassDesc*cd)
-{
-  void* casts[] =  { SCMatrixBlock::_castdown(cd) };
-  return do_castdowns(casts,cd);
-}
-
-SCMatrixRectBlock::~SCMatrixRectBlock()
-{
-  delete[] data;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// SCMatrixLTriBlock member functions
-
-SavableState_REF_def(SCMatrixLTriBlock);
-
-#define CLASSNAME SCMatrixLTriBlock
-#define PARENTS public SCMatrixBlock
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-SCMatrixLTriBlock::SCMatrixLTriBlock(int s,int e):
-  start(s),
-  end(e)
-{
-  data = new double[((e-s)*(e-s+1))/2];
-}
-
-SCMatrixLTriBlock::SCMatrixLTriBlock(StateIn&s):
-  SavableState(s,class_desc_)
-{
-  s.get(start);
-  s.get(end);
-  s.get(data);
-}
-
-void
-SCMatrixLTriBlock::save_data_state(StateOut&s)
-{
-  s.put(start);
-  s.put(end);
-  s.put(data,((end-start)*(end-start+1))/2);
-}
-
-void *
-SCMatrixLTriBlock::_castdown(const ClassDesc*cd)
-{
-  void* casts[] =  { SCMatrixBlock::_castdown(cd) };
-  return do_castdowns(casts,cd);
-}
-
-SCMatrixLTriBlock::~SCMatrixLTriBlock()
-{
-  delete[] data;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// SCMatrixDiagBlock member functions
-
-SavableState_REF_def(SCMatrixDiagBlock);
-
-#define CLASSNAME SCMatrixDiagBlock
-#define PARENTS public SCMatrixBlock
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-SCMatrixDiagBlock::SCMatrixDiagBlock(int s, int e):
-  istart(s),
-  iend(e),
-  jstart(s)
-{
-  data = new double[e-s];
-}
-
-SCMatrixDiagBlock::SCMatrixDiagBlock(int is, int ie,int js):
-  istart(is),
-  iend(ie),
-  jstart(js)
-{
-  data = new double[ie-is];
-}
-
-SCMatrixDiagBlock::SCMatrixDiagBlock(StateIn&s):
-  SavableState(s,class_desc_)
-{
-  s.get(istart);
-  s.get(jstart);
-  s.get(iend);
-  s.get(data);
-}
-
-void
-SCMatrixDiagBlock::save_data_state(StateOut&s)
-{
-  s.put(istart);
-  s.put(jstart);
-  s.put(iend);
-  s.put(data,iend-istart);
-}
-
-void *
-SCMatrixDiagBlock::_castdown(const ClassDesc*cd)
-{
-  void* casts[] =  { SCMatrixBlock::_castdown(cd) };
-  return do_castdowns(casts,cd);
-}
-
-SCMatrixDiagBlock::~SCMatrixDiagBlock()
-{
-  delete[] data;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// SCVectorSimpleBlock member functions
-
-SavableState_REF_def(SCVectorSimpleBlock);
-
-#define CLASSNAME SCVectorSimpleBlock
-#define PARENTS public SCMatrixBlock
-#define HAVE_STATEIN_CTOR
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-
-SCVectorSimpleBlock::SCVectorSimpleBlock(int s, int e):
-  istart(s),
-  iend(e)
-{
-  data = new double[e-s];
-}
-
-SCVectorSimpleBlock::SCVectorSimpleBlock(StateIn&s):
-  SavableState(s,class_desc_)
-{
-  s.get(istart);
-  s.get(iend);
-  s.get(data);
-}
-
-void
-SCVectorSimpleBlock::save_data_state(StateOut&s)
-{
-  s.put(istart);
-  s.put(iend);
-  s.put(data,iend-istart);
-}
-
-void *
-SCVectorSimpleBlock::_castdown(const ClassDesc*cd)
-{
-  void* casts[] =  { SCMatrixBlock::_castdown(cd) };
-  return do_castdowns(casts,cd);
-}
-
-SCVectorSimpleBlock::~SCVectorSimpleBlock()
-{
-  delete[] data;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// SCMatrixBlockIter member functions
-
-SCMatrixBlockIter::SCMatrixBlockIter()
-{
-}
-
-SCMatrixBlockIter::~SCMatrixBlockIter()
-{
-}
 
 /////////////////////////////////////////////////////////////////////////////
 // SCElementOp member functions
@@ -541,7 +307,7 @@ RefSCMatrix::operator+(RefSCMatrix&a)
 
   RefSCMatrix ret(rowdim(),coldim());
   
-  ret->copy(pointer());
+  ret->assign(pointer());
   ret->accumulate(a);
 
   return ret;
@@ -555,7 +321,7 @@ RefSCMatrix::operator-(RefSCMatrix&a)
 
   RefSCMatrix ret(rowdim(),coldim());
   
-  ret->copy(a.pointer());
+  ret->assign(a.pointer());
   ret->scale(-1.0);
   ret->accumulate(pointer());
 
@@ -569,7 +335,7 @@ RefSCMatrix::t()
   
   RefSCMatrix ret;
   ret = clone();
-  ret->copy(pointer());
+  ret->assign(pointer());
   ret->transpose_this();
   return ret;
 }
@@ -581,7 +347,7 @@ RefSCMatrix::i()
   
   RefSCMatrix ret;
   ret = clone();
-  ret->copy(pointer());
+  ret->assign(pointer());
   ret->invert_this();
   return ret;
 }
@@ -634,11 +400,48 @@ RefSCMatrix::accumulate_product(RefSCMatrix&a,RefSCMatrix&b)
   pointer()->accumulate_product(a.pointer(),b.pointer());
 }
 
+RefSCMatrix
+RefSCMatrix::copy()
+{
+  if (null()) return 0;
+  RefSCMatrix v = rowdim()->create_matrix(coldim());
+  v.assign(*this);
+  return v;
+}
+
 void
-RefSCMatrix::copy(RefSCMatrix&a)
+RefSCMatrix::assign(RefSCMatrix&a)
 {
   require_nonnull();
-  pointer()->copy(a.pointer());
+  pointer()->assign(a.pointer());
+}
+
+void
+RefSCMatrix::assign(const double*v)
+{
+  require_nonnull();
+  pointer()->assign(v);
+}
+
+void
+RefSCMatrix::assign(const double**v)
+{
+  require_nonnull();
+  pointer()->assign(v);
+}
+
+void
+RefSCMatrix::convert(double*v)
+{
+  require_nonnull();
+  pointer()->convert(v);
+}
+
+void
+RefSCMatrix::convert(double**v)
+{
+  require_nonnull();
+  pointer()->convert(v);
 }
 
 void
@@ -663,6 +466,12 @@ RefSCMatrix::accumulate(RefSCMatrix&a)
 }
 
 void
+RefSCMatrix::element_op(RefSCRectElementOp&op)
+{
+  if (nonnull()) pointer()->element_op(op);
+}
+
+void
 RefSCMatrix::print(ostream& out)
 {
   print(0,out);
@@ -673,6 +482,20 @@ RefSCMatrix::print(const char*title,ostream&out, int precision)
 {
   require_nonnull();
   pointer()->print(title,out,precision);
+}
+
+RefSCMatrix
+RefSCMatrix::operator *(double a)
+{
+  RefSCMatrix r(copy());
+  r.scale(a);
+  return r;
+}
+
+RefSCMatrix
+operator *(double a, RefSCMatrix& v)
+{
+  return v*a;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -750,7 +573,7 @@ RefSymmSCMatrix::operator+(RefSymmSCMatrix&a)
 
   RefSymmSCMatrix ret(dim());
   
-  ret->copy(pointer());
+  ret->assign(pointer());
   ret->accumulate(a.pointer());
 
   return ret;
@@ -764,7 +587,7 @@ RefSymmSCMatrix::operator-(RefSymmSCMatrix&a)
 
   RefSymmSCMatrix ret(dim());
   
-  ret->copy(a.pointer());
+  ret->assign(a.pointer());
   ret->scale(-1.0);
   ret->accumulate(pointer());
 
@@ -778,7 +601,7 @@ RefSymmSCMatrix::i()
   
   RefSymmSCMatrix ret;
   ret = clone();
-  ret->copy(pointer());
+  ret->assign(pointer());
   ret->invert_this();
   return ret;
 }
@@ -837,11 +660,48 @@ RefSymmSCMatrix::diagonalize(RefDiagSCMatrix& vals, RefSCMatrix& vecs)
   pointer()->diagonalize(vals.pointer(),vecs.pointer());
 }
 
+RefSymmSCMatrix
+RefSymmSCMatrix::copy()
+{
+  if (null()) return 0;
+  RefSymmSCMatrix v = dim()->create_symmmatrix();
+  v.assign(*this);
+  return v;
+}
+
 void
-RefSymmSCMatrix::copy(RefSymmSCMatrix&a)
+RefSymmSCMatrix::assign(RefSymmSCMatrix&a)
 {
   require_nonnull();
-  pointer()->copy(a.pointer());
+  pointer()->assign(a.pointer());
+}
+
+void
+RefSymmSCMatrix::assign(const double*v)
+{
+  require_nonnull();
+  pointer()->assign(v);
+}
+
+void
+RefSymmSCMatrix::assign(const double**v)
+{
+  require_nonnull();
+  pointer()->assign(v);
+}
+
+void
+RefSymmSCMatrix::convert(double*v)
+{
+  require_nonnull();
+  pointer()->convert(v);
+}
+
+void
+RefSymmSCMatrix::convert(double**v)
+{
+  require_nonnull();
+  pointer()->convert(v);
 }
 
 void
@@ -866,6 +726,12 @@ RefSymmSCMatrix::accumulate(RefSymmSCMatrix&a)
 }
 
 void
+RefSymmSCMatrix::element_op(RefSCSymmElementOp&op)
+{
+  if (nonnull()) pointer()->element_op(op);
+}
+
+void
 RefSymmSCMatrix::print(ostream& out)
 {
   print(0,out);
@@ -876,6 +742,20 @@ RefSymmSCMatrix::print(const char*title,ostream&out, int precision)
 {
   require_nonnull();
   pointer()->print(title,out,precision);
+}
+
+RefSymmSCMatrix
+RefSymmSCMatrix::operator *(double a)
+{
+  RefSymmSCMatrix r(copy());
+  r.scale(a);
+  return r;
+}
+
+RefSymmSCMatrix
+operator *(double a, RefSymmSCMatrix& v)
+{
+  return v*a;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -953,7 +833,7 @@ RefDiagSCMatrix::operator+(RefDiagSCMatrix&a)
 
   RefDiagSCMatrix ret(dim());
   
-  ret->copy(pointer());
+  ret->assign(pointer());
   ret->accumulate(a.pointer());
 
   return ret;
@@ -967,7 +847,7 @@ RefDiagSCMatrix::operator-(RefDiagSCMatrix&a)
 
   RefDiagSCMatrix ret(dim());
   
-  ret->copy(a.pointer());
+  ret->assign(a.pointer());
   ret->scale(-1.0);
   ret->accumulate(pointer());
 
@@ -981,7 +861,7 @@ RefDiagSCMatrix::i()
   
   RefDiagSCMatrix ret;
   ret = clone();
-  ret->copy(pointer());
+  ret->assign(pointer());
   ret->invert_this();
   return ret;
 }
@@ -1013,11 +893,34 @@ RefDiagSCMatrix::clone()
   return r;
 }
 
+RefDiagSCMatrix
+RefDiagSCMatrix::copy()
+{
+  if (null()) return 0;
+  RefDiagSCMatrix v = dim()->create_diagmatrix();
+  v.assign(*this);
+  return v;
+}
+
 void
-RefDiagSCMatrix::copy(RefDiagSCMatrix&a)
+RefDiagSCMatrix::assign(RefDiagSCMatrix&a)
 {
   require_nonnull();
-  pointer()->copy(a.pointer());
+  pointer()->assign(a.pointer());
+}
+
+void
+RefDiagSCMatrix::assign(const double*v)
+{
+  require_nonnull();
+  pointer()->assign(v);
+}
+
+void
+RefDiagSCMatrix::convert(double*v)
+{
+  require_nonnull();
+  pointer()->convert(v);
 }
 
 void
@@ -1042,6 +945,12 @@ RefDiagSCMatrix::accumulate(RefDiagSCMatrix&a)
 }
 
 void
+RefDiagSCMatrix::element_op(RefSCDiagElementOp&op)
+{
+  if (nonnull()) pointer()->element_op(op);
+}
+
+void
 RefDiagSCMatrix::print(ostream& out)
 {
   print(0,out);
@@ -1054,8 +963,25 @@ RefDiagSCMatrix::print(const char*title,ostream&out, int precision)
   pointer()->print(title,out,precision);
 }
 
+RefDiagSCMatrix
+RefDiagSCMatrix::operator *(double a)
+{
+  RefDiagSCMatrix r(copy());
+  r.scale(a);
+  return r;
+}
+
+RefDiagSCMatrix
+operator *(double a, RefDiagSCMatrix& v)
+{
+  return v*a;
+}
+
 ///////////////////////////////////////////////////////////////////
 // RefSCVector members
+
+ARRAY_def(RefSCVector);
+SET_def(RefSCVector);
 
 RefSCVector::RefSCVector()
 {
@@ -1129,7 +1055,7 @@ RefSCVector::operator+(RefSCVector&a)
 
   RefSCVector ret(dim());
   
-  ret->copy(pointer());
+  ret->assign(pointer());
   ret->accumulate(a.pointer());
 
   return ret;
@@ -1143,7 +1069,7 @@ RefSCVector::operator-(RefSCVector&a)
 
   RefSCVector ret(dim());
   
-  ret->copy(a.pointer());
+  ret->assign(a.pointer());
   ret->scale(-1.0);
   ret->accumulate(pointer());
 
@@ -1177,11 +1103,48 @@ RefSCVector::clone()
   return r;
 }
 
-void
-RefSCVector::copy(RefSCVector&a)
+RefSCVector
+RefSCVector::copy()
+{
+  if (null()) return 0;
+  RefSCVector v = dim()->create_vector();
+  v.assign(*this);
+  return v;
+}
+
+double
+RefSCVector::dot(RefSCVector&a)
 {
   require_nonnull();
-  pointer()->copy(a.pointer());
+  return pointer()->scalar_product(a.pointer());
+}
+
+double
+RefSCVector::scalar_product(RefSCVector&a)
+{
+  require_nonnull();
+  return pointer()->scalar_product(a.pointer());
+}
+
+void
+RefSCVector::assign(RefSCVector&a)
+{
+  require_nonnull();
+  pointer()->assign(a.pointer());
+}
+
+void
+RefSCVector::assign(const double*v)
+{
+  require_nonnull();
+  pointer()->assign(v);
+}
+
+void
+RefSCVector::convert(double*v)
+{
+  require_nonnull();
+  pointer()->convert(v);
 }
 
 void
@@ -1206,6 +1169,12 @@ RefSCVector::accumulate(RefSCVector&a)
 }
 
 void
+RefSCVector::element_op(RefSCVectorElementOp&op)
+{
+  if (nonnull()) pointer()->element_op(op);
+}
+
+void
 RefSCVector::print(ostream& out)
 {
   print(0,out);
@@ -1216,4 +1185,18 @@ RefSCVector::print(const char*title,ostream&out, int precision)
 {
   require_nonnull();
   pointer()->print(title,out,precision);
+}
+
+RefSCVector
+RefSCVector::operator *(double a)
+{
+  RefSCVector r(copy());
+  r.scale(a);
+  return r;
+}
+
+RefSCVector
+operator *(double a, RefSCVector& v)
+{
+  return v*a;
 }

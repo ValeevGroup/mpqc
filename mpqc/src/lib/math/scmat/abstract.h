@@ -32,8 +32,10 @@ class SCVector: virtual public SavableState {
     virtual int n();
     virtual double maxabs(); // maximum absolute value of the elements
     virtual void assign(double);
+    virtual void assign(const double*);
+    virtual void convert(double*);
+    virtual void assign(SCVector*);
     virtual void scale(double);
-    virtual void copy(SCVector*);
     virtual void print(ostream&);
 
     virtual RefSCDimension dim() = 0;
@@ -62,10 +64,14 @@ class SCMatrix: virtual public SavableState {
     virtual int ncol();
     virtual double maxabs(); // maximum absolute value of the elements
     virtual void assign(double);
+    virtual void assign(const double*);
+    virtual void assign(const double**);
+    virtual void convert(double*);
+    virtual void convert(double**);
+    virtual void assign(SCMatrix*);
     virtual void scale(double);
     virtual void shift_diagonal(double);
     virtual void unit();
-    virtual void copy(SCMatrix*);
     virtual void print(ostream&);
 
     // pure virtual functions
@@ -91,10 +97,14 @@ class SymmSCMatrix: virtual public SavableState {
     void save_data_state(StateOut&);
     virtual double maxabs(); // maximum absolute value of the elements
     virtual void assign(double);
+    virtual void assign(const double*);
+    virtual void assign(const double**);
+    virtual void convert(double*);
+    virtual void convert(double**);
+    virtual void assign(SymmSCMatrix*);
     virtual void scale(double);
     virtual void shift_diagonal(double);
     virtual void unit();
-    virtual void copy(SymmSCMatrix*);
     virtual void print(ostream&);
     virtual int n();
 
@@ -122,8 +132,10 @@ class DiagSCMatrix: virtual public SavableState {
 
     virtual double maxabs(); // maximum absolute value of the elements
     virtual void assign(double);
+    virtual void assign(const double*);
+    virtual void convert(double*);
     virtual void scale(double);
-    virtual void copy(DiagSCMatrix*);
+    virtual void assign(DiagSCMatrix*);
     virtual void print(ostream&);
     virtual int n();
 

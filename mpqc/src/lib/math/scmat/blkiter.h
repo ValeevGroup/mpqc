@@ -2,7 +2,23 @@
 #ifndef _math_scmat_blkiter_h
 #define _math_scmat_blkiter_h
 
-#include <math/scmat/matrix.h>
+class SCMatrixRectBlock;
+class SCMatrixLTriBlock;
+class SCMatrixDiagBlock;
+class SCVectorSimpleBlock;
+
+class SCMatrixBlockIter {
+  public:
+    SCMatrixBlockIter();
+    virtual ~SCMatrixBlockIter();
+    virtual int i() = 0;
+    virtual int j() = 0;
+    virtual void set(double) = 0;
+    virtual double get() = 0;
+    virtual operator int() = 0;
+    virtual void operator++() = 0; // prefix ++
+    virtual void reset() = 0;
+};
 
 class SCMatrixRectBlockIter: public SCMatrixBlockIter {
   private:

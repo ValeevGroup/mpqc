@@ -73,6 +73,84 @@ SCElementScale::process(SCMatrixBlockIter&i)
 }
 
 /////////////////////////////////////////////////////////////////////////
+// SCElementInvert members
+
+#define CLASSNAME SCElementInvert
+#define PARENTS       virtual public SCDiagElementOp, \
+                      virtual public SCSymmElementOp, \
+                      virtual public SCRectElementOp, \
+                      virtual public SCVectorElementOp
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+SCElementInvert::SCElementInvert(double a) {}
+SCElementInvert::SCElementInvert(StateIn&s):
+  SavableState(s,class_desc_)
+{
+}
+void
+SCElementInvert::save_data_state(StateOut&s)
+{
+}
+void *
+SCElementInvert::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { SCDiagElementOp::_castdown(cd),
+                     SCSymmElementOp::_castdown(cd),
+                     SCRectElementOp::_castdown(cd),
+                     SCVectorElementOp::_castdown(cd)
+                   };
+  return do_castdowns(casts,cd);
+}
+SCElementInvert::~SCElementInvert() {}
+void
+SCElementInvert::process(SCMatrixBlockIter&i)
+{
+  for (i.reset(); i; ++i) {
+      i.set(1.0/i.get());
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////
+// SCElementSquareRoot members
+
+#define CLASSNAME SCElementSquareRoot
+#define PARENTS       virtual public SCDiagElementOp, \
+                      virtual public SCSymmElementOp, \
+                      virtual public SCRectElementOp, \
+                      virtual public SCVectorElementOp
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+SCElementSquareRoot::SCElementSquareRoot(double a) {}
+SCElementSquareRoot::SCElementSquareRoot(StateIn&s):
+  SavableState(s,class_desc_)
+{
+}
+void
+SCElementSquareRoot::save_data_state(StateOut&s)
+{
+}
+void *
+SCElementSquareRoot::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { SCDiagElementOp::_castdown(cd),
+                     SCSymmElementOp::_castdown(cd),
+                     SCRectElementOp::_castdown(cd),
+                     SCVectorElementOp::_castdown(cd)
+                   };
+  return do_castdowns(casts,cd);
+}
+SCElementSquareRoot::~SCElementSquareRoot() {}
+void
+SCElementSquareRoot::process(SCMatrixBlockIter&i)
+{
+  for (i.reset(); i; ++i) {
+      i.set(sqrt(i.get()));
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////
 // SCElementMaxAbs members
 
 SavableState_REF_def(SCElementMaxAbs);
@@ -296,10 +374,58 @@ SCMatrix::unit()
 }
 
 void
-SCMatrix::copy(SCMatrix*a)
+SCMatrix::assign(SCMatrix*a)
 {
   this->assign(0.0);
   this->accumulate(a);
+}
+
+void
+SCMatrix::assign(const double*a)
+{
+  int n = nrow();
+  const double **v = new double*[n];
+  for (int i=0; i<n; i++) {
+      v[i] = &a[i*n];
+    }
+  assign(v);
+  delete[] v;
+}
+
+void
+SCMatrix::assign(const double**a)
+{
+  int nr = nrow();
+  int nc = ncol();
+  for (int i=0; i<nr; i++) {
+      for (int j=0; j<nc; i++) {
+          set_element(i,j,a[i][j]);
+        }
+    }
+}
+
+void
+SCMatrix::convert(double*a)
+{
+  int n = nrow();
+  double **v = new double*[n];
+  for (int i=0; i<n; i++) {
+      v[i] = &a[i*n];
+    }
+  convert(v);
+  delete[] v;
+}
+
+void
+SCMatrix::convert(double**a)
+{
+  int nr = nrow();
+  int nc = ncol();
+  for (int i=0; i<nr; i++) {
+      for (int j=0; j<nc; i++) {
+          a[i][j] = get_element(i,j);
+        }
+    }
 }
 
 void
@@ -360,6 +486,56 @@ SymmSCMatrix::assign(double a)
 }
 
 void
+SymmSCMatrix::assign(const double*a)
+{
+  int nr = n();
+  const double **v = new double*[nr];
+  int ioff= 0;
+  for (int i=0; i<nr; i++) {
+      v[i] = &a[ioff];
+      ioff += i;
+    }
+  assign(v);
+  delete[] v;
+}
+
+void
+SymmSCMatrix::assign(const double**a)
+{
+  int nr = n();
+  for (int i=0; i<nr; i++) {
+      for (int j=0; j<=i; i++) {
+          set_element(i,j,a[i][j]);
+        }
+    }
+}
+
+void
+SymmSCMatrix::convert(double*a)
+{
+  int nr = n();
+  double **v = new double*[nr];
+  int ioff= 0;
+  for (int i=0; i<nr; i++) {
+      v[i] = &a[ioff];
+      ioff += i;
+    }
+  convert(v);
+  delete[] v;
+}
+
+void
+SymmSCMatrix::convert(double**a)
+{
+  int nr = n();
+  for (int i=0; i<nr; i++) {
+      for (int j=0; j<=i; i++) {
+          a[i][j] = get_element(i,j);
+        }
+    }
+}
+
+void
 SymmSCMatrix::scale(double a)
 {
   RefSCSymmElementOp op = new SCElementScale(a);
@@ -381,7 +557,7 @@ SymmSCMatrix::unit()
 }
 
 void
-SymmSCMatrix::copy(SymmSCMatrix*a)
+SymmSCMatrix::assign(SymmSCMatrix*a)
 {
   this->assign(0.0);
   this->accumulate(a);
@@ -445,6 +621,24 @@ DiagSCMatrix::assign(double a)
 }
 
 void
+DiagSCMatrix::assign(const double*a)
+{
+  int nr = n();
+  for (int i=0; i<nr; i++) {
+      set_element(i,a[i]);
+    }
+}
+
+void
+DiagSCMatrix::convert(double*a)
+{
+  int nr = n();
+  for (int i=0; i<nr; i++) {
+      a[i] = get_element(i);
+    }
+}
+
+void
 DiagSCMatrix::scale(double a)
 {
   RefSCDiagElementOp op = new SCElementScale(a);
@@ -452,7 +646,7 @@ DiagSCMatrix::scale(double a)
 }
 
 void
-DiagSCMatrix::copy(DiagSCMatrix*a)
+DiagSCMatrix::assign(DiagSCMatrix*a)
 {
   this->assign(0.0);
   this->accumulate(a);
@@ -521,6 +715,24 @@ SCVector::assign(double a)
 }
 
 void
+SCVector::assign(const double*a)
+{
+  int nr = n();
+  for (int i=0; i<nr; i++) {
+      set_element(i,a[i]);
+    }
+}
+
+void
+SCVector::convert(double*a)
+{
+  int nr = n();
+  for (int i=0; i<nr; i++) {
+      a[i] = get_element(i);
+    }
+}
+
+void
 SCVector::scale(double a)
 {
   RefSCVectorElementOp op = new SCElementScale(a);
@@ -528,7 +740,7 @@ SCVector::scale(double a)
 }
 
 void
-SCVector::copy(SCVector*a)
+SCVector::assign(SCVector*a)
 {
   this->assign(0.0);
   this->accumulate(a);

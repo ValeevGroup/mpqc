@@ -1,5 +1,17 @@
 
 #include <math/scmat/blkiter.h>
+#include <math/scmat/block.h>
+
+/////////////////////////////////////////////////////////////////////////////
+// SCMatrixBlockIter member functions
+
+SCMatrixBlockIter::SCMatrixBlockIter()
+{
+}
+
+SCMatrixBlockIter::~SCMatrixBlockIter()
+{
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixRectBlockIter member functions

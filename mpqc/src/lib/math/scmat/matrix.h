@@ -1,7 +1,10 @@
+
 #ifndef _math_scmat_matrix_h
 #define _math_scmat_matrix_h
 
 #include <iostream.h>
+#include <util/container/array.h>
+#include <util/container/set.h>
 #include <util/state/state.h>
 
 class SCDimension;
@@ -15,99 +18,11 @@ class SCMatrixdouble;
 class SymmSCMatrixdouble;
 class DiagSCMatrixdouble;
 class RefSCElementOp;
-
-class SCMatrixBlock: virtual public SavableState {
-#   define CLASSNAME SCMatrixBlock
-#   include <util/state/stated.h>
-#   include <util/class/classda.h>
-  public:
-    SCMatrixBlock();
-    virtual ~SCMatrixBlock();
-};
-
-SavableState_REF_dec(SCMatrixBlock);
-
-class SCVectorSimpleBlock: public SCMatrixBlock {
-#   define CLASSNAME SCVectorSimpleBlock
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  public:
-    SCVectorSimpleBlock(int istart,int iend);
-    SCVectorSimpleBlock(StateIn&);
-    virtual ~SCVectorSimpleBlock();
-    void save_data_state(StateOut&);
-    int istart;
-    int iend;
-    double* data;
-};
-
-SavableState_REF_dec(SCVectorSimpleBlock);
-
-class SCMatrixRectBlock: public SCMatrixBlock {
-#   define CLASSNAME SCMatrixRectBlock
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  public:
-    SCMatrixRectBlock(int is, int ie, int js, int je);
-    SCMatrixRectBlock(StateIn&);
-    virtual ~SCMatrixRectBlock();
-    void save_data_state(StateOut&);
-    int istart;
-    int jstart;
-    int iend;
-    int jend;
-    double* data;
-};
-SavableState_REF_dec(SCMatrixRectBlock);
-
-class SCMatrixLTriBlock: public SCMatrixBlock {
-#   define CLASSNAME SCMatrixLTriBlock
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  public:
-    SCMatrixLTriBlock(int s,int e);
-    SCMatrixLTriBlock(StateIn&);
-    virtual ~SCMatrixLTriBlock();
-    void save_data_state(StateOut&);
-    int start;
-    int end;
-    double* data;
-};
-SavableState_REF_dec(SCMatrixLTriBlock);
-
-class SCMatrixDiagBlock: public SCMatrixBlock {
-#   define CLASSNAME SCMatrixDiagBlock
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  public:
-    SCMatrixDiagBlock(int istart,int iend,int jstart);
-    SCMatrixDiagBlock(int istart,int iend);
-    SCMatrixDiagBlock(StateIn&);
-    virtual ~SCMatrixDiagBlock();
-    void save_data_state(StateOut&);
-    int istart;
-    int jstart;
-    int iend;
-    double* data;
-};
-SavableState_REF_dec(SCMatrixDiagBlock);
-
-class SCMatrixBlockIter {
-  public:
-    SCMatrixBlockIter();
-    virtual ~SCMatrixBlockIter();
-    virtual int i() = 0;
-    virtual int j() = 0;
-    virtual void set(double) = 0;
-    virtual double get() = 0;
-    virtual operator int() = 0;
-    virtual void operator++() = 0; // prefix ++
-    virtual void reset() = 0;
-};
+class SCMatrixBlockIter;
+class SCMatrixRectBlock;
+class SCMatrixLTriBlock;
+class SCMatrixDiagBlock;
+class SCVectorSimpleBlock;
 
 class SCElementOp: virtual public SavableState {
 #   define CLASSNAME SCElementOp
@@ -207,6 +122,38 @@ class SCElementAssign: virtual public SCDiagElementOp,
     void process(SCMatrixBlockIter&);
 };
 
+class SCElementSquareRoot: virtual public SCDiagElementOp,
+                       virtual public SCSymmElementOp,
+                       virtual public SCRectElementOp,
+                       virtual public SCVectorElementOp {
+#   define CLASSNAME SCElementSquareRoot
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  public:
+    SCElementSquareRoot(double a);
+    SCElementSquareRoot(StateIn&);
+    ~SCElementSquareRoot();
+    void save_data_state(StateOut&);
+    void process(SCMatrixBlockIter&);
+};
+
+class SCElementInvert: virtual public SCDiagElementOp,
+                       virtual public SCSymmElementOp,
+                       virtual public SCRectElementOp,
+                       virtual public SCVectorElementOp {
+#   define CLASSNAME SCElementInvert
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  public:
+    SCElementInvert(double a);
+    SCElementInvert(StateIn&);
+    ~SCElementInvert();
+    void save_data_state(StateOut&);
+    void process(SCMatrixBlockIter&);
+};
+
 class SCElementShiftDiagonal: virtual public SCDiagElementOp,
                        virtual public SCSymmElementOp,
                        virtual public SCRectElementOp,
@@ -287,16 +234,26 @@ class RefSCVector: public RefSSSCVector {
     int n();
     RefSCDimension dim();
     SCVectordouble operator()(int);
-    RefSCVector clone();
     RefSCVector operator+(RefSCVector&a);
     RefSCVector operator-(RefSCVector&a);
-    void copy(RefSCVector&);
-    void scale(double);
+    RefSCVector operator*(double);
+    RefSCVector clone();
+    RefSCVector copy();
+    double scalar_product(RefSCVector&);
+    double dot(RefSCVector&);
+    void assign(RefSCVector&);
     void assign(double);
+    void assign(const double*);
+    void convert(double*);
+    void scale(double);
     void accumulate(RefSCVector&);
+    void element_op(RefSCVectorElementOp&);
     void print(ostream&out);
     void print(const char*title=0, ostream&out=cout, int precision=10);
 };
+RefSCVector operator*(double,RefSCVector&);
+ARRAY_dec(RefSCVector);
+SET_dec(RefSCVector);
 
 SavableState_named_REF_dec(RefSSSCMatrix,SCMatrix);
 class RefSCMatrix: public RefSSSCMatrix {
@@ -315,18 +272,25 @@ class RefSCMatrix: public RefSSSCMatrix {
   public:
     RefSCMatrix(RefSCDimension&,RefSCDimension&);
     RefSCMatrix operator*(RefSCMatrix&);
+    RefSCMatrix operator*(double);
     RefSCMatrix operator+(RefSCMatrix&);
     RefSCMatrix operator-(RefSCMatrix&);
     RefSCMatrix t();
     RefSCMatrix i();
     RefSCMatrix clone();
+    RefSCMatrix copy();
     void set_element(int,int,double);
     double get_element(int,int);
     void accumulate_product(RefSCMatrix&,RefSCMatrix&);
-    void copy(RefSCMatrix&);
+    void assign(RefSCMatrix&);
     void scale(double);
     void assign(double);
+    void assign(const double*);
+    void assign(const double**);
+    void convert(double*);
+    void convert(double**);
     void accumulate(RefSCMatrix&);
+    void element_op(RefSCRectElementOp&);
     int nrow();
     int ncol();
     RefSCDimension rowdim();
@@ -335,6 +299,7 @@ class RefSCMatrix: public RefSSSCMatrix {
     void print(ostream&);
     void print(const char*title=0,ostream&out=cout, int =10);
 };
+RefSCMatrix operator*(double,RefSCMatrix&);
 
 SavableState_named_REF_dec(RefSSSymmSCMatrix,SymmSCMatrix);
 class RefSymmSCMatrix: public RefSSSymmSCMatrix {
@@ -352,17 +317,24 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     // matrix specific members
   public:
     RefSymmSCMatrix(RefSCDimension&);
+    RefSymmSCMatrix operator*(double);
     RefSymmSCMatrix operator+(RefSymmSCMatrix&);
     RefSymmSCMatrix operator-(RefSymmSCMatrix&);
     RefSymmSCMatrix i();
     RefSymmSCMatrix clone();
+    RefSymmSCMatrix copy();
     void set_element(int,int,double);
     double get_element(int,int);
     void accumulate_symmetric_product(RefSymmSCMatrix&);
-    void copy(RefSymmSCMatrix&);
+    void assign(RefSymmSCMatrix&);
     void scale(double);
     void assign(double);
+    void assign(const double*);
+    void assign(const double**);
+    void convert(double*);
+    void convert(double**);
     void accumulate(RefSymmSCMatrix&);
+    void element_op(RefSCSymmElementOp&);
     RefDiagSCMatrix eigvals();
     RefSCMatrix eigvecs();
     void diagonalize(RefDiagSCMatrix& eigvals,RefSCMatrix& eigvecs);
@@ -372,6 +344,7 @@ class RefSymmSCMatrix: public RefSSSymmSCMatrix {
     void print(ostream&);
     void print(const char*title=0,ostream&out=cout, int =10);
 };
+RefSymmSCMatrix operator*(double,RefSymmSCMatrix&);
 
 SavableState_named_REF_dec(RefSSDiagSCMatrix,DiagSCMatrix);
 class RefDiagSCMatrix: public RefSSDiagSCMatrix {
@@ -389,22 +362,28 @@ class RefDiagSCMatrix: public RefSSDiagSCMatrix {
     // matrix specific members
   public:
     RefDiagSCMatrix(RefSCDimension&);
+    RefDiagSCMatrix operator*(double);
     RefDiagSCMatrix operator+(RefDiagSCMatrix&);
     RefDiagSCMatrix operator-(RefDiagSCMatrix&);
     RefDiagSCMatrix i();
     RefDiagSCMatrix clone();
+    RefDiagSCMatrix copy();
     void set_element(int,double);
     double get_element(int);
-    void copy(RefDiagSCMatrix&);
+    void assign(RefDiagSCMatrix&);
     void scale(double);
     void assign(double);
+    void assign(const double*);
+    void convert(double*);
     void accumulate(RefDiagSCMatrix&);
+    void element_op(RefSCDiagElementOp&);
     int n();
     RefSCDimension dim();
     DiagSCMatrixdouble operator()(int i);
     void print(ostream&);
     void print(const char*title=0,ostream&out=cout, int =10);
 };
+RefDiagSCMatrix operator*(double,RefDiagSCMatrix&);
 
 class SCVectordouble {
    friend class RefSCVector;

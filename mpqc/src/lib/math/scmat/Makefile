@@ -9,13 +9,15 @@ default:: $(DEPENDINCLUDE)
 default:: libscmat.a
 
 CXXSRC = abstract.cc   local.cc      matrix.cc \
-         blkiter.cc    matrix_i.cc
+         blkiter.cc    matrix_i.cc   result.cc \
+         vector3.cc    vector3_i.cc  block.cc
 
 CSRC = cmatrix.c
 
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o) 
 
-INC =  cmatrix.h matrix_i.h cmatrix.h matrix.h abstract.h blkiter.h local.h
+INC =  cmatrix.h matrix_i.h cmatrix.h matrix.h abstract.h blkiter.h local.h \
+       result.h vector3.h vector3_i.h block.h
 
 GENINC =
 

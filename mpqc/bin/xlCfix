@@ -1,0 +1,15 @@
+#!/bin/csh -f
+
+set options = ()
+foreach i ($*)
+  if ("$i:e" == cc) then
+     set filename = `basename $i:r.C`
+     set options = ($options $filename)
+     /bin/rm -f $filename
+     ln -s $i $filename
+  else
+     set options = ($options $i)
+    endif
+  end
+
+xlC $options

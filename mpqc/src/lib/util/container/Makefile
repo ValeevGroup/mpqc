@@ -65,7 +65,7 @@ asetmacr.h: asettmpl.h $(TMPL2MACDEP)
 refmacr.h: reftmpl.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > refmacr.h
 
-settest: settest.o libcontainer.$(LIBSUF)
+settest: settest.o libcontainer.$(LIBSUF) libmisc.$(LIBSUF)
 	$(CXX) $(LDFLAGS) -o settest $^
 
 gnutest: gnutest.o libcontainer.$(LIBSUF)

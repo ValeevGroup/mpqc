@@ -1231,15 +1231,6 @@ mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
     // End of 1. and 2. quarter back-transformation
     /////////////////////////////////////////////////
 
-
-    if (nproc > 1) {
-      gammabuf = new double[nbasis*nfuncmax];
-      if (!gammabuf) {
-        fprintf(outfile,"Could not allocate gammabuf\n");
-        abort();
-        }
-      }
- 
     // Allocate various arrays
     gamma_iqrs = new double[ni*nbasis*nfuncmax*nfuncmax];
     if (!gamma_iqrs) {

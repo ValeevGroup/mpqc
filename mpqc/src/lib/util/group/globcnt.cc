@@ -126,7 +126,7 @@ GlobalCounter::val()
   int val = 0;
 #endif
   int ret;
-  if (ret = semctl(semid_, 0, GETVAL, val) == -1) {
+  if ((ret = semctl(semid_, 0, GETVAL, val)) == -1) {
       perror("semctl (GETVAL)");
       abort();
     }

@@ -134,7 +134,7 @@ INLINE void QCXDR::byte_swap(float*f)
   fprintf(stderr,
           "QCXDR::byte_swap(float): not available because of compiler bug\n");
   abort();
-  return 0.0;
+  return;
 #else
   char r[16];
   if (sizeof(float) == 2) { byte_swap2(f, r); byte_copy2(r, f); }

@@ -14,8 +14,8 @@ get_ki(int z)
   double ki;
   
   if (z <= 0) {
-      cerr << "Non-positive nuclear charge encountered in computation of dispersion
-              coefficient" << endl;
+      cerr << "Non-positive nuclear charge encountered in computation of"
+           << " dispersion coefficient" << endl;
       abort();
     }
   else if (z == 1) ki = 1.0;

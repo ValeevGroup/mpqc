@@ -1,5 +1,5 @@
 #ifdef LINPACKD
 LINPACKD
 #else
-linpackd.LIBSUF
+liblinpackd.LIBSUF
 #endif

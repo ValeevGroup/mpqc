@@ -5,7 +5,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-TARGET_TO_MAKE = linpackd
+TARGET_TO_MAKE = liblinpackd
 BIN_OR_LIB = LIB
 
 CSRC = linpackd.c
@@ -16,9 +16,9 @@ DISTFILES = $(CSRC) Makefile LIBS.h
 
 LIBOBJ := $(LIBSRC:%.c=%.$(OBJSUF))
 
-default:: $(TOPDIR)/lib/linpackd.a
+default:: $(TOPDIR)/lib/liblinpackd.a
 ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/linpackd.so
+default:: $(TOPDIR)/lib/liblinpackd.so
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

@@ -66,14 +66,6 @@ class EAVLMMap {
     T *start_;
     EAVLMMapNode<K,T> T::* node_;
   public:
-#if defined(__GNUC__) && defined(__alpha__)
-    T*& rlink(const T* n) const { T*& r = (n->*node_).rt; return r; }
-    T*& llink(const T* n) const { T*& r = (n->*node_).lt; return r; }
-    T*& uplink(const T* n) const { T*& r = (n->*node_).up; return r; }
-    int& balance(const T* n) const { int& r = (n->*node_).balance; return r; }
-    K& key(T* n) const { K& r = (n->*node_).key; return r; }
-    const K& key(const T* n) const { K& r = (n->*node_).key; return r; }
-#else    
     T*& rlink(T* n) const { return (n->*node_).rt; }
     T* rlink(const T* n) const { return (n->*node_).rt; }
     T*& llink(T* n) const { return (n->*node_).lt; }
@@ -84,7 +76,6 @@ class EAVLMMap {
     int balance(const T* n) const { return (n->*node_).balance; }
     K& key(T* n) const { return (n->*node_).key; }
     const K& key(const T* n) const { return (n->*node_).key; }
-#endif
     int compare(T*n,T*m) const { return sc::compare(key(n), key(m)); }
     int compare(T*n,const K&m) const { return sc::compare(key(n), m); }
   private:

@@ -103,6 +103,12 @@ LIBS=$withval
 echo Using extra libraries: $withval
 )
 
+dnl --------- Want absolute path for srcdir, not relative. ---------
+
+if test X$ac_srcdir_defaulted = Xyes; then
+  srcdir=`(cd $srcdir; echo $PWD)`
+fi
+
 dnl --------- Checks for programs. ---------
 AC_PROG_INSTALL
 AC_PROG_RANLIB
@@ -170,6 +176,7 @@ ELF_MINOR=0.1
 
 dnl -- does machine use elf format --
 
+changequote(<<, >>)dnl
 case $target in
   mips*-sgi-irix[5-6]* | r8000-sgi-irix*)
     ELF=yes
@@ -195,6 +202,11 @@ case $target in
     LDFLAGS="-Wl,-rpath -Wl,\$(LIBDIR)"
   ;;
 esac
+changequote([, ])dnl
+
+if test X$SHARED_LIBS = Xno; then
+  ELF=no
+fi
 
 if test X$ELF = Xyes; then
   if test X$GCC = Xyes; then
@@ -228,6 +240,16 @@ case $target in
       AC_DEFINE(NO_VIRTUAL_BASES)
     fi
   ;;
+changequote(<<, >>)dnl
+  i[56]86-*)
+    if test X$GCC = Xyes; then
+      COPTIONS_OPT="-O2 -malign-loops=2 -malign-jumps=2 -malign-functions=2"
+    fi
+    if test X$GXX = Xyes; then
+      CXXOPTIONS_OPT="-O2 -malign-loops=2 -malign-jumps=2 -malign-functions=2"
+    fi
+  ;;
+changequote([, ])dnl
 esac
 
 dnl -- special architecture options --
@@ -239,7 +261,9 @@ case $target in
     CXXOPTIONS_MISC="$CXXOPTIONS_MISC -mips2"
     AC_MSG_RESULT(mips)
   ;;
+changequote(<<, >>)dnl
   mips[123]-*)
+changequote([, ])dnl
     COPTIONS_MISC="$COPTIONS_MISC -$target_cpu"
     CXXOPTIONS_MISC="$CXXOPTIONS_MISC -$target_cpu"
     AC_MSG_RESULT($target_cpu)
@@ -266,7 +290,9 @@ case $target in
     fi
     AC_MSG_RESULT(r8000)
   ;;
-  i586-*)
+changequote(<<, >>)dnl
+  i[456]86-*)
+changequote([, ])dnl
     if test X$GCC = Xyes; then
       COPTIONS_MISC="$COPTIONS_MISC -m486"
     fi

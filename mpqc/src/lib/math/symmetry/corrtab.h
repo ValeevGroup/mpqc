@@ -60,6 +60,11 @@ class CorrelationTable: public VRefCount {
 
     ~CorrelationTable();
 
+    //. Returns the higher order point group.
+    RefPointGroup group() const { return group_; }
+    //. Returns the lower order point group.
+    RefPointGroup subgroup() const { return subgroup_; }
+
     //. Initalize the correlation table.  Returns 0 for success and nonzero
     //for failure.  This will fail if the subgroup is not really a subgroup
     //of group.

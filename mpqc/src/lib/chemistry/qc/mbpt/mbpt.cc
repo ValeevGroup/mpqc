@@ -81,7 +81,7 @@ dquicksort(double *item,int *index,int n)
 ///////////////////////////////////////////////////////////////////////////
 // MBPT2
 
-#define VERSION 5
+#define VERSION 6
 #define CLASSNAME MBPT2
 #define HAVE_KEYVAL_CTOR
 #define HAVE_STATEIN_CTOR
@@ -109,10 +109,10 @@ MBPT2::MBPT2(StateIn& s):
   s.get(debug_);
 
   if (s.version(static_class_desc()) >= 2) {
-      s.get(dos2_);
+      s.get(do_d1_);
     }
   else {
-      dos2_ = 0;
+      do_d1_ = 0;
     }
 
   if (s.version(static_class_desc()) >= 3) {
@@ -134,6 +134,13 @@ MBPT2::MBPT2(StateIn& s):
     }
   else {
       max_norb_ = 0;
+    }
+
+  if (s.version(static_class_desc()) >= 6) {
+      s.get(do_d2_);
+    }
+  else {
+      do_d2_ = 1;
     }
 
   hf_energy_ = 0.0;
@@ -193,7 +200,8 @@ MBPT2::MBPT2(const RefKeyVal& keyval):
 
   algorithm_ = keyval->pcharvalue("algorithm");
 
-  dos2_ = keyval->booleanvalue("compute_s2");
+  do_d1_ = keyval->booleanvalue("compute_d1");
+  do_d2_ = keyval->booleanvalue("compute_d2",KeyValValueboolean(1));
 
   debug_ = keyval->booleanvalue("debug");
   if (keyval->error() == KeyVal::WrongType)
@@ -237,10 +245,11 @@ MBPT2::save_data_state(StateOut& s)
   s.putstring(method_);
   s.putstring(algorithm_);
   s.put(debug_);
-  s.put(dos2_);
+  s.put(do_d1_);
   s.put(dynamic_);
   s.put(cphf_epsilon_);
   s.put(max_norb_);
+  s.put(do_d2_);
 }
 
 void

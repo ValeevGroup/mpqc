@@ -83,9 +83,11 @@ class MBPT2: public Wavefunction {
 
     char *method_;
     char *algorithm_;
-    // if dos2_ is true, s2 will be computed even if the gradient is not
-    int dos2_;
-
+    // if do_d1_ is true, D1(MP2) will be computed even if the gradient is not
+    int do_d1_;
+    // if do_d2_ is true, D2(MP1) will be computed 
+    int do_d2_;
+    
     int nfuncmax;
 
     double hf_energy_;

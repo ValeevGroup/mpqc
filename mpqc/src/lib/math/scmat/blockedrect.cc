@@ -461,9 +461,9 @@ BlockedSCMatrix::invert_this()
     // d1 and d2 were swapped by now
     for (i=0; i < d1->blocks()->nblock(); i++)
       if (mats_[i].nonnull())
-        mats_[i].assign(tdim.get_subblock(d1->blocks()->start(i),
-                                          d1->blocks()->fence(i)-1,
-                                          0, d2->n()-1));
+        mats_[i]->convert(tdim.get_subblock(d1->blocks()->start(i),
+                                            d1->blocks()->fence(i)-1,
+                                            0, d2->n()-1));
     
     return res;
 
@@ -478,9 +478,9 @@ BlockedSCMatrix::invert_this()
     // d1 and d2 were swapped by now
     for (i=0; i < d2->blocks()->nblock(); i++)
       if (mats_[i].nonnull())
-        mats_[i].assign(tdim.get_subblock(0, d1->n()-1,
-                                          d2->blocks()->start(i),
-                                          d2->blocks()->fence(i)-1));
+        mats_[i]->convert(tdim.get_subblock(0, d1->n()-1,
+                                            d2->blocks()->start(i),
+                                            d2->blocks()->fence(i)-1));
     
     return res;
 

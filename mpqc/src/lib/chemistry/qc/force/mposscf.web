@@ -1,6 +1,9 @@
 %
 % $Log$
-% Revision 1.5  1994/11/07 19:39:23  etseidl
+% Revision 1.6  1994/11/18 01:54:36  etseidl
+% add code to save the state of the force library
+%
+% Revision 1.5  1994/11/07  19:39:23  etseidl
 % only call ipv2 init functions on node 0
 %
 % Revision 1.4  1994/08/26  23:21:26  etseidl
@@ -294,6 +297,59 @@ static int opentype = 0;
 static FILE *fp;
 
 @* The global functions.
+
+@ The |dmt_force_osscf_get_options| routine fills in an integer array
+with the values of the input options
+
+@<Global functions.@>=
+GLOBAL_FUNCTION void
+dmt_force_osscf_get_options(opts)
+int *opts;
+{
+  if (opts) {
+    opts[0] = print_nuc_1der;
+    opts[1] = print_kinetic_1der;
+    opts[2] = print_nuclear_1der;
+    opts[3] = print_2e_1der;
+    opts[4] = print_hcoreder;
+    opts[5] = print_overlap_1der;
+    opts[6] = print_all_1der;
+    opts[7] = print_density;
+    opts[8] = print_mofock;
+    opts[9] = print_ewdensity;
+    opts[10] = print_all;
+    opts[11] = local_P;
+    opts[12] = init_called;
+    opts[13] = opentype;
+  }
+}
+
+@
+
+@<Global functions.@>=
+GLOBAL_FUNCTION void
+dmt_force_osscf_put_options(opts)
+int *opts;
+{
+  if (opts) {
+    print_nuc_1der = opts[0];
+    print_kinetic_1der = opts[1];
+    print_nuclear_1der = opts[2];
+    print_2e_1der = opts[3];
+    print_hcoreder = opts[4];
+    print_overlap_1der = opts[5];
+    print_all_1der = opts[6];
+    print_density = opts[7];
+    print_mofock = opts[8];
+    print_ewdensity = opts[9];
+    print_all = opts[10];
+    local_P = opts[11];
+    init_called = opts[12];
+    opentype = opts[13];
+  }
+
+  init_called = 1;
+}
 
 @ The |dmt_force_osscf_init| routine is called to initalize the
 |dmt_force_osscf| routine.  It handles reading the input.  The

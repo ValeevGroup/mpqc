@@ -8,6 +8,11 @@ dmt_force_osscf_keyval_init(KeyVal*,FILE*);
 void
 dmt_force_csscf_keyval_init(KeyVal*,FILE*);
 
+void dmt_get_csscf_force(StateIn&);
+void dmt_put_csscf_force(StateOut&);
+void dmt_get_osscf_force(StateIn&);
+void dmt_put_osscf_force(StateOut&);
+
 extern "C" {
 int
 dmt_force_read_and_bcast_boolean(KeyVal*keyval,FILE*,char*name,int*boolval);

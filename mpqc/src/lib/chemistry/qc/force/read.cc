@@ -4,6 +4,7 @@ extern "C" {
 #include <comm/picl/picl.h>
 #include <comm/picl/ext/piclext.h>
 }
+#include <util/state/state.h>
 #include <util/keyval/keyval.h>
 #include <util/keyval/ipv2c.h>
 #include <util/misc/libmisc.h>
@@ -99,3 +100,52 @@ dmt_force_read_string(KeyVal*keyval,FILE*fp,char*name,char**stringptr)
   return errcod;
 }
 
+void
+dmt_get_csscf_force(StateIn& s)
+{
+  int *opts=0;
+  if (mynode0()==0)
+    s.get(opts);
+  else
+    opts = new int[17];
+  bcast0(opts,sizeof(int)*17,mtype_get(),0);
+  
+  dmt_force_csscf_put_options(opts);
+  delete[] opts;
+}
+
+void
+dmt_put_csscf_force(StateOut& s)
+{
+  if (mynode0()==0) {
+    int *opts=new int[17];
+    dmt_force_csscf_get_options(opts);
+    s.put(opts,17);
+    delete[] opts;
+  }
+}
+
+void
+dmt_get_osscf_force(StateIn& s)
+{
+  int *opts=0;
+  if (mynode0()==0)
+    s.get(opts);
+  else
+    opts = new int[17];
+  bcast0(opts,sizeof(int)*17,mtype_get(),0);
+  
+  dmt_force_osscf_put_options(opts);
+  delete[] opts;
+}
+
+void
+dmt_put_osscf_force(StateOut& s)
+{
+  if (mynode0()==0) {
+    int *opts=new int[17];
+    dmt_force_osscf_get_options(opts);
+    s.put(opts,17);
+    delete[] opts;
+  }
+}

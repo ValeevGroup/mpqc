@@ -1,5 +1,3 @@
 libmisc.LIBSUF
-libgroup.LIBSUF
-libclass.LIBSUF
-libstate.LIBSUF
-libcontainer.LIBSUF
+#include <util/state/LIBS.h>
+#include <util/keyval/LIBS.h>

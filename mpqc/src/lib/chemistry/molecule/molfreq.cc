@@ -4,6 +4,7 @@
 #endif
 
 #include <math.h>
+#include <util/misc/formio.h>
 #include <math/scmat/local.h>
 #include <chemistry/molecule/molfreq.h>
 
@@ -45,10 +46,20 @@ MolecularFrequencies::MolecularFrequencies(const RefKeyVal& keyval)
   if (keyval->error() != KeyVal::OK) disp_ = 0.001;
 
   gradients_ = 0;
+
+  nfreq_ = 0;
+  freq_ = 0;
 }
 
 MolecularFrequencies::~MolecularFrequencies()
 {
+  delete[] nfreq_;
+  if (freq_) {
+      for (int i=0; i<nirrep_; i++) {
+          delete[] freq_[i];
+        }
+      delete[] freq_;
+    }
   delete[] displacements_;
   delete[] gradients_;
 }
@@ -83,6 +94,8 @@ MolecularFrequencies::MolecularFrequencies(StateIn& si):
       displacements_[i] = matrixkit()->restore_matrix(si,d3natom_,ddisp);
     }
 
+  freq_ = 0;
+  nfreq_ = 0;
   gradients_ = 0;
 }
 
@@ -109,7 +122,6 @@ MolecularFrequencies::compute_displacements()
 
   int ng = ct.order();
   int natom = mol_->natom();
-  int nirrep = ct.nirrep();
 
   original_point_group_ = mol_->point_group();
   original_geometry_ = matrixkit()->vector(d3natom_);
@@ -149,6 +161,7 @@ MolecularFrequencies::compute_displacements()
   RefSCMatrix Uext(d3natom_,d3natom_,matrixkit());
   RefSCMatrix Vext(dext,dext,matrixkit());
   RefSCDimension min;
+  nexternal_ = dext.n();
   if (d3natom_.n()<dext.n()) min = d3natom_;
   else min = dext;
   int nmin = min.n();
@@ -200,7 +213,7 @@ MolecularFrequencies::compute_displacements()
 
   // Project the cartesian displacements into each irrep
   SymmetryOperation so;
-  for (i=0; i<nirrep; i++) {
+  for (i=0; i<nirrep_; i++) {
       IrreducibleRepresentation irrep = ct.gamma(i);
       RefSCMatrix *components = new RefSCMatrix[irrep.degeneracy()];
       // loop over the components of this irrep
@@ -251,6 +264,7 @@ MolecularFrequencies::compute_displacements()
         }
       int ndisp = 0;
       for (j=0; j<irrep.degeneracy(); j++) ndisp += components[j].ncol();
+
       RefSCDimension ddisp = new SCDimension(ndisp);
       displacements_[i] = matrixkit()->matrix(d3natom_,ddisp);
       int offset = 0;
@@ -363,6 +377,10 @@ MolecularFrequencies::compute_frequencies_from_gradients()
 
   cout << "Frequencies (cm-1; negative is imaginary):";
 
+  // initial the frequency tables
+  nfreq_ = new int[nirrep_];
+  freq_ = new double*[nirrep_];
+
   // find the inverse sqrt mass matrix
   RefDiagSCMatrix m(d3natom_, matrixkit());
   for (i=0,coor=0; i<mol_->natom(); i++) {
@@ -382,6 +400,8 @@ MolecularFrequencies::compute_frequencies_from_gradients()
   // start with the totally symmetry frequencies
   RefSCMatrix dtrans = displacements_[0];
   RefSCDimension ddim = dtrans.coldim();
+  nfreq_[0] = ddim.n();
+  freq_[0] = new double[nfreq_[0]];
   dhessian = matrixkit()->symmmatrix(ddim);
   for (i=0; i<ddim.n(); i++) {
       for (int j=0; j<=i; j++) {
@@ -396,6 +416,8 @@ MolecularFrequencies::compute_frequencies_from_gradients()
   for (int irrep=1; irrep<nirrep_; irrep++) {
       dtrans = displacements_[irrep];
       ddim = dtrans.coldim();
+      nfreq_[irrep] = ddim.n();
+      freq_[irrep] = new double[nfreq_[irrep]];
       if (ddim.n() == 0) continue;
       dhessian = matrixkit()->symmmatrix(ddim);
       for (i=0; i<ddim.n(); i++) {
@@ -477,7 +499,240 @@ MolecularFrequencies::do_freq_for_irrep(int irrep,
   for (i=0; i<freqs.n(); i++) {
       if (freqs(i) >=0.0) freqs(i) = sqrt(freqs(i));
       else freqs(i) = -sqrt(-freqs(i));
+      freq_[irrep][i] = freqs(i);
       freqs(i) = freqs(i) * 219474.63;
     }
   freqs.print(original_point_group_.char_table().gamma(irrep).symbol());
+}
+
+void
+MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
+{
+  int i;
+  double tmpvar;
+
+  if (!nfreq_) return;
+
+  // default values for temperature T and pressure P are
+  // 298.15 K and 1 atm (=101325.0 Pa), respectively 
+
+  // 1986 CODATA
+  const double NA = 6.0221367e23;  // Avogadro's number
+  const double k  = 1.380658e-23;  // Boltzmann's constant (J/K)
+  const double h  = 6.6260755e-34; // Planck's constant (J*s)
+  const double R  = 8.314510;      // gas constant (J/(mol*K))  (R=k*NA)
+  const double pi = 3.14159265358979323846;
+  const double hartree_to_hertz = 6.5796838e15; // (hertz/hartree)
+
+  const double hartree_to_joule = 4.3597482e-18; // (J/hartree)
+  const double hartree_to_joule_per_mol = hartree_to_joule*NA;
+                                            // (J/(mol*hartree))
+  const double amu_to_kg = 1.6605402e-27; // (kg/amu)
+  const double angstrom_to_meter = 1.0e-10;
+  const double atm_to_Pa = 101325.0; // (Pa/atm)
+
+
+  ////////////////////////////////////////////////////////////////////////
+  // compute the molar entropy using formulas for ideal polyatomic gasses
+  // from McQuarrie, Statistical Mechanics, 1976, Ch. 8; [use (8-27) for
+  // linear and (8-33) for non-linear molecules]
+  // S = S_trans + S_rot + S_vib + S_el
+  ////////////////////////////////////////////////////////////////////////
+
+  // compute the mass of the molecule (in kg)
+  double mass = 0.0;
+  for (i=0; i<mol_->natom(); i++) {
+      mass += mol_->atom(i).mass();
+      }
+  mass *= amu_to_kg;
+
+  // compute principal moments of inertia (pmi) in amu*angstrom^2
+  double pmi[3];
+  mol_->principal_moments_of_inertia(pmi);
+
+  // find out if molecule is linear (if smallest pmi < 1.0e-5 amu angstrom^2)
+  // (elements of pmi are sorted in order smallest to largest)
+  int linear = 0;
+  if (pmi[0] < 1.0e-5) linear = 1;
+
+  // compute the symmetry number sigma;
+  // for linear molecules: sigma = 2 (D_inf_h), sigma = 1 (C_inf_v)
+  // for non-linear molecules: sigma = # of rot. in pt. grp, including E
+  int sigma;
+  CharacterTable ct = original_point_group_.char_table();
+  if (linear) {
+      //if (D_inf_h) sigma = 2;
+      if (original_point_group_.symbol()[0] == 'D' ||
+          original_point_group_.symbol()[0] == 'd') sigma = 2;
+      else if (original_point_group_.symbol()[0] == 'C' ||
+               original_point_group_.symbol()[0] == 'c') sigma = 1;
+      else {
+          cerr << "MolecularFrequencies: For linear molecules"
+               << " the specified point group must be Cnv or Dnh"
+               << endl;
+          abort();
+          }
+      }
+  else if ((original_point_group_.symbol()[0] == 'C' ||
+            original_point_group_.symbol()[0] == 'c') &&
+           (original_point_group_.symbol()[1] >= '1'  &&
+            original_point_group_.symbol()[1] <= '8') &&
+            original_point_group_.symbol()[2] == '\0') {
+      sigma = ct.order();  // group is a valid CN
+      }
+  else if ((original_point_group_.symbol()[0] == 'D' ||
+            original_point_group_.symbol()[0] == 'd') &&
+           (original_point_group_.symbol()[1] >= '2'  &&
+            original_point_group_.symbol()[1] <= '6') &&
+            original_point_group_.symbol()[2] == '\0') {
+      sigma = ct.order();  // group is a valid DN
+      }
+  else if ((original_point_group_.symbol()[0] == 'T' ||
+            original_point_group_.symbol()[0] == 't') &&
+            original_point_group_.symbol()[1] == '\0') {
+      sigma = ct.order();  // group is T
+      }
+  else sigma = 0.5*ct.order(); // group is not pure rot. group (CN, DN, or T)
+
+  // compute S_trans
+  double S_trans;
+  tmpvar = pow(2*pi*mass*k*T/(h*h),1.5);
+  S_trans = R*(log(tmpvar*R*T/(P*atm_to_Pa)) + 2.5 - log(NA));
+
+  // compute S_rot
+  double S_rot;
+  double theta[3]; // rotational temperatures (K)
+  if (linear) {
+      theta[1] = h*h/(8*pi*pi*pmi[1]*amu_to_kg*pow(angstrom_to_meter,2.0)*k);
+      S_rot = log(T/(sigma*theta[1])) + 1.0;
+      }
+  else {
+      theta[0] = h*h/(8*pi*pi*pmi[0]*amu_to_kg*pow(angstrom_to_meter,2.0)*k);
+      theta[1] = h*h/(8*pi*pi*pmi[1]*amu_to_kg*pow(angstrom_to_meter,2.0)*k);
+      theta[2] = h*h/(8*pi*pi*pmi[2]*amu_to_kg*pow(angstrom_to_meter,2.0)*k);
+      tmpvar = theta[0]*theta[1]*theta[2];
+      S_rot = log(pow(pi*T*T*T/tmpvar,0.5)/sigma) + 1.5;
+      }
+  S_rot *= R;
+
+  // compute S_vib
+  double S_vib = 0.0;
+  for (i=0; i<nirrep_; i++) {
+      for (int j=0; j<nfreq_[i]; j++) {
+          if (freq_[i][j] > 0.0) {
+              tmpvar = hartree_to_hertz*h*freq_[i][j]/(k*T);
+              S_vib += tmpvar/(exp(tmpvar)-1) - log(1-exp(-tmpvar));
+              }
+          }
+      }
+   S_vib *= R;
+
+  // compute S_el
+  double S_el;
+  S_el = R*log(degeneracy);
+
+  // compute total molar entropy S (in J/(mol*K))
+  double S;
+  S = S_trans + S_rot + S_vib + S_el;
+
+  
+  //////////////////////////////////////////////
+  // compute the molar enthalpy (nonelectronic) 
+  //////////////////////////////////////////////
+
+  int n_zero_or_imaginary = 0;
+  double E0vib = 0.0;
+  for (i=0; i<nirrep_; i++) {
+      for (int j=0; j<nfreq_[i]; j++) {
+          if (freq_[i][j] > 0.0) E0vib += freq_[i][j] * hartree_to_joule_per_mol;
+          else n_zero_or_imaginary++;
+        }
+    }
+  E0vib *= 0.5;
+
+  double EvibT = 0.0;
+  for (i=0; i<nirrep_; i++) {
+      for (int j=0; j<nfreq_[i]; j++) {
+          if (freq_[i][j] > 0.0)
+              EvibT += freq_[i][j] * hartree_to_joule_per_mol
+                      /(exp(freq_[i][j]*hartree_to_joule/k*T-1));
+        }
+    }
+
+  double EPV = NA*k*T;
+
+  double Erot;
+  if (nexternal_ == 3) {
+      // atom
+      Erot = 0.0;
+    }
+  else if (nexternal_ == 5) {
+      // linear
+      Erot = EPV;
+    }
+  else if (nexternal_ == 6) {
+      // nonlinear
+      Erot = 1.5 * EPV;
+    }
+  else {
+      cerr << "Strange number of external coordinates: " << nexternal_
+           << ".  Setting Erot to 0.0" << endl;
+      Erot = 0.0;
+    }
+
+  double Etrans = 1.5 * EPV;
+
+  ////////////////////////////////////////////////
+  // Print out results of thermodynamic analysis
+  ////////////////////////////////////////////////
+
+  cout << "THERMODYNAMIC ANALYSIS:" << endl;
+  cout << endl;
+  cout << scprintf("Contributions to the nonelectronic enthalpy at %.2lf K:\n",T);
+  cout << "                   kJ/mol       kcal/mol"<< endl;
+  cout << scprintf("  E0vib        = %9.4lf    %9.4lf\n",
+          E0vib/1000, E0vib/(4.184*1000));
+  cout << scprintf("  Evib(T)      = %9.4lf    %9.4lf\n",
+          EvibT/1000, EvibT/(4.184*1000));
+  cout << scprintf("  Erot(T)      = %9.4lf    %9.4lf\n",
+          Erot/1000, Erot/(4.184*1000));
+  cout << scprintf("  Etrans(T)    = %9.4lf    %9.4lf\n",
+          Etrans/1000, Etrans/(4.184*1000));
+  cout << scprintf("  PV(T)        = %9.4lf    %9.4lf\n",
+          EPV/1000, EPV/(4.184*1000));
+  cout << scprintf("  Total nonelectronic enthalpy:\n");
+  cout << scprintf("  H_nonel(T)   = %9.4lf    %9.4lf\n",
+         (E0vib+EvibT+Erot+Etrans+EPV)/1000,
+         (E0vib+EvibT+Erot+Etrans+EPV)/(4.184*1000));
+  cout << endl;
+
+  cout << scprintf("Contributions to the entropy at %.2lf K and %.1lf atm:\n",
+          T, P);
+  cout << "                   J/(mol*K)    cal/(mol*K)"<< endl;
+  cout << scprintf("  S_trans(T,P) = %9.4lf    %9.4lf\n", S_trans,S_trans/4.184);
+  cout << scprintf("  S_rot(T)     = %9.4lf    %9.4lf\n", S_rot,S_rot/4.184);
+  cout << scprintf("  S_vib(T)     = %9.4lf    %9.4lf\n", S_vib,S_vib/4.184);
+  cout << scprintf("  S_el         = %9.4lf    %9.4lf\n", S_el,S_el/4.184);
+  cout << scprintf("  Total entropy:\n");
+  cout << scprintf("  S_total(T,P) = %9.4lf    %9.4lf\n", S, S/4.184);
+  cout << endl;
+
+  cout << "Various data used for thermodynamic analysis:" << endl;
+  cout << endl;
+  if (linear) cout << "Linear molecule" << endl;
+  else cout << "Nonlinear molecule" << endl;
+  cout << scprintf("Principal moments of inertia (amu*angstrom^2):"
+          " %.5lf, %.5lf, %.5lf\n", pmi[0], pmi[1], pmi[2]);
+  cout << "Point group: " << original_point_group_.symbol() << endl;
+  cout << "Order of point group: " << ct.order() << endl;
+  cout << "Rotational symmetry number: " << sigma << endl;
+  if (linear) {
+      cout << scprintf("Rotational temperature (K): %.4lf\n", theta[1]);
+    }
+  else {
+      cout << scprintf("Rotational temperatures (K): %.4lf, %.4lf, %.4lf\n",
+              theta[0], theta[1], theta[2]);
+    }
+  cout << "Electronic degeneracy: " << degeneracy << endl;
+  cout << endl;
 }

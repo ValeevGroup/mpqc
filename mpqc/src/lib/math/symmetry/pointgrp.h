@@ -351,6 +351,7 @@ class CharacterTable {
     //\clsnmref{SymmetryOperation} which is the frame of reference.  All
     //symmetry operations are transformed to this frame of reference.
     CharacterTable(const char*,const SymmetryOperation&);
+
     CharacterTable(const CharacterTable&);
     ~CharacterTable();
 
@@ -379,7 +380,7 @@ class CharacterTable {
     //. Returns the index of the symop which is the inverse of symop[i].
     int inverse(int i) const { return _inv[i]; }
     
-    //. Returns sum\_ir degen(ir);
+    //. Returns sum\_{ir} degen(ir);
     int ncomp() const {
       int ret=0;
       for (int i=0; i < nirrep_; i++) {
@@ -400,7 +401,7 @@ class CharacterTable {
       return -1;
     }
 
-    //. Returns the which compenent i is.
+    //. Returns which component i is.
     int which_comp(int i) {
       for (int ir=0, cn=0; ir < nirrep_; ir++) {
         int nc = (gamma_[ir].complex()) ? 1 : gamma_[ir].degen;
@@ -413,7 +414,6 @@ class CharacterTable {
     
     //. 
     // This prints the irrep to the given file, or stdout if none is given.
-    // The second argument is an optional string of spaces to offset by.
     void print(ostream& =cout) const;
 };
 
@@ -424,8 +424,9 @@ class CharacterTable {
 // \clsnmref{CharacterTable}.  It contains a string representation of the
 // Schoenflies symbol of a point group, a frame of reference for the
 // symmetry operation transformation matrices, and a point of origin.
-// The origin may one day disappear...I once thought it would be useful.
-// Maybe I'll remember why some day.
+// The origin is not respected by the symmetry operations, so if
+// you want to use a point group with a nonzero origin, first translate
+// all your coordinates to the origin and then set the origin to zero.
 //
 // \clsnm{PointGroup} is the only class in libsymmetry which is a
 // \clsnmref{SavableState}.  I did this to save space...it takes less than a

@@ -47,7 +47,7 @@ OneBodyIntV3::~OneBodyIntV3()
 void
 OneBodyIntV3::compute_shell(int i, int j)
 {
-  (int1ev3_->*intfunc_)(i, j);
+  (int1ev3_.pointer()->*intfunc_)(i, j);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -200,7 +200,7 @@ OneBodyDerivIntV3::~OneBodyDerivIntV3()
 void
 OneBodyDerivIntV3::compute_shell(int i, int j, DerivCenters& c)
 {
-  (int1ev3_->*intfunc_)(i,j,0,basis1()->shell_to_center(i));
+  (int1ev3_.pointer()->*intfunc_)(i,j,0,basis1()->shell_to_center(i));
   c.clear();
   c.add_center(0,basis1(),i);
   c.add_omitted(1,basis2(),j);
@@ -209,7 +209,7 @@ OneBodyDerivIntV3::compute_shell(int i, int j, DerivCenters& c)
 void
 OneBodyDerivIntV3::compute_shell(int i, int j, int c)
 {
-  (int1ev3_->*intfunc_)(i,j,0,c);
+  (int1ev3_.pointer()->*intfunc_)(i,j,0,c);
 }
 
 /////////////////////////////////////////////////////////////////////////////

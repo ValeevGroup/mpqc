@@ -22,7 +22,7 @@ TwoBodyIntJF::TwoBodyIntJF(const RefGaussianBasisSet& gbs) :
     for (int j=0; j < MAXAM*2; j++)
       sz += ioff(i+1)*ioff(j+1)*MAXAM*8;
 
-  DP = (double *) malloc(sz*sizeof(double));
+  DP = new double[sz];
 
 }
 
@@ -273,6 +273,7 @@ TwoBodyIntJF::compute_shell(int sii, int sjj, int skk, int sll, double *buf)
           double *data = HRR_build(Classes, 0, ab, cd);
           //int num = Fill_data(Classes, 0);
 
+#if 0
           int index=0;
           for (int fi = 0; fi < ioff(Classes[0].am[0]+1); fi++) {
             int bfi = fi+shpi->func0;
@@ -295,6 +296,7 @@ TwoBodyIntJF::compute_shell(int sii, int sjj, int skk, int sll, double *buf)
               }
             }
           }
+#endif
         }
       }
     }

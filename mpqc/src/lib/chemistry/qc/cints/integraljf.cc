@@ -14,13 +14,13 @@ OneBodyIntJF::init()
   int i,j;
   
   // find the max angular momentum and set up constant arrays
-  maxam=MAXAM;
+  maxam=MAXAM+1;
 
   // lci is binomial coefficient, l choose i, in one-d array
   if (lci)
     delete[] lci;
 
-  lci = new int[ioff(maxam+1)];
+  lci = new int[ioff(maxam+1)+1];
   lci[0]=0;
 
   for (i=1; i <= maxam; i++)

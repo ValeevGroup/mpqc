@@ -91,7 +91,7 @@ BEMSolvent::init()
   if (vertex_area_) delete[] vertex_area_;
   vertex_area_ = new double[ncharge()];
   for (int i=0; i<ncharge(); i++) vertex_area_[i] = 0.0;
-  TriangulatedSurfaceIntegrator triint(surf_->surface());
+  TriangulatedSurfaceIntegrator triint(surf_);
   for (triint = 0; triint.update(); triint++) {
       int j0 = triint.vertex_number(0);
       int j1 = triint.vertex_number(1);
@@ -134,7 +134,7 @@ BEMSolvent::polarization_charge(double *charges)
   double charge = 0.0;
   
   // integrate over the surface
-  TriangulatedSurfaceIntegrator triint(surf_->surface());
+  TriangulatedSurfaceIntegrator triint(surf_);
   for (triint = 0; triint.update(); triint++) {
       int j0 = triint.vertex_number(0);
       int j1 = triint.vertex_number(1);
@@ -162,7 +162,7 @@ BEMSolvent::normalize_charge(double enclosed_charge, double* charges)
   double charge = 0.0;
   double area = 0.0;
   // integrate over the surface
-  TriangulatedSurfaceIntegrator triint(surf_->surface());
+  TriangulatedSurfaceIntegrator triint(surf_);
   for (triint = 0; triint.update(); triint++) {
       int j0 = triint.vertex_number(0);
       int j1 = triint.vertex_number(1);
@@ -212,7 +212,7 @@ BEMSolvent::init_system_matrix()
 
   // integrate over the surface
   double A = 0.0;
-  TriangulatedSurfaceIntegrator triint(surf_->surface());
+  TriangulatedSurfaceIntegrator triint(surf_);
   for (triint = 0; triint.update(); triint++) {
       RefSCVector surfv = triint.current()->point();
       SCVector3 surfpv(surfv->get_element(0),
@@ -287,7 +287,7 @@ BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
   // integrate over the surface
   double A = 0.0;
   double efield_dot_normal = 0.0;
-  TriangulatedSurfaceIntegrator triint(surf_->surface());
+  TriangulatedSurfaceIntegrator triint(surf_);
   for (triint = 0; triint.update(); triint++) {
       RefSCVector surfv = triint.current()->point();
       SCVector3 surfpv(surfv->get_element(0),
@@ -353,7 +353,7 @@ BEMSolvent::self_interaction_energy(double** charge_positions,
   charges_to_surface_charge_density(charge);
 
   // Precompute all of the integration points.
-  TriangulatedSurfaceIntegrator itemplate(surf_->surface());
+  TriangulatedSurfaceIntegrator itemplate(surf_);
   int n_integration_points = itemplate.n();
   TriangulatedSurfaceIntegrator *integration_points
       = new TriangulatedSurfaceIntegrator[n_integration_points];

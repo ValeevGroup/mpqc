@@ -411,7 +411,7 @@ GaussianBasisSet::init2(int skip_ghosts)
   // figure out if any shells are spherical harmonics
   has_pure_ = false;
   for(int i=0; i<nsh; i++)
-    has_pure_ = has_pure_ && shell_[i]->has_pure();
+    has_pure_ = has_pure_ || shell_[i]->has_pure();
 
   if (matrixkit_.null())
     matrixkit_ = SCMatrixKit::default_matrixkit();

@@ -1,4 +1,4 @@
-TOPDIR=../..
+TOPDIR=..
 ifndef SRCDIR
   SRCDIR=.
 endif
@@ -9,7 +9,7 @@ C2T = $(SRCDIR)/$(TOPDIR)/bin/class2texi
 T2H = $(SRCDIR)/$(TOPDIR)/bin/texi2html
 RMDOTDOT = $(SRCDIR)/$(TOPDIR)/bin/rmdotdot
 
-SRCLIBDIR := $(shell $(RMDOTDOT) $(SRCDIR)/$(TOPDIR)/src.lib)
+SRCLIBDIR := $(shell $(RMDOTDOT) $(SRCDIR)/$(TOPDIR)/src/lib)
 
 # The are the hand written texi files.
 DOC =  SC.texi class.texi idxcon.texi keyval.texi scmat.texi \

@@ -1785,11 +1785,11 @@ RadialAngularIntegrator::init_parameters(void)
 {
 
   prune_grid_ = 1;
-  gridtype_ = 2;
+  gridtype_ = 3;
   user_defined_grids_ = 0;
   npruned_partitions_ = 5;
   dynamic_grids_ = 1;
-  max_gridtype_ = 5;
+  max_gridtype_ = 6;
   natomic_rows_ = 5;
   grid_accuracy_ = new double[max_gridtype_];
   
@@ -1798,6 +1798,8 @@ RadialAngularIntegrator::init_parameters(void)
   for (i=1; i<max_gridtype_; i++) grid_accuracy_[i] = grid_accuracy_[i-1]*1e-1;
     
   init_pruning_coefficients();
+
+  // ExEnv::out() << "gridtype_ = " << gridtype_ << endl;
   
 }
 
@@ -1806,17 +1808,18 @@ RadialAngularIntegrator::init_parameters(const RefKeyVal& keyval)
 {
   char *grid = 0;
   
-  max_gridtype_ = 5;
+  max_gridtype_ = 6;
   natomic_rows_ = 5;
   
   grid = keyval->pcharvalue("grid");
 
   if (grid) {
-      if (!strcmp(grid,"xcoarse"))     gridtype_ = 0;
-      else if (!strcmp(grid,"coarse")) gridtype_ = 1;
-      else if (!strcmp(grid,"medium")) gridtype_ = 2;
-      else if (!strcmp(grid,"fine"))   gridtype_ = 3;
-      else if (!strcmp(grid,"xfine"))  gridtype_ = 4;
+      if (!strcmp(grid,"xcoarse"))        gridtype_ = 0;
+      else if (!strcmp(grid,"coarse"))    gridtype_ = 1;
+      else if (!strcmp(grid,"medium"))    gridtype_ = 2;
+      else if (!strcmp(grid,"fine"))      gridtype_ = 3;
+      else if (!strcmp(grid,"xfine"))     gridtype_ = 4;
+      else if (!strcmp(grid,"ultrafine")) gridtype_ = 5;
       else {
           ExEnv::out() << node0
                        << indent
@@ -1833,7 +1836,7 @@ RadialAngularIntegrator::init_parameters(const RefKeyVal& keyval)
 
     }
   else {
-      gridtype_ = 2;
+      gridtype_ = 3;
     }
 
 
@@ -2015,19 +2018,19 @@ RadialAngularIntegrator::init_default_grids(void)
 
   // Set number of radial points for each atomic row and grid type
   nr_points_[0][0] = 20; nr_points_[0][1] = 30; nr_points_[0][2] = 50;
-  nr_points_[0][3] = 70; nr_points_[0][4] = 100;
+  nr_points_[0][3] = 60; nr_points_[0][4] = 70; nr_points_[0][5] = 100;
 
   nr_points_[1][0] = 30; nr_points_[1][1] = 50; nr_points_[1][2] = 75;
-  nr_points_[1][3] = 100; nr_points_[1][4] = 140;
+  nr_points_[1][3] = 85; nr_points_[1][4] = 100; nr_points_[1][5] = 140;
 
   nr_points_[2][0] = 45; nr_points_[2][1] = 75; nr_points_[2][2] = 95;
-  nr_points_[2][3] = 125; nr_points_[2][4] = 175;
+  nr_points_[2][3] = 110; nr_points_[2][4] = 125; nr_points_[2][5] = 175;
 
   nr_points_[3][0] = 75; nr_points_[3][1] = 95; nr_points_[3][2] = 110;
-  nr_points_[3][3] = 160; nr_points_[3][4] = 210;
+  nr_points_[3][3] = 130; nr_points_[3][4] = 160; nr_points_[3][5] = 210;
 
   nr_points_[4][0] = 105; nr_points_[4][1] = 130; nr_points_[4][2] = 155;
-  nr_points_[4][3] = 205; nr_points_[4][4] = 235;
+  nr_points_[4][3] = 180; nr_points_[4][4] = 205; nr_points_[4][5] = 235;
 
   // prune_grid_ = 1; npruned_partitions_ = 5; gridtype_ = 2;
 }
@@ -2039,8 +2042,9 @@ RadialAngularIntegrator::angular_grid_offset(int i)
   case 0: return 0;
   case 1: return 6;
   case 2: return 12;
-  case 3: return 30;
-  case 4: return 42;
+  case 3: return 18;
+  case 4: return 30;
+  case 5: return 42;
   default: abort();
     }
   return 0;
@@ -2267,6 +2271,7 @@ RadialAngularIntegrator::print(ostream &o) const
       case 2: o << node0 << "medium"; break;
       case 3: o << node0 << "fine"; break;
       case 4: o << node0 << "xfine"; break;
+      case 5: o << node0 << "ultrafine"; break;
       default: o << node0 << "unknown"; break;
         }
       o << node0 << " grid employed" << endl;

@@ -14,6 +14,7 @@ extern "C" {
 
 #include <util/group/picl.h>
 #include <util/group/message.h>
+#include <util/group/memory.h>
 #include <util/group/mstate.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
@@ -56,7 +57,7 @@ static void mkcostvec(centers_t*, sym_struct_t*, dmt_cost_t*);
 ///////////////////////////////////////////////////////////////////////////
 
 static void
-clean_mp(const RefMessageGrp& grp)
+clean_mp(const RefMessageGrp& msg)
 {
   picl_prober();
 
@@ -65,26 +66,26 @@ clean_mp(const RefMessageGrp& grp)
 }
 
 static RefMessageGrp
-init_mp(const char *inputfile, int argc, char** argv)
+init_mp(const char *inputfile, int &argc, char** argv)
 {
   int nproc,me,host;
   int top,ord,dir;
-  RefMessageGrp grp;
+  RefMessageGrp msg;
 
-  grp = MessageGrp::initial_messagegrp(argc, argv);
-  if (grp.null()) {
+  msg = MessageGrp::initial_messagegrp(argc, argv);
+  if (msg.null()) {
       RefKeyVal keyval = new ParsedKeyVal(inputfile);
-      grp = keyval->describedclassvalue("message");
+      msg = keyval->describedclassvalue("message");
       keyval = 0;
     }
 
-  if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
-  else grp = MessageGrp::get_default_messagegrp();
+  if (msg.nonnull()) MessageGrp::set_default_messagegrp(msg);
+  else msg = MessageGrp::get_default_messagegrp();
 
-  open0_messagegrp(&nproc,&me,&host,grp);
+  open0_messagegrp(&nproc,&me,&host,msg);
   setarc0(&nproc,&top,&ord,&dir);
 
-  return grp;
+  return msg;
 }
 
 static void
@@ -164,7 +165,17 @@ main(int argc, char *argv[])
 
   FILE *outfile = stdout;
   
-  char *filename = (argv[1]) ? argv[1] : "mpqc.in";
+  const char *filename = "mpqc.in";
+
+  int iarg;
+  for (iarg=1; iarg<argc; iarg++) {
+      // skip over the options
+      if (argv[iarg][0] == '-') iarg++;
+      else {
+          filename = argv[iarg];
+          break;
+        }
+    }
 
   int nfilebase = (int) (strrchr(filename, '.') - filename);
 
@@ -181,7 +192,9 @@ main(int argc, char *argv[])
   RefDebugger debugger;
 
  // initialize the picl routines
-  RefMessageGrp grp = init_mp(filename, argc, argv);
+  RefMessageGrp msg = init_mp(filename, argc, argv);
+
+  RefMemoryGrp mem = MemoryGrp::initial_memorygrp(argc, argv);
 
  // initialize timing for mpqc
 
@@ -192,12 +205,12 @@ main(int argc, char *argv[])
 
   int nfzc, nfzv, mem_alloc;
 
-  if (grp->me() == 0) {
+  if (msg->me() == 0) {
     fprintf(outfile,
         "\n       MPQC: Massively Parallel Quantum Chemistry\n\n\n");
 
     fprintf(outfile,"  Running on a %s with %d nodes.\n",
-            machine_type(), numnodes0());
+            TARGET_ARCH, msg->n());
     fflush(outfile);
 
    // initialize keyval
@@ -211,7 +224,7 @@ main(int argc, char *argv[])
     // Let the debugger know the name of the executable and the node
     if (debugger.nonnull()) {
         debugger->set_exec(argv[0]);
-        debugger->set_prefix(grp->me());
+        debugger->set_prefix(msg->me());
       }
 
     pkv = ppkv = 0;
@@ -417,7 +430,7 @@ main(int argc, char *argv[])
   }
 
   // send input data to all the nodes
-  BcastState bcaststate(grp);
+  BcastState bcaststate(msg);
   bcaststate.bcast(do_scf);
   bcaststate.bcast(do_grad);
   bcaststate.bcast(nopt);
@@ -442,7 +455,7 @@ main(int argc, char *argv[])
   bcaststate.flush();
 
   // set up the basis set on this center
-  if (grp->me() != 0) {
+  if (msg->me() != 0) {
       tcenters = int_centers_from_gbs(gbs);
       assign_centers(&centers,tcenters);
       free_centers(tcenters);
@@ -451,7 +464,7 @@ main(int argc, char *argv[])
   // Let the debugger know the name of the executable and the node
   if (debugger.nonnull()) {
       debugger->set_exec(argv[0]);
-      debugger->set_prefix(grp->me());
+      debugger->set_prefix(msg->me());
     }
 
   sgen_reset_bcast0();
@@ -508,7 +521,7 @@ main(int argc, char *argv[])
 
     if (geom_code==GEOM_ABORT || geom_code==GEOM_DONE) {
       fprintf(outfile,"mpqcnode: geom_code says you are done or in trouble\n");
-      clean_mp(grp);
+      clean_mp(msg);
       return geom_code != GEOM_DONE;
     }
   }
@@ -546,7 +559,7 @@ main(int argc, char *argv[])
   if (!do_scf && do_grad && do_mp2) {
       if (mynode0()==0)
           fprintf(stderr,"Must do scf before mp2 gradient. Program exits\n");
-      clean_mp(grp);
+      clean_mp(msg);
       return 1;
     }
 
@@ -570,7 +583,7 @@ main(int argc, char *argv[])
 
       if (errcod != 0) {
         fprintf(outfile,"trouble forming scf vector\n");
-        clean_mp(grp);
+        clean_mp(msg);
         return 1;
       }
     
@@ -588,7 +601,7 @@ main(int argc, char *argv[])
             mbpt_mp2_gradient(scf_info, sym_info, centers,
                               nfzc, nfzv,
                               Scf_Vec, Fock, FockO,
-                              mem_alloc, outfile, grp,
+                              mem_alloc, outfile, msg, mem,
                               energy, gradient);
           }
         else if (!scf_info.iopen) {
@@ -623,7 +636,7 @@ main(int argc, char *argv[])
             mbpt_mp2_gradient(scf_info, sym_info, centers,
                               nfzc, nfzv,
                               Scf_Vec, Fock, FockO,
-                              mem_alloc, outfile, grp,
+                              mem_alloc, outfile, msg, mem,
                               energy, gradient);
           }
         else if (!scf_info.iopen) {
@@ -797,7 +810,7 @@ main(int argc, char *argv[])
   delete[] pdbfile;
   delete[] geomfile;
 
-  clean_mp(grp);
+  clean_mp(msg);
 
   return 0;
 }

@@ -258,9 +258,6 @@ main(int argc, char *argv[])
        << scprintf("Running on a %s with %d nodes.", TARGET_ARCH, grp->n())
        << endl << endl;
 
-  // see if frequencies are wanted
-  RefMolecularFrequencies molfreq = keyval->describedclassvalue("freq");
-  
   // check for a molecular energy and optimizer
   char * molname = keyval->pcharvalue("filename");
   if (!molname)
@@ -330,6 +327,29 @@ main(int argc, char *argv[])
   delete[] restartfile;
   delete[] ckptfile;
 
+  // see if frequencies are wanted
+  char * freqfile = new char[strlen(molname)+6];
+  sprintf(freqfile,"%s.freq",molname);
+  if (restart) {
+    if (grp->me() == 0) {
+      statresult = stat(freqfile,&sb);
+      statsize = (statresult==0) ? sb.st_size : 0;
+    }
+    grp->bcast(statresult);
+    grp->bcast(statsize);
+  }
+
+  RefMolecularFrequencies molfreq;
+  if (restart && statresult==0 && statsize) {
+    BcastStateInBinXDR si(grp,freqfile);
+    molfreq.restore_state(si);
+  } else {
+    molfreq = keyval->describedclassvalue("freq");
+  }
+
+  if (molfreq.nonnull() && mole.nonnull())
+    molfreq->set_energy(mole);
+  
   int check = (options.retrieve("c") != 0);
   int limit = atoi(options.retrieve("l"));
   if (limit) {
@@ -414,12 +434,15 @@ main(int argc, char *argv[])
 
   if (ready_for_freq && molfreq.nonnull()) {
     tim->enter("frequencies");
-    molfreq->compute_displacements();
+    if (!molfreq->displacements_computed())
+      molfreq->compute_displacements();
     cout << node0 << indent
          << "Computing molecular frequencies from "
-         << molfreq->ndisplace() << " displacements:" << endl;
+         << molfreq->ndisplace() << " displacements:" << endl
+         << indent << "Starting at displacement: "
+         << molfreq->ndisplacements_done() << endl;
 
-    for (i=0; i<molfreq->ndisplace(); i++) {
+    for (i=molfreq->ndisplacements_done(); i<molfreq->ndisplace(); i++) {
       // This produces side-effects in mol and may even change
       // its symmetry.
       cout << node0
@@ -429,6 +452,9 @@ main(int argc, char *argv[])
       mole->obsolete();
       RefSCVector gradv = mole->get_cartesian_gradient();
       molfreq->set_gradient(i, gradv);
+
+      StateOutBinXDR so(freqfile);
+      molfreq.save_state(so);
     }
     molfreq->original_geometry();
     molfreq->compute_frequencies_from_gradients();
@@ -436,6 +462,8 @@ main(int argc, char *argv[])
     molfreq->thermochemistry(1);
     tim->exit("frequencies");
   }
+
+  delete[] freqfile;
 
   // see if any pictures are desired
   RefRender renderer = keyval->describedclassvalue("renderer");

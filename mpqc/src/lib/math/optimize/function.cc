@@ -353,7 +353,7 @@ Function::print(ostream&o)
 {
   o << node0 << indent << "Function Parameters:\n" << incindent
     << indent << scprintf("value_accuracy = %e\n",desired_value_accuracy())
-    << indent << scprintf("gradient.accuracy = %e\n",
+    << indent << scprintf("gradient_accuracy = %e\n",
                           desired_gradient_accuracy())
     << indent << scprintf("hessian_accuracy = %e\n",desired_hessian_accuracy())
     << decindent << endl;

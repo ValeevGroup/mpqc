@@ -350,10 +350,10 @@ UHF::ao_fock()
   fockb_.result_noupdate().assign(hcore_);
   fockb_.result_noupdate().accumulate(ddb);
 
-  da.assign(0.0);
+  dda.assign(0.0);
   accumddh_->accum(dda);
-  focka_.result_noupdate().accumulate(da);
-  fockb_.result_noupdate().accumulate(da);
+  focka_.result_noupdate().accumulate(dda);
+  fockb_.result_noupdate().accumulate(dda);
 
   focka_.computed()=1;
   fockb_.computed()=1;

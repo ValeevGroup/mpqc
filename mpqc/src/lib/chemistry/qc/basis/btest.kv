@@ -1,16 +1,36 @@
 
+xmolecule = $:ico_d5
+
 molecule<Molecule>: (
-  symmetry = c1
+  symmetry = d3
+  angstrom=yes
   { atoms geometry } = {
-    N  [ 0.0  0.0  0.0 ]
     C  [ 1.0  0.0  0.0 ]
-    C  [ 2.0  0.0  0.0 ]
-    H  [ 3.0  0.0  0.0 ]
-    He [ 4.0  0.0  0.0 ]
+    %N  [  0.675333  0.0  0.8753333 ]
+    %N  [  1.0129995 0.0  1.31299995]
+    %N  [ -1.25 0 3.4 ]
+    %N  [  0.0 0.0  1.4 ]
+    %C  [ 1.0  0.0  0.0 ]
+    %C  [ 2.0  0.0  0.0 ]
+    %H  [ 0.0  0.0  1.0 ]
+    %H  [ -0.72360679775  0.0  1.17082039325 ]
+    %H  [ -1.0  0.0  1.0 ]
+    %He [ 4.0  0.0  0.0 ]
     }
  )
 
-test: [
+test : [
+ <GaussianBasisSet>: (
+   molecule = $:molecule
+   name = "foo"
+   %name = "STO-3G"
+   %name = "6-31G**"
+   %name = "aug-cc-pVTZ"
+   %puream=yes
+ )
+]
+
+xtest: [
  <GaussianBasisSet>: (
    molecule = $:molecule
    name = "STO-3G"
@@ -33,3 +53,81 @@ test: [
              ]
    )
  ]
+
+
+basis: (
+  hydrogen: "foo": [
+    (type: [am = s]
+            {exp               coef:0} = {
+       1.307093214e+02   1.0
+       }
+    )
+  ]
+  carbon: "foo": [
+    (type: [am = d]
+            {exp               coef:0} = {
+       1.307093214e+02   1.0
+       }
+    )
+  ]
+  nitrogen: "foo": [
+    (type: [am = s]
+            {exp               coef:0} = {
+       1.307093214e+02   1.0
+       }
+    )
+  ]
+)
+
+ico<Molecule>: (
+  symmetry = ih
+  angstrom=yes
+  { atoms geometry } = {
+       C      [     0.0000000000    0.0000000000    1.4000000000 ]
+  }
+)
+
+ico_d5<Molecule>: (
+  symmetry = d5d
+  angstrom=yes
+  { atoms geometry } = {
+       C      [     0.0000000000    0.0000000000    1.4000000000 ]
+       C      [     0.0000000000   -1.2521980674    0.6260990337 ]
+  }
+)
+
+dodec<Molecule>: (
+  symmetry = ih
+  angstrom = yes
+  { atoms geometry } = {
+    C        [   1.2762577889    0.0000000000    1.6706431349 ]
+  }
+)
+
+dodec_d5<Molecule>: (
+  symmetry = d5d
+  angstrom = yes
+  { atoms geometry } = {
+    C        [   0.0000000000    1.6300000000    0.3070000000 ]
+    C        [   0.0000000000    1.0130000000    1.3130000000 ]
+  }
+)
+
+bucky<Molecule>: (
+  symmetry = ih
+  angstrom = yes
+  { atoms geometry } = {
+       C      [    -1.2265000000    0.0000000000    3.3145000000 ]
+  }
+)
+
+bucky_d5<Molecule>: (
+  symmetry = d5d
+  angstrom = yes
+  { atoms geometry } = {
+       C      [     0.0000000000   -1.2265000000    3.3145000000 ]
+       C      [     0.0000000000   -2.4160714497    2.5793044120 ]
+       C      [     0.6992125547    2.9469022060    1.8212857248 ]
+       C      [     3.4642913133   -0.3675977940    0.5947857248 ]
+  }
+)

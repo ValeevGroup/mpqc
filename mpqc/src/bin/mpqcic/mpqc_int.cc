@@ -54,7 +54,7 @@ static FILE *errfp=stderr;
 
 static RefMolecule mol;
 static RefMolecularCoor coor;
-static RefIHessianUpdate update;
+static RefHessianUpdate update;
 
 static RefSymmSCMatrix hessian;
 static RefSCVector xn;

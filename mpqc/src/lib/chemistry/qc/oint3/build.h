@@ -45,6 +45,9 @@ class BuildIntV3 {
     double int_v_k34;
     IntV3Arraydoublep3 int_v_list;
   public:
+    BuildIntV3();
+    ~BuildIntV3();
+
     int impossible_integral();
 
 #if (MG == 1) || (MG == 2) || (MG == 3) || (MG == 4)

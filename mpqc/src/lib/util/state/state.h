@@ -92,7 +92,6 @@ class SavableState: public DescribedClass {
   protected:
     SavableState(StateIn&);
   };
-DescribedClass_REF_dec(SavableState);
 
 ////////////////////////////////////////////////////////////////////
 
@@ -156,7 +155,7 @@ class StateIn: public DescribedClass {
   protected:
     StateDataNumSet* ps_;
     int _nextobject;
-    ArraysetClassDescP _cd;
+    ArraysetCClassDescP _cd;
     Arraysetint _version;
     virtual int get_array_void(void*,int);
   public:
@@ -197,6 +196,8 @@ class StateIn: public DescribedClass {
     void copy_references();
   };
 DescribedClass_REF_dec(StateIn);
+
+SavableState_REF_dec(SavableState);
 
 ////////////////////////////////////////////////////////////////////
 

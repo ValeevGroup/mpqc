@@ -100,15 +100,15 @@ ipv2_scan.cc: ipv2_scan.ll
 
 keyvalMap.cc keyvalMap.h:
 	$(GENCLASS) -2 KeyValKeyword val RefKeyValValue val Map keyval
-	prepend-header keyvalMap.h "#include <util/keyval/keyval.h>"
-	prepend-header keyvalMap.h "#include <util/keyval/keyvaldefs.h>"
+	$(PREPEND_HEADER) keyvalMap.h "#include <util/keyval/keyval.h>"
+	$(PREPEND_HEADER) keyvalMap.h "#include <util/keyval/keyvaldefs.h>"
 	/bin/mv keyvalMap.h tmp.keyvalMap.h
 	grep -v "#include \"keyvaldefs.h\"" < tmp.keyvalMap.h > keyvalMap.h
 	/bin/rm tmp.keyvalMap.h
 
 keyval$(MAPIMPL)Map.cc keyval$(MAPIMPL)Map.h:
 	$(GENCLASS) -2 KeyValKeyword val RefKeyValValue val $(MAPIMPL)Map keyval
-	prepend-header keyval$(MAPIMPL)Map.h "#include <util/keyval/keyval.h>"
+	$(PREPEND_HEADER) keyval$(MAPIMPL)Map.h "#include <util/keyval/keyval.h>"
 
 keyvalImplMap.h:
 	echo "#include <util/keyval/keyval$(MAPIMPL)Map.h>" > keyvalImplMap.h

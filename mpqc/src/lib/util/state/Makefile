@@ -85,15 +85,15 @@ endif
 
 stateptrSet.cc stateptrSet.h:
 	$(GENCLASS) StateDataPtr val Set stateptr
-	prepend-header stateptrSet.h "#include <util/state/state_ptr.h>"
-	prepend-header stateptrSet.h "#include <util/state/stateptrdefs.h>"
+	$(PREPEND_HEADER) stateptrSet.h "#include <util/state/state_ptr.h>"
+	$(PREPEND_HEADER) stateptrSet.h "#include <util/state/stateptrdefs.h>"
 	/bin/mv stateptrSet.h tmp.stateptrSet.h
 	grep -v "#include \"stateptrdefs.h\"" < tmp.stateptrSet.h > stateptrSet.h
 	/bin/rm tmp.stateptrSet.h
 
 stateptr$(SETIMPL)Set.cc stateptr$(SETIMPL)Set.h:
 	$(GENCLASS) StateDataPtr val $(SETIMPL)Set stateptr
-	prepend-header stateptr$(SETIMPL)Set.h "#include <util/state/state_ptr.h>"
+	$(PREPEND_HEADER) stateptr$(SETIMPL)Set.h "#include <util/state/state_ptr.h>"
 
 stateptrImplSet.h:
 	echo "#include <util/state/stateptr$(SETIMPL)Set.h>" > stateptrImplSet.h
@@ -101,15 +101,15 @@ stateptrImplSet.h:
 
 statenumSet.cc statenumSet.h:
 	$(GENCLASS) StateDataNum val Set statenum
-	prepend-header statenumSet.h "#include <util/state/state_ptr.h>"
-	prepend-header statenumSet.h "#include <util/state/statenumdefs.h>"
+	$(PREPEND_HEADER) statenumSet.h "#include <util/state/state_ptr.h>"
+	$(PREPEND_HEADER) statenumSet.h "#include <util/state/statenumdefs.h>"
 	/bin/mv statenumSet.h tmp.statenumSet.h
 	grep -v "#include \"statenumdefs.h\"" < tmp.statenumSet.h > statenumSet.h
 	/bin/rm tmp.statenumSet.h
 
 statenum$(SETIMPL)Set.cc statenum$(SETIMPL)Set.h:
 	$(GENCLASS) StateDataNum val $(SETIMPL)Set statenum
-	prepend-header statenum$(SETIMPL)Set.h "#include <util/state/state_ptr.h>"
+	$(PREPEND_HEADER) statenum$(SETIMPL)Set.h "#include <util/state/state_ptr.h>"
 
 statenumImplSet.h:
 	echo "#include <util/state/statenum$(SETIMPL)Set.h>" > statenumImplSet.h
@@ -119,15 +119,15 @@ statenumImplSet.h:
 
 classdMap.cc classdMap.h:
 	$(GENCLASS) -2 ClassDescP val int val Map classd
-	prepend-header classdMap.h "#include <util/class/class.h>"
-	prepend-header classdMap.h "#include <util/state/classddefs.h>"
+	$(PREPEND_HEADER) classdMap.h "#include <util/class/class.h>"
+	$(PREPEND_HEADER) classdMap.h "#include <util/state/classddefs.h>"
 	/bin/mv classdMap.h tmp.classdMap.h
 	grep -v "#include \"classddefs.h\"" < tmp.classdMap.h > classdMap.h
 	/bin/rm tmp.classdMap.h
 
 classd$(MAPIMPL)Map.cc classd$(MAPIMPL)Map.h:
 	$(GENCLASS) -2 ClassDescP val int val $(MAPIMPL)Map classd
-	prepend-header classd$(MAPIMPL)Map.h "#include <util/class/class.h>"
+	$(PREPEND_HEADER) classd$(MAPIMPL)Map.h "#include <util/class/class.h>"
 
 classdImplMap.h:
 	echo "#include <util/state/classd$(MAPIMPL)Map.h>" > classdImplMap.h

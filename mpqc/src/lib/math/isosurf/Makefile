@@ -86,7 +86,7 @@ endif
 #	mv tricoefMap.h tmp.tricoefMap.h
 #	grep -v tricoefdefs.h tmp.tricoefMap.h > tricoefMap.h
 #	rm tmp.tricoefMap.h
-#	prepend-header tricoefMap.h "#include <math/isosurf/tricoef.h>"
+#	$(PREPEND_HEADER) tricoefMap.h "#include <math/isosurf/tricoef.h>"
 #
 #tricoefRAVLMap.cc tricoefRAVLMap.h:
 #	$(GENCLASS) -2 TriInterpCoefKey ref RefTriInterpCoef ref RAVLMap tricoef
@@ -98,9 +98,9 @@ veMap.cc veMap.h:
 	mv veMap.h tmp.veMap.h
 	grep -v vedefs.h tmp.veMap.h > veMap.h
 	rm tmp.veMap.h
-	prepend-header veMap.h "#include <math/isosurf/vertex.h>"
-	prepend-header veMap.h "#include <math/isosurf/edge.h>"
-	prepend-header veMap.h "#include <math/isosurf/edgedefs.h>"
+	$(PREPEND_HEADER) veMap.h "#include <math/isosurf/vertex.h>"
+	$(PREPEND_HEADER) veMap.h "#include <math/isosurf/edge.h>"
+	$(PREPEND_HEADER) veMap.h "#include <math/isosurf/edgedefs.h>"
 
 veRAVLMap.cc veRAVLMap.h:
 	$(GENCLASS) -2 RefVertex ref RefEdge ref RAVLMap ve
@@ -112,9 +112,9 @@ vtMap.cc vtMap.h:
 	mv vtMap.h tmp.vtMap.h
 	grep -v vtdefs.h tmp.vtMap.h > vtMap.h
 	rm tmp.vtMap.h
-	prepend-header vtMap.h "#include <math/isosurf/vertex.h>"
-	prepend-header vtMap.h "#include <math/isosurf/triangle.h>"
-	prepend-header vtMap.h "#include <math/isosurf/edgedefs.h>"
+	$(PREPEND_HEADER) vtMap.h "#include <math/isosurf/vertex.h>"
+	$(PREPEND_HEADER) vtMap.h "#include <math/isosurf/triangle.h>"
+	$(PREPEND_HEADER) vtMap.h "#include <math/isosurf/edgedefs.h>"
 
 vtRAVLMap.cc vtRAVLMap.h:
 	$(GENCLASS) -2 RefVertex ref RefTriangle ref RAVLMap vt
@@ -126,9 +126,9 @@ vtsMap.cc vtsMap.h:
 	mv vtsMap.h tmp.vtsMap.h
 	grep -v vtsdefs.h tmp.vtsMap.h > vtsMap.h
 	rm tmp.vtsMap.h
-	prepend-header vtsMap.h "#include <math/isosurf/vertex.h>"
-	prepend-header vtsMap.h "#include <math/isosurf/triAVLSet.h>"
-	prepend-header vtsMap.h "#include <math/isosurf/edgedefs.h>"
+	$(PREPEND_HEADER) vtsMap.h "#include <math/isosurf/vertex.h>"
+	$(PREPEND_HEADER) vtsMap.h "#include <math/isosurf/triAVLSet.h>"
+	$(PREPEND_HEADER) vtsMap.h "#include <math/isosurf/edgedefs.h>"
 
 vtsRAVLMap.cc vtsRAVLMap.h:
 	$(GENCLASS) -2 RefVertex ref RefTriangleAVLSet ref RAVLMap vts
@@ -140,8 +140,8 @@ vertexSet.cc vertexSet.h:
 	mv vertexSet.h tmp.vertexSet.h
 	grep -v vertexdefs.h tmp.vertexSet.h > vertexSet.h
 	rm tmp.vertexSet.h
-	prepend-header vertexSet.h "#include <math/isosurf/vertex.h>"
-	prepend-header vertexSet.h "#include <math/isosurf/edgedefs.h>"
+	$(PREPEND_HEADER) vertexSet.h "#include <math/isosurf/vertex.h>"
+	$(PREPEND_HEADER) vertexSet.h "#include <math/isosurf/edgedefs.h>"
 
 vertexAVLSet.cc vertexAVLSet.h:
 	$(GENCLASS) RefVertex ref AVLSet vertex
@@ -153,7 +153,7 @@ edgeMap.cc edgeMap.h:
 	mv edgeMap.h tmp.edgeMap.h
 	grep -v edgedefs.h tmp.edgeMap.h > edgeMap.h
 	rm tmp.edgeMap.h
-	prepend-header edgeMap.h "#include <math/isosurf/edgeAVLSet.h>"
+	$(PREPEND_HEADER) edgeMap.h "#include <math/isosurf/edgeAVLSet.h>"
 
 edgeRAVLMap.cc edgeRAVLMap.h:
 	$(GENCLASS) -2 RefVertex ref RefEdgeAVLSet ref RAVLMap edge
@@ -163,8 +163,8 @@ edgeSet.cc edgeSet.h:
 	mv edgeSet.h tmp.edgeSet.h
 	grep -v edgedefs.h tmp.edgeSet.h > edgeSet.h
 	rm tmp.edgeSet.h
-	prepend-header edgeSet.h "#include <math/isosurf/edge.h>"
-	prepend-header edgeSet.h "#include <math/isosurf/edgedefs.h>"
+	$(PREPEND_HEADER) edgeSet.h "#include <math/isosurf/edge.h>"
+	$(PREPEND_HEADER) edgeSet.h "#include <math/isosurf/edgedefs.h>"
 
 edgeAVLSet.cc edgeAVLSet.h:
 	$(GENCLASS) RefEdge ref AVLSet edge
@@ -176,7 +176,7 @@ triMap.cc triMap.h:
 	mv triMap.h tmp.triMap.h
 	grep -v tridefs.h tmp.triMap.h > triMap.h
 	rm tmp.triMap.h
-	prepend-header triMap.h "#include <math/isosurf/triAVLSet.h>"
+	$(PREPEND_HEADER) triMap.h "#include <math/isosurf/triAVLSet.h>"
 
 triRAVLMap.cc triRAVLMap.h:
 	$(GENCLASS) -2 RefEdge ref RefTriangleAVLSet ref RAVLMap tri
@@ -186,8 +186,8 @@ triSet.cc triSet.h:
 	mv triSet.h tmp.triSet.h
 	grep -v tridefs.h tmp.triSet.h > triSet.h
 	rm tmp.triSet.h
-	prepend-header triSet.h "#include <math/isosurf/triangle.h>"
-	prepend-header triSet.h "#include <math/isosurf/edgedefs.h>"
+	$(PREPEND_HEADER) triSet.h "#include <math/isosurf/triangle.h>"
+	$(PREPEND_HEADER) triSet.h "#include <math/isosurf/edgedefs.h>"
 
 triAVLSet.cc triAVLSet.h:
 	$(GENCLASS) RefTriangle ref AVLSet tri

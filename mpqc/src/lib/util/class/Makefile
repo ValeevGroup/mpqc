@@ -90,15 +90,15 @@ endif
 
 classMap.cc classMap.h:
 	$(GENCLASS) -2 ClassKey val ClassDescP val Map class
-	prepend-header classMap.h "#include <util/class/class.h>"
-	prepend-header classMap.h "#include <util/class/classdefs.h>"
+	$(PREPEND_HEADER) classMap.h "#include <util/class/class.h>"
+	$(PREPEND_HEADER) classMap.h "#include <util/class/classdefs.h>"
 	/bin/mv classMap.h tmp.classMap.h
 	grep -v "#include \"classdefs.h\"" < tmp.classMap.h > classMap.h
 	/bin/rm tmp.classMap.h
 
 class$(MAPIMPL)Map.cc class$(MAPIMPL)Map.h:
 	$(GENCLASS) -2 ClassKey val ClassDescP val $(MAPIMPL)Map class
-	prepend-header class$(MAPIMPL)Map.h "#include <util/class/class.h>"
+	$(PREPEND_HEADER) class$(MAPIMPL)Map.h "#include <util/class/class.h>"
 
 classImplMap.h:
 	echo "#include <util/class/class$(MAPIMPL)Map.h>" > classImplMap.h
@@ -106,23 +106,23 @@ classImplMap.h:
 
 classkeyPlex.cc classkeyPlex.h:
 	$(GENCLASS) ClassKey val Plex classkey
-	prepend-header classkeyPlex.h "#include <util/class/class.h>"
+	$(PREPEND_HEADER) classkeyPlex.h "#include <util/class/class.h>"
 
 classkeyXPlex.cc classkeyXPlex.h:
 	$(GENCLASS) ClassKey val XPlex classkey
-	prepend-header classkeyXPlex.h "#include <util/class/class.h>"
+	$(PREPEND_HEADER) classkeyXPlex.h "#include <util/class/class.h>"
 
 classkeySet.cc classkeySet.h:
 	$(GENCLASS) ClassKey val Set classkey
-	prepend-header classkeySet.h "#include <util/class/class.h>"
-	prepend-header classkeySet.h "#include <util/class/classkeydefs.h>"
+	$(PREPEND_HEADER) classkeySet.h "#include <util/class/class.h>"
+	$(PREPEND_HEADER) classkeySet.h "#include <util/class/classkeydefs.h>"
 	/bin/mv classkeySet.h tmp.classkeySet.h
 	grep -v "#include \"classkeydefs.h\"" < tmp.classkeySet.h > classkeySet.h
 	/bin/rm tmp.classkeySet.h
 
 classkey$(SETIMPL)Set.cc classkey$(SETIMPL)Set.h:
 	$(GENCLASS) ClassKey val $(SETIMPL)Set classkey
-	prepend-header classkey$(SETIMPL)Set.h "#include <util/class/class.h>"
+	$(PREPEND_HEADER) classkey$(SETIMPL)Set.h "#include <util/class/class.h>"
 
 classkeyImplSet.h:
 	echo "#include <util/class/classkey$(SETIMPL)Set.h>" > classkeyImplSet.h
@@ -130,20 +130,20 @@ classkeyImplSet.h:
 
 classStack.cc classStack.h:
 	$(GENCLASS) ClassDescP val Stack class
-	prepend-header classStack.h "#include <util/class/class.h>"
+	$(PREPEND_HEADER) classStack.h "#include <util/class/class.h>"
 
 class$(STACKIMPL)Stack.cc class$(STACKIMPL)Stack.h:
 	$(GENCLASS) ClassDescP val $(STACKIMPL)Stack class
-	prepend-header class$(STACKIMPL)Stack.h "#include <util/class/class.h>"
+	$(PREPEND_HEADER) class$(STACKIMPL)Stack.h "#include <util/class/class.h>"
 
 classSLList.cc classSLList.h:
 	$(GENCLASS) ClassDescP val SLList class
-	prepend-header classSLList.h "#include <util/class/class.h>"
+	$(PREPEND_HEADER) classSLList.h "#include <util/class/class.h>"
 
 classlSLList.cc classlSLList.h:
 	$(GENCLASS) ClassDescPSLList val SLList classl
-	prepend-header classlSLList.h "#include <util/class/classSLList.h>"
-	prepend-header classlSLList.h "#include <util/class/class.h>"
+	$(PREPEND_HEADER) classlSLList.h "#include <util/class/classSLList.h>"
+	$(PREPEND_HEADER) classlSLList.h "#include <util/class/class.h>"
 
 classImplStack.h:
 	echo "#include <util/class/class$(STACKIMPL)Stack.h" > classImplStack.h

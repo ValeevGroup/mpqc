@@ -140,7 +140,9 @@ MBPT2::cs_cphf(double **scf_vector,
   i = 0;
   niter = 0;
 
-  while (niter < 20) { // Allow max 20 iterations
+  const int maxiter = 30;
+  const int warniter = 20;
+  while (niter < maxiter) { // Allow max maxiter iterations
 
     niter++;
     i++;
@@ -328,14 +330,22 @@ MBPT2::cs_cphf(double **scf_vector,
       break;
       }
 
+    if (niter >= warniter) {
+      cout << node0 << indent
+           << scprintf("CPHF: iter = %2d rms(P) = %12.10f eps = %12.10f",
+                       niter, tmp_val1, epsilon)
+           << endl;
+      }
+
     }
 
   ///////////////////////////////////////////////////////////////
   // If CPHF equations did not converge, exit with error message
   ///////////////////////////////////////////////////////////////
-  if (niter == 20) {
+  if (niter == maxiter) {
     cout << node0 << indent
-         << "CPHF equations did not converge in 20 iterations" << endl;
+         << "CPHF equations did not converge in " << maxiter << " iterations"
+         << endl;
     abort();
     }
 

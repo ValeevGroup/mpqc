@@ -1,0 +1,66 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename SC.info
+@settitle The Scientific Computing Toolkit
+@setchapternewpage odd
+@c %**end of header
+
+@ifinfo
+Copyright 1994 Sandia Corporation
+@end ifinfo
+     
+@titlepage
+@title The Scientific Computing Toolkit
+@author Curtis Janssen, Edward Seidl, and Michael Colvin
+
+@c  The following two commands start the copyright page.
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1994 Sandia Corporation
+@end titlepage
+
+@c set up a classname input
+@defindex cl
+
+@node Top, , (dir), (dir)
+
+@ifinfo
+This document describes the Scientific Computing Toolkit.
+@end ifinfo
+
+@menu
+--- Utility Libraries ---
+* The Class Library:: A library for describing classes.
+* The State Library:: A library for saving and restoring the state of objects.
+* The KeyVal Library:: A library for making keyword/value associations.
+
+--- Communication Libraries ---
+
+--- Math Libraries ---
+* The Matrix Library:: This provides a variety of matrix types.
+
+--- Chemistry Libraries ---
+
+--- Indices ---
+* Concept Index::          The concept index.
+* Class Index::            The index to class names.
+
+@end menu
+
+@include ../src.lib/util/class/class.texi
+@include ../src.lib/util/state/state.texi
+@include ../src.lib/util/keyval/keyval.texi
+@include ../src.lib/math/scmat/scmat.texi
+
+@node    Concept Index,     , , Top
+@unnumbered Concept Index
+
+@printindex cp
+
+@node    Class Index,     , , Top
+@unnumbered Class Index
+
+@printindex cl
+
+@contents
+@bye

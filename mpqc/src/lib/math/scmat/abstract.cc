@@ -293,11 +293,12 @@ SCMatrix::accumulate_product(DiagSCMatrix*a,SCMatrix*b)
 {
   SCMatrix *t = b->copy();
   t->transpose_this();
-  SCMatrix *t2 = this->copy();
+  SCMatrix *t2 = kit()->matrix(coldim(),rowdim());
+  t2->assign(0.0);
   t2->accumulate_product(t,a);
   delete t;
   t2->transpose_this();
-  assign(t2);
+  accumulate(t2);
   delete t2;
 }
 

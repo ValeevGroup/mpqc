@@ -22,15 +22,27 @@ at any GNU software FTP repository.
 
        <ul>
 
-           <li> GCC 2.96 and later (the 3.0 release does not work,
-                however), available from <a
-                href="http://gcc.gnu.org">http://gcc.gnu.org</a>.
+           <li> GCC 2.96 and later, available from <a
+                href="http://gcc.gnu.org">http://gcc.gnu.org</a>.  However,
+                the 3.0 and 3.0.1 releases of GCC are not recommended.
 
-           <li> IBM xlC 5.0.2 and later.  Use the versions of the
-                compilers with the "_r" appended to the name, since SC
-                uses multi-threading.
+           <li> IBM xlC 5.0.2 and later work with both 32 and 64 bit modes
+                Use the versions of the compilers with the "_r" appended to
+                the name, since SC uses multi-threading.  You must also
+                specify that RTTI is used: <tt>--with-cxx='xlC_r
+                -qrtti'</tt>.
 
-           <li> Compaq/Alpha/Linux with Compaq C++ 6.3.6.8 and later.
+           <li> Compaq/Alpha/Linux with Compaq C++ 6.3.6.8 and later work.
+                Special configure options are needed: <tt>--with-cxx='cxx
+                -D__USE_STD_IOSTREAM'</tt>
+
+           <li> The Intel 5.0.1 Linux compilers for IA-32 work.  Version
+                5.0.1 for IA-64 will not work.
+
+           <li> The KAI version 4.0e1 compiler works.  Special configure
+                options are needed: <tt>--with-cxx='KCC
+                --one_instantiation_per_object' --with-ar=KCC
+                --with-ar-flags=-o</tt>
 
        </ul>
 

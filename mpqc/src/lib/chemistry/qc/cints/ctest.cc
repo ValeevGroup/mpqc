@@ -15,6 +15,8 @@ const ClassDesc &fl0  = SymmGaussianBasisSet::class_desc_;
 int
 main(int argc, char *argv[])
 {
+  int i;
+  
   char *filename = (argv[1]) ? argv[1] : SRCDIR "/ctest.kv";
   
   RefKeyVal keyval = new ParsedKeyVal(filename);
@@ -31,6 +33,8 @@ main(int argc, char *argv[])
   
   printf("\nnucrep = %20.15f\n",cints_nuclear_repulsion_energy(gbs));
 
+  ////////////////////////////////////////////////////////////////////////////
+  
   RefSymmSCMatrix s(gbs->basisdim());
   s.assign(0.0);
 
@@ -69,6 +73,29 @@ main(int argc, char *argv[])
   if (argc > 1)
     s.print("ke integrals v2");
 
+  tim_enter("intv2 pe");
+  op = new GaussianNuclearIntv2(gbs);
+  s.element_op(op);
+  op=0;
+  tim_exit("intv2 pe");
+
+  if (argc > 1)
+    s.print("hcore v2");
+
+  RefSCMatrix vecs(gbs->basisdim(),gbs->basisdim());
+  RefDiagSCMatrix vals(gbs->basisdim());
+  s.diagonalize(vals,vecs);
+
+  double sum=0;
+  for (i=0; i < gbs->nbasis(); i++)
+    sum += vals.get_element(i);
+  
+  printf("\n  sum of evals of hcore = %20.15f\n\n",sum);
+  
+  tim_print(0);
+  
+  ///////////////////////////////////////////////////////////////////////
+
   s.assign(0.0);
 
   tim_enter("jf ke");
@@ -80,23 +107,6 @@ main(int argc, char *argv[])
   if (argc > 1)
     s.print("ke integrals jf");
 
-  tim_print(0);
-  
-  ///////////////////////////////////////////////////////////////////////
-  
-  s.assign(0.0);
-
-  tim_enter("intv2 pe");
-  op = new GaussianNuclearIntv2(gbs);
-  s.element_op(op);
-  op=0;
-  tim_exit("intv2 pe");
-
-  if (argc > 1)
-    s.print("pe integrals v2");
-
-  s.assign(0.0);
-
   tim_enter("jf pe");
   op = new GaussianNuclearIntJF(gbs);
   s.element_op(op);
@@ -104,7 +114,15 @@ main(int argc, char *argv[])
   tim_exit("jf pe");
 
   if (argc > 1)
-    s.print("pe integrals jf");
+    s.print("hcore jf");
+
+  s.diagonalize(vals,vecs);
+
+  sum=0;
+  for (i=0; i < gbs->nbasis(); i++)
+    sum += vals.get_element(i);
+  
+  printf("\n  sum of evals of hcore = %20.15f\n\n",sum);
 
   tim_print(0);
   

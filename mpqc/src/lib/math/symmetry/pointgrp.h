@@ -337,26 +337,32 @@ class CharacterTable {
     //texi Returns sum_ir degen(ir);
     int ncomp() const {
       int ret=0;
-      for (int i=0; i < nirrep_; i++)
-        ret + gamma_[i].degeneracy();
+      for (int i=0; i < nirrep_; i++) {
+        int nc = (gamma_[i].complex()) ? 1 : gamma_[i].degen;
+        ret += nc;
+      }
       return ret;
     }
 
     //texi Returns the irrep component i belongs to.
     int which_irrep(int i) {
-      for (int ir=0, cn=0; ir < nirrep_; ir++)
-        for (int c=0; c < gamma_[ir].degen; c++,cn++)
+      for (int ir=0, cn=0; ir < nirrep_; ir++) {
+        int nc = (gamma_[ir].complex()) ? 1 : gamma_[ir].degen;
+        for (int c=0; c < nc; c++,cn++)
           if (cn==i)
             return ir;
+      }
       return -1;
     }
 
     //texi Returns the which compenent i is.
     int which_comp(int i) {
-      for (int ir=0, cn=0; ir < nirrep_; ir++)
-        for (int c=0; c < gamma_[ir].degen; c++,cn++)
+      for (int ir=0, cn=0; ir < nirrep_; ir++) {
+        int nc = (gamma_[ir].complex()) ? 1 : gamma_[ir].degen;
+        for (int c=0; c < nc; c++,cn++)
           if (cn==i)
             return c;
+      }
       return -1;
     }
     

@@ -6,7 +6,7 @@
 #include <math/scmat/local.h>
 
 #include <chemistry/qc/wfn/obwfn.h>
-#include <chemistry/qc/integral/integralv2.h>
+#include <chemistry/qc/intv2/integralv2.h>
 
 SavableState_REF_def(OneBodyWavefunction);
 
@@ -166,19 +166,6 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
   Cpp=0;
   
   return vec;
-}
-
-// returns a matrix containing S^-1/2
-RefSymmSCMatrix
-OneBodyWavefunction::ao_to_orthog_ao()
-{
-  // first calculate S
-  RefSymmSCMatrix s = overlap().copy();
-  
-  // then form S^-1/2
-  form_m_half(s);
-
-  return s;
 }
 
 double

@@ -13,7 +13,7 @@ double Wavefunction::density(const SCVector3&r)
   if (!bs_values) bs_values=new double[nbasis];
 
   // compute the basis set values
-  basis()->values(r,bs_values);
+  basis()->values(integral_,r,bs_values);
 
   //for (int i=0; i<nbasis; i++)
   //     printf("bs_values[%d] = % 12.8f\n",i,bs_values[i]);
@@ -48,7 +48,7 @@ double Wavefunction::density_gradient(const SCVector3&r,double*grad)
 
   // compute the grad values and get the basis set values at the
   // same time
-  basis()->grad_values(r,bsg_values,bs_values);
+  basis()->grad_values(integral_,r,bsg_values,bs_values);
 
   //for (int i=0; i<nbasis; i++)
   //     printf("bs_values[%d] = % 12.8f\n",i,bs_values[i]);

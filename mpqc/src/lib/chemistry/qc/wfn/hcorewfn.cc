@@ -1,6 +1,6 @@
 
 #include <chemistry/qc/wfn/obwfn.h>
-#include <chemistry/qc/integral/integralv2.h>
+#include <chemistry/qc/basis/integral.h>
 
 /////////////////////////////////////////////////////////////////////////
 

@@ -7,15 +7,17 @@
 #include <math/symmetry/pointgrp.h>
 #include <util/misc/libmisc.h>
 #include <util/keyval/keyval.h>
-#include <chemistry/qc/basis/symgaussbas.h>
-#include <chemistry/qc/basis/rot.h>
 
 extern "C" {
 #include <tmpl.h>
 #include <math/array/math_lib.h>
 }
 
+#include <chemistry/qc/basis/gaussbas.h>
+#include <chemistry/qc/basis/shellrot.h>
+#include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/intv2/int_libv2.h>
+#include <chemistry/qc/intv2/integralv2.h>
 
 extern "C" {
 #include <chemistry/qc/dmtsym/symm_mac.h>
@@ -132,18 +134,13 @@ sym_struct_from_gbs(const RefGaussianBasisSet& gbs, sym_struct_t& sym_info)
     }
   }
 
-  SymmGaussianBasisSet *sgbs = SymmGaussianBasisSet::castdown(gbs.pointer());
-  if (!sgbs)
-    sgbs = new SymmGaussianBasisSet(*gbs.pointer());
-  if (!sgbs) {
-    fprintf(stderr,"sym_struct_from_gbs: "
-            "could not create SymmGaussianBasisSet\n");
-    return -1;
-  }
+  // dmtsym always uses intv2
+  IntegralV2 ints;
                                                                       
-  PointGroup& pg = sgbs->molecule()->point_group();
+  PointGroup& pg = gbs->molecule()->point_group();
   CharacterTable ct = pg.char_table();
-  PetiteList& pl = sgbs->petite_list();
+  RefPetiteList rpl = ints.petite_list(gbs);
+  PetiteList& pl = *rpl.pointer();
   
   char *point_group = strdup(pg.symbol());
   
@@ -219,10 +216,10 @@ sym_struct_from_gbs(const RefGaussianBasisSet& gbs, sym_struct_t& sym_info)
 
     // now for the rotation matrices
     for (g=0; g < ct.order(); g++) {
-      Rotation rp(1, ct.symm_operation(g));
-      Rotation rd(2, ct.symm_operation(g));
-      Rotation rf(3, ct.symm_operation(g));
-      Rotation rg(4, ct.symm_operation(g));
+      ShellRotation rp(1, ct.symm_operation(g), ints);
+      ShellRotation rd(2, ct.symm_operation(g), ints);
+      ShellRotation rf(3, ct.symm_operation(g), ints);
+      ShellRotation rg(4, ct.symm_operation(g), ints);
 
       for (i=0; i < 3; i++)
         for (int j=0; j < 3; j++)
@@ -283,10 +280,5 @@ sym_struct_from_gbs(const RefGaussianBasisSet& gbs, sym_struct_t& sym_info)
     }
   }
       
-  // if we didn't get sgbs from a castdown, then we created it with new.
-  // free it.
-  if (!SymmGaussianBasisSet::castdown(gbs.pointer()))
-    delete sgbs;
-  
   return 0;
 }

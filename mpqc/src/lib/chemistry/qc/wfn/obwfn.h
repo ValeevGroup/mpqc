@@ -40,10 +40,6 @@ class OneBodyWavefunction: public Wavefunction
 
     virtual RefSCMatrix projected_eigenvectors(const RefOneBodyWavefunction&);
 
-    // returns a matrix which transforms AO's to orthogonal AO's
-    // can be overridden, but defaults to S^-1/2
-    virtual RefSymmSCMatrix ao_to_orthog_ao();
-
     double orbital(const SCVector3& r, int iorb);
     double orbital_density(const SCVector3& r, int iorb, double* orbval = 0);
 

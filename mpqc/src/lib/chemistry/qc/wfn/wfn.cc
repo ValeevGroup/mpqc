@@ -13,7 +13,7 @@ extern "C" {
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 #include <chemistry/molecule/molecule.h>
-#include <chemistry/qc/integral/integralv2.h>
+#include <chemistry/qc/intv2/integralv2.h>
 #include <chemistry/qc/wfn/wfn.h>
 
 SavableState_REF_def(Wavefunction);
@@ -40,6 +40,7 @@ Wavefunction::Wavefunction(const Wavefunction& wfn) :
 {
   _basisdim = wfn._basisdim;
   _gbs = wfn._gbs;
+  integral_ = wfn.integral_;
 }
 
 Wavefunction::Wavefunction(const RefKeyVal&keyval):
@@ -60,6 +61,10 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
     = GaussianBasisSet::require_castdown(keyval->describedclassvalue("basis").pointer(),
                                          "Wavefunction::Wavefunction\n");
 
+  integral_ = keyval->describedclassvalue("integrals");
+  if (integral_.null())
+    integral_ = new IntegralV2;
+  
   _basisdim = _gbs->basisdim();
 }
 
@@ -80,6 +85,7 @@ Wavefunction::Wavefunction(StateIn&s):
 {
   _gbs.restore_state(s);
   _basisdim.restore_state(s);
+  integral_.restore_state(s);
 }
 
 Wavefunction&
@@ -103,6 +109,7 @@ Wavefunction::save_data_state(StateOut&s)
   _natural_density.save_data_state(s);
   _gbs.save_state(s);
   _basisdim.save_state(s);
+  integral_.save_state(s);
 }
 
 RefSCMatrix
@@ -112,13 +119,12 @@ Wavefunction::natural_orbitals()
       RefSymmSCMatrix dens = density();
 
       // transform the density into an orthogonal basis
-      RefSCMatrix ortho;
-      RefSCMatrix orthoi;
-      basis()->ortho(ortho,orthoi);
+      RefSymmSCMatrix ortho = ao_to_orthog_ao();
+      RefSymmSCMatrix orthoi = ortho.i();
 
       RefSymmSCMatrix densortho(_basisdim);
       densortho.assign(0.0);
-      densortho.accumulate_transform(orthoi.t(),dens);
+      densortho.accumulate_transform(orthoi,dens);
 
       RefSCMatrix natorb(_basisdim,_basisdim);
       RefDiagSCMatrix natden(_basisdim);
@@ -165,7 +171,7 @@ Wavefunction::overlap()
     RefSymmSCMatrix s(basis_dimension());
     s.assign(0.0);
 
-    RefSCElementOp op = new GaussianOverlapIntv2(basis());
+    RefSCElementOp op = integral_->overlap_op(basis());
     s.element_op(op);
     op=0;
 
@@ -174,6 +180,42 @@ Wavefunction::overlap()
   }
 
   return _overlap;
+}
+
+// at some point this will have to check for zero eigenvalues and not
+// invert them
+static void
+form_m_half(RefSymmSCMatrix& M)
+{
+  // Diagonalize M to get m and U
+  RefSCMatrix U(M.dim(), M.dim());
+  RefDiagSCMatrix m(M.dim());
+  M.diagonalize(m,U);
+
+  // take square root of all elements of m
+  RefSCElementOp op = new SCElementSquareRoot;
+  m.element_op(op);
+
+  // invert m
+  op = new SCElementInvert;
+  m.element_op(op);
+
+  // back transform m^-1/2 to get M^-1/2 ( U*m^-1/2*U~ = M^-1/2)
+  M.assign(0.0);
+  M.accumulate_transform(U,m);
+}
+
+// returns a matrix containing S^-1/2
+RefSymmSCMatrix
+Wavefunction::ao_to_orthog_ao()
+{
+  // first calculate S
+  RefSymmSCMatrix s = overlap().copy();
+  
+  // then form S^-1/2
+  form_m_half(s);
+
+  return s;
 }
 
 RefGaussianBasisSet

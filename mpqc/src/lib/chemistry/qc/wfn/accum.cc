@@ -4,7 +4,7 @@
 #endif
 
 #include <chemistry/qc/wfn/accum.h>
-#include <chemistry/qc/integral/integralv2.h>
+#include <chemistry/qc/basis/integral.h>
 
 ///////////////////////////////////////////////////////////////////////////
 // AccumDIH

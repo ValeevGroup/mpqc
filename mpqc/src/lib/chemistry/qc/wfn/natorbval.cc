@@ -31,7 +31,7 @@ double Wavefunction::orbital(const SCVector3& r,
     if (!bs_values) bs_values=new double[nbasis];
 
     // compute the basis set values
-    basis()->values(r,bs_values);
+    basis()->values(integral_,r,bs_values);
     
     // loop over basis functions
     double orb_value = 0;

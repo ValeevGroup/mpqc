@@ -12,6 +12,7 @@
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/basis/basis.h>
+#include <chemistry/qc/basis/integral.h>
 
 class Wavefunction: public MolecularEnergy
 {
@@ -27,6 +28,8 @@ class Wavefunction: public MolecularEnergy
     double* bs_values;
     double* bsg_values;
     RefGaussianBasisSet _gbs;
+    RefIntegral integral_;
+    
  public:
     Wavefunction(const Wavefunction&);
     Wavefunction(const RefKeyVal&);
@@ -36,6 +39,10 @@ class Wavefunction: public MolecularEnergy
     Wavefunction & operator=(const Wavefunction&);
     
     void save_data_state(StateOut&);
+
+    // returns a matrix which transforms AO's to orthogonal AO's
+    // can be overridden, but defaults to S^-1/2
+    virtual RefSymmSCMatrix ao_to_orthog_ao();
 
     void print(ostream& = cout);
     double density(const SCVector3&);
@@ -54,6 +61,7 @@ class Wavefunction: public MolecularEnergy
     virtual RefDiagSCMatrix natural_density();
     virtual RefSymmSCMatrix overlap();
     RefGaussianBasisSet basis();
+    RefIntegral integral();
 
     RefSCDimension basis_dimension() { return _basisdim; }
 };

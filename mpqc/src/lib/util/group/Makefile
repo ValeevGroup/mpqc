@@ -66,7 +66,8 @@ memtest: memtest.o \
 	libref.a
 	$(LD) $(LDFLAGS) -o memtest $^ $(SYSLIBS)
 
-pooltest: pooltest.o libgroup.a
+pooltest: pooltest.o libmisc.a libgroup.a libkeyval.a libstate.a \
+          libclass.a libcontainer.a libref.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o pooltest $^ $(SYSLIBS)
 
 rnglocktest: rnglocktest.o libgroup.a

@@ -1,8 +1,10 @@
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <iostream.h>
+
 #include <util/group/pool.h>
+#include <util/misc/formio.h>
 
 class Double {
   private:

@@ -35,11 +35,8 @@
 #include <util/render/oogl.h>
 #include <util/misc/formio.h>
 
-// force linkage of the taylor expansion energy evaluator
-#include <chemistry/molecule/taylor_f.h>
-// and of the renderer
-#include <chemistry/molecule/molrender.h>
-#include <chemistry/molecule/molfreq.h>
+// force linkage 
+#include <chemistry/molecule/linkage.h>
 
 __builtin_delete(void*ptr)
 {

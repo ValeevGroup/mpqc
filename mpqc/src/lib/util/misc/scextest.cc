@@ -75,7 +75,8 @@ l()
   throw InputError("input error in l()",
                    __FILE__,
                    __LINE__,
-                   "the_keyword");
+                   "the_keyword",
+                   "the_value");
 }
 
 void

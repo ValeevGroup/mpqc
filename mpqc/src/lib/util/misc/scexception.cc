@@ -56,12 +56,18 @@ SCException::SCException(const char *description,
 {
   try {
       elaboration_ = new ostringstream;
-      elaborate() << "exception:   " << exception_type_
-                  << std::endl
-                  << "description: " << description
-                  << std::endl
-                  << "location:    " << file << ":" << line
-                  << std::endl;
+      if (exception_type_) {
+          elaborate() << "exception:   " << exception_type_
+                      << std::endl;
+        }
+      if (description_) {
+          elaborate() << "description: " << description
+                      << std::endl;
+        }
+      if (file_) {
+          elaborate() << "location:    " << file << ":" << line
+                      << std::endl;
+        }
       if (class_desc_) {
           elaborate() << "class:       " << class_desc_->name()
                       << std::endl;
@@ -102,7 +108,7 @@ SCException::~SCException() throw()
 }
 
 const char* 
-SCException::what() throw()
+SCException::what() const throw()
 {
   if (elaboration_) {
       return elaboration_->str().c_str();
@@ -127,17 +133,32 @@ InputError::InputError(
     const char *file,
     int line,
     const char *keyword,
+    const char *value,
     const ClassDesc *class_desc,
     const char *exception_type) throw():
   SCException(description, file, line, class_desc, exception_type),
   keyword_(keyword)
 {
-  if (keyword_) {
-      try {
+  try {
+      if (value) {
+          value_ = new char[strlen(value)+1];
+          if (value_) strcpy(value_, value);
+        }
+      else {
+          value_ = 0;
+        }
+    }
+  catch (...) {
+    value_ = 0;
+    }
+
+  try {
+      if (keyword_)
           elaborate() << "keyword:     " << keyword_ << std::endl;
-        }
-      catch (...) {
-        }
+      if (value_)
+          elaborate() << "value:       " << value_ << std::endl;
+    }
+  catch (...) {
     }
 }
   
@@ -149,6 +170,7 @@ InputError::InputError(const InputError& ref) throw():
 
 InputError::~InputError() throw()
 {
+  delete[] value_;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -208,9 +230,11 @@ MemAllocFailed::MemAllocFailed(const char *description,
   nbyte_(nbyte)
 { 
   try {
-      elaborate() << "nbyte:       "
-                  << nbyte
-                  << std::endl;
+      if (nbyte_) {
+          elaborate() << "nbyte:       "
+                      << nbyte
+                      << std::endl;
+        }
     }
   catch(...) {
     }
@@ -267,6 +291,9 @@ FileOperationFailed::FileOperationFailed(const char *description,
             break;
         case Write:
             elaborate() << "Write";
+            break;
+        case Corrupt:
+            elaborate() << "Corrupt";
             break;
         case Other:
             elaborate() << "Other";

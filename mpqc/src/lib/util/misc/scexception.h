@@ -65,7 +65,7 @@ class SCException: public std::exception {
 
     /** Reimplementation of std::exception::what().  The returned
         std::string is only valid for the lifetime of this object. */
-    const char* what() throw();
+    const char* what() const throw();
 
     const char *description() const throw() { return description_; }
     const char *file() const throw() { return file_; }
@@ -105,17 +105,20 @@ class ProgrammingError: public SCException {
  */
 class InputError: public SCException {
     const char *keyword_;
+    char *value_;
 
   public:
     InputError(const char *description = 0,
                const char *file = 0,
                int line = 0,
                const char *keyword = 0,
+               const char *value = 0,
                const ClassDesc *class_desc = 0,
                const char *exception_type = "InputError") throw();
     InputError(const InputError&) throw();
     ~InputError() throw();
     const char *keyword() const throw() { return keyword_; }
+    const char *value() const throw() { return value_; }
 };
 
 // ///////////////////////////////////////////////////////////////////////
@@ -159,7 +162,7 @@ class MemAllocFailed: public SystemException {
 class FileOperationFailed: public SystemException {
   public:
     enum FileOperation { Unknown, OpenR, OpenW, OpenRW,
-                         Close, Read, Write, Other };
+                         Close, Read, Write, Corrupt, Other };
 
   private:
     const char *filename_;

@@ -891,10 +891,10 @@ changequote([, ])dnl
     AC_MSG_RESULT("old mips4-sgi-irix r8000-sgi-irix or r10000-sgi-irix")
   ;;
   rs6000-*)
-    if test X$CXX = XmpCC; then
+    if test "X$CXX" = XmpCC; then
       CXX="\$(SRCTOPDIR)/bin/xlCfix mpCC"
     fi
-    if test X$CXX = XxlC; then
+    if test "X$CXX" = XxlC; then
       CXX="\$(SRCTOPDIR)/bin/xlCfix xlC"
     fi
     AC_MSG_RESULT(rs6000)

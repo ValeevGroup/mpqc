@@ -132,7 +132,7 @@ esac
 
 DEFAULT_PARALLEL=none
 AC_ARG_WITH(default-parallel,
-[  --with-default-parallel Default parallism model (none, mpi, or mtmpi)],
+[  --with-default-parallel Default parallism model: none, mpi, armcimpi or mtmpi],
 DEFAULT_PARALLEL=$withval
 )
 if test $DEFAULT_PARALLEL = mpi; then
@@ -140,6 +140,9 @@ if test $DEFAULT_PARALLEL = mpi; then
 elif test $DEFAULT_PARALLEL = mtmpi; then
   AC_DEFINE(DEFAULT_MPI)
   AC_DEFINE(DEFAULT_MTMPI)
+elif test $DEFAULT_PARALLEL = armcimpi; then
+  AC_DEFINE(DEFAULT_MPI)
+  AC_DEFINE(DEFAULT_ARMCI)
 fi
 
 AC_ARG_ENABLE(long-long,
@@ -1005,14 +1008,35 @@ elif test $ALWAYS_USE_MPI = yes; then
   AC_DEFINE(ALWAYS_USE_MPI)
 fi
 
+  dnl ------ check for the armci library
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  AC_CHECK_HEADER(armci.h,[
+    AC_CHECK_FUNC(ARMCI_Init,HAVE_ARMCI=yes,[
+      AC_CHECK_LIB(armci,ARMCI_Init,[HAVE_ARMCI=yes;LIBS="-larmci $LIBS"])
+    ])
+  ])
+  AC_LANG_RESTORE
+
+  if test X$HAVE_ARMCI = Xyes; then
+    AC_DEFINE(HAVE_ARMCI)
+  fi
+
 if test $DEFAULT_PARALLEL = mtmpi -a X$HAVE_MPI != Xyes; then
   AC_MSG_ERROR([--with-default-parallel=mtmpi but MPI not available])
+fi
+if test $DEFAULT_PARALLEL = armcimpi -a X$HAVE_MPI != Xyes; then
+  AC_MSG_ERROR([--with-default-parallel=armcimpi but MPI not available])
+fi
+if test $DEFAULT_PARALLEL = armcimpi -a X$HAVE_ARMCI != Xyes; then
+  AC_MSG_ERROR([--with-default-parallel=armcimpi but ARMCI not available])
 fi
 
 AC_SUBST(HAVE_PERF)
 AC_SUBST(HAVE_MPL)
 AC_SUBST(HAVE_P4)
 AC_SUBST(HAVE_MPI)
+AC_SUBST(HAVE_ARMCI)
 AC_SUBST(HAVE_PTHREAD)
 AC_SUBST(EXTRADEFINES)
 

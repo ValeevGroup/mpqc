@@ -171,6 +171,9 @@
 /* Define if you have the <mpi.h> header file and library.  */
 #undef HAVE_MPI
 
+/* Define if you have the <armci.h> header file and library.  */
+#undef HAVE_ARMCI
+
 /* Define if you have the <perf.h> header file and library.  */
 #undef HAVE_PERF
 
@@ -182,6 +185,9 @@
 
 /* Define if MTMPIMemoryGrp should be used by default. */
 #undef DEFAULT_MTMPI
+
+/* Define if MTMPIMemoryGrp should be used by default. */
+#undef DEFAULT_ARMCI
 
 /* Define if is MPI is always used (needed if MPI_Init is used to
    initialize argument list). */

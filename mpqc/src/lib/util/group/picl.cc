@@ -82,7 +82,7 @@ check0(int)
 double clock0()
 {
   static double first;
-  static initp = 0;
+  static int initp = 0;
   double t;
   if (!initp) {
     first = dclock();
@@ -95,7 +95,7 @@ double clock0()
 double clock0()
 {
   static double first;
-  static initp = 0;
+  static int initp = 0;
   double t;
   if (!initp) {
     first = MPI_Wtime();

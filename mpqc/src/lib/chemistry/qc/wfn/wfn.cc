@@ -47,7 +47,7 @@
 SavableState_REF_def(Wavefunction);
 
 #define CLASSNAME Wavefunction
-#define VERSION 3
+#define VERSION 4
 #define PARENTS public MolecularEnergy
 #include <util/state/statei.h>
 #include <util/class/classia.h>
@@ -163,6 +163,13 @@ Wavefunction::Wavefunction(StateIn&s):
     symm_orthog_ = 1;
   }
 
+  if (s.version(static_class_desc()) >= 4) {
+    s.get(lindep_tol_);
+  }
+  else {
+    lindep_tol_ = 1.e-6;
+  }
+
   gbs_.restore_state(s);
   integral_.restore_state(s);
 
@@ -213,6 +220,7 @@ Wavefunction::save_data_state(StateOut&s)
   s.put(print_nao_);
   s.put(print_npa_);
   s.put(symm_orthog_);
+  s.put(lindep_tol_);
 
   gbs_.save_state(s);
   integral_.save_state(s);

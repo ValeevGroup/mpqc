@@ -17,7 +17,7 @@ BINOBJ = main.o tmpllex.o
 default:: tmpl
 
 tmpllex.c: tmpllex.l
-	$(LEX) -t $^ > tmpllex.c
+	$(FLEX) -t $^ > tmpllex.c
 
 clean::
 	/bin/rm -f tmpllex.c

@@ -200,11 +200,7 @@ BEMSolventH::init(const RefWavefunction& wfn)
   solvent_->normals(normals_);
 
   if (integrate_nelectron_) {
-      RefAssignedKeyVal akv = new AssignedKeyVal;
-      akv->assign("nr",128);
-      akv->assign("ntheta",32);
-      akv->assign("nphi",64);
-      RefDenIntegrator integrator = new Murray93Integrator(akv.pointer());
+      RefDenIntegrator integrator = new RadialAngularIntegrator();
       RefDenFunctional functional
           = new NElInShapeFunctional(solvent_->surface()->volume_object(),
                                      solvent_->surface()->isovalue());

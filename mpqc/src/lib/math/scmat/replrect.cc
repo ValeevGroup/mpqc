@@ -6,6 +6,12 @@
 #include <math/scmat/cmatrix.h>
 #include <math/scmat/elemop.h>
 
+extern "C" {
+    int sing_(double *q, int *lq, int *iq, double *s, double *p,
+              int *lp, int *ip, double *a, int *la, int *m, int *n,
+              double *w);
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // ReplSCMatrix member functions
 

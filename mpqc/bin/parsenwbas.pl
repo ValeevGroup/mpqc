@@ -114,9 +114,10 @@ $pured = 0; # if $pure or $pured d's are pure
 $puref = 1; # if $pure or $puref f's are pure; by default all f's are pure
 # make sure puream is 1 for correlation consistent and ano basis sets
 # and 6-311g and sto-ng
-if ($basisname =~ /cc-p/ || $basisname =~ /ano/
-    || $basisname =~ /^6-311g/
-    || $basisname =~ /^sto-[1-9]g/
+if ($basisname =~ /cc-p/ || $basisname =~ /ANO/
+    || $basisname =~ /^6-311G/
+    || $basisname =~ /^6-311\+/
+    || $basisname =~ /^STO-[1-9]G/
     ) {
     $pure = 1;
 }
@@ -141,12 +142,13 @@ while (<NWCHEMBASIS>) {
   #printf "-----> %s\n", $_;
   if (/^ *(BASIS.* +[^ ]* +)([A-Z]*)/) {
     $retrieve = 1;
+    $spherical_option = $2;
     $basis = $1;
     $line = "$1$2";
     $basis =~ s/^[^\"]*\"//; #"
     $basis =~ s/\"[^\"]*$//; #"
     printf "Basis = %s\n", $basis;
-    if ($2 eq "SPHERICAL") {
+    if ($spherical_option eq "SPHERICAL") {
       $pure = 1;
     }
     #printf "%s\n", $line;
@@ -192,7 +194,7 @@ while (<NWCHEMBASIS>) {
     goto GOTLINE;
     }
     else {
-      printf MPQCBASIS "   %s\n", $1;
+      $exp_coef_lines[$#exp_coef_lines+1] = $1;
     }
   }
 }
@@ -271,6 +273,88 @@ sub start_shell {
   printf MPQCBASIS "} = {\n";
 }
 
+# This does the formatting of the exponent/coefficient lines in a way to
+# make the lines the same as the original format, if possible.  This has
+# the advantage making easier to examine diffs of the basis sets to check
+# for problems.
+sub print_lines_1 {
+  my $i;
+
+  foreach $i (0..$#exp_coef_lines) {
+      $exp_coef_lines[$i] =~ s/^ +//;
+      $exp_coef_lines[$i] =~ s/ +$//;
+  }
+
+  my $remove_last_digit_from_exponent = 1;
+  foreach $i (0..$#exp_coef_lines) {
+      my $line = $exp_coef_lines[$i];
+      @fields = split(/ +/,$line);
+      my $exponent = $fields[0];
+      if (!($exponent =~ /0$/)) {
+          $remove_last_digit_from_exponent = 0;
+      }
+      if (&nright($exponent) == 8) {
+          $remove_last_digit_from_exponent = 0;
+      }
+  }
+
+  foreach $i (0..$#exp_coef_lines) {
+      my $line = $exp_coef_lines[$i];
+      @fields = split(/ +/,$line);
+      my $exponent = $fields[0];
+      if ($remove_last_digit_from_exponent == 1) {
+          $exponent =~ s/0$//;
+      }
+      printf MPQCBASIS "        %s%s", &space(5,$exponent), $exponent;
+      foreach $i (1..$#fields) {
+          my $coef = $fields[$i];
+          if (!($coef =~ /^-/)) {
+              $coef = " $coef";
+          }
+          printf MPQCBASIS "   %s%s", &space(5,$coef), $coef;
+      }
+      print MPQCBASIS "\n";
+  }
+}
+
+# This is a very simple printout of the lines.
+sub print_lines_2 {
+  my $i;
+  foreach $i (0..$#exp_coef_lines) {
+      printf MPQCBASIS "%s\n", $exp_coef_lines[$i];
+  }
+}
+
 sub finish_shell {
+  &print_lines_2();
+
+  $#exp_coef_lines = -1;
   printf MPQCBASIS "   })\n";
+}
+
+sub space {
+    my $n = shift;
+    my $f = shift;
+
+    my $left_digits = $f;
+    $left_digits =~ s/\..*//;
+    my $nleft = length($left_digits);
+
+    my $nspace = $n - $nleft;
+
+    my $i;
+    my $res = "";
+    foreach $i (0..$nspace-1) {
+        $res = " $res";
+    }
+
+    return $res;
+}
+
+sub nright {
+    my $f = shift;
+
+    my $right_digits = $f;
+    $right_digits =~ s/.*\.//;
+    return length($right_digits);
 }

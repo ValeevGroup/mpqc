@@ -683,6 +683,13 @@ AC_MSG_RESULT("no")
 );
 AC_LANG_RESTORE
 
+dnl  ----------- check for C++ restrict extension ---------------
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_TRY_LINK(,restrict double *x=new double[10],x[0]=4.0,AC_DEFINE(CXX_RESTRICT))
+AC_LANG_RESTORE
+
 dnl ---------- Checks for C++ header files. -----------
 
 AC_LANG_SAVE

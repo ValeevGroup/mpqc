@@ -29,6 +29,7 @@
 #include <assert.h>
 #include <math.h>
 
+#include <scconfig.h>
 #include <util/misc/formio.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/fjt.h>
@@ -548,7 +549,6 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
   int i,j,k,l,m;
   int ci,cj,ck,cl;
   double *bufferprim;
-  double *con_ints;
 
 #if 0
   ExEnv::outn() << scprintf("not_gcs: %d%d%d%d\n",
@@ -648,7 +648,7 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
             for (m=mlower; m<=mupper; m++) {
               int o;
               int sizec = contract_length(m,nlower,nupper);
-              con_ints = e0f0_ijk[cl](m,nlower);
+              restrictxx double *con_ints = e0f0_ijk[cl](m,nlower);
               bufferprim = build.int_v_list(m,nlower,0);
 
               for (o=sizec; o!=0; o--) {
@@ -663,7 +663,7 @@ Int2eV3::build_not_using_gcs(int nc1, int nc2, int nc3, int nc4,
             for (m=mlower; m<=mupper; m++) {
               int o;
               int sizec = contract_length(m,nlower,nupper);
-              con_ints = e0f0_ijk[cl](m,nlower);
+              restrictxx double *con_ints = e0f0_ijk[cl](m,nlower);
               bufferprim = build.int_v_list(m,nlower,0);
 
               for (o=sizec; o!=0; o--) {
@@ -696,7 +696,6 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
   double coef0,coef1,coef2,coef3;
   double ishl1expi=1.0, ishl2expj=1.0, ishl3expk=1.0;
   double *bufferprim;
-  double *con_ints;
   double c0scale;
 
   /* Loop over the primitives. */
@@ -774,7 +773,7 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
             for (m=mlower; m<=mupper; m++) {
               int o;
               int sizec = contract_length(m,nlower,nupper);
-              con_ints = e0f0_ijk[cl](m,nlower);
+              restrictxx double *con_ints = e0f0_ijk[cl](m,nlower);
               bufferprim = build.int_v_list(m,nlower,0);
               /* Sum the integrals into the contracted integrals. */
 #ifdef SUNMOS
@@ -793,7 +792,7 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
             for (m=mlower; m<=mupper; m++) {
               int o;
               int sizec = contract_length(m,nlower,nupper);
-              con_ints = e0f0_ijk[cl](m,nlower);
+              restrictxx double *con_ints = e0f0_ijk[cl](m,nlower);
               bufferprim = build.int_v_list(m,nlower,0);
               /* Write the integrals to the contracted integrals. */
 #ifdef SUNMOS
@@ -1224,7 +1223,7 @@ Int2eV3::blockbuildprim_1(int amin,int amax,int am34,int m)
     int i12y1s34m1 = i12y1*size34m1;
     double *I10i = &I10[i12y1s34];
     double *I11i = &I11[i12y1s34];
-    double *I00i = &I00[cartindex1234];
+    restrictxx double *I00i = &I00[cartindex1234];
     if (j12==1) {
       for (cartindex34=0; cartindex34<size34; cartindex34++) {
         I00i[cartindex34]
@@ -1484,7 +1483,7 @@ Int2eV3::blockbuildprim_3(int bmin,int bmax,int m)
     stack_alignment_check(&p340_m_r30, "buildprim_3: p340_m_r30");
 
     /* Construct the new integrals. */
-    double *I00o = I00; // points the current target integral
+    restrictxx double *I00o = I00; // points the current target integral
     I10o = I10;
     I11o = I11;
     //int cartindex34 = 0;

@@ -7,7 +7,20 @@
 /* Define to empty if the keyword does not work.  */
 #undef const
 
+/* Define if the C++ restrict keyword extension exists.  */
+#undef CXX_RESTRICT
+
 #endif /* __cplusplus */
+
+#ifdef __cplusplus
+
+#ifdef CXX_RESTRICT
+#define restrictxx restrict
+#else
+#define restrictxx
+#endif
+
+#endif
 
 /* Define if you want to optimize the reference counting code.  */
 #undef REF_OPTIMIZE

@@ -3,6 +3,9 @@
  * integrals. */
 
 /* $Log$
+ * Revision 1.4  1996/03/23 02:37:44  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.3  1995/11/16 00:47:35  cljanss
  * Removed normalization for individual basis functions.
  *
@@ -36,7 +39,7 @@
 #include <chemistry/qc/intv2/comp_erep23.gbl>
 #include <chemistry/qc/intv2/comp_erep23.lcl>
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 make_int_unit_shell()
 {
   int_unit_shell = (shell_t*) malloc(sizeof(shell_t));
@@ -57,7 +60,7 @@ make_int_unit_shell()
  * shell psh1 and electron 2 is in psh2, that is (1 | 2).  To avoid
  * confusing the user of these routines, the INT_NOPERM is set.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_erep2(flags,psh1,psh2)
     int flags;
     int *psh1;
@@ -82,7 +85,7 @@ int_erep2(flags,psh1,psh2)
  * as arguments the flags, an integer vector of shell numbers
  * and an integer vector which will be filled in with size
  * information, if it is non-NULL. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_erep2_v(flags,shells,sizes)
 int flags;
 int *shells;
@@ -100,7 +103,7 @@ int  *sizes;
  * and electron 2 is in psh2 and psh3, that is (1 | 2 3).  To avoid
  * confusing the user of these routines, the INT_NOPERM is set.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_erep3(flags,psh1,psh2,psh3)
     int flags;
     int *psh1;
@@ -118,7 +121,7 @@ int_erep3(flags,psh1,psh2,psh3)
  * as arguments the flags, an integer vector of shell numbers
  * and an integer vector which will be filled in with size
  * information, if it is non-NULL. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_erep3_v(flags,shells,sizes)
 int flags;
 int *shells;

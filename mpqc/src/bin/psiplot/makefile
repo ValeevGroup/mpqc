@@ -15,9 +15,6 @@ TARGET_TO_MAKE = psiplot
 #CXX = g++
 #CXXFLAGS = -g $(C++INCLUDE)
 
-CXXFLAGS = $(CXXFLAGS_DEBUG)
-CFLAGS = $(CFLAGS_DEBUG)
-
 INCLUDE := $(INCLUDE) -I/usr/explorer/include
 CXXINCLUDE := $(CXXINCLUDE) -I/usr/explorer/include
 

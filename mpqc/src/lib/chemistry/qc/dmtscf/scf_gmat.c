@@ -78,7 +78,7 @@ scf_struct_t *scf_info;
  * frees memory used by the integral routines and the scf bounds
  */
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 scf_done_gmat(centers, scf_info)
 centers_t *centers;
 scf_struct_t *scf_info;
@@ -295,7 +295,7 @@ int elim;
  * a global sum should already have been done on lg
  */
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 scf_lgmat_to_scat(lg,Gmat)
 double *lg;
 dmt_matrix Gmat;
@@ -415,7 +415,7 @@ double **gmato;
 
 /* free up the arrays used in the local_P direct fock build */
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 scf_done_direct_gmat(dpmat, dpmato, maxp, gmat, gmato)
 double *dpmat;
 double *dpmato;

@@ -7,15 +7,6 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 DEFINES += -DSRCLIBDIR=\"$(SRCLIBDIR)\"
 LD = $(CXX)
 
-ifeq ($(YACC),bison)
-CXXFLAGS += -DBISON
-CXXFLAGS_DEBUG += -DBISON
-endif
-ifeq ($(LEX),flex)
-CXXFLAGS += -DFLEX
-CXXFLAGS_DEBUG += -DFLEX
-endif
-
 MAPIMPL = RAVL
 
 CXXSRC = ipv2.cc ipv2_alloc.cc ipv2_cwk.cc ipv2_data.cc ipv2_error.cc \
@@ -64,12 +55,12 @@ endif
 #### yacc and lex ####
 # (only works with bison and flex)
 ipv2_parse.cc ipv2_parse.h: ipv2_parse.yy
-	$(YACC) -v -d -o ipv2_parse.cc $^
+	$(BISON) -v -d -o ipv2_parse.cc $^
 	/bin/mv ipv2_parse.cc.h ipv2_parse.h
 	-@rm -f ipv2_parse.cc.output
 
 ipv2_scan.cc: ipv2_scan.ll
-	$(LEX) -L -t $^ | grep -v "extern FILE .yyin" \
+	$(FLEX) -L -t $^ | grep -v "extern FILE .yyin" \
 	                | grep -v "static int yy_get_next_buffer.*;" \
 	                | sed "s/static int yy_get_next_buffer/int yy_get_next_buffer/" \
 	                | grep -v "static void yyunput.*;" \

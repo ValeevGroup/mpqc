@@ -11,7 +11,7 @@
  * factor exp(-epsilon * t) for virtuals and exp(epsilon*t) for
  * occupied where epsilon is an orbital eigenvalue.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 dmt_expewdensity (nocc, C, eigval, D, E, t)
 int nocc;
 dmt_matrix C;

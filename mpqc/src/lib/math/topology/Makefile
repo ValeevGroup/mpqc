@@ -5,8 +5,6 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-#CXXFLAGS = $(CXXFLAGS_DEBUG)
-
 CXXSRC = point.cc pointbag.cc pntbag_i.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)

@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.5  1996/03/23 02:37:47  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.4  1995/03/17 01:49:33  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
@@ -53,7 +56,7 @@
 #include <chemistry/qc/intv2/int_print.lcl>
 
 /* Prints out information about the basis set. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_basisinfo(fp,centers)
 FILE *fp;
 centers_t *centers;
@@ -75,7 +78,7 @@ centers_t *centers;
   }
 
 /* Print out information about the geometry and basis set. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_geometryinfo(fp,centers)
 FILE *fp;
 centers_t *centers;
@@ -120,7 +123,7 @@ centers_t *centers;
  * This prints out integrals using the offset arrays in the
  * centers structure.  Only nonzero integrals are printed.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_offset_print(fp,buffer,c1,s1,c2,s2,c3,s3,c4,s4)
 FILE *fp;
 double *buffer;
@@ -163,7 +166,7 @@ int s4;
  * e13e24 = (shell 1 == shell 3) && (shell 2 == shell 4)
  * e34 = shell 3 == shell 4
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_offset_print_n(fp,buffer,n1,n2,n3,n4,o1,o2,o3,o4,e12,e13e24,e34)
 FILE *fp;
 double *buffer;
@@ -204,7 +207,7 @@ int e34;
  * s1 = shell number on center 1
  * ...
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_print(fp,buffer,c1,s1,c2,s2,c3,s3,c4,s4)
 FILE *fp;
 double *buffer;
@@ -241,7 +244,7 @@ int s4;
  * e13e24  = (shell 1 == shell 3) && (shell 2 == shell 4)
  * e34 = shell 3 == shell 4
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_print_n(fp,buffer,n1,n2,n3,n4,e12,e13e24,e34)
 FILE *fp;
 double *buffer;
@@ -271,7 +274,7 @@ int e34;
     }
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_print_intermediates(fp)
 FILE *fp;
 {

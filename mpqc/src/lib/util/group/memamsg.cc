@@ -9,7 +9,7 @@
 #include <util/group/pool.h>
 #include <util/group/memamsg.h>
 
-#if defined(PARAGON)
+#ifdef HAVE_HRECV
 #  define DISABLE do { masktrap(1); fflush(stdout); } while(0)
 #  define ENABLE do { fflush(stdout); masktrap(0); } while(0)
    extern "C" {

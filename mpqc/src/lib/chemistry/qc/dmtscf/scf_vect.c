@@ -146,7 +146,7 @@ FILE *outfile;
   return 0;
 }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 print_evals(outfile,evals,occ_num,n)
 FILE *outfile;
 double *evals;

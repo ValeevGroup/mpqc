@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.7  1996/03/23 02:37:48  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.6  1995/11/16 00:47:38  cljanss
  * Removed normalization for individual basis functions.
  *
@@ -62,7 +65,7 @@
 
 /* This routine must be called before anything else, even the offset
  * initializing routines (because this produces the shell nfunc info). */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_initialize_centers(centers)
 centers_t *centers;
 {
@@ -84,7 +87,7 @@ centers_t *centers;
  * from contraction coefficients for normalized primitives
  * to contraction coefficients for unnormalized primitives.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_normalize_shell(shell)
 shell_t *shell;
 {

@@ -8,10 +8,6 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libarray
 BIN_OR_LIB = LIB
 
-ifeq ($(ARCH),SUN4)
-override COPTIONS = -O2
-endif
-
 SGENFLAGS = -ifndef _math_array_libmath_h
 
 CSRC = diag.c flin.c matrix_utl.c mxmm.c mxmv.c print.c

@@ -3,6 +3,9 @@
  */
 
 /* $Log$
+ * Revision 1.10  1996/03/23 02:37:43  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.9  1995/11/16 00:47:32  cljanss
  * Removed normalization for individual basis functions.
  *
@@ -129,7 +132,7 @@
  * The new ordering is placed in *psh1,4 on exit.
  * for the derivatives.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_erep(flags,psh1,psh2,psh3,psh4)
 int flags;
 int *psh1;
@@ -144,7 +147,7 @@ int *psh4;
  * as arguments the flags, an integer vector of shell numbers
  * and an integer vector which will be filled in with size
  * information, if it is non-NULL. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_erep_v(flags,shells,sizes)
 int flags;
 int *shells;
@@ -165,7 +168,7 @@ int  *sizes;
  * angular momentum is to adjusted.  This differs from libint version
  * 1 in that it used total angular momentum here.
  */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 compute_erep(flags,psh1,psh2,psh3,psh4,dam1,dam2,dam3,dam4)
 int flags;
 int *psh1;
@@ -305,16 +308,16 @@ int dam4;
     iswtch(&am1,&am2);iswtch(&sh1,&sh2);iswtch(psh1,psh2);iswtch(&osh1,&osh2);
     iswtch(&dam1,&dam2);
     iswtch(&minam1,&minam2);
-    pswtch((VOID_PTR *)&int_shell1,(VOID_PTR *)&int_shell2);
-    pswtch((VOID_PTR *)&pcs1,(VOID_PTR *)&pcs2);
+    pswtch((void**)&int_shell1,(void**)&int_shell2);
+    pswtch((void**)&pcs1,(void**)&pcs2);
     }
   if (am4 > am3) {
     p34 = 1;
     iswtch(&am3,&am4);iswtch(&sh3,&sh4);iswtch(psh3,psh4);iswtch(&osh3,&osh4);
     iswtch(&dam3,&dam4);
     iswtch(&minam3,&minam4);
-    pswtch((VOID_PTR *)&int_shell3,(VOID_PTR *)&int_shell4);
-    pswtch((VOID_PTR *)&pcs3,(VOID_PTR *)&pcs4);
+    pswtch((void**)&int_shell3,(void**)&int_shell4);
+    pswtch((void**)&pcs3,(void**)&pcs4);
     }
   if (!(int_unit2||int_unit4) && (osh1 == osh4) && (osh2 == osh3) && (osh1 != osh2)) {
     /* Don't make the permutation unless we won't override what was
@@ -324,8 +327,8 @@ int dam4;
       iswtch(&am3,&am4);iswtch(&sh3,&sh4);iswtch(psh3,psh4);iswtch(&osh3,&osh4);
       iswtch(&dam3,&dam4);
       iswtch(&minam3,&minam4);
-      pswtch((VOID_PTR *)&int_shell3,(VOID_PTR *)&int_shell4);
-      pswtch((VOID_PTR *)&pcs3,(VOID_PTR *)&pcs4);
+      pswtch((void**)&int_shell3,(void**)&int_shell4);
+      pswtch((void**)&pcs3,(void**)&pcs4);
       }
     }
   if ((am3 > am1)||((am3 == am1)&&(am4 > am2))) {
@@ -336,12 +339,12 @@ int dam4;
     iswtch(&am12,&am34);
     iswtch(&dam1,&dam3);
     iswtch(&minam1,&minam3);
-    pswtch((VOID_PTR *)&int_shell1,(VOID_PTR *)&int_shell3);
-    pswtch((VOID_PTR *)&pcs1,(VOID_PTR *)&pcs3);
+    pswtch((void**)&int_shell1,(void**)&int_shell3);
+    pswtch((void**)&pcs1,(void**)&pcs3);
     iswtch(&dam2,&dam4);
     iswtch(&minam2,&minam4);
-    pswtch((VOID_PTR *)&int_shell2,(VOID_PTR *)&int_shell4);
-    pswtch((VOID_PTR *)&pcs2,(VOID_PTR *)&pcs4);
+    pswtch((void**)&int_shell2,(void**)&int_shell4);
+    pswtch((void**)&pcs2,(void**)&pcs4);
     }
   /* This tries to make centers A and B equivalent, if possible. */
   else if (  (am3 == am1)
@@ -358,12 +361,12 @@ int dam4;
     iswtch(&am12,&am34);
     iswtch(&dam1,&dam3);
     iswtch(&minam1,&minam3);
-    pswtch((VOID_PTR *)&int_shell1,(VOID_PTR *)&int_shell3);
-    pswtch((VOID_PTR *)&pcs1,(VOID_PTR *)&pcs3);
+    pswtch((void**)&int_shell1,(void**)&int_shell3);
+    pswtch((void**)&pcs1,(void**)&pcs3);
     iswtch(&dam2,&dam4);
     iswtch(&minam2,&minam4);
-    pswtch((VOID_PTR *)&int_shell2,(VOID_PTR *)&int_shell4);
-    pswtch((VOID_PTR *)&pcs2,(VOID_PTR *)&pcs4);
+    pswtch((void**)&int_shell2,(void**)&int_shell4);
+    pswtch((void**)&pcs2,(void**)&pcs4);
     }
 #else /* OLD_PERMUTATION_ALGORITHM */
   if (am2 > am1) {
@@ -371,16 +374,16 @@ int dam4;
     iswtch(&am1,&am2);iswtch(&sh1,&sh2);iswtch(psh1,psh2);iswtch(&osh1,&osh2);
     iswtch(&dam1,&dam2);
     iswtch(&minam1,&minam2);
-    pswtch((VOID_PTR *)&int_shell1,(VOID_PTR *)&int_shell2);
-    pswtch((VOID_PTR *)&pcs1,(VOID_PTR *)&pcs2);
+    pswtch((void**)&int_shell1,(void**)&int_shell2);
+    pswtch((void**)&pcs1,(void**)&pcs2);
     }
   if (am4 > am3) {
     p34 = 1;
     iswtch(&am3,&am4);iswtch(&sh3,&sh4);iswtch(psh3,psh4);iswtch(&osh3,&osh4);
     iswtch(&dam3,&dam4);
     iswtch(&minam3,&minam4);
-    pswtch((VOID_PTR *)&int_shell3,(VOID_PTR *)&int_shell4);
-    pswtch((VOID_PTR *)&pcs3,(VOID_PTR *)&pcs4);
+    pswtch((void**)&int_shell3,(void**)&int_shell4);
+    pswtch((void**)&pcs3,(void**)&pcs4);
     }
   if (!(int_unit2||int_unit4) && (osh1 == osh4) && (osh2 == osh3) && (osh1 != osh2)) {
     /* Don't make the permutation unless we won't override what was
@@ -390,8 +393,8 @@ int dam4;
       iswtch(&am3,&am4);iswtch(&sh3,&sh4);iswtch(psh3,psh4);iswtch(&osh3,&osh4);
       iswtch(&dam3,&dam4);
       iswtch(&minam3,&minam4);
-      pswtch((VOID_PTR *)&int_shell3,(VOID_PTR *)&int_shell4);
-      pswtch((VOID_PTR *)&pcs3,(VOID_PTR *)&pcs4);
+      pswtch((void**)&int_shell3,(void**)&int_shell4);
+      pswtch((void**)&pcs3,(void**)&pcs4);
       }
     }
   if ((am34 > am12)||((am34 == am12)&&(minam1 > minam3))) {
@@ -402,12 +405,12 @@ int dam4;
     iswtch(&am12,&am34);
     iswtch(&dam1,&dam3);
     iswtch(&minam1,&minam3);
-    pswtch((VOID_PTR *)&int_shell1,(VOID_PTR *)&int_shell3);
-    pswtch((VOID_PTR *)&pcs1,(VOID_PTR *)&pcs3);
+    pswtch((void**)&int_shell1,(void**)&int_shell3);
+    pswtch((void**)&pcs1,(void**)&pcs3);
     iswtch(&dam2,&dam4);
     iswtch(&minam2,&minam4);
-    pswtch((VOID_PTR *)&int_shell2,(VOID_PTR *)&int_shell4);
-    pswtch((VOID_PTR *)&pcs2,(VOID_PTR *)&pcs4);
+    pswtch((void**)&int_shell2,(void**)&int_shell4);
+    pswtch((void**)&pcs2,(void**)&pcs4);
     }
   /* This tries to make centers A and B equivalent, if possible. */
   else if (  (am3 == am1)
@@ -425,12 +428,12 @@ int dam4;
     iswtch(&am12,&am34);
     iswtch(&dam1,&dam3);
     iswtch(&minam1,&minam3);
-    pswtch((VOID_PTR *)&int_shell1,(VOID_PTR *)&int_shell3);
-    pswtch((VOID_PTR *)&pcs1,(VOID_PTR *)&pcs3);
+    pswtch((void**)&int_shell1,(void**)&int_shell3);
+    pswtch((void**)&pcs1,(void**)&pcs3);
     iswtch(&dam2,&dam4);
     iswtch(&minam2,&minam4);
-    pswtch((VOID_PTR *)&int_shell2,(VOID_PTR *)&int_shell4);
-    pswtch((VOID_PTR *)&pcs2,(VOID_PTR *)&pcs4);
+    pswtch((void**)&int_shell2,(void**)&int_shell4);
+    pswtch((void**)&pcs2,(void**)&pcs4);
     }
 #endif /* OLD_PERMUTATION_ALGORITHM */
 
@@ -711,25 +714,25 @@ int dam4;
       iswtch(&am1,&am3);
       iswtch(&am2,&am4);
       iswtch(&am12,&am34);
-      pswtch((VOID_PTR *)&int_shell1,(VOID_PTR *)&int_shell3);
-      pswtch((VOID_PTR *)&pcs1,(VOID_PTR *)&pcs3);
-      pswtch((VOID_PTR *)&int_shell2,(VOID_PTR *)&int_shell4);
-      pswtch((VOID_PTR *)&pcs2,(VOID_PTR *)&pcs4);
+      pswtch((void**)&int_shell1,(void**)&int_shell3);
+      pswtch((void**)&pcs1,(void**)&pcs3);
+      pswtch((void**)&int_shell2,(void**)&int_shell4);
+      pswtch((void**)&pcs2,(void**)&pcs4);
       iswtch(&int_expweight1,&int_expweight3);
       iswtch(&int_expweight2,&int_expweight4);
       }
     if (p34) {
       iswtch(&sh3,&sh4);iswtch(psh3,psh4);iswtch(&osh3,&osh4);
       iswtch(&am3,&am4);
-      pswtch((VOID_PTR *)&int_shell3,(VOID_PTR *)&int_shell4);
-      pswtch((VOID_PTR *)&pcs3,(VOID_PTR *)&pcs4);
+      pswtch((void**)&int_shell3,(void**)&int_shell4);
+      pswtch((void**)&pcs3,(void**)&pcs4);
       iswtch(&int_expweight3,&int_expweight4);
       }
     if (p12) {
       iswtch(&sh1,&sh2);iswtch(psh1,psh2);iswtch(&osh1,&osh2);
       iswtch(&am1,&am2);
-      pswtch((VOID_PTR *)&int_shell1,(VOID_PTR *)&int_shell2);
-      pswtch((VOID_PTR *)&pcs1,(VOID_PTR *)&pcs2);
+      pswtch((void**)&int_shell1,(void**)&int_shell2);
+      pswtch((void**)&pcs1,(void**)&pcs2);
       iswtch(&int_expweight1,&int_expweight2);
       }
     }
@@ -810,7 +813,7 @@ int dam4;
  * +------------------+
  */
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_erep_all1der(flags,psh1,psh2,psh3,psh4,der_centers)
 int flags;
 int *psh1;
@@ -1008,7 +1011,7 @@ der_centers_t *der_centers;
  * The results are accumulated in buffer, which cannot be the same
  * as the current int_buffer.
  */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 compute_erep_1der(flags,buffer,psh1,psh2,psh3,psh4,dercenter)
 int flags;
 double *buffer;
@@ -1215,19 +1218,19 @@ int dercenter;
     END_ALLDERLOOPS(+)
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 pswtch(i,j)
-VOID_PTR *i;
-VOID_PTR *j;
+void**i;
+void**j;
 {
-  VOID_PTR tmp;
+  void*tmp;
 
   tmp = *i;
   *i = *j;
   *j = tmp;
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 iswtch(i,j)
 int *i;
 int *j;
@@ -1239,14 +1242,14 @@ int *j;
   *j = tmp;
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 fail()
 {
   fprintf(stderr,"failing module:\n%s\n",__FILE__);
   exit(1);
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 nonredundant_erep(buffer,e12,e34,e13e24,n1,n2,n3,n4,red_off,nonred_off)
 double *buffer;
 int e12;
@@ -1291,7 +1294,7 @@ int *nonred_off;
  * as arguments the flags, an integer vector of shell numbers
  * and an integer vector which will be filled in with size
  * information, if it is non-NULL, and the dercenters pointer. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_erep_all1der_v(flags,shells,sizes,dercenters)
 int flags;
 int *shells;
@@ -1309,7 +1312,7 @@ der_centers_t *dercenters;
   }
 
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_erep_bound1der(flags,bsh1,bsh2,size)
 int flags;
 int bsh1;
@@ -1419,7 +1422,7 @@ int *size;
  * derivative integral bounds.
  * It fills int_buffer with (sh1+i sh2|sh1+i sh2).
  */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 compute_erep_bound1der(flags,buffer,psh1,psh2,psh3,psh4)
 int flags;
 double *buffer;

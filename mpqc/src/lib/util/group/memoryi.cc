@@ -1,10 +1,6 @@
 
-#undef HAVE_PGON
-#undef HAVE_SHM
-#if defined(PARAGON) && !defined(SUNMOS)
-#  define HAVE_PGON
-#elif !defined(SUNMOS)
-#  define HAVE_SHM
+#ifdef HAVE_CONFIG_H
+#include <config.h>
 #endif
 
 #include <util/group/memory.h>
@@ -12,12 +8,12 @@
 
 #include <util/group/memproc.h>
 
-#ifdef HAVE_PGON
+#ifdef HAVE_HRECV
 #  include <util/group/messpgon.h>
 #  include <util/group/mempgon.h>
 #endif
 
-#ifdef HAVE_SHM
+#ifdef HAVE_SYSV_IPC
 #  include <util/group/messshm.h>
 #  include <util/group/memshm.h>
 #endif
@@ -70,7 +66,7 @@ MemoryGrp::create_memorygrp(int localsize)
       fprintf(stderr, "MemoryGrp::create_memorygrp: requires default msg\n");
       abort();
     }
-#ifdef HAVE_PGON
+#ifdef HAVE_HRECV
   else if (msg->class_desc() == ParagonMessageGrp::static_class_desc()) {
       ret = new ParagonMemoryGrp(msg, localsize);
     }
@@ -81,7 +77,7 @@ MemoryGrp::create_memorygrp(int localsize)
       ret = new MPLMemoryGrp(msg, localsize);
     }
 #endif
-#ifdef HAVE_SHM
+#ifdef HAVE_SYSV_IPC
   else if (msg->class_desc() == ShmMessageGrp::static_class_desc()) {
       ret = new ShmMemoryGrp(msg, localsize);
     }

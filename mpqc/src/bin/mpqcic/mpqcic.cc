@@ -7,7 +7,6 @@
 #include <sys/stat.h>
 
 extern "C" {
-#include <tmpl.h>
 #include <util/sgen/sgen.h>
 #include <math/dmt/libdmt.h>
 #include <math/array/math_lib.h>
@@ -35,11 +34,11 @@ extern "C" {
 
 // Force linkages:
 #ifndef __PIC__
-# ifndef PARAGON
+# ifdef HAVE_SYSV_IPC
 #   include <util/group/messshm.h>
     const ClassDesc &fl0 = ShmMessageGrp::class_desc_;
-    const ClassDesc &fl1 = ProcMessageGrp::class_desc_;
 # endif
+  const ClassDesc &fl1 = ProcMessageGrp::class_desc_;
 # ifdef HAVE_PVM
 #   include <util/group/messpvm.h>
     const ClassDesc &fl2 = PVMMessageGrp::class_desc_;

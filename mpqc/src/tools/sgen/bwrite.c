@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.3  1996/03/23 02:38:53  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.2  1994/10/18 23:03:45  etseidl
  * fix many warnings, use memset rather than bzero
  *
@@ -50,14 +53,13 @@
 
 
 #include <stdio.h>
-#include <tmpl.h>
 
 #include "bwrite.gbl"
 #include "bwrite.lcl"
 
 #include "gen_write.gbl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 bwrite_gen()
 {
   char *protoargsfmt = "int _unit,%s_t *_%s,int *_offset";

@@ -47,12 +47,8 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-ifeq ($(ARCH),PARAGON)
-  MPQCLIBSDEFINE=-DUSE_PICLPARAGON
-endif
-
 dmtscftest: dmtscftest.o libdmtscf.a \
-        $(shell $(LISTLIBS) $(MPQCLIBSDEFINE) $(INCLUDE) $(SRCDIR)/LIBS.h)
+        $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(CXX) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)

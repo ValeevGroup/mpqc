@@ -13,26 +13,6 @@
 #define SIMPLE_LOCK 1
 #endif
 
-#if defined(L486) || defined(PARAGON)
-#ifndef SHMCTL_REQUIRES_SHMID
-#  define SHMCTL_REQUIRES_SHMID
-#endif
-#endif
-
-#if defined(L486) || defined(PARAGON)
-#ifndef SHMDT_CHAR
-#  define SHMDT_CHAR
-#endif
-#endif
-
-#if !defined(SHMAT_TYPE) && (defined(L486) || defined(OSF) || defined(AIX))
-#  define SHMAT_TYPE char *
-#endif
-
-#ifndef SHMAT_TYPE
-#  define SHMAT_TYPE void *
-#endif
-
 #undef DEBUG
 
 #define CLASSNAME ShmMemoryGrp
@@ -69,7 +49,7 @@ ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg,
 
       // attach the shared segment.
       memory_ = (void*) 0;
-      memory_ = shmat(shmid_,(SHMAT_TYPE)memory_,0);
+      memory_ = shmat(shmid_,(SHMTYPE)memory_,0);
 
       // initialize the pool
       pool_ = new(memory_) Pool(poolallocation);
@@ -142,7 +122,7 @@ ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg,
   if (me() != 0) {
       // some versions of shmat return -1 for errors, bit 64 bit
       // compilers with 32 bit int's will complain.
-      if ((memory_ = shmat(shmid_,(SHMAT_TYPE)memory_,0)) == 0) {
+      if ((memory_ = shmat(shmid_,(SHMTYPE)memory_,0)) == 0) {
           fprintf(stderr,"problem on node %d\n", me());
           perror("ShmMemoryGrp::shmat");
           abort();
@@ -157,22 +137,14 @@ ShmMemoryGrp::ShmMemoryGrp(const RefMessageGrp& msg,
 
 ShmMemoryGrp::~ShmMemoryGrp()
 {
-#ifdef SHMDT_CHAR
-  shmdt((char*)memory_);
-#else
-  shmdt(memory_);
-#endif
+  shmdt((SHMTYPE)memory_);
 
   msg_->sync();
 
   delete[] update_;
 
   if (me() == 0) {
-#ifdef SHMCTL_REQUIRES_SHMID
       shmctl(shmid_,IPC_RMID,0);
-#else
-      shmctl(shmid_,IPC_RMID);
-#endif
     }
 
 #ifdef DEBUG

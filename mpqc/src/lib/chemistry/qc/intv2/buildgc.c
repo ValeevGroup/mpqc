@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.9  1996/03/23 02:37:35  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.8  1995/08/28 23:59:13  cljanss
  * Fixed a bug that could cause overwrites during 2e deriv. computation.
  *
@@ -224,7 +227,7 @@ DECLARE_BUILD(3,3,3,3)
 /* This initializes the build routines.  It is called from
  * int_initialize_erep.  This allocates storage for the
  * intermediate integrals. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_init_buildgc(order,am1,am2,am3,am4,nc1,nc2,nc3,nc4)
 int order;
 int am1;
@@ -632,7 +635,7 @@ int nc4;
   saved_ncon = nc1;
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_done_buildgc()
 {
   int i,j,k;
@@ -662,7 +665,7 @@ int_done_buildgc()
   }
 
 /* add_store maintains a list of free storage allocated by int_init_buildgc */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 add_store(p)
 void *p;
 {
@@ -683,14 +686,14 @@ void *p;
   }
 
 /* free_store frees the memory that add_store keeps track of */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 free_store()
 {
   _free_store(store,n_store_last);
   store = NULL;
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 _free_store(s,n)
 store_list_t* s;
 int n;
@@ -705,7 +708,7 @@ int n;
   }
 
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_buildgcam(minam1,minam2,minam3,minam4,
               maxam1,maxam2,maxam3,maxam4,
               dam1,dam2,dam3,dam4,
@@ -810,7 +813,7 @@ int eAB;
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 build_not_using_gcs(nc1,nc2,nc3,nc4,minam1,minam3,maxam12,maxam34,dam1,dam2,dam3,dam4,eAB)
 int nc1;
 int nc2;
@@ -1009,7 +1012,7 @@ int eAB;
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 build_using_gcs(nc1,nc2,nc3,nc4,minam1,minam3,maxam12,maxam34,dam1,dam2,dam3,dam4,eAB)
 int nc1;
 int nc2;
@@ -1186,7 +1189,7 @@ int eAB;
  * primitives.  It is given the total angular momentum as the argument
  * and requires that the global primitive offsets and other global
  * constants be initialized. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 gen_prim_intermediates(pr1,pr2,pr3,pr4,am)
 int pr1;
 int pr2;
@@ -1199,7 +1202,7 @@ int am;
   double pmq,pmq2;
   double AmB,AmB2;
   /* This is 2^(1/2) * pi^(5/4) */
-  CONST double sqrt2pi54 = 5.9149671727956129;
+  const double sqrt2pi54 = 5.9149671727956129;
   double conv_to_s;
 
   if (int_store2 && !int_unit2 && !int_unit4) {
@@ -1299,7 +1302,7 @@ int am;
 
 /* This is like gen_prim_intermediates, except the normalization is
  * put into the ssss integrals. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 gen_prim_intermediates_with_norm(pr1,pr2,pr3,pr4,am,norm)
 int pr1;
 int pr2;
@@ -1313,7 +1316,7 @@ double norm;
   double pmq,pmq2;
   double AmB,AmB2;
   /* This is 2^(1/2) * pi^(5/4) */
-  CONST double sqrt2pi54 = 5.9149671727956129;
+  const double sqrt2pi54 = 5.9149671727956129;
   double conv_to_s;
 
   if (int_store2) {
@@ -1410,7 +1413,7 @@ double norm;
 
 
 /* This routine computes the shell intermediates. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 gen_shell_intermediates(sh1,sh2,sh3,sh4)
 int sh1;
 int sh2;
@@ -1506,7 +1509,7 @@ int m;
   }
 
 /* I00 will be made [a+1 0|b 0](m) */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 buildprim_1(I00,am12,am34,m)
 double *I00;
 int am12;
@@ -1631,7 +1634,7 @@ int m;
 
 
 /* I00 will be made [a 0|b+1 0](m) */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 buildprim_3(I00,am12,am34,m)
 double *I00;
 int am12;
@@ -1778,7 +1781,7 @@ int m;
 
 /* Initialize the list of integrals which have been precomputed
  * to "not computed" (=0). */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 init_inthave(am12,am34)
 int am12;
 int am34;
@@ -1858,7 +1861,7 @@ impossible_integral()
   return(0);
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 iswtch(i,j)
 int *i;
 int *j;
@@ -1870,7 +1873,7 @@ int *j;
   *j = tmp;
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 fail()
 {
   fprintf(stderr,"failing module:\n%s\n",__FILE__);

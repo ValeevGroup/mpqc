@@ -1,6 +1,9 @@
 %{
 
 /* $Log$
+ * Revision 1.3  1996/03/23 02:39:04  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.2  1994/10/18 23:04:01  etseidl
  * fix many warnings, use memset rather than bzero
  *
@@ -100,7 +103,7 @@ static int eline = 0;
 static int lostline = 0;
 
 /* Advance the input line. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 advline()
 {
   lostline = 0;
@@ -109,7 +112,7 @@ advline()
   }
 
 /* Move the input line back. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 bckline()
 {
   lostline = 1;
@@ -118,7 +121,7 @@ bckline()
   }
 
 /* Advance the input char. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 advchar()
 {
   int i;
@@ -133,7 +136,7 @@ advchar()
   cur_line[eline] = '\0';
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 bckchar()
 {
   if (eline==0) {
@@ -147,7 +150,7 @@ bckchar()
   
 
 /* Show position. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 showpos()
 {
 #ifndef FLEX

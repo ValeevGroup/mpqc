@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.3  1996/03/23 02:38:59  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.2  1994/10/18 23:03:52  etseidl
  * fix many warnings, use memset rather than bzero
  *
@@ -26,7 +29,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <tmpl.h>
 #include "types.h"
 #include "global.h"
 
@@ -36,7 +38,7 @@
 #include "sgen_util.gbl"
 #include "error.gbl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 init_gen()
 {
   declaration_t *I;
@@ -93,7 +95,7 @@ init_gen()
   fclose(output);
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 init_declaration(dec)
 declaration_t *dec;
 {
@@ -113,7 +115,7 @@ declaration_t *dec;
   fprintf(output,"  }\n");
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 init_member(member,structname)
 member_t *member;
 char *structname;

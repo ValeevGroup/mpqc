@@ -46,7 +46,7 @@ static dmt_matrix SScr1, SScr2;
  * so here are some functione to grab pointers to them all
  */
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 scf_iter_get_col_tmps(S1, S2, S3)
 dmt_matrix *S1;
 dmt_matrix *S2;
@@ -57,7 +57,7 @@ dmt_matrix *S3;
   *S3 = Scr3;
 }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 scf_iter_get_scat_tmps(S1, S2)
 dmt_matrix *S1;
 dmt_matrix *S2;
@@ -66,7 +66,7 @@ dmt_matrix *S2;
   *S2 = SScr2;
 }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 scf_iter_get_pmats(S1, S2, S3, S4)
 dmt_matrix *S1;
 dmt_matrix *S2;
@@ -79,7 +79,7 @@ dmt_matrix *S4;
   *S4 = DPmatO;
 }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 scf_iter_get_gmats(S1, S2)
 dmt_matrix *S1;
 dmt_matrix *S2;
@@ -187,7 +187,7 @@ dmt_matrix SM;
  * return 0 on success, -1 on failure
  */
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 scf_done_iter(centers,scf_info,sym_info,Fock,FockO,Scf_Vec)
 centers_t *centers;
 scf_struct_t *scf_info;
@@ -562,7 +562,7 @@ int iter;
  * them, and then forms Fock = Hcore + sym(Gmat), and FockO = sym(GmatO)
  */
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 make_fock(centers,scf_info,sym_info,Fock,FockO,Gmat,GmatO,SScr1,SScr2)
 centers_t *centers;
 scf_struct_t *scf_info;
@@ -606,7 +606,7 @@ dmt_matrix SScr2;
   }
 }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 un_level_shift(scf_info,Fock,occ_num,evals)
 scf_struct_t *scf_info;
 dmt_matrix Fock;
@@ -641,7 +641,7 @@ double *evals;
   free(fdiag);
 }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 level_shift(scf_info,Fock,occ_num)
 scf_struct_t *scf_info;
 dmt_matrix Fock;
@@ -692,7 +692,7 @@ double *occ_num;
  *
  */
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 make_eff_fock(scf_info,Fock,FockO,Scf_Vec,occ_num,iter)
 scf_struct_t *scf_info;
 dmt_matrix Fock;

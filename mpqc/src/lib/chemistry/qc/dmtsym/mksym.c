@@ -24,7 +24,7 @@
  * will fall between shells, this can't be done.
  */
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 sym_sym_matrix(centers,sym_info,skel,sym)
 centers_t *centers;
 sym_struct_t *sym_info;

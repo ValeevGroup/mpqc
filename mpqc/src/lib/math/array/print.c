@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.4  1996/03/23 02:38:09  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.3  1995/03/17 01:50:10  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
@@ -52,7 +55,7 @@
 #include <math/array/print.gbl>
 #include <math/array/print.lcl>
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 math_print_dm(out,aa)
 FILE *out;
 double_matrix_t *aa;
@@ -90,7 +93,7 @@ double_matrix_t *aa;
     }
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 math_print_dv(out,aa)
 FILE *out;
 double_vector_t *aa;
@@ -129,7 +132,7 @@ double_vector_t *aa;
     }
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 math_print_dmvv(out,aa,bb,cc)
 FILE *out;
 double_matrix_t *aa;
@@ -178,7 +181,7 @@ double_vector_t *cc;
     }
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 math_print_dmv(out,aa,bb)
 FILE *out;
 double_matrix_t *aa;

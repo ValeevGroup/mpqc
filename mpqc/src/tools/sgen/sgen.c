@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.4  1996/03/23 02:39:05  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.3  1994/10/18 23:04:01  etseidl
  * fix many warnings, use memset rather than bzero
  *
@@ -56,7 +59,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <tmpl.h>
 #include "types.h"
 #define  _ALLOCATE_GLOBAL_
 #include "global.h"

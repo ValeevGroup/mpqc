@@ -3,6 +3,9 @@
  * file. */
 
 /* $Log$
+ * Revision 1.3  1996/03/23 02:39:06  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.2  1994/10/18 23:04:03  etseidl
  * fix many warnings, use memset rather than bzero
  *
@@ -29,7 +32,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <tmpl.h>
 #include "types.h"
 #include "global.h"
 
@@ -38,7 +40,7 @@
 
 #include "error.gbl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 init_declarations()
 {
   free_name_list(default_modules);
@@ -48,7 +50,7 @@ init_declarations()
   dl = NULL;
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 free_declaration(dl)
 declaration_t *dl;
 {
@@ -59,7 +61,7 @@ declaration_t *dl;
   free(dl);
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 free_member_list(members)
 member_list_t *members;
 {
@@ -69,7 +71,7 @@ member_list_t *members;
   free(members);
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 free_name_list(names)
 name_list_t *names;
 {
@@ -79,7 +81,7 @@ name_list_t *names;
   free(names);
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 free_member(member)
 member_t *member;
 {
@@ -89,7 +91,7 @@ member_t *member;
   free_index_list(member->indices);
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 free_index_list(indices)
 index_list_t *indices;
 {
@@ -140,7 +142,7 @@ alloc_index_list()
   }
 
 /* Add a declaration to the end of the global declaration list. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 declaration(name,modules,members)
 char *name;
 name_list_t *modules;
@@ -166,7 +168,7 @@ member_list_t *members;
 
 /* This sets up the global name list that contains the default
  * modules. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 set_default_modules(nl)
 name_list_t *nl;
 {

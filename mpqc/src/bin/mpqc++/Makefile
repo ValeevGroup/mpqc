@@ -4,8 +4,6 @@ ifndef SRCDIR
 endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-CXXFLAGS = $(CXXFLAGS_DEBUG)
-
 #BIN_OR_LIB = BIN
 TARGET_TO_MAKE = mpqc++
 #LD = $(CXX)

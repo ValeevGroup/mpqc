@@ -32,7 +32,7 @@
  *
  */
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 scf_ex(scf_info,centers,Scf_Vec)
 scf_struct_t *scf_info;
 centers_t*centers;

@@ -68,7 +68,7 @@ int ginv0( ARGS1(int) );
 /****************************************************************************/
 /* These routines are not a part picl, but their use crept into the code.   */
 
-#if !defined(PARAGON)
+#if !defined(HAVE_NX)
 int cubedim( ARGS0 );
 int mynode ( ARGS0 );
 int numnodes( ARGS0 );

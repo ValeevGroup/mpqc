@@ -2,6 +2,9 @@
 /* Some convenient functions are provided here. */
 
 /* $Log$
+ * Revision 1.4  1996/03/23 02:39:07  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.3  1994/10/21 20:39:50  cljanss
  * Work arounds for IRIX 6.0 IDO/C++ bugs.
  *
@@ -42,7 +45,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <tmpl.h>
 #include "types.h"
 #include "global.h"
 
@@ -128,7 +130,7 @@ char *type;
 /* This finds out how many indices are needed to loop thru the elements
  * of an array and writes out a declaration of these indices to the
  * global output file.  The structname is needed incase an error occurs. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 declare_indices(members,structname)
 member_list_t *members;
 char *structname;
@@ -166,7 +168,7 @@ char *structname;
   }
 
 /* This is like declare_indices, but one less index is declared. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 declare_indices_less1(members,structname)
 member_list_t *members;
 char *structname;
@@ -206,7 +208,7 @@ char *structname;
   }
 
 /* This is like declare_indices_less1, but is only for basic types. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 declare_indices_for_nonpointer(members,structname)
 member_list_t *members;
 char *structname;
@@ -245,7 +247,7 @@ char *structname;
   }
 
 /* This is like declare_indices_less1, but is only for basic types. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 declare_indices_less1basic(members,structname)
 member_list_t *members;
 char *structname;

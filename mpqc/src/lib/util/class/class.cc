@@ -3,12 +3,16 @@
 #pragma implementation
 #endif
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_DLFCN
+#if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
-#endif // HAVE_DLFCN
+#endif // HAVE_DLFCN_H
 
 #include <util/class/class.h>
 
@@ -408,7 +412,7 @@ ClassDesc::load_class(const char* classname)
       return 0;
     }
   
-#if HAVE_DLFCN
+#if HAVE_DLFCN_H
   // make a copy of the library search list
   char* path = new char[strlen(classlib_search_path_) + 1];
   strcpy(path, classlib_search_path_);
@@ -488,7 +492,7 @@ ClassDesc::load_class(const char* classname)
     }
 
   delete[] path;
-#endif // HAVE_DLFCN
+#endif // HAVE_DLFCN_H
 
   fprintf(stderr,"ClassDesc::load_class(\"%s\"): load failed\n", classname);
 

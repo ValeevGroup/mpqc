@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.6  1996/03/23 02:37:49  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.5  1995/03/17 01:49:35  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
@@ -55,7 +58,7 @@
 #include <chemistry/qc/intv2/offsets.lcl>
 
 /* This initializes the offset arrays for one electron integrals. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_initialize_offsets1(cs1,cs2)
 centers_t *cs1;
 centers_t *cs2;
@@ -78,7 +81,7 @@ centers_t *cs2;
   }
 
 /* This is called to free the offsets. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_done_offsets1(cs1,cs2)
 centers_t *cs1;
 centers_t *cs2;
@@ -88,7 +91,7 @@ centers_t *cs2;
   }
 
 /* Initialize the offset arrays for two electron integrals. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_initialize_offsets2(cs1,cs2,cs3,cs4)
 centers_t *cs1;
 centers_t *cs2;
@@ -146,7 +149,7 @@ centers_t *cs4;
   }
 
 /* This is called to free the offsets. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_done_offsets2(cs1,cs2,cs3,cs4)
 centers_t *cs1;
 centers_t *cs2;
@@ -275,7 +278,7 @@ int off;
   }
 
 /* Free storage for the offset arrays. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 free_offsets(cs)
 centers_t *cs;
 {

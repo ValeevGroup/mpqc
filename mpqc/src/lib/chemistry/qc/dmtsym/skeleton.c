@@ -19,7 +19,7 @@
  *
  */
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 sym_skel_matrix(sym_info,mat)
 sym_struct_t *sym_info;
 dmt_matrix mat;

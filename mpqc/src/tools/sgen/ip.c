@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.4  1996/03/23 02:39:00  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.3  1994/10/18 23:03:54  etseidl
  * fix many warnings, use memset rather than bzero
  *
@@ -42,7 +45,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <tmpl.h>
 #include "types.h"
 #include "global.h"
 
@@ -55,7 +57,7 @@
 #define F fprintf
 #define O output
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 ip_gen(use_keyval_ipv2)
     int use_keyval_ipv2;
 {
@@ -129,7 +131,7 @@ ip_gen(use_keyval_ipv2)
   fclose(output);
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 ip_vararg(dec)
 declaration_t *dec;
 {
@@ -177,7 +179,7 @@ declaration_t *dec;
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 ip_declaration(dec)
 declaration_t *dec;
 {
@@ -239,7 +241,7 @@ declaration_t *dec;
 /* This reads in dimensions.  If dimensions are not explicitly given
  * in the input, then the matrices with the variable dimensions are
  * examined to determine how much storage will be needed. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 ip_dimension(member,dec)
 member_t *member;
 declaration_t *dec;
@@ -295,7 +297,7 @@ declaration_t *dec;
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 ip_member(member,structname)
 member_t *member;
 char *structname;
@@ -374,7 +376,7 @@ char *structname;
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 ip_elementary(member,structname,spaces,indices,n_indices)
 member_t *member;
 char *structname;

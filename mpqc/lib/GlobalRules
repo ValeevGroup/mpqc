@@ -81,10 +81,6 @@ install: install_inc install_target
 
 install_inc::
 
-# sample install_inc rule:
-#install_inc:: $(INC) $(GENINC)
-#	$(INCINSTALL) $^ $(INCDIR)/SC/$(THISDIR)
-
 install_target:: $(TARGET_TO_MAKE).$(LIBSUF)
 	$(INSTALL) $(INSTALLLIBOPT) $(TARGET_TO_MAKE).$(LIBSUF) $(LIBDIR)
 	$(RANLIB) $(LIBDIR)/$(TARGET_TO_MAKE).$(LIBSUF)
@@ -117,10 +113,10 @@ endif
 #	@echo target=$@ dir=$(dir $@)
 #	@if [ $(dir $@) = "" ]; then echo null dir: $@ $<; fi
 #	@if [ $(dir $@) != "" ]; then echo nonnull dir: $@ $<; fi
-	@if [ $(dir $@) = "./" ]; then tmpl $<; fi
+	@if [ $(dir $@) = "./" ]; then $(TMPL) $<; fi
 
 %.$(OBJSUF): %.c
-	$(CC) $(CFLAGS) -c $< $(OUTPUT_OPTION)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< $(OUTPUT_OPTION)
 
 #
 # see if we use the f2c fortran replacement
@@ -136,10 +132,10 @@ else
 endif
 
 %.$(OBJSUF): %.C
-	$(CXX) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
 
 %.$(OBJSUF): %.cc
-	$(CXX) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
 
 #
 # cleans
@@ -194,28 +190,28 @@ interface::
 #
 
 %.d: %.c
-	$(CC) -M -c $(CFLAGS) $< | sed 's/^$*.o/$*.o $*.d/g' > $(@F)
+	$(CC) -M -c $(CPPFLAGS) $(CFLAGS) $< | sed 's/^$*.o/$*.o $*.d/g' > $(@F)
 
 %.d: %.cc
-	$(CXX) -M -c $(CXXFLAGS) $< | sed 's/^$*.o/$*.o $*.d/g' > $(@F)
+	$(CXX) -M -c $(CPPFLAGS) $(CXXFLAGS) $< | sed 's/^$*.o/$*.o $*.d/g' > $(@F)
 
 #
 # sometimes it's nice to get assembler source
 #
 %.s: %.c
-	$(CC) $(CFLAGS) -S $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -S $<
 
 %.s: %.cc
-	$(CXX) $(CXXFLAGS) -S $<
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -S $<
 
 #
 # sometimes it's nice to get preprocessed source
 #
 %.i: %.c
-	$(CC) $(CFLAGS) -E $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -E $< -o $@
 
 %.ii: %.cc
-	$(CXX) $(CXXFLAGS) -E $< -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -E $< -o $@
 
 #
 # remote stuff
@@ -268,6 +264,8 @@ values::
 	@echo VPATH=$(VPATH)
 	@echo BIN_OR_LIB=$(BIN_OR_LIB)
 	@echo TARGET_TO_MAKE=$(TARGET_TO_MAKE)
+	@echo TMPL=$(TMPL)
+	@echo SGEN=$(SGEN)
 ifdef LIBS
 	@echo LIBS=$(LIBS)
 endif

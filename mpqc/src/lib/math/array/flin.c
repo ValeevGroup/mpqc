@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.4  1996/03/23 02:38:05  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.3  1995/03/17 01:50:06  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
@@ -72,7 +75,7 @@ int im;
   return(det);
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 ludcmp(a,n,indx,d)
 double **a;
 int n;
@@ -141,7 +144,7 @@ double *d;
   free(vv);
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 lubksb(a,n,indx,b)
 double **a;
 int n;

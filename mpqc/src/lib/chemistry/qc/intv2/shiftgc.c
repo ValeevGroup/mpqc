@@ -4,6 +4,9 @@
  * center 3 to 4. */
 
 /* $Log$
+ * Revision 1.6  1996/03/23 02:37:50  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.5  1995/03/17 01:49:42  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
@@ -94,7 +97,7 @@ static int eAB;
 /* This initializes the shift routines.  It is called by int_initialize_erep.
  * It is passed the maximum am to be found on each center.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_init_shiftgc(order,am1,am2,am3,am4)
 int order;
 int am1;
@@ -134,13 +137,13 @@ int am4;
     }
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_done_shiftgc()
 {
   free_int_array4(&shiftinthave);
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 init_shiftinthave(am1,am2,am3,am4)
 int am1;
 int am2;
@@ -167,7 +170,7 @@ int am4;
  * tam1-4 is the target angular momentum on centers 1-4
  * sh1-4 are the shell numbers on centers 1-4
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_shiftgcam(gc1,gc2,gc3,gc4, tam1,tam2,tam3,tam4, peAB)
 int gc1;
 int gc2;
@@ -294,7 +297,7 @@ int am4;
  * I0100 are the target integrals.
  * am1-4 is the angular momentum on each of the centers in the target set.
  */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 shiftam_12(I0100,am1,am2,am3,am4)
 double *I0100;
 int am1;
@@ -371,7 +374,7 @@ int am4;
  * I0100 are the target integrals.
  * am1-4 is the angular momentum on each of the centers in the target set.
  */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 shiftam_12eAB(I0100,am1,am2,am3,am4)
 double *I0100;
 int am1;
@@ -428,7 +431,7 @@ int am4;
     }
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 shiftam_34(I0001,am1,am2,am3,am4)
 double *I0001;
 int am1;
@@ -548,7 +551,7 @@ int am4;
     }
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 iswtch(i,j)
 int *i;
 int *j;
@@ -560,7 +563,7 @@ int *j;
   *j = tmp;
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 fail()
 {
   fprintf(stderr,"failing module:\n%s\n",__FILE__);

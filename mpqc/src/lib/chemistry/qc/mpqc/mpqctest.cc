@@ -1,4 +1,8 @@
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <string.h>
 
 #include <sys/stat.h>
@@ -28,12 +32,12 @@ const ClassDesc &fl4 = EFCOpt::class_desc_;
 const ClassDesc &fl5 = ConnollyShape2::class_desc_;
 const ClassDesc &fl6 = BEMSolvent::class_desc_;
 const ClassDesc &fl7 = BFGSUpdate::class_desc_;
-# ifndef PARAGON
+# ifndef HAVE_SYSV_IPC
 #   include <util/group/messshm.h>
     const ClassDesc &fl8 = ShmMessageGrp::class_desc_;
-    const ClassDesc &fl9 = ProcMessageGrp::class_desc_;
 # endif
-# ifdef PARAGON
+const ClassDesc &fl9 = ProcMessageGrp::class_desc_;
+# ifdef HAVE_NX_H
 #  include <util/group/messpgon.h>
     const ClassDesc &fl10 = ParagonMessageGrp::class_desc_;
 # endif
@@ -54,7 +58,7 @@ init_mp(const char *inputfile)
 
   // if we are on a paragon then use a ParagonMessageGrp
   // otherwise read the message group from the input file
-#if defined(PARAGON)
+#ifdef HAVE_NX_H
   grp = new ParagonMessageGrp;
 #else
   RefKeyVal keyval = new ParsedKeyVal(inputfile);
@@ -71,16 +75,6 @@ init_mp(const char *inputfile)
 main(int argc, char**argv)
 {
   set_new_handler(die);
-  
-/* prepare for potential debugging */
-#if (defined(SGI) || defined(SUN4)) && defined(USE_DEBUG)
-  debug_init(argv[0]);
-#endif
-
-#if ((defined(SGI) || defined(SUN4)) && \
-     (!defined(SABER))) && defined(USE_DEBUG)
-  malloc_debug_on_error();
-#endif
 
   // the output stream is standard out
   ostream& o = cout;

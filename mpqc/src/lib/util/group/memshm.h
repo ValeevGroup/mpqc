@@ -14,18 +14,6 @@
 #include <util/group/globcnt.h>
 #include <util/group/memmsg.h>
 
-#if defined(L486) || defined(PARAGON)
-#ifndef SHMCTL_REQUIRES_SHMID
-#  define SHMCTL_REQUIRES_SHMID
-#endif
-#endif
-
-#if defined(L486) || defined(PARAGON)
-#ifndef SHMDT_CHAR
-#  define SHMDT_CHAR
-#endif
-#endif
-
 class ShmMemoryGrp: public MsgMemoryGrp {
 #define CLASSNAME ShmMemoryGrp
 #include <util/class/classd.h>

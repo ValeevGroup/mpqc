@@ -3,6 +3,10 @@
 #pragma implementation
 #endif
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,24 +15,12 @@
 #include <sys/sem.h>
 #include <util/group/globcnt.h>
 
-#if defined(AIX)
-union semun {
-  int val;
-  struct semid_ds *buf;
-  u_short *array;
-};
-#endif
-
 #ifndef SEM_A
 #  define SEM_A 0200
 #endif
 
 #ifndef SEM_R
 #  define SEM_R 0400
-#endif
-
-#ifdef L486
-#  define SEMCTL_REQUIRES_SEMUN
 #endif
 
 GlobalCounter::GlobalCounter()
@@ -65,10 +57,10 @@ GlobalCounter::~GlobalCounter()
 #ifdef SEMCTL_REQUIRES_SEMUN
       semun junk;
       junk.val = 0;
-      ret = semctl(semid_, 0, IPC_RMID, junk);
 #else
-      ret = semctl(semid_, 0, IPC_RMID);
+      int junk = 0;
 #endif
+      ret = semctl(semid_, 0, IPC_RMID, junk);
       if (ret == -1) {
           perror("semctl (IPC_RMID)");
           abort();
@@ -98,8 +90,9 @@ GlobalCounter::val()
 {
 #ifdef SEMCTL_REQUIRES_SEMUN
   semun val;
+  val.val = 0;
 #else
-  int val;
+  int val = 0;
 #endif
   int ret;
   if (ret = semctl(semid_, 0, GETVAL, val) == -1) {

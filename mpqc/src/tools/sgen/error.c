@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.3  1996/03/23 02:38:54  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.2  1994/10/18 23:03:47  etseidl
  * fix many warnings, use memset rather than bzero
  *
@@ -32,7 +35,6 @@
 #if !defined(SUN)
 #include <stdarg.h>
 #endif
-#include <tmpl.h>
 #include "types.h"
 #include "global.h"
 #include "scan.gbl"
@@ -41,7 +43,7 @@
 #include "error.lcl"
 
 #if !defined(SUN)
-GLOBAL_VA_FUNCTION VOID
+GLOBAL_VA_FUNCTION void
 #ifndef __STDC__
 error(msg)
 char *msg;
@@ -59,7 +61,7 @@ error(char *msg, ...)
   exit(1);
   }
 
-GLOBAL_VA_FUNCTION VOID
+GLOBAL_VA_FUNCTION void
 #ifndef __STDC__
 warn(msg)
 char *msg;
@@ -75,7 +77,7 @@ warn(char *msg, ...)
   va_end(args);
   }
 #else /* ! SUN */
-GLOBAL_VA_FUNCTION VOID
+GLOBAL_VA_FUNCTION void
 #ifndef __STDC__
 error(msg)
 char *msg;
@@ -88,7 +90,7 @@ error(char *msg, ...)
   exit(1);
   }
 
-GLOBAL_VA_FUNCTION VOID
+GLOBAL_VA_FUNCTION void
 #ifndef __STDC__
 warn(msg)
 char *msg;

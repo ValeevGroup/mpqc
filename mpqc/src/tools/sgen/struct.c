@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.3  1996/03/23 02:39:09  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.2  1994/10/18 23:04:06  etseidl
  * fix many warnings, use memset rather than bzero
  *
@@ -24,7 +27,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <tmpl.h>
 #include "types.h"
 #include "global.h"
 
@@ -35,7 +37,7 @@
 #include "error.gbl"
 #include "sgen_util.gbl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 struct_open()
 {
   char outfile[FILENAME_MAX];
@@ -54,14 +56,14 @@ struct_open()
   includeoutput = output;
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 struct_close()
 {
   fclose(includeoutput);
   includeoutput = 0;
 }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 struct_gen()
 {
   declaration_t *I;
@@ -87,7 +89,7 @@ struct_gen()
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 union_gen(member,members,structname)
 member_t *member;
 member_list_t *members;
@@ -125,7 +127,7 @@ char *structname;
  * but it also needs the entire member list for the current structure
  * so that it can check to make sure that all variable indices have
  * been declared as integers within the structure. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 member_gen(member,members,structname)
 member_t *member;
 member_list_t *members;
@@ -224,7 +226,7 @@ char *structname;
 
 /* This checks to make sure that all variable indices and union
  * selectors have been declared as integers within the structure. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 find_variable_index(indexname,member,members,structname,membername)
 char *indexname;
 member_t *member;

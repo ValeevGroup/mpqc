@@ -1,5 +1,8 @@
 %
 % $Log$
+% Revision 1.10  1996/03/23 02:37:29  cljanss
+% Everything can now be configured with autoconf.
+%
 % Revision 1.9  1995/10/11 21:13:47  cljanss
 % ParsedKeyVal now uses iostream instead of stdio.  Various other cleanups.
 %
@@ -1521,7 +1524,7 @@ This routine examines the indices |i|, |j|, |k|, and |l| to determine
 scale values which are written to the memory locations pointed to
 by |coulombscale| and |exchangescale|.
 @<Local functions.@>=
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 set_scale(coulombscale,exchangescale,i,j,k,l)
 double *coulombscale;
 double *exchangescale;
@@ -1542,7 +1545,7 @@ int l;
 @ This takes the partial forces array on all nodes and sums them
 into the forces array on node 0.
 @<Local functions.@>=
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 sum_forces(f)
 double_matrix_t *f;
 {

@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:59  etseidl
- * Initial revision
+ * Revision 1.2  1996/03/23 02:39:12  cljanss
+ * Everything can now be configured with autoconf.
+ *
+ * Revision 1.1.1.1  1993/12/29 12:54:00  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.3  1993/04/28  18:31:08  jannsen
  * generated files are placed in the current directory
@@ -40,7 +43,9 @@ static char rcsid[] = "$Id$";
 #include <math.h>
 #include <string.h>
 
-#include "tmpl.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 extern FILE *yyin;
 FILE *tmplglobal;

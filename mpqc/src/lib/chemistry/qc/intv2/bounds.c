@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.9  1996/03/23 02:37:33  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.8  1995/10/25 21:15:46  cljanss
  * Cleaned up and added int_bound_to_double.  Fixed a bug that made bounds
  * underestimated by at most a factor of 4.
@@ -87,7 +90,7 @@
 #define COMPUTE_Q  1
 #define COMPUTE_R 2
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_init_bounds_nocomp()
 {
   int i;
@@ -109,14 +112,14 @@ int_init_bounds_nocomp()
   for (i=0; i<nsht; i++) int_Qvec[i] = 0;
 }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_init_bounds()
 {
   int_init_bounds_nocomp();
   compute_bounds(&int_Q,int_Qvec,COMPUTE_Q);
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_init_bounds_1der_nocomp()
 {
   int i;
@@ -143,7 +146,7 @@ int_init_bounds_1der_nocomp()
   for (i=0; i<nsht; i++) int_Qvec[i] = int_Rvec[i] = 0;
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_bounds_comp(s1,s2)
 int s1;
 int s2;
@@ -151,7 +154,7 @@ int s2;
   compute_bounds_shell(&int_Q,int_Qvec,COMPUTE_Q,s1,s2);
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_bounds_1der_comp(s1,s2)
 int s1;
 int s2;
@@ -160,7 +163,7 @@ int s2;
   compute_bounds_shell(&int_R,int_Rvec,COMPUTE_R,s1,s2);
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_init_bounds_1der()
 {
   int_init_bounds_1der_nocomp();
@@ -168,14 +171,14 @@ int_init_bounds_1der()
   compute_bounds(&int_R,int_Rvec,COMPUTE_R);
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_done_bounds()
 {
   if (int_Qvec) free(int_Qvec);
   int_Qvec = 0;
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_done_bounds_1der()
 {
   if (int_Qvec) free(int_Qvec);
@@ -269,7 +272,7 @@ int s4;
 
 /* Compute the partial bound arrays, either Q or R can be computed
  * with appropiate choice of flag. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 compute_bounds(overall,vec,flag)
 int_bound_t *overall;
 int_bound_t *vec;
@@ -293,7 +296,7 @@ int flag;
 
 /* Compute the partial bound arrays, either Q or R can be computed
  * with appropiate choice of flag. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 compute_bounds_shell(overall,vec,flag,sh1,sh2)
 int_bound_t *overall;
 int_bound_t *vec;

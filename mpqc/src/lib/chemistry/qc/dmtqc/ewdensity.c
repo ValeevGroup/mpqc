@@ -9,7 +9,7 @@
 
 /* This computes the energy weight density for clscf
  * wavefunctions. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 dmt_ewdensity (C, Fmo, nocc, W)
 dmt_matrix C;
 dmt_matrix Fmo;
@@ -60,7 +60,7 @@ dmt_matrix W;
  * wavefunctions.  The open shell ewd matrix is really just the
  * AO Lagrangian, to within a sign.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 dmt_open_ewdensity (C, F, Fo, ndocc, nsocc, W)
 dmt_matrix C;
 dmt_matrix F;

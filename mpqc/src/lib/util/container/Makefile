@@ -82,9 +82,6 @@ iclean::
 distclean::
 	-/bin/rm -f $(GENINC)
 
-install_inc:: $(INC) $(GENINC)
-	$(INCINSTALL) $^ $(INCDIR)/SC/util/container
-
 $(TESTCXX:%.cc=%.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.o=.d)

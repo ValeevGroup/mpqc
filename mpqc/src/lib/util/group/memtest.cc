@@ -5,42 +5,34 @@
 #include <util/group/mstate.h>
 #include <util/group/hcube.h>
 #include <util/group/memshm.h>
-#ifdef PARAGON
+#ifdef HAVE_NX
 #  include <util/group/memipgon.h>
 #endif
 
 // Force linkages:
 //#ifndef __PIC__
-#ifndef PUMAGON
+#ifdef HAVE_SYSV_IPC
 #   include <util/group/messshm.h>
     const ClassDesc &fl0 = ShmMessageGrp::class_desc_;
 #endif
-# ifdef HAVE_PVM
+#ifdef HAVE_PVM
 #   include <util/group/messpvm.h>
     const ClassDesc &fl2 = PVMMessageGrp::class_desc_;
-# endif
-# ifdef HAVE_MPI
+#endif
+#ifdef HAVE_MPI
 #   include <util/group/messmpi.h>
     const ClassDesc &fl2 = MPIMessageGrp::class_desc_;
-# endif
+#endif
 //#endif
 
 // this is needed for debugging
-#ifdef PARAGON
+#ifdef HAVE_NX
 extern "C" {
 #include <nx.h>
-void gsync(void);
-void crecv(long typesel, char *buf, long count);
-void csend(long type, char *buf, long count, long node, long ptype);
-void gopf(char*,int,char*,long (*rf)(char*,char*));
-void crecvx(long typesel, char *buf, long count, long nodesel,
-                    long ptypesel, long info[]);
-void hrecv(long, char*, long, void (*handler)(long, long, long, long));
-long masktrap(long state);
 }
-#endif // PARAGON
+#endif // HAVE_NX
 
-#if defined(PARAGON)
+#ifdef HAVE_HRECV
 #  define DISABLE do { masktrap(1); fflush(stdout); } while(0)
 #  define ENABLE do { fflush(stdout); masktrap(0); } while(0)
    extern "C" {
@@ -62,7 +54,7 @@ void do_int_tests(const RefMessageGrp&);
 void do_double_tests(const RefMessageGrp&);
 void do_double2_tests(const RefMessageGrp&);
 
-#ifdef PARAGON
+#ifdef HAVE_HRECV
 #  define MemoryGrp_CTOR(msg,size) new IParagonMemoryGrp(msg,size)
 #else
 #  define MemoryGrp_CTOR(msg,size) MemoryGrp::create_memorygrp(size)

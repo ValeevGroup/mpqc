@@ -27,30 +27,34 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/wait.h>
-#include <syslog.h>
 #include <fcntl.h>
-#if !defined(I860)  || defined(PARAGON)
+#ifdef HAVE_SYSLOG_H
+#include <syslog.h>
+#endif
+#ifdef HAVE_TERMIOS_H
 #include <termios.h>
-#else
+#endif
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>  // for umask()
+#endif
 
 #include <iostream.h>
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <util/unix/cct_cprot.h>
 #include <util/unix/daemon.h>
 
-#if defined(SUN) || (defined(SGI) && defined __GNUC__ && __GNUC_MINOR__ < 6)
-extern "C" int syslog(int,char*,...);
-#endif
-
-#if defined(L486)
+#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
 
-#if defined(PARAGON)
-#undef BSD
+#ifndef SIGCLD
 #define SIGCLD SIGCHLD
 #endif
 

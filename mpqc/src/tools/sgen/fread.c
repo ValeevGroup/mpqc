@@ -1,7 +1,10 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:56  etseidl
- * Initial revision
+ * Revision 1.2  1996/03/23 02:38:55  cljanss
+ * Everything can now be configured with autoconf.
+ *
+ * Revision 1.1.1.1  1993/12/29 12:53:57  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.4  1992/07/20  18:37:39  seidl
  * add support for string arrays
@@ -20,14 +23,13 @@
 static char *rcsid = "$Id$";
 
 #include <stdio.h>
-#include <tmpl.h>
 
 #include "fread.gbl"
 #include "fread.lcl"
 
 #include "gen_read.gbl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 fread_gen()
 {
   char *protoargsfmt = "FILE *_fp,%s_t *_%s, int *_offset";

@@ -4,7 +4,7 @@
 #include <util/misc/assert.gbl>
 #include <util/misc/assert.lcl>
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 util_assert(file,line)
 char *file;
 int line;

@@ -7,6 +7,9 @@
  */
 
 /* $Log$
+ * Revision 1.5  1996/03/23 02:37:46  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.4  1995/03/17 01:49:32  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
@@ -80,7 +83,7 @@ static int itable_infinity;
  *     Reidel 1975.  For J < JMAX the values are calculated
  *     using downward recursion in J.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_initialize_fjt(max)
 int max;
 {
@@ -147,7 +150,7 @@ int max;
 
 /* This is called when the fjt routines are no longer needed, or
  * before they are reinitialized with a new maxj. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_done_fjt()
 {
   free_double_matrix(&gtable);
@@ -159,46 +162,27 @@ int_done_fjt()
  * the incomplete gamma function for a particular wval for all 0<=j<=J.
  * The result is placed in the global intermediate int_fjttable.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_fjt(J,wval)
 int J;
 double wval;
 {
-#ifdef NCUBE_V2
-# define sqrpih   0.886226925452758
-# define coef2   0.5000000000000000
-# define coef3  -0.1666666666666667
-# define coef4   0.0416666666666667
-# define coef5  -0.0083333333333333
-# define coef6   0.0013888888888889
-# define gfac30   0.4999489092
-# define gfac31  -0.2473631686
-# define gfac32   0.321180909
-# define gfac33  -0.3811559346
-# define gfac20   0.4998436875
-# define gfac21  -0.24249438
-# define gfac22   0.24642845
-# define gfac10   0.499093162
-# define gfac11  -0.2152832
-# define gfac00  -0.490
-#else
-  CONST double sqrpih =  0.886226925452758;
-  CONST double coef2 =  0.5000000000000000;
-  CONST double coef3 = -0.1666666666666667;
-  CONST double coef4 =  0.0416666666666667;
-  CONST double coef5 = -0.0083333333333333;
-  CONST double coef6 =  0.0013888888888889;
-  CONST double gfac30 =  0.4999489092;
-  CONST double gfac31 = -0.2473631686;
-  CONST double gfac32 =  0.321180909;
-  CONST double gfac33 = -0.3811559346;
-  CONST double gfac20 =  0.4998436875;
-  CONST double gfac21 = -0.24249438;
-  CONST double gfac22 =  0.24642845;
-  CONST double gfac10 =  0.499093162;
-  CONST double gfac11 = -0.2152832;
-  CONST double gfac00 = -0.490;
-#endif
+  const double sqrpih =  0.886226925452758;
+  const double coef2 =  0.5000000000000000;
+  const double coef3 = -0.1666666666666667;
+  const double coef4 =  0.0416666666666667;
+  const double coef5 = -0.0083333333333333;
+  const double coef6 =  0.0013888888888889;
+  const double gfac30 =  0.4999489092;
+  const double gfac31 = -0.2473631686;
+  const double gfac32 =  0.321180909;
+  const double gfac33 = -0.3811559346;
+  const double gfac20 =  0.4998436875;
+  const double gfac21 = -0.24249438;
+  const double gfac22 =  0.24642845;
+  const double gfac10 =  0.499093162;
+  const double gfac11 = -0.2152832;
+  const double gfac00 = -0.490;
 
   double wdif, d2wal, rexpw, /* denom, */ gval, factor, rwval, term;
   int i, itable, irange;

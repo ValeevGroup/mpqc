@@ -32,7 +32,7 @@
 //   An include file can be used to set these options as well.  This has
 // the advantage that dependency checking will force an automatic
 // recompile of all affected files if the options change.  The file
-// <refconfig.h> will be include if -DREF_CONFIG is specified.
+// <config.h> will be include if -DHAVE_CONFIG_H is specified.
 //
 //   Note that all source code that uses references must be compiled with
 // the same value for REF_CHECKSUM and REF_MANAGE.  Changing these can
@@ -52,8 +52,8 @@
 
 #include <util/ref/identity.h>
 
-#ifdef REF_CONFIG
-#include <refconfig.h>
+#ifdef HAVE_CONFIG_H
+#include <config.h>
 #endif
 
 #ifdef REF_OPTIMIZE

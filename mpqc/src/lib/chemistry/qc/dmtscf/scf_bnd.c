@@ -56,7 +56,7 @@ double *intbuf;
  *
  */
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 scf_done_bounds()
 {
   int_done_bounds();

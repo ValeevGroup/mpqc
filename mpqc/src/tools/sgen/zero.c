@@ -2,6 +2,9 @@
  * routine zero_x will zero out arrays in x */
 
 /* $Log$
+ * Revision 1.5  1996/03/23 02:39:10  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.4  1994/10/21 20:39:52  cljanss
  * Work arounds for IRIX 6.0 IDO/C++ bugs.
  *
@@ -34,7 +37,6 @@
  * */
  
 #include <stdio.h>
-#include <tmpl.h>
 #include <string.h>
 #include "types.h"
 #include "global.h"
@@ -45,7 +47,7 @@
 #include "zero.gbl"
 #include "zero.lcl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 zero_gen()
 {
   declaration_t *I;
@@ -117,7 +119,7 @@ zero_gen()
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 zero_member(member,structname)
 member_t *member;
 char *structname;
@@ -194,7 +196,7 @@ char *structname;
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 zero_elementary(member,structname,indices,spaces,array_type,range)
 member_t *member;
 char *structname;

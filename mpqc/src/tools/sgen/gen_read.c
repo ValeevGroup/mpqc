@@ -5,6 +5,9 @@
  * code. */
 
 /* $Log$
+ * Revision 1.6  1996/03/23 02:38:57  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.5  1994/10/31 17:55:34  etseidl
  * include string.h in generated c file
  *
@@ -81,7 +84,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <tmpl.h>
 #include "types.h"
 #include "global.h"
 
@@ -91,7 +93,7 @@
 #include "sgen_util.gbl"
 #include "error.gbl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 general_read_gen(suffix,readname,basicname,
                  protoargsfmt,funcargsfmt,funcdecsfmt,elemargsfmt,tpointerargs,
                  strpointerargs,useoffsets,extra_includes)
@@ -198,7 +200,7 @@ char *extra_includes;
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 general_read_member(readname,basicname, elemargsfmt,tpointerargs,
     strpointerargs,member,structname)
 char *readname;
@@ -396,7 +398,7 @@ char *structname;
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 general_read_elementary(readname,basicname,elemargsfmt,strpointerargs,
                         member,structname,indices,spaces,array_type,range)
 char *readname;

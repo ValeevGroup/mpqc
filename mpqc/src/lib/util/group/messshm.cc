@@ -8,14 +8,6 @@
 #include <util/misc/bug.h>
 #include <util/group/messshm.h>
 
-#if defined(OSF) || defined(SUNMOS) || defined(AIX)
-union semun {
-  int val;
-  struct semid_ds *buf;
-  u_short *array;
-};
-#endif
-
 //#define DEBUG
 
 #ifndef SEM_A
@@ -24,22 +16,6 @@ union semun {
 
 #ifndef SEM_R
 #  define SEM_R 0400
-#endif
-
-#ifdef L486
-#  define SEMCTL_REQUIRES_SEMUN
-#endif
-
-#if defined(L486) || defined(PARAGON)
-#ifndef SHMCTL_REQUIRES_SHMID
-#  define SHMCTL_REQUIRES_SHMID
-#endif
-#endif
-
-#if defined(L486) || defined(PARAGON)
-#ifndef SHMDT_CHAR
-#  define SHMDT_CHAR
-#endif
 #endif
 
 /* Set the maximum number of processors (including the host). */
@@ -223,28 +199,19 @@ ShmMessageGrp::~ShmMessageGrp()
           wait_for_write(0);
         };
       release_write(0);
-#ifdef SHMDT_CHAR
-      shmdt((char*)sharedmem);
-#else
-      shmdt(sharedmem);
-#endif
+      shmdt((SHMTYPE)sharedmem);
       // release the memory
-#ifdef SHMCTL_REQUIRES_SHMID
       shmctl(shmid,IPC_RMID,0);
-#else
-      shmctl(shmid,IPC_RMID);
-#endif
 
       for (int i=0; i<n(); i++) {
 #ifdef SEMCTL_REQUIRES_SEMUN
           semun junk;
           junk.val = 0;
+#else
+          int junk = 0;
+#endif
           semctl(semid,i,IPC_RMID,junk);
           semctl(change_semid,i,IPC_RMID,junk);
-#else
-          semctl(semid,i,IPC_RMID);
-          semctl(change_semid,i,IPC_RMID);
-#endif
         }
     }
   else {
@@ -254,11 +221,7 @@ ShmMessageGrp::~ShmMessageGrp()
           put_change(0);
           commbuf[0]->n_wait_for_change--;
         }
-#ifdef SHMDT_CHAR
-      shmdt((char*)sharedmem);
-#else
-      shmdt(sharedmem);
-#endif
+      shmdt((SHMTYPE)sharedmem);
       release_write(0);
     }
 }
@@ -290,7 +253,7 @@ ShmMessageGrp::initialize(int nprocs)
                  IPC_CREAT | SHM_R | SHM_W);
 
   // Attach the shared segment.
-  nextbuf = sharedmem = shmat(shmid,NULL,0);
+  nextbuf = sharedmem = shmat(shmid,0,0);
 
 #ifdef SEMCTL_REQUIRES_SEMUN
   semun semzero;

@@ -130,7 +130,7 @@ INLINE long QCXDR::byte_swap(unsigned long l)
 
 INLINE void QCXDR::byte_swap(float*f)
 {
-#if defined(SGI) && !defined(__GNUG__)
+#if defined(sgi) && !defined(__GNUG__)
   fprintf(stderr,
           "QCXDR::byte_swap(float): not available because of compiler bug\n");
   abort();

@@ -5,6 +5,9 @@
  * code. */
 
 /* $Log$
+ * Revision 1.3  1996/03/23 02:38:58  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.2  1994/10/18 23:03:51  etseidl
  * fix many warnings, use memset rather than bzero
  *
@@ -66,7 +69,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <tmpl.h>
 #include "types.h"
 #include "global.h"
 
@@ -76,7 +78,7 @@
 #include "sgen_util.gbl"
 #include "error.gbl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 general_write_gen(suffix,writename,basicname,
                  protoargsfmt,funcargsfmt,funcdecsfmt,elemargsfmt,
                  selemargsfmt,useoffsets,extra_includes)
@@ -177,7 +179,7 @@ char *extra_includes;
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 general_write_member(writename,basicname,elemargsfmt,selemargsfmt,
                    member,structname)
 char *writename;
@@ -298,7 +300,7 @@ char *structname;
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 general_write_elementary(writename,basicname,elemargsfmt,selemargsfmt,
                          member,structname,indices,spaces,array_type,range)
 char *writename;

@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.8  1996/03/23 02:37:45  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.7  1995/10/25 21:19:49  cljanss
  * Adding support for pure am.  Gradients don't yet work.
  *
@@ -317,7 +320,7 @@ centers_t *cs4;
 
 /* This is called when no more 2 electron integrals are needed.
  * It will free the intermediates. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_done_erep()
 {
   if (int_derint_buffer) free(int_derint_buffer);
@@ -343,7 +346,7 @@ int_done_erep()
 
 /* Allocates storage for the intermediates.  The arguments are the
  * total number of unique primitive and shells. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 alloc_inter(nprim,nshell)
 int nprim;
 int nshell;
@@ -370,7 +373,7 @@ int nshell;
     }
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 compute_shell_1(cs)
 centers_t *cs;
 {
@@ -395,7 +398,7 @@ centers_t *cs;
     }
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 compute_prim_1(cs1)
 centers_t *cs1;
 {
@@ -426,7 +429,7 @@ centers_t *cs1;
 #endif
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 compute_shell_2(cs1,cs2)
 centers_t *cs1;
 centers_t *cs2;
@@ -435,7 +438,7 @@ centers_t *cs2;
   }
 
 /* The 2 primitive intermediates. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 compute_prim_2(cs1,cs2)
 centers_t *cs1;
 centers_t *cs2;
@@ -445,7 +448,7 @@ centers_t *cs2;
   shell_t *shell1,*shell2;
   int i;
   /* This is 2^(1/2) * pi^(5/4) */
-  CONST double sqrt2pi54 = 5.9149671727956129;
+  const double sqrt2pi54 = 5.9149671727956129;
   double AmB,AmB2;
 
   offset1 = cs1->prim_offset;
@@ -504,7 +507,7 @@ centers_t *cs2;
     }
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 fail()
 {
   fprintf(stderr,"failing module:\n%s\n",__FILE__);

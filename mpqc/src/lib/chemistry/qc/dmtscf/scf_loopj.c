@@ -148,7 +148,7 @@ FILE *outfile;
 }
 
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 mgd_int_loop(centers,scf_info,sym_info,gdb,mgdbuff,maxpijkl,tnint)
 centers_t *centers;
 scf_struct_t *scf_info;
@@ -262,7 +262,7 @@ double *tnint;
   (*tnint)+= (double) (n1*n2*n3*n4);
 }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 fill_max(DPmat,maxp)
 dmt_matrix DPmat;
 double *maxp;

@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.4  1996/03/23 02:38:08  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.3  1995/03/17 01:50:09  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
@@ -79,7 +82,7 @@ static int keep_ncv=0;
 static double_matrix_t aav,bbv;
 
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 math_dvxdv_dv(AF,ta,BF,tb,CF,tc,nr,nl,nc,add)
 double_vector_t *AF;
 int ta;
@@ -140,7 +143,7 @@ int add;
   free_double_matrix(&scr1);
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 math_dmxdv_dv(AF,ta,BF,tb,CF,tc,nr,nl,nc,add)
 double_matrix_t *AF;
 int ta;
@@ -185,7 +188,7 @@ int add;
   free_double_matrix(&scr);
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 math_dvxdm_dv(AF,ta,BF,tb,CF,tc,nr,nl,nc,add)
 double_vector_t *AF;
 int ta;
@@ -230,7 +233,7 @@ int add;
   free_double_matrix(&scr);
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 math_dmxdm_dv(AF,ta,BF,tb,CF,tc,nr,nl,nc,add)
 double_matrix_t *AF;
 int ta;
@@ -246,7 +249,7 @@ int add;
   math_double_mxmv(AF->d,ta,BF->d,tb,CF->d,tc,nr,nl,nc,add);
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 math_double_mxmv(AF,ta,BF,tb,CF,tc,nr,nl,nc,add)
 double **AF;
 int ta;

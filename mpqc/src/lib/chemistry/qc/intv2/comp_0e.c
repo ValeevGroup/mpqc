@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.6  1996/03/23 02:37:37  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.5  1995/03/17 01:49:24  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
@@ -78,7 +81,7 @@ centers_t *cs2;
 /* This computes the efield at position due to the nuclei.  The result
  * is written to efield.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_nuclear_efield(cs1,cs2,position,efield)
 centers_t *cs1;
 centers_t *cs2;
@@ -112,7 +115,7 @@ double *efield;
 
 /* Compute the nuclear repulsion energy first derivative with respect
  * to the given center. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_nuclear_repulsion_1der(cs1,cs2,repder,csder,cdernum)
 centers_t *cs1;
 centers_t *cs2;

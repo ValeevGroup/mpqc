@@ -19,30 +19,30 @@
  *      November, 1992
  */
 
-#ifndef _libQC_usignal_h
-#define _libQC_usignal_h
-
 #ifdef __GNUC__
 #pragma interface
 #endif
 
+#ifndef _libQC_usignal_h
+#define _libQC_usignal_h
+
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <signal.h>
 
-#if defined(SGI)
-#if defined(__GNUC__) && __GNUC_MINOR__ < 6
-typedef  void  Sigfunc(int,...);  /* for signal handlers */
-#else
-typedef  void  Sigfunc(...);  /* for signal handlers */
-#endif
+#if defined(SIGHASELLIP)
+typedef  RETSIGTYPE  Sigfunc(...);  /* for signal handlers */
 #define SIG_HANDLER(a,b) void a(int b,...)
 #else
-typedef  void  Sigfunc(int);  /* for signal handlers */
+typedef  RETSIGTYPE  Sigfunc(int);  /* for signal handlers */
 #define SIG_HANDLER(a,b) void a(int b)
 #endif
 typedef Sigfunc* Sigfunc_t;
 
 
-#if !defined(I860) || defined(PARAGON)
+#if defined(HAVE_SIGFILLSET)
 /////////////////////////////////////////////////////////////////////////
 
 class UnixSignalSet {

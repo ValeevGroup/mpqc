@@ -7,7 +7,7 @@
 #include <util/group/topology.h>
 #include <util/group/hcube.h>
 #include <util/class/classMap.h>
-#if defined(PARAGON)
+#ifdef HAVE_NX
 #  include <util/group/messpgon.h>
 #endif
 
@@ -65,7 +65,7 @@ MessageGrp::get_default_messagegrp()
 MessageGrp*
 MessageGrp::initial_messagegrp(int argc, char** argv)
 {
-#if defined(PARAGON)
+#ifdef HAVE_NX
   // the initial message group on the paragon is always ParagonMessageGrp
   return new ParagonMessageGrp;
 #else

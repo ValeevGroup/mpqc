@@ -5,8 +5,6 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-#CXXFLAGS = $(CXXFLAGS_DEBUG)
-
 TARGET_TO_MAKE = libwfn
 BIN_OR_LIB = LIB
 

@@ -3,16 +3,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <util/group/picl.h>
 
-#if defined(I860) && !defined(PARAGON)
+#ifdef HAVE_CUBE_H
+#include <cube.h>
+#endif
+#ifdef HAVE_NX_H
 #include <cube.h>
 #endif
 
 void
 gcollect(double *x, int *lens, double *y)
 {
-#if defined(I860) && !defined(PARAGON)
+#if defined(HAVE_CUBE_H) || defined(HAVE_NX_H)
   gcolx(x,lens,y);
 #else
 

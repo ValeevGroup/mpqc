@@ -10,13 +10,6 @@ BIN_OR_LIB = LIB
 
 DEFINES += -DTIMING
 
-# This is for matrix.web.  Adding throttling (on 4-10-92) caused
-# some problem with optimization.
-ifeq ($(ARCH),NCUBE_V2)
-  CFLAGS := $(CFLAGS_DEBUG)
-  FFLAGS := $(FFLAGS_DEBUG)
-endif
-
 CSRC = hql.c ptred.c
 
 INC = libdmt.h matrix.h

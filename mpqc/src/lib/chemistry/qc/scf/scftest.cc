@@ -1,4 +1,8 @@
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <string.h>
 
 #include <sys/stat.h>
@@ -25,12 +29,12 @@ const ClassDesc &fl2 = QNewtonOpt::class_desc_;
 const ClassDesc &fl3 = GDIISOpt::class_desc_;
 const ClassDesc &fl4 = EFCOpt::class_desc_;
 const ClassDesc &fl5 = BFGSUpdate::class_desc_;
-# ifndef PARAGON
+# ifdef HAVE_SYSV_IPC
 #   include <util/group/messshm.h>
     const ClassDesc &fl8 = ShmMessageGrp::class_desc_;
-    const ClassDesc &fl9 = ProcMessageGrp::class_desc_;
 # endif
-# ifdef PARAGON
+const ClassDesc &fl9 = ProcMessageGrp::class_desc_;
+# ifdef HAVE_NX_H
 #  include <util/group/messpgon.h>
     const ClassDesc &fl10 = ParagonMessageGrp::class_desc_;
 # endif
@@ -43,7 +47,7 @@ init_mp(const char *inputfile)
 
   // if we are on a paragon then use a ParagonMessageGrp
   // otherwise read the message group from the input file
-#if defined(PARAGON)
+#ifdef HAVE_NX_H
   grp = new ParagonMessageGrp;
 #else
   RefKeyVal keyval = new ParsedKeyVal(inputfile);

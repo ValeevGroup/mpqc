@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.3  1996/03/23 02:39:02  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.2  1994/10/18 23:03:58  etseidl
  * fix many warnings, use memset rather than bzero
  *
@@ -30,7 +33,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <tmpl.h>
 #include "types.h"
 #include "global.h"
 
@@ -40,7 +42,7 @@
 #include "error.gbl"
 #include "sgen_util.gbl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 print_gen()
 {
   declaration_t *I;
@@ -114,7 +116,7 @@ print_gen()
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 print_member(member,structname)
 member_t *member;
 char *structname;
@@ -218,7 +220,7 @@ char *structname;
   reset_indent();
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 print_elementary(member,structname,indices,spaces)
 member_t *member;
 char *structname;
@@ -289,7 +291,7 @@ char *spaces;
 #endif /* BASIC_TYPES_DIRECT */
  }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 adjust_indent(n,spaces)
 int n;
 char *spaces;
@@ -298,7 +300,7 @@ char *spaces;
   else fprintf(output,"  sgen_print_nindent += %d;\n",n);
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 reset_indent()
 {
   fprintf(output,"  sgen_print_nindent = orig_indent;\n");

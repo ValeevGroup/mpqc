@@ -4,7 +4,7 @@
 #include <util/group/picl.h>
 #include <util/group/message.h>
 
-#if defined(PARAGON)
+#if defined(HAVE_NX)
 #  include <nx.h>
 #elif defined(HAVE_MPI)
 #  include <mpi.h>
@@ -44,7 +44,7 @@ check0(int)
 #define CLOCKS_PER_SEC ((int) 1000000)
 #endif
 
-#if defined(PARAGON)
+#if defined(HAVE_NX)
 double clock0()
 {
   static double first;
@@ -504,19 +504,13 @@ ginv0(int i)
 ///////////////////////////////////////////////////////////////////////////
 // These routines are not a part of picl, but their use crept into the code.
 
-#if defined(PARAGON)
+#if defined(HAVE_NX)
 # include <nx.h>
-  // things missing from nx.h:
-  extern "C" {
-    void gdlow(double x[], long n, double work[]);
-    void gdhigh(double x[], long n, double work[]);
-    void gdsum(double x[], long n, double work[]);
-  }
-#elif defined(I860)
+#elif defined(HAVE_CUBE_H)
 # include <cube.h>
 #endif
 
-#if defined(I860) && !defined(PARAGON)
+#if HAVE_CUBE_H
 /* the following is a fast global sum for long vectors.
  * It was written by Stan Erwin, an Intel employee at the NIH.
  *
@@ -586,10 +580,9 @@ gdcomb(int n, double* x, double* y, int dim, int idim)
 
 #endif // I860
 
-#if defined(SUNMOS)
-
 #define PUMA_LEN 10240
 
+#if defined(HAVE_NX)
 static void
 puma_sum(double *val, int len, double *tmp)
 {
@@ -612,7 +605,7 @@ puma_sum(double *val, int len, double *tmp)
 
 void gop1(double* val, int len, double* tmp, int op, int type)
 {
-#if defined(PARAGON)
+#if defined(HAVE_NX)
   switch (op) {
     case 'm':
       gdlow(val,len,tmp);
@@ -621,14 +614,10 @@ void gop1(double* val, int len, double* tmp, int op, int type)
       gdhigh(val,len,tmp);
       break;
     case '+':
-#if defined(SUNMOS)
       puma_sum(val,len,tmp);
-#else      
-      gdsum(val,len,tmp);
-#endif
       break;
     }
-#elif defined(I860)
+#elif defined(HAVE_CUBE_H)
   switch (op) {
     case 'm':
       gmin0(val,len,5,type,0);
@@ -704,7 +693,7 @@ void gop0_sc(signed char*val,int len,int op,int type)
   bcast0(val,len,type,0);
 }
 
-#if !defined(I860)
+#if !defined(HAVE_CUBE_H)
 int cubedim_() {
   int n,p,me, host,i=0;
   who0(&p,&me,&host);
@@ -712,7 +701,7 @@ int cubedim_() {
   while (n > 0) {n >>= 1; i++;}
   return (i-1);
 }
-#ifndef NCUBE
+
 int cubedim() {
   int n,p,me, host,i=0;
   who0(&p,&me,&host);
@@ -720,6 +709,7 @@ int cubedim() {
   while (n > 0) {n >>= 1; i++;}
   return (i-1);
 }
+#if !defined(HAVE_NX)
 int mynode() {
   int p, me, host;
   who0(&p, &me, &host);
@@ -730,7 +720,7 @@ int mynode_() {
   who0(&p, &me, &host);
   return (me);
 }
-#endif /*NCUBE*/
+
 int numnodes_() {
   int p, me, host;
   who0(&p, &me, &host);
@@ -747,7 +737,8 @@ int infocount() {
   recvinfo0(&bytes,&type,&source);
   return(bytes);
 }
-#endif /* !I860 */
+#endif /* !HAVE_NX */
+#endif /* !HAVE_CUBE_H */
 
 int mynode0() {
   int p, me, host;

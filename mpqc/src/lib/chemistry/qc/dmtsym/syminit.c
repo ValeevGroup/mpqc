@@ -150,7 +150,7 @@ double *tr;
  * return the transformed coordinates in tr
  */
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 new_r(r,tr,tm)
 double *r;
 double *tr;

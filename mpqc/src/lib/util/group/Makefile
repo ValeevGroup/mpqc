@@ -14,16 +14,15 @@ OPTIONALCXXSRC = messshm.cc messpgon.cc messpvm.cc messmpi.cc memshm.cc \
                  mempgon.cc memipgon.cc memmpl.cc
 
 CXXSRC := $(REQUIREDCXXSRC)
-ifneq ($(ARCH),SUNMOS)
-ifneq ($(ARCH),PARAGON)
+
+ifeq ($(HAVE_SYSV_IPC),yes)
   CXXSRC += messshm.cc memshm.cc
 endif
-endif
-ifeq ($(ARCH),PARAGON)
-  CXXSRC += messpgon.cc mempgon.cc memipgon.cc
-endif
-ifeq ($(ARCH),SUNMOS)
+ifeq ($(HAVE_NX),yes)
   CXXSRC += messpgon.cc memipgon.cc
+ifeq ($(HAVE_HRECV),yes)
+  CXXSRC += mempgon.cc
+endif
 endif
 ifeq ($(HAVE_PVM),yes)
   CXXSRC += messpvm.cc

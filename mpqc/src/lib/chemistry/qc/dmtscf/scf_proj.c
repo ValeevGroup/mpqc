@@ -329,7 +329,7 @@ int nocc;
   return(0);
 }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 form_s2(new_cen,oldcenters,S2)
 centers_t *new_cen;
 centers_t *oldcenters;

@@ -1,6 +1,6 @@
 
-#ifndef _util_group_messshm_h
-#define _util_group_messshm_h
+#ifndef _util_group_messpgon_h
+#define _util_group_messpgon_h
 
 #include <util/group/message.h>
 

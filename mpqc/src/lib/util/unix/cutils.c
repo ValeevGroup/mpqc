@@ -30,6 +30,10 @@
  * I assume that it is public domain -- ETS
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,6 +45,10 @@
 #include <unistd.h>
 
 #include  <util/unix/cct_cprot.h>
+
+#ifdef HAVE_SYSLOG_H
+#include <syslog.h>
+#endif
 
 static void  err_doit(int, const char *, va_list);
 
@@ -142,8 +150,6 @@ err_doit(int errnoflag, const char *fmt, va_list ap)
 
 /* Error routines for programs that can run as a daemon. */
 
-#include <syslog.h>
-
 static void log_doit(int, int, const char *, va_list ap);
 
 /* Initialize syslog(), if running as daemon. */
@@ -151,7 +157,7 @@ static void log_doit(int, int, const char *, va_list ap);
 void
 log_open(const char *ident, int option, int facility)
 {
-#if !defined(I860) || defined (PARAGON)
+#ifdef HAVE_SYSLOG_H
   openlog(ident, option, facility);
 #endif
 }
@@ -165,7 +171,9 @@ log_ret(const char *fmt, ...)
   va_list ap;
 
   va_start(ap, fmt);
+#ifdef HAVE_SYSLOG_H
   log_doit(1, LOG_ERR, fmt, ap);
+#endif
   va_end(ap);
   return;
   }
@@ -179,7 +187,9 @@ log_sys(const char *fmt, ...)
   va_list ap;
 
   va_start(ap, fmt);
+#ifdef HAVE_SYSLOG_H
   log_doit(1, LOG_ERR, fmt, ap);
+#endif
   va_end(ap);
   exit(2);
   }
@@ -193,7 +203,9 @@ log_msg(const char *fmt, ...)
   va_list ap;
 
   va_start(ap, fmt);
+#ifdef HAVE_SYSLOG_H
   log_doit(0, LOG_ERR, fmt, ap);
+#endif
   va_end(ap);
   return;
   }
@@ -207,7 +219,9 @@ log_quit(const char *fmt, ...)
   va_list ap;
 
   va_start(ap, fmt);
+#ifdef HAVE_SYSLOG_H
   log_doit(0, LOG_ERR, fmt, ap);
+#endif
   va_end(ap);
   exit(2);
   }
@@ -228,7 +242,7 @@ log_doit(int errnoflag, int priority, const char *fmt, va_list ap)
 
   strcat(buf, "\n");
 
-#if !defined(I860) || defined (PARAGON)
+#ifdef HAVE_SYSLOG_H
   syslog(priority, buf);
 #endif
 
@@ -237,7 +251,7 @@ log_doit(int errnoflag, int priority, const char *fmt, va_list ap)
 
 /**************************************************************/
 
-#if !defined(PARAGON)
+#if !defined(HAVE_STRERROR)
 
 static struct errordesc {
   int val;
@@ -561,15 +575,7 @@ close_open_files()
 void
 pr_exit(int status)
 {
-#if defined(I860) && !defined(PARAGON)
-  union wait stat;
-  stat.w_status=status;
-#define WEXITSTATUS(x) ((x).w_retcode)
-#define WSTOPSIG(x) ((x).w_stopsig)
-#define WTERMSIG(x) ((x).w_termsig)
-#else
   int stat=status;
-#endif
 
   if(WIFEXITED(stat))
    fprintf(stderr,"normal termination, exit status = %d\n",WEXITSTATUS(stat));

@@ -1,10 +1,11 @@
 #!/bin/csh -f
 
+set sub = 's_/[^/]*/\.\.\(/\)\?_\1_'
 set originalpath = $1
-set newpath = `echo $originalpath | sed 's/\/[^/]*\/\.\.\//\//'`
+set newpath = `echo $originalpath | sed "$sub"`
 while ($newpath != $originalpath)
   set originalpath = $newpath
-  set newpath = `echo $originalpath | sed 's/\/[^/]*\/\.\.\//\//'`
+  set newpath = `echo $originalpath | sed "$sub"`
   end
 
 echo $newpath

@@ -269,7 +269,7 @@ dmt_matrix Scr3;
  *
  */
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 scf_done_diis(scf_info)
 scf_struct_t *scf_info;
 {

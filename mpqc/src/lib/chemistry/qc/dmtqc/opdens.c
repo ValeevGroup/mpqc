@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.4  1996/03/23 02:37:05  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.3  1995/03/17 01:48:29  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
@@ -35,7 +38,7 @@
 
 /* This computes the open-shell density */
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 dmt_open_density (C, ndoc, nsoc, PO)
 dmt_matrix C;
 int ndoc;

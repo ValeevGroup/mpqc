@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.3  1996/03/23 02:39:03  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.2  1995/03/18 00:09:57  cljanss
  * Using util/group to provide picl support.  Deleted the comm directory.
  *
@@ -33,14 +36,13 @@
 static char *rcsid = "$Id:";
 
 #include <stdio.h>
-#include <tmpl.h>
 
 #include "rbcast0.gbl"
 #include "rbcast0.lcl"
 
 #include "gen_read.gbl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 rbcast0_gen()
 {
   char *protoargsfmt = "%s_t *_%s,int _type,int _root";

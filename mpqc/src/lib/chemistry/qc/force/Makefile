@@ -10,10 +10,6 @@ BIN_OR_LIB = LIB
 
 DEFINES += -DTIMING
 
-ifeq ($(ARCH),SUN4)
-override COPTIONS = -O2
-endif
-
 HISTORICALWEBSRC = spcsscf.web mpcsscf.web mposscf.web
 WEBSRC = mpcsscf.web mposscf.web
 .PRECIOUS: $(WEBSRC:%.web=%.c)

@@ -30,15 +30,19 @@
 #ifndef _libQC_xdr_h
 #define _libQC_xdr_h
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 extern "C" {
-#if defined(__GNUC__) || defined(SGI)
+#if defined(__GNUC__) || defined(sgi)
 #include <limits.h>  // use the gnu limits.h
 #else
 #include <sys/limits.h>
 #endif
 }
 
-#if defined(sparc) || defined(sgi) || defined(rs6000)
+#if defined(WORDS_BIGENDIAN)
 #define BIGENDIAN 1
 #else
 #define BIGENDIAN 0

@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.11  1996/03/23 02:37:39  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.10  1995/11/16 00:47:29  cljanss
  * Removed normalization for individual basis functions.
  *
@@ -190,7 +193,7 @@ centers_t *cs2;
   return scratch;
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_done_1e()
 {
   int_done_fjt();
@@ -209,7 +212,7 @@ int_done_1e()
 /* This computes the overlap integrals between functions in two shells.
  * The result is placed in the buffer.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_shell_overlap(cs1,cs2,buff,ish,jsh)
 centers_t *cs1;
 centers_t *cs2;
@@ -243,7 +246,7 @@ int jsh;
 /* This computes the overlap ints between functions in two shells.
  * The result is placed in the buffer.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_shell_overlap_1der(cs1,cs2,buff,ish,jsh,dercs,centernum)
 centers_t *cs1;
 centers_t *cs2;
@@ -288,7 +291,7 @@ int centernum;
  * in two shells.  The result is accumulated in the buffer which is ordered
  * atom 0 x, y, z, atom 1, ... .
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_accum_shell_overlap_1der(cs1,cs2,buff,ish,jsh,dercs,centernum)
 centers_t *cs1;
 centers_t *cs2;
@@ -452,7 +455,7 @@ int k2;
 /* This computes the kinetic energy integrals between functions in two shells.
  * The result is placed in the buffer.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_shell_kinetic(cs1,cs2,buff,ish,jsh)
 centers_t *cs1;
 centers_t *cs2;
@@ -484,7 +487,7 @@ int jsh;
   int_transform_1e(cartesianbuffer, buff, shell1, shell2);
   }
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_accum_shell_kinetic(cs1,cs2,buff,ish,jsh)
 centers_t *cs1;
 centers_t *cs2;
@@ -520,7 +523,7 @@ int jsh;
  * in two shells.  The result is accumulated in the buffer which is ordered
  * atom 0 x, y, z, atom 1, ... .
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_accum_shell_kinetic_1der(cs1,cs2,buff,ish,jsh,dercs,centernum)
 centers_t *cs1;
 centers_t *cs2;
@@ -539,7 +542,7 @@ int centernum;
  * atom 0 x, y, z, atom 1, ... .
  * The function used to compute the nonderivative integrals is shell_function.
  */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 accum_shell_1der(cs1,cs2,buff,ish,jsh,dercs,centernum,shell_function)
 centers_t *cs1;
 centers_t *cs2;
@@ -796,7 +799,7 @@ int k2;
  * in two shells.  The result is accumulated in the buffer which is ordered
  * atom 0 x, y, z, atom 1, ... .
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_accum_shell_nuclear_1der(cs1,cs2,buff,ish,jsh,dercs,centernum)
 centers_t *cs1;
 centers_t *cs2;
@@ -815,7 +818,7 @@ int centernum;
  * if the real Hellman-Feynman forces are desired, because the sum
  * of the hf_1der and nonhf_1der forces are still correct.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_accum_shell_nuclear_hfc_1der(cs1,cs2,buff,ish,jsh,dercs,centernum)
 centers_t *cs1;
 centers_t *cs2;
@@ -849,7 +852,7 @@ int centernum;
  * in two shells.  The result is accumulated in the buffer which is ordered
  * atom 0 x, y, z, atom 1, ... .  Only the Hellman-Feynman part is computed.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_accum_shell_nuclear_hf_1der(cs1,cs2,buff,ish,jsh,dercs,centernum)
 centers_t *cs1;
 centers_t *cs2;
@@ -890,7 +893,7 @@ int centernum;
  * in two shells.  The result is accumulated in the buffer which is ordered
  * atom 0 x, y, z, atom 1, ... .  Only the non Hellman-Feynman part is computed.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_accum_shell_nuclear_nonhf_1der(cs1,cs2,buff,ish,jsh,dercs,centernum)
 centers_t *cs1;
 centers_t *cs2;
@@ -936,7 +939,7 @@ int centernum;
  * The result is accumulated in the buffer in the form bf1 x y z, bf2
  * x y z, etc.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_accum_shell_efield(cs1,cs2,buff,ish,jsh,position)
 centers_t *cs1;
 centers_t *cs2;
@@ -955,7 +958,7 @@ double *position;
  * x y z, etc.  The globals scale_shell_result, result_scale_factor,
  * and C must be set before this is called.
  */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 accum_shell_efield(cs1,cs2,buff,ish,jsh)
 centers_t *cs1;
 centers_t *cs2;
@@ -1001,7 +1004,7 @@ int jsh;
 /* This computes the nuc rep energy integrals between functions in two shells.
  * The result is placed in the buffer.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_shell_nuclear(cs1,cs2,buff,ish,jsh)
 centers_t *cs1;
 centers_t *cs2;
@@ -1058,7 +1061,7 @@ int jsh;
  * a point charge interaction operator.
  * The result is placed in the buffer.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_accum_shell_point_charge(cs1,cs2,buff,ish,jsh,ncharge,charge,position)
 centers_t *cs1;
 centers_t *cs2;
@@ -1112,7 +1115,7 @@ double** position;
  * a point charge interaction operator.
  * The result is placed in the buffer.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_shell_point_charge(cs1,cs2,buff,ish,jsh,ncharge,charge,position)
 centers_t *cs1;
 centers_t *cs2;
@@ -1164,7 +1167,7 @@ double** position;
 /* This computes the 1e Hamiltonian integrals between functions in two shells.
  * The result is placed in the buffer.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_shell_hcore(cs1,cs2,buff,ish,jsh)
 centers_t *cs1;
 centers_t *cs2;
@@ -1220,7 +1223,7 @@ int jsh;
 /* This computes the 1e Hamiltonian deriv ints between functions in two shells.
  * The result is placed in the buffer.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_shell_hcore_1der(cs1,cs2,buff,ish,jsh,dercs,centernum)
 centers_t *cs1;
 centers_t *cs2;
@@ -1262,7 +1265,7 @@ int centernum;
 /* This computes the kinetic deriv ints between functions in two shells.
  * The result is placed in the buffer.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_shell_kinetic_1der(cs1,cs2,buff,ish,jsh,dercs,centernum)
 centers_t *cs1;
 centers_t *cs2;
@@ -1303,7 +1306,7 @@ int centernum;
 /* This computes the nuclear deriv ints between functions in two shells.
  * The result is placed in the buffer.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_shell_nuclear_1der(cs1,cs2,buff,ish,jsh,dercs,centernum)
 centers_t *cs1;
 centers_t *cs2;
@@ -1345,7 +1348,7 @@ int centernum;
  * Only the Hellman-Feynman part is computed.
  * The result is placed in the buffer.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_shell_nuclear_hf_1der(cs1,cs2,buff,ish,jsh,dercs,centernum)
 centers_t *cs1;
 centers_t *cs2;
@@ -1387,7 +1390,7 @@ int centernum;
  * Only the non Hellman-Feynman part is computed.
  * The result is placed in the buffer.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_shell_nuclear_nonhf_1der(cs1,cs2,buff,ish,jsh,dercs,centernum)
 centers_t *cs1;
 centers_t *cs2;
@@ -1590,7 +1593,7 @@ int m;
  * the electric field vector, the
  * cartesian exponents for centers 1 and 2.  The shell1 and shell2
  * globals are used. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 comp_shell_efield(efield,gc1,i1,j1,k1,gc2,i2,j2,k2)
 double *efield;
 int gc1;
@@ -1768,7 +1771,7 @@ int m;
  * x y z, etc.  The last arg, com, is the origin of the coordinate
  * system used to compute the dipole moment.
  */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 int_accum_shell_dipole(cs1,cs2,buff,ish,jsh,com)
 centers_t *cs1;
 centers_t *cs2;

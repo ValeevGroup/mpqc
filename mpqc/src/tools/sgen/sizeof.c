@@ -3,8 +3,11 @@
  * in bytes, including arrays, etc. */
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:58  etseidl
- * Initial revision
+ * Revision 1.2  1996/03/23 02:39:08  cljanss
+ * Everything can now be configured with autoconf.
+ *
+ * Revision 1.1.1.1  1993/12/29 12:53:59  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.2  1992/06/17  23:07:49  jannsen
  * modified to generate clean code
@@ -22,7 +25,6 @@
 static char rcsid[] = "$Id$";
 
 #include <stdio.h>
-#include <tmpl.h>
 #include <string.h>
 #include "types.h"
 #include "global.h"
@@ -30,7 +32,7 @@ static char rcsid[] = "$Id$";
 #include "sizeof.gbl"
 #include "sizeof.lcl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 sizeof_gen()
 {
   declaration_t *I;
@@ -104,7 +106,7 @@ sizeof_gen()
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 sizeof_member(member,structname)
 member_t *member;
 char *structname;
@@ -214,7 +216,7 @@ char *structname;
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 sizeof_elementary(member,structname,indices,spaces,array_type,range)
 member_t *member;
 char *structname;

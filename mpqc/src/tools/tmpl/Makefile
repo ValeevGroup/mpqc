@@ -8,10 +8,6 @@ INCLUDE += -I. -I$(SRCDIR)
 BIN_OR_LIB = BIN
 TARGET_TO_MAKE = tmpl
 
-ifeq ($(LEX),lex)
-SYSLIBS := $(SYSLIBS) -ll
-endif
-
 DISTFILES = main.c tmpllex.l tmpl.h
 
 DEPENDCSRC = main.c tmpllex.c
@@ -19,11 +15,6 @@ DEPENDCSRC = main.c tmpllex.c
 BINOBJ = main.o tmpllex.o
 
 default:: tmpl
-
-# tmpl.h is put into the source include directory.  This is
-# necessary because tmpl is not compiled for all architectures.
-install_inc::
-	$(INCINSTALL) tmpl.h $(SRCDIR)/$(TOPDIR)/include
 
 tmpllex.c: tmpllex.l
 	$(LEX) -t $^ > tmpllex.c

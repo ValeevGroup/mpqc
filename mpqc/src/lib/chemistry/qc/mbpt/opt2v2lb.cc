@@ -8,16 +8,7 @@ typedef int dmt_matrix;
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <tmpl.h>
-
-extern "C" {
-#ifdef PARAGON
-#include <nx.h>
-#endif
-}
-
 #include <util/group/picl.h>
-#include <tmpl.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <math/array/math_lib.h>

@@ -2,6 +2,9 @@
  * routine assign_x will return set x1 equal to x2 */
 
 /* $Log$
+ * Revision 1.3  1996/03/23 02:38:51  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.2  1994/10/18 23:03:42  etseidl
  * fix many warnings, use memset rather than bzero
  *
@@ -35,7 +38,6 @@
  * */
  
 #include <stdio.h>
-#include <tmpl.h>
 #include <string.h>
 #include "types.h"
 #include "global.h"
@@ -46,7 +48,7 @@
 #include "error.gbl"
 #include "sgen_util.gbl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 assign_gen()
 {
   declaration_t *I;
@@ -121,7 +123,7 @@ assign_gen()
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 assign_member(member,structname)
 member_t *member;
 char *structname;
@@ -260,7 +262,7 @@ char *structname;
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 assign_elementary(member,structname,indices,spaces,array_type,range)
 member_t *member;
 char *structname;

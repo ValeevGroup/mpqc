@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.4  1996/03/23 02:38:05  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.3  1995/03/17 01:50:05  cljanss
  * Removed -I. and -I$(SRCDIR) from the default include path in
  * GlobalMakefile to avoid name conflicts with system include files.
@@ -57,7 +60,7 @@
  *            largest
  */
 
-GLOBAL_FUNCTION VOID 
+GLOBAL_FUNCTION void
 math_diag_dm(array,e_vals,e_vecs,matz,toler,sort)
 double_matrix_t *array;
 double_vector_t *e_vals;
@@ -132,7 +135,7 @@ int sort;
  * double_vector which holds the lower triangle of a square, symmetric
  * matrix */
 
-GLOBAL_FUNCTION VOID 
+GLOBAL_FUNCTION void
 math_diag_dv(array,e_vals,e_vecs,matz,toler,sort)
 double_vector_t *array;
 double_vector_t *e_vals;
@@ -209,7 +212,7 @@ int sort;
 #endif
 #define DSIGN(a,b) ((b) >= 0.0) ? (fabs(a)) : (-fabs(a))
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 tred2(n,aa,dd,ee,matz)
 int n;
 double_matrix_t *aa;
@@ -295,7 +298,7 @@ int matz;
 /* gives only eigenvalues if matz = 0, both eigenvalues and eigenvectors */
 /* if matz = 1 */
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 tqli(n,dd,zz,ee,matz,toler)
 int n;
 double_vector_t *dd;
@@ -389,7 +392,7 @@ L2:
   }
 
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 eigsort(n,d,v)
 int n;
 double_vector_t *d;

@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.3  1996/03/23 02:38:50  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.2  1994/10/18 23:03:39  etseidl
  * fix many warnings, use memset rather than bzero
  *
@@ -45,7 +48,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <tmpl.h>
 #include "types.h"
 #include "global.h"
 
@@ -55,7 +57,7 @@
 #include "error.gbl"
 #include "sgen_util.gbl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 alloc_gen()
 {
   declaration_t *I;
@@ -124,7 +126,7 @@ alloc_gen()
 
 /* This generates a function to allocate storage using the names of
  * the dimension members. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 alloc_by_name(dec)
 declaration_t *dec;
 {
@@ -207,7 +209,7 @@ declaration_t *dec;
 /* This generates a function that takes a pointer to a preinitialized
  * datum and allocates storage consistent with the dimensions given
  * in the preinitialized datum. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 alloc_initialized(dec)
 declaration_t *dec;
 {
@@ -232,7 +234,7 @@ declaration_t *dec;
   fprintf(output,"  }\n");
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 alloc_member(member,structname)
 member_t *member;
 char *structname;

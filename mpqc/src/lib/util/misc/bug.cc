@@ -2,6 +2,10 @@
 #pragma implementation
 #endif
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <fcntl.h>
 #ifndef F_SETFD
 #  define F_SETFD 2
@@ -25,12 +29,11 @@ static Debugger *signals[NSIG];
 //////////////////////////////////////////////////////////////////////
 // static routines
 
-#ifdef _linux_
-// for linux
-typedef void(*handler_type)(int);
-#else
+#ifdef SIGHASELLIP
 // required for CC -64 on IRIX 6.0.1 and for gcc on IRIX 5.3
-typedef void(*handler_type)(...);
+typedef RETSIGTYPE (*handler_type)(...);
+#else
+typedef RETSIGTYPE (*handler_type)(int);
 #endif
 
 static void
@@ -264,10 +267,6 @@ Debugger::default_cmd()
 #endif
   int has_x11_display = (getenv("DISPLAY") != 0);
 
-#ifdef PARAGON
-  has_x11_display = 0;
-#endif
-
   if (!gcc && sizeof(void*) == 8 && has_x11_display) {
       set_cmd("xterm -title \"$(PREFIX)$(EXEC)\" -e dbx -p $(PID) $(EXEC) &");
     }
@@ -301,11 +300,6 @@ Debugger::debug(const char *reason)
   cout << endl;
 
   if (cmd_) {
-#if 0
-      fcntl(0, F_SETFD, 1);
-      fcntl(1, F_SETFD, 1);
-      fcntl(2, F_SETFD, 1);
-#endif
       int pid = getpid();
       char cpid[128];
       sscanf(cpid,"%d",pid);

@@ -8,15 +8,7 @@ INCLUDE += -I. -I$(SRCDIR)
 TARGET_TO_MAKE = sgen
 BIN_OR_LIB = BIN
 
-ifeq ($(LEX),flex)
-DEFINES := $(DEFINES) -DFLEX
-endif
-
-CFLAGS = $(COPTIONS) $(INCLUDE) $(DEFINES)
-
-ifeq ($(LEX),lex)
-LIBS = -ly
-endif
+DEFINES += -DFLEX
 
 CFILES = \
 alloca.c \
@@ -88,25 +80,16 @@ zero.gbl zero.lcl
 
 default:: sgen
 
-ifeq ($(YACC),yacc)
 parse.c: parse.y
-	$(YACC) -d $<
-	/bin/mv y.tab.c parse.c
-	/bin/mv y.tab.h parse.h
+	$(BISON) $< -d -o parse.c
 
 parse.h: parse.c
-else
-parse.c: parse.y
-	$(YACC) $< -d -o parse.c
-
-parse.h: parse.c
-endif
 
 scan.o: scan.c
-	$(CC) $(CFLAGS) -c $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 scan.c: scan.l
-	$(LEX) -t $< > scan.c
+	$(FLEX) -t $< > scan.c
 
 distclean::
 	/bin/rm -f parse.c parse.h scan.c parse.output y.output

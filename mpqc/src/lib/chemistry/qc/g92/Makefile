@@ -16,15 +16,6 @@ TESTSRCS = g92test.cc
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 
-ifeq ($(ARCH),PARAGON)
-  MPQCLIBSDEFINE=-DUSE_PICLPARAGON
-  DEFAULT=mpqcic
-endif
-ifeq ($(ARCH),SUNMOS)
-  MPQCLIBSDEFINE=-DUSE_PICLPARAGON
-  DEFAULT=mpqcic
-endif
-
 default:: $(DEPENDINCLUDE)
 default:: dlinfo
 default:: $(TOPDIR)/lib/libg92.a
@@ -35,7 +26,7 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 libs: $(SRCDIR)/LIBS.h
-	$(LISTLIBS) $(MPQCLIBSDEFINE) $(INCLUDE) $(SRCDIR)/LIBS.h > libs
+	$(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h > libs
 
 g92test:: libs
 	@echo "makeing g92test"

@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.4  1996/03/23 02:38:52  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.3  1995/03/18 00:09:56  cljanss
  * Using util/group to provide picl support.  Deleted the comm directory.
  *
@@ -29,7 +32,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <tmpl.h>
 #include "types.h"
 #include "global.h"
 
@@ -39,7 +41,7 @@
 #include "sgen_util.gbl"
 #include "error.gbl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 bcast0_gen()
 {
   declaration_t *I;
@@ -99,7 +101,7 @@ bcast0_gen()
   fclose(output);
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 bcast0_declaration(dec)
 declaration_t *dec;
 {

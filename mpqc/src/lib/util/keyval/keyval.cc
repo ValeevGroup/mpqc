@@ -11,10 +11,6 @@ extern "C" {
 #include <iostream.h>
 #include <util/keyval/keyval.h>
 
-#if defined(I860) && !defined(PARAGON)
-#include <util/unix/cct_cprot.h>
-#endif
-
 ////////////////////////////////////////////////////////////////////////
 // KeyVal
 
@@ -319,16 +315,6 @@ RefDescribedClass KeyVal::describedclassvalue(const char* key,int n1,int n2)
   return key_describedclassvalue(newkey);
   }
 
-#if !defined(I860)  || defined(PARAGON)
-#define getnewvakey(newkey,key,narg) \
-  strcpy(newkey,key); \
-  if(narg!=0) { \
-    va_start(args,narg); \
-    for(int i=0; i < narg; i++)  \
-      sprintf((newkey+strlen(newkey)),":%d",va_arg(args,int)); \
-    va_end(args); \
-    }
-#else
 // new and improved for the intel, we can once again use va_arg(), so the
 // 12 arg limit is gone.  Unfortunately we can't use new here, so the vals
 // array is hardwired to 80.  That should suffice in the foreseeable future
@@ -337,15 +323,18 @@ RefDescribedClass KeyVal::describedclassvalue(const char* key,int n1,int n2)
   strcpy(newkey,key); \
   if(narg!=0) { \
     int vals[80]; \
-    if(narg > 80) err_quit("getnewvakey: too many varargs for intel...sorry"); \
+    if(narg > 80) { \
+        fprintf(stderr,"keyval.cc: getnewvakey: too many varargs...sorry\n"); \
+        exit(1); \
+      } \
     va_start(args,narg); \
-    for(int i=0; i < narg; i++) \
+    int i; \
+    for(i=0; i < narg; i++) \
       vals[i] = va_arg(args,int); \
     va_end(args); \
     for(i=0; i < narg; i++)  \
       sprintf((newkey+strlen(newkey)),":%d",vals[i]); \
     }
-#endif
 
 // For all else:
 int KeyVal::Va_exists(const char* key,int narg,...)

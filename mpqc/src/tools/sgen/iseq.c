@@ -3,6 +3,9 @@
  * the same, 0 otherwise */
 
 /* $Log$
+ * Revision 1.3  1996/03/23 02:39:01  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.2  1994/10/18 23:03:55  etseidl
  * fix many warnings, use memset rather than bzero
  *
@@ -31,7 +34,6 @@
  
 #include <stdio.h>
 #include <string.h>
-#include <tmpl.h>
 #include "types.h"
 #include "global.h"
 
@@ -41,7 +43,7 @@
 #include "error.gbl"
 #include "sgen_util.gbl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 iseq_gen()
 {
   declaration_t *I;
@@ -112,7 +114,7 @@ iseq_gen()
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 comp_member(member,structname)
 member_t *member;
 char *structname;
@@ -182,7 +184,7 @@ char *structname;
 
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 iseq_elementary(member,structname,indices,spaces)
 member_t *member;
 char *structname;

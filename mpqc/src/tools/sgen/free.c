@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.4  1996/03/23 02:38:55  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.3  1994/10/31 17:55:08  etseidl
  * include stdlib.h in generated c file
  *
@@ -38,7 +41,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <tmpl.h>
 #include "types.h"
 #include "global.h"
 
@@ -48,7 +50,7 @@
 #include "sgen_util.gbl"
 #include "error.gbl"
 
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 free_gen()
 {
   declaration_t *I;
@@ -110,7 +112,7 @@ free_gen()
 
 /* This generates a function that takes a pointer to a
  * datum and frees storage. */
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 free_data(dec)
 declaration_t *dec;
 {
@@ -134,7 +136,7 @@ declaration_t *dec;
   fprintf(output,"  }\n");
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 free_member(member,structname)
 member_t *member;
 char *structname;

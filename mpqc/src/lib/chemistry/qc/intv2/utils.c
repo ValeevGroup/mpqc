@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.6  1996/03/23 02:37:51  cljanss
+ * Everything can now be configured with autoconf.
+ *
  * Revision 1.5  1995/10/25 21:20:01  cljanss
  * Adding support for pure am.  Gradients don't yet work.
  *
@@ -186,7 +189,7 @@ shell_t *shell;
   return jmax;
   }
 
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 fail()
 {
   fprintf(stderr,"failing module:\n%s\n",__FILE__);

@@ -1,5 +1,8 @@
 %
 % $Log$
+% Revision 1.13  1996/03/23 02:38:12  cljanss
+% Everything can now be configured with autoconf.
+%
 % Revision 1.12  1995/04/24 18:37:01  cljanss
 % Port to xlC 2.1.3.
 %
@@ -1553,7 +1556,7 @@ of |-1| turns off all synchronization.  Values equal to or greater than zero
 gives the number of synchronization messages that can be missing
 from the out neighbor for it to be sent a new block.
 @<Public communications routines.@>=
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 dmt_set_sync_loop(sl)
 int sl;
 {
@@ -1564,7 +1567,7 @@ int sl;
 number of nodes ahead the data is sent before processing of
 the current data begins.  A value of |0| turns throttling off.
 @<Public communications routines.@>=
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 dmt_set_throttle(val)
 int val;
 {
@@ -1906,7 +1909,7 @@ The public entry points simply call the |private| routine
 
 @<Public I/O routines.@>=
 
-GLOBAL_FUNCTION VOID dmt_write (fname, mat)
+GLOBAL_FUNCTION void dmt_write (fname, mat)
 char *fname;			/* Target file name. */
 mdescr mat;			/* The matrix to write. */
 {

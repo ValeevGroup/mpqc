@@ -86,7 +86,7 @@ argument is the name of the region.  The |position_region|
 routine will add the needed region to the list if desired.
 
 @<Public ...@>=
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 tim_enter (name)
 char *name;
 {
@@ -131,7 +131,7 @@ be the name of the current region.  The |tim_done| routine is
 the same, except |tim_done| does not need the |name| argument.
 
 @<Public...@>=
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 tim_exit (name)
 char *name;
 {
@@ -163,7 +163,7 @@ The region can be entered again, accumulating
 the time.
 
 @<Public...@>=
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 tim_done ()
 {
   double timenow;
@@ -332,7 +332,7 @@ char *name;
 
 @ Transverse a |region_t| tree and perform some action on that tree.
 @<Support routines.@>=
-LOCAL_FUNCTION VOID
+LOCAL_FUNCTION void
 tree_action(tree,func)
 region_t *tree;
 void (*func)(region_t *); 

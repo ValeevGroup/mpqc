@@ -90,7 +90,7 @@ int et2;
   }
 
 /* This returns the sum of two matrices Apq += Bpq */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 add_double_matrix(A,sa1,ea1,sa2,ea2, B,sb1,eb1,sb2,eb2)
 double_matrix_t *A;
 int sa1;
@@ -138,7 +138,7 @@ int eb2;
   }
 
 /* This scales a matrix by a constant factor. */
-GLOBAL_FUNCTION VOID
+GLOBAL_FUNCTION void
 scale_double_matrix(A,factor)
 double_matrix_t *A;
 double factor;

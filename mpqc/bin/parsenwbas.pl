@@ -107,15 +107,6 @@ $name{"Md"}="mendelevium";
 $name{"No"}="nobelium";
 $name{"Lr"}="lawrencium";
 
-#$basisname = $basis;
-#$basisname =~ tr/A-Z/a-z/;
-#$basisname =~ tr/+/P/;
-#$basisname =~ tr/\*/S/;
-#$basisname =~ tr/\(/L/;
-#$basisname =~ tr/\)/R/;
-#$basisname =~ tr/,/_/;
-#$basisname =~ tr/ /_/;
-#$basisfile = "|cat";
 $atom = none;
 $retrieve = 0;
 $pure = 0;
@@ -129,6 +120,13 @@ if ($basisname =~ /cc-p/ || $basisname =~ /ano/
     ) {
     $pure = 1;
 }
+$basisname =~ tr/A-Z/a-z/;
+$basisname =~ tr/+/P/;
+$basisname =~ tr/\*/S/;
+$basisname =~ tr/\(/L/;
+$basisname =~ tr/\)/R/;
+$basisname =~ tr/,/_/;
+$basisname =~ tr/ /_/;
 printf "Reading NWChem basis from %s.nw\n", $basisname;
 printf "Writing MPQC basis to %s.kv\n", $basisname;
 open(NWCHEMBASIS, "<$basisname.nw");

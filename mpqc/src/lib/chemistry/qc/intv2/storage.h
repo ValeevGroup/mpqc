@@ -44,6 +44,7 @@ class IntegralKey {
     unsigned int sh2_sh3_p13p24;
   public:
     IntegralKey(int,int,int,int,int,int,int);
+    IntegralKey(const IntegralKey&);
     int sh0() const { return (sh0_sh1_p12_p34>>SH0_SHIFT) & SH_MASK; }
     int sh1() const { return (sh0_sh1_p12_p34>>SH1_SHIFT) & SH_MASK; }
     int p12() const { return (sh0_sh1_p12_p34>>P12_SHIFT) & PE_MASK; }
@@ -64,6 +65,13 @@ IntegralKey::IntegralKey(int sh1_, int sh2_, int sh3_, int sh4_,
   sh2_sh3_p13p24 = (sh3_<<SH2_SHIFT)
                    |(sh4_<<SH3_SHIFT)
                    |(p13p24_<<P13P24_SHIFT);
+}
+
+inline
+IntegralKey::IntegralKey(const IntegralKey& ik)
+{
+  sh0_sh1_p12_p34 = ik.sh0_sh1_p12_p34;
+  sh2_sh3_p13p24 = ik.sh2_sh3_p13p24;
 }
 
 inline int

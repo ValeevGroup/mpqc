@@ -1,5 +1,8 @@
 
 /* $Log$
+ * Revision 1.7  1995/08/28 17:12:18  etseidl
+ * workaround a few gcc bugs on SUNMOS
+ *
  * Revision 1.6  1995/07/26 16:29:23  cljanss
  * Rearranged memory layout and loops to speed things up.
  *
@@ -1145,9 +1148,15 @@ int eAB;
             bufferprim = int_v_list.dp[m][nlower][0];
 
             /* Sum the integrals into the contracted integrals. */
+#ifdef SUNMOS
+            for (o=0; o < sizec; o++) {
+                con_ints[o] += coef3 * bufferprim[o];
+              }
+#else
             for (o=sizec; o; o--) {
                 *con_ints++ += coef3 * *bufferprim++;
               }
+#endif
 
             }
           }

@@ -257,7 +257,9 @@ void
 int_done_storage()
 {
   if (storer.nonnull()) {
+#ifndef i860
       storer->print_stats();
+#endif
       storer->done();
     }
   int_integral_storage = 0;

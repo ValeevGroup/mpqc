@@ -456,25 +456,32 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
   
   d->assign(0.0);
   
-  RefSCMatrix vector;
+  RefSCMatrix oso_vector;
   if (alp || !uhf) {
     if (oso_scf_vector_.nonnull())
-      vector = so_to_orthog_so().t() * oso_scf_vector_;
+      oso_vector = oso_scf_vector_;
   }
   else {
     if (oso_scf_vector_beta_.nonnull())
-      vector = so_to_orthog_so().t() * oso_scf_vector_beta_;
+      oso_vector = oso_scf_vector_beta_;
   }
       
-  if (vector.null()) {
+  if (oso_vector.null()) {
     if (uhf) {
       if (alp)
-        vector = alpha_eigenvectors();
+        oso_vector = oso_alpha_eigenvectors();
       else
-        vector = beta_eigenvectors();
+        oso_vector = oso_beta_eigenvectors();
     } else
-      vector = eigenvectors();
+      oso_vector = oso_eigenvectors();
   }
+
+  if (debug_ > 1) oso_vector.print("ortho SO vector");
+
+  RefSCMatrix vector = so_to_orthog_so().t() * oso_vector;
+  oso_vector = 0;
+
+  if (debug_ > 1) oso_vector.print("SO vector");
   
   RefPetiteList pl = integral()->petite_list(basis());
   
@@ -588,6 +595,10 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
            << endl;
       abort();
     }
+  }
+
+  if (debug_ > 1) {
+    d.print("density");
   }
 }
 

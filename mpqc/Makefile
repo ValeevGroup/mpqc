@@ -37,6 +37,7 @@ default::
 	@echo 
 	@echo "  configure     Update aclocal.m4 and run configure."
 	@echo "  tags          Build a new TAGS file."
+	@echo "  clean         Remove emacs backup files in this and all subdirectories."
 	@echo 
 
 endif
@@ -45,7 +46,12 @@ endif
 configure:
 	aclocal -I lib/autoconf
 	autoconf
+	/bin/rm -rf autom4te.cache
 
 .PHONY: tags
 tags:
 	etags --members `find . -name "*.[hcfCF]"` `find . -name "*.cc"`
+
+.PHONY: clean
+clean::
+	/bin/rm -f `find . -name "*~" -print`

@@ -108,7 +108,7 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name)
 
   // Compute intermediates
   if (debug_)
-    ExEnv::out0() << indent << "Ready to compute MP2-R12/A (GEBS) intermediates" << endl;
+    ExEnv::out0() << indent << "Ready to compute MP2-R12/A (GEBC) intermediates" << endl;
 
   // Compute the number of tasks that have full access to the integrals
   // and split the work among them

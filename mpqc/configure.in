@@ -504,7 +504,7 @@ dnl --------- This is at the top since its likely to cause problems. ---------
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_TRY_COMPILE([#include <FlexLexer.h>],[],[echo -n
-],AC_MSG_ERROR([couldn't find FlexLexer.h--try --with-include]))
+],AC_MSG_ERROR([couldn't find FlexLexer.h--try --with-include; also make sure you are using the patched flex]))
 AC_LANG_RESTORE
 
 dnl -------- Checks for cross compiling. ----------

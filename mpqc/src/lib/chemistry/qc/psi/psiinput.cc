@@ -15,8 +15,10 @@
 #endif
 
 #include <util/misc/formio.h>
+#include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/psi/psiinput.h>
 #include <chemistry/qc/basis/basis.h>
+#include <chemistry/qc/basis/petite.h>
 extern "C" {
 #include <stdio.h>
 #include <math.h>
@@ -77,36 +79,108 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
   opentype = keyval->pcharvalue("opentype");
   label = keyval->pcharvalue("label");
   _test = keyval->booleanvalue("test");
+
+  RefOneBodyWavefunction obwfn = keyval->describedclassvalue("obwfn");
+  const double epsilon = 0.001;
+  RefPetiteList pl;
+  if (obwfn.nonnull()) pl = obwfn->integral()->petite_list(obwfn->basis());
+
   n = keyval->count("docc");
   if (keyval->error() != KeyVal::OK || n != nirrep) {
-      cerr << "change size of docc array" << endl;
-      abort();
+      if (obwfn.nonnull()) {
+          for (i=0; i<nirrep; i++) {
+              docc[i] = 0;
+              for (int j=0; j<pl->nfunction(i); j++) {
+                  if (obwfn->occupation(i,j) > 2.0-epsilon) docc[i]++;
+                }
+            }
+        }
+      else {
+          cerr << "change size of docc array or give obwfn" << endl;
+          abort();
+        }
     }
-  for (i=0; i<nirrep; i++) 
-      docc[i] = keyval->intvalue("docc",i);
+  else {
+      for (i=0; i<nirrep; i++) 
+          docc[i] = keyval->intvalue("docc",i);
+    }
   
-  if (!strcmp(opentype, "NONE")) {
+  if (strcmp(opentype, "NONE")) {
     n = keyval->count("socc");
     if (keyval->error() != KeyVal::OK || n != nirrep) {
-        cerr << "change size of socc array" << endl;
-        abort();
+      if (obwfn.nonnull()) {
+          for (i=0; i<nirrep; i++) {
+              socc[i] = 0;
+              for (int j=0; j<pl->nfunction(i); j++) {
+                  if (obwfn->occupation(i,j) > 1.0-epsilon
+                      && obwfn->occupation(i,j) < 1.0+epsilon) socc[i]++;
+                }
+            }
         }
-    for (i=0; i<nirrep; i++) {
-      socc[i] = keyval->intvalue("socc",i);
+      else {
+          cerr << "change size of socc array or give obwfn" << endl;
+          abort();
+        }
+      }
+    else {
+        for (i=0; i<nirrep; i++) {
+            socc[i] = keyval->intvalue("socc",i);
+          }
       }
     }
-  else for (i=0; i<nirrep; i++) 
-    socc[i] = 0;
+  else {
+      for (i=0; i<nirrep; i++) 
+          socc[i] = 0;
+    }
 
 
   if (keyval->exists("frozen_docc")) {
     n = keyval->count("frozen_docc");
     if (keyval->error() != KeyVal::OK || n != nirrep) {
-        cerr << "change size of frozen_docc array" << endl;
-        abort();
+        char *tmp = keyval->pcharvalue("frozen_docc");
+        if (tmp) {
+            if (!strcmp(tmp,"auto") && obwfn.nonnull()) {
+                int nfzc = _mol->n_core_electrons()/2;
+                cout << node0 << indent
+                     << "PSI: auto-freezing "<<nfzc<<" core orbitals" << endl;
+                RefDiagSCMatrix eigvals = obwfn->eigenvalues().copy();
+                for (i=0; i<nirrep; i++) frozen_docc[i] = 0;
+                while (nfzc) {
+                    double smallest = 0.0;
+                    int smallesti=0;
+                    for (i=0; i<obwfn->basis()->nbasis(); i++) {
+                        if (smallest > eigvals(i)) {
+                            smallest = eigvals(i);
+                            smallesti = i;
+                          }
+                      }
+                    eigvals(smallesti) = 0.0;
+                    int orbnum = 0;
+                    for (i=0; i<nirrep; i++) {
+                        orbnum += pl->nfunction(i);
+                        if (smallesti < orbnum) {
+                            frozen_docc[i]++;
+                            break;
+                          }
+                      }
+                    nfzc--;
+                  }
+              }
+            else {
+                cerr << "bad value for frozen_docc or missing obwfn" << endl;
+                abort();
+              }
+            delete[] tmp;
+          }
+        else {
+            cerr << "change size of frozen_docc array" << endl;
+            abort();
+          }
       }
-    for (i=0; i<nirrep; i++) 
-        frozen_docc[i] = keyval->intvalue("frozen_docc",i);
+    else {
+        for (i=0; i<nirrep; i++) 
+            frozen_docc[i] = keyval->intvalue("frozen_docc",i);
+      }
     }
   else for (i=0; i<nirrep; i++) 
     frozen_docc[i] = 0;
@@ -125,6 +199,22 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
 
   if (keyval->exists("ex_lvl")) ex_lvl = keyval->intvalue("ex_lvl");
   else ex_lvl = 0;
+
+  cout << node0 << indent << "docc = [";
+  for (i=0; i<nirrep; i++) cout << node0 << " " << docc[i];
+  cout << node0 << " ]" << endl;
+
+  cout << node0 << indent << "socc = [";
+  for (i=0; i<nirrep; i++) cout << node0 << " " << socc[i];
+  cout << node0 << " ]" << endl;
+
+  cout << node0 << indent << "frozen_docc = [";
+  for (i=0; i<nirrep; i++) cout << node0 << " " << frozen_docc[i];
+  cout << node0 << " ]" << endl;
+
+  cout << node0 << indent << "frozen_uocc = [";
+  for (i=0; i<nirrep; i++) cout << node0 << " " << frozen_uocc[i];
+  cout << node0 << " ]" << endl;
 }
 
 
@@ -252,7 +342,7 @@ char ts[133];
     unique = _mol->find_unique_atoms();
     write_string("geometry = (\n");
     for (int i=0; i < _mol->num_unique_atoms(); i++) {
-        sprintf(ts, "  (%f %f %f)\n", _mol->r(unique[i],0),
+        sprintf(ts, "  (% 14.12f % 14.12f % 14.12f)\n", _mol->r(unique[i],0),
            _mol->r(unique[i],1), _mol->r(unique[i],2));
         write_string(ts);
         } 
@@ -281,10 +371,17 @@ PSI_Input::write_basis(void)
       for (j = 0; j < _gbs->nshell_on_center(unique[i]); j++) {
 	for (l=(*_gbs)(unique[i],j).ncontraction()-1; l>-1;l--) {
           if((*_gbs)(unique[i],j).am(l)==am){
-	    sprintf(ts, "  (%c\n", (*_gbs)(unique[i],j).amchar(l));
+            const char *purestring = "";
+            if (am==2&&(*_gbs)(unique[i],j).is_pure(l)) purestring = "5";
+            if (am==3&&(*_gbs)(unique[i],j).is_pure(l)) purestring = "7";
+            if (am==4&&(*_gbs)(unique[i],j).is_pure(l)) purestring = "9";
+            if (am==5&&(*_gbs)(unique[i],j).is_pure(l)) purestring = "11";
+	    sprintf(ts, "  (%c%s\n", (*_gbs)(unique[i],j).amchar(l),
+                    purestring);
 	    write_string(ts);
 	    for(k=0; k<(*_gbs)(unique[i],j).nprimitive(); k++){
-	      sprintf(ts, "    (%f   %f)\n", (*_gbs)(unique[i],j).exponent(k),
+	      sprintf(ts, "    (%22.16f   % 18.16f)\n",
+                      (*_gbs)(unique[i],j).exponent(k),
 		      (*_gbs)(unique[i],j).coefficient_norm(l,k));
 	      write_string(ts);
 	      }

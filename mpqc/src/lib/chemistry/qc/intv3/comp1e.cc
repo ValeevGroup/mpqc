@@ -186,7 +186,7 @@ Int1eV3::overlap_1der(int ish, int jsh,
   nj = gshell2->nfunction();
 
 #if 0
-  ExEnv::out() << scprintf("zeroing %d*%d*3 elements of buff\n",ni,nj);
+  ExEnv::outn() << scprintf("zeroing %d*%d*3 elements of buff\n",ni,nj);
 #endif
   for (i=0; i<ni*nj*3; i++) {
     buff[i] = 0.0;
@@ -692,12 +692,12 @@ Int1eV3::accum_shell_block_1der(double *buff, int ish, int jsh,
   int index = 0;
   for (i=0; i<gcsize1; i++) {
       for (int j=0; j<gcsize2; j++, index++) {
-          ExEnv::out() << scprintf(" (%d %d): % 18.15f % 18.15f",
+          ExEnv::outn() << scprintf(" (%d %d): % 18.15f % 18.15f",
                            i,j,cartesianbuffer[index],fastbuff[index]);
           if (fabs(cartesianbuffer[index]-fastbuff[index])>1.0e-12) {
-              ExEnv::out() << " **";
+              ExEnv::outn() << " **";
             }
-          ExEnv::out() << endl;
+          ExEnv::outn() << endl;
         }
     }
   delete[] cartesianbuffer;
@@ -1243,7 +1243,7 @@ Int1eV3::nuclear(int ish, int jsh)
       double fast = fastbuf[index];
       double slow = cartesianbuffer[index];
       if (fabs(fast-slow)>1.0e-12) {
-        ExEnv::out() << scprintf("NUC SHELL FINAL: %d (%d %d %d) %d (%d %d %d): ",
+        ExEnv::outn() << scprintf("NUC SHELL FINAL: %d (%d %d %d) %d (%d %d %d): ",
                          gc1, i1,j1,k1, gc2, i2,j2,k2)
              << scprintf(" % 20.15f % 20.15f",
                          fast, slow)
@@ -1601,7 +1601,7 @@ Int1eV3::int_shell_nuclear_nonhf_1der(int ish, int jsh,
   nj = gshell2->nfunction();
 
 #if 0
-  ExEnv::out() << scprintf("int_shell_nuclear_nonhf_1der: zeroing %d doubles in buff\n",ni*nj*3);
+  ExEnv::outn() << scprintf("int_shell_nuclear_nonhf_1der: zeroing %d doubles in buff\n",ni*nj*3);
 #endif
   for (i=0; i<ni*nj*3; i++) {
     buff[i] = 0.0;
@@ -1766,7 +1766,7 @@ Int1eV3::comp_shell_block_nuclear(int gc1, int a, int gc2, int b,
       double *primbuffer = inter(a,b,0);
       for (int ip=0; ip<size1; ip++) {
         for (int jp=0; jp<size2; jp++) {
-          //ExEnv::out() << scprintf("buffer[%d] += %18.15f",
+          //ExEnv::outn() << scprintf("buffer[%d] += %18.15f",
           //                 (ip+gcoff1)*gcsize2+jp+gcoff2,
           //                 tmp * *primbuffer)
           //     << endl;
@@ -1778,7 +1778,7 @@ Int1eV3::comp_shell_block_nuclear(int gc1, int a, int gc2, int b,
 
 #if DEBUG_NUC_SHELL
 #  if DEBUG_NUC_SHELL > 1
-  ExEnv::out() << scprintf("GC = (%d %d), A = %d, B = %d", gc1, gc2, a, b)
+  ExEnv::outn() << scprintf("GC = (%d %d), A = %d, B = %d", gc1, gc2, a, b)
        << endl;
 #  endif
   int i1,j1,k1;
@@ -1793,16 +1793,16 @@ Int1eV3::comp_shell_block_nuclear(int gc1, int a, int gc2, int b,
                                        gc2, i2, j2, k2);
       int bad = fabs(fast-slow)>1.0e-12;
       if (DEBUG_NUC_SHELL > 1 || bad) {
-        ExEnv::out() << scprintf("NUC SHELL: (%d %d %d) (%d %d %d): ",
+        ExEnv::outn() << scprintf("NUC SHELL: (%d %d %d) (%d %d %d): ",
                          i1,j1,k1, i2,j2,k2)
              << scprintf(" % 20.15f % 20.15f",
                          fast, slow);
         }
       if (bad) {
-        ExEnv::out() << " ****" << endl;
+        ExEnv::outn() << " ****" << endl;
         }
       else if (DEBUG_NUC_SHELL > 1) {
-        ExEnv::out() << endl;
+        ExEnv::outn() << endl;
         }
       jp++;
       } END_FOR_CART;
@@ -1821,7 +1821,7 @@ Int1eV3::comp_prim_block_nuclear(int a, int b)
   // fill in the ia+ib=0 integrals
   for (im=0; im<=l; im++) {
 #if DEBUG_NUC_PRIM > 1
-    ExEnv::out() << "BUILD: M = " << im
+    ExEnv::outn() << "BUILD: M = " << im
          << " A = " << 0
          << " B = " << 0
          << endl;
@@ -1834,7 +1834,7 @@ Int1eV3::comp_prim_block_nuclear(int a, int b)
     // build the integrals for a = 0
     for (ib=1; ib<=lm && ib<=b; ib++) {
 #if DEBUG_NUC_PRIM > 1
-      ExEnv::out() << "BUILD: M = " << im
+      ExEnv::outn() << "BUILD: M = " << im
            << " A = " << 0
            << " B = " << ib
            << endl;
@@ -1844,7 +1844,7 @@ Int1eV3::comp_prim_block_nuclear(int a, int b)
     for (ia=1; ia<=lm && ia<=a; ia++) {
       for (ib=0; ib<=lm-ia && ib<=b; ib++) {
 #if DEBUG_NUC_PRIM > 1
-        ExEnv::out() << "BUILD: M = " << im
+        ExEnv::outn() << "BUILD: M = " << im
              << " A = " << ia
              << " B = " << ib
              << endl;
@@ -1862,7 +1862,7 @@ Int1eV3::comp_prim_block_nuclear(int a, int b)
       for (ib=0; ib<=lm-ia && ib<=b; ib++) {
         int nb = INT_NCART_NN(b);
 #if DEBUG_NUC_PRIM > 1
-        ExEnv::out() << "M = " << im
+        ExEnv::outn() << "M = " << im
              << " A = " << ia
              << " B = " << ib
              << endl;
@@ -1877,7 +1877,7 @@ Int1eV3::comp_prim_block_nuclear(int a, int b)
             if (fast > 999.0) fast = 999.0;
             if (fast < -999.0) fast = -999.0;
             if (fabs(fast-slow)>1.0e-12) {
-              ExEnv::out() << scprintf("(%d %d %d) (%d %d %d) (%d): ",
+              ExEnv::outn() << scprintf("(%d %d %d) (%d %d %d) (%d): ",
                                i1,j1,k1, i2,j2,k2, im)
                    << scprintf(" % 20.15f % 20.15f",
                                fast, slow)
@@ -2237,7 +2237,7 @@ Int1eV3::comp_prim_block_efield(int a, int b)
   // fill in the ia+ib=0 integrals, skipping m=0
   for (im=1; im<=l; im++) {
 #if DEBUG_EFIELD_PRIM > 1
-    ExEnv::out() << "BUILD NUC: M = " << im
+    ExEnv::outn() << "BUILD NUC: M = " << im
          << " A = " << 0
          << " B = " << 0
          << endl;
@@ -2251,7 +2251,7 @@ Int1eV3::comp_prim_block_efield(int a, int b)
     // build the integrals for a = 0
     for (ib=1; ib<=lm && ib<=b; ib++) {
 #if DEBUG_EFIELD_PRIM > 1
-      ExEnv::out() << "BUILD NUC: M = " << im
+      ExEnv::outn() << "BUILD NUC: M = " << im
            << " A = " << 0
            << " B = " << ib
            << endl;
@@ -2261,7 +2261,7 @@ Int1eV3::comp_prim_block_efield(int a, int b)
     for (ia=1; ia<=lm && ia<=a; ia++) {
       for (ib=0; ib<=lm-ia && ib<=b; ib++) {
 #if DEBUG_EFIELD_PRIM > 1
-        ExEnv::out() << "BUILD NUC: M = " << im
+        ExEnv::outn() << "BUILD NUC: M = " << im
              << " A = " << ia
              << " B = " << ib
              << endl;
@@ -2276,7 +2276,7 @@ Int1eV3::comp_prim_block_efield(int a, int b)
   // fill in the ia+ib=0 integrals
   for (im=0; im<=l; im++) {
 #if DEBUG_EFIELD_PRIM > 1
-    ExEnv::out() << "BUILD EFIELD: M = " << im
+    ExEnv::outn() << "BUILD EFIELD: M = " << im
          << " A = " << 0
          << " B = " << 0
          << endl;
@@ -2292,7 +2292,7 @@ Int1eV3::comp_prim_block_efield(int a, int b)
     // build the integrals for a = 0
     for (ib=1; ib<=lm && ib<=b; ib++) {
 #if DEBUG_EFIELD_PRIM > 1
-      ExEnv::out() << "BUILD EFIELD: M = " << im
+      ExEnv::outn() << "BUILD EFIELD: M = " << im
            << " A = " << 0
            << " B = " << ib
            << endl;
@@ -2302,7 +2302,7 @@ Int1eV3::comp_prim_block_efield(int a, int b)
     for (ia=1; ia<=lm && ia<=a; ia++) {
       for (ib=0; ib<=lm-ia && ib<=b; ib++) {
 #if DEBUG_EFIELD_PRIM > 1
-        ExEnv::out() << "BUILD EFIELD: M = " << im
+        ExEnv::outn() << "BUILD EFIELD: M = " << im
              << " A = " << ia
              << " B = " << ib
              << endl;
@@ -2320,7 +2320,7 @@ Int1eV3::comp_prim_block_efield(int a, int b)
       for (ib=0; ib<=lm-ia && ib<=b; ib++) {
         int nb = INT_NCART_NN(b);
 #if DEBUG_EFIELD_PRIM > 1
-        ExEnv::out() << "M = " << im
+        ExEnv::outn() << "M = " << im
              << " A = " << ia
              << " B = " << ib
              << endl;
@@ -2336,7 +2336,7 @@ Int1eV3::comp_prim_block_efield(int a, int b)
               if (fast > 999.0) fast = 999.0;
               if (fast < -999.0) fast = -999.0;
               if (fabs(fast-slow)>1.0e-12) {
-                ExEnv::out() << scprintf("(%d %d %d) (%d %d %d) (%d): ",
+                ExEnv::outn() << scprintf("(%d %d %d) (%d %d %d) (%d): ",
                                  i1,j1,k1, i2,j2,k2, im)
                      << scprintf(" % 20.15f % 20.15f",
                                  fast, slow)

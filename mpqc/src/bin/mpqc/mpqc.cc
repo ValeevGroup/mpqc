@@ -51,6 +51,7 @@
 
 // Force linkages:
 #include <chemistry/qc/mbpt/linkage.h>
+//#include <chemistry/qc/psi/linkage.h>
 #include <util/state/linkage.h>
 
 #include "disclaimer.h"
@@ -161,12 +162,12 @@ main(int argc, char *argv[])
   tim->enter("input");
   
   // now set up the debugger
-  RefDebugger debugger = keyval->describedclassvalue(":debug");
+  RefDebugger debugger = keyval->describedclassvalue("debug");
   if (debugger.nonnull()) {
     debugger->set_exec(argv[0]);
     debugger->set_prefix(grp->me());
     if (options.retrieve("d"))
-      debugger->debug("Edwared The Seidl is a hog.");
+      debugger->debug("Starting debugger because -d given on command line.");
   }
   
   // now check to see what matrix kit to use

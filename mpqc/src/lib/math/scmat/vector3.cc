@@ -204,10 +204,11 @@ SCVector3::spherical_to_cartesian(SCVector3&cart) const
 
 void SCVector3::print(ostream& os) const
 {
-  os << indent
+  os << indent << "{"
      << setw(8) << setprecision(5) << x() << " "
      << setw(8) << setprecision(5) << y() << " "
-     << setw(8) << setprecision(5) << z() << "}\n";
+     << setw(8) << setprecision(5) << z() << "}"
+     << endl;
 }
 
 ostream &

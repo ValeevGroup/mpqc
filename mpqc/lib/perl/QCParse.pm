@@ -618,6 +618,7 @@ sub input_string() {
     my $symmetry = $qcinput->symmetry();
     my $mol = "% molecule specification";
     $mol = "$mol\nmolecule<Molecule>: (";
+    $symmetry = lc $symmetry if ($symmetry eq "AUTO");
     if ($qcinput->frequencies()) {
         $mol = "$mol\n  symmetry = C1";
     }

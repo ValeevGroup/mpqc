@@ -88,12 +88,6 @@ BlockedDiagSCMatrix::dim()
   return d;
 }
 
-RefSCDimension
-BlockedDiagSCMatrix::dim(int i)
-{
-  return d->dim(i);
-}
-
 double
 BlockedDiagSCMatrix::get_element(int i)
 {
@@ -255,4 +249,22 @@ BlockedDiagSCMatrix::print(const char *title, ostream& os, int prec)
   }
 
   delete[] newtitle;
+}
+
+RefSCDimension
+BlockedDiagSCMatrix::dim(int i)
+{
+  return d->dim(i);
+}
+
+int
+BlockedDiagSCMatrix::nblocks() const
+{
+  return d->nblocks();
+}
+
+RefDiagSCMatrix
+BlockedDiagSCMatrix::block(int i)
+{
+  return mats_[i];
 }

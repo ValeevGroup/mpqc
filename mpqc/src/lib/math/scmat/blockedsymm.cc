@@ -88,12 +88,6 @@ BlockedSymmSCMatrix::dim()
   return d;
 }
 
-RefSCDimension
-BlockedSymmSCMatrix::dim(int i)
-{
-  return d->dim(i);
-}
-
 double
 BlockedSymmSCMatrix::get_element(int i,int j)
 {
@@ -543,4 +537,22 @@ BlockedSymmSCMatrix::print(const char *title, ostream& os, int prec)
   }
 
   delete[] newtitle;
+}
+
+RefSCDimension
+BlockedSymmSCMatrix::dim(int i)
+{
+  return d->dim(i);
+}
+
+int
+BlockedSymmSCMatrix::nblocks() const
+{
+  return d->nblocks();
+}
+
+RefSymmSCMatrix
+BlockedSymmSCMatrix::block(int i)
+{
+  return mats_[i];
 }

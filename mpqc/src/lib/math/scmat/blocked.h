@@ -112,10 +112,7 @@ class BlockedSCVector: public SCVector {
     void save_data_state(StateOut&);
 
     RefSCDimension dim();
-    RefSCDimension dim(int);
 
-    RefSCVector vector(int);
-    
     void assign(double);
     void assign(SCVector*);
     void assign(const double*);
@@ -136,12 +133,14 @@ class BlockedSCVector: public SCVector {
     void element_op(const RefSCElementOp3&,
                     SCVector*,SCVector*);
     void print(const char* title=0,ostream& out=cout, int =10);
+
+    // BlockedSCVector specific functions
+    RefSCDimension dim(int);
+    int nblocks() const;
+    RefSCVector block(int);
 };
 
 class BlockedSCMatrix: public SCMatrix {
-    // this is in chemistry/qc/basis/petite.h.
-    // one day this will be unnecessary
-    friend class PetiteList;
     friend class BlockedSymmSCMatrix;
     friend class BlockedDiagSCMatrix;
     friend BlockedSCVector;
@@ -171,8 +170,6 @@ class BlockedSCMatrix: public SCMatrix {
     // implementations and overrides of virtual functions
     RefSCDimension rowdim();
     RefSCDimension coldim();
-    RefSCDimension rowdim(int);
-    RefSCDimension coldim(int);
 
     void assign(double);
     double get_element(int,int);
@@ -214,8 +211,10 @@ class BlockedSCMatrix: public SCMatrix {
     void print(const char* title=0,ostream& out=cout, int =10);
 
     // BlockedSCMatrix specific functions
-    RefSCMatrix unblock() const;
-    void block(const RefSCMatrix&);
+    RefSCDimension rowdim(int);
+    RefSCDimension coldim(int);
+    int nblocks() const;
+    RefSCMatrix block(int);
 };
 
 class BlockedSymmSCMatrix: public SymmSCMatrix {
@@ -245,7 +244,6 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
     void save_data_state(StateOut&);
 
     RefSCDimension dim();
-    RefSCDimension dim(int);
 
     double get_element(int,int);
     void set_element(int,int,double);
@@ -284,6 +282,11 @@ class BlockedSymmSCMatrix: public SymmSCMatrix {
                     SymmSCMatrix*,SymmSCMatrix*);
 
     void print(const char* title=0,ostream& out=cout, int =10);
+
+    // BlockedSymmSCMatrix specific functions
+    RefSCDimension dim(int);
+    int nblocks() const;
+    RefSymmSCMatrix block(int);
 };
 
 class BlockedDiagSCMatrix: public DiagSCMatrix {
@@ -313,7 +316,6 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
     void save_data_state(StateOut&);
 
     RefSCDimension dim();
-    RefSCDimension dim(int);
 
     double get_element(int);
     void set_element(int,double);
@@ -331,6 +333,11 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
     void element_op(const RefSCElementOp3&,
                     DiagSCMatrix*,DiagSCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
+
+    // BlockedDiagSCMatrix specific functions
+    RefSCDimension dim(int);
+    int nblocks() const;
+    RefDiagSCMatrix block(int);
 };
 
 class BlockedSCElementOp : public SCElementOp {

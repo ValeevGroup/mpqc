@@ -129,18 +129,6 @@ BlockedSCMatrix::coldim()
   return d2;
 }
 
-RefSCDimension
-BlockedSCMatrix::rowdim(int i)
-{
-  return d1->dim(i);
-}
-
-RefSCDimension
-BlockedSCMatrix::coldim(int i)
-{
-  return d2->dim(i);
-}
-
 void
 BlockedSCMatrix::assign(double v)
 {
@@ -651,81 +639,26 @@ BlockedSCMatrix::print(const char *title, ostream& os, int prec)
   delete[] newtitle;
 }
 
-RefSCMatrix
-BlockedSCMatrix::unblock() const
+RefSCDimension
+BlockedSCMatrix::rowdim(int i)
 {
-  int i;
-  
-  int nrow = d1->n();
-  int ncol = d2->n();
-  
-  RefSCDimension allrow, allcol;
-  
-  // ugly hack
-  if (LocalSCDimension::castdown(d1) && LocalSCDimension::castdown(d2)) {
-    allrow = new LocalSCDimension(nrow);
-    allcol = new LocalSCDimension(ncol);
-    
-  } else if (ReplSCDimension::castdown(d1) && ReplSCDimension::castdown(d2)) {
-    ReplSCDimension *foo = ReplSCDimension::castdown(d1);
-    allrow = new ReplSCDimension(nrow, foo->messagegrp());
-    allcol = new ReplSCDimension(ncol, foo->messagegrp());
-
-  } else {
-    fprintf(stderr,"BlockedSCMatrix::unblock: cannot unblock this type\n");
-    abort();
-  }
-  
-  RefSCMatrix ret = allrow->create_matrix(allcol);
-  ret.assign(0.0);
-
-  if (d1->nblocks()==d2->nblocks()) {
-    for (i=0; i < d1->nblocks(); i++)
-      ret.assign_subblock(mats_[i], d1->first(i), d1->last(i)-1,
-                                    d2->first(i), d2->last(i)-1);
-  } else if (d1->nblocks()==1) {
-    for (i=0; i < d2->nblocks(); i++)
-      ret.assign_subblock(mats_[i], 0, d1->n()-1,
-                                    d2->first(i), d2->last(i)-1);
-
-  } else if (d2->nblocks()==1) {
-    for (i=0; i < d1->nblocks(); i++)
-      ret.assign_subblock(mats_[i], d1->first(i), d1->last(i)-1,
-                                    0, d2->n()-1);
-  } else {
-    fprintf(stderr,"BlockedSCMatrix::unblock: cannot unblock this type\n");
-    abort();
-  }
-  
-  return ret;
+  return d1->dim(i);
 }
 
-void
-BlockedSCMatrix::block(const RefSCMatrix& m)
+RefSCDimension
+BlockedSCMatrix::coldim(int i)
 {
-  int i;
-  
-  if (m->rowdim()->n() != rowdim()->n() ||
-      m->coldim()->n() != coldim()->n()) {
-    fprintf(stderr,"BlockedSCMatrix::block: wrong dimensions\n");
-    abort();
-  }
-  
-  if (d1->nblocks()==d2->nblocks()) {
-    for (i=0; i < d1->nblocks(); i++)
-      mats_[i].assign(m->get_subblock(d1->first(i), d1->last(i)-1,
-                                      d2->first(i), d2->last(i)-1));
-  } else if (d1->nblocks()==1) {
-    for (i=0; i < d2->nblocks(); i++)
-      mats_[i].assign(m->get_subblock(0, d1->n()-1,
-                                      d2->first(i), d2->last(i)-1));
+  return d2->dim(i);
+}
 
-  } else if (d2->nblocks()==1) {
-    for (i=0; i < d1->nblocks(); i++)
-      mats_[i].assign(m->get_subblock(d1->first(i), d1->last(i)-1,
-                                      0, d2->n()-1));
-  } else {
-    fprintf(stderr,"BlockedSCMatrix::block: cannot block this matrix\n");
-    abort();
-  }
+int
+BlockedSCMatrix::nblocks() const
+{
+  return nblocks_;
+}
+
+RefSCMatrix
+BlockedSCMatrix::block(int i)
+{
+  return mats_[i];
 }

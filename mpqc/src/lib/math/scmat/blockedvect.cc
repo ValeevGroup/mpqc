@@ -95,18 +95,6 @@ BlockedSCVector::dim()
   return d;
 }
 
-RefSCDimension
-BlockedSCVector::dim(int i)
-{
-  return d->dim(i);
-}
-
-RefSCVector
-BlockedSCVector::vector(int i)
-{
-  return vecs_[i];
-}
-
 void
 BlockedSCVector::assign(double a)
 {
@@ -339,4 +327,22 @@ BlockedSCVector::print(const char *title, ostream& os, int prec)
   }
 
   delete[] newtitle;
+}
+
+RefSCDimension
+BlockedSCVector::dim(int i)
+{
+  return d->dim(i);
+}
+
+int
+BlockedSCVector::nblocks() const
+{
+  return d->nblocks();
+}
+
+RefSCVector
+BlockedSCVector::block(int i)
+{
+  return vecs_[i];
 }

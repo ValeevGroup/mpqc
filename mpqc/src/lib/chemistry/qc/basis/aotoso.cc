@@ -523,7 +523,7 @@ PetiteList::aotoso()
   
   SO_block *sos = aotoso_info();
   
-  BlockedSCMatrix *aosop = BlockedSCMatrix::castdown(aoso);
+  BlockedSCMatrix *aosop = BlockedSCMatrix::castdown(aoso.pointer());
 
   for (int b=0; b < aosop->nblocks(); b++) {
     RefSCMatrix aosb = aosop->block(b);
@@ -600,7 +600,7 @@ PetiteList::to_SO_basis(const RefSymmSCMatrix& a)
   if (c1_)
     return a;
   
-  RefSymmSCMatrix aomatrix = BlockedSymmSCMatrix::castdown(a);
+  RefSymmSCMatrix aomatrix = BlockedSymmSCMatrix::castdown(a.pointer());
   if (aomatrix.null()) {
     aomatrix = gbs_->so_matrixkit()->symmmatrix(AO_basisdim());
     aomatrix->convert(a);
@@ -636,7 +636,7 @@ PetiteList::evecs_to_SO_basis(const RefSCMatrix& aoev)
   fprintf(stderr,"PetiteList::evecs_to_SO_basis: don't work yet\n");
   abort();
   
-  RefSCMatrix aoevecs = BlockedSCMatrix::castdown(aoev);
+  RefSCMatrix aoevecs = BlockedSCMatrix::castdown(aoev.pointer());
   if (aoevecs.null()) {
     aoevecs = gbs_->so_matrixkit()->matrix(AO_basisdim(), AO_basisdim());
     aoevecs->convert(aoev);
@@ -833,14 +833,14 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   CharacterTable ct = gbs.molecule()->point_group().char_table();
 
 #if 1
-  RefSymmSCMatrix bskel = BlockedSymmSCMatrix::castdown(skel);
+  RefSymmSCMatrix bskel = BlockedSymmSCMatrix::castdown(skel.pointer());
   if (bskel.null()) {
     bskel = gbs.so_matrixkit()->symmmatrix(AO_basisdim());
     bskel->convert(skel);
   }
   
   RefSCMatrix aoso = aotoso().t();
-  BlockedSCMatrix *lu = BlockedSCMatrix::castdown(aoso);
+  BlockedSCMatrix *lu = BlockedSCMatrix::castdown(aoso.pointer());
 
   for (b=0; b < lu->nblocks(); b++) {
     if (lu->block(b).null())

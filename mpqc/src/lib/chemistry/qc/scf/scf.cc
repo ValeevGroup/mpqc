@@ -141,7 +141,7 @@ SCF::compute()
 {
   int me=scf_grp_->me();
   
-  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit())) ? 1 : 0;
+  local_ = (LocalSCMatrixKit::castdown(basis()->matrixkit().pointer())) ?1:0;
   
   if (hessian_needed())
     set_desired_gradient_accuracy(desired_hessian_accuracy()/100.0);
@@ -253,7 +253,7 @@ SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
 {
   RefSymmSCMatrix l = m;
   
-  if (!LocalSymmSCMatrix::castdown(l)) {
+  if (!LocalSymmSCMatrix::castdown(l.pointer())) {
     RefSCMatrixKit k = new LocalSCMatrixKit;
     l = k->symmmatrix(m.dim());
     l->convert(m);
@@ -265,7 +265,7 @@ SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
     l.assign(0.0);
   }
 
-  p = LocalSymmSCMatrix::castdown(l)->get_data();
+  p = LocalSymmSCMatrix::castdown(l.pointer())->get_data();
   return l;
 }
 
@@ -331,7 +331,7 @@ SCF::init_mem(int nm)
   int nmem = i_offset(basis()->nbasis())*nm*sizeof(double);
 
   // if we're actually using local matrices, then there's no choice
-  if (LocalSCMatrixKit::castdown(basis()->matrixkit())) {
+  if (LocalSCMatrixKit::castdown(basis()->matrixkit().pointer())) {
     if (nmem > storage_)
       return;
   } else {

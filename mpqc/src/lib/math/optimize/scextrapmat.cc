@@ -43,7 +43,7 @@ SymmSCMatrixSCExtrapData::save_data_state(StateOut& s)
   SCExtrapData::save_data_state(s);
   m.dim().save_state(s);
 
-  int blocked = (BlockedSymmSCMatrix::castdown(m)) ? 1 : 0;
+  int blocked = (BlockedSymmSCMatrix::castdown(m.pointer())) ? 1 : 0;
   s.put(blocked);
   
   m.save(s);
@@ -121,7 +121,7 @@ SymmSCMatrix2SCExtrapData::save_data_state(StateOut& s)
   SCExtrapData::save_data_state(s);
   m1.dim().save_state(s);
 
-  int blocked = (BlockedSymmSCMatrix::castdown(m1)) ? 1 : 0;
+  int blocked = (BlockedSymmSCMatrix::castdown(m1.pointer())) ? 1 : 0;
   s.put(blocked);
   
   m1.save(s);
@@ -213,7 +213,7 @@ SymmSCMatrixNSCExtrapData::save_data_state(StateOut& s)
   s.put(n_);
   m[0].dim().save_state(s);
 
-  int blocked = (BlockedSymmSCMatrix::castdown(m[0])) ? 1 : 0;
+  int blocked = (BlockedSymmSCMatrix::castdown(m[0].pointer())) ? 1 : 0;
   s.put(blocked);
   
   for (int i=0; i < n_; i++)
@@ -298,7 +298,7 @@ SymmSCMatrixSCExtrapError::save_data_state(StateOut& s)
   SCExtrapError::save_data_state(s);
   m.dim().save_state(s);
 
-  int blocked = (BlockedSymmSCMatrix::castdown(m)) ? 1 : 0;
+  int blocked = (BlockedSymmSCMatrix::castdown(m.pointer())) ? 1 : 0;
   s.put(blocked);
   
   m.save(s);

@@ -168,13 +168,14 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
   }
 
   if (me==0) {
+    int i;
     cout << indent << "docc = [";
-    for (int i=0; i < nirrep_; i++)
+    for (i=0; i < nirrep_; i++)
       cout << " " << ndocc_[i];
     cout << " ]\n";
 
     cout << indent << "socc = [";
-    for (int i=0; i < nirrep_; i++)
+    for (i=0; i < nirrep_; i++)
       cout << " " << (i==osa_ || i==osb_) ? 1 : 0;
     cout << " ]\n";
   }
@@ -277,14 +278,15 @@ OSSSCF::print(ostream&o)
 {
   SCF::print(o);
   if (scf_grp_->me()==0) {
+    int i;
     o << indent << "OSSSCF Parameters:\n" << incindent;
     o << indent << "ndocc = " << tndocc_ << endl;
     o << indent << "docc = [";
-    for (int i=0; i < nirrep_; i++)
+    for (i=0; i < nirrep_; i++)
       o << " " << ndocc_[i];
     o << " ]" << endl;
     o << indent << "socc = [";
-    for (int i=0; i < nirrep_; i++)
+    for (i=0; i < nirrep_; i++)
       o << " " << (i==osa_ || i==osb_) ? 1 : 0;
     o << " ]" << endl << decindent << endl;
   }
@@ -536,8 +538,8 @@ OSSSCF::new_density()
   cl_dens_.accumulate(op_densa_);
 
   op_densb_.assign(op_densa_);
-  BlockedSymmSCMatrix::castdown(op_densa_)->block(osb_)->assign(0.0);
-  BlockedSymmSCMatrix::castdown(op_densb_)->block(osa_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(op_densa_.pointer())->block(osb_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(op_densb_.pointer())->block(osa_)->assign(0.0);
   
   cl_dens_diff_.accumulate(cl_dens_);
   op_densa_diff_.accumulate(op_densa_);
@@ -621,8 +623,8 @@ OSSSCF::effective_fock()
   mofockb.assign(0.0);
   mofockb.accumulate_transform(scf_vector_.t(), fock(2));
   
-  BlockedSymmSCMatrix::castdown(mofocka)->block(osb_)->assign(0.0);
-  BlockedSymmSCMatrix::castdown(mofockb)->block(osa_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(mofocka.pointer())->block(osb_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(mofockb.pointer())->block(osa_)->assign(0.0);
   
   mofocka.accumulate(mofockb);
   mofockb=0;
@@ -787,8 +789,8 @@ OSSSCF::lagrangian()
   mofockb.assign(0.0);
   mofockb.accumulate_transform(scf_vector_.t(), op_fockb_.result_noupdate());
   
-  BlockedSymmSCMatrix::castdown(mofocka)->block(osb_)->assign(0.0);
-  BlockedSymmSCMatrix::castdown(mofockb)->block(osa_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(mofocka.pointer())->block(osb_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(mofockb.pointer())->block(osa_)->assign(0.0);
   
   mofocka.accumulate(mofockb);
   mofockb=0;
@@ -832,8 +834,8 @@ OSSSCF::gradient_density()
   op_densa_.element_op(op);
   op_densb_.assign(op_densa_);
 
-  BlockedSymmSCMatrix::castdown(op_densa_)->block(osb_)->assign(0.0);
-  BlockedSymmSCMatrix::castdown(op_densb_)->block(osa_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(op_densa_.pointer())->block(osb_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(op_densb_.pointer())->block(osa_)->assign(0.0);
   
   RefPetiteList pl = integral()->petite_list(basis());
   

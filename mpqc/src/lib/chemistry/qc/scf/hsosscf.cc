@@ -159,13 +159,14 @@ HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
   }
 
   if (me==0) {
+    int i;
     cout << indent << "docc = [";
-    for (int i=0; i < nirrep_; i++)
+    for (i=0; i < nirrep_; i++)
       cout << " " << ndocc_[i];
     cout << " ]\n";
 
     cout << indent << "socc = [";
-    for (int i=0; i < nirrep_; i++)
+    for (i=0; i < nirrep_; i++)
       cout << " " << nsocc_[i];
     cout << " ]\n";
   }
@@ -264,15 +265,16 @@ HSOSSCF::print(ostream&o)
 {
   SCF::print(o);
   if (scf_grp_->me()==0) {
+    int i;
     o << indent << "HSOSSCF Parameters:\n" << incindent;
     o << indent << "ndocc = " << tndocc_ << endl;
     o << indent << "nsocc = " << tnsocc_ << endl;
     o << indent << "docc = [";
-    for (int i=0; i < nirrep_; i++)
+    for (i=0; i < nirrep_; i++)
       o << " " << ndocc_[i];
     o << " ]" << endl;
     o << indent << "socc = [";
-    for (int i=0; i < nirrep_; i++)
+    for (i=0; i < nirrep_; i++)
       o << " " << nsocc_[i];
     o << " ]" << endl << decindent << endl;
   }

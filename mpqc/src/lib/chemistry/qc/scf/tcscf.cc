@@ -195,13 +195,14 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
   }
 
   if (me==0) {
+    int i;
     cout << indent << "docc = [";
-    for (int i=0; i < nirrep_; i++)
+    for (i=0; i < nirrep_; i++)
       cout << " " << ndocc_[i];
     cout << " ]\n";
 
     cout << indent << "socc = [";
-    for (int i=0; i < nirrep_; i++)
+    for (i=0; i < nirrep_; i++)
       cout << " " << (i==osa_ || i==osb_) ? 1 : 0;
     cout << " ]\n";
   }
@@ -311,6 +312,7 @@ TCSCF::print(ostream&o)
 {
   SCF::print(o);
   if (scf_grp_->me()==0) {
+    int i;
     o << indent << "TCSCF Parameters:\n" << incindent;
     o << indent << "ndocc = " << tndocc_ << endl;
     o << indent << "occa = " << occa_ << endl;
@@ -318,11 +320,11 @@ TCSCF::print(ostream&o)
     o << indent << "ci1 = " << ci1_ << endl;
     o << indent << "ci2 = " << ci2_ << endl;
     o << indent << "docc = [";
-    for (int i=0; i < nirrep_; i++)
+    for (i=0; i < nirrep_; i++)
       o << " " << ndocc_[i];
     o << " ]" << endl;
     o << indent << "socc = [";
-    for (int i=0; i < nirrep_; i++)
+    for (i=0; i < nirrep_; i++)
       o << " " << (i==osa_ || i==osb_) ? 1 : 0;
     o << " ]" << endl << decindent << endl;
   }
@@ -585,13 +587,13 @@ TCSCF::new_density()
   op_densa_.assign(0.0);
   op = new SCFDensity(this, scf_vector_, occa_);
   op_densa_.element_op(op);
-  BlockedSymmSCMatrix::castdown(op_densa_)->block(osb_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(op_densa_.pointer())->block(osb_)->assign(0.0);
   op_densa_.scale(2.0);
 
   op_densb_.assign(0.0);
   op = new SCFDensity(this, scf_vector_, occb_);
   op_densb_.element_op(op);
-  BlockedSymmSCMatrix::castdown(op_densb_)->block(osa_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(op_densb_.pointer())->block(osa_)->assign(0.0);
   op_densb_.scale(2.0);
 
   cl_dens_diff_.accumulate(cl_dens_);
@@ -726,11 +728,11 @@ TCSCF::effective_fock()
   RefSymmSCMatrix mofock = mofocka.copy();
   mofock.accumulate(mofockb);
 
-  BlockedSymmSCMatrix *F = BlockedSymmSCMatrix::castdown(mofock);
-  BlockedSymmSCMatrix *Fa = BlockedSymmSCMatrix::castdown(mofocka);
-  BlockedSymmSCMatrix *Fb = BlockedSymmSCMatrix::castdown(mofockb);
-  BlockedSymmSCMatrix *Ka = BlockedSymmSCMatrix::castdown(moka);
-  BlockedSymmSCMatrix *Kb = BlockedSymmSCMatrix::castdown(mokb);
+  BlockedSymmSCMatrix *F = BlockedSymmSCMatrix::castdown(mofock.pointer());
+  BlockedSymmSCMatrix *Fa = BlockedSymmSCMatrix::castdown(mofocka.pointer());
+  BlockedSymmSCMatrix *Fb = BlockedSymmSCMatrix::castdown(mofockb.pointer());
+  BlockedSymmSCMatrix *Ka = BlockedSymmSCMatrix::castdown(moka.pointer());
+  BlockedSymmSCMatrix *Kb = BlockedSymmSCMatrix::castdown(mokb.pointer());
   
   double scalea = (fabs(ci1_) < fabs(ci2_)) ? 1.0/(ci1_*ci1_ + 0.05) : 1.0;
   double scaleb = (fabs(ci2_) < fabs(ci1_)) ? 1.0/(ci2_*ci2_ + 0.05) : 1.0;
@@ -955,8 +957,8 @@ TCSCF::lagrangian()
   mokb.scale(ci1_*ci2_);
   mokb.accumulate(mofockb);
 
-  BlockedSymmSCMatrix::castdown(moka)->block(osb_)->assign(0.0);
-  BlockedSymmSCMatrix::castdown(mokb)->block(osa_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(moka.pointer())->block(osb_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(mokb.pointer())->block(osa_)->assign(0.0);
   
   moka.accumulate(mokb);
   mokb=0;
@@ -1007,8 +1009,8 @@ TCSCF::gradient_density()
   op_densb_.element_op(op);
   op_densb_.scale(occb_);
   
-  BlockedSymmSCMatrix::castdown(op_densa_)->block(osb_)->assign(0.0);
-  BlockedSymmSCMatrix::castdown(op_densb_)->block(osa_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(op_densa_.pointer())->block(osb_)->assign(0.0);
+  BlockedSymmSCMatrix::castdown(op_densb_.pointer())->block(osa_)->assign(0.0);
   
   RefPetiteList pl = integral()->petite_list(basis());
   

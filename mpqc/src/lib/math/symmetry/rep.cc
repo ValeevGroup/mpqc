@@ -246,7 +246,12 @@ SymRep::print(ostream& os) const
 {
   int i;
 
-  ios::fmtflags oldf = os.setf(ios::left);
+#ifdef HAVE_IOS_FMTFLAGS
+  ios::fmtflags oldf;
+#else
+  long oldf;
+#endif
+  oldf = os.setf(ios::left);
 
   os.setf(ios::fixed,ios::floatfield);
   os.setf(ios::right,ios::adjustfield);

@@ -24,8 +24,9 @@ class Int2eV3: public VRefCount {
     RefGaussianBasisSet bs4_;
 
     // statics from vrr.cc
-  protected:
+  public:
     enum { STORAGE_CHUNK = 4096 };
+  protected:
     struct store_list {
         void* data[STORAGE_CHUNK];
         struct store_list* p;

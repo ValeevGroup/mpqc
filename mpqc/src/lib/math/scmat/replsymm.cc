@@ -143,8 +143,8 @@ ReplSymmSCMatrix::get_subblock(int br, int er, int bc, int ec)
     abort();
   }
   
-  RefSCDimension dnrow = (nsrow==n()) ? dim() : new SCDimension(nsrow);
-  RefSCDimension dncol = (nscol==n()) ? dim() : new SCDimension(nscol);
+  RefSCDimension dnrow = (nsrow==n()) ? dim().pointer():new SCDimension(nsrow);
+  RefSCDimension dncol = (nscol==n()) ? dim().pointer():new SCDimension(nscol);
 
   SCMatrix * sb = kit()->matrix(dnrow,dncol);
   sb->assign(0.0);

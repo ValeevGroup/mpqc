@@ -36,9 +36,9 @@ SCFDensity::process(SCMatrixBlockIter& bi)
 
   RefSCMatrix vir=vec;
   
-  if (BlockedSCMatrix::castdown(vec)) {
+  if (BlockedSCMatrix::castdown(vec.pointer())) {
     ir=current_block();
-    vir = BlockedSCMatrix::castdown(vec)->block(ir);
+    vir = BlockedSCMatrix::castdown(vec.pointer())->block(ir);
   }
 
   int nbasis=vir.ncol();

@@ -80,7 +80,12 @@ IrreducibleRepresentation::print(ostream& os) const
 
   int i,d;
   
-  ios::fmtflags oldf = os.setf(ios::left);
+#ifdef HAVE_IOS_FMTFLAGS
+  ios::fmtflags oldf;
+#else
+  long oldf;
+#endif
+  oldf = os.setf(ios::left);
   
   os << indent << setw(5) << symb;
 

@@ -42,6 +42,9 @@
 /* Define if you have the wait3 system call.  */
 #undef HAVE_WAIT3
 
+/* Define if you have the ios::fmtflags.  */
+#undef HAVE_IOS_FMTFLAGS
+
 /* Define as the return type of signal handlers (int or void).  */
 #undef RETSIGTYPE
 

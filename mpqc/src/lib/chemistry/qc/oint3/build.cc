@@ -2,6 +2,7 @@
 #pragma implementation
 #endif
 
+#include <stdlib.h>
 #include <chemistry/qc/oint3/build.h>
 
 int

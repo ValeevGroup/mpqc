@@ -35,7 +35,7 @@ extern "C" {
 static int
 mp2grad(centers_t *centers, scf_struct_t *scf_info, dmt_matrix Scf_Vec,
         double_vector_t *_evals, int nfzc, int nfzv, int mem,FILE* outfile,
-        const RefMessageGrp &msg, const RefMemoryGrp &mem,
+        const RefMessageGrp &msg, const RefMemoryGrp &memgrp,
         double &energy, double_matrix_t *);
 
 static void

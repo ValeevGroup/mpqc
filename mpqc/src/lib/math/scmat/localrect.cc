@@ -117,8 +117,13 @@ LocalSCMatrix::get_subblock(int br, int er, int bc, int ec)
       abort();
     }
   
-  RefSCDimension dnrow = (nsrow==nrow()) ? rowdim() : new SCDimension(nsrow);
-  RefSCDimension dncol = (nscol==ncol()) ? coldim() : new SCDimension(nscol);
+  RefSCDimension dnrow;
+  if (nsrow==nrow()) dnrow = rowdim();
+  else dnrow = new SCDimension(nsrow);
+
+  RefSCDimension dncol;
+  if (nscol==ncol()) dncol = coldim();
+  else dncol = new SCDimension(nscol);
 
   SCMatrix * sb = kit()->matrix(dnrow,dncol);
   sb->assign(0.0);

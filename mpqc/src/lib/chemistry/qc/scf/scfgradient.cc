@@ -35,7 +35,7 @@ ob_gradient(const RefOneBodyDerivInt& derint, double * gradient,
 {
   int me=grp->me();
   int nproc=grp->n();
-  int local = (LocalSymmSCMatrix::castdown(density) != 0);
+  int local = (LocalSymmSCMatrix::castdown(density.pointer()) != 0);
   int gsh=0;
   
   GaussianBasisSet& gbs = *gbs_.pointer();

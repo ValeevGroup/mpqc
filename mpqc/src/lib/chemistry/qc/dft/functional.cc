@@ -769,9 +769,9 @@ StdDenFunctional::StdDenFunctional(const RefKeyVal& keyval)
           funcs_[1] = new VWN5LCFunctional;
         }
       else if (!strcmp(name_,"SPZ81")) {
-          init_arrays(3);
+          init_arrays(2);
           funcs_[0] = new SlaterXFunctional;
-          funcs_[2] = new PZ81LCFunctional;
+          funcs_[1] = new PZ81LCFunctional;
         }
       else if (!strcmp(name_,"BPW91")) {
           init_arrays(3);

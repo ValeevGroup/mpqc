@@ -60,6 +60,7 @@ parse.cc: parse.yy
 	$(BISON) -v -d -o parse.tmp $^
 	cat parse.tmp \
 		| sed "s/^int yyparse.*;$$//" \
+		| sed "s/^YYPARSE_RETURN_TYPE yyparse.*;$$//" \
 		| sed "s/yylval/MPQCInylval/g" \
 		> parse.cc
 	cat parse.tmp.h \

@@ -1841,39 +1841,70 @@ MBPT2::compute_cs_grad()
   msg_->sum(Waj,nvir*nocc,tmpmat);
   delete[] tmpmat;
 
+  RefSCDimension nocc_act_dim(new SCDimension(nocc_act));
+  RefSCDimension nvir_act_dim(new SCDimension(nvir_act));
   RefSCDimension nocc_dim(new SCDimension(nocc));
   RefSCDimension nvir_dim(new SCDimension(nvir));
   RefSCDimension nbasis_dim(new SCDimension(nbasis));
 
-  if (me == 0) {
-    BiggestContribs biggest_s2(2,10);
-    // compute the S2 norm
-    double s2norm = 0.0;
-    for (j=nfzc; j<nocc; j++) {
-      laj_ptr = &Laj[j*nvir];
-      for (a=0; a<nvir_act; a++) {
-        tmpval = 0.5**laj_ptr++/(evals[a+nocc]-evals[j]);
-        biggest_s2.insert(tmpval,j,a);
-        s2norm += tmpval*tmpval;
-        }
+  RefSCMatrix s2(nocc_act_dim, nvir_act_dim, kit);
+  BiggestContribs biggest_s2(2,10);
+  // compute the S2 norm
+  double s2norm = 0.0;
+  for (j=nfzc; j<nocc; j++) {
+    laj_ptr = &Laj[j*nvir];
+    for (a=0; a<nvir_act; a++) {
+      tmpval = 0.5**laj_ptr++/(evals[a+nocc]-evals[j]);
+      s2.set_element(j-nfzc,a,tmpval);
+      biggest_s2.insert(tmpval,j,a);
+      s2norm += tmpval*tmpval;
       }
-    s2norm = sqrt(s2norm/(2*nocc_act));
-    cout << indent << scprintf("S2 norm = %12.8f", s2norm) << endl;
-    if (biggest_s2.ncontrib()) {
-      cout << endl << indent << "Largest S2 values (unique determinants):" << endl;
-      }
-    for (i=0; i<biggest_s2.ncontrib(); i++) {
-      int i0 = orbital_map[biggest_s2.indices(i)[0]];
-      int i1 = orbital_map[biggest_s2.indices(i)[1] + nocc];
-      cout << indent << scprintf("  %2d %12.8f %2d %3s -> %2d %3s",
-                                 i+1, biggest_s2.val(i),
-                                 symorb_num_[i0]+1,
-                                 ct.gamma(symorb_irrep_[i0]).symbol(),
-                                 symorb_num_[i1]+1,
-                                 ct.gamma(symorb_irrep_[i1]).symbol()
-                                 )
-           << endl;
-      }
+    }
+  // compute the S2 matrix 1-norm
+  double s2onenorm = 0.0;
+  RefSCElementSumAbs sumabs = new SCElementSumAbs;
+  RefSCElementOp genop = sumabs.pointer();
+  for (a=0; a < nvir_act; a++) {
+    sumabs->init();
+    s2.get_column(a).element_op(genop);
+    if (s2onenorm < sumabs->result()) s2onenorm = sumabs->result();
+    }
+  // compute the S2 matrix inf-norm
+  double s2infnorm = 0.0;
+  for (j=0; j < nocc_act; j++) {
+    sumabs->init();
+    s2.get_row(j).element_op(genop);
+    if (s2infnorm < sumabs->result()) s2infnorm = sumabs->result();
+    }
+  // compute the S2 matrix 2-norm
+  RefSymmSCMatrix s2s2(nocc_act_dim,kit);
+  s2s2.assign(0.0);
+  s2s2.accumulate_symmetric_product(s2);
+  s2 = 0;
+  double s2twonorm = sqrt(s2s2.eigvals().get_element(nocc_act-1));
+  s2s2 = 0;
+  // compute the S2 norm
+  s2norm = sqrt(s2norm/(2*nocc_act));
+  // print the norms
+  cout <<node0
+       <<indent<<scprintf("S2(ov) matrix 1-norm   = %12.8f", s2onenorm) <<endl
+       <<indent<<scprintf("S2 matrix 2-norm       = %12.8f", s2twonorm) <<endl
+       <<indent<<scprintf("S2(ov) matrix inf-norm = %12.8f", s2infnorm) <<endl
+       <<indent<<scprintf("S2 norm                = %12.8f", s2norm) <<endl;
+  if (biggest_s2.ncontrib()) {
+    cout << node0 << endl
+         << indent << "Largest S2 values (unique determinants):" << endl;
+    }
+  for (i=0; i<biggest_s2.ncontrib(); i++) {
+    int i0 = orbital_map[biggest_s2.indices(i)[0]];
+    int i1 = orbital_map[biggest_s2.indices(i)[1] + nocc];
+    cout << node0 << indent << scprintf("  %2d %12.8f %2d %3s -> %2d %3s",
+                                        i+1, biggest_s2.val(i),
+                                        symorb_num_[i0]+1,
+                                        ct.gamma(symorb_irrep_[i0]).symbol(),
+                                        symorb_num_[i1]+1,
+                                        ct.gamma(symorb_irrep_[i1]).symbol())
+         << endl;
     }
 
 

@@ -244,7 +244,16 @@ sub parse_mpqc {
         elsif ($wante && /Value of the MolecularEnergy:\s+$fltrx/) {
             $molecularenergy = $1;
         }
-        elsif ($wante && /S2 norm =\s+$fltrx/) {
+        elsif ($wante && /S2\(ov\) matrix 1-norm\s*=\s*$fltrx/) {
+            $self->{"s2matrix1norm"} = $1;
+        }
+        elsif ($wante && /S2 matrix 2-norm\s*=\s*$fltrx/) {
+            $self->{"s2matrix2norm"} = $1;
+        }
+        elsif ($wante && /S2\(ov\) matrix inf-norm\s*=\s*$fltrx/) {
+            $self->{"s2matrixinfnorm"} = $1;
+        }
+        elsif ($wante && /S2 norm\s*=\s*$fltrx/) {
             $s2norm = $1;
         }
         elsif ($wante && /Largest S2 values.*:/) {
@@ -509,6 +518,21 @@ sub energy {
 sub s2norm {
     my $self = shift;
     $self->{"s2norm"}
+}
+
+sub s2matrix1norm {
+    my $self = shift;
+    $self->{"s2matrix1norm"}
+}
+
+sub s2matrix2norm {
+    my $self = shift;
+    $self->{"s2matrix2norm"}
+}
+
+sub s2matrixinfnorm {
+    my $self = shift;
+    $self->{"s2matrixinfnorm"}
 }
 
 sub t1norm {

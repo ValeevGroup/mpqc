@@ -105,6 +105,24 @@ sub check {
                     printf " S2N:%d", $maxerror;
                     print "*" if ($maxerror <= 8);
                 }
+                if ($result->s2matrix1norm() && $cresult->s2matrix1norm()) {
+                    my $maxerror = compare_numbers($result->s2matrix1norm(),
+                                                   $cresult->s2matrix1norm());
+                    printf " |S2|1:%d", $maxerror;
+                    print "*" if ($maxerror <= 8);
+                }
+                if ($result->s2matrix2norm() && $cresult->s2matrix2norm()) {
+                    my $maxerror = compare_numbers($result->s2matrix2norm(),
+                                                   $cresult->s2matrix2norm());
+                    printf " |S2|2:%d", $maxerror;
+                    print "*" if ($maxerror <= 8);
+                }
+                if ($result->s2matrixinfnorm() && $cresult->s2matrixinfnorm()){
+                    my $maxerror = compare_numbers($result->s2matrixinfnorm(),
+                                                 $cresult->s2matrixinfnorm());
+                    printf " |S2|i:%d", $maxerror;
+                    print "*" if ($maxerror <= 8);
+                }
                 if ($result->npacharge() && $cresult->npacharge()) {
                     my $maxerror = compare_vecs($result->npacharge(),
                                                 $cresult->npacharge());

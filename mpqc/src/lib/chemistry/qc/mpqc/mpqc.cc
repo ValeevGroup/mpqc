@@ -52,14 +52,118 @@ MPSCF::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+void MPSCF::init(int which)
+{
+  switch(which) {
+  case 0:
+    break;
+  case 1:
+    // some PICL emulators need argv0
+    argv0 = "bad news: argv0 not available -- MPSCF";
+
+    // get some info from the host program
+    int top,ord,dir;
+
+    open0(&nproc,&me,&host);
+    setarc0(&nproc,&top,&ord,&dir);
+
+    // initialize timing for mpqc 
+    tim_enter("mpqcnode");
+    tim_enter("input");
+
+    outfile = stdout;
+  
+    if (me == 0) {
+      fprintf(outfile,
+              "\n      MPSCF: Massively Parallel Quantum Chemistry\n\n\n");
+      fprintf(outfile,"  Running on a %s with %d nodes.\n",
+              machine_type(),nproc);
+      fflush(outfile);
+    }
+    break;
+  case 2:
+    if (me==0) {
+      fprintf(outfile,"\n  mpqc options:\n");
+      fprintf(outfile,"    node_timings       = %s\n",
+              (node_timings)?"YES":"NO");
+      fprintf(outfile,"    throttle           = %d\n",throttle);
+      fprintf(outfile,"    sync_loop          = %d\n",sync_loop);
+      fprintf(outfile,"    save_vector        = %s\n",
+              (save_vector)?"YES":"NO");
+
+      sprintf(vecfile,"%s.scfvec",scf_info.fname);
+
+      // pretty print the scf struct
+      scf_print_options(outfile,scf_info);
+    }
+  
+    sgen_reset_bcast0();
+    
+    bcast0_scf_struct(&scf_info,0,0);
+    bcast0_sym_struct(&sym_info,0,0);
+    bcast0_centers(&centers,0,0);
+
+    bcast0(&save_vector,sizeof(int),mtype_get(),0);
+    bcast0(&throttle,sizeof(int),mtype_get(),0);
+    bcast0(&sync_loop,sizeof(int),mtype_get(),0);
+    bcast0(&node_timings,sizeof(int),mtype_get(),0);
+
+    int size;
+    if (me==0) size=strlen(vecfile)+1;
+    bcast0(&size,sizeof(int),mtype_get(),0);
+    bcast0(vecfile,size,mtype_get(),0);
+    
+    // initialize the dmt routines
+    init_dmt(&centers,&scf_info,&sym_info);
+
+    // set the throttle for libdmt loops
+    dmt_set_throttle(throttle);
+
+    // set the sync_loop for libdmt loops
+    dmt_set_sync_loop(sync_loop);
+    
+    break;
+
+  case 3:
+    // allocate memory for vector and fock matrices
+
+    Scf_Vec = dmt_create("scf vector",scf_info.nbfao,COLUMNS);
+    Fock = dmt_create("fock matrix",scf_info.nbfao,SCATTERED);
+    if (scf_info.iopen)
+      FockO = dmt_create("open fock matrix",scf_info.nbfao,SCATTERED);
+    else
+      FockO = dmt_nil();
+
+    if (me == 0 && save_vector)
+      fprintf(outfile,"  scf vector will be written to file %s\n\n",vecfile);
+
+    // if restart, then read in old scf vector if it exists
+
+    FILE* test_vec = fopen(vecfile,"r");
+    if (test_vec && scf_info.restart) {
+      fclose(test_vec);
+      dmt_read(vecfile,Scf_Vec);
+      if (me==0) fprintf(outfile,"\n  read vector from file %s\n\n",vecfile);
+      scf_info.restart=1;
+    } else if (test_vec) {
+      fclose(test_vec);
+    }
+
+    tim_exit("input");
+    break;
+    
+  default:
+    break;
+  }
+}
+
 MPSCF::MPSCF(const RefKeyVal&keyval):
   OneBodyWavefunction(keyval),
   _scf(this),
   _exchange_energy(this),
   _eigenvectors(this)
 {
-  RefGaussianBasisSet gbs = keyval->describedclassvalue("basis");
-  centers_t *tcenters = gbs->convert_to_centers_t(_mol.pointer());
+  centers_t *tcenters = basis()->convert_to_centers_t(_mol.pointer());
 
   if (!tcenters) {
     exit(3);
@@ -101,33 +205,11 @@ MPSCF::MPSCF(const RefKeyVal&keyval):
     abort();
   }
   active = 1;
+
+  init(1);
   
- // some PICL emulators need argv0
-  argv0 = "bad news: argv0 not available -- MPSCF";
-
- // get some info from the host program
-  int nproc,me,top,ord,dir;
-
-  open0(&nproc,&me,&host);
-  setarc0(&nproc,&top,&ord,&dir);
-
- // initialize timing for mpqc 
-  tim_enter("mpqcnode");
-  tim_enter("input");
-
-  outfile = stdout;
-
-  int throttle,sync_loop;
-
   if (me == 0) {
-
-    fprintf(outfile,
-              "\n      MPSCF: Massively Parallel Quantum Chemistry\n\n\n");
-    fprintf(outfile,"  Running on a %s with %d nodes.\n",machine_type(),nproc);
-    fflush(outfile);
-
    // read input, and initialize various structs
-
     node_timings = keyval->booleanvalue("node_timings");
 
     throttle = keyval->intvalue("throttle");
@@ -137,34 +219,9 @@ MPSCF::MPSCF(const RefKeyVal&keyval):
 
     save_vector = keyval->booleanvalue("save_vector");
     if (keyval->error() != KeyVal::OK) save_vector=1;
-
-    fprintf(outfile,"\n  mpqc options:\n");
-    fprintf(outfile,"    node_timings       = %s\n",(node_timings)?"YES":"NO");
-    fprintf(outfile,"    throttle           = %d\n",throttle);
-    fprintf(outfile,"    sync_loop          = %d\n",sync_loop);
-    fprintf(outfile,"    save_vector        = %s\n",(save_vector)?"YES":"NO");
-
-    sprintf(vecfile,"%s.scfvec",scf_info.fname);
-
-   // pretty print the scf struct
-    scf_print_options(outfile,scf_info);
   }
 
-  sgen_reset_bcast0();
-
-  bcast0_scf_struct(&scf_info,0,0);
-  bcast0_sym_struct(&sym_info,0,0);
-  bcast0_centers(&centers,0,0);
-
-  bcast0(&save_vector,sizeof(int),mtype_get(),0);
-  bcast0(&throttle,sizeof(int),mtype_get(),0);
-  bcast0(&sync_loop,sizeof(int),mtype_get(),0);
-  bcast0(&node_timings,sizeof(int),mtype_get(),0);
-
-  int size;
-  if (me==0) size=strlen(vecfile)+1;
-  bcast0(&size,sizeof(int),mtype_get(),0);
-  bcast0(vecfile,size,mtype_get(),0);
+  init(2);
 
  // if we're using a projected guess vector, then initialize oldcenters
   if (scf_info.proj_vector) {
@@ -181,9 +238,6 @@ MPSCF::MPSCF(const RefKeyVal&keyval):
     bcast0_centers(&oldcenters,0,0);
   }
 
- // initialize the dmt routines
-  init_dmt(&centers,&scf_info,&sym_info);
-
  // initialize force and geometry routines
   if (me==0) fprintf(outfile,"\n");
   if (scf_info.iopen)
@@ -192,37 +246,7 @@ MPSCF::MPSCF(const RefKeyVal&keyval):
     dmt_force_csscf_keyval_init(keyval.pointer(),outfile);
   if (me==0) fprintf(outfile,"\n");
 
- // set the throttle for libdmt loops
-  dmt_set_throttle(throttle);
-
- // set the sync_loop for libdmt loops
-  dmt_set_sync_loop(sync_loop);
-
- // allocate memory for vector and fock matrices
-
-  Scf_Vec = dmt_create("scf vector",scf_info.nbfao,COLUMNS);
-  Fock = dmt_create("fock matrix",scf_info.nbfao,SCATTERED);
-  if (scf_info.iopen)
-    FockO = dmt_create("open fock matrix",scf_info.nbfao,SCATTERED);
-  else
-    FockO = dmt_nil();
-
-  if (mynode0() == 0 && save_vector)
-      fprintf(outfile,"  scf vector will be written to file %s\n\n",vecfile);
-
- // if restart, then read in old scf vector if it exists
-
-  FILE* test_vec = fopen(vecfile,"r");
-  if (test_vec && scf_info.restart) {
-    fclose(test_vec);
-    dmt_read(vecfile,Scf_Vec);
-    if (me==0) fprintf(outfile,"\n  read vector from file %s\n\n",vecfile);
-    scf_info.restart=1;
-  } else if (test_vec) {
-    fclose(test_vec);
-  }
-
-  tim_exit("input");
+  init(3);
 }
 
 MPSCF::~MPSCF()
@@ -233,7 +257,7 @@ MPSCF::~MPSCF()
     dmt_force_csscf_done();
 
   tim_print(node_timings);
-  clean_and_exit(host0());
+  //clean_and_exit(host0());
   active = 0;
 }
 
@@ -251,14 +275,61 @@ MPSCF::MPSCF(StateIn&s):
     }
   active = 1;
 
-  abort();
+  // get the easy stuff
+  char *foo;
+  s.getstring(foo);
+  if (foo) {
+    strcpy(vecfile,foo);
+    delete[] foo;
+  }
+  s.get(save_vector);
+  s.get(_ndocc);
+  s.get(_nsocc);
+
+  init_scf_struct(&scf_info);
+  get_scf_struct(s,scf_info);
+
+  centers_t *tcenters = basis()->convert_to_centers_t(_mol.pointer());
+  if (!tcenters)
+    exit(3);
+
+  init_centers(&centers);
+  init_centers(&oldcenters);
+
+  assign_centers(&centers,tcenters);
+  free_centers(tcenters);
+
+  sym_struct_from_pg(_mol->point_group(),centers,sym_info);
+  init(1);
+  init(2);
+
+ // initialize force and geometry routines
+  if (me==0) fprintf(outfile,"\n");
+  if (scf_info.iopen)
+    dmt_get_osscf_force(s);
+  else
+    dmt_get_csscf_force(s);
+  if (me==0) fprintf(outfile,"\n");
+  
+  init(3);
 }
 
 void
 MPSCF::save_data_state(StateOut&s)
 {
   OneBodyWavefunction::save_data_state(s);
-  abort();
+
+  // save the easy stuff
+  s.putstring(vecfile);
+  s.put(save_vector);
+  s.put(_ndocc);
+  s.put(_nsocc);
+  
+  put_scf_struct(s,scf_info);
+  if (scf_info.iopen)
+    dmt_put_osscf_force(s);
+  else
+    dmt_put_csscf_force(s);
 }
 
 

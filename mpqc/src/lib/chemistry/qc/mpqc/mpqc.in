@@ -39,9 +39,16 @@ mole: [
 opt: [
   <QNewtonOpt>: (
      convergence = 1.0e-5
+     max_iterations = 20
      function = $:mole:0
      update<BFGSUpdate>:()
      )
+%  <GDIISOpt>: (
+%     convergence = 1.0e-5
+%     max_iterations = 20
+%     function = $:mole:0
+%     update<BFGSUpdate>:()
+%     )
   ]
 
 

@@ -7,11 +7,15 @@
 #include "mpqc.h"
 #include <chemistry/molecule/coor.h>
 #include <math/optimize/opt.h>
+#include <math/optimize/gdiis.h>
 
 // Force linkages:
+#ifndef __PIC__
 const ClassDesc &fl0 = MPSCF::class_desc_;
 const ClassDesc &fl1 = IntMolecularCoor::class_desc_;
 const ClassDesc &fl2 = QNewtonOpt::class_desc_;
+const ClassDesc &fl3 = GDIISOpt::class_desc_;
+#endif
 
 void die()
 {
@@ -39,10 +43,12 @@ main(int argc, char**argv)
 
   // open keyval input
   RefKeyVal rpkv(new ParsedKeyVal(input));
+  int nmole = rpkv->count("mole");
+  int nopt = rpkv->count("opt");
 
-  for (int i=0; rpkv->exists("mole",i); i++) {
+  for (int i=0; i < nmole; i++) {
       RefMolecularEnergy mole = rpkv->describedclassvalue("mole",i);
-
+     
       if (mole.nonnull()) {
           mole->print(o);
 
@@ -55,7 +61,7 @@ main(int argc, char**argv)
         }
     }
 
-  for (i=0; rpkv->exists("opt",i); i++) {
+  for (i=0; i < nopt; i++) {
       RefOptimize opt = rpkv->describedclassvalue("opt",i);
 
       if (opt.nonnull()) {

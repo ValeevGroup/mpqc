@@ -152,7 +152,7 @@ GaussianPointChargeIntv2::compute_shell(int i,int j)
 GaussianNuclearIntv2::GaussianNuclearIntv2(const RefGaussianBasisSet&bs1,
                                            const RefGaussianBasisSet&bs2) :
   GaussianPointChargeIntv2(bs1, bs2,
-                           new PointChargeData(bs1_ ->molecule()->charges()))
+                           new PointChargeData(bs1->molecule()->charges()))
 {
 }
 

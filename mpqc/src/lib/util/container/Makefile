@@ -21,9 +21,10 @@ TESTCXX = settest.cc settestt.cc reftest.cc reftestx.cc
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = pixmap.h pixvpdefs.h ptrset.h voidptr.h voidptrdefs.h \
-      set.h array.h ref.h reftestx.h
+      set.h array.h ref.h reftestx.h artem.h ar2tem.h ssarmac.h ssar2mac.h
 
-GENINC = $(GENCXXSRC:%.cc=%.h) setmacr.h asetmacr.h refmacr.h
+GENINC = $(GENCXXSRC:%.cc=%.h) setmacr.h asetmacr.h refmacr.h \
+         armac.h ar2mac.h ssarmac.h ssar2mac.h
 
 DEPENDINCLUDE = $(INC) $(GENINC)
 
@@ -37,6 +38,18 @@ default:: libcontainer.a
 
 interface:: $(DEPENDINCLUDE)
 
+armac.h: artem.h $(TMPL2MACDEP)
+	$(TMPL2MAC) $< > armac.h
+
+ar2mac.h: ar2tem.h $(TMPL2MACDEP)
+	$(TMPL2MAC) $< > ar2mac.h
+
+ssarmac.h: ssartem.h $(TMPL2MACDEP)
+	$(TMPL2MAC) $< > ssarmac.h
+
+ssar2mac.h: ssar2tem.h $(TMPL2MACDEP)
+	$(TMPL2MAC) $< > ssar2mac.h
+
 setmacr.h: settmpl.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > setmacr.h
 
@@ -48,6 +61,9 @@ refmacr.h: reftmpl.h $(TMPL2MACDEP)
 
 settest: settest.o libcontainer.a
 	$(CXX) $(CXXFLAGS) -o settest $^
+
+artest: artest.o libcontainer.a
+	$(CXX) $(CXXFLAGS) -o artest $^
 
 settestt: settestt.o libcontainer.a
 	$(CXX) $(CXXFLAGS) -o settestt $^

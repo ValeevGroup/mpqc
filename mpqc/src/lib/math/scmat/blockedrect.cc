@@ -474,6 +474,8 @@ BlockedSCMatrix::invert_this()
     fprintf(stderr,"BlockedSCMatrix::invert_this: SVD not implemented yet");
     abort();
   }
+
+  return 0.0;
 }
 
 void
@@ -564,7 +566,7 @@ BlockedSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
 void
 BlockedSCMatrix::element_op(const RefSCElementOp& op)
 {
-  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
 
   for (int i=0; i < nblocks_; i++) {
     if (bop)
@@ -586,7 +588,7 @@ BlockedSCMatrix::element_op(const RefSCElementOp2& op,
     abort();
   }
 
-  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
 
   for (int i=0; i < nblocks_; i++) {
     if (bop)
@@ -611,7 +613,7 @@ BlockedSCMatrix::element_op(const RefSCElementOp3& op,
     abort();
   }
 
-  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
 
   for (int i=0; i < nblocks_; i++) {
     if (bop)

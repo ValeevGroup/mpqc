@@ -333,11 +333,11 @@ class SCMatrixJointSubblockIter: public SCMatrixSubblockIter {
     int niters_;
     RefSCMatrixSubblockIter *iters_;
   public:
-    SCMatrixJointSubblockIter(RefSCMatrixSubblockIter&,
-                              RefSCMatrixSubblockIter&,
-                              RefSCMatrixSubblockIter& = 0,
-                              RefSCMatrixSubblockIter& = 0,
-                              RefSCMatrixSubblockIter& = 0);
+    SCMatrixJointSubblockIter(const RefSCMatrixSubblockIter&,
+                              const RefSCMatrixSubblockIter&,
+                              const RefSCMatrixSubblockIter& = 0,
+                              const RefSCMatrixSubblockIter& = 0,
+                              const RefSCMatrixSubblockIter& = 0);
     ~SCMatrixJointSubblockIter();
     void begin();
     int ready();

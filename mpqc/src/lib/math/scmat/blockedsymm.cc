@@ -466,7 +466,7 @@ BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
 void
 BlockedSymmSCMatrix::element_op(const RefSCElementOp& op)
 {
-  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
 
   for (int i=0; i < d->nblocks(); i++) {
     if (bop)
@@ -487,7 +487,7 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp2& op,
     abort();
   }
 
-  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
 
   for (int i=0; i < d->nblocks(); i++) {
     if (bop)
@@ -511,7 +511,7 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp3& op,
     abort();
   }
 
-  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
 
   for (int i=0; i < d->nblocks(); i++) {
     if (bop)

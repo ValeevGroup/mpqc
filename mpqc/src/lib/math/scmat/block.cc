@@ -966,11 +966,11 @@ SCMatrixCompositeSubblockIter::block()
 // SCMatrixJointSubblockIter
 
 SCMatrixJointSubblockIter::SCMatrixJointSubblockIter(
-    RefSCMatrixSubblockIter& i1,
-    RefSCMatrixSubblockIter& i2,
-    RefSCMatrixSubblockIter& i3,
-    RefSCMatrixSubblockIter& i4,
-    RefSCMatrixSubblockIter& i5):
+    const RefSCMatrixSubblockIter& i1,
+    const RefSCMatrixSubblockIter& i2,
+    const RefSCMatrixSubblockIter& i3,
+    const RefSCMatrixSubblockIter& i4,
+    const RefSCMatrixSubblockIter& i5):
   SCMatrixSubblockIter(None)
 {
   niters_ = 0;

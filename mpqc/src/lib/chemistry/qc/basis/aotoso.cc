@@ -163,13 +163,14 @@ SO_block::add(SO& s, int i)
 void
 SO_block::print(const char *title)
 {
+  int i,j;
   printf("SO block %s\n",title);
-  for (int i=0; i < len; i++) {
+  for (i=0; i < len; i++) {
     printf("SO %d\n",i+1);
-    for (int j=0; j < so[i].len; j++)
+    for (j=0; j < so[i].len; j++)
       printf(" %10d",so[i].cont[j].bfn);
     printf("\n");
-    for (int j=0; j < so[i].len; j++)
+    for (j=0; j < so[i].len; j++)
       printf(" %10.7f",so[i].cont[j].coef);
     printf("\n");
   }
@@ -562,8 +563,8 @@ do_transform(const RefSymmSCMatrix& skel, const RefSymmSCMatrix& sym,
 {
   int b,c,i,j,k,l;
   
-  BlockedSymmSCMatrix *lsym = BlockedSymmSCMatrix::castdown(sym);
-  BlockedSymmSCMatrix *lskl = BlockedSymmSCMatrix::castdown(skel);
+  BlockedSymmSCMatrix *lsym = BlockedSymmSCMatrix::castdown(sym.pointer());
+  BlockedSymmSCMatrix *lskl = BlockedSymmSCMatrix::castdown(skel.pointer());
 
   SO_block *sos = pl.aotoso();
 
@@ -825,7 +826,7 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   do_transform(skel,sym,gbs_,*this,ct);
 #endif
 
-  BlockedSymmSCMatrix *la = BlockedSymmSCMatrix::castdown(sym);
+  BlockedSymmSCMatrix *la = BlockedSymmSCMatrix::castdown(sym.pointer());
   
   // loop through blocks and finish symmetrizing degenerate blocks
   for (b=0; b < la->nblocks(); b++) {

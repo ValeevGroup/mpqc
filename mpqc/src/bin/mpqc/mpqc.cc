@@ -16,12 +16,15 @@
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
 
+#include <math/optimize/opt.h>
+
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/molecule/molfreq.h>
+#include <chemistry/qc/wfn/wfn.h>
 
 // Force linkages:
-#include <chemistry/qc/scf/linkage.h>
+#include <chemistry/qc/mbpt/linkage.h>
 
 #include "disclaimer.h"
 
@@ -90,7 +93,8 @@ main(int argc, char *argv[])
 
   // get the message group.  the commandline take precedence, then what is
   // in the input file.
-  RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
+  //RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
+  RefMessageGrp grp;
   
   // if we are on a paragon then use a ParagonMessageGrp
   // otherwise read the message group from the input file
@@ -150,11 +154,15 @@ main(int argc, char *argv[])
   char * ckptfile = new char[strlen(molname)+6];
   sprintf(ckptfile,"%s.ckpt",molname);
   
+  int restart = 1;
+  if (keyval->exists("restart"))
+    restart = keyval->booleanvalue("restart");
+  
   struct stat sb;
   RefMolecularEnergy mole;
   RefOptimize opt;
 
-  if (stat(ckptfile,&sb)==0 && sb.st_size) {
+  if (restart && stat(ckptfile,&sb)==0 && sb.st_size) {
     StateInBinXDR si(ckptfile);
     opt.restore_state(si);
     mole = opt->function();

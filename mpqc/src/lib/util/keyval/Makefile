@@ -42,7 +42,7 @@ keyvaltest: keyvaltest.o libkeyval.$(LIBSUF) libcontainer.$(LIBSUF) libclass.$(L
 	$(LD) $(LDFLAGS) -o keyvaltest $^ $(SYSLIBS)
 
 keyvaltest.o: keyvaltest.cc
-	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

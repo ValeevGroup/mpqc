@@ -10,6 +10,13 @@
 #include "ipv2_parse.h"
 #define YY_USE_PROTOS
 #define yyrestart IPV2::yrestart
+#ifndef OLD_FLEX_SCANNER
+#  define yy_get_next_buffer IPV2::y_get_next_buffer
+#  define yyunput IPV2::yunput
+#  define yyinput IPV2::yinput
+   FILE* IPV2::yin=0;
+   FILE* IPV2::yout=0;
+#endif
 %}
 string  [A-Za-z0-9_\.*+-/]*
 qstring \"[^"\n]+\"

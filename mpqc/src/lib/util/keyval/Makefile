@@ -64,7 +64,14 @@ ipv2_parse.cc ipv2_parse.h: ipv2_parse.yy
 	-@rm -f ipv2_parse.cc.output
 
 ipv2_scan.cc: ipv2_scan.ll
-	$(LEX) -L -t $^ | grep -v "extern FILE .yyin" > ipv2_scan.cc
+	$(LEX) -L -t $^ | grep -v "extern FILE .yyin" \
+	                | grep -v "static int yy_get_next_buffer.*;" \
+	                | sed "s/static int yy_get_next_buffer/int yy_get_next_buffer/" \
+	                | grep -v "static void yyunput.*;" \
+	                | sed "s/static void yyunput/void yyunput/" \
+	                | grep -v "static int yyinput.*;" \
+	                | sed "s/static int yyinput/int yyinput/" \
+	                > ipv2_scan.cc
 
 #############################
 

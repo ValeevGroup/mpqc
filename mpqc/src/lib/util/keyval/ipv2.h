@@ -156,6 +156,11 @@ class IPV2
   void yrestart(FILE*);
   void yerror(const char* s);
   int ywrap();
+#ifndef OLD_FLEX_SCANNER
+  int y_get_next_buffer();
+  void yunput(int c, char *buf_ptr);
+  int yinput();
+#endif    
  public:
   static FILE* yin;
   static FILE* yout;

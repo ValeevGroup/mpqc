@@ -5,13 +5,17 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
+T2H = $(SRCDIR)/$(TOPDIR)
+
 default: info
 
-info:
-	makeinfo SC.texi
+.PHONY:	info html
 
-html:
-	perl $(TOPDIR)/bin/texi2html -verbose -deepsplit -menu SC.texi
+info: SC.texi
+	makeinfo $^
+
+html: SC.texi
+	perl $(T2H)/bin/texi2html -verbose -deepsplit -menu $^
 
 clean distclean::
 	/bin/rm -f *.info* *.html

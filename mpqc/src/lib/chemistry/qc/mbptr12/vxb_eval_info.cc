@@ -73,8 +73,10 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   nocc_act_ = nocc_ - nfzc_;
   noso_ = oso_dim.n();
 
+  ints_method_ = mbptr12->r12ints_method();
+  ints_file_ = mbptr12->r12ints_file();
+
   // Default values
-  ints_file_ = strdup("/tmp/r12ints.dat");
   memory_ = 8000000;
   debug_ = 0;
   dynamic_ = false;
@@ -103,9 +105,9 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   si.get(nfzv_);
   si.get(noso_);
 
+  int ints_method; si.get(ints_method); ints_method_ = (StoreMethod) ints_method;
   si.getstring(ints_file_);
 
-  // Default values
   double memory; si.get(memory); memory_ = (size_t) memory;
   si.get(debug_);
   int dynamic; si.get(dynamic); dynamic_ = (bool) dynamic;
@@ -133,7 +135,9 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put(nfzv_);
   so.put(noso_);
 
+  so.put((int)ints_method_);
   so.putstring(ints_file_);
+
   so.put((double)memory_);
   so.put(debug_);
   so.put((int)dynamic_);

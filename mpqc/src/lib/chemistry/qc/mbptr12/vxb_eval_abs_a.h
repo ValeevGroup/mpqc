@@ -68,7 +68,7 @@ public:
 	       RefSCMatrix& Xab,
 	       RefSCMatrix& Bab);
 
-  Ref<R12IntEvalInfo> r12info() const { return r12info_; };
+  Ref<R12IntEvalInfo> r12info() const;
 };
 
 }

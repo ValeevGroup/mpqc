@@ -81,7 +81,6 @@ public:
   void set_debug(int debug);
   void set_dynamic(bool dynamic);
   void set_memory(size_t nbytes);
-  void set_ints_file(const char* filename);
 
   Ref<R12IntEvalInfo> r12info() const;
   RefSCDimension dim_aa() const;

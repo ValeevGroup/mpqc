@@ -81,6 +81,7 @@ void R12IntEval_abs_A::obsolete()
   evaluated_ = false;
 }
 
+Ref<R12IntEvalInfo> R12IntEval_abs_A::r12info() const { return r12info_; };
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -75,8 +75,10 @@ R12IntEval::R12IntEval(MBPT2_R12* mbptr12)
   emp2pair_aa_ = local_matrix_kit->vector(dim_aa_);
   emp2pair_ab_ = local_matrix_kit->vector(dim_ab_);
 
+  stdapprox_ = mbptr12->stdapprox();
+  spinadapted_ = mbptr12->spinadapted();
+
   // Default values
-  stdapprox_ = LinearR12::StdApprox_Ap;
   evaluated_ = false;
   debug_ = 0;
 }
@@ -111,13 +113,9 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   emp2pair_aa_.restore(si);
   emp2pair_ab_.restore(si);
 
-  int stdapprox;
-  si.get(stdapprox);
-  stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
-  int evaluated;
-  si.get(evaluated);
-  evaluated_ = (bool) evaluated;
+  int stdapprox; si.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
   int spinadapted; si.get(spinadapted); spinadapted_ = (bool) spinadapted;
+  int evaluated; si.get(evaluated); evaluated_ = (bool) evaluated;
   si.get(debug_);
 }
 
@@ -154,8 +152,8 @@ void R12IntEval::save_data_state(StateOut& so)
   emp2pair_ab_.save(so);
 
   so.put((int)stdapprox_);
-  so.put((int)evaluated_);
   so.put((int)spinadapted_);
+  so.put((int)evaluated_);
   so.put(debug_);
 }
 
@@ -169,7 +167,6 @@ void R12IntEval::set_spinadapted(bool spinadapted) { spinadapted_ = spinadapted;
 void R12IntEval::set_debug(int debug) { if (debug >= 0) { debug_ = debug; r12info_->set_debug_level(debug_); }};
 void R12IntEval::set_dynamic(bool dynamic) { r12info_->set_dynamic(dynamic); };
 void R12IntEval::set_memory(size_t nbytes) { r12info_->set_memory(nbytes); };
-void R12IntEval::set_ints_file(const char* filename) { r12info_->set_ints_file(filename); };
 
 Ref<R12IntEvalInfo> R12IntEval::r12info() const { return r12info_; };
 RefSCDimension R12IntEval::dim_aa() const { return dim_aa_; };

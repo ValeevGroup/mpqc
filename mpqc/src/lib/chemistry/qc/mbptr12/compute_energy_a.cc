@@ -45,10 +45,8 @@ MBPT2_R12::compute_energy_a_()
 
   if (r12eval_.null()) {
     r12eval_ = new R12IntEval(this);
-    r12eval_->set_stdapprox(stdapprox_);
-    // will spin-adapt the energies rather than the intermediates
+    // will adapt energies rather than the intermediates
     r12eval_->set_spinadapted(false);
-    r12eval_->set_ints_file(r12ints_file_);
     r12eval_->set_debug(debug_);
     r12eval_->set_dynamic(dynamic_);
     r12eval_->set_memory(mem_alloc);

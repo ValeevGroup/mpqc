@@ -42,6 +42,7 @@
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/vxb_eval.h>
+#include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 
 namespace sc {
@@ -49,7 +50,8 @@ namespace sc {
 // //////////////////////////////////////////////////////////////////////////
 
 class R12IntEval;
-  class MP2R12Energy;
+class R12IntEvalInfo;
+class MP2R12Energy;
   
 /** The MBPT2_R12 class implements several linear R12 second-order perturbation theory
 methods. */
@@ -72,7 +74,8 @@ class MBPT2_R12: public MBPT2 {
     double mp2_corr_energy_;
     double r12_corr_energy_;
     LinearR12::StandardApproximation stdapprox_;
-    char *r12ints_file_;
+    R12IntEvalInfo::StoreMethod r12ints_method_;
+    char* r12ints_file_;
     bool spinadapted_;
 
     void init_variables_();
@@ -116,11 +119,48 @@ class MBPT2_R12: public MBPT2 {
 	<dt><tt>spinadapted</tt><dd> This specifies whether to compute spin-adapted
 	or spin-orbital pair energies. Default is to compute spin-adapted energies.
 
-        <dt><tt>r12ints_file</tt><dd> This specifies which file to use to store transformed
-	MO integrals if the multipass algorithm is used.  Default is /tmp/r12ints.dat.
-
 	<dt><tt>aux_basis</tt><dd> This specifies the auxiliary basis to be used for the resolution
 	of the identity. Default is to use the same basis as for the orbital expansion.
+
+	<dt><tt>r12ints</tt><dd> This specifies how to store transformed MO integrals.
+	Valid values are:
+
+	<dl>
+
+	  <dt><tt>mem-posix</tt><dd> Store integrals in memory for single-pass situations
+	  and in a binary file on task 0's node using POSIX I/O for multipass situations.
+	  <tt>posix</tt> is usually less efficient than <tt>mpi</tt> for distributed
+	  parallel multipass runs since the I/O is performed by one task only. However, this method guaranteed to
+          work in all types of environments, hence <tt>mem-posix</tt> is the default.
+
+	  <dt><tt>posix</tt><dd> Store integrals in a binary file on task 0's node using POSIX I/O.
+	  This method is different from <tt>mem-posix</tt> in that it forces the integrals out to disk
+          even if they could be stored in memory. <tt>posix</tt> should only be used for benchmarking
+          and testing purposes.
+
+	  <dt><tt>mem-mpi</tt><dd> Store integrals in memory for single-pass situations
+	  and in a binary file using MPI-I/O for multipass situations. This method
+	  assumes the availability of MPI-I/O. <tt>mem-mpi</tt> is the preferred choice
+	  in distributed environments which have MPI-I/O available.
+
+	  <dt><tt>mpi</tt><dd> Store integrals in a binary file using MPI-I/O. This method
+	  is different from <tt>mem-mpi</tt> in that it forces the integrals out to disk
+	  even if they could be stored in memory. <tt>mpi</tt> should only be used for benchmarking
+	  and testing purposes.
+
+	  <dt><tt>mem</tt><dd> Store integrals in memory. Can only be used with single-pass
+	  transformations. This method should only be used for testing purposes
+
+	</dl>
+
+	If <tt>r12ints</tt> is not specified, then <tt>mem-posix</tt> method will be used.
+	If user wishes to use MPI-I/O, pending its availability, for higher parallel efficiency,
+	<tt>r12ints</tt> should be explicitly set to <tt>mem-mpi</tt>.
+
+        <dt><tt>r12ints_file</tt><dd> This specifies which file to use to store transformed
+	MO integrals if <tt>r12ints=posix-io</tt> or <tt>r12ints=mpi-io</tt> is used.
+	Default is /tmp/r12ints.dat. If MPI-I/O is used then it is user's responsibility to ensure
+	that the file resides on a file system that supports MPI-I/O.
 
         </dl> */
     MBPT2_R12(const Ref<KeyVal>&);
@@ -129,6 +169,10 @@ class MBPT2_R12: public MBPT2 {
     void save_data_state(StateOut&);
 
     Ref<GaussianBasisSet> aux_basis() const;
+    LinearR12::StandardApproximation stdapprox() const;
+    bool spinadapted() const;
+    R12IntEvalInfo::StoreMethod r12ints_method() const;
+    char* r12ints_file() const;
 
     double corr_energy();
     double r12_corr_energy();

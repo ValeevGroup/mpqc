@@ -34,8 +34,9 @@
 
 #include <util/ref/ref.h>
 #include <math/scmat/abstract.h>
+#include <util/group/memory.h>
 #include <chemistry/molecule/energy.h>
-#include <chemistry/qc/mbptr12/mbptr12.h>
+#include <chemistry/qc/scf/scf.h>
 
 namespace sc {
 
@@ -45,6 +46,12 @@ class MBPT2_R12;
       evaluators */
 
 class R12IntEvalInfo : virtual public SavableState {
+
+public:
+
+  enum StoreMethod { mem_posix = 0, posix = 1, mem_mpi = 2, mpi = 3, mem_only = 4 };
+
+private:
 
   MolecularEnergy* mole_;     // MolecularEnergy that owns this
   Ref<SCF> ref_;
@@ -62,10 +69,11 @@ class R12IntEvalInfo : virtual public SavableState {
   int nfzv_;
   int noso_;
 
+  size_t memory_;
   bool dynamic_;
   int debug_;
+  StoreMethod ints_method_;
   char* ints_file_;
-  size_t memory_;
 
   RefSCMatrix scf_vec_;
   RefDiagSCMatrix evals_;
@@ -83,6 +91,7 @@ public:
 
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; };
   void set_debug_level(int debug) { debug_ = debug; };
+  void set_ints_method(const StoreMethod method) { ints_method_ = method; };
   void set_ints_file(const char* filename) { ints_file_ = strdup(filename); };
   void set_memory(size_t nbytes) { if (nbytes >= 0) memory_ = nbytes; };
 
@@ -98,7 +107,8 @@ public:
 
   bool dynamic() const { return dynamic_; };
   int debug_level() const { return debug_; };
-  const char* ints_file() const { return ints_file_; }
+  const StoreMethod ints_method() const { return ints_method_; };
+  const char* ints_file() const { return ints_file_; };
   const size_t memory() const { return memory_; };
 
   const int nocc() const { return nocc_;};

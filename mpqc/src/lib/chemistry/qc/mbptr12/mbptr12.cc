@@ -62,6 +62,7 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   aux_basis_ << SavableState::restore_state(s);
   int stdapprox; s.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
   int spinadapted; s.get(spinadapted); spinadapted_ = (bool)spinadapted;
+  int r12ints_method; s.get(r12ints_method); r12ints_method_ = (R12IntEvalInfo::StoreMethod) r12ints_method;
   s.getstring(r12ints_file_);
   s.get(mp2_corr_energy_);
   s.get(r12_corr_energy_);
@@ -110,6 +111,40 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   spinadapted_ = true;
   spinadapted_ = keyval->booleanvalue("spinadapted");
 
+  // Determine how to store MO integrals
+  char* r12ints_str = 0;
+  r12ints_str = keyval->pcharvalue("r12ints");
+  if (!r12ints_str) {
+    r12ints_method_ = R12IntEvalInfo::mem_posix;
+  }
+  else {
+    if (!strcmp(r12ints_str,"mem")) {
+      r12ints_method_ = R12IntEvalInfo::mem_only;
+    }
+#if HAVE_MPIIO
+    else if (!strcmp(r12ints_str,"mem-mpi")) {
+      r12ints_method_ = R12IntEvalInfo::mem_mpi;
+    }
+    else if (!strcmp(r12ints_str,"mpi")) {
+      r12ints_method_ = R12IntEvalInfo::mpi;
+    }
+#else
+    else if ( !strcmp(r12ints_str,"mem-mpi") ||
+	      !strcmp(r12ints_str,"mpi") ) {
+      throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- specified keyword r12ints is not valid in this environment (no MPI-I/O detected)");
+    }
+#endif
+    else if (!strcmp(r12ints_str,"mem-posix")) {
+      r12ints_method_ = R12IntEvalInfo::mem_posix;
+    }
+    else if (!strcmp(r12ints_str,"posix")) {
+      r12ints_method_ = R12IntEvalInfo::posix;
+    }
+    else
+      throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- invalid value for keyword r12ints");
+    delete[] r12ints_str;
+  }
+
   // Get the filename to store the integrals
   r12ints_file_ = 0;
   r12ints_file_ = keyval->pcharvalue("r12ints_file");
@@ -131,7 +166,7 @@ MBPT2_R12::~MBPT2_R12()
   r12a_energy_ = 0;
   r12ap_energy_ = 0;
   r12b_energy_ = 0;
-  free(r12ints_file_);
+  delete[] r12ints_file_;
 }
 
 void
@@ -145,6 +180,7 @@ MBPT2_R12::save_data_state(StateOut& s)
   SavableState::save_state(aux_basis_.pointer(),s);
   s.put((int)stdapprox_);
   s.put((int)spinadapted_);
+  s.put((int)r12ints_method_);
   s.putstring(r12ints_file_);
 
   s.put(mp2_corr_energy_);
@@ -168,6 +204,25 @@ MBPT2_R12::print(ostream&o) const
     break;
   }
   o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << endl;
+  char* r12ints_str;
+  switch (r12ints_method_) {
+  case R12IntEvalInfo::mem_only:
+    r12ints_str = strdup("mem"); break;
+  case R12IntEvalInfo::mem_posix:
+    r12ints_str = strdup("mem_posix"); break;
+  case R12IntEvalInfo::posix:
+    r12ints_str = strdup("posix"); break;
+#if HAVE_MPIIO
+  case R12IntEvalInfo::mem_mpi:
+    r12ints_str = strdup("mem-mpi"); break;
+  case R12IntEvalInfo::mpi:
+    r12ints_str = strdup("mpi"); break;
+#endif
+  default:
+    throw std::runtime_error("MBPT2_R12::print -- invalid value of r12ints_method_");
+  }
+  o << indent << "How to Store Transformed Integrals: " << r12ints_str << endl << endl;
+  delete[] r12ints_str;
   o << indent << "Transformed Integrals file: " << r12ints_file_ << endl << endl;
   o << indent << "Auxiliary Basis:" << endl;
   o << incindent; aux_basis_->print(o); o << decindent << endl;
@@ -231,6 +286,38 @@ Ref<GaussianBasisSet>
 MBPT2_R12::aux_basis() const
 {
   return aux_basis_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+LinearR12::StandardApproximation
+MBPT2_R12::stdapprox() const
+{
+  return stdapprox_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+bool
+MBPT2_R12::spinadapted() const
+{
+  return spinadapted_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+R12IntEvalInfo::StoreMethod
+MBPT2_R12::r12ints_method() const
+{
+  return r12ints_method_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+char*
+MBPT2_R12::r12ints_file() const
+{
+  return strdup(r12ints_file_);
 }
 
 /////////////////////////////////////////////////////////////////////////////

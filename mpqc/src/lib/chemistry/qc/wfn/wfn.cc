@@ -10,11 +10,13 @@ extern "C" {
 }
 
 #include <iostream.h>
+
 #include <util/keyval/keyval.h>
-#include <math/scmat/local.h>
-#include <chemistry/molecule/molecule.h>
+#include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/intv2/integralv2.h>
+
 #include <chemistry/qc/wfn/wfn.h>
+#include <chemistry/qc/wfn/hcore.h>
 
 SavableState_REF_def(Wavefunction);
 
@@ -30,155 +32,178 @@ Wavefunction::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-Wavefunction::Wavefunction(const Wavefunction& wfn) :
-  MolecularEnergy(wfn),
-  _overlap(wfn._overlap,this),
-  _natural_orbitals(wfn._natural_orbitals,this),
-  _natural_density(wfn._natural_density,this),
-  bs_values(0),
-  bsg_values(0)
-{
-  _basisdim = wfn._basisdim;
-  _gbs = wfn._gbs;
-  integral_ = wfn.integral_;
-}
-
 Wavefunction::Wavefunction(const RefKeyVal&keyval):
   // this will let molecule be retrieved from basis
   MolecularEnergy(new AggregateKeyVal(keyval,
                                       new PrefixKeyVal("basis", keyval))),
-  _overlap(this),
-  _natural_orbitals(this),
-  _natural_density(this),
+  overlap_(this),
+  hcore_(this),
+  natural_orbitals_(this),
+  natural_density_(this),
   bs_values(0),
   bsg_values(0)
 {
-  _overlap.compute() = 0;
-  _natural_orbitals.compute() = 0;
-  _natural_density.compute() = 0;
+  overlap_.compute() = 0;
+  hcore_.compute() = 0;
+  natural_orbitals_.compute() = 0;
+  natural_density_.compute() = 0;
 
-  _gbs
-    = GaussianBasisSet::require_castdown(keyval->describedclassvalue("basis").pointer(),
-                                         "Wavefunction::Wavefunction\n");
+  overlap_.computed() = 0;
+  hcore_.computed() = 0;
+  natural_orbitals_.computed() = 0;
+  natural_density_.computed() = 0;
+
+  gbs_ = GaussianBasisSet::require_castdown(
+    keyval->describedclassvalue("basis").pointer(),
+    "Wavefunction::Wavefunction\n"
+    );
 
   integral_ = keyval->describedclassvalue("integrals");
   if (integral_.null())
     integral_ = new IntegralV2;
   
-  _basisdim = _gbs->basisdim();
-}
-
-Wavefunction::~Wavefunction()
-{
-  if (bs_values) delete[] bs_values;
-  if (bsg_values) delete[] bsg_values;
+  basisdim_ = gbs_->basisdim();
+  basiskit_ = gbs_->matrixkit();
 }
 
 Wavefunction::Wavefunction(StateIn&s):
   MolecularEnergy(s),
-  _overlap(s,this),
-  _natural_orbitals(s,this),
-  _natural_density(s,this),
+  overlap_(s,this),
+  hcore_(s,this),
+  natural_orbitals_(s,this),
+  natural_density_(s,this),
   bs_values(0),
   bsg_values(0)
   maybe_SavableState(s)
 {
-  _gbs.restore_state(s);
-  _basisdim.restore_state(s);
+  overlap_.compute() = 0;
+  hcore_.compute() = 0;
+  natural_orbitals_.compute() = 0;
+  natural_density_.compute() = 0;
+
+  overlap_.computed() = 0;
+  hcore_.computed() = 0;
+  natural_orbitals_.computed() = 0;
+  natural_density_.computed() = 0;
+
+  gbs_.restore_state(s);
   integral_.restore_state(s);
+
+  basisdim_ = gbs_->basisdim();
+  basiskit_ = gbs_->matrixkit();
 }
 
-Wavefunction&
-Wavefunction::operator=(const Wavefunction& wfn)
+Wavefunction::~Wavefunction()
 {
-  MolecularEnergy::operator=(wfn);
-  _basisdim = wfn._basisdim;
-  _gbs = wfn._gbs;
-  _overlap = wfn._overlap;
-  _natural_orbitals = wfn._natural_orbitals;
-  _natural_density = wfn._natural_density;
-  return *this;
+  if (bs_values) {
+    delete[] bs_values;
+    bs_values=0;
+  }
+  if (bsg_values) {
+    delete[] bsg_values;
+    bsg_values=0;
+  }
 }
 
 void
 Wavefunction::save_data_state(StateOut&s)
 {
   MolecularEnergy::save_data_state(s);
-  _overlap.save_data_state(s);
-  _natural_orbitals.save_data_state(s);
-  _natural_density.save_data_state(s);
-  _gbs.save_state(s);
-  _basisdim.save_state(s);
+
+  // overlap and hcore integrals are cheap so don't store them.
+  // same goes for natural orbitals
+
+  gbs_.save_state(s);
   integral_.save_state(s);
 }
 
 RefSCMatrix
 Wavefunction::natural_orbitals()
 {
-  if (!_natural_orbitals.computed()) {
+  if (!natural_orbitals_.computed()) {
       RefSymmSCMatrix dens = density();
 
       // transform the density into an orthogonal basis
       RefSymmSCMatrix ortho = ao_to_orthog_ao();
       RefSymmSCMatrix orthoi = ortho.i();
 
-      RefSymmSCMatrix densortho(_basisdim, _gbs->matrixkit());
+      RefSymmSCMatrix densortho(basis_dimension(), basis_matrixkit());
       densortho.assign(0.0);
       densortho.accumulate_transform(orthoi,dens);
 
-      RefSCMatrix natorb(_basisdim,_basisdim, _gbs->matrixkit());
-      RefDiagSCMatrix natden(_basisdim, _gbs->matrixkit());
-      _natural_orbitals = natorb;
-      _natural_density = natden;
+      RefSCMatrix natorb(basis_dimension(), basis_dimension(),
+                         basis_matrixkit());
+      RefDiagSCMatrix natden(basis_dimension(), basis_matrixkit());
+      natural_orbitals_ = natorb;
+      natural_density_ = natden;
 
-      densortho.diagonalize(_natural_density,_natural_orbitals);
+      densortho.diagonalize(natural_density_,natural_orbitals_);
 
       // _natural_orbitals is the ortho to NO basis transform
       // make _natural_orbitals the AO to the NO basis transform
-      _natural_orbitals = ortho * _natural_orbitals;
+      natural_orbitals_ = ortho * natural_orbitals_;
 
-      _natural_orbitals.computed() = 1;
-      _natural_density.computed() = 1;
+      natural_orbitals_.computed() = 1;
+      natural_density_.computed() = 1;
     }
 
-  return _natural_orbitals;
+  return natural_orbitals_;
 }
 
 RefDiagSCMatrix
 Wavefunction::natural_density()
 {
-  if (!_natural_density.computed()) {
+  if (!natural_density_.computed()) {
       RefSymmSCMatrix dens = density();
 
-      RefSCMatrix natorb(_basisdim,_basisdim, _gbs->matrixkit());
-      RefDiagSCMatrix natden(_basisdim, _gbs->matrixkit());
-      _natural_orbitals = natorb;
-      _natural_density = natden;
+      RefSCMatrix natorb(basis_dimension(), basis_dimension(),
+                         basis_matrixkit());
+      RefDiagSCMatrix natden(basis_dimension(), basis_matrixkit());
+      natural_orbitals_ = natorb;
+      natural_density_ = natden;
 
-      dens.diagonalize(_natural_density,_natural_orbitals);
+      dens.diagonalize(natural_density_,natural_orbitals_);
 
-      _natural_orbitals.computed() = 1;
-      _natural_density.computed() = 1;
+      natural_orbitals_.computed() = 1;
+      natural_density_.computed() = 1;
     }
 
-  return _natural_density;
+  return natural_density_;
 }
 
 RefSymmSCMatrix
 Wavefunction::overlap()
 {
-  if (!_overlap.computed()) {
-    RefSymmSCMatrix s(basis_dimension(), _gbs->matrixkit());
-    RefSCElementOp ov = new OneBodyIntOp(integral()->overlap_int(_gbs));
+  if (!overlap_.computed()) {
+    RefSymmSCMatrix s(basis_dimension(), basis_matrixkit());
+    RefSCElementOp ov = new OneBodyIntOp(integral()->overlap_int(gbs_));
     s.assign(0.0);
     s.element_op(ov);
     ov=0;
 
-    _overlap = s;
-    _overlap.computed() = 1;
+    overlap_ = s;
+    overlap_.computed() = 1;
   }
 
-  return _overlap;
+  return overlap_;
+}
+
+RefSymmSCMatrix
+Wavefunction::core_hamiltonian()
+{
+  if (!hcore_.computed()) {
+    RefAccumHCore hc = new AccumHCore();
+    hc->init(basis(), integral());
+
+    RefSymmSCMatrix h(basis_dimension(), basis_matrixkit());
+    hc->accum(h);
+    hc=0;
+
+    hcore_ = h;
+    hcore_.computed() = 1;
+  }
+
+  return hcore_;
 }
 
 // at some point this will have to check for zero eigenvalues and not
@@ -220,13 +245,25 @@ Wavefunction::ao_to_orthog_ao()
 RefGaussianBasisSet
 Wavefunction::basis()
 {
-  return _gbs;
+  return gbs_;
 }
 
 RefIntegral
 Wavefunction::integral()
 {
   return integral_;
+}
+
+RefSCDimension
+Wavefunction::basis_dimension()
+{
+  return basisdim_;
+}
+
+RefSCMatrixKit
+Wavefunction::basis_matrixkit()
+{
+  return basiskit_;
 }
 
 void

@@ -157,7 +157,7 @@ CLHF::ao_fock(double accuracy)
       }
       conts[i] = new LocalCLHFContribution(gmats[i], pmat);
       gblds[i] = new LocalGBuild<LocalCLHFContribution>(*conts[i], tbis_[i],
-        pl, bs, scf_grp_, pmax, gmat_accuracy, nthread, i
+               pl, bs, scf_grp_, pmax, 1.e-20/*gmat_accuracy*/, nthread, i
         );
 
       threadgrp_->add_thread(i, gblds[i]);
@@ -278,7 +278,7 @@ CLHF::two_body_energy(double &ec, double &ex)
     RefPetiteList pl = integral()->petite_list();
     LocalGBuild<LocalCLHFEnergyContribution>
       gb(lclc, tbi, pl, basis(), scf_grp_, pmax,
-         desired_value_accuracy()/100.0);
+         1.e-20/*desired_value_accuracy()/100.0*/);
     gb.run();
 
     delete[] pmax;

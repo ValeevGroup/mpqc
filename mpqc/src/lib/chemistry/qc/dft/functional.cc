@@ -115,6 +115,12 @@ DenFunctional::need_density_gradient()
   return 0;
 }
 
+int
+DenFunctional::need_density_hessian()
+{
+  return 0;
+}
+
 void
 DenFunctional::set_spin_polarized(int i)
 {
@@ -130,7 +136,7 @@ DenFunctional::set_compute_potential(int i)
 void
 DenFunctional::gradient(const PointInputData& id, PointOutputData& od,
                         double *grad_f, int acenter,
-                        const RefGaussianBasisSet &basis,
+                        GaussianBasisSet *basis,
                         const double *dmat_a, const double *dmat_b,
                         int ncontrib, const int *contrib,
                         int ncontrib_bf_, const int *contrib_bf_,
@@ -139,7 +145,7 @@ DenFunctional::gradient(const PointInputData& id, PointOutputData& od,
 {
   int need_gamma_terms = need_density_gradient();
   point(id, od);
-  memset(grad_f, 0, sizeof(double)*basis->molecule()->natom()*3);
+  memset(grad_f, 0, sizeof(double)*basis->ncenter()*3);
 #if 0
   ExEnv::out() << scprintf("gradient: rho_a= %12.8f rho_b= %12.8f need_gamma = %d",
                    id.a.rho, id.b.rho, need_gamma_terms) << endl;

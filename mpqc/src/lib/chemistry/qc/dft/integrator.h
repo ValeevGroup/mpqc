@@ -33,6 +33,7 @@
 #endif
 
 #include <util/state/state.h>
+#include <util/group/thread.h>
 #include <chemistry/qc/dft/functional.h>
 #include <chemistry/qc/basis/extent.h>
 
@@ -45,23 +46,21 @@ class DenIntegrator: virtual public SavableState {
     RefWavefunction wfn_;
     RefShellExtent extent_;
 
+    RefThreadGrp threadgrp_;
+    RefMessageGrp messagegrp_;
+
     double value_;
     double accuracy_;
 
-    int spin_polarized_;
+    double *alpha_vmat_;
+    double *beta_vmat_;
 
-    int ncontrib_;
-    int *contrib_;
-    int ncontrib_bf_;
-    int *contrib_bf_;
-    double *bs_values_;
-    double *bsg_values_;
-    double *bsh_values_;
     double *alpha_dmat_;
     double *beta_dmat_;
     double *dmat_bound_;
-    double *alpha_vmat_; // lower triangle of xi_i(r) v(r) xi_j(r) integrals
-    double *beta_vmat_; // lower triangle of xi_i(r) v(r) xi_j(r) integrals
+
+    int spin_polarized_;
+
     int need_density_; // specialization must set to 1 if it needs density_
     double density_;
     int nbasis_;
@@ -69,21 +68,14 @@ class DenIntegrator: virtual public SavableState {
     int natom_;
     int compute_potential_integrals_; // 1 if potential integrals are needed
 
-    int need_gradient_;
-    int need_hessian_;
-
     int linear_scaling_;
     int use_dmat_bound_;
 
-    void get_density(double *dmat, PointInputData::SpinData &d);
     void init_integration(const RefDenFunctional &func,
                           const RefSymmSCMatrix& densa,
                           const RefSymmSCMatrix& densb,
                           double *nuclear_gradient);
     void done_integration();
-    double do_point(int acenter, const SCVector3 &r, const RefDenFunctional &,
-                    double weight, double multiplier, double *nuclear_gradient,
-                    double *f_gradient, double *w_gradient);
 
     void init_object();
   public:
@@ -159,7 +151,7 @@ class IntegrationWeight: virtual public SavableState {
     /** Computes the weight for a given center at a given point in space.
         Derivatives of the weigth with respect to nuclear coordinates are
         optionally returned in grad_w.  This must be called after init, but
-        before done. */
+        before done. It must also be thread-safe. */
     virtual double w(int center, SCVector3 &point, double *grad_w = 0) = 0;
 };
 SavableState_REF_dec(IntegrationWeight);
@@ -402,8 +394,6 @@ class RadialAngularIntegrator: public DenIntegrator {
     int natomic_rows_;
     int max_gridtype_;
   protected:
-    RefRadialIntegrator radial_;
-    RefAngularIntegrator angular_;
     RefIntegrationWeight weight_;
     RefRadialIntegrator radial_user_;
     RefAngularIntegrator angular_user_;
@@ -421,9 +411,9 @@ class RadialAngularIntegrator: public DenIntegrator {
                    const RefSymmSCMatrix& densb =0,
                    double *nuclear_gradient = 0);
     void print(ostream & =ExEnv::out()) const;
-    RefAngularIntegrator get_angular_grid(double radius, double atomic_radius,
-                                          int charge);
-    RefRadialIntegrator get_radial_grid(int charge);
+    AngularIntegrator *get_angular_grid(double radius, double atomic_radius,
+                                        int charge);
+    RadialIntegrator *get_radial_grid(int charge);
     void init_default_grids(void);
     int angular_grid_offset(int i);
     void set_grids(void);
@@ -434,6 +424,7 @@ class RadialAngularIntegrator: public DenIntegrator {
     void init_pruning_coefficients(void);
     void init_alpha_coefficients(void);
     int select_dynamic_grid(void);
+    RefIntegrationWeight weight() { return weight_; }
 };
     
 #endif

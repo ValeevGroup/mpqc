@@ -54,8 +54,10 @@ double Wavefunction::orbital(const SCVector3& r,
     if (!bs_values) bs_values=new double[nbasis];
 
     // compute the basis set values
-    basis()->set_integral(integral_);
-    basis()->values(r,bs_values);
+    GaussianBasisSet::ValueData *valdat
+        = new GaussianBasisSet::ValueData(basis(), integral_);
+    basis()->values(r,valdat,bs_values);
+    delete valdat;
     
     // loop over basis functions
     double orb_value = 0;

@@ -114,11 +114,14 @@ class DenFunctional: virtual public SavableState {
     // Must return 1 if the density gradient must also be provided.
     // The default implementation returns 0.
     virtual int need_density_gradient();
+    // Must return 1 if the density hessian must also be provided.
+    // The default implementation returns 0.
+    virtual int need_density_hessian();
 
     virtual void point(const PointInputData&, PointOutputData&) = 0;
     void gradient(const PointInputData&, PointOutputData&,
                   double *gradient, int acenter,
-                  const RefGaussianBasisSet &basis,
+                  GaussianBasisSet *basis,
                   const double *dmat_a, const double *dmat_b,
                   int ncontrib_, const int *contrib_,
                   int ncontrib_bf_, const int *contrib_bf_,

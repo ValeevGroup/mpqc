@@ -130,11 +130,6 @@ class GaussianBasisSet: public SavableState
     RefSCMatrixKit so_matrixkit_;
     RefSCDimension basisdim_;
 
-    // these are needed for the routines to compute basis set values
-    // they must be initialized with set_integral()
-    CartesianIter **civec_;
-    SphericalTransformIter **sivec_;
-
     int ncenter_;
     SSBArrayint shell_to_center_;
     SSBArrayint center_to_shell_;
@@ -160,6 +155,19 @@ class GaussianBasisSet: public SavableState
     virtual void set_matrixkit(const RefSCMatrixKit&);
     
   public:
+    /** This holds scratch data needed to compute basis function values. */
+    class ValueData {
+      protected:
+        CartesianIter **civec_;
+        SphericalTransformIter **sivec_;
+        int maxam_;
+      public:
+        ValueData(const RefGaussianBasisSet &, const RefIntegral &);
+        ~ValueData();
+        CartesianIter **civec() { return civec_; }
+        SphericalTransformIter **sivec() { return sivec_; }
+    };
+
     /** The KeyVal constructor.
 
         <dl>
@@ -354,36 +362,35 @@ class GaussianBasisSet: public SavableState
     
     /** Compute the values for this basis set at position r.  The
         basis_values argument must be vector of length nbasis. */
-    int values(const SCVector3& r, double* basis_values) const;
+    int values(const SCVector3& r, ValueData *, double* basis_values) const;
     /** Like values(...), but computes gradients of the basis function
         values, too.  The g_values argument must be vector of length
         3*nbasis.  The data will be written in the order bf1_x, bf1_y,
         bf1_z, ... */
-    int grad_values(const SCVector3& r,
+    int grad_values(const SCVector3& r, ValueData *,
                     double*g_values,double* basis_values=0) const;
     /** Like values(...), but computes first and second derivatives of the
         basis function values, too.  h_values must be vector of length
         6*nbasis.  The data will be written in the order bf1_xx, bf1_yx,
         bf1_yy, bf1_zx, bf1_zy, bf1_zz, ... */
-    int hessian_values(const SCVector3& r, double *h_values,
+    int hessian_values(const SCVector3& r, ValueData *, double *h_values,
                        double*g_values=0,double* basis_values=0) const;
     /** Compute the values for the given shell functions at position r.
         See the other values(...) members for more information.  */
-    int shell_values(const SCVector3& r, int sh, double* basis_values) const;
+    int shell_values(const SCVector3& r, int sh,
+                     ValueData *, double* basis_values) const;
     /** Like values(...), but computes gradients of the shell function
         values, too.  See the other grad_values(...)
         members for more information.  */
     int grad_shell_values(const SCVector3& r, int sh,
+                          ValueData *,
                           double*g_values, double* basis_values=0) const;
     /** Like values(...), but computes first and second derivatives of the
         shell function values, too.  See the other hessian_values(...)
         members for more information. */
-    int hessian_shell_values(const SCVector3& r, int sh, double *h_values,
+    int hessian_shell_values(const SCVector3& r, int sh,
+                       ValueData *, double *h_values,
                        double*g_values=0,double* basis_values=0) const;
-    /** This must be called before the values, grid_values, and
-        hessian_values members to initialize iterators that know the basis
-        function order. */
-    void set_integral(const RefIntegral&);
 
     /// Returns true if this and the argument are equivalent.
     int equiv(const RefGaussianBasisSet &b);

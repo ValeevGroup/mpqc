@@ -57,6 +57,166 @@ template RefAngularIntegrator***
 #define CHECK_ALIGN(v)
 
 ///////////////////////////////////////////////////////////////////////////
+// DenIntegratorThread
+
+//ThreadLock *tlock;
+
+class DenIntegratorThread: public Thread {
+  protected:
+    // data common to all threads
+    int nthread_;
+    double *alpha_dmat_;
+    double *beta_dmat_;
+    double *dmat_bound_;
+    int nshell_;
+    int nbasis_;
+    int natom_;
+    DenIntegrator *integrator_;
+    int spin_polarized_;
+    int need_hessian_;
+    int need_gradient_;
+    GaussianBasisSet *basis_;
+    int linear_scaling_;
+    int use_dmat_bound_;
+    double value_;
+    DenFunctional *func_;
+
+    // not yet initialized
+    ShellExtent *extent_;
+    double accuracy_;
+    int compute_potential_integrals_;
+
+    // data local to thread
+    int ithread_;
+    int ncontrib_;
+    int *contrib_;
+    int ncontrib_bf_;
+    int *contrib_bf_;
+    double *bs_values_;
+    double *bsg_values_;
+    double *bsh_values_;
+    double *alpha_vmat_; // lower triangle of xi_i(r) v(r) xi_j(r) integrals
+    double *beta_vmat_; // lower triangle of xi_i(r) v(r) xi_j(r) integrals
+    double *nuclear_gradient_;
+    double *w_gradient_;
+    double *f_gradient_;
+    GaussianBasisSet::ValueData *valdat_;
+
+  public:
+    DenIntegratorThread(int ithread, int nthread,
+                        DenIntegrator *integrator,
+                        DenFunctional *func,
+                        double *alpha_dmat,
+                        double *beta_dmat,
+                        double *dmat_bound,
+                        int linear_scaling, int use_dmat_bound,
+                        ShellExtent *extent,
+                        double accuracy,
+                        int compute_potential_integrals,
+                        int need_nuclear_gradient);
+    virtual ~DenIntegratorThread();
+    void get_density(double *dmat, PointInputData::SpinData &d);
+    double do_point(int acenter, const SCVector3 &r,
+                    double weight, double multiplier,
+                    double *nuclear_gradient,
+                    double *f_gradient, double *w_gradient);
+    double *nuclear_gradient() { return nuclear_gradient_; }
+    double *alpha_vmat() { return alpha_vmat_; }
+    double *beta_vmat() { return beta_vmat_; }
+    double value() { return value_; }
+};
+
+DenIntegratorThread::DenIntegratorThread(int ithread, int nthread,
+                                         DenIntegrator *integrator,
+                                         DenFunctional *func,
+                                         double *alpha_dmat,
+                                         double *beta_dmat,
+                                         double *dmat_bound,
+                                         int linear_scaling,
+                                         int use_dmat_bound,
+                                         ShellExtent *extent,
+                                         double accuracy,
+                                         int compute_potential_integrals,
+                                         int need_nuclear_gradient)
+{
+  value_ = 0.0;
+
+  ithread_ = ithread;
+  nthread_ = nthread;
+  integrator_ = integrator;
+  spin_polarized_ = integrator->wavefunction()->spin_polarized();
+  nshell_ = integrator->wavefunction()->basis()->nshell();
+  nbasis_ = integrator->wavefunction()->basis()->nbasis();
+  natom_ = integrator->wavefunction()->molecule()->natom();
+  need_gradient_ = func->need_density_gradient();
+  need_hessian_ = func->need_density_hessian();
+  basis_ = integrator->wavefunction()->basis().pointer();
+  linear_scaling_ = linear_scaling;
+  use_dmat_bound_ = use_dmat_bound;
+  func_ = func;
+  extent_ = extent;
+  accuracy_ = accuracy;
+  compute_potential_integrals_ = compute_potential_integrals;
+
+  alpha_dmat_ = alpha_dmat;
+  beta_dmat_ = beta_dmat;
+  dmat_bound_ = dmat_bound;
+
+  valdat_ = new GaussianBasisSet::ValueData(
+      integrator->wavefunction()->basis(),
+      integrator->wavefunction()->integral());
+
+  if (need_nuclear_gradient) nuclear_gradient_ = new double[3*natom_];
+  else nuclear_gradient_ = 0;
+
+  contrib_ = new int[nshell_];
+
+  contrib_bf_ = new int[nbasis_];
+
+  bs_values_ = new double[nbasis_];
+
+  alpha_vmat_ = 0;
+  beta_vmat_ = 0;
+  if (compute_potential_integrals_) {
+      int ntri = (nbasis_*(nbasis_+1))/2;
+      alpha_vmat_ = new double[ntri];
+      memset(alpha_vmat_, 0, sizeof(double)*ntri);
+      if (spin_polarized_) {
+          beta_vmat_ = new double[ntri];
+          memset(beta_vmat_, 0, sizeof(double)*ntri);
+        }
+    }
+
+  bsg_values_=0;
+  bsh_values_=0;
+  if (need_gradient_ || nuclear_gradient_) bsg_values_ = new double[3*nbasis_];
+  if (need_hessian_ || (need_gradient_ && nuclear_gradient_))
+      bsh_values_ = new double[6*nbasis_];
+
+  w_gradient_ = 0;
+  f_gradient_ = 0;
+  if (nuclear_gradient_) {
+      w_gradient_ = new double[natom_*3];
+      f_gradient_ = new double[natom_*3];
+    }
+}
+
+DenIntegratorThread::~DenIntegratorThread()
+{
+  delete[] contrib_;
+  delete[] contrib_bf_;
+  delete[] bs_values_;
+  delete[] bsg_values_;
+  delete[] bsh_values_;
+  delete[] alpha_vmat_;
+  delete[] beta_vmat_;
+  delete[] nuclear_gradient_;
+  delete[] f_gradient_;
+  delete[] w_gradient_;
+  delete valdat_;
+}
+
+///////////////////////////////////////////////////////////////////////////
 // DenIntegrator
 
 SavableState_REF_def(DenIntegrator);
@@ -98,16 +258,9 @@ DenIntegrator::DenIntegrator(const RefKeyVal& keyval)
 
 DenIntegrator::~DenIntegrator()
 {
-  delete[] contrib_;
-  delete[] contrib_bf_;
-  delete[] bs_values_;
-  delete[] bsg_values_;
-  delete[] bsh_values_;
+  delete[] dmat_bound_;
   delete[] alpha_dmat_;
   delete[] beta_dmat_;
-  delete[] dmat_bound_;
-  delete[] alpha_vmat_;
-  delete[] beta_vmat_;
 }
 
 void
@@ -120,20 +273,17 @@ DenIntegrator::save_data_state(StateOut& s)
 void
 DenIntegrator::init_object()
 {
-  contrib_ = 0;
-  contrib_bf_ = 0;
-  bs_values_ = 0;
-  bsg_values_ = 0;
-  bsh_values_ = 0;
-  alpha_dmat_ = 0;
-  beta_dmat_ = 0;
-  dmat_bound_ = 0;
-  alpha_vmat_ = 0;
-  beta_vmat_ = 0;
+  threadgrp_ = ThreadGrp::get_default_threadgrp();
+  messagegrp_ = MessageGrp::get_default_messagegrp();
   compute_potential_integrals_ = 0;
   accuracy_ = DBL_EPSILON;
   linear_scaling_ = 1;
   use_dmat_bound_ = 1;
+  dmat_bound_ = 0;
+  alpha_dmat_ = 0;
+  beta_dmat_ = 0;
+  alpha_vmat_ = 0;
+  beta_vmat_ = 0;
 }
 
 void
@@ -189,14 +339,8 @@ DenIntegrator::init_integration(const RefDenFunctional &func,
   int i;
   value_ = 0.0;
 
-  wfn_->basis()->set_integral(wfn_->integral());
-
   func->set_compute_potential(
       compute_potential_integrals_ || nuclear_gradient != 0);
-
-  need_gradient_ = func->need_density_gradient();
-  need_hessian_ = 0;
-  if (need_hessian_) need_gradient_ = 1;
 
   spin_polarized_ = wfn_->spin_polarized();
   func->set_spin_polarized(spin_polarized_);
@@ -205,23 +349,6 @@ DenIntegrator::init_integration(const RefDenFunctional &func,
 
   nshell_ = wfn_->basis()->nshell();
   nbasis_ = wfn_->basis()->nbasis();
-
-  delete[] contrib_;
-  contrib_ = new int[nshell_];
-
-  delete[] contrib_bf_;
-  contrib_bf_ = new int[nbasis_];
-
-  delete[] bs_values_;
-  bs_values_ = new double[nbasis_];
-
-  delete[] bsg_values_;
-  delete[] bsh_values_;
-  bsg_values_=0;
-  bsh_values_=0;
-  if (need_gradient_ || nuclear_gradient) bsg_values_ = new double[3*nbasis_];
-  if (need_hessian_ || (need_gradient_ && nuclear_gradient))
-      bsh_values_ = new double[6*nbasis_];
    
   delete[] alpha_dmat_;
   RefSymmSCMatrix adens = densa;
@@ -285,16 +412,17 @@ DenIntegrator::init_integration(const RefDenFunctional &func,
 void
 DenIntegrator::done_integration()
 {
-  RefMessageGrp msg = MessageGrp::get_default_messagegrp();
-
-  msg->sum(value_);
+  messagegrp_->sum(value_);
   if (compute_potential_integrals_) {
       int ntri = (nbasis_*(nbasis_+1))/2;
-      msg->sum(alpha_vmat_,ntri);
+      messagegrp_->sum(alpha_vmat_,ntri);
       if (spin_polarized_) {
-          msg->sum(beta_vmat_,ntri);
+          messagegrp_->sum(beta_vmat_,ntri);
         }
     }
+  delete[] alpha_dmat_; alpha_dmat_ = 0;
+  delete[] beta_dmat_;  beta_dmat_ = 0;
+  delete[] dmat_bound_; dmat_bound_ = 0;
 }
 
 inline static double
@@ -311,13 +439,9 @@ dot(double v[3], double w[3])
 }
 
 void
-DenIntegrator::get_density(double *dmat, PointInputData::SpinData &d)
+DenIntegratorThread::get_density(double *dmat, PointInputData::SpinData &d)
 {
   int i, j, ish, jsh;
-
-  tim_enter("get_density");
-
-  GaussianBasisSet *basis = wfn_->basis().pointer();
 
   double tmp = 0.0;
   double densij;
@@ -455,24 +579,18 @@ DenIntegrator::get_density(double *dmat, PointInputData::SpinData &d)
       d.lap_rho = d.hes_rho[XX] + d.hes_rho[YY] + d.hes_rho[ZZ];
     }
 
-  tim_exit("get_density");
 }
 
 double
-DenIntegrator::do_point(int acenter, const SCVector3 &r,
-                        const RefDenFunctional &func,
+DenIntegratorThread::do_point(int acenter, const SCVector3 &r,
                         double weight, double multiplier,
                         double *nuclear_gradient,
                         double *f_gradient, double *w_gradient)
 {
-  tim_enter("do_point");
-
   int i,j,k;
   double w_mult = weight * multiplier;
 
   CHECK_ALIGN(w_mult);
-
-  GaussianBasisSet *basis = wfn_->basis().pointer();
 
   // only consider those shells for which phi_i * (Max_j D_ij phi_j) > tol
   if (linear_scaling_ && use_dmat_bound_) {
@@ -506,15 +624,15 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
       for (i=0; i<nshell_; i++) contrib_[i] = i;
     }
   if (ncontrib_ > nshell_) {
-      ExEnv::out() << "DenIntegrator::do_point: ncontrib invalid" << endl;
+      ExEnv::out() << "DenIntegratorThread::do_point: ncontrib invalid"
+                   << endl;
       abort();
     }
-  if (ncontrib_ == 0) { tim_exit("do_point"); return 0.0; }
 
   ncontrib_bf_ = 0;
   for (i=0; i<ncontrib_; i++) {
-      int nbf = basis->shell(contrib_[i]).nfunction();
-      int bf = basis->shell_to_function(contrib_[i]);
+      int nbf = basis_->shell(contrib_[i]).nfunction();
+      int bf = basis_->shell_to_function(contrib_[i]);
       for (j=0; j<nbf; j++, bf++) {
           contrib_bf_[ncontrib_bf_++] = bf;
         }
@@ -523,8 +641,8 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
   // compute the basis set values
   double *bsh = bsh_values_, *bsg = bsg_values_, *bsv = bs_values_;
   for (i=0; i<ncontrib_; i++) {
-      basis->hessian_shell_values(r,contrib_[i],bsh,bsg,bsv);
-      int shsize = basis->shell(contrib_[i]).nfunction();
+      basis_->hessian_shell_values(r,contrib_[i],valdat_,bsh,bsg,bsv);
+      int shsize = basis_->shell(contrib_[i]).nfunction();
       if (bsh) bsh += 6 * shsize;
       if (bsg) bsg += 3 * shsize;
       if (bsv) bsv += shsize;
@@ -547,16 +665,16 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
   PointOutputData od;
   if ( (id.a.rho + id.b.rho) > 1e2*DBL_EPSILON) {
       if (nuclear_gradient == 0) {
-          func->point(id, od);
+          func_->point(id, od);
         }
       else {
-          func->gradient(id, od, f_gradient, acenter, basis,
+          func_->gradient(id, od, f_gradient, acenter, basis_,
                          alpha_dmat_, (spin_polarized_?beta_dmat_:alpha_dmat_),
                          ncontrib_, contrib_, ncontrib_bf_, contrib_bf_,
                          bs_values_, bsg_values_, bsh_values_);
         }
     }
-  else { tim_exit("do_point"); return id.a.rho + id.b.rho; }
+  else { return id.a.rho + id.b.rho; }
   
   value_ += od.energy * w_mult;
 
@@ -652,7 +770,6 @@ DenIntegrator::do_point(int acenter, const SCVector3 &r,
         }
     }
 
-  tim_exit("do_point");
   return id.a.rho + id.b.rho;
 }
 
@@ -1650,6 +1767,142 @@ GaussLegendreAngularIntegrator::print(ostream &o) const
 }
 
 //////////////////////////////////////////////
+//  RadialAngularIntegratorThread
+
+class RadialAngularIntegratorThread: public DenIntegratorThread {
+  protected:
+    SCVector3 *centers_;
+    int *nr_;
+    double *atomic_radius_;
+    Molecule *mol_;
+    RadialAngularIntegrator *ra_integrator_;
+    IntegrationWeight *weight_;
+    int point_count_total_;
+    double total_density_;
+  public:
+    RadialAngularIntegratorThread(int ithread, int nthread,
+                                  RadialAngularIntegrator *integrator,
+                                  DenFunctional *func,
+                                  double *alpha_dmat, double *beta_dmat,
+                                  double *dmat_bound,
+                                  int linear_scaling, int use_dmat_bound,
+                                  ShellExtent *extent,
+                                  double accuracy,
+                                  int compute_potential_integrals,
+                                  int need_nuclear_gradient);
+    ~RadialAngularIntegratorThread();
+    void run();
+    double total_density() { return total_density_; }
+    int point_count() { return point_count_total_; }
+};
+
+RadialAngularIntegratorThread
+::RadialAngularIntegratorThread(int ithread, int nthread,
+                                RadialAngularIntegrator *integrator,
+                                DenFunctional *func,
+                                double *alpha_dmat, double *beta_dmat,
+                                double *dmat_bound,
+                                int linear_scaling, int use_dmat_bound,
+                                ShellExtent *extent,
+                                double accuracy,
+                                int compute_potential_integrals,
+                                int need_nuclear_gradient):
+  DenIntegratorThread(ithread,nthread,
+                      integrator, func,
+                      alpha_dmat, beta_dmat,
+                      dmat_bound,
+                      linear_scaling, use_dmat_bound,
+                      extent, accuracy,
+                      compute_potential_integrals,
+                      need_nuclear_gradient)
+{
+  int icenter;
+  ra_integrator_ = integrator;
+
+  mol_ = integrator_->wavefunction()->molecule().pointer();
+
+  weight_ = ra_integrator_->weight().pointer();
+
+  nr_ = new int[natom_];
+  
+  for (icenter=0; icenter<natom_; icenter++)
+      nr_[icenter] = ra_integrator_->get_radial_grid(mol_->Z(icenter))->nr();
+
+  centers_ = new SCVector3[natom_];
+  for (icenter=0; icenter<natom_; icenter++) {
+      centers_[icenter].x() = mol_->r(icenter,0);
+      centers_[icenter].y() = mol_->r(icenter,1);
+      centers_[icenter].z() = mol_->r(icenter,2);
+    }
+
+  atomic_radius_ = new double[natom_];
+  for (icenter=0; icenter<natom_; icenter++) {
+      atomic_radius_[icenter]
+          = mol_->atominfo()->maxprob_radius(mol_->Z(icenter));
+    }
+
+  point_count_total_ = 0;
+  total_density_ = 0.0;
+}
+
+RadialAngularIntegratorThread::~RadialAngularIntegratorThread()
+{
+  delete[] centers_;
+  delete[] atomic_radius_;
+  delete[] nr_;
+}
+
+void
+RadialAngularIntegratorThread::run()
+{
+  int icenter;
+  int nangular;
+  int ir, iangular;           // Loop indices for diff. integration dim
+  int point_count;            // Counter for # integration points per center
+
+  SCVector3 center;           // Cartesian position of center
+  SCVector3 integration_point;
+
+  double w,q,int_volume,radial_multiplier,angular_multiplier;
+        
+  int parallel_counter = 0;
+
+  for (icenter=0; icenter < natom_; icenter++) {
+      point_count=0;
+      center = centers_[icenter];
+      // get current radial grid: depends on convergence threshold
+      RadialIntegrator *radial
+          = ra_integrator_->get_radial_grid(mol_->Z(icenter));
+      for (ir=0; ir < radial->nr(); ir++) {
+          if (! (parallel_counter++%nthread_ == ithread_)) continue;
+          double r = radial->radial_value(ir, radial->nr(),
+                                          atomic_radius_[icenter]);
+          radial_multiplier = radial->radial_multiplier(radial->nr());
+          // get current angular grid: depends on radial point and threshold
+          AngularIntegrator *angular
+              = ra_integrator_->get_angular_grid(r, atomic_radius_[icenter],
+                                                 mol_->Z(icenter));
+          nangular = angular->num_angular_points(r/atomic_radius_[icenter],ir);
+          for (iangular=0; iangular<nangular; iangular++) {
+              angular_multiplier
+                  = angular->angular_point_cartesian(iangular,r,
+                                                     integration_point);
+              integration_point += center;
+              w=weight_->w(icenter, integration_point, w_gradient_);
+              point_count++;
+              double multiplier = angular_multiplier * radial_multiplier;
+              total_density_
+                  += w * multiplier
+                  * do_point(icenter, integration_point,
+                             w, multiplier,
+                             nuclear_gradient_, f_gradient_, w_gradient_);
+            }
+        }
+      point_count_total_ += point_count;
+    }
+}
+
+//////////////////////////////////////////////
 //  RadialAngularIntegrator
 
 #define CLASSNAME RadialAngularIntegrator
@@ -2060,7 +2313,7 @@ RadialAngularIntegrator::angular_grid_offset(int gridtype)
   return 0;
 }
 
-RefRadialIntegrator
+RadialIntegrator *
 RadialAngularIntegrator::get_radial_grid(int charge)
 {
   if (!user_defined_grids_) {
@@ -2071,18 +2324,18 @@ RadialAngularIntegrator::get_radial_grid(int charge)
       else select_grid = gridtype_;
       //ExEnv::out << "RAI::get_radial_grid -> select_grid = " << select_grid;
       
-      if (charge<3) return radial_grid_[0][select_grid];
-      else if (charge<11) return radial_grid_[1][select_grid];
-      else if (charge<19) return radial_grid_[2][select_grid];
-      else if (charge<37) return radial_grid_[3][select_grid];
-      else if (charge<55) return radial_grid_[4][select_grid];
+      if (charge<3) return radial_grid_[0][select_grid].pointer();
+      else if (charge<11) return radial_grid_[1][select_grid].pointer();
+      else if (charge<19) return radial_grid_[2][select_grid].pointer();
+      else if (charge<37) return radial_grid_[3][select_grid].pointer();
+      else if (charge<55) return radial_grid_[4][select_grid].pointer();
       else {
           ExEnv::out() << " No default radial grids for atomic charge " << charge << endl;
           abort();
         }
     }
 
-  return radial_user_;
+  return radial_user_.pointer();
 
 }
 
@@ -2122,7 +2375,7 @@ RadialAngularIntegrator::get_atomic_row(int i)
   return 0;
 }
 
-RefAngularIntegrator
+AngularIntegrator *
 RadialAngularIntegrator::get_angular_grid(double radius, double atomic_radius,
                                           int Z)
 {
@@ -2142,14 +2395,15 @@ RadialAngularIntegrator::get_angular_grid(double radius, double atomic_radius,
       // gridtype_ will need to be adjusted for dynamic grids  
       for (i=0; i<npruned_partitions_-1; i++) {
           if (radius/atomic_radius < Alpha[i]) {
-              return angular_grid_[atomic_row][i][select_grid];
+              return angular_grid_[atomic_row][i][select_grid].pointer();
             }
         }
-      return angular_grid_[atomic_row][npruned_partitions_-1][select_grid];
+      return angular_grid_[atomic_row][npruned_partitions_-1][select_grid]
+          .pointer();
     }
 
   else {
-      return angular_user_;
+      return angular_user_.pointer();
     }
 }
 
@@ -2159,96 +2413,72 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
                               const RefSymmSCMatrix& densb,
                               double *nuclear_gradient)
 {
+  int i, icenter;
+
   tim_enter("integrate");
 
   init_integration(denfunc, densa, densb, nuclear_gradient);
 
-  RefMolecule mol = wavefunction()->molecule();
-  weight_->init(mol, DBL_EPSILON);
+  weight_->init(wavefunction()->molecule(), DBL_EPSILON);
 
-  int ncenters=mol->natom();   // number of centers
-  int icenter;                 // Loop index over centers
-
-  int *nr = new int[ncenters];
-  int nangular;
-  
-  for (icenter=0; icenter<ncenters; icenter++)
-      nr[icenter] = get_radial_grid(mol->Z(icenter))->nr();
-
-  double *w_gradient = 0;
-  double *f_gradient = 0;
-  if (nuclear_gradient) {
-      w_gradient = new double[ncenters*3];
-      f_gradient = new double[ncenters*3];
+  int me = messagegrp_->me();
+  int nthread = threadgrp_->nthread();
+  int nthread_overall = nthread;
+  messagegrp_->sum(nthread_overall);
+  int ithread_overall = 0;
+  if (me > 0) {
+      messagegrp_->recv(me - 1,ithread_overall);
+    }
+  if (me < messagegrp_->n() - 1) {
+      int ithread_overall_next = ithread_overall + nthread;
+      messagegrp_->send(me + 1, ithread_overall_next);
     }
 
-  SCVector3 *centers = new SCVector3[ncenters];
-  for (icenter=0; icenter<ncenters; icenter++) {
-      centers[icenter].x() = mol->r(icenter,0);
-      centers[icenter].y() = mol->r(icenter,1);
-      centers[icenter].z() = mol->r(icenter,2);
+  // create threads
+  //cout << "creating test lock" << endl;
+  //RefThreadLock reflock = threadgrp_->new_lock();
+  //tlock = reflock.pointer();
+  RadialAngularIntegratorThread **threads =
+      new RadialAngularIntegratorThread*[nthread];
+  for (i=0; i<nthread; i++) {
+      threads[i] = new RadialAngularIntegratorThread(
+          i + ithread_overall, nthread_overall,
+          this, denfunc.pointer(),
+          alpha_dmat_, beta_dmat_, dmat_bound_,
+          linear_scaling_, use_dmat_bound_,
+          extent_.pointer(), accuracy_, compute_potential_integrals_,
+          nuclear_gradient != 0);
+      threadgrp_->add_thread(i, threads[i]);
     }
 
-  int ir, iangular;           // Loop indices for diff. integration dim
-  int point_count;            // Counter for # integration points per center
-  int point_count_total=0;    // Counter for # integration points
+  // run threads
+  threadgrp_->start_threads();
+  threadgrp_->wait_threads();
 
-  SCVector3 center;           // Cartesian position of center
-  SCVector3 integration_point;
-
-  double w,q,int_volume,radial_multiplier,angular_multiplier;
+  // sum results
+  int point_count_total = 0;
   double total_density = 0.0;
-        
-  RefMessageGrp msg = MessageGrp::get_default_messagegrp();
-  int nproc = msg->n();
-  int me = msg->me();
-  int parallel_counter = 0;
-
-  double *atomic_radius = new double[ncenters];
-  for (icenter=0; icenter<ncenters; icenter++) {
-      // atomic_radius[icenter] = mol->atominfo()->bragg_radius(mol->Z(icenter));
-      atomic_radius[icenter] = mol->atominfo()->maxprob_radius(mol->Z(icenter));
-    }
-
-  for (icenter=0; icenter < ncenters; icenter++) {
-      //if (! (parallel_counter++%nproc == me)) continue;
-      point_count=0;
-      center = centers[icenter];
-      // get radial_ and nr[icenter] for current grid : depends on convergence threshold
-      radial_ = get_radial_grid(mol->Z(icenter));
-      // ExEnv::out() << " Radial grid = " << radial_->nr() << " points for charge "
-      //     << mol->Z(icenter) << endl;
-      for (ir=0; ir < radial_->nr(); ir++) {
-          //point_count=0;
-          if (! (parallel_counter++%nproc == me)) continue;
-          double r = radial_->radial_value(ir, radial_->nr(),
-                                           atomic_radius[icenter]);
-          radial_multiplier = radial_->radial_multiplier(radial_->nr());
-          // determine angular grid here
-          // returns which lebedev grid to use for this radial point
-          angular_ = get_angular_grid(r, atomic_radius[icenter], mol->Z(icenter));
-          // ExEnv::out() << " Angular grid = " << angular_->nw() << " points for charge "
-          //       << mol->Z(icenter) << endl;
-          nangular = angular_->num_angular_points(r/atomic_radius[icenter],ir);
-           for (iangular=0; iangular<nangular; iangular++) {
-              angular_multiplier =
-                   angular_->angular_point_cartesian(iangular,r,integration_point);
-              integration_point += center;
-              w=weight_->w(icenter, integration_point, w_gradient);
-              point_count++;
-              double multiplier = angular_multiplier * radial_multiplier;
-              total_density
-                  += w * multiplier
-                  * do_point(icenter, integration_point, denfunc,
-                             w, multiplier,
-                             nuclear_gradient, f_gradient, w_gradient);
-                  }
+  value_ = 0.0;
+  for (i=0; i<nthread; i++) {
+      point_count_total += threads[i]->point_count();
+      total_density += threads[i]->total_density();
+      value_ += threads[i]->value();
+      if (compute_potential_integrals_) {
+          int ntri = (nbasis_*(nbasis_+1))/2;
+          double *alpha_vmat_i = threads[i]->alpha_vmat();
+          for (int j=0; j<ntri; j++) alpha_vmat_[j] += alpha_vmat_i[j];
+          if (spin_polarized_) {
+              double *beta_vmat_i = threads[i]->beta_vmat();
+              for (int j=0; j<ntri; j++) beta_vmat_[j] += beta_vmat_i[j];
+            }
         }
-      point_count_total+=point_count;
     }
 
-  msg->sum(point_count_total);
-  msg->sum(total_density);
+  threadgrp_->delete_threads();
+  delete[] threads;
+
+  messagegrp_->sum(point_count_total);
+  messagegrp_->sum(total_density);
   done_integration();
   weight_->done();
 
@@ -2258,12 +2488,6 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
                << "Integrated electron density error = "
                << scprintf("%14.12f", total_density-wfn_->nelectron())
                << endl;
-
-  delete[] f_gradient;
-  delete[] w_gradient;
-  delete[] atomic_radius;
-  delete[] nr;
-  delete[] centers;
 
   tim_exit("integrate");
 }

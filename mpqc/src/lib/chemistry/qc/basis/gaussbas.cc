@@ -408,9 +408,6 @@ GaussianBasisSet::init2(int skip_ghosts)
     basisdim_ = new SCDimension(nbasis(), nb, bs, "basis set dimension");
     delete[] bs;
   }
-
-  civec_ = 0;
-  sivec_ = 0;
 }
 
 void
@@ -473,9 +470,6 @@ GaussianBasisSet::
 
 GaussianBasisSet::~GaussianBasisSet()
 {
-  RefIntegral nullint;
-  set_integral(nullint);
-
   delete[] name_;
 
   int ii;
@@ -598,32 +592,6 @@ GaussianBasisSet::operator()(int icenter,int ishell)
   return *shell_[center_to_shell_(icenter) + ishell];
 }
 
-void
-GaussianBasisSet::set_integral(const RefIntegral &integral)
-{
-  int i;
-  int maxam = max_angular_momentum();
-  if (civec_) {
-      for (i=0; i<=maxam; i++) {
-          delete civec_[i];
-          delete sivec_[i];
-        }
-      delete[] civec_;
-      delete[] sivec_;
-      civec_ = 0;
-      sivec_ = 0;
-    }
-  if (integral.nonnull()) {
-      civec_ = new CartesianIter *[maxam+1];
-      sivec_ = new SphericalTransformIter *[maxam+1];
-      for (i=0; i<=maxam; i++) {
-          civec_[i] = integral->new_cartesian_iter(i);
-          if (i>1) sivec_[i] = integral->new_spherical_transform_iter(i);
-          else sivec_[i] = 0;
-        }
-    }
-}
-
 int
 GaussianBasisSet::equiv(const RefGaussianBasisSet &b)
 {
@@ -682,6 +650,34 @@ GaussianBasisSet::print(ostream& os) const
     }
 
   os << node0 << decindent;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// GaussianBasisSet::ValueData
+
+GaussianBasisSet::ValueData::ValueData(
+    const RefGaussianBasisSet &basis,
+    const RefIntegral &integral)
+{
+  maxam_ = basis->max_angular_momentum();
+
+  civec_ = new CartesianIter *[maxam_+1];
+  sivec_ = new SphericalTransformIter *[maxam_+1];
+  for (int i=0; i<=maxam_; i++) {
+      civec_[i] = integral->new_cartesian_iter(i);
+      if (i>1) sivec_[i] = integral->new_spherical_transform_iter(i);
+      else sivec_[i] = 0;
+    }
+}
+
+GaussianBasisSet::ValueData::~ValueData()
+{
+  for (int i=0; i<=maxam_; i++) {
+      delete civec_[i];
+      delete sivec_[i];
+    }
+  delete[] civec_;
+  delete[] sivec_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

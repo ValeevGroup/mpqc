@@ -35,32 +35,26 @@
 #include <chemistry/qc/basis/gaussshell.h>
 
 int
-GaussianBasisSet::values(const SCVector3& r, double* basis_values) const
+GaussianBasisSet::values(const SCVector3& r, ValueData *v,
+                         double* basis_values) const
 {
-  return hessian_values(r, 0, 0, basis_values);
+  return hessian_values(r, v, 0, 0, basis_values);
 }
 
 int
-GaussianBasisSet::grad_values(const SCVector3& r,
+GaussianBasisSet::grad_values(const SCVector3& r, ValueData *v,
                               double* g_values,
                               double* basis_values) const
 {
-  return hessian_values(r, 0, g_values, basis_values);
+  return hessian_values(r, v, 0, g_values, basis_values);
 }
 
 int
-GaussianBasisSet::hessian_values(const SCVector3& r,
+GaussianBasisSet::hessian_values(const SCVector3& r, ValueData *v,
                                  double* h_values,
                                  double* g_values,
                                  double* basis_values) const
 {
-    if (civec_ == 0) {
-        ExEnv::err()
-            << "GaussianBasisSet::grad_values called but set_integral not"
-            << endl;
-        abort();
-      }
-
     SCVector3 r_diff;
     int ishell = 0;
     int ibasis = 0;
@@ -98,7 +92,7 @@ GaussianBasisSet::hessian_values(const SCVector3& r,
             if (basis_values) b_values_i = &basis_values[ibasis];
             if (g_values)     g_values_i = &g_values[3*ibasis];
             if (h_values)     h_values_i = &h_values[6*ibasis];
-            nreturns=gbs(ishell).hessian_values(civec_, sivec_, r_diff,
+            nreturns=gbs(ishell).hessian_values(v->civec(), v->sivec(), r_diff,
                                                 h_values_i,
                                                 g_values_i,
                                                 b_values_i);
@@ -111,39 +105,34 @@ GaussianBasisSet::hessian_values(const SCVector3& r,
 }
 
 int
-GaussianBasisSet::shell_values(const SCVector3& r,
-                               int sh, double* basis_values) const
+GaussianBasisSet::shell_values(const SCVector3& r, int sh, ValueData *d,
+                               double* basis_values) const
 {
-  return hessian_shell_values(r, sh, 0, 0, basis_values);
+  return hessian_shell_values(r, sh, d, 0, 0, basis_values);
 }
 
 int
 GaussianBasisSet::grad_shell_values(const SCVector3& r, int sh,
+                              ValueData *d,
                               double* g_values,
                               double* basis_values) const
 {
-  return hessian_shell_values(r, sh, 0, g_values, basis_values);
+  return hessian_shell_values(r, sh, d, 0, g_values, basis_values);
 }
 
 int
 GaussianBasisSet::hessian_shell_values(const SCVector3& r, int sh,
+                                       ValueData *d,
                                        double* h_values,
                                        double* g_values,
                                        double* basis_values) const
 {
-    if (civec_ == 0) {
-        ExEnv::out() << "GaussianBasisSet::hessian_shell_values"
-             << " called but set_integral not"
-             << endl;
-        abort();
-      }
-
     int icenter = shell_to_center(sh);
 
     SCVector3 r_diff;
     for (int i=0; i<3; i++) r_diff[i] = r[i] - GaussianBasisSet::r(icenter,i);
 
-    return operator()(sh).hessian_values(civec_, sivec_, r_diff,
+    return operator()(sh).hessian_values(d->civec(), d->sivec(), r_diff,
                                          h_values,
                                          g_values,
                                          basis_values);

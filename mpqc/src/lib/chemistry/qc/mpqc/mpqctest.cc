@@ -8,6 +8,8 @@
 #include <math/optimize/qnewton.h>
 #include <math/optimize/gdiis.h>
 #include <math/optimize/efc.h>
+#include <chemistry/molecule/molshape.h>
+#include <chemistry/solvent/bem.h>
 
 // Force linkages:
 #ifndef __PIC__
@@ -16,6 +18,8 @@ const ClassDesc &fl1 = IntMolecularCoor::class_desc_;
 const ClassDesc &fl2 = QNewtonOpt::class_desc_;
 const ClassDesc &fl3 = GDIISOpt::class_desc_;
 const ClassDesc &fl4 = EFCOpt::class_desc_;
+const ClassDesc &fl5 = ConnollyShape2::class_desc_;
+const ClassDesc &fl6 = BEMSolvent::class_desc_;
 #endif
 
 void die()
@@ -41,31 +45,25 @@ main(int argc, char**argv)
   // the output stream is standard out
   SCostream& o = SCostream::cout;
 
-  char *input = (argv[1]) ? argv[1] : strdup(SRCDIR "/mpqc.in");
+  char *input =      (argc > 1)? argv[1] : SRCDIR "/mpqc.in";
+  char *keyword =    (argc > 2)? argv[2] : "mole";
+  char *optkeyword = (argc > 3)? argv[3] : "opt";
 
   // open keyval input
   RefKeyVal rpkv(new ParsedKeyVal(input));
 
-  RefMolecularEnergy mole = rpkv->describedclassvalue("mole");
-     
-  if (mole.nonnull()) {
-    mole->print(o);
+  RefMolecularEnergy mole = rpkv->describedclassvalue(keyword);
 
-    o << "energy = " << mole->energy() << endl;
-    o << "gradient:\n";
-    o++; mole->gradient().print(o); o--;
-  } else {
-    o << "mole is null\n";
-  }
+  if (mole->gradient_implemented()) {
+      RefOptimize opt = rpkv->describedclassvalue(optkeyword);
 
-  RefOptimize opt = rpkv->describedclassvalue("opt");
-
-  if (opt.nonnull()) {
-    //opt->print(o);
-    opt->optimize();
-  } else {
-    o << "opt is null\n";
-  }
+      if (opt.nonnull()) {
+          //opt->print(o);
+          opt->optimize();
+        } else {
+            o << "opt is null\n";
+          }
+    }
 
   return 0;
 }

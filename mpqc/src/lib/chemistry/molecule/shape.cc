@@ -14,7 +14,8 @@ extern "C" {
 void *
 VDWShape::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { UnionShape::_castdown(cd) };
+  void* casts[1];
+  casts[0] = UnionShape::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -52,7 +53,8 @@ VDWShape::~VDWShape()
 void *
 ConnollyShape::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { UnionShape::_castdown(cd) };
+  void* casts[1];
+  casts[0] = UnionShape::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

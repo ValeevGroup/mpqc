@@ -36,7 +36,8 @@
 void *
 BendSimpleCo::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SimpleCo::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SimpleCo::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 SimpleCo_IMPL(BendSimpleCo)

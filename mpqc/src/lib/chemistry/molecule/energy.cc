@@ -18,7 +18,8 @@ SavableState_REF_def(MolecularEnergy);
 void *
 MolecularEnergy::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { NLP2::_castdown(cd) };
+  void* casts[1];
+  casts[0] = NLP2::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -225,7 +226,7 @@ MolecularEnergy::molecule()
 void
 MolecularEnergy::guess_hessian(RefSymmSCMatrix&hessian)
 {
-  if (_mc.nonnull) {
+  if (_mc.nonnull()) {
       _mc->guess_hessian(hessian);
     }
   else {

@@ -15,7 +15,8 @@ SavableState_REF_def(Molecule);
 void *
 Molecule::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -164,8 +165,17 @@ Pix Molecule::first()
 
 void Molecule::next(Pix& i)
 {
+#ifdef __GNUC__
   if ((int)i < natoms) ((int)i)++;
   else i = 0;
+#else
+  if ((int)i < natoms) {
+    int ii = (int) i;
+    ii++;
+    i = (Pix)ii;
+  }
+  else i = 0;
+#endif
 }
 
 int Molecule::owns(Pix i)
@@ -297,7 +307,7 @@ PointBag_double* Molecule::charges() const
   PointBag_double*result = new PointBag_double;
   int i;
   for (i=0; i<natom(); i++) {
-      result->add(get_atom(i).point(),get_atom(i).element().charge());
+      result->add(get_atom(i).point(), get_atom(i).element().charge());
     }
   return result;
 }

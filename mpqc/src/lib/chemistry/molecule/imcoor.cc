@@ -63,7 +63,8 @@ dist(Point& a, Point& b)
 void *
 IntMolecularCoor::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { MolecularCoor::_castdown(cd) };
+  void* casts[1];
+  casts[0] = MolecularCoor::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

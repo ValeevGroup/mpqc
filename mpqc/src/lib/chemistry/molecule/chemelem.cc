@@ -11,7 +11,8 @@
 void *
 ChemicalElement::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

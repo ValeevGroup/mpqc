@@ -142,6 +142,28 @@ the quasi-newton method.
 
 \input{scfopt.in.tex}
 
+\subsection{Optimization with a Computed Guess Hessian}
+\index{optimization!example}
+\index{examples!optimization}
+
+The following input will optimize the geometry of water using
+the quasi-newton method.  The guess hessian will be computed
+at a lower level of theory.
+
+\input{scfoptguesshess.in.tex}
+
+\subsection{Optimization Using Newton's Method}
+\index{optimization!example}
+\index{examples!optimization}
+
+The following input will optimize the geometry of water using the Newton's
+method.  The hessian will be computed at each step in the optimization.
+However, hessian recomputation is usually not worth the cost; try using the
+computed hessian as a guess hessian for a quasi-Newton method before
+resorting to a Newton optimization.
+
+\input{newton.in.tex}
+
 \subsection{SCF Frequencies}
 \index{frequencies!example}
 \index{examples!frequencies}
@@ -216,3 +238,15 @@ was obtained by doing a few fixed coordinate optimizations along the
 inversion coordinate.
 
 \input{ts.in.tex}
+
+\subsection{Transition State Optimization with a Computed Guess Hessian}
+\index{transition state!example}
+\index{examples!transition state}
+
+This example shows a transition state optimization of the N-inversion in
+$\mathrm{CH}_3\mathrm{NH}_2$ using mode following.  The initial geometry
+was obtained by doing a few fixed coordinate optimizations along the
+inversion coordinate.  An approximate guess hessian will be computed, which
+makes the optimiziation converge much faster in this case.
+
+\input{tsguesshess.in.tex}

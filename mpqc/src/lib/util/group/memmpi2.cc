@@ -83,7 +83,7 @@ MPI2MemoryGrp::activate()
   MPI_Info info;
   MPI_Info_create(&info);
   MPI_Info_set(info, "no_locks", "true");
-  int r = MPI_Win_create(data_, localsize(), sizeof(int), info,
+  int r = MPI_Win_create(data_, localsize(), sizeof(double), info,
                          MPI_COMM_WORLD, &rma_win_);
   MPI_Info_free(&info);
 
@@ -131,6 +131,7 @@ MPI2MemoryGrp::sum_data(double *data, int node, int offset, int size)
   int doffset = offset/sizeof(double);
   int dsize = size/sizeof(double);
 
+  
   int r = MPI_Accumulate(data, dsize, MPI_DOUBLE,
                          node, doffset, dsize, MPI_DOUBLE,
                          MPI_SUM, rma_win_);
@@ -138,6 +139,7 @@ MPI2MemoryGrp::sum_data(double *data, int node, int offset, int size)
     ExEnv::errn() << "MPI2MemoryGrp::sum_data failed" << endl;
     abort();
   }
+
 }
 
 void *

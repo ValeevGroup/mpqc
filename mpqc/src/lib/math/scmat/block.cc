@@ -110,7 +110,11 @@ SCMatrixBlockListLink::~SCMatrixBlockListLink()
   if (_block) _block->dereference();
   if (_block->nreference() == 0) delete _block;
 
-  if (_next) delete _next;
+  for (SCMatrixBlockListLink *nexti, *i=_next; i; i = nexti) {
+      nexti = i->_next;
+      i->_next = 0;
+      delete i;
+    }
 }
 
 void

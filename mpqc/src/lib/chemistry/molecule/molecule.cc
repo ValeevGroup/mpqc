@@ -1004,6 +1004,7 @@ Molecule::n_core_electrons()
 {
   int i,n=0;
   for (i=0; i<natom(); i++) {
+      if (charge(i) == 0.0) continue;
       int z = Z_[i];
       if (z > 2) n += 2;
       if (z > 10) n += 8;

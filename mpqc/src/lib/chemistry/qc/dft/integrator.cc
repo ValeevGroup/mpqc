@@ -2222,8 +2222,7 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
     }
 
   for (icenter=0; icenter < ncenters; icenter++) {
-      if (! (parallel_counter++%nproc == me)) continue;
-
+      //if (! (parallel_counter++%nproc == me)) continue;
       point_count=0;
       center = centers[icenter];
       // get radial_ and nr[icenter] for current grid : depends on convergence threshold
@@ -2231,8 +2230,8 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
       // ExEnv::out() << " Radial grid = " << radial_->nr() << " points for charge "
       //     << mol->Z(icenter) << endl;
       for (ir=0; ir < radial_->nr(); ir++) {
-          // point_count=0;
-          // if (! (parallel_counter++%nproc == me)) continue;
+          //point_count=0;
+          if (! (parallel_counter++%nproc == me)) continue;
           double r = radial_->radial_value(ir, radial_->nr(),
                                            bragg_radius[icenter]);
           radial_multiplier = radial_->radial_multiplier(radial_->nr());

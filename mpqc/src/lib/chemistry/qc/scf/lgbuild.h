@@ -33,6 +33,7 @@
 #endif
 
 #undef SCF_CHECK_BOUNDS
+#undef SCF_DONT_USE_BOUNDS
 
 #include <chemistry/qc/scf/gbuild.h>
 
@@ -132,8 +133,10 @@ class LocalGBuild : public GBuild<T> {
               intbound *= qijkl;
               GBuild<T>::contribution.set_bound(intbound, pbound);
 #else
+#  ifndef SCF_DONT_USE_BOUNDS
               if (tbi.log2_shell_bound(i,j,k,l)+pmaxijkl < tol)
                 continue;
+#  endif
 #endif
 
               //tim_enter_default();

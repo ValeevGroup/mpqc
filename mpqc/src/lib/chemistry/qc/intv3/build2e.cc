@@ -52,8 +52,8 @@ stack_alignment_check(void *ptr, const char *where)
 #endif
 
 #ifdef __i386__
-//#define FIX_STACK __asm__ __volatile__("andl\t$0xfffffff8,%esp\n\t")
-#define FIX_STACK
+#define FIX_STACK __asm__ __volatile__("andl\t$0xfffffff8,%esp\n\t")
+//#define FIX_STACK
 #else
 #define FIX_STACK
 #endif

@@ -271,12 +271,12 @@ class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
 /** An implementation of a Lebedev angular integrator.  It uses code
     written by Dr. Dmitri N. Laikov.
 
-    This can generate grids with the following numbers of points:
-       6,  14,  26,  38,  50,  74,  86, 110, 146, 170, 194, 230, 266, 302,
-     350, 386, 434, 482, 530, 590, 650, 698, 770, 830, 890, 974,1046,1118,1202,
-    1274,1358,1454,1538,1622,1730,1814,1910,2030,2126,2222,2354,2450,2558,2702,
-    2810,2930,3074,3182,3314,3470,3590,3722,3890,4010,4154,4334,4466,4610,4802,
-    4934,5090,5294,5438,5606, and 5810.
+    This can generate grids with the following numbers of points: 6, 14,
+    26, 38, 50, 74, 86, 110, 146, 170, 194, 230, 266, 302, 350, 386, 434,
+    482, 530, 590, 650, 698, 770, 830, 890, 974, 1046, 1118, 1202, 1274,
+    1358, 1454, 1538, 1622, 1730, 1814, 1910, 2030, 2126, 2222, 2354, 2450,
+    2558, 2702, 2810, 2930, 3074, 3182, 3314, 3470, 3590, 3722, 3890, 4010,
+    4154, 4334, 4466, 4610, 4802, 4934, 5090, 5294, 5438, 5606, and 5810.
 
     V.I. Lebedev, and D.N. Laikov
     "A quadrature formula for the sphere of the 131st
@@ -316,7 +316,7 @@ class LebedevLaikovIntegrator: public AngularIntegrator {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    int npoints_;
+    int npoint_;
     double *x_, *y_, *z_, *w_;
     
     void init(int n);
@@ -386,8 +386,8 @@ class RadialAngularIntegrator: public DenIntegrator {
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   protected:
-    RefRadialIntegrator RadInt_;
-    RefAngularIntegrator AngInt_;
+    RefRadialIntegrator radial_;
+    RefAngularIntegrator angular_;
     RefIntegrationWeight weight_;
   public:
     RadialAngularIntegrator();

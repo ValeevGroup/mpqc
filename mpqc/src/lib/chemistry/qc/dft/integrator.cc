@@ -1613,8 +1613,8 @@ LebedevLaikovIntegrator::LebedevLaikovIntegrator()
 
 LebedevLaikovIntegrator::LebedevLaikovIntegrator(const RefKeyVal& keyval)
 {
-  KeyValValueint defnpoints(1202);
-  init(keyval->intvalue("npoints", defnpoints));
+  KeyValValueint defnpoint(1202);
+  init(keyval->intvalue("npoint", defnpoint));
 }
 
 LebedevLaikovIntegrator::~LebedevLaikovIntegrator()
@@ -1645,8 +1645,8 @@ LebedevLaikovIntegrator::init(int n)
   z_ = new double[n];
   w_ = new double[n];
 
-  npoints_ = Lebedev_Laikov_sphere(n, x_, y_, z_, w_);
-  if (npoints_ != n) {
+  npoint_ = Lebedev_Laikov_sphere(n, x_, y_, z_, w_);
+  if (npoint_ != n) {
       cout << class_name() << ": bad number of points given: " << n << endl;
       abort();
     }
@@ -1656,7 +1656,7 @@ int
 LebedevLaikovIntegrator::num_angular_points(double r_value, int ir)
 {
   if (ir == 0) return 1;
-  return npoints_;
+  return npoint_;
 }
 
 double
@@ -1674,7 +1674,7 @@ LebedevLaikovIntegrator
 void
 LebedevLaikovIntegrator::print(ostream &o) const
 {
-  o << node0 << indent << scprintf("npoints = %5d", npoints_) << endl;
+  o << node0 << indent << scprintf("npoint = %5d", npoint_) << endl;
 }
 
 /////////////////////////////////
@@ -1923,18 +1923,18 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
 
 RadialAngularIntegrator::RadialAngularIntegrator()
 {
-  RadInt_ = new EulerMaclaurinRadialIntegrator;
-  AngInt_ = new GaussLegendreAngularIntegrator;
-  weight_ = new BeckeIntegrationWeight;
+  radial_  = new EulerMaclaurinRadialIntegrator;
+  angular_ = new GaussLegendreAngularIntegrator;
+  weight_  = new BeckeIntegrationWeight;
 }
 
 RadialAngularIntegrator::RadialAngularIntegrator(const RefKeyVal& keyval):
   DenIntegrator(keyval)
 {
-  RadInt_ = keyval->describedclassvalue("RadInt");
-  if (RadInt_.null()) RadInt_ = new EulerMaclaurinRadialIntegrator(keyval);
-  AngInt_ = keyval->describedclassvalue("AngInt");
-  if (AngInt_.null()) AngInt_ = new GaussLegendreAngularIntegrator(keyval);
+  radial_ = keyval->describedclassvalue("radial");
+  if (radial_.null()) radial_ = new EulerMaclaurinRadialIntegrator;
+  angular_ = keyval->describedclassvalue("angular");
+  if (angular_.null()) angular_ = new LebedevLaikovIntegrator;
   weight_ = keyval->describedclassvalue("weight");
   if (weight_.null()) weight_ = new BeckeIntegrationWeight;
 
@@ -1976,7 +1976,7 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
   int *nr = new int[ncenters];
   int nangular;
   
-  for (icenter=0; icenter<ncenters; icenter++) nr[icenter] = RadInt_->get_nr();
+  for (icenter=0; icenter<ncenters; icenter++) nr[icenter] = radial_->get_nr();
 
   double *w_gradient = 0;
   double *f_gradient = 0;
@@ -2025,20 +2025,20 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
       int r_done = 0;
       for (ir=0; ir < nr[icenter]; ir++) {
 //      for (ir=nr[icenter]-1; ir >= 0; ir--) {
-          double r = RadInt_->radial_value(ir, nr[icenter], bragg_radius[icenter]);
-          //dr_dqr2 = RadInt_->get_dr_dqr2();
-          radial_multiplier = RadInt_->radial_multiplier(nr[icenter]);
-          nangular = AngInt_->num_angular_points(r/bragg_radius[icenter],ir);
-          //double radial_int_volume = RadInt_->get_dr_dqr2();
+          double r = radial_->radial_value(ir, nr[icenter], bragg_radius[icenter]);
+          //dr_dqr2 = radial_->get_dr_dqr2();
+          radial_multiplier = radial_->radial_multiplier(nr[icenter]);
+          nangular = angular_->num_angular_points(r/bragg_radius[icenter],ir);
+          //double radial_int_volume = radial_->get_dr_dqr2();
           for (iangular=0; iangular<nangular; iangular++) {
               angular_multiplier =
-                AngInt_->angular_point_cartesian(iangular,r,integration_point);
+                angular_->angular_point_cartesian(iangular,r,integration_point);
               integration_point += center;
               w=weight_->w(icenter, integration_point, w_gradient);
               //if (w_gradient) weight_->test(icenter, integration_point);
               point_count++;
               double multiplier = angular_multiplier * radial_multiplier;
-              //double angular_int_volume = AngInt_->sin_theta(point);
+              //double angular_int_volume = angular_->sin_theta(point);
               //double int_volume = radial_int_volume * angular_int_volume;
               if (do_point(icenter, integration_point, denfunc,
                            w, multiplier,
@@ -2093,8 +2093,8 @@ RadialAngularIntegrator::print(ostream &o) const
 {
   o << node0 << indent << class_name() << " Parameters:" << endl;
   o << incindent;
-  RadInt_->print(o);
-  AngInt_->print(o);
+  radial_->print(o);
+  angular_->print(o);
   o << decindent;
 }
 

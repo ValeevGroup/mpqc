@@ -4,5 +4,6 @@
 #include <chemistry/qc/force/LIBS.h>
 #include <chemistry/molecule/LIBS.h>
 #include <chemistry/qc/basis/LIBS.h>
+#include <math/optimize/LIBS.h>
 #include <util/misc/LIBS.h>
 #include <util/group/LIBS.h>

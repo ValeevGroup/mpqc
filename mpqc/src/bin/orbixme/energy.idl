@@ -1,6 +1,11 @@
 
-#include <keyval.idl>
+#include <function.idl>
+#include <molecule.idl>
 
-interface C_MolecularEnergy : C_KeyValCreatable {
+interface C_MolecularEnergy : C_Function {
   double energy();
+  C_Molecule molecule();
+
+  // orbix bug workaround
+  boolean molecularenergy_has_object();
 };

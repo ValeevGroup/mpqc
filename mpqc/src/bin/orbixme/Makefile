@@ -42,15 +42,34 @@ MOLECULECLNTGENSRC = moleculeC.cc
 MOLECULESERVSRC = moleculei.cc $(MOLECULESERVGENSRC)
 MOLECULECLNTSRC = $(MOLECULECLNTGENSRC)
 
-CHEMSERVSRC = chemserv.cc $(ENERGYSERVSRC) $(MOLECULESERVSRC) $(KEYVALSERVSRC)
-CHEMCLNTSRC = chemclnt.cc $(ENERGYCLNTSRC) $(MOLECULECLNTSRC) $(KEYVALCLNTSRC)
+FUNCTIONGENINC = function.h
+FUNCTIONSERVGENSRC = functionS.cc
+FUNCTIONCLNTGENSRC = functionC.cc
+FUNCTIONSERVSRC = functioni.cc $(FUNCTIONSERVGENSRC)
+FUNCTIONCLNTSRC = $(FUNCTIONCLNTGENSRC)
+
+OPTIMIZEGENINC = optimize.h
+OPTIMIZESERVGENSRC = optimizeS.cc
+OPTIMIZECLNTGENSRC = optimizeC.cc
+OPTIMIZESERVSRC = optimizei.cc $(OPTIMIZESERVGENSRC)
+OPTIMIZECLNTSRC = $(OPTIMIZECLNTGENSRC)
+
+CHEMSERVSRC = chemserv.cc $(ENERGYSERVSRC) $(MOLECULESERVSRC) \
+                          $(FUNCTIONSERVSRC) $(OPTIMIZESERVSRC) \
+                          $(KEYVALSERVSRC)
+CHEMCLNTSRC = chemclnt.cc $(ENERGYCLNTSRC) $(MOLECULECLNTSRC) \
+                          $(FUNCTIONCLNTSRC) $(OPTIMIZECLNTSRC) \
+                          $(KEYVALCLNTSRC)
 CHEMSERVOBJ = $(CHEMSERVSRC:%.cc=%.o)
 CHEMCLNTOBJ = $(CHEMCLNTSRC:%.cc=%.o)
 
 GENSRC = $(KEYVALSERVGENSRC) $(KEYVALCLNTGENSRC) \
          $(ENERGYSERVGENSRC) $(ENERGYCLNTGENSRC) \
-         $(MOLECULESERVGENSRC) $(MOLECULECLNTGENSRC)
-GENINC = $(KEYVALGENINC) $(ENERGYGENINC) $(MOLECULEGENINC)
+         $(MOLECULESERVGENSRC) $(MOLECULECLNTGENSRC) \
+         $(FUNCTIONSERVGENSRC) $(FUNCTIONCLNTGENSRC) \
+         $(OPTIMIZESERVGENSRC) $(OPTIMIZECLNTGENSRC)
+GENINC = $(KEYVALGENINC) $(ENERGYGENINC) $(MOLECULEGENINC) \
+         $(OPTIMIZEGENINC) $(FUNCTIONGENINC)
 DEPENDINCLUDE = $(INC) $(GENINC)
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
@@ -75,6 +94,16 @@ energyC.cc energyS.cc energy.h: energy.idl
 keyvalC.cc keyvalS.cc keyval.h: keyval.idl
 	/bin/rm -f keyvalS.cc keyvalC.cc keyval.h
 	/bin/rm -f keyvalS.c++ keyvalC.c++
+	$(IDL) $(CXXINCLUDE) -B $^
+
+optimizeC.cc optimizeS.cc optimize.h: optimize.idl
+	/bin/rm -f optimizeS.cc optimizeC.cc optimize.h
+	/bin/rm -f optimizeS.c++ optimizeC.c++
+	$(IDL) $(CXXINCLUDE) -B $^
+
+functionC.cc functionS.cc function.h: function.idl
+	/bin/rm -f functionS.cc functionC.cc function.h
+	/bin/rm -f functionS.c++ functionC.c++
 	$(IDL) $(CXXINCLUDE) -B $^
 
 moleculeC.cc moleculeS.cc molecule.h: molecule.idl

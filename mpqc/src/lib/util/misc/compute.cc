@@ -37,6 +37,8 @@ Compute::obsolete()
     }
 }
 
+////////////////////////////////////////////////////////////////////////
+
 void
 Result::update() {
   if (!computed()) {
@@ -63,12 +65,31 @@ Result::Result(StateIn&s,Compute*c):
   c->add(this);
 }
 
+Result::Result(const Result&r, Compute*c) :
+  _c(c)
+{
+  _compute=r._compute;
+  _computed=r._computed;
+  
+  c->add(this);
+}
+
 void
 Result::save_data_state(StateOut&s)
 {
   s.put(_compute);
   s.put(_computed);
 }
+
+Result&
+Result::operator=(const Result&r)
+{
+  _compute=r._compute;
+  _computed=r._computed;
+  return *this;
+}
+
+/////////////////////////////////////////////////////////////////////////
 
 AccResult::AccResult(Compute*c):
   Result(c),
@@ -121,10 +142,26 @@ AccResult::AccResult(StateIn&s,Compute*c):
   s.get(_desired_accuracy);
 }
 
+AccResult::AccResult(const AccResult&a, Compute*c) :
+  Result(a,c)
+{
+  _actual_accuracy=a._actual_accuracy;
+  _desired_accuracy=a._desired_accuracy;
+}
+
 void
 AccResult::save_data_state(StateOut&s)
 {
   Result::save_data_state(s);
   s.put(_actual_accuracy);
   s.put(_desired_accuracy);
+}
+
+AccResult&
+AccResult::operator=(const AccResult&a)
+{
+  Result::operator=(a);
+  _actual_accuracy=a._actual_accuracy;
+  _desired_accuracy=a._desired_accuracy;
+  return *this;
 }

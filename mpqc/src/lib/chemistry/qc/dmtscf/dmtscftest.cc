@@ -16,7 +16,7 @@ extern "C" {
 #include <chemistry/qc/intv2/int_libv2.h>
 }
 
-#include <util/keyval/ipv2c.h>
+#include <util/keyval/keyval.h>
 
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 #include <chemistry/qc/dmtscf/scf_dmt.h>
@@ -30,23 +30,6 @@ init_mp()
 
   open0(&nproc,&me,&host);
   setarc0(&nproc,&top,&ord,&dir);
-}
-
-// this is done for libintv2 which still uses the old libipv2 stuff
-static void 
-init_ipv2()
-{
-  FILE *infile = fopen("mpqc.in","r");
-
-  ip_initialize(infile,stdout);
-
-  ip_cwk_add(":default");
-  ip_cwk_add(":mpqc");
-
-  ip_append_from_input("input",stdout);
-  ip_cwk_clear();
-  ip_cwk_add(":default");
-  ip_cwk_add(":mpqc");
 }
 
 static void
@@ -93,18 +76,27 @@ main()
 
   init_mp();
 
+  RefKeyVal keyval;
+
   if (mynode0() == 0) {
-   // initialize the keyval ipv2 C functions
-    init_ipv2();
+   // initialize keyval
+    RefKeyVal pkv(new ParsedKeyVal("mpqc.in"));
+    RefKeyVal ppkv(new PrefixKeyVal(":scf :default",*pkv.pointer()));
+    pkv = new ParsedKeyVal("input",*ppkv.pointer());
+    keyval = new AggregateKeyVal(*ppkv.pointer(),*pkv.pointer());
+
+    pkv = ppkv = 0;
 
    // initialize all of the structs needed by the SC libraries
-    errcod = scf_init_scf(&centers, &scf_info, &sym_info, "mpqc.in");
+    errcod = scf_init_scf(*keyval.pointer(), centers, scf_info, sym_info); 
 
    // pretty print the scf options
     scf_print_options(stdout, scf_info);
 
-    ip_boolean("save_vector",&save_vector,0);
-    ip_boolean("save_fock",&save_fock,0);
+    save_vector = keyval->booleanvalue("save_vector");
+    if (keyval->error() != KeyVal::OK) save_vector = 1;
+
+    save_fock = keyval->booleanvalue("save_fock");
   }
 
   bcast0_scf_struct(&scf_info,0,0);
@@ -117,11 +109,11 @@ main()
 
  // if we need a projected guess, initialize oldcenters
   if (scf_info.proj_vector) {
-    errcod = scf_make_old_centers(&centers, &oldcenters);
+    errcod = scf_make_old_centers(*keyval.pointer(), centers, oldcenters);
   }
 
- // free up the ipv2 memory
-  ip_done();
+ // close input
+  keyval = 0;
 
  // initialize the dmt library
   init_dmt(&centers);

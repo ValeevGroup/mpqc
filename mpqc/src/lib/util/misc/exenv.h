@@ -41,6 +41,8 @@ class ExEnv {
     static int initialized_;
     static int *argc_;
     static char ***argv_;
+    static char hostname_[256];
+    static char username_[9];
 
     static unsigned long mem_;
     static int nproc_;
@@ -57,6 +59,9 @@ class ExEnv {
     static char **&argv() { return *argv_; }
     /// Return argv[0] with the path removed.
     static const char *program_name();
+    /// Return the host name.
+    static const char *hostname() { return hostname_; }
+    static const char *username() { return username_; }
 
     /// The amount of memory on this node.
     static unsigned long memory() { if (!initialized_) err(); return mem_; }

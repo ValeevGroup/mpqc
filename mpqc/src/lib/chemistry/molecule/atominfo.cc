@@ -260,9 +260,9 @@ AtomInfo::load_library_values()
           struct stat sb;
           const char *ainfo = INSTALLED_SCLIBDIR "/atominfo.kv";
           if (stat(ainfo, &sb) != 0) {
-              cout << indent << "WARNING: could not find " << ainfo << endl;
               ainfo = SRC_SCLIBDIR "/atominfo.kv";
             }
+          cout << indent << "Reading file " << ainfo << "." << endl;
           keyval = new ParsedKeyVal(ainfo);
         }
       RefKeyVal pkeyval = new PrefixKeyVal(keyval, "atominfo");

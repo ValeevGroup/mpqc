@@ -29,8 +29,18 @@
 #pragma implementation
 #endif
 
+#include <unistd.h>
 #include <stdlib.h>
 #include <iostream.h>
+
+#include <scconfig.h>
+
+#ifdef HAVE_PWD_H
+#include <pwd.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
 
 #include <util/misc/exenv.h>
 #include <string.h>
@@ -45,6 +55,8 @@ unsigned long ExEnv::mem_ = 0;
 int ExEnv::nproc_ = 0;
 int *ExEnv::argc_ = 0;
 char ***ExEnv::argv_ = 0;
+char ExEnv::hostname_[256] = { '\0' };
+char ExEnv::username_[9] = { '\0' };
 
 void
 ExEnv::err()
@@ -69,7 +81,25 @@ ExEnv::init(int &argcref, char **&argvref)
   argc_ = &argcref;
   argv_ = &argvref;
 
+#ifdef HAVE_GETHOSTNAME
+  gethostname(hostname_, 256);
+#else
+  strcpy(hostname_, "UNKNOWN");
+#endif
+
+  memset(username_,0,9);
+#if defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
+  const char *pw_name = getpwuid(geteuid())->pw_name;
+  if (pw_name) {
+      strncpy(username_, pw_name, 9);
+      username_[8] = 0;
+    }
+#else
+  strcpy(username_,"UNKNOWN");
+#endif
+
   initialized_ = 1;
+
 #ifdef HAVE_NIAMA
 #if 0
   using namespace NIAMA;

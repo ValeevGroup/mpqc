@@ -54,8 +54,6 @@ BasisFileSet::BasisFileSet(const RefKeyVal& keyval)
       struct stat sb;
       const char *bdir = INSTALLED_SCLIBDIR "/basis";
       if (stat(bdir, &sb) != 0) {
-          cout << node0 << indent
-               << "WARNING: could not find " << bdir << endl;
           bdir = SRC_SCLIBDIR "/basis";
         }
       dir_[1] = strcpy(new char[strlen(bdir)+1], bdir);
@@ -126,6 +124,7 @@ BasisFileSet::keyval(const RefKeyVal &keyval, const char *basisname)
           ifstream is(path);
           if (is.good()) {
               int status = 1;
+              cout << indent << "Reading file " << path << "." << endl;
               grp->bcast(status);
               ostrstream ostrs;
               is >> ostrs.rdbuf();

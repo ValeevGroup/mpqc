@@ -541,7 +541,11 @@ ClassDesc::load_class(const char* classname)
   delete[] path;
 #endif // HAVE_DLFCN_H
 
-  cerr << "ClassDesc::load_class(\"" << classname << "\"): load failed"
+  cout << "ClassDesc::load_class(\"" << classname << "\"): load failed"
+       << endl
+       << "Either \"" << classname << "\" is an invalid class name or the code"
+       << endl
+       << "for \"" << classname << "\" was not linked into the executable."
        << endl;
 
   return -1;

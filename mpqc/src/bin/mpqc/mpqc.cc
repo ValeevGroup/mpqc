@@ -29,6 +29,10 @@
 #include <scconfig.h>
 #endif
 
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
+
 #include <scdirlist.h>
 
 #include <new.h>
@@ -326,8 +330,23 @@ main(int argc, char *argv[])
   cout << node0 << indent;
   for (i=0; i<(80-ntitle2)/2; i++) cout << node0 << ' ';
   cout << node0 << title2 << endl << endl;
-  cout << node0 << indent
-       << scprintf("Running on a %s.", TARGET_ARCH) << endl;
+
+  const char *tstr = 0;
+#if defined(HAVE_TIME) && defined(HAVE_CTIME)
+  time_t t;
+  time(&t);
+  tstr = ctime(&t);
+#endif
+  if (!tstr) {
+    tstr = "UNKNOWN";
+  }
+
+  cout << node0
+       << indent << scprintf("Architecture is %s.", TARGET_ARCH) << endl
+       << indent << scprintf("Hostname is %s.", ExEnv::hostname()) << endl
+       << indent << scprintf("Username is %s.", ExEnv::username()) << endl
+       << indent << scprintf("Time is %s", tstr);
+  cout.flush();
 
   // get the thread group.  first try the commandline and environment
   RefThreadGrp thread = ThreadGrp::initial_threadgrp(argc, argv);

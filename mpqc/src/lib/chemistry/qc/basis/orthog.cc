@@ -80,6 +80,7 @@ OverlapOrthog::OverlapOrthog(StateIn& si):
   orthog_trans_inverse_.restore(si);
   si.get(min_orthog_res_);
   si.get(max_orthog_res_);
+  si.get(nlindep_);
 }
 
 void
@@ -94,6 +95,7 @@ OverlapOrthog::save_data_state(StateOut& so)
   orthog_trans_inverse_.save(so);
   so.put(min_orthog_res_);
   so.put(max_orthog_res_);
+  so.put(nlindep_);
   // The overlap_ member is not saved since should not be needed.
   // The result_kit_ member is not saved since it depends on the
   // runtime environment.  It is given to the StateIn CTOR by
@@ -131,6 +133,7 @@ OverlapOrthog::copy() const
   orthog->orthog_dim_ = orthog_dim_;
   orthog->min_orthog_res_ = min_orthog_res_;
   orthog->max_orthog_res_ = max_orthog_res_;
+  orthog->nlindep_ = nlindep_;
   return orthog;
 }
 
@@ -173,7 +176,7 @@ OverlapOrthog::compute_overlap_eig(RefSCMatrix& overlap_eigvec,
   int *pm_index = new int[m->dim()->n()];
   int *nfunc = new int[nblocks];
   int nfunctot = 0;
-  int nlindep = 0;
+  nlindep_ = 0;
   for (i=0; i<nblocks; i++) {
       nfunc[i] = 0;
       if (blocked && bm->block(i).null()) continue;
@@ -198,18 +201,18 @@ OverlapOrthog::compute_overlap_eig(RefSCMatrix& overlap_eigvec,
               pm_index[nfunctot] = j;
               nfunc[i]++;
               nfunctot++;
-              nlindep++;
+              nlindep_++;
             }
           else {
-              nlindep++;
+              nlindep_++;
             }
         }
       delete[] pm;
     }
 
-  if (nlindep > 0 && orthog_method_ == Symmetric) {
+  if (nlindep_ > 0 && orthog_method_ == Symmetric) {
     ExEnv::out0() << indent
-                 << "WARNING: " << nlindep
+                 << "WARNING: " << nlindep_
                  << " basis function"
                  << (dim_.n()-orthog_dim_.n()>1?"s":"")
                  << " ignored in symmetric orthogonalization."
@@ -315,6 +318,7 @@ OverlapOrthog::compute_gs_orthog()
   // Orthogonalize each subblock of the overlap.
   max_orthog_res_ = 1.0;
   min_orthog_res_ = 1.0;
+  nlindep_ = 0;
   BlockedSymmSCMatrix *S
     = dynamic_cast<BlockedSymmSCMatrix *>(overlap_.pointer());
   int nblock = S->nblocks();
@@ -341,6 +345,7 @@ OverlapOrthog::compute_gs_orthog()
     blockorthogs[i] = blockorthog;
     nblockorthogs[i] = nblockorthog;
     northog += nblockorthog;
+    nlindep_ += dim.n() - nblockorthog;
   }
 
   // Construct the orthog basis SCDimension object.
@@ -505,6 +510,13 @@ OverlapOrthog::orthog_dim()
 {
   if (orthog_dim_.null()) compute_orthog_trans();
   return orthog_dim_;
+}
+
+int
+OverlapOrthog::nlindep()
+{
+  if (orthog_dim_.null()) compute_orthog_trans();
+  return nlindep_; 
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -50,6 +50,8 @@ class OverlapOrthog: virtual public SavableState {
     // The tolerance for linearly independent basis functions.
     // The intepretation depends on the orthogonalization method.
     double lindep_tol_;
+    // The number of linearly dependent functions
+    int nlindep_;
     // The orthogonalization method
     OrthogMethod orthog_method_;
     // The orthogonalization matrices
@@ -120,6 +122,11 @@ class OverlapOrthog: virtual public SavableState {
 
     RefSCDimension dim();
     RefSCDimension orthog_dim();
+
+    /** Returns the number of linearly dependent functions eliminated from
+        the orthogonal basis.
+      */
+    int nlindep();
 };
 
 }

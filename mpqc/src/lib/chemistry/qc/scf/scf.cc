@@ -53,7 +53,7 @@ using namespace std;
 // SCF
 
 static ClassDesc SCF_cd(
-  typeid(SCF),"SCF",4,"public OneBodyWavefunction",
+  typeid(SCF),"SCF",5,"public OneBodyWavefunction",
   0, 0, 0);
 
 SCF::SCF(StateIn& s) :
@@ -86,8 +86,9 @@ SCF::SCF(StateIn& s) :
     print_occ_evals_ = 0;
   }
   s.get(level_shift_);
-  if (s.version(::class_desc<SCF>()) >= 4) {
+  if (s.version(::class_desc<SCF>()) >= 5) {
     s.get(keep_guess_wfn_);
+    guess_wfn_ << SavableState::restore_state(s);
   }
   else keep_guess_wfn_ = 0;
 
@@ -194,6 +195,8 @@ SCF::save_data_state(StateOut& s)
   s.put(print_all_evals_);
   s.put(print_occ_evals_);
   s.put(level_shift_);
+  s.put(keep_guess_wfn_);
+  SavableState::save_state(guess_wfn_.pointer(),s);
   SavableState::save_state(extrap_.pointer(),s);
   SavableState::save_state(accumdih_.pointer(),s);
   SavableState::save_state(accumddh_.pointer(),s);

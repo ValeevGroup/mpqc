@@ -32,7 +32,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-TARGET_TO_MAKE = libmbptr12
+TARGET_TO_MAKE = libSCmbptr12
 BIN_OR_LIB = LIB
 
 CXXSRCS = mbptr12.cc distsh.cc trans12_grt.cc \

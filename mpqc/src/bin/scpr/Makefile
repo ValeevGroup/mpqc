@@ -27,10 +27,18 @@ XLIBS=
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
  ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
  XDEF += -DHAVE_CHEMISTRY_QC_MBPTR12
- XLIBS += -lPSI_r12
  endif
 XDEF += -DHAVE_CHEMISTRY_QC_CINTS
-XLIBS += -lPSI_int
+endif
+
+ifeq ($(HAVE_LIBINT),yes)
+  XLIBS += -lint
+endif
+ifeq ($(HAVE_LIBR12),yes)
+  XLIBS += -lr12
+endif
+ifeq ($(HAVE_LIBDERIV),yes)
+  XLIBS += -lderiv
 endif
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(XDEF) $(SRCDIR)/LIBS.h)

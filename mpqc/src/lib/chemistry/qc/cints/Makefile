@@ -32,7 +32,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-TARGET_TO_MAKE = libcints
+TARGET_TO_MAKE = libSCcints
 BIN_OR_LIB = LIB
 
 #DEFINES += -DDMALLOC

@@ -1,4 +1,4 @@
-libcints.LIBSUF
+libSCcints.LIBSUF
 #include <util/keyval/LIBS.h>
 #include <util/misc/LIBS.h>
 #include <chemistry/molecule/LIBS.h>

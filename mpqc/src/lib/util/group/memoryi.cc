@@ -72,6 +72,13 @@ MemoryGrp::~MemoryGrp()
 }
 
 MemoryGrp *
+MemoryGrp::initial_memorygrp()
+{
+  int argc = 0;
+  initial_memorygrp(argc,0);
+}
+
+MemoryGrp *
 MemoryGrp::initial_memorygrp(int &argc, char *argv[])
 {
   MemoryGrp *grp = 0;

@@ -105,6 +105,7 @@ class MemoryGrp: public DescribedClass {
     //argument to -memorygrp should be either string for a
     //\clsnmref{ParsedKeyVal} constructor or a classname.
     static MemoryGrp* initial_memorygrp(int &argc, char** argv);
+    static MemoryGrp* initial_memorygrp();
 };
 DescribedClass_REF_dec(MemoryGrp);
 

@@ -441,7 +441,7 @@ dot(double v[3], double w[3])
 void
 DenIntegratorThread::get_density(double *dmat, PointInputData::SpinData &d)
 {
-  int i, j, ish, jsh;
+  int i, j;
 
   double tmp = 0.0;
   double densij;
@@ -587,7 +587,7 @@ DenIntegratorThread::do_point(int acenter, const SCVector3 &r,
                         double *nuclear_gradient,
                         double *f_gradient, double *w_gradient)
 {
-  int i,j,k;
+  int i,j;
   double w_mult = weight * multiplier;
 
   CHECK_ALIGN(w_mult);
@@ -1179,7 +1179,7 @@ double
 BeckeIntegrationWeight::w(int acenter, SCVector3 &point,
                           double *w_gradient)
 {
-  int icenter, jcenter;
+  int icenter;
   double p_sum=0.0, p_a=0.0;
     
   for (icenter=0; icenter<ncenters; icenter++) {
@@ -1863,7 +1863,7 @@ RadialAngularIntegratorThread::run()
   SCVector3 center;           // Cartesian position of center
   SCVector3 integration_point;
 
-  double w,q,int_volume,radial_multiplier,angular_multiplier;
+  double w,radial_multiplier,angular_multiplier;
         
   int parallel_counter = 0;
 
@@ -2167,8 +2167,6 @@ void
 RadialAngularIntegrator::init_pruning_coefficients(void)
 {
   // Set up Alpha arrays for pruning
-  int i;
-
   //ExEnv::out() << "npruned_partitions = " << npruned_partitions_ << endl;
   //ExEnv::out() << "natomic_rows = " << natomic_rows_ << endl;
   int num_boundaries = npruned_partitions_-1;
@@ -2216,7 +2214,7 @@ RadialAngularIntegrator::init_pruning_coefficients(const RefKeyVal& keyval)
                   ExEnv::out() << "RadialAngularIntegrator:: Number of alpha coefficients does "
                        << "not match the number of boundaries (" << check << " != "
                        << num_boundaries << ")" << endl;
-                  abort;
+                  abort();
                 }
               for (j=0; j<num_boundaries; j++) 
                   Alpha_coeffs_[i][j] = keyval->doublevalue("alpha_coeffs", i, j);
@@ -2391,7 +2389,7 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
                               const RefSymmSCMatrix& densb,
                               double *nuclear_gradient)
 {
-  int i, icenter;
+  int i;
 
   tim_enter("integrate");
 

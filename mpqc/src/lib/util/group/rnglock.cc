@@ -267,9 +267,6 @@ RangeLock::split_ranges(int start, int fence)
       else if (fence <= i->start) {
           // fence is before this block, fill in the gap
           RangeLockItem *p = i->prev;
-          int actualstart;
-          if (p->fence > start) actualstart = p->fence;
-          else actualstart = start;
           RangeLockItem *t = new(pool_) RangeLockItem(p, i,
                                                       p->fence, fence, 0);
           p->next = t;

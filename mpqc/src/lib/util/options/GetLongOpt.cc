@@ -226,33 +226,25 @@ GetLongOpt::setcell(Cell *c, const char *valtoken, const char *nexttoken, const 
    case GetLongOpt::OptionalValue :
       if ( *valtoken == '=' ) {
 	 c->value = ++valtoken;
-	 return 0;
       }
-      else {
-	 if ( nexttoken != 0 && nexttoken[0] != optmarker ) {
-	    c->value = nexttoken;
-	    return 1;
-	 }
-	 else return 0;
+      else if ( nexttoken != 0 && nexttoken[0] != optmarker ) {
+          c->value = nexttoken;
+          return 1;
       }
-      break;
+      return 0;
    case GetLongOpt::MandatoryValue :
       if ( *valtoken == '=' ) {
 	 c->value = ++valtoken;
 	 return 0;
       }
-      else {
-	 if ( nexttoken != 0 && nexttoken[0] != optmarker ) {
-	    c->value = nexttoken;
-	    return 1;
-	 }
-	 else {
-	    cerr << name << ": mandatory value for ";
-	    cerr << optmarker << c->option << " not specified\n";
-	    return -1;	/* mandatory value not specified */
-	 }
+      else if ( nexttoken != 0 && nexttoken[0] != optmarker ) {
+	 c->value = nexttoken;
+	 return 1;
       }
-      break;
+
+      cerr << name << ": mandatory value for ";
+      cerr << optmarker << c->option << " not specified\n";
+      return -1;	/* mandatory value not specified */
    default :
       break;
    }

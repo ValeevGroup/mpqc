@@ -46,6 +46,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 extern "C" {
+  void
   dsygv_(int *ITYPE, const char *JOBZ, const char *UPLO,
          int *N, double *A, int *LDA, double *B, int *LDB,
          double *W, double *WORK, int *LWORK, int *INFO);

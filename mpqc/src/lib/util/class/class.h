@@ -313,6 +313,7 @@ DCRefBase::dereference(VRefCount *p)
 #  define DescribedClass_named_REF_dec(name,T) DCRef_declare(T); \
                                                typedef class DCRef ## T name;
 #  define DescribedClass_named_REF_def(name,T)
+#  define DCRef_define(T)
 #else
 #  define DCRef_declare(T) typedef class DCRef<T> DCRef ## T;
 #  define DescribedClass_named_REF_dec(name,T) typedef class DCRef<T> name; \

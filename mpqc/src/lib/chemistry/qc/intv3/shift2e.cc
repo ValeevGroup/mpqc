@@ -85,14 +85,12 @@ Int2eV3::int_init_shiftgc(int order, int am1, int am2, int am3, int am4)
   for (d=1; d<=am4; d++) {
     int size_d = INT_NCART(d);
     int size_dm1 = INT_NCART(d-1);
-    int off_c_dm1 = 0;
     int off_cp1_dm1 = INT_NCART(am3) * size_dm1;
     int off_c_d = 0;
     for (c=am3; c<=am3+am4-d; c++) {
       int size_c = INT_NCART(c);
       int size_cp1 = INT_NCART(c+1);
       off_c_d += size_c * size_d;
-      off_c_dm1 = off_cp1_dm1;
       off_cp1_dm1 += size_cp1 * size_dm1;
       }
     if (off_c_d > ndata34_f) ndata34_f = off_c_d;
@@ -108,12 +106,10 @@ Int2eV3::int_init_shiftgc(int order, int am1, int am2, int am3, int am4)
     int size_bm1 = INT_NCART(b-1);
     int off_a_b = 0;
     int off_ap1_bm1 = INT_NCART(am1) * size_bm1 * size_c_d;
-    int off_a_bm1 = 0;
     for (a=am1; a<=am1+am2-b; a++) {
       int size_a = INT_NCART(a);
       int size_ap1 = INT_NCART(a+1);
       off_a_b += size_a * size_b * size_c_d;
-      off_a_bm1 = off_ap1_bm1;
       off_ap1_bm1 += size_ap1 * size_bm1 * size_c_d;
       }
     if (off_a_b > ndata12) ndata12 = off_a_b;
@@ -280,7 +276,7 @@ Int2eV3::shiftam_12(double *I0100, double *I1000, double *I0000,
                     int am1, int am2, int am3, int am4)
 {
   int i;
-  int i1,j1,k1;
+  int i1,k1;
   int size2, size2m134, size34;
 
 #if CHECK_INTEGRAL_ALGORITHM > 1
@@ -307,7 +303,7 @@ Int2eV3::shiftam_12(double *I0100, double *I1000, double *I0000,
   int cartindex1 = 0;
   for (i1=0; i1<=am1; i1++) {
     for (k1=0; k1<=am1-i1; k1++) {
-      j1 = am1 - i1 - k1;
+      //int j1 = am1 - i1 - k1;
       int ci1x1 = (cartindex1 + am1 + 2) * size2m134;
       int ci1y1 = (cartindex1 + i1) * size2m134;
       int ci1z1 = (cartindex1 + i1 + 1)  * size2m134;
@@ -354,7 +350,7 @@ Int2eV3::shiftam_12eAB(double *I0100, double *I1000, double *I0000,
                        int am1, int am2, int am3, int am4)
 {
   int i;
-  int i1,j1,k1;
+  int i1,k1;
   int size2, size2m134, size34;
 
 #if CHECK_INTEGRAL_ALGORITHM > 1
@@ -377,7 +373,7 @@ Int2eV3::shiftam_12eAB(double *I0100, double *I1000, double *I0000,
   int cartindex1 = 0;
   for (i1=0; i1<=am1; i1++) {
     for (k1=0; k1<=am1-i1; k1++) {
-      j1 = am1 - i1 - k1;
+      //int j1 = am1 - i1 - k1;
       int ci1x1 = (cartindex1 + am1 + 2) * size2m134;
       int ci1y1 = (cartindex1 + i1) * size2m134;
       int ci1z1 = (cartindex1 + i1 + 1)  * size2m134;
@@ -413,10 +409,10 @@ void
 Int2eV3::shiftam_34(double *I0001, double *I0010, double *I0000,
                     int am1, int am2, int am3, int am4)
 {
-  int i1,j1,k1,cartindex1;
-  int i2,j2,k2,cartindex2;
-  int i3,j3,k3,cartindex3;
-  int i4,j4,k4,cartindex4;
+  int i1,k1,cartindex1;
+  int i2,k2,cartindex2;
+  int i3,k3,cartindex3;
+  int i4,k4,cartindex4;
   int cartindex1234;
   int size23p14m1,size3p14m1,size4m1,size234m1,size34m1;
 
@@ -444,19 +440,19 @@ Int2eV3::shiftam_34(double *I0001, double *I0010, double *I0000,
   cartindex1 = 0;
   for (i1=0; i1<=am1; i1++) {
     for (k1=0; k1<=am1-i1; k1++) {
-      j1 = am1 - i1 - k1;
+      //int j1 = am1 - i1 - k1;
       int ci1_I0010 = cartindex1 * size23p14m1;
       int ci1_I0000 = cartindex1 * size234m1;
       cartindex2 = 0;
       for (i2=0; i2<=am2; i2++) {
         for (k2=0; k2<=am2-i2; k2++) {
-          j2 = am2 - i2 - k2;
+          //int j2 = am2 - i2 - k2;
           int ci2_I0010 = ci1_I0010 + cartindex2 * size3p14m1;
           int ci2_I0000 = ci1_I0000 + cartindex2 * size34m1;
           cartindex3 = 0;
           for (i3=0; i3<=am3; i3++) {
             for (k3=0; k3<=am3-i3; k3++) {
-              j3 = am3 - i3 - k3;
+              //int j3 = am3 - i3 - k3;
               //note: cartindex3 + am3 + 2 = INT_CARTINDEX(am3+1,i3+1,j3)
               int ci3_I0010 = ci2_I0010
                               + (cartindex3 + am3 + 2)*size4m1;
@@ -464,7 +460,7 @@ Int2eV3::shiftam_34(double *I0001, double *I0010, double *I0000,
               cartindex4 = 0;
               for (i4=0; i4<=am4; i4++) {
                 for (k4=0; k4<=am4-i4; k4++) {
-                  j4 = am4 - i4 - k4;
+                  int j4 = am4 - i4 - k4;
 
                   if (i4) {
                     //note: cartindex4 - am4 - 1 = INT_CARTINDEX(am4-1,i4-1,j4)
@@ -499,29 +495,7 @@ Int2eV3::shiftam_34(double *I0001, double *I0010, double *I0000,
                        + I0000[ci3_I0000
                                + ci4 ]
                          * CmD2;
-#if 0
-   if (cartindex1234 == 4) {
-     ExEnv::out() << scprintf(" building with % f + % f * % f ",
-                         I0010[  INT_CARTINDEX(am1,i1,j1) * size23p14m1
-                               + INT_CARTINDEX(am2,i2,j2) * size3p14m1
-                               + INT_CARTINDEX(am3+1,i3,j3) * size4m1
-                               + INT_CARTINDEX(am4-1,i4,j4) ],
-                         I0000[  INT_CARTINDEX(am1,i1,j1) * size234m1
-                               + INT_CARTINDEX(am2,i2,j2) * size34m1
-                               + INT_CARTINDEX(am3,i3,j3) * size4m1
-                               + INT_CARTINDEX(am4-1,i4,j4) ],
-                         CmD[2]);
-      }
-#endif
                     }
-
-#if 0
-                  if ((!am1) == (!am2) == am3 == am4) {
-                    ExEnv::out() << scprintf("assigned I0001[%d] = % f\n",
-                           cartindex1234,
-                           I0001[cartindex1234]);
-                    }
-#endif
 
                   cartindex1234++;
                   cartindex4++;

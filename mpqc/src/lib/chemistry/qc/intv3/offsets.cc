@@ -108,15 +108,12 @@ Int2eV3::int_initialize_offsets2()
   int shell_offset1;
   int shell_offset2;
   int shell_offset3;
-  int shell_offset4;
   int prim_offset1;
   int prim_offset2;
   int prim_offset3;
-  int prim_offset4;
   int func_offset1;
   int func_offset2;
   int func_offset3;
-  int func_offset4;
 
   /* Shell offset arrays. */
   bs1_shell_offset_ = 0;
@@ -145,19 +142,15 @@ Int2eV3::int_initialize_offsets2()
     }
 
   if (bs4_ == bs1_) {
-      shell_offset4 = shell_offset3;
       bs4_shell_offset_ = bs1_shell_offset_;
     }
   else if (bs4_ == bs2_) {
-      shell_offset4 = shell_offset3;
       bs4_shell_offset_ = bs2_shell_offset_;
     }
   else if (bs4_ == bs3_) {
-      shell_offset4 = shell_offset3;
       bs4_shell_offset_ = bs3_shell_offset_;
     }
   else {
-      shell_offset4 = shell_offset(bs4_,shell_offset3);
       bs4_shell_offset_ = shell_offset3;
     }
 
@@ -188,19 +181,15 @@ Int2eV3::int_initialize_offsets2()
     }
 
   if (bs4_ == bs1_) {
-      prim_offset4 = prim_offset3;
       bs4_prim_offset_ = bs1_prim_offset_;
     }
   else if (bs4_ == bs2_) {
-      prim_offset4 = prim_offset3;
       bs4_prim_offset_ = bs2_prim_offset_;
     }
   else if (bs4_ == bs3_) {
-      prim_offset4 = prim_offset3;
       bs4_prim_offset_ = bs3_prim_offset_;
     }
   else {
-      prim_offset4 = prim_offset(bs4_,prim_offset3);
       bs4_prim_offset_ = prim_offset3;
     }
 
@@ -231,19 +220,15 @@ Int2eV3::int_initialize_offsets2()
     }
 
   if (bs4_ == bs1_) {
-      func_offset4 = func_offset3;
       bs4_func_offset_ = bs1_func_offset_;
     }
   else if (bs4_ == bs2_) {
-      func_offset4 = func_offset3;
       bs4_func_offset_ = bs2_func_offset_;
     }
   else if (bs4_ == bs3_) {
-      func_offset4 = func_offset3;
       bs4_func_offset_ = bs3_func_offset_;
     }
   else {
-      func_offset4 = func_offset(bs4_,func_offset3);
       bs4_func_offset_ = func_offset3;
     }
   }

@@ -565,6 +565,7 @@ Molecule::atom_to_unique_offset(int iatom) const
     }
   ExEnv::err() << "Molecule::atom_to_unique_offset: internal error"
                << endl;
+  return -1;
 }
 
 void

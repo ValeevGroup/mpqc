@@ -50,6 +50,7 @@
 #  define SavableState_named_REF_dec(refname,T)				      \
      DCRef_declare(T); SSRef_declare(T); typedef class SSRef ## T refname;
 #  define SavableState_named_REF_def(refname,T)
+#  define SSRef_define(T)
 #else
 #  define SSRef_declare(T) typedef class SSRef<T> SSRef ## T;
 #  define SavableState_named_REF_dec(refname,T) typedef class SSRef<T> refname;

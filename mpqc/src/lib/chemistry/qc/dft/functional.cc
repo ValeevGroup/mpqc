@@ -338,7 +338,6 @@ void
 DenFunctional::fd_point(const PointInputData&id, PointOutputData&od)
 {
   PointInputData tid(id);
-  double plus, minu;
 
   // fill in the energy at the initial density values
   point(id,od);
@@ -1646,9 +1645,6 @@ VWN1LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
       deczeta = 0.;
     }
     else {
-      double zeta2 = zeta*zeta;
-      double zeta3 = zeta2*zeta;
-      double zeta4 = zeta2*zeta2;
       double depc_dr_s0 = dFdr_s(x, Ap_, x0p_, bp_, cp_);
       double defc_dr_s1 = dFdr_s(x, Af_, x0f_, bf_, cf_);
       double dec_dr_s = depc_dr_s0 + f * (defc_dr_s1 - depc_dr_s0);
@@ -1745,7 +1741,7 @@ VWN2LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   ec_local = ec;
 
   if (compute_potential_) {
-      double zeta3 = zeta2*zeta;
+      //double zeta3 = zeta2*zeta;
       // Monte Carlo fitting parameters
       double depc_dr_s0_mc = dFdr_s(x, Ap_,x0p_mc_, bp_mc_, cp_mc_); 
       double defc_dr_s1_mc = dFdr_s(x, Af_, x0f_mc_, bf_mc_, cf_mc_);
@@ -1881,7 +1877,6 @@ VWN3LCFunctional::point_lc(const PointInputData &id, PointOutputData &od,
   ec_local = ec;
 
   if (compute_potential_) {
-      double zeta3 = zeta2*zeta;
       // Monte Carlo fitting parameters
       double depc_dr_s0_mc = dFdr_s(x, Ap_, x0p_mc_, bp_mc_, cp_mc_);
       double defc_dr_s1_mc = dFdr_s(x, Af_, x0f_mc_, bf_mc_, cf_mc_);
@@ -2273,16 +2268,12 @@ Becke88XFunctional::Becke88XFunctional(StateIn& s):
 {
   s.get(beta_);
   beta6_ = 6. * beta_;
-  beta26_ = beta6_ * beta_;
-  beta2_ = beta_ * beta_;
 }
 
 Becke88XFunctional::Becke88XFunctional()
 {
   beta_ = 0.0042;
   beta6_ = 6. * beta_;
-  beta26_ = beta6_ * beta_;
-  beta2_ = beta_ * beta_;
 }
 
 Becke88XFunctional::Becke88XFunctional(const RefKeyVal& keyval):
@@ -2290,8 +2281,6 @@ Becke88XFunctional::Becke88XFunctional(const RefKeyVal& keyval):
 {
   beta_ = keyval->doublevalue("beta", KeyValValuedouble(0.0042));
   beta6_ = 6. * beta_;
-  beta26_ = beta6_ * beta_;
-  beta2_ = beta_ * beta_;
 }
 
 Becke88XFunctional::~Becke88XFunctional()
@@ -2322,12 +2311,8 @@ Becke88XFunctional::point(const PointInputData &id,
   // Preset terms from Murray's paper
   const double beta = beta_;
   const double beta6 = beta6_;
-  const double beta26 = beta26_;
-  const double beta2 = beta2_;
 
   // const double beta6=0.0252;
-  // const double beta26=0.00010584; 
-  // const double beta2=0.00001764;
 
   // Use simplified formula
   double rho_a_13 = pow(id.a.rho,(1./3.));
@@ -2693,7 +2678,6 @@ P86CFunctional::point(const PointInputData &id,
 
   if (compute_potential_) {
       double drs_drhoa = -rs/(3.*rho);
-      double drs_drhob = drs_drhoa;
       double dCrho_drhoa = drs_drhoa/denom *
                            (C3_+2.*C4_*rs - numer/denom * (C5_+2.*C6_*rs+3.*C7_*rs2));
       double dCrho_drhob = dCrho_drhoa;
@@ -3044,7 +3028,6 @@ PBECFunctional::rho_deriv(double rho_a, double rho_b, double mdr,
       double ec = ec_local;
       double decdrhoa = ec_local_dra;
       double rhoa = rho_a;
-      double rhob = rho_b;
       double result =
    (gamma*((-2*beta*Power(mdr,2)*Power(Pi,0.3333333333333333)*rhoa*
            (Power(beta,2)*decdrhoa*Power(E,(4*ec)/gamma)*Power(mdr,4)*
@@ -3521,7 +3504,7 @@ PW91CFunctional::point(const PointInputData &id, PointOutputData &od)
   double z = (id.a.rho - id.b.rho)/rho;
   double gamma = sqrt(id.a.gamma + id.b.gamma + 2*id.gamma_ab);
 
-  double pwc, dpwc_drs, dpwc_dz, dpwc_dg;
+  double pwc, dpwc_drs, dpwc_dg;
 
   if (rho < MIN_DENSITY) return;
   if (gamma < MIN_SQRTGAMMA) {
@@ -4082,7 +4065,7 @@ PBEXFunctional::spin_contrib(const PointInputData::SpinData &i,
 
   if (compute_potential_) {
       double rhoa_73 = rhoa_43*rhoa;
-      double r0, r1;
+      double r0;
       r0 = (0.016455307846020562*gaa*mu)/kappa/rhoa_83+1.0;
       dpbex_drhoa = -(1.2407009817988002*(-(kappa/r0)
        +kappa+1.0)*rhoa_13)+(0.040832233200718403*gaa*mu)/(r0*r0)/rhoa_73;

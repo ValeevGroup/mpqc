@@ -692,8 +692,6 @@ class Becke88XFunctional: public DenFunctional {
   protected:
     double beta_;
     double beta6_;
-    double beta26_;
-    double beta2_;
   public:
     Becke88XFunctional();
     Becke88XFunctional(const RefKeyVal &);

@@ -52,7 +52,7 @@ main(int argc, char** argv)
           level = atoi(argv[i]);
         }
       else {
-          fprintf(stderr,"%s: unknown option: \"%s\"\n", argv[0]);
+          fprintf(stderr,"%s: unknown option: \"%s\"\n", argv[0], argv[i]);
           abort();
         }
     }

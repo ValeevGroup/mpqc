@@ -873,7 +873,8 @@ int nitems, nbytes, line;
 #endif
    if (ptr != NULL) return ptr;
    fprintf(stderr, "can't calloc %d bytes\n", nitems*nbytes);
-   exit(1);
+   abort();
+   return 0;
 }
 
 static void _myfree(ptr, lineno)

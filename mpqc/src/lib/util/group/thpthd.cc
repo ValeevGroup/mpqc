@@ -125,12 +125,14 @@ PthreadThreadGrp::init_attr()
 #elif defined(PTHREAD_CREATE_JOINABLE)
   pthread_attr_setdetachstate(attr_, PTHREAD_CREATE_JOINABLE);
 #endif
-  size_t minstacksize = 2097152;
-  size_t defstacksize = 1;
 #ifdef HAVE_PTHREAD_ATTR_GETSTACKSIZE
+  size_t defstacksize;
   pthread_attr_getstacksize(attr_, &defstacksize);
+#elif HAVE_PTHREAD_ATTR_SETSTACKSIZE
+  size_t defstacksize = 1;
 #endif
 #ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
+  size_t minstacksize = 2097152;
   if (defstacksize < minstacksize) {
     pthread_attr_setstacksize(attr_, minstacksize);
   }

@@ -177,8 +177,9 @@ int Lebedev_Laikov_npoint(int lvalue)
     }
   else {
       printf(" Lebedev_Laikov_npoint: lvalue > 131.  No grids of this type available.\n");
-      exit(1);
+      abort();
     }
+  return 0;
 }
 
 int
@@ -1562,7 +1563,6 @@ Lebedev_Laikov_Oh (int n, double a, double b, double v,
       x[4] = 0.0; y[4] = 0.0; z[4] =   a; w[4] = v;
       x[5] = 0.0; y[5] = 0.0; z[5] =  -a; w[5] = v;
       return 6;
-    break;
     case 2:
       a = 1.0/sqrt (2.0);
       x[ 0] = 0.0; y[ 0] =   a; z[ 0] =   a; w[ 0] = v;
@@ -1578,7 +1578,6 @@ Lebedev_Laikov_Oh (int n, double a, double b, double v,
       x[10] =  -a; y[10] =   a; z[10] = 0.0; w[10] = v;
       x[11] =  -a; y[11] =  -a; z[11] = 0.0; w[11] = v;
       return 12;
-    break;
     case 3:
       a = 1.0/sqrt (3.0);
       x[0] =   a; y[0] =   a; z[0] =   a; w[0] = v;
@@ -1590,7 +1589,6 @@ Lebedev_Laikov_Oh (int n, double a, double b, double v,
       x[6] =  -a; y[6] =  -a; z[6] =   a; w[6] = v;
       x[7] =  -a; y[7] =  -a; z[7] =  -a; w[7] = v;
       return 8;
-    break;
     case 4:
       b = sqrt (1.0 - 2.0*a*a);
       x[ 0] =   a; y[ 0] =   a; z[ 0] =   b; w[ 0] = v;
@@ -1618,7 +1616,6 @@ Lebedev_Laikov_Oh (int n, double a, double b, double v,
       x[22] =   b; y[22] =  -a; z[22] =  -a; w[22] = v;
       x[23] =  -b; y[23] =  -a; z[23] =  -a; w[23] = v;
       return 24;
-    break;
     case 5:
       b = sqrt (1.0 - a*a);
       x[ 0] =   a; y[ 0] =   b; z[ 0] = 0.0; w[ 0] = v;
@@ -1646,7 +1643,6 @@ Lebedev_Laikov_Oh (int n, double a, double b, double v,
       x[22] = 0.0; y[22] =  -b; z[22] =   a; w[22] = v;
       x[23] = 0.0; y[23] =  -b; z[23] =  -a; w[23] = v;
       return 24;
-    break;
     case 6:
       c = sqrt (1.0 - a*a - b*b);
       x[ 0] =   a; y[ 0] =   b; z[ 0] =   c; w[ 0] = v;
@@ -1698,7 +1694,6 @@ Lebedev_Laikov_Oh (int n, double a, double b, double v,
       x[46] =  -c; y[46] =  -b; z[46] =   a; w[46] = v;
       x[47] =  -c; y[47] =  -b; z[47] =  -a; w[47] = v;
       return 48;
-    break;
   }
   return 0;
 }

@@ -182,7 +182,6 @@ BEMSolvent::disprep()
   int i, iloop, isolute;
   int natomtypes;
   int z_solvent_atom;
-  int z_solute_atom;
 
   RefUnits unit = new Units("kcal/mol");
   double kcalpermol_to_hartree = unit->to_atomic_units();
@@ -267,7 +266,6 @@ BEMSolvent::disprep()
           for (isolute=0; isolute<solute_->natom(); isolute++) {
 
               SCVector3 atom(solute_->r(isolute)); 
-              z_solute_atom = solute_->Z(isolute); 
               SCVector3 ras = location - atom;
               rasnorm = ras.norm();
               radius = atominfo->vdw_radius(solute_->Z(isolute));

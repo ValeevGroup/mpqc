@@ -25,6 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <float.h>
+
 #include <util/misc/formio.h>
 
 #include <chemistry/qc/basis/basis.h>
@@ -34,6 +36,7 @@
 #include <chemistry/qc/basis/f77sym.h>
 
 extern "C" {
+  void
   F77_DGESVD(const char * JOBU, const char *JOBVT,
              int *M, int *N, double *A, int *LDA,
              double *S, double *U, int *LDU, double *VT, int *LDVT,
@@ -267,7 +270,7 @@ struct lin_comb {
 SO_block *
 PetiteList::aotoso_info()
 {
-  int iuniq, i, d, ii, jj, g, fn, s, c, ir, f;
+  int iuniq, i, j, d, ii, jj, g, s, c, ir;
 
   GaussianBasisSet& gbs = *gbs_.pointer();
   Molecule& mol = *gbs.molecule().pointer();
@@ -348,21 +351,21 @@ PetiteList::aotoso_info()
         // this is destroyed by the SVD routine
         double **linorb = new double*[nfuncuniq];
         linorb[0] = new double[nfuncuniq*nfuncall];
-        for (int j=1; j<nfuncuniq; j++) {
+        for (j=1; j<nfuncuniq; j++) {
           linorb[j] = &linorb[j-1][nfuncall];
         }
 
         // a copy of linorb
         double **linorbcop = new double*[nfuncuniq];
         linorbcop[0] = new double[nfuncuniq*nfuncall];
-        for (int j=1; j<nfuncuniq; j++) {
+        for (j=1; j<nfuncuniq; j++) {
           linorbcop[j] = &linorbcop[j-1][nfuncall];
         }
 
         // allocate an array for the SVD routine
         double **u = new double*[nfuncuniq];
         u[0] = new double[nfuncuniq*nfuncuniq];
-        for (int j=1; j<nfuncuniq; j++) {
+        for (j=1; j<nfuncuniq; j++) {
           u[j] = &u[j-1][nfuncuniq];
         }
 
@@ -370,7 +373,7 @@ PetiteList::aotoso_info()
         // orbitals
         double **symmorb = new double*[nfuncuniq];
         symmorb[0] = new double[nfuncuniq*nfuncall];
-        for (int j=1; j<nfuncuniq; j++) {
+        for (j=1; j<nfuncuniq; j++) {
           symmorb[j] = &symmorb[j-1][nfuncall];
         }
         memset(symmorb[0], 0, nfuncuniq*nfuncall*sizeof(8));
@@ -423,7 +426,7 @@ PetiteList::aotoso_info()
                        singval, &djunk, &ijunk, u[0], &nfuncuniq,
                        work, &lwork, &info);
             // put the lin indep symm orbs into the so array
-            for (int j=0; j<nfuncuniq; j++) {
+            for (j=0; j<nfuncuniq; j++) {
               if (singval[j] > 1.0e-6) {
                 SO tso;
                 tso.set_length(nfuncall);
@@ -487,7 +490,7 @@ PetiteList::aotoso_info()
     int len = SOs[i].len;
     grp->bcast(len);
     SOs[i].reset_length(len);
-    for (int j=0; j<len; j++) {
+    for (j=0; j<len; j++) {
       int solen = SOs[i].so[j].length;
       grp->bcast(solen);
       SOs[i].so[j].reset_length(solen);
@@ -542,13 +545,13 @@ PetiteList::aotoso_info()
           nSOs[in].add(SOs[i].so[k],k);
         i++;
 
-        for (int j=0; j < SOs[i].len; j++,k++)
+        for (j=0; j < SOs[i].len; j++,k++)
           nSOs[in].add(SOs[i].so[j],k);
 
         i++;
         in++;
       } else {
-        for (int j=0; j < ct.gamma(ir).degeneracy(); j++,i++,in++) {
+        for (j=0; j < ct.gamma(ir).degeneracy(); j++,i++,in++) {
           nSOs[in].set_length(nbf_in_ir_[ir]);
           for (int k=0; k < SOs[i].len; k++)
             nSOs[in].add(SOs[i].so[k],k);

@@ -5,6 +5,13 @@
 
 using namespace std;
 
+// min-max macros
+#define MIN(A,B) ((A) < (B) ? (A) : (B))
+#define MAX(A,B) ((A) > (B) ? (A) : (B))
+
+// error handling macro
+#define V_ERROR(E) { ExEnv::err() << E; exit(1); }
+
 /****************************************************************
 *								*
 *		    vec2 Member functions			*

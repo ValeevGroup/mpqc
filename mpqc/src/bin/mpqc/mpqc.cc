@@ -186,7 +186,7 @@ main(int argc, char *argv[])
   int i;
   const char *devnull = "/dev/null";
   atexit(clean_up);
-  set_new_handler(out_of_memory);
+  std::set_new_handler(out_of_memory);
 
 #if defined(__i386__) && defined(__GNUC__)
   // make floating point errors cause an exception (except for denormalized

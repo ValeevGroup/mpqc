@@ -71,7 +71,7 @@ int
 main(int argc, char *argv[])
 {
   atexit(clean_up);
-  set_new_handler(out_of_memory);
+  std::set_new_handler(out_of_memory);
 
   ExEnv::init(argc, argv);
 

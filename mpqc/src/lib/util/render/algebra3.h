@@ -16,13 +16,6 @@
 // double and takes as argument a double
 typedef double (*V_FCT_PTR)(double);
 
-// min-max macros
-#define MIN(A,B) ((A) < (B) ? (A) : (B))
-#define MAX(A,B) ((A) > (B) ? (A) : (B))
-
-// error handling macro
-#define V_ERROR(E) { ExEnv::err() << E; exit(1); }
-
 class vec2;
 class vec3;
 class vec4;

@@ -112,6 +112,10 @@ class SOBasis : public VRefCount {
     /// Return the number of irreps.
     int nirrep() const { return nirrep_; }
     int ncomponent(int iirrep) const { return ncomp_[iirrep]; }
+    /// Return the number of functions in the given irrep.
+    int nfunction_in_irrep(int irrep) const { return nfunc_in_irrep_[irrep]; }
+    /// Return the offset for the first function of the given irrep.
+    int function_offset_for_irrep(int irrep) const;
     /// Return the number of functions in the given shell.
     int nfunction(int ishell) const;
     /** Return the number of functions in the AO shell that make up
@@ -153,6 +157,16 @@ inline int
 SOBasis::irrep(int ishell, int ifunc) const
 {
   return irrep_[func_[ishell]+ifunc];
+}
+
+inline int
+SOBasis::function_offset_for_irrep(int irrep) const
+{
+  int r = 0;
+  for (int i=0; i<irrep; i++) {
+      r += nfunc_in_irrep_[i];
+    }
+  return r;
 }
 
 inline int

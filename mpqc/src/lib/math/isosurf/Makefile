@@ -8,7 +8,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 LD=$(CXX)
 
 CXXSRC = volume.cc shape.cc surf.cc volume_i.cc \
-         vertex.cc edge.cc triangle.cc surf.cc isosurf.cc
+         vertex.cc edge.cc triangle.cc isosurf.cc
 CSRC = implicit.c
 
 LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)

@@ -25,39 +25,6 @@
  * The U.S. Government is granted a limited license as per AL 91-7.
  */
 
-/* $Log$
- * Revision 1.4  1998/02/03 15:30:18  cljanss
- * More performance enhancements.
- *
- * Revision 1.3  1996/10/25 23:35:44  etseidl
- * add copyleft notice
- *
- * Revision 1.2  1996/07/17 23:58:19  cljanss
- * First pass at removing centers_t.  More to come.
- *
- * Revision 1.1  1996/05/30 19:05:43  cljanss
- * Updated Integral interface. Added IntegralV3.  Removed IntegralV2.
- *
- * Revision 1.2  1993/12/30  13:32:53  etseidl
- * mostly rcs id stuff
- *
- * Revision 1.1.1.1  1992/03/17  16:33:06  seidl
- * DOE-NIH Quantum Chemistry Library 0.0
- *
- * Revision 1.1  1992/03/17  16:33:04  seidl
- * Initial revision
- *
- * Revision 1.1  1992/02/03  15:49:49  seidl
- * Initial revision
- *
- * Revision 1.1  1991/12/14  00:19:36  cljanss
- * Initial revision
- * */
-/*
- * Revision 1.1  91/06/16  16:40:07  janssen
- * Initial revision
- *  */
-
 /* True if the integral is nonzero. */
 #define INT_NONZERO(x) (((x)< -1.0e-10)||((x)> 1.0e-10))
 

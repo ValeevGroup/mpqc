@@ -59,6 +59,7 @@ class SafeUInt {
     SafeUInt &operator ++ (int) { i_++; return *this; }
     operator double() const { return i_; }
     operator unsigned long() const { return i_; }
+    SafeUInt &operator =(const SafeUInt &i) { i_ = i.i_; }
     int operator > (const SafeUInt& i) const { return i_>i.i_; }
     int operator >= (const SafeUInt& i) const { return i_>=i.i_; }
     int operator < (const SafeUInt& i) const { return i_<i.i_; }

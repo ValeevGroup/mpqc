@@ -296,6 +296,47 @@ sub parse_mpqc {
             $self->{"d1large_b"} = $d1large_b;
             $self->{"d1large_spin"} = $d1large_spin;
         }
+        elsif ($wante && /^\s*Natural\s+Population\s+Analysis:\s*$/) {
+            my $npacharge = [];
+            my $npashellpop = [];
+            <$out>;
+            my $iatom = 0;
+            while (<$out>) {
+                if (/^\s*\d+\s+[A-Za-z]+\s+$fltrx\s+$fltrx\s*$/) {
+                    $npacharge->[$iatom] = $1;
+                    $npashellpop->[$iatom] = [ $2 ];
+                }
+                elsif (/^\s*\d+\s+[A-Za-z]+\s+$fltrx\s+$fltrx\s+$fltrx\s*$/) {
+                    $npacharge->[$iatom] = $1;
+                    $npashellpop->[$iatom] = [ $2, $3 ];
+                }
+                elsif (/^\s*\d+\s+[A-Za-z]+\s+$fltrx\s+$fltrx\s+$fltrx\s+$fltrx\s*$/) {
+                    $npacharge->[$iatom] = $1;
+                    $npashellpop->[$iatom] = [ $2, $3, $4 ];
+                }
+                elsif (/^\s*\d+\s+[A-Za-z]+\s+$fltrx\s+$fltrx\s+$fltrx\s+$fltrx\s+$fltrx\s*$/) {
+                    $npacharge->[$iatom] = $1;
+                    $npashellpop->[$iatom] = [ $2, $3, $4, $5 ];
+                }
+                elsif (/^\s*\d+\s+[A-Za-z]+\s+$fltrx\s+$fltrx\s+$fltrx\s+$fltrx\s+$fltrx\s+$fltrx\s*$/) {
+                    $npacharge->[$iatom] = $1;
+                    $npashellpop->[$iatom] = [ $2, $3, $4, $5, $6 ];
+                }
+                elsif (/^\s*\d+\s+[A-Za-z]+\s+$fltrx\s+$fltrx\s+$fltrx\s+$fltrx\s+$fltrx\s+$fltrx\s+$fltrx\s*$/) {
+                    $npacharge->[$iatom] = $1;
+                    $npashellpop->[$iatom] = [ $2, $3, $4, $5, $6, $7 ];
+                }
+                elsif (/^\s*$/) {
+                    last;
+                }
+                else {
+                    die "AM too high to read NPA shell populations (line=$_)";
+                }
+                $iatom = $iatom + 1;
+            }
+            $self->{"npacharge"} = $npacharge;
+            $self->{"npashellpop"} = $npashellpop;
+        }
         elsif (/The optimization has converged/) {
             $optconverged = 1;
         }
@@ -533,6 +574,16 @@ sub s2large_i {
 sub s2large_a {
     my $self = shift;
     $self->{"s2large_a"}
+}
+
+sub npacharge {
+    my $self = shift;
+    $self->{"npacharge"}
+}
+
+sub npashellpop {
+    my $self = shift;
+    $self->{"npashellpop"}
 }
 
 1;

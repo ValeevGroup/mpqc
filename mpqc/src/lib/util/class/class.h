@@ -293,6 +293,28 @@ class DCRefBase: private RefBase {
 };
 ostream &operator<<(ostream&,const DCRefBase&);
 
+inline void
+DCRefBase::reference(VRefCount *p)
+{
+  if (p) {
+#if REF_CHECK_STACK
+      if (DO_REF_CHECK_STACK(p)) {
+          DO_REF_UNMANAGE(p);
+          warn_ref_to_stack();
+        }
+#endif
+      p->reference();
+    }
+}
+
+inline void
+DCRefBase::dereference(VRefCount *p)
+{
+  if (p && p->dereference()<=0) {
+      delete p;
+    }
+}
+
 // These files declare template and macro smart pointer classes for
 // DescribedClass objects.  They use macros from util/ref/ref.h.
 #include <util/class/clastmpl.h>

@@ -756,26 +756,6 @@ DCRefBase::ref_info( ostream& os) const
   DCRefBase::ref_info(parentpointer(),os);
 }
 
-void
-DCRefBase::reference(VRefCount *p)
-{
-  if (p) {
-      if (DO_REF_CHECK_STACK(p)) {
-          DO_REF_UNMANAGE(p);
-          warn_ref_to_stack();
-        }
-      p->reference();
-    }
-}
-
-void
-DCRefBase::dereference(VRefCount *p)
-{
-  if (p && p->dereference()<=0) {
-      delete p;
-    }
-}
-
 ostream &
 operator <<(ostream&o, const DCRefBase &ref)
 {

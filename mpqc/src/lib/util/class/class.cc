@@ -350,7 +350,7 @@ ClassDesc::init(const char* name, int version,
       if (tmp) {
           // Needed for misbehaving getenv's.
           if (strncmp(tmp, "LD_LIBRARY_PATH=", 16) == 0) {
-              tmp = strchr(tmp,'=');
+              tmp = ::strchr(tmp,'=');
               tmp++;
             }
         }

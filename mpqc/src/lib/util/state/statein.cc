@@ -513,7 +513,7 @@ StateIn::dir_getobject(Ref<SavableState> &p, const char *name)
     }
 
   // find the class name and/or object number
-  const char *colon = strrchr(name,':');
+  const char *colon = ::strrchr(name,':');
   int number = 1;
   char *classname = 0;
   if (colon == 0) {

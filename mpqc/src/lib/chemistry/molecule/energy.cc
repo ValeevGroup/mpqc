@@ -118,13 +118,18 @@ MolecularEnergy::MolecularEnergy(StateIn&s):
   NLP2(s),
   _energy(_value)
 {
-  _mc->restore_state(s);
+  _mc.restore_state(s);
+  _moldim.restore_state(s);
+  _mol.restore_state(s);
 }
 
 void
 MolecularEnergy::save_data_state(StateOut&s)
 {
-  _mc->save_state(s);
+  NLP2::save_data_state(s);
+  _mc.save_state(s);
+  _moldim.save_state(s);
+  _mol.save_state(s);
 }
 
 void

@@ -67,8 +67,8 @@ class MBPT2_R12: public MBPT2 {
     // This checks if the integral factory is suitable for R12 calculations
     void check_integral_factory_();
 
-    /* calculate the mp2r12a energy in spin-orbital formulation */
-    void compute_energy_a_spinorb_();
+    /* calculate the MP2-R12 energy in std approximations A and A' */
+    void compute_energy_a_();
 
   protected:
     // implement the Compute::compute() function,

@@ -38,11 +38,21 @@ using namespace sc;
 
 
 void
-MBPT2_R12::compute_energy_a_spinorb_()
+MBPT2_R12::compute_energy_a_()
 {
   tim_enter("mp2-r12a energy");
 
+  char * SA_str = (stdapprox_ == LinearR12::StdApprox_A) ? strdup("A") : strdup("A'");
+
   double escf = ref_energy();
+  double emp2tot_aa = 0.0;
+  double emp2tot_ab = 0.0;
+  double er12tot_aa = 0.0;
+  double er12tot_ab = 0.0;
+  double emp2tot_0 = 0.0;
+  double emp2tot_1 = 0.0;
+  double er12tot_0 = 0.0;
+  double er12tot_1 = 0.0;
 
   int nocc = 0;
   for (int i=0; i<oso_dimension()->n(); i++) {
@@ -82,10 +92,6 @@ MBPT2_R12::compute_energy_a_spinorb_()
     RefSCVector epair_ab = localkit->vector(dim_ab);
     RefSCVector er12_aa = localkit->vector(dim_aa);
     RefSCVector er12_ab = localkit->vector(dim_ab);
-    double emp2tot_aa = 0.0;
-    double emp2tot_ab = 0.0;
-    double er12tot_aa = 0.0;
-    double er12tot_ab = 0.0;
     
     // Alpha-alpha pairs
     RefSCMatrix Baa_ij = localkit->matrix(dim_aa,dim_aa);
@@ -178,53 +184,113 @@ MBPT2_R12::compute_energy_a_spinorb_()
     if (!spinadapted_) {
       epair_0_ = epair_ab;
       epair_1_ = epair_aa;
+
+      ExEnv::out0() << endl << indent << "Alpha-alpha MBPT2-R12/" << SA_str << " pair energies:" << endl;
+      ExEnv::out0() << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
+      ExEnv::out0() << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
+      for(int i=0,ij=0;i<nocc_act;i++)
+	for(int j=0;j<i;j++,ij++) {
+	  ExEnv::out0() << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",i+1,j+1,
+					      emp2_aa->get_element(ij),
+					      er12_aa->get_element(ij),
+					      epair_aa->get_element(ij)) << endl;
+	}
+      
+      ExEnv::out0() << endl << indent << "Alpha-beta MBPT2-R12/" << SA_str << " pair energies:" << endl;
+      ExEnv::out0() << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
+      ExEnv::out0() << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
+      for(int i=0,ij=0;i<nocc_act;i++)
+	for(int j=0;j<nocc_act;j++,ij++) {
+	  ExEnv::out0() << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",i+1,j+1,
+					      emp2_ab->get_element(ij),
+					      er12_ab->get_element(ij),
+					      epair_ab->get_element(ij)) << endl;
+	}
     }
     else {
       epair_0_ = localkit->vector(r12eval->dim_s());
       epair_1_ = localkit->vector(r12eval->dim_t());
+      RefSCVector emp2_0 = localkit->vector(r12eval->dim_s());
+      RefSCVector emp2_1 = localkit->vector(r12eval->dim_t());
+      RefSCVector er12_0 = localkit->vector(r12eval->dim_s());
+      RefSCVector er12_1 = localkit->vector(r12eval->dim_t());
 
       // Triplet pairs are easy
       epair_1_->assign(epair_aa);
       epair_1_->scale(1.5);
+      emp2_1->assign(emp2_aa);
+      emp2_1->scale(1.5);
+      er12_1->assign(er12_aa);
+      er12_1->scale(1.5);
 
-      // Singlet pairs are trickier
+      // Singlet pairs are a bit trickier
       int ij_s = 0;
       for(int i=0; i<nocc_act; i++)
 	for(int j=0; j<=i; j++, ij_s++) {
 	  int ij_ab = i*nocc_act + j;
-	  double eab = epair_ab->get_element(ij_ab);
-	  epair_0_->set_element(ij_s,eab);
+	  int ij_aa = i*(i-1)/2 + j;
+	  double eab, eaa, e_s;
+
+	  eab = epair_ab->get_element(ij_ab);
+	  if (i != j)
+	    eaa = epair_aa->get_element(ij_aa);
+	  else
+	    eaa = 0.0;
+	  e_s = (i != j ? 2.0 : 1.0) * eab - 0.5 * eaa;
+	  epair_0_->set_element(ij_s,e_s);
+
+	  eab = emp2_ab->get_element(ij_ab);
+	  if (i != j)
+	    eaa = emp2_aa->get_element(ij_aa);
+	  else
+	    eaa = 0.0;
+	  e_s = (i != j ? 2.0 : 1.0) * eab - 0.5 * eaa;
+	  emp2_0->set_element(ij_s,e_s);
+
+	  eab = er12_ab->get_element(ij_ab);
+	  if (i != j)
+	    eaa = er12_aa->get_element(ij_aa);
+	  else
+	    eaa = 0.0;
+	  e_s = (i != j ? 2.0 : 1.0) * eab - 0.5 * eaa;
+	  er12_0->set_element(ij_s,e_s);
 	}
+
+      // compute total singlet and triplet energies
+      RefSCVector unit_0 = localkit->vector(r12eval->dim_s());
+      RefSCVector unit_1 = localkit->vector(r12eval->dim_t());
+      unit_0->assign(1.0);
+      unit_1->assign(1.0);
+      emp2tot_0 = emp2_0.dot(unit_0);
+      emp2tot_1 = emp2_1.dot(unit_1);
+      er12tot_0 = er12_0.dot(unit_0);
+      er12tot_1 = er12_1.dot(unit_1);
+
+      ExEnv::out0() << endl << indent << "Singlet MBPT2-R12/" << SA_str << " pair energies:" << endl;
+      ExEnv::out0() << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
+      ExEnv::out0() << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
+      for(int i=0,ij=0;i<nocc_act;i++)
+	for(int j=0;j<=i;j++,ij++) {
+	  ExEnv::out0() << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",i+1,j+1,
+					      emp2_0->get_element(ij),
+					      er12_0->get_element(ij),
+					      epair_0_->get_element(ij)) << endl;
+	}
+      
+      ExEnv::out0() << endl << indent << "Triplet MBPT2-R12/" << SA_str << " pair energies:" << endl;
+      ExEnv::out0() << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
+      ExEnv::out0() << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
+      for(int i=0,ij=0;i<nocc_act;i++)
+	for(int j=0;j<i;j++,ij++) {
+	  ExEnv::out0() << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",i+1,j+1,
+					      emp2_1->get_element(ij),
+					      er12_1->get_element(ij),
+					      epair_1_->get_element(ij)) << endl;
+	}
+
     }
 
-    if (stdapprox_ == LinearR12::StdApprox_A)
-      ExEnv::out0() << endl << indent << "Alpha-alpha MBPT2-R12/A pair energies:" << endl;
-    else
-      ExEnv::out0() << endl << indent << "Alpha-alpha MBPT2-R12/A' pair energies:" << endl;
-    ExEnv::out0() << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
-    ExEnv::out0() << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
-    for(int i=0,ij=0;i<nocc_act;i++)
-      for(int j=0;j<i;j++,ij++) {
-	ExEnv::out0() << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",i+1,j+1,
-					    emp2_aa->get_element(ij),
-					    er12_aa->get_element(ij),
-					    epair_aa->get_element(ij)) << endl;
-      }
     
-    if (stdapprox_ == LinearR12::StdApprox_A)
-      ExEnv::out0() << endl << indent << "Alpha-beta MBPT2-R12/A pair energies:" << endl;
-    else
-      ExEnv::out0() << endl << indent << "Alpha-beta MBPT2-R12/A' pair energies:" << endl;
-    ExEnv::out0() << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
-    ExEnv::out0() << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
-    for(int i=0,ij=0;i<nocc_act;i++)
-      for(int j=0;j<nocc_act;j++,ij++) {
-	ExEnv::out0() << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",i+1,j+1,
-					    emp2_ab->get_element(ij),
-					    er12_ab->get_element(ij),
-					    epair_ab->get_element(ij)) << endl;
-      }
-
     mp2_corr_energy_ = emp2tot_aa + emp2tot_ab;
     r12_corr_energy_ = er12tot_aa + er12tot_ab;
 
@@ -237,29 +303,35 @@ MBPT2_R12::compute_energy_a_spinorb_()
   // node;
   ///////////////////////////////////////////////////////////////
 
+  if (spinadapted_) {
+    ExEnv::out0()<<endl<<indent
+		 <<scprintf("Singlet MP2 correlation energy [au]:          %17.12lf\n", emp2tot_0);
+    ExEnv::out0()<<indent
+		 <<scprintf("Triplet MP2 correlation energy [au]:          %17.12lf\n", emp2tot_1);
+    ExEnv::out0()<<indent
+		 <<scprintf("Singlet (MP2)-R12/%2s correlation energy [au]: %17.12lf\n", SA_str, er12tot_0);
+    ExEnv::out0()<<indent
+		 <<scprintf("Triplet (MP2)-R12/%2s correlation energy [au]: %17.12lf\n", SA_str, er12tot_1);
+    ExEnv::out0()<<indent
+		 <<scprintf("Singlet MP2-R12/%2s correlation energy [au]:   %17.12lf\n", SA_str,
+			    emp2tot_0 + er12tot_0);
+    ExEnv::out0()<<indent
+		 <<scprintf("Triplet MP2-R12/%2s correlation energy [au]:   %17.12lf\n", SA_str,
+			    emp2tot_1 + er12tot_1);
+  }
+  
   double etotal = escf + mp2_corr_energy_ + r12_corr_energy_;
   ExEnv::out0()<<endl<<indent
 	       <<scprintf("RHF energy [au]:                           %17.12lf\n", escf);
   ExEnv::out0()<<indent
 	       <<scprintf("MP2 correlation energy [au]:               %17.12lf\n", mp2_corr_energy_);
-  if (stdapprox_ == LinearR12::StdApprox_A)
-    ExEnv::out0()<<indent
-		 <<scprintf("(MBPT2)-R12/A  correlation energy [au]:    %17.12lf\n", r12_corr_energy_);
-  else
-    ExEnv::out0()<<indent
-		 <<scprintf("(MBPT2)-R12/A' correlation energy [au]:    %17.12lf\n", r12_corr_energy_);
-  if (stdapprox_ == LinearR12::StdApprox_A)
-    ExEnv::out0()<<indent
-		 <<scprintf("MBPT2-R12/A  correlation energy [au]:      %17.12lf\n", mp2_corr_energy_ + r12_corr_energy_);
-  else
-    ExEnv::out0()<<indent
-		 <<scprintf("MBPT2-R12/A' correlation energy [au]:      %17.12lf\n", mp2_corr_energy_ + r12_corr_energy_);
-  if (stdapprox_ == LinearR12::StdApprox_A)
-    ExEnv::out0()<<indent
-		 <<scprintf("MBPT2-R12/A  energy [au]:                  %17.12lf\n", etotal);
-  else
-    ExEnv::out0()<<indent
-		 <<scprintf("MBPT2-R12/A' energy [au]:                  %17.12lf\n", etotal);
+  ExEnv::out0()<<indent
+	       <<scprintf("(MBPT2)-R12/%2s correlation energy [au]:    %17.12lf\n", SA_str, r12_corr_energy_);
+  ExEnv::out0()<<indent
+	       <<scprintf("MBPT2-R12/%2s correlation energy [au]:      %17.12lf\n", SA_str, mp2_corr_energy_ + r12_corr_energy_);
+  ExEnv::out0()<<indent
+	       <<scprintf("MBPT2-R12/%2s energy [au]:                  %17.12lf\n", SA_str, etotal) << endl;
+
   ExEnv::out0().flush();
 
   set_energy(etotal);

@@ -176,10 +176,7 @@ MBPT2_R12::compute()
   reference_->set_desired_value_accuracy(desired_value_accuracy()
                                          / ref_to_mp2r12_acc_);
 
-  if (spinadapted_)
-    throw std::runtime_error("MBPT2_R12::compute: spin-adapted formulation of MP2-R12 energy has not been implemented yet. Try spin-orbital instead");
-  else
-    compute_energy_a_spinorb_();
+  compute_energy_a_();
 }
 
 //////////////////////////////////////////////////////////////////////////////

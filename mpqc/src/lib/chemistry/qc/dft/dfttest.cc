@@ -197,8 +197,19 @@ fd_test_point(int acenter, const SCVector3 &tpoint,
   double *an_grad_f = new double[mol->natom()*3];
   memset(an_grad_f,0, 3*mol->natom() * sizeof(double));
 
+  int ncontrib = wfn->basis()->nshell();
+  int ncontrib_bf = wfn->basis()->nbasis();
+  int *contrib = new int[ncontrib];
+  int *contrib_bf = new int[ncontrib_bf];
+  for (int i=0; i<ncontrib; i++) contrib[i] = i;
+  for (int i=0; i<ncontrib_bf; i++) contrib_bf[i] = i;
   functional->gradient(id, od, an_grad_f, acenter, wfn->basis(),
-                       dmat, dmat, bs_values_, bsg_values_, bsh_values_);
+                       dmat, dmat,
+                       ncontrib, contrib,
+                       ncontrib_bf, contrib_bf,
+                       bs_values_, bsg_values_, bsh_values_);
+  delete[] contrib;
+  delete[] contrib_bf;
 
   cout << " acenter = " << acenter << " point = " << point << endl;
   cout << "FD df/dx:" << endl;

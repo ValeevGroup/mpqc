@@ -137,7 +137,7 @@ pbecnl<SumDenFunctional>: (
     ]
 )
 
-valtest = [ $:pbe $:pw91 ]
+valtest = [ $:pbe $:pw91 $:pw91x $:pw91c]
 
 basis<GaussianBasisSet>: (
   %name = test

@@ -108,51 +108,72 @@ ImplicitSurfacePolygonizer::isosurface(double value,
   // Clean up temporaries.
   _tmp_vertices.clear();
 
+  cout << "about to complete the surface" << endl;
+
   // finish the surface
   surf.complete_surface();
 
+  cout << "completed the surface" << endl;
+  cout << "flat area = " << surf.flat_area() << endl;
+  cout << "  ntri = " << setw(10) << surf.ntriangle()
+       << " bytes = "
+       << setw(10) << surf.ntriangle() * sizeof(Triangle)
+       << endl;
+  cout << "  nedg = " << setw(10) << surf.nedge()
+       << " bytes = "
+       << setw(10) << surf.nedge() * sizeof(Edge)
+       << endl;
+  cout << "  nver = " << setw(10) << surf.nvertex()
+       << " bytes = "
+       << setw(10) << surf.nvertex() * sizeof(Vertex)
+       << endl;
+
   // compute normals if they weren't computed from the gradients
   if (!_volume->gradient_implemented()) {
-      int i;
-      // make a list of what triangles are connected to each vertex
-      AVLMap<RefVertex,AVLSet<RefTriangle> > vertex_to_triangles;
+      int i,j;
+      // compute the normals as the average of the normals of
+      // all the connected triangles
       for (i=0; i<surf.ntriangle(); i++) {
           RefTriangle t = surf.triangle(i);
-	  RefVertex v0 = t->vertex(0);
-	  RefVertex v1 = t->vertex(1);
-	  RefVertex v2 = t->vertex(2);
-          vertex_to_triangles[v0].insert(t);
-          vertex_to_triangles[v1].insert(t);
-          vertex_to_triangles[v2].insert(t);
-        }
-      for (i=0; i<surf.nvertex(); i++) {
-          RefVertex v = surf.vertex(i);
-          AVLSet<RefTriangle> triangles;
-          triangles |= vertex_to_triangles[v];
-          SCVector3 norm(0.0);
-          SCVector3 tmp(0.0);
-          for (AVLSet<RefTriangle>::iterator J = triangles.begin();
-               J != triangles.end(); J++) {
-              RefTriangle t(*J);
-              // compute the normal to the surface
-              // (using flat triangles)
-              SCVector3 BA = t->vertex(1)->point() - t->vertex(0)->point();
-              SCVector3 CA = t->vertex(2)->point() - t->vertex(0)->point();
-              SCVector3 N = BA.cross(CA);
-              double n = N.norm();
-              if (n < 1.0e-15) {
-                  tmp = 0.0;
+          SCVector3 tmp;
+          SCVector3 BA = t->vertex(1)->point() - t->vertex(0)->point();
+          SCVector3 CA = t->vertex(2)->point() - t->vertex(0)->point();
+          SCVector3 N = BA.cross(CA);
+          double n = N.norm();
+          if (n < 1.0e-8) {
+              tmp = 0.0;
+            }
+          else {
+              n = 1.0/n;
+              for (int j=0; j<3; j++) {
+                  tmp[j] = - N[j]*n;
                 }
-              else {
-                  n = 1.0/n;
-                  for (int j=0; j<3; j++) {
-                      tmp[j] = - N[j]*n;
+            }
+          for (j=0; j<3; j++) {
+              int iv = surf.vertex_index(t->vertex(j));
+              if (iv>=0) {
+                  RefVertex v = surf.vertex(iv);
+                  if (v->has_normal()) {
+                      v->set_normal(tmp + v->normal());
+                    }
+                  else {
+                      v->set_normal(tmp);
                     }
                 }
-              norm = norm + tmp;
             }
-          norm.normalize();
-          v->set_normal(norm);
+        }
+      // normalize all the normals
+      for (i=0; i<surf.nvertex(); i++) {
+          RefVertex v = surf.vertex(i);
+          if (v->has_normal()) {
+              SCVector3 n = v->normal();
+              n.normalize();
+              v->set_normal(n);
+            }
+          else {
+              cout << "ERROR: isosurf has a vertex without a triangle" << endl;
+              abort();
+            }
         }
     }
 }
@@ -195,14 +216,6 @@ ImplicitSurfacePolygonizer::add_triangle_to_current(int i1, int i2, int i3,
       cout << "  ntri = " << setw(10) << current->_surf->ntriangle()
            << " bytes = "
            << setw(10) << current->_surf->ntriangle() * sizeof(Triangle)
-           << endl;
-      cout << "  nedg = " << setw(10) << current->_surf->nedge()
-           << " bytes = "
-           << setw(10) << current->_surf->nedge() * sizeof(Edge)
-           << endl;
-      cout << "  nver = " << setw(10) << current->_surf->nvertex()
-           << " bytes = "
-           << setw(10) << current->_surf->nvertex() * sizeof(Vertex)
            << endl;
     }
   current->_surf->add_triangle(v1,v2,v3);

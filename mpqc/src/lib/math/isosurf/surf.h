@@ -154,10 +154,25 @@ class TriangulatedSurface: public DescribedClass {
     // get information from the object sets
     int nvertex() const { return _vertices.length(); };
     RefVertex vertex(int i) const { return _index_to_vertex[i]; };
+    int vertex_index(const RefVertex &o) {
+      AVLMap<RefVertex,int>::iterator i = _vertex_to_index.find(o);
+      if (i != _vertex_to_index.end()) return i.data();
+      return -1;
+    }
     int nedge() const { return _edges.length(); };
     RefEdge edge(int i) const { return _index_to_edge[i]; };
+    int edge_index(const RefEdge &o) {
+      AVLMap<RefEdge,int>::iterator i = _edge_to_index.find(o);
+      if (i != _edge_to_index.end()) return i.data();
+      return -1;
+    }
     int ntriangle() const { return _triangles.length(); };
     RefTriangle triangle(int i) const { return _index_to_triangle[i]; }
+    int triangle_index(const RefTriangle &o) {
+      AVLMap<RefTriangle,int>::iterator i = _triangle_to_index.find(o);
+      if (i != _triangle_to_index.end()) return i.data();
+      return -1;
+    }
 
     // information from the index mappings
     int triangle_vertex(int i,int j) const { return _triangle_vertex[i][j]; };

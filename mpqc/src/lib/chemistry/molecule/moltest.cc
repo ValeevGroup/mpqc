@@ -10,6 +10,7 @@
 #include <chemistry/molecule/taylor_f.h>
 // and of the renderer
 #include <chemistry/molecule/molrender.h>
+#include <chemistry/molecule/molfreq.h>
 
 __builtin_delete(void*ptr)
 {
@@ -122,6 +123,11 @@ main(int argc, char **argv)
   RefMolecularEnergy me = kv->describedclassvalue("energy");
   if (me.nonnull()) {
       me->print();
+    }
+
+  RefMolecularFrequencies mf = kv->describedclassvalue("freq");
+  if (mf.nonnull()) {
+      mf->print_frequencies();
     }
 
   return 0;

@@ -93,6 +93,9 @@
 /* Define if you have functioning SYSV IPC.  */
 #undef HAVE_SYSV_IPC
 
+/* Define if you have functioning DEC mmap.  */
+#undef HAVE_ALPHA_MMAP
+
 /* Define if semctl must have a semun as the fourth argument.  */
 #undef SEMCTL_REQUIRES_SEMUN
 

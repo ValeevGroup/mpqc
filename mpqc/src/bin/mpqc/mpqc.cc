@@ -576,10 +576,7 @@ main(int argc, char *argv[])
   int print_timings = keyval->booleanvalue("print_timings",truevalue);
   
   // sanity checks for the benefit of reasonable looking output
-  if (opt.null())
-    do_opt=0;
-  else
-    do_grad=1;
+  if (opt.null()) do_opt=0;
   
   ExEnv::out() << node0 << endl << indent
        << "MPQC options:" << endl << incindent

@@ -193,6 +193,10 @@
 /* Define if MPI2MemorGrp should be used by default. */
 #undef DEFAULT_MPI2
 
+/* Define if is MPI is always used (needed if MPI_Init is used to
+   initialize argument list). */
+#undef ALWAYS_USE_MPI
+
 /* Define if you have the m library (-lm).  */
 #undef HAVE_LIBM
 

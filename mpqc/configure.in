@@ -151,11 +151,11 @@ AC_ARG_WITH(default-parallel,
 DEFAULT_PARALLEL=$withval
 )
 if test $DEFAULT_PARALLEL = mpi2; then
-  AC_DEFINE(MPI_DEFAULT)
-  AC_DEFINE(MPI2_DEFAULT)
+  AC_DEFINE(DEFAULT_MPI)
+  AC_DEFINE(DEFAULT_MPI2)
 elif test $DEFAULT_PARALLEL = mtmpi; then
-  AC_DEFINE(MPI_DEFAULT)
-  AC_DEFINE(MTMPI_DEFAULT)
+  AC_DEFINE(DEFAULT_MPI)
+  AC_DEFINE(DEFAULT_MTMPI)
 fi
 
 AC_ARG_ENABLE(long-long,
@@ -1035,6 +1035,12 @@ if test X$PARALLEL = Xyes; then
                  [HAVE_MPI2_ONE_SIDED=yes;AC_DEFINE(HAVE_MPI2_ONE_SIDED)])
   fi
   AC_LANG_RESTORE
+fi
+
+if test X$HAVE_MPI != Xyes -a $ALWAYS_USE_MPI = yes; then
+  AC_MSG_ERROR([--enable-always-use-mpi is set but MPI is not available])
+elif test $ALWAYS_USE_MPI = yes; then
+  AC_DEFINE(ALWAYS_USE_MPI)
 fi
 
 if test $DEFAULT_PARALLEL = mpi2 -a X$HAVE_MPI2_ONE_SIDED != Xyes; then

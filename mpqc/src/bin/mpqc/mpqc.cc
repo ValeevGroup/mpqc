@@ -204,8 +204,8 @@ try_main(int argc, char *argv[])
   ExEnv::init(argc, argv);
 
   Ref<MessageGrp> grp;
-#if defined(HAVE_MPI) && defined(DEFAULT_MPI)
-  grp = new MPIMessageGrp(argc, argv);
+#if defined(HAVE_MPI) && defined(ALWAYS_USE_MPI)
+  grp = new MPIMessageGrp(&argc, &argv);
 #elif defined(HAVE_MPI)
   // MPI is allowed wait until MPI_Init to fill in argc and argv,
   // so we may have to call MPI_Init before we even know that we

@@ -273,18 +273,20 @@ MemoryGrp::set_default_memorygrp(const Ref<MemoryGrp>& grp)
 MemoryGrp*
 MemoryGrp::get_default_memorygrp()
 {
+  Ref<MessageGrp> msg;
+
 #if defined(HAVE_MPI) && defined(DEFAULT_MPI2)
   default_memorygrp = new MPI2MemoryGrp;
   return default_memorygrp.pointer();
 #endif
 #if defined(HAVE_MPI) && defined(DEFAULT_MTMPI)
-  Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
+  msg = MessageGrp::get_default_messagegrp();
   Ref<ThreadGrp> thr = ThreadGrp::get_default_threadgrp();
   default_memorygrp = new MTMPIMemoryGrp(msg,thr);
   return default_memorygrp.pointer();
 #endif
 
-  Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
+  msg = MessageGrp::get_default_messagegrp();
   if (msg.null()) {
       ExEnv::errn() << scprintf("MemoryGrp::get_default_memorygrp: requires default MessageGrp if default behavior not configured\n");
       abort();

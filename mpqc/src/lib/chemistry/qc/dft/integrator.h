@@ -339,7 +339,7 @@ class GaussLegendreAngularIntegrator: public AngularIntegrator {
 };
 
 /** An implementation of an integrator using any combination of
-    a RadianIntegrator and an AngularIntegrator. */
+    a RadialIntegrator and an AngularIntegrator. */
 class RadialAngularIntegrator: public DenIntegrator {
   private:
     int prune_grid_;

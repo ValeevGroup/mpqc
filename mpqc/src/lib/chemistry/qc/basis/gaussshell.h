@@ -32,6 +32,26 @@ class CartesianIter
     int n();
 };
 
+class RedundantCartesianIter {
+  private:
+    int done_;
+    int l_;
+    int *axis_;
+  public:
+    RedundantCartesianIter(int l);
+    ~RedundantCartesianIter();
+    void start();
+    void next();
+    operator int();
+    int bfn();
+    int l(int i);
+    int l() { return l_; }
+    int a() { return l(0); }
+    int b() { return l(1); }
+    int c() { return l(2); }
+    int axis(int i) { return axis_[i]; }
+};
+
 class RefKeyVal;
 class GaussianShell: public SavableState
 {

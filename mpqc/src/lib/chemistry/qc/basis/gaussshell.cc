@@ -386,3 +386,64 @@ GaussianShell::~GaussianShell()
   delete[] coef;
 }
 
+////////////////////////////////////////////////////////////////////////
+// RedundantCartianIter
+
+RedundantCartesianIter::RedundantCartesianIter(int l)
+{
+  l_ = l;
+  axis_ = new int[l_];
+}
+
+RedundantCartesianIter::~RedundantCartesianIter()
+{
+  delete[] axis_;
+}
+
+int
+RedundantCartesianIter::l(int axis)
+{
+  int i;
+  int r = 0;
+  for (i=0; i<l_; i++) if (axis_[i]==axis) r++;
+  return r;
+}
+
+int
+RedundantCartesianIter::bfn()
+{
+  int i = a();
+  int j = b();
+  int am = l();
+  return (((((((am)+1)<<1)-(i))*((i)+1))>>1)-(j)-1);
+}
+
+RedundantCartesianIter::operator int()
+{
+  return !done_;
+}
+
+void
+RedundantCartesianIter::start()
+{
+  if (l_==0) done_ = 1;
+  else done_ = 0;
+  int i;
+  for (i=0; i<l_; i++) {
+      axis_[i] = 0;
+    }
+}
+
+void
+RedundantCartesianIter::next()
+{
+  int i;
+  for (i=0; i<l_; i++) {
+      if (axis_[i] == 2) axis_[i] == 0;
+      else {
+          axis_[i]++;
+          return;
+        }
+    }
+  done_ = 1;
+}

@@ -161,19 +161,21 @@ HSOSSCF::HSOSSCF(const RefKeyVal& keyval) :
 
   nirrep_ = molecule()->point_group()->char_table().ncomp();
 
-  if (keyval->exists("docc") && keyval->exists("socc")) {
-    ndocc_ = new int[nirrep_];
-    nsocc_ = new int[nirrep_];
+  ndocc_ = read_occ(keyval, "docc", nirrep_);
+  nsocc_ = read_occ(keyval, "socc", nirrep_);
+  if (ndocc_ && nsocc_) {
     user_occupations_=1;
-    for (i=0; i < nirrep_; i++) {
-      ndocc_[i] = keyval->intvalue("docc",i);
-      nsocc_[i] = keyval->intvalue("socc",i);
-    }
     initial_ndocc_ = new int[nirrep_];
     memcpy(initial_ndocc_, ndocc_, sizeof(int)*nirrep_);
     initial_nsocc_ = new int[nirrep_];
     memcpy(initial_nsocc_, nsocc_, sizeof(int)*nirrep_);
-  } else {
+  }
+  else if (ndocc_ && !nsocc_ || !ndocc_ && nsocc_) {
+    ExEnv::out() << "ERROR: HSOSSCF: only one of docc and socc specified: "
+                 << "give both or none" << endl;
+    abort();
+  }
+  else {
     ndocc_=0;
     nsocc_=0;
     initial_ndocc_=0;

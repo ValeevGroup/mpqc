@@ -147,12 +147,12 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
   osa_=-1;
   osb_=-1;
   
-  if (keyval->exists("docc") && keyval->exists("socc")) {
-    ndocc_ = new int[nirrep_];
+  ndocc_ = read_occ(keyval, "docc", nirrep_);
+  int *nsocc = read_occ(keyval, "socc", nirrep_);
+  if (ndocc_ && nsocc) {
     user_occupations_=1;
     for (int i=0; i < nirrep_; i++) {
-      ndocc_[i] = keyval->intvalue("docc",i);
-      int nsi = keyval->intvalue("socc",i);
+      int nsi = nsocc[i];
       if (nsi && osa_<0)
         osa_=i;
       else if (nsi && osb_<0)
@@ -162,7 +162,14 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
         abort();
       }
     }
-  } else {
+    delete[] nsocc;
+  }
+  else if (ndocc_ && !nsocc || !ndocc_ && nsocc) {
+    ExEnv::out() << "ERROR: OSSSCF: only one of docc and socc specified: "
+                 << "give both or none" << endl;
+    abort();
+  }
+  else {
     ndocc_=0;
     user_occupations_=0;
     set_occupations(0);

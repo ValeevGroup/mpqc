@@ -130,15 +130,9 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
 
   nirrep_ = molecule()->point_group()->char_table().ncomp();
 
-  if (keyval->exists("docc")) {
-    ndocc_ = new int[nirrep_];
+  ndocc_ = read_occ(keyval, "docc", nirrep_);
+  if (ndocc_) {
     user_occupations_=1;
-    for (i=0; i < nirrep_; i++) {
-      ndocc_[i]=0;
-
-      if (keyval->exists("docc",i))
-        ndocc_[i] = keyval->intvalue("docc",i);
-    }
     initial_ndocc_ = new int[nirrep_];
     memcpy(initial_ndocc_, ndocc_, sizeof(int)*nirrep_);
   } else {

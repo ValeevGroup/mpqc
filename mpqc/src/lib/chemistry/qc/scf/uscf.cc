@@ -183,19 +183,23 @@ UnrestrictedSCF::UnrestrictedSCF(const RefKeyVal& keyval) :
 
   nirrep_ = molecule()->point_group()->char_table().ncomp();
 
-  if (keyval->exists("alpha") && keyval->exists("beta")) {
-    nalpha_ = new int[nirrep_];
-    nbeta_ = new int[nirrep_];
+  nalpha_ = read_occ(keyval, "alpha", nirrep_);
+  nbeta_ = read_occ(keyval, "beta", nirrep_);
+  if (nalpha_ && nbeta_) {
     tnalpha_ = 0;
     tnbeta_ = 0;
     user_occupations_=1;
     for (i=0; i < nirrep_; i++) {
-      nalpha_[i] = keyval->intvalue("alpha",i);
-      nbeta_[i] = keyval->intvalue("beta",i);
       tnalpha_ += nalpha_[i];
       tnbeta_ += nbeta_[i];
     }
-  } else {
+  }
+  else if (nalpha_ && !nbeta_ || !nalpha_ && nbeta_) {
+    ExEnv::out() << "ERROR: USCF: only one of alpha and beta specified: "
+                 << "give both or none" << endl;
+    abort();
+  }
+  else {
     nalpha_=0;
     nbeta_=0;
     user_occupations_=0;

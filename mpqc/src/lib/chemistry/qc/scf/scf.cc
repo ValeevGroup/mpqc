@@ -685,6 +685,26 @@ SCF::done_threads()
   tbis_ = 0;
 }
 
+int *
+SCF::read_occ(const RefKeyVal &keyval, const char *name, int nirrep)
+{
+  int *occ = 0;
+  if (keyval->exists(name)) {
+    if (keyval->count(name) != nirrep) {
+      ExEnv::err() << node0 << indent
+                   << "ERROR: SCF: have " << nirrep << " irreps but "
+                   << name << " vector " << " is length " << keyval->count(name)
+                   << endl;
+      abort();
+    }
+    occ = new int[nirrep];
+    for (int i=0; i<nirrep; i++) {
+      occ[i] = keyval->intvalue(name,i);
+    }
+  }
+  return occ;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

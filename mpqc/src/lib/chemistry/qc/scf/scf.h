@@ -114,6 +114,9 @@ class SCF: public OneBodyWavefunction {
     
     void so_density(const RefSymmSCMatrix& d, double occ, int alp=1);
 
+    // Returns a new'ed allocation vector if it is in the input,
+    // otherwise null.
+    int *read_occ(const RefKeyVal &, const char *name, int nirrep);
   public:
     SCF(StateIn&);
     /** The KeyVal constructor.

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <libInfo>
 <scl>
-  <library uri="@libdir@/cca/libSCchemistry.so"
+  <library uri="@sclibdir@/cca/libSCchemistry.so"
    scope="global" resolution="now" >
     <class name="MPQC.Chemistry_MoleculeViewer" desc="ior/impl" />
     <class name="MPQC.Physics_Units" desc="ior/impl" />

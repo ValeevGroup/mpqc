@@ -8,5 +8,8 @@ const double*, const int*, const double*, double*, const int*);
 extern void F77_DAXPY(const int* n, const double* da, const double* dx,
 const int* incx, double* dy, const int* incy);
 
+extern double F77_DDOT(const int* n, const double* dx, const int* incx,
+double* dy, const int* incy);
+
 }
 

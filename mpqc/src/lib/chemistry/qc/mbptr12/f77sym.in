@@ -1,3 +1,4 @@
 
 #define F77_DGEMM
 #define F77_DAXPY
+#define F77_DDOT

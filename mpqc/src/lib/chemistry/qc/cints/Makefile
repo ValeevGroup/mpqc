@@ -11,7 +11,8 @@ DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 TARGET_TO_MAKE = libcints
 BIN_OR_LIB = LIB
 
-SRCS = nucrep.cc integraljf.cc ovlp.cc kei.cc pei.cc
+SRCS = nucrep.cc integraljf.cc ovlp.cc kei.cc pei.cc \
+       fjtable.cc
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 

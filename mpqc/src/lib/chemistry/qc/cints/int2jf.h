@@ -1,0 +1,50 @@
+
+// these provide integrals using Justin Fermann's cints routines
+
+#ifndef _chemistry_qc_cints_int2jf_h
+#define _chemistry_qc_cints_int2jf_h
+
+#include <chemistry/qc/basis/basis.h>
+
+class FJTable {
+  private:
+    int maxj;
+    int itable_infinity;
+    double wval_infinity;
+
+    double **gtable;
+    double *denomarray;
+    double *int_fjttable;
+    
+    void done();
+    
+  public:
+    FJTable();
+    FJTable(int);
+    ~FJTable();
+
+    void reset(int);
+    void fjt(int, double);
+};
+
+class TwoBodyIntJF
+{
+  protected:
+    RefGaussianBasisSet gbs_;
+    
+    char *V_done;
+    char *H_done;
+    double *dp_use;
+    
+    FJTable fjt;
+    
+    void init();
+
+  public:
+    TwoBodyIntJF(const RefGaussianBasisSet&);
+    ~TwoBodyIntJF();
+
+    void compute_shell(int,int,int,int,double*);
+};
+
+#endif

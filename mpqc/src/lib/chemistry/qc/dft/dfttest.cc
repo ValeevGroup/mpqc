@@ -162,7 +162,7 @@ fd_test_point(int acenter, const SCVector3 &tpoint,
   // frozen_dmat = dmat makes the overlap derivative contribution 0
   double *frozen_dmat = dmat;
 
-  double delta = 0.0001;
+  double delta = 0.0005;
   for (int i=0; i<mol->natom(); i++) {
     for (int j=0; j<3; j++) {
       if (acenter == i) point[j] += delta;

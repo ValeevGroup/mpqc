@@ -63,6 +63,7 @@ memtest.o: memtest.cc
 memtest: memtest.o \
 	libgroup.a \
 	libkeyval.a \
+	libmisc.a \
 	libstate.a \
 	libclass.a \
 	libcontainer.a \

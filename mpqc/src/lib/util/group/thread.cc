@@ -128,7 +128,7 @@ ThreadGrp::add_thread(int i, Thread*t)
   }
 }
 
-void ThreadGrp::add_thread(int i, Thread*t, int priority) { add_thread(i,t); }
+void ThreadGrp::add_thread(int i, Thread*t, int priority) { add_thread(i,t,priority); }
 
 static Ref<ThreadGrp> default_threadgrp;
 

@@ -146,7 +146,7 @@ void PthreadThreadGrp::add_thread(int ithread, Thread* t, int priority)
   }
   else {
     threads_[ithread] = t;
-    init_priority(ithread, priority);
+    //init_priority(ithread, priority);
   }
   
 }

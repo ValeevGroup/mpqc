@@ -54,8 +54,8 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     int serial_;
     int serial(int node);
 
-    MPI_Comm comm_;
-
+    MPI_Comm comp_comm_;
+    MPI_Comm comm_comm_;
     int req_tag_;
 
     int active_;

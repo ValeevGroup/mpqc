@@ -1,6 +1,6 @@
 
              The Massively Parallel Quantum Chemistry Program
-                                 MPQC 1.1
+                                 MPQC 1.3
 
 DESCRIPTION
 ===========
@@ -9,16 +9,15 @@ DESCRIPTION
 computer architectures.
 
   MPQC can compute closed shell and general restricted open shell
-Hartree-Fock energies and gradients, second order open shell perturbation
-theory (OPT2[2]) and Z-averaged perturbation theory (ZAPT2) energies, and
-second order closed shell Moeller-Plesset perturbation theory energies and
-gradients.  It also includes a robust internal coordinate geometry
-optimizer that efficiently optimizes molecules with many degrees of
-freedom.
+Hartree-Fock energies and gradients, density functional theory energies and
+gradients, second order open shell perturbation theory (OPT2[2]) and
+Z-averaged perturbation theory (ZAPT2) energies, and second order closed
+shell Moeller-Plesset perturbation theory energies and gradients.  It also
+includes an internal coordinate geometry optimizer.
 
   MPQC runs on Unix compatible workstations (Intel/Linux, SGI R8000, IBM
 RS/6000), symmetric multi-processors (SGI Power Challenge), and massively
-parallel computers (IBM SP2, Intel Paragon).
+parallel computers (IBM SP, Intel Paragon).
 
 LICENSE
 =======
@@ -43,9 +42,5 @@ all necessary servicing, repair or correction.
 COMPILING AND RUNNING
 =====================
 
- There should be instructions for compiling and running MPQC where you got
-the source distribution.  If not, the documentation can be made changing
-directory to "src/bin/mpqc/doc" and typing "make mpqc.dvi", "make mpqc.ps",
-or "make mpqc.html", as you please.  These commands might not complete
-depending on your system's setup.  In this case you will be stuck reading
-the TeX source files.
+ There are instructions for compiling and running MPQC at
+http://aros.ca.sandia.gov/~cljanss/mpqc

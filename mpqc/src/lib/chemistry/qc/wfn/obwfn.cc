@@ -230,7 +230,8 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn)
     // we also need X = C'~ * S^-1 * C'
     RefSymmSCMatrix X(cprime.coldim(),basis()->matrixkit());
     X.assign(0.0);
-    X.accumulate_transform(cprime.t(),sinvp->block(irrep));
+    X.accumulate_transform(cprime,sinvp->block(irrep),
+                           SCMatrix::TransposeTransform);
     //X.print("X matrix");
   
     // we're done with cprime, free up some memory

@@ -35,6 +35,8 @@
 #include <math/scmat/elemop.h>
 #include <math/optimize/linkage.h>
 
+using namespace std;
+
 class Quadratic: public Function
 {
   private:

@@ -33,7 +33,8 @@ main(int argc, char *argv[])
   printf("\nMolecule:\n");
   gbs->molecule()->print();
   
-  printf("\nnucrep = %20.15f\n",cints_nuclear_repulsion_energy(gbs));
+  printf("\nnbasis = %d\n",gbs->nbasis());
+  printf("nucrep = %20.15f\n",cints_nuclear_repulsion_energy(gbs));
 
   ////////////////////////////////////////////////////////////////////////////
   

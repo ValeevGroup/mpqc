@@ -84,14 +84,9 @@ R12IntEval::compute_B_gbc_1_()
   Ref<MOIndexSpace> occ_space = r12info_->occ_space();
   Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
   Ref<MOIndexSpace> vir_space = r12info_->vir_space();
-
-  // compute the Fock matrix between the complement and all occupieds and
-  // create the new Fock-weighted space
   Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
-  RefSCMatrix F_ri_o = fock_(r12info_->occ_space(),ribs_space,occ_space);
-  F_ri_o.print("Fock matrix (RI-BS/occ.)");
-  Ref<MOIndexSpace> focc_space = new MOIndexSpace("Fock-weighted occupied MOs sorted by energy",
-                                                  occ_space, ribs_space->coefs()*F_ri_o, ribs_space->basis());
+  form_focc_space_();
+  Ref<MOIndexSpace> focc_space = focc_space_;
 
   const int noso = r12info()->noso();
   const int nocc = r12info_->nocc();
@@ -335,6 +330,296 @@ R12IntEval::compute_B_gbc_2_()
   if (evaluated_)
     return;
 
+  Ref<R12IntsAcc> ijpq_acc = ipjq_tform_->ints_acc();
+
+  if (!ijpq_acc->is_committed())
+    throw std::runtime_error("R12IntEval::compute_B_gbc_1_() -- ipjq_tform_ hasn't been computed yet");
+  if (!ijpq_acc->is_active())
+    ijpq_acc->activate();
+
+  tim_enter("B(GBC2) intermediate");
+
+  const int num_te_types = 2; // only integrals of r_{12} are needed
+  Ref<MessageGrp> msg = r12info()->msg();
+  int me = msg->me();
+  int nproc = msg->n();
+  ExEnv::out0() << endl << indent
+    << "Entered B(GBC2) intermediate evaluator" << endl;
+  ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
+
+  RefSCMatrix X_ijklF_ab = Bab_.clone();
+  RefSCMatrix B_gbc2_aa = Baa_.clone();
+  RefSCMatrix B_gbc2_ab = Bab_.clone();
+  X_ijklF_ab.assign(0.0);
+  B_gbc2_aa.assign(0.0);
+  B_gbc2_ab.assign(0.0);
+
+  Ref<MOIndexSpace> obs_space = r12info_->obs_space();
+  Ref<MOIndexSpace> occ_space = r12info_->occ_space();
+  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
+  Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
+  form_factocc_space_();
+  Ref<MOIndexSpace> factocc_space = factocc_space_;
+
+  const int nocc = r12info_->nocc();
+  const int nribs = ribs_space->rank();
+
+  // compute r_{12}^2 operator in act.occ.pair/act.occ.-focc. basis
+  RefSCMatrix R2 = compute_r2_(act_occ_space,factocc_space);
+  // Compute contribution X += (r^2)_{ij}^{k l_f}
+  X_ijklF_ab.accumulate(R2);
+
+  //
+  // Compute contribution X -= r_{ij}^{\alpha'm} r_{m\alpha'}^{k l_f}
+  //                         + r_{ji}^{\alpha'm} r_{\alpha'm}^{k l_f}
+  //
+  Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
+
+  tfactory->set_spaces(act_occ_space,occ_space,
+                       act_occ_space,ribs_space);
+  Ref<TwoBodyMOIntsTransform> imjA_tform = tfactory->twobody_transform_13("(im|jA)");
+  imjA_tform->set_num_te_types(num_te_types);
+  imjA_tform->compute();
+  Ref<R12IntsAcc> ijmA_acc = imjA_tform->ints_acc();
+
+  tfactory->set_spaces(act_occ_space,occ_space,
+                       factocc_space,ribs_space);
+  Ref<TwoBodyMOIntsTransform> kmlfA_tform = tfactory->twobody_transform_13("(km|lfA)");
+  kmlfA_tform->set_num_te_types(num_te_types);
+  kmlfA_tform->compute();
+  Ref<R12IntsAcc> klfmA_acc = kmlfA_tform->ints_acc();
+
+  tfactory->set_spaces(factocc_space,occ_space,
+                       act_occ_space,ribs_space);
+  Ref<TwoBodyMOIntsTransform> lfmkA_tform = tfactory->twobody_transform_13("(lfm|kA)");
+  lfmkA_tform->set_num_te_types(num_te_types);
+  lfmkA_tform->compute();
+  Ref<R12IntsAcc> lfkmA_acc = lfmkA_tform->ints_acc();
+
+  // Compute the number of tasks that have full access to the integrals
+  // and split the work among them
+  vector<int> proc_with_ints;
+  int nproc_with_ints = tasks_with_ints_(ijmA_acc,proc_with_ints);
+
+  MOPairIter_SD ij_iter(act_occ_space);
+  MOPairIter_SD kl_iter(act_occ_space);
+
+  int nbraket = nocc*nribs;
+  for(kl_iter.start();int(kl_iter);kl_iter.next()) {
+
+    const int kl = kl_iter.ij();
+    // Figure out if this task will handle this kl
+    int kl_proc = kl%nproc_with_ints;
+    if (kl_proc != proc_with_ints[me])
+      continue;
+    const int k = kl_iter.i();
+    const int l = kl_iter.j();
+    const int kl_ab = kl_iter.ij_ab();
+    const int lk_ab = kl_iter.ji_ab();
+
+    if (debug_)
+      ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
+
+    // Get (|r12|) integrals
+    tim_enter("MO ints retrieve");
+    double *klfmA_buf_r12 = klfmA_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
+    double *lfkmA_buf_r12 = lfkmA_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
+    double *lkfmA_buf_r12 = klfmA_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
+    double *kflmA_buf_r12 = lfkmA_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
+    tim_exit("MO ints retrieve");
+
+    if (debug_)
+      ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
+
+    for(ij_iter.start();int(ij_iter);ij_iter.next()) {
+
+      const int ij = ij_iter.ij();
+      const int i = ij_iter.i();
+      const int j = ij_iter.j();
+      const int ij_ab = ij_iter.ij_ab();
+      const int ji_ab = ij_iter.ji_ab();
+
+      if (debug_)
+        ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
+
+      // Get (|r12|) integrals
+      tim_enter("MO ints retrieve");
+      double *ijmA_buf_r12 = ijmA_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
+      double *jimA_buf_r12 = ijmA_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
+      tim_exit("MO ints retrieve");
+
+      if (debug_)
+        ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
+
+      double X_ijklf = 0.0;
+      double X_jiklf = 0.0;
+      double X_ijlkf = 0.0;
+      double X_jilkf = 0.0;
+
+      const int unit_stride = 1;
+      X_ijklf += F77_DDOT(&nbraket,lfkmA_buf_r12,&unit_stride,jimA_buf_r12,&unit_stride);
+      X_ijklf += F77_DDOT(&nbraket,klfmA_buf_r12,&unit_stride,ijmA_buf_r12,&unit_stride);
+      X_ijklF_ab.set_element(ij_ab,kl_ab,-X_ijklf);
+      if (kl_ab != lk_ab) {
+        X_ijlkf += F77_DDOT(&nbraket,kflmA_buf_r12,&unit_stride,jimA_buf_r12,&unit_stride);
+        X_ijlkf += F77_DDOT(&nbraket,lkfmA_buf_r12,&unit_stride,ijmA_buf_r12,&unit_stride);
+        X_ijklF_ab.set_element(ij_ab,lk_ab,-X_ijlkf);
+      }
+      if (ij_ab == ji_ab) {
+        X_jiklf += F77_DDOT(&nbraket,lfkmA_buf_r12,&unit_stride,ijmA_buf_r12,&unit_stride);
+        X_jiklf += F77_DDOT(&nbraket,klfmA_buf_r12,&unit_stride,jimA_buf_r12,&unit_stride);
+        X_ijklF_ab.set_element(ji_ab,kl_ab,-X_jiklf);
+        if (kl_ab != lk_ab) {
+          X_jilkf += F77_DDOT(&nbraket,kflmA_buf_r12,&unit_stride,ijmA_buf_r12,&unit_stride);
+          X_jilkf += F77_DDOT(&nbraket,lkfmA_buf_r12,&unit_stride,jimA_buf_r12,&unit_stride);
+          X_ijklF_ab.set_element(ji_ab,lk_ab,-X_jilkf);
+        }
+      }
+      
+      ijmA_acc->release_pair_block(i,j,R12IntsAcc::r12);
+      ijmA_acc->release_pair_block(j,i,R12IntsAcc::r12);
+    }
+
+    klfmA_acc->release_pair_block(k,l,R12IntsAcc::r12);
+    lfkmA_acc->release_pair_block(l,k,R12IntsAcc::r12);
+    klfmA_acc->release_pair_block(l,k,R12IntsAcc::r12);
+    lfkmA_acc->release_pair_block(k,l,R12IntsAcc::r12);
+  }
+
+
+  //
+  // Compute contribution X -= r_{ij}^{pq} r_{pq}^{k l_f}
+  //
+  tfactory->set_spaces(act_occ_space,obs_space,
+                       factocc_space,obs_space);
+  Ref<TwoBodyMOIntsTransform> kplfq_tform = tfactory->twobody_transform_13("(kp|lfq)");
+  kplfq_tform->set_num_te_types(num_te_types);
+  kplfq_tform->compute();
+  Ref<R12IntsAcc> klfpq_acc = kplfq_tform->ints_acc();
+
+  nbraket = obs_space->rank() * obs_space->rank();
+  for(kl_iter.start();int(kl_iter);kl_iter.next()) {
+
+    const int kl = kl_iter.ij();
+    // Figure out if this task will handle this kl
+    int kl_proc = kl%nproc_with_ints;
+    if (kl_proc != proc_with_ints[me])
+      continue;
+    const int k = kl_iter.i();
+    const int l = kl_iter.j();
+    const int kl_ab = kl_iter.ij_ab();
+    const int lk_ab = kl_iter.ji_ab();
+
+    if (debug_)
+      ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
+
+    // Get (|r12|) integrals
+    tim_enter("MO ints retrieve");
+    double *klfpq_buf_r12 = klfpq_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
+    double *lkfpq_buf_r12 = klfpq_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
+    tim_exit("MO ints retrieve");
+
+    if (debug_)
+      ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
+
+    for(ij_iter.start();int(ij_iter);ij_iter.next()) {
+
+      const int ij = ij_iter.ij();
+      const int i = ij_iter.i();
+      const int j = ij_iter.j();
+      const int ij_ab = ij_iter.ij_ab();
+      const int ji_ab = ij_iter.ji_ab();
+
+      if (debug_)
+        ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
+
+      // Get (|r12|) integrals
+      tim_enter("MO ints retrieve");
+      double *ijpq_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
+      double *jipq_buf_r12 = ijpq_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
+      tim_exit("MO ints retrieve");
+
+      if (debug_)
+        ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
+
+      double X_ijklf = 0.0;
+      double X_jiklf = 0.0;
+      double X_ijlkf = 0.0;
+      double X_jilkf = 0.0;
+
+      const int unit_stride = 1;
+      X_ijklf += F77_DDOT(&nbraket,klfpq_buf_r12,&unit_stride,ijpq_buf_r12,&unit_stride);
+      X_ijklF_ab.set_element(ij_ab,kl_ab,-X_ijklf);
+      if (kl_ab != lk_ab) {
+        X_ijlkf += F77_DDOT(&nbraket,lkfpq_buf_r12,&unit_stride,ijpq_buf_r12,&unit_stride);
+        X_ijklF_ab.set_element(ij_ab,lk_ab,-X_ijlkf);
+      }
+      if (ij_ab == ji_ab) {
+        X_jiklf += F77_DDOT(&nbraket,klfpq_buf_r12,&unit_stride,jipq_buf_r12,&unit_stride);
+        X_ijklF_ab.set_element(ji_ab,kl_ab,-X_jiklf);
+        if (kl_ab != lk_ab) {
+          X_jilkf += F77_DDOT(&nbraket,lkfpq_buf_r12,&unit_stride,jipq_buf_r12,&unit_stride);
+          X_ijklF_ab.set_element(ji_ab,lk_ab,-X_jilkf);
+        }
+      }
+      
+      ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12);
+      ijpq_acc->release_pair_block(j,i,R12IntsAcc::r12);
+    }
+
+    klfpq_acc->release_pair_block(k,l,R12IntsAcc::r12);
+    klfpq_acc->release_pair_block(l,k,R12IntsAcc::r12);
+  }
+
+  //
+  // Compute B_gbc2 = X_ijklF + X_jilkF :
+  // B_gbc2_ab_ijkl = X_ijklF_ab + X_jilkF_ab
+  // B_gbc2_aa_ijkl = X_ijklF_aa + X_jilkF_aa = X_ijklF_ab - X_jiklF_ab + X_jilkF_ab - X_ijlkF_ab
+  //
+
+  for(kl_iter.start();int(kl_iter);kl_iter.next()) {
+
+    const int kl_aa = kl_iter.ij_aa();
+    const int kl_ab = kl_iter.ij_ab();
+    const int lk_ab = kl_iter.ji_ab();
+
+    for(ij_iter.start();int(ij_iter);ij_iter.next()) {
+
+      const int ij_aa = ij_iter.ij_aa();
+      const int ij_ab = ij_iter.ij_ab();
+      const int ji_ab = ij_iter.ji_ab();
+
+      const double B_ab_ijkl = X_ijklF_ab.get_element(ij_ab,kl_ab) + X_ijklF_ab.get_element(ji_ab,lk_ab);
+      const double B_ab_ijlk = X_ijklF_ab.get_element(ij_ab,lk_ab) + X_ijklF_ab.get_element(ji_ab,kl_ab);
+      const double B_ab_jikl = B_ab_ijlk;
+      const double B_ab_jilk = B_ab_ijkl;
+
+      B_gbc2_ab.set_element( ij_ab, kl_ab, B_ab_ijkl);
+      B_gbc2_ab.set_element( ij_ab, lk_ab, B_ab_ijlk);
+      B_gbc2_ab.set_element( ji_ab, kl_ab, B_ab_jikl);
+      B_gbc2_ab.set_element( ji_ab, lk_ab, B_ab_jilk);
+
+      if (ij_aa != -1 && kl_aa != -1) {
+        B_gbc2_aa.set_element( ij_aa, kl_aa, B_ab_ijkl - B_ab_jikl);
+      }
+
+    }
+  }
+
+  ExEnv::out0() << indent << "Exited B(GBC2) intermediate evaluator" << endl;
+
+  // Symmetrize the B contribution
+  B_gbc2_aa.scale(0.5);
+  B_gbc2_ab.scale(0.5);
+  B_gbc2_aa.print("Alpha-alpha B(GBC2) contribution");
+  B_gbc2_ab.print("Alpha-beta B(GBC2) contribution");
+  Baa_.accumulate(B_gbc2_aa); Baa_.accumulate(B_gbc2_aa.t());
+  Bab_.accumulate(B_gbc2_ab); Bab_.accumulate(B_gbc2_ab.t());
+
+  globally_sum_intermeds_();
+
+  tim_exit("B(GBC2) intermediate");
+  
 }
 
 ////////////////////////////////////////////////////////////////////////////

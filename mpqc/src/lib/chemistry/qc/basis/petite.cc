@@ -17,11 +17,13 @@ PetiteList::PetiteList()
   _gbs=0;
   _natom=0;
   _nshell=0;
+  _nirrep=0;
   _ng=0;
   _p1=0;
   _atom_map=0;
   _shell_map=0;
   _lamij=0;
+  _nbf_in_ir=0;
 }
 
 PetiteList::PetiteList(const RefGaussianBasisSet &gbs)
@@ -37,6 +39,9 @@ PetiteList::~PetiteList()
   if (_lamij)
     delete[] _lamij;
 
+  if (_nbf_in_ir)
+    delete[] _nbf_in_ir;
+  
   if (_atom_map) {
     for (int i=0; i < _natom; i++)
       delete[] _atom_map[i];
@@ -53,10 +58,12 @@ PetiteList::~PetiteList()
   _natom=0;
   _nshell=0;
   _ng=0;
+  _nirrep=0;
   _p1=0;
   _atom_map=0;
   _shell_map=0;
   _lamij=0;
+  _nbf_in_ir=0;
 }
 
 static int
@@ -85,6 +92,7 @@ PetiteList::init(const RefGaussianBasisSet &gb)
   _ng = ct.order();
   _natom = mol.natom();
   _nshell = gbs.nshell();
+  _nirrep = ct.nirrep();
 
   // allocate storage for arrays
   _p1 = new char[_nshell];
@@ -179,17 +187,43 @@ PetiteList::init(const RefGaussianBasisSet &gb)
     }
   }
 
-#if 0 // for future reference
+  // form reducible representation of the basis functions
+  double *red_rep = new double[_ng];
+  memset(red_rep,0,sizeof(double)*_ng);
+  
   for (int i=0; i < _natom; i++) {
-    for (int s=0; s < gbs.nshell_on_center(i); s++) {
-      for (int c=0; c < gbs(i,s).ncontraction(); c++) {
-        int am=gbs(i,s).am(c);
+    for (int g=0; g < _ng; g++) {
+      so = ct.symm_operation(g);
+      int j= _atom_map[i][g];
 
-        Rotation r(am,so);
+      if (i!=j)
+        continue;
+      
+      for (int s=0; s < gbs.nshell_on_center(i); s++) {
+        for (int c=0; c < gbs(i,s).ncontraction(); c++) {
+          int am=gbs(i,s).am(c);
+
+          if (am==0)
+            red_rep[g] += 1.0;
+          else {
+            Rotation r(am,so,gbs(i,s).is_pure(c));
+            red_rep[g] += r.trace();
+          }
+        }
       }
     }
   }
-#endif
+
+  _nbf_in_ir = new int[_nirrep];
+  for (int i=0; i < _nirrep; i++) {
+    double t=0;
+    for (int g=0; g < _ng; g++)
+      t += ct[i][g]*red_rep[g];
+
+    _nbf_in_ir[i] = ((int) (t+0.5))/_ng;
+  }
+
+  delete[] red_rep;
 }
 
 RefSCMatrix
@@ -213,12 +247,12 @@ PetiteList::r(int g)
         int am=gbs(i,s).am(c);
 
         if (am==0) {
-          ret.set_element(func_i,func_j,1.0);
+          ret.set_element(func_j,func_i,1.0);
         } else {
-          Rotation rr(am,so);
+          Rotation rr(am,so,gbs(i,s).is_pure(c));
           for (int ii=0; ii < rr.dim(); ii++)
             for (int jj=0; jj < rr.dim(); jj++)
-              ret.set_element(func_i+ii,func_j+jj,rr(ii,jj));
+              ret.set_element(func_j+jj,func_i+ii,rr(jj,ii));
         }
 
         func_i += gbs(i,s).nfunction(c);
@@ -228,7 +262,205 @@ PetiteList::r(int g)
   }
   return ret;
 }
+
+////////////////////////////////////////////////////////////////////////////
+
+class lin_comb {
+  private:
+    int _nsh;
+    int _nbf;
+    int *fn;
+    double **c;
+  public:
+    lin_comb(int nsh, int nbf, int f0) : _nsh(nsh), _nbf(nbf) {
+      fn = new int[_nsh];
+      for (int i=0; i < _nsh; i++)
+        fn[i] = f0+i;
+      
+      c = new double*[_nsh];
+      for (int i=0; i < _nsh; i++) {
+        c[i] = new double[_nbf];
+        memset(c[i],0,sizeof(double)*_nbf);
+      }
+    }
+    ~lin_comb() {
+      if (fn) delete[] fn; fn=0;
+      if (c) {
+        for (int i=0; i < _nsh; i++)
+          if (c[i])
+            delete[] c[i];
+        delete[] c;
+      }
+      c=0; _nsh=_nbf=0;
+    }
+
+    int numbf() const { return _nbf; }
+    int numsh() const { return _nsh; }
+    int bfnum(int i) const { return fn[i]; }
+    double& coef(int i, int j) { return c[i][j]; }
+};
     
+RefSCMatrix
+PetiteList::aotoso()
+{
+  GaussianBasisSet& gbs = *_gbs.pointer();
+  Molecule& mol = *gbs.molecule().pointer();
+
+  RefSCMatrix ret = gbs.basisdim()->create_matrix(gbs.basisdim());
+  ret.assign(0.0);
+  
+  // create the character table for the point group
+  CharacterTable ct = mol.point_group().char_table();
+  SymmetryOperation so;
+  
+  double *red_rep = new double[_ng];
+  int *ninir = new int[_nirrep];
+
+  int *saoelem = new int[_nirrep];
+  saoelem[0]=0;
+  for (int i=1; i < _nirrep; i++)
+    saoelem[i] = saoelem[i-1]+_nbf_in_ir[i-1];
+
+  // loop over unique shells
+  for (int i=0; i < _natom; i++) {
+    for (int s=0; s < gbs.nshell_on_center(i); s++) {
+      int shell_i = gbs.shell_on_center(i,s);
+      
+      if (!_p1[shell_i])
+        continue;
+        
+      // find out how many shells are equivalent to this one
+      int neqs=0;
+      for (int g=0; g < _ng; g++)
+        if (shell_i==_shell_map[shell_i][g])
+          neqs++;
+
+      neqs = _ng/neqs;
+      
+      // loop over contractions now to get a reducible representation for
+      // the shell
+      memset(red_rep,0,sizeof(double)*_ng);
+
+      for (int g=0; g < _ng; g++) {
+        int j = _atom_map[i][g];
+        if (i!=j && _atom_map[j][g]!=j)
+          continue;
+        
+        so = ct.symm_operation(g);
+        
+        for (int c=0; c < gbs(i,s).ncontraction(); c++) {
+          int am=gbs(i,s).am(c);
+          
+          if (am==0)
+            red_rep[g] += neqs*1.0;
+          else {
+            Rotation r(am,so,gbs(i,s).is_pure(c));
+            red_rep[g] += neqs*r.trace();
+          }
+        }
+      }
+
+      // now extract number of functions of each symmetry that we can expect
+      memset(ninir,0,sizeof(int)*_nirrep);
+      for (int ir=0; ir < _nirrep; ir++) {
+        double t=0;
+        for (int g=0; g < _ng; g++)
+          t += ct[ir][g]*red_rep[g];
+        
+        ninir[ir] = ((int) (t+0.5))/_ng;
+      }
+
+      // ok, we know how many functions we're looking for now, so start
+      // forming linear combinations of basis functions
+
+      lin_comb **lc = new lin_comb*[_ng];
+      
+      for (int g=0; g < _ng; g++) {
+        so = ct.symm_operation(g);
+        int j = _atom_map[i][g];
+
+        int func_i = gbs.shell_to_function(gbs.shell_on_center(i,s));
+        int func_j = gbs.shell_to_function(gbs.shell_on_center(j,s));
+
+        lc[g] = new lin_comb(gbs(i,s).nfunction(),gbs.nbasis(),func_i);
+        lin_comb& lcg = *lc[g];
+        
+        int fi=0;
+        for (int c=0; c < gbs(i,s).ncontraction(); c++) {
+          int am=gbs(i,s).am(c);
+
+          if (am==0) {
+            lcg.coef(fi,func_j) = 1.0;
+          } else {
+            Rotation rr(am,so,gbs(i,s).is_pure(c));
+            for (int ii=0; ii < rr.dim(); ii++)
+              for (int jj=0; jj < rr.dim(); jj++)
+                lcg.coef(fi+ii,func_j+jj) = rr(ii,jj);
+          }
+
+          fi += gbs(i,s).nfunction(c);
+          func_i += gbs(i,s).nfunction(c);
+          func_j += gbs(i,s).nfunction(c);
+        }
+
+#if 0
+        for (int ii=0; ii < lcg.numsh(); ii++) {
+          printf("%5d",lcg.bfnum(ii));
+          for (int jj=0; jj < lcg.numbf(); jj++)
+            printf(" %10.7f",lcg.coef(ii,jj));
+          printf("\n");
+        }
+#endif
+      }
+
+      // form the combinations
+      double *blc = new double[gbs.nbasis()];
+      
+      for (int ir=0; ir < ct.nirrep(); ir++) {
+        printf("irrep %s\n",ct[ir].symbol());
+        
+        for (int fn=0; fn < gbs(i,s).nfunction(); fn++) {
+          memset(blc,0,sizeof(double)*gbs.nbasis());
+
+          for (int g=0; g < _ng; g++) {
+            lin_comb& lcg = *lc[g];
+
+            for (int f=0; f < gbs.nbasis(); f++)
+              blc[f] += ct[ir][g]*lcg.coef(fn,f);
+          }
+
+          double c1=0;
+          for (int ii=0; ii < gbs.nbasis(); ii++)
+            c1 += blc[ii]*blc[ii];
+
+          if (c1 < 1.0e-3)
+            continue;
+          
+          c1 = 1.0/sqrt(c1);
+          for (int ii=0; ii < gbs.nbasis(); ii++) {
+            blc[ii] *= c1;
+            ret.set_element(ii,saoelem[ir],blc[ii]);
+          }
+          saoelem[ir]++;
+          
+#if 1
+          printf("  %d",lc[0]->bfnum(fn));
+          for (int ii=0; ii < gbs.nbasis(); ii++)
+            printf(" %10.7f",blc[ii]);
+          printf("\n");
+#endif
+        }
+      }
+
+    }
+  }
+
+
+  return ret;
+}
+    
+////////////////////////////////////////////////////////////////////////////
+
 void
 PetiteList::print(FILE *o)
 {
@@ -236,6 +468,7 @@ PetiteList::print(FILE *o)
   fprintf(o,"  _natom = %d\n",_natom);
   fprintf(o,"  _nshell = %d\n",_nshell);
   fprintf(o,"  _ng = %d\n",_ng);
+  fprintf(o,"  _nirrep = %d\n",_nirrep);
 
   fprintf(o,"\n");
   fprintf(o,"  _atom_map = \n");
@@ -269,4 +502,8 @@ PetiteList::print(FILE *o)
     fprintf(o,"\n");
   }
   
+  fprintf(o,"\n");
+  CharacterTable ct = _gbs->molecule()->point_group().char_table();
+  for (int i=0; i < _nirrep; i++)
+    fprintf(o,"  %5d functions of %s symmetry\n",_nbf_in_ir[i],ct[i].symbol());
 }

@@ -14,6 +14,7 @@ class PetiteList {
     int _natom;
     int _nshell;
     int _ng;
+    int _nirrep;
 
     RefGaussianBasisSet _gbs;
     
@@ -23,6 +24,8 @@ class PetiteList {
     int **_shell_map; // shell_map[n][g] is the shell that symop g maps shell n
                      // into
     char *_lamij;     // see Dupuis & King, IJQC 11,613,(1977)
+
+    int *_nbf_in_ir;
 
     inline int ioff(int i) const { return i*(i+1)>>1; }
     inline int ioff(int i, int j) const
@@ -35,17 +38,21 @@ class PetiteList {
 
     void init(const RefGaussianBasisSet&);
 
-    int in_p1(int n) const { return (int) _p1[n]; }
     int atom_map(int n, int g) const { return _atom_map[n][g]; }
     int shell_map(int n, int g) const { return _shell_map[n][g]; }
     int lambda(int ij) const { return (int) _lamij[ij]; }
     int lambda(int i, int j) const { return (int) _lamij[ioff(i,j)]; }
 
+    int in_p1(int n) const { return (int) _p1[n]; }
+    int in_p2(int ij) const { return (int) _lamij[ij]; }
     int in_p4(int ij, int kl, int i, int j, int k, int l) const;
     
+    int nfunction(int i) const { return _nbf_in_ir[i]; }
+
     void print(FILE* =stdout);
 
     RefSCMatrix r(int g);
+    RefSCMatrix aotoso();
 };
 
 inline int

@@ -35,6 +35,16 @@
 #include <util/misc/formio.h>
 #include <util/group/pool.h>
 #include <util/group/memshm.h>
+#include <limits.h>
+#include <errno.h>
+
+#ifndef SHMMAX
+#define SHMMAX INT_MAX
+#endif
+
+#ifndef SHMMIN
+#define SHMMIN 1
+#endif
 
 #ifndef SIMPLE_LOCK
 #define SIMPLE_LOCK 1
@@ -83,6 +93,8 @@ ShmMemoryGrp::ShmMemoryGrp(const RefKeyVal& keyval):
 void
 ShmMemoryGrp::set_localsize(int localsize)
 {
+  int i;
+
   cleanup();
 
   MsgMemoryGrp::set_localsize(localsize);
@@ -103,7 +115,7 @@ ShmMemoryGrp::set_localsize(int localsize)
 
       int rsize = size;
       int isize;
-      for (int i=0; rsize>0; i++,rsize-=isize) {
+      for (i=0; rsize>0; i++,rsize-=isize) {
           isize = rsize;
           if (isize > SHMMAX) isize = SHMMAX;
           else if (isize < SHMMIN) isize = SHMMIN;
@@ -124,7 +136,7 @@ ShmMemoryGrp::set_localsize(int localsize)
 
       rsize = size;
       void *ataddress = 0;
-      for (int i=0; rsize>0; i++,rsize-=isize) {
+      for (i=0; rsize>0; i++,rsize-=isize) {
           isize = rsize;
           if (isize > SHMMAX) isize = SHMMAX;
           else if (isize < SHMMIN) isize = SHMMIN;
@@ -150,7 +162,7 @@ ShmMemoryGrp::set_localsize(int localsize)
                    << endl;
               abort();
             }
-          ataddress = attach_address_[i] + isize;
+          ataddress = (void*)((char*)(attach_address_[i]) + isize);
         }
 
       // attach the shared segments.

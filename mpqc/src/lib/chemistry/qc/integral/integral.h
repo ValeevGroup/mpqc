@@ -15,7 +15,7 @@ class OneBodyInt: public SCSymmElementOp
   
   virtual int nbasis();
   virtual int nshell();
-  virtual GaussianBasisSet& basis();
+  virtual const GaussianBasisSet& basis();
 
   virtual void compute_shell(int,int,double*) = 0;
 

@@ -34,7 +34,7 @@ int OneBodyInt::nshell()
   return bs->nshell();
 }
 
-GaussianBasisSet& OneBodyInt::basis()
+const GaussianBasisSet& OneBodyInt::basis()
 {
   return *bs;
 }

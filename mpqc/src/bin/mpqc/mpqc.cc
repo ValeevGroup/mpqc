@@ -125,6 +125,26 @@ main(int argc, char *argv[])
   if (strcmp(options.retrieve("W"),"."))
     chdir(options.retrieve("W"));
 
+  if (options.retrieve("h")) {
+    cout << node0 << endl
+         << indent << "MPQC version " << MPQC_VERSION << endl << endl;
+    options.usage(cout);
+    exit(0);
+  }
+  
+  if (options.retrieve("v")) {
+    cout << node0 << endl
+         << indent << "MPQC version " << MPQC_VERSION << endl << endl;
+    exit(0);
+  }
+  
+  if (options.retrieve("w")) {
+    cout << node0 << endl
+         << indent << "MPQC version " << MPQC_VERSION << endl << endl;
+    print_disclaimer(cout);
+    exit(0);
+  }
+
   // get the message group.  first try the commandline and environment
   RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
   if (grp.nonnull())
@@ -200,26 +220,6 @@ main(int argc, char *argv[])
 
   if (options.retrieve("d"))
     SCFormIO::set_debug(1);
-
-  if (options.retrieve("h")) {
-    cout << node0 << endl
-         << indent << "MPQC version " << MPQC_VERSION << endl << endl;
-    options.usage(cout);
-    exit(0);
-  }
-  
-  if (options.retrieve("v")) {
-    cout << node0 << endl
-         << indent << "MPQC version " << MPQC_VERSION << endl << endl;
-    exit(0);
-  }
-  
-  if (options.retrieve("w")) {
-    cout << node0 << endl
-         << indent << "MPQC version " << MPQC_VERSION << endl << endl;
-    print_disclaimer(cout);
-    exit(0);
-  }
 
   // initialize timing for mpqc
   RefRegionTimer tim = new ParallelRegionTimer(grp,"mpqc",1,1);

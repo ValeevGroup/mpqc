@@ -459,6 +459,28 @@ sub fzv {
     $_;
 }
 
+sub docc {
+    my $self = shift;
+    $_ = $self->{"parser"}->value("docc");
+    s/^\s+//;
+    s/\s+$//;
+    if ($_ eq "" || $_ eq "-") {
+        $_ = "auto";
+    }
+    $_;
+}
+
+sub socc {
+    my $self = shift;
+    $_ = $self->{"parser"}->value("socc");
+    s/^\s+//;
+    s/\s+$//;
+    if ($_ eq "" || $_ eq "-") {
+        $_ = "auto";
+    }
+    $_;
+}
+
 sub optimize {
     my $self = shift;
     my $bval = $self->{"parser"}->boolean_value("optimize");
@@ -608,6 +630,24 @@ sub initialize() {
     $self->{"qcinput"} = $qcinput;
 }
 
+sub docc_string() {
+    my $self = shift;
+    my $qcinput = $self->{"qcinput"};
+    my $occs = $qcinput->docc();
+    if ($occs eq "auto") { return ""; }
+    $occs =~ s/,/ /g;
+    "docc = [ $occs ]";
+}
+
+sub socc_string() {
+    my $self = shift;
+    my $qcinput = $self->{"qcinput"};
+    my $occs = $qcinput->socc();
+    if ($occs eq "auto") { return ""; }
+    $occs =~ s/,/ /g;
+    "socc = [ $occs ]";
+}
+
 sub input_string() {
     my $self = shift;
     my $qcinput = $self->{"qcinput"};
@@ -625,7 +665,7 @@ sub input_string() {
     else {
         $mol = "$mol\n  symmetry = $symmetry";
     }
-    $mol = "$mol\n  angstroms = yes";
+    $mol = "$mol\n  unit = angstrom";
     $mol = "$mol\n  { atoms geometry } = {";
     printf "MPQCInputWriter: natom = %d\n", $qcinput->n_atom() if ($debug);
     my $i;
@@ -672,6 +712,8 @@ sub input_string() {
 
     my $charge = $qcinput->charge();
     my $mult = $qcinput->mult();
+    my $docc = $self->docc_string();
+    my $socc = $self->socc_string();
 
     my $memory = $qcinput->memory();
     my $inputmethod = $methodmap{uc($qcinput->method())};
@@ -702,6 +744,8 @@ sub input_string() {
         $mole = "$mole\n    total_charge = $charge";
         $mole = "$mole\n    multiplicity = $mult";
         $mole = "$mole\n    print_npa = yes";
+        if ($docc ne "") {$mole = "$mole\n    $docc";}
+        if ($socc ne "") {$mole = "$mole\n    $socc";}
     }
     if ($method eq "MBPT2") {
         my $fzc = $qcinput->fzc();
@@ -723,6 +767,8 @@ sub input_string() {
         $mole = "$mole\n      total_charge = $charge";
         $mole = "$mole\n      multiplicity = $mult";
         $mole = "$mole\n      memory = $memory";
+        if ($docc ne "") {$mole = "$mole\n      $docc";}
+        if ($socc ne "") {$mole = "$mole\n      $socc";}
         if (! ($basis =~ /^STO/
                || $basis =~ /^MI/
                || $basis =~ /^\d-\d1G$/)) {
@@ -730,6 +776,8 @@ sub input_string() {
             $mole = "$mole\n        molecule = \$:molecule";
             $mole = "$mole\n        total_charge = $charge";
             $mole = "$mole\n        multiplicity = $mult";
+            if ($docc ne "") {$mole = "$mole\n        $docc";}
+            if ($socc ne "") {$mole = "$mole\n        $socc";}
             $mole = "$mole\n        basis<GaussianBasisSet>: (";
             $mole = "$mole\n          molecule = \$:molecule";
             $mole = "$mole\n          name = \"STO-3G\"";
@@ -746,6 +794,8 @@ sub input_string() {
         $mole = "$mole\n      molecule = \$:molecule";
         $mole = "$mole\n      total_charge = $charge";
         $mole = "$mole\n      multiplicity = $mult";
+        if ($docc ne "") {$mole = "$mole\n      $docc";}
+        if ($socc ne "") {$mole = "$mole\n      $socc";}
         $mole = "$mole\n      basis<GaussianBasisSet>: (";
         $mole = "$mole\n        molecule = \$:molecule";
         $mole = "$mole\n        name = \"STO-3G\"";

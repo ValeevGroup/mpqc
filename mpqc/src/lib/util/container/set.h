@@ -34,6 +34,7 @@
 
 #include <Pix.h>
 #include <stdlib.h>
+#include <iostream.h>
 #include <iomanip.h>
 #include <util/container/array.h>
 

@@ -32,6 +32,7 @@
 #ifndef _util_container_array_h
 #define _util_container_array_h
 
+#include <iostream.h>
 #include <iomanip.h>
 #include <stdlib.h>
 

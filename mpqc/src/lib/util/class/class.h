@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <iostream.h>
 #include <iomanip.h>
 #include <util/ref/ref.h>
 #include <util/container/array.h>

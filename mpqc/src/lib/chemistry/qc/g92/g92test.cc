@@ -28,6 +28,8 @@ const ClassDesc &fl5 = BFGSUpdate::class_desc_;
 
 main(int argc, char**argv)
 {
+  printf("\n     SC G92 driver program\n\n");
+
   // the output stream is standard out
   SCostream& o = SCostream::cout;
 
@@ -54,21 +56,17 @@ main(int argc, char**argv)
     opt->set_checkpoint_file("g92test.ckpt");
   }
 
-#if 0
   if (mole->gradient_implemented()) {
     if (opt.nonnull()) {
-      //opt->print(o);
       opt->optimize();
     } else {
       o << "opt is null\n";
     }
   }
-#else
-  mole->do_hessian(1);
+  
   mole->hessian();
   Gaussian92::castdown(mole)->normal_modes()->print("normal modes");
   Gaussian92::castdown(mole)->frequencies()->print("frequencies");
-#endif
 
   return 0;
 }

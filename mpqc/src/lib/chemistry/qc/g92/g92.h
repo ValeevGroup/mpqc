@@ -20,33 +20,30 @@ protected:
   int charge_;
   int multiplicity_;
   int memory_;
-  int save_log_;
   int use_ckpt_;
   char *name_;
   char *scr_dir_;
   char *g92_dir_;
   char *basis_;
 
-  char *estring_;
-  char *emethod_;
-  char *gmethod_;
-  char *hmethod_;
-  
   ResultRefSCMatrix _eigenvectors;
 
   void compute();
 
-  virtual void init() = 0;
+  virtual char * emethod() = 0;
+  virtual char * gmethod() = 0;
+  virtual char * hmethod() = 0;
   
   virtual int run_energy();
+  virtual int parse_g92_energy();
+  
   virtual int run_gradient();
+  virtual int parse_g92_gradient();
+  
   virtual int run_hessian();
+  virtual int parse_g92_hessian();
 
-  FILE * open_log();
-  int run_g92(const char *method);
-  int parse_g92_energy(const char *);
-  int parse_g92_gradient(const char *);
-  int parse_g92_hessian(const char *);
+  virtual int run_g92(const char *method);
 
 public:
   Gaussian92(const RefKeyVal&);
@@ -72,7 +69,9 @@ class Gaussian92SCF: public Gaussian92
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
 private:
-  void init();
+  char * emethod();
+  char * gmethod();
+  char * hmethod();
 
 public:
   Gaussian92SCF(const RefKeyVal&);
@@ -96,7 +95,9 @@ class Gaussian92UHF: public Gaussian92
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
 private:
-  void init();
+  char * emethod();
+  char * gmethod();
+  char * hmethod();
 
 public:
   Gaussian92UHF(const RefKeyVal&);

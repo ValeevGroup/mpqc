@@ -3,16 +3,6 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
-static char *
-new_string(const char *str)
-{
-  char *ret = new char[strlen(str)+1];
-  strcpy(ret,str);
-  return ret;
-}
-
-////////////////////////////////////////////////////////////////////////////
-
 #define CLASSNAME Gaussian92SCF
 #define PARENTS public Gaussian92
 #define HAVE_KEYVAL_CTOR
@@ -27,13 +17,56 @@ Gaussian92SCF::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-void
-Gaussian92SCF::init()
+char *
+Gaussian92SCF::emethod()
 {
-  estring_ = "E(RHF)";
-  emethod_ = "#p units=au SCF=DIRECT RHF";
-  gmethod_ = "#p units=au Force SCF=DIRECT RHF";
-  hmethod_ = "#p units=au Freq SCF=DIRECT RHF";
+  static char method[32];
+  int conv = (int) -log10(desired_value_accuracy());
+
+  // closed shell
+  if (multiplicity_==1)
+    sprintf(method,"rhf scf=(direct,conv=%d)",conv);
+
+  // open shell
+  else
+    sprintf(method,"rohf scf=(direct,conv=%d)",conv);
+
+  return method;
+}
+
+char *
+Gaussian92SCF::gmethod()
+{
+  static char method[36];
+  int conv = (int) -log10(desired_value_accuracy());
+  
+  // closed shell
+  if (multiplicity_==1)
+    sprintf(method,"rhf force scf=(direct,conv=%d)",conv);
+
+  // open shell
+  else
+    sprintf(method,"rohf force scf=(direct,conv=%d)",conv);
+
+  return method;
+}
+
+char *
+Gaussian92SCF::hmethod()
+{
+  static char method[48];
+  int conv = (int) -log10(desired_value_accuracy());
+  int hconv = (int) -log10(desired_hessian_accuracy());
+  
+  // closed shell
+  if (multiplicity_==1)
+    sprintf(method,"rhf freq scf=(direct,conv=%d) cphf=conv=%d",conv,hconv);
+  
+  // open shell
+  else
+    sprintf(method,"rohf freq scf=(direct,conv=%d) cphf=conv=%d",conv,hconv);
+
+  return method;
 }
 
 Gaussian92SCF::Gaussian92SCF(const RefKeyVal&keyval):
@@ -43,7 +76,6 @@ Gaussian92SCF::Gaussian92SCF(const RefKeyVal&keyval):
     fprintf(stderr,"Gaussian92SCF needs a basis\n");
     abort();
   }
-  init();
 }
 
 Gaussian92SCF::~Gaussian92SCF()
@@ -54,7 +86,6 @@ Gaussian92SCF::Gaussian92SCF(StateIn&s) :
   Gaussian92(s)
   maybe_SavableState(s)
 {
-  init();
 }
 
 void

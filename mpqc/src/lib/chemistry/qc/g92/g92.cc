@@ -18,12 +18,20 @@ extern "C" {
 
 ////////////////////////////////////////////////////////////////////////////
 
-static char *
-new_string(const char *str)
+static int
+find_line(FILE *g92log, char *line, int len, const char *string)
 {
-  char *ret = new char[strlen(str)+1];
-  strcpy(ret,str);
-  return ret;
+  while(fgets(line,len,g92log)) {
+    if (strstr(line,string))
+      break;
+  }
+
+  if (feof(g92log)) {
+    fprintf(stderr,"Gaussian92::find_line: hit end of file\n");
+    return -1;
+  }
+
+  return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -64,13 +72,14 @@ Gaussian92::Gaussian92(const RefKeyVal&keyval):
   memory_ = keyval->intvalue("memory");
   if (keyval->error() != KeyVal::OK) memory_ = 4000000;
 
-  save_log_ = keyval->booleanvalue("keep_g92_log");
-  if (keyval->error() != KeyVal::OK) save_log_ = 1;
-
   use_ckpt_ = keyval->booleanvalue("use_checkpoint_guess");
+  if (keyval->error() != KeyVal::OK) use_ckpt_ = 1;
 
   name_ = keyval->pcharvalue("filename");
-  if (keyval->error() != KeyVal::OK) name_ = new_string("g92file");
+  if (keyval->error() != KeyVal::OK) {
+    name_ = new char[8];
+    strcpy(name_,"g92file");
+  }
 
   scr_dir_ = keyval->pcharvalue("scratch_dir");
   g92_dir_ = keyval->pcharvalue("g92_dir");
@@ -83,10 +92,11 @@ Gaussian92::Gaussian92(const RefKeyVal&keyval):
 
 Gaussian92::~Gaussian92()
 {
+  if (name_) delete[] name_;
   if (scr_dir_) delete[] scr_dir_;
   if (g92_dir_) delete[] g92_dir_;
   if (basis_) delete[] basis_;
-  scr_dir_ = g92_dir_ = basis_ =0;
+  name_ = scr_dir_ = g92_dir_ = basis_ =0;
 }
 
 Gaussian92::Gaussian92(StateIn&s):
@@ -97,7 +107,6 @@ Gaussian92::Gaussian92(StateIn&s):
   s.get(charge_);
   s.get(multiplicity_);
   s.get(memory_);
-  s.get(save_log_);
   s.get(use_ckpt_);
   s.getstring(name_);
   s.getstring(scr_dir_);
@@ -112,7 +121,6 @@ Gaussian92::save_data_state(StateOut&s)
   s.put(charge_);
   s.put(multiplicity_);
   s.put(memory_);
-  s.put(save_log_);
   s.put(use_ckpt_);
   s.putstring(name_);
   s.putstring(scr_dir_);
@@ -120,13 +128,7 @@ Gaussian92::save_data_state(StateOut&s)
   s.putstring(basis_);
 }
 
-int
-Gaussian92::do_eigenvectors(int f)
-{
-  int old = _eigenvectors.compute();
-  _eigenvectors.compute() = f;
-  return old;
-}
+////////////////////////////////////////////////////////////////////////////
 
 void
 Gaussian92::compute()
@@ -134,7 +136,7 @@ Gaussian92::compute()
   int i,j;
 
   // print the geometry every iteration
-  printf("  molecular geometry in Gaussian92::compute()\n");
+  printf("\n  molecular geometry in Gaussian92::compute()\n");
   _mol->print();
 
   // Adjust the value accuracy if gradients are needed and set up
@@ -147,6 +149,15 @@ Gaussian92::compute()
       set_desired_gradient_accuracy(1.0e-4);
     if (desired_value_accuracy() > 0.1 * desired_gradient_accuracy()) {
       set_desired_value_accuracy(0.1 * desired_gradient_accuracy());
+    }
+  }
+
+  if (_hessian.compute()) {
+    if (desired_hessian_accuracy() > 1.0e-4)
+      set_desired_hessian_accuracy(1.0e-4);
+    
+    if (desired_value_accuracy() > 0.01 * desired_hessian_accuracy()) {
+      set_desired_value_accuracy(0.01 * desired_hessian_accuracy());
     }
   }
 
@@ -168,22 +179,176 @@ Gaussian92::compute()
   }
 }
 
-RefSCMatrix
-Gaussian92::eigenvectors()
+//////////////////////////////////////////////////////////////////////////
+
+int
+Gaussian92::run_energy()
 {
-  if (!_energy.computed()) {
-    run_energy();
+  if (run_g92(emethod()) < 0) {
+    fprintf(stderr,"Gaussian92::run_energy: run_g92 did not succeed\n");
+    return -1;
   }
-  return _eigenvectors;
+  
+  return parse_g92_energy();
 }
 
-void
-Gaussian92::print(SCostream&o)
+int
+Gaussian92::parse_g92_energy()
 {
-  o.flush();
-  OneBodyWavefunction::print(o);
-  o.flush();
+  FILE *g92log = fopen("Test.FChk","r");
+  if (!g92log) {
+    fprintf(stderr,"Gaussian92::parse_g92_energy: could not open log file\n");
+    return -1;
+  }
+  
+  char line[122];
+  if (find_line(g92log,line,120,"Total Energy") < 0) {
+    fprintf(stderr,"Gaussian92::parse_g92_energy:"
+            " Could not find energy in G92 output\n");
+    fclose(g92log);
+    return -1;
+  }
+
+  fclose(g92log);
+
+  double energy;
+  char *tok = strtok(line,"R");
+  tok = strtok(0," ");
+  if (!tok) {
+    fprintf(stderr,
+            "Gaussian92::parse_g92_energy: trouble scanning energy line\n");
+    return -1;
+  }
+
+  energy = atof(tok);
+  printf("\n  Gaussian92 energy = %20.10f\n",energy);
+  
+  set_energy(energy);
+  _energy.set_actual_accuracy(_energy.desired_accuracy());
+  
+  return 0;
 }
+
+//////////////////////////////////////////////////////////////////////////
+
+int
+Gaussian92::run_gradient()
+{
+  if (run_g92(gmethod()) < 0) {
+    fprintf(stderr,"Gaussian92::run_gradient: run_g92 did not succeed\n");
+    return -1;
+  }
+  
+  return parse_g92_gradient();
+}
+
+int
+Gaussian92::parse_g92_gradient()
+{
+  if (parse_g92_energy() < 0) {
+    fprintf(stderr,"Gaussian92::parse_g92_gradient:"
+            " Could not parse energy\n");
+    return -1;
+  }
+
+  FILE *g92log = fopen("Test.FChk","r");
+  if (!g92log) {
+    fprintf(stderr,
+            "Gaussian92::parse_g92_gradient: Could not open log file\n");
+    return -1;
+  }
+
+  // find the forces in the log file
+  char line[122];
+  
+  if (find_line(g92log,line,120,"Cartesian Forces") < 0) {
+    fprintf(stderr,"Gaussian92::parse_g92_gradient:"
+            " Could not find gradient in G92 output\n");
+    fclose(g92log);
+    return -1;
+  }
+
+  RefSCVector gradient(_mol->dim_natom3());
+  
+  // and now read in the forces
+  double x,y,z;
+  
+  printf("\n  Gaussian92 gradient:\n");
+  
+  for (int i=0; i < _mol->natom(); i++) {
+    fscanf(g92log,"%lf %lf %lf",&x,&y,&z);
+    gradient.set_element(i*3,x);
+    gradient.set_element(i*3+1,y);
+    gradient.set_element(i*3+2,z);
+    printf("%5d %14.10f %14.10f %14.10f\n",i+1,x,y,z);
+  }
+
+  fclose(g92log);
+  set_gradient(gradient);
+  _gradient.set_actual_accuracy(desired_gradient_accuracy());
+
+  return 0;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+int
+Gaussian92::run_hessian()
+{
+  if (run_g92(hmethod()) < 0) {
+    fprintf(stderr,"Gaussian92::run_hessian: run_g92 did not succeed\n");
+    return -1;
+  }
+  
+  return parse_g92_hessian();
+}
+  
+int
+Gaussian92::parse_g92_hessian()
+{
+  if (parse_g92_gradient() < 0) {
+    fprintf(stderr,"Gaussian92::parse_g92_hessian:"
+            " Could not parse gradient\n");
+    return -1;
+  }
+
+  FILE *g92log = fopen("Test.FChk","r");
+  if (!g92log) {
+    fprintf(stderr,"Gaussian92::parse_g92_hessian: Could not open log file\n");
+    return -1;
+  }
+
+  // find the force constants in the log file
+  char line[122];
+  
+  if (find_line(g92log,line,120,"Cartesian Force Constants") < 0) {
+    fprintf(stderr,"Gaussian92::parse_g92_hessian:"
+            " Could not find hessian in G92 output\n");
+    fclose(g92log);
+    return -1;
+  }
+
+  RefSymmSCMatrix hessian(_mol->dim_natom3());
+  
+  // read in force constants
+  for (int i=0; i < hessian->n(); i++) {
+    for (int j=0; j <= i; j++) {
+      double x;
+      fscanf(g92log,"%lf",&x);
+      hessian.set_element(i,j,x);
+    }
+  }
+
+  fclose(g92log);
+
+  hessian.print("  G92 force constants");
+  set_hessian(hessian);
+  _hessian.set_actual_accuracy(desired_hessian_accuracy());
+  
+  return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////
 
 int
 Gaussian92::run_g92(const char *method)
@@ -204,12 +369,10 @@ Gaussian92::run_g92(const char *method)
   // Write out required headers
   fprintf(g92com,"%%chk=%s\n",name_);
   fprintf(g92com,"%%mem=%d\n",memory_);
-  fprintf(g92com,"%s",method);
+  fprintf(g92com,"#p FChk=all units=au %s\n",method);
   
   if (basis_)
-    fprintf(g92com,"/%s\n",basis_);
-  else
-    fprintf(g92com,"\n");
+    fprintf(g92com,"%s\n",basis_);
 
   // Request to use guess from checkpoint file
   if (use_ckpt_) {
@@ -257,17 +420,14 @@ Gaussian92::run_g92(const char *method)
   }
 
   // assemble and execute g92 command
-#if 0
   char *commandstr =
     new char[strlen(comfile)+strlen(g92_dir_)+strlen(logfile)+10];
   sprintf(commandstr,"%sg92 < %s > %s",g92_dir_, comfile, logfile);
-  delete[] commandstr;
+
   int ret = system(commandstr);
-#else
-  int ret = 0;
-#endif
     
-  // Free filesnames
+  // Free arrays
+  delete[] commandstr;
   delete[] comfile;
   delete[] logfile;
 
@@ -276,201 +436,45 @@ Gaussian92::run_g92(const char *method)
 
 ///////////////////////////////////////////////////////////////////////////
 
-FILE *
-Gaussian92::open_log()
+int
+Gaussian92::do_eigenvectors(int f)
+{
+  int old = _eigenvectors.compute();
+  _eigenvectors.compute() = f;
+  return old;
+}
+
+RefSCMatrix
+Gaussian92::eigenvectors()
+{
+  if (!_energy.computed()) {
+    run_energy();
+  }
+  return _eigenvectors;
+}
+
+void
+Gaussian92::print(SCostream&o)
+{
+  o.flush();
+  OneBodyWavefunction::print(o);
+  o.flush();
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+static FILE *
+open_log(const char *name_)
 {
   char * logfile = new char[strlen(name_)+9];
   sprintf(logfile,"%s.g92.out",name_);
   
   FILE *g92log = fopen(logfile,"r");
   if (!g92log)
-    fprintf(stderr,"Gaussian92::open_log: "
-            "could not open output file %s\n",logfile);
+    fprintf(stderr,"open_log: could not open output file %s\n",logfile);
 
   delete[] logfile;
   return g92log;
-}
-
-static int
-find_line(FILE *g92log, char *line, int len, const char *string)
-{
-  while(fgets(line,len,g92log)) {
-    if (strstr(line,string))
-      break;
-  }
-
-  if (feof(g92log)) {
-    fprintf(stderr,"Gaussian92::find_line: hit end of file\n");
-    return -1;
-  }
-
-  return 0;
-}
-
-int
-Gaussian92::parse_g92_energy(const char *parse_str)
-{
-  FILE *g92log = open_log();
-  if (!g92log) {
-    fprintf(stderr,"Gaussian92::parse_g92_energy:"
-            "could not open log file\n");
-    return -1;
-  }
-  
-  char line[122];
-  if (find_line(g92log,line,120,parse_str) < 0) {
-    fprintf(stderr,"Gaussian92::parse_g92_energy:"
-            " Could not find energy in G92 output\n");
-    fclose(g92log);
-    return -1;
-  }
-
-  fclose(g92log);
-
-  double energy;
-  char *tok = strtok(line,"=");
-  tok = strtok(0," ");
-  if (!tok) {
-    fprintf(stderr,"Gaussian92::parse_g92_energy:"
-            " trouble scanning line energy line\n");
-    return -1;
-  }
-
-  energy = atof(tok);
-  printf("\n  Gaussian92 energy %s = %20.10f\n",parse_str,energy);
-  
-  set_energy(energy);
-  _energy.set_actual_accuracy(_energy.desired_accuracy());
-  
-  return 0;
-}
-
-int
-Gaussian92::parse_g92_gradient(const char *parse_str)
-{
-  if (parse_g92_energy(parse_str) < 0) {
-    fprintf(stderr,"Gaussian92::parse_g92_gradient:"
-            " Could not parse energy\n");
-    return -1;
-  }
-
-  FILE *g92log = open_log();
-  if (!g92log) {
-    fprintf(stderr,"Gaussian92::parse_g92_gradient:"
-            " Could not open log file\n");
-    return -1;
-  }
-
-  // find the forces in the log file
-  char line[122];
-  char *gstring = "Center     Atomic                   Forces (Hartrees/Bohr)";
-  
-  if (find_line(g92log,line,120,gstring) < 0) {
-    fprintf(stderr,"Gaussian92::parse_g92_gradient:"
-            " Could not find gradient in G92 output\n");
-    fclose(g92log);
-    return -1;
-  }
-
-  // read two garbage lines
-  fgets(line,120,g92log);
-  fgets(line,120,g92log);
-
-  RefSCVector gradient(_mol->dim_natom3());
-  
-  // and now read in the forces
-  int n,an;
-  double x,y,z;
-
-  printf("\n  Gaussian92 gradient:\n");
-  for (int i=0; i < _mol->natom(); i++) {
-    fscanf(g92log,"%d %d %lf %lf %lf\n",&n,&an,&x,&y,&z);
-    gradient.set_element(i*3,x);
-    gradient.set_element(i*3+1,y);
-    gradient.set_element(i*3+2,z);
-    printf("%5d %14.10f %14.10f %14.10f\n",n,x,y,z);
-  }
-
-  fclose(g92log);
-  set_gradient(gradient);
-  _gradient.set_actual_accuracy(desired_gradient_accuracy());
-
-  return 0;
-}
-
-static double
-fortran_atof(char *str)
-{
-  char *exp = strstr(str,"D");
-  *exp = '\0';
-  exp++;
-  
-  return atof(str) * pow(10.0,atof(exp));
-}
-  
-int
-Gaussian92::parse_g92_hessian(const char *parse_str)
-{
-  if (parse_g92_gradient(parse_str) < 0) {
-    fprintf(stderr,"Gaussian92::parse_g92_hessian:"
-            " Could not parse energy\n");
-    return -1;
-  }
-
-  FILE *g92log = open_log();
-  if (!g92log) {
-    fprintf(stderr,"Gaussian92::parse_g92_hessian:"
-            " Could not open log file\n");
-    return -1;
-  }
-
-  // find the forces in the log file
-  char line[122];
-  char *hstring = "FORCE CONSTANTS IN CARTESIAN COORDINATES (HARTREES/BOHR).";
-  
-  if (find_line(g92log,line,120,hstring) < 0) {
-    fprintf(stderr,"Gaussian92::parse_g92_hessian:"
-            " Could not find hessian in G92 output\n");
-    fclose(g92log);
-    return -1;
-  }
-
-  RefSymmSCMatrix hessian(_mol->dim_natom3());
-  
-  // read in force constants
-  int npara = hessian->n() / 5;
-  if (hessian->n() % 5) npara++;
-
-  for (int np=0; np < npara; np++) {
-    // get the line containing column numbers
-    fgets(line,120,g92log);
-    char *tok = strtok(line," ");
-    int firstc = atoi(tok) - 1;
-    
-    for (int i=firstc; i < hessian->n(); i++) {
-      fgets(line,120,g92log);
-      tok = strtok(line," ");
-      int n = atoi(tok);
-      if (n-1 != i)
-        break;
-
-      int j=firstc; char num[15];
-      while (tok = strtok(0," ")) {
-        strcpy(num,tok);
-        double x = fortran_atof(num);
-        hessian.set_element(i,j,x);
-        j++;
-      }
-    }
-  }
-
-  fclose(g92log);
-
-  hessian.print("  G92 force constants");
-  set_hessian(hessian);
-  _hessian.set_actual_accuracy(desired_hessian_accuracy());
-  
-  return 0;
 }
 
 RefSCMatrix
@@ -483,7 +487,7 @@ Gaussian92::normal_modes()
   RefSCMatrix normalmodes(_moldim,nnorm);
   normalmodes.assign(0.0);
 
-  FILE *g92log = open_log();
+  FILE *g92log = open_log(name_);
   if (!g92log) {
     fprintf(stderr,"Gaussian92::normal_modes: Could not open log file\n");
     return normalmodes;
@@ -538,7 +542,7 @@ Gaussian92::frequencies()
   RefSCVector freq(nfreq);
   freq.assign(0.0);
 
-  FILE *g92log = open_log();
+  FILE *g92log = open_log(name_);
   if (!g92log) {
     fprintf(stderr,"Gaussian92::frequencies: Could not open log file\n");
     return freq;
@@ -571,39 +575,4 @@ Gaussian92::frequencies()
   fclose(g92log);
   
   return freq;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-int
-Gaussian92::run_energy()
-{
-  if (run_g92(emethod_) < 0) {
-    fprintf(stderr,"Gaussian92::run_energy: run_g92 did not succeed\n");
-    return -1;
-  }
-  
-  return parse_g92_energy(estring_);
-}
-
-int
-Gaussian92::run_gradient()
-{
-  if (run_g92(gmethod_) < 0) {
-    fprintf(stderr,"Gaussian92::run_gradient: run_g92 did not succeed\n");
-    return -1;
-  }
-  
-  return parse_g92_gradient(estring_);
-}
-
-int
-Gaussian92::run_hessian()
-{
-  if (run_g92(hmethod_) < 0) {
-    fprintf(stderr,"Gaussian92::run_hessian: run_g92 did not succeed\n");
-    return -1;
-  }
-  
-  return parse_g92_hessian(estring_);
 }

@@ -1,8 +1,6 @@
 
 #include "g92.h"
 
-////////////////////////////////////////////////////////////////////////////
-
 #define CLASSNAME Gaussian92UHF
 #define PARENTS public Gaussian92
 #define HAVE_KEYVAL_CTOR
@@ -17,13 +15,38 @@ Gaussian92UHF::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
-void
-Gaussian92UHF::init()
+char *
+Gaussian92UHF::emethod()
 {
-  estring_ = "E(UHF)";
-  emethod_ = "#p units=au SCF=DIRECT UHF";
-  gmethod_ = "#p units=au Force SCF=DIRECT UHF";
-  hmethod_ = "#p units=au Freq SCF=DIRECT UHF";
+  static char method[32];
+  int conv = (int) -log10(desired_value_accuracy());
+
+  sprintf(method,"uhf scf=(direct,conv=%d)",conv);
+
+  return method;
+}
+
+char *
+Gaussian92UHF::gmethod()
+{
+  static char method[36];
+  int conv = (int) -log10(desired_value_accuracy());
+  
+  sprintf(method,"uhf force scf=(direct,conv=%d)",conv);
+
+  return method;
+}
+
+char *
+Gaussian92UHF::hmethod()
+{
+  static char method[48];
+  int conv = (int) -log10(desired_value_accuracy());
+  int hconv = (int) -log10(desired_hessian_accuracy());
+  
+  sprintf(method,"uhf freq scf=(direct,conv=%d) cphf=conv=%d",conv,hconv);
+
+  return method;
 }
 
 Gaussian92UHF::Gaussian92UHF(const RefKeyVal&keyval):
@@ -33,7 +56,6 @@ Gaussian92UHF::Gaussian92UHF(const RefKeyVal&keyval):
     fprintf(stderr,"Gaussian92UHF needs a basis\n");
     abort();
   }
-  init();
 }
 
 Gaussian92UHF::~Gaussian92UHF()
@@ -44,7 +66,6 @@ Gaussian92UHF::Gaussian92UHF(StateIn&s) :
   Gaussian92(s)
   maybe_SavableState(s)
 {
-  init();
 }
 
 void

@@ -7,7 +7,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 INCLUDE += -I. -I$(SRCDIR)
 CXXINCLUDE += -I. -I$(SRCDIR)
 
-IDL = idl -h .h -s serv.cc -c clnt.cc
+IDL = idl -h .h -s S.cc -c C.cc
 
 ITCLT           = -lITclt
 IRCLT           = -lIRclt
@@ -22,34 +22,68 @@ CXXINCLUDE += $(ORBINCLUDE)
 ORBSERVERLIBS = $(ORBLIBDIR) $(ITSRV)
 ORBCLIENTLIBS = $(ORBLIBDIR) $(ITCLT)
 
-SERVEROBJ = server.o moleserv.o molei.o
-CLIENTOBJ = client.o moleclnt.o
+INC = energyi.h keyvali.h
 
-INC = molei.h
-GENINC = mole.h
-GENSRC = moleserv.cc moleclnt.cc
+KEYVALGENINC = keyval.h
+KEYVALSERVGENSRC = keyvalS.cc
+KEYVALCLNTGENSRC = keyvalC.cc
+KEYVALSERVSRC = keyvali.cc $(KEYVALSERVGENSRC)
+KEYVALCLNTSRC = $(KEYVALCLNTGENSRC)
 
+ENERGYGENINC = energy.h
+ENERGYSERVGENSRC = energyS.cc
+ENERGYCLNTGENSRC = energyC.cc
+ENERGYSERVSRC = energyi.cc $(ENERGYSERVGENSRC)
+ENERGYCLNTSRC = $(ENERGYCLNTGENSRC)
+
+MOLECULEGENINC = molecule.h
+MOLECULESERVGENSRC = moleculeS.cc
+MOLECULECLNTGENSRC = moleculeC.cc
+MOLECULESERVSRC = moleculei.cc $(MOLECULESERVGENSRC)
+MOLECULECLNTSRC = $(MOLECULECLNTGENSRC)
+
+CHEMSERVSRC = chemserv.cc $(ENERGYSERVSRC) $(MOLECULESERVSRC) $(KEYVALSERVSRC)
+CHEMCLNTSRC = chemclnt.cc $(ENERGYCLNTSRC) $(MOLECULECLNTSRC) $(KEYVALCLNTSRC)
+CHEMSERVOBJ = $(CHEMSERVSRC:%.cc=%.o)
+CHEMCLNTOBJ = $(CHEMCLNTSRC:%.cc=%.o)
+
+GENSRC = $(KEYVALSERVGENSRC) $(KEYVALCLNTGENSRC) \
+         $(ENERGYSERVGENSRC) $(ENERGYCLNTGENSRC) \
+         $(MOLECULESERVGENSRC) $(MOLECULECLNTGENSRC)
+GENINC = $(KEYVALGENINC) $(ENERGYGENINC) $(MOLECULEGENINC)
 DEPENDINCLUDE = $(INC) $(GENINC)
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
 .PHONY: default
-default:: moleserv moleclnt
+default:: chemserv chemclnt
 
-moleserv: $(SERVEROBJ) $(LIBS)
+chemserv: $(CHEMSERVOBJ) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(SYSLIBS) $(ORBSERVERLIBS)
 
-moleclnt: $(CLIENTOBJ)
+chemclnt: $(CHEMCLNTOBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(ORBCLIENTLIBS)
 
 %.o: %.C
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-moleclnt.cc moleserv.cc mole.h: mole.idl
-	$(IDL) -B $^
+energyC.cc energyS.cc energy.h: energy.idl
+	/bin/rm -f energyC.cc energyS.cc energy.h
+	/bin/rm -f energyC.c++ energyS.c++
+	$(IDL) $(CXXINCLUDE) -B $^
+
+keyvalC.cc keyvalS.cc keyval.h: keyval.idl
+	/bin/rm -f keyvalS.cc keyvalC.cc keyval.h
+	/bin/rm -f keyvalS.c++ keyvalC.c++
+	$(IDL) $(CXXINCLUDE) -B $^
+
+moleculeC.cc moleculeS.cc molecule.h: molecule.idl
+	/bin/rm -f moleculeS.cc moleculeC.cc molecule.h
+	/bin/rm -f moleculeS.c++ moleculeC.c++
+	$(IDL) $(CXXINCLUDE) -B $^
 
 oclean::
-	/bin/rm -f moleserv moleclnt
+	/bin/rm -f chemserv chemclnt
 
 distclean::
 	/bin/rm -f $(GENINC) $(GENSRC)
@@ -57,9 +91,14 @@ distclean::
 
 #################################################################
 
+include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
+
+#################################################################
+
 default:: $(DEPENDINCLUDE)
 
-$(CLIENTOBJ:.o=.d) $(SERVEROBJ:.o=.d): $(DEPENDINCLUDE)
+DEPENDOBJ = $(CHEMSERVOBJ) $(CHEMCLNTOBJ)
+$(DEPENDOBJ): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(CLIENTOBJ:.o=.d) $(BINOBJ:.o=.d)
+include $(DEPENDOBJ:.o=.d)
 endif

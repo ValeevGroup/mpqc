@@ -1,0 +1,4 @@
+
+interface C_KeyValCreatable {
+  void keyval_create(in string arg);
+};

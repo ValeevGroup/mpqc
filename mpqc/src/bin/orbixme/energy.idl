@@ -1,0 +1,6 @@
+
+#include <keyval.idl>
+
+interface C_MolecularEnergy : C_KeyValCreatable {
+  double energy();
+};

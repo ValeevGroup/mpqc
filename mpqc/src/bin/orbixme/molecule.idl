@@ -1,0 +1,11 @@
+
+#include <keyval.idl>
+
+interface C_Molecule : C_KeyValCreatable {
+  long natom();
+  //int atomic_number(in int atomnum);
+  //int x(in int atomnum);
+  //int y(in int atomnum);
+  //int z(in int atomnum);
+  //double r(in int atom1, in int atom2);
+};

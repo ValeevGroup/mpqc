@@ -1,6 +1,9 @@
 
 #ifndef _KeyVal_h
 #define _KeyVal_h
+#ifdef __GNUG__
+#pragma interface
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

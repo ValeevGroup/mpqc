@@ -1,3 +1,6 @@
+#ifdef __GNUG__
+#pragma implementation
+#endif
 
 extern "C" {
 #include <stdio.h>

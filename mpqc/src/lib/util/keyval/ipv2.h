@@ -1,6 +1,9 @@
 
 #ifndef _util_keyval_ipv2_ipv2_h
 #define _util_keyval_ipv2_ipv2_h
+#ifdef __GNUG__
+#pragma interface
+#endif
 
 #include <stdio.h>
 

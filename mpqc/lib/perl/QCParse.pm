@@ -2,9 +2,12 @@
 eval 'exec perl $0 $*'
     if 0;
 
+require Molecule;
+
 ##########################################################################
 
 package QCParse;
+$debug = 0;
 
 sub testparse {
     my $parse = new QCParse;
@@ -114,6 +117,20 @@ sub parse_file {
     $self->parse_string($string);
 }
 
+sub write_file {
+    my $self = shift;
+    my $file = shift;
+    my $keyval = $self->{'keyval'};
+    my @keys = keys(%$keyval);
+    open(OUTPUT, ">$file");
+    foreach $key (@keys) {
+        my $value = $keyval->{$key};
+        print OUTPUT "${key}:\n";
+        print OUTPUT "$value\n";
+    }
+    close(OUTPUT);
+}
+
 sub parse_string {
     my $self = shift;
     my $string = shift;
@@ -147,6 +164,7 @@ sub add {
     my $value = shift;
     if ($keyword ne "") {
         $self->{'keyval'}{$keyword} = $value;
+        printf("%s = %s\n", $keyword, $value) if ($debug);
     }
 }
 
@@ -255,23 +273,7 @@ sub initialize {
     $self->{"parser"} = $parser;
     $self->{"error"} = "";
 
-    # parse the molecule information
-    $self->{"position"} = [];
-    $self->{"element"} = [];
-    my @molecule = $parser->value_as_array("molecule");
-    my $i = 0;
-    while ($#molecule >= 0) {
-        my $sym = shift @molecule;
-        my $x = shift @molecule;
-        my $y = shift @molecule;
-        my $z = shift @molecule;
-        $self->{"element"}[$i] = $sym;
-        $self->{"position"}[$i] = [ $x, $y, $z ];
-        $i++;
-    }
-    $self->{"natom"} = $i;
-
-    print "QCInput: initialize: natom = $i\n" if ($debug);
+    $self->{"molecule"} = new Molecule($parser->value("molecule"));
 }
 
 sub error {
@@ -373,6 +375,28 @@ sub gradient {
     $bval;
 }
 
+sub fzc {
+    my $self = shift;
+    $_ = $self->{"parser"}->value("fzc");
+    s/^\s+//;
+    s/\s+$//;
+    if ($_ eq "") {
+        $_ = 0;
+    }
+    $_;
+}
+
+sub fzv {
+    my $self = shift;
+    $_ = $self->{"parser"}->value("fzv");
+    s/^\s+//;
+    s/\s+$//;
+    if ($_ eq "") {
+        $_ = 0;
+    }
+    $_;
+}
+
 sub optimize {
     my $self = shift;
     my $bval = $self->{"parser"}->boolean_value("optimize");
@@ -395,26 +419,35 @@ sub frequencies {
 
 sub axyz_lines {
     my $self = shift;
-    $self->{"parser"}->value("molecule");
+    $self->molecule()->string();
+}
+
+sub molecule() {
+    my $self = shift;
+    return $self->{"molecule"};
 }
 
 sub n_atom {
     my $self = shift;
     printf "QCInput: returning natom = %d\n", $self->{"natom"} if ($debug);
-    $self->{"natom"};
+    $self->molecule()->n_atom();
 }
 
 sub element {
     my $self = shift;
-    my $i = shift;
-    $self->{"element"}[$i];
+    $self->molecule()->element(@_);
 }
 
 sub position {
     my $self = shift;
-    my $i = shift;
-    my $xyz = shift;
-    $self->{"position"}[$i][$xyz];
+    $self->molecule()->position(@_);
+}
+
+sub write_file {
+    my $self = shift;
+    my $file = shift;
+    my $parser = $self->{'parser'};
+    $parser->write_file($file);
 }
 
 ##########################################################################
@@ -449,6 +482,13 @@ sub write_input() {
     open(OUTPUT,">$file");
     printf OUTPUT "%s", $input;
     close(OUTPUT);
+}
+
+sub write_qcinput {
+    my $self = shift;
+    my $file = shift;
+    my $qcinput = $self->{'qcinput'};
+    $qcinput->write_file($file);
 }
 
 ##########################################################################
@@ -506,6 +546,9 @@ sub input_string() {
     my $basis = "% basis set specification";
     $basis = "$basis\nbasis<GaussianBasisSet>: (";
     $basis = sprintf "%s\n  name = \"%s\"", $basis, $qcinput->basis();
+    my $puream = "yes";
+    $puream = "no" if ($qcinput->basis() eq "6-31G*");
+    $basis = "$basis\n  puream = $puream";
     $basis = "$basis\n  molecule = \$:molecule";
     $basis = "$basis\n)\n";
 
@@ -540,6 +583,10 @@ sub input_string() {
     $mole = "$mole\n    basis = \$:basis";
     $mole = "$mole\n    coor = \$..:coor";
     if ($method eq "MBPT2") {
+        my $fzc = $qcinput->fzc();
+        my $fzv = $qcinput->fzv();
+        $mole = "$mole\n    nfzc = $fzc";
+        $mole = "$mole\n    nfzv = $fzv";
         my $refmethod = "";
         if ($qcinput->mult() == 1) {
             $refmethod = "CLSCF";
@@ -619,10 +666,20 @@ sub input_string() {
     my $self = shift;
     my $qcinput = $self->{"qcinput"};
     my $qcparse = $qcinput->{"parser"};
+    my $extra = "";
 
-    my $route = sprintf("# %s/%s",
-                        $methodmap{$qcinput->method()},
-                        $qcinput->basis());
+    my $method = $methodmap{$qcinput->method()};
+    my $basis = $qcinput->basis();
+    if ($method eq "MP2") {
+        my $window = "full";
+        if ($qcinput->fzc() != 0 || $qcinput->fzv() != 0) {
+            $window = "rw";
+            $extra = sprintf("\n%s %d %d", $extra,
+                             $qcinput->fzc()+1, - $qcinput->fzv());
+        }
+        $method = "$method($window)";
+    }
+    my $route = sprintf("# %s/%s", $method, $basis);
     if ($qcinput->optimize()) { $route = "$route opt" }
     if ($qcinput->frequencies()) { $route = "$route freq" }
 
@@ -633,7 +690,7 @@ sub input_string() {
 
     my $mol = $qcinput->axyz_lines();
 
-    my $com = "$route\n\n$label\n\n$chargemult\n$mol\n\n";
+    my $com = "$route\n\n$label\n\n$chargemult\n$mol$extra\n\n";
 
     $com;
 }

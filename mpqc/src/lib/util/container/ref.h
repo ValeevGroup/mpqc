@@ -34,7 +34,7 @@ class  Ref ## T  {							      \
     T* pointer();							      \
     const T* pointer() const;						      \
     operator T*();							      \
-    const operator T*() const;						      \
+    operator const T*() const;						      \
     T& operator *();							      \
     const T& operator *() const;					      \
     Ref ## T ();							      \
@@ -67,7 +67,7 @@ const T* Ref ## T :: operator->() const { return p; }			      \
 T* Ref ## T :: pointer() { return p; }					      \
 const T* Ref ## T :: pointer() const { return p; }			      \
 Ref ## T :: operator T*() { return p; };				      \
-Ref ## T :: const operator T*() const { return p; };			      \
+Ref ## T :: operator const T*() const { return p; };			      \
 T& Ref ## T :: operator *() { return *p; };				      \
 const T& Ref ## T :: operator *() const { return *p; };			      \
 int Ref ## T :: null() { return p == 0; }				      \
@@ -146,7 +146,7 @@ void Ref ## T :: check_pointer()					      \
       warn("Ref" # T ": bad reference count in referenced object\n");	      \
     }									      \
 }									      \
-void Ref ## T :: ref_info(FILE*fp=stdout)				      \
+void Ref ## T :: ref_info(FILE*fp)					      \
 {									      \
   if (nonnull()) fprintf(fp,"nreference() = %d\n",p->nreference());	      \
   else fprintf(fp,"reference is null\n");				      \

@@ -94,19 +94,19 @@ static DVector intco,oldintco;
 static DVector idisp,oldidisp;
 
 static int internal_forces(DMatrix&,Molecule&,double_matrix_t*);
-static int update_hessian();
+static int update_hessian(RefKeyVal);
 static int cartesian_disp(DMatrix&);
 static void gdiis_disp();
-static void guess_hessian(SimpleCoList*);
-static int get_symmco();
+static void guess_hessian(RefSimpleCoList,RefKeyVal);
+static int get_symmco(RefKeyVal);
 static DMatrix gen_inverse(DMatrix&);
-static void get_input();
-static int setup_cart(centers_t *cs);
+static void get_input(RefKeyVal);
+static int setup_cart(centers_t *cs,RefKeyVal);
 
 /////////////////////////////////////////////////////////////////
 
 int
-Geom_init_mpqc(FILE *out, FILE *err, centers_t *cs)
+Geom_init_mpqc(FILE *out, FILE *err, centers_t *cs, RefKeyVal keyval)
 {
   int i;
 
@@ -123,9 +123,9 @@ Geom_init_mpqc(FILE *out, FILE *err, centers_t *cs)
   if(out) outfp=out;
   if(err) errfp=err;
 
-  get_input();
+  get_input(keyval);
 
-  if (cartesians) return setup_cart(cs);
+  if (cartesians) return setup_cart(cs,keyval);
 
  // if geom.dat exists, then read in all of the hooey stored there,
  // otherwise read intco stuff from mpqc.in
@@ -133,17 +133,12 @@ Geom_init_mpqc(FILE *out, FILE *err, centers_t *cs)
   struct stat buf;
 
   if(stat("geom.dat",&buf) < 0 || buf.st_size==0) {
-    //StateOutBinXDR so("geom.dat","w+");
     STATEOUT so("geom.dat","w+");
 
    // ok, first let's create the molecule object using the coords in centers
-    ParsedKeyVal rawin("mpqc.in");
-    PrefixKeyVal pref1(":intco",rawin);
-    PrefixKeyVal pref2(":default",rawin);
-    AggregateKeyVal keyval(pref1,pref2);
 
     for (i=0; i < centers->n; i++) {
-      char* label = keyval.pcharvalue("atom_labels",i);
+      char* label = keyval->pcharvalue("atom_labels",i);
       AtomicCenter ac(centers->center[i].atom,
 		      centers->center[i].r[0],
 		      centers->center[i].r[1],
@@ -155,7 +150,7 @@ Geom_init_mpqc(FILE *out, FILE *err, centers_t *cs)
       }
 
    // now that we have a geometry, let's make the list of symm coordinates
-    if(get_symmco() < 0) {
+    if(get_symmco(keyval) < 0) {
       err_msg("Geom_init_mpqc: yikes!  can't make symm coords");
       return GEOM_ABORT;
       }
@@ -179,22 +174,13 @@ Geom_init_mpqc(FILE *out, FILE *err, centers_t *cs)
   // save it all to disk
     so.put(iter);
     symm_coords->save_state(so);
-printf("put coords\n");
-mol.print(stdout);
-printf("printed mol\n");
     mol.save_object_state(so);
-printf("put mol\n");
     intco.save_object_state(so);
-printf("put intco\n");
     iforce.save_object_state(so);
-printf("put iforce\n");
     idisp.save_object_state(so);
-printf("put idisp\n");
     hessian.save_object_state(so);
-printf("put hess\n");
     }
   else {
-    //StateInBinXDR si("geom.dat","r+");
     STATEIN si("geom.dat","r+");
 
     si.get(iter);
@@ -225,34 +211,29 @@ printf("put hess\n");
   }
 
 void
-Geom_done_mpqc()
+Geom_done_mpqc(RefKeyVal keyval)
 {
   symm_coords = 0;
 
-  SimpleCoList * list = Geom_form_simples(mol);
-
-  ParsedKeyVal rawin("mpqc.in");
-  PrefixKeyVal pref1(":intco",rawin);
-  PrefixKeyVal pref2(":default",rawin);
-  AggregateKeyVal keyval(pref1,pref2);
+  RefSimpleCoList list = Geom_form_simples(mol);
 
   int nadd;
-  if(nadd=keyval.count("add_simp")) {
+  if(nadd=keyval->count("add_simp")) {
     for(int i=0; i < nadd; i++) {
-      char *val = keyval.pcharvalue("add_simp",i,0);
+      char *val = keyval->pcharvalue("add_simp",i,0);
 
       if (!strcmp("stre",val))
-        list->add(new Stre(&keyval,"add_simp",i));
+        list->add(new Stre(keyval.pointer(),"add_simp",i));
       else if (!strcmp("bend",val))
-        list->add(new Bend(&keyval,"add_simp",i));
+        list->add(new Bend(keyval.pointer(),"add_simp",i));
       else if (!strcmp("tors",val))
-        list->add(new Tors(&keyval,"add_simp",i));
+        list->add(new Tors(keyval.pointer(),"add_simp",i));
       else if (!strcmp("out",val))
-        list->add(new Out(&keyval,"add_simp",i));
+        list->add(new Out(keyval.pointer(),"add_simp",i));
       else if (!strcmp("linip",val))
-        list->add(new LinIP(&keyval,"add_simp",i));
+        list->add(new LinIP(keyval.pointer(),"add_simp",i));
       else if (!strcmp("linop",val))
-        list->add(new LinOP(&keyval,"add_simp",i));
+        list->add(new LinOP(keyval.pointer(),"add_simp",i));
       delete[] val;
       }
     }
@@ -261,61 +242,54 @@ Geom_done_mpqc()
 
   fprintf(outfp,"\n  Final internal coordinates\n");
   Geom_print_pretty(list);
-  delete list;
 }
 
 static void
-get_input()
+get_input(RefKeyVal keyval)
 {
- // first let's screw up the input
-  ParsedKeyVal rawin("mpqc.in");
-  PrefixKeyVal pref1(":intco",rawin);
-  PrefixKeyVal pref2(":default",rawin);
-  AggregateKeyVal keyval(pref1,pref2);
-
-  if (keyval.exists("convergence")) {
-    int conv = keyval.intvalue("convergence");
+  if (keyval->exists("convergence")) {
+    int conv = keyval->intvalue("convergence");
     conv_crit = pow(10.0,(double)-conv);
     }
 
-  if (keyval.exists("maxstepsize")) {
-    maxstepsize = keyval.doublevalue("maxstepsize");
+  if (keyval->exists("maxstepsize")) {
+    maxstepsize = keyval->doublevalue("maxstepsize");
     }
 
-  if (keyval.exists("cartesians")) {
-    cartesians = keyval.booleanvalue("cartesians");
+  if (keyval->exists("cartesians")) {
+    cartesians = keyval->booleanvalue("cartesians");
     }
 
-  if (keyval.exists("update_hessian")) {
-    update_hess = keyval.booleanvalue("update_hessian");
+  if (keyval->exists("update_hessian")) {
+    update_hess = keyval->booleanvalue("update_hessian");
     }
 
-  if (keyval.exists("maxstep")) {
-    maxstep = keyval.intvalue("maxstep");
+  if (keyval->exists("maxstep")) {
+    maxstep = keyval->intvalue("maxstep");
     }
 
-  if (keyval.exists("recalc_bmat")) {
-    recalc_bmat = keyval.booleanvalue("recalc_bmat");
+  if (keyval->exists("recalc_bmat")) {
+    recalc_bmat = keyval->booleanvalue("recalc_bmat");
     }
 
-  if (keyval.exists("recalc_hessian")) {
-    recalc_hess = keyval.booleanvalue("recalc_hessian");
+  if (keyval->exists("recalc_hessian")) {
+    recalc_hess = keyval->booleanvalue("recalc_hessian");
     }
 
-  if (keyval.exists("ngdiis")) {
-    ngdiis = keyval.intvalue("ngdiis");
+  if (keyval->exists("ngdiis")) {
+    ngdiis = keyval->intvalue("ngdiis");
     }
 
-  if (keyval.exists("use_gdiis")) {
-    use_gdiis = keyval.booleanvalue("use_gdiis");
+  if (keyval->exists("use_gdiis")) {
+    use_gdiis = keyval->booleanvalue("use_gdiis");
     }
 
-  if (keyval.exists("gdiis_begin")) {
-    int tmp = keyval.intvalue("gdiis_begin");
+  if (keyval->exists("gdiis_begin")) {
+    int tmp = keyval->intvalue("gdiis_begin");
     gdiis_begin = pow(10.0,(double)-tmp);
     }
 
-  redundant = keyval.booleanvalue("redundant");
+  redundant = keyval->booleanvalue("redundant");
   if (redundant > 0) justa1=0;
 
   fprintf(outfp,"\n  intco:use_gdiis      = %d\n",use_gdiis);
@@ -332,49 +306,43 @@ get_input()
 }
 
 static int
-get_symmco()
+get_symmco(RefKeyVal keyval)
 {
   static int firsttime=1;
 
- // first let's screw up the input
-  ParsedKeyVal rawin("mpqc.in");
-  PrefixKeyVal pref1(":intco",rawin);
-  PrefixKeyVal pref2(":default",rawin);
-  AggregateKeyVal keyval(pref1,pref2);
-
-  SimpleCoList *list=0;
+  RefSimpleCoList list;
 
  // if the simples are defined in the input, read them, otherwise generate
  // them based on the geometry
 
-  if(keyval.count("simp"))
-    list = Geom_read_simples(&keyval);
+  if(keyval->count("simp"))
+    list = Geom_read_simples(keyval.pointer());
   else
     list = Geom_form_simples(mol);
 
   int nadd;
-  if(nadd=keyval.count("add_simp")) {
+  if(nadd=keyval->count("add_simp")) {
     for(int i=0; i < nadd; i++) {
-      char *val = keyval.pcharvalue("add_simp",i,0);
+      char *val = keyval->pcharvalue("add_simp",i,0);
 
       if (!strcmp("stre",val))
-        list->add(new Stre(&keyval,"add_simp",i));
+        list->add(new Stre(keyval.pointer(),"add_simp",i));
       else if (!strcmp("bend",val))
-        list->add(new Bend(&keyval,"add_simp",i));
+        list->add(new Bend(keyval.pointer(),"add_simp",i));
       else if (!strcmp("tors",val))
-        list->add(new Tors(&keyval,"add_simp",i));
+        list->add(new Tors(keyval.pointer(),"add_simp",i));
       else if (!strcmp("out",val))
-        list->add(new Out(&keyval,"add_simp",i));
+        list->add(new Out(keyval.pointer(),"add_simp",i));
       else if (!strcmp("linip",val))
-        list->add(new LinIP(&keyval,"add_simp",i));
+        list->add(new LinIP(keyval.pointer(),"add_simp",i));
       else if (!strcmp("linop",val))
-        list->add(new LinOP(&keyval,"add_simp",i));
+        list->add(new LinOP(keyval.pointer(),"add_simp",i));
       delete[] val;
       }
     }
 
-  if(keyval.count("symm")) {
-    symm_coords = Geom_read_symm(&keyval,"symm",list);
+  if(keyval->count("symm")) {
+    symm_coords = Geom_read_symm(keyval.pointer(),"symm",list);
     if(!redundant) symm_coords = Geom_form_symm(mol,symm_coords,justa1);
     }
   else if(redundant)
@@ -388,13 +356,13 @@ get_symmco()
     }
 
   int csize;
-  if ((csize=keyval.count("chessian"))) {
+  if ((csize=keyval->count("chessian"))) {
     csize = (int) sqrt((double)csize);
     DMatrix chessian(csize,csize);
     int ij=0;
     for (int i=0; i < csize; i++)
       for (int j=0; j < csize; j++,ij++)
-        chessian(i,j) = keyval.doublevalue("chessian",ij);
+        chessian(i,j) = keyval->doublevalue("chessian",ij);
 
     chessian *= 4.359813653/(0.52917706*0.52917706);
 
@@ -414,7 +382,7 @@ get_symmco()
     hessian = p * gen_inverse(p*hessian*p) * p;
     }
   else
-    guess_hessian(list);
+    guess_hessian(list,keyval);
 
   if(list) {
     if(firsttime) {
@@ -423,7 +391,6 @@ get_symmco()
       Geom_print_pretty(list);
       firsttime=0;
       }
-    delete list;
     }
 
   fprintf(outfp,"\n  in get_symmco:  %d symmetrized internal coordinates\n",
@@ -433,7 +400,8 @@ get_symmco()
   }
 
 int
-Geom_update_mpqc(double energy, double_matrix_t *grad, double_matrix_t *hess)
+Geom_update_mpqc(double energy, double_matrix_t *grad, double_matrix_t *hess,
+                 RefKeyVal keyval)
 {
 
   oldiforce = iforce;
@@ -480,7 +448,7 @@ Geom_update_mpqc(double energy, double_matrix_t *grad, double_matrix_t *hess)
     }
 
   if (update_hess)
-    update_hessian();
+    update_hessian(keyval);
 
   if (use_gdiis) {
     gdiis_disp();
@@ -515,7 +483,6 @@ Geom_update_mpqc(double energy, double_matrix_t *grad, double_matrix_t *hess)
       
   if (!cartesians && cartesian_disp(bmat) < 0) {
     fprintf(outfp,"\n could not update geometry, saving state and exiting\n");
-    //StateOutBinXDR so("geom.dat");
     STATEOUT so("geom.dat");
     so.put(iter);
     symm_coords->save_state(so);
@@ -542,7 +509,6 @@ Geom_update_mpqc(double energy, double_matrix_t *grad, double_matrix_t *hess)
     mol.print(outfp);
     }
 
-  //StateOutBinXDR so("geom.dat");
   STATEOUT so("geom.dat");
 
   iter++;
@@ -594,7 +560,7 @@ internal_forces(DMatrix& bmat, Molecule& m, double_matrix_t *grad)
   }
 
 static int
-update_hessian()
+update_hessian(RefKeyVal keyval)
 {
   if(iter==1) return 0;
 
@@ -608,9 +574,9 @@ update_hessian()
              alpha*(oldidisp.ccross(v) + v.ccross(oldidisp));
     }
   else {
-    SimpleCoList *list = Geom_form_simples(mol);
+    RefSimpleCoList list = Geom_form_simples(mol);
     Geom_calc_simples(list,mol);
-    guess_hessian(list);
+    guess_hessian(list,keyval);
     fprintf(outfp," recalc hessian\n");
     }
 
@@ -699,9 +665,14 @@ Foo:
 
     rmsdisp += dx*dx + dy*dy + dz*dz;
 
-    maxdisp = (dx > maxdisp) ? dx : maxdisp;
-    maxdisp = (dy > maxdisp) ? dy : maxdisp;
-    maxdisp = (dz > maxdisp) ? dz : maxdisp;
+   // exercises a gcc 2.4.5 compiler bug
+   // maxdisp = (dx > maxdisp) ? dx : maxdisp;
+   // maxdisp = (dy > maxdisp) ? dy : maxdisp;
+   // maxdisp = (dz > maxdisp) ? dz : maxdisp;
+
+    if (dx > maxdisp) maxdisp = dx;
+    if (dy > maxdisp) maxdisp = dy;
+    if (dz > maxdisp) maxdisp = dz;
     }
   rmsdisp = sqrt(rmsdisp/(mol.natom()*3));
 
@@ -804,15 +775,11 @@ gdiis_disp()
   }
 
 static void
-guess_hessian(SimpleCoList *list)
+guess_hessian(RefSimpleCoList list,RefKeyVal keyval)
 {
-  ParsedKeyVal rawin("mpqc.in");
-  PrefixKeyVal pref1(":intco",rawin);
-  PrefixKeyVal pref2(":default",rawin);
-  AggregateKeyVal keyval(pref1,pref2);
 
  // see if there is a hessian in the input
-  int size= keyval.count("hessian");
+  int size= keyval->count("hessian");
 
   if(size==0 || size != hessian.nrow()*(hessian.nrow()+1)/2) {
     hessian = Geom_form_hessian(mol,list,symm_coords);
@@ -821,7 +788,7 @@ guess_hessian(SimpleCoList *list)
     int i,j,ij;
     for(i=ij=0; i < hessian.nrow(); i++)
       for(j=0; j <= i; j++,ij++)
-        hessian(i,j) = hessian(j,i) = keyval.doublevalue("hessian",ij);
+        hessian(i,j) = hessian(j,i) = keyval->doublevalue("hessian",ij);
     }
 
   DMatrix bmat = Geom_make_bmat(symm_coords,mol);
@@ -852,18 +819,14 @@ gen_inverse(DMatrix& mat)
 
 
 static int
-setup_cart(centers_t *cs)
+setup_cart(centers_t *cs,RefKeyVal keyval)
 {
   int i,j;
 
  // ok, first let's create the molecule object using the coords in centers
-  ParsedKeyVal rawin("mpqc.in");
-  PrefixKeyVal pref1(":intco",rawin);
-  PrefixKeyVal pref2(":default",rawin);
-  AggregateKeyVal keyval(pref1,pref2);
 
   for (i=0; i < centers->n; i++) {
-    char* label = keyval.pcharvalue("atom_labels",i);
+    char* label = keyval->pcharvalue("atom_labels",i);
     AtomicCenter ac(centers->center[i].atom,
                     centers->center[i].r[0],
                     centers->center[i].r[1],
@@ -875,15 +838,13 @@ setup_cart(centers_t *cs)
     }
 
  // form simple diagonal hessian, and transform to cartesian coords
-  SimpleCoList*  list = Geom_form_simples(mol);
+  RefSimpleCoList  list = Geom_form_simples(mol);
 
   DMatrix ihessian = Geom_form_hessian(mol,list);
-  SymmCoList* slist = Geom_symm_from_simple(list);
+  RefSymmCoList slist = Geom_symm_from_simple(list);
   DMatrix bmat = Geom_make_bmat(slist,mol);
 
   DMatrix thessian = bmat.transpose() * ihessian * bmat;
-
-  delete list;
 
  // now remove the 3 translations and 3 rotations and invert the hessian
   int dim=thessian.nrow();

@@ -92,6 +92,9 @@ DIIS::DIIS(const RefKeyVal& keyval):
   start = keyval->intvalue("start");
   if (keyval->error() != KeyVal::OK) start = 1;
 
+  damping_factor = keyval->doublevalue("damping_factor");
+  if (keyval->error() != KeyVal::OK) damping_factor = 0;
+  
   if (ndiis <= 0) {
       fprintf(stderr, "DIIS::DIIS(const RefKeyVal& keyval): got ndiis = 0\n");
       abort();

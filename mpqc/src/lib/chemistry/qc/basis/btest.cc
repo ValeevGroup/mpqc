@@ -40,17 +40,24 @@ test_overlap(const RefGaussianBasisSet& gbs, const RefGaussianBasisSet& gbs2,
   pl->symmetrize(s,sb);
   sb.print("blocked again");
 
-  s=0; sb=0; pl=0;
+  s=0; sb=0;
 
   // now try overlap between two basis sets
-  RefSCMatrix ssq(gbs->basisdim(),gbs2->basisdim(),gbs->matrixkit());
-  intgrl->set_basis(gbs,gbs2);
+  RefSCMatrix ssq(gbs2->basisdim(),gbs->basisdim(),gbs2->matrixkit());
+  intgrl->set_basis(gbs2,gbs);
 
   ov = new OneBodyIntOp(new OneBodyIntIter(intgrl->overlap()));
   ssq.assign(0.0);
   ssq.element_op(ov);
   ssq.print("overlap sq");
   ov=0;
+
+  RefPetiteList pl2 = intgrl->petite_list(gbs2);
+  RefSCMatrix ssqb(pl2->AO_basisdim(), pl->AO_basisdim(), gbs->so_matrixkit());
+  ssqb->convert(ssq);
+
+  RefSCMatrix syms2 = pl2->aotoso().t() * ssqb * pl->aotoso();
+  syms2.print("symm S2");
 }
 
 static void

@@ -402,6 +402,8 @@ water2<SetIntCoor>: [
 @node The SimpleCo Class, The Simple Internal Coordinate Classes, The SetIntCoor Class, The Molecular Coordinate Classes
 @subsection The SimpleCo Class
 
+@include SimpleCo.texi
+
 @menu
 * The SimpleCo Public Interface::  
 * The SimpleCo KeyVal Constructor::  
@@ -410,8 +412,39 @@ water2<SetIntCoor>: [
 @node The SimpleCo Public Interface, The SimpleCo KeyVal Constructor, The SimpleCo Class, The SimpleCo Class
 @subsubsection The SimpleCo Public Interface
 
+@include SimpleCo.pub.texi
+
 @node The SimpleCo KeyVal Constructor,  , The SimpleCo Public Interface, The SimpleCo Class
 @subsubsection The SimpleCo KeyVal Constructor
+
+The @code{SimpleCo} KeyVal constructor is different from most other 
+constructors in that there are two entirely different forms of input that
+it can take.  In the more traditional form, the constructor looks for an
+``atoms'' array.  This is an integer array which contains the indices of the
+atoms which make up the coordinate (with the first atom being number 1, rather
+than 0).  Of course, this constructor first calls the KeyVal constructor 
+for @code{IntCoor} (@ref{The IntCoor KeyVal Constructor}).
+
+The second form is a ``shorthand'' form in which the @code{SimpleCo} is
+an array containing a string label, followed by the atom indices.  This form
+can be more convenient, but it does not allow you to explicitly set the
+``value'' for @code{IntCoor} (@ref{The IntCoor KeyVal Constructor}).
+
+Here is an example of the first format:
+
+@example
+simple<StreSimpleCo>: (
+  label = "o-h2 stretch"
+  atoms = [ 3 2 ]
+)
+@end example
+
+Here is the same coordinate specified the ``shorthand'' way:
+
+@example
+simple<StreSimpleCo>:[ "o-h2 stretch" 3 2 ]
+@end example
+
 
 @c --------------------------------------------------------------------------
 
@@ -432,35 +465,67 @@ water2<SetIntCoor>: [
 @node The StreSimpleCo Class, The BendSimpleCo Class, The Simple Internal Coordinate Classes, The Simple Internal Coordinate Classes
 @subsubsection The StreSimpleCo Class
 
+@include StreSimpleCo.texi
+
+The public interface is:
+@include StreSimpleCo.pub.texi
+
 @c --------------------------------------------------------------------------
 
 @node The BendSimpleCo Class, The TorsSimpleCo Class, The StreSimpleCo Class, The Simple Internal Coordinate Classes
 @subsubsection The BendSimpleCo Class
+
+@include BendSimpleCo.texi
+
+The public interface is:
+@include BendSimpleCo.pub.texi
 
 @c --------------------------------------------------------------------------
 
 @node The TorsSimpleCo Class, The OutSimpleCo Class, The BendSimpleCo Class, The Simple Internal Coordinate Classes
 @subsubsection The TorsSimpleCo Class
 
+@include TorsSimpleCo.texi
+
+The public interface is:
+@include TorsSimpleCo.pub.texi
+
 @c --------------------------------------------------------------------------
 
 @node The OutSimpleCo Class, The LinIPSimpleCo Class, The TorsSimpleCo Class, The Simple Internal Coordinate Classes
 @subsubsection The OutSimpleCo Class
+
+@include OutSimpleCo.texi
+
+The public interface is:
+@include OutSimpleCo.pub.texi
 
 @c --------------------------------------------------------------------------
 
 @node The LinIPSimpleCo Class, The LinOPSimpleCo Class, The OutSimpleCo Class, The Simple Internal Coordinate Classes
 @subsubsection The LinIPSimpleCo Class
 
+@include LinIPSimpleCo.texi
+
+The public interface is:
+@include LinIPSimpleCo.pub.texi
+
 @c --------------------------------------------------------------------------
 
 @node The LinOPSimpleCo Class,  , The LinIPSimpleCo Class, The Simple Internal Coordinate Classes
 @subsubsection The LinOPSimpleCo Class
 
+@include LinOPSimpleCo.texi
+
+The public interface is:
+@include LinOPSimpleCo.pub.texi
+
 @c --------------------------------------------------------------------------
 
 @node The MolecularCoor Class, The IntMolecularCoor Class, The Simple Internal Coordinate Classes, The Molecular Coordinate Classes
 @subsection The MolecularCoor Class
+
+@include MolecularCoor.texi
 
 @menu
 * The MolecularCoor Public Interface::  
@@ -472,6 +537,9 @@ water2<SetIntCoor>: [
 @node The MolecularCoor Public Interface, The MolecularCoor KeyVal Constructor, The MolecularCoor Class, The MolecularCoor Class
 @subsubsection The MolecularCoor Public Interface
 
+The public interface is:
+@include MolecularCoor.pub.texi
+
 @c --------------------------------------------------------------------------
 
 @node The MolecularCoor KeyVal Constructor,  , The MolecularCoor Public Interface, The MolecularCoor Class
@@ -481,6 +549,8 @@ water2<SetIntCoor>: [
 
 @node The IntMolecularCoor Class, The CartMolecularCoor Class, The MolecularCoor Class, The Molecular Coordinate Classes
 @subsection The IntMolecularCoor Class
+
+@include IntMolecularCoor.texi
 
 @menu
 * The IntMolecularCoor Public Interface::  
@@ -493,10 +563,14 @@ water2<SetIntCoor>: [
 @node The IntMolecularCoor Public Interface, The IntMolecularCoor Protected Interface, The IntMolecularCoor Class, The IntMolecularCoor Class
 @subsubsection The IntMolecularCoor Public Interface
 
+@include IntMolecularCoor.pub.texi
+
 @c --------------------------------------------------------------------------
 
 @node The IntMolecularCoor Protected Interface, The IntMolecularCoor KeyVal Constructor, The IntMolecularCoor Public Interface, The IntMolecularCoor Class
 @subsubsection The IntMolecularCoor Protected Interface
+
+@include IntMolecularCoor.pro.texi
 
 @c --------------------------------------------------------------------------
 
@@ -508,25 +582,39 @@ water2<SetIntCoor>: [
 @node The CartMolecularCoor Class, The SymmMolecularCoor Class, The IntMolecularCoor Class, The Molecular Coordinate Classes
 @subsection The CartMolecularCoor Class
 
+@include CartMolecularCoor.texi
+
 @menu
 * The CartMolecularCoor Public Interface::  
+* The CartMolecularCoor Protected Interface::  
 * The CartMolecularCoor KeyVal Constructor::  
 @end menu
 
 @c --------------------------------------------------------------------------
 
-@node The CartMolecularCoor Public Interface, The CartMolecularCoor KeyVal Constructor, The CartMolecularCoor Class, The CartMolecularCoor Class
+@node The CartMolecularCoor Public Interface, The CartMolecularCoor Protected Interface, The CartMolecularCoor Class, The CartMolecularCoor Class
 @subsubsection The CartMolecularCoor Public Interface
+
+@include CartMolecularCoor.pub.texi
 
 @c --------------------------------------------------------------------------
 
-@node The CartMolecularCoor KeyVal Constructor,  , The CartMolecularCoor Public Interface, The CartMolecularCoor Class
+@node The CartMolecularCoor Protected Interface, The CartMolecularCoor KeyVal Constructor, The CartMolecularCoor Public Interface, The CartMolecularCoor Class
+@subsubsection The CartMolecularCoor Protected Interface
+
+@include CartMolecularCoor.pro.texi
+
+@c --------------------------------------------------------------------------
+
+@node The CartMolecularCoor KeyVal Constructor,  , The CartMolecularCoor Protected Interface, The CartMolecularCoor Class
 @subsubsection The CartMolecularCoor KeyVal Constructor
 
 @c --------------------------------------------------------------------------
 
 @node The SymmMolecularCoor Class, The RedundMolecularCoor Class, The CartMolecularCoor Class, The Molecular Coordinate Classes
 @subsection The SymmMolecularCoor Class
+
+@include SymmMolecularCoor.texi
 
 @menu
 * The SymmMolecularCoor Public Interface::  
@@ -538,6 +626,8 @@ water2<SetIntCoor>: [
 @node The SymmMolecularCoor Public Interface, The SymmMolecularCoor KeyVal Constructor, The SymmMolecularCoor Class, The SymmMolecularCoor Class
 @subsubsection The SymmMolecularCoor Public Interface
 
+@include SymmMolecularCoor.pub.texi
+
 @c --------------------------------------------------------------------------
 
 @node The SymmMolecularCoor KeyVal Constructor,  , The SymmMolecularCoor Public Interface, The SymmMolecularCoor Class
@@ -548,15 +638,19 @@ water2<SetIntCoor>: [
 @node The RedundMolecularCoor Class,  , The SymmMolecularCoor Class, The Molecular Coordinate Classes
 @subsection The RedundMolecularCoor Class
 
-@c --------------------------------------------------------------------------
+@include RedundMolecularCoor.texi
 
 @menu
 * The RedundMolecularCoor Public Interface::  
 * The RedundMolecularCoor KeyVal Constructor::  
 @end menu
 
+@c --------------------------------------------------------------------------
+
 @node The RedundMolecularCoor Public Interface, The RedundMolecularCoor KeyVal Constructor, The RedundMolecularCoor Class, The RedundMolecularCoor Class
 @subsubsection The RedundMolecularCoor Public Interface
+
+@include RedundMolecularCoor.pub.texi
 
 @c --------------------------------------------------------------------------
 

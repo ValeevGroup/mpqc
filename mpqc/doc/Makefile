@@ -57,12 +57,28 @@ MOLDOC = Molecule.texi Molecule.pub.texi Molecule.pri.texi
 # from chemistry/molecule/coor.h
 COORDOC = IntCoor.texi IntCoor.pub.texi \
           SumIntCoor.texi SumIntCoor.pub.texi \
-          SetIntCoor.texi SetIntCoor.pub.texi
+          SetIntCoor.texi SetIntCoor.pub.texi \
+          MolecularCoor.texi MolecularCoor.pub.texi \
+          IntMolecularCoor.texi IntMolecularCoor.pro.texi \
+          IntMolecularCoor.pub.texi \
+          SymmMolecularCoor.texi SymmMolecularCoor.pub.texi \
+          RedundMolecularCoor.texi RedundMolecularCoor.pub.texi \
+          CartMolecularCoor.texi CartMolecularCoor.pro.texi \
+          CartMolecularCoor.pub.texi
+
+# from chemistry/molecule/simple.h
+SIMPLEDOC = SimpleCo.texi SimpleCo.pub.texi \
+            StreSimpleCo.texi StreSimpleCo.pub.texi \
+            BendSimpleCo.texi BendSimpleCo.pub.texi \
+            TorsSimpleCo.texi TorsSimpleCo.pub.texi \
+            OutSimpleCo.texi OutSimpleCo.pub.texi \
+            LinIPSimpleCo.texi LinIPSimpleCo.pub.texi \
+            LinOPSimpleCo.texi LinOPSimpleCo.pub.texi
 
 # These are all of texi files used to generate the documentation.
 # The top level document, SC.texi, must be first in the list.
 GENDOC = $(KEYVALDOC) $(MATRIXDOC) $(ABSTRACTDOC) $(SYMMETRYDOC) \
-         $(CHEMEDOC) $(ATOMDOC) $(MOLDOC) $(COORDOC)
+         $(CHEMEDOC) $(ATOMDOC) $(MOLDOC) $(COORDOC) $(SIMPLEDOC)
 
 ALLDOC = $(DOC) $(GENDOC)
 
@@ -129,3 +145,5 @@ $(MOLDOC): $(SRCLIBDIR)/chemistry/molecule/molecule.h
 $(COORDOC): $(SRCLIBDIR)/chemistry/molecule/coor.h
 	$(C2T) $<
 
+$(SIMPLEDOC): $(SRCLIBDIR)/chemistry/molecule/simple.h
+	$(C2T) $<

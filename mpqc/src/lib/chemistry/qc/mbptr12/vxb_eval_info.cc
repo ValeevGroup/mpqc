@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <stdlib.h>
 #include <util/misc/formio.h>
 #include <util/ref/ref.h>
 #include <chemistry/qc/basis/basis.h>
@@ -143,7 +144,10 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put((int)dynamic_);
 }
 
-
+const char* R12IntEvalInfo::ints_file() const
+{
+  return strdup(ints_file_);
+}
 
 /////////////////////////////////////////////////////////////////
 // Function dquicksort performs a quick sort (smaller -> larger) 

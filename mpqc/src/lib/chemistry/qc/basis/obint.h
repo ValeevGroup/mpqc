@@ -229,11 +229,11 @@ class OneBodyIntOp: public SCElementOp {
     OneBodyIntOp(const RefOneBodyIntIter&);
     virtual ~OneBodyIntOp();
   
-    virtual void process(SCMatrixBlockIter&);
-    virtual void process_spec(SCMatrixRectBlock*);
-    virtual void process_spec(SCMatrixLTriBlock*);
-    virtual void process_spec(SCMatrixRectSubBlock*);
-    virtual void process_spec(SCMatrixLTriSubBlock*);
+    void process(SCMatrixBlockIter&);
+    void process_spec_rect(SCMatrixRectBlock*);
+    void process_spec_ltri(SCMatrixLTriBlock*);
+    void process_spec_rectsub(SCMatrixRectSubBlock*);
+    void process_spec_ltrisub(SCMatrixLTriSubBlock*);
 
     int has_side_effects();
 };
@@ -247,15 +247,15 @@ class OneBody3IntOp: public SCElementOp3 {
     OneBody3IntOp(const RefOneBodyIntIter&);
     virtual ~OneBody3IntOp();
   
-    virtual void process(SCMatrixBlockIter&,
-                         SCMatrixBlockIter&,
-                         SCMatrixBlockIter&);
-    virtual void process_spec(SCMatrixRectBlock*,
-                              SCMatrixRectBlock*,
-                              SCMatrixRectBlock*);
-    virtual void process_spec(SCMatrixLTriBlock*,
-                              SCMatrixLTriBlock*,
-                              SCMatrixLTriBlock*);
+    void process(SCMatrixBlockIter&,
+                 SCMatrixBlockIter&,
+                 SCMatrixBlockIter&);
+    void process_spec_rect(SCMatrixRectBlock*,
+                           SCMatrixRectBlock*,
+                           SCMatrixRectBlock*);
+    void process_spec_ltri(SCMatrixLTriBlock*,
+                           SCMatrixLTriBlock*,
+                           SCMatrixLTriBlock*);
 
     int has_side_effects();
     int has_side_effects_in_arg1();

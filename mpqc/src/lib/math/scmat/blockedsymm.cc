@@ -438,6 +438,12 @@ BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
 }
 
 void
+BlockedSymmSCMatrix::accumulate_transform(SymmSCMatrix*a,SymmSCMatrix*b)
+{
+  SymmSCMatrix::accumulate_transform(a,b);
+}
+
+void
 BlockedSymmSCMatrix::element_op(const RefSCElementOp& op)
 {
   BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op.pointer());
@@ -518,7 +524,7 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp3& op,
 }
 
 void
-BlockedSymmSCMatrix::print(const char *title, ostream& os, int prec)
+BlockedSymmSCMatrix::vprint(const char *title, ostream& os, int prec)
 {
   int len = (title) ? strlen(title) : 0;
   char *newtitle = new char[len + 80];

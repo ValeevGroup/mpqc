@@ -7,6 +7,7 @@ extern "C" {
 # include <math.h>
   }
 
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/isosurf/shape.h>
 
@@ -232,10 +233,12 @@ SphereShape::distance_to_surface(const SCVector3&p,SCVector3*grad) const
   return d;
 }
 
-void SphereShape::print(FILE*fp) const
+void SphereShape::print(ostream&o)
 {
-  fprintf(fp,"SphereShape: r = %8.4f o = (%8.4f %8.4f %8.4f)\n",
-          radius(),origin()[0],origin()[1],origin()[2]);
+  o << indent
+    << scprintf("SphereShape: r = %8.4f o = (%8.4f %8.4f %8.4f)",
+                radius(),origin()[0],origin()[1],origin()[2])
+    << endl;
 }
 
 void
@@ -385,14 +388,20 @@ UncappedTorusHoleShape::in_plane_sphere(
 }
 
 void
-UncappedTorusHoleShape::print(FILE*fp) const
+UncappedTorusHoleShape::print(ostream&o)
 {
-  fprintf(fp,"UncappedTorusHoleShape:\n");
-  fprintf(fp,"  r = %8.5f\n",_r);
-  fprintf(fp,"  s1 = ");
-  _s1.print(fp);
-  fprintf(fp,"  s2 = ");
-  _s2.print(fp);
+  o << indent << "UncappedTorusHoleShape:" << endl;
+  o << incindent;
+  o << indent << "r = " << _r << endl;
+  o << indent << "s1 = ";
+  o << incindent << skipnextindent;
+  _s1.print(o);
+  o << decindent;
+  o << indent << "s2 = ";
+  o << incindent << skipnextindent;
+  _s2.print(o);
+  o << decindent;
+  o << decindent;
 }
 
 void

@@ -348,6 +348,24 @@ ReplSymmSCMatrix::assign(double val)
 }
 
 void
+ReplSymmSCMatrix::assign(SymmSCMatrix*m)
+{
+  SymmSCMatrix::assign(m);
+}
+
+void
+ReplSymmSCMatrix::assign(const double*m)
+{
+  SymmSCMatrix::assign(m);
+}
+
+void
+ReplSymmSCMatrix::assign(const double**m)
+{
+  SymmSCMatrix::assign(m);
+}
+
+void
 ReplSymmSCMatrix::accumulate(SymmSCMatrix*a)
 {
   // make sure that the arguments is of the correct type
@@ -568,6 +586,12 @@ ReplSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
   cmat_transform_diagonal_matrix(rows,n(),lb->matrix,lb->n(),la->rows,1);
 }
 
+void
+ReplSymmSCMatrix::accumulate_transform(SymmSCMatrix*a,SymmSCMatrix*b)
+{
+  SymmSCMatrix::accumulate_transform(a,b);
+}
+
 double
 ReplSymmSCMatrix::scalar_product(SCVector*a)
 {
@@ -662,7 +686,7 @@ ReplSymmSCMatrix::element_op(const RefSCElementOp3& op,
 
 // from Ed Seidl at the NIH (with a bit of hacking)
 void
-ReplSymmSCMatrix::print(const char *title, ostream& os, int prec)
+ReplSymmSCMatrix::vprint(const char *title, ostream& os, int prec)
 {
   int ii,jj,kk,nn;
   int i,j;

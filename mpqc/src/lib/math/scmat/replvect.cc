@@ -312,7 +312,7 @@ ReplSCVector::element_op(const RefSCElementOp3& op,
 
 // from Ed Seidl at the NIH (with a bit of hacking)
 void
-ReplSCVector::print(const char *title, ostream& os, int prec)
+ReplSCVector::vprint(const char *title, ostream& os, int prec)
 {
   int i;
   int lwidth;

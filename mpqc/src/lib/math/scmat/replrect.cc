@@ -358,6 +358,24 @@ ReplSCMatrix::assign(double a)
 }
 
 void
+ReplSCMatrix::assign(SCMatrix*m)
+{
+  SCMatrix::assign(m);
+}
+
+void
+ReplSCMatrix::assign(const double*m)
+{
+  SCMatrix::assign(m);
+}
+
+void
+ReplSCMatrix::assign(const double**m)
+{
+  SCMatrix::assign(m);
+}
+
+void
 ReplSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
 {
   const char* name = "ReplSCMatrix::accumulate_product";
@@ -481,6 +499,18 @@ ReplSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
           cd[i][j] += ad[i][j]*bd[j];
         }
     }
+}
+
+void
+ReplSCMatrix::accumulate_product(SymmSCMatrix*a,SCMatrix*b)
+{
+  SCMatrix::accumulate_product(a,b);
+}
+
+void
+ReplSCMatrix::accumulate_product(DiagSCMatrix*a,SCMatrix*b)
+{
+  SCMatrix::accumulate_product(a,b);
 }
 
 void
@@ -805,7 +835,7 @@ ReplSCMatrix::element_op(const RefSCElementOp3& op,
 
 // from Ed Seidl at the NIH
 void
-ReplSCMatrix::print(const char *title, ostream& os, int prec)
+ReplSCMatrix::vprint(const char *title, ostream& os, int prec)
 {
   int ii,jj,kk,nn;
   int i,j;

@@ -77,14 +77,14 @@ class SCElementOp: public SavableState {
     //\clsnm{ElementOp} specializations should override these when
     //efficiency is important, since these give the most efficient access
     //to the elements of the block.
-    virtual void process_spec(SCMatrixRectBlock*);
-    virtual void process_spec(SCMatrixLTriBlock*);
-    virtual void process_spec(SCMatrixDiagBlock*);
-    virtual void process_spec(SCVectorSimpleBlock*);
-    virtual void process_spec(SCMatrixRectSubBlock*);
-    virtual void process_spec(SCMatrixLTriSubBlock*);
-    virtual void process_spec(SCMatrixDiagSubBlock*);
-    virtual void process_spec(SCVectorSimpleSubBlock*);
+    virtual void process_spec_rect(SCMatrixRectBlock*);
+    virtual void process_spec_ltri(SCMatrixLTriBlock*);
+    virtual void process_spec_diag(SCMatrixDiagBlock*);
+    virtual void process_spec_vsimp(SCVectorSimpleBlock*);
+    virtual void process_spec_rectsub(SCMatrixRectSubBlock*);
+    virtual void process_spec_ltrisub(SCMatrixLTriSubBlock*);
+    virtual void process_spec_diagsub(SCMatrixDiagSubBlock*);
+    virtual void process_spec_vsimpsub(SCVectorSimpleSubBlock*);
 };
 DCRef_declare(SCElementOp);
 SSRef_declare(SCElementOp);
@@ -109,10 +109,10 @@ class SCElementOp2: public SavableState {
     virtual void collect(const RefMessageGrp&);
     virtual void process(SCMatrixBlockIter&,SCMatrixBlockIter&) = 0;
     void process_base(SCMatrixBlock*,SCMatrixBlock*);
-    virtual void process_spec(SCMatrixRectBlock*,SCMatrixRectBlock*);
-    virtual void process_spec(SCMatrixLTriBlock*,SCMatrixLTriBlock*);
-    virtual void process_spec(SCMatrixDiagBlock*,SCMatrixDiagBlock*);
-    virtual void process_spec(SCVectorSimpleBlock*,SCVectorSimpleBlock*);
+    virtual void process_spec_rect(SCMatrixRectBlock*,SCMatrixRectBlock*);
+    virtual void process_spec_ltri(SCMatrixLTriBlock*,SCMatrixLTriBlock*);
+    virtual void process_spec_diag(SCMatrixDiagBlock*,SCMatrixDiagBlock*);
+    virtual void process_spec_vsimp(SCVectorSimpleBlock*,SCVectorSimpleBlock*);
 };
 DCRef_declare(SCElementOp2);
 SSRef_declare(SCElementOp2);
@@ -140,18 +140,18 @@ class SCElementOp3: public SavableState {
                          SCMatrixBlockIter&,
                          SCMatrixBlockIter&) = 0;
     void process_base(SCMatrixBlock*,SCMatrixBlock*,SCMatrixBlock*);
-    virtual void process_spec(SCMatrixRectBlock*,
-                              SCMatrixRectBlock*,
-                              SCMatrixRectBlock*);
-    virtual void process_spec(SCMatrixLTriBlock*,
-                              SCMatrixLTriBlock*,
-                              SCMatrixLTriBlock*);
-    virtual void process_spec(SCMatrixDiagBlock*,
-                              SCMatrixDiagBlock*,
-                              SCMatrixDiagBlock*);
-    virtual void process_spec(SCVectorSimpleBlock*,
-                              SCVectorSimpleBlock*,
-                              SCVectorSimpleBlock*);
+    virtual void process_spec_rect(SCMatrixRectBlock*,
+                                   SCMatrixRectBlock*,
+                                   SCMatrixRectBlock*);
+    virtual void process_spec_ltri(SCMatrixLTriBlock*,
+                                   SCMatrixLTriBlock*,
+                                   SCMatrixLTriBlock*);
+    virtual void process_spec_diag(SCMatrixDiagBlock*,
+                                   SCMatrixDiagBlock*,
+                                   SCMatrixDiagBlock*);
+    virtual void process_spec_vsimp(SCVectorSimpleBlock*,
+                                    SCVectorSimpleBlock*,
+                                    SCVectorSimpleBlock*);
 };
 DCRef_declare(SCElementOp3);
 SSRef_declare(SCElementOp3);

@@ -28,8 +28,10 @@ class Volume: public Function {
     ~Volume();
 
     void set_gradient(const SCVector3& g);
+    void set_gradient(RefSCVector& g);
     void get_gradient(SCVector3& g);
     void set_x(const SCVector3& x);
+    void set_x(const RefSCVector& x);
     void get_x(SCVector3& x);
 
     // find the corners of a bounding box which approximately

@@ -133,7 +133,7 @@ LocalDiagSCMatrix::gen_invert_this()
 void
 LocalDiagSCMatrix::element_op(const RefSCElementOp& op)
 {
-  op->process_spec(block.pointer());
+  op->process_spec_diag(block.pointer());
 }
 
 void
@@ -147,7 +147,7 @@ LocalDiagSCMatrix::element_op(const RefSCElementOp2& op,
       cerr << indent << "LocalDiagSCMatrix: bad element_op\n";
       abort();
     }
-  op->process_spec(block.pointer(), lm->block.pointer());
+  op->process_spec_diag(block.pointer(), lm->block.pointer());
 }
 
 void
@@ -163,12 +163,13 @@ LocalDiagSCMatrix::element_op(const RefSCElementOp3& op,
       cerr << indent << "LocalDiagSCMatrix: bad element_op\n";
       abort();
     }
-  op->process_spec(block.pointer(), lm->block.pointer(), ln->block.pointer());
+  op->process_spec_diag(block.pointer(),
+                        lm->block.pointer(), ln->block.pointer());
 }
 
 // from Ed Seidl at the NIH (with a bit of hacking)
 void
-LocalDiagSCMatrix::print(const char *title, ostream& os, int prec)
+LocalDiagSCMatrix::vprint(const char *title, ostream& os, int prec)
 {
   int i;
   int lwidth;

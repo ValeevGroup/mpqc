@@ -128,13 +128,13 @@ class TriangulatedSurface: public DescribedClass {
     virtual double volume();
 
     // output of the surface
-    virtual void print(FILE* = stdout);
-    virtual void print_vertices_and_triangles(FILE* = stdout);
-    virtual void print_geomview_format(FILE*fp = stdout);
+    virtual void print(ostream&o=cout);
+    virtual void print_vertices_and_triangles(ostream&o=cout);
+    virtual void print_geomview_format(ostream&o=cout);
 
     // print information about the topology
-    void topology_info(FILE*f=stdout);
-    void topology_info(int nvertex, int nedge, int ntri, FILE*f=stdout);
+    void topology_info(ostream&o=cout);
+    void topology_info(int nvertex, int nedge, int ntri, ostream&o=cout);
 };
 DescribedClass_REF_dec(TriangulatedSurface);
 

@@ -430,6 +430,30 @@ DistSCMatrix::accumulate_product(SCMatrix*pa,SCMatrix*pb)
 }
 
 void
+DistSCMatrix::accumulate_product(SymmSCMatrix*a,SCMatrix*b)
+{
+  SCMatrix::accumulate_product(a,b);
+}
+
+void
+DistSCMatrix::accumulate_product(DiagSCMatrix*a,SCMatrix*b)
+{
+  SCMatrix::accumulate_product(a,b);
+}
+
+void
+DistSCMatrix::accumulate_product(SCMatrix*a,SymmSCMatrix*b)
+{
+  SCMatrix::accumulate_product(a,b);
+}
+
+void
+DistSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
+{
+  SCMatrix::accumulate_product(a,b);
+}
+
+void
 DistSCMatrix::create_vecform(Form f, int nvectors)
 {
   // determine with rows/cols go on this node
@@ -811,7 +835,7 @@ DistSCMatrix::element_op(const RefSCElementOp3& op,
 }
 
 void
-DistSCMatrix::print(const char *title, ostream& os, int prec)
+DistSCMatrix::vprint(const char *title, ostream& os, int prec)
 {
   int i,j;
   int lwidth;

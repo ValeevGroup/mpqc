@@ -55,7 +55,7 @@ class SphereShape: public Shape {
     double radius() const { return _radius; }
     const SCVector3& origin() const { return _origin; }
     double distance_to_surface(const SCVector3&r,SCVector3*grad=0) const;
-    void print(FILE*fp=stdout) const;
+    void print(ostream&o=cout);
 
     // these are used to update the parameters describing the sphere
     double radius(double r);
@@ -107,7 +107,7 @@ class UncappedTorusHoleShape: public Shape
     inline const SCVector3 A() const { SCVector3 v(_s1.origin()); return v; }
     inline const SCVector3 B() const { SCVector3 v(_s2.origin()); return v; }
     inline double radius() const { return _r; };
-    void print(FILE*fp=stdout) const;
+    void print(ostream&o=cout);
     void boundingbox(double valuemin, double valuemax,
                      SCVector3& p1, SCVector3&p2);
 
@@ -212,7 +212,7 @@ class Uncapped5SphereExclusionShape: public Shape
     inline double rC() const { return _s3.radius(); };
     inline double r() const { return _r; };
     inline int solution_exists() const { return _solution_exists; };
-    void print(FILE*fp=stdout) const;
+    void print(ostream&o=cout);
     double distance_to_surface(const SCVector3&r,SCVector3*grad=0) const;
     int is_outside(const SCVector3&) const;
     void boundingbox(double valuemin, double valuemax,

@@ -73,7 +73,7 @@ class ReplSCVector: public SCVector {
                     SCVector*);
     void element_op(const RefSCElementOp3&,
                     SCVector*,SCVector*);
-    void print(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10);
 
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
@@ -105,6 +105,9 @@ class ReplSCMatrix: public SCMatrix {
 
     // implementations and overrides of virtual functions
     void assign(double);
+    void assign(SCMatrix*);
+    void assign(const double*);
+    void assign(const double**);
     double get_element(int,int);
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
@@ -122,6 +125,8 @@ class ReplSCMatrix: public SCMatrix {
     void accumulate_product(SCMatrix*,SCMatrix*);
     void accumulate_product(SCMatrix*,SymmSCMatrix*);
     void accumulate_product(SCMatrix*,DiagSCMatrix*);
+    void accumulate_product(SymmSCMatrix*,SCMatrix*);
+    void accumulate_product(DiagSCMatrix*,SCMatrix*);
     void accumulate(SCMatrix*);
     void accumulate(SymmSCMatrix*);
     void accumulate(DiagSCMatrix*);
@@ -139,7 +144,7 @@ class ReplSCMatrix: public SCMatrix {
                     SCMatrix*);
     void element_op(const RefSCElementOp3&,
                     SCMatrix*,SCMatrix*);
-    void print(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10);
 
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
@@ -170,6 +175,9 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
 
     // implementations and overrides of virtual functions
     void assign(double);
+    void assign(SymmSCMatrix*);
+    void assign(const double*);
+    void assign(const double**);
     double get_element(int,int);
     void set_element(int,int,double);
     void accumulate_element(int,int,double);
@@ -199,13 +207,13 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     void accumulate_symmetric_sum(SCMatrix*);
     void accumulate_transform(SCMatrix*,SymmSCMatrix*);
     void accumulate_transform(SCMatrix*,DiagSCMatrix*);
-    //void accumulate_transform(SymmSCMatrix*,SymmSCMatrix*);
+    void accumulate_transform(SymmSCMatrix*,SymmSCMatrix*);
     void element_op(const RefSCElementOp&);
     void element_op(const RefSCElementOp2&,
                     SymmSCMatrix*);
     void element_op(const RefSCElementOp3&,
                     SymmSCMatrix*,SymmSCMatrix*);
-    void print(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10);
 
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
@@ -232,6 +240,8 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
 
     // implementations and overrides of virtual functions
     void assign(double);
+    void assign(const double *);
+    void assign(DiagSCMatrix *);
     double get_element(int);
     void set_element(int,double);
     void accumulate_element(int,double);
@@ -246,7 +256,7 @@ class ReplDiagSCMatrix: public DiagSCMatrix {
                     DiagSCMatrix*);
     void element_op(const RefSCElementOp3&,
                     DiagSCMatrix*,DiagSCMatrix*);
-    void print(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10);
 
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);

@@ -6,6 +6,5 @@ libmolecule.LIBSUF
 #include <math/symmetry/LIBS.h>
 #include <util/state/LIBS.h>
 #include <util/keyval/LIBS.h>
-#include <util/unix/LIBS.h>
 #include <util/render/LIBS.h>
 #include <util/container/LIBS.h>

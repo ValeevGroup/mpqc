@@ -3,6 +3,7 @@
 #pragma implementation
 #endif
 
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
@@ -70,26 +71,32 @@ TriangulatedSurface::~TriangulatedSurface()
 }
 
 void
-TriangulatedSurface::topology_info(FILE*fp)
+TriangulatedSurface::topology_info(ostream&o)
 {
-  topology_info(nvertex(), nedge(), ntriangle(), fp);
+  topology_info(nvertex(), nedge(), ntriangle(), o);
 }
 
 void
-TriangulatedSurface::topology_info(int v, int e, int t, FILE* fp)
+TriangulatedSurface::topology_info(int v, int e, int t, ostream&o)
 {
   // Given v vertices i expect 2*v - 4*n_surface triangles
   // and 3*v - 6*n_surface edges
-  fprintf(fp, "n_vertex = %d, n_edge = %d, n_triangle = %d:\n",
-          v, e, t);
+  o << indent
+    << scprintf("n_vertex = %d, n_edge = %d, n_triangle = %d:",
+                v, e, t)
+    << endl;
   int nsurf_e = ((3*v - e)%6 == 0)? (3*v - e)/6 : -1;
   int nsurf_t = ((2*v - t)%4 == 0)? (2*v - t)/4 : -1;
   if ((nsurf_e!=-1) && (nsurf_e == nsurf_t)) {
-      fprintf(fp,"  this is consistent with n_closed_surface - n_hole = %d\n",
-              nsurf_e);
+      o << indent
+        << scprintf("  this is consistent with n_closed_surface - n_hole = %d",
+                    nsurf_e)
+        << endl;
     }
   else {
-      fprintf(fp,"  this implies that some surfaces are not closed\n");
+      o << indent
+        << scprintf("  this implies that some surfaces are not closed")
+        << endl;
     }
 }
 
@@ -473,99 +480,106 @@ TriangulatedSurface::find_edge(const RefVertex& v1, const RefVertex& v2)
 }
 
 void
-TriangulatedSurface::print(FILE*fp)
+TriangulatedSurface::print(ostream&o)
 {
-  fprintf(fp,"TriangulatedSurface:\n");
+  o << indent << "TriangulatedSurface:" << endl;
   int i;
 
   int np = nvertex();
-  fprintf(fp," %3d Vertices:\n",np);
+  o << indent << scprintf(" %3d Vertices:",np) << endl;
   for (i=0; i<np; i++) {
       RefVertex p = vertex(i);
-      fprintf(fp,"  %3d:",i);
+      o << indent << scprintf("  %3d:",i);
       for (int j=0; j<3; j++) {
-          fprintf(fp," % 15.10f", p->point()[j]);
+          o << scprintf(" % 15.10f", p->point()[j]);
         }
-      fprintf(fp,"\n");
+      o << endl;
     }
 
   int ne = nedge();
-  fprintf(fp," %3d Edges:\n",ne);
+  o << indent << scprintf(" %3d Edges:",ne) << endl;
   for (i=0; i<ne; i++) {
       RefEdge e = edge(i);
       RefVertex v0 = e->vertex(0);
       RefVertex v1 = e->vertex(1);
-      fprintf(fp,"  %3d: %3d %3d\n",i,
-              _vertex_to_index[_vertices.seek(v0)],
-              _vertex_to_index[_vertices.seek(v1)]);
+      o << indent
+        << scprintf("  %3d: %3d %3d",i,
+                    _vertex_to_index[_vertices.seek(v0)],
+                    _vertex_to_index[_vertices.seek(v1)])
+        << endl;
     }
 
   int nt = ntriangle();
-  fprintf(fp," %3d Triangles:\n",nt);
+  o << indent << scprintf(" %3d Triangles:",nt) << endl;
   for (i=0; i<nt; i++) {
       RefTriangle tri = triangle(i);
       RefEdge e0 = tri->edge(0);
       RefEdge e1 = tri->edge(1);
       RefEdge e2 = tri->edge(2);
-      fprintf(fp,"  %3d: %3d %3d %3d\n",i,
-              _edge_to_index[_edges.seek(e0)],
-              _edge_to_index[_edges.seek(e1)],
-              _edge_to_index[_edges.seek(e2)]);
+      o << indent
+        << scprintf("  %3d: %3d %3d %3d",i,
+                    _edge_to_index[_edges.seek(e0)],
+                    _edge_to_index[_edges.seek(e1)],
+                    _edge_to_index[_edges.seek(e2)])
+        << endl;
     }
 }
 
 void
-TriangulatedSurface::print_vertices_and_triangles(FILE*fp)
+TriangulatedSurface::print_vertices_and_triangles(ostream&o)
 {
-  fprintf(fp,"TriangulatedSurface:\n");
+  o << indent << "TriangulatedSurface:" << endl;
   int i;
 
   int np = nvertex();
-  fprintf(fp," %3d Vertices:\n",np);
+  o << indent << scprintf(" %3d Vertices:",np) << endl;
   for (i=0; i<np; i++) {
       RefVertex p = vertex(i);
-      fprintf(fp,"  %3d:",i);
+      o << indent << scprintf("  %3d:",i);
       for (int j=0; j<3; j++) {
-          fprintf(fp," % 15.10f", p->point()[j]);
+          o << scprintf(" % 15.10f", p->point()[j]);
         }
-      fprintf(fp,"\n");
+      o << endl;
     }
 
   int nt = ntriangle();
-  fprintf(fp," %3d Triangles:\n",nt);
+  o << indent << scprintf(" %3d Triangles:",nt) << endl;
   for (i=0; i<nt; i++) {
       RefTriangle tri = triangle(i);
-      fprintf(fp,"  %3d: %3d %3d %3d\n",i,
-              _triangle_vertex[i][0],
-              _triangle_vertex[i][1],
-              _triangle_vertex[i][2]);
+      o << indent
+        << scprintf("  %3d: %3d %3d %3d",i,
+                    _triangle_vertex[i][0],
+                    _triangle_vertex[i][1],
+                    _triangle_vertex[i][2])
+        << endl;
     }
 }
 
 void
-TriangulatedSurface::print_geomview_format(FILE*fp)
+TriangulatedSurface::print_geomview_format(ostream&o)
 {
-  fprintf(fp,"OFF\n");
+  o << "OFF" << endl;
 
-  fprintf(fp,"%d %d %d\n",nvertex(),ntriangle(),nedge());
+  o << nvertex() << " " << ntriangle() << " " << nedge() << endl;
   int i;
 
   int np = nvertex();
   for (i=0; i<np; i++) {
       RefVertex p = vertex(i);
       for (int j=0; j<3; j++) {
-          fprintf(fp," % 15.10f", p->point()[j]);
+          o << scprintf(" % 15.10f", p->point()[j]);
         }
-      fprintf(fp,"\n");
+      o << endl;
     }
 
   int nt = ntriangle();
   for (i=0; i<nt; i++) {
       RefTriangle tri = triangle(i);
-      fprintf(fp," 3 %3d %3d %3d\n",
-              _triangle_vertex[i][0],
-              _triangle_vertex[i][1],
-              _triangle_vertex[i][2]);
+      o << scprintf(" 3 %3d %3d %3d",
+                    _triangle_vertex[i][0],
+                    _triangle_vertex[i][1],
+                    _triangle_vertex[i][2])
+          << endl;
     }
 }
 

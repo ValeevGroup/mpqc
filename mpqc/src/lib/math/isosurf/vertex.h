@@ -7,7 +7,6 @@
 #endif
 
 extern "C" {
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 }
@@ -33,7 +32,7 @@ class Vertex: public VRefCount {
     void set_normal(const SCVector3&p);
     operator SCVector3&();
 
-    void print(FILE*fp = stdout);
+    void print(ostream&o=cout);
 };
 
 REF_dec(Vertex);

@@ -3,6 +3,7 @@
 #pragma implementation
 #endif
 
+#include <util/misc/formio.h>
 #include <math/isosurf/vertex.h>
 
 
@@ -60,17 +61,17 @@ Vertex::operator SCVector3&()
 }
 
 void
-Vertex::print(FILE*fp)
+Vertex::print(ostream&o)
 {
   int i;
-  fprintf(fp, "Vertex:");
+  o << indent << "Vertex:";
   for (i=0; i<3; i++)  {
-      fprintf(fp," %8.5f", _point[i]);
+      o << scprintf(" %8.5f", _point[i]);
     }
   if (_normal) {
       for (i=0; i<3; i++)  {
-          fprintf(fp," %8.5f", normal()[i]);
+          o << scprintf(" %8.5f", normal()[i]);
         }
     }
-  fprintf(fp,"\n");
+  o << endl;
 }

@@ -100,6 +100,18 @@ ReplDiagSCMatrix::assign(double val)
 }
 
 void
+ReplDiagSCMatrix::assign(DiagSCMatrix*m)
+{
+  DiagSCMatrix::assign(m);
+}
+
+void
+ReplDiagSCMatrix::assign(const double*m)
+{
+  DiagSCMatrix::assign(m);
+}
+
+void
 ReplDiagSCMatrix::accumulate(DiagSCMatrix*a)
 {
   // make sure that the argument is of the correct type
@@ -231,7 +243,7 @@ ReplDiagSCMatrix::element_op(const RefSCElementOp3& op,
 
 // from Ed Seidl at the NIH (with a bit of hacking)
 void
-ReplDiagSCMatrix::print(const char *title, ostream& os, int prec)
+ReplDiagSCMatrix::vprint(const char *title, ostream& os, int prec)
 {
   int i;
   int lwidth;

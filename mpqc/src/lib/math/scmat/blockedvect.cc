@@ -320,7 +320,7 @@ BlockedSCVector::element_op(const RefSCElementOp3& op,
 }
 
 void
-BlockedSCVector::print(const char *title, ostream& os, int prec)
+BlockedSCVector::vprint(const char *title, ostream& os, int prec)
 {
   int len = (title) ? strlen(title) : 0;
   char *newtitle = new char[len + 80];

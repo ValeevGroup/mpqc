@@ -146,6 +146,12 @@ Volume::set_gradient(const SCVector3& g)
 }
 
 void
+Volume::set_gradient(RefSCVector& g)
+{
+  Function::set_gradient(g);
+}
+
+void
 Volume::get_gradient(SCVector3& g)
 {
   const RefSCVector v = gradient();
@@ -162,6 +168,12 @@ Volume::set_x(const SCVector3& x)
   xx.set_element(1, x[1]);
   xx.set_element(2, x[2]);
   set_x(xx);
+}
+
+void
+Volume::set_x(const RefSCVector& x)
+{
+  Function::set_x(x);
 }
 
 void

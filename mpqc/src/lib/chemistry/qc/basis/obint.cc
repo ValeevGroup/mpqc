@@ -274,7 +274,7 @@ OneBodyIntOp::process(SCMatrixBlockIter& b)
 }
 
 void
-OneBodyIntOp::process_spec(SCMatrixRectBlock* b)
+OneBodyIntOp::process_spec_rect(SCMatrixRectBlock* b)
 {
   RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
   RefGaussianBasisSet bs2 = iter->one_body_int()->basis2();
@@ -315,7 +315,7 @@ OneBodyIntOp::process_spec(SCMatrixRectBlock* b)
 }
 
 void
-OneBodyIntOp::process_spec(SCMatrixLTriBlock* b)
+OneBodyIntOp::process_spec_ltri(SCMatrixLTriBlock* b)
 {
   RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
 
@@ -353,7 +353,7 @@ OneBodyIntOp::process_spec(SCMatrixLTriBlock* b)
 }
 
 void
-OneBodyIntOp::process_spec(SCMatrixRectSubBlock* b)
+OneBodyIntOp::process_spec_rectsub(SCMatrixRectSubBlock* b)
 {
   RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
   RefGaussianBasisSet bs2 = iter->one_body_int()->basis2();
@@ -395,7 +395,7 @@ OneBodyIntOp::process_spec(SCMatrixRectSubBlock* b)
 }
 
 void
-OneBodyIntOp::process_spec(SCMatrixLTriSubBlock* b)
+OneBodyIntOp::process_spec_ltrisub(SCMatrixLTriSubBlock* b)
 {
   RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
 
@@ -470,9 +470,9 @@ OneBody3IntOp::process(SCMatrixBlockIter&,
 }
 
 void
-OneBody3IntOp::process_spec(SCMatrixRectBlock* a,
-                            SCMatrixRectBlock* b,
-                            SCMatrixRectBlock* c)
+OneBody3IntOp::process_spec_rect(SCMatrixRectBlock* a,
+                                 SCMatrixRectBlock* b,
+                                 SCMatrixRectBlock* c)
 {
   RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();
   RefGaussianBasisSet bs2 = iter->one_body_int()->basis2();
@@ -531,9 +531,9 @@ OneBody3IntOp::process_spec(SCMatrixRectBlock* a,
 }
 
 void
-OneBody3IntOp::process_spec(SCMatrixLTriBlock* a,
-                            SCMatrixLTriBlock* b,
-                            SCMatrixLTriBlock* c)
+OneBody3IntOp::process_spec_ltri(SCMatrixLTriBlock* a,
+                                 SCMatrixLTriBlock* b,
+                                 SCMatrixLTriBlock* c)
 {
 #if 0
   RefGaussianBasisSet bs1 = iter->one_body_int()->basis1();

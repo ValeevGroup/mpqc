@@ -221,7 +221,7 @@ BlockedDiagSCMatrix::element_op(const RefSCElementOp3& op,
 }
 
 void
-BlockedDiagSCMatrix::print(const char *title, ostream& os, int prec)
+BlockedDiagSCMatrix::vprint(const char *title, ostream& os, int prec)
 {
   int len = (title) ? strlen(title) : 0;
   char *newtitle = new char[len + 80];

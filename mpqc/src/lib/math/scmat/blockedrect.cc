@@ -96,6 +96,24 @@ BlockedSCMatrix::assign(double v)
       mats_[i]->assign(v);
 }
 
+void
+BlockedSCMatrix::assign(SCMatrix *v)
+{
+  SCMatrix::assign(v);
+}
+
+void
+BlockedSCMatrix::assign(const double *v)
+{
+  SCMatrix::assign(v);
+}
+
+void
+BlockedSCMatrix::assign(const double **v)
+{
+  SCMatrix::assign(v);
+}
+
 double
 BlockedSCMatrix::get_element(int i,int j)
 {
@@ -343,6 +361,18 @@ BlockedSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
       continue;
     mats_[i]->accumulate_product(la->mats_[i], lb->mats_[bi]);
   }
+}
+
+void
+BlockedSCMatrix::accumulate_product(SymmSCMatrix*a,SCMatrix*b)
+{
+  SCMatrix::accumulate_product(a,b);
+}
+
+void
+BlockedSCMatrix::accumulate_product(DiagSCMatrix*a,SCMatrix*b)
+{
+  SCMatrix::accumulate_product(a,b);
 }
 
 void
@@ -661,7 +691,7 @@ BlockedSCMatrix::element_op(const RefSCElementOp3& op,
 }
 
 void
-BlockedSCMatrix::print(const char *title, ostream& os, int prec)
+BlockedSCMatrix::vprint(const char *title, ostream& os, int prec)
 {
   int len = (title) ? strlen(title) : 0;
   char *newtitle = new char[len + 80];

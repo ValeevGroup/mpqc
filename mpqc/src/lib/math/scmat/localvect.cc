@@ -232,7 +232,7 @@ LocalSCVector::scalar_product(SCVector*a)
 void
 LocalSCVector::element_op(const RefSCElementOp& op)
 {
-  op->process_spec(block.pointer());
+  op->process_spec_vsimp(block.pointer());
 }
 
 void
@@ -246,7 +246,7 @@ LocalSCVector::element_op(const RefSCElementOp2& op,
       cerr << indent << "LocalSCVector: bad element_op\n";
       abort();
     }
-  op->process_spec(block.pointer(), lm->block.pointer());
+  op->process_spec_vsimp(block.pointer(), lm->block.pointer());
 }
 
 void
@@ -262,12 +262,13 @@ LocalSCVector::element_op(const RefSCElementOp3& op,
       cerr << indent << "LocalSCVector: bad element_op\n";
       abort();
     }
-  op->process_spec(block.pointer(), lm->block.pointer(), ln->block.pointer());
+  op->process_spec_vsimp(block.pointer(),
+                         lm->block.pointer(), ln->block.pointer());
 }
 
 // from Ed Seidl at the NIH (with a bit of hacking)
 void
-LocalSCVector::print(const char *title, ostream& os, int prec)
+LocalSCVector::vprint(const char *title, ostream& os, int prec)
 {
   int i;
   int lwidth;

@@ -198,6 +198,12 @@ DistSCVector::accumulate(SCMatrix*a)
 }
 
 void
+DistSCVector::assign(double d)
+{
+  SCVector::assign(d);
+}
+
+void
 DistSCVector::assign(SCVector*a)
 {
   // make sure that the argument is of the correct type
@@ -400,6 +406,12 @@ DistSCVector::accumulate_product(SCMatrix *pa, SCVector *pb)
 }
 
 void
+DistSCVector::accumulate_product(SymmSCMatrix *pa, SCVector *pb)
+{
+  SCVector::accumulate_product(pa,pb);
+}
+
+void
 DistSCVector::convert(double *res)
 {
   int n = dim()->n();
@@ -420,6 +432,12 @@ DistSCVector::convert(double *res)
   messagegrp()->sum(res, n);
 }
 
+void
+DistSCVector::convert(SCVector *v)
+{
+  SCVector::convert(v);
+}
+
 RefSCMatrixSubblockIter
 DistSCVector::local_blocks(SCMatrixSubblockIter::Access access)
 {
@@ -433,7 +451,7 @@ DistSCVector::all_blocks(SCMatrixSubblockIter::Access access)
 }
 
 void
-DistSCVector::print(const char *title, ostream& os, int prec)
+DistSCVector::vprint(const char *title, ostream& os, int prec)
 {
   double *data = new double[dim()->n()];
   convert(data);

@@ -47,9 +47,11 @@ class DistSCVector: public SCVector {
   public:
     DistSCVector(const RefSCDimension&, DistSCMatrixKit*);
     ~DistSCVector();
+    void assign(double);
     void assign(SCVector*);
     void assign(const double*);
     void convert(double* v);
+    void convert(SCVector *);
 
     void set_element(int,double);
     void accumulate_element(int,double);
@@ -58,12 +60,13 @@ class DistSCVector: public SCVector {
     void accumulate(SCMatrix*m);
     double scalar_product(SCVector*);
     void accumulate_product(SCMatrix *, SCVector *);
+    void accumulate_product(SymmSCMatrix *, SCVector *);
     void element_op(const RefSCElementOp&);
     void element_op(const RefSCElementOp2&,
                     SCVector*);
     void element_op(const RefSCElementOp3&,
                     SCVector*,SCVector*);
-    void print(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10);
 
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);
@@ -121,6 +124,10 @@ class DistSCMatrix: public SCMatrix {
 
     void accumulate_outer_product(SCVector*,SCVector*);
     void accumulate_product(SCMatrix*,SCMatrix*);
+    void accumulate_product(SymmSCMatrix*,SCMatrix*);
+    void accumulate_product(DiagSCMatrix*,SCMatrix*);
+    void accumulate_product(SCMatrix*,SymmSCMatrix*);
+    void accumulate_product(SCMatrix*,DiagSCMatrix*);
     void accumulate(SCMatrix*);
     void accumulate(SymmSCMatrix*);
     void accumulate(DiagSCMatrix*);
@@ -137,7 +144,7 @@ class DistSCMatrix: public SCMatrix {
                     SCMatrix*);
     void element_op(const RefSCElementOp3&,
                     SCMatrix*,SCMatrix*);
-    void print(const char* title=0,ostream& out=cout, int =10);
+    void vprint(const char* title=0,ostream& out=cout, int =10);
 
     RefSCMatrixSubblockIter local_blocks(SCMatrixSubblockIter::Access);
     RefSCMatrixSubblockIter all_blocks(SCMatrixSubblockIter::Access);

@@ -143,8 +143,9 @@ class SCVector: public DescribedClass {
     virtual void element_op(const RefSCElementOp3&,
                             SCVector*,SCVector*) = 0;
     //. Print out the vector.
-    virtual void print(ostream&);
-    virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
+    void print(ostream&);
+    void print(const char* title=0,ostream& out=cout, int =10);
+    virtual void vprint(const char* title=0,ostream& out=cout, int =10) = 0;
 
     //. Returns the message group used by the matrix kit
     RefMessageGrp messagegrp();
@@ -289,8 +290,9 @@ class SCMatrix: public DescribedClass {
     virtual void element_op(const RefSCElementOp3&,
                             SCMatrix*,SCMatrix*) = 0;
     //. Print out the matrix.
-    virtual void print(ostream&);
-    virtual void print(const char* title=0,ostream& out=cout, int =10) = 0;
+    void print(ostream&);
+    void print(const char* title=0,ostream& out=cout, int =10);
+    virtual void vprint(const char* title=0,ostream& out=cout, int =10) = 0;
 
     //. Returns the message group used by the matrix kit
     RefMessageGrp messagegrp();
@@ -421,8 +423,9 @@ class SymmSCMatrix: public DescribedClass {
     virtual void element_op(const RefSCElementOp3&,
                             SymmSCMatrix*,SymmSCMatrix*) = 0;
     //. Print out the matrix.
-    virtual void print(ostream&);
-    virtual void print(const char* title=0,ostream& out=cout, int =10);
+    void print(ostream&);
+    void print(const char* title=0,ostream& out=cout, int =10);
+    virtual void vprint(const char* title=0,ostream& out=cout, int =10);
 
     //. Returns the message group used by the matrix kit
     RefMessageGrp messagegrp();
@@ -506,8 +509,9 @@ class DiagSCMatrix: public DescribedClass {
     virtual void element_op(const RefSCElementOp3&,
                             DiagSCMatrix*,DiagSCMatrix*) = 0;
     //. Print out the matrix.
-    virtual void print(ostream&);
-    virtual void print(const char* title=0,ostream& out=cout, int =10);
+    void print(ostream&);
+    void print(const char* title=0,ostream& out=cout, int =10);
+    virtual void vprint(const char* title=0,ostream& out=cout, int =10);
 
     //. Returns the message group used by the matrix kit
     RefMessageGrp messagegrp();

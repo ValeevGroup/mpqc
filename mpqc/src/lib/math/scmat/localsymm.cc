@@ -547,6 +547,12 @@ LocalSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
   cmat_transform_diagonal_matrix(rows,n(),lb->block->data,lb->n(),la->rows,1);
 }
 
+void
+LocalSymmSCMatrix::accumulate_transform(SymmSCMatrix*a,SymmSCMatrix*b)
+{
+  SymmSCMatrix::accumulate_transform(a,b);
+}
+
 double
 LocalSymmSCMatrix::scalar_product(SCVector*a)
 {
@@ -577,7 +583,7 @@ LocalSymmSCMatrix::scalar_product(SCVector*a)
 void
 LocalSymmSCMatrix::element_op(const RefSCElementOp& op)
 {
-  op->process_spec(block.pointer());
+  op->process_spec_ltri(block.pointer());
 }
 
 void
@@ -591,7 +597,7 @@ LocalSymmSCMatrix::element_op(const RefSCElementOp2& op,
       cerr << indent << "LocalSymmSCMatrix: bad element_op\n";
       abort();
     }
-  op->process_spec(block.pointer(), lm->block.pointer());
+  op->process_spec_ltri(block.pointer(), lm->block.pointer());
 }
 
 void
@@ -607,12 +613,13 @@ LocalSymmSCMatrix::element_op(const RefSCElementOp3& op,
       cerr << indent << "LocalSymmSCMatrix: bad element_op\n";
       abort();
     }
-  op->process_spec(block.pointer(), lm->block.pointer(), ln->block.pointer());
+  op->process_spec_ltri(block.pointer(),
+                        lm->block.pointer(), ln->block.pointer());
 }
 
 // from Ed Seidl at the NIH (with a bit of hacking)
 void
-LocalSymmSCMatrix::print(const char *title, ostream& os, int prec)
+LocalSymmSCMatrix::vprint(const char *title, ostream& os, int prec)
 {
   int ii,jj,kk,nn;
   int i,j;

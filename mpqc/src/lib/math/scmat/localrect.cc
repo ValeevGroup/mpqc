@@ -326,6 +326,24 @@ LocalSCMatrix::assign(double a)
 }
 
 void
+LocalSCMatrix::assign(SCMatrix *m)
+{
+  SCMatrix::assign(m);
+}
+
+void
+LocalSCMatrix::assign(const double *m)
+{
+  SCMatrix::assign(m);
+}
+
+void
+LocalSCMatrix::assign(const double **m)
+{
+  SCMatrix::assign(m);
+}
+
+void
 LocalSCMatrix::accumulate_product(SCMatrix*a,SCMatrix*b)
 {
   const char* name = "LocalSCMatrix::accumulate_product";
@@ -450,6 +468,18 @@ LocalSCMatrix::accumulate_product(SCMatrix*a,DiagSCMatrix*b)
           cd[i][j] += ad[i][j]*bd[j];
         }
     }
+}
+
+void
+LocalSCMatrix::accumulate_product(SymmSCMatrix*a,SCMatrix*b)
+{
+  SCMatrix::accumulate_product(a,b);
+}
+
+void
+LocalSCMatrix::accumulate_product(DiagSCMatrix*a,SCMatrix*b)
+{
+  SCMatrix::accumulate_product(a,b);
 }
 
 void
@@ -715,7 +745,7 @@ LocalSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
 void
 LocalSCMatrix::element_op(const RefSCElementOp& op)
 {
-  op->process_spec(block.pointer());
+  op->process_spec_rect(block.pointer());
 }
 
 void
@@ -729,7 +759,7 @@ LocalSCMatrix::element_op(const RefSCElementOp2& op,
       cerr << indent << "LocalSCMatrix: bad element_op\n";
       abort();
     }
-  op->process_spec(block.pointer(), lm->block.pointer());
+  op->process_spec_rect(block.pointer(), lm->block.pointer());
 }
 
 void
@@ -746,12 +776,13 @@ LocalSCMatrix::element_op(const RefSCElementOp3& op,
       cerr << indent << "LocalSCMatrix: bad element_op\n";
       abort();
     }
-  op->process_spec(block.pointer(), lm->block.pointer(), ln->block.pointer());
+  op->process_spec_rect(block.pointer(),
+                        lm->block.pointer(), ln->block.pointer());
 }
 
 // from Ed Seidl at the NIH
 void
-LocalSCMatrix::print(const char *title, ostream& os, int prec)
+LocalSCMatrix::vprint(const char *title, ostream& os, int prec)
 {
   int ii,jj,kk,nn;
   int i,j;

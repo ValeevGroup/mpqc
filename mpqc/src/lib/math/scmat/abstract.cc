@@ -316,7 +316,13 @@ SCMatrix::accumulate_product(DiagSCMatrix*a,SCMatrix*b)
 void
 SCMatrix::print(ostream&o)
 {
-  print(0, o, 10);
+  vprint(0, o, 10);
+}
+
+void
+SCMatrix::print(const char *t, ostream&o, int i)
+{
+  vprint(t, o, i);
 }
 
 SCMatrix*
@@ -553,11 +559,17 @@ SymmSCMatrix::assign(SymmSCMatrix*a)
 void
 SymmSCMatrix::print(ostream&o)
 {
-  print(0, o, 10);
+  vprint(0, o, 10);
 }
 
 void
-SymmSCMatrix::print(const char* title, ostream& out, int i)
+SymmSCMatrix::print(const char *t, ostream&o, int i)
+{
+  vprint(t, o, i);
+}
+
+void
+SymmSCMatrix::vprint(const char* title, ostream& out, int i)
 {
   RefSCMatrix m = kit()->matrix(dim(),dim());
   m->assign(0.0);
@@ -802,11 +814,17 @@ DiagSCMatrix::assign(DiagSCMatrix*a)
 void
 DiagSCMatrix::print(ostream&o)
 {
-  print(0, o, 10);
+  vprint(0, o, 10);
 }
 
 void
-DiagSCMatrix::print(const char* title, ostream& out, int i)
+DiagSCMatrix::print(const char *t, ostream&o, int i)
+{
+  vprint(t, o, i);
+}
+
+void
+DiagSCMatrix::vprint(const char* title, ostream& out, int i)
 {
   RefSCMatrix m = kit()->matrix(dim(),dim());
   m->assign(0.0);
@@ -959,7 +977,13 @@ SCVector::assign(SCVector*a)
 void
 SCVector::print(ostream&o)
 {
-  print(0, o, 10);
+  vprint(0, o, 10);
+}
+
+void
+SCVector::print(const char *t, ostream&o, int i)
+{
+  vprint(t, o, i);
 }
 
 void

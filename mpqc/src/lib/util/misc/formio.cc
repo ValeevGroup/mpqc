@@ -28,6 +28,7 @@
 #include <util/misc/formio.h>
 
 #include <stdio.h> // for vsprintf
+#include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 

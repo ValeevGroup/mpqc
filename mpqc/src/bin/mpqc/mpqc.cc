@@ -475,17 +475,25 @@ main(int argc, char *argv[])
              << "WARNING: desired accuracy not achieved in energy" << endl;
       }
       cout << node0 << endl;
-      // use result_noupdate since the energy might not have converged
+      // Use result_noupdate since the energy might not have converged
       // to the desired accuracy in which case grabbing the result will
-      // start up the calculation again
+      // start up the calculation again.  However the gradient might
+      // not have been computed (if we are restarting and the gradient
+      // isn't in the save file for example).
+      RefSCVector grad;
       if (mole->gradient_result().computed()) {
-        mole->gradient_result()
-          .result_noupdate().print("Gradient of the MolecularEnergy:");
+        grad = mole->gradient_result().result_noupdate();
+      }
+      else {
+        grad = mole->gradient();
+      }
+      if (grad.nonnull()) {
+        grad.print("Gradient of the MolecularEnergy:");
         if (mole->gradient_result().actual_accuracy()
             > mole->gradient_result().desired_accuracy()) {
           cout << node0 << indent
                << "WARNING: desired accuracy not achieved in gradient" << endl;
-      }
+        }
       }
     } else if (do_energy && mole->value_implemented()) {
       cout << node0 << endl << indent

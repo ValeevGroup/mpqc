@@ -91,7 +91,9 @@ CKPTINPUTS = \
  ckpt_0clkssvwn3.in     ckpt_1clkssvwn3.in     ckpt_clkssvwn3.in \
  ckpt_0clkssvwn4.in     ckpt_1clkssvwn4.in     ckpt_clkssvwn4.in \
  ckpt_0clkssvwn5.in     ckpt_1clkssvwn5.in     ckpt_clkssvwn5.in \
- ckpt_0clksxalpha.in    ckpt_1clksxalpha.in    ckpt_clksxalpha.in
+ ckpt_0clksxalpha.in    ckpt_1clksxalpha.in    ckpt_clksxalpha.in \
+ ckpt_0hsosksxalpha.in  ckpt_1hsosksxalpha.in  ckpt_hsosksxalpha.in \
+ ckpt_0uksxalpha.in     ckpt_1uksxalpha.in     ckpt_uksxalpha.in
 
 CKPTINPUTS := $(CKPTINPUTS:%=run/%)
 CKPTOUTPUTS = $(CKPTINPUTS:%.$(INSUF)=%.out)
@@ -280,6 +282,8 @@ checkckpt:
 	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn3.out $(RUN)/ckpt_1clkssvwn3.out
 	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn4.out $(RUN)/ckpt_1clkssvwn4.out
 	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn5.out $(RUN)/ckpt_1clkssvwn5.out
+	@$(CHECKOUT) $(RUN)/ckpt_hsosksxalpha.out $(RUN)/ckpt_1hsosksxalpha.out
+	@$(CHECKOUT) $(RUN)/ckpt_uksxalpha.out $(RUN)/ckpt_1uksxalpha.out
 
 .PHONY: checkmbpt
 checkmbpt:
@@ -385,6 +389,30 @@ $(RUN)/ckpt_1clks%.qci: ckpt/gradient.qci
 	/bin/cp $< $@
 
 $(RUN)/ckpt_clks%.qci: ckpt/gradient.qci
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/ckpt_0hsosks%.qci: ckpt/energy.qci
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/ckpt_1hsosks%.qci: ckpt/gradient.qci
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/ckpt_hsosks%.qci: ckpt/gradient.qci
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/ckpt_0uks%.qci: ckpt/energy.qci
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/ckpt_1uks%.qci: ckpt/gradient.qci
+	@mkdir -p $(RUN)
+	/bin/cp $< $@
+
+$(RUN)/ckpt_uks%.qci: ckpt/gradient.qci
 	@mkdir -p $(RUN)
 	/bin/cp $< $@
 

@@ -13,6 +13,7 @@
 #include <util/keyval/keyval.h>
 #include <math/topology/point.h>
 #include <math/topology/pointbag.h>
+#include <math/symmetry/pointgrp.h>
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/chemelem.h>
 #include <chemistry/molecule/atomcent.h>
@@ -32,7 +33,7 @@ class Molecule :
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-  //AtomicCenterXPlex atoms;
+    PointGroup pg;
     AtomicCenter* atoms;
     int natoms;
     AtomicCenter& get_atom(int);
@@ -54,19 +55,39 @@ class Molecule :
     virtual void print(SCostream& =SCostream::cout);
     virtual void print(FILE*);
     int natom() const;
+
     int owns(Pix);
     Pix first();
     void next(Pix&);
+
     AtomicCenter& operator()(Pix);
     AtomicCenter& operator[](int);
     AtomicCenter& atom(int);
-    const AtomicCenter& operator()(Pix) const; 
+    const AtomicCenter& operator()(Pix) const;
     const AtomicCenter& operator[](int) const;
     const AtomicCenter& atom(int) const;
+
     PointBag_double* charges() const;
+
+    const PointGroup& point_group() const;
+    Point center_of_mass();
 
     void save_data_state(StateOut&);
 };
 SavableState_REF_dec(Molecule);
+
+/////////////////////////////////////////////////////////////////////
+
+// this may or may not increase the number of atoms
+void mol_symmetrize_molecule(Molecule&);
+
+// these change the coordinates of the molecule
+void mol_move_to_com(Molecule&);
+void mol_transform_to_principal_axes(Molecule&);
+void mol_cleanup_molecule(Molecule&);
+
+// these have no side effects
+int mol_num_unique_atoms(Molecule&);
+int * mol_find_unique_atoms(Molecule&);  // returns new'd array
 
 #endif

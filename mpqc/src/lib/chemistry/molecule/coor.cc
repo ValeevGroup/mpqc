@@ -664,6 +664,7 @@ MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
 MolecularCoor::MolecularCoor(StateIn&s):
   SavableState(s)
 {
+  matrixkit_ = SCMatrixKit::default_matrixkit();
   molecule_.restore_state(s);
   dnatom3_.restore_state(s);
 }

@@ -45,6 +45,9 @@ class BasisFileSet;
 
 SavableState_REF_fwddec(Integral)
 
+class CartesianIter;
+class SphericalTransformIter;
+
 class GaussianBasisSet: public SavableState
 {
 #   define CLASSNAME GaussianBasisSet
@@ -63,7 +66,12 @@ class GaussianBasisSet: public SavableState
     RefSCMatrixKit matrixkit_;
     RefSCMatrixKit so_matrixkit_;
     RefSCDimension basisdim_;
-    
+
+    // these are needed for the routines to compute basis set values
+    // they must be initialized with set_integral()
+    CartesianIter **civec_;
+    SphericalTransformIter **sivec_;
+
     int ncenter_;
     SSBArrayint shell_to_center_;
     SSBArrayint center_to_shell_;
@@ -141,10 +149,12 @@ class GaussianBasisSet: public SavableState
     double r(int icenter,int xyz) const;
     
     // compute the value for this basis set at position r
-    int values(const RefIntegral&,
-               const SCVector3& r, double* basis_values) const;
-    int grad_values(const RefIntegral&, const SCVector3& r,
-                    double*g_values,double* basis_values=0)const;
+    int values(const SCVector3& r, double* basis_values) const;
+    int grad_values(const SCVector3& r,
+                    double*g_values,double* basis_values=0) const;
+    // this must be called before the above two routines to initialize
+    // iterators that know the basis function order
+    void set_integral(const RefIntegral&);
 
     // fill in matrix with a matrix that orthogonalizes the basis functions
     void ortho(const RefIntegral&, const RefSCMatrix&ortho);

@@ -36,18 +36,22 @@
 #include <chemistry/qc/basis/gaussshell.h>
 
 int
-GaussianBasisSet::values(const RefIntegral& ints,
-                         const SCVector3& r, double* basis_values) const
+GaussianBasisSet::values(const SCVector3& r, double* basis_values) const
 {
-  return grad_values(ints, r, 0, basis_values);
+  return grad_values(r, 0, basis_values);
 }
 
 int
-GaussianBasisSet::grad_values(const RefIntegral& ints,
-                              const SCVector3& r,
+GaussianBasisSet::grad_values(const SCVector3& r,
                               double* g_values,
                               double* basis_values) const
 {
+    if (civec_ == 0) {
+        cerr << "GaussianBasisSet::grad_values called but set_integral not"
+             << endl;
+        abort();
+      }
+
     SCVector3 r_diff;
     int ishell = 0;
     int ibasis = 0;
@@ -81,19 +85,19 @@ GaussianBasisSet::grad_values(const RefIntegral& ints,
 	for (int ish=0; ish < nshell; ish++) {
             if (basis_values && g_values)
               {
-	        nreturns=gbs(ishell).grad_values(ints, r_diff,
+	        nreturns=gbs(ishell).grad_values(civec_, sivec_, r_diff,
                                                  &g_values[ibasis*3],
                                                  &basis_values[ibasis]);
               }
             else if (g_values)
               {
-	        nreturns=gbs(ishell).grad_values(ints, r_diff,
+	        nreturns=gbs(ishell).grad_values(civec_, sivec_, r_diff,
                                                  &g_values[ibasis*3],
                                                  &basis_values[ibasis]);
               }
             else if (basis_values)
               {
-	        nreturns=gbs(ishell).grad_values(ints, r_diff, 0,
+	        nreturns=gbs(ishell).grad_values(civec_, sivec_, r_diff, 0,
                                                  &basis_values[ibasis]);
               }
             ibasis += nreturns;

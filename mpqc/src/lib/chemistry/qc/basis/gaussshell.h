@@ -39,6 +39,9 @@
 class RefKeyVal;
 SavableState_REF_fwddec(Integral)
 
+class CartesianIter;
+class SphericalTransformIter;
+
 class GaussianShell: public SavableState
 {
 #   define CLASSNAME GaussianShell
@@ -129,8 +132,10 @@ class GaussianShell: public SavableState
     double exponent(int iprim) const { return exp[iprim]; }
 
     // compute the value of this shell at offset r
-    int values(const RefIntegral&, const SCVector3& r, double* basis_values);
-    int grad_values(const RefIntegral&, const SCVector3& R,
+    int values(CartesianIter **, SphericalTransformIter **,
+               const SCVector3& r, double* basis_values);
+    int grad_values(CartesianIter **, SphericalTransformIter **,
+                    const SCVector3& R,
                     double* g_values,
                     double* basis_values=0) const;
 

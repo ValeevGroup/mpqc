@@ -40,6 +40,9 @@
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/files.h>
+#include <chemistry/qc/basis/cartiter.h>
+#include <chemistry/qc/basis/transform.h>
+#include <chemistry/qc/basis/integral.h>
 
 SavableState_REF_def(GaussianBasisSet);
 
@@ -385,6 +388,9 @@ GaussianBasisSet::init2()
       bs[s] = shell(s).nfunction();
     basisdim_ = new SCDimension(nbasis(), nb, bs, "basis set dimension");
   }
+
+  civec_ = 0;
+  sivec_ = 0;
 }
 
 void
@@ -454,6 +460,9 @@ GaussianBasisSet::~GaussianBasisSet()
       delete shell_[ii];
     }
   delete[] shell_;
+
+  RefIntegral nullint;
+  set_integral(nullint);
 }
 
 int
@@ -572,6 +581,32 @@ GaussianShell&
 GaussianBasisSet::operator()(int icenter,int ishell)
 {
   return *shell_[center_to_shell_(icenter) + ishell];
+}
+
+void
+GaussianBasisSet::set_integral(const RefIntegral &integral)
+{
+  int i;
+  int maxam = max_angular_momentum();
+  if (civec_) {
+      for (i=0; i<=maxam; i++) {
+          delete civec_[i];
+          delete sivec_[i];
+        }
+      delete[] civec_;
+      delete[] sivec_;
+      civec_ = 0;
+      sivec_ = 0;
+    }
+  if (integral.nonnull()) {
+      civec_ = new CartesianIter *[maxam+1];
+      sivec_ = new SphericalTransformIter *[maxam+1];
+      for (i=0; i<=maxam; i++) {
+          civec_[i] = integral->new_cartesian_iter(i);
+          if (i>1) sivec_[i] = integral->new_spherical_transform_iter(i);
+          else sivec_[i] = 0;
+        }
+    }
 }
 
 void

@@ -105,6 +105,8 @@ DenIntegrator::init_integration(const RefDenFunctional &func)
 {
   value_ = 0.0;
 
+  wfn_->basis()->set_integral(wfn_->integral());
+
   func->set_compute_potential(compute_potential_integrals_);
 
   need_gradient_ = func->need_density_gradient();
@@ -193,10 +195,10 @@ DenIntegrator::do_point(const SCVector3 &r,
 
   // compute the basis set values
   if (need_gradient_) {
-      wfn_->basis()->grad_values(wfn_->integral(),r,bsg_values_,bs_values_);
+      wfn_->basis()->grad_values(r,bsg_values_,bs_values_);
     }
   else {
-      wfn_->basis()->values(wfn_->integral(),r,bs_values_);
+      wfn_->basis()->values(r,bs_values_);
     }
 
   // loop over basis functions adding contributions to the density

@@ -42,15 +42,16 @@
 #define MAX_AM    6
 
 int
-GaussianShell::values(const RefIntegral& ints,
+GaussianShell::values(CartesianIter **civec, SphericalTransformIter **sivec,
                       const SCVector3& r, double* basis_values)
 {
-  return grad_values(ints, r, 0, basis_values);
+  return grad_values(civec, sivec, r, 0, basis_values);
 }
 
 // Returns a pointer to a vector of values of basis 
 int
-GaussianShell::grad_values(const RefIntegral& ints,
+GaussianShell::grad_values(CartesianIter **civec,
+                           SphericalTransformIter **sivec,
                            const SCVector3& r,
                            double* g_values,
                            double* basis_values) const
@@ -139,18 +140,17 @@ GaussianShell::grad_values(const RefIntegral& ints,
               i_basis++;
             }
           else if (!puream[i]) {
-              CartesianIter *jp = ints->new_cartesian_iter(l[i]);
+              CartesianIter *jp = civec[l[i]];
               CartesianIter& j = *jp;
               for (j.start(); j; j.next()) {
                   basis_values[i_basis] = xs[j.a()]*ys[j.b()]*zs[j.c()]
                                          *precon[i];
                   i_basis++;
                 }
-              delete jp;
             }
           else {
               double cart_basis_values[((MAX_AM+1)*(MAX_AM+2))/2];
-              CartesianIter *jp = ints->new_cartesian_iter(l[i]);
+              CartesianIter *jp = civec[l[i]];
               CartesianIter& j = *jp;
               int i_cart = 0;
               for (j.start(); j; j.next()) {
@@ -158,9 +158,7 @@ GaussianShell::grad_values(const RefIntegral& ints,
                                              *precon[i];
                   i_cart++;
                 }
-              delete jp;
-              SphericalTransformIter *ti
-                  = ints->new_spherical_transform_iter(l[i]);
+              SphericalTransformIter *ti = sivec[l[i]];
               int n = ti->n();
               memset(&basis_values[i_basis], 0, sizeof(double)*n);
               for (ti->start(); ti->ready(); ti->next()) {
@@ -168,7 +166,6 @@ GaussianShell::grad_values(const RefIntegral& ints,
                       += ti->coef() * cart_basis_values[ti->cartindex()];
                 }
               i_basis += n;
-              delete ti;
             }
         }
     }
@@ -188,7 +185,7 @@ GaussianShell::grad_values(const RefIntegral& ints,
               i_grad++;
             }
           else if (!puream[i]) {
-              CartesianIter *jp = ints->new_cartesian_iter(l[i]);
+              CartesianIter *jp = civec[l[i]];
               CartesianIter& j = *jp;
               for (j.start(); j; j.next()) {
                   double norm_precon = precon[i];
@@ -211,11 +208,10 @@ GaussianShell::grad_values(const RefIntegral& ints,
                     * xs[j.a()] * ys[j.b()] * zs[j.c()-1];
                   i_grad++;
                 }
-              delete jp;
             }
           else {
               double cart_g_values[3*((MAX_AM+1)*(MAX_AM+2))/2];
-              CartesianIter *jp = ints->new_cartesian_iter(l[i]);
+              CartesianIter *jp = civec[l[i]];
               CartesianIter& j = *jp;
               int i_cart = 0;
               for (j.start(); j; j.next()) {
@@ -239,9 +235,7 @@ GaussianShell::grad_values(const RefIntegral& ints,
                     * xs[j.a()] * ys[j.b()] * zs[j.c()-1];
                   i_cart++;
                 }
-              delete jp;
-              SphericalTransformIter *ti
-                  = ints->new_spherical_transform_iter(l[i]);
+              SphericalTransformIter *ti = sivec[l[i]];
               int n = ti->n();
               memset(&g_values[i_grad], 0, sizeof(double)*n*3);
               for (ti->start(); ti->ready(); ti->next()) {
@@ -254,7 +248,6 @@ GaussianShell::grad_values(const RefIntegral& ints,
                     }
                 }
               i_grad += 3*n;
-              delete ti;
             }
         }
     }

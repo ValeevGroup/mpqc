@@ -7,7 +7,9 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 BIN_OR_LIB = BIN
 TARGET_TO_MAKE = tmpl
 
-#SYSLIBS := $(SYSLIBS) -ll
+ifeq ($(LEX),lex)
+SYSLIBS := $(SYSLIBS) -ll
+endif
 
 DISTFILES = main.c tmpllex.l tmpl.h
 

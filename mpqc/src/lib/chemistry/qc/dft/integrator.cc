@@ -1654,16 +1654,16 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
   s.get(user_defined_grids_);
   s.get(dynamic_grids_);
 
-  ExEnv::out() << "natomic_rows_ = " << natomic_rows_ << endl;
-  ExEnv::out() << "max_gridtype_ = " << max_gridtype_ << endl;
-  ExEnv::out() << "prune_grid_ = " << prune_grid_ << endl;
-  ExEnv::out() << "gridtype_ = " << gridtype_ << endl;
-  ExEnv::out() << "npruned_partitions_ = " << npruned_partitions_ << endl;
-  ExEnv::out() << "user_defined_grids_ = " << user_defined_grids_ << endl;
-  ExEnv::out() << "dynamic_grids_ = " << dynamic_grids_ << endl;
+//  ExEnv::out() << "natomic_rows_ = " << natomic_rows_ << endl;
+//  ExEnv::out() << "max_gridtype_ = " << max_gridtype_ << endl;
+//  ExEnv::out() << "prune_grid_ = " << prune_grid_ << endl;
+//  ExEnv::out() << "gridtype_ = " << gridtype_ << endl;
+//  ExEnv::out() << "npruned_partitions_ = " << npruned_partitions_ << endl;
+//  ExEnv::out() << "user_defined_grids_ = " << user_defined_grids_ << endl;
+//  ExEnv::out() << "dynamic_grids_ = " << dynamic_grids_ << endl;
   
 
-  ExEnv::out() << "In StateIn Constructor!" << endl;
+//  ExEnv::out() << "In StateIn Constructor!" << endl;
   weight_ = new BeckeIntegrationWeight;
 
   int i;
@@ -1694,7 +1694,7 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
 RadialAngularIntegrator::RadialAngularIntegrator()
 {
   weight_  = new BeckeIntegrationWeight;
-  ExEnv::out() << "In Default Constructor" << endl;
+//  ExEnv::out() << "In Default Constructor" << endl;
   radial_user_ = new EulerMaclaurinRadialIntegrator;
   angular_user_ = new LebedevLaikovIntegrator;
   
@@ -1717,7 +1717,7 @@ RadialAngularIntegrator::RadialAngularIntegrator(const RefKeyVal& keyval):
 
   weight_ = keyval->describedclassvalue("weight");
   if (weight_.null()) weight_ = new BeckeIntegrationWeight;
-  ExEnv::out() << "In RefKeyVal Constructor" << endl;
+//  ExEnv::out() << "In RefKeyVal Constructor" << endl;
   
   init_parameters(keyval);
   init_default_grids();
@@ -1755,24 +1755,14 @@ RadialAngularIntegrator::save_data_state(StateOut& s)
   s.put(dynamic_grids_);
   s.put_array_double(Alpha_coeffs_[0],natomic_rows_*(npruned_partitions_-1));
   
-  ExEnv::out() << "natomic_rows_ = " << natomic_rows_ << endl;
-  ExEnv::out() << "max_gridtype_ = " << max_gridtype_ << endl;
-  ExEnv::out() << "prune_grid_ = " << prune_grid_ << endl;
-  ExEnv::out() << "gridtype_ = " << gridtype_ << endl;
-  ExEnv::out() << "npruned_partitions_ = " << npruned_partitions_ << endl;
-  ExEnv::out() << "user_defined_grids_ = " << user_defined_grids_ << endl;
-  ExEnv::out() << "dynamic_grids_ = " << dynamic_grids_ << endl;
+//  ExEnv::out() << "natomic_rows_ = " << natomic_rows_ << endl;
+//  ExEnv::out() << "max_gridtype_ = " << max_gridtype_ << endl;
+//  ExEnv::out() << "prune_grid_ = " << prune_grid_ << endl;
+//  ExEnv::out() << "gridtype_ = " << gridtype_ << endl;
+//  ExEnv::out() << "npruned_partitions_ = " << npruned_partitions_ << endl;
+//  ExEnv::out() << "user_defined_grids_ = " << user_defined_grids_ << endl;
+//  ExEnv::out() << "dynamic_grids_ = " << dynamic_grids_ << endl;
   
-//  s.put(radial_);
-//  s.put(angular_);
-//  s.put(weight_);
-//  s.put_array_double(grid_accuracy_, max_gridtype_);
-//  s.put(natomic_rows_);
-//  s.put(radial_user_);
-//  s.put(angular_user_);
-//  s.put(angular_grid_);
-//  s.put(radial_grid_);
-
   if (user_defined_grids_) {
       radial_user_.save_state(s);
       angular_user_.save_state(s);
@@ -1819,8 +1809,10 @@ RadialAngularIntegrator::init_parameters(const RefKeyVal& keyval)
       else if (!strcmp(grid,"xfine"))  gridtype_ = 4;
       else {
           ExEnv::out() << " Grid type " << grid << " not recognized. " << endl;
-          ExEnv::out() << " Choices are: xcoarse, coarse, medium(default), fine, xfine. " << endl;
-          ExEnv::out() << " The computed energies are accuracy to 1e-4, 1e-5, 1e-6, 1e-7, and 1e-8 E_h,"
+          ExEnv::out() <<
+              " Choices are: xcoarse, coarse, medium(default), fine, xfine. " << endl;
+          ExEnv::out() <<
+              " The computed energies are accuracy to 1e-4, 1e-5, 1e-6, 1e-7, and 1e-8 E_h,"
               " respectively." << endl;
           ExEnv::out() << " Using medium default grids. " << endl;
           gridtype_ = 2;
@@ -2193,8 +2185,6 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
   int *nr = new int[ncenters];
   int nangular;
   
-  // This will need to be changed for pruning
-  // for (icenter=0; icenter<ncenters; icenter++) nr[icenter] = radial_->nr();
   for (icenter=0; icenter<ncenters; icenter++)
       nr[icenter] = get_radial_grid(mol->Z(icenter))->nr();
 
@@ -2219,16 +2209,8 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
   SCVector3 center;           // Cartesian position of center
   SCVector3 integration_point;
 
-  double w,q,int_volume,radial_multiplier,angular_multiplier;
+  double w,q,int_volume,radial_multiplier,angular_multiplier,total_density;
         
-  // Need to loop over all possible radial grids for each icenter
-  // Determine maximium # grid points
-  // This isn't used anywhere!
-  int nr_max=0;
-  for (icenter=0;icenter<ncenters;icenter++) {
-      if (nr[icenter]>nr_max) nr_max=nr[icenter];
-    }
-
   RefMessageGrp msg = MessageGrp::get_default_messagegrp();
   int nproc = msg->n();
   int me = msg->me();
@@ -2249,6 +2231,8 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
       // ExEnv::out() << " Radial grid = " << radial_->nr() << " points for charge "
       //     << mol->Z(icenter) << endl;
       for (ir=0; ir < radial_->nr(); ir++) {
+          // point_count=0;
+          // if (! (parallel_counter++%nproc == me)) continue;
           double r = radial_->radial_value(ir, radial_->nr(),
                                            bragg_radius[icenter]);
           radial_multiplier = radial_->radial_multiplier(radial_->nr());
@@ -2260,19 +2244,16 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
           nangular = angular_->num_angular_points(r/bragg_radius[icenter],ir);
           for (iangular=0; iangular<nangular; iangular++) {
               angular_multiplier =
-                angular_->angular_point_cartesian(iangular,r,
-                                                  integration_point);
+                   angular_->angular_point_cartesian(iangular,r,integration_point);
               integration_point += center;
               w=weight_->w(icenter, integration_point, w_gradient);
               point_count++;
               double multiplier = angular_multiplier * radial_multiplier;
-              if (do_point(icenter, integration_point, denfunc,
-                           w, multiplier,
-                           nuclear_gradient, f_gradient, w_gradient)
-                  * multiplier < 1e2*DBL_EPSILON
-                  && multiplier > 1e2*DBL_EPSILON) {
-                }
-            }
+              total_density =
+                       do_point(icenter, integration_point, denfunc,
+                       w, multiplier,
+                       nuclear_gradient, f_gradient, w_gradient)
+                  }
         }
       point_count_total+=point_count;
     }
@@ -2298,14 +2279,14 @@ RadialAngularIntegrator::print(ostream &o) const
 {
   o << node0 << indent << class_name() << " Parameters:" << endl;
   o << incindent;
-  if (prune_grid_) o << indent << indent << " Pruned ";
+  if (prune_grid_) o << indent << " Pruned ";
   if (!user_defined_grids_) {
       switch (gridtype_) {
       case 0: o << "xcoarse "; break;
       case 1: o << "xcoarse "; break;
-      case 2: o << "medium ";  break;
-      case 3: o << "fine ";    break;
-      case 4: o << "xfine ";   break;
+      case 2: o << "medium  "; break;
+      case 3: o << "fine    "; break;
+      case 4: o << "xfine   "; break;
         }
       o << "grid employed" << endl;
     }

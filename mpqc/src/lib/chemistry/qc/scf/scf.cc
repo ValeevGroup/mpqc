@@ -264,11 +264,13 @@ SCF::compute()
       
     // this will be done elsewhere eventually
     double nucrep = molecule()->nuclear_repulsion_energy();
+    double eother = 0.0;
+    if (accumddh_.nonnull()) eother = accumddh_->e();
     cout << node0 << endl << indent
-         << scprintf("total scf energy = %20.15f", eelec+nucrep)
+         << scprintf("total scf energy = %20.15f", eelec+eother+nucrep)
          << endl;
 
-    set_energy(eelec+nucrep);
+    set_energy(eelec+eother+nucrep);
     set_actual_value_accuracy(desired_value_accuracy());
   }
 

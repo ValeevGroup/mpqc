@@ -321,12 +321,15 @@ MCSCF::compute()
 
     double eelec,nucrep;
     do_vector(eelec,nucrep);
-      
+
+    double eother = 0.0;
+    if (accumddh_.nonnull()) eother = accumddh_->e();
+  
     // this will be done elsewhere eventually
-    printf("  total scf energy = %20.15f\n",eelec+nucrep);
+    printf("  total scf energy = %20.15f\n",eelec+eother+nucrep);
     fflush(stdout);
 
-    set_energy(eelec+nucrep);
+    set_energy(eelec+eother+nucrep);
     _energy.set_actual_accuracy(_energy.desired_accuracy());
   }
 
@@ -423,9 +426,12 @@ MCSCF::do_vector(double& eelec, double& nucrep)
     if (fabs(olde-eelec) < 1.0e-13)
       break;
 
+    double eother = 0.0;
+    if (accumddh_.nonnull()) eother = accumddh_->e();
+
     printf("ci1 = %g ci2 = %g ci3 = %g\n",ci1,ci2,ci3);
     printf("iter %5d energy = %20.15f delta = %15.10g\n",
-           iter,eelec+nucrep,olde-eelec);
+           iter,eelec+eother+nucrep,olde-eelec-eother);
     fflush(stdout);
 
     RefSymmSCMatrix fa = _gr_hcore.copy();

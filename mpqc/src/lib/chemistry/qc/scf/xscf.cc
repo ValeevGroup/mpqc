@@ -335,11 +335,13 @@ XSCF::compute()
 
     double eelec,nucrep;
     do_vector(eelec,nucrep);
+    double eother = 0.0;
+    if (accumddh_.nonnull()) eother = accumddh_->e();
       
     // this will be done elsewhere eventually
-    printf("  total scf energy = %20.15f\n",eelec+nucrep);
+    printf("  total scf energy = %20.15f\n",eelec+eother+nucrep);
 
-    set_energy(eelec+nucrep);
+    set_energy(eelec+eother+nucrep);
     _energy.set_actual_accuracy(_energy.desired_accuracy());
   }
 
@@ -440,8 +442,11 @@ XSCF::do_vector(double& eelec, double& nucrep)
     if (fabs(olde-eelec) < 1.0e-13)
       break;
 
+    double eother = 0.0;
+    if (accumddh_.nonnull()) eother = accumddh_->e();
+
     printf("iter %5d energy = %20.15f delta = %15.10g\n",
-           iter,eelec+nucrep,olde-eelec);
+           iter,eelec+eother+nucrep,olde-eelec-eother);
 
     RefSymmSCMatrix sfc = _gr_hcore.copy();
     sfc.accumulate(_fockc);

@@ -51,7 +51,7 @@ NLP0::NLP0(KeyVal&kv):
 }
 
 NLP0::NLP0(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,NLP0::class_desc_),
   _value(s,this)
 {
   _dim.restore_state(s);
@@ -177,7 +177,7 @@ NLP1::NLP1(KeyVal&kv):
 }
 
 NLP1::NLP1(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,NLP1::class_desc_),
   NLP0(s),
   _gradient(s,this)
 {
@@ -286,7 +286,7 @@ NLP2::NLP2(KeyVal&kv):
 }
 
 NLP2::NLP2(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,NLP2::class_desc_),
   NLP1(s),
   _hessian(s,this)
 {

@@ -242,7 +242,7 @@ MPSCF::~MPSCF()
 }
 
 MPSCF::MPSCF(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,MPSCF::class_desc_),
   OneBodyWavefunction(s),
   _exchange_energy(this),
   _eigenvectors(this),

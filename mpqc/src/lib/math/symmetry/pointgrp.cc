@@ -459,7 +459,7 @@ PointGroup::PointGroup(KeyVal& kv)
 
 PointGroup::PointGroup(StateIn& si) :
   symb(0),
-  SavableState(si,class_desc_),
+  SavableState(si,PointGroup::class_desc_),
   origin_(si)
 {
   si.getstring(symb);

@@ -95,7 +95,7 @@ void ChemicalElement::save_data_state(StateOut& so)
 }
 
 ChemicalElement::ChemicalElement(StateIn& si):
-  SavableState(si,class_desc_)
+  SavableState(si,ChemicalElement::class_desc_)
 {
   si.get(Z_);
 }

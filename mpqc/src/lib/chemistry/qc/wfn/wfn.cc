@@ -51,7 +51,7 @@ Wavefunction::~Wavefunction()
 }
 
 Wavefunction::Wavefunction(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,Wavefunction::class_desc_),
   MolecularEnergy(s),
   _natural_orbitals(this),
   _natural_density(this),

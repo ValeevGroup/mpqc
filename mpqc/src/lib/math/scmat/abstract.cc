@@ -49,7 +49,7 @@ SCDimension::~SCDimension()
 #include <util/class/classi.h>
 SCElementScale::SCElementScale(double a):scale(a) {}
 SCElementScale::SCElementScale(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,SCElementScale::class_desc_)
 {
   s.get(scale);
 }
@@ -91,7 +91,7 @@ SCElementScale::process(SCMatrixBlockIter&i)
 SCElementInvert::SCElementInvert() {}
 SCElementInvert::SCElementInvert(double a) {}
 SCElementInvert::SCElementInvert(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,SCElementInvert::class_desc_)
 {
 }
 void
@@ -131,7 +131,7 @@ SCElementInvert::process(SCMatrixBlockIter&i)
 SCElementSquareRoot::SCElementSquareRoot() {}
 SCElementSquareRoot::SCElementSquareRoot(double a) {}
 SCElementSquareRoot::SCElementSquareRoot(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,SCElementSquareRoot::class_desc_)
 {
 }
 void
@@ -172,7 +172,7 @@ SavableState_REF_def(SCElementMaxAbs);
 
 SCElementMaxAbs::SCElementMaxAbs():r(0.0) {}
 SCElementMaxAbs::SCElementMaxAbs(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,SCElementMaxAbs::class_desc_)
 {
   s.get(r);
 }
@@ -229,7 +229,7 @@ SCElementMaxAbs::collect(RefSCElementOp&op)
 #include <util/class/classi.h>
 SCElementAssign::SCElementAssign(double a):assign(a) {}
 SCElementAssign::SCElementAssign(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,SCElementAssign::class_desc_)
 {
   s.get(assign);
 }
@@ -270,7 +270,7 @@ SCElementAssign::process(SCMatrixBlockIter&i)
 #include <util/class/classi.h>
 SCElementShiftDiagonal::SCElementShiftDiagonal(double a):shift_diagonal(a) {}
 SCElementShiftDiagonal::SCElementShiftDiagonal(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,SCElementShiftDiagonal::class_desc_)
 {
   s.get(shift_diagonal);
 }
@@ -315,7 +315,7 @@ SCMatrix::~SCMatrix()
 }
 
 SCMatrix::SCMatrix(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,SCMatrix::class_desc_)
 {
 }
 
@@ -496,7 +496,7 @@ SymmSCMatrix::SymmSCMatrix()
 }
 
 SymmSCMatrix::SymmSCMatrix(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,SymmSCMatrix::class_desc_)
 {
 }
 
@@ -646,7 +646,7 @@ DiagSCMatrix::DiagSCMatrix()
 }
 
 DiagSCMatrix::DiagSCMatrix(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,DiagSCMatrix::class_desc_)
 {
 }
 
@@ -755,7 +755,7 @@ SCVector::~SCVector()
 }
 
 SCVector::SCVector(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,SCVector::class_desc_)
 {
 }
 
@@ -782,7 +782,7 @@ double
 SCVector::maxabs()
 {
   RefSCElementMaxAbs op = new SCElementMaxAbs();
-  RefSCRectElementOp abop = op;
+  RefSCVectorElementOp abop = op;
   this->element_op(abop);
   return op->result();
 }

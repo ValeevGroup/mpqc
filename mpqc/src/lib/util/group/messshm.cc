@@ -52,6 +52,7 @@ union semun {
 
 struct commbuf_struct {
     int nmsg;
+    int n_wait_for_change;
     char buf[SHMCOMMBUFSIZE];
 };
 typedef struct commbuf_struct commbuf_t;
@@ -68,8 +69,7 @@ static int shmid;
 static int sync_semid;
 static int sync2_semid;
 static int semid;
-static int send_semid;
-static int recv_semid;
+static int change_semid;
 static void* sharedmem;
 
 static struct sembuf semdec;
@@ -189,12 +189,10 @@ ShmMessageGrp::~ShmMessageGrp()
   semun junk;
   junk.val = 0;
   semctl(semid,me(),IPC_RMID,junk);
-  semctl(send_semid,me(),IPC_RMID,junk);
-  semctl(recv_semid,me(),IPC_RMID,junk);
+  semctl(change_semid,me(),IPC_RMID,junk);
 #else
   semctl(semid,me(),IPC_RMID);
-  semctl(send_semid,me(),IPC_RMID);
-  semctl(recv_semid,me(),IPC_RMID);
+  semctl(change_semid,me(),IPC_RMID);
 #endif
 }
 
@@ -267,14 +265,8 @@ ShmMessageGrp::initialize(int nprocs)
       exit(-1);
     }
   
-  send_semid = semget(IPC_PRIVATE,nprocs,IPC_CREAT | SEM_R | SEM_A );
-  if (send_semid == -1) {
-      perror("semget");
-      exit(-1);
-    }
-
-  recv_semid = semget(IPC_PRIVATE,nprocs,IPC_CREAT | SEM_R | SEM_A );
-  if (recv_semid == -1) {
+  change_semid = semget(IPC_PRIVATE,nprocs,IPC_CREAT | SEM_R | SEM_A );
+  if (change_semid == -1) {
       perror("semget");
       exit(-1);
     }
@@ -287,12 +279,7 @@ ShmMessageGrp::initialize(int nprocs)
           exit(-1);
         }
 
-      if (semctl(recv_semid,i,SETVAL,semzero) == -1) {
-          perror("semctl");
-          exit(-1);
-        }
-
-      if (semctl(send_semid,i,SETVAL,semzero) == -1) {
+      if (semctl(change_semid,i,SETVAL,semzero) == -1) {
           perror("semctl");
           exit(-1);
         }
@@ -301,6 +288,8 @@ ShmMessageGrp::initialize(int nprocs)
       commbuf[i] = (commbuf_t*) nextbuf;
       // Mark the commbuf as having no messages.
       commbuf[i]->nmsg = 0;
+      // and no outstanding waits
+      commbuf[i]->n_wait_for_change = 0;
       nextbuf = (void*)(((char*)nextbuf) + sizeof(commbuf_t));
     }
 
@@ -318,53 +307,17 @@ ShmMessageGrp::initialize(int nprocs)
   intMessageGrp::initialize(mynodeid, nprocs, 30);
 }
 
-static void reset_recv(int node)
-{
-#ifdef SEMCTL_REQUIRES_SEMUN
-  semun semzero;
-  semzero.val = 0;
-#else
-  int semzero = 0;
-#endif
-  semctl(recv_semid,node,SETVAL,semzero);
-}
-
-static void get_recv(int node)
+static void get_change(int node)
 {
   semdec.sem_num = node;
-  semop(recv_semid,&semdec,1);
+  semop(change_semid,&semdec,1);
   semdec.sem_num = 0;
 }
 
-static void put_recv(int node)
+static void put_change(int node)
 {
   seminc.sem_num = node;
-  semop(recv_semid,&seminc,1);
-  seminc.sem_num = 0;
-}
-
-static void reset_send(int node)
-{
-#ifdef SEMCTL_REQUIRES_SEMUN
-  semun semzero;
-  semzero.val = 0;
-#else
-  int semzero = 0;
-#endif
-  semctl(send_semid,node,SETVAL,semzero);
-}
-
-static void get_send(int node)
-{
-  semdec.sem_num = node;
-  semop(send_semid,&semdec,1);
-  semdec.sem_num = 0;
-}
-
-static void put_send(int node)
-{
-  seminc.sem_num = node;
-  semop(send_semid,&seminc,1);
+  semop(change_semid,&seminc,1);
   seminc.sem_num = 0;
 }
 
@@ -447,8 +400,6 @@ ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
   print_buffer(me(),me());
 #endif
 
-  reset_send(me());
-
   look_for_message:
 
   wait_for_write(me());
@@ -459,8 +410,9 @@ ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
       message = NEXT_MESSAGE(message);
     }
   if (i==commbuf[me()]->nmsg) {
+      commbuf[me()]->n_wait_for_change++;
       release_write(me());
-      get_send(me());
+      get_change(me());
       goto look_for_message;
     }
 
@@ -490,8 +442,12 @@ ShmMessageGrp::basic_recv(int type, void* buf, int bytes)
 
   commbuf[me()]->nmsg--;
 
+  while(commbuf[me()]->n_wait_for_change) {
+      put_change(me());
+      commbuf[me()]->n_wait_for_change--;
+    }
+
   release_write(me());
-  put_recv(me());
 }
 
 void
@@ -514,8 +470,6 @@ ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
       fprintf(stderr,"ShmMessageGrp::basic_send: bad destination\n");
       abort();
     }
-
-  reset_recv(dest);
 
   try_send_again:
 
@@ -541,8 +495,9 @@ ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
       else {
           // try to recover from a full buffer by waiting for the dest
           // to read some data.
+          commbuf[dest]->n_wait_for_change++;
           release_write(dest);
-          get_recv(dest);
+          get_change(dest);
           goto try_send_again;
         }
     }
@@ -552,9 +507,14 @@ ShmMessageGrp::basic_send(int dest, int type, void* buf, int bytes)
   memcpy(((char*)availmsg) + sizeof(msgbuf_t),buf,bytes);
   commbuf[dest]->nmsg++;
 
+  // let the dest know that there is more data in the buffer
+  while(commbuf[dest]->n_wait_for_change) {
+      put_change(dest);
+      commbuf[dest]->n_wait_for_change--;
+    }
+
   // Release write access to the dest's buffer.
   release_write(dest);
-  put_send(dest);
 }
 
 int

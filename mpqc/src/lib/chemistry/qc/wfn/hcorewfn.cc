@@ -34,78 +34,53 @@ HCoreWfn::_castdown(const ClassDesc*cd)
 
 HCoreWfn::HCoreWfn(StateIn& s) :
   OneBodyWavefunction(s),
-  _accumh(s)
+  accumh(s)
   maybe_SavableState(s)
 {
-  occ(_mol->charges(),ndocc,nsocc);
+  occ(molecule()->charges(),ndocc,nsocc);
 }
 
 HCoreWfn::HCoreWfn(const RefKeyVal&keyval):
   OneBodyWavefunction(keyval)
 {
-  occ(_mol->charges(),ndocc,nsocc);
-  _accumh = new AccumHCore;
-  _accumh->init(basis(),integral());
-}
-
-HCoreWfn::HCoreWfn(const OneBodyWavefunction& obwfn) :
-  OneBodyWavefunction(obwfn)
-{
-  occ(_mol->charges(),ndocc,nsocc);
-  _accumh = new AccumHCore;
-  _accumh->init(basis(),integral());
-}
-
-HCoreWfn::HCoreWfn(const HCoreWfn& hcwfn) :
-  OneBodyWavefunction(hcwfn)
-{
-  occ(_mol->charges(),ndocc,nsocc);
-  _accumh = hcwfn._accumh;
+  occ(molecule()->charges(),ndocc,nsocc);
+  accumh = new AccumHCore;
+  accumh->init(basis(),integral());
 }
 
 HCoreWfn::~HCoreWfn()
 {
 }
 
-HCoreWfn &
-HCoreWfn::operator=(const HCoreWfn& hcwfn)
-{
-  OneBodyWavefunction::operator=(hcwfn);
-  _accumh = hcwfn._accumh;
-  ndocc = hcwfn.ndocc;
-  nsocc = hcwfn.nsocc;
-  return *this;
-}
-
 void
 HCoreWfn::save_data_state(StateOut&s)
 {
   OneBodyWavefunction::save_data_state(s);
-  _accumh.save_state(s);
+  accumh.save_state(s);
 }
 
 RefSCMatrix
 HCoreWfn::eigenvectors()
 {
-  if (!_eigenvectors.computed()) {
+  if (!eigenvectors_.computed()) {
 
     // create the core Hamiltonian Hcore
-    RefSymmSCMatrix h(basis_dimension(), matrixkit());
-    _accumh->accum(h);
+    RefSymmSCMatrix h(basis_dimension(), basis_matrixkit());
+    accumh->accum(h);
   
     // diagonalize Hcore, and transform to S^-1/2 basis
-    RefSCMatrix vec(basis_dimension(), basis_dimension(), matrixkit());
-    RefDiagSCMatrix val(basis_dimension(), matrixkit());
+    RefSCMatrix vec(basis_dimension(), basis_dimension(), basis_matrixkit());
+    RefDiagSCMatrix val(basis_dimension(), basis_matrixkit());
     h.diagonalize(val,vec);
   
     vec = ao_to_orthog_ao()*vec;
 
-    _eigenvectors=vec;
+    eigenvectors_=vec;
 
-    _eigenvectors.computed() = 1;
+    eigenvectors_.computed() = 1;
   }
   
-  return _eigenvectors;
+  return eigenvectors_;
 }
 
 double

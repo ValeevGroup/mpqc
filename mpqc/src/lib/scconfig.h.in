@@ -204,6 +204,9 @@
 /* Define if template should be explicitly instantiated.  */
 #undef EXPLICIT_TEMPLATE_INSTANTIATION
 
+/* Set to the FORTRAN 77 dgemm name.  */
+#undef F77_DGEMM_SYMBOL
+
 #endif /* _CONFIG_H */
 
 /* 

@@ -210,6 +210,7 @@ BEMSolvent::init_system_matrix()
   RefSCMatrix system_matrix(d,d,matrixkit());
   system_matrix.assign(0.0);
 
+  tim_enter("precomp");
   // precompute some arrays
   TriangulatedSurfaceIntegrator triint(surf_);
   int n_integration_points = triint.n();
@@ -234,7 +235,9 @@ BEMSolvent::init_system_matrix()
       sfdA[i] = s * fdA;
       rsfdA[i] = rs * fdA;
     }
+  tim_exit("precomp");
 
+  tim_enter("sysmat");
   double *sysmati = new double[n];
   RefSCVector vsysmati(system_matrix->rowdim(),system_matrix->kit());
   // loop thru all the vertices
@@ -264,6 +267,7 @@ BEMSolvent::init_system_matrix()
       vsysmati->assign(sysmati);
       system_matrix->assign_row(vsysmati,i);
     }
+  tim_exit("sysmat");
 
   delete[] surfpv;
   delete[] rfdA;
@@ -274,6 +278,7 @@ BEMSolvent::init_system_matrix()
   delete[] j2;
   delete[] sysmati;
 
+  tim_enter("AV");
   double A = 0.0;
   double V = 0.0;
   for (triint = 0; triint.update(); triint++) {
@@ -282,17 +287,24 @@ BEMSolvent::init_system_matrix()
     }
   area_ = A;
   volume_ = V;
+  tim_exit("AV");
 
   cout << node0 << indent
-       << scprintf("Solvent Accessible Surface: Area = %15.10f ", A)
-       << scprintf("Volume = %15.10f", V) << endl;
+       << scprintf("Solvent Accessible Surface:") << endl
+       << indent
+       << scprintf("  Area = %15.10f ", A)
+       << scprintf("Volume = %15.10f ", V)
+       << scprintf("Nvertex = %3d", n) << endl;
 
   // Add I to the system matrix.
   system_matrix->shift_diagonal(1.0);
 
   //system_matrix->print("System Matrix");
 
-  system_matrix_i_ = system_matrix.i();
+  tim_enter("inv");
+  system_matrix->invert_this();
+  system_matrix_i_ = system_matrix;
+  tim_exit("inv");
 
   //system_matrix_i_->print("System Matrix Inverse");
 }

@@ -48,7 +48,9 @@ BABEL_CLASSES = \
   MPQC.IntegralEvaluator2 \
   MPQC.IntegralEvaluator3 \
   MPQC.IntegralEvaluator4 \
-  MPQC.ChemistryOpt_CoordinateModel
+  MPQC.ChemistryOpt_CoordinateModel \
+  MPQC.ComponentClassDescription \
+  MPQC.ComponentFactory
 
 EXTRA_CXX_SRCS = socket.cc except.cc basis_cca_to_sc.cc
 EXTRA_INCLUDES = socket.h except.h ccaiter.h

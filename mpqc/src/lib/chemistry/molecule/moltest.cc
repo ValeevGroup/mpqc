@@ -52,12 +52,6 @@ using namespace std;
 // force linkage 
 #include <chemistry/molecule/linkage.h>
 
-__builtin_delete(void*ptr)
-{
-  if (ptr>(void*)0 && ptr<(void*)0x100) abort();
-  if (ptr) free(ptr);
-}
-
 void do_displacement(Ref<MolecularCoor>&mc,int i);
 
 void
@@ -116,7 +110,7 @@ main(int argc, char **argv)
       kv = new ParsedKeyVal(SRCDIR "/moltest.in");
     }
 
-  Ref<AtomInfo> atominfo = kv->describedclassvalue("atominfo");
+  Ref<AtomInfo> atominfo; atominfo << kv->describedclassvalue("atominfo");
   if (atominfo.nonnull()) {
       Ref<AtomInfo> refatominfo = new AtomInfo;
       cout << node0<< "-------------- testing atominfo --------------" << endl;
@@ -128,13 +122,14 @@ main(int argc, char **argv)
       ostrstream ostrs;
 #endif
       StateOutBin so(ostrs);
-      atominfo.save_state(so);
+      SavableState::save_state(atominfo.pointer(), so);
       atominfo = 0;
       so.close();
       ostrs.flush();
       istream istrs(ostrs.rdbuf());
       StateInBin si(istrs);
-      atominfo.restore_state(si);
+      istrs.rdbuf(0);
+      atominfo << SavableState::restore_state(si);
       if (grp->me() == 0) print_atominfo(atominfo, refatominfo);
       if (grp->n() > 1) {
           BcastState b(grp, 0);
@@ -145,7 +140,7 @@ main(int argc, char **argv)
         }
     }
 
-  Ref<Molecule> mol = kv->describedclassvalue("molecule");
+  Ref<Molecule> mol; mol << kv->describedclassvalue("molecule");
   if (mol.nonnull()) {
       cout << "-------------- testing molecule --------------" << endl;
 
@@ -182,21 +177,23 @@ main(int argc, char **argv)
 #endif
       StateOutBin so(ostrs);
       cout << "saveing ..." << endl;
-      mol.save_state(so);
+      SavableState::save_state(mol.pointer(),so);
       mol = 0;
       so.close();
       ostrs.flush();
       istream istrs(ostrs.rdbuf());
       StateInBin si(istrs);
       cout << "restoring ..." << endl;
-      mol.restore_state(si);
+      mol << SavableState::restore_state(si);
       cout << "printing restored molecule:" << endl;
       mol->print();
     }
 
   cout << "-------------- initializing render tests --------------" << endl;
-  Ref<Render> ren = kv->describedclassvalue("renderer");
-  Ref<RenderedObject> renmol = kv->describedclassvalue("renderedmolecule");
+  Ref<Render> ren;
+  ren << kv->describedclassvalue("renderer");
+  Ref<RenderedObject> renmol;
+  renmol << kv->describedclassvalue("renderedmolecule");
   if (ren.nonnull() && renmol.nonnull()) {
       cout << "-------------- testing renderer --------------" << endl;
       ren->render(renmol);
@@ -204,10 +201,10 @@ main(int argc, char **argv)
 
   //exit(0);
 
-  Ref<SetIntCoor> simp = kv->describedclassvalue("simp");
+  Ref<SetIntCoor> simp; simp << kv->describedclassvalue("simp");
   if (simp.nonnull()) {
       cout << "-------------- testing simp  --------------" << endl;
-      Ref<IntCoorGen> gen = kv->describedclassvalue("generator");
+      Ref<IntCoorGen> gen; gen << kv->describedclassvalue("generator");
       if (gen.nonnull()) {
           gen->print();
         }
@@ -219,7 +216,7 @@ main(int argc, char **argv)
     }
 
   // compare the analytic bmatrix to the finite displacement bmatrix
-  Ref<SetIntCoor> bmat_test = kv->describedclassvalue("bmat_test");
+  Ref<SetIntCoor> bmat_test; bmat_test << kv->describedclassvalue("bmat_test");
   if (bmat_test.nonnull()) {
       cout << "-------------- bmat_test  --------------" << endl;
       Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
@@ -271,7 +268,7 @@ main(int argc, char **argv)
   cerr.flush();
   
   // now we get ambitious
-  Ref<MolecularCoor> mc = kv->describedclassvalue("molcoor");
+  Ref<MolecularCoor> mc; mc << kv->describedclassvalue("molcoor");
   cout.flush();
   cerr.flush();
 
@@ -295,19 +292,20 @@ main(int argc, char **argv)
       // hessian.print();
     }
 
-  Ref<MolecularEnergy> me = kv->describedclassvalue("energy");
+  Ref<MolecularEnergy> me; me << kv->describedclassvalue("energy");
   if (me.nonnull()) {
       cout << "-------------- testing energy  --------------" << endl;
       me->print();
     }
 
-  Ref<MolecularHessian> molhess = kv->describedclassvalue("hess");
+  Ref<MolecularHessian> molhess; molhess << kv->describedclassvalue("hess");
   RefSymmSCMatrix xhessian;
   if (molhess.nonnull()) {
       xhessian = molhess->cartesian_hessian();
     }
 
-  Ref<MolecularFrequencies> molfreq = kv->describedclassvalue("freq");
+  Ref<MolecularFrequencies> molfreq;
+  molfreq << kv->describedclassvalue("freq");
   if (molfreq.nonnull() && xhessian.nonnull()) {
       cout << "-------------- testing freq  --------------" << endl;
       molfreq->compute_frequencies(xhessian);

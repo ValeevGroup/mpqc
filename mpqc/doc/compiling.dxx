@@ -28,11 +28,9 @@ at any GNU software FTP repository.
        \begin{itemize}
 
            \item EGCS 1.1.2 and GCC 2.95.1, both available from
-                 \URL{http://egcs.cygnus.com}, seem to work.  There seem to
-                 be problems with optimization with these compilers,
-                 however.  Use #--enable-debug# to make sure everything
-                 works.  If you want to optimize anyway, then EGCS 1.1.2 is
-                 a better choice.
+                 \URL{http://egcs.cygnus.com}, seem to work.  However,
+                 there seem to be problems with the C and/or math library
+                 in RedHat 6.0, so use either Redhat 5.2 or 6.1.
 
            \item IBM xlC 3.1.4 and later.  Use the versions of the
                  compilers with the "_r" appended to the name, since SC

@@ -47,11 +47,14 @@ This chapter explains how to run mpqc in a variety of environments.
 \begin{description}
 \item[{\tt -f}] The name of the input file.  The default is
                      {\tt mpqc.in}.
-\item[{\tt -messagegrp}] A ParsedKeyVal specification of a
-                      MessageGrp object.
+\item[{\tt -messagegrp}] A \Ref{ParsedKeyVal} specification of a
+                      \Ref{MessageGrp} object.
                       The default depends on how MPQC was compiled.
-\item[{\tt -threadgrp}] A ParsedKeyVal specification of a
-                      ThreadGrp object.
+\item[{\tt -memorygrp}] A \Ref{ParsedKeyVal} specification of a
+                      \Ref{MemoryGrp} object.
+                      The default depends on how MPQC was compiled.
+\item[{\tt -threadgrp}] A \Ref{ParsedKeyVal} specification of a
+                      \Ref{ThreadGrp} object.
                       The default depends on how MPQC was compiled.
 \item[{\tt -l}] Sets a limit on the number of basis functions.
                      The default is zero, which means an unlimited number
@@ -370,6 +373,33 @@ details about how to do the calculation:
 
 /**@name A Walk-Through of an Input File
 
+This example input does a Hartree-Fock calculation on water.
+Following is the entire input, followed by a breakdown with
+descriptions.
+
+\begin{verbatim}
+% This input does a Hartree-Fock calculation on water.
+molecule<Molecule>: (
+  symmetry = C2V
+  unit = angstrom
+  { atoms geometry } = {
+    O     [     0.00000000     0.00000000     0.37000000 ]
+    H     [     0.78000000     0.00000000    -0.18000000 ]
+    H     [    -0.78000000     0.00000000    -0.18000000 ]
+  }
+)
+basis<GaussianBasisSet>: (
+  name = "STO-3G"
+  molecule = $:molecule
+)
+mpqc: (
+  mole<CLHF>: (
+    molecule = $:molecule
+    basis = $:basis
+  )
+)
+\end{verbatim}
+
 We start with a descriptive comment.  Comments begin
 with a #%#.  Everything beginning with the #%# to the end
 of the line are ignored.
@@ -378,19 +408,45 @@ of the line are ignored.
 % This input does a Hartree-Fock calculation on water.
 \end{verbatim}
 
-Now lets set up a \Ref{Molecule} object.  The name of the
-object comes first, it is #molecule#.  Then in angle
-brackets comes the type of the molecule, which is the class
-\Ref{Molecule}.  The completed keyword is followed by a #:#
-and then several pieces of input grouped between a pair of
-matching parentheses.  These parentheses contain the information
-that given the \Ref{Molecule} \Ref{KeyVal} constructor.
+Now lets set up a \Ref{Molecule} object.  The name of the object comes
+first, it is #molecule#.  Then in angle brackets comes the type of the
+molecule, which is the class \Ref{Molecule}.  The completed keyword is
+followed by a #:# and then several pieces of input grouped between a pair
+of matching parentheses.  These parentheses contain the information that
+will be given to \Ref{Molecule} \Ref{KeyVal} constructor.
 
 \begin{verbatim}
 molecule<Molecule>: (
+\end{verbatim}
+
+The point group of the molecule is needed.  This is done by
+assigning #symmetry# to a case insensitive Schoenflies symbol
+that is used to initialize a \Ref{PointGroup} object.
+
+\begin{verbatim}
   symmetry = C2V
+\end{verbatim}
+
+The default unit for the Cartesian coordinates is Bohr.  You can
+specify other units by assigned #unit# to a string that will be
+used to initialize a \Ref{Units} object.
+
+\begin{verbatim}
   unit = angstrom
-  { atoms geometry } = {
+\end{verbatim}
+
+Finally, the atoms and coordinates are given.  This can be given in the
+shorthand table syntax shown below.  The headings of the table are the
+keywords between the first pair of brackets.  These are followed by an #=#
+and another pair of brackets that contain the data.  The first datum is
+assigned to the first element of the array that corresponds to the first
+heading, #atom#.  The second datum is assigned to the first element of the
+array associated with the second heading, #geometry#, and so on.  Here the
+second datum is actually a vector: the x, y and z coordinates of the first
+atom.
+
+\begin{verbatim}
+  { atoms                       geometry                   } = {
     O     [     0.00000000     0.00000000     0.37000000 ]
     H     [     0.78000000     0.00000000    -0.18000000 ]
     H     [    -0.78000000     0.00000000    -0.18000000 ]
@@ -415,17 +471,43 @@ keywords will be grouped in the #mpqc# section of the input
 mpqc: (
 \end{verbatim}
 
-Next we create specify the #mole# keyword which specifies
-a specialization of the \Ref{MolecularEnergy} class.  In
-this case we will do a Hartree-Fock calculation.   That
-is done with an object of type \Ref{CLHF}.
+Next we create specify the #mole# keyword which specifies a specialization
+of the \Ref{MolecularEnergy} class.  In this case we will do a Hartree-Fock
+calculation.  That is done with an object of type \Ref{CLHF}.  The keywords
+that \Ref{CLHF} accepts are given with the documentation for the \Ref{CLHF}
+class, usually in the description of the #const RefKeyVal&# constructor for
+the class.  Also with the \Ref{CLHF} documentation is a list of parent
+classes.  Each of the parent classes may also have input.  This input is
+included with the rest of the input for the child class.
 
 \begin{verbatim}
   mole<CLHF>: (
 \end{verbatim}
 
+The next line specifies the molecule to be used.  There are two things to
+note, first that this is actually a reference to complete molecule
+specification elsewhere in the input file.  The #$# indicates that this is
+a reference and the keyword following the #$# is the actual location of the
+molecule.  The #:# in front of the keyword means that the keyword is not
+relative to the current location in the input, but rather relative to the
+root of the tree of keywords.  Thus, this line grabs the molecule that was
+specified above.  The molecule object could have been placed here, but
+frequently it is necessary that several objects refer to the exact same
+object and this can only be done using references.
+
+The second point is that if you look at the documentation for \Ref{CLHF},
+you will see that it doesn't read #molecule# keyword.  However, if you
+follow its parent classes up to \Ref{MolecularEnergy}, you'll find that
+#molecule# is indeed read.
+
 \begin{verbatim}
     molecule = $:molecule
+\end{verbatim}
+
+Just as we gave #molecule#, specify the basis set with the #basis# keyword
+as follows:
+
+\begin{verbatim}
     basis = $:basis
 \end{verbatim}
 

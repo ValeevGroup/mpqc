@@ -806,6 +806,7 @@ HSOSSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
 {
   RefSCElementMaxAbs m = new SCElementMaxAbs;
   cl_dens_.element_op(m);
+  op_dens_.element_op(m);
   double pmax = m->result();
   m=0;
 
@@ -824,7 +825,7 @@ HSOSSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
     RefPetiteList pl = integral()->petite_list();
     LocalTBGrad<LocalHSOSGradContribution>
       tb(l, tbi, pl, basis(), scf_grp_, tbgrad,
-         pmax, desired_gradient_accuracy(), exchange_fraction);
+         pmax, desired_gradient_accuracy(), 1, 0, exchange_fraction);
     tb.run();
     scf_grp_->sum(tbgrad,3 * basis()->molecule()->natom());
   }

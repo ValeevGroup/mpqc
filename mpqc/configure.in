@@ -22,7 +22,6 @@ ifelse(sc_buildid, ,
                           sc_version,default_prefix_dash,sc_buildid)))
 
 AC_PREFIX_DEFAULT(default_prefix)
-[default_prefix: ]default_prefix
 SC_VERSION=sc_version
 AC_DEFINE_UNQUOTED(SC_VERSION, "$SC_VERSION")
 AC_SUBST(SC_VERSION)

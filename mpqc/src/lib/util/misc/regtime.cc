@@ -113,6 +113,9 @@ class TimedRegion {
     void cpu_exit(double);
     void wall_exit(double);
     void flops_exit(double);
+    void cpu_add(double t) { cpu_time_ += t; }
+    void wall_add(double t) { wall_time_ += t; }
+    void flops_add(double t) { flops_ += t; }
     TimedRegion *up() const { return up_; }
 
     int nregion();
@@ -449,6 +452,37 @@ RegionTimer::exit(const char *name)
     }
   current_ = current_->up();
 }
+
+void
+RegionTimer::add_wall_time(const char *name, double t)
+{
+  if (wall_time_) {
+    current_ = current_->findinsubregion(name);
+    current_->wall_add(t);
+    current_ = current_->up();
+    }
+}
+
+void
+RegionTimer::add_cpu_time(const char *name, double t)
+{
+  if (cpu_time_) {
+    current_ = current_->findinsubregion(name);
+    current_->cpu_add(t);
+    current_ = current_->up();
+    }
+}
+
+void
+RegionTimer::add_flops(const char *name, double t)
+{
+  if (flops_) {
+    current_ = current_->findinsubregion(name);
+    current_->flops_add(t);
+    current_ = current_->up();
+    }
+}
+
 
 void
 RegionTimer::enter_default()

@@ -80,6 +80,10 @@ class RegionTimer: public DescribedClass {
     double get_cpu_time() const;
     double get_flops() const;
 
+    void add_wall_time(const char *, double);
+    void add_cpu_time(const char *, double);
+    void add_flops(const char *, double);
+
     static RegionTimer *default_regiontimer();
     static void set_default_regiontimer(const RefRegionTimer &);
 };

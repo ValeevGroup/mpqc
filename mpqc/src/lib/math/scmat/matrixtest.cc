@@ -2,6 +2,21 @@
 #include <iostream.h>
 #include <math.h>
 #include <matrix.h>
+#include <blkiter.h>
+
+class Prod3: public SCElementOp3 {
+  private:
+  public:
+    void process(SCMatrixBlockIter& i1,
+                 SCMatrixBlockIter& i2,
+                 SCMatrixBlockIter& i3) {
+        for (i1.reset(),i2.reset(),i3.reset();
+             i1;
+             ++i1,++i2,++i3) {
+            i1.set(i2.get()*i3.get());
+          }
+      }
+};
 
 void
 randomize(RefSCMatrix&m)
@@ -42,10 +57,21 @@ matrixtest(RefSCDimension d1,RefSCDimension d2,RefSCDimension d3)
   srand48(0);
 
   RefSCMatrix a(d1,d2);
+  RefSCMatrix a2(d1,d2);
+  RefSCMatrix a3(d1,d2);
   RefSCMatrix b(d2,d3);
   RefSCMatrix c(d1,d3);
 
   cout << "a(" << a.nrow() << "," << a.ncol() << ")\n";
+
+  a.assign(7.0);
+  a2.assign(5.0);
+  a3.assign(3.0);
+  RefSCElementOp3 op3 = new Prod3;
+  a.element_op(op3,a2,a3);
+  a.print("a");
+  a2.print("a2");
+  a3.print("a3");
 
   a.assign(0.0);
   b.assign(1.0);

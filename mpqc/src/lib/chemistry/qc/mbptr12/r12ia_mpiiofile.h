@@ -66,11 +66,15 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
 
     /// Utility function to check MPI I/O error codes.
     void check_error_code_(int errcod) const;
+    // Initialization tasks common to all constructors
+    void init(bool restart);
     
   public:
     R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char *filename, int num_te_types, int nbasis1, int nbasis2,
 			 int nocc, int nfzc, bool restart);
+    R12IntsAcc_MPIIOFile(StateIn&);
     ~R12IntsAcc_MPIIOFile();
+    void save_data_state(StateOut&);
 
     /// Stores an ij pair block of integrals to the file
     void store_pair_block(int i, int j, double *ints);

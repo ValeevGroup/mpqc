@@ -49,42 +49,18 @@ R12IntsAcc_Node0File::R12IntsAcc_Node0File(Ref<MemoryGrp>& mem, const char* file
   R12IntsAcc(num_te_types, nbasis1, nbasis2, nocc, nfzc)
 {
   mem_ = mem;
-
-  pairblk_ = new struct PairBlkInfo[nocc_act_*nocc_act_];
-  int i, j, ij;
-  for(i=0,ij=0;i<nocc_act_;i++)
-    for(j=0;j<nocc_act_;j++,ij++) {
-      pairblk_[ij].ints_[eri] = NULL;
-      pairblk_[ij].ints_[r12] = NULL;
-      pairblk_[ij].ints_[r12t1] = NULL;
-      pairblk_[ij].ints_[r12t2] = NULL;
-      pairblk_[ij].refcount_[eri] = 0;
-      pairblk_[ij].refcount_[r12] = 0;
-      pairblk_[ij].refcount_[r12t1] = 0;
-      pairblk_[ij].refcount_[r12t2] = 0;
-      pairblk_[ij].offset_ = (off_t)ij*blocksize_;
-    }
-
-  // Create the file
-  icounter_ = 0;
   filename_ = strdup(filename);
-  if (!restart) {
-    datafile_ = creat(filename_,0644);
-    // If the file was not opened correctly - throw an exception
-    if (datafile_ == -1) {
-      switch (errno) {
-	case EACCES:
-	throw std::runtime_error("R12IntsAcc_Node0File::R12IntsAcc_Node0File -- access to the requested file is not allowed");
-	case ENOSPC:
-	throw std::runtime_error("R12IntsAcc_Node0File::R12IntsAcc_Node0File -- no space left in the filesystem");
+  
+  init(restart);
+}
 
-	default:
-        throw std::runtime_error("R12IntsAcc_Node0File::R12IntsAcc_Node0File -- failed to open POSIX file on node 0");
-      }
-    }
-    // If everything is fine close it and proceed
-    close(datafile_);
-  }
+R12IntsAcc_Node0File::R12IntsAcc_Node0File(StateIn& si) :
+  R12IntsAcc(si)
+{
+  mem_ = MemoryGrp::get_default_memorygrp();
+  si.getstring(filename_);
+  
+  init(true);
 }
 
 R12IntsAcc_Node0File::~R12IntsAcc_Node0File()
@@ -105,6 +81,60 @@ R12IntsAcc_Node0File::~R12IntsAcc_Node0File()
   // Destroy the file
   unlink(filename_);
   free(filename_);
+}
+
+void
+R12IntsAcc_Node0File::save_data_state(StateOut& so)
+{
+  R12IntsAcc::save_data_state(so);
+  so.putstring(filename_);
+}
+
+void
+R12IntsAcc_Node0File::init(bool restart)
+{
+  pairblk_ = new struct PairBlkInfo[nocc_act_*nocc_act_];
+  int i, j, ij;
+  for(i=0,ij=0;i<nocc_act_;i++)
+    for(j=0;j<nocc_act_;j++,ij++) {
+      pairblk_[ij].ints_[eri] = NULL;
+      pairblk_[ij].ints_[r12] = NULL;
+      pairblk_[ij].ints_[r12t1] = NULL;
+      pairblk_[ij].ints_[r12t2] = NULL;
+      pairblk_[ij].refcount_[eri] = 0;
+      pairblk_[ij].refcount_[r12] = 0;
+      pairblk_[ij].refcount_[r12t1] = 0;
+      pairblk_[ij].refcount_[r12t2] = 0;
+      pairblk_[ij].offset_ = (off_t)ij*blocksize_;
+    }
+
+  // See if can open/create the file
+  icounter_ = 0;
+  if (restart)
+    datafile_ = open(filename_,O_WRONLY|O_APPEND,0644);
+  else
+    datafile_ = creat(filename_,0644);
+  // Check if the file was opened correctly
+  check_filedescr_();
+  // If everything is fine close it and proceed
+  close(datafile_);
+}
+
+void
+R12IntsAcc_Node0File::check_filedescr_()
+{
+  // If the file was not opened correctly - throw an exception
+  if (datafile_ == -1) {
+    switch (errno) {
+      case EACCES:
+      throw std::runtime_error("R12IntsAcc_Node0File::R12IntsAcc_Node0File -- access to the requested file is not allowed");
+      case ENOSPC:
+      throw std::runtime_error("R12IntsAcc_Node0File::R12IntsAcc_Node0File -- no space left in the filesystem");
+
+      default:
+      throw std::runtime_error("R12IntsAcc_Node0File::R12IntsAcc_Node0File -- failed to open POSIX file on node 0");
+    }
+  }
 }
 
 void

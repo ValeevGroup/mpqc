@@ -33,6 +33,9 @@
 #endif
 
 #include <util/ref/ref.h>
+#include <util/state/state.h>
+#include <util/state/statein.h>
+#include <util/state/stateout.h>
 #include <util/group/memory.h>
 
 namespace sc {
@@ -42,23 +45,25 @@ namespace sc {
 //   o = active occupied MO
 //   g = general MO
 
-class R12IntsAcc: public RefCount {
+class R12IntsAcc: virtual public SavableState {
 
-    int num_te_types_;  // Number of types of integrals in a block (usually, 3 or 4)
+    int num_te_types_;  // Number of types of integrals in a block (in R12 theories -- 3 or 4)
 
    protected:
     int nocc_, nocc_act_, nfzc_;
     int nbasis1_, nbasis2_;
-    size_t nbasis__2_;  // nbasis_ squared - the size of a block of integrals of one type
+    size_t nbasis__2_;  // nbasis1_ * nbasis2_  - the size of a block of integrals of one type
     size_t blksize_;    // the same in bytes
     size_t blocksize_;  // hence the size of the block of num_te_types of integrals is nbasis__2_ * num_te_types
     bool committed_;    // Whether all data has been written out and ready to be read
 
   public:
     R12IntsAcc(int num_te_types, int nbasis1, int nbasis2, int nocc, int nfzc);
+    R12IntsAcc(StateIn&);
     ~R12IntsAcc();
+    void save_data_state(StateOut&);
 
-    /// Types of two-body operators that r12IntsAcc understands
+    /// Types of two-body operators that R12IntsAcc understands
     enum tbint_type { eri=0, r12=1, r12t1=2, r12t2=3};
     static const int max_num_te_types_ = 4;
 

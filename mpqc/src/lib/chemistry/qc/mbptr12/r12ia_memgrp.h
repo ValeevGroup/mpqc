@@ -56,10 +56,15 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
       int refcount_[max_num_te_types_];          // number of references
       distsize_t offset_;    // global Memgrp offset in bytes
     } *pairblk_;
+    
+    // Initialization tasks common to all constructors
+    void init();
 
   public:
     R12IntsAcc_MemoryGrp(Ref<MemoryGrp>&, int num_te_types, int nbasis1, int nbasis2, int nocc, int nfzc);
+    R12IntsAcc_MemoryGrp(StateIn&);
     ~R12IntsAcc_MemoryGrp();
+    void save_data_state(StateOut&);
 
     /// Stores all pair block of integrals held in mem
     /// mem must be the same as mem_ used to construct this

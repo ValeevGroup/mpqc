@@ -40,6 +40,9 @@ using namespace sc;
 /*--------------------------------
   R12IntsAcc
  --------------------------------*/
+static ClassDesc R12IntsAcc_cd(
+  typeid(R12IntsAcc),"R12IntsAcc",1,"virtual public SavableState",
+  0, 0, 0);
 
 R12IntsAcc::R12IntsAcc(int num_te_types, int nbasis1, int nbasis2, int nocc, int nfzc) :
   num_te_types_(num_te_types), nbasis1_(nbasis1), nbasis2_(nbasis2), nocc_(nocc), nfzc_(nfzc)
@@ -51,8 +54,33 @@ R12IntsAcc::R12IntsAcc(int num_te_types, int nbasis1, int nbasis2, int nocc, int
   committed_ = false;
 }
 
+R12IntsAcc::R12IntsAcc(StateIn& si) : SavableState(si)
+{
+  si.get(num_te_types_);
+  si.get(nbasis1_);
+  si.get(nbasis2_);
+  si.get(nocc_);
+  si.get(nfzc_);
+  int committed; si.get(committed); committed_ = (bool) committed;
+
+  nocc_act_ = nocc_ - nfzc_;
+  nbasis__2_ = nbasis1_*nbasis2_;
+  blksize_ = nbasis__2_*sizeof(double);
+  blocksize_ = blksize_*num_te_types_;
+}
+
 R12IntsAcc::~R12IntsAcc()
 {
+}
+
+void R12IntsAcc::save_data_state(StateOut& so)
+{
+  so.put(num_te_types_);
+  so.put(nbasis1_);
+  so.put(nbasis2_);
+  so.put(nocc_);
+  so.put(nfzc_);
+  so.put((int)committed_);
 }
 
 

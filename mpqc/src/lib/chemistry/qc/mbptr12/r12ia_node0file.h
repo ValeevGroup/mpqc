@@ -64,10 +64,17 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
       off_t offset_;      // location in file (in bytes)
     } *pairblk_;
     
+    // Initialization tasks common to all constructors
+    void init(bool restart);
+    // Check if the file operation went OK
+    void check_filedescr_();
+
   public:
     R12IntsAcc_Node0File(Ref<MemoryGrp>& mem, const char *filename, int num_te_types, int nbasis1, int nbasis2,
 			 int nocc, int nfzc, bool restart);
+    R12IntsAcc_Node0File(StateIn&);
     ~R12IntsAcc_Node0File();
+    void save_data_state(StateOut&);
 
     /// Stores all pair block of integrals held in mem.
     /// By default blocks are appended to the end of the same file, i.e.

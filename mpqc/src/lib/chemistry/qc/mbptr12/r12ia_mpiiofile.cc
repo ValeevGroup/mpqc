@@ -40,11 +40,54 @@ using namespace sc;
 
 ///////////////////////////////////////////////////////////////
 
+static ClassDesc R12IntsAcc_MPIIOFile_cd(
+  typeid(R12IntsAcc_MPIIOFile),"R12IntsAcc_MPIIOFile",1,"public R12IntsAcc",
+  0, 0, create<R12IntsAcc_MPIIOFile>);
+
 R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char* filename, int nte_types, int nbasis1, int nbasis2,
 					   int nocc, int nfzc, bool restart) :
     R12IntsAcc(nte_types, nbasis1, nbasis2, nocc, nfzc), datafile_(MPI_FILE_NULL)
 {
   mem_ = mem;
+  filename_ = strdup(filename);
+
+  init(restart);
+}
+
+R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(StateIn& si) :
+  R12IntsAcc(si)
+{
+  mem_ = MemoryGrp::get_default_memorygrp();
+  si.getstring(filename_);
+  
+  init(true);
+}
+
+R12IntsAcc_MPIIOFile::~R12IntsAcc_MPIIOFile()
+{
+  for(int i=0;i<nocc_act_;i++)
+    for(int j=0;j<nocc_act_;j++) {
+      int ij = ij_index(i,j);
+      for(int oper_type=0; oper_type<num_te_types(); oper_type++)
+	if (pairblk_[ij].ints_[oper_type] != NULL) {
+	  ExEnv::outn() << indent << mem_->me() << ": i = " << i << " j = " << j << " oper_type = " << oper_type << endl;
+	  throw std::runtime_error("Logic error: R12IntsAcc_MPIIOFile::~ : some nonlocal blocks have not been released!");
+	}
+    }
+  delete[] pairblk_;
+  free(filename_);
+}
+
+void
+R12IntsAcc_MPIIOFile::save_data_state(StateOut& so)
+{
+  R12IntsAcc::save_data_state(so);
+  so.putstring(filename_);
+}
+
+void
+R12IntsAcc_MPIIOFile::init(bool restart)
+{
   int errcod;
   errcod = MPI_Comm_size(MPI_COMM_WORLD, &nproc_);
   nints_per_block_ = nbasis__2_*num_te_types();
@@ -64,13 +107,8 @@ R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char* file
       pairblk_[ij].offset_ = (MPI_Offset)ij*blocksize_;
     }
 
-  // Create the file
+  // Try opening/creating the file
   icounter_ = 0;
-  filename_ = strdup(filename);
-
-  //
-  // Try opening the file
-  //
   int amode;
   if (!restart)
     amode = MPI_MODE_CREATE | MPI_MODE_DELETE_ON_CLOSE | MPI_MODE_WRONLY;
@@ -83,22 +121,6 @@ R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char* file
   errcod = MPI_File_close(&datafile_);
   check_error_code_(errcod);
 }
-
-R12IntsAcc_MPIIOFile::~R12IntsAcc_MPIIOFile()
-{
-  for(int i=0;i<nocc_act_;i++)
-    for(int j=0;j<nocc_act_;j++) {
-      int ij = ij_index(i,j);
-      for(int oper_type=0; oper_type<num_te_types(); oper_type++)
-	if (pairblk_[ij].ints_[oper_type] != NULL) {
-	  ExEnv::outn() << indent << mem_->me() << ": i = " << i << " j = " << j << " oper_type = " << oper_type << endl;
-	  throw std::runtime_error("Logic error: R12IntsAcc_MPIIOFile::~ : some nonlocal blocks have not been released!");
-	}
-    }
-  delete[] pairblk_;
-  free(filename_);
-}
-
 
 void
 R12IntsAcc_MPIIOFile::check_error_code_(int errcod) const

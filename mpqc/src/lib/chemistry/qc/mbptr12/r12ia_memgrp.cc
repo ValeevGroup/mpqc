@@ -40,12 +40,51 @@ using namespace sc;
 
 ///////////////////////////////////////////////////////////////
 
+static ClassDesc R12IntsAcc_MemoryGrp_cd(
+  typeid(R12IntsAcc_MemoryGrp),"R12IntsAcc_MemoryGrp",1,"public R12IntsAcc",
+  0, 0, create<R12IntsAcc_MemoryGrp>);
+
 R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(Ref<MemoryGrp>& mem, int num_te_types, int nbasis1, int nbasis2, int nocc, int nfzc) :
   R12IntsAcc(num_te_types, nbasis1, nbasis2, nocc, nfzc)
 {
   mem_ = mem;
-  nproc_ = mem->n();
   
+  init();
+}
+
+R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(StateIn& si) : R12IntsAcc(si)
+{
+  mem_ = MemoryGrp::get_default_memorygrp();
+  
+  init();
+}
+
+R12IntsAcc_MemoryGrp::~R12IntsAcc_MemoryGrp()
+{
+  for(int i=0;i<nocc_act_;i++)
+    for(int j=0;j<nocc_act_;j++)
+      if (!is_local(i,j)) {
+	int ij = ij_index(i,j);
+	for(int oper_type=0; oper_type<num_te_types(); oper_type++)
+	  if (pairblk_[ij].ints_[oper_type] != NULL) {
+	    ExEnv::outn() << indent << mem_->me() << ": i = " << i << " j = " << j << " oper_type = " << oper_type << endl;
+	    throw std::runtime_error("Logic error: R12IntsAcc_MemoryGrp::~ : some nonlocal blocks have not been released!");
+	  }
+      }
+  delete[] pairblk_;
+}
+
+void
+R12IntsAcc_MemoryGrp::save_data_state(StateOut& so)
+{
+  R12IntsAcc::save_data_state(so);
+}
+
+void
+R12IntsAcc_MemoryGrp::init()
+{
+  nproc_ = mem_->n();
+
   // Now do some extra work to figure layout of data in MemoryGrp
   // Compute global offsets to each processor's data
   int i,j,ij;
@@ -63,21 +102,6 @@ R12IntsAcc_MemoryGrp::R12IntsAcc_MemoryGrp(Ref<MemoryGrp>& mem, int num_te_types
       int local_ij_index = ij_index(i,j)/nproc_;
       pairblk_[ij].offset_ = (distsize_t)local_ij_index*blocksize_ + mem_->offset(ij_proc(i,j));
     }
-}
-
-R12IntsAcc_MemoryGrp::~R12IntsAcc_MemoryGrp()
-{
-  for(int i=0;i<nocc_act_;i++)
-    for(int j=0;j<nocc_act_;j++)
-      if (!is_local(i,j)) {
-	int ij = ij_index(i,j);
-	for(int oper_type=0; oper_type<num_te_types(); oper_type++)
-	  if (pairblk_[ij].ints_[oper_type] != NULL) {
-	    ExEnv::outn() << indent << mem_->me() << ": i = " << i << " j = " << j << " oper_type = " << oper_type << endl;
-	    throw std::runtime_error("Logic error: R12IntsAcc_MemoryGrp::~ : some nonlocal blocks have not been released!");
-	  }
-      }
-  delete[] pairblk_;
 }
 
 void

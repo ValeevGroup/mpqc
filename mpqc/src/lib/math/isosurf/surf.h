@@ -258,7 +258,7 @@ class TriangulatedImplicitSurface: public TriangulatedSurface {
     TriangulatedImplicitSurface(const RefKeyVal&);
     ~TriangulatedImplicitSurface();
 
-    RefVolume volume() const { return vol_; }
+    RefVolume volume_object() const { return vol_; }
     double isovalue() const { return isovalue_; }
 
     void init();

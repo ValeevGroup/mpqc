@@ -182,7 +182,7 @@ const double &Point::operator[](int i) const
 }
 
 // Print out a Point
-void Point::print(ostream& os)
+void Point::print(ostream& os) const
 {
     int i;
     for (i=0;i<dim;i++)	os << node0 << scprintf(" %12.8f",x[i]);

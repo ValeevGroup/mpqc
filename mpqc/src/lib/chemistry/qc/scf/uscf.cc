@@ -346,7 +346,7 @@ UnrestrictedSCF::fock(int n)
 }
 
 void
-UnrestrictedSCF::print(ostream&o)
+UnrestrictedSCF::print(ostream&o) const
 {
   int i;
 

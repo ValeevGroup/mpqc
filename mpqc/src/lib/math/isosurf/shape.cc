@@ -193,7 +193,7 @@ Shape::interpolate(const SCVector3& A,
 }
 
 int
-Shape::value_implemented()
+Shape::value_implemented() const
 {
   return 1;
 }
@@ -260,7 +260,7 @@ SphereShape::distance_to_surface(const SCVector3&p,SCVector3*grad) const
   return d;
 }
 
-void SphereShape::print(ostream&o)
+void SphereShape::print(ostream&o) const
 {
   o << indent
     << scprintf("SphereShape: r = %8.4f o = (%8.4f %8.4f %8.4f)",
@@ -283,7 +283,7 @@ SphereShape::boundingbox(double valuemin, double valuemax,
 }
 
 int
-SphereShape::gradient_implemented()
+SphereShape::gradient_implemented() const
 {
   return 1;
 }
@@ -413,7 +413,7 @@ UncappedTorusHoleShape::in_plane_sphere(
 }
 
 void
-UncappedTorusHoleShape::print(ostream&o)
+UncappedTorusHoleShape::print(ostream&o) const
 {
   o << indent << "UncappedTorusHoleShape:" << endl;
   o << incindent;
@@ -452,7 +452,7 @@ UncappedTorusHoleShape::boundingbox(double valuemin, double valuemax,
 }
 
 int
-UncappedTorusHoleShape::gradient_implemented()
+UncappedTorusHoleShape::gradient_implemented() const
 {
   return 1;
 }
@@ -595,7 +595,7 @@ ReentrantUncappedTorusHoleShape::
 }
 
 int
-ReentrantUncappedTorusHoleShape::gradient_implemented()
+ReentrantUncappedTorusHoleShape::gradient_implemented() const
 {
   return 1;
 }
@@ -668,7 +668,7 @@ double NonreentrantUncappedTorusHoleShape::
 }
 
 int
-NonreentrantUncappedTorusHoleShape::gradient_implemented()
+NonreentrantUncappedTorusHoleShape::gradient_implemented() const
 {
   return 1;
 }
@@ -1129,7 +1129,7 @@ Uncapped5SphereExclusionShape::boundingbox(double valuemin, double valuemax,
 }
 
 int
-Uncapped5SphereExclusionShape::gradient_implemented()
+Uncapped5SphereExclusionShape::gradient_implemented() const
 {
   return 1;
 }
@@ -1223,7 +1223,7 @@ UnionShape::boundingbox(double valuemin, double valuemax,
 }
 
 int
-UnionShape::gradient_implemented()
+UnionShape::gradient_implemented() const
 {
   for (AVLSet<RefShape>::iterator j=_shapes.begin(); j!=_shapes.end(); j++) {
       if (!(*j)->gradient_implemented()) return 0;

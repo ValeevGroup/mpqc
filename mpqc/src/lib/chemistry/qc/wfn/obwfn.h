@@ -98,7 +98,7 @@ class OneBodyWavefunction: public Wavefunction {
     double orbital(const SCVector3& r, int iorb);
     double orbital_density(const SCVector3& r, int iorb, double* orbval = 0);
 
-    void print(ostream&o=cout);
+    void print(ostream&o=cout) const;
 };
 SavableState_REF_dec(OneBodyWavefunction);
 

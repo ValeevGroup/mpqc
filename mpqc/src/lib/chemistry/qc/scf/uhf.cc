@@ -93,7 +93,7 @@ UHF::gradient_implemented() const
 }
 
 void
-UHF::print(ostream&o)
+UHF::print(ostream&o) const
 {
   UnrestrictedSCF::print(o);
 }

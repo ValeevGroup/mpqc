@@ -83,6 +83,7 @@ nnmb_atom(int z, int l)
     }
   cerr << "NAO: z too big" << endl;
   abort();
+  return 0;
 }
 
 static int

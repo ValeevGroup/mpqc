@@ -86,7 +86,7 @@ class UnrestrictedSCF: public SCF {
     int spin_polarized();
     int spin_unrestricted();
     
-    void print(ostream&o=cout);
+    void print(ostream&o=cout) const;
 
     int n_fock_matrices() const;
     RefSymmSCMatrix fock(int);

@@ -59,7 +59,7 @@ class OSSSCF: public SCF {
 
     void save_data_state(StateOut&);
 
-    void print(ostream&o=cout);
+    void print(ostream&o=cout) const;
 
     double occupation(int ir, int vectornum);
     double alpha_occupation(int irrep, int vectornum);

@@ -242,7 +242,7 @@ XSCF::gradient_implemented() const
 }
 
 void
-XSCF::print(ostream&o)
+XSCF::print(ostream&o) const
 {
   OneBodyWavefunction::print(o);
 }

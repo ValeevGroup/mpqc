@@ -275,7 +275,7 @@ OSSSCF::spin_polarized()
 }
 
 void
-OSSSCF::print(ostream&o)
+OSSSCF::print(ostream&o) const
 {
   int i;
   

@@ -204,7 +204,7 @@ MBPT2::save_data_state(StateOut& s)
 }
 
 void
-MBPT2::print(ostream&o)
+MBPT2::print(ostream&o) const
 {
   o << node0 << indent << "MBPT2:" << endl;
   o << incindent;

@@ -149,7 +149,7 @@ class MBPT2: public Wavefunction {
     // override compute's obsolete so we can call the reference's obsolete
     void obsolete();
 
-    void print(ostream&o=cout);
+    void print(ostream&o=cout) const;
 };
 SavableState_REF_dec(MBPT2);
 

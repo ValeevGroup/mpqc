@@ -285,7 +285,7 @@ HSOSSCF::spin_polarized()
 }
 
 void
-HSOSSCF::print(ostream&o)
+HSOSSCF::print(ostream&o) const
 {
   int i;
   

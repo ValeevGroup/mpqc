@@ -202,7 +202,7 @@ BEMSolventH::init(const RefWavefunction& wfn)
       akv->assign("nphi",64);
       RefDenIntegrator integrator = new Murray93Integrator(akv.pointer());
       RefDenFunctional functional
-          = new NElInShapeFunctional(solvent_->surface()->volume(),
+          = new NElInShapeFunctional(solvent_->surface()->volume_object(),
                                      solvent_->surface()->isovalue());
       integrator->set_wavefunction(wfn_);
       integrator->integrate(functional);

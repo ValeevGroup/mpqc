@@ -93,7 +93,7 @@ TCHF::gradient_implemented() const
 }
 
 void
-TCHF::print(ostream&o)
+TCHF::print(ostream&o) const
 {
   TCSCF::print(o);
 }

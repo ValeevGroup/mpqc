@@ -246,7 +246,7 @@ MCSCF::gradient_implemented() const
 }
 
 void
-MCSCF::print(ostream&o)
+MCSCF::print(ostream&o) const
 {
   OneBodyWavefunction::print(o);
 }

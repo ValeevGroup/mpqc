@@ -93,7 +93,7 @@ OSSHF::gradient_implemented() const
 }
 
 void
-OSSHF::print(ostream&o)
+OSSHF::print(ostream&o) const
 {
   OSSSCF::print(o);
 }

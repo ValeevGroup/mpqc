@@ -325,7 +325,7 @@ Wavefunction::ao_to_orthog_ao()
 }
 
 RefGaussianBasisSet
-Wavefunction::basis()
+Wavefunction::basis() const
 {
   return gbs_;
 }
@@ -349,14 +349,14 @@ Wavefunction::basis_matrixkit()
 }
 
 void
-Wavefunction::print(ostream&o)
+Wavefunction::print(ostream&o) const
 {
   MolecularEnergy::print(o);
   basis()->print_brief(o);
   // the other stuff is a wee bit too big to print
   if (print_nao_ || print_npa_) {
     tim_enter("NAO");
-    RefSCMatrix naos = nao();
+    RefSCMatrix naos = ((Wavefunction*)this)->nao();
     tim_exit("NAO");
     if (print_nao_) naos.print("NAO");
   }

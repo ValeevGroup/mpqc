@@ -56,7 +56,7 @@ class CLKS: public CLSCF {
 
     void save_data_state(StateOut&);
 
-    void print(ostream&o=cout);
+    void print(ostream&o=cout) const;
 
     void two_body_energy(double &ec, double &ex);
 

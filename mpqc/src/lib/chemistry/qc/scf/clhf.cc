@@ -92,7 +92,7 @@ CLHF::gradient_implemented() const
 }
 
 void
-CLHF::print(ostream&o)
+CLHF::print(ostream&o) const
 {
   CLSCF::print(o);
 }

@@ -320,7 +320,7 @@ TCSCF::spin_polarized()
 }
 
 void
-TCSCF::print(ostream&o)
+TCSCF::print(ostream&o) const
 {
   int i;
   

@@ -55,7 +55,7 @@ class Shape: public Volume {
                      double val,
                      SCVector3& result);
 
-    int value_implemented();
+    int value_implemented() const;
 };
 
 SavableState_REF_dec(Shape);
@@ -78,13 +78,13 @@ class SphereShape: public Shape {
     double radius() const { return _radius; }
     const SCVector3& origin() const { return _origin; }
     double distance_to_surface(const SCVector3&r,SCVector3*grad=0) const;
-    void print(ostream&o=cout);
+    void print(ostream&o=cout) const;
 
     // these are used to update the parameters describing the sphere
     double radius(double r);
     const SCVector3& origin(const SCVector3& o);
 
-    int gradient_implemented();
+    int gradient_implemented() const;
 };
 
 inline double
@@ -128,11 +128,11 @@ class UncappedTorusHoleShape: public Shape
     inline const SCVector3 A() const { SCVector3 v(_s1.origin()); return v; }
     inline const SCVector3 B() const { SCVector3 v(_s2.origin()); return v; }
     inline double radius() const { return _r; };
-    void print(ostream&o=cout);
+    void print(ostream&o=cout) const;
     void boundingbox(double valuemin, double valuemax,
                      SCVector3& p1, SCVector3&p2);
 
-    int gradient_implemented();
+    int gradient_implemented() const;
 };
 
 class NonreentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
@@ -151,7 +151,7 @@ class NonreentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
     ~NonreentrantUncappedTorusHoleShape();
     double distance_to_surface(const SCVector3&r,SCVector3*grad=0) const;
 
-    int gradient_implemented();
+    int gradient_implemented() const;
 };
 
 class ReentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
@@ -172,7 +172,7 @@ class ReentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
     int is_outside(const SCVector3&r) const;
     double distance_to_surface(const SCVector3&r,SCVector3*grad=0) const;
 
-    int gradient_implemented();
+    int gradient_implemented() const;
 };
 
 class Uncapped5SphereExclusionShape: public Shape
@@ -238,7 +238,7 @@ class Uncapped5SphereExclusionShape: public Shape
     void boundingbox(double valuemin, double valuemax,
                      SCVector3& p1, SCVector3&p2);
 
-    int gradient_implemented();
+    int gradient_implemented() const;
 };
 
 class UnionShape: public Shape {
@@ -256,7 +256,7 @@ class UnionShape: public Shape {
     void boundingbox(double valuemin, double valuemax,
                      SCVector3& p1, SCVector3& p2);
 
-    int gradient_implemented();
+    int gradient_implemented() const;
 };
 
 #endif

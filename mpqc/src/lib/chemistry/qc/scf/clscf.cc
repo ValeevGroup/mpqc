@@ -217,7 +217,7 @@ CLSCF::spin_polarized()
 }
 
 void
-CLSCF::print(ostream&o)
+CLSCF::print(ostream&o) const
 {
   SCF::print(o);
   o << node0 << indent << "CLSCF Parameters:\n" << incindent

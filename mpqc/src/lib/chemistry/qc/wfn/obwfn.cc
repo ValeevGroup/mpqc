@@ -402,7 +402,7 @@ OneBodyWavefunction::orbital_density(const SCVector3& r,
 }
 
 void
-OneBodyWavefunction::print(ostream&o)
+OneBodyWavefunction::print(ostream&o) const
 {
   Wavefunction::print(o);
 }

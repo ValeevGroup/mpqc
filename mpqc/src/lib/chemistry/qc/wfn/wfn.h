@@ -108,7 +108,7 @@ class Wavefunction: public MolecularEnergy {
 
     RefSCDimension basis_dimension();
     RefSCMatrixKit basis_matrixkit();
-    RefGaussianBasisSet basis();
+    RefGaussianBasisSet basis() const;
     RefIntegral integral();
 
     // override symmetry_changed from MolecularEnergy
@@ -118,7 +118,7 @@ class Wavefunction: public MolecularEnergy {
     // can be overridden, but defaults to S^-1/2
     virtual RefSymmSCMatrix ao_to_orthog_ao();
 
-    void print(ostream& = cout);
+    void print(ostream& = cout) const;
 };
 SavableState_REF_dec(Wavefunction);
 

@@ -204,7 +204,7 @@ SCF::spin_unrestricted()
 }
 
 void
-SCF::print(ostream&o)
+SCF::print(ostream&o) const
 {
   OneBodyWavefunction::print(o);
   o << node0 << indent << "SCF Parameters:\n" << incindent

@@ -132,7 +132,7 @@ class SCF: public OneBodyWavefunction {
     virtual double one_body_energy();
     virtual void two_body_energy(double &ec, double &ex);
 
-    void print(ostream&o=cout);
+    void print(ostream&o=cout) const;
 
   protected:
     // the following are scratch and are not checkpointed

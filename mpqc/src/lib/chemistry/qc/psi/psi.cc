@@ -57,7 +57,7 @@ PsiWfn::save_data_state(StateOut&s)
 }
 
 void
-PsiWfn::print(ostream&o)
+PsiWfn::print(ostream&o) const
 {
   Wavefunction::print(o);
 }
@@ -143,12 +143,14 @@ double
 PsiWfn::density(const SCVector3&d)
 {
   abort();
+  return 0.0;
 }
 
 RefSymmSCMatrix
 PsiWfn::density()
 {
   abort();
+  return 0;
 }
 
 int

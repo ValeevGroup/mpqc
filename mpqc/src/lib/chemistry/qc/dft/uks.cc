@@ -134,7 +134,7 @@ UKS::extrap_data()
 }
 
 void
-UKS::print(ostream&o)
+UKS::print(ostream&o) const
 {
   UnrestrictedSCF::print(o);
 }

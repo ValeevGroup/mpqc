@@ -104,7 +104,7 @@ CLKS::gradient_implemented() const
 }
 
 void
-CLKS::print(ostream&o)
+CLKS::print(ostream&o) const
 {
   CLSCF::print(o);
 }

@@ -418,6 +418,7 @@ FinDispMolecularHessian::original_geometry()
     }
 
   mol_->set_point_group(original_point_group_);
+  mole_->symmetry_changed();
 }
 
 void

@@ -77,8 +77,8 @@ Function::Function(const RefKeyVal&kv):
 Function::Function(StateIn&s):
   SavableState(s),
   value_(s,this),
-  gradient_(s,this),
-  hessian_(s,this)
+  gradient_(this),
+  hessian_(this)
 {
   matrixkit_ = SCMatrixKit::default_matrixkit();
   dim_.restore_state(s);
@@ -86,10 +86,12 @@ Function::Function(StateIn&s):
   x_.restore(s);
 
   gradient_.result_noupdate() = matrixkit()->vector(dim_);
-  gradient_.result_noupdate()->restore(s);
+  gradient_.restore_state(s);
+  gradient_.result_noupdate().restore(s);
 
   hessian_.result_noupdate() = matrixkit()->symmmatrix(dim_);
-  hessian_.result_noupdate()->restore(s);
+  hessian_.restore_state(s);
+  hessian_.result_noupdate().restore(s);
 }
 
 Function::~Function()
@@ -115,9 +117,9 @@ Function::save_data_state(StateOut&s)
   dim_.save_state(s);
   x_.save(s);
   gradient_.save_data_state(s);
-  gradient_.result_noupdate()->save(s);
+  gradient_.result_noupdate().save(s);
   hessian_.save_data_state(s);
-  hessian_.result_noupdate()->save(s);
+  hessian_.result_noupdate().save(s);
 }
 
 RefSCMatrixKit

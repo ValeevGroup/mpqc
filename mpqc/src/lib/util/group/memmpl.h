@@ -7,7 +7,7 @@
 #define _util_group_memmpl_h
 
 #include <stdio.h>
-#include <util/group/memamsg.h>
+#include <util/group/memmid.h>
 
 class MPLMemoryGrp: public MIDMemoryGrp {
 #define CLASSNAME MPLMemoryGrp
@@ -18,10 +18,11 @@ class MPLMemoryGrp: public MIDMemoryGrp {
     long send(void* data, int nbytes, int node, int type);
     long recv(void* data, int nbytes, int node, int type);
     long postrecv(void *data, int nbytes, int type);
-    long wait(long = -1);
+    long wait(long, long = -1);
   public:
     MPLMemoryGrp(const RefMessageGrp& msg, int localsize);
     ~MPLMemoryGrp();
+    void deactivate();
 };
 
 #endif

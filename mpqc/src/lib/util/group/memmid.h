@@ -17,9 +17,9 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
 #include <util/class/classd.h>
   public:
     // This is public so memory handler functions can call it.
-    void handler(MemoryDataRequest&, long *mid = 0);
-  protected:
     void handler(long *mid = 0);
+  protected:
+    void handler(MemoryDataRequest&, long *mid = 0);
     
     void retrieve_data(void *, int node, int offset, int size);
     void replace_data(void *, int node, int offset, int size);

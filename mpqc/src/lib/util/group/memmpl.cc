@@ -41,7 +41,8 @@ static MPLMemoryGrp *global_mpl_mem = 0;
 static void
 mpl_memory_handler(int*msgid_arg)
 {
-  global_mpl_mem->handler(msgid_arg);
+  long lmid = *msgid_arg;
+  global_mpl_mem->handler(&lmid);
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -100,17 +101,19 @@ MPLMemoryGrp::postrecv(void *data, int nbytes, int type)
   int global_type;
   int global_mid;
   mpc_rcvncall(data, nbytes,
-               &global_source, &globa_type, &global_mid,
+               &global_source, &global_type, &global_mid,
                mpl_memory_handler);
+  return global_mid;
 }
 
 long
-MPLMemoryGrp::wait(long mid)
+MPLMemoryGrp::wait(long mid1, long mid2)
 {
   int imid;
-  if (mid == -1) imid = DONTCARE;
-  else imid = (int) mid;
-  mpc_wait(&imid);
+  if (mid2 == -1) imid = (int)mid1;
+  else imid = DONTCARE;
+  size_t count;
+  mpc_wait(&imid,&count);
   return imid;
 }
 

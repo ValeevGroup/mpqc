@@ -4,16 +4,16 @@
 
 (require 'cc-mode)
 
-(setq c-basic-half-offset 2)
+(setq clj-c-basic-half-offset 2)
 
 (defun clj-adaptive-block-open (langelem)
   ;; when substatement is on semantics list, return
-  ;; -(c-basic-offset - c-basic-half-offset) to give a
-  ;; total offset of c-basic-half-offset,
-  ;; otherwise return c-basic-half-offset
+  ;; -(c-basic-offset - clj-c-basic-half-offset) to give a
+  ;; total offset of clj-c-basic-half-offset,
+  ;; otherwise return clj-c-basic-half-offset
   (if (assq 'substatement c-semantics)
-      (+ c-basic-half-offset (- c-basic-offset))
-    c-basic-half-offset))
+      (+ clj-c-basic-half-offset (- c-basic-offset))
+    clj-c-basic-half-offset))
 
 (defun clj-lineup-math (langelem)
   ;; line up math statement-cont so that stuff after the "+", "-", etc
@@ -42,7 +42,7 @@
   ;; these closes blocks in a way that is consistent with the way
   ;; clj-adaptive-statement-block-intro indents the first statement
   (- (clj-adaptive-statement-block-intro langelem)
-     (- c-basic-offset c-basic-half-offset))
+     (- c-basic-offset clj-c-basic-half-offset))
 )
 
 (defun clj-adaptive-statement-block-intro (langelem)
@@ -56,7 +56,7 @@
           ;; next char is not a "{"
           c-basic-offset
         ;; use remainder of half offset
-        (- c-basic-offset c-basic-half-offset))
+        (- c-basic-offset clj-c-basic-half-offset))
       )))
 
 (defun clj-condensed-adaptive-statement-block-intro (langelem)
@@ -91,7 +91,7 @@
              )
 
 ;;
-;; this is the style to use when editting Curt's files
+;; this is the style to use when editing Curt's files
 ;;
 (c-add-style "CLJ" '(
     (c-offsets-alist . (
@@ -112,7 +112,7 @@
 ;; Curt's other style
 ;;
 (c-add-style "CLJ-CONDENSED" '(
-    (c-echo-syntactic-information-p . t)
+    ;(c-echo-syntactic-information-p . t)
     (c-basic-offset . 2)
     (c-offsets-alist . (
        (statement-block-intro . clj-condensed-adaptive-statement-block-intro)

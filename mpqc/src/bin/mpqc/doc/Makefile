@@ -25,6 +25,9 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 mpqc.see: mpqc.dvi
 	$(XDVI) $^
 
+mpqc.ps: mpqc.dvi
+	dvips -o $@ $^
+
 mpqc.dvi: mpqc.tex $(SAMPLEINPUTS)
 	@echo env TEXINPUTS=$$TEXINPUTS
 	@echo TEXINPUTS=$$TEXINPUTS:$(EXTRA_TEXINPUTS)

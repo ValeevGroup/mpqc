@@ -1,0 +1,51 @@
+
+             The Massively Parallel Quantum Chemistry Program
+                                 MPQC 1.1
+
+DESCRIPTION
+===========
+
+  MPQC computes the properties of molecules, ab initio, on a wide variety of
+computer architectures.
+
+  MPQC can compute closed shell and general restricted open shell
+Hartree-Fock energies and gradients, second order open shell perturbation
+theory (OPT2[2]) and Z-averaged perturbation theory (ZAPT2) energies, and
+second order closed shell Moeller-Plesset perturbation theory energies and
+gradients.  It also includes a robust internal coordinate geometry
+optimizer that efficiently optimizes molecules with many degrees of
+freedom.
+
+  MPQC runs on Unix compatible workstations (Intel/Linux, SGI R8000, IBM
+RS/6000), symmetric multi-processors (SGI Power Challenge), and massively
+parallel computers (IBM SP2, Intel Paragon).
+
+LICENSE
+=======
+
+  This software is distributed under the GNU General Public License.  The
+the US Government retains a limited license in some of the code, as
+prescribed in AL 91-7.  See the file LICENSE for details and additional
+information.
+
+DISCLAIMER
+==========
+
+  There is no warranty for the program, to the extent permitted by
+applicable law.  Except when otherwise stated in writing the copyright
+holders and/or other parties provide the program "as is" without warranty
+of any kind, either expressed or implied, including, but not limited to,
+the implied warranties of merchantability and fitness for a particular
+purpose.  The entire risk as to the quality and performance of the program
+is with you.  Should the program prove defective, you assume the cost of
+all necessary servicing, repair or correction.
+
+COMPILING AND RUNNING
+=====================
+
+ There should be instructions for compiling and running MPQC where you got
+the source distribution.  If not, the documentation can be made changing
+directory to "src/bin/mpqc/doc" and typing "make mpqc.dvi", "make mpqc.ps",
+or "make mpqc.html", as you please.  These commands might not complete
+depending on your system's setup.  In this case you will be stuck reading
+the TeX source files.

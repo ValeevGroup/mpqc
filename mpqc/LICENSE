@@ -1,0 +1,33 @@
+
+PUBLIC LICENSE
+==============
+
+  The Massively Parallel Quantum Chemistry program is distributed under the
+GNU General Public License (see the file COPYING).  However, the vast
+majority of code can be distributed under the GNU Library General Public
+License (see the file COPYING.LIB).  The General Public License only
+applies to some files with a "main" subroutine and "lib/elisp/compile.el".
+The applicable license is given in each source file.
+
+GOVERNMENT LICENSE
+==================
+
+  Furthermore, the US Government retains a limited license in all of the
+code marked as "Copyright (C) 1996 Limit Point Systems, Inc.", as
+prescribed in AL 91-7.  The US Government license doesn't apply to code
+that is marked as copyrighted by a party other than Limit Point Systems,
+Inc., if that code's distribution terms are incompatible with the US
+Government license.  This includes "include/libg++-stub/builtin.h" and
+"lib/elisp/compile.el".
+
+  The file "include/libg++-stub/builtin.h" is derived from the Free
+Software Foundation's C++ library libg++.  The file "lib/elisp/compile.el"
+is derived from a component of Free Software Foundation's emacs editor.
+The full versions of each of these pieces of software are available by
+anonymous ftp from prep.ai.mit.edu in the directory /pub/gnu.
+
+EXPORT RESTRICTIONS
+===================
+
+  THIS SOFTWARE CAN ONLY BE EXPORTED IN ACCORDANCE WITH EXISTING EXPORT
+CONTROL LEGISLATION AND REGULATIONS OF THE US GOVERNMENT.

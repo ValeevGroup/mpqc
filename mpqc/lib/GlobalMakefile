@@ -9,6 +9,7 @@ endif
 # this vpath works with listlibs to find the libraries
 vpath %.a $(TOPDIR)/lib
 vpath %.so $(TOPDIR)/lib
+vpath %.la $(TOPDIR)/lib
 
 # SRCTOPDIR is the top of the source directory
 SRCTOPDIR = $(shell $(SRCDIR)/$(TOPDIR)/bin/rmdotdot $(SRCDIR)/$(TOPDIR))

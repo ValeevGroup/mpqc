@@ -45,19 +45,19 @@ default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h) /home/mlleinin/src/vprof/vmonauto.o
+LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
-dfttest:: dfttest.o $(LIBS)
-	$(CXX) $(LDFLAGS) -o dfttest $^ $(SYSLIBS)
+dfttest:: dfttest.$(OBJSUF) $(LIBS)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o dfttest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-dfttest.o: dfttest.cc
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+dfttest.$(OBJSUF): dfttest.cc
+	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 lebedev: lebedev.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -DDEFINE_MAIN -o $@ $<
+	$(LTLINK) $(CC) $(CFLAGS) $(CPPFLAGS) -DDEFINE_MAIN -o $@ $< $(LTLINKBINOPTS)
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) dfttest.d
+include $(LIBOBJ:.$(OBJSUF)=.d) dfttest.d
 endif
 

@@ -137,7 +137,7 @@ DISTFILES = Makefile build.h $(LIBSRC1) $(LIBSRC2) $(LIBSRC3)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) $(TESTOBJ:.o=.d)
+include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:.o=.d)
 endif

@@ -40,7 +40,7 @@ CXXSRC = volume.cc shape.cc volume_i.cc \
          tricoef.cc tmplinst.cc
 CSRC = implicit.c
 
-LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)
+LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(CSRC:%.c=%.$(OBJSUF))
 
 INC = volume.h shape.h volume_i.h implicit.h tricoef.h
 
@@ -53,22 +53,22 @@ DISTFILES = isotest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: $(DEPENDINCLUDE)
 
-tmplinst.o: tmplinst.cc
-	$(CXX) $(CXXFLAGS:-fno-implicit-templates=) $(CPPFLAGS) -c $<
+tmplinst.$(OBJSUF): tmplinst.cc
+	$(LTCOMP) $(CXX) $(CXXFLAGS:-fno-implicit-templates=) $(CPPFLAGS) -c $<
 
-isotest.o: isotest.cc
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+isotest.$(OBJSUF): isotest.cc
+	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-isotest: isotest.o \
+isotest: isotest.$(OBJSUF) \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(LD) $(LDFLAGS) -o isotest $^ $(SYSLIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o isotest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 distclean::
 	/bin/rm -f isotest
 
-$(LIBOBJ:.o=.d) isotest.d: $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d) isotest.d: $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) isotest.d
+include $(LIBOBJ:.$(OBJSUF)=.d) isotest.d
 endif

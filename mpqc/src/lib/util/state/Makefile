@@ -36,7 +36,7 @@ CXXSRC = state.cc statein.cc stateout.cc state_bin.cc proxy.cc \
          state_text.cc state_file.cc translate.cc \
          tmplinst.cc array.cc
 
-LIBOBJ = $(CXXSRC:%.cc=%.o)
+LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 INC =  LIBS.h state.h statein.h stateout.h \
        translate.h array.h \
@@ -57,20 +57,20 @@ interface:: $(DEPENDINCLUDE)
 statmacr.h: stattmpl.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > statmacr.h
 
-statetest.o: statetest.cc
-	$(CXX) $(CXXFLAGS) $(DEFINES) $(INCLUDE) -DSRCDIR=\"$(SRCDIR)\" -c $<
+statetest.$(OBJSUF): statetest.cc
+	$(LTCOMP) $(CXX) $(CXXFLAGS) $(DEFINES) $(INCLUDE) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-statetest: statetest.o libkeyval.$(LIBSUF) libmisc.$(LIBSUF) \
+statetest: statetest.$(OBJSUF) libkeyval.$(LIBSUF) libmisc.$(LIBSUF) \
            libgroup.$(LIBSUF) libstate.$(LIBSUF) libclass.$(LIBSUF) \
            libcontainer.$(LIBSUF) libref.$(LIBSUF)
-	$(LD) $(LDFLAGS) -o statetest $^ $(SYSLIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o statetest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 distclean::
 	/bin/rm -f statetest statetest.a.out statetest.out
 
-statetest.d $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+statetest.d $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) statetest.d
+include $(LIBOBJ:.$(OBJSUF)=.d) statetest.d
 endif

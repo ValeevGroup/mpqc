@@ -47,15 +47,15 @@ default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d)
+include $(LIBOBJ:.$(OBJSUF)=.d)
 endif
 
 LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
-mbpttest:: mbpttest.o $(LIBS)
-	$(CXX) $(LDFLAGS) -o mbpttest $^ $(SYSLIBS)
+mbpttest:: mbpttest.$(OBJSUF) $(LIBS)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o mbpttest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-mbpttest.o: mbpttest.cc
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+mbpttest.$(OBJSUF): mbpttest.cc
+	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<

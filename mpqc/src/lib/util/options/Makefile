@@ -7,16 +7,16 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = liboptions
 
-LIBOBJ = GetLongOpt.o
+LIBOBJ = GetLongOpt.$(OBJSUF)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-sample: README.o liboptions.a
-	$(CXX) -o $@ $^
+sample: README.$(OBJSUF) liboptions.$(LIBSUF)
+	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKBINOPTS)
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d)
+include $(LIBOBJ:.$(OBJSUF)=.d)
 endif
 
 

@@ -39,7 +39,7 @@ CXXSRC = molecule.cc molsymm.cc \
          molshape.cc taylor.cc hess.cc fdhess.cc \
          molrender.cc atominfo.cc molfreq.cc formula.cc
 
-LIBOBJ = $(CXXSRC:%.cc=%.o)
+LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 INC = molecule.h \
       simple.h localdef.h \
@@ -52,7 +52,7 @@ BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libmolecule
 
 TESTSRC = moltest.cc
-TESTOBJ = $(TESTSRC:%.cc=%.o)
+TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))
 TESTFILES = moltest.in
 
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
@@ -66,17 +66,17 @@ LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 LD = $(CXX)
 
 moltest: $(TESTOBJ) $(LIBS)
-	$(LD) $(LDFLAGS) -o moltest $^ $(SYSLIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o moltest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-symmetrize: symmetrize.o $(LIBS)
-	$(LD) $(LDFLAGS) -o symmetrize $^ $(SYSLIBS)
+symmetrize: symmetrize.$(OBJSUF) $(LIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o symmetrize $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 distclean::
 	/bin/rm -f symmetrize moltest
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) $(TESTOBJ:%.o=%.d)
+include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:%.$(OBJSUF)=%.d)
 endif

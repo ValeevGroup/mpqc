@@ -46,14 +46,14 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
-wfntest:: wfntest.o $(LIBS)
-	$(CXX) $(LDFLAGS) -o wfntest $^ $(SYSLIBS)
+wfntest:: wfntest.$(OBJSUF) $(LIBS)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o wfntest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-wfntest.o: wfntest.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+wfntest.$(OBJSUF): wfntest.cc
+	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d)
+include $(LIBOBJ:.$(OBJSUF)=.d)
 endif
 

@@ -33,7 +33,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 CXXSRC = class.cc proxy.cc
 
-LIBOBJ = $(CXXSRC:%.cc=%.o) $(GENCXXSRC:%.cc=%.o)
+LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(GENCXXSRC:%.cc=%.$(OBJSUF))
 
 INC = class.h proxy.h
 GENINC = clasmacr.h
@@ -55,18 +55,18 @@ clasmacr.h: clastmpl.h $(TMPL2MACDEP)
 
 # a test program
 LD = $(CXX)
-classtest: classtest.o libclass.$(LIBSUF) libcontainer.$(LIBSUF) libref.$(LIBSUF) libmisc.$(LIBSUF) libstate.$(LIBSUF) libkeyval.$(LIBSUF)
-	$(LD) $(LDFLAGS) -o classtest $^ $(SYSLIBS)
+classtest: classtest.$(OBJSUF) libclass.$(LIBSUF) libcontainer.$(LIBSUF) libref.$(LIBSUF) libmisc.$(LIBSUF) libstate.$(LIBSUF) libkeyval.$(LIBSUF)
+	$(LTLINK) $(LD) $(LDFLAGS) -o classtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 bug: bug.cc
-	$(CXX) $(CXXFLAGS) -o bug $^
+	$(LTLINK) $(CXX) $(CXXFLAGS) -o bug $^ $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 distclean::
 	/bin/rm -f classtest
 
-$(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.o=.d)
+include $(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.$(OBJSUF)=.d)
 endif

@@ -54,7 +54,7 @@ CSRC = cmatrix.c svd.c
 
 FSRC = pdsteqr.f
 
-LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o) $(FSRC:%.f=%.o) 
+LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(CSRC:%.c=%.$(OBJSUF)) $(FSRC:%.f=%.$(OBJSUF)) 
 
 INC =  cmatrix.h matrix_i.h cmatrix.h matrix.h abstract.h blkiter.h local.h \
        result.h vector3.h vector3_i.h block.h matrix3.h elemop.h repl.h \
@@ -67,7 +67,7 @@ DEPENDINCLUDE = $(INC) $(GENINC)
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libscmat
 
-TESTOBJ = matrixtest.o
+TESTOBJ = matrixtest.$(OBJSUF)
 
 DISTFILES = $(CXXSRC) $(INC) scmat.h $(WEBSRC) Makefile LIBS.h \
             $(TESTSRC) $(TESTFILES)
@@ -77,28 +77,28 @@ LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 matrixtest:
 	@echo The target must be a specialization such as localtest.
 
-localtest: localtest.o $(TESTOBJ) $(LIBS)
-	$(LD) $(LDFLAGS) -o localtest $^ $(SYSLIBS) 
+localtest: localtest.$(OBJSUF) $(TESTOBJ) $(LIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o localtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-repltest: repltest.o $(TESTOBJ) $(LIBS)
-	$(LD) $(LDFLAGS) -o repltest $^ $(SYSLIBS) 
+repltest: repltest.$(OBJSUF) $(TESTOBJ) $(LIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o repltest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-disttest: disttest.o $(TESTOBJ) $(LIBS)
-	$(LD) $(LDFLAGS) -o disttest $^ $(SYSLIBS) 
+disttest: disttest.$(OBJSUF) $(TESTOBJ) $(LIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o disttest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-blockedtest: blockedtest.o $(TESTOBJ) $(LIBS)
-	$(LD) $(LDFLAGS) -o blockedtest $^ $(SYSLIBS) 
+blockedtest: blockedtest.$(OBJSUF) $(TESTOBJ) $(LIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o blockedtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-repltest.o: repltest.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< -o $@
+repltest.$(OBJSUF): repltest.cc
+	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< -o $@
 
-disttest.o: disttest.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< -o $@
+disttest.$(OBJSUF): disttest.cc
+	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< -o $@
 
 TAGS: $(CXXSRC) $(CSRC)
 	etags $^
 
-disthql.o disthql.d: f77sym.h
+disthql.$(OBJSUF) disthql.d: f77sym.h
 
 f77sym.h: f77sym.in
 	$(MKF77SYM) $< $@
@@ -108,7 +108,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 distclean::
 	/bin/rm -f f77sym.h
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(CXXSRC:.cc=.d) $(CSRC:.c=.d) $(TESTSRC:%.cc=%.d)
 endif

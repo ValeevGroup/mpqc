@@ -36,7 +36,7 @@ CXXSRC = render.cc oogl.cc object.cc polygons.cc polysphere.cc \
          transform.cc appearance.cc material.cc sphere.cc algebra3.cc \
          color.cc polylines.cc tempinst.cc animate.cc
 
-LIBOBJ = $(CXXSRC:%.cc=%.o)
+LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 INC = render.h oogl.h object.h sphere.h color.h \
       algebra3.h parameter.h find.h stack.h polygons.h polysphere.h \
@@ -48,7 +48,7 @@ BIN_OR_LIB = LIB
 TARGET_TO_MAKE = librender
 
 TESTSRC = rentest.cc
-TESTOBJ = $(TESTSRC:%.cc=%.o)
+TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))
 TESTFILES = 
 
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
@@ -60,14 +60,14 @@ interface:: $(DEPENDINCLUDE)
 LD = $(CXX)
 rentest: $(TESTOBJ) \
 	 $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(LD) $(LDFLAGS) -o rentest $^ $(SYSLIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o rentest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-rentest.o: rentest.cc
-	$(CXX) -DSRCDIR=\"$(SRCDIR)\" $(CPPFLAGS) $(CXXFLAGS) -c $<
+rentest.$(OBJSUF): rentest.cc
+	$(LTCOMP) $(CXX) -DSRCDIR=\"$(SRCDIR)\" $(CPPFLAGS) $(CXXFLAGS) -c $<
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) $(TESTOBJ:%.o=%.d)
+include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:%.$(OBJSUF)=%.d)
 endif

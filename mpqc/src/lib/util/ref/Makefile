@@ -40,7 +40,7 @@ GENSRC = $(GENCXXSRC)
 CXXSRC = $(GENCXXSRC) $(REALCXXSRC)
 TESTCXX = reftest.cc reftestx.cc
 
-LIBOBJ = $(CXXSRC:%.cc=%.o)
+LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 INC = ref.h reftestx.h reftmpl.h identity.h
 
@@ -60,15 +60,15 @@ interface:: $(DEPENDINCLUDE)
 refmacr.h: reftmpl.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > refmacr.h
 
-reftest: reftest.o reftestx.o libref.$(LIBSUF) libmisc.$(LIBSUF)
-	$(CXX) $(LDFLAGS) -o reftest $^
+reftest: reftest.$(OBJSUF) reftestx.$(OBJSUF) libref.$(LIBSUF) libmisc.$(LIBSUF)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o reftest $^ $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 targetclean::
 	-rm -f reftest
 
-$(TESTCXX:%.cc=%.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(TESTCXX:%.cc=%.d) $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d)
+include $(LIBOBJ:.$(OBJSUF)=.d)
 endif

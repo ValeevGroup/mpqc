@@ -36,7 +36,7 @@ CXXSRC = array.cc avl.cc bitarray.cc carray.cc
 
 TESTCXX = avltest.cc artest.cc
 
-LIBOBJ = $(CXXSRC:%.cc=%.o)
+LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 INC = array.h artem.h ar2tem.h ssarmac.h ssar2mac.h \
       eavlmmap.h avlmap.h avlset.h compare.h bitarray.h
@@ -66,11 +66,11 @@ ssarmac.h: ssartem.h $(TMPL2MACDEP)
 ssar2mac.h: ssar2tem.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > ssar2mac.h
 
-avltest: avltest.o libmisc.$(LIBSUF) libkeyval.$(LIBSUF) libstate.$(LIBSUF) libclass.$(LIBSUF) libref.$(LIBSUF) libcontainer.$(LIBSUF)
-	$(CXX) $(LDFLAGS) -o avltest $^
+avltest: avltest.$(OBJSUF) libmisc.$(LIBSUF) libkeyval.$(LIBSUF) libstate.$(LIBSUF) libclass.$(LIBSUF) libref.$(LIBSUF) libcontainer.$(LIBSUF)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o avltest $^ $(LTLINKBINOPTS)
 
-artest: artest.o libcontainer.$(LIBSUF)
-	$(CXX) $(LDFLAGS) -o artest $^
+artest: artest.$(OBJSUF) libcontainer.$(LIBSUF)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o artest $^ $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
@@ -80,7 +80,7 @@ miscclean::
 distclean::
 	/bin/rm -rf avltest
 
-$(TESTCXX:%.cc=%.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(TESTCXX:%.cc=%.d) $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(TESTCXX:%.cc=%.d) $(LIBOBJ:.o=.d)
+include $(TESTCXX:%.cc=%.d) $(LIBOBJ:.$(OBJSUF)=.d)
 endif

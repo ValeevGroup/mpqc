@@ -48,14 +48,14 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
-scftest:: scftest.o $(LIBS)
-	$(CXX) $(LDFLAGS) -o scftest $^ $(SYSLIBS)
+scftest:: scftest.$(OBJSUF) $(LIBS)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o scftest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-scftest.o: scftest.cc
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+scftest.$(OBJSUF): scftest.cc
+	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) scftest.d
+include $(LIBOBJ:.$(OBJSUF)=.d) scftest.d
 endif
 

@@ -25,15 +25,12 @@ LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-main.o: main.cc
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
-
 molrender: $(BINOBJ) $(LIBS)
-	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 install:: molrender
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
-	$(INSTALL) $(INSTALLBINOPT) $< $(bindir)
+	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(bindir)
 	cd $(TOPDIR); CONFIG_FILES=src/bin/molrender/tkmolrender CONFIG_HEADERS= ./config.status
 	$(INSTALL) $(INSTALLBINOPT) tkmolrender $(bindir)
 	/bin/rm -f tkmolrender

@@ -21,18 +21,18 @@ interface:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-psitest: psitest.o  \
+psitest: psitest.$(OBJSUF)  \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(CXX) $(LDFLAGS) -o psitest $^ $(SYSLIBS)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o psitest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-psitest.o: psitest.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+psitest.$(OBJSUF): psitest.cc
+	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 print: 
 	echo $(SRCDIR)
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) $(TESTSRCS:%.cc=%.d)
+include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTSRCS:%.cc=%.d)
 endif
 

@@ -126,6 +126,12 @@ Useful options to configure include:
 <dt><tt>--disable-threads</tt><dd>Do not try to find the multi-thread
   libraries.
 
+<dt><tt>--enable-shared</tt><dd>Use shared libraries.  This will
+  reduce the size of executables, if shared libraries are supported
+  on your system.
+
+<dt><tt>--disable-static</tt><dd>Do not build libraries for static linking.
+
 <dt><tt>--enable-stl</tt><dd>Use the Standard Template Library for some of
   the container classes.  Your compiler must have a working STL
   implementation.

@@ -15,7 +15,7 @@ main(int argc, char** argv)
   int i;
   const char* model = "stick";
   const char* keyword = "molecule";
-  const char* inputfile = SRCDIR "/molrender.in";
+  const char* inputfile = "molrender.in";
   int level = 3;
   enum InputType { PDB, KEYVAL } input = KEYVAL;
   const char* render = 0;

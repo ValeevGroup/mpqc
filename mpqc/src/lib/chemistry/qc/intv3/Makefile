@@ -63,23 +63,23 @@ interface:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-fjttest: fjttest.o \
+fjttest: fjttest.$(OBJSUF) \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(CXX) $(LDFLAGS) -o fjttest $^ $(SYSLIBS)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o fjttest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-inttest: inttest.o \
+inttest: inttest.$(OBJSUF) \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(CXX) $(LDFLAGS) -o inttest $^ $(SYSLIBS)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o inttest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-inttest.o: inttest.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+inttest.$(OBJSUF): inttest.cc
+	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 targetclean::
 	-rm -f inttest fjttest
 
-$(TESTOBJ:.o=.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(TESTOBJ:.$(OBJSUF)=.d) $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) $(TESTOBJ:.o=.d)
+include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:.$(OBJSUF)=.d)
 endif
 
 #############################################################

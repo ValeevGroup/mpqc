@@ -39,7 +39,7 @@ CXXSRC = function.cc opt.cc update.cc qnewton.cc newton.cc \
          scextrap.cc scextrapmat.cc diis.cc transform.cc conv.cc
 CSRC = 
 
-LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)
+LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(CSRC:%.c=%.$(OBJSUF))
 
 INC = function.h opt.h gdiis.h efc.h update.h qnewton.h newton.h \
       scextrap.h scextrapmat.h diis.h transform.h conv.h
@@ -53,26 +53,26 @@ DISTFILES = opttest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
 default:: $(DEPENDINCLUDE)
 
-opttest: opttest.o $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(LD) $(LDFLAGS) -o opttest $^ $(SYSLIBS)
+opttest: opttest.$(OBJSUF) $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+	$(LTLINK) $(LD) $(LDFLAGS) -o opttest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-opttest.o: opttest.cc
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+opttest.$(OBJSUF): opttest.cc
+	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-scextest: scextest.o liboptimize.a \
+scextest: scextest.$(OBJSUF) liboptimize.$(LIBSUF) \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(LD) $(LDFLAGS) -o scextest $^ $(SYSLIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o scextest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-scextest.o: scextest.cc
-	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+scextest.$(OBJSUF): scextest.cc
+	$(LTCOMP) $(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-kvopt: kvopt.o $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(LD) $(LDFLAGS) -o kvopt $^ $(SYSLIBS)
+kvopt: kvopt.$(OBJSUF) $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+	$(LTLINK) $(LD) $(LDFLAGS) -o kvopt $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-kvopt.d opttest.d scextest.d $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+kvopt.d opttest.d scextest.d $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) kvopt.d opttest.d scextest.d
+include $(LIBOBJ:.$(OBJSUF)=.d) kvopt.d opttest.d scextest.d
 endif
 

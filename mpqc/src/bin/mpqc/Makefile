@@ -18,7 +18,7 @@ GENINC = parse.h
 
 DEPENDINCLUDE = $(INC)
 
-BINOBJ = $(CXXSRC:%.cc=%.o) $(GENCXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)
+BINOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(GENCXXSRC:%.cc=%.$(OBJSUF)) $(CSRC:%.c=%.$(OBJSUF))
 
 DISTFILES = $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
@@ -45,11 +45,11 @@ default:: $(DEPENDINCLUDE)
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 mpqc: $(BINOBJ) $(LIBS)
-	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 install:: mpqc
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
-	$(INSTALL) $(INSTALLBINOPT) $< $(bindir)
+	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(bindir)
 
 distclean::
 	/bin/rm -f mpqc
@@ -93,7 +93,7 @@ scan.d: parse.h
 
 #################################################################
 
-$(BINOBJ:.o=.d): $(DEPENDINCLUDE)
+$(BINOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(BINOBJ:.o=.d)
+include $(BINOBJ:.$(OBJSUF)=.d)
 endif

@@ -48,11 +48,26 @@ $(TOPDIR)/lib/$(TARGET_TO_MAKE).a: $(LIBOBJ)
 	$(AR) $(ARFLAGS) $@ $^
 	$(RANLIB) $@
 
-default:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).a
+$(TOPDIR)/lib/$(TARGET_TO_MAKE).la: $(LIBOBJ)
+	$(LTLINK) $(CXX) -o $@ $^ $(LTLINKLIBOPTS)
+
+default:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).la
+
+ifneq ($(ENABLESHARED),yes)
 
 install_devel:: install_inc install_target
 
 install::
+
+endif
+
+ifeq ($(ENABLESHARED),yes)
+
+install_devel:: install_inc
+
+install:: install_target
+
+endif
 
 install_inc::
 	$(INSTALL) $(INSTALLDIROPT) $(includedir)/$(SRCDIR:$(SRCTOPDIR)/src/lib/%=%)
@@ -61,8 +76,7 @@ install_inc::
 
 install_target:: $(TOPDIR)/lib/$(TARGET_TO_MAKE).$(LIBSUF)
 	$(INSTALL) $(INSTALLDIROPT) $(libdir)
-	$(INSTALL) $(INSTALLLIBOPT) $< $(libdir)
-	$(RANLIB) $(libdir)/$(TARGET_TO_MAKE).$(LIBSUF)
+	$(LTINST) $(INSTALL) $(INSTALLLIBOPT) $< $(libdir)
 endif
 
 ifeq ($(BIN_OR_LIB),BIN)
@@ -76,12 +90,15 @@ install:: install_target
 
 install_target:: $(TARGET_TO_MAKE)
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
-	$(INSTALL) $(INSTALLBINOPT) $(TARGET_TO_MAKE) $(bindir)
+	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $(TARGET_TO_MAKE) $(bindir)
 
 endif
 
 %.$(OBJSUF): %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< $(OUTPUT_OPTION)
+
+%.lo: %.c
+	$(LTCOMP) $(CC) $(CPPFLAGS) $(CFLAGS) -c $< $(OUTPUT_OPTION)
 
 #
 # see if we use the f2c fortran replacement
@@ -102,6 +119,12 @@ endif
 %.$(OBJSUF): %.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
 
+%.lo: %.C
+	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
+
+%.lo: %.cc
+	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
+
 #
 # cleans
 #
@@ -113,7 +136,8 @@ miscclean::
 	-rm -f *~
 
 oclean::
-	-rm -rf *.o cxx_tmpl_repo
+	-rm -rf *.o cxx_tmpl_repo *.lo
+	-rm -rf .libs
 
 dclean::
 	-rm -f *.d

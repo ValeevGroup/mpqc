@@ -9,9 +9,10 @@ SUBDIRS = basis elisp perl
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 
-distclean::
+oclean::
 	/bin/rm -f lib*.a
 	/bin/rm -f lib*.so*
+	/bin/rm -f lib*.la
 
 install:: atominfo.kv magic
 	$(INSTALL) $(INSTALLDIROPT) $(libdir)

@@ -15,7 +15,7 @@ INC =
 
 DEPENDINCLUDE = $(INC)
 
-BINOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)
+BINOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(CSRC:%.c=%.$(OBJSUF))
 
 DISTFILES = $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
 
@@ -30,18 +30,18 @@ default:: $(DEPENDINCLUDE)
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 scpr: $(BINOBJ) $(LIBS)
-	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 install:: scpr
 	$(INSTALL) $(INSTALLDIROPT) $(bindir)
-	$(INSTALL) $(INSTALLBINOPT) $< $(bindir)
+	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(bindir)
 
 distclean::
 	/bin/rm -f scpr
 
 #################################################################
 
-$(BINOBJ:.o=.d): $(DEPENDINCLUDE)
+$(BINOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(BINOBJ:.o=.d)
+include $(BINOBJ:.$(OBJSUF)=.d)
 endif

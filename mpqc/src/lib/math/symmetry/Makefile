@@ -35,7 +35,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 CXXSRC = symop.cc rep.cc irrep.cc chartab.cc pointgrp.cc \
          maketab.cc tetra.cc ico.cc corrtab.cc
 
-LIBOBJ = $(CXXSRC:%.cc=%.o)
+LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 INC =  pointgrp.h
 
@@ -51,14 +51,14 @@ default:: $(DEPENDINCLUDE)
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-testpg: testpg.o $(LIBS)
-	$(CXX) $^ -o $@ $(SYSLIBS)
+testpg: testpg.$(OBJSUF) $(LIBS)
+	$(LTLINK) $(CXX) $^ -o $@ $(SYSLIBS)$(LTLINKBINOPTS)
 
 distclean::
 	/bin/rm -f testpg
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d)
+include $(LIBOBJ:.$(OBJSUF)=.d)
 endif
 

@@ -61,31 +61,31 @@ LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
 default:: $(DEPENDINCLUDE)
 
-comptest: comptest.o $(LIBS)
-	$(LD) $(LDFLAGS) $^ -o comptest $(SYSLIBS)
+comptest: comptest.$(OBJSUF) $(LIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) $^ -o comptest $(SYSLIBS) $(LTLINKBINOPTS)
 
-tregtime: tregtime.o $(LIBS)
-	$(LD) $(LDFLAGS) $^ -o tregtime $(SYSLIBS)
+tregtime: tregtime.$(OBJSUF) $(LIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) $^ -o tregtime $(SYSLIBS) $(LTLINKBINOPTS)
 
-bugtest: bugtest.o $(LIBS)
-	$(LD) $(LDFLAGS) -DSRCDIR=\"$(SRCDIR)\" $^ $(SYSLIBS) -o bugtest
+bugtest: bugtest.$(OBJSUF) $(LIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -DSRCDIR=\"$(SRCDIR)\" $^ $(SYSLIBS) -o bugtest $(LTLINKBINOPTS)
 
-bugtest.o: bugtest.cc
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+bugtest.$(OBJSUF): bugtest.cc
+	$(LTLINK) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< $(LTLINKBINOPTS)
 
-unittest: unittest.o $(LIBS) 
-	$(LD) $(LDFLAGS) $^ $(SYSLIBS) -o unittest
+unittest: unittest.$(OBJSUF) $(LIBS) 
+	$(LTLINK) $(LD) $(LDFLAGS) $^ $(SYSLIBS) -o unittest $(LTLINKBINOPTS)
 
-formiot: formiot.o $(LIBS)
-	$(LD) $(LDFLAGS) $^ -o formiot $(SYSLIBS)
+formiot: formiot.$(OBJSUF) $(LIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) $^ -o formiot $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 distclean::
-	/bin/rm -f comptest tregtime bugtest formiot
+	/bin/rm -f comptest tregtime bugtest formiot unittest
 
-$(LIBOBJ:.o=.d) $(TESTOBJ:.o=.d): $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) $(TESTOBJ:.o=.d)
+include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:.$(OBJSUF)=.d)
 endif
 

@@ -80,7 +80,7 @@ INC = pool.h message.h mstate.h topology.h \
       rnglock.h memory.h memmsg.h memshm.h pool.h memamsg.h memproc.h \
       memmpl.h memmpi.h mempuma.h pregtime.h memmtmpi.h
 
-LIBOBJ = $(CXXSRC:%.cc=%.o)
+LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libgroup
@@ -93,10 +93,10 @@ DEPENDINCLUDE =
 
 default:: $(DEPENDINCLUDE)
 
-memtest.o: memtest.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+memtest.$(OBJSUF): memtest.cc
+	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-memtest: memtest.o \
+memtest: memtest.$(OBJSUF) \
 	libgroup.$(LIBSUF) \
 	libkeyval.$(LIBSUF) \
 	libmisc.$(LIBSUF) \
@@ -104,9 +104,9 @@ memtest: memtest.o \
 	libclass.$(LIBSUF) \
 	libcontainer.$(LIBSUF) \
 	libref.$(LIBSUF)
-	$(LD) $(LDFLAGS) -o memtest $^ $(SYSLIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o memtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-pooltest: pooltest.o \
+pooltest: pooltest.$(OBJSUF) \
 	libmisc.$(LIBSUF) \
 	libgroup.$(LIBSUF) \
 	libkeyval.$(LIBSUF) \
@@ -114,15 +114,15 @@ pooltest: pooltest.o \
 	libclass.$(LIBSUF) \
 	libcontainer.$(LIBSUF) \
 	libref.$(LIBSUF)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o pooltest $^ $(SYSLIBS)
+	$(LTLINK) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o pooltest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-rnglocktest: rnglocktest.o libgroup.$(LIBSUF)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o rnglocktest $^ $(SYSLIBS)
+rnglocktest: rnglocktest.$(OBJSUF) libgroup.$(LIBSUF)
+	$(LTLINK) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o rnglocktest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-messtest.o: messtest.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+messtest.$(OBJSUF): messtest.cc
+	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-messtest: messtest.o \
+messtest: messtest.$(OBJSUF) \
 	libgroup.$(LIBSUF) \
 	libkeyval.$(LIBSUF) \
 	libmisc.$(LIBSUF) \
@@ -130,12 +130,12 @@ messtest: messtest.o \
 	libclass.$(LIBSUF) \
 	libcontainer.$(LIBSUF) \
 	libref.$(LIBSUF)
-	$(LD) $(LDFLAGS) -o messtest $^ $(SYSLIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o messtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-thrtest.o: thrtest.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+thrtest.$(OBJSUF): thrtest.cc
+	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-thrtest: thrtest.o \
+thrtest: thrtest.$(OBJSUF) \
 	libgroup.$(LIBSUF) \
 	libkeyval.$(LIBSUF) \
 	libmisc.$(LIBSUF) \
@@ -143,13 +143,13 @@ thrtest: thrtest.o \
 	libclass.$(LIBSUF) \
 	libcontainer.$(LIBSUF) \
 	libref.$(LIBSUF)
-	$(LD) $(LDFLAGS) -o thrtest $^ $(SYSLIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o thrtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-$(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.o=.d)
+include $(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.$(OBJSUF)=.d)
 endif
 
 targetclean::

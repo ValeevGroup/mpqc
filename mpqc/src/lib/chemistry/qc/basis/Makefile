@@ -49,7 +49,7 @@ INC = basis.h gaussbas.h guassshell.h files.h \
       sobasis.h sointegral.h
 
 TESTSRC = btest.cc
-TESTOBJ = $(TESTSRC:%.cc=%.o)
+TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))
 TESTFILES = btest.kv
 
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
@@ -58,25 +58,25 @@ LIBOBJ= $(CXXSRC:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
 
-aotoso.o aotoso.d: f77sym.h
+aotoso.$(OBJSUF) aotoso.d: f77sym.h
 
 f77sym.h: f77sym.in
 	$(MKF77SYM) $< $@
 
 btest: $(TESTOBJ) libintv3.$(LIBSUF) liboint3.$(LIBSUF) \
                   $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
-	$(LD) $(LDFLAGS) -o btest $^ $(SYSLIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o btest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 clean::
-	rm -f btest btest.out
+	rm -f btest btest.$(OBJSUF)ut
 
 distclean::
 	/bin/rm -f f77sym.h
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) $(TESTOBJ:%.o=%.d)
+include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:%.$(OBJSUF)=%.d)
 endif
 

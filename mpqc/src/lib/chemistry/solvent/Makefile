@@ -36,7 +36,7 @@ DEFINES += -DSRCDIR=\"$(SRCDIR)\"
 LD = $(CXX)
 CXXSRC = bem.cc disprep.cc
 
-LIBOBJ = $(CXXSRC:%.cc=%.o)
+LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 INC = bem.h
 
@@ -46,7 +46,7 @@ BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libsolvent
 
 TESTSRC = bemtest.cc
-TESTOBJ = $(TESTSRC:%.cc=%.o)
+TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))
 TESTFILES = bemtest.in
 
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)
@@ -58,14 +58,14 @@ interface:: $(DEPENDINCLUDE)
 LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 
 bemtest: $(TESTOBJ) $(LIBS)
-	$(LD) $(LDFLAGS) -o bemtest $^ $(SYSLIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o bemtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 distclean::
 	/bin/rm -f bemtest
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) $(TESTOBJ:%.o=%.d)
+include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:%.$(OBJSUF)=%.d)
 endif

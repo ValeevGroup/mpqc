@@ -40,7 +40,7 @@ CXXSRC = ipv2.cc ipv2_alloc.cc ipv2_cwk.cc ipv2_data.cc ipv2_error.cc \
 
 GENCXXSRC =ipv2_parse.cc ipv2_scan.cc
 
-LIBOBJ = $(CXXSRC:%.cc=%.o) $(GENCXXSRC:%.cc=%.o)
+LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(GENCXXSRC:%.cc=%.$(OBJSUF))
 GENSRC = $(GENCXXSRC)
 
 INC = ipv2.h keyval.h keyvaldefs.h ipv2_scan.h
@@ -56,24 +56,24 @@ DISTFILES = Makefile $(CXXSRC) $(INC) ipv2_parse.yy ipv2_scan.ll LIBS.h
 
 default:: $(DEPENDINCLUDE)
 
-keyvaltest: keyvaltest.o libkeyval.$(LIBSUF) libcontainer.$(LIBSUF) \
+keyvaltest: keyvaltest.$(OBJSUF) libkeyval.$(LIBSUF) libcontainer.$(LIBSUF) \
             libmisc.$(LIBSUF) libgroup.$(LIBSUF) \
             libclass.$(LIBSUF) libstate.$(LIBSUF) \
             libref.$(LIBSUF)
-	$(LD) $(LDFLAGS) -o keyvaltest $^ $(SYSLIBS)
+	$(LTLINK) $(LD) $(LDFLAGS) -o keyvaltest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
-keyvaltest.o: keyvaltest.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+keyvaltest.$(OBJSUF): keyvaltest.cc
+	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 distclean::
 	/bin/rm -f keyvaltest ipv2_parse.output
 
-$(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
-OTHEROBJ = keyvaltest.o
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
+OTHEROBJ = keyvaltest.$(OBJSUF)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) $(OTHEROBJ:.o=.d)
+include $(LIBOBJ:.$(OBJSUF)=.d) $(OTHEROBJ:.$(OBJSUF)=.d)
 endif
 
 #### yacc and lex ####

@@ -165,9 +165,6 @@
 /* Define if you have the NIAMA library.  */
 #undef HAVE_NIAMA
 
-/* Define if you have the <pvm.h> header file and library.  */
-#undef HAVE_PVM
-
 /* Define if you have the <mpl.h> header file and library.  */
 #undef HAVE_MPL
 
@@ -180,17 +177,11 @@
 /* Define if your MPI implementation uses p4 */
 #undef HAVE_P4
 
-/* Define if your MPI implementation has the real MPI2 one-sided calls */
-#undef HAVE_MPI2_ONE_SIDED
-
 /* Define if MPIMessageGrp should be used by default. */
 #undef DEFAULT_MPI
 
 /* Define if MTMPIMemoryGrp should be used by default. */
 #undef DEFAULT_MTMPI
-
-/* Define if MPI2MemorGrp should be used by default. */
-#undef DEFAULT_MPI2
 
 /* Define if is MPI is always used (needed if MPI_Init is used to
    initialize argument list). */

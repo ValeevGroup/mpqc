@@ -66,11 +66,6 @@ main(int argc, char *argv[])
 
   ExEnv::out0() << "Molecule at center of mass in highest point group:" << endl;
   mol->print();
-  
-  //mol->transform_to_principal_axes(0);
-  //ExEnv::out0() << "Molecule wrt principal axes:\n";
-  //mol->print();
-  //mol->point_group()->symm_frame().print();
 
   mol->cleanup_molecule();
   ExEnv::out0() << "cleaned molecule\n";

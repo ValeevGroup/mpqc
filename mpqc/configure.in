@@ -132,12 +132,11 @@ esac
 
 DEFAULT_PARALLEL=none
 AC_ARG_WITH(default-parallel,
-[  --with-default-parallel Default parallism model (none, mpi2, or mtmpi)],
+[  --with-default-parallel Default parallism model (none, mpi, or mtmpi)],
 DEFAULT_PARALLEL=$withval
 )
-if test $DEFAULT_PARALLEL = mpi2; then
+if test $DEFAULT_PARALLEL = mpi; then
   AC_DEFINE(DEFAULT_MPI)
-  AC_DEFINE(DEFAULT_MPI2)
 elif test $DEFAULT_PARALLEL = mtmpi; then
   AC_DEFINE(DEFAULT_MPI)
   AC_DEFINE(DEFAULT_MTMPI)
@@ -996,10 +995,6 @@ if test X$PARALLEL = Xyes; then
     dnl ----- check for functions that might be in an mpi library
     AC_CHECK_FUNC(mpc_rcvncall,[HAVE_MPL=yes;AC_DEFINE(HAVE_MPL)])
     AC_CHECK_FUNC(p4_initenv,[HAVE_P4=yes;AC_DEFINE(HAVE_P4)])
-    AC_CHECK_FUNC(MPI2_RMA_init,
-                 [HAVE_PUMA_MPI2=yes;AC_DEFINE(HAVE_PUMA_MPI2)])
-    AC_CHECK_FUNC(MPI_Win_create,
-                 [HAVE_MPI2_ONE_SIDED=yes;AC_DEFINE(HAVE_MPI2_ONE_SIDED)])
   fi
   AC_LANG_RESTORE
 fi
@@ -1010,10 +1005,6 @@ elif test $ALWAYS_USE_MPI = yes; then
   AC_DEFINE(ALWAYS_USE_MPI)
 fi
 
-if test $DEFAULT_PARALLEL = mpi2 -a X$HAVE_MPI2_ONE_SIDED != Xyes; then
-  AC_MSG_ERROR([--with-default-parallel=mpi2 but MPI2 1-sided not available])
-fi
-
 if test $DEFAULT_PARALLEL = mtmpi -a X$HAVE_MPI != Xyes; then
   AC_MSG_ERROR([--with-default-parallel=mtmpi but MPI not available])
 fi
@@ -1021,7 +1012,6 @@ fi
 AC_SUBST(HAVE_PERF)
 AC_SUBST(HAVE_MPL)
 AC_SUBST(HAVE_P4)
-AC_SUBST(HAVE_MPI2_ONE_SIDED)
 AC_SUBST(HAVE_MPI)
 AC_SUBST(HAVE_PTHREAD)
 AC_SUBST(EXTRADEFINES)

@@ -68,9 +68,11 @@ install::
 
 clean::
 	/bin/rm -f mpqc
+	/bin/rm -f parse.tmp*
 
 distclean::
 	/bin/rm -f mpqc
+	/bin/rm -f parse.tmp*
 	/bin/rm -f $(GENCXXSRC) $(GENINC) parse.output
 
 # (only works with bison and flex)

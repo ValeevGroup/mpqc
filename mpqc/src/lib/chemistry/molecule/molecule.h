@@ -152,6 +152,8 @@ class Molecule: public SavableState
     double *r(int atom) { return r_[atom]; }
     const double *r(int atom) const { return r_[atom]; }
     double mass(int atom) const;
+    /** Returns the label explicitly assigned to atom.  If
+        no label has been assigned, then null is returned. */
     const char *label(int atom) const;
 
     /** Takes an (x, y, z) postion and finds an atom within the

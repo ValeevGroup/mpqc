@@ -52,20 +52,6 @@ namespace sc {
 }
 # endif
 
-#if defined(HAVE_PUMA_MPI2)
-#   include <util/group/thpuma.h>
-namespace sc {
-    static ForceLink<PumaThreadGrp> group_force_link_d_;
-}
-#endif
-
-#if defined(HAVE_MPI2_ONE_SIDED)
-#   include <util/group/memmpi2.h>
-namespace sc {
-    static ForceLink<MPI2MemoryGrp> group_force_link_f_;
-}
-#endif
-
 #if defined(HAVE_MPI)
 #   include <util/group/memmtmpi.h>
 namespace sc {

@@ -130,24 +130,6 @@ matching set of criteria are found.
 
 \begin{itemize}
 
-   \item If a ParagonMessageGrp is used then:
-
-     \begin{itemize}
-
-        \item If the machine supports the full NX library (that is, it
-           includes the hrecv function), then ParagonMemoryGrp
-           will be used.  The NX library is typically found on Intel
-           Paragons and IPSC machines.
-
-        \item If the machine is an Intel Paragon running the Puma OS and
-           it supports MPI2 one-sided communication, then
-           PumaMemoryGrp will be used.
-
-        \item If the machine supports the NX library subset without hrecv,
-           then IParagonMemoryGrp is used.
-
-     \end{itemize}
-
    \item If an MPIMessageGrp is used then:
 
      \begin{itemize}

@@ -56,7 +56,7 @@ class ImplicitSurfacePolygonizer: public IsosurfaceGen {
     RefVolume _volume;
 
 #ifdef HAVE_STL
-    vector<RefVertex>  _tmp_vertices;
+    std::vector<RefVertex>  _tmp_vertices;
 #else
     Array<RefVertex>  _tmp_vertices;
 #endif

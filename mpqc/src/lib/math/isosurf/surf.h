@@ -69,9 +69,9 @@ class TriangulatedSurface: public DescribedClass {
 
     // map integer indices to an object
 #ifdef HAVE_STL
-    vector<RefVertex> _index_to_vertex;
-    vector<RefEdge> _index_to_edge;
-    vector<RefTriangle> _index_to_triangle;
+    std::vector<RefVertex> _index_to_vertex;
+    std::vector<RefEdge> _index_to_edge;
+    std::vector<RefTriangle> _index_to_triangle;
 #else
     Array<RefVertex> _index_to_vertex;
     Array<RefEdge> _index_to_edge;

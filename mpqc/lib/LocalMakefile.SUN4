@@ -1,0 +1,6 @@
+
+DEFINES += -DSUN
+
+SYSLIBS = -lm
+OTHERLIBS = -L/usr/lang/SC1.0 -lF77 -lm
+

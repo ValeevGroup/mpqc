@@ -1,0 +1,16 @@
+
+ARCH = I860
+
+CC = icc
+FC = if77
+AR = ar860
+RANLIB = @echo
+
+DEFINES += -DI860
+
+COPTIONS = -O3 -Knoieee -Mnoframe -node
+COPTIONS_NOOPT = -node
+COPTIONS_DEBUG = -g -node
+
+SYSLIBS = -lm -lf -lX11
+

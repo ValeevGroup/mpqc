@@ -1,5 +1,5 @@
 
-ARCH = PARAGON
+ARCH = SUNMOS
 
 YACC = bison
 LEX = flex
@@ -10,12 +10,12 @@ FC = if77
 AR = ar860
 RANLIB = echo
 
-DEFINES += -DPARAGON -DI860
-
-LD = $(CXX)
-LDFLAGS += -mnx -mnoieee
+DEFINES += -DPARAGON -DI860 -DPUMAGON -DSUNMOS
 
 COPTIONS = -O3 -Knoieee
+
+LD = $(CXX)
+LDFLAGS += -msunmos -mnoieee
 
 SYSLIBS = -lm -lf
 

@@ -1,0 +1,11 @@
+
+ARCH = RS6000
+
+# xlc is the ANSI C compiler
+CC = xlc
+FC = xlf
+
+DEFINES += -DAIXV3 -DAIX
+
+YACC = yacc
+LEX = lex

@@ -128,7 +128,7 @@ ReplSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
     }
 
   double** adat = la->rows;
-  double* bdat = vector;
+  double* bdat = lb->vector;
   double tmp;
   int n = dim()->n();
   int i, j;

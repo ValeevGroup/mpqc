@@ -7,7 +7,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 #CXXFLAGS = $(CXXFLAGS_DEBUG)
 
-TARGET_TO_MAKE = integral
+TARGET_TO_MAKE = libintegral
 BIN_OR_LIB = LIB
 
 SRCS = integral.cc integralv2.cc ortho.cc
@@ -15,9 +15,9 @@ SRCS = integral.cc integralv2.cc ortho.cc
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 
 default:: $(DEPENDINCLUDE)
-default:: $(TOPDIR)/lib/integral.a
+default:: $(TOPDIR)/lib/libintegral.a
 ifeq ($(ELF),yes)
-default:: $(TOPDIR)/lib/integral.so
+default:: $(TOPDIR)/lib/libintegral.so
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

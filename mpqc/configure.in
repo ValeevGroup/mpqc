@@ -564,6 +564,20 @@ if test -f depcheck.u; then
 fi
 /bin/rm -f depcheck.u depcheck.c depcheck.o
 
+dnl -- special misc options --
+
+AC_MSG_CHECKING([for miscellaneous flags])
+case $target in
+  *-cray-unicos*)
+    if test ! X$GXX = Xyes; then
+      CXXFLAGS_MISC="$CXXFLAGS_MISC -h conform"
+    fi
+  ;;
+  *)
+    AC_MSG_RESULT(none)
+  ;;
+esac
+
 dnl -- special optimization options --
 
 AC_MSG_CHECKING([for special optimization options])
@@ -1513,9 +1527,7 @@ case $target in
     if test ! X$GXX = Xyes; then
       # This is to quickly get things running.
       # A more sophisticated template instantiation model would be better.
-      # The conform flag isn't really related to templates, but it needed
-      # to get Cray's C++ compiler to support standard C++.
-      CXXFLAGS="$CXXFLAGS -h simple_templates -h conform"
+      CXXFLAGS="$CXXFLAGS -h simple_templates"
     fi
   ;;
   *-dec-osf*)

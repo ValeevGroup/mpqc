@@ -93,6 +93,8 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
     bool is_avail(int i, int j) const { return (mem_->me() == 0);};
     /// Does this task have access to all the integrals?
     bool has_access(int proc) const { return (proc == 0);};
+    /// Can restart Node0File-based accumulator
+    bool can_restart() const { return true; };
 
     // Utility functions
     int ij_index(int i, int j) const { return i*nocc_act_ + j; };

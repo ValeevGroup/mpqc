@@ -55,6 +55,8 @@ class R12IntEval : virtual public SavableState {
   Ref<R12IntEval_sbs_A> eval_sbs_a_;
   Ref<R12IntEval_abs_A> eval_abs_a_;
 
+  RefSCMatrix Vaa_, Vab_, Xaa_, Xab_, Baa_, Bab_;
+  RefSCVector emp2pair_aa_, emp2pair_ab_;
   RefSCDimension dim_aa_, dim_ab_, dim_s_, dim_t_;
 
   LinearR12::StandardApproximation stdapprox_;
@@ -64,7 +66,7 @@ class R12IntEval : virtual public SavableState {
 public:
 
   R12IntEval(StateIn&);
-  R12IntEval(MBPT2_R12&);
+  R12IntEval(MBPT2_R12*);
   ~R12IntEval();
 
   void save_data_state(StateOut&);

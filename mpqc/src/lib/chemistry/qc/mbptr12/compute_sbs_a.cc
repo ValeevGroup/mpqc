@@ -400,9 +400,10 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
    -----------------------------------*/
   tim_enter("mp2-r12/a passes");
-  if (me == 0 && mole->if_to_checkpoint()) {
+  if (me == 0 && mole->if_to_checkpoint() && r12intsacc->can_restart()) {
     StateOutBin stateout(mole->checkpoint_file());
     SavableState::save_state(mole.pointer(),stateout);
+    ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
   }
 
   for (int pass=0; pass<npass; pass++) {
@@ -737,16 +738,9 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 	    } // exit a loop
 	  }   // exit b loop
 	  ij_index++;
-	  if (ii > jj) {
+	  if (ii > jj)
 	    emp2_aa.set_element(ij_aa,eaa);
-	    ExEnv::outn() << indent
-			  << scprintf("AA correlation energy for pair %3d %3d = %16.12f",
-				      i+i_offset, j+nfzc, eaa) << endl;
-	  }
 	  emp2_ab.set_element(ij_ab,eab);
-	  ExEnv::outn() << indent
-			<< scprintf("AB correlation energy for pair %3d %3d = %16.12f",
-				    i+i_offset, j+nfzc, eab) << endl;
 	}     // endif
 	if (debug_) {
 	  msg->sum(ecorr_ij);
@@ -773,12 +767,13 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     tim_enter("MO ints store");
     r12intsacc->store_memorygrp(mem,ni);
     tim_exit("MO ints store");
-    current_orbital_ += ni;
     mem->sync();
 
-    if (me == 0 && mole->if_to_checkpoint()) {
+    if (me == 0 && mole->if_to_checkpoint() && r12intsacc->can_restart()) {
+      current_orbital_ += ni;
       StateOutBin stateout(mole->checkpoint_file());
       SavableState::save_state(mole.pointer(),stateout);
+      ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
     }
 
   } // end of loop over passes
@@ -1145,6 +1140,12 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
       }
   }
   msg->sum(aoint_computed);
+
+  if (me == 0 && mole->if_to_checkpoint() && r12intsacc->can_restart()) {
+    StateOutBin stateout(mole->checkpoint_file());
+    SavableState::save_state(mole.pointer(),stateout);
+    ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
+  }
 
 #if PRINT_BIGGEST_INTS
   biggest_ints_1.combine(msg);

@@ -87,6 +87,8 @@ class R12IntsAcc: public RefCount {
     virtual bool is_avail(int i, int j) const =0;
     /// Does this task have access to all the integrals?
     virtual bool has_access(int proc) const =0;
+    /// Can this specialization be used in restarts?
+    virtual bool can_restart() const =0;
 };
 
 }

@@ -80,6 +80,8 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
     bool is_avail(int i, int j) const { return true;};
     /// Does this task have access to all the integrals?
     bool has_access(int proc) const { return true;};
+    /// Cannot restart MemoryGrp-based accumulator
+    bool can_restart() const { return false; };
 
     // Utility functions
     int ij_index(int i, int j) const { return i*nocc_act_ + j; };

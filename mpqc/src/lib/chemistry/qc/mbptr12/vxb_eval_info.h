@@ -76,7 +76,7 @@ class R12IntEvalInfo : virtual public SavableState {
 
 public:
   R12IntEvalInfo(StateIn&);
-  R12IntEvalInfo(MBPT2_R12&);
+  R12IntEvalInfo(MBPT2_R12*);
   ~R12IntEvalInfo();
 
   void save_data_state(StateOut&);

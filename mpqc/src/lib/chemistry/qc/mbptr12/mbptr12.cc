@@ -189,6 +189,7 @@ MBPT2_R12::compute()
 void
 MBPT2_R12::obsolete()
 {
+  r12eval_ = 0;
   mp2_corr_energy_ = 0.0;
   r12_corr_energy_ = 0.0;
   MBPT2::obsolete();

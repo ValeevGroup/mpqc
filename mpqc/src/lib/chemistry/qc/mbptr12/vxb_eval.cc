@@ -51,7 +51,7 @@ static ClassDesc R12IntEval_cd(
   typeid(R12IntEval),"R12IntEval",1,"virtual public SavableState",
   0, 0, create<R12IntEval>);
 
-R12IntEval::R12IntEval(MBPT2_R12& mbptr12)
+R12IntEval::R12IntEval(MBPT2_R12* mbptr12)
 {
   r12info_ = new R12IntEvalInfo(mbptr12);
 
@@ -64,6 +64,16 @@ R12IntEval::R12IntEval(MBPT2_R12& mbptr12)
   dim_s_ = new SCDimension((nocc_act*(nocc_act+1))/2);
   dim_t_ = dim_aa_;
 
+  Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
+  Vaa_ = local_matrix_kit->matrix(dim_aa_,dim_aa_);
+  Vab_ = local_matrix_kit->matrix(dim_ab_,dim_ab_);
+  Xaa_ = local_matrix_kit->matrix(dim_aa_,dim_aa_);
+  Xab_ = local_matrix_kit->matrix(dim_ab_,dim_ab_);
+  Baa_ = local_matrix_kit->matrix(dim_aa_,dim_aa_);
+  Bab_ = local_matrix_kit->matrix(dim_ab_,dim_ab_);
+  emp2pair_aa_ = local_matrix_kit->vector(dim_aa_);
+  emp2pair_ab_ = local_matrix_kit->vector(dim_ab_);
+
   // Default values
   stdapprox_ = LinearR12::StdApprox_Ap;
   debug_ = 0;
@@ -75,11 +85,19 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   eval_sbs_a_ << SavableState::restore_state(si);
   eval_abs_a_ << SavableState::restore_state(si);
 
-  int nocc_act = r12info_->nocc_act();
-  dim_aa_ = new SCDimension((nocc_act*(nocc_act-1))/2);
-  dim_ab_ = new SCDimension(nocc_act*nocc_act);
-  dim_s_ = new SCDimension((nocc_act*(nocc_act+1))/2);
-  dim_t_ = dim_aa_;
+  dim_aa_ << SavableState::restore_state(si);
+  dim_ab_ << SavableState::restore_state(si);
+  dim_s_ << SavableState::restore_state(si);
+  dim_t_ << SavableState::restore_state(si);
+
+  Vaa_ << SavableState::restore_state(si);
+  Vab_ << SavableState::restore_state(si);
+  Xaa_ << SavableState::restore_state(si);
+  Xab_ << SavableState::restore_state(si);
+  Baa_ << SavableState::restore_state(si);
+  Bab_ << SavableState::restore_state(si);
+  emp2pair_aa_ << SavableState::restore_state(si);
+  emp2pair_ab_ << SavableState::restore_state(si);
 
   int stdapprox;
   si.get(stdapprox);
@@ -105,6 +123,20 @@ void R12IntEval::save_data_state(StateOut& so)
   SavableState::save_state(r12info_.pointer(),so);
   SavableState::save_state(eval_sbs_a_.pointer(),so);
   SavableState::save_state(eval_abs_a_.pointer(),so);
+
+  SavableState::save_state(dim_aa_.pointer(),so);
+  SavableState::save_state(dim_ab_.pointer(),so);
+  SavableState::save_state(dim_s_.pointer(),so);
+  SavableState::save_state(dim_t_.pointer(),so);
+
+  Vaa_.save(so);
+  Vab_.save(so);
+  Xaa_.save(so);
+  Xab_.save(so);
+  Baa_.save(so);
+  Bab_.save(so);
+  emp2pair_aa_.save(so);
+  emp2pair_ab_.save(so);
 
   so.put(stdapprox_);
 }
@@ -140,58 +172,53 @@ void R12IntEval::compute(RefSCMatrix& Vaa,
   int nab = nocc_act*nocc_act;
   int me = r12info()->msg()->me();
 
-  Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
-    Vaa = local_matrix_kit->matrix(dim_aa_,dim_aa_);
-    Baa = local_matrix_kit->matrix(dim_aa_,dim_aa_);
-    Xaa = local_matrix_kit->matrix(dim_aa_,dim_aa_);
-    Vab = local_matrix_kit->matrix(dim_ab_,dim_ab_);
-    Bab = local_matrix_kit->matrix(dim_ab_,dim_ab_);
-    Xab = local_matrix_kit->matrix(dim_ab_,dim_ab_);
-    emp2pair_aa = local_matrix_kit->vector(dim_aa_);
-    emp2pair_ab = local_matrix_kit->vector(dim_ab_);
-    Vaa->unit();
-    Vab->unit();
-    Baa->unit();
-    Bab->unit();
-    Xaa.assign(0.0);
-    Xab.assign(0.0);
-    emp2pair_aa.assign(0.0);
-    emp2pair_ab.assign(0.0);
+  Vaa_->unit();
+  Vab_->unit();
+  Baa_->unit();
+  Bab_->unit();
+  Xaa_.assign(0.0);
+  Xab_.assign(0.0);
+  emp2pair_aa_.assign(0.0);
+  emp2pair_ab_.assign(0.0);
 
-    if (debug_)
-      ExEnv::out0() << indent << "Allocated V, B, and X intermediates" << endl;
-    
-    eval_sbs_a_->compute(Vaa,Xaa,Baa,Vab,Xab,Bab,emp2pair_aa,emp2pair_ab);
-    if (r12info_->basis() != r12info_->basis_aux())
-      eval_abs_a_->compute(Vaa,Xaa,Baa,Vab,Xab,Bab);
+  eval_sbs_a_->compute(Vaa_,Xaa_,Baa_,Vab_,Xab_,Bab_,emp2pair_aa_,emp2pair_ab_);
+  if (r12info_->basis() != r12info_->basis_aux())
+    eval_abs_a_->compute(Vaa_,Xaa_,Baa_,Vab_,Xab_,Bab_);
 
-    if (me == 0 && debug_) {
-      Vaa.print("Alpha-alpha V matrix");
-      Baa.print("Alpha-alpha B matrix");
-      Xaa.print("Alpha-alpha X matrix");
-      Vab.print("Alpha-beta V matrix");
-      Bab.print("Alpha-beta B matrix");
-      Xab.print("Alpha-beta X matrix");
-    }
+  if (me == 0 && debug_) {
+    Vaa_.print("Alpha-alpha V matrix");
+    Baa_.print("Alpha-alpha B matrix");
+    Xaa_.print("Alpha-alpha X matrix");
+    Vab_.print("Alpha-beta V matrix");
+    Bab_.print("Alpha-beta B matrix");
+    Xab_.print("Alpha-beta X matrix");
+  }
 
-    //
-    // Compute basis set completeness
-    //
-    double traceV_aa = Vaa->trace();
-    double traceB_aa = Baa->trace();
-    double traceV_ab = Vab->trace();
-    double traceB_ab = Bab->trace();
+  //
+  // Compute basis set completeness
+  //
+  double traceV_aa = Vaa_->trace();
+  double traceB_aa = Baa_->trace();
+  double traceV_ab = Vab_->trace();
+  double traceB_ab = Bab_->trace();
+  
+  ExEnv::out0() << endl;
+  ExEnv::out0() << indent << "Basis Set completeness diagnostics:" << endl;
+  ExEnv::out0() << indent
+		<< "-Tr(V)/Tr(B) for alpha-alpha pairs:" << indent <<
+    scprintf("%10.6lf",(-1.0)*traceV_aa/traceB_aa) << endl;
+  ExEnv::out0() << indent
+		<< "-Tr(V)/Tr(B) for alpha-beta pairs:" << indent <<
+    scprintf("%10.6lf",(-1.0)*traceV_ab/traceB_ab) << endl;
 
-    ExEnv::out0() << endl;
-    ExEnv::out0() << indent << "Basis Set completeness diagnostics:" << endl;
-    ExEnv::out0() << indent
-		 << "-Tr(V)/Tr(B) for alpha-alpha pairs:" << indent <<
-      scprintf("%10.6lf",(-1.0)*traceV_aa/traceB_aa) << endl;
-    ExEnv::out0() << indent
-		 << "-Tr(V)/Tr(B) for alpha-beta pairs:" << indent <<
-      scprintf("%10.6lf",(-1.0)*traceV_ab/traceB_ab) << endl;
-
-    
+  Vaa = Vaa_;
+  Vab = Vab_;
+  Xaa = Xaa_;
+  Xab = Xab_;
+  Baa = Baa_; 
+  Bab = Bab_;
+  emp2pair_aa = emp2pair_aa_;
+  emp2pair_ab = emp2pair_ab_;
 }
 			 
 

@@ -85,6 +85,8 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
     bool is_avail(int i, int j) const { return true;};
     /// Does this task have access to all the integrals?
     bool has_access(int proc) const { return true;};
+    /// Can restart MPI-IO-based accumulator
+    bool can_restart() const { return true; };
 
     // Utility functions
     int ij_index(int i, int j) const { return i*nocc_act_ + j; };

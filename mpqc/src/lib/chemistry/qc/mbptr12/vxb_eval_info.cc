@@ -48,13 +48,13 @@ static ClassDesc R12IntEvalInfo_cd(
   typeid(R12IntEvalInfo),"R12IntEvalInfo",1,"virtual public SavableState",
   0, 0, create<R12IntEvalInfo>);
 
-R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12& mbptr12)
+R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
 {
-  mole_ = &mbptr12;
-  ref_ = mbptr12.ref();
-  integral_ = mbptr12.integral();
-  bs_ = mbptr12.basis();
-  bs_aux_ = mbptr12.aux_basis();
+  mole_ = mbptr12;
+  ref_ = mbptr12->ref();
+  integral_ = mbptr12->integral();
+  bs_ = mbptr12->basis();
+  bs_aux_ = mbptr12->aux_basis();
 
   matrixkit_ = SCMatrixKit::default_matrixkit();
   mem_ = MemoryGrp::get_default_memorygrp();
@@ -68,8 +68,8 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12& mbptr12)
   for (int i=0; i<oso_dim->n(); i++) {
     if (ref_->occupation(i) == 2.0) nocc_++;
   }
-  nfzc_ = mbptr12.nfzcore();
-  nfzv_ = mbptr12.nfzvirt();
+  nfzc_ = mbptr12->nfzcore();
+  nfzv_ = mbptr12->nfzvirt();
   nocc_act_ = nocc_ - nfzc_;
   noso_ = oso_dim.n();
 

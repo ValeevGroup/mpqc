@@ -61,18 +61,18 @@ MBPT2_R12::compute_energy_a_()
   int nocc_act = nocc - nfzc;
   int me = msg_->me();
 
-    r12eval_ = new R12IntEval(*this);
-    r12eval_->set_stdapprox(stdapprox_);
-    // will spin-adapt the energies rather than the intermediates
-    r12eval_->set_spinadapted(false);
-    r12eval_->set_ints_file(r12ints_file_);
-    r12eval_->set_debug(debug_);
-    r12eval_->set_dynamic(dynamic_);
-    r12eval_->set_memory(mem_alloc);
-
-    RefSCMatrix Vaa, Xaa, Baa, Vab, Xab, Bab;
-    RefSCVector emp2_aa, emp2_ab;
-    r12eval_->compute(Vaa,Xaa,Baa,Vab,Xab,Bab,emp2_aa,emp2_ab);
+  r12eval_ = new R12IntEval(this);
+  r12eval_->set_stdapprox(stdapprox_);
+  // will spin-adapt the energies rather than the intermediates
+  r12eval_->set_spinadapted(false);
+  r12eval_->set_ints_file(r12ints_file_);
+  r12eval_->set_debug(debug_);
+  r12eval_->set_dynamic(dynamic_);
+  r12eval_->set_memory(mem_alloc);
+  
+  RefSCMatrix Vaa, Xaa, Baa, Vab, Xab, Bab;
+  RefSCVector emp2_aa, emp2_ab;
+  r12eval_->compute(Vaa,Xaa,Baa,Vab,Xab,Bab,emp2_aa,emp2_ab);
 
   if (me == 0) {
 
@@ -82,7 +82,7 @@ MBPT2_R12::compute_energy_a_()
     for(int i=nfzc; i<nocc; i++)
       evals[i-nfzc] = evalmat(i);
     evalmat = 0;
-
+    
     //
     // Evaluate pair energies
     //
@@ -99,39 +99,39 @@ MBPT2_R12::compute_energy_a_()
     int ij=0;
     for(int i=0; i<nocc_act; i++)
       for(int j=0; j<i; j++, ij++) {
-
-      RefSCVector Vaa_ij = Vaa.get_column(ij);
-
-      // Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
-      Baa_ij.assign(Baa);
-      if (stdapprox_ == LinearR12::StdApprox_Ap) { 
-      int kl=0;
-      for(int k=0; k<nocc_act; k++)
-	for(int l=0; l<k; l++, kl++) {
-	  int ow=0;
-	  for(int o=0; o<nocc_act; o++)
-	    for(int w=0; w<o; w++, ow++) {
-	      double fx = 0.5 * (evals[k] + evals[l] + evals[o] + evals[w] - 2.0*evals[i] - 2.0*evals[j]) *
-		Xaa.get_element(kl,ow);
-	      Baa_ij.accumulate_element(kl,ow,fx);
+	
+	RefSCVector Vaa_ij = Vaa.get_column(ij);
+	
+	// Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
+	Baa_ij.assign(Baa);
+	if (stdapprox_ == LinearR12::StdApprox_Ap) { 
+	  int kl=0;
+	  for(int k=0; k<nocc_act; k++)
+	    for(int l=0; l<k; l++, kl++) {
+	      int ow=0;
+	      for(int o=0; o<nocc_act; o++)
+		for(int w=0; w<o; w++, ow++) {
+		  double fx = 0.5 * (evals[k] + evals[l] + evals[o] + evals[w] - 2.0*evals[i] - 2.0*evals[j]) *
+		    Xaa.get_element(kl,ow);
+		  Baa_ij.accumulate_element(kl,ow,fx);
+		}
 	    }
+	  if (debug_ > 1) {
+	    Baa_ij.print("Full A' alpha-alpha B matrix");
+	  }
 	}
-      if (debug_ > 1) {
-	Baa_ij.print("Full A' alpha-alpha B matrix");
+	// For some reason invert_this doesn't work here
+	Baa_ij->gen_invert_this();
+	
+	if (debug_ > 1) {
+	  Baa_ij.print("Inverse alpha-alpha B matrix");
+	}
+	
+	double eaa_ij = -2.0*Vaa_ij.dot(Baa_ij * Vaa_ij);
+	er12tot_aa += eaa_ij;
+	er12_aa.set_element(ij,eaa_ij);
+	emp2tot_aa += emp2_aa.get_element(ij);
       }
-      }
-      // For some reason invert_this doesn't work here
-      Baa_ij->gen_invert_this();
-
-      if (debug_ > 1) {
-	Baa_ij.print("Inverse alpha-alpha B matrix");
-      }
-
-      double eaa_ij = -2.0*Vaa_ij.dot(Baa_ij * Vaa_ij);
-      er12tot_aa += eaa_ij;
-      er12_aa.set_element(ij,eaa_ij);
-      emp2tot_aa += emp2_aa.get_element(ij);
-    }
     Baa_ij=0;
     epair_aa->assign(emp2_aa);
     epair_aa->accumulate(er12_aa);
@@ -141,43 +141,43 @@ MBPT2_R12::compute_energy_a_()
     ij=0;
     for(int i=0; i<nocc_act; i++)
       for(int j=0; j<nocc_act; j++, ij++) {
-
-      RefSCVector Vab_ij = Vab.get_column(ij);
-
-      // Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
-      Bab_ij.assign(Bab);
-      if (stdapprox_ == LinearR12::StdApprox_Ap) {
-      int kl=0;
-      for(int k=0; k<nocc_act; k++)
-	for(int l=0; l<nocc_act; l++, kl++) {
-	  int ow=0;
-	  for(int o=0; o<nocc_act; o++)
-	    for(int w=0; w<nocc_act; w++, ow++) {
-	      double fx = 0.5 * (evals[k] + evals[l] + evals[o] + evals[w] - 2.0*evals[i] - 2.0*evals[j]) *
-		Xab.get_element(kl,ow);
-	      Bab_ij.accumulate_element(kl,ow,fx);
+	
+	RefSCVector Vab_ij = Vab.get_column(ij);
+	
+	// Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
+	Bab_ij.assign(Bab);
+	if (stdapprox_ == LinearR12::StdApprox_Ap) {
+	  int kl=0;
+	  for(int k=0; k<nocc_act; k++)
+	    for(int l=0; l<nocc_act; l++, kl++) {
+	      int ow=0;
+	      for(int o=0; o<nocc_act; o++)
+		for(int w=0; w<nocc_act; w++, ow++) {
+		  double fx = 0.5 * (evals[k] + evals[l] + evals[o] + evals[w] - 2.0*evals[i] - 2.0*evals[j]) *
+		    Xab.get_element(kl,ow);
+		  Bab_ij.accumulate_element(kl,ow,fx);
+		}
 	    }
+	  if (debug_ > 1) {
+	    Bab_ij.print("Full A' alpha-beta B matrix");
+	  }
 	}
-      if (debug_ > 1) {
-	Bab_ij.print("Full A' alpha-beta B matrix");
+	// For some reason invert_this doesn't work here
+	Bab_ij->gen_invert_this();
+	
+	if (debug_ > 1) {
+	  Bab_ij.print("Inverse alpha-beta B matrix");
+	}
+	
+	double eab_ij = -1.0*Vab_ij.dot(Bab_ij * Vab_ij);
+	er12tot_ab += eab_ij;
+	er12_ab.set_element(ij,eab_ij);
+	emp2tot_ab += emp2_ab.get_element(ij);
       }
-      }
-      // For some reason invert_this doesn't work here
-      Bab_ij->gen_invert_this();
-
-      if (debug_ > 1) {
-	Bab_ij.print("Inverse alpha-beta B matrix");
-      }
-
-      double eab_ij = -1.0*Vab_ij.dot(Bab_ij * Vab_ij);
-      er12tot_ab += eab_ij;
-      er12_ab.set_element(ij,eab_ij);
-      emp2tot_ab += emp2_ab.get_element(ij);
-    }
     Bab_ij=0;
     epair_ab->assign(emp2_ab);
     epair_ab->accumulate(er12_ab);
-
+    
 
     /*---------------------------------------
       Spin-adapt pair energies, if necessary
@@ -185,7 +185,7 @@ MBPT2_R12::compute_energy_a_()
     if (!spinadapted_) {
       epair_0_ = epair_ab;
       epair_1_ = epair_aa;
-
+      
       ExEnv::out0() << endl << indent << "Alpha-alpha MBPT2-R12/" << SA_str << " pair energies:" << endl;
       ExEnv::out0() << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
       ExEnv::out0() << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;

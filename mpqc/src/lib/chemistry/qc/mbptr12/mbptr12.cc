@@ -167,7 +167,8 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   // Klopper and Samson's ABS method is only implemented for certain "old" methods
   // Make sure that the ABS method is available for the requested MP2-R12 energy
-  const bool must_use_cabs = (!gbc_ || !ebc_ || stdapprox_ == LinearR12::StdApprox_B);
+  const bool must_use_cabs = (!gbc_ || !ebc_ || stdapprox_ == LinearR12::StdApprox_B ||
+                              !basis()->equiv(vir_basis_));
   if (must_use_cabs &&
       (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus))
     throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- abs_method must be set to cabs or cabs+ for this MP2-R12 method");

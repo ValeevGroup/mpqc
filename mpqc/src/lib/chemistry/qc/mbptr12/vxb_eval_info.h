@@ -62,6 +62,7 @@ private:
   Ref<Integral> integral_;
   Ref<GaussianBasisSet> bs_;
   Ref<GaussianBasisSet> bs_aux_;
+  Ref<GaussianBasisSet> bs_vir_;
   Ref<GaussianBasisSet> bs_ri_;
   Ref<SCMatrixKit> matrixkit_;
   Ref<MessageGrp> msg_;
@@ -69,10 +70,8 @@ private:
   Ref<ThreadGrp> thr_;
 
   int nocc_;
-  int nocc_act_;
   int nfzc_;
   int nfzv_;
-  int noso_;
 
   size_t memory_;
   bool dynamic_;
@@ -83,6 +82,7 @@ private:
   LinearR12::ABSMethod abs_method_;
 
   int nlindep_aux_;
+  int nlindep_vir_;
   int nlindep_ri_;
   
   Ref<MOIndexSpace> mo_space_;   // symblocked MO space
@@ -91,8 +91,10 @@ private:
   Ref<MOIndexSpace> ribs_space_;
   Ref<MOIndexSpace> act_occ_space_;
   Ref<MOIndexSpace> occ_space_;
+  Ref<MOIndexSpace> occ_space_symblk_;
   Ref<MOIndexSpace> act_vir_space_;
   Ref<MOIndexSpace> vir_space_;
+  Ref<MOIndexSpace> vir_space_symblk_;
   Ref<MOIntsTransformFactory> tfactory_;
 
   // construct the RI basis based on abs_method
@@ -109,6 +111,8 @@ private:
   void eigen2_();
   // Construct orthog_aux_
   void construct_orthog_aux_();
+  // Construct orthog_vir_
+  void construct_orthog_vir_();
   // Construct orthog_ri_
   void construct_orthog_ri_();
 
@@ -145,6 +149,8 @@ public:
   Ref<Integral> integral() const { return integral_; };
   /// Returns the orbital basis set (OBS) object
   Ref<GaussianBasisSet> basis() const { return bs_; };
+  /// Returns the virtuals basis set (VBS) object
+  Ref<GaussianBasisSet> basis_vir() const { return bs_vir_; };
   /// Returns the resolution-of-the-identity basis set (RIBS) object
   Ref<GaussianBasisSet> basis_ri() const { return bs_ri_; };
   Ref<SCMatrixKit> matrixkit() const { return matrixkit_; };
@@ -160,11 +166,11 @@ public:
   const size_t memory() const { return memory_; };
 
   const int nocc() const { return nocc_;};
-  const int nocc_act() const { return nocc_act_;};
-  const int noso() const { return noso_;};
+  const int nocc_act() const { return nocc_ - nfzc_;};
   const int nfzc() const { return nfzc_;};
+  const int nvir() const { return vir_space_->rank();};
+  const int nvir_act() const { return act_vir_space_->rank();};
   const int nfzv() const { return nfzv_;};
-  const int nvir_act() const { return noso_ - nocc_ - nfzv_;};
 
   LinearR12::ABSMethod abs_method() const { return abs_method_; };
 
@@ -176,10 +182,14 @@ public:
   Ref<MOIndexSpace> act_occ_space() const { return act_occ_space_; };
   /// Returns the MOIndexSpace object for the active unoccupied MOs
   Ref<MOIndexSpace> act_vir_space() const { return act_vir_space_; };
-  /// Returns the MOIndexSpace object for all occupied MOs
+  /// Returns the MOIndexSpace object for all occupied MOs sorted by energy
   Ref<MOIndexSpace> occ_space() const { return occ_space_; };
-  /// Returns the MOIndexSpace object for all unoccupied MOs
+  /// Returns the MOIndexSpace object for all occupied MOs symmetry-blocked
+  Ref<MOIndexSpace> occ_space_symblk() const { return occ_space_symblk_; };
+  /// Returns the MOIndexSpace object for all unoccupied MOs ordered by energy
   Ref<MOIndexSpace> vir_space() const { return vir_space_; };
+  /// Returns the MOIndexSpace object for all unoccupied MOs ordered by symmetry
+  Ref<MOIndexSpace> vir_space_symblk() const { return vir_space_symblk_; };
   /// Returns the MOIndexSpace object for ABS
   Ref<MOIndexSpace> abs_space() const { return abs_space_; };
   /// Returns the MOIndexSpace object for RI-BS

@@ -53,14 +53,14 @@ using namespace sc;
 #define PRINT_R12_INTERMED 0
 
 void
-R12IntEval::obs_contrib_to_VXB_gebc_()
+R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
 {
   if (evaluated_)
     return;
-  LinearR12::ABSMethod abs_method = r12info()->abs_method();
-  Ref<MessageGrp> msg = r12info()->msg();
-  Ref<MemoryGrp> mem = r12info()->mem();
-  Ref<ThreadGrp> thr = r12info()->thr();
+  LinearR12::ABSMethod abs_method = r12info_->abs_method();
+  Ref<MessageGrp> msg = r12info_->msg();
+  Ref<MemoryGrp> mem = r12info_->mem();
+  Ref<ThreadGrp> thr = r12info_->thr();
   const int num_te_types = 3;
   enum te_types {eri=0, r12=1, r12t1=2};
 
@@ -80,11 +80,11 @@ R12IntEval::obs_contrib_to_VXB_gebc_()
   if (num_te_types != ipjq_acc->num_te_types())
     throw std::runtime_error("R12IntEval::obs_contrib_to_VXB_gebc() -- number of MO integral types is wrong");
 
-  int nocc = r12info()->nocc();
-  int nocc_act = r12info()->nocc_act();
-  int nfzc = r12info()->nfzc();
-  int nfzv = r12info()->nfzv();
-  int noso = r12info()->noso();
+  int nocc = r12info_->nocc();
+  int nocc_act = r12info_->nocc_act();
+  int nfzc = r12info_->nfzc();
+  int nfzv = r12info_->nfzv();
+  int noso = r12info_->mo_space()->rank();
   int nvir  = noso - nocc;
 
   /*--------------------------------

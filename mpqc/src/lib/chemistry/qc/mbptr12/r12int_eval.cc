@@ -133,7 +133,7 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   emp2pair_ab_.restore(si);
 
   ipjq_tform_ << SavableState::restore_state(si);
-  ikjy_tform_ << SavableState::restore_state(si);
+  iajb_tform_ << SavableState::restore_state(si);
   init_tforms_();
 
   int gbc; si.get(gbc); gbc_ = (bool) gbc;
@@ -155,7 +155,7 @@ R12IntEval::~R12IntEval()
   dim_ab_aa_ = 0;
   dim_ab_ab_ = 0;
   ipjq_tform_ = 0;
-  ikjy_tform_ = 0;
+  iajb_tform_ = 0;
 }
 
 void
@@ -185,7 +185,7 @@ R12IntEval::save_data_state(StateOut& so)
   emp2pair_ab_.save(so);
 
   SavableState::save_state(ipjq_tform_.pointer(),so);
-  SavableState::save_state(ikjy_tform_.pointer(),so);
+  SavableState::save_state(iajb_tform_.pointer(),so);
 
   so.put((int)gbc_);
   so.put((int)ebc_);
@@ -201,7 +201,7 @@ R12IntEval::obsolete()
 {
   evaluated_ = false;
   ipjq_tform_->obsolete();
-  ikjy_tform_->obsolete();
+  iajb_tform_->obsolete();
   init_intermeds_();
 }
 
@@ -308,12 +308,6 @@ R12IntEval::init_tforms_()
     tfactory->set_spaces(r12info_->act_occ_space(),r12info_->obs_space(),
                          r12info_->act_occ_space(),r12info_->obs_space());
     ipjq_tform_ = tfactory->twobody_transform_13("(ip|jq)");
-  }
-
-  if (ikjy_tform_.null()) {
-    tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
-                         r12info_->act_occ_space(),r12info_->ribs_space());
-    ikjy_tform_ = tfactory->twobody_transform_13("(ik|jy)");
   }
 }
 
@@ -570,6 +564,50 @@ R12IntEval::form_factocc_space_()
   }
 }
 
+void
+R12IntEval::form_canonvir_space_()
+{
+  // Create a complement space to all occupieds
+  // Fock operator is diagonal in this space
+  if (canonvir_space_.null()) {
+
+    if (r12info_->basis_vir()->equiv(r12info_->basis())) {
+      canonvir_space_ = r12info_->vir_space();
+      return;
+    }
+
+    const Ref<MOIndexSpace> mo_space = r12info_->mo_space();
+    Ref<MOIndexSpace> vir_space = r12info_->vir_space_symblk();
+    RefSCMatrix F_vir = fock_(r12info_->occ_space(),vir_space,vir_space);
+
+    int nrow = vir_space->rank();
+    double* F_full = new double[nrow*nrow];
+    double* F_lowtri = new double [nrow*(nrow+1)/2];
+    F_vir->convert(F_full);
+    int ij = 0;
+    for(int row=0; row<nrow; row++) {
+      int rc = row*nrow;
+      for(int col=0; col<=row; col++, rc++, ij++) {
+        F_lowtri[ij] = F_full[rc];
+      }
+    }
+    RefSymmSCMatrix F_vir_lt(F_vir.rowdim(),F_vir->kit());
+    F_vir_lt->assign(F_lowtri);
+    F_vir = 0;
+    delete[] F_full;
+    delete[] F_lowtri;
+
+    Ref<MOIndexSpace> canonvir_space_symblk = new MOIndexSpace("Virt. MOs symmetry-blocked",
+                                                               vir_space, vir_space->coefs()*F_vir_lt.eigvecs(),
+                                                               vir_space->basis());
+    RefDiagSCMatrix F_vir_evals = F_vir_lt.eigvals();
+    canonvir_space_ = new MOIndexSpace("Virt. MOs sorted by energy",
+                                       canonvir_space_symblk->coefs(), canonvir_space_symblk->basis(),
+                                       F_vir_evals, 0, 0,
+                                       MOIndexSpace::energy);
+  }
+}
+
 const int
 R12IntEval::tasks_with_ints_(const Ref<R12IntsAcc> ints_acc, vector<int>& map_to_twi)
 {
@@ -604,9 +642,17 @@ R12IntEval::compute()
   if (evaluated_)
     return;
   
-  obs_contrib_to_VXB_gebc_();
-  if (r12info_->basis() != r12info_->basis_ri())
-    abs1_contrib_to_VXB_gebc_();
+  if (r12info_->basis_vir()->equiv(r12info_->basis())) {
+    obs_contrib_to_VXB_gebc_vbseqobs_();
+    if (r12info_->basis() != r12info_->basis_ri())
+      abs1_contrib_to_VXB_gebc_();
+  }
+  else {
+    contrib_to_VXB_gebc_vbsneqobs_();
+    compute_dualEmp2_();
+    compute_dualEmp1_();
+  }
+
   
 #if TEST_FOCK
   if (!evaluated_) {

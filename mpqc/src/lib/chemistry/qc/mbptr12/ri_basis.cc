@@ -122,6 +122,42 @@ R12IntEvalInfo::construct_orthog_aux_()
 }
 
 void
+R12IntEvalInfo::construct_orthog_vir_()
+{
+  if (vir_space_.nonnull())
+    return;
+
+  if (bs_ == bs_vir_) {
+    // If virtuals are from the same space as occupieds, then everything is easy
+    vir_space_ = new MOIndexSpace("unoccupied MOs sorted by energy", mo_space_->coefs(),
+                                  mo_space_->basis(), mo_space_->evals(), nocc_, 0);
+    // If virtuals are from the same space as occupieds, then everything is easy
+    vir_space_symblk_ = new MOIndexSpace("unoccupied MOs symmetry-blocked", mo_space_->coefs(),
+                                         mo_space_->basis(), mo_space_->evals(), nocc_, 0, MOIndexSpace::symmetry);
+
+    if (nfzv_ == 0)
+      act_vir_space_ = vir_space_;
+    else
+      act_vir_space_ = new MOIndexSpace("active unoccupied MOs sorted by energy", mo_space_->coefs(),
+                                  mo_space_->basis(), mo_space_->evals(), nocc_, nfzv_);
+    nlindep_vir_ = 0;
+  }
+  else {
+    // This is a set of orthonormal functions that span VBS
+    Ref<MOIndexSpace> vir_space = orthogonalize("VBS", bs_vir_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_vir_);
+    // Now project out occupied MOs
+    vir_space_symblk_ = orthog_comp(occ_space_symblk_, vir_space, "VBS", ref_->lindep_tol());
+
+    // Design flaw!!! Need to compute Fock matrix right here but can't since Fock is built into R12IntEval
+    // Need to move all relevant code outside of MBPT2-R12 code
+    if (nfzv_ != 0)
+      throw std::runtime_error("R12IntEvalInfo::construct_orthog_vir_() -- nfzv_ != 0 is not allowed yet");
+    vir_space_ = vir_space_symblk_;
+    act_vir_space_ = vir_space_symblk_;
+  }
+}
+
+void
 R12IntEvalInfo::construct_orthog_ri_()
 {
   if (bs_ri_.null())
@@ -151,7 +187,7 @@ R12IntEvalInfo::abs_spans_obs_()
     Ref<MOIndexSpace> ribs_space = orthogonalize("OBS+ABS", ri_basis, ref_->orthog_method(), ref_->lindep_tol(), nlindep_ri);
   }
 
-  if (nlindep_ri - nlindep_aux_ - noso_ == 0)
+  if (nlindep_ri - nlindep_aux_ - mo_space_->rank() == 0)
     return true;
   else
     return false;
@@ -163,12 +199,17 @@ void
 R12IntEvalInfo::construct_ortho_comp_svd_()
 {
    construct_orthog_aux_();
+   construct_orthog_vir_();
    construct_orthog_ri_();
 
-   ExEnv::out0() << indent << "SVD-projecting out OBS from " << ribs_space_->name()
-  << ":" << endl << incindent;
+   ExEnv::out0() << indent << "SVD-projecting out occupied MOs from " << ribs_space_->name()
+                 << ":" << endl << incindent;
 
-   ribs_space_ = orthog_comp(mo_space_, ribs_space_, "RI-BS", ref_->lindep_tol());
+   ribs_space_ = orthog_comp(occ_space_symblk_, ribs_space_, "RI-BS", ref_->lindep_tol());
+
+   ExEnv::out0() << indent << "SVD-projecting out VBS from " << ribs_space_->name()
+                 << ":" << endl << incindent;
+   ribs_space_ = orthog_comp(vir_space_symblk_, ribs_space_, "RI-BS", ref_->lindep_tol());
 }
 
 Ref<MOIndexSpace>
@@ -232,6 +273,10 @@ Ref<MOIndexSpace>
 R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                             const std::string& name, double lindep_tol) const
 {
+  // Both spaces must be ordered in the same way
+  if (space1->moorder() != space2->moorder())
+    throw std::runtime_error("R12IntEvalInfo::orthog_comp() -- space1 and space2 are ordered differently ");
+
   // C12 = C1 * S12 * C2
   RefSCMatrix C12;
   compute_overlap_ints(space1,space2,C12);

@@ -88,7 +88,7 @@ R12IntEval::compute_B_gbc_1_()
   form_focc_space_();
   Ref<MOIndexSpace> focc_space = focc_space_;
 
-  const int noso = r12info()->noso();
+  const int noso = r12info_->mo_space()->rank();
   const int nocc = r12info_->nocc();
   const int nvir = noso - nocc;
   const int nribs = ribs_space->rank();
@@ -340,7 +340,7 @@ R12IntEval::compute_B_gbc_2_()
   tim_enter("B(GBC2) intermediate");
 
   const int num_te_types = 2; // only integrals of r_{12} are needed
-  Ref<MessageGrp> msg = r12info()->msg();
+  Ref<MessageGrp> msg = r12info_->msg();
   int me = msg->me();
   int nproc = msg->n();
   ExEnv::out0() << endl << indent

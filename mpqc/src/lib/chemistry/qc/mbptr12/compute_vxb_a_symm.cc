@@ -1,5 +1,5 @@
 //
-// compute_a_gebc_abs1.cc
+// compute_vxb_a_symm.cc
 //
 // Copyright (C) 2004 Edward Valeev
 //
@@ -51,40 +51,41 @@ using namespace sc;
 
 #define PRINT_R12_INTERMED 0
 
-void
-R12IntEval::abs1_contrib_to_VXB_gebc_()
+Ref<TwoBodyMOIntsTransform>
+R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name, const Ref<MOIndexSpace>& mospace)
 {
   if (evaluated_)
-    return;
+    return NULL;
   LinearR12::ABSMethod abs_method = r12info_->abs_method();
   Ref<MessageGrp> msg = r12info_->msg();
   Ref<MemoryGrp> mem = r12info_->mem();
   Ref<ThreadGrp> thr = r12info_->thr();
-  const int num_te_types = 4;
-  enum te_types {eri=0, r12=1, r12t1=2, r12t2=3};
+  const int num_te_types = 3;
+  enum te_types {eri=0, r12=1, r12t1=2};
 
-  tim_enter("mp2-r12a intermeds");
+  tim_enter("mp2-r12a intermeds (symmetric term)");
 
   int me = msg->me();
   int nproc = msg->n();
   
   ExEnv::out0() << endl << indent
-	       << "Entered ABS A (GEBC) intermediates evaluator" << endl;
+                << "Entered " << mospace->name()
+                << " A (GEBC) intermediates evaluator" << endl;
   ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
 
   // Do the AO->MO transform
   Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
-  tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
-                       r12info_->act_occ_space(),r12info_->ribs_space());
-  Ref<TwoBodyMOIntsTransform> ikjy_tform = tfactory->twobody_transform_13("(ik|jy)");
-  ikjy_tform->set_num_te_types(num_te_types);
-  ikjy_tform->compute();
-  Ref<R12IntsAcc> ijky_acc = ikjy_tform->ints_acc();
-  if (num_te_types != ijky_acc->num_te_types())
-    throw std::runtime_error("R12IntEval::obs_contrib_to_VXB_gebc() -- number of MO integral types is wrong");
+  tfactory->set_spaces(r12info_->act_occ_space(),mospace,
+                       r12info_->act_occ_space(),mospace);
+  Ref<TwoBodyMOIntsTransform> ipjq_tform = tfactory->twobody_transform_13(tform_name.c_str());
+  ipjq_tform->set_num_te_types(num_te_types);
+  ipjq_tform->compute();
+  Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
+  if (num_te_types != ijpq_acc->num_te_types())
+    throw std::runtime_error("R12IntEval::contrib_to_VXB_a_symm_() -- number of MO integral types is wrong");
 
-  const int nocc = r12info_->nocc();
-  const int noso_ri = r12info_->ribs_space()->rank();
+  int nocc_act = r12info_->nocc_act();
+  int noso = mospace->rank();
 
   /*--------------------------------
     Compute MP2-R12/A intermediates
@@ -108,7 +109,7 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
   // Compute the number of tasks that have full access to the integrals
   // and split the work among them
   vector<int> proc_with_ints;
-  int nproc_with_ints = tasks_with_ints_(ijky_acc,proc_with_ints);
+  int nproc_with_ints = tasks_with_ints_(ijpq_acc,proc_with_ints);
 
   
   //////////////////////////////////////////////////////////////
@@ -128,8 +129,8 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
   //    end kl loop
   //
   /////////////////////////////////////////////////////////////////////////////////
-  
-  if (ijky_acc->has_access(me)) {
+
+  if (ijpq_acc->has_access(me)) {
 
     for(kl_iter.start();int(kl_iter);kl_iter.next()) {
 
@@ -147,17 +148,12 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
 
-      // Get (|1/r12|), (|r12|), (|[r12,T1]|), and (|[r12,T2]|) integrals
+      // Get (|1/r12|), (|r12|), and (|[r12,T1]|) integrals
       tim_enter("MO ints retrieve");
-      double *klox_buf_eri = ijky_acc->retrieve_pair_block(k,l,R12IntsAcc::eri);
-      double *klox_buf_r12 = ijky_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
-      double *klox_buf_r12t1 = ijky_acc->retrieve_pair_block(k,l,R12IntsAcc::r12t1);
-      double *klox_buf_r12t2 = ijky_acc->retrieve_pair_block(k,l,R12IntsAcc::r12t2);
-
-      double *lkox_buf_eri = ijky_acc->retrieve_pair_block(l,k,R12IntsAcc::eri);
-      double *lkox_buf_r12 = ijky_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
-      double *lkox_buf_r12t1 = ijky_acc->retrieve_pair_block(l,k,R12IntsAcc::r12t1);
-      double *lkox_buf_r12t2 = ijky_acc->retrieve_pair_block(l,k,R12IntsAcc::r12t2);
+      double *klxy_buf_eri = ijpq_acc->retrieve_pair_block(k,l,R12IntsAcc::eri);
+      double *klxy_buf_r12 = ijpq_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
+      double *klxy_buf_r12t1 = ijpq_acc->retrieve_pair_block(k,l,R12IntsAcc::r12t1);
+      double *lkxy_buf_r12t1 = ijpq_acc->retrieve_pair_block(l,k,R12IntsAcc::r12t1);
       tim_exit("MO ints retrieve");
 
       if (debug_)
@@ -176,8 +172,7 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
           ExEnv::outn() << indent << "task " << me << ": (k,l) = " << k << "," << l << ": (i,j) = " << i << "," << j << endl;
 
         tim_enter("MO ints retrieve");
-        double *ijox_buf_r12 = ijky_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
-        double *jiox_buf_r12 = ijky_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
+        double *ijxy_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
         tim_exit("MO ints retrieve");
 
         if (debug_)
@@ -191,54 +186,56 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
         Vaa_ijkl = Vab_ijkl = Vab_jikl = Vab_ijlk = Vab_jilk = 0.0;
         Xaa_ijkl = Xab_ijkl = Xab_jikl = Xab_ijlk = Xab_jilk = 0.0;
         Taa_ijkl = Tab_ijkl = Tab_jikl = Tab_ijlk = Tab_jilk = 0.0;
-        for(int o=0;o<nocc;o++) {
-          const double pfac_xy = 1.0;
-          for(int x=0;x<noso_ri;x++) {
-            int ox_offset = o*noso_ri + x;
-            double ij_r12_ox = ijox_buf_r12[ox_offset];
-            double ji_r12_ox = jiox_buf_r12[ox_offset];
-            double kl_eri_ox = klox_buf_eri[ox_offset];
-            double lk_eri_ox = lkox_buf_eri[ox_offset];
-            Vab_ijkl -= pfac_xy * (ij_r12_ox * kl_eri_ox + ji_r12_ox * lk_eri_ox);
+
+        const double pfac_xy = 0.5;
+        for(int y=0;y<noso;y++) {
+          for(int x=0;x<noso;x++) {
+            int yx_offset = y*noso+x;
+            int xy_offset = x*noso+y;
+            double ij_r12_xy = ijxy_buf_r12[xy_offset];
+            double ij_r12_yx = ijxy_buf_r12[yx_offset];
+            double kl_eri_xy = klxy_buf_eri[xy_offset];
+            double kl_eri_yx = klxy_buf_eri[yx_offset];
+            Vab_ijkl -= pfac_xy * (ij_r12_xy * kl_eri_xy + ij_r12_yx * kl_eri_yx);
             if (ij_ab != ji_ab)
-              Vab_jikl -= pfac_xy * (ji_r12_ox * kl_eri_ox + ij_r12_ox * lk_eri_ox);
+              Vab_jikl -= pfac_xy * (ij_r12_yx * kl_eri_xy + ij_r12_xy * kl_eri_yx);
             if (kl_ab != lk_ab)
-              Vab_ijlk -= pfac_xy * (ij_r12_ox * lk_eri_ox + ji_r12_ox * kl_eri_ox);
+              Vab_ijlk -= pfac_xy * (ij_r12_xy * kl_eri_yx + ij_r12_yx * kl_eri_xy);
             if (ij_ab != ji_ab && kl_ab != lk_ab) {
-              Vab_jilk -= pfac_xy * (ij_r12_ox * kl_eri_ox + ji_r12_ox * lk_eri_ox);
+              Vab_jilk -= pfac_xy * (ij_r12_yx * kl_eri_yx + ij_r12_xy * kl_eri_xy);
             }
             if (ij_aa != -1 && kl_aa != -1) {
-              Vaa_ijkl -= pfac_xy * (ij_r12_ox - ji_r12_ox)*(kl_eri_ox - lk_eri_ox);
+              Vaa_ijkl -= pfac_xy * (ij_r12_xy - ij_r12_yx)*(kl_eri_xy - kl_eri_yx);
             }
-            double kl_r12_ox = klox_buf_r12[ox_offset];
-            double lk_r12_ox = lkox_buf_r12[ox_offset];
-            Xab_ijkl -= pfac_xy * (ij_r12_ox * kl_r12_ox + ji_r12_ox * lk_r12_ox);
+            double kl_r12_xy = klxy_buf_r12[xy_offset];
+            double kl_r12_yx = klxy_buf_r12[yx_offset];
+            Xab_ijkl -= pfac_xy * (ij_r12_xy * kl_r12_xy + ij_r12_yx * kl_r12_yx);
             if (ij_ab != ji_ab)
-              Xab_jikl -= pfac_xy * (ji_r12_ox * kl_r12_ox + ij_r12_ox * lk_r12_ox);
+              Xab_jikl -= pfac_xy * (ij_r12_yx * kl_r12_xy + ij_r12_xy * kl_r12_yx);
             if (kl_ab != lk_ab)
-              Xab_ijlk -= pfac_xy * (ij_r12_ox * lk_r12_ox + ji_r12_ox * kl_r12_ox);
+              Xab_ijlk -= pfac_xy * (ij_r12_xy * kl_r12_yx + ij_r12_yx * kl_r12_xy);
             if (ij_ab != ji_ab && kl_ab != lk_ab) {
-              Xab_jilk -= pfac_xy * (ij_r12_ox * kl_r12_ox + ji_r12_ox * lk_r12_ox);
+              Xab_jilk -= pfac_xy * (ij_r12_yx * kl_r12_yx + ij_r12_xy * kl_r12_xy);
             }
             if (ij_aa != -1 && kl_aa != -1) {
-              Xaa_ijkl -= pfac_xy * (ij_r12_ox - ji_r12_ox)*(kl_r12_ox - lk_r12_ox);
+              Xaa_ijkl -= pfac_xy * (ij_r12_xy - ij_r12_yx)*(kl_r12_xy - kl_r12_yx);
             }
-            double kl_r12t1_ox = klox_buf_r12t1[ox_offset];
-            double kl_r12t2_ox = klox_buf_r12t2[ox_offset];
-            double lk_r12t1_ox = lkox_buf_r12t1[ox_offset];
-            double lk_r12t2_ox = lkox_buf_r12t2[ox_offset];
-            double kl_Tr12_ox = -kl_r12t1_ox-kl_r12t2_ox;
-            double lk_Tr12_ox = -lk_r12t1_ox-lk_r12t2_ox;
-            Tab_ijkl += pfac_xy * (ij_r12_ox * kl_Tr12_ox + ji_r12_ox * lk_Tr12_ox);
+            double kl_r12t1_xy = klxy_buf_r12t1[xy_offset];
+            double kl_r12t1_yx = klxy_buf_r12t1[yx_offset];
+            double lk_r12t1_xy = lkxy_buf_r12t1[xy_offset];
+            double lk_r12t1_yx = lkxy_buf_r12t1[yx_offset];
+            double kl_Tr12_xy = -kl_r12t1_xy-lk_r12t1_yx;
+            double kl_Tr12_yx = -kl_r12t1_yx-lk_r12t1_xy;
+            Tab_ijkl += pfac_xy * (ij_r12_xy * kl_Tr12_xy + ij_r12_yx * kl_Tr12_yx);
             if (ij_ab != ji_ab)
-              Tab_jikl += pfac_xy * (ji_r12_ox * kl_Tr12_ox + ij_r12_ox * lk_Tr12_ox);
+              Tab_jikl += pfac_xy * (ij_r12_yx * kl_Tr12_xy + ij_r12_xy * kl_Tr12_yx);
             if (kl_ab != lk_ab)
-              Tab_ijlk += pfac_xy * (ij_r12_ox * lk_Tr12_ox + ji_r12_ox * kl_Tr12_ox);
+              Tab_ijlk += pfac_xy * (ij_r12_xy * kl_Tr12_yx + ij_r12_yx * kl_Tr12_xy);
             if (ij_ab != ji_ab && kl_ab != lk_ab) {
-              Tab_jilk += pfac_xy * (ij_r12_ox * kl_Tr12_ox + ji_r12_ox * lk_Tr12_ox);
+              Tab_jilk += pfac_xy * (ij_r12_yx * kl_Tr12_yx + ij_r12_xy * kl_Tr12_xy);
             }
             if (ij_aa != -1 && kl_aa != -1) {
-              Taa_ijkl += pfac_xy * (ij_r12_ox - ji_r12_ox)*(kl_Tr12_ox - lk_Tr12_ox);
+              Taa_ijkl += pfac_xy * (ij_r12_xy - ij_r12_yx)*(kl_Tr12_xy - kl_Tr12_yx);
             }
           }
         }
@@ -272,45 +269,40 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
         tim_exit("MO ints contraction");
 
 #if PRINT_R12_INTERMED
-        if (ij_ab != ji_ab && kl_ab != lk_ab)
-          printf("Vaa[%d][%d] = %lf\n",ij_aa,kl_aa,Vaa_ij[kl_aa]);
-        printf("Vab[%d][%d] = %lf\n",ij_ab,kl_ab,Vab_ij[kl_ab]);
-        if (ij_ab != ji_ab)
-          printf("Vab[%d][%d] = %lf\n",ji_ab,kl_ab,Vab_ji[kl_ab]);
-        if (kl_ab != lk_ab)
-          printf("Vab[%d][%d] = %lf\n",ij_ab,lk_ab,Vab_ij[lk_ab]);
-        if (ij_ab != ji_ab && kl_ab != lk_ab)
-          printf("Vab[%d][%d] = %lf\n",ji_ab,lk_ab,Vab_ji[lk_ab]);
-        if (ij_ab != ji_ab && kl_ab != lk_ab)
-          printf("Xaa[%d][%d] = %lf\n",ij_aa,kl_aa,Xaa_ij[kl_aa]);
-        printf("Xab[%d][%d] = %lf\n",ij_ab,kl_ab,Xab_ij[kl_ab]);
-        if (ij_ab != ji_ab)
-          printf("Xab[%d][%d] = %lf\n",ji_ab,kl_ab,Xab_ji[kl_ab]);
-        if (kl_ab != lk_ab)
-          printf("Xab[%d][%d] = %lf\n",ij_ab,lk_ab,Xab_ij[lk_ab]);
-        if (ij_ab != ji_ab && kl_ab != lk_ab)
-          printf("Xab[%d][%d] = %lf\n",ji_ab,lk_ab,Xab_ji[lk_ab]);
-        if (ij_ab != ji_ab && kl_ab != lk_ab)
-          printf("Taa[%d][%d] = %lf\n",ij_aa,kl_aa,Taa_ij[kl_aa]);
-        printf("Tab[%d][%d] = %lf\n",ij_ab,kl_ab,Tab_ij[kl_ab]);
-        if (ij_ab != ji_ab)
-          printf("Tab[%d][%d] = %lf\n",ji_ab,kl_ab,Tab_ji[kl_ab]);
-        if (kl_ab != lk_ab)
-          printf("Tab[%d][%d] = %lf\n",ij_ab,lk_ab,Tab_ij[lk_ab]);
-        if (ij_ab != ji_ab && kl_ab != lk_ab)
-          printf("Tab[%d][%d] = %lf\n",ji_ab,lk_ab,Tab_ji[lk_ab]);
+	    if (ij_ab != ji_ab && kl_ab != lk_ab)
+	      printf("Vaa[%d][%d] = %lf\n",ij_aa,kl_aa,Vaa_ij[kl_aa]);
+            printf("Vab[%d][%d] = %lf\n",ij_ab,kl_ab,Vab_ij[kl_ab]);
+	    if (ij_ab != ji_ab)
+	      printf("Vab[%d][%d] = %lf\n",ji_ab,kl_ab,Vab_ji[kl_ab]);
+	    if (kl_ab != lk_ab)
+	      printf("Vab[%d][%d] = %lf\n",ij_ab,lk_ab,Vab_ij[lk_ab]);
+	    if (ij_ab != ji_ab && kl_ab != lk_ab)
+	      printf("Vab[%d][%d] = %lf\n",ji_ab,lk_ab,Vab_ji[lk_ab]);
+	    if (ij_ab != ji_ab && kl_ab != lk_ab)
+	      printf("Xaa[%d][%d] = %lf\n",ij_aa,kl_aa,Xaa_ij[kl_aa]);
+            printf("Xab[%d][%d] = %lf\n",ij_ab,kl_ab,Xab_ij[kl_ab]);
+	    if (ij_ab != ji_ab)
+	      printf("Xab[%d][%d] = %lf\n",ji_ab,kl_ab,Xab_ji[kl_ab]);
+	    if (kl_ab != lk_ab)
+	      printf("Xab[%d][%d] = %lf\n",ij_ab,lk_ab,Xab_ij[lk_ab]);
+	    if (ij_ab != ji_ab && kl_ab != lk_ab)
+	      printf("Xab[%d][%d] = %lf\n",ji_ab,lk_ab,Xab_ji[lk_ab]);
+	    if (ij_ab != ji_ab && kl_ab != lk_ab)
+	      printf("Taa[%d][%d] = %lf\n",ij_aa,kl_aa,Taa_ij[kl_aa]);
+            printf("Tab[%d][%d] = %lf\n",ij_ab,kl_ab,Tab_ij[kl_ab]);
+	    if (ij_ab != ji_ab)
+	      printf("Tab[%d][%d] = %lf\n",ji_ab,kl_ab,Tab_ji[kl_ab]);
+	    if (kl_ab != lk_ab)
+	      printf("Tab[%d][%d] = %lf\n",ij_ab,lk_ab,Tab_ij[lk_ab]);
+	    if (ij_ab != ji_ab && kl_ab != lk_ab)
+	      printf("Tab[%d][%d] = %lf\n",ji_ab,lk_ab,Tab_ji[lk_ab]);
 #endif
-        ijky_acc->release_pair_block(i,j,R12IntsAcc::r12);
-        ijky_acc->release_pair_block(j,i,R12IntsAcc::r12);
+        ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12);
       }
-      ijky_acc->release_pair_block(k,l,R12IntsAcc::eri);
-      ijky_acc->release_pair_block(k,l,R12IntsAcc::r12);
-      ijky_acc->release_pair_block(k,l,R12IntsAcc::r12t1);
-      ijky_acc->release_pair_block(k,l,R12IntsAcc::r12t2);
-      ijky_acc->release_pair_block(l,k,R12IntsAcc::eri);
-      ijky_acc->release_pair_block(l,k,R12IntsAcc::r12);
-      ijky_acc->release_pair_block(l,k,R12IntsAcc::r12t1);
-      ijky_acc->release_pair_block(l,k,R12IntsAcc::r12t2);
+      ijpq_acc->release_pair_block(k,l,R12IntsAcc::eri);
+      ijpq_acc->release_pair_block(k,l,R12IntsAcc::r12);
+      ijpq_acc->release_pair_block(k,l,R12IntsAcc::r12t1);
+      ijpq_acc->release_pair_block(l,k,R12IntsAcc::r12t1);
     }
   }
   // Tasks that don't do any work here still need to create these timers
@@ -321,7 +313,7 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
 
   tim_exit("intermediates");
   ExEnv::out0() << indent << "End of computation of intermediates" << endl;
-  ijky_acc->deactivate();
+  ijpq_acc->deactivate();
   
   // Symmetrize B intermediate
   for(int ij=0;ij<naa;ij++)
@@ -339,10 +331,10 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
     }
 
   globally_sum_intermeds_();
-  tim_exit("mp2-r12a intermeds");
+  tim_exit("mp2-r12a intermeds (symmetric term)");
   checkpoint_();
   
-  return;
+  return ipjq_tform;
 }
 
 ////////////////////////////////////////////////////////////////////////////

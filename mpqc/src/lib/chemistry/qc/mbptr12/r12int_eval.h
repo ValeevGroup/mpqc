@@ -70,11 +70,15 @@ class R12IntEval : virtual public SavableState {
   Ref<MOIndexSpace> factocc_space_;
   /// Form Fock-weighted active occupied space
   void form_factocc_space_();
+  /// Space of canonical virtual MOs
+  Ref<MOIndexSpace> canonvir_space_;
+  /// Form space of auxiliary virtuals
+  void form_canonvir_space_();
 
-  // (act.occ. OBS| act.occ. OBS) transform
+  // (act.occ. OBS| act.occ. OBS) transform (used when OBS == VBS)
   Ref<TwoBodyMOIntsTransform> ipjq_tform_;
-  // (act.occ. occ.| act.occ. RI-BS) transform
-  Ref<TwoBodyMOIntsTransform> ikjy_tform_;
+  // (act.occ. VBS| act.occ. VBS) transform (used when VBS != OBS)
+  Ref<TwoBodyMOIntsTransform> iajb_tform_;
 
   /// Initialize transforms
   void init_tforms_();
@@ -104,11 +108,29 @@ class R12IntEval : virtual public SavableState {
       (or -1 if the task doesn't have access to the integrals) */
   const int tasks_with_ints_(const Ref<R12IntsAcc> ints_acc, vector<int>& map_to_twi);
   
+  /** Compute contribution to V, X, and B of the following form:
+      0.5 * \bar{g}_{ij}^{pq} * \bar{r}_{pq}^{kl}, where p and q span mospace
+      Returns transform object referred to by tform_name which stores integrals in ijpq order
+  */
+  Ref<TwoBodyMOIntsTransform> contrib_to_VXB_a_symm_(const std::string& tform_name,
+                                                     const Ref<MOIndexSpace>& mospace);
+
+  /** Compute contribution to V, X, and B of the following form:
+      \bar{g}_{ij}^{am} * \bar{r}_{am}^{kl}, where m and a span mospace1 and mospace2, respectively
+      Returns transform object referred to by tform_name which stores integrals in ijma order
+  */
+  Ref<TwoBodyMOIntsTransform> contrib_to_VXB_a_asymm_(const std::string& tform_name,
+                                                      const Ref<MOIndexSpace>& mospace1,
+                                                      const Ref<MOIndexSpace>& mospace2);
+
   /// Compute OBS contribution to V, X, and B (these contributions are independent of the method)
-  void obs_contrib_to_VXB_gebc_();
+  void obs_contrib_to_VXB_gebc_vbseqobs_();
 
   /// Compute 1-ABS contribution to V, X, and B (these contributions are independent of the method)
   void abs1_contrib_to_VXB_gebc_();
+
+  /// Equiv to the sum of above, except for this doesn't assume that VBS is the same as OBS
+  void contrib_to_VXB_gebc_vbsneqobs_();
 
   /// Compute A using the "simple" formula obtained using direct substitution alpha'->a'
   void compute_A_simple_();
@@ -132,6 +154,12 @@ class R12IntEval : virtual public SavableState {
   /** Compute the second (r<sub>kl</sub>^<sup>AB</sup> r<sub>AB</sub>^<sup>Kj</sup> f<sub>K</sub><sup>i</sup>)
       contribution to B that vanishes under GBC */
   void compute_B_gbc_2_();
+
+  /// Compute dual-basis MP2 energy (contribution from doubles to MP2 energy)
+  void compute_dualEmp2_();
+  
+  /// Compute dual-basis MP1 energy (contribution from singles to HF energy)
+  void compute_dualEmp1_();
   
   /** Sum contributions to the intermediates from all nodes and broadcast so
       every node has the correct matrices */

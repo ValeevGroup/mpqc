@@ -68,14 +68,14 @@ R12IntEval::compute_T2_()
 
   tim_enter("mp2 t2 amplitudes");
 
-  Ref<MessageGrp> msg = r12info()->msg();
+  Ref<MessageGrp> msg = r12info_->msg();
   int me = msg->me();
   int nproc = msg->n();
   ExEnv::out0() << endl << indent
 	       << "Entered MP2 T2 amplitude evaluator" << endl;
   ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
 
-  const int noso = r12info()->noso();
+  const int noso = r12info_->mo_space()->rank();
   const int nocc = r12info_->nocc();
   const int nfzv = r12info_->nfzv();
   Ref<MOIndexSpace> mo_space = r12info_->obs_space();
@@ -212,14 +212,14 @@ R12IntEval::compute_R_()
 
   tim_enter("R intermediate");
 
-  Ref<MessageGrp> msg = r12info()->msg();
+  Ref<MessageGrp> msg = r12info_->msg();
   int me = msg->me();
   int nproc = msg->n();
   ExEnv::out0() << endl << indent
     << "Entered R intermediate evaluator" << endl;
   ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
 
-  const int noso = r12info()->noso();
+  const int noso = r12info_->mo_space()->rank();
   const int nocc = r12info_->nocc();
   const int nfzv = r12info_->nfzv();
   Ref<MOIndexSpace> mo_space = r12info_->obs_space();
@@ -336,14 +336,14 @@ R12IntEval::compute_A_simple_()
 
   const int num_te_types = 2;
   
-  Ref<MessageGrp> msg = r12info()->msg();
+  Ref<MessageGrp> msg = r12info_->msg();
   int me = msg->me();
   int nproc = msg->n();
   ExEnv::out0() << endl << indent
     << "Entered A intermediate evaluator" << endl;
   ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
 
-  const int noso = r12info()->noso();
+  const int noso = r12info_->mo_space()->rank();
   const int nocc = r12info_->nocc();
   const int nfzv = r12info_->nfzv();
   const int nvir_act = noso - nocc - nfzv;

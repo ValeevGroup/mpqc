@@ -1,5 +1,5 @@
 //
-// compute_a_gebc_abs1.cc
+// compute_vxb_a_asymm.cc
 //
 // Copyright (C) 2004 Edward Valeev
 //
@@ -51,11 +51,13 @@ using namespace sc;
 
 #define PRINT_R12_INTERMED 0
 
-void
-R12IntEval::abs1_contrib_to_VXB_gebc_()
+Ref<TwoBodyMOIntsTransform>
+R12IntEval::contrib_to_VXB_a_asymm_(const std::string& tform_name,
+                                    const Ref<MOIndexSpace>& mospace1,
+                                    const Ref<MOIndexSpace>& mospace2)
 {
   if (evaluated_)
-    return;
+    return NULL;
   LinearR12::ABSMethod abs_method = r12info_->abs_method();
   Ref<MessageGrp> msg = r12info_->msg();
   Ref<MemoryGrp> mem = r12info_->mem();
@@ -63,28 +65,29 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
   const int num_te_types = 4;
   enum te_types {eri=0, r12=1, r12t1=2, r12t2=3};
 
-  tim_enter("mp2-r12a intermeds");
+  tim_enter("mp2-r12a intermeds (asymmetric term)");
 
   int me = msg->me();
   int nproc = msg->n();
   
   ExEnv::out0() << endl << indent
-	       << "Entered ABS A (GEBC) intermediates evaluator" << endl;
+                << "Entered " << mospace1->name() << "/" << mospace2->name()
+                << " A (GEBC) intermediates evaluator" << endl;
   ExEnv::out0() << indent << scprintf("nproc = %i", nproc) << endl;
 
   // Do the AO->MO transform
   Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
-  tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
-                       r12info_->act_occ_space(),r12info_->ribs_space());
-  Ref<TwoBodyMOIntsTransform> ikjy_tform = tfactory->twobody_transform_13("(ik|jy)");
+  tfactory->set_spaces(r12info_->act_occ_space(),mospace1,
+                       r12info_->act_occ_space(),mospace2);
+  Ref<TwoBodyMOIntsTransform> ikjy_tform = tfactory->twobody_transform_13(tform_name.c_str());
   ikjy_tform->set_num_te_types(num_te_types);
   ikjy_tform->compute();
   Ref<R12IntsAcc> ijky_acc = ikjy_tform->ints_acc();
   if (num_te_types != ijky_acc->num_te_types())
     throw std::runtime_error("R12IntEval::obs_contrib_to_VXB_gebc() -- number of MO integral types is wrong");
 
-  const int nocc = r12info_->nocc();
-  const int noso_ri = r12info_->ribs_space()->rank();
+  const int rank2 = mospace1->rank();
+  const int rank4 = mospace2->rank();
 
   /*--------------------------------
     Compute MP2-R12/A intermediates
@@ -191,10 +194,10 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
         Vaa_ijkl = Vab_ijkl = Vab_jikl = Vab_ijlk = Vab_jilk = 0.0;
         Xaa_ijkl = Xab_ijkl = Xab_jikl = Xab_ijlk = Xab_jilk = 0.0;
         Taa_ijkl = Tab_ijkl = Tab_jikl = Tab_ijlk = Tab_jilk = 0.0;
-        for(int o=0;o<nocc;o++) {
+        for(int o=0; o<rank2; o++) {
           const double pfac_xy = 1.0;
-          for(int x=0;x<noso_ri;x++) {
-            int ox_offset = o*noso_ri + x;
+          for(int x=0; x<rank4; x++) {
+            int ox_offset = o*rank4 + x;
             double ij_r12_ox = ijox_buf_r12[ox_offset];
             double ji_r12_ox = jiox_buf_r12[ox_offset];
             double kl_eri_ox = klox_buf_eri[ox_offset];
@@ -339,10 +342,10 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
     }
 
   globally_sum_intermeds_();
-  tim_exit("mp2-r12a intermeds");
+  tim_exit("mp2-r12a intermeds (asymmetric term)");
   checkpoint_();
   
-  return;
+  return ikjy_tform;
 }
 
 ////////////////////////////////////////////////////////////////////////////

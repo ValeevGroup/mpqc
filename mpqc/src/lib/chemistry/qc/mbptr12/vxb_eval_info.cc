@@ -64,6 +64,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   integral_ = mbptr12->integral();
   bs_ = mbptr12->basis();
   bs_aux_ = mbptr12->aux_basis();
+  bs_vir_ = mbptr12->vir_basis();
 
   matrixkit_ = SCMatrixKit::default_matrixkit();
   mem_ = MemoryGrp::get_default_memorygrp();
@@ -79,8 +80,6 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   }
   nfzc_ = mbptr12->nfzcore();
   nfzv_ = mbptr12->nfzvirt();
-  nocc_act_ = nocc_ - nfzc_;
-  noso_ = oso_dim.n();
 
   ints_method_ = mbptr12->r12ints_method();
   ints_file_ = mbptr12->r12ints_file();
@@ -102,6 +101,7 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   integral_ << SavableState::restore_state(si);
   bs_ << SavableState::restore_state(si);
   bs_aux_ << SavableState::restore_state(si);
+  bs_vir_ << SavableState::restore_state(si);
   bs_ri_ << SavableState::restore_state(si);
 
   matrixkit_ = SCMatrixKit::default_matrixkit();
@@ -110,10 +110,8 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   thr_ = ThreadGrp::get_default_threadgrp();
 
   si.get(nocc_);
-  si.get(nocc_act_);
   si.get(nfzc_);
   si.get(nfzv_);
-  si.get(noso_);
 
   int ints_method; si.get(ints_method); ints_method_ = (StoreMethod) ints_method;
   si.getstring(ints_file_);
@@ -136,8 +134,10 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     ribs_space_ << SavableState::restore_state(si);
     act_occ_space_ << SavableState::restore_state(si);
     occ_space_ << SavableState::restore_state(si);
+    occ_space_symblk_ << SavableState::restore_state(si);
     act_vir_space_ << SavableState::restore_state(si);
     vir_space_ << SavableState::restore_state(si);
+    vir_space_symblk_ << SavableState::restore_state(si);
     tfactory_ << SavableState::restore_state(si);
   }
 
@@ -156,13 +156,12 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(integral_.pointer(),so);
   SavableState::save_state(bs_.pointer(),so);
   SavableState::save_state(bs_aux_.pointer(),so);
+  SavableState::save_state(bs_vir_.pointer(),so);
   SavableState::save_state(bs_ri_.pointer(),so);
 
   so.put(nocc_);
-  so.put(nocc_act_);
   so.put(nfzc_);
   so.put(nfzv_);
-  so.put(noso_);
 
   so.put((int)ints_method_);
   so.putstring(ints_file_);
@@ -178,8 +177,10 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(ribs_space_.pointer(),so);
   SavableState::save_state(act_occ_space_.pointer(),so);
   SavableState::save_state(occ_space_.pointer(),so);
+  SavableState::save_state(occ_space_symblk_.pointer(),so);
   SavableState::save_state(act_vir_space_.pointer(),so);
   SavableState::save_state(vir_space_.pointer(),so);
+  SavableState::save_state(vir_space_symblk_.pointer(),so);
   SavableState::save_state(tfactory_.pointer(),so);
 }
 
@@ -287,16 +288,14 @@ void R12IntEvalInfo::eigen2_()
 
   mo_space_ = new MOIndexSpace("symmetry-blocked MOs", vecs, bs_, vals, 0, 0, MOIndexSpace::symmetry);
   obs_space_ = new MOIndexSpace("MOs sorted by energy", vecs, bs_, vals, 0, 0);
-  occ_space_ = new MOIndexSpace("occupied MOs sorted by energy", vecs, bs_, vals, 0, noso_ - nocc_);
+  occ_space_ = new MOIndexSpace("occupied MOs sorted by energy", vecs, bs_, vals, 0, mo_space_->rank() - nocc_);
+  occ_space_symblk_ = new MOIndexSpace("occupied MOs symmetry-blocked", vecs, bs_, vals,
+                                       0, mo_space_->rank() - nocc_, MOIndexSpace::symmetry);
+
   if (nfzc_ == 0)
     act_occ_space_ = occ_space_;
   else
-    act_occ_space_ = new MOIndexSpace("active occupied MOs sorted by energy", vecs, bs_, vals, nfzc_, noso_ - nocc_);
-  vir_space_ = new MOIndexSpace("unoccupied MOs sorted by energy", vecs, bs_, vals, nocc_, 0);
-  if (nfzv_ == 0)
-    act_vir_space_ = vir_space_;
-  else
-    act_vir_space_ = new MOIndexSpace("active unoccupied MOs sorted by energy", vecs, bs_, vals, nocc_, nfzv_);
+    act_occ_space_ = new MOIndexSpace("active occupied MOs sorted by energy", vecs, bs_, vals, nfzc_, mo_space_->rank() - nocc_);
 
   if (debug_) ExEnv::out0() << indent << "R12IntEvalInfo: eigen2_ done" << endl;
 }

@@ -61,6 +61,7 @@ Volume::Volume():
 Volume::Volume(const RefKeyVal&keyval):
   Function(keyval)
 {
+  set_dimension(new SCDimension(3));
   _interp_acc = keyval->doublevalue("interpolation_accuracy");
   if (keyval->error() != KeyVal::OK) _interp_acc = 1.0e-6;
 }

@@ -7,6 +7,8 @@ while (<>) {
     }
     else {
         s/<(.*)>/<\\clsnmref{$1}>/;
+        s/{/\\{/g;
+        s/}/\\}/g;
         print $_;
     }
 }

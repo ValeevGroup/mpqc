@@ -801,7 +801,6 @@ AC_CHECK_HEADERS(termios.h sys/stat.h sys/types.h dlfcn.h)
 
 dnl -- Checks for typedefs, structures, and compiler characteristics. --
 AC_C_CONST
-AC_C_INLINE
 AC_TYPE_SIZE_T
 AC_STRUCT_TM
 

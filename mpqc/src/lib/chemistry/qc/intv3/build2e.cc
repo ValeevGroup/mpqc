@@ -780,7 +780,6 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
   double *bufferprim;
   double *con_ints;
   double c0scale;
-  intfunc brptr=build_routine[minam1][maxam12][minam3][maxam34][eAB];
 
   /* Loop over the primitives. */
   for (i=0; i<int_shell1->nprimitive(); i++) {
@@ -811,6 +810,7 @@ Int2eV3::build_using_gcs(int nc1, int nc2, int nc3, int nc4,
             have_all_ints = 1;
             }
           else if ((minam1<=MG)&&(minam3<=MG)&&(maxam12<=MG)&&(maxam34<=MG)) {
+            intfunc brptr=build_routine[minam1][maxam12][minam3][maxam34][eAB];
             if (brptr == &BuildIntV3::impossible_integral) {
               cerr << scprintf("trying to build with int2v%d%d%d%d (exact)\n",
                       minam1,maxam12,minam3,maxam34);

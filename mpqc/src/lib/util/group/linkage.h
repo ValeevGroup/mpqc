@@ -41,13 +41,6 @@ static ForceLink<ProcMessageGrp> group_force_link_;
     static ForceLink<ShmMessageGrp> group_force_link_a_;
 # endif
 
-# ifdef HAVE_NX
-#   include <util/group/messpgon.h>
-#   include <util/group/memipgon.h>
-    static ForceLink<ParagonMessageGrp> group_force_link_b_;
-    static ForceLink<IParagonMemoryGrp> group_force_link_b1_;
-# endif
-
 # if defined(HAVE_PTHREAD)
 #   include <util/group/thpthd.h>
     static ForceLink<PthreadThreadGrp> group_force_link_c_;
@@ -56,11 +49,6 @@ static ForceLink<ProcMessageGrp> group_force_link_;
 #if defined(HAVE_PUMA_MPI2)
 #   include <util/group/thpuma.h>
     static ForceLink<PumaThreadGrp> group_force_link_d_;
-#endif
-
-#if defined(HAVE_MPI)
-#   include <util/group/memmpi.h>
-    static ForceLink<MPIMemoryGrp> group_force_link_e_;
 #endif
 
 #if defined(HAVE_MPI2_ONE_SIDED)

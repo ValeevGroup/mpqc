@@ -88,13 +88,24 @@ ProcMemoryGrp::obtain_readonly(distsize_t offset, int size)
   return &data_[distsize_to_size(offset)];
 }
 
+void *
+ProcMemoryGrp::obtain_writeonly(distsize_t offset, int size)
+{
+  return &data_[distsize_to_size(offset)];
+}
+
 void
-ProcMemoryGrp::release_read(void *data, distsize_t offset, int size)
+ProcMemoryGrp::release_readonly(void *data, distsize_t offset, int size)
 {
 }
 
 void
-ProcMemoryGrp::release_write(void *data, distsize_t offset, int size)
+ProcMemoryGrp::release_writeonly(void *data, distsize_t offset, int size)
+{
+}
+
+void
+ProcMemoryGrp::release_readwrite(void *data, distsize_t offset, int size)
 {
   release_local_lock(offset-localoffset(), offset-localoffset()+size);
 }

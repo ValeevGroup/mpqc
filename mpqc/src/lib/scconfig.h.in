@@ -129,9 +129,6 @@
 /* Define if you have functioning SYSV IPC.  */
 #undef HAVE_SYSV_IPC
 
-/* Define if you have functioning DEC mmap.  */
-#undef HAVE_ALPHA_MMAP
-
 /* Define if semctl must have a semun as the fourth argument.  */
 #undef SEMCTL_REQUIRES_SEMUN
 
@@ -169,12 +166,6 @@
 /* Define if you have the NIAMA library.  */
 #undef HAVE_NIAMA
 
-/* Define if you have the <nx.h> header file and -lnx (Intel Paragon).  */
-#undef HAVE_NX
-
-/* Define if you have the <nx.h> header file and -lnx and hrecv works.  */
-#undef HAVE_HRECV
-
 /* Define if you have the <pvm.h> header file and library.  */
 #undef HAVE_PVM
 
@@ -189,9 +180,6 @@
 
 /* Define if your MPI implementation uses p4 */
 #undef HAVE_P4
-
-/* Define if your MPI implementation has the cougar MPI2 one-sided calls */
-#undef HAVE_PUMA_MPI2
 
 /* Define if your MPI implementation has the real MPI2 one-sided calls */
 #undef HAVE_MPI2_ONE_SIDED

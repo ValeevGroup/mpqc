@@ -36,7 +36,7 @@ that it supports, the MessageGrp specialization may one day be eliminated.
 
 The MemoryGrp class is the ancestor for classes that permit access to the
 memory in different processes, possible on difference machines.  There are
-three important specializations of this class:
+two important specializations of this class:
 
 <dl>
 

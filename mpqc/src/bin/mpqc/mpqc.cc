@@ -458,12 +458,29 @@ main(int argc, char *argv[])
   else
     thread = ThreadGrp::get_default_threadgrp();
 
+  // get the memory group.  first try the commandline and environment
+  Ref<MemoryGrp> memory = MemoryGrp::initial_memorygrp(argc, argv);
+  
+  // if we still don't have a group, try reading the memory group
+  // from the input
+  if (memory.null()) {
+    memory << keyval->describedclassvalue("memory");
+  }
+
+  if (memory.nonnull())
+    MemoryGrp::set_default_memorygrp(memory);
+  else
+    memory = MemoryGrp::get_default_memorygrp();
+
   ExEnv::out() << node0 << indent
        << "Using " << grp->class_name()
        << " for message passing (number of nodes = " << grp->n() << ")." << endl
        << indent
        << "Using " << thread->class_name()
        << " for threading (number of threads = " << thread->nthread() << ")." << endl
+       << indent
+       << "Using " << memory->class_name()
+       << " for distributed shared memory." << endl
        << indent
        << "Total number of processors = " << grp->n() * thread->nthread() << endl;
 

@@ -34,6 +34,7 @@
 #define _util_group_memmtmpi_h
 
 #include <fstream>
+#include <mpi.h>
 
 #include <util/group/message.h>
 #include <util/group/memamsg.h>
@@ -47,14 +48,17 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
   private:
     Ref<ThreadGrp> th_;
 
-    int req_type_;
-    int fr_type_;
-    int to_type_;
+    Ref<ThreadLock> serial_lock_;
+    int serial_;
+    int serial();
+
+    MPI_Comm comm_;
+
+    int req_tag_;
 
     int active_;
 
     Thread **thread_;
-    Ref<ThreadLock> mem_lock_;
     Ref<ThreadLock> print_lock_; // needed for debugging only
     std::ofstream hout; // handler out
     std::ofstream mout; // main thread out
@@ -62,8 +66,8 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     void init_mtmpimg(int nthreads);
 
     // parent class pure virtuals
-    void retrieve_data(void *, int node, int offset, int size);
-    void replace_data(void *, int node, int offset, int size);
+    void retrieve_data(void *, int node, int offset, int size, int lock);
+    void replace_data(void *, int node, int offset, int size, int unlock);
     void sum_data(double *data, int node, int doffset, int dsize);
 
     friend class MTMPIThread;
@@ -71,9 +75,6 @@ class MTMPIMemoryGrp: public ActiveMsgMemoryGrp {
     MTMPIMemoryGrp(const Ref<MessageGrp>& msg, const Ref<ThreadGrp> &th);
     MTMPIMemoryGrp(const Ref<KeyVal> &);
     ~MTMPIMemoryGrp();
-
-    long lockcomm();
-    void unlockcomm(long oldvalue);
 
     void activate();
     void deactivate();

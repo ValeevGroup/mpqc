@@ -60,44 +60,26 @@ using namespace std;
 #define PRINTF(args)
 
 ///////////////////////////////////////////////////////////////////////
-// The MemoryLockRequest class
-
-MemoryLockRequest::MemoryLockRequest(Request r, int node,
-                                     int start, int end)
-{
-  assign(r, node, start, end);
-}
-
-void
-MemoryLockRequest::assign(Request r, int node,
-                          int start, int end)
-{
-  data_[0] = (int) r;
-  data_[1] = node;
-  data_[2] = start;
-  data_[3] = end;
-}
-
-///////////////////////////////////////////////////////////////////////
 // The MemoryDataRequest class
 
-static int request_serial_number;
-
 MemoryDataRequest::MemoryDataRequest(Request r, int node,
-                                     int offset, int size)
+                                     int offset, int size, int lock,
+                                     int serial_number)
 {
-  assign(r, node, offset, size);
+  assign(r, node, offset, size, lock, serial_number);
 }
 
 void
 MemoryDataRequest::assign(Request r, int node,
-                          int offset, int size)
+                          int offset, int size, int lock,
+                          int serial_number)
 {
   data_[0] = (int) r;
   data_[1] = node;
   data_[2] = offset;
   data_[3] = size;
-  data_[4] = request_serial_number++;
+  data_[4] = serial_number;
+  data_[5] = lock;
 }
 
 const char *
@@ -130,9 +112,10 @@ MemoryDataRequest::print(const char *msg, ostream & o) const
               msg, request_string(), node(), serial_number(), reactivate());
     }
   else {
-      o << scprintf("%s \"%s\" offset = %5d, %5d bytes, %d-%d\n",
+      o << scprintf("%s \"%s\" offset = %5d, %5d bytes, %d-%d, %s\n",
               msg, request_string(),
-              offset(), size(), node(), serial_number());
+              offset(), size(), node(), serial_number(),
+              (lock()?"lock":"nolock"));
     }
   o.flush();
 }
@@ -180,14 +163,12 @@ static ClassDesc ActiveMsgMemoryGrp_cd(
 ActiveMsgMemoryGrp::ActiveMsgMemoryGrp(const Ref<MessageGrp>& msg):
   MsgMemoryGrp(msg)
 {
-  use_locks_for_reduction_ = 0;
   data_ = 0;
 }
 
 ActiveMsgMemoryGrp::ActiveMsgMemoryGrp(const Ref<KeyVal>& keyval):
   MsgMemoryGrp(keyval)
 {
-  use_locks_for_reduction_ = 0;
   data_ = 0;
 }
 
@@ -226,10 +207,6 @@ ActiveMsgMemoryGrp::~ActiveMsgMemoryGrp()
 void *
 ActiveMsgMemoryGrp::obtain_writeonly(distsize_t offset, int size)
 {
-  if (use_locks_) {
-      send_lock_request(MemoryLockRequest::WriteOnly, offset, size);
-      wait_for_lock();
-    }
   void *data = (void *) new char[size];
   return data;
 }
@@ -238,22 +215,19 @@ void *
 ActiveMsgMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 {
   PRINTF(("ActiveMsgMemoryGrp::obtain_readwrite entered\n"));
-  if (use_locks_) {
-      send_lock_request(MemoryLockRequest::ReadWrite, offset, size);
-      wait_for_lock();
-    }
   void *data = (void *) new char[size];
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
       if (i.node() == me()) {
           PRINTF(("ActiveMsgMemoryGrp::obtain_readwrite: local copy\n"));
+          obtain_local_lock(i.offset(), i.offset()+i.size());
           memcpy(i.data(), &data_[i.offset()], i.size());
         }
       else {
           PRINTF(("ActiveMsgMemoryGrp::obtain_readwrite: node = %d, "
                   "int offset = %d, int size = %d\n",
                   i.node(), i.offset()/sizeof(int), i.size()/sizeof(int)));
-          retrieve_data(i.data(), i.node(), i.offset(), i.size());
+          retrieve_data(i.data(), i.node(), i.offset(), i.size(), 1);
         }
     }
   PRINTF(("ActiveMsgMemoryGrp::obtain_readwrite exiting\n"));
@@ -263,10 +237,6 @@ ActiveMsgMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 void *
 ActiveMsgMemoryGrp::obtain_readonly(distsize_t offset, int size)
 {
-  if (use_locks_) {
-      send_lock_request(MemoryLockRequest::ReadOnly, offset, size);
-      wait_for_lock();
-    }
   void *data = (void *) new char[size];
   PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readonly:"
           "overall: offset = %d size = %d\n",
@@ -285,7 +255,7 @@ ActiveMsgMemoryGrp::obtain_readonly(distsize_t offset, int size)
           PRINTF(("ActiveMsgMemoryGrp::obtain_readonly: node = %d, "
                   "int offset = %d, int size = %d\n",
                   i.node(), i.offset()/sizeof(int), i.size()/sizeof(int)));
-          retrieve_data(i.data(), i.node(), i.offset(), i.size());
+          retrieve_data(i.data(), i.node(), i.offset(), i.size(), 0);
         }
     }
   return data;
@@ -296,12 +266,6 @@ ActiveMsgMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dsize)
 {
   distsize_t offset = doffset * sizeof(double);
   int size = dsize * sizeof(double);
-  // Locks are usually implicit, assuming that only one active message
-  // handler is active at a time.
-  if (use_locks_for_reduction_) {
-      send_lock_request(MemoryLockRequest::Reduce, offset, size);
-      wait_for_lock();
-    }
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
       if (i.node() == me()) {
@@ -310,18 +274,15 @@ ActiveMsgMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dsize)
           double *tmp = (double*) i.data();
           PRINTF(("%d: summing %d doubles from 0x%x to 0x%x\n",
                   me(), chunkdsize, tmp, chunkdata));
-          long oldlock = lockcomm();
+          obtain_local_lock(i.offset(), i.offset()+i.size());
           for (int j=0; j<chunkdsize; j++) {
               *chunkdata++ += *tmp++;
             }
-          unlockcomm(oldlock);
+          release_local_lock(i.offset(), i.offset()+i.size());
         }
       else {
           sum_data((double*)i.data(), i.node(), i.offset(), i.size());
         }
-    }
-  if (use_locks_for_reduction_) {
-      send_lock_request(MemoryLockRequest::RelReduce, offset, size);
     }
 }
 
@@ -333,11 +294,13 @@ ActiveMsgMemoryGrp::sum_reduction_on_node(double *data, int doffset,
 
   if (node == me()) {
       double *localdata = (double*) &data_[sizeof(double)*doffset];
-      long oldlock = lockcomm();
+      obtain_local_lock(sizeof(double)*doffset,
+                        sizeof(double)*(doffset+dlength));
       for (int j=0; j<dlength; j++) {
           *localdata++ += *data++;
         }
-      unlockcomm(oldlock);
+      release_local_lock(sizeof(double)*doffset,
+                         sizeof(double)*(doffset+dlength));
     }
   else {
       sum_data(data, node, sizeof(double)*doffset, sizeof(double)*dlength);
@@ -345,20 +308,14 @@ ActiveMsgMemoryGrp::sum_reduction_on_node(double *data, int doffset,
 }
 
 void
-ActiveMsgMemoryGrp::release_read(void *data, distsize_t offset, int size)
+ActiveMsgMemoryGrp::release_readonly(void *data, distsize_t offset, int size)
 {
-  if (use_locks_) {
-      send_lock_request(MemoryLockRequest::RelRead, offset, size);
-    }
   delete[] (char*) data;
 }
 
 void
-ActiveMsgMemoryGrp::release_write(void *data, distsize_t offset, int size)
+ActiveMsgMemoryGrp::release_writeonly(void *data, distsize_t offset, int size)
 {
-  if (use_locks_) {
-      send_lock_request(MemoryLockRequest::RelWrite, offset, size);
-    }
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
       if (i.node() == me()) {
@@ -372,7 +329,23 @@ ActiveMsgMemoryGrp::release_write(void *data, distsize_t offset, int size)
           PRINTF(("ActiveMsgMemoryGrp::release_write: node = %d, "
                   "int offset = %d, int size = %d\n",
                   i.node(), i.offset()/sizeof(int), i.size()/sizeof(int)));
-          replace_data(i.data(), i.node(), i.offset(), i.size());
+          replace_data(i.data(), i.node(), i.offset(), i.size(), 0);
+        }
+    }
+  delete[] (char*) data;
+}
+
+void
+ActiveMsgMemoryGrp::release_readwrite(void *data, distsize_t offset, int size)
+{
+  MemoryIter i(data, offsets_, n());
+  for (i.begin(offset, size); i.ready(); i.next()) {
+      if (i.node() == me()) {
+          memcpy(&data_[i.offset()], i.data(), i.size());
+          release_local_lock(i.offset(), i.offset()+i.size());
+        }
+      else {
+          replace_data(i.data(), i.node(), i.offset(), i.size(), 1);
         }
     }
   delete[] (char*) data;
@@ -382,32 +355,6 @@ void
 ActiveMsgMemoryGrp::print(ostream &o) const
 {
   MemoryGrp::print(o);
-}
-
-void
-ActiveMsgMemoryGrp::send_lock_request(MemoryLockRequest::Request req,
-                                      distsize_t offset, int size)
-{
-  ExEnv::err() << scprintf("%d: %s: cannot use memory locks\n", me(), class_name());
-  abort();
-}
-
-void
-ActiveMsgMemoryGrp::wait_for_lock()
-{
-  ExEnv::err() << scprintf("%d: %s: cannot use memory locks\n", me(), class_name());
-  abort();
-}
-
-long
-ActiveMsgMemoryGrp::lockcomm()
-{
-    return 0;
-}
-
-void
-ActiveMsgMemoryGrp::unlockcomm(long oldvalue)
-{
 }
 
 #endif

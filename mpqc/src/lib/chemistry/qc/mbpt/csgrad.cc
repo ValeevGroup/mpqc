@@ -47,6 +47,10 @@
 
 using namespace std;
 
+#define SINGLE_THREAD_E12   0
+#define SINGLE_THREAD_QBT34 1
+#define SINGLE_THREAD_S2PDM 1
+
 #if PRINT_BIGGEST_INTS
 BiggestContribs biggest_ints_1(4,40);
 #endif
@@ -561,8 +565,6 @@ MBPT2::compute_cs_grad()
        << " Bytes"
        << endl;
 
-  mem->lock(0);
-
   MemoryGrpBuf<double> membuf_remote(mem);
 
   Ref<ThreadLock> lock = thr_->new_lock();
@@ -641,18 +643,21 @@ MBPT2::compute_cs_grad()
     for (i=0; i<thr_->nthread(); i++) {
       e12thread[i]->set_i_offset(i_offset);
       e12thread[i]->set_ni(ni);
-      //e12thread[i]->run();
       thr_->add_thread(i,e12thread[i]);
+#     if SINGLE_THREAD_E12
+      e12thread[i]->run();
+#     endif
       }
+#   if !SINGLE_THREAD_E12
     thr_->start_threads();
     thr_->wait_threads();
+#   endif
     tim_exit("erep+1.qt+2.qt");
 
     if (me == 0) {
       ExEnv::out() << indent << "End of loop over shells" << endl;
       }
 
-    mem->lock(0);
     mem->sync();  // Make sure iqjs is complete on each node before continuing
 
     integral_iqjs = (double*) mem->localdata();
@@ -1358,9 +1363,14 @@ MBPT2::compute_cs_grad()
       qbt34thread[i]->set_i_offset(i_offset);
       qbt34thread[i]->set_ni(ni);
       thr_->add_thread(i,qbt34thread[i]);
+#     if SINGLE_THREAD_QBT34
+      qbt34thread[i]->run();
+#     endif
       }
+#   if !SINGLE_THREAD_QBT34
     thr_->start_threads();
     thr_->wait_threads();
+#   endif
     tim_exit("3.qbt+4.qbt+non-sep contrib.");
     // Add thread contributions to Lpi and ginter
     for (i=0; i<thr_->nthread(); i++) {
@@ -2036,9 +2046,14 @@ MBPT2::compute_cs_grad()
                                        lock, basis(), tbintder_[i],
                                        PHF, P2AO, tol, debug_, dynamic_);
       thr_->add_thread(i,s2pdmthread[i]);
+#     if SINGLE_THREAD_S2PDM
+      s2pdmthread[i]->run();
+#     endif
     }
+# if !SINGLE_THREAD_S2PDM
   thr_->start_threads();
   thr_->wait_threads();
+# endif
   for (i=0; i<thr_->nthread(); i++) {
       s2pdmthread[i]->accum_mp2_contrib(ginter);
       s2pdmthread[i]->accum_hf_contrib(hf_ginter);

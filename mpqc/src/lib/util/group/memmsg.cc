@@ -99,6 +99,25 @@ void
 MsgMemoryGrp::sync()
 {
   msg_->sync();
+#if 0
+  // debug code
+  for (int i=0; i<n(); i++) {
+      if (i == me()) {
+          cout << "Data on node " << i << ":" << endl;
+          for (int j=0; j<localsize()/sizeof(double); j++) {
+              double dat = ((double*)localdata())[j];
+              if (fabs(dat) > 1.e-12) {
+                  cout << " " << i << " " << offset(me()) + j << " "
+                       << setw(6)
+                       << dat << endl;
+                }
+            }
+        }
+      cout.flush();
+      msg_->sync();
+    }
+  // end debug code
+#endif
 }
 
 #endif

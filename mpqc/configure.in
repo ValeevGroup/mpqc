@@ -903,36 +903,14 @@ if test X$PARALLEL = Xyes; then
     LIBS="-lpvm $LIBS"
   fi
 
-  dnl ----- check for the intel nx library
-  AC_CHECK_HEADER(nx.h,[
-    AC_CHECK_LIB(nx,hrecv,[
-      HAVE_HRECV=yes
-      HAVE_NX=yes
-      ],[
-      AC_CHECK_LIB(nx,exit,HAVE_NX=yes)
-      ]
-    )
-    ]
-  )
-  if test X$HAVE_NX = Xyes; then
-    AC_DEFINE(HAVE_NX)
-    LIBS="-lnx $LIBS"
-  fi
-  if test X$HAVE_HRECV = Xyes; then
-    AC_DEFINE(HAVE_HRECV)
-  fi
-
 fi
 
 AC_SUBST(HAVE_PERF)
 AC_SUBST(HAVE_MPL)
 AC_SUBST(HAVE_P4)
-AC_SUBST(HAVE_PUMA_MPI2)
 AC_SUBST(HAVE_MPI2_ONE_SIDED)
 AC_SUBST(HAVE_MPI)
 AC_SUBST(HAVE_PVM)
-AC_SUBST(HAVE_NX)
-AC_SUBST(HAVE_HRECV)
 AC_SUBST(HAVE_PTHREAD)
 AC_SUBST(EXTRADEFINES)
 
@@ -1115,21 +1093,6 @@ esac
 ],
 AC_DEFINE(SEMCTL_REQUIRES_SEMUN) AC_MSG_RESULT(yes))
 AC_LANG_RESTORE
-
-dnl --------- Checks for working mmap. ---------
-
-AC_MSG_CHECKING([for Alpha mmap])
-case $target in
-  alpha-dec-osf*)
-    HAVE_ALPHA_MMAP=yes
-    AC_DEFINE(HAVE_ALPHA_MMAP)
-    AC_MSG_RESULT(yes)
-    ;;
-  *)
-    AC_MSG_RESULT(no)
-    ;;
-esac
-AC_SUBST(HAVE_ALPHA_MMAP)
 
 dnl ----------- Fortran symbol names --------------
 

@@ -283,18 +283,6 @@ ShmMemoryGrp::set_localsize(int localsize)
       fail = attach_memory(address,size);
       msg_->max(fail);
       if (fail) {
-
-
-
-
-
-
-
-
-
-
-
-
           detach_memory();
         }
       address = (void*) &((char*)address)[0x1000000];
@@ -377,43 +365,41 @@ ShmMemoryGrp::obtain_readwrite(distsize_t offset, int size)
       abort();
     }
 
-  if (use_locks_) {
 #if SIMPLE_LOCK
-      obtain_lock();
+  obtain_lock();
 #else // SIMPLE_LOCK
 #ifdef DEBUG
-      ExEnv::out() << scprintf("%d: clear_release_count\n", me());
-      ExEnv::out().flush();
+  ExEnv::out() << scprintf("%d: clear_release_count\n", me());
+  ExEnv::out().flush();
 #endif // DEBUG
-      clear_release_count();
+  clear_release_count();
 #ifdef DEBUG
-      ExEnv::out() << scprintf("%d: obtain_lock\n", me());
-      ExEnv::out().flush();
+  ExEnv::out() << scprintf("%d: obtain_lock\n", me());
+  ExEnv::out().flush();
 #endif // DEBUG
-      obtain_lock();
+  obtain_lock();
 #ifdef DEBUG
-      ExEnv::out() << scprintf("%d: checkeq\n", me());
-      ExEnv::out().flush();
+  ExEnv::out() << scprintf("%d: checkeq\n", me());
+  ExEnv::out().flush();
 #endif
-      while (!rangelock_->checkeq(offset, offset + size, 0)) {
+  while (!rangelock_->checkeq(offset, offset + size, 0)) {
 #ifdef DEBUG
-          ExEnv::out() << scprintf("%d: range not zero -- waiting for release\n", me());
-          ExEnv::out().flush();
-#endif // DEBUG
-          //rangelock_->print();
-          release_lock();
-          wait_for_release();
-          obtain_lock();
-        }
-      rangelock_->decrement(offset, offset + size);
-#ifdef DEBUG
-      ExEnv::out() << scprintf("%d: after obtain write\n", me());
+      ExEnv::out() << scprintf("%d: range not zero -- waiting for release\n", me());
       ExEnv::out().flush();
-      //rangelock_->print();
 #endif // DEBUG
+      //rangelock_->print();
       release_lock();
-#endif // SIMPLE_LOCK
+      wait_for_release();
+      obtain_lock();
     }
+  rangelock_->decrement(offset, offset + size);
+#ifdef DEBUG
+  ExEnv::out() << scprintf("%d: after obtain write\n", me());
+  ExEnv::out().flush();
+  //rangelock_->print();
+#endif // DEBUG
+  release_lock();
+#endif // SIMPLE_LOCK
 
   return &((char*)data_)[distsize_to_size(offset)];
 }
@@ -426,73 +412,46 @@ ShmMemoryGrp::obtain_readonly(distsize_t offset, int size)
       abort();
     }
 
-  if (use_locks_) {
-#if SIMPLE_LOCK
-      obtain_lock();
-#else // SIMPLE_LOCK
-      clear_release_count();
-      obtain_lock();
-      while (!rangelock_->checkgr(offset, offset + size, -1)) {
-#ifdef DEBUG
-          ExEnv::out() << scprintf("%d: range is -1 -- waiting for release\n", me());
-          ExEnv::out().flush();
-          //rangelock_->print();
-#endif // DEBUG
-          release_lock();
-          wait_for_release();
-          obtain_lock();
-        }
-      rangelock_->increment(offset, offset + size);
-#ifdef DEBUG
-      ExEnv::out() << scprintf("%d: after obtain read\n", me());
-      ExEnv::out().flush();
-      //rangelock_->print();
-#endif // DEBUG
-      release_lock();
-#endif // SIMPLE_LOCK
+  return &((char*)data_)[distsize_to_size(offset)];
+}
+
+void *
+ShmMemoryGrp::obtain_writeonly(distsize_t offset, int size)
+{
+  if (offset + size > totalsize()) {
+      ExEnv::err() << scprintf("ShmMemoryGrp::obtain_writeonly: arg out of range\n");
+      abort();
     }
 
   return &((char*)data_)[distsize_to_size(offset)];
 }
 
 void
-ShmMemoryGrp::release_read(void *data, distsize_t offset, int size)
+ShmMemoryGrp::release_readonly(void *data, distsize_t offset, int size)
 {
-  if (use_locks_) {
-#if SIMPLE_LOCK
-      release_lock();
-#else // SIMPLE_LOCK
-      obtain_lock();
-      rangelock_->decrement(offset, offset + size);
-      note_release();
-#ifdef DEBUG
-      ExEnv::out() << scprintf("%d: after release read\n", me());
-      //rangelock_->print();
-      ExEnv::out().flush();
-#endif // DEBUG
-      release_lock();
-#endif // SIMPLE_LOCK
-    }
 }
 
 void
-ShmMemoryGrp::release_write(void *data, distsize_t offset, int size)
+ShmMemoryGrp::release_writeonly(void *data, distsize_t offset, int size)
 {
-  if (use_locks_) {
+}
+
+void
+ShmMemoryGrp::release_readwrite(void *data, distsize_t offset, int size)
+{
 #if SIMPLE_LOCK
-      release_lock();
+  release_lock();
 #else // SIMPLE_LOCK
-      obtain_lock();
-      rangelock_->increment(offset, offset + size);
-      note_release();
+  obtain_lock();
+  rangelock_->increment(offset, offset + size);
+  note_release();
 #ifdef DEBUG
-      ExEnv::out() << scprintf("%d: after release write\n", me());
-      //rangelock_->print();
-      ExEnv::out().flush();
+  ExEnv::out() << scprintf("%d: after release write\n", me());
+  //rangelock_->print();
+  ExEnv::out().flush();
 #endif // DEBUG
-      release_lock();
+  release_lock();
 #endif // SIMPLE_LOCK
-    }
 }
 
 void
@@ -559,37 +518,6 @@ void
 ShmMemoryGrp::print(ostream &o) const
 {
   MemoryGrp::print(o);
-  if (me() == 0) {
-      if (use_locks_) {
-          ((ShmMemoryGrp*)this)->obtain_lock();
-          //rangelock_->print(fp);
-          ((ShmMemoryGrp*)this)->release_lock();
-        }
-    }
-}
-
-void
-ShmMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
-{
-  int offset = distsize_to_size(doffset) * sizeof(double);
-  int length = dlength * sizeof(double);
-
-  if (offset + length > distsize_to_size(totalsize())) {
-      ExEnv::err() << scprintf("MemoryGrp::sum_reduction: arg out of range\n");
-      abort();
-    }
-
-  double *source_data = (double*) obtain_readwrite(offset, length);
-
-  // if locks are not being in obtain_readwrite used we must still be sure
-  // to use locks here, since we have direct access to global memory
-  if (!use_locks_) obtain_lock();
-  for (int i=0; i<dlength; i++) {
-      source_data[i] += data[i];
-    }
-  if (!use_locks_) release_lock();
-
-  release_write((void*) source_data, offset, length);
 }
 
 #endif

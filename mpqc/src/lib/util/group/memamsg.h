@@ -36,37 +36,18 @@
 
 #include <util/group/memmsg.h>
 
-class MemoryLockRequest {
-  public:
-    enum { NData = 5 };
-    enum Request { Deactivate, RelWrite, RelRead, RelReduce,
-                   WriteOnly, ReadOnly, ReadWrite, Reduce };
-  private:
-    int data_[NData];
-  public:
-    MemoryLockRequest() {}
-    MemoryLockRequest(Request r, int node = 0, int start = 0, int end = 0);
-    void assign(Request r, int node, int start, int end);
-    void *data() const { return (void *) data_; }
-    int nbytes() const { return sizeof(int)*NData; }
-
-    int request() const { return (Request) data_[0]; }
-    int node() const { return data_[1]; }
-    int start() const { return data_[2]; }
-    int end() const { return data_[3]; }
-    int serial_number() const { return data_[4]; }
-};
-
 class MemoryDataRequest {
   public:
-    enum { NData = 5 };
+    enum { NData = 6 };
     enum Request { Deactivate, Sync, Retrieve, Replace, DoubleSum };
   private:
     int data_[NData];
   public:
     MemoryDataRequest() {}
-    MemoryDataRequest(Request r, int node = 0, int offset = 0, int size = 0);
-    void assign(Request r, int node, int offset, int size);
+    MemoryDataRequest(Request r, int node = 0, int offset = 0, int size = 0,
+                      int lock = 0, int serial = 0);
+    void assign(Request r, int node, int offset, int size,
+                int lock, int serial);
     void *data() const { return (void *) data_; }
     int nbytes() const { return sizeof(int)*NData; }
 
@@ -77,6 +58,7 @@ class MemoryDataRequest {
     int offset() const { return data_[2]; }
     int size() const { return data_[3]; }
     int serial_number() const { return data_[4]; }
+    int lock() const { return data_[5]; }
 
     int touches_data() const {return request()!=Deactivate&&request()!=Sync;}
 
@@ -109,15 +91,11 @@ class.  It uses active messages to implement global shared memory.  */
 class ActiveMsgMemoryGrp : public MsgMemoryGrp {
   protected:
     char *data_;
-    int use_locks_for_reduction_;
 
-    // the defaults for these produce an error
-    virtual void send_lock_request(MemoryLockRequest::Request,
-                                   distsize_t offset, int size);
-    virtual void wait_for_lock();
-
-    virtual void retrieve_data(void *, int node, int offset, int size) = 0;
-    virtual void replace_data(void *, int node, int offset, int size) = 0;
+    virtual void retrieve_data(void *, int node, int offset, int size,
+                               int lock) = 0;
+    virtual void replace_data(void *, int node, int offset, int size,
+                              int unlock) = 0;
     virtual void sum_data(double *data, int node, int doffset, int dsize) = 0;
   public:
     ActiveMsgMemoryGrp(const Ref<MessageGrp>& msg);
@@ -127,14 +105,12 @@ class ActiveMsgMemoryGrp : public MsgMemoryGrp {
     void set_localsize(int);
     void *localdata();
 
-    virtual long lockcomm();
-    virtual void unlockcomm(long oldvalue);
-
     void *obtain_writeonly(distsize_t offset, int size);
     void *obtain_readwrite(distsize_t offset, int size);
     void *obtain_readonly(distsize_t offset, int size);
-    void release_read(void *data, distsize_t offset, int size);
-    void release_write(void *data, distsize_t offset, int size);
+    void release_readonly(void *data, distsize_t offset, int size);
+    void release_writeonly(void *data, distsize_t offset, int size);
+    void release_readwrite(void *data, distsize_t offset, int size);
 
     void sum_reduction(double *data, distsize_t doffset, int dsize);
     void sum_reduction_on_node(double *data, int doffset, int dsize,

@@ -39,32 +39,14 @@
 
 #include <util/group/memproc.h>
 
-#ifdef HAVE_NX
-#  ifdef HAVE_HRECV
-#    include <util/group/mempgon.h>
-#  endif
-#  include <util/group/messpgon.h>
-#  include <util/group/memipgon.h>
-#endif
-
 #ifdef HAVE_SYSV_IPC
 #  include <util/group/messshm.h>
 #  include <util/group/memshm.h>
-#  ifdef HAVE_ALPHA_MMAP
-#    include <util/group/memammap.h>
-#  endif
 #endif
 
-#if defined(HAVE_MPL)
-#  include <util/group/memmpl.h>
-#endif
 #if defined(HAVE_MPI)
 #  include <util/group/messmpi.h>
-#  include <util/group/memmpi.h>
-#endif
-
-#if defined(HAVE_PUMA_MPI2)
-#  include <util/group/mempuma.h>
+#  include <util/group/memmtmpi.h>
 #endif
 
 using namespace std;
@@ -88,7 +70,6 @@ static ClassDesc MemoryGrp_cd(
 
 MemoryGrp::MemoryGrp()
 {
-  use_locks_ = 0;
   debug_ = 0;
 
   offsets_ = 0;
@@ -98,7 +79,6 @@ MemoryGrp::MemoryGrp()
 
 MemoryGrp::MemoryGrp(const Ref<KeyVal>& keyval)
 {
-  use_locks_ = 0;
   debug_ = keyval->intvalue("debug");
 
   offsets_ = 0;
@@ -205,40 +185,15 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
       ExEnv::err() << scprintf("MemoryGrp::create_memorygrp: requires default msg\n");
       abort();
     }
-#ifdef HAVE_NX
-  else if (msg->class_desc() == ::class_desc<ParagonMessageGrp>()) {
-#ifdef HAVE_HRECV
-      grp = new ParagonMemoryGrp(msg);
-#elif defined(HAVE_PUMA_MPI2)
-      grp = new PumaMemoryGrp(msg);
-#else
-      grp = new IParagonMemoryGrp(msg);
-#endif
-    }
-#endif
-#if defined(HAVE_MPL)
-  else if (msg->class_desc() == ::class_desc<MPIMessageGrp>()) {
-      grp = new MPLMemoryGrp(msg);
-    }
-#endif
 #if defined(HAVE_MPI)
   else if (msg->class_desc() == ::class_desc<MPIMessageGrp>()) {
-#if defined(HAVE_PUMA_MPI2)
-      grp = new PumaMemoryGrp(msg);
-#elif defined(HAVE_ALPHA_MMAP)
-      grp = new AlphaMMapMemoryGrp(msg);
-#else
-      grp = new MPIMemoryGrp(msg);
-#endif
+      Ref<ThreadGrp> thr = ThreadGrp::get_default_threadgrp();
+      grp = new MTMPIMemoryGrp(msg,thr);
     }
 #endif
 #ifdef HAVE_SYSV_IPC
   else if (msg->class_desc() == ::class_desc<ShmMessageGrp>()) {
-#ifdef HAVE_ALPHA_MMAP
-      grp = new AlphaMMapMemoryGrp(msg);
-#else
       grp = new ShmMemoryGrp(msg);
-#endif
     }
 #endif
   else if (msg->n() == 1) {
@@ -255,16 +210,6 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
     }
 
   return grp;
-}
-
-void
-MemoryGrp::lock(int b)
-{
-  if (b) {
-      ExEnv::out() << node0 << class_name() << ": locks not available" << endl;
-      abort();
-    }
-  use_locks_ = b;
 }
 
 void
@@ -287,12 +232,6 @@ MemoryGrp::print(ostream&o) const
     }
 }
 
-void *
-MemoryGrp::obtain_writeonly(distsize_t offset, int size)
-{
-  return obtain_readwrite(offset, size);
-}
-
 void
 MemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
 {
@@ -310,7 +249,7 @@ MemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
       source_data[i] += data[i];
     }
 
-  release_write((void*) source_data, offset, length);
+  release_readwrite((void*) source_data, offset, length);
 }
 
 void
@@ -349,6 +288,23 @@ MemoryGrp::release_local_lock(size_t start, size_t fence)
   for (int i=lstart; i<=llast; i++) {
       locks_[i]->unlock();
     }
+}
+
+static Ref<MemoryGrp> default_memorygrp;
+
+void
+MemoryGrp::set_default_memorygrp(const Ref<MemoryGrp>& grp)
+{
+  default_memorygrp = grp;
+}
+
+MemoryGrp*
+MemoryGrp::get_default_memorygrp()
+{
+  if (default_memorygrp.null()) {
+      default_memorygrp = new ProcMemoryGrp;
+    }
+  return default_memorygrp.pointer();
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -146,7 +146,7 @@ MBPT2::MBPT2(StateIn& s):
 
   eliminate_in_gmat_ = 1;
 
-  mem = MemoryGrp::initial_memorygrp();
+  mem = MemoryGrp::get_default_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 

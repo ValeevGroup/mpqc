@@ -51,8 +51,10 @@ class ProcMemoryGrp: public MemoryGrp {
 
     void *obtain_readwrite(distsize_t offset, int size);
     void *obtain_readonly(distsize_t offset, int size);
-    void release_read(void *data, distsize_t offset, int size);
-    void release_write(void *data, distsize_t offset, int size);
+    void *obtain_writeonly(distsize_t offset, int size);
+    void release_readonly(void *data, distsize_t offset, int size);
+    void release_writeonly(void *data, distsize_t offset, int size);
+    void release_readwrite(void *data, distsize_t offset, int size);
 
     void sync();
 };

@@ -183,8 +183,6 @@ class MemoryGrp: public DescribedClass {
     int n_;
     distsize_t *offsets_; // offsets_[n_] is the fence for all data
 
-    int use_locks_;
-
     // set to nonzero for debugging information
     int debug_;
 
@@ -223,18 +221,23 @@ class MemoryGrp: public DescribedClass {
     /// Deactivate is called after the memory has been used.
     virtual void deactivate();
 
-    /** Locking of memory regions can be turned on if the application
-        can be sure that only one node has write access to a region
-        at time.  This might improve performance a bit.  lock must
-        be called with the same argument on all nodes. The default is
-        to not lock.  Not all specializations support locking. */
-    virtual void lock(int truefalse);
-
-    virtual void *obtain_writeonly(distsize_t offset, int size);
+    /// This gives write access to the memory location.  No locking is done.
+    virtual void *obtain_writeonly(distsize_t offset, int size) = 0;
+    /** Only one thread can have an unreleased obtain_readwrite at a time.
+        The actual memory region locked can be larger than that requested.
+        If the memory region is already locked this will block.  For this
+        reason, data should be held as read/write for as short a time as
+        possible. */
     virtual void *obtain_readwrite(distsize_t offset, int size) = 0;
+    /// This gives read access to the memory location.  No locking is done.
     virtual void *obtain_readonly(distsize_t offset, int size) = 0;
-    virtual void release_read(void *data, distsize_t offset, int size) = 0;
-    virtual void release_write(void *data, distsize_t offset, int size) = 0;
+    /// This is called when read access is no longer needed.
+    virtual void release_readonly(void *data, distsize_t offset, int size) = 0;
+    /// This is called when write access is no longer needed.
+    virtual void release_writeonly(void *data, distsize_t offset, int size)=0;
+    /** This is called when read/write access is no longer needed.
+        The memory will be unlocked. */
+    virtual void release_readwrite(void *data, distsize_t offset, int size)=0;
 
     virtual void sum_reduction(double *data, distsize_t doffset, int dsize);
     virtual void sum_reduction_on_node(double *data, int doffset, int dsize,
@@ -262,6 +265,11 @@ class MemoryGrp: public DescribedClass {
         be either string for a ParsedKeyVal constructor or a classname. */
     static MemoryGrp* initial_memorygrp(int &argc, char** argv);
     static MemoryGrp* initial_memorygrp();
+    /** The default memory group contains the primary memory group to
+        be used by an application. */
+    static void set_default_memorygrp(const Ref<MemoryGrp>&);
+    /// Returns the default memory group.
+    static MemoryGrp* get_default_memorygrp();
 };
 
 
@@ -273,8 +281,8 @@ class MemoryGrp: public DescribedClass {
 template <class data_t>
 class MemoryGrpBuf {
     Ref<MemoryGrp> grp_;
-    enum LockType { None, Read, Write };
-    LockType locktype_;
+    enum AccessType { None, Read, Write, ReadWrite };
+    AccessType accesstype_;
     data_t *data_;
     distsize_t offset_;
     int length_;
@@ -319,19 +327,19 @@ template <class data_t>
 MemoryGrpBuf<data_t>::MemoryGrpBuf(const Ref<MemoryGrp> & grp)
 {
   grp_ = grp;
-  locktype_ = None;
+  accesstype_ = None;
 }
 
 template <class data_t>
 data_t *
 MemoryGrpBuf<data_t>::writeonly(distsize_t offset, int length)
 {
-  if (locktype_ != None) release();
+  if (accesstype_ != None) release();
   data_ = (data_t *) grp_->obtain_writeonly(sizeof(data_t)*offset,
                                             sizeof(data_t)*length);
   offset_ = offset;
   length_ = length;
-  locktype_ = Write;
+  accesstype_ = Write;
   return data_;
 }
 
@@ -339,12 +347,12 @@ template <class data_t>
 data_t *
 MemoryGrpBuf<data_t>::readwrite(distsize_t offset, int length)
 {
-  if (locktype_ != None) release();
+  if (accesstype_ != None) release();
   data_ = (data_t *) grp_->obtain_readwrite(sizeof(data_t)*offset,
                                             sizeof(data_t)*length);
   offset_ = offset;
   length_ = length;
-  locktype_ = Write;
+  accesstype_ = ReadWrite;
   return data_;
 }
 
@@ -352,12 +360,12 @@ template <class data_t>
 const data_t *
 MemoryGrpBuf<data_t>::readonly(distsize_t offset, int length)
 {
-  if (locktype_ != None) release();
+  if (accesstype_ != None) release();
   data_ = (data_t *) grp_->obtain_readonly(sizeof(data_t)*offset,
                                            sizeof(data_t)*length);
   offset_ = offset;
   length_ = length;
-  locktype_ = Read;
+  accesstype_ = Read;
   return data_;
 }
 
@@ -389,13 +397,17 @@ template <class data_t>
 void
 MemoryGrpBuf<data_t>::release()
 {
-  if (locktype_ == Write)
-      grp_->release_write((data_t *)data_,
-                          sizeof(data_t)*offset_, sizeof(data_t)*length_);
-  if (locktype_ == Read)
-      grp_->release_read(data_, sizeof(data_t)*offset_, sizeof(data_t)*length_);
+  if (accesstype_ == Write)
+      grp_->release_writeonly((data_t *)data_,
+                              sizeof(data_t)*offset_, sizeof(data_t)*length_);
+  if (accesstype_ == Read)
+      grp_->release_readonly(data_, sizeof(data_t)*offset_,
+                             sizeof(data_t)*length_);
+  if (accesstype_ == ReadWrite)
+      grp_->release_readwrite(data_, sizeof(data_t)*offset_,
+                              sizeof(data_t)*length_);
 
-  locktype_ = None;
+  accesstype_ = None;
 }
 
 #endif

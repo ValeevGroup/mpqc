@@ -76,10 +76,10 @@ class ShmMemoryGrp: public MsgMemoryGrp {
 
     void *obtain_readwrite(distsize_t offset, int size);
     void *obtain_readonly(distsize_t offset, int size);
-    void release_read(void *data, distsize_t offset, int size);
-    void release_write(void *data, distsize_t offset, int size);
-
-    virtual void sum_reduction(double *data, distsize_t doffset, int dsize);
+    void *obtain_writeonly(distsize_t offset, int size);
+    void release_readonly(void *data, distsize_t offset, int size);
+    void release_writeonly(void *data, distsize_t offset, int size);
+    void release_readwrite(void *data, distsize_t offset, int size);
 
     void print(std::ostream &o = ExEnv::out()) const;
 };

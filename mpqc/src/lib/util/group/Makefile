@@ -35,38 +35,26 @@ REQUIREDCXXSRC = mstate.cc \
          message.cc messimpl.cc messproc.cc messint.cc \
          reduce.cc topology.cc hcube.cc \
          rnglock.cc memory.cc memmsg.cc pool.cc \
-         memamsg.cc memproc.cc memmid.cc \
+         memamsg.cc memproc.cc \
          pregtime.cc thread.cc memiter.cc
 
-OPTIONALCXXSRC = messshm.cc messpgon.cc messpvm.cc messmpi.cc memshm.cc \
-                 mempgon.cc memipgon.cc memmpl.cc memmtmpi.cc
+OPTIONALCXXSRC = messshm.cc messpvm.cc messmpi.cc memshm.cc \
+                 memmtmpi.cc
 
 CXXSRC := $(REQUIREDCXXSRC)
 
 ifeq ($(HAVE_SYSV_IPC),yes)
   CXXSRC += messshm.cc memshm.cc globcnt.cc
 endif
-ifeq ($(HAVE_ALPHA_MMAP),yes)
-  CXXSRC += memammap.cc
-endif
-ifeq ($(HAVE_NX),yes)
-  CXXSRC += messpgon.cc memipgon.cc
-ifeq ($(HAVE_HRECV),yes)
-  CXXSRC += mempgon.cc
-endif
-endif
 
 ifeq ($(HAVE_PVM),yes)
   CXXSRC += messpvm.cc
 endif
 ifeq ($(HAVE_MPI),yes)
-  CXXSRC += messmpi.cc memmpi.cc memmtmpi.cc
-endif
-ifeq ($(HAVE_MPL),yes)
-  CXXSRC += memmpl.cc
+  CXXSRC += messmpi.cc memmtmpi.cc
 endif
 ifeq ($(HAVE_PUMA_MPI2),yes)
-  CXXSRC += mempuma.cc thpuma.cc
+  CXXSRC += thpuma.cc
 endif
 ifeq ($(HAVE_MPI2_ONE_SIDED),yes)
   CXXSRC += memmpi2.cc
@@ -74,11 +62,6 @@ endif
 ifeq ($(HAVE_PTHREAD),yes)
   CXXSRC += thpthd.cc
 endif
-
-INC = pool.h message.h mstate.h topology.h \
-      messshm.h messpvm.h messmpi.h \
-      rnglock.h memory.h memmsg.h memshm.h pool.h memamsg.h memproc.h \
-      memmpl.h memmpi.h mempuma.h pregtime.h memmtmpi.h
 
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 

@@ -217,9 +217,10 @@ class SCElementInvert: public SCElementOp {
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
+  private:
+    double threshold_;
   public:
-    SCElementInvert();
-    SCElementInvert(double a);
+    SCElementInvert(double threshold = 0.0);
     SCElementInvert(StateIn&);
     ~SCElementInvert();
     int has_side_effects();

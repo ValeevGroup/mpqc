@@ -5,6 +5,7 @@
 
 #include <iostream.h>
 #include <stdlib.h>
+#include <math.h>
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
@@ -471,15 +472,16 @@ SCDestructiveElementProduct::has_side_effects()
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
 #include <util/class/classi.h>
-SCElementInvert::SCElementInvert() {}
-SCElementInvert::SCElementInvert(double a) {}
+SCElementInvert::SCElementInvert(double threshold):threshold_(threshold) {}
 SCElementInvert::SCElementInvert(StateIn&s):
   SCElementOp(s)
 {
+  s.get(threshold_);
 }
 void
 SCElementInvert::save_data_state(StateOut&s)
 {
+  s.put(threshold_);
 }
 void *
 SCElementInvert::_castdown(const ClassDesc*cd)
@@ -493,7 +495,10 @@ void
 SCElementInvert::process(SCMatrixBlockIter&i)
 {
   for (i.reset(); i; ++i) {
-      i.set(1.0/i.get());
+      double val = i.get();
+      if (fabs(val) > threshold_) val = 1.0/val;
+      else val = 0.0;
+      i.set(val);
     }
 }
 

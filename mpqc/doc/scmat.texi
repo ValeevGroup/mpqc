@@ -1,0 +1,655 @@
+@c -*-texinfo-*-
+@node The Matrix Library, Concept Index, The KeyVal Library, Top
+@chapter The Matrix Library
+@cindex matrix operations
+
+The main feature of the matrix library is that a set of matrix
+abstractions is used that permit very general matrix implementations.
+This flexibility is needed to support diverse computing environments,
+including parallel architectures.  For example, this library must
+support, at a minimum: simple matrices that provide efficient matrix
+computations in a uniprocessor environment, clusters of processors with
+enough memory to store all matrices connected by a relatively slow
+network (workstations on an LAN), clusters of processors with enough
+memory to store all matrices and a fast interconnect network (a
+massively parallel machine such as the Intel Paragon), and clusters of
+machines that don't have enough memory to hold entire matrices (only a
+fast interconnect network would work well in this case).
+
+Other features of SCMAT include memory management, run-time type
+facilities, and persistence.  Automated memory management is provided by
+using the reference counting facility in the @code{VRefCount} base
+class.  Castdown operations (type conversions from less to more derived
+objects) and other run-time type information are provided by
+implementations of the @code{DescribedClass} base class' members.
+Persistence is provided by implementations of the @code{SavableState}
+members.
+
+The base class for all matrices is @code{SCMatrix}.  Symmetric matrices
+are provided by the @code{SymmSCMatrix} derivative of @code{SCMatrix}.
+@code{SymmSCMatrix} is further derived to obtain diagonal matrices with
+@code{DiagSCMatrix}.  Lower and upper triangular matrices may be
+provided in the future by the @code{LTriSCMatrix} and
+@code{UTriSCMatrix} derivatives of @code{SCMatrix}.  In practice, users
+won't need to deal directly with implementations of the matrix classes
+or even with the abstract base classes.  Instead, the pointer classes
+which manage the reference counts in the objects have had matrix
+operations defined as members.  These forward the operations to the
+contained matrix object.  Additionally, the pointer classes have
+operators such as @code{*}, @code{-}, and @code{+} defined to allow
+convenient and intuitive matrix syntax.  These pointer classes are
+@code{RefSCMatrix}, @code{RefSymmSCMatrix}, and @code{RefDiagSCMatrix}.
+
+SCMAT supports a variety of operations on matrices.  The pure virtual
+functions were choosen to let matrices be used with minimal memory and
+time overhead.  For example, the pure virtual matrix multiply routine
+accumulates the result into the target matrix rather than constructing a
+new matrix.  However, the possibility of run-time type violations exists
+using this approach, because an object of type @code{SymmSCMatrix}
+cannot be used in place of @code{SCMatrix} as the target of a multiply
+of two @code{SCMatrix} objects.
+
+Matrix operations can require the creation of matrices not identical to
+the original.  It may be desirable in some cases for a routine which has
+no knowledge of the matrix implementations to create these matrices.  To
+accommadate this, the task of matrix creation lies with
+@code{SCDimension}.  Given an @code{SCDimension} object, a
+@code{SymmSCMatrix} implemenation or a @code{DiagSCMatrix}
+implementation object can be created.  Two @code{SCDimension} objects of
+identical exact type can be used to create a @code{SCMatrix} (if two
+@code{SCDimension} objects of different exact types are used a run time
+error will result).  Thus, all matrix implementations must determine the
+storage layout of matrices from the one or two @code{SCDimension} used
+to create it.
+
+If a needed matrix operation is missing, mechanisms exist to add fairly
+general operations.  Operations which only depend on individual elements
+of matrices can be provided by user provided specializations of the
+@code{SCElementOp} class.  Operations depending on examinations of all
+pairs of indices from two matrices can specialize the @code{SCBinaryOp}
+class.  Sometimes we need operations on matrices with identical
+dimensions that examine each element in one matrix along with the
+corresponding element from the other matrix.  This is accomplished with
+@code{SCElementPairOp} and for two pairs of matrices
+@code{SCBinaryPairOp} is used.
+
+In summary, to construct new matrix implementations, @code{SCDimension},
+@code{SCMatrix}, @code{SymmSCMatrix}, and @code{DiagSCMatrix} must be
+implemented.  To use an existing implementations, objects of the desired
+@code{SCDimension} implementation must be created and then the pointer
+classes @code{RefSCMatrix}, @code{RefSymmSCMatrix}, and
+@code{RefDiagSCMatrix} are used to construct and manipulate the
+matrices.  New operations on matrices can be development by implementing
+@code{SCElementOp}, @code{SCBinaryOp}, @code{SCElementPairOp}, or
+@code{SCBinaryPairOp}.
+
+The following include files are provided by the matrix library:
+
+@table @file
+@item matrix.h
+The primary include file for users of matrices.  Its main feature is
+that it declares reference counting pointers to matrix implementations.
+These implementations are not visible here (unless
+@code{INLINE_FUNCTIONS} is declared) to help prevent recompilations and
+to reduce compile times.
+
+If dimension for a matrix must be created, or a member specific to an
+implementation is needed, then the appropriate header file must be
+included.
+
+@item abstract.h
+This include file contains the declarations for abstract classes that
+users do not usually need to see.  These include @code{SCDimension},
+@code{SCMatrix}, @code{SymmSCMatrix}, and @code{DiagSCMatrix}.
+
+@item blkiter.h
+This include file declares the implementations of
+@code{SCMatrixBlockIter}.  Users of SCMAT should not need to include
+this file.
+
+@item local.h
+This include file is the matrix implementation for locally stored
+matrices.  These are suitable for use in a uniprocessor environment.
+This file usually only needs to be included for routines that need to
+create @code{LocalSCDimension} objects.
+@end table
+
+@menu
+* The SCDimension Class:: Dimensions determine storage layout of matrices.
+* The Block Classes::  All matrices ultimately store their data in blocks.
+* The Matrix Reference Classes::  Matrices can be accessed through references.
+* The Element Operation Classes:: Classes that process matrix elements.
+* The Reference to Element Classes:: These handle element references.
+* The Matrix Classes:: The abstract bases for all matrix implementations.
+* The Block Iterator Classes::  Iterators provide access to block types.
+* The Local Matrix Classes::  A locally stored matrix implementation.
+
+@end menu
+
+@c ===========================================================================
+
+@node The Block Classes, , , The Matrix Library
+@section The Block Classes
+
+@menu
+* The SCMatrixBlock Class:: The abstract base class for all matrix blocks.
+* The SCMatrixRectBlock Class:: A rectangular subblock of a matrix.
+* The SCMatrixLTriBlock Class:: A lower triangular subblock of a matrix.
+* The SCMatrixDiagBlock Class:: A diagonal subblock of a matrix.
+* The SCVectorSimpleBlock Class:: A chunk of a vector.
+@end menu
+
+@c ---------------------------------------------------------------------------
+
+@node The SCMatrixBlock Class, , , The Block Classes
+@subsection The SCMatrixBlock Class
+@clindex SCMatrixBlock
+
+The @code{SCMatrixBlock} class is the parent of the block classes.  All
+of its descendents allow public access to data members, in order to
+allow efficient access to data.  Descendents may specify index ranges
+with a @var{start} and @var{end} members.  @var{start} members give the
+first valid index and the last valid index is one less than the
+corresponding @var{end} member.  @code{SCMatrixBlock} is a descendent of
+@code{SavableState} (@pxref{The SavableState Class}).  Usually,
+reference counted instances of @code{SCMatrixBlock} are used with the
+@code{RefSCMatrixBlock}.
+
+@c ---------------------------------------------------------------------------
+
+@node The SCMatrixRectBlock Class, , , The Block Classes
+@subsection The SCMatrixRectBlock Class
+@clindex SCMatrixRectBlock
+@clindex RefSCMatrixRectBlock
+
+The @code{SCMatrixRectBlock} represents a rectangular block of a matrix.
+It is a descendant of @code{SCMatrixBlock} (@pxref{The SCMatrixBlock Class}).
+
+The memory layout for @code{SCMatrixRectBlock} is given by:
+@example
+int block_index = 0;
+for (int i=istart;i<iend;i++) @{
+  for (int j=jstart;j<jend;j++) @{
+    data_index++;
+    @}
+  @}
+@end example
+
+Some useful members of @code{SCMatrixRectBlock} are:
+@table @code
+@item SCMatrixRectBlock(int @var{istart}, int @var{iend}, int @var{jstart}, int @var{jend})
+This initializes all of the data members.
+@item SCMatrixRectBlock(StateIn& @var{si})
+This constructs an object using state information in @var{si}.
+@item virtual ~SCMatrixRectBlock()
+This deallocates @code{data}.
+@item void save_data_state(StateOut& so)
+This stores the state of the object to @code{so}.
+@item int istart
+The first row index.
+@item int jstart
+The first column index.
+@item int iend
+The last row index plus one.
+@item int jend
+The last column index plus one.
+@item double* data
+A pointer to the data.  The CTOR and DTOR handle this storage.  The
+user should not change or @code{delete} this pointer.
+@end table
+
+@c ---------------------------------------------------------------------------
+
+@node The SCMatrixLTriBlock Class, , , The Block Classes
+@subsection The SCMatrixLTriBlock Class
+@clindex SCMatrixLTriBlock
+@clindex RefSCMatrixLTriBlock
+This class hold a lower triangular block of a matrix.  Symmetric matrices
+can be implemented using these.
+This class inherits from @code{SCMatrixBlock}
+(@pxref{The SCMatrixBlock Class}).
+
+The memory layout for @code{SCMatrixLTriBlock} is as follows:
+@example
+int block_index = 0;
+for (int i=start;i<end;i++) @{
+  for (int j=start;j<=i;j++) @{
+    block_index++;
+    @}
+  @}
+@end example
+
+The members are:
+@table @code
+@item SCMatrixLTriBlock(int @var{istart}, int @var{iend})
+This initializes all of the data members.
+@item SCMatrixLTriBlock(StateIn& @var{si})
+This constructs an object using state information in @var{si}.
+@item virtual ~SCMatrixLTriBlock()
+This deallocates @code{data}.
+@item void save_data_state(StateOut& @var{so})
+This stores the state of the object to @var{so}.
+@item int start
+The first row/column index.
+@item int end
+The last row/column index plus one.
+@item double* data
+A pointer to the data.  The CTOR and DTOR handle this storage.  The
+user should not change or @code{delete} this pointer.
+@end table
+
+@c ---------------------------------------------------------------------------
+
+@node The SCMatrixDiagBlock Class, , , The Block Classes
+@section The SCMatrixDiagBlock Class
+@clindex SCMatrixDiagBlock
+@clindex RefSCMatrixDiagBlock
+This class holds a block of elements from a diagonal matrix.
+It inherits from @code{SCMatrixBlock}
+(@pxref{The SCMatrixBlock Class}).
+
+The memory layout for @code{SCMatrixDiagBlock} is as follows:
+@example
+int block_index = 0;
+for (i=istart,j=jstart;i<iend;i++,j++) @{
+  block_index++;
+  @}
+@end example
+
+The members are:
+@table @code
+@item SCMatrixDiagBlock(int @var{istart}, int @var{iend})
+This initializes all of the data members.
+@item SCMatrixDiagBlock(StateIn& @var{si})
+This constructs an object using state information in @var{si}.
+@item virtual ~SCMatrixDiagBlock()
+This deallocates @code{data}.
+@item void save_data_state(StateOut& @var{so})
+This stores the state of the object to @var{so}.
+@item int start
+The first row/column index.
+@item int end
+The last row/column index plus one.
+@item double* data
+A pointer to the data.  The CTOR and DTOR handle this storage.  The
+user should not change or @code{delete} this pointer.
+@end table
+
+@c ---------------------------------------------------------------------------
+
+@node The SCVectorSimpleBlock Class, , , The Block Classes
+@section The SCVectorSimpleBlock Class
+@clindex SCVectorSimpleBlock
+@clindex RefSCVectorSimpleBlock
+This class holds a contiguous elements of a vector.
+It inherits from @code{SCMatrixBlock}
+(@pxref{The SCMatrixBlock Class}).
+
+The memory layout for @code{SCVectorSimpleBlock} is as follows:
+@example
+int block_index = 0;
+for (i=istart;i<iend;i++) @{
+  block_index++;
+  @}
+@end example
+
+The members are:
+@table @code
+@item SCVectorSimpleBlock(int @var{istart}, int @var{iend})
+This initializes all of the data members.
+@item SCVectorSimpleBlock(StateIn& @var{si})
+This constructs an object using state information in @var{si}.
+@item virtual ~SCVectorSimpleBlock()
+This deallocates @code{data}.
+@item void save_data_state(StateOut& @var{so})
+This stores the state of the object to @var{so}.
+@item int start
+The first row/column index.
+@item int end
+The last row/column index plus one.
+@item double* data
+A pointer to the data.  The CTOR and DTOR handle this storage.  The
+user should not change or @code{delete} this pointer.
+@end table
+
+@c ===========================================================================
+
+@node The SCDimension Class, , , The Matrix Library
+@section The SCDimension Class
+@clindex SCDimension
+@clindex RefSCDimension
+All implementations of matrices have a corresponding @code{SCDimension}
+implementation.
+
+Dimensions are usually used through the @code{RefSCDimension} class.  It
+is declared using the reference declaration macros provided in the state
+library (@pxref{The State Library}).
+
+These are the members of @code{SCDimension}:
+@table @code
+@item SCDimension()
+@item virtual ~SCDimension()
+@item virtual int n() = 0
+@item virtual SCMatrix* create_matrix(SCDimension*) = 0
+@item virtual SymmSCMatrix* create_symmmatrix() = 0
+@item virtual DiagSCMatrix* create_diagmatrix() = 0
+@item virtual SCVector* create_vector() = 0
+@end table
+
+@c ===========================================================================
+
+@node The Matrix Reference Classes, , , The Matrix Library
+@section The Matrix Reference Classes
+
+Routines that do not need to use the matrix implementation specific
+members or dimension constructors can do all of their work in terms of
+references to matrices.  This eliminates dependencies on implementation
+header files and helps speed compile time.  The referencing
+functionality is essentially the same as that provided by
+@file{util/container/ref.h}, however, members have been added to forward
+operations to the @code{SCMatrix} pointer.
+
+These provide routines not in the @code{SCMatrix} hierarchy, as well.
+For example, the C++ operators @code{*}, @code{-}, and @code{+} are
+provided to return a reference to a newly created matrix.  This isn't
+necessarily the most efficient way to do things, but it is quite
+convenient and useful when efficiency isn't an issue.
+
+@menu
+* The RefSCVector Class:: References to vectors.
+* The RefSCMatrix Class:: References to rectangular matrices.
+* The RefSymmSCMatrix Class:: References to symmetric matrices.
+* The RefDiagSCMatrix Class:: References to diagonal matrices.
+@end menu
+
+@c ---------------------------------------------------------------------------
+
+@node The RefSCVector Class, , , The Matrix Reference Classes
+@subsection The RefSCVector Class
+@clindex RefSCVector
+
+@table @code
+@end table
+
+@c ---------------------------------------------------------------------------
+
+@node The RefSCMatrix Class, , , The Matrix Reference Classes
+@subsection The RefSCMatrix Class
+@clindex RefSCMatrix
+
+@table @code
+@end table
+
+@c ---------------------------------------------------------------------------
+
+@node The RefSymmSCMatrix Class, , , The Matrix Reference Classes
+@subsection The RefSymmSCMatrix Class
+@clindex RefSymmSCMatrix
+
+@table @code
+@end table
+
+@c ---------------------------------------------------------------------------
+
+@node The RefDiagSCMatrix Class, , , The Matrix Reference Classes
+@subsection The RefDiagSCMatrix Class
+@clindex RefDiagSCMatrix
+
+@table @code
+@end table
+
+@c ===========================================================================
+
+@node The Element Operation Classes, , , The Matrix Library
+@section The Element Operation Classes
+
+@menu
+* The SCElementOp Class:: The abstract base class for all element operations.
+* The SCRectElementOp Class:: The base class for operations on SCMatrix.
+* The SCDiagElementOp Class:: The base class for operations on SCDiagMatrix.
+* The SCSymmElementOp Class:: The base class for operations on SCSymmMatrix.
+* The SCVectorElementOp Class:: The base class for operations on SCVector.
+* The SCElementScale Class:: Scale the elements.
+* The SCElementMaxAbs Class:: Find the maximum absolute value of the elements.
+* The SCElementAssign Class:: Assign a value to the elements.
+* The SCElementShiftDiagonal Class:: Shift the diagonal elements.
+@end menu
+
+@c ---------------------------------------------------------------------------
+
+@node The SCElementOp Class, , , The Element Operation Classes
+@subsection The SCElementOp Class
+@clindex SCElementOp
+@clindex RefSCElementOp
+
+@code{SCElementOp} is an abstract class that performs operations on the elements
+of a matrix or vector.
+
+@table @code
+@item SCElementOp()
+@item virtual ~SCElementOp()
+@item virtual int has_collect()
+@itemx virtual void collect(RefSCElementOp&)
+If duplicates of @code{SCElementOp} are made then if @code{has_collect}
+returns true then collect is called in such a way that each duplicated
+@code{SCElementOp} is the argument of @code{collect} once.  The default
+return value of @code{has_collect} is 0 and @code{collect}'s default
+action is do nothing.
+@item virtual void process(SCMatrixBlockIter&) = 0
+@item virtual void process(SCMatrixRectBlock*)
+@itemx virtual void process(SCMatrixLTriBlock*)
+@itemx virtual void process(SCMatrixDiagBlock*)
+@end table
+
+@c ---------------------------------------------------------------------------
+
+@node The SCRectElementOp Class, , , The Element Operation Classes
+@subsection The SCRectElementOp Class
+@clindex SCRectElementOp
+@clindex RefSCRectElementOp
+
+@code{SCRectElementOp} is an abstract class that performs operations on the
+elements of a rectangular matrix @code{SCMatrix}.  It gives nothing new to
+@code{SCElementOp}; its main purpose is type checking.
+
+@c ---------------------------------------------------------------------------
+
+@node The SCDiagElementOp Class, , , The Element Operation Classes
+@subsection The SCDiagElementOp Class
+@clindex SCDiagElementOp
+@clindex RefSCDiagElementOp
+
+@code{SCDiagElementOp} is an abstract class that performs operations on the
+elements of a diagonal matrix @code{DiagSCMatrix}.  It gives nothing new to
+@code{SCElementOp}; its main purpose is type checking.
+
+@c ---------------------------------------------------------------------------
+
+@node The SCSymmElementOp Class, , , The Element Operation Classes
+@subsection The SCSymmElementOp Class
+@clindex SCSymmElementOp
+@clindex RefSCSymmElementOp
+
+@code{SCSymmElementOp} is an abstract class that performs operations on the
+elements of a diagonal matrix @code{SymmSCMatrix}.  It gives nothing new to
+@code{SCElementOp}; its main purpose is type checking.
+
+@c ---------------------------------------------------------------------------
+
+@node The SCVectorElementOp Class, , , The Element Operation Classes
+@subsection The SCVectorElementOp Class
+@clindex SCVectorElementOp
+@clindex RefSCVectorElementOp
+
+@code{SCVectorElementOp} is an abstract class that performs operations
+on the elements of a vector @code{SCVector}.  It gives nothing new to
+@code{SCElementOp}; its main purpose is type checking.
+
+@c ---------------------------------------------------------------------------
+
+@node The SCElementScale Class, , , The Element Operation Classes
+@subsection The SCElementScale Class
+@clindex SCElementScale
+@clindex RefSCElementScale
+
+This multiplies all of the elements in the matrix by the constant given
+to the constructor.  It works for all element operations.  Note that the
+@code{virtual} inheritance isn't needed for ANSI C++, but the GNU
+compiler 2.5.something breaks if it isn't used.  This is perhaps an
+abuse of multiple inheritance.  The alternative is four
+@code{SCElementScale} classes: @code{SCDiagElementScale}, and so on.
+This would be more aesthetic, but I'm too lazy.
+
+@c ---------------------------------------------------------------------------
+
+@node The SCElementMaxAbs Class, , , The Element Operation Classes
+@subsection The SCElementMaxAbs Class
+@clindex SCElementMaxAbs
+@clindex RefSCElementMaxAbs
+
+This finds the maximum absolute value over all of the elements in the
+matrix.  The member @code{result} returns this value.
+
+@c ---------------------------------------------------------------------------
+
+@node The SCElementAssign Class, , , The Element Operation Classes
+@subsection The SCElementAssign Class
+@clindex SCElementAssign
+@clindex RefSCElementAssign
+
+This assigns the constant given in the constructor to all of the elements
+in a matrix.
+
+@c ---------------------------------------------------------------------------
+
+@node The SCElementShiftDiagonal Class, , , The Element Operation Classes
+@subsection The SCElementShiftDiagonal Class
+@clindex SCElementShiftDiagonal
+@clindex RefSCElementShiftDiagonal
+
+This is adds the constant given in the constructor to the
+diagonal elements of the matrix.
+
+@c ===========================================================================
+
+@node The Reference to Element Classes, , , The Matrix Library
+@section The Reference to Element Classes
+
+It is common for matrix packages to return a reference to a matrix
+element @code{double& operator()(int,int)}.  This behavior doesn't leave
+matrix packages much flexibility---matrix element must always be at some
+fixed position in memory.  However, the syntax of @code{a(i,j) = f(i,j)}
+is appealing and for the matrix library to be simply dropped in as a
+replacement for others this functionality is needed.  This is the role
+of @code{SCMatrixdouble} and @code{SCVectordouble}.
+
+The former being the vector element access return type and the latter
+being the matrix element access return type.
+
+Use of @code{SCVectordouble} and @code{SCMatrixdouble} should be
+avoided when efficiency is a concern.
+
+@c ===========================================================================
+
+@node The Matrix Classes, , , The Matrix Library
+@section The Matrix Element Classes
+
+The @code{SCVector}, @code{SCMatrix}, @code{SymmSCMatrix}, and
+@code{DiagSCMatrix} are the abstract classes that all matrix
+implementations derive from.
+
+@menu
+* The SCVector Class:: The abstract base for all vectors.
+* The SCMatrix Class:: The abstract base for all rectangular matrices.
+* The SymmSCMatrix Class:: The abstract base for all symmetric matrices.
+* The DiagSCMatrix Class:: The abstract base for all diagonal matrices.
+@end menu
+
+@c ---------------------------------------------------------------------------
+
+@node The SCVector Class, , , The Matrix Classes
+@subsection The SCVector Class
+@clindex SCVector
+
+@c ---------------------------------------------------------------------------
+
+@node The SCMatrix Class, , , The Matrix Classes
+@subsection The SCMatrix Class
+@clindex SCMatrix
+
+@c ---------------------------------------------------------------------------
+
+@node The SymmSCMatrix Class, , , The Matrix Classes
+@subsection The SymmSCMatrix Class
+@clindex SymmSCMatrix
+
+@c ---------------------------------------------------------------------------
+
+@node The DiagSCMatrix Class, , , The Matrix Classes
+@subsection The DiagSCMatrix Class
+@clindex DiagSCMatrix
+
+@c ===========================================================================
+
+@node The Block Iterator Classes, , , The Matrix Library
+@section The Block Iterator Classes
+
+Block iterators can be used to determine which matrix elements
+are in a block when the exact type of a block is not known.
+
+@code{SCMatrixBlockIter} is the abstract base class for all matrix
+and vector block iterators.  It has the following members:
+@clindex SCMatrixBlockIter
+@table @code
+@item SCMatrixBlockIter()
+@item virtual ~SCMatrixBlockIter()
+@item virtual int i() = 0
+@item virtual int j() = 0
+@item virtual void set(double) = 0
+@item virtual double get() = 0
+@item virtual operator int() = 0
+@item virtual void operator++() = 0
+Only the prefix @code{++} is provided.
+@item virtual void reset() = 0
+@end table
+
+This abstract base class is implemented by @code{SCMatrixDiagBlockIter},
+@code{SCMatrixLTriBlockIter}, @code{SCVectorSimpleBlockIter}, and
+@code{SCVectorRectBlockIter}.
+
+@clindex SCMatrixDiagBlockIter
+@clindex SCMatrixLTriBlockIter
+@clindex SCVectorSimpleBlockIter
+@clindex SCVectorRectBlockIter
+
+@c ===========================================================================
+
+@node The Local Matrix Classes, , , The Matrix Library
+@section The Local Matrix Classes
+@clindex LocalSCDimension
+@clindex LocalSCVector
+@clindex LocalSCMatrix
+@clindex LocalSymmSCMatrix
+@clindex LocalDiagSCMatrix
+@clindex RefLocalSCDimension
+
+The classes @code{LocalSCDimension}, @code{LocalSCMatrix},
+@code{LocalSymmSCMatrix}, and @code{LocalDiagSCMatrix} provide an
+implementation of locally stored matrices.  These are suitable for use
+in a uniprocessor environment.
+
+The local matrix dimension, @code{LocalSCDimension}, has these members:
+@table @code
+@item LocalSCDimension(int n)
+@item LocalSCDimension(KeyVal&)
+@item LocalSCDimension(StateIn&)
+@item ~LocalSCDimension()
+@item void save_data_state(StateOut&)
+@item int n()
+@itemx SCMatrix* create_matrix(SCDimension*)
+@itemx SymmSCMatrix* create_symmmatrix()
+@itemx DiagSCMatrix* create_diagmatrix()
+@itemx SCVector* create_vector()
+These are overridden virtuals from @code{SCDimension}.
+@xref{The SCDimension Class}.
+@end table

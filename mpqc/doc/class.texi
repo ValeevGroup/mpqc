@@ -1,0 +1,308 @@
+@c -*-texinfo-*-
+@node The Class Library, The State Library, The Ref Library, Top
+@chapter The Class Library
+@cindex metainformation
+@cindex cast operations (safe)
+@cindex safe cast operations
+
+The class library provides abstract base classes, macros, and include
+files that collectively provide a mechanism that allows programmers
+to retrieve information about a class' name; parents; and void,
+@code{StateIn&}, and @code{KeyVal&} constructors.  Also, a castdown
+mechanism is provided.
+
+@menu
+* The DescribedClass Class:: The abstract base class describing classes.
+* The ClassDesc Class:: Each DescribedClass has a ClassDesc instance.
+* The DescribedClass Ref Macros:: References to DescribedClass objects.
+@end menu
+
+@c ---------------------------------------------------------------------
+
+@node The DescribedClass Class, The ClassDesc Class, The Class Library, The Class Library
+@section The DescribedClass Class
+@clindex DescribedClass
+@c texi2html: do not split
+
+Classes which need runtime information about themselves and their relationship
+to other classes can
+virtually inherit from @code{DescribedClass}.  This will provide the
+class with the ability to query its name, query its version, and perform
+safe castdown operations.  Furthermore, the class's static
+@code{ClassDesc} can be obtained which permits several other operations.
+
+@menu
+* DescribedClass Implementation:: How to implement a DescribedClass.
+* DescribedClass Interface:: The interface to the DescribedClass class.
+@end menu
+
+@c .........................................................................
+
+@node DescribedClass Implementation, DescribedClass Interface, The DescribedClass Class, The DescribedClass Class
+@subsection Implementation
+@mcindex CLASSNAME
+@mcindex PARENTS
+@mcindex HAVE_CTOR
+@mcindex HAVE_KEYVAL_CTOR
+@mcindex HAVE_STATEIN_CTOR
+
+The special nature of described classes requires that the base class,
+@code{DescribedClass}, cannot provide everything needed.  To assist the
+user in setting up described classes several include files are provided.
+To use these include files, the programmer must define some @code{cpp}
+macros and, within the body of the class declaration,
+include @code{util/class/classd.h} for concrete classes and
+@code{util/class/classda.h} for abstract classes.  Include files
+are also provided for implementing all but one of the member functions
+needed by each @code{DescribedClass} descendant.  These are
+@code{util/class/classi.h} for concrete classes and
+@code{util/class/classia.h} for abstract classes.
+
+Each of these include files examines several @code{cpp}
+macros to correctly set up the class declarations and definitions.
+All of the macros are automatically
+@code{undef}'ed by each of the include files.
+The macros are:
+
+@table @code
+@item CLASSNAME
+  The name of the class.
+@item PARENTS
+  The parents of the class exactly as they appear in the class
+  declaration.  For example @code{public A, private B, virtual Z},
+  without quotes.  The order, access specification, and virtualness
+  must be correct or the castdown mechanism could cause erratic behavior.
+  This is only needed for the implementation include file.  It should
+  not be set for the declaration include file.
+@item HAVE_CTOR
+  This should be defined if the programmer (or compiler) has provided
+  a constructor for the class taking no arguments.
+@item HAVE_KEYVAL_CTOR
+  This should be defined if the programmer has provided
+  a constructor for the class taking a @code{KeyVal&} argument.
+  This is useful if objects of this type need to be read from
+  an input file.
+@item HAVE_STATEIN_CTOR
+  This should be defined if the programmer has provided
+  a constructor taking a @code{StateIn&} arguments.
+  This is necessary if objects of this type are to be saved and
+  restored.
+@end table
+
+A class declaration would look like:
+
+@example
+class A: virtual public DescribedClass @{
+#  define CLASSNAME A
+#  define HAVE_CTOR
+#  include <util/class/classd.h>
+@};
+@end example
+
+The source file implementing the members of @code{A} would follow a
+similar procedure to define @code{A}'s members.  For example:
+
+@example
+#define CLASSNAME A
+#define PARENTS virtual public DescribedClass
+#define HAVE_CTOR
+#include <util/class/classi.h>
+@end example
+
+The @code{_castdown} operation must be implemented by the user.
+@footnote{In the future, extensions to C++ may make this unnecessary.}
+It is very simple to write, but small errors can lead to difficult
+to find bugs.  For the example above, the @code{_castdown} operator for
+class @code{A} would look like:
+
+@example
+A::_castdown(const ClassDesc*cd)
+@{
+  void* casts[] =  @{ DescribedClass::_castdown(cd) @};
+  return do_castdowns(casts,cd);
+@}
+@end example
+
+The cast array contains the results of attempting to call
+@code{_castdown} for each of the parent classes.  The order and
+number of the castings must match those given by the @code{PARENTS}
+macro.  Most of the work involved in doing a castdown has been
+moved into the helper function @code{do_castdowns}, which is
+implemented by the provided include files.
+
+@c .........................................................................
+
+@node DescribedClass Interface,  , DescribedClass Implementation, The DescribedClass Class
+@subsection Interface
+
+The @code{DescribedClass} class has the following interface:
+@table @code
+@item virtual ClassDesc* class_desc()=0
+This returns the unique pointer to the @code{ClassDesc} for the object.
+This is declared and implemented for the programmer by the provided
+include files.
+
+@item virtual void* _castdown(ClassDesc*)=0
+Given the @code{ClassDesc} for the class we wish to cast this class
+into, this will perform the castdown and return a @code{void*} to the
+appropiate subobject.  The function would not usually be used; it is
+better to use the static @code{castdown} member to perform castdowns.
+This function must be defined by the programmer.
+
+@item const char* class_name() const
+This returns the name of the object's exact type.
+This is provided by @code{DescribedClass}.
+
+@item int class_version()
+This returns the version number of the class.
+This is declared and implemented for the programmer by include files.
+
+@item static DescribedClass* create()
+This will create an instance of @code{DescribedClass} with exact type
+@code{Client}.  The constructor taking no arguments is used.
+This is declared and implemented for the programmer by provided include files
+if the @code{HAVE_CTOR} macro is defined when this files are included.
+
+@item static DescribedClass* create(KeyVal&)
+This will create an instance of @code{DescribedClass} with exact type
+@code{Client}.  The constructor taking a @code{KeyVal&} argument is used.
+This is declared and implemented for the programmer by provided include files
+if the @code{HAVE_KEYVAL_CTOR} macro is defined when these files are included.
+
+@item static DescribedClass* create(StateIn&)
+This will create an instance of @code{DescribedClass} with exact type
+@code{Client}.  The constructor taking a @code{StateIn&} argument is used.
+This is declared and implemented for the programmer by provided include files
+if the @code{HAVE_STATEIN_CTOR} macro is defined when these files are included.
+
+@item static Client* castdown(DescribedClass*p)
+This will allow castdown operations from any @code{DescribedClass} to
+@code{Client}.  If the castdown cannot be done, then 0 will be returned.
+This is declared and implemented for the programmer by include files.
+
+@item static ClassDesc* static_class_desc()
+This returns the unique @code{ClassDesc} pointer for @code{Client}.
+This is declared and implemented for the programmer by include files.
+@end table
+
+@c ---------------------------------------------------------------------
+
+@node The ClassDesc Class, The DescribedClass Ref Macros, The DescribedClass Class, The Class Library
+@section The ClassDesc Class
+@clindex ClassDesc
+
+This class is used to contain information about classes.  Each described
+class has a static @code{ClassDesc} member.  This member has lists of
+the parents, children and virtual parents for each class.  The
+@code{ClassDesc} class also has a static member that is a list of all
+described classes in the system.  These lists are constructed as the
+constructors for the static @code{ClassDesc} members for each class are
+called and are completed before @code{main} is entered.  The lists will
+necessarily be incomplete or incorrect before @code{main} is entered so
+programmers must be careful when using this information before
+@code{main} is called.
+
+The @code{ClassDesc} class has these members:
+@table @code
+@item const char* name() const
+Returns the name of the class.
+
+@item int version() const
+Returns the version number of the class.
+
+@item static ClassDesc* name_to_class_desc(const char*)
+Given the name of the class, return a pointer to the class descriptor.
+
+@item DescribedClass* create() const
+Create an instance of @code{DescribedClass} with exact type equal to the
+class to which this class descriptor belongs.  The constructor which
+takes no arguments is used.  If this constructor doesn't exist or a
+static function that calls it with @code{new} wasn't given to this
+@code{ClassDesc} when it was created, then @samp{0} will be returned.
+
+@item DescribedClass* create(StateIn&) const
+Create an instance of @code{DescribedClass} with exact type equal to the
+class to which this class descriptor belongs.  The @code{StateIn&}
+constructor is used (@pxref{The State Library}).  If this
+constructor doesn't exist or a static function that calls it with
+@code{new} wasn't passed to this @code{ClassDesc}, then @samp{0} will be
+returned.
+
+@item DescribedClass* create(KeyVal&) const
+Create an instance of @code{DescribedClass} with exact type equal to the
+class to which this class descriptor belongs.  The @code{KeyVal&}
+constructor is used (@pxref{The KeyVal Library}).  If this constructor
+doesn't exist or
+a static function that calls it with @code{new} wasn't passed to
+this @code{ClassDesc}, then @samp{0} will be returned.
+
+@item static void list_all_classes()
+Writes a list of all of the classes to @code{stdout}.  This is useful
+for debugging.
+
+@item DescribedClass* create_described_class() const
+This member has been replaced by @code{create()}.
+@end table
+
+@c ---------------------------------------------------------------------
+
+@node The DescribedClass Ref Macros,  , The ClassDesc Class, The Class Library
+@section The DescribedClass Reference Macros
+@mcindex DescribedClass_REF_dec
+@mcindex DescribedClass_REF_def
+
+The @code{DescribedClass} reference macros provide the memory management
+facilities of the standard reference macros (@pxref{The Ref Library});
+however, these macros provide new implementations of
+constructor and assignment operators that take advantage of the
+castdown ability of @code{DescribedClass}.  The standard reference
+classes allows only assignment to references of the same exact type
+or pointers to objects of the same exact type as the contained object.  The
+@code{DescribedClass} reference macros have constructor and assignment
+operators that take @code{DescribedClass} references and pointers as
+arguments.  They use the contained type's static @code{castdown}
+operator to convert the target
+@code{DescribedClass} object into an object of the same exact type.
+If the cast fails a reference to null is assigned.
+
+Following is an example.  Note that inheritance from @code{VRefCount}
+is unnecessary, since @code{DescribedClass} already is a
+@code{VRefCount} descendant..
+
+@example
+#include <util/class/class.h>
+
+class A: virtual public DescribedClass @{
+ // all the stuff needed for a DescribedClass omitted
+@};
+DescribedClass_REF_dec(A);
+
+class B: public A @{
+ // all the stuff needed for a DescribedClass omitted
+@};
+DescribedClass_REF_dec(B);
+
+DescribedClass_REF_def(A);
+DescribedClass_REF_def(B);
+
+int
+main()
+@{
+  RefA a1(new B);
+  RefB b1;
+
+  // a1 and b1 will refer to the same object
+  b1 = a1;
+
+  RefA a2(new A)
+  RefB b2;
+
+  // b2 will refer to null since a2 does not refer to a B type object.
+  b2 = a2;
+
+  return 0;
+@}
+
+@end example
+
+

@@ -1,0 +1,797 @@
+@c -*-texinfo-*-
+@node The State Library, The KeyVal Library, The Class Library, Top
+@chapter The State Library
+@cindex persistence
+
+The state library provides means for objects to save and restore their
+state.  Features include:
+
+@itemize @bullet
+@item
+  Pointers to base types can be saved and restored.
+  The exact types of the saved and restored objects will match.
+@item
+  If the pointer to an object is saved twice, only one copy of the
+  object is saved.  When these two pointers are restored they will
+  point to the same object.
+@item
+  If the pointer to an array of a basic type is saved twice,
+  only one copy of then
+  array is saved.  When these two pointers are restored they will
+  point to the same array.  (This feature causes insurmountable
+  problems and will be phased out.  Another technique for providing this
+  functionality will be provided.)
+@item
+  Virtual base classes are dealt with in a manner consistent with
+  the way C++ treats virtual base classes.
+@item
+  The library is portable.  Information about object layout for
+  particular compiler implementations is not needed.
+@end itemize
+
+For objects of a class to be savable with this library the class must
+inherit @code{SavableState} which in turn inherits @code{DescribedClass}
+(@pxref{The Class Library}).  Also, a constructor taking a @code{StateIn&}
+argument and a @code{save_data_state(StateOut&)} member must be
+provided.  If the class has virtual base classes, then a
+@code{save_vbase_state(StateOut&)} member must also be provided.
+
+@menu
+* The SavableState Class:: The abstract base for savable/restorable classes.
+* The StateIn Class:: The abstract base class for state restoration.
+* The StateInFile Class:: The classes for restoring from files.
+* The StateOut Class:: The abstract base class for saving state.
+* The StateOutFile Class:: The classes for saving to files.
+* The StateIn/Out Network Classes:: Saving/restoring across the net.
+@end menu
+
+@c -------------------------------------------------------------------
+
+@node The SavableState Class, , The State Library, The State Library
+@section The SavableState Class
+@clindex SavableState
+@c texi2html: do not split
+
+Classes gain access to @code{SavableState}'s save and restore mechanisms
+through inheritance.  Virtual inheritance is recommended, since other classes
+in the inheritance hierarchy may also inherit from @code{SavableState},
+hopefully virtually as well.
+
+@menu
+* SavableState Interface:: The interface for SavableState.
+* SavableState Interface::
+* SavableState Simple Example::
+* SavableState Example with Inheritance::
+* SavableState Example with Virtual and Nonvirtual Inheritance::
+* SavableState Example with Pointers to SavableStates::
+* SavableState Example with Pointers to Data::
+@end menu
+
+@c .....................................................................
+
+@node SavableState Interface, , , The SavableState Class
+@subsection Interface
+
+The @code{SavableState} class has the following public interface:
+@table @code
+
+@item virtual void save_state(StateOut&)
+Save the state of the object as specified by the @code{StateOut} object.
+This routine saves the state of the object (with includes the
+nonvirtual bases), virtual bases, and type information.
+The default implementation should be adequate.
+
+@item virtual void save_vbase_state(StateOut&)
+This routine must invoke @code{save_data_state} for all
+virtually inherited
+base classes, including those that are not
+direct parents.
+@footnote{This is similar to the way C++ constructors work for
+virtual base classes.}
+The @code{save_data_state} member for the @code{SavableState} and the
+@code{DescribedClass} virtual base classes should not
+be called.  The implementation provided by
+@code{SavableState} can be used when are no other virtually
+inherited bases.
+
+@item void save_data_state(StateOut&)
+If the class contains any information that is needed
+to restore state, or inherits nonvirtually from any class other
+than @code{SavableState} and @code{DescribedClass} that has
+state information that must be saved, then the class
+must declare and implement a
+@code{save_data_state} member (i.e. in nearly all cases).
+
+@item @var{CLASSNAME}(StateIn&)
+The @code{StateIn&} constructor must be declared and implemented for
+all classes.  It must restore the information saved by @code{save_data_state}.
+
+@item void save_object_state(StateOut&)
+This can be used for saving state when the exact type of the object is
+known for both the save and the restore.  To restore objects saved in
+this way the user must directly invoke the object's @code{StateIn&}
+constructor.
+
+@item static @var{CLASSNAME}* restore_state(StateIn& @var{si})
+This restores objects saved with @code{save_state}.  The exact type of
+the next object in @var{si} can be any type publically derived from
+@var{CLASSNAME}.
+
+@end table
+
+@c .....................................................................
+
+@node SavableState Simple Example, , , The SavableState Class
+@subsection Simple Example
+
+Here is a simple example of the specification of a client, @code{C},
+of @code{SavableState}:
+@example
+class C: virtual public SavableState @{
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
+  private:
+    int i;
+  public:
+    C(StateIn&);
+    void save_data_state(StateOut&);
+  @};
+@end example
+
+Here is the implementation for the above:
+@example
+#define CLASSNAME C
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void* C::_castdown(ClassDesc*cd)
+  @{
+  void* casts[0];
+  return do_castdowns(casts);
+  @}
+void C::save_data_state(StateOut&so) @{
+  so.put(i);
+  @}
+C::C(StateIn&si): SavableState(si,C::class_desc_) @{
+  si.get(i);
+  @}
+@end example
+
+@c .....................................................................
+
+@node SavableState Example with Inheritance, , , The SavableState Class
+@subsection Example with Inheritance
+
+Here is an example of the specification of @code{C},
+where @code{C} nonvirtually inherits from another
+@code{SavableState} derivative:
+@example
+class C: public B @{
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
+  private:
+    int i;
+  public:
+    C(StateIn&);
+    void save_data_state(StateOut&);
+  @};
+@end example
+
+Here is the implementation for the above:
+@example
+#define CLASSNAME C
+#define PARENTS public B
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void* C::_castdown(ClassDesc*cd)
+  @{
+  void* casts[] = @{ B::_castdown(cd) @};
+  return do_castdowns(casts);
+  @}
+void C::save_data_state(StateOut&so) @{
+  B::save_data_state(so);
+  so.put(i);
+  @}
+C::C(StateIn&si): SavableState(si,C::class_desc_), B(si)  @{
+  si.get(i);
+  @}
+@end example
+
+@c .....................................................................
+
+@node SavableState Example with Virtual and Nonvirtual Inheritance, , , The SavableState Class
+@subsection Example with Virtual and Nonvirtual Inheritance
+
+Here is an example of the specification of @code{C},
+where @code{C} nonvirtually inherits from another client of
+@code{SavableState} as well as virtually inherits from a client
+of @code{SavableState}:
+@example
+class C: public B,
+         virtual public E @{
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
+  private:
+    int i;
+  public:
+    C(StateIn&);
+    void save_data_state(StateOut&);
+  @};
+@end example
+
+Here is the implementation for the above:
+@example
+#define CLASSNAME C
+#define PARENTS public B, virtual public E
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void* C::_castdown(ClassDesc*cd)
+  @{
+  void* casts[] = @{B::_castdown(cd),E::_castdown(cd)@};
+  return do_castdowns(casts);
+  @}
+void C::save_vbase_state(StateOut&sio) @{
+  E::save_data_state(sio);
+  @}
+void C::save_data_state(StateOut&so) @{
+  B::save_parent_state(so);
+  so.put(i);
+  @}
+C::C(StateIn&si): SavableState(si,C::class_desc_), B(si), E(si) @{
+  si.get(i);
+  @}
+@end example
+
+@c .....................................................................
+
+@node SavableState Example with Pointers to SavableStates, , , The SavableState Class
+@subsection Example with Pointers to SavableStates
+
+Here is an example where @code{C} has data members which are
+pointers to derivatives of @code{SavableState}:
+@example
+class C: @{
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
+  private:
+    A* ap; // A is also a SavableState
+  public:
+    C(StateIn&);
+    void save_data_state(StateOut&);
+  @};
+@end example
+
+Here is the implementation for the above:
+@example
+#define CLASSNAME C
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void* C::_castdown(ClassDesc*cd)
+  @{
+  void* casts[0];
+  return do_castdowns(casts);
+  @}
+void C::save_data_state(StateOut&so) @{
+  so.put(ap);
+  @}
+C::C(StateIn&si): SavableState(si,C::class_desc_) @{
+  ap = A::restore_state(si);
+  @}
+@end example
+
+@c .....................................................................
+
+@node SavableState Example with Pointers to Data, , , The SavableState Class
+@subsection Example with Pointers to Data
+
+Here is an example where @code{C} has data members which are
+pointers to data:
+@example
+class C: virtual public SavableState @{
+# define CLASSNAME C
+# define HAVE_STATEIN_CTOR
+# include <util/state/stated.h>
+# include <util/class/classd.h>
+  private:
+    int vecsize;
+    double *vec;
+    int n1;
+    int n2;
+    double **array;
+  public:
+    C(StateIn&);
+    void save_data_state(StateOut&);
+  @};
+@end example
+
+Here is the implementation for the above:
+@example
+#define CLASSNAME C
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void* C::_castdown(ClassDesc*cd)
+  @{
+  void* casts[0];
+  return do_castdowns(casts);
+  @}
+void C::save_data_state(StateOut&so) @{
+  so.put(vecsize);
+  so.put(vec,vecsize);
+
+  so.put(n1);
+  so.put(n2);
+  if (so.putpointer(array)) @{
+    for (int i=0; i<n1; i++) @{
+      so.put(array[i],n2);
+      @}
+    @}
+  @}
+C::C(StateIn&si): SavableState(si,C::class_desc_) @{
+  si.get(vecsize);
+  si.get(vec);
+
+  si.get(n1);
+  si.get(n2);
+
+  int refnum;
+  if (refnum = so.getpointer(array)) @{
+    array = new double*[n1];
+    so.havepointer(refnum,array);
+    for (int i=0; i<n1; i++) @{
+      si.get(array[i]);
+      @}
+    @}
+  @}
+@end example
+
+
+@c -------------------------------------------------------------------
+
+@node The StateIn Class, , , The State Library
+@section The StateIn Class
+@clindex StateIn
+
+The @code{StateIn} class provides the input support needed to restore
+objects.
+
+The @code{StateIn} class has the following interface:
+@table @code
+@item virtual void get(char&)
+@itemx virtual void get(int&)
+@itemx virtual void get(float&)
+@itemx virtual void get(double&)
+@itemx virtual void get(char*&)
+@itemx virtual void get(int*&)
+@itemx virtual void get(float*&)
+@itemx virtual void get(double*&)
+These restore data saved with @code{StateOut::put}.
+
+@item virtual void getstring(char*&)
+This restores strings saved with @code{StateOut::putstring}.
+
+@item virtual void get(ClassDesc**)
+This restores @code{ClassDesc}'s.  It will set the pointer to the
+address of the static @code{ClassDesc} for the class which has the same
+name as the class that had the @code{ClassDesc} that was saved by
+@code{put(const ClassDesc*)}.  It is not necessary for the user call
+this member.
+
+@item virtual int  getpointer(void**)
+This is used to restore a pointer.  It is called with the
+pointer to the pointer being restored.  If the data being
+restored has previously been restored, then the pointer being
+restored is set to a reference to the previously restored object
+and 0 is returned.  If the return value is nonzero then storage
+must be allocated for the data and the pointer to the new data
+along with the return value from @code{getpointer} must be given
+as arguments to the @code{havepointer} routine.  Note that
+@code{getpointer} and @code{havepointer} are automatically called for
+all of the above data types and need not be used, except for two
+dimensional arrays and other special situations.
+
+@item virtual void havepointer(int,void*)
+When storage has been allocated during object restoration, this
+routine is called with the object reference number and the pointer
+to the new storage so @code{getpointer} can find the data if it
+is referenced again.
+@end table
+
+Implementations of the @code{StateIn} class have been realized in
+the @code{StateInFileBin} and @code{StateInFileText} classes which
+restore data write by @code{StateOutFileBin} and @code{StateOutFileText}
+respectively.
+
+@c -------------------------------------------------------------------
+
+@node The StateInFile Class, , , The State Library
+@section The StateInFile Class
+@clindex StateInFile
+@clindex StateInFileText
+@clindex StateInFileBin
+
+The @code{StateInFile} provides a @code{StateIn} which reads from files.
+It is still abstract---one of its derived classes, @code{StateInFileText}
+or @code{StateInFileBin}, must be used to obtain a @code{StateIn}
+object.  The @code{StateInFileText} class reads with a text format
+and the @code{StateInFileBin} reads with a binary format.
+
+The @code{StateInFile} class has the following interface, in addition
+to those members provided by @code{StateIn}:
+
+@table @code
+@item StateInFile(FILE* @var{fp})
+State information will be obtained from @var{fp}.
+@item StateInFile()
+State information will be obtained from @code{stdin}.
+@end table
+
+@c -------------------------------------------------------------------
+
+@node The StateOut Class, , , The State Library
+@section The StateOut Class
+@clindex StateOut
+
+The @code{StateOut} class provides the output operations needed
+by the member functions of @code{SavableState}.  It also keeps track
+of pointers to data so that two references to the same piece of data do
+not result in that data being sent to the output device two times.
+
+The @code{StateOut} class has the following interface:
+
+@table @code
+@item virtual void put(char)
+@itemx virtual void put(int)
+@itemx virtual void put(float)
+@itemx virtual void put(double)
+@itemx virtual void put(char*,int)
+@itemx virtual void put(int*,int)
+@itemx virtual void put(float*,int)
+@itemx virtual void put(double*,int)
+The @code{@var{CLASSNAME}::save_data_state} member uses
+these functions to save information about the state of the
+object.  Most frequently, this will involve giving the
+data members of @var{CLASSNAME} as arguments to @code{put}.
+
+The member functions taking both a pointer and integer argument
+save a vector of the specified integer length of the
+appropiate type.  Additionally, the address of the data is
+kept in a table, so additional references to the data will
+not result in duplicated data being save.  Also, the restored
+@var{CLASSNAME} object will contain the duplicated references
+as they appeared in the original.
+
+@item virtual void putstring(char*)
+This is like @code{put} except the length of the @code{char}
+array is determined by interpreting the character array as
+a character string.
+
+@item virtual void put(const ClassDesc*)
+This member saves the state of @code{ClassDesc}.  It should
+not be necessary for the user to call this.
+
+@item virtual int putpointer(void*)
+This will prepare @code{StateOut} to output a pointer to data.
+It first checks to see if the data has already been saved.
+If it has, then a reference to this data is saved and 1 is returned.
+Otherwise, 0 is returned and the class must continue with the save
+of the data referenced by this pointer.
+@end table
+
+Implementations of the @code{StateOut} class have been realized in
+the @code{StateOutFileBin} and @code{StateOutFileText} classes which
+save the date in files in binary and textual formats, respectively.
+
+@c -------------------------------------------------------------------
+
+@node The StateOutFile Class, , , The State Library
+@section The StateOutFile Class
+@clindex StateOutFile
+@clindex StateOutFileText
+@clindex StateOutFileBin
+
+The @code{StateOutFile} provides a @code{StateOut} which writes to files.
+It is still abstract---one of its derived classes, @code{StateOutFileText}
+or @code{StateOutFileBin}, must be used to obtain a @code{StateOut}
+object.  The @code{StateOutFileText} class writes in a text format
+and the @code{StateOutFileBin} writes in a binary format.
+
+
+The @code{StateOutFile} class has the following interface, in addition
+to those members provided by @code{StateOut}:
+
+@table @code
+@item StateOutFile(FILE* @var{fp})
+State information will be written to @var{fp}.
+@item StateOutFile()
+State information will be written to @code{stdout}.
+@end table
+
+@c -------------------------------------------------------------------
+
+@node The StateIn/Out Network Classes, , , The State Library
+@section The Network Classes
+@clindex StateOutXDR
+@clindex StateInXDR
+
+At the heart of the networking classes are the @code{StateOutXDR} and
+@code{StateInXDR} classes.  These are derived from @code{StateOut} and
+@code{StateIn} and provide all the the same functionality, with the
+exception that all integer and floating point data is converted to SUN's
+eXternal Data Representation.  Use of this class requires your system to
+have access to the SUN RPC @code{xdr_} routines.  If your system does
+not have these, they may be obtained via anonymous ftp from ftp.uu.net
+in the directory @file{/systems/sun/sextape/rpc4.0}.
+
+Currently the Berkeley socket routines are used for communications.
+Thus, the @code{BSDSocket} class is provided for network communication,
+and the @code{UnixSocket} class is provided for inter-processes
+communication.  The @code{BSD_TCPSocket} and @code{UnixStreamSocket}
+classes provide reliable stream communications, while the
+@code{BSD_UDPSocket} and @code{UnixDGramSocket} classes provide
+unreliable datagram communications.  It is recommended that the stream
+classes be used for most applications.
+
+@menu
+* The Socket Class::
+* The BSDSocket Class::
+* The UnixSocket Class::
+* The BSD_TCPSocket and UnixStreamSocket Classes::
+* The BSD_UDPSocket and UnixDGramSocket Classes::
+* StateIn/Out TCP Example::
+* UDP Example::
+* StateIn/Out Stream Example::
+* StateIn/Out Datagram Example::
+@end menu
+
+@c .........................................................................
+@node The Socket Class, , , The StateIn/Out Network Classes
+@subsection The Socket Class
+@clindex Socket
+
+The @code{Socket} class is common to all the networking classes.  It
+provides the following functions:
+@table @code
+@item virtual int Close()
+The internally stored file descriptor for the socket will be closed.
+@item const int GetFD() const
+Returns the internally stored file descriptor for the socket.
+@end table
+
+@c .........................................................................
+@node The BSDSocket Class, , , The StateIn/Out Network Classes
+@subsection The BSDSocket Class
+@clindex BSDSocket
+
+The @code{BSDSocket} class provides an interface to the TCP/IP Internet
+domain protocols of the Berkeley socket interface.  It provides the
+following functions:
+@table @code
+@item virtual int Bind(int)
+Given an integer port number, this function binds the local socket to
+that port number.  Returns -1 on failure, 0 on success.
+@item virtual int Connect(const char*,int)
+Given the name of a host, and a port on that host to connect to, this
+function will make the connection which allows data to be transfered.
+If the connection type is not @code{SOCK_STREAM}, then the 
+@code{connect()} system call is not made, but the remote-address
+portions of the @code{sockaddr} are filled in.
+Returns -1 on failure, 0 on success.
+@end table
+
+@c .........................................................................
+@node The UnixSocket Class, , , The StateIn/Out Network Classes
+@subsection The UnixSocket Class
+@clindex UnixSocket
+
+The @code{UnixSocket} class provides an interface to the UNIX domain
+protocols of the Berkeley socket interface.  It provides the following
+functions:
+@table @code
+@item int Unlink(void)
+This function will close the socket and unlink the file associated with
+the local @code{sockaddr}.  The return code is that of the 
+@code{unlink()} system call.
+@item virtual int Bind(const char*)
+Given a fully qualified filename, this function binds the local socket
+to that filename.  Returns -1 on failure, 0 on success.
+@item virtual int Connect(const char*)
+Given a fully qualified filename, this
+function will make the connection to that filename 
+which allows data to be transfered.
+If the connection type is not @code{SOCK_STREAM}, then the 
+@code{connect()} system call is not made, but the remote-address
+portions of the @code{sockaddr} are filled in.
+Returns -1 on failure, 0 on success.
+@end table
+
+@c .........................................................................
+@node The BSD_TCPSocket and UnixStreamSocket Classes, , , The StateIn/Out Network Classes
+@subsection The BSD_TCPSocket and UnixStreamSocket Classes
+@clindex BSD_TCPSocket
+@clindex UnixStreamSocket
+
+These classes provide a stream interface to the underlying protocols.
+Both provide a constructor which performs the appropriate
+@code{socket()} call.  In addition, each provides an overloaded
+@code{Bind()} member function.  This overloaded @code{Bind()} first
+calls the parent's @code{Bind()}, and then performs a @code{listen()}
+call, which tells the system that the process is willing to receive
+connections.  Only server programs need call @code{Bind()}.  The
+following functions are also provided:
+@table @code
+@item int Listen(void)
+Perform an @code{accept} on the socket.  This call will block until
+a connection request is received.  If the call is interupted by a
+signal, -1 is returned, otherwise the file descriptor for the new
+socket is returned.
+@item int Listen(BSD_TCPSocket&)
+Like the @code{Listen(void)} function, except the @code{BSD_TCPSocket}
+which is passed in is set up for communication with the remote host.
+@item int Listen(UnixStreamSocket&)
+Like the @code{Listen(void)} function, except the @code{UnixStreamSocket}
+which is passed in is set up for communication with the remote process.
+@end table
+
+@c .........................................................................
+
+@node The BSD_UDPSocket and UnixDGramSocket Classes, , , The StateIn/Out Network Classes
+@subsection The BSD_UDPSocket and UnixDGramSocket Classes
+@clindex BSD_UDPSocket
+@clindex UnixDGramSocket
+@clindex StateIOBSD_TCP
+@clindex StateIOBSD_UDP
+@clindex StateIOUnixStream
+@clindex StateIOUnixDGram
+
+These classes provide a datagram interface to the underlying protocols.
+Both provide a constructor which performs the appropriate
+@code{socket()} call.
+
+Access to the networking classes is provided through the following
+classes: @code{StateIOBSD_TCP}, @code{StateIOBSD_UDP},
+@code{StateIOUnixStream}, and @code{StateIOUnixDGram}.  These classes
+provide all of the input and output functionality necessary for network
+communications.
+
+@c .........................................................................
+
+@node StateIn/Out TCP Example, , , The StateIn/Out Network Classes
+@subsection TCP Example
+
+Here is a simple example of a TCP server:
+@example
+main()
+@{
+  StateIOBSD_TCP to_client;
+  if(to_client.Bind(1234)<0) exit(1);
+  for(;;) @{
+    StateIOBSD_TCP si;
+    if(to_client.Listen(si)<0) continue;  // call interupted, no big deal
+    int nargs;
+    si.get(nargs);
+    @}
+  exit(0);
+  @}
+
+@end example
+
+Here is a simple example of a TCP client:
+@example
+main(int argc,char *argv[])
+@{
+  StateIOBSD_TCP to_server;
+  if(to_server.Connect("midway",1234)<0) exit(1);
+  to_server.put(argc);
+  exit(0);
+  @}
+
+@end example
+
+@c .........................................................................
+
+@node UDP Example, , , The StateIn/Out Network Classes
+@subsection UDP Example
+
+Here is a simple example of a UDP server:
+@example
+main()
+@{
+  StateIOBSD_UDP to_client;
+  if(to_client.Bind(1234)<0) exit(1);
+  int nargs;
+  to_client.get(nargs);
+  exit(0);
+  @}
+
+@end example
+
+Here is a simple example of a UDP client:
+@example
+main(int argc,char *argv[])
+@{
+  StateIOBSD_UDP to_server;
+  if(to_server.Bind(0)<0) exit(1);
+  if(to_server.Connect("midway",1234)<0) exit(1);
+  to_server.put(argc);
+  exit(0);
+  @}
+
+@end example
+
+@c .........................................................................
+
+@node StateIn/Out Stream Example, , , The StateIn/Out Network Classes
+@subsection UNIX Domain Stream Example
+
+Here is a simple example of a UNIX Domain Stream server:
+@example
+main()
+@{
+  StateIOUnixStream to_client;
+  if(to_client.Bind("/tmp/unix_socket.s")<0) exit(1);
+  for(;;) @{
+    StateIOUnixStream si;
+    if(to_client.Listen(si)<0) continue;  // call interupted, no big deal
+    int nargs;
+    si.get(nargs);
+    @}
+  exit(0);
+  @}
+
+@end example
+
+Here is a simple example of a UNIX Domain Stream client:
+@example
+main(int argc,char *argv[])
+@{
+  StateIOUnixStream to_server;
+  if(to_server.Connect("/tmp/unix_socket.s")<0) exit(1);
+  to_server.put(argc);
+  exit(0);
+  @}
+
+@end example
+
+@c .........................................................................
+
+@node StateIn/Out Datagram Example, , , The StateIn/Out Network Classes
+@subsection UNIX Domain Datagram Example
+
+Here is a simple example of a UNIX Domain Datagram server:
+@example
+main()
+@{
+  StateIOUnixDGram to_client;
+  if(to_client.Bind("/tmp/unix_socket.s")<0) exit(1);
+  int nargs;
+  to_client.get(nargs);
+  exit(0);
+  @}
+
+@end example
+
+Here is a simple example of a UNIX Domain Datagram client:
+@example
+main(int argc,char *argv[])
+@{
+  StateIOBSD_UDP to_server;
+  if(to_server.Bind(0)<0) exit(1);
+  if(to_server.Connect("/tmp/unix_socket.s")<0) exit(1);
+  to_server.put(argc);
+  exit(0);
+  @}
+
+@end example
+

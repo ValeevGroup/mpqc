@@ -95,7 +95,8 @@ A::save_data_state(StateOut&s)
 void *
 A::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -155,7 +156,8 @@ B::save_data_state(StateOut&s)
 void *
 B::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { A::_castdown(cd) };
+  void* casts[1];
+  casts[0] = A::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -211,7 +213,8 @@ C::save_data_state(StateOut&s)
 void *
 C::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { SavableState::_castdown(cd) };
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 
@@ -295,7 +298,9 @@ D::save_data_state(StateOut&s)
 void *
 D::_castdown(const ClassDesc*cd)
 {
-  void* casts[] =  { B::_castdown(cd), C::_castdown(cd) };
+  void* casts[2];
+  casts[0] = B::_castdown(cd);
+  casts[1] = C::_castdown(cd);
   return do_castdowns(casts,cd);
 }
 

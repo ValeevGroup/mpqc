@@ -29,6 +29,9 @@
 #pragma implementation
 #endif
 
+#include <errno.h>
+#include <string.h>
+
 #include <stdexcept>
 #include <sstream>
 #include <util/state/stateio.h>
@@ -193,7 +196,7 @@ SystemException::~SystemException() throw()
 }
 
 ////////////////////////////////////////////////////////////////////////
-// MemAllocFailure
+// Memory Allocation Failure
 
 MemAllocFailed::MemAllocFailed(const char *description,
                                const char *file,
@@ -219,6 +222,111 @@ MemAllocFailed::MemAllocFailed(const MemAllocFailed& ref) throw():
 }
 
 MemAllocFailed::~MemAllocFailed() throw()
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+// File Operation Failure
+
+FileOperationFailed::FileOperationFailed(const char *description,
+                                         const char *file,
+                                         int line,
+                                         const char *filename,
+                                         FileOperation op,
+                                         const ClassDesc *class_desc,
+                                         const char *exception_type) throw():
+  SystemException(description, file, line, class_desc, exception_type),
+  filename_(filename),
+  operation_(op)
+{ 
+  try {
+      if (filename_) {
+          elaborate() << "file name:   "
+                      << filename_
+                      << std::endl;
+        }
+      elaborate() << "file op:     ";
+      switch (operation_) {
+        case Unknown:
+            elaborate() << "Unknown";
+            break;
+        case OpenR:
+            elaborate() << "OpenR";
+            break;
+        case OpenW:
+            elaborate() << "OpenW";
+            break;
+        case OpenRW:
+            elaborate() << "OpenRW";
+            break;
+        case Close:
+            elaborate() << "Close";
+            break;
+        case Read:
+            elaborate() << "Read";
+            break;
+        case Write:
+            elaborate() << "Write";
+            break;
+        case Other:
+            elaborate() << "Other";
+            break;
+        default:
+            elaborate() << "Invalid";
+        }
+      elaborate() << std::endl;
+    }
+  catch(...) {
+    }
+}
+
+FileOperationFailed::FileOperationFailed(const FileOperationFailed& ref) throw():
+  SystemException(ref), filename_(ref.filename_), operation_(ref.operation_)
+{ 
+}
+
+FileOperationFailed::~FileOperationFailed() throw()
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+// Syscall Failure
+
+SyscallFailed::SyscallFailed(const char *description,
+                             const char *file,
+                             int line,
+                             const char *syscall,
+                             int err,
+                             const ClassDesc *class_desc,
+                             const char *exception_type) throw():
+  SystemException(description, file, line, class_desc, exception_type),
+  syscall_(syscall),
+  err_(err)
+{ 
+  try {
+      if (err_ == 0) {
+          err_ = errno;
+        }
+      if (syscall_) {
+          elaborate() << "system call: "
+                      << syscall_
+                      << std::endl;
+        }
+      elaborate() << "error:       "
+                  << strerror(err_)
+                  << " (" << err_ << ")"
+                  << std::endl;
+    }
+  catch(...) {
+    }
+}
+
+SyscallFailed::SyscallFailed(const SyscallFailed& ref) throw():
+  SystemException(ref), syscall_(ref.syscall_), err_(ref.err_)
+{ 
+}
+
+SyscallFailed::~SyscallFailed() throw()
 {
 }
 

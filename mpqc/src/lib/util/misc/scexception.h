@@ -74,8 +74,8 @@ class SCException: public std::exception {
     const char *exception_type() const throw() { return exception_type_; }
 
     /** Returns a stream where addition information about the exception can
-        be written.  This will throw if it is impossible to elaborate
-        (possibly due to low memory), so it must be used in a try block. */
+        be written.  This will throw if a valid stream cannot be returned
+        (possibly due to low memory). */
     std::ostream &elaborate();
 };
 
@@ -150,7 +150,59 @@ class MemAllocFailed: public SystemException {
     MemAllocFailed(const MemAllocFailed&) throw();
     ~MemAllocFailed() throw();
 
+    /// Returns the number of bytes used in the failed allocation attempt.
     size_t nbyte() const throw() { return nbyte_; }
+};
+
+/** This is thrown when an operation on a file fails.
+ */
+class FileOperationFailed: public SystemException {
+  public:
+    enum FileOperation { Unknown, OpenR, OpenW, OpenRW,
+                         Close, Read, Write, Other };
+
+  private:
+    const char *filename_;
+    FileOperation operation_;
+
+  public:
+    FileOperationFailed(const char *description = 0,
+                   const char *source_file = 0,
+                   int line = 0,
+                   const char *filename = 0,
+                   FileOperation operation = Unknown,
+                   const ClassDesc *class_desc = 0,
+                   const char *exception_type = "FileOperationFailed") throw();
+    FileOperationFailed(const FileOperationFailed&) throw();
+    ~FileOperationFailed() throw();
+
+    /** Returns the file name of the file that caused the error, if known.
+        Otherwise 0 is returned. */
+    const char * filename() const throw() { return filename_; }
+    FileOperation operation() const throw() { return operation_; }
+};
+
+/** This is thrown when an system call fails with an errno.
+ */
+class SyscallFailed: public SystemException {
+    const char *syscall_;
+    int err_;
+
+  public:
+    SyscallFailed(const char *description = 0,
+                  const char *source_file = 0,
+                  int line = 0,
+                  const char *syscall = 0,
+                  int err = 0, 
+                  const ClassDesc *class_desc = 0,
+                  const char *exception_type = "SyscallFailed") throw();
+    SyscallFailed(const SyscallFailed&) throw();
+    ~SyscallFailed() throw();
+
+    /** Returns the file name of the file that caused the error, if known.
+        Otherwise 0 is returned. */
+    const char * syscall() const throw() { return syscall_; }
+    int err() const throw() { return err_; }
 };
 
 // ///////////////////////////////////////////////////////////////////////

@@ -87,6 +87,26 @@ m()
                            10, 11);
 }
 
+void
+n()
+{
+  throw FileOperationFailed("file op failed in n()",
+                            __FILE__,
+                            __LINE__,
+                            "outfile",
+                            FileOperationFailed::OpenRW);
+}
+
+void
+o()
+{
+  throw SyscallFailed("syscall failed in o()",
+                      __FILE__,
+                      __LINE__,
+                      "xyz",
+                      10);
+}
+
 main()
 {
   try {
@@ -158,6 +178,24 @@ main()
     }
   catch (SCException &e) {
       std::cout << "EXPECTED: got an m() exception" << std::endl;
+      std::cout << e.what() << std::endl;
+    }
+
+  try {
+      n();
+      std::cout << "ERROR: n() ran OK" << std::endl;
+    }
+  catch (SCException &e) {
+      std::cout << "EXPECTED: got an n() exception" << std::endl;
+      std::cout << e.what() << std::endl;
+    }
+
+  try {
+      o();
+      std::cout << "ERROR: o() ran OK" << std::endl;
+    }
+  catch (SCException &e) {
+      std::cout << "EXPECTED: got an o() exception" << std::endl;
       std::cout << e.what() << std::endl;
     }
 

@@ -133,9 +133,102 @@ The development of SC began before exception handling was available in C++.
 A retrofit of the code to properly use exceptions is in progress.  All new
 code should use exceptions instead of exit or abort and allocate resources
 in such a way that, if an exception occurs, all resources such as memory or
-locks are released.  A hierarchy of except classes has been created that
+locks are released.  A hierarchy of exception classes has been created that
 maps better to scientific computing than the standard exceptions.  See
 documentation for the SCException class and its derivatives for more
 information.
+
+\subsection scexceptmem Exceptions and Memory Allocation
+
+Consider the following code fragment:
+
+<pre>
+Object *obj = new Object;
+double *array = new double[n];
+
+f(obj, array, mol);
+
+delete obj;
+delete[] array;
+</pre>
+
+If an exception is thrown in the function f(), then storage for array and
+obj will not be released.  The standard C++ library provides a class,
+auto_ptr, to deal with obj, and the SC toolkit provides a class, auto_vec,
+to deal with array.
+
+The include files for these two classes are:
+
+<pre>
+#include <memory>
+#include <util/misc/autovec.h>
+</pre>
+
+the code would be modified as follows:
+
+<pre>
+std::auto_ptr<Object> obj(new Object);
+sc::auto_vec<double> array(new double[n]);
+
+f(obj.get(), array.get());
+
+obj.release();  // or just let the destructor release it
+array.release();  // or just let the destructor release it
+</pre>
+
+Note that when sc::Ref is used to store pointers, the storage will
+automatically be released when necessary.  No special treatment is needed
+to deal with exceptions.
+
+\subsection scexceptlocks Exceptions and Locks
+
+Consider the following code fragment:
+
+<pre>
+g(const sc::Ref<sc::ThreadLock> &lock)
+{
+  lock->lock();
+  f();
+  lock->unlock();
+}
+</pre>
+
+If f() throws, then the lock is never released.  The ThreadLock
+lock() and unlock() members should not be used anymore.  Now
+do the following:
+
+<pre>
+g(const sc::Ref<sc::ThreadLock> &lock)
+{
+  sc::ThreadLockHolder lockholder(lock);
+  f();
+  lockholder->unlock(); // or let the destructor unlock it
+}
+</pre>
+
+\subsection scexcepttimer Exceptions and Region Timers
+
+Consider the following code fragment:
+
+<pre>
+g(const sc::Ref<sc::RegionTimer> &regtim)
+{
+  regtim->enter("f()");
+  f();
+  regtim->exit();
+}
+</pre>
+
+If f() throws, then the "f()" timing region is never exited.
+Instead use the following:
+
+<pre>
+g(const sc::Ref<sc::RegionTimer> &regtim)
+{
+  sc::Timer timer(regtim, "f()");
+  f();
+  timer.reset(); // or let the destructor exit the region
+}
+</pre>
 
 */

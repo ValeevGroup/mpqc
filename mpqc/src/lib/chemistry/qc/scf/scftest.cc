@@ -5,9 +5,6 @@
 
 #include <string.h>
 
-#include <iostream.h>
-#include <iomanip.h>
-
 #include <sys/stat.h>
 #include <unistd.h>
 #include <new.h>
@@ -92,6 +89,10 @@ init_mp(const RefKeyVal& keyval)
   
   tim = new ParallelRegionTimer(grp,"scftest",1,0);
   RegionTimer::set_default_regiontimer(tim);
+
+  SCFormIO::set_printnode(0);
+  SCFormIO::set_messagegrp(grp);
+  SCFormIO::set_debug(1);
   
   return grp;
 }
@@ -143,9 +144,8 @@ main(int argc, char**argv)
         mole->gradient().print("gradient");
       }
     } else if (mole->value_implemented()) {
-      if (grp->me()==0)
-        cout << indent << "value of mole is " <<
-          setw(20) << setprecision(15) << mole->energy() << endl << endl;
+      cout << node0 << indent
+           << scprintf("value of mole is %20.15f\n\n", mole->energy());
     }
   }
 
@@ -158,3 +158,9 @@ main(int argc, char**argv)
 
   return 0;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

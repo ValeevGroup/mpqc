@@ -105,3 +105,7 @@ class MCSCF: public OneBodyWavefunction
 SavableState_REF_dec(MCSCF);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -4,9 +4,6 @@
 #pragma implementation "tccont.h"
 #endif
 
-#include <iostream.h>
-#include <iomanip.h>
-
 #include <math.h>
 
 #include <util/misc/timer.h>
@@ -101,8 +98,6 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
   ka_(this),
   kb_(this)
 {
-  int me = scf_grp_->me();
-  
   focka_.compute()=0;
   focka_.computed()=0;
   
@@ -131,25 +126,22 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
   } else {
     tndocc_ = (nelectrons-2)/2;
     if ((nelectrons-2)%2) {
-      if (me==0) {
-        cerr << endl << indent
-             << "TCSCF::init: Warning, there's a leftover electron.\n";
-        cerr << incindent;
-        cerr << indent << "total_charge = " << charge << endl;
-        cerr << indent << "total nuclear charge = " << Znuc << endl;
-        cerr << indent << "ndocc_ = " << tndocc_ << endl << decindent;
-      }
+      cerr << node0 << endl << indent
+           << "TCSCF::init: Warning, there's a leftover electron.\n"
+           << incindent
+           << indent << "total_charge = " << charge << endl
+           << indent << "total nuclear charge = " << Znuc << endl
+           << indent << "ndocc_ = " << tndocc_ << endl << decindent;
     }
   }
 
-  if (me==0)
-    cout << endl << indent << "TCSCF::init: total charge = "
-         << Znuc-2*tndocc_-2 << endl << endl;
+  cout << node0 << endl << indent << "TCSCF::init: total charge = "
+       << Znuc-2*tndocc_-2 << endl << endl;
 
   nirrep_ = molecule()->point_group().char_table().ncomp();
 
   if (nirrep_==1) {
-    cerr << indent << "TCSCF::init: cannot do C1 symmetry\n";
+    cerr << node0 << indent << "TCSCF::init: cannot do C1 symmetry\n";
     abort();
   }
 
@@ -184,7 +176,7 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
       else if (nsi && osb_<0)
         osb_==i;
       else if (nsi) {
-        cerr << indent << "TCSCF::init: too many open shells\n";
+        cerr << node0 << indent << "TCSCF::init: too many open shells\n";
         abort();
       }
     }
@@ -194,18 +186,16 @@ TCSCF::TCSCF(const RefKeyVal& keyval) :
     set_occupations(0);
   }
 
-  if (me==0) {
-    int i;
-    cout << indent << "docc = [";
-    for (i=0; i < nirrep_; i++)
-      cout << " " << ndocc_[i];
-    cout << " ]\n";
+  int i;
+  cout << node0 << indent << "docc = [";
+  for (i=0; i < nirrep_; i++)
+    cout << node0 << " " << ndocc_[i];
+  cout << node0 << " ]\n";
 
-    cout << indent << "socc = [";
-    for (i=0; i < nirrep_; i++)
-      cout << " " << (i==osa_ || i==osb_) ? 1 : 0;
-    cout << " ]\n";
-  }
+  cout << node0 << indent << "socc = [";
+  for (i=0; i < nirrep_; i++)
+    cout << node0 << " " << (i==osa_ || i==osb_) ? 1 : 0;
+  cout << node0 << " ]\n";
 
   // check to see if this was done in SCF(keyval)
   if (!keyval->exists("maxiter"))
@@ -274,8 +264,9 @@ RefSymmSCMatrix
 TCSCF::fock(int n)
 {
   if (n > 4) {
-    cerr << indent << "TCSCF::fock: there are only four fock matrices, "
-         << "but fock(" << n << ") was requested" << endl;
+    cerr << node0 << indent
+         << "TCSCF::fock: there are only four fock matrices, "
+         << scprintf("but fock(%d) was requested\n", n);
     abort();
   }
 
@@ -310,24 +301,24 @@ TCSCF::hessian_implemented()
 void
 TCSCF::print(ostream&o)
 {
+  int i;
+  
   SCF::print(o);
-  if (scf_grp_->me()==0) {
-    int i;
-    o << indent << "TCSCF Parameters:\n" << incindent;
-    o << indent << "ndocc = " << tndocc_ << endl;
-    o << indent << "occa = " << occa_ << endl;
-    o << indent << "occb = " << occb_ << endl;
-    o << indent << "ci1 = " << ci1_ << endl;
-    o << indent << "ci2 = " << ci2_ << endl;
-    o << indent << "docc = [";
-    for (i=0; i < nirrep_; i++)
-      o << " " << ndocc_[i];
-    o << " ]" << endl;
-    o << indent << "socc = [";
-    for (i=0; i < nirrep_; i++)
-      o << " " << (i==osa_ || i==osb_) ? 1 : 0;
-    o << " ]" << endl << decindent << endl;
-  }
+
+  o << node0 << indent << "TCSCF Parameters:\n" << incindent
+    << indent << "ndocc = " << tndocc_ << endl
+    << indent << scprintf("occa = %f", occa_) << endl
+    << indent << scprintf("occb = %f", occb_) << endl
+    << indent << scprintf("ci1 = %9.6f", ci1_) << endl
+    << indent << scprintf("ci2 = %9.6f", ci2_) << endl
+    << indent << "docc = [";
+  for (i=0; i < nirrep_; i++)
+    o << node0 << " " << ndocc_[i];
+  o << node0 << " ]" << endl
+    << indent << "socc = [";
+  for (i=0; i < nirrep_; i++)
+    o << node0 << " " << (i==osa_ || i==osb_) ? 1 : 0;
+  o << node0 << " ]" << endl << decindent << endl;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -441,18 +432,17 @@ TCSCF::set_occupations(const RefDiagSCMatrix& ev)
   } else {
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {
-      if (ndocc_[i] != newdocc[i] && scf_grp_->me()==0) {
-        cerr << indent << "TCSCF::set_occupations:  WARNING!!!!\n";
-        cerr << incindent << indent <<
-          "occupations for irrep " << i+1 << " have changed\n";
-        cerr << indent << "ndocc was " << ndocc_[i] << ", changed to "
-             << newdocc[i] << endl << decindent;
+      if (ndocc_[i] != newdocc[i]) {
+        cerr << node0 << indent << "TCSCF::set_occupations:  WARNING!!!!\n"
+             << incindent << indent
+             << scprintf("occupations for irrep %d have changed\n", i+1)
+             << indent
+             << scprintf("ndocc was %d, changed to %d", ndocc_[i], newdocc[i])
+             << endl << decindent;
       }
-      if (((osa != osa_ && osa != osb_) || (osb != osb_ && osb != osa_))
-          && scf_grp_->me()==0) {
-        cerr << indent << "TCSCF::set_occupations:  WARNING!!!!\n";
-        cerr << incindent << indent
-             << "open shell occupations have changed"
+      if (((osa != osa_ && osa != osb_) || (osb != osb_ && osb != osa_))) {
+        cerr << node0 << indent << "TCSCF::set_occupations:  WARNING!!!!\n"
+             << incindent << indent << "open shell occupations have changed"
              << endl << decindent;
         osa_=osa;
         osb_=osb;
@@ -670,12 +660,7 @@ TCSCF::scf_energy()
   ci2_ = hv.get_element(1,0);
   double c1c2 = ci1_*ci2_;
 
-  if (scf_grp_->me()==0) {
-    cout.setf(ios::fixed);
-    cout << indent
-         << "ci1 = " << setprecision(7) << ci1_ << " "
-         << "ci2 = " << setprecision(7) << ci2_ << endl;
-  }
+  cout << node0 << indent << scprintf("c1 = %10.7f c2 = %10.7f\n", ci1_, ci2_);
   
   occa_ = 2*ci1_*ci1_;
   occb_ = 2*ci2_*ci2_;
@@ -828,7 +813,8 @@ TCSCF::ao_fock()
     char * pmax = init_pmax(pmata);
     char * pmaxb = init_pmax(pmatb);
   
-    for (int i=0; i < i_offset(basis()->nshell()); i++) {
+    int i;
+    for (i=0; i < i_offset(basis()->nshell()); i++) {
       if (pmaxb[i] > pmax[i])
         pmax[i]=pmaxb[i];
     }
@@ -863,7 +849,7 @@ TCSCF::ao_fock()
 
   // for now quit
   else {
-    cerr << indent << "Cannot yet use anything but Local matrices\n";
+    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   
@@ -1056,7 +1042,8 @@ TCSCF::two_body_deriv(double * tbgrad)
 
   // for now quit
   else {
-    cerr << indent << "TCSCF::two_body_deriv: can't do gradient yet\n";
+    cerr << node0 << indent
+         << "TCSCF::two_body_deriv: can't do gradient yet\n";
     abort();
   }
 }
@@ -1072,3 +1059,9 @@ void
 TCSCF::done_hessian()
 {
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

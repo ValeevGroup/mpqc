@@ -189,3 +189,9 @@ void
 SCF::compute_hessian(const RefSymmSCMatrix& hessian)
 {
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

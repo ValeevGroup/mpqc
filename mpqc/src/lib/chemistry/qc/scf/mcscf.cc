@@ -601,3 +601,9 @@ MCSCF::do_vector(double& eelec, double& nucrep)
   _gr_vector = 0;
   nvector = 0;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

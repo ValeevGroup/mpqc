@@ -133,3 +133,7 @@ class LocalOSSGradContribution {
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

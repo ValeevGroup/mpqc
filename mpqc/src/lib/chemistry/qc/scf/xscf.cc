@@ -619,3 +619,9 @@ XSCF::do_vector(double& eelec, double& nucrep)
   nvectora = 0;
   nvectorb = 0;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

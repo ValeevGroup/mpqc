@@ -192,3 +192,9 @@ MOLagrangian::process(SCMatrixBlockIter& bi1, SCMatrixBlockIter& bi2)
       bi1.set(0.0);
   }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

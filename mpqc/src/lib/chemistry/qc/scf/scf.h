@@ -135,3 +135,7 @@ class SCF: public OneBodyWavefunction {
 SavableState_REF_dec(SCF);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -92,3 +92,7 @@ class OSSSCF: public SCF {
 SavableState_REF_dec(OSSSCF);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -301,8 +301,7 @@ class LocalGBuild : public GBuild<T> {
       }
 
       grp_->sum(&tnint, 1, 0, 0);
-      if (me==0)
-        cout << setw(20) << setprecision(0) << tnint << " integrals" << endl;
+      cout << node0 << scprintf("%20.0f integrals\n", tnint);
 
       tim_exit("ao_gmat");
     }
@@ -310,3 +309,7 @@ class LocalGBuild : public GBuild<T> {
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

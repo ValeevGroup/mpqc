@@ -1,7 +1,4 @@
 
-#include <iostream.h>
-#include <iomanip.h>
-
 #include <util/misc/timer.h>
 #include <util/misc/formio.h>
 
@@ -59,15 +56,9 @@ SCF::compute_vector(double& eelec)
 
     // calculate the electronic energy
     eelec = scf_energy();
-    if (scf_grp_->me()==0) {
-      cout.setf(ios::fixed);
-      cout << indent << "iter " << setw(5) << iter+1 <<
-        " energy = " << setw(20) << setprecision(15) << eelec+nucrep;
-      cout.unsetf(ios::fixed);
-      cout.setf(ios::scientific);
-      cout << " delta = " << setw(20) << setprecision(15) << delta << endl;
-      cout.unsetf(ios::scientific);
-    }
+    cout << node0 << indent
+         << scprintf("iter %5d energy = %20.15f delta = %10.5e\n",
+                     iter+1, eelec+nucrep, delta);
 
     // now extrapolate the fock matrix
     tim_enter("extrap");
@@ -164,3 +155,9 @@ SCF::extrap_error()
 
   return error;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

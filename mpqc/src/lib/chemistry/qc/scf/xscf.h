@@ -109,3 +109,7 @@ class XSCF: public OneBodyWavefunction
 SavableState_REF_dec(XSCF);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

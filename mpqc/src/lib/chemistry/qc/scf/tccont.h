@@ -132,3 +132,7 @@ class LocalTCGradContribution {
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

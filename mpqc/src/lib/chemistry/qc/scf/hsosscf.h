@@ -88,3 +88,7 @@ class HSOSSCF: public SCF {
 SavableState_REF_dec(HSOSSCF);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -3,8 +3,6 @@
 #pragma implementation
 #endif
 
-#include <iostream.h>
-#include <iomanip.h>
 #include <math.h>
 #include <sys/stat.h>
 
@@ -122,16 +120,11 @@ void
 SCF::print(ostream&o)
 {
   OneBodyWavefunction::print(o);
-  if (scf_grp_->me()==0) {
-    o << indent << "SCF Parameters:\n" << incindent;
-    o << indent << "maxiter = " << maxiter_ << endl;
-    o << indent << "density_reset_freq = " << dens_reset_freq_ << endl;
-    o << indent << "reset_occupations = " << reset_occ_ << endl;
-    o << indent << "local_density = " << local_dens_ << endl;
-    o << indent << "memory = " << storage_ << endl;
-    o << indent << "level_shift = " << level_shift_ << endl;
-    o << decindent << endl;
-  }
+  o << node0 << indent << "SCF Parameters:\n" << incindent
+    << indent << "maxiter = " << maxiter_ << endl
+    << indent << "density_reset_freq = " << dens_reset_freq_ << endl
+    << indent << scprintf("level_shift = %f\n",level_shift_)
+    << decindent << endl;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -150,23 +143,17 @@ SCF::compute()
     set_desired_value_accuracy(desired_gradient_accuracy()/100.0);
 
   if (value_needed()) {
-    if (me==0) {
-      cout.unsetf(ios::fixed);
-      cout << endl << indent << "SCF::compute: energy accuracy = "
-           << setw(10) << setprecision(7) << desired_value_accuracy()
-           << endl << endl;
-    }
+    cout << node0 << endl << indent
+         << scprintf("SCF::compute: energy accuracy = %10.7e\n\n",
+                     desired_value_accuracy());
 
     double eelec;
     compute_vector(eelec);
       
     // this will be done elsewhere eventually
     double nucrep = molecule()->nuclear_repulsion_energy();
-    if (me==0) {
-      cout.setf(ios::fixed);
-      cout << endl << indent << "total scf energy = " <<
-        setw(20) << setprecision(15) << eelec+nucrep << endl;
-    }
+    cout << node0 << endl << indent
+         << scprintf("total scf energy = %20.15f\n", eelec+nucrep);
 
     set_energy(eelec+nucrep);
     set_actual_value_accuracy(desired_value_accuracy());
@@ -175,12 +162,9 @@ SCF::compute()
   if (gradient_needed()) {
     RefSCVector gradient = matrixkit()->vector(moldim());
 
-    if (me==0) {
-      cout.unsetf(ios::fixed);
-      cout << endl << indent << "SCF::compute: gradient accuracy = "
-           << setw(10) << setprecision(7) << desired_gradient_accuracy()
-           << endl << endl;
-    }
+    cout << node0 << endl << indent
+         << scprintf("SCF::compute: gradient accuracy = %10.7e\n\n",
+                     desired_gradient_accuracy());
 
     compute_gradient(gradient);
     gradient.print("cartesian gradient");
@@ -192,12 +176,9 @@ SCF::compute()
   if (hessian_needed()) {
     RefSymmSCMatrix hessian = matrixkit()->symmmatrix(moldim());
     
-    if (me==0) {
-      cout.unsetf(ios::fixed);
-      cout << endl << indent << "SCF::compute: hessian accuracy = "
-           << setw(10) << setprecision(7) << desired_hessian_accuracy()
-           << endl << endl;
-    }
+    cout << node0 << endl << indent
+         << scprintf("SCF::compute: hessian accuracy = %10.7e\n\n",
+                     desired_hessian_accuracy());
 
     compute_hessian(hessian);
     set_hessian(hessian);
@@ -283,18 +264,18 @@ SCF::initial_vector()
   // GaussianBasisSet
   if (guess_wfn_.nonnull()) {
     if (guess_wfn_->basis()->nbasis() == basis()->nbasis()) {
-      if (me==0) {
-        cout << indent
-             << "Using guess_wavefunction as starting vector\n";
-      }
+      cout << node0 << indent
+           << "Projecting guess wavefunction into the present basis set\n";
+
+      // indent output of eigenvectors() call if there is any
       cout << incindent << incindent;
       eigenvectors_ = guess_wfn_->eigenvectors();
       cout << decindent << decindent;
     } else {
-      if (me==0) {
-        cout << indent
-             << "Projecting guess_wavefunction into the present basis set\n";
-      }
+      cout << node0 << indent
+           << "Using guess wavefunction as starting vector\n";
+
+      // indent output of projected_eigenvectors() call if there is any
       cout << incindent << incindent;
       eigenvectors_ = projected_eigenvectors(guess_wfn_);
       cout << decindent << decindent;
@@ -304,14 +285,10 @@ SCF::initial_vector()
     // for the old wavefunction
     guess_wfn_=0;
 
-    if (me==0)
-      cout << endl;
+    cout << node0 << endl;
       
   } else {
-    if (me==0) {
-      cout << indent
-           << "Starting from core Hamiltonian guess\n\n";
-    }
+    cout << node0 << indent << "Starting from core Hamiltonian guess\n\n";
     eigenvectors_ = hcore_guess();
   }
 }
@@ -344,3 +321,9 @@ SCF::init_mem(int nm)
 
   integral()->set_storage(storage_-nmem);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

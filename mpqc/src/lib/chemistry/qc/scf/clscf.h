@@ -81,3 +81,7 @@ class CLSCF: public SCF {
 SavableState_REF_dec(CLSCF);
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -19,3 +19,7 @@ class GBuild {
 };
 
 #endif
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -4,9 +4,6 @@
 #pragma implementation "clcont.h"
 #endif
 
-#include <iostream.h>
-#include <iomanip.h>
-
 #include <math.h>
 
 #include <util/misc/timer.h>
@@ -96,18 +93,16 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
   } else {
     tndocc_ = (Znuc-charge)/2;
     if ((Znuc-charge)%2 && me==0) {
-      cerr << endl;
-      cerr << indent << "CLSCF::init: Warning, there's a leftover electron.\n";
-      cerr << incindent << indent << "total_charge = " << charge << endl;
-      cerr << indent << "total nuclear charge = " << Znuc << endl;
-      cerr << indent << "ndocc_ = " << tndocc_ << endl << decindent;
+      cerr << node0 << endl
+           << indent << "CLSCF::init: Warning, there's a leftover electron.\n"
+           << incindent << indent << "total_charge = " << charge << endl
+           << indent << "total nuclear charge = " << Znuc << endl
+           << indent << "ndocc_ = " << tndocc_ << endl << decindent;
     }
   }
 
-  if (me==0) {
-    cout << endl << indent << "CLSCF::init: total charge = " << Znuc-2*tndocc_;
-    cout << endl << endl;
-  }
+  cout << node0 << endl << indent
+       << "CLSCF::init: total charge = " << Znuc-2*tndocc_ << endl << endl;
 
   nirrep_ = molecule()->point_group().char_table().ncomp();
 
@@ -126,12 +121,10 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
     set_occupations(0);
   }
 
-  if (me==0) {
-    cout << indent << "docc = [";
-    for (int i=0; i < nirrep_; i++)
-      cout << " " << ndocc_[i];
-    cout << " ]\n";
-  }
+  cout << node0 << indent << "docc = [";
+  for (int i=0; i < nirrep_; i++)
+    cout << node0 << " " << ndocc_[i];
+  cout << node0 << " ]\n";
 
   // check to see if this was done in SCF(keyval)
   if (!keyval->exists("maxiter"))
@@ -180,8 +173,9 @@ RefSymmSCMatrix
 CLSCF::fock(int n)
 {
   if (n > 0) {
-    cerr << indent << "CLSCF::fock: there is only one fock matrix, ";
-    cerr << "but fock(" << n << ") was requested" << endl;
+    cerr << node0 << indent
+         << "CLSCF::fock: there is only one fock matrix, "
+         << scprintf("but fock(%d) was requested\n",n);
     abort();
   }
 
@@ -210,14 +204,12 @@ void
 CLSCF::print(ostream&o)
 {
   SCF::print(o);
-  if (scf_grp_->me()==0) {
-    o << indent << "CLSCF Parameters:\n" << incindent;
-    o << indent << "ndocc = " << tndocc_ << endl;
-    o << indent << "docc = [";
-    for (int i=0; i < nirrep_; i++)
-      o << " " << ndocc_[i];
-    o << " ]" << endl << decindent << endl;
-  }
+  o << node0 << indent << "CLSCF Parameters:\n" << incindent
+    << indent << "ndocc = " << tndocc_ << endl
+    << indent << "docc = [";
+  for (int i=0; i < nirrep_; i++)
+    o << node0 << " " << ndocc_[i];
+  o << node0 << " ]" << endl << decindent << endl;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -299,12 +291,13 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
   } else {
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {
-      if (ndocc_[i] != newocc[i] && scf_grp_->me()==0) {
-        cerr << indent << "CLSCF::set_occupations:  WARNING!!!!\n";
-        cerr << incindent << indent <<
-          "occupations for irrep " << i+1 << " have changed\n";
-        cerr << indent << "ndocc was " << ndocc_[i] << ", changed to "
-             << newocc[i] << endl << decindent;
+      if (ndocc_[i] != newocc[i]) {
+        cerr << node0 << indent << "CLSCF::set_occupations:  WARNING!!!!\n"
+             << incindent << indent
+             << scprintf("occupations for irrep %d have changed\n",i+1)
+             << indent
+             << scprintf("ndocc was %d, changed to %d", ndocc_[i],newocc[i])
+             << endl << decindent;
       }
     }
 
@@ -478,7 +471,7 @@ CLSCF::ao_fock()
 
   // for now quit
   else {
-    cerr << indent << "Cannot yet use anything but Local matrices\n";
+    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   
@@ -601,7 +594,8 @@ CLSCF::two_body_deriv(double * tbgrad)
 
   // for now quit
   else {
-    cerr << indent << "CLSCF::two_body_deriv: can't do gradient yet\n";
+    cerr << node0 << indent
+         << "CLSCF::two_body_deriv: can't do gradient yet\n";
     abort();
   }
 }
@@ -617,3 +611,9 @@ void
 CLSCF::done_hessian()
 {
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

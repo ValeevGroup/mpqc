@@ -153,3 +153,9 @@ PsiEffH::PsiEffH(SCF*s) :
 PsiEffH::~PsiEffH()
 {
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

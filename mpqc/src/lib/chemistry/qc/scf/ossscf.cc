@@ -4,9 +4,6 @@
 #pragma implementation "osscont.h"
 #endif
 
-#include <iostream.h>
-#include <iomanip.h>
-
 #include <math.h>
 
 #include <util/misc/timer.h>
@@ -121,25 +118,22 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
   } else {
     tndocc_ = (nelectrons-2)/2;
     if ((nelectrons-2)%2) {
-      if (me==0) {
-        cerr << endl << indent
-             << "OSSSCF::init: Warning, there's a leftover electron.\n";
-        cerr << incindent;
-        cerr << indent << "total_charge = " << charge << endl;
-        cerr << indent << "total nuclear charge = " << Znuc << endl;
-        cerr << indent << "ndocc_ = " << tndocc_ << endl << decindent;
-      }
+      cerr << node0 << endl << indent
+           << "OSSSCF::init: Warning, there's a leftover electron.\n"
+           << incindent
+           << indent << "total_charge = " << charge << endl
+           << indent << "total nuclear charge = " << Znuc << endl
+           << indent << "ndocc_ = " << tndocc_ << endl << decindent;
     }
   }
 
-  if (me==0)
-    cout << endl << indent << "OSSSCF::init: total charge = "
-         << Znuc-2*tndocc_-2 << endl << endl;
+  cout << node0 << endl << indent << "OSSSCF::init: total charge = "
+       << Znuc-2*tndocc_-2 << endl << endl;
 
   nirrep_ = molecule()->point_group().char_table().ncomp();
 
   if (nirrep_==1) {
-    cerr << indent << "OSSSCF::init: cannot do C1 symmetry\n";
+    cerr << node0 << indent << "OSSSCF::init: cannot do C1 symmetry\n";
     abort();
   }
 
@@ -157,7 +151,7 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
       else if (nsi && osb_<0)
         osb_==i;
       else if (nsi) {
-        cerr << indent << "OSSSCF::init: too many open shells\n";
+        cerr << node0 << indent << "OSSSCF::init: too many open shells\n";
         abort();
       }
     }
@@ -167,18 +161,16 @@ OSSSCF::OSSSCF(const RefKeyVal& keyval) :
     set_occupations(0);
   }
 
-  if (me==0) {
-    int i;
-    cout << indent << "docc = [";
-    for (i=0; i < nirrep_; i++)
-      cout << " " << ndocc_[i];
-    cout << " ]\n";
+  int i;
+  cout << node0 << indent << "docc = [";
+  for (i=0; i < nirrep_; i++)
+    cout << node0 << " " << ndocc_[i];
+  cout << node0 << " ]\n";
 
-    cout << indent << "socc = [";
-    for (i=0; i < nirrep_; i++)
-      cout << " " << (i==osa_ || i==osb_) ? 1 : 0;
-    cout << " ]\n";
-  }
+  cout << node0 << indent << "socc = [";
+  for (i=0; i < nirrep_; i++)
+    cout << node0 << " " << (i==osa_ || i==osb_) ? 1 : 0;
+  cout << node0 << " ]\n";
 
   // check to see if this was done in SCF(keyval)
   if (!keyval->exists("maxiter"))
@@ -242,8 +234,9 @@ RefSymmSCMatrix
 OSSSCF::fock(int n)
 {
   if (n > 2) {
-    cerr << indent << "OSSSCF::fock: there are only three fock matrices, ";
-    cerr << "but fock(" << n << ") was requested" << endl;
+    cerr << node0 << indent
+         << "OSSSCF::fock: there are only three fock matrices, "
+         << scprintf("but fock(%d) was requested\n", n);
     abort();
   }
 
@@ -276,20 +269,20 @@ OSSSCF::hessian_implemented()
 void
 OSSSCF::print(ostream&o)
 {
+  int i;
+  
   SCF::print(o);
-  if (scf_grp_->me()==0) {
-    int i;
-    o << indent << "OSSSCF Parameters:\n" << incindent;
-    o << indent << "ndocc = " << tndocc_ << endl;
-    o << indent << "docc = [";
-    for (i=0; i < nirrep_; i++)
-      o << " " << ndocc_[i];
-    o << " ]" << endl;
-    o << indent << "socc = [";
-    for (i=0; i < nirrep_; i++)
-      o << " " << (i==osa_ || i==osb_) ? 1 : 0;
-    o << " ]" << endl << decindent << endl;
-  }
+  o << node0 << indent << "OSSSCF Parameters:\n" << incindent
+    << indent << "ndocc = " << tndocc_ << endl
+    << indent << "docc = [";
+  for (i=0; i < nirrep_; i++)
+    o << node0 << " " << ndocc_[i];
+  o << node0 << " ]" << endl;
+
+  o << node0 << indent << "socc = [";
+  for (i=0; i < nirrep_; i++)
+    o << node0 << " " << (i==osa_ || i==osb_) ? 1 : 0;
+  o << node0 << " ]" << endl << decindent << endl;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -397,17 +390,17 @@ OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
   } else {
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {
-      if (ndocc_[i] != newdocc[i] && scf_grp_->me()==0) {
-        cerr << indent << "OSSSCF::set_occupations:  WARNING!!!!\n";
-        cerr << incindent << indent <<
-          "occupations for irrep " << i+1 << " have changed\n";
-        cerr << indent << "ndocc was " << ndocc_[i] << ", changed to "
-             << newdocc[i] << endl << decindent;
+      if (ndocc_[i] != newdocc[i]) {
+        cerr << node0 << indent << "OSSSCF::set_occupations:  WARNING!!!!\n"
+             << incindent << indent
+             << scprintf("occupations for irrep %d have changed\n", i+1)
+             << indent
+             << scprintf("ndocc was %d, changed to %d", ndocc_[i], newdocc[i])
+             << endl << decindent;
       }
-      if (((osa != osa_ && osa != osb_) || (osb != osb_ && osb != osa_))
-          && scf_grp_->me()==0) {
-        cerr << indent << "OSSSCF::set_occupations:  WARNING!!!!\n";
-        cerr << incindent << indent
+      if ((osa != osa_ && osa != osb_) || (osb != osb_ && osb != osa_)) {
+        cerr << node0 << indent << "OSSSCF::set_occupations:  WARNING!!!!\n"
+             << incindent << indent
              << "open shell occupations have changed"
              << endl << decindent;
         osa_=osa;
@@ -699,7 +692,7 @@ OSSSCF::ao_fock()
 
   // for now quit
   else {
-    cerr << indent << "Cannot yet use anything but Local matrices\n";
+    cerr << node0 << indent << "Cannot yet use anything but Local matrices\n";
     abort();
   }
   
@@ -881,7 +874,8 @@ OSSSCF::two_body_deriv(double * tbgrad)
 
   // for now quit
   else {
-    cerr << indent << "OSSSCF::two_body_deriv: can't do gradient yet\n";
+    cerr << node0 << indent
+         << "OSSSCF::two_body_deriv: can't do gradient yet\n";
     abort();
   }
 }
@@ -897,3 +891,9 @@ void
 OSSSCF::done_hessian()
 {
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "ETS")

@@ -35,10 +35,11 @@
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/cartiter.h>
+#include <chemistry/qc/basis/transform.h>
 
 #define MAX_NPRIM 20
 #define MAX_NCON  10
-#define MAX_AM    4
+#define MAX_AM    6
 
 int
 GaussianShell::values(const RefIntegral& ints,
@@ -137,7 +138,7 @@ GaussianShell::grad_values(const RefIntegral& ints,
               basis_values[i_basis] = precon[i];
               i_basis++;
             }
-          else {
+          else if (!puream[i]) {
               CartesianIter *jp = ints->new_cartesian_iter(l[i]);
               CartesianIter& j = *jp;
               for (j.start(); j; j.next()) {
@@ -146,6 +147,28 @@ GaussianShell::grad_values(const RefIntegral& ints,
                   i_basis++;
                 }
               delete jp;
+            }
+          else {
+              double cart_basis_values[((MAX_AM+1)*(MAX_AM+2))/2];
+              CartesianIter *jp = ints->new_cartesian_iter(l[i]);
+              CartesianIter& j = *jp;
+              int i_cart = 0;
+              for (j.start(); j; j.next()) {
+                  cart_basis_values[i_cart] = xs[j.a()]*ys[j.b()]*zs[j.c()]
+                                             *precon[i];
+                  i_cart++;
+                }
+              delete jp;
+              SphericalTransformIter *ti
+                  = ints->new_spherical_transform_iter(l[i]);
+              int n = ti->n();
+              memset(&basis_values[i_basis], 0, sizeof(double)*n);
+              for (ti->start(); ti->ready(); ti->next()) {
+                  basis_values[i_basis + ti->pureindex()]
+                      += ti->coef() * cart_basis_values[ti->cartindex()];
+                }
+              i_basis += n;
+              delete ti;
             }
         }
     }
@@ -164,7 +187,7 @@ GaussianShell::grad_values(const RefIntegral& ints,
               g_values[i_grad] = -zs[1]*norm_precon_g;
               i_grad++;
             }
-          else {
+          else if (!puream[i]) {
               CartesianIter *jp = ints->new_cartesian_iter(l[i]);
               CartesianIter& j = *jp;
               for (j.start(); j; j.next()) {
@@ -189,6 +212,49 @@ GaussianShell::grad_values(const RefIntegral& ints,
                   i_grad++;
                 }
               delete jp;
+            }
+          else {
+              double cart_g_values[3*((MAX_AM+1)*(MAX_AM+2))/2];
+              CartesianIter *jp = ints->new_cartesian_iter(l[i]);
+              CartesianIter& j = *jp;
+              int i_cart = 0;
+              for (j.start(); j; j.next()) {
+                  double norm_precon = precon[i];
+                  double norm_precon_g = precon_g[i];
+                  cart_g_values[i_cart] = - norm_precon_g
+                    * xs[j.a()+1] * ys[j.b()] * zs[j.c()];
+                  if (j.a()) cart_g_values[i_cart] += j.a() * norm_precon
+                    * xs[j.a()-1] * ys[j.b()] * zs[j.c()];
+                  i_cart++;
+
+                  cart_g_values[i_cart] = - norm_precon_g
+                    * xs[j.a()] * ys[j.b()+1] * zs[j.c()];
+                  if (j.b()) cart_g_values[i_cart] += j.b() * norm_precon
+                    * xs[j.a()] * ys[j.b()-1] * zs[j.c()];
+                  i_cart++;
+
+                  cart_g_values[i_cart] = - norm_precon_g
+                    * xs[j.a()] * ys[j.b()] * zs[j.c()+1];
+                  if (j.c()) cart_g_values[i_cart] += j.c() * norm_precon
+                    * xs[j.a()] * ys[j.b()] * zs[j.c()-1];
+                  i_cart++;
+                }
+              delete jp;
+              SphericalTransformIter *ti
+                  = ints->new_spherical_transform_iter(l[i]);
+              int n = ti->n();
+              memset(&g_values[i_grad], 0, sizeof(double)*n*3);
+              for (ti->start(); ti->ready(); ti->next()) {
+                  double coef = ti->coef();
+                  int pi = ti->pureindex();
+                  int ci = ti->cartindex();
+                  for (int xyz=0; xyz<3; xyz++) {
+                      g_values[i_grad + pi*3 + xyz]
+                          += coef * cart_g_values[ci*3 + xyz];
+                    }
+                }
+              i_grad += 3*n;
+              delete ti;
             }
         }
     }

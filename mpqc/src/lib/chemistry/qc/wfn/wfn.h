@@ -161,7 +161,7 @@ class Wavefunction: public MolecularEnergy {
     virtual RefSymmSCMatrix beta_ao_density();
 
     /// returns the ao to nao transformation matrix
-    virtual RefSCMatrix nao();
+    virtual RefSCMatrix nao(double *atom_charges=0);
 
     /// Returns the SO overlap matrix.
     virtual RefSymmSCMatrix overlap();

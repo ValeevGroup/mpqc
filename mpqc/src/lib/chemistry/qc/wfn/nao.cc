@@ -297,7 +297,7 @@ form_nao(const RefSymmSCMatrix &P, const RefSymmSCMatrix &S,
 // From "Natural Population Analysis", Alan E. Reed, Robert B. Weinstock,
 // Frank Weinhold, JCP, 83 (1985), p 735.
 RefSCMatrix
-Wavefunction::nao()
+Wavefunction::nao(double *atom_charges)
 {
 
   RefGaussianBasisSet b = basis();
@@ -851,6 +851,9 @@ Wavefunction::nao()
            << scprintf("%3d   %2s   % 8.6f",i + 1,
                        AtomInfo::symbol(molecule()->Z(i)),
                        double(molecule()->Z(i)) - e);
+      if (atom_charges) {
+          atom_charges[i] = molecule()->Z(i) - e;
+        }
       for (j=0; j<=maxam_on_atom[i]; j++) {
           e = 0.0;
           for (k=0; k<nam_on_atom[i][j]; k++) {

@@ -275,11 +275,7 @@ classname with the ``#<#'' and ``#>#'' operators immediately
 after the keyword naming the data.
 
 A pointer to a single object can be associated with multiple keywords by
-using
-\hyperref{value substitution}
-         {value substitution (see Section~}
-         {)}
-         {ParsedKeyValvalsub}.
+using value substitution.
 This is accomplished by holding references to all objects once they are
 read in.
 

@@ -226,7 +226,7 @@ class GaussianBasisSet: public SavableState
 
         \begin{description}
 
-        \item[type] This is a vector{pkvarray} that describes each
+        \item[type] This is a vector that describes each
         component of this shell.  For each element the following two
         keywords are read:
 
@@ -254,7 +254,7 @@ class GaussianBasisSet: public SavableState
         An example might be easier to understand.  This is a basis set
         specificition for STO-2G carbon:
 
-        \begin{verbatim}
+        <pre>
         basis: (
          carbon: "STO-2G": [
           (type: [(am = s)]
@@ -269,7 +269,7 @@ class GaussianBasisSet: public SavableState
            })
          ]
         )
-        \end{verbatim}
+        </pre>
      */
     GaussianBasisSet(const RefKeyVal&);
     GaussianBasisSet(StateIn&);

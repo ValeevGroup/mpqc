@@ -236,7 +236,7 @@ constructor to the diagonal elements of the matrix.  Use of this on a
 vector is undefined.
 \item[SCElementMaxAbs] Find the maximum absolute value element in a
 matrix or vector.  The result is available as the return value of the
-\srccd{result()} member.
+#result()# member.
 \item[SCElementDot] The constructor for this class takes three
 arguments: SCElementDot(double**a,
 double**b, int length).  The length of each vector given by

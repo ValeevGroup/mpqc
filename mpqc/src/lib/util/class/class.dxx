@@ -4,8 +4,8 @@
 The class library provides abstract base classes, macros,
 and include files that collectively provide a mechanism that
 allows programmers to retrieve information about a class'
-name; parents; and void, StateIn\srccd{\&}, and
-KeyVal\srccd{\&} constructors.  Also, a castdown
+name; parents; and void, \Ref{StateIn}, and
+\Ref{KeyVal} constructors.  Also, a castdown
 mechanism is provided.
 
 */

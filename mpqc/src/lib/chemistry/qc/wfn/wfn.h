@@ -108,41 +108,53 @@ class Wavefunction: public MolecularEnergy {
                            const RefSCMatrix& orbs,
                            double* orbval = 0);
 
+    /// Returns the charge.
     double charge();
+    /// Returns the number of electrons.
     virtual int nelectron() = 0;
 
-    // returns the so density
+    /// Returns the SO density.
     virtual RefSymmSCMatrix density() = 0;
+    /// Returns the AO density.
     virtual RefSymmSCMatrix ao_density();
+    /// Returns the natural orbitals.
     virtual RefSCMatrix natural_orbitals();
+    /// Returns the natural density (a diagonal matrix).
     virtual RefDiagSCMatrix natural_density();
 
-    // Return 1 if the alpha density is not equal to the beta density.
+    /// Return 1 if the alpha density is not equal to the beta density.
     virtual int spin_polarized() = 0;
 
-    // Return alpha and beta electron densities
+    /// Return alpha electron densities in the SO basis.
     virtual RefSymmSCMatrix alpha_density();
+    /// Return beta electron densities in the SO basis.
     virtual RefSymmSCMatrix beta_density();
+    /// Return alpha electron densities in the AO basis.
     virtual RefSymmSCMatrix alpha_ao_density();
+    /// Return beta electron densities in the AO basis.
     virtual RefSymmSCMatrix beta_ao_density();
 
-    // returns the ao to nao transformation matrix
+    /// returns the ao to nao transformation matrix
     virtual RefSCMatrix nao();
 
+    /// Returns the SO overlap matrix.
     virtual RefSymmSCMatrix overlap();
+    /// Returns the SO core Hamiltonian.
     virtual RefSymmSCMatrix core_hamiltonian();
 
     RefSCDimension basis_dimension();
     RefSCMatrixKit basis_matrixkit();
+    /// Returns the basis set.
     RefGaussianBasisSet basis() const;
+    /// Returns the integral evaluator.
     RefIntegral integral();
 
     // override symmetry_changed from MolecularEnergy
     void symmetry_changed();
     
-    // returns a matrix which transforms AO's to orthogonal AO's
-    // can be overridden, but defaults to S^-1/2
-    virtual RefSymmSCMatrix ao_to_orthog_ao();
+    /** Returns a matrix which transforms SO's to orthogonal SO's
+        Can be overridden, but defaults to $S^-1/2$ */
+    virtual RefSymmSCMatrix so_to_orthog_so();
 
     void print(ostream& = cout) const;
 };

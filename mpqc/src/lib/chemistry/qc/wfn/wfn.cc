@@ -195,7 +195,7 @@ Wavefunction::natural_orbitals()
       RefSymmSCMatrix dens = density();
 
       // transform the density into an orthogonal basis
-      RefSymmSCMatrix ortho = ao_to_orthog_ao();
+      RefSymmSCMatrix ortho = so_to_orthog_so();
 
       RefSymmSCMatrix densortho(basis_dimension(), basis_matrixkit());
       densortho.assign(0.0);
@@ -333,7 +333,7 @@ form_m_half(RefSymmSCMatrix& M,double tol)
 
 // returns a matrix containing S^-1/2
 RefSymmSCMatrix
-Wavefunction::ao_to_orthog_ao()
+Wavefunction::so_to_orthog_so()
 {
   // first calculate S
   RefSymmSCMatrix s = overlap().copy();

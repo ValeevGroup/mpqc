@@ -42,6 +42,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/symmint.h>
+#include <chemistry/qc/basis/orthog.h>
 #include <chemistry/qc/mbpt/util.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbptr12/trans123_r12a_abs.h>
@@ -63,6 +64,8 @@ using namespace sc;
 #define PRINT_NUM_TE_TYPES 4
 #define PRINT_R12_INTERMED 0
 #define LINDEP_TOL 1.e-6
+
+#define USE_GLOBAL_ORTHOG 1
 
 #if PRINT_BIGGEST_INTS
 BiggestContribs biggest_ints_1(4,40);
@@ -360,9 +363,19 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     integral_aux = 0;
 
     //
-    // Compute canonical orthogonalizer
+    // Compute orthogonalizer for the auxiliary basis
     //
-    
+#if USE_GLOBAL_ORTHOG
+    OverlapOrthog orthog(OverlapOrthog::Canonical,
+                         overlap_aux,
+                         so_matrixkit_aux,
+                         LINDEP_TOL,
+                         0);
+
+    RefSCMatrix orthog_aux_so = orthog.basis_to_orthog_basis();
+    orthog_aux_so = orthog_aux_so.t();
+    osodim_aux = orthog_aux_so.coldim();
+#else    
     RefSCMatrix overlap_aux_eigvec;
     RefDiagSCMatrix overlap_isqrt_eigval;
     RefDiagSCMatrix overlap_sqrt_eigval;
@@ -470,6 +483,8 @@ R12IntEval_abs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
     
     RefSCMatrix orthog_aux_so = overlap_isqrt_eigval * overlap_aux_eigvec.t();
     orthog_aux_so = orthog_aux_so.t();
+#endif
+
     orthog_aux = pl_aux->evecs_to_AO_basis(orthog_aux_so);
     orthog_aux_so = 0;
     

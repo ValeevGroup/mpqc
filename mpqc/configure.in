@@ -334,6 +334,7 @@ AC_ARG_WITH(ld,
 LD=$withval
 )
 
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
 if test $prefix = default_prefix; then
   scdatadir=$datadir
 else

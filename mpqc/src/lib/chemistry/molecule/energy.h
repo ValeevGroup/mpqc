@@ -38,11 +38,14 @@ class MolecularEnergy: public NLP2 {
     void x_to_molecule();
     void molecule_to_x();
   public:
+    MolecularEnergy(const MolecularEnergy&);
     MolecularEnergy(const RefKeyVal&);
     MolecularEnergy(StateIn&);
     ~MolecularEnergy();
     void save_data_state(StateOut&);
 
+    MolecularEnergy & operator=(const MolecularEnergy&);
+    
     virtual double energy();
     virtual RefMolecule molecule();
     void guess_hessian(RefSymmSCMatrix&);

@@ -27,6 +27,15 @@ MolecularEnergy::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+MolecularEnergy::MolecularEnergy(const MolecularEnergy& mole):
+  NLP2(mole),
+  _energy(_value)
+{
+  _mc = mole._mc;
+  _moldim = mole._moldim;
+  _mol = mole._mol;
+}
+
 MolecularEnergy::MolecularEnergy(const RefKeyVal&keyval):
   NLP2(keyval),
   _energy(_value)
@@ -74,6 +83,16 @@ MolecularEnergy::MolecularEnergy(StateIn&s):
   _mc.restore_state(s);
   _moldim.restore_state(s);
   _mol.restore_state(s);
+}
+
+MolecularEnergy&
+MolecularEnergy::operator=(const MolecularEnergy& mole)
+{
+  NLP2::operator=(mole);
+  _mc = mole._mc;
+  _moldim = mole._moldim;
+  _mol = mole._mol;
+  return *this;
 }
 
 void

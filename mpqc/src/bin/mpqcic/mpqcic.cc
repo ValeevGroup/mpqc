@@ -221,7 +221,7 @@ main(int argc, char *argv[])
         fprintf(stderr,"mpqcic: couldn't read \"basis\"\n");
         abort();
       }
-    tcenters = gbs->convert_to_centers_t();
+    tcenters = int_centers_from_gbs(gbs);
 
     mol = gbs->molecule();
 
@@ -443,7 +443,7 @@ main(int argc, char *argv[])
 
   // set up the basis set on this center
   if (grp->me() != 0) {
-      tcenters = gbs->convert_to_centers_t();
+      tcenters = int_centers_from_gbs(gbs);
       assign_centers(&centers,tcenters);
       free_centers(tcenters);
     }
@@ -469,7 +469,7 @@ main(int argc, char *argv[])
     bcaststate.bcast(oldgbs);
     bcaststate.flush();
 
-    tcenters = oldgbs->convert_to_centers_t();
+    tcenters = int_centers_from_gbs(oldgbs);
 
     assign_centers(&oldcenters,tcenters);
     free_centers(tcenters);

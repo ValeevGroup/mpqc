@@ -48,6 +48,7 @@ class DenIntegrator: virtual_base public SavableState {
 
     double *bs_values_;
     double *bsg_values_;
+    double *bsh_values_;
     double *alpha_dmat_;
     double *beta_dmat_;
     double *alpha_vmat_; // lower triangle of xi_i(r) v(r) xi_j(r) integrals
@@ -59,7 +60,7 @@ class DenIntegrator: virtual_base public SavableState {
 
     int need_gradient_;
 
-    void get_density(double *dmat, double &den, double grad[3]);
+    void get_density(double *dmat, PointInputData::SpinData &d);
     void init_integration(const RefDenFunctional &func,
                           const RefSymmSCMatrix& densa,
                           const RefSymmSCMatrix& densb);

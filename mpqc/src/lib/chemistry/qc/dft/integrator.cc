@@ -59,6 +59,7 @@ DenIntegrator::DenIntegrator()
 {
   bs_values_ = 0;
   bsg_values_ = 0;
+  bsh_values_ = 0;
   alpha_dmat_ = 0;
   beta_dmat_ = 0;
   alpha_vmat_ = 0;
@@ -70,6 +71,7 @@ DenIntegrator::DenIntegrator(const RefKeyVal& keyval)
 {
   bs_values_ = 0;
   bsg_values_ = 0;
+  bsh_values_ = 0;
   alpha_dmat_ = 0;
   beta_dmat_ = 0;
   alpha_vmat_ = 0;
@@ -81,16 +83,11 @@ DenIntegrator::~DenIntegrator()
 {
   delete[] bs_values_;
   delete[] bsg_values_;
+  delete[] bsh_values_;
   delete[] alpha_dmat_;
   delete[] beta_dmat_;
   delete[] alpha_vmat_;
   delete[] beta_vmat_;
-  bs_values_ = 0;
-  bsg_values_ = 0;
-  alpha_dmat_ = 0;
-  beta_dmat_ = 0;
-  alpha_vmat_ = 0;
-  beta_vmat_ = 0;
 }
 
 void
@@ -133,9 +130,13 @@ DenIntegrator::init_integration(const RefDenFunctional &func,
   bs_values_ = new double[nbasis_];
 
   delete[] bsg_values_;
+  delete[] bsh_values_;
   bsg_values_=0;
-  if (need_gradient_)
+  bsh_values_=0;
+  if (need_gradient_) {
       bsg_values_ = new double[3*nbasis_];
+      bsh_values_ = new double[6*nbasis_];
+    }
 
   delete[] alpha_dmat_;
   RefSymmSCMatrix adens = densa;
@@ -184,68 +185,6 @@ DenIntegrator::done_integration()
     }
 }
 
-void
-DenIntegrator::get_density(double *dmat, double &den, double dengrad[3])
-{
-  int i, j;
-  double bvi, bvix, bviy, bviz;
-  double densij;
-  
-  double tmp = 0.0;
-
-  if (need_gradient_) {
-      double grad[3];
-      grad[0] = grad[1] = grad[2] = 0.0;
-
-      int ij=0;
-      for (i=0; i < nbasis_; i++) {
-          bvi = bs_values_[i];
-          bvix = bsg_values_[i*3];
-          bviy = bsg_values_[i*3+1];
-          bviz = bsg_values_[i*3+2];
-
-          for (j=0; j < i; j++,ij++) {
-              densij = dmat[ij];
-              double bvj = bs_values_[j];
-
-              tmp += 2.0*densij*bvi*bvj;
-              grad[0] += densij*(bvi*bsg_values_[j*3+0] + bvj*bvix);
-              grad[1] += densij*(bvi*bsg_values_[j*3+1] + bvj*bviy);
-              grad[2] += densij*(bvi*bsg_values_[j*3+2] + bvj*bviz);
-            }
-
-          densij = dmat[ij]*bvi;
-          tmp += densij*bvi;
-          grad[0] += densij*bvix;
-          grad[1] += densij*bviy;
-          grad[2] += densij*bviz;
-
-          ij++;
-        }
-
-
-      den = tmp;
-  
-      dengrad[0] = grad[0] * 2.0;
-      dengrad[1] = grad[1] * 2.0;
-      dengrad[2] = grad[2] * 2.0;
-    }
-  else {
-      int ij=0;
-      for (i=0; i < nbasis_; i++) {
-          bvi = 2.0*bs_values_[i];
-
-          for (j=0; j < i; j++,ij++)
-              tmp += dmat[ij]*bvi*bs_values_[j];
-
-          tmp += 0.25*dmat[ij]*bvi*bvi;
-          ij++;
-        }
-
-      den = tmp;
-    }
-}
-
 inline static double
 norm(double v[3])
 {
@@ -259,6 +198,134 @@ dot(double v[3], double w[3])
   return v[0]*w[0] + v[1]*w[1] + v[2]*w[2];
 }
 
+void
+DenIntegrator::get_density(double *dmat, PointInputData::SpinData &d)
+{
+  int i, j;
+
+  if (need_gradient_) {
+      double tmp = 0.0;
+      double densij;
+      double bvi, bvix, bviy, bviz;
+      double bvixx, bviyx, bviyy, bvizx, bvizy, bvizz;
+
+      const int X = PointInputData::X;
+      const int Y = PointInputData::Y;
+      const int Z = PointInputData::Z;
+      const int XX = PointInputData::XX;
+      const int YX = PointInputData::YX;
+      const int YY = PointInputData::YY;
+      const int ZX = PointInputData::ZX;
+      const int ZY = PointInputData::ZY;
+      const int ZZ = PointInputData::ZZ;
+
+      double grad[3], hess[6];
+      for (i=0; i<3; i++) grad[i] = 0.0;
+      for (i=0; i<6; i++) hess[i] = 0.0;
+
+      int ij=0;
+      for (i=0; i < nbasis_; i++) {
+          bvi = bs_values_[i];
+          bvix = bsg_values_[i*3+X];
+          bviy = bsg_values_[i*3+Y];
+          bviz = bsg_values_[i*3+Z];
+          bvixx = bsh_values_[i*6+XX];
+          bviyx = bsh_values_[i*6+YX];
+          bviyy = bsh_values_[i*6+YY];
+          bvizx = bsh_values_[i*6+ZX];
+          bvizy = bsh_values_[i*6+ZY];
+          bvizz = bsh_values_[i*6+ZZ];
+
+          for (j=0; j < i; j++,ij++) {
+              densij = dmat[ij];
+              double bvj = bs_values_[j];
+              double bvjx = bsg_values_[j*3+X];
+              double bvjy = bsg_values_[j*3+Y];
+              double bvjz = bsg_values_[j*3+Z];
+              double bvjxx = bsh_values_[j*6+XX];
+              double bvjyx = bsh_values_[j*6+YX];
+              double bvjyy = bsh_values_[j*6+YY];
+              double bvjzx = bsh_values_[j*6+ZX];
+              double bvjzy = bsh_values_[j*6+ZY];
+              double bvjzz = bsh_values_[j*6+ZZ];
+
+              tmp += 2.0*densij*bvi*bvj;
+
+              grad[X] += densij*(bvi*bvjx + bvj*bvix);
+              grad[Y] += densij*(bvi*bvjy + bvj*bviy);
+              grad[Z] += densij*(bvi*bvjz + bvj*bviz);
+
+              hess[XX] += densij*(bvi*bvjxx +bvix*bvjx +bvjx*bvix +bvixx*bvj);
+              hess[YX] += densij*(bvi*bvjyx +bviy*bvjx +bvjy*bvix +bviyx*bvj);
+              hess[YY] += densij*(bvi*bvjyy +bviy*bvjy +bvjy*bviy +bviyy*bvj);
+              hess[ZX] += densij*(bvi*bvjzx +bviz*bvjx +bvjz*bvix +bvizx*bvj);
+              hess[ZY] += densij*(bvi*bvjzy +bviz*bvjy +bvjz*bviy +bvizy*bvj);
+              hess[ZZ] += densij*(bvi*bvjzz +bviz*bvjz +bvjz*bviz +bvizz*bvj);
+            }
+
+          densij = dmat[ij]*bvi;
+          tmp += densij*bvi;
+          grad[X] += densij*bvix;
+          grad[Y] += densij*bviy;
+          grad[Z] += densij*bviz;
+          hess[XX] += densij*bvixx;
+          hess[YX] += densij*bviyx;
+          hess[YY] += densij*bviyy;
+          hess[ZX] += densij*bvizx;
+          hess[ZY] += densij*bvizy;
+          hess[ZZ] += densij*bvizz;
+
+          ij++;
+        }
+
+
+      d.rho = tmp;
+      for (i=0; i<3; i++) d.del_rho[i] = 2.0 * grad[i];
+      for (i=0; i<6; i++) d.hes_rho[i] = 2.0 * hess[i];
+
+      d.lap_rho = d.hes_rho[XX] + d.hes_rho[YY] + d.hes_rho[ZZ];
+
+      d.gamma = norm(d.del_rho);
+      if (d.gamma > 1.0e-10) {
+          d.del_gamma[X] = (d.del_rho[X]*d.hes_rho[XX]
+                               + d.del_rho[Y]*d.hes_rho[YX]
+                               + d.del_rho[Z]*d.hes_rho[ZX]
+              )/d.gamma;
+          d.del_gamma[Y] = (d.del_rho[X]*d.hes_rho[YX]
+                               + d.del_rho[Y]*d.hes_rho[YY]
+                               + d.del_rho[Z]*d.hes_rho[ZY]
+              )/d.gamma;
+          d.del_gamma[Z] = (d.del_rho[X]*d.hes_rho[ZX]
+                               + d.del_rho[Y]*d.hes_rho[ZY]
+                               + d.del_rho[Z]*d.hes_rho[ZZ]
+              )/d.gamma;
+        }
+      else {
+          d.del_gamma[X] = d.del_gamma[Y] = d.del_gamma[Z] = 0.0;
+        }
+      d.del_rho_del_gamma = 0.0;
+      for (i=0; i<3; i++)
+          d.del_rho_del_gamma += d.del_rho[i]*d.del_gamma[i];
+
+    }
+  else {
+      double tmp = 0.0;
+      int ij=0;
+      for (i=0; i < nbasis_; i++) {
+          double bvi = 2.0*bs_values_[i];
+
+          for (j=0; j < i; j++,ij++)
+              tmp += dmat[ij]*bvi*bs_values_[j];
+
+          tmp += 0.25*dmat[ij]*bvi*bvi;
+          ij++;
+        }
+
+      d.rho = tmp;
+    }
+  d.rho_13 = pow(d.rho, 1./3.);
+}
+
 double
 DenIntegrator::do_point(const SCVector3 &r,
                         const RefDenFunctional &func,
@@ -268,7 +335,7 @@ DenIntegrator::do_point(const SCVector3 &r,
 
   // compute the basis set values
   if (need_gradient_) {
-      wfn_->basis()->grad_values(r,bsg_values_,bs_values_);
+      wfn_->basis()->hessian_values(r,bsh_values_,bsg_values_,bs_values_);
     }
   else {
       wfn_->basis()->values(r,bs_values_);
@@ -277,25 +344,13 @@ DenIntegrator::do_point(const SCVector3 &r,
   // loop over basis functions adding contributions to the density
   PointInputData id(r);
 
-  get_density(alpha_dmat_, id.rho_a, id.del_rho_a);
-  id.rho_a_13 = pow(id.rho_a, 1./3.);
-  if (need_gradient_)
-      id.gamma_aa = norm(id.del_rho_a);
+  get_density(alpha_dmat_, id.a);
 
   if (!spin_polarized_) {
-      id.rho_b = id.rho_a;
-      id.rho_b_13 = id.rho_a_13;
-      if (need_gradient_) {
-          for (i=0; i<3; i++) id.del_rho_b[i] = id.del_rho_a[i];
-          id.gamma_bb = id.gamma_aa;
-        }
+      id.b = id.a;
     }
   else {
-      get_density(beta_dmat_, id.rho_b, id.del_rho_b);
-      id.rho_b_13 = pow(id.rho_b,1./3.);
-      if (need_gradient_) {
-          id.gamma_bb = norm(id.del_rho_b);
-        }
+      get_density(beta_dmat_, id.b);
     }
 
   PointOutputData od;
@@ -307,21 +362,21 @@ DenIntegrator::do_point(const SCVector3 &r,
       // the contribution to the potential integrals
       if (need_gradient_) {
           double gradsa[3], gradsb[3];
-          gradsa[0] = weight*(2.0*od.df_dgamaa*id.del_rho_a[0] +
-                                  od.df_dgamab*id.del_rho_b[0]);
-          gradsa[1] = weight*(2.0*od.df_dgamaa*id.del_rho_a[1] +
-                                  od.df_dgamab*id.del_rho_b[1]);
-          gradsa[2] = weight*(2.0*od.df_dgamaa*id.del_rho_a[2] +
-                                  od.df_dgamab*id.del_rho_b[2]);
+          gradsa[0] = weight*(2.0*od.df_dgamma_aa*id.a.del_rho[0] +
+                                  od.df_dgamma_ab*id.b.del_rho[0]);
+          gradsa[1] = weight*(2.0*od.df_dgamma_aa*id.a.del_rho[1] +
+                                  od.df_dgamma_ab*id.b.del_rho[1]);
+          gradsa[2] = weight*(2.0*od.df_dgamma_aa*id.a.del_rho[2] +
+                                  od.df_dgamma_ab*id.b.del_rho[2]);
           double drhoa = weight*od.df_drho_a, drhob=0.0;
           if (spin_polarized_) {
               drhob = weight*od.df_drho_b;
-              gradsb[0] = weight*(2.0*od.df_dgambb*id.del_rho_b[0] +
-                                      od.df_dgamab*id.del_rho_a[0]);
-              gradsb[1] = weight*(2.0*od.df_dgambb*id.del_rho_b[1] +
-                                      od.df_dgamab*id.del_rho_a[1]);
-              gradsb[2] = weight*(2.0*od.df_dgambb*id.del_rho_b[2] +
-                                      od.df_dgamab*id.del_rho_a[2]);
+              gradsb[0] = weight*(2.0*od.df_dgamma_bb*id.b.del_rho[0] +
+                                      od.df_dgamma_ab*id.a.del_rho[0]);
+              gradsb[1] = weight*(2.0*od.df_dgamma_bb*id.b.del_rho[1] +
+                                      od.df_dgamma_ab*id.a.del_rho[1]);
+              gradsb[2] = weight*(2.0*od.df_dgamma_bb*id.b.del_rho[2] +
+                                      od.df_dgamma_ab*id.a.del_rho[2]);
             }
 
           int jk=0;
@@ -372,7 +427,7 @@ DenIntegrator::do_point(const SCVector3 &r,
         }
     }
 
-  return id.rho_a + id.rho_b;
+  return id.a.rho + id.b.rho;
 }
 
 ///////////////////////////////////////////////////////////////////////////

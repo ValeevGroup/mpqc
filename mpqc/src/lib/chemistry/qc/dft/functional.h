@@ -37,18 +37,27 @@
 #include <chemistry/qc/wfn/wfn.h>
 
 struct PointInputData {
-    double rho_a;
-    double rho_b;
+    enum {X=0, Y=1, Z=2};
+    enum {XX=0, YX=1, YY=2, ZX=3, ZY=4, ZZ=5};
+    struct SpinData {
+        double rho;
+        // rho^(1/3)
+        double rho_13;
 
-    double gamma_aa;
-    double gamma_bb;
+        double del_rho[3];
+        // gamma = |del rho|
+        double gamma;
 
-    double del_rho_a[3];
-    double del_rho_b[3];
-
-    // provided for convenience
-    double rho_a_13;
-    double rho_b_13;
+        // hessian of rho
+        double hes_rho[6];
+        // del |del rho|
+        double del_gamma[3];
+        // del^2 rho
+        double lap_rho;
+        // (del rho).(del |del rho|)
+        double del_rho_del_gamma;
+    };
+    SpinData a, b;
 
     const SCVector3 &r;
 
@@ -64,9 +73,9 @@ struct PointOutputData {
     double df_drho_b;
 
     // derivative of functional wrt density gradient
-    double df_dgamaa;
-    double df_dgambb;
-    double df_dgamab;
+    double df_dgamma_aa;
+    double df_dgamma_bb;
+    double df_dgamma_ab;
 };
 
 class DenFunctional: virtual_base public SavableState {

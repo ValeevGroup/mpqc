@@ -142,7 +142,7 @@ void
 NElFunctional::point(const PointInputData &id,
                      PointOutputData &od)
 {
-  od.energy = id.rho_a + id.rho_b;
+  od.energy = id.a.rho + id.b.rho;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -265,7 +265,7 @@ SumDenFunctional::point(const PointInputData &id,
 {
   od.energy = 0.0;
   od.df_drho_a = od.df_drho_b = 0.0;
-  od.df_dgamaa = od.df_dgambb = od.df_dgamab = 0.0;
+  od.df_dgamma_aa = od.df_dgamma_bb = od.df_dgamma_ab = 0.0;
   PointOutputData tmpod;
   for (int i=0; i < n_; i++) {
       funcs_[i]->point(id, tmpod);
@@ -274,9 +274,9 @@ SumDenFunctional::point(const PointInputData &id,
       if (compute_potential_) {
           od.df_drho_a += coefs_[i] * tmpod.df_drho_a;
           od.df_drho_b += coefs_[i] * tmpod.df_drho_b;
-          od.df_dgamaa += coefs_[i] * tmpod.df_dgamaa;
-          od.df_dgamab += coefs_[i] * tmpod.df_dgamab;
-          od.df_dgambb += coefs_[i] * tmpod.df_dgambb;
+          od.df_dgamma_aa += coefs_[i] * tmpod.df_dgamma_aa;
+          od.df_dgamma_ab += coefs_[i] * tmpod.df_dgamma_ab;
+          od.df_dgamma_bb += coefs_[i] * tmpod.df_dgamma_bb;
         }
     }
 }
@@ -346,20 +346,20 @@ LSDAXFunctional::point(const PointInputData &id,
   const double dmcx2rthird = -1.2407009817988; // 2*(3/4pi)^1/3
 
   if (!spin_polarized_) {
-      od.energy = mcx2rthird * 2.0 * id.rho_a * id.rho_a_13;
+      od.energy = mcx2rthird * 2.0 * id.a.rho * id.a.rho_13;
       if (compute_potential_) {
-          od.df_drho_a = dmcx2rthird * id.rho_a_13;
+          od.df_drho_a = dmcx2rthird * id.a.rho_13;
           od.df_drho_b = od.df_drho_a;
-          od.df_dgamaa = od.df_dgambb = od.df_dgamab = 0.0;
+          od.df_dgamma_aa = od.df_dgamma_bb = od.df_dgamma_ab = 0.0;
         }
     }
   else {
       od.energy = mcx2rthird
-                * (id.rho_a * id.rho_a_13 + id.rho_b * id.rho_b_13);
+                * (id.a.rho * id.a.rho_13 + id.b.rho * id.b.rho_13);
       if (compute_potential_) {
-          od.df_drho_a = dmcx2rthird * id.rho_a_13;
-          od.df_drho_b = dmcx2rthird * id.rho_b_13;
-          od.df_dgamaa = od.df_dgambb = od.df_dgamab = 0.0;
+          od.df_drho_a = dmcx2rthird * id.a.rho_13;
+          od.df_drho_b = dmcx2rthird * id.b.rho_13;
+          od.df_dgamma_aa = od.df_dgamma_bb = od.df_dgamma_ab = 0.0;
         }
     }
 }
@@ -450,8 +450,8 @@ LSDACFunctional::point(const PointInputData &id,
   const double one_third = 1./3.;
   const double two_thirds = 2./3.;
 
-  double rho = id.rho_a + id.rho_b;
-  double zeta = (id.rho_a - id.rho_b)/rho;
+  double rho = id.a.rho + id.b.rho;
+  double zeta = (id.a.rho - id.b.rho)/rho;
   double x = pow(3./(4.*M_PI*rho), sixth);
 
   double epc    = F(x, 0.0310907,          -0.10498,    3.72744, 12.9352);
@@ -539,21 +539,21 @@ XalphaFunctional::point(const PointInputData &id,
   const double four_thirds = 4./3.;
   
   if (!spin_polarized_) {
-      od.energy = - 2.0 * factor_ * id.rho_a * id.rho_a_13;
+      od.energy = - 2.0 * factor_ * id.a.rho * id.a.rho_13;
       if (compute_potential_) {
-          od.df_drho_a = -four_thirds * factor_ * id.rho_a_13;
+          od.df_drho_a = -four_thirds * factor_ * id.a.rho_13;
           od.df_drho_b = od.df_drho_a;
-          od.df_dgamaa = od.df_dgamab = od.df_dgambb = 0;
+          od.df_dgamma_aa = od.df_dgamma_ab = od.df_dgamma_bb = 0;
         }
     }
   else {
-      double rhoa43 = id.rho_a * id.rho_a_13;
-      double rhob43 = id.rho_b * id.rho_b_13;
+      double rhoa43 = id.a.rho * id.a.rho_13;
+      double rhob43 = id.b.rho * id.b.rho_13;
       od.energy = - factor_ * (rhoa43 + rhob43);
       if (compute_potential_) {
-          od.df_drho_a = -four_thirds * factor_ * id.rho_a_13;
-          od.df_drho_b = -four_thirds * factor_ * id.rho_b_13;
-          od.df_dgamaa = od.df_dgamab = od.df_dgambb = 0;
+          od.df_drho_a = -four_thirds * factor_ * id.a.rho_13;
+          od.df_drho_b = -four_thirds * factor_ * id.b.rho_13;
+          od.df_dgamma_aa = od.df_dgamma_ab = od.df_dgamma_bb = 0;
         }
     }
 }
@@ -627,8 +627,8 @@ Becke88Functional::point(const PointInputData &id,
   const double beta26=0.00010584; 
 
   // Use simplified formula
-  double rho_a_43 = id.rho_a*id.rho_a_13;
-  double xa = id.gamma_aa/rho_a_43;
+  double rho_a_43 = id.a.rho*id.a.rho_13;
+  double xa = id.a.gamma/rho_a_43;
   double xa2 = xa*xa;
   double ga_denom = 1/(1.+beta6*xa*asinh(xa));
   double ga = -beta*xa2*ga_denom;
@@ -636,30 +636,30 @@ Becke88Functional::point(const PointInputData &id,
 
   if (compute_potential_) {
     //   double gap = xa/sqrt(1.+xa2) + asinh(xa);
-    //  od.df_drho_a = beta*id.rho_a_13*xa2*ga_denom*(4./3. - 8.*beta*xa*ga_denom*gap);
-    //  od.df_dgamaa = -2.*beta*xa*ga_denom*(1.-3.*beta*xa*ga_denom*gap);
+    //  od.df_drho_a = beta*id.a.rho_13*xa2*ga_denom*(4./3. - 8.*beta*xa*ga_denom*gap);
+    //  od.df_dgamma_aa = -2.*beta*xa*ga_denom*(1.-3.*beta*xa*ga_denom*gap);
     //  double gap = beta*xa2/sqrt(1.+xa2) + beta*xa*asinh(xa) + 1./3.;
-    //  od.df_drho_a = beta*id.rho_a_13*xa2*ga_denom*(-4./3. - 8.*ga_denom*gap);
-    //  od.df_dgamaa = -2.*beta*xa*ga_denom*(1.-3.*beta*xa*ga_denom*gap);
+    //  od.df_drho_a = beta*id.a.rho_13*xa2*ga_denom*(-4./3. - 8.*ga_denom*gap);
+    //  od.df_dgamma_aa = -2.*beta*xa*ga_denom*(1.-3.*beta*xa*ga_denom*gap);
       double gap_denom = ga_denom*ga_denom;
       double gap = beta26*xa2*(xa/sqrt(xa2+1) - asinh(xa)) - 2*beta*xa;
       gap *= gap_denom;
-      od.df_drho_a = 4./3. * id.rho_a_13 * (ga - xa*gap);
-      od.df_dgamaa = 0.5*gap/id.gamma_aa;
-    //  double gap = (beta*id.rho_a_13*xa2*ga_denom)*(4./3. -
+      od.df_drho_a = 4./3. * id.a.rho_13 * (ga - xa*gap);
+      od.df_dgamma_aa = 0.5*gap/id.a.gamma;
+    //  double gap = (beta*id.a.rho_13*xa2*ga_denom)*(4./3. -
     //          8.*beta*xa2*ga_denom/sqrt(1.+xa2) - 8.*beta*xa*asinh(xa)*ga_denom);
-    //  od.df_dgamaa = beta26*xa2*denom*denom*(xa/sqrt(1.+xa2) + asinh(xa))
+    //  od.df_dgamma_aa = beta26*xa2*denom*denom*(xa/sqrt(1.+xa2) + asinh(xa))
     //                 - 2.*beta*xa*denom; 
-      if (isnan(od.df_dgamaa)) od.df_dgamaa=0.;
+      if (isnan(od.df_dgamma_aa)) od.df_dgamma_aa=0.;
 
       od.df_drho_b=od.df_drho_a;
-      od.df_dgambb=od.df_dgamaa;
-      od.df_dgamab=0.;
+      od.df_dgamma_bb=od.df_dgamma_aa;
+      od.df_dgamma_ab=0.;
     }
 
   if (spin_polarized_) {
-      double rho_b_43 = id.rho_b*id.rho_b_13;
-      double xb = id.gamma_bb/rho_b_43;
+      double rho_b_43 = id.b.rho*id.b.rho_13;
+      double xb = id.b.gamma/rho_b_43;
       double xb2 = xb*xb;
       double gb_denom = 1./(1.+beta6*xb*asinh(xb));
       double gb = -beta*xb2*gb_denom;
@@ -667,14 +667,14 @@ Becke88Functional::point(const PointInputData &id,
 
       if (compute_potential_) {
         //double gbp = xb/sqrt(1.+xb2) + asinh(xb);
-        //od.df_drho_b = beta*id.rho_b_13*xb2*gb_denom*(4./3. - 8.*beta*xb*gb_denom*gbp);
-        //od.df_dgambb = -2.*beta*xb*gb_denom*(1.-3.*beta*xb*gb_denom*gbp);
+        //od.df_drho_b = beta*id.b.rho_13*xb2*gb_denom*(4./3. - 8.*beta*xb*gb_denom*gbp);
+        //od.df_dgamma_bb = -2.*beta*xb*gb_denom*(1.-3.*beta*xb*gb_denom*gbp);
            double gbp_denom = gb_denom*gb_denom;
            double gbp = beta26*xb2*(xb/sqrt(xb2+1) - asinh(xb)) - 2.*beta*xb;
            gbp *= gbp_denom;
-           od.df_drho_b = 4./3. * id.rho_b_13 * (gb - xb*gbp);
-           od.df_dgambb = 0.5*gbp/id.gamma_bb;
-          if (isnan(od.df_dgambb)) od.df_dgambb=0.;
+           od.df_drho_b = 4./3. * id.b.rho_13 * (gb - xb*gbp);
+           od.df_dgamma_bb = 0.5*gbp/id.b.gamma;
+          if (isnan(od.df_dgamma_bb)) od.df_dgamma_bb=0.;
         }
     }
   else
@@ -743,9 +743,9 @@ LYPFunctional::point(const PointInputData &id,
   double ec;
 
   // Precalculate terms for efficiency
-  double dens=id.rho_a+id.rho_b;
+  double dens=id.a.rho+id.b.rho;
   double dens2=dens*dens;
-  double grad=id.gamma_aa+id.gamma_bb;
+  double grad=id.a.gamma+id.b.gamma;
   double grad2=grad*grad;
   double dens1_3=pow(dens,-1./3.);
 
@@ -768,23 +768,23 @@ LYPFunctional::point(const PointInputData &id,
     }
   else {
       // Use Miehlich's original formula
-      double dens_a2=id.rho_a*id.rho_a;
-      double dens_b2=id.rho_b*id.rho_b;
-      double grad_a2=id.gamma_aa*id.gamma_aa;
-      double grad_b2=id.gamma_bb*id.gamma_bb;
+      double dens_a2=id.a.rho*id.a.rho;
+      double dens_b2=id.b.rho*id.b.rho;
+      double grad_a2=id.a.gamma*id.a.gamma;
+      double grad_b2=id.b.gamma*id.b.gamma;
         
-      ec= -4*a*id.rho_a*id.rho_b/
+      ec= -4*a*id.a.rho*id.b.rho/
           ((1. + d*dens1_3)*dens) - a*b*omega*
           (-2.*grad2*dens2/3. +
            grad_b2*(2.*dens2/3. - dens_a2) +
            grad_a2*(2.*dens2/3. - dens_b2) +
-           id.rho_a*id.rho_b*
+           id.a.rho*id.b.rho*
            ((47./18. - 7.*delta/18.)*grad2 -
             (5./2. - delta/18.)*(grad_a2 + grad_b2) -
-            (-11. + delta)*(grad_a2*id.rho_a/dens
-                            + grad_b2*id.rho_b/dens)/9. +
-            pow(2.,11./3.)*cf*(pow(id.rho_a,8./3.)
-                               + pow(id.rho_b,8./3.))));
+            (-11. + delta)*(grad_a2*id.a.rho/dens
+                            + grad_b2*id.b.rho/dens)/9. +
+            pow(2.,11./3.)*cf*(pow(id.a.rho,8./3.)
+                               + pow(id.b.rho,8./3.))));
     }
 
   if (compute_potential_) {

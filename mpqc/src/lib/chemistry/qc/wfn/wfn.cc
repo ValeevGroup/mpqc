@@ -456,6 +456,12 @@ Wavefunction::compute_overlap_eig()
   cout << node0 << indent
        << "overlap eigenvalue max/min = " << maxabs/minabs
        << endl;
+
+  if (debug_ > 1) {
+    overlap_eigvec_.result_noupdate().print("S eigvec");
+    overlap_isqrt_eigval_.result_noupdate().print("s^(-1/2) eigvec");
+    so_to_orthog_so().print("SO to oSO");
+  }
 }
 
 // returns the orthogonalization matrix

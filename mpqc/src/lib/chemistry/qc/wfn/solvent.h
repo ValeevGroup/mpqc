@@ -52,6 +52,7 @@ class BEMSolventH: public AccumH {
     double **normals_;
     double *efield_dot_normals_;
     double *charges_;
+    double *charges_n_;
     double escalar_;
     double ecavitation_;
   public:

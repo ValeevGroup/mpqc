@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <util/misc/formio.h>
+#include <util/misc/timer.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
 #include <math/scmat/local.h>
@@ -164,24 +165,9 @@ BEMSolvent::surface_charge_density_to_charges(double *charges)
 double
 BEMSolvent::polarization_charge(double *charges)
 {
-  charges_to_surface_charge_density(charges);
   double charge = 0.0;
-  
-  // integrate over the surface
-  TriangulatedSurfaceIntegrator triint(surf_);
-  for (triint = 0; triint.update(); triint++) {
-      int j0 = triint.vertex_number(0);
-      int j1 = triint.vertex_number(1);
-      int j2 = triint.vertex_number(2);
-      double r = triint.r();
-      double s = triint.s();
-      double dA = triint.w();
-      charge += dA * (charges[j0] * (1 - r - s)
-                      + charges[j1] * r
-                      + charges[j2] * s);
-    }
-
-  surface_charge_density_to_charges(charges);
+  int n = ncharge();
+  for (int i=0; i<n; i++) charge += charges[i];
   return charge;
 }
 
@@ -191,43 +177,15 @@ BEMSolvent::polarization_charge(double *charges)
 void
 BEMSolvent::normalize_charge(double enclosed_charge, double* charges)
 {
-  charges_to_surface_charge_density(charges);
-
+  int i;
   double expected_charge = enclosed_charge
                          * (1.0/dielectric_constant_ - 1.0);
-
   double charge = 0.0;
-  double area = 0.0;
-  // integrate over the surface
-  TriangulatedSurfaceIntegrator triint(surf_);
-  for (triint = 0; triint.update(); triint++) {
-      int j0 = triint.vertex_number(0);
-      int j1 = triint.vertex_number(1);
-      int j2 = triint.vertex_number(2);
-      double r = triint.r();
-      double s = triint.s();
-      double dA = triint.w();
-      charge += dA * (charges[j0] * (1 - r - s)
-                      + charges[j1] * r
-                      + charges[j2] * s);
-      area += dA;
-    }
-
-  double charge_correction = (expected_charge - charge)/area;
-
-  surface_charge_density_to_charges(charges);
-
-  // add the correction to the charges
-  for (triint = 0; triint.update(); triint++) {
-      int j0 = triint.vertex_number(0);
-      int j1 = triint.vertex_number(1);
-      int j2 = triint.vertex_number(2);
-      double r = triint.r();
-      double s = triint.s();
-      double dA = triint.w();
-      charges[j0] += (1 - r - s) * dA * charge_correction;
-      charges[j1] += r * dA * charge_correction;
-      charges[j2] += s * dA * charge_correction;
+  int n = ncharge();
+  for (i=0; i<n; i++) charge += charges[i];
+  if (fabs(charge) > 1.0e-4) {
+      double charge_correction = expected_charge/charge;
+      for (i=0; i<n; i++) charges[i] *= charge_correction;
     }
 
   if (debug_) {
@@ -237,15 +195,14 @@ BEMSolvent::normalize_charge(double enclosed_charge, double* charges)
            << scprintf("  integrated surface charge = %20.15f", charge)
            << endl << indent
            << scprintf("  expected surface charge = %20.15f", expected_charge)
-           << endl << indent
-           << scprintf("  surface area = %20.15f", area) << endl;
+           << endl;
     }
 }
 
 void
 BEMSolvent::init_system_matrix()
 {
-  int i;
+  int i, j;
   int ntri = surf_->ntriangle();
   int n = ncharge();
 
@@ -253,34 +210,42 @@ BEMSolvent::init_system_matrix()
   RefSCMatrix system_matrix(d,d,matrixkit());
   system_matrix.assign(0.0);
 
-  // integrate over the surface
+  // precompute some arrays
+  TriangulatedSurfaceIntegrator triint(surf_);
+  int n_integration_points = triint.n();
+  SCVector3 *surfpv = new SCVector3[n_integration_points];
+  double *rfdA = new double[n_integration_points];
+  double *sfdA = new double[n_integration_points];
+  double *rsfdA = new double[n_integration_points];
+  int *j0 = new int[n_integration_points];
+  int *j1 = new int[n_integration_points];
+  int *j2 = new int[n_integration_points];
+  for (triint=0, i=0; i<n_integration_points&&triint.update(); i++,triint++) {
+      surfpv[i] = triint.current()->point();
+      j0[i] = triint.vertex_number(0);
+      j1[i] = triint.vertex_number(1);
+      j2[i] = triint.vertex_number(2);
+      double r = triint.r();
+      double s = triint.s();
+      double rs = 1 - r - s;
+      double dA = triint.w();
+      double fdA = - f_ * dA;
+      rfdA[i] = r * fdA;
+      sfdA[i] = s * fdA;
+      rsfdA[i] = rs * fdA;
+    }
+
   double *sysmati = new double[n];
   RefSCVector vsysmati(system_matrix->rowdim(),system_matrix->kit());
-  TriangulatedSurfaceIntegrator triint(surf_);
-  triint.distribute(grp_);
   // loop thru all the vertices
   for (i = 0; i<n; i++) {
       memset(sysmati,0,sizeof(double)*n);
       RefVertex v = surf_->vertex(i);
       const SCVector3& pv = v->point();
       const SCVector3& nv = v->normal();
-      for (triint = 0; triint.update(); triint++) {
-          // these depend on only triint
-          const SCVector3& surfpv = triint.current()->point();
-          int j0 = triint.vertex_number(0);
-          int j1 = triint.vertex_number(1);
-          int j2 = triint.vertex_number(2);
-          double r = triint.r();
-          double s = triint.s();
-          double rs = 1 - r - s;
-          double dA = triint.w();
-          double fdA = - f_ * dA;
-          double rfdA = r * fdA;
-          double sfdA = s * fdA;
-          double rsfdA = rs * fdA;
-
-          // these depend on both triint and i
-          SCVector3 diff(pv - surfpv);
+      // integrate over the surface
+      for (j = 0; j < n_integration_points; j++) {
+          SCVector3 diff(pv - surfpv[j]);
           double normal_component = diff.dot(nv);
           double diff2 = diff.dot(diff);
           if (diff2 <= 1.0e-8) {
@@ -292,15 +257,21 @@ BEMSolvent::init_system_matrix()
             }
           double denom = diff2*sqrt(diff2);
           double common_factor = normal_component/denom;
-          sysmati[j0] += common_factor * rsfdA;
-          sysmati[j1] += common_factor * rfdA;
-          sysmati[j2] += common_factor * sfdA;
+          sysmati[j0[j]] += common_factor * rsfdA[j];
+          sysmati[j1[j]] += common_factor * rfdA[j];
+          sysmati[j2[j]] += common_factor * sfdA[j];
         }
-      grp_->sum(sysmati,n);
       vsysmati->assign(sysmati);
       system_matrix->assign_row(vsysmati,i);
     }
 
+  delete[] surfpv;
+  delete[] rfdA;
+  delete[] sfdA;
+  delete[] rsfdA;
+  delete[] j0;
+  delete[] j1;
+  delete[] j2;
   delete[] sysmati;
 
   double A = 0.0;
@@ -309,8 +280,6 @@ BEMSolvent::init_system_matrix()
       V += triint.weight()*triint.dA()[2]*triint.current()->point()[2];
       A += triint.w();
     }
-  grp_->sum(A);
-  grp_->sum(V);
   area_ = A;
   volume_ = V;
 
@@ -332,32 +301,17 @@ void
 BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
 {
   if (system_matrix_i_.null()) {
+      tim_enter("sysmat");
       init_system_matrix();
+      tim_exit("sysmat");
     }
 
-  // **this surface integral is only needed for computed_enclosed_charge_
-  // **perhaps it should be avoided
-  // integrate over the surface
-  double A = 0.0;
+  tim_enter("qenq");
   double efield_dot_normal = 0.0;
-  TriangulatedSurfaceIntegrator triint(surf_);
-  for (triint = 0; triint.update(); triint++) {
-      const SCVector3& surfpv = triint.current()->point();
-      int j0 = triint.vertex_number(0);
-      int j1 = triint.vertex_number(1);
-      int j2 = triint.vertex_number(2);
-      double r = triint.r();
-      double s = triint.s();
-      double rs = 1 - r - s;
-      double dA = triint.w();
-      A += dA;
-
-      efield_dot_normal += ( efield_dot_normals[j0] * r
-                             +efield_dot_normals[j1] * s
-                             +efield_dot_normals[j2] * rs) * dA;
-
-      
-    }
+  int n = ncharge();
+  for (int i=0; i<n; i++)
+      efield_dot_normal += efield_dot_normals[i] * vertex_area_[i];
+  tim_exit("qenq");
 
   computed_enclosed_charge_ = efield_dot_normal/(4.0*M_PI);
 
@@ -366,15 +320,14 @@ BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
                                       * (1.0/dielectric_constant_ - 1.0);
 
       cout << node0 << indent
-         << scprintf("BEMSolvent:compute_charges: Surface Area = %20.15f", A)
-         << endl << indent
-         << scprintf("BEMSolvent:compute_charges: encl nuc + elec q = %20.15f",
+         << scprintf("BEMSolvent:compute_charges: encl q = %20.15f",
                      computed_enclosed_charge_)
          << endl << indent
          << scprintf("BEMSolvent:compute_charges: exp surface q = %20.15f",
                      computed_expected_charge) << endl;
     }
 
+  tim_enter("scomp");
   RefSCVector edotn(system_matrix_i_.coldim(),matrixkit());
   edotn.assign(efield_dot_normals);
   //edotn.print("E dot normals");
@@ -382,8 +335,11 @@ BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
   RefSCVector chrg = system_matrix_i_ * edotn;
   //chrg.print("Charges");
   chrg.convert(charges);
+  tim_exit("scomp");
 
+  tim_enter("stoq");
   surface_charge_density_to_charges(charges);
+  tim_exit("stoq");
 }
 
 double

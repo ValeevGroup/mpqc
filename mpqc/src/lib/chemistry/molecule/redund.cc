@@ -58,45 +58,15 @@ RedundMolecularCoor::save_data_state(StateOut&s)
 void
 RedundMolecularCoor::form_coordinates()
 {
-  int i;
-  int nbonds = bonds_->n();
-  int nbends = bends_->n();
-  int ntors = tors_->n();
-  int nouts = outs_->n();
-  int nextras = extras_->n();
-  for (i=0; i<nbonds; i++) all_->add(bonds_->coor(i));
-  for (i=0; i<nbends; i++) all_->add(bends_->coor(i));
-  for (i=0; i<ntors; i++) all_->add(tors_->coor(i));
-  for (i=0; i<nouts; i++) all_->add(outs_->coor(i));
-  for (i=0; i<nextras; i++) all_->add(extras_->coor(i));
-
   variable_ = all_;
-  
-  int nredundant = nbonds + nbends + ntors + nouts + nextras;
-  int nfixed = fixed_->n();
-
-  // see how many coords we expect
-  int n3 = molecule_->natom()*3;
-  int nunique = n3 - 6; // need to detect linear
-
-  if (nredundant < nunique) {
-    fprintf(stderr,"RedundMolecularCoor::form_coordinates: "
-            "found too few redundant coordinates\n");
-    fprintf(stderr,"  (the geometry is probably bad)\n");
-    abort();
-  }
-  
-  // put the fixed coordinates into the constant list
-  nfixed = fixed_->n();
-  for (i=0; i<nfixed; i++) {
-    constant_->add(fixed_->coor(i));
-  }
 }
 
 void
 RedundMolecularCoor::guess_hessian(RefSymmSCMatrix&hessian)
 {
   variable_->guess_hessian(molecule_,hessian);
+  variable_->print();
+  all_->print();
 }
 
 RefSymmSCMatrix

@@ -76,16 +76,16 @@ matrixtest:
 	@echo The target must be a specialization such as localtest.
 
 localtest: localtest.o $(TESTOBJ) $(LIBS)
-	$(CXX) $(CXXFLAGS) -o localtest $^ $(SYSLIBS) 
+	$(LD) $(LDFLAGS) -o localtest $^ $(SYSLIBS) 
 
 repltest: repltest.o $(TESTOBJ) $(LIBS)
-	$(CXX) $(CXXFLAGS) -o repltest $^ $(SYSLIBS) 
+	$(LD) $(LDFLAGS) -o repltest $^ $(SYSLIBS) 
 
 disttest: disttest.o $(TESTOBJ) $(LIBS)
-	$(CXX) $(CXXFLAGS) -o disttest $^ $(SYSLIBS) 
+	$(LD) $(LDFLAGS) -o disttest $^ $(SYSLIBS) 
 
 blockedtest: blockedtest.o $(TESTOBJ) $(LIBS)
-	$(CXX) $(CXXFLAGS) -o blockedtest $^ $(SYSLIBS) 
+	$(LD) $(LDFLAGS) -o blockedtest $^ $(SYSLIBS) 
 
 repltest.o: repltest.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< -o $@

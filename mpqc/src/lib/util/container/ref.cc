@@ -74,6 +74,6 @@ RefBase::warn_bad_ref_count() const
 void
 RefBase::ref_info(VRefCount*p,FILE*fp) const
 {
-  if (p) fprintf(fp,"nreference() = %d\n",p->nreference());
+  if (p) fprintf(fp,"nreference() = %ld\n",p->nreference());
   else fprintf(fp,"reference is null\n");
 }

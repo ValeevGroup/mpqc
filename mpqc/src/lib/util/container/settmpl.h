@@ -22,7 +22,8 @@ class Set {
       if (!nelement
           || ((Type*)i<&element[0])
           || ((Type*)i>&element[nelement-1])) {
-          fprintf(stderr,"Set::range_check(%d): nelement=%d\n",i,nelement);
+          fprintf(stderr,
+                  "Set::range_check(%ld): nelement=%d\n",(long)i,nelement);
           abort();
         }
     }
@@ -33,8 +34,8 @@ class Set {
     }
   public:
     int length() const { return nelement; }
-    Set():nelement(0),element(new Type[array_incr]),array_length(array_incr) {}
-    Set(const Set<Type> & s):nelement(0),element(0),array_length(0)
+    Set():nelement(0),array_length(array_incr),element(new Type[array_incr]) {}
+    Set(const Set<Type> & s):nelement(0),array_length(0),element(0)
     {
       this->operator = (s);
     }

@@ -14,7 +14,8 @@
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/molecule.h>
 
-class RefIntCoor;
+class SSRefIntCoor;
+typedef class SSRefIntCoor RefIntCoor;
 class IntCoor: virtual public SavableState {
 #   define CLASSNAME IntCoor
 #   include <util/state/stated.h>
@@ -86,7 +87,8 @@ class SumIntCoor: public IntCoor {
     int equivalent(RefIntCoor&);
 };
 
-class RefSetIntCoor;
+class SSRefSetIntCoor;
+typedef class SSRefSetIntCoor RefSetIntCoor;
 class SetIntCoor: virtual public SavableState {
 #   define CLASSNAME SetIntCoor
 #   define HAVE_CTOR

@@ -389,14 +389,13 @@ RegionTimer::get_cpu_time() const
 {
 #if defined(HAVE_NX)
   return 0.0;
-#elif defined(HAVE_SYS_RESOURCE)
+#endif
   double res;
   struct rusage r;
   getrusage(RUSAGE_SELF,&r);
   res = r.ru_utime.tv_sec + r.ru_stime.tv_sec;
   res += 0.000001 * ( r.ru_utime.tv_usec + r.ru_stime.tv_usec );
   return res;
-#endif
 }
 
 double
@@ -404,11 +403,10 @@ RegionTimer::get_wall_time() const
 {
 #if defined(HAVE_NX)
   return dclock();
-#elif defined(HAVE_SYS_RESOURCE)
+#endif
   struct timeval tod;
   gettimeofday(&tod,0);
   return tod.tv_sec + 0.000001 * tod.tv_usec;
-#endif
 }
 
 double

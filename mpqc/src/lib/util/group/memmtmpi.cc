@@ -79,8 +79,14 @@ MTMPIThread::run()
           req.print("RECV",mem_->hout);
           mem_->print_lock_->unlock();
         }
-      assert(req.size() >= 0);
-      assert(req.offset()+req.size() <= mem_->localsize());
+      if (req.touches_data()) {
+          assert(req.size() >= 0);
+          if (req.offset()+req.size() > mem_->localsize()) {
+              req.print("BAD RECV");
+              cout << "mem_->localsize() = " << mem_->localsize() << endl;
+            }
+          assert(req.offset()+req.size() <= mem_->localsize());
+        }
       switch (req.request()) {
       case MemoryDataRequest::Deactivate:
           return;

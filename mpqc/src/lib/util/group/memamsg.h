@@ -78,6 +78,8 @@ class MemoryDataRequest {
     int size() const { return data_[3]; }
     int serial_number() const { return data_[4]; }
 
+    int touches_data() const {return request()!=Deactivate&&request()!=Sync;}
+
     // Sync messages only define one datum besides type and node
     int reactivate() const { return data_[2]; }
 

@@ -279,7 +279,7 @@ RefSymmSCMatrix
 MolecularEnergy::get_cartesian_hessian()
 {
   hessian();
-  if (cartesian_gradient_.null()) {
+  if (cartesian_hessian_.null()) {
       cerr << "MolecularEnergy::get_cartesian_hessian(): "
            << "cartesian hessian not available"
            << endl;

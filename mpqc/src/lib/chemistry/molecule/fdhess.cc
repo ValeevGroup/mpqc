@@ -209,6 +209,10 @@ FinDispMolecularHessian::restart()
   if (statsize) {
     BcastStateInBin si(grp,restart_file_);
     restore_displacements(si);
+    mol_ = mole_->molecule();
+    }
+  else {
+    init();
     }
   restart_ = 0;
 }
@@ -253,7 +257,6 @@ FinDispMolecularHessian::checkpoint_displacements(StateOut& s)
   int i;
   displacement_point_group_.save_state(s);
   original_point_group_.save_state(s);
-  original_geometry_.dim().save_state(s);
   original_geometry_.save(s);
 
   s.put(disp_);

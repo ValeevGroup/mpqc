@@ -493,8 +493,9 @@ main(int argc, char *argv[])
     char *suf = strrchr(restartfile,'.');
     if (!strcmp(suf,".wfn")) {
       mole.key_restore_state(si,"mole");
-      ExEnv::out() << node0 << endl << indent
-           << "Restored <MolecularEnergy> from " << restartfile << endl;
+      ExEnv::out() << node0 << endl
+                   << indent << "Restored <" << mole->class_name()
+                   << "> from " << restartfile << endl;
 
       opt = keyval->describedclassvalue("opt");
       if (opt.nonnull())

@@ -123,6 +123,10 @@ class Molecule: public SavableState
     void transform_to_principal_axes(int trans_frame=1);
     void cleanup_molecule();
 
+    //. Compute the principal moments of inertia and, possibly, the
+    // principal axes.
+    void principal_moments_of_inertia(double *evals, double **evecs=0);
+
     int num_unique_atoms();
     int *find_unique_atoms();  // returns new'd array
 

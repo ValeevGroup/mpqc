@@ -6,10 +6,12 @@
 #include <new.h>
 #include "mpqc.h"
 #include <chemistry/molecule/coor.h>
+#include <math/optimize/opt.h>
 
 // Force linkages:
 const ClassDesc &fl0 = MPSCF::class_desc_;
 const ClassDesc &fl1 = IntMolecularCoor::class_desc_;
+const ClassDesc &fl2 = QNewtonOpt::class_desc_;
 
 void die()
 {

@@ -240,9 +240,14 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
   fflush(outfp);
   mol->print();
   
-  fprintf(outfp,"\n Initial simple internal coordinates\n\n");
   fflush(outfp);
-  coor->print_simples();
+  if (print_internal) {
+    fprintf(outfp,"\n Initial internal coordinates\n\n");
+    coor->print();
+  } else {
+    fprintf(outfp,"\n Initial simple internal coordinates\n\n");
+    coor->print_simples();
+  }
   fprintf(outfp,"\n");
   fflush(outfp);
 
@@ -290,11 +295,13 @@ Geom_update_mpqc(RefSCVector& grad, const RefKeyVal& keyval)
 
   // transform cartesian coordinates to internal coordinates 
   coor->to_internal(xn);
-  // xn.print("internal coordinates");
+  if (print_internal)
+    xn.print("internal coordinates");
 
   // transform cartesian gradient to internal coordinates
   coor->to_internal(gn,cart_grad);
-  // gn.print("internal coordinate gradients");
+  if (print_internal)
+    gn.print("internal coordinate gradients");
 
   // update the inverse hessian
   RefNLP2 nlp = 0;

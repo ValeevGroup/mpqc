@@ -12,45 +12,11 @@
 #include <mpi.h>
 #include <mpproto.h>
 
-#define DISABLE do { fflush(stdout); } while(0)
-#define ENABLE do { fflush(stdout); } while(0)
-
-#define DEBUG 0
-
-#if DEBUG
-#  undef PRINTF
-#  define PRINTF(args) do { DISABLE; \
-                            printf args; \
-                            ENABLE; \
-                           } while(0)
-#else
-#  undef PRINTF
-#  define PRINTF(args)
-#endif
-
-///////////////////////////////////////////////////////////////////////
-// The handler function and its data
-
-static volatile int global_source, global_type, global_mid;
-static MPIMemoryGrp *global_mpi_mem = 0;
-
-static void
-mpi_memory_handler(int*msgid_arg)
-{
-  long lmid = *msgid_arg;
-  if (!global_mpi_mem) {
-      fprintf(stderr,"WARNING: Tried to call mpi_memory_handler"
-              " without global_mpi_mem\n");
-    }
-  else {
-      global_mpi_mem->handler(&lmid);
-    }
-}
-
 ///////////////////////////////////////////////////////////////////////
 // The MPIMemoryGrp class
 
 #define CLASSNAME MPIMemoryGrp
+#define HAVE_KEYVAL_CTOR
 #define PARENTS public MIDMemoryGrp
 #include <util/class/classi.h>
 void *
@@ -61,26 +27,78 @@ MPIMemoryGrp::_castdown(const ClassDesc*cd)
   return do_castdowns(casts,cd);
 }
 
+MPIMemoryGrp::MPIMemoryGrp(const RefMessageGrp& msg):
+  MIDMemoryGrp(msg)
+{
+  if (debug_) cout << "MPIMemoryGrp entered" << endl;
+
+  use_acknowledgments_ = 0;
+  use_active_messages_ = 0;
+
+  init_mid();
+
+  activate();
+}
+
+MPIMemoryGrp::MPIMemoryGrp(const RefKeyVal& keyval):
+  MIDMemoryGrp(keyval)
+{
+  if (debug_) cout << "MPIMemoryGrp keyval entered" << endl;
+
+  use_acknowledgments_ = 0;
+  use_active_messages_ = 0;
+
+  init_mid();
+
+  activate();
+}
+
+void
+MPIMemoryGrp::init_mid()
+{
+  for (int i=0; i<max_mid; i++) mid_ready_[i] = 1;
+}
+
+long
+MPIMemoryGrp::get_mid()
+{
+  for (int i=0; i<max_mid; i++) {
+      if (!mid_ready_[i]) {
+          mid_ready_[i] = 0;
+          return i;
+        }
+    }
+
+  cerr << "MPIMemoryGrp::get_mid(): ran out of mid's" << endl;
+  abort();
+  return 0;
+}
+
+void
+MPIMemoryGrp::free_mid(long mid)
+{
+  mid_ready_[i] = 1;
+}
+
 long
 MPIMemoryGrp::lock()
 {
-  int oldvalue;
-  mpc_lockrnc(1, &oldvalue);
-  return oldvalue;
+  return 0;
 }
 
 void
 MPIMemoryGrp::unlock(long oldvalue)
 {
-  int old = oldvalue;
-  mpc_lockrnc(old, &old);
 }
 
 long
 MPIMemoryGrp::send(void* data, int nbytes, int node, int type)
 {
-  int mid;
-  mpc_send(data, nbytes, node, type, &mid);
+  int mid = get_mid();
+  //int MPI_Ibsend(void* buf, int count, MPI_Datatype datatype,
+  //int dest, int tag, MPI_Comm comm, MPI_Request *request) 
+  MPI_Ibsend(data, nbytes, MPI_BYTE, node, type,
+             MPI_COMM_WORLD, &handles_[mid]);
   return mid;
 }
 
@@ -91,110 +109,73 @@ MPIMemoryGrp::recv(void* data, int nbytes, int node, int type)
   if (node == -1) n = DONTCARE;
   else n = node;
   int t = type;
-  int mid;
-  mpc_recv(data, nbytes, &n, &t, &mid);
-  PRINTF(("MPIMemoryGrp:: recv mid = %d\n", mid));
+  int mid = get_mid();
+  // int MPI_Irecv(void* buf, int count, MPI_Datatype datatype, int
+  // source, int tag, MPI_Comm comm, MPI_Request *request) 
+  MPI_Irecv(data, nbytes, MPI_BYTE, n, t,
+            MPI_COMM_WORLD, &handles_[mid]);
+  if (debug_) cerr << "MPIMemoryGrp:: recv mid = " << mid << endl;
   return mid;
 }
 
 long
 MPIMemoryGrp::postrecv(void *data, int nbytes, int type)
 {
-  global_type = type;
-  global_source = DONTCARE; 
-#ifdef HAVE_MPL
-  mpc_rcvncall(data, nbytes,
-               (int*)&global_source, (int*)&global_type, (int*)&global_mid,
-               mpi_memory_handler);
-  PRINTF(("MPIMemoryGrp:: postrecv mid = %d\n", global_mid));
-#else
   cerr << "MPIMemoryGrp::postrecv: active messages not supported\n" << endl;
   abort();
-#endif
-  return global_mid;
+  return 0;
 }
 
 long
 MPIMemoryGrp::wait(long mid1, long mid2)
 {
-  int imid;
-  if (mid2 == -1) imid = (int)mid1;
-  else imid = DONTCARE;
-  size_t count;
-  PRINTF(("MPIMemoryGrp: waiting on %d\n", imid));
-  if (mpc_wait(&imid,&count)) {
-      fprintf(stderr, "MPIMemoryGrp: mpc_wait failed\n");
+  MPI_Status status;
+  if (debug_) {
+      cout << me() << ": MPIMemoryGrp::wait("
+           << mid1 << ", "
+           << mid2 << ")"
+           << endl;
+    }
+
+  if (mid1 == -1) {
+      cerr << me() << ": MPIMemoryGrp::wait: mid1 == -1" << endl;
       sleep(1);
       abort();
     }
-  PRINTF(("MPIMemoryGrp: imid = %d, global_mid = %d DONTCARE = %d count = %d\n",
-          imid, global_mid, DONTCARE, count));
-  return (long)imid;
-}
-
-MPIMemoryGrp::MPIMemoryGrp(const RefMessageGrp& msg):
-  MIDMemoryGrp(msg)
-{
-  PRINTF(("MPIMemoryGrp entered\n"));
-  if (global_mpi_mem) {
-      fprintf(stderr, "MPIMemoryGrp: only one allowed at a time\n");
-      sleep(1);
-      abort();
+  else if (mid2 == -1) {
+      MPI_Wait(&handle_[mid1], &status);
+      free_mid(mid1);
+      if (debug_)
+          cout << me() << ": MPIMemoryGrp::wait(): got(1) " << mid1 << endl;
+      return mid1;
     }
-
-  global_mpi_mem = this;
-
-  use_acknowledgments_ = 0;
-#ifdef HAVE_MPL
-  use_active_messages_ = 1;
-#else
-  use_active_messages_ = 0;
-#endif
-
-  PRINTF(("MPIMemoryGrp activating\n"));
-  activate();
-  PRINTF(("MPIMemoryGrp done\n"));
-}
-
-MPIMemoryGrp::MPIMemoryGrp(const RefKeyVal& keyval):
-  MIDMemoryGrp(keyval)
-{
-  PRINTF(("MPIMemoryGrp keyval entered\n"));
-  if (global_mpi_mem) {
-      fprintf(stderr, "MPIMemoryGrp: only one allowed at a time\n");
-      sleep(1);
-      abort();
+  else {
+      while(1) {
+          int flag;
+          MPI_Test(&handle_[mid1], &flag, &status);
+          if (flag) {
+              free_mid(mid1);
+              if (debug_)
+                  cout << me() << ": MPIMemoryGrp::wait(): got(2a) "
+                       << mid1 << endl;
+              return mid1;
+            }
+          MPI_Test(&handle_[mid2], &flag, &status);
+          if (flag) {
+              free_mid(mid2);
+              if (debug_)
+                  cout << me() << ": MPIMemoryGrp::wait(): got(2b) "
+                       << mid2 << endl;
+              return mid2;
+            }
+        }
     }
-
-  global_mpi_mem = this;
-
-  use_acknowledgments_ = 0;
-#ifdef HAVE_MPL
-  use_active_messages_ = keyval->booleanvalue("active");
-#else
-  use_active_messages_ = 0;
-#endif
-
-  PRINTF(("MPIMemoryGrp activating\n"));
-  activate();
-  PRINTF(("MPIMemoryGrp done\n"));
 }
 
 MPIMemoryGrp::~MPIMemoryGrp()
 {
-  PRINTF(("MPIMemoryGrp: in DTOR\n"));
+  if (debug_) cerr << "MPIMemoryGrp: in DTOR" << endl;
   deactivate();
-
-  int oldlock = lock();
-  global_mpi_mem = 0;
-  unlock(oldlock);
-}
-
-void
-MPIMemoryGrp::deactivate()
-{
-  if (!global_mpi_mem) return;
-  MIDMemoryGrp::deactivate();
 }
 
 #endif

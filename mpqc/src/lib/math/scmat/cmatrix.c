@@ -10,8 +10,10 @@
 #include <string.h>
 #include <math/scmat/cmatrix.h>
 
-static void ludcmp(double**, int dim, int*, double*);
-static void lubksb(double**, int dim, int*, double*);
+static void ludcmp(double**, int, int*, double*);
+static void lubksb(double**, int, int*, double*);
+static void symm_lu_decomp(double**, int, double*);
+static void symm_lu_back_sub(double**, int, double*);
 
 static void tred2(int dim,double**,double*,double*,int);
 static void tqli(int dim,double*,double**,double*,int,double);
@@ -103,15 +105,16 @@ cmat_determ(double** a, int sym, int dim)
 {
   int i;
   double det=0;
-  int *indx= (int*) malloc(sizeof(int)*dim);
 
   if (sym) {
-    fprintf(stderr,"cmat_determ: can't handle sym=1 yet\n");
-    abort();
+    symm_lu_decomp(a,dim,&det);
+  } else {
+    int *indx= (int*) malloc(sizeof(int)*dim);
+    ludcmp(a,dim,indx,&det);
+    free(indx);
   }
 
-  ludcmp(a,dim,indx,&det);
-  free(indx);
+  if (fabs(det) < 1.0e-16) return 0;
 
   for (i=0; i < dim; i++) det *= a[i][i];
 
@@ -124,79 +127,81 @@ cmat_solve_lin(double** a, int sym, double* b, int dim)
 {
   int i;
   double det=0;
-  int *indx= (int*) malloc(sizeof(int)*dim);
 
   if (sym) {
-      fprintf(stderr,"cmat_solve_lin: can't handle sym=1 yet\n");
-      abort();
-    }
-
-  ludcmp(a,dim,indx,&det);
+    symm_lu_decomp(a,dim,&det);
+    if (fabs(det) < 1.0e-16) return 0;
+    symm_lu_back_sub(a,dim,b);
+  } else {
+    int *indx= (int*) malloc(sizeof(int)*dim);
+    ludcmp(a,dim,indx,&det);
+    if (fabs(det) < 1.0e-16) return 0;
+    lubksb(a,dim,indx,b);
+    free(indx);
+  }
 
   for(i=0; i < dim; i++) det *= a[i][i];
-
-  lubksb(a,dim,indx,b);
-  free(indx);
+  if (fabs(det) < 1.0e-16) return 0;
 
   return det;
-  }
+}
 
 double 
 cmat_invert(double**a, int sym, int dim)
 {
   int i,j;
   double det=0;
-  double **a_orig;
-  int *indx= (int*) malloc(sizeof(int)*dim);
   double **y;
-  double* b;
-
-  /* if a is a symmetric matrix, then copy it to a nonsymmetric matrix */
-  if (sym) {
-      a_orig = a;
-      a = cmat_new_square_matrix(dim);
-      for (i=0; i<dim; i++) {
-          for (j=0; j<=i; j++) {
-              a[i][j] = a[j][i] = a_orig[i][j];
-            }
-        }
-    }
-
-  ludcmp(a,dim,indx,&det);
-
-  for(i=0; i < dim; i++) det *= a[i][i];
+  double *b;
 
   b = (double*) malloc(sizeof(double)*dim);
-
-  /* y=a */
   y = cmat_new_square_matrix(dim);
-  for (i=0; i<dim; i++) {
-      for (j=0; j<dim; j++) y[i][j] = a[i][j];
+
+  if (sym) {
+    symm_lu_decomp(a,dim,&det);
+    if (fabs(det) < 1.0e-16) return 0;
+
+    for (i=0; i < dim; i++) det *= a[i][i];
+    if (fabs(det) < 1.0e-16) return 0;
+
+    for (i=0; i < dim; i++) {
+      for (j=0; j < dim; j++) b[j]=0;
+      b[i]=1;
+      symm_lu_back_sub(a,dim,b);
+      for (j=0; j < dim; j++) y[j][i]=b[j];
     }
 
-  for(i=0; i < dim; i++) {
-    for(j=0; j < dim; j++) b[j]=0;
-    b[i]=1;
-    lubksb(y,dim,indx,b);
-    for(j=0; j < dim; j++) a[j][i]=b[j];
+    for (i=0; i < dim; i++)
+      for (j=0; j <= i; j++)
+        a[i][j] = y[i][j];
+
+  } else {
+    int *indx= (int*) malloc(sizeof(int)*dim);
+
+    ludcmp(a,dim,indx,&det);
+    if (fabs(det) < 1.0e-16) return 0;
+
+    for (i=0; i < dim; i++) det *= a[i][i];
+    if (fabs(det) < 1.0e-16) return 0;
+
+    for (i=0; i < dim; i++) {
+      memset(b,0,sizeof(double)*dim);
+      b[i]=1;
+      lubksb(a,dim,indx,b);
+      for (j=0; j < dim; j++) y[j][i]=b[j];
     }
+
+    for (i=0; i < dim; i++)
+      for (j=0; j < dim; j++)
+        a[i][j] = y[i][j];
+    free(indx);
+  }
 
   free(b);
   cmat_delete_matrix(y);
-  free(indx);
 
-  /* copy a back to the original a, if necessary */
-  if (sym) {
-      int i,j;
-      for (i=0; i<dim; i++) {
-          for (j=0; j<=i; j++) {
-              a_orig[i][j] = 0.5*(a[i][j]+a[j][i]);
-            }
-        }
-      cmat_delete_matrix(a);
-    }
   return det;
-  }
+}
 
 static void
 ludcmp(double** a, int n, int *indx, double *d)
@@ -211,7 +216,7 @@ ludcmp(double** a, int n, int *indx, double *d)
   for (i=0; i < n ; i++) {
     big=0.0;
     for (j=0; j < n; j++) if ((temp=fabs(a[i][j])) > big) big=temp;
-#if 0
+#if 1
     if (big == 0.0) {
       *d = 0.0;
       free(vv);
@@ -291,6 +296,98 @@ lubksb(double** a, int n, int *indx, double* b)
     b[i] = sum/a[i][i];
     }
   }
+
+/*
+ * this is LU decomposition where A is a symmetric matrix
+ * when A is symmetric, then 
+ *   beta(i,j) = A(i,j) - sum_k(i-1) beta(k,i)*beta(k,j)/beta(k,k)
+ *   alpha(i,j) = beta(j,i)/beta(j,j)
+ *
+ * since we're storing beta in a, the indices of beta will be switched
+ * since alpha is expressed in terms of beta, we don't store it
+ *
+ * so we have
+ *   beta(i,j) = A(i,j) - sum_k(i-1) beta(i,k)*beta(j,k)/beta(k,k)
+ *   alpha(i,j) = beta(i,j)/beta(j,j)
+ */
+
+static void
+symm_lu_decomp(double** a, int n, double *d)
+{
+  int i,imax,j,k;
+  double big,dum,sum,tmp;
+
+  double* v = (double*) malloc(sizeof(double)*n);
+  memset(v,0,sizeof(double)*n);
+
+  /* check for singular matrix */
+  for (i=0; i < n; i++) {
+    for (j=0; j < i; j++) {
+      v[i] = ((tmp=fabs(a[i][j])) > v[i]) ? tmp : v[i];
+      v[j] = (tmp > v[j]) ? tmp : v[j];
+    }
+    v[i] = ((tmp=fabs(a[i][i])) > v[i]) ? tmp : v[i];
+  }
+
+  for (i=0; i < n; i++) {
+    if (fabs(v[i]) < 1.0e-16) {
+      fprintf(stderr,"\n  warning: singular matrix in symm_lu_decomp\n");
+      *d = 0.0;
+      return;
+    }
+  }
+
+  free(v);
+
+  *d = 1.0;
+
+  for (i=0; i < n ; i++) {
+    /* check to make sure we're not going to blow up */
+    if (i < n-1) {
+      tmp = 0; 
+      for (k=0; k < i-1; k++)
+        tmp += a[i][k]*a[i][k]/a[k][k];
+      if (fabs(a[i][i]-tmp) < 1.0e-16) {
+        fprintf(stderr,"\n  warning: singular matrix in symm_lu_decomp 2\n");
+        *d = 0;
+        return;
+      }
+    }
+    for (j=i; j < n; j++) {
+      tmp = 0;
+      for (k=0; k <= i-1; k++)
+        tmp -= a[i][k]*a[j][k]/a[k][k];
+      a[j][i] += tmp;
+    }
+  }
+}
+
+static void
+symm_lu_back_sub(double** a, int n, double* b)
+{
+  int i,j;
+  double sum;
+
+ /* form y(i) = bi - sum_j(i-1) alpha(i,j)*y(j)
+  * alpha(i,j) = beta(j,i)/beta(j,j), but beta is stored lower instead of 
+  * upper triangle, so alpha(i,j) = beta(i,j)/beta(j,j)
+  */
+  for (i=0; i < n ; i++) {
+    sum = 0;
+    for (j=0; j < i; j++)
+      sum += (a[i][j]/a[j][j]) * b[j];
+    b[i] -= sum;
+  }
+
+ /* now form x(i) = 1/beta(i,i)*[y(i) - sum_j=i+1(N) beta(i,j)*x(j)]
+  * is really ...[...beta(j,i)*x(j)]
+  */
+  for (i=n-1; i >= 0 ; i--) {
+    sum = b[i];
+    for (j=i+1; j < n ; j++) sum -= a[j][i]*b[j];
+    b[i] = sum/a[i][i];
+  }
+}
 
 /*
  * This does c(t) (+)= a(t) * b(t), where the (t) means the transpose

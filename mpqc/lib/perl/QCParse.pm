@@ -107,6 +107,10 @@ sub initialize {
 sub parse_file {
     my $self = shift;
     my $file = shift;
+    if (! -f "$file") {
+        $self->{"ok"} = 0;
+        return;
+    }
     open(INPUT, "<$file");
     my $string = "";
     while (<INPUT>) {
@@ -115,6 +119,7 @@ sub parse_file {
     close(INPUT);
     #print "Got file:\n$string\n";
     $self->parse_string($string);
+    $self->{"ok"} = 1;
 }
 
 sub write_file {
@@ -246,6 +251,12 @@ sub value_as_lines {
         $i++;
     }
     return @array;
+}
+
+# returns 1 if the input file existed
+sub ok {
+    my $self = shift;
+    $self->{"ok"};
 }
 
 sub display {
@@ -493,6 +504,12 @@ sub mode_following() {
     return scalar($self->{"parser"}->value_as_array("followed")) != 0;
 }
 
+# returns 1 if the input file existed
+sub ok {
+    my $self = shift;
+    $self->{"parser"}->{"ok"};
+}
+
 ##########################################################################
 
 package InputWriter;
@@ -539,10 +556,15 @@ sub write_qcinput {
 package MPQCInputWriter;
 @ISA = qw( InputWriter );
 %methodmap = ("MP2" => "MBPT2",
+              "OPT1[2]" => "MBPT2",
               "OPT2[2]" => "MBPT2",
               "ZAPT2" => "MBPT2",
               "ROSCF" => "SCF",
               "SCF" => "SCF" );
+%mbpt2map = ("MP2" => "mp",
+             "OPT1[2]" => "opt1",
+             "OPT2[2]" => "opt2",
+             "ZAPT2" => "zapt");
 $debug = 0;
 
 sub new {
@@ -644,6 +666,8 @@ sub input_string() {
     if ($method eq "MBPT2") {
         my $fzc = $qcinput->fzc();
         my $fzv = $qcinput->fzv();
+        my $mbpt2method = $mbpt2map{uc($qcinput->method())};
+        $mole = "$mole\n    method = $mbpt2method";
         $mole = "$mole\n    nfzc = $fzc";
         $mole = "$mole\n    nfzv = $fzv";
         my $refmethod = "";

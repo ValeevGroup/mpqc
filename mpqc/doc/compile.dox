@@ -69,12 +69,11 @@ at any GNU software FTP repository.
          must be given --with-libs, --with-libdirs, or both.
 
     <li> A lexical analyzer generator is required to generate code to read
-         input files.  Currently, <a
-         href="ftp://ftp.gnu.org/non-gnu/flex/">GNU flex, version
-         2.5.4a</a>, with a patch applied to the source, <a
-         href="http://aros.ca.sandia.gov/~cljanss/mpqc/distrib/patch-flex-2.5.4a-snl.gz">patch-flex-2.5.4a-snl.gz</a>,
-         is required.  Future versions of flex are under development that
-         will not require this patch.
+	 input files.  The flex program is used for this purpose.
+	 However, the most common version of flex, 2.5.4a, does
+	 not generate legal C++.  It may be necessary to download,
+	 compile, and install a more recent version of flex from <a
+	 href="http://lex.sourceforge.net">http://lex.sourceforge.net</a>.
 
          Make sure that <tt>FlexLexer.h</tt> from flex is in your include
          path. You may need to give the path to <tt>FlexLexer.h</tt> to

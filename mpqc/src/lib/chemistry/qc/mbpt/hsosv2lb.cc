@@ -819,6 +819,19 @@ MBPT2::compute_hsos_v2_lb()
         tim_exit("compute ecorr");
         }       // exit j loop
       }         // exit i loop
+
+    if (nsocc == 0 && npass > 1 && pass < npass - 1) {
+      double passe = ecorr_opt2;
+      msg_->sum(passe);
+      cout << node0 << indent
+           << "Partial correlation energy for pass " << pass << ":" << endl;
+      cout << node0 << indent
+           << scprintf("  restart_ecorr_v2lb   = %14.10f", passe)
+           << endl;
+      cout << node0 << indent
+           << scprintf("  restart_orbital_v2lb = %d", ((pass+1) * ni))
+           << endl;
+      }
     }           // exit loop over i-batches (pass)
 
 

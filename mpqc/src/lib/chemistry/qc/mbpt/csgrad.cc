@@ -43,14 +43,6 @@ static void sum_gradients(const RefMessageGrp& msg, double **f, int n1, int n2);
 static void zero_gradients(double **f, int n1, int n2);
 static void accum_gradients(double **g, double **f, int n1, int n2);
 
-static int nfuncmax;
-static int nij;        // number of i,j pairs on a node (for e.g., mo_int)
-static double *mo_int; // MO integrals of type (ov|ov)
-                       // (and these integrals divided by
-                       // orbital energy denominators)
-static double *integral_iqjs; // half-transformed integrals
-static double *iqjs_buf;
-
 #define PRINT1Q 0
 
 #if PRINT_CONTRIB
@@ -99,6 +91,13 @@ MBPT2::compute_cs_grad()
 
   RefSCMatrixKit kit = SCMatrixKit::default_matrixkit();
 
+  int nij;        // number of i,j pairs on a node (for e.g., mo_int)
+  double *mo_int; // MO integrals of type (ov|ov)
+                  // (and these integrals divided by
+                  // orbital energy denominators)
+  double *integral_iqjs; // half-transformed integrals
+  double *iqjs_buf;
+
   int nocc_act, nvir_act;
   int i, j, k;
   int ii, bb;
@@ -110,7 +109,7 @@ MBPT2::compute_cs_grad()
   int ik_offset;
   int i_offset; 
   int npass, pass;
-  long tmpint;
+  int tmpint;
   int np, nq, nr, ns; 
   int P, Q, R, S;
   int p, q, r, s;
@@ -289,6 +288,41 @@ MBPT2::compute_cs_grad()
   msg_->bcast(ni);
   msg_->bcast(mem_static);
 
+  // Compute the storage remaining for the integral routines
+  distsize_t dyn_mem = compute_cs_dynamic_memory(ni,nocc_act);
+  int mem_remaining;
+  if (mem_alloc <= (dyn_mem + mem_static)) mem_remaining = 0;
+  else mem_remaining = mem_alloc - (int)(dyn_mem + mem_static);
+
+  cout << node0 << indent
+       << "Memory available per node:      " << mem_alloc << " Bytes"
+       << endl;
+  cout << node0 << indent
+       << "Static memory used per node:    " << mem_static << " Bytes"
+       << endl;
+  cout << node0 << indent
+       << "Total memory used per node:     " << dyn_mem+mem_static << " Bytes"
+       << endl;
+  cout << node0 << indent
+       << "Memory required for one pass:   "
+       << compute_cs_dynamic_memory(nocc_act,nocc_act)+mem_static
+       << " Bytes"
+       << endl;
+  cout << node0 << indent
+       << "Minimum memory required:        "
+       << compute_cs_dynamic_memory(1,nocc_act)+mem_static
+       << " Bytes"
+       << endl;
+  cout << node0 << indent
+       << "Batch size:                     " << ni
+       << endl;
+
+  if (ni == 0) {
+    cerr << node0 << "Batch size is 0: more memory or processors are needed"
+         << endl;
+    abort();
+    }
+
   if (ni == nocc_act) {
     npass = 1;
     rest = 0;
@@ -321,29 +355,6 @@ MBPT2::compute_cs_grad()
           if (index++ % nproc == me) nijmax++;
         }
     }
-
-  // Compute the storage remaining for the integral routines
-  int dyn_mem = compute_cs_dynamic_memory(ni,nocc_act);
-  int mem_remaining = mem_alloc - (dyn_mem + mem_static);
-  if (mem_remaining < 0) mem_remaining = 0;
-
-  cout << node0 << indent
-       << scprintf("Memory available per node:      %i Bytes",mem_alloc)
-       << endl;
-  cout << node0 << indent
-       << scprintf("Static memory used per node:    %i Bytes",mem_static)
-       << endl;
-  cout << node0 << indent
-       << scprintf("Total memory used per node:     %i Bytes",
-                   dyn_mem+mem_static)
-       << endl;
-  cout << node0 << indent
-       << scprintf("Memory required for one pass:   %i Bytes",
-                   compute_cs_dynamic_memory(nocc_act,nocc_act)+mem_static)
-       << endl;
-  cout << node0 << indent
-       << scprintf("Batch size:                     %i", ni)
-       << endl;
 
   ////////////////////////////////////////////////
   // The scf vector is distributed between nodes;
@@ -971,6 +982,19 @@ MBPT2::compute_cs_grad()
       cout << indent << "End of ecorr" << endl;
       }
     // end of debug print
+
+    if (npass > 1 && pass < npass - 1) {
+      double passe = ecorr_mp2;
+      msg_->sum(passe);
+      cout << node0 << indent
+           << "Partial correlation energy for pass " << pass << ":" << endl;
+      cout << node0 << indent
+           << scprintf("  restart_ecorr_memgrp   = %14.10f", passe)
+           << endl;
+      cout << node0 << indent
+           << scprintf("  restart_orbital_memgrp = %d", ((pass+1) * ni))
+           << endl;
+      }
 
     // don't go beyond this point if only the energy is needed
     if (!dograd) continue;
@@ -1669,7 +1693,6 @@ MBPT2::compute_cs_grad()
     if (debug_ && me == 0) {
       cout << indent << "Done with pass " << pass << endl;
       }
-
     }           // exit loop over i-batches (pass)
   tim_exit("mp2 passes");
 
@@ -2580,11 +2603,10 @@ MBPT2::compute_cs_batchsize(int mem_static, int nocc_act)
   int index;
   int mem1, mem2, mem3;
   int mem_dyn;   // dynamic memory available
-  int maxdyn;
+  distsize_t maxdyn;
   int tmp;
   int i, j;
   int ni;
-  int nij_local; // (local to this function; the variable nij is static)
   int nproc = msg_->n();
 
   ///////////////////////////////////////
@@ -2602,10 +2624,7 @@ MBPT2::compute_cs_batchsize(int mem_static, int nocc_act)
   maxdyn = compute_cs_dynamic_memory(ni, nocc_act);
 
   if (maxdyn > mem_dyn) {
-    cerr << scprintf("At least %i bytes required (for batch size 1)\n"
-                     "but only %i bytes allocated; program exits\n",
-                     maxdyn+mem_static, mem_alloc);
-    abort();
+    return 0;
     }
 
   ni = 2;
@@ -2630,16 +2649,15 @@ MBPT2::compute_cs_batchsize(int mem_static, int nocc_act)
 // i-batches are included here  - only these arrays
 // affect the batch size.
 /////////////////////////////////////
-int
+distsize_t
 MBPT2::compute_cs_dynamic_memory(int ni, int nocc_act)
 {
   int index;
-  int mem1, mem2, mem3;
-  int mem_dyn;   // dynamic memory available
-  int maxdyn;
-  int tmp;
+  distsize_t mem1, mem2, mem3;
+  distsize_t maxdyn;
+  distsize_t tmp;
   int i, j;
-  int nij_local; // (local to this function; the variable nij is static)
+  int nij;
   int nproc = msg_->n();
 
   ///////////////////////////////////////
@@ -2651,18 +2669,21 @@ MBPT2::compute_cs_dynamic_memory(int ni, int nocc_act)
 
   // compute nij as nij on node 0, since nij on node 0 is >= nij on other nodes
   index = 0;
-  nij_local = 0;
+  nij = 0;
   for (i=0; i<ni; i++) {
     for (j=0; j<nocc; j++) {
-      if (index++ % nproc == 0) nij_local++;
+      if (index++ % nproc == 0) nij++;
       }
     }
-  mem1 = sizeof(double)*(nij_local*nbasis*nbasis + nbasis*nvir);
-  mem2 = sizeof(double)*(ni*nbasis*nfuncmax*nfuncmax + nij_local*nbasis*nbasis
-                         + ni*nbasis + nbasis*nfuncmax
-                         + nfuncmax*nfuncmax*nfuncmax*nfuncmax);
-  mem3 = sizeof(double)*(ni*nbasis*nfuncmax*nfuncmax + nij_local*nbasis*nbasis
-                         + 2*(2 + nbasis*nfuncmax));
+  mem1 = sizeof(double)*(nij*(distsize_t)nbasis*(distsize_t)nbasis
+                         + nbasis*(distsize_t)nvir);
+  mem2 = sizeof(double)*(ni*nbasis*nfuncmax*(distsize_t)nfuncmax
+                         + nij*(distsize_t)nbasis*(distsize_t)nbasis
+                         + ni*(distsize_t)nbasis + nbasis*(distsize_t)nfuncmax
+                         + nfuncmax*nfuncmax*nfuncmax*(distsize_t)nfuncmax);
+  mem3 = sizeof(double)*(ni*nbasis*nfuncmax*(distsize_t)nfuncmax
+                         + nij*(distsize_t)nbasis*(distsize_t)nbasis
+                         + 2*(2 + nbasis*(distsize_t)nfuncmax));
   tmp = (mem2>mem3 ? mem2:mem3);
   maxdyn = (mem1>tmp ? mem1:tmp);
 

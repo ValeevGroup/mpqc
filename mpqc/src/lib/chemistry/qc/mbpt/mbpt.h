@@ -64,6 +64,8 @@ class MBPT2: public Wavefunction {
     char *method_;
     char *algorithm_;
 
+    int nfuncmax;
+
   protected:
     void init_variables();
 
@@ -79,6 +81,9 @@ class MBPT2: public Wavefunction {
     void compute_hsos_v1();
 
     // calculate the opt2 energy using algorithm v2
+    distsize_t compute_v2_memory(int ni,
+                             int nfuncmax, int nbasis, int nbfme, int nshell,
+                             int ndocc, int nsocc, int nvir, int nproc);
     void compute_hsos_v2();
 
     // calculate the opt2 energy using the load balanced version of v2
@@ -86,7 +91,9 @@ class MBPT2: public Wavefunction {
 
     // calculate the closed shell mp2 energy and gradient
     int compute_cs_batchsize(int mem_static, int nocc_act);
-    int compute_cs_dynamic_memory(int ni, int nocc_act);
+    // distsize_t is used to allow memory requirements to be
+    // estimated by starting the calculation on a single processor
+    distsize_t compute_cs_dynamic_memory(int ni, int nocc_act);
     int make_cs_gmat(RefSymmSCMatrix& Gmat, double *DPmat);
     void form_max_dens(double *DPmat, signed char *maxp);
     int init_cs_gmat();

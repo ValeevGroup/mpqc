@@ -79,7 +79,6 @@ MBPT2::compute_hsos_v2()
   int *nbf;            /* number of basis functions processed by each node */
   int *proc;           /* element k: processor which will process shell k  */
   int aoint_computed = 0; 
-  double A, B, C, ni_top, max, ni_double; /* variables used to compute ni  */
   double *evals_open;    /* reordered scf eigenvalues                      */
   const double *intbuf;  /* 2-electron AO integral buffer                  */
   double *trans_int1;    /* partially transformed integrals                */
@@ -114,13 +113,9 @@ MBPT2::compute_hsos_v2()
 
   cout << node0 << indent << "Just entered OPT2 program (opt2_v2)" << endl;
 
-  tbint_ = integral()->electron_repulsion();
-  intbuf = tbint_->buffer();
-
   tol = (int) (-10.0/log10(2.0));  /* discard ereps smaller than 10^-10 */
 
   nproc = msg_->n();
-  cout << node0 << indent << "nproc = " << nproc << endl;
 
   ndocc = nsocc = 0;
   const double epsilon = 1.0e-4;
@@ -229,31 +224,58 @@ MBPT2::compute_hsos_v2()
    * mo_int_do_so_vir, mo_int_tmp,                                        *
    * and the following arrays of type int: myshells, shellsize,           *
    * sorted_shells, nbf, and proc                                         */
-//  ni = (mem_alloc 
-//        - sizeof(double)*(2*nvir*nvir + nbasis*(nvir+nocc) + (nocc+nvir) 
-//                         + 2*nsocc + 2*ndocc*nsocc*(nvir-nsocc))
-//        - sizeof(int)*(3*nshell + nproc + nRshell)) /
-//        (sizeof(double)*(nfuncmax*nfuncmax*nbasis + nvir + nbf[me]*nvir*nocc));
-    A = -0.5*sizeof(double)*nbf[me]*nvir;
-    B = sizeof(double)*(nfuncmax*nfuncmax*nbasis + nvir + nocc*nbf[me]*nvir
-                        + nbf[me]*nvir*0.5);
-    C = sizeof(double)*(2*nvir*nvir + (nbasis+1)*(nvir+nocc) + 2*nsocc
-                        + 2*ndocc*nsocc*(nvir-nsocc))
-        + sizeof(int)*(3*nshell + nproc + nRshell);
-    ni_top = -B/(2*A);
-    max = A*ni_top*ni_top + B*ni_top +C;
-    if (max <= mem_alloc) {
-      ni = nocc;
+    
+  distsize_t memused = 0;
+  for (ni=1; ni<=nocc; ni++) {
+    distsize_t tmpmem = compute_v2_memory(ni,
+                                          nfuncmax, nbasis, nbf[me], nshell,
+                                          ndocc, nsocc, nvir, nproc);
+    if (tmpmem > mem_alloc) {
+      ni--;
+      break;
       }
-    else {
-      ni_double = (-B + sqrt((double)(B*B - 4*A*(C-mem_alloc))))/(2*A);
-      ni = (int) ni_double;
-      if (ni > nocc) ni = nocc;
-      }
+    memused = tmpmem;
+    }
 
   /* set ni equal to the smallest batch size for any node */
   msg_->min(ni);
   msg_->bcast(ni);
+
+  int nbfmax = nbf[me];
+  msg_->max(nbfmax);
+
+  if (me == 0) {
+    cout << indent << " nproc  nbasis  nshell  nfuncmax"
+                      "  ndocc  nsocc  nvir  nfzc  nfzv" << endl;
+    cout << indent << scprintf("  %-4i   %-5i    %-4i     %-3i"
+                     "     %-3i    %-3i    %-3i    %-3i   %-3i\n",
+            nproc,nbasis,nshell,nfuncmax,ndocc,nsocc,nvir,nfzc,nfzv);
+    }
+
+
+  cout << node0 << indent
+       << "Memory available per node:      " << mem_alloc << " Bytes"
+       << endl;
+  cout << node0 << indent
+       << "Total memory used per node:     " << memused << " Bytes"
+       << endl;
+  cout << node0 << indent
+       << "Memory required for one pass:   "
+       << compute_v2_memory(nocc,
+                            nfuncmax, nbasis, nbfmax, nshell,
+                            ndocc, nsocc, nvir, nproc)
+       << " Bytes"
+       << endl;
+  cout << node0 << indent
+       << "Minimum memory required:        "
+       << compute_v2_memory(1,
+                            nfuncmax, nbasis, nbfmax, nshell,
+                            ndocc, nsocc, nvir, nproc)
+       << " Bytes"
+       << endl;
+  cout << node0 << indent
+       << "Batch size:                     " << ni
+       << endl;
 
   if (ni < nsocc) {
     cerr << node0 << "Not enough memory allocated" << endl;
@@ -265,8 +287,6 @@ MBPT2::compute_hsos_v2()
     abort();
     }
 
-  cout << node0 << indent << "Computed batchsize: " << ni << endl;
-
   if (nocc == ni) {
     npass = 1;
     rest = 0;
@@ -277,15 +297,10 @@ MBPT2::compute_hsos_v2()
     if (rest == 0) npass--;
     }
 
-  if (me == 0) {
-    cout << indent << " npass  rest  nbasis  nshell  nfuncmax"
-                      "  ndocc  nsocc  nvir  nfzc  nfzv" << endl;
-    cout << indent << scprintf("  %-4i   %-3i   %-5i    %-4i     %-3i"
-                     "     %-3i    %-3i    %-3i    %-3i   %-3i\n",
-            npass,rest,nbasis,nshell,nfuncmax,ndocc,nsocc,nvir,nfzc,nfzv);
-    cout << indent << scprintf("Using %i bytes of memory",mem_alloc) << endl;
-    }
-
+  cout << indent << node0
+       << "npass = " << npass
+       << " rest = " << rest
+       << endl;
 
   /* the scf vector might be distributed between the nodes, but for OPT2 *
    * each node needs its own copy of the vector;                         *
@@ -350,7 +365,7 @@ MBPT2::compute_hsos_v2()
 
   /* allocate storage for various arrays */
 
-  dim_ij = nocc*ni - ni*(ni - 1)/2;
+  dim_ij = nocc*ni - (ni*(ni - 1))/2;
 
   trans_int1 = (double*) malloc(nfuncmax*nfuncmax*nbasis*ni*sizeof(double));
   trans_int2 = (double*) malloc(nvir*ni*sizeof(double));
@@ -366,6 +381,9 @@ MBPT2::compute_hsos_v2()
 
   if (nsocc) bzerofast(mo_int_do_so_vir,ndocc*nsocc*(nvir-nsocc));
 
+
+  tbint_ = integral()->electron_repulsion();
+  intbuf = tbint_->buffer();
 
 /**************************************************************************
  *   begin opt2 loops                                                     *
@@ -719,6 +737,19 @@ MBPT2::compute_hsos_v2()
         tim_exit("compute ecorr");
         }       /* exit j loop */
       }         /* exit i loop */
+
+    if (nsocc == 0 && npass > 1 && pass < npass - 1) {
+      double passe = ecorr_opt2;
+      msg_->sum(passe);
+      cout << node0 << indent
+           << "Partial correlation energy for pass " << pass << ":" << endl;
+      cout << node0 << indent
+           << scprintf("  restart_ecorr_v2   = %14.10f", passe)
+           << endl;
+      cout << node0 << indent
+           << scprintf("  restart_orbital_v2 = %d", ((pass+1) * ni))
+           << endl;
+      }
     }           /* exit loop over i-batches (pass) */
 
 
@@ -884,6 +915,35 @@ iqs(int *item,int *index,int left,int right)
   if (left<j) iqs(item,index,left,j);
   if (i<right) iqs(item,index,i,right);
   }
+
+distsize_t
+MBPT2::compute_v2_memory(int ni,
+                         int nfuncmax, int nbasis, int nbfme, int nshell,
+                         int ndocc, int nsocc, int nvir, int nproc
+                         )
+{
+  distsize_t result = 0;
+  distsize_t dsize = sizeof(double);
+  distsize_t isize = sizeof(int);
+  int dim_ij = nocc*ni - (ni*(ni - 1))/2;
+
+  result += nfuncmax*nfuncmax*(distsize_t)nbasis*(distsize_t)ni*dsize;
+  result += nvir*ni*dsize;
+  result += nbfme*nvir*(distsize_t)dim_ij*dsize;
+  result += nvir*nvir*dsize;
+  result += nvir*nvir*dsize;
+  result += nsocc*dsize;
+  result += nsocc*dsize;
+  result += ndocc*nsocc*(distsize_t)(nvir-nsocc)*dsize;
+  result += ndocc*nsocc*(distsize_t)(nvir-nsocc)*dsize;
+  result += (nbasis+nsocc-nfzc-nfzv)*dsize;
+  result += nshell*isize;
+  result += nshell*isize;
+  result += nproc*isize;
+  result += nshell*isize;
+
+  return result;
+}
 
 ////////////////////////////////////////////////////////////////////////////
 

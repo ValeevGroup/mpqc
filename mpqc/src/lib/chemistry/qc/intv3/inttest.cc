@@ -132,7 +132,8 @@ main(int argc, char **argv)
   Ref<KeyVal> pkv(new ParsedKeyVal(infile));
   Ref<KeyVal> tkeyval(new PrefixKeyVal(":test", pkv));
 
-  Ref<GaussianBasisSet> basis = tkeyval->describedclassvalue("basis");
+  Ref<GaussianBasisSet> basis = require_dynamic_cast<GaussianBasisSet*>(
+    tkeyval->describedclassvalue("basis").pointer(),"main\n");
   Ref<Molecule> mol = basis->molecule();
 
   int tproc = tkeyval->intvalue("test_processor");
@@ -152,22 +153,22 @@ main(int argc, char **argv)
   tim->enter("overlap");
   if (me == tproc && tkeyval->booleanvalue("overlap")) {
       cout << scprintf("testing overlap:\n");
-      test_int_shell_1e(tkeyval, int1ev3, Int1eV3::overlap, permute);
+      test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::overlap, permute);
     }
   tim->change("kinetic");
   if (me == tproc && tkeyval->booleanvalue("kinetic")) {
       cout << scprintf("testing kinetic:\n");
-      test_int_shell_1e(tkeyval, int1ev3, Int1eV3::kinetic, permute);
+      test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::kinetic, permute);
     }
   tim->change("hcore");
   if (me == tproc && tkeyval->booleanvalue("hcore")) {
       cout << scprintf("testing hcore:\n");
-      test_int_shell_1e(tkeyval, int1ev3, Int1eV3::hcore, permute);
+      test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::hcore, permute);
     }
   tim->change("nuclear");
   if (me == tproc && tkeyval->booleanvalue("nuclear")) {
       cout << scprintf("testing nuclear:\n");
-      test_int_shell_1e(tkeyval, int1ev3, Int1eV3::nuclear, permute);
+      test_int_shell_1e(tkeyval, int1ev3, &Int1eV3::nuclear, permute);
     }
   tim->change("3 center");
   if (me == tproc && tkeyval->booleanvalue("3")) {

@@ -40,7 +40,7 @@
 #include <util/group/pregtime.h>
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
-#include <util/state/stateio.h>
+#include <util/state/state_bin.h>
 
 #include <math/optimize/opt.h>
 
@@ -50,6 +50,8 @@
 // Force linkages:
 #include <chemistry/qc/scf/linkage.h>
 
+using namespace std;
+
 Ref<RegionTimer> tim;
 Ref<MessageGrp> grp;
 
@@ -58,16 +60,12 @@ init_mp(const Ref<KeyVal>& keyval)
 {
   // if we are on a paragon then use a ParagonMessageGrp
   // otherwise read the message group from the input file
-#ifdef HAVE_NX_H
-  grp = new ParagonMessageGrp;
-#else
-  grp = keyval->describedclassvalue("message");
-#endif
+  grp << keyval->describedclassvalue("message");
 
   if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
   else grp = MessageGrp::get_default_messagegrp();
 
-  Ref<Debugger> debugger = keyval->describedclassvalue(":debug");
+  Ref<Debugger> debugger; debugger << keyval->describedclassvalue(":debug");
   // Let the debugger know the name of the executable and the node
   if (debugger.nonnull()) {
     debugger->set_exec("scftest");
@@ -79,26 +77,19 @@ init_mp(const Ref<KeyVal>& keyval)
   RegionTimer::set_default_regiontimer(tim);
 
   SCFormIO::set_printnode(0);
-  SCFormIO::set_messagegrp(grp);
   //SCFormIO::set_debug(1);
 
   SCFormIO::setindent(cout, 2);
   SCFormIO::setindent(cerr, 2);
-  
-  {
-    int nproc, me, host, top, ord, dir;
-    open0_messagegrp(&nproc,&me,&host,grp);
-    setarc0(&nproc,&top,&ord,&dir);
-  }
   
   return grp;
 }
 
 main(int argc, char**argv)
 {
-  char *input =      (argc > 1)? argv[1] : SRCDIR "/mpqc.in";
-  char *keyword =    (argc > 2)? argv[2] : "mole";
-  char *optkeyword = (argc > 3)? argv[3] : "opt";
+  const char *input =      (argc > 1)? argv[1] : SRCDIR "/mpqc.in";
+  const char *keyword =    (argc > 2)? argv[2] : "mole";
+  const char *optkeyword = (argc > 3)? argv[3] : "opt";
 
   // open keyval input
   Ref<KeyVal> rpkv(new ParsedKeyVal(input));
@@ -107,8 +98,10 @@ main(int argc, char**argv)
 
   tim->enter("input");
   
-  if (rpkv->exists("matrixkit"))
-    SCMatrixKit::set_default_matrixkit(rpkv->describedclassvalue("matrixkit"));
+  if (rpkv->exists("matrixkit")) {
+    Ref<SCMatrixKit> kit; kit << rpkv->describedclassvalue("matrixkit");
+    SCMatrixKit::set_default_matrixkit(kit);
+  }
   
   struct stat sb;
   Ref<MolecularEnergy> mole;
@@ -116,11 +109,11 @@ main(int argc, char**argv)
 
   if (stat("scftest.ckpt",&sb)==0 && sb.st_size) {
     StateInBin si("scftest.ckpt");
-    opt.restore_state(si);
-    mole = opt->function();
+    opt << SavableState::restore_state(si);
+    mole << opt->function();
   } else {
-    mole = rpkv->describedclassvalue(keyword);
-    opt = rpkv->describedclassvalue(optkeyword);
+    mole << rpkv->describedclassvalue(keyword);
+    opt << rpkv->describedclassvalue(optkeyword);
     if (opt.nonnull()) {
       opt->set_checkpoint();
       opt->set_checkpoint_file("scftest.ckpt");
@@ -145,7 +138,7 @@ main(int argc, char**argv)
   mole->print(cout);
 
   StateOutBin so("scftest.wfn");
-  mole.save_state(so);
+  SavableState::save_state(mole.pointer(),so);
   
   tim->print(cout);
 

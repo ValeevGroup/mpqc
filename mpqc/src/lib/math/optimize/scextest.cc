@@ -47,8 +47,8 @@ main()
   
   Ref<KeyVal> keyval = new ParsedKeyVal( SRCDIR "/scextest.in");
 
-  Ref<SelfConsistentExtrapolation> extrap
-      = keyval->describedclassvalue("scextrap");
+  Ref<SelfConsistentExtrapolation> extrap;
+  extrap << keyval->describedclassvalue("scextrap");
 
   RefSCDimension dim = new SCDimension(3, "test_dim");
   Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
@@ -91,11 +91,12 @@ main()
     }
 
   StateOutText s("scextest.ckpt");
-  extrap.save_state(s);
+  SavableState::save_state(extrap.pointer(),s);
   s.close();
 
   StateInText si("scextest.ckpt");
-  Ref<SelfConsistentExtrapolation> e2(si);
+  Ref<SelfConsistentExtrapolation> e2;
+  e2 << SavableState::restore_state(si);
   
   si.close();
   

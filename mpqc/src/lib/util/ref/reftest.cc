@@ -28,6 +28,10 @@
 #include <util/ref/ref.h>
 #include <util/ref/reftestx.h>
 
+#if HAVE_PTHREAD==1 && REF_USE_LOCKS==1
+#include <pthread.h>
+#endif
+
 using namespace std;
 
 void
@@ -161,7 +165,7 @@ static Ref<X> sx1, sx2;
 void *
 test4_run(void *)
 {
-  for (int i=0; i<100000; i++) {
+  for (int i=0; i<20000; i++) {
       Ref<X> x1 = sx1;
       Ref<X> x2 = sx2;
       x1 = x2;
@@ -169,6 +173,7 @@ test4_run(void *)
       x1 = x1;
       x1 = 0;
     }
+  return 0;
 }
 void
 test4()

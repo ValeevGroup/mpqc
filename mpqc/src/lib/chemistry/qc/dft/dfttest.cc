@@ -70,8 +70,8 @@ get_density(PointInputData::SpinData &d, const SCVector3 &r,
 
   double * bsg_values_ = new double[3*wfn->basis()->nbasis()];
   double * bs_values_ = new double[wfn->basis()->nbasis()];
-  wfn->basis()->set_integral(wfn->integral());
-  wfn->basis()->grad_values(r,bsg_values_,bs_values_);
+  GaussianBasisSet::ValueData vdat(wfn->basis(), wfn->integral());
+  wfn->basis()->grad_values(r,&vdat,bsg_values_,bs_values_);
 
   int i, j;
 
@@ -144,7 +144,7 @@ fd_test_do_point(const SCVector3 &point,
 {
   PointInputData id(point);
   get_density(id.a, point, wfn, frozen_dmat);
-  id.compute_derived(0);
+  id.compute_derived(0,func->need_density_gradient());
   PointOutputData od;
   if ( (id.a.rho + id.b.rho) > 1e2*DBL_EPSILON) func->point(id, od);
   else return 0.0;
@@ -187,11 +187,12 @@ fd_test_point(int acenter, const SCVector3 &tpoint,
   double * bsh_values_ = new double[6*wfn->basis()->nbasis()];
   double * bsg_values_ = new double[3*wfn->basis()->nbasis()];
   double * bs_values_ = new double[wfn->basis()->nbasis()];
-  wfn->basis()->hessian_values(point,bsh_values_,bsg_values_,bs_values_);
+  GaussianBasisSet::ValueData vdat(wfn->basis(), wfn->integral());
+  wfn->basis()->hessian_values(point,&vdat,bsh_values_,bsg_values_,bs_values_);
 
   PointInputData id(point);
   get_density(id.a, point, wfn);
-  id.compute_derived(0);
+  id.compute_derived(0,functional->need_density_gradient());
 
   PointOutputData od;
   functional->set_compute_potential(1);
@@ -446,7 +447,7 @@ do_valtest(const Ref<DenFunctional> &valtest)
           id.gamma_ab = -sqrt(id.a.gamma*id.b.gamma);
         if (id.gamma_ab < -0.5*(id.a.gamma*id.b.gamma))
           id.gamma_ab = -0.5*(id.a.gamma*id.b.gamma);
-        id.compute_derived(1);
+        id.compute_derived(1, valtest->need_density_gradient());
         valtest->point(id,od);
         mpqc_sumexc += od.energy*wt;
 #endif
@@ -482,7 +483,7 @@ main(int argc, char**argv)
 {
 
   int i;
-  char *input = (argc > 1)? argv[1] : SRCDIR "/dfttest.in";
+  const char *input = (argc > 1)? argv[1] : SRCDIR "/dfttest.in";
 
   // open keyval input
   Ref<KeyVal> keyval(new ParsedKeyVal(input));
@@ -497,12 +498,13 @@ main(int argc, char**argv)
   cout << "=========== Value f Tests ===========" << endl;
   int nvaltest = keyval->count("valtest");
   for (i=0; i<nvaltest; i++) {
-    Ref<DenFunctional> valtest = keyval->describedclassvalue("valtest", i);
+    Ref<DenFunctional> valtest;
+    valtest << keyval->describedclassvalue("valtest", i);
     if (valtest.nonnull()) valtest->print();
     do_valtest(valtest);
     }
 
-  Ref<Wavefunction>  dft        = keyval->describedclassvalue("dft");
+  Ref<Wavefunction> dft; dft << keyval->describedclassvalue("dft");
   if (dft.nonnull()) {
     cout << "=========== FD dE/dx Tests ===========" << endl;
     fd_e_test(dft);
@@ -553,7 +555,7 @@ main(int argc, char**argv)
     cout << endl;
     }
 
-  Ref<Molecule> mol = keyval->describedclassvalue("molecule");
+  Ref<Molecule> mol; mol << keyval->describedclassvalue("molecule");
   if (mol.nonnull()) {
     cout << "=========== FD Weight Tests ===========" << endl;
     Ref<IntegrationWeight> weights[] = {
@@ -570,8 +572,10 @@ main(int argc, char**argv)
       }
     }
 
-  Ref<DenFunctional> functional = keyval->describedclassvalue("functional");
-  Ref<Wavefunction>  wfn        = keyval->describedclassvalue("wfn");
+  Ref<DenFunctional> functional;
+  functional << keyval->describedclassvalue("functional");
+  Ref<Wavefunction>  wfn;
+  wfn << keyval->describedclassvalue("wfn");
   if (functional.nonnull() && wfn.nonnull()) {
     cout << "=========== FD df/dx Tests ===========" << endl;
     fd_test(functional, wfn);

@@ -99,16 +99,12 @@ init_mp(const Ref<KeyVal>& keyval)
 {
   // if we are on a paragon then use a ParagonMessageGrp
   // otherwise read the message group from the input file
-#ifdef HAVE_NX_H
-  grp = new ParagonMessageGrp;
-#else
-  grp = keyval->describedclassvalue("message");
-#endif
+  grp << keyval->describedclassvalue("message");
 
   if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
   else grp = MessageGrp::get_default_messagegrp();
 
-  Ref<Debugger> debugger = keyval->describedclassvalue(":debug");
+  Ref<Debugger> debugger; debugger << keyval->describedclassvalue(":debug");
   // Let the debugger know the name of the executable and the node
   if (debugger.nonnull()) {
     debugger->set_exec("mbpttest");
@@ -144,8 +140,10 @@ main(int argc, char**argv)
   
   int do_gradient = rpkv->booleanvalue("gradient");
 
-  if (rpkv->exists("matrixkit"))
-    SCMatrixKit::set_default_matrixkit(rpkv->describedclassvalue("matrixkit"));
+  if (rpkv->exists("matrixkit")) {
+    Ref<SCMatrixKit> kit; kit << rpkv->describedclassvalue("matrixkit");
+    SCMatrixKit::set_default_matrixkit(kit);
+    }
   
   struct stat sb;
   Ref<MolecularEnergy> mole;
@@ -153,11 +151,11 @@ main(int argc, char**argv)
 
   if (stat("mbpttest.ckpt",&sb)==0 && sb.st_size) {
     StateInBin si("mbpttest.ckpt");
-    opt.restore_state(si);
-    mole = opt->function();
+    opt << SavableState::restore_state(si);
+    mole << opt->function();
   } else {
-    mole = rpkv->describedclassvalue(keyword);
-    opt = rpkv->describedclassvalue(optkeyword);
+    mole << rpkv->describedclassvalue(keyword);
+    opt << rpkv->describedclassvalue(optkeyword);
     if (opt.nonnull()) {
       opt->set_checkpoint();
       opt->set_checkpoint_file("mbpttest.ckpt");
@@ -183,7 +181,7 @@ main(int argc, char**argv)
   }
 
   StateOutBin so("mbpttest.wfn");
-  mole.save_state(so);
+  SavableState::save_state(mole.pointer(),so);
   
   tim->print(ExEnv::out());
 

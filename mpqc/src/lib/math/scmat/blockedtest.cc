@@ -65,7 +65,7 @@ main()
     d3->blocks()->set_subdim(i,sd3);
   }
 
-  matrixtest(kit,keyval,d1,d2,d3,true);
+  matrixtest(kit,keyval,d1,d2,d3,false);
   
   d1 = new SCDimension(sd1.n(),1);
   d2 = new SCDimension(sd2.n(),1);
@@ -75,7 +75,7 @@ main()
   d2->blocks()->set_subdim(0,sd2);
   d3->blocks()->set_subdim(0,sd3);
 
-  matrixtest(kit,keyval,d1,d2,d3,true);
+  matrixtest(kit,keyval,d1,d2,d3,false);
   d1=0;
 
   return 0;

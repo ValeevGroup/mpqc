@@ -65,7 +65,8 @@ main(int argc,char** argv)
   // open keyval input
   Ref<KeyVal> rpkv(new ParsedKeyVal(input));
 
-  Ref<TriangulatedSurface> surf = rpkv->describedclassvalue(keyword);
+  Ref<TriangulatedSurface> surf;
+  surf << rpkv->describedclassvalue(keyword);
 
   cout << scprintf("surf->flat_area() = %f\n", surf->flat_area());
   cout << scprintf("surf->flat_volume() = %f\n", surf->flat_volume());

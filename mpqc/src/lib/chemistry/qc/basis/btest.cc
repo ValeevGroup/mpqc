@@ -159,7 +159,8 @@ test_overlap(const Ref<GaussianBasisSet>& gbs, const Ref<GaussianBasisSet>& gbs2
 
   // first form AO basis overlap
   RefSymmSCMatrix s(gbs->basisdim(), gbs->matrixkit());
-  RefSCElementOp ov = new OneBodyIntOp(new OneBodyIntIter(intgrl->overlap()));
+  Ref<SCElementOp> ov
+      = new OneBodyIntOp(new OneBodyIntIter(intgrl->overlap()));
   s.assign(0.0);
   s.element_op(ov);
   ov=0;
@@ -219,7 +220,8 @@ test_eigvals(const Ref<GaussianBasisSet>& gbs, const Ref<Integral>& intgrl)
   
   hcore_ao.assign(0.0);
 
-  RefSCElementOp op = new OneBodyIntOp(new OneBodyIntIter(intgrl->kinetic()));
+  Ref<SCElementOp> op
+      = new OneBodyIntOp(new OneBodyIntIter(intgrl->kinetic()));
   hcore_ao.element_op(op);
   op=0;
 
@@ -294,7 +296,8 @@ checkerror(const char *name, int shell, int func,
 }
 
 void
-test_func_values(const Ref<GaussianBasisSet> &gbs)
+test_func_values(const Ref<GaussianBasisSet> &gbs,
+                 const Ref<Integral> &integral)
 {
   cout << "testing basis function value gradient and hessian numerically"
        << endl;
@@ -336,6 +339,7 @@ test_func_values(const Ref<GaussianBasisSet> &gbs)
   SCVector3 dxz(delta, 0., delta);
   SCVector3 dyz(0., delta, delta);
   double deltax = 0.1;
+  GaussianBasisSet::ValueData vdat(gbs, integral);
   for (r.x()=0.0; r.x() < 1.0; r.x() += deltax) {
       deltax *= 2.;
       double deltay = 0.1;
@@ -345,19 +349,19 @@ test_func_values(const Ref<GaussianBasisSet> &gbs)
           for (r.z()=0.0; r.z() < 1.0; r.z() += deltaz) {
               deltaz *= 2.;
               cout << "R = " << r << endl;
-              gbs->hessian_values(r, h_val, g_val, b_val);
-              gbs->values(r + dx, b_val_plsx);
-              gbs->values(r - dx, b_val_mnsx);
-              gbs->values(r + dy, b_val_plsy);
-              gbs->values(r - dy, b_val_mnsy);
-              gbs->values(r + dz, b_val_plsz);
-              gbs->values(r - dz, b_val_mnsz);
-              gbs->values(r + dxy, b_val_plsyx);
-              gbs->values(r - dxy, b_val_mnsyx);
-              gbs->values(r + dyz, b_val_plszy);
-              gbs->values(r - dyz, b_val_mnszy);
-              gbs->values(r + dxz, b_val_plszx);
-              gbs->values(r - dxz, b_val_mnszx);
+              gbs->hessian_values(r, &vdat, h_val, g_val, b_val);
+              gbs->values(r + dx, &vdat, b_val_plsx);
+              gbs->values(r - dx, &vdat, b_val_mnsx);
+              gbs->values(r + dy, &vdat, b_val_plsy);
+              gbs->values(r - dy, &vdat, b_val_mnsy);
+              gbs->values(r + dz, &vdat, b_val_plsz);
+              gbs->values(r - dz, &vdat, b_val_mnsz);
+              gbs->values(r + dxy, &vdat, b_val_plsyx);
+              gbs->values(r - dxy, &vdat, b_val_mnsyx);
+              gbs->values(r + dyz, &vdat, b_val_plszy);
+              gbs->values(r - dyz, &vdat, b_val_mnszy);
+              gbs->values(r + dxz, &vdat, b_val_plszx);
+              gbs->values(r - dxz, &vdat, b_val_mnszx);
               for (int i=0; i<nbasis; i++) {
                   int shell = gbs->function_to_shell(i);
                   int func = i - gbs->shell_to_function(shell);
@@ -461,7 +465,7 @@ main(int, char *argv[])
   ostrstream perlout(o,sizeof(o));
 #endif
 
-  char *filename = (argv[1]) ? argv[1] : SRCDIR "/btest.kv";
+  const char *filename = (argv[1]) ? argv[1] : SRCDIR "/btest.kv";
   
   Ref<KeyVal> keyval = new ParsedKeyVal(filename);
   
@@ -477,8 +481,10 @@ main(int, char *argv[])
   int doextent = keyval->booleanvalue("extent");
 
   for (i=0; i<keyval->count("test"); i++) {
-      Ref<GaussianBasisSet> gbs = keyval->describedclassvalue("test", i);
-      Ref<GaussianBasisSet> gbs2 = keyval->describedclassvalue("test2", i);
+      Ref<GaussianBasisSet> gbs;
+      gbs << keyval->describedclassvalue("test", i);
+      Ref<GaussianBasisSet> gbs2;
+      gbs2 << keyval->describedclassvalue("test2", i);
 
       if (dooverlap) test_overlap(gbs,gbs2,intgrl);
 
@@ -486,10 +492,10 @@ main(int, char *argv[])
 
       if (dostate) {
           StateOutBin out("btest.out");
-          gbs.save_state(out);
+          SavableState::save_state(gbs.pointer(),out);
           out.close();
           StateInBin in("btest.out");
-          gbs.restore_state(in);
+          gbs << SavableState::restore_state(in);
           gbs->print();
         }
 
@@ -504,8 +510,7 @@ main(int, char *argv[])
 
       if (dovalues) {
           intgrl->set_basis(gbs);
-          gbs->set_integral(intgrl);
-          test_func_values(gbs);
+          test_func_values(gbs,intgrl);
         }
 
       if (doextent) {
@@ -565,19 +570,19 @@ main(int, char *argv[])
                   last_elem_exists++;
                   if (j+1 == 1) {
                       atombaskv_a->assign("name", basisname);
-                      atombaskv_a->assign("molecule", hmol);
+                      atombaskv_a->assign("molecule", hmol.pointer());
                       Ref<GaussianBasisSet> gbs=new GaussianBasisSet(atombaskv);
                       n0 = gbs->nbasis();
                     }
                   if (j+1 == 6) {
                       atombaskv_a->assign("name", basisname);
-                      atombaskv_a->assign("molecule", cmol);
+                      atombaskv_a->assign("molecule", cmol.pointer());
                       Ref<GaussianBasisSet> gbs=new GaussianBasisSet(atombaskv);
                       n1 = gbs->nbasis();
                     }
                   if (j+1 == 15) {
                       atombaskv_a->assign("name", basisname);
-                      atombaskv_a->assign("molecule", pmol);
+                      atombaskv_a->assign("molecule", pmol.pointer());
                       Ref<GaussianBasisSet> gbs=new GaussianBasisSet(atombaskv);
                       n2 = gbs->nbasis();
                     }

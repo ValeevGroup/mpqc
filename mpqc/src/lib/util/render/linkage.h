@@ -31,8 +31,12 @@
 #ifndef __PIC__
 
 #include <util/render/oogl.h>
+#include <util/render/sphere.h>
+#include <util/render/polylines.h>
 
 static ForceLink<OOGLRender> render_force_link_a_;
+static ForceLink<RenderedSphere> render_force_link_b_;
+static ForceLink<RenderedPolylines> render_force_link_c_;
 
 #endif /* __PIC__ */
 

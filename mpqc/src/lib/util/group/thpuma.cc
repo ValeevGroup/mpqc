@@ -92,7 +92,7 @@ PumaThreadGrp::start_threads()
 {
   flag_=0;
   if (nthread_ > 1)
-    cop((void (*)(void*))threads_[1]->run, &flag, (void*)threads_[1]);
+    cop((void (*)(void*))threads_[1]->run, &flag_, (void*)threads_[1]);
 
   threads_[0]->run(threads_[0]);
   
@@ -103,7 +103,7 @@ int
 PumaThreadGrp::wait_threads()
 {
   if (nthread_ > 1)
-    while (!flag);
+    while (!flag_);
     
   return 0;
 }

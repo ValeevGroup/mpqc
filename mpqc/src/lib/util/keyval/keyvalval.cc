@@ -23,7 +23,7 @@ KeyValValue::~KeyValValue()
 }
 
 KeyVal::KeyValError
-KeyValValue::value(double& val)
+KeyValValue::doublevalue(double& val)
 {
   val = KeyVal::Defaultdouble();
   return KeyVal::WrongType;
@@ -37,35 +37,35 @@ KeyValValue::booleanvalue(int& val)
 }
 
 KeyVal::KeyValError
-KeyValValue::value(float& val)
+KeyValValue::floatvalue(float& val)
 {
   val = KeyVal::Defaultfloat();
   return KeyVal::WrongType;
 }
 
 KeyVal::KeyValError
-KeyValValue::value(char& val)
+KeyValValue::charvalue(char& val)
 {
   val = KeyVal::Defaultchar();
   return KeyVal::WrongType;
 }
 
 KeyVal::KeyValError
-KeyValValue::value(int& val)
+KeyValValue::intvalue(int& val)
 {
   val = KeyVal::Defaultint();
   return KeyVal::WrongType;
 }
 
 KeyVal::KeyValError
-KeyValValue::value(char*& val)
+KeyValValue::pcharvalue(char*& val)
 {
   val = KeyVal::Defaultpchar();
   return KeyVal::WrongType;
 }
 
 KeyVal::KeyValError
-KeyValValue::value(RefDescribedClass& val)
+KeyValValue::describedclassvalue(RefDescribedClass& val)
 {
   val = KeyVal::DefaultRefDescribedClass();
   return KeyVal::WrongType;
@@ -84,7 +84,7 @@ KeyValValuedouble::~KeyValValuedouble()
 }
 
 KeyVal::KeyValError
-KeyValValuedouble::value(double&val)
+KeyValValuedouble::doublevalue(double&val)
 {
   val = _val;
   return KeyVal::OK;
@@ -122,7 +122,7 @@ KeyValValuefloat::~KeyValValuefloat()
 }
 
 KeyVal::KeyValError
-KeyValValuefloat::value(float&val)
+KeyValValuefloat::floatvalue(float&val)
 {
   val = _val;
   return KeyVal::OK;
@@ -141,7 +141,7 @@ KeyValValuechar::~KeyValValuechar()
 }
 
 KeyVal::KeyValError
-KeyValValuechar::value(char&val)
+KeyValValuechar::charvalue(char&val)
 {
   val = _val;
   return KeyVal::OK;
@@ -160,7 +160,7 @@ KeyValValueint::~KeyValValueint()
 }
 
 KeyVal::KeyValError
-KeyValValueint::value(int&val)
+KeyValValueint::intvalue(int&val)
 {
   val = _val;
   return KeyVal::OK;
@@ -179,7 +179,7 @@ KeyValValuepchar::~KeyValValuepchar()
   delete[] _val;
 }
 KeyVal::KeyValError
-KeyValValuepchar::value(char*&val)
+KeyValValuepchar::pcharvalue(char*&val)
 {
   val = _val;
   return KeyVal::OK;
@@ -200,7 +200,7 @@ KeyValValueRefDescribedClass::
 {
 }
 KeyVal::KeyValError
-KeyValValueRefDescribedClass::value(RefDescribedClass&val)
+KeyValValueRefDescribedClass::describedclassvalue(RefDescribedClass&val)
 {
   val = _val;
   return KeyVal::OK;
@@ -218,7 +218,7 @@ KeyValValueString::~KeyValValueString()
 {
 }
 KeyVal::KeyValError
-KeyValValueString::value(double&val)
+KeyValValueString::doublevalue(double&val)
 {
   val = atof(_val);
   return KeyVal::OK;
@@ -245,25 +245,25 @@ KeyValValueString::booleanvalue(int&val)
   return KeyVal::OK;
 }
 KeyVal::KeyValError
-KeyValValueString::value(float&val)
+KeyValValueString::floatvalue(float&val)
 {
   val = (float) atof(_val);
   return KeyVal::OK;
 }
 KeyVal::KeyValError
-KeyValValueString::value(char&val)
+KeyValValueString::charvalue(char&val)
 {
   val = _val[0];
   return KeyVal::OK;
 }
 KeyVal::KeyValError
-KeyValValueString::value(int&val)
+KeyValValueString::intvalue(int&val)
 {
   val = atoi(_val);
   return KeyVal::OK;
 }
 KeyVal::KeyValError
-KeyValValueString::value(char*&val)
+KeyValValueString::pcharvalue(char*&val)
 {
   val = strcpy(new char[strlen(_val)+1],_val);
   return KeyVal::OK;

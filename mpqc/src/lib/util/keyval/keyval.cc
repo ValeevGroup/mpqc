@@ -55,7 +55,7 @@ KeyVal::key_doublevalue(const char* key)
   RefKeyValValue val(value(key));
   if (val.nonnull()) {
       double result;
-      seterror(val->value(result));
+      seterror(val->doublevalue(result));
       return result;
     }
   return Defaultdouble();
@@ -77,7 +77,7 @@ KeyVal::key_intvalue(const char* key)
   RefKeyValValue val(value(key));
   if (val.nonnull()) {
       int result;
-      seterror(val->value(result));
+      seterror(val->intvalue(result));
       return result;
     }
   return Defaultint();
@@ -88,7 +88,7 @@ KeyVal::key_floatvalue(const char* key)
   RefKeyValValue val(value(key));
   if (val.nonnull()) {
       float result;
-      seterror(val->value(result));
+      seterror(val->floatvalue(result));
       return result;
     }
   return Defaultfloat();
@@ -99,7 +99,7 @@ KeyVal::key_charvalue(const char* key)
   RefKeyValValue val(value(key));
   if (val.nonnull()) {
       char result;
-      seterror(val->value(result));
+      seterror(val->charvalue(result));
       return result;
     }
   return Defaultchar();
@@ -110,7 +110,7 @@ KeyVal::key_pcharvalue(const char* key)
   RefKeyValValue val(value(key));
   if (val.nonnull()) {
       char* result;
-      seterror(val->value(result));
+      seterror(val->pcharvalue(result));
       return result;
     }
   return Defaultpchar();
@@ -121,7 +121,7 @@ KeyVal::key_describedclassvalue(const char* key)
   RefKeyValValue val(value(key));
   if (val.nonnull()) {
       RefDescribedClass result;
-      seterror(val->value(result));
+      seterror(val->describedclassvalue(result));
       return result;
     }
   return DefaultRefDescribedClass();

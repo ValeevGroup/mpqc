@@ -151,13 +151,13 @@ class KeyValValue: public VRefCount {
     KeyValValue(KeyValValue&);
   public:
     virtual ~KeyValValue();
-    virtual KeyVal::KeyValError value(double&);
+    virtual KeyVal::KeyValError doublevalue(double&);
     virtual KeyVal::KeyValError booleanvalue(int&);
-    virtual KeyVal::KeyValError value(float&);
-    virtual KeyVal::KeyValError value(char&);
-    virtual KeyVal::KeyValError value(int&);
-    virtual KeyVal::KeyValError value(char*&);
-    virtual KeyVal::KeyValError value(RefDescribedClass&);
+    virtual KeyVal::KeyValError floatvalue(float&);
+    virtual KeyVal::KeyValError charvalue(char&);
+    virtual KeyVal::KeyValError intvalue(int&);
+    virtual KeyVal::KeyValError pcharvalue(char*&);
+    virtual KeyVal::KeyValError describedclassvalue(RefDescribedClass&);
 };
 
 REF_dec(KeyValValue);
@@ -169,7 +169,7 @@ class KeyValValuedouble: public KeyValValue {
     KeyValValuedouble(double);
     KeyValValuedouble(const KeyValValuedouble&);
     ~KeyValValuedouble();
-    KeyVal::KeyValError value(double&);
+    KeyVal::KeyValError doublevalue(double&);
 };
 
 class KeyValValueboolean: public KeyValValue {
@@ -189,7 +189,7 @@ class KeyValValuefloat: public KeyValValue {
     KeyValValuefloat(float);
     KeyValValuefloat(const KeyValValuefloat&);
     ~KeyValValuefloat();
-    KeyVal::KeyValError value(float&);
+    KeyVal::KeyValError floatvalue(float&);
 };
 
 class KeyValValuechar: public KeyValValue {
@@ -199,7 +199,7 @@ class KeyValValuechar: public KeyValValue {
     KeyValValuechar(char);
     KeyValValuechar(const KeyValValuechar&);
     ~KeyValValuechar();
-    KeyVal::KeyValError value(char&);
+    KeyVal::KeyValError charvalue(char&);
 };
 
 class KeyValValueint: public KeyValValue {
@@ -209,7 +209,7 @@ class KeyValValueint: public KeyValValue {
     KeyValValueint(int);
     KeyValValueint(const KeyValValueint&);
     ~KeyValValueint();
-    KeyVal::KeyValError value(int&);
+    KeyVal::KeyValError intvalue(int&);
 };
 
 class KeyValValuepchar: public KeyValValue {
@@ -219,7 +219,7 @@ class KeyValValuepchar: public KeyValValue {
     KeyValValuepchar(const char*);
     KeyValValuepchar(const KeyValValuepchar&);
     ~KeyValValuepchar();
-    KeyVal::KeyValError value(char*&);
+    KeyVal::KeyValError pcharvalue(char*&);
 };
 
 class KeyValValueRefDescribedClass: public KeyValValue {
@@ -229,7 +229,7 @@ class KeyValValueRefDescribedClass: public KeyValValue {
     KeyValValueRefDescribedClass(RefDescribedClass&);
     KeyValValueRefDescribedClass(KeyValValueRefDescribedClass&);
     ~KeyValValueRefDescribedClass();
-    KeyVal::KeyValError value(RefDescribedClass&);
+    KeyVal::KeyValError describedclassvalue(RefDescribedClass&);
 };
 
 class KeyValValueString: public KeyValValue {
@@ -239,12 +239,12 @@ class KeyValValueString: public KeyValValue {
     KeyValValueString(const char*);
     KeyValValueString(const KeyValValueString&);
     ~KeyValValueString();
-    KeyVal::KeyValError value(double&);
+    KeyVal::KeyValError doublevalue(double&);
     KeyVal::KeyValError booleanvalue(int&);
-    KeyVal::KeyValError value(float&);
-    KeyVal::KeyValError value(char&);
-    KeyVal::KeyValError value(int&);
-    KeyVal::KeyValError value(char*&);
+    KeyVal::KeyValError floatvalue(float&);
+    KeyVal::KeyValError charvalue(char&);
+    KeyVal::KeyValError intvalue(int&);
+    KeyVal::KeyValError pcharvalue(char*&);
 };
 
 // this class allows keyval associations to be set up by the program,

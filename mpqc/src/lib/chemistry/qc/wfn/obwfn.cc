@@ -541,6 +541,17 @@ void
 OneBodyWavefunction::symmetry_changed()
 {
   Wavefunction::symmetry_changed();
+
+  // junk the old occupation information
+  delete[] nvecperirrep_;
+  delete[] occupations_;
+  delete[] alpha_occupations_;
+  delete[] beta_occupations_;
+  nirrep_ = 0;
+  nvecperirrep_=0;
+  occupations_=0;
+  alpha_occupations_=0;
+  beta_occupations_=0;
   
   // for now, delete old eigenvectors...later we'll transform to new
   // pointgroup

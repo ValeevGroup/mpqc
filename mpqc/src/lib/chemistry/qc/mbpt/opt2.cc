@@ -32,6 +32,8 @@ mbpt_opt2(centers_t &centers, scf_struct_t &scf_info, sym_struct_t &sym_info,
   SCR2 = dmt_create("opt2:scr2",scf_info.nbfao,COLUMNS);
   SCR3 = dmt_create("opt2:scr3",scf_info.nbfao,COLUMNS);
 
+  if (!do_opt2_v1 && !do_opt2_v2) do_opt2_v2 = 1;
+
   tim_enter("opt2");
 
   mbpt_ffo(S, &scf_info, &sym_info, &centers, Scf_Vec, Fock, FockO);

@@ -50,6 +50,7 @@
 ///////////////////////////////////////////////////////////////////////////
 // CLSCF
 
+#define VERSION 2
 #define CLASSNAME CLSCF
 #define PARENTS public SCF
 #include <util/class/classia.h>
@@ -75,6 +76,13 @@ CLSCF::CLSCF(StateIn& s) :
   s.get(tndocc_);
   s.get(nirrep_);
   s.get(ndocc_);
+  if (s.version(static_class_desc()) >= 2) {
+    s.get(initial_ndocc_);
+    most_recent_pg_.restore_state(s);
+  } else {
+    initial_ndocc_ = new int[nirrep_];
+    memcpy(initial_ndocc_, ndocc_, sizeof(int)*nirrep_);
+  }
 
   // now take care of memory stuff
   init_mem(2);
@@ -126,7 +134,10 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
       if (keyval->exists("docc",i))
         ndocc_[i] = keyval->intvalue("docc",i);
     }
+    initial_ndocc_ = new int[nirrep_];
+    memcpy(initial_ndocc_, ndocc_, sizeof(int)*nirrep_);
   } else {
+    initial_ndocc_=0;
     ndocc_=0;
     user_occupations_=0;
     set_occupations(0);
@@ -153,6 +164,7 @@ CLSCF::~CLSCF()
     delete[] ndocc_;
     ndocc_=0;
   }
+  delete[] initial_ndocc_;
 }
 
 void
@@ -167,6 +179,8 @@ CLSCF::save_data_state(StateOut& s)
   s.put(tndocc_);
   s.put(nirrep_);
   s.put(ndocc_,nirrep_);
+  s.put(initial_ndocc_,nirrep_);
+  most_recent_pg_.save_state(s);
 }
 
 double
@@ -219,13 +233,22 @@ CLSCF::print(ostream&o)
 void
 CLSCF::set_occupations(const RefDiagSCMatrix& ev)
 {
-  if (user_occupations_)
-    return;
+  if (user_occupations_ || (initial_ndocc_ && ev.null())) {
+    if (form_occupations(ndocc_, initial_ndocc_)) {
+      most_recent_pg_ = new PointGroup(molecule()->point_group());
+      return;
+    }
+    cout << node0 << indent
+         << "CLSCF: WARNING: reforming occupation vector from scratch" << endl;
+  }
   
   if (nirrep_==1) {
-    if (!ndocc_) {
-      ndocc_=new int[1];
-      ndocc_[0]=tndocc_;
+    delete[] ndocc_;
+    ndocc_=new int[1];
+    ndocc_[0]=tndocc_;
+    if (!initial_ndocc_) {
+      initial_ndocc_=new int[1];
+      initial_ndocc_[0]=tndocc_;
     }
     return;
   }
@@ -292,7 +315,8 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
 
   if (!ndocc_) {
     ndocc_=newocc;
-  } else {
+  } else if (most_recent_pg_.nonnull()
+             && most_recent_pg_->equiv(molecule()->point_group())) {
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {
       if (ndocc_[i] != newocc[i]) {
@@ -308,6 +332,15 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
     memcpy(ndocc_,newocc,sizeof(int)*nirrep_);
     delete[] newocc;
   }
+
+  if (!initial_ndocc_
+      || initial_pg_->equiv(molecule()->point_group())) {
+    delete[] initial_ndocc_;
+    initial_ndocc_ = new int[nirrep_];
+    memcpy(initial_ndocc_,ndocc_,sizeof(int)*nirrep_);
+  }
+
+  most_recent_pg_ = new PointGroup(molecule()->point_group());
 }
 
 void

@@ -41,9 +41,11 @@ class CLSCF: public SCF {
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   protected:
+    RefPointGroup most_recent_pg_;
     int user_occupations_;
     int tndocc_;
     int nirrep_;
+    int *initial_ndocc_;
     int *ndocc_;
 
     ResultRefSymmSCMatrix cl_fock_;

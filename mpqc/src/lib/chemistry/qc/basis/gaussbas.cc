@@ -10,33 +10,38 @@ GaussianBasisSet::GaussianBasisSet(KeyVal&topkeyval,Molecule&molecule)
   char keyword[KeyVal::MaxKeywordLength],prefix[KeyVal::MaxKeywordLength];
   int havepure,pure;
 
-  name_ = new char[strlen(basisname)+1];
-  strcpy(name_,basisname);
+  name_ = basisname;
 
   // see if the user requests pure am or cartesian functions
   pure = topkeyval.booleanvalue("puream");
   if (topkeyval.error() == KeyVal::OK) havepure = 1;
 
   // construct a keyval that contains the basis library
-  ParsedKeyVal lib1keyval("/net/munin/usr/people/cljanss/src/SC/lib/v2g90.ipv2");
-  ParsedKeyVal lib2keyval("/net/munin/usr/people/cljanss/src/SC/lib/v2g90supp.ipv2");
-  AggregateKeyVal keyval(topkeyval,lib1keyval,lib2keyval);
+  ParsedKeyVal libkeyval("basis",topkeyval);
+  AggregateKeyVal keyval(topkeyval,libkeyval);
 
   // construct prefixes for each atom: :basis:<atom>:<basisname>:<shell#>
   // and read in the shell
   nbasis_ = 0;
   Pix i;
   int ishell = 0;
-  for (i=molecule.first(); i != 0; molecule.next(i)) {
+  int iatom;
+  for (i=molecule.first(),iatom=0; i != 0; molecule.next(i),iatom++) {
+      // see if there is a specific basisname for this atom
+      char* sbasisname = topkeyval.pcharvalue("basis",iatom);
+      if (!sbasisname) sbasisname = basisname;
+      
       AtomicCenter ac = molecule(i);
       ChemicalElement e = ac.element();
       const char* name = e.name();
       sprintf(keyword,":basis:%s:%s",
-              molecule(i).element().name(),basisname);
+              molecule(i).element().name(),sbasisname);
       int count = keyval.count(keyword);
       nshell_ += count;
       recursively_get_shell(ishell,keyval,molecule(i).element().name(),
-			    basisname,havepure,pure,0);
+			    sbasisname,havepure,pure,0);
+
+      if (basisname != sbasisname) delete[] sbasisname;
     }
   nshell_ = ishell;
   shell = new GaussianShell*[nshell_];
@@ -44,18 +49,24 @@ GaussianBasisSet::GaussianBasisSet(KeyVal&topkeyval,Molecule&molecule)
   shell_to_function_ = new int[nshell_];
   ishell = 0;
   int ifunction = 0;
-  for (i=molecule.first(); i != 0; molecule.next(i)) {
+  for (i=molecule.first(),iatom=0; i != 0; molecule.next(i),iatom++) {
+      // see if there is a specific basisname for this atom
+      char* sbasisname = topkeyval.pcharvalue("basis",iatom);
+      if (!sbasisname) sbasisname = basisname;
+      
       centerpix_to_r[i] = new double[3];
       centerpix_to_r[i][0] = molecule(i)[0];
       centerpix_to_r[i][1] = molecule(i)[1];
       centerpix_to_r[i][2] = molecule(i)[2];
       centerpix_to_shellnum[i] = ishell;
       recursively_get_shell(ishell,keyval,molecule(i).element().name(),
-			    basisname,havepure,pure,1);
+			    sbasisname,havepure,pure,1);
       centerpix_to_nshell[i] = ishell - centerpix_to_shellnum[i];
       for (int j = centerpix_to_shellnum[i]; j<ishell; j++) {
 	  shell_to_centerpix[j] = i;
 	}
+
+      if (basisname != sbasisname) delete[] sbasisname;
      }
 
   // compute nbasis_ and shell_to_function_[]
@@ -65,7 +76,6 @@ GaussianBasisSet::GaussianBasisSet(KeyVal&topkeyval,Molecule&molecule)
       nbasis_ += shell[ishell]->nfunction();
     }
 
-  delete[] basisname;
 }
 
 void GaussianBasisSet::

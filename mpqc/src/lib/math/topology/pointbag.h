@@ -75,35 +75,38 @@
 
 class PointBagElem_double
 {
- private:
-  double obj;
-  Point pnt;
- public:
-  PointBagElem_double(Point&p, double&t);
-  ~PointBagElem_double();
-  inline Point& point() { return pnt; };
-  inline double& object() { return obj; };
+  private:
+    double obj;
+    Point pnt;
+  public:
+    PointBagElem_double(const Point&p, const double&t);
+    PointBagElem_double(const PointBagElem_double&);
+    ~PointBagElem_double();
+    Point& point();
+    double& object();
 };
 
 class PointBag_double
 {
- private:
-  VoidPtrAVLSet impl;
- public:
-  PointBag_double();
-  ~PointBag_double();
-  inline length() { return impl.length(); };
-  inline add(Point p, double x) {
-      impl.add((void*)new PointBagElem_double(p,x));
-    };
-  inline int owns(Pix i) { return impl.owns(i); };
-  inline double& operator()(Pix i) {
-      return ((PointBagElem_double*)impl(i))->object();
-    };
-  inline double& get(Pix i) { return operator()(i); }
-  inline Point& point(Pix i) { return ((PointBagElem_double*)impl(i))->point(); };
-  inline Pix first() { return impl.first(); };
-  inline void next(Pix&i) { impl.next(i); };
+  private:
+    VoidPtrAVLSet impl;
+  public:
+    PointBag_double();
+    PointBag_double(PointBag_double&);
+    ~PointBag_double();
+    PointBag_double::length();
+    PointBag_double::add(const Point& p, double x);
+    PointBag_double::add(const PointBagElem_double&);
+    int PointBag_double::owns(Pix i);
+    double& PointBag_double::operator()(Pix i);
+    double& PointBag_double::get(Pix i);
+    Point& PointBag_double::point(Pix i);
+    Pix PointBag_double::first();
+    void PointBag_double::next(Pix&i);
 };
+
+#ifdef INLINE_FUNCTIONS
+#include <math/topology/pntbag_i.h>
+#endif
 
 #endif

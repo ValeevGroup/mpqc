@@ -188,6 +188,11 @@ Point::resize(int d)
   if (dim > 0) x = new double[dim];
 }
 
+int Point::dimension() const
+{
+  return dim;
+}
+
 DescribedClass_REF_def(Point);
 ARRAY_def(RefPoint);
 SET_def(RefPoint);

@@ -41,7 +41,7 @@ class Point : virtual public SavableState
   // Destructor
     ~Point(void);
   
-    inline int dimension() const { return dim; }
+    int dimension() const;
     void resize(int dim);
 
   // Copy to double *

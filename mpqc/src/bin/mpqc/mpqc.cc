@@ -78,6 +78,7 @@ clean_up(void)
 int
 main(int argc, char *argv[])
 {
+  const char *devnull = "/dev/null";
   atexit(clean_up);
 
   ExEnv::set_args(argc, argv);
@@ -252,6 +253,12 @@ main(int argc, char *argv[])
   char * ckptfile = new char[strlen(molname)+6];
   sprintf(ckptfile,"%s.ckpt",molname);
   
+  char * restartfile = keyval->pcharvalue("restart_file");
+  if (keyval->error() != KeyVal::OK) {
+    restartfile = new char[strlen(ckptfile)+1];
+    strcpy(restartfile, ckptfile);
+  }
+  
   int restart = 1;
   if (keyval->exists("restart"))
     restart = keyval->booleanvalue("restart");
@@ -271,30 +278,34 @@ main(int argc, char *argv[])
   int statresult, statsize;
   if (restart) {
     if (grp->me() == 0) {
-      statresult = stat(ckptfile,&sb);
+      statresult = stat(restartfile,&sb);
       statsize = (statresult==0) ? sb.st_size : 0;
     }
     grp->bcast(statresult);
     grp->bcast(statsize);
   }
   if (restart && statresult==0 && statsize) {
-    if (grp->me() == 0) {
-      StateInBinXDR si(ckptfile);
-      opt.restore_state(si);
+    StateInBinXDR si(restartfile);
+    char *suf = strrchr(restartfile,'.');
+    if (!strcmp(suf,".wfn")) {
+      mole.restore_state(si);
     }
-    BcastState bcast(grp);
-    bcast.bcast(opt);
-    bcast.flush();
-    mole = opt->function();
+    else {
+      opt.restore_state(si);
+      mole = opt->function();
+    }
   } else {
     mole = keyval->describedclassvalue("mole");
     opt = keyval->describedclassvalue("opt");
-    if (checkpoint && opt.nonnull() && grp->me() == 0) {
-      opt->set_checkpoint();
-      opt->set_checkpoint_file(ckptfile);
-    }
   }
 
+  if (checkpoint && opt.nonnull()) {
+    opt->set_checkpoint();
+    if (grp->me() == 0) opt->set_checkpoint_file(ckptfile);
+    else opt->set_checkpoint_file(devnull);
+  }
+
+  delete[] restartfile;
   delete[] ckptfile;
 
   int check = (options.retrieve("c") != 0);
@@ -339,7 +350,8 @@ main(int argc, char *argv[])
   
   int ready_for_freq = 1;
   if (mole.nonnull()) {
-    if ((do_opt || do_grad) && !mole->gradient_implemented()) {
+    if (((do_opt && opt.nonnull()) || do_grad)
+        && !mole->gradient_implemented()) {
       cout << node0 << indent
            << "WARNING: optimization or gradient requested but the given"
            << endl
@@ -412,10 +424,16 @@ main(int argc, char *argv[])
          << endl;
   }
 
-  if (savestate && grp->me() == 0) {
+  if (savestate) {
     if (opt.nonnull()) {
-      ckptfile = new char[strlen(molname)+6];
-      sprintf(ckptfile,"%s.ckpt",molname);
+      if (grp->me() == 0) {
+        ckptfile = new char[strlen(molname)+6];
+        sprintf(ckptfile,"%s.ckpt",molname);
+      }
+      else {
+        ckptfile = new char[strlen(devnull)+1];
+        strcpy(ckptfile, devnull);
+      }
 
       StateOutBinXDR so(ckptfile);
       opt.save_state(so);
@@ -425,8 +443,14 @@ main(int argc, char *argv[])
     }
 
     if (mole.nonnull()) {
-      ckptfile = new char[strlen(molname)+5];
-      sprintf(ckptfile, "%s.wfn",molname);
+      if (grp->me() == 0) {
+        ckptfile = new char[strlen(molname)+6];
+        sprintf(ckptfile,"%s.wfn",molname);
+      }
+      else {
+        ckptfile = new char[strlen(devnull)+1];
+        strcpy(ckptfile, devnull);
+      }
   
       StateOutBinXDR so(ckptfile);
       mole.save_state(so);

@@ -1,4 +1,8 @@
 
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
 #include <stdio.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/integral/integral.h>
@@ -6,8 +10,8 @@
 
 ///////////////////////////////////////////////////////////////////////
 
-OneBodyInt::OneBodyInt(const RefGaussianBasisSet&b):
-  bs1(b), bs2(b)
+OneBodyInt::OneBodyInt(const RefGaussianBasisSet&b, OneBodyIntIter *it):
+  bs1(b), bs2(b), iter(it)
 {
   // allocate a buffer
   int biggest_shell = b->max_nfunction_in_shell();
@@ -17,11 +21,15 @@ OneBodyInt::OneBodyInt(const RefGaussianBasisSet&b):
   else {
       buffer_ = 0;
     }
+
+  if (!iter)
+    iter = new OneBodyIntIter;
 }
 
 OneBodyInt::OneBodyInt(const RefGaussianBasisSet&b1,
-                       const RefGaussianBasisSet&b2) :
-  bs1(b1), bs2(b2)
+                       const RefGaussianBasisSet&b2,
+                       OneBodyIntIter *it) :
+  bs1(b1), bs2(b2), iter(it)
 {
   // allocate a buffer
   int biggest_shell = b1->max_nfunction_in_shell() *
@@ -32,11 +40,21 @@ OneBodyInt::OneBodyInt(const RefGaussianBasisSet&b1,
   else {
       buffer_ = 0;
     }
+
+  if (!iter)
+    iter = new OneBodyIntIter;
 }
 
 OneBodyInt::~OneBodyInt()
 {
-  if (buffer_) delete[] buffer_;
+  if (buffer_) {
+    delete[] buffer_;
+    buffer_=0;
+  }
+  if (iter) {
+    delete iter;
+    iter=0;
+  }
 }
 
 int OneBodyInt::nbasis()
@@ -90,34 +108,37 @@ OneBodyInt::process(SCMatrixRectBlock* b)
 
   int njdata = b->jend - b->jstart;
 
-  for (int ish=ishstart;ish<ishend;ish++) {
+  iter->reset(ishstart, ishend, jshstart, jshend);
+  for (iter->start(); iter->ready(); iter->next()) {
+      int ish=iter->ishell();
+      int jsh=iter->jshell();
+
       int nish = bs1->operator[](ish).nfunction();
-      for (int jsh=jshstart;jsh<jshend;jsh++) {
-          int njsh = bs2->operator[](jsh).nfunction();
+      int njsh = bs2->operator[](jsh).nfunction();
 
-          // compute a set of shell integrals
-          compute_shell(ish,jsh,buffer_);
+      double scale = iter->scale();
+    
+      // compute a set of shell integrals
+      compute_shell(ish,jsh,buffer_);
 
-          double*tmp = buffer_;
-          int ifn = bs1->shell_to_function(ish);
-          int jfnsave = bs2->shell_to_function(jsh);
-          for (int i=0; i<nish; i++,ifn++) {
-              if (ifn < b->istart || ifn >= b->iend) {
-                  tmp += njsh;
-                }
-              else {
-                  int jfn = jfnsave;
-                  int data_index = (ifn - b->istart)*njdata + jfn - b->jstart;
-                  for (int j=0; j<njsh; j++,jfn++) {
-                      if (jfn >= b->jstart && jfn < b->jend) {
-                          b->data[data_index] += *tmp;
-                          data_index++;
-                        }
-                      tmp++;
+      double *tmp = buffer_;
+      int ifn = bs1->shell_to_function(ish);
+      int jfnsave = bs2->shell_to_function(jsh);
+      for (int i=0; i<nish; i++,ifn++) {
+          if (ifn < b->istart || ifn >= b->iend) {
+              tmp += njsh;
+            }
+          else {
+              int jfn = jfnsave;
+              int data_index = (ifn - b->istart)*njdata + jfn - b->jstart;
+              for (int j=0; j<njsh; j++,jfn++) {
+                  if (jfn >= b->jstart && jfn < b->jend) {
+                      b->data[data_index] += *tmp * scale;
+                      data_index++;
                     }
+                  tmp++;
                 }
             }
-          
         }
     }
 }
@@ -132,38 +153,41 @@ OneBodyInt::process(SCMatrixLTriBlock* b)
   int shend = (fnend?bs1->function_to_shell(fnend - 1) + 1 : 0);
 
   // loop over all needed shells
-  for (int ish=shstart;ish<shend;ish++) {
+  iter->reset(shstart, shend, 0, 0);
+  for (iter->start_ltri(); iter->ready_ltri(); iter->next_ltri()) {
+      int ish=iter->ishell();
+      int jsh=iter->jshell();
+
       int nish = bs1->operator[](ish).nfunction();
-      for (int jsh=shstart;jsh<=ish;jsh++) {
-          int njsh = bs1->operator[](jsh).nfunction();
+      int njsh = bs1->operator[](jsh).nfunction();
 
-          // compute a set of shell integrals
-          compute_shell(ish,jsh,buffer_);
+      double scale = iter->scale();
 
-          // take the integrals from buffer and put them into the LTri block
-          double*tmp = buffer_;
-          int ifn = bs1->shell_to_function(ish);
-          int jfnsave = bs1->shell_to_function(jsh);
-          for (int i=0; i<nish; i++,ifn++) {
-              // skip over basis functions that are not needed
-              if (ifn < fnstart || ifn >= fnend) {
-                  tmp += njsh;
-                }
-              else {
-                  int jfn = jfnsave;
-                  int irelfn = ifn - fnstart;
-                  int data_index = ((irelfn+1)*irelfn>>1) + jfn - fnstart;
-                  for (int j=0; j<njsh; j++,jfn++) {
-                      // skip over basis functions that are not needed
-                      if (jfn <= ifn && jfn >= fnstart) {
-                          b->data[data_index] += *tmp;
-                          data_index++;
-                        }
-                      tmp++;
+      // compute a set of shell integrals
+      compute_shell(ish,jsh,buffer_);
+
+      // take the integrals from buffer and put them into the LTri block
+      double*tmp = buffer_;
+      int ifn = bs1->shell_to_function(ish);
+      int jfnsave = bs1->shell_to_function(jsh);
+      for (int i=0; i<nish; i++,ifn++) {
+        // skip over basis functions that are not needed
+          if (ifn < fnstart || ifn >= fnend) {
+              tmp += njsh;
+            }
+          else {
+              int jfn = jfnsave;
+              int irelfn = ifn - fnstart;
+              int data_index = ((irelfn+1)*irelfn>>1) + jfn - fnstart;
+              for (int j=0; j<njsh; j++,jfn++) {
+                  // skip over basis functions that are not needed
+                  if (jfn <= ifn && jfn >= fnstart) {
+                      b->data[data_index] += *tmp * scale;
+                      data_index++;
                     }
+                  tmp++;
                 }
             }
-          
         }
     }
 }
@@ -176,8 +200,8 @@ OneBodyInt::has_side_effects()
 
 ///////////////////////////////////////////////////////////////////////
 
-OneBody3Int::OneBody3Int(const RefGaussianBasisSet&b):
-  bs1(b), bs2(b)
+OneBody3Int::OneBody3Int(const RefGaussianBasisSet&b, OneBodyIntIter *it) :
+  bs1(b), bs2(b), iter(it)
 {
   // allocate a buffer
   int biggest_shell = b->max_nfunction_in_shell();
@@ -187,11 +211,15 @@ OneBody3Int::OneBody3Int(const RefGaussianBasisSet&b):
   else {
       buffer_ = 0;
     }
+
+  if (!iter)
+    iter = new OneBodyIntIter;
 }
 
 OneBody3Int::OneBody3Int(const RefGaussianBasisSet&b1,
-                         const RefGaussianBasisSet&b2) :
-  bs1(b1), bs2(b2)
+                         const RefGaussianBasisSet&b2,
+                         OneBodyIntIter *it) :
+  bs1(b1), bs2(b2), iter(it)
 {
   // allocate a buffer
   int biggest_shell = b1->max_nfunction_in_shell() *
@@ -202,11 +230,21 @@ OneBody3Int::OneBody3Int(const RefGaussianBasisSet&b1,
   else {
       buffer_ = 0;
    }
+
+  if (!iter)
+    iter = new OneBodyIntIter;
 }
 
 OneBody3Int::~OneBody3Int()
 {
-  if (buffer_) delete[] buffer_;
+  if (buffer_) {
+    delete[] buffer_;
+    buffer_=0;
+  }
+  if (iter) {
+    delete iter;
+    iter=0;
+  }
 }
 
 int OneBody3Int::nbasis()
@@ -262,36 +300,39 @@ OneBody3Int::process(SCMatrixRectBlock* a,
 
   int njdata = b->jend - b->jstart;
 
-  for (int ish=ishstart;ish<ishend;ish++) {
+  iter->reset(ishstart, ishend, jshstart, jshend);
+  for (iter->start(); iter->ready(); iter->next()) {
+      int ish=iter->ishell();
+      int jsh=iter->jshell();
+
       int nish = bs1->operator[](ish).nfunction();
-      for (int jsh=jshstart;jsh<jshend;jsh++) {
-          int njsh = bs2->operator[](jsh).nfunction();
+      int njsh = bs2->operator[](jsh).nfunction();
 
-          // compute a set of shell integrals
-          compute_shell(ish,jsh,buffer_);
+      double scale = iter->scale();
 
-          double*tmp = buffer_;
-          int ifn = bs1->shell_to_function(ish);
-          int jfnsave = bs2->shell_to_function(jsh);
-          for (int i=0; i<nish; i++,ifn++) {
-              if (ifn < b->istart || ifn >= b->iend) {
-                  tmp += njsh * 3;
-                }
-              else {
-                  int jfn = jfnsave;
-                  int data_index = (ifn - b->istart)*njdata + jfn - b->jstart;
-                  for (int j=0; j<njsh; j++,jfn++) {
-                      if (jfn >= b->jstart && jfn < b->jend) {
-                          a->data[data_index] += tmp[0];
-                          b->data[data_index] += tmp[1];
-                          c->data[data_index] += tmp[2];
-                          data_index++;
-                        }
-                      tmp += 3;
+      // compute a set of shell integrals
+      compute_shell(ish,jsh,buffer_);
+
+      double*tmp = buffer_;
+      int ifn = bs1->shell_to_function(ish);
+      int jfnsave = bs2->shell_to_function(jsh);
+      for (int i=0; i<nish; i++,ifn++) {
+          if (ifn < b->istart || ifn >= b->iend) {
+              tmp += njsh * 3;
+            }
+          else {
+              int jfn = jfnsave;
+              int data_index = (ifn - b->istart)*njdata + jfn - b->jstart;
+              for (int j=0; j<njsh; j++,jfn++) {
+                  if (jfn >= b->jstart && jfn < b->jend) {
+                      a->data[data_index] += tmp[0] * scale;
+                      b->data[data_index] += tmp[1] * scale;
+                      c->data[data_index] += tmp[2] * scale;
+                      data_index++;
                     }
+                  tmp += 3;
                 }
             }
-          
         }
     }
 }
@@ -308,40 +349,43 @@ OneBody3Int::process(SCMatrixLTriBlock* a,
   int shend = (fnend?bs1->function_to_shell(fnend - 1) + 1 : 0);
 
   // loop over all needed shells
-  for (int ish=shstart;ish<shend;ish++) {
+  iter->reset(shstart, shend, 0, 0);
+  for (iter->start_ltri(); iter->ready_ltri(); iter->next_ltri()) {
+      int ish=iter->ishell();
+      int jsh=iter->jshell();
+
       int nish = bs1->operator[](ish).nfunction();
-      for (int jsh=shstart;jsh<=ish;jsh++) {
-          int njsh = bs1->operator[](jsh).nfunction();
+      int njsh = bs1->operator[](jsh).nfunction();
 
-          // compute a set of shell integrals
-          compute_shell(ish,jsh,buffer_);
+      double scale = iter->scale();
+    
+      // compute a set of shell integrals
+      compute_shell(ish,jsh,buffer_);
 
-          // take the integrals from buffer and put them into the LTri block
-          double*tmp = buffer_;
-          int ifn = bs1->shell_to_function(ish);
-          int jfnsave = bs1->shell_to_function(jsh);
-          for (int i=0; i<nish; i++,ifn++) {
-              // skip over basis functions that are not needed
-              if (ifn < fnstart || ifn >= fnend) {
-                  tmp += njsh * 3;
-                }
-              else {
-                  int jfn = jfnsave;
-                  int irelfn = ifn - fnstart;
-                  int data_index = ((irelfn+1)*irelfn>>1) + jfn - fnstart;
-                  for (int j=0; j<njsh; j++,jfn++) {
-                      // skip over basis functions that are not needed
-                      if (jfn <= ifn && jfn >= fnstart) {
-                          a->data[data_index] += tmp[0];
-                          b->data[data_index] += tmp[1];
-                          c->data[data_index] += tmp[2];
-                          data_index++;
-                        }
-                      tmp += 3;
+      // take the integrals from buffer and put them into the LTri block
+      double*tmp = buffer_;
+      int ifn = bs1->shell_to_function(ish);
+      int jfnsave = bs1->shell_to_function(jsh);
+      for (int i=0; i<nish; i++,ifn++) {
+          // skip over basis functions that are not needed
+          if (ifn < fnstart || ifn >= fnend) {
+              tmp += njsh * 3;
+            }
+          else {
+              int jfn = jfnsave;
+              int irelfn = ifn - fnstart;
+              int data_index = ((irelfn+1)*irelfn>>1) + jfn - fnstart;
+              for (int j=0; j<njsh; j++,jfn++) {
+                  // skip over basis functions that are not needed
+                  if (jfn <= ifn && jfn >= fnstart) {
+                      a->data[data_index] += tmp[0] * scale;
+                      b->data[data_index] += tmp[1] * scale;
+                      c->data[data_index] += tmp[2] * scale;
+                      data_index++;
                     }
+                  tmp += 3;
                 }
             }
-          
         }
     }
 }

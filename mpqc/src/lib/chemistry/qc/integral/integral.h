@@ -2,19 +2,26 @@
 #ifndef _chemistry_qc_integral_integral_h
 #define _chemistry_qc_integral_integral_h
 
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 #include <math/scmat/matrix.h>
 #include <math/scmat/elemop.h>
 #include <chemistry/qc/basis/basis.h>
+#include <chemistry/qc/integral/intiter.h>
 
 class OneBodyInt: public SCElementOp
 {
- private:
+ protected:
+  OneBodyIntIter *iter;
   RefGaussianBasisSet bs1;
   RefGaussianBasisSet bs2;
   double *buffer_;
  public:
-  OneBodyInt(const RefGaussianBasisSet&b);
-  OneBodyInt(const RefGaussianBasisSet&b1, const RefGaussianBasisSet&b2);
+  OneBodyInt(const RefGaussianBasisSet&b, OneBodyIntIter* =0);
+  OneBodyInt(const RefGaussianBasisSet&b1, const RefGaussianBasisSet&b2,
+             OneBodyIntIter* =0);
   
   virtual int nbasis();
   virtual int nbasis1();
@@ -42,12 +49,14 @@ class OneBodyInt: public SCElementOp
 class OneBody3Int: public SCElementOp3
 {
  private:
+  OneBodyIntIter *iter;
   RefGaussianBasisSet bs1;
   RefGaussianBasisSet bs2;
   double *buffer_;
  public:
-  OneBody3Int(const RefGaussianBasisSet&b);
-  OneBody3Int(const RefGaussianBasisSet&b1,const RefGaussianBasisSet&b2);
+  OneBody3Int(const RefGaussianBasisSet&b, OneBodyIntIter* =0);
+  OneBody3Int(const RefGaussianBasisSet&b1,const RefGaussianBasisSet&b2,
+              OneBodyIntIter* =0);
   
   virtual int nbasis();
   virtual int nbasis1();

@@ -10,7 +10,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 TARGET_TO_MAKE = libintegral
 BIN_OR_LIB = LIB
 
-SRCS = integral.cc integralv2.cc ortho.cc
+SRCS = integral.cc integralv2.cc ortho.cc intiter.cc
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 

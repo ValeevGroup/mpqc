@@ -778,7 +778,13 @@ void
 SCElementRandomize::process(SCMatrixBlockIter&i)
 {
   for (i.reset(); i; ++i) {
+#ifdef HAVE_DRAND48
       i.set(drand48()*(drand48()<0.5?1.0:-1.0));
+#else
+      int r=rand();
+      double dr = (double) r / 32767.0;
+      i.set(dr*(dr<0.5?1.0:-1.0));
+#endif
     }
 }
 

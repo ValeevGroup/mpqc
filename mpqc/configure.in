@@ -751,6 +751,10 @@ AC_DEFINE(SIGHASELLIP) AC_MSG_RESULT(yes),
 AC_MSG_RESULT(no))
 AC_LANG_RESTORE
 
+dnl --------- Checks for rand functions ---------
+
+AC_CHECK_FUNCS(drand48)
+
 dnl --------- Checks for SYSV IPC. ---------
 
 AC_CHECK_FUNCS(shmget semget)

@@ -37,23 +37,6 @@ PsiWavefunction::PsiWavefunction(const Ref<KeyVal>&keyval):
   socc_ = read_occ(keyval,"socc",nirrep_);
   frozen_docc_ = read_occ(keyval,"frozen_docc",nirrep_);
   frozen_uocc_ = read_occ(keyval,"frozen_uocc",nirrep_);
-  if (!docc_ || !socc_) {
-    if (keyval->exists("total_charge") && keyval->exists("multiplicity")) {
-      charge_ = keyval->intvalue("total_charge");
-      multp_ = keyval->intvalue("multiplicity");
-      if (multp_ < 1) {
-	ExEnv::err0() << indent
-		      << "ERROR: PsiWavefunction: valid multiplicity has to be >= 1" << endl;
-	abort();
-      }
-    }
-    else {
-      ExEnv::err0() << indent
-		    << "ERROR: PsiWavefunction: multiplicity and total_charge need "
-		    << "to be specified when docc (socc) are missing" << endl;
-      abort();
-    }
-  }
 
   int bytes = keyval->intvalue("memory");
   if (bytes <= 2000000)
@@ -198,6 +181,23 @@ static ClassDesc PsiSCF_cd(
 PsiSCF::PsiSCF(const Ref<KeyVal>&keyval):
   PsiWavefunction(keyval)
 {
+  if (!docc_ || !socc_) {
+    if (keyval->exists("total_charge") && keyval->exists("multiplicity")) {
+      charge_ = keyval->intvalue("total_charge");
+      multp_ = keyval->intvalue("multiplicity");
+      if (multp_ < 1) {
+	ExEnv::err0() << indent
+		      << "ERROR: PsiSCF: valid multiplicity has to be >= 1" << endl;
+	abort();
+      }
+    }
+    else {
+      ExEnv::err0() << indent
+		    << "ERROR: PsiSCF: multiplicity and total_charge need "
+		    << "to be specified when docc (socc) are missing" << endl;
+      abort();
+    }
+  }
 }
 
 PsiSCF::~PsiSCF()

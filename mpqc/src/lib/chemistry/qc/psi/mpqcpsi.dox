@@ -19,6 +19,7 @@ This chapter explains how to use Psi from MPQC.
   <li> \ref psiinp
   <li> \ref psiexenv
   <li> \ref psiwfn
+  <li> \ref examples
 </ul>
 
 \section psiworks How the MPQC-Psi interface works
@@ -206,6 +207,94 @@ Here are a few examples of PsiWavefunctions:
       multiplicity = 1
     )
   )
+</pre>
+
+
+\section examples More examples
+
+This section contains some examples of complete inputs that specify an MPQC/Psi computations.
+
+Here's an optimization + subsequent frequency analysis on water molecule
+at the RHF CCSD 6-311G** level:
+<pre>
+% Emacs should use -*- KeyVal -*- mode
+% this file was automatically generated
+% label: water test series
+% molecule specification
+molecule<Molecule>: (
+  symmetry = C2V
+  unit = angstrom
+  { atoms geometry } = {
+     O     [     0.000000000000     0.000000000000     0.369372944000 ]
+     H     [     0.783975899000     0.000000000000    -0.184686472000 ]
+     H     [    -0.783975899000     0.000000000000    -0.184686472000 ]
+  }
+)
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "6-311G**"
+  molecule = $:molecule
+)
+% Psi environment specification
+psienv<PsiExEnv>: (
+      cwd = ./
+      fileprefix = mpqcpsi
+      stdout = mpqcpsi.stdout
+      stderr = mpqcpsi.stderr
+      nscratch = 1
+      scratch = [ "/scratch/evaleev/" ]
+)
+
+mpqc: (
+  checkpoint = no
+  savestate = no
+  restart = no
+  coor<SymmMolecularCoor>: (
+    molecule = $:molecule
+    generator<IntCoorGen>: (
+      molecule = $:molecule
+    )
+  )
+  % molecular coordinates for optimization  do_energy = yes
+  do_gradient = no
+  % method for computing the molecule's energy
+  mole<PsiCCSD>: (
+    molecule = $:molecule
+    basis = $:basis
+    coor = $..:coor
+    psienv = $:psienv
+    memory = 32000000
+    reference<PsiCLHF>: (
+      psienv = $:psienv
+      molecule = $:molecule
+      total_charge = 0
+      multiplicity = 1
+      basis = $:basis
+      memory = 32000000
+    )
+    hessian<FinDispMolecularHessian>: (
+      point_group<PointGroup>: symmetry = C2V
+      checkpoint = no
+      restart = no
+    )
+  )
+  optimize = yes
+  % optimizer object for the molecular geometry
+  opt<QNewtonOpt>: (
+    max_iterations = 20
+    function = $..:mole
+    update<BFGSUpdate>: ()
+    convergence<MolEnergyConvergence>: (
+      cartesian = yes
+      energy = $..:..:mole
+    )
+  )
+% vibrational frequency input
+  freq<MolecularFrequencies>: (
+    point_group<PointGroup>: symmetry = C2V
+    molecule = $:molecule
+  )
+)
 </pre>
 
 */

@@ -212,7 +212,17 @@ ParentClasses::change_parent(ClassDesc*oldcd,ClassDesc*newcd)
     }
 }
 
+ParentClass& ParentClasses::parent(int i)
+{
+  return *_classes[i];
+}
+
 const ParentClass& ParentClasses::parent(int i) const
+{
+  return *_classes[i];
+}
+
+ParentClass& ParentClasses::operator[](int i)
 {
   return *_classes[i];
 }
@@ -295,7 +305,7 @@ ClassDesc::~ClassDesc()
   if (children_) delete children_;
 }
 
-const ClassDesc*
+ClassDesc*
 ClassDesc::name_to_class_desc(const char* name)
 {
   ClassKey key(name);

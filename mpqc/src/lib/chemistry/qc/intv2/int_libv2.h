@@ -1,7 +1,7 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:01  etseidl
- * Initial revision
+ * Revision 1.2  1993/12/30 13:32:53  etseidl
+ * mostly rcs id stuff
  *
  * Revision 1.4  1993/04/28  00:32:04  jannsen
  * added some include files and c++ support

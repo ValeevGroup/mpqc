@@ -1,7 +1,7 @@
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:00  etseidl
- * Initial revision
+ * Revision 1.2  1993/12/30 13:32:47  etseidl
+ * mostly rcs id stuff
  *
  * Revision 1.5  1993/04/28  00:31:15  jannsen
  * added point charge integrals

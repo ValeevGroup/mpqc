@@ -2,8 +2,8 @@
 /* These utility routines assist in reading in the basis functions. */
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:01  etseidl
- * Initial revision
+ * Revision 1.2  1993/12/30 13:32:43  etseidl
+ * mostly rcs id stuff
  *
  * Revision 1.4  1993/04/28  00:30:13  jannsen
  * added int_read_basis global function

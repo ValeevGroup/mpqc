@@ -4,8 +4,8 @@
  * center 3 to 4. */
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:03  etseidl
- * Initial revision
+ * Revision 1.2  1993/12/30 13:33:09  etseidl
+ * mostly rcs id stuff
  *
  * Revision 1.4  1992/06/17  22:05:20  jannsen
  * cleaned up for saber-c

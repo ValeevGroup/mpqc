@@ -33,15 +33,15 @@ ifeq ($(ARCH),I860)
   COPTIONS = -O3 -Knoieee -Mnoframe
 endif
 
-ifeq ($(ARCH),SGI)
-  CC = $(GCC)
-  COPTIONS = $(GCOPTIONS)
-  ifneq ($(CC),$(GCC))
-    # this was needed for some SGI's
-    #CFLAGS := $(CFLAGS) -Olimit 2000
-    CFLAGS := $(CFLAGS_DEBUG)
-  endif
-endif
+#ifeq ($(ARCH),SGI)
+#  CC = $(GCC)
+#  COPTIONS = $(GCOPTIONS)
+#  ifneq ($(CC),$(GCC))
+#    # this was needed for some SGI's
+#    #CFLAGS := $(CFLAGS) -Olimit 2000
+#    CFLAGS := $(CFLAGS_DEBUG)
+#  endif
+#endif
 
 CSRC = bounds.c storage.c  buildgc.c  comp_1e.c  comp_0e.c  normalize.c  \
        offsets.c int_fjt.c  init2e.c  atominfo.c  basis.c  comp_erep.c  \

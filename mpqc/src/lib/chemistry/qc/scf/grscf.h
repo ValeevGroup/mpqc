@@ -54,7 +54,6 @@ class GRSCF: public OneBodyWavefunction
     RefSymmSCMatrix _gr_op_gmat;
     RefSymmSCMatrix _gr_hcore;
     RefSCMatrix _gr_vector;
-    RefSCMatrix _gr_nvector;
     
     void init();
     virtual void compute();

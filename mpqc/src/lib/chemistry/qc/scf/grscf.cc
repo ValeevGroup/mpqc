@@ -226,8 +226,6 @@ GRSCF::compute()
       HCoreWfn hcwfn(*this);
       RefSCMatrix vec = hcwfn.eigenvectors();
 
-      //vec->print("guess scf vector");
-      
       _eigenvectors = vec;
     }
 
@@ -237,10 +235,6 @@ GRSCF::compute()
 
     if (_fock.null()) {
       _fock = _eigenvectors.result_noupdate()->rowdim()->create_symmmatrix();
-    }
-    
-    if (_nsocc && _op_fock.null()) {
-      _op_fock = _fock.clone();
     }
     
     if (_fock_evals.null()) {
@@ -280,7 +274,7 @@ GRSCF::do_vector(double& eelec, double& nucrep)
   //_gr_vector.print("start vector");
   
   // allocate storage for the temp arrays
-  _gr_nvector = _gr_vector.clone();
+  RefSCMatrix nvector = _gr_vector.clone();
   
   _gr_dens = _fock.clone();
   _gr_dens.assign(0.0);
@@ -291,27 +285,15 @@ GRSCF::do_vector(double& eelec, double& nucrep)
   _gr_gmat = _gr_dens->clone();
   _gr_hcore = _gr_dens->clone();
 
-  if (_nsocc) {
-    _gr_op_dens = _gr_dens->clone();
-    _gr_op_dens.assign(0.0);
-    _gr_op_dens_diff = _gr_dens->clone();
-    _gr_op_dens_diff.assign(0.0);
-    _gr_op_gmat = _gr_dens->clone();
-  }
-  
   // form Hcore
   _gr_hcore.assign(0.0);
   _accumdih->accum(_gr_hcore);
-  //_gr_hcore.print("hcore");
 
   for (int iter=0; iter < _maxiter; iter++) {
     // form the density from the current vector 
-    form_density(_gr_vector,
-                 _gr_dens,_gr_dens_diff,
-                 _gr_op_dens,_gr_op_dens_diff);
+    form_density(_gr_vector,_gr_dens,_gr_dens_diff,0,0);
     
-    //_gr_dens.print("density matrix");
-    
+    // check convergence
     int ij=0;
     double delta=0;
     for (int i=0; i < _gr_dens_diff->n(); i++)
@@ -321,71 +303,77 @@ GRSCF::do_vector(double& eelec, double& nucrep)
 
     if (delta < 1.0e-8) break;
 
+    // scale the off-diagonal elements of the density matrix
     _gr_dens->scale(2.0);
     _gr_dens->scale_diagonal(0.5);
     
+    // form the AO basis fock matrix
     form_ao_fock(nucrep);
-    //_gr_gmat.print("g matrix");
-    //_fock.print("ao fock matrix");
 
+    // unscale the off-diagonal elements of the density matrix
     _gr_dens->scale(0.5);
     _gr_dens->scale_diagonal(2.0);
 
+    // calculate the electronic energy
     eelec = scf_energy();
     printf("iter %5d energy = %20.15f delta = %15.10g\n",
            iter,eelec+nucrep,delta);
 
-    RefSymmSCMatrix _gr_error = _fock.clone();
-    _gr_error.assign(0.0);
-    _gr_error.accumulate_transform(_gr_vector.t(),_fock);
+    // now extrapolate the fock matrix
+    // first we form the error matrix which is the offdiagonal blocks of
+    // the MO fock matrix
+    RefSymmSCMatrix mo_error = _fock.clone();
 
-    for (int i=0; i < _gr_error->n(); i++) {
+    mo_error.assign(0.0);
+    mo_error.accumulate_transform(_gr_vector.t(),_fock);
+
+    for (int i=0; i < mo_error->n(); i++) {
       double occi = occupation(i);
       for (int j=0; j <= i; j++) {
         double occj = occupation(j);
         if (occi == occj)
-          _gr_error.set_element(i,j,0.0);
+          mo_error.set_element(i,j,0.0);
       }
     }
     
-    _gr_gmat.assign(0.0);
-    _gr_gmat.accumulate_transform(_gr_vector,_gr_error);
-    _gr_error.assign(_gr_gmat);
+    // now transform MO error to the AO basis
+    RefSymmSCMatrix ao_error = mo_error.clone();
+    ao_error.assign(0.0);
+    ao_error.accumulate_transform(_gr_vector,mo_error);
+    mo_error = 0;
     
+    // and do the DIIS extrapolation
     _data = new SymmSCMatrixSCExtrapData(_fock);
-    _error = new SymmSCMatrixSCExtrapError(_gr_error);
+    _error = new SymmSCMatrixSCExtrapError(ao_error);
     _extrap->extrapolate(_data,_error);
     _data=0;
     _error=0;
-    //_fock.print("extrap fock");
+    ao_error=0;
 
-    RefSymmSCMatrix _gr_mofock = _fock.clone();
-    _gr_mofock.assign(0.0);
-    _gr_mofock.accumulate_transform(_gr_vector.t(),_fock);
+    // now transform extrapolated fock to MO basis
+    RefSymmSCMatrix mofock = _fock.clone();
+    mofock.assign(0.0);
+    mofock.accumulate_transform(_gr_vector.t(),_fock);
 
-    //_gr_mofock.print("mo fock");
+    // diagonalize MO fock to get MO vector
+    mofock.diagonalize(_fock_evals,nvector);
+    mofock=0;
+
+    // transform MO vector to AO basis
+    _gr_vector = _gr_vector * nvector;
     
-    _gr_mofock.diagonalize(_fock_evals,_gr_nvector);
-    _gr_mofock=0;
-    //_gr_nvector.print("evecs");
-
-    _gr_vector = _gr_vector * _gr_nvector;
-    
+    // and orthogonalize vector
     _gr_vector->schmidt_orthog(overlap().pointer(),basis()->nbasis());
-    //_gr_vector.print("new vector");
   }
       
   _eigenvectors = _gr_vector;
   
   _gr_dens = 0;
   _gr_dens_diff = 0;
-  _gr_op_dens = 0;
-  _gr_op_dens_diff = 0;
   _gr_gmat = 0;
-  _gr_op_gmat = 0;
   _gr_hcore = 0;
   _gr_vector = 0;
-  _gr_nvector = 0;
+  nvector = 0;
 }
 
 double

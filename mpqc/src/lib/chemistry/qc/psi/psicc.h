@@ -32,6 +32,9 @@ class PSI_CCSD_T: public Wavefunction
 
     void print(ostream&o=cout);
 
+    int spin_polarized();
+    int nelectron();
+
     int gradient_implemented();
     int value_implemented();
 };
@@ -62,6 +65,9 @@ class PSI_CCSD: public Wavefunction
 
     void print(ostream&o=cout);
 
+    int spin_polarized();
+    int nelectron();
+
     int gradient_implemented();
     int value_implemented();
 };
@@ -91,6 +97,9 @@ class PSI_CCSDT: public Wavefunction
     RefSymmSCMatrix density();
 
     void print(ostream&o=cout);
+
+    int spin_polarized();
+    int nelectron();
 
     int gradient_implemented();
     int value_implemented();

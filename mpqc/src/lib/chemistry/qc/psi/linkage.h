@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_scf_linkage_h
-#define _chemistry_qc_scf_linkage_h
+#ifndef _chemistry_qc_psi_linkage_h
+#define _chemistry_qc_psi_linkage_h
 
 #ifndef __PIC__
 

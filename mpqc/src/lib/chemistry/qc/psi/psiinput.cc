@@ -39,7 +39,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
   printf("here it comes\n");
   _gbs->print();
   // _gbs = keyval->describedclassvalue("basis");
-  nirrep = _mol->point_group().char_table().nirrep();
+  nirrep = _mol->point_group()->char_table().nirrep();
   docc = new int[nirrep];
   socc = new int[nirrep];
   frozen_docc = new int[nirrep];
@@ -252,8 +252,8 @@ char ts[133];
     unique = _mol->find_unique_atoms();
     write_string("geometry = (\n");
     for (int i=0; i < _mol->num_unique_atoms(); i++) {
-        sprintf(ts, "  (%f %f %f)\n", _mol->atom(unique[i])[0],
-           _mol->atom(unique[i])[1], _mol->atom(unique[i])[2]);
+        sprintf(ts, "  (%f %f %f)\n", _mol->r(unique[i],0),
+           _mol->r(unique[i],1), _mol->r(unique[i],2));
         write_string(ts);
         } 
     write_string("    )\n");
@@ -270,11 +270,12 @@ PSI_Input::write_basis(void)
   char ts[133];
 
   begin_section("basis");
+  RefAtomInfo atominfo = _mol->atominfo();
   int *unique ;
   unique = _mol->find_unique_atoms();
   for (i=0; i<_mol->num_unique_atoms(); i++) {
     sprintf(ts, "%s:SCdefined = (\n", 
-	    _mol->atom(unique[i]).element().name());
+	    atominfo->name(_mol->Z(unique[i])));
     write_string(ts);
     for(am=0; am<6; am++){
       for (j = 0; j < _gbs->nshell_on_center(unique[i]); j++) {
@@ -308,22 +309,23 @@ PSI_Input::write_defaults(const char *dertype, const char *wavefn)
    double *x_vec, *y_vec, *z_vec;
 
    begin_section("default");
+   write_keyword("output", "terminal");
    write_keyword("wfn", wavefn);
    write_keyword("dertype", dertype);
    write_keyword("opentype", opentype);
    write_key_wq("label",label);
-   sprintf(ts, "memory = (%6.1f MB)\n", (float) memory);
+   sprintf(ts, "memory = (%d MB)\n", memory/1000000);
    write_string(ts);
 
-   write_keyword("symmetry",_mol->point_group().symbol());
+   write_keyword("symmetry",_mol->point_group()->symbol());
 
    x_vec = new double[3];
    y_vec = new double[3];
    z_vec = new double[3];
    for (i=0; i<3; i++) {
-     x_vec[i] = _mol->point_group().symm_frame()[i][0];
-     y_vec[i] = _mol->point_group().symm_frame()[i][1];
-     z_vec[i] = _mol->point_group().symm_frame()[i][2];
+     x_vec[i] = _mol->point_group()->symm_frame()[i][0];
+     y_vec[i] = _mol->point_group()->symm_frame()[i][1];
+     z_vec[i] = _mol->point_group()->symm_frame()[i][2];
      }
  
    write_keyword("x_axis", 3, x_vec);
@@ -429,10 +431,11 @@ PSI_Input::write_input(void)
   char t2[133];
 
   begin_section("input");
+  RefAtomInfo atominfo = _mol->atominfo();
   unique = _mol->find_unique_atoms();
   sprintf(t1, "atoms = (");
   for (i=0; i < _mol->num_unique_atoms(); i++) {
-    sprintf(t2, "%s ", _mol->atom(unique[i]).element().symbol());
+    sprintf(t2, "%s ", atominfo->symbol(_mol->Z(unique[i])));
     strcat(t1, t2);
     }
   strcat(t1, ")\n");

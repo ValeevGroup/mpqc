@@ -62,7 +62,7 @@ void
 PSI_CCSD_T::compute()
 {  
   int i;
-  int ni = molecule()->point_group().char_table().nirrep();
+  int ni = molecule()->point_group()->char_table().nirrep();
 
   //molecule()->transform_to_principal_axes();
 
@@ -84,9 +84,9 @@ PSI_CCSD_T::compute()
     FILE11 file11(0);
     for(i=0; i<molecule()->natom(); i++)
       for(j=0; j<molecule()->natom(); j++)
-        if( fabs(file11.coordinate(0,i) - molecule()->atom(j)[0]) < tol &&
-            fabs(file11.coordinate(1,i) - molecule()->atom(j)[1]) < tol &&
-            fabs(file11.coordinate(2,i) - molecule()->atom(j)[2]) < tol){
+        if( fabs(file11.coordinate(0,i) - molecule()->r(j,0)) < tol &&
+            fabs(file11.coordinate(1,i) - molecule()->r(j,1)) < tol &&
+            fabs(file11.coordinate(2,i) - molecule()->r(j,2)) < tol){
           reorder[i] = j;
           break;
           }
@@ -130,6 +130,19 @@ RefSymmSCMatrix
 PSI_CCSD_T::density()
 {
   abort();
+}
+
+int
+PSI_CCSD_T::spin_polarized()
+{
+  return 1;
+}
+
+int
+PSI_CCSD_T::nelectron()
+{
+  abort();
+  return 0;
 }
 
 int

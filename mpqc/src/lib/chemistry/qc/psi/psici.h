@@ -32,6 +32,9 @@ class PSI_CI: public Wavefunction
 
     void print(ostream&o=cout);
 
+    int spin_polarized();
+    int nelectron();
+
     int gradient_implemented();
     int value_implemented();
 };

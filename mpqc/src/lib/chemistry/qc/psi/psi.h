@@ -35,6 +35,10 @@ class PSISCF: public OneBodyWavefunction
     RefDiagSCMatrix eigenvalues();
     RefSCMatrix eigenvectors();
 
+    int spin_polarized();
+    int spin_unrestricted();
+    RefSymmSCMatrix density();
+
     int gradient_implemented();
     int value_implemented();
 };

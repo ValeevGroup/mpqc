@@ -36,6 +36,8 @@
 #include <util/state/stateio.h>
 #include <chemistry/qc/dft/integrator.h>
 
+#define MAX_DOUBLE 1e+14
+
 //#define CHECK_ALIGN(v) if(int(&v)&7)cout<<"Bad Alignment: "<< ## v <<endl;
 #define CHECK_ALIGN(v)
 
@@ -1093,267 +1095,6 @@ BeckeIntegrationWeight::w(int acenter, SCVector3 &point,
   return w_a;
 }
 
-///////////////////////////////////////////////////////////////////////////
-// Murray93Integrator
-
-// utility functions
-
-static void
-gauleg(double x1, double x2, double x[], double w[], int n)
-{
-  int m,j,i;
-  double z1,z,xm,xl,pp,p3,p2,p1;
-  const double EPS = 10.0 * DBL_EPSILON;
-
-  m=(n+1)/2;
-  xm=0.5*(x2+x1);
-  xl=0.5*(x2-x1);
-  for (i=1;i<=m;i++)  {
-      z=cos(M_PI*(i-0.25)/(n+0.5));
-      do {
-          p1=1.0;
-          p2=0.0;
-          for (j=1;j<=n;j++) {
-              p3=p2;
-              p2=p1;
-              p1=((2.0*j-1.0)*z*p2-(j-1.0)*p3)/j;
-	    }
-          pp=n*(z*p1-p2)/(z*z-1.0);
-          z1=z;
-          z=z1-p1/pp;
-	} while (fabs(z-z1) > EPS);
-      x[i-1]=xm-xl*z;
-      x[n-i]=xm+xl*z;
-      w[i-1]=2.0*xl/((1.0-z*z)*pp*pp);
-      w[n-i]=w[i-1];
-    }
-}
-
-#define CLASSNAME Murray93Integrator
-#define HAVE_KEYVAL_CTOR
-#define HAVE_STATEIN_CTOR
-#define PARENTS public DenIntegrator
-#include <util/state/statei.h>
-#include <util/class/classi.h>
-void *
-Murray93Integrator::_castdown(const ClassDesc*cd)
-{
-  void* casts[1];
-  casts[0] = DenIntegrator::_castdown(cd);
-  return do_castdowns(casts,cd);
-}
-
-Murray93Integrator::Murray93Integrator(StateIn& s):
-  SavableState(s),
-  DenIntegrator(s)
-{
-  init_object();
-  s.get(nr_);
-  s.get(ntheta_);
-  s.get(nphi_);
-  s.get(Ktheta_);
-}
-
-Murray93Integrator::Murray93Integrator()
-{
-  init_object();
-}
-
-Murray93Integrator::Murray93Integrator(const RefKeyVal& keyval):
-  DenIntegrator(keyval)
-{
-  init_object();
-  nr_ = keyval->intvalue("nr", KeyValValueint(nr_));
-  ntheta_ = keyval->intvalue("ntheta", KeyValValueint(ntheta_));
-  nphi_ = keyval->intvalue("nphi", KeyValValueint(2*ntheta_));
-  Ktheta_ = keyval->intvalue("Ktheta", KeyValValueint(Ktheta_));
-}
-
-Murray93Integrator::~Murray93Integrator()
-{
-}
-
-void
-Murray93Integrator::save_data_state(StateOut& s)
-{
-  DenIntegrator::save_data_state(s);
-  s.put(nr_);
-  s.put(ntheta_);
-  s.put(nphi_);
-  s.put(Ktheta_);
-}
-
-void
-Murray93Integrator::init_object()
-{
-  nr_ = 75;
-  ntheta_ = 16;
-  nphi_ = 2*ntheta_;
-  Ktheta_ = 5;
-  weight_ = new BeckeIntegrationWeight;
-}
-
-// taken from Mike Colvin 1997/07/21 and modified
-void
-Murray93Integrator::integrate(const RefDenFunctional &denfunc,
-                              const RefSymmSCMatrix& densa,
-                              const RefSymmSCMatrix& densb,
-                              double *nuclear_gradient)
-{
-  tim_enter("integrate");
-
-  init_integration(denfunc, densa, densb, nuclear_gradient);
-
-  RefMolecule mol = wavefunction()->molecule();
-  weight_->init(mol, DBL_EPSILON);
-
-  int ncenters=mol->natom();   // number of centers
-  int icenter;                 // Loop index over centers
-
-  int *nr = new int[ncenters];
-  int ntheta = ntheta_;
-  int nphi = nphi_;
-  for (icenter=0; icenter<ncenters; icenter++) nr[icenter] = nr_;
-
-  double *w_gradient = 0;
-  double *f_gradient = 0;
-  if (nuclear_gradient) {
-      w_gradient = new double[ncenters*3];
-      f_gradient = new double[ncenters*3];
-    }
-
-  SCVector3 *centers = new SCVector3[ncenters];
-  for (icenter=0; icenter<ncenters; icenter++) {
-      centers[icenter].x() = mol->r(icenter,0);
-      centers[icenter].y() = mol->r(icenter,1);
-      centers[icenter].z() = mol->r(icenter,2);
-    }
-
-  int ir, itheta, iphi;       // Loop indices for diff. integration dim
-  int point_count;            // Counter for # integration points per center
-  int point_count_total=0;    // Counter for # integration points
-
-  SCVector3 point;            // sph coord of current integration point
-  SCVector3 center;           // Cartesian position of center
-  SCVector3 integration_point;
-
-  double w,q,int_volume,sin_theta;
-        
-  // Determine maximium # grid points
-  int nr_max=0;
-  for (icenter=0;icenter<ncenters;icenter++) {
-      if (nr[icenter]>nr_max) nr_max=nr[icenter];
-    }
-
-  // allocate memory for integration sub-expressions
-  double *theta_quad_points =  new double[ntheta];
-  double *theta_quad_weights = new double[ntheta];
-  double *r_values = new double[nr_max];
-  double *dr_dq = new double[nr_max];
-
-  RefMessageGrp msg = MessageGrp::get_default_messagegrp();
-  int nproc = msg->n();
-  int me = msg->me();
-  int parallel_counter = 0;
-
-  double *bragg_radius = new double[ncenters];
-  for (icenter=0; icenter<ncenters; icenter++) {
-      bragg_radius[icenter] = mol->atominfo()->bragg_radius(mol->Z(icenter));
-    }
-
-  for (icenter=0; icenter < ncenters; icenter++) {
-      if (! (parallel_counter++%nproc == me)) continue;
-
-      point_count=0;
-      center = centers[icenter];
-
-      for (ir=0; ir < nr[icenter]; ir++) {
-          // Mike Colvin's interpretation of Murray's radial grid
-          q=(double)ir/(double)nr[icenter];
-          double value=q/(1-q);
-          double r = bragg_radius[icenter]*value*value;
-          double dr_dq = 2.0*bragg_radius[icenter]*q*pow(1.0-q,-3.);
-          double drdqr2 = dr_dq*r*r;
-          point.r() = r;
-
-          // Precalcute theta Gauss-Legendre abcissas and weights
-          if (ir==0) {
-              ntheta=1;
-              nphi=1;
-            }
-          else {
-              ntheta = (int) (r/bragg_radius[icenter] * Ktheta_*ntheta_);
-              if (ntheta > ntheta_)
-                  ntheta = ntheta_;
-              if (ntheta < 6)
-                  ntheta=6;
-              nphi = 2*ntheta;
-            }
-          gauleg(0.0, M_PI, theta_quad_points, theta_quad_weights, ntheta);
-
-          for (itheta=0; itheta < ntheta; itheta++) {
-              point.theta() = theta_quad_points[itheta];
-              sin_theta = sin(point.theta());
-              // calculate integration volume 
-              int_volume=drdqr2*sin_theta;
-              for (iphi=0; iphi < nphi; iphi++) {
-                  point.phi() = (double)iphi/(double)nphi * 2.0 * M_PI;
-                  point.spherical_to_cartesian(integration_point);
-                  integration_point += center;
-
-                  // calculate weighting factor
-                  w=weight_->w(icenter, integration_point, w_gradient);
-                  //if (w_gradient) weight_->test(icenter, integration_point);
-                    
-                  // Update center point count
-                  point_count++;
-
-                  // Make contribution to Euler-Maclaurin formula
-                  double multiplier = int_volume
-                                    * theta_quad_weights[itheta]/nr[icenter]
-                                    * 2.0 * M_PI / ((double)nphi);
-                  do_point(icenter, integration_point, denfunc,
-                           w, multiplier,
-                           nuclear_gradient, f_gradient, w_gradient);
-                }
-            }
-        }
-      point_count_total+=point_count;
-    }
-
-  msg->sum(point_count_total);
-  done_integration();
-  weight_->done();
-
-     cout << node0 << indent
-          << "Total integration points = " << point_count_total << endl;
-    //cout << scprintf(" Value of integral = %16.14f", value()) << endl;
-
-    delete[] f_gradient;
-    delete[] w_gradient;
-    delete[] theta_quad_points;
-    delete[] bragg_radius;
-    delete[] theta_quad_weights;
-    delete[] r_values;
-    delete[] dr_dq;
-    delete[] nr;
-    delete[] centers;
-
-  tim_exit("integrate");
-}
-
-void
-Murray93Integrator::print(ostream &o) const
-{
-  o << node0 << indent << "Murray93Integrator Parameters:" << endl;
-  o << incindent;
-  o << node0 << indent << scprintf("nr     = %5d", nr_) << endl;
-  o << node0 << indent << scprintf("ntheta = %5d", ntheta_) << endl;
-  o << node0 << indent << scprintf("nphi   = %5d", nphi_) << endl;
-  o << node0 << indent << scprintf("Ktheta = %5d", Ktheta_) << endl;
-  o << decindent;
-}
-
 ///////////////////////////////////////////////////
 // Radial Integrator
 
@@ -1457,8 +1198,12 @@ EulerMaclaurinRadialIntegrator::EulerMaclaurinRadialIntegrator()
   nr_ = 75;
 }
 
-EulerMaclaurinRadialIntegrator
-::EulerMaclaurinRadialIntegrator(const RefKeyVal& keyval):
+EulerMaclaurinRadialIntegrator::EulerMaclaurinRadialIntegrator(int nr_points)
+{
+  nr_ = nr_points;
+}
+
+EulerMaclaurinRadialIntegrator::EulerMaclaurinRadialIntegrator(const RefKeyVal& keyval):
   RadialIntegrator(keyval)
 {
   nr_ = keyval->intvalue("nr", KeyValValueint(75));
@@ -1563,10 +1308,16 @@ LebedevLaikovIntegrator::LebedevLaikovIntegrator()
   init(302);
 }
 
+LebedevLaikovIntegrator::LebedevLaikovIntegrator(int npoint)
+{
+  init(npoint);
+}
+
 LebedevLaikovIntegrator::LebedevLaikovIntegrator(const RefKeyVal& keyval)
 {
   KeyValValueint defnpoint(302);
-  init(keyval->intvalue("npoint", defnpoint));
+  
+  init(keyval->intvalue("n", defnpoint));
 }
 
 LebedevLaikovIntegrator::~LebedevLaikovIntegrator()
@@ -1587,16 +1338,28 @@ LebedevLaikovIntegrator::save_data_state(StateOut& s)
 extern "C" {
     int Lebedev_Laikov_sphere (int N, double *X, double *Y, double *Z,
                                double *W);
+    int Lebedev_Laikov_lvalue (int lvalue);
+}
+
+int
+LebedevLaikovIntegrator::nw(void) const
+{
+  return npoint_;
 }
 
 void
 LebedevLaikovIntegrator::init(int n)
 {
+  // cout << " LebedevLaikovIntegrator::init -> before x_, y_, z_, and w_ malloc's " << endl;
+  // cout << " n = " << n << endl;
+  
   x_ = new double[n];
   y_ = new double[n];
   z_ = new double[n];
   w_ = new double[n];
 
+  // cout << " LebedevLaikovIntegrator::init -> nw_points = " << n << endl;
+  
   npoint_ = Lebedev_Laikov_sphere(n, x_, y_, z_, w_);
   if (npoint_ != n) {
       cout << class_name() << ": bad number of points given: " << n << endl;
@@ -1626,7 +1389,7 @@ LebedevLaikovIntegrator
 void
 LebedevLaikovIntegrator::print(ostream &o) const
 {
-  o << node0 << indent << scprintf("npoint = %5d", npoint_) << endl;
+  o << node0 << indent << scprintf("  npoint   =  %5d", npoint_) << endl;
 }
 
 /////////////////////////////////
@@ -1768,6 +1531,12 @@ GaussLegendreAngularIntegrator::set_Ktheta_r(int i)
   Ktheta_r_ = i;
 }
 
+int
+GaussLegendreAngularIntegrator::nw(void) const
+{
+  return nphi_*ntheta_;
+}
+
 double
 GaussLegendreAngularIntegrator::sin_theta(SCVector3 &point) const
 {
@@ -1884,25 +1653,279 @@ RadialAngularIntegrator::RadialAngularIntegrator(StateIn& s):
 
 RadialAngularIntegrator::RadialAngularIntegrator()
 {
-  radial_  = new EulerMaclaurinRadialIntegrator;
-  angular_ = new LebedevLaikovIntegrator;
   weight_  = new BeckeIntegrationWeight;
+
+  init_parameters();  
+  init_default_grids();
+  set_grids();
+
 }
 
 RadialAngularIntegrator::RadialAngularIntegrator(const RefKeyVal& keyval):
   DenIntegrator(keyval)
 {
-  radial_ = keyval->describedclassvalue("radial");
-  if (radial_.null()) radial_ = new EulerMaclaurinRadialIntegrator;
-  angular_ = keyval->describedclassvalue("angular");
-  if (angular_.null()) angular_ = new LebedevLaikovIntegrator;
+  
+  radial_user_ = keyval->describedclassvalue("radial");
+  angular_user_ = keyval->describedclassvalue("angular");
+  if ( !(radial_user_.null()) && !(angular_user_.null()) ) user_defined_grids_ = 1;
+  else user_defined_grids_ = 0;
+  if (radial_user_.null()) radial_user_ = new EulerMaclaurinRadialIntegrator;
+  if (angular_user_.null()) angular_user_ = new LebedevLaikovIntegrator;
+
   weight_ = keyval->describedclassvalue("weight");
   if (weight_.null()) weight_ = new BeckeIntegrationWeight;
+
+  init_parameters(keyval);
+  init_default_grids();
+  set_grids();
 
 }
 
 RadialAngularIntegrator::~RadialAngularIntegrator()
 {
+  delete[] Alpha_coeffs_;
+  delete[] radial_grid_;
+  delete[] angular_grid_;
+  delete[] nr_points_;
+  delete[] nw_lvalue_;
+}
+
+void
+RadialAngularIntegrator::init_parameters(void)
+{
+
+  prune_grid_ = 1;
+  gridtype_ = 2;
+  user_defined_grids_ = 0;
+  npruned_partitions_ = 5;
+
+  init_pruning_coefficients();
+  
+}
+
+void
+RadialAngularIntegrator::init_parameters(const RefKeyVal& keyval)
+{
+  char *grid = 0;
+  
+  grid = keyval->pcharvalue("grid");
+  if (keyval->error() != KeyVal::OK) gridtype_ = 2;
+
+  if (grid) {
+      if (!strcmp(grid,"xcoarse"))     gridtype_ = 0;
+      else if (!strcmp(grid,"coarse")) gridtype_ = 1;
+      else if (!strcmp(grid,"medium")) gridtype_ = 2;
+      else if (!strcmp(grid,"fine"))   gridtype_ = 3;
+      else if (!strcmp(grid,"xfine"))  gridtype_ = 4;
+      else {
+          cout << " Grid type " << grid << " not recognized. " << endl;
+          cout << " Choices are: xcoarse, coarse, medium(default), fine, xfine. " << endl;
+          cout << " Using medium default grids. " << endl;
+          gridtype_ = 2;
+        }
+
+    }
+  else gridtype_ = 2;
+
+  // cout << " gridtype = " << gridtype_ << endl;
+  
+  init_pruning_coefficients(keyval);
+  
+}
+
+
+void
+RadialAngularIntegrator::set_grids(void)
+{
+  int i, j, k;
+
+  int atomic_rows = 5;
+
+  // Allocate memory for grids
+  radial_grid_ = new RefRadialIntegrator*[atomic_rows];
+  RefRadialIntegrator *tmprad = new RefRadialIntegrator[atomic_rows*(gridtype_+1)];
+  for (i=0; i<atomic_rows; i++) radial_grid_[i] = tmprad + i*(gridtype_+1);
+
+  angular_grid_ = new RefAngularIntegrator**[atomic_rows];
+  RefAngularIntegrator **tmpang2 =
+                                  new RefAngularIntegrator*[atomic_rows*npruned_partitions_];
+  RefAngularIntegrator *tmpang1 =
+            new RefAngularIntegrator[atomic_rows*npruned_partitions_*(gridtype_+1)];
+
+  for (i=0; i<atomic_rows*npruned_partitions_; i++) tmpang2[i] = tmpang1 + i*(gridtype_+1);
+  for (i=0; i<atomic_rows; i++) angular_grid_[i] = tmpang2 + i*npruned_partitions_;
+  
+  // Set up pruning grids regardless of whether they are used
+
+  int offset;
+  int prune_formula_1[5] = {26, 18, 12, 0, 12};
+  int prune_formula_2[5] = {36, 24, 12, 0, 12};
+  double prune_percentage[5] = {0.1, 0.4, 0.6, 1.0, 0.6};
+  
+  int lvalue, offset_gridtype;
+
+  offset_gridtype = angular_grid_offset(gridtype_);
+  // cout << " offset_gridtype = " << offset_gridtype << endl;
+
+  for (i=0; i<atomic_rows; i++) {
+      lvalue = nw_lvalue_[i];
+      // cout << " i = " << i << " lvalue = " << lvalue << endl;
+      for (j=0; j<=gridtype_; j++)
+          radial_grid_[i][j] = new EulerMaclaurinRadialIntegrator(nr_points_[i][j]);
+      
+      for (j=0; j<npruned_partitions_; j++) {
+          // cout << "\t j = " << j << endl;
+          for (k=0; k<=gridtype_; k++) {
+              // cout << "i = " << i << " j = " << j << " k = " << k << " lvalue = " << lvalue << endl;
+              //offset = angular_grid_offset(k);  // lvalue offset from reference xcoarse value
+              //cout << " offset = " << offset << endl;
+              if ( (lvalue+offset_gridtype)<29 && i<=1 ) {
+                  // First row grid too small for pruning
+                  double n = (prune_percentage[j]*(double)(lvalue+offset_gridtype));
+                  int m = (int)n;
+                  if ( (n-m) > 0.5 ) m++;
+                  // int m = (int) (prune_percentage[j]*(double)(lvalue+offset_gridtype));
+                  // cout << " m = " << m << endl;
+                  // int m = lvalue+offset_gridtype;
+                  angular_grid_[i][j][k] = new LebedevLaikovIntegrator(
+                      Lebedev_Laikov_lvalue(m));
+                }
+              else if ( (lvalue+offset_gridtype)<39 && i>1 )
+                  // Second or larger grid too small for pruning
+                  angular_grid_[i][j][k] = new LebedevLaikovIntegrator(
+                      Lebedev_Laikov_lvalue(lvalue+offset_gridtype));
+              else if (i<=1) // H -> Ne and lvalue >=29
+                  angular_grid_[i][j][k] = new LebedevLaikovIntegrator(
+                      Lebedev_Laikov_lvalue(lvalue+offset_gridtype-prune_formula_1[j]));
+              else // for Sodium or larger and lvalue >= 29
+                  angular_grid_[i][j][k] = new LebedevLaikovIntegrator(
+                      Lebedev_Laikov_lvalue(lvalue+offset_gridtype-prune_formula_2[j]));
+            }
+        }
+    }
+}
+
+void
+RadialAngularIntegrator::init_pruning_coefficients(void)
+{
+  // Set up Alpha arrays for pruning
+  int i;
+  int atomic_rows = 7;
+  int num_boundaries = npruned_partitions_-1;
+  double *tmp = new double[atomic_rows*num_boundaries];
+  memset((void *)tmp, 0, sizeof(double)*atomic_rows*num_boundaries);
+  Alpha_coeffs_ = new double*[atomic_rows];
+  for (i=0; i<atomic_rows; i++) Alpha_coeffs_[i] = tmp + i*num_boundaries;
+
+
+  // set pruning cutoff variables - Alpha -> radial shell cutoffs
+  Alpha_coeffs_[0][0] = 0.25;   Alpha_coeffs_[0][1] = 0.5;
+  Alpha_coeffs_[0][2] = 1.0;    Alpha_coeffs_[0][3] = 4.5;
+  Alpha_coeffs_[1][0] = 0.1667; Alpha_coeffs_[1][1] = 0.5;
+  Alpha_coeffs_[1][2] = 0.9;    Alpha_coeffs_[1][3] = 3.5;
+  Alpha_coeffs_[2][0] = 0.1;    Alpha_coeffs_[2][1] = 0.4;
+  Alpha_coeffs_[2][2] = 0.8;    Alpha_coeffs_[2][3] = 2.5;
+  Alpha_coeffs_[3][2] = MAX_DOUBLE; Alpha_coeffs_[4][2] = MAX_DOUBLE;
+  Alpha_coeffs_[5][2] = MAX_DOUBLE; Alpha_coeffs_[6][2] = MAX_DOUBLE;
+   
+}
+
+void
+RadialAngularIntegrator::init_pruning_coefficients(const RefKeyVal& keyval)
+{
+  int i, j;
+
+  prune_grid_ = keyval->intvalue("prune_grid");
+  if (keyval->error() != KeyVal::OK) prune_grid_ = 1;
+
+  // cout << "prune_grid = " << prune_grid_ << endl;
+  
+  // Need to generalize this to parse input for any number of grids
+  if (prune_grid_) {
+      npruned_partitions_ = keyval->count("angular_points");
+      if (keyval->error() != KeyVal::OK) npruned_partitions_ = 5;
+
+      // set pruning cutoff variables - Alpha -> radial shell cutoffs
+      int atomic_rows = 7;
+      int num_boundaries = npruned_partitions_-1;
+      double *tmp = new double[atomic_rows*num_boundaries];
+      memset((void *)tmp, 0, sizeof(double)*atomic_rows*num_boundaries);
+      Alpha_coeffs_ = new double*[atomic_rows];
+      for (i=0; i<atomic_rows; i++) Alpha_coeffs_[i] = tmp + i*num_boundaries;
+      
+      int alpha_rows = keyval->count("alpha_coeffs");
+      if (keyval->error() != KeyVal::OK) {
+          if (npruned_partitions_ != 5) {
+              cout << " RadialAngularIntegrator:: Need to supply alpha coefficients "
+                   << "for the " << num_boundaries << " partition boundaries " << endl;
+              abort();
+            }
+          Alpha_coeffs_[0][0] = 0.25;   Alpha_coeffs_[0][1] = 0.5;
+          Alpha_coeffs_[0][2] = 1.0;    Alpha_coeffs_[0][3] = 4.5;
+          Alpha_coeffs_[1][0] = 0.1667; Alpha_coeffs_[1][1] = 0.5;
+          Alpha_coeffs_[1][2] = 0.9;    Alpha_coeffs_[1][3] = 3.5;
+          Alpha_coeffs_[2][0] = 0.1;    Alpha_coeffs_[2][1] = 0.4;
+          Alpha_coeffs_[2][2] = 0.8;    Alpha_coeffs_[2][3] = 2.5;
+          Alpha_coeffs_[3][2] = MAX_DOUBLE; Alpha_coeffs_[4][2] = MAX_DOUBLE;
+          Alpha_coeffs_[5][2] = MAX_DOUBLE; Alpha_coeffs_[6][2] = MAX_DOUBLE;
+        }
+      else { // alpha coefficients defined in input
+          int check;
+          for (i=0; i<alpha_rows; i++) {
+              check = keyval->count("alpha_coeffs", i);
+              if (check != num_boundaries) {
+                  cout << "RadialAngularIntegrator:: Number of alpha coefficients does "
+                       << "not match the number of boundaries (" << check << " != "
+                       << num_boundaries << ")" << endl;
+                  abort;
+                }
+              for (j=0; j<num_boundaries; j++) 
+                  Alpha_coeffs_[i][j] = keyval->doublevalue("alpha_coeffs", i, j);
+            }
+        }
+    }
+  else {
+      double *tmp = new double[1];
+      memset((void *)tmp, 0, sizeof(double));
+      Alpha_coeffs_ = new double*[1];
+      Alpha_coeffs_[0] = tmp;
+    }
+}
+
+void
+RadialAngularIntegrator::init_default_grids(void)
+{
+  int rows = 5;
+  int grids = 5;
+  nw_lvalue_ = new int[rows];
+
+  int *tmp = new int[rows*grids];
+  memset((void *)tmp, 0, sizeof(int)*rows*grids);
+  nr_points_ = new int*[rows];
+  int i;
+  for (i=0; i<rows; i++) nr_points_[i] = tmp + i*grids;
+
+  // Set angular momentum level of reference xcoarse grids for each atomic row
+  nw_lvalue_[0] = 11; nw_lvalue_[1] = 17; nw_lvalue_[2] = 21;
+  nw_lvalue_[3] = 25; nw_lvalue_[4] = 31;
+
+  // Set number of radial points for each atomic row and grid type
+  nr_points_[0][0] = 20; nr_points_[0][1] = 30; nr_points_[0][2] = 50;
+  nr_points_[0][3] = 70; nr_points_[0][4] = 100;
+
+  nr_points_[1][0] = 30; nr_points_[1][1] = 50; nr_points_[1][2] = 75;
+  nr_points_[1][3] = 100; nr_points_[1][4] = 140;
+
+  nr_points_[2][0] = 45; nr_points_[2][1] = 75; nr_points_[2][2] = 95;
+  nr_points_[2][3] = 125; nr_points_[2][4] = 175;
+
+  nr_points_[3][0] = 75; nr_points_[3][1] = 95; nr_points_[3][2] = 110;
+  nr_points_[3][3] = 160; nr_points_[3][4] = 210;
+
+  nr_points_[4][0] = 105; nr_points_[4][1] = 130; nr_points_[4][2] = 155;
+  nr_points_[4][3] = 205; nr_points_[4][4] = 235;
+
+  // prune_grid_ = 1; npruned_partitions_ = 5; gridtype_ = 2;
 }
 
 void
@@ -1912,6 +1935,100 @@ RadialAngularIntegrator::save_data_state(StateOut& s)
   radial_.save_state(s);
   angular_.save_state(s);
   weight_.save_state(s);
+}
+
+int
+RadialAngularIntegrator::angular_grid_offset(int i)
+{
+  switch (i) {
+  case 0: return 0;
+  case 1: return 6;
+  case 2: return 12;
+  case 3: return 30;
+  case 4: return 42;
+    }
+}
+
+RefRadialIntegrator
+RadialAngularIntegrator::get_radial_grid(int charge)
+{
+  if (!user_defined_grids_) {
+      // cout << " get_radial_grid: gridtype = " << gridtype_ << endl;
+      if (charge<3) return radial_grid_[0][gridtype_];
+      else if (charge<11) return radial_grid_[1][gridtype_];
+      else if (charge<19) return radial_grid_[2][gridtype_];
+      else if (charge<37) return radial_grid_[3][gridtype_];
+      else if (charge<55) return radial_grid_[4][gridtype_];
+      else {
+          cout << " No default radial grids for atomic charge " << charge << endl;
+          abort();
+        }
+    }
+
+  else return radial_user_;
+
+}
+
+int
+RadialAngularIntegrator::get_atomic_row(int i)
+{
+  if (i<3) return 0;
+  else if (i<11) return 1;
+  else if (i<19) return 2;
+  else if (i<37) return 3;
+  else if (i<55) return 4;
+  else if (i<87) return 5;
+  else {
+      cout << " RadialAngularIntegrator::get_atomic_row - failed with int value " << i << endl;
+    }
+
+}
+
+RefAngularIntegrator
+RadialAngularIntegrator::get_angular_grid(double radius, double bragg_radius,
+                                          int charge)
+{
+  int atomic_row, i, maxgrid=0, nw, maxgrid_index;
+
+  atomic_row = get_atomic_row(charge);
+  if (!prune_grid_ && !user_defined_grids_) {
+      for (i=0; i<npruned_partitions_; i++) {
+          nw = angular_grid_[atomic_row][i][gridtype_]->nw();
+          if (nw>maxgrid) { maxgrid = nw; maxgrid_index = i; }
+        }
+      // should double check to see if largest grid is in partition 4
+      switch (atomic_row) {
+      case 0: return angular_grid_[atomic_row][maxgrid_index][gridtype_];
+      case 1: return angular_grid_[atomic_row][maxgrid_index][gridtype_];
+      case 2: return angular_grid_[atomic_row][maxgrid_index][gridtype_];
+      case 3: return angular_grid_[atomic_row][maxgrid_index][gridtype_];
+      case 4: return angular_grid_[atomic_row][maxgrid_index][gridtype_];
+      default: cout << " No default angular grids for atomic charge " << charge << endl;
+        }
+    }
+  else if (prune_grid_ && !user_defined_grids_) {  
+      // Seleted Alpha's
+      double *Alpha;
+      if (charge<3) Alpha = Alpha_coeffs_[0];
+      else if (charge<11) Alpha = Alpha_coeffs_[1];
+      else if (charge<19) Alpha = Alpha_coeffs_[2];
+      else {
+          cout << " No partitioning parameters for atomic number " << charge << endl;
+          exit(0);
+        }
+  
+      // gridtype_ will need to be adjusted for dynamic grids  
+      if (radius<Alpha[0]*bragg_radius) return angular_grid_[atomic_row][0][gridtype_];
+      if (radius<Alpha[1]*bragg_radius) return angular_grid_[atomic_row][1][gridtype_];
+      if (radius<Alpha[2]*bragg_radius) return angular_grid_[atomic_row][2][gridtype_];
+      if (radius<Alpha[3]*bragg_radius) return angular_grid_[atomic_row][3][gridtype_];
+      else return angular_grid_[atomic_row][4][gridtype_];
+    }
+
+  else {
+      // cout << " get_angular_grid: returning angular_user_" << endl;
+      return angular_user_;  // (user_defined_grids_=1) returning user defined angular grid
+    }
 }
 
 void
@@ -1933,7 +2050,10 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
   int *nr = new int[ncenters];
   int nangular;
   
-  for (icenter=0; icenter<ncenters; icenter++) nr[icenter] = radial_->nr();
+  // This will need to be changed for pruning
+  // for (icenter=0; icenter<ncenters; icenter++) nr[icenter] = radial_->nr();
+  for (icenter=0; icenter<ncenters; icenter++)
+      nr[icenter] = get_radial_grid(mol->Z(icenter))->nr();
 
   double *w_gradient = 0;
   double *f_gradient = 0;
@@ -1958,7 +2078,9 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
 
   double w,q,int_volume,radial_multiplier,angular_multiplier;
         
+  // Need to loop over all possible radial grids for each icenter
   // Determine maximium # grid points
+  // This isn't used anywhere!
   int nr_max=0;
   for (icenter=0;icenter<ncenters;icenter++) {
       if (nr[icenter]>nr_max) nr_max=nr[icenter];
@@ -1979,10 +2101,19 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
 
       point_count=0;
       center = centers[icenter];
-      for (ir=0; ir < nr[icenter]; ir++) {
-          double r = radial_->radial_value(ir, nr[icenter],
+      // get radial_ and nr[icenter] for current grid : depends on convergence threshold
+      radial_ = get_radial_grid(mol->Z(icenter));
+      // cout << " Radial grid = " << radial_->nr() << " points for charge "
+      //     << mol->Z(icenter) << endl;
+      for (ir=0; ir < radial_->nr(); ir++) {
+          double r = radial_->radial_value(ir, radial_->nr(),
                                            bragg_radius[icenter]);
-          radial_multiplier = radial_->radial_multiplier(nr[icenter]);
+          radial_multiplier = radial_->radial_multiplier(radial_->nr());
+          // determine angular grid here
+          // returns which lebedev grid to use for this radial point
+          angular_ = get_angular_grid(r, bragg_radius[icenter], mol->Z(icenter));
+          // cout << " Angular grid = " << angular_->nw() << " points for charge "
+          //       << mol->Z(icenter) << endl;
           nangular = angular_->num_angular_points(r/bragg_radius[icenter],ir);
           for (iangular=0; iangular<nangular; iangular++) {
               angular_multiplier =
@@ -2024,8 +2155,22 @@ RadialAngularIntegrator::print(ostream &o) const
 {
   o << node0 << indent << class_name() << " Parameters:" << endl;
   o << incindent;
-  radial_->print(o);
-  angular_->print(o);
+  if (prune_grid_) o << indent << indent << " Pruned ";
+  if (!user_defined_grids_) {
+      switch (gridtype_) {
+      case 0: o << "xcoarse "; break;
+      case 1: o << "xcoarse "; break;
+      case 2: o << "medium ";  break;
+      case 3: o << "fine ";    break;
+      case 4: o << "xfine ";   break;
+        }
+      o << "grid employed" << endl;
+    }
+  else {
+      radial_user_->print(o);
+      angular_user_->print(o);
+    }
+  
   o << decindent;
 }
 

@@ -107,6 +107,82 @@ main ()
 #endif
 
 #ifdef INTHISFILE
+/*
+** Lebedev_Laikov_lvalue
+**
+** lvalue : grid complete through this value of angular momentum quantum number l.
+**
+** return value : number of points in sought Lebedev-Laikov grid.
+**
+*/
+int Lebedev_Laikov_lvalue(int lvalue)
+{
+
+  int fraction, tmp_lvalue;
+  tmp_lvalue = lvalue;
+  
+  if (lvalue <3) {
+      /* printf(" Lebedev_Laikov_lvalue: angular momentum value too low (%d < 3).\n", lvalue);
+      printf(" Using smallest Lebedev-Laikov grid -> 3.\n");
+      */
+      return 6;
+    }
+  else if (lvalue <= 31) {
+      /* grids complete through l = 2m+1 */
+      tmp_lvalue -= 1;
+      fraction = tmp_lvalue%2;
+      tmp_lvalue /= 2;
+      if (fraction) tmp_lvalue++; /* round up */
+      switch (tmp_lvalue) {
+      case 0:  return 6;
+      case 1:  return 6;
+      case 2:  return 14;
+      case 3:  return 26;
+      case 4:  return 38;
+      case 5:  return 50;
+      case 6:  return 74;
+      case 7:  return 86;
+      case 8:  return 110;
+      case 9:  return 146;
+      case 10: return 170;
+      case 11: return 194;
+      case 12: return 230;
+      case 13: return 266;
+      case 14: return 302;
+      case 15: return 350;
+        } 
+    }
+  else if (lvalue <= 131) {
+      /* grids complete through l = 6m+5 */
+      tmp_lvalue -= 5;
+      fraction = tmp_lvalue%6;
+      tmp_lvalue /= 6;
+      if (fraction) tmp_lvalue++; /* round up */
+      switch (tmp_lvalue) {
+      case 5:  return 434;
+      case 6:  return 590;
+      case 7:  return 770;
+      case 8:  return 974;
+      case 9:  return 1202;
+      case 10: return 1454;
+      case 11: return 1730;
+      case 12: return 2030;
+      case 13: return 2354;
+      case 14: return 2702;
+      case 15: return 3074;
+      case 16: return 3470;
+      case 17: return 3890;
+      case 18: return 4334;
+      case 19: return 4802;
+      case 20: return 5294;
+      case 21: return 5810;
+        }
+    }
+  else {
+      printf(" Lebedev_Laikov_lvalue: lvalue > 131.  No grids of this type available.\n");
+      exit(1);
+    }
+}
 
 int
 Lebedev_Laikov_sphere (int N, double *X, double *Y, double *Z, double *W)

@@ -231,6 +231,7 @@ class AngularIntegrator: virtual public SavableState{
     ~AngularIntegrator();
     void save_data_state(StateOut &);
 
+    virtual int nw(void) const = 0;
     virtual int num_angular_points(double r_value, int ir) = 0;
     virtual double angular_point_cartesian(int iangular, double r,
         SCVector3 &integration_point) const = 0;
@@ -255,6 +256,7 @@ class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
     void set_dr_dqr2(double i);
   public:
     EulerMaclaurinRadialIntegrator();
+    EulerMaclaurinRadialIntegrator(int i);
     EulerMaclaurinRadialIntegrator(const RefKeyVal &);
     EulerMaclaurinRadialIntegrator(StateIn &);
     ~EulerMaclaurinRadialIntegrator();
@@ -323,9 +325,11 @@ class LebedevLaikovIntegrator: public AngularIntegrator {
     LebedevLaikovIntegrator();
     LebedevLaikovIntegrator(const RefKeyVal &);
     LebedevLaikovIntegrator(StateIn &);
+    LebedevLaikovIntegrator(int);
     ~LebedevLaikovIntegrator();
     void save_data_state(StateOut &);
 
+    int nw(void) const;
     int num_angular_points(double r_value, int ir);
     double angular_point_cartesian(int iangular, double r,
                                    SCVector3 &integration_point) const;
@@ -362,7 +366,7 @@ class GaussLegendreAngularIntegrator: public AngularIntegrator {
     void set_nphi_r(int i);
     int get_Ktheta_r(void) const;
     void set_Ktheta_r(int i);
-
+    int nw(void) const;
     double sin_theta(SCVector3 &point) const;
     void gauleg(double x1, double x2, int n);    
   public:
@@ -386,10 +390,21 @@ class RadialAngularIntegrator: public DenIntegrator {
 #   define HAVE_STATEIN_CTOR
 #   include <util/state/stated.h>
 #   include <util/class/classd.h>
+  private:
+    int prune_grid_;
+    double **Alpha_coeffs_;
+    int gridtype_;
+    int **nr_points_, *nw_lvalue_;
+    int npruned_partitions_;
+    int user_defined_grids_;
   protected:
     RefRadialIntegrator radial_;
     RefAngularIntegrator angular_;
     RefIntegrationWeight weight_;
+    RefRadialIntegrator radial_user_;
+    RefAngularIntegrator angular_user_;
+    RefAngularIntegrator ***angular_grid_;
+    RefRadialIntegrator **radial_grid_;
   public:
     RadialAngularIntegrator();
     RadialAngularIntegrator(const RefKeyVal &);
@@ -402,40 +417,19 @@ class RadialAngularIntegrator: public DenIntegrator {
                    const RefSymmSCMatrix& densb =0,
                    double *nuclear_gradient = 0);
     void print(ostream & =cout) const;
+    RefAngularIntegrator get_angular_grid(double radius, double bragg_radius,
+                                          int charge);
+    RefRadialIntegrator get_radial_grid(int charge);
+    void init_default_grids(void);
+    int angular_grid_offset(int i);
+    void set_grids(void);
+    int get_atomic_row(int i);
+    void init_parameters(void);
+    void init_parameters(const RefKeyVal& keyval);
+    void init_pruning_coefficients(const RefKeyVal& keyval);
+    void init_pruning_coefficients(void);
 };
     
-/** An implementation of an integrator based on C.W. Murray, et
-    al. Mol. Phys. 78, No. 4, 997-1014, 1993. */
-class Murray93Integrator: public DenIntegrator {
-#   define CLASSNAME Murray93Integrator
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  protected:
-    int nr_;
-    int ntheta_;
-    int nphi_;
-    int Ktheta_;
-
-    RefIntegrationWeight weight_;
-
-    void init_object();
-  public:
-    Murray93Integrator();
-    Murray93Integrator(const RefKeyVal &);
-    Murray93Integrator(StateIn &);
-    ~Murray93Integrator();
-    void save_data_state(StateOut &);
-
-    void integrate(const RefDenFunctional &,
-                   const RefSymmSCMatrix& densa =0,
-                   const RefSymmSCMatrix& densb =0,
-                   double *nuclear_gradient = 0);
-
-    void print(ostream & =cout) const;
-};
-
 #endif
 
 // Local Variables:

@@ -1,0 +1,148 @@
+% -*- KeyVal -*-
+
+h<Molecule>: (
+  symmetry = d2h
+  unit = angstrom
+  { atoms geometry } = {
+    H     [  0.0  0.0   0.0 ]
+  }
+)
+
+li<Molecule>: (
+  symmetry = d2h
+  unit = angstrom
+  { atoms geometry } = {
+    Li     [  0.0  0.0   0.0 ]
+  }
+)
+
+he<Molecule>: (
+  symmetry = d2h
+  unit = angstrom
+  { atoms geometry } = {
+    He     [  0.0  0.0   0.0 ]
+  }
+)
+
+hf<Molecule>: (
+  symmetry = c2v
+  unit = angstrom
+  { atoms geometry } = {
+      H    [ 0.000000    0.000000   -0.832050 ]
+      F    [ 0.000000    0.000000    0.092450 ]
+  }
+)
+
+h2o<Molecule>: (
+  symmetry = C1
+  unit = angstrom
+  { atoms geometry } = {
+    O     [     0.00000000     0.00000000     0.36937294 ]
+    H     [     0.78397590     0.00000000    -0.18468647 ]
+    H     [    -0.78397590     0.00000000    -0.18468647 ]
+  }
+)
+
+nel<NElFunctional>:()
+
+murray93<Murray93Integrator>:(
+  nr = 40
+  ntheta = 16
+  nphi = 16
+)
+
+basis<GaussianBasisSet>: (
+  %name = test
+  %name = test2
+  %name = "STO-3G"
+  name = "3-21G"
+  %name = "6-31G"
+  molecule = $..:molecule
+)
+
+clwfn<CLSCF>:(
+  molecule = $:he
+  basis = $:basis
+  memory = 16000000
+)
+
+oswfn<HSOSSCF>:(
+  molecule = $:li
+  basis = $:basis
+  memory = 16000000
+)
+
+wfn = $:clwfn
+molecule = $:wfn:molecule
+
+hfacm<HFACM>:(
+  integrator = $:murray93
+  molecule = $:molecule
+  basis = $:basis
+  memory = 16000000
+  hf = $:wfn
+  xa0 = 0.0
+  xfunctional<SumDenFunctional>: (
+    coefs = [
+      1.0
+      ]
+    funcs: [
+      <XalphaFunctional>:()
+      ]
+  )
+  a0 = 0.20
+  %a0 = 0.0
+  functional<SumDenFunctional>: (
+    coefs = [
+       1.00
+       1.00
+      -0.20  % should equal -a0
+       0.72
+       0.81
+      ]
+    funcs: [
+      <LSDAXFunctional>:()
+      <LSDACFunctional>:()
+      <LSDAXFunctional>:()
+      <Becke88Functional>:()
+      <PW91Functional>:()
+      ]
+  )
+)
+
+functional = $:nel
+integrator = $:murray93
+
+basis: (
+ helium: test: [
+  (type: [am = s]
+   {exp coef:0} = {
+            6.36242139       0.15432897
+            1.15892300       0.53532814
+            0.31364979       0.44463454
+   })
+  (type: [am = p]
+   {exp coef:0} = {
+            1.0       1.0
+   })
+ ]
+ helium: test2: [
+  (type: [am = s]
+   {exp coef:0} = {
+            6.36242139       0.15432897
+            1.15892300       0.53532814
+            0.31364979       0.44463454
+   })
+  (type: [am = s]
+   {exp coef:0} = {
+            0.01       1.0
+   })
+ ]
+ helium: test3: [
+  (type: [am = s]
+   {exp coef:0} = {
+            4.0       1.0
+            2.0       1.0
+   })
+ ]
+)

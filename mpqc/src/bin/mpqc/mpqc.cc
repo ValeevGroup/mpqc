@@ -100,6 +100,8 @@ main(int argc, char *argv[])
                  "which message group to use", 0);
   options.enroll("threadgrp", GetLongOpt::MandatoryValue,
                  "which thread group to use", 0);
+  options.enroll("memorygrp", GetLongOpt::MandatoryValue,
+                 "which thread group to use", 0);
   options.enroll("l", GetLongOpt::MandatoryValue, "basis set limit", "0");
   options.enroll("W", GetLongOpt::MandatoryValue,
                  "set the working directory", ".");
@@ -225,7 +227,7 @@ main(int argc, char *argv[])
     if (options.retrieve("d"))
       debugger->debug("Starting debugger because -d given on command line.");
   }
-  
+
   // now check to see what matrix kit to use
   if (keyval->exists("matrixkit"))
     SCMatrixKit::set_default_matrixkit(
@@ -316,6 +318,10 @@ main(int argc, char *argv[])
   if (keyval->error() != KeyVal::OK)
     do_pdb=0;
   
+  int print_mole = keyval->booleanvalue("print_mole");
+  if (keyval->error() != KeyVal::OK)
+    print_mole=1;
+  
   int ready_for_freq = 1;
   if (mole.nonnull()) {
     if ((do_opt || do_grad) && !mole->gradient_implemented()) {
@@ -373,7 +379,8 @@ main(int argc, char *argv[])
   }
 
   if (mole.nonnull()) {
-    mole->print(cout);
+    if (print_mole)
+      mole->print(cout);
 
     if (do_pdb) {
       ckptfile = new char[strlen(molname)+5];

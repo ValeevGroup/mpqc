@@ -557,11 +557,18 @@ HSOSSCF::effective_fock()
   // someplace outside SCF::compute_vector()
   RefSymmSCMatrix mofock = fock(0).clone();
   mofock.assign(0.0);
-  mofock.accumulate_transform(scf_vector_.t(), fock(0));
 
   RefSymmSCMatrix mofocko = fock(1).clone();
   mofocko.assign(0.0);
-  mofocko.accumulate_transform(scf_vector_.t(), fock(1));
+
+  // use eigenvectors if scf_vector_ is null
+  if (scf_vector_.null()) {
+    mofock.accumulate_transform(eigenvectors().t(), fock(0));
+    mofocko.accumulate_transform(eigenvectors().t(), fock(1));
+  } else {
+    mofock.accumulate_transform(scf_vector_.t(), fock(0));
+    mofocko.accumulate_transform(scf_vector_.t(), fock(1));
+  }
 
   RefSCElementOp2 op = new GSGeneralEffH(this);
   mofock.element_op(op, mofocko);

@@ -263,7 +263,7 @@ TCSCF::n_fock_matrices() const
 RefSymmSCMatrix
 TCSCF::fock(int n)
 {
-  if (n > 4) {
+  if (n > 3) {
     cerr << node0 << indent
          << "TCSCF::fock: there are only four fock matrices, "
          << scprintf("but fock(%d) was requested\n", n);
@@ -692,22 +692,32 @@ TCSCF::effective_fock()
   // someplace outside SCF::compute_vector()
   RefSymmSCMatrix mofocka = fock(0).clone();
   mofocka.assign(0.0);
-  mofocka.accumulate_transform(scf_vector_.t(), fock(0));
-  mofocka.scale(ci1_*ci1_);
 
   RefSymmSCMatrix mofockb = mofocka.clone();
   mofockb.assign(0.0);
-  mofockb.accumulate_transform(scf_vector_.t(), fock(1));
-  mofockb.scale(ci2_*ci2_);
 
   RefSymmSCMatrix moka = mofocka.clone();
   moka.assign(0.0);
-  moka.accumulate_transform(scf_vector_.t(), fock(3));
-  moka.scale(ci1_*ci2_);
 
   RefSymmSCMatrix mokb = mofocka.clone();
   mokb.assign(0.0);
-  mokb.accumulate_transform(scf_vector_.t(), fock(4));
+
+  // use eigenvectors if scf_vector_ is null
+  if (scf_vector_.null()) {
+    mofocka.accumulate_transform(eigenvectors().t(), fock(0));
+    mofockb.accumulate_transform(eigenvectors().t(), fock(1));
+    moka.accumulate_transform(eigenvectors().t(), fock(2));
+    mokb.accumulate_transform(eigenvectors().t(), fock(3));
+  } else {
+    mofocka.accumulate_transform(scf_vector_.t(), fock(0));
+    mofockb.accumulate_transform(scf_vector_.t(), fock(1));
+    moka.accumulate_transform(scf_vector_.t(), fock(2));
+    mokb.accumulate_transform(scf_vector_.t(), fock(3));
+  }
+  
+  mofocka.scale(ci1_*ci1_);
+  mofockb.scale(ci2_*ci2_);
+  moka.scale(ci1_*ci2_);
   mokb.scale(ci1_*ci2_);
 
   RefSymmSCMatrix mofock = mofocka.copy();

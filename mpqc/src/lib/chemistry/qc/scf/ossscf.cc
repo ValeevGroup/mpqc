@@ -606,15 +606,23 @@ OSSSCF::effective_fock()
   // someplace outside SCF::compute_vector()
   RefSymmSCMatrix mofock = fock(0).clone();
   mofock.assign(0.0);
-  mofock.accumulate_transform(scf_vector_.t(), fock(0));
 
   RefSymmSCMatrix mofocka = fock(1).clone();
   mofocka.assign(0.0);
-  mofocka.accumulate_transform(scf_vector_.t(), fock(1));
   
   RefSymmSCMatrix mofockb = fock(2).clone();
   mofockb.assign(0.0);
-  mofockb.accumulate_transform(scf_vector_.t(), fock(2));
+
+  // use eigenvectors if scf_vector_ is null
+  if (scf_vector_.null()) {
+    mofock.accumulate_transform(eigenvectors().t(), fock(0));
+    mofocka.accumulate_transform(eigenvectors().t(), fock(1));
+    mofockb.accumulate_transform(eigenvectors().t(), fock(2));
+  } else {
+    mofock.accumulate_transform(scf_vector_.t(), fock(0));
+    mofocka.accumulate_transform(scf_vector_.t(), fock(1));
+    mofockb.accumulate_transform(scf_vector_.t(), fock(2));
+  }
   
   BlockedSymmSCMatrix::castdown(mofocka.pointer())->block(osb_)->assign(0.0);
   BlockedSymmSCMatrix::castdown(mofockb.pointer())->block(osa_)->assign(0.0);

@@ -422,7 +422,12 @@ CLSCF::effective_fock()
   // case this is called from someplace outside SCF::compute_vector()
   RefSymmSCMatrix mofock = fock(0).clone();
   mofock.assign(0.0);
-  mofock.accumulate_transform(scf_vector_.t(), fock(0));
+
+  // use eigenvectors if scf_vector_ is null
+  if (scf_vector_.null())
+    mofock.accumulate_transform(eigenvectors().t(), fock(0));
+  else
+    mofock.accumulate_transform(scf_vector_.t(), fock(0));
 
   return mofock;
 }

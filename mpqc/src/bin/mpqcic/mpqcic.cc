@@ -142,7 +142,9 @@ main(int argc, char *argv[])
 // be read from keyval.in.
 #ifdef NEED_IPV2
     ParsedKeyVal *pparsed = new ParsedKeyVal("mpqc.in");
-    pparsed->read("keyval.in");
+    struct stat stbuf;
+    if (stat("keyval.in",&stbuf)==0 && stbuf.st_size!=0)
+      pparsed->read("keyval.in");
     RefKeyVal parsed(pparsed);
 #else
     RefKeyVal parsed(new ParsedKeyVal("mpqc.in"));

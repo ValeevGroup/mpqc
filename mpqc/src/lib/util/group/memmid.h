@@ -43,15 +43,17 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
                       const char * = 0, int target = -1);
 
     void do_wait(const char *msg, int mid,
-                 MemoryDataRequestQueue &q, size_t expectedsize);
+                 MemoryDataRequestQueue &q, size_t expectedsize,
+                 int node = -1 /*not needed except for debugging*/);
     void flush_queue(MemoryDataRequestQueue &q);
 
-    virtual long lock() = 0;
-    virtual void unlock(long oldvalue) = 0;
+    virtual long lockcomm() = 0;
+    virtual void unlockcomm(long oldvalue) = 0;
     virtual long send(void* data, int nbytes, int node, int type) = 0;
     virtual long recv(void* data, int nbytes, int node, int type) = 0;
     virtual long postrecv(void *data, int nbytes, int type) = 0;
     virtual long wait(long, long = -1) = 0;
+    virtual int probe(long);
 
     virtual void got_data_request_mid();
   public:
@@ -65,6 +67,7 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
     void deactivate();
 
     void sync();
+    void catchup();
 };
 
 #endif

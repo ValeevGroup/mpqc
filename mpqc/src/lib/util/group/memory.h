@@ -91,12 +91,16 @@ class MemoryGrp: public DescribedClass {
     //. you access memory changes.
     virtual void sync() = 0;
 
+    //. Some memory group implementations don't have access to
+    //. real shared memory or even active messages.  Instead, requests
+    //. are processed whenever certain memory group routines are called.
+    //. This can cause large latencies and buffer overflows.  If this
+    //. is a problem, then the catchup member can be called to
+    //. process all outstanding requests.
+    virtual void catchup();
+
     //. Prints out information about the object.
     virtual void print(ostream &o = cout);
-
-    //. The initial message group is the group that starts up a process.
-    //. This returns null if this process is first and then it is up to the
-    //. programmer to create a messagegrp.
 
     //. Create a memory group.  This routine looks for a -memorygrp
     //argument, then the environmental variable MEMORYGRP, and, finally,

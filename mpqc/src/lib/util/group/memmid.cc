@@ -220,20 +220,20 @@ MIDMemoryGrp::retrieve_data(void *data, int node, int offset, int size)
 {
   MemoryDataRequestQueue q;
 
-  long oldlock = lock();
+  long oldlock = lockcomm();
 
   MemoryDataRequest buf(MemoryDataRequest::Retrieve,
                          me(), offset, size);
   if (debug_) print_memreq(buf, "retrieve:", node);
   int mid = send(buf.data(), buf.nbytes(), node, data_request_type_);
-  do_wait("retrieve: send req", mid, q, buf.nbytes());
+  do_wait("retrieve: send req", mid, q, buf.nbytes(), node);
 
   mid = recv(data, size, node, data_type_from_handler_);
-  do_wait("retrieve: recv dat", mid, q, size);
+  do_wait("retrieve: recv dat", mid, q, size, node);
 
   flush_queue(q);
 
-  unlock(oldlock);
+  unlockcomm(oldlock);
 }
 
 void
@@ -241,27 +241,27 @@ MIDMemoryGrp::replace_data(void *data, int node, int offset, int size)
 {
   MemoryDataRequestQueue q;
 
-  long oldlock = lock();
+  long oldlock = lockcomm();
 
   MemoryDataRequest buf(MemoryDataRequest::Replace,
                         me(), offset, size);
   if (debug_) print_memreq(buf, "replace:", node);
   int mid = send(buf.data(), buf.nbytes(), node, data_request_type_);
-  do_wait("replace: send req", mid, q, buf.nbytes());
+  do_wait("replace: send req", mid, q, buf.nbytes(), node);
 
   mid = send(data, size, node, data_type_to_handler_);
-  do_wait("replace: send dat", mid, q, size);
+  do_wait("replace: send dat", mid, q, size, node);
 
   if (use_acknowledgments_) {
       int junk;
       mid = recv(&junk, sizeof(junk), node, data_type_from_handler_);
-      do_wait("replace: recv ack", mid, q, sizeof(junk));
+      do_wait("replace: recv ack", mid, q, sizeof(junk), node);
       if (debug_) printf("%d: replace: got ack %d:%d\n",me_,junk&0xff,junk>>8);
     }
 
   flush_queue(q);
 
-  unlock(oldlock);
+  unlockcomm(oldlock);
 }
 
 void
@@ -269,27 +269,27 @@ MIDMemoryGrp::sum_data(double *data, int node, int offset, int size)
 {
   MemoryDataRequestQueue q;
 
-  long oldlock = lock();
+  long oldlock = lockcomm();
 
   MemoryDataRequest buf(MemoryDataRequest::DoubleSum,
                         me(), offset, size);
   if (debug_) print_memreq(buf, "sum:", node);
   int mid = send(buf.data(), buf.nbytes(), node, data_request_type_);
-  do_wait("sum: send req", mid, q, buf.nbytes());
+  do_wait("sum: send req", mid, q, buf.nbytes(), node);
 
   mid = send(data, size, node, data_type_to_handler_);
-  do_wait("sum: send dat", mid, q, size);
+  do_wait("sum: send dat", mid, q, size, node);
 
   if (use_acknowledgments_) {
       int junk;
       recv(&junk, sizeof(junk), node, data_type_from_handler_);
-      do_wait("sum: recv ack", mid, q, sizeof(junk));
+      do_wait("sum: recv ack", mid, q, sizeof(junk), node);
       if (debug_) printf("%d: sum: got ack %d:%d\n",me_, junk&0xff, junk>>8);
     }
 
   flush_queue(q);
 
-  unlock(oldlock);
+  unlockcomm(oldlock);
 }
 
 void
@@ -298,7 +298,7 @@ MIDMemoryGrp::sync()
   int i;
   int mid;
 
-  long oldlock = lock();
+  long oldlock = lockcomm();
 
   if (debug_)
       printf("%d: MIDMemoryGrp::sync() entered, active = %d\n", me_, active_);
@@ -391,14 +391,15 @@ MIDMemoryGrp::sync()
 
   if (debug_) printf("%d: MIDMemoryGrp::sync() done\n", me_);
 
-  unlock(oldlock);
+  unlockcomm(oldlock);
 }
 
 void
 MIDMemoryGrp::do_wait(const char *msg, int mid,
-                      MemoryDataRequestQueue &q, size_t expectedsize)
+                      MemoryDataRequestQueue &q, size_t expectedsize,
+                      int node)
 {
-  long oldlock = lock();
+  long oldlock = lockcomm();
 
   int tmpmid;
   do {
@@ -415,6 +416,11 @@ MIDMemoryGrp::do_wait(const char *msg, int mid,
                                  data_request_buffer_.node(),
                                  data_request_buffer_.serial_number());
               q.push(data_request_buffer_);
+              if (q.n() == MemoryDataRequestQueue::MaxDepth/2) {
+                  cout << me_ << ": " << msg
+                       << " wait: queue half full while waiting for node "
+                       << node << endl;
+                }
             }
           else {
               if (debug_) printf("%d: %s: wait: handling request %d-%d\n",
@@ -436,13 +442,13 @@ MIDMemoryGrp::do_wait(const char *msg, int mid,
         }
     } while (tmpmid != mid);
 
-  unlock(oldlock);
+  unlockcomm(oldlock);
 }
 
 void
 MIDMemoryGrp::flush_queue(MemoryDataRequestQueue &q)
 {
-  long oldlock = lock();
+  long oldlock = lockcomm();
 
   for (int i=0; i<q.n(); i++) {
       if (debug_) printf("%d: processing queued request %d-%d\n",
@@ -453,13 +459,37 @@ MIDMemoryGrp::flush_queue(MemoryDataRequestQueue &q)
     }
   q.clear();
 
-  unlock(oldlock);
+  unlockcomm(oldlock);
 }
 void
 MIDMemoryGrp::got_data_request_mid()
 {
   data_request_mid_ = -1;
   active_ = 0;
+}
+
+void
+MIDMemoryGrp::catchup()
+{
+  while (!use_active_messages_ && probe(data_request_mid_)) {
+      got_data_request_mid();
+      if (debug_) cout << scprintf("%d: catchup: handling request %d-%d",
+                                   me_,
+                                   data_request_buffer_.node(),
+                                   data_request_buffer_.serial_number())
+                       << endl;
+      handler();
+      activate();
+    }
+}
+
+int
+MIDMemoryGrp::probe(long)
+{
+    cerr << "MIDMemoryGrp:: probe not implemeneted for " << class_name()
+         << endl;
+    abort();
+    return 0;
 }
 
 #endif

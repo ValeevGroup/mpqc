@@ -48,13 +48,13 @@ IParagonMemoryGrp::~IParagonMemoryGrp()
 }
 
 long
-IParagonMemoryGrp::lock()
+IParagonMemoryGrp::lockcomm()
 {
   return 0;
 }
 
 void
-IParagonMemoryGrp::unlock(long oldvalue)
+IParagonMemoryGrp::unlockcomm(long oldvalue)
 {
 }
 

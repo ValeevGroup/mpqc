@@ -16,8 +16,8 @@ class IParagonMemoryGrp: public MIDMemoryGrp {
 #define HAVE_KEYVAL_CTOR
 #include <util/class/classd.h>
   private:
-    long lock();
-    void unlock(long oldvalue);
+    long lockcomm();
+    void unlockcomm(long oldvalue);
     long send(void* data, int nbytes, int node, int type);
     long recv(void* data, int nbytes, int node, int type);
     long postrecv(void *data, int nbytes, int type);

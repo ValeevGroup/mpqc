@@ -48,7 +48,7 @@ MPLMemoryGrp::_castdown(const ClassDesc*cd)
 }
 
 long
-MPLMemoryGrp::lock()
+MPLMemoryGrp::lockcomm()
 {
   int oldvalue;
   mpc_lockrnc(1, &oldvalue);
@@ -57,7 +57,7 @@ MPLMemoryGrp::lock()
 }
 
 void
-MPLMemoryGrp::unlock(long oldvalue)
+MPLMemoryGrp::unlockcomm(long oldvalue)
 {
   int old = oldvalue;
   mpc_lockrnc(old, &old);
@@ -173,9 +173,9 @@ MPLMemoryGrp::~MPLMemoryGrp()
   if (debug_) printf("MPLMemoryGrp: in DTOR\n");
   deactivate();
 
-  int oldlock = lock();
+  int oldlock = lockcomm();
   global_mpl_mem = 0;
-  unlock(oldlock);
+  unlockcomm(oldlock);
 }
 
 void

@@ -308,3 +308,9 @@ MemoryGrp::sum_reduction_on_node(double *data, int doffset, int dlength,
   sum_reduction(data, doffset + offset(node)/sizeof(double),
                 dlength);
 }
+
+void
+MemoryGrp::catchup()
+{
+  return;
+}

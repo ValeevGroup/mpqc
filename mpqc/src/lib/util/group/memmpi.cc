@@ -82,13 +82,13 @@ MPIMemoryGrp::free_mid(long mid)
 }
 
 long
-MPIMemoryGrp::lock()
+MPIMemoryGrp::lockcomm()
 {
   return 0;
 }
 
 void
-MPIMemoryGrp::unlock(long oldvalue)
+MPIMemoryGrp::unlockcomm(long oldvalue)
 {
 }
 
@@ -158,7 +158,7 @@ MPIMemoryGrp::wait(long mid1, long mid2)
   else {
       while(1) {
           int flag;
-          if (debug_) cout << ">>>> MPI_Test for " << mid1 << endl;
+          //if (debug_) cout << ">>>> MPI_Test for " << mid1 << endl;
           MPI_Test(&handles_[mid1], &flag, &status);
           if (flag) {
               free_mid(mid1);
@@ -167,7 +167,7 @@ MPIMemoryGrp::wait(long mid1, long mid2)
                        << mid1 << endl;
               return mid1;
             }
-          if (debug_) cout << ">>>> MPI_Test for " << mid2 << endl;
+          //if (debug_) cout << ">>>> MPI_Test for " << mid2 << endl;
           MPI_Test(&handles_[mid2], &flag, &status);
           if (flag) {
               free_mid(mid2);
@@ -178,6 +178,22 @@ MPIMemoryGrp::wait(long mid1, long mid2)
             }
         }
     }
+}
+
+int
+MPIMemoryGrp::probe(long mid)
+{
+  MPI_Status status;
+  int flag;
+  MPI_Test(&handles_[mid], &flag, &status);
+  if (flag) {
+      free_mid(mid);
+      if (debug_)
+          cout << me() << ": MPIMemoryGrp::probe(): got "
+               << mid << endl;
+      return 1;
+    }
+  return 0;
 }
 
 void

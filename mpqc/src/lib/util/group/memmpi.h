@@ -22,12 +22,13 @@ class MPIMemoryGrp: public MIDMemoryGrp {
     void free_mid(long mid);
     void init_mid();
 
-    long lock();
-    void unlock(long oldvalue);
+    long lockcomm();
+    void unlockcomm(long oldvalue);
     long send(void* data, int nbytes, int node, int type);
     long recv(void* data, int nbytes, int node, int type);
     long postrecv(void *data, int nbytes, int type);
     long wait(long, long = -1);
+    int probe(long);
   public:
     MPIMemoryGrp(const RefMessageGrp& msg);
     MPIMemoryGrp(const RefKeyVal &);

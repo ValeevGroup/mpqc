@@ -22,6 +22,16 @@ class SCVector3
     SCVector3(const RefSCVector&);
     void normalize();
     SCVector3 operator*(double) const;
+    void operator -= (const SCVector3& v) {
+        _v[0] -= v._v[0];
+        _v[1] -= v._v[1];
+        _v[2] -= v._v[2];
+      }
+    void operator += (const SCVector3& v) {
+        _v[0] += v._v[0];
+        _v[1] += v._v[1];
+        _v[2] += v._v[2];
+      }
     void operator *= (double m) { _v[0] *= m; _v[1] *= m; _v[2] *= m; }
     SCVector3 operator+(const SCVector3&) const;
     SCVector3 operator-(const SCVector3&) const;

@@ -272,7 +272,7 @@ do_shell_quartet_test(int flags, double* buffer,
                   if (fabs(buffer[ibuf]) > maxintegral) {
                       maxintegral = fabs(buffer[ibuf]);
                     }
-                  if (fabs(buffer[ibuf]) > integralbound) {
+                  if (bounds && fabs(buffer[ibuf]) > integralbound) {
                       printf("((%d %d)(%d %d)|(%d %d)(%d %d)) = %15.11f, "
                              "bound = %15.11f\n",
                              sh[0], ii, sh[1], jj, sh[2], kk, sh[3], ll,
@@ -353,6 +353,7 @@ test_4_center(const RefKeyVal& keyval, centers_t& centers)
   int bounds = keyval->booleanvalue("bounds");
   int permute = keyval->booleanvalue("permute");
 
+  printf("4 center test:\n");
   printf("  storage = %d\n", storage);
   printf("  niter   = %d\n", niter);
   printf("  print   = %d\n", print);
@@ -384,55 +385,109 @@ test_4_center(const RefKeyVal& keyval, centers_t& centers)
 }
 
 void
-test_4der_center(const RefKeyVal& keyval, centers_t& centers)
+do_shell_quartet_der_test(int flags,
+                          double* buffer, int print, int bounds, int permute,
+                          const RefKeyVal& keyval, centers_t& centers,
+                          int i, int j, int k, int l)
 {
-  int ii,jj,kk,ll, i,j,k,l, ibuf, ider, xyz;
+  int ii,jj,kk,ll, ibuf, ider, xyz;
   der_centers_t dercenters;
 
-  int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2|INT_NOPERM|INT_REDUND;
-  double *buffer =
-    int_initialize_erep(flags,1,&centers,&centers,&centers,&centers);
-
-  for (i=0; i<centers.nshell; i++) {
-      for (j=0; j<centers.nshell; j++) {
-          for (k=0; k<centers.nshell; k++) {
-              for (l=0; l<centers.nshell; l++) {
-                  int sh[4], sizes[4];
-                  sh[0] = i;
-                  sh[1] = j;
-                  sh[2] = k;
-                  sh[3] = l;
-                  int_erep_all1der_v(flags,sh,sizes,&dercenters);
-                  ibuf = 0;
-                  for (ider=0; ider<dercenters.n; ider++) {
-                      for (ii=0; ii<sizes[0]; ii++) {
-                          for (jj=0; jj<sizes[1]; jj++) {
-                              for (kk=0; kk<sizes[2]; kk++) {
-                                  for (ll=0; ll<sizes[3]; ll++) {
-                                      for (xyz=0; xyz<3; xyz++) {
-                                          if (INT_NONZERO(buffer[ibuf])) {
-                                              printf(" ((%d %d)(%d %d)"
-                                                     "|(%d %d)(%d %d))(%d %d)"
-                                                     " = %15.11f\n",
-                                                     sh[0],ii,
-                                                     sh[1],jj,
-                                                     sh[2],kk,
-                                                     sh[3],ll,
-                                                     dercenters.num[ider], xyz,
-                                                     buffer[ibuf]
-                                                  );
-                                            }
-                                          ibuf++;
-                                        }
-                                    }
-                                }
+  int sh[4], sizes[4];
+  sh[0] = i;
+  sh[1] = j;
+  sh[2] = k;
+  sh[3] = l;
+  int_erep_all1der_v(flags,sh,sizes,&dercenters);
+  ibuf = 0;
+  for (ider=0; ider<dercenters.n; ider++) {
+      for (xyz=0; xyz<3; xyz++) {
+          for (ii=0; ii<sizes[0]; ii++) {
+              for (jj=0; jj<sizes[1]; jj++) {
+                  for (kk=0; kk<sizes[2]; kk++) {
+                      for (ll=0; ll<sizes[3]; ll++) {
+                          if (INT_NONZERO(buffer[ibuf])) {
+                              printf(" ((%d %d)(%d %d)"
+                                     "|(%d %d)(%d %d))(%d %d)"
+                                     " = %15.11f\n",
+                                     sh[0],ii,
+                                     sh[1],jj,
+                                     sh[2],kk,
+                                     sh[3],ll,
+                                     dercenters.num[ider], xyz,
+                                     buffer[ibuf]
+                                  );
                             }
+                          ibuf++;
                         }
                     }
                 }
             }
         }
     }
+}
+
+void
+do_test_4der_center(int flags,
+                    double* buffer, int print, int bounds, int permute,
+                    const RefKeyVal& keyval, centers_t& centers)
+{
+  int i,j,k,l;
+  for (i=0; i<centers.nshell; i++) {
+      for (j=0; j<centers.nshell; j++) {
+          for (k=0; k<centers.nshell; k++) {
+              for (l=0; l<centers.nshell; l++) {
+                  do_shell_quartet_der_test(flags, buffer,
+                                            print, bounds, permute,
+                                            keyval, centers,
+                                            i, j, k, l);
+                }
+            }
+        }
+    }
+}
+
+void
+test_4der_center(const RefKeyVal& keyval, centers_t& centers)
+{
+  int i;
+
+  int flags = INT_EREP|INT_NOSTRB|INT_NOSTR1|INT_NOSTR2|INT_NOPERM|INT_REDUND;
+  double *buffer =
+    int_initialize_erep(flags,1,&centers,&centers,&centers,&centers);
+
+  int niter = keyval->intvalue("niter");
+  int print = keyval->booleanvalue("print");
+  int bounds = keyval->booleanvalue("bounds");
+  int permute = keyval->booleanvalue("permute");
+
+  printf("4 center derivative test:\n");
+  printf("  niter   = %d\n", niter);
+  printf("  print   = %d\n", print);
+  printf("  bounds  = %d\n", bounds);
+  printf("  permute = %d\n", permute);
+
+  if (permute || bounds) {
+      printf("permute and bounds not implemented\n");
+    }
+
+  if (bounds) int_init_bounds();
+
+  for (i=0; i<niter; i++) {
+      do_test_4der_center(flags, buffer,
+                          print, bounds, permute, keyval, centers);
+    }
+
+  if (keyval->count("quartet") == 4) {
+      do_shell_quartet_der_test(flags, buffer, print, bounds, permute,
+                                keyval, centers,
+                                keyval->intvalue("quartet", 0),
+                                keyval->intvalue("quartet", 1),
+                                keyval->intvalue("quartet", 2),
+                                keyval->intvalue("quartet", 3));
+    }
+
+  if (bounds) int_done_bounds();
 
   int_done_erep();
 }

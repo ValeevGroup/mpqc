@@ -10,9 +10,10 @@ ne2sto3g: (
 
 h2o: (
   molecule<Molecule>: (
-    symmetry=c2v
+    symmetry=c1
     { atoms geometry} = {
       H  [   1.5  0.0  -0.3 ]
+      H  [  -1.5  0.0  -0.3 ]
       O  [   0.0  0.0   1.0 ]
      }
   )
@@ -20,8 +21,24 @@ h2o: (
     %basisdir = "/net/midway/usr/people/etseidl/basis/"
     basisfiles = [ "v2g90supp.ipv2" "v2g90nogc.ipv2" ]
     molecule = $..:molecule
-    %name = 6-31s
-    name = sto3gd
+    name = 6-31s
+    %name = sto3gd
+    puream = yes
+   )
+)
+
+heh: (
+  molecule<Molecule>: (
+    symmetry=c1
+    { atoms geometry} = {
+      He  [  -1.0  0.0  0.0 ]
+      H   [   1.0  0.0  0.0 ]
+     }
+  )
+  basis<GaussianBasisSet>: (
+    molecule = $..:molecule
+    name = test2
+    %name = sto3gd
     puream = yes
    )
 )
@@ -39,22 +56,22 @@ htest: (
     )
  )
 
-centers = $:h2o
+centers = $:heh
 
 test: (
    print_centers = yes
-   overlap = yes
-   kinetic = yes
-   hcore = yes
-   nuclear = yes
+   overlap = no
+   kinetic = no
+   hcore = no
+   nuclear = no
    3 = no
-   bounds = yes
-   4der = no
+   bounds = no
+   4 = no
+   4der = yes
    print = yes
-   4 = yes
-   niter = 1
+   niter = 0
    permute = yes
-   %quartet = [1 1 1 1]
+   quartet = [0 0 0 1]
    %storage = 10000
  )
 
@@ -123,12 +140,14 @@ basis:(
             }
      )
    ]
-  helium: test: [
-     %(get = sto3g)
-     (type: [(am = d puream = yes)]
-           { exp           coef:0 } = {
-             1.0           1.0
-             }
-      )
+  hydrogen: test2: [
+     (type: [(am = d)]
+       { exp           coef:0 } = {
+         1.0           1.0
+       }
+     )
+    ]
+  helium: test2: [
+     (get = STO-3G)
     ]
 )

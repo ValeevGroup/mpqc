@@ -114,7 +114,7 @@ Point::Point(KeyVal&k)
 }
 
 Point::Point(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,Point::class_desc_)
 {
   s.get(dim);
   if (dim > 0) s.get(x);

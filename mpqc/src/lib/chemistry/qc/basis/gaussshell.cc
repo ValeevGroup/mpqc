@@ -104,7 +104,7 @@ GaussianShell::GaussianShell(KeyVal&keyval)
 }
 
 GaussianShell::GaussianShell(StateIn&s):
-  SavableState(s,class_desc_)
+  SavableState(s,GaussianShell::class_desc_)
 {
   s.get(nprim);
   s.get(ncon);

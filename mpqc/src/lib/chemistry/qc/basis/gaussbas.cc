@@ -63,7 +63,7 @@ GaussianBasisSet::GaussianBasisSet(RefMolecule&molecule,
 }
 
 GaussianBasisSet::GaussianBasisSet(StateIn&s):
-  SavableState(s,class_desc_),
+  SavableState(s,GaussianBasisSet::class_desc_),
   center_to_r_(s),
   center_to_nshell_(s)
 {

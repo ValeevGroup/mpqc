@@ -3,9 +3,7 @@
 #pragma implementation
 #endif
 
-extern "C" {
 #include <math.h>
-};
 
 #include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
@@ -101,8 +99,9 @@ IntCoor::IntCoor(const RefKeyVal&keyval)
           value_ *= M_PI/180.0;
         }
       else {
-          fprintf(stderr,"  IntCoor::IntCoor(KeyVal): unknown unit = \"%s\"\n",
-                  unit);
+          cerr << indent
+               << "IntCoor::IntCoor(KeyVal): unknown unit = \""
+               << unit << "\"\n";
           abort();
         }
       delete[] unit;
@@ -194,7 +193,7 @@ SetIntCoor::SetIntCoor(const RefKeyVal& keyval)
   RefIntCoorGen gen = keyval->describedclassvalue("generator");
 
   if (gen.null() && !n) {
-      fprintf(stderr,"  SetIntCoor::SetIntCoor: bad input\n");
+      cerr << indent << "SetIntCoor::SetIntCoor: bad input\n";
       abort();
     }
 
@@ -425,7 +424,7 @@ SumIntCoor::SumIntCoor(const RefKeyVal&keyval):
   int n = keyval->count(coor);
   int ncoef = keyval->count(coef);
   if (n != ncoef || !n) {
-      fprintf(stderr,"SumIntCoor::SumIntCoor: bad input\n");
+      cerr << indent << "SumIntCoor::SumIntCoor: bad input\n";
       abort();
     }
 
@@ -644,8 +643,8 @@ MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
   molecule_ = keyval->describedclassvalue("molecule");
 
   if (molecule_.null()) {
-      fprintf(stderr, "MolecularCoor(const RefKeyVal&keyval):"
-              " molecule not found\n");
+      cerr << indent <<
+          "MolecularCoor(const RefKeyVal&keyval): molecule not found\n";
       abort();
     }
 
@@ -656,7 +655,7 @@ MolecularCoor::MolecularCoor(const RefKeyVal&keyval)
 
   if (dnatom3_.null()) dnatom3_ = new SCDimension(3*molecule_->natom());
   else if (dnatom3_->n() != 3 * molecule_->natom()) {
-      fprintf(stderr, "MolecularCoor(KeyVal): bad dnatom3 value");
+      cerr << indent << "MolecularCoor(KeyVal): bad dnatom3 value\n";
       abort();
     }
 }
@@ -709,6 +708,7 @@ IntCoorGen::_castdown(const ClassDesc*cd)
 IntCoorGen::IntCoorGen(const RefMolecule& mol,
                        int nextra_bonds, int *extra_bonds)
 {
+  grp_ = MessageGrp::get_default_messagegrp();
   molecule_ = mol;
   nextra_bonds_ = nextra_bonds;
   extra_bonds_ = extra_bonds;
@@ -722,6 +722,10 @@ IntCoorGen::IntCoorGen(const RefMolecule& mol,
 
 IntCoorGen::IntCoorGen(const RefKeyVal& keyval)
 {
+  grp_ = keyval->describedclassvalue("messagegrp");
+  if (grp_.null())
+      grp_ = MessageGrp::get_default_messagegrp();
+
   molecule_ = keyval->describedclassvalue("molecule");
 
   radius_scale_factor_ = keyval->doublevalue("radius_scale_factor");
@@ -755,8 +759,9 @@ IntCoorGen::IntCoorGen(const RefKeyVal& keyval)
       for (int i=0; i<nextra_bonds_*2; i++) {
           extra_bonds_[i] = keyval->intvalue("extra_bonds",i);
           if (keyval->error() != KeyVal::OK) {
-              fprintf(stderr,"  IntCoorGen:: keyval CTOR: "
-                      "problem reading \"extra_bonds:%d\"\n",i);
+              cerr << indent
+                   << "IntCoorGen:: keyval CTOR: problem reading "
+                   << "\"extra_bonds:" << i << "\"\n";
               abort();
             }
         }
@@ -769,6 +774,7 @@ IntCoorGen::IntCoorGen(const RefKeyVal& keyval)
 IntCoorGen::IntCoorGen(StateIn& s):
   SavableState(s)
 {
+  grp_ = MessageGrp::get_default_messagegrp();
   molecule_.restore_state(s);
   s.get(linear_bends_);
   s.get(linear_tors_);
@@ -853,12 +859,14 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
     }
     if (!bound) {
       int j = nearest_contact(i,m);
-      fprintf(stderr,"\n  Warning!:  atom %d is not bound to anything.\n",i+1);
-      fprintf(stderr,
-              "             You may wish to add an entry to extra_bonds.\n");
-      fprintf(stderr,
-              "             Atom %d is only %f angstroms away...\n\n",j+1,
-              bohr*dist(m[i].point(),m[j].point()));
+      if (grp_->me()==0) {
+        cerr << endl << indent
+             << "Warning!:  atom " << i+1 << "is not bound to anything.\n"
+             << "           You may wish to add an entry to extra_bonds.\n"
+             << "           Atom " << j+1 << " is only "
+             << bohr*dist(m[i].point(),m[j].point())
+             << " angstroms away...\n\n";
+      }
     }
   }
       
@@ -868,8 +876,9 @@ IntCoorGen::generate(const RefSetIntCoor& sic)
   add_tors(sic,bonds,m);
   add_out(sic,bonds,m);
 
-  cout << indent
-       << "IntCoorGen: generated " << sic->n() << " coordinates." << endl;
+  if (grp_->me()==0)
+    cout << indent
+         << "IntCoorGen: generated " << sic->n() << " coordinates." << endl;
 }
 
 ///////////////////////////////////////////////////////////////////////////

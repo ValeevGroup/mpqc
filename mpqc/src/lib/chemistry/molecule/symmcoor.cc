@@ -383,11 +383,13 @@ SymmMolecularCoor::form_coordinates()
   variable_->update_values(molecule_);
 
   fflush(stdout);
-  cout << "  IntMolecularCoor::form_variable_coordinates()\n"
-    << "    expected " << nunique << " coordinates\n"
-    << "    found " << variable_->n() << " variable coordinates\n"
-    << "    found " << constant_->n() << " constant coordinates\n";
-  cout.flush();
+  if (matrixkit()->messagegrp()->me()==0) {
+    cout << "  SymmMolecularCoor::form_variable_coordinates()\n"
+         << "    expected " << nunique << " coordinates\n"
+         << "    found " << variable_->n() << " variable coordinates\n"
+         << "    found " << constant_->n() << " constant coordinates\n";
+    cout.flush();
+  }
 
   delete[] is_totally_symmetric;
   fixed_ = saved_fixed_;
@@ -500,13 +502,17 @@ SymmMolecularCoor::change_coordinates()
 void
 SymmMolecularCoor::print(ostream& os)
 {
-  os << indent << "SymmMolecularCoor Parameters:\n";
-  os << incindent;
-  os << indent << "change_coordinates = "
-               << (change_coordinates_?"yes":"no") << endl;
-  os << indent << "transform_hessian = "
-               << (transform_hessian_?"yes":"no") << endl;
-  os << indent << "max_kappa2 = "
-               << max_kappa2_ << endl;
-  os << decindent;
+  IntMolecularCoor::print(os);
+  
+  if (matrixkit()->messagegrp()->me()==0) {
+    os << indent << "SymmMolecularCoor Parameters:\n";
+    os << incindent;
+    os << indent << "change_coordinates = "
+       << (change_coordinates_?"yes":"no") << endl;
+    os << indent << "transform_hessian = "
+       << (transform_hessian_?"yes":"no") << endl;
+    os << indent << "max_kappa2 = "
+       << max_kappa2_ << endl;
+    os << decindent << endl;
+  }
 }

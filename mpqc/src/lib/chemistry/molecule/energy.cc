@@ -3,11 +3,9 @@
 #pragma implementation
 #endif
 
-extern "C" {
-#include <stdio.h>
+#include <iostream.h>
 #include <stdlib.h>
 #include <math.h>
-}
 
 #include <util/misc/formio.h>
 #include <math/scmat/local.h>
@@ -105,7 +103,7 @@ MolecularEnergy::save_data_state(StateOut&s)
 void
 MolecularEnergy::failure(const char * msg)
 {
-  fprintf(stderr,"MolecularEnergy::failure: \"%s\"\n",msg);
+  cerr << indent << "MolecularEnergy::failure: " << msg << endl;
   abort();
 }
 
@@ -224,17 +222,22 @@ MolecularEnergy::inverse_hessian(RefSymmSCMatrix&hessian)
 void
 MolecularEnergy::print(ostream&o)
 {
+  int me = matrixkit()->messagegrp()->me();
+  
   Function::print(o);
   if (mc_.nonnull()) {
-      o << indent << "Molecular Coordinates:\n";
+      if (me==0)
+          o << indent << "Molecular Coordinates:\n";
       o << incindent;
       mc_->print(o);
       o << decindent;
     }
   else {
-      o << indent << "Molecule:\n";
-      o << incindent;
-      mol_->print(o);
-      o << decindent;
+      if (me==0) {
+          o << indent << "Molecule:\n";
+          o << incindent;
+          mol_->print(o);
+          o << decindent << endl;
+        }
     }
 }

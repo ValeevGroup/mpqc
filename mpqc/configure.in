@@ -690,9 +690,12 @@ if test "(" X$PARALLEL = Xyes -a X$THREADS != Xno ")" -o X$THREADS = Xyes; then
   AC_CHECK_HEADER(pthread.h,[
     AC_CHECK_FUNC(pthread_create,HAVE_PTHREAD=yes,[
       dnl ... otherwise see if posix threads are in -lpthread ...
-      AC_CHECK_LIB(pthread,pthread_create,HAVE_PTHREAD=yes,[
+      AC_CHECK_LIB(pthread,pthread_create,[
+        HAVE_PTHREAD=yes;LIBS="-lpthread $LIBS"
+        ],[
         dnl ... otherwise see if posix threads are in -lpthreads
-        AC_CHECK_LIB(pthreads,pthread_create,HAVE_PTHREAD=yes)
+        AC_CHECK_LIB(pthreads,pthread_create,
+                     [HAVE_PTHREAD=yes;LIBS="-lpthreads $LIBS"])
         ]
       )
       ]
@@ -710,7 +713,11 @@ AC_CHECK_LIB(sun,exit)
 AC_CHECK_LIB(m,exit)
 AC_CHECK_LIB(fl,exit)
 AC_CHECK_HEADER(perf.h,[
-  AC_CHECK_LIB(perf,perf_set_config,[HAVE_PERF=yes;AC_DEFINE(HAVE_PERF)])
+  AC_CHECK_LIB(perf,perf_set_config,[
+    HAVE_PERF=yes
+    LIBS="-lperf $LIBS"
+    AC_DEFINE(HAVE_PERF)
+    ])
   ]
 )
 
@@ -719,20 +726,20 @@ if test X$PARALLEL = Xyes; then
   dnl ----- check for the mpi library
   AC_CHECK_HEADER(mpi.h,[
     AC_CHECK_FUNC(MPI_Init,HAVE_MPI=yes,[
-      AC_CHECK_LIB(mpi,MPI_Init,HAVE_MPI=yes,[
-        AC_CHECK_LIB(mpich,MPI_Init,HAVE_MPI=yes)
+      AC_CHECK_LIB(mpi,MPI_Init,[HAVE_MPI=yes;LIBS="-lmpi $LIBS"],[
+        AC_CHECK_LIB(mpich,MPI_Init,[HAVE_MPI=yes;LIBS="-lmpich $LIBS"])
         ]
       )]
     )
-    dnl ----- check for functions that might be in an mpi library
-    AC_CHECK_FUNC(mpc_rcvncall,[HAVE_MPL=yes;AC_DEFINE(HAVE_MPL)])
-    AC_CHECK_FUNC(p4_initenv,[HAVE_P4=yes;AC_DEFINE(HAVE_P4)])
-    AC_CHECK_FUNC(mpi,MPI2_RMA_init,
-                 [HAVE_PUMA_MPI2=yes;AC_DEFINE(HAVE_PUMA_MPI2)])
     ]
   )
   if test X$HAVE_MPI = Xyes; then
     AC_DEFINE(HAVE_MPI)
+    dnl ----- check for functions that might be in an mpi library
+    AC_CHECK_FUNC(mpc_rcvncall,[HAVE_MPL=yes;AC_DEFINE(HAVE_MPL)])
+    AC_CHECK_FUNC(p4_initenv,[HAVE_P4=yes;AC_DEFINE(HAVE_P4)])
+    AC_CHECK_FUNC(MPI2_RMA_init,
+                 [HAVE_PUMA_MPI2=yes;AC_DEFINE(HAVE_PUMA_MPI2)])
   fi
 
   dnl ----- check for the pvm library
@@ -742,6 +749,7 @@ if test X$PARALLEL = Xyes; then
   )
   if test X$HAVE_PVM = Xyes; then
     AC_DEFINE(HAVE_PVM)
+    LIBS="-lpvm $LIBS"
   fi
 
   dnl ----- check for the intel nx library
@@ -757,6 +765,7 @@ if test X$PARALLEL = Xyes; then
   )
   if test X$HAVE_NX = Xyes; then
     AC_DEFINE(HAVE_NX)
+    LIBS="-lnx $LIBS"
   fi
   if test X$HAVE_HRECV = Xyes; then
     AC_DEFINE(HAVE_HRECV)

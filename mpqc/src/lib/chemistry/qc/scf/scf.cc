@@ -595,8 +595,6 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
          << "Nelectron = " << 2.0 * (d * overlap()).trace() << endl;
   }
 
-  if (debug_ > 1) d.print("density");
-
   int use_alternate_density = 0;
   if (use_alternate_density || debug_ > 2) {
     // double check the density with this simpler, slower way to compute
@@ -620,6 +618,14 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
       ExEnv::out() << node0 << indent
                    << "using alternate density algorithm" << endl;
     }
+  }
+
+  if (debug_ > 1) {
+    d.print("SO Density");
+    RefSCMatrix rd(d.dim(), d.dim(), basis_matrixkit());
+    rd.assign(0.0);
+    rd.accumulate(d);
+    (d*overlap()*d-rd).print("SO Density idempotency error");
   }
 }
 

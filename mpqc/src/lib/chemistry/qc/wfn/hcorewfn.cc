@@ -208,7 +208,16 @@ HCoreWfn::density()
     dens->assign(0.0);
     dens->accumulate_transform(mo_to_so, mo_density);
 
-    if (debug_ > 1) dens.print("SO Density");
+    if (debug_ > 1) {
+      mo_density.print("MO Density");
+      dens.print("SO Density");
+      ExEnv::out() << node0
+                   << indent << "Nelectron(MO) = " << mo_density.trace()
+                   << endl
+                   << indent << "Nelectron(SO) = "
+                   << (overlap().gi()*dens).trace()
+                   << endl;
+    }
 
     density_ = dens;
     density_.computed() = 1;

@@ -62,7 +62,7 @@ static RefSCVector gn;
 static RefSCVector cart_grad;
 static RefSCVector last_mode;
 
-RefLocalSCDimension di, dc;
+RefSCDimension di, dc;
 
 static int iter=1;
 
@@ -191,13 +191,13 @@ Geom_init_mpqc(RefMolecule& molecule, const RefKeyVal& topkeyval)
     di = coor->dim();
 
    // create the inverted hessian 
-    hessian = new LocalSymmSCMatrix(di.pointer());
+    hessian = di->create_symmmatrix();
     coor->guess_hessian(hessian);
-    if (!efc) hessian = hessian.i();
+    if (!efc) hessian = hessian.gi();
 
-    xn = new LocalSCVector(di.pointer());
-    gn = new LocalSCVector(di.pointer());
-    cart_grad = new LocalSCVector(dc.pointer());
+    xn = di->create_vector();
+    gn = di->create_vector();
+    cart_grad = dc->create_vector();
 
     coor->to_internal(xn);
     gn->assign(0.0);
@@ -276,7 +276,7 @@ Geom_update_mpqc(RefSCVector& grad, const RefKeyVal& keyval)
 {
   int i,j,ij;
 
-  cart_grad = grad.copy();
+  cart_grad.assign(grad);
     
   // find rms and max force
   rmsforce=0;

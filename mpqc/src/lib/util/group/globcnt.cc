@@ -1,3 +1,29 @@
+//
+// globcnt.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
 #ifdef __GNUG__
 #pragma implementation
@@ -38,21 +64,18 @@ GlobalCounter::initialize()
     }
   controls_release_ = 1;
   operator = (0);
-  //printf("got semid = %d\n", semid_);
 }
 
 void
 GlobalCounter::initialize(const char *stringrep)
 {
   semid_ = atoi(stringrep);
-  //printf("setting semid (0x%08x) = %d\n", &semid_, semid_);
   controls_release_ = 0;
 }
 
 GlobalCounter::~GlobalCounter()
 {
   if (semid_ != -1 && controls_release_) {
-      //printf("removing semid = %d\n", semid_);
       int ret;
 #ifdef SEMCTL_REQUIRES_SEMUN
       semun junk;
@@ -71,8 +94,6 @@ GlobalCounter::~GlobalCounter()
 void
 GlobalCounter::operator = (int i)
 {
-  //printf("GlobalCounter: assigning %5d (0x%08x) to %3d\n",
-  //       semid_, &semid_, i);
 #ifdef SEMCTL_REQUIRES_SEMUN
   semun val;
   val.val = i;
@@ -111,7 +132,6 @@ GlobalCounter::wait_for_zero()
 void
 GlobalCounter::operator+=(int i)
 {
-  //printf("GlobalCounter: incrementing %5d by %3d\n", semid_, i);
   struct sembuf s;
   s.sem_num = 0;
   s.sem_op = i;
@@ -142,3 +162,9 @@ GlobalCounter::stringrep()
   return strcpy(new char[strlen(tmp)+1], tmp);
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// eval: (c-set-style "CLJ")
+// End:

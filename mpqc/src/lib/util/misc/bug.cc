@@ -384,7 +384,6 @@ Debugger::debug(const char *reason)
       cout << prefix_ << "Debugger: starting \"" << cmd << "\"" << endl;
       debugger_ready_ = 0;
       system(cmd);
-      delete[] cmd;
       // wait until the debugger is ready
       if (sleep_) {
           cout << "Sleeping " << sleep_

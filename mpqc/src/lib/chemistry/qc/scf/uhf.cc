@@ -248,6 +248,9 @@ UHF::ao_fock(double accuracy)
 
     delete[] pmax;
 
+    scf_grp_->sum(&tnint, 1, 0, 0);
+    ExEnv::out0() << indent << scprintf("%20.0f integrals\n", tnint);
+    
     // if we're running on multiple processors, then sum the G matrices
     if (scf_grp_->n() > 1) {
       scf_grp_->sum(gmat, i_offset(basis()->nbasis()));

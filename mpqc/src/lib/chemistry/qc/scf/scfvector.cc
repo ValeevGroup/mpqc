@@ -28,6 +28,9 @@
 #include <util/misc/timer.h>
 #include <util/misc/formio.h>
 
+#include <util/state/state_bin.h>
+#include <util/group/mstate.h>
+
 #include <math/scmat/offset.h>
 #include <math/scmat/blocked.h>
 #include <math/scmat/blkiter.h>
@@ -40,6 +43,8 @@
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/scf/scfops.h>
 #include <chemistry/qc/scf/scflocal.h>
+
+#include <errno.h>
 
 using namespace std;
 using namespace sc;
@@ -57,6 +62,41 @@ extern "C" {
          double *W, double *WORK, int *LWORK, int *INFO);
 }
 
+void
+SCF::savestate_iter(int iter)
+{
+  char *ckptfile=0, *oldckptfile=0;
+  const char *devnull=0, *filename=0;
+  
+  if (savestate_iter_ && ( (iter+1)%savestate_frequency_==0) ) {
+    devnull = "/dev/null";
+    filename = SCFormIO::default_basename();
+    if (scf_grp_->me() == 0) {
+      ckptfile = new char[strlen(filename)+10];
+      sprintf(ckptfile,"%s.%d.tmp",filename,iter+1);
+      oldckptfile = new char[strlen(filename)+10];
+      sprintf(oldckptfile,"%s.%d.tmp",filename,(iter+1-savestate_frequency_));
+    }
+    else {
+      ckptfile = new char[strlen(devnull)+1];
+      strcpy(ckptfile, devnull);
+    }
+    // save temporary checkpoint file after each SCF iteration
+    StateOutBin so(ckptfile);
+    save_state(this,so);
+    if (scf_grp_->me() == 0) {
+      if (oldckptfile != NULL && (iter+1-savestate_frequency_)>=savestate_frequency_ ) {
+        if (unlink(oldckptfile)) 
+          ExEnv::out0() << " SCF::compute_vector() Temporary "
+                        << "checkpoint file failed to delete. " << endl;
+      }
+      delete [] oldckptfile;
+    }
+    delete [] ckptfile;
+    so.close();
+  }
+
+}
 double
 SCF::compute_vector(double& eelec)
 {
@@ -90,6 +130,7 @@ SCF::compute_vector(double& eelec)
   double delta = 1.0;
   int iter, iter_since_reset = 0;
   double accuracy = 1.0;
+
   for (iter=0; iter < maxiter_; iter++, iter_since_reset++) {
     // form the density from the current vector 
     tim_enter("density");
@@ -129,9 +170,9 @@ SCF::compute_vector(double& eelec)
     double eother = 0.0;
     if (accumddh_.nonnull()) eother = accumddh_->e();
     ExEnv::out0() << indent
-         << scprintf("iter %5d energy = %15.10f delta = %10.5e",
-                     iter+1, eelec+eother+nucrep, delta)
-         << endl;
+                  << scprintf("iter %5d energy = %15.10f delta = %10.5e",
+                              iter+1, eelec+eother+nucrep, delta)
+                  << endl;
 
     // now extrapolate the fock matrix
     tim_enter("extrap");
@@ -157,7 +198,7 @@ SCF::compute_vector(double& eelec)
       = dynamic_cast<BlockedSCMatrix*>(oso_scf_vector_.pointer());
 
     ExEnv::out0() << indent
-                 << "solving generalized eigenvalue problem" << endl;
+                  << "solving generalized eigenvalue problem" << endl;
 
     for (int iblock=0; iblock<bfmat->nblocks(); iblock++) {
       RefSymmSCMatrix fmat = bfmat->block(iblock);
@@ -190,7 +231,7 @@ SCF::compute_vector(double& eelec)
              epsilon,&optlwork,&lwork,&info);
       if (info) {
         ExEnv::outn() << "dsygv could not determine work size: info = "
-                     << info << endl;
+                      << info << endl;
         abort();
       }
       lwork = (int)optlwork;
@@ -199,7 +240,7 @@ SCF::compute_vector(double& eelec)
              epsilon,work,&lwork,&info);
       if (info) {
         ExEnv::outn() << "dsygv could not diagonalize matrix: info = "
-                     << info << endl;
+                      << info << endl;
         abort();
       }
       double *z = fso; // the vector is placed in fso
@@ -264,8 +305,10 @@ SCF::compute_vector(double& eelec)
       (oso_scf_vector_.t()*oso_scf_vector_).print(
         "vOSO.t()*vOSO",ExEnv::out0(),14);
     }
+
+    savestate_iter(iter);
   }
-      
+    
   eigenvalues_ = evals;
   eigenvalues_.computed() = 1;
   eigenvalues_.set_actual_accuracy(accuracy<delta?delta:accuracy);

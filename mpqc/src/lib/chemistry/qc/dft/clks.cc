@@ -244,8 +244,11 @@ CLKS::ao_fock(double accuracy)
       abort();
     }
     tim_exit("stop thread");
-      
+
+    double tnint=0;
     for (i=0; i < nthread; i++) {
+      tnint += gblds[i]->tnint;
+      
       if (i) {
         for (int j=0; j < ntri; j++)
           gmat[j] += gmats[i][j];
@@ -261,6 +264,9 @@ CLKS::ao_fock(double accuracy)
 
     delete[] pmax;
 
+    scf_grp_->sum(&tnint, 1, 0, 0);
+    ExEnv::out0() << indent << scprintf("%20.0f integrals\n", tnint);
+    
     // if we're running on multiple processors, then sum the G matrix
     tim_enter("sum");
     if (scf_grp_->n() > 1)

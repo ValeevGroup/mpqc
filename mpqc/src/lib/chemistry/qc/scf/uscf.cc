@@ -944,7 +944,7 @@ UnrestrictedSCF::compute_vector(double& eelec)
   tim_enter("vector");
   int i;
 
-  // reinitialize the extrapolation object
+    // reinitialize the extrapolation object
   extrap_->reinitialize();
   
   // create level shifter
@@ -973,6 +973,7 @@ UnrestrictedSCF::compute_vector(double& eelec)
 
   double delta = 1.0;
   int iter;
+  
   for (iter=0; iter < maxiter_; iter++) {
     // form the density from the current vector 
     tim_enter("density");
@@ -1062,7 +1063,8 @@ UnrestrictedSCF::compute_vector(double& eelec)
     if (reset_occ_)
       set_occupations(evalsa, evalsb);
 
-  }
+    savestate_iter(iter);
+    }
       
   eigenvalues_ = evalsa;
   eigenvalues_.computed() = 1;

@@ -86,6 +86,8 @@ SCF::SCF(StateIn& s) :
     print_all_evals_ = 0;
     print_occ_evals_ = 0;
   }
+  s.get(savestate_iter_);
+  s.get(savestate_frequency_);
   s.get(level_shift_);
   if (s.version(::class_desc<SCF>()) >= 5) {
     s.get(keep_guess_wfn_);
@@ -114,6 +116,8 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
   reset_occ_(0),
   local_dens_(1),
   storage_(0),
+  savestate_iter_(0),
+  savestate_frequency_(1),
   level_shift_(0)
 {
   if (keyval->exists("maxiter"))
@@ -125,6 +129,12 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
   if (keyval->exists("reset_occupations"))
     reset_occ_ = keyval->booleanvalue("reset_occupations");
 
+  if (keyval->exists("savestate_iter"))
+    savestate_iter_ = keyval->booleanvalue("savestate_iter",KeyValValueboolean(0));
+  
+  if (keyval->exists("savestate_frequency"))
+    savestate_frequency_ = keyval->intvalue("savestate_frequency");
+    
   if (keyval->exists("level_shift"))
     level_shift_ = keyval->doublevalue("level_shift");
 
@@ -202,6 +212,8 @@ SCF::save_data_state(StateOut& s)
   s.put(dstorage);
   s.put(print_all_evals_);
   s.put(print_occ_evals_);
+  s.put(savestate_iter_);
+  s.put(savestate_frequency_);
   s.put(level_shift_);
   s.put(keep_guess_wfn_);
   SavableState::save_state(guess_wfn_.pointer(),s);
@@ -245,7 +257,9 @@ SCF::print(ostream&o) const
   o << indent << "SCF Parameters:\n" << incindent
     << indent << "maxiter = " << maxiter_ << endl
     << indent << "density_reset_frequency = " << dens_reset_freq_ << endl
-    << indent << scprintf("level_shift = %f\n",level_shift_)
+    << indent << "savestate_iter = " << savestate_iter_ << endl
+    << indent << "savestate_frequency = " << savestate_frequency_ << endl
+    << indent << scprintf("level_shift = %f\n",level_shift_) 
     << decindent << endl;
 }
 

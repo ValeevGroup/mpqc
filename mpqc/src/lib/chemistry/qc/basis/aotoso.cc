@@ -558,7 +558,7 @@ PetiteList::aotoso()
           if (ii < blk->istart || ii >= blk->iend)
             continue;
 
-          blk->data[(ii-blk->istart)*jlen+(j-blk->jstart)] = soj.cont[i].coef;
+          blk->data[ii*jlen+j] = soj.cont[i].coef;
         }
       }
     }

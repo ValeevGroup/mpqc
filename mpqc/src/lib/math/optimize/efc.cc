@@ -367,7 +367,7 @@ EFCOpt::update()
   // be smaller
   accuracy_ = maxabs_gradient * maxabs_gradient_to_next_desired_accuracy;
   
-  return conv_->converged();
+  return converged;
 }
 
 /////////////////////////////////////////////////////////////////////////////

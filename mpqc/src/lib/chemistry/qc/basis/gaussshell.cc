@@ -284,30 +284,6 @@ double GaussianShell::coefficient_norm(int con,int prim) const
   return coef[con][prim] * sqrt(::norm(l[con],l[con],c,ss));
 }
 
-// compute n!!
-static long
-factfact(int n)
-{
-  long result;
-  int i;
-
-  result = 1;
-  for (i=3; i<=n; i+=2) {
-    result *= i;
-    }
-  return result;
-  }
-
-// compute the part of the normalization that depends on the exponents
-// of x, y, and z.
-static double
-bfnorm(int i,int j,int k)
-{
-  return 1.0/(sqrt((double)  factfact(2*i-1)
-                           * factfact(2*j-1)
-                           * factfact(2*k-1)));
-  }
-
 // Compute the normalization constant for a shell.
 // returns 1/sqrt(<(x^l 0 0|(x^l 0 0)>).
 // The formula is from Obara and Saika (for the basis functions within

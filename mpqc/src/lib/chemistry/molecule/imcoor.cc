@@ -4,6 +4,7 @@ extern "C" {
 };
 
 #include <math/scmat/matrix.h>
+#include <math/scmat/elemop.h>
 #include <math/scmat/local.h>
 #include <chemistry/molecule/localdef.h>
 #include <chemistry/molecule/molecule.h>

@@ -3,6 +3,7 @@
 #define _chemistry_qc_integral_integral_h
 
 #include <math/scmat/matrix.h>
+#include <math/scmat/elemop.h>
 #include <chemistry/qc/basis/basis.h>
 
 class OneBodyInt: public SCElementOp

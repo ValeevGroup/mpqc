@@ -1,4 +1,5 @@
 
+#include <math/scmat/elemop.h>
 #include <math/optimize/scextrapmat.h>
 
 #define CLASSNAME SymmSCMatrixSCExtrapData

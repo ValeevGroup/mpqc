@@ -8,6 +8,7 @@
 #include <float.h>
 #include <string.h>
 #include <math/scmat/matrix.h>
+#include <math/scmat/elemop.h>
 #include <util/keyval/keyval.h>
 
 #include <math/optimize/nlp.h>

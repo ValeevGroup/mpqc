@@ -124,7 +124,7 @@ void PrefixKeyVal::dump(FILE*fp,int n)
 int PrefixKeyVal::getnewprefixkey(const char*key,char*newkey)
 {
   int i;
-  int result;
+  int result=0;
 
   if (key[0] == ':') {
     strcpy(newkey,key);

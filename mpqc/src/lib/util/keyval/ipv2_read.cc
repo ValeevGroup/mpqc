@@ -426,8 +426,6 @@ IPV2::ip_get_variable_kt(char* variable)
 void
 IPV2::ip_assign_variable(char* variable)
 {
-  ip_keyword_tree_t *kt;
-  
   if (table_keywords) ip_next_table_entry();
 
   /* Note that the subtree is really a reference to another subtree. */

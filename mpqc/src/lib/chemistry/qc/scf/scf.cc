@@ -54,7 +54,7 @@ using namespace sc;
 // SCF
 
 static ClassDesc SCF_cd(
-  typeid(SCF),"SCF",6,"public OneBodyWavefunction",
+  typeid(SCF),"SCF",7,"public OneBodyWavefunction",
   0, 0, 0);
 
 SCF::SCF(StateIn& s) :
@@ -86,8 +86,14 @@ SCF::SCF(StateIn& s) :
     print_all_evals_ = 0;
     print_occ_evals_ = 0;
   }
-  s.get(savestate_iter_);
-  s.get(savestate_frequency_);
+  if (s.version(::class_desc<SCF>()) >= 7) {
+    s.get(savestate_iter_);
+    s.get(savestate_frequency_);
+  }
+  else {
+    savestate_iter_ = 0;
+    savestate_frequency_ = 0;
+  }
   s.get(level_shift_);
   if (s.version(::class_desc<SCF>()) >= 5) {
     s.get(keep_guess_wfn_);

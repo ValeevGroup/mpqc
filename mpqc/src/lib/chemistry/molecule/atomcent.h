@@ -60,6 +60,9 @@ class AtomicCenter: public SavableState
     //. Returns the label for this atom.
     const char * label() const { return label_; }
 
+    //. Returns the mass for this atom.
+    double mass() const;
+
     void save_data_state(StateOut&);
 
     //. Print information about the atom

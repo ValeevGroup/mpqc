@@ -86,3 +86,9 @@ void AtomicCenter::print(FILE*fp)
   fprintf(fp,"%2s",element().symbol());
   point().print(fp);
 }
+
+double
+AtomicCenter::mass() const
+{
+  return element_.mass();
+}

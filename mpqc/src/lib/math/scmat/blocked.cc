@@ -165,7 +165,7 @@ BlockedSCDimension::init(const RefSCMatrixKit& mk, int *nb, const char *name)
   dims_[0] = mk->dimension(nb[0], name);
   
   for (int i=1; i < nblocks_; i++) {
-    n_ += nb[0];
+    n_ += nb[i];
     first_[i] = last_[i-1];
     last_[i] = first_[i]+nb[i];
     dims_[i] = mk->dimension(nb[i], name);

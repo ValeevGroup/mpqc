@@ -326,6 +326,11 @@ R12IntEvalInfo::construct_ortho_comp_()
    s12.element_op(ov_op12);
    ov_op12=0;
    if (debug_ > 1) s12.print("AO overlap (OBS/RI-BS)");
+
+   // get MOs
+   RefSCMatrix scf_vec = ref_->eigenvectors();
+   RefSCMatrix so_ao = integral_aux->petite_list()->sotoao();
+   scf_vec = scf_vec.t() * so_ao;
     
    //
    // Compute orthogonalizer for the RI basis
@@ -335,21 +340,27 @@ R12IntEvalInfo::construct_ortho_comp_()
    integral_aux->set_basis(ri_bs);
    Ref<PetiteList> plist_ri = integral_aux->petite_list();
    RefSCMatrix ao2so_ri = plist_ri->aotoso();
-   RefSCMatrix s12_nb(scf_vec_.coldim(),ao2so_ri->rowdim(), ao_matrixkit);
+   RefSCMatrix s12_nb(scf_vec.coldim(),ao2so_ri->rowdim(), so_matrixkit);
    s12_nb->convert(s12);
    s12 = 0;
 
    // MOs (in terms of AOs) "transformed" into the RI AO basis
-   RefSCMatrix scf_vec_ao_ri = scf_vec_ * s12_nb;
-
-   // Need blocked representations
-   RefSCMatrix scf_vec_ri_bm(scf_vec_ao_ri.rowdim(),scf_vec_ao_ri.coldim(), so_matrixkit);
-   scf_vec_ri_bm->convert(scf_vec_ao_ri);
-   scf_vec_ao_ri = 0;
-   scf_vec_ri_bm = scf_vec_ri_bm * orthog_ri_ * orthog_ri_.t();  
+   RefSCMatrix scf_vec_ri_bm = scf_vec * s12_nb * orthog_ri_ * orthog_ri_.t();  
 
    // Transform MOs into the auxiliary SO basis
    RefSCMatrix scf_vec_ri = scf_vec_ri_bm * ao2so_ri;
+
+   // Orthogonalize MOs expressed in the auxiliary SO basis
+   RefSymmSCMatrix CtSC(scf_vec_ri.rowdim(), so_matrixkit);
+   CtSC.assign(0.0);
+   CtSC.accumulate_transform(scf_vec_ri, overlap_ri_);
+   OverlapOrthog Corthog(ref_->orthog_method(),
+                         CtSC,
+                         so_matrixkit,
+                         ref_->lindep_tol(),
+                         0);
+   scf_vec_ri = Corthog.basis_to_orthog_basis() * scf_vec_ri;
+   ExEnv::out0() << endl;
 
    // Prepare the initial set of vectors in RI-BS
    int ng = orthog_ri_.coldim()->blocks()->nblock();
@@ -364,33 +375,7 @@ R12IntEvalInfo::construct_ortho_comp_()
      RefSCMatrix scfvec_block = scf_vec_ri.block(g);
      RefSCMatrix oso_ri_block = oso_ri.block(g);
      RefSymmSCMatrix overlap_ri_block = overlap_ri_.block(g);
-     
-     // Gram-Schmidt orthogonalize MOs against each other first
-     for(int mo=0; mo<noso_; mo++) {
-       if (orbsym_[mo] == g) {
-	 RefSCVector movec = scfvec_block.get_row(mo);
-	  
-	 for(int omo=0; omo<mo; omo++) {
-	   if (orbsym_[omo] == g) {
-	     RefSCVector omovec = scfvec_block.get_row(omo);
-	     double overlap = movec.scalar_product(overlap_ri_block * omovec);
-	     movec.accumulate(-overlap*omovec);
-	   }
-	 }
-	  
-	 // Normalize
-	 double norm = movec.scalar_product(overlap_ri_block * movec);
-	 if (fabs(norm) > 1.0E-8) {
-	   double oonorm = 1.0/sqrt(norm);
-	   movec.scale(oonorm);
-	   scfvec_block.assign_row(movec,mo);
-	 }
-	 else {
-	   throw std::runtime_error("MOs projected onto RI-BS have negligible norm. Modify/increase the auxiliary basis set");
-	 }
-       }
-     }
-      
+
      int nso_ri = oso_ri_block.rowdim()->n();
      for(int so=0; so<nso_ri; so++) {
 	
@@ -398,12 +383,11 @@ R12IntEvalInfo::construct_ortho_comp_()
        RefSCVector tmpvec_block = oso_ri_block.get_row(so);
        
        // Project against MOs
-       for(int mo=0; mo<noso_; mo++) {
-	 if (orbsym_[mo] == g) {
-	   RefSCVector movec = scfvec_block.get_row(mo);
-	   double overlap = tmpvec_block.scalar_product(overlap_ri_block * movec);
-	   tmpvec_block.accumulate(-overlap*movec);
-	 }
+       int noso = scfvec_block.rowdim().n();
+       for(int mo=0; mo<noso; mo++) {
+	 RefSCVector movec = scfvec_block.get_row(mo);
+	 double overlap = tmpvec_block.scalar_product(overlap_ri_block * movec);
+	 tmpvec_block.accumulate(-overlap*movec);
        }
        
        oso_ri_block.assign_row(tmpvec_block,so);

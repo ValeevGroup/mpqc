@@ -62,18 +62,18 @@ class SCBlockInfo: public SavableState {
     /// Create a SCBlockInfo object.
     SCBlockInfo(int n, int nblocks = 0, const int *blocksizes = 0);
     SCBlockInfo(StateIn&);
-    /** @memo The KeyVal constructor.
-        \begin{description}
+    /** The KeyVal constructor.
+        <dl>
 
-        \item[sizes] This is a vector giving the size of each subblock.
-        There is no default.
+        <dt><tt>sizes</tt><dd> This is a vector giving the size of each
+        subblock.  There is no default.
 
-        \item[subdims] If this vector is given there is must be entry for
-        each entry in the sizes vector.  Each entry is an SCDimension
-        object.  The default is to not store subdimension information.
+        <dt><tt>subdims</tt><dd> If this vector is given there is must be
+        entry for each entry in the sizes vector.  Each entry is an
+        SCDimension object.  The default is to not store subdimension
+        information.
 
-        \end{description}
-     */
+        </dl> */
     SCBlockInfo(const RefKeyVal& keyval);
 
     ~SCBlockInfo();
@@ -89,7 +89,7 @@ class SCBlockInfo: public SavableState {
     int start(int i) const { return start_[i]; }
     /// Return the size of block i.
     int size(int i) const { return size_[i]; }
-    ///  Return the last index $+ 1$ for block i.
+    ///  Return the last index + 1 for block i.
     int fence(int i) const { return start_[i] + size_[i]; }
 
     void elem_to_block(int i, int &block, int &offset);
@@ -127,17 +127,16 @@ class SCDimension: public SavableState {
     SCDimension(const RefSCBlockInfo&, const char *name = 0);
     SCDimension(int n, int nblocks, const int *blocksizes = 0,
                 const char* name = 0);
-    /** @memo The KeyVal constructor.
-        \begin{description}
+    /** The KeyVal constructor.
+        <dl>
 
-        \item[n] This gives size of the dimension.  One of n or blocks is
-        required.
+        <dt><tt>n</tt><dd> This gives size of the dimension.  One of n or
+        blocks is required.
 
-        \item[blocks] The block information for the dimension can be given
-        as a SCBlockInfo object.  One of n or blocks is required.
+        <dt><tt>blocks</tt><dd> The block information for the dimension can
+        be given as a SCBlockInfo object.  One of n or blocks is required.
 
-        \end{description}
-    */
+        </dl> */
     SCDimension(const RefKeyVal&);
     SCDimension(StateIn&s);
 

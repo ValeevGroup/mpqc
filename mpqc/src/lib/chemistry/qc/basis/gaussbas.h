@@ -53,66 +53,62 @@ class SphericalTransformIter;
 /** The GaussianBasisSet class is used describe a basis set composed of
 atomic gaussian orbitals.
 
-Following is a table with available basis sets listing the supported elements
-for each basis and the number of basis functions for H, $n_0$, first row,
-$n_1$, and second row, $n_2$, atoms.  Basis sets with non-alpha-numerical
-characters in their name must be given in quotes.
+Following is a table with available basis sets listing the supported
+elements for each basis and the number of basis functions for H, \f$n_0\f$,
+first row, \f$n_1\f$, and second row, \f$n_2\f$, atoms.  Basis sets with
+non-alpha-numerical characters in their name must be given in quotes.
 
-\begin{tabular}{lcrrr}
-  Basis Set&
-   Elements&
-   $n_0$&
-   $n_1$&
-   $n_2$ \\
-STO-2G & H-Ca & 1 & 5 & 9 \\
-STO-3G & H-Kr & 1 & 5 & 9 \\
-STO-3G* & H-Ar & 1 & 5 & 15 \\
-STO-6G & H-Kr & 1 & 5 & 9 \\
-MINI (Huzinaga) & H-Ca & 1 & 5 & 9 \\
-MINI (Scaled) & H-Ca & 1 & 5 & 9 \\
-MIDI (Huzinaga) & H-Na & 2 & 9 &  \\
-DZ (Dunning) & H, Li, B-Ne, Al-Cl & 2 & 10 & 18 \\
-DZP (Dunning) & H, Li, B-Ne, Al-Cl & 5 & 16 & 24 \\
-DZP + Diffuse (Dunning) & H, B-Ne & 6 & 19 &  \\
-3-21G & H-Kr & 2 & 9 & 13 \\
-3-21G* & H-Ar & 2 & 9 & 19 \\
-3-21++G & H-Ar & 3 & 13 & 17 \\
-3-21++G* & H-Ar & 3 & 13 & 23 \\
-4-31G & H-Ne, P-Cl & 2 & 9 & 13 \\
-4-31G* & H-Ne, P-Cl & 2 & 15 & 19 \\
-4-31G** & H-Ne, P-Cl & 5 & 15 & 19 \\
-6-31G & H-Ar & 2 & 9 & 13 \\
-6-31G* & H-Ar & 2 & 15 & 19 \\
-6-31G** & H-Ar & 5 & 15 & 19 \\
-6-31+G* & H-Ar & 2 & 19 & 23 \\
-6-31++G & H-Ar & 3 & 13 & 17 \\
-6-31++G* & H-Ar & 3 & 19 & 23 \\
-6-31++G** & H-Ar & 6 & 19 & 23 \\
-6-311G & H-Ar, Ga-Kr & 3 & 13 & 21 \\
-6-311G* & H-Ar, Ga-Kr & 3 & 19 & 27 \\
-6-311G** & H-Ar, Ga-Kr & 6 & 19 & 27 \\
-6-311G(2df,2pd) & H-Ne & 15 & 35 &  \\
-6-311++G** & H-Ne & 7 & 23 &  \\
-6-311++G(2d,2p) & H-Ne & 10 & 29 &  \\
-6-311++G(3df,3pd) & H-Ar & 19 & 45 & 53 \\
-cc-pVDZ & H, He, B-Ne, Al-Ar & 5 & 14 & 18 \\
-cc-pVTZ & H, He, B-Ne, Al-Ar & 14 & 30 & 34 \\
-cc-pVQZ & H, He, B-Ne, Al-Ar & 30 & 55 & 59 \\
-cc-pV5Z & H-Ne, Al-Ar & 55 & 91 & 95 \\
-aug-cc-pVDZ & H, He, B-Ne, Al-Ar & 9 & 23 & 27 \\
-aug-cc-pVTZ & H, He, B-Ne, Al-Ar & 23 & 46 & 50 \\
-aug-cc-pVQZ & H, He, B-Ne, Al-Ar & 46 & 80 & 84 \\
-aug-cc-pV5Z & H, He, B-Ne, Al-Ar & 80 & 127 & 131 \\
-cc-pCVDZ & B-Ne &  & 18 &  \\
-cc-pCVTZ & B-Ne &  & 43 &  \\
-cc-pCVQZ & B-Ne &  & 84 &  \\
-cc-pCV5Z & B-Ne &  & 145 &  \\
-aug-cc-pCVDZ & B-F &  & 27 &  \\
-aug-cc-pCVTZ & B-Ne &  & 59 &  \\
-aug-cc-pCVQZ & B-Ne &  & 109 &  \\
-aug-cc-pCV5Z & B-F &  & 181 &  \\
-NASA Ames ANO & H, B-Ne, Al, P, Ti, Fe, Ni & 30 & 55 & 59 \\
-\end{tabular}
+<table>
+<tr><td>Basis Set<td>Elements<td>\f$n_0\f$<td>\f$n_1\f$<td>\f$n_2\f$
+<tr><td><tt>STO-2G</tt><td>H-Ca<td>1<td>5<td>9
+<tr><td><tt>STO-3G</tt><td>H-Kr<td>1<td>5<td>9
+<tr><td><tt>STO-3G*</tt><td>H-Ar<td>1<td>5<td>14
+<tr><td><tt>STO-6G</tt><td>H-Be, C-Kr<td>1<td>5<td>9
+<tr><td><tt>MINI (Huzinaga)</tt><td>H-Ca<td>1<td>5<td>9
+<tr><td><tt>MINI (Scaled)</tt><td>H-Ca<td>1<td>5<td>9
+<tr><td><tt>MIDI (Huzinaga)</tt><td>H-Na<td>2<td>9<td>
+<tr><td><tt>DZ (Dunning)</tt><td>H, Li, B-Ne, Al-Cl<td>2<td>10<td>18
+<tr><td><tt>DZP (Dunning)</tt><td>H, Li, B-Ne, Al-Cl<td>5<td>16<td>24
+<tr><td><tt>DZP + Diffuse (Dunning)</tt><td>H, B-Ne<td>6<td>19<td>
+<tr><td><tt>3-21G</tt><td>H-Kr<td>2<td>9<td>13
+<tr><td><tt>3-21G*</tt><td>H-Ar<td>2<td>9<td>19
+<tr><td><tt>3-21++G</tt><td>H-Ar<td>3<td>13<td>17
+<tr><td><tt>3-21++G*</tt><td>H-Ar<td>3<td>13<td>23
+<tr><td><tt>4-31G</tt><td>H-Ne, P-Cl<td>2<td>9<td>13
+<tr><td><tt>4-31G*</tt><td>H-Ne, P-Cl<td>2<td>15<td>19
+<tr><td><tt>4-31G**</tt><td>H-Ne, P-Cl<td>5<td>15<td>19
+<tr><td><tt>6-31G</tt><td>H-Ar<td>2<td>9<td>13
+<tr><td><tt>6-31G*</tt><td>H-Ar<td>2<td>15<td>19
+<tr><td><tt>6-31G**</tt><td>H-Ar<td>5<td>15<td>19
+<tr><td><tt>6-31+G*</tt><td>H-Ar<td>2<td>19<td>23
+<tr><td><tt>6-31++G</tt><td>H-Ar<td>3<td>13<td>17
+<tr><td><tt>6-31++G*</tt><td>H-Ar<td>3<td>19<td>23
+<tr><td><tt>6-31++G**</tt><td>H-Ar<td>6<td>19<td>23
+<tr><td><tt>6-311G</tt><td>H-Ar, Ga-Kr<td>3<td>13<td>21
+<tr><td><tt>6-311G*</tt><td>H-Ar, Ga-Kr<td>3<td>18<td>26
+<tr><td><tt>6-311G**</tt><td>H-Ar, Ga-Kr<td>6<td>18<td>26
+<tr><td><tt>6-311G(2df,2pd)</tt><td>H-Ne<td>14<td>30<td>
+<tr><td><tt>6-311++G**</tt><td>H-Ne<td>7<td>23<td>
+<tr><td><tt>6-311++G(2d,2p)</tt><td>H-Ne<td>10<td>29<td>
+<tr><td><tt>6-311++G(3df,3pd)</tt><td>H-Ar<td>19<td>42<td>50
+<tr><td><tt>cc-pVDZ</tt><td>H, He, B-Ne, Al-Ar, Ga-Kr<td>5<td>14<td>18
+<tr><td><tt>cc-pVTZ</tt><td>H, He, B-Ne, Al-Ar, Ga-Se<td>14<td>30<td>34
+<tr><td><tt>cc-pVQZ</tt><td>H, He, B-Ne, Al-Ar<td>30<td>55<td>59
+<tr><td><tt>cc-pV5Z</tt><td>H-Ne, Al-Ar<td>55<td>91<td>95
+<tr><td><tt>aug-cc-pVDZ</tt><td>H, He, B-Ne, Al-Ar<td>9<td>23<td>27
+<tr><td><tt>aug-cc-pVTZ</tt><td>H, He, B-Ne, Al-Ar<td>23<td>46<td>50
+<tr><td><tt>aug-cc-pVQZ</tt><td>H, He, B-Ne, Al-Ar<td>46<td>80<td>84
+<tr><td><tt>aug-cc-pV5Z</tt><td>H, He, B-Ne, Al-Ar<td>80<td>127<td>131
+<tr><td><tt>cc-pCVDZ</tt><td>B-Ne<td><td>18<td>
+<tr><td><tt>cc-pCVTZ</tt><td>B-Ne<td><td>43<td>
+<tr><td><tt>cc-pCVQZ</tt><td>B-Ne<td><td>84<td>
+<tr><td><tt>cc-pCV5Z</tt><td>B-Ne<td><td>145<td>
+<tr><td><tt>aug-cc-pCVDZ</tt><td>B-F<td><td>27<td>
+<tr><td><tt>aug-cc-pCVTZ</tt><td>B-Ne<td><td>59<td>
+<tr><td><tt>aug-cc-pCVQZ</tt><td>B-Ne<td><td>109<td>
+<tr><td><tt>aug-cc-pCV5Z</tt><td>B-F<td><td>181<td>
+<tr><td><tt>NASA Ames ANO</tt><td>H, B-Ne, Al, P, Ti, Fe, Ni<td>30<td>55<td>59
+</table>
 
 */
 class GaussianBasisSet: public SavableState
@@ -164,43 +160,45 @@ class GaussianBasisSet: public SavableState
     virtual void set_matrixkit(const RefSCMatrixKit&);
     
   public:
-    /** @memo The KeyVal constructor.
+    /** The KeyVal constructor.
 
-        \begin{description}
+        <dl>
 
-        \item[molecule] The gives a Molecule object.  The is no default.
+        <dt><tt>molecule</tt><dd> The gives a Molecule object.  The is no
+        default.
 
-        \item[puream] If this boolean parameter is true then 5D, 7F,
-        etc. will be used.  Otherwise all cartesian functions will be used.
-        The default depends on the particular basis set.
+        <dt><tt>puream</tt><dd> If this boolean parameter is true then 5D,
+        7F, etc. will be used.  Otherwise all cartesian functions will be
+        used.  The default depends on the particular basis set.
 
-        \item[name] This is a string giving the name of the basis set.  The
-        above table of basis sets gives some of the recognized basis set
-        names.  It may be necessary to put the name in double quotes. There
-        is no default.
+        <dt><tt>name</tt><dd> This is a string giving the name of the basis
+        set.  The above table of basis sets gives some of the recognized
+        basis set names.  It may be necessary to put the name in double
+        quotes. There is no default.
 
-        \item[basis] This is a vector of basis set names that can give a
-        different basis set to each atom in the molecule.  If the element
-        vector is given, then it gives different basis sets to different
-        elements.  The default is to give every atom the basis set
-        specified in name.
+        <dt><tt>basis</tt><dd> This is a vector of basis set names that can
+        give a different basis set to each atom in the molecule.  If the
+        element vector is given, then it gives different basis sets to
+        different elements.  The default is to give every atom the basis
+        set specified in name.
 
-        \item[element] This is a vector of elements.  If it is given then
-        it must have the same number of entries as the basis vector.
+        <dt><tt>element</tt><dd> This is a vector of elements.  If it is
+        given then it must have the same number of entries as the basis
+        vector.
 
-        \item[basisdir] A string giving a directory where basis set data
-        files are to be sought.  See the text below for a complete
+        <dt><tt>basisdir</tt><dd> A string giving a directory where basis
+        set data files are to be sought.  See the text below for a complete
         description of what directors are consulted.
 
-        \item[basisfiles] Each keyword in this vector of files is appended
-        to the directory specified with basisdir and basis set data is read
-        from them.
+        <dt><tt>basisfiles</tt><dd> Each keyword in this vector of files is
+        appended to the directory specified with basisdir and basis set
+        data is read from them.
 
-        \item[matrixkit] Specifies a SCMatrixKit object.  It is usually not
-        necessary to give this keyword, as the default action should get
-        the correct SCMatrixKit.
+        <dt><tt>matrixkit</tt><dd> Specifies a SCMatrixKit object.  It is
+        usually not necessary to give this keyword, as the default action
+        should get the correct SCMatrixKit.
 
-        \end{description}
+        </dl>
 
         Several files in various directories are checked for basis set
         data.  First, basis sets can be given by the user in the basis
@@ -213,7 +211,7 @@ class GaussianBasisSet: public SavableState
         the basis set name to a file name and check first in the directory
         given by basisdir.  Next it checks for the environment variable
         SCLIBDIR.  If it is set it will look for the basis file in
-        \$SCLIBDIR/basis.  Otherwise it will look in the source code
+        $SCLIBDIR/basis.  Otherwise it will look in the source code
         distribution in the directory SC/lib/basis.  If the executable has
         changed machines or the source code has be moved, then it may be
         necessary to copy the library files to your machine and set the
@@ -225,37 +223,38 @@ class GaussianBasisSet: public SavableState
         (which may need to be placed inside double quotes).  Each shell
         reads the following keywords:
 
-        \begin{description}
+        <dl>
 
-        \item[type] This is a vector that describes each
+        <dt><tt>type</tt><dd> This is a vector that describes each
         component of this shell.  For each element the following two
         keywords are read:
 
-        \begin{description}
+        <dl>
 
-          \item[am] The angular momentum of the component.  This can be
-          given as the letter designation, s, p, d, etc.  There is no
-          default.
+          <dt><tt>am</tt><dd> The angular momentum of the component.  This
+          can be given as the letter designation, s, p, d, etc.  There is
+          no default.
 
-          \item[puream] If this boolean parameter is true then 5D, 7F,
-          etc. shells are used.  The default is false.  This parameter can
-          be overridden in the GaussianBasisSet specification.
+          <dt><tt>puream</tt><dd> If this boolean parameter is true then
+          5D, 7F, etc. shells are used.  The default is false.  This
+          parameter can be overridden in the GaussianBasisSet
+          specification.
 
-        \end{description}
+        </dl>
 
-        \item[exp] This is a vector giving the exponents of the primitive
-        Gaussian functions.
+        <dt><tt>exp</tt><dd> This is a vector giving the exponents of the
+        primitive Gaussian functions.
 
-        \item[coef] This is a matrix giving the coeffients of the primitive
-        Gaussian functions.  The first index gives the component number of
-        the shell and the second gives the primitive number.
+        <dt><tt>coef</tt><dd> This is a matrix giving the coeffients of the
+        primitive Gaussian functions.  The first index gives the component
+        number of the shell and the second gives the primitive number.
 
-        \end{description}
+        </dl>
 
         An example might be easier to understand.  This is a basis set
         specificition for STO-2G carbon:
 
-        \begin{verbatim}
+        <pre>
         basis: (
          carbon: "STO-2G": [
           (type: [(am = s)]
@@ -270,8 +269,7 @@ class GaussianBasisSet: public SavableState
            })
          ]
         )
-        \end{verbatim}
-     */
+        </pre> */
     GaussianBasisSet(const RefKeyVal&);
     GaussianBasisSet(StateIn&);
     virtual ~GaussianBasisSet();

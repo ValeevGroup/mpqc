@@ -582,13 +582,14 @@ main(int, char *argv[])
           perlout << ")";
           if (i != nbasis-1) perlout << "," << endl;
           perlout << endl;
-          cout << "\\verb*|" << basisname << "| & " << elemstr << " & ";
+          cout << "<tr><td><tt>" << basisname
+               << "</tt><td>" << elemstr << "<td>";
           if (n0>0) cout << n0;
-          cout << " & ";
+          cout << "<td>";
           if (n1>0) cout << n1;
-          cout << " & ";
+          cout << "<td>";
           if (n2>0) cout << n2;
-          cout << " \\\\" << endl;
+          cout << endl;
           delete[] basisname;
         }
 

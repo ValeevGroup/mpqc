@@ -1,5 +1,16 @@
 
-/**@name The Reference Library
+/** \page ref The Reference Library
+
+The Reference Library provides a means to automatically free
+memory that is no longer needed.
+
+<ul>
+  <li> \ref refintro
+  <li> \ref refcust
+  <li> \ref refexample
+</ul>
+
+\section refintro Introduction to Reference Counting
 
 It is fairly easy in C++ to create a pointer to an object that
 actually references invalid memory.  One common way to do this
@@ -22,7 +33,7 @@ automate memory management.  In this approach, a count of how
 many pointers point to an object is attached to that object.
 This count is managed by a smart pointer class which mimics
 the behavior of C++ pointers by providing
-#operator->()#.  This class has a pointer to the
+<tt>operator->()</tt>.  This class has a pointer to the
 reference counted object and increments the reference count of
 objects when they are assigned to it while decrementing the
 counts of the objects that are displaced by these assigments.
@@ -38,7 +49,7 @@ the automated reference mechanism finish the work.
 The reference library provides smart pointers and a base class that
 can be used to maintain reference counts to objects.  For an
 object to be reference counted its class must inherit from
-the VRefCount class.  This adds #sizeof(int)# bytes
+the VRefCount class.  This adds <tt>sizeof(int)</tt> bytes
 of overhead per object and makes the destructor virtual (so a vtable
 will be added to objects of the class, if there wasn't already a virtual
 member in the class).
@@ -46,52 +57,48 @@ member in the class).
 The smart pointers that maintain the reference counts are
 provided by the Ref class template.  Users of
 compilers that have problems with class templates can instead
-use classes created with the cpp macros REF\_dec and
-REF\_def.  These macros take the name of the reference counted
+use classes created with the cpp macros REF_dec and
+REF_def.  These macros take the name of the reference counted
 class as the only argument and declare the interface
 and define the members of the new Ref class.
-The REF\_dec macro takes a class name as an argument and
+The REF_dec macro takes a class name as an argument and
 constructs a new class declaration which is formed by appending the
 class name to Ref.  This macro would usually be invoked in the
 same header file that gives the declaration for that reference counted
 class.  The implementation of the members for this class are generated
-by using the REF\_def which also takes the class name as the
+by using the REF_def which also takes the class name as the
 argument.  This should be given in one of the source files relating to
 that class and should not be placed in the header file.  The
-REF\_dec macro must be followed by a semicolon.
+REF_dec macro must be followed by a semicolon.
 
-*/
-
-//@{
-
-/**@name Customizing the Reference Counting Package
+\section refcust Customizing the Reference Counting Package
 
   The behaviour of the package can be modified at compile time
 with the following five macros, each of which should be undefined, 0, or 1:
 
-\begin{description}
-\item[REF\_CHECK\_STACK]
+<dl>
+<dt><tt>REF_CHECK_STACK</tt><dd>
   If this is 1, referenced objects are checked to see if they
   reside on the stack, in which case storage for the object is not managed,
   if management is enabled.
-\item[REF\_CHECKSUM]
+<dt><tt>REF_CHECKSUM</tt><dd>
   If this is 1, checksums of the reference count are kept
   and checked to see if an object has been overwritten.
-\item[REF\_MANAGE]
+<dt><tt>REF_MANAGE</tt><dd>
   If this is 1, the unmanage member is enabled.
-\item[REF\_CHECK\_MAX\_NREF]
+<dt><tt>REF_CHECK_MAX_NREF</tt><dd>
   If this is 1, the reference count is checked before
   it is incremented to make sure it isn't too big.
-\item[REF\_CHECK\_MIN\_NREF]
+<dt><tt>REF_CHECK_MIN_NREF</tt><dd>
   If this is 1, the reference count is checked before
   it is decremented to make sure it isn't already zero.
-\end{description}
+</dl>
 
 If a macro is undefined, then the behaviour is architecture
 dependent---usually, the macro will be set to 1 in this case.
 For maximum efficiency and for normal operation after the program is
 debugged, compile with all of the above macros defined to zero.
-This can also be done by defining REF\_OPTIMIZE.
+This can also be done by defining REF_OPTIMIZE.
 
   An include file can be used to set these options as well.  This has
 the advantage that dependency checking will force an automatic
@@ -100,18 +107,16 @@ in the file scconfig.h, which is produced by the automated configuration
 procedure.
 
   Note that all source code that uses references must be compiled with
-the same value for REF\_CHECKSUM and REF\_MANAGE.
+the same value for REF_CHECKSUM and REF_MANAGE.
 Changing these can change the storage layout and the interpretation of
 the reference count data.
 
-*/
-
-/**@name A Reference Example
+\section refexample A Reference Example
 
 Following is a simple example of how to manage memory with reference
 counts.
 
-\begin{verbatim}
+<pre>
 #include <util/container/ref.h>
 
 class A: virtual public VRefCount {
@@ -153,10 +158,6 @@ main()
   // to it go out of scope and destroyed.
   return 0;
 }
-\end{verbatim}
+</pre>
 
 */
-
-//@}
-
- */

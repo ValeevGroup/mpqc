@@ -95,33 +95,34 @@ class Wavefunction: public MolecularEnergy {
     
   public:
     Wavefunction(StateIn&);
-    /** @memo The KeyVal constructor.
+    /** The KeyVal constructor.
 
-        \begin{description}
+        <dl>
 
-        \item[basis] Specifies a GaussianBasisSet object.  There is no
-        default.
+        <dt><tt>basis</tt><dd> Specifies a GaussianBasisSet object.  There
+        is no default.
 
-        \item[integral] Specifies an Integral object that computes the two
-        electron integrals.  The default is a IntegralV3 object.
+        <dt><tt>integral</tt><dd> Specifies an Integral object that
+        computes the two electron integrals.  The default is a IntegralV3
+        object.
 
-        \item[symm_orthog] If true, symmetric orthogonalization is used;
-        otherwise canonical orthogonalization is used.  The default is true.
+        <dt><tt>symm_orthog</tt><dd> If true, symmetric orthogonalization
+        is used; otherwise canonical orthogonalization is used.  The
+        default is true.
 
-        \item[print_nao] This specifies a boolean value.  If true the
-        natural atomic orbitals will be printed.  Not all wavefunction will
-        be able to do this.  The default is false.
+        <dt><tt>print_nao</tt><dd> This specifies a boolean value.  If true
+        the natural atomic orbitals will be printed.  Not all wavefunction
+        will be able to do this.  The default is false.
 
-        \item[print_npa] This specifies a boolean value.  If true the
-        natural population analysis will be printed.  Not all wavefunction
-        will be able to do this.  The default is true if print_nao is true,
-        otherwise it is false.
+        <dt><tt>print_npa</tt><dd> This specifies a boolean value.  If true
+        the natural population analysis will be printed.  Not all
+        wavefunction will be able to do this.  The default is true if
+        print_nao is true, otherwise it is false.
 
-        \item[debug] This integer can be used to produce output for
-        debugging.  The default is 0.
+        <dt><tt>debug</tt><dd> This integer can be used to produce output
+        for debugging.  The default is 0.
 
-        \end{description}
-     */
+        </dl> */
     Wavefunction(const RefKeyVal&);
     virtual ~Wavefunction();
 
@@ -192,8 +193,8 @@ class Wavefunction: public MolecularEnergy {
     /** Returns a matrix which does the default transform from SO's to
         orthogonal SO's.  This could be either the symmetric or canonical
         orthogonalization matrix.  The row dimension is SO and the column
-        dimension is ortho SO.  An operator $O$ in the ortho SO basis is
-        given by $X O X^T$ where $X$ is the return value of this
+        dimension is ortho SO.  An operator \f$O\f$ in the ortho SO basis is
+        given by \f$X O X^T\f$ where \f$X\f$ is the return value of this
         function. */
     RefSCMatrix so_to_orthog_so();
 

@@ -191,71 +191,66 @@ class SumDenFunctional: public DenFunctional {
     equivalent functional in Gaussian 98 A.6.  The NWChem column lists the
     equivalent functional in NWChem 3.3.1.
 
-\begin{tabular}{llll}
-Name   & Description             & G98    & NWChem  \\
-XALPHA & \Ref{XalphaFunctional}  & XALPHA &         \\
-HFS    & \Ref{SlaterXFunctional} & HFS    & slater  \\
-HFB    & \Ref{Becke88XFunctional}& HFB    & becke88 \\
-HFG96  & \Ref{G96XFunctional}    &        &         \\
-G96LYP & \Ref{G96XFunctional}                      
-        +\Ref{LYPCFunctional}    & G96LYP &         \\
-BLYP   &  \Ref{SlaterXFunctional}                  
-          +\Ref{Becke88XFunctional}                
-          +\Ref{LYPCFunctional}   & BLYP   &        \\
-SVWN1  &  \Ref{SlaterXFunctional}
-          +\Ref{VWN1LCFunctional} &        & slater vwn_1 \\
-SVWN1RPA& \Ref{SlaterXFunctional}
-          +\Ref{VWN1LCFunctional}(1)&      & slater vwn_1_rpa \\
-SVWN2  &  \Ref{SlaterXFunctional}
-          +\Ref{VWN2LCFunctional} &        & slater vwn_2 \\
-SVWN3  &  \Ref{SlaterXFunctional}
-          +\Ref{VWN2LCFunctional} &        & slater vwn_3 \\
-SVWN4  &  \Ref{SlaterXFunctional}
-          +\Ref{VWN4LCFunctional} &        & slater vwn_4 \\
-SVWN5  &  \Ref{SlaterXFunctional}
-          +\Ref{VWN5LCFunctional} & SVWN5  & slater vwn_5 \\
-SPZ81  &  \Ref{SlaterXFunctional}
-          +\Ref{PZ81LCFunctional} & SPL    &         \\
-SPW92  &  \Ref{SlaterXFunctional}
-          +\Ref{PW92LCFunctional} &        & slater pw91lda \\
-BP86   &  \Ref{SlaterXFunctional}
-          \Ref{Becke88XFunctional}
-          +\Ref{P86CFunctional}
-          +\Ref{PZ81LCFunctional} &        & becke88 perdue86 \\
-B3LYP&
-          0.2 HF-Exchange
-          + 0.8  \Ref{SlaterXFunctional}
-          + 0.72 \Ref{Becke88XFunctional}
-          + 0.19 \Ref{VWN1LCFunctional}(1)
-          + 0.81 \Ref{LYPCFunctional} &  B3LYP   &   b3lyp \\
-B3PW91&
-          0.2 HF-Exchange
-          + 0.8  \Ref{SlaterXFunctional}
-          + 0.72 \Ref{Becke88XFunctional}
-          + 0.19 \Ref{PW91CFunctional}
-          + 0.81 \Ref{PW92LCFunctional} & B3PW91  &        \\
-B3P86&
-          0.2 HF-Exchange
-          + 0.8  \Ref{SlaterXFunctional}
-          + 0.72 \Ref{Becke88XFunctional}
-          + 0.19 \Ref{P86CFunctional}
-          + 0.81 \Ref{VWN1LCFunctional(1)} &     &          \\
-PBE&      \Ref{PBEXFunctional}
-         +\Ref{PBECFunctional}             &      & xpbe96 cpbe96 \\
-PW91&     \Ref{PW91XFunctional}
-         +\Ref{PW91CFunctional}          &      &           \\
-mPW(PW91)PW91&
-          \Ref{mPW91XFunctional}(PW91)
-          +\Ref{PW91CFunctional}         & PW91PW91 &       \\
-mPWPW91&
-          \Ref{mPW91XFunctional}(mPW91)
-          +\Ref{PW91CFunctional}         &      &           \\
-mPW1PW91&
-           0.16 HF-Exchange
-          + 0.84 \Ref{mPW91XFunctional}(mPW91)
-          +\Ref{PW91CFunctional}         &      &           \\
+<table>
+<tr><td>Name    <td> Description         <td> G98    <td> NWChem 
+<tr><td>XALPHA  <td> XalphaFunctional    <td> XALPHA <td>        
+<tr><td>HFS     <td> SlaterXFunctional   <td> HFS    <td> slater 
+<tr><td>HFB     <td> Becke88XFunctional  <td> HFB    <td> becke88
+<tr><td>HFG96   <td> G96XFunctional      <td>        <td>        
+<tr><td>G96LYP  <td> G96XFunctional                      
+                    +LYPCFunctional      <td> G96LYP <td>         
+<tr><td>BLYP    <td> SlaterXFunctional                  
+                    +Becke88XFunctional                
+                    +LYPCFunctional           <td> BLYP  <td>        
+<tr><td>SVWN1   <td> SlaterXFunctional
+                    +VWN1LCFunctional         <td>       <td> slater vwn_1 
+<tr><td>SVWN1RPA<td> SlaterXFunctional
+                    +VWN1LCFunctional(1)      <td>       <td> slater vwn_1_rpa 
+<tr><td>SVWN2   <td> SlaterXFunctional
+                    +VWN2LCFunctional         <td>       <td> slater vwn_2 
+<tr><td>SVWN3   <td> SlaterXFunctional
+                    +VWN2LCFunctional         <td>       <td> slater vwn_3 
+<tr><td>SVWN4   <td> SlaterXFunctional
+                    +VWN4LCFunctional         <td>       <td> slater vwn_4 
+<tr><td>SVWN5   <td> SlaterXFunctional
+                    +VWN5LCFunctional         <td> SVWN5 <td> slater vwn_5 
+<tr><td>SPZ81   <td> SlaterXFunctional
+                    +PZ81LCFunctional         <td> SPL   <td>         
+<tr><td>SPW92   <td> SlaterXFunctional
+                    +PW92LCFunctional         <td>       <td> slater pw91lda 
+<tr><td>BP86    <td> SlaterXFunctional
+                    +Becke88XFunctional
+                    +P86CFunctional
+                    +PZ81LCFunctional         <td>       <td> becke88 perdue86 
+<tr><td>B3LYP   <td> 0.2 HF-Exchange
+                    + 0.8  SlaterXFunctional
+                    + 0.72 Becke88XFunctional
+                    + 0.19 VWN1LCFunctional(1)
+                    + 0.81 LYPCFunctional     <td> B3LYP  <td>   b3lyp 
+<tr><td>B3PW91  <td> 0.2 HF-Exchange
+                    + 0.8  SlaterXFunctional
+                    + 0.72 Becke88XFunctional
+                    + 0.19 PW91CFunctional
+                    + 0.81 PW92LCFunctional   <td> B3PW91 <td>        
+<tr><td>B3P86   <td> 0.2 HF-Exchange
+                   + 0.8 SlaterXFunctional
+                   + 0.72 Becke88XFunctional
+                   + 0.19 P86CFunctional
+                   + 0.81 VWN1LCFunctional(1) <td>        <td>          
+<tr><td>PBE     <td> PBEXFunctional
+                    +PBECFunctional           <td>        <td> xpbe96 cpbe96 
+<tr><td>PW91    <td> PW91XFunctional
+                    +PW91CFunctional          <td>        <td>           
+<tr><td>mPW(PW91)PW91
+                <td> mPW91XFunctional(PW91)
+                    +PW91CFunctional          <td>PW91PW91<td>       
+<tr><td>mPWPW91 <td> mPW91XFunctional(mPW91)
+                    +PW91CFunctional          <td>        <td>           
+<tr><td>mPW1PW91<td> 0.16 HF-Exchange
+                   + 0.84 mPW91XFunctional(mPW91)
+                   +PW91CFunctional           <td>        <td>           
 
-\end{tabular} */
+</table> */
 class StdDenFunctional: public SumDenFunctional {
 #   define CLASSNAME StdDenFunctional
 #   define HAVE_KEYVAL_CTOR
@@ -874,20 +869,20 @@ class mPW91XFunctional: public DenFunctional {
     mPW91XFunctional(Func variant);
     /** Construct an mPW form exchange functional.
         The following keywords are recognized:
-        \begin{description}
+        <dl>
 
-          \item[constants] This can be B88 to give the Becke88 exchange
-            functional; PW91, to give results similar to the PW91 exchange
-            functional; or mPW91, to give the new functional developed by
-            Adamo and Barone.
+          <dt><tt>constants</tt><dd> This can be B88 to give the Becke88
+          exchange functional; PW91, to give results similar to the PW91
+          exchange functional; or mPW91, to give the new functional
+          developed by Adamo and Barone.
 
-          \item[b]
-          \item[beta]
-          \item[c] 
-          \item[d]
-          \item[x_d_coef]  The coefficient of $x^d$, where $x$ is the
-                           reduced gradient.
-        \end{description}
+          <dt><tt>b</tt><dd>
+          <dt><tt>beta</tt><dd>
+          <dt><tt>c</tt><dd> 
+          <dt><tt>d</tt><dd>
+          <dt><tt>x_d_coef</tt><dd>  The coefficient of \f$x^d\f$,
+          where \f$x\f$ is the reduced gradient.
+        </dl>
 
     */
     mPW91XFunctional(const RefKeyVal &);

@@ -1,0 +1,104 @@
+/** \page mpqcval Validating MPQC
+
+ After you compile MPQC, you should run it through the validation suite.
+You should also run the validation suite if you upgrade your operating
+system software, since this could change shared libraries that are linking
+with MPQC and could affect the results.
+
+ The validation suite is in <tt>src/bin/mpqc/validate</tt>.  The
+input files are divided into several categories:
+<dl>
+  <dt><tt>h2o</tt><dd>These are simple tests that exercise many of MPQC's
+        features.
+
+  <dt><tt>h2omp2</tt><dd>Tests that further exercise MP2.
+
+  <dt><tt>h2ofrq</tt><dd>Tests of h2o frequencies with a variety of methods.
+
+  <dt><tt>mbpt</tt><dd>These tests exercise MP2 as well as the open-shell
+        perturbation theory methods.  The various available
+        algorithms are tested as well.
+
+  <dt><tt>ckpt</tt><dd>Tests the checkpoint and restart capabilities.
+
+  <dt><tt>symm1</tt><dd>Tests of point group symmetry.
+
+  <dt><tt>symm2</tt><dd>More point group symmetry tests.  These use basis
+        sets with higher angular momentum than #symm1#.
+
+  <dt><tt>symm3</tt><dd>Tests automatic point group determination.
+
+  <dt><tt>basis1</tt><dd>A variety of basis sets are tested for first row
+        atoms along with hydrogen and helium.
+
+  <dt><tt>basis2</tt><dd>Basis sets test for second row atoms.
+
+  <dt><tt>methods</tt><dd>Tests the self-consistent-field methods and the
+                  density functional theory functionals.
+
+  <dt><tt>clscf</tt><dd>More tests of methods based on CLSCF.
+
+  <dt><tt>hsosscf</tt><dd>More tests of methods based on HSOSSCF.
+
+  <dt><tt>uscf</tt><dd>More tests of methods based on UnrestrictedSCF.
+
+  <dt><tt>dft</tt><dd>More test of the DFT methods.
+
+</dl>
+
+  To generate the input files change into the
+<tt>src/bin/mpqc/validate</tt> subdirectory of your object directory (where
+you compiled MPQC) and type <tt>make inputs</tt>.  This will create a
+<tt>run</tt> subdirectory containing MPQC input files ending with the
+<tt>.in</tt> suffix.  Files ending with a <tt>.qci</tt> suffix will also be
+placed in the <tt>run</tt> directory.  These contain a description of the
+calculation that is used by the utility program that checks the results of
+the validation suite.
+
+  Next you need to run the calculations.  You might want to start with the
+<tt>h2o</tt> input files first since they shouldn't take too long to run.
+For the <tt>ckpt</tt> calculations you should run the calculations
+alphabetically by input file name.  This ensures that the checkpoint files
+will be created before they are needed.
+
+  While the test calculations are running you can begin monitoring the
+results by typing <tt>make checkrun</tt> in the
+<tt>src/bin/mpqc/validate</tt> directory.  This will first do some
+consistency checks between pairs of files selected from the <tt>ckpt</tt>,
+<tt>mbpt</tt>, <tt>symm1</tt>, and <tt>symm2</tt> groups of calculations
+(see below for a discussion of the output for comparison of two files).
+Then each file is individually checked.  An <tt>ok</tt> is printed next the
+test name, if it looks like the calculation made it to the end.  A
+<tt>missing</tt> means the output file could not be found.  A <tt>failed</tt>
+means that the output file has problems (or the calculation may still be
+running).
+
+  Next you will want to see if your compiled MPQC produces the same answer
+as ours.  Note that our reference validation suite has not been verified
+relative to an independent code, except for a few spot checks.  If you find
+that MPQC doesn't produce the same answer as another quantum chemistry
+program that you trust, then please promptly notify us and send all the
+details.  The reference validation suite is distributed separately from
+MPQC.  Obtain it (hopefully it is available where you got the source code)
+and untar it in the <tt>src/bin/mpqc/validate</tt> subdirectory of your
+MPQC object code directory.  This will create the <tt>ref</tt>
+subdirectory.  Now you can type <tt>make check</tt> and outputs in the
+<tt>ref</tt> and <tt>run</tt> directories will be pairwise compared.  On
+some machines, notably Linux, you can use <tt>make fastcheck</tt> instead
+of <tt>make check</tt> and the comparisons will run considerably faster.
+
+  When files are pairwise compared first the status (<tt>ok</tt>,
+<tt>missing</tt>, or <tt>failed</tt>) for each file is printed.  If both
+statuses are <tt>ok</tt> then an <tt>E:</tt> is printed followed by the
+number of digits to which the energies agree.  If they agree to all digits
+<tt>99</tt> is printed.  If a gradient was computed, then <tt>Grad:</tt> is
+printed followed by the number of digits to which the gradients in least
+agreement agree.  Likewise if frequencies were computed.
+
+  If two numbers do not agree to the expected accuracy, then an asterisk,
+<tt>*</tt>, is printed after the number of digits in agreement.
+
+  Finally, you can do a detailed comparison of the contents of the
+<tt>ref</tt> and <tt>run</tt> subdirectories by typing <tt>make diff</tt>.
+
+*/

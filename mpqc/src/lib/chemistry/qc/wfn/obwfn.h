@@ -61,15 +61,15 @@ class OneBodyWavefunction: public Wavefunction {
 
  public:
     OneBodyWavefunction(StateIn&);
-    /** @memo The KeyVal constructor.
-        \begin{description}
+    /** The KeyVal constructor.
+        <dl>
 
-        \item[eigenvector_accuracy] Gives the accuracy to which
+        <dt><tt>eigenvector_accuracy</tt><dd> Gives the accuracy to which
         eigenvectors are initially computed.  The default 1.0e-7.
         Accuracies are usually adjusted as needed anyway, so it should not
         be necessary to change this.
 
-        \end{description}
+        </dl>
     */
     OneBodyWavefunction(const RefKeyVal&);
     ~OneBodyWavefunction();

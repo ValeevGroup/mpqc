@@ -1,37 +1,37 @@
 
-/**@name Developing Code Using SC
-   
+/** \page develop Developing Code Using SC
+
    In addition to the executables, the Scientific Computing Toolkit
    libraries and include files can be installed on your machine.
-   This is described in the \Ref{Compiling} section of this manual.
+   This is described in the \ref compile section of this manual.
 
-   @memo How to use the Scientific Computing Toolkit in your code.
-  */
+<ul>
+  <li> \ref scconfig
+  <li> \ref scinit
+</ul>
 
-//@{
+\subsection scconfig The sc-config Program
 
-/**@name The sc-config Program
+The sc-config program returns information about how SC was compiled
+and installed.  The following information is available:
 
-  The sc-config program returns information about how SC was compiled
-  and installed.  The following information is available:
+<dl>
+     <dt><tt>--prefix</tt><dd> The directory where SC is installed.
+     <dt><tt>--version</tt><dd> The version of SC.
+     <dt><tt>--libs</tt><dd> The libraries and library paths needed to link.
+     <dt><tt>--cppflags</tt><dd> The include directories.
+     <dt><tt>--cc</tt><dd> The C compiler.
+     <dt><tt>--cflags</tt><dd> The C flags.
+     <dt><tt>--cxx</tt><dd> The C++ compiler.
+     <dt><tt>--cxxflags</tt><dd> The C++ compiler flags.
+     <dt><tt>--f77</tt><dd> The FORTRAN 77 compiler.
+     <dt><tt>--f77flags</tt><dd> The FORTRAN 77 compiler flags.
+</dl>
 
-  \begin{itemize}
-     \item[--prefix] The directory where SC is installed.
-     \item[--version] The version of SC.
-     \item[--libs] The libraries and library paths needed to link.
-     \item[--cppflags] The include directories.
-     \item[--cc] The C compiler.
-     \item[--cflags] The C flags.
-     \item[--cxx] The C++ compiler.
-     \item[--cxxflags] The C++ compiler flags.
-     \item[--f77] The FORTRAN 77 compiler.
-     \item[--f77flags] The FORTRAN 77 compiler flags.
-  \end{itemize}
+To use the sc-config program to link your executable to SC, use a
+Makefile for GNU make similar to the following:
 
-  To use the sc-config program to link your executable to SC, use a
-  Makefile for GNU make similar to the following:
-
-\begin{verbatim}
+<pre>
 SCCONFIG = /usr/local/mpqc/current/bin/sc-config
 CXX := $(shell $(SCCONFIG) --cxx)
 CXXFLAGS := $(shell $(SCCONFIG) --cxxflags)
@@ -40,73 +40,69 @@ LIBS := $(shell $(SCCONFIG) --libs)
 
 myprog: myprog.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
-\end{verbatim}
+</pre>
 
-*/
-
-/**@name Initializing SC
+\subsection scinit Initializing SC
 
 First the execution environment must be initialized using
-the \Ref{ExEnv} init member.
+the ExEnv init member.
 
-\begin{verbatim}
+<pre>
   ExEnv::init(argc, argv);
-\end{verbatim}
+</pre>
 
 By default, all output will go to the console stream, cout.  To change
 this, use the following code:
 
-\begin{verbatim}
+<pre>
   ostream *outstream = new ofstream(outputfilename);
   ExEnv::set_out(outstream);
-\end{verbatim}
+</pre>
 
 MPI is allowed wait until MPI_Init to fill in argc and argv, so we may have
 to call MPI_Init before we even know that we ready to construct
 MPIMessageGrp.  So if an MPIMessageGrp is needed, it is up to the developer
 to call MPI_Init to get the argument list for certain MPI implementations.
 
-\begin{verbatim}
+<pre>
   MPI_Init(&argc, &argv);
-\end{verbatim}
+</pre>
 
 When files are read and written, an extension is added to a
 basename to construct the file name.  The default is "SC".
 To use another basename, make the following call:
 
-\begin{verbatim}
+<pre>
   SCFormIO::set_default_basename(basename);
-\end{verbatim}
+</pre>
 
 If your job might run in parallel, then make the following
 call or the nodes will print redundant information.
 
-\begin{verbatim}
+<pre>
   SCFormIO::init_mp(myproc);
-\end{verbatim}
+</pre>
 
 This segment of code sets up the threading object:
 
-\begin{verbatim}
+<pre>
   RefThreadGrp thread = ThreadGrp::initial_threadgrp(argc, argv);
   ThreadGrp::set_default_threadgrp(thread);
   if (thread.nonnull())
     ThreadGrp::set_default_threadgrp(thread);
   else
     thread = ThreadGrp::get_default_threadgrp();
-\end{verbatim}
+</pre>
 
 This segment of code sets up the message passing object:
 
-\begin{verbatim}
+<pre>
   RefMessageGrp grp = MessageGrp::initial_messagegrp(argc, argv);
   if (grp.nonnull())
     MessageGrp::set_default_messagegrp(grp);
   else
     grp = MessageGrp::get_default_messagegrp();
-\end{verbatim}
+</pre>
 
 
 */
-
-//@}

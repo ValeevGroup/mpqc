@@ -78,32 +78,32 @@ class MolecularFrequencies: public SavableState {
                            const RefSymmSCMatrix &dhessian,
                            const RefSCMatrix &dtranst);
   public:
-    /** @memo The KeyVal constructor.
+    /** The KeyVal constructor.
 
-        \begin{description}
+        <dl>
 
-        \item[mole] A MolecularEnergy object.  If this is not given then
-        molecule must be given.
+        <dt><tt>mole</tt><dd> A MolecularEnergy object.  If this is not
+        given then molecule must be given.
 
-        \item[molecule] A Molecule object.  If this is not given then mole
-        must be given.
+        <dt><tt>molecule</tt><dd> A Molecule object.  If this is not given
+        then mole must be given.
 
-        \item[point_group] A PointGroup object.  This is the point group
-        used to compute the finite displacements.  Since some
+        <dt><tt>point_group</tt><dd> A PointGroup object.  This is the
+        point group used to compute the finite displacements.  Since some
         MolecularEnergy objects cannot handle changes in the molecule's
-        point group, the molecule must be given $C_1$ symmetry for
+        point group, the molecule must be given \f$C_1\f$ symmetry for
         frequency calculations.  In this case, the point_group keyword can
         be given to reduce number of the displacements needed to compute
         the frequencies.  If this is not given then the point group of the
         molecule is used.
 
-        \item[debug] An integer which, if nonzero, will cause extra output.
+        <dt><tt>debug</tt><dd> An integer which, if nonzero, will cause
+        extra output.
 
-        \item[displacement] The amount that coordinates will be displaced.
-        The default is 0.001.
+        <dt><tt>displacement</tt><dd> The amount that coordinates will be
+        displaced.  The default is 0.001.
 
-        \end{description}
-     */
+        </dl> */
     MolecularFrequencies(const RefKeyVal &);
     MolecularFrequencies(StateIn &);
     ~MolecularFrequencies();

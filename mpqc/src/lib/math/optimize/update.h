@@ -86,15 +86,15 @@ class DFPUpdate: public HessianUpdate {
     DFPUpdate(StateIn&);
     /** The KeyVal constructor reads the following keywords:
     
-    \begin{description}
+    <dl>
 
-    \item[xprev] The previous coordinates can be given (but is not
+    <dt><tt>xprev</tt><dd> The previous coordinates can be given (but is not
     recommended).  The default is none.
 
-    \item[gprev] The previous gradient can be given (but is not
+    <dt><tt>gprev</tt><dd> The previous gradient can be given (but is not
     recommended).  The default is none.
 
-    \end{description}
+    </dl>
 
     */
     DFPUpdate(const RefKeyVal&);

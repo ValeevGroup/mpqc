@@ -1,31 +1,31 @@
 
-/**@name The State Library
+/** \page state The State Library
 
 The state library provides means for objects to save and restore their
 state.  Features include:
 
-\begin{itemize}
-\item
+<ul>
+<li>
   Pointers to base types can be saved and restored.
   The exact types of the saved and restored objects will match.
-\item
+<li>
   If the pointer to an object is saved twice, only one copy of the
   object is saved.  When these two pointers are restored they will
   point to the same object.
-\item
+<li>
   If the pointer to an array of a basic type is saved twice,
   only one copy of then
   array is saved.  When these two pointers are restored they will
   point to the same array.  (This feature causes insurmountable
   problems and will be phased out.  Another technique for providing this
   functionality will be provided.)
-\item
+<li>
   Virtual base classes are dealt with in a manner consistent with
   the way C++ treats virtual base classes.
-\item
+<li>
   The library is portable.  Information about object layout for
   particular compiler implementations is not needed.
-\end{itemize}
+</ul>
 
 For objects of a class to be savable with this library the class must
 inherit SavableState which in turn inherits
@@ -36,15 +36,18 @@ the class has virtual base classes, then a
 save_vbase_state(StateOut&) member must also be
 provided.
 
-*/
+<ul>
+ <li> \ref stateex
+ <li> \ref stateexin
+ <li> \ref stateexvin
+ <li> \ref stateexdata
+</ul>
 
-//@{
-
-/**@name Simple Example
+\section stateex Simple Example
 
 Here is a simple example of the specification of a client, C,
 of SavableState:
-\begin{verbatim}
+<pre>
 class C: virtual public SavableState {
 # define CLASSNAME C
 # define HAVE_STATEIN_CTOR
@@ -56,10 +59,10 @@ class C: virtual public SavableState {
     C(StateIn&);
     void save_data_state(StateOut&);
   };
-\end{verbatim}
+</pre>
 
 Here is the implementation for the above:
-\begin{verbatim}
+<pre>
 #define CLASSNAME C
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
@@ -75,16 +78,14 @@ void C::save_data_state(StateOut&so) {
 C::C(StateIn&si): SavableState(si,C::class_desc_) {
   si.get(i);
   }
-\end{verbatim}
+</pre>
 
-*/
-
-/**@name Example with Inheritance
+\section stateexin Example with Inheritance
 
 Here is an example of the specification of C,
 where C nonvirtually inherits from another
 SavableState derivative:
-\begin{verbatim}
+<pre>
 class C: public B {
 # define CLASSNAME C
 # define HAVE_STATEIN_CTOR
@@ -96,10 +97,10 @@ class C: public B {
     C(StateIn&);
     void save_data_state(StateOut&);
   };
-\end{verbatim}
+</pre>
 
 Here is the implementation for the above:
-\begin{verbatim}
+<pre>
 #define CLASSNAME C
 #define PARENTS public B
 #define HAVE_STATEIN_CTOR
@@ -117,15 +118,15 @@ void C::save_data_state(StateOut&so) {
 C::C(StateIn&si): SavableState(si,C::class_desc_), B(si)  {
   si.get(i);
   }
-\end{verbatim}
+</pre>
 
-\subsection{Example with Virtual and Nonvirtual Inheritance}
+\section stateexvin Example with Virtual and Nonvirtual Inheritance
 
 Here is an example of the specification of C,
 where C nonvirtually inherits from another client of
 SavableState as well as virtually inherits from a client
 of SavableState:
-\begin{verbatim}
+<pre>
 class C: public B,
          virtual public E {
 # define CLASSNAME C
@@ -138,10 +139,10 @@ class C: public B,
     C(StateIn&);
     void save_data_state(StateOut&);
   };
-\end{verbatim}
+</pre>
 
 Here is the implementation for the above:
-\begin{verbatim}
+<pre>
 #define CLASSNAME C
 #define PARENTS public B, virtual public E
 #define HAVE_STATEIN_CTOR
@@ -162,15 +163,13 @@ void C::save_data_state(StateOut&so) {
 C::C(StateIn&si): SavableState(si,C::class_desc_), B(si), E(si) {
   si.get(i);
   }
-\end{verbatim}
+</pre>
 
-*/
-
-/**@name Example with Pointers to SavableStates
+\section stateexpoint Example with Pointers to SavableStates
 
 Here is an example where C has data members which are
 pointers to derivatives of SavableState:
-\begin{verbatim}
+<pre>
 class C: {
 # define CLASSNAME C
 # define HAVE_STATEIN_CTOR
@@ -182,10 +181,10 @@ class C: {
     C(StateIn&);
     void save_data_state(StateOut&);
   };
-\end{verbatim}
+</pre>
 
 Here is the implementation for the above:
-\begin{verbatim}
+<pre>
 #define CLASSNAME C
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
@@ -201,15 +200,13 @@ void C::save_data_state(StateOut&so) {
 C::C(StateIn&si): SavableState(si,C::class_desc_) {
   ap = A::restore_state(si);
   }
-\end{verbatim}
+</pre>
 
-*/
-
-/**@name Example with Pointers to Data
+\section stateexdata Example with Pointers to Data
 
 Here is an example where C has data members which are
 pointers to data:
-\begin{verbatim}
+<pre>
 class C: virtual public SavableState {
 # define CLASSNAME C
 # define HAVE_STATEIN_CTOR
@@ -225,10 +222,10 @@ class C: virtual public SavableState {
     C(StateIn&);
     void save_data_state(StateOut&);
   };
-\end{verbatim}
+</pre>
 
 Here is the implementation for the above:
-\begin{verbatim}
+<pre>
 #define CLASSNAME C
 #define HAVE_STATEIN_CTOR
 #include <util/state/statei.h>
@@ -266,8 +263,6 @@ C::C(StateIn&si): SavableState(si,C::class_desc_) {
       }
     }
   }
-\end{verbatim}
+</pre>
 
 */
-
-//@}

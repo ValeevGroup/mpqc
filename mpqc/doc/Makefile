@@ -1,33 +1,21 @@
+TOPDIR=..
+ifndef SRCDIR
+  SRCDIR=$(shell pwd)
+endif
 
-PERL=perl
-DOCXX=doc++
+include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-.PHONY: html
-html: sc.dxx include.dxx library.dxx binary.dxx
-	$(DOCXX) -d html $<
+DOXYGEN=doxygen
 
-.PHONY: tex
-tex: sc.dxx include.dxx library.dxx binary.dxx
-	$(DOCXX) -t $< > doc.tex
-
-.PHONY: include.dxx
-include.dxx:
-	$(PERL) ../bin/mkdoc.pl ../src/lib $@
-
-.PHONY: library.dxx
-library.dxx:
-	$(PERL) ../bin/mkextradoc.pl ../src/lib $@
-
-.PHONY: binary.dxx
-binary.dxx:
-	$(PERL) ../bin/mkextradoc.pl ../src/bin $@
+.PHONY: all
+all:
+	$(DOXYGEN) doxygen.cfg
 
 .PHONY: veryclean
 veryclean:
-	/bin/rm -rf html include.dxx library.dxx binary.dxx
+	/bin/rm -rf html latex man
 	/bin/rm -rf *~
 
 .PHONY: clean
 clean:
-	/bin/rm -rf include.dxx library.dxx binary.dxx
 	/bin/rm -rf *~

@@ -1,0 +1,7 @@
+/** \page mpqccomp Compiling MPQC
+
+ MPQC is distributed with the SC Toolkit.  MPQC will automatically
+be compiled when SC is compiled.  See \ref compile
+for more information.
+
+*/

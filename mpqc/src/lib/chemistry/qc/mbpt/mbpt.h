@@ -141,84 +141,89 @@ class MBPT2: public Wavefunction {
     void compute_cs_grad();
   public:
     MBPT2(StateIn&);
-    /** @memo The KeyVal constructor.
-        \begin{description}
+    /** The KeyVal constructor.
+        <dl>
 
-        \item[reference] This gives the reference wavefunction.  It must be
-        an object of type CLSCF for closed-shell molecules and HSOSSCF for
-        open-shell molecules.  The is no default.
+        <dt><tt>reference</tt><dd> This gives the reference wavefunction.
+        It must be an object of type CLSCF for closed-shell molecules and
+        HSOSSCF for open-shell molecules.  The is no default.
 
-        \item[nfzc] The number of frozen core orbitals.  The default is 0.
-        If no atoms have an atomic number greater than 30, then the number
-        of orbitals to be frozen can be automatically determined by
-        specifying nfzc = auto.
+        <dt><tt>nfzc</tt><dd> The number of frozen core orbitals.  The
+        default is 0.  If no atoms have an atomic number greater than 30,
+        then the number of orbitals to be frozen can be automatically
+        determined by specifying nfzc = auto.
 
-        \item[nfzv] The number of frozen virtual orbitals.  The default is
-        0.
+        <dt><tt>nfzv</tt><dd> The number of frozen virtual orbitals.  The
+        default is 0.
 
-        \item[memory] The amount of memory, in bytes, that each processor
-        may use.
+        <dt><tt>memory</tt><dd> The amount of memory, in bytes, that each
+        processor may use.
 
-        \item[method] This gives a string that must take on one of the
-        values below.  The default is mp for closed-shell systems and zapt
-        for open-shell systems.
+        <dt><tt>method</tt><dd> This gives a string that must take on one
+        of the values below.  The default is mp for closed-shell systems
+        and zapt for open-shell systems.
 
-        \begin{description}
+        <dl>
 
-          \item[mp] Use M\o{}ller-Plesset perturbation theory.  This is
-          only valid for closed-shell systems.  Energies and gradients can
-          be computed with this method.
+          <dt><tt>mp</tt><dd> Use M\o{}ller-Plesset perturbation theory.
+          This is only valid for closed-shell systems.  Energies and
+          gradients can be computed with this method.
 
-          \item[opt1] Use the OPT1 variant of open-shell perturbation
-          theory.  Only energies can be computed for open-shell systems.
+          <dt><tt>opt1</tt><dd> Use the OPT1 variant of open-shell
+          perturbation theory.  Only energies can be computed for
+          open-shell systems.
 
-          \item[opt2] Use the OPT2 variant of open-shell perturbation
-          theory.  Only energies can be computed for open-shell systems.
+          <dt><tt>opt2</tt><dd> Use the OPT2 variant of open-shell
+          perturbation theory.  Only energies can be computed for
+          open-shell systems.
 
-          \item[zapt] Use the ZAPT variant of open-shell perturbation
-          theory.  Only energies can be computed for open-shell systems.
+          <dt><tt>zapt</tt><dd> Use the ZAPT variant of open-shell
+          perturbation theory.  Only energies can be computed for
+          open-shell systems.
 
-        \end{description}
+        </dl>
 
-        \item[algorithm] This gives a string that must take on one of the
-        values given below.  The default is memgrp for closed-shell
-        systems.  For open-shell systems v1 is used for a small number of
-        processors and v2 is used otherwise.
+        <dt><tt>algorithm</tt><dd> This gives a string that must take on
+        one of the values given below.  The default is memgrp for
+        closed-shell systems.  For open-shell systems v1 is used for a
+        small number of processors and v2 is used otherwise.
 
-        \begin{description}
+        <dl>
 
-          \item[memgrp] Use the distributed shared memory algorithm (which
-          uses a MemoryGrp object).  This is only valid for MP2 energies
-          and gradients.
+          <dt><tt>memgrp</tt><dd> Use the distributed shared memory
+          algorithm (which uses a MemoryGrp object).  This is only valid
+          for MP2 energies and gradients.
 
-          \item[v1] Use algorithm V1.  Only energies can be computed.  The
-          maximum number of processors that can be utilized is the number
-          of virtual orbitals.  This algorithm computes few integrals than
-          the others, but has higher communication requirements.
+          <dt><tt>v1</tt><dd> Use algorithm V1.  Only energies can be
+          computed.  The maximum number of processors that can be utilized
+          is the number of virtual orbitals.  This algorithm computes few
+          integrals than the others, but has higher communication
+          requirements.
 
-          \item[v2] Use algorithm V2.  Only energies can be computed.  The
-          maximum number of processors that can be utilized is the number
-          of shells.
+          <dt><tt>v2</tt><dd> Use algorithm V2.  Only energies can be
+          computed.  The maximum number of processors that can be utilized
+          is the number of shells.
 
-          \item[v2lb] Use a modified V2 algorithm that may compute more two
-          electron integrals, but may get better load balance on the
-          $O(n_\mathrm{basis}^5)$ part of the calculation.  Only energies
-          can be computed.  This is recommended only for computations
-          involving large molecules (where the transformation is dominant)
-          on very many processors (approaching the number of shells).
+          <dt><tt>v2lb</tt><dd> Use a modified V2 algorithm that may
+          compute more two electron integrals, but may get better load
+          balance on the \f$O(n_\mathrm{basis}^5)\f$ part of the
+          calculation.  Only energies can be computed.  This is recommended
+          only for computations involving large molecules (where the
+          transformation is dominant) on very many processors (approaching
+          the number of shells).
 
-        \end{description}
+        </dl>
 
         The v1 and v2 algorithms are discussed in Ida M. B. Nielsen and
         Edward T. Seidl, J. Comp. Chem. 16, 1301 (1995).  The memgrp
         algorithm is discussed in Ida M. B. Nielsen, Chem. Phys. Lett. 255,
         210 (1996).
 
-        \item[memorygrp] A MemoryGrp object is used by the memgrp
+        <dt><tt>memorygrp</tt><dd> A MemoryGrp object is used by the memgrp
         algorithm.  If this is not given the program will try to find an
         appropriate default.
 
-        \end{description} */
+        </dl> */
     MBPT2(const RefKeyVal&);
     ~MBPT2();
 

@@ -60,22 +60,22 @@ class IntCoor: public SavableState {
     /** This constructor takes a string containing a label for the
         internal coordinate.  The string is copied. */
     IntCoor(const char* label = 0);
-    /** @memo The KeyVal constructor.
-        \begin{description}
+    /** The KeyVal constructor.
+        <dl>
 
-        \item[label] A label for the coordinate using only to identify the
-        coordinate to the user in printouts.  The default is no label.
+        <dt><tt>label</tt><dd> A label for the coordinate using only to
+        identify the coordinate to the user in printouts.  The default is
+        no label.
 
-        \item[value] A value for the coordinate.  In the way that
+        <dt><tt>value</tt><dd> A value for the coordinate.  In the way that
         coordinates are usually used, the default is to compute a value
         from the cartesian coordinates in a Molecule object.
 
-        \item[unit] The unit in which the value is given.  This can be
-        bohr, anstrom, radian, and degree.  The default is bohr for lengths
-        and radian for angles.
+        <dt><tt>unit</tt><dd> The unit in which the value is given.  This
+        can be bohr, anstrom, radian, and degree.  The default is bohr for
+        lengths and radian for angles.
 
-        \end{description}
-    */
+        </dl> */
     IntCoor(const RefKeyVal&);
     
     virtual ~IntCoor();
@@ -113,7 +113,7 @@ ARRAY_dec(RefIntCoor);
 coordinates.
 
 The following is a sample ParsedKeyVal input for a SumIntCoor object:
-\begin{verbatim}
+<pre>
   sumintcoor<SumIntCoor>: (
     coor: [
       <StreSimpleCo>:( atoms = [ 1 2 ] )
@@ -121,7 +121,7 @@ The following is a sample ParsedKeyVal input for a SumIntCoor object:
       ]
     coef = [ 1.0 1.0 ]
     )
-\end{verbatim}
+</pre>
 */
 class SumIntCoor: public IntCoor {
 #   define CLASSNAME SumIntCoor
@@ -137,17 +137,16 @@ class SumIntCoor: public IntCoor {
     /** This constructor takes a string containing a label for this
         coordinate. */
     SumIntCoor(const char *);
-    /** @memo The KeyVal constructor.
-        \begin{description}
+    /** The KeyVal constructor.
+        <dl>
 
-        \item[coor] A vector of IntCoor objects that define the summed
-        coordinates.
+        <dt><tt>coor</tt><dd> A vector of IntCoor objects that define the
+        summed coordinates.
 
-        \item[coef] A vector of floating point numbers that gives the
-        coefficients of the summed coordinates.
+        <dt><tt>coef</tt><dd> A vector of floating point numbers that gives
+        the coefficients of the summed coordinates.
 
-        \end{description}
-    */
+        </dl> */
     SumIntCoor(const RefKeyVal&);
 
     ~SumIntCoor();
@@ -188,7 +187,7 @@ coordinates can be explicity given.
 
 The following is a sample ParsedKeyVal input for
 a SetIntCoor object.
-\begin{verbatim}
+<pre>
   setintcoor<SetIntCoor>: [
     <SumIntCoor>: (
       coor: [
@@ -199,7 +198,7 @@ a SetIntCoor object.
       )
     <BendSimpleCo>:( atoms = [ 1 2 3 ] )
   ]
-\end{verbatim}
+</pre>
 */
 class SetIntCoor: public SavableState {
 #   define CLASSNAME SetIntCoor
@@ -213,17 +212,16 @@ class SetIntCoor: public SavableState {
   public:
     SetIntCoor();
     SetIntCoor(StateIn&);
-    /** @memo The KeyVal constructor.
-        \begin{description}
+    /** The KeyVal constructor.
+        <dl>
 
-        \item[generator] A IntCoorGen object that will be used to generate
-        the internal coordinates.
+        <dt><tt>generator</tt><dd> A IntCoorGen object that will be used to
+        generate the internal coordinates.
 
-        \item[i] A sequence of integer keywords, all $i$ for $0 \leq i < n$,
-        can be assigned to IntCoor objects.
+        <dt><tt>i</tt><dd> A sequence of integer keywords, all \f$i\f$ for
+        \f$0 \leq i < n\f$, can be assigned to IntCoor objects.
 
-        \end{description}
-    */
+        </dl> */
     SetIntCoor(const RefKeyVal&);
 
     virtual ~SetIntCoor();
@@ -297,47 +295,47 @@ class IntCoorGen: public SavableState
         IntCoorGen keeps a reference to extra and deletes it when the
         destructor is called. */
     IntCoorGen(const RefMolecule&, int nextra=0, int *extra=0);
-    /** @memo The KeyVal constructor.
-        \begin{description}
+    /** The KeyVal constructor.
+        <dl>
 
-        \item[molecule] A Molecule object.  There is no default.
+        <dt><tt>molecule</tt><dd> A Molecule object.  There is no default.
 
-        \item[radius_scale_factor] If the distance between two atoms is
-        less than the radius scale factor times the sum of the atoms'
-        atomic radii, then a bond is placed between the two atoms for the
-        purpose of finding internal coordinates.  The default is 1.1.
+        <dt><tt>radius_scale_factor</tt><dd> If the distance between two
+        atoms is less than the radius scale factor times the sum of the
+        atoms' atomic radii, then a bond is placed between the two atoms
+        for the purpose of finding internal coordinates.  The default is
+        1.1.
 
-        \item[linear_bend_threshold] A bend angle in degress greater than
-        180 minus this keyword's floating point value is considered a
-        linear bend. The default is 5.0.
+        <dt><tt>linear_bend_threshold</tt><dd> A bend angle in degress
+        greater than 180 minus this keyword's floating point value is
+        considered a linear bend. The default is 5.0.
 
-        \item[linear_tors_threshold] The angles formed by atoms a-b-c and
-        b-c-d are checked for near linearity.  If an angle in degrees is
-        greater than 180 minus this keyword's floating point value, then
-        the torsion is classified as a linear torsion. The default is 5.0.
+        <dt><tt>linear_tors_threshold</tt><dd> The angles formed by atoms
+        a-b-c and b-c-d are checked for near linearity.  If an angle in
+        degrees is greater than 180 minus this keyword's floating point
+        value, then the torsion is classified as a linear torsion. The
+        default is 5.0.
 
-        \item[linear_bend] Generate BendSimpleCo objects to describe linear
-        bends.  The default is false.
+        <dt><tt>linear_bend</tt><dd> Generate BendSimpleCo objects to
+        describe linear bends.  The default is false.
 
-        \item[linear_lbend] Generate pairs of LinIPSimpleCo and
+        <dt><tt>linear_lbend</tt><dd> Generate pairs of LinIPSimpleCo and
         LinIPSimpleCo objects to describe linear bends.  The default is
         true.
 
-        \item[linear_tors] Generate TorsSimpleCo objects to described
-        linear torsions.  The default is false.
+        <dt><tt>linear_tors</tt><dd> Generate TorsSimpleCo objects to
+        described linear torsions.  The default is false.
 
-        \item[linear_stors] Generate ScaledTorsSimpleCo objects to
-        described linear torsions.  The default is true.
+        <dt><tt>linear_stors</tt><dd> Generate ScaledTorsSimpleCo objects
+        to described linear torsions.  The default is true.
 
+        <dt><tt>extra_bonds</tt><dd> This is a vector of atom numbers,
+        where elements \f$2 (i-1) + 1\f$ and \f$2 i\f$ specify the atoms
+        which are bound in extra bond \f$i\f$.  The extra_bonds keyword
+        should only be needed for weakly interacting fragments, otherwise
+        all the needed bonds will be found.
 
-        \item[extra_bonds] This is a vector of atom numbers, where elements
-        $2 (i-1) + 1$ and $2 i$ specify the atoms which are bound in extra
-        bond $i$.  The extra_bonds keyword should only be needed for weakly
-        interacting fragments, otherwise all the needed bonds will be
-        found.
-
-        \end{description}
-    */
+        </dl> */
     IntCoorGen(const RefKeyVal&);
     IntCoorGen(StateIn&);
 
@@ -374,22 +372,22 @@ class MolecularCoor: public SavableState
   public:
     MolecularCoor(RefMolecule&);
     MolecularCoor(StateIn&);
-    /** @memo The KeyVal constructor.
-        \begin{description}
+    /** The KeyVal constructor.
+        <dl>
 
-        \item[molecule] A Molecule object.  There is no default.
+        <dt><tt>molecule</tt><dd> A Molecule object.  There is no default.
 
-        \item[debug] An integer which, if nonzero, will cause extra output.
+        <dt><tt>debug</tt><dd> An integer which, if nonzero, will cause
+        extra output.
 
-        \item[matrixkit] A SCMatrixKit object.  It is usually unnecessary
-        to give this keyword.
+        <dt><tt>matrixkit</tt><dd> A SCMatrixKit object.  It is usually
+        unnecessary to give this keyword.
 
-        \item[natom3] An SCDimension object for the dimension of the vector
-        of cartesian coordinates.  It is usually unnecessary to give this
-        keyword.
+        <dt><tt>natom3</tt><dd> An SCDimension object for the dimension of
+        the vector of cartesian coordinates.  It is usually unnecessary to
+        give this keyword.
 
-        \end{description}
-     */
+        </dl> */
     MolecularCoor(const RefKeyVal&);
 
     virtual ~MolecularCoor();
@@ -550,111 +548,110 @@ class IntMolecularCoor: public MolecularCoor
   public:
     IntMolecularCoor(StateIn&);
     IntMolecularCoor(RefMolecule&mol);
-    /** @memo The KeyVal constructor.
-        \begin{description}
+    /** The KeyVal constructor.
+        <dl>
 
-        \item[variable] Gives a SetIntCoor object that specifies the
-        internal coordinates that can be varied. If this is not given, the
-        variable coordinates will be generated.
+        <dt><tt>variable</tt><dd> Gives a SetIntCoor object that specifies
+        the internal coordinates that can be varied. If this is not given,
+        the variable coordinates will be generated.
 
-        \item[followed] Gives a IntCoor object that specifies a coordinate
-        to used as the first coordinate in the variable coordinate list.
-        The remaining coordinates will be automatically generated.  The
-        default is no followed coordinate.  This option is usually used to
-        set the initial search direction for a transition state
-        optimization, where it is used in conjunction with the
+        <dt><tt>followed</tt><dd> Gives a IntCoor object that specifies a
+        coordinate to used as the first coordinate in the variable
+        coordinate list.  The remaining coordinates will be automatically
+        generated.  The default is no followed coordinate.  This option is
+        usually used to set the initial search direction for a transition
+        state optimization, where it is used in conjunction with the
         mode_following keyword read by the EFCOpt class.
 
-        \item[fixed] Gives a SetIntCoor object that specifies the internal
-        coordinates that will be fixed.  The default is no fixed
+        <dt><tt>fixed</tt><dd> Gives a SetIntCoor object that specifies the
+        internal coordinates that will be fixed.  The default is no fixed
         coordinates.
 
-        \item[watched] Gives a SetIntCoor object that specifies internal
-        coordinates that will be printed out whenever the coordinates are
-        changed.  The default is none.
+        <dt><tt>watched</tt><dd> Gives a SetIntCoor object that specifies
+        internal coordinates that will be printed out whenever the
+        coordinates are changed.  The default is none.
 
-        \item[have_fixed_values] If true, then values for the fixed
-        coordinates must be given in fixed and an attempt will be made to
-        displace the initial geometry to the given fixed values. The
-        default is false.
+        <dt><tt>have_fixed_values</tt><dd> If true, then values for the
+        fixed coordinates must be given in fixed and an attempt will be
+        made to displace the initial geometry to the given fixed
+        values. The default is false.
 
-        \item[extra_bonds] This is only read if the generator keyword is
-        not given.  It is a vector of atom numbers, where elements
-        $(i-1)\times 2 + 1$ and $i\times 2$ specify the atoms which are
-        bound in extra bond $i$.  The extra_bonds keyword should only be
-        needed for weakly interacting fragments, otherwise all the needed
-        bonds will be found.
+        <dt><tt>extra_bonds</tt><dd> This is only read if the generator
+        keyword is not given.  It is a vector of atom numbers, where
+        elements \f$(i-1)\times 2 + 1\f$ and \f$i\times 2\f$ specify the
+        atoms which are bound in extra bond \f$i\f$.  The extra_bonds
+        keyword should only be needed for weakly interacting fragments,
+        otherwise all the needed bonds will be found.
 
-        \item[generator] Specifies an IntCoorGen object that creates
-        simple, redundant internal coordinates. If this keyword is not
-        given, then a vector giving extra bonds to be added is read from
-        extra_bonds and this is used to create an IntCoorGen object.
+        <dt><tt>generator</tt><dd> Specifies an IntCoorGen object that
+        creates simple, redundant internal coordinates. If this keyword is
+        not given, then a vector giving extra bonds to be added is read
+        from extra_bonds and this is used to create an IntCoorGen object.
 
-        \item[decouple_bonds] Automatically generated internal coordinates
-        are linear combinations of possibly any mix of simple internal
-        coordinates.  If decouple_bonds is true, an attempt will be made to
-        form some of the internal coordinates from just stretch simple
-        coordinates.  The default is false.
+        <dt><tt>decouple_bonds</tt><dd> Automatically generated internal
+        coordinates are linear combinations of possibly any mix of simple
+        internal coordinates.  If decouple_bonds is true, an attempt will
+        be made to form some of the internal coordinates from just stretch
+        simple coordinates.  The default is false.
 
-        \item[decouple_bends] This is like decouple_bonds except it applies
-        to the bend-like coordinates.  The default is false.
+        <dt><tt>decouple_bends</tt><dd> This is like decouple_bonds except
+        it applies to the bend-like coordinates.  The default is false.
 
-        \item[max_update_disp] The maximum displacement to be used in the
-        displacement to fixed internal coordinates values.  Larger
-        displacements will be broken into several smaller displacements and
-        new coordinates will be formed for each of these displacments. This
-        is only used when fixed and have_fixed_values are given.  The
-        default is 0.5.
+        <dt><tt>max_update_disp</tt><dd> The maximum displacement to be
+        used in the displacement to fixed internal coordinates values.
+        Larger displacements will be broken into several smaller
+        displacements and new coordinates will be formed for each of these
+        displacments. This is only used when fixed and have_fixed_values
+        are given.  The default is 0.5.
 
-        \item[max_update_steps] The maximum number of steps permitted to
-        convert internal coordinate displacements to cartesian coordinate
-        displacements.  The default is 100.
+        <dt><tt>max_update_steps</tt><dd> The maximum number of steps
+        permitted to convert internal coordinate displacements to cartesian
+        coordinate displacements.  The default is 100.
                
-        \item[update_bmat] Displacements in internal coordinates are
-        converted to a cartesian displacements interatively.  If there are
-        large changes in the cartesian coordinates during conversion, then
-        recompute the $B$ matrix, which is using to do the conversion.  The
-        default is false.
+        <dt><tt>update_bmat</tt><dd> Displacements in internal coordinates
+        are converted to a cartesian displacements interatively.  If there
+        are large changes in the cartesian coordinates during conversion,
+        then recompute the \f$B\f$ matrix, which is using to do the
+        conversion.  The default is false.
 
-        \item[only_totally_symmetric] If a simple test reveals that an
-        internal coordinate is not totally symmetric, then it will not be
-        added to the internal coordinate list.  The default is true.
+        <dt><tt>only_totally_symmetric</tt><dd> If a simple test reveals
+        that an internal coordinate is not totally symmetric, then it will
+        not be added to the internal coordinate list.  The default is true.
                
-        \item[simple_tolerance] The internal coordinates are formed as
-        linear combinations of simple, redundant internal coordinates.
-        Coordinates with coefficients smaller then simple_tolerance will be
-        omitted. The default is 1.0e-3.
+        <dt><tt>simple_tolerance</tt><dd> The internal coordinates are
+        formed as linear combinations of simple, redundant internal
+        coordinates.  Coordinates with coefficients smaller then
+        simple_tolerance will be omitted. The default is 1.0e-3.
 
-        \item[cartesian_tolerance] The tolerance for conversion of internal
-        coordinate displacements to cartesian displacements.  The default
-        is 1.0e-12.
+        <dt><tt>cartesian_tolerance</tt><dd> The tolerance for conversion
+        of internal coordinate displacements to cartesian displacements.
+        The default is 1.0e-12.
                
-        \item[form:print_simple] Print the simple internal
-        coordinates.  The default is false.
-               
-        \item[form:print_variable] Print the variable internal coordinates.
-        The default is false.
-               
-        \item[form:print_constant] Print the constant internal coordinates.
-        The default is false.
-               
-        \item[form:print_molecule] Print the molecule when forming
+        <dt><tt>form:print_simple</tt><dd> Print the simple internal
         coordinates.  The default is false.
                
-        \item[scale_bonds] Obsolete.  The default value is 1.0.
-
-        \item[scale_bends] Obsolete.  The default value is 1.0.
+        <dt><tt>form:print_variable</tt><dd> Print the variable internal
+        coordinates.  The default is false.
                
-        \item[scale_tors] Obsolete.  The default value is 1.0.
+        <dt><tt>form:print_constant</tt><dd> Print the constant internal
+        coordinates.  The default is false.
+               
+        <dt><tt>form:print_molecule</tt><dd> Print the molecule when
+        forming coordinates.  The default is false.
+               
+        <dt><tt>scale_bonds</tt><dd> Obsolete.  The default value is 1.0.
 
-        \item[scale_outs] Obsolete.  The default value is 1.0.
+        <dt><tt>scale_bends</tt><dd> Obsolete.  The default value is 1.0.
+               
+        <dt><tt>scale_tors</tt><dd> Obsolete.  The default value is 1.0.
 
-        \item[symmetry_tolerance] Obsolete.  The default is 1.0e-5.
+        <dt><tt>scale_outs</tt><dd> Obsolete.  The default value is 1.0.
 
-        \item[coordinate_tolerance] Obsolete.  The default is 1.0e-7.
+        <dt><tt>symmetry_tolerance</tt><dd> Obsolete.  The default is 1.0e-5.
 
-        \end{description}
-     */
+        <dt><tt>coordinate_tolerance</tt><dd> Obsolete.  The default is 1.0e-7.
+
+        </dl> */
     IntMolecularCoor(const RefKeyVal&);
 
     virtual ~IntMolecularCoor();
@@ -717,25 +714,24 @@ class SymmMolecularCoor: public IntMolecularCoor
   public:
     SymmMolecularCoor(RefMolecule&mol);
     SymmMolecularCoor(StateIn&);
-    /** @memo The KeyVal constructor.
-        \begin{description}
+    /** The KeyVal constructor.
+        <dl>
 
-        \item[change_coordinates] If true, the quality of the internal
-        coordinates will be checked periodically and if they are beginning
-        to become linearly dependent a new set of internal coordinates will
-        be computed.  The default is false.
+        <dt><tt>change_coordinates</tt><dd> If true, the quality of the
+        internal coordinates will be checked periodically and if they are
+        beginning to become linearly dependent a new set of internal
+        coordinates will be computed.  The default is false.
 
-        \item[max_kappa2] A measure of the quality of the internal
-        coordinates.  Values of the 2-norm condition, $\kappa_2$, larger
-        than max_kappa2 are considered linearly dependent.  The default is
-        10.0.
+        <dt><tt>max_kappa2</tt><dd> A measure of the quality of the
+        internal coordinates.  Values of the 2-norm condition,
+        \f$\kappa_2\f$, larger than max_kappa2 are considered linearly
+        dependent.  The default is 10.0.
 
-        \item[transform_hessian] If true, the hessian will be transformed
-        every time the internal coordinates are formed.  The default is
-        true.
+        <dt><tt>transform_hessian</tt><dd> If true, the hessian will be
+        transformed every time the internal coordinates are formed.  The
+        default is true.
 
-        \end{description}
-     */
+        </dl> */
     SymmMolecularCoor(const RefKeyVal&);
 
     virtual ~SymmMolecularCoor();

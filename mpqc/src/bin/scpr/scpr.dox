@@ -1,50 +1,39 @@
 
-/**@name The scpr Program
+/** \page scpr The scpr Program
 
-  @memo This program prints objects contained in files created by \Ref{The State Library}.
+<h1>Compiling scpr</h1>
 
-*/
-
-//@{
-
-/**@name Compiling scpr
  scpr is distributed with the SC Toolkit.  scpr will automatically
 be compiled when SC is compiled.  See the \Ref{Compiling}
 for more information.
-*/
 
-/**@name Running scpr
+<h1>Running scpr</h1>
 
 scpr takes the following command line options followed by a list of files.
 
-\begin{description}
-
-\item[{\tt -o <val>}] Print the object with the name val.  Object names
+<dl>
+ <dt><tt>-o <val></tt><dd>Print the object with the name val.  Object names
            take the form "<classname>:<ordinal_number>".  At least one file
            and object name must be given.
-\item[{\tt -memorygrp <val>}] Which memory group to use.
-\item[{\tt -threadgrp <val>}] Which thread group to use.
-\item[{\tt -messagegrp <val>}] Which message group to use.
-\item[{\tt -W <val>}] Set the working directory.
-\item[{\tt -d}] Turn on debugging.
-\item[{\tt -v}] Print the version.
-\item[{\tt -w}] Print the warranty.
-\item[{\tt -L}] Print the license.
-\item[{\tt -h}] Print this help.
-\end{description}
+ <dt><tt>-memorygrp <val></tt><dd>Which memory group to use.
+ <dt><tt>-threadgrp <val></tt><dd>Which thread group to use.
+ <dt><tt>-messagegrp <val></tt><dd>Which message group to use.
+ <dt><tt>-W <val></tt><dd>Set the working directory.
+ <dt><tt>-d</tt><dd>Turn on debugging.
+ <dt><tt>-v</tt><dd>Print the version.
+ <dt><tt>-w</tt><dd>Print the warranty.
+ <dt><tt>-L</tt><dd>Print the license.
+ <dt><tt>-h</tt><dd>Print this help.
+</dl>
 
-*/
-
-/**@name License
+<h1>License</h1>
 
 scpr is open-source software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the Free
 Software Foundation; either version 2 of the License, or (at your option)
 any later version.
 
-*/
-
-/**@name Warranty
+<h1>Warranty</h1>
 
 scpr is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -52,5 +41,3 @@ FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 details.
 
 */
-
-//@}

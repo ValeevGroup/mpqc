@@ -459,18 +459,18 @@ class PointGroup: public SavableState {
        symmetry_frame ((0,0,0) and the unit matrix, respectively), might
        look like this:
 
-       \begin{verbatim}
+       <pre>
        pointgrp<PointGroup>: (
          symmetry = "c2v"
        )
-       \end{verbatim}
+       </pre>
 
        By default, the principal rotation axis is taken to be the z axis.
        If you already have a set of coordinates which assume that the
        rotation axis is the x axis, then you'll have to rotate your frame
        of reference with symmetry_frame:
 
-       \begin{verbatim}
+       <pre>
        pointgrp<PointGroup>: (
          symmetry = "c2v"
          symmetry_frame = [
@@ -479,7 +479,7 @@ class PointGroup: public SavableState {
            [ 1 0 0 ]
          ]
        )
-       \end{verbatim}
+       </pre>
      */
     PointGroup(const RefKeyVal&);
 

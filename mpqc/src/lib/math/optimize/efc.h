@@ -65,29 +65,32 @@ class EFCOpt: public Optimize {
   public:
     /** The KeyVal constructor reads the following keywords:
 
-        \begin{description}
+        <dl>
 
-        \item[update] This gives an HessianUpdate object.  The default is
-        to not update the hessian.
+        <dt><tt>update</tt><dd> This gives an HessianUpdate object.  The
+        default is to not update the hessian.
 
-        \item[transition_state] If this is true than a transition state
-        search will be performed. The default is false.
+        <dt><tt>transition_state</tt><dd> If this is true than a transition
+        state search will be performed. The default is false.
 
-        \item[mode_following] If this is true, then the initial search
-        direction for a transition state search will be choosen to similar
-        to the first coordinate of the Function.  The default is false.
+        <dt><tt>mode_following</tt><dd> If this is true, then the initial
+        search direction for a transition state search will be choosen to
+        similar to the first coordinate of the Function.  The default is
+        false.
 
-        \item[hessian] By default, the guess hessian is obtained from the
-        Function object.  This keyword specifies an lower triangle array
-        (the second index must be less than or equal to than the first)
-        that replaces the guess hessian.  If some of the elements are not
-        given, elements from the guess hessian will be used.
+        <dt><tt>hessian</tt><dd> By default, the guess hessian is obtained
+        from the Function object.  This keyword specifies an lower triangle
+        array (the second index must be less than or equal to than the
+        first) that replaces the guess hessian.  If some of the elements
+        are not given, elements from the guess hessian will be used.
 
-        \item[accuracy] The accuracy with which the first gradient will be
-        computed.  If this is too large, it may be necessary to evaluate
-        the first gradient point twice.  If it is too small, it may take
-        longer to evaluate the first point. The default is 0.0001.
-    */
+        <dt><tt>accuracy</tt><dd> The accuracy with which the first
+        gradient will be computed.  If this is too large, it may be
+        necessary to evaluate the first gradient point twice.  If it is too
+        small, it may take longer to evaluate the first point. The default
+        is 0.0001.
+
+        </dl> */
     EFCOpt(const RefKeyVal&);
     EFCOpt(StateIn&);
     ~EFCOpt();

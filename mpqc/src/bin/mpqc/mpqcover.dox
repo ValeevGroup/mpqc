@@ -1,0 +1,22 @@
+/** \page mpqcover MPQC Overview
+
+The Massively Parallel Quantum Chemistry program (MPQC) computes
+the properties of molecules, <i>ab initio</i>, on a wide variety
+of computer architectures.
+
+MPQC can compute closed shell and general restricted open-shell
+Hartree-Fock energies and gradients, second order open-shell
+perturbation theory (OPT2[2]) and Z-averaged perturbation theory
+(ZAPT2) energies, and second order closed shell Moeller-Plesset
+perturbation theory energies and gradients.  It also includes
+methods for optimizing molecules in either Cartesian or internal
+coordinates.
+
+MPQC is designed using object-oriented programming techniques and
+implemented in the C++ programming language.  This design has propagated
+even to the input of MPQC which is object-oriented as well.  The user
+specifies a group of objects that the program creates when it starts.  MPQC
+manipulates the objects to produce energies, gradients, geometries, and
+properties.
+
+*/

@@ -43,13 +43,13 @@
 optimization is converged.  The KeyVal input for Convergence is given
 below.  Giving none of these keywords is the same as giving the following
 input:
-\begin{verbatim}
+<pre>
   conv<Convergence>: (
     max_disp = 1.0e-6
     max_grad = 1.0e-6
     graddisp = 1.0e-6
   )
-\end{verbatim}
+</pre>
 */
 class Convergence: virtual public SavableState {
 #   define CLASSNAME Convergence
@@ -84,41 +84,40 @@ class Convergence: virtual public SavableState {
 
     /** The KeyVal constructor reads the following keywords:
 
-        \begin{description}
+        <dl>
 
-        \item[max_disp] The value of the maximum displacement must be less
-        then the value of this keyword for the calculation to be converged.
-        The default is to not check this parameter.  However, if no other
-        keyword are given, default convergence parameters are chosen as
-        described above.
+        <dt><tt>max_disp</tt><dd> The value of the maximum displacement
+        must be less then the value of this keyword for the calculation to
+        be converged.  The default is to not check this parameter.
+        However, if no other keyword are given, default convergence
+        parameters are chosen as described above.
 
-        \item[max_grad] The value of the maximum gradient must be less then
-        the value of this keyword for the calculation to be converged.  The
-        default is to not check this parameter.  However, if no other
-        keyword are given, default convergence parameters are chosen as
-        described above.
-
-        \item[rms_disp] The value of the RMS of the displacements must be
+        <dt><tt>max_grad</tt><dd> The value of the maximum gradient must be
         less then the value of this keyword for the calculation to be
         converged.  The default is to not check this parameter.  However,
         if no other keyword are given, default convergence parameters are
         chosen as described above.
 
-        \item[rms_grad] The value of the RMS of the gradients must be less
-        then the value of this keyword for the calculation to be converged.
-        The default is to not check this parameter.  However, if no other
+        <dt><tt>rms_disp</tt><dd> The value of the RMS of the displacements
+        must be less then the value of this keyword for the calculation to
+        be converged.  The default is to not check this parameter.
+        However, if no other keyword are given, default convergence
+        parameters are chosen as described above.
+
+        <dt><tt>rms_grad</tt><dd> The value of the RMS of the gradients
+        must be less then the value of this keyword for the calculation to
+        be converged.  The default is to not check this parameter.
+        However, if no other keyword are given, default convergence
+        parameters are chosen as described above.
+
+        <dt><tt>graddisp</tt><dd> The value of the scalar product of the
+        gradient vector with the displacement vector must be less then the
+        value of this keyword for the calculation to be converged.  The
+        default is to not check this parameter.  However, if no other
         keyword are given, default convergence parameters are chosen as
         described above.
 
-        \item[graddisp] The value of the scalar product of the gradient
-        vector with the displacement vector must be less then the value of
-        this keyword for the calculation to be converged.  The default is
-        to not check this parameter.  However, if no other keyword are
-        given, default convergence parameters are chosen as described
-        above.
-
-        \end{description}
-    */
+        </dl> */
     Convergence(const RefKeyVal&);
     virtual ~Convergence();
 

@@ -51,16 +51,16 @@ KeyVal constructor that can create a new molecule from either a
 PDB file or from a list of Cartesian coordinates.
 
 The following ParsedKeyVal input reads from the PDB
-file #h2o.pdb#:
-\begin{verbatim}
+file <tt>h2o.pdb</tt>:
+<pre>
 molecule<Molecule>: (
    pdb_file = "h2o.pdb"
  )
-\end{verbatim}
+</pre>
 
 The following input explicitly gives the atom coordinates, using the
 ParsedKeyVal table notation:
-\begin{verbatim}
+<pre>
 molecule<Molecule>: (
     unit=angstrom
     { atom_labels atoms           geometry            } = {
@@ -70,7 +70,7 @@ molecule<Molecule>: (
      }
     )
   )
-\end{verbatim}
+</pre>
 The default units are Bohr with can be overridden with
 #unit=angstrom#.  The #atom_labels# array can be
 omitted.  The #atoms# and #geometry# arrays
@@ -79,8 +79,8 @@ are required.
 The Molecule class has a PointGroup
 member object, which also has a KeyVal constructor
 that is called when a Molecule is made.  The
-following example constructs a molecule with $C_{2v}$ symmetry:
-\begin{verbatim}
+following example constructs a molecule with \f$C_{2v}\f$ symmetry:
+<pre>
 molecule<Molecule>: (
     symmetry=c2v
     unit=angstrom
@@ -90,7 +90,7 @@ molecule<Molecule>: (
      }
     )
   )
-\end{verbatim}
+</pre>
 Only the symmetry unique atoms need to be specified.  Nonunique
 atoms can be given too, however, numerical errors in the
 geometry specification can result in the generation of extra

@@ -62,28 +62,28 @@ class Optimize: virtual public SavableState {
 
     /** The KeyVal constructor reads the following information:
 
-        \begin{description}
+        <dl>
 
-        \item[checkpoint] If true, the optimization will be checkpointed.
-        The default is false.
+        <dt><tt>checkpoint</tt><dd> If true, the optimization will be
+        checkpointed.  The default is false.
 
-        \item[checkpoint_file] The name of the checkpoint file.  The name
-        defaults to opt_ckpt.dat.
+        <dt><tt>checkpoint_file</tt><dd> The name of the checkpoint file.
+        The name defaults to opt_ckpt.dat.
 
-        \item[max_iterations] The maximum number of interations.
+        <dt><tt>max_iterations</tt><dd> The maximum number of interations.
         The default is 10.
 
-        \item[max_stepsize] The maximum stepsize.  The default is 0.6.
+        <dt><tt>max_stepsize</tt><dd> The maximum stepsize.  The default is
+        0.6.
 
-        \item[function] A Function object.  There is no default.
+        <dt><tt>function</tt><dd> A Function object.  There is no default.
 
-        \item[convergence] This can be either a floating point number or a
-        Convergence object.  If it is a floating point number then it is
-        the convergence criterion.  See the description Convergence class
-        for the default.
+        <dt><tt>convergence</tt><dd> This can be either a floating point
+        number or a Convergence object.  If it is a floating point number
+        then it is the convergence criterion.  See the description
+        Convergence class for the default.
 
-        \end{description}
-    */
+        </dl> */
     Optimize(const RefKeyVal&);
     virtual ~Optimize();
 

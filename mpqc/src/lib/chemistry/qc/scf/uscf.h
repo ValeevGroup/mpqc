@@ -36,6 +36,7 @@
 
 // //////////////////////////////////////////////////////////////////////////
 
+/// A base class for unrestricted self-consistent-field methods.
 class UnrestrictedSCF: public SCF {
 #   define CLASSNAME UnrestrictedSCF
 #   include <util/state/stated.h>

@@ -54,19 +54,19 @@ class CLSCF: public SCF {
 
   public:
     CLSCF(StateIn&);
-    /** @memo The KeyVal constructor:
-        \begin{description}
+    /** The KeyVal constructor:
+        <dl>
 
-        \item[total_charge] This integer gives the total charge of the
-        molecule.  The default is 0.
+        <dt><tt>total_charge</tt><dd> This integer gives the total charge
+        of the molecule.  The default is 0.
 
-        \item[docc] This vector of integers gives the total number of
-        doubly occupied orbitals of each irreducible representation.  By
-        default, this will be chosen to make the molecule uncharged and the
-        electrons will be distributed among the irreducible representations
-        according to the orbital energies.
+        <dt><tt>docc</tt><dd> This vector of integers gives the total
+        number of doubly occupied orbitals of each irreducible
+        representation.  By default, this will be chosen to make the
+        molecule uncharged and the electrons will be distributed among the
+        irreducible representations according to the orbital energies.
 
-        \end{description} */
+        </dl> */
     CLSCF(const RefKeyVal&);
     ~CLSCF();
 

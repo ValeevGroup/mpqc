@@ -84,22 +84,21 @@ class Function: virtual public SavableState, public Compute {
     Function(const Function&);
 
     /** The keyval constructor reads the following keywords:
-        \begin{description}
+        <dl>
 
-        \item[matrixkit] Gives a SCMatrixKit
+        <dt><tt>matrixkit</tt><dd> Gives a SCMatrixKit
         object.  If it is not specified, a default SCMatrixKit is selected.
 
-        \item[value_accuracy] Sets the accuracy to which values are
+        <dt><tt>value_accuracy</tt><dd> Sets the accuracy to which values are
         computed.  The default is the machine accuracy.
 
-        \item[gradient_accuracy] Sets the accuracy to which gradients are
-        computed.  The default is the machine accuracy.
+        <dt><tt>gradient_accuracy</tt><dd> Sets the accuracy to which
+        gradients are computed.  The default is the machine accuracy.
 
-        \item[hessian_accuracy] Sets the accuracy to which hessians are
-        computed.  The default is the machine accuracy.
+        <dt><tt>hessian_accuracy</tt><dd> Sets the accuracy to which
+        hessians are computed.  The default is the machine accuracy.
 
-        \end{description}
-    */
+        </dl> */
     Function(const RefKeyVal&, double funcacc = DBL_EPSILON,
              double gradacc = DBL_EPSILON, double hessacc = DBL_EPSILON);
     virtual ~Function();

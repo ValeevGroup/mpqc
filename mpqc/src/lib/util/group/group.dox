@@ -1,5 +1,5 @@
 
-/**@name The Group Library
+/** \page group The Group Library
 
 The group library provides two important abstract base classes for
 communications.  The MessageGrp class is the for standard message passing
@@ -9,13 +9,13 @@ reductions, such as a global sum, are directly provided for convenience.
 The MessageGrp class has specializations that permits its use on a wide
 variety of hardware:
 
-\begin{itemize}
-\item PVMMessageGrp uses the PVM package
-\item MPIMessageGrp uses the MPI library
-\item ParagonMessageGrp uses the Intel Paragon's NX library
-\item ShmMessageGrp uses System V IPC (for
+<ul>
+<li> PVMMessageGrp uses the PVM package
+<li> MPIMessageGrp uses the MPI library
+<li> ParagonMessageGrp uses the Intel Paragon's NX library
+<li> ShmMessageGrp uses System V IPC (for
       symmetric multiprocessors)
-\end{itemize}
+</ul>
 
 The other abstract communication class of importance, MemoryGrp, provides
 the appearance of global shared memory.  Only where communications with

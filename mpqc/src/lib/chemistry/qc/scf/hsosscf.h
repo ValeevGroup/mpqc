@@ -60,49 +60,48 @@ class HSOSSCF: public SCF {
 
   public:
     HSOSSCF(StateIn&);
-    /** @memo The KeyVal constructor.
-        \begin{description}
+    /** The KeyVal constructor.
+        <dl>
 
-        \item[total_charge] This integer gives the total charge, $c$, of
-        the molecule.  The default is 0.
+        <dt><tt>total_charge</tt><dd> This integer gives the total charge,
+        \f$c\f$, of the molecule.  The default is 0.
 
-        \item[nsocc] This integer gives the total number of singly occupied
-        orbitals, $n_\mathrm{socc}$.  If this is not given, then
-        multiplicity will be read.
+        <dt><tt>nsocc</tt><dd> This integer gives the total number of
+        singly occupied orbitals, \f$n_\mathrm{socc}\f$.  If this is not
+        given, then multiplicity will be read.
 
-        \item[multiplicity] This integer gives the multiplicity, $m$, of
-        the molecule.  The number of singly occupied orbitals is then
-        $n_\mathrm{socc} = m - 1$.  If neither nsocc nor multiplicity is
-        given, then if, in consideration of total_charge, the number of
-        electrons is even, the default $n_\mathrm{socc}$ is 2.  Otherwise,
-        it is 1.
+        <dt><tt>multiplicity</tt><dd> This integer gives the multiplicity,
+        \f$m\f$, of the molecule.  The number of singly occupied orbitals
+        is then \f$n_\mathrm{socc} = m - 1\f$.  If neither nsocc nor
+        multiplicity is given, then if, in consideration of total_charge,
+        the number of electrons is even, the default \f$n_\mathrm{socc}\f$
+        is 2.  Otherwise, it is 1.
 
-        \item[ndocc] This integer gives the total number of doubly occupied
-        orbitals $n_\mathrm{docc}$.  The default $n_\mathrm{docc} = (c -
-        n_\mathrm{socc})/2$.
+        <dt><tt>ndocc</tt><dd> This integer gives the total number of
+        doubly occupied orbitals \f$n_\mathrm{docc}\f$.  The default
+        \f$n_\mathrm{docc} = (c - n_\mathrm{socc})/2\f$.
 
-        \item[socc] This vector of integers gives the total number of
-        singly occupied orbitals of each irreducible representation.  By
-        default, the $n_\mathrm{socc}$ singly occupied orbitals will be
-        distributed according to orbital eigenvalues.  If socc is given,
-        then docc must be given and they override nsocc, multiplicity,
-        ndocc, and total_charge.
+        <dt><tt>socc</tt><dd> This vector of integers gives the total
+        number of singly occupied orbitals of each irreducible
+        representation.  By default, the \f$n_\mathrm{socc}\f$ singly
+        occupied orbitals will be distributed according to orbital
+        eigenvalues.  If socc is given, then docc must be given and they
+        override nsocc, multiplicity, ndocc, and total_charge.
 
-        \item[docc] This vector of integers gives the total number of
-        doubly occupied orbitals of each irreducible representation.  By
-        default, the $n_\mathrm{docc}$ singly occupied orbitals will be
-        distributed according to orbital eigenvalues.  If docc is given,
-        then socc must be given and they override nsocc, multiplicity,
-        ndocc, and total_charge.
+        <dt><tt>docc</tt><dd> This vector of integers gives the total
+        number of doubly occupied orbitals of each irreducible
+        representation.  By default, the \f$n_\mathrm{docc}\f$ singly
+        occupied orbitals will be distributed according to orbital
+        eigenvalues.  If docc is given, then socc must be given and they
+        override nsocc, multiplicity, ndocc, and total_charge.
 
-        \item[maxiter] This has the same meaning as in the parent class,
-        SCF; however, the default value is 100.
+        <dt><tt>maxiter</tt><dd> This has the same meaning as in the parent
+        class, SCF; however, the default value is 100.
 
-        \item[level_shift] This has the same meaning as in the parent
-        class, SCF; however, the default value is 1.0.
+        <dt><tt>level_shift</tt><dd> This has the same meaning as in the
+        parent class, SCF; however, the default value is 1.0.
 
-        \end{description}
-     */
+        </dl> */
     HSOSSCF(const RefKeyVal&);
     ~HSOSSCF();
 

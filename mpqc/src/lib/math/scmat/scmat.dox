@@ -1,5 +1,5 @@
 
-/**@name The Matrix Library
+/** \page scmat The Matrix Library
 
 The scientific computing matrix library (SCMAT) is designed around a set of
 matrix abstractions that permit very general matrix implementations.  This
@@ -11,6 +11,22 @@ by a relatively slow network (workstations on an LAN), clusters of
 processors with enough memory to store all matrices and a fast interconnect
 network (a massively parallel machine such as the Intel Paragon), and
 clusters of machines that don't have enough memory to hold entire matrices.
+
+<ul>
+  <li> \ref scmatover
+  <li> \ref scmatdim
+  <li> \ref scmatref
+  <li> \ref scmatabstract
+  <li> \ref scmatstor
+  <li> \ref scmatop
+  <li> \ref scmatopsp
+  <li> \ref scmatlocal
+  <li> \ref scmatrepl
+  <li> \ref scmatdist
+  <li> \ref scmatblocked
+</ul>
+
+\section scmatover Overview
 
 The design of SCMAT differs from other object-oriented matrix packages in
 two important ways.  First, the matrix classes are abstract base classes.
@@ -88,8 +104,8 @@ the specialization.
 
 The following include files are provided by the matrix library:
 
-\begin{description}
-\item[matrix.h]
+<dl>
+<dt><tt>matrix.h</tt><dd>
 Usually, this is the only include file needed by users of matrices.  It
 declares reference counting pointers to abstract matrices.
 
@@ -97,76 +113,70 @@ If kit for a matrix must be created, or a member specific to an
 implementation is needed, then that implementation's header file must be
 included.
 
-\item[elemop.h]
+<dt><tt>elemop.h</tt><dd>
 This is the next most useful include file.  It defines useful
 SCElementOp, SCElementOp2, and SCElementOp3
 specializations.
 
-\item[abstract.h]
+<dt><tt>abstract.h</tt><dd>
 This include file contains the declarations for abstract classes that
 users do not usually need to see.  These include SCDimension,
 SCMatrix, SymmSCMatrix, DiagSCMatrix,
 SCMatrixKit.  This file is currently included by
 matrix.h.
 
-\item[block.h]
+<dt><tt>block.h</tt><dd>
 This file declares SCMatrixBlock and specializations.  It
 only need be include by users implementing new SCElementOp
 specializations.
 
-\item[blkiter.h]
+<dt><tt>blkiter.h</tt><dd>
 This include file declares the implementations of
 SCMatrixBlockIter.  It only need be include by users implementing
 new SCElementOp specializations.
 
-\item[vector3.h]
+<dt><tt>vector3.h</tt><dd>
 This declares SCVector3, a lightweight vector of length three.
 
-\item[matrix3.h]
+<dt><tt>matrix3.h</tt><dd>
 This declares SCMatrix3, a lightweight matrix of dimension three by
 three.  It includes vector3.h.
 
-\item[local.h]
+<dt><tt>local.h</tt><dd>
 This include file is the matrix implementation for locally stored
 matrices.  These are suitable for use in a uniprocessor environment.  The
 LocalSCMatrixKit is the default matrix implementation returned
 by the static member SCMatrixKit::default_matrixkit.
 This file usually doesn't need to be included.
 
-\item[dist.h]
+<dt><tt>dist.h</tt><dd>
 This include file is the matrix implementation for distributed matrices.
 These are suitable for use in a distributed memory multiprocessor which
 does not have enough memory to hold all of the matrix elements on each
 processor.  This file usually doesn't need to be included.
 
-\item[repl.h]
+<dt><tt>repl.h</tt><dd>
 This include file is the matrix implementation for replicated matrices.
 These are suitable for use in a distributed memory multiprocessor which
 does have enough memory to hold all of the matrix elements on each
 processor.  This file usually doesn't need to be included.
 
-\item[blocked.h]
+<dt><tt>blocked.h</tt><dd>
 This include file is the matrix implementation for blocked matrices.
 Blocked matrices store a matrix as subblocks that are matrices from another
 matrix specialization.  These are used to save storage and computation time
-in quantum chemistry applications for molecules with other than $C_1$ point
+in quantum chemistry applications for molecules with other than \f$C_1\f$ point
 group symmetry.
 
-\end{description}
+</dl>
 
-*/
-
-//@{
-
-/**@name Matrix Dimensions
+\section scmatdim Matrix Dimensions
 
 In addition to the simple integer dimension, objects of the SCDimension
 class contain application specific blocking information.  This information
 is held in an object of class SCBlockInfo.
 
-*/
-
-/**@name Matrix Reference Classes
+\section scmatref Matrix Reference Classes
 
 The easiest way to use SCMAT is through the smart pointer classes
 RefSCMatrix, RefSymmSCMatrix, RefDiagSCMatrix, RefSCVector, RefSCDimension,
@@ -176,9 +186,7 @@ These reference classes also have common operations defined as members for
 convenience.  This makes it unnecessary to also use the sometimes awkward
 syntax of operator->() to manipulate the contained objects.
 
-*/
-
-/**@name Abstract Matrix Classes
+\section scmatabstract Abstract Matrix Classes
 
 This section documents the primary abstract classes: SCMatrix,
 SymmSCMatrix, DiagSCMatrix, and SCVector, as well as the SCMatrixKit class
@@ -190,93 +198,81 @@ This section is primarily for implementers of new specializations
 of matrices.  Users of existing matrices will be most interested
 in the matrix reference classes.
 
-*/
-
-/**@name Matrix Storage
+\section scmatstor Matrix Storage
 
 All elements of matrices and vectors are kept in blocks.  The
 choice of blocks and where they are keep is left up to each
 matrix specialization.
-*/
 
-/**@name Manipulating Matrix Elements with Element Operations
+\section scmatop Manipulating Matrix Elements with Element Operations
 
 The SCElementOp, SCElementOp2, and SCElementOp3 classes can
 be used to maniupulate matrix elements.
 
-*/
-
-/**@name SCElementOp Specializations
+\section scmatopsp SCElementOp Specializations
 
 Several commonly needed element operations are already coded up and
 available by including math/scmat/elemop.h.  Below are descriptions
 of these classes:
 
-\begin{description}
-\item[SCElementScalarProduct] This SCElementOp2 computes
+<dl>
+<dt>SCElementScalarProduct<dd> This SCElementOp2 computes
 the scalar product of two matrices or vectors.  The result is available
 after the operation from the return value of the result() member.
-\item[SCDestructiveElementProduct] This SCElementOp2
+<dt>SCDestructiveElementProduct<dd> This SCElementOp2
 replaces the elements of the matrix or vector whose element_op
 member is called.  The resulting values are the element by element products
 of the two matrices or vectors.
-\item[SCElementScale] This scales each element by an amount given
+<dt>SCElementScale<dd> This scales each element by an amount given
 in the constructor.
-\item[SCElementRandomize] This generates random elements.
-\item[SCElementAssign] Assign to each element the value passed to
+<dt>SCElementRandomize<dd> This generates random elements.
+<dt>SCElementAssign<dd> Assign to each element the value passed to
 the constructor.
-\item[SCElementSquareRoot] Replace each element with its square
+<dt>SCElementSquareRoot<dd> Replace each element with its square
 root.
-\item[SCElementInvert] Replace each element by its reciprocal.
-\item[SCElementScaleDiagonal] Scales the diagonal elements of a
+<dt>SCElementInvert<dd> Replace each element by its reciprocal.
+<dt>SCElementScaleDiagonal<dd> Scales the diagonal elements of a
 matrix by the argument passed to the constructor.  Use of this on a vector
 is undefined.
-\item[SCElementShiftDiagonal] Add the value passed to the
+<dt>SCElementShiftDiagonal<dd> Add the value passed to the
 constructor to the diagonal elements of the matrix.  Use of this on a
 vector is undefined.
-\item[SCElementMaxAbs] Find the maximum absolute value element in a
+<dt>SCElementMaxAbs<dd> Find the maximum absolute value element in a
 matrix or vector.  The result is available as the return value of the
-#result()# member.
-\item[SCElementDot] The constructor for this class takes three
+<tt>result()</tt> member.
+<dt>SCElementDot<dd> The constructor for this class takes three
 arguments: SCElementDot(double**a,
 double**b, int length).  The length of each vector given by
 a and b is given by length.  The number of vectors in
 a is the number of rows in the matrix and the number in b is
-the number of columns.  To each element in the matrix $m_{ij}$ the dot
-product of the $a_i$ and $b_j$ is added.
-\item[SCElementAccumulateSCMatrix]  This is obsolete---do not use it.
-\item[SCElementAccumulateSymmSCMatrix] This is obsolete---do not
+the number of columns.  To each element in the matrix \f$m_{ij}\f$ the dot
+product of the \f$a_i\f$ and \f$b_j\f$ is added.
+<dt>SCElementAccumulateSCMatrix<dd>  This is obsolete---do not use it.
+<dt>SCElementAccumulateSymmSCMatrix<dd> This is obsolete---do not
 use it.
-\item[SCElementAccumulateDiagSCMatrix] This is obsolete---do not
+<dt>SCElementAccumulateDiagSCMatrix<dd> This is obsolete---do not
 use it.
-\item[SCElementAccumulateSCVector] This is obsolete---do not use
+<dt>SCElementAccumulateSCVector<dd> This is obsolete---do not use
 it.
-\end{description}
-*/
+</dl>
 
-/**@name Local Matrices
+\section scmatlocal Local Matrices
 
 Local matrices do no communication.  All elements reside on each node
 and all computations are duplicated on each node.
 
-*/
-
-/**@name Replicated Matrices
+\section scmatrepl Replicated Matrices
 
 Replicated matrices hold all of the elements on each node, however
 do some communications in order to reduce computation time.
 
-*/
-
-/**@name Distributed Matrices
+\section scmatdist Distributed Matrices
 
 Distributed matrices spread the elements across all the nodes and
 thus require less storage than local matrices however these use
 more communications than replicated matrices.
 
-*/
-
-/**@name Blocked Matrices
+\section scmatblocked Blocked Matrices
 
 Blocked matrices are used to implement point group symmetry.  Another
 matrix specialization is used to hold the diagonal subblocks of a
@@ -285,5 +281,3 @@ This results in considerable savings in storage and computation for
 those cases where it applies.
 
 */
-
-//@}

@@ -116,42 +116,42 @@ class SCF: public OneBodyWavefunction {
 
   public:
     SCF(StateIn&);
-    /** @memo The KeyVal constructor.
+    /** The KeyVal constructor.
 
-        \begin{description}
+        <dl>
 
-        \item[maxiter] This integer specifies the maximum number of SCF
-        iterations.  The default is 40.
+        <dt><tt>maxiter</tt><dd> This integer specifies the maximum number
+        of SCF iterations.  The default is 40.
 
-        \item[density_reset_frequency] This integer specifies how often, in
-        term of SCF iterations, $\Delta D$ will be reset to $D$.  The
-        default is 10.
+        <dt><tt>density_reset_frequency</tt><dd> This integer specifies how
+        often, in term of SCF iterations, \f$\Delta D\f$ will be reset to
+        \f$D\f$.  The default is 10.
 
-        \item[reset_occuptions] Reassign the occupations after each
-        iteration based on the eigenvalues.  This only has an effect for
-        molecules with higher than $C_1$ symmetry.  The default is false.
+        <dt><tt>reset_occuptions</tt><dd> Reassign the occupations after
+        each iteration based on the eigenvalues.  This only has an effect
+        for molecules with higher than \f$C_1\f$ symmetry.  The default is
+        false.
 
-        \item[level_shift] The default is 0.
+        <dt><tt>level_shift</tt><dd> The default is 0.
 
-        \item[extrap] This specifies an object of type
+        <dt><tt>extrap</tt><dd> This specifies an object of type
         SelfConsistentExtrapolation.  The default is a DIIS object.
 
-        \item[memory] The amount of memory that each processor may use.
-        The default is 0 (minimal memory use).
+        <dt><tt>memory</tt><dd> The amount of memory that each processor
+        may use.  The default is 0 (minimal memory use).
 
-        \item[local_density] If this is true, a local copy of the density
-        and $G$ matrix will be made on all nodes, even if a distributed
-        matrix specialization is used.  The default is true.
+        <dt><tt>local_density</tt><dd> If this is true, a local copy of the
+        density and \f$G\f$ matrix will be made on all nodes, even if a
+        distributed matrix specialization is used.  The default is true.
 
-        \item[guess_wavefunction] This specifies the initial guess for the
-        solution to the SCF equations.  This can be either a
+        <dt><tt>guess_wavefunction</tt><dd> This specifies the initial
+        guess for the solution to the SCF equations.  This can be either a
         OneBodyWavefunction object or the name of file that contains the
         saved state of a OneBodyWavefunction object.  By default the
         one-electron hamiltonian will be diagonalized to obtain the initial
         guess.
 
-        \end{description}
-     */
+        </dl> */
     SCF(const RefKeyVal&);
     ~SCF();
 

@@ -40,9 +40,9 @@ The ShmMessageGrp KeyVal constructor takes a single keyword that specifies
 the number of processors.  Here is an example of a \Ref{ParsedKeyVal} input
 that creates a ShmMessageGrp that runs on four processors:
 
-\begin{verbatim}
+<pre>
 message<ShmMessageGrp>: n = 4
-\end{verbatim}
+</pre>
 
 */
 class ShmMessageGrp: public intMessageGrp {

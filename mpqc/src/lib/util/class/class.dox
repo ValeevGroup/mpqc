@@ -1,18 +1,20 @@
 
-/**@name The Described Class Library
+/** \page class The Described Class Library
 
 The class library provides abstract base classes, macros,
 and include files that collectively provide a mechanism that
 allows programmers to retrieve information about a class'
-name; parents; and void, \Ref{StateIn}, and
-\Ref{KeyVal} constructors.  Also, a castdown
+name; parents; and void, StateIn, and
+KeyVal constructors.  Also, a castdown
 mechanism is provided.
 
-*/
+<ul>
+  <li> \ref classuse
+  <li> \ref classref
+  <li> \ref classrefuse
+</ul>
 
-//@{
-
-/**@name Using DescribedClass
+\section classuse Using DescribedClass
 
 The special nature of described classes requires that the base class,
 DescribedClass, cannot provide everything needed.  To assist the user in
@@ -30,63 +32,63 @@ All of the macros are automatically
 undef'ed by each of the include files.
 The macros are:
 
-\begin{description}
-\item[CLASSNAME]
+<dl>
+<dt><tt>CLASSNAME</tt><dd>
   The name of the class.
-\item[PARENTS]
+<dt><tt>PARENTS</tt><dd>
   The parents of the class exactly as they appear in the class
   declaration.  For example: "public A, private B, virtual Z",
   without quotes.  The order, access specification, and virtualness
   must be correct or the castdown mechanism could cause erratic behavior.
   This is only needed for the implementation include file.  It should
   not be set for the declaration include file.
-\item[HAVE_CTOR]
+<dt><tt>HAVE_CTOR</tt><dd>
   This should be defined if the programmer (or compiler) has provided
   a constructor for the class taking no arguments.
-\item[HAVE_KEYVAL_CTOR]
+<dt><tt>HAVE_KEYVAL_CTOR</tt><dd>
   This should be defined if the programmer has provided
   a constructor for the class taking a KeyVal& argument.
   This is useful if objects of this type need to be read from
   an input file.
-\item[HAVE_STATEIN_CTOR]
+<dt><tt>HAVE_STATEIN_CTOR</tt><dd>
   This should be defined if the programmer has provided
   a constructor taking a StateIn& arguments.
   This is necessary if objects of this type are to be saved and
   restored.
-\end{description}
+</dl>
 
 A class declaration would look like:
 
-\begin{verbatim}
+<pre>
 class A: virtual public DescribedClass {
 #  define CLASSNAME A
 #  define HAVE_CTOR
 #  include <util/class/classd.h>
 };
-\end{verbatim}
+</pre>
 
 The source file implementing the members of A would follow a
 similar procedure to define A's members.  For example:
 
-\begin{verbatim}
+<pre>
 #define CLASSNAME A
 #define PARENTS virtual public DescribedClass
 #define HAVE_CTOR
 #include <util/class/classi.h>
-\end{verbatim}
+</pre>
 
 The _castdown operation must be implemented by the user.
 It is very simple to write, but small errors can lead to difficult
 to find bugs.  For the example above, the _castdown operator for
 class A would look like:
 
-\begin{verbatim}
+<pre>
 A::_castdown(const ClassDesc*cd)
 {
   void* casts[] =  { DescribedClass::_castdown(cd) };
   return do_castdowns(casts,cd);
 }
-\end{verbatim}
+</pre>
 
 The cast array contains the results of attempting to call
 _castdown for each of the parent classes.  The order and
@@ -95,9 +97,7 @@ macro.  Most of the work involved in doing a castdown has been
 moved into the helper function do_castdowns, which is
 implemented by the provided include files.
 
-*/
-
-/**@name The DCRef Macros
+\section classref The DCRef Macros
 
 Some C++ compilers don't handle class templates very well so cpp macros
 have been provided to define smart pointers to DescribedClass derivatives.
@@ -113,15 +113,13 @@ argument.  This should be given in one of the source files relating to that
 class and should not be placed in the header file.  The
 DescribedClass_REF_dec macro must be followed by a semicolon.
 
-*/
-
-/**@name Using DCRef
+\section classrefuse Using DCRef
 
 Following is an example of the use of DCRef.  Note that inheritance from
 VRefCount is unnecessary, since DescribedClass already is a VRefCount
 descendant.
 
-\begin{verbatim}
+<pre>
 #include <util/class/class.h>
 
 class A: virtual public DescribedClass {
@@ -155,8 +153,6 @@ main()
   return 0;
 }
 
-\end{verbatim}
+</pre>
 
 */
-
-//@}

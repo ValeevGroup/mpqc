@@ -70,35 +70,34 @@ class Debugger: public SavableState {
     Debugger(const char *exec = 0);
 
     /** The KeyVal constructor understands the following keywords:
-        \begin{description}
-        \item[debug] Try to start a debugger when an error occurs.
+        <dl>
+        <dt><tt>debug</tt><dd> Try to start a debugger when an error occurs.
         Doesn't work on all machines. The default is true, if possible.
 
-        \item[traceback] Try to print out a traceback extracting return
-        addresses from the call stack.  Doesn't work on most machines.  The
-        default is true, if possible.
+        <dt><tt>traceback</tt><dd> Try to print out a traceback extracting
+        return addresses from the call stack.  Doesn't work on most
+        machines.  The default is true, if possible.
 
-        \item[exit] Exit on errors.  The default is true.
+        <dt><tt>exit</tt><dd> Exit on errors.  The default is true.
 
-        \item[wait_for_debugger] When starting a debugger go into an
-        infinite loop to give the debugger a chance to attach to the
+        <dt><tt>wait_for_debugger</tt><dd> When starting a debugger go into
+        an infinite loop to give the debugger a chance to attach to the
         process.  The default is true.
 
-        \item[sleep] When starting a debugger wait this many
+        <dt><tt>sleep</tt><dd> When starting a debugger wait this many
         seconds to give the debugger a chance to attach to the process.
         The default is 0.
 
-        \item[handle_defaults] Handle a standard set of signals
+        <dt><tt>handle_defaults</tt><dd> Handle a standard set of signals
         such as SIGBUS, SIGSEGV, etc.  The default is true.
 
-        \item[prefix] Gives a string that is printed before each
+        <dt><tt>prefix</tt><dd> Gives a string that is printed before each
         line that is printed by Debugger. The default is nothing.
 
-        \item[cmd] Gives a command to be executed to start the
+        <dt><tt>cmd</tt><dd> Gives a command to be executed to start the
         debugger.  The default varies with machine.
         
-        \end{description}
-    */
+        </dl> */
     Debugger(const RefKeyVal&);
 
     Debugger(StateIn&);

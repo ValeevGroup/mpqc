@@ -76,31 +76,30 @@ class MolecularEnergy: public Function {
     int print_molecule_when_changed_;
   public:
     MolecularEnergy(const MolecularEnergy&);
-    /** @memo The KeyVal constructor.
-        \begin{description}
+    /** The KeyVal constructor.
+        <dl>
 
-        \item[molecule] A Molecule object.  There is no default.
+        <dt><tt>molecule</tt><dd> A Molecule object.  There is no default.
 
-        \item[coor] A MolecularCoor object that describes the coordinates.
-        If this is not given cartesian coordinates will be used.  For
-        convenience, two keywords needed by the MolecularCoor object are
-        automatically provided: natom3 and matrixkit.
+        <dt><tt>coor</tt><dd> A MolecularCoor object that describes the
+        coordinates.  If this is not given cartesian coordinates will be
+        used.  For convenience, two keywords needed by the MolecularCoor
+        object are automatically provided: natom3 and matrixkit.
 
-        \item[value_accuracy] Sets the accuracy to which values are
-        computed.  The default is 1.0e-6 atomic units.
+        <dt><tt>value_accuracy</tt><dd> Sets the accuracy to which values
+        are computed.  The default is 1.0e-6 atomic units.
 
-        \item[gradient_accuracy] Sets the accuracy to which gradients are
-        computed.  The default is 1.0e-6 atomic units.
+        <dt><tt>gradient_accuracy</tt><dd> Sets the accuracy to which
+        gradients are computed.  The default is 1.0e-6 atomic units.
 
-        \item[hessian_accuracy] Sets the accuracy to which hessians are
-        computed.  The default is 1.0e-4 atomic units.
+        <dt><tt>hessian_accuracy</tt><dd> Sets the accuracy to which
+        hessians are computed.  The default is 1.0e-4 atomic units.
 
-        \item[print_molecule_when_changed] If true, then whenever the
-        molecule's coordinates are updated they will be printed.  The
+        <dt><tt>print_molecule_when_changed</tt><dd> If true, then whenever
+        the molecule's coordinates are updated they will be printed.  The
         default is true.
 
-        \end{description}
-    */
+        </dl> */
     MolecularEnergy(const RefKeyVal&);
     MolecularEnergy(StateIn&);
     ~MolecularEnergy();
@@ -186,13 +185,13 @@ Convergence class with the exception that giving none of the convergence
 criteria keywords is the same as providing the following input to the
 KeyVal constructor:
 
-\begin{verbatim}
+<pre>
   conv<MolEnergyConvergence>: (
     max_disp = 1.0e-4
     max_grad = 1.0e-4
     graddisp = 1.0e-4
   )
-\end{verbatim}
+</pre>
 
 For MolEnergyConverence to work, the Function object given to the Optimizer
 object must derive from MolecularEnergy.
@@ -212,19 +211,21 @@ class MolEnergyConvergence: public Convergence {
     // Standard constructors and destructor.
     MolEnergyConvergence();
     MolEnergyConvergence(StateIn&);
-    /** @memo The KeyVal constructor.
+    /** The KeyVal constructor.
 
         In addition to the keywords read by Convergence, the following
         keywords are examined:
 
-        \begin{description}
+        <dl>
 
-        \item[energy] The MolecularEnergy object.  This is required.
+        <dt><tt>energy</tt><dd> The MolecularEnergy object.  This is
+        required.
 
-        \item[cartesian] If true, cartesian displacements and gradients
-        will be compared to the convergence criteria.  The default is true.
+        <dt><tt>cartesian</tt><dd> If true, cartesian displacements and
+        gradients will be compared to the convergence criteria.  The
+        default is true.
 
-        \end{description}
+        </dl>
 
      */
     MolEnergyConvergence(const RefKeyVal&);

@@ -1,0 +1,145 @@
+
+/** \page mpqcsimp Simple Input
+
+The simple input format consists of keywords followed by a ":" followed by
+a value.  The values might be modified by options found in parenthesis.
+For example, the following input performs an optimization of water using
+density functional theory with the B3LYP exchange-correlation functional:
+
+<pre>
+% B3LYP optimization of water
+optimize: yes
+method: KS (xc = B3LYP)
+basis: 3-21G*
+molecule:
+    O    0.172   0.000   0.000
+    H    0.745   0.000   0.754
+    H    0.745   0.000  -0.754
+</pre>
+
+Comments begin with a <tt>%</tt> and continue to the end of the line.
+Basis set names containing special characters, such as a space
+or parentheses, must be quoted inside a pair of double quotes.
+The accepted keywords are:
+
+<dl>
+
+<dt><tt>molecule</tt><dd> Gives the atoms types and coordinates.  The
+  following options can be used
+
+  <dl>
+     <dt><tt>bohr</tt><dd> The coordinates are given in Bohr.
+     <dt><tt>angstrom</tt><dd>  The coordinates are given in Angstroms.
+     <dt><tt>charge</tt><dd>  This option can be given after an "element x y z"
+                  quadruple.  This will override the charge on the
+                  atom.  For example, <tt>(charge = 0)</tt> can be given
+                  for the ghost atoms in a counterpoise correction
+                  calculation.
+  </dl>
+
+<dt><tt>multiplicity</tt><dd> Gives the multiplicity of the molecule.  The
+  default is <tt>1</tt>.
+
+<dt><tt>optimize</tt><dd> If <tt>yes</tt>, then an optimization will be
+  performed.  The default is <tt>no</tt>.  The following options can be
+  given.
+
+  <dl>
+     <dt><tt>cartesian</tt><dd> Use Cartesian coordinates.
+     <dt><tt>internal</tt><dd> Use internal coordinates.
+     <dt><tt>redundant</tt><dd> Use redundant internal coordinates.
+  </dl>
+
+<dt><tt>gradient</tt><dd> If <tt>yes</tt>, then a gradient calculation will
+  be performed.  The default is <tt>no</tt>.
+
+<dt><tt>frequencies</tt><dd> If <tt>yes</tt>, then the frequencies will be
+  obtained.  The default is <tt>no</tt>.
+
+<dt><tt>charge</tt><dd> Specificies the charge on the molecule.  The
+  default is <tt>0</tt>.
+
+<dt><tt>method</tt><dd> Specifices the method.  There is no default and the
+  possible values are:
+
+   <dl>
+
+     <dt><tt>HF</tt><dd> Hartree-Fock.  Unrestricted HF is used if
+        <tt>multiplicity</tt> > 1
+     <dt><tt>RHF</tt><dd> Restricted Hartree-Fock.
+     <dt><tt>UHF</tt><dd> Unestricted Hartree-Fock.
+     <dt><tt>KS</tt><dd> Kohn-Sham.  Unrestricted KS is used if
+        <tt>multiplicity</tt> > 1
+     <dt><tt>RKS</tt><dd> Restricted Kohn-Sham.
+     <dt><tt>UKS</tt><dd> Unestricted Kohn-Sham.
+     <dt><tt>MP2</tt><dd> Second order Moeller-Plesset perturbation theory.
+                Only available for <tt>multiplicity</tt> = 1.
+     <dt><tt>ZAPT2</tt><dd>  Z-averaged perturbation theory.
+                Only available for <tt>multiplicity</tt> > 1.  No gradient,
+                optimization, or frequencies are possible.
+   </dl>
+
+   The following options are valid with the <tt>KS</tt>, <tt>RKS</tt>, and
+   <tt>UKS</tt> methods:
+
+   <dl>
+     <dt><tt>grid</tt><dd> Specifies the grid to be used for numerical
+        integrations.  The following values can be given:
+        <dl>
+           <dt><tt>xcoarse</tt><dd>
+           <dt><tt>coarse</tt><dd>
+           <dt><tt>medium</tt><dd>
+           <dt><tt>fine</tt><dd>
+           <dt><tt>xfine</tt><dd>
+           <dt><tt>ultrafine</tt><dd>
+        </dl>
+     <dt><tt>xc</tt><dd> Specifies the exchange-correlation functional.
+        There is no default.  See the table in the StdDenFunctional
+        class documentation for the possible values.
+   </dl>
+
+<dt><tt>basis</tt><dd> Specifies the basis set.  There is no default.  See
+  the table in the GaussianBasisSet class documentation for the
+  available basis sets.
+
+<dt><tt>restart</tt><dd> Set to <tt>yes</tt> to restart an optimization.
+  The default is <tt>no</tt>.
+
+<dt><tt>checkpoint</tt><dd> Set to <tt>no</tt> to not save checkpoint files
+  during an optimization.  The default is <tt>yes</tt>.
+
+<dt><tt>symmetry</tt><dd> Specifices the Schoenflies symbol of the point
+  group of the molecule.  The default is <tt>auto</tt>, which will cause to
+  program to find the highest order Abelian subgroup of the molecule.
+
+<dt><tt>docc</tt><dd> Gives the number of doubly occupied orbitals in each
+  each irreducible representation in a parenthesized list.  The symmetry
+  must be specified and not be <tt>auto</tt>.  The method must be
+  restricted.
+
+<dt><tt>socc</tt><dd> Gives the number of single occupied orbitals in each
+  each irreducible representation in a parenthesized list.  The symmetry
+  must be specified and not be <tt>auto</tt>.  The method must be
+  restricted.
+
+<dt><tt>alpha</tt><dd> Gives the number of alpha occupied orbitals in each
+  each irreducible representation in a parenthesized list.  The symmetry
+  must be specified and not be <tt>auto</tt>.  The method must be
+  unrestricted.
+
+<dt><tt>beta</tt><dd> Gives the number of beta occupied orbitals in each
+  each irreducible representation in a parenthesized list.  The symmetry
+  must be specified and not be <tt>auto</tt>.  The method must be
+  unrestricted.
+
+<dt><tt>frozen_docc</tt><dd> Gives the number of frozen core orbitals.  Can
+  be each a single integer or a parenthesized list giving the frozen core
+  orbitals in each irreducible representation.
+
+<dt><tt>frozen_uocc</tt><dd> Gives the number of frozen virtual orbitals.
+  Can be each a single integer or a parenthesized list giving the frozen
+  virtual orbitals in each irreducible representation.
+
+</dl>
+
+*/

@@ -49,9 +49,9 @@ coordinate.  The first way is a shorthand notation, just a vector of a
 label followed by the atom numbers (starting at 1) is given.  For example,
 a stretch between two atoms, 1 and 2, is given, in the
 ParsedKeyVal format, as
-\begin{verbatim}
+<pre>
   stretch<StreSimpleCo>: [ R12 1 2 ]
-\end{verbatim}
+</pre>
 
 The other two ways to specify the atoms are more general.  With them, it is
 possible to give parameters for the IntCoor base class (and thus
@@ -59,24 +59,24 @@ give the value of the coordinate).  In the first of these input formats, a
 vector associated with the keyword atoms gives the atom numbers.
 The following specification for stretch is equivalent to that
 above:
-\begin{verbatim}
+<pre>
   stretch<StreSimpleCo>:( label = R12 atoms = [ 1 2 ] )
-\end{verbatim}
+</pre>
 
 In the second, a vector, atom_labels, is given along with a
 Molecule object.  The atom labels are looked up in the
 Molecule object to find the atom numbers.
 The following specification for stretch is equivalent to those
 above:
-\begin{verbatim}
+<pre>
   molecule<Molecule>: (
     { atom_labels atoms   geometry      } = {
           H1         H   [ 1.0 0.0 0.0 ]
           H2         H   [-1.0 0.0 0.0 ] } )
   stretch<StreSimpleCo>:( label = R12
                           atom_labels = [ H1 H2 ]
-                          molecule = $molecule )
-\end{verbatim}
+                          molecule = $:molecule )
+</pre>
  */
 class SimpleCo : public IntCoor {
 #   define CLASSNAME SimpleCo
@@ -188,10 +188,9 @@ The StreSimpleCo class describes an stretch internal coordinate of a
 molecule.  The input is described in the documentation of its parent
 class SimpleCo.
 
-Designating the two atoms as $a$ and $b$ and their cartesian positions as
-$\bar{r}_a$ and $\bar{r}_b$, the value of the coordinate, $r$, is
-\[ r = \| \bar{r}_a - \bar{r}_b \| \]
- */
+Designating the two atoms as \f$a\f$ and \f$b\f$ and their cartesian
+positions as \f$\bar{r}_a\f$ and \f$\bar{r}_b\f$, the value of the
+coordinate, \f$r\f$, is \f[ r = \| \bar{r}_a - \bar{r}_b \| \f] */
 class StreSimpleCo : public SimpleCo {
 #   define CLASSNAME StreSimpleCo
 #   define HAVE_CTOR
@@ -234,13 +233,13 @@ static const double rtd = 180.0/3.14159265358979323846;
 molecule.  The input is described in the documentation of its parent class
 SimpleCo.
 
-Designating the three atoms as $a$, $b$, and $c$ and their cartesian
-positions as $\bar{r}_a$, $\bar{r}_b$, and $\bar{r}_c$, the value of the
-coordinate, $\theta$, is given by
+Designating the three atoms as \f$a\f$, \f$b\f$, and \f$c\f$ and their
+cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$, and
+\f$\bar{r}_c\f$, the value of the coordinate, \f$\theta\f$, is given by
 
-\[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|} \]
-\[ \bar{u}_{cb} = \frac{\bar{r}_c - \bar{r}_b}{\| \bar{r}_c - \bar{r}_b \|} \]
-\[ \theta       = \arccos ( \bar{u}_{ab} \cdot \bar{u}_{cb} ) \]
+\f[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\f]
+\f[ \bar{u}_{cb} = \frac{\bar{r}_c - \bar{r}_b}{\| \bar{r}_c - \bar{r}_b \|}\f]
+\f[ \theta       = \arccos ( \bar{u}_{ab} \cdot \bar{u}_{cb} ) \f]
 
 */
 class BendSimpleCo : public SimpleCo { 
@@ -285,21 +284,26 @@ The TorsSimpleCo class describes an torsion internal coordinate of a
 molecule.  The input is described in the documentation of its parent
 class SimpleCo.
 
-Designating the four atoms as $a$, $b$, $c$, and $d$ and their cartesian
-positions as $\bar{r}_a$, $\bar{r}_b$, $\bar{r}_c$, and $\bar{r}_d$, the
-value of the coordinate, $\tau$, is given by
+Designating the four atoms as \f$a\f$, \f$b\f$, \f$c\f$, and \f$d\f$ and
+their cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$,
+\f$\bar{r}_c\f$, and \f$\bar{r}_d\f$, the value of the coordinate,
+\f$\tau\f$, is given by
 
-\[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|} \]
-\[ \bar{u}_{cb} = \frac{\bar{r}_c - \bar{r}_b}{\| \bar{r}_c - \bar{r}_b \|} \]
-\[ \bar{u}_{cd} = \frac{\bar{r}_c - \bar{r}_d}{\| \bar{r}_c - \bar{r}_b \|} \]
-\[ \bar{n}_{abc}= \frac{\bar{u}_{ab} \times \bar{u}_{cb}}
-                       {\| \bar{u}_{ab} \times \bar{u}_{cb} \|} \]
-\[ \bar{n}_{bcd}= \frac{\bar{u}_{cd} \times \bar{u}_{bc}}
-                       {\| \bar{u}_{cd} \times \bar{u}_{bc} \|} \]
-\[ s            = \cases{1, &if (\bar{n}_{abc}\times\bar{n}_{bcd})
-                                  \cdot \bar{u}_{cb} > 0;\cr
-                         -1, &otherwise.\cr} \]
-\[ \tau         = s \arccos ( - \bar{n}_{abc} \cdot \bar{n}_{bcd} ) \]
+\f[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\f]
+\f[ \bar{u}_{cb} = \frac{\bar{r}_c - \bar{r}_b}{\| \bar{r}_c - \bar{r}_b \|}\f]
+\f[ \bar{u}_{cd} = \frac{\bar{r}_c - \bar{r}_d}{\| \bar{r}_c - \bar{r}_b \|}\f]
+\f[ \bar{n}_{abc}= \frac{\bar{u}_{ab} \times \bar{u}_{cb}}
+                       {\| \bar{u}_{ab} \times \bar{u}_{cb} \|} \f]
+\f[ \bar{n}_{bcd}= \frac{\bar{u}_{cd} \times \bar{u}_{bc}}
+                       {\| \bar{u}_{cd} \times \bar{u}_{bc} \|} \f]
+\f[ s = \left\{
+    \begin{array}{ll}
+        1 & \mbox{if $(\bar{n}_{abc}\times\bar{n}_{bcd}) \cdot \bar{u}_{cb}
+                  > 0;$} \\
+       -1 & \mbox{otherwise}
+    \end{array} \right.
+ \f]
+\f[ \tau         = s \arccos ( - \bar{n}_{abc} \cdot \bar{n}_{bcd} ) \f]
 
 */
 class TorsSimpleCo : public SimpleCo { 
@@ -344,23 +348,29 @@ coordinate of a molecule.  The scaled torsion is more stable that ordinary
 torsions (see the TorsSimpleCo class) in describing situations
 where one of the torsions plane's is given by three near linear atoms.
 
-Designating the four atoms as $a$, $b$, $c$, and $d$ and their cartesian
-positions as $\bar{r}_a$, $\bar{r}_b$, $\bar{r}_c$, and $\bar{r}_d$, the
-value of the coordinate, $\tau_s$, is given by
+Designating the four atoms as \f$a\f$, \f$b\f$, \f$c\f$, and \f$d\f$ and
+their cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$,
+\f$\bar{r}_c\f$, and \f$\bar{r}_d\f$, the value of the coordinate,
+\f$\tau_s\f$, is given by
 
-\[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\]
-\[ \bar{u}_{cb} = \frac{\bar{r}_c - \bar{r}_b}{\| \bar{r}_c - \bar{r}_b \|}\]
-\[ \bar{u}_{cd} = \frac{\bar{r}_c - \bar{r}_d}{\| \bar{r}_c - \bar{r}_b \|}\]
-\[ \bar{n}_{abc}= \frac{\bar{u}_{ab} \times \bar{u}_{cb}}
-                       {\| \bar{u}_{ab} \times \bar{u}_{cb} \|}\]
-\[ \bar{n}_{bcd}= \frac{\bar{u}_{cd} \times \bar{u}_{cb}}
-                       {\| \bar{u}_{cd} \times \bar{u}_{cb} \|}\]
-\[ s            = \cases{-1, &if (\bar{n}_{abc}\times\bar{n}_{bcd})
-                                  \cdot \bar{u}_{cb} > 0;\cr
-                         1, &otherwise.\cr}\]
-\[ \tau_s       = s \sqrt{\left(1-(\bar{u}_{ab} \cdot \bar{u}_{cb}\right)^2)
+\f[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\f]
+\f[ \bar{u}_{cb} = \frac{\bar{r}_c - \bar{r}_b}{\| \bar{r}_c - \bar{r}_b \|}\f]
+\f[ \bar{u}_{cd} = \frac{\bar{r}_c - \bar{r}_d}{\| \bar{r}_c - \bar{r}_b \|}\f]
+\f[ \bar{n}_{abc}= \frac{\bar{u}_{ab} \times \bar{u}_{cb}}
+                       {\| \bar{u}_{ab} \times \bar{u}_{cb} \|}\f]
+\f[ \bar{n}_{bcd}= \frac{\bar{u}_{cd} \times \bar{u}_{cb}}
+                       {\| \bar{u}_{cd} \times \bar{u}_{cb} \|}\f]
+\f[ s = \left\{
+    \begin{array}{ll}
+      -1 & \mbox{if $(\bar{n}_{abc}\times\bar{n}_{bcd})
+                                  \cdot \bar{u}_{cb} > 0$} \\
+       1 & \mbox{otherwise}
+    \end{array}
+    \right.
+\f]
+\f[ \tau_s       = s \sqrt{\left(1-(\bar{u}_{ab} \cdot \bar{u}_{cb}\right)^2)
                         \left(1-(\bar{u}_{cb} \cdot \bar{u}_{cd}\right)^2)}
-                  \arccos ( - \bar{n}_{abc} \cdot \bar{n}_{bcd} )\]
+                  \arccos ( - \bar{n}_{abc} \cdot \bar{n}_{bcd} )\f]
 
  */
 class ScaledTorsSimpleCo : public SimpleCo { 
@@ -406,16 +416,17 @@ The OutSimpleCo class describes an out-of-plane internal coordinate
 of a molecule.  The input is described in the documentation of its parent
 class SimpleCo.
 
-Designating the four atoms as $a$, $b$, $c$, and $d$ and their cartesian
-positions as $\bar{r}_a$, $\bar{r}_b$, $\bar{r}_c$, and $\bar{r}_d$, the
-value of the coordinate, $\tau$, is given by
+Designating the four atoms as \f$a\f$, \f$b\f$, \f$c\f$, and \f$d\f$ and
+their cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$,
+\f$\bar{r}_c\f$, and \f$\bar{r}_d\f$, the value of the coordinate,
+\f$\tau\f$, is given by
 
-\[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\]
-\[ \bar{u}_{cb} = \frac{\bar{r}_b - \bar{r}_c}{\| \bar{r}_c - \bar{r}_b \|}\]
-\[ \bar{u}_{db} = \frac{\bar{r}_c - \bar{r}_d}{\| \bar{r}_c - \bar{r}_b \|}\]
-\[ \bar{n}_{bcd}= \frac{\bar{u}_{cb} \times \bar{u}_{db}}
-                     {\| \bar{u}_{cb} \times \bar{u}_{db} \|}\]
-\[ \phi         = \arcsin ( \bar{u}_{ab} \cdot \bar{n}_{bcd} )\]
+\f[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\f]
+\f[ \bar{u}_{cb} = \frac{\bar{r}_b - \bar{r}_c}{\| \bar{r}_c - \bar{r}_b \|}\f]
+\f[ \bar{u}_{db} = \frac{\bar{r}_c - \bar{r}_d}{\| \bar{r}_c - \bar{r}_b \|}\f]
+\f[ \bar{n}_{bcd}= \frac{\bar{u}_{cb} \times \bar{u}_{db}}
+                     {\| \bar{u}_{cb} \times \bar{u}_{db} \|}\f]
+\f[ \phi         = \arcsin ( \bar{u}_{ab} \cdot \bar{n}_{bcd} )\f]
 
 */
 class OutSimpleCo : public SimpleCo { 
@@ -457,23 +468,23 @@ typedef OutSimpleCo Out;
 
 /** The LinIPSimpleCo class describes an in-plane component of a linear
 bend internal coordinate of a molecule.  The input is described in the
-documentation of its parent class SimpleCo.  A vector, $\bar{u}$, given as
-the keyword u, that is not colinear with either $\bar{r}_a -
-\bar{r}_b$ or $\bar{r}_b - \bar{r}_c$ must be provided, where $\bar{r}_a$,
-$\bar{r}_b$, and $\bar{r}_c$ are the positions of the first, second, and
-third atoms, respectively.
+documentation of its parent class SimpleCo.  A vector, \f$\bar{u}\f$, given
+as the keyword u, that is not colinear with either \f$\bar{r}_a -
+\bar{r}_b\f$ or \f$\bar{r}_b - \bar{r}_c\f$ must be provided, where
+\f$\bar{r}_a\f$, \f$\bar{r}_b\f$, and \f$\bar{r}_c\f$ are the positions of
+the first, second, and third atoms, respectively.
 
   Usually, LinIPSimpleCo is used with a corresponding LinOPSimpleCo, which
 is given exactly the same u.
 
-Designating the three atoms as $a$, $b$, and $c$ and their cartesian
-positions as $\bar{r}_a$, $\bar{r}_b$, and $\bar{r}_c$, the value of the
-coordinate, $\theta_i$, is given by
+Designating the three atoms as \f$a\f$, \f$b\f$, and \f$c\f$ and their
+cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$, and
+\f$\bar{r}_c\f$, the value of the coordinate, \f$\theta_i\f$, is given by
 
-\[  \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\]
-\[  \bar{u}_{cb} = \frac{\bar{r}_b - \bar{r}_c}{\| \bar{r}_c - \bar{r}_b \|}\]
-\[  \theta_i     = \pi - \arccos ( \bar{u}_{ab} \cdot \bar{u} )
-                    - \arccos ( \bar{u}_{cb} \cdot \bar{u} )\]
+\f[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\f]
+\f[ \bar{u}_{cb} = \frac{\bar{r}_b - \bar{r}_c}{\| \bar{r}_c - \bar{r}_b \|}\f]
+\f[ \theta_i     = \pi - \arccos ( \bar{u}_{ab} \cdot \bar{u} )
+                    - \arccos ( \bar{u}_{cb} \cdot \bar{u} )\f]
 
 */
 class LinIPSimpleCo : public SimpleCo { 
@@ -518,26 +529,26 @@ typedef LinIPSimpleCo LinIP;
 
 /** The LinOPSimpleCo class describes an out-of-plane component of a linear
 bend internal coordinate of a molecule.  The input is described in the
-documentation of its parent class SimpleCo.  A vector, $\bar{u}$, given as
-the keyword u, that is not colinear with either $\bar{r}_a - \bar{r}_b$ or
-$\bar{r}_b - \bar{r}_c$ must be provided, where $\bar{r}_a$, $\bar{r}_b$,
-and $\bar{r}_c$ are the positions of the first, second, and third atoms,
-respectively.
+documentation of its parent class SimpleCo.  A vector, \f$\bar{u}\f$, given
+as the keyword u, that is not colinear with either \f$\bar{r}_a -
+\bar{r}_b\f$ or \f$\bar{r}_b - \bar{r}_c\f$ must be provided, where
+\f$\bar{r}_a\f$, \f$\bar{r}_b\f$, and \f$\bar{r}_c\f$ are the positions of
+the first, second, and third atoms, respectively.
 
   Usually, LinOPSimpleCo is used with a corresponding LinIPSimpleCo, which
 is given exactly the same u.
 
-Designating the three atoms as $a$, $b$, and $c$ and their cartesian
-positions as $\bar{r}_a$, $\bar{r}_b$, and $\bar{r}_c$, the value of the
-coordinate, $\theta_o$, is given by
+Designating the three atoms as \f$a\f$, \f$b\f$, and \f$c\f$ and their
+cartesian positions as \f$\bar{r}_a\f$, \f$\bar{r}_b\f$, and
+\f$\bar{r}_c\f$, the value of the coordinate, \f$\theta_o\f$, is given by
 
 
-\[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\]
-\[ \bar{u}_{cb} = \frac{\bar{r}_b - \bar{r}_c}{\| \bar{r}_c - \bar{r}_b \|}\]
-\[ \bar{n}      = \frac{\bar{u} \times \bar{u}_{ab}}
-                       {\| \bar{u} \times \bar{u}_{ab} \|}\]
-\[ \theta_o     = \pi - \arccos ( \bar{u}_{ab} \cdot \bar{n} )
-                      - \arccos ( \bar{u}_{cb} \cdot \bar{n} )\]
+\f[ \bar{u}_{ab} = \frac{\bar{r}_a - \bar{r}_b}{\| \bar{r}_a - \bar{r}_b \|}\f]
+\f[ \bar{u}_{cb} = \frac{\bar{r}_b - \bar{r}_c}{\| \bar{r}_c - \bar{r}_b \|}\f]
+\f[ \bar{n}      = \frac{\bar{u} \times \bar{u}_{ab}}
+                       {\| \bar{u} \times \bar{u}_{ab} \|}\f]
+\f[ \theta_o     = \pi - \arccos ( \bar{u}_{ab} \cdot \bar{n} )
+                      - \arccos ( \bar{u}_{cb} \cdot \bar{n} )\f]
 
 */
 class LinOPSimpleCo : public SimpleCo { 

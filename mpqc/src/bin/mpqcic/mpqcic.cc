@@ -26,7 +26,13 @@ extern "C" {
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/molecule/molecule.h>
 
+extern "C" {
+#include "scf_ffo.gbl"
+#include "opt2_fock.gbl"
+}
+
 #include "mpqc_int.h"
+#include "opt2.h"
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -106,7 +112,8 @@ main(int argc, char *argv[])
 {
   int errcod, geom_code=-1;
   
-  int do_scf, do_grad, do_mp2, read_geom, opt_geom, nopt, proper;
+  int do_scf, do_grad, do_mp2, do_opt2_v1, do_opt2_v2;
+  int read_geom, opt_geom, nopt, proper;
   int save_fock, save_vector, print_geometry;
   int localp, throttle, sync_loop, node_timings;
   int geometry_converged;
@@ -139,6 +146,8 @@ main(int argc, char *argv[])
   char *filename = (argv[1]) ? argv[1] : "mpqc.in";
 
   RefKeyVal keyval;
+
+  int nfzc, nfzv, mem_alloc;
 
   if (mynode0() == 0) {
     fprintf(outfile,
@@ -178,6 +187,16 @@ main(int argc, char *argv[])
     }
     scfkv=0;
 
+    // Read in opt2 stuff
+
+    RefKeyVal opt2input(new PrefixKeyVal(":opt2 :mpqc :default", keyval));
+    nfzc = opt2input->intvalue("frozen_docc");
+    nfzv = opt2input->intvalue("frozen_uocc");
+    mem_alloc = opt2input->intvalue("mem");
+    if (!mem_alloc) mem_alloc = 8000000;
+
+    opt2input = 0;
+
    // read input, and initialize various structs
 
     do_grad=0;
@@ -202,6 +221,14 @@ main(int argc, char *argv[])
     do_mp2 = 0;
     if (keyval->exists("mp2"))
       do_mp2 = keyval->booleanvalue("mp2");
+
+    do_opt2_v1 = 0;
+    if (keyval->exists("opt2_v1"))
+      do_opt2_v1 = keyval->booleanvalue("opt2_v1");
+
+    do_opt2_v2 = 0;
+    if (keyval->exists("opt2_v2"))
+      do_opt2_v2 = keyval->booleanvalue("opt2_v2");
 
     read_geom = 0;
     if (keyval->exists("read_geometry"))
@@ -257,6 +284,8 @@ main(int argc, char *argv[])
     fprintf(outfile,"    print_geometry     = %s\n",
                                                   (print_geometry)?"YES":"NO");
     fprintf(outfile,"    mp2                = %s\n\n", (do_mp2)?"YES":"NO");
+    fprintf(outfile,"    opt2_v1            = %s\n\n", (do_opt2_v1)?"YES":"NO");
+    fprintf(outfile,"    opt2_v2            = %s\n\n", (do_opt2_v2)?"YES":"NO");
 
     if (save_vector) {
       fprintf(outfile,"  scf vector will be written to file %s.scfvec\n",
@@ -280,7 +309,7 @@ main(int argc, char *argv[])
       read_geometry(centers,keyval,outfile);
     }
 
-   // we may have change the geometry in mol, so reform centers
+   // we may have changed the geometry in mol, so reform centers
     reset_centers(centers,mol);
   }
 
@@ -302,7 +331,12 @@ main(int argc, char *argv[])
   bcast0(&localp,sizeof(int),mtype_get(),0);
   bcast0(&proper,sizeof(int),mtype_get(),0);
   bcast0(&do_mp2,sizeof(int),mtype_get(),0);
+  bcast0(&do_opt2_v1,sizeof(int),mtype_get(),0);
+  bcast0(&do_opt2_v1,sizeof(int),mtype_get(),0);
   bcast0(&dens,sizeof(double),mtype_get(),0);
+  bcast0(&nfzc,sizeof(int),mtype_get(),0);
+  bcast0(&nfzv,sizeof(int),mtype_get(),0);
+  bcast0(&mem_alloc,sizeof(int),mtype_get(),0);
 
  // if we're using a projected guess vector, then initialize oldcenters
   if (scf_info.proj_vector) {
@@ -473,7 +507,7 @@ main(int argc, char *argv[])
       dmt_force_csscf_done();
   }
 
- /* print out some usefull stuff */
+ /* print out some useful stuff */
 #if 0
   if (proper) {
     tim_enter("properties");
@@ -567,9 +601,100 @@ main(int argc, char *argv[])
     mp2_hah(&centers,&scf_info,SCF_VEC,FOCK,outfile,keyval);
     tim_exit("mp2");
   }
-#endif  
+#endif
+
+  if (do_opt2_v1 || do_opt2_v2) {
+    dmt_matrix S = dmt_create("libscfv3 overlap matrix",scf_info.nbfao,SCATTERED);
+    dmt_matrix SAHALF;
+    dmt_matrix SC;
+    dmt_matrix EVECS;
+    dmt_matrix SCR;
+    double_vector_t occ_num;
+    double_vector_t evals;
+    dmt_matrix SCR1,SCR2,SCR3;
+    // this got free'ed somewhere
+    if(scf_info.iopen)
+      FockO = dmt_create("opt2 open fock matrix",scf_info.nbfao,SCATTERED);
+    SCR1 = dmt_create("opt2:scr1",scf_info.nbfao,COLUMNS);
+    SCR2 = dmt_create("opt2:scr2",scf_info.nbfao,COLUMNS);
+    SCR3 = dmt_create("opt2:scr3",scf_info.nbfao,COLUMNS);
+
+    if (!do_scf) {
+
+      if(mynode0()==0) fprintf(stderr,"Must do scf before opt2. Program exits\n");
+      clean_and_exit();
+      }
+
+    tim_enter("opt2");
+
+    scf_ffo(S, &scf_info, &sym_info, &centers, Scf_Vec, Fock, FockO);
+
+    if (scf_info.iopen) {
+      scf_make_opt2_fock(&scf_info,Fock,FockO,Scf_Vec,SCR1,SCR2,SCR3);
+      dmt_free(SCR3);
+      dmt_copy(Fock,SCR1); /* dmt_diag needs a columns dist. matrix */
+      allocbn_double_vector(&evals,"n",scf_info.nbfao);
+      dmt_diag(SCR1,SCR2,evals.d); /*SCR2 transforms from old to new mo basis */
+      dmt_copy(Scf_Vec,SCR1);
+      dmt_transpose(SCR1);
+      dmt_mult(SCR1,SCR2,Scf_Vec);
+      dmt_free(SCR1);
+      dmt_free(SCR2);
+      }
+    else {
+      /* form 'sahalf' matrix sahalf = u*ei^-0.5*u~ */
+      allocbn_double_vector(&evals,"n",scf_info.nbfao);
+      SAHALF= dmt_create("libscfv3 scf_core_guess scr4",scf_info.nbfao,COLUMNS);      EVECS = dmt_create("libscfv3 scf_core_guess scr3",scf_info.nbfao,COLUMNS);      SCR = dmt_create("libscfv3 scf_core_guess scr5",scf_info.nbfao,COLUMNS);
+      SC = dmt_columns("libscfv3 scf_core_guess scr1",S);
+      /* diagonalize overlap matrix */
+      dmt_diag(SC,EVECS,evals.d);
+      /* form SAHALF matrix (s^(-1/2), Sz&Ostl p. 143) */
+      for(int i=0; i < scf_info.nbfao; i++) evals.d[i] = 1.0/sqrt(evals.d[i]);
+      dmt_fill(SAHALF,0.0);
+      dmt_set_diagonal(SAHALF,evals.d);
+      /* form the orthogonalization matrix S^(-1/2) (Szabo&Ostlund p. 143)
+       * (called SAHALF here) */
+      dmt_transpose(EVECS);
+      dmt_mult(SAHALF,EVECS,SCR);
+      dmt_mult(EVECS,SCR,SAHALF);
+      dmt_free(EVECS);
+      dmt_free(SC);
+      dmt_free(SCR);
+      dmt_free(S);
+      dmt_copy(Fock,SCR1); /* need a columns distr. matrix */
+      dmt_mult(SCR1,SAHALF,SCR2);
+      dmt_mult(SAHALF,SCR2,SCR3);
+      /* SCR3 is now the Fock matrix in the orthogonalized ao basis */
+      dmt_diag(SCR3,Scf_Vec,evals.d);
+      dmt_copy(Scf_Vec,SCR1);
+      dmt_mult(SAHALF,SCR1,Scf_Vec); /* Sz&Ostl p.146 point 9 */
+      dmt_free(SCR1);
+      dmt_free(SCR2);
+      dmt_free(SCR3);
+      }
+
+    if (do_opt2_v1) {
+        sync0();
+        tim_enter("opt2_v1");
+        opt2_v1(&centers,&scf_info,Scf_Vec,&evals,nfzc,nfzv,mem_alloc,
+                    outfile);
+        tim_exit("opt2_v1");
+      }
+    if (do_opt2_v2) {
+        sync0();
+        tim_enter("opt2_v2");
+        opt2_v2(&centers,&scf_info,Scf_Vec,&evals,nfzc,nfzv,mem_alloc,
+                    outfile);
+        tim_exit("opt2_v2");
+      }
+    free_double_vector(&evals);
+
+    tim_exit("opt2");
+    }
 
   tim_print(node_timings);
+
+  fflush(outfile);
 
   clean_and_exit();
 }

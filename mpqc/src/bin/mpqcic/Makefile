@@ -9,11 +9,12 @@ LD = $(CXX)
 
 TARGET_TO_MAKE = mpqcic
 
-CXXSRC = mpqcic.cc mpqc_int.cc mp2.cc
-CSRC =
-INC = mpqc_int.h
+CXXSRC = mpqcic.cc mpqc_int.cc opt2_v1.cc opt2_v2.cc
+CSRC = scf_ffo.c opt2_fock.c gcollect.c
+INC = mpqc_int.h opt2.h
 
-DEPENDINCLUDE = $(INC)
+DEPENDINCLUDE = $(INC) \
+                scf_ffo.gbl scf_ffo.lcl opt2_fock.gbl opt2_fock.lcl
 
 BINOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o)
 

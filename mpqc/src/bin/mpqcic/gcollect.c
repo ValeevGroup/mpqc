@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <comm/picl/picl.h>
 #include <comm/picl/ext/piclext.h>
@@ -12,7 +13,7 @@
 void
 gcollect(double *x, int *lens, double *y)
 {
-#if defined(I860)
+#if defined(I860) && !defined(PARAGON)
   gcolx(x,lens,y);
 #else
 
@@ -31,7 +32,10 @@ gcollect(double *x, int *lens, double *y)
   for (i=0; i < me; i++) myoff += lens[i];
   myoff /= sizeof(double);
 
+  leny = 0;
   for (i=0; i < nproc; i++) leny += lens[i];
+
+  memset(y,0,leny);
 
   memcpy(&y[myoff],x,lens[me]);
 

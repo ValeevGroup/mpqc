@@ -462,8 +462,8 @@ main(int argc, char**argv)
 {
 
 //#if defined(__i386__) && defined(__GNUC__)
-  // make floating point errors cause an exception (except for denormalized
-  // operands, since small numbers are denormalized)
+//  make floating point errors cause an exception (except for denormalized
+//  operands, since small numbers are denormalized)
 //  asm("fldcw %0" : : "o" (0x372));
 //#endif
 
@@ -485,6 +485,7 @@ main(int argc, char**argv)
 
   cout << "=========== FD df/drho Tests ===========" << endl;
   RefDenFunctional funcs[] = {
+    new PW91CFunctional,
     new SlaterXFunctional,
     new Becke88XFunctional,
     new VWN1LCFunctional,
@@ -492,10 +493,10 @@ main(int argc, char**argv)
     new VWN3LCFunctional,
     new VWN4LCFunctional,
     new VWN5LCFunctional,
+    new VWNTestLCFunctional,
     new PW92LCFunctional,
     new PZ81LCFunctional,
     new PBECFunctional,
-    new PW91CFunctional,
     new P86CFunctional,
     new XalphaFunctional,
     new LYPCFunctional,

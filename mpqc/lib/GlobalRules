@@ -209,6 +209,8 @@ $(TARGET_TO_MAKE).patch%: $(TARGET_TO_MAKE)_pl%
     echo " " > /dev/null
 
 values::
+	@echo TOPDIR=$(TOPDIR)
+	@echo SRCDIR=$(SRCDIR)
 	@echo VPATH=$(VPATH)
 	@echo BIN_OR_LIB=$(BIN_OR_LIB)
 	@echo TARGET_TO_MAKE=$(TARGET_TO_MAKE)

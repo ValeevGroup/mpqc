@@ -74,8 +74,12 @@ SCFormIO::init()
   indent_size_ = ios::xalloc();
   skip_indent_ = ios::xalloc();
 
-  if (grp_.null())
-    set_messagegrp(MessageGrp::get_default_messagegrp());
+  cout.iword(skip_indent_) = 0;
+  cout.iword(indent_size_) = 0;
+  cout.iword(nindent_) = 0;
+  cerr.iword(skip_indent_) = 0;
+  cerr.iword(indent_size_) = 0;
+  cerr.iword(nindent_) = 0;
 
   if (nullstream_.bad() || nullstream_.fail())
     nullstream_.open("/dev/null");
@@ -90,7 +94,7 @@ SCFormIO::indent(ios&o)
       skip--;
       return o;
     }
-  if (debug_) {
+  if (debug_ && grp_.nonnull()) {
       char nn[24];
       sprintf(nn,"node %5d:",grp_->me());
       for (int i=0; i < strlen(nn); i++) o.rdbuf()->sputc(nn[i]);
@@ -152,7 +156,8 @@ SCFormIO::node0(ostream& o)
 {
   if (!ready_) init();
   
-  if (!debug_ && node_to_print_ >= 0 && node_to_print_ != grp_->me())
+  if (!debug_ && node_to_print_ >= 0
+      && grp_.nonnull() && node_to_print_ != grp_->me())
     return nullstream_;
 
   return o;

@@ -1,9 +1,12 @@
 
 /* $Log$
- * Revision 1.1  1994/06/08 01:15:11  cljanss
- * Many changes.  These include: newmat7 and nihmatrix -> scmat
- * and mpqcic -> MPSCF and updated optimize stuff.
+ * Revision 1.2  1994/07/07 17:59:10  cljanss
+ * Fixed strcmp on a null pointer.
  *
+// Revision 1.1  1994/06/08  01:15:11  cljanss
+// Many changes.  These include: newmat7 and nihmatrix -> scmat
+// and mpqcic -> MPSCF and updated optimize stuff.
+//
  * */
 
 static char rcsid[] = "$Id$";
@@ -497,9 +500,9 @@ default_value(KeyVal&keyval,char*keyword)
 
     val = keyval.intvalue(keyword);
     if (keyval.error() != KeyVal::OK) {
-        val = 6;
-        if(!ot && strcmp(ot,"none")) val=4;
-        if(!ot && !strcmp(ot,"twocon")) val = 3;
+        if(!ot || !strcmp(ot,"none")) val=6;
+        else if(!strcmp(ot,"twocon")) val = 3;
+        else val = 4;
       }
     if (ot) delete[] ot;
     }

@@ -399,6 +399,8 @@ class RadialAngularIntegrator: public DenIntegrator {
     int user_defined_grids_;
     double *grid_accuracy_;
     int dynamic_grids_;
+    int natomic_rows_;
+    int max_gridtype_;
   protected:
     RefRadialIntegrator radial_;
     RefAngularIntegrator angular_;
@@ -430,6 +432,7 @@ class RadialAngularIntegrator: public DenIntegrator {
     void init_parameters(const RefKeyVal& keyval);
     void init_pruning_coefficients(const RefKeyVal& keyval);
     void init_pruning_coefficients(void);
+    void init_alpha_coefficients(void);
     int select_dynamic_grid(void);
 };
     

@@ -941,7 +941,7 @@ UnrestrictedSCF::extrap_error()
 ///////////////////////////////////////////////////////////////////////////
 
 double
-UnrestrictedSCF::compute_vector(double& eelec)
+UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
 {
   tim_enter("vector");
   int i;
@@ -963,12 +963,6 @@ UnrestrictedSCF::compute_vector(double& eelec)
 
   // set up subclass for vector calculation
   init_vector();
-  
-  // calculate the nuclear repulsion energy
-  double nucrep = molecule()->nuclear_repulsion_energy();
-  ExEnv::out0() << indent
-       << scprintf("nuclear repulsion energy = %15.10f", nucrep)
-       << endl << endl;
 
   RefDiagSCMatrix evalsa(oso_dimension(), basis_matrixkit());
   RefDiagSCMatrix evalsb(oso_dimension(), basis_matrixkit());

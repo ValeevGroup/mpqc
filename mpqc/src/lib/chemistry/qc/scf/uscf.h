@@ -59,7 +59,7 @@ class UnrestrictedSCF: public SCF {
   protected:
     Ref<SCExtrapError> extrap_error();
     // calculate the scf vector, returning the accuracy
-    double compute_vector(double&);
+    double compute_vector(double&, double enuclear);
     void initial_vector(int needv=1);
     
   public:

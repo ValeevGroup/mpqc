@@ -1,0 +1,5 @@
+
+interface MolE {
+  void create(in string arg);
+  double energy();
+};

@@ -416,10 +416,10 @@ AC_MSG_CHECKING([for special optimization options])
 case $target in
   rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
     if test X$GCC != Xyes; then
-      COPTIONS_OPT="-O"
+      COPTIONS_OPT="-O -qnolm"
     fi
     if test X$GXX != Xyes; then
-      CXXOPTIONS_OPT="-O"
+      CXXOPTIONS_OPT="-O -qnolm -qrtti"
     fi
     AC_MSG_RESULT("rs6000 or powerpc")
   ;;
@@ -1258,10 +1258,10 @@ changequote([, ])dnl
   ;;
   rs6000-*)
     if test "X$CXX" = XmpCC -o "X$CXX" = XmpCC_r; then
-      CXX="\$(SRCTOPDIR)/bin/xlCfix mpCC"
+      CXX="mpCC_r"
     fi
     if test "X$CXX" = XxlC; then
-      CXX="\$(SRCTOPDIR)/bin/xlCfix xlC"
+      CXX="xlC_r"
     fi
     AC_MSG_RESULT(rs6000)
   ;;

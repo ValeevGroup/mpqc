@@ -134,6 +134,7 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     abs_space_ << SavableState::restore_state(si);
     ribs_space_ << SavableState::restore_state(si);
     act_occ_space_ << SavableState::restore_state(si);
+    occ_space_ << SavableState::restore_state(si);
   }
 
   orbsym_ = 0;
@@ -175,6 +176,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(abs_space_.pointer(),so);
   SavableState::save_state(ribs_space_.pointer(),so);
   SavableState::save_state(act_occ_space_.pointer(),so);
+  SavableState::save_state(occ_space_.pointer(),so);
 }
 
 char* R12IntEvalInfo::ints_file() const
@@ -419,6 +421,7 @@ void R12IntEvalInfo::eigen2_(RefDiagSCMatrix &vals, RefSCMatrix &vecs, int*& orb
 
   obs_space_ = new MOIndexSpace("MOs sorted by energy", vecs, bs_, vals, 0, 0);
   act_occ_space_ = new MOIndexSpace("active occupied MOs sorted by energy", vecs, bs_, vals, nfzc_, noso_ - nocc_);
+  occ_space_ = new MOIndexSpace("occupied MOs sorted by energy", vecs, bs_, vals, 0, noso_ - nocc_);
 
   vecs = obs_space_->coefs().t();
   vals = obs_space_->evals();

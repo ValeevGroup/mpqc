@@ -97,6 +97,7 @@ private:
   Ref<MOIndexSpace> abs_space_;
   Ref<MOIndexSpace> ribs_space_;
   Ref<MOIndexSpace> act_occ_space_;
+  Ref<MOIndexSpace> occ_space_;
 
   // construct the RI basis based on abs_method
   void construct_ri_basis_(bool safe);
@@ -185,6 +186,8 @@ public:
   Ref<MOIndexSpace> obs_space() const { return obs_space_; };
   /// Returns the MOIndexSpace object for the active occupied MOs
   Ref<MOIndexSpace> act_occ_space() const { return act_occ_space_; };
+  /// Returns the MOIndexSpace object for all occupied MOs
+  Ref<MOIndexSpace> occ_space() const { return occ_space_; };
   /// Returns the MOIndexSpace object for ABS
   Ref<MOIndexSpace> abs_space() const { return abs_space_; };
   /// Returns the MOIndexSpace object for RI-BS

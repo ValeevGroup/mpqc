@@ -40,7 +40,7 @@ class MPSCF: public OneBodyWavefunction
     centers_t centers;
     centers_t oldcenters;
     dmt_matrix Scf_Vec;
-    Result _scf;
+    ResultInfo _scf;
     dmt_matrix Fock;
     dmt_matrix FockO;
     FILE* outfile;

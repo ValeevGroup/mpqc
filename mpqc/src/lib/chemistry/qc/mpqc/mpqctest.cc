@@ -93,7 +93,7 @@ main(int argc, char**argv)
     //StateInText si("mpqctest.ckpt");
     StateInBinXDR si("mpqctest.ckpt");
     opt.restore_state(si);
-    mole = opt->nlp();
+    mole = opt->function();
   } else {
     // open keyval input
     RefKeyVal rpkv(new ParsedKeyVal(input));

@@ -444,7 +444,7 @@ MPSCF::compute()
             // at each charge position compute the efield dot normal
             _density.computed() = 0;
             RefSymmSCMatrix DAO = density();
-            RefSymmSCMatrix efieldAO(DAO.dim());
+            RefSymmSCMatrix efieldAO(DAO.dim(),solvent_->matrixkit());
             GaussianEfieldDotVectorIntv2 *edotnv2
                 = new GaussianEfieldDotVectorIntv2(basis(), molecule());
             RefSCElementOp edotn_op = edotnv2;
@@ -637,7 +637,7 @@ MPSCF::compute()
     }
 
     // convert the gradient to a SCVector
-    RefSCVector g(_moldim);
+    RefSCVector g(_moldim,matrixkit());
     for (ii=0,i=0; i<centers.n; i++) {
       for (j=0; j<3; j++,ii++) {
         g(ii) = grad.d[j][i];
@@ -819,7 +819,7 @@ MPSCF::scfvec_to_eigenvectors()
   int nbasis = basis()->nbasis();
 
   if (_eigenvectors.result_noupdate().null()) {
-      RefSCMatrix tmp(basis_dimension(),basis_dimension());
+      RefSCMatrix tmp(basis_dimension(),basis_dimension(),matrixkit());
       _eigenvectors.result_noupdate() = tmp;
     }
 

@@ -36,7 +36,7 @@ REQUIREDCXXSRC = mstate.cc \
          reduce.cc topology.cc hcube.cc \
          rnglock.cc memory.cc memmsg.cc pool.cc \
          memamsg.cc memproc.cc \
-         pregtime.cc thread.cc memiter.cc
+         pregtime.cc thread.cc memiter.cc memrdma.cc
 
 OPTIONALCXXSRC = messshm.cc messmpi.cc memshm.cc \
                  memmtmpi.cc
@@ -49,6 +49,9 @@ endif
 
 ifeq ($(HAVE_MPI),yes)
   CXXSRC += messmpi.cc memmtmpi.cc
+endif
+ifeq ($(HAVE_ARMCI),yes)
+  CXXSRC += memarmci.cc
 endif
 ifeq ($(HAVE_PTHREAD),yes)
   CXXSRC += thpthd.cc

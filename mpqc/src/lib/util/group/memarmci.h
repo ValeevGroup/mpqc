@@ -1,10 +1,11 @@
 //
-// linkage.h
+// memarmci.h
+// based on memshm.h
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
 // Author: Curtis Janssen <cljanss@ca.sandia.gov>
-// Maintainer: LPS
+// Maintainer: SNL
 //
 // This file is part of the SC Toolkit.
 //
@@ -25,48 +26,48 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _util_group_linkage_h
-#define _util_group_linkage_h
-
-#ifndef __PIC__
-
-#ifdef HAVE_CONFIG_H
-#include <scconfig.h>
+#ifdef __GNUC__
+#pragma interface
 #endif
 
+#ifndef _util_group_memarmci_h
+#define _util_group_memarmci_h
+
+#include <iostream>
+
+#include <util/group/memrdma.h>
+
 namespace sc {
-static ForceLink<ProcMessageGrp> group_force_link_;
+
+/** The ARMCIMemoryGrp concrete class provides an implementation of
+    MsgMemoryGrp.  It uses the ARMCI interface. */
+class ARMCIMemoryGrp: public RDMAMemoryGrp {
+  private:
+    void **all_data_;
+    void init();
+    void finalize();
+  public:
+    ARMCIMemoryGrp(const Ref<MessageGrp>& msg);
+    ARMCIMemoryGrp(const Ref<KeyVal>&);
+    ~ARMCIMemoryGrp();
+
+    void set_localsize(size_t);
+
+    void retrieve_data(void *, int node, int offset, int size, int lock);
+    void replace_data(void *, int node, int offset, int size, int unlock);
+    void sum_data(double *data, int node, int doffset, int dsize);
+
+    void sync();
+    void deactivate();
+
+    void print(std::ostream &o = ExEnv::out0()) const;
+};
+
 }
 
-# ifdef HAVE_SYSV_IPC
-#   include <util/group/messshm.h>
-namespace sc {
-    static ForceLink<ShmMessageGrp> group_force_link_a_;
-}
-# endif
-
-# if defined(HAVE_PTHREAD)
-#   include <util/group/thpthd.h>
-namespace sc {
-    static ForceLink<PthreadThreadGrp> group_force_link_c_;
-}
-# endif
-
-#if defined(HAVE_MPI)
-#   include <util/group/memmtmpi.h>
-namespace sc {
-    static ForceLink<MTMPIMemoryGrp> group_force_link_g_;
-}
 #endif
 
-#if defined(HAVE_ARMCI)
-#   include <util/group/memarmci.h>
-namespace sc {
-    static ForceLink<ARMCIMemoryGrp> group_force_link_h_;
-}
-#endif
-
-#endif /* __PIC__ */
-
-
-#endif
+// Local Variables:
+// mode: c++
+// c-file-style: "CLJ"
+// End:

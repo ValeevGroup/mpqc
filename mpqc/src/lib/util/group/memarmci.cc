@@ -1,0 +1,201 @@
+//
+// memarmci.cc
+// based on memshm.cc
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Maintainer: SNL
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
+
+#ifndef _util_group_memarmci_cc
+#define _util_group_memarmci_cc
+
+#ifdef __GNUC__
+#pragma implementation
+#endif
+
+extern "C" {
+#include <armci.h>
+}
+
+#include <util/misc/formio.h>
+#include <util/group/memarmci.h>
+
+using namespace sc;
+
+static ClassDesc ARMCIMemoryGrp_cd(
+  typeid(ARMCIMemoryGrp),"ARMCIMemoryGrp",1,"public RDMAMemoryGrp",
+  0, create<ARMCIMemoryGrp>, 0);
+
+ARMCIMemoryGrp::ARMCIMemoryGrp(const Ref<MessageGrp>& msg):
+  RDMAMemoryGrp(msg)
+{
+  init();
+}
+
+ARMCIMemoryGrp::ARMCIMemoryGrp(const Ref<KeyVal>& keyval):
+  RDMAMemoryGrp(keyval)
+{
+  init();
+}
+
+void
+ARMCIMemoryGrp::init()
+{
+  //debug_ = 1;
+  all_data_ = 0;
+  ARMCI_Init();
+}
+
+void
+ARMCIMemoryGrp::finalize()
+{
+  set_localsize(0);
+  ARMCI_Finalize();
+}
+
+void
+ARMCIMemoryGrp::set_localsize(size_t localsize)
+{
+  ARMCI_AllFence();
+
+  // this will initialize the offsets_ array
+  MsgMemoryGrp::set_localsize(localsize);
+
+  if (all_data_) {
+      ARMCI_Free(data_);
+      delete[] all_data_;
+      all_data_ = 0;
+      data_ = 0;
+      ARMCI_Destroy_mutexes();
+    }
+
+  if (localsize == 0) return;
+
+  all_data_ = new void*[n()];
+  int r;
+  r = ARMCI_Malloc(all_data_, localsize);
+  data_ = reinterpret_cast<char*>(all_data_[me()]);
+
+  if (debug_) {
+      for (int i=0; i<n(); i++) {
+          std::cout << me() << ": all_data[" << i
+                    << "] = " << all_data_[i] << std::endl;
+        }
+    }
+
+  ARMCI_Create_mutexes(1);
+}
+
+void
+ARMCIMemoryGrp::retrieve_data(void *data, int node, int offset,
+                              int size, int lock)
+{
+  if (lock) ARMCI_Lock(0, node);
+  ARMCI_Get(reinterpret_cast<char*>(all_data_[node])+offset, data, size, node);
+}
+
+void
+ARMCIMemoryGrp::replace_data(void *data, int node, int offset,
+                             int size, int unlock)
+{
+  ARMCI_Put(data, reinterpret_cast<char*>(all_data_[node])+offset, size, node);
+  if (unlock) {
+      ARMCI_Fence(node);
+      ARMCI_Unlock(0, node);
+    }
+}
+
+void
+ARMCIMemoryGrp::sum_data(double *data, int node, int offset, int size)
+{
+  int doffset = offset/sizeof(double);
+  int dsize = size/sizeof(double);
+
+  void *src = data;
+  void *dst = reinterpret_cast<double*>(all_data_[node])+doffset;
+
+  armci_giov_t acc_dat;
+  acc_dat.src_ptr_array = &src;
+  acc_dat.dst_ptr_array = &dst;
+  acc_dat.bytes = dsize * sizeof(double);
+  acc_dat.ptr_array_len = 1;
+  double scale = 1.0;
+
+  if (debug_) {
+      std::cout << me() << ": summing " << dsize
+                << " doubles from "
+                << (void*)src
+                << " to "
+                << (void*)dst
+                << " on " << node
+                << " (base dest=" << (void*)all_data_[node] << ")"
+                << std::endl;
+      for (int i=0; i<dsize; i++) {
+          std::cout << me() << ": src[" << i << "] = "
+                    << data[i] << std::endl;
+        }
+//        for (int i=0; i<dsize; i++) {
+//            std::cout << me() << ": dst[" << i << "] = "
+//                      << ((double*)(all_data_[node]))[doffset+i]
+//                      << std::endl;
+//          }
+    }
+
+  ARMCI_AccV(ARMCI_ACC_DBL, &scale, &acc_dat, 1, node);
+}
+
+void
+ARMCIMemoryGrp::sync()
+{
+  ARMCI_AllFence();
+  msg_->sync();
+}
+
+void
+ARMCIMemoryGrp::deactivate()
+{
+  // Really, this is still active after deactivate is called.
+  // However, we'll at least make sure that all outstanding
+  // requests are finished.
+  ARMCI_AllFence();
+}
+
+ARMCIMemoryGrp::~ARMCIMemoryGrp()
+{
+  finalize();
+}
+
+void
+ARMCIMemoryGrp::print(std::ostream &o) const
+{
+  RDMAMemoryGrp::print(o);
+}
+
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// c-file-style: "CLJ"
+// End:

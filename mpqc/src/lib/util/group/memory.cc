@@ -49,6 +49,10 @@
 #  include <util/group/memmtmpi.h>
 #endif
 
+#if defined(HAVE_ARMCI)
+#  include <util/group/memarmci.h>
+#endif
+
 using namespace std;
 using namespace sc;
 
@@ -283,6 +287,10 @@ MemoryGrp::get_default_memorygrp()
   return default_memorygrp.pointer();
 #endif
 
+#if defined(DEFAULT_ARMCI)
+  default_memorygrp = new ARMCIMemoryGrp(msg);
+  return default_memorygrp.pointer();
+#endif
 
   if (msg.null()) {
       ExEnv::errn() << scprintf("MemoryGrp::get_default_memorygrp: requires default MessageGrp if default behavior not configured\n");
@@ -292,6 +300,12 @@ MemoryGrp::get_default_memorygrp()
   else if (msg->class_desc() == ::class_desc<MPIMessageGrp>()) {
       Ref<ThreadGrp> thr = ThreadGrp::get_default_threadgrp();
       default_memorygrp = new MTMPIMemoryGrp(msg,thr);
+      return default_memorygrp.pointer();
+    }
+#endif
+#if defined(HAVE_ARMCI)
+  else if (msg->class_desc() == ::class_desc<MPIMessageGrp>()) {
+      default_memorygrp = new ARMCIMemoryGrp(msg);
       return default_memorygrp.pointer();
     }
 #endif

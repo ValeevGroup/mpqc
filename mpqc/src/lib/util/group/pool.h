@@ -9,6 +9,7 @@
 #define virtual tried_virtual_but_this_is_very_bad_if_pool_is_in_shared_memory
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <new.h>
 
 #undef DEBUG_POOL

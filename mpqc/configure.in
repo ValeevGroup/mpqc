@@ -778,7 +778,6 @@ if test X$GXX = Xyes; then
   #AC_DEFINE(EXPLICIT_TEMPLATE_INSTANTIATION)
   AC_MSG_RESULT("GNU")
 else
-changequote(<<, >>)dnl
   case $target in
     *-sgi-irix6.0*)
       AC_MSG_RESULT("*-sgi-irix6.0*")
@@ -791,7 +790,6 @@ changequote(<<, >>)dnl
       AC_MSG_RESULT("generic non GNU")
       ;;
     esac
-changequote([, ])dnl
 fi
 
 if test $DEBUG = yes; then

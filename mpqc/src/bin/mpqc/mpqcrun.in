@@ -8,8 +8,6 @@ $bindir = "@bindir@";
 $scdatadir = "@scdatadir@";
 
 use POSIX;
-use threads;
-use threads::shared;
 
 if ($prefix eq '@' . 'prefix@') {
     $configurerun = 0;
@@ -50,6 +48,9 @@ $always_use_mpi = '@ALWAYS_USE_MPI@';
 if ("$always_use_mpi" eq "yes") {
     $messagegrp = "mpi";
 }
+
+# The integral specialization
+$integral = "none";
 
 # The mpi launch command
 $launch = '@LAUNCH@';
@@ -128,6 +129,7 @@ if (!GetOptions("small!" => \$small,
                 "threadgrp=s" => \$threadgrp,
                 "memorygrp=s" => \$memorygrp,
                 "messagegrp=s" => \$messagegrp,
+                "integral=s" => \$integral,
                 "nprocperjob=i" => \$nprocperjob,
                 "nthreadperproc=i" => \$nthreadperproc,
                 "nprocpernode=i" => \$nprocpernode,
@@ -187,6 +189,10 @@ if ($help) {
     print  "                     proc: does a single processor run\n";
     print  "                     mtmpi: use multi-threaded MPI\n";
     print  "                     armci: use ARMCI\n";
+    print  "  --integral intgl   use the given integral package (value: $integral)\n";
+    print  "                     none: uses MPQC's default\n";
+    print  "                     intv3: this package is distributed with MPQC\n";
+    print  "                     cints: the libint package (required for MP2-R12)\n";
     printf "  --launch cmd       use the given cmd to launch jobs--see below (value: %s)\n",
           (($launch eq "")?"<not set>":$launch);
     printf "  --nodefile file    a file listing nodes to use (value: %s)\n",
@@ -330,6 +336,15 @@ elsif ($memorygrp eq "armci") {
 
 ######################################################################
 
+if ($integral eq "cints") {
+  $ENV{"INTEGRAL"} = "<IntegralCints>:()";
+}
+elsif ($integral eq "intv3") {
+  $ENV{"INTEGRAL"} = "<IntegralV3>:()";
+}
+
+######################################################################
+
 # autoflush output
 $| = 1;
 
@@ -373,22 +388,36 @@ printenvvar("MESSAGEGRP");
 printenvvar("THREADGRP");
 printenvvar("MEMORYGRP");
 printenvvar("SCLIBDIR");
+printenvvar("INTEGRAL");
 
 $thecount = 0;
 $n = 0;
 
-@threads = ();
+$usingthreads = 0;
+if ($maxjobs > 1) {
+    require threads;
+    require threads::shared;
 
-foreach my $jobnum (0..$maxjobs-1) {
-    my $thr = threads->new(\&jobrunner, $jobnum);
-    $threads[$#threads+1] = $thr;
+    $usingthreads = 1;
+
+    @threads = ();
+
+    foreach my $jobnum (0..$maxjobs-1) {
+        my $thr = threads->new(\&jobrunner, $jobnum);
+        $threads[$#threads+1] = $thr;
+    }
+
+    foreach my $thr (@threads) {
+        $thr->join();
+    }
+
+    @threads = ();
 }
-
-foreach my $thr (@threads) {
-    $thr->join();
+else {
+    foreach my $jobnum (0..$maxjobs-1) {
+        jobrunner($jobnum);
+    }
 }
-
-@threads = ();
 
 foreach $i (values(%nodefile)) {
     unlink "$i";
@@ -396,11 +425,11 @@ foreach $i (values(%nodefile)) {
 
 sub get_next_file {
     my $jobnum = shift;
-    lock(@seqfiles);
+    lock(@seqfiles) if ($usingthreads);
     if ($#seqfiles >= 0 && $jobnum == 0) {
         return pop(@seqfiles);
     }
-    lock(@files);
+    lock(@files) if ($usingthreads);
     if ($#files >= 0) {
         return pop(@files);
     }
@@ -434,6 +463,12 @@ sub jobrunner {
         }
         if (exists($ENV{MEMORYGRP})) {
            $mpqcrunproc = "$mpqcrunproc " . &isoencode("$ENV{MEMORYGRP}");
+        }
+        else {
+           $mpqcrunproc = "$mpqcrunproc none";
+        }
+        if (exists($ENV{INTEGRAL})) {
+           $mpqcrunproc = "$mpqcrunproc " . &isoencode("$ENV{INTEGRAL}");
         }
         else {
            $mpqcrunproc = "$mpqcrunproc none";
@@ -509,9 +544,9 @@ sub get_file_list {
             }
         }
         if (!$rerun
-            && (-f $out)
+            && (-f "$out")
             && ($onlynew
-                || (-M $out < -M $in && (! -f "$mpqc" || -M $out < -M "$mpqc")))) {
+                || (-M "$out" < -M "$in" && (! -f "$mpqc" || -M "$out" < -M "$mpqc")))) {
             if ($verbose) {
                 print "$in: skipping: $out up-to-date\n";
             }
@@ -525,7 +560,7 @@ sub get_file_list {
             if ($verbose) {
                 print "$in: will be run\n";
             }
-            $files[$#files+1] = $in;
+            $files[$#files+1] = "$in";
         }
     }
 
@@ -537,13 +572,13 @@ sub outfile {
 
     my $out;
     if ($uniqout) {
-        $out = $in;
+        $out = "$in";
         $out =~ s/\.[^.]*$//;
-        $out = sprintf "%s.out.%03d.%02d", $out, $nprocperjob, $nthreadperproc;
+        $out = sprintf "%s.out.%03d.%02d", "$out", $nprocperjob, $nthreadperproc;
         my $outversion = 1;
         while (-f "$out") {
             $outversion++;
-            $out = sprintf "%s.out.%03d.%02d", $out, $nprocperjob, $nthreadperproc;
+            $out = sprintf "%s.out.%03d.%02d", "$out", $nprocperjob, $nthreadperproc;
         }
     }
     elsif ($autoout) {
@@ -557,7 +592,7 @@ sub outfile {
         $out = "";
     }
 
-    return $out;
+    return "$out";
 }
 
 sub printenvvar {

@@ -10,6 +10,7 @@ mpqc=$1 && shift
 messagegrp=$1 && shift
 threadgrp=$1 && shift
 memorygrp=$1 && shift
+integral=$1 && shift
 
 function isodecode() {
   str=$1 && shift
@@ -32,6 +33,10 @@ fi
 
 if [ "$memorygrp" != none ]; then
   export MEMORYGRP=`isodecode $memorygrp`
+fi
+
+if [ "$integral" != none ]; then
+  export INTEGRAL=`isodecode $integral`
 fi
 
 

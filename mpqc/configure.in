@@ -402,7 +402,9 @@ AC_ARG_WITH(ld,
 LD=$withval
 )
 
+changequote(<<, >>)dnl
 LAUNCH="%MPQC% [-o %OUTPUT%] %INPUT%"
+changequote([, ])dnl
 AC_ARG_WITH(launch,
 [  --with-launch           The mpqcrun script launch string.],
 LAUNCH=$withval

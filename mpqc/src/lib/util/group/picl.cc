@@ -1,6 +1,4 @@
 
-#define IN_PICL_CC
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <util/group/picl.h>

@@ -5,6 +5,9 @@
 #include <util/group/mstate.h>
 #include <util/group/hcube.h>
 #include <util/group/memshm.h>
+#ifdef PARAGON
+#  include <util/group/memipgon.h>
+#endif
 
 // Force linkages:
 //#ifndef __PIC__
@@ -54,10 +57,16 @@ long masktrap(long state);
                           ENABLE; \
                          } while(0)
 
-void do_simple_tests();
-void do_int_tests();
-void do_double_tests();
-void do_double2_tests();
+void do_simple_tests(const RefMessageGrp&);
+void do_int_tests(const RefMessageGrp&);
+void do_double_tests(const RefMessageGrp&);
+void do_double2_tests(const RefMessageGrp&);
+
+#ifdef PARAGON
+#  define MemoryGrp_CTOR(msg,size) new IParagonMemoryGrp(msg,size)
+#else
+#  define MemoryGrp_CTOR(msg,size) MemoryGrp::create_memorygrp(size)
+#endif
 
 int
 main(int argc, char**argv)
@@ -85,29 +94,34 @@ main(int argc, char**argv)
 
   MessageGrp::set_default_messagegrp(msg);
 
-  //do_simple_tests();
+  do_simple_tests(msg);
 
-  //do_double_tests();
-  do_double2_tests();
+  do_double_tests(msg);
+  do_double2_tests(msg);
 
-  //do_int_tests();
+  do_int_tests(msg);
 
   return 0;
 }
 
 void
-do_simple_tests()
+do_simple_tests(const RefMessageGrp&msg)
 {
-  RefMemoryGrp mem = MemoryGrp::create_memorygrp(8);
+  RefMemoryGrp mem = MemoryGrp_CTOR(msg, 8);
+
+  printf("Using memory group \"%s\".\n", mem->class_name());
+
   mem->sync();
   mem = 0;
 }
 
 void
-do_int_tests()
+do_int_tests(const RefMessageGrp&msg)
 {
   const int intbufsize = 10;
-  RefMemoryGrp mem = MemoryGrp::create_memorygrp(intbufsize*sizeof(int));
+  RefMemoryGrp mem = MemoryGrp_CTOR(msg, intbufsize*sizeof(int));
+
+  printf("Using memory group \"%s\".\n", mem->class_name());
 
   //sleep(1);
   fflush(stdout);
@@ -235,7 +249,7 @@ do_int_tests()
 }
 
 void
-do_double_tests()
+do_double_tests(const RefMessageGrp&msg)
 {
   PRINTF(("double tests entered\n"));
 
@@ -244,7 +258,10 @@ do_double_tests()
   RefMemoryGrp mem;
 
   const int doublebufsize = 4;
-  mem = MemoryGrp::create_memorygrp(doublebufsize*sizeof(double));
+  mem = MemoryGrp_CTOR(msg, doublebufsize*sizeof(double));
+
+  printf("Using memory group \"%s\".\n", mem->class_name());
+
   mem->sync();
   mem->lock(0);
 
@@ -324,7 +341,7 @@ do_double_tests()
 }
 
 void
-do_double2_tests()
+do_double2_tests(const RefMessageGrp&msg)
 {
   PRINTF(("double2 tests entered\n"));
 
@@ -333,7 +350,9 @@ do_double2_tests()
   RefMemoryGrp mem;
 
   const int doublebufsize = 4;
-  mem = MemoryGrp::create_memorygrp(doublebufsize*sizeof(double));
+  mem = MemoryGrp_CTOR(msg, doublebufsize*sizeof(double));
+  printf("Using memory group \"%s\".\n", mem->class_name());
+
   mem->sync();
   mem->lock(0);
 

@@ -96,7 +96,7 @@ class PoolData {
     //void* operator new(size_t size, void* placement);
     void* data();
 
-    void check(void*lower=(void*)0x0,void*upper=(void*)0x7fffffff);
+    void check(void*lower=(void*)0x0,void*upper=(void*)0x7fffffffL);
 };
 
 const int PoolData_aligned_size = (sizeof(PoolData) + pool_data_alignment - 1)

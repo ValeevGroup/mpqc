@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <util/group/message.h>
+#include <util/group/message.cc>
 
 /////////////////////////////////////////////////////////////////////////
 // instantiate templates

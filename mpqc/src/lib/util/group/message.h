@@ -23,71 +23,43 @@ class GrpReduce {
 template <class T>
 class GrpSumReduce: public GrpReduce<T> {
   public:
-    void reduce(T*target, T*data, int nelement) {
-        for (int i=0; i<nelement; i++) {
-            target[i] += data[i];
-          }
-      }
+    void reduce(T*target, T*data, int nelement);
 };
 
 template <class T>
 class GrpMinReduce: public GrpReduce<T> {
   public:
-    void reduce(T*target, T*data, int nelement) {
-        for (int i=0; i<nelement; i++) {
-            if (target[i] > data[i]) target[i] = data[i];
-          }
-      }
+    void reduce(T*target, T*data, int nelement);
 };
 
 template <class T>
 class GrpMaxReduce: public GrpReduce<T> {
   public:
-    void reduce(T*target, T*data, int nelement) {
-        for (int i=0; i<nelement; i++) {
-            if (target[i] < data[i]) target[i] = data[i];
-          }
-      }
+    void reduce(T*target, T*data, int nelement);
 };
 
 template <class T>
 class GrpArithmeticAndReduce: public GrpReduce<T> {
   public:
-    void reduce(T*target, T*data, int nelement) {
-        for (int i=0; i<nelement; i++) {
-            target[i] = target[i] & data[i];
-          }
-      }
+    void reduce(T*target, T*data, int nelement);
 };
 
 template <class T>
 class GrpArithmeticOrReduce: public GrpReduce<T> {
   public:
-    void reduce(T*target, T*data, int nelement) {
-        for (int i=0; i<nelement; i++) {
-            target[i] = target[i] | data[i];
-          }
-      }
+    void reduce(T*target, T*data, int nelement);
 };
 
 template <class T>
 class GrpArithmeticXOrReduce: public GrpReduce<T> {
   public:
-    void reduce(T*target, T*data, int nelement) {
-        for (int i=0; i<nelement; i++) {
-            target[i] = target[i] ^ data[i];
-          }
-      }
+    void reduce(T*target, T*data, int nelement);
 };
 
 template <class T>
 class GrpProductReduce: public GrpReduce<T> {
   public:
-    void reduce(T*target, T*data, int nelement) {
-        for (int i=0; i<nelement; i++) {
-            target[i] *= data[i];
-          }
-      }
+    void reduce(T*target, T*data, int nelement);
 };
 
 template <class T>
@@ -96,9 +68,7 @@ class GrpFunctionReduce: public GrpReduce<T> {
     void (*func_)(T*target,T*data,int nelement);
   public:
     GrpFunctionReduce(void(*func)(T*,T*,int)):func_(func) {}
-    void reduce(T*target, T*data, int nelement) {
-        (*func_)(target,data,nelement);
-      }
+    void reduce(T*target, T*data, int nelement);
 };
 
 DescribedClass_REF_fwddec(MessageGrp);
@@ -331,6 +301,10 @@ class intMessageGrp: public MessageGrp {
 
     int probet(int);
 };
+
+#ifndef __GNUG__
+#  include <util/group/message.cc>
+#endif
 
 #endif
 

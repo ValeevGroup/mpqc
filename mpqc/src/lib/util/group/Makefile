@@ -5,23 +5,23 @@ endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
 REQUIREDCXXSRC = mstate.cc \
-         message.cc messproc.cc messint.cc \
+         message.cc messagei.cc messproc.cc messint.cc \
          reduce.cc topology.cc hcube.cc picl.cc \
          rnglock.cc memory.cc memmsg.cc pool.cc memoryi.cc \
-         globcnt.cc memamsg.cc memproc.cc
+         globcnt.cc memamsg.cc memproc.cc memmid.cc
 
 OPTIONALCXXSRC = messshm.cc messpgon.cc messpvm.cc messmpi.cc memshm.cc \
-                 mempgon.cc memmpl.cc
+                 mempgon.cc memipgon.cc memmpl.cc
 
 CXXSRC := $(REQUIREDCXXSRC)
 ifneq ($(ARCH),SUNMOS)
   CXXSRC += messshm.cc memshm.cc
 endif
 ifeq ($(ARCH),PARAGON)
-  CXXSRC += messpgon.cc mempgon.cc
+  CXXSRC += messpgon.cc mempgon.cc memipgon.cc
 endif
 ifeq ($(ARCH),SUNMOS)
-  CXXSRC += messpgon.cc
+  CXXSRC += messpgon.cc memipgon.cc
 endif
 ifeq ($(HAVE_PVM),yes)
   CXXSRC += messpvm.cc

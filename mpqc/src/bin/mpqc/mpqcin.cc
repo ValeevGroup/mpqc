@@ -560,8 +560,10 @@ MPQCIn::write_energy_object(ostream &ostrs,
   else error("no method given");
   ostrs << indent << keyword << "<" << method_object << ">: (" << endl;
   ostrs << incindent;
-  ostrs << indent << o_extra.str();
-  if (auxbasis_key) write_basis_object(ostrs, auxbasis_key, auxbasis_.val());
+  if (o_extra.str() != "") ostrs << indent << o_extra.str();
+  if (auxbasis_key
+      && auxbasis_.val() != 0
+      && strcmp(auxbasis_.val(),basis_.val()) != 0) write_basis_object(ostrs, auxbasis_key, auxbasis_.val());
   if (need_cints) ostrs << indent << "integrals<IntegralCints>: ()" << endl;
   ostrs << indent << "total_charge = " << charge_.val() << endl;
   ostrs << indent << "molecule = $:molecule" << endl;

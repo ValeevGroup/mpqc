@@ -15,10 +15,12 @@ extern "C" {
 
 #include <util/group/picl.h>
 #include <util/group/message.h>
+#include <util/group/mstate.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/libmisc.h>
+#include <util/misc/bug.h>
 #include <chemistry/qc/intv2/int_libv2.h>
 #include <chemistry/qc/dmtsym/sym_dmt.h>
 #include <chemistry/qc/dmtscf/scf_dmt.h>
@@ -50,7 +52,6 @@ extern "C" {
 
 //////////////////////////////////////////////////////////////////////////////
 
-static void read_geometry(centers_t&, const RefKeyVal&, FILE*, const char *);
 static void mkcostvec(centers_t*, sym_struct_t*, dmt_cost_t*);
 
 ///////////////////////////////////////////////////////////////////////////
@@ -142,7 +143,7 @@ main(int argc, char *argv[])
   int errcod, geom_code=-1;
   
   int do_scf, do_grad, do_mp2, do_opt2_v1, do_opt2_v2, do_opt2v2lb, do_mp2grad;
-  int read_geom, opt_geom, nopt, proper;
+  int opt_geom, nopt, proper;
   int save_fock, save_vector, print_geometry, make_pdb=0;
   int localp, throttle, sync_loop, node_timings;
   int geometry_converged;
@@ -194,6 +195,8 @@ main(int argc, char *argv[])
 
   int nfzc, nfzv, mem_alloc;
 
+  RefDebugger debugger;
+
   if (mynode0() == 0) {
     fprintf(outfile,
         "\n       MPQC: Massively Parallel Quantum Chemistry\n\n\n");
@@ -208,6 +211,8 @@ main(int argc, char *argv[])
                                        new PrefixKeyVal(":default",pkv)));
     pkv = new ParsedKeyVal("input",ppkv);
     keyval = new AggregateKeyVal(ppkv,pkv);
+
+    debugger = keyval->describedclassvalue(":debug");
 
     pkv = ppkv = 0;
 
@@ -324,10 +329,6 @@ main(int argc, char *argv[])
         if (!mem_alloc) mem_alloc = 8000000;
       }
 
-    read_geom = 0;
-    if (keyval->exists("read_geometry"))
-      read_geom = keyval->booleanvalue("read_geometry");
-
     opt_geom = 0;
     if (keyval->exists("optimize_geometry"))
       opt_geom = keyval->booleanvalue("optimize_geometry");
@@ -404,8 +405,6 @@ main(int argc, char *argv[])
     if (opt_geom) {
       fprintf(outfile,"\n");
       geom_code = Geom_init_mpqc(mol,keyval,geomfile);
-    } else if (read_geom && stat(geomfile,&stbuf)==0 && stbuf.st_size!=0) {
-      read_geometry(centers,keyval,outfile,geomfile);
     }
 
    // we may have changed the geometry in mol, so reform centers
@@ -417,43 +416,63 @@ main(int argc, char *argv[])
 
   }
 
+  // send input data to all the nodes
+  BcastState bcaststate(grp);
+  bcaststate.bcast(do_scf);
+  bcaststate.bcast(do_grad);
+  bcaststate.bcast(nopt);
+  bcaststate.bcast(opt_geom);
+  bcaststate.bcast(throttle);
+  bcaststate.bcast(sync_loop);
+  bcaststate.bcast(save_fock);
+  bcaststate.bcast(save_vector);
+  bcaststate.bcast(node_timings);
+  bcaststate.bcast(localp);
+  bcaststate.bcast(proper);
+  bcaststate.bcast(do_mp2);
+  bcaststate.bcast(do_opt2_v1);
+  bcaststate.bcast(do_opt2_v2);
+  bcaststate.bcast(do_opt2v2lb);
+  bcaststate.bcast(dens);
+  bcaststate.bcast(nfzc);
+  bcaststate.bcast(nfzv);
+  bcaststate.bcast(mem_alloc);
+  bcaststate.bcast(debugger);
+  bcaststate.bcast(gbs);
+  bcaststate.flush();
+
+  // set up the basis set on this center
+  if (grp->me() != 0) {
+      tcenters = gbs->convert_to_centers_t();
+      assign_centers(&centers,tcenters);
+      free_centers(tcenters);
+    }
+
+  // Let the debugger know the name of the executable and the node
+  if (debugger.nonnull()) {
+      debugger->set_exec(argv[0]);
+      debugger->set_prefix(grp->me());
+    }
+
   sgen_reset_bcast0();
 
   bcast0_scf_struct(&scf_info,0,0);
   bcast0_sym_struct(&sym_info,0,0);
-  bcast0_centers(&centers,0,0);
-
-  bcast0(&do_scf,sizeof(int),mtype_get(),0);
-  bcast0(&do_grad,sizeof(int),mtype_get(),0);
-  bcast0(&nopt,sizeof(int),mtype_get(),0);
-  bcast0(&opt_geom,sizeof(int),mtype_get(),0);
-  bcast0(&throttle,sizeof(int),mtype_get(),0);
-  bcast0(&sync_loop,sizeof(int),mtype_get(),0);
-  bcast0(&save_fock,sizeof(int),mtype_get(),0);
-  bcast0(&save_vector,sizeof(int),mtype_get(),0);
-  bcast0(&node_timings,sizeof(int),mtype_get(),0);
-  bcast0(&localp,sizeof(int),mtype_get(),0);
-  bcast0(&proper,sizeof(int),mtype_get(),0);
-  bcast0(&do_mp2,sizeof(int),mtype_get(),0);
-  bcast0(&do_opt2_v1,sizeof(int),mtype_get(),0);
-  bcast0(&do_opt2_v2,sizeof(int),mtype_get(),0);
-  bcast0(&do_opt2v2lb,sizeof(int),mtype_get(),0);
-  bcast0(&dens,sizeof(double),mtype_get(),0);
-  bcast0(&nfzc,sizeof(int),mtype_get(),0);
-  bcast0(&nfzv,sizeof(int),mtype_get(),0);
-  bcast0(&mem_alloc,sizeof(int),mtype_get(),0);
 
  // if we're using a projected guess vector, then initialize oldcenters
   if (scf_info.proj_vector) {
+    RefGaussianBasisSet oldgbs;
     if (mynode0()==0) {
-      RefGaussianBasisSet gbs = keyval->describedclassvalue("pbasis");
-      tcenters = gbs->convert_to_centers_t();
-
-      assign_centers(&oldcenters,tcenters);
-      free_centers(tcenters);
+      oldgbs = keyval->describedclassvalue("pbasis");
     }
 
-    bcast0_centers(&oldcenters,0,0);
+    bcaststate.bcast(oldgbs);
+    bcaststate.flush();
+
+    tcenters = oldgbs->convert_to_centers_t();
+
+    assign_centers(&oldcenters,tcenters);
+    free_centers(tcenters);
   }
 
  // initialize the dmt library
@@ -774,70 +793,6 @@ main(int argc, char *argv[])
   delete[] pdbfile;
   delete[] geomfile;
   return 0;
-}
-
-static void
-read_geometry(centers_t& centers, const RefKeyVal& keyval, FILE *outfp,
-              const char *geomfile)
-{
-#if 0  
-  StateInBinXDR si(geomfile,"r+");
-
-  int iter;
-  si.get(iter);
-
-  fprintf(outfp,"\n using geometry from iteration %d\n",iter);
-
-  RefSymmCoList symm_coords;
-  symm_coords = SymmCoList::restore_state(si);
-  symm_coords = 0;
-
-  si.get(iter);
-  if (iter) {
-    symm_coords = SymmCoList::restore_state(si);
-    symm_coords = 0;
-  }
-
-  Molecule mol(si);
-
-  for(int i=0; i < centers.n; i++) {
-    centers.center[i].r[0] = mol[i][0];
-    centers.center[i].r[1] = mol[i][1];
-    centers.center[i].r[2] = mol[i][2];
-    }
-
-  mol.print(outfp);
-
-  RefSimpleCoList list = Geom_form_simples(mol);
-
-  int nadd;
-  if(nadd=keyval->count("add_simp")) {
-    for(int i=0; i < nadd; i++) {
-      char *val = keyval->pcharvalue("add_simp",i,0);
-
-      if (!strcmp("stre",val))
-        list->add(new Stre(keyval.pointer(),"add_simp",i));
-      else if (!strcmp("bend",val))
-        list->add(new Bend(keyval.pointer(),"add_simp",i));
-      else if (!strcmp("tors",val))
-        list->add(new Tors(keyval.pointer(),"add_simp",i));
-      else if (!strcmp("out",val))
-        list->add(new Out(keyval.pointer(),"add_simp",i));
-      else if (!strcmp("linip",val))
-        list->add(new LinIP(keyval.pointer(),"add_simp",i));
-      else if (!strcmp("linop",val))
-        list->add(new LinOP(keyval.pointer(),"add_simp",i));
-      delete[] val;
-      }
-    }
-
-  Geom_calc_simples(list,mol);
-
-  fprintf(outfp,"\n  internal coordinates\n");
-  Geom_print_pretty(list);
-
-  list=0;
-#endif
 }
 
 static void

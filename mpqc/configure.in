@@ -106,7 +106,12 @@ echo Using extra libraries: $withval
 dnl --------- Want absolute path for srcdir, not relative. ---------
 
 if test X$ac_srcdir_defaulted = Xyes; then
-  srcdir=`(cd $srcdir; echo $PWD)`
+  case $srcdir in
+    ../*)
+      srcdir=`(cd $srcdir; pwd)`
+      #srcdir=`(cd $srcdir; echo $PWD)`
+      ;;
+  esac
 fi
 
 dnl --------- Checks for programs. ---------

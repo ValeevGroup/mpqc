@@ -151,7 +151,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   if (!r12ints_file_) {
     // Since SCFormIO::fileext_to_filename uses new char[] and KeyVal::pcharvalue uses malloc
     // need to copy the obtained string using strdup first
-    char* filename = SCFormIO::fileext_to_filename("./r12ints.dat");
+    char* filename = SCFormIO::fileext_to_filename(".r12ints.dat");
     r12ints_file_ = strdup(filename);
     delete[] filename;
   }

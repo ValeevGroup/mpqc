@@ -40,6 +40,7 @@ typedef int dmt_matrix;
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
+#include <chemistry/qc/mbpt/hsosv1e1.h>
 
 static distsize_t
 compute_v1_memory(distsize_t ni,
@@ -84,10 +85,10 @@ MBPT2::compute_hsos_v1()
   int i_offset; 
   int npass, pass;
   int ni;             /* batch size */
-  int np, nq, nr, ns; 
+  int nr, ns; 
   int P, Q, R, S;
   int p, q, r, s;
-  int bf1, bf2, bf3, bf4;
+  int bf3,bf4;
   int index;
   int col_index;
   int docc_index, socc_index, vir_index;
@@ -98,11 +99,9 @@ MBPT2::compute_hsos_v1()
   int a_number;              /* number of a-values processed by each node */
   int a_offset;
   int *a_vector;           /* each node's # of iajb integrals for one i,j */
-  int shell_index;
   int compute_index;
   int tmp_index;
   int dim_ij;
-  int aoint_computed = 0;
   int nshell;
   double *evals_open;    /* reordered scf eigenvalues                      */
   const double *intbuf;  /* 2-electron AO integral buffer                  */
@@ -121,7 +120,7 @@ MBPT2::compute_hsos_v1()
   double *iajb;
   double pqrs;
   double *c_qa;
-  double *c_rb, *c_rj, *c_sj, *c_pi, *c_qi;
+  double *c_rb, *c_rj, *c_sj;
   double delta_ijab;
   double delta;
   double contrib1, contrib2;
@@ -131,6 +130,7 @@ MBPT2::compute_hsos_v1()
   double escf;
   double eopt2,eopt1,ezapt2;
   double tol;     /* log2 of the erep tolerance (erep < 2^tol => discard) */
+  int ithread;
 
   me = msg_->me();
   
@@ -395,9 +395,20 @@ MBPT2::compute_hsos_v1()
   // create the integrals object
   if (debug_>0) cout << node0 << indent << "allocating integrals" << endl;
   integral()->set_storage((int)mem_remaining);
-  tbint_ = integral()->electron_repulsion();
-  intbuf = tbint_->buffer();
+  RefTwoBodyInt *tbint = new RefTwoBodyInt[thr_->nthread()];
+  for (ithread=0; ithread<thr_->nthread(); ithread++) {
+      tbint[ithread] = integral()->electron_repulsion();
+    }
 
+  // set up the thread objects
+  RefThreadLock lock = thr_->new_lock();
+  HSOSV1Erep1Qtr** e1thread = new HSOSV1Erep1Qtr*[thr_->nthread()];
+  for (ithread=0; ithread<thr_->nthread(); ithread++) {
+      e1thread[ithread] = new HSOSV1Erep1Qtr(ithread, thr_->nthread(), me, nproc,
+                                             lock, basis(), tbint[ithread], ni,
+                                             scf_vector, tol, debug_);
+    }
+  
   if (debug_>0) cout << node0 << indent << "beginning passes" << endl;
 
 /**************************************************************************
@@ -408,8 +419,6 @@ MBPT2::compute_hsos_v1()
     i_offset= pass*ni + restart_orbital_v1_;
     if ((pass == npass - 1) && (rest != 0)) ni = rest;
     bzerofast(trans_int3,nbasis*a_number*dim_ij);
-
-    shell_index = 0;
 
     tim_enter("RS loop");
     for (R = 0; R < basis()->nshell(); R++) {
@@ -422,74 +431,16 @@ MBPT2::compute_hsos_v1()
         tim_exit("bzerofast trans_int1");
 
         tim_enter("PQ loop");
-        for (P = 0; P < basis()->nshell(); P++) {
-          np = basis()->shell(P).nfunction();
 
-          for (Q = 0; Q <= P; Q++) {
-            shell_index++;
-            if (shell_index%nproc != me) continue; 
-
-            if (tbint_->log2_shell_bound(P,Q,R,S) < tol) {
-              continue;                           /* skip ereps less than tol */
-              }
-
-            aoint_computed++;
-
-            nq = basis()->shell(Q).nfunction();
-
-            tim_enter("erep");
-            tbint_->compute_shell(P,Q,R,S);
-            tim_exit("erep");
-
-            tim_enter("1. quart. tr."); 
-
-            index = 0;
-
-            for (bf1 = 0; bf1 < np; bf1++) {
-              p = basis()->shell_to_function(P) + bf1;
- 
-              for (bf2 = 0; bf2 < nq; bf2++) {
-                q = basis()->shell_to_function(Q) + bf2;
-                if (q > p) {
-                  /* if q > p: want to skip the loops over bf3-4  */
-                  /* and larger bf2 values, so increment bf1 by 1 */
-                  /* ("break") and adjust the value of index      */
-                  index = (bf1 + 1) * nq * nr * ns;
-                  break;
-                  }
-
-                for (bf3 = 0; bf3 < nr; bf3++) {
-
-                  for (bf4 = 0; bf4 < ns; bf4++,index++) {
-                    if (R==S && bf4>bf3) {
-                      index = ((bf1*nq + bf2)*nr + (bf3+1))*ns;
-                      break; 
-                      }
-
-                    if (fabs(intbuf[index])>1.0e-15) {
-                      pqrs = intbuf[index];
-
-                      iqrs = &trans_int1[((bf4*nr + bf3)*nbasis + q)*ni];
-                      iprs = &trans_int1[((bf4*nr + bf3)*nbasis + p)*ni];
-                    
-                      if (p == q) pqrs *= 0.5;
-
-                      col_index = i_offset;
-                      c_pi = &scf_vector[p][col_index];
-                      c_qi = &scf_vector[q][col_index];
-
-                      for (i=ni; i; i--) {
-                        *iqrs++ += pqrs * *c_pi++;
-                        *iprs++ += pqrs * *c_qi++;
-                        }
-                      }
-                    }   /* exit bf4 loop */
-                  }     /* exit bf3 loop */
-                }       /* exit bf2 loop */
-              }         /* exit bf1 loop */
-            tim_exit("1. quart. tr.");
-            }           /* exit Q loop */
-          }             /* exit P loop */
+        for (ithread=0; ithread<thr_->nthread(); ithread++) {
+          e1thread[ithread]->set_data(R,nr,S,ns,ni,i_offset);
+          thr_->add_thread(ithread,e1thread[ithread]);
+          }
+        thr_->start_threads();
+        thr_->wait_threads();
+        for (ithread=0; ithread<thr_->nthread(); ithread++) {
+          e1thread[ithread]->accum_buffer(trans_int1);
+          }
 
         tim_exit("PQ loop");
 
@@ -572,6 +523,10 @@ MBPT2::compute_hsos_v1()
      * socc_sum[isocc] = sum over asocc of (isocc asocc|asocc isocc)       *
      * (isocc, asocc = s.o. and the sum over asocc runs over all s.o.'s)   *
      * the individual integrals are not saved here, only the sums are kept */
+
+    if (debug_) {
+      cout << node0 << indent << "Beginning 4. quarter transform" << endl;
+      }
 
     tim_enter("4. quart. tr.");
     if (pass == 0 && me == 0) {
@@ -762,8 +717,15 @@ MBPT2::compute_hsos_v1()
       }
     }           /* exit loop over i-batches (pass) */
 
-  // don't need the AO integrals anymore
-  tbint_ = 0;
+  // don't need the AO integrals and threads anymore
+  double aoint_computed = 0.0;
+  for (i=0; i<thr_->nthread(); i++) {
+      tbint[i] = 0;
+      aoint_computed += e1thread[i]->aoint_computed();
+      delete e1thread[i];
+    }
+  delete[] e1thread;
+  delete[] tbint;
 
   /* compute contribution from excitations of the type is1 -> s1a where   *
    * i=d.o., s1=s.o. and a=unocc; single excitations of the type i -> a,  *

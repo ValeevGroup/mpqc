@@ -23,6 +23,10 @@ default:: libsymmetry.a
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
+testpg: testpg.o $(LIBS)
+	$(CXX) $^ -o $@ -lm
+
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.o=.d)

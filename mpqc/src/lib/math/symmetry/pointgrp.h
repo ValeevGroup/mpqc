@@ -28,12 +28,12 @@
 #include <math/nihmatrix/nihmatrix.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
+#include <util/keyval/keyval.h>
 
 
 class CharacterTable;
 
-class IrreducibleRepresentation
-{
+class IrreducibleRepresentation {
   friend class CharacterTable;
 
   private:
@@ -68,8 +68,7 @@ class IrreducibleRepresentation
 
 /////////////////////////////////////////////////////////////
 
-class CharacterTable
-{
+class CharacterTable {
   public:
     enum pgroups {C1, CS, CI, CN, CNV, CNH, DN, DND, DNH, SN, T, TH, TD, O,
                   OH, I, IH};
@@ -108,16 +107,21 @@ class CharacterTable
 /////////////////////////////////////////////////////////////
 
 class PointGroup
-  : virtual public DescribedClass, virtual public SavableState
-{
-DescribedClass_DECLARE(PointGroup)
-SavableState_DECLARE(PointGroup)
+  : virtual public DescribedClass, virtual public SavableState {
+#   define CLASSNAME PointGroup
+#   define HAVE_CTOR
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
   private:
     char *symb;
 
   public:
     PointGroup();
     PointGroup(const char*);
+    PointGroup(KeyVal&);
+    PointGroup(StateIn&);
     PointGroup(PointGroup&);
     ~PointGroup();
 

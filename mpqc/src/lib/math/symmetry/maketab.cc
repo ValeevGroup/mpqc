@@ -293,7 +293,7 @@ int CharacterTable::make_table()
       for (j=0; j < g/2; j++) gamma_[i].rep[j] = gamma_[1].rep[j];
       for (j=g/2; j < g; j++) gamma_[i].rep[j] = -gamma_[1].rep[j];
 
-      for (i=i+1; i <= nirrep_ ; i++) {
+      for (i=i+1; i < nirrep_ ; i++) {
         i0=i-(nirrep_/2);
 
         if (nt==4) sprintf(label,"Eu");

@@ -91,12 +91,12 @@ void IrreducibleRepresentation::print(FILE *fp, const char *off)
 ////////////////////////////////////////////////////////////////////////
 
 CharacterTable::CharacterTable()
-  : g(0), nt(0), pg(0), nirrep_(0), gamma_(0), symb(0), symop(0)
+  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symb(0), symop(0)
 {
 }
 
 CharacterTable::CharacterTable(const CharacterTable& ct)
-  : g(0), nt(0), pg(0), nirrep_(0), gamma_(0), symb(0), symop(0)
+  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symb(0), symop(0)
 {
   *this = ct;
 }
@@ -154,7 +154,7 @@ void CharacterTable::print(FILE *fp, const char *off)
 
 
 CharacterTable::CharacterTable(const char *cpg)
-  : g(0), nt(0), pg(0), nirrep_(0), gamma_(0), symb(0), symop(0)
+  : g(0), nt(0), pg(C1), nirrep_(0), gamma_(0), symb(0), symop(0)
 {
   // first parse the point group symbol, this will give us the order of the
   // point group(g), the type of point group (pg), the order of the principle
@@ -314,23 +314,48 @@ int CharacterTable::parse_symbol()
 
 ////////////////////////////////////////////////////////////////////////
 
-DescribedClass_IMPL(PointGroup,1,"","")
-SavableState_IMPL(PointGroup)
-void * PointGroup::_castdown(ClassDesc *cd)
+#define CLASSNAME PointGroup
+#define PARENTS virtual public SavableState
+#define HAVE_CTOR
+#define HAVE_KEYVAL_CTOR
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+PointGroup::_castdown(const ClassDesc*cd)
 {
-  if(&class_desc_ == cd) return this;
-  return 0;
-  }
+  void* casts[] =  { SavableState::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
 
 PointGroup::PointGroup()
-  : symb(0)
 {
+    symb = new char[3]; strcpy(symb,"c1");
 }
 
 PointGroup::PointGroup(const char *s)
   : symb(0)
 {
   if (s) { symb = new char[strlen(s)+1]; strcpy(symb,s); }
+  else {
+    symb = new char[3];
+    strcpy(symb,"c1");
+  }
+}
+
+PointGroup::PointGroup(KeyVal& kv) : symb(0)
+{
+  if (kv.exists("symmetry"))
+    symb = kv.pcharvalue("symmetry");
+  else {
+    symb = new char[3];
+    strcpy(symb,"c1");
+  }
+}
+
+PointGroup::PointGroup(StateIn& si) : symb(0), SavableState(si,class_desc_)
+{
+  si.get(symb);
 }
 
 PointGroup::PointGroup(PointGroup& pg)
@@ -341,12 +366,12 @@ PointGroup::PointGroup(PointGroup& pg)
 
 PointGroup::~PointGroup()
 {
-  if (symb) delete[] symb; symb=0;
+  if (symb) { delete[] symb; symb=0; }
 }
 
 PointGroup& PointGroup::operator=(PointGroup& pg)
 {
-  if (symb) delete[] symb; symb=0;
+  if (symb) { delete[] symb; symb=0; }
   if (pg.symb) { symb = new char[strlen(pg.symb)+1]; strcpy(symb,pg.symb); }
   return *this;
 }

@@ -49,7 +49,7 @@ t_ops(SymmetryOperation *symop)
   symop[10].c2_y();
 
   // C2(z)
-  symop[11].rotation(M_PI);
+  symop[11].rotation((double)M_PI);
 
   // a = ( 1, 1, 1)
   // b = (-1,-1, 1)
@@ -184,7 +184,7 @@ CharacterTable::t()
   ire.rep[0].E();
 
   // 4 C3's
-  ire.rep[1].rotation(2.0*M_PI/3.0);
+  ire.rep[1].rotation(2.0*(double)M_PI/3.0);
   ire.rep[2] = ire.rep[1];
   ire.rep[3] = ire.rep[1];
   ire.rep[4] = ire.rep[1];
@@ -254,7 +254,7 @@ CharacterTable::th()
   ireg.rep[0].E();
   
   // 4 C3's
-  ireg.rep[1].rotation(2.0*M_PI/3.0);
+  ireg.rep[1].rotation(2.0*(double)M_PI/3.0);
   ireg.rep[2] = ireg.rep[1];
   ireg.rep[3] = ireg.rep[1];
   ireg.rep[4] = ireg.rep[1];
@@ -327,7 +327,7 @@ CharacterTable::td()
   ire.rep[0].E();
 
   // 4 C3's
-  ire.rep[1].rotation(2.0*M_PI/3.0);
+  ire.rep[1].rotation(2.0*(double)M_PI/3.0);
   ire.rep[2] = ire.rep[1];
   ire.rep[3] = ire.rep[1];
   ire.rep[4] = ire.rep[1];
@@ -408,7 +408,7 @@ CharacterTable::o()
   ire.rep[0].E();
 
   // 4 C3's
-  ire.rep[1].rotation(2.0*M_PI/3.0);
+  ire.rep[1].rotation(2.0*(double)M_PI/3.0);
   ire.rep[2] = ire.rep[1];
   ire.rep[3] = ire.rep[1];
   ire.rep[4] = ire.rep[1];
@@ -528,7 +528,7 @@ void CharacterTable::oh()
   ireg.rep[0].E();
   
   // 4 C3's
-  ireg.rep[1].rotation(2.0*M_PI/3.0);
+  ireg.rep[1].rotation(2.0*(double)M_PI/3.0);
   ireg.rep[2] = ireg.rep[1];
   ireg.rep[3] = ireg.rep[1];
   ireg.rep[4] = ireg.rep[1];

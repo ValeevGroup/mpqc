@@ -50,17 +50,17 @@ i_ops(SymRep *t1rep, SymRep *t2rep, SymRep *grep, SymRep *hrep)
   // 12 C5's
   //
   // first the 2 C5's about the z axis
-  t1rep[1].rotation(2.0*M_PI/5.0);
-  t1rep[2].rotation(8.0*M_PI/5.0);
+  t1rep[1].rotation(2.0*(double)M_PI/5.0);
+  t1rep[2].rotation(8.0*(double)M_PI/5.0);
   
   t2rep[1] = t1rep[1].operate(t1rep[1]);
   t2rep[2] = t1rep[2].operate(t1rep[2]);
 
-  grep[1].rotation(2.0*M_PI/5.0);
-  grep[2].rotation(8.0*M_PI/5.0);
+  grep[1].rotation(2.0*(double)M_PI/5.0);
+  grep[2].rotation(8.0*(double)M_PI/5.0);
   
-  hrep[1].rotation(2.0*M_PI/5.0);
-  hrep[2].rotation(8.0*M_PI/5.0);
+  hrep[1].rotation(2.0*(double)M_PI/5.0);
+  hrep[2].rotation(8.0*(double)M_PI/5.0);
    
   // form rotation matrices for the C3 axis about the zx axis (these were
   // taken from turbomole version 2, which claims they were sort of inherited
@@ -69,8 +69,8 @@ i_ops(SymRep *t1rep, SymRep *t2rep, SymRep *grep, SymRep *hrep)
   SymRep gso(4);
   SymRep hso(5);
 
-  double c2p5 = cos(2.0*M_PI/5.0);
-  double s2p5 = sin(2.0*M_PI/5.0);
+  double c2p5 = cos(2.0*(double)M_PI/5.0);
+  double s2p5 = sin(2.0*(double)M_PI/5.0);
   double cosd = s2p5/((1.0-c2p5)*sqrt(3.0));
   double cosd2 = cosd*cosd;
   double sind2 = 1.0 - cosd2;

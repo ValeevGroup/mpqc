@@ -66,6 +66,10 @@ int
 int_read_centers(KeyVal&keyval, centers_t& centers)
 {
   char *basis = keyval.pcharvalue("basis");
+  if (!basis) {
+    fprintf(stderr,"int_read_centers: can't read basis");
+    return -1;
+  }
 
  // initialize some things
   centers.shell_offset = 0;
@@ -109,9 +113,17 @@ int_read_centers(KeyVal&keyval, centers_t& centers)
 /////////////////////////////////////////////////////////////////////////////
 
 static int
-read_shells(KeyVal& keyval, const char *atom, const char *bname,
+read_shells(KeyVal& topkeyval, const char *atom, const char *bname,
             basis_t& basis, int& nsh, enum whats what)
 {
+  // construct a keyval that contains the basis library
+
+  // this ParsedKeyVal CTOR looks at the basisdir and basisfiles
+  // variables to find out what basis set files are to be read in
+  ParsedKeyVal libkeyval("basis",topkeyval); libkeyval.unmanage();
+  PrefixKeyVal prekeyval(":basis",libkeyval); prekeyval.unmanage();
+  AggregateKeyVal keyval(prekeyval,libkeyval); keyval.unmanage();
+
   char key[512];
 
  // first count what's at :basis:"atom":"bname", this will give us the

@@ -1281,16 +1281,14 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
 
       for (ir=0; ir < nr[icenter]; ir++) {
           // Mike Colvin's interpretation of Murray's radial grid
-          cout << " ir = " << ir << endl;
           q=(double)ir/(double)nr[icenter];
           double value=q/(1-q);
           double r = bragg_radius[icenter]*value*value;
           double dr_dq = 2.0*bragg_radius[icenter]*q*pow(1.0-q,-3.);
           double drdqr2 = dr_dq*r*r;
-          //       cout << scprintf(" radial_int_volume = %20.14f", drdqr2) << endl;
           point.r() = r;
 
-          // Precalcute theta Guass-Legendre abcissas and weights
+          // Precalcute theta Gauss-Legendre abcissas and weights
           if (ir==0) {
               ntheta=1;
               nphi=1;
@@ -1303,24 +1301,15 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
                   ntheta=6;
               nphi = 2*ntheta;
             }
-
           gauleg(0.0, M_PI, theta_quad_points, theta_quad_weights, ntheta);
 
           for (itheta=0; itheta < ntheta; itheta++) {
               point.theta() = theta_quad_points[itheta];
               sin_theta = sin(point.theta());
-              //cout << scprintf(" radial_int_volume = %20.14f", drdqr2) << endl;
-              //cout << scprintf(" angular_int_volume = %20.14f", sin_theta) << endl;
               // calculate integration volume 
               int_volume=drdqr2*sin_theta;
-              //         cout << scprintf(" int_volume = %20.14f", int_volume) << endl;
               for (iphi=0; iphi < nphi; iphi++) {
                   point.phi() = (double)iphi/(double)nphi * 2.0 * M_PI;
-                  cout << " itheta = " << itheta << endl;
-                  cout << " iphi = " << iphi << endl;
- //   cout << " iangular = " << itheta*nphi+iphi << endl;
-   cout << scprintf(" radial_int_volume = %20.14f", drdqr2) << endl;
-   cout << scprintf(" angular_int_volume = %20.14f", sin_theta) << endl;
                   point.spherical_to_cartesian(integration_point);
                   integration_point += center;
 
@@ -1335,7 +1324,6 @@ Murray93Integrator::integrate(const RefDenFunctional &denfunc,
                   double multiplier = int_volume
                                     * theta_quad_weights[itheta]/nr[icenter]
                                     * 2.0 * M_PI / ((double)nphi);
-      //          cout << scprintf(" multiplier = %20.14f", multiplier) << endl;
                   if (do_point(icenter, integration_point, denfunc,
                                w, multiplier,
                                nuclear_gradient, f_gradient, w_gradient)
@@ -1733,11 +1721,11 @@ GaussLegendreAngularIntegrator::num_angular_points(double r_value, int ir)
       Ktheta = get_Ktheta();
       ntheta = get_ntheta();
       ntheta_r= (int) (r_value*Ktheta*ntheta);
+      set_ntheta_r(ntheta_r);
       if (ntheta_r > ntheta) set_ntheta_r(ntheta);
       if (ntheta_r < 6) set_ntheta_r(6);
       set_nphi_r(2*get_ntheta_r());
     }
-
   return get_ntheta_r()*get_nphi_r();
 }
 
@@ -1787,8 +1775,6 @@ GaussLegendreAngularIntegrator::angular_point_cartesian(int iangular, SCVector3 
   nphi_r = get_nphi_r();
   itheta = iangular/nphi_r;
   iphi = iangular - itheta*nphi_r;
-  cout << " itheta = " << itheta << endl;
-  cout << " iphi = " << iphi << endl;
   point.theta() = theta_quad_points_[itheta];
   point.phi() = (double) iphi/ (double) nphi_r * 2.0 * M_PI;
   point.spherical_to_cartesian(integration_point);
@@ -1925,11 +1911,7 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
       point_count=0;
       center = centers[icenter];
       int r_done = 0;
-      if (icenter==0) cout << " ncenters = " << ncenters << endl;
-      cout << " icenter = " << icenter << endl;
       for (ir=0; ir < nr[icenter]; ir++) {
-  if (ir==0) cout << " nr = " << nr[icenter] << endl;
-  cout << " ir = " << ir << endl;    
           double r = RadInt_->radial_value(ir, nr[icenter], bragg_radius[icenter]);
           point.r() = r;
           dr_dqr2 = RadInt_->get_dr_dqr2();
@@ -1937,25 +1919,16 @@ RadialAngularIntegrator::integrate(const RefDenFunctional &denfunc,
           nangular = AngInt_->num_angular_points(r/bragg_radius[icenter],ir);
           AngInt_->angular_weights();
           double radial_int_volume = RadInt_->get_dr_dqr2();
-          //cout << scprintf(" radial_int_volume = %20.14f", radial_int_volume) << endl;
- // cout << scprintf(" radial_mulitplier = %20.14f", radial_multiplier) << endl;
           for (iangular=0; iangular<nangular; iangular++) {
-  if (iangular==0) cout << " nangular = " << nangular << endl;
- cout << " iangular = " << iangular << endl;
               angular_multiplier =
                 AngInt_->angular_point_cartesian(iangular, point, integration_point);
               integration_point += center;
               w=weight_->w(icenter, integration_point, w_gradient);
               //if (w_gradient) weight_->test(icenter, integration_point);
               point_count++;
-//   cout << scprintf(" angular_mulitplier = %20.14f", angular_multiplier) << endl;
               double multiplier = angular_multiplier * radial_multiplier;
-//   cout << scprintf(" multiplier = %20.14f", multiplier) << endl;
               double angular_int_volume = AngInt_->sin_theta(point);
-   cout << scprintf(" radial_int_volume = %20.14f", radial_int_volume) << endl;
-   cout << scprintf(" angular_int_volume = %20.14f", angular_int_volume) << endl;
               double int_volume = radial_int_volume * angular_int_volume;
-//   cout << scprintf(" int_volume = %20.14f", int_volume) << endl;
               if (do_point(icenter, integration_point, denfunc,
                            w, multiplier,
                            nuclear_gradient, f_gradient, w_gradient)

@@ -65,7 +65,7 @@ LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
   CXXSRC += ccaenv.cc
   INC += ccaenv.h
-  LTLINKLIBOPTS += -L$(CCAFE_LIB) -R$(CCAFE_LIB) -lccaffeine -lccafeCore \
+  LTLINKLIBOPTS += -L$(CCAFE_LIB) -R$(CCAFE_LIB) -lccafeCore \
     -L$(BABELLIB) -R$(BABELLIB) -lsidl
 endif
 

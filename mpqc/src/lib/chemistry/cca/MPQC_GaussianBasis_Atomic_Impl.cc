@@ -2,12 +2,12 @@
 // File:          MPQC_GaussianBasis_Atomic_Impl.cc
 // Symbol:        MPQC.GaussianBasis_Atomic-v0.2
 // Symbol Type:   class
-// Babel Version: 0.9.8
+// Babel Version: 0.10.0
 // Description:   Server-side implementation for MPQC.GaussianBasis_Atomic
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.9.8
+// babel-version = 0.10.0
 // 
 #include "MPQC_GaussianBasis_Atomic_Impl.hh"
 
@@ -32,6 +32,13 @@ void MPQC::GaussianBasis_Atomic_impl::_dtor() {
   //delete shell_array_;
 
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Atomic._dtor)
+}
+
+// static class initializer
+void MPQC::GaussianBasis_Atomic_impl::_load() {
+  // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic._load)
+  // guaranteed to be called at most once before any other method in this class
+  // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Atomic._load)
 }
 
 // user defined static methods: (none)

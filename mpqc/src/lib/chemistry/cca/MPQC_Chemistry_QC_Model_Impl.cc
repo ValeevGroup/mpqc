@@ -2,12 +2,12 @@
 // File:          MPQC_Chemistry_QC_Model_Impl.cc
 // Symbol:        MPQC.Chemistry_QC_Model-v0.2
 // Symbol Type:   class
-// Babel Version: 0.9.8
+// Babel Version: 0.10.0
 // Description:   Server-side implementation for MPQC.Chemistry_QC_Model
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.9.8
+// babel-version = 0.10.0
 // 
 #include "MPQC_Chemistry_QC_Model_Impl.hh"
 
@@ -48,6 +48,13 @@ void MPQC::Chemistry_QC_Model_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model._dtor)
   // add destruction details here
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_Model._dtor)
+}
+
+// static class initializer
+void MPQC::Chemistry_QC_Model_impl::_load() {
+  // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model._load)
+  // guaranteed to be called at most once before any other method in this class
+  // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_Model._load)
 }
 
 // user defined static methods: (none)

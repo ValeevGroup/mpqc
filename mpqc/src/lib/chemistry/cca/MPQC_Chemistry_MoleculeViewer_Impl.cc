@@ -2,12 +2,12 @@
 // File:          MPQC_Chemistry_MoleculeViewer_Impl.cc
 // Symbol:        MPQC.Chemistry_MoleculeViewer-v0.2
 // Symbol Type:   class
-// Babel Version: 0.9.8
+// Babel Version: 0.10.0
 // Description:   Server-side implementation for MPQC.Chemistry_MoleculeViewer
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.9.8
+// babel-version = 0.10.0
 // 
 #include "MPQC_Chemistry_MoleculeViewer_Impl.hh"
 
@@ -39,6 +39,13 @@ void MPQC::Chemistry_MoleculeViewer_impl::_dtor() {
 #endif // USE_SOCKET
 
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_MoleculeViewer._dtor)
+}
+
+// static class initializer
+void MPQC::Chemistry_MoleculeViewer_impl::_load() {
+  // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_MoleculeViewer._load)
+  // guaranteed to be called at most once before any other method in this class
+  // DO-NOT-DELETE splicer.end(MPQC.Chemistry_MoleculeViewer._load)
 }
 
 // user defined static methods: (none)

@@ -32,7 +32,7 @@ package MPQC version 0.2 {
 
   class IntegralEvaluatorFactory
     implements-all Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory,
-    gov.cca.Component, gov.cca.Port { };
+    gov.cca.Component, gov.cca.Port {};
 
   class IntegralEvaluator2 implements-all
     Chemistry.QC.GaussianBasis.IntegralEvaluator2{

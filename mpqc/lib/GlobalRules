@@ -278,7 +278,7 @@ $(GEN_SRCS): .babel-stamp
 
 $(EXTRA_CXX_SRCS): .babel-stamp
 
-.babel-stamp:
+.babel-stamp: $(SIDL_FILES)
 	@rm -f .babel-stamp .babel-temp; touch .babel-temp
 	for i in $(IMPLHDRS) $(IMPLSRCS) $(EXTRA_CXX_SRCS) $(EXTRA_INCLUDES); \
           do \

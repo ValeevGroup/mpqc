@@ -194,7 +194,6 @@ Int2eCCA::remove_redundant(int sh1, int sh2, int sh3, int sh4) {
 // copied liberally from intV3 
 
 /*
-
 static int
 shell_offset(Ref<GaussianBasisSet> cs, int off)
 {
@@ -335,7 +334,6 @@ Int2eCCA::remove_redundant(int is, int js, int ks, int ls) {
   }
 }
 */
-
 
 /////////////////////////////////////////////////////////////////////////////
 

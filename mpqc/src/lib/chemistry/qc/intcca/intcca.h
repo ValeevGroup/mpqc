@@ -58,6 +58,7 @@ class IntegralCCA : public Integral {
     Ref<Molecule> sc_molecule_;
     Chemistry::Chemistry_Molecule molecule_;
     std::string factory_type_;
+    std::string package_;
 
     // INTV3 verion
 //    SphericalTransformV3 ***st_;
@@ -91,6 +92,10 @@ class IntegralCCA : public Integral {
         CCA IntegralEvaluatorFactory component.  This symbol name should
         also appear in the cca-load argument.  The default is
         <tt>MPQC.IntegralEvaluatorFactory</tt>.
+
+        <dt><tt>integral_package</tt><dd> This gives the name of the
+        integrals package to use (<tt>intv3</tt> or <tt>cints</tt>).
+        The default is <tt>cints</tt>.
 
         <dt><tt>molecule</tt><dd> This gives a molecule object, it is required.
         </dl>

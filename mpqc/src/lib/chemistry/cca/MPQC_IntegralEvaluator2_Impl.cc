@@ -2,12 +2,12 @@
 // File:          MPQC_IntegralEvaluator2_Impl.cc
 // Symbol:        MPQC.IntegralEvaluator2-v0.2
 // Symbol Type:   class
-// Babel Version: 0.9.8
+// Babel Version: 0.10.0
 // Description:   Server-side implementation for MPQC.IntegralEvaluator2
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.9.8
+// babel-version = 0.10.0
 // 
 #include "MPQC_IntegralEvaluator2_Impl.hh"
 
@@ -36,6 +36,13 @@ void MPQC::IntegralEvaluator2_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._dtor)
   // add destruction details here
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._dtor)
+}
+
+// static class initializer
+void MPQC::IntegralEvaluator2_impl::_load() {
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._load)
+  // guaranteed to be called at most once before any other method in this class
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._load)
 }
 
 // user defined static methods: (none)

@@ -2,12 +2,12 @@
 // File:          MPQC_IntegralEvaluator2_Impl.hh
 // Symbol:        MPQC.IntegralEvaluator2-v0.2
 // Symbol Type:   class
-// Babel Version: 0.9.8
+// Babel Version: 0.10.0
 // Description:   Server-side implementation for MPQC.IntegralEvaluator2
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.9.8
+// babel-version = 0.10.0
 // 
 
 #ifndef included_MPQC_IntegralEvaluator2_Impl_hh
@@ -112,6 +112,9 @@ namespace MPQC {
 
     // user defined destruction
     void _dtor();
+
+    // static class initializer
+    static void _load();
 
   public:
 

@@ -86,6 +86,10 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   if ( keyval->error() != KeyVal::OK ) {
     factory_type_ = string("MPQC.IntegralEvaluatorFactory");
   }
+  package_ = keyval->stringvalue("integral_package");
+  if ( keyval->error() != KeyVal::OK ) {
+    package_ = string("cints");
+  }
 
   sc_molecule_ << keyval->describedclassvalue("molecule");
   if (sc_molecule_.null()) {
@@ -117,6 +121,9 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
     }
   }
   eval_factory_.set_molecule(molecule_);
+
+  // set package
+  eval_factory_.set_integral_package(package_);
 
 }
 
@@ -198,7 +205,6 @@ IntegralCCA::new_spherical_transform_iter(int l, int inv, int subl)
       return new SphericalTransformIter(ist_[l][(l-subl)/2]);
     }
   return new SphericalTransformIter(st_[l][(l-subl)/2]);
-
 
 }
 

@@ -2,12 +2,12 @@
 // File:          MPQC_GaussianBasis_Molecular_Impl.hh
 // Symbol:        MPQC.GaussianBasis_Molecular-v0.2
 // Symbol Type:   class
-// Babel Version: 0.9.8
+// Babel Version: 0.10.0
 // Description:   Server-side implementation for MPQC.GaussianBasis_Molecular
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.9.8
+// babel-version = 0.10.0
 // 
 
 #ifndef included_MPQC_GaussianBasis_Molecular_Impl_hh
@@ -108,6 +108,9 @@ namespace MPQC {
 
     // user defined destruction
     void _dtor();
+
+    // static class initializer
+    static void _load();
 
   public:
 

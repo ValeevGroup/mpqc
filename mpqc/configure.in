@@ -1877,9 +1877,9 @@ if test $components == "yes"; then
   AC_CHECK_HEADER(gov_cca_IOR.h,
     AC_DEFINE(HAVE_CCA_SPEC_BABEL_HEADERS),
     AC_MSG_ERROR([problem with cca-spec-babel headers]) )
-  AC_CHECK_HEADER(Chemistry_IOR.h,
+  AC_CHECK_HEADER(Chemistry_QC_Model_IOR.h,
     AC_DEFINE(HAVE_CCA_CHEM_HEADERS),
-    AC_MSG_ERROR([problem with cca-chem headers]) )
+    AC_MSG_ERROR([problem with cca-chem-generic headers]) )
 
   dnl why does this fail???
   dnl AC_LANG_SAVE

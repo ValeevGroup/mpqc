@@ -2,12 +2,12 @@
 // File:          MPQC_IntegralEvaluator4_Impl.cc
 // Symbol:        MPQC.IntegralEvaluator4-v0.2
 // Symbol Type:   class
-// Babel Version: 0.9.8
+// Babel Version: 0.10.0
 // Description:   Server-side implementation for MPQC.IntegralEvaluator4
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.9.8
+// babel-version = 0.10.0
 // 
 #include "MPQC_IntegralEvaluator4_Impl.hh"
 
@@ -33,6 +33,13 @@ void MPQC::IntegralEvaluator4_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._dtor)
   if( package_ == "intv3") delete [] temp_buffer_;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._dtor)
+}
+
+// static class initializer
+void MPQC::IntegralEvaluator4_impl::_load() {
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._load)
+  // guaranteed to be called at most once before any other method in this class
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._load)
 }
 
 // user defined static methods: (none)

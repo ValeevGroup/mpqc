@@ -17,14 +17,17 @@ code marked as "Copyright (C) 1996 Limit Point Systems, Inc.", as
 prescribed in AL 91-7.  The US Government license doesn't apply to code
 that is marked as copyrighted by a party other than Limit Point Systems,
 Inc., if that code's distribution terms are incompatible with the US
-Government license.  This includes "include/libg++-stub/builtin.h" and
-"lib/elisp/compile.el".
+Government license.  This includes "include/libg++-stub/builtin.h",
+"lib/elisp/compile.el", and, in the directory "src/lib/util/containers",
+the files "gnuset.h", "gnuavlse.h", and "gnuavlse.cc".
 
-  The file "include/libg++-stub/builtin.h" is derived from the Free
-Software Foundation's C++ library libg++.  The file "lib/elisp/compile.el"
-is derived from a component of Free Software Foundation's emacs editor.
-The full versions of each of these pieces of software are available by
-anonymous ftp from prep.ai.mit.edu in the directory /pub/gnu.
+  The files "include/libg++-stub/builtin.h" and the files "gnuset.h",
+"gnuavlse.h", and "gnuavlse.cc" in the "src/lib/util/containers" directory
+are derived from the Free Software Foundation's C++ library, libg++.  The
+file "lib/elisp/compile.el" is derived from a component of Free Software
+Foundation's emacs editor.  The full versions of each of these pieces of
+software are available by anonymous ftp from prep.ai.mit.edu in the
+directory /pub/gnu.
 
 EXPORT RESTRICTIONS
 ===================

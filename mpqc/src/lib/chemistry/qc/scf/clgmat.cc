@@ -415,17 +415,16 @@ CLSCF::form_ao_fock(centers_t *centers, double *intbuf)
   delete[] shnfunc;
   delete[] pmax;
 
-  RefSymmSCMatrix foo = _gr_gmat.clone();
-  foo.assign(0.0);
+  RefSymmSCMatrix gmat = _gr_gmat.copy();
   
-  for (int g=0; g < _mol->point_group().char_table().order(); g++) {
+  for (int g=1; g < _mol->point_group().char_table().order(); g++) {
     RefSCMatrix r = pl.r(g);
-    foo.accumulate_transform(r,_gr_gmat);
+    gmat.accumulate_transform(r,_gr_gmat);
   }
-  foo.scale(1.0/_mol->point_group().char_table().order());
+  gmat.scale(1.0/_mol->point_group().char_table().order());
 
-  _fock.assign(foo);
+  _fock.assign(gmat);
   _fock.accumulate(_gr_hcore);
-  foo = 0;
+  gmat = 0;
 
 }

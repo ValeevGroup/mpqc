@@ -15,7 +15,7 @@ mole<CLSCF>: (
 
   % MolecularEnergy input
   molecule = $:molecule
-  basis = $:basis
+  basis = $:gbasis
 
   % comment out coor if molecule is an atom
   coor = $:coor
@@ -24,6 +24,8 @@ mole<CLSCF>: (
   density_reset_freq = 5
   ckpt_dir = "./"
   filename = "test"
+  maxiter=20
+  ndocc=14
 
   extrap<DIIS>: (
     start = 5
@@ -32,10 +34,7 @@ mole<CLSCF>: (
   )
 )
 
-
-%basis = $:631gsbasis
-basis = $:stobasis
-molecule = $:water
+molecule = $:h3op
 
 coor = $:symcoor
 message = $:message1
@@ -53,25 +52,13 @@ xopt<QNewtonOpt>: (
 % basis sets
 %
 
-631gssbasis<GaussianBasisSet>: (
-  basisdir = "/net/midway/usr/people/etseidl/basis/"
-  basisfiles = [ v2g90.ipv2 ]
+gbasis<GaussianBasisSet>: (
   molecule = $:molecule
-  name = 631gss
-)
+  %name = "6-31G**"
+  %name = "STO-3G"
+  name = "aug-cc-pVTZ"
 
-631gsbasis<GaussianBasisSet>: (
-  basisdir = "/net/midway/usr/people/etseidl/basis/"
-  basisfiles = [ v2g90.ipv2 ]
-  molecule = $:molecule
-  name = 631gs
-)
-
-stobasis<GaussianBasisSet>: (
-  basisdir = "/net/midway/usr/people/etseidl/basis/"
-  basisfiles = [ v2g90.ipv2 ]
-  molecule = $:molecule
-  name = sto3g
+  puream=yes
 )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -135,12 +122,70 @@ cscoh2<Molecule>: (
   }
 )
 
-water<Molecule>: (
-  symmetry=c2
+tmmc1<Molecule>: (
+  symmetry=c1
   { atoms geometry } = {
-      H  [   1.5  0.0   1.0 ]
-      %H  [  -1.5  0.0   1.0 ]
-      O  [   0.0  0.0   0.0 ]
+      c     [  2.8345899953    0.0000000000    0.0000000000 ]
+      c     [ -1.4172949976   -2.4548269452    0.0000000000 ]
+      c     [ -1.4172949976    2.4548269452    0.0000000000 ]
+      c     [  0.0000000000    0.0000000000    0.0000000000 ]
+      h     [  3.7794533270    1.7007539972    0.0000000000 ]
+      h     [ -0.4168304964   -4.1234795922    0.0000000000 ]
+      h     [ -3.3626228306    2.4227255950    0.0000000000 ]
+      h     [  3.7794533270   -1.7007539972    0.0000000000 ]
+      h     [ -3.3626228306   -2.4227255950    0.0000000000 ]
+      h     [ -0.4168304964    4.1234795922    0.0000000000 ]
+  }
+)
+
+tmm<Molecule>: (
+  symmetry=d3h
+  { atoms geometry } = {
+      c     [  2.8345899953    0.0000000000    0.0000000000 ]
+      c     [  0.0000000000    0.0000000000    0.0000000000 ]
+      h     [  3.7794533270    1.7007539972    0.0000000000 ]
+  }
+)
+
+ozone_c1<Molecule>: (
+  symmetry=c1
+  { atoms geometry } = {
+      o    [  1.5000000000    0.0000000000    0.0000000000 ]
+      o    [ -0.7500000000   -1.2990381057    0.0000000000 ]
+      o    [ -0.7500000000    1.2990381057    0.0000000000 ]
+  }
+)
+
+ozone<Molecule>: (
+  symmetry=d3h
+  { atoms geometry } = {
+      o    [  1.5000000000    0.0000000000    0.0000000000 ]
+  }
+)
+
+h3op_c1<Molecule>: (
+  symmetry=c1
+  { atoms geometry } = {
+      h    [  1.5000000000    0.0000000000    1.0000000000 ]
+      h    [ -0.7500000000   -1.2990381057    1.0000000000 ]
+      h    [ -0.7500000000    1.2990381057    1.0000000000 ]
+      o    [  0.0000000000    0.0000000000    0.0000000000 ]
+  }
+)
+
+h3op<Molecule>: (
+  symmetry=c3v
+  { atoms geometry } = {
+      h    [  1.5000000000    0.0000000000    1.0000000000 ]
+      o    [  0.0000000000    0.0000000000    0.0000000000 ]
+  }
+)
+
+water<Molecule>: (
+  symmetry=c2v
+  { atoms geometry } = {
+      H    [  1.5000000000    0.0000000000    1.0000000000 ]
+      O    [  0.0000000000    0.0000000000    0.0000000000 ]
   }
 )
 
@@ -152,57 +197,14 @@ he<Molecule>: (
 )
 
 basis:(
-  helium: foo: [
-    (type: [am = s]
-            {exp               coef:0} = {
-       3.425250914e+00   1.543289673e-01
-       })
-    (type: [am = p]
-            {exp               coef:0} = {
-       3.425250914e+00   1.543289673e-01
-       })
-    ]
-  hydrogen: sto3g: [
-    (type: [am = s]
-            {exp               coef:0} = {
-       3.425250914e+00   1.543289673e-01
-       6.239137298e-01   5.353281423e-01
-       1.688554040e-01   4.446345422e-01})
-    ]
-  carbon: sto3g: [
-    (type: [am = s]
-            {exp               coef:0} = {
-       7.161683735e+01   1.543289673e-01
-       1.304509632e+01   5.353281423e-01
-       3.530512160e+00   4.446345422e-01})
-    (type: [am = p  am = s] 
-            {exp               coef:0        coef:1} = {
-       2.941249355e+00   1.559162750e-01  -9.996722919e-02
-       6.834830964e-01   6.076837186e-01   3.995128261e-01
-       2.222899159e-01   3.919573931e-01   7.001154689e-01})
-    ]
-  nitrogen: sto3g: [
-    (type: [am = s]
-            {exp               coef:0} = {
-       9.910616896e+01   1.543289673e-01
-       1.805231239e+01   5.353281423e-01
-       4.885660238e+00   4.446345422e-01})
-    (type: [am = p  am = s] 
-            {exp               coef:0        coef:1} = {
-       3.780455879e+00   1.559162750e-01  -9.996722919e-02
-       8.784966449e-01   6.076837186e-01   3.995128261e-01
-       2.857143744e-01   3.919573931e-01   7.001154689e-01})
-    ]
-  oxygen: sto3g: [
+  oxygen: "foo": [
     (type: [am = s]
             {exp               coef:0} = {
        1.307093214e+02   1.543289673e-01
        2.380886605e+01   5.353281423e-01
        6.443608313e+00   4.446345422e-01})
-    (type: [am = p  am = s] 
-            {exp               coef:0        coef:1} = {
-       5.033151319e+00   1.559162750e-01  -9.996722919e-02
-       1.169596125e+00   6.076837186e-01   3.995128261e-01
-       3.803889600e-01   3.919573931e-01   7.001154689e-01})
+    (type: [am = d ] 
+            {exp               coef:0   } = {
+       1.169596125e+00   6.076837186e-01})
     ]
 )

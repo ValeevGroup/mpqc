@@ -104,17 +104,16 @@ init_mp(const Ref<KeyVal>& keyval, int &argc, char **&argv)
 
   if (grp.null()) {
       grp << keyval->describedclassvalue("messagegrp");
+    }
 
-      if (grp.null()) {
-          std::cerr << indent << "Couldn't initialize MessageGrp\n";
-          abort();
-        }
+  if (grp.null()) grp = MessageGrp::get_default_messagegrp();
+
+  if (grp.null()) {
+    std::cerr << indent << "Couldn't initialize MessageGrp\n";
+    abort();
     }
 
   MessageGrp::set_default_messagegrp(grp);
-
-  if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
-  else grp = MessageGrp::get_default_messagegrp();
 
   Ref<Debugger> debugger; debugger << keyval->describedclassvalue(":debug");
   // Let the debugger know the name of the executable and the node
@@ -197,6 +196,10 @@ main(int argc, char**argv)
   
   tim->print(ExEnv::out0());
 
+  tim = 0;
+  grp = 0;
+  RegionTimer::set_default_regiontimer(0);
+  MessageGrp::set_default_messagegrp(0);
   return 0;
 }
 

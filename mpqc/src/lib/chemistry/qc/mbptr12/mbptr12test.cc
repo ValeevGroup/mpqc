@@ -156,6 +156,11 @@ main(int argc, char**argv)
   
   tim->print(ExEnv::out0());
 
+  tim = 0;
+  grp = 0;
+  RegionTimer::set_default_regiontimer(0);
+  MessageGrp::set_default_messagegrp(0);
+
   return 0;
 }
 

@@ -36,7 +36,7 @@ ElectronDensity::compute()
       set_value(wfn_.density(r));
     }
   if (do_hessian()) {
-      cerr << node0 << << indent
+      cerr << node0 << indent
            << "ElectronDensity::compute(): isn't yet implemented\n";
       abort();
     }

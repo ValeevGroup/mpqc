@@ -21,9 +21,12 @@
 #  include <util/group/memshm.h>
 #endif
 
-#if defined(HAVE_MPL) && defined(HAVE_MPI)
+#if defined(HAVE_MPL)
 #  include <util/group/memmpl.h>
+#endif
+#if defined(HAVE_MPI)
 #  include <util/group/messmpi.h>
+#  include <util/group/memmpi.h>
 #endif
 
 //////////////////////////////////////////////////////////////////////
@@ -148,9 +151,13 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
 #endif
     }
 #endif
+#if defined(HAVE_MPL)
+  else if (msg->class_desc() == MPIMessageGrp::static_class_desc()) {
+      grp = new MPLMemoryGrp(msg);
+    }
+#endif
 #if defined(HAVE_MPI)
   else if (msg->class_desc() == MPIMessageGrp::static_class_desc()) {
-      printf("creating mpimemorygrp\n");
       grp = new MPIMemoryGrp(msg);
     }
 #endif

@@ -354,6 +354,24 @@ changequote([, ])dnl
     fi
     AC_MSG_RESULT(intel)
   ;;
+  i860-intel-puma*)
+    if test X$GCC = Xyes; then
+      COPTIONS_MISC="$COPTIONS_MISC -mpuma"
+    else
+      COPTIONS_MISC="$COPTIONS_MISC -D__PUMAGON__"
+      COPTIONS_MISC="$COPTIONS_MISC -L$PARAGON_XDEV/paragon/lib-coff/puma"
+      COPTIONS_MISC="$COPTIONS_MISC -YS,$PARAGON_XDEV/paragon/lib-coff/puma"
+      COPTIONS_MISC="$COPTIONS_MISC -lpuma -lm -lkmath"
+      COPTIONS_MISC="$COPTIONS_MISC $PARAGON_XDEV/paragon/lib-coff/puma/libstubs.o"
+    fi
+    if test X$GXX = Xyes; then
+      CXXOPTIONS_MISC="$CXXOPTIONS_MISC -mpuma"
+    fi
+    if test X$cross_compiling = Xyes; then
+      AR=ar860
+    fi
+    AC_MSG_RESULT(paragon puma)
+  ;;
   i860-intel-sunmos*)
     if test X$GCC = Xyes; then
       COPTIONS_MISC="$COPTIONS_MISC -msunmos"
@@ -624,6 +642,10 @@ dnl --------- Checks that must be done last. ---------
 
 AC_MSG_CHECKING([for special flags that must be set last])
 case $target in
+  i860-intel-puma*)
+    LDFLAGS="$LDFLAGS -mpuma -mnoieee"
+    AC_MSG_RESULT(paragon puma)
+  ;;
   i860-intel-sunmos*)
     LDFLAGS="$LDFLAGS -msunmos -mnoieee"
     AC_MSG_RESULT(paragon sunmos)

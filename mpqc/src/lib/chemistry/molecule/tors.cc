@@ -67,16 +67,6 @@ TorsSimpleCo::TorsSimpleCo(const RefKeyVal &kv):
 {
 }
 
-// TorsSimpleCo::TorsSimpleCo(KeyVal *kv, const char *lab, int n) :
-//   SimpleCo(4)
-// {
-//   label_=kv->pcharvalue(lab,n,1);
-//   atoms[0]=kv->intvalue(lab,n,2);
-//   atoms[1]=kv->intvalue(lab,n,3);
-//   atoms[2]=kv->intvalue(lab,n,4);
-//   atoms[3]=kv->intvalue(lab,n,5);
-//   }
-
 TorsSimpleCo& TorsSimpleCo::operator=(const TorsSimpleCo& s)
 {
   if(label_) delete[] label_;

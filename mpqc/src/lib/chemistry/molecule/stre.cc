@@ -62,14 +62,6 @@ StreSimpleCo::StreSimpleCo(const RefKeyVal &kv)
 {
 }
 
-// StreSimpleCo::StreSimpleCo(KeyVal *kv, const char *lab, int n)
-//   : SimpleCo(2)
-// {
-//   label_=kv->pcharvalue(lab,n,1);
-//   atoms[0]=kv->intvalue(lab,n,2);
-//   atoms[1]=kv->intvalue(lab,n,3);
-//   }
-
 StreSimpleCo::~StreSimpleCo()
 {
 }

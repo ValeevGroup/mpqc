@@ -113,8 +113,14 @@ class MBPT2_R12: public MBPT2 {
 
         </dl>
 
+	<dt><tt>spinadapted</tt><dd> This specifies whether to compute spin-adapted
+	or spin-orbital pair energies. Default is to compute spin-adapted energies.
+
         <dt><tt>r12ints_file</tt><dd> This specifies which file to use to store transformed
-	MO integrals if the multipass algorithm is used.  The default is /tmp/r12ints.dat.
+	MO integrals if the multipass algorithm is used.  Default is /tmp/r12ints.dat.
+
+	<dt><tt>aux_basis</tt><dd> This specifies the auxiliary basis to be used for the resolution
+	of the identity. Default is to use the same basis as for the orbital expansion.
 
         </dl> */
     MBPT2_R12(const Ref<KeyVal>&);

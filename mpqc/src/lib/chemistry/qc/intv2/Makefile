@@ -72,12 +72,12 @@ interface:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-inttest: inttest.o libbasis.a \
+inttest: inttest.o \
 	$(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 	$(CXX) $(LDFLAGS) -o inttest $^ $(SYSLIBS)
 
 inttest.o: inttest.cc
-	$(CXX) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 $(TESTOBJ:.o=.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

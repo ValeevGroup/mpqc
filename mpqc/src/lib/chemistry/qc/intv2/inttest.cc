@@ -34,7 +34,7 @@ main()
 
   RefGaussianBasisSet basis = keyval->describedclassvalue("basis");
   RefMolecule mol = basis->molecule();
-  centers_t *pcenters = basis->convert_to_centers_t();
+  centers_t *pcenters = int_centers_from_gbs(basis);
   centers_t &centers = *pcenters;
 
   int_initialize_offsets2(&centers,&centers,&centers,&centers);

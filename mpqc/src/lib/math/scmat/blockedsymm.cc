@@ -231,7 +231,7 @@ BlockedSymmSCMatrix::trace()
   
   for (int i=0; i < d->blocks()->nblock(); i++)
     if (mats_[i].nonnull())
-      res += mats_[i]->determ_this();
+      res += mats_[i]->trace();
 
   return res;
 }

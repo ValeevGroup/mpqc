@@ -400,9 +400,7 @@ class intMessageGrp: public MessageGrp {
     int leftover_ctl_bits();
 };
 
-#ifndef __GNUG__
-#  include <util/group/messaget.h>
-#endif
+#include <util/group/messaget.h>
 
 #endif
 

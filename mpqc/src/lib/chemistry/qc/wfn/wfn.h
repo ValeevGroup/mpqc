@@ -60,6 +60,10 @@ class Wavefunction: public MolecularEnergy {
     RefGaussianBasisSet gbs_;
     RefIntegral integral_;
 
+    // The tolerance for lambda(max)/lambda(min) in the
+    // diagonalized overlap matrix
+    double lindep_tol_;
+
     int print_nao_;
     int print_npa_;
     

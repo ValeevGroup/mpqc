@@ -36,6 +36,7 @@
 
 #include <util/keyval/keyval.h>
 #include <util/misc/timer.h>
+#include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/symmint.h>
@@ -82,6 +83,8 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
 
   print_nao_ = keyval->booleanvalue("print_nao");
   print_npa_ = keyval->booleanvalue("print_npa");
+  KeyValValuedouble lindep_tol_def(1.e-6);
+  lindep_tol_ = keyval->doublevalue("lindep_tol", lindep_tol_def);
 
   gbs_ = GaussianBasisSet::require_castdown(
     keyval->describedclassvalue("basis").pointer(),
@@ -290,8 +293,8 @@ Wavefunction::core_hamiltonian()
 
 // at some point this will have to check for zero eigenvalues and not
 // invert them
-static void
-form_m_half(RefSymmSCMatrix& M)
+static int
+form_m_half(RefSymmSCMatrix& M,double tol)
 {
   // Diagonalize M to get m and U
   RefSCMatrix U(M.dim(), M.dim(), M.kit());
@@ -302,13 +305,30 @@ form_m_half(RefSymmSCMatrix& M)
   RefSCElementOp op = new SCElementSquareRoot;
   m.element_op(op);
 
+  RefSCElementMaxAbs maxabsop = new SCElementMaxAbs;
+  m.element_op(maxabsop);
+  double maxabs = maxabsop->result();
+
+  RefSCElementMinAbs minabsop = new SCElementMinAbs(maxabs);
+  m.element_op(minabsop);
+  double minabs = minabsop->result();
+
   // invert m
-  op = new SCElementInvert;
-  m.element_op(op);
+  RefSCElementInvert invertop = new SCElementInvert(tol*maxabs);
+  m.element_op(invertop);
+  int nlindep = invertop->result();
+
+  if (!nlindep && maxabs/minabs > 1.0e1) {
+    cout << node0 << indent
+         << "s^(1/2): max/min = " << maxabs/minabs
+         << endl;
+  }
 
   // back transform m^-1/2 to get M^-1/2 ( U*m^-1/2*U~ = M^-1/2)
   M.assign(0.0);
   M.accumulate_transform(U,m);
+
+  return nlindep;
 }
 
 // returns a matrix containing S^-1/2
@@ -319,7 +339,16 @@ Wavefunction::ao_to_orthog_ao()
   RefSymmSCMatrix s = overlap().copy();
   
   // then form S^-1/2
-  form_m_half(s);
+  int nlindep = form_m_half(s,lindep_tol_);
+  if (nlindep != 0) {
+      cout << node0 << indent
+           << "Wavefunction: WARNING: "
+           << nlindep << " linearly dependent basis function"
+           << (nlindep>1?"s":"")
+           << endl;
+    }
+
+  //s.print("S^(-1/2)");
 
   return s;
 }

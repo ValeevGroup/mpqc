@@ -66,6 +66,7 @@ class DenIntegrator: virtual public SavableState {
     double density_;
     int nbasis_;
     int nshell_;
+    int n_integration_center_;
     int natom_;
     int compute_potential_integrals_; // 1 if potential integrals are needed
 
@@ -157,7 +158,7 @@ class IntegrationWeight: virtual public SavableState {
 /** Implements Becke's integration weight scheme. */
 class BeckeIntegrationWeight: public IntegrationWeight {
 
-    int ncenters;
+    int n_integration_centers;
     SCVector3 *centers;
     double *atomic_radius;
 

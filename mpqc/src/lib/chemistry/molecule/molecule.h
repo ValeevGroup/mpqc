@@ -122,6 +122,9 @@ class Molecule: public SavableState
     // The Z that represents a "Q" type atom.
     int q_Z_;
 
+    // If true, include the q terms in the charge and efield routines
+    bool include_q_;
+
     // If true, include the coupling between q-q pairs when
     // computing nuclear repulsion energy and gradients.
     bool include_qq_;
@@ -284,7 +287,7 @@ class Molecule: public SavableState
     /// Return the maximum atomic number.
     int max_z();
 
-    /// Return the molecules AtomInfo object.
+    /// Return the molecule's AtomInfo object.
     Ref<AtomInfo> atominfo() const { return atominfo_; }
 
     /// Returns the element name of the atom.
@@ -292,6 +295,32 @@ class Molecule: public SavableState
 
     /// Returns the element symbol of the atom.
     std::string atom_symbol(int iatom) const;
+
+    /** If include_q is true, then include the "Q" atoms in the charge and
+        efield routines. */
+    //@{
+    void set_include_q(bool iq) { include_q_ = iq; }
+    bool include_q() const { return include_q_; }
+    //@}
+
+    /** If include_qq is true, include the coupling between pairs of "Q"
+        atoms when computing nuclear repulsion energy and gradients. */
+    //@{
+    void set_include_qq(bool iqq) { include_qq_ = iqq; }
+    bool include_qq() const { return include_qq_; }
+    //@}
+
+    /// Retrieve the "Q" atoms.
+    //@{
+    int n_q_atom() const { return q_atoms_.size(); }
+    int q_atom(int i) const { return q_atoms_[i]; }
+    //@}
+
+    /// Retrieve all atoms but the "Q" atoms.
+    //@{
+    int n_non_q_atom() const { return non_q_atoms_.size(); }
+    int non_q_atom(int i) const { return non_q_atoms_[i]; }
+    //@}
 
     void save_data_state(StateOut&);
 };

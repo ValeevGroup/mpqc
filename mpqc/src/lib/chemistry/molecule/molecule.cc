@@ -61,6 +61,7 @@ Molecule::Molecule():
   nequiv_ = 0;
   atom_to_uniq_ = 0;
   q_Z_ = atominfo_->string_to_Z("Q");
+  include_q_ = false;
   include_qq_ = false;
   init_symmetry_info();
 }
@@ -113,7 +114,9 @@ Molecule::Molecule(const Ref<KeyVal>&input):
   nequiv_ = 0;
   atom_to_uniq_ = 0;
 
-  include_qq_ = input->booleanvalue("include_qq");
+  KeyValValueboolean kvfalse(0);
+  include_q_ = input->booleanvalue("include_q",kvfalse);
+  include_qq_ = input->booleanvalue("include_qq",kvfalse);
 
   atominfo_ << input->describedclassvalue("atominfo");
   if (atominfo_.null()) atominfo_ = new AtomInfo;
@@ -221,6 +224,7 @@ Molecule::operator=(const Molecule& mol)
   geometry_units_ = new Units(mol.geometry_units_->string_rep());
 
   q_Z_ = mol.q_Z_;
+  include_q_ = mol.include_q_;
   include_qq_ = mol.include_qq_;
   q_atoms_ = mol.q_atoms_;
   non_q_atoms_ = mol.non_q_atoms_;
@@ -480,16 +484,23 @@ Molecule::charge(int iatom) const
 double
 Molecule::nuclear_charge() const
 {
-  int i;
   double c = 0.0;
-  for (i=0; i<natom(); i++) {
+  if (include_q_) {
+    for (int i=0; i<natom(); i++) {
       c += charge(i);
     }
+  }
+  else {
+    for (int ii=0; ii<non_q_atoms_.size(); ii++) {
+      c += charge(non_q_atoms_[ii]);
+    }
+  }
   return c;
 }
 
 void Molecule::save_data_state(StateOut& so)
 {
+  so.put(include_q_);
   so.put(include_qq_);
   so.put(natoms_);
   SavableState::save_state(pg_.pointer(),so);
@@ -527,9 +538,11 @@ Molecule::Molecule(StateIn& si):
       abort();
     }
   if (si.version(::class_desc<Molecule>()) < 6) {
+    include_q_ = false;
     include_qq_ = false;
     }
   else {
+    si.get(include_q_);
     si.get(include_qq_);
   }
   si.get(natoms_);
@@ -744,47 +757,79 @@ void
 Molecule::nuclear_charge_efield(const double *charges,
                                 const double *position, double *efield)
 {
-  int i,j;
   double tmp;
   double rd[3];
 
-  for (i=0; i<3; i++) efield[i] = 0.0;
+  for (int i=0; i<3; i++) efield[i] = 0.0;
 
-  for (i=0; i<natoms_; i++) {
+  if (include_q_) {
+    for (int i=0; i<natoms_; i++) {
       SCVector3 a(r(i));
       tmp = 0.0;
-      for (j=0; j<3; j++) {
-          rd[j] = position[j] - a[j];
-          tmp += rd[j]*rd[j];
-        }
+      for (int j=0; j<3; j++) {
+        rd[j] = position[j] - a[j];
+        tmp += rd[j]*rd[j];
+      }
       tmp = charges[i]/(tmp*sqrt(tmp));
-      for (j=0; j<3; j++) {
-          efield[j] +=  rd[j] * tmp;
-        }
+      for (int j=0; j<3; j++) {
+        efield[j] +=  rd[j] * tmp;
+      }
     }
+  }
+  else {
+    for (int ii=0; ii<non_q_atoms_.size(); ii++) {
+      int i = non_q_atoms_[ii];
+      SCVector3 a(r(i));
+      tmp = 0.0;
+      for (int j=0; j<3; j++) {
+        rd[j] = position[j] - a[j];
+        tmp += rd[j]*rd[j];
+      }
+      tmp = charges[i]/(tmp*sqrt(tmp));
+      for (int j=0; j<3; j++) {
+        efield[j] +=  rd[j] * tmp;
+      }
+    }
+  }
 }
 
 void
 Molecule::nuclear_efield(const double *position, double *efield)
 {
-  int i,j;
   double tmp;
   double rd[3];
 
-  for (i=0; i<3; i++) efield[i] = 0.0;
+  for (int i=0; i<3; i++) efield[i] = 0.0;
 
-  for (i=0; i<natoms_; i++) {
+  if (include_q_) {
+    for (int i=0; i<natoms_; i++) {
       SCVector3 a(r(i));
       tmp = 0.0;
-      for (j=0; j<3; j++) {
-          rd[j] = position[j] - a[j];
-          tmp += rd[j]*rd[j];
-        }
+      for (int j=0; j<3; j++) {
+        rd[j] = position[j] - a[j];
+        tmp += rd[j]*rd[j];
+      }
       tmp = charge(i)/(tmp*sqrt(tmp));
-      for (j=0; j<3; j++) {
-          efield[j] +=  rd[j] * tmp;
-        }
+      for (int j=0; j<3; j++) {
+        efield[j] +=  rd[j] * tmp;
+      }
     }
+  }
+  else {
+    for (int ii=0; ii<non_q_atoms_.size(); ii++) {
+      int i = non_q_atoms_[ii];
+      SCVector3 a(r(i));
+      tmp = 0.0;
+      for (int j=0; j<3; j++) {
+        rd[j] = position[j] - a[j];
+        tmp += rd[j]*rd[j];
+      }
+      tmp = charge(i)/(tmp*sqrt(tmp));
+      for (int j=0; j<3; j++) {
+        efield[j] +=  rd[j] * tmp;
+      }
+    }
+  }
 }
 
 int

@@ -83,6 +83,7 @@ class DenIntegratorThread: public Thread {
     int nshell_;
     int nbasis_;
     int natom_;
+    int n_integration_center_;
     DenIntegrator *integrator_;
     int spin_polarized_;
     int need_hessian_;
@@ -116,7 +117,7 @@ class DenIntegratorThread: public Thread {
                         int compute_potential_integrals,
                         int need_nuclear_gradient);
     virtual ~DenIntegratorThread();
-    double do_point(int acenter, const SCVector3 &r,
+    double do_point(int iatom, const SCVector3 &r,
                     double weight, double multiplier,
                     double *nuclear_gradient,
                     double *f_gradient, double *w_gradient);
@@ -146,6 +147,8 @@ DenIntegratorThread::DenIntegratorThread(int ithread, int nthread,
   nshell_ = integrator->wavefunction()->basis()->nshell();
   nbasis_ = integrator->wavefunction()->basis()->nbasis();
   natom_ = integrator->wavefunction()->molecule()->natom();
+  n_integration_center_
+      = integrator->wavefunction()->molecule()->n_non_q_atom();
   need_gradient_ = func->need_density_gradient();
   need_hessian_ = func->need_density_hessian();
   basis_ = integrator->wavefunction()->basis().pointer();
@@ -177,7 +180,7 @@ DenIntegratorThread::DenIntegratorThread(int ithread, int nthread,
   w_gradient_ = 0;
   f_gradient_ = 0;
   if (nuclear_gradient_) {
-      w_gradient_ = new double[natom_*3];
+      w_gradient_ = new double[n_integration_center_*3];
       f_gradient_ = new double[natom_*3];
     }
 }
@@ -291,6 +294,8 @@ DenIntegrator::init_integration(const Ref<DenFunctional> &func,
   func->set_spin_polarized(spin_polarized_);
 
   natom_ = wfn_->molecule()->natom();
+  n_integration_center_
+      = wfn_->molecule()->n_non_q_atom();
 
   nshell_ = wfn_->basis()->nshell();
   nbasis_ = wfn_->basis()->nbasis();
@@ -326,7 +331,7 @@ DenIntegrator::done_integration()
 }
 
 double
-DenIntegratorThread::do_point(int acenter, const SCVector3 &r,
+DenIntegratorThread::do_point(int iatom, const SCVector3 &r,
                         double weight, double multiplier,
                         double *nuclear_gradient,
                         double *f_gradient, double *w_gradient)
@@ -362,7 +367,7 @@ DenIntegratorThread::do_point(int acenter, const SCVector3 &r,
           func_->point(id, od);
         }
       else {
-          func_->gradient(id, od, f_gradient, acenter, basis_,
+          func_->gradient(id, od, f_gradient, iatom, basis_,
                           den_->alpha_density_matrix(),
                           den_->beta_density_matrix(),
                           ncontrib, contrib,
@@ -459,8 +464,12 @@ DenIntegratorThread::do_point(int acenter, const SCVector3 &r,
   if (nuclear_gradient != 0) {
       // the contribution from f dw/dx
       if (w_gradient) {
-          for (i=0; i<natom_*3; i++) {
-              nuclear_gradient[i] += w_gradient[i] * od.energy * multiplier;
+          for (int icenter = 0; icenter<n_integration_center_; icenter++) {
+              int iatom = basis_->molecule()->non_q_atom(icenter);
+              for (int ixyz=0; ixyz<3; ixyz++) {
+                  nuclear_gradient[iatom*3+ixyz]
+                      += w_gradient[icenter*3+ixyz] * od.energy * multiplier;
+                }
             }
         }
       // the contribution from (df/dx) w
@@ -634,6 +643,7 @@ BeckeIntegrationWeight::BeckeIntegrationWeight(StateIn& s):
   SavableState(s),
   IntegrationWeight(s)
 {
+  n_integration_centers = 0;
   atomic_radius = 0;
   a_mat = 0;
   oorab = 0;
@@ -642,6 +652,7 @@ BeckeIntegrationWeight::BeckeIntegrationWeight(StateIn& s):
 
 BeckeIntegrationWeight::BeckeIntegrationWeight()
 {
+  n_integration_centers = 0;
   centers = 0;
   atomic_radius = 0;
   a_mat = 0;
@@ -651,6 +662,7 @@ BeckeIntegrationWeight::BeckeIntegrationWeight()
 BeckeIntegrationWeight::BeckeIntegrationWeight(const Ref<KeyVal>& keyval):
   IntegrationWeight(keyval)
 {
+  n_integration_centers = 0;
   centers = 0;
   atomic_radius = 0;
   a_mat = 0;
@@ -674,36 +686,37 @@ BeckeIntegrationWeight::init(const Ref<Molecule> &mol, double tolerance)
   done();
   IntegrationWeight::init(mol, tolerance);
 
-  ncenters = mol->natom();
+  // We only want to include to include "atoms" that correspond to nuclei,
+  // not charges.
+  n_integration_centers = mol->n_non_q_atom();
 
-  double *atomic_radius = new double[ncenters];
-  int icenter;
-  for (icenter=0; icenter<ncenters; icenter++) {
-      // atomic_radius[icenter] = mol->atominfo()->bragg_radius(mol->Z(icenter));
-      atomic_radius[icenter] = mol->atominfo()->maxprob_radius(mol->Z(icenter));
+  double *atomic_radius = new double[n_integration_centers];
+  centers = new SCVector3[n_integration_centers];
+
+  for (int icenter=0; icenter<n_integration_centers; icenter++) {
+      int iatom = mol->non_q_atom(icenter);
+
+      // atomic_radius[icenter] = mol->atominfo()->bragg_radius(mol->Z(iatom));
+      atomic_radius[icenter] = mol->atominfo()->maxprob_radius(mol->Z(iatom));
+
+      centers[icenter].x() = mol->r(iatom,0);
+      centers[icenter].y() = mol->r(iatom,1);
+      centers[icenter].z() = mol->r(iatom,2);
     }
-  
-  centers = new SCVector3[ncenters];
-  for (icenter=0; icenter<ncenters; icenter++) {
-      centers[icenter].x() = mol->r(icenter,0);
-      centers[icenter].y() = mol->r(icenter,1);
-      centers[icenter].z() = mol->r(icenter,2);
-    }
+      
+  a_mat = new double*[n_integration_centers];
+  a_mat[0] = new double[n_integration_centers*n_integration_centers];
+  oorab = new double*[n_integration_centers];
+  oorab[0] = new double[n_integration_centers*n_integration_centers];
 
-  a_mat = new double*[ncenters];
-  a_mat[0] = new double[ncenters*ncenters];
-  oorab = new double*[ncenters];
-  oorab[0] = new double[ncenters*ncenters];
-
-  for (icenter=0; icenter < ncenters; icenter++) {
+  for (int icenter=0; icenter<n_integration_centers; icenter++) {
       if (icenter) {
-          a_mat[icenter] = &a_mat[icenter-1][ncenters];
-          oorab[icenter] = &oorab[icenter-1][ncenters];
+          a_mat[icenter] = &a_mat[icenter-1][n_integration_centers];
+          oorab[icenter] = &oorab[icenter-1][n_integration_centers];
         }
 
       double atomic_radius_a = atomic_radius[icenter];
-      
-      for (int jcenter=0; jcenter < ncenters; jcenter++) {
+      for (int jcenter=0; jcenter < n_integration_centers; jcenter++) {
           double chi=atomic_radius_a/atomic_radius[jcenter];
           double uab=(chi-1.)/(chi+1.);
           a_mat[icenter][jcenter] = uab/(uab*uab-1.);
@@ -739,6 +752,8 @@ BeckeIntegrationWeight::done()
       delete[] oorab;
       oorab = 0;
     }
+
+  n_integration_centers = 0;
 }
 
 double
@@ -749,7 +764,7 @@ BeckeIntegrationWeight::compute_p(int icenter, SCVector3&point)
   double *aa = a_mat[icenter];
 
   double p = 1.0;
-  for (int jcenter=0; jcenter < ncenters; jcenter++) {
+  for (int jcenter=0; jcenter < n_integration_centers; jcenter++) {
       if (icenter != jcenter) {
           double mu = (ra-point.dist(centers[jcenter]))*ooraba[jcenter];
 
@@ -837,7 +852,7 @@ BeckeIntegrationWeight::compute_grad_p(int grad_center, int bcenter,
 
   if (grad_center == bcenter) {
       grad = 0.0;
-      for (int dcenter=0; dcenter<ncenters; dcenter++) {
+      for (int dcenter=0; dcenter<n_integration_centers; dcenter++) {
           if (dcenter == bcenter) continue;
           SCVector3 grad_nu;
           compute_grad_nu(grad_center, dcenter, point, grad_nu);
@@ -861,7 +876,7 @@ BeckeIntegrationWeight::w(int acenter, SCVector3 &point,
   int icenter;
   double p_sum=0.0, p_a=0.0;
     
-  for (icenter=0; icenter<ncenters; icenter++) {
+  for (icenter=0; icenter<n_integration_centers; icenter++) {
       double p_tmp = compute_p(icenter, point);
       if (icenter==acenter) p_a=p_tmp;
       p_sum += p_tmp;
@@ -872,15 +887,15 @@ BeckeIntegrationWeight::w(int acenter, SCVector3 &point,
       // w_gradient is computed using the formulae from
       // Johnson et al., JCP v. 98, p. 5612 (1993) (Appendix B)
       int i,j;
-      for (i=0; i<ncenters*3; i++ ) w_gradient[i] = 0.0;
+      for (i=0; i<n_integration_centers*3; i++ ) w_gradient[i] = 0.0;
 //      fd_w(acenter, point, w_gradient);  // imbn commented out for debug
 //        ExEnv::outn() << point << " ";
-//        for (int i=0; i<ncenters*3; i++) {
+//        for (int i=0; i<n_integration_centers*3; i++) {
 //            ExEnv::outn() << scprintf(" %10.6f", w_gradient[i]);
 //          }
 //        ExEnv::outn() << endl;
 //      return w_a;  // imbn commented out for debug
-      for (int ccenter = 0; ccenter < ncenters; ccenter++) {
+      for (int ccenter = 0; ccenter < n_integration_centers; ccenter++) {
           // NB: for ccenter==acenter, use translational invariance
           // to get the corresponding component of the gradient
           if (ccenter != acenter) {
@@ -888,7 +903,7 @@ BeckeIntegrationWeight::w(int acenter, SCVector3 &point,
               SCVector3 grad_c_p_a;
               compute_grad_p(ccenter, acenter, acenter, point, p_a, grad_c_p_a);
               for (i=0; i<3; i++) grad_c_w_a[i] = grad_c_p_a[i]/p_sum;
-              for (int bcenter=0; bcenter<ncenters; bcenter++) {
+              for (int bcenter=0; bcenter<n_integration_centers; bcenter++) {
                   SCVector3 grad_c_p_b;
                   double p_b = compute_p(bcenter,point);
                   compute_grad_p(ccenter, bcenter, acenter, point, p_b,
@@ -900,7 +915,7 @@ BeckeIntegrationWeight::w(int acenter, SCVector3 &point,
         }
       // fill in w_gradient for ccenter==acenter
       for (j=0; j<3; j++) {
-          for (i=0; i<ncenters; i++) {
+          for (i=0; i<n_integration_centers; i++) {
               if (i != acenter) {
                   w_gradient[acenter*3+j] -= w_gradient[i*3+j];
                 }
@@ -1419,23 +1434,27 @@ RadialAngularIntegratorThread
 
   weight_ = ra_integrator_->weight().pointer();
 
-  nr_ = new int[natom_];
+  nr_ = new int[n_integration_center_];
   
-  for (icenter=0; icenter<natom_; icenter++)
+  for (icenter=0; icenter<n_integration_center_; icenter++) {
+      int iatom = mol_->non_q_atom(icenter);
       nr_[icenter]
-	= ra_integrator_->get_radial_grid(mol_->Z(icenter),deriv_order)->nr();
-
-  centers_ = new SCVector3[natom_];
-  for (icenter=0; icenter<natom_; icenter++) {
-      centers_[icenter].x() = mol_->r(icenter,0);
-      centers_[icenter].y() = mol_->r(icenter,1);
-      centers_[icenter].z() = mol_->r(icenter,2);
+	= ra_integrator_->get_radial_grid(mol_->Z(iatom),deriv_order)->nr();
     }
 
-  atomic_radius_ = new double[natom_];
-  for (icenter=0; icenter<natom_; icenter++) {
+  centers_ = new SCVector3[n_integration_center_];
+  for (icenter=0; icenter<n_integration_center_; icenter++) {
+      int iatom = mol_->non_q_atom(icenter);
+      centers_[icenter].x() = mol_->r(iatom,0);
+      centers_[icenter].y() = mol_->r(iatom,1);
+      centers_[icenter].z() = mol_->r(iatom,2);
+    }
+
+  atomic_radius_ = new double[n_integration_center_];
+  for (icenter=0; icenter<n_integration_center_; icenter++) {
+      int iatom = mol_->non_q_atom(icenter);
       atomic_radius_[icenter]
-          = mol_->atominfo()->maxprob_radius(mol_->Z(icenter));
+          = mol_->atominfo()->maxprob_radius(mol_->Z(iatom));
     }
 
   point_count_total_ = 0;
@@ -1466,12 +1485,13 @@ RadialAngularIntegratorThread::run()
         
   int parallel_counter = 0;
 
-  for (icenter=0; icenter < natom_; icenter++) {
+  for (icenter=0; icenter < n_integration_center_; icenter++) {
+      int iatom = mol_->non_q_atom(icenter);
       point_count=0;
       center = centers_[icenter];
       // get current radial grid: depends on convergence threshold
       RadialIntegrator *radial
-          = ra_integrator_->get_radial_grid(mol_->Z(icenter), deriv_order);
+          = ra_integrator_->get_radial_grid(mol_->Z(iatom), deriv_order);
       nr = radial->nr();
       for (ir=0; ir < nr; ir++) {
           if (! (parallel_counter++%nthread_ == ithread_)) continue;
@@ -1480,7 +1500,7 @@ RadialAngularIntegratorThread::run()
           // get current angular grid: depends on radial point and threshold
           AngularIntegrator *angular
               = ra_integrator_->get_angular_grid(r, atomic_radius_[icenter],
-                                                 mol_->Z(icenter),
+                                                 mol_->Z(iatom),
 						 deriv_order);
           nangular = angular->num_angular_points(r/atomic_radius_[icenter],ir);
           for (iangular=0; iangular<nangular; iangular++) {
@@ -1493,7 +1513,7 @@ RadialAngularIntegratorThread::run()
               double multiplier = angular_multiplier * radial_multiplier;
               total_density_
                   += w * multiplier
-                  * do_point(icenter, integration_point,
+                  * do_point(iatom, integration_point,
                              w, multiplier,
                              nuclear_gradient_, f_gradient_, w_gradient_);
             }

@@ -54,6 +54,9 @@ LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/LIBS.h)
 testpg: testpg.o $(LIBS)
 	$(CXX) $^ -o $@ $(SYSLIBS)
 
+distclean::
+	/bin/rm -f testpg
+
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.o=.d)

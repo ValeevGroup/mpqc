@@ -84,6 +84,9 @@ symmetrize: symmetrize.o $(LIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
+distclean::
+	/bin/rm -f symmetrize moltest
+
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.o=.d) $(TESTOBJ:%.o=%.d)

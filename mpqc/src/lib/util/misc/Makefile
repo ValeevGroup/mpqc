@@ -75,6 +75,9 @@ formiot: formiot.o $(LIBS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
+distclean::
+	/bin/rm -f comptest tregtime bugtest formiot
+
 $(LIBOBJ:.o=.d) $(TESTOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.o=.d) $(TESTOBJ:.o=.d)

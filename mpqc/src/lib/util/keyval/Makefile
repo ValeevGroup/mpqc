@@ -68,6 +68,9 @@ keyvaltest.o: keyvaltest.cc
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
+distclean::
+	/bin/rm -f keyvaltest
+
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 OTHEROBJ = keyvaltest.o
 ifneq ($(DODEPEND),no)

@@ -66,6 +66,9 @@ bug: bug.cc
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
+distclean::
+	/bin/rm -f classtest
+
 $(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(TESTCXXSRC:%.cc=%.d) $(LIBOBJ:.o=.d)

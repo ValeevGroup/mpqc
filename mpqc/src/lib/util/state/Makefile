@@ -67,6 +67,9 @@ statetest: statetest.o libkeyval.$(LIBSUF) libmisc.$(LIBSUF) \
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
+distclean::
+	/bin/rm -f statetest statetest.a.out statetest.out
+
 statetest.d $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.o=.d) statetest.d

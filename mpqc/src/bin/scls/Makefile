@@ -32,6 +32,9 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 scls: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
+distclean::
+	/bin/rm -f scls
+
 #################################################################
 
 $(BINOBJ:.o=.d): $(DEPENDINCLUDE)

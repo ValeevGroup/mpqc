@@ -77,6 +77,9 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 miscclean::
 	-rm -f foo.h
 
+distclean::
+	/bin/rm -rf avltest
+
 $(TESTCXX:%.cc=%.d) $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(TESTCXX:%.cc=%.d) $(LIBOBJ:.o=.d)

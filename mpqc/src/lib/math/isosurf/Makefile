@@ -66,6 +66,9 @@ isotest: isotest.o \
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
+distclean::
+	/bin/rm -f isotest
+
 $(LIBOBJ:.o=.d) isotest.d: $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(LIBOBJ:.o=.d) isotest.d

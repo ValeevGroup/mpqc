@@ -48,6 +48,9 @@ install_mpqcic:: mpqc
 mpqc: $(BINOBJ) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS)
 
+distclean::
+	/bin/rm -f mpqc
+
 #################################################################
 
 $(BINOBJ:.o=.d): $(DEPENDINCLUDE)

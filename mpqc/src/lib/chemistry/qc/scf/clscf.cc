@@ -112,6 +112,7 @@ CLSCF::CLSCF(const RefKeyVal& keyval) :
   PointBag_double *z = molecule()->charges();
   
   for (Pix p=z->first(); p; z->next(p)) Znuc += (int) z->get(p);
+  delete z;
 
   // check to see if this is to be a charged molecule
   int charge = keyval->intvalue("total_charge");

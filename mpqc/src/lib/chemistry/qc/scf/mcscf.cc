@@ -58,6 +58,7 @@ occ(PointBag_double *z, int &nd)
 {
   int Z=0;
   for (Pix i=z->first(); i; z->next(i)) Z += (int) z->get(i);
+  delete z;
 
   nd = Z/2;
   if (Z%2) {

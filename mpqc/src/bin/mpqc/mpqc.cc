@@ -493,6 +493,8 @@ main(int argc, char *argv[])
   if (print_timings)
     tim->print(cout);
 
+  delete[] basename;
+
   return 0;
 }
 

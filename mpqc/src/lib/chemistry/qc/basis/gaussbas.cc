@@ -387,6 +387,7 @@ GaussianBasisSet::init2()
     for (int s=0; s < nb; s++)
       bs[s] = shell(s).nfunction();
     basisdim_ = new SCDimension(nbasis(), nb, bs, "basis set dimension");
+    delete[] bs;
   }
 
   civec_ = 0;

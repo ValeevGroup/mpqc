@@ -65,9 +65,9 @@ Int2eV3::~Int2eV3()
   int_done_erep();
   if (int_integral_storage) {
     done_storage();
-    done_bounds();
-    done_bounds_1der();
   }
+  done_bounds();
+  done_bounds_1der();
 }
 
 /////////////////////////////////////////////////////////////////////////////

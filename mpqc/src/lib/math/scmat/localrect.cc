@@ -99,8 +99,8 @@ LocalSCMatrix::get_subblock(int br, int er, int bc, int ec)
     abort();
   }
   
-  RefSCDimension dnrow = new SCDimension(nsrow);
-  RefSCDimension dncol = new SCDimension(nscol);
+  RefSCDimension dnrow = (nsrow==nrow()) ? rowdim() : new SCDimension(nsrow);
+  RefSCDimension dncol = (nscol==ncol()) ? coldim() : new SCDimension(nscol);
 
   SCMatrix * sb = kit()->matrix(dnrow,dncol);
   sb->assign(0.0);

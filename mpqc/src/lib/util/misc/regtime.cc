@@ -618,8 +618,10 @@ RegionTimer::print(ostream& o)
   while (maxcputime >= 10.0) { maxcputime/=10.0; maxcpuwidth++; }
 
   int maxflopswidth = 4;
-  while (maxflops >= 10.0) { maxflops/=10.0; maxflopswidth++; }
-  if (maxflopswidth < strlen(flops_name)) maxflopswidth = strlen(flops_name);
+  if (flops_) {
+    while (maxflops >= 10.0) { maxflops/=10.0; maxflopswidth++; }
+    if (maxflopswidth < strlen(flops_name)) maxflopswidth = strlen(flops_name);
+    }
 
   o.setf(ios::right);
   for (i=0; i<maxwidth; i++) o << " ";

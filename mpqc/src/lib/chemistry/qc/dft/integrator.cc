@@ -1575,6 +1575,336 @@ EulerMaclaurinRadialIntegrator::get_dr_dqr2(void)
 }
 
 /////////////////////////////////
+// LebedevAngularIntegrator
+#define CLASSNAME LebedevAngularIntegrator
+#define PARENTS public AngularIntegrator
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+LebedevAngularIntegrator::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = AngularIntegrator::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+LebedevAngularIntegrator::LebedevAngularIntegrator(StateIn& s):
+  SavableState(s),
+  AngularIntegrator(s)
+{
+}
+
+LebedevAngularIntegrator::LebedevAngularIntegrator()
+{
+  
+  set_norder(59);
+  set_npoints(1202);
+  set_N1(13);
+  set_N2(4);
+  set_N3(16);
+  set_point_count(0);
+  
+  int npoints = get_npoints();
+  x_ = new double [npoints];
+  y_ = new double [npoints];
+  z_ = new double [npoints];
+  lebedev_weights_ = new double [npoints];
+
+  build_grid();
+}
+
+LebedevAngularIntegrator::LebedevAngularIntegrator(const RefKeyVal& keyval)
+{
+  set_norder( keyval->intvalue("norder") );
+  if (keyval->error() != KeyVal::OK) set_norder(59);
+  set_npoints( keyval->intvalue("npoints") );
+  if (keyval->error() != KeyVal::OK) set_npoints(1202);
+  set_N1( keyval->intvalue("N1") );
+  if (keyval->error() != KeyVal::OK) set_N1(13);
+  set_N2( keyval->intvalue("N2") );
+  if (keyval->error() != KeyVal::OK) set_N2(4);
+  set_N3( keyval->intvalue("N3") );
+  if (keyval->error() != KeyVal::OK) set_N3(16);
+  
+  int npoints = get_npoints();
+  x_ = new double [npoints];
+  y_ = new double [npoints];
+  z_ = new double [npoints];
+  lebedev_weights_ = new double [npoints];
+  set_point_count(0);
+  
+  if (npoints == 9) {
+      set_N1(0); set_N2(1); set_N3(0);
+    }
+  build_grid();
+}
+
+LebedevAngularIntegrator::~LebedevAngularIntegrator()
+{
+  delete [] x_;
+  delete [] y_;
+  delete [] z_;
+  delete [] lebedev_weights_;
+}
+
+void
+LebedevAngularIntegrator::save_data_state(StateOut& s)
+{
+  cout << class_name() << ": cannot save state" << endl;
+  abort();
+}
+
+int
+LebedevAngularIntegrator::get_norder(void)
+{
+  return norder_;
+}
+
+void
+LebedevAngularIntegrator::set_norder(int i)
+{
+  norder_ = i;
+}
+
+int
+LebedevAngularIntegrator::get_npoints(void)
+{
+  return npoints_;
+}
+
+void
+LebedevAngularIntegrator::set_npoints(int i)
+{
+  npoints_ = i;
+}
+
+int
+LebedevAngularIntegrator::get_N1(void)
+{
+  return N1_;
+}
+
+void
+LebedevAngularIntegrator::set_N1(int i)
+{
+  N1_ = i;
+}
+
+int
+LebedevAngularIntegrator::get_N2(void)
+{
+  return N2_;
+}
+
+void
+LebedevAngularIntegrator::set_N2(int i)
+{
+  N2_ = i;
+}
+
+int
+LebedevAngularIntegrator::get_N3(void)
+{
+  return N3_;
+}
+
+void
+LebedevAngularIntegrator::set_N3(int i)
+{
+  N3_ = i;
+}
+
+int
+LebedevAngularIntegrator::get_point_count(void)
+{
+  return point_count_;
+}
+
+void
+LebedevAngularIntegrator::set_point_count(int i)
+{
+  point_count_ = i;
+}
+
+
+double
+LebedevAngularIntegrator::angular_point_cartesian(int iangular, SCVector3 &point,
+                                                  SCVector3 &integration_point)
+{
+  double r = point.r();
+  integration_point.x() = r*x_[iangular];
+  integration_point.y() = r*y_[iangular];
+  integration_point.z() = r*z_[iangular];
+
+   return ( lebedev_weights_[iangular] );
+  
+  //int itheta, iphi, nphi_r;
+  //nphi_r = get_nphi_r();
+  //itheta = iangular/nphi_r;
+  //iphi = iangular - itheta*nphi_r;
+  //point.theta() = theta_quad_points_[itheta];
+  //point.phi() = (double) iphi/ (double) nphi_r * 2.0 * M_PI;
+  //point.spherical_to_cartesian(integration_point);
+  //return ( sin_theta(point)*theta_quad_weights_[itheta]*2.0*M_PI/(double)nphi_r );
+
+}
+
+int
+LebedevAngularIntegrator::num_angular_points(double r_value, int ir)
+{
+  if (ir == 0) return 1;
+  else return get_npoints();
+}
+
+void
+LebedevAngularIntegrator::angular_weights(void)
+{
+  return;
+}
+
+void
+LebedevAngularIntegrator::build_grid(void)
+{
+  int norder, npoints, N1, N2, N3;
+
+  norder = get_norder();
+  npoints = get_npoints();
+  N1 = get_N1();
+  N2 = get_N2();
+  N3 = get_N3();
+
+  double A[3], *l, *m, *B, *q, *r, *C, *u, *v, *w, *D;
+  l = new double [N1]; m = new double [N1]; B = new double [N1];
+  q = new double [N2]; r = new double [N2]; C = new double [N2];
+  u = new double [N3]; v = new double [N3]; w = new double [N3]; D = new double [N3];
+  
+  if (norder == 59 && npoints == 1202) {
+      A[0]  = 0.110518923327e-3; A[1]  = 0.920523273809e-3; A[2]  = 0.913315978645e-3;
+      
+      l[0]  = 0.371263644966e-1; m[0]  = 0.998620681800e+0; B[0]  = 0.369042189802e-3;
+      l[1]  = 0.914006041226e-1; m[1]  = 0.991610739722e+0; B[1]  = 0.560399092868e-3;
+      l[2]  = 0.153107785247e+0; m[2]  = 0.976276606395e+0; B[2]  = 0.686529762928e-3;
+      l[3]  = 0.218092889166e+0; m[3]  = 0.951247067481e+0; B[3]  = 0.772033855115e-3;
+      l[4]  = 0.283987453220e+0; m[4]  = 0.915806886209e+0; B[4]  = 0.830154595889e-3;
+      l[5]  = 0.349117760096e+0; m[5]  = 0.869616915182e+0; B[5]  = 0.868669255018e-3;
+      l[6]  = 0.412143146144e+0; m[6]  = 0.812573722300e+0; B[6]  = 0.892707628585e-3;
+      l[7]  = 0.471899362715e+0; m[7]  = 0.744729469632e+0; B[7]  = 0.906082023857e-3;
+      l[8]  = 0.527314545284e+0; m[8]  = 0.666242253736e+0; B[8]  = 0.911977725494e-3;
+      l[9]  = 0.620947533244e+0; m[9]  = 0.478380938077e+0; B[9]  = 0.912872013860e-3;
+      l[10] = 0.656972271186e+0; m[10] = 0.369830866459e+0; B[10] = 0.913071493569e-3;
+      l[11] = 0.684178830907e+0; m[11] = 0.252583955701e+0; B[11] = 0.915287378455e-3;
+      l[12] = 0.701260433012e+0; m[12] = 0.128326186660e+0; B[12] = 0.918743627432e-3;
+      
+      q[0]  = 0.107238221548e+0; r[0]  = 0.994233354821e+0; C[0]  = 0.517697731297e-3;
+      q[1]  = 0.258206895950e+0; r[1]  = 0.966089643296e+0; C[1]  = 0.733114368210e-3;
+      q[2]  = 0.417275295531e+0; r[2]  = 0.908780131682e+0; C[2]  = 0.846323283638e-3;
+      q[3]  = 0.570036691179e+0; r[3]  = 0.821619237061e+0; C[3]  = 0.903112269425e-3;
+
+      u[0]  = 0.982798601826e+0; v[0]  = 0.177177402262e+0; w[0]  = 0.521063947701e-1; D[0]  = 0.648577845316e-3;
+      u[1]  = 0.962424923033e+0; v[1]  = 0.247571646343e+0; w[1]  = 0.111564095716e+0; D[1]  = 0.743503091098e-3;
+      u[2]  = 0.940200799413e+0; v[2]  = 0.335461628907e+0; w[2]  = 0.590588885324e-1; D[2]  = 0.799852789184e-3;
+      u[3]  = 0.932082204014e+0; v[3]  = 0.317361524661e+0; w[3]  = 0.174655167758e+0; D[3]  = 0.810173148747e-3;
+      u[4]  = 0.904367419939e+0; v[4]  = 0.409026842709e+0; w[4]  = 0.121723505110e+0; D[4]  = 0.848338957459e-3;
+      u[5]  = 0.891240756007e+0; v[5]  = 0.385429115067e+0; w[5]  = 0.239027847938e+0; D[5]  = 0.855629925731e-3;
+      u[6]  = 0.867643562846e+0; v[6]  = 0.493222118485e+0; w[6]  = 0.626625062415e-1; D[6]  = 0.880320867974e-3;
+      u[7]  = 0.858197998604e+0; v[7]  = 0.478532067592e+0; w[7]  = 0.185750519455e+0; D[7]  = 0.881104818243e-3;
+      u[8]  = 0.839675362405e+0; v[8]  = 0.450742259316e+0; w[8]  = 0.302946697353e+0; D[8]  = 0.885028234127e-3;
+      u[9]  = 0.816528856402e+0; v[9]  = 0.563212302076e+0; w[9]  = 0.126777480068e+0; D[9]  = 0.902134229904e-3;
+      u[10] = 0.801546937078e+0; v[10] = 0.543430356969e+0; w[10] = 0.249411216236e+0; D[10] = 0.901009167711e-3;
+      u[11] = 0.777356306907e+0; v[11] = 0.512351848642e+0; w[11] = 0.364983226060e+0; D[11] = 0.902269293843e-3;
+      u[12] = 0.766162121390e+0; v[12] = 0.639427963475e+0; w[12] = 0.642454922422e-1; D[12] = 0.915801617469e-3;
+      u[13] = 0.755358414353e+0; v[13] = 0.626980550902e+0; w[13] = 0.190601822278e+0; D[13] = 0.913157800319e-3;
+      u[14] = 0.734430575756e+0; v[14] = 0.603116169310e+0; w[14] = 0.311227594715e+0; D[14] = 0.910781357948e-3;
+      u[15] = 0.704383718402e+0; v[15] = 0.569370279847e+0; w[15] = 0.423864478152e+0; D[15] = 0.910576025897e-3;
+    }
+  else {
+      cout << class_name() << ": (norder, npoints) = " << norder <<"," << npoints
+           << " is not a valid Lebedev angular grid." << endl;
+      abort();
+    }
+
+  double *zero_array;
+  zero_array = new double[N2];
+  for (int i=0; i<N2; i++) zero_array[i] = 0.0;
+
+  double zero = 0.0;
+  double one = 1.0;
+  double sqrt2 = sqrt(2.);
+  double sqrt3 = sqrt(3.);
+  
+  // call generate_points rouinte
+  generate_points(A,   1, 3, &one,   &zero,  &zero);
+  generate_points(A+1, 1, 3, &sqrt2, &sqrt2, &zero);
+  generate_points(A+2, 1, 1, &sqrt3, &sqrt3, &sqrt3);
+  generate_points(B,  N1, 3, l,      m,      l);
+  generate_points(C,  N2, 6, q,      r,      zero_array); 
+  generate_points(D,  N3, 6, u,      v,      w);
+  
+  delete [] zero_array;
+    
+}
+
+void
+LebedevAngularIntegrator::generate_points(double weights[], int N, int nsets,
+                                          double  u[], double v[], double w[])
+{
+  int i,j,k, nsigns;
+  double *p1, *p2, *p3;
+  double *tmp_array;
+
+  tmp_array = new double[3];
+  
+  for (i=0; i<nsets; i++) {
+      switch(i) {
+      case 0: p1 = u; p2 = v; p3 = w;
+          break;
+      case 1: p1 = u; p2 = w; p3 = v;
+          break;
+      case 2: p1 = v; p2 = u; p3 = w;
+          break;
+      case 3: p1 = v; p2 = w; p3 = u;
+          break;
+      case 4: p1 = w; p2 = u; p3 = v;
+          break;
+      case 5: p1 = w; p2 = v; p3 = u;
+          break;
+      default: cout << class_name() << ": i = " << i << " is not a valid option." << endl;
+          abort();
+        }
+      for (j=0; j<N; j++) {
+          tmp_array[0] = p1[j]; tmp_array[1] = p2[j]; tmp_array[2] = p3[j];
+          expand(tmp_array,0, weights[j]);              
+        }
+    }
+  delete [] tmp_array;
+}
+
+void
+LebedevAngularIntegrator::expand(double array[], int offset, double weight)
+{
+  if (offset > 2) {
+      int point_count = get_point_count();
+      x_[point_count] = array[0];
+      y_[point_count] = array[1];
+      z_[point_count] = array[2];
+      lebedev_weights_[point_count] = weight;
+      set_point_count(point_count+1);
+      return;
+    }
+  expand(array, offset+1, weight);
+
+  if (array[offset] == 0.) return;
+  else array[offset] = -array[offset];
+  double *copy_array;
+  copy_array = new double[3];
+  memcpy(copy_array, array, sizeof(double)*3);
+  expand(copy_array, offset+1, weight);
+  
+  delete [] copy_array;
+  
+
+}
+/////////////////////////////////
 //  GaussLegendreAngularIntegrator
 
 #define CLASSNAME GaussLegendreAngularIntegrator

@@ -245,6 +245,47 @@ class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
     void set_dr_dqr2(double i);
 };
 
+class LebedevAngularIntegrator: public AngularIntegrator {
+#   define CLASSNAME LebedevAngularIntegrator
+#   define HAVE_KEYVAL_CTOR
+#   define HAVE_STATEIN_CTOR
+#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  protected:
+    int norder_;
+    int npoints_;
+    int N1_, N2_, N3_;
+    double *x_, *y_, *z_;
+    double *lebedev_weights_;
+    int point_count_;
+  public:
+    LebedevAngularIntegrator();
+    LebedevAngularIntegrator(const RefKeyVal &);
+    LebedevAngularIntegrator(StateIn &);
+    ~LebedevAngularIntegrator();
+    void save_data_state(StateOut &);
+
+    int get_norder(void);
+    void set_norder(int i);
+    int get_npoints(void);
+    void set_npoints(int i);
+    int get_N1(void);
+    void set_N1(int i);
+    int get_N2(void);
+    void set_N2(int i);
+    int get_N3(void);
+    void set_N3(int i);
+    int get_point_count(void);
+    void set_point_count(int i);
+    double angular_point_cartesian(int iangular, SCVector3 &point,
+                                   SCVector3 &integration_point);
+    int num_angular_points(double r_value, int ir);
+    void angular_weights(void);
+    void build_grid(void);
+    void generate_points(double weights[], int N, int nsets, double  u[], double v[], double w[]);
+    void expand(double array[], int offset, double weight);
+};
+
 class GaussLegendreAngularIntegrator: public AngularIntegrator {
 #   define CLASSNAME GaussLegendreAngularIntegrator
 #   define HAVE_KEYVAL_CTOR
@@ -266,7 +307,7 @@ class GaussLegendreAngularIntegrator: public AngularIntegrator {
     GaussLegendreAngularIntegrator(StateIn &);
     ~GaussLegendreAngularIntegrator();
     void save_data_state(StateOut &);
-
+    
     int get_ntheta(void);
     void set_ntheta(int i);
     int get_nphi(void);

@@ -137,7 +137,7 @@ sym_struct_from_gbs(const RefGaussianBasisSet& gbs, sym_struct_t& sym_info)
   // dmtsym always uses intv3
   RefIntegral ints = new IntegralV3(gbs);
                                                                       
-  PointGroup& pg = gbs->molecule()->point_group();
+  const PointGroup& pg = gbs->molecule()->point_group();
   CharacterTable ct = pg.char_table();
   RefPetiteList rpl = ints->petite_list(gbs);
   PetiteList& pl = *rpl.pointer();

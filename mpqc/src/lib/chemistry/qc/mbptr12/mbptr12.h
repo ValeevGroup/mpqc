@@ -76,6 +76,7 @@ class MBPT2_R12: public MBPT2 {
     LinearR12::StandardApproximation stdapprox_;
     R12IntEvalInfo::StoreMethod r12ints_method_;
     char* r12ints_file_;
+    bool gebc_;
     bool spinadapted_;
 
     void init_variables_();
@@ -96,6 +97,10 @@ class MBPT2_R12: public MBPT2 {
     /** The KeyVal constructor.
         <dl>
 
+        <dt><tt>gebc</tt><dd> This boolean specifies whether Generalized and Extended Brillouin
+        Conditions (GBC and EBC, respectively) are assumed to hold. The default is "true".
+        <tt>gebc=false</tt> has not been implemented yet.
+
         <dt><tt>stdapprox</tt><dd> This gives a string that must take on one
         of the values below.  The default is A.
 
@@ -115,8 +120,11 @@ class MBPT2_R12: public MBPT2 {
 	  This method is not implemented yet.
 
         </dl>
+        
+        Keyword <tt>stdapprox</tt> only makes sense when <tt>gebc</tt> is set to true.
+        
 
-	<dt><tt>spinadapted</tt><dd> This specifies whether to compute spin-adapted
+	<dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted
 	or spin-orbital pair energies. Default is to compute spin-adapted energies.
 
 	<dt><tt>aux_basis</tt><dd> This specifies the auxiliary basis to be used for the resolution
@@ -130,7 +138,7 @@ class MBPT2_R12: public MBPT2 {
 	  <dt><tt>mem-posix</tt><dd> Store integrals in memory for single-pass situations
 	  and in a binary file on task 0's node using POSIX I/O for multipass situations.
 	  <tt>posix</tt> is usually less efficient than <tt>mpi</tt> for distributed
-	  parallel multipass runs since the I/O is performed by one task only. However, this method guaranteed to
+	  parallel multipass runs since the I/O is performed by one task only. However, this method is guaranteed to
           work in all types of environments, hence <tt>mem-posix</tt> is the default.
 
 	  <dt><tt>posix</tt><dd> Store integrals in a binary file on task 0's node using POSIX I/O.
@@ -149,7 +157,8 @@ class MBPT2_R12: public MBPT2 {
 	  and testing purposes.
 
 	  <dt><tt>mem</tt><dd> Store integrals in memory. Can only be used with single-pass
-	  transformations. This method should only be used for testing purposes
+	  transformations for MP2-R12/A and MP2-R12/A' methods.
+          This method should only be used for testing purposes.
 
 	</dl>
 
@@ -158,7 +167,8 @@ class MBPT2_R12: public MBPT2 {
 	<tt>r12ints</tt> should be explicitly set to <tt>mem-mpi</tt>.
 
         <dt><tt>r12ints_file</tt><dd> This specifies which file to use to store transformed
-	MO integrals if <tt>r12ints=posix-io</tt> or <tt>r12ints=mpi-io</tt> is used.
+	MO integrals if <tt>r12ints</tt> is set to <tt>posix</tt>, <tt>mpi</tt>, <tt>mem-posix</tt>
+        or <tt>mem-mpi</tt> is used.
 	Default is "./<inputbasename>.r12ints.dat", where <inputbasename> is the name of the input
 	file without ".in". If MPI-I/O is used then it is user's responsibility to ensure
 	that the file resides on a file system that supports MPI-I/O.
@@ -170,6 +180,7 @@ class MBPT2_R12: public MBPT2 {
     void save_data_state(StateOut&);
 
     Ref<GaussianBasisSet> aux_basis() const;
+    bool gebc() const;
     LinearR12::StandardApproximation stdapprox() const;
     bool spinadapted() const;
     R12IntEvalInfo::StoreMethod r12ints_method() const;

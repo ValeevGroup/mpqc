@@ -39,6 +39,7 @@
 #include <chemistry/qc/mbptr12/vxb_eval.h>
 #include <chemistry/qc/mbptr12/vxb_eval_sbs_a.h>
 #include <chemistry/qc/mbptr12/vxb_eval_abs_a.h>
+#include <chemistry/qc/mbptr12/vxb_eval_b.h>
 
 using namespace std;
 using namespace sc;
@@ -58,6 +59,7 @@ R12IntEval::R12IntEval(MBPT2_R12* mbptr12)
 
   eval_sbs_a_ = new R12IntEval_sbs_A(r12info_);
   eval_abs_a_ = new R12IntEval_abs_A(r12info_);
+  eval_b_ = new R12IntEval_B(r12info_);
 
   int nocc_act = r12info_->nocc_act();
   dim_aa_ = new SCDimension((nocc_act*(nocc_act-1))/2);
@@ -75,6 +77,7 @@ R12IntEval::R12IntEval(MBPT2_R12* mbptr12)
   emp2pair_aa_ = local_matrix_kit->vector(dim_aa_);
   emp2pair_ab_ = local_matrix_kit->vector(dim_ab_);
 
+  gebc_ = mbptr12->gebc();
   stdapprox_ = mbptr12->stdapprox();
   spinadapted_ = mbptr12->spinadapted();
 
@@ -88,6 +91,7 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   r12info_ << SavableState::restore_state(si);
   eval_sbs_a_ << SavableState::restore_state(si);
   eval_abs_a_ << SavableState::restore_state(si);
+  eval_b_ << SavableState::restore_state(si);
 
   dim_aa_ << SavableState::restore_state(si);
   dim_ab_ << SavableState::restore_state(si);
@@ -113,6 +117,7 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   emp2pair_aa_.restore(si);
   emp2pair_ab_.restore(si);
 
+  int gebc; si.get(gebc); gebc_ = (bool) gebc;
   int stdapprox; si.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
   int spinadapted; si.get(spinadapted); spinadapted_ = (bool) spinadapted;
   int evaluated; si.get(evaluated); evaluated_ = (bool) evaluated;
@@ -136,6 +141,7 @@ void R12IntEval::save_data_state(StateOut& so)
   SavableState::save_state(r12info_.pointer(),so);
   SavableState::save_state(eval_sbs_a_.pointer(),so);
   SavableState::save_state(eval_abs_a_.pointer(),so);
+  SavableState::save_state(eval_b_.pointer(),so);
 
   SavableState::save_state(dim_aa_.pointer(),so);
   SavableState::save_state(dim_ab_.pointer(),so);
@@ -162,6 +168,7 @@ void R12IntEval::obsolete()
   evaluated_ = false;
 }
 
+void R12IntEval::set_gebc(bool gebc) { gebc_ = gebc; };
 void R12IntEval::set_stdapprox(LinearR12::StandardApproximation stdapprox) { stdapprox_ = stdapprox; };
 void R12IntEval::set_spinadapted(bool spinadapted) { spinadapted_ = spinadapted; };
 void R12IntEval::set_debug(int debug) { if (debug >= 0) { debug_ = debug; r12info_->set_debug_level(debug_); }};
@@ -221,6 +228,8 @@ void R12IntEval::compute()
   if (evaluated_)
     return;
   
+  if (gebc_)
+    throw std::runtime_error("R12IntEval::compute: intermediates for MP2-R12 methods that assume neither GBC nor EBC have not been implemented yet");
   if (spinadapted_)
     throw std::runtime_error("R12IntEval::compute: spin-adapted R12 intermediates have not been implemented yet");
 
@@ -236,19 +245,28 @@ void R12IntEval::compute()
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
   }
 
-  eval_sbs_a_->compute(Vaa_,Xaa_,Baa_,Vab_,Xab_,Bab_,emp2pair_aa_,emp2pair_ab_);
+  // If doing standard MP2-R12/A or MP2-R12/A' methods contributions to the intermediates from different classes of
+  // integrals can be computed separately ...
+  if (gebc_ && stdapprox_ != LinearR12::StdApprox_B) {
+    eval_sbs_a_->compute(Vaa_,Xaa_,Baa_,Vab_,Xab_,Bab_,emp2pair_aa_,emp2pair_ab_);
   
-  if (r12info_->basis() != r12info_->basis_aux()) {
-    if (me == 0 && debug_ > 1) {
-      Vaa_.print("Alpha-alpha SBS V matrix");
-      Baa_.print("Alpha-alpha SBS B matrix");
-      Xaa_.print("Alpha-alpha SBS X matrix");
-      Vab_.print("Alpha-beta SBS V matrix");
-      Bab_.print("Alpha-beta SBS B matrix");
-      Xab_.print("Alpha-beta SBS X matrix");
-    }
+    if (r12info_->basis() != r12info_->basis_aux()) {
+      if (me == 0 && debug_ > 1) {
+        Vaa_.print("Alpha-alpha SBS V matrix");
+        Baa_.print("Alpha-alpha SBS B matrix");
+        Xaa_.print("Alpha-alpha SBS X matrix");
+        Vab_.print("Alpha-beta SBS V matrix");
+        Bab_.print("Alpha-beta SBS B matrix");
+        Xab_.print("Alpha-beta SBS X matrix");
+      }
 
-    eval_abs_a_->compute(Vaa_,Xaa_,Baa_,Vab_,Xab_,Bab_);
+      eval_abs_a_->compute(Vaa_,Xaa_,Baa_,Vab_,Xab_,Bab_);
+    }
+  }
+  // ... otherwise (for MP2-R12/B or when BCs are not assumed) need to compute all classes
+  // of integrals and then compute contributions in one shot. This is done by an R12IntEval_B object
+  {
+    eval_b_->compute(Vaa_,Xaa_,Baa_,Vab_,Xab_,Bab_,emp2pair_aa_,emp2pair_ab_);
   }
 
   if (me == 0 && debug_) {

@@ -60,6 +60,7 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   r12ap_energy_ << SavableState::restore_state(s);
   r12b_energy_ << SavableState::restore_state(s);
   aux_basis_ << SavableState::restore_state(s);
+  int gebc; s.get(gebc); gebc_ = (bool)gebc;
   int stdapprox; s.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
   int spinadapted; s.get(spinadapted); spinadapted_ = (bool)spinadapted;
   int r12ints_method; s.get(r12ints_method); r12ints_method_ = (R12IntEvalInfo::StoreMethod) r12ints_method;
@@ -87,6 +88,12 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     );
   if (aux_basis_.pointer() == NULL)
     aux_basis_ = basis();
+
+  // Default is to assume GBC and EBC
+  gebc_ = true;
+  gebc_ = keyval->booleanvalue("gebc");
+  if (gebc_ == false)
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12: gebc=false has not been implemented yet");
 
   // Default method is MBPT2-R12/A
   stdapprox_ = LinearR12::StdApprox_A;
@@ -145,6 +152,11 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     delete[] r12ints_str;
   }
 
+  // Make sure that integrals storage method is compatible with standard approximation
+  // i.e. is stdapprox = B cannot use mem.
+  if ((!gebc_ || (gebc_ && stdapprox_ == LinearR12::StdApprox_B)) && r12ints_method_ == R12IntEvalInfo::mem_only)
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- r12ints=mem is only possible for MP2-R12/A and MP2-R12/A' methods");
+
   // Get the filename to store the integrals
   r12ints_file_ = 0;
   r12ints_file_ = keyval->pcharvalue("r12ints_file");
@@ -182,6 +194,7 @@ MBPT2_R12::save_data_state(StateOut& s)
   SavableState::save_state(r12ap_energy_.pointer(),s);
   SavableState::save_state(r12b_energy_.pointer(),s);
   SavableState::save_state(aux_basis_.pointer(),s);
+  s.put((int)gebc_);
   s.put((int)stdapprox_);
   s.put((int)spinadapted_);
   s.put((int)r12ints_method_);
@@ -196,6 +209,7 @@ MBPT2_R12::print(ostream&o) const
 {
   o << indent << "MBPT2_R12:" << endl;
   o << incindent;
+  o << indent << "GBC and EBC assumed: " << (gebc_ ? "true" : "false") << endl;
   switch (stdapprox_) {
     case LinearR12::StdApprox_A :
       o << indent << "Standard Approximation: A" << endl;
@@ -290,6 +304,14 @@ Ref<GaussianBasisSet>
 MBPT2_R12::aux_basis() const
 {
   return aux_basis_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+bool
+MBPT2_R12::gebc() const
+{
+  return gebc_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

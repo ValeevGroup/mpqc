@@ -38,6 +38,7 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/vxb_eval_sbs_a.h>
 #include <chemistry/qc/mbptr12/vxb_eval_abs_a.h>
+#include <chemistry/qc/mbptr12/vxb_eval_b.h>
 
 namespace sc {
 
@@ -45,6 +46,7 @@ class MBPT2_R12;
 class R12IntEvalInfo;
 class R12IntEval_sbs_A;
 class R12IntEval_abs_A;
+class R12IntEval_B;
 
   /** Class R12IntEval is the top-level R12 intermediate evaluator */
 
@@ -57,11 +59,13 @@ class R12IntEval : virtual public SavableState {
 
   Ref<R12IntEval_sbs_A> eval_sbs_a_;
   Ref<R12IntEval_abs_A> eval_abs_a_;
+  Ref<R12IntEval_B> eval_b_;
 
   RefSCMatrix Vaa_, Vab_, Xaa_, Xab_, Baa_, Bab_;
   RefSCVector emp2pair_aa_, emp2pair_ab_;
   RefSCDimension dim_aa_, dim_ab_, dim_s_, dim_t_;
 
+  bool gebc_;
   LinearR12::StandardApproximation stdapprox_;
   bool spinadapted_;
   int debug_;
@@ -76,6 +80,7 @@ public:
   /// Makes the evaluator obsolete, the next call to compute() will cause the intermediates to be recomputed
   void obsolete();
   
+  void set_gebc(bool gebc);
   void set_stdapprox(LinearR12::StandardApproximation stdapprox);
   void set_spinadapted(bool spinadapted);
   void set_debug(int debug);

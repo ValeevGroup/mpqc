@@ -10,6 +10,8 @@ class LocalCLKSContribution {
       gmat(g), pmat(p), a0(a) {}
     ~LocalCLKSContribution() {}
 
+    void set_bound(double, double) {}
+
     inline void cont1(int ij, int kl, double val) {
       gmat[ij] += val*pmat[kl];
       gmat[kl] += val*pmat[ij];
@@ -53,6 +55,8 @@ class LocalCLKSEnergyContribution {
       ec=ex=0;
     }
     ~LocalCLKSEnergyContribution() {}
+
+    void set_bound(double, double) {}
 
     inline void cont1(int ij, int kl, double val) {
       ec += val*pmat[ij]*pmat[kl];

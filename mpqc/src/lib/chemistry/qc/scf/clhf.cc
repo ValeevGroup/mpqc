@@ -157,7 +157,7 @@ CLHF::ao_fock(double accuracy)
       }
       conts[i] = new LocalCLHFContribution(gmats[i], pmat);
       gblds[i] = new LocalGBuild<LocalCLHFContribution>(*conts[i], tbis_[i],
-               pl, bs, scf_grp_, pmax, 1.e-20/*gmat_accuracy*/, nthread, i
+               pl, bs, scf_grp_, pmax, gmat_accuracy, nthread, i
         );
 
       threadgrp_->add_thread(i, gblds[i]);

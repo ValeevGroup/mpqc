@@ -41,7 +41,15 @@
 #include <chemistry/qc/scf/scfops.h>
 #include <chemistry/qc/scf/scflocal.h>
 
+#undef GENERALIZED_EIGENSOLVER
+
 ///////////////////////////////////////////////////////////////////////////
+
+extern "C" {
+  dsygv_(int *ITYPE, const char *JOBZ, const char *UPLO,
+         int *N, double *A, int *LDA, double *B, int *LDB,
+         double *W, double *WORK, int *LWORK, int *INFO);
+}
 
 double
 SCF::compute_vector(double& eelec)
@@ -128,6 +136,84 @@ SCF::compute_vector(double& eelec)
     error=0;
     tim_exit("extrap");
 
+#ifdef GENERALIZED_EIGENSOLVER
+    // Get the fock matrix and overlap in the SO basis.  The fock matrix
+    // used here works for CLOSED SHELL ONLY.
+    RefSymmSCMatrix bfmatref = fock(0);
+    RefSymmSCMatrix bsmatref = overlap();
+    BlockedSymmSCMatrix *bfmat
+      = BlockedSymmSCMatrix::castdown(bfmatref.pointer());
+    BlockedSymmSCMatrix *bsmat
+      = BlockedSymmSCMatrix::castdown(bsmatref.pointer());
+    BlockedDiagSCMatrix *bevals
+      = BlockedDiagSCMatrix::castdown(evals.pointer());
+    BlockedSCMatrix *bvec
+      = BlockedSCMatrix::castdown(oso_scf_vector_.pointer());
+
+    ExEnv::out() << node0 << indent
+                 << "solving generalized eigenvalue problem" << endl;
+
+    for (int iblock=0; iblock<bfmat->nblocks(); iblock++) {
+      RefSymmSCMatrix fmat = bfmat->block(iblock);
+      RefSymmSCMatrix smat = bsmat->block(iblock);
+      RefDiagSCMatrix evalblock = bevals->block(iblock);
+      RefSCMatrix oso_scf_vector_block = bvec->block(iblock);
+      int nbasis = fmat.dim().n();
+      int nbasis2 = nbasis*nbasis;
+
+      if (!nbasis) continue;
+
+      // Convert to the lapack storage format.
+      double *fso = new double[nbasis2];
+      double *sso = new double[nbasis2];
+      int ij=0;
+      for (int i=0; i<nbasis; i++) {
+        for (int j=0; j<nbasis; j++,ij++) {
+          fso[ij] = fmat(i,j);
+          sso[ij] = smat(i,j);
+        }
+      }
+
+      // solve generalized eigenvalue problem with DSYGV
+      int itype = 1;
+      double *epsilon = new double[nbasis];
+      int lwork = -1;
+      int info;
+      double optlwork;
+      dsygv_(&itype,"V","U",&nbasis,fso,&nbasis,sso,&nbasis,
+             epsilon,&optlwork,&lwork,&info);
+      if (info) {
+        ExEnv::out() << "dsygv could not determine work size: info = "
+                     << info << endl;
+        abort();
+      }
+      lwork = (int)optlwork;
+      double *work = new double[lwork];
+      dsygv_(&itype,"V","U",&nbasis,fso,&nbasis,sso,&nbasis,
+             epsilon,work,&lwork,&info);
+      if (info) {
+        ExEnv::out() << "dsygv could not diagonalize matrix: info = "
+                     << info << endl;
+        abort();
+      }
+      double *z = fso; // the vector is placed in fso
+
+      // make sure everyone agrees on the new arrays
+      scf_grp_->bcast(z, nbasis2);
+      scf_grp_->bcast(epsilon, nbasis);
+
+      evalblock->assign(epsilon);
+      oso_scf_vector_block->assign(z);
+
+      // cleanup
+      delete[] fso;
+      delete[] work;
+      delete[] sso;
+      delete[] epsilon;
+    }
+
+    oso_scf_vector_ = (oso_scf_vector_ * so_to_orthog_so_inverse()).t();
+#else
     // diagonalize effective MO fock to get MO vector
     tim_enter("evals");
     RefSCMatrix nvector(oso_dimension(),oso_dimension(),basis_matrixkit());
@@ -158,6 +244,7 @@ SCF::compute_vector(double& eelec)
     // now un-level shift eigenvalues
     level_shift->set_shift(-level_shift_);
     evals.element_op(level_shift);
+#endif
 
     if (debug_>0) {
       evals.print("scf eigenvalues");
@@ -166,8 +253,6 @@ SCF::compute_vector(double& eelec)
     if (reset_occ_)
       set_occupations(evals);
 
-    eff=0;
-    
     if (debug_>1) {
       oso_scf_vector_.print("orthogonalized SO basis scf vector");
     }

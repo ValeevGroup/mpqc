@@ -320,7 +320,7 @@ SCF::init_pmax(double *pmat_data)
       if (maxp <= tol)
         maxp=tol;
 
-      long power = long(log(maxp)*l2inv);
+      long power = long(ceil(log(maxp)*l2inv));
       if (power < SCHAR_MIN) pmax[ij] = SCHAR_MIN;
       else if (power > SCHAR_MAX) pmax[ij] = SCHAR_MAX;
       else pmax[ij] = (signed char) power;
@@ -605,7 +605,8 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
 
   if (debug_ > 1) d.print("density");
 
-  if (debug_ > 2) {
+  int use_alternate_density = 0;
+  if (use_alternate_density || debug_ > 2) {
     // double check the density with this simpler, slower way to compute
     // the density matrix
     RefSymmSCMatrix occ(oso_dimension(), basis_matrixkit());
@@ -617,9 +618,16 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
     RefSymmSCMatrix d2(so_dimension(), basis_matrixkit());
     d2.assign(0.0);
     d2.accumulate_transform(vector, occ);
-    d2.print("d2 density");
-    ExEnv::out() << node0 << indent
-         << "d2 Nelectron = " << 2.0 * (d2 * overlap()).trace() << endl;
+    if (debug_ > 2) {
+      d2.print("d2 density");
+      ExEnv::out() << node0 << indent << "d2 Nelectron = "
+                   << 2.0 * (d2 * overlap()).trace() << endl;
+    }
+    if (use_alternate_density) {
+      d.assign(d2);
+      ExEnv::out() << node0 << indent
+                   << "using alternate density algorithm" << endl;
+    }
   }
 }
 

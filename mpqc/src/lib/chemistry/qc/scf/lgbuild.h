@@ -32,6 +32,8 @@
 #pragma interface
 #endif
 
+#undef SCF_CHECK_BOUNDS
+
 #include <chemistry/qc/scf/gbuild.h>
 
 template<class T>
@@ -78,8 +80,8 @@ class LocalGBuild : public GBuild<T> {
       const double *intbuf = tbi.buffer();
 
       tnint=0;
-      int threadind=0;
-      int ijklind=0;
+      sc_int_least64_t threadind=0;
+      sc_int_least64_t ijklind=0;
 
       for (int i=0; i < gbs.nshell(); i++) {
         if (!pl.in_p1(i))
@@ -110,27 +112,29 @@ class LocalGBuild : public GBuild<T> {
             int nk=gbs(k).nfunction();
 
             int pmaxijk=pmaxij, ptmp;
-            if ((ptmp=pmax[i_offset(i)+k]-2) > pmaxijk) pmaxijk=ptmp;
-            if ((ptmp=pmax[ij_offset(j,k)]-2) > pmaxijk) pmaxijk=ptmp;
+            if ((ptmp=pmax[i_offset(i)+k]-1) > pmaxijk) pmaxijk=ptmp;
+            if ((ptmp=pmax[ij_offset(j,k)]-1) > pmaxijk) pmaxijk=ptmp;
         
             int okl = i_offset(k);
             for (int l=0; l <= (k==i?j:k); l++,okl++) {
               int pmaxijkl = pmaxijk;
               if ((ptmp=pmax[okl]) > pmaxijkl) pmaxijkl=ptmp;
-              if ((ptmp=pmax[i_offset(i)+l]-2) > pmaxijkl) pmaxijkl=ptmp;
-              if ((ptmp=pmax[ij_offset(j,l)]-2) > pmaxijkl) pmaxijkl=ptmp;
-              
-
-#if SCF_CHECK_BOUNDS
-              GBuild<T>::contribution.set_bound(pow(2.0,double(tbi.log2_shell_bound(i,j,k,l)+pmaxijkl)));
-#else
-              if (tbi.log2_shell_bound(i,j,k,l)+pmaxijkl < tol)
-                continue;
-#endif
+              if ((ptmp=pmax[i_offset(i)+l]-1) > pmaxijkl) pmaxijkl=ptmp;
+              if ((ptmp=pmax[ij_offset(j,l)]-1) > pmaxijkl) pmaxijkl=ptmp;
 
               int qijkl = pl.in_p4(oij,okl,i,j,k,l);
               if (!qijkl)
                 continue;
+
+#ifdef SCF_CHECK_BOUNDS
+              double intbound = pow(2.0,double(tbi.log2_shell_bound(i,j,k,l)));
+              double pbound   = pow(2.0,double(pmaxijkl));
+              intbound *= qijkl;
+              GBuild<T>::contribution.set_bound(intbound, pbound);
+#else
+              if (tbi.log2_shell_bound(i,j,k,l)+pmaxijkl < tol)
+                continue;
+#endif
 
               //tim_enter_default();
               tbi.compute_shell(i,j,k,l);

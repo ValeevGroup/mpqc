@@ -11,6 +11,8 @@ class LocalUHFContribution {
       gmata(ga), gmatb(gb), pmata(pa), pmatb(pb) {}
     ~LocalUHFContribution() {}
 
+    void set_bound(double,double) {};
+
     inline void cont1(int ij, int kl, double val) {
       gmata[ij] += val*(pmata[kl]+pmatb[kl]);
       gmata[kl] += val*(pmata[ij]+pmatb[ij]);
@@ -61,6 +63,8 @@ class LocalUHFEnergyContribution {
     }
 
     ~LocalUHFEnergyContribution() {}
+
+    void set_bound(double,double) {};
 
     inline void cont1(int ij, int kl, double val) {
       ec += val*(pmata[ij]+pmatb[ij])*(pmata[kl]+pmatb[kl]);

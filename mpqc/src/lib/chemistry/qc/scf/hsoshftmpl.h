@@ -11,6 +11,8 @@ class LocalHSOSContribution {
       gmat(g), gmato(go), pmat(p), pmato(po) {}
     ~LocalHSOSContribution() {}
 
+    void set_bound(double,double) {};
+
     inline void cont1(int ij, int kl, double val) {
       gmat[ij] += val*pmat[kl];
       gmat[kl] += val*pmat[ij];
@@ -60,6 +62,8 @@ class LocalHSOSEnergyContribution {
   public:
     double ec;
     double ex;
+
+    void set_bound(double,double) {};
     
     LocalHSOSEnergyContribution(double *p, double *po) : pmat(p), pmato(po) {
       ec=ex=0;

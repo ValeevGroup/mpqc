@@ -13,6 +13,8 @@ class LocalUKSContribution {
       gmata(ga), gmatb(gb), pmata(pa), pmatb(pb), a0(a) {}
     ~LocalUKSContribution() {}
 
+    void set_bound(double, double) {}
+
     inline void cont1(int ij, int kl, double val) {
       gmata[ij] += val*(pmata[kl]+pmatb[kl]);
       gmata[kl] += val*(pmata[ij]+pmatb[ij]);
@@ -66,6 +68,8 @@ class LocalUKSEnergyContribution {
     }
 
     ~LocalUKSEnergyContribution() {}
+
+    void set_bound(double, double) {}
 
     inline void cont1(int ij, int kl, double val) {
       ec += val*(pmata[ij]+pmatb[ij])*(pmata[kl]+pmatb[kl]);

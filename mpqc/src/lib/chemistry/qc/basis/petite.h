@@ -34,6 +34,7 @@
 
 #include <iostream.h>
 
+#include <util/misc/scint.h>
 #include <util/ref/ref.h>
 #include <util/container/array.h>
 #include <math/scmat/blocked.h>
@@ -41,6 +42,20 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/integral.h>
+
+// //////////////////////////////////////////////////////////////////////////
+
+inline sc_int_least64_t
+ij_offset64(sc_int_least64_t i, sc_int_least64_t j)
+{
+  return (i>j) ? (((i*(i+1)) >> 1) + j) : (((j*(j+1)) >> 1) + i);
+}
+
+inline sc_int_least64_t
+i_offset64(sc_int_least64_t i)
+{
+  return ((i*(i+1)) >> 1);
+}
 
 // //////////////////////////////////////////////////////////////////////////
 
@@ -170,13 +185,13 @@ PetiteList::in_p4(int ij, int kl, int i, int j, int k, int l) const
   if (c1_)
     return 1;
   
-  int ijkl = i_offset(ij)+kl;
+  sc_int_least64_t ijkl = i_offset64(ij)+kl;
   int nijkl=0;
 
   for (int g=0; g < ng_; g++) {
     int gij = ij_offset(shell_map_[i][g],shell_map_[j][g]);
     int gkl = ij_offset(shell_map_[k][g],shell_map_[l][g]);
-    int gijkl = ij_offset(gij,gkl);
+    sc_int_least64_t gijkl = ij_offset64(gij,gkl);
 
     if (gijkl > ijkl)
       return 0;

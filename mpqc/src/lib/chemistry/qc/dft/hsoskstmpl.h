@@ -13,6 +13,8 @@ class LocalHSOSKSContribution {
       gmat(g), gmato(go), pmat(p), pmato(po), a0(_a0) {}
     ~LocalHSOSKSContribution() {}
 
+    void set_bound(double, double) {}
+
     inline void cont1(int ij, int kl, double val) {
       gmat[ij] += val*pmat[kl];
       gmat[kl] += val*pmat[ij];
@@ -69,6 +71,8 @@ class LocalHSOSKSEnergyContribution {
     }
 
     ~LocalHSOSKSEnergyContribution() {}
+
+    void set_bound(double, double) {}
 
     inline void cont1(int ij, int kl, double val) {
       ec += val*pmat[ij]*pmat[kl];

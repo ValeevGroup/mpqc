@@ -358,7 +358,7 @@ Int2eV3::compute_bounds_shell(int_bound_t *overall, int_bound_t *vec,
     /* Compute the partial bound value. */
       max = sqrt(max);
       if (max>tol) {
-        vec[shellij] = (int_bound_t) (log(max)*loginv + 0.999999999);
+        vec[shellij] = (int_bound_t) ceil(log(max)*loginv);
         }
       else {
         vec[shellij] = (int_bound_t) int_bound_min;
@@ -392,7 +392,7 @@ Int2eV3::bound_to_logbound(double value)
   double loginv = 1.0/log(2.0);
   int_bound_t res;
 
-  if (value > tol) res = (int_bound_t) (log(value)*loginv);
+  if (value > tol) res = (int_bound_t) ceil(log(value)*loginv);
   else res = int_bound_min;
   return res;
   }

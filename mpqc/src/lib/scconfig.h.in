@@ -21,6 +21,9 @@
 /* Define if you don't have vprintf but do have _doprnt.  */
 #undef HAVE_DOPRNT
 
+/* Define if you have <stdint.h>.  */
+#undef HAVE_STDINT_H
+
 /* Define if you have <sys/stat.h>.  */
 #undef HAVE_SYS_STAT_H
 

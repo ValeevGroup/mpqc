@@ -10,8 +10,6 @@ class LocalTCContribution {
     double * const pmatb;
     double * const opmata;
     double * const opmatb;
-
-    double bound;
   public:
     LocalTCContribution(double *ga, double *pa, double *gb, double *pb,
                         double *ka, double *opa, double *kb, double *opb) :
@@ -19,7 +17,7 @@ class LocalTCContribution {
       pmata(pa), pmatb(pb), opmata(opa), opmatb(opb) {}
     ~LocalTCContribution() {}
 
-    void set_bound(double b) { bound = b; }
+    void set_bound(double,double) {}
 
     inline void cont1(int ij, int kl, double val) {
       gmata[ij] += val*pmata[kl];
@@ -111,6 +109,8 @@ class LocalTCEnergyContribution {
       exab=ecab=0;
     }
     ~LocalTCEnergyContribution() {}
+
+    void set_bound(double,double) {};
 
     inline void cont1(int ij, int kl, double val) {
       eca += val*pmata[ij]*pmata[kl];

@@ -908,7 +908,7 @@ dnl ---------- Checks for header files. -----------
 AC_HEADER_STDC
 AC_CHECK_HEADERS(fcntl.h limits.h sys/ioctl.h sys/time.h unistd.h pwd.h)
 AC_CHECK_HEADERS(sys/times.h sys/resource.h time.h machine/fpu.h asm/fpu.h)
-AC_CHECK_HEADERS(termios.h sys/stat.h sys/types.h dlfcn.h)
+AC_CHECK_HEADERS(termios.h sys/stat.h sys/types.h dlfcn.h stdint.h)
 
 dnl -- Checks for typedefs, structures, and compiler characteristics. --
 AC_C_CONST

@@ -8,16 +8,13 @@ class LocalOSSContribution {
     double * const pmat;
     double * const pmata;
     double * const pmatb;
-
-    double bound;
   public:
     LocalOSSContribution(double *g, double *p, double *ga, double *pa,
                          double *gb, double *pb) :
-      gmat(g), gmata(ga), gmatb(gb), pmat(p), pmata(pa), pmatb(pb),
-      bound(0.0) {}
+      gmat(g), gmata(ga), gmatb(gb), pmat(p), pmata(pa), pmatb(pb) {}
     ~LocalOSSContribution() {}
 
-    void set_bound(double b) { bound = b; }
+    void set_bound(double,double) {}
 
     inline void cont1(int ij, int kl, double val) {
       gmat[ij] += val*pmat[kl];
@@ -108,6 +105,8 @@ class LocalOSSEnergyContribution {
   public:
     double ec;
     double ex;
+
+    void set_bound(double,double) {};
     
     LocalOSSEnergyContribution(double *p, double *pa, double *pb) :
       pmat(p), pmata(pa), pmatb(pb) {

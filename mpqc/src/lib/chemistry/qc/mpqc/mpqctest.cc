@@ -20,6 +20,8 @@
 #ifndef __PIC__
 const ClassDesc &fl0 = MPSCF::class_desc_;
 const ClassDesc &fl1 = IntMolecularCoor::class_desc_;
+const ClassDesc &fl1a = RedundMolecularCoor::class_desc_;
+const ClassDesc &fl1b = CartMolecularCoor::class_desc_;
 const ClassDesc &fl2 = QNewtonOpt::class_desc_;
 const ClassDesc &fl3 = GDIISOpt::class_desc_;
 const ClassDesc &fl4 = EFCOpt::class_desc_;
@@ -94,7 +96,8 @@ main(int argc, char**argv)
   RefOptimize opt;
 
   if (stat("mpqctest.ckpt",&sb)==0 && sb.st_size) {
-    StateInText si("mpqctest.ckpt");
+    //StateInText si("mpqctest.ckpt");
+    StateInBinXDR si("mpqctest.ckpt");
     opt.restore_state(si);
     mole = opt->nlp();
   } else {

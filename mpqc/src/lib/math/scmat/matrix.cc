@@ -277,6 +277,33 @@ RefSCMatrix::clone() const
   return r;
 }
 
+RefSCMatrix
+RefSCMatrix::get_subblock(int br, int er, int bc, int ec)
+{
+  require_nonnull();
+  
+  RefSCMatrix ret = pointer()->get_subblock(br,er,bc,ec);
+  return ret;
+}
+
+void
+RefSCMatrix::assign_subblock(const RefSCMatrix& sb,
+                             int br, int er, int bc, int ec)
+{
+  require_nonnull();
+  sb.require_nonnull();
+  pointer()->assign_subblock(sb.pointer(),br,er,bc,ec);
+}
+
+void
+RefSCMatrix::accumulate_subblock(const RefSCMatrix& sb,
+                                 int br, int er, int bc, int ec)
+{
+  require_nonnull();
+  sb.require_nonnull();
+  pointer()->accumulate_subblock(sb.pointer(),br,er,bc,ec);
+}
+
 void
 RefSCMatrix::accumulate_product(const RefSCMatrix&a,const RefSCMatrix&b) const
 {

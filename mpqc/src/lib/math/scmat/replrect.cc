@@ -142,6 +142,75 @@ ReplSCMatrix::set_element(int i,int j,double a)
   matrix[off] = a;
 }
 
+SCMatrix *
+ReplSCMatrix::get_subblock(int br, int er, int bc, int ec)
+{
+  int nsrow = er-br+1;
+  int nscol = ec-bc+1;
+
+  if (nsrow > nrow() || nscol > ncol()) {
+    fprintf(stderr,"ReplSCMatrix::get_subblock: trying to get too big a"
+            "subblock (%d,%d) from (%d,%d)\n",nsrow,nscol,nrow(),ncol());
+    abort();
+  }
+  
+  RefReplSCDimension dnrow = new ReplSCDimension(nsrow,messagegrp());
+  RefReplSCDimension dncol = new ReplSCDimension(nscol,messagegrp());
+
+  SCMatrix * sb = dnrow->create_matrix(dncol.pointer());
+  sb->assign(0.0);
+
+  ReplSCMatrix *lsb = ReplSCMatrix::require_castdown(sb,
+                                      "ReplSCMatrix::get_subblock");
+
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j < nscol; j++)
+      lsb->rows[i][j] = rows[i+br][j+bc];
+      
+  return sb;
+}
+
+void
+ReplSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
+{
+  ReplSCMatrix *lsb = ReplSCMatrix::require_castdown(sb,
+                                      "ReplSCMatrix::assign_subblock");
+
+  int nsrow = er-br+1;
+  int nscol = ec-bc+1;
+
+  if (nsrow > nrow() || nscol > ncol()) {
+    fprintf(stderr,"ReplSCMatrix::assign_subblock: trying to assign too big a"
+            " subblock (%d,%d) to (%d,%d)\n",nsrow,nscol,nrow(),ncol());
+    abort();
+  }
+  
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j < nscol; j++)
+      rows[i+br][j+bc] = lsb->rows[i][j]; 
+}
+
+void
+ReplSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
+{
+  ReplSCMatrix *lsb = ReplSCMatrix::require_castdown(sb,
+                                      "ReplSCMatrix::accumulate_subblock");
+
+  int nsrow = er-br+1;
+  int nscol = ec-bc+1;
+
+  if (nsrow > nrow() || nscol > ncol()) {
+    fprintf(stderr,"ReplSCMatrix::accumulate_subblock: trying to accumulate"
+            " too big a subblock (%d,%d) to (%d,%d)\n",
+            nsrow,nscol,nrow(),ncol());
+    abort();
+  }
+  
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j < nscol; j++)
+      rows[i+br][j+bc] += lsb->rows[i][j]; 
+}
+
 void
 ReplSCMatrix::assign(double a)
 {

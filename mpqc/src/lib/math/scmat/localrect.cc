@@ -128,6 +128,75 @@ LocalSCMatrix::set_element(int i,int j,double a)
   block->data[off] = a;
 }
 
+SCMatrix *
+LocalSCMatrix::get_subblock(int br, int er, int bc, int ec)
+{
+  int nsrow = er-br+1;
+  int nscol = ec-bc+1;
+
+  if (nsrow > nrow() || nscol > ncol()) {
+    fprintf(stderr,"LocalSCMatrix::get_subblock: trying to get too big a"
+            "subblock (%d,%d) from (%d,%d)\n",nsrow,nscol,nrow(),ncol());
+    abort();
+  }
+  
+  RefLocalSCDimension dnrow = new LocalSCDimension(nsrow);
+  RefLocalSCDimension dncol = new LocalSCDimension(nscol);
+
+  SCMatrix * sb = dnrow->create_matrix(dncol.pointer());
+  sb->assign(0.0);
+
+  LocalSCMatrix *lsb = LocalSCMatrix::require_castdown(sb,
+                                      "LocalSCMatrix::get_subblock");
+
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j < nscol; j++)
+      lsb->rows[i][j] = rows[i+br][j+bc];
+      
+  return sb;
+}
+
+void
+LocalSCMatrix::assign_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
+{
+  LocalSCMatrix *lsb = LocalSCMatrix::require_castdown(sb,
+                                      "LocalSCMatrix::assign_subblock");
+
+  int nsrow = er-br+1;
+  int nscol = ec-bc+1;
+
+  if (nsrow > nrow() || nscol > ncol()) {
+    fprintf(stderr,"LocalSCMatrix::assign_subblock: trying to assign too big a"
+            " subblock (%d,%d) to (%d,%d)\n",nsrow,nscol,nrow(),ncol());
+    abort();
+  }
+  
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j < nscol; j++)
+      rows[i+br][j+bc] = lsb->rows[i][j]; 
+}
+
+void
+LocalSCMatrix::accumulate_subblock(SCMatrix*sb, int br, int er, int bc, int ec)
+{
+  LocalSCMatrix *lsb = LocalSCMatrix::require_castdown(sb,
+                                      "LocalSCMatrix::accumulate_subblock");
+
+  int nsrow = er-br+1;
+  int nscol = ec-bc+1;
+
+  if (nsrow > nrow() || nscol > ncol()) {
+    fprintf(stderr,"LocalSCMatrix::accumulate_subblock: trying to accumulate"
+            " too big a subblock (%d,%d) to (%d,%d)\n",
+            nsrow,nscol,nrow(),ncol());
+    abort();
+  }
+  
+  for (int i=0; i < nsrow; i++)
+    for (int j=0; j < nscol; j++)
+      rows[i+br][j+bc] += lsb->rows[i][j]; 
+}
+
 void
 LocalSCMatrix::assign(double a)
 {

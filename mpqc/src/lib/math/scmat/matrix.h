@@ -167,27 +167,36 @@ class RefSCMatrix: public RefSSSCMatrix {
     //texi Create a vector with dimension @var{d1} by @var{d2}.
     // The data values are undefined.
     RefSCMatrix(const RefSCDimension& d1,const RefSCDimension& d2);
+
     //texi Multiply this by a vector and return a vector.
     RefSCVector operator*(const RefSCVector&) const;
+
     //texi Multiply this by a matrix and return a matrix.
     RefSCMatrix operator*(const RefSCMatrix&) const;
     RefSCMatrix operator*(const RefSymmSCMatrix&) const;
     RefSCMatrix operator*(const RefDiagSCMatrix&) const;
+
     //texi Multiply this by a scalar and return the result.
     RefSCMatrix operator*(double) const;
+
     //texi Matrix addition and subtraction.
     RefSCMatrix operator+(const RefSCMatrix&) const;
     RefSCMatrix operator-(const RefSCMatrix&) const;
+
     //texi Return the transpose of this.
     RefSCMatrix t() const;
     //texi Return the inverse of this.
     RefSCMatrix i() const;
     //texi Return the generalized inverse of this.
     RefSCMatrix gi() const;
+
     //texi These call the @code{SCMatrix} members of the same name
     // after checking for references to @code{0}.
     RefSCMatrix clone() const;
     RefSCMatrix copy() const;
+    RefSCMatrix get_subblock(int br, int er, int bc, int ec);
+    void assign_subblock(const RefSCMatrix&, int br, int er, int bc, int ec);
+    void accumulate_subblock(const RefSCMatrix&, int, int, int, int);
     void accumulate_outer_product(const RefSCVector&,const RefSCVector&) const;
     void accumulate_product(const RefSCMatrix&,const RefSCMatrix&) const;
     void assign(const RefSCMatrix&) const;

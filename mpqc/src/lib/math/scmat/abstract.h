@@ -168,6 +168,18 @@ class SCMatrix: public SavableState {
     //texi Return or modify an element.
     virtual double get_element(int,int) = 0;
     virtual void set_element(int,int,double) = 0;
+    
+    //texi Return a subblock of @code{this}.  The subblock is defined as
+    // the rows starting at @code{br} and ending at @code{er}, and the
+    // columns beginning at @code{bc} and ending at @code{ec}.
+    virtual SCMatrix * get_subblock(int br, int er, int bc, int ec) =0;
+
+    //texi Assign @code{m} to a subblock of @code{this}.
+    virtual void assign_subblock(SCMatrix *m, int, int, int, int) =0;
+
+    //texi Sum @code{m} into a subblock of @code{this}.
+    virtual void accumulate_subblock(SCMatrix *m, int, int, int, int) =0;
+    
     //texi Sum @var{m} into this.
     virtual void accumulate(SCMatrix* m) = 0;
     //texi Sum into @code{this} the products of various vectors or matrices.

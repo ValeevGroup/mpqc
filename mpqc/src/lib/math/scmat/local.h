@@ -106,6 +106,9 @@ class LocalSCMatrix: public SCMatrix {
     RefSCDimension coldim();
     double get_element(int,int);
     void set_element(int,int,double);
+    SCMatrix * get_subblock(int,int,int,int);
+    void assign_subblock(SCMatrix*, int,int,int,int);
+    void accumulate_subblock(SCMatrix*, int,int,int,int);
     void accumulate_outer_product(SCVector*,SCVector*);
     void accumulate_product(SCMatrix*,SCMatrix*);
     void accumulate_product(SCMatrix*,SymmSCMatrix*);

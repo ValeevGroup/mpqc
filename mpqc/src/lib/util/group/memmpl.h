@@ -11,6 +11,7 @@
 
 class MPLMemoryGrp: public MIDMemoryGrp {
 #define CLASSNAME MPLMemoryGrp
+#define HAVE_KEYVAL_CTOR
 #include <util/class/classd.h>
   private:
     long lock();
@@ -20,7 +21,8 @@ class MPLMemoryGrp: public MIDMemoryGrp {
     long postrecv(void *data, int nbytes, int type);
     long wait(long, long = -1);
   public:
-    MPLMemoryGrp(const RefMessageGrp& msg, int localsize);
+    MPLMemoryGrp(const RefMessageGrp& msg);
+    MPLMemoryGrp(const RefKeyVal&);
     ~MPLMemoryGrp();
     void deactivate();
 };

@@ -3,14 +3,14 @@
 #pragma interface
 #endif
 
-#ifndef _util_group_memmpl_h
-#define _util_group_memmpl_h
+#ifndef _util_group_memmpi_h
+#define _util_group_memmpi_h
 
 #include <stdio.h>
 #include <util/group/memmid.h>
 
 class MPIMemoryGrp: public MIDMemoryGrp {
-#define CLASSNAME MPLMemoryGrp
+#define CLASSNAME MPIMemoryGrp
 #include <util/class/classd.h>
   private:
     long lock();

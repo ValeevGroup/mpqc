@@ -102,7 +102,7 @@ MPIMemoryGrp::postrecv(void *data, int nbytes, int type)
 {
   global_type = type;
   global_source = DONTCARE; 
-#if HAVE_MPI
+#ifdef HAVE_MPL
   mpc_rcvncall(data, nbytes,
                (int*)&global_source, (int*)&global_type, (int*)&global_mid,
                mpi_memory_handler);
@@ -159,7 +159,7 @@ MPIMemoryGrp::MPIMemoryGrp(const RefMessageGrp& msg):
 MPIMemoryGrp::MPIMemoryGrp(const RefKeyVal& keyval):
   MIDMemoryGrp(keyval)
 {
-  PRINTF(("MPIMemoryGrp entered\n"));
+  PRINTF(("MPIMemoryGrp keyval entered\n"));
   if (global_mpi_mem) {
       fprintf(stderr, "MPIMemoryGrp: only one allowed at a time\n");
       sleep(1);
@@ -170,7 +170,7 @@ MPIMemoryGrp::MPIMemoryGrp(const RefKeyVal& keyval):
 
   use_acknowledgments_ = 0;
 #ifdef HAVE_MPL
-  use_active_messages_ = keyval->boolvalue("active");
+  use_active_messages_ = keyval->booleanvalue("active");
 #else
   use_active_messages_ = 0;
 #endif

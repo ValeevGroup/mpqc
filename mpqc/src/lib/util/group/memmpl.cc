@@ -51,6 +51,7 @@ mpl_memory_handler(int*msgid_arg)
 // The MPLMemoryGrp class
 
 #define CLASSNAME MPLMemoryGrp
+#define HAVE_KEYVAL_CTOR
 #define PARENTS public MIDMemoryGrp
 #include <util/class/classi.h>
 void *
@@ -127,9 +128,8 @@ MPLMemoryGrp::wait(long mid1, long mid2)
   return (long)imid;
 }
 
-MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg,
-                           int localsize):
-  MIDMemoryGrp(msg, localsize)
+MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg):
+  MIDMemoryGrp(msg)
 {
   PRINTF(("MPLMemoryGrp entered\n"));
   if (global_mpl_mem) {
@@ -142,6 +142,23 @@ MPLMemoryGrp::MPLMemoryGrp(const RefMessageGrp& msg,
 
   use_acknowledgments_ = 0;
   use_active_messages_ = 1;
+
+  PRINTF(("MPLMemoryGrp activating\n"));
+  activate();
+  PRINTF(("MPLMemoryGrp done\n"));
+}
+
+MPLMemoryGrp::MPLMemoryGrp(const RefKeyVal& keyval):
+  MIDMemoryGrp(keyval)
+{
+  PRINTF(("MPLMemoryGrp KeyVal entered\n"));
+  if (global_mpl_mem) {
+      fprintf(stderr, "MPLMemoryGrp: only one allowed at a time\n");
+      sleep(1);
+      abort();
+    }
+
+  global_mpl_mem = this;
 
   PRINTF(("MPLMemoryGrp activating\n"));
   activate();

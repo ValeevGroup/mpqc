@@ -57,6 +57,7 @@ class MIDMemoryGrp: public ActiveMsgMemoryGrp {
     MemoryDataRequest &data_request_buffer() { return data_request_buffer_; }
 
     MIDMemoryGrp(const RefMessageGrp& msg);
+    MIDMemoryGrp(const RefKeyVal& msg);
     ~MIDMemoryGrp();
 
     void activate();

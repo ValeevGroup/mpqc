@@ -151,6 +151,21 @@ MIDMemoryGrp::MIDMemoryGrp(const RefMessageGrp& msg):
   active_ = 0;
 }
 
+MIDMemoryGrp::MIDMemoryGrp(const RefKeyVal& keyval):
+  ActiveMsgMemoryGrp(keyval)
+{
+  PRINTF(("MIDMemoryGrp KeyVal CTOR\n", me()));
+  data_request_type_ = 113;
+  data_type_to_handler_ = 114;
+  data_type_from_handler_ = 115;
+  nsync_ = 0;
+  use_acknowledgments_ = keyval->booleanvalue("ack");
+  if (keyval->error() != KeyVal::OK) use_acknowledgments_ = 0;
+  use_active_messages_ = keyval->booleanvalue("active");
+  if (keyval->error() != KeyVal::OK) use_active_messages_ = 1;
+  active_ = 0;
+}
+
 MIDMemoryGrp::~MIDMemoryGrp()
 {
   PRINTF(("%d: ~MIDMemoryGrp\n", me()));
@@ -305,7 +320,8 @@ MIDMemoryGrp::sync()
               activate();
             }
           else {
-              printf("WARNING: MIDMemoryGrp::sync: stray message\n");
+              printf("WARNING: MIDMemoryGrp::sync(1): stray message id = %d\n",
+                     mid);
             }
         }
       nsync_ = 0;
@@ -338,7 +354,7 @@ MIDMemoryGrp::sync()
               activate();
             }
           else if (tmpmid != mid) {
-              printf("MIDMemoryGrp: sync: stray message id = %d\n",
+              printf("MIDMemoryGrp::sync(2): stray message id = %d\n",
                      tmpmid);
               sleep(1);
               abort();
@@ -354,7 +370,8 @@ MIDMemoryGrp::sync()
               activate();
             }
           else {
-              printf("WARNING: MIDMemoryGrp::sync: stray message\n");
+              printf("WARNING: MIDMemoryGrp::sync(3): stray message id = %d\n",
+                     mid);
             }
         }
       nsync_ = 0;

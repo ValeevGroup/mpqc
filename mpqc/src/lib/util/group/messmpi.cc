@@ -11,6 +11,7 @@
 #define CLASSNAME MPIMessageGrp
 #define PARENTS public MessageGrp
 #define HAVE_CTOR
+#define HAVE_KEYVAL_CTOR
 #include <util/class/classi.h>
 void *
 MPIMessageGrp::_castdown(const ClassDesc*cd)
@@ -21,6 +22,18 @@ MPIMessageGrp::_castdown(const ClassDesc*cd)
 }
 
 MPIMessageGrp::MPIMessageGrp()
+{
+  init();
+}
+
+MPIMessageGrp::MPIMessageGrp(const RefKeyVal& keyval):
+  MessageGrp(keyval)
+{
+  init();
+}
+
+void
+MPIMessageGrp::init()
 {
   int me, nproc;
   int argc = 1;

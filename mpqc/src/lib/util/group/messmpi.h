@@ -7,6 +7,7 @@
 class MPIMessageGrp: public MessageGrp {
 #define CLASSNAME MPIMessageGrp
 #define HAVE_CTOR
+#define HAVE_KEYVAL_CTOR
 #include <util/class/classd.h>
   protected:
     void* buf;
@@ -15,8 +16,11 @@ class MPIMessageGrp: public MessageGrp {
     int rnode;
     int rtag;
     int rlen;
+
+    void init();
   public:
     MPIMessageGrp();
+    MPIMessageGrp(const RefKeyVal&);
     ~MPIMessageGrp();
 
     void raw_send(int target, void* data, int nbyte);

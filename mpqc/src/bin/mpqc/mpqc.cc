@@ -34,6 +34,9 @@ static void
 clean_up(void)
 {
   MessageGrp::set_default_messagegrp(0);
+  SCMatrixKit::set_default_matrixkit(0);
+  RegionTimer::set_default_regiontimer(0);
+  SCFormIO::set_messagegrp(0);
 }
 
 int

@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <chemistry/qc/intv2/int_macros.h>
@@ -47,8 +48,6 @@ static transform_t f10f7[nf10f7]
        { 4, 5,  1.0},
        { 6, 5, -1.0},
        { 5, 6,  1.0}};
-
-static transform_t unit[1] = {{ 0, 0, 1.0 }};
 
 static double *source = 0;
 static int nsourcemax = 0;
@@ -381,7 +380,7 @@ void
 transform_1e(double *integrals, double *target,
              shell_t *sh1, shell_t *sh2, int chunk)
 {
-  int i, ntarget;
+  int ntarget;
 
   do_transform_1e(integrals, sh1, sh2, chunk);
 

@@ -110,6 +110,7 @@ Molecule::init_symmetry_info(double tol)
         SCVector3 aj(r(uniq));
         if (np.dist(aj) < tol
             && Z(uniq) == Z(i)
+            && fabs(charge(uniq)-charge(i)) < tol
             && fabs(mass(uniq)-mass(i)) < tol) {
           i_is_unique = 0;
           i_equiv = j;

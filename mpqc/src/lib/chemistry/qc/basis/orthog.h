@@ -29,12 +29,13 @@
 #ifndef _chemistry_qc_basis_orthog_h
 #define _chemistry_qc_basis_orthog_h
 
+#include <util/state/state.h>
 #include <math/scmat/matrix.h>
 
 namespace sc {
 
 /// This class computes the orthogonalizing transform for a basis set.
-class OverlapOrthog: public RefCount {
+class OverlapOrthog: virtual public SavableState {
   public:
     
     /// An enum for the types of orthogonalization.
@@ -70,6 +71,9 @@ class OverlapOrthog: public RefCount {
     void compute_gs_orthog();
     void compute_orthog_trans();
 
+    // WARNING: after a SavableState save/restore, these two members will
+    // be null.  There is really no need to store these anyway--should be
+    // removed.
     RefSymmSCMatrix overlap_;
     Ref<SCMatrixKit> result_kit_; // this kit is used for the result matrices
 
@@ -79,6 +83,10 @@ class OverlapOrthog: public RefCount {
                   const Ref<SCMatrixKit> &result_kit,
                   double lindep_tolerance,
                   int debug = 0);
+
+    OverlapOrthog(StateIn&);
+
+    void save_data_state(StateOut&);
 
     void reinit(OrthogMethod method,
                 const RefSymmSCMatrix &overlap,

@@ -50,7 +50,7 @@ using namespace sc;
 #define CHECK_SYMMETRIZED_INTEGRALS 0
 
 static ClassDesc Wavefunction_cd(
-  typeid(Wavefunction),"Wavefunction",5,"public MolecularEnergy",
+  typeid(Wavefunction),"Wavefunction",6,"public MolecularEnergy",
   0, 0, 0);
 
 Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
@@ -189,6 +189,18 @@ Wavefunction::Wavefunction(StateIn&s):
   gbs_ << SavableState::restore_state(s);
   integral_ << SavableState::restore_state(s);
 
+  if (s.version(::class_desc<Wavefunction>()) >= 6) {
+    Ref<KeyVal> original_override = s.override();
+    Ref<AssignedKeyVal> matrixkit_override = new AssignedKeyVal;
+    matrixkit_override->assign("matrixkit", gbs_->so_matrixkit().pointer());
+    Ref<KeyVal> new_override
+      = new AggregateKeyVal(matrixkit_override.pointer(),
+                            original_override.pointer());
+    s.set_override(new_override);
+    orthog_ << SavableState::restore_state(s);
+    s.set_override(original_override);
+  }
+
   integral_->set_basis(gbs_);
   Ref<PetiteList> pl = integral_->petite_list();
 
@@ -238,6 +250,7 @@ Wavefunction::save_data_state(StateOut&s)
 
   SavableState::save_state(gbs_.pointer(),s);
   SavableState::save_state(integral_.pointer(),s);
+  SavableState::save_state(orthog_.pointer(),s);
 }
 
 double

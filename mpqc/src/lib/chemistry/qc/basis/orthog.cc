@@ -33,13 +33,19 @@
 #include <math.h>
 
 #include <iostream>
+#include <stdexcept>
 
+#include <util/state/stateio.h>
 #include <chemistry/qc/basis/orthog.h>
 #include <math/scmat/elemop.h>
 #include <math/scmat/blocked.h>
 
 using namespace std;
 using namespace sc;
+
+static ClassDesc OverlapOrthog_cd(typeid(OverlapOrthog),"OverlapOrthog",1,
+                                  "virtual public SavableState",
+                                  0, 0, create<OverlapOrthog>);
 
 OverlapOrthog::OverlapOrthog(
   OrthogMethod method,
@@ -49,6 +55,49 @@ OverlapOrthog::OverlapOrthog(
   int debug)
 {
   reinit(method,overlap,result_kit,lindep_tolerance,debug);
+}
+
+OverlapOrthog::OverlapOrthog(StateIn& si):
+  SavableState(si)
+{
+  Ref<SCMatrixKit> kit;
+  kit << si.override()->describedclassvalue("matrixkit");
+
+  if (kit.null()) {
+    throw std::runtime_error("OverlapOrthog::OverlapOrthog(StateIn& si): requires that a matrixkit be set up in the override info");
+    }
+
+  si.get(debug_);
+  dim_ << SavableState::restore_state(si);
+  orthog_dim_ << SavableState::restore_state(si);
+  si.get(lindep_tol_);
+  int i_orthog_method;
+  si.get(i_orthog_method);
+  orthog_method_ = OrthogMethod(i_orthog_method);
+  orthog_trans_ = kit->matrix(dim_, orthog_dim_);
+  orthog_trans_.restore(si);
+  orthog_trans_inverse_ = kit->matrix(orthog_dim_, dim_);
+  orthog_trans_inverse_.restore(si);
+  si.get(min_orthog_res_);
+  si.get(max_orthog_res_);
+}
+
+void
+OverlapOrthog::save_data_state(StateOut& so)
+{
+  so.put(debug_);
+  SavableState::save_state(dim_.pointer(), so);
+  SavableState::save_state(orthog_dim_.pointer(), so);
+  so.put(lindep_tol_);
+  so.put(int(orthog_method_));
+  orthog_trans_.save(so);
+  orthog_trans_inverse_.save(so);
+  so.put(min_orthog_res_);
+  so.put(max_orthog_res_);
+  // The overlap_ member is not saved since should not be needed.
+  // The result_kit_ member is not saved since it depends on the
+  // runtime environment.  It is given to the StateIn CTOR by
+  // an overriding KeyVal.
 }
 
 void

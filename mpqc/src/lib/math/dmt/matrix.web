@@ -1,7 +1,7 @@
 %
 % $Log$
-% Revision 1.1  1993/12/29 12:53:31  etseidl
-% Initial revision
+% Revision 1.2  1993/12/30 13:18:39  etseidl
+% merge in clj diffs
 %
 % Revision 1.13  1993/04/27  21:58:45  jannsen
 % Port to RS/6000.  Minor bug fixes other minor things.
@@ -1938,7 +1938,7 @@ the column.
 #ifdef NCUBE
     r8n (col, ncols);   /* Byte swapping stuff. */
 #endif
-    writeval = write (fd, col, ncols * sizeof(double));
+    writeval = write (fd, (void*)col, ncols * sizeof(double));
     assert (writeval == ncols * sizeof (double));
 #ifdef NCUBE
     r8n (col, ncols);   /* Byte swapping stuff. */
@@ -2064,15 +2064,15 @@ if (mynode0() == 0) {
       readval=0;
       while(nleft > max_words)
 	{
-	  readval+= read(fd,col+read_offset,max_words*sizeof(double));
+	  readval+= read(fd,(void*)(col+read_offset),max_words*sizeof(double));
 	  nleft-=max_words;
 	  read_offset+=max_words;
 	}
-      readval+= read(fd,col+read_offset,nleft*sizeof(double));
+      readval+= read(fd,(void*)(col+read_offset),nleft*sizeof(double));
     }
   else
     {
-      readval= read(fd,col,nbasis*sizeof(double));
+      readval= read(fd,(void*)col,nbasis*sizeof(double));
     }
 
   assert (readval == nbasis * sizeof (double));

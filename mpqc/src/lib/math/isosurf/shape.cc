@@ -46,7 +46,7 @@ Shape::~Shape()
 void
 Shape::compute()
 {
-  const ColumnVector& cv = GetXc();
+  const ColumnVector& cv = GetX();
   Point3 r;
   r[0] = cv.element(0);
   r[1] = cv.element(1);
@@ -284,15 +284,15 @@ UncappedTorusHoleShape::in_plane_sphere(const Point3& n) const
   // if |U| is tiny, then any vector perp to AB will do
   double u = U_perp.dot(U_perp);
   if (u<1.0e-23) {
-      DVector3 ltry = R_AB;
-      ltry[0] += 1.0;
-      ltry = ltry - R_AB * (ltry.dot(R_AB)/R_AB.dot(R_AB));
-      if (ltry.dot(ltry) < 1.0e-23) {
-          ltry = R_AB;
-          ltry[1] += 1.0;
-          ltry = ltry - R_AB * (ltry.dot(R_AB)/R_AB.dot(R_AB));
+      DVector3 vtry = R_AB;
+      vtry[0] += 1.0;
+      vtry = vtry - R_AB * (vtry.dot(R_AB)/R_AB.dot(R_AB));
+      if (vtry.dot(vtry) < 1.0e-23) {
+          vtry = R_AB;
+          vtry[1] += 1.0;
+          vtry = vtry - R_AB * (vtry.dot(R_AB)/R_AB.dot(R_AB));
         }
-      U_perp = ltry;
+      U_perp = vtry;
     }
 
   U_perp.normalize();

@@ -114,9 +114,8 @@ void
 Volume::SetX(const Point& x)
 {
   int dim = GetDim();
-  //ColumnVector tmp(dim);
-  Point tmp(dim);
-  for (int i=0; i<dim; i++) tmp[i] = x[i];
+  ColumnVector tmp(dim);
+  for (int i=0; i<dim; i++) tmp.element(i) = x[i];
   SetX(tmp);
 }
 

@@ -38,7 +38,9 @@ class Volume: public NLP2 {
     ~Volume();
     void SetX(const Point& x);
     inline void SetX(RefPoint& x) { SetX(*(x.pointer())); }
+    inline void SetX(ColumnVector& x) { NLP0::SetX(x); }
     void GetX(const Point& x);
+    inline const ColumnVector& GetX() { return NLP0::GetX(); }
 
     void gradient(DVector&); // calls gradient() and converts it to DVector
     inline void gradient(RefPoint&p, DVector&g)

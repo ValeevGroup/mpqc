@@ -104,6 +104,7 @@ Int2eV3::int_init_buildgc(int order,
   nc2 = nc3 = nc4 = nc1;
 
   jmax_for_con = (int *) malloc(sizeof(int)*nc1);
+  // storage for jmax_for_con is not counted since it is freed below
   for (i=0; i<nc1; i++) {
     int tmp;
     jmax_for_con[i] = bs1_->max_am_for_contraction(i);
@@ -131,6 +132,9 @@ Int2eV3::int_init_buildgc(int order,
   inthave.set_dim(am12+1,am34+1,am+1);
   contract_length.set_dim(am12+1,am34+1,am34+1);
   build.int_v_list.set_dim(am12+1,am34+1,am+1);
+  used_storage_build_ += inthave.nbyte();
+  used_storage_build_ += contract_length.nbyte();
+  used_storage_build_ += build.int_v_list.nbyte();
 
   /* Set all slots to 0 */
   for (i=0; i<=am12; i++) {
@@ -165,6 +169,7 @@ Int2eV3::int_init_buildgc(int order,
     }
 
   int_v0_buf = (double*) malloc(sizeof(double)*int_v_bufsize);
+  used_storage_build_ += sizeof(double)*int_v_bufsize;
   if (!int_v0_buf) {
     cerr << scprintf("couldn't allocate all integral intermediates\n");
     fail();
@@ -192,12 +197,16 @@ Int2eV3::int_init_buildgc(int order,
   e0f0_con_int_bufsize = 0;
   con_int_bufsize = 0;
   int_con_ints_array = new IntV3Arraydoublep4***[nc1];
+  used_storage_build_ += sizeof(IntV3Arraydoublep4***)*nc1;
   for (ci=0; ci<nc1; ci++) {
     int_con_ints_array[ci] = new IntV3Arraydoublep4**[nc2];
+    used_storage_build_ += sizeof(IntV3Arraydoublep4**)*nc2;
     for (cj=0; cj<nc2; cj++) {
       int_con_ints_array[ci][cj] = new IntV3Arraydoublep4*[nc3];
+      used_storage_build_ += sizeof(IntV3Arraydoublep4*)*nc3;
       for (ck=0; ck<nc3; ck++) {
         int_con_ints_array[ci][cj][ck] = new IntV3Arraydoublep4[nc4];
+        used_storage_build_ += sizeof(IntV3Arraydoublep4)*nc4;
         for (cl=0; cl<nc4; cl++) {
   int am12_for_con;
   int am34_for_con;
@@ -211,6 +220,7 @@ Int2eV3::int_init_buildgc(int order,
     }
 
   int_con_ints_array[ci][cj][ck][cl].set_dim(am12+1,am12+1,am34+1,am34+1);
+  used_storage_build_ += int_con_ints_array[ci][cj][ck][cl].nbyte();
 
   /* Count how much storage for the integrals is needed. */
   for (i=0; i<=am12; i++) {

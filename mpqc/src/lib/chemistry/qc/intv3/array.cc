@@ -80,6 +80,12 @@ IntV3Arraydouble2::print(ostream &o)
     }
 }
 
+int
+IntV3Arraydouble2::nbyte() const
+{
+  return n1_ * (sizeof(double*) + n2_ * sizeof(double));
+}
+
 ////////////////////////////////////////////////////////////////////////////
 
 IntV3Arraydouble3::IntV3Arraydouble3()
@@ -131,6 +137,12 @@ IntV3Arraydouble3::print(ostream &o)
     }
 }
 
+int
+IntV3Arraydouble3::nbyte() const
+{
+  return n1_*(sizeof(double**) + n2_*(sizeof(double*) + n3_*sizeof(double)));
+}
+
 ////////////////////////////////////////////////////////////////////////////
 
 IntV3Arraydoublep3::IntV3Arraydoublep3()
@@ -180,6 +192,14 @@ IntV3Arraydoublep3::print(ostream &o)
           o << endl;
         }
     }
+}
+
+int
+IntV3Arraydoublep3::nbyte() const
+{
+  return n1_*(sizeof(double***)
+              + n2_*(sizeof(double**)
+                     + n3_*sizeof(double*)));
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -243,6 +263,15 @@ IntV3Arraydoublep4::print(ostream &o)
     }
 }
 
+int
+IntV3Arraydoublep4::nbyte() const
+{
+  return n1_*(sizeof(double****)
+              + n2_*(sizeof(double***)
+                     + n3_*(sizeof(double**)
+                            + n4_*sizeof(double*))));
+}
+
 ////////////////////////////////////////////////////////////////////////////
 
 IntV3Arrayint3::IntV3Arrayint3()
@@ -292,6 +321,14 @@ IntV3Arrayint3::print(ostream &o)
           o << endl;
         }
     }
+}
+
+int
+IntV3Arrayint3::nbyte() const
+{
+  return n1_*(sizeof(int**)
+              + n2_*(sizeof(int*)
+                     + n3_*sizeof(int)));
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -353,6 +390,15 @@ IntV3Arrayint4::print(ostream &o)
             }
         }
     }
+}
+
+int
+IntV3Arrayint4::nbyte() const
+{
+  return n1_*(sizeof(int***)
+              + n2_*(sizeof(int**)
+                     + n3_*(sizeof(int*)
+                            + n4_*sizeof(int))));
 }
 
 /////////////////////////////////////////////////////////////////////////////

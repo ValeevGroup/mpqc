@@ -44,6 +44,7 @@ class IntV3Arraydouble2 {
     void set_dim(int n1, int n2);
     double &operator()(int i,int j) { return data_[i][j]; }
     void print(ostream &);
+    int nbyte() const;
 };
 
 class IntV3Arraydouble3 {
@@ -57,6 +58,7 @@ class IntV3Arraydouble3 {
     double *operator()(int i,int j) { return data_[i][j]; }
     double &operator()(int i,int j,int k) { return data_[i][j][k]; }
     void print(ostream &);
+    int nbyte() const;
 };
 
 class IntV3Arraydoublep3 {
@@ -69,6 +71,7 @@ class IntV3Arraydoublep3 {
     void set_dim(int n1, int n2, int n3);
     double *&operator()(int i,int j,int k) { return data_[i][j][k]; }
     void print(ostream &);
+    int nbyte() const;
 };
 
 class IntV3Arraydoublep4 {
@@ -81,6 +84,7 @@ class IntV3Arraydoublep4 {
     void set_dim(int n1, int n2, int n3, int n4);
     double *&operator()(int i,int j,int k,int l) { return data_[i][j][k][l]; }
     void print(ostream &);
+    int nbyte() const;
 };
 
 class IntV3Arrayint3 {
@@ -93,6 +97,7 @@ class IntV3Arrayint3 {
     void set_dim(int n1, int n2, int n3);
     int &operator()(int i,int j,int k) { return data_[i][j][k]; }
     void print(ostream &);
+    int nbyte() const;
 };
 
 class IntV3Arrayint4 {
@@ -105,6 +110,7 @@ class IntV3Arrayint4 {
     void set_dim(int n1, int n2, int n3, int n4);
     int &operator()(int i,int j,int k,int l) { return data_[i][j][k][l]; }
     void print(ostream &);
+    int nbyte() const;
 };
 
 #endif

@@ -44,6 +44,8 @@ class BEMSolventH: public AccumH {
 #   include <util/class/classd.h>
   private:
     double gamma_;
+    int onebody_;
+    int normalize_q_;
 
     RefWavefunction wfn_;
     RefBEMSolvent solvent_;

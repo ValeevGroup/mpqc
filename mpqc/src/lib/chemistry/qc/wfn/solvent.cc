@@ -34,6 +34,66 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/wfn/solvent.h>
 
+#define INTEGRATE_NELECTRON 0
+
+#if INTEGRATE_NELECTRON
+#include <math/isosurf/volume.h>
+#include <chemistry/qc/dft/integrator.h>
+#include <chemistry/qc/dft/functional.h>
+//. The \clsnm{NElFunctional} computes the number of electrons.
+//. It is primarily for testing the integrator.
+class NElInShapeFunctional: public DenFunctional {
+#   define CLASSNAME NElInShapeFunctional
+#   include <util/class/classd.h>
+  private:
+    RefVolume vol_;
+    double isoval_;
+  public:
+    NElInShapeFunctional(const RefVolume &, double);
+    ~NElInShapeFunctional();
+
+    void point(const PointInputData&, PointOutputData&);
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// NElFunctional
+
+#define CLASSNAME NElInShapeFunctional
+#define PARENTS public DenFunctional
+#include <util/class/classi.h>
+void *
+NElInShapeFunctional::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = DenFunctional::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+NElInShapeFunctional::NElInShapeFunctional(const RefVolume& vol,
+                                           double isoval)
+{
+  vol_ = vol;
+  isoval_ = isoval;
+}
+
+NElInShapeFunctional::~NElInShapeFunctional()
+{
+}
+
+void
+NElInShapeFunctional::point(const PointInputData &id,
+                            PointOutputData &od)
+{
+  vol_->set_x(id.r);
+  if (vol_->value() <= isoval_) {
+      od.energy = id.rho_a + id.rho_b;
+    }
+  else {
+      od.energy = 0.0;
+    }
+}
+#endif
+
 #define CLASSNAME BEMSolventH
 #define VERSION 1
 #define PARENTS public AccumH
@@ -63,6 +123,10 @@ BEMSolventH::BEMSolventH(const RefKeyVal&keyval):
       RefUnits npm = new Units("dyne/cm");
       gamma_ = 72.75 * npm->to_atomic_units();
     }
+  onebody_ = keyval->booleanvalue("onebody");
+  if (keyval->error() != KeyVal::OK) onebody_ = 1;
+  normalize_q_ = keyval->booleanvalue("normalize_q");
+  if (keyval->error() != KeyVal::OK) normalize_q_ = 1;
 }
 
 BEMSolventH::BEMSolventH(StateIn&s):
@@ -117,6 +181,23 @@ BEMSolventH::init(const RefWavefunction& wfn)
 
   // get the surface normals
   solvent_->normals(normals_);
+
+#if INTEGRATE_NELECTRON
+  RefAssignedKeyVal akv = new AssignedKeyVal;
+  akv->assign("nr",128);
+  akv->assign("ntheta",32);
+  akv->assign("nphi",64);
+  RefDenIntegrator integrator = new Murray93Integrator(akv.pointer());
+  RefDenFunctional functional
+      = new NElInShapeFunctional(solvent_->surface()->volume(),
+                                 solvent_->surface()->isovalue());
+  integrator->set_wavefunction(wfn_);
+  integrator->integrate(functional);
+  cout << node0 << indent
+       << scprintf("N(e) in isosurf = %12.8f", integrator->value())
+       << endl;
+#endif
+
   tim_exit("init");
   tim_exit("solvent");
 }
@@ -182,14 +263,17 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   // e and n are independently normalized since the nature of the
   // errors in e and n are different: n error is just numerical and
   // e error is numerical plus diffuseness of electron distribution
-  tim_enter("norm");
-  // electron contrib
-  solvent_->normalize_charge(-wfn_->nelectron(), charges_);
-  // nuclear contrib
-  solvent_->normalize_charge(wfn_->molecule()->nuclear_charge(), charges_n_);
+  if (normalize_q_) {
+      tim_enter("norm");
+      // electron contrib
+      solvent_->normalize_charge(-wfn_->nelectron(), charges_);
+      // nuclear contrib
+      solvent_->normalize_charge(wfn_->molecule()->nuclear_charge(),
+                                 charges_n_);
+      tim_exit("norm");
+    }
   // sum the nuclear and electron contrib
   for (i=0; i<ncharge; i++) charges_[i] += charges_n_[i];
-  tim_exit("norm");
 
   //// compute scalar contributions
   double A = solvent_->area();
@@ -221,14 +305,12 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   h_ao.element_op(pc_op);
   // transform to the so basis and add to h
   RefSymmSCMatrix h_so = wfn_->integral()->petite_list()->to_SO_basis(h_ao);
-  // why?
-  h_so.scale(2.0);
-  h->accumulate(h_so);
+  if (onebody_) h->accumulate(h_so);
   // compute the contribution to the energy
   sp->init();
   RefSymmSCMatrix so_density = wfn_->density()->copy();
   // for the scalar products, scale the density's off-diagonals by two
-  //so_density->scale(2.0);
+  so_density->scale(2.0);
   so_density->scale_diagonal(0.5);
   h_so->element_op(generic_sp, so_density);
   double eelecsurf = sp->result();
@@ -243,20 +325,26 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
   //tim_exit("s-s");
 
   escalar_ = enucsurf + esurfsurf + ecavitation_ + edisprep;
+  // NOTE: SCF currently only adds h_so to the Fock matrix
+  // so a term is missing in the energy.  This term is added here
+  // and when SCF is fixed, should no longer be included.
+  if (onebody_) escalar_ += 0.5 * eelecsurf;
+
+  if (!onebody_) escalar_ += eelecsurf;
 
   cout << incindent;
   cout << node0 << indent
        << "Solvent: "
        << scprintf("q(e-enc)=%12.10f q(n-enc)=%12.10f", qeenc, qnenc)
        << endl;
-  cout <<  incindent;
+  cout << incindent;
   cout << node0 << indent
        << scprintf("E(c)=%10.8f ", ecavitation_)
        << scprintf("E(disp-rep)=%10.8f", edisprep)
        << endl;
   cout << node0 << indent
        << scprintf("E(n-s)=%10.8f ", enucsurf)
-       << scprintf("E(e-s)=%10.8f", eelecsurf)
+       << scprintf("E(e-s)=%10.8f ", eelecsurf)
        << scprintf("E(s-s)=%10.8f ", esurfsurf)
        << endl;
   cout << decindent;

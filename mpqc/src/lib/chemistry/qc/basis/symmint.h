@@ -8,6 +8,7 @@
 
 #include <util/state/state.h>
 #include <chemistry/qc/basis/obint.h>
+#include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/basis/petite.h>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -21,6 +22,20 @@ class SymmOneBodyIntIter : public OneBodyIntIter {
     ~SymmOneBodyIntIter();
 
     void start(int ist=0, int jst=0, int ien=0, int jen=0);
+    void next();
+
+    double scale() const;
+};
+
+class SymmTwoBodyIntIter : public TwoBodyIntIter {
+  protected:
+    RefPetiteList pl;
+
+  public:
+    SymmTwoBodyIntIter(const RefTwoBodyInt&, const RefPetiteList&);
+    ~SymmTwoBodyIntIter();
+
+    void start();
     void next();
 
     double scale() const;

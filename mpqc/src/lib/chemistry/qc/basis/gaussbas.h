@@ -11,14 +11,13 @@
 //#include <util/container/pixmap.h>
 #include <util/state/state.h>
 #include <math/scmat/matrix.h>
+#include <chemistry/molecule/molecule.h>
 
 // this is for centers_t*
 #include <chemistry/qc/intv2/atoms.h>
 
 class GaussianShell;
 class KeyVal;
-class Molecule;
-class RefMolecule;
 class cart_point;
 
 class GaussianBasisSet: virtual public SavableState

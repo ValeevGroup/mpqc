@@ -7,6 +7,7 @@
 #endif
 
 #include <math/scmat/block.h>
+#include <math/scmat/elemop.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/abstract.h>
 
@@ -330,6 +331,42 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
     void element_op(const RefSCElementOp3&,
                     DiagSCMatrix*,DiagSCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
+};
+
+class BlockedSCElementOp : public SCElementOp {
+#   define CLASSNAME BlockedSCElementOp
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
+  private:
+    int current_block_;
+    
+  public:
+    void working_on(int);
+    int current_block() const;
+};
+
+class BlockedSCElementOp2 : public SCElementOp2 {
+#   define CLASSNAME BlockedSCElementOp2
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
+  private:
+    int current_block_;
+    
+  public:
+    void working_on(int);
+    int current_block() const;
+};
+
+class BlockedSCElementOp3 : public SCElementOp3 {
+#   define CLASSNAME BlockedSCElementOp3
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
+  private:
+    int current_block_;
+    
+  public:
+    void working_on(int);
+    int current_block() const;
 };
 
 #endif

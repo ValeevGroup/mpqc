@@ -260,8 +260,13 @@ BlockedSCVector::scalar_product(SCVector*a)
 void
 BlockedSCVector::element_op(const RefSCElementOp& op)
 {
-  for (int i=0; i < d->nblocks(); i++)
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+
+  for (int i=0; i < d->nblocks(); i++) {
+    if (bop)
+      bop->working_on(i);
     vecs_[i]->element_op(op);
+  }
 }
 
 void
@@ -276,8 +281,13 @@ BlockedSCVector::element_op(const RefSCElementOp2& op,
     abort();
   }
 
-  for (int i=0; i < d->nblocks(); i++)
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+
+  for (int i=0; i < d->nblocks(); i++) {
+    if (bop)
+      bop->working_on(i);
     vecs_[i]->element_op(op, lm->vecs_[i]);
+  }
 }
 
 void
@@ -294,8 +304,13 @@ BlockedSCVector::element_op(const RefSCElementOp3& op,
     abort();
   }
 
-  for (int i=0; i < d->nblocks(); i++)
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+
+  for (int i=0; i < d->nblocks(); i++) {
+    if (bop)
+      bop->working_on(i);
     vecs_[i]->element_op(op, lm->vecs_[i], ln->vecs_[i]);
+  }
 }
 
 // from Ed Seidl at the NIH (with a bit of hacking)

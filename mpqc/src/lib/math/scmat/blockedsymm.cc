@@ -458,13 +458,18 @@ BlockedSymmSCMatrix::accumulate_transform(SCMatrix*a,DiagSCMatrix*b)
 void
 BlockedSymmSCMatrix::element_op(const RefSCElementOp& op)
 {
-  for (int i=0; i < d->nblocks(); i++)
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+
+  for (int i=0; i < d->nblocks(); i++) {
+    if (bop)
+      bop->working_on(i);
     mats_[i]->element_op(op);
+  }
 }
 
 void
 BlockedSymmSCMatrix::element_op(const RefSCElementOp2& op,
-                              SymmSCMatrix* m)
+                                SymmSCMatrix* m)
 {
   BlockedSymmSCMatrix *lm = BlockedSymmSCMatrix::require_castdown(m,
                                           "BlockedSymSCMatrix::element_op");
@@ -473,8 +478,13 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp2& op,
     abort();
   }
 
-  for (int i=0; i < d->nblocks(); i++)
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+
+  for (int i=0; i < d->nblocks(); i++) {
+    if (bop)
+      bop->working_on(i);
     mats_[i]->element_op(op,lm->mats_[i].pointer());
+  }
 }
 
 void
@@ -491,9 +501,14 @@ BlockedSymmSCMatrix::element_op(const RefSCElementOp3& op,
     abort();
   }
 
-  for (int i=0; i < d->nblocks(); i++)
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+
+  for (int i=0; i < d->nblocks(); i++) {
+    if (bop)
+      bop->working_on(i);
     mats_[i]->element_op(op,lm->mats_[i].pointer(),
                             ln->mats_[i].pointer());
+  }
 }
 
 void

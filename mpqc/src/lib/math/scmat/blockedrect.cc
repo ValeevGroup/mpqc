@@ -585,8 +585,13 @@ BlockedSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
 void
 BlockedSCMatrix::element_op(const RefSCElementOp& op)
 {
-  for (int i=0; i < nblocks_; i++)
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+
+  for (int i=0; i < nblocks_; i++) {
+    if (bop)
+      bop->working_on(i);
     mats_[i]->element_op(op);
+  }
 }
 
 void
@@ -594,15 +599,20 @@ BlockedSCMatrix::element_op(const RefSCElementOp2& op,
                           SCMatrix* m)
 {
   BlockedSCMatrix *lm
-      = BlockedSCMatrix::require_castdown(m,"BlockedSCMatrix::element_op");
+    = BlockedSCMatrix::require_castdown(m,"BlockedSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim())) {
     fprintf(stderr,"BlockedSCMatrix: bad element_op\n");
     abort();
   }
 
-  for (int i=0; i < nblocks_; i++)
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+
+  for (int i=0; i < nblocks_; i++) {
+    if (bop)
+      bop->working_on(i);
     mats_[i]->element_op(op,lm->mats_[i].pointer());
+  }
 }
 
 void
@@ -610,9 +620,9 @@ BlockedSCMatrix::element_op(const RefSCElementOp3& op,
                           SCMatrix* m,SCMatrix* n)
 {
   BlockedSCMatrix *lm
-      = BlockedSCMatrix::require_castdown(m,"BlockedSCMatrix::element_op");
+    = BlockedSCMatrix::require_castdown(m,"BlockedSCMatrix::element_op");
   BlockedSCMatrix *ln
-      = BlockedSCMatrix::require_castdown(n,"BlockedSCMatrix::element_op");
+    = BlockedSCMatrix::require_castdown(n,"BlockedSCMatrix::element_op");
 
   if (!rowdim()->equiv(lm->rowdim()) || !coldim()->equiv(lm->coldim()) ||
       !rowdim()->equiv(ln->rowdim()) || !coldim()->equiv(ln->coldim())) {
@@ -620,9 +630,14 @@ BlockedSCMatrix::element_op(const RefSCElementOp3& op,
     abort();
   }
 
-  for (int i=0; i < nblocks_; i++)
+  BlockedSCElementOp *bop = BlockedSCElementOp::castdown(op);
+
+  for (int i=0; i < nblocks_; i++) {
+    if (bop)
+      bop->working_on(i);
     mats_[i]->element_op(op,lm->mats_[i].pointer(),
                             ln->mats_[i].pointer());
+  }
 }
 
 void

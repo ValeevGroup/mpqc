@@ -324,3 +324,77 @@ BlockedSCDimension::create_vector()
 }
 
 SavableState_REF_def(BlockedSCDimension);
+
+/////////////////////////////////////////////////////////////////////////////
+
+#define CLASSNAME BlockedSCElementOp
+#define PARENTS public SCElementOP
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+BlockedSCElementOp::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+void
+BlockedSCElementOp::working_on(int b)
+{
+  current_block_ = b;
+}
+
+int
+BlockedSCElementOp::current_block() const
+{
+  return current_block_;
+}
+
+#define CLASSNAME BlockedSCElementOp2
+#define PARENTS public SCElementOP2
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+BlockedSCElementOp2::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCElementOp2::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+void
+BlockedSCElementOp2::working_on(int b)
+{
+  current_block_ = b;
+}
+
+int
+BlockedSCElementOp2::current_block() const
+{
+  return current_block_;
+}
+
+#define CLASSNAME BlockedSCElementOp3
+#define PARENTS public SCElementOP3
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+BlockedSCElementOp3::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCElementOp3::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+void
+BlockedSCElementOp3::working_on(int b)
+{
+  current_block_ = b;
+}
+
+int
+BlockedSCElementOp3::current_block() const
+{
+  return current_block_;
+}

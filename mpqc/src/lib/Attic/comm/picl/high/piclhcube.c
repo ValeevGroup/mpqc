@@ -6,8 +6,11 @@
  */
 
 /* $Log$
- * Revision 1.1  1993/12/29 12:53:49  etseidl
- * Initial revision
+ * Revision 1.2  1994/08/26 23:59:17  etseidl
+ * remove rcs ids and fix some warnings
+ *
+ * Revision 1.1.1.1  1993/12/29  12:53:50  etseidl
+ * SC source tree 0.1
  *
  * Revision 1.6  1993/04/27  21:11:17  jannsen
  * If COMMBUFSIZE is defined, then try to avoid sending messages bigger
@@ -59,7 +62,6 @@
  * Revision 1.1  1991/03/04  23:47:45  colvin
  * Initial revision
  * */
-static char rcsid[]="$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>

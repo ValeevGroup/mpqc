@@ -1,0 +1,10 @@
+% Emacs should use -*- KeyVal -*- mode.
+
+messagegrp<ProcMessageGrp>: (
+  n = 2
+  )
+
+n1 = 2
+n2 = 3
+n3 = 4
+n4 = 200

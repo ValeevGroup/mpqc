@@ -1,59 +1,83 @@
 
-#ifndef _math_scmat_local_h
-#define _math_scmat_local_h
+#ifndef _math_scmat_repl_h
+#define _math_scmat_repl_h
 
 #ifdef __GNUC__
 #pragma interface
 #endif
 
+#include <util/group/message.h>
+
 #include <math/scmat/block.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/abstract.h>
 
-class LocalSCDimension: public SCDimension {
-#   define CLASSNAME LocalSCDimension
+class ReplSCMatrixKit: public SCMatrixKit {
+#   define CLASSNAME ReplSCMatrixKit
+#   define HAVE_CTOR
 #   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
+//#   include <util/state/stated.h>
+#   include <util/class/classd.h>
+  private:
+    RefMessageGrp grp_;
+  public:
+    ReplSCMatrixKit();
+    ReplSCMatrixKit(const RefKeyVal&);
+    ~ReplSCMatrixKit();
+
+    RefMessageGrp messagegrp() const { return grp_; }
+
+    SCDimension* dimension(int n, const char* name=0);
+
+    SCMatrix* restore_matrix(StateIn&,
+                             const RefSCDimension&,const RefSCDimension&);
+    SymmSCMatrix* restore_symmmatrix(StateIn&, const RefSCDimension&);
+    DiagSCMatrix* restore_diagmatrix(StateIn&, const RefSCDimension&);
+    SCVector* restore_vector(StateIn&, const RefSCDimension&);
+};
+
+class ReplSCDimension: public SCDimension {
+#   define CLASSNAME ReplSCDimension
+//#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
     int n_;
+    int* blocks_;
+    int nblocks_;
+    RefMessageGrp grp_;
   public:
-    LocalSCDimension(int n, const char* name = 0);
-    LocalSCDimension(const RefKeyVal&);
-    LocalSCDimension(StateIn&);
-    ~LocalSCDimension();
-    void save_data_state(StateOut&);
+    ReplSCDimension(int n, const RefMessageGrp&, const char* name = 0);
+    ~ReplSCDimension();
     int n();
     SCMatrix* create_matrix(SCDimension*);
     SymmSCMatrix* create_symmmatrix();
     DiagSCMatrix* create_diagmatrix();
     SCVector* create_vector();
-};
-SavableState_REF_dec(LocalSCDimension);
 
-class LocalSCVector: public SCVector {
-    friend class LocalSCMatrix;
-    friend class LocalSymmSCMatrix;
-    friend class LocalDiagSCMatrix;
-#   define CLASSNAME LocalSCVector
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
+    RefMessageGrp messagegrp() const { return grp_; }
+    int blockstart(int b) { return blocks_[b]; }
+    int blockfence(int b) { return blocks_[b+1]; }
+    int nblock() { return nblocks_; }
+};
+SavableState_REF_dec(ReplSCDimension);
+
+class ReplSCVector: public SCVector {
+    friend class ReplSCMatrix;
+    friend class ReplSymmSCMatrix;
+    friend class ReplDiagSCMatrix;
+#   define CLASSNAME ReplSCVector
+//#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    RefLocalSCDimension d;
-    RefSCVectorSimpleBlock block;
-
-    void resize(int);
+    RefReplSCDimension d;
+    RefSCMatrixBlockList blocklist;
+    double* vector;
+    void init_blocklist();
+    void before_elemop();
+    void after_elemop();
   public:
-    LocalSCVector();
-    LocalSCVector(LocalSCDimension*);
-    LocalSCVector(const RefKeyVal&);
-    LocalSCVector(StateIn&);
-    ~LocalSCVector();
-    void save_data_state(StateOut&);
+    ReplSCVector(ReplSCDimension*);
+    ~ReplSCVector();
     void assign(double);
     void assign(SCVector*);
     void assign(const double*);
@@ -71,37 +95,36 @@ class LocalSCVector: public SCVector {
     void element_op(const RefSCElementOp3&,
                     SCVector*,SCVector*);
     void print(const char* title=0,ostream& out=cout, int =10);
+
+    RefMessageGrp messagegrp() { return d->messagegrp(); }
 };
 
-class LocalSCMatrix: public SCMatrix {
-    friend class LocalSymmSCMatrix;
-    friend class LocalDiagSCMatrix;
-    friend LocalSCVector;
-#   define CLASSNAME LocalSCMatrix
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
+class ReplSCMatrix: public SCMatrix {
+    friend class ReplSymmSCMatrix;
+    friend class ReplDiagSCMatrix;
+    friend ReplSCVector;
+#   define CLASSNAME ReplSCMatrix
+//#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    RefLocalSCDimension d1;
-    RefLocalSCDimension d2;
-    RefSCMatrixRectBlock block;
+    RefReplSCDimension d1;
+    RefReplSCDimension d2;
+    RefSCMatrixBlockList blocklist;
+    double* matrix;
     double** rows;
   private:
     // utility functions
     int compute_offset(int,int);
-    void resize(int,int);
+    void init_blocklist();
+
+    void before_elemop();
+    void after_elemop();
   public:
-    LocalSCMatrix();
-    LocalSCMatrix(const RefKeyVal&);
-    LocalSCMatrix(StateIn&);
-    LocalSCMatrix(LocalSCDimension*,LocalSCDimension*);
-    ~LocalSCMatrix();
+    ReplSCMatrix(ReplSCDimension*,ReplSCDimension*);
+    ~ReplSCMatrix();
 
     // implementations and overrides of virtual functions
     void assign(double);
-    void save_data_state(StateOut&);
     RefSCDimension rowdim();
     RefSCDimension coldim();
     double get_element(int,int);
@@ -123,35 +146,35 @@ class LocalSCMatrix: public SCMatrix {
     void element_op(const RefSCElementOp3&,
                     SCMatrix*,SCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
+
+    RefMessageGrp messagegrp() { return d1->messagegrp(); }
 };
 
-class LocalSymmSCMatrix: public SymmSCMatrix {
-    friend class LocalSCMatrix;
-    friend class LocalDiagSCMatrix;
-    friend LocalSCVector;
-#   define CLASSNAME LocalSymmSCMatrix
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
+class ReplSymmSCMatrix: public SymmSCMatrix {
+    friend class ReplSCMatrix;
+    friend class ReplDiagSCMatrix;
+    friend ReplSCVector;
+#   define CLASSNAME ReplSymmSCMatrix
+//#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    RefLocalSCDimension d;
-    RefSCMatrixLTriBlock block;
+    RefReplSCDimension d;
+    RefSCMatrixBlockList blocklist;
+    double* matrix;
     double** rows;
   private:
     // utility functions
     int compute_offset(int,int);
-    void resize(int n);
+    void init_blocklist();
+
+    void before_elemop();
+    void after_elemop();
   public:
-    LocalSymmSCMatrix();
-    LocalSymmSCMatrix(const RefKeyVal&);
-    LocalSymmSCMatrix(StateIn&);
-    LocalSymmSCMatrix(LocalSCDimension*);
-    ~LocalSymmSCMatrix();
+    ReplSymmSCMatrix(ReplSCDimension*);
+    ~ReplSymmSCMatrix();
 
     // implementations and overrides of virtual functions
-    void save_data_state(StateOut&);
+    void assign(double);
     RefSCDimension dim();
     double get_element(int,int);
     void set_element(int,int,double);
@@ -176,31 +199,31 @@ class LocalSymmSCMatrix: public SymmSCMatrix {
     void element_op(const RefSCElementOp3&,
                     SymmSCMatrix*,SymmSCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
+
+    RefMessageGrp messagegrp() { return d->messagegrp(); }
 };
 
-class LocalDiagSCMatrix: public DiagSCMatrix {
-    friend LocalSCMatrix;
-    friend LocalSymmSCMatrix;
-    friend LocalSCVector;
-#   define CLASSNAME LocalDiagSCMatrix
-#   define HAVE_CTOR
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
+class ReplDiagSCMatrix: public DiagSCMatrix {
+    friend ReplSCMatrix;
+    friend ReplSymmSCMatrix;
+    friend ReplSCVector;
+#   define CLASSNAME ReplDiagSCMatrix
+//#   include <util/state/stated.h>
 #   include <util/class/classd.h>
   private:
-    RefLocalSCDimension d;
-    RefSCMatrixDiagBlock block;
-    void resize(int n);
+    RefReplSCDimension d;
+    RefSCMatrixBlockList blocklist;
+    void init_blocklist();
+    double* matrix;
+
+    void before_elemop();
+    void after_elemop();
   public:
-    LocalDiagSCMatrix();
-    LocalDiagSCMatrix(const RefKeyVal&);
-    LocalDiagSCMatrix(StateIn&);
-    LocalDiagSCMatrix(LocalSCDimension*);
-    ~LocalDiagSCMatrix();
+    ReplDiagSCMatrix(ReplSCDimension*);
+    ~ReplDiagSCMatrix();
 
     // implementations and overrides of virtual functions
-    void save_data_state(StateOut&);
+    void assign(double);
     RefSCDimension dim();
     double get_element(int);
     void set_element(int,double);
@@ -216,28 +239,8 @@ class LocalDiagSCMatrix: public DiagSCMatrix {
     void element_op(const RefSCElementOp3&,
                     DiagSCMatrix*,DiagSCMatrix*);
     void print(const char* title=0,ostream& out=cout, int =10);
-};
 
-class LocalSCMatrixKit: public SCMatrixKit {
-#   define CLASSNAME LocalSCMatrixKit
-#   define HAVE_KEYVAL_CTOR
-#   define HAVE_STATEIN_CTOR
-#   include <util/state/stated.h>
-#   include <util/class/classd.h>
-  public:
-    LocalSCMatrixKit();
-    LocalSCMatrixKit(const RefKeyVal&);
-    LocalSCMatrixKit(StateIn&);
-    ~LocalSCMatrixKit();
-    void save_data_state(StateOut&);
-
-    SCDimension* dimension(int n, const char* name=0);
-
-    SCMatrix* restore_matrix(StateIn&,
-                             const RefSCDimension&,const RefSCDimension&);
-    SymmSCMatrix* restore_symmmatrix(StateIn&, const RefSCDimension&);
-    DiagSCMatrix* restore_diagmatrix(StateIn&, const RefSCDimension&);
-    SCVector* restore_vector(StateIn&, const RefSCDimension&);
+    RefMessageGrp messagegrp() { return d->messagegrp(); }
 };
 
 #endif

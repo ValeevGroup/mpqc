@@ -4,6 +4,8 @@
 #endif
 
 #include <math/scmat/block.h>
+#include <math/scmat/blkiter.h>
+#include <math/scmat/elemop.h>
 
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixBlock member functions
@@ -29,6 +31,98 @@ SCMatrixBlock::_castdown(const ClassDesc*cd)
 
 SCMatrixBlock::~SCMatrixBlock()
 {
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// SCMatrixBlockListLink member functions
+
+SCMatrixBlockListLink::SCMatrixBlockListLink(SCMatrixBlock* b,
+                                             SCMatrixBlockListLink* l)
+{
+  block(b);
+  next(l);
+}
+
+SCMatrixBlockListLink::~SCMatrixBlockListLink()
+{
+  if (_block) _block->dereference();
+  if (_block->nreference() == 0) delete _block;
+
+  if (_next) delete _next;
+}
+
+void
+SCMatrixBlockListLink::block(SCMatrixBlock* b)
+{
+  _block = b;
+  if (_block) _block->reference();
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// SCMatrixBlockList member functions
+
+#define CLASSNAME SCMatrixBlockList
+#define PARENTS public SavableState
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+SCMatrixBlockList::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SavableState::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+SCMatrixBlockList::SCMatrixBlockList()
+{
+  _begin = 0;
+}
+
+SCMatrixBlockList::SCMatrixBlockList(StateIn& s):
+  SavableState(s)
+{
+  int i, count;
+  s.get(count);
+  for (i=0; i<count; i++) {
+      append(SCMatrixBlock::restore_state(s));
+    }
+}
+
+SCMatrixBlockList::~SCMatrixBlockList()
+{
+  if (_begin) delete _begin;
+}
+
+void
+SCMatrixBlockList::save_data_state(StateOut&s)
+{
+  int count = 0;
+  SCMatrixBlockListIter i;
+  for (i = begin(); i != end(); i++) count++;
+  s.put(count);
+  for (i = begin(); i != end(); i++) {
+      i.block()->save_state(s);
+    }
+}
+
+void
+SCMatrixBlockList::insert(SCMatrixBlock* b)
+{
+  _begin = new SCMatrixBlockListLink(b, _begin);
+}
+
+void
+SCMatrixBlockList::append(SCMatrixBlock* b)
+{
+  if (_begin == 0) {
+      _begin = new SCMatrixBlockListLink(b);
+    }
+  else {
+      SCMatrixBlockListLink* i;
+      for (i = _begin; i->next() != 0; i = i->next());
+      i->next(new SCMatrixBlockListLink(b));
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -84,6 +178,114 @@ SCMatrixRectBlock::~SCMatrixRectBlock()
   delete[] data;
 }
 
+void
+SCMatrixRectBlock::process(SCElementOp*op)
+{
+  SCMatrixRectBlockIter i(this);
+  op->process(i);
+}
+
+void
+SCMatrixRectBlock::process(SCElementOp2*op,
+                           SCMatrixBlock* b)
+{
+  SCMatrixRectBlockIter i(this);
+  SCMatrixRectBlockIter j((SCMatrixRectBlock*)b);
+  op->process(i,j);
+}
+
+void
+SCMatrixRectBlock::process(SCElementOp3*op,
+                           SCMatrixBlock* b1, SCMatrixBlock* b2)
+{
+  SCMatrixRectBlockIter i(this);
+  SCMatrixRectBlockIter j((SCMatrixRectBlock*)b1);
+  SCMatrixRectBlockIter k((SCMatrixRectBlock*)b2);
+  op->process(i,j,k);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// SCMatrixRectSubBlock member functions
+
+SavableState_REF_def(SCMatrixRectSubBlock);
+
+#define CLASSNAME SCMatrixRectSubBlock
+#define PARENTS public SCMatrixBlock
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+SCMatrixRectSubBlock::SCMatrixRectSubBlock(int is, int ie, int istr,
+                                           int js, int je, double* d):
+  istart(is),
+  jstart(js),
+  istride(istr),
+  iend(ie),
+  jend(je),
+  data(d)
+{
+}
+
+SCMatrixRectSubBlock::SCMatrixRectSubBlock(StateIn&s):
+  SCMatrixBlock(s)
+{
+  s.get(istart);
+  s.get(istride);
+  s.get(jstart);
+  s.get(iend);
+  s.get(jend);
+  data = 0;
+}
+
+void
+SCMatrixRectSubBlock::save_data_state(StateOut&s)
+{
+  s.put(istart);
+  s.put(istride);
+  s.put(jstart);
+  s.put(iend);
+  s.put(jend);
+}
+
+void *
+SCMatrixRectSubBlock::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCMatrixBlock::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+SCMatrixRectSubBlock::~SCMatrixRectSubBlock()
+{
+}
+
+void
+SCMatrixRectSubBlock::process(SCElementOp*op)
+{
+  SCMatrixRectSubBlockIter i(this);
+  op->process(i);
+}
+
+void
+SCMatrixRectSubBlock::process(SCElementOp2*op,
+                              SCMatrixBlock* b)
+{
+  SCMatrixRectSubBlockIter i(this);
+  SCMatrixRectSubBlockIter j((SCMatrixRectSubBlock*)b);
+  op->process(i,j);
+}
+
+void
+SCMatrixRectSubBlock::process(SCElementOp3*op,
+                              SCMatrixBlock* b1,
+                              SCMatrixBlock* b2)
+{
+  SCMatrixRectSubBlockIter i(this);
+  SCMatrixRectSubBlockIter j((SCMatrixRectSubBlock*)b1);
+  SCMatrixRectSubBlockIter k((SCMatrixRectSubBlock*)b2);
+  op->process(i,j,k);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // SCMatrixLTriBlock member functions
 
@@ -129,6 +331,112 @@ SCMatrixLTriBlock::_castdown(const ClassDesc*cd)
 SCMatrixLTriBlock::~SCMatrixLTriBlock()
 {
   delete[] data;
+}
+
+void
+SCMatrixLTriBlock::process(SCElementOp*op)
+{
+  SCMatrixLTriBlockIter i(this);
+  op->process(i);
+}
+
+void
+SCMatrixLTriBlock::process(SCElementOp2*op,
+                           SCMatrixBlock* b)
+{
+  SCMatrixLTriBlockIter i(this);
+  SCMatrixLTriBlockIter j((SCMatrixLTriBlock*)b);
+  op->process(i,j);
+}
+
+void
+SCMatrixLTriBlock::process(SCElementOp3*op,
+                           SCMatrixBlock* b1, SCMatrixBlock* b2)
+{
+  SCMatrixLTriBlockIter i(this);
+  SCMatrixLTriBlockIter j((SCMatrixLTriBlock*)b1);
+  SCMatrixLTriBlockIter k((SCMatrixLTriBlock*)b2);
+  op->process(i,j,k);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// SCMatrixLTriSubBlock member functions
+
+SavableState_REF_def(SCMatrixLTriSubBlock);
+
+#define CLASSNAME SCMatrixLTriSubBlock
+#define PARENTS public SCMatrixBlock
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+SCMatrixLTriSubBlock::SCMatrixLTriSubBlock(int is, int ie,
+                                           int js, int je,
+                                           double*d):
+  istart(is),
+  iend(ie),
+  jstart(js),
+  jend(je),
+  data(d)
+{
+}
+
+SCMatrixLTriSubBlock::SCMatrixLTriSubBlock(StateIn&s):
+  SCMatrixBlock(s)
+{
+  s.get(istart);
+  s.get(iend);
+  s.get(jstart);
+  s.get(jend);
+  data = 0;
+}
+
+void
+SCMatrixLTriSubBlock::save_data_state(StateOut&s)
+{
+  s.put(istart);
+  s.put(iend);
+  s.put(jstart);
+  s.put(jend);
+}
+
+void *
+SCMatrixLTriSubBlock::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCMatrixBlock::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+SCMatrixLTriSubBlock::~SCMatrixLTriSubBlock()
+{
+}
+
+void
+SCMatrixLTriSubBlock::process(SCElementOp*op)
+{
+  SCMatrixLTriSubBlockIter i(this);
+  op->process(i);
+}
+
+void
+SCMatrixLTriSubBlock::process(SCElementOp2*op,
+                              SCMatrixBlock* b)
+{
+  SCMatrixLTriSubBlockIter i(this);
+  SCMatrixLTriSubBlockIter j((SCMatrixLTriSubBlock*)b);
+  op->process(i,j);
+}
+
+void
+SCMatrixLTriSubBlock::process(SCElementOp3*op,
+                              SCMatrixBlock* b1,
+                              SCMatrixBlock* b2)
+{
+  SCMatrixLTriSubBlockIter i(this);
+  SCMatrixLTriSubBlockIter j((SCMatrixLTriSubBlock*)b1);
+  SCMatrixLTriSubBlockIter k((SCMatrixLTriSubBlock*)b2);
+  op->process(i,j,k);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -189,6 +497,121 @@ SCMatrixDiagBlock::~SCMatrixDiagBlock()
   delete[] data;
 }
 
+void
+SCMatrixDiagBlock::process(SCElementOp*op)
+{
+  SCMatrixDiagBlockIter i(this);
+  op->process(i);
+}
+
+void
+SCMatrixDiagBlock::process(SCElementOp2*op,
+                           SCMatrixBlock* b)
+{
+  SCMatrixDiagBlockIter i(this);
+  SCMatrixDiagBlockIter j((SCMatrixDiagBlock*)b);
+  op->process(i,j);
+}
+
+void
+SCMatrixDiagBlock::process(SCElementOp3*op,
+                           SCMatrixBlock* b1, SCMatrixBlock* b2)
+{
+  SCMatrixDiagBlockIter i(this);
+  SCMatrixDiagBlockIter j((SCMatrixDiagBlock*)b1);
+  SCMatrixDiagBlockIter k((SCMatrixDiagBlock*)b2);
+  op->process(i,j,k);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// SCMatrixDiagSubBlock member functions
+
+SavableState_REF_def(SCMatrixDiagSubBlock);
+
+#define CLASSNAME SCMatrixDiagSubBlock
+#define PARENTS public SCMatrixBlock
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+SCMatrixDiagSubBlock::SCMatrixDiagSubBlock(int s, int e, int o,
+                                           double* d):
+  istart(s),
+  jstart(s),
+  iend(e),
+  offset(o),
+  data(d)
+{
+}
+
+SCMatrixDiagSubBlock::SCMatrixDiagSubBlock(int is, int ie,
+                                           int js, int o, double* d):
+  istart(is),
+  jstart(js),
+  iend(ie),
+  offset(o),
+  data(d)
+{
+}
+
+SCMatrixDiagSubBlock::SCMatrixDiagSubBlock(StateIn&s):
+  SCMatrixBlock(s)
+{
+  s.get(istart);
+  s.get(jstart);
+  s.get(iend);
+  s.get(offset);
+  data = 0;
+}
+
+void
+SCMatrixDiagSubBlock::save_data_state(StateOut&s)
+{
+  s.put(istart);
+  s.put(jstart);
+  s.put(iend);
+  s.put(offset);
+}
+
+void *
+SCMatrixDiagSubBlock::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCMatrixBlock::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+SCMatrixDiagSubBlock::~SCMatrixDiagSubBlock()
+{
+}
+
+void
+SCMatrixDiagSubBlock::process(SCElementOp*op)
+{
+  SCMatrixDiagSubBlockIter i(this);
+  op->process(i);
+}
+
+void
+SCMatrixDiagSubBlock::process(SCElementOp2*op,
+                              SCMatrixBlock* b)
+{
+  SCMatrixDiagSubBlockIter i(this);
+  SCMatrixDiagSubBlockIter j((SCMatrixDiagSubBlock*)b);
+  op->process(i,j);
+}
+
+void
+SCMatrixDiagSubBlock::process(SCElementOp3*op,
+                              SCMatrixBlock* b1,
+                              SCMatrixBlock* b2)
+{
+  SCMatrixDiagSubBlockIter i(this);
+  SCMatrixDiagSubBlockIter j((SCMatrixDiagSubBlock*)b1);
+  SCMatrixDiagSubBlockIter k((SCMatrixDiagSubBlock*)b2);
+  op->process(i,j,k);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // SCVectorSimpleBlock member functions
 
@@ -234,4 +657,107 @@ SCVectorSimpleBlock::_castdown(const ClassDesc*cd)
 SCVectorSimpleBlock::~SCVectorSimpleBlock()
 {
   delete[] data;
+}
+
+void
+SCVectorSimpleBlock::process(SCElementOp*op)
+{
+  SCVectorSimpleBlockIter i(this);
+  op->process(i);
+}
+
+void
+SCVectorSimpleBlock::process(SCElementOp2*op,
+                             SCMatrixBlock* b)
+{
+  SCVectorSimpleBlockIter i(this);
+  SCVectorSimpleBlockIter j((SCVectorSimpleBlock*)b);
+  op->process(i,j);
+}
+
+void
+SCVectorSimpleBlock::process(SCElementOp3*op,
+                             SCMatrixBlock* b1,
+                             SCMatrixBlock* b2)
+{
+  SCVectorSimpleBlockIter i(this);
+  SCVectorSimpleBlockIter j((SCVectorSimpleBlock*)b1);
+  SCVectorSimpleBlockIter k((SCVectorSimpleBlock*)b2);
+  op->process(i,j,k);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// SCVectorSimpleSubBlock member functions
+
+SavableState_REF_def(SCVectorSimpleSubBlock);
+
+#define CLASSNAME SCVectorSimpleSubBlock
+#define PARENTS public SCMatrixBlock
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+
+SCVectorSimpleSubBlock::SCVectorSimpleSubBlock(int s, int e, int o,
+                                               double* d):
+  istart(s),
+  iend(e),
+  offset(o),
+  data(d)
+{
+}
+
+SCVectorSimpleSubBlock::SCVectorSimpleSubBlock(StateIn&s):
+  SCMatrixBlock(s)
+{
+  s.get(istart);
+  s.get(iend);
+  s.get(offset);
+  data = 0;
+}
+
+void
+SCVectorSimpleSubBlock::save_data_state(StateOut&s)
+{
+  s.put(istart);
+  s.put(iend);
+  s.put(offset);
+}
+
+void *
+SCVectorSimpleSubBlock::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCMatrixBlock::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+SCVectorSimpleSubBlock::~SCVectorSimpleSubBlock()
+{
+}
+
+void
+SCVectorSimpleSubBlock::process(SCElementOp*op)
+{
+  SCVectorSimpleSubBlockIter i(this);
+  op->process(i);
+}
+
+void
+SCVectorSimpleSubBlock::process(SCElementOp2*op,
+                                SCMatrixBlock* b)
+{
+  SCVectorSimpleSubBlockIter i(this);
+  SCVectorSimpleSubBlockIter j((SCVectorSimpleSubBlock*)b);
+  op->process(i,j);
+}
+
+void
+SCVectorSimpleSubBlock::process(SCElementOp3*op,
+                                SCMatrixBlock* b1,
+                                SCMatrixBlock* b2)
+{
+  SCVectorSimpleSubBlockIter i(this);
+  SCVectorSimpleSubBlockIter j((SCVectorSimpleSubBlock*)b1);
+  SCVectorSimpleSubBlockIter k((SCVectorSimpleSubBlock*)b2);
+  op->process(i,j,k);
 }

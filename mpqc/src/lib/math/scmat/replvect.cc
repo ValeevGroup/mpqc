@@ -1,0 +1,317 @@
+
+#include <stdio.h>
+#include <math.h>
+#include <util/keyval/keyval.h>
+#include <math/scmat/repl.h>
+#include <math/scmat/cmatrix.h>
+#include <math/scmat/elemop.h>
+
+/////////////////////////////////////////////////////////////////////////////
+// ReplSCVector member functions
+
+#define CLASSNAME ReplSCVector
+#define PARENTS public SCVector
+//#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+ReplSCVector::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCVector::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+ReplSCVector::ReplSCVector(ReplSCDimension*a):
+  d(a)
+{
+  vector = new double[a->n()];
+  init_blocklist();
+}
+
+void
+ReplSCVector::before_elemop()
+{
+  // zero out the blocks not in my block list
+  int i;
+  int nproc = messagegrp()->n();
+  int me = messagegrp()->me();
+  for (i=0; i<d->nblock(); i++) {
+      if (i%nproc == me) continue;
+      memset(&vector[d->blockstart(i)], 0,
+             sizeof(double)*(d->blockfence(i) - d->blockstart(i)));
+    }
+}
+
+void
+ReplSCVector::after_elemop()
+{
+  messagegrp()->sum(vector, d->n());
+}
+
+void
+ReplSCVector::init_blocklist()
+{
+  int i;
+  int nproc = messagegrp()->n();
+  int me = messagegrp()->me();
+  blocklist = new SCMatrixBlockList;
+  for (i=0; i<d->nblock(); i++) {
+      if (i%nproc != me) continue;
+      blocklist->insert(new SCVectorSimpleSubBlock(d->blockstart(i),
+                                                   d->blockfence(i),
+                                                   d->blockstart(i),
+                                                   vector));
+    }
+}
+
+ReplSCVector::~ReplSCVector()
+{
+}
+
+RefSCDimension
+ReplSCVector::dim()
+{
+  return d;
+}
+
+double
+ReplSCVector::get_element(int i)
+{
+  return vector[i];
+}
+
+void
+ReplSCVector::set_element(int i,double a)
+{
+  vector[i] = a;
+}
+
+void
+ReplSCVector::accumulate_product(SCMatrix*a,SCVector*b)
+{
+  const char* name = "ReplSCVector::accumulate_product";
+  // make sure that the arguments are of the correct type
+  ReplSCMatrix* la = ReplSCMatrix::require_castdown(a,name);
+  ReplSCVector* lb = ReplSCVector::require_castdown(b,name);
+
+  // make sure that the dimensions match
+  if (!(this->dim() == a->rowdim())
+      || !(a->coldim() == b->dim())) {
+      fprintf(stderr,"ReplSCVector::"
+              "accumulate_product(SCMatrix*a,SCVector*b):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  cmat_mxm(la->rows, 0,
+           &lb->vector, 1,
+           &vector, 1,
+           n(), la->ncol(), 1,
+           1);
+}
+
+void
+ReplSCVector::accumulate_product(SymmSCMatrix*a,SCVector*b)
+{
+  const char* name = "ReplSCVector::accumulate_product";
+  // make sure that the arguments are of the correct type
+  ReplSymmSCMatrix* la = ReplSymmSCMatrix::require_castdown(a,name);
+  ReplSCVector* lb = ReplSCVector::require_castdown(b,name);
+
+  // make sure that the dimensions match
+  if (!(this->dim() == a->dim())
+      || !(a->dim() == b->dim())) {
+      fprintf(stderr,"ReplSCVector::"
+              "accumulate_product(SymmSCMatrix*a,SCVector*b):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  double** adat = la->rows;
+  double* bdat = vector;
+  double tmp;
+  int n = dim()->n();
+  int i, j;
+  for (i=0; i<n; i++) {
+      tmp = 0.0;
+      for (j=0; j<=i; j++) {
+          tmp += adat[i][j] * bdat[j];
+        }
+      for (; j<n; j++) {
+          tmp += adat[j][i] * bdat[j];
+        }
+      vector[i] += tmp;
+    }
+}
+
+void
+ReplSCVector::accumulate(SCVector*a)
+{
+  // make sure that the argument is of the correct type
+  ReplSCVector* la
+    = ReplSCVector::require_castdown(a,"ReplSCVector::accumulate");
+
+  // make sure that the dimensions match
+  if (!(this->dim() == la->dim())) {
+      fprintf(stderr,"ReplSCVector::"
+              "accumulate(SCVector*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int nelem = d->n();
+  int i;
+  for (i=0; i<nelem; i++) vector[i] += la->vector[i];
+}
+
+void
+ReplSCVector::assign(double a)
+{
+  int nelem = d->n();
+  int i;
+  for (i=0; i<nelem; i++) vector[i] = a;
+}
+
+void
+ReplSCVector::assign(SCVector*a)
+{
+  // make sure that the argument is of the correct type
+  ReplSCVector* la
+    = ReplSCVector::require_castdown(a,"ReplSCVector::assign");
+
+  // make sure that the dimensions match
+  if (!(this->dim() == la->dim())) {
+      fprintf(stderr,"ReplSCVector::"
+              "assign(SCVector*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int nelem = d->n();
+  int i;
+  for (i=0; i<nelem; i++) vector[i] = la->vector[i];
+}
+
+void
+ReplSCVector::assign(const double*a)
+{
+  int nelem = d->n();
+  int i;
+  for (i=0; i<nelem; i++) vector[i] = a[i];
+}
+
+double
+ReplSCVector::scalar_product(SCVector*a)
+{
+  // make sure that the argument is of the correct type
+  ReplSCVector* la
+    = ReplSCVector::require_castdown(a,"ReplSCVector::scalar_product");
+
+  // make sure that the dimensions match
+  if (!(this->dim() == la->dim())) {
+      fprintf(stderr,"ReplSCVector::"
+              "scale_product(SCVector*a):\n");
+      fprintf(stderr,"dimensions don't match\n");
+      abort();
+    }
+
+  int nelem = d->n();
+  int i;
+  double result = 0.0;
+  for (i=0; i<nelem; i++) result += vector[i] * la->vector[i];
+  return result;
+}
+
+void
+ReplSCVector::element_op(const RefSCElementOp& op)
+{
+  if (op->has_side_effects()) before_elemop();
+  SCMatrixBlockListIter i;
+  for (i = blocklist->begin(); i != blocklist->end(); i++) {
+      op->process(i.block());
+    }
+  if (op->has_side_effects()) after_elemop();
+}
+
+void
+ReplSCVector::element_op(const RefSCElementOp2& op,
+                          SCVector* m)
+{
+  ReplSCVector *lm
+      = ReplSCVector::require_castdown(m, "ReplSCVector::element_op");
+  if (!lm || d != lm->d) {
+      fprintf(stderr,"ReplSCVector: bad element_op\n");
+      abort();
+    }
+  if (op->has_side_effects()) before_elemop();
+  if (op->has_side_effects_in_arg()) lm->before_elemop();
+  SCMatrixBlockListIter i, j;
+  for (i = blocklist->begin(), j = lm->blocklist->begin();
+       i != blocklist->end();
+       i++, j++) {
+      op->process(i.block(), j.block());
+    }
+  if (op->has_side_effects()) after_elemop();
+  if (op->has_side_effects_in_arg()) lm->after_elemop();
+}
+
+void
+ReplSCVector::element_op(const RefSCElementOp3& op,
+                          SCVector* m,SCVector* n)
+{
+  ReplSCVector *lm
+      = ReplSCVector::require_castdown(m, "ReplSCVector::element_op");
+  ReplSCVector *ln
+      = ReplSCVector::require_castdown(n, "ReplSCVector::element_op");
+  if (!lm || !ln || d != lm->d || d != ln->d) {
+      fprintf(stderr,"ReplSCVector: bad element_op\n");
+      abort();
+    }
+  if (op->has_side_effects()) before_elemop();
+  if (op->has_side_effects_in_arg1()) lm->before_elemop();
+  if (op->has_side_effects_in_arg2()) ln->before_elemop();
+  SCMatrixBlockListIter i, j, k;
+  for (i = blocklist->begin(),
+           j = lm->blocklist->begin(),
+           k = ln->blocklist->begin();
+       i != blocklist->end();
+       i++, j++, k++) {
+      op->process(i.block(), j.block(), k.block());
+    }
+  if (op->has_side_effects()) after_elemop();
+  if (op->has_side_effects_in_arg1()) lm->after_elemop();
+  if (op->has_side_effects_in_arg2()) ln->after_elemop();
+}
+
+// from Ed Seidl at the NIH (with a bit of hacking)
+void
+ReplSCVector::print(const char *title, ostream& os, int prec)
+{
+  if (messagegrp()->me() != 0) return;
+
+  int i;
+  int lwidth;
+  double max=this->maxabs();
+
+  max=(max==0.0)?1.0:log10(max);
+  if(max < 0.0) max=1.0;
+
+  lwidth = prec+5+(int) max;
+
+  os.setf(ios::fixed,ios::floatfield); os.precision(prec);
+  os.setf(ios::right,ios::adjustfield);
+
+  if(title) os << "\n" << title << "\n";
+  else os << "\n";
+
+  if(n()==0) { os << " empty vector\n"; return; }
+
+  for (i=0; i<n(); i++) {
+      os.width(5); os << i+1;
+      os.width(lwidth); os << vector[i];
+      os << "\n";
+    }
+  os << "\n";
+
+  os.flush();
+}

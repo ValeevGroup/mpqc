@@ -39,9 +39,21 @@ SCElementOp::has_collect()
   return 0;
 }
 
+int
+SCElementOp::has_side_effects()
+{
+  return 0;
+}
+
 void
 SCElementOp::collect(RefSCElementOp&)
 {
+}
+
+void
+SCElementOp::process(SCMatrixBlock* a)
+{
+  a->process(this);
 }
 
 // If specializations of SCElementOp do not handle a particle
@@ -114,9 +126,27 @@ SCElementOp2::has_collect()
   return 0;
 }
 
+int
+SCElementOp2::has_side_effects()
+{
+  return 0;
+}
+
+int
+SCElementOp2::has_side_effects_in_arg()
+{
+  return 0;
+}
+
 void
 SCElementOp2::collect(RefSCElementOp2&)
 {
+}
+
+void
+SCElementOp2::process(SCMatrixBlock* a, SCMatrixBlock* b)
+{
+  a->process(this, b);
 }
 
 // If specializations of SCElementOp2 do not handle a particle
@@ -196,9 +226,35 @@ SCElementOp3::has_collect()
   return 0;
 }
 
+int
+SCElementOp3::has_side_effects()
+{
+  return 0;
+}
+
+int
+SCElementOp3::has_side_effects_in_arg1()
+{
+  return 0;
+}
+
+int
+SCElementOp3::has_side_effects_in_arg2()
+{
+  return 0;
+}
+
 void
 SCElementOp3::collect(RefSCElementOp3&)
 {
+}
+
+void
+SCElementOp3::process(SCMatrixBlock* a,
+                      SCMatrixBlock* b,
+                      SCMatrixBlock* c)
+{
+  a->process(this, b, c);
 }
 
 // If specializations of SCElementOp3 do not handle a particle
@@ -292,6 +348,12 @@ SCElementScale::process(SCMatrixBlockIter&i)
   for (i.reset(); i; ++i) {
       i.set(scale*i.get());
     }
+}
+
+int
+SCElementScale::has_side_effects()
+{
+  return 1;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -393,6 +455,12 @@ SCDestructiveElementProduct::process(SCMatrixBlockIter&i,
     }
 }
 
+int
+SCDestructiveElementProduct::has_side_effects()
+{
+  return 1;
+}
+
 /////////////////////////////////////////////////////////////////////////
 // SCElementInvert members
 
@@ -427,6 +495,12 @@ SCElementInvert::process(SCMatrixBlockIter&i)
     }
 }
 
+int
+SCElementInvert::has_side_effects()
+{
+  return 1;
+}
+
 /////////////////////////////////////////////////////////////////////////
 // SCElementSquareRoot members
 
@@ -459,6 +533,12 @@ SCElementSquareRoot::process(SCMatrixBlockIter&i)
   for (i.reset(); i; ++i) {
       i.set(sqrt(i.get()));
     }
+}
+
+int
+SCElementSquareRoot::has_side_effects()
+{
+  return 1;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -549,6 +629,12 @@ SCElementAssign::process(SCMatrixBlockIter&i)
     }
 }
 
+int
+SCElementAssign::has_side_effects()
+{
+  return 1;
+}
+
 /////////////////////////////////////////////////////////////////////////
 // SCElementShiftDiagonal members
 
@@ -581,5 +667,67 @@ SCElementShiftDiagonal::process(SCMatrixBlockIter&i)
 {
   for (i.reset(); i; ++i) {
       if (i.i() == i.j()) i.set(shift_diagonal+i.get());
+    }
+}
+
+int
+SCElementShiftDiagonal::has_side_effects()
+{
+  return 1;
+}
+
+/////////////////////////////////////////////////////////////////////////
+// SCElementDot members
+
+#define CLASSNAME SCElementDot
+#define PARENTS   public SCElementOp
+#define HAVE_STATEIN_CTOR
+#include <util/state/statei.h>
+#include <util/class/classi.h>
+void *
+SCElementDot::_castdown(const ClassDesc*cd)
+{
+  void* casts[1];
+  casts[0] = SCElementOp::_castdown(cd);
+  return do_castdowns(casts,cd);
+}
+
+SCElementDot::SCElementDot(double**a, double**b, int n):
+  avects(a),
+  bvects(b),
+  length(n)
+{
+}
+
+SCElementDot::SCElementDot(StateIn&s)
+{
+  fprintf(stderr,"SCElementDot does not permit StateIn CTOR\n");
+  abort();
+}
+
+void
+SCElementDot::save_data_state(StateOut&s)
+{
+  fprintf(stderr,"SCElementDot does not permit save_data_state\n");
+  abort();
+}
+
+int
+SCElementDot::has_side_effects()
+{
+  return 1;
+}
+
+void
+SCElementDot::process(SCMatrixBlockIter&i)
+{
+  for (i.reset(); i; ++i) {
+      double tmp = i.get();
+      double* a = avects[i.i()];
+      double* b = bvects[i.j()];
+      for (int j = length; j; j--, a++, b++) {
+          tmp += *a * *b;
+        }
+      i.set(tmp);
     }
 }

@@ -1,8 +1,12 @@
 
 #include <iostream.h>
 #include <math.h>
+#include <stdio.h>
+#include <util/misc/libmisc.h>
+#include <util/group/picl.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/blkiter.h>
+#include <math/scmat/elemop.h>
 
 class Prod3: public SCElementOp3 {
   private:
@@ -16,6 +20,7 @@ class Prod3: public SCElementOp3 {
             i1.set(i2.get()*i3.get());
           }
       }
+    int has_side_effects() { return 1; }
 };
 
 void
@@ -48,8 +53,15 @@ randomize(RefSCVector&m)
 
 // test abstract matrices
 void
-matrixtest(RefSCDimension d1,RefSCDimension d2,RefSCDimension d3)
+matrixtest(
+    RefSCMatrixKit kit, RefKeyVal keyval,
+    RefSCDimension d1,RefSCDimension d2,RefSCDimension d3)
 {
+  // The tim_enter routines require PICL
+  int numproc, me, host;
+  open0(&numproc, &me, &host);
+
+  tim_enter("matrixtest");
   int i;
   int j;
 
@@ -73,6 +85,50 @@ matrixtest(RefSCDimension d1,RefSCDimension d2,RefSCDimension d3)
   a2.print("a2");
   a3.print("a3");
 
+  /////////////////////////////////
+  
+  RefSymmSCMatrix sa(d3);
+  RefSymmSCMatrix sa2(d3);
+  RefSymmSCMatrix sa3(d3);
+
+  sa.assign(7.0);
+  sa2.assign(5.0);
+  sa3.assign(3.0);
+  sa.element_op(op3,sa2,sa3);
+  sa.print("sa");
+  sa2.print("sa2");
+  sa3.print("sa3");
+
+  /////////////////////////////////
+  
+  RefDiagSCMatrix da(d3);
+  RefDiagSCMatrix da2(d3);
+  RefDiagSCMatrix da3(d3);
+
+  da.assign(7.0);
+  da2.assign(5.0);
+  da3.assign(3.0);
+  da.element_op(op3,da2,da3);
+  da.print("da");
+  da2.print("da2");
+  da3.print("da3");
+
+  /////////////////////////////////
+  
+  RefSCVector vva(d3);
+  RefSCVector vva2(d3);
+  RefSCVector vva3(d3);
+
+  vva.assign(7.0);
+  vva2.assign(5.0);
+  vva3.assign(3.0);
+  vva.element_op(op3,vva2,vva3);
+  vva.print("vva");
+  vva2.print("vva2");
+  vva3.print("vva3");
+
+  ////////////////////////////////
+
   a.assign(0.0);
   b.assign(1.0);
   c.assign(2.0);
@@ -81,13 +137,28 @@ matrixtest(RefSCDimension d1,RefSCDimension d2,RefSCDimension d3)
   b.print("b");
   c.print("c");
 
+  tim_enter("mxm");
   RefSCMatrix d = c * b.t();
+  tim_exit("mxm");
+
+  int nd4 = keyval->intvalue("n4");
+  if (!nd4) nd4 = 1;
+  cout << "n4 = " << nd4 << endl;
+  RefSCDimension d4 = kit->dimension(nd4);
+  RefSCMatrix aaa(d4,d4);
+  RefSCMatrix bbb(d4,d4);
+  aaa.assign(1.0);
+  bbb.assign(2.0);
+  tim_enter("mxm2");
+  RefSCMatrix ccc = aaa*bbb;
+  tim_exit("mxm2");
 
   d.print("d");
 
   RefSymmSCMatrix e(d3);
 
   e.assign(1.0);
+  e.print("e");
   e.eigvals().print("e.eigvals()");
   e.eigvecs().print("e.eigvecs()");
 
@@ -171,4 +242,8 @@ matrixtest(RefSCDimension d1,RefSCDimension d2,RefSCDimension d3)
   cout << "bmbt_test\n";
   bmbt_test.print();
 
+  tim_exit("matrixtest");
+  tim_print(0);
+
+  close0(0);
 }

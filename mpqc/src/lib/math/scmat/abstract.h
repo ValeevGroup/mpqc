@@ -364,6 +364,18 @@ class SCMatrixKit: public SavableState {
     SymmSCMatrix* symmmatrix(const RefSCDimension&);
     DiagSCMatrix* diagmatrix(const RefSCDimension&);
     SCVector* vector(const RefSCDimension&);
+
+    //texi Given the dimensions and a @code{StateIn} object,
+    // restore matrices or vectors.
+    virtual SCMatrix* restore_matrix(StateIn&,
+                                     const RefSCDimension&,
+                                     const RefSCDimension&) = 0;
+    virtual SymmSCMatrix* restore_symmmatrix(StateIn&,
+                                             const RefSCDimension&) = 0;
+    virtual DiagSCMatrix* restore_diagmatrix(StateIn&,
+                                             const RefSCDimension&) = 0;
+    virtual SCVector* restore_vector(StateIn&,
+                                     const RefSCDimension&) = 0;
 };
 
 #endif

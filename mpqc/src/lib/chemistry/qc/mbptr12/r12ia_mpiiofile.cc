@@ -67,18 +67,21 @@ R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char* file
   // Create the file
   icounter_ = 0;
   filename_ = strdup(filename);
-  if (!restart) {
-    int errcod = MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_CREATE | MPI_MODE_DELETE_ON_CLOSE,
-                               MPI_INFO_NULL, &datafile_);
-    if (errcod != MPI_SUCCESS) {
-      char* errstr;
-      int errstrlen;
-      MPI_Error_string(errcod, errstr, &errstrlen);
-      ExEnv::out0() << "R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile -- MPI-I/O error: " << errstr << endl;
-      throw std::runtime_error("R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile -- could not open MPI-I/O file");
-    }
-    MPI_File_close(&datafile_);
-  }
+
+  //
+  // Try opening the file
+  //
+  int amode;
+  if (!restart)
+    amode = MPI_MODE_CREATE | MPI_MODE_DELETE_ON_CLOSE | MPI_MODE_WRONLY;
+  else
+    amode = MPI_MODE_RDONLY;
+
+  errcod = MPI_File_open(MPI_COMM_WORLD, filename_, amode,
+                         MPI_INFO_NULL, &datafile_);
+  check_error_code_(errcod);
+  errcod = MPI_File_close(&datafile_);
+  check_error_code_(errcod);
 }
 
 R12IntsAcc_MPIIOFile::~R12IntsAcc_MPIIOFile()
@@ -96,6 +99,30 @@ R12IntsAcc_MPIIOFile::~R12IntsAcc_MPIIOFile()
   free(filename_);
 }
 
+
+void
+R12IntsAcc_MPIIOFile::check_error_code_(int errcod) const
+{
+
+  if (errcod != MPI_SUCCESS) {
+
+    int errclass;
+    MPI_Error_class(errcod, &errclass);
+
+    switch (errclass) {
+    default:
+      char* errstr = new char[MPI_MAX_ERROR_STRING];
+      int errstrlen;
+      MPI_Error_string(errcod, errstr, &errstrlen);
+      ExEnv::out0() << "R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile -- MPI-I/O error: " << errstr 
+                    << " on file " << filename_ << endl;
+      delete[] errstr;
+      throw std::runtime_error("R12IntsAcc_MPIIOFile::R12IntsAcc_MPIIOFile -- MPI-I/O error");
+    }
+  }
+
+}
+
 void
 R12IntsAcc_MPIIOFile::store_pair_block(int i, int j, double *ints)
 {
@@ -110,14 +137,16 @@ R12IntsAcc_MPIIOFile::commit()
   mem_->sync();
   mem_->deactivate();
   R12IntsAcc::commit();
-  MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_RDONLY | MPI_MODE_DELETE_ON_CLOSE, MPI_INFO_NULL, &datafile_);
+  int errcod = MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_RDONLY | MPI_MODE_DELETE_ON_CLOSE, MPI_INFO_NULL, &datafile_);
+  check_error_code_(errcod);
 }
 
 void
 R12IntsAcc_MPIIOFile::deactivate()
 {
   mem_->activate();
-  MPI_File_close(&datafile_);
+  int errcod = MPI_File_close(&datafile_);
+  check_error_code_(errcod);
 }
 
 void
@@ -180,6 +209,7 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
 
     // Append the data to the file
     int errcod = MPI_File_open(MPI_COMM_WORLD, filename_, MPI_MODE_CREATE | MPI_MODE_APPEND | MPI_MODE_WRONLY, MPI_INFO_NULL, &datafile_);
+    check_error_code_(errcod);
     
     for (int i=0; i<ni; i++)
       for (int j=0; j<nocc_act_; j++) {
@@ -190,12 +220,15 @@ R12IntsAcc_MPIIOFile_Ind::store_memorygrp(Ref<MemoryGrp>& mem, int ni)
         double *data = (double *) mem->localdata() + nbasis__2_*num_te_types()*local_ij_index;
         
         int IJ = ij_index(i+icounter_,j);
-        MPI_File_seek(datafile_, pairblk_[IJ].offset_, MPI_SEEK_SET);
+        int errcod = MPI_File_seek(datafile_, pairblk_[IJ].offset_, MPI_SEEK_SET);
+        check_error_code_(errcod);
         MPI_Status status;
-        MPI_File_write(datafile_, (void *)data, nints_per_block_, MPI_DOUBLE, &status);
+        errcod = MPI_File_write(datafile_, (void *)data, nints_per_block_, MPI_DOUBLE, &status);
+        check_error_code_(errcod);
       }
     // Close the file and update the i counter
-    MPI_File_close(&datafile_);
+    errcod = MPI_File_close(&datafile_);
+    check_error_code_(errcod);
     icounter_ += ni;
   }
 }
@@ -208,10 +241,12 @@ R12IntsAcc_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type
   // Always first check if it's already in memory
   if (pb->ints_[oper_type] == 0) {
     MPI_Offset offset = pb->offset_ + (MPI_Offset)oper_type*blksize_;
-    MPI_File_seek(datafile_, offset, MPI_SEEK_SET);
+    int errcod = MPI_File_seek(datafile_, offset, MPI_SEEK_SET);
+    check_error_code_(errcod);
     double *buffer = new double[nbasis__2_];
     MPI_Status status;
-    MPI_File_read(datafile_, (void *)buffer, nbasis__2_, MPI_DOUBLE, &status);
+    errcod = MPI_File_read(datafile_, (void *)buffer, nbasis__2_, MPI_DOUBLE, &status);
+    check_error_code_(errcod);
     pb->ints_[oper_type] = buffer;
   }
   pb->refcount_[oper_type] += 1;

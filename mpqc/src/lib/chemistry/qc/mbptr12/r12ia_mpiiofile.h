@@ -63,6 +63,9 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
       int refcount_[max_num_te_types_];      // number of references
       MPI_Offset offset_;      // location in file (in bytes)
     } *pairblk_;
+
+    /// Utility function to check MPI I/O error codes.
+    void check_error_code_(int errcod) const;
     
   public:
     R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char *filename, int num_te_types, int nbasis1, int nbasis2,

@@ -160,6 +160,7 @@ PsiInput::write_geom(const Ref<Molecule>& mol)
     write_keyword("subgroup",mol->point_group()->symbol());
   }
 
+  write_keyword("units","bohr");
   write_string("geometry = (\n");
   for (int i=0; i < mol->natom(); i++) {
     write_string("  (");
@@ -255,7 +256,7 @@ PsiInput::write_basis_sets(const Ref<GaussianBasisSet>& basis)
 void
 PsiInput::write_defaults(const Ref<PsiExEnv>& exenv, const char *dertype)
 {
-  begin_section("default");
+  begin_section("psi");
   
   write_key_wq("label"," ");
   write_keyword("dertype",dertype);
@@ -271,7 +272,7 @@ PsiInput::write_defaults(const Ref<PsiExEnv>& exenv, const char *dertype)
   }
   delete[] scrname;
   end_section();
-  write_string("file30: ( nvolume = 1 volume1 = \"./\" )");
+  write_string("file32: ( nvolume = 1 volume1 = \"./\" )\n");
   end_section();
 
   end_section();

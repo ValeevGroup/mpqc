@@ -394,7 +394,7 @@ EriCints::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 	    REALTYPE *raw_data = build_eri[tam1][tam2][tam3][tam4](&Libint_, num_prim_comb);
 #ifdef NONDOUBLE_INTS
 	    for(int ijkl=0; ijkl<size; ijkl++)
-	      prim_ints_[buffer_offset + ijkl] = (double) raw_data[i];
+	      prim_ints_[buffer_offset + ijkl] = (double) raw_data[ijkl];
 #else
 	    memcpy(&(prim_ints_[buffer_offset]),raw_data,sizeof(REALTYPE)*size);
 #endif
@@ -403,7 +403,7 @@ EriCints::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 	    REALTYPE temp = 0.0;
 	    for(int i=0;i<num_prim_comb;i++)
 	      temp += Libint_.PrimQuartet[i].F[0];
-	    target_ints_buffer_[buffer_offset] = (double) temp;
+	    prim_ints_[buffer_offset] = (double) temp;
 	  }
 	  buffer_offset += size;
 	}}}}

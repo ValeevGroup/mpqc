@@ -9,12 +9,12 @@ mole: [
       cwd = ./
       fileprefix = psi.test
       nscratch = 1
-      scratch = [ "/scratch/evaleev/" ]
+      scratch = [ "/tmp/" ]
     )
 
     % MolecularEnergy input
     molecule<Molecule>: (
-        symmetry = c2v
+        symmetry = auto
         {atoms geometry} = {
           H  [  -1.5  0.0  -0.3 ]
           H  [   1.5  0.0  -0.3 ]

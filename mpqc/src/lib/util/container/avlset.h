@@ -85,7 +85,7 @@ template <class K>
 void
 AVLSet<K>::operator -= (const AVLSet<K> &s)
 {
-  for (AVLSet<K>::iterator i=s.begin(); i!=s.end(); i++) {
+  for (typename AVLSet<K>::iterator i=s.begin(); i!=s.end(); i++) {
       remove(*i);
     }
 }
@@ -94,7 +94,7 @@ template <class K>
 void
 AVLSet<K>::operator |= (const AVLSet<K> &s)
 {
-  for (AVLSet<K>::iterator i=s.begin(); i!=s.end(); i++) {
+  for (typename AVLSet<K>::iterator i=s.begin(); i!=s.end(); i++) {
       insert(*i);
     }
 }

@@ -25,6 +25,12 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+// This is needed to make GNU extensions available, such as
+// feenableexcept and fedisableexcept.
+#ifndef _GNU_SOURCE
+#  define _GNU_SOURCE
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include <scconfig.h>
 #endif
@@ -143,42 +149,9 @@ clean_up(void)
 }
 
 #include <signal.h>
-#if defined(HAVE_MACHINE_FPU_H)
-#include <machine/fpu.h>
-#elif defined(HAVE_ASM_FPU_H)
-#include <asm/fpu.h>
-#endif
 
-#if defined(HAVE_IEEE_SET_FP_CONTROL) && defined(HAVE_IEEE_GET_FP_CONTROL)
-extern "C" {
-  void ieee_set_fp_control(long);
-  long ieee_get_fp_control(void);
-};
-void sigfpe_handler(int)
-{
-  unsigned long fp_control = ieee_get_fp_control();
-  int fatal = 0;
-  if (fp_control & IEEE_STATUS_INV) {
-      ExEnv::outn() << "SIGFPE: invalid operation" << endl;
-      fatal = 1;
-    }
-  if (fp_control & IEEE_STATUS_DZE) {
-      ExEnv::outn() << "SIGFPE: divide by zero" << endl;
-      fatal = 1;
-    }
-  if (fp_control & IEEE_STATUS_OVF) {
-      ExEnv::outn() << "SIGFPE: overflow" << endl;
-      fatal = 1;
-    }
-  if (fp_control & IEEE_STATUS_UNF) {
-      //ExEnv::outn() << "SIGFPE: underflow" << endl;
-    }
-  if (fp_control & IEEE_STATUS_INE) {
-      //ExEnv::outn() << "SIGFPE: inexact" << endl;
-    }
-  // throw'ing due to an FPE will violate nothrow guarantees, so abort
-  if (fatal) abort();
-}
+#ifdef HAVE_FENV_H
+#  include <fenv.h>
 #endif
 
 int
@@ -191,15 +164,27 @@ try_main(int argc, char *argv[])
   const char *devnull = "/dev/null";
   atexit(clean_up);
 
-#if defined(__i386__) && defined(__GNUC__)
-  // make floating point errors cause an exception (except for denormalized
-  // operands, since small numbers are denormalized)
-// This causes problems with SIGFPE in gdb starting with Linux/Mandrake8.0
-//  asm("fldcw %0" : : "o" (0x372));
+#ifdef HAVE_FEENABLEEXCEPT
+  // this uses a glibc extension to trap on individual exceptions
+# ifdef FE_DIVBYZERO
+  feenableexcept(FE_DIVBYZERO);
+# endif
+# ifdef FE_INVALID
+  feenableexcept(FE_INVALID);
+# endif
+# ifdef FE_OVERFLOW
+  feenableexcept(FE_OVERFLOW);
+# endif
 #endif
 
-#if defined(HAVE_IEEE_SET_FP_CONTROL) && defined(HAVE_IEEE_GET_FP_CONTROL)
-  signal(SIGFPE,sigfpe_handler);
+#ifdef HAVE_FEDISABLEEXCEPT
+  // this uses a glibc extension to not trap on individual exceptions
+# ifdef FE_UNDERFLOW
+  fedisableexcept(FE_UNDERFLOW);
+# endif
+# ifdef FE_INEXACT
+  fedisableexcept(FE_INEXACT);
+# endif
 #endif
 
 #if defined(HAVE_SETRLIMIT)

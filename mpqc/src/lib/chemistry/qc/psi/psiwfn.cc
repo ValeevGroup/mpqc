@@ -3,6 +3,7 @@
 #pragma implementation
 #endif
 
+#include <stdexcept>
 #include <math.h>
 
 #include <util/keyval/keyval.h>
@@ -54,13 +55,13 @@ PsiWavefunction::PsiWavefunction(StateIn&s):
   SavableState(s),
   Wavefunction(s)
 {
-  abort();
+  throw std::runtime_error("PsiWavefunction::PsiWavefunction(StateIn&) -- cannot restore state of Psi wave functions");
 }
 
 void
 PsiWavefunction::save_data_state(StateOut&s)
 {
-  abort();
+  throw std::runtime_error("PsiWavefunction::save_data_state -- cannot save state of Psi wave functions, set savestate = no in your input file");
 }
 
 void
@@ -139,7 +140,7 @@ PsiWavefunction::write_basic_input(int conv)
 
   Ref<PsiInput> psiinput = get_psi_input();
   psiinput->write_defaults(exenv_,dertype);
-  psiinput->write_keyword("default:memory",memory_);
+  psiinput->write_keyword("psi:memory",memory_);
   psiinput->begin_section("input");
   psiinput->write_keyword("no_reorient","true");
   psiinput->write_keyword("keep_ref_frame","true");
@@ -205,17 +206,14 @@ PsiSCF::~PsiSCF()
 }
 
 PsiSCF::PsiSCF(StateIn&s):
-  SavableState(s),
   PsiWavefunction(s)
 {
-  abort();
 }
 
 void
 PsiSCF::save_data_state(StateOut&s)
 {
   PsiWavefunction::save_data_state(s);
-  abort();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -241,19 +239,18 @@ PsiCLHF::~PsiCLHF()
 PsiCLHF::PsiCLHF(StateIn&s):
   PsiSCF(s)
 {
-  abort();
 }
 
 void
 PsiCLHF::write_basic_input(int convergence)
 {
   Ref<PsiInput> input = get_psi_input();
-  input->write_keyword("default:reference","rhf");
+  input->write_keyword("psi:reference","rhf");
   if (docc_)
-    input->write_keyword_array("default:docc",nirrep_,docc_);
+    input->write_keyword_array("psi:docc",nirrep_,docc_);
   else {
-    input->write_keyword("default:multp",multp_);
-    input->write_keyword("default:multp",charge_);
+    input->write_keyword("psi:multp",multp_);
+    input->write_keyword("psi:charge",charge_);
   }
 }
 
@@ -264,7 +261,7 @@ PsiCLHF::write_input(int convergence)
   input->open();
   PsiWavefunction::write_basic_input(convergence);
   write_basic_input(convergence);
-  input->write_keyword("default:wfn","scf");
+  input->write_keyword("psi:wfn","scf");
   input->close();
 }
 
@@ -291,18 +288,17 @@ PsiHSOSHF::~PsiHSOSHF()
 PsiHSOSHF::PsiHSOSHF(StateIn&s):
   PsiSCF(s)
 {
-  abort();
 }
 
 void
 PsiHSOSHF::write_basic_input(int convergence)
 {
   Ref<PsiInput> input = get_psi_input();
-  input->write_keyword("default:reference","rohf");
+  input->write_keyword("psi:reference","rohf");
   if (docc_)
-    input->write_keyword_array("default:docc",nirrep_,docc_);
+    input->write_keyword_array("psi:docc",nirrep_,docc_);
   if (socc_)
-    input->write_keyword_array("default:socc",nirrep_,socc_);
+    input->write_keyword_array("psi:socc",nirrep_,socc_);
 }
 
 void
@@ -312,7 +308,7 @@ PsiHSOSHF::write_input(int convergence)
   input->open();
   PsiWavefunction::write_basic_input(convergence);
   write_basic_input(convergence);
-  input->write_keyword("default:wfn","scf");
+  input->write_keyword("psi:wfn","scf");
   input->close();
 }
 
@@ -335,18 +331,17 @@ PsiUHF::~PsiUHF()
 PsiUHF::PsiUHF(StateIn&s):
   PsiSCF(s)
 {
-  abort();
 }
 
 void
 PsiUHF::write_basic_input(int convergence)
 {
   Ref<PsiInput> input = get_psi_input();
-  input->write_keyword("default:reference","uhf");
+  input->write_keyword("psi:reference","uhf");
   if (docc_)
-    input->write_keyword_array("default:docc",nirrep_,docc_);
+    input->write_keyword_array("psi:docc",nirrep_,docc_);
   if (socc_)
-    input->write_keyword_array("default:socc",nirrep_,socc_);
+    input->write_keyword_array("psi:socc",nirrep_,socc_);
 }
 
 void
@@ -356,7 +351,7 @@ PsiUHF::write_input(int convergence)
   input->open();
   PsiWavefunction::write_basic_input(convergence);
   write_basic_input(convergence);
-  input->write_keyword("default:wfn","scf");
+  input->write_keyword("psi:wfn","scf");
   input->close();
 }
 
@@ -381,10 +376,9 @@ PsiCCSD::~PsiCCSD()
 }
 
 PsiCCSD::PsiCCSD(StateIn&s):
-  SavableState(s),
   PsiWavefunction(s)
 {
-  abort();
+  reference_ << SavableState::restore_state(s);
 }
 
 int
@@ -401,7 +395,7 @@ void
 PsiCCSD::save_data_state(StateOut&s)
 {
   PsiWavefunction::save_data_state(s);
-  abort();
+  SavableState::save_state(reference_.pointer(),s);
 }
 
 void
@@ -416,11 +410,11 @@ PsiCCSD::write_input(int convergence)
   input->open();
   PsiWavefunction::write_basic_input(convergence);
   reference_->write_basic_input(convergence);
-  input->write_keyword("default:wfn","ccsd");
+  input->write_keyword("psi:wfn","ccsd");
   if (frozen_docc_)
-    input->write_keyword_array("default:frozen_docc",nirrep_,frozen_docc_);
+    input->write_keyword_array("psi:frozen_docc",nirrep_,frozen_docc_);
   if (frozen_uocc_)
-    input->write_keyword_array("default:frozen_uocc",nirrep_,frozen_uocc_);
+    input->write_keyword_array("psi:frozen_uocc",nirrep_,frozen_uocc_);
   input->close();
 }
 
@@ -451,10 +445,9 @@ PsiCCSD_T::~PsiCCSD_T()
 }
 
 PsiCCSD_T::PsiCCSD_T(StateIn&s):
-  SavableState(s),
   PsiWavefunction(s)
 {
-  abort();
+  reference_ << SavableState::restore_state(s);
 }
 
 int
@@ -469,7 +462,7 @@ void
 PsiCCSD_T::save_data_state(StateOut&s)
 {
   PsiWavefunction::save_data_state(s);
-  abort();
+  SavableState::save_state(reference_.pointer(),s);
 }
 
 void
@@ -484,14 +477,14 @@ PsiCCSD_T::write_input(int convergence)
   input->open();
   PsiWavefunction::write_basic_input(convergence);
   reference_->write_basic_input(convergence);
-  input->write_keyword("default:wfn","ccsd");
+  input->write_keyword("psi:wfn","ccsd");
   input->begin_section("psi");
   input->write_keyword("exec","(\"cints\" \"cscf\" \"transqt\" \"ccsort\" \"ccenergy\" \"cchbar\" \"cctriples\")");
   input->end_section();
   if (frozen_docc_)
-    input->write_keyword_array("default:frozen_docc",nirrep_,frozen_docc_);
+    input->write_keyword_array("psi:frozen_docc",nirrep_,frozen_docc_);
   if (frozen_uocc_)
-    input->write_keyword_array("default:frozen_uocc",nirrep_,frozen_uocc_);
+    input->write_keyword_array("psi:frozen_uocc",nirrep_,frozen_uocc_);
   input->close();
 }
 

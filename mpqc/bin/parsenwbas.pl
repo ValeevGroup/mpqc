@@ -114,9 +114,10 @@ $pured = 0; # if $pure or $pured d's are pure
 $puref = 1; # if $pure or $puref f's are pure; by default all f's are pure
 # make sure puream is 1 for correlation consistent and ano basis sets
 # and 6-311g and sto-ng
-if ($basisname =~ /cc-p/ || $basisname =~ /ano/
-    || $basisname =~ /^6-311g/
-    || $basisname =~ /^sto-[1-9]g/
+if ($basisname =~ /cc-p/ || $basisname =~ /ANO/
+    || $basisname =~ /^6-311G/
+    || $basisname =~ /^6-311\+/
+    || $basisname =~ /^STO-[1-9]G/
     ) {
     $pure = 1;
 }
@@ -139,57 +140,61 @@ while (<NWCHEMBASIS>) {
   #  next;
   GOTLINE:
   #printf "-----> %s\n", $_;
-  if (/<pre>(BASIS.* +[^ ]* +)([A-Z]*)/) {
+  if (/^ *(BASIS.* +[^ ]* +)([A-Z]*)/) {
     $retrieve = 1;
+    $spherical_option = $2;
     $basis = $1;
     $line = "$1$2";
     $basis =~ s/^[^\"]*\"//; #"
     $basis =~ s/\"[^\"]*$//; #"
     printf "Basis = %s\n", $basis;
-    if ($2 eq "SPHERICAL") {
+    if ($spherical_option eq "SPHERICAL") {
       $pure = 1;
     }
     #printf "%s\n", $line;
     printf MPQCBASIS "%%%s\n", $line;
   }
-  elsif (/^<p>END/) {
+  elsif (/^ *END/) {
     $retrieve = 0;
   }
-  elsif (/^<p>\#(.*)/) {
+  elsif (/^ *\#(.*)/) {
     my $comment = $1;
     $comment =~ s/ *$//;
     $savedcomments = sprintf("%s%%%s\n", $savedcomments, $comment);
   }
   elsif ($retrieve == 1) {
-    /^<p>(.*)/;
+    /^(.*)/;
     $_ = $1;
     #printf "%s\n", $_;
     if (/^ *([A-Z][a-z]*) +([A-Za-z]+)/) {
       if (!($1 eq $atom)) {
         if ($atom eq none) {
           $atom = $1;
-          $am = $2;
+          my $am = $2;
+          print "first shell: atom = $atom am = $am\n";
           &start_atom;
-          &start_shell;
+          &start_shell($am);
         }
         else {
           &finish_shell;
           &finish_atom;
           $atom = $1;
-          $am = $2;
+          my $am = $2;
+          print "new atom: atom = $atom am = $am\n";
           &start_atom;
-          &start_shell;
+          &start_shell($am);
         }
       }
       else {
         &finish_shell;
-        $am = $2;
-        &start_shell;
+        my $am = $2;
+        print "new shell on old atom: atom = $atom am = $am\n";
+        &start_shell($am);
       }
     goto GOTLINE;
     }
     else {
-      printf MPQCBASIS "   %s\n", $1;
+      $exp_coef_lines[$#exp_coef_lines+1] = $1;
     }
   }
 }
@@ -219,14 +224,17 @@ sub finish_atom {
 }
 
 sub start_shell {
+  my $am = shift;
+
   printf MPQCBASIS "%s", $savedcomments;
   $savedcomments = "";
   while (<NWCHEMBASIS>) {
     last;
   }
-  @coefandexp = split(' ',$_);
-  $ncoef = $#coefandexp - 1;
-  ($amlower = $am) =~ tr/A-Z/a-z/;
+  @coefandexp = split;
+  $ncoef = $#coefandexp;
+  my $amlower = $am;
+  $amlower =~ tr/A-Z/a-z/;
   printf MPQCBASIS "  (type:";
   if ($amlower eq "sp") {
     printf MPQCBASIS " [am = p am = s]\n";
@@ -265,6 +273,88 @@ sub start_shell {
   printf MPQCBASIS "} = {\n";
 }
 
+# This does the formatting of the exponent/coefficient lines in a way to
+# make the lines the same as the original format, if possible.  This has
+# the advantage making easier to examine diffs of the basis sets to check
+# for problems.
+sub print_lines_1 {
+  my $i;
+
+  foreach $i (0..$#exp_coef_lines) {
+      $exp_coef_lines[$i] =~ s/^ +//;
+      $exp_coef_lines[$i] =~ s/ +$//;
+  }
+
+  my $remove_last_digit_from_exponent = 1;
+  foreach $i (0..$#exp_coef_lines) {
+      my $line = $exp_coef_lines[$i];
+      @fields = split(/ +/,$line);
+      my $exponent = $fields[0];
+      if (!($exponent =~ /0$/)) {
+          $remove_last_digit_from_exponent = 0;
+      }
+      if (&nright($exponent) == 8) {
+          $remove_last_digit_from_exponent = 0;
+      }
+  }
+
+  foreach $i (0..$#exp_coef_lines) {
+      my $line = $exp_coef_lines[$i];
+      @fields = split(/ +/,$line);
+      my $exponent = $fields[0];
+      if ($remove_last_digit_from_exponent == 1) {
+          $exponent =~ s/0$//;
+      }
+      printf MPQCBASIS "        %s%s", &space(5,$exponent), $exponent;
+      foreach $i (1..$#fields) {
+          my $coef = $fields[$i];
+          if (!($coef =~ /^-/)) {
+              $coef = " $coef";
+          }
+          printf MPQCBASIS "   %s%s", &space(5,$coef), $coef;
+      }
+      print MPQCBASIS "\n";
+  }
+}
+
+# This is a very simple printout of the lines.
+sub print_lines_2 {
+  my $i;
+  foreach $i (0..$#exp_coef_lines) {
+      printf MPQCBASIS "%s\n", $exp_coef_lines[$i];
+  }
+}
+
 sub finish_shell {
+  &print_lines_2();
+
+  $#exp_coef_lines = -1;
   printf MPQCBASIS "   })\n";
+}
+
+sub space {
+    my $n = shift;
+    my $f = shift;
+
+    my $left_digits = $f;
+    $left_digits =~ s/\..*//;
+    my $nleft = length($left_digits);
+
+    my $nspace = $n - $nleft;
+
+    my $i;
+    my $res = "";
+    foreach $i (0..$nspace-1) {
+        $res = " $res";
+    }
+
+    return $res;
+}
+
+sub nright {
+    my $f = shift;
+
+    my $right_digits = $f;
+    $right_digits =~ s/.*\.//;
+    return length($right_digits);
 }

@@ -44,15 +44,8 @@
 #define ARRAY_dec(Type) Array_declare(Type)
 #define ARRAY_def(Type)
 
-// These are simple arrays that have StateIn CTORS and save_object_state,
-// but do not actually inherit from SavableState at this time.  They only
-// work if Type is a basic type like int, double, etc.
-// The SSB macros and templates cannot be used unless <util/state/state.h>
-// is included.  This cannot be done here since state.h grabs this file.
-namespace sc {
-class StateIn;
-class StateOut;
-}
+#include <util/state/statein.h>
+#include <util/state/stateout.h>
 #include <util/container/ssartem.h>
 #include <util/container/ssarmac.h>
 #define SSB_ARRAY_dec(Type) SSBArray_declare(Type)

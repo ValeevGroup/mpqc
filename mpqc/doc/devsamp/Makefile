@@ -5,6 +5,8 @@ CXXFLAGS := $(shell $(SCCONFIG) --cxxflags)
 CPPFLAGS := $(shell $(SCCONFIG) --cppflags)
 LIBS := $(shell $(SCCONFIG) --libs)
 LIBDIR  := $(shell $(SCCONFIG) --libdir)
+LTLINK := $(shell $(SCCONFIG) --ltlink)
+LTLINKBINOPTS := $(shell $(SCCONFIG) --ltlinkbinopts)
 
 mp2: mp2.o
-	$(CXX) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) -lmpqc $(LIBS)
+	$(LTLINK) $(CXX) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) -lmpqc $(LIBS) $(LTLINKBINOPTS)

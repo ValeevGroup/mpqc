@@ -53,7 +53,7 @@ PSI_CCSD::save_data_state(StateOut&s)
 }
 
 void
-PSI_CCSD::print(SCostream&o)
+PSI_CCSD::print(ostream&o)
 {
   Wavefunction::print(o);
 }

@@ -13,7 +13,7 @@ main()
   RefKeyVal rpkv(new ParsedKeyVal(input));
   
   // the output stream is standard out
-  SCostream o(stdout);
+  ostream &o = cout;
 
   RefOneBodyWavefunction wfn = rpkv->describedclassvalue("wavefunction");
   if (wfn.null()) {

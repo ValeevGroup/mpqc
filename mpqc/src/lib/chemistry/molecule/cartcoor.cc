@@ -3,6 +3,7 @@ extern "C" {
 #include <math.h>
 };
 
+#include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
@@ -133,13 +134,14 @@ CartMolecularCoor::to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart)
 }
 
 void
-CartMolecularCoor::print(SCostream& os)
+CartMolecularCoor::print(ostream& os)
 {
-  os.indent() << "Molecule:\n"; os++; molecule_->print(os); os--;
+  os << indent << "Molecule:\n";
+  os << incindent; molecule_->print(os); os << decindent;
 }
 
 void
-CartMolecularCoor::print_simples(SCostream& os)
+CartMolecularCoor::print_simples(ostream& os)
 {
 }
 

@@ -37,7 +37,7 @@ class Wavefunction: public MolecularEnergy
     
     void save_data_state(StateOut&);
 
-    void print(SCostream& =SCostream::cout);
+    void print(ostream& = cout);
     double density(const SCVector3&);
     double density_gradient(const SCVector3&,double*);
     double natural_orbital(const SCVector3& r, int iorb);

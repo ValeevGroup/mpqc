@@ -7,7 +7,6 @@
 #endif
 
 #include <math/optimize/nlp.h>
-#include <util/container/ref.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
 

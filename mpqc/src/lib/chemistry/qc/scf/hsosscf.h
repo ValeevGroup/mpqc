@@ -81,7 +81,7 @@ class HSOSSCF: public OneBodyWavefunction
     
     void save_data_state(StateOut&);
 
-    void print(SCostream&o=SCostream::cout);
+    void print(ostream&o=cout);
 
     RefSCMatrix eigenvectors();
 

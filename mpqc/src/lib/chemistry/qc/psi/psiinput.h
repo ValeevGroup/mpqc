@@ -66,7 +66,7 @@ class PSI_Input {
       PSI_Input(const RefKeyVal&);
       PSI_Input();
       virtual ~PSI_Input();
-      void print(SCostream&);
+      void print(ostream&);
       virtual void write_input_file(const char *,const char *,
                const int convergence = 0, const char *s = "input.dat");
       int test() { return _test; }

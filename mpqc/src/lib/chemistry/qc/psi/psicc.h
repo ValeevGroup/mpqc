@@ -30,7 +30,7 @@ class PSI_CCSD_T: public Wavefunction
     double density(cart_point&);
     RefSymmSCMatrix density();
 
-    void print(SCostream&o=SCostream::cout);
+    void print(ostream&o=cout);
 };
 
 class PSI_CCSD: public Wavefunction
@@ -57,7 +57,7 @@ class PSI_CCSD: public Wavefunction
     double density(cart_point&);
     RefSymmSCMatrix density();
 
-    void print(SCostream&o=SCostream::cout);
+    void print(ostream&o=cout);
 };
 
 class PSI_CCSDT: public Wavefunction
@@ -84,7 +84,7 @@ class PSI_CCSDT: public Wavefunction
     double density(cart_point&);
     RefSymmSCMatrix density();
 
-    void print(SCostream&o=SCostream::cout);
+    void print(ostream&o=cout);
 };
 
 #endif

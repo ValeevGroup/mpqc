@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <float.h>
 #include <string.h>
+#include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/elemop.h>
 #include <util/keyval/keyval.h>
@@ -152,9 +153,9 @@ NLP0::actual_value_accuracy()
 }
 
 void
-NLP0::print(SCostream&o)
+NLP0::print(ostream&o)
 {
-  o.indent(); o << "value_accuracy = " << desired_value_accuracy() << endl;
+  o << indent << "value_accuracy = " << desired_value_accuracy() << endl;
 }
 
 void
@@ -284,12 +285,12 @@ NLP1::desired_gradient_accuracy()
 }
 
 void
-NLP1::print(SCostream&o)
+NLP1::print(ostream&o)
 {
   NLP0::print(o);
-  o.indent(); o << "gradient.accuracy = "
-                << desired_gradient_accuracy()
-                << endl;
+  o << indent << "gradient.accuracy = "
+              << desired_gradient_accuracy()
+              << endl;
 }
 
 void
@@ -422,10 +423,10 @@ NLP2::actual_hessian_accuracy()
 }
 
 void
-NLP2::print(SCostream&o)
+NLP2::print(ostream&o)
 {
   NLP1::print(o);
-  o.indent(); o << "hessian_accuracy = " << desired_hessian_accuracy() << endl;
+  o << indent << "hessian_accuracy = " << desired_hessian_accuracy() << endl;
 }
 
 int

@@ -30,7 +30,7 @@ class PSI_CI: public Wavefunction
     double density(cart_point&);
     RefSymmSCMatrix density();
 
-    void print(SCostream&o=SCostream::cout);
+    void print(ostream&o=cout);
 };
 
 #endif

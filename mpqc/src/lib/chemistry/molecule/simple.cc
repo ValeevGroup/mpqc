@@ -31,6 +31,7 @@
 #include <bstring.h>
 #endif
 
+#include <util/misc/formio.h>
 #include <chemistry/molecule/simple.h>
 #include <chemistry/molecule/chemelem.h>
 #include <chemistry/molecule/localdef.h>
@@ -212,7 +213,7 @@ SimpleCo::print()
 #endif
 
 void
-SimpleCo::print(RefMolecule mol, SCostream& os)
+SimpleCo::print(RefMolecule mol, ostream& os)
 {
   os.setf(ios::fixed,ios::floatfield);
   os.precision(10);
@@ -220,8 +221,8 @@ SimpleCo::print(RefMolecule mol, SCostream& os)
   os.width(10);
 
   os.width(5);
-  os.indent() << ctype()
-              << " ";
+  os << indent << ctype()
+               << " ";
   os.width(10);
   os          << label()
               << " ";

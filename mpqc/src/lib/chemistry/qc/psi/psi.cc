@@ -7,6 +7,7 @@ extern "C" {
 #include <math.h>
 }
 
+#include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/libmisc.h>
 #include <math/scmat/matrix.h>
@@ -56,14 +57,14 @@ PSISCF::save_data_state(StateOut&s)
 }
 
 void
-PSISCF::print(SCostream& o)
+PSISCF::print(ostream& o)
 {
   OneBodyWavefunction::print(o);
   psi_in.print(o);
 
-  o.indent() << "grad_convergence = " << 
+  o << indent << "grad_convergence = " << 
            desired_gradient_accuracy() << endl;
-  o.indent() << "energy_convergence = " << 
+  o << indent << "energy_convergence = " << 
            desired_value_accuracy() << endl;
  
 }

@@ -183,7 +183,7 @@ Wavefunction::basis()
 }
 
 void
-Wavefunction::print(SCostream&o)
+Wavefunction::print(ostream&o)
 {
   MolecularEnergy::print(o);
   // the other stuff is a wee bit too big to print

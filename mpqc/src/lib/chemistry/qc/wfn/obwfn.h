@@ -50,7 +50,7 @@ class OneBodyWavefunction: public Wavefunction
     double density(const SCVector3&);
     RefSymmSCMatrix density();
 
-    void print(SCostream&o=SCostream::cout);
+    void print(ostream&o=cout);
 };
 SavableState_REF_dec(OneBodyWavefunction);
 

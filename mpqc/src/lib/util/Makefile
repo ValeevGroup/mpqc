@@ -5,7 +5,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-SUBDIRS = options sgen container misc class keyval unix state group render
+SUBDIRS = options sgen ref container misc class keyval unix state group render
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 

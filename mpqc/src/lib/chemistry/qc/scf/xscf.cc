@@ -222,7 +222,7 @@ XSCF::hessian_implemented()
 }
 
 void
-XSCF::print(SCostream&o)
+XSCF::print(ostream&o)
 {
   OneBodyWavefunction::print(o);
 }

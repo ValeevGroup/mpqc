@@ -7,6 +7,7 @@ extern "C" {
 #include <math.h>
 };
 
+#include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
@@ -148,19 +149,19 @@ IntCoor::print()
 #endif
 
 void
-IntCoor::print(RefMolecule mol, SCostream& os)
+IntCoor::print(RefMolecule mol, ostream& os)
 {
   os.setf(ios::fixed,ios::floatfield);
   os.precision(10);
   os.setf(ios::left,ios::adjustfield);
   os.width(10);
 
-  os.indent() << ctype()
-              << " \""
-              << label()
-              << "\" "
-              << preferred_value()
-              << endl;
+  os << indent << ctype()
+               << " \""
+               << label()
+               << "\" "
+               << preferred_value()
+               << endl;
 }
 
 double
@@ -367,7 +368,7 @@ SetIntCoor::print()
 #endif
 
 void
-SetIntCoor::print(RefMolecule mol, SCostream& os)
+SetIntCoor::print(RefMolecule mol, ostream& os)
 {
   int i;
 
@@ -543,18 +544,18 @@ SumIntCoor::print()
 #endif
 
 void
-SumIntCoor::print(RefMolecule mol, SCostream& os)
+SumIntCoor::print(RefMolecule mol, ostream& os)
 {
   os.setf(ios::fixed,ios::floatfield);
   os.precision(10);
   os.setf(ios::left,ios::adjustfield);
 
-  int initial_indent = os.get_indent();
+  int initial_indent = SCFormIO::getindent(os);
   int i;
 
   os.width(5);
-  os.indent() << ctype()
-              << " ";
+  os << indent << ctype()
+               << " ";
   os.width(10);
   os          << label()
               << " ";
@@ -564,12 +565,14 @@ SumIntCoor::print(RefMolecule mol, SCostream& os)
               << endl;
 
   for(i=0; i<coor_.length(); i++) {
-      os++;
+      os << incindent;
       os.width(14);
-      os.indent() << coef_[i] << " ";
-      os.set_indent_to_column(); os.skip_next_indent();
+      os << indent << coef_[i] << " ";
+
+      SCFormIO::setindent(os, SCFormIO::getindent(os) + 15);
+      os << skipnextindent;
       coor_[i]->print(mol,os);
-      os.set_indent(initial_indent);
+      SCFormIO::setindent(os, initial_indent);
     }
 }
 
@@ -796,18 +799,18 @@ IntCoorGen::save_data_state(StateOut& s)
 }
 
 void
-IntCoorGen::print(SCostream& out)
+IntCoorGen::print(ostream& out)
 {
   out << "IntCoorGen:" << endl;
-  out++;
-  out.indent() << "linear_bends = " << linear_bends_ << endl;
-  out.indent() << "linear_tors = " << linear_tors_ << endl;
-  out.indent() << "linear_stors = " << linear_stors_ << endl;
-  out.indent() << "linear_bend_threshold = " << linear_bend_thres_ << endl;
-  out.indent() << "linear_tors_threshold = " << linear_tors_thres_ << endl;
-  out.indent() << "radius_scale_factor = " << radius_scale_factor_ << endl;
-  out.indent() << "nextra_bonds = " << nextra_bonds_ << endl;
-  out--;
+  out << incindent;
+  out << indent << "linear_bends = " << linear_bends_ << endl;
+  out << indent << "linear_tors = " << linear_tors_ << endl;
+  out << indent << "linear_stors = " << linear_stors_ << endl;
+  out << indent << "linear_bend_threshold = " << linear_bend_thres_ << endl;
+  out << indent << "linear_tors_threshold = " << linear_tors_thres_ << endl;
+  out << indent << "radius_scale_factor = " << radius_scale_factor_ << endl;
+  out << indent << "nextra_bonds = " << nextra_bonds_ << endl;
+  out << decindent;
 }
 
 void

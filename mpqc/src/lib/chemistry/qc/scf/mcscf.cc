@@ -226,7 +226,7 @@ MCSCF::hessian_implemented()
 }
 
 void
-MCSCF::print(SCostream&o)
+MCSCF::print(ostream&o)
 {
   OneBodyWavefunction::print(o);
 }

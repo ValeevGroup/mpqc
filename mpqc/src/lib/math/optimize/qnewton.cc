@@ -113,7 +113,7 @@ QNewtonOpt::update()
   RefSCVector xcurrent;
   RefSCVector gcurrent;
 
-  SCostream::cout.flush();
+  cout.flush();
     
   // get the next gradient at the required level of accuracy.
   // usually only one pass is needed, unless we happen to find

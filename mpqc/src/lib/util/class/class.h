@@ -3,23 +3,22 @@
 #pragma interface
 #endif
 
-#ifndef _libQC_class_h
-#define _libQC_class_h
+#ifndef _util_class_class_h
+#define _util_class_class_h
 
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <util/misc/identity.h>
-#include <util/container/ref.h>
+#include <util/ref/ref.h>
 #include <util/container/array.h>
 #include <util/container/set.h>
 
 template <class T, class C>
-class DescribedDataMember {
+class DescribedMemberDatum {
   private:
     T C::*member_;
   public:
-    DescribedDataMember(T C::*member): member_(member) {}
+    DescribedMemberDatum(T C::*member): member_(member) {}
     //T &member(C *c) { return c->*member_; }
 };
 
@@ -175,7 +174,7 @@ class  RefDescribedClassBase: private RefBase {
 };
 
 // These files declare template and macro smart pointer classes for
-// DescribedClass objects.  They use macros from util/container/ref.h.
+// DescribedClass objects.  They use macros from util/ref/ref.h.
 #include <util/class/clastmpl.h>
 #include <util/class/clasmacr.h>
 

@@ -3,7 +3,6 @@
 #define _util_render_render_h
 
 #include <util/class/class.h>
-#include <util/container/ref.h>
 #include <util/render/appearance.h>
 #include <util/render/material.h>
 #include <util/render/transform.h>

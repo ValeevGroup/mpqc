@@ -83,7 +83,7 @@ main(int argc, char**argv)
 #endif
 
   // the output stream is standard out
-  SCostream& o = SCostream::cout;
+  ostream& o = cout;
 
   char *input =      (argc > 1)? argv[1] : SRCDIR "/mpqc.in";
   char *keyword =    (argc > 2)? argv[2] : "mole";

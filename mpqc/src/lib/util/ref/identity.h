@@ -1,6 +1,6 @@
 
-#ifndef _util_misc_identity_h
-#define _util_misc_identity_h
+#ifndef _util_ref_identity_h
+#define _util_ref_identity_h
 
 #ifdef __GNUG__
 #pragma interface

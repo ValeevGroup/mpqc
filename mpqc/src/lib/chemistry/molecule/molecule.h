@@ -11,7 +11,6 @@
 #ifdef __GNUC__
 #include <ostream.h>
 #endif
-#include <util/misc/scostream.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
@@ -65,7 +64,7 @@ class Molecule: public SavableState
     void add_atom(int,AtomicCenter&);
 
     //texi Print information about the molecule.
-    virtual void print(SCostream& =SCostream::cout);
+    virtual void print(ostream& =cout);
     virtual void print(FILE*);
     //texi Returns the number of atoms in the molcule.
     int natom() const;

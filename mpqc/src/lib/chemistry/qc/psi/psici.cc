@@ -53,7 +53,7 @@ PSI_CI::save_data_state(StateOut&s)
 }
 
 void
-PSI_CI::print(SCostream&o)
+PSI_CI::print(ostream&o)
 {
   Wavefunction::print(o);
 }

@@ -679,7 +679,7 @@ MPSCF::occupation(int i)
 }
 
 void
-MPSCF::print(SCostream&o)
+MPSCF::print(ostream&o)
 {
   if (outfile) fflush(outfile);
   o.flush();

@@ -97,10 +97,10 @@ class SimpleCo : public IntCoor {
 
 #ifdef __GNUC__
     //texi Print the coordinate.
-    void print(RefMolecule =0, SCostream& = SCostream::cout);
+    void print(RefMolecule =0, ostream& = cout);
 #else
     void print();
-    void print(RefMolecule, SCostream& = SCostream::cout);
+    void print(RefMolecule, ostream& = cout);
 #endif
     
     //texi Tests to see if two coordinates are equivalent to each other.

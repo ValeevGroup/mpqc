@@ -213,7 +213,7 @@ HSOSSCF::hessian_implemented()
 }
 
 void
-HSOSSCF::print(SCostream&o)
+HSOSSCF::print(ostream&o)
 {
   OneBodyWavefunction::print(o);
 }

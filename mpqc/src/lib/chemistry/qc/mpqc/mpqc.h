@@ -66,7 +66,7 @@ class MPSCF: public OneBodyWavefunction
     virtual ~MPSCF();
     void save_data_state(StateOut&);
 
-    void print(SCostream& =SCostream::cout);
+    void print(ostream& =cout);
     int do_exchange_energy(int);
     int do_eigenvectors(int);
     RefSCMatrix eigenvectors();

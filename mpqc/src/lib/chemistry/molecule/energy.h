@@ -53,7 +53,7 @@ class MolecularEnergy: public NLP2 {
 
     void set_x(const RefSCVector&);
 
-    virtual void print(SCostream& =SCostream::cout);
+    virtual void print(ostream& = cout);
 };
 SavableState_REF_dec(MolecularEnergy);
 

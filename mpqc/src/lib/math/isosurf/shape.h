@@ -9,7 +9,6 @@
 #include <math/isosurf/volume.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>
-#include <util/container/ref.h>
 #include <util/container/array.h>
 #include <util/container/set.h>
 

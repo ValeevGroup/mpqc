@@ -13,20 +13,20 @@ GENCXXSRC = pixvpMap.cc pixvp$(MAPIMPL)Map.cc \
             pixintMap.cc pixint$(MAPIMPL)Map.cc \
             intpixMap.cc intpix$(MAPIMPL)Map.cc
 
-REALCXXSRC = array.cc set.cc ref.cc voidptr.cc gnuavlse.cc avl.cc
+REALCXXSRC = array.cc set.cc voidptr.cc gnuavlse.cc avl.cc
 
 GENSRC = $(GENCXXSRC)
 
 CXXSRC = $(GENCXXSRC) $(REALCXXSRC)
-TESTCXX = settest.cc settestt.cc reftest.cc reftestx.cc
+TESTCXX = settest.cc settestt.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.o)
 
 INC = pixmap.h pixvpdefs.h ptrset.h voidptr.h voidptrdefs.h \
-      set.h array.h ref.h reftestx.h artem.h ar2tem.h ssarmac.h ssar2mac.h \
-      gnuset.h gnuavlse.h pixintdefs.h avl.h
+      set.h array.h artem.h ar2tem.h ssarmac.h ssar2mac.h \
+      gnuset.h gnuavlse.h pixintdefs.h avl.h refset.h
 
-GENINC = $(GENCXXSRC:%.cc=%.h) setmacr.h asetmacr.h refmacr.h \
+GENINC = $(GENCXXSRC:%.cc=%.h) setmacr.h asetmacr.h \
          armac.h ar2mac.h ssarmac.h ssar2mac.h
 
 DEPENDINCLUDE = $(INC) $(GENINC)
@@ -62,9 +62,6 @@ setmacr.h: settmpl.h $(TMPL2MACDEP)
 asetmacr.h: asettmpl.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > asetmacr.h
 
-refmacr.h: reftmpl.h $(TMPL2MACDEP)
-	$(TMPL2MAC) $< > refmacr.h
-
 settest: settest.o libcontainer.$(LIBSUF) libmisc.$(LIBSUF)
 	$(CXX) $(LDFLAGS) -o settest $^
 
@@ -76,9 +73,6 @@ artest: artest.o libcontainer.$(LIBSUF)
 
 settestt: settestt.o libcontainer.$(LIBSUF)
 	$(CXX) $(LDFLAGS) -o settestt $^
-
-reftest: reftest.o reftestx.o libcontainer.$(LIBSUF) libmisc.$(LIBSUF)
-	$(CXX) $(LDFLAGS) -o reftest $^
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

@@ -6,6 +6,7 @@
 #include <math.h>
 #include <string.h>
 
+#include <util/misc/formio.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/localdef.h>
 #include <math/scmat/cmatrix.h>
@@ -219,11 +220,11 @@ Molecule::add_atom(int i,AtomicCenter& ac)
 }
 
 void
-Molecule::print(SCostream& os)
+Molecule::print(ostream& os)
 {
   int i;
 
-  os.indent();
+  os << indent;
   os << "    n  atom  label          x               y               z"
       "          mass\n";
 
@@ -231,7 +232,7 @@ Molecule::print(SCostream& os)
   os.setf(ios::right,ios::adjustfield);
 
   for (i=0; i<natom(); i++) {
-      os.indent();
+      os << indent;
       os.precision(10);
       os << ' ';
       os.width(5);

@@ -11,7 +11,7 @@ extern "C" {
 #include <stdlib.h>
 #include <math.h>
 }
-#include <util/container/ref.h>
+#include <util/ref/ref.h>
 #include <util/container/set.h>
 #include <math/scmat/matrix.h>
 #include <math/isosurf/volume.h>

@@ -66,7 +66,7 @@ TaylorMolecularEnergy::save_data_state(StateOut&s)
 }
 
 void
-TaylorMolecularEnergy::print(SCostream&o)
+TaylorMolecularEnergy::print(ostream&o)
 {
   MolecularEnergy::print(o);
   abort();

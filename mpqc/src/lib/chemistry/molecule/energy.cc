@@ -9,6 +9,7 @@ extern "C" {
 #include <math.h>
 }
 
+#include <util/misc/formio.h>
 #include <math/scmat/local.h>
 #include <util/keyval/keyval.h>
 #include <chemistry/molecule/energy.h>
@@ -221,19 +222,19 @@ MolecularEnergy::inverse_hessian(RefSymmSCMatrix&hessian)
 }
 
 void
-MolecularEnergy::print(SCostream&o)
+MolecularEnergy::print(ostream&o)
 {
   NLP2::print(o);
   if (_mc.nonnull()) {
-      o.indent(); o << "Molecular Coordinates:\n";
-      o++;
+      o << indent << "Molecular Coordinates:\n";
+      o << incindent;
       _mc->print(o);
-      o--;
+      o << decindent;
     }
   else {
-      o.indent(); o << "Molecule:\n";
-      o++;
+      o << indent << "Molecule:\n";
+      o << incindent;
       _mol->print(o);
-      o--;
+      o << decindent;
     }
 }

@@ -4,7 +4,7 @@
 #pragma implementation "reftestx.h"
 #endif
 
-#include <util/container/reftestx.h>
+#include <util/ref/reftestx.h>
 
 #ifdef __GNUG__
 typedef Ref<X> forced_implementation_of_RefX;

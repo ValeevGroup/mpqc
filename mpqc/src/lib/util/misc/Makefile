@@ -17,11 +17,11 @@ WEBFILES = debug.web pathfopen.web rdmatrix.web timer.web
 CSRC = ieee.c prober.c assert.c machtype.c checkalloc.c mtype.c
 GENSRC = $(WEBFILES:%.web=%.c)
 
-CXXSRC = compute.cc compute_i.cc error.cc scostream.cc identity.cc
+CXXSRC = compute.cc compute_i.cc error.cc formio.cc
 
-TESTSRC = comptest.cc scotest.cc
+TESTSRC = comptest.cc formiot.cc
 
-INC = assert.h libmisc.h memory.h timer.h compute.h scostream.h ieee.h
+INC = assert.h libmisc.h memory.h timer.h compute.h ieee.h
 GENINC = machtype.gbl timer.gbl assert.gbl
 
 DISTFILES = $(WEBFILES) $(CSRC) $(CXXSRC) $(TESTSRC) $(INC) Makefile LIBS.h
@@ -43,8 +43,8 @@ endif
 comptest: comptest.cc libmisc.a ../state/libstate.a
 	$(CXX) $(CXXFLAGS) $^ -o comptest
 
-scotest: scotest.cc libmisc.a
-	$(CXX) $(CXXFLAGS) $^ -o scotest
+formiot: formiot.cc libmisc.a
+	$(CXX) $(CXXFLAGS) $^ -o formiot
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

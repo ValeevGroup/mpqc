@@ -3,6 +3,7 @@ extern "C" {
 #include <math.h>
 };
 
+#include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/elemop.h>
 #include <chemistry/molecule/localdef.h>
@@ -738,7 +739,7 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
       all_to_internal(old_internal);
 
 #if VERBOSE
-      SCostream::cout << "Coordinates on step " << step << ":" << endl;
+      cout << "Coordinates on step " << step << ":" << endl;
       variable_->print();
 #endif
 
@@ -748,7 +749,7 @@ IntMolecularCoor::all_to_cartesian(RefSCVector&new_internal)
       if ((update_bmat_ && maxabs_cart_diff>update_tolerance)
           || internal_to_cart_disp.null()) {
 #if VERBOSE
-          SCostream::cout << "updating bmatrix" << endl;
+          cout << "updating bmatrix" << endl;
 #endif
 
           int i;
@@ -993,54 +994,71 @@ IntMolecularCoor::nconstrained()
 }
 
 void
-IntMolecularCoor::print(SCostream& os)
+IntMolecularCoor::print(ostream& os)
 {
-  os.indent() << "IntMolecularCoor Parameters:\n";
-  os++;
-  os.indent() << "update_bmat = " << (update_bmat_?"yes":"no") << endl;
-  os.indent() << "scale_bonds = " << scale_bonds_ << endl;
-  os.indent() << "scale_bends = " << scale_bends_ << endl;
-  os.indent() << "scale_tors = " << scale_tors_ << endl;
-  os.indent() << "scale_outs = " << scale_outs_ << endl;
-  os.indent() << "symmetry_tolerance = " << symmetry_tolerance_ << endl;
-  os.indent() << "simple_tolerance = " << simple_tolerance_ << endl;
-  os.indent() << "coordinate_tolerance = " << coordinate_tolerance_ << endl;
-  os.indent() << "have_fixed_values = " << given_fixed_values_ << endl;
-  os.indent() << "max_update_steps = " << max_update_steps_ << endl;
-  os.indent() << "max_update_disp = " << max_update_disp_ << endl;
-  os.indent() << "have_fixed_values = " << given_fixed_values_ << endl;
-  os--;
+  os << indent << "IntMolecularCoor Parameters:\n";
+  os << incindent;
+  os << indent << "update_bmat = " << (update_bmat_?"yes":"no") << endl;
+  os << indent << "scale_bonds = " << scale_bonds_ << endl;
+  os << indent << "scale_bends = " << scale_bends_ << endl;
+  os << indent << "scale_tors = " << scale_tors_ << endl;
+  os << indent << "scale_outs = " << scale_outs_ << endl;
+  os << indent << "symmetry_tolerance = " << symmetry_tolerance_ << endl;
+  os << indent << "simple_tolerance = " << simple_tolerance_ << endl;
+  os << indent << "coordinate_tolerance = " << coordinate_tolerance_ << endl;
+  os << indent << "have_fixed_values = " << given_fixed_values_ << endl;
+  os << indent << "max_update_steps = " << max_update_steps_ << endl;
+  os << indent << "max_update_disp = " << max_update_disp_ << endl;
+  os << indent << "have_fixed_values = " << given_fixed_values_ << endl;
+  os << decindent;
   
-  os.indent() << "Molecule:\n"; os++; molecule_->print(os); os--;
+  os << indent << "Molecule:\n";
+  os << incindent;
+  molecule_->print(os);
+  os << decindent;
 
   print_simples(os);
 
-  os.indent() << "Variables:\n"; os++; variable_->print(molecule_,os); os--;
-  os.indent() << "Constants:\n"; os++; constant_->print(molecule_,os); os--;
+  os << indent << "Variables:\n";
+  os << incindent;
+  variable_->print(molecule_,os);
+  os << decindent;
+
+  os << indent << "Constants:\n";
+  os << incindent;
+  constant_->print(molecule_,os);
+  os << decindent;
 }
 
 void
-IntMolecularCoor::print_simples(SCostream& os)
+IntMolecularCoor::print_simples(ostream& os)
 {
   if (bonds_->n()) {
-    os.indent() << "Bonds:\n"; os++; bonds_->print(molecule_,os); os--;
+    os << indent << "Bonds:\n";
+    os << incindent; bonds_->print(molecule_,os); os << decindent;
   }
   if (bends_->n()) {
-    os.indent() << "Bends:\n";  os++; bends_->print(molecule_,os); os--;
+    os << indent << "Bends:\n";
+    os << incindent; bends_->print(molecule_,os); os << decindent;
   }
   if (tors_->n()) {
-    os.indent() << "Torsions:\n";  os++; tors_->print(molecule_,os); os--;
+    os << indent << "Torsions:\n";
+    os << incindent; tors_->print(molecule_,os); os << decindent;
   }
   if (outs_->n()) {
-    os.indent() << "Out of Plane:\n";  os++; outs_->print(molecule_,os); os--;
+    os << indent << "Out of Plane:\n";
+    os << incindent; outs_->print(molecule_,os); os << decindent;
   }
   if (extras_->n()) {
-    os.indent() << "Extras:\n";  os++; extras_->print(molecule_,os); os--;
+    os << indent << "Extras:\n";
+    os << incindent; extras_->print(molecule_,os); os << decindent;
   }
   if (fixed_->n()) {
-    os.indent() << "Fixed:\n";  os++; fixed_->print(molecule_,os); os--;
+    os << indent << "Fixed:\n";
+    os << incindent; fixed_->print(molecule_,os); os << decindent;
   }
   if (followed_.nonnull()) {
-    os.indent() << "Followed:\n"; os++; followed_->print(molecule_,os); os--;
+    os << indent << "Followed:\n";
+    os << incindent; followed_->print(molecule_,os); os << decindent;
   }
 }

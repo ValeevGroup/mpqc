@@ -1,7 +1,9 @@
 
 #include <stdio.h>
-#include <util/container/ref.h>
-#include <util/container/reftestx.h>
+#include <util/ref/ref.h>
+#include <util/ref/reftestx.h>
+
+template class Ref<X>;
 
 int
 main()
@@ -23,7 +25,8 @@ main()
   if (x1 != x1) abort();
   if (x2 != x2) abort();
 
-  for (int i=1000000; i; i--) {
+  int i;
+  for (i=1000000; i; i--) {
       x1->reference();
     }
   for (i=1000000; i; i--) {

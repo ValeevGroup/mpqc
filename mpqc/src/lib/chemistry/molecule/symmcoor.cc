@@ -3,6 +3,7 @@ extern "C" {
 #include <math.h>
 };
 
+#include <util/misc/formio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/elemop.h>
 #include <chemistry/molecule/localdef.h>
@@ -494,15 +495,15 @@ SymmMolecularCoor::change_coordinates()
 }
 
 void
-SymmMolecularCoor::print(SCostream& os)
+SymmMolecularCoor::print(ostream& os)
 {
-  os.indent() << "SymmMolecularCoor Parameters:\n";
-  os++;
-  os.indent() << "change_coordinates = "
-              << (change_coordinates_?"yes":"no") << endl;
-  os.indent() << "transform_hessian = "
-              << (transform_hessian_?"yes":"no") << endl;
-  os.indent() << "max_kappa2 = "
-              << max_kappa2_ << endl;
-  os--;
+  os << indent << "SymmMolecularCoor Parameters:\n";
+  os << incindent;
+  os << indent << "change_coordinates = "
+               << (change_coordinates_?"yes":"no") << endl;
+  os << indent << "transform_hessian = "
+               << (transform_hessian_?"yes":"no") << endl;
+  os << indent << "max_kappa2 = "
+               << max_kappa2_ << endl;
+  os << decindent;
 }

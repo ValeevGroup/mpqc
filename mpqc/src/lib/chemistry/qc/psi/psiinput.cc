@@ -14,7 +14,8 @@
 #pragma implementation
 #endif
 
-#include "psiinput.h"
+#include <util/misc/formio.h>
+#include <chemistry/qc/psi/psiinput.h>
 #include <chemistry/qc/basis/basis.h>
 extern "C" {
 #include <stdio.h>
@@ -90,7 +91,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
         fprintf(stderr, "change size of socc array");
         abort();
         }
-    for (int i=0; i<nirrep; i++) {
+    for (i=0; i<nirrep; i++) {
       socc[i] = keyval->intvalue("socc",i);
       }
     }
@@ -104,7 +105,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
         fprintf(stderr, "change size of frozen_docc array");
         abort();
       }
-    for (int i=0; i<nirrep; i++) 
+    for (i=0; i<nirrep; i++) 
         frozen_docc[i] = keyval->intvalue("frozen_docc",i);
     }
   else for (i=0; i<nirrep; i++) 
@@ -116,7 +117,7 @@ PSI_Input::PSI_Input(const RefKeyVal&keyval)
         fprintf(stderr, "change size of frozen_uocc array");
         abort();
       }
-    for (int i=0; i<nirrep; i++) 
+    for (i=0; i<nirrep; i++) 
         frozen_uocc[i] = keyval->intvalue("frozen_uocc",i);
     }
   else for (i=0; i<nirrep; i++) 
@@ -372,34 +373,34 @@ PSI_Input::write_indent()
 }
 
 void
-PSI_Input::print(SCostream& o)
+PSI_Input::print(ostream& o)
 {
   int i;
 
-  o.indent() << "opentype = " << opentype << endl;
-  o.indent() << "label = " << label << endl;
-  o.indent() << "test = " << _test << endl;
-  o.indent() << "memory = " << memory << endl;
-
-  o.indent() << "docc:";
+  o << indent << "opentype = " << opentype << endl;
+  o << indent << "label = " << label << endl;
+  o << indent << "test = " << _test << endl;
+  o << indent << "memory = " << memory << endl;
+             
+  o << indent << "docc:";
   for (i=0; i<nirrep; i++) {
     o << " " << docc[i];
     }
   o << endl;
 
-  o.indent() << "socc:";
+  o << indent << "socc:";
   for (i=0; i<nirrep; i++) {
     o << " " << socc[i];
     }
   o << endl;
 
-  o.indent() << "frozen_docc:";
+  o << indent << "frozen_docc:";
   for (i=0; i<nirrep; i++) {
      o << " " << frozen_docc[i];
      }
   o << endl;
 
-  o.indent() << "frozen_uocc:";
+  o << indent << "frozen_uocc:";
   for (i=0; i<nirrep; i++) {
     o << " " << frozen_uocc[i];
     }

@@ -6,7 +6,7 @@
 #pragma interface
 #endif
 
-#include <util/container/ref.h>
+#include <util/ref/ref.h>
 
 class TriInterpCoefKey {
   private:

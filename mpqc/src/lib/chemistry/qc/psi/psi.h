@@ -29,7 +29,7 @@ class PSISCF: public OneBodyWavefunction
     virtual ~PSISCF();
     void save_data_state(StateOut&);
   
-    void print(SCostream& =SCostream::cout);
+    void print(ostream& =cout);
 
     //int do_eigenvectors(int);
     //RefSCMatrix eigenvectors();

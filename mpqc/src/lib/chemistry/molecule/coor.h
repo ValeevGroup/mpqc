@@ -7,8 +7,6 @@
 #include <ostream.h>
 #endif
 
-#include <util/misc/scostream.h>
-#include <util/container/ref.h>
 #include <util/container/array.h>
 #include <util/container/set.h>
 #include <math/scmat/matrix.h>
@@ -59,10 +57,10 @@ class IntCoor: public SavableState {
     virtual const char* ctype() const = 0;
 #ifdef __GNUC__
     //texi Print information about the coordinate.
-    virtual void print(RefMolecule =0, SCostream& =SCostream::cout);
+    virtual void print(RefMolecule =0, ostream& =cout);
 #else
     virtual void print();
-    virtual void print(RefMolecule, SCostream& =SCostream::cout);
+    virtual void print(RefMolecule, ostream& =cout);
 #endif
     //texi Returns the value of the force constant associated with this
     // coordinate.
@@ -121,10 +119,10 @@ class SumIntCoor: public IntCoor {
     const char* ctype() const;
 #ifdef __GNUC__
     //texi Print the individual coordinates in the sum with their coefficients.
-    void print(RefMolecule = 0, SCostream& =SCostream::cout);
+    void print(RefMolecule = 0, ostream& =cout);
 #else
     void print();
-    void print(RefMolecule, SCostream& =SCostream::cout);
+    void print(RefMolecule, ostream& =cout);
 #endif
     //texi Returns the weighted sum of the individual force constants.
     double force_constant(RefMolecule&);
@@ -186,10 +184,10 @@ class SetIntCoor: public SavableState {
     virtual void guess_hessian(RefMolecule&,RefSymmSCMatrix&);
 #ifdef __GNUC__
     //texi Print the coordinates in the set.
-    virtual void print(RefMolecule =0,SCostream& =SCostream::cout);
+    virtual void print(RefMolecule =0,ostream& =cout);
 #else
     virtual void print();
-    virtual void print(RefMolecule,SCostream& =SCostream::cout);
+    virtual void print(RefMolecule,ostream& =cout);
 #endif
     //texi Recalculate the values of the internal coordinates in the set.
     virtual void update_values(RefMolecule&);
@@ -249,7 +247,7 @@ class IntCoorGen: public SavableState
     virtual void generate(const RefSetIntCoor&);
 
     //texi Print out information about this.
-    virtual void print(SCostream& out=SCostream::cout);
+    virtual void print(ostream& out=cout);
 };
 SavableState_REF_dec(IntCoorGen);
 
@@ -285,8 +283,8 @@ class MolecularCoor: public SavableState
     RefSCDimension dim_natom3() { return dnatom3_; }
 
     //texi Print the coordinate.
-    virtual void print(SCostream& =SCostream::cout) = 0;
-    virtual void print_simples(SCostream& =SCostream::cout) = 0;
+    virtual void print(ostream& =cout) = 0;
+    virtual void print_simples(ostream& =cout) = 0;
 
     //texi Returns a smart reference to an @code{SCDimension} equal to the
     // number of coordinates (be they Cartesian, internal, or whatever)
@@ -450,8 +448,8 @@ class IntMolecularCoor: public MolecularCoor
     virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian);
     virtual int to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal);
     virtual int to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
-    virtual void print(SCostream& =SCostream::cout);
-    virtual void print_simples(SCostream& =SCostream::cout);
+    virtual void print(ostream& =cout);
+    virtual void print_simples(ostream& =cout);
     int nconstrained();
 };
 
@@ -501,7 +499,7 @@ class SymmMolecularCoor: public IntMolecularCoor
     // and might transform to a new set of coordinates.
     RefNonlinearTransform change_coordinates();
 
-    void print(SCostream& =SCostream::cout);
+    void print(ostream& =cout);
 };
 
 /////////////////////////////////////////////////////////////////////////
@@ -579,8 +577,8 @@ class CartMolecularCoor: public MolecularCoor
     virtual int to_internal(RefSCVector&internal,RefSCVector&cartesian);
     virtual int to_cartesian(RefSymmSCMatrix&cart,RefSymmSCMatrix&internal);
     virtual int to_internal(RefSymmSCMatrix&internal,RefSymmSCMatrix&cart);
-    virtual void print(SCostream& =SCostream::cout);
-    virtual void print_simples(SCostream& =SCostream::cout);
+    virtual void print(ostream& =cout);
+    virtual void print_simples(ostream& =cout);
     void guess_hessian(RefSymmSCMatrix&hessian);
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 };

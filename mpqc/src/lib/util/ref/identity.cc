@@ -3,7 +3,7 @@
 #pragma implementation
 #endif
 
-#include <util/misc/identity.h>
+#include <util/ref/identity.h>
 
 Identity::~Identity()
 {

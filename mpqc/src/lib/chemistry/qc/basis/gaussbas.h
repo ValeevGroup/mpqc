@@ -7,7 +7,6 @@
 #endif
 
 #include <stdio.h>
-#include <util/container/ref.h>
 #include <util/state/state.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/vector3.h>

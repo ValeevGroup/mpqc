@@ -44,13 +44,13 @@
 #pragma interface
 #endif
 
-#ifndef _util_container_ref_h
-#define _util_container_ref_h
+#ifndef _util_ref_ref_h
+#define _util_ref_ref_h
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <util/misc/identity.h>
+#include <util/ref/identity.h>
 
 #ifdef REF_CONFIG
 #include <refconfig.h>
@@ -253,10 +253,10 @@ class RefBase {
 #endif
 
 // The template reference declaration.
-#include <util/container/reftmpl.h>
+#include <util/ref/reftmpl.h>
 
 // The macro reference declaration.
-#include <util/container/refmacr.h>
+#include <util/ref/refmacr.h>
 #define REF_dec(T) Ref_declare(T)
 #define REF_def(T)
 

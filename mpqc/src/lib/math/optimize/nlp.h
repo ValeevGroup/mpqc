@@ -6,7 +6,6 @@
 #pragma interface
 #endif
 
-#include <util/misc/scostream.h>
 #include <util/state/state.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/result.h>
@@ -51,7 +50,7 @@ class NLP0: virtual_base public SavableState, public Compute {
     virtual double actual_value_accuracy();
     virtual double desired_value_accuracy();
 
-    virtual void print(SCostream& =SCostream::cout);
+    virtual void print(ostream& = cout);
 };
 SavableState_REF_dec(NLP0);
 
@@ -105,7 +104,7 @@ class NLP1: public NLP0 {
 
     void set_dimension(const RefSCDimension&);
 
-    virtual void print(SCostream& =SCostream::cout);
+    virtual void print(ostream& = cout);
 };
 SavableState_REF_dec(NLP1);
 
@@ -142,7 +141,7 @@ class NLP2: public NLP1 {
     virtual void guess_hessian(RefSymmSCMatrix&);
     virtual RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 
-    virtual void print(SCostream& =SCostream::cout);
+    virtual void print(ostream& = cout);
 
     void set_dimension(const RefSCDimension&);
 

@@ -8,7 +8,6 @@
 
 #include <stdio.h>
 #include <util/class/class.h>
-#include <util/container/ref.h>
 #include <util/group/rnglock.h>
 
 class MemoryGrp: public DescribedClass {

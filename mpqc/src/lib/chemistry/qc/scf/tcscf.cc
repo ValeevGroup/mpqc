@@ -222,7 +222,7 @@ TCSCF::hessian_implemented()
 }
 
 void
-TCSCF::print(SCostream&o)
+TCSCF::print(ostream&o)
 {
   OneBodyWavefunction::print(o);
 }

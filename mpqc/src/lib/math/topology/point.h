@@ -12,7 +12,6 @@
 
 #include <util/class/class.h>
 #include <util/state/state.h>
-#include <util/container/ref.h>
 #include <util/container/set.h>
 #include <util/container/array.h>
 

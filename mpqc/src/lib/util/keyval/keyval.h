@@ -11,7 +11,6 @@
 #include <stdarg.h>
 
 #include <util/class/class.h>
-#include <util/container/ref.h>
 
 class KeyValKeyword {
   private:

@@ -41,7 +41,7 @@ class TaylorMolecularEnergy: public MolecularEnergy {
     TaylorMolecularEnergy(StateIn&);
     ~TaylorMolecularEnergy();
     void save_data_state(StateOut&);
-    void print(SCostream& = SCostream::cout);
+    void print(ostream& = cout);
     void compute();
 };
 

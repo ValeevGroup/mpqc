@@ -28,7 +28,7 @@ main(int argc, char**argv)
 #endif
 
   // the output stream is standard out
-  SCostream& o = SCostream::cout;
+  ostream& o = cout;
 
   // use the same IPV2 for both the C IPV2 input and the keyval input
   IPV2* ipv2 = new IPV2;

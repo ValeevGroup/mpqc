@@ -91,6 +91,7 @@ class MBPT2: public Wavefunction {
 
     double restart_ecorr_;
     int restart_orbital_v1_;
+    int restart_orbital_memgrp_;
 
   protected:
     void init_variables();

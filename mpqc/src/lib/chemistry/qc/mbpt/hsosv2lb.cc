@@ -830,7 +830,7 @@ MBPT2::compute_hsos_v2_lb()
       cout << node0 << indent
            << "Partial correlation energy for pass " << pass << ":" << endl;
       cout << node0 << indent
-           << scprintf("  restart_ecorr_v2lb   = %14.10f", passe)
+           << scprintf("  restart_ecorr        = %14.10f", passe)
            << endl;
       cout << node0 << indent
            << scprintf("  restart_orbital_v2lb = %d", ((pass+1) * ni))

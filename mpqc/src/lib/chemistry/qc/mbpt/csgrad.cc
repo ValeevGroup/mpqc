@@ -271,6 +271,26 @@ MBPT2::compute_cs_grad()
       }
     abort();
     }
+    
+  if (restart_orbital_memgrp_) {
+    if (!dograd && !dos2_) {
+      cout << node0 << indent
+           << scprintf("Restarting at orbital %d with partial energy %18.14f",
+                       restart_orbital_memgrp_, restart_ecorr_)
+           << endl;
+      ecorr_mp2 = restart_ecorr_;
+      }
+    else {
+      cout << node0 << indent
+           << "Restart requested but not possible with gradients or S2"
+           << endl;
+      restart_ecorr_ = 0.0;
+      restart_orbital_memgrp_ = 0;
+      }
+    }
+  else {
+      restart_ecorr_ = 0.0;
+    }
 
   ////////////////////////////////////////////////////////
   // Compute batch size ni for mp2 loops;
@@ -295,7 +315,7 @@ MBPT2::compute_cs_grad()
       mem_static += nocc*nvir; // partial Laj
       }
     mem_static *= sizeof(double);
-    ni = compute_cs_batchsize(mem_static, nocc_act); 
+    ni = compute_cs_batchsize(mem_static, nocc_act-restart_orbital_memgrp_); 
     }
 
   if (max_norb_ > 0 && ni > max_norb_) {
@@ -348,15 +368,14 @@ MBPT2::compute_cs_grad()
   if (dynamic_) {
     cout << node0 << indent << "Using dynamic load balancing." << endl;
     }
-    
 
-  if (ni == nocc_act) {
+  if (ni == nocc_act-restart_orbital_memgrp_) {
     npass = 1;
     rest = 0;
     }
   else {
-    rest = nocc_act%ni;
-    npass = (nocc_act - rest)/ni + 1;
+    rest = (nocc_act-restart_orbital_memgrp_)%ni;
+    npass = (nocc_act-restart_orbital_memgrp_ - rest)/ni + 1;
     if (rest == 0) npass--;
     }
 
@@ -566,7 +585,7 @@ MBPT2::compute_cs_grad()
       cout << indent << me << " beginning pass " << pass << endl;
       }
 
-    i_offset = pass*ni + nfzc;
+    i_offset = restart_orbital_memgrp_ + pass*ni + nfzc;
     if ((pass == npass - 1) && (rest != 0)) ni = rest;
 
     // Compute number of of i,j pairs on each node for
@@ -935,7 +954,7 @@ MBPT2::compute_cs_grad()
       cout << node0 << indent
            << "Partial correlation energy for pass " << pass << ":" << endl;
       cout << node0 << indent
-           << scprintf("  restart_ecorr_memgrp   = %18.14f", passe)
+           << scprintf("  restart_ecorr          = %18.14f", passe)
            << endl;
       cout << node0 << indent
            << scprintf("  restart_orbital_memgrp = %d", ((pass+1) * ni))
@@ -1730,31 +1749,33 @@ MBPT2::compute_cs_grad()
       }
 #endif
 
-    if (biggest_coefs.ncontrib()) {
-      cout << endl << indent
-           << "Largest first order coefficients (unique):"
-           << endl;
-      }
-    for (i=0; i<biggest_coefs.ncontrib(); i++) {
-      int i0 = orbital_map[biggest_coefs.indices(i)[0]];
-      int i1 = orbital_map[biggest_coefs.indices(i)[1]];
-      int i2 = orbital_map[biggest_coefs.indices(i)[2] + nocc];
-      int i3 = orbital_map[biggest_coefs.indices(i)[3] + nocc];
-      int spincase = biggest_coefs.indices(i)[4];
-      cout << indent
-           << scprintf("  %2d %12.8f %2d %3s %2d %3s -> %2d %3s %2d %3s (%s)",
-                       i+1, biggest_coefs.val(i),
-                       symorb_num_[i0]+1,
-                       ct.gamma(symorb_irrep_[i0]).symbol(),
-                       symorb_num_[i1]+1,
-                       ct.gamma(symorb_irrep_[i1]).symbol(),
-                       symorb_num_[i2]+1,
-                       ct.gamma(symorb_irrep_[i2]).symbol(),
-                       symorb_num_[i3]+1,
-                       ct.gamma(symorb_irrep_[i3]).symbol(),
-                       (spincase==1111?"++++":"+-+-")
-             )
-           << endl;
+    if (restart_orbital_memgrp_ == 0) {
+      if (biggest_coefs.ncontrib()) {
+        cout << endl << indent
+             << "Largest first order coefficients (unique):"
+             << endl;
+        }
+      for (i=0; i<biggest_coefs.ncontrib(); i++) {
+        int i0 = orbital_map[biggest_coefs.indices(i)[0]];
+        int i1 = orbital_map[biggest_coefs.indices(i)[1]];
+        int i2 = orbital_map[biggest_coefs.indices(i)[2] + nocc];
+        int i3 = orbital_map[biggest_coefs.indices(i)[3] + nocc];
+        int spincase = biggest_coefs.indices(i)[4];
+        cout << indent
+             << scprintf("  %2d %12.8f %2d %3s %2d %3s -> %2d %3s %2d %3s (%s)",
+                         i+1, biggest_coefs.val(i),
+                         symorb_num_[i0]+1,
+                         ct.gamma(symorb_irrep_[i0]).symbol(),
+                         symorb_num_[i1]+1,
+                         ct.gamma(symorb_irrep_[i1]).symbol(),
+                         symorb_num_[i2]+1,
+                         ct.gamma(symorb_irrep_[i2]).symbol(),
+                         symorb_num_[i3]+1,
+                         ct.gamma(symorb_irrep_[i3]).symbol(),
+                         (spincase==1111?"++++":"+-+-")
+               )
+             << endl;
+        }
       }
 
     // Print out various energies etc.

@@ -29,7 +29,18 @@ closest_distance(DVector3& X,DVector3*A,int n,double*grad)
 //////////////////////////////////////////////////////////////////////
 // Shape
 
-REF_def(Shape);
+#define CLASSNAME Shape
+#define PARENTS public Volume
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+Shape::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { Volume::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
+
+SavableState_REF_def(Shape);
 ARRAY_def(RefShape);
 SET_def(RefShape);
 ARRAYSET_def(RefShape);
@@ -142,6 +153,17 @@ Shape::interpolate(RefPoint p1,RefPoint p2,double val)
 //////////////////////////////////////////////////////////////////////
 // SphereShape
 
+#define CLASSNAME SphereShape
+#define PARENTS public Shape
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+SphereShape::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { Shape::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
+
 SphereShape::SphereShape(const Point3&o,double r):
   _origin(o),
   _radius(r)
@@ -207,6 +229,17 @@ SphereShape::boundingbox(double valuemin, double valuemax,
 
 ////////////////////////////////////////////////////////////////////////
 // UncappedTorusHoleShape
+
+#define CLASSNAME UncappedTorusHoleShape
+#define PARENTS public Shape
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+UncappedTorusHoleShape::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { Shape::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
 
 UncappedTorusHoleShape::UncappedTorusHoleShape(double r,
                                const SphereShape& s1,
@@ -376,6 +409,17 @@ is_in_unbounded_triangle(const DVector3&XP,const DVector3&AP,const DVector3&BP)
 /////////////////////////////////////////////////////////////////////
 // ReentrantUncappedTorusHoleShape
 
+#define CLASSNAME ReentrantUncappedTorusHoleShape
+#define PARENTS public UncappedTorusHoleShape
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+ReentrantUncappedTorusHoleShape::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { UncappedTorusHoleShape::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
+
 ReentrantUncappedTorusHoleShape::ReentrantUncappedTorusHoleShape(double r,
                                                  const SphereShape& s1,
                                                  const SphereShape& s2):
@@ -480,6 +524,17 @@ ReentrantUncappedTorusHoleShape::
 /////////////////////////////////////////////////////////////////////
 // NonreentrantUncappedTorusHoleShape
 
+#define CLASSNAME NonreentrantUncappedTorusHoleShape
+#define PARENTS public UncappedTorusHoleShape
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+NonreentrantUncappedTorusHoleShape::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { UncappedTorusHoleShape::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
+
 NonreentrantUncappedTorusHoleShape::
   NonreentrantUncappedTorusHoleShape(double r,
                                      const SphereShape& s1,
@@ -534,6 +589,17 @@ double NonreentrantUncappedTorusHoleShape::
 
 /////////////////////////////////////////////////////////////////////
 // Uncapped5SphereExclusionShape
+
+#define CLASSNAME Uncapped5SphereExclusionShape
+#define PARENTS public Shape
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+Uncapped5SphereExclusionShape::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { Shape::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
 
 Uncapped5SphereExclusionShape*
 Uncapped5SphereExclusionShape::
@@ -864,6 +930,17 @@ Uncapped5SphereExclusionShape::boundingbox(double valuemin, double valuemax,
 
 /////////////////////////////////////////////////////////////////////
 // Unionshape
+
+#define CLASSNAME UnionShape
+#define PARENTS public Shape
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+void *
+UnionShape::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { Shape::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
 
 UnionShape::UnionShape()
 {

@@ -665,7 +665,7 @@ TriangulatedSurface::clear()
 {
   _completed_surface = 0;
 
-  if (triangle_vertex) {
+  if (_triangle_vertex) {
       for (int i=0; i<_triangles.length(); i++) {
           delete[] _triangle_vertex[i];
         }
@@ -673,7 +673,7 @@ TriangulatedSurface::clear()
     }
   _triangle_vertex = 0;
 
-  if (triangle_edge) {
+  if (_triangle_edge) {
       for (int i=0; i<_triangles.length(); i++) {
           delete[] _triangle_edge[i];
         }
@@ -681,7 +681,7 @@ TriangulatedSurface::clear()
     }
   _triangle_edge = 0;
 
-  if (edge_vertex) {
+  if (_edge_vertex) {
       for (int i=0; i<_edges.length(); i++) {
           delete[] _edge_vertex[i];
         }
@@ -698,6 +698,305 @@ TriangulatedSurface::clear()
 }
 
 void
+TriangulatedSurface::remove_short_edges(double length_cutoff)
+{
+  if (!_completed_surface) {
+      complete_surface();
+    }
+  
+  int nvertex = _vertices.length();
+  int nedge = _edges.length();
+  int ntriangle = _triangles.length();
+
+  printf("TriangulatedSurface::remove_short_edges:\n");
+  printf("  nvertex nedge ntriangle\n");
+  printf("    %3d    %3d     %3d     (%s)\n",
+         nvertex,nedge,ntriangle,"initial");
+
+  int* vertex_map = new int[nvertex];
+  int* edge_map = new int[nedge];
+  int* triangle_map = new int[ntriangle];
+  
+  for (int ie=0; ie<nedge; ie++) {
+      // the edge with potentially two deleted points
+      RefEdge E2D(_edges[ie]);
+      if (E2D->length() < length_cutoff) {
+          int i;
+          
+          // find the deleted vertices
+          ArraysetRefVertex D;
+          D.add(_edges[ie]->vertex(0));
+          D.add(_edges[ie]->vertex(1));
+
+          // the edges with one deleted point which border triangles with
+          // one deleted point.
+          ArraysetRefEdge E1D_T1D;
+          // the edges with one deleted point which border the triangles
+          // with two deleted points.
+          ArraysetRefEdge E1D_T2DA;
+          ArraysetRefEdge E1D_T2DB;
+
+          // the triangles with two deleted points
+          RefTriangle T2DA;
+          RefTriangle T2DB;
+          // the triangles with one deleted point
+          ArraysetRefTriangle T1D;
+
+          // find the triangles T2DA, T2DB, and the triangle set T1D
+          // also find the edge arrays E1D_T2DA and E1D_T2DB
+          for (i=0; i<ntriangle; i++) {
+              if (_triangles[i]->edge(0) == E2D) {
+                  if (T2DA.null()) {
+                      T2DA = _triangles[i];
+                      E1D_T2DA.add(_triangles[i]->edge(1));
+                      E1D_T2DA.add(_triangles[i]->edge(2));
+                    }
+                  else {
+                      T2DB = _triangles[i];
+                      E1D_T2DB.add(_triangles[i]->edge(1));
+                      E1D_T2DB.add(_triangles[i]->edge(2));
+                    }
+                }
+              else if (_triangles[i]->edge(1) == E2D) {
+                  if (T2DA.null()) {
+                      T2DA = _triangles[i];
+                      E1D_T2DA.add(_triangles[i]->edge(0));
+                      E1D_T2DA.add(_triangles[i]->edge(2));
+                    }
+                  else {
+                      T2DB = _triangles[i];
+                      E1D_T2DB.add(_triangles[i]->edge(0));
+                      E1D_T2DB.add(_triangles[i]->edge(2));
+                    }
+                }
+              else if (_triangles[i]->edge(2) == E2D) {
+                  if (T2DA.null()) {
+                      T2DA = _triangles[i];
+                      E1D_T2DA.add(_triangles[i]->edge(0));
+                      E1D_T2DA.add(_triangles[i]->edge(1));
+                    }
+                  else {
+                      T2DB = _triangles[i];
+                      E1D_T2DB.add(_triangles[i]->edge(0));
+                      E1D_T2DB.add(_triangles[i]->edge(1));
+                    }
+                }
+              else if (_triangles[i]->vertex(0) == D[0]
+                       || _triangles[i]->vertex(0) == D[1]
+                       || _triangles[i]->vertex(1) == D[0]
+                       || _triangles[i]->vertex(1) == D[1]
+                       || _triangles[i]->vertex(2) == D[0]
+                       || _triangles[i]->vertex(2) == D[1]) {
+                  T1D.add(_triangles[i]);
+                }
+            }
+
+          // find the edge array E1D_T1D
+          for (i=0; i<T1D.length(); i++) {
+              for (int j=0; j<3; j++) {
+                  if (T1D[i]->edge(j)->vertex(0) == D[0]
+                      ||T1D[i]->edge(j)->vertex(0) == D[1]
+                      ||T1D[i]->edge(j)->vertex(1) == D[0]
+                      ||T1D[i]->edge(j)->vertex(1) == D[1]) {
+                      E1D_T1D.add(T1D[i]->edge(j));
+                    }
+                }
+            }
+
+          // find the vertex replacement, D_rep
+          RefVertex D_rep(new Vertex(new Point(3),*(new DVector(3))));
+          for (i=0; i<3; i++) {
+              D_rep->point()->operator[](i) =
+                0.5*(D[0]->point()->operator[](i)
+                     + D[1]->point()->operator[](i));
+              D_rep->gradient().operator[](i) =
+                0.5*(D[0]->gradient().operator[](i)
+                     + D[1]->gradient().operator[](i));
+            }
+
+          // find the edge replacements, E1D_T2DA_rep
+          RefEdge E1D_T2DA_rep;
+          if (D[0] != E1D_T2DA[0]->vertex(0)
+              && D[1] != E1D_T2DA[0]->vertex(0)) {
+              E1D_T2DA_rep = new Edge(E1D_T2DA[0]->vertex(0),D_rep);
+            }
+          else {
+              E1D_T2DA_rep = new Edge(E1D_T2DA[0]->vertex(1),D_rep);
+            }
+
+          // find the edge replacements, E1D_T2DB_rep
+          RefEdge E1D_T2DB_rep;
+          if (D[0] != E1D_T2DB[0]->vertex(0)
+              && D[1] != E1D_T2DB[0]->vertex(0)) {
+              E1D_T2DB_rep = new Edge(E1D_T2DB[0]->vertex(0),D_rep);
+            }
+          else {
+              E1D_T2DB_rep = new Edge(E1D_T2DB[0]->vertex(1),D_rep);
+            }
+
+          // find the edge replacements, E1D_T1D_rep
+          ArrayRefEdge E1D_T1D_rep(E1D_T1D.length());
+          for (i=0; i<E1D_T1D.length(); i++) {
+              if (E1D_T1D[i]->vertex(0) == D[0]
+                  || E1D_T1D[i]->vertex(0) == D[1]) {
+                  E1D_T1D_rep[i] = new Edge(D_rep,E1D_T1D[i]->vertex(1));
+                }
+              else {
+                  E1D_T1D_rep[i] = new Edge(D_rep,E1D_T1D[i]->vertex(0));
+                }
+            }
+
+          // find the triangle replacments, T1D_rep
+          ArrayRefTriangle T1D_rep(T1D.length());
+          for (i=0; i<T1D.length(); i++) {
+              ArrayRefEdge edges(3);
+              for (int j=0; j<3; j++) {
+                  edges[j] = T1D[i]->edge(j);
+                  int iedge = E1D_T1D.iseek(edges[j]);
+                  if (iedge >= 0) {
+                      edges[j] = E1D_T1D_rep[iedge];
+                      continue;
+                    }
+                  iedge = E1D_T2DA.iseek(edges[j]);
+                  if (iedge >= 0) {
+                      edges[j] = E1D_T2DA_rep;
+                      continue;
+                    }
+                  iedge = E1D_T2DB.iseek(edges[j]);
+                  if (iedge >= 0) {
+                      edges[j] = E1D_T2DB_rep;
+                      continue;
+                    }
+                }
+              T1D_rep[i] = new Triangle(edges[0],edges[1],edges[2]);
+            }
+
+          for (i=0; i<ntriangle; i++) triangle_map[i] = i;
+          for (i=0; i<nvertex; i++) vertex_map[i] = i;
+          for (i=0; i<nedge; i++) edge_map[i] = i;
+
+          // compute the mapping of old vertex indices to new vertex indices
+          for (i=0; i<2; i++) {
+              int j;
+              int jstart = _vertices.iseek(D[i]);
+              vertex_map[jstart] = nvertex-2; // delete 2 add 1
+              for (j=jstart+1; j<nvertex; j++) {
+                  vertex_map[j]--;
+                }
+            }
+
+          // compute the mapping of old edge indices to new edge indices
+          int istart = _edges.iseek(E2D);
+          edge_map[istart] = -1;
+          for (i=istart+1; i<nedge; i++) edge_map[i]--;
+          for (i=0; i<2; i++) {
+              int j;
+              int jstart = _edges.iseek(E1D_T2DA[i]);
+              edge_map[jstart] = nedge - 5; // delete 5 add 1
+              for (j=jstart+1; j<nedge; j++) edge_map[j]--;
+              jstart = _edges.iseek(E1D_T2DB[i]);
+              edge_map[jstart] = nedge - 4; // delete 5 add 2
+              for (j=jstart+1; j<nedge; j++) edge_map[j]--;
+            }
+
+          // compute the mapping of old triangle indices to new
+          istart = _triangles.iseek(T2DA);
+          triangle_map[istart] = -1;
+          for (i=istart+1; i<ntriangle; i++) triangle_map[i]--;
+          istart = _triangles.iseek(T2DB);
+          triangle_map[istart] = -1;
+          for (i=istart+1; i<ntriangle; i++) triangle_map[i]--;
+          
+          // replace the E1D_T1D edges
+          for (i=0; i<E1D_T1D.length(); i++) {
+              _edges[_edges.iseek(E1D_T1D[i])] = E1D_T1D_rep[i];
+            }
+
+          // replace the T1D triangles
+          for (i=0; i<T1D.length(); i++) {
+              _triangles[_triangles.iseek(T1D[i])] = T1D_rep[i];
+            }
+
+          // delete the unused objects
+          _triangles.del(T2DA);
+          _triangles.del(T2DB);
+          _edges.del(E2D);
+          _vertices.del(D[0]);
+          _vertices.del(D[1]);
+          for (i=0; i<2; i++) {
+              _edges.del(E1D_T2DA[i]);
+              _edges.del(E1D_T2DB[i]);
+            }
+
+          // put the new vertex on the end
+          _vertices.add(D_rep);
+
+          // put the new edges on the end
+          _edges.add(E1D_T2DA_rep);
+          _edges.add(E1D_T2DB_rep);
+
+          if (_triangle_vertex) {
+              int ii;
+              for (i=ii=0; ii<ntriangle; ii++) {
+                  if (triangle_map[ii] < 0) {
+                      delete[] _triangle_vertex[ii];
+                      continue;
+                    }
+                  _triangle_vertex[i] = _triangle_vertex[ii];
+                  for (int j=0; j<3; j++) {
+                      _triangle_vertex[i][j]
+                        = vertex_map[_triangle_vertex[i][j]];
+                    }
+                  i++;
+                }
+            }
+          if (_triangle_edge) {
+              int ii;
+              for (i=ii=0; ii<ntriangle; ii++) {
+                  if (triangle_map[ii] < 0) {
+                      delete[] _triangle_edge[ii];
+                      continue;
+                    }
+                  _triangle_edge[i] = _triangle_edge[ii];
+                  for (int j=0; j<3; j++) {
+                      _triangle_edge[i][j]
+                        = edge_map[_triangle_edge[i][j]];
+                    }
+                  i++;
+                }
+            }
+          if (_edge_vertex) {
+              int ii;
+              for (i=ii=0; ii<nedge; ii++) {
+                  if (edge_map[ii] < 0) {
+                      delete[] _edge_vertex[ii];
+                      continue;
+                    }
+                  _edge_vertex[i] = _edge_vertex[ii];
+                  for (int j=0; j<2; j++) {
+                      _edge_vertex[i][j]
+                        = vertex_map[_edge_vertex[i][j]];
+                    }
+                  i++;
+                }
+            }
+          ntriangle -= 2;
+          nedge -= 3;
+          nvertex -= 1;
+          
+        } /* if below cutoff */
+    }
+  delete[] edge_map;
+  delete[] vertex_map;
+
+  printf("    %3d    %3d     %3d     (%s)\n",
+         nvertex,nedge,ntriangle,"final");
+
+  printf("    %3d    %3d     %3d     (%s)\n",
+         _vertices.length(),_edges.length(),_triangles.length(),"actual");
+}
+
+void
 TriangulatedSurface::complete_surface()
 {
   int i;
@@ -709,19 +1008,25 @@ TriangulatedSurface::complete_surface()
       _edges.add(tri->edge(2));
     }
   int ne = nedge();
-  for (i=0; i<ne; i++) {
-      RefEdge e = edge(i);
-      _vertices.add(e->vertex(0));
-      _vertices.add(e->vertex(1));
+  // The vertices have possibly already been set up.  If so, then
+  // they all better be there.
+  if (_vertices.length() == 0) {
+      for (i=0; i<ne; i++) {
+          RefEdge e = edge(i);
+          _vertices.add(e->vertex(0));
+          _vertices.add(e->vertex(1));
+        }
     }
 
-  // construct the array that converts the triangle number and vertex number
-  // within the triangle to the overall vertex number
-  _triangle_vertex = new int*[ntri];
-  for (i=0; i<ntri; i++) {
-      _triangle_vertex[i] = new int[3];
-      for (int j=0; j<3; j++) _triangle_vertex[i][j] =
-        _vertices.iseek(triangle(i)->vertex(j));
+  if (!_triangle_vertex) {
+      // construct the array that converts the triangle number and vertex
+      // number within the triangle to the overall vertex number
+      _triangle_vertex = new int*[ntri];
+      for (i=0; i<ntri; i++) {
+          _triangle_vertex[i] = new int[3];
+          for (int j=0; j<3; j++) _triangle_vertex[i][j] =
+            _vertices.iseek(triangle(i)->vertex(j));
+        }
     }
 
   // construct the array that converts the triangle number and edge number
@@ -839,6 +1144,47 @@ void
 TriangulatedSurface::add_triangle(RefTriangle&t)
 {
   if (_completed_surface) clear();
+  else if (_triangle_vertex) {
+      fprintf(stderr,"TriangulatedSurface::add_triangle(): "
+              "didn't expect vertices\n");
+      abort();
+    }
+  _triangles.add(t);
+}
+
+void
+TriangulatedSurface::initialize_vertices_triangles(int nvert,int ntri)
+{
+  if (_completed_surface) clear();
+  // construct the array that converts the triangle number and vertex number
+  // within the triangle to the overall vertex number
+  _triangle_vertex = new int*[ntri];
+  for (int i=0; i<ntri; i++) {
+      _triangle_vertex[i] = new int[3];
+    }
+}
+
+void
+TriangulatedSurface::add_vertex(RefVertex&v)
+{
+  _vertices.add(v);
+}
+
+void
+TriangulatedSurface::add_triangle(RefTriangle&t,
+                                  int vertex0,
+                                  int vertex1,
+                                  int vertex2)
+{
+  if (!_triangle_vertex) {
+      fprintf(stderr,"TriangulatedSurface::add_triangle(): "
+              "expected vertices\n");
+      abort();
+    }
+  int i = _triangles.length();
+  _triangle_vertex[i][0] = vertex0;
+  _triangle_vertex[i][1] = vertex1;
+  _triangle_vertex[i][2] = vertex2;
   _triangles.add(t);
 }
 
@@ -855,7 +1201,7 @@ TriangulatedSurface::print(FILE*fp)
       int dim = p->dimension();
       fprintf(fp,"  %3d:",i);
       for (int j=0; j<dim; j++) {
-          fprintf(fp," % 8.4f", p->point()->operator[](j));
+          fprintf(fp," % 15.10f", p->point()->operator[](j));
         }
       fprintf(fp,"\n");
     }
@@ -877,6 +1223,35 @@ TriangulatedSurface::print(FILE*fp)
               _edges.iseek(tri->edge(0)),
               _edges.iseek(tri->edge(1)),
               _edges.iseek(tri->edge(2)));
+    }
+}
+
+void
+TriangulatedSurface::print_vertices_and_triangles(FILE*fp)
+{
+  fprintf(fp,"TriangulatedSurface:\n");
+  int i;
+
+  int np = nvertex();
+  fprintf(fp," %3d Vertices:\n",np);
+  for (i=0; i<np; i++) {
+      RefVertex p = vertex(i);
+      int dim = p->dimension();
+      fprintf(fp,"  %3d:",i);
+      for (int j=0; j<dim; j++) {
+          fprintf(fp," % 15.10f", p->point()->operator[](j));
+        }
+      fprintf(fp,"\n");
+    }
+
+  int nt = ntriangle();
+  fprintf(fp," %3d Triangles:\n",nt);
+  for (i=0; i<nt; i++) {
+      RefTriangle tri = triangle(i);
+      fprintf(fp,"  %3d: %3d %3d %3d\n",i,
+              _triangle_vertex[i][0],
+              _triangle_vertex[i][1],
+              _triangle_vertex[i][2]);
     }
 }
 
@@ -947,6 +1322,14 @@ TriangulatedSurface10::volume()
     }
   
   return volume;
+}
+
+void
+TriangulatedSurface10::remove_short_edges(double length_cutoff)
+{
+  fprintf(stderr,"TriangulatedSurface10::remove_short_edges(): "
+          "not implemented\n");
+  abort();
 }
 
 //////////////////////////////////////////////////////////////////////

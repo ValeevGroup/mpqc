@@ -16,7 +16,7 @@ class Vertex: public RefCount {
     DVector _gradient;
   public:
     Vertex();
-    Vertex(RefPoint&point);
+    //Vertex(RefPoint&point);
     Vertex(RefPoint&point,DVector&gradient);
     ~Vertex();
     inline DVector& gradient() { return _gradient; };
@@ -34,7 +34,7 @@ SET_dec(RefVertex);
 ARRAYSET_dec(RefVertex);
 ARRAY_dec(ArraysetRefVertex);
 
-class Edge: public RefCount {
+class Edge: public VRefCount {
   private:
     RefVertex _vertices[2];
   public:
@@ -68,7 +68,7 @@ SET_dec(RefEdge4);
 ARRAYSET_dec(RefEdge4);
 ARRAY_dec(ArraysetRefEdge4);
 
-class Triangle: public RefCount {
+class Triangle: public VRefCount {
   private:
     int _edge_vertex;
     RefEdge _edges[3];
@@ -169,9 +169,14 @@ class TriangulatedSurface {
     inline int ntriangle() { return _triangles.length(); };
     inline RefTriangle triangle(int i) { return _triangles[i]; };
     void add_triangle(RefTriangle&);
+    void initialize_vertices_triangles(int nvertex, int ntriangle);
+    void add_vertex(RefVertex&);
+    void add_triangle(RefTriangle&,int vertex0,int vertex1,int vertex2);
+    virtual void remove_short_edges(double cutoff_length = 1.0e-6);
     virtual void clear();
     virtual void complete_surface();
     virtual void print(FILE* = stdout);
+    virtual void print_vertices_and_triangles(FILE* = stdout);
     //void compute_colors(Volume&);
     void compute_values(RefVolume&);
     virtual double area();
@@ -190,6 +195,7 @@ class TriangulatedSurface10: public TriangulatedSurface {
   public:
     TriangulatedSurface10(RefVolume&vol,double isovalue);
     ~TriangulatedSurface10();
+    void remove_short_edges(double cutoff_length = 1.0e-6);
     void complete_surface();
     double area();
     double volume();

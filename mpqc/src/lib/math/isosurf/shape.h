@@ -10,6 +10,9 @@
 #include <util/container/set.h>
 
 class Shape: public Volume {
+#   define CLASSNAME Shape
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
   public:
     const double infinity = 1.0e23;
     
@@ -21,12 +24,15 @@ class Shape: public Volume {
     RefPoint interpolate(RefPoint p1,RefPoint p2,double val);
 };
 
-REF_dec(Shape);
+SavableState_REF_dec(Shape);
 ARRAY_dec(RefShape);
 SET_dec(RefShape);
 ARRAYSET_dec(RefShape);
 
 class SphereShape: public Shape {
+#   define CLASSNAME SphereShape
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
   private:
     Point3 _origin;
     double _radius;
@@ -48,6 +54,9 @@ ARRAYSET_dec(RefSphereShape);
 
 class UncappedTorusHoleShape: public Shape
 {
+#   define CLASSNAME UncappedTorusHoleShape
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
   private:
     SphereShape _s1;
     SphereShape _s2;
@@ -71,6 +80,9 @@ class UncappedTorusHoleShape: public Shape
 
 class NonreentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
 {
+#   define CLASSNAME NonreentrantUncappedTorusHoleShape
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
   private:
     double rAP;
     double rBP;
@@ -85,6 +97,9 @@ class NonreentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
 
 class ReentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
 {
+#   define CLASSNAME ReentrantUncappedTorusHoleShape
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
   private:
     double rAP;
     double rBP;
@@ -101,6 +116,9 @@ class ReentrantUncappedTorusHoleShape: public UncappedTorusHoleShape
 
 class Uncapped5SphereExclusionShape: public Shape
 {
+#   define CLASSNAME Uncapped5SphereExclusionShape
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
   private:
     int _solution_exists;
     int _reentrant;
@@ -155,6 +173,9 @@ class Uncapped5SphereExclusionShape: public Shape
 };
 
 class UnionShape: public Shape {
+#   define CLASSNAME UnionShape
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
   protected:
     ArraysetRefShape _shapes;
   public:

@@ -2014,6 +2014,9 @@ static int convert_to_surface(TriangulatedSurface& surf,UniformLattice&lat)
   ArrayArraysetint edge_point_numbers(vertex_count);
   ArrayArraysetRefEdge edges(vertex_count);
 
+  /* Initialize the surface. */
+  surf.initialize_vertices_triangles(vertex_count,triangle_count);
+
   /* Copy vertex info into the vertex buffer, adding vertex indices
    * as we go.
    */
@@ -2024,8 +2027,9 @@ static int convert_to_surface(TriangulatedSurface& surf,UniformLattice&lat)
       RefPoint newpoint = new Point(thisvtx->x,thisvtx->y,thisvtx->z);
       lat.gradient(newpoint,gradient);
       points[i] = new Vertex(newpoint,gradient);
-    thisvtx->index= i++;
-    thisvtx= thisvtx->next;
+      surf.add_vertex(points[i]);
+      thisvtx->index= i++;
+      thisvtx= thisvtx->next;
   }
 
   /* Put the triangle info into the surface.
@@ -2038,7 +2042,10 @@ static int convert_to_surface(TriangulatedSurface& surf,UniformLattice&lat)
                              thistri->v2->index,thistri->v3->index);
       RefEdge e3 = find_edge(edge_point_numbers,edges,points,
                              thistri->v1->index,thistri->v3->index);
-      surf.add_triangle(new Triangle(e1,e2,e3));
+      surf.add_triangle(new Triangle(e1,e2,e3),
+                        thistri->v1->index,
+                        thistri->v2->index,
+                        thistri->v3->index);
     thistri= thistri->next;
   }
 

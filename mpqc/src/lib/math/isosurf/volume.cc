@@ -6,14 +6,23 @@ extern "C" {
 
 #include "volume.h"
 
+#define CLASSNAME Volume
+#define PARENTS public NLP2
+#include <util/state/statei.h>
+#include <util/class/classia.h>
+
+void *
+Volume::_castdown(const ClassDesc*cd)
+{
+  void* casts[] =  { NLP2::_castdown(cd) };
+  return do_castdowns(casts,cd);
+}
+
 Volume::Volume(int dim):
   NLP2(dim),
   _value(fvalue),
   _gradient(grad),
   _hessian(Hessian),
-  _do_value(1),
-  _do_gradient(0),
-  _do_hessian(0),
   _interp_acc(1.0e-6)
 {
 }
@@ -193,20 +202,12 @@ void
 Volume::set_value(double e)
 {
   _value = e;
-  _have_value = 1;
+  _value.computed() = 1;
 }
 
 double
 Volume::value()
 {
-  if (!_have_value) {
-      int old = do_value(1);
-      compute();
-      do_value(old);
-    }
-  if (!_have_value) {
-      failure("could not compute value");
-    }
   return _value;
 }
 
@@ -214,29 +215,22 @@ void
 Volume::set_gradient(ColumnVector&g)
 {
   _gradient = g;
-  _have_gradient = 1;
+  _gradient.computed() = 1;
 }
 
 void
 Volume::set_gradient(DVector&g)
 {
-  _gradient.ReDimension(g.dim());
-  for (int i=0; i<g.dim(); i++) _gradient.element(i) = g[i];
-  _have_gradient = 1;
+  ColumnVector& v = _gradient.result_noupdate();
+  v.ReDimension(g.dim());
+  for (int i=0; i<g.dim(); i++) v.element(i) = g[i];
+  _gradient.computed() = 1;
 }
 
 
 const ColumnVector&
 Volume::gradient()
 {
-  if (!_have_gradient) {
-      int old = do_gradient(1);
-      compute();
-      do_gradient(old);
-    }
-  if (!_have_gradient) {
-      failure("could not compute gradient");
-    }
   return _gradient;
 }
 
@@ -244,74 +238,52 @@ void
 Volume::set_hessian(SymmetricMatrix&h)
 {
   _hessian = h;
-  _have_hessian = 1;
+  _hessian.computed() = 1;
 }
 
 const SymmetricMatrix&
 Volume::hessian()
 {
-  if (!_have_hessian) {
-      int old = do_hessian(1);
-      compute();
-      do_hessian(old);
-    }
-  if (!_have_hessian) {
-      failure("could not compute hessian");
-    }
   return _hessian;
 }
 
 int
 Volume::do_value()
 {
-  return _do_value;
+  return _value.compute();
 }
 
 int
 Volume::do_gradient()
 {
-  return _do_gradient;
+  return _gradient.compute();
 }
 
 int
 Volume::do_hessian()
 {
-  return _do_hessian;
+  return _hessian.compute();
 }
 
 int
 Volume::do_value(int f)
 {
-  int old = _do_value;
-  _do_value = f;
-  return old;
+  return _value.compute(f);
 }
 
 int
 Volume::do_gradient(int f)
 {
-  int old = _do_gradient;
-  _do_gradient = f;
-  return old;
+  return _gradient.compute(f);
 }
 
 int
 Volume::do_hessian(int f)
 {
-  int old = _do_hessian;
-  _do_hessian = f;
-  return old;
+  return _hessian.compute(f);
 }
 
-void
-Volume::x_changed()
-{
-  _have_value = 0;
-  _have_gradient = 0;
-  _have_hessian = 0;
-}
-
-REF_def(Volume);
+SavableState_REF_def(Volume);
 ARRAY_def(RefVolume);
 SET_def(RefVolume);
 ARRAYSET_def(RefVolume);

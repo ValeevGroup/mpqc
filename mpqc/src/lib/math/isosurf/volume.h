@@ -8,20 +8,15 @@
 #include <math/topology/point.h>
 
 class Volume: public NLP2 {
+#   define CLASSNAME Volume
+#   include <util/state/stated.h>
+#   include <util/class/classda.h>
   private:
-    int _do_value;
-    int _do_gradient;
-    int _do_hessian;
-    
-    int _have_value;
-    int _have_gradient;
-    int _have_hessian;
-
     double _interp_acc;
 
-    double& _value;
-    ColumnVector& _gradient;
-    SymmetricMatrix& _hessian;
+    Resultdouble& _value;
+    ResultColumnVector& _gradient;
+    ResultSymmetricMatrix& _hessian;
   protected:
     void set_value(double);
     void set_gradient(ColumnVector&);
@@ -69,21 +64,18 @@ class Volume: public NLP2 {
     int do_gradient();
     int do_hessian();
 
-    // overrides for members of NLP2, NLP1, and NLP0
-    void x_changed();
+    virtual void Eval();
+    virtual double EvalF();
+    virtual ColumnVector EvalG();
+    virtual SymmetricMatrix EvalH();
 
-    void Eval();
-    double EvalF();
-    ColumnVector EvalG();
-    SymmetricMatrix EvalH();
-
-    double value();
-    inline double value(RefPoint&p) { SetX(p); return value(); };
-    const ColumnVector& gradient();
-    const SymmetricMatrix& hessian();
+    virtual double value();
+    virtual inline double value(RefPoint&p) { SetX(p); return value(); };
+    virtual const ColumnVector& gradient();
+    virtual const SymmetricMatrix& hessian();
 };
 
-REF_dec(Volume);
+SavableState_REF_dec(Volume);
 ARRAY_dec(RefVolume);
 SET_dec(RefVolume);
 ARRAYSET_dec(RefVolume);

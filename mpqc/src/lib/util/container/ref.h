@@ -9,9 +9,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifndef SUNMOS
 #ifndef REF_CHECK_POINTER
+#ifndef SUNMOS
 #define REF_CHECK_POINTER 1
+#else
+#define REF_CHECK_POINTER 0
 #endif
 #endif
 

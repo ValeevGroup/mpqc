@@ -213,18 +213,15 @@ refname :: refname (T*a): p(a)						      \
       warn("Ref" # T ": creating a reference to stack data");		      \
     }									      \
   if (p) p->reference();						      \
-  if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
 refname :: refname (const refname &a): p(a.p)				      \
 {									      \
   if (p) p->reference();						      \
-  if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
 refname :: refname (const RefDescribedClassBase &a)			      \
 {									      \
   p = T::castdown((DescribedClass*)a.parentpointer());		              \
   if (p) p->reference();						      \
-  if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
 refname :: ~refname ()							      \
 {									      \
@@ -233,7 +230,6 @@ refname :: ~refname ()							      \
 void									      \
 refname :: clear()							      \
 {									      \
-  if (REF_CHECK_POINTER) check_pointer();				      \
   if (p && p->dereference()<=0) {					      \
       if (DO_REF_CHECK_STACK(p)) {					      \
           warn("Ref" # T ": skipping delete of object on the stack");	      \
@@ -254,7 +250,6 @@ refname& refname :: operator=(const refname & c)			      \
   if (c.p) c.p->reference();						      \
   clear();								      \
   p=c.p;								      \
-  if (REF_CHECK_POINTER) check_pointer();				      \
   return *this;								      \
 }									      \
 refname& refname :: operator=(T* cr)					      \
@@ -262,7 +257,6 @@ refname& refname :: operator=(T* cr)					      \
   if (cr) cr->reference();						      \
   clear();								      \
   p = cr;								      \
-  if (REF_CHECK_POINTER) check_pointer();				      \
   return *this;								      \
 }									      \
 refname& refname :: operator=(const RefDescribedClassBase & c)		      \
@@ -271,7 +265,6 @@ refname& refname :: operator=(const RefDescribedClassBase & c)		      \
   if (cr) cr->reference();						      \
   clear();								      \
   p = cr;								      \
-  if (REF_CHECK_POINTER) check_pointer();				      \
   return *this;								      \
 }									      \
 void refname :: assign_pointer(T* cr)					      \
@@ -279,7 +272,6 @@ void refname :: assign_pointer(T* cr)					      \
   if (cr) cr->reference();						      \
   clear();								      \
   p = cr;								      \
-  if (REF_CHECK_POINTER) check_pointer();				      \
 }									      \
 void refname :: check_pointer() const					      \
 {									      \

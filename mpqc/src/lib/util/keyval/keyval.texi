@@ -20,6 +20,7 @@ single C++ statement.
 @node The KeyVal Class, , The KeyVal Library, The KeyVal Library
 @section The KeyVal Class
 @clindex KeyVal
+@c texi2html: do not split
 
 The @code{KeyVal} class is designed to simplify the process of allowing
 a user to specify keyword/value associations to a C++ program.  A
@@ -136,6 +137,7 @@ The requested operation failed.
 @node The ParsedKeyVal Class, , , The KeyVal Library
 @section The ParsedKeyVal Class
 @clindex ParsedKeyVal
+@c texi2html: do not split
 
 The @code{ParsedKeyVal} class inherits from @code{KeyVal}.  It permits
 users to specify keyword/value associations in a text file.

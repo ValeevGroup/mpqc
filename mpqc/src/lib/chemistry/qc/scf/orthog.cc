@@ -131,14 +131,15 @@ SCElementMaxDiff::collect(const RefMessageGrp&msg)
 
 
 // C.t() * S * C should be a unit matrix.  There can be zeros
-// on the diagonal if the basis set is linearly independent.
+// on the diagonal if the basis set is linearly dependent and
+// symmetric orthogonalization is used.
 void
 SCF::orthog_vector(RefSCMatrix &C, const RefSymmSCMatrix &S,
                    double diag_one_tolerance,
                    double offdiag_tolerance,
                    double diag_zero_tolerance)
 {
-  RefSymmSCMatrix CtSC = S.clone();
+  RefSymmSCMatrix CtSC(oso_dimension(), basis_matrixkit());
   CtSC.assign(0.0);
   CtSC.accumulate_transform(C, S, SCMatrix::TransposeTransform);
   if (debug_ > 1) CtSC.print("CtSC");

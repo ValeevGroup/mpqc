@@ -126,7 +126,7 @@ RefSymmSCMatrix
 HCoreWfn::density()
 {
   if (!density_.computed()) {
-    RefDiagSCMatrix mo_density(basis_dimension(), basis_matrixkit());
+    RefDiagSCMatrix mo_density(oso_dimension(), basis_matrixkit());
     BlockedDiagSCMatrix *modens
       = BlockedDiagSCMatrix::castdown(mo_density.pointer());
     if (!modens) {
@@ -144,7 +144,7 @@ HCoreWfn::density()
         modens_ib->set_element(i, 1.0);
     }
 
-    RefSymmSCMatrix dens(basis_dimension(), basis_matrixkit());
+    RefSymmSCMatrix dens(so_dimension(), basis_matrixkit());
     dens->assign(0.0);
     dens->accumulate_transform(eigenvectors(), mo_density);
 

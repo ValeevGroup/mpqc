@@ -112,7 +112,7 @@ CLKS::print(ostream&o) const
 RefSymmSCMatrix
 CLKS::density()
 {
-  RefSymmSCMatrix dens(basis_dimension(), basis_matrixkit());
+  RefSymmSCMatrix dens(so_dimension(), basis_matrixkit());
   so_density(dens, 2.0);
   dens.scale(2.0);
   return dens;
@@ -130,7 +130,7 @@ CLKS::effective_fock()
 {
   RefSymmSCMatrix fa = fock(0) + vxc_;
 
-  RefSymmSCMatrix mofock = fa.clone();
+  RefSymmSCMatrix mofock(oso_dimension(), basis_matrixkit());
   mofock.assign(0.0);
 
   // use eigenvectors if scf_vector_ is null

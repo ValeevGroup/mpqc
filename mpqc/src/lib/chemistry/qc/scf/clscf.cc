@@ -69,7 +69,7 @@ CLSCF::CLSCF(StateIn& s) :
   cl_fock_(this)
 {
   cl_fock_.result_noupdate() =
-    basis_matrixkit()->symmmatrix(basis_dimension());
+    basis_matrixkit()->symmmatrix(so_dimension());
   cl_fock_.restore_state(s);
   cl_fock_.result_noupdate().restore(s);
   
@@ -423,7 +423,7 @@ RefSymmSCMatrix
 CLSCF::density()
 {
   if (!density_.computed()) {
-    RefSymmSCMatrix dens(basis_dimension(), basis_matrixkit());
+    RefSymmSCMatrix dens(so_dimension(), basis_matrixkit());
     so_density(dens, 2.0);
     dens.scale(2.0);
 
@@ -495,7 +495,7 @@ CLSCF::effective_fock()
 {
   // just return MO fock matrix.  use fock() instead of cl_fock_ just in
   // case this is called from someplace outside SCF::compute_vector()
-  RefSymmSCMatrix mofock = fock(0).clone();
+  RefSymmSCMatrix mofock(oso_dimension(), basis_matrixkit());
   mofock.assign(0.0);
 
   // use eigenvectors if scf_vector_ is null
@@ -560,7 +560,7 @@ CLSCF::lagrangian()
   mofock.element_op(op);
   
   // transform MO lagrangian to SO basis
-  RefSymmSCMatrix so_lag(basis_dimension(), basis_matrixkit());
+  RefSymmSCMatrix so_lag(so_dimension(), basis_matrixkit());
   so_lag.assign(0.0);
   so_lag.accumulate_transform(scf_vector_, mofock);
   
@@ -575,7 +575,7 @@ CLSCF::lagrangian()
 RefSymmSCMatrix
 CLSCF::gradient_density()
 {
-  cl_dens_ = basis_matrixkit()->symmmatrix(basis_dimension());
+  cl_dens_ = basis_matrixkit()->symmmatrix(so_dimension());
   cl_dens_.assign(0.0);
   
   so_density(cl_dens_, 2.0);

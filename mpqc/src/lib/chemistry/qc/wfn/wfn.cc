@@ -47,7 +47,7 @@
 SavableState_REF_def(Wavefunction);
 
 #define CLASSNAME Wavefunction
-#define VERSION 2
+#define VERSION 3
 #define PARENTS public MolecularEnergy
 #include <util/state/statei.h>
 #include <util/class/classia.h>
@@ -64,6 +64,7 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
   // MolecularEnergy(new AggregateKeyVal(keyval,
   //                                     new PrefixKeyVal("basis", keyval))),
   MolecularEnergy(keyval),
+  have_overlap_eig_(0),
   overlap_(this),
   hcore_(this),
   natural_orbitals_(this),
@@ -85,6 +86,8 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
   print_npa_ = keyval->booleanvalue("print_npa");
   KeyValValuedouble lindep_tol_def(1.e-6);
   lindep_tol_ = keyval->doublevalue("lindep_tol", lindep_tol_def);
+  symm_orthog_ = keyval->booleanvalue("symm_orthog",
+                                      KeyValValueboolean(1));
 
   debug_ = keyval->intvalue("debug");
 
@@ -100,13 +103,15 @@ Wavefunction::Wavefunction(const RefKeyVal&keyval):
   integral_->set_basis(gbs_);
   RefPetiteList pl = integral_->petite_list();
 
-  basisdim_ = pl->SO_basisdim();
+  sodim_ = pl->SO_basisdim();
+  aodim_ = pl->AO_basisdim();
   basiskit_ = gbs_->so_matrixkit();
 }
 
 Wavefunction::Wavefunction(StateIn&s):
   maybe_SavableState(s)
   MolecularEnergy(s),
+  have_overlap_eig_(0),
   overlap_(this),
   hcore_(this),
   natural_orbitals_(this),
@@ -135,13 +140,21 @@ Wavefunction::Wavefunction(StateIn&s):
     print_npa_ = 0;
   }
 
+  if (s.version(static_class_desc()) >= 3) {
+    s.get(symm_orthog_);
+  }
+  else {
+    symm_orthog_ = 1;
+  }
+
   gbs_.restore_state(s);
   integral_.restore_state(s);
 
   integral_->set_basis(gbs_);
   RefPetiteList pl = integral_->petite_list();
 
-  basisdim_ = pl->SO_basisdim();
+  sodim_ = pl->SO_basisdim();
+  aodim_ = pl->AO_basisdim();
   basiskit_ = gbs_->so_matrixkit();
 }
 
@@ -149,7 +162,13 @@ void
 Wavefunction::symmetry_changed()
 {
   RefPetiteList pl = integral_->petite_list();
-  basisdim_ = pl->SO_basisdim();
+  sodim_ = pl->SO_basisdim();
+  aodim_ = pl->SO_basisdim();
+  osodim_ = 0;
+  have_overlap_eig_ = 0;
+  overlap_isqrt_eigval_ = 0;
+  overlap_sqrt_eigval_ = 0;
+  overlap_eigvec_ = 0;
   basiskit_ = gbs_->so_matrixkit();
 }
 
@@ -175,6 +194,7 @@ Wavefunction::save_data_state(StateOut&s)
 
   s.put(print_nao_);
   s.put(print_npa_);
+  s.put(symm_orthog_);
 
   gbs_.save_state(s);
   integral_.save_state(s);
@@ -199,24 +219,22 @@ Wavefunction::natural_orbitals()
       RefSymmSCMatrix dens = density();
 
       // transform the density into an orthogonal basis
-      RefSymmSCMatrix ortho = so_to_orthog_so();
+      RefSCMatrix ortho = so_to_orthog_so();
 
-      RefSymmSCMatrix densortho(basis_dimension(), basis_matrixkit());
+      RefSymmSCMatrix densortho(oso_dimension(), basis_matrixkit());
       densortho.assign(0.0);
-      densortho.accumulate_transform(ortho.i(),dens);
+      densortho.accumulate_transform(so_to_orthog_so(),dens);
 
-      RefSCMatrix natorb(basis_dimension(), basis_dimension(),
+      RefSCMatrix natorb(oso_dimension(), oso_dimension(),
                          basis_matrixkit());
-      RefDiagSCMatrix natden(basis_dimension(), basis_matrixkit());
-      natural_orbitals_ = natorb;
+      RefDiagSCMatrix natden(oso_dimension(), basis_matrixkit());
+
+      densortho.diagonalize(natden, natorb);
+
+      // natorb is the ortho SO to NO basis transform
+      // make natural_orbitals_ the SO to the NO basis transform
+      natural_orbitals_ = so_to_orthog_so().t() * natorb;
       natural_density_ = natden;
-
-      densortho.diagonalize(natural_density_.result_noupdate(),
-                            natural_orbitals_.result_noupdate());
-
-      // _natural_orbitals is the ortho to NO basis transform
-      // make _natural_orbitals the AO to the NO basis transform
-      natural_orbitals_ = ortho * natural_orbitals_.result_noupdate();
 
       natural_orbitals_.computed() = 1;
       natural_density_.computed() = 1;
@@ -252,7 +270,7 @@ Wavefunction::overlap()
     ov=0;
 
     // then symmetrize it
-    RefSymmSCMatrix sb(basis_dimension(), basis_matrixkit());
+    RefSymmSCMatrix sb(so_dimension(), basis_matrixkit());
     pl->symmetrize(s,sb);
 
     overlap_ = sb;
@@ -284,8 +302,8 @@ Wavefunction::core_hamiltonian()
     hao.element_op(hc);
     hc=0;
 
-    // now symmetrize Hao
-    RefSymmSCMatrix h(basis_dimension(), basis_matrixkit());
+    // now symmetrize Hso
+    RefSymmSCMatrix h(so_dimension(), basis_matrixkit());
     pl->symmetrize(hao,h);
 
     hcore_ = h;
@@ -295,66 +313,164 @@ Wavefunction::core_hamiltonian()
   return hcore_.result_noupdate();
 }
 
-// at some point this will have to check for zero eigenvalues and not
-// invert them
-static int
-form_m_half(RefSymmSCMatrix& M,double tol)
+// computes intermediates needed to form orthogonalization matrices
+// and their inverses.
+void
+Wavefunction::compute_overlap_eig()
 {
+  // first calculate S
+  RefSymmSCMatrix M = overlap().copy();
+
   // Diagonalize M to get m and U
   RefSCMatrix U(M.dim(), M.dim(), M.kit());
   RefDiagSCMatrix m(M.dim(), M.kit());
   M.diagonalize(m,U);
 
-  // take square root of all elements of m
-  RefSCElementOp op = new SCElementSquareRoot;
-  m.element_op(op);
-
   RefSCElementMaxAbs maxabsop = new SCElementMaxAbs;
   m.element_op(maxabsop);
   double maxabs = maxabsop->result();
+  double s_tol = lindep_tol_ * maxabs;
 
-  RefSCElementMinAbs minabsop = new SCElementMinAbs(maxabs);
-  m.element_op(minabsop);
-  double minabs = minabsop->result();
+  double minabs = maxabs;
+  BlockedDiagSCMatrix *bm = BlockedDiagSCMatrix::castdown(m.pointer());
+  if (bm == 0) {
+      cout << node0 << "Wfn: orthog: expected blocked overlap" << endl;
+    }
+  int i, j;
+  double *pm_sqrt = new double[bm->dim()->n()];
+  double *pm_isqrt = new double[bm->dim()->n()];
+  int *pm_index = new int[bm->dim()->n()];
+  int *nfunc = new int[bm->nblocks()];
+  int nfunctot = 0;
+  int nlindep = 0;
+  for (i=0; i<bm->nblocks(); i++) {
+      nfunc[i] = 0;
+      if (bm->block(i).null()) continue;
+      int n = bm->block(i)->dim()->n();
+      double *pm = new double[n];
+      bm->block(i)->convert(pm);
+      for (j=0; j<n; j++) {
+          if (pm[j] > s_tol) {
+              if (pm[j] < minabs) { minabs = pm[j]; }
+              pm_sqrt[nfunctot] = sqrt(pm[j]);
+              pm_isqrt[nfunctot] = 1.0/pm_sqrt[nfunctot];
+              pm_index[nfunctot] = j;
+              nfunc[i]++;
+              nfunctot++;
+            }
+          else if (symm_orthog_) {
+              pm_sqrt[nfunctot] = 0.0;
+              pm_isqrt[nfunctot] = 0.0;
+              pm_index[nfunctot] = j;
+              nfunc[i]++;
+              nfunctot++;
+              nlindep++;
+            }
+          else {
+              nlindep++;
+            }
+        }
+      delete[] pm;
+    }
 
-  // invert m
-  RefSCElementInvert invertop = new SCElementInvert(tol*maxabs);
-  m.element_op(invertop);
-  int nlindep = invertop->result();
+  // make sure all nodes end up with exactly the same data
+  MessageGrp::get_default_messagegrp()->bcast(nfunctot);
+  MessageGrp::get_default_messagegrp()->bcast(nfunc, bm->nblocks());
+  MessageGrp::get_default_messagegrp()->bcast(pm_sqrt,nfunctot);
+  MessageGrp::get_default_messagegrp()->bcast(pm_isqrt,nfunctot);
+  MessageGrp::get_default_messagegrp()->bcast(pm_index,nfunctot);
 
-  if (!nlindep && maxabs/minabs > 1.0e1) {
-    cout << node0 << indent
-         << "s^(1/2): max/min = " << maxabs/minabs
-         << endl;
-  }
+  if (symm_orthog_) {
+      osodim_ = new SCDimension(bm->dim()->blocks(),
+                                "ortho SO (symmetric)");
+    }
+  else {
+      osodim_ = new SCDimension(nfunctot, bm->nblocks(),
+                                nfunc, "ortho SO (canonical)");
+      for (i=0; i<bm->nblocks(); i++) {
+        osodim_->blocks()->set_subdim(i, new SCDimension(nfunc[i]));
+      }
+    }
 
-  // back transform m^-1/2 to get M^-1/2 ( U*m^-1/2*U~ = M^-1/2)
-  M.assign(0.0);
-  M.accumulate_transform(U,m);
+  overlap_eigvec_ = basis_matrixkit()->matrix(sodim_, osodim_);
+  if (symm_orthog_) {
+      overlap_eigvec_.assign(U);
+    }
+  else {
+      BlockedSCMatrix *bev
+          = BlockedSCMatrix::castdown(overlap_eigvec_.pointer());
+      BlockedSCMatrix *bU
+          = BlockedSCMatrix::castdown(U.pointer());
+      int ifunc = 0;
+      for (i=0; i<bev->nblocks(); i++) {
+          if (bev->block(i).null()) continue;
+          for (j=0; j<nfunc[i]; j++) {
+              bev->block(i)->assign_column(
+                  bU->block(i)->get_column(pm_index[ifunc]),j
+                  );
+              ifunc++;
+            }
+        }
+    }
 
-  return nlindep;
-}
+  overlap_sqrt_eigval_ = basis_matrixkit()->diagmatrix(osodim_);
+  overlap_sqrt_eigval_->assign(pm_sqrt);
+  overlap_isqrt_eigval_ = basis_matrixkit()->diagmatrix(osodim_);
+  overlap_isqrt_eigval_->assign(pm_isqrt);
 
-// returns a matrix containing S^-1/2
-RefSymmSCMatrix
-Wavefunction::so_to_orthog_so()
-{
-  // first calculate S
-  RefSymmSCMatrix s = overlap().copy();
+  delete[] nfunc;
+  delete[] pm_sqrt;
+  delete[] pm_isqrt;
+  delete[] pm_index;
   
-  // then form S^-1/2
-  int nlindep = form_m_half(s,lindep_tol_);
   if (nlindep != 0) {
       cout << node0 << indent
-           << "Wavefunction: WARNING: "
+           << "Wavefunction: orthog: WARNING: "
            << nlindep << " linearly dependent basis function"
            << (nlindep>1?"s":"")
            << endl;
     }
 
-  //s.print("S^(-1/2)");
+  cout << node0 << indent
+       << "overlap eigenvalue max/min = " << maxabs/minabs
+       << endl;
 
-  return s;
+  have_overlap_eig_ = 1;
+}
+
+// returns the orthogonalization matrix
+RefSCMatrix
+Wavefunction::so_to_orthog_so()
+{
+  if (!have_overlap_eig_) compute_overlap_eig();
+
+  RefSCMatrix trans;
+
+  if (symm_orthog_) {
+    trans = overlap_eigvec_ * overlap_isqrt_eigval_ * overlap_eigvec_.t();
+  }
+  else {
+    trans = overlap_isqrt_eigval_ * overlap_eigvec_.t();
+  }
+
+  return trans;
+}
+
+RefSCMatrix
+Wavefunction::so_to_orthog_so_inverse()
+{
+  if (!have_overlap_eig_) compute_overlap_eig();
+
+  RefSCMatrix trans;
+
+  if (symm_orthog_) {
+    trans = overlap_eigvec_ * overlap_sqrt_eigval_ * overlap_eigvec_.t();
+  }
+  else {
+    trans = overlap_eigvec_ * overlap_sqrt_eigval_;
+  }
+
+  return trans;
 }
 
 RefGaussianBasisSet
@@ -370,9 +486,22 @@ Wavefunction::integral()
 }
 
 RefSCDimension
-Wavefunction::basis_dimension()
+Wavefunction::so_dimension()
 {
-  return basisdim_;
+  return sodim_;
+}
+
+RefSCDimension
+Wavefunction::ao_dimension()
+{
+  return aodim_;
+}
+
+RefSCDimension
+Wavefunction::oso_dimension()
+{
+  if (!have_overlap_eig_) compute_overlap_eig();
+  return osodim_;
 }
 
 RefSCMatrixKit

@@ -78,7 +78,9 @@ class OneBodyWavefunction: public Wavefunction {
 
     int nelectron();
 
-    // returns the so to mo transformation matrix
+    /** Returns the SO to MO transformation matrix.  The
+        row index is the SO number and the col index is the MO number.
+    */
     virtual RefSCMatrix eigenvectors() = 0;
     virtual RefDiagSCMatrix eigenvalues() = 0;
     virtual double occupation(int irrep, int vectornum) = 0;

@@ -98,17 +98,17 @@ OneBodyWavefunction::OneBodyWavefunction(StateIn&s):
   beta_occupations_(0)
 {
   eigenvectors_.result_noupdate() =
-    basis_matrixkit()->matrix(basis_dimension(), basis_dimension());
+    basis_matrixkit()->matrix(so_dimension(), oso_dimension());
   eigenvectors_.restore_state(s);
   eigenvectors_.result_noupdate().restore(s);
 
   eigenvalues_.result_noupdate() =
-    basis_matrixkit()->diagmatrix(basis_dimension());
+    basis_matrixkit()->diagmatrix(oso_dimension());
   eigenvalues_.restore_state(s);
   eigenvalues_.result_noupdate().restore(s);
 
   density_.result_noupdate() =
-    basis_matrixkit()->symmmatrix(basis_dimension());
+    basis_matrixkit()->symmmatrix(so_dimension());
   density_.restore_state(s);
   density_.result_noupdate().restore(s);
 }
@@ -171,8 +171,8 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
        << (oldP_so*oldS).trace() << endl;
 
   // Transform the old SO overlap into the orthogonal SO basis, oSO
-  RefSymmSCMatrix old_so_to_oso = owfn->so_to_orthog_so();
-  RefSymmSCMatrix oldP_oso = oldP_so->clone();
+  RefSCMatrix old_so_to_oso = owfn->so_to_orthog_so();
+  RefSymmSCMatrix oldP_oso(owfn->oso_dimension(), owfn->basis_matrixkit());
   oldP_oso->assign(0.0);
   oldP_oso->accumulate_transform(old_so_to_oso, oldP_so);
 
@@ -199,15 +199,15 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
     = oldpl->sotoao() * blocked_old_to_new_ao * pl->aotoso();
 
   // now must transform the transform into the orthogonal SO basis
-  RefSymmSCMatrix so_to_oso = so_to_orthog_so();
-  RefSCMatrix old_to_new_oso = old_so_to_oso.gi()
+  RefSCMatrix so_to_oso = so_to_orthog_so();
+  RefSCMatrix old_to_new_oso = owfn->so_to_orthog_so_inverse().t()
                              * old_to_new_so
-                             * so_to_oso;
+                             * so_to_oso.t();
   old_so_to_oso = 0;
   old_to_new_so = 0;
   
   // The old density transformed to the new orthogonal SO basis
-  RefSymmSCMatrix newP_oso(basis_dimension(), basis_matrixkit());
+  RefSymmSCMatrix newP_oso(oso_dimension(), basis_matrixkit());
   newP_oso->assign(0.0);
   newP_oso->accumulate_transform(old_to_new_oso.t(), oldP_oso);
   old_to_new_oso = 0;
@@ -238,7 +238,7 @@ OneBodyWavefunction::projected_eigenvectors(const RefOneBodyWavefunction& owfn,
   RefSCMatrix newvec_oso = newP_oso_vecs;
 
   // transform the orbitals from the orthogonal to nonorthogonal SO basis
-  RefSCMatrix newvec_so = so_to_oso * newvec_oso;
+  RefSCMatrix newvec_so = so_to_oso.t() * newvec_oso;
 
   if (debug_ >= 2) {
       newvec_oso.print("projected ortho SO vector");
@@ -510,12 +510,15 @@ OneBodyWavefunction::projected_eigenvalues(const RefOneBodyWavefunction& owfn,
 RefSCMatrix
 OneBodyWavefunction::hcore_guess()
 {
-  RefSymmSCMatrix hcore = core_hamiltonian();
-  RefSCMatrix vec(basis_dimension(), basis_dimension(), basis_matrixkit());
-  RefDiagSCMatrix val(basis_dimension(), basis_matrixkit());
-  hcore.diagonalize(val,vec);
+  RefSymmSCMatrix hcore_oso(oso_dimension(), basis_matrixkit());
+  hcore_oso->assign(0.0);
+  hcore_oso->accumulate_transform(so_to_orthog_so(), core_hamiltonian());
 
-  vec = so_to_orthog_so() * vec;
+  RefSCMatrix vec(oso_dimension(), oso_dimension(), basis_matrixkit());
+  RefDiagSCMatrix val(oso_dimension(), basis_matrixkit());
+  hcore_oso.diagonalize(val,vec);
+
+  vec = so_to_orthog_so().t() * vec;
 
   return vec;
 }

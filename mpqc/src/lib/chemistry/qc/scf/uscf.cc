@@ -80,22 +80,22 @@ UnrestrictedSCF::UnrestrictedSCF(StateIn& s) :
   compute_guess_ = 0;
 
   cb_.result_noupdate() =
-    basis_matrixkit()->matrix(basis_dimension(), basis_dimension());
+    basis_matrixkit()->matrix(so_dimension(), oso_dimension());
   cb_.restore_state(s);
   cb_.result_noupdate().restore(s);
 
   eb_.result_noupdate() =
-    basis_matrixkit()->diagmatrix(basis_dimension());
+    basis_matrixkit()->diagmatrix(oso_dimension());
   eb_.restore_state(s);
   eb_.result_noupdate().restore(s);
 
   focka_.result_noupdate() =
-    basis_matrixkit()->symmmatrix(basis_dimension());
+    basis_matrixkit()->symmmatrix(so_dimension());
   focka_.restore_state(s);
   focka_.result_noupdate().restore(s);
 
   fockb_.result_noupdate() =
-    basis_matrixkit()->symmmatrix(basis_dimension());
+    basis_matrixkit()->symmmatrix(so_dimension());
   fockb_.restore_state(s);
   fockb_.result_noupdate().restore(s);
 
@@ -666,7 +666,7 @@ UnrestrictedSCF::done_vector()
 RefSymmSCMatrix
 UnrestrictedSCF::alpha_density()
 {
-  RefSymmSCMatrix dens(basis_dimension(), basis_matrixkit());
+  RefSymmSCMatrix dens(so_dimension(), basis_matrixkit());
   so_density(dens, 1.0, 1);
   return dens;
 }
@@ -674,7 +674,7 @@ UnrestrictedSCF::alpha_density()
 RefSymmSCMatrix
 UnrestrictedSCF::beta_density()
 {
-  RefSymmSCMatrix dens(basis_dimension(), basis_matrixkit());
+  RefSymmSCMatrix dens(so_dimension(), basis_matrixkit());
   so_density(dens, 1.0, 0);
   return dens;
 }
@@ -722,8 +722,8 @@ RefSymmSCMatrix
 UnrestrictedSCF::density()
 {
   if (!density_.computed()) {
-    RefSymmSCMatrix densa(basis_dimension(), basis_matrixkit());
-    RefSymmSCMatrix densb(basis_dimension(), basis_matrixkit());
+    RefSymmSCMatrix densa(so_dimension(), basis_matrixkit());
+    RefSymmSCMatrix densb(so_dimension(), basis_matrixkit());
     so_density(densa, 1.0, 1);
     so_density(densb, 1.0, 0);
     densa.accumulate(densb);
@@ -829,7 +829,7 @@ RefSCExtrapError
 UnrestrictedSCF::extrap_error()
 {
   // form Error_a
-  RefSymmSCMatrix moa = hcore_.clone();
+  RefSymmSCMatrix moa(oso_dimension(), basis_matrixkit());
   moa.assign(0.0);
   moa.accumulate_transform(scf_vector_, focka_.result_noupdate(),
                               SCMatrix::TransposeTransform);
@@ -838,7 +838,7 @@ UnrestrictedSCF::extrap_error()
   moa.element_op(op);
   
   // form Error_b
-  RefSymmSCMatrix mob = hcore_.clone();
+  RefSymmSCMatrix mob(oso_dimension(), basis_matrixkit());
   mob.assign(0.0);
   mob.accumulate_transform(scf_vectorb_, fockb_.result_noupdate(),
                               SCMatrix::TransposeTransform);
@@ -846,12 +846,12 @@ UnrestrictedSCF::extrap_error()
   op = new UBExtrapErrorOp(this);
   mob.element_op(op);
 
-  RefSymmSCMatrix aoa = moa.clone();
+  RefSymmSCMatrix aoa(so_dimension(), basis_matrixkit());
   aoa.assign(0.0);
   aoa.accumulate_transform(scf_vector_, moa);
-  
-  RefSymmSCMatrix aob = moa;
-  moa=0;
+  moa = 0;
+
+  RefSymmSCMatrix aob(so_dimension(), basis_matrixkit());
   aob.assign(0.0);
   aob.accumulate_transform(scf_vectorb_,mob);
   mob=0;
@@ -897,8 +897,8 @@ UnrestrictedSCF::compute_vector(double& eelec)
        << scprintf("nuclear repulsion energy = %15.10f", nucrep)
        << endl << endl;
 
-  RefDiagSCMatrix evalsa(basis_dimension(), basis_matrixkit());
-  RefDiagSCMatrix evalsb(basis_dimension(), basis_matrixkit());
+  RefDiagSCMatrix evalsa(oso_dimension(), basis_matrixkit());
+  RefDiagSCMatrix evalsb(oso_dimension(), basis_matrixkit());
 
   double delta = 1.0;
   int iter;
@@ -940,18 +940,18 @@ UnrestrictedSCF::compute_vector(double& eelec)
     // diagonalize effective MO fock to get MO vector
     tim_enter("evals");
 
-    RefSymmSCMatrix moa = hcore_.clone();
+    RefSymmSCMatrix moa(oso_dimension(), basis_matrixkit());
     moa.assign(0.0);
     moa.accumulate_transform(scf_vector_, focka_.result_noupdate(),
                              SCMatrix::TransposeTransform);
     
-    RefSymmSCMatrix mob = hcore_.clone();
+    RefSymmSCMatrix mob(oso_dimension(), basis_matrixkit());
     mob.assign(0.0);
     mob.accumulate_transform(scf_vectorb_, fockb_.result_noupdate(),
                              SCMatrix::TransposeTransform);
     
-    RefSCMatrix nvectora = scf_vector_.clone();
-    RefSCMatrix nvectorb = scf_vector_.clone();
+    RefSCMatrix nvectora(oso_dimension(), oso_dimension(), basis_matrixkit());
+    RefSCMatrix nvectorb(oso_dimension(), oso_dimension(), basis_matrixkit());
   
     // level shift effective fock
     alevel_shift->set_shift(level_shift_);
@@ -1090,7 +1090,7 @@ UnrestrictedSCF::lagrangian()
       ebir.set_element(i,0.0);
   }
   
-  RefSymmSCMatrix la = basis_matrixkit()->symmmatrix(basis_dimension());
+  RefSymmSCMatrix la = basis_matrixkit()->symmmatrix(so_dimension());
   la.assign(0.0);
   la.accumulate_transform(scf_vector_, ea);
 
@@ -1109,7 +1109,7 @@ UnrestrictedSCF::lagrangian()
 RefSymmSCMatrix
 UnrestrictedSCF::gradient_density()
 {
-  densa_ = basis_matrixkit()->symmmatrix(basis_dimension());
+  densa_ = basis_matrixkit()->symmmatrix(so_dimension());
   densb_ = densa_.clone();
   
   so_density(densa_, 1.0, 1);

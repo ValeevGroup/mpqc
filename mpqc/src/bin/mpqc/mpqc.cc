@@ -447,7 +447,7 @@ main(int argc, char *argv[])
   int limit = atoi(options.retrieve("l"));
   if (limit) {
     RefWavefunction wfn(mole);
-    if (wfn.nonnull() && wfn->basis_dimension()->n() > limit) {
+    if (wfn.nonnull() && wfn->ao_dimension()->n() > limit) {
       cerr << node0 << endl << indent
            << "The limit of " << limit << " basis functions has been exceeded."
            << endl;

@@ -47,8 +47,15 @@ class Wavefunction: public MolecularEnergy {
 #   include <util/state/stated.h>
 #   include <util/class/classda.h>
   private:
-    RefSCDimension basisdim_;
+    RefSCDimension aodim_;
+    RefSCDimension sodim_;
+    RefSCDimension osodim_;
     RefSCMatrixKit basiskit_;
+
+    int have_overlap_eig_;
+    RefSCMatrix overlap_eigvec_;
+    RefDiagSCMatrix overlap_isqrt_eigval_;
+    RefDiagSCMatrix overlap_sqrt_eigval_;
     
     ResultRefSymmSCMatrix overlap_;
     ResultRefSymmSCMatrix hcore_;
@@ -61,12 +68,17 @@ class Wavefunction: public MolecularEnergy {
     RefGaussianBasisSet gbs_;
     RefIntegral integral_;
 
-    // The tolerance for lambda(max)/lambda(min) in the
-    // diagonalized overlap matrix
+    // The tolerance for lambda(max)/lambda(min) for linearly
+    // independent basis functions
     double lindep_tol_;
+
+    // Whether or not to symmetrically orthogonalize
+    int symm_orthog_;
 
     int print_nao_;
     int print_npa_;
+
+    void compute_overlap_eig();
 
   protected:
 
@@ -83,6 +95,9 @@ class Wavefunction: public MolecularEnergy {
 
         \item[integral] Specifies an Integral object that computes the two
         electron integrals.  The default is a IntegralV3 object.
+
+        \item[symm_orthog] If true, symmetric orthogonalization is used;
+        otherwise canonical orthogonalization is used.  The default is true.
 
         \item[print_nao] This specifies a boolean value.  If true the
         natural atomic orbitals will be printed.  Not all wavefunction will
@@ -149,7 +164,13 @@ class Wavefunction: public MolecularEnergy {
     /// Returns the SO core Hamiltonian.
     virtual RefSymmSCMatrix core_hamiltonian();
 
-    RefSCDimension basis_dimension();
+    /// Atomic orbital dimension.
+    RefSCDimension ao_dimension();
+    /// Symmetry adapted orbital dimension.
+    RefSCDimension so_dimension();
+    /// Orthogonalized symmetry adapted orbital dimension.
+    RefSCDimension oso_dimension();
+    /// Matrix kit for AO, SO, orthogonalized SO, and MO dimensioned matrices.
     RefSCMatrixKit basis_matrixkit();
     /// Returns the basis set.
     RefGaussianBasisSet basis() const;
@@ -158,10 +179,18 @@ class Wavefunction: public MolecularEnergy {
 
     // override symmetry_changed from MolecularEnergy
     void symmetry_changed();
-    
-    /** Returns a matrix which transforms SO's to orthogonal SO's
-        Can be overridden, but defaults to $S^-1/2$ */
-    virtual RefSymmSCMatrix so_to_orthog_so();
+
+    /** Returns a matrix which does the default transform from SO's to
+        orthogonal SO's.  This could be either the symmetric or canonical
+        orthogonalization matrix.  The row dimension is SO and the column
+        dimension is ortho SO.  An operator $O$ in the ortho SO basis is
+        given by $X O X^T$ where $X$ is the return value of this
+        function. */
+    RefSCMatrix so_to_orthog_so();
+
+    /** Returns the inverse of the transformation returned by so_to_orthog_so.
+     */
+    RefSCMatrix so_to_orthog_so_inverse();
 
     void print(ostream& = cout) const;
 };

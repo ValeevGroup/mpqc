@@ -70,17 +70,17 @@ OSSSCF::OSSSCF(StateIn& s) :
   op_fockb_(this)
 {
   cl_fock_.result_noupdate() =
-    basis_matrixkit()->symmmatrix(basis_dimension());
+    basis_matrixkit()->symmmatrix(so_dimension());
   cl_fock_.restore_state(s);
   cl_fock_.result_noupdate().restore(s);
   
   op_focka_.result_noupdate() =
-    basis_matrixkit()->symmmatrix(basis_dimension());
+    basis_matrixkit()->symmmatrix(so_dimension());
   op_focka_.restore_state(s);
   op_focka_.result_noupdate().restore(s);
   
   op_fockb_.result_noupdate() =
-    basis_matrixkit()->symmmatrix(basis_dimension());
+    basis_matrixkit()->symmmatrix(so_dimension());
   op_fockb_.restore_state(s);
   op_fockb_.result_noupdate().restore(s);
   
@@ -515,8 +515,8 @@ RefSymmSCMatrix
 OSSSCF::density()
 {
   if (!density_.computed()) {
-    RefSymmSCMatrix dens(basis_dimension(), basis_matrixkit());
-    RefSymmSCMatrix dens1(basis_dimension(), basis_matrixkit());
+    RefSymmSCMatrix dens(so_dimension(), basis_matrixkit());
+    RefSymmSCMatrix dens1(so_dimension(), basis_matrixkit());
     so_density(dens, 2.0);
     dens.scale(2.0);
 
@@ -535,8 +535,8 @@ OSSSCF::density()
 RefSymmSCMatrix
 OSSSCF::alpha_density()
 {
-  RefSymmSCMatrix dens1(basis_dimension(), basis_matrixkit());
-  RefSymmSCMatrix dens2(basis_dimension(), basis_matrixkit());
+  RefSymmSCMatrix dens1(so_dimension(), basis_matrixkit());
+  RefSymmSCMatrix dens2(so_dimension(), basis_matrixkit());
 
   so_density(dens1, 2.0);
   so_density(dens2, 1.0);
@@ -551,8 +551,8 @@ OSSSCF::alpha_density()
 RefSymmSCMatrix
 OSSSCF::beta_density()
 {
-  RefSymmSCMatrix dens1(basis_dimension(), basis_matrixkit());
-  RefSymmSCMatrix dens2(basis_dimension(), basis_matrixkit());
+  RefSymmSCMatrix dens1(so_dimension(), basis_matrixkit());
+  RefSymmSCMatrix dens2(so_dimension(), basis_matrixkit());
 
   so_density(dens1, 2.0);
   so_density(dens2, 1.0);
@@ -672,13 +672,13 @@ OSSSCF::effective_fock()
 {
   // use fock() instead of cl_fock_ just in case this is called from
   // someplace outside SCF::compute_vector()
-  RefSymmSCMatrix mofock = fock(0).clone();
+  RefSymmSCMatrix mofock(oso_dimension(), basis_matrixkit());
   mofock.assign(0.0);
 
-  RefSymmSCMatrix mofocka = fock(1).clone();
+  RefSymmSCMatrix mofocka(oso_dimension(), basis_matrixkit());
   mofocka.assign(0.0);
   
-  RefSymmSCMatrix mofockb = fock(2).clone();
+  RefSymmSCMatrix mofockb(oso_dimension(), basis_matrixkit());
   mofockb.assign(0.0);
 
   // use eigenvectors if scf_vector_ is null
@@ -770,7 +770,7 @@ OSSSCF::lagrangian()
   mofocka=0;
 
   // transform MO lagrangian to SO basis
-  RefSymmSCMatrix so_lag(basis_dimension(), basis_matrixkit());
+  RefSymmSCMatrix so_lag(so_dimension(), basis_matrixkit());
   so_lag.assign(0.0);
   so_lag.accumulate_transform(scf_vector_, mofock);
   
@@ -786,7 +786,7 @@ OSSSCF::lagrangian()
 RefSymmSCMatrix
 OSSSCF::gradient_density()
 {
-  cl_dens_ = basis_matrixkit()->symmmatrix(basis_dimension());
+  cl_dens_ = basis_matrixkit()->symmmatrix(so_dimension());
   op_densa_ = cl_dens_.clone();
   op_densb_ = cl_dens_.clone();
   

@@ -71,7 +71,7 @@ SCF::compute_vector(double& eelec)
        << scprintf("nuclear repulsion energy = %15.10f", nucrep)
        << endl << endl;
 
-  RefDiagSCMatrix evals(basis_dimension(), basis_matrixkit());
+  RefDiagSCMatrix evals(oso_dimension(), basis_matrixkit());
 
   double delta = 1.0;
   int iter;
@@ -114,7 +114,7 @@ SCF::compute_vector(double& eelec)
 
     // diagonalize effective MO fock to get MO vector
     tim_enter("evals");
-    RefSCMatrix nvector = scf_vector_.clone();
+    RefSCMatrix nvector(oso_dimension(),oso_dimension(),basis_matrixkit());
   
     RefSymmSCMatrix eff = effective_fock();
 
@@ -284,7 +284,7 @@ SCF::extrap_error()
   RefSCElementOp op = new ExtrapErrorOp(this);
   mofock.element_op(op);
   
-  RefSymmSCMatrix aoerror = mofock.clone();
+  RefSymmSCMatrix aoerror(so_dimension(), basis_matrixkit());
   aoerror.assign(0.0);
   aoerror.accumulate_transform(scf_vector_,mofock);
   mofock=0;

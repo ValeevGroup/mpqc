@@ -367,7 +367,7 @@ XSCF::do_vector(double& eelec, double& nucrep)
   _gr_vector = _eigenvectors.result_noupdate();
   
   // allocate storage for the temp arrays
-  RefSCMatrix nvectorc = _gr_vector.clone();
+  RefSCMatrix nvectorc(oso_dimension(), basis_matrixkit());
   RefSCMatrix nvectora =
     _fock_evalsa->dim()->create_matrix(_fock_evalsa->dim().pointer());
   RefSCMatrix nvectorb = nvectora.clone();

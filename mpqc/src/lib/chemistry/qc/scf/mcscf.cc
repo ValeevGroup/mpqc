@@ -357,7 +357,7 @@ MCSCF::do_vector(double& eelec, double& nucrep)
   _gr_vector = _eigenvectors.result_noupdate();
   
   // allocate storage for the temp arrays
-  RefSCMatrix nvector = _gr_vector.clone();
+  RefSCMatrix nvector(oso_dimension(), oso_dimension(), basis_matrixkit());
   
   _densc = _focka.clone();
   _densc.assign(0.0);

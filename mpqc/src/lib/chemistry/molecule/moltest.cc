@@ -57,15 +57,19 @@ print_atominfo(const RefAtomInfo &atominfo,
 {
   cout << "Rvdw(H) = " << refatominfo->vdw_radius(1)
        << " " << atominfo->vdw_radius(1)
+       << "/" << atominfo->vdw_radius_scale()
        << endl;
   cout << "Rvdw(C) = " << refatominfo->vdw_radius(6)
        << " " << atominfo->vdw_radius(6)
+       << "/" << atominfo->vdw_radius_scale()
        << endl;
   cout << "Rb(H) = " << refatominfo->bragg_radius(1)
        << " " << atominfo->bragg_radius(1)
+       << "/" << atominfo->bragg_radius_scale()
        << endl;
   cout << "Ra(H) = " << refatominfo->atomic_radius(1)
        << " " << atominfo->atomic_radius(1)
+       << "/" << atominfo->atomic_radius_scale()
        << endl;
   cout << "mass(H) = " << refatominfo->mass(1)
        << " " << atominfo->mass(1)

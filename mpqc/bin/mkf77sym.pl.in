@@ -1,0 +1,33 @@
+#!/usr/bin/perl
+
+$method = "@F77_SYMBOLS@";
+
+$in = shift;
+$out = shift;
+
+open(IN,"<$in");
+open(OUT,">$out");
+
+while(<IN>) {
+    if (/\# *define F77_([A-Z]+)/) {
+        $f77name = $1;
+        if ($method == "symbol_") {
+            $cname = lc($f77name);
+            $cname = "${cname}_";
+        }
+        elsif ($method == "symbol") {
+            $cname = lc($f77name);
+        }
+        elsif ($method == "SYMBOL") {
+            $cname = uc($f77name);
+        }
+        elsif ($method == "SYMBOL_") {
+            $cname = uc($f77name);
+            $cname = "${cname}_";
+        }
+        printf OUT "#define F77_%s %s\n", $f77name, $cname;
+    }
+    else {
+        printf OUT "%s", $_;
+    }
+}

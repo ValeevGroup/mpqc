@@ -829,6 +829,8 @@ if test $HAVE_SCALABLE_BLAS = yes; then
   AC_DEFINE(HAVE_SCALABLE_BLAS)
 fi
 
+AC_CHECK_LIB(lapack,exit)
+
 AC_SUBST(HAVE_PERF)
 AC_SUBST(HAVE_MPL)
 AC_SUBST(HAVE_P4)
@@ -1044,15 +1046,19 @@ if test -n "$F77" -a "$F77" != no ; then
   echo "main(){ FF(); return 0; }" > flink.c
   if $CC -o flink -DFF=ffunc flink.c ffunc.o 1>/dev/null 2>/dev/null; then
     AC_MSG_RESULT(same as C)
+    F77_SYMBOLS=symbol
     AC_DEFINE_UNQUOTED(F77_DGEMM_SYMBOL,  dgemm)
   elif $CC -o flink -DFF=ffunc_ flink.c ffunc.o 1>/dev/null 2>/dev/null; then
     AC_MSG_RESULT(lowercase with underscore)
+    F77_SYMBOLS=symbol_
     AC_DEFINE_UNQUOTED(F77_DGEMM_SYMBOL,  dgemm_)
   elif $CC -o flink -DFF=FFUNC flink.c ffunc.o 1>/dev/null 2>/dev/null; then
     AC_MSG_RESULT(uppercase)
+    F77_SYMBOLS=SYMBOL
     AC_DEFINE_UNQUOTED(F77_DGEMM_SYMBOL,  DGEMM)
   elif $CC -o flink -DFF=FFUNC_ flink.c ffunc.o 1>/dev/null 2>/dev/null; then
     AC_MSG_RESULT(uppercase with underscore)
+    F77_SYMBOLS=SYMBOL_
     AC_DEFINE_UNQUOTED(F77_DGEMM_SYMBOL,  DGEMM_)
   else
     AC_MSG_RESULT(giving up)
@@ -1060,8 +1066,10 @@ if test -n "$F77" -a "$F77" != no ; then
   fi
   /bin/rm -f ffunc.f ffunc.o flink flink.c flink.o ffunc
 else
+  F77_SYMBOLS=symbol_
   AC_MSG_RESULT(guessing lowercase with underscore)
 fi
+AC_SUBST(F77_SYMBOLS)
 
 dnl ----------- NIAMA library checks --------------
 
@@ -1151,5 +1159,5 @@ dnl --------- Create the stub Makefiles. ---------
 
 $PERL $srcdir/bin/objectdir.pl $srcdir
 
-AC_OUTPUT(lib/LocalMakefile bin/sc-config)
+AC_OUTPUT(lib/LocalMakefile bin/sc-config bin/mkf77sym.pl)
 chmod +x bin/sc-config

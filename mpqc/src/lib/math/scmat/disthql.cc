@@ -9,6 +9,14 @@
 #include <math/scmat/disthql.h>
 #include <math/linpackd/linpackd.h>
 
+#include <math/scmat/f77sym.h>
+
+extern "C" {
+  void pdsteqr_(int *n, double *d, double *e,
+                double *z, int *ldz, int *nz, double *work,
+                int *info);
+}
+
 static void dist_diagonalize_(int n, int m, double *a, double *d, double *e,
                               double *sigma, double *z, double *v, double *w,
                               int *ind, const RefMessageGrp&);
@@ -96,9 +104,17 @@ dist_diagonalize_(int n, int m, double *a, double *d, double *e,
 
  /* diagonalize tridiagonal matrix using implicit QL method */
 
+#if 0
   pimtql2_(d,e,&n,z,&m,&info);
-  if (info != 0)
-    cerr << "Nonzero ierr from psytqr\n";
+  if (info != 0) {
+      cout << "dist_diagonalize: node "
+           << grp->me() << ": nonzero ierr from pimtql2" << endl;
+      abort();
+    }
+#else
+   for (i=1; i<n; i++) e[i-1] = e[i];
+   F77_PDSTEQR(&n, d, e, z, &m, &m, w, &info);
+#endif
 
  /* rearrange the eigenvectors by transposition */
 
@@ -146,8 +162,16 @@ pimtql2_ (double *d,double *e,int *sn,double *z,int *sm,int *info)
    for (j=0; j<n; j++) {
       its = 0;
       while (its < maxit) {
-         for (im=j; im<=k; im++) 
-            if (absol(e[im]) <= macheps*(absol(d[im])+absol(d[im+1]))) break; 
+         for (im=j; im<=k; im++) {
+            // this is the original threshold
+            double threshold = macheps*(absol(d[im])+absol(d[im+1]));
+            // new threshold will hopefully ensure convergence
+            //if (threshold < macheps) threshold = macheps;
+            if (absol(e[im]) <= threshold) break; 
+//from NR:
+//             double dsum = absol(d[im])+absol(d[im+1]);
+//             if (dsum + absol(e[im]) == dsum) break;
+         }
          u = d[j];
          if (im == j) break;
          else {
@@ -185,7 +209,7 @@ pimtql2_ (double *d,double *e,int *sn,double *z,int *sm,int *info)
                /* form eigenvectors */
 
 #if 0
-               for (ia=0; ia<m; ia++) {
+               for (int ia=0; ia<m; ia++) {
                   p = z[(i+1)*m+ia];
                   z[(i+1)*m+ia] = s * z[i*m+ia] + c * p; 
                   z[i*m+ia] = c * z[i*m+ia] - s * p;

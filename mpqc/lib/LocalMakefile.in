@@ -53,6 +53,7 @@ TMPL2MAC = $(PERL) $(TMPL2MACDEP)
 COMPRESS = gzip
 UNCOMPRESS = gzip -d
 LISTLIBS= $(PERL) $(SRCTOPDIR)/bin/listlibs.pl -DLIBSUF=$(LIBSUF)
+MKF77SYM= $(PERL) $(TOPDIR)/bin/mkf77sym.pl
 
 # first check for generated include files in the machine dependent directories
 # and then for include files in the src directory

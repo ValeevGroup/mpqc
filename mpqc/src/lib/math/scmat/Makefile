@@ -52,7 +52,9 @@ TESTSRC = disttest.cc localtest.cc repltest.cc blockedtest.cc
 
 CSRC = cmatrix.c svd.c
 
-LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o) 
+FSRC = pdsteqr.f
+
+LIBOBJ = $(CXXSRC:%.cc=%.o) $(CSRC:%.c=%.o) $(FSRC:%.f=%.o) 
 
 INC =  cmatrix.h matrix_i.h cmatrix.h matrix.h abstract.h blkiter.h local.h \
        result.h vector3.h vector3_i.h block.h matrix3.h elemop.h repl.h \
@@ -96,10 +98,18 @@ disttest.o: disttest.cc
 TAGS: $(CXXSRC) $(CSRC)
 	etags $^
 
+disthql.o: f77sym.h
+
+f77sym.h: f77sym.in
+	$(MKF77SYM) $< $@
+
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
+
+distclean::
+	/bin/rm -f f77sym.h
 
 $(LIBOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.o=.d) $(TESTSRC:%.cc=%.d)
+include $(CXXSRC:.cc=.d) $(CSRC:.c=.d) $(TESTSRC:%.cc=%.d)
 endif
 

@@ -9,7 +9,7 @@ mole: [
       cwd = ./
       fileprefix = psi.test
       nscratch = 1
-      scratch = [ "/scratch/evaleev/" ]
+      scratch = [ "/tmp/" ]
     )
 
     % MolecularEnergy input

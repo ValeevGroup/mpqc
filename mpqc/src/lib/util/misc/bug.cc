@@ -204,7 +204,9 @@ void
 Debugger::handle(int sig)
 {
   if (sig >= NSIG) return;
+#ifdef HAVE_SIGNAL
   signal(sig, (handler_type)handler);
+#endif
   signals[sig] = this;
   mysigs_[sig] = 1;
 }
@@ -299,6 +301,9 @@ Debugger::debug(const char *reason)
   else cout << "no reason given";
   cout << endl;
 
+#ifndef HAVE_SYSTEM
+  abort();
+#else
   if (cmd_) {
       int pid = getpid();
       char cpid[128];
@@ -331,6 +336,7 @@ Debugger::debug(const char *reason)
       // wait until the debugger is ready
       if (wait_for_debugger_) while(!debugger_ready_);
     }
+#endif
 }
 
 void

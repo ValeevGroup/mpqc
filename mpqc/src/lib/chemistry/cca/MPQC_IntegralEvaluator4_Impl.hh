@@ -38,6 +38,7 @@
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._includes)
 #include <chemistry/qc/basis/gaussbas.h>
+#include <chemistry/qc/intv3/cartitv3.h>
 #include <chemistry/qc/intv3/intv3.h>
 #ifdef HAVE_CINTS
   #include <chemistry/qc/cints/cints.h>
@@ -89,6 +90,12 @@ namespace MPQC {
     int int_type_;
     int deriv_level_;
     std::string package_;
+    int **reorder_;
+    int bufn_;
+    double *temp_buffer_;
+
+    void reorder_intv3(int64_t,int64_t,int64_t,int64_t);
+    void initialize_reorder_intv3();
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._implementation)
 
   private:

@@ -715,7 +715,7 @@ MolecularCoor::change_coordinates()
 int
 MolecularCoor::to_cartesian(const RefSCVector&internal)
 {
-  to_cartesian(molecule_, internal);
+  return to_cartesian(molecule_, internal);
 }
 
 ///////////////////////////////////////////////////////////////////////////

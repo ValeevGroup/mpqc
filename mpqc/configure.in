@@ -1345,6 +1345,23 @@ esac
 AC_DEFINE(SEMCTL_REQUIRES_SEMUN) AC_MSG_RESULT(yes))
 AC_LANG_RESTORE
 
+dnl ----------- See if Fortran works --------------
+
+AC_MSG_CHECKING(if fortran compiler works)
+if test -n "$F77" -a "$F77" != no ; then
+  /bin/rm -f ffunc.f flink.c
+  echo "      program main" > ffunc.f
+  echo "      return" >> ffunc.f
+  echo "      end" >> ffunc.f
+  if $F77 -o ffunc ffunc.f 1>&5 2>&5; then
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_FAILURE(fortran compiler does not work)
+  fi
+  /bin/rm -f ffunc ffunc.f
+fi
+
 dnl ----------- Fortran symbol names --------------
 
 AC_MSG_CHECKING(fortran symbols)

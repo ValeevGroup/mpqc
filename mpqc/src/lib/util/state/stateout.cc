@@ -29,6 +29,8 @@
 #pragma implementation
 #endif
 
+#include <limits.h>
+
 #include <scconfig.h>
 
 #include <unistd.h>
@@ -143,6 +145,13 @@ int StateOut::put(unsigned int r) { return put_array_uint(&r,1); }
 int StateOut::put(int r) { return put_array_int(&r,1); }
 int StateOut::put(float r) { return put_array_float(&r,1); }
 int StateOut::put(double r) { return put_array_double(&r,1); }
+int StateOut::put(unsigned long r)
+{
+  if (r > INT_MAX) {
+      throw std::runtime_error("StateOut::put max allowed size exceeded");
+    }
+  return put(int(r));
+}
 
 // This deletes all references to objects, so if they are output
 // again, they will be written in their entirety.

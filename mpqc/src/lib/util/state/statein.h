@@ -173,7 +173,7 @@ class StateIn:  public DescribedClass {
 
     /// Read an STL vector of data.
     template <class T>
-    int get(std::vector<T> &v) {
+    int get(typename std::vector<T> &v) {
       int l; get(l);
       if (l) { v.resize(l); for (int i=0; i<l; i++) get(v[i]); }
     }

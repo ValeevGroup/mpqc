@@ -111,6 +111,7 @@ class StateOut: public DescribedClass {
     virtual int put(char r);
     virtual int put(unsigned int r);
     virtual int put(int r);
+    virtual int put(unsigned long r);
     virtual int put(float r);
     virtual int put(double r);
     /** Write the given array data.  Size information is also saved.  The
@@ -130,7 +131,7 @@ class StateOut: public DescribedClass {
 
     /// Write an STL vector of data.
     template <class T>
-    int put(std::vector<T> &v) {
+    int put(typename std::vector<T> &v) {
       int l = v.size(); put(l);
       if (l) { for (int i=0; i<l; i++) put(v[i]); }
     }

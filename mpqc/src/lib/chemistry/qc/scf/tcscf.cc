@@ -270,10 +270,30 @@ TCSCF::occupation(int ir, int i)
     return 0.0;
 }
 
+double
+TCSCF::alpha_occupation(int ir, int i)
+{
+  if (i < ndocc_[ir])
+    return 1.0;
+  else if (ir==osa_ && i==ndocc_[ir])
+    return 0.5*occa_;
+  return 0.0;
+}
+
+double
+TCSCF::beta_occupation(int ir, int i)
+{
+  if (i < ndocc_[ir])
+    return 1.0;
+  else if (ir==osb_ && i==ndocc_[ir])
+    return 0.5*occb_;
+  return 0.0;
+}
+
 int
 TCSCF::n_fock_matrices() const
 {
-  return 2;
+  return 4;
 }
 
 RefSymmSCMatrix

@@ -230,14 +230,29 @@ OSSSCF::occupation(int ir, int i)
     return 2.0;
   else if ((ir==osa_ || ir==osb_) && (i == ndocc_[ir]))
     return 1.0;
-  else
-    return 0.0;
+  return 0.0;
+}
+
+double
+OSSSCF::alpha_occupation(int ir, int i)
+{
+  if (i < ndocc_[ir] || (ir==osa_ && i==ndocc_[ir]))
+    return 1.0;
+  return 0.0;
+}
+
+double
+OSSSCF::beta_occupation(int ir, int i)
+{
+  if (i < ndocc_[ir] || (ir==osb_ && i==ndocc_[ir]))
+    return 1.0;
+  return 0.0;
 }
 
 int
 OSSSCF::n_fock_matrices() const
 {
-  return 2;
+  return 3;
 }
 
 RefSymmSCMatrix

@@ -1,4 +1,4 @@
-define([sc_version],[2.0.beta.5])
+define([sc_version],[2.1.alpha])
 
 dnl Process this file with autoconf to produce a configure script.
 define([AC_CACHE_LOAD], )dnl for debugging configure.in
@@ -304,7 +304,7 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_PROG_CC
 dnl ac_prog_cxx's order isn't what i need
-AC_CHECK_PROGS(CXX, g++ c++ gcc CC cxx xlC, gcc)
+AC_CHECK_PROGS(CXX, g++ c++ gcc CC cxx xlC_r, gcc)
 dnl sees if CXX is a GNU compiler
 AC_PROG_CXX
 changequote(<<, >>)dnl
@@ -1247,23 +1247,6 @@ case $target in
   i860-intel-osf*)
     LDFLAGS="$LDFLAGS -mnx -mnoieee"
     AC_MSG_RESULT(osf paragon)
-  ;;
-changequote(<<, >>)dnl
-  mips*-sgi-irix6.[01]*)
-changequote([, ])dnl
-    if test "X$GXX" != Xyes; then
-      CXX="\$(SRCTOPDIR)/bin/CCfix CC"
-    fi
-    AC_MSG_RESULT("mips*-sgi-irix6.0 or mips*-sgi-irix6.1")
-  ;;
-  rs6000-*)
-    if test "X$CXX" = XmpCC -o "X$CXX" = XmpCC_r; then
-      CXX="mpCC_r"
-    fi
-    if test "X$CXX" = XxlC; then
-      CXX="xlC_r"
-    fi
-    AC_MSG_RESULT(rs6000)
   ;;
   *)
     AC_MSG_RESULT(none)

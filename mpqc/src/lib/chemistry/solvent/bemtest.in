@@ -25,7 +25,7 @@ solvent<BEMSolvent>: (
         surface<TriangulatedSurface>: (
             verbose = yes
           )
-        volume<ConnollyShape2>: (
+        volume<ConnollyShape>: (
             molecule = $:molecule
             probe_radius = 2.6456173
             atominfo = $:atominfo

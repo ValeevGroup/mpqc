@@ -49,7 +49,7 @@ main()
   solvent->init_system_matrix();
   solvent->done();
 
-  ConnollyShape2::print_counts();
+  ConnollyShape::print_counts();
   CS2Sphere::print_counts();
 
   return 0;

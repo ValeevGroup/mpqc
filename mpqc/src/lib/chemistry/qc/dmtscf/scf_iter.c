@@ -437,6 +437,11 @@ FILE *outfile;
 
  /* and armed with the new density matrix, form new skeleton G and GO */
 
+  if (scf_info->print_flg&1024) {
+    printf("Density");
+    dmt_print(Pmat);
+  }
+  
   if (scf_make_gmat(scf_info,sym_info,centers,
                     Gmat,GmatO,DPmat,DPmatO,SScr1,SScr2,outfile) < 0) {
     fprintf(stderr,"scf_make_ao_fock: trouble forming gmat\n");
@@ -496,6 +501,11 @@ int iter;
  /* if open-shell, form effective MO fock matrix used to get new vector
   * and level shift it. otherwise, just transform Fock matrix to MO basis.
   */
+  if (scf_info->print_flg&1024) {
+    printf("AO Fock");
+    dmt_print(Fock);
+  }
+  
   if (scf_info->iopen) {
     make_eff_fock(scf_info,Fock,FockO,Scf_Vec,occ_num,iter);
   } else {
@@ -505,13 +515,29 @@ int iter;
     level_shift(scf_info,Fock,occ_num);
   }
 
+  if (scf_info->print_flg&1024) {
+    printf("MO Fock");
+    dmt_print(Fock);
+  }
+  
  /* now diagonalize the MO Fock matrix */
   dmt_copy(Fock,Scr2); /* dmt_diag needs a columns dist. matrix */
   dmt_diag(Scr2,Scr1,evals);
+
+  if (scf_info->print_flg&1024) {
+    printf("Evecs");
+    dmt_print(Scr1);
+  }
+  
   dmt_transpose(Scf_Vec);
   dmt_mult(Scf_Vec,Scr1,Scr2);
   dmt_copy(Scr2,Scf_Vec);
 
+  if (scf_info->print_flg&1024) {
+    printf("New vector");
+    dmt_print(Scf_Vec);
+  }
+  
  /* un-level shift eigenvalues */
 
   un_level_shift(scf_info,Fock,occ_num,evals);
@@ -558,6 +584,13 @@ dmt_matrix SScr2;
     if (scf_info->iopen) dmt_copy(GmatO,SScr2);
   }
 
+  if (scf_info->print_flg&1024) {
+    printf("Hcore");
+    dmt_print(Hcore);
+    printf("G matrix");
+    dmt_print(SScr1);
+  }
+  
  /* F = H + G
   * FO = H + G - GO */
 

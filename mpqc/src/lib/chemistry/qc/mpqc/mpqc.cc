@@ -25,7 +25,7 @@ extern "C" {
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/force/libforce.h>
 #include <chemistry/qc/dmtscf/scf_dmt.h>
-#include <chemistry/qc/intv2/integralv2.h>
+#include <chemistry/qc/intv2/obintv2.h>
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -176,7 +176,7 @@ MPSCF::MPSCF(const RefKeyVal&keyval):
 
   free_centers(tcenters);
 
-  if (sym_struct_from_pg(_mol->point_group(),centers,sym_info) < 0) {
+  if (sym_struct_from_pg(molecule()->point_group(),centers,sym_info) < 0) {
     fprintf(stderr,"MPSCF::MPSCF(KeyVal&):  could not form sym_info\n");
     exit(1);
   }
@@ -301,7 +301,7 @@ MPSCF::MPSCF(StateIn&s):
   assign_centers(&centers,tcenters);
   free_centers(tcenters);
 
-  sym_struct_from_pg(_mol->point_group(),centers,sym_info);
+  sym_struct_from_pg(molecule()->point_group(),centers,sym_info);
   init(1);
   init(2);
 
@@ -359,12 +359,12 @@ MPSCF::compute()
  // print the geometry every iteration
   if (mynode0()==0) {
     fprintf(outfile,"  molecular geometry in MPSCF::compute()\n");
-    _mol->print(outfile);
+    molecule()->print(outfile);
   }
 
   if (solvent_.nonnull()) {
       fprintf(outfile,"  initializing the solvent\n");
-      if (_gradient.compute()) {
+      if (do_gradient()) {
           fprintf(stderr,
                   "  ERROR: MPSCF cannot do gradients with a solvent\n");
           abort();
@@ -379,7 +379,7 @@ MPSCF::compute()
   if (desired_value_accuracy() > 1.0e-4)
     set_desired_value_accuracy(1.0e-4);
 
-  if (_gradient.compute()) {
+  if (do_gradient()) {
     if (desired_gradient_accuracy() > 1.0e-4)
       set_desired_gradient_accuracy(1.0e-4);
     if (desired_value_accuracy() > 0.1 * desired_gradient_accuracy()) {
@@ -392,7 +392,7 @@ MPSCF::compute()
  // copy geometry from Molecule to centers
   for (i=0; i < centers.n; i++) {
     for (j=0; j < 3; j++) {
-      centers.center[i].r[j] = _mol->operator[](i)[j];
+      centers.center[i].r[j] = molecule()->operator[](i)[j];
     }
   }
 
@@ -404,14 +404,14 @@ MPSCF::compute()
   // make sure everybody knows if we're to compute a vector
   bcast0(&_scf.compute(),sizeof(int),mtype_get(),0);
   bcast0(&_scf.computed(),sizeof(int),mtype_get(),0);
-  bcast0(&_energy.compute(),sizeof(int),mtype_get(),0);
-  bcast0(&_energy.computed(),sizeof(int),mtype_get(),0);
+  bcast0(&value_.compute(),sizeof(int),mtype_get(),0);
+  bcast0(&value_.computed(),sizeof(int),mtype_get(),0);
 
   // calculate new scf_vector
-  if (_scf.needed() || _energy.needed()) {
+  if (_scf.needed() || value_needed()) {
     tim_enter("scf_vect");
 
-    scf_info.convergence = ((int) -log10(_energy.desired_accuracy())) + 1;
+    scf_info.convergence = ((int) -log10(desired_value_accuracy())) + 1;
     scf_info.intcut = scf_info.convergence + 1;
     fprintf(outfile,"\n  MPSCF: computing energy with integral cutoff 10^-%d"
               " and convergence 10^-%d\n",
@@ -442,7 +442,7 @@ MPSCF::compute()
             tim_enter("Efield");
             scfvec_to_eigenvectors();
             // at each charge position compute the efield dot normal
-            _density.computed() = 0;
+            density_.computed() = 0;
             RefSymmSCMatrix DAO = density();
             RefSymmSCMatrix efieldAO(DAO.dim(),solvent_->matrixkit());
 
@@ -610,19 +610,19 @@ MPSCF::compute()
     scf_info.restart=1;
     _scf.computed() = 1;
     set_energy(scf_info.nuc_rep+scf_info.e_elec);
-    _energy.set_actual_accuracy(_energy.desired_accuracy());
+    set_actual_value_accuracy(desired_value_accuracy());
 
     tim_exit("scf_vect");
   }
 
   // make sure that everybody knows whether or not a gradient is needed.
-  bcast0(&_gradient.compute(),sizeof(int),mtype_get(),0);
-  bcast0(&_gradient.computed(),sizeof(int),mtype_get(),0);
+  bcast0(&gradient_.compute(),sizeof(int),mtype_get(),0);
+  bcast0(&gradient_.computed(),sizeof(int),mtype_get(),0);
 
   // compute the gradient if needed
   double_matrix_t grad;
   allocbn_double_matrix(&grad,"n1 n2",3,centers.n);
-  if (_gradient.needed()) {
+  if (gradient_needed()) {
     int cutoff = ((int) -log10(desired_gradient_accuracy())) + 1;
     fprintf(outfile,"\n");
     fprintf(outfile,"  MPSCF: computing gradient with cutoff 10^-%d\n",cutoff);
@@ -639,7 +639,7 @@ MPSCF::compute()
     }
 
     // convert the gradient to a SCVector
-    RefSCVector g(_moldim,matrixkit());
+    RefSCVector g(moldim(),matrixkit());
     for (ii=0,i=0; i<centers.n; i++) {
       for (j=0; j<3; j++,ii++) {
         g(ii) = grad.d[j][i];
@@ -648,11 +648,11 @@ MPSCF::compute()
 
     // update the gradient, converting to internal coordinates if needed
     set_gradient(g);
-    _gradient.set_actual_accuracy(desired_gradient_accuracy());
+    set_actual_gradient_accuracy(desired_gradient_accuracy());
   }
 
  // compute the hessian if needed
-  if (_hessian.needed()) {
+  if (hessian_needed()) {
     if (mynode0()==0) {
       fprintf(stderr,"A hessian was requested, but cannot be computed\n");
       abort();

@@ -1,3 +1,4 @@
+#include <chemistry/qc/dft/LIBS.h>
 libSCwfn.LIBSUF
 #include <util/misc/LIBS.h>
 #include <math/scmat/LIBS.h>

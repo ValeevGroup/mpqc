@@ -77,10 +77,10 @@ scinttest: scinttest.$(OBJSUF) $(LIBS)
 	$(LTLINK) $(LD) $(LDFLAGS) $^ -o scinttest $(SYSLIBS) $(LTLINKBINOPTS)
 
 bugtest: bugtest.$(OBJSUF) $(LIBS)
-	$(LTLINK) $(LD) $(LDFLAGS) -DSRCDIR=\"$(SRCDIR)\" $^ $(SYSLIBS) -o bugtest $(LTLINKBINOPTS)
+	$(LTLINK) $(LD) $(LDFLAGS) $^ $(SYSLIBS) -o bugtest $(LTLINKBINOPTS)
 
 bugtest.$(OBJSUF): bugtest.cc
-	$(LTLINK) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< $(LTLINKBINOPTS)
+	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $< $(LTLINKBINOPTS)
 
 unittest: unittest.$(OBJSUF) $(LIBS) 
 	$(LTLINK) $(LD) $(LDFLAGS) $^ $(SYSLIBS) -o unittest $(LTLINKBINOPTS)

@@ -69,10 +69,10 @@ ssar2mac.h: ssar2tem.h $(TMPL2MACDEP)
 	$(TMPL2MAC) $< > ssar2mac.h
 
 avltest: avltest.$(OBJSUF) libSCmisc.$(LIBSUF) libSCkeyval.$(LIBSUF) libSCstate.$(LIBSUF) libSCclass.$(LIBSUF) libSCref.$(LIBSUF) libSCcontainer.$(LIBSUF)
-	$(LTLINK) $(CXX) $(LDFLAGS) -o avltest $^ $(LTLINKBINOPTS)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o avltest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 artest: artest.$(OBJSUF) libSCcontainer.$(LIBSUF) libSCmisc.$(LIBSUF) libSCkeyval.$(LIBSUF) libSCstate.$(LIBSUF) libSCclass.$(LIBSUF) libSCref.$(LIBSUF) libSCcontainer.$(LIBSUF)
-	$(LTLINK) $(CXX) $(LDFLAGS) -o artest $^ $(LTLINKBINOPTS)
+	$(LTLINK) $(CXX) $(LDFLAGS) -o artest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

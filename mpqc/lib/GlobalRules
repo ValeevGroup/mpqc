@@ -126,18 +126,10 @@ endif
 %.lo: %.c
 	$(LTCOMP) $(CC) $(CPPFLAGS) $(CFLAGS) -c $< $(OUTPUT_OPTION)
 
-#
-# see if we use the f2c fortran replacement
-#
-ifeq ($(FC),f2c)
-%.o: %.f
+ifneq ($(OBJSUF),lo)
 
-%.c: %.f
-	$(FC) $< > $@.c
-else
 %.$(OBJSUF): %.f
 	$(FC) $(FFLAGS) -c $< $(OUTPUT_OPTION)
-endif
 
 %.$(OBJSUF): %.C
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
@@ -145,11 +137,16 @@ endif
 %.$(OBJSUF): %.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
 
+endif
+
 %.lo: %.C
 	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
 
 %.lo: %.cc
 	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< $(OUTPUT_OPTION)
+
+%.lo: %.f
+	$(LTCOMP) $(FC) $(FFLAGS) -c $< $(OUTPUT_OPTION)
 
 #
 # cleans

@@ -27,7 +27,7 @@ GENSRC = $(SGENSRC)
 
 INC = scf_dmt.h
 
-SGENINC = $(GENSRC:%.c=%.h) scf.h
+SGENINC = $(GENSRC:%.c=%.h)
 GENINC = $(CSRC:%.c=%.gbl) $(CSRC:%.c=%.lcl)
 
 LIBOBJ = $(CSRC:%.c=%.o) $(CXXSRC:%.cc=%.o) $(GENSRC:%.c=%.o)

@@ -481,9 +481,9 @@ ClassDesc::load_class(const char* classname)
                   testclassname = strtok(0," ");
                 }
             }
+          fclose(fp);
         }
       
-      fclose(fp);
       dir = strtok(0, ":");
     }
 

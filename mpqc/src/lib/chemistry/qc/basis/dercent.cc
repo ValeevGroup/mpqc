@@ -31,7 +31,6 @@ DerivCenters::add_omitted(int center, int atom)
 {
   omitted_center_ = center;
   omitted_atom_ = atom;
-  ncenter_++;
 }
 
 void

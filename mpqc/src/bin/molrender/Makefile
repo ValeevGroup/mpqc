@@ -35,6 +35,9 @@ install:: molrender
 	$(INSTALL) $(INSTALLBINOPT) tkmolrender $(bindir)
 	/bin/rm -f tkmolrender
 
+distclean::
+	/bin/rm -f molrender
+
 $(BINOBJ:.o=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
 include $(BINOBJ:.o=.d)

@@ -13,6 +13,7 @@ oclean::
 	/bin/rm -f lib*.a
 	/bin/rm -f lib*.so*
 	/bin/rm -f lib*.la
+	/bin/rm -rf .libs
 
 distclean:: oclean
 

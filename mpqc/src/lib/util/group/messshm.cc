@@ -300,7 +300,6 @@ static void put_send(int node)
 // Obtain a lock for writing to the node's buffer.
 static void wait_for_write(int node)
 {
-  void *mem;
   semdec.sem_num = node;
   semop(semid,&semdec,1);
   semdec.sem_num = 0;

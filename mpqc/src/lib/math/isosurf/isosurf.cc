@@ -96,7 +96,6 @@ ImplicitSurfacePolygonizer::isosurface(double value,
   // compute normals if they weren't computed from the gradients
   if (!_volume->gradient_implemented()) {
       int i;
-      Pix I;
       // make a list of what triangles are connected to each vertex
       RefTriangleAVLSet empty;
       RefVertexRefTriangleAVLSetRAVLMap vertex_to_triangles(empty);

@@ -95,7 +95,6 @@ OneBodyInt::process(SCMatrixLTriBlock* b)
   int shend = (fnend?bs->function_to_shell(fnend - 1) + 1 : 0);
 
   // loop over all needed shells
-  int ioff = 0;
   for (int ish=shstart;ish<shend;ish++) {
       int nish = bs->operator[](ish).nfunction();
       for (int jsh=shstart;jsh<=ish;jsh++) {
@@ -231,7 +230,6 @@ OneBody3Int::process(SCMatrixLTriBlock* a,
   int shend = (fnend?bs->function_to_shell(fnend - 1) + 1 : 0);
 
   // loop over all needed shells
-  int ioff = 0;
   for (int ish=shstart;ish<shend;ish++) {
       int nish = bs->operator[](ish).nfunction();
       for (int jsh=shstart;jsh<=ish;jsh++) {

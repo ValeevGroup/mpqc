@@ -172,8 +172,14 @@ GaussianBasisSet::GaussianBasisSet(const GaussianBasisSet& gbs) :
   init2();
 }
 
-GaussianBasisSet::GaussianBasisSet(const char* name, const Ref<Molecule>& molecule, const Ref<SCMatrixKit>& matrixkit, const RefSCDimension& basisdim,
-				   const int ncenter, const int nshell, GaussianShell** shell, const std::vector<int>& center_to_nshell) :
+GaussianBasisSet::GaussianBasisSet(const char* name,
+                                   const Ref<Molecule>& molecule,
+                                   const Ref<SCMatrixKit>& matrixkit,
+                                   const RefSCDimension& basisdim,
+				   const int ncenter,
+                                   const int nshell,
+                                   GaussianShell** shell,
+                                   const std::vector<int>& center_to_nshell) :
   molecule_(molecule),
   matrixkit_(matrixkit),
   basisdim_(basisdim),
@@ -188,11 +194,11 @@ GaussianBasisSet::GaussianBasisSet(const char* name, const Ref<Molecule>& molecu
 }
 
 Ref<GaussianBasisSet>
-GaussianBasisSet::operator+(const Ref<GaussianBasisSet>& B)
+GaussianBasisSet::concatenate(const Ref<GaussianBasisSet>& B)
 {
   GaussianBasisSet* b = B.pointer();
   if (molecule_.pointer() != b->molecule_.pointer())
-    throw std::runtime_error("GaussianBasisSet::operator+ -- cannot concatenate basis sets, molecules are different");
+    throw std::runtime_error("GaussianBasisSet::concatenate -- cannot concatenate basis sets, molecules are different");
 
   Ref<Molecule> molecule = molecule_;
   Ref<SCMatrixKit> matrixkit = matrixkit_;
@@ -216,40 +222,49 @@ GaussianBasisSet::operator+(const Ref<GaussianBasisSet>& B)
     for (int i=0; i<ns; i++) {
       const GaussianShell* gsi;
       if (i < ns1)
-	gsi = shell_[s1off + i];
+        gsi = shell_[s1off + i];
       else
-	gsi = b->shell_[s2off + i - ns1];
+        gsi = b->shell_[s2off + i - ns1];
 
       int nc=gsi->ncontraction();
       int np=gsi->nprimitive();
       func_per_shell[soff + i] = gsi->nfunction();
-      
+
       int *ams = new int[nc];
       int *pure = new int[nc];
       double *exps = new double[np];
       double **coefs = new double*[nc];
       
       for (int j=0; j < nc; j++) {
-	ams[j] = gsi->am(j);
-	pure[j] = gsi->is_pure(j);
-	coefs[j] = new double[np];
-	for (int k=0; k < np; k++)
-	  coefs[j][k] = gsi->coefficient_unnorm(j,k);
+        ams[j] = gsi->am(j);
+        pure[j] = gsi->is_pure(j);
+        coefs[j] = new double[np];
+        for (int k=0; k < np; k++)
+          coefs[j][k] = gsi->coefficient_unnorm(j,k);
       }
       
       for (int j=0; j < np; j++)
-	exps[j] = gsi->exponent(j);
+        exps[j] = gsi->exponent(j);
       
       shell[soff + i] = new GaussianShell(nc, np, exps, ams, pure, coefs,
-					  GaussianShell::Unnormalized);
+                                          GaussianShell::Unnormalized);
     }
   }
 
   int nbas = nbasis() + b->nbasis();
-  RefSCDimension basisdim = new SCDimension(nbas, nshell, func_per_shell, "basis set dimension");
+  RefSCDimension basisdim
+      = new SCDimension(nbas, nshell, func_per_shell, "basis set dimension");
 
-  Ref<GaussianBasisSet> AplusB = new GaussianBasisSet("", molecule, matrixkit, basisdim, ncenter,
-						      nshell, shell, center_to_nshell);
+  std::string AplusB_name;
+  AplusB_name += "[";
+  AplusB_name += name();
+  AplusB_name += "]+[";
+  AplusB_name += B->name();
+  AplusB_name += "]";
+  Ref<GaussianBasisSet> AplusB
+      = new GaussianBasisSet(AplusB_name.c_str(), molecule,
+                             matrixkit, basisdim, ncenter,
+                             nshell, shell, center_to_nshell);
 
   delete[] func_per_shell;
 

@@ -1,4 +1,5 @@
 
+concat = 1
 overlap = 0
 eigvals = 0
 state   = 0
@@ -30,8 +31,6 @@ basislist = [
  "3-21++G"
  "3-21++G*"
  "4-31G"
- "4-31G*"
- "4-31G**"
  "6-31G"
  "6-31G*"
  "6-31G**"
@@ -50,10 +49,12 @@ basislist = [
  "cc-pVTZ"
  "cc-pVQZ"
  "cc-pV5Z"
+ "cc-pV6Z"
  "aug-cc-pVDZ"
  "aug-cc-pVTZ"
  "aug-cc-pVQZ"
  "aug-cc-pV5Z"
+ "aug-cc-pV6Z"
  "cc-pCVDZ"
  "cc-pCVTZ"
  "cc-pCVQZ"
@@ -107,6 +108,16 @@ test2 : [
    %puream=yes
  )
 ]
+
+concat1<GaussianBasisSet>: (
+   molecule = $:molecule
+   name = "6-31G*"
+)
+
+concat2<GaussianBasisSet>: (
+   molecule = $:molecule
+   name = "cc-pV6Z"
+)
 
 test : [
  <GaussianBasisSet>: (

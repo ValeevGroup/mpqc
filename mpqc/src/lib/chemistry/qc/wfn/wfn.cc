@@ -1117,9 +1117,11 @@ Wavefunction::orthog_method() const
 void
 Wavefunction::set_orthog_method(const OverlapOrthog::OrthogMethod& omethod)
 {
-  orthog_method_ = omethod;
-  init_orthog();
-  obsolete();
+  if (orthog_method_ != omethod) {
+    orthog_method_ = omethod;
+    init_orthog();
+    obsolete();
+  }
 }
 
 double
@@ -1131,9 +1133,11 @@ Wavefunction::lindep_tol() const
 void
 Wavefunction::set_lindep_tol(double lindep_tol)
 {
-  lindep_tol_ = lindep_tol;
-  init_orthog();
-  obsolete();
+  if (lindep_tol_ != lindep_tol) {
+    lindep_tol_ = lindep_tol;
+    init_orthog();
+    obsolete();
+  }
 }
 
 void

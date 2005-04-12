@@ -31,7 +31,6 @@
 
 #ifndef _util_misc_scexception_h
 #define _util_misc_scexception_h
-#endif
 
 #ifndef _util_class_class_h
 #include <util/class/class.h>
@@ -326,3 +325,6 @@ public:
 };
 
 }
+
+#endif
+

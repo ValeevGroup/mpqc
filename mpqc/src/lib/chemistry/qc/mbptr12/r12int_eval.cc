@@ -784,8 +784,16 @@ R12IntEval::compute()
   
   if (r12info_->basis_vir()->equiv(r12info_->basis())) {
     obs_contrib_to_VXB_gebc_vbseqobs_();
+    if (debug_ > 1) {
+      Baa_.print("Alpha-alpha B(OBS) contribution");
+      Bab_.print("Alpha-beta B(OBS) contribution");
+    }
     if (r12info_->basis() != r12info_->basis_ri())
       abs1_contrib_to_VXB_gebc_();
+    if (debug_ > 1) {
+      Baa_.print("Alpha-alpha B(OBS+ABS) contribution");
+      Bab_.print("Alpha-beta B(OBS+ABS) contribution");
+    }
   }
   else {
     contrib_to_VXB_gebc_vbsneqobs_();
@@ -839,7 +847,15 @@ R12IntEval::compute()
       throw std::runtime_error("R12IntEval::compute() -- gbc=false is only supported when basis_vir == basis");
 
     compute_B_gbc_1_();
+    if (debug_ > 1) {
+      Baa_.print("Alpha-alpha B(OBS+ABS+GBC1) contribution");
+      Bab_.print("Alpha-beta B(OBS+ABS+GBC1) contribution");
+    }
     compute_B_gbc_2_();
+    if (debug_ > 1) {
+      Baa_.print("Alpha-alpha B(OBS+ABS+GBC1+GBC2) contribution");
+      Bab_.print("Alpha-beta B(OBS+ABS+GBC1+GBC2) contribution");
+    }
   }
 
   // Distribute the final intermediates to every node

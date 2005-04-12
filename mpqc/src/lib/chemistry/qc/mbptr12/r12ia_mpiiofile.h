@@ -69,6 +69,11 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
     // Initialization tasks common to all constructors
     void init(bool restart);
     
+    /// total number of tasks
+    int ntasks() const { return mem_->n(); }
+    /// ID of this task
+    int taskid() const { return mem_->me(); }
+    
   public:
     R12IntsAcc_MPIIOFile(Ref<MemoryGrp>& mem, const char *filename, int num_te_types,
                          int ni, int nj, int nx, int ny);

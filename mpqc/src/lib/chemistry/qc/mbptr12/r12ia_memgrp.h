@@ -60,7 +60,11 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
     
     // Initialization tasks common to all constructors
     void init();
-
+    /// total number of tasks
+    int ntasks() const { return mem_->n(); }
+    /// ID of this task
+    int taskid() const { return mem_->me(); }
+    
   public:
     R12IntsAcc_MemoryGrp(Ref<MemoryGrp>&, int num_te_types, int ni, int nj, int nx, int ny);
     R12IntsAcc_MemoryGrp(StateIn&);

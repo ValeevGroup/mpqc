@@ -67,7 +67,12 @@ class R12IntsAcc_Node0File: public R12IntsAcc {
     void init(bool restart);
     // Check if the file operation went OK
     void check_filedescr_();
-
+    
+    /// total number of tasks
+    int ntasks() const { return mem_->n(); }
+    /// ID of this task
+    int taskid() const { return mem_->me(); }
+    
   public:
     R12IntsAcc_Node0File(Ref<MemoryGrp>& mem, const char *filename, int num_te_types, int ni, int nj,
                          int nx, int ny);

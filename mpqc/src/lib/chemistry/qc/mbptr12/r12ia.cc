@@ -126,6 +126,30 @@ void R12IntsAcc::inc_next_orbital(int ni)
   next_orbital_ += ni;
 }
 
+int
+R12IntsAcc::tasks_with_access(vector<int>& twa_map) const
+{
+  int nproc = ntasks();
+  
+  // Compute the number of tasks that have full access to the integrals
+  // and split the work among them
+  int nproc_with_ints = 0;
+  for(int proc=0;proc<nproc;proc++)
+    if (has_access(proc)) nproc_with_ints++;
+ 
+  twa_map.resize(nproc);
+  int count = 0;
+  for(int proc=0;proc<nproc;proc++)
+    if (has_access(proc)) {
+      twa_map[proc] = count;
+      count++;
+    }
+    else
+      twa_map[proc] = -1;
+
+  return nproc_with_ints;
+}
+
 ///////////////////////////////////////////////////////////////
 
 // Local Variables:

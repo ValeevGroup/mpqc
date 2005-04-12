@@ -32,11 +32,14 @@
 #pragma interface
 #endif
 
+#include <vector>
 #include <util/ref/ref.h>
 #include <util/state/state.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
 #include <util/group/memory.h>
+
+using namespace std;
 
 namespace sc {
 
@@ -79,6 +82,10 @@ class R12IntsAcc: virtual public SavableState {
     bool committed_;    // Whether all data has been written out and ready to be read
     bool active_;       // Whether ready to read data
 
+    /// total number of tasks
+    virtual int ntasks() const =0;
+    /// ID of this task
+    virtual int taskid() const =0;
     /// The index of the first orbital in the next integrals batch to be stored
     void inc_next_orbital(int ni);
 
@@ -94,6 +101,14 @@ class R12IntsAcc: virtual public SavableState {
 
     /// The number of types of integrals that are being handled together
     int num_te_types() const { return num_te_types_; };
+    /// Rank of index space i
+    int ni() const { return ni_; }
+    /// Rank of index space j
+    int nj() const { return nj_; }
+    /// Rank of index space x
+    int nx() const { return nx_; }
+    /// Rank of index space y
+    int ny() const { return ny_; }
     /// Size of each block of the integrals of one type, in double words
     size_t blocksize() const { return blksize_; };
     /// The index of the first orbital in the next integrals batch to be stored
@@ -136,6 +151,10 @@ class R12IntsAcc: virtual public SavableState {
     virtual bool is_avail(int i, int j) const =0;
     /// Does this task have access to all the integrals?
     virtual bool has_access(int proc) const =0;
+    /** Returns the total number of tasks with access to integrals.
+        If task i has access to the integrals, then twa_map[i] is its index among
+        the tasks with access, -1 otherwise. */
+    int tasks_with_access(vector<int>& twa_map) const;
     /// Can this specialization be used in restarts?
     virtual bool can_restart() const =0;
 };

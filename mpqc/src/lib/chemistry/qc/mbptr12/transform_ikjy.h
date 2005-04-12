@@ -34,6 +34,7 @@
 
 #include <string>
 #include <util/ref/ref.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/mbptr12/transform_tbint.h>
 
 using namespace std;
@@ -62,13 +63,14 @@ public:
 
   /// Implementation of TwoBodyMOIntsTransform::type()
   std::string type() const { return "ikjy"; }
-
   /** Returns the number of bytes allocated for each ij-block of integrals of one type
       in MemoryGrp */
   const size_t memgrp_blksize() const;
 
   /// Computes transformed integrals
   void compute();
+  /// Check symmetry of transformed integrals
+  void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) const throw (ProgrammingError);
 };
 
 }

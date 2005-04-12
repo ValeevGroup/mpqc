@@ -31,6 +31,7 @@
 
 #include <stdexcept>
 
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/state/state_bin.h>
 #include <util/ref/ref.h>
@@ -170,6 +171,56 @@ TwoBodyMOIntsTransform_ikjy::init_acc()
   
   default:
     throw std::runtime_error("TwoBodyMOIntsTransform_ikjy::init_acc() -- invalid integrals store method");
+  }
+}
+
+void
+TwoBodyMOIntsTransform_ikjy::check_int_symm(double threshold) const throw (ProgrammingError)
+{
+  Ref<R12IntsAcc> iacc = ints_acc();
+  if (!iacc->is_committed())
+    throw ProgrammingError("TwoBodyMOIntsTransform_ikjy::check_int_symm() is called but integrals not computed yet",
+                           __FILE__, __LINE__);
+
+  int num_te_types = iacc->num_te_types();
+  int ni = iacc->ni();
+  int nj = iacc->nj();
+  int nk = iacc->nx();
+  int ny = iacc->ny();
+  vector<int> isyms = space1_->mosym();
+  vector<int> jsyms = space3_->mosym();
+  vector<int> ksyms = space2_->mosym();
+  vector<int> ysyms = space4_->mosym();
+  
+  int me = msg_->me();
+  vector<int> twi_map;
+  int ntasks_with_ints = iacc->tasks_with_access(twi_map);
+  if (!iacc->has_access(me))
+    return;
+  
+  int ij=0;
+  for(int i=0; i<ni; i++) {
+    int isym = isyms[i];
+    for(int j=0; j<nj; j++, ij++) {
+      int jsym = jsyms[j];
+      if (ij%ntasks_with_ints != twi_map[me])
+        continue;
+      
+      for(int t=0; t<num_te_types; t++) {
+        const double* ints = iacc->retrieve_pair_block(i,j,static_cast<R12IntsAcc::tbint_type>(t));
+        int ky=0;
+        for(int k=0; k<nk; k++) {
+          int ksym = ksyms[k];
+          for(int y=0; y<ny; y++, ky++) {
+            int ysym = ysyms[y];
+            if (isym^jsym^ksym^ysym == 0 && fabs(ints[ky]) > threshold)
+              throw ProgrammingError("TwoBodyMOIntsTransform_ikjy::check_int_symm() -- nonzero nonsymmetric integrals are detected",
+                                     __FILE__, __LINE__);
+          }
+        }
+        iacc->release_pair_block(i,j,static_cast<R12IntsAcc::tbint_type>(t));
+      }
+    }
   }
 }
 

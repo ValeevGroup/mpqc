@@ -34,6 +34,7 @@
 
 #include <string>
 #include <util/ref/ref.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/mbptr12/r12ia.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
@@ -57,6 +58,9 @@ class TwoBodyMOIntsTransform : virtual public SavableState {
   virtual distsize_t compute_transform_dynamic_memory_(int ni) const = 0;
 
 protected:
+  /** By default, integrals smaller than zero_integral are considered zero.
+      This constant is only used in checking integrals, not computing them. */
+  static const double zero_integral = 1.0e-12;
   /// Predefined enumerated type for the MO spaces
   typedef struct {
     enum {Space1, Space2, Space3, Space4};
@@ -183,7 +187,8 @@ public:
 
   /// Computes transformed integrals
   virtual void compute() = 0;
-  
+  /// Check symmetry of transformed integrals
+  virtual void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) const throw (ProgrammingError) =0;
   /// Make the transform obsolete. Next call to compute() will recompute
   virtual void obsolete();
 

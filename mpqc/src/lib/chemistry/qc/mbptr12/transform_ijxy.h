@@ -69,6 +69,8 @@ public:
 
   /// Computes transformed integrals
   void compute();
+  /// Check symmetry of transformed integrals
+  void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) const throw (ProgrammingError);
 };
 
 }

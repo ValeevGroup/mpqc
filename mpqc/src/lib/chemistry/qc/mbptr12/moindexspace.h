@@ -98,10 +98,21 @@ private:
 
 public:
   MOIndexSpace(StateIn&);
-  /** This constructor should be used when the MOIndexSpace object is a subspace of a full orbital space.
-      This function constructs an MOIndexSpace object using a symmetry-blocked transformation coefficient matrix
-      (AO by MO) for the full space,
-      basis set, block offsets and sizes. If moorder == energy then evals will be used to sort the vectors. */
+  /** This function constructs an MOIndexSpace from (blocked) space full_coefs.
+      Block i will contain vectors [ offsets[i], offsets[i]+nmopi[i]-1 ] . By default,
+      the space maintains the same blocked structure and the same order within blocks
+      as the original space (moorder=symmetry). If moorder=energy and eigenvalues
+      evals are provided, then all vectors will be put in one block and
+      sorted according to ascending evals.
+
+      \param full_coefs -- symmetry-blocked transformation coefficient matrix
+      (AO by MO) for the full space
+      \param basis -- basis set
+      \param offsets -- block offsets
+      \param nmopi -- new block sizes
+      \param moorder -- specifies new ordering of vectors
+      \param evals -- used to sort the vectors
+      */
   MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis,
                const vector<int>& offsets, const vector<int>& nmopi, IndexOrder moorder = symmetry,
                const RefDiagSCMatrix& evals = 0);
@@ -123,7 +134,7 @@ public:
                IndexOrder moorder = undefined, const vector<int>& mosym = 0,
                const RefDiagSCMatrix& evals = 0);*/
   /** This constructor is a true hack introduced because I have no idea how to construct what I need.
-      It will copy orig_space but replace it's coefs with new_coefs, and it's basis with new_basis. */
+      It will copy orig_space but replace it's coefs with new_coefs, and its basis with new_basis. */
   MOIndexSpace(std::string name, const Ref<MOIndexSpace>& orig_space, const RefSCMatrix& new_coefs,
                const Ref<GaussianBasisSet>& new_basis);
   ~MOIndexSpace();

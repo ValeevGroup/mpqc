@@ -212,7 +212,7 @@ TwoBodyMOIntsTransform_ijxy::check_int_symm(double threshold) const throw (Progr
           int xsym = xsyms[x];
           for(int y=0; y<ny; y++, xy++) {
             int ysym = ysyms[y];
-            if (isym^jsym^xsym^ysym == 0 && fabs(ints[xy]) > threshold)
+            if ( (isym^jsym^xsym^ysym) != 0 && fabs(ints[xy]) > threshold)
               throw ProgrammingError("TwoBodyMOIntsTransform_ijxy::check_int_symm() -- nonzero nonsymmetric integrals are detected",
                                      __FILE__, __LINE__);
           }

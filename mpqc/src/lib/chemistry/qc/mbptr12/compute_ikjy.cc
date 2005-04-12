@@ -52,7 +52,7 @@ using namespace sc;
 #define PRINT4Q 0
 #define PRINT_NUM_TE_TYPES 1
 #define WRITE_DOUBLES 0
-
+#define CHECK_INTS_SYMM 1
 
 /*-------------------------------------
   Based on MBPT2::compute_mp2_energy()
@@ -368,6 +368,13 @@ TwoBodyMOIntsTransform_ikjy::compute()
   }
   
   print_footer();
+
+#if CHECK_INTS_SYMM
+  ExEnv::out0() << indent << "Detecting non-totally-symmetric integrals ... ";
+  check_int_symm();
+  ExEnv::out0() << "none" << endl;
+#endif
+
 }
 
 

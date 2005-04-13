@@ -2,12 +2,12 @@
 // File:          MPQC_Chemistry_QC_Model_Impl.hh
 // Symbol:        MPQC.Chemistry_QC_Model-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.Chemistry_QC_Model
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 
 #ifndef included_MPQC_Chemistry_QC_Model_Impl_hh
@@ -78,7 +78,8 @@ namespace MPQC {
 
   private:
     // private default constructor (required)
-    Chemistry_QC_Model_impl() {} 
+    Chemistry_QC_Model_impl() 
+    {} 
 
   public:
     // sidl constructor (required)
@@ -106,8 +107,8 @@ namespace MPQC {
      */
     void
     initialize_parsedkeyval (
-      /*in*/ const ::std::string& keyword,
-      /*in*/ const ::std::string& input
+      /* in */ const ::std::string& keyword,
+      /* in */ const ::std::string& input
     )
     throw () 
     ;
@@ -117,8 +118,8 @@ namespace MPQC {
      */
     void
     initialize_parsedkeyval_file (
-      /*in*/ const ::std::string& keyword,
-      /*in*/ const ::std::string& filename
+      /* in */ const ::std::string& keyword,
+      /* in */ const ::std::string& filename
     )
     throw () 
     ;
@@ -128,9 +129,9 @@ namespace MPQC {
      */
     void
     initialize_aggregatekeyval (
-      /*in*/ const ::std::string& keyword,
-      /*in*/ const ::std::string& input,
-      /*in*/ void* describedclass
+      /* in */ const ::std::string& keyword,
+      /* in */ const ::std::string& input,
+      /* in */ void* describedclass
     )
     throw () 
     ;
@@ -140,7 +141,7 @@ namespace MPQC {
      */
     void
     initialize_pointer (
-      /*in*/ void* ptr
+      /* in */ void* ptr
     )
     throw () 
     ;
@@ -151,7 +152,7 @@ namespace MPQC {
      */
     void
     set_molecule (
-      /*in*/ ::Chemistry::Molecule molecule
+      /* in */ ::Chemistry::Molecule molecule
     )
     throw () 
     ;
@@ -177,7 +178,7 @@ namespace MPQC {
      */
     void
     set_energy_accuracy (
-      /*in*/ double acc
+      /* in */ double acc
     )
     throw () 
     ;
@@ -201,7 +202,7 @@ namespace MPQC {
      */
     void
     set_do_energy (
-      /*in*/ bool doit
+      /* in */ bool doit
     )
     throw () 
     ;
@@ -221,7 +222,7 @@ namespace MPQC {
      */
     void
     set_gradient_accuracy (
-      /*in*/ double acc
+      /* in */ double acc
     )
     throw () 
     ;
@@ -250,7 +251,7 @@ namespace MPQC {
      */
     void
     set_hessian_accuracy (
-      /*in*/ double acc
+      /* in */ double acc
     )
     throw () 
     ;
@@ -278,7 +279,7 @@ namespace MPQC {
      */
     void
     set_guess_hessian_accuracy (
-      /*in*/ double acc
+      /* in */ double acc
     )
     throw () 
     ;

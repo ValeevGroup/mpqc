@@ -2,12 +2,12 @@
 // File:          MPQC_ChemistryOpt_CoordinateModel_Impl.hh
 // Symbol:        MPQC.ChemistryOpt_CoordinateModel-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.ChemistryOpt_CoordinateModel
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 
 #ifndef included_MPQC_ChemistryOpt_CoordinateModel_Impl_hh
@@ -152,7 +152,8 @@ namespace MPQC {
 
   private:
     // private default constructor (required)
-    ChemistryOpt_CoordinateModel_impl() {} 
+    ChemistryOpt_CoordinateModel_impl() 
+    {} 
 
   public:
     // sidl constructor (required)
@@ -175,32 +176,6 @@ namespace MPQC {
     static void _load();
 
   public:
-
-
-    /**
-     * Starts up a component presence in the calling framework.
-     * @param Svc the component instance's handle on the framework world.
-     * Contracts concerning Svc and setServices:
-     * 
-     * The component interaction with the CCA framework
-     * and Ports begins on the call to setServices by the framework.
-     * 
-     * This function is called exactly once for each instance created
-     * by the framework.
-     * 
-     * The argument Svc will never be nil/null.
-     * 
-     * Those uses ports which are automatically connected by the framework
-     * (so-called service-ports) may be obtained via getPort during
-     * setServices.
-     */
-    void
-    setServices (
-      /*in*/ ::gov::cca::Services services
-    )
-    throw ( 
-      ::gov::cca::CCAException
-    );
 
 
     /**
@@ -228,7 +203,7 @@ namespace MPQC {
      */
     void
     set_model (
-      /*in*/ ::Chemistry::QC::Model model
+      /* in */ ::Chemistry::QC::Model model
     )
     throw () 
     ;
@@ -271,7 +246,7 @@ namespace MPQC {
      */
     double
     get_energy (
-      /*in*/ ::sidl::array<double> x
+      /* in */ ::sidl::array<double> x
     )
     throw () 
     ;
@@ -290,7 +265,7 @@ namespace MPQC {
      */
     ::sidl::array<double>
     get_gradient (
-      /*in*/ ::sidl::array<double> x
+      /* in */ ::sidl::array<double> x
     )
     throw () 
     ;
@@ -309,7 +284,7 @@ namespace MPQC {
      */
     ::sidl::array<double>
     get_hessian (
-      /*in*/ ::sidl::array<double> x
+      /* in */ ::sidl::array<double> x
     )
     throw () 
     ;
@@ -330,9 +305,9 @@ namespace MPQC {
      */
     void
     get_energy_and_gradient (
-      /*in*/ ::sidl::array<double> x,
-      /*out*/ double& f,
-      /*in*/ ::sidl::array<double> g
+      /* in */ ::sidl::array<double> x,
+      /* out */ double& f,
+      /* in */ ::sidl::array<double> g
     )
     throw () 
     ;
@@ -351,9 +326,9 @@ namespace MPQC {
      */
     void
     guess_hessian_solve (
-      /*in*/ ::sidl::array<double> effective_grad,
-      /*in*/ ::sidl::array<double> effective_step,
-      /*in*/ void* first_geom
+      /* in */ ::sidl::array<double> effective_grad,
+      /* in */ ::sidl::array<double> effective_step,
+      /* in */ void* first_geom
     )
     throw () 
     ;
@@ -366,7 +341,7 @@ namespace MPQC {
      */
     void
     checkConvergence (
-      /*inout*/ int32_t& flag
+      /* inout */ int32_t& flag
     )
     throw () 
     ;
@@ -381,6 +356,32 @@ namespace MPQC {
     void
     monitor() throw () 
     ;
+
+    /**
+     * Starts up a component presence in the calling framework.
+     * @param Svc the component instance's handle on the framework world.
+     * Contracts concerning Svc and setServices:
+     * 
+     * The component interaction with the CCA framework
+     * and Ports begins on the call to setServices by the framework.
+     * 
+     * This function is called exactly once for each instance created
+     * by the framework.
+     * 
+     * The argument Svc will never be nil/null.
+     * 
+     * Those uses ports which are automatically connected by the framework
+     * (so-called service-ports) may be obtained via getPort during
+     * setServices.
+     */
+    void
+    setServices (
+      /* in */ ::gov::cca::Services services
+    )
+    throw ( 
+      ::gov::cca::CCAException
+    );
+
   };  // end class ChemistryOpt_CoordinateModel_impl
 
 } // end namespace MPQC

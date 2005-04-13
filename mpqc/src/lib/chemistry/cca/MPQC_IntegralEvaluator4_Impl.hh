@@ -2,12 +2,12 @@
 // File:          MPQC_IntegralEvaluator4_Impl.hh
 // Symbol:        MPQC.IntegralEvaluator4-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.IntegralEvaluator4
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 
 #ifndef included_MPQC_IntegralEvaluator4_Impl_hh
@@ -112,7 +112,8 @@ namespace MPQC {
 
   private:
     // private default constructor (required)
-    IntegralEvaluator4_impl() {} 
+    IntegralEvaluator4_impl() 
+    {} 
 
   public:
     // sidl constructor (required)
@@ -140,7 +141,7 @@ namespace MPQC {
      */
     void
     set_integral_package (
-      /*in*/ const ::std::string& label
+      /* in */ const ::std::string& label
     )
     throw () 
     ;
@@ -157,12 +158,12 @@ namespace MPQC {
      */
     void
     initialize (
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs3,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs4,
-      /*in*/ const ::std::string& label,
-      /*in*/ int64_t max_deriv
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4,
+      /* in */ const ::std::string& label,
+      /* in */ int64_t max_deriv
     )
     throw () 
     ;
@@ -186,11 +187,11 @@ namespace MPQC {
      */
     void
     compute (
-      /*in*/ int64_t shellnum1,
-      /*in*/ int64_t shellnum2,
-      /*in*/ int64_t shellnum3,
-      /*in*/ int64_t shellnum4,
-      /*in*/ int64_t deriv_level
+      /* in */ int64_t shellnum1,
+      /* in */ int64_t shellnum2,
+      /* in */ int64_t shellnum3,
+      /* in */ int64_t shellnum4,
+      /* in */ int64_t deriv_level
     )
     throw () 
     ;
@@ -208,11 +209,11 @@ namespace MPQC {
      */
     ::sidl::array<double>
     compute_array (
-      /*in*/ int64_t shellnum1,
-      /*in*/ int64_t shellnum2,
-      /*in*/ int64_t shellnum3,
-      /*in*/ int64_t shellnum4,
-      /*in*/ int64_t deriv_level
+      /* in */ int64_t shellnum1,
+      /* in */ int64_t shellnum2,
+      /* in */ int64_t shellnum3,
+      /* in */ int64_t shellnum4,
+      /* in */ int64_t deriv_level
     )
     throw () 
     ;

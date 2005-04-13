@@ -2,12 +2,12 @@
 // File:          MPQC_Chemistry_MoleculeViewer_Impl.cc
 // Symbol:        MPQC.Chemistry_MoleculeViewer-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.Chemistry_MoleculeViewer
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 #include "MPQC_Chemistry_MoleculeViewer_Impl.hh"
 
@@ -16,14 +16,14 @@
 #include <iostream>
 // DO-NOT-DELETE splicer.end(MPQC.Chemistry_MoleculeViewer._includes)
 
-// user defined constructor
+// user-defined constructor.
 void MPQC::Chemistry_MoleculeViewer_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_MoleculeViewer._ctor)
   is_updated=0;
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_MoleculeViewer._ctor)
 }
 
-// user defined destructor
+// user-defined destructor.
 void MPQC::Chemistry_MoleculeViewer_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_MoleculeViewer._dtor)
 
@@ -41,16 +41,16 @@ void MPQC::Chemistry_MoleculeViewer_impl::_dtor() {
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_MoleculeViewer._dtor)
 }
 
-// static class initializer
+// static class initializer.
 void MPQC::Chemistry_MoleculeViewer_impl::_load() {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_MoleculeViewer._load)
   // guaranteed to be called at most once before any other method in this class
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_MoleculeViewer._load)
 }
 
-// user defined static methods: (none)
+// user-defined static methods: (none)
 
-// user defined non-static methods:
+// user-defined non-static methods:
 /**
  * Starts up a component presence in the calling framework.
  * @param Svc the component instance's handle on the framework world.
@@ -70,7 +70,7 @@ void MPQC::Chemistry_MoleculeViewer_impl::_load() {
  */
 void
 MPQC::Chemistry_MoleculeViewer_impl::setServices (
-  /*in*/ ::gov::cca::Services services ) 
+  /* in */ ::gov::cca::Services services ) 
 throw ( 
   ::gov::cca::CCAException
 ){
@@ -85,7 +85,7 @@ throw (
  */
 void
 MPQC::Chemistry_MoleculeViewer_impl::set_molecule (
-  /*in*/ ::Chemistry::Molecule molecule ) 
+  /* in */ ::Chemistry::Molecule molecule ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_MoleculeViewer.set_molecule)
@@ -99,7 +99,7 @@ throw ()
  */
 void
 MPQC::Chemistry_MoleculeViewer_impl::set_coor (
-  /*in*/ const ::std::string& coords ) 
+  /* in */ const ::std::string& coords ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_MoleculeViewer.set_coor)
@@ -111,7 +111,7 @@ throw ()
  * Method:  run_gui[]
  */
 void
-MPQC::Chemistry_MoleculeViewer_impl::run_gui () 
+MPQC::Chemistry_MoleculeViewer_impl::run_gui ()
 throw () 
 
 {
@@ -124,7 +124,7 @@ throw ()
  * Method:  draw[]
  */
 void
-MPQC::Chemistry_MoleculeViewer_impl::draw () 
+MPQC::Chemistry_MoleculeViewer_impl::draw ()
 throw () 
 
 {

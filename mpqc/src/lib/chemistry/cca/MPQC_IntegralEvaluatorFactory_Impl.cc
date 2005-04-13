@@ -2,12 +2,12 @@
 // File:          MPQC_IntegralEvaluatorFactory_Impl.cc
 // Symbol:        MPQC.IntegralEvaluatorFactory-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.IntegralEvaluatorFactory
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 #include "MPQC_IntegralEvaluatorFactory_Impl.hh"
 
@@ -27,37 +27,37 @@ string get_Integral_keyval(string);
 sc::Ref<sc::GaussianBasisSet> basis_cca_to_sc(GaussianBasis::Molecular&);
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._includes)
 
-// user defined constructor
+// user-defined constructor.
 void MPQC::IntegralEvaluatorFactory_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory._ctor)
   // add construction details here
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._ctor)
 }
 
-// user defined destructor
+// user-defined destructor.
 void MPQC::IntegralEvaluatorFactory_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory._dtor)
   // add destruction details here
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._dtor)
 }
 
-// static class initializer
+// static class initializer.
 void MPQC::IntegralEvaluatorFactory_impl::_load() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory._load)
   // guaranteed to be called at most once before any other method in this class
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._load)
 }
 
-// user defined static methods: (none)
+// user-defined static methods: (none)
 
-// user defined non-static methods:
+// user-defined non-static methods:
 /**
  * Set the molecular basis 
  * @param molbasis The molecular basis 
  */
 void
 MPQC::IntegralEvaluatorFactory_impl::set_molecular (
-  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular molbasis ) 
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular molbasis ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.set_molecular)
@@ -70,7 +70,7 @@ throw ()
  * @return The molecular basis 
  */
 ::Chemistry::QC::GaussianBasis::Molecular
-MPQC::IntegralEvaluatorFactory_impl::get_molecular () 
+MPQC::IntegralEvaluatorFactory_impl::get_molecular ()
 throw () 
 
 {
@@ -85,7 +85,7 @@ throw ()
  */
 void
 MPQC::IntegralEvaluatorFactory_impl::set_molecule (
-  /*in*/ ::Chemistry::Molecule mol ) 
+  /* in */ ::Chemistry::Molecule mol ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.set_molecule)
@@ -98,7 +98,7 @@ throw ()
  * @return The molecule 
  */
 ::Chemistry::Molecule
-MPQC::IntegralEvaluatorFactory_impl::get_molecule () 
+MPQC::IntegralEvaluatorFactory_impl::get_molecule ()
 throw () 
 
 {
@@ -113,7 +113,7 @@ throw ()
  */
 void
 MPQC::IntegralEvaluatorFactory_impl::set_integral_package (
-  /*in*/ const ::std::string& label ) 
+  /* in */ const ::std::string& label ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.set_integral_package)
@@ -131,10 +131,10 @@ throw ()
  */
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator2
 MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator2 (
-  /*in*/ const ::std::string& label,
-  /*in*/ int64_t max_deriv,
-  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2 ) 
+  /* in */ const ::std::string& label,
+  /* in */ int64_t max_deriv,
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2 ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator2)
@@ -158,11 +158,11 @@ throw ()
  */
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator3
 MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator3 (
-  /*in*/ const ::std::string& label,
-  /*in*/ int64_t max_deriv,
-  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs3 ) 
+  /* in */ const ::std::string& label,
+  /* in */ int64_t max_deriv,
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3 ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator3)
@@ -187,12 +187,12 @@ throw ()
  */
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator4
 MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator4 (
-  /*in*/ const ::std::string& label,
-  /*in*/ int64_t max_deriv,
-  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs3,
-  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs4 ) 
+  /* in */ const ::std::string& label,
+  /* in */ int64_t max_deriv,
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4 ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator4)
@@ -210,7 +210,7 @@ throw ()
  * @return The contraction transform 
  */
 ::Chemistry::QC::GaussianBasis::ContractionTransform
-MPQC::IntegralEvaluatorFactory_impl::get_contraction_transform () 
+MPQC::IntegralEvaluatorFactory_impl::get_contraction_transform ()
 throw () 
 
 {
@@ -238,7 +238,7 @@ throw ()
  */
 void
 MPQC::IntegralEvaluatorFactory_impl::setServices (
-  /*in*/ ::gov::cca::Services services ) 
+  /* in */ ::gov::cca::Services services ) 
 throw ( 
   ::gov::cca::CCAException
 ){

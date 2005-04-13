@@ -2,12 +2,12 @@
 // File:          MPQC_Chemistry_MoleculeViewer_Impl.hh
 // Symbol:        MPQC.Chemistry_MoleculeViewer-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.Chemistry_MoleculeViewer
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 
 #ifndef included_MPQC_Chemistry_MoleculeViewer_Impl_hh
@@ -91,7 +91,8 @@ namespace MPQC {
 
   private:
     // private default constructor (required)
-    Chemistry_MoleculeViewer_impl() {} 
+    Chemistry_MoleculeViewer_impl() 
+    {} 
 
   public:
     // sidl constructor (required)
@@ -134,7 +135,7 @@ namespace MPQC {
      */
     void
     setServices (
-      /*in*/ ::gov::cca::Services services
+      /* in */ ::gov::cca::Services services
     )
     throw ( 
       ::gov::cca::CCAException
@@ -145,7 +146,7 @@ namespace MPQC {
      */
     void
     set_molecule (
-      /*in*/ ::Chemistry::Molecule molecule
+      /* in */ ::Chemistry::Molecule molecule
     )
     throw () 
     ;
@@ -155,7 +156,7 @@ namespace MPQC {
      */
     void
     set_coor (
-      /*in*/ const ::std::string& coords
+      /* in */ const ::std::string& coords
     )
     throw () 
     ;

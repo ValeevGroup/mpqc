@@ -2,12 +2,12 @@
 // File:          MPQC_IntegralEvaluatorFactory_Impl.hh
 // Symbol:        MPQC.IntegralEvaluatorFactory-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.IntegralEvaluatorFactory
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 
 #ifndef included_MPQC_IntegralEvaluatorFactory_Impl_hh
@@ -121,7 +121,8 @@ namespace MPQC {
 
   private:
     // private default constructor (required)
-    IntegralEvaluatorFactory_impl() {} 
+    IntegralEvaluatorFactory_impl() 
+    {} 
 
   public:
     // sidl constructor (required)
@@ -151,7 +152,7 @@ namespace MPQC {
      */
     void
     set_molecular (
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular molbasis
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular molbasis
     )
     throw () 
     ;
@@ -171,7 +172,7 @@ namespace MPQC {
      */
     void
     set_molecule (
-      /*in*/ ::Chemistry::Molecule mol
+      /* in */ ::Chemistry::Molecule mol
     )
     throw () 
     ;
@@ -191,7 +192,7 @@ namespace MPQC {
      */
     void
     set_integral_package (
-      /*in*/ const ::std::string& label
+      /* in */ const ::std::string& label
     )
     throw () 
     ;
@@ -207,10 +208,10 @@ namespace MPQC {
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator2
     get_integral_evaluator2 (
-      /*in*/ const ::std::string& label,
-      /*in*/ int64_t max_deriv,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2
+      /* in */ const ::std::string& label,
+      /* in */ int64_t max_deriv,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2
     )
     throw () 
     ;
@@ -227,11 +228,11 @@ namespace MPQC {
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator3
     get_integral_evaluator3 (
-      /*in*/ const ::std::string& label,
-      /*in*/ int64_t max_deriv,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs3
+      /* in */ const ::std::string& label,
+      /* in */ int64_t max_deriv,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3
     )
     throw () 
     ;
@@ -249,12 +250,12 @@ namespace MPQC {
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator4
     get_integral_evaluator4 (
-      /*in*/ const ::std::string& label,
-      /*in*/ int64_t max_deriv,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs3,
-      /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs4
+      /* in */ const ::std::string& label,
+      /* in */ int64_t max_deriv,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4
     )
     throw () 
     ;
@@ -287,7 +288,7 @@ namespace MPQC {
      */
     void
     setServices (
-      /*in*/ ::gov::cca::Services services
+      /* in */ ::gov::cca::Services services
     )
     throw ( 
       ::gov::cca::CCAException

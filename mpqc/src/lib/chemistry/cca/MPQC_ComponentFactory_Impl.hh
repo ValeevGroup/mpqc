@@ -2,12 +2,12 @@
 // File:          MPQC_ComponentFactory_Impl.hh
 // Symbol:        MPQC.ComponentFactory-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.ComponentFactory
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 
 #ifndef included_MPQC_ComponentFactory_Impl_hh
@@ -68,7 +68,8 @@ namespace MPQC {
 
   private:
     // private default constructor (required)
-    ComponentFactory_impl() {} 
+    ComponentFactory_impl() 
+    {} 
 
   public:
     // sidl constructor (required)
@@ -96,8 +97,8 @@ namespace MPQC {
      */
     void
     addDescription (
-      /*in*/ const ::std::string& className,
-      /*in*/ const ::std::string& classAlias
+      /* in */ const ::std::string& className,
+      /* in */ const ::std::string& classAlias
     )
     throw () 
     ;
@@ -124,7 +125,7 @@ namespace MPQC {
      */
     ::gov::cca::Component
     createComponentInstance (
-      /*in*/ const ::std::string& className
+      /* in */ const ::std::string& className
     )
     throw () 
     ;
@@ -137,8 +138,8 @@ namespace MPQC {
      */
     void
     destroyComponentInstance (
-      /*in*/ const ::std::string& className,
-      /*in*/ ::gov::cca::Component c
+      /* in */ const ::std::string& className,
+      /* in */ ::gov::cca::Component c
     )
     throw () 
     ;

@@ -2,12 +2,12 @@
 // File:          MPQC_GaussianBasis_Atomic_Impl.hh
 // Symbol:        MPQC.GaussianBasis_Atomic-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.GaussianBasis_Atomic
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 
 #ifndef included_MPQC_GaussianBasis_Atomic_Impl_hh
@@ -90,7 +90,8 @@ namespace MPQC {
 
   private:
     // private default constructor (required)
-    GaussianBasis_Atomic_impl() {} 
+    GaussianBasis_Atomic_impl() 
+    {} 
 
   public:
     // sidl constructor (required)
@@ -118,8 +119,8 @@ namespace MPQC {
      */
     void
     initialize (
-      /*in*/ void* scbasis,
-      /*in*/ int32_t atomnum
+      /* in */ void* scbasis,
+      /* in */ int32_t atomnum
     )
     throw () 
     ;
@@ -172,7 +173,7 @@ namespace MPQC {
      */
     ::Chemistry::QC::GaussianBasis::Shell
     get_shell (
-      /*in*/ int64_t shellnum
+      /* in */ int64_t shellnum
     )
     throw () 
     ;

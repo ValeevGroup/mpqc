@@ -2,12 +2,12 @@
 // File:          MPQC_Chemistry_QC_ModelFactory_Impl.cc
 // Symbol:        MPQC.Chemistry_QC_ModelFactory-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.Chemistry_QC_ModelFactory
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 #include "MPQC_Chemistry_QC_ModelFactory_Impl.hh"
 
@@ -22,7 +22,7 @@ using namespace std;
 using namespace sc;
 // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_ModelFactory._includes)
 
-// user defined constructor
+// user-defined constructor.
 void MPQC::Chemistry_QC_ModelFactory_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_ModelFactory._ctor)
 
@@ -37,9 +37,10 @@ void MPQC::Chemistry_QC_ModelFactory_impl::_ctor() {
   char** fake_argv=0;
 
   // always use MPI message group
-  grp_ = new sc::MPIMessageGrp( &fake_argc, &fake_argv);
-  if (grp_.nonnull())
-    sc::MessageGrp::set_default_messagegrp(grp_);
+  //grp_ = new sc::MessageGrp( &fake_argc, &fake_argv);
+  //if (grp_.nonnull())
+  //  sc::MessageGrp::set_default_messagegrp(grp_);
+  grp_ = sc::MessageGrp::get_default_messagegrp();
 
   // get thread group
   thread_ = sc::ThreadGrp::initial_threadgrp(fake_argc, fake_argv);
@@ -68,23 +69,23 @@ void MPQC::Chemistry_QC_ModelFactory_impl::_ctor() {
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_ModelFactory._ctor)
 }
 
-// user defined destructor
+// user-defined destructor.
 void MPQC::Chemistry_QC_ModelFactory_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_ModelFactory._dtor)
   // add destruction details here
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_ModelFactory._dtor)
 }
 
-// static class initializer
+// static class initializer.
 void MPQC::Chemistry_QC_ModelFactory_impl::_load() {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_ModelFactory._load)
   // guaranteed to be called at most once before any other method in this class
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_ModelFactory._load)
 }
 
-// user defined static methods: (none)
+// user-defined static methods: (none)
 
-// user defined non-static methods:
+// user-defined non-static methods:
 /**
  * Starts up a component presence in the calling framework.
  * @param Svc the component instance's handle on the framework world.
@@ -104,7 +105,7 @@ void MPQC::Chemistry_QC_ModelFactory_impl::_load() {
  */
 void
 MPQC::Chemistry_QC_ModelFactory_impl::setServices (
-  /*in*/ ::gov::cca::Services services ) 
+  /* in */ ::gov::cca::Services services ) 
 throw ( 
   ::gov::cca::CCAException
 ){
@@ -185,7 +186,7 @@ throw (
  */
 void
 MPQC::Chemistry_QC_ModelFactory_impl::set_theory (
-  /*in*/ const ::std::string& theory ) 
+  /* in */ const ::std::string& theory ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_ModelFactory.set_theory)
@@ -199,7 +200,7 @@ throw ()
  */
 void
 MPQC::Chemistry_QC_ModelFactory_impl::set_basis (
-  /*in*/ const ::std::string& basis ) 
+  /* in */ const ::std::string& basis ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_ModelFactory.set_basis)
@@ -213,7 +214,7 @@ throw ()
  */
 void
 MPQC::Chemistry_QC_ModelFactory_impl::set_molecule (
-  /*in*/ ::Chemistry::Molecule molecule ) 
+  /* in */ ::Chemistry::Molecule molecule ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_ModelFactory.set_molecule)
@@ -228,7 +229,7 @@ throw ()
  */
 void
 MPQC::Chemistry_QC_ModelFactory_impl::set_integral_factory (
-  /*in*/ ::Chemistry::QC::GaussianBasis::IntegralEvaluatorFactory intfact ) 
+  /* in */ ::Chemistry::QC::GaussianBasis::IntegralEvaluatorFactory intfact ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_ModelFactory.set_integral_factory)
@@ -242,7 +243,7 @@ throw ()
  * @return The new Model instance.
  */
 ::Chemistry::QC::Model
-MPQC::Chemistry_QC_ModelFactory_impl::get_model () 
+MPQC::Chemistry_QC_ModelFactory_impl::get_model ()
 throw ( 
   ::sidl::BaseException
 )
@@ -364,7 +365,7 @@ throw (
  * members may be called after finalize. 
  */
 int32_t
-MPQC::Chemistry_QC_ModelFactory_impl::finalize () 
+MPQC::Chemistry_QC_ModelFactory_impl::finalize ()
 throw () 
 
 {

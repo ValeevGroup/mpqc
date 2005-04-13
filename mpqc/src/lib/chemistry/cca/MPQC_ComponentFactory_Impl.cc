@@ -2,12 +2,12 @@
 // File:          MPQC_ComponentFactory_Impl.cc
 // Symbol:        MPQC.ComponentFactory-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.ComponentFactory
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 #include "MPQC_ComponentFactory_Impl.hh"
 
@@ -17,37 +17,37 @@
 #include "MPQC_IntegralEvaluatorFactory.hh"
 // DO-NOT-DELETE splicer.end(MPQC.ComponentFactory._includes)
 
-// user defined constructor
+// user-defined constructor.
 void MPQC::ComponentFactory_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory._ctor)
   addDescription( "MPQC.IntegralEvaluatorFactory", "IntegralEvaluatorFactory");
   // DO-NOT-DELETE splicer.end(MPQC.ComponentFactory._ctor)
 }
 
-// user defined destructor
+// user-defined destructor.
 void MPQC::ComponentFactory_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory._dtor)
   // add destruction details here
   // DO-NOT-DELETE splicer.end(MPQC.ComponentFactory._dtor)
 }
 
-// static class initializer
+// static class initializer.
 void MPQC::ComponentFactory_impl::_load() {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory._load)
   // guaranteed to be called at most once before any other method in this class
   // DO-NOT-DELETE splicer.end(MPQC.ComponentFactory._load)
 }
 
-// user defined static methods: (none)
+// user-defined static methods: (none)
 
-// user defined non-static methods:
+// user-defined non-static methods:
 /**
  * Method:  addDescription[]
  */
 void
 MPQC::ComponentFactory_impl::addDescription (
-  /*in*/ const ::std::string& className,
-  /*in*/ const ::std::string& classAlias ) 
+  /* in */ const ::std::string& className,
+  /* in */ const ::std::string& classAlias ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory.addDescription)
@@ -71,7 +71,7 @@ throw ()
  *  @throws CCAException in the event of error.
  */
 ::sidl::array< ::gov::cca::ComponentClassDescription>
-MPQC::ComponentFactory_impl::getAvailableComponentClasses () 
+MPQC::ComponentFactory_impl::getAvailableComponentClasses ()
 throw ( 
   ::gov::cca::CCAException
 )
@@ -96,7 +96,7 @@ throw (
  */
 ::gov::cca::Component
 MPQC::ComponentFactory_impl::createComponentInstance (
-  /*in*/ const ::std::string& className ) 
+  /* in */ const ::std::string& className ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory.createComponentInstance)
@@ -121,8 +121,8 @@ throw ()
  */
 void
 MPQC::ComponentFactory_impl::destroyComponentInstance (
-  /*in*/ const ::std::string& className,
-  /*in*/ ::gov::cca::Component c ) 
+  /* in */ const ::std::string& className,
+  /* in */ ::gov::cca::Component c ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentFactory.destroyComponentInstance)

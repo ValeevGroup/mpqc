@@ -2,12 +2,12 @@
 // File:          MPQC_Chemistry_QC_ModelFactory_Impl.hh
 // Symbol:        MPQC.Chemistry_QC_ModelFactory-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.Chemistry_QC_ModelFactory
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 
 #ifndef included_MPQC_Chemistry_QC_ModelFactory_Impl_hh
@@ -60,7 +60,7 @@
 #include <util/group/mstate.h>
 #include <util/group/thread.h>
 #include <util/group/pregtime.h>
-#include <util/group/messmpi.h>
+//#include <util/group/messmpi.h>
 #include <chemistry/qc/intcca/intcca.h>
 #include <chemistry/qc/basis/integral.h>
 #include "cca.h"
@@ -152,7 +152,8 @@ namespace MPQC {
 
   private:
     // private default constructor (required)
-    Chemistry_QC_ModelFactory_impl() {} 
+    Chemistry_QC_ModelFactory_impl() 
+    {} 
 
   public:
     // sidl constructor (required)
@@ -195,7 +196,7 @@ namespace MPQC {
      */
     void
     setServices (
-      /*in*/ ::gov::cca::Services services
+      /* in */ ::gov::cca::Services services
     )
     throw ( 
       ::gov::cca::CCAException
@@ -208,7 +209,7 @@ namespace MPQC {
      */
     void
     set_theory (
-      /*in*/ const ::std::string& theory
+      /* in */ const ::std::string& theory
     )
     throw () 
     ;
@@ -220,7 +221,7 @@ namespace MPQC {
      */
     void
     set_basis (
-      /*in*/ const ::std::string& basis
+      /* in */ const ::std::string& basis
     )
     throw () 
     ;
@@ -232,7 +233,7 @@ namespace MPQC {
      */
     void
     set_molecule (
-      /*in*/ ::Chemistry::Molecule molecule
+      /* in */ ::Chemistry::Molecule molecule
     )
     throw () 
     ;
@@ -245,7 +246,7 @@ namespace MPQC {
      */
     void
     set_integral_factory (
-      /*in*/ ::Chemistry::QC::GaussianBasis::IntegralEvaluatorFactory intfact
+      /* in */ ::Chemistry::QC::GaussianBasis::IntegralEvaluatorFactory intfact
     )
     throw () 
     ;

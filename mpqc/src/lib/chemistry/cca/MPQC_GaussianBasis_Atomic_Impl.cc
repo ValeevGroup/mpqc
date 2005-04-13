@@ -2,12 +2,12 @@
 // File:          MPQC_GaussianBasis_Atomic_Impl.cc
 // Symbol:        MPQC.GaussianBasis_Atomic-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.GaussianBasis_Atomic
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 #include "MPQC_GaussianBasis_Atomic_Impl.hh"
 
@@ -15,14 +15,14 @@
 // Put additional includes or other arbitrary code here...
 // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Atomic._includes)
 
-// user defined constructor
+// user-defined constructor.
 void MPQC::GaussianBasis_Atomic_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic._ctor)
   // add construction details here
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Atomic._ctor)
 }
 
-// user defined destructor
+// user-defined destructor.
 void MPQC::GaussianBasis_Atomic_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic._dtor)
 
@@ -34,23 +34,23 @@ void MPQC::GaussianBasis_Atomic_impl::_dtor() {
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Atomic._dtor)
 }
 
-// static class initializer
+// static class initializer.
 void MPQC::GaussianBasis_Atomic_impl::_load() {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic._load)
   // guaranteed to be called at most once before any other method in this class
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Atomic._load)
 }
 
-// user defined static methods: (none)
+// user-defined static methods: (none)
 
-// user defined non-static methods:
+// user-defined non-static methods:
 /**
  * Method:  initialize[]
  */
 void
 MPQC::GaussianBasis_Atomic_impl::initialize (
-  /*in*/ void* scbasis,
-  /*in*/ int32_t atomnum ) 
+  /* in */ void* scbasis,
+  /* in */ int32_t atomnum ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic.initialize)
@@ -108,7 +108,7 @@ throw ()
  * @return Canonical basis set name. 
  */
 ::std::string
-MPQC::GaussianBasis_Atomic_impl::get_name () 
+MPQC::GaussianBasis_Atomic_impl::get_name ()
 throw () 
 
 {
@@ -122,7 +122,7 @@ throw ()
  * @return Number of basis functions. 
  */
 int64_t
-MPQC::GaussianBasis_Atomic_impl::get_n_basis () 
+MPQC::GaussianBasis_Atomic_impl::get_n_basis ()
 throw () 
 
 {
@@ -136,7 +136,7 @@ throw ()
  * @return Number of shells. 
  */
 int64_t
-MPQC::GaussianBasis_Atomic_impl::get_n_shell () 
+MPQC::GaussianBasis_Atomic_impl::get_n_shell ()
 throw () 
 
 {
@@ -150,7 +150,7 @@ throw ()
  * @return Max angular momentum value. 
  */
 int64_t
-MPQC::GaussianBasis_Atomic_impl::get_max_angular_momentum () 
+MPQC::GaussianBasis_Atomic_impl::get_max_angular_momentum ()
 throw () 
 
 {
@@ -164,7 +164,7 @@ throw ()
  * @return enum AngularType {CARTESIAN,SPHERICAL,MIXED} 
  */
 ::Chemistry::QC::GaussianBasis::AngularType
-MPQC::GaussianBasis_Atomic_impl::get_angular_type () 
+MPQC::GaussianBasis_Atomic_impl::get_angular_type ()
 throw () 
 
 {
@@ -180,7 +180,7 @@ throw ()
  */
 ::Chemistry::QC::GaussianBasis::Shell
 MPQC::GaussianBasis_Atomic_impl::get_shell (
-  /*in*/ int64_t shellnum ) 
+  /* in */ int64_t shellnum ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic.get_shell)
@@ -192,7 +192,7 @@ throw ()
  * Print the atomic basis data. 
  */
 void
-MPQC::GaussianBasis_Atomic_impl::print_atomic () 
+MPQC::GaussianBasis_Atomic_impl::print_atomic ()
 throw () 
 
 {

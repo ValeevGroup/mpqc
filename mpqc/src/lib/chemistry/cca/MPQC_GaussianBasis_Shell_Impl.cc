@@ -2,12 +2,12 @@
 // File:          MPQC_GaussianBasis_Shell_Impl.cc
 // Symbol:        MPQC.GaussianBasis_Shell-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.GaussianBasis_Shell
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 #include "MPQC_GaussianBasis_Shell_Impl.hh"
 
@@ -15,36 +15,36 @@
 // Put additional includes or other arbitrary code here...
 // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Shell._includes)
 
-// user defined constructor
+// user-defined constructor.
 void MPQC::GaussianBasis_Shell_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell._ctor)
   // add construction details here
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Shell._ctor)
 }
 
-// user defined destructor
+// user-defined destructor.
 void MPQC::GaussianBasis_Shell_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell._dtor)
   // add destruction details here
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Shell._dtor)
 }
 
-// static class initializer
+// static class initializer.
 void MPQC::GaussianBasis_Shell_impl::_load() {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell._load)
   // guaranteed to be called at most once before any other method in this class
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Shell._load)
 }
 
-// user defined static methods: (none)
+// user-defined static methods: (none)
 
-// user defined non-static methods:
+// user-defined non-static methods:
 /**
  * Method:  initialize[]
  */
 void
 MPQC::GaussianBasis_Shell_impl::initialize (
-  /*in*/ void* scshell ) 
+  /* in */ void* scshell ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.initialize)
@@ -80,7 +80,7 @@ throw ()
  * @return Number of contractions. 
  */
 int64_t
-MPQC::GaussianBasis_Shell_impl::get_n_contraction () 
+MPQC::GaussianBasis_Shell_impl::get_n_contraction ()
 throw () 
 
 {
@@ -94,7 +94,7 @@ throw ()
  * @return Number of primitives. 
  */
 int64_t
-MPQC::GaussianBasis_Shell_impl::get_n_primitive () 
+MPQC::GaussianBasis_Shell_impl::get_n_primitive ()
 throw () 
 
 {
@@ -111,8 +111,8 @@ throw ()
  */
 double
 MPQC::GaussianBasis_Shell_impl::get_contraction_coef (
-  /*in*/ int64_t connum,
-  /*in*/ int64_t expnum ) 
+  /* in */ int64_t connum,
+  /* in */ int64_t expnum ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.get_contraction_coef)
@@ -128,7 +128,7 @@ throw ()
  */
 double
 MPQC::GaussianBasis_Shell_impl::get_exponent (
-  /*in*/ int64_t expnum ) 
+  /* in */ int64_t expnum ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.get_exponent)
@@ -143,7 +143,7 @@ throw ()
  */
 int64_t
 MPQC::GaussianBasis_Shell_impl::get_angular_momentum (
-  /*in*/ int64_t connum ) 
+  /* in */ int64_t connum ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.get_angular_momentum)
@@ -156,7 +156,7 @@ throw ()
  * @return Maximum angular momentum value. 
  */
 int64_t
-MPQC::GaussianBasis_Shell_impl::get_max_angular_momentum () 
+MPQC::GaussianBasis_Shell_impl::get_max_angular_momentum ()
 throw () 
 
 {
@@ -172,7 +172,7 @@ throw ()
  */
 ::Chemistry::QC::GaussianBasis::AngularType
 MPQC::GaussianBasis_Shell_impl::get_contraction_angular_type (
-  /*in*/ int64_t connum ) 
+  /* in */ int64_t connum ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Shell.get_contraction_angular_type)
@@ -194,7 +194,7 @@ throw ()
  * @return enum AngularType {CARTESIAN,SPHERICAL,MIXED} 
  */
 ::Chemistry::QC::GaussianBasis::AngularType
-MPQC::GaussianBasis_Shell_impl::get_angular_type () 
+MPQC::GaussianBasis_Shell_impl::get_angular_type ()
 throw () 
 
 {
@@ -207,7 +207,7 @@ throw ()
  * Print the shell data. 
  */
 void
-MPQC::GaussianBasis_Shell_impl::print_shell () 
+MPQC::GaussianBasis_Shell_impl::print_shell ()
 throw () 
 
 {

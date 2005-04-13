@@ -2,12 +2,12 @@
 // File:          MPQC_Physics_Units_Impl.cc
 // Symbol:        MPQC.Physics_Units-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.Physics_Units
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 #include "MPQC_Physics_Units_Impl.hh"
 
@@ -15,37 +15,37 @@
 // Put additional includes or other arbitrary code here...
 // DO-NOT-DELETE splicer.end(MPQC.Physics_Units._includes)
 
-// user defined constructor
+// user-defined constructor.
 void MPQC::Physics_Units_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.Physics_Units._ctor)
   // add construction details here
   // DO-NOT-DELETE splicer.end(MPQC.Physics_Units._ctor)
 }
 
-// user defined destructor
+// user-defined destructor.
 void MPQC::Physics_Units_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.Physics_Units._dtor)
   // add destruction details here
   // DO-NOT-DELETE splicer.end(MPQC.Physics_Units._dtor)
 }
 
-// static class initializer
+// static class initializer.
 void MPQC::Physics_Units_impl::_load() {
   // DO-NOT-DELETE splicer.begin(MPQC.Physics_Units._load)
   // guaranteed to be called at most once before any other method in this class
   // DO-NOT-DELETE splicer.end(MPQC.Physics_Units._load)
 }
 
-// user defined static methods: (none)
+// user-defined static methods: (none)
 
-// user defined non-static methods:
+// user-defined non-static methods:
 /**
  * Initializes the units as a human readable string
  * options are "angstroms" or "bohr" 
  */
 void
 MPQC::Physics_Units_impl::initialize (
-  /*in*/ const ::std::string& unitname ) 
+  /* in */ const ::std::string& unitname ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Physics_Units.initialize)
@@ -57,7 +57,7 @@ throw ()
  * Returns the units as a human readable string. 
  */
 ::std::string
-MPQC::Physics_Units_impl::get_unit_name () 
+MPQC::Physics_Units_impl::get_unit_name ()
 throw () 
 
 {
@@ -71,7 +71,7 @@ throw ()
  */
 double
 MPQC::Physics_Units_impl::convert_to (
-  /*in*/ const ::std::string& unitname ) 
+  /* in */ const ::std::string& unitname ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Physics_Units.convert_to)
@@ -86,7 +86,7 @@ throw ()
  */
 double
 MPQC::Physics_Units_impl::convert_from (
-  /*in*/ const ::std::string& unitname ) 
+  /* in */ const ::std::string& unitname ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Physics_Units.convert_from)

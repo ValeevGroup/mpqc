@@ -2,12 +2,12 @@
 // File:          MPQC_GaussianBasis_Shell_Impl.hh
 // Symbol:        MPQC.GaussianBasis_Shell-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.GaussianBasis_Shell
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 
 #ifndef included_MPQC_GaussianBasis_Shell_Impl_hh
@@ -81,7 +81,8 @@ namespace MPQC {
 
   private:
     // private default constructor (required)
-    GaussianBasis_Shell_impl() {} 
+    GaussianBasis_Shell_impl() 
+    {} 
 
   public:
     // sidl constructor (required)
@@ -109,7 +110,7 @@ namespace MPQC {
      */
     void
     initialize (
-      /*in*/ void* scshell
+      /* in */ void* scshell
     )
     throw () 
     ;
@@ -139,8 +140,8 @@ namespace MPQC {
      */
     double
     get_contraction_coef (
-      /*in*/ int64_t connum,
-      /*in*/ int64_t expnum
+      /* in */ int64_t connum,
+      /* in */ int64_t expnum
     )
     throw () 
     ;
@@ -153,7 +154,7 @@ namespace MPQC {
      */
     double
     get_exponent (
-      /*in*/ int64_t expnum
+      /* in */ int64_t expnum
     )
     throw () 
     ;
@@ -166,7 +167,7 @@ namespace MPQC {
      */
     int64_t
     get_angular_momentum (
-      /*in*/ int64_t connum
+      /* in */ int64_t connum
     )
     throw () 
     ;
@@ -187,7 +188,7 @@ namespace MPQC {
      */
     ::Chemistry::QC::GaussianBasis::AngularType
     get_contraction_angular_type (
-      /*in*/ int64_t connum
+      /* in */ int64_t connum
     )
     throw () 
     ;

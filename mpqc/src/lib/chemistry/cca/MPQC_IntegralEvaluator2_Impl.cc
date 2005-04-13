@@ -2,12 +2,12 @@
 // File:          MPQC_IntegralEvaluator2_Impl.cc
 // Symbol:        MPQC.IntegralEvaluator2-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.IntegralEvaluator2
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 #include "MPQC_IntegralEvaluator2_Impl.hh"
 
@@ -24,36 +24,36 @@ Ref<GaussianBasisSet> basis_cca_to_sc(Molecular&);
 
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._includes)
 
-// user defined constructor
+// user-defined constructor.
 void MPQC::IntegralEvaluator2_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._ctor)
   deriv_level_ = -1;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._ctor)
 }
 
-// user defined destructor
+// user-defined destructor.
 void MPQC::IntegralEvaluator2_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._dtor)
   // add destruction details here
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._dtor)
 }
 
-// static class initializer
+// static class initializer.
 void MPQC::IntegralEvaluator2_impl::_load() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._load)
   // guaranteed to be called at most once before any other method in this class
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._load)
 }
 
-// user defined static methods: (none)
+// user-defined static methods: (none)
 
-// user defined non-static methods:
+// user-defined non-static methods:
 /**
  * Method:  set_integral_package[]
  */
 void
 MPQC::IntegralEvaluator2_impl::set_integral_package (
-  /*in*/ const ::std::string& label ) 
+  /* in */ const ::std::string& label ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.set_integral_package)
@@ -70,10 +70,10 @@ throw ()
  */
 void
 MPQC::IntegralEvaluator2_impl::initialize (
-  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-  /*in*/ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-  /*in*/ const ::std::string& label,
-  /*in*/ int64_t max_deriv ) 
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+  /* in */ const ::std::string& label,
+  /* in */ int64_t max_deriv ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.initialize)
@@ -203,7 +203,7 @@ throw ()
  * @return Buffer pointer 
  */
 void*
-MPQC::IntegralEvaluator2_impl::get_buffer () 
+MPQC::IntegralEvaluator2_impl::get_buffer ()
 throw () 
 
 {
@@ -220,9 +220,9 @@ throw ()
  */
 void
 MPQC::IntegralEvaluator2_impl::compute (
-  /*in*/ int64_t shellnum1,
-  /*in*/ int64_t shellnum2,
-  /*in*/ int64_t deriv_level ) 
+  /* in */ int64_t shellnum1,
+  /* in */ int64_t shellnum2,
+  /* in */ int64_t deriv_level ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute)
@@ -254,9 +254,9 @@ throw ()
  */
 ::sidl::array<double>
 MPQC::IntegralEvaluator2_impl::compute_array (
-  /*in*/ int64_t shellnum1,
-  /*in*/ int64_t shellnum2,
-  /*in*/ int64_t deriv_level ) 
+  /* in */ int64_t shellnum1,
+  /* in */ int64_t shellnum2,
+  /* in */ int64_t deriv_level ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute_array)

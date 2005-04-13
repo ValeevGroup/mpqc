@@ -2,12 +2,12 @@
 // File:          MPQC_Chemistry_QC_Model_Impl.cc
 // Symbol:        MPQC.Chemistry_QC_Model-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.Chemistry_QC_Model
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 #include "MPQC_Chemistry_QC_Model_Impl.hh"
 
@@ -36,37 +36,37 @@ array_to_matrix(sidl::array<double>, const sc::RefSymmSCMatrix &v);
 
 // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_Model._includes)
 
-// user defined constructor
+// user-defined constructor.
 void MPQC::Chemistry_QC_Model_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model._ctor)
   // add construction details here
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_Model._ctor)
 }
 
-// user defined destructor
+// user-defined destructor.
 void MPQC::Chemistry_QC_Model_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model._dtor)
   // add destruction details here
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_Model._dtor)
 }
 
-// static class initializer
+// static class initializer.
 void MPQC::Chemistry_QC_Model_impl::_load() {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model._load)
   // guaranteed to be called at most once before any other method in this class
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_Model._load)
 }
 
-// user defined static methods: (none)
+// user-defined static methods: (none)
 
-// user defined non-static methods:
+// user-defined non-static methods:
 /**
  * Method:  initialize_parsedkeyval[]
  */
 void
 MPQC::Chemistry_QC_Model_impl::initialize_parsedkeyval (
-  /*in*/ const ::std::string& keyword,
-  /*in*/ const ::std::string& input ) 
+  /* in */ const ::std::string& keyword,
+  /* in */ const ::std::string& input ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model.initialize_parsedkeyval)
@@ -82,8 +82,8 @@ throw ()
  */
 void
 MPQC::Chemistry_QC_Model_impl::initialize_parsedkeyval_file (
-  /*in*/ const ::std::string& keyword,
-  /*in*/ const ::std::string& filename ) 
+  /* in */ const ::std::string& keyword,
+  /* in */ const ::std::string& filename ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model.initialize_parsedkeyval_file)
@@ -105,9 +105,9 @@ throw ()
  */
 void
 MPQC::Chemistry_QC_Model_impl::initialize_aggregatekeyval (
-  /*in*/ const ::std::string& keyword,
-  /*in*/ const ::std::string& input,
-  /*in*/ void* describedclass ) 
+  /* in */ const ::std::string& keyword,
+  /* in */ const ::std::string& input,
+  /* in */ void* describedclass ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model.initialize_aggregatekeyval)
@@ -137,7 +137,7 @@ throw ()
  */
 void
 MPQC::Chemistry_QC_Model_impl::initialize_pointer (
-  /*in*/ void* ptr ) 
+  /* in */ void* ptr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model.initialize_pointer)
@@ -150,7 +150,7 @@ throw ()
  */
 void
 MPQC::Chemistry_QC_Model_impl::set_molecule (
-  /*in*/ ::Chemistry::Molecule molecule ) 
+  /* in */ ::Chemistry::Molecule molecule ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model.set_molecule)
@@ -170,7 +170,7 @@ throw ()
  * Returns the molecule.  @return The Molecule object. 
  */
 ::Chemistry::Molecule
-MPQC::Chemistry_QC_Model_impl::get_molecule () 
+MPQC::Chemistry_QC_Model_impl::get_molecule ()
 throw () 
 
 {
@@ -183,7 +183,7 @@ throw ()
  * Method:  get_energy[]
  */
 double
-MPQC::Chemistry_QC_Model_impl::get_energy () 
+MPQC::Chemistry_QC_Model_impl::get_energy ()
 throw ( 
   ::sidl::BaseException
 )
@@ -204,7 +204,7 @@ throw (
  */
 void
 MPQC::Chemistry_QC_Model_impl::set_energy_accuracy (
-  /*in*/ double acc ) 
+  /* in */ double acc ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model.set_energy_accuracy)
@@ -218,7 +218,7 @@ throw ()
  * @return The energy accuracy. 
  */
 double
-MPQC::Chemistry_QC_Model_impl::get_energy_accuracy () 
+MPQC::Chemistry_QC_Model_impl::get_energy_accuracy ()
 throw () 
 
 {
@@ -236,7 +236,7 @@ throw ()
  */
 void
 MPQC::Chemistry_QC_Model_impl::set_do_energy (
-  /*in*/ bool doit ) 
+  /* in */ bool doit ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model.set_do_energy)
@@ -248,7 +248,7 @@ throw ()
  * Returns the Cartesian gradient.  
  */
 ::sidl::array<double>
-MPQC::Chemistry_QC_Model_impl::get_gradient () 
+MPQC::Chemistry_QC_Model_impl::get_gradient ()
 throw ( 
   ::sidl::BaseException
 )
@@ -264,7 +264,7 @@ throw (
  */
 void
 MPQC::Chemistry_QC_Model_impl::set_gradient_accuracy (
-  /*in*/ double acc ) 
+  /* in */ double acc ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model.set_gradient_accuracy)
@@ -278,7 +278,7 @@ throw ()
  * @return The current gradient accuracy. 
  */
 double
-MPQC::Chemistry_QC_Model_impl::get_gradient_accuracy () 
+MPQC::Chemistry_QC_Model_impl::get_gradient_accuracy ()
 throw () 
 
 {
@@ -291,7 +291,7 @@ throw ()
  * Returns the Cartesian Hessian. @return The Hessian. 
  */
 ::sidl::array<double>
-MPQC::Chemistry_QC_Model_impl::get_hessian () 
+MPQC::Chemistry_QC_Model_impl::get_hessian ()
 throw ( 
   ::sidl::BaseException
 )
@@ -307,7 +307,7 @@ throw (
  */
 void
 MPQC::Chemistry_QC_Model_impl::set_hessian_accuracy (
-  /*in*/ double acc ) 
+  /* in */ double acc ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model.set_hessian_accuracy)
@@ -320,7 +320,7 @@ throw ()
  * The result is undefined if the Hessian has not already been computed. 
  */
 double
-MPQC::Chemistry_QC_Model_impl::get_hessian_accuracy () 
+MPQC::Chemistry_QC_Model_impl::get_hessian_accuracy ()
 throw () 
 
 {
@@ -333,7 +333,7 @@ throw ()
  * Returns a Cartesian guess Hessian. 
  */
 ::sidl::array<double>
-MPQC::Chemistry_QC_Model_impl::get_guess_hessian () 
+MPQC::Chemistry_QC_Model_impl::get_guess_hessian ()
 throw ( 
   ::sidl::BaseException
 )
@@ -351,7 +351,7 @@ throw (
  */
 void
 MPQC::Chemistry_QC_Model_impl::set_guess_hessian_accuracy (
-  /*in*/ double acc ) 
+  /* in */ double acc ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model.set_guess_hessian_accuracy)
@@ -365,7 +365,7 @@ throw ()
  * @return The guess hessian accuracy.  
  */
 double
-MPQC::Chemistry_QC_Model_impl::get_guess_hessian_accuracy () 
+MPQC::Chemistry_QC_Model_impl::get_guess_hessian_accuracy ()
 throw () 
 
 {
@@ -379,7 +379,7 @@ throw ()
  * members may be called after finalize. 
  */
 int32_t
-MPQC::Chemistry_QC_Model_impl::finalize () 
+MPQC::Chemistry_QC_Model_impl::finalize ()
 throw () 
 
 {

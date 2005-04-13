@@ -2,12 +2,12 @@
 // File:          MPQC_GaussianBasis_Molecular_Impl.cc
 // Symbol:        MPQC.GaussianBasis_Molecular-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.GaussianBasis_Molecular
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 #include "MPQC_GaussianBasis_Molecular_Impl.hh"
 
@@ -15,14 +15,14 @@
 #include <chemistry/molecule/molecule.h>
 // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Molecular._includes)
 
-// user defined constructor
+// user-defined constructor.
 void MPQC::GaussianBasis_Molecular_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Molecular._ctor)
   // add construction details here
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Molecular._ctor)
 }
 
-// user defined destructor
+// user-defined destructor.
 void MPQC::GaussianBasis_Molecular_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Molecular._dtor)
 
@@ -34,23 +34,23 @@ void MPQC::GaussianBasis_Molecular_impl::_dtor() {
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Molecular._dtor)
 }
 
-// static class initializer
+// static class initializer.
 void MPQC::GaussianBasis_Molecular_impl::_load() {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Molecular._load)
   // guaranteed to be called at most once before any other method in this class
   // DO-NOT-DELETE splicer.end(MPQC.GaussianBasis_Molecular._load)
 }
 
-// user defined static methods: (none)
+// user-defined static methods: (none)
 
-// user defined non-static methods:
+// user-defined non-static methods:
 /**
  * Method:  initialize[]
  */
 void
 MPQC::GaussianBasis_Molecular_impl::initialize (
-  /*in*/ void* scbasis,
-  /*in*/ const ::std::string& label ) 
+  /* in */ void* scbasis,
+  /* in */ const ::std::string& label ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Molecular.initialize)
@@ -106,7 +106,7 @@ throw ()
  * Method:  sc_gbs_pointer[]
  */
 void*
-MPQC::GaussianBasis_Molecular_impl::sc_gbs_pointer () 
+MPQC::GaussianBasis_Molecular_impl::sc_gbs_pointer ()
 throw () 
 
 {
@@ -120,7 +120,7 @@ throw ()
  * @return User specified name. 
  */
 ::std::string
-MPQC::GaussianBasis_Molecular_impl::get_label () 
+MPQC::GaussianBasis_Molecular_impl::get_label ()
 throw () 
 
 {
@@ -134,7 +134,7 @@ throw ()
  * @return Number of basis functions. 
  */
 int64_t
-MPQC::GaussianBasis_Molecular_impl::get_n_basis () 
+MPQC::GaussianBasis_Molecular_impl::get_n_basis ()
 throw () 
 
 {
@@ -148,7 +148,7 @@ throw ()
  * @return Number of shells. 
  */
 int64_t
-MPQC::GaussianBasis_Molecular_impl::get_n_shell () 
+MPQC::GaussianBasis_Molecular_impl::get_n_shell ()
 throw () 
 
 {
@@ -162,7 +162,7 @@ throw ()
  * @return Max angular momentum value. 
  */
 int64_t
-MPQC::GaussianBasis_Molecular_impl::get_max_angular_momentum () 
+MPQC::GaussianBasis_Molecular_impl::get_max_angular_momentum ()
 throw () 
 
 {
@@ -176,7 +176,7 @@ throw ()
  * @return enum AngularType {CARTESIAN,SPHERICAL,MIXED} 
  */
 ::Chemistry::QC::GaussianBasis::AngularType
-MPQC::GaussianBasis_Molecular_impl::get_angular_type () 
+MPQC::GaussianBasis_Molecular_impl::get_angular_type ()
 throw () 
 
 {
@@ -192,7 +192,7 @@ throw ()
  */
 ::Chemistry::QC::GaussianBasis::Atomic
 MPQC::GaussianBasis_Molecular_impl::get_atomic (
-  /*in*/ int64_t atomnum ) 
+  /* in */ int64_t atomnum ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Molecular.get_atomic)
@@ -205,7 +205,7 @@ throw ()
  * @return The molecule. 
  */
 ::Chemistry::Molecule
-MPQC::GaussianBasis_Molecular_impl::get_molecule () 
+MPQC::GaussianBasis_Molecular_impl::get_molecule ()
 throw () 
 
 {
@@ -218,7 +218,7 @@ throw ()
  * Print the molecular basis data. 
  */
 void
-MPQC::GaussianBasis_Molecular_impl::print_molecular () 
+MPQC::GaussianBasis_Molecular_impl::print_molecular ()
 throw () 
 
 {

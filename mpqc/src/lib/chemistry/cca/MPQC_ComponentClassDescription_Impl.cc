@@ -2,12 +2,12 @@
 // File:          MPQC_ComponentClassDescription_Impl.cc
 // Symbol:        MPQC.ComponentClassDescription-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.ComponentClassDescription
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 #include "MPQC_ComponentClassDescription_Impl.hh"
 
@@ -15,37 +15,37 @@
 // Put additional includes or other arbitrary code here...
 // DO-NOT-DELETE splicer.end(MPQC.ComponentClassDescription._includes)
 
-// user defined constructor
+// user-defined constructor.
 void MPQC::ComponentClassDescription_impl::_ctor() {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentClassDescription._ctor)
   // add construction details here
   // DO-NOT-DELETE splicer.end(MPQC.ComponentClassDescription._ctor)
 }
 
-// user defined destructor
+// user-defined destructor.
 void MPQC::ComponentClassDescription_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentClassDescription._dtor)
   // add destruction details here
   // DO-NOT-DELETE splicer.end(MPQC.ComponentClassDescription._dtor)
 }
 
-// static class initializer
+// static class initializer.
 void MPQC::ComponentClassDescription_impl::_load() {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentClassDescription._load)
   // guaranteed to be called at most once before any other method in this class
   // DO-NOT-DELETE splicer.end(MPQC.ComponentClassDescription._load)
 }
 
-// user defined static methods: (none)
+// user-defined static methods: (none)
 
-// user defined non-static methods:
+// user-defined non-static methods:
 /**
  * Method:  initialize[]
  */
 void
 MPQC::ComponentClassDescription_impl::initialize (
-  /*in*/ const ::std::string& className,
-  /*in*/ const ::std::string& classAlias ) 
+  /* in */ const ::std::string& className,
+  /* in */ const ::std::string& classAlias ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.ComponentClassDescription.initialize)
@@ -63,7 +63,7 @@ throw ()
  *  Throws <code>CCAException</code> if <code>ComponentClassDescription</code> is invalid.
  */
 ::std::string
-MPQC::ComponentClassDescription_impl::getComponentClassName () 
+MPQC::ComponentClassDescription_impl::getComponentClassName ()
 throw ( 
   ::gov::cca::CCAException
 )

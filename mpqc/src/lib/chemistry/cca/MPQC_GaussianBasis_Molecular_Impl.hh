@@ -2,12 +2,12 @@
 // File:          MPQC_GaussianBasis_Molecular_Impl.hh
 // Symbol:        MPQC.GaussianBasis_Molecular-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.GaussianBasis_Molecular
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 
 #ifndef included_MPQC_GaussianBasis_Molecular_Impl_hh
@@ -91,7 +91,8 @@ namespace MPQC {
 
   private:
     // private default constructor (required)
-    GaussianBasis_Molecular_impl() {} 
+    GaussianBasis_Molecular_impl() 
+    {} 
 
   public:
     // sidl constructor (required)
@@ -119,8 +120,8 @@ namespace MPQC {
      */
     void
     initialize (
-      /*in*/ void* scbasis,
-      /*in*/ const ::std::string& label
+      /* in */ void* scbasis,
+      /* in */ const ::std::string& label
     )
     throw () 
     ;
@@ -179,7 +180,7 @@ namespace MPQC {
      */
     ::Chemistry::QC::GaussianBasis::Atomic
     get_atomic (
-      /*in*/ int64_t atomnum
+      /* in */ int64_t atomnum
     )
     throw () 
     ;

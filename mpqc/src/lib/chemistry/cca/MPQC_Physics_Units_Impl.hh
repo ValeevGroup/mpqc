@@ -2,12 +2,12 @@
 // File:          MPQC_Physics_Units_Impl.hh
 // Symbol:        MPQC.Physics_Units-v0.2
 // Symbol Type:   class
-// Babel Version: 0.10.0
+// Babel Version: 0.10.2
 // Description:   Server-side implementation for MPQC.Physics_Units
 // 
 // WARNING: Automatically generated; only changes within splicers preserved
 // 
-// babel-version = 0.10.0
+// babel-version = 0.10.2
 // 
 
 #ifndef included_MPQC_Physics_Units_Impl_hh
@@ -71,7 +71,8 @@ namespace MPQC {
 
   private:
     // private default constructor (required)
-    Physics_Units_impl() {} 
+    Physics_Units_impl() 
+    {} 
 
   public:
     // sidl constructor (required)
@@ -101,7 +102,7 @@ namespace MPQC {
      */
     void
     initialize (
-      /*in*/ const ::std::string& unitname
+      /* in */ const ::std::string& unitname
     )
     throw () 
     ;
@@ -119,7 +120,7 @@ namespace MPQC {
      */
     double
     convert_to (
-      /*in*/ const ::std::string& unitname
+      /* in */ const ::std::string& unitname
     )
     throw () 
     ;
@@ -130,7 +131,7 @@ namespace MPQC {
      */
     double
     convert_from (
-      /*in*/ const ::std::string& unitname
+      /* in */ const ::std::string& unitname
     )
     throw () 
     ;

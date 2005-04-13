@@ -212,9 +212,11 @@ TwoBodyMOIntsTransform_ijxy::check_int_symm(double threshold) const throw (Progr
           int xsym = xsyms[x];
           for(int y=0; y<ny; y++, xy++) {
             int ysym = ysyms[y];
-            if ( (isym^jsym^xsym^ysym) != 0 && fabs(ints[xy]) > threshold)
+            if ( (isym^jsym^xsym^ysym) != 0 && fabs(ints[xy]) > threshold) {
+              ExEnv::outn() << scprintf("Integral type=%d i=%d j=%d x=%d y=%d should be zero\n",t,i,j,x,y);
               throw ProgrammingError("TwoBodyMOIntsTransform_ijxy::check_int_symm() -- nonzero nonsymmetric integrals are detected",
                                      __FILE__, __LINE__);
+            }
           }
         }
         iacc->release_pair_block(i,j,static_cast<R12IntsAcc::tbint_type>(t));

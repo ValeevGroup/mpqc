@@ -52,7 +52,6 @@ using namespace sc;
 #define PRINT3Q 0
 #define PRINT4Q 0
 #define PRINT_NUM_TE_TYPES 1
-#define WRITE_DOUBLES 0
 #define CHECK_INTS_SYMM 1
 
 /*-------------------------------------
@@ -352,15 +351,18 @@ TwoBodyMOIntsTransform_ixjy::compute()
               for (int x = 0; x<rank2; x++) {
                 const int ijx_sym = ij_sym ^ mosym2[x];
                 for (int y = 0; y<rank4; y++, ijxy_ptr++) {
-                  if (ijx_sym ^ mosym4[y])
+                  if (ijx_sym ^ mosym4[y]) {
                     *ijxy_ptr = 0.0;
+                  }
                 }
               }
             }
           }
         }
       }
-    }    
+    }
+    // Sync up tasks before integrals are committed
+    mem_->sync();
 
 #if PRINT4Q
     {

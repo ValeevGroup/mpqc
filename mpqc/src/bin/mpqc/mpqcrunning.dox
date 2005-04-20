@@ -1,7 +1,7 @@
 
 /** \page mpqcrunning Running MPQC
 
-This chapter explains how to run mpqc in a variety of environments.
+This chapter explains how to run MPQC in a variety of environments.
 
 The first two sections give general information on running MPQC:
 
@@ -19,6 +19,7 @@ different environments:
   <li> \ref mpqcmpi
   <li> \ref mpqcmp2
   <li> \ref mpqcmp2r12
+  <li> \ref mpqccca
 </ul>
 
 \section mpqccomline Command Line Options
@@ -74,6 +75,13 @@ name.  If the input file name is not given, it will default to
                 deprecated, as both input file formats can be read
                 by given the input file name on the command line
                 without any option flags.
+
+  <dt><tt>-cca-path</tt><dd>A colon-separated list of directories in which 
+                CCA component libraries may be found.
+
+  <dt><tt>-cca-load</tt><dd>A colon-separated list of symbol names for
+                CCA components which will be instantiated from the libraries
+                found in the path given by <tt>-cca-path</tt>
 
 </dl>
 
@@ -156,7 +164,7 @@ setenv MESSAGEGRP "<ShmMessageGrp>:(n = 4)"
 
 By default, MPQC will run on only one CPU.  To specify more, you can give a
 ShmMessageGrp object on the command line.
-The following would run mpqc in four processes:
+The following would run MPQC in four processes:
 <pre>
 mpqc -messagegrp "<ShmMessageGrp>:(n = 4)" input_file
 </pre>
@@ -318,5 +326,32 @@ In order to use IntegralCints as the default Integral object,
 add <tt>-integral "<IntegralCints>:()"</tt> to the command line,
 or set environmental variable <tt>INTEGRAL</tt> to <tt>"<IntegralCints>:()"</tt>.
 </p>
+
+\section mpqccca Special Notes for CCA Components
+
+<p>
+<b>Common Component Architecture (CCA)</b>
+
+Portions of MPQC functionality are being packaged into CCA components.
+For general overviews of CCA technology and framework usage, please see 
+<a href="http://www.cca-forum.org">www.cca-forum.org</a> (the tutorial in particular) and the 
+<a href="http://www.cca-forum.org/~cca-chem/doc-apps-0.2/index.html">cca-chem-apps</a> 
+documentation.
+MPQC components may be utilized directly within the ccaffeine framework, while some 
+components may be instantiated and used within MPQC itself, making use of an embedded
+CCA framework.
+</p>
+
+<p>
+<b>CCA Runtime Environment</b>
+
+For MPQC runs utilizing embedded components, the runtime environment for the CCA
+framework must be specified.
+The colon-separated path used to locate component libraries must be specified either 
+using the <tt>-cca-path</tt> command-line option or using the <tt>cca-path</tt> key 
+within the <tt>mpqc</tt> section of a keyval input.
+The colon-separated list of component symbol names which will be referenced within the
+input must be specified using either the <tt>-cca-load</tt> command-line option or using
+the <tt>cca-load</tt> key within the <tt>mpqc</tt> section of a keyval input.
 
 */

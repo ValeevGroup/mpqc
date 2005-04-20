@@ -328,6 +328,7 @@ inputs that most nearly matches your problem.  The
   <li> \ref mpqcoosampmp2r12ckpt
   <li> \ref mpqcoosamphfgradfromwfn
   <li> \ref mpqcoosampmp2usinghfwfn
+  <li> \ref mpqcoosamphfusingcca
 </ul>
 
 \subsection mpqcoosamphf Hartree-Fock Energy
@@ -1272,5 +1273,53 @@ Note that now object <tt>reference</tt> is of type <tt>SavableStateProxy</tt>,
 rather than <tt>CLHF</tt>. <tt>SavableStateProxy</tt> is a special object type
 that can be converted at runtime into the desired type (in this case, <tt>CLHF</tt>,
 as indicated by <tt>object</tt>).
+
+\subsection mpqcoosamphfusingcca CLHF energy using a CCA integrals component
+
+The following input will compute the CLHF energy of water using a CCA integrals component
+via the IntegralCCA adaptor class.
+
+<pre>
+\% emacs should use -*- KeyVal -*- mode
+\% molecule specification
+molecule<Molecule>: (
+  symmetry = C2V
+  unit = angstrom
+  { atoms geometry } = {
+    O     [     0.00000000     0.00000000     0.37000000 ]
+    H     [     0.78000000     0.00000000    -0.18000000 ]
+    H     [    -0.78000000     0.00000000    -0.18000000 ]
+  }
+)
+\% basis set specification
+basis<GaussianBasisSet>: (
+  name = "STO-3G"
+  molecule = $:molecule
+)
+mpqc: (
+  \% path to component libraries
+  cca-path = /usr/local/lib/cca
+  \% symbol names of components which will be instantiated
+  cca-load = MPQC.IntegralEvaluatorFactory
+  checkpoint = no
+  savestate = no
+  \% method for computing the molecule's energy
+  mole<CLHF>: (
+    molecule = $:molecule
+    basis = $:basis
+    \% cca integrals adaptor class
+    integrals<IntegralCCA>: (
+      molecule = $:molecule
+      \% integral buffer type
+      integral_buffer = opaque
+      \% integral package
+      integral_package = intv3
+      \% factory component symbol name
+      evaluator_factory = MPQC.IntegralEvaluatorFactory
+    )
+  )
+)
+</pre>
+<br>
 
 */

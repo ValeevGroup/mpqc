@@ -88,7 +88,7 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   }
   package_ = keyval->stringvalue("integral_package");
   if ( keyval->error() != KeyVal::OK ) {
-    package_ = string("cints");
+    package_ = string("intv3");
   }
 
   sc_molecule_ << keyval->describedclassvalue("molecule");

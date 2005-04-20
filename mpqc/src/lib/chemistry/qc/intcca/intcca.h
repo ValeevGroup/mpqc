@@ -48,7 +48,7 @@ using namespace Chemistry::QC::GaussianBasis;
 
 namespace sc {
 
-/** IntegralCCA provides an MPQC client for CCA IntegralEvaluator components. */
+/** IntegralCCA provides an SC client for CCA IntegralEvaluator components. */
 class IntegralCCA : public Integral {
   private:
     int maxl_;
@@ -93,9 +93,10 @@ class IntegralCCA : public Integral {
         also appear in the cca-load argument.  The default is
         <tt>MPQC.IntegralEvaluatorFactory</tt>.
 
-        <dt><tt>integral_package</tt><dd> This gives the name of the
-        integrals package to use (<tt>intv3</tt> or <tt>cints</tt>).
-        The default is <tt>cints</tt>.
+        <dt><tt>integral_package</tt><dd> If the default 
+        <tt>MPQC.IntegralEvaluatorFactory</tt> is used, then this 
+        option may be used to specify the integrals package to use
+        (<tt>intv3</tt> or <tt>cints</tt>).  The default is <tt>intv3</tt>.
 
         <dt><tt>molecule</tt><dd> This gives a molecule object, it is required.
         </dl>

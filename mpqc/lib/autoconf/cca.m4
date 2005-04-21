@@ -113,7 +113,7 @@ AC_DEFUN([AC_CHECK_CCA],[
     AC_MSG_WARN([Ccaffeine not configured for MPI])
   else
    CCAFE_MPI_ENABLE="yes"
-   CCAFE_MPI_INCLUDE=`echo $CCAFE_MPI_INCLUDE | sed s/\-I(.*)/\1/`
+   CCAFE_MPI_INCLUDE=`echo $CCAFE_MPI_INCLUDE | sed 's/^\-I//'`
   fi
   AC_SUBST(CCAFE_MPI_ENABLE)
   AC_SUBST(CCAFE_MPI_INCLUDE)

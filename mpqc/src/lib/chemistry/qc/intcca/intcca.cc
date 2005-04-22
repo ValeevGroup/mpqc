@@ -154,21 +154,21 @@ CartesianIter *
 IntegralCCA::new_cartesian_iter(int l)
 {
   //return new CartesianIterV3(l);
-  return new CartesianIterCints(l);
+  return new CartesianIterCCA(l);
 }
 
 RedundantCartesianIter *
 IntegralCCA::new_redundant_cartesian_iter(int l)
 {
   //return new RedundantCartesianIterV3(l);
-  return new RedundantCartesianIterCints(l);
+  return new RedundantCartesianIterCCA(l);
 }
 
 RedundantCartesianSubIter *
 IntegralCCA::new_redundant_cartesian_sub_iter(int l)
 {
   //return new RedundantCartesianSubIterV3(l);
-  return new RedundantCartesianSubIterCints(l);
+  return new RedundantCartesianSubIterCCA(l);
 }
 
 SphericalTransformIter *
@@ -193,12 +193,12 @@ IntegralCCA::new_spherical_transform_iter(int l, int inv, int subl)
  
   // CINTS version
   if (l>maxl_ || l<0) {
-      ExEnv::errn() << "IntegralCints::new_spherical_transform_iter: bad l" << endl;
+      ExEnv::errn() << "IntegralCCA::new_spherical_transform_iter: bad l" << endl;
       abort();
     }
   if (subl == -1) subl = l;
   if (subl < 0 || subl > l || (l-subl)%2 != 0) {
-      ExEnv::errn() << "IntegralCints::new_spherical_transform_iter: bad subl" << endl;
+      ExEnv::errn() << "IntegralCCA::new_spherical_transform_iter: bad subl" << endl;
       abort();
     }
   if (inv) {
@@ -230,12 +230,12 @@ IntegralCCA::spherical_transform(int l, int inv, int subl)
 
   // CINTS version
   if (l>maxl_ || l<0) {
-      ExEnv::errn() << "IntegralCints::spherical_transform_iter: bad l" << endl;
+      ExEnv::errn() << "IntegralCCA::spherical_transform_iter: bad l" << endl;
       abort();
     }
   if (subl == -1) subl = l;
   if (subl < 0 || subl > l || (l-subl)%2 != 0) {
-      ExEnv::errn() << "IntegralCints::spherical_transform_iter: bad subl" << endl;
+      ExEnv::errn() << "IntegralCCA::spherical_transform_iter: bad subl" << endl;
       abort();
     }
   if (inv) {
@@ -427,15 +427,15 @@ IntegralCCA::free_transforms()
   if (maxl_ < maxam) maxl_ = maxam;
 
   if (maxl_ >= 0) {
-    st_ = new SphericalTransformCints**[maxl_+1];
-    ist_ = new ISphericalTransformCints**[maxl_+1];;
+    st_ = new SphericalTransformCCA**[maxl_+1];
+    ist_ = new ISphericalTransformCCA**[maxl_+1];;
     int i,j;
     for (i=0; i<=maxl_; i++) {
-      st_[i] = new SphericalTransformCints*[i/2+1];
-      ist_[i] = new ISphericalTransformCints*[i/2+1];
+      st_[i] = new SphericalTransformCCA*[i/2+1];
+      ist_[i] = new ISphericalTransformCCA*[i/2+1];
       for (j=0; j<=i/2; j++) {
-        st_[i][j] = new SphericalTransformCints(i,i-2*j);
-        ist_[i][j] = new ISphericalTransformCints(i,i-2*j);
+        st_[i][j] = new SphericalTransformCCA(i,i-2*j);
+        ist_[i][j] = new ISphericalTransformCCA(i,i-2*j);
       }
     }
   }

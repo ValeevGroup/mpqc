@@ -35,14 +35,8 @@
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactory.hh>
 #include <Chemistry_Chemistry_Molecule.hh>
 #include <chemistry/molecule/molecule.h>
-
-// INTV3 includes
-//#include <chemistry/qc/intv3/cartitv3.h>
-//#include <chemistry/qc/intv3/tformv3.h>
-
-// CINTS includes
-#include <chemistry/qc/cints/cartit.h>
-#include <chemistry/qc/cints/tform.h>
+#include <chemistry/qc/intcca/cartit.h>
+#include <chemistry/qc/intcca/tform.h>
 
 using namespace Chemistry::QC::GaussianBasis;
 
@@ -65,8 +59,8 @@ class IntegralCCA : public Integral {
 //    ISphericalTransformV3 ***ist_;
 
     // CINTS version
-    SphericalTransformCints ***st_;
-    ISphericalTransformCints ***ist_;
+    SphericalTransformCCA ***st_;
+    ISphericalTransformCCA ***ist_;
 
     void free_transforms();
     void initialize_transforms();

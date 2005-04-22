@@ -31,6 +31,9 @@ ifndef SRCDIR
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+ifeq ($(HAVE_LIBINT),yes)
+  DEFINES += -DHAVE_CINTS
+endif
 
 TARGET_TO_MAKE = libSCintcca
 BIN_OR_LIB = LIB
@@ -39,7 +42,7 @@ DEFINES += -DDMALLOC
 
 CXXSRC = int1e.cc int2e.cc obintcca.cc tbintcca.cc intcca.cc
 
-INC = int1e.h int2e.h obintcca.h tbintcca.h intcca.h
+INC = int1e.h int2e.h obintcca.h tbintcca.h intcca.h cartit.h tform.h
 
 CPPFLAGS += -I../../cca
 LTLINKLIBOPTS += -L$(CCAFE_LIB) -R$(CCAFE_LIB) -lccafeCore \

@@ -264,6 +264,8 @@ all the makefiles will be overwritten.
        specified using the <tt>--with-cca-chem-config</tt>.
   <li> To fully support runtime configuration of component applications, 
        compile using <tt>--enable-shared</tt>.
+  <li> Run <tt>make install_devel</tt> after compiling to install the <tt>sc-config</tt>
+       script (required by <tt>cca-chem-apps</tt>).
 </ul>
 
 \section compilecomp Compilation

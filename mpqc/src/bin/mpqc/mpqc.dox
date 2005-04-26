@@ -14,6 +14,7 @@ This documentation is divided into the following chapters:
   <li> \ref mpqcinp
   <li> \ref mpqcval
   <li> \ref mpqcpsi
+  <li> \ref mpqccomponents
   <li> \ref mpqclic
   <li> \ref mpqcwar
 </ul>
@@ -26,6 +27,7 @@ This documentation is divided into the following chapters:
   <li> \ref mpqcinp
   <li> \ref mpqcval
   <li> \ref mpqcpsi
+  <li> \ref mpqccomponents
   <li> \ref mpqclic
   <li> \ref mpqcwar
 </ul>

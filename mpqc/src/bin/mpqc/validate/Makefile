@@ -84,6 +84,10 @@ HSOSSCFMASTER=hsosscf.qci
 HSOSSCFINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(HSOSSCFMASTER))
 HSOSSCFOUTPUTS = $(HSOSSCFINPUTS:%.$(INSUF)=%.out)
 
+CCAINTMASTER=ccaint.qci
+CCAINTINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(RUN) $(CCAINTMASTER))
+CCAINTOUTPUTS = $(CCAINTINPUTS:%.$(INSUF)=%.out)
+
 CKPTINPUTS = \
  ckpt_0clscf.in     ckpt_0qnewtopt.in  ckpt_1zapt2.in     ckpt_mp2.in \
  ckpt_0efcopt.in    ckpt_1clscf.in     ckpt_1qnewtopt.in  ckpt_2qnewtopt.in \
@@ -147,7 +151,7 @@ ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
             $(SYMM1INPUTS) $(SYMM2INPUTS) $(SYMM3INPUTS) \
             $(CKPTINPUTS) $(MBPTINPUTS) \
             $(CLSCFINPUTS) $(USCFINPUTS) $(HSOSSCFINPUTS) \
-            $(INPUTINPUTS)
+            $(INPUTINPUTS) $(CCAINTINPUTS)
 ALLOUTPUTS = $(ALLINPUTS:%.$(INSUF)=%.out)
 
 ##############################################################################
@@ -161,7 +165,7 @@ default::
 
 .PHONY: inputs
 inputs:: h2o h2omp2 mp2r12 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
-inputs:: methods clscf uscf hsosscf input dft orthog
+inputs:: methods clscf uscf hsosscf input dft orthog ccaint
 
 .PHONY: h2o
 h2o: stamp-h2o
@@ -210,6 +214,9 @@ opt: stamp-opt
 
 .PHONY: optts
 optts: stamp-optts
+
+.PHONY: ccaint
+ccaint: stamp-ccaint
 
 .PHONY: ckpt
 ckpt: $(CKPTINPUTS) $(CKPTINPUTS:%.in=%.qci)
@@ -286,6 +293,10 @@ stamp-uscf: $(RUN) $(USCFMASTER) $(INPUTGENDEPS)
 stamp-hsosscf: $(RUN) $(HSOSSCFMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(HSOSSCFMASTER)
 	touch stamp-hsosscf
+
+stamp-ccaint: $(RUN) $(CCAINTMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(RUN) $(CCAINTMASTER)
+	touch stamp-ccaint
 
 ##############################################################################
 

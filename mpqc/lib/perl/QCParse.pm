@@ -795,6 +795,7 @@ sub input_string() {
     my $qcparse = $qcinput->{"parser"};
 
     my $use_cints = 0;
+    my $do_cca = $qcparse->value("do_cca");
 
     printf "molecule = %s\n", $qcparse->value("molecule") if ($debug);
 
@@ -827,6 +828,21 @@ sub input_string() {
     $basis = sprintf "%s\n  name = \"%s\"", $basis, $qcinput->basis();
     $basis = "$basis\n  molecule = \$:molecule";
     $basis = "$basis\n)\n";
+
+    my $integrals = "";
+    if($do_cca) {
+      $integrals = "% using cca integrals";
+      $integrals = "$integrals\nintegrals<IntegralCCA>: (";
+      my $buffer_type = $qcparse->value("integral_buffer");
+      if( $buffer_type ne "opaque" && $buffer_type ne "array" ) {
+        $buffer_type = "opaque";
+      }     
+      $integrals = "$integrals\n  integral_buffer = $buffer_type";
+      $integrals = "$integrals\n  integral_package = intv3";
+      $integrals = "$integrals\n  evaluator_factory = MPQC.IntegralEvaluatorFactory";
+      $integrals = "$integrals\n  molecule = \$:molecule";
+      $integrals = "$integrals\n)\n";
+    }
 
     my $fixed = $qcparse->value_as_arrayref("fixed");
     my $followed = $qcparse->value_as_arrayref("followed");
@@ -919,12 +935,18 @@ sub input_string() {
     else {
         $mole = "$mole\n  do_gradient = no";
     }
+    if($do_cca) {
+      $mole = "$mole\n  do_cca = yes";
+    }
     $mole = "$mole\n  % method for computing the molecule's energy";
     $mole = "$mole\n  mole<$method>: (";
     $mole = "$mole\n    molecule = \$:molecule";
     $mole = "$mole\n    basis = \$:basis";
     $mole = "$mole\n    coor = \$..:coor";
     $mole = "$mole\n    memory = $memory";
+    if($do_cca) {
+      $mole = "$mole\n    integrals = \$:integrals";
+    }
     if ($inputmethod eq "SCF" || $inputmethod eq "UHF"
         || $method eq "CLKS" || $method eq "UKS" || $method eq "HSOSKS") {
         $mole = "$mole\n    total_charge = $charge";
@@ -1002,6 +1024,9 @@ sub input_string() {
         $mole = "$mole\n        name = \"STO-3G\"";
         $mole = "$mole\n      )";
         $mole = "$mole\n      memory = $memory";
+        if($do_cca) {
+          $mole = "$mole\n      integrals = \$:integrals";
+        }
         $mole = "$mole\n    )";
     }
     if ($qcinput->frequencies()) {
@@ -1079,7 +1104,7 @@ sub input_string() {
         $label =~ s/\n/\n% label: /g;
         $label = "$label\n";
     }
-    "$emacs$warn$label$mol$basis$mpqcstart$coor$mole$opt$freq$mpqcstop";
+    "$emacs$warn$label$mol$basis$integrals$mpqcstart$coor$mole$opt$freq$mpqcstop";
 }
 
 sub mpqc_fixed_coor {

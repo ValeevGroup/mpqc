@@ -79,7 +79,7 @@ name.  If the input file name is not given, it will default to
   <dt><tt>-cca-path</tt><dd>A colon-separated list of directories in which 
                 CCA component libraries may be found.
 
-  <dt><tt>-cca-load</tt><dd>A colon-separated list of symbol names for
+  <dt><tt>-cca-load</tt><dd>A colon-separated list of sidl class names for
                 CCA components which will be instantiated from the libraries
                 found in the path given by <tt>-cca-path</tt>
 
@@ -350,7 +350,7 @@ framework must be specified.
 The colon-separated path used to locate component libraries must be specified either 
 using the <tt>-cca-path</tt> command-line option or using the <tt>cca_path</tt> key 
 within the <tt>mpqc</tt> section of a keyval input.
-The colon-separated list of component symbol names which will be referenced within the
+The colon-separated list of component sidl class names which will be referenced within the
 input must be specified using either the <tt>-cca-load</tt> command-line option or using
 the <tt>cca_load</tt> key within the <tt>mpqc</tt> section of a keyval input.
 If defaults for the cca-path and cca-load options are desired, <tt>do_cca</tt> must be 

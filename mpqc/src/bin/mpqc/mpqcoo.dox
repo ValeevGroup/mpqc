@@ -117,6 +117,19 @@ class.
         MolecularEnergy object given with the mole keyword.  The default is
         false.
 
+<dt><tt>do_cca</tt><dd> The value of this keywork is boolean.  If true
+        the cca embedded framework will be initialized.  The default is 
+        false.
+
+<dt><tt>cca_path</tt><dd> The value of this keyword is a string that provides
+        a colon-separated list of directories in which CCA component libraries 
+        may be found.
+
+<dt><tt>cca_load</tt><dd> The value of this keyword is a string that provides 
+        a colon-separated list of sidl class names for CCA components which 
+        will be instantiated from the libraries found in the path given by 
+        <tt>cca_path</tt>.
+
 <dt><tt>optimize</tt><dd> The value of this keyword is boolean.  If true
         and the opt keyword was set to a valid value, then an optimization
         will be performed.  The default is true.
@@ -1299,7 +1312,7 @@ basis<GaussianBasisSet>: (
 mpqc: (
   \% path to component libraries
   cca_path = /usr/local/lib/cca
-  \% symbol names of components which will be instantiated
+  \% sidl class names of components which will be instantiated
   cca_load = MPQC.IntegralEvaluatorFactory
   do_cca = yes
   checkpoint = no
@@ -1315,7 +1328,7 @@ mpqc: (
       integral_buffer = opaque
       \% integral package
       integral_package = intv3
-      \% factory component symbol name
+      \% factory component sidl class name
       evaluator_factory = MPQC.IntegralEvaluatorFactory
     )
   )

@@ -45,6 +45,8 @@ input files are divided into several categories:
 
   <dt><tt>dft</tt><dd>More tests of the CLKS method.
 
+  <dt><tt>ccaint</tt><dd>Tests of embedded CCA integrals components.
+
 </dl>
 
   To generate the input files change into the

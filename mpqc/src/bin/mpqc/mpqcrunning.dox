@@ -348,10 +348,12 @@ CCA framework.
 For MPQC runs utilizing embedded components, the runtime environment for the CCA
 framework must be specified.
 The colon-separated path used to locate component libraries must be specified either 
-using the <tt>-cca-path</tt> command-line option or using the <tt>cca-path</tt> key 
+using the <tt>-cca-path</tt> command-line option or using the <tt>cca_path</tt> key 
 within the <tt>mpqc</tt> section of a keyval input.
 The colon-separated list of component symbol names which will be referenced within the
 input must be specified using either the <tt>-cca-load</tt> command-line option or using
-the <tt>cca-load</tt> key within the <tt>mpqc</tt> section of a keyval input.
+the <tt>cca_load</tt> key within the <tt>mpqc</tt> section of a keyval input.
+If defaults for the cca-path and cca-load options are desired, <tt>do_cca</tt> must be 
+set to <tt>yes</tt> in the keyval input.
 
 */

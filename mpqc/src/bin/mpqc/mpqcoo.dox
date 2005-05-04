@@ -1298,9 +1298,10 @@ basis<GaussianBasisSet>: (
 )
 mpqc: (
   \% path to component libraries
-  cca-path = /usr/local/lib/cca
+  cca_path = /usr/local/lib/cca
   \% symbol names of components which will be instantiated
-  cca-load = MPQC.IntegralEvaluatorFactory
+  cca_load = MPQC.IntegralEvaluatorFactory
+  do_cca = yes
   checkpoint = no
   savestate = no
   \% method for computing the molecule's energy

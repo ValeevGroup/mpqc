@@ -10,6 +10,9 @@
  #    include <chemistry/qc/mbptr12/LIBS.h>
  #endif
 #endif
+#ifdef HAVE_CHEMISTRY_QC_LIBINT2
+#  include <chemistry/qc/libint2/LIBS.h>
+#endif
 #ifdef HAVE_CHEMISTRY_CCA
 #  include <chemistry/qc/intcca/LIBS.h>
 #  include <util/misc/LIBS.h>

@@ -43,6 +43,9 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
  endif
 XDEF += -DHAVE_CHEMISTRY_QC_CINTS
 endif
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2),yes)
+XDEF += -DHAVE_CHEMISTRY_QC_LIBINT2
+endif
 
 ifeq ($(HAVE_LIBINT),yes)
   XLIBS += -lint
@@ -52,6 +55,9 @@ ifeq ($(HAVE_LIBR12),yes)
 endif
 ifeq ($(HAVE_LIBDERIV),yes)
   XLIBS += -lderiv
+endif
+ifeq ($(HAVE_LIBINT2),yes)
+  XLIBS += -lint2
 endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
   ifeq ($(ENABLESHARED),yes)

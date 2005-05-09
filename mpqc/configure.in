@@ -1600,6 +1600,20 @@ AC_CHECK_HEADERS(libderiv/libderiv.h,
   )
 AC_LANG_RESTORE
 
+dnl ----------- libint2 library checks --------------
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(libint2/libint2.h,
+  AC_CHECK_LIB(int2,libint2_static_init,
+    HAVE_LIBINT2=yes
+    AC_DEFINE(HAVE_LIBINT2)
+    AC_SUBST(HAVE_LIBINT2)
+    LIBS="-lint2 $LIBS"
+    )
+  )
+AC_LANG_RESTORE
+
 dnl ----------- make sure we have everything for cints and mbptr12 ----------
 
 if test ! X$HAVE_LIBR12 = Xyes -o ! X$HAVE_LIBINT = Xyes; then

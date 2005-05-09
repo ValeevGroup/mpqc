@@ -43,6 +43,9 @@ endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
 SUBDIRS := $(SUBDIRS) cints
 endif
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2),yes)
+SUBDIRS := $(SUBDIRS) libint2
+endif
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
 SUBDIRS := $(SUBDIRS) mbptr12
 endif

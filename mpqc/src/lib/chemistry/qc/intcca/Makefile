@@ -34,6 +34,9 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 ifeq ($(HAVE_LIBINT),yes)
   DEFINES += -DHAVE_CINTS
 endif
+ifeq ($(INTV3_ORDER),yes)
+  DEFINES += -DINTV3_ORDER
+endif
 
 TARGET_TO_MAKE = libSCintcca
 BIN_OR_LIB = LIB

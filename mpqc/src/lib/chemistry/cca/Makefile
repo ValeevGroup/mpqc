@@ -97,6 +97,9 @@ CPPFLAGS += -I./ -I$(SRCDIR) -I$(CCA_SPEC_CLASSIC_INCLUDE)
 ifeq ($(HAVE_LIBINT),yes)
   DEFINES += -DHAVE_CINTS
 endif
+ifeq ($(INTV3_ORDER),yes)
+  DEFINES += -DINTV3_ORDER
+endif
 tmp_libdir := $(libdir)
 SCLIBS = $(shell echo `ls ../../../../lib/*.$(LIBSUF)`)
 SCLINK = $(SCLIBS:lib%.$(LIBSUF)=-l%)

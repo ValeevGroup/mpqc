@@ -31,7 +31,9 @@ void MPQC::IntegralEvaluator4_impl::_ctor() {
 // user-defined destructor.
 void MPQC::IntegralEvaluator4_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._dtor)
+#ifndef INTV3_ORDER
   if( package_ == "intv3") delete [] temp_buffer_;
+#endif
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._dtor)
 }
 
@@ -98,7 +100,11 @@ throw ()
             << " integral evaluator\n";
   if ( package_ == "intv3" ) {
     integral_ = new IntegralV3( bs1_ );
+#ifdef INTV3_ORDER
+    std::cout << "  using intv3 ordering" << std::endl;
+#else
     initialize_reorder_intv3();
+#endif
   }
 #ifdef HAVE_CINTS
   else if ( package_ == "cints" )
@@ -192,8 +198,10 @@ throw ()
     eval_->compute_shell( (int) shellnum1, (int) shellnum2,
 			  (int) shellnum3, (int) shellnum4);
     if( package_ == "intv3") {
+#ifndef INTV3_ORDER
       reorder_intv3( shellnum1, shellnum2, shellnum3, shellnum4 );
       //reorder_intv3_inline( shellnum1, shellnum2, shellnum3, shellnum4 );
+#endif
     }
   }
   else {

@@ -90,7 +90,9 @@ throw ()
             << " integral evaluator\n";
   if ( package_ == "intv3" ) { 
     integral_ = new IntegralV3( bs1_, bs2_ );
+#ifndef INTV3_ORDER
     initialize_reorder_intv3();
+#endif
   }
 #ifdef HAVE_CINTS
   else if ( package_ == "cints" )
@@ -229,7 +231,9 @@ throw ()
 
   if( int_type_ == one_body ) {
     eval_->compute_shell( (int) shellnum1,  (int) shellnum2 );
+#ifndef INTV3_ORDER
     if( package_ == "intv3") reorder_intv3( shellnum1, shellnum2 );
+#endif
   }
   else 
     abort();

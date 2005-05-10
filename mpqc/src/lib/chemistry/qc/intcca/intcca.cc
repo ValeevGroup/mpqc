@@ -25,14 +25,20 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <stdexcept>
-
 #include <util/state/stateio.h>
 #include <util/misc/ccaenv.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/intcca/intcca.h>
 #include <chemistry/qc/intcca/obintcca.h>
 #include <chemistry/qc/intcca/tbintcca.h>
+#include <util/misc/scexception.h>
+#ifdef INTV3_ORDER
+  #include <chemistry/qc/intv3/cartitv3.h>
+  #include <chemistry/qc/intv3/tformv3.h>
+#else
+  #include <chemistry/qc/intcca/cartit.h>
+  #include <chemistry/qc/intcca/tform.h>
+#endif
 
 using namespace std;
 using namespace sc;
@@ -78,8 +84,9 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   if ( buffer == "opaque" ) use_opaque_ = 1;
   else if ( buffer == "array" ) use_opaque_ = 0;
   else {
-    ExEnv::err0() << indent << "unrecognized integral buffer type" << endl;
-    abort();
+    InputError ex("integral_buffer must be either opaque or array",__FILE__, __LINE__,
+                  "integral_buffer",buffer.c_str(),class_desc());
+    throw ex;
   }
 
   factory_type_ = keyval->stringvalue("evaluator_factory");
@@ -90,6 +97,16 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   if ( keyval->error() != KeyVal::OK ) {
     package_ = string("intv3");
   }
+#ifdef INTV3_ORDER
+  if(package_ == "cints") {
+    InputError ex("using intv3 ordering, can't use cints",__FILE__, __LINE__);
+    try { ex.elaborate() << "INTV3_ORDER=yes in LocalMakefile,"
+                         << " this option is for development use only";
+    }
+    catch (...) {}
+    throw ex;
+  }
+#endif
 
   sc_molecule_ << keyval->describedclassvalue("molecule");
   if (sc_molecule_.null()) {
@@ -153,30 +170,40 @@ IntegralCCA::clone()
 CartesianIter *
 IntegralCCA::new_cartesian_iter(int l)
 {
-  //return new CartesianIterV3(l);
+#ifdef INTV3_ORDER
+  return new CartesianIterV3(l);
+#else
   return new CartesianIterCCA(l);
+#endif
 }
 
 RedundantCartesianIter *
 IntegralCCA::new_redundant_cartesian_iter(int l)
 {
-  //return new RedundantCartesianIterV3(l);
+#ifdef INTV3_ORDER
+  return new RedundantCartesianIterV3(l);
+#else
   return new RedundantCartesianIterCCA(l);
+#endif
 }
 
 RedundantCartesianSubIter *
 IntegralCCA::new_redundant_cartesian_sub_iter(int l)
 {
-  //return new RedundantCartesianSubIterV3(l);
+#ifdef INTV3_ORDER
+  return new RedundantCartesianSubIterV3(l);
+#else
   return new RedundantCartesianSubIterCCA(l);
+#endif
 }
 
 SphericalTransformIter *
 IntegralCCA::new_spherical_transform_iter(int l, int inv, int subl)
 {
 
-  // INTV3 version
-/*  if (l>maxl_ || l<0) {
+#ifdef INTV3_ORDER
+
+  if (l>maxl_ || l<0) {
       ExEnv::errn() << "IntegralV3::new_spherical_transform_iter: bad l" << endl;
       abort();
     }
@@ -189,7 +216,8 @@ IntegralCCA::new_spherical_transform_iter(int l, int inv, int subl)
       return new SphericalTransformIter(ist_[l][(l-subl)/2]);
     }
   return new SphericalTransformIter(st_[l][(l-subl)/2]);
-*/
+
+#else
  
   // CINTS version
   if (l>maxl_ || l<0) {
@@ -206,14 +234,18 @@ IntegralCCA::new_spherical_transform_iter(int l, int inv, int subl)
     }
   return new SphericalTransformIter(st_[l][(l-subl)/2]);
 
+#endif
+
 }
 
 const SphericalTransform *
 IntegralCCA::spherical_transform(int l, int inv, int subl)
 {
 
+#ifdef INTV3_ORDER
+
   // INTV3 version
-/*  if (l>maxl_ || l<0) {
+  if (l>maxl_ || l<0) {
       ExEnv::errn() << "IntegralV3::spherical_transform_iter: bad l" << endl;
       abort();
     }
@@ -226,7 +258,8 @@ IntegralCCA::spherical_transform(int l, int inv, int subl)
       return ist_[l][(l-subl)/2];
     }
   return st_[l][(l-subl)/2];
-*/
+
+#else
 
   // CINTS version
   if (l>maxl_ || l<0) {
@@ -242,6 +275,8 @@ IntegralCCA::spherical_transform(int l, int inv, int subl)
       return ist_[l][(l-subl)/2];
     }
   return st_[l][(l-subl)/2];
+
+#endif
 
 }
 
@@ -349,8 +384,10 @@ void
 IntegralCCA::free_transforms()
 {
 
+#ifdef INTV3_ORDER
+
   // INTV3 version
-/*  int i,j;
+  int i,j;
   for (i=0; i<=maxl_; i++) {
       for (j=0; j<=i/2; j++) {
           delete st_[i][j];
@@ -363,7 +400,8 @@ IntegralCCA::free_transforms()
   delete[] ist_;
   st_ = 0;
   ist_ = 0;
-*/
+
+#else
 
   // CINTS version
   int i,j;
@@ -382,14 +420,15 @@ IntegralCCA::free_transforms()
   st_ = NULL;
   ist_ = NULL;
 
+#endif
+
 }
 
  void
  IntegralCCA::initialize_transforms()
  {
- 
-   // INTV3 version
-/*   maxl_ = -1;
+
+   maxl_ = -1;
    int maxam;
    maxam = bs1_.nonnull()?bs1_->max_angular_momentum():-1;
    if (maxl_ < maxam) maxl_ = maxam;
@@ -399,40 +438,32 @@ IntegralCCA::free_transforms()
    if (maxl_ < maxam) maxl_ = maxam;
    maxam = bs4_.nonnull()?bs4_->max_angular_momentum():-1;
    if (maxl_ < maxam) maxl_ = maxam;
+ 
+#ifdef INTV3_ORDER
 
-   st_ = new SphericalTransformV3**[maxl_+1];
-   ist_ = new ISphericalTransformV3**[maxl_+1];;
+   // INTV3 version
+   st_ = new SphericalTransform**[maxl_+1];
+   ist_ = new ISphericalTransform**[maxl_+1];
    int i,j;
    for (i=0; i<=maxl_; i++) {
-       st_[i] = new SphericalTransformV3*[i/2+1];
-       ist_[i] = new ISphericalTransformV3*[i/2+1];
+       st_[i] = new SphericalTransform*[i/2+1];
+       ist_[i] = new ISphericalTransform*[i/2+1];
        for (j=0; j<=i/2; j++) {
            st_[i][j] = new SphericalTransformV3(i,i-2*j);
            ist_[i][j] = new ISphericalTransformV3(i,i-2*j);
          }
      }
-*/
 
+#else
 
   // CINTS version
-  maxl_ = -1;
-  int maxam;
-  maxam = bs1_.nonnull()?bs1_->max_angular_momentum():-1;
-  if (maxl_ < maxam) maxl_ = maxam;
-  maxam = bs2_.nonnull()?bs2_->max_angular_momentum():-1;
-  if (maxl_ < maxam) maxl_ = maxam;
-  maxam = bs3_.nonnull()?bs3_->max_angular_momentum():-1;
-  if (maxl_ < maxam) maxl_ = maxam;
-  maxam = bs4_.nonnull()?bs4_->max_angular_momentum():-1;
-  if (maxl_ < maxam) maxl_ = maxam;
-
   if (maxl_ >= 0) {
-    st_ = new SphericalTransformCCA**[maxl_+1];
-    ist_ = new ISphericalTransformCCA**[maxl_+1];;
+    st_ = new SphericalTransform**[maxl_+1];
+    ist_ = new ISphericalTransform**[maxl_+1];
     int i,j;
     for (i=0; i<=maxl_; i++) {
-      st_[i] = new SphericalTransformCCA*[i/2+1];
-      ist_[i] = new ISphericalTransformCCA*[i/2+1];
+      st_[i] = new SphericalTransform*[i/2+1];
+      ist_[i] = new ISphericalTransform*[i/2+1];
       for (j=0; j<=i/2; j++) {
         st_[i][j] = new SphericalTransformCCA(i,i-2*j);
         ist_[i][j] = new ISphericalTransformCCA(i,i-2*j);
@@ -443,6 +474,8 @@ IntegralCCA::free_transforms()
     st_ = NULL;
     ist_ = NULL;
   }
+
+#endif
 
 }
 

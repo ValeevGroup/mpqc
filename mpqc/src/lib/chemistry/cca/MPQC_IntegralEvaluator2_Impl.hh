@@ -81,8 +81,10 @@ namespace MPQC {
     Ref<OneBodyInt> eval_;
     Ref<OneBodyDerivInt> deriv_eval_;
     int max_nshell2_;
+    int maxam_;
     sidl::array<double> sidl_buffer_;
     const double *sc_buffer_;
+    double *temp_buffer_;
     enum { one_body, one_body_deriv};
     int int_type_;
     int deriv_level_;

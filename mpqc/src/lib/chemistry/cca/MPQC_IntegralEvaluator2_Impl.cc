@@ -14,6 +14,7 @@
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._includes)
 #include <iostream>
 #include <sstream>
+#include <util/misc/scexception.h>
 #pragma implementation "ccaiter.h"
 #include <ccaiter.h>
 
@@ -34,7 +35,14 @@ void MPQC::IntegralEvaluator2_impl::_ctor() {
 // user-defined destructor.
 void MPQC::IntegralEvaluator2_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._dtor)
-  // add destruction details here
+#ifndef INTV3_ORDER
+  if( package_ == "intv3") {
+    delete temp_buffer_;
+    for( int i=0; i<=maxam_; ++i)
+      delete [] reorder_[i];
+    delete [] reorder_;
+  }
+#endif
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._dtor)
 }
 
@@ -85,6 +93,9 @@ throw ()
     bs2_.assign_pointer( bs1_.pointer() );
   else 
     bs2_ = basis_cca_to_sc( bs2 );
+  max_nshell2_ = bs1_->max_ncartesian_in_shell() *
+    bs2_->max_ncartesian_in_shell();
+  maxam_ = max( bs1_->max_angular_momentum(), bs2_->max_angular_momentum() );
   
   std::cout << "  initializing " << package_ << " " << evaluator_label_
             << " integral evaluator\n";
@@ -99,13 +110,10 @@ throw ()
     integral_ = new IntegralCints( bs1_, bs2_ );
 #endif
   else {
-    std::cout << "\nbad integral package name" << std::endl;
-    abort();
+    throw InputError("bad integral package name",
+                     __FILE__,__LINE__);
   }
   
-  max_nshell2_ = bs1_->max_ncartesian_in_shell() * 
-    bs2_->max_ncartesian_in_shell();
-
   int error = 0;
   if(evaluator_label_ == "overlap") 
     switch( max_deriv ) {
@@ -180,23 +188,22 @@ throw ()
     }*/
   
   if( error ) {
-    std::cerr << "Error in MPQC::IntegralEvaluator2:\n"
-	      << "  integral type is either unrecognized or not supported\n";
-    abort();
+    throw InputError("unrecognized integral type",
+                     __FILE__,__LINE__);
   }
   
-  if( eval_.nonnull() ) 
+  if( eval_.nonnull() ) { 
     int_type_ = one_body;
-  else if( deriv_eval_.nonnull() ) 
-    int_type_ = one_body_deriv;
-  else {
-    std::cerr << "Error in MPQC::IntegralEvaluator2:\n"
-	      << "  bad pointer to sc integal evaluator";
-    abort();
+    sc_buffer_ = eval_->buffer();
   }
+  else if( deriv_eval_.nonnull() ) { 
+    int_type_ = one_body_deriv;
+    sc_buffer_ = deriv_eval_->buffer();
+  }
+  else 
+    throw ProgrammingError("bad pointer to sc integal evaluator",
+                           __FILE__,__LINE__);
   
-  sc_buffer_ = eval_->buffer();
-
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.initialize)
 }
 
@@ -229,21 +236,17 @@ throw ()
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute)
 
-  if( int_type_ == one_body ) {
-    eval_->compute_shell( (int) shellnum1,  (int) shellnum2 );
-#ifndef INTV3_ORDER
-    if( package_ == "intv3") reorder_intv3( shellnum1, shellnum2 );
-#endif
-  }
+  if( int_type_ == one_body )
+    eval_->compute_shell( shellnum1, shellnum2 );
+  else if( int_type_ == one_body_deriv )
+    deriv_eval_->compute_shell( shellnum1, shellnum2, deriv_level );
   else 
-    abort();
+    throw ProgrammingError("bad evaluator type",
+                           __FILE__,__LINE__);
 
-  /* deriv wrt what center?  interface needs work
-  else if( int_type_ == one_body_deriv ) {
-    deriv_eval_->compute_shell( (int) shellnum1, (int) shellnum2,??? );
-    sc_buffer = deriv_eval_->buffer();
-  }
-  */
+#ifndef INTV3_ORDER
+  if( package_ == "intv3") reorder_intv3( shellnum1, shellnum2 );
+#endif
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.compute)
 }
@@ -285,14 +288,13 @@ void
 MPQC::IntegralEvaluator2_impl::initialize_reorder_intv3() 
 {
 
-  int maxam = max( bs1_->max_angular_momentum(), bs2_->max_angular_momentum() );
+  temp_buffer_ = new double[max_nshell2_];
 
-  reorder_ = new int*[maxam+1];
+  reorder_ = new int*[maxam_+1];
   reorder_[0] = new int[1];
   reorder_[0][0] = 0;
-  if(maxam==0) return;
 
-  for( int i=1; i<=maxam; ++i) {
+  for( int i=1; i<=maxam_; ++i) {
 
     sc::CartesianIter *v3iter = integral_->new_cartesian_iter(i);
     MPQC::CartesianIterCCA iter(i);
@@ -301,9 +303,9 @@ MPQC::IntegralEvaluator2_impl::initialize_reorder_intv3()
     int ncf = ccaiter->n();
     
     reorder_[i] = new int[ncf];
-    ccaiter->start();
+    v3iter->start();
     for( int j=0; j<ncf; ++j) {
-      v3iter->start();
+      ccaiter->start();
       for( int k=0; k<ncf; ++k) {
         if( v3iter->a() == ccaiter->a() &&
             v3iter->b() == ccaiter->b() &&
@@ -311,12 +313,10 @@ MPQC::IntegralEvaluator2_impl::initialize_reorder_intv3()
           reorder_[i][j] = k;
           k=ncf; //break k loop
         }
-        else v3iter->next();
+        else ccaiter->next();
       }
-      ccaiter->next();
+      v3iter->next();
     }
-
-    delete v3iter;
   }
 
 }
@@ -334,10 +334,8 @@ MPQC::IntegralEvaluator2_impl::reorder_intv3(int64_t shellnum1,int64_t shellnum2
 
   // copy buffer into temp space
   int nfunc = s1.nfunction() * s2.nfunction();
-  double *temp_buffer = new double[nfunc];
-  for( int i=0; i<nfunc; ++i) { 
-    temp_buffer[i] = sc_buffer_[i]; 
-  }
+  for( int i=0; i<nfunc; ++i) 
+    temp_buffer_[i] = sc_buffer_[i]; 
    
   int index=0, con_offset=0, local_offset, c1_base, c2_base;
 
@@ -362,10 +360,10 @@ MPQC::IntegralEvaluator2_impl::reorder_intv3(int64_t shellnum1,int64_t shellnum2
         for( int fc2=0; fc2<s2.nfunction(c2); ++fc2 ) {
 
           if( s2.is_cartesian(c2) )
-            buf[index] = 
-              temp_buffer[c2_base + local_offset + reorder_[s2.am(c2)][fc2]];
+            buf[c2_base + local_offset + reorder_[s2.am(c2)][fc2]] =
+              temp_buffer_[index];
           else
-            buf[index] = temp_buffer[c2_base + local_offset + fc2];
+            buf[c2_base + local_offset + fc2] = temp_buffer_[index];
           ++index;
 
         }

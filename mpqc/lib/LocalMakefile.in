@@ -162,4 +162,7 @@ ifeq ($(ENABLECCA),yes)
   LTLINKLIBOPTS += -rpath $(libdir)/cca
 endif
 
+# intv3 or cca/cints ordering?
+INTV3_ORDER=no
+
 

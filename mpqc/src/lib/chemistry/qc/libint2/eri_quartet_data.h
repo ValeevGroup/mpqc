@@ -31,7 +31,7 @@
 #ifndef _chemistry_qc_libint2_eriquartetdata_h
 #define _chemistry_qc_libint2_eriquartetdata_h
 
-namespace {
+namespace erilibint2 {
   
   typedef Libint_t prim_data;
   void assign_FjT(prim_data* Data, const int& jmax, const double* FjT, const double& scale) {
@@ -69,7 +69,7 @@ namespace {
 /*--------------------------------------------------------------------------------
   This function computes constants used in OSRR for a given quartet of primitives
  --------------------------------------------------------------------------------*/
-inline void EriLibint2::eri_quartet_data_(prim_data *Data, double scale)
+inline void EriLibint2::eri_quartet_data_(erilibint2::prim_data *Data, double scale)
 {
 #define STATIC_OO2NP1
 #include "static.h"
@@ -109,8 +109,6 @@ inline void EriLibint2::eri_quartet_data_(prim_data *Data, double scale)
   Data->roz[0] = eta*ooze;
   double rho = zeta*Data->roz[0];
   
-  double t1 = M_PI*ooz;
-  double t2 = M_PI*ooe;
   double pfac_norm = int_shell1_->coefficient_unnorm(quartet_info_.gc1,p1)*
   int_shell2_->coefficient_unnorm(quartet_info_.gc2,p2)*
   int_shell3_->coefficient_unnorm(quartet_info_.gc3,p3)*
@@ -145,11 +143,11 @@ inline void EriLibint2::eri_quartet_data_(prim_data *Data, double scale)
     W[2] = (zeta*P[2] + eta*Q[2])*ooze;
     
     if(T < small_T){
-      assign_FjT(Data,quartet_info_.am,oo2np1,pfac);
+      erilibint2::assign_FjT(Data,quartet_info_.am,oo2np1,pfac);
     }
     else {
       double *fjttable = Fm_Eval_->values(quartet_info_.am,T);
-      assign_FjT(Data,quartet_info_.am,fjttable,pfac);
+      erilibint2::assign_FjT(Data,quartet_info_.am,fjttable,pfac);
     }
 
     /* PA */

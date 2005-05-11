@@ -109,6 +109,8 @@ class IntegralLibint2 : public Integral {
 
     Ref<TwoBodyInt> grt();
 
+    Ref<TwoBodyInt> g12(double gamma);
+
     Ref<TwoBodyDerivInt> electron_repulsion_deriv();
 
     void set_basis(const Ref<GaussianBasisSet> &b1,

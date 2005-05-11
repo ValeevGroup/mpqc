@@ -40,7 +40,7 @@ BIN_OR_LIB = LIB
 TESTCSRC = libint2test.cc
 
 CXXSRC = libint2.cc obintlibint2.cc tbintlibint2.cc tform.cc int2e.cc eri.cc comp_eri.cc \
-        storage.cc \
+        storage.cc g12.cc comp_g12.cc\
 	primpairs.cc shellpairs.cc permute2e.cc int1e.cc overlap.cc kinetic.cc nuclear.cc \
 	hcore.cc obosrr.cc edipole.cc equadrupole.cc
 

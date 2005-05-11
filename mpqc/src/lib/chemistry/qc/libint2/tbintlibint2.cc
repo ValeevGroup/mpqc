@@ -33,6 +33,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/libint2/tbintlibint2.h>
 #include <chemistry/qc/libint2/eri.h>
+#include <chemistry/qc/libint2/g12.h>
 
 using namespace std;
 using namespace sc;
@@ -48,13 +49,17 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 				 const Ref<GaussianBasisSet>& b2,
 				 const Ref<GaussianBasisSet>& b3,
 				 const Ref<GaussianBasisSet>& b4,
-				 size_t storage, tbinteval int2etype):
+				 size_t storage, tbinteval int2etype,
+                                 double gamma):
   TwoBodyInt(integral,b1,b2,b3,b4)
 {
   // Which evaluator to use
   switch (int2etype) {
   case erieval:
     int2elibint2_ = new EriLibint2(integral,b1,b2,b3,b4,storage);
+    break;
+  case g12eval:
+    int2elibint2_ = new G12Libint2(integral,b1,b2,b3,b4,storage,gamma);
     break;
   default:
     throw FeatureNotImplemented("Tried to construct a two-electron integral \

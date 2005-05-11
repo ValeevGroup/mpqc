@@ -34,7 +34,7 @@
 namespace sc {
 
 // Types of available 2-electron integral evaluators
-typedef enum {erieval = 0, grteval = 1, greval = 2} tbinteval;
+typedef enum {erieval = 0, grteval = 1, g12eval = 2} tbinteval;
 
 /** This implements electron repulsion integrals in the IntLibint2 library. */
 class TwoBodyIntLibint2 : public TwoBodyInt {
@@ -47,7 +47,8 @@ class TwoBodyIntLibint2 : public TwoBodyInt {
                  const Ref<GaussianBasisSet>&b2,
                  const Ref<GaussianBasisSet>&b3,
                  const Ref<GaussianBasisSet>&b4,
-                 size_t storage, tbinteval int2etype);
+                 size_t storage, tbinteval int2etype,
+                 double gamma=0.0);
     ~TwoBodyIntLibint2();
 
     int log2_shell_bound(int,int,int,int);

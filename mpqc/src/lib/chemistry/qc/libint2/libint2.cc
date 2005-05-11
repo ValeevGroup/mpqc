@@ -279,6 +279,12 @@ IntegralLibint2::grt()
   //return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, grteval);
 }
 
+Ref<TwoBodyInt>
+IntegralLibint2::g12(double gamma)
+{
+  return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, grteval, gamma);
+}
+
 void
 IntegralLibint2::set_basis(const Ref<GaussianBasisSet> &b1,
 			 const Ref<GaussianBasisSet> &b2,

@@ -255,6 +255,17 @@ Integral::storage_required_grt(const Ref<GaussianBasisSet> &b1,
 }
 
 size_t
+Integral::storage_required_g12(const Ref<GaussianBasisSet> &b1,
+			       const Ref<GaussianBasisSet> &b2,
+			       const Ref<GaussianBasisSet> &b3,
+			       const Ref<GaussianBasisSet> &b4)
+{
+  // By default, generated G12 evaluator will not need
+  // any significant amount of memory
+  return 0;
+}
+
+size_t
 Integral::storage_unused()
 {
   ptrdiff_t tmp=storage_-storage_used_;
@@ -265,6 +276,12 @@ Ref<TwoBodyInt>
 Integral::grt()
 {
   throw std::runtime_error("Integral::grt(): not implemented in this particular integrals factory.");
+}
+
+Ref<TwoBodyInt>
+Integral::g12(double gamma)
+{
+  throw std::runtime_error("Integral::g12(): not implemented in this particular integrals factory.");
 }
 
 Ref<OneBodyOneCenterInt>

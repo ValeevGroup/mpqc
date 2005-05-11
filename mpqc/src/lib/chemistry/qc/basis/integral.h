@@ -122,6 +122,12 @@ class Integral : public SavableState {
 					const Ref<GaussianBasisSet> &b3 = 0,
 					const Ref<GaussianBasisSet> &b4 = 0);
   /** Returns how much storage will be needed to initialize a two-body integrals
+      evaluator for G12 integrals. */
+    virtual size_t storage_required_g12(const Ref<GaussianBasisSet> &b1,
+					const Ref<GaussianBasisSet> &b2 = 0,
+					const Ref<GaussianBasisSet> &b3 = 0,
+					const Ref<GaussianBasisSet> &b4 = 0);
+  /** Returns how much storage will be needed to initialize a two-body integrals
       evaluator for derivative electron repulsion integrals. */
     virtual size_t storage_required_eri_deriv(const Ref<GaussianBasisSet> &b1,
 					      const Ref<GaussianBasisSet> &b2 = 0,
@@ -246,6 +252,12 @@ class Integral : public SavableState {
         integrals. Implementation for this kind of TwoBodyInt is
         optional. */
     virtual Ref<TwoBodyInt> grt();
+    
+    /** Return a TwoBodyInt that computes two-electron integrals specific
+        to explicitly correlated methods which use Gaussian geminals.
+        gamma specifies the exponent of the Geminal.
+        Implementation for this kind of TwoBodyInt is optional. */
+    virtual Ref<TwoBodyInt> g12(double gamma);
     
     /// Return the MessageGrp used by the integrals objects.
     Ref<MessageGrp> messagegrp() { return grp_; }

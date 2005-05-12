@@ -5,4 +5,6 @@ libSClibint2.LIBSUF
 #include <chemistry/qc/basis/LIBS.h>
 #include <chemistry/qc/intv3/LIBS.h>
 #include <chemistry/qc/oint3/LIBS.h>
+#include <chemistry/qc/cints/LIBS.h>
+
 

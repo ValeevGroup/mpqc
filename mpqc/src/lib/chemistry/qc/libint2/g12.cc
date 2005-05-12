@@ -207,7 +207,7 @@ G12Libint2::ExpensiveMath::ExpensiveMath()
     fac[i] = i*fac[i-1];
     }
   for(int i=1; i<=imax; i++) {
-    for(int j=0; j<=i; i++) {
+    for(int j=0; j<=i; j++) {
       bc[i][j] = fac[i]/(fac[j]*fac[i-j]);
       }
     }

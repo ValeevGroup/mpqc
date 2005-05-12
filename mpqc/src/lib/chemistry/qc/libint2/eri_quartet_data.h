@@ -27,49 +27,15 @@
 
 #include <util/misc/math.h>
 #include <chemistry/qc/libint2/static.h>
+#include <chemistry/qc/libint2/libint2_utils.h>
 
 #ifndef _chemistry_qc_libint2_eriquartetdata_h
 #define _chemistry_qc_libint2_eriquartetdata_h
 
-namespace erilibint2 {
-  
-  typedef Libint_t prim_data;
-  void assign_FjT(prim_data* Data, const int& jmax, const double* FjT, const double& scale) {
-    switch (jmax) {
-      case 12:
-      Data->__ss_1_over_r_12_ss___up_12[0] = FjT[12] * scale;
-      case 11:
-      Data->__ss_1_over_r_12_ss___up_11[0] = FjT[11] * scale;
-      case 10:
-      Data->__ss_1_over_r_12_ss___up_10[0] = FjT[10] * scale;
-      case 9:
-      Data->__ss_1_over_r_12_ss___up_9[0] = FjT[9] * scale;
-      case 8:
-      Data->__ss_1_over_r_12_ss___up_8[0] = FjT[8] * scale;
-      case 7:
-      Data->__ss_1_over_r_12_ss___up_7[0] = FjT[7] * scale;
-      case 6:
-      Data->__ss_1_over_r_12_ss___up_6[0] = FjT[6] * scale;
-      case 5:
-      Data->__ss_1_over_r_12_ss___up_5[0] = FjT[5] * scale;
-      case 4:
-      Data->__ss_1_over_r_12_ss___up_4[0] = FjT[4] * scale;
-      case 3:
-      Data->__ss_1_over_r_12_ss___up_3[0] = FjT[3] * scale;
-      case 2:
-      Data->__ss_1_over_r_12_ss___up_2[0] = FjT[2] * scale;
-      case 1:
-      Data->__ss_1_over_r_12_ss___up_1[0] = FjT[1] * scale;
-      case 0:
-      Data->__ss_1_over_r_12_ss___up_0[0] = FjT[0] * scale;
-    }
-  }
-};
-
 /*--------------------------------------------------------------------------------
   This function computes constants used in OSRR for a given quartet of primitives
  --------------------------------------------------------------------------------*/
-inline void EriLibint2::eri_quartet_data_(erilibint2::prim_data *Data, double scale)
+inline void EriLibint2::eri_quartet_data_(prim_data *Data, double scale)
 {
 #define STATIC_OO2NP1
 #include "static.h"
@@ -143,11 +109,11 @@ inline void EriLibint2::eri_quartet_data_(erilibint2::prim_data *Data, double sc
     W[2] = (zeta*P[2] + eta*Q[2])*ooze;
     
     if(T < small_T){
-      erilibint2::assign_FjT(Data,quartet_info_.am,oo2np1,pfac);
+      assign_FjT(Data,quartet_info_.am,oo2np1,pfac);
     }
     else {
       double *fjttable = Fm_Eval_->values(quartet_info_.am,T);
-      erilibint2::assign_FjT(Data,quartet_info_.am,fjttable,pfac);
+      assign_FjT(Data,quartet_info_.am,fjttable,pfac);
     }
 
     /* PA */

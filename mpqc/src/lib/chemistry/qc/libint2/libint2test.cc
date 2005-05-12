@@ -41,19 +41,20 @@
 #include <chemistry/qc/libint2/libint2.h>
 #include <chemistry/qc/libint2/int2e.h>
 #include <chemistry/qc/libint2/cartit.h>
+#include <chemistry/qc/cints/cints.h>
 
 
 using namespace std;
 using namespace sc;
 
-#define CINTS
+#define LIBINT2
 
 void compare_1e_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3);
 void compare_2e_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3);
 void compare_2e_puream_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3);
 void compare_2e_bufsum_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3);
 void compare_2e_unique_bufsum_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3);
-void print_grt_ints(Ref<TwoBodyInt>& tblibint2);
+void print_g12_ints(Ref<TwoBodyInt>& tblibint2);
 void compare_2e_permute(Ref<Integral>& libint2);
 void test_int_shell_1e(const Ref<KeyVal>&, const Ref<Int1eV3> &int1ev3,
                        void (Int1eV3::*int_shell_1e)(int,int),
@@ -100,34 +101,6 @@ testint(const Ref<TwoBodyDerivInt>& in)
     }
 }
 
-/*void
-do_bounds_stats(const Ref<KeyVal>& keyval,
-                const Ref<Int2eV3> &int2ev3)
-{
-  int i,j;
-  int nshell = int2ev3->basis()->nshell();
-  int eps = -10;
-  int *nonzero = new int[nshell];
-  for (i=0; i<nshell; i++) {
-      if (i==0) nonzero[i] = 0;
-      else nonzero[i] = nonzero[i-1];
-      for (j=0; j<=i; j++) {
-          if (int2ev3->erep_4bound(i,j,-1,-1) > eps) {
-              nonzero[i]++;
-            }
-        }
-    }
-  for (i=0; i<nshell; i++) {
-      int natom = 1 + int2ev3->basis()->shell_to_center(i);
-      int npq = (i*(i+1))/2;
-      cout<<scprintf("nsh=%2d nat=%2d npq=%4d npq>eps=%4d npq>eps/nsh=%9.4f /nat=%9.4f",
-                     i, natom, npq, nonzero[i], double(nonzero[i])/i,
-                     double(nonzero[i])/natom)
-          << endl;
-    }
-  delete[] nonzero;
-}
-*/
 
 int main(int argc, char **argv)
 {
@@ -208,7 +181,7 @@ int main(int argc, char **argv)
 
   tim->enter("Integral");
   Ref<Integral> integral = new IntegralV3(basis);
-#ifdef CINTS
+#ifdef LIBINT2
   Ref<Integral> integrallibint2 = new IntegralLibint2(basis);
 #endif
 
@@ -217,7 +190,7 @@ int main(int argc, char **argv)
   Ref<OneBodyInt> nuclearv3 = integral->nuclear();
   Ref<OneBodyInt> hcorev3 = integral->hcore();
 
-#ifdef CINTS
+#ifdef LIBINT2
   Ref<OneBodyInt> overlaplibint2 = integrallibint2->overlap();
   testint(overlaplibint2);
   Ref<OneBodyInt> kineticlibint2 = integrallibint2->kinetic();
@@ -230,15 +203,15 @@ int main(int argc, char **argv)
 
   Ref<TwoBodyInt> erepv3 = integral->electron_repulsion();
 
-#ifdef CINTS
+#ifdef LIBINT2
   int storage_needed = integrallibint2->storage_required_eri(basis);
   cout << scprintf("Need %d bytes to create EriLibint2\n",storage_needed);
   Ref<TwoBodyInt> ereplibint2 = integrallibint2->electron_repulsion();
   testint(ereplibint2);
-  storage_needed = integrallibint2->storage_required_grt(basis);
-  cout << scprintf("Need %d bytes to create GRTLibint2\n",storage_needed);
-  Ref<TwoBodyInt> grtlibint2 = integrallibint2->grt();
-  testint(grtlibint2);
+  storage_needed = integrallibint2->storage_required_g12(basis);
+  cout << scprintf("Need %d bytes to create G12Libint2\n",storage_needed);
+  Ref<TwoBodyInt> g12libint2 = integrallibint2->g12(0.0);
+  testint(g12libint2);
 #endif
   tim->exit();
 
@@ -266,26 +239,23 @@ int main(int argc, char **argv)
 
   cout << "Testing Libint2' ERIs against IntV3's" << endl;
   compare_2e_libint2_vs_v3(ereplibint2,erepv3);
+  exit(0);
   //compare_2e_puream_libint2_vs_v3(ereplibint2,erepv3);
-  cout << "Testing Libint2' ERIs (from GRTLibint2) against IntV3's" << endl;
-  compare_2e_libint2_vs_v3(grtlibint2,erepv3);
+  cout << "Testing Libint2' ERIs (from G12Libint2) against IntV3's" << endl;
+  compare_2e_libint2_vs_v3(g12libint2,erepv3);
 
-#ifdef CINTS
+#ifdef LIBINT2
   cout << "Testing sums of Libint2' ERIs against IntV3's" << endl;
   compare_2e_bufsum_libint2_vs_v3(ereplibint2,erepv3);
-  cout << "Testing sums of Libint2' ERIs (from GRTLibint2) against IntV3's" << endl;
-  compare_2e_bufsum_libint2_vs_v3(grtlibint2,erepv3);
+  cout << "Testing sums of Libint2' ERIs (from G12Libint2) against IntV3's" << endl;
+  compare_2e_bufsum_libint2_vs_v3(g12libint2,erepv3);
 
   cout << "Testing sums of unique Libint2' ERIs against IntV3's" << endl;
   ereplibint2->set_redundant(0);
   erepv3->set_redundant(0);
-  grtlibint2->set_redundant(0);
   compare_2e_unique_bufsum_libint2_vs_v3(ereplibint2,erepv3);
-  cout << "Testing sums of unique Libint2' ERIs (from GRTLibint2) against IntV3's" << endl;
-  compare_2e_unique_bufsum_libint2_vs_v3(grtlibint2,erepv3);
-
   cout << "Printing GRT integrals" << endl;
-  print_grt_ints(grtlibint2);
+  print_g12_ints(g12libint2);
 #endif
 
   //  tim->print();
@@ -634,18 +604,21 @@ compare_2e_unique_bufsum_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyIn
 }
 
 void
-print_grt_ints(Ref<TwoBodyInt>& tblibint2)
+print_g12_ints(Ref<TwoBodyInt>& tblibint2)
 {
   Ref<GaussianBasisSet> basis = tblibint2->basis();
-  const double *buffer[4];
+  const unsigned int num_te_types = 6;
+  const double *buffer[num_te_types];
   buffer[0] = tblibint2->buffer(TwoBodyInt::eri);
-  buffer[1] = tblibint2->buffer(TwoBodyInt::r12);
-  buffer[2] = tblibint2->buffer(TwoBodyInt::r12t1);
-  buffer[3] = tblibint2->buffer(TwoBodyInt::r12t2);
+  buffer[1] = tblibint2->buffer(TwoBodyInt::r12_m1_g12);
+  buffer[2] = tblibint2->buffer(TwoBodyInt::t1g12);
+  buffer[3] = tblibint2->buffer(TwoBodyInt::t2g12);
+  buffer[4] = tblibint2->buffer(TwoBodyInt::r12_0_g12);
+  buffer[5] = tblibint2->buffer(TwoBodyInt::g12t1g12);
   char teout_filename[] = "teout0.dat";
-  FILE *teout[4];
+  FILE *teout[num_te_types];
 
-  for(int te_type=0;te_type<4;te_type++) {
+  for(int te_type=0;te_type<num_te_types;te_type++) {
     teout_filename[5] = te_type + '0';
     teout[te_type] = fopen(teout_filename,"w");
   }
@@ -722,42 +695,17 @@ print_grt_ints(Ref<TwoBodyInt>& tblibint2)
 		    int lmax = e34 ? ( (e13e24&&(i==k)) ? j : k) : ( (e13e24&&(i==k)) ? j : nbf4-1);
 		    for (int l=0; l<=lmax; l++) {
 		      
-		      double integral = buffer[0][index];
-		      if (fabs(integral) > 1E-15) {
-			fprintf(teout[0], "%5d%5d%5d%5d%20.10lf\n",
-				basis->shell_to_function(sh1) + i+1, 
-				basis->shell_to_function(sh2) + j+1, 
-				basis->shell_to_function(sh3) + k+1, 
-				basis->shell_to_function(sh4) + l+1, 
-				integral);
-		      }
-		      integral = buffer[1][index];
-		      if (fabs(integral) > 1E-15) {
-			fprintf(teout[1], "%5d%5d%5d%5d%20.10lf\n",
-				basis->shell_to_function(sh1) + i+1, 
-				basis->shell_to_function(sh2) + j+1, 
-				basis->shell_to_function(sh3) + k+1, 
-				basis->shell_to_function(sh4) + l+1, 
-				integral);
-		      }
-		      integral = buffer[2][index];
-		      if (fabs(integral) > 1E-15) {
-			fprintf(teout[2], "%5d%5d%5d%5d%20.10lf\n",
-				basis->shell_to_function(sh1) + i+1, 
-				basis->shell_to_function(sh2) + j+1, 
-				basis->shell_to_function(sh3) + k+1, 
-				basis->shell_to_function(sh4) + l+1, 
-				integral);
-		      }
-		      integral = buffer[3][index];
-		      if (fabs(integral) > 1E-15) {
-			fprintf(teout[3], "%5d%5d%5d%5d%20.10lf\n",
-				basis->shell_to_function(sh1) + i+1, 
-				basis->shell_to_function(sh2) + j+1, 
-				basis->shell_to_function(sh3) + k+1, 
-				basis->shell_to_function(sh4) + l+1, 
-				integral);
-		      }
+                      for(int te_type=0; te_type<num_te_types; te_type++) {
+                        double integral = buffer[te_type][index];
+                        if (fabs(integral) > 1E-15) {
+                          fprintf(teout[te_type], "%5d%5d%5d%5d%20.10lf\n",
+			          basis->shell_to_function(sh1) + i+1, 
+                                  basis->shell_to_function(sh2) + j+1, 
+                                  basis->shell_to_function(sh3) + k+1, 
+                                  basis->shell_to_function(sh4) + l+1, 
+                                  integral);
+                        }
+                      }
 		      index++;
 		    }
 		  }
@@ -765,7 +713,7 @@ print_grt_ints(Ref<TwoBodyInt>& tblibint2)
 	      }
 	    }
 	  }
-  for(int te_type=0;te_type<4;te_type++)
+  for(int te_type=0;te_type<num_te_types;te_type++)
     fclose(teout[te_type]);
 }
 

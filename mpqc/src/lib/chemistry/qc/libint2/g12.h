@@ -30,6 +30,7 @@
 #endif
 
 #include <limits.h>
+#include <stdexcept>
 
 #include <util/ref/ref.h>
 #include <util/misc/scexception.h>

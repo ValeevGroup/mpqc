@@ -67,6 +67,10 @@ class IntegralLibint2 : public Integral {
 				const Ref<GaussianBasisSet> &b2 = 0,
 				const Ref<GaussianBasisSet> &b3 = 0,
 				const Ref<GaussianBasisSet> &b4 = 0);
+    size_t storage_required_g12(const Ref<GaussianBasisSet> &b1,
+				const Ref<GaussianBasisSet> &b2 = 0,
+				const Ref<GaussianBasisSet> &b3 = 0,
+				const Ref<GaussianBasisSet> &b4 = 0);
     size_t storage_required_grt(const Ref<GaussianBasisSet> &b1,
 				const Ref<GaussianBasisSet> &b2 = 0,
 				const Ref<GaussianBasisSet> &b3 = 0,

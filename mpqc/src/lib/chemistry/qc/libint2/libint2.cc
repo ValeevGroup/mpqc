@@ -36,6 +36,7 @@
 #include <chemistry/qc/libint2/obintlibint2.h>
 #include <chemistry/qc/libint2/tbintlibint2.h>
 #include <chemistry/qc/libint2/eri.h>
+#include <chemistry/qc/libint2/g12.h>
 
 using namespace std;
 using namespace sc;
@@ -98,12 +99,21 @@ IntegralLibint2::storage_required_eri(const Ref<GaussianBasisSet> &b1,
 }
 
 size_t
+IntegralLibint2::storage_required_g12(const Ref<GaussianBasisSet> &b1,
+				     const Ref<GaussianBasisSet> &b2,
+				     const Ref<GaussianBasisSet> &b3,
+				     const Ref<GaussianBasisSet> &b4)
+{
+  return G12Libint2::storage_required(b1,b2,b3,b4);
+}
+
+size_t
 IntegralLibint2::storage_required_grt(const Ref<GaussianBasisSet> &b1,
 				    const Ref<GaussianBasisSet> &b2,
 				    const Ref<GaussianBasisSet> &b3,
 				    const Ref<GaussianBasisSet> &b4)
 {
-  throw FeatureNotImplemented("IntegralLibint2::storage_required_grt() -- IntegralLibint2 does not implement GRt integrals yet.", __FILE__, __LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::storage_required_grt() -- IntegralLibint2 does not implement GRT integrals yet.", __FILE__, __LINE__);
 }
 
 CartesianIter *
@@ -282,7 +292,7 @@ IntegralLibint2::grt()
 Ref<TwoBodyInt>
 IntegralLibint2::g12(double gamma)
 {
-  return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, grteval, gamma);
+  return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, g12eval, gamma);
 }
 
 void

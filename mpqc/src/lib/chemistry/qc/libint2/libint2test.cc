@@ -239,7 +239,6 @@ int main(int argc, char **argv)
 
   cout << "Testing Libint2' ERIs against IntV3's" << endl;
   compare_2e_libint2_vs_v3(ereplibint2,erepv3);
-  exit(0);
   //compare_2e_puream_libint2_vs_v3(ereplibint2,erepv3);
   cout << "Testing Libint2' ERIs (from G12Libint2) against IntV3's" << endl;
   compare_2e_libint2_vs_v3(g12libint2,erepv3);

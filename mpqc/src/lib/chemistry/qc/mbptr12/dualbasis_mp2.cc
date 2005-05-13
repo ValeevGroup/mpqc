@@ -73,9 +73,9 @@ R12IntEval::compute_dualEmp2_()
   Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
   tfactory->set_spaces(r12info_->act_occ_space(),canonvir_space_,
                        r12info_->act_occ_space(),canonvir_space_);
-  Ref<TwoBodyMOIntsTransform> ipjq_tform = tfactory->twobody_transform_13("(ix|jy)");
+  Ref<TwoBodyMOIntsTransform> ipjq_tform = tfactory->twobody_transform_13("(ix|jy)",corrfactor_->callback());
   ipjq_tform->set_num_te_types(num_te_types);
-  ipjq_tform->compute();
+  ipjq_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
   if (num_te_types != ijpq_acc->num_te_types())
     throw std::runtime_error("R12IntEval::compute_dualEmp2_() -- number of MO integral types is wrong");
@@ -120,7 +120,7 @@ R12IntEval::compute_dualEmp2_()
 
       // Get (|1/r12|) integrals
       tim_enter("MO ints retrieve");
-      double *klxy_buf_eri = ijpq_acc->retrieve_pair_block(k,l,R12IntsAcc::eri);
+      double *klxy_buf_eri = ijpq_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_eri());
       tim_exit("MO ints retrieve");
 
       if (debug_)
@@ -148,7 +148,7 @@ R12IntEval::compute_dualEmp2_()
       if (kl_aa != -1)
         emp2pair_aa_.set_element(kl_aa,emp2_aa);
 
-      ijpq_acc->release_pair_block(k,l,R12IntsAcc::eri);
+      ijpq_acc->release_pair_block(k,l,corrfactor_->tbint_type_eri());
     }
   }
 

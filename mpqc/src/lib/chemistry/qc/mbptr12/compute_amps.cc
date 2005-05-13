@@ -123,7 +123,7 @@ R12IntEval::compute_T2_vbsneqobs_()
 
     // Get (|1/r12|) integrals
     tim_enter("MO ints retrieve");
-    double *ijxy_buf_eri = ijab_acc->retrieve_pair_block(i,j,R12IntsAcc::eri);
+    double *ijxy_buf_eri = ijab_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_eri());
     tim_exit("MO ints retrieve");
 
     if (debug_)
@@ -160,7 +160,7 @@ R12IntEval::compute_T2_vbsneqobs_()
 
     }
     
-    ijab_acc->release_pair_block(i,j,R12IntsAcc::eri);
+    ijab_acc->release_pair_block(i,j,corrfactor_->tbint_type_eri());
   }
 
   globally_sum_scmatrix_(T2aa_);
@@ -229,8 +229,8 @@ R12IntEval::compute_R_vbsneqobs_(const Ref<TwoBodyMOIntsTransform>& ipjq_tform, 
 
     // Get (|1/r12|) integrals
     tim_enter("MO ints retrieve");
-    double *ijxy_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
-    double *jixy_buf_r12 = ijpq_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
+    double *ijxy_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12());
+    double *jixy_buf_r12 = ijpq_acc->retrieve_pair_block(j,i,corrfactor_->tbint_type_f12());
     tim_exit("MO ints retrieve");
 
     if (debug_)
@@ -259,8 +259,8 @@ R12IntEval::compute_R_vbsneqobs_(const Ref<TwoBodyMOIntsTransform>& ipjq_tform, 
 
     }
 
-    ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12);
-    ijpq_acc->release_pair_block(j,i,R12IntsAcc::r12);
+    ijpq_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12());
+    ijpq_acc->release_pair_block(j,i,corrfactor_->tbint_type_f12());
   }
 
   globally_sum_scmatrix_(Raa);

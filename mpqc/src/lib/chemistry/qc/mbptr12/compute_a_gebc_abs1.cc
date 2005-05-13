@@ -76,9 +76,9 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
   Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
   tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
                        r12info_->act_occ_space(),r12info_->ribs_space());
-  Ref<TwoBodyMOIntsTransform> ikjy_tform = tfactory->twobody_transform_13("(ik|jy)");
+  Ref<TwoBodyMOIntsTransform> ikjy_tform = tfactory->twobody_transform_13("(ik|jy)",corrfactor_->callback());
   ikjy_tform->set_num_te_types(num_te_types);
-  ikjy_tform->compute();
+  ikjy_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijky_acc = ikjy_tform->ints_acc();
   if (num_te_types != ijky_acc->num_te_types())
     throw std::runtime_error("R12IntEval::obs_contrib_to_VXB_gebc() -- number of MO integral types is wrong");
@@ -149,15 +149,15 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
 
       // Get (|1/r12|), (|r12|), (|[r12,T1]|), and (|[r12,T2]|) integrals
       tim_enter("MO ints retrieve");
-      double *klox_buf_eri = ijky_acc->retrieve_pair_block(k,l,R12IntsAcc::eri);
-      double *klox_buf_r12 = ijky_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
-      double *klox_buf_r12t1 = ijky_acc->retrieve_pair_block(k,l,R12IntsAcc::r12t1);
-      double *klox_buf_r12t2 = ijky_acc->retrieve_pair_block(k,l,R12IntsAcc::r12t2);
+      double *klox_buf_eri = ijky_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_eri());
+      double *klox_buf_r12 = ijky_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_f12());
+      double *klox_buf_r12t1 = ijky_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_t1f12());
+      double *klox_buf_r12t2 = ijky_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_t2f12());
 
-      double *lkox_buf_eri = ijky_acc->retrieve_pair_block(l,k,R12IntsAcc::eri);
-      double *lkox_buf_r12 = ijky_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
-      double *lkox_buf_r12t1 = ijky_acc->retrieve_pair_block(l,k,R12IntsAcc::r12t1);
-      double *lkox_buf_r12t2 = ijky_acc->retrieve_pair_block(l,k,R12IntsAcc::r12t2);
+      double *lkox_buf_eri = ijky_acc->retrieve_pair_block(l,k,corrfactor_->tbint_type_eri());
+      double *lkox_buf_r12 = ijky_acc->retrieve_pair_block(l,k,corrfactor_->tbint_type_f12());
+      double *lkox_buf_r12t1 = ijky_acc->retrieve_pair_block(l,k,corrfactor_->tbint_type_t1f12());
+      double *lkox_buf_r12t2 = ijky_acc->retrieve_pair_block(l,k,corrfactor_->tbint_type_t2f12());
       tim_exit("MO ints retrieve");
 
       if (debug_)
@@ -176,8 +176,8 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
           ExEnv::outn() << indent << "task " << me << ": (k,l) = " << k << "," << l << ": (i,j) = " << i << "," << j << endl;
 
         tim_enter("MO ints retrieve");
-        double *ijox_buf_r12 = ijky_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
-        double *jiox_buf_r12 = ijky_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
+        double *ijox_buf_r12 = ijky_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12());
+        double *jiox_buf_r12 = ijky_acc->retrieve_pair_block(j,i,corrfactor_->tbint_type_f12());
         tim_exit("MO ints retrieve");
 
         if (debug_)
@@ -300,17 +300,17 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
         if (ij_ab != ji_ab && kl_ab != lk_ab)
           printf("Tab[%d][%d] = %lf\n",ji_ab,lk_ab,Tab_ji[lk_ab]);
 #endif
-        ijky_acc->release_pair_block(i,j,R12IntsAcc::r12);
-        ijky_acc->release_pair_block(j,i,R12IntsAcc::r12);
+        ijky_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12());
+        ijky_acc->release_pair_block(j,i,corrfactor_->tbint_type_f12());
       }
-      ijky_acc->release_pair_block(k,l,R12IntsAcc::eri);
-      ijky_acc->release_pair_block(k,l,R12IntsAcc::r12);
-      ijky_acc->release_pair_block(k,l,R12IntsAcc::r12t1);
-      ijky_acc->release_pair_block(k,l,R12IntsAcc::r12t2);
-      ijky_acc->release_pair_block(l,k,R12IntsAcc::eri);
-      ijky_acc->release_pair_block(l,k,R12IntsAcc::r12);
-      ijky_acc->release_pair_block(l,k,R12IntsAcc::r12t1);
-      ijky_acc->release_pair_block(l,k,R12IntsAcc::r12t2);
+      ijky_acc->release_pair_block(k,l,corrfactor_->tbint_type_eri());
+      ijky_acc->release_pair_block(k,l,corrfactor_->tbint_type_f12());
+      ijky_acc->release_pair_block(k,l,corrfactor_->tbint_type_t1f12());
+      ijky_acc->release_pair_block(k,l,corrfactor_->tbint_type_t2f12());
+      ijky_acc->release_pair_block(l,k,corrfactor_->tbint_type_eri());
+      ijky_acc->release_pair_block(l,k,corrfactor_->tbint_type_f12());
+      ijky_acc->release_pair_block(l,k,corrfactor_->tbint_type_t1f12());
+      ijky_acc->release_pair_block(l,k,corrfactor_->tbint_type_t2f12());
     }
   }
   // Tasks that don't do any work here still need to create these timers

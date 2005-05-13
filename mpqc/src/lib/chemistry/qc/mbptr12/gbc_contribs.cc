@@ -62,7 +62,7 @@ R12IntEval::compute_B_gbc_1_()
   Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
   if (!ijpq_acc->is_committed())
-    ipjq_tform->compute();
+    ipjq_tform->compute(corrparam_);
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
@@ -100,16 +100,16 @@ R12IntEval::compute_B_gbc_1_()
 
   tfactory->set_spaces(act_occ_space,occ_space,
                        act_occ_space,ribs_space);
-  Ref<TwoBodyMOIntsTransform> imjA_tform = tfactory->twobody_transform_13("(im|jA)");
+  Ref<TwoBodyMOIntsTransform> imjA_tform = tfactory->twobody_transform_13("(im|jA)",corrfactor_->callback());
   imjA_tform->set_num_te_types(num_te_types);
-  imjA_tform->compute();
+  imjA_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijmA_acc = imjA_tform->ints_acc();
 
   tfactory->set_spaces(act_occ_space,focc_space,
                        act_occ_space,ribs_space);
-  Ref<TwoBodyMOIntsTransform> iMfjA_tform = tfactory->twobody_transform_13("(iMf|jA)");
+  Ref<TwoBodyMOIntsTransform> iMfjA_tform = tfactory->twobody_transform_13("(iMf|jA)",corrfactor_->callback());
   iMfjA_tform->set_num_te_types(num_te_types);
-  iMfjA_tform->compute();
+  iMfjA_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijMfA_acc = iMfjA_tform->ints_acc();
   
   SpatialMOPairIter_eq ij_iter(act_occ_space);
@@ -147,8 +147,8 @@ R12IntEval::compute_B_gbc_1_()
 
     // Get (|r12|) integrals
     tim_enter("MO ints retrieve");
-    double *klMfA_buf_r12 = ijMfA_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
-    double *lkMfA_buf_r12 = ijMfA_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
+    double *klMfA_buf_r12 = ijMfA_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_f12());
+    double *lkMfA_buf_r12 = ijMfA_acc->retrieve_pair_block(l,k,corrfactor_->tbint_type_f12());
     tim_exit("MO ints retrieve");
 
     if (debug_)
@@ -168,8 +168,8 @@ R12IntEval::compute_B_gbc_1_()
 
       // Get (|r12|) integrals
       tim_enter("MO ints retrieve");
-      double *ijmA_buf_r12 = ijmA_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
-      double *jimA_buf_r12 = ijmA_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
+      double *ijmA_buf_r12 = ijmA_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12());
+      double *jimA_buf_r12 = ijmA_acc->retrieve_pair_block(j,i,corrfactor_->tbint_type_f12());
       tim_exit("MO ints retrieve");
 
       if (debug_)
@@ -199,12 +199,12 @@ R12IntEval::compute_B_gbc_1_()
       if (ij_aa != -1 && kl_aa != -1)
         B_gbc1_aa.set_element(kl_aa,ij_aa,-(rr_klij-rr_lkij-rr_klji+rr_lkji));
         
-      ijmA_acc->release_pair_block(i,j,R12IntsAcc::r12);
-      ijmA_acc->release_pair_block(j,i,R12IntsAcc::r12);
+      ijmA_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12());
+      ijmA_acc->release_pair_block(j,i,corrfactor_->tbint_type_f12());
     }
 
-    ijMfA_acc->release_pair_block(k,l,R12IntsAcc::r12);
-    ijMfA_acc->release_pair_block(l,k,R12IntsAcc::r12);
+    ijMfA_acc->release_pair_block(k,l,corrfactor_->tbint_type_f12());
+    ijMfA_acc->release_pair_block(l,k,corrfactor_->tbint_type_f12());
   }
 
   //
@@ -212,9 +212,9 @@ R12IntEval::compute_B_gbc_1_()
   //
   tfactory->set_spaces(act_occ_space,focc_space,
                        act_occ_space,vir_space);
-  Ref<TwoBodyMOIntsTransform> iMfja_tform = tfactory->twobody_transform_13("(iMf|ja)");
+  Ref<TwoBodyMOIntsTransform> iMfja_tform = tfactory->twobody_transform_13("(iMf|ja)",corrfactor_->callback());
   iMfja_tform->set_num_te_types(num_te_types);
-  iMfja_tform->compute();
+  iMfja_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijMfa_acc = iMfja_tform->ints_acc();
 
   nproc_with_ints = tasks_with_ints_(ijMfa_acc,proc_with_ints);
@@ -238,8 +238,8 @@ R12IntEval::compute_B_gbc_1_()
 
     // Get (|r12|) integrals
     tim_enter("MO ints retrieve");
-    double *klMfa_buf_r12 = ijMfa_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
-    double *lkMfa_buf_r12 = ijMfa_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
+    double *klMfa_buf_r12 = ijMfa_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_f12());
+    double *lkMfa_buf_r12 = ijMfa_acc->retrieve_pair_block(l,k,corrfactor_->tbint_type_f12());
     tim_exit("MO ints retrieve");
 
     if (debug_)
@@ -259,7 +259,7 @@ R12IntEval::compute_B_gbc_1_()
 
       // Get (|r12|) integrals
       tim_enter("MO ints retrieve");
-      double *ijpq_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
+      double *ijpq_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12());
       tim_exit("MO ints retrieve");
 
       if (debug_)
@@ -298,11 +298,11 @@ R12IntEval::compute_B_gbc_1_()
             B_gbc1_aa.accumulate_element(kl_aa,ij_aa,-(rr_klij-rr_lkij-rr_klji+rr_lkji));
         }
       
-      ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12);
+      ijpq_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12());
     }
 
-    ijMfa_acc->release_pair_block(k,l,R12IntsAcc::r12);
-    ijMfa_acc->release_pair_block(l,k,R12IntsAcc::r12);
+    ijMfa_acc->release_pair_block(k,l,corrfactor_->tbint_type_f12());
+    ijMfa_acc->release_pair_block(l,k,corrfactor_->tbint_type_f12());
   }
 
   // Symmetrize the B contribution
@@ -338,7 +338,7 @@ R12IntEval::compute_B_gbc_2_()
   Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
   if (!ijpq_acc->is_committed())
-    ipjq_tform->compute();
+    ipjq_tform->compute(corrparam_);
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
@@ -383,23 +383,23 @@ R12IntEval::compute_B_gbc_2_()
 
   tfactory->set_spaces(act_occ_space,occ_space,
                        act_occ_space,ribs_space);
-  Ref<TwoBodyMOIntsTransform> imjA_tform = tfactory->twobody_transform_13("(im|jA)");
+  Ref<TwoBodyMOIntsTransform> imjA_tform = tfactory->twobody_transform_13("(im|jA)",corrfactor_->callback());
   imjA_tform->set_num_te_types(num_te_types);
-  imjA_tform->compute();
+  imjA_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijmA_acc = imjA_tform->ints_acc();
 
   tfactory->set_spaces(act_occ_space,occ_space,
                        factocc_space,ribs_space);
-  Ref<TwoBodyMOIntsTransform> kmlfA_tform = tfactory->twobody_transform_13("(km|lfA)");
+  Ref<TwoBodyMOIntsTransform> kmlfA_tform = tfactory->twobody_transform_13("(km|lfA)",corrfactor_->callback());
   kmlfA_tform->set_num_te_types(num_te_types);
-  kmlfA_tform->compute();
+  kmlfA_tform->compute(corrparam_);
   Ref<R12IntsAcc> klfmA_acc = kmlfA_tform->ints_acc();
 
   tfactory->set_spaces(factocc_space,occ_space,
                        act_occ_space,ribs_space);
-  Ref<TwoBodyMOIntsTransform> lfmkA_tform = tfactory->twobody_transform_13("(lfm|kA)");
+  Ref<TwoBodyMOIntsTransform> lfmkA_tform = tfactory->twobody_transform_13("(lfm|kA)",corrfactor_->callback());
   lfmkA_tform->set_num_te_types(num_te_types);
-  lfmkA_tform->compute();
+  lfmkA_tform->compute(corrparam_);
   Ref<R12IntsAcc> lfkmA_acc = lfmkA_tform->ints_acc();
 
   // Compute the number of tasks that have full access to the integrals
@@ -429,10 +429,10 @@ R12IntEval::compute_B_gbc_2_()
 
     // Get (|r12|) integrals
     tim_enter("MO ints retrieve");
-    double *klfmA_buf_r12 = klfmA_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
-    double *lfkmA_buf_r12 = lfkmA_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
-    double *lkfmA_buf_r12 = klfmA_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
-    double *kflmA_buf_r12 = lfkmA_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
+    double *klfmA_buf_r12 = klfmA_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_f12());
+    double *lfkmA_buf_r12 = lfkmA_acc->retrieve_pair_block(l,k,corrfactor_->tbint_type_f12());
+    double *lkfmA_buf_r12 = klfmA_acc->retrieve_pair_block(l,k,corrfactor_->tbint_type_f12());
+    double *kflmA_buf_r12 = lfkmA_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_f12());
     tim_exit("MO ints retrieve");
 
     if (debug_)
@@ -451,8 +451,8 @@ R12IntEval::compute_B_gbc_2_()
 
       // Get (|r12|) integrals
       tim_enter("MO ints retrieve");
-      double *ijmA_buf_r12 = ijmA_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
-      double *jimA_buf_r12 = ijmA_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
+      double *ijmA_buf_r12 = ijmA_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12());
+      double *jimA_buf_r12 = ijmA_acc->retrieve_pair_block(j,i,corrfactor_->tbint_type_f12());
       tim_exit("MO ints retrieve");
 
       if (debug_)
@@ -483,14 +483,14 @@ R12IntEval::compute_B_gbc_2_()
         }
       }
       
-      ijmA_acc->release_pair_block(i,j,R12IntsAcc::r12);
-      ijmA_acc->release_pair_block(j,i,R12IntsAcc::r12);
+      ijmA_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12());
+      ijmA_acc->release_pair_block(j,i,corrfactor_->tbint_type_f12());
     }
 
-    klfmA_acc->release_pair_block(k,l,R12IntsAcc::r12);
-    lfkmA_acc->release_pair_block(l,k,R12IntsAcc::r12);
-    klfmA_acc->release_pair_block(l,k,R12IntsAcc::r12);
-    lfkmA_acc->release_pair_block(k,l,R12IntsAcc::r12);
+    klfmA_acc->release_pair_block(k,l,corrfactor_->tbint_type_f12());
+    lfkmA_acc->release_pair_block(l,k,corrfactor_->tbint_type_f12());
+    klfmA_acc->release_pair_block(l,k,corrfactor_->tbint_type_f12());
+    lfkmA_acc->release_pair_block(k,l,corrfactor_->tbint_type_f12());
   }
 #endif
 
@@ -500,9 +500,9 @@ R12IntEval::compute_B_gbc_2_()
   //
   tfactory->set_spaces(act_occ_space,obs_space,
                        factocc_space,obs_space);
-  Ref<TwoBodyMOIntsTransform> kplfq_tform = tfactory->twobody_transform_13("(kp|lfq)");
+  Ref<TwoBodyMOIntsTransform> kplfq_tform = tfactory->twobody_transform_13("(kp|lfq)",corrfactor_->callback());
   kplfq_tform->set_num_te_types(num_te_types);
-  kplfq_tform->compute();
+  kplfq_tform->compute(corrparam_);
   Ref<R12IntsAcc> klfpq_acc = kplfq_tform->ints_acc();
 
   nbraket = obs_space->rank() * obs_space->rank();
@@ -523,8 +523,8 @@ R12IntEval::compute_B_gbc_2_()
 
     // Get (|r12|) integrals
     tim_enter("MO ints retrieve");
-    double *klfpq_buf_r12 = klfpq_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
-    double *lkfpq_buf_r12 = klfpq_acc->retrieve_pair_block(l,k,R12IntsAcc::r12);
+    double *klfpq_buf_r12 = klfpq_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_f12());
+    double *lkfpq_buf_r12 = klfpq_acc->retrieve_pair_block(l,k,corrfactor_->tbint_type_f12());
     tim_exit("MO ints retrieve");
 
     if (debug_)
@@ -543,8 +543,8 @@ R12IntEval::compute_B_gbc_2_()
 
       // Get (|r12|) integrals
       tim_enter("MO ints retrieve");
-      double *ijpq_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
-      double *jipq_buf_r12 = ijpq_acc->retrieve_pair_block(j,i,R12IntsAcc::r12);
+      double *ijpq_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12());
+      double *jipq_buf_r12 = ijpq_acc->retrieve_pair_block(j,i,corrfactor_->tbint_type_f12());
       tim_exit("MO ints retrieve");
 
       if (debug_)
@@ -571,12 +571,12 @@ R12IntEval::compute_B_gbc_2_()
         }
       }
       
-      ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12);
-      ijpq_acc->release_pair_block(j,i,R12IntsAcc::r12);
+      ijpq_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12());
+      ijpq_acc->release_pair_block(j,i,corrfactor_->tbint_type_f12());
     }
 
-    klfpq_acc->release_pair_block(k,l,R12IntsAcc::r12);
-    klfpq_acc->release_pair_block(l,k,R12IntsAcc::r12);
+    klfpq_acc->release_pair_block(k,l,corrfactor_->tbint_type_f12());
+    klfpq_acc->release_pair_block(l,k,corrfactor_->tbint_type_f12());
   }
   globally_sum_scmatrix_(X_ijklF_ab);
 #endif

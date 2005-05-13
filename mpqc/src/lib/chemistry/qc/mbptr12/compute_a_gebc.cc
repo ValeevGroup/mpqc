@@ -167,10 +167,10 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
 
       // Get (|1/r12|), (|r12|), and (|[r12,T1]|) integrals
       tim_enter("MO ints retrieve");
-      double *klxy_buf_eri = ipjq_acc->retrieve_pair_block(k,l,R12IntsAcc::eri);
-      double *klxy_buf_r12 = ipjq_acc->retrieve_pair_block(k,l,R12IntsAcc::r12);
-      double *klxy_buf_r12t1 = ipjq_acc->retrieve_pair_block(k,l,R12IntsAcc::r12t1);
-      double *lkxy_buf_r12t1 = ipjq_acc->retrieve_pair_block(l,k,R12IntsAcc::r12t1);
+      double *klxy_buf_eri = ipjq_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_eri());
+      double *klxy_buf_r12 = ipjq_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_f12());
+      double *klxy_buf_r12t1 = ipjq_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_t1f12());
+      double *lkxy_buf_r12t1 = ipjq_acc->retrieve_pair_block(l,k,corrfactor_->tbint_type_t1f12());
       tim_exit("MO ints retrieve");
 
       if (debug_)
@@ -213,7 +213,7 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
           ExEnv::outn() << indent << "task " << me << ": (k,l) = " << k << "," << l << ": (i,j) = " << i << "," << j << endl;
 
         tim_enter("MO ints retrieve");
-        double *ijxy_buf_r12 = ipjq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
+        double *ijxy_buf_r12 = ipjq_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12());
         tim_exit("MO ints retrieve");
 
         if (debug_)
@@ -342,12 +342,12 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
 	    if (ij_ab != ji_ab && kl_ab != lk_ab)
 	      printf("Tab[%d][%d] = %lf\n",ji_ab,lk_ab,Tab_ji[lk_ab]);
 #endif
-        ipjq_acc->release_pair_block(i,j,R12IntsAcc::r12);
+        ipjq_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12());
       }
-      ipjq_acc->release_pair_block(k,l,R12IntsAcc::eri);
-      ipjq_acc->release_pair_block(k,l,R12IntsAcc::r12);
-      ipjq_acc->release_pair_block(k,l,R12IntsAcc::r12t1);
-      ipjq_acc->release_pair_block(l,k,R12IntsAcc::r12t1);
+      ipjq_acc->release_pair_block(k,l,corrfactor_->tbint_type_eri());
+      ipjq_acc->release_pair_block(k,l,corrfactor_->tbint_type_f12());
+      ipjq_acc->release_pair_block(k,l,corrfactor_->tbint_type_t1f12());
+      ipjq_acc->release_pair_block(l,k,corrfactor_->tbint_type_t1f12());
     }
   }
   // Tasks that don't do any work here still need to create these timers

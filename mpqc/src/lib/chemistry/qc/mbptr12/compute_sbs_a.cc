@@ -931,10 +931,10 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 
 	// Get (|1/r12|), (|r12|), and (|[r12,T1]|) integrals
         tim_enter("MO ints retrieve");
-        double *klyx_buf_eri = r12intsacc_->retrieve_pair_block(k,l,R12IntsAcc::eri);
-        double *klyx_buf_r12 = r12intsacc_->retrieve_pair_block(k,l,R12IntsAcc::r12);
-        double *klyx_buf_r12t1 = r12intsacc_->retrieve_pair_block(k,l,R12IntsAcc::r12t1);
-	double *lkyx_buf_r12t1 = r12intsacc_->retrieve_pair_block(l,k,R12IntsAcc::r12t1);
+        double *klyx_buf_eri = r12intsacc_->retrieve_pair_block(k,l,corrfactor_->tbint_type_eri());
+        double *klyx_buf_r12 = r12intsacc_->retrieve_pair_block(k,l,corrfactor_->tbint_type_f12());
+        double *klyx_buf_r12t1 = r12intsacc_->retrieve_pair_block(k,l,corrfactor_->tbint_type_t1f12());
+	double *lkyx_buf_r12t1 = r12intsacc_->retrieve_pair_block(l,k,corrfactor_->tbint_type_t1f12());
         tim_exit("MO ints retrieve");
 
 	if (debug_)
@@ -954,7 +954,7 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
               ExEnv::outn() << indent << "task " << me << ": (k,l) = " << k << "," << l << ": (i,j) = " << i << "," << j << endl;
             
             tim_enter("MO ints retrieve");
-            double *ijyx_buf_r12 = r12intsacc_->retrieve_pair_block(i,j,R12IntsAcc::r12);
+            double *ijyx_buf_r12 = r12intsacc_->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12());
             tim_exit("MO ints retrieve");
 
             if (debug_)
@@ -1115,12 +1115,12 @@ R12IntEval_sbs_A::compute(RefSCMatrix& Vaa, RefSCMatrix& Xaa, RefSCMatrix& Baa,
 	    if (i != j && k != l)
 	      printf("Tab[%d][%d] = %lf\n",ji_ab,lk_ab,Tab_ji[lk_ab]);
 #endif
-            r12intsacc_->release_pair_block(i,j,R12IntsAcc::r12);
+            r12intsacc_->release_pair_block(i,j,corrfactor_->tbint_type_f12());
           }
-        r12intsacc_->release_pair_block(k,l,R12IntsAcc::eri);
-        r12intsacc_->release_pair_block(k,l,R12IntsAcc::r12);
-        r12intsacc_->release_pair_block(k,l,R12IntsAcc::r12t1);
-	r12intsacc_->release_pair_block(l,k,R12IntsAcc::r12t1);
+        r12intsacc_->release_pair_block(k,l,corrfactor_->tbint_type_eri());
+        r12intsacc_->release_pair_block(k,l,corrfactor_->tbint_type_f12());
+        r12intsacc_->release_pair_block(k,l,corrfactor_->tbint_type_t1f12());
+	r12intsacc_->release_pair_block(l,k,corrfactor_->tbint_type_t1f12());
       }
   }
   // Tasks that don't do any work here still need to create these timers

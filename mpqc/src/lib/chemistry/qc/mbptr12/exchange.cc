@@ -71,9 +71,9 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   // Gaussians are real, hence occ_space and bra_space can be swapped
   tfactory->set_spaces(occ_space,bra_space,
                        occ_space,ket_space);
-  Ref<TwoBodyMOIntsTransform> mxny_tform = tfactory->twobody_transform_13("(mx|ny)");
+  Ref<TwoBodyMOIntsTransform> mxny_tform = tfactory->twobody_transform_13("(mx|ny)",corrfactor_->callback());
   mxny_tform->set_num_te_types(num_te_types);
-  mxny_tform->compute();
+  mxny_tform->compute(corrparam_);
   Ref<R12IntsAcc> mnxy_acc = mxny_tform->ints_acc();
 
   const int nocc = occ_space->rank();
@@ -123,7 +123,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
 
       // Get (|1/r12|) integrals
       tim_enter("MO ints retrieve");
-      const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,R12IntsAcc::eri);
+      const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,corrfactor_->tbint_type_eri());
       tim_exit("MO ints retrieve");
 
       if (debug_)
@@ -133,7 +133,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
       const int unit_stride = 1;
       F77_DAXPY(&nbraket,&one,mmxy_buf_eri,&unit_stride,K_xy,&unit_stride);
 
-      mnxy_acc->release_pair_block(m,m,R12IntsAcc::eri);
+      mnxy_acc->release_pair_block(m,m,corrfactor_->tbint_type_eri());
     }
   }
   // Tasks that don't do any work here still need to create these timers

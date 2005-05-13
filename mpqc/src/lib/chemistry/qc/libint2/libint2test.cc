@@ -48,6 +48,9 @@ using namespace std;
 using namespace sc;
 
 #define LIBINT2
+#define GAMMA12 1.0
+// Set to 1 to test R12^2*G12 integrals (only possible if GAMMA12 is 0.0 AND COMPUTE_R12_2_G12 is set to 1 in comp_g12.cc)
+#define TEST_R12_2_G12 0
 
 void compare_1e_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3);
 void compare_2e_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3);
@@ -56,6 +59,8 @@ void compare_2e_bufsum_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>
 void compare_2e_unique_bufsum_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3);
 void print_ints(Ref<TwoBodyInt>& tblibint2, unsigned int num_te_types, const std::string& prefix);
 void print_all_ints(Ref<TwoBodyInt>& tblibint2, unsigned int num_te_types, const std::string& prefix);
+void test_r12_2_integrals(Ref<TwoBodyInt>& tblibint2, Ref<OneBodyInt>& s_libint2, Ref<OneBodyInt>& dm_libint2,
+                          Ref<OneBodyInt>& qm_libint2, unsigned int te_type);
 void compare_2e_permute(Ref<Integral>& libint2);
 void test_int_shell_1e(const Ref<KeyVal>&, const Ref<Int1eV3> &int1ev3,
                        void (Int1eV3::*int_shell_1e)(int,int),
@@ -211,7 +216,7 @@ int main(int argc, char **argv)
   testint(ereplibint2);
   storage_needed = integrallibint2->storage_required_g12(basis);
   cout << scprintf("Need %d bytes to create G12Libint2\n",storage_needed);
-  Ref<TwoBodyInt> g12libint2 = integrallibint2->g12(0.0);
+  Ref<TwoBodyInt> g12libint2 = integrallibint2->g12(GAMMA12);
   testint(g12libint2);
 #endif
   tim->exit();
@@ -259,6 +264,18 @@ int main(int argc, char **argv)
   print_all_ints(ereplibint2,1,"eri");
   cout << "Printing G12 integrals" << endl;
   print_all_ints(g12libint2,6,"g12");
+
+#if TEST_R12_2_G12
+  if (GAMMA12 == 0.0) {
+      cout << "Testing R12^2*G12 integrals (gamma=0) -> R12^2 integrals" << endl;
+      cout << "     NOTE: COMPUTE_R12_2_G12 must be set to 1 in comp_g12.cc" << endl;
+      Ref<OneBodyInt> s_libint2 = integrallibint2->overlap();
+      Ref<OneBodyInt> dm_libint2 = integrallibint2->dipole(0);
+      Ref<OneBodyInt> qm_libint2 = integrallibint2->quadrupole(0);
+      test_r12_2_integrals(g12libint2,s_libint2,dm_libint2,qm_libint2,5);
+    }
+#endif
+  
 #endif
 
   //  tim->print();
@@ -777,6 +794,128 @@ print_all_ints(Ref<TwoBodyInt>& tblibint2, unsigned int num_te_types, const std:
   for(int te_type=0;te_type<num_te_types;te_type++)
     fclose(teout[te_type]);
 }
+
+void test_r12_2_integrals(Ref<TwoBodyInt>& tblibint2, Ref<OneBodyInt>& s_libint2, Ref<OneBodyInt>& dm_libint2, Ref<OneBodyInt>& qm_libint2, unsigned int te_type)
+{
+  Ref<GaussianBasisSet> basis = tblibint2->basis();
+  const double *tbbuf;
+  tbbuf = tblibint2->buffer(static_cast<TwoBodyInt::tbint_type>(te_type));
+
+  // Compute dipole and quadrupole (xx, yy, zz) matrices
+  RefSCDimension dim = basis->basisdim();
+  Ref<SCMatrixKit> kit = basis->matrixkit();
+  RefSCMatrix s(dim, dim, kit);
+  RefSCMatrix mx(dim, dim, kit);
+  RefSCMatrix my(dim, dim, kit);
+  RefSCMatrix mz(dim, dim, kit);
+  RefSCMatrix mxx(dim, dim, kit);
+  RefSCMatrix myy(dim, dim, kit);
+  RefSCMatrix mzz(dim, dim, kit);
+  s.assign(0.0);
+  mx.assign(0.0);
+  my.assign(0.0);
+  mz.assign(0.0);
+  mxx.assign(0.0);
+  myy.assign(0.0);
+  mzz.assign(0.0);
+  for (int sh1=0; sh1<basis->nshell(); sh1++) {
+    int bf1_offset = basis->shell_to_function(sh1);
+    int nbf1 = basis->shell(sh1).nfunction();
+    for (int sh2=0; sh2<basis->nshell(); sh2++) {
+      int bf2_offset = basis->shell_to_function(sh2);
+      int nbf2 = basis->shell(sh2).nfunction();
+      
+      s_libint2->compute_shell(sh1,sh2);
+      const double *m0intsptr = s_libint2->buffer();
+      
+      dm_libint2->compute_shell(sh1,sh2);
+      const double *m1intsptr = dm_libint2->buffer();
+
+      qm_libint2->compute_shell(sh1,sh2);
+      const double *m2intsptr = qm_libint2->buffer();
+
+      int bf1_index = bf1_offset;
+      for(int bf1=0; bf1<nbf1; bf1++, bf1_index++, m1intsptr+=3*nbf2, m2intsptr+=6*nbf2) {
+	int bf2_index = bf2_offset;
+	const double *ptr1 = m1intsptr;
+        const double *ptr2 = m2intsptr;
+	for(int bf2=0; bf2<nbf2; bf2++, bf2_index++) {
+
+          s.set_element(bf1_index, bf2_index, *(m0intsptr++));
+          
+	  mx.set_element(bf1_index, bf2_index, *(ptr1++));
+	  my.set_element(bf1_index, bf2_index, *(ptr1++));
+	  mz.set_element(bf1_index, bf2_index, *(ptr1++));
+
+          mxx.set_element(bf1_index, bf2_index, *(ptr2++));
+          ptr2 += 2;
+          myy.set_element(bf1_index, bf2_index, *(ptr2++));
+          ptr2++;
+          mzz.set_element(bf1_index, bf2_index, *(ptr2++));
+
+        }
+      }
+    }
+  }
+      
+
+  for (int sh1=0; sh1<basis->nshell(); sh1++)
+    for (int sh2=0; sh2<basis->nshell(); sh2++)
+      for (int sh3=0; sh3<basis->nshell(); sh3++)
+	for (int sh4=0; sh4<basis->nshell(); sh4++)
+	  {
+              
+	      tblibint2->compute_shell(sh1,sh2,sh3,sh4);
+
+	      int nbf1 = basis->shell(sh1).nfunction();
+	      int nbf2 = basis->shell(sh2).nfunction();
+	      int nbf3 = basis->shell(sh3).nfunction();
+	      int nbf4 = basis->shell(sh4).nfunction();
+	    
+	      for (int i=0; i<nbf1; i++) {
+		int jmax = nbf2-1;
+		for (int j=0; j<=jmax; j++) {
+		  int kmax = nbf3-1;
+		  for (int k=0; k<=kmax; k++) {
+		    int lmax = nbf4-1;
+		    for (int l=0; l<=lmax; l++) {
+		      
+                      int index = (((i*nbf2+j)*nbf3+k)*nbf4+l);
+                      
+                      double comp_int = tbbuf[index];
+
+                      int bf1 = i + basis->shell_to_function(sh1);
+                      int bf2 = j + basis->shell_to_function(sh2);
+                      int bf3 = k + basis->shell_to_function(sh3);
+                      int bf4 = l + basis->shell_to_function(sh4);
+
+                      // compute r12^2 integral from dipole and quadrupole moment matrices
+                      double ref_int = -(mxx.get_element(bf1,bf2) +
+                                        myy.get_element(bf1,bf2) +
+                                        mzz.get_element(bf1,bf2)) * s.get_element(bf3,bf4)
+                                      - s.get_element(bf1,bf2) *
+                                       (mxx.get_element(bf3,bf4) +
+                                        myy.get_element(bf3,bf4) +
+                                        mzz.get_element(bf3,bf4))
+                                      - 2.0*(mx.get_element(bf1,bf2)*mx.get_element(bf3,bf4) +
+                                            my.get_element(bf1,bf2)*my.get_element(bf3,bf4) +
+                                            mz.get_element(bf1,bf2)*mz.get_element(bf3,bf4));
+
+                      if (fabs(comp_int - ref_int) > 1E-12) {
+                        cout << scprintf("Discrepancy in test_r12_2(sh1 = %d, sh2 = %d, sh3 = %d, sh4 = %d)\n",sh1,sh2,sh3,sh4);
+                        cout << scprintf("R12^2(RR in libint2) = %20.15lf\n",
+                                         comp_int);
+                        cout << scprintf("R12^2(factorized)    = %20.15lf\n\n",
+                                         ref_int);
+                        }
+                      
+                      }
+		    }
+		  }
+		}
+          }
+}
+
 
 void
 compare_2e_permute(Ref<Integral>& libint2)

@@ -55,8 +55,6 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
                       const Ref<MOIndexSpace>& ket_space)
 {
   Ref<MessageGrp> msg = r12info()->msg();
-  const int num_te_types = 1;
-  enum te_types {eri=0};
 
   tim_enter("exchange");
 
@@ -72,7 +70,6 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   tfactory->set_spaces(occ_space,bra_space,
                        occ_space,ket_space);
   Ref<TwoBodyMOIntsTransform> mxny_tform = tfactory->twobody_transform_13("(mx|ny)",corrfactor_->callback());
-  mxny_tform->set_num_te_types(num_te_types);
   mxny_tform->compute(corrparam_);
   Ref<R12IntsAcc> mnxy_acc = mxny_tform->ints_acc();
 

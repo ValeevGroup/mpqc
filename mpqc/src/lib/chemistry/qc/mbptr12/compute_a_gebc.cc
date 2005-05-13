@@ -61,8 +61,6 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
   Ref<MessageGrp> msg = r12info_->msg();
   Ref<MemoryGrp> mem = r12info_->mem();
   Ref<ThreadGrp> thr = r12info_->thr();
-  const int num_te_types = 3;
-  enum te_types {eri=0, r12=1, r12t1=2};
 
   tim_enter("mp2-r12a intermeds");
 
@@ -81,8 +79,6 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
     //ipjq_tform->set_num_te_types(num_te_types);
     ipjq_tform->compute(corrparam_);
   }
-  if (num_te_types != ipjq_acc->num_te_types())
-    throw std::runtime_error("R12IntEval::obs_contrib_to_VXB_gebc() -- number of MO integral types is wrong");
 
   int nocc = r12info_->nocc();
   int nocc_act = r12info_->nocc_act();

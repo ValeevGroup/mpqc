@@ -61,8 +61,6 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name)
   Ref<MessageGrp> msg = r12info_->msg();
   Ref<MemoryGrp> mem = r12info_->mem();
   Ref<ThreadGrp> thr = r12info_->thr();
-  const int num_te_types = 3;
-  enum te_types {eri=0, r12=1, r12t1=2};
 
   tim_enter("mp2-r12a intermeds (symmetric term)");
 
@@ -76,8 +74,6 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name)
     ipjq_tform->compute(corrparam_);
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
-  if (num_te_types != ijpq_acc->num_te_types())
-    throw std::runtime_error("R12IntEval::contrib_to_VXB_a_symm_() -- number of MO integral types is wrong");
 
   if (ipjq_tform->space2() != ipjq_tform->space4())
     throw std::runtime_error("R12IntEval::contrib_to_VXB_a_symm_() -- wrong type of transform is requested (space2 != space4)");

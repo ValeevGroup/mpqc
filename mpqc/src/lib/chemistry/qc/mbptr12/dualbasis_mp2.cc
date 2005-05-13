@@ -57,8 +57,6 @@ R12IntEval::compute_dualEmp2_()
   Ref<MessageGrp> msg = r12info()->msg();
   Ref<MemoryGrp> mem = r12info()->mem();
   Ref<ThreadGrp> thr = r12info()->thr();
-  const int num_te_types = 1;
-  enum te_types {eri=0};
 
   tim_enter("dual-basis MP2 energy");
   ExEnv::out0() << endl << indent
@@ -74,11 +72,8 @@ R12IntEval::compute_dualEmp2_()
   tfactory->set_spaces(r12info_->act_occ_space(),canonvir_space_,
                        r12info_->act_occ_space(),canonvir_space_);
   Ref<TwoBodyMOIntsTransform> ipjq_tform = tfactory->twobody_transform_13("(ix|jy)",corrfactor_->callback());
-  ipjq_tform->set_num_te_types(num_te_types);
   ipjq_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
-  if (num_te_types != ijpq_acc->num_te_types())
-    throw std::runtime_error("R12IntEval::compute_dualEmp2_() -- number of MO integral types is wrong");
 
   int nocc_act = r12info()->nocc_act();
   int ncanonvir = canonvir_space_->rank();
@@ -178,8 +173,6 @@ R12IntEval::compute_dualEmp1_()
   Ref<MessageGrp> msg = r12info()->msg();
   Ref<MemoryGrp> mem = r12info()->mem();
   Ref<ThreadGrp> thr = r12info()->thr();
-  const int num_te_types = 1;
-  enum te_types {eri=0};
 
   tim_enter("dual-basis MP1 energy");
   ExEnv::out0() << endl << indent

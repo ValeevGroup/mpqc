@@ -55,8 +55,6 @@ R12IntEval::coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>
                      const Ref<MOIndexSpace>& ket_space)
 {
   Ref<MessageGrp> msg = r12info()->msg();
-  const int num_te_types = 1;
-  enum te_types {eri=0};
 
   tim_enter("coulomb");
 
@@ -72,7 +70,6 @@ R12IntEval::coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>
   tfactory->set_spaces(occ_space,occ_space,
                        bra_space,ket_space);
   Ref<TwoBodyMOIntsTransform> mnxy_tform = tfactory->twobody_transform_12("(mn|xy)",corrfactor_->callback());
-  mnxy_tform->set_num_te_types(num_te_types);
   mnxy_tform->compute(corrparam_);
   Ref<R12IntsAcc> mnxy_acc = mnxy_tform->ints_acc();
 

@@ -158,8 +158,8 @@ public:
   Ref<MemoryGrp> mem() const;
   /// Returns the MessageGrp object
   Ref<MessageGrp> msg() const;
-  /// Returns the integrals accumulator object
-  Ref<R12IntsAcc> ints_acc() const;
+  /** Returns the integrals accumulator object. */
+  Ref<R12IntsAcc> ints_acc();
   /// Returns MOIndexSpace object 1
   Ref<MOIndexSpace> space1() const;
   /// Returns MOIndexSpace object 2
@@ -198,7 +198,7 @@ public:
   /// Computes transformed integrals. g is passed as parameter to the Integral::IntegralCallback
   virtual void compute(double g) = 0;
   /// Check symmetry of transformed integrals
-  virtual void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) const throw (ProgrammingError) =0;
+  virtual void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError) =0;
   /// Make the transform obsolete. Next call to compute() will recompute
   virtual void obsolete();
 

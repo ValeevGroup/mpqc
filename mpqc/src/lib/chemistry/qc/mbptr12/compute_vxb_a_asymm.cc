@@ -61,8 +61,6 @@ R12IntEval::contrib_to_VXB_a_asymm_(const std::string& tform_name)
   Ref<MessageGrp> msg = r12info_->msg();
   Ref<MemoryGrp> mem = r12info_->mem();
   Ref<ThreadGrp> thr = r12info_->thr();
-  const int num_te_types = 4;
-  enum te_types {eri=0, r12=1, r12t1=2, r12t2=3};
 
   tim_enter("mp2-r12a intermeds (asymmetric term)");
 
@@ -76,8 +74,6 @@ R12IntEval::contrib_to_VXB_a_asymm_(const std::string& tform_name)
     ikjy_tform->compute(corrparam_);
   if (!ijky_acc->is_active())
     ijky_acc->activate();
-  if (num_te_types != ijky_acc->num_te_types())
-    throw std::runtime_error("R12IntEval::contrib_to_VXB_a_asymm_() -- number of MO integral types is wrong");
 
   Ref<MOIndexSpace> mospace1 = ikjy_tform->space2();
   Ref<MOIndexSpace> mospace2 = ikjy_tform->space4();

@@ -342,8 +342,6 @@ R12IntEval::compute_A_simple_()
 
   tim_enter("A intermediate");
 
-  const int num_te_types = 2;
-  
   Ref<MessageGrp> msg = r12info_->msg();
   int me = msg->me();
   int nproc = msg->n();
@@ -373,7 +371,6 @@ R12IntEval::compute_A_simple_()
   tfactory->set_spaces(act_occ_space,act_vir_space,
                        act_occ_space,act_fvir_space);
   Ref<TwoBodyMOIntsTransform> iajBf_tform = tfactory->twobody_transform_13("(ia|jB_f)",corrfactor_->callback());
-  iajBf_tform->set_num_te_types(num_te_types);
   iajBf_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijaBf_acc = iajBf_tform->ints_acc();
   

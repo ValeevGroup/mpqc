@@ -60,8 +60,6 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
   Ref<MessageGrp> msg = r12info_->msg();
   Ref<MemoryGrp> mem = r12info_->mem();
   Ref<ThreadGrp> thr = r12info_->thr();
-  const int num_te_types = 4;
-  enum te_types {eri=0, r12=1, r12t1=2, r12t2=3};
 
   tim_enter("mp2-r12a intermeds");
 
@@ -77,11 +75,8 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
   tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
                        r12info_->act_occ_space(),r12info_->ribs_space());
   Ref<TwoBodyMOIntsTransform> ikjy_tform = tfactory->twobody_transform_13("(ik|jy)",corrfactor_->callback());
-  ikjy_tform->set_num_te_types(num_te_types);
   ikjy_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijky_acc = ikjy_tform->ints_acc();
-  if (num_te_types != ijky_acc->num_te_types())
-    throw std::runtime_error("R12IntEval::obs_contrib_to_VXB_gebc() -- number of MO integral types is wrong");
 
   const int nocc = r12info_->nocc();
   const int noso_ri = r12info_->ribs_space()->rank();

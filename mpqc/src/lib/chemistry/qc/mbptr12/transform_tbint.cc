@@ -145,7 +145,14 @@ Ref<MessageGrp>
 TwoBodyMOIntsTransform::msg() const {return  msg_; }
 
 Ref<R12IntsAcc>
-TwoBodyMOIntsTransform::ints_acc() const {return ints_acc_; }
+TwoBodyMOIntsTransform::ints_acc() {
+  if (ints_acc_)
+    return ints_acc_;
+  else {
+    init_acc();
+    return ints_acc_;
+    }
+}
 
 Ref<MOIndexSpace>
 TwoBodyMOIntsTransform::space1() const {return space1_;}

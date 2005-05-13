@@ -68,8 +68,6 @@ R12IntEval::compute_B_gbc_1_()
 
   tim_enter("B(GBC1) intermediate");
 
-  const int num_te_types = 2;
-  
   Ref<MessageGrp> msg = r12info()->msg();
   int me = msg->me();
   int nproc = msg->n();
@@ -101,14 +99,12 @@ R12IntEval::compute_B_gbc_1_()
   tfactory->set_spaces(act_occ_space,occ_space,
                        act_occ_space,ribs_space);
   Ref<TwoBodyMOIntsTransform> imjA_tform = tfactory->twobody_transform_13("(im|jA)",corrfactor_->callback());
-  imjA_tform->set_num_te_types(num_te_types);
   imjA_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijmA_acc = imjA_tform->ints_acc();
 
   tfactory->set_spaces(act_occ_space,focc_space,
                        act_occ_space,ribs_space);
   Ref<TwoBodyMOIntsTransform> iMfjA_tform = tfactory->twobody_transform_13("(iMf|jA)",corrfactor_->callback());
-  iMfjA_tform->set_num_te_types(num_te_types);
   iMfjA_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijMfA_acc = iMfjA_tform->ints_acc();
   
@@ -213,7 +209,6 @@ R12IntEval::compute_B_gbc_1_()
   tfactory->set_spaces(act_occ_space,focc_space,
                        act_occ_space,vir_space);
   Ref<TwoBodyMOIntsTransform> iMfja_tform = tfactory->twobody_transform_13("(iMf|ja)",corrfactor_->callback());
-  iMfja_tform->set_num_te_types(num_te_types);
   iMfja_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijMfa_acc = iMfja_tform->ints_acc();
 
@@ -344,7 +339,6 @@ R12IntEval::compute_B_gbc_2_()
 
   tim_enter("B(GBC2) intermediate");
 
-  const int num_te_types = 2; // only integrals of r_{12} are needed
   Ref<MessageGrp> msg = r12info_->msg();
   int me = msg->me();
   int nproc = msg->n();
@@ -384,21 +378,18 @@ R12IntEval::compute_B_gbc_2_()
   tfactory->set_spaces(act_occ_space,occ_space,
                        act_occ_space,ribs_space);
   Ref<TwoBodyMOIntsTransform> imjA_tform = tfactory->twobody_transform_13("(im|jA)",corrfactor_->callback());
-  imjA_tform->set_num_te_types(num_te_types);
   imjA_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijmA_acc = imjA_tform->ints_acc();
 
   tfactory->set_spaces(act_occ_space,occ_space,
                        factocc_space,ribs_space);
   Ref<TwoBodyMOIntsTransform> kmlfA_tform = tfactory->twobody_transform_13("(km|lfA)",corrfactor_->callback());
-  kmlfA_tform->set_num_te_types(num_te_types);
   kmlfA_tform->compute(corrparam_);
   Ref<R12IntsAcc> klfmA_acc = kmlfA_tform->ints_acc();
 
   tfactory->set_spaces(factocc_space,occ_space,
                        act_occ_space,ribs_space);
   Ref<TwoBodyMOIntsTransform> lfmkA_tform = tfactory->twobody_transform_13("(lfm|kA)",corrfactor_->callback());
-  lfmkA_tform->set_num_te_types(num_te_types);
   lfmkA_tform->compute(corrparam_);
   Ref<R12IntsAcc> lfkmA_acc = lfmkA_tform->ints_acc();
 
@@ -501,7 +492,6 @@ R12IntEval::compute_B_gbc_2_()
   tfactory->set_spaces(act_occ_space,obs_space,
                        factocc_space,obs_space);
   Ref<TwoBodyMOIntsTransform> kplfq_tform = tfactory->twobody_transform_13("(kp|lfq)",corrfactor_->callback());
-  kplfq_tform->set_num_te_types(num_te_types);
   kplfq_tform->compute(corrparam_);
   Ref<R12IntsAcc> klfpq_acc = kplfq_tform->ints_acc();
 

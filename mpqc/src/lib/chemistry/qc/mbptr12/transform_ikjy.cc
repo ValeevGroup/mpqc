@@ -176,7 +176,7 @@ TwoBodyMOIntsTransform_ikjy::init_acc()
 }
 
 void
-TwoBodyMOIntsTransform_ikjy::check_int_symm(double threshold) const throw (ProgrammingError)
+TwoBodyMOIntsTransform_ikjy::check_int_symm(double threshold) throw (ProgrammingError)
 {
   Ref<R12IntsAcc> iacc = ints_acc();
   if (!iacc->is_committed())

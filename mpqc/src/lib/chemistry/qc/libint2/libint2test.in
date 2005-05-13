@@ -152,9 +152,10 @@ currentbas<GaussianBasisSet>: (
   %name = "cc-pVDZ"
   %name = "cc-pVTZ"
   %name = "cc-pVQZ"
-  name = "DZ (Dunning)"
+  %name = "DZ (Dunning)"
   %name = "DZP (Dunning)"
-  %puream = no
+  name = "aug-cc-pVDZ"
+  puream = no
 )
 
 631gs<GaussianBasisSet>: (

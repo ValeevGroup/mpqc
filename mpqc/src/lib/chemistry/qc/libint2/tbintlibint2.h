@@ -38,6 +38,9 @@ typedef enum {erieval = 0, grteval = 1, g12eval = 2} tbinteval;
 
 /** This implements electron repulsion integrals in the IntLibint2 library. */
 class TwoBodyIntLibint2 : public TwoBodyInt {
+
+    unsigned int num_tbint_types_;
+
   protected:
     Ref<Int2eLibint2> int2elibint2_;
   
@@ -50,6 +53,10 @@ class TwoBodyIntLibint2 : public TwoBodyInt {
                  size_t storage, tbinteval int2etype,
                  double gamma=0.0);
     ~TwoBodyIntLibint2();
+
+    unsigned int num_tbint_types() const {
+      return num_tbint_types_;
+    }
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int);

@@ -47,6 +47,8 @@ class TwoBodyIntV3 : public TwoBodyInt {
                  size_t storage);
     ~TwoBodyIntV3();
 
+    unsigned int num_tbint_types() const { return 1; }
+
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int);
 

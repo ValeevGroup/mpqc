@@ -38,6 +38,9 @@ typedef enum {erieval = 0, grteval = 1, greval = 2} tbinteval;
 
 /** This implements electron repulsion integrals in the IntCints library. */
 class TwoBodyIntCints : public TwoBodyInt {
+
+    unsigned int num_tbint_types_;
+
   protected:
     Ref<Int2eCints> int2ecints_;
   
@@ -49,6 +52,10 @@ class TwoBodyIntCints : public TwoBodyInt {
                  const Ref<GaussianBasisSet>&b4,
                  size_t storage, tbinteval int2etype);
     ~TwoBodyIntCints();
+
+    unsigned int num_tbint_types() const {
+      return num_tbint_types_;
+    }
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int);

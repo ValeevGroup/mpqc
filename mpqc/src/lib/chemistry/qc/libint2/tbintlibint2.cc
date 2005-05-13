@@ -57,9 +57,11 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
   switch (int2etype) {
   case erieval:
     int2elibint2_ = new EriLibint2(integral,b1,b2,b3,b4,storage);
+    num_tbint_types_ = 1;
     break;
   case g12eval:
     int2elibint2_ = new G12Libint2(integral,b1,b2,b3,b4,storage,gamma);
+    num_tbint_types_ = 6;
     break;
   default:
     throw FeatureNotImplemented("Tried to construct a two-electron integral \

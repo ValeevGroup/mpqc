@@ -273,7 +273,7 @@ Integral::storage_unused()
 }
 
 Ref<TwoBodyInt>
-Integral::grt()
+Integral::grt(double g)
 {
   throw std::runtime_error("Integral::grt(): not implemented in this particular integrals factory.");
 }

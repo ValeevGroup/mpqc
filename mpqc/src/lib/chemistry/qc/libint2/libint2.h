@@ -111,7 +111,7 @@ class IntegralLibint2 : public Integral {
                                      
     Ref<TwoBodyInt> electron_repulsion();
 
-    Ref<TwoBodyInt> grt();
+    Ref<TwoBodyInt> grt(double gamma);
 
     Ref<TwoBodyInt> g12(double gamma);
 

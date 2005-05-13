@@ -272,18 +272,6 @@ Integral::storage_unused()
   return (tmp<0?0:tmp);
 }
 
-Ref<TwoBodyInt>
-Integral::grt(double g)
-{
-  throw std::runtime_error("Integral::grt(): not implemented in this particular integrals factory.");
-}
-
-Ref<TwoBodyInt>
-Integral::g12(double gamma)
-{
-  throw std::runtime_error("Integral::g12(): not implemented in this particular integrals factory.");
-}
-
 Ref<OneBodyOneCenterInt>
 Integral::point_charge1(const Ref<PointChargeData>&)
 {

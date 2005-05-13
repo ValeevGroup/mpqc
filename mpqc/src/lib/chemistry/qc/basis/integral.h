@@ -251,13 +251,13 @@ class Integral : public SavableState {
         integral of r12 operator, and "t" for the commutator
         integrals. Implementation for this kind of TwoBodyInt is
         optional. */
-    virtual Ref<TwoBodyInt> grt(double gamma=0);
+    virtual Ref<TwoBodyInt> grt(double gamma=0) =0;
     
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to explicitly correlated methods which use Gaussian geminals.
         gamma specifies the exponent of the Geminal.
         Implementation for this kind of TwoBodyInt is optional. */
-    virtual Ref<TwoBodyInt> g12(double gamma);
+    virtual Ref<TwoBodyInt> g12(double gamma) =0;
     
     /// Return the MessageGrp used by the integrals objects.
     Ref<MessageGrp> messagegrp() { return grp_; }

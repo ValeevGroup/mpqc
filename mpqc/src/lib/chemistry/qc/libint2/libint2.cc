@@ -283,7 +283,7 @@ IntegralLibint2::electron_repulsion_deriv()
 }
 
 Ref<TwoBodyInt>
-IntegralLibint2::grt()
+IntegralLibint2::grt(double gamma)
 {
   throw FeatureNotImplemented("IntegralLibint2::grt() is not implemented yet", __FILE__, __LINE__);
   //return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, grteval);

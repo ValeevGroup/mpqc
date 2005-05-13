@@ -107,7 +107,9 @@ class IntegralCints : public Integral {
                                      
     Ref<TwoBodyInt> electron_repulsion();
 
-    Ref<TwoBodyInt> grt();
+    Ref<TwoBodyInt> grt(double);
+
+    Ref<TwoBodyInt> g12(double);
 
     Ref<TwoBodyDerivInt> electron_repulsion_deriv();
 

@@ -36,6 +36,9 @@
 #include <dmalloc.h>
 #endif
 
+// Set to 1 to compute R12_2_G12 instead [g12,[t1,g12]]
+#define COMPUTE_R12_2_G12 0
+
 using namespace std;
 using namespace sc;
 
@@ -473,10 +476,12 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
             }
 
           // scale r12^2*g12 integrals by 4*gamma^2 to obtain [g12,[t1,g12]]
+#if !COMPUTE_R12_2_G12
           const double g2_4 = gamma_*gamma_*4.0;
           for(int ijkl=0; ijkl<size; ijkl++) {
             prim_ints_[TwoBodyInt::g12t1g12][buffer_offset + ijkl] *= g2_4;
             }
+#endif
           
 	  buffer_offset += size;
           }}}}

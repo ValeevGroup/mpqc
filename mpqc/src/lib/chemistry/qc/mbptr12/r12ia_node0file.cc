@@ -102,14 +102,10 @@ R12IntsAcc_Node0File::init(bool restart)
   int i, j, ij;
   for(i=0,ij=0;i<ni_;i++)
     for(j=0;j<nj_;j++,ij++) {
-      pairblk_[ij].ints_[eri] = NULL;
-      pairblk_[ij].ints_[r12] = NULL;
-      pairblk_[ij].ints_[r12t1] = NULL;
-      pairblk_[ij].ints_[r12t2] = NULL;
-      pairblk_[ij].refcount_[eri] = 0;
-      pairblk_[ij].refcount_[r12] = 0;
-      pairblk_[ij].refcount_[r12t1] = 0;
-      pairblk_[ij].refcount_[r12t2] = 0;
+      for(int type=0; type<num_te_types(); type++) {
+        pairblk_[ij].ints_[type] = NULL;
+        pairblk_[ij].refcount_[type] = 0;
+        }
       pairblk_[ij].offset_ = (off_t)ij*blocksize_;
     }
 

@@ -38,6 +38,7 @@
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/linearr12.h>
 
 using namespace std;
 
@@ -120,13 +121,16 @@ public:
   /// Returns MOIndexSpace object 4
   Ref<MOIndexSpace> space4() const;
 
+    typedef LinearR12::CorrelationFactor::IntegralCallback IntegralCallback;
   /** Creates an TwoBodyMOIntsTransform object that will compute (pq|rs) integrals
       stored in qs blocks for each pr */
-  Ref<TwoBodyMOIntsTransform> twobody_transform_13(const std::string& id);
+  Ref<TwoBodyMOIntsTransform>
+  twobody_transform_13(const std::string& id, const IntegralCallback& callback);
 
   /** Creates an TwoBodyMOIntsTransform object that will compute (pq|rs) integrals
     stored in rs blocks for each pq */
-  Ref<TwoBodyMOIntsTransform> twobody_transform_12(const std::string& id);
+  Ref<TwoBodyMOIntsTransform>
+  twobody_transform_12(const std::string& id, const IntegralCallback& callback);
   
 };
 

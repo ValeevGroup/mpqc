@@ -73,7 +73,7 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name)
   Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_(tform_name);
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
   if (ijpq_acc.null() || !ijpq_acc->is_committed())
-    ipjq_tform->compute();
+    ipjq_tform->compute(corrparam_);
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
   if (num_te_types != ijpq_acc->num_te_types())

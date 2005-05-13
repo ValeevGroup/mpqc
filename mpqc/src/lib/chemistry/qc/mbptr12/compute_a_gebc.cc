@@ -77,8 +77,9 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
   Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
   Ref<R12IntsAcc> ipjq_acc = ipjq_tform->ints_acc();
   if (!ipjq_acc->is_committed()) {
-    ipjq_tform->set_num_te_types(num_te_types);
-    ipjq_tform->compute();
+    // Do not adjust the number of te_types since the needed buffers may not be in the beginning of the list
+    //ipjq_tform->set_num_te_types(num_te_types);
+    ipjq_tform->compute(corrparam_);
   }
   if (num_te_types != ipjq_acc->num_te_types())
     throw std::runtime_error("R12IntEval::obs_contrib_to_VXB_gebc() -- number of MO integral types is wrong");

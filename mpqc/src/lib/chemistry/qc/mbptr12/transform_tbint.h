@@ -49,6 +49,10 @@ class MOIntsTransformFactory;
       using parallel integrals-direct AO->MO transformation. */
 
 class TwoBodyMOIntsTransform : virtual public SavableState {
+public:
+  typedef MOIntsTransformFactory::IntegralCallback IntegralCallback;
+
+private:
 
   // Construct the integrals accumulator object
   // This function depends on the particulars of the transformation
@@ -68,6 +72,8 @@ protected:
 
   std::string name_;
   Ref<MOIntsTransformFactory> factory_;
+
+  IntegralCallback callback_;
 
   Ref<MolecularEnergy> top_mole_;   // Top-level molecular energy to enable checkpointing
   Ref<MessageGrp> msg_;
@@ -129,11 +135,15 @@ protected:
   /** Prints out standard footer. Call at the end of compute().
    */
   void print_footer(std::ostream& os = ExEnv::out0()) const;
+
+  /** Checks whether this TwoBodyInt is compatible with this TwoBodyMOIntsTransform */
+  void check_tbint(const Ref<TwoBodyInt>& tbint) const;
     
 public:
 
   TwoBodyMOIntsTransform(StateIn&);
   TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
+                         const IntegralCallback& callback,
                          const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                          const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4);
   ~TwoBodyMOIntsTransform();
@@ -185,8 +195,8 @@ public:
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; }
   void set_print_percent(double print_percent) { print_percent_ = print_percent; }
 
-  /// Computes transformed integrals
-  virtual void compute() = 0;
+  /// Computes transformed integrals. g is passed as parameter to the Integral::IntegralCallback
+  virtual void compute(double g) = 0;
   /// Check symmetry of transformed integrals
   virtual void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) const throw (ProgrammingError) =0;
   /// Make the transform obsolete. Next call to compute() will recompute

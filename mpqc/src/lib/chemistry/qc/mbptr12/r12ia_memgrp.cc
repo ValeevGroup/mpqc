@@ -92,18 +92,14 @@ R12IntsAcc_MemoryGrp::init()
   pairblk_ = new struct PairBlkInfo[ni_*nj_];
   for(i=0,ij=0;i<ni_;i++)
     for(j=0;j<nj_;j++,ij++) {
-      pairblk_[ij].ints_[eri] = NULL;
-      pairblk_[ij].ints_[r12] = NULL;
-      pairblk_[ij].ints_[r12t1] = NULL;
-      pairblk_[ij].ints_[r12t2] = NULL;
-      pairblk_[ij].refcount_[eri] = 0;
-      pairblk_[ij].refcount_[r12] = 0;
-      pairblk_[ij].refcount_[r12t1] = 0;
-      pairblk_[ij].refcount_[r12t2] = 0;
+      for(int type=0; type<num_te_types(); type++) {
+        pairblk_[ij].ints_[type] = NULL;
+        pairblk_[ij].refcount_[type] = 0;
+        }
       int local_ij_index = ij_index(i,j)/nproc_;
       pairblk_[ij].offset_ = (distsize_t)local_ij_index*blksize_memgrp_*num_te_types() +
-        mem_->offset(ij_proc(i,j));
-    }
+                             mem_->offset(ij_proc(i,j));
+      }
 }
 
 void
@@ -149,10 +145,9 @@ R12IntsAcc_MemoryGrp::store_pair_block(int i, int j, double *ints)
   // For now store blocks local to this node ONLY
   if (is_local(i,j)) {
     int ij = ij_index(i,j);
-    pairblk_[ij].ints_[eri] = ints;
-    pairblk_[ij].ints_[r12] = (double*) ((size_t)ints + blksize_memgrp_);
-    pairblk_[ij].ints_[r12t1] = (double*) ((size_t)ints + 2*blksize_memgrp_);
-    pairblk_[ij].ints_[r12t2] = (double*) ((size_t)ints + 3*blksize_memgrp_);;
+    pairblk_[ij].ints_[0] = ints;
+    for(int type=1; type<num_te_types(); type++)
+      pairblk_[ij].ints_[type] = pairblk_[ij].ints_[type-1] + blksize_memgrp_;
   }
 }
 

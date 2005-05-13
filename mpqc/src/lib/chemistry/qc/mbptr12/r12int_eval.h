@@ -61,6 +61,8 @@ class R12IntEval : virtual public SavableState {
 
   bool gbc_;
   bool ebc_;
+  Ref<LinearR12::CorrelationFactor> corrfactor_;
+  double corrparam_;
   LinearR12::ABSMethod abs_method_;
   LinearR12::StandardApproximation stdapprox_;
   bool spinadapted_;
@@ -200,7 +202,8 @@ class R12IntEval : virtual public SavableState {
 
 public:
   R12IntEval(StateIn&);
-  R12IntEval(const Ref<R12IntEvalInfo>&, bool gbc = true, bool ebc = true,
+  R12IntEval(const Ref<R12IntEvalInfo>&, const Ref<LinearR12::CorrelationFactor>& corrfactor,
+             double corrparam, bool gbc = true, bool ebc = true,
              LinearR12::ABSMethod abs_method = LinearR12::ABS_CABSPlus,
              LinearR12::StandardApproximation stdapprox = LinearR12::StdApprox_Ap);
   ~R12IntEval();
@@ -214,6 +217,7 @@ public:
   void set_print_percent(double print_percent);
   void set_memory(size_t nbytes);
 
+  const Ref<LinearR12::CorrelationFactor> corrfactor() const { return corrfactor_; }
   const bool gbc() const { return gbc_; }
   const bool ebc() const { return ebc_; }
   const LinearR12::StandardApproximation stdapprox() const { return stdapprox_; }

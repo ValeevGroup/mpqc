@@ -107,6 +107,18 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   if (vir_basis_.pointer() == NULL)
     vir_basis_ = basis();
 
+  // Default is to use R12 factor
+  std::string corrfactor = keyval->stringvalue("corr_factor", KeyValValuestring("r12"));
+  corrparam_ = 0.0;
+  if (corrfactor == "r12")
+    corrfactor_ = LinearR12::CorrelationFactor::Instance(LinearR12::R12CorrFactor);
+  else if (corrfactor == "g12") {
+    corrfactor_ = LinearR12::CorrelationFactor::Instance(LinearR12::G12CorrFactor);
+    corrparam_ = keyval->doublevalue("corr_param", KeyValValuedouble(0.0));
+    }
+  else
+    throw FeatureNotImplemented("MBPT2_R12::MBPT2_R12 -- this correlation factor is not implemented",__FILE__,__LINE__);
+  
   // Default is to assume GBC
   gbc_ = keyval->booleanvalue("gbc",KeyValValueboolean((int)true));
   // Default is to assume EBC
@@ -290,6 +302,8 @@ MBPT2_R12::print(ostream&o) const
 {
   o << indent << "MBPT2_R12:" << endl;
   o << incindent;
+  o << indent << "Correlation factor: " << corrfactor_->label() << endl;
+  o << indent << "Correlation parameter: " << corrparam_ << endl;
   o << indent << "GBC assumed: " << (gbc_ ? "true" : "false") << endl;
   o << indent << "EBC assumed: " << (ebc_ ? "true" : "false") << endl;
   switch(abs_method_) {

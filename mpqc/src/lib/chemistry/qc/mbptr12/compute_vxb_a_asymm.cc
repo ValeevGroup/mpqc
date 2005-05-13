@@ -73,7 +73,7 @@ R12IntEval::contrib_to_VXB_a_asymm_(const std::string& tform_name)
   Ref<TwoBodyMOIntsTransform> ikjy_tform = get_tform_(tform_name);
   Ref<R12IntsAcc> ijky_acc = ikjy_tform->ints_acc();
   if (ijky_acc.null() || !ijky_acc->is_committed())
-    ikjy_tform->compute();
+    ikjy_tform->compute(corrparam_);
   if (!ijky_acc->is_active())
     ijky_acc->activate();
   if (num_te_types != ijky_acc->num_te_types())

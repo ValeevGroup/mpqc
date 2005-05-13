@@ -38,6 +38,7 @@
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
 #include <util/group/memory.h>
+#include <chemistry/qc/basis/tbint.h>
 
 using namespace std;
 
@@ -96,8 +97,8 @@ class R12IntsAcc: virtual public SavableState {
     void save_data_state(StateOut&);
 
     /// Types of two-body operators that R12IntsAcc understands
-    enum tbint_type { eri=0, r12=1, r12t1=2, r12t2=3};
-    static const int max_num_te_types_ = 4;
+    typedef unsigned int tbint_type;
+    static const unsigned int max_num_te_types_ = TwoBodyInt::max_num_tbint_types;
 
     /// The number of types of integrals that are being handled together
     int num_te_types() const { return num_te_types_; };

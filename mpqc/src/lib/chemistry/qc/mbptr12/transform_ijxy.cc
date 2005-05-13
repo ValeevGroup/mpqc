@@ -55,9 +55,10 @@ static ClassDesc TwoBodyMOIntsTransform_ijxy_cd(
   0, 0, create<TwoBodyMOIntsTransform_ijxy>);
 
 TwoBodyMOIntsTransform_ijxy::TwoBodyMOIntsTransform_ijxy(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
+                                                         const IntegralCallback& callback,
                                                          const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                                          const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
-  TwoBodyMOIntsTransform(name,factory,space1,space2,space3,space4)
+  TwoBodyMOIntsTransform(name,factory,callback,space1,space2,space3,space4)
 {
   init_vars();
 }

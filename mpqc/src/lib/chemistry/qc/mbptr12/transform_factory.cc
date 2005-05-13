@@ -138,16 +138,16 @@ MOIntsTransformFactory::set_spaces(const Ref<MOIndexSpace>& space1, const Ref<MO
 }
 
 Ref<TwoBodyMOIntsTransform>
-MOIntsTransformFactory::twobody_transform_13(const std::string& name)
+MOIntsTransformFactory::twobody_transform_13(const std::string& name, const IntegralCallback& callback)
 {
   Ref<TwoBodyMOIntsTransform> result;
 
   
   if (space2_->rank() <= space2_->basis()->nbasis()) {
-    result = new TwoBodyMOIntsTransform_ikjy(name,this,space1_,space2_,space3_,space4_);
+    result = new TwoBodyMOIntsTransform_ikjy(name,this,callback,space1_,space2_,space3_,space4_);
   }
   else {
-    result = new TwoBodyMOIntsTransform_ixjy(name,this,space1_,space2_,space3_,space4_);
+    result = new TwoBodyMOIntsTransform_ixjy(name,this,callback,space1_,space2_,space3_,space4_);
   }
 
   if (top_mole_.nonnull())
@@ -157,11 +157,11 @@ MOIntsTransformFactory::twobody_transform_13(const std::string& name)
 }
 
 Ref<TwoBodyMOIntsTransform>
-MOIntsTransformFactory::twobody_transform_12(const std::string& name)
+MOIntsTransformFactory::twobody_transform_12(const std::string& name, const IntegralCallback& callback)
 {
   Ref<TwoBodyMOIntsTransform> result;
 
-  result = new TwoBodyMOIntsTransform_ijxy(name,this,space1_,space2_,space3_,space4_);
+  result = new TwoBodyMOIntsTransform_ijxy(name,this,callback,space1_,space2_,space3_,space4_);
 
   if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);

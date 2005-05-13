@@ -57,7 +57,7 @@ R12IntEval::compute_T2_vbsneqobs_()
   Ref<TwoBodyMOIntsTransform> iajb_tform = get_tform_("(ia|jb)");
   Ref<R12IntsAcc> ijab_acc = iajb_tform->ints_acc();
   if (!ijab_acc->is_committed())
-    iajb_tform->compute();
+    iajb_tform->compute(corrparam_);
   if (!ijab_acc->is_active())
     ijab_acc->activate();
 
@@ -176,7 +176,7 @@ R12IntEval::compute_R_vbsneqobs_(const Ref<TwoBodyMOIntsTransform>& ipjq_tform, 
 {
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
   if (!ijpq_acc->is_committed())
-    ipjq_tform->compute();
+    ipjq_tform->compute(corrparam_);
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 

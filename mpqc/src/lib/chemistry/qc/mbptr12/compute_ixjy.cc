@@ -58,7 +58,7 @@ using namespace sc;
   Based on MBPT2::compute_mp2_energy()
  -------------------------------------*/
 void
-TwoBodyMOIntsTransform_ixjy::compute()
+TwoBodyMOIntsTransform_ixjy::compute(double tbint_param)
 {
   init_acc();
   if (ints_acc_->is_committed())
@@ -137,8 +137,9 @@ TwoBodyMOIntsTransform_ixjy::compute()
   integral->set_basis(space1_->basis(),space2_->basis(),space3_->basis(),space4_->basis());
   Ref<TwoBodyInt>* tbints = new Ref<TwoBodyInt>[thr_->nthread()];
   for (int i=0; i<thr_->nthread(); i++) {
-    tbints[i] = integral->grt();
+    tbints[i] = ((integral.pointer())->*callback_)(tbint_param);
   }
+  check_tbint(tbints[0]);
   if (debug_ >= 1)
     ExEnv::out0() << indent << scprintf("Memory used for integral storage:       %i Bytes",
       integral->storage_used()) << endl;

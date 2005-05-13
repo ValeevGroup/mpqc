@@ -79,6 +79,8 @@ class MBPT2_R12: public MBPT2 {
 
     double mp2_corr_energy_;
     double r12_corr_energy_;
+    Ref<LinearR12::CorrelationFactor> corrfactor_;
+    double corrparam_;
     LinearR12::StandardApproximation stdapprox_;
     LinearR12::ABSMethod abs_method_;
     R12IntEvalInfo::StoreMethod r12ints_method_;
@@ -117,6 +119,12 @@ class MBPT2_R12: public MBPT2 {
         is only valid if stdapprox=A'.
         The effect of setting this keyword to true is rather small --
         hence it is not recommended to use this keyword.
+      
+        <dt><tt>corr_factor</tt><dd> This string specifies which correlation factor to use.
+        Allowed values are "r12" and "g12". The default is "r12". This option is experimental.
+      
+        <dt><tt>corr_param</tt><dd> This floating-point value specifies an optional parameter
+        of the correlation factor. Default is zero.
       
         <dt><tt>stdapprox</tt><dd> This gives a string that must take on one
         of the values below.  The default is A'.

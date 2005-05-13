@@ -53,9 +53,10 @@ static ClassDesc TwoBodyMOIntsTransform_cd(
   0, 0, 0);
 
 TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
+                                               const MOIntsTransformFactory::IntegralCallback& callback,
                                                const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                                const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
-  name_(name), factory_(factory), space1_(space1), space2_(space2), space3_(space3), space4_(space4)
+  name_(name), factory_(factory), callback_(callback), space1_(space1), space2_(space2), space3_(space3), space4_(space4)
 {
   mem_ = MemoryGrp::get_default_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();
@@ -124,8 +125,8 @@ void
 TwoBodyMOIntsTransform::set_num_te_types(const int num_te_types)
 {
   // need to figure out how to determine the number of te types supported by this TwoBodyInt
-  if (num_te_types < 1 || num_te_types > TwoBodyInt::num_tbint_types)
-    throw std::runtime_error("TwoBodyMOIntsTransform::set_num_te_types() -- ");
+  if (num_te_types < 1 || num_te_types > TwoBodyInt::max_num_tbint_types)
+    throw std::runtime_error("TwoBodyMOIntsTransform::set_num_te_types() -- number of tbint types exceeds allowed maximum");
   num_te_types_ = num_te_types;
   init_vars();
 }
@@ -391,6 +392,15 @@ TwoBodyMOIntsTransform::print_footer(std::ostream& os) const
   if (debug_ >= 0)
     os << indent << "Exited " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
 }
+
+void
+TwoBodyMOIntsTransform::check_tbint(const Ref<TwoBodyInt>& tbint) const
+{
+  if (num_te_types_ > tbint->num_tbint_types())
+    throw AlgorithmException("TwoBodyMOIntsTransform::check_tbint() -- number of integral types supported by \
+current TwoBodyInt is less than\nthe number of types expected by the accumulator",__FILE__,__LINE__);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 

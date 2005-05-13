@@ -51,10 +51,11 @@ static ClassDesc R12IntEval_cd(
   typeid(R12IntEval),"R12IntEval",1,"virtual public SavableState",
   0, 0, 0);
 
-R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info, bool gbc, bool ebc,
+R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info, const Ref<LinearR12::CorrelationFactor>& corrfactor,
+                       double corrparam, bool gbc, bool ebc,
                        LinearR12::ABSMethod abs_method,
                        LinearR12::StandardApproximation stdapprox) :
-  r12info_(r12info), gbc_(gbc), ebc_(ebc), abs_method_(abs_method),
+  r12info_(r12info), corrfactor_(corrfactor), corrparam_(corrparam), gbc_(gbc), ebc_(ebc), abs_method_(abs_method),
   stdapprox_(stdapprox), spinadapted_(false), include_mp1_(false), evaluated_(false),
   debug_(0)
 {
@@ -371,9 +372,9 @@ R12IntEval::init_tforms_()
   if (ipjq_tform.null()) {
     tfactory->set_spaces(r12info_->act_occ_space(),r12info_->obs_space(),
                          r12info_->act_occ_space(),r12info_->obs_space());
-    ipjq_tform = tfactory->twobody_transform_13(ipjq_name);
+    ipjq_tform = tfactory->twobody_transform_13(ipjq_name,corrfactor_->callback());
     tform_map_[ipjq_name] = ipjq_tform;
-    tform_map_[ipjq_name]->set_num_te_types(3);
+    tform_map_[ipjq_name]->set_num_te_types(corrfactor_->num_tbint_types());
   }
 
   const std::string iajb_name = "(ia|jb)";
@@ -381,9 +382,9 @@ R12IntEval::init_tforms_()
   if (iajb_tform.null()) {
     tfactory->set_spaces(r12info_->act_occ_space(),r12info_->act_vir_space(),
                          r12info_->act_occ_space(),r12info_->act_vir_space());
-    iajb_tform = tfactory->twobody_transform_13(iajb_name);
+    iajb_tform = tfactory->twobody_transform_13(iajb_name,corrfactor_->callback());
     tform_map_[iajb_name] = iajb_tform;
-    tform_map_[iajb_name]->set_num_te_types(3);
+    tform_map_[iajb_name]->set_num_te_types(corrfactor_->num_tbint_types());
   }
 
   const std::string imja_name = "(im|ja)";
@@ -391,9 +392,9 @@ R12IntEval::init_tforms_()
   if (imja_tform.null()) {
     tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
                          r12info_->act_occ_space(),r12info_->act_vir_space());
-    imja_tform = tfactory->twobody_transform_13(imja_name);
+    imja_tform = tfactory->twobody_transform_13(imja_name,corrfactor_->callback());
     tform_map_[imja_name] = imja_tform;
-    tform_map_[imja_name]->set_num_te_types(4);
+    tform_map_[imja_name]->set_num_te_types(corrfactor_->num_tbint_types());
   }
 
   const std::string imjn_name = "(im|jn)";
@@ -401,9 +402,9 @@ R12IntEval::init_tforms_()
   if (imjn_tform.null()) {
     tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
                          r12info_->act_occ_space(),r12info_->occ_space());
-    imjn_tform = tfactory->twobody_transform_13(imjn_name);
+    imjn_tform = tfactory->twobody_transform_13(imjn_name,corrfactor_->callback());
     tform_map_[imjn_name] = imjn_tform;
-    tform_map_[imjn_name]->set_num_te_types(3);
+    tform_map_[imjn_name]->set_num_te_types(corrfactor_->num_tbint_types());
   }
 
   const std::string imjy_name = "(im|jy)";
@@ -411,9 +412,9 @@ R12IntEval::init_tforms_()
   if (imjy_tform.null()) {
     tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
                          r12info_->act_occ_space(),r12info_->ribs_space());
-    imjy_tform = tfactory->twobody_transform_13(imjy_name);
+    imjy_tform = tfactory->twobody_transform_13(imjy_name,corrfactor_->callback());
     tform_map_[imjy_name] = imjy_tform;
-    tform_map_[imjy_name]->set_num_te_types(4);
+    tform_map_[imjy_name]->set_num_te_types(corrfactor_->num_tbint_types());
   }
 
   iajb_tform = tform_map_[iajb_name];
@@ -430,7 +431,8 @@ R12IntEval::get_tform_(const std::string& tform_name)
     std::string errmsg = "R12IntEval::get_tform_() -- transform " + tform_name + " is not known";
     throw std::runtime_error(errmsg.c_str());
   }
-  tform->compute();
+  // Do not compute here since compute() call may take params now
+  //tform->compute(tbint_params);
 
   return tform;
 }

@@ -143,14 +143,12 @@ TwoBodyMOIntsTransform_123Inds::run()
   space3->coefs().convert(vector3);
 
   /*-------------------------------------------------------------
-    Find integrals buffers to 1/r12, r12, and [r12,T1] integrals
+    Get pointers to integral buffers
    -------------------------------------------------------------*/
   const int num_te_types = tform_->num_te_types();
-  const double *intbuf[TwoBodyInt::num_tbint_types];
-  intbuf[TwoBodyInt::eri] = tbint_->buffer(TwoBodyInt::eri);
-  intbuf[TwoBodyInt::r12] = tbint_->buffer(TwoBodyInt::r12);
-  intbuf[TwoBodyInt::r12t1] = tbint_->buffer(TwoBodyInt::r12t1);
-  intbuf[TwoBodyInt::r12t2] = tbint_->buffer(TwoBodyInt::r12t2);
+  const double **intbuf = new const double*[num_te_types];
+  for(int te_type=0; te_type<num_te_types; te_type++)
+    intbuf[te_type] = tbint_->buffer(static_cast<sc::TwoBodyInt::tbint_type>(te_type));
 
   /*-----------------------------------------------------
     Allocate buffers for partially transformed integrals
@@ -568,6 +566,7 @@ TwoBodyMOIntsTransform_123Inds::run()
   delete[] vector1[0]; delete[] vector1;
   delete[] vector2[0]; delete[] vector2;
   delete[] vector3[0]; delete[] vector3;
+  delete[] intbuf;
 }
 
 ////////////////////////////////////////////////////////////////////////////

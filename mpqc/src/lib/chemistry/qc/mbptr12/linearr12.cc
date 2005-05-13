@@ -81,6 +81,12 @@ CorrelationFactor::~CorrelationFactor()
 {
 }
 
+const LinearR12::CorrelationFactorID&
+CorrelationFactor::id() const
+{
+  return id_;
+}
+
 const std::string&
 CorrelationFactor::label() const
 {

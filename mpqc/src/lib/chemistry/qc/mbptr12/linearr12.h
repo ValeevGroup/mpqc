@@ -55,6 +55,8 @@ namespace sc {
         static Ref<CorrelationFactor> Instance(CorrelationFactorID);
         ~CorrelationFactor();
 
+        /// Returns CorrelationFactorID
+        const CorrelationFactorID& id() const;
         /// Returns label
         const std::string& label() const;
         /// Returns callback

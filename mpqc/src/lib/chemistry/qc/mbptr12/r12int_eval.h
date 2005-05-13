@@ -93,6 +93,10 @@ class R12IntEval : virtual public SavableState {
   void init_tforms_();
   /// Set intermediates to zero + add the "diagonal" contributions
   void init_intermeds_();
+  /// When F12=R12 number of simplifications occur so a specialized code is provided
+  void init_intermeds_r12_();
+  /// When F12 != R12 the following code is used
+  void init_intermeds_g12_();
   /// Compute r^2 contribution to X
   void r2_contrib_to_X_orig_();
   /// Compute r^2 contribution to X using compute_r2_()

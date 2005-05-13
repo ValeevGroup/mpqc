@@ -30,6 +30,7 @@
 #endif
 
 #include <util/misc/formio.h>
+#include <util/misc/scexception.h>
 #include <util/ref/ref.h>
 #include <util/state/state_bin.h>
 #include <math/scmat/local.h>
@@ -440,6 +441,22 @@ R12IntEval::get_tform_(const std::string& tform_name)
 void
 R12IntEval::init_intermeds_()
 {
+  if (corrfactor_->id() == LinearR12::R12CorrFactor) {
+    init_intermeds_r12_();
+    }
+  else if (corrfactor_->id() == LinearR12::G12CorrFactor) {
+    init_intermeds_g12_();
+    }
+  else
+    throw AlgorithmException("R12IntEval::init_intermeds_() -- unrecognized CorrelationFactor",__FILE__,__LINE__);
+
+  emp2pair_aa_.assign(0.0);
+  emp2pair_ab_.assign(0.0);
+}
+
+void
+R12IntEval::init_intermeds_r12_()
+{
   if (r12info_->msg()->me() == 0) {
     Vaa_->unit();
     Vab_->unit();
@@ -465,9 +482,6 @@ R12IntEval::init_intermeds_()
   Xab_.assign(0.0);
   //r2_contrib_to_X_orig_();
   r2_contrib_to_X_new_();
-
-  emp2pair_aa_.assign(0.0);
-  emp2pair_ab_.assign(0.0);
 }
 
 /// Compute <space1 space1|r_{12}^2|space1 space2>

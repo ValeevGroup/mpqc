@@ -98,7 +98,8 @@ class G12Libint2: public Int2eLibint2 {
       ExpensiveMath();
       double fac[4*LIBINT2_MAX_AM_R12kG12+1];
       double bc[4*LIBINT2_MAX_AM_R12kG12+1][4*LIBINT2_MAX_AM_R12kG12+1];
-    } ExpMath_;
+    };
+    ExpensiveMath ExpMath_;
   
   public:
     G12Libint2(Integral *,

@@ -55,7 +55,7 @@ G12Libint2::G12Libint2(Integral *integral,
 		   const Ref<GaussianBasisSet>& b3,
 		   const Ref<GaussianBasisSet>& b4,
 		   size_t storage, double gamma) :
-  Int2eLibint2(integral,b1,b2,b3,b4,storage), gamma_(gamma)
+  Int2eLibint2(integral,b1,b2,b3,b4,storage), ExpMath_(), gamma_(gamma)
 {
   // The static part of Libint's interface is automatically initialized in libint.cc
   int l1 = bs1_->max_angular_momentum();
@@ -206,7 +206,7 @@ G12Libint2::ExpensiveMath::ExpensiveMath()
   for(int i=1; i<=imax; i++) {
     fac[i] = i*fac[i-1];
     }
-  for(int i=1; i<=imax; i++) {
+  for(int i=0; i<=imax; i++) {
     for(int j=0; j<=i; j++) {
       bc[i][j] = fac[i]/(fac[j]*fac[i-j]);
       }

@@ -54,7 +54,8 @@ void compare_2e_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3)
 void compare_2e_puream_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3);
 void compare_2e_bufsum_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3);
 void compare_2e_unique_bufsum_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyInt>& tbv3);
-void print_g12_ints(Ref<TwoBodyInt>& tblibint2);
+void print_ints(Ref<TwoBodyInt>& tblibint2, unsigned int num_te_types, const std::string& prefix);
+void print_all_ints(Ref<TwoBodyInt>& tblibint2, unsigned int num_te_types, const std::string& prefix);
 void compare_2e_permute(Ref<Integral>& libint2);
 void test_int_shell_1e(const Ref<KeyVal>&, const Ref<Int1eV3> &int1ev3,
                        void (Int1eV3::*int_shell_1e)(int,int),
@@ -253,8 +254,11 @@ int main(int argc, char **argv)
   ereplibint2->set_redundant(0);
   erepv3->set_redundant(0);
   compare_2e_unique_bufsum_libint2_vs_v3(ereplibint2,erepv3);
-  cout << "Printing GRT integrals" << endl;
-  print_g12_ints(g12libint2);
+  ereplibint2->set_redundant(1);
+  cout << "Printing ERI integrals" << endl;
+  print_all_ints(ereplibint2,1,"eri");
+  cout << "Printing G12 integrals" << endl;
+  print_all_ints(g12libint2,6,"g12");
 #endif
 
   //  tim->print();
@@ -603,23 +607,20 @@ compare_2e_unique_bufsum_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<TwoBodyIn
 }
 
 void
-print_g12_ints(Ref<TwoBodyInt>& tblibint2)
+print_ints(Ref<TwoBodyInt>& tblibint2, unsigned int num_te_types, const std::string& prefix)
 {
   Ref<GaussianBasisSet> basis = tblibint2->basis();
-  const unsigned int num_te_types = 6;
   const double *buffer[num_te_types];
-  buffer[0] = tblibint2->buffer(TwoBodyInt::eri);
-  buffer[1] = tblibint2->buffer(TwoBodyInt::r12_m1_g12);
-  buffer[2] = tblibint2->buffer(TwoBodyInt::t1g12);
-  buffer[3] = tblibint2->buffer(TwoBodyInt::t2g12);
-  buffer[4] = tblibint2->buffer(TwoBodyInt::r12_0_g12);
-  buffer[5] = tblibint2->buffer(TwoBodyInt::g12t1g12);
+  for(int te_type=0; te_type<num_te_types; te_type++) {
+    buffer[te_type] = tblibint2->buffer(static_cast<TwoBodyInt::tbint_type>(te_type));
+  }
   char teout_filename[] = "teout0.dat";
   FILE *teout[num_te_types];
 
   for(int te_type=0;te_type<num_te_types;te_type++) {
     teout_filename[5] = te_type + '0';
-    teout[te_type] = fopen(teout_filename,"w");
+    std::string fname = prefix + teout_filename;
+    teout[te_type] = fopen(fname.c_str(),"w");
   }
 
   for (int ush1=0; ush1<basis->nshell(); ush1++)
@@ -673,7 +674,7 @@ print_g12_ints(Ref<TwoBodyInt>& tblibint2)
 	      int sh2 = S2[uq];
 	      int sh3 = S3[uq];
 	      int sh4 = S4[uq];
-
+              
 	      tblibint2->compute_shell(sh1,sh2,sh3,sh4);
 
 	      int nbf1 = basis->shell(sh1).nfunction();
@@ -685,7 +686,6 @@ print_g12_ints(Ref<TwoBodyInt>& tblibint2)
 	      int e34 = (sh3 == sh4) ? 1 : 0;
 	      int e13e24 = (((sh1 == sh3)&&(sh2==sh4))||((sh1==sh4)&&(sh2==sh3))) ? 1 : 0;
 
-	      int index = 0;
 	      for (int i=0; i<nbf1; i++) {
 		int jmax = e12 ? i : nbf2-1;
 		for (int j=0; j<=jmax; j++) {
@@ -694,6 +694,8 @@ print_g12_ints(Ref<TwoBodyInt>& tblibint2)
 		    int lmax = e34 ? ( (e13e24&&(i==k)) ? j : k) : ( (e13e24&&(i==k)) ? j : nbf4-1);
 		    for (int l=0; l<=lmax; l++) {
 		      
+                      int index = (((i*nbf2+j)*nbf3+k)*nbf4+l);
+                      
                       for(int te_type=0; te_type<num_te_types; te_type++) {
                         double integral = buffer[te_type][index];
                         if (fabs(integral) > 1E-15) {
@@ -705,13 +707,73 @@ print_g12_ints(Ref<TwoBodyInt>& tblibint2)
                                   integral);
                         }
                       }
-		      index++;
 		    }
 		  }
 		}
 	      }
 	    }
 	  }
+  for(int te_type=0;te_type<num_te_types;te_type++)
+    fclose(teout[te_type]);
+}
+
+void
+print_all_ints(Ref<TwoBodyInt>& tblibint2, unsigned int num_te_types, const std::string& prefix)
+{
+  Ref<GaussianBasisSet> basis = tblibint2->basis();
+  const double *buffer[num_te_types];
+  for(int te_type=0; te_type<num_te_types; te_type++) {
+    buffer[te_type] = tblibint2->buffer(static_cast<TwoBodyInt::tbint_type>(te_type));
+  }
+  char teout_filename[] = "teout0.dat";
+  FILE *teout[num_te_types];
+
+  for(int te_type=0;te_type<num_te_types;te_type++) {
+    teout_filename[5] = te_type + '0';
+    std::string fname = prefix + teout_filename;
+    teout[te_type] = fopen(fname.c_str(),"w");
+  }
+
+  for (int sh1=0; sh1<basis->nshell(); sh1++)
+    for (int sh2=0; sh2<basis->nshell(); sh2++)
+      for (int sh3=0; sh3<basis->nshell(); sh3++)
+	for (int sh4=0; sh4<basis->nshell(); sh4++)
+	  {
+              
+	      tblibint2->compute_shell(sh1,sh2,sh3,sh4);
+
+	      int nbf1 = basis->shell(sh1).nfunction();
+	      int nbf2 = basis->shell(sh2).nfunction();
+	      int nbf3 = basis->shell(sh3).nfunction();
+	      int nbf4 = basis->shell(sh4).nfunction();
+	    
+	      for (int i=0; i<nbf1; i++) {
+		int jmax = nbf2-1;
+		for (int j=0; j<=jmax; j++) {
+		  int kmax = nbf3-1;
+		  for (int k=0; k<=kmax; k++) {
+		    int lmax = nbf4-1;
+		    for (int l=0; l<=lmax; l++) {
+		      
+                      int index = (((i*nbf2+j)*nbf3+k)*nbf4+l);
+                      
+                      for(int te_type=0; te_type<num_te_types; te_type++) {
+                        double integral = buffer[te_type][index];
+                        if (fabs(integral) > 1E-15) {
+                          fprintf(teout[te_type], "%5d%5d%5d%5d%20.10lf\n",
+			          basis->shell_to_function(sh1) + i+1, 
+                                  basis->shell_to_function(sh2) + j+1, 
+                                  basis->shell_to_function(sh3) + k+1, 
+                                  basis->shell_to_function(sh4) + l+1, 
+                                  integral);
+                        }
+                      }
+		    }
+		  }
+		}
+	      }
+          }
+
   for(int te_type=0;te_type<num_te_types;te_type++)
     fclose(teout[te_type]);
 }

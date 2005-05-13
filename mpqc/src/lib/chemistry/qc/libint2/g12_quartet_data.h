@@ -159,17 +159,17 @@ inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double 
   //
   double rorg = rho * oorhog;
   double sqrt_rorg = sqrt(rorg);
-  Data->__ss_r_12_up_0_times_G12_ss___up_0[0] = rorg * sqrt_rorg * pair12->ovlp * pair34->ovlp * exp(-gamma*rorg*PQ2);
-  Data->__ss_r_12_up_2_times_G12_ss___up_0[0] = (1.5 + T) * Data->__ss_r_12_up_0_times_G12_ss___up_0[0] * oorhog;
-
-  //
-  // compute (00|-1|00)^m from Fj(x)
-  //
   double pfac_norm = int_shell1_->coefficient_unnorm(quartet_info_.gc1,p1)*
   int_shell2_->coefficient_unnorm(quartet_info_.gc2,p2)*
   int_shell3_->coefficient_unnorm(quartet_info_.gc3,p3)*
   int_shell4_->coefficient_unnorm(quartet_info_.gc4,p4);
-  double pfac = 2.0 * sqrt(rhog*M_1_PI) * Data->__ss_r_12_up_0_times_G12_ss___up_0[0] * scale * pfac_norm;
+  Data->__ss_r_12_up_0_times_G12_ss___up_0[0] = rorg * sqrt_rorg * pair12->ovlp * pair34->ovlp * exp(-gamma*rorg*PQ2) * pfac_norm;
+  Data->__ss_r_12_up_2_times_G12_ss___up_0[0] = (1.5 + T) * Data->__ss_r_12_up_0_times_G12_ss___up_0[0] * oorhog * pfac_norm;
+
+  //
+  // compute (00|-1|00)^m from Fj(x)
+  //
+  double pfac = 2.0 * sqrt(rhog*M_1_PI) * Data->__ss_r_12_up_0_times_G12_ss___up_0[0] * scale;
 
   const double *F;
   if(T < small_T){ 
@@ -183,10 +183,10 @@ inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double 
   double g_i[4*LIBINT2_MAX_AM_R12kG12+1];
   double r_i[4*LIBINT2_MAX_AM_R12kG12+1];
   double oorhog_i[4*LIBINT2_MAX_AM_R12kG12+1];
-  g_i[0] = gamma;
-  r_i[0] = rho;
-  oorhog_i[0] = oorhog;
-  for(int i=1; i<=quartet_info_.am+1; i++) {
+  g_i[0] = 1.0;
+  r_i[0] = 1.0;
+  oorhog_i[0] = 1.0;
+  for(int i=1; i<=quartet_info_.am; i++) {
       g_i[i] = g_i[i-1] * gamma;
       r_i[i] = r_i[i-1] * rho;
       oorhog_i[i] = oorhog_i[i-1] * oorhog;
@@ -199,7 +199,7 @@ inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double 
       ss_m1_ss[m] = ssss * oorhog_i[m];
     }
   
-  assign_FjT(Data,quartet_info_.am,ss_m1_ss,pfac);
+  assign_ss_r12m1g12_ss(Data,quartet_info_.am,ss_m1_ss,pfac);
 
 
   //

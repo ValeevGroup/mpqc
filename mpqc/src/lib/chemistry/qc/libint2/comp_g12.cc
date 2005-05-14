@@ -474,6 +474,14 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
               prim_ints_[TwoBodyInt::t2g12][buffer_offset + ijkl] *= -1.0;
               }
             }
+          
+          // MBPT2_R12 expects commutators be of [g12,T1] variety -- for now just multiply by -1
+          for(int ijkl=0; ijkl<size; ijkl++) {
+            prim_ints_[TwoBodyInt::t1g12][buffer_offset + ijkl] *= -1.0;
+            }
+          for(int ijkl=0; ijkl<size; ijkl++) {
+            prim_ints_[TwoBodyInt::t2g12][buffer_offset + ijkl] *= -1.0;
+            }
 
           // scale r12^2*g12 integrals by 4*gamma^2 to obtain [g12,[t1,g12]]
 #if !COMPUTE_R12_2_G12

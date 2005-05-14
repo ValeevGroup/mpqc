@@ -227,20 +227,6 @@ TwoBodyMOIntsTransform_ikjy::check_int_symm(double threshold) throw (Programming
   }
 }
 
-/*void
-TwoBodyMOIntsTransform_ikjy::compute()
-{
-  init_acc();
-
-  Ref<ThreadLock> lock = thr_->new_lock();
-  Ref<Integral> int_factory = factory_->integral();
-  int_factory->set_basis(space1_->basis(),space2_->basis(),space3_->basis(),space4_->basis());
-  Ref<TwoBodyInt> tbint = int_factory->grt();
-  Ref<TwoBodyMOIntsTransform> this_tform = this;
-  TwoBodyMOIntsTransform_123Inds* tform_123 = new TwoBodyMOIntsTransform_123Inds(this_tform,0,1,lock,tbint,-100.0,0);
-  tform_123->run();
-}*/
-
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

@@ -87,8 +87,9 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info, const Ref<LinearR12::
     emp2pair_aa_ = local_matrix_kit->vector(dim_ij_aa_);
     emp2pair_ab_ = local_matrix_kit->vector(dim_ij_ab_);
     
-    init_intermeds_();
     init_tforms_();
+    // init_intermeds_ may require initialized transforms
+    init_intermeds_();
 }
 
 R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
@@ -465,6 +466,15 @@ R12IntEval::init_intermeds_()
   else
     throw AlgorithmException("R12IntEval::init_intermeds_() -- unrecognized CorrelationFactor",__FILE__,__LINE__);
 
+    if (debug_ >=0) {
+      Vaa_.print("Alpha-alpha V(OBS) contribution");
+      Vab_.print("Alpha-beta V(OBS) contribution");
+      Xaa_.print("Alpha-alpha X(OBS) contribution");
+      Xab_.print("Alpha-beta X(OBS) contribution");
+      Baa_.print("Alpha-alpha B(OBS) contribution");
+      Bab_.print("Alpha-beta B(OBS) contribution");
+    }
+		        
   emp2pair_aa_.assign(0.0);
   emp2pair_ab_.assign(0.0);
 }
@@ -799,12 +809,20 @@ R12IntEval::compute()
   if (r12info_->basis_vir()->equiv(r12info_->basis())) {
     obs_contrib_to_VXB_gebc_vbseqobs_();
     if (debug_ > 1) {
+      Vaa_.print("Alpha-alpha V(OBS) contribution");
+      Vab_.print("Alpha-beta V(OBS) contribution");
+      Xaa_.print("Alpha-alpha X(OBS) contribution");
+      Xab_.print("Alpha-beta X(OBS) contribution");
       Baa_.print("Alpha-alpha B(OBS) contribution");
       Bab_.print("Alpha-beta B(OBS) contribution");
     }
     if (r12info_->basis() != r12info_->basis_ri())
       abs1_contrib_to_VXB_gebc_();
     if (debug_ > 1) {
+      Vaa_.print("Alpha-alpha V(OBS) contribution");
+      Vab_.print("Alpha-beta V(OBS) contribution");
+      Xaa_.print("Alpha-alpha X(OBS) contribution");
+      Xab_.print("Alpha-beta X(OBS) contribution");
       Baa_.print("Alpha-alpha B(OBS+ABS) contribution");
       Bab_.print("Alpha-beta B(OBS+ABS) contribution");
     }

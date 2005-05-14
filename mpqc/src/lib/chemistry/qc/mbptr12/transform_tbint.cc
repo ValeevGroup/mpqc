@@ -243,8 +243,10 @@ TwoBodyMOIntsTransform::init_vars()
                   space4_->memory_in_use(); // scf vector
     int nthreads = thr_->nthread();
     // ... plus the integrals evaluators
-    mem_static_ += nthreads * factory_->integral()->storage_required_grt(space1_->basis(),space2_->basis(),
-                                                            space3_->basis(),space4_->basis());
+    //mem_static_ += nthreads * factory_->integral()->storage_required_grt(space1_->basis(),space2_->basis(),
+    //                                                        space3_->basis(),space4_->basis());
+    // there is not enough information here to figure out how to compute memory requirements -- just add 1 MB
+    mem_static_ += 1000000;
     batchsize_ = compute_transform_batchsize_(mem_static_,rank_i); 
   }
 

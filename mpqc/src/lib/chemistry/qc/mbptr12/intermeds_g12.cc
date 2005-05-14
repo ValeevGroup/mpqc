@@ -66,7 +66,7 @@ R12IntEval::init_intermeds_g12_()
 
   //
   // Do the AO->MO transform:
-  // 1) get (im|jn) integrals of g12/r12 and [g12,[t1,g12]] operators to compute diagonal parts of V and B
+  // 1) get (im|jn) integrals of g12/r12 operator to compute diagonal parts of V
   //
   Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
   Ref<TwoBodyMOIntsTransform> imjn_tform = tform_map_["(im|jn)"];
@@ -76,12 +76,13 @@ R12IntEval::init_intermeds_g12_()
   }
 
   //
-  // 2) get (im|jn) integrals of g12*g12 operator (in reality use g12 integrals with the exponent multiplied by 2)
-  //    these integrals used to compute X
+  // 2) get (im|jn) integrals of [g12,[t1,g12]] and g12*g12 operator (use integrals with the exponent multiplied by 2, and additionally [g12,[t1,g12]] integral needs to be scaled by 0.25 to take into account that real exponent is half what the integral library thinks)
+  //    these integrals used to compute X and B
   //    NOTE: use occ_space instead of act_occ_space so that one block of code will handle all 3 integrals
   tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
                        r12info_->act_occ_space(),r12info_->occ_space());
   Ref<TwoBodyMOIntsTransform> im2jn_tform = tfactory->twobody_transform_13("(im|2|jn)",corrfactor_->callback());
+  im2jn_tform->set_num_te_types(corrfactor_->num_tbint_types());
   im2jn_tform->compute(2.0*corrparam_);
   Ref<R12IntsAcc> ij2mn_acc = im2jn_tform->ints_acc();
 
@@ -124,7 +125,7 @@ R12IntEval::init_intermeds_g12_()
       // Get the integrals
       tim_enter("MO ints retrieve");
       double *ijxy_buf_f12eri   = ijmn_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12eri());
-      double *ijxy_buf_f12t1f12 = ijmn_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12t1f12());
+      double *ijxy_buf_f12t1f12 = ij2mn_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12t1f12());
       double *ijxy_buf_f12f12   = ij2mn_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12f12());
       tim_exit("MO ints retrieve");
 
@@ -166,8 +167,8 @@ R12IntEval::init_intermeds_g12_()
         if (ij_aa != -1 && kl_aa != -1)
           Xaa_.set_element(ij_aa,kl_aa,X_ijkl_ab-X_ijlk_ab);
 
-        const double B_ijkl_ab = ijxy_buf_f12t1f12[kkll];
-        const double B_ijlk_ab = ijxy_buf_f12t1f12[llkk];
+        const double B_ijkl_ab = 0.25 * ijxy_buf_f12t1f12[kkll];
+        const double B_ijlk_ab = 0.25 * ijxy_buf_f12t1f12[llkk];
         const double B_jikl_ab = B_ijlk_ab;
         const double B_jilk_ab = B_ijkl_ab;
         Bab_.set_element(ij_ab,kl_ab,B_ijkl_ab);
@@ -180,7 +181,7 @@ R12IntEval::init_intermeds_g12_()
       }
       
       ij2mn_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12f12());
-      ijmn_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12t1f12());
+      ij2mn_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12t1f12());
       ijmn_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12eri());
     }
   }

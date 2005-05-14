@@ -58,6 +58,7 @@ CorrelationFactor::Instance(CorrelationFactorID id)
     cf->tbint_type_f12eri(TwoBodyInt::r12_m1_g12);
     cf->tbint_type_f12f12(TwoBodyInt::r12_0_g12);
     cf->tbint_type_f12t1f12(TwoBodyInt::g12t1g12);
+    break;
   default:
     throw FeatureNotImplemented("CorrelationFactor::Instance() -- correlation factor with this id not found",__FILE__,__LINE__);
   }

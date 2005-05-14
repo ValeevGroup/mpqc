@@ -71,12 +71,17 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
   ExEnv::out0() << incindent;
 
   // Do the AO->MO transform
-  Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
+  Ref<TwoBodyMOIntsTransform> ikjy_tform = get_tform_("(im|jy)");
+  Ref<R12IntsAcc> ijky_acc = ikjy_tform->ints_acc();
+  if (!ijky_acc->is_committed())
+    ikjy_tform->compute(corrparam_);
+  /*Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
   tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
                        r12info_->act_occ_space(),r12info_->ribs_space());
   Ref<TwoBodyMOIntsTransform> ikjy_tform = tfactory->twobody_transform_13("(ik|jy)",corrfactor_->callback());
+  ikjy_tform->set_num_te_types(corrfactor_->num_tbint_types());
   ikjy_tform->compute(corrparam_);
-  Ref<R12IntsAcc> ijky_acc = ikjy_tform->ints_acc();
+  Ref<R12IntsAcc> ijky_acc = ikjy_tform->ints_acc();*/
 
   const int nocc = r12info_->nocc();
   const int noso_ri = r12info_->ribs_space()->rank();

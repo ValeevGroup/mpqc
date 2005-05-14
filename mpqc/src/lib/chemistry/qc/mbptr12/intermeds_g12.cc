@@ -73,25 +73,26 @@ R12IntEval::init_intermeds_g12_()
   Ref<R12IntsAcc> ijmn_acc = imjn_tform->ints_acc();
   if (!ijmn_acc->is_committed()) {
     imjn_tform->compute(corrparam_);
-    }
+  }
 
   //
   // 2) get (im|jn) integrals of g12*g12 operator (in reality use g12 integrals with the exponent multiplied by 2)
   //    these integrals used to compute X
   //    NOTE: use occ_space instead of act_occ_space so that one block of code will handle all 3 integrals
-  tfactory->set_spaces(r12info_->act_occ_space(),r12info->occ_space(),
-                       r12info_->act_occ_space(),r12info->occ_space());
+  tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
+                       r12info_->act_occ_space(),r12info_->occ_space());
   Ref<TwoBodyMOIntsTransform> im2jn_tform = tfactory->twobody_transform_13("(im|2|jn)",corrfactor_->callback());
   im2jn_tform->compute(2.0*corrparam_);
   Ref<R12IntsAcc> ij2mn_acc = im2jn_tform->ints_acc();
 
+  int nfzc = r12info()->nfzc();
   int nocc_act = r12info()->nocc_act();
-  int ncanonvir = canonvir_space_->rank();
+  int nocc = r12info()->nocc();
 
-  ExEnv::out0() << indent << "Begin computation of energies" << endl;
-  SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
-  int naa = kl_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
-  int nab = kl_iter.nij_ab();          // Number of alpha-beta pairs
+  ExEnv::out0() << indent << "Begin computation of intermediates" << endl;
+  SpatialMOPairIter_eq ij_iter(r12info_->act_occ_space());
+  int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
+  int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
   if (debug_) {
     ExEnv::out0() << indent << "naa = " << naa << endl;
     ExEnv::out0() << indent << "nab = " << nab << endl;
@@ -104,53 +105,83 @@ R12IntEval::init_intermeds_g12_()
 
   if (ijmn_acc->has_access(me)) {
 
-    for(kl_iter.start();int(kl_iter);kl_iter.next()) {
+    for(ij_iter.start();int(ij_iter);ij_iter.next()) {
 
-      const int kl = kl_iter.ij();
-      // Figure out if this task will handle this kl
-      int kl_proc = kl%nproc_with_ints;
-      if (kl_proc != proc_with_ints[me])
+      const int ij = ij_iter.ij();
+      // Figure out if this task will handle this ij
+      int ij_proc = ij%nproc_with_ints;
+      if (ij_proc != proc_with_ints[me])
         continue;
-      const int k = kl_iter.i();
-      const int l = kl_iter.j();
-      const int kl_aa = kl_iter.ij_aa();
-      const int kl_ab = kl_iter.ij_ab();
-      const int lk_ab = kl_iter.ij_ba();
+      const int i = ij_iter.i();
+      const int j = ij_iter.j();
+      const int ij_aa = ij_iter.ij_aa();
+      const int ij_ab = ij_iter.ij_ab();
+      const int ji_ab = ij_iter.ij_ba();
 
       if (debug_)
-        ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
+        ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
 
-      // Get (|1/r12|) integrals
+      // Get the integrals
       tim_enter("MO ints retrieve");
-      double *klxy_buf_eri = ijmn_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_eri());
+      double *ijxy_buf_f12eri   = ijmn_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12eri());
+      double *ijxy_buf_f12t1f12 = ijmn_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12t1f12());
+      double *ijxy_buf_f12f12   = ij2mn_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12f12());
       tim_exit("MO ints retrieve");
 
       if (debug_)
-        ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
+        ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
 
-      // Compute MP2 energies
-      double emp2_aa = 0.0;
-      double emp2_ab = 0.0;
-      for(int a=0; a<ncanonvir; a++) {
-        for(int b=0; b<ncanonvir; b++) {
-          const int ab_offset = a*ncanonvir+b;
-          const int ba_offset = b*ncanonvir+a;
-          const double oo_delta_ijab = 1.0/(act_occ_evals(k)+act_occ_evals(l)-canonvir_evals(a)-canonvir_evals(b));
-          const double eri_kalb = klxy_buf_eri[ab_offset];
-          const double eri_kbla = klxy_buf_eri[ba_offset];
-          emp2_ab += 0.5*(eri_kalb * eri_kalb + eri_kbla * eri_kbla) * oo_delta_ijab;
-          if (kl_aa != -1) {
-            emp2_aa += (eri_kalb - eri_kbla) * (eri_kalb - eri_kbla) * oo_delta_ijab;
-          }
-        }
+      SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
+      for(kl_iter.start();int(kl_iter);kl_iter.next()) {
+        const int k = kl_iter.i();
+        const int l = kl_iter.j();
+        const int kl_aa = kl_iter.ij_aa();
+        const int kl_ab = kl_iter.ij_ab();
+        const int lk_ab = kl_iter.ij_ba();
+        
+        const int kk = k + nfzc;
+        const int ll = l + nfzc;
+        const int kkll = kk*nocc+ll;
+        const int llkk = kk*nocc+ll;
+        
+        const double V_ijkl_ab = ijxy_buf_f12eri[kkll];
+        const double V_ijlk_ab = ijxy_buf_f12eri[llkk];
+        const double V_jikl_ab = V_ijlk_ab;
+        const double V_jilk_ab = V_ijkl_ab;
+        Vab_.set_element(ij_ab,kl_ab,V_ijkl_ab);
+        Vab_.set_element(ji_ab,kl_ab,V_jikl_ab);
+        Vab_.set_element(ij_ab,lk_ab,V_ijlk_ab);
+        Vab_.set_element(ji_ab,lk_ab,V_jilk_ab);
+        if (ij_aa != -1 && kl_aa != -1)
+          Vaa_.set_element(ij_aa,kl_aa,V_ijkl_ab-V_ijlk_ab);
+      
+        const double X_ijkl_ab = ijxy_buf_f12f12[kkll];
+        const double X_ijlk_ab = ijxy_buf_f12f12[llkk];
+        const double X_jikl_ab = X_ijlk_ab;
+        const double X_jilk_ab = X_ijkl_ab;
+        Xab_.set_element(ij_ab,kl_ab,X_ijkl_ab);
+        Xab_.set_element(ji_ab,kl_ab,X_jikl_ab);
+        Xab_.set_element(ij_ab,lk_ab,X_ijlk_ab);
+        Xab_.set_element(ji_ab,lk_ab,X_jilk_ab);
+        if (ij_aa != -1 && kl_aa != -1)
+          Xaa_.set_element(ij_aa,kl_aa,X_ijkl_ab-X_ijlk_ab);
+
+        const double B_ijkl_ab = ijxy_buf_f12t1f12[kkll];
+        const double B_ijlk_ab = ijxy_buf_f12t1f12[llkk];
+        const double B_jikl_ab = B_ijlk_ab;
+        const double B_jilk_ab = B_ijkl_ab;
+        Bab_.set_element(ij_ab,kl_ab,B_ijkl_ab);
+        Bab_.set_element(ji_ab,kl_ab,B_jikl_ab);
+        Bab_.set_element(ij_ab,lk_ab,B_ijlk_ab);
+        Bab_.set_element(ji_ab,lk_ab,B_jilk_ab);
+        if (ij_aa != -1 && kl_aa != -1)
+          Baa_.set_element(ij_aa,kl_aa,B_ijkl_ab-B_ijlk_ab);
+        
       }
-      emp2pair_ab_.set_element(kl_ab,emp2_ab);
-      if (kl_ab != lk_ab)
-        emp2pair_ab_.set_element(lk_ab,emp2_ab);
-      if (kl_aa != -1)
-        emp2pair_aa_.set_element(kl_aa,emp2_aa);
-
-      ijmn_acc->release_pair_block(k,l,corrfactor_->tbint_type_eri());
+      
+      ij2mn_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12f12());
+      ijmn_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12t1f12());
+      ijmn_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12eri());
     }
   }
 
@@ -158,15 +189,16 @@ R12IntEval::init_intermeds_g12_()
   tim_enter("MO ints retrieve");
   tim_exit("MO ints retrieve");
 
-  ExEnv::out0() << indent << "End of computation of energies" << endl;
+  ExEnv::out0() << indent << "End of computation of intermediates" << endl;
   ijmn_acc->deactivate();
+  ij2mn_acc->deactivate();
   
   globally_sum_intermeds_();
 
   ExEnv::out0() << decindent;
-  ExEnv::out0() << indent << "Exited dual-basis MP2 energy evaluator" << endl;
+  ExEnv::out0() << indent << "Exited G12 diagonal intermediates evaluator" << endl;
 
-  tim_exit("dual-basis MP2 energy");
+  tim_exit("\"diagonal\" part of G12 intermediates");
   checkpoint_();
   
   return;

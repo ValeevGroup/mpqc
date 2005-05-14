@@ -441,6 +441,21 @@ R12IntEval::get_tform_(const std::string& tform_name)
 void
 R12IntEval::init_intermeds_()
 {
+    Vaa_.assign(0.0);
+    Vab_.assign(0.0);
+    Baa_.assign(0.0);
+    Bab_.assign(0.0);
+    Xaa_.assign(0.0);
+    Xab_.assign(0.0);
+    if (ebc_ == false) {
+      Aaa_.assign(0.0);
+      Aab_.assign(0.0);
+      T2aa_.assign(0.0);
+      T2ab_.assign(0.0);
+      Raa_.assign(0.0);
+      Rab_.assign(0.0);
+    }
+
   if (corrfactor_->id() == LinearR12::R12CorrFactor) {
     init_intermeds_r12_();
     }
@@ -463,23 +478,6 @@ R12IntEval::init_intermeds_r12_()
     Baa_->unit();
     Bab_->unit();
   }
-  else {
-    Vaa_.assign(0.0);
-    Vab_.assign(0.0);
-    Baa_.assign(0.0);
-    Bab_.assign(0.0);
-  }
-  if (ebc_ == false) {
-    Aaa_.assign(0.0);
-    Aab_.assign(0.0);
-    T2aa_.assign(0.0);
-    T2ab_.assign(0.0);
-    Raa_.assign(0.0);
-    Rab_.assign(0.0);
-  }
-
-  Xaa_.assign(0.0);
-  Xab_.assign(0.0);
   //r2_contrib_to_X_orig_();
   r2_contrib_to_X_new_();
 }

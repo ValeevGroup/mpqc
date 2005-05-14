@@ -124,6 +124,13 @@ TwoBodyMOIntsTransform_13Inds::run()
   const int nbasis4 = bs4->nbasis();
   double dtol = pow(2.0,tol_);
   const size_t memgrp_blksize = tform_->memgrp_blksize()/sizeof(double);
+  
+  //find the type of integrals which is antisymmetric with respect to permuting functions of particle 1
+  int tbtype_anti1 = -1;
+  if (tbint_->num_tbint_types() == 6)
+    tbtype_anti1 = TwoBodyInt::t1g12;
+  if (tbint_->num_tbint_types() == 4)
+    tbtype_anti1 = TwoBodyInt::r12t1;
 
   double** vector1 = new double*[nbasis1];
   double** vector3 = new double*[nbasis3];
@@ -173,7 +180,7 @@ TwoBodyMOIntsTransform_13Inds::run()
   if (print_interval == 0) print_interval = 1;
   if (time_interval == 0) time_interval = 1;
   if (work_per_thread == 0) work_per_thread = 1;
-
+  
   if (debug_) {
     lock_->lock();
     ExEnv::outn() << scprintf("%d:%d: starting get_task loop",me,mythread_) << endl;
@@ -290,8 +297,8 @@ TwoBodyMOIntsTransform_13Inds::run()
                     if (bs1_eq_bs2) {
 
                       double rsip_int_contrib = rsiq_int_contrib;
-                      if (te_type == TwoBodyInt::r12t1)
-                      rsip_int_contrib = -1.0*rsiq_int_contrib;
+                      if (te_type == tbtype_anti1)
+                        rsip_int_contrib = -1.0*rsiq_int_contrib;
 
                       if (p == q) {
                         for (int i=0; i<ni; i++) {

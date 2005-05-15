@@ -146,8 +146,9 @@ R12IntsAcc_MemoryGrp::store_pair_block(int i, int j, double *ints)
   if (is_local(i,j)) {
     int ij = ij_index(i,j);
     pairblk_[ij].ints_[0] = ints;
+    const size_t blksize = blksize_memgrp_/sizeof(double);
     for(int type=1; type<num_te_types(); type++)
-      pairblk_[ij].ints_[type] = pairblk_[ij].ints_[type-1] + blksize_memgrp_;
+      pairblk_[ij].ints_[type] = pairblk_[ij].ints_[type-1] + blksize;
   }
 }
 

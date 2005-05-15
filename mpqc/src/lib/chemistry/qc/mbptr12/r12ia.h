@@ -111,7 +111,7 @@ class R12IntsAcc: virtual public SavableState {
     /// Rank of index space y
     int ny() const { return ny_; }
     /// Size of each block of the integrals of one type, in double words
-    size_t blocksize() const { return blksize_; };
+    size_t blocksize() const { return nxy_; };
     /// The index of the first orbital in the next integrals batch to be stored
     int next_orbital() const;
 

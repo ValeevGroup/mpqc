@@ -33,9 +33,6 @@ else {
     $mpqcobj = '@compiledir@/src/bin/mpqc/mpqc';
 }
 
-# This is the number of jobs that will be run concurrently.
-$maxjobs = "1";
-
 # The threadgrp specialization
 $threadgrp = "none";
 
@@ -67,8 +64,8 @@ $nodes = "";
 # A format string to convert a node number to a node name
 $nodename = "%d";
 
-# The number of processes each job will use.
-$nprocperjob = "max";
+# The number of nodes each job will use.
+$nnodeperjob = "nnode";
 
 # The number of threads each process will use.
 $nthreadperproc = 1;
@@ -130,11 +127,10 @@ if (!GetOptions("small!" => \$small,
                 "memorygrp=s" => \$memorygrp,
                 "messagegrp=s" => \$messagegrp,
                 "integral=s" => \$integral,
-                "nprocperjob=i" => \$nprocperjob,
+                "nnodeperjob=i" => \$nnodeperjob,
                 "nthreadperproc=i" => \$nthreadperproc,
                 "nprocpernode=i" => \$nprocpernode,
                 "seq=s" => \$seq,
-                "maxjobs=i" => \$maxjobs,
                 "mpqc=s" => \$mpqc,
                 "readdir=s" => \$readdir,
                 "nodefile=s" => \$nodefile,
@@ -172,8 +168,7 @@ if ($help) {
     print  "  --mpqc path        the mpqc executable to use (value: $mpqc)\n";
     print  "  --objdir           run the mpqc exec in the object dir (value: $objdir)\n";
     print  "  --small            skip big runs in verification suite (value: $small)\n";
-    print  "  --maxjobs n        run n jobs at a time (value: $maxjobs)\n";
-    print  "  --nprocperjob n    run with n procs per job (value: $nprocperjob)\n";
+    print  "  --nnodeperjob n    run with n nodes per job (value: $nnodeperjob)\n";
     print  "  --nprocpernode n   run with n procs per node (value: $nprocpernode)\n";
     print  "  --nthreadperproc n use n threads per process (value: $nthreadperproc)\n";
     print  "  --threadgrp grp    use the given threading layer (value: $threadgrp)\n";
@@ -229,8 +224,8 @@ if ($help) {
     print  "  and a substitution is not available, then everything within the\n";
     print  "  the brackets is removed.\n";
     print  "Examples of the launch argument:\n";
-    print  "  mpirun [-hf %NODEFILE%] -n %NPROC% %MPQC% -o %OUTPUT% %INPUT%\n";
-    print  "  mpirun [-H %NODELIST%] -n %NPROC% %MPQC% -o %OUTPUT% %INPUT%\n";
+    print  "  mpirun [-hf %NODEFILE%] -n %NPROC% %MPQC% [-o %OUTPUT%] %INPUT%\n";
+    print  "  mpirun [-H %NODELIST%] -n %NPROC% %MPQC% [-o %OUTPUT%] %INPUT%\n";
     exit 0;
 }
 
@@ -253,19 +248,32 @@ elsif ("$nodefile" eq "" && exists($ENV{"PBS_NODEFILE"})) {
     $nodefile=$ENV{"PBS_NODEFILE"};
 }
 if ("$nodefile" ne "" && -f "$nodefile") {
+    my %nodesfound = {};
     open(NODEFILE,"<$nodefile");
     while(<NODEFILE>) {
         if (/(\S+)/) {
-            $nodelist[$#nodelist + 1] = $1;
+            my $nodename = $1;
+            if (!exists($nodesfound{$nodename})) {
+                $nodelist[$#nodelist + 1] = $nodename;
+                $nodesfound{$nodename} = 1;
+            }
         }
     }
     close(NODEFILE);
 }
 
-if ($nprocperjob eq "max") {
-    if ($#nodelist == -1) { $nprocperjob = 1; }
-    else { $nprocperjob = $#nodelist + 1; }
+if ($#nodelist == -1) {
+    $nnode = 1;
 }
+else {
+    $nnode = $#nodelist + 1;
+}
+
+if ($nnodeperjob eq "nnode") {
+    $nnodeperjob = $nnode;
+}
+
+$nprocperjob = $nnodeperjob * $nprocpernode;
 
 if ($messagegrp eq "none" && $nprocperjob > 1) {
     $messagegrp = "mpi";
@@ -278,21 +286,23 @@ elsif ($messagegrp eq "mpi") {
   $ENV{"MESSAGEGRP"} = "<MPIMessageGrp>:()";
 }
 
+$nnodeperjob = POSIX::ceil($nprocperjob / $nprocpernode);
+
 @jobnodes = ();
 %jobnnodes = {};
 %nodelist = {};
 %nodefile = {};
-$ijob = 0;
-foreach my $i (0..$#nodelist) {
-    $jobnnodes[$ijob++]++;
-    if ($ijob >= $maxjobs) { $ijob = 0; }
+$maxjobs = 0;
+while (($maxjobs + 1) * $nnodeperjob < $nnode) {
+    $jobnnodes[$maxjobs++] = $nnodeperjob;
+}
+
+if ($maxjobs == 0) {
+    die "requested $nnodeperjob nodes but have $nnode nodes";
 }
 
 $nodesbegin = 0;
 foreach my $i (0..$maxjobs-1) {
-    if ($jobnnodes[$i] > POSIX::ceil($nprocperjob / $nprocpernode)) {
-        $jobnnodes[$i] = POSIX::ceil($nprocperjob / $nprocpernode);
-    }
     my $nodesend = $nodesbegin + $jobnnodes[$i];
     my @slice = (@nodelist)[$nodesbegin..($nodesend-1)];
     $jobnodes{$i} = \@slice;
@@ -345,6 +355,15 @@ elsif ($integral eq "intv3") {
 
 ######################################################################
 
+$usingthreads = 0;
+if ($maxjobs > 1) {
+    require threads;
+    require threads::shared;
+    $usingthreads = 1;
+}
+
+######################################################################
+
 # autoflush output
 $| = 1;
 
@@ -393,13 +412,7 @@ printenvvar("INTEGRAL");
 $thecount = 0;
 $n = 0;
 
-$usingthreads = 0;
-if ($maxjobs > 1) {
-    require threads;
-    require threads::shared;
-
-    $usingthreads = 1;
-
+if ($usingthreads) {
     @threads = ();
 
     foreach my $jobnum (0..$maxjobs-1) {
@@ -574,20 +587,21 @@ sub outfile {
     if ($uniqout) {
         my $outbase = "$in";
         $outbase =~ s/\.[^.]*$//;
-        $out = sprintf "%s.out.%03d.%02d", "$outbase", $nprocperjob, $nthreadperproc;
+        $out = sprintf "%s.out.%03d.%02d.%02d", "$outbase",
+                        $nnodeperjob, $nprocpernode, $nthreadperproc;
         my $outversion = 1;
         while (-f "$out") {
             $outversion++;
-            $out = sprintf "%s.out.%03d.%02d.%02d", "$outbase", $nprocperjob, $nthreadperproc,
-                   $outversion;
+            $out = sprintf "%s.out.%03d.%02d.%02d.%02d", "$outbase",
+                           $nnodeperjob, $nprocpernode, $nthreadperproc,
+                           $outversion;
         }
     }
     elsif ($autoout) {
-        $out = "$in";
-        $out =~ s/\.[^.]*$/.out/;
-        if ("$out" eq "$in") {
-            $out = "$in".out;
-        }
+        my $outbase = "$in";
+        $outbase =~ s/\.[^.]*$//;
+        $out = sprintf "%s.out.%03d.%02d.%02d", "$outbase",
+                       $nnodeperjob, $nprocpernode, $nthreadperproc;
     }
     else {
         $out = "";

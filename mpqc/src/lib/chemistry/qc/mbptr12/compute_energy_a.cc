@@ -27,6 +27,7 @@
 
 #include <stdexcept>
 #include <scconfig.h>
+#include <util/misc/math.h>
 #include <util/misc/formio.h>
 #include <util/misc/timer.h>
 #include <math/scmat/abstract.h>
@@ -74,8 +75,8 @@ MBPT2_R12::compute_energy_a_()
     r12ap_energy_->compute_pair_function_ab(0,r1,r1);
     ExEnv::out0() << endl<<endl;
     const int nintervals = 100;
-    const double Phi_start = -3.1415928;
-    const double Phi_end = +3.1415928;
+    const double Phi_start = -(M_PI);
+    const double Phi_end = M_PI;
     const double dPhi = (Phi_end - Phi_start) / nintervals;
     const int npts = nintervals + 1;
     for(int i=-nintervals/2; i<=nintervals/2; i++) {

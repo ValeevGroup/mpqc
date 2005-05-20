@@ -29,6 +29,7 @@
 #include <math.h>
 
 #include <util/misc/formio.h>
+#include <util/misc/math.h>
 #include <chemistry/qc/intv3/macros.h>
 #include <chemistry/qc/intv3/fjt.h>
 #include <chemistry/qc/intv3/utils.h>
@@ -242,7 +243,7 @@ Int1eV3::comp_shell_overlap(int gc1, int i1, int j1, int k1,
         AmB = A[xyz] - B[xyz];
         AmB2 += AmB*AmB;
         }
-      ss =   pow(3.141592653589793/(exp1+exp2),1.5)
+      ss =   pow(M_PI/(exp1+exp2),1.5)
            * exp(- oozeta * exp1 * exp2 * AmB2);
       tmp     =  gshell1->coefficient_unnorm(gc1,i)
                * gshell2->coefficient_unnorm(gc2,j)
@@ -282,7 +283,7 @@ Int1eV3::int_prim_overlap(shell_t *pshell1, shell_t *pshell2,
     AmB = A[xyz] - B[xyz];
     AmB2 += AmB*AmB;
     }
-  ss =   pow(3.141592653589793/(gshell1->exponent(prim1)
+  ss =   pow(M_PI/(gshell1->exponent(prim1)
                                 +gshell2->exponent(prim2)),1.5)
        * exp(- oozeta * gshell1->exponent(prim1)
              * gshell2->exponent(prim2) * AmB2);
@@ -741,7 +742,7 @@ Int1eV3::comp_shell_kinetic(int gc1, int i1, int j1, int k1,
         AmB2 += AmB*AmB;
         }
       /* The s integral kinetic energy. */
-      ss =   pow(3.141592653589793/(gshell1->exponent(i)
+      ss =   pow(M_PI/(gshell1->exponent(i)
                                     +gshell2->exponent(j)),1.5)
            * exp(- xi * AmB2);
       sTs =  ss
@@ -1653,7 +1654,7 @@ Int1eV3::comp_shell_nuclear(int gc1, int i1, int j1, int k1,
         }
 
       /* The auxillary integral coeficients. */
-      auxcoef =   2.0 * 3.141592653589793/(gshell1->exponent(i)
+      auxcoef =   2.0 * M_PI/(gshell1->exponent(i)
                                            +gshell2->exponent(j))
            * exp(- oozeta * gshell1->exponent(i)
                  * gshell2->exponent(j) * AmB2);
@@ -1731,7 +1732,7 @@ Int1eV3::comp_shell_block_nuclear(int gc1, int a, int gc2, int b,
         }
 
       /* The auxillary integral coeficients. */
-      auxcoef =   2.0 * 3.141592653589793/(gshell1->exponent(i)
+      auxcoef =   2.0 * M_PI/(gshell1->exponent(i)
                                            +gshell2->exponent(j))
            * exp(- oozeta * gshell1->exponent(i)
                  * gshell2->exponent(j) * AmB2);
@@ -2122,7 +2123,7 @@ Int1eV3::comp_shell_efield(double *efield,
         }
 
       /* The auxillary integral coeficients. */
-      auxcoef =   2.0 * 3.141592653589793/(gshell1->exponent(i)
+      auxcoef =   2.0 * M_PI/(gshell1->exponent(i)
                                            +gshell2->exponent(j))
            * exp(- oozeta * gshell1->exponent(i)
                  * gshell2->exponent(j) * AmB2);
@@ -2190,7 +2191,7 @@ Int1eV3::comp_shell_block_efield(int gc1, int a, int gc2, int b,
         }
 
       /* The auxillary integral coeficients. */
-      auxcoef =   2.0 * 3.141592653589793/(gshell1->exponent(i)
+      auxcoef =   2.0 * M_PI/(gshell1->exponent(i)
                                            +gshell2->exponent(j))
            * exp(- oozeta * gshell1->exponent(i)
                  * gshell2->exponent(j) * AmB2);
@@ -2692,7 +2693,7 @@ Int1eV3::comp_shell_dipole(double* dipole,
         AmB = A[xyz] - B[xyz];
         AmB2 += AmB*AmB;
         }
-      ss =   pow(3.141592653589793/(exp1+exp2),1.5)
+      ss =   pow(M_PI/(exp1+exp2),1.5)
            * exp(- oozeta * exp1 * exp2 * AmB2);
       for (mu=0; mu<3; mu++) sMus[mu] = ss * PmC[mu];
       tmp     =  gshell1->coefficient_unnorm(gc1,i)

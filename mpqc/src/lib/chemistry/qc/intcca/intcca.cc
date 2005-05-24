@@ -26,6 +26,7 @@
 //
 
 #include <util/state/stateio.h>
+#include <util/misc/scexception.h>
 #include <util/misc/ccaenv.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/intcca/intcca.h>
@@ -109,10 +110,8 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
 #endif
 
   sc_molecule_ << keyval->describedclassvalue("molecule");
-  if (sc_molecule_.null()) {
-      ExEnv::err0() << indent << "molecule is required" << endl;
-      abort();
-  }
+  if (sc_molecule_.null())
+    throw InputError("molecule is required",__FILE__,__LINE__);
 
   gov::cca::Services &services = *CCAEnv::get_services();
   gov::cca::ports::BuilderService &bs = *CCAEnv::get_builder_service();
@@ -133,9 +132,8 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   molecule_.initialize(sc_molecule_->natom(),"bohr");
   for( int i=0; i<sc_molecule_->natom(); ++i ) {
     molecule_.set_atomic_number( i, sc_molecule_->Z(i) );
-    for( int j=0; j<3; ++j ) {
+    for( int j=0; j<3; ++j )
       molecule_.set_cart_coor( i, j, sc_molecule_->r(i,j) );
-    }
   }
   eval_factory_.set_molecule(molecule_);
 
@@ -164,7 +162,11 @@ IntegralCCA::~IntegralCCA()
 Integral*
 IntegralCCA::clone()
 {
+  // ???
   return new IntegralCCA(eval_factory_,use_opaque_);
+  // this wouldn't take much work
+  //throw FeatureNotImplemented("clone not implemented",
+  //                            __FILE__,__LINE__);
 }
 
 CartesianIter *
@@ -200,38 +202,31 @@ IntegralCCA::new_redundant_cartesian_sub_iter(int l)
 SphericalTransformIter *
 IntegralCCA::new_spherical_transform_iter(int l, int inv, int subl)
 {
-
 #ifdef INTV3_ORDER
 
-  if (l>maxl_ || l<0) {
-      ExEnv::errn() << "IntegralV3::new_spherical_transform_iter: bad l" << endl;
-      abort();
-    }
+  if (l>maxl_ || l<0)
+      throw ProgrammingError("new_spherical_transform_iter: bad l",
+                             __FILE__,__LINE__);
   if (subl == -1) subl = l;
-  if (subl < 0 || subl > l || (l-subl)%2 != 0) {
-      ExEnv::errn() << "IntegralV3::new_spherical_transform_iter: bad subl" << endl;
-      abort();
-    }
-  if (inv) {
+  if (subl < 0 || subl > l || (l-subl)%2 != 0)
+      throw ProgrammingError("new_spherical_transform_iter: bad subl",
+                             __FILE__,__LINE__);
+  if (inv)
       return new SphericalTransformIter(ist_[l][(l-subl)/2]);
-    }
   return new SphericalTransformIter(st_[l][(l-subl)/2]);
 
 #else
  
   // CINTS version
-  if (l>maxl_ || l<0) {
-      ExEnv::errn() << "IntegralCCA::new_spherical_transform_iter: bad l" << endl;
-      abort();
-    }
+  if (l>maxl_ || l<0)
+      throw ProgrammingError("new_spherical_transform_iter: bad l",
+                             __FILE__,__LINE__);
   if (subl == -1) subl = l;
-  if (subl < 0 || subl > l || (l-subl)%2 != 0) {
-      ExEnv::errn() << "IntegralCCA::new_spherical_transform_iter: bad subl" << endl;
-      abort();
-    }
-  if (inv) {
+  if (subl < 0 || subl > l || (l-subl)%2 != 0)
+      throw ProgrammingError("new_spherical_transform_iter: bad subl",
+                             __FILE__,__LINE__);
+  if (inv)
       return new SphericalTransformIter(ist_[l][(l-subl)/2]);
-    }
   return new SphericalTransformIter(st_[l][(l-subl)/2]);
 
 #endif
@@ -241,39 +236,32 @@ IntegralCCA::new_spherical_transform_iter(int l, int inv, int subl)
 const SphericalTransform *
 IntegralCCA::spherical_transform(int l, int inv, int subl)
 {
-
 #ifdef INTV3_ORDER
 
   // INTV3 version
-  if (l>maxl_ || l<0) {
-      ExEnv::errn() << "IntegralV3::spherical_transform_iter: bad l" << endl;
-      abort();
-    }
+  if (l>maxl_ || l<0)
+      throw ProgrammingError("spherical_transform_iter: bad l",
+                             __FILE__,__LINE__);
   if (subl == -1) subl = l;
-  if (subl < 0 || subl > l || (l-subl)%2 != 0) {
-      ExEnv::errn() << "IntegralV3::spherical_transform_iter: bad subl" << endl;
-      abort();
-    }
-  if (inv) {
+  if (subl < 0 || subl > l || (l-subl)%2 != 0)
+      throw ProgrammingError("spherical_transform_iter: bad subl",
+                             __FILE__,__LINE__);
+  if (inv)
       return ist_[l][(l-subl)/2];
-    }
   return st_[l][(l-subl)/2];
 
 #else
 
   // CINTS version
-  if (l>maxl_ || l<0) {
-      ExEnv::errn() << "IntegralCCA::spherical_transform_iter: bad l" << endl;
-      abort();
-    }
+  if (l>maxl_ || l<0)
+      throw ProgrammingError("spherical_transform_iter: bad l",
+                             __FILE__,__LINE__);
   if (subl == -1) subl = l;
-  if (subl < 0 || subl > l || (l-subl)%2 != 0) {
-      ExEnv::errn() << "IntegralCCA::spherical_transform_iter: bad subl" << endl;
-      abort();
-    }
-  if (inv) {
+  if (subl < 0 || subl > l || (l-subl)%2 != 0)
+      throw ProgrammingError("spherical_transform_iter: bad subl",
+                             __FILE__,__LINE__);
+  if (inv)
       return ist_[l][(l-subl)/2];
-    }
   return st_[l][(l-subl)/2];
 
 #endif
@@ -311,62 +299,71 @@ IntegralCCA::hcore()
 Ref<OneBodyInt>
 IntegralCCA::point_charge(const Ref<PointChargeData>& dat)
 {
-//   return new PointChargeIntV3(this, bs1_, bs2_, dat);
+  throw FeatureNotImplemented("point_charge not implemented",
+                              __FILE__,__LINE__);
 }
 
 Ref<OneBodyInt>
 IntegralCCA::efield_dot_vector(const Ref<EfieldDotVectorData>&dat)
 {
-//   return new EfieldDotVectorIntV3(this, bs1_, bs2_, dat);
+  throw FeatureNotImplemented("efield_dot_vector not iplemented",
+                              __FILE__,__LINE__);
 }
 
 Ref<OneBodyInt>
 IntegralCCA::dipole(const Ref<DipoleData>& dat)
 {
-//   return new DipoleIntV3(this, bs1_, bs2_, dat);
+  throw FeatureNotImplemented("dipole not implemented",
+                              __FILE__,__LINE__);
 }
 
 Ref<OneBodyInt>
 IntegralCCA::quadrupole(const Ref<DipoleData>& dat)
 {
-//   throw std::runtime_error("IntegralV3 cannot compute quadrupole moment integrals yet. Try IntegralCints instead.");
+  throw FeatureNotImplemented("quadrupole not implemented",
+                              __FILE__,__LINE__);
 }
 
 Ref<OneBodyDerivInt>
 IntegralCCA::overlap_deriv()
 {
-//   return new OneBodyDerivIntV3(this, bs1_, bs2_, &Int1eV3::overlap_1der);
+   return new OneBodyDerivIntCCA(this, bs1_, bs2_, eval_factory_, use_opaque_, 
+                                 "overlap_1der");
 }
 
 Ref<OneBodyDerivInt>
 IntegralCCA::kinetic_deriv()
 {
-//   return new OneBodyDerivIntV3(this, bs1_, bs2_, &Int1eV3::kinetic_1der);
+   return new OneBodyDerivIntCCA(this, bs1_, bs2_, eval_factory_, use_opaque_, 
+                                 "kinetic_1der");
 }
 
 Ref<OneBodyDerivInt>
 IntegralCCA::nuclear_deriv()
 {
-//   return new OneBodyDerivIntV3(this, bs1_, bs2_, &Int1eV3::nuclear_1der);
+   return new OneBodyDerivIntCCA(this, bs1_, bs2_, eval_factory_, use_opaque_, 
+                                 "nuclear_1der");
 }
 
 Ref<OneBodyDerivInt>
 IntegralCCA::hcore_deriv()
 {
-//   return new OneBodyDerivIntV3(this, bs1_, bs2_, &Int1eV3::hcore_1der);
+   return new OneBodyDerivIntCCA(this, bs1_, bs2_, eval_factory_, use_opaque_,
+                                 "hcore_1der");
 }
 
 Ref<TwoBodyInt>
 IntegralCCA::electron_repulsion()
 {
   return new TwoBodyIntCCA(this, bs1_, bs2_, bs3_, bs4_, 
-                           storage_, eval_factory_, use_opaque_ );
+                           storage_, eval_factory_, use_opaque_, "eri" );
 }
 
 Ref<TwoBodyDerivInt>
 IntegralCCA::electron_repulsion_deriv()
 {
-//   return new TwoBodyDerivIntV3(this, bs1_, bs2_, bs3_, bs4_, storage_);
+   return new TwoBodyDerivIntCCA(this, bs1_, bs2_, bs3_, bs4_, 
+                                 storage_, eval_factory_, use_opaque_, "eri_der1" );
 }
 
 void
@@ -383,7 +380,6 @@ IntegralCCA::set_basis(const Ref<GaussianBasisSet> &b1,
 void
 IntegralCCA::free_transforms()
 {
-
 #ifdef INTV3_ORDER
 
   // INTV3 version
@@ -427,7 +423,6 @@ IntegralCCA::free_transforms()
  void
  IntegralCCA::initialize_transforms()
  {
-
    maxl_ = -1;
    int maxam;
    maxam = bs1_.nonnull()?bs1_->max_angular_momentum():-1;

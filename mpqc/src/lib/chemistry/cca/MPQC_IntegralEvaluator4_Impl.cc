@@ -14,6 +14,7 @@
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._includes)
 #include <iostream>
 #include <sstream>
+#include <util/misc/scexception.h>
 #include <ccaiter.h>
 
 using namespace std;
@@ -110,28 +111,25 @@ throw ()
   else if ( package_ == "cints" )
     integral_ = new IntegralCints( bs1_ );
 #endif
-  else {
-    std::cout << "\nbad integral package name" << std::endl;
-    abort();
-  }
+  else
+    throw InputError("bad integral package name",
+                     __FILE__,__LINE__);
 
-  int error = 0;
-
+  // a proper solution is required here
   integral_->set_storage(200000000);
 
+  int error = 0;
   if(evaluator_label_ == "eri2")
     switch( deriv_level ) {
     case 0:
       { eval_ = integral_->electron_repulsion(); break; }
     case 1:
       { deriv_eval_ = integral_->electron_repulsion_deriv(); break; }
-    case 2:
-      { deriv_eval_ = integral_->electron_repulsion_deriv(); break; }
     default:
       ++error;
     }
 
-  if(evaluator_label_ == "grt")
+  else if(evaluator_label_ == "grt")
     switch( deriv_level ) {
     case 0:
         { eval_ = integral_->grt(); break; }
@@ -139,23 +137,28 @@ throw ()
       ++error;
     }
 
-  if( error ) {
-    std::cerr << "Error in MPQC::integralEvaluator4:\n"
-              << "  integral type is either unrecognized or not supported\n";
-    abort();
-  }
+  else
+    throw InputError("unsupported integral type",
+                     __FILE__,__LINE__);
 
-  if( eval_.nonnull() )
+  if( error )
+    throw InputError("derivative level not supported",
+                     __FILE__,__LINE__);
+
+  if( eval_.nonnull() ) {
     int_type_ = two_body;
-  else if( deriv_eval_.nonnull() )
-    int_type_ = two_body_deriv;
-  else {
-    std::cerr << "Error in MPQC::IntegralEvaluator4:\n"
-              << "  bad integral evaluator pointer\n";
-    abort();
+    sc_buffer_ = eval_->buffer();
   }
-
-  sc_buffer_ = eval_->buffer();
+  else if( deriv_eval_.nonnull() ) {
+    int_type_ = two_body_deriv;
+    sc_buffer_ = deriv_eval_->buffer();
+  }
+  else
+    throw ProgrammingError("bad integral evaluator pointer",
+                           __FILE__,__LINE__);
+  if( !sc_buffer_ ) 
+    throw ProgrammingError("buffer not assigned",
+                           __FILE__,__LINE__);
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.initialize)
 }
@@ -180,7 +183,8 @@ throw ()
  * @param shellnum2 Gaussian shell number 2.
  * @param shellnum3 Gaussian shell number 3.
  * @param shellnum4 Gaussian shell number 4.
- * @param deriv_level Derivative level. 
+ * @param deriv_level Derivative level.
+ * @param deriv_ctr Derivative center descriptor. 
  */
 void
 MPQC::IntegralEvaluator4_impl::compute (
@@ -188,34 +192,27 @@ MPQC::IntegralEvaluator4_impl::compute (
   /* in */ int64_t shellnum2,
   /* in */ int64_t shellnum3,
   /* in */ int64_t shellnum4,
-  /* in */ int64_t deriv_level ) 
+  /* in */ int64_t deriv_level,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute)
 
-  if( int_type_ == two_body ) {
-    //eval_->set_redundant(0);
-    eval_->compute_shell( (int) shellnum1, (int) shellnum2,
-			  (int) shellnum3, (int) shellnum4);
-    if( package_ == "intv3") {
-#ifndef INTV3_ORDER
-      reorder_intv3( shellnum1, shellnum2, shellnum3, shellnum4 );
-      //reorder_intv3_inline( shellnum1, shellnum2, shellnum3, shellnum4 );
-#endif
-    }
+  if( int_type_ == two_body )
+    eval_->compute_shell( shellnum1, shellnum2,
+			  shellnum3, shellnum4);
+  else if( int_type_ == two_body_deriv ) {
+//    deriv_eval_->compute_shell( shellnum1, shellnum2, 
+//                                shellnum3, shellnum4, ??? );
   }
-  else {
-    std::cout << "Eval4: int_type is " << int_type_ << std::endl
-              << " ... aborting\n";
-    abort();
-  }
+  else
+    throw ProgrammingError("bad evaluator type",
+                           __FILE__,__LINE__);
 
-  /* deriv wrt what center? interface needs work
-  else if( int_type == two_body_deriv ) {
-    deriv_eval_ptr_->compute_shell( shellnum1, shellnum2, ??? );
-    sc_buffer = deriv_eval_->buffer();
-  }
-  */
+#ifndef INTV3_ORDER
+  if( package_ == "intv3" )
+    reorder_intv3( shellnum1, shellnum2, shellnum3, shellnum4 );
+#endif
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.compute)
 }
@@ -228,6 +225,7 @@ throw ()
  * @param shellnum3 Guassian shell number 3.
  * @param shellnum4 Gaussian shell number 4.
  * @param deriv_level Derivative level.
+ * @param deriv_ctr Derivative center descriptor.
  * @return Borrowed sidl array buffer. 
  */
 ::sidl::array<double>
@@ -236,12 +234,13 @@ MPQC::IntegralEvaluator4_impl::compute_array (
   /* in */ int64_t shellnum2,
   /* in */ int64_t shellnum3,
   /* in */ int64_t shellnum4,
-  /* in */ int64_t deriv_level ) 
+  /* in */ int64_t deriv_level,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute_array)
 
-  compute( shellnum1, shellnum2, shellnum3, shellnum4, deriv_level );
+  compute( shellnum1, shellnum2, shellnum3, shellnum4, deriv_level, deriv_ctr );
 
   // this creates a proxy SIDL array
   int lower[1] = {0};
@@ -295,31 +294,6 @@ MPQC::IntegralEvaluator4_impl::initialize_reorder_intv3()
       }
       v3iter->next();
     }
-
-/*
-    reorder_[i] = new int[ncf];
-    ccaiter->start();
-    for( int j=0; j<ncf; ++j) {
-      v3iter->start();
-      for( int k=0; k<ncf; ++k) {
-        if( v3iter->a() == ccaiter->a() &&
-            v3iter->b() == ccaiter->b() &&
-            v3iter->c() == ccaiter->c() ) {
-          reorder_[i][j] = k;
-          k=ncf; //break k loop
-        }
-        else v3iter->next();
-      }
-      ccaiter->next();
-    }
-*/
-
-    //std::cout << "reorder am=" << i << std::endl;
-    //for( int j=0; j<ncf; ++j)
-    //  std::cout << reorder_[i][j] << " ";
-    //std::cout << std::endl;
-
-    delete v3iter;
   }
 
 }

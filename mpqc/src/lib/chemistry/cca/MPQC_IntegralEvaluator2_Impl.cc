@@ -121,8 +121,6 @@ throw ()
       { eval_ = integral_->overlap(); break; }
     case 1:
       { deriv_eval_ = integral_->overlap_deriv(); break; }
-    case 2:
-      { deriv_eval_ = integral_->overlap_deriv(); break; }
     default:
       ++error;
     }
@@ -132,8 +130,6 @@ throw ()
     case 0:
       { eval_ = integral_->kinetic(); break; }
     case 1:
-      { deriv_eval_ = integral_->kinetic_deriv(); break; }
-    case 2:
       { deriv_eval_ = integral_->kinetic_deriv(); break; }
     default:
       ++error;
@@ -145,8 +141,6 @@ throw ()
       { eval_ = integral_->nuclear(); break; }
     case 1:
       { deriv_eval_ = integral_->nuclear_deriv(); break; }
-    case 2:
-      { deriv_eval_ = integral_->nuclear_deriv(); break; }
     default:
       ++error;
     }
@@ -157,38 +151,16 @@ throw ()
       { eval_ = integral_->hcore(); break; }
     case 1:
       { deriv_eval_ = integral_->hcore_deriv(); break; }
-    case 2:
-      { deriv_eval_ = integral_->hcore_deriv(); break; }
     default:
       ++error;
     }
-  
-  /*else if(evaluator_label_ == "pointcharge")
-    switch( deriv_level ) {
-    case 0:
-    { eval_ = integral_->point_charge(); break; }
-    default:
-    ++error;
-    }
-    
-    else if(evaluator_label_ == "dipole")
-    switch( deriv_level ) {
-    case 0:
-    { eval_ = integral_->dipole(); break; }
-    default:
-    ++error;
-    }
-    
-    else if(evaluator_label_ == "quadrupole")
-    switch( deriv_level ) {
-    case 0:
-    { eval_ = integral_->quadrupole(); break; }
-    default:
-    ++error;
-    }*/
+
+  else 
+    throw InputError("unrecognized integral type",
+                     __FILE__,__LINE__);
   
   if( error ) {
-    throw InputError("unrecognized integral type",
+    throw InputError("derivative level not supported",
                      __FILE__,__LINE__);
   }
   
@@ -203,7 +175,10 @@ throw ()
   else 
     throw ProgrammingError("bad pointer to sc integal evaluator",
                            __FILE__,__LINE__);
-  
+  if( !sc_buffer_ )
+    throw ProgrammingError("buffer not assigned",
+                           __FILE__,__LINE__);
+
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.initialize)
 }
 
@@ -226,20 +201,23 @@ throw ()
  * @param shellnum1 Gaussian shell number 1.
  * @param shellnum2 Gaussian shell number 2.
  * @param deriv_level Derivative level. 
+ * @param deriv_ctr Derivative center descriptor. 
  */
 void
 MPQC::IntegralEvaluator2_impl::compute (
   /* in */ int64_t shellnum1,
   /* in */ int64_t shellnum2,
-  /* in */ int64_t deriv_level ) 
+  /* in */ int64_t deriv_level,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute)
 
   if( int_type_ == one_body )
     eval_->compute_shell( shellnum1, shellnum2 );
-  else if( int_type_ == one_body_deriv )
-    deriv_eval_->compute_shell( shellnum1, shellnum2, deriv_level );
+  else if( int_type_ == one_body_deriv ) {
+    //deriv_eval_->compute_shell( shellnum1, shellnum2, ??? );
+  }
   else 
     throw ProgrammingError("bad evaluator type",
                            __FILE__,__LINE__);
@@ -257,18 +235,20 @@ throw ()
  * @param shellnum1 Gaussian shell number 1.
  * @param shellnum2 Gaussian shell number 2.
  * @param deriv_level Derivative level.
+ * @param deriv_ctr Derivative center descriptor.
  * @return Borrowed sidl array buffer. 
  */
 ::sidl::array<double>
 MPQC::IntegralEvaluator2_impl::compute_array (
   /* in */ int64_t shellnum1,
   /* in */ int64_t shellnum2,
-  /* in */ int64_t deriv_level ) 
+  /* in */ int64_t deriv_level,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute_array)
 
-  compute( shellnum1, shellnum2, deriv_level );
+  compute( shellnum1, shellnum2, deriv_level, deriv_ctr );
 
   // create a proxy SIDL array
   int lower[1] = {0};

@@ -22,6 +22,9 @@
 // 
 // Includes for all method dependencies.
 // 
+#ifndef included_Chemistry_QC_GaussianBasis_DerivCenters_hh
+#include "Chemistry_QC_GaussianBasis_DerivCenters.hh"
+#endif
 #ifndef included_Chemistry_QC_GaussianBasis_Molecular_hh
 #include "Chemistry_QC_GaussianBasis_Molecular.hh"
 #endif
@@ -142,13 +145,15 @@ namespace MPQC {
      * @param shellnum2 Gaussian shell number 2.
      * @param shellnum3 Gaussian shell number 3.
      * @param deriv_level Derivative level. 
+     * @param deriv_ctr Derivative center descriptor. 
      */
     void
     compute (
       /* in */ int64_t shellnum1,
       /* in */ int64_t shellnum2,
       /* in */ int64_t shellnum3,
-      /* in */ int64_t deriv_level
+      /* in */ int64_t deriv_level,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;
@@ -161,6 +166,7 @@ namespace MPQC {
      * @param shellnum2 Gaussian shell number 2.
      * @param shellnum3 Gaussian shell number 3.
      * @param deriv_level Derivative level.
+     * @param deriv_ctr Derivative center desctiptor.
      * @return Borrowed sidl array buffer. 
      */
     ::sidl::array<double>
@@ -168,7 +174,8 @@ namespace MPQC {
       /* in */ int64_t shellnum1,
       /* in */ int64_t shellnum2,
       /* in */ int64_t shellnum3,
-      /* in */ int64_t deriv_level
+      /* in */ int64_t deriv_level,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;

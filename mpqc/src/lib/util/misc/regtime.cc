@@ -87,7 +87,7 @@ int getrusage (
 #include <util/keyval/keyval.h>
 #include <util/misc/regtime.h>
 #include <util/misc/timer.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 
 using namespace std;
 using namespace sc;

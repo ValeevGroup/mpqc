@@ -34,7 +34,7 @@
 #ifdef HAVE_CONFIG_H
 #include <scconfig.h>
 #endif
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <util/misc/compute.h>
 #include <util/state/state.h>

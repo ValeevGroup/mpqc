@@ -63,6 +63,10 @@ reftest: reftest.$(OBJSUF) reftestx.$(OBJSUF) \
            libSCcontainer.$(LIBSUF) libSCref.$(LIBSUF) libSCmisc.$(LIBSUF)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o reftest $^ $(LTLINKBINOPTS) $(SYSLIBS)
 
+check1:: reftest
+	./reftest > reftest.out.chk 2>&1
+	diff -u reftest.out.chk $(SRCDIR)/reftest.out || echo "files do not match"
+
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
 $(TESTCXX:%.cc=%.d) $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)

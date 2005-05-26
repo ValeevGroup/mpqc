@@ -11,6 +11,8 @@ BIN_OR_LIB = LIB
 SRCS = psiwfn.cc psiexenv.cc psiinput.cc psifile11.cc
 CSRCS = 
 
+psitest.testrun: DO_TESTRUN=no
+
 TESTSRCS = psitest.cc
 
 TESTPROGS = psitest

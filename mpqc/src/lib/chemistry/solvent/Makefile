@@ -45,6 +45,8 @@ DEPENDINCLUDE = $(INC)
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libSCsolvent
 
+bemtest.testrun: DO_TESTRUN=no
+
 TESTSRC = bemtest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))
 TESTFILES = bemtest.in

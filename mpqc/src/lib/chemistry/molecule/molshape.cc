@@ -33,7 +33,7 @@
 #include <util/misc/math.h>
 #include <vector>
 
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <chemistry/molecule/molshape.h>
 #include <chemistry/molecule/molecule.h>
 #include <math/scmat/matrix3.h>

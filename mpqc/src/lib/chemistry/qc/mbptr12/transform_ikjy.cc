@@ -31,7 +31,7 @@
 
 #include <stdexcept>
 
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <util/state/state_bin.h>
 #include <util/ref/ref.h>

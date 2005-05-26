@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <util/misc/timer.h>
 #include <util/state/stateio.h>

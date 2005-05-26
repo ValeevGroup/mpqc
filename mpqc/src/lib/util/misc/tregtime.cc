@@ -30,6 +30,9 @@
 #include <util/misc/formio.h>
 #include <util/misc/regtime.h>
 
+#include <util/keyval/keyval.h>
+static int (sc::KeyVal::*force_keyval_link)(const char*) = &sc::KeyVal::exists;
+
 using namespace std;
 using namespace sc;
 

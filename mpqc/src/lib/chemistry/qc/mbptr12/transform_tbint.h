@@ -34,7 +34,7 @@
 
 #include <string>
 #include <util/ref/ref.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/mbptr12/r12ia.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>

@@ -601,11 +601,11 @@ main(int, char *argv[])
 
       // Make H, C, and P molecules
       Ref<Molecule> hmol = new Molecule();
-      hmol->add_atom(AtomInfo::string_to_Z("H"),0,0,0);
+      hmol->add_atom(hmol->atominfo()->string_to_Z("H"),0,0,0);
       Ref<Molecule> cmol = new Molecule();
-      cmol->add_atom(AtomInfo::string_to_Z("C"),0,0,0);
+      cmol->add_atom(cmol->atominfo()->string_to_Z("C"),0,0,0);
       Ref<Molecule> pmol = new Molecule();
-      pmol->add_atom(AtomInfo::string_to_Z("P"),0,0,0);
+      pmol->add_atom(pmol->atominfo()->string_to_Z("P"),0,0,0);
 
       perlout << "%basissets = (" << endl;
       int nbasis = keyval->count("basislist");
@@ -627,7 +627,7 @@ main(int, char *argv[])
               Ref<KeyVal> atombaskv(atombaskv_a);
               char keyword[256];
               strcpy(keyword,":basis:");
-              strcat(keyword,AtomInfo::name(j+1));
+              strcat(keyword,hmol->atominfo()->name(j+1).c_str());
               strcat(keyword,":");
               strcat(keyword,basisname);
               if (basiskv->exists(keyword)) {
@@ -643,7 +643,7 @@ main(int, char *argv[])
                   perlout << j+1;
                   if (!last_elem_exists) {
                       if (elemstr[0] != '\0') strcat(elemstr,", ");
-                      strcat(elemstr,AtomInfo::symbol(j+1));
+                      strcat(elemstr,hmol->atominfo()->symbol(j+1).c_str());
                     }
                   else if (last_elem_exists == 2) {
                       strcat(elemstr,"-");
@@ -671,7 +671,7 @@ main(int, char *argv[])
               else {
                   if (last_elem_exists > 1) {
                       if (last_elem_exists == 2) strcat(elemstr,", ");
-                      strcat(elemstr, AtomInfo::symbol(j));
+                      strcat(elemstr, hmol->atominfo()->symbol(j).c_str());
                     }
                   last_elem_exists = 0;
                 }

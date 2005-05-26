@@ -32,7 +32,7 @@
 #include <chemistry/qc/intcca/intcca.h>
 #include <chemistry/qc/intcca/obintcca.h>
 #include <chemistry/qc/intcca/tbintcca.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #ifdef INTV3_ORDER
   #include <chemistry/qc/intv3/cartitv3.h>
   #include <chemistry/qc/intv3/tformv3.h>

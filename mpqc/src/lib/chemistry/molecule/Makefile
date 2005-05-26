@@ -55,6 +55,8 @@ TESTSRC = moltest.cc
 TESTOBJ = $(TESTSRC:%.cc=%.$(OBJSUF))
 TESTFILES = moltest.in
 
+symmetrize.testrun: TESTRUN_ARGS=$(SRCDIR)/moltest.in molecule
+
 TESTPROGS = moltest symmetrize
 
 DISTFILES = $(CXXSRC) $(INC) Makefile $(TESTSRC) $(TESTFILES)

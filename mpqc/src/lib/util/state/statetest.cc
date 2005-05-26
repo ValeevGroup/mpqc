@@ -280,6 +280,15 @@ D::D()
   cd = 'd';
   fd = 4.1;
   dd = 8.2;
+  ddat = new double[4];
+  fdat = new float[4];
+  idat = new int[4];
+  cdat = new char[4];
+  cdat[0]=(cdat[1]=(cdat[2]=(cdat[3]='a')+1)+1)+1;
+  idat[0]=(idat[1]=(idat[2]=(idat[3]=1)+1)+1)+1;
+  fdat[0]=(fdat[1]=(fdat[2]=(fdat[3]=1.0)+1)+1)+1;
+  ddat[0]=(ddat[1]=(ddat[2]=(ddat[3]=1.0)+1)+1)+1;
+  sdat = "Test of std::string";
 }
 D::D(const Ref<KeyVal>&keyval):
   B(keyval),

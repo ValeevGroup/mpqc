@@ -53,6 +53,10 @@ using namespace sc;
 #endif
 //#endif
 
+#include <util/class/scexception.h>
+static const char * (sc::SCException::*force_except_link)() const
+    = &sc::SCException::description;
+
 // this is needed for debugging
 #ifdef HAVE_NX
 extern "C" {
@@ -104,13 +108,14 @@ main(int argc, char**argv)
         }
     }
 
-  // now set up the debugger
-  Ref<Debugger> debugger;
-  debugger << keyval->describedclassvalue(":debug");
-  if (debugger.nonnull()) {
-    debugger->set_exec(argv[0]);
-    debugger->set_prefix(msg->me());
-  }
+// This causes problems for automated testing:
+//   // now set up the debugger
+//   Ref<Debugger> debugger;
+//   debugger << keyval->describedclassvalue(":debug");
+//   if (debugger.nonnull()) {
+//     debugger->set_exec(argv[0]);
+//     debugger->set_prefix(msg->me());
+//   }
 
   keyval = 0;
 
@@ -119,6 +124,10 @@ main(int argc, char**argv)
   MessageGrp::set_default_messagegrp(msg);
 
   Ref<MemoryGrp> mem = MemoryGrp::initial_memorygrp(argc, argv);
+  if (mem.nonnull())
+    MemoryGrp::set_default_memorygrp(mem);
+  else
+    mem = MemoryGrp::get_default_memorygrp();
 
   do_simple_tests(msg, mem);
 

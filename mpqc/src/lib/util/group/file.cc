@@ -38,7 +38,7 @@
 
 
 #include <util/misc/formio.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <util/group/file.h>
 
 #include <util/group/fileproc.h>

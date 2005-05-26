@@ -56,7 +56,7 @@ dfttest.$(OBJSUF): dfttest.cc
 	$(LTCOMP) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
 lebedev: lebedev.c
-	$(LTLINK) $(CC) $(CFLAGS) $(CPPFLAGS) -DDEFINE_MAIN -o $@ $< $(LTLINKBINOPTS)
+	$(LTLINK) $(CC) $(CFLAGS) $(CPPFLAGS) -DDEFINE_MAIN -o $@ $< $(LTLINKBINOPTS) -lm
 
 $(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)

@@ -35,7 +35,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <util/state/stateio.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 
 using namespace std;
 using namespace sc;

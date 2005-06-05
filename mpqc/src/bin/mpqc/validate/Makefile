@@ -25,16 +25,38 @@ CHECKOUT=$(PERL) -I$(SRCTOPDIR)/lib/perl $(SRCDIR)/checkout.pl
 # need to determine nthreadperproc from MPQCRUN_ARGS, since this determines
 # whether or not certain tests
 
+ifneq ($(filter --nthreadperproc,$(MPQCRUN_ARGS)),)
+$(error must use --nthreadperproc=xxx syntax for MPQCRUN_ARGS)
+endif
 MPQCRUN_NTHREADPERPROC:=$(filter --nthreadperproc=%, $(MPQCRUN_ARGS))
 MPQCRUN_NTHREADPERPROC:=$(patsubst --nthreadperproc=%, %, $(MPQCRUN_NTHREADPERPROC))
+MPQCRUN_NTHREADPERPROC:=$(strip $(MPQCRUN_NTHREADPERPROC))
 ifeq ($(MPQCRUN_NTHREADPERPROC),)
   MPQCRUN_NTHREADPERPROC=1
 endif
+
+ifneq ($(filter --integral,$(MPQCRUN_ARGS)),)
+$(error must use --integral=xxx syntax for MPQCRUN_ARGS)
+endif
+MPQCRUN_INTEGRAL:=$(filter --integral=%, $(MPQCRUN_ARGS))
+MPQCRUN_INTEGRAL:=$(patsubst --integral=%, %, $(MPQCRUN_INTEGRAL))
+MPQCRUN_INTEGRAL:=$(strip $(MPQCRUN_INTEGRAL))
+$(warning mpqcrun_integral is $(MPQCRUN_INTEGRAL))
+ifeq ($(MPQCRUN_INTEGRAL),)
+  MPQCRUN_INTEGRAL=intv3
+endif
+$(warning mpqcrun_integral is $(MPQCRUN_INTEGRAL))
 
 # Also need to see if --mpqc was specified.  If not, then add
 # --mpqc ../mpqc.
 ifeq ($(filter --mpqc, $(MPQCRUN_ARGS)),)
 MPQCRUN_ARGS:=--mpqc ../mpqc $(MPQCRUN_ARGS)
+endif
+
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
+ifeq ($(MPQCRUN_INTEGRAL),cints)
+HAVE_MBPTR12=yes
+endif
 endif
 
 ########################################################################
@@ -48,7 +70,7 @@ H2OMP2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(H2OMP2MA
 H2OMP2OUTPUTS = $(H2OMP2INPUTS:%.$(INSUF)=%.out)
 
 MP2R12MASTER=mp2r12.qci
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
+ifeq ($(HAVE_MBPTR12),yes)
   MP2R12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(MP2R12MASTER))
 else
   MP2R12INPUTS=
@@ -145,7 +167,7 @@ MBPTINPUTS = \
  mbpt_mp2v2lb.in    mbpt_opt22v1.in    mbpt_zapt2v2.in \
  mbpt_mp2mem_mp.in  mbpt_mp2v2_mp.in   mbpt_mp2mem_c1.in  mbpt_mp2mem_auto.in
 
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
+ifeq ($(HAVE_MBPTR12),yes)
  MBPTINPUTS += \
     mbpt_mp2r12_ne2.in            mbpt_mp2r12_ne2_posix.in \
     mbpt_mp2r12_ne2_tz.in \
@@ -167,7 +189,7 @@ clks_lsdax.in  hsosks_xa.in          uks_blyp.in \
 clks_xa.in     uks_lsdax.in          uks_xa.in \
 hsoshf.in      osshf.in
 
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
+ifeq ($(HAVE_MBPTR12),yes)
  METHODSINPUTS += \
     mp2r12ap_+gbc.in mp2r12ap_abs+.in \
     mp2r12ap_abs.in  mp2r12ap_cabs+.in \
@@ -181,7 +203,7 @@ INPUTINPUTS = \
 rksch2.in uksch2.in uhfch2opt.in rhfch2opt.in hfch2opt.in \
 hfh2ofreq.in ksh2oco.in ksh2o.in hfh2oopt.in \
 mp2h2o.in zapt2ch2.in
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
+ifeq ($(HAVE_MBPTR12),yes)
   INPUTINPUTS += mp2r12ah2o.in mp2r12aph2o.in
 endif
 INPUTINPUTS := $(INPUTINPUTS:%=$(INP)/input_%)

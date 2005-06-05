@@ -1,0 +1,78 @@
+% Emacs should use -*- KeyVal -*- mode
+% this file was automatically generated
+% label: transition state optimization test series
+% molecule specification
+molecule<Molecule>: (
+  symmetry = C1
+  unit = angstrom
+  { atoms geometry } = {
+     N     [    -0.353954010900     0.039688692900    -1.061127354100 ]
+     H     [     0.322677521800     0.046951921000    -1.805774173300 ]
+     C     [     0.132281914400    -0.660560552000     0.116527630800 ]
+     C     [    -0.117786146100     1.185077883600    -0.098333914400 ]
+     H     [     0.612520785300     0.430156433100     0.746870348400 ]
+     H     [    -0.621030198700    -1.141372950500     0.702403356000 ]
+     H     [     1.076353236800    -1.164815696400     0.027628671600 ]
+     H     [    -1.051063102600     1.264874268300     0.460509620100 ]
+  }
+)
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "3-21G"
+  molecule = $:molecule
+)
+mpqc: (
+  checkpoint = no
+  savestate = no
+  restart = no
+  % molecular coordinates for optimization
+  coor<SymmMolecularCoor>: (
+    molecule = $:molecule
+    generator<IntCoorGen>: (
+      molecule = $:molecule
+    )
+    followed<SumIntCoor>:(
+      coor: [
+        <StreSimpleCo>:(atoms = [3 5])
+        <StreSimpleCo>:(atoms = [4 5])
+      ]
+      coef = [   1.0 -1.0]
+    )
+  )
+  do_energy = yes
+  do_gradient = no
+  % method for computing the molecule's energy
+  mole<CLHF>: (
+    molecule = $:molecule
+    basis = $:basis
+    coor = $..:coor
+    memory = 32000000
+    total_charge = 0
+    multiplicity = 1
+    print_npa = yes
+    guess_wavefunction<CLHF>: (
+      molecule = $:molecule
+      total_charge = 0
+      multiplicity = 1
+      basis<GaussianBasisSet>: (
+        molecule = $:molecule
+        name = "STO-3G"
+      )
+      memory = 32000000
+    )
+  )
+  optimize = yes
+  % optimizer object for the molecular geometry
+  opt<EFCOpt>: (
+    max_iterations = 20
+    function = $..:mole
+    transition_state = yes
+    hessian = [ [ -0.1 ] ]
+    mode_following = yes
+    update<PowellUpdate>: ()
+    convergence<MolEnergyConvergence>: (
+      cartesian = yes
+      energy = $..:..:mole
+    )
+  )
+)

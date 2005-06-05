@@ -1,0 +1,176 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 2.3.0-alpha
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@n65
+  Start Time: Sun Jan  9 18:49:48 2005
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /home/cljanss/src/SC/lib/atominfo.kv.
+
+  Restored <CLKS> from ckpt_0clkspbe.wfn
+
+  Molecular formula H2O
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = ckpt_1clkspbe
+    restart_file  = ckpt_0clkspbe.wfn
+    restart       = yes
+    checkpoint    = yes
+    savestate     = yes
+    do_energy     = yes
+    do_gradient   = yes
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  Value of the MolecularEnergy:  -75.2228685703
+
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  integral intermediate storage = 15938 bytes
+  integral cache = 15983614 bytes
+  nuclear repulsion energy =    9.1571164826
+
+                   565 integrals
+  Total integration points = 4049
+  Integrated electron density error = 0.000132434501
+  iter     1 energy =  -75.2226832980 delta = 7.77597e-01
+                   565 integrals
+  Total integration points = 46071
+  Integrated electron density error = 0.000001555307
+  iter     2 energy =  -75.2228685430 delta = 5.88893e-05
+                   565 integrals
+  Total integration points = 46071
+  Integrated electron density error = 0.000001555311
+  iter     3 energy =  -75.2228685665 delta = 4.12597e-05
+                   565 integrals
+  Total integration points = 46071
+  Integrated electron density error = 0.000001555313
+  iter     4 energy =  -75.2228685682 delta = 9.74275e-06
+                   565 integrals
+  Total integration points = 46071
+  Integrated electron density error = 0.000001555309
+  iter     5 energy =  -75.2228685692 delta = 5.28369e-06
+                   565 integrals
+  Total integration points = 46071
+  Integrated electron density error = 0.000001555310
+  iter     6 energy =  -75.2228685698 delta = 4.83497e-06
+                   565 integrals
+  Total integration points = 46071
+  Integrated electron density error = 0.000001555312
+  iter     7 energy =  -75.2228685703 delta = 8.10405e-06
+
+  HOMO is     1  B2 =  -0.062013
+  LUMO is     4  A1 =   0.300503
+
+  total scf energy =  -75.2228685703
+
+  SCF::compute: gradient accuracy = 1.0000000e-06
+
+  Total integration points = 46071
+  Integrated electron density error = 0.000001555473
+  Total Gradient:
+       1   O  -0.0000000005  -0.0000000246  -0.1261640136
+       2   H  -0.0430499046   0.0000000123   0.0630820069
+       3   H   0.0430499051   0.0000000122   0.0630820067
+
+  Gradient of the MolecularEnergy:
+      1   -0.0000000005
+      2   -0.0000000246
+      3   -0.1261640136
+      4   -0.0430499046
+      5    0.0000000123
+      6    0.0630820069
+      7    0.0430499051
+      8    0.0000000122
+      9    0.0630820067
+
+  Closed Shell Kohn-Sham (CLKS) Parameters:
+    Function Parameters:
+      value_accuracy    = 4.295573e-09 (1.000000e-08) (computed)
+      gradient_accuracy = 4.295573e-07 (1.000000e-06) (computed)
+      hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+    Molecule:
+      Molecular formula: H2O
+      molecule<Molecule>: (
+        symmetry = c2v
+        unit = "angstrom"
+        {  n atoms                        geometry                     }={
+           1     O [    0.0000000000     0.0000000000     0.3693729400]
+           2     H [    0.7839759000     0.0000000000    -0.1846864700]
+           3     H [   -0.7839759000    -0.0000000000    -0.1846864700]
+        }
+      )
+      Atomic Masses:
+         15.99491    1.00783    1.00783
+
+    GaussianBasisSet:
+      nbasis = 7
+      nshell = 4
+      nprim  = 12
+      name = "STO-3G"
+    SCF Parameters:
+      maxiter = 40
+      density_reset_frequency = 10
+      level_shift = 0.000000
+
+    CLSCF Parameters:
+      charge = 0.0000000000
+      ndocc = 5
+      docc = [ 3 0 1 1 ]
+
+    Functional:
+      Standard Density Functional: PBE
+      Sum of Functionals:
+        +1.0000000000000000
+          Object of type PBEXFunctional
+        +1.0000000000000000
+          Object of type PBECFunctional
+    Integrator:
+      RadialAngularIntegrator:
+        Pruned fine grid employed
+                               CPU Wall
+mpqc:                         6.78 6.80
+  calc:                       6.75 6.77
+    compute gradient:         1.49 1.49
+      nuc rep:                0.00 0.00
+      one electron gradient:  0.00 0.00
+      overlap gradient:       0.00 0.00
+      two electron gradient:  1.49 1.49
+        grad:                 1.49 1.49
+          integrate:          1.42 1.41
+          two-body:           0.01 0.01
+            contribution:     0.01 0.00
+              start thread:   0.01 0.00
+              stop thread:    0.00 0.00
+            setup:            0.00 0.00
+    vector:                   5.26 5.28
+      density:                0.00 0.00
+      evals:                  0.00 0.00
+      extrap:                 0.01 0.01
+      fock:                   5.17 5.17
+        accum:                0.00 0.00
+        init pmax:            0.00 0.00
+        integrate:            5.15 5.16
+        local data:           0.00 0.00
+        setup:                0.01 0.00
+        start thread:         0.00 0.00
+        stop thread:          0.00 0.00
+        sum:                  0.00 0.00
+        symm:                 0.01 0.00
+  input:                      0.03 0.03
+
+  End Time: Sun Jan  9 18:49:55 2005
+

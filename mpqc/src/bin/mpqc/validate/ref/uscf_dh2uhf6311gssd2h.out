@@ -1,0 +1,210 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                             Version 2.1.0-alpha-gcc3
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@aros.ca.sandia.gov
+  Start Time: Sun Apr  7 06:25:17 2002
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 2).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 2
+  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/atominfo.kv.
+  WARNING: two unbound groups of atoms
+           consider using extra_bonds input
+
+           adding bond between 1 and 2
+
+  IntCoorGen: generated 1 coordinates.
+  Forming optimization coordinates:
+    SymmMolecularCoor::form_variable_coordinates()
+      expected 0 coordinates
+      found 1 variable coordinates
+      found 0 constant coordinates
+  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/basis/6-311gSS.kv.
+      Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/basis/sto-3g.kv.
+
+      USCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(SO):             1     0     0     0     0     1     0     0
+      Maximum orthogonalization residual = 1
+      Minimum orthogonalization residual = 1
+      alpha = [ 1 0 0 0 0 1 0 0 ]
+      beta  = [ 0 0 0 0 0 0 0 0 ]
+
+  USCF::init: total charge = 0
+
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      nuclear repulsion energy =    0.0264588624
+
+      iter     1 energy =   -0.9331636991 delta = 8.16497e-01
+
+      <S^2>exact = 2.000000
+      <S^2>      = 2.000000
+
+      total scf energy =   -0.9331636991
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 2
+        Using symmetric orthogonalization.
+        n(SO):             4     0     1     1     0     4     1     1
+        Maximum orthogonalization residual = 2.26144
+        Minimum orthogonalization residual = 0.109211
+        The number of electrons in the projected density = 1.99895
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 0
+        The number of electrons in the projected density = 0
+
+  alpha = [ 1 0 0 0 0 1 0 0 ]
+  beta  = [ 0 0 0 0 0 0 0 0 ]
+
+  Molecular formula H2
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = uscf_dh2uhf6311gssd2h
+    restart_file  = uscf_dh2uhf6311gssd2h.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = yes
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    0.0264588624
+
+  iter     1 energy =   -0.9443177590 delta = 6.84658e-02
+  iter     2 energy =   -0.9886353525 delta = 1.52451e-02
+  iter     3 energy =   -0.9976130806 delta = 9.98679e-03
+  iter     4 energy =   -0.9993646049 delta = 7.07418e-03
+  iter     5 energy =   -0.9996064867 delta = 3.27913e-03
+  iter     6 energy =   -0.9996189396 delta = 7.97327e-04
+  iter     7 energy =   -0.9996195947 delta = 1.86456e-04
+  iter     8 energy =   -0.9996196287 delta = 4.26207e-05
+  iter     9 energy =   -0.9996196305 delta = 9.71236e-06
+  iter    10 energy =   -0.9996196305 delta = 2.21117e-06
+  iter    11 energy =   -0.9996196305 delta = 5.03217e-07
+  iter    12 energy =   -0.9996196305 delta = 1.14509e-07
+  iter    13 energy =   -0.9996196305 delta = 2.60566e-08
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.000000
+
+  total scf energy =   -0.9996196305
+
+  SCF::compute: gradient accuracy = 1.0000000e-06
+
+  Total Gradient:
+       1   H   0.0000000000   0.0000000000  -0.0000000000
+       2   H   0.0000000000   0.0000000000   0.0000000000
+
+  Value of the MolecularEnergy:   -0.9996196305
+
+
+  Gradient of the MolecularEnergy:
+      1   -0.0000000000
+
+  Function Parameters:
+    value_accuracy    = 5.928458e-09 (1.000000e-08) (computed)
+    gradient_accuracy = 5.928458e-07 (1.000000e-06) (computed)
+    hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+  Molecular Coordinates:
+    IntMolecularCoor Parameters:
+      update_bmat = no
+      scale_bonds = 1.0000000000
+      scale_bends = 1.0000000000
+      scale_tors = 1.0000000000
+      scale_outs = 1.0000000000
+      symmetry_tolerance = 1.000000e-05
+      simple_tolerance = 1.000000e-03
+      coordinate_tolerance = 1.000000e-07
+      have_fixed_values = 0
+      max_update_steps = 100
+      max_update_disp = 0.500000
+      have_fixed_values = 0
+
+    Molecular formula: H2
+    molecule<Molecule>: (
+      symmetry = d2h
+      unit = "angstrom"
+      {  n atoms                        geometry                     }={
+         1     H [    0.0000000000     0.0000000000    10.0000000000]
+         2     H [    0.0000000000     0.0000000000   -10.0000000000]
+      }
+    )
+    Atomic Masses:
+        1.00783    1.00783
+
+    Bonds:
+      STRE       s1    19.99999    1    2         H-H
+
+    SymmMolecularCoor Parameters:
+      change_coordinates = no
+      transform_hessian = yes
+      max_kappa2 = 10.000000
+
+  GaussianBasisSet:
+    nbasis = 12
+    nshell = 8
+    nprim  = 12
+    name = "6-311G**"
+  Natural Population Analysis:
+     n   atom    charge     ne(S)     ne(P) 
+      1    H    0.000000  1.000000 -0.000000
+      2    H    0.000000  1.000000 -0.000000
+
+  SCF Parameters:
+    maxiter = 100
+    density_reset_frequency = 10
+    level_shift = 0.250000
+
+  UnrestrictedSCF Parameters:
+    charge = 0.0000000000
+    nalpha = 2
+    nbeta = 0
+    alpha = [ 1 0 0 0 0 1 0 0 ]
+    beta  = [ 0 0 0 0 0 0 0 0 ]
+
+                               CPU Wall
+mpqc:                         0.48 0.48
+  NAO:                        0.02 0.01
+  calc:                       0.29 0.29
+    compute gradient:         0.02 0.02
+      nuc rep:                0.00 0.00
+      one electron gradient:  0.01 0.01
+      overlap gradient:       0.00 0.01
+      two electron gradient:  0.01 0.01
+    vector:                   0.27 0.26
+      density:                0.02 0.01
+      evals:                  0.01 0.02
+      extrap:                 0.00 0.03
+      fock:                   0.22 0.18
+        start thread:         0.00 0.01
+        stop thread:          0.00 0.00
+  input:                      0.17 0.17
+    vector:                   0.02 0.01
+      density:                0.00 0.00
+      evals:                  0.00 0.00
+      extrap:                 0.00 0.00
+      fock:                   0.00 0.00
+        start thread:         0.00 0.00
+        stop thread:          0.00 0.00
+
+  End Time: Sun Apr  7 06:25:18 2002
+

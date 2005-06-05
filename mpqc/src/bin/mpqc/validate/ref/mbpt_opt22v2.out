@@ -1,0 +1,187 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                             Version 2.1.0-alpha-gcc3
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@aros.ca.sandia.gov
+  Start Time: Sat Apr  6 14:02:32 2002
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 2).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 2
+  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/atominfo.kv.
+  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/basis/3-21g.kv.
+
+  HSOSSCF::init: total charge = 0
+
+  Starting from core Hamiltonian guess
+
+  Using symmetric orthogonalization.
+  n(SO):             7     4     0     2     0     2     7     4
+  Maximum orthogonalization residual = 3.24125
+  Minimum orthogonalization residual = 0.0547209
+  docc = [ 3 1 0 0 0 0 2 1 ]
+  socc = [ 0 0 0 1 0 1 0 0 ]
+
+  Molecular formula C2H4
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = mbpt_opt22v2
+    restart_file  = mbpt_opt22v2.ckpt
+    restart       = no
+    checkpoint    = yes
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = no
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+  Just entered OPT2 program (opt2_v2)
+  Distribution of basis functions between nodes:
+     26
+   nproc  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+    1      26       14       4       5      2      17     2     2  
+  Memory available per node:      16000000 Bytes
+  Total memory used per node:     130676 Bytes
+  Memory required for one pass:   130676 Bytes
+  Minimum memory required:        35636 Bytes
+  Batch size:                     7
+  npass = 1 rest = 0
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =   26.3555332531
+
+  iter     1 energy =  -76.8939307079 delta = 1.76549e-01
+  iter     2 energy =  -77.4049323475 delta = 5.03208e-02
+  iter     3 energy =  -77.4170628380 delta = 1.22849e-02
+  iter     4 energy =  -77.4187845578 delta = 5.20928e-03
+  iter     5 energy =  -77.4190161477 delta = 1.76724e-03
+  iter     6 energy =  -77.4190429039 delta = 6.32269e-04
+  iter     7 energy =  -77.4190450503 delta = 1.67963e-04
+  iter     8 energy =  -77.4190452657 delta = 5.63239e-05
+  iter     9 energy =  -77.4190452840 delta = 1.25150e-05
+  iter    10 energy =  -77.4190452846 delta = 3.32511e-06
+  iter    11 energy =  -77.4190452844 delta = 8.65068e-07
+  iter    12 energy =  -77.4190452843 delta = 2.42893e-07
+  iter    13 energy =  -77.4190452844 delta = 7.20205e-08
+  iter    14 energy =  -77.4190452844 delta = 2.37810e-08
+
+  HOMO is     1 B3g =  -0.052322
+  LUMO is     3 B2u =   0.166795
+
+  total scf energy =  -77.4190452844
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 22050
+  Number of shell quartets for which AO integrals
+  were computed: 18936
+  ROHF energy [au]:                   -77.419045284356
+  OPT1 energy [au]:                   -77.557907841977
+  OPT2 second order correction [au]:   -0.133999969281
+  OPT2 energy [au]:                   -77.553045253637
+  ZAPT2 correlation energy [au]:       -0.133029280854
+  ZAPT2 energy [au]:                  -77.552074565211
+
+  Value of the MolecularEnergy:  -77.5530452536
+
+  MBPT2:
+    Function Parameters:
+      value_accuracy    = 6.535177e-07 (1.000000e-06) (computed)
+      gradient_accuracy = 0.000000e+00 (1.000000e-06)
+      hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+    Molecule:
+      Molecular formula: C2H4
+      molecule<Molecule>: (
+        symmetry = d2h
+        unit = "angstrom"
+        {  n atoms                        geometry                     }={
+           1     C [   -0.0000000000     1.0094000000     0.0000000000]
+           2     C [   -0.0000000000    -1.0094000000     0.0000000000]
+           3     H [    0.9174000000     1.6662000000     0.0000000000]
+           4     H [   -0.9174000000    -1.6662000000     0.0000000000]
+           5     H [    0.9174000000    -1.6662000000     0.0000000000]
+           6     H [   -0.9174000000     1.6662000000     0.0000000000]
+        }
+      )
+      Atomic Masses:
+         12.00000   12.00000    1.00783    1.00783    1.00783
+          1.00783
+
+    GaussianBasisSet:
+      nbasis = 26
+      nshell = 14
+      nprim  = 24
+      name = "3-21G"
+    Reference Wavefunction:
+      Function Parameters:
+        value_accuracy    = 6.535177e-09 (1.000000e-08) (computed)
+        gradient_accuracy = 0.000000e+00 (1.000000e-06)
+        hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+      Molecule:
+        Molecular formula: C2H4
+        molecule<Molecule>: (
+          symmetry = d2h
+          unit = "angstrom"
+          {  n atoms                        geometry                     }={
+             1     C [   -0.0000000000     1.0094000000     0.0000000000]
+             2     C [   -0.0000000000    -1.0094000000     0.0000000000]
+             3     H [    0.9174000000     1.6662000000     0.0000000000]
+             4     H [   -0.9174000000    -1.6662000000     0.0000000000]
+             5     H [    0.9174000000    -1.6662000000     0.0000000000]
+             6     H [   -0.9174000000     1.6662000000     0.0000000000]
+          }
+        )
+        Atomic Masses:
+           12.00000   12.00000    1.00783    1.00783    1.00783
+            1.00783
+
+      GaussianBasisSet:
+        nbasis = 26
+        nshell = 14
+        nprim  = 24
+        name = "3-21G"
+      SCF Parameters:
+        maxiter = 100
+        density_reset_frequency = 10
+        level_shift = 0.250000
+
+      HSOSSCF Parameters:
+        charge = 0
+        ndocc = 7
+        nsocc = 2
+        docc = [ 3 1 0 0 0 0 2 1 ]
+        socc = [ 0 0 0 1 0 1 0 0 ]
+
+
+                                     CPU Wall
+mpqc:                               1.11 1.06
+  calc:                             0.99 0.93
+    4. quart. tr.:                  0.00 0.00
+    RS loop:                        0.45 0.45
+      2. quart. tr.:                0.05 0.02
+      3. quart. tr.:                0.00 0.01
+      PQ loop:                      0.40 0.42
+        1. quart. tr.:              0.03 0.06
+        erep:                       0.29 0.29
+      bzerofast trans_int1:         0.00 0.00
+      bzerofast trans_int2:         0.00 0.00
+    compute ecorr:                  0.00 0.00
+      global sum mo_int_do_so_vir:  0.00 0.00
+    global sum socc_sum:            0.00 0.00
+    global sum trans_int4:          0.00 0.00
+    vector:                         0.52 0.46
+      density:                      0.03 0.01
+      evals:                        0.02 0.02
+      extrap:                       0.07 0.04
+      fock:                         0.38 0.38
+        start thread:               0.09 0.06
+        stop thread:                0.00 0.00
+  input:                            0.12 0.12
+
+  End Time: Sat Apr  6 14:02:33 2002
+

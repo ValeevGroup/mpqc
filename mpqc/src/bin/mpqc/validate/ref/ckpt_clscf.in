@@ -1,0 +1,35 @@
+% molecule specification
+molecule<Molecule>: (
+  symmetry = C2V
+  angstroms = yes
+  { atoms geometry } = {
+    O     [     0.00000000     0.00000000     0.36937294 ]
+    H     [     0.78397590     0.00000000    -0.18468647 ]
+    H     [    -0.78397590     0.00000000    -0.18468647 ]
+  }
+)
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "STO-3G"
+  molecule = $:molecule
+)
+mpqc: (
+  savestate = yes
+  restart = no
+  do_energy = yes
+  do_gradient = yes
+  % method for computing the molecule's energy
+  mole<CLHF>: (
+    molecule = $:molecule
+    basis = $:basis
+    memory = 16000000
+    guess_wavefunction<CLHF>: (
+      molecule = $:molecule
+      basis<GaussianBasisSet>: (
+        molecule = $:molecule
+        name = "STO-3G"
+      )
+      memory = 16000000
+    )
+  )
+)

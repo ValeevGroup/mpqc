@@ -1,0 +1,13 @@
+
+molecule:
+    O    0.172   0.000   0.000
+    H    0.745   0.000   0.754
+    H    0.745   0.000  -0.754
+
+optimize: no
+checkpoint: no
+
+method: MP2-R12/A'
+
+basis: cc-pVDZ
+auxbasis: aug-cc-pVTZ

@@ -1,0 +1,59 @@
+test_basis:
+STO-3G 6-311G**
+method:
+hsosbp86
+followed:
+
+fzv:
+
+fixed:
+
+test_method:
+hsoshf hsosxalpha hsoshfk hsoshfs hsoshfb hsoshfg96 hsosblyp hsosb3lyp hsospbe hsospw91 hsosb3pw91 hsosbpw91 hsosb3p86 hsosbp86 hsosspz81
+test_molecule_multiplicity:
+1   3
+frequencies:
+no
+test_molecule_symmetry:
+c2v  c2v
+label:
+unrestricted open shell self consistent field tests (HF and DFT)
+gradient:
+yes
+socc:
+auto
+state:
+1
+optimize:
+no
+docc:
+auto
+ch2:
+  C   0.000   0.000  -0.100
+  H   0.000   0.857   0.596
+  H   0.000  -0.857   0.596
+
+fzc:
+
+h2o:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472
+
+molecule:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472
+
+test_molecule:
+h2o  ch2
+grid:
+default
+basis:
+STO-3G
+checkpoint:
+no
+restart:
+no
+symmetry:
+c2v

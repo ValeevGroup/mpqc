@@ -1,0 +1,536 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                             Version 2.1.0-alpha-gcc3
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@aros.ca.sandia.gov
+  Start Time: Sat Apr  6 14:19:30 2002
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 2).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 2
+  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/atominfo.kv.
+
+  IntCoorGen: generated 116 coordinates.
+  Forming optimization coordinates:
+    SymmMolecularCoor::form_variable_coordinates()
+      expected 42 coordinates
+      found 2 variable coordinates
+      found 0 constant coordinates
+  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/basis/sto-3g.kv.
+      Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/basis/sto-3g.kv.
+
+      CLSCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(SO):            24    24
+      Maximum orthogonalization residual = 3.1974
+      Minimum orthogonalization residual = 0.16589
+      docc = [ 14 14 ]
+      nbasis = 48
+
+  CLSCF::init: total charge = 0
+
+  Using symmetric orthogonalization.
+  n(SO):            24    24
+  Maximum orthogonalization residual = 3.1974
+  Minimum orthogonalization residual = 0.16589
+  Using guess wavefunction as starting vector
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      integral intermediate storage = 597256 bytes
+      integral cache = 31383928 bytes
+      nuclear repulsion energy =  370.7642087535
+
+                    312734 integrals
+      iter     1 energy = -302.6043980693 delta = 2.31080e-01
+                    348062 integrals
+      iter     2 energy = -303.7280142656 delta = 5.44515e-02
+                    321630 integrals
+      iter     3 energy = -303.7785912303 delta = 1.61685e-02
+                    360256 integrals
+      iter     4 energy = -303.7806019259 delta = 4.36798e-03
+                    365924 integrals
+      iter     5 energy = -303.7806137943 delta = 3.48515e-04
+                    315406 integrals
+      iter     6 energy = -303.7806159212 delta = 4.04284e-05
+                    369734 integrals
+      iter     7 energy = -303.7806141568 delta = 4.46243e-06
+
+      HOMO is    14  Ag =  -0.341422
+      LUMO is    15  Au =   0.482080
+
+      total scf energy = -303.7806141568
+
+  docc = [ 14 14 ]
+  nbasis = 48
+
+  Molecular formula C8H8
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = symm1_cubmp284sto3gci
+    restart_file  = symm1_cubmp284sto3gci.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = yes
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  Entered memgrp based MP2 routine
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Static memory used per node:    48784 Bytes
+  Total memory used per node:     10629776 Bytes
+  Memory required for one pass:   10629776 Bytes
+  Minimum memory required:        583184 Bytes
+  Batch size:                     20
+   npass  rest  nbasis  nshell  nfuncmax
+    1      0     48       24       4  
+   nocc   nvir   nfzc   nfzv
+    28     20     8      4   
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  integral intermediate storage = 597256 bytes
+  integral cache = 31383928 bytes
+  nuclear repulsion energy =  370.7642087535
+
+                313822 integrals
+  iter     1 energy = -303.7848973616 delta = 2.39887e-01
+                362636 integrals
+  iter     2 energy = -303.7804452139 delta = 1.13828e-03
+                341806 integrals
+  iter     3 energy = -303.7805650953 delta = 5.05433e-04
+                329712 integrals
+  iter     4 energy = -303.7805956441 delta = 2.19215e-04
+                366310 integrals
+  iter     5 energy = -303.7806026215 delta = 1.10206e-04
+                335026 integrals
+  iter     6 energy = -303.7806061964 delta = 5.05004e-05
+                352088 integrals
+  iter     7 energy = -303.7806144389 delta = 2.56149e-04
+                370938 integrals
+  iter     8 energy = -303.7806141568 delta = 6.20962e-07
+                338846 integrals
+  iter     9 energy = -303.7806141557 delta = 3.08867e-07
+                371490 integrals
+  iter    10 energy = -303.7806141568 delta = 4.35774e-08
+
+  HOMO is    14  Ag =  -0.341422
+  LUMO is    15  Au =   0.482080
+
+  total scf energy = -303.7806141568
+  NOTE: There are degenerate orbitals within an irrep.  This will make
+        some diagnostics, such as the largest amplitude, nonunique.
+  NOTE: There are degenerate orbitals within an irrep.  This will make
+        some diagnostics, such as the largest amplitude, nonunique.
+
+  WARNING: MBPT2: gap between frozen and active virtual orbitals is 0.134653 au
+
+
+  Memory used for integral intermediates: 1246184 Bytes
+  Memory used for integral storage:       10110804 Bytes
+  Size of global distributed array:       10321920 Bytes
+  Beginning pass 1
+  Begin loop over shells (erep, 1.+2. q.t.)
+    working on shell pair (  0   0),  0.7% complete
+    working on shell pair (  7   2), 10.7% complete
+    working on shell pair ( 10   5), 20.7% complete
+    working on shell pair ( 12  12), 30.7% complete
+    working on shell pair ( 15   0), 40.7% complete
+    working on shell pair ( 16  14), 50.7% complete
+    working on shell pair ( 18   9), 60.7% complete
+    working on shell pair ( 20   0), 70.7% complete
+    working on shell pair ( 21   9), 80.7% complete
+    working on shell pair ( 22  17), 90.7% complete
+  End of loop over shells
+  Begin third q.t.
+  End of third q.t.
+  Begin fourth q.t.
+  End of fourth q.t.
+  Begin third and fourth q.b.t.
+    working on shell pair (  0   0),  0.7% complete
+    working on shell pair (  7   2), 10.7% complete
+    working on shell pair ( 10   5), 20.7% complete
+    working on shell pair ( 12  12), 30.7% complete
+    working on shell pair ( 15   0), 40.7% complete
+    working on shell pair ( 16  14), 50.7% complete
+    working on shell pair ( 18   9), 60.7% complete
+    working on shell pair ( 20   0), 70.7% complete
+    working on shell pair ( 21   9), 80.7% complete
+    working on shell pair ( 22  17), 90.7% complete
+  End of third and fourth q.b.t.
+  Done with pass 1
+
+  Largest first order coefficients (unique):
+     1  -0.02567490 13  Au 13  Au -> 16  Ag 16  Ag (+-+-)
+     2  -0.02354684 14  Au 14  Au -> 17  Ag 17  Ag (+-+-)
+     3  -0.01827073 10  Ag 10  Ag -> 16  Au 16  Au (+-+-)
+     4  -0.01714305 10  Au 10  Au -> 20  Au 20  Au (+-+-)
+     5  -0.01702100 12  Au 12  Au -> 23  Au 23  Au (+-+-)
+     6  -0.01661559 12  Au 12  Au -> 18  Ag 18  Ag (+-+-)
+     7  -0.01623995 12  Au 12  Au -> 17  Ag 17  Ag (+-+-)
+     8  -0.01575341 11  Ag 11  Ag -> 15  Au 15  Au (+-+-)
+     9  -0.01549040 11  Ag 11  Ag -> 17  Au 17  Au (+-+-)
+    10  -0.01534787 13  Au 13  Au -> 22  Au 22  Au (+-+-)
+
+  RHF energy [au]:                   -303.780614156841
+  MP2 correlation energy [au]:         -0.288087024544
+  MP2 energy [au]:                   -304.068701181386
+
+  D1(MP2)                =   0.00662558
+  S2 matrix 1-norm       =   0.00927535
+  S2 matrix inf-norm     =   0.01434753
+  S2 diagnostic          =   0.00196912
+
+  Largest S2 values (unique determinants):
+     1  -0.00488214 10  Au -> 15  Au
+     2   0.00428597  9  Au -> 17  Au
+     3   0.00419595 11  Au -> 16  Au
+     4  -0.00380792 10  Au -> 20  Au
+     5  -0.00304042  9  Au -> 18  Au
+     6  -0.00303050 11  Au -> 19  Au
+     7  -0.00302687 11  Au -> 17  Au
+     8   0.00261430  9  Au -> 16  Au
+     9   0.00233758 11  Au -> 18  Au
+    10  -0.00230968  9  Au -> 19  Au
+
+  D2(MP1) =   0.10126052
+
+  CPHF: iter =  1 rms(P) = 0.0078864202 eps = 0.0000000100
+  CPHF: iter =  2 rms(P) = 0.0003893900 eps = 0.0000000100
+  CPHF: iter =  3 rms(P) = 0.0000206780 eps = 0.0000000100
+  CPHF: iter =  4 rms(P) = 0.0000009317 eps = 0.0000000100
+  CPHF: iter =  5 rms(P) = 0.0000000646 eps = 0.0000000100
+  CPHF: iter =  6 rms(P) = 0.0000000026 eps = 0.0000000100
+
+  Total MP2 gradient [au]:
+       1   H  -0.0002215422  -0.0002215422  -0.0002215422
+       2   H   0.0002215422   0.0002215422  -0.0002215422
+       3   H  -0.0002215422   0.0002215422   0.0002215422
+       4   H   0.0002215422  -0.0002215422   0.0002215422
+       5   H   0.0002215422   0.0002215422   0.0002215422
+       6   H  -0.0002215422  -0.0002215422   0.0002215422
+       7   H   0.0002215422  -0.0002215422  -0.0002215422
+       8   H  -0.0002215422   0.0002215422  -0.0002215422
+       9   C  -0.0257514301  -0.0257514301  -0.0257514301
+      10   C   0.0257514301   0.0257514301  -0.0257514301
+      11   C  -0.0257514301   0.0257514301   0.0257514301
+      12   C   0.0257514301  -0.0257514301   0.0257514301
+      13   C   0.0257514301   0.0257514301   0.0257514301
+      14   C  -0.0257514301  -0.0257514301   0.0257514301
+      15   C   0.0257514301  -0.0257514301  -0.0257514301
+      16   C  -0.0257514301   0.0257514301  -0.0257514301
+
+  Value of the MolecularEnergy: -304.0687011814
+
+
+  Gradient of the MolecularEnergy:
+      1    0.0628530844
+      2   -0.0643879739
+
+  MBPT2:
+    Function Parameters:
+      value_accuracy    = 1.571331e-07 (1.000000e-06) (computed)
+      gradient_accuracy = 0.000000e+00 (1.000000e-06) (computed)
+      hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+    Molecular Coordinates:
+      IntMolecularCoor Parameters:
+        update_bmat = no
+        scale_bonds = 1.0000000000
+        scale_bends = 1.0000000000
+        scale_tors = 1.0000000000
+        scale_outs = 1.0000000000
+        symmetry_tolerance = 1.000000e-05
+        simple_tolerance = 1.000000e-03
+        coordinate_tolerance = 1.000000e-07
+        have_fixed_values = 0
+        max_update_steps = 100
+        max_update_disp = 0.500000
+        have_fixed_values = 0
+
+      Molecular formula: C8H8
+      molecule<Molecule>: (
+        symmetry = ci
+        unit = "angstrom"
+        {  n atoms                        geometry                     }={
+           1     H [    1.4040000000     1.4040000000     1.4040000000]
+           2     H [   -1.4040000000    -1.4040000000     1.4040000000]
+           3     H [    1.4040000000    -1.4040000000    -1.4040000000]
+           4     H [   -1.4040000000     1.4040000000    -1.4040000000]
+           5     H [   -1.4040000000    -1.4040000000    -1.4040000000]
+           6     H [    1.4040000000     1.4040000000    -1.4040000000]
+           7     H [   -1.4040000000     1.4040000000     1.4040000000]
+           8     H [    1.4040000000    -1.4040000000     1.4040000000]
+           9     C [    0.7760000000     0.7760000000     0.7760000000]
+          10     C [   -0.7760000000    -0.7760000000     0.7760000000]
+          11     C [    0.7760000000    -0.7760000000    -0.7760000000]
+          12     C [   -0.7760000000     0.7760000000    -0.7760000000]
+          13     C [   -0.7760000000    -0.7760000000    -0.7760000000]
+          14     C [    0.7760000000     0.7760000000    -0.7760000000]
+          15     C [   -0.7760000000     0.7760000000     0.7760000000]
+          16     C [    0.7760000000    -0.7760000000     0.7760000000]
+        }
+      )
+      Atomic Masses:
+          1.00783    1.00783    1.00783    1.00783    1.00783
+          1.00783    1.00783    1.00783   12.00000   12.00000
+         12.00000   12.00000   12.00000   12.00000   12.00000
+         12.00000
+
+      Bonds:
+        STRE       s1     1.08773    1    9         H-C
+        STRE       s2     1.08773    2   10         H-C
+        STRE       s3     1.08773    3   11         H-C
+        STRE       s4     1.08773    4   12         H-C
+        STRE       s5     1.08773    5   13         H-C
+        STRE       s6     1.55200   10   13         C-C
+        STRE       s7     1.55200   11   13         C-C
+        STRE       s8     1.55200   12   13         C-C
+        STRE       s9     1.08773    6   14         H-C
+        STRE      s10     1.55200    9   14         C-C
+        STRE      s11     1.55200   11   14         C-C
+        STRE      s12     1.55200   12   14         C-C
+        STRE      s13     1.08773    7   15         H-C
+        STRE      s14     1.55200    9   15         C-C
+        STRE      s15     1.55200   10   15         C-C
+        STRE      s16     1.55200   12   15         C-C
+        STRE      s17     1.08773    8   16         H-C
+        STRE      s18     1.55200    9   16         C-C
+        STRE      s19     1.55200   10   16         C-C
+        STRE      s20     1.55200   11   16         C-C
+      Bends:
+        BEND       b1   125.26439    6   14    9      H-C-C
+        BEND       b2   125.26439    7   15    9      H-C-C
+        BEND       b3   125.26439    8   16    9      H-C-C
+        BEND       b4   125.26439    5   13   10      H-C-C
+        BEND       b5   125.26439    7   15   10      H-C-C
+        BEND       b6    90.00000    9   15   10      C-C-C
+        BEND       b7   125.26439    8   16   10      H-C-C
+        BEND       b8    90.00000    9   16   10      C-C-C
+        BEND       b9   125.26439    5   13   11      H-C-C
+        BEND      b10    90.00000   10   13   11      C-C-C
+        BEND      b11   125.26439    6   14   11      H-C-C
+        BEND      b12    90.00000    9   14   11      C-C-C
+        BEND      b13   125.26439    8   16   11      H-C-C
+        BEND      b14    90.00000    9   16   11      C-C-C
+        BEND      b15    90.00000   10   16   11      C-C-C
+        BEND      b16   125.26439    5   13   12      H-C-C
+        BEND      b17    90.00000   10   13   12      C-C-C
+        BEND      b18    90.00000   11   13   12      C-C-C
+        BEND      b19   125.26439    6   14   12      H-C-C
+        BEND      b20    90.00000    9   14   12      C-C-C
+        BEND      b21    90.00000   11   14   12      C-C-C
+        BEND      b22   125.26439    7   15   12      H-C-C
+        BEND      b23    90.00000    9   15   12      C-C-C
+        BEND      b24    90.00000   10   15   12      C-C-C
+        BEND      b25   125.26439    2   10   13      H-C-C
+        BEND      b26   125.26439    3   11   13      H-C-C
+        BEND      b27   125.26439    4   12   13      H-C-C
+        BEND      b28   125.26439    1    9   14      H-C-C
+        BEND      b29   125.26439    3   11   14      H-C-C
+        BEND      b30    90.00000   13   11   14      C-C-C
+        BEND      b31   125.26439    4   12   14      H-C-C
+        BEND      b32    90.00000   13   12   14      C-C-C
+        BEND      b33   125.26439    1    9   15      H-C-C
+        BEND      b34    90.00000   14    9   15      C-C-C
+        BEND      b35   125.26439    2   10   15      H-C-C
+        BEND      b36    90.00000   13   10   15      C-C-C
+        BEND      b37   125.26439    4   12   15      H-C-C
+        BEND      b38    90.00000   13   12   15      C-C-C
+        BEND      b39    90.00000   14   12   15      C-C-C
+        BEND      b40   125.26439    1    9   16      H-C-C
+        BEND      b41    90.00000   14    9   16      C-C-C
+        BEND      b42    90.00000   15    9   16      C-C-C
+        BEND      b43   125.26439    2   10   16      H-C-C
+        BEND      b44    90.00000   13   10   16      C-C-C
+        BEND      b45    90.00000   15   10   16      C-C-C
+        BEND      b46   125.26439    3   11   16      H-C-C
+        BEND      b47    90.00000   13   11   16      C-C-C
+        BEND      b48    90.00000   14   11   16      C-C-C
+      Torsions:
+        TORS       t1    90.00000   15   10   13   11   C-C-C-C
+        TORS       t2    -0.00000   16   10   13   11   C-C-C-C
+        TORS       t3    -0.00000   15   10   13   12   C-C-C-C
+        TORS       t4   -90.00000   16   10   13   12   C-C-C-C
+        TORS       t5   -90.00000   14   11   13   10   C-C-C-C
+        TORS       t6    -0.00000   16   11   13   10   C-C-C-C
+        TORS       t7    -0.00000   14   11   13   12   C-C-C-C
+        TORS       t8    90.00000   16   11   13   12   C-C-C-C
+        TORS       t9    90.00000   14   12   13   10   C-C-C-C
+        TORS      t10    -0.00000   15   12   13   10   C-C-C-C
+        TORS      t11    -0.00000   14   12   13   11   C-C-C-C
+        TORS      t12   -90.00000   15   12   13   11   C-C-C-C
+        TORS      t13   -90.00000   15    9   14   11   C-C-C-C
+        TORS      t14    -0.00000   16    9   14   11   C-C-C-C
+        TORS      t15    -0.00000   15    9   14   12   C-C-C-C
+        TORS      t16    90.00000   16    9   14   12   C-C-C-C
+        TORS      t17    90.00000   13   11   14    9   C-C-C-C
+        TORS      t18    -0.00000   16   11   14    9   C-C-C-C
+        TORS      t19    -0.00000   13   11   14   12   C-C-C-C
+        TORS      t20   -90.00000   16   11   14   12   C-C-C-C
+        TORS      t21   -90.00000   13   12   14    9   C-C-C-C
+        TORS      t22    -0.00000   15   12   14    9   C-C-C-C
+        TORS      t23    -0.00000   13   12   14   11   C-C-C-C
+        TORS      t24    90.00000   15   12   14   11   C-C-C-C
+        TORS      t25    90.00000   14    9   15   10   C-C-C-C
+        TORS      t26    -0.00000   16    9   15   10   C-C-C-C
+        TORS      t27    -0.00000   14    9   15   12   C-C-C-C
+        TORS      t28   -90.00000   16    9   15   12   C-C-C-C
+        TORS      t29   -90.00000   13   10   15    9   C-C-C-C
+        TORS      t30    -0.00000   16   10   15    9   C-C-C-C
+        TORS      t31    -0.00000   13   10   15   12   C-C-C-C
+        TORS      t32    90.00000   16   10   15   12   C-C-C-C
+        TORS      t33    90.00000   13   12   15    9   C-C-C-C
+        TORS      t34    -0.00000   14   12   15    9   C-C-C-C
+        TORS      t35    -0.00000   13   12   15   10   C-C-C-C
+        TORS      t36   -90.00000   14   12   15   10   C-C-C-C
+        TORS      t37   -90.00000   14    9   16   10   C-C-C-C
+        TORS      t38    -0.00000   15    9   16   10   C-C-C-C
+        TORS      t39    -0.00000   14    9   16   11   C-C-C-C
+        TORS      t40    90.00000   15    9   16   11   C-C-C-C
+        TORS      t41    90.00000   13   10   16    9   C-C-C-C
+        TORS      t42    -0.00000   15   10   16    9   C-C-C-C
+        TORS      t43    -0.00000   13   10   16   11   C-C-C-C
+        TORS      t44   -90.00000   15   10   16   11   C-C-C-C
+        TORS      t45   -90.00000   13   11   16    9   C-C-C-C
+        TORS      t46    -0.00000   14   11   16    9   C-C-C-C
+        TORS      t47    -0.00000   13   11   16   10   C-C-C-C
+        TORS      t48    90.00000   14   11   16   10   C-C-C-C
+
+      SymmMolecularCoor Parameters:
+        change_coordinates = no
+        transform_hessian = yes
+        max_kappa2 = 10.000000
+
+    GaussianBasisSet:
+      nbasis = 48
+      nshell = 24
+      nprim  = 72
+      name = "STO-3G"
+    Reference Wavefunction:
+      Function Parameters:
+        value_accuracy    = 1.571331e-09 (1.000000e-08) (computed)
+        gradient_accuracy = 0.000000e+00 (1.000000e-06)
+        hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+      Molecule:
+        Molecular formula: C8H8
+        molecule<Molecule>: (
+          symmetry = ci
+          unit = "angstrom"
+          {  n atoms                        geometry                     }={
+             1     H [    1.4040000000     1.4040000000     1.4040000000]
+             2     H [   -1.4040000000    -1.4040000000     1.4040000000]
+             3     H [    1.4040000000    -1.4040000000    -1.4040000000]
+             4     H [   -1.4040000000     1.4040000000    -1.4040000000]
+             5     H [   -1.4040000000    -1.4040000000    -1.4040000000]
+             6     H [    1.4040000000     1.4040000000    -1.4040000000]
+             7     H [   -1.4040000000     1.4040000000     1.4040000000]
+             8     H [    1.4040000000    -1.4040000000     1.4040000000]
+             9     C [    0.7760000000     0.7760000000     0.7760000000]
+            10     C [   -0.7760000000    -0.7760000000     0.7760000000]
+            11     C [    0.7760000000    -0.7760000000    -0.7760000000]
+            12     C [   -0.7760000000     0.7760000000    -0.7760000000]
+            13     C [   -0.7760000000    -0.7760000000    -0.7760000000]
+            14     C [    0.7760000000     0.7760000000    -0.7760000000]
+            15     C [   -0.7760000000     0.7760000000     0.7760000000]
+            16     C [    0.7760000000    -0.7760000000     0.7760000000]
+          }
+        )
+        Atomic Masses:
+            1.00783    1.00783    1.00783    1.00783    1.00783
+            1.00783    1.00783    1.00783   12.00000   12.00000
+           12.00000   12.00000   12.00000   12.00000   12.00000
+           12.00000
+
+      GaussianBasisSet:
+        nbasis = 48
+        nshell = 24
+        nprim  = 72
+        name = "STO-3G"
+      SCF Parameters:
+        maxiter = 40
+        density_reset_frequency = 10
+        level_shift = 0.000000
+
+      CLSCF Parameters:
+        charge = 0.0000000000
+        ndocc = 28
+        docc = [ 14 14 ]
+
+
+  The following keywords in "symm1_cubmp284sto3gci.in" were ignored:
+    mpqc:mole:reference:guess_wavefunction:multiplicity
+    mpqc:mole:reference:multiplicity
+
+                                         CPU  Wall
+mpqc:                                  47.66 59.74
+  calc:                                45.14 57.13
+    mp2-mem:                           45.14 57.13
+      Laj:                              1.58  1.58
+        make_gmat for Laj:              1.52  1.52
+          gmat:                         1.52  1.52
+      Pab and Wab:                      0.00  0.00
+      Pkj and Wkj:                      1.39  1.40
+        make_gmat for Wkj:              1.34  1.34
+          gmat:                         1.34  1.34
+      cphf:                             7.29  7.29
+        gmat:                           7.23  7.26
+      hcore contrib.:                   0.68  0.68
+      mp2 passes:                      21.10 26.79
+        1. q.b.t.:                      0.08  0.07
+        2. q.b.t.:                      0.15  0.15
+        3. q.t.:                        0.43  0.43
+        3.qbt+4.qbt+non-sep contrib.:  12.96 17.66
+        4. q.t.:                        0.28  0.28
+        Pab and Wab:                    0.09  0.09
+        Pkj and Wkj:                    0.16  0.16
+        Waj and Laj:                    0.12  0.13
+        compute ecorr:                  0.01  0.02
+        divide (ia|jb)'s:               0.01  0.01
+        erep+1.qt+2.qt:                 6.78  7.76
+      overlap contrib.:                 0.08  0.08
+      sep 2PDM contrib.:                9.63 15.90
+      vector:                           2.46  2.47
+        density:                        0.01  0.01
+        evals:                          0.02  0.02
+        extrap:                         0.00  0.02
+        fock:                           2.22  2.23
+          accum:                        0.00  0.00
+          ao_gmat:                      2.10  2.13
+            start thread:               2.09  2.08
+            stop thread:                0.00  0.05
+          init pmax:                    0.00  0.00
+          local data:                   0.01  0.01
+          setup:                        0.04  0.03
+          sum:                          0.00  0.00
+          symm:                         0.07  0.05
+  input:                                2.49  2.58
+    vector:                             2.06  2.15
+      density:                          0.00  0.00
+      evals:                            0.01  0.01
+      extrap:                           0.00  0.01
+      fock:                             1.92  1.98
+        accum:                          0.00  0.00
+        ao_gmat:                        1.82  1.92
+          start thread:                 1.82  1.88
+          stop thread:                  0.00  0.03
+        init pmax:                      0.00  0.00
+        local data:                     0.00  0.00
+        setup:                          0.04  0.02
+        sum:                            0.00  0.00
+        symm:                           0.05  0.04
+
+  End Time: Sat Apr  6 14:20:30 2002
+

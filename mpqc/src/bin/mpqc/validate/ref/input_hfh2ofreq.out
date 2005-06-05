@@ -1,0 +1,685 @@
+  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/atominfo.kv.
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                             Version 2.1.0-alpha-gcc3
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@aros.ca.sandia.gov
+  Start Time: Sat Apr  6 14:00:26 2002
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 2).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 2
+  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/atominfo.kv.
+  Molecule: setting point group to c2v
+  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/basis/6-31gS.kv.
+      Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/basis/sto-3g.kv.
+
+      CLSCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(SO):             4     0     1     2
+      Maximum orthogonalization residual = 1.94039
+      Minimum orthogonalization residual = 0.335627
+      docc = [ 3 0 1 1 ]
+      nbasis = 7
+
+  CLSCF::init: total charge = 0
+
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      integral intermediate storage = 31876 bytes
+      integral cache = 7967676 bytes
+      nuclear repulsion energy =    9.2914265473
+
+                       565 integrals
+      iter     1 energy =  -74.6442059283 delta = 7.46913e-01
+                       565 integrals
+      iter     2 energy =  -74.9411785471 delta = 2.32701e-01
+                       565 integrals
+      iter     3 energy =  -74.9598835707 delta = 6.74768e-02
+                       565 integrals
+      iter     4 energy =  -74.9608017389 delta = 1.82839e-02
+                       565 integrals
+      iter     5 energy =  -74.9608457808 delta = 4.27179e-03
+                       565 integrals
+      iter     6 energy =  -74.9608460189 delta = 2.87494e-04
+                       565 integrals
+      iter     7 energy =  -74.9608460194 delta = 1.50392e-05
+
+      HOMO is     1  B1 =  -0.391179
+      LUMO is     4  A1 =   0.614055
+
+      total scf energy =  -74.9608460194
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 10
+        Using symmetric orthogonalization.
+        n(SO):            10     1     3     5
+        Maximum orthogonalization residual = 4.69613
+        Minimum orthogonalization residual = 0.0219193
+        The number of electrons in the projected density = 9.95801
+
+  docc = [ 3 0 1 1 ]
+  nbasis = 19
+
+  Molecular formula H2O
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = input_hfh2ofreq
+    restart_file  = input_hfh2ofreq.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = no
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  SCF::compute: energy accuracy = 1.0000000e-06
+
+  integral intermediate storage = 236328 bytes
+  integral cache = 7760632 bytes
+  nuclear repulsion energy =    9.2914265473
+
+                 19108 integrals
+  iter     1 energy =  -75.8313984939 delta = 2.12979e-01
+                 19108 integrals
+  iter     2 energy =  -75.9893342668 delta = 5.77199e-02
+                 19108 integrals
+  iter     3 energy =  -76.0061172655 delta = 1.48537e-02
+                 19108 integrals
+  iter     4 energy =  -76.0104307742 delta = 6.83190e-03
+                 19108 integrals
+  iter     5 energy =  -76.0107349333 delta = 2.29768e-03
+                 19108 integrals
+  iter     6 energy =  -76.0107461220 delta = 5.11193e-04
+                 19108 integrals
+  iter     7 energy =  -76.0107462842 delta = 5.25319e-05
+                 19108 integrals
+  iter     8 energy =  -76.0107462976 delta = 1.68043e-05
+                 19108 integrals
+  iter     9 energy =  -76.0107462983 delta = 4.02927e-06
+                 19108 integrals
+  iter    10 energy =  -76.0107462984 delta = 1.15008e-06
+
+  HOMO is     1  B1 =  -0.498217
+  LUMO is     4  A1 =   0.213089
+
+  total scf energy =  -76.0107462984
+
+  Value of the MolecularEnergy:  -76.0107462984
+
+  The external rank is 6
+  Computing molecular hessian from 6 displacements:
+  Starting at displacement: 0
+  Hessian options: 
+    displacement: 0.01 bohr
+    gradient_accuracy: 1e-05 au
+    eliminate_cubic_terms: yes
+    only_totally_symmetric: no
+
+  Beginning displacement 0:
+  Molecule: setting point group to c2v
+  Displacement is A1 in c2v.  Using point group c2v for displaced molecule.
+
+  SCF::compute: energy accuracy = 1.0000000e-07
+
+  integral intermediate storage = 236328 bytes
+  integral cache = 7760632 bytes
+  nuclear repulsion energy =    9.2914265473
+
+  Using symmetric orthogonalization.
+  n(SO):            10     1     3     5
+  Maximum orthogonalization residual = 4.69613
+  Minimum orthogonalization residual = 0.0219193
+                 19108 integrals
+  iter     1 energy =  -76.0107462984 delta = 2.09895e-01
+                 19108 integrals
+  iter     2 energy =  -76.0107462984 delta = 1.86331e-08
+
+  HOMO is     1  B1 =  -0.498218
+  LUMO is     4  A1 =   0.213089
+
+  total scf energy =  -76.0107462984
+
+  SCF::compute: gradient accuracy = 1.0000000e-05
+
+  Total Gradient:
+       1   O   0.0004691490   0.0000000000   0.0000000000
+       2   H  -0.0002345745  -0.0000000000  -0.0002321324
+       3   H  -0.0002345745  -0.0000000000   0.0002321324
+
+  Beginning displacement 1:
+  Molecule: setting point group to c2v
+  Displacement is A1 in c2v.  Using point group c2v for displaced molecule.
+
+  SCF::compute: energy accuracy = 1.0000000e-07
+
+  integral intermediate storage = 236328 bytes
+  integral cache = 7760632 bytes
+  nuclear repulsion energy =    9.2713628191
+
+  Using symmetric orthogonalization.
+  n(SO):            10     1     3     5
+  Maximum orthogonalization residual = 4.69009
+  Minimum orthogonalization residual = 0.0219947
+                 19108 integrals
+  iter     1 energy =  -76.0107168738 delta = 2.09903e-01
+                 19108 integrals
+  iter     2 energy =  -76.0107327055 delta = 4.41842e-04
+                 19108 integrals
+  iter     3 energy =  -76.0107332524 delta = 9.95819e-05
+                 19108 integrals
+  iter     4 energy =  -76.0107333392 delta = 3.04180e-05
+                 19108 integrals
+  iter     5 energy =  -76.0107333482 delta = 1.06061e-05
+                 19108 integrals
+  iter     6 energy =  -76.0107333492 delta = 4.39723e-06
+                 19108 integrals
+  iter     7 energy =  -76.0107333492 delta = 8.82987e-07
+                 19108 integrals
+  iter     8 energy =  -76.0107333492 delta = 1.73915e-07
+
+  HOMO is     1  B1 =  -0.497903
+  LUMO is     4  A1 =   0.212736
+
+  total scf energy =  -76.0107333492
+
+  SCF::compute: gradient accuracy = 1.0000000e-05
+
+  Total Gradient:
+       1   O  -0.0010405841   0.0000000000  -0.0000000000
+       2   H   0.0005202920  -0.0000000000   0.0022405305
+       3   H   0.0005202920  -0.0000000000  -0.0022405305
+
+  Beginning displacement 2:
+  Molecule: setting point group to c2v
+  Displacement is A1 in c2v.  Using point group c2v for displaced molecule.
+
+  SCF::compute: energy accuracy = 1.0000000e-07
+
+  integral intermediate storage = 236328 bytes
+  integral cache = 7760632 bytes
+  nuclear repulsion energy =    9.2483981954
+
+  Using symmetric orthogonalization.
+  n(SO):            10     1     3     5
+  Maximum orthogonalization residual = 4.68748
+  Minimum orthogonalization residual = 0.0220808
+                 19108 integrals
+  iter     1 energy =  -76.0106433186 delta = 2.09707e-01
+                 19108 integrals
+  iter     2 energy =  -76.0106998497 delta = 1.24263e-03
+                 19108 integrals
+  iter     3 energy =  -76.0107037606 delta = 2.93534e-04
+                 19108 integrals
+  iter     4 energy =  -76.0107045194 delta = 1.00100e-04
+                 19108 integrals
+  iter     5 energy =  -76.0107046612 delta = 4.91826e-05
+                 19108 integrals
+  iter     6 energy =  -76.0107046779 delta = 2.31661e-05
+                 19108 integrals
+  iter     7 energy =  -76.0107046780 delta = 1.57454e-06
+                 19108 integrals
+  iter     8 energy =  -76.0107046780 delta = 2.73161e-07
+
+  HOMO is     1  B1 =  -0.498108
+  LUMO is     4  A1 =   0.212038
+
+  total scf energy =  -76.0107046780
+
+  SCF::compute: gradient accuracy = 1.0000000e-05
+
+  Total Gradient:
+       1   O  -0.0066012454   0.0000000000   0.0000000000
+       2   H   0.0033006227  -0.0000000000   0.0031779831
+       3   H   0.0033006227  -0.0000000000  -0.0031779831
+
+  Beginning displacement 3:
+  Molecule: setting point group to c2v
+  Displacement is A1 in c2v.  Using point group c2v for displaced molecule.
+
+  SCF::compute: energy accuracy = 1.0000000e-07
+
+  integral intermediate storage = 236328 bytes
+  integral cache = 7760632 bytes
+  nuclear repulsion energy =    9.3114638385
+
+  Using symmetric orthogonalization.
+  n(SO):            10     1     3     5
+  Maximum orthogonalization residual = 4.70216
+  Minimum orthogonalization residual = 0.0218448
+                 19108 integrals
+  iter     1 energy =  -76.0106307945 delta = 2.10102e-01
+                 19108 integrals
+  iter     2 energy =  -76.0107221272 delta = 1.46434e-03
+                 19108 integrals
+  iter     3 energy =  -76.0107280713 delta = 3.42812e-04
+                 19108 integrals
+  iter     4 energy =  -76.0107295333 delta = 1.36029e-04
+                 19108 integrals
+  iter     5 energy =  -76.0107296860 delta = 4.54298e-05
+                 19108 integrals
+  iter     6 energy =  -76.0107297039 delta = 2.30328e-05
+                 19108 integrals
+  iter     7 energy =  -76.0107297041 delta = 2.17592e-06
+                 19108 integrals
+  iter     8 energy =  -76.0107297041 delta = 4.74694e-07
+
+  HOMO is     1  B1 =  -0.498531
+  LUMO is     4  A1 =   0.213430
+
+  total scf energy =  -76.0107297041
+
+  SCF::compute: gradient accuracy = 1.0000000e-05
+
+  Total Gradient:
+       1   O   0.0020165841   0.0000000000   0.0000000000
+       2   H  -0.0010082920  -0.0000000000  -0.0027230783
+       3   H  -0.0010082920  -0.0000000000   0.0027230783
+
+  Beginning displacement 4:
+  Molecule: setting point group to c2v
+  Displacement is A1 in c2v.  Using point group c2v for displaced molecule.
+
+  SCF::compute: energy accuracy = 1.0000000e-07
+
+  integral intermediate storage = 236328 bytes
+  integral cache = 7760632 bytes
+  nuclear repulsion energy =    9.3346656189
+
+  Using symmetric orthogonalization.
+  n(SO):            10     1     3     5
+  Maximum orthogonalization residual = 4.70475
+  Minimum orthogonalization residual = 0.0217598
+                 19108 integrals
+  iter     1 energy =  -76.0106278992 delta = 2.10097e-01
+                 19108 integrals
+  iter     2 energy =  -76.0106864378 delta = 1.27390e-03
+                 19108 integrals
+  iter     3 energy =  -76.0106904174 delta = 2.99792e-04
+                 19108 integrals
+  iter     4 energy =  -76.0106911794 delta = 1.00691e-04
+                 19108 integrals
+  iter     5 energy =  -76.0106913183 delta = 4.92094e-05
+                 19108 integrals
+  iter     6 energy =  -76.0106913345 delta = 2.29549e-05
+                 19108 integrals
+  iter     7 energy =  -76.0106913346 delta = 1.58762e-06
+                 19108 integrals
+  iter     8 energy =  -76.0106913346 delta = 2.59742e-07
+
+  HOMO is     1  B1 =  -0.498334
+  LUMO is     4  A1 =   0.214132
+
+  total scf energy =  -76.0106913346
+
+  SCF::compute: gradient accuracy = 1.0000000e-05
+
+  Total Gradient:
+       1   O   0.0076545848   0.0000000000   0.0000000000
+       2   H  -0.0038272924  -0.0000000000  -0.0037750779
+       3   H  -0.0038272924  -0.0000000000   0.0037750779
+
+  Beginning displacement 5:
+  Molecule: setting point group to cs
+  Displacement is B2 in c2v.  Using point group cs for displaced molecule.
+
+  SCF::compute: energy accuracy = 1.0000000e-07
+
+  integral intermediate storage = 236328 bytes
+  integral cache = 7760632 bytes
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      integral intermediate storage = 31876 bytes
+      integral cache = 7967676 bytes
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(SO):             6     1
+      Maximum orthogonalization residual = 1.94042
+      Minimum orthogonalization residual = 0.3354
+      nuclear repulsion energy =    9.2917138257
+
+                       733 integrals
+      iter     1 energy =  -74.6441111903 delta = 7.46789e-01
+                       733 integrals
+      iter     2 energy =  -74.9410849693 delta = 2.27702e-01
+                       733 integrals
+      iter     3 energy =  -74.9597742006 delta = 6.70496e-02
+                       733 integrals
+      iter     4 energy =  -74.9607071950 delta = 1.85604e-02
+                       733 integrals
+      iter     5 energy =  -74.9607494303 delta = 3.80143e-03
+                       733 integrals
+      iter     6 energy =  -74.9607496841 delta = 2.82464e-04
+                       733 integrals
+      iter     7 energy =  -74.9607496844 delta = 9.74967e-06
+
+      HOMO is     1  A" =  -0.391187
+      LUMO is     5  A' =   0.613805
+
+      total scf energy =  -74.9607496844
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 10
+        Using symmetric orthogonalization.
+        n(SO):            15     4
+        Maximum orthogonalization residual = 4.69616
+        Minimum orthogonalization residual = 0.0219165
+        The number of electrons in the projected density = 9.95801
+
+  nuclear repulsion energy =    9.2917138257
+
+                 25330 integrals
+  iter     1 energy =  -75.8313073803 delta = 2.12869e-01
+                 25330 integrals
+  iter     2 energy =  -75.9892651359 delta = 5.76207e-02
+                 25330 integrals
+  iter     3 energy =  -76.0060646997 delta = 1.47923e-02
+                 25330 integrals
+  iter     4 energy =  -76.0103608950 delta = 6.82584e-03
+                 25330 integrals
+  iter     5 energy =  -76.0106645434 delta = 2.29496e-03
+                 25330 integrals
+  iter     6 energy =  -76.0106757084 delta = 5.10629e-04
+                 25330 integrals
+  iter     7 energy =  -76.0106758705 delta = 5.24087e-05
+                 25330 integrals
+  iter     8 energy =  -76.0106758838 delta = 1.66862e-05
+                 25330 integrals
+  iter     9 energy =  -76.0106758846 delta = 3.98484e-06
+                 25330 integrals
+  iter    10 energy =  -76.0106758846 delta = 1.13646e-06
+                 25330 integrals
+  iter    11 energy =  -76.0106758846 delta = 1.45371e-07
+
+  HOMO is     1  A" =  -0.498222
+  LUMO is     5  A' =   0.213059
+
+  total scf energy =  -76.0106758846
+
+  SCF::compute: gradient accuracy = 1.0000000e-05
+
+  Total Gradient:
+       1   O   0.0006454807   0.0000000000  -0.0105297251
+       2   H   0.0036801738  -0.0000000000   0.0049428248
+       3   H  -0.0043256545  -0.0000000000   0.0055869003
+  Molecule: setting point group to c2v
+  The external rank is 6
+
+  Frequencies (cm-1; negative is imaginary):
+  A1
+     1  4074.63
+     2  1825.22
+
+  B2
+     3  4193.34
+
+  THERMODYNAMIC ANALYSIS:
+
+  Contributions to the nonelectronic enthalpy at 298.15 K:
+                     kJ/mol       kcal/mol
+    E0vib        =   60.3707      14.4289
+    Evib(T)      =    0.0033       0.0008
+    Erot(T)      =    3.7185       0.8887
+    Etrans(T)    =    3.7185       0.8887
+    PV(T)        =    2.4790       0.5925
+    Total nonelectronic enthalpy:
+    H_nonel(T)   =   70.2899      16.7997
+
+  Contributions to the entropy at 298.15 K and 1.0 atm:
+                     J/(mol*K)    cal/(mol*K)
+    S_trans(T,P) =  144.8020      34.6085
+    S_rot(T)     =   43.4035      10.3737
+    S_vib(T)     =    0.0122       0.0029
+    S_el         =    0.0000       0.0000
+    Total entropy:
+    S_total(T,P) =  188.2176      44.9851
+  
+  Various data used for thermodynamic analysis:
+  
+  Nonlinear molecule
+  Principal moments of inertia (amu*angstrom^2): 0.58773, 1.14593, 1.73366
+  Point group: c2v
+  Order of point group: 4
+  Rotational symmetry number: 2
+  Rotational temperatures (K): 41.2676, 21.1656, 13.9902
+  Electronic degeneracy: 1
+
+  Function Parameters:
+    value_accuracy    = 2.772912e-08 (1.000000e-07)
+    gradient_accuracy = 2.772912e-06 (1.000000e-06)
+    hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+  Molecule:
+    Molecular formula: H2O
+    molecule<Molecule>: (
+      symmetry = c2v
+      symmetry_frame = [
+        [ -0.0000000000000000  0.0000000000000000  1.0000000000000000]
+        [  1.0000000000000000  0.0000000000000000 -0.0000000000000000]
+        [ -0.0000000000000000  1.0000000000000000 -0.0000000000000000]]
+      unit = "angstrom"
+      {  n atoms                        geometry                     }={
+         1     O [   -0.0641272226     0.0000000000     0.0000000000]
+         2     H [    0.5088727774    -0.0000000000     0.7540000000]
+         3     H [    0.5088727774    -0.0000000000    -0.7540000000]
+      }
+    )
+    Atomic Masses:
+       15.99491    1.00783    1.00783
+
+  GaussianBasisSet:
+    nbasis = 19
+    nshell = 8
+    nprim  = 19
+    name = "6-31G*"
+
+  SCF::compute: energy accuracy = 1.0000000e-07
+
+  integral intermediate storage = 236328 bytes
+  integral cache = 7760632 bytes
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      integral intermediate storage = 31876 bytes
+      integral cache = 7967676 bytes
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(SO):             4     0     1     2
+      Maximum orthogonalization residual = 1.94039
+      Minimum orthogonalization residual = 0.335627
+      nuclear repulsion energy =    9.2914265473
+
+                       565 integrals
+      iter     1 energy =  -74.6442059283 delta = 7.46913e-01
+                       565 integrals
+      iter     2 energy =  -74.9411785471 delta = 2.32701e-01
+                       565 integrals
+      iter     3 energy =  -74.9598835707 delta = 6.74768e-02
+                       565 integrals
+      iter     4 energy =  -74.9608017389 delta = 1.82839e-02
+                       565 integrals
+      iter     5 energy =  -74.9608457808 delta = 4.27179e-03
+                       565 integrals
+      iter     6 energy =  -74.9608460189 delta = 2.87494e-04
+                       565 integrals
+      iter     7 energy =  -74.9608460194 delta = 1.50392e-05
+
+      HOMO is     1  B1 =  -0.391179
+      LUMO is     4  A1 =   0.614055
+
+      total scf energy =  -74.9608460194
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 10
+        Using symmetric orthogonalization.
+        n(SO):            10     1     3     5
+        Maximum orthogonalization residual = 4.69613
+        Minimum orthogonalization residual = 0.0219193
+        The number of electrons in the projected density = 9.95801
+
+  nuclear repulsion energy =    9.2914265473
+
+                 19108 integrals
+  iter     1 energy =  -75.8313984939 delta = 2.12979e-01
+                 19108 integrals
+  iter     2 energy =  -75.9893342668 delta = 5.77199e-02
+                 19108 integrals
+  iter     3 energy =  -76.0061172655 delta = 1.48537e-02
+                 19108 integrals
+  iter     4 energy =  -76.0104307742 delta = 6.83190e-03
+                 19108 integrals
+  iter     5 energy =  -76.0107349333 delta = 2.29768e-03
+                 19108 integrals
+  iter     6 energy =  -76.0107461220 delta = 5.11193e-04
+                 19108 integrals
+  iter     7 energy =  -76.0107462842 delta = 5.25319e-05
+                 19108 integrals
+  iter     8 energy =  -76.0107462976 delta = 1.68043e-05
+                 19108 integrals
+  iter     9 energy =  -76.0107462983 delta = 4.02927e-06
+                 19108 integrals
+  iter    10 energy =  -76.0107462984 delta = 1.15008e-06
+                 19108 integrals
+  iter    11 energy =  -76.0107462984 delta = 1.44804e-07
+
+  HOMO is     1  B1 =  -0.498218
+  LUMO is     4  A1 =   0.213089
+
+  total scf energy =  -76.0107462984
+  Natural Population Analysis:
+     n   atom    charge     ne(S)     ne(P)     ne(D) 
+      1    O   -0.954701  3.748465  5.194988  0.011248
+      2    H    0.477351  0.522649
+      3    H    0.477351  0.522649
+
+  SCF Parameters:
+    maxiter = 40
+    density_reset_frequency = 10
+    level_shift = 0.000000
+
+  CLSCF Parameters:
+    charge = 0
+    ndocc = 5
+    docc = [ 3 0 1 1 ]
+
+                               CPU Wall
+mpqc:                         1.87 1.99
+  NAO:                        0.21 0.22
+    vector:                   0.18 0.20
+      density:                0.00 0.00
+      evals:                  0.04 0.01
+      extrap:                 0.02 0.01
+      fock:                   0.04 0.09
+        accum:                0.00 0.00
+        ao_gmat:              0.03 0.03
+          start thread:       0.03 0.03
+          stop thread:        0.00 0.00
+        init pmax:            0.00 0.00
+        local data:           0.00 0.00
+        setup:                0.01 0.03
+        sum:                  0.00 0.00
+        symm:                 0.00 0.03
+      vector:                 0.05 0.05
+        density:              0.00 0.00
+        evals:                0.00 0.00
+        extrap:               0.00 0.01
+        fock:                 0.03 0.02
+          accum:              0.00 0.00
+          ao_gmat:            0.01 0.01
+            start thread:     0.01 0.00
+            stop thread:      0.00 0.00
+          init pmax:          0.00 0.00
+          local data:         0.00 0.00
+          setup:              0.01 0.01
+          sum:                0.00 0.00
+          symm:               0.01 0.01
+  calc:                       0.12 0.13
+    vector:                   0.11 0.13
+      density:                0.00 0.00
+      evals:                  0.00 0.01
+      extrap:                 0.00 0.01
+      fock:                   0.09 0.09
+        accum:                0.00 0.00
+        ao_gmat:              0.04 0.03
+          start thread:       0.03 0.03
+          stop thread:        0.00 0.00
+        init pmax:            0.00 0.00
+        local data:           0.00 0.00
+        setup:                0.04 0.02
+        sum:                  0.00 0.00
+        symm:                 0.01 0.03
+  hessian:                    1.35 1.42
+    compute gradient:         0.62 0.68
+      nuc rep:                0.00 0.00
+      one electron gradient:  0.06 0.07
+      overlap gradient:       0.05 0.03
+      two electron gradient:  0.51 0.57
+        contribution:         0.09 0.15
+          start thread:       0.09 0.11
+          stop thread:        0.00 0.03
+        setup:                0.42 0.42
+    vector:                   0.69 0.71
+      density:                0.01 0.01
+      evals:                  0.04 0.03
+      extrap:                 0.03 0.05
+      fock:                   0.42 0.40
+        accum:                0.00 0.00
+        ao_gmat:              0.16 0.17
+          start thread:       0.15 0.15
+          stop thread:        0.00 0.01
+        init pmax:            0.00 0.00
+        local data:           0.03 0.01
+        setup:                0.06 0.09
+        sum:                  0.00 0.00
+        symm:                 0.16 0.12
+      vector:                 0.05 0.04
+        density:              0.00 0.00
+        evals:                0.00 0.00
+        extrap:               0.03 0.00
+        fock:                 0.00 0.02
+          accum:              0.00 0.00
+          ao_gmat:            0.00 0.01
+            start thread:     0.00 0.00
+            stop thread:      0.00 0.00
+          init pmax:          0.00 0.00
+          local data:         0.00 0.00
+          setup:              0.00 0.00
+          sum:                0.00 0.00
+          symm:               0.00 0.01
+  input:                      0.18 0.21
+    vector:                   0.03 0.04
+      density:                0.00 0.00
+      evals:                  0.01 0.00
+      extrap:                 0.00 0.01
+      fock:                   0.02 0.02
+        accum:                0.00 0.00
+        ao_gmat:              0.00 0.01
+          start thread:       0.00 0.00
+          stop thread:        0.00 0.00
+        init pmax:            0.00 0.00
+        local data:           0.00 0.00
+        setup:                0.01 0.01
+        sum:                  0.00 0.00
+        symm:                 0.00 0.01
+
+  End Time: Sat Apr  6 14:00:28 2002
+

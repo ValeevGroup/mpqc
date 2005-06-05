@@ -1,0 +1,64 @@
+% Emacs should use -*- KeyVal -*- mode
+% this file was automatically generated
+% label: symmetry test series 2
+% molecule specification
+molecule<Molecule>: (
+  symmetry = auto
+  unit = angstrom
+  { atoms geometry } = {
+     H     [     0.952627944163     0.952627944163     0.952627944163 ]
+     C     [     0.334863156130     0.334863156130     0.334863156130 ]
+     C     [    -0.334863156130    -0.334863156130    -0.334863156130 ]
+     H     [    -0.952627944163    -0.952627944163    -0.952627944163 ]
+  }
+)
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "cc-pVTZ"
+  molecule = $:molecule
+)
+mpqc: (
+  checkpoint = no
+  savestate = no
+  restart = no
+  % molecular coordinates for optimization
+  coor<SymmMolecularCoor>: (
+    molecule = $:molecule
+    generator<IntCoorGen>: (
+      molecule = $:molecule
+    )
+  )
+  do_energy = yes
+  do_gradient = no
+  % method for computing the molecule's energy
+  mole<CLHF>: (
+    molecule = $:molecule
+    basis = $:basis
+    coor = $..:coor
+    memory = 32000000
+    total_charge = 0
+    multiplicity = 1
+    print_npa = yes
+    guess_wavefunction<CLHF>: (
+      molecule = $:molecule
+      total_charge = 0
+      multiplicity = 1
+      basis<GaussianBasisSet>: (
+        molecule = $:molecule
+        name = "STO-3G"
+      )
+      memory = 32000000
+    )
+  )
+  optimize = no
+  % optimizer object for the molecular geometry
+  opt<QNewtonOpt>: (
+    max_iterations = 20
+    function = $..:mole
+    update<BFGSUpdate>: ()
+    convergence<MolEnergyConvergence>: (
+      cartesian = yes
+      energy = $..:..:mole
+    )
+  )
+)

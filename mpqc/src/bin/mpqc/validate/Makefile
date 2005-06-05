@@ -208,6 +208,10 @@ INPUTINPUTS := $(INPUTINPUTS:%=$(INP)/input_%)
 
 ##############################################################################
 
+# cints will not run all test cases.  This filter can be used to select
+# just cases that cints can run
+CINTSFILTER = $(INP)/mbpt_mp2r12% $(INP)/methods_mp2r12% $(INP)/mp2r12%
+
 ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
 	    $(MP2R12INPUTS) \
             $(ORTHOGINPUTS) $(BASIS1INPUTS) $(BASIS2INPUTS) \
@@ -239,6 +243,9 @@ CHECK0FILTER := $(CHECK0FILTER:%=%.in) \
 CHECK0FILTER += $(INP)/basis2_% $(INP)/dft_% $(INP)/symm1_cub%
 CHECK0FILTER += $(INP)/mbpt_mp2r12_c6h6_multipass.in
 CHECK0INPUTS := $(filter-out $(CHECK0FILTER),$(CHECK0INPUTS))
+ifeq ($(MPQCRUN_INTEGRAL),cints)
+  CHECK0INPUTS := $(filter $(CINTSFILTER),$(CHECK0INPUTS))
+endif
 CHECK0OUTPUTS := $(CHECK0INPUTS:%.$(INSUF)=%.out)
 #printcheck0:
 #	@echo CHECK0BFILTER = $(CHECK0BFILTER)
@@ -264,6 +271,9 @@ CHECK1FILTER := $(CHECK1FILTER:%=%.in) \
 CHECK1FILTER += $(INP)/basis2_% $(INP)/dft_% $(INP)/symm1_cub%
 CHECK1FILTER += $(INP)/mbpt_mp2r12_c6h6_multipass.in
 CHECK1INPUTS := $(filter-out $(CHECK1FILTER),$(CHECK1INPUTS))
+ifeq ($(MPQCRUN_INTEGRAL),cints)
+  CHECK1INPUTS := $(filter $(CINTSFILTER),$(CHECK1INPUTS))
+endif
 CHECK1OUTPUTS := $(CHECK1INPUTS:%.$(INSUF)=%.out)
 #printcheck1:
 #	@echo CHECK1BFILTER = $(CHECK1BFILTER)
@@ -271,6 +281,9 @@ CHECK1OUTPUTS := $(CHECK1INPUTS:%.$(INSUF)=%.out)
 #	@ls -l $(CHECK1INPUTS)
 
 CHECK2INPUTS := $(ALLINPUTS)
+ifeq ($(MPQCRUN_INTEGRAL),cints)
+  CHECK2INPUTS := $(filter $(CINTSFILTER),$(CHECK2INPUTS))
+endif
 CHECK2OUTPUTS := $(CHECK2INPUTS:%.$(INSUF)=%.out)
 #printcheck2:
 #	@ls -l $(CHECK2INPUTS)
@@ -318,8 +331,14 @@ check: check0
 
 check0: $(RUN) check0_run check0_chk
 
+MPQCRUN = ../mpqcrun
+MPQCRUN_EXTRA_ARGS = --autoout --simpout \
+                     --inputprefix $(SRCDIR)/ref/ \
+                     --outputprefix $(RUN)/ \
+                     --seq ^ckpt_
+
 check0_run:
-	$(PERL) ../mpqcrun --autoout --inputprefix $(SRCDIR)/ref/ --outputprefix $(RUN)/ --simpout $(MPQCRUN_ARGS) $(CHECK0INPUTS:$(INP)/%=%)
+	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(MPQCRUN_ARGS) $(CHECK0INPUTS:$(INP)/%=%)
 
 check0_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK0OUTPUTS:$(INP)/%=$(RUN)/%)
@@ -327,7 +346,7 @@ check0_chk:
 check1: $(RUN) check1_run check1_chk
 
 check1_run:
-	$(PERL) ../mpqcrun --autoout --inputprefix $(SRCDIR)/ref/ --outputprefix $(RUN)/ --simpout $(MPQCRUN_ARGS) $(CHECK1INPUTS:$(INP)/%=%)
+	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(MPQCRUN_ARGS) $(CHECK1INPUTS:$(INP)/%=%)
 
 check1_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK1OUTPUTS:$(INP)/%=$(RUN)/%)
@@ -335,7 +354,7 @@ check1_chk:
 check2: (RUN) check2_run check2_chk
 
 check2_run:
-	$(PERL) ../mpqcrun --autoout --inputprefix $(SRCDIR)/ref/ --outputprefix $(RUN)/ --simpout $(MPQCRUN_ARGS) $(CHECK2INPUTS:$(INP)/%=%)
+	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(MPQCRUN_ARGS) $(CHECK2INPUTS:$(INP)/%=%)
 
 check2_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK2OUTPUTS:$(INP)/%=$(RUN)/%)

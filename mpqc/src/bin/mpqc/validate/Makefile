@@ -41,11 +41,9 @@ endif
 MPQCRUN_INTEGRAL:=$(filter --integral=%, $(MPQCRUN_ARGS))
 MPQCRUN_INTEGRAL:=$(patsubst --integral=%, %, $(MPQCRUN_INTEGRAL))
 MPQCRUN_INTEGRAL:=$(strip $(MPQCRUN_INTEGRAL))
-$(warning mpqcrun_integral is $(MPQCRUN_INTEGRAL))
 ifeq ($(MPQCRUN_INTEGRAL),)
   MPQCRUN_INTEGRAL=intv3
 endif
-$(warning mpqcrun_integral is $(MPQCRUN_INTEGRAL))
 
 # Also need to see if --mpqc was specified.  If not, then add
 # --mpqc ../mpqc.

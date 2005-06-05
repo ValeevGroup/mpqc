@@ -382,9 +382,12 @@ try_main(int argc, char *argv[])
   Ref<KeyVal> keyval = new PrefixKeyVal(parsedkv.pointer(),"mpqc");
 
   // get the basename for output files
-  int nfilebase = (int) (::strrchr(input, '.') - input);
+  const char *basename_source;
+  if (output) basename_source = output;
+  else        basename_source = input;
+  int nfilebase = (int) (::strrchr(basename_source, '.') - basename_source);
   char *basename = new char[nfilebase + 1];
-  strncpy(basename, input, nfilebase);
+  strncpy(basename, basename_source, nfilebase);
   basename[nfilebase] = '\0';
   SCFormIO::set_default_basename(basename);
 

@@ -66,10 +66,13 @@ mpqcrun takes the following command line options:
                               one job is run at a time.
   <dt><tt>--exclude</tt> regex<dd>Exclude files matching regex.
   <dt><tt>--readdir</tt> dir<dd>Run mpqc on all files matching dir/*.in.
+  <dt><tt>--inputprefix</tt> prefix<dd>Prepend prefix to all input file names.
+  <dt><tt>--outputprefix</tt> prefix<dd>Prepend prefix to all output file names.
   <dt><tt>--count</tt><dd>Print the number of input files that would be run.
   <dt><tt>--printfiles</tt><dd>Print the list of input files that would be run.
   <dt><tt>--rerun</tt><dd>Overwrite output file, even if up-to-date.
   <dt><tt>--onlynew</tt><dd>Do not overwrite output file, even if not up-to-date.
+  <dt><tt>--simpout</tt><dd>Do not append extra info like nnode to filename.
   <dt><tt>--uniqout</tt><dd>Generate unique output filenames.
   <dt><tt>--autoout</tt><dd>Generate output filenames by replacing
                             the suffix with "out".

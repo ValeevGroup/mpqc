@@ -1,0 +1,248 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                             Version 2.1.0-alpha-gcc3
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@aros.ca.sandia.gov
+  Start Time: Sat Apr  6 14:09:51 2002
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 2).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 2
+  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/atominfo.kv.
+  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/basis/6-311gSS.kv.
+      Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/basis/sto-3g.kv.
+
+      USCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(SO):             4     0     1     2
+      Maximum orthogonalization residual = 1.94235
+      Minimum orthogonalization residual = 0.275215
+      alpha = [ 3 0 1 1 ]
+      beta  = [ 2 0 0 1 ]
+
+  USCF::init: total charge = 0
+
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      nuclear repulsion energy =    6.0605491858
+
+      iter     1 energy =  -38.1820699187 delta = 5.64824e-01
+      iter     2 energy =  -38.4003011385 delta = 1.24674e-01
+      iter     3 energy =  -38.4180544451 delta = 4.28738e-02
+      iter     4 energy =  -38.4207818964 delta = 1.77645e-02
+      iter     5 energy =  -38.4210039537 delta = 4.15403e-03
+      iter     6 energy =  -38.4210309242 delta = 1.17802e-03
+      iter     7 energy =  -38.4210325834 delta = 2.78023e-04
+      iter     8 energy =  -38.4210326590 delta = 6.34829e-05
+      iter     9 energy =  -38.4210326633 delta = 1.34588e-05
+      iter    10 energy =  -38.4210326648 delta = 5.94892e-06
+      iter    11 energy =  -38.4210326652 delta = 3.49557e-06
+
+      <S^2>exact = 2.000000
+      <S^2>      = 2.004930
+
+      total scf energy =  -38.4210326652
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 5
+        Using symmetric orthogonalization.
+        n(SO):            14     2     5     9
+        Maximum orthogonalization residual = 4.53967
+        Minimum orthogonalization residual = 0.0225907
+        The number of electrons in the projected density = 4.99687
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 3
+        The number of electrons in the projected density = 2.99893
+
+  alpha = [ 3 0 1 1 ]
+  beta  = [ 2 0 0 1 ]
+
+  Molecular formula CH2
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = methods_uks_xa
+    restart_file  = methods_uks_xa.ckpt
+    restart       = yes
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = yes
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  Initializing ShellExtent
+    nshell = 13
+    ncell = 54760
+    ave nsh/cell = 1.85464
+    max nsh/cell = 13
+  nuclear repulsion energy =    6.0605491858
+
+  Total integration points = 4049
+  Integrated electron density error = -0.000032523730
+  iter     1 energy =  -38.4473195742 delta = 7.15245e-02
+  Total integration points = 4049
+  Integrated electron density error = -0.000034546170
+  iter     2 energy =  -38.5340543291 delta = 1.95337e-02
+  Total integration points = 11317
+  Integrated electron density error = -0.000001042860
+  iter     3 energy =  -38.5379932758 delta = 4.15324e-03
+  Total integration points = 11317
+  Integrated electron density error = -0.000001191705
+  iter     4 energy =  -38.5384378265 delta = 1.32339e-03
+  Total integration points = 24639
+  Integrated electron density error = -0.000000382249
+  iter     5 energy =  -38.5385185154 delta = 4.78495e-04
+  Total integration points = 24639
+  Integrated electron density error = -0.000000385593
+  iter     6 energy =  -38.5385307662 delta = 1.47017e-04
+  Total integration points = 46071
+  Integrated electron density error = 0.000000001458
+  iter     7 energy =  -38.5385337979 delta = 6.55276e-05
+  Total integration points = 46071
+  Integrated electron density error = 0.000000001326
+  iter     8 energy =  -38.5385342642 delta = 2.55956e-05
+  Total integration points = 46071
+  Integrated electron density error = 0.000000001462
+  iter     9 energy =  -38.5385343393 delta = 1.09765e-05
+  Total integration points = 46071
+  Integrated electron density error = 0.000000001497
+  iter    10 energy =  -38.5385343501 delta = 4.31175e-06
+  Total integration points = 46071
+  Integrated electron density error = 0.000000001513
+  iter    11 energy =  -38.5385344540 delta = 1.96814e-06
+  Total integration points = 46071
+  Integrated electron density error = 0.000000001526
+  iter    12 energy =  -38.5385344542 delta = 6.88116e-07
+  Total integration points = 46071
+  Integrated electron density error = 0.000000001523
+  iter    13 energy =  -38.5385344542 delta = 3.58261e-07
+  Total integration points = 46071
+  Integrated electron density error = 0.000000001523
+  iter    14 energy =  -38.5385344543 delta = 1.21821e-07
+  Total integration points = 46071
+  Integrated electron density error = 0.000000001524
+  iter    15 energy =  -38.5385344543 delta = 5.93447e-08
+  Total integration points = 46071
+  Integrated electron density error = 0.000000001524
+  iter    16 energy =  -38.5385344543 delta = 1.09468e-08
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.003092
+
+  total scf energy =  -38.5385344543
+
+  SCF::compute: gradient accuracy = 1.0000000e-06
+
+  Initializing ShellExtent
+    nshell = 13
+    ncell = 54760
+    ave nsh/cell = 1.85464
+    max nsh/cell = 13
+  Total integration points = 46071
+  Integrated electron density error = 0.000000001523
+  Total Gradient:
+       1   C   0.0000000000  -0.0000000000  -0.0423797690
+       2   H   0.0000000000  -0.0206512149   0.0211898845
+       3   H  -0.0000000000   0.0206512149   0.0211898845
+
+  Value of the MolecularEnergy:  -38.5385344543
+
+
+  Gradient of the MolecularEnergy:
+      1    0.0000000000
+      2   -0.0000000000
+      3   -0.0423797690
+      4    0.0000000000
+      5   -0.0206512149
+      6    0.0211898845
+      7   -0.0000000000
+      8    0.0206512149
+      9    0.0211898845
+
+  Unrestricted Kohn-Sham (UKS) Parameters:
+    Function Parameters:
+      value_accuracy    = 4.244119e-09 (1.000000e-08) (computed)
+      gradient_accuracy = 4.244119e-07 (1.000000e-06) (computed)
+      hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+    Molecule:
+      Molecular formula: CH2
+      molecule<Molecule>: (
+        symmetry = c2v
+        unit = "angstrom"
+        {  n atoms                        geometry                     }={
+           1     C [    0.0000000000     0.0000000000    -0.1000000000]
+           2     H [   -0.0000000000     0.8570000000     0.5960000000]
+           3     H [   -0.0000000000    -0.8570000000     0.5960000000]
+        }
+      )
+      Atomic Masses:
+         12.00000    1.00783    1.00783
+
+    GaussianBasisSet:
+      nbasis = 30
+      nshell = 13
+      nprim  = 24
+      name = "6-311G**"
+    SCF Parameters:
+      maxiter = 100
+      density_reset_frequency = 10
+      level_shift = 0.250000
+
+    UnrestrictedSCF Parameters:
+      charge = 0.0000000000
+      nalpha = 5
+      nbeta = 3
+      alpha = [ 3 0 1 1 ]
+      beta  = [ 2 0 0 1 ]
+
+    Functional:
+      XalphaFunctional: alpha =   0.70000000
+    Integrator:
+      RadialAngularIntegrator:
+        Pruned fine grid employed
+                                CPU  Wall
+mpqc:                         11.90 12.87
+  calc:                       11.61 12.58
+    compute gradient:          2.45  2.79
+      nuc rep:                 0.00  0.00
+      one electron gradient:   0.03  0.03
+      overlap gradient:        0.01  0.01
+      two electron gradient:   2.41  2.75
+        grad:                  2.41  2.75
+          integrate:           1.95  2.25
+          two-body:            0.18  0.21
+    vector:                    9.16  9.78
+      density:                 0.04  0.01
+      evals:                   0.01  0.03
+      extrap:                  0.05  0.05
+      fock:                    8.76  9.39
+        integrate:             8.07  8.66
+        start thread:          0.16  0.17
+        stop thread:           0.00  0.02
+  input:                       0.29  0.29
+    vector:                    0.10  0.10
+      density:                 0.00  0.01
+      evals:                   0.02  0.01
+      extrap:                  0.01  0.02
+      fock:                    0.06  0.06
+        start thread:          0.00  0.00
+        stop thread:           0.00  0.00
+
+  End Time: Sat Apr  6 14:10:04 2002
+

@@ -1,0 +1,49 @@
+test_symmetry:
+c2v
+test_basis:
+6-31G*
+method:
+mp2
+followed:
+
+fzv:
+0
+fixed:
+
+test_method:
+mp2
+frequencies:
+no
+label:
+water mp2 test series
+test_fzv:
+0 1
+socc:
+auto
+state:
+1
+optimize:
+no
+docc:
+auto
+fzc:
+1
+molecule:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472
+
+grid:
+default
+test_fzc:
+0 1
+test_calc:
+energy opt
+basis:
+6-31G*
+checkpoint:
+no
+restart:
+no
+symmetry:
+c2v

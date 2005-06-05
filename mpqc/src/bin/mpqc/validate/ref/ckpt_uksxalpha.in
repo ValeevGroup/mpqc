@@ -1,0 +1,27 @@
+% molecule specification
+molecule<Molecule>: (
+  symmetry = C2V
+  angstroms = yes
+  { atoms geometry } = {
+    O     [ 0.0 0.0 0.0 ]
+    H     [ 0.0 0.0 1.0 ]
+  }
+)
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "STO-3G"
+  molecule = $:molecule
+)
+mpqc: (
+  savestate = yes
+  restart = no
+  do_energy = yes
+  do_gradient = yes
+  % method for computing the molecule's energy
+  mole<UKS>: (
+    molecule = $:molecule
+    basis = $:basis
+    memory = 16000000
+    functional<StdDenFunctional>: ( name = "XALPHA" )
+  )
+)

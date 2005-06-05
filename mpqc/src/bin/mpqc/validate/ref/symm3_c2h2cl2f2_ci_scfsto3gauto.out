@@ -1,0 +1,298 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 2.3.0-alpha
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@n102
+  Start Time: Sun Jan  9 18:54:39 2005
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /home/cljanss/src/SC/lib/atominfo.kv.
+  Molecule: setting point group to ci
+
+  IntCoorGen: generated 33 coordinates.
+  Forming optimization coordinates:
+    SymmMolecularCoor::form_variable_coordinates()
+      expected 18 coordinates
+      found 6 variable coordinates
+      found 0 constant coordinates
+  Reading file /home/cljanss/src/SC/lib/basis/sto-3g.kv.
+      Reading file /home/cljanss/src/SC/lib/basis/sto-3g.kv.
+
+      CLSCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(basis):            20    20
+      Maximum orthogonalization residual = 2.77673
+      Minimum orthogonalization residual = 0.0560107
+      docc = [ 17 16 ]
+      nbasis = 40
+
+  CLSCF::init: total charge = 0
+
+  Using symmetric orthogonalization.
+  n(basis):            20    20
+  Maximum orthogonalization residual = 2.77673
+  Minimum orthogonalization residual = 0.0560107
+  Using guess wavefunction as starting vector
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      integral intermediate storage = 137120 bytes
+      integral cache = 31849760 bytes
+      nuclear repulsion energy =  490.4089751480
+
+                    139133 integrals
+      iter     1 energy = -1178.0131250848 delta = 4.07502e-01
+                    151402 integrals
+      iter     2 energy = -1178.7799966997 delta = 8.90178e-02
+                    135697 integrals
+      iter     3 energy = -1178.8127038249 delta = 2.11682e-02
+                    162406 integrals
+      iter     4 energy = -1178.8134597206 delta = 3.53402e-03
+                    132818 integrals
+      iter     5 energy = -1178.8134719926 delta = 3.86554e-04
+                    167071 integrals
+      iter     6 energy = -1178.8134724500 delta = 7.24968e-05
+                    139358 integrals
+      iter     7 energy = -1178.8134725324 delta = 2.84805e-05
+                    169203 integrals
+      iter     8 energy = -1178.8134725016 delta = 2.65532e-06
+
+      HOMO is    17  Ag =  -0.278027
+      LUMO is    17  Au =   0.534310
+
+      total scf energy = -1178.8134725016
+
+  docc = [ 17 16 ]
+  nbasis = 40
+
+  Molecular formula C2H2Cl2F2
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = symm3_c2h2cl2f2_ci_scfsto3gauto
+    restart_file  = symm3_c2h2cl2f2_ci_scfsto3gauto.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = yes
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  integral intermediate storage = 137120 bytes
+  integral cache = 31849760 bytes
+  nuclear repulsion energy =  490.4089751480
+
+                140684 integrals
+  iter     1 energy = -1178.8134102872 delta = 4.22952e-01
+                168051 integrals
+  iter     2 energy = -1178.8134724733 delta = 2.45399e-05
+                143731 integrals
+  iter     3 energy = -1178.8134724858 delta = 1.04666e-05
+                137915 integrals
+  iter     4 energy = -1178.8134724794 delta = 4.81881e-06
+                169203 integrals
+  iter     5 energy = -1178.8134724994 delta = 2.27179e-06
+                145874 integrals
+  iter     6 energy = -1178.8134724991 delta = 1.79676e-06
+                151917 integrals
+  iter     7 energy = -1178.8134724996 delta = 5.25373e-06
+
+  HOMO is    17  Ag =  -0.278027
+  LUMO is    17  Au =   0.534310
+
+  total scf energy = -1178.8134724996
+
+  SCF::compute: gradient accuracy = 1.0000000e-06
+
+  Total Gradient:
+       1   C  -0.9334170748  -1.2988204883  -1.3107848867
+       2   C   0.9334170748   1.2988204883   1.3107848867
+       3   H  -0.0530334794  -0.0495036142  -0.0370735586
+       4  Cl   0.8956266977   1.1503025087   2.1958640035
+       5   F   0.1999178754   0.2822111568  -0.7664240453
+       6   H   0.0530334794   0.0495036142   0.0370735586
+       7  Cl  -0.8956266977  -1.1503025087  -2.1958640035
+       8   F  -0.1999178753  -0.2822111568   0.7664240453
+Value of the MolecularEnergy: -1178.8134724996
+
+
+  Gradient of the MolecularEnergy:
+      1   0.5133346706
+      2   1.0983959849
+      3  -1.7097870349
+      4  -0.4986889125
+      5   1.1626662483
+      6  -0.4116981711
+
+  Function Parameters:
+    value_accuracy    = 5.992376e-09 (1.000000e-08) (computed)
+    gradient_accuracy = 5.992376e-07 (1.000000e-06) (computed)
+    hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+  Molecular Coordinates:
+    IntMolecularCoor Parameters:
+      update_bmat = no
+      scale_bonds = 1.0000000000
+      scale_bends = 1.0000000000
+      scale_tors = 1.0000000000
+      scale_outs = 1.0000000000
+      symmetry_tolerance = 1.000000e-05
+      simple_tolerance = 1.000000e-03
+      coordinate_tolerance = 1.000000e-07
+      have_fixed_values = 0
+      max_update_steps = 100
+      max_update_disp = 0.500000
+      have_fixed_values = 0
+
+    Molecular formula: C2H2Cl2F2
+    molecule<Molecule>: (
+      symmetry = ci
+      unit = "angstrom"
+      {  n atoms                        geometry                     }={
+         1     C [   -0.7649739588    -0.0000000251    -0.0000000000]
+         2     C [    0.7649739588     0.0000000251     0.0000000000]
+         3     H [   -1.1648059741     1.0275867189    -0.0000000000]
+         4    Cl [   -1.1648059586    -0.5137883349    -0.8899130700]
+         5     F [   -1.1648059586    -0.5137883349     0.8899130700]
+         6     H [    1.1648059741    -1.0275867189     0.0000000000]
+         7    Cl [    1.1648059586     0.5137883349     0.8899130700]
+         8     F [    1.1648059586     0.5137883349    -0.8899130700]
+      }
+    )
+    Atomic Masses:
+       12.00000   12.00000    1.00783   34.96885   18.99840
+        1.00783   34.96885   18.99840
+
+    Bonds:
+      STRE       s1     1.52995    1    2         C-C
+      STRE       s2     1.10263    1    3         C-H
+      STRE       s3     1.10263    1    4         C-Cl
+      STRE       s4     1.10263    1    5         C-F
+      STRE       s5     1.77983    4    5         Cl-F
+      STRE       s6     1.10263    2    6         C-H
+      STRE       s7     1.10263    2    7         C-Cl
+      STRE       s8     1.10263    2    8         C-F
+      STRE       s9     1.77983    7    8         Cl-F
+    Bends:
+      BEND       b1   111.26091    2    1    3      C-C-H
+      BEND       b2   111.26101    2    1    4      C-C-Cl
+      BEND       b3   107.62357    3    1    4      H-C-Cl
+      BEND       b4    36.18806    1    5    4      C-F-Cl
+      BEND       b5   111.26101    2    1    5      C-C-F
+      BEND       b6   107.62357    3    1    5      H-C-F
+      BEND       b7   107.62389    4    1    5      Cl-C-F
+      BEND       b8    36.18806    1    4    5      C-Cl-F
+      BEND       b9   111.26091    1    2    6      C-C-H
+      BEND      b10   111.26101    1    2    7      C-C-Cl
+      BEND      b11   107.62357    6    2    7      H-C-Cl
+      BEND      b12    36.18806    2    8    7      C-F-Cl
+      BEND      b13   111.26101    1    2    8      C-C-F
+      BEND      b14   107.62357    6    2    8      H-C-F
+      BEND      b15   107.62389    7    2    8      Cl-C-F
+      BEND      b16    36.18806    2    7    8      C-Cl-F
+    Torsions:
+      TORS       t1   180.00000    4    1    2    7   Cl-C-C-Cl
+      TORS       t2   -59.99969    5    1    2    7   F-C-C-Cl
+      TORS       t3    59.99969    4    1    2    8   Cl-C-C-F
+      TORS       t4   180.00000    5    1    2    8   F-C-C-F
+      TORS       t5   122.13192    2    1    4    5   C-C-Cl-F
+      TORS       t6  -122.13192    2    1    5    4   C-C-F-Cl
+      TORS       t7  -122.13192    1    2    7    8   C-C-Cl-F
+      TORS       t8   122.13192    1    2    8    7   C-C-F-Cl
+
+    SymmMolecularCoor Parameters:
+      change_coordinates = no
+      transform_hessian = yes
+      max_kappa2 = 10.000000
+
+  GaussianBasisSet:
+    nbasis = 40
+    nshell = 16
+    nprim  = 48
+    name = "STO-3G"
+  Natural Population Analysis:
+     n   atom    charge     ne(S)     ne(P) 
+      1    C   -0.163149  2.905325  3.257823
+      2    C   -0.163149  2.905325  3.257823
+      3    H    0.054848  0.945152
+      4   Cl    0.261084  5.600589  11.138328
+      5    F   -0.152783  3.788425  5.364358
+      6    H    0.054848  0.945152
+      7   Cl    0.261084  5.600589  11.138328
+      8    F   -0.152783  3.788425  5.364358
+
+  SCF Parameters:
+    maxiter = 40
+    density_reset_frequency = 10
+    level_shift = 0.000000
+
+  CLSCF Parameters:
+    charge = 0.0000000000
+    ndocc = 33
+    docc = [ 17 16 ]
+
+  The following keywords in "symm3_c2h2cl2f2_ci_scfsto3gauto.in" were ignored:
+    mpqc:mole:guess_wavefunction:multiplicity
+    mpqc:mole:multiplicity
+
+                               CPU Wall
+mpqc:                         2.08 2.08
+  NAO:                        0.02 0.03
+  calc:                       1.58 1.57
+    compute gradient:         1.19 1.19
+      nuc rep:                0.00 0.00
+      one electron gradient:  0.09 0.10
+      overlap gradient:       0.03 0.03
+      two electron gradient:  1.07 1.07
+        contribution:         0.95 0.95
+          start thread:       0.95 0.95
+          stop thread:        0.00 0.00
+        setup:                0.12 0.12
+    vector:                   0.38 0.38
+      density:                0.00 0.00
+      evals:                  0.00 0.00
+      extrap:                 0.00 0.01
+      fock:                   0.34 0.33
+        accum:                0.00 0.00
+        ao_gmat:              0.31 0.30
+          start thread:       0.30 0.30
+          stop thread:        0.00 0.00
+        init pmax:            0.00 0.00
+        local data:           0.00 0.00
+        setup:                0.00 0.01
+        sum:                  0.00 0.00
+        symm:                 0.03 0.01
+  input:                      0.47 0.48
+    vector:                   0.38 0.38
+      density:                0.01 0.00
+      evals:                  0.00 0.00
+      extrap:                 0.01 0.01
+      fock:                   0.34 0.35
+        accum:                0.00 0.00
+        ao_gmat:              0.31 0.32
+          start thread:       0.31 0.32
+          stop thread:        0.00 0.00
+        init pmax:            0.00 0.00
+        local data:           0.00 0.00
+        setup:                0.02 0.01
+        sum:                  0.00 0.00
+        symm:                 0.01 0.01
+
+  End Time: Sun Jan  9 18:54:41 2005
+

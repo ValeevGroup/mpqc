@@ -43,6 +43,20 @@ default::
 
 endif
 
+check: check0
+
+check0:
+	cd src/bin/mpqc/validate; $(MAKE) check0
+
+check1:
+	cd src/bin/mpqc/validate; $(MAKE) check1
+
+check2:
+	cd src/bin/mpqc/validate; $(MAKE) check2
+
+check_clean:
+	cd src/bin/mpqc/validate; $(MAKE) check_clean
+
 .PHONY: configure
 configure:
 	aclocal -I lib/autoconf

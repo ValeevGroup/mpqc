@@ -83,6 +83,12 @@ $exclude = "";
 # If true, then mpqc with all inputs in the current directory.
 $readdir = "";
 
+# The directory where the input file is to be found.
+$inputprefix = "";
+
+# The directory where the output file is to be placed.
+$outputprefix = "";
+
 # If this is set to one, then a set of extra exclusions will be
 # included.  This is only useful for the running test suite.
 $small = 0;
@@ -114,6 +120,9 @@ $uniqout = 0;
 # If true, then generate output file names.
 $autoout = 0;
 
+# If true, then do not append nproc, nthread, nnode info to filename.
+$simpout = 0;
+
 # If true, run mpqc from the object directory
 $objdir = 0;
 
@@ -133,6 +142,8 @@ if (!GetOptions("small!" => \$small,
                 "seq=s" => \$seq,
                 "mpqc=s" => \$mpqc,
                 "readdir=s" => \$readdir,
+                "outputprefix=s" => \$outputprefix,
+                "inputprefix=s" => \$inputprefix,
                 "nodefile=s" => \$nodefile,
                 "nodes=s" => \$nodes,
                 "nodename=s" => \$nodename,
@@ -143,6 +154,7 @@ if (!GetOptions("small!" => \$small,
                 "onlynew!" => \$onlynew,
                 "uniqout!" => \$uniqout,
                 "autoout!" => \$autoout,
+                "simpout!" => \$simpout,
                 "objdir!" => \$objdir,
                 "count!" => \$count,
                 "debug!" => \$debug,
@@ -293,7 +305,7 @@ $nnodeperjob = POSIX::ceil($nprocperjob / $nprocpernode);
 %nodelist = {};
 %nodefile = {};
 $maxjobs = 0;
-while (($maxjobs + 1) * $nnodeperjob < $nnode) {
+while (($maxjobs + 1) * $nnodeperjob <= $nnode) {
     $jobnnodes[$maxjobs++] = $nnodeperjob;
 }
 
@@ -456,10 +468,12 @@ sub jobrunner {
 
     while ( ($file = get_next_file($jobslot)) ne "") {
         my $out = outfile("$file");
+        $out = "$outputprefix$out";
+        my $in = "$inputprefix$file";
         my $cmd = "$launch";
         $cmd =~ s/%MPQC%/$mpqc/;
         $cmd =~ s/%NPROC%/$nprocperjob/;
-        $cmd =~ s/%INPUT%/$file/;
+        $cmd =~ s/%INPUT%/$in/;
 
 	my $mpqcrunproc = "$scdatadir/mpqcrunproc $mpqc";
         if (exists($ENV{MESSAGEGRP})) {
@@ -524,8 +538,10 @@ sub get_file_list {
 
     my @files;
 
-    foreach my $in (@allfiles) {
-        my $out = outfile("$in");
+    foreach my $infile (@allfiles) {
+        my $out = outfile("$infile");
+        $out = "$outputprefix$out";
+        $in = "$inputprefix$infile";
         $issmall = (!($in =~ /ccpc?v[dtq5]z/));
         if ($in =~ /^(cl|hsos|u)scf_.*6311gss/) {
             $issmall = 0;
@@ -573,7 +589,7 @@ sub get_file_list {
             if ($verbose) {
                 print "$in: will be run\n";
             }
-            $files[$#files+1] = "$in";
+            $files[$#files+1] = "$infile";
         }
     }
 
@@ -583,25 +599,27 @@ sub get_file_list {
 sub outfile {
     my $in = shift;
 
+    my $outbase = "$in";
+    $outbase =~ s/\.[^.]*$//;
+    if ($simpout) {
+        $outbase = sprintf "%s.out", "$outbase";
+    }
+    else {
+        $outbase = sprintf "%s.out.%03d.%02d.%02d", "$outbase",
+                           $nnodeperjob, $nprocpernode, $nthreadperproc;
+    }
+
     my $out;
     if ($uniqout) {
-        my $outbase = "$in";
-        $outbase =~ s/\.[^.]*$//;
-        $out = sprintf "%s.out.%03d.%02d.%02d", "$outbase",
-                        $nnodeperjob, $nprocpernode, $nthreadperproc;
+        $out = "$outbase";
         my $outversion = 1;
         while (-f "$out") {
             $outversion++;
-            $out = sprintf "%s.out.%03d.%02d.%02d.%02d", "$outbase",
-                           $nnodeperjob, $nprocpernode, $nthreadperproc,
-                           $outversion;
+            $out = sprintf "%s.%02d", "$outbase", $outversion;
         }
     }
     elsif ($autoout) {
-        my $outbase = "$in";
-        $outbase =~ s/\.[^.]*$//;
-        $out = sprintf "%s.out.%03d.%02d.%02d", "$outbase",
-                       $nnodeperjob, $nprocpernode, $nthreadperproc;
+        $out = "$outbase";
     }
     else {
         $out = "";

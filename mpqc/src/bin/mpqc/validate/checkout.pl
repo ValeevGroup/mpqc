@@ -11,6 +11,7 @@ $refmissing = 0;
 $testmissing = 0;
 $reffailed = 0;
 $testfailed = 0;
+$ntest = 0;
 
 if ($ARGV[0] eq "-r") {
     shift;
@@ -51,6 +52,7 @@ else {
 }
 
 print  "*************************************************\n";
+printf "* %6d test cases total\n", $ntest;
 printf "* %6d numerical discrepancies\n", $error;
 printf "* %6d failed reference cases\n", $reffailed;
 printf "* %6d missing reference cases\n", $refmissing;
@@ -280,6 +282,7 @@ sub check {
             $testmissing++;
         }
     }
+    $ntest++;
     printf "\n";
 }
 

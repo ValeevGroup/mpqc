@@ -290,7 +290,7 @@ older versions of GNU make use <tt>make JOBS=-j4</tt>.
 install_devel</tt>, however, <tt>make install</tt> must be also be run to
 install the files needed for run-time support.
 
-\section compileccheck Checking the Compilation
+\section compilecheck Checking the Compilation
 
 See \ref mpqcval for instructions for checking your compilation.
 

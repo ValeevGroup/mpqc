@@ -36,6 +36,8 @@ default::
 	@echo "tree, the following targets are available:"
 	@echo 
 	@echo "  configure     Update aclocal.m4 and run configure."
+	@echo "  touch         Make sure the parser files are more recent than"
+	@echo "                the sources.  Useful after a CVS checkout."
 	@echo "  tags          Build a new TAGS file."
 	@echo "  ebrowse       Build a new BROWSE file for emacs ebrowse."
 	@echo "  clean         Remove emacs backup files in this and all subdirectories."
@@ -62,6 +64,15 @@ configure:
 	aclocal -I lib/autoconf
 	autoconf
 	/bin/rm -rf autom4te.cache
+
+.PHONY: touch
+touch:
+	touch src/bin/mpqc/scan.cc
+	touch src/bin/mpqc/parse.cc
+	touch src/bin/mpqc/parse.h
+	touch src/lib/util/keyval/ipv2_scan.cc
+	touch src/lib/util/keyval/ipv2_parse.cc
+	touch src/lib/util/keyval/ipv2_parse.h
 
 .PHONY: tags
 tags:

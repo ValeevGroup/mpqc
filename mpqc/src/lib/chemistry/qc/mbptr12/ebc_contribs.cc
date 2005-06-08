@@ -610,6 +610,7 @@ R12IntEval::AT2_contrib_to_V_()
     RefSCMatrix Vab = Aab_*T2ab_.t();
     Vab_.accumulate(Vab);  
   }
+  globally_sum_intermeds_();
 }
 
 void
@@ -627,6 +628,7 @@ R12IntEval::AR_contrib_to_B_()
     RefSCMatrix AR_ab_t = AR_ab.t();
     Bab_.accumulate(AR_ab_t);
   }
+  globally_sum_intermeds_();
 }
 
 ////////////////////////////////////////////////////////////////////////////

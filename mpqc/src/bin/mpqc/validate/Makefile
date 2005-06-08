@@ -25,20 +25,22 @@ CHECKOUT=$(PERL) -I$(SRCTOPDIR)/lib/perl $(SRCDIR)/checkout.pl
 # need to determine nthreadperproc from MPQCRUN_ARGS, since this determines
 # whether or not certain tests
 
-ifneq ($(filter --nthreadperproc,$(MPQCRUN_ARGS)),)
+ALL_MPQCRUN_ARGS:=$(MPQCRUN_ARGS)
+
+ifneq ($(filter --nthreadperproc,$(ALL_MPQCRUN_ARGS)),)
 $(error must use --nthreadperproc=xxx syntax for MPQCRUN_ARGS)
 endif
-MPQCRUN_NTHREADPERPROC:=$(filter --nthreadperproc=%, $(MPQCRUN_ARGS))
+MPQCRUN_NTHREADPERPROC:=$(filter --nthreadperproc=%, $(ALL_MPQCRUN_ARGS))
 MPQCRUN_NTHREADPERPROC:=$(patsubst --nthreadperproc=%, %, $(MPQCRUN_NTHREADPERPROC))
 MPQCRUN_NTHREADPERPROC:=$(strip $(MPQCRUN_NTHREADPERPROC))
 ifeq ($(MPQCRUN_NTHREADPERPROC),)
   MPQCRUN_NTHREADPERPROC=1
 endif
 
-ifneq ($(filter --integral,$(MPQCRUN_ARGS)),)
+ifneq ($(filter --integral,$(ALL_MPQCRUN_ARGS)),)
 $(error must use --integral=xxx syntax for MPQCRUN_ARGS)
 endif
-MPQCRUN_INTEGRAL:=$(filter --integral=%, $(MPQCRUN_ARGS))
+MPQCRUN_INTEGRAL:=$(filter --integral=%, $(ALL_MPQCRUN_ARGS))
 MPQCRUN_INTEGRAL:=$(patsubst --integral=%, %, $(MPQCRUN_INTEGRAL))
 MPQCRUN_INTEGRAL:=$(strip $(MPQCRUN_INTEGRAL))
 ifeq ($(MPQCRUN_INTEGRAL),)
@@ -47,8 +49,8 @@ endif
 
 # Also need to see if --mpqc was specified.  If not, then add
 # --mpqc ../mpqc.
-ifeq ($(filter --mpqc, $(MPQCRUN_ARGS)),)
-MPQCRUN_ARGS:=--mpqc ../mpqc $(MPQCRUN_ARGS)
+ifeq ($(filter --mpqc%, $(ALL_MPQCRUN_ARGS)),)
+ALL_MPQCRUN_ARGS:=--mpqc ../mpqc $(ALL_MPQCRUN_ARGS)
 endif
 
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
@@ -338,7 +340,7 @@ MPQCRUN_EXTRA_ARGS = --autoout --simpout \
                      --seq ^ckpt_
 
 check0_run:
-	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(MPQCRUN_ARGS) $(CHECK0INPUTS:$(INP)/%=%)
+	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK0INPUTS:$(INP)/%=%)
 
 check0_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK0OUTPUTS:$(INP)/%=$(RUN)/%)
@@ -346,7 +348,7 @@ check0_chk:
 check1: $(RUN) check1_run check1_chk
 
 check1_run:
-	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(MPQCRUN_ARGS) $(CHECK1INPUTS:$(INP)/%=%)
+	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK1INPUTS:$(INP)/%=%)
 
 check1_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK1OUTPUTS:$(INP)/%=$(RUN)/%)
@@ -354,7 +356,7 @@ check1_chk:
 check2: (RUN) check2_run check2_chk
 
 check2_run:
-	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(MPQCRUN_ARGS) $(CHECK2INPUTS:$(INP)/%=%)
+	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK2INPUTS:$(INP)/%=%)
 
 check2_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK2OUTPUTS:$(INP)/%=$(RUN)/%)

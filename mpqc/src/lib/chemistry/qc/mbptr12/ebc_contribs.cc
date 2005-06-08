@@ -247,21 +247,6 @@ differs from the basis set for occupieds");
   vector<int> proc_with_ints;
   int nproc_with_ints = tasks_with_ints_(ijpq_acc,proc_with_ints);
 
-  //////////////////////////////////////////////////////////////
-  //
-  // Evaluation of the MP2 T2 amplitudes proceeds as follows:
-  //
-  //    loop over batches of ij,
-  //      load (ijxy)=(ix|jy) into memory
-  //
-  //      loop over xy, 0<=x<nvir_act, 0<=y<nvir_act
-  //        compute T2_aa[ij][xy] = [ (ijxy) - (ijyx) ] / denom
-  //        compute T2_ab[ij][xy] = [ (ijxy) ] / denom
-  //      end xy loop
-  //    end ij loop
-  //
-  /////////////////////////////////////////////////////////////////////////////////
-
   for(ij_iter.start();int(ij_iter);ij_iter.next()) {
 
     const int ij = ij_iter.ij();
@@ -478,6 +463,141 @@ R12IntEval::compute_A_simple_()
 
   tim_exit("A intermediate");
 }
+
+void
+R12IntEval::compute_A_via_commutator_()
+{
+  if (evaluated_)
+    return;
+
+  // This functions assumes that virtuals are expanded in the same basis
+  // as the occupied orbitals
+  if (!r12info_->basis_vir()->equiv(r12info_->basis()))
+    throw std::runtime_error("R12IntEval::compute_A_via_commutator_() -- should not be called when the basis set for virtuals \
+differs from the basis set for occupieds");
+
+  Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
+  Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
+  if (!ijpq_acc->is_committed())
+    ipjq_tform->compute();
+  if (!ijpq_acc->is_active())
+    ijpq_acc->activate();
+
+  tim_enter("A intermediate via [T,r]");
+
+  Ref<MessageGrp> msg = r12info_->msg();
+  int me = msg->me();
+  int nproc = msg->n();
+  ExEnv::out0() << endl << indent
+    << "Entered A amplitude (via [T,r]) evaluator" << endl;
+  ExEnv::out0() << incindent;
+
+  const int noso = r12info_->mo_space()->rank();
+  const int nocc = r12info_->nocc();
+  const int nfzv = r12info_->nfzv();
+  Ref<MOIndexSpace> mo_space = r12info_->obs_space();
+  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
+  Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
+
+  SpatialMOPairIter_eq ij_iter(act_occ_space);
+  SpatialMOPairIter_eq ab_iter(act_vir_space);
+  int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
+  int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
+  if (debug_) {
+    ExEnv::out0() << indent << "naa = " << naa << endl;
+    ExEnv::out0() << indent << "nab = " << nab << endl;
+  }
+
+  // Compute the number of tasks that have full access to the integrals
+  // and split the work among them
+  vector<int> proc_with_ints;
+  int nproc_with_ints = tasks_with_ints_(ijpq_acc,proc_with_ints);
+
+  for(ij_iter.start();int(ij_iter);ij_iter.next()) {
+
+    const int ij = ij_iter.ij();
+    // Figure out if this task will handle this ij
+    int ij_proc = ij%nproc_with_ints;
+    if (ij_proc != proc_with_ints[me])
+      continue;
+    const int i = ij_iter.i();
+    const int j = ij_iter.j();
+    const int ij_aa = ij_iter.ij_aa();
+    const int ij_ab = ij_iter.ij_ab();
+    const int ji_ab = ij_iter.ij_ba();
+
+    if (debug_)
+      ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
+
+    // Get (|1/r12|) integrals
+    tim_enter("MO ints retrieve");
+    double *ijxy_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
+    double *ijxy_buf_r12t1 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12t1);
+    double *ijxy_buf_r12t2 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12t2);
+    tim_exit("MO ints retrieve");
+
+    if (debug_)
+      ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
+
+    RefDiagSCMatrix act_occ_evals = r12info_->act_occ_space()->evals();
+    RefDiagSCMatrix all_evals = r12info_->obs_space()->evals();
+    double R_aa_ijab = 0.0;
+    double R_ab_ijab = 0.0;
+    double TR_aa_ijab = 0.0;
+    double TR_ab_ijab = 0.0;
+
+    for(ab_iter.start();int(ab_iter);ab_iter.next()) {
+
+      const int a = ab_iter.i();
+      const int b = ab_iter.j();
+      const int ab_aa = ab_iter.ij_aa();
+      const int ab_ab = ab_iter.ij_ab();
+      const int ba_ab = ab_iter.ij_ba();
+
+      const int aa = a + nocc;
+      const int bb = b + nocc;
+
+      const int ab_offset = aa*noso+bb;
+      const int ba_offset = bb*noso+aa;
+      const double r12_iajb = ijxy_buf_r12[ab_offset];
+      const double r12_ibja = ijxy_buf_r12[ba_offset];
+      const double t1r12_iajb = -ijxy_buf_r12t1[ab_offset];
+      const double t1r12_ibja = -ijxy_buf_r12t1[ba_offset];
+      const double t2r12_iajb = -ijxy_buf_r12t2[ab_offset];
+      const double t2r12_ibja = -ijxy_buf_r12t2[ba_offset];
+      double Aab_ij_ab = 0.5 * ( (t1r12_iajb + t2r12_iajb) - (all_evals[aa] + all_evals[bb] -
+                                                              act_occ_evals[i] - act_occ_evals[j])*r12_iajb );
+      double Aab_ij_ba = 0.5 * ( (t1r12_ibja + t2r12_ibja) - (all_evals[aa] + all_evals[bb] -
+                                                              act_occ_evals[i] - act_occ_evals[j])*r12_ibja );
+      Aab_.set_element(ij_ab,ab_ab,Aab_ij_ab);
+      Aab_.set_element(ji_ab,ba_ab,Aab_ij_ab);
+      Aab_.set_element(ji_ab,ab_ab,Aab_ij_ba);
+      Aab_.set_element(ij_ab,ba_ab,Aab_ij_ba);
+
+      if (ij_aa != -1 && ab_aa != -1) {
+        Aaa_.set_element(ij_aa,ab_aa,Aab_ij_ab - Aab_ij_ba);
+      }
+
+    }
+
+    ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12);
+    ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12t1);
+    ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12t2);
+  }
+
+  globally_sum_intermeds_();
+
+#if TEST_A
+  Aaa_.print("Alpha-alpha A intermediate");
+  Aab_.print("Alpha-beta A intermediate");
+#endif
+
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited A amplitude (via [T,r]) evaluator" << endl;
+
+  tim_exit("A intermediate via [T,r]");
+}
+
 
 void
 R12IntEval::AT2_contrib_to_V_()

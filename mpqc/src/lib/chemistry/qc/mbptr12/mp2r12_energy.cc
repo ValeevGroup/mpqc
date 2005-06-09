@@ -51,6 +51,8 @@ using namespace sc::exp;
 inline int max(int a,int b) { return (a > b) ? a : b;}
 
 #define USE_INVERT 0
+#define USE_FULL_A 1
+#define INCLUDE_A_IN_B 1
 
 /*-------------
   MP2R12Energy
@@ -234,10 +236,12 @@ void MP2R12Energy::compute()
   RefSCMatrix Xaa = r12eval_->X_aa();
   RefSymmSCMatrix Baa = r12eval_->B_aa();
   RefSCMatrix Aaa = r12eval_->A_aa();
+  RefSCMatrix Ac_aa = r12eval_->Ac_aa();
   RefSCMatrix Vab = r12eval_->V_ab();
   RefSCMatrix Xab = r12eval_->X_ab();
   RefSymmSCMatrix Bab = r12eval_->B_ab();
   RefSCMatrix Aab = r12eval_->A_ab();
+  RefSCMatrix Ac_ab = r12eval_->Ac_ab();
   RefSCVector emp2_aa = r12eval_->emp2_aa();
   RefSCVector emp2_ab = r12eval_->emp2_ab();
 
@@ -316,15 +320,21 @@ void MP2R12Energy::compute()
                   
                   Baa_ij.accumulate_element(kl,ow,fx);
                   
-                  // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
+                  // If EBC is not assumed add Akl,cd*Acd,ow/(ec+ed-ei-ej)
                   if (ebc == false) {
                     double fy = 0.0;
                     int cd=0;
                     for(int c=0; c<nvir_act; c++)
                       for(int d=0; d<c; d++, cd++) {
-                        
+#if INCLUDE_A_IN_B
+#if USE_FULL_A                        
                         fy -= Aaa.get_element(kl,cd)*Aaa.get_element(ow,cd)/(evals_act_vir[c] + evals_act_vir[d]
                                                                              - evals_act_occ[i] - evals_act_occ[j]);
+#else
+                        fy -= 0.5 * (Aaa.get_element(kl,cd)*Ac_aa.get_element(ow,cd) + Ac_aa.get_element(kl,cd)*Aaa.get_element(ow,cd))/(evals_act_vir[c] + evals_act_vir[d]
+                                                                             - evals_act_occ[i] - evals_act_occ[j]);
+#endif
+#endif
                       }
                     
                     Baa_ij.accumulate_element(kl,ow,fy);
@@ -442,9 +452,15 @@ void MP2R12Energy::compute()
                     int cd=0;
                     for(int c=0; c<nvir_act; c++)
                       for(int d=0; d<nvir_act; d++, cd++) {
-                        
+#if INCLUDE_A_IN_B
+#if USE_FULL_A                        
                         fy -= Aab.get_element(kl,cd)*Aab.get_element(ow,cd)/(evals_act_vir[c] + evals_act_vir[d]
                                                                              - evals_act_occ[i] - evals_act_occ[j]);
+#else
+                        fy -= 0.5 * (Aab.get_element(kl,cd)*Ac_ab.get_element(ow,cd) + Ac_ab.get_element(kl,cd)*Aab.get_element(ow,cd))/(evals_act_vir[c] + evals_act_vir[d]
+                                                                             - evals_act_occ[i] - evals_act_occ[j]);
+#endif
+#endif
                       }
                     
                     Bab_ij.accumulate_element(kl,ow,fy);

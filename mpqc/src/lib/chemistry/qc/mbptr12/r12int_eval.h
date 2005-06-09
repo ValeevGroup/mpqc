@@ -53,6 +53,7 @@ class R12IntEval : virtual public SavableState {
   // Note that intermediate B is symmetric but is stored as a full matrix to simplify the code
   // that computes asymmetric form of B
   RefSCMatrix Vaa_, Vab_, Xaa_, Xab_, Baa_, Bab_, Aaa_, Aab_, T2aa_, T2ab_;
+  RefSCMatrix Ac_aa_, Ac_ab_;
   RefSCMatrix Raa_, Rab_;    // Not sure if I'll compute and keep these explicitly later
   Ref<R12Amplitudes> Amps_;  // Amplitudes of various R12-contributed terms in pair functions
   RefSCVector emp2pair_aa_, emp2pair_ab_;
@@ -140,6 +141,9 @@ class R12IntEval : virtual public SavableState {
 
   /// Compute A using the "simple" formula obtained using direct substitution alpha'->a'
   void compute_A_simple_();
+
+  /// Compute A using the standard commutator approach
+  void compute_A_via_commutator_();
 
   /// Compute MP2 T2
   void compute_T2_();
@@ -237,6 +241,8 @@ public:
   RefSymmSCMatrix B_aa();
   /// Returns alpha-alpha block of the A intermediate matrix. Returns 0 if EBC is assumed.
   RefSCMatrix A_aa();
+  /// Returns alpha-alpha block of the A intermediate matrix. Returns 0 if EBC is assumed.
+  RefSCMatrix Ac_aa();
   /// Returns alpha-alpha block of the MP2 T2 matrix. Returns 0 if EBC is assumed.
   RefSCMatrix T2_aa();
   /// Returns alpha-beta block of the V intermediate matrix.
@@ -247,6 +253,8 @@ public:
   RefSymmSCMatrix B_ab();
   /// Returns alpha-beta block of the A intermediate matrix. Returns 0 if EBC is assumed
   RefSCMatrix A_ab();
+  /// Returns alpha-beta block of the A intermediate matrix. Returns 0 if EBC is assumed
+  RefSCMatrix Ac_ab();
   /// Returns alpha-beta block of the MP2 T2 matrix. Returns 0 if EBC is assumed
   RefSCMatrix T2_ab();
   /// Returns alpha-alpha MP2 pair energies.

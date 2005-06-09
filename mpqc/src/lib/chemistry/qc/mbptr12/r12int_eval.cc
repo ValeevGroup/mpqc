@@ -77,6 +77,8 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info, bool gbc, bool ebc,
     if (ebc_ == false) {
       Aaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
       Aab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+      Ac_aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
+      Ac_ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
       T2aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
       T2ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
       Raa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
@@ -281,6 +283,13 @@ RefSCMatrix R12IntEval::A_aa()
   return Aaa_;
 }
 
+RefSCMatrix R12IntEval::Ac_aa()
+{
+  if (ebc_ == false)
+    compute();
+  return Ac_aa_;
+}
+
 RefSCMatrix R12IntEval::T2_aa()
 {
   if (ebc_ == false)
@@ -324,6 +333,13 @@ RefSCMatrix R12IntEval::A_ab()
   if (ebc_ == false)
     compute();
   return Aab_;
+}
+
+RefSCMatrix R12IntEval::Ac_ab()
+{
+  if (ebc_ == false)
+    compute();
+  return Ac_ab_;
 }
 
 RefSCMatrix R12IntEval::T2_ab()
@@ -453,6 +469,8 @@ R12IntEval::init_intermeds_()
   if (ebc_ == false) {
     Aaa_.assign(0.0);
     Aab_.assign(0.0);
+    Ac_aa_.assign(0.0);
+    Ac_ab_.assign(0.0);
     T2aa_.assign(0.0);
     T2ab_.assign(0.0);
     Raa_.assign(0.0);
@@ -834,6 +852,9 @@ R12IntEval::compute()
       throw std::runtime_error("R12IntEval::compute() -- ebc=false is only supported when basis_vir == basis");
 
     compute_A_simple_();
+    compute_A_via_commutator_();
+    //Aaa_.assign(Ac_aa_);
+    //Aab_.assign(Ac_ab_);
     compute_T2_();
     AT2_contrib_to_V_();
     compute_R_();
@@ -929,6 +950,9 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
   if (ebc_ == false) {
     globally_sum_scmatrix_(Aaa_,to_all_tasks);
     globally_sum_scmatrix_(Aab_,to_all_tasks);
+
+    globally_sum_scmatrix_(Ac_aa_,to_all_tasks);
+    globally_sum_scmatrix_(Ac_ab_,to_all_tasks);
     
     globally_sum_scmatrix_(T2aa_,to_all_tasks);
     globally_sum_scmatrix_(T2ab_,to_all_tasks);

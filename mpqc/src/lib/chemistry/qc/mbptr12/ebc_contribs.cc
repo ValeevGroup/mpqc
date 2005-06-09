@@ -51,7 +51,8 @@ using namespace std;
 using namespace sc;
 
 #define TEST_T2 0
-#define TEST_A 0
+#define TEST_A 1
+#define USE_A_COMM_IN_B_EBC 1
 
 void
 R12IntEval::compute_T2_()
@@ -533,7 +534,7 @@ differs from the basis set for occupieds");
     tim_enter("MO ints retrieve");
     double *ijxy_buf_r12 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12);
     double *ijxy_buf_r12t1 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12t1);
-    double *ijxy_buf_r12t2 = ijpq_acc->retrieve_pair_block(i,j,R12IntsAcc::r12t2);
+    double *jixy_buf_r12t1 = ijpq_acc->retrieve_pair_block(j,i,R12IntsAcc::r12t1);
     tim_exit("MO ints retrieve");
 
     if (debug_)
@@ -563,33 +564,33 @@ differs from the basis set for occupieds");
       const double r12_ibja = ijxy_buf_r12[ba_offset];
       const double t1r12_iajb = -ijxy_buf_r12t1[ab_offset];
       const double t1r12_ibja = -ijxy_buf_r12t1[ba_offset];
-      const double t2r12_iajb = -ijxy_buf_r12t2[ab_offset];
-      const double t2r12_ibja = -ijxy_buf_r12t2[ba_offset];
-      double Aab_ij_ab = 0.5 * ( (t1r12_iajb + t2r12_iajb) - (all_evals[aa] + all_evals[bb] -
-                                                              act_occ_evals[i] - act_occ_evals[j])*r12_iajb );
-      double Aab_ij_ba = 0.5 * ( (t1r12_ibja + t2r12_ibja) - (all_evals[aa] + all_evals[bb] -
-                                                              act_occ_evals[i] - act_occ_evals[j])*r12_ibja );
-      Aab_.set_element(ij_ab,ab_ab,Aab_ij_ab);
-      Aab_.set_element(ji_ab,ba_ab,Aab_ij_ab);
-      Aab_.set_element(ji_ab,ab_ab,Aab_ij_ba);
-      Aab_.set_element(ij_ab,ba_ab,Aab_ij_ba);
+      const double t2r12_iajb = -jixy_buf_r12t1[ba_offset];
+      const double t2r12_ibja = -jixy_buf_r12t1[ab_offset];
+      double Aab_ij_ab = 0.5 * ( -(t1r12_iajb + t2r12_iajb) - (all_evals(aa) + all_evals(bb) -
+                                                              act_occ_evals(i) - act_occ_evals(j))*r12_iajb );
+      double Aab_ij_ba = 0.5 * ( -(t1r12_ibja + t2r12_ibja) - (all_evals(aa) + all_evals(bb) -
+                                                              act_occ_evals(i) - act_occ_evals(j))*r12_ibja );
+      Ac_ab_.set_element(ij_ab,ab_ab,Aab_ij_ab);
+      Ac_ab_.set_element(ji_ab,ba_ab,Aab_ij_ab);
+      Ac_ab_.set_element(ji_ab,ab_ab,Aab_ij_ba);
+      Ac_ab_.set_element(ij_ab,ba_ab,Aab_ij_ba);
 
       if (ij_aa != -1 && ab_aa != -1) {
-        Aaa_.set_element(ij_aa,ab_aa,Aab_ij_ab - Aab_ij_ba);
+        Ac_aa_.set_element(ij_aa,ab_aa,Aab_ij_ab - Aab_ij_ba);
       }
 
     }
 
     ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12);
     ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12t1);
-    ijpq_acc->release_pair_block(i,j,R12IntsAcc::r12t2);
+    ijpq_acc->release_pair_block(j,i,R12IntsAcc::r12t1);
   }
 
   globally_sum_intermeds_();
 
 #if TEST_A
-  Aaa_.print("Alpha-alpha A intermediate");
-  Aab_.print("Alpha-beta A intermediate");
+  Ac_aa_.print("Alpha-alpha A intermediate");
+  Ac_ab_.print("Alpha-beta A intermediate");
 #endif
 
   ExEnv::out0() << decindent;
@@ -619,12 +620,18 @@ R12IntEval::AR_contrib_to_B_()
   if (evaluated_)
     return;
   if (r12info_->msg()->me() == 0) {
+#if USE_A_COMM_IN_B_EBC
+    RefSCMatrix AR_aa = Ac_aa_*Raa_.t();
+    RefSCMatrix AR_ab = Ac_ab_*Rab_.t();
+#else
     RefSCMatrix AR_aa = Aaa_*Raa_.t();
     RefSCMatrix AR_ab = Aab_*Rab_.t();
-    AR_aa.scale(-1.0); Baa_.accumulate(AR_aa);
+#endif
+    double scale = -1.0;
+    AR_aa.scale(scale); Baa_.accumulate(AR_aa);
     RefSCMatrix AR_aa_t = AR_aa.t();
     Baa_.accumulate(AR_aa_t);
-    AR_ab.scale(-1.0); Bab_.accumulate(AR_ab);
+    AR_ab.scale(scale); Bab_.accumulate(AR_ab);
     RefSCMatrix AR_ab_t = AR_ab.t();
     Bab_.accumulate(AR_ab_t);
   }

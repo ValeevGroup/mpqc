@@ -84,10 +84,10 @@ public:
   LinearR12::StandardApproximation stdapp() const;
   /** Returns whether Generalized Brillouin Condition (GBC) was used in evaluation of
       the MP2-R12 intermediates */
-  const bool gbc() const;
+  bool gbc() const;
   /** Returns whether Extended Brillouin Condition (EBC) was used in evaluation of
       the MP2-R12 intermediates and the MP2-R12 energy */
-  const bool ebc() const;
+  bool ebc() const;
   void set_debug(int debug);
   int get_debug() const;
   

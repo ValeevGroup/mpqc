@@ -144,8 +144,8 @@ void MP2R12Energy::obsolete()
 }
 
 Ref<R12IntEval> MP2R12Energy::r12eval() const { return r12eval_; };
-const bool MP2R12Energy::ebc() const { return ebc_; };
-const bool MP2R12Energy::gbc() const { return r12eval_->gbc(); };
+bool MP2R12Energy::ebc() const { return ebc_; };
+bool MP2R12Energy::gbc() const { return r12eval_->gbc(); };
 LinearR12::StandardApproximation MP2R12Energy::stdapp() const { return stdapprox_; };
 void MP2R12Energy::set_debug(int debug) { debug_ = debug; };
 int MP2R12Energy::get_debug() const { return debug_; };
@@ -572,6 +572,7 @@ MP2R12Energy::compute_pair_function_aa(int ij, const SCVector3& r1, const SCVect
 
   print_psi_values(ExEnv::out0(),r1,r2,phi_aa.get_element(ij),phi_t2,phi_r12);
 
+  return phi_t2 + phi_r12;
 }
 
 void
@@ -674,6 +675,8 @@ MP2R12Energy::compute_pair_function_ab(int ij, const SCVector3& r1, const SCVect
   phi_r12 -= 1.0 * Cox.get_row(ij).dot(phi_ox);
 
   print_psi_values(ExEnv::out0(),r1,r2,phi_aa.get_element(ij),phi_t2,phi_r12);
+
+  return phi_t2 + phi_r12;
 }
 
 void

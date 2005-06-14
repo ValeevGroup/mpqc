@@ -41,6 +41,7 @@ using namespace std;
 using namespace sc;
 
 #define TEST_FOCK 0
+#define NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS 0
 
 inline int max(int a,int b) { return (a > b) ? a : b;}
 
@@ -53,10 +54,10 @@ static ClassDesc R12IntEval_cd(
 
 R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info, bool gbc, bool ebc,
                        LinearR12::ABSMethod abs_method,
-                       LinearR12::StandardApproximation stdapprox) :
+                       LinearR12::StandardApproximation stdapprox, bool follow_ks_ebcfree) :
   r12info_(r12info), gbc_(gbc), ebc_(ebc), abs_method_(abs_method),
-  stdapprox_(stdapprox), spinadapted_(false), include_mp1_(false), evaluated_(false),
-  debug_(0)
+  stdapprox_(stdapprox), spinadapted_(false), include_mp1_(false),
+  follow_ks_ebcfree_(follow_ks_ebcfree), debug_(0), evaluated_(false)
 {
     int nocc_act = r12info_->nocc_act();
     int nvir_act = r12info_->nvir_act();
@@ -77,8 +78,10 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info, bool gbc, bool ebc,
     if (ebc_ == false) {
       Aaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
       Aab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
-      Ac_aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
-      Ac_ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+      if (follow_ks_ebcfree_) {
+        Ac_aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
+        Ac_ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+      }
       T2aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
       T2ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
       Raa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
@@ -97,6 +100,7 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   int ebc; si.get(ebc); ebc_ = (bool) ebc;
   int absmethod; si.get(absmethod); abs_method_ = (LinearR12::ABSMethod) absmethod;
   int stdapprox; si.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
+  int follow_ks_ebcfree; si.get(follow_ks_ebcfree); follow_ks_ebcfree_ = static_cast<bool>(follow_ks_ebcfree);
 
   r12info_ << SavableState::restore_state(si);
   dim_ij_aa_ << SavableState::restore_state(si);
@@ -116,6 +120,10 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   if (ebc_ == false) {
     Aaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
     Aab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+    if (follow_ks_ebcfree_) {
+      Ac_aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
+      Ac_ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+    }
     T2aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
     T2ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
     Raa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
@@ -133,6 +141,8 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   if (ebc_ == false) {
     Aaa_.restore(si);
     Aab_.restore(si);
+    Ac_aa_.restore(si);
+    Ac_ab_.restore(si);
     T2aa_.restore(si);
     T2ab_.restore(si);
     Raa_.restore(si);
@@ -176,6 +186,7 @@ R12IntEval::save_data_state(StateOut& so)
   so.put((int)ebc_);
   so.put((int)abs_method_);
   so.put((int)stdapprox_);
+  so.put((int)follow_ks_ebcfree_);
 
   SavableState::save_state(r12info_.pointer(),so);
   SavableState::save_state(dim_ij_aa_.pointer(),so);
@@ -194,6 +205,8 @@ R12IntEval::save_data_state(StateOut& so)
   if (ebc_ == false) {
     Aaa_.save(so);
     Aab_.save(so);
+    Ac_aa_.save(so);
+    Ac_ab_.save(so);
     T2aa_.save(so);
     T2ab_.save(so);
     Raa_.save(so);
@@ -285,9 +298,12 @@ RefSCMatrix R12IntEval::A_aa()
 
 RefSCMatrix R12IntEval::Ac_aa()
 {
-  if (ebc_ == false)
+  if (ebc_ == false && follow_ks_ebcfree_) {
     compute();
-  return Ac_aa_;
+    return Ac_aa_;
+  }
+  else
+    throw ProgrammingError("R12IntEval::Ac_aa() called although the object initialized with follow_ks_ebcfree set to false",__FILE__,__LINE__);
 }
 
 RefSCMatrix R12IntEval::T2_aa()
@@ -337,9 +353,12 @@ RefSCMatrix R12IntEval::A_ab()
 
 RefSCMatrix R12IntEval::Ac_ab()
 {
-  if (ebc_ == false)
+  if (ebc_ == false && follow_ks_ebcfree_) {
     compute();
-  return Ac_ab_;
+    return Ac_ab_;
+  }
+  else
+    throw ProgrammingError("R12IntEval::Ac_ab() called although the object initialized with follow_ks_ebcfree set to false",__FILE__,__LINE__);
 }
 
 RefSCMatrix R12IntEval::T2_ab()
@@ -455,10 +474,17 @@ void
 R12IntEval::init_intermeds_()
 {
   if (r12info_->msg()->me() == 0) {
+#if NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS
+    Vaa_->assign(0.0);
+    Vab_->assign(0.0);
+    Baa_->assign(0.0);
+    Bab_->assign(0.0);
+#else
     Vaa_->unit();
     Vab_->unit();
     Baa_->unit();
     Bab_->unit();
+#endif
   }
   else {
     Vaa_.assign(0.0);
@@ -469,8 +495,10 @@ R12IntEval::init_intermeds_()
   if (ebc_ == false) {
     Aaa_.assign(0.0);
     Aab_.assign(0.0);
-    Ac_aa_.assign(0.0);
-    Ac_ab_.assign(0.0);
+    if (follow_ks_ebcfree_) {
+      Ac_aa_.assign(0.0);
+      Ac_ab_.assign(0.0);
+    }
     T2aa_.assign(0.0);
     T2ab_.assign(0.0);
     Raa_.assign(0.0);
@@ -480,7 +508,9 @@ R12IntEval::init_intermeds_()
   Xaa_.assign(0.0);
   Xab_.assign(0.0);
   //r2_contrib_to_X_orig_();
+#if !NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS
   r2_contrib_to_X_new_();
+#endif
 
   emp2pair_aa_.assign(0.0);
   emp2pair_ab_.assign(0.0);
@@ -803,12 +833,20 @@ R12IntEval::compute()
   if (r12info_->basis_vir()->equiv(r12info_->basis())) {
     obs_contrib_to_VXB_gebc_vbseqobs_();
     if (debug_ > 1) {
+      Vaa_.print("Alpha-alpha V(OBS) contribution");
+      Vab_.print("Alpha-beta V(OBS) contribution");
+      Xaa_.print("Alpha-alpha X(OBS) contribution");
+      Xab_.print("Alpha-beta X(OBS) contribution");
       Baa_.print("Alpha-alpha B(OBS) contribution");
       Bab_.print("Alpha-beta B(OBS) contribution");
     }
     if (r12info_->basis() != r12info_->basis_ri())
       abs1_contrib_to_VXB_gebc_();
     if (debug_ > 1) {
+      Vaa_.print("Alpha-alpha V(OBS+ABS) contribution");
+      Vab_.print("Alpha-beta V(OBS+ABS) contribution");
+      Xaa_.print("Alpha-alpha X(OBS+ABS) contribution");
+      Xab_.print("Alpha-beta X(OBS+ABS) contribution");
       Baa_.print("Alpha-alpha B(OBS+ABS) contribution");
       Bab_.print("Alpha-beta B(OBS+ABS) contribution");
     }
@@ -852,9 +890,13 @@ R12IntEval::compute()
       throw std::runtime_error("R12IntEval::compute() -- ebc=false is only supported when basis_vir == basis");
 
     compute_A_simple_();
-    compute_A_via_commutator_();
-    //Aaa_.assign(Ac_aa_);
-    //Aab_.assign(Ac_ab_);
+    Aaa_.scale(2.0);
+    Aab_.scale(2.0);
+    if (follow_ks_ebcfree_) {
+      compute_A_via_commutator_();
+      Ac_aa_.scale(2.0);
+      Ac_ab_.scale(2.0);
+    }
     compute_T2_();
     AT2_contrib_to_V_();
     compute_R_();
@@ -951,8 +993,10 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
     globally_sum_scmatrix_(Aaa_,to_all_tasks);
     globally_sum_scmatrix_(Aab_,to_all_tasks);
 
-    globally_sum_scmatrix_(Ac_aa_,to_all_tasks);
-    globally_sum_scmatrix_(Ac_ab_,to_all_tasks);
+    if (follow_ks_ebcfree_) {
+      globally_sum_scmatrix_(Ac_aa_,to_all_tasks);
+      globally_sum_scmatrix_(Ac_ab_,to_all_tasks);
+    }
     
     globally_sum_scmatrix_(T2aa_,to_all_tasks);
     globally_sum_scmatrix_(T2ab_,to_all_tasks);

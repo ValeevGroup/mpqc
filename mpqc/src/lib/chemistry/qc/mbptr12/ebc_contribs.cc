@@ -52,7 +52,16 @@ using namespace sc;
 
 #define TEST_T2 0
 #define TEST_A 1
-#define USE_A_COMM_IN_B_EBC 1
+// if set to 1 then use f+k rather than f to compute A
+#define A_DIRECT_EXCLUDE_K 0
+
+//
+// these are for testing purposes only
+//
+// use the commutator form A
+#define USE_A_COMM_IN_B_EBC 0
+#define ACOMM_INCLUDE_TR_ONLY 0
+#define ACOMM_INCLUDE_R_ONLY 0
 
 void
 R12IntEval::compute_T2_()
@@ -348,7 +357,11 @@ R12IntEval::compute_A_simple_()
   // compute the Fock matrix between the complement and virtuals and
   // create the new Fock-weighted space
   Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
+#if A_DIRECT_EXCLUDE_K
+  RefSCMatrix F_ri_v = fock_(r12info_->occ_space(),ribs_space,act_vir_space,1.0,0.0);
+#else
   RefSCMatrix F_ri_v = fock_(r12info_->occ_space(),ribs_space,act_vir_space);
+#endif
   if (debug_ > 1)
     F_ri_v.print("Fock matrix (RI-BS/act.virt.)");
   Ref<MOIndexSpace> act_fvir_space = new MOIndexSpace("Fock-weighted active unoccupied MOs sorted by energy",
@@ -566,10 +579,18 @@ differs from the basis set for occupieds");
       const double t1r12_ibja = -ijxy_buf_r12t1[ba_offset];
       const double t2r12_iajb = -jixy_buf_r12t1[ba_offset];
       const double t2r12_ibja = -jixy_buf_r12t1[ab_offset];
+#if ACOMM_INCLUDE_TR_ONLY
+      double Aab_ij_ab = 0.5 * ( -(t1r12_iajb + t2r12_iajb) );
+      double Aab_ij_ba = 0.5 * ( -(t1r12_ibja + t2r12_ibja) );
+#elif ACOMM_INCLUDE_R_ONLY
+      double Aab_ij_ab = 0.5 * ( r12_iajb );
+      double Aab_ij_ba = 0.5 * ( r12_ibja );
+#else
       double Aab_ij_ab = 0.5 * ( -(t1r12_iajb + t2r12_iajb) - (all_evals(aa) + all_evals(bb) -
                                                               act_occ_evals(i) - act_occ_evals(j))*r12_iajb );
       double Aab_ij_ba = 0.5 * ( -(t1r12_ibja + t2r12_ibja) - (all_evals(aa) + all_evals(bb) -
                                                               act_occ_evals(i) - act_occ_evals(j))*r12_ibja );
+#endif
       Ac_ab_.set_element(ij_ab,ab_ab,Aab_ij_ab);
       Ac_ab_.set_element(ji_ab,ba_ab,Aab_ij_ab);
       Ac_ab_.set_element(ji_ab,ab_ab,Aab_ij_ba);
@@ -623,17 +644,26 @@ R12IntEval::AR_contrib_to_B_()
 #if USE_A_COMM_IN_B_EBC
     RefSCMatrix AR_aa = Ac_aa_*Raa_.t();
     RefSCMatrix AR_ab = Ac_ab_*Rab_.t();
+    double scale = -0.5;
 #else
     RefSCMatrix AR_aa = Aaa_*Raa_.t();
     RefSCMatrix AR_ab = Aab_*Rab_.t();
+    double scale = -0.5;
 #endif
-    double scale = -1.0;
-    AR_aa.scale(scale); Baa_.accumulate(AR_aa);
+    RefSCMatrix Baa = Baa_.clone();  Baa.assign(0.0);
+    RefSCMatrix Bab = Bab_.clone();  Bab.assign(0.0);
+    AR_aa.scale(scale); Baa.accumulate(AR_aa);
     RefSCMatrix AR_aa_t = AR_aa.t();
-    Baa_.accumulate(AR_aa_t);
-    AR_ab.scale(scale); Bab_.accumulate(AR_ab);
+    Baa.accumulate(AR_aa_t);
+    AR_ab.scale(scale); Bab.accumulate(AR_ab);
     RefSCMatrix AR_ab_t = AR_ab.t();
-    Bab_.accumulate(AR_ab_t);
+    Bab.accumulate(AR_ab_t);
+    if (debug_ > 1) {
+      Baa.print("Alpha-alpha B^{EBC} contribution");
+      Bab.print("Alpha-beta B^{EBC} contribution");
+    }
+    Baa_.accumulate(Baa);
+    Bab_.accumulate(Bab);
   }
   globally_sum_intermeds_();
 }

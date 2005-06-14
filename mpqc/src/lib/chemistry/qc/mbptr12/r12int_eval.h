@@ -66,6 +66,8 @@ class R12IntEval : virtual public SavableState {
   LinearR12::StandardApproximation stdapprox_;
   bool spinadapted_;
   bool include_mp1_;
+  /// should I follow Klopper-Samson approach in the intermediates formulation for the EBC-free method?
+  bool follow_ks_ebcfree_;
   int debug_;
 
   // Map to TwoBodyMOIntsTransform objects that have been computed previously
@@ -205,9 +207,12 @@ class R12IntEval : virtual public SavableState {
 
 public:
   R12IntEval(StateIn&);
-  R12IntEval(const Ref<R12IntEvalInfo>&, bool gbc = true, bool ebc = true,
+  /** Constructs R12IntEval. If follow_ks_ebcfree is true then follow formalism of Klopper and Samson
+      to compute EBC-free MP2-R12 energy. */
+  R12IntEval(const Ref<R12IntEvalInfo>& info, bool gbc = true, bool ebc = true,
              LinearR12::ABSMethod abs_method = LinearR12::ABS_CABSPlus,
-             LinearR12::StandardApproximation stdapprox = LinearR12::StdApprox_Ap);
+             LinearR12::StandardApproximation stdapprox = LinearR12::StdApprox_Ap,
+             bool follow_ks_ebcfree = false);
   ~R12IntEval();
 
   void save_data_state(StateOut&);
@@ -222,6 +227,7 @@ public:
   const bool gbc() const { return gbc_; }
   const bool ebc() const { return ebc_; }
   const LinearR12::StandardApproximation stdapprox() const { return stdapprox_; }
+  bool follow_ks_ebcfree() const { return follow_ks_ebcfree_; }
 
   Ref<R12IntEvalInfo> r12info() const;
   RefSCDimension dim_oo_aa() const;

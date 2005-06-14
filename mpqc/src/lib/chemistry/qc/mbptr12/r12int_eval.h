@@ -98,9 +98,10 @@ class R12IntEval : virtual public SavableState {
   void r2_contrib_to_X_new_();
   /// Compute <space1 space1|r_{12}^2|space1 space2> matrix
   RefSCMatrix compute_r2_(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
-  /// Compute the Fock matrix between 2 spaces
+  /** Compute the Fock matrix between 2 spaces. scale_J and scale_K are used to scale Coulomb
+      and exchange contributions */
   RefSCMatrix fock_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
-                    const Ref<MOIndexSpace>& ket_space);
+                    const Ref<MOIndexSpace>& ket_space, double scale_J = 1.0, double scale_K = 1.0);
   /// Compute the coulomb matrix between 2 spaces
   RefSCMatrix coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
                        const Ref<MOIndexSpace>& ket_space);

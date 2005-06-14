@@ -52,6 +52,8 @@ using namespace sc;
 #define PRINT4Q_MP2 0
 #define PRINT_R12_INTERMED 0
 
+#define COMPUTE_AB_BLOCK_ONLY 0
+
 void
 R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
 {
@@ -234,6 +236,19 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
           else
             pfac_xy = pfac_xy_2;
           for(int x=0;x<noso;x++) {
+
+#if COMPUTE_AB_BLOCK_ONLY
+            if (y < nocc || x < nocc) {
+              pfac_xy = 0.0;
+            }
+            else {
+              if (y >= nocc)
+                pfac_xy = pfac_xy_1;
+              else
+                pfac_xy = pfac_xy_2;
+            }
+#endif
+            
             int yx_offset = y*noso+x;
             int xy_offset = x*noso+y;
             double ij_r12_xy = ijxy_buf_r12[xy_offset];

@@ -129,6 +129,7 @@ R12IntEval::compute_B_gbc_1_()
   // Compute the first half of the term
   const int nbraket = nocc*nribs;
 
+#if 1
   for(kl_iter.start();int(kl_iter);kl_iter.next()) {
 
     const int kl = kl_iter.ij();
@@ -176,28 +177,33 @@ R12IntEval::compute_B_gbc_1_()
         ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
 
       double rr_klij = 0.0;
-      double rr_lkij = 0.0;
-      double rr_klji = 0.0;
       double rr_lkji = 0.0;
+      double rr_klji = 0.0;
+      double rr_lkij = 0.0;
 
       const int unit_stride = 1;
       rr_klij = F77_DDOT(&nbraket,klMfA_buf_r12,&unit_stride,ijmA_buf_r12,&unit_stride);
-      B_gbc1_ab.set_element(kl_ab,ij_ab,-rr_klij);
-      if (kl_ab != lk_ab) {
-        rr_lkij = F77_DDOT(&nbraket,lkMfA_buf_r12,&unit_stride,ijmA_buf_r12,&unit_stride);
-        B_gbc1_ab.set_element(lk_ab,ij_ab,-rr_lkij);
-      }
-      if (ij_ab != ji_ab) {
-        rr_klji = F77_DDOT(&nbraket,klMfA_buf_r12,&unit_stride,jimA_buf_r12,&unit_stride);
-        B_gbc1_ab.set_element(kl_ab,ji_ab,-rr_klji);
-      }
       if (kl_ab != lk_ab && ij_ab != ji_ab) {
         rr_lkji = F77_DDOT(&nbraket,lkMfA_buf_r12,&unit_stride,jimA_buf_r12,&unit_stride);
-        B_gbc1_ab.set_element(lk_ab,ji_ab,-rr_lkji);
       }
+      else
+        rr_lkji = rr_klij;
+      B_gbc1_ab.set_element(kl_ab,ij_ab,-(rr_klij+rr_lkji));
+      B_gbc1_ab.set_element(lk_ab,ji_ab,-(rr_klij+rr_lkji));
+      
+      if (kl_ab != lk_ab)
+        rr_lkij = F77_DDOT(&nbraket,lkMfA_buf_r12,&unit_stride,ijmA_buf_r12,&unit_stride);
+      else
+        rr_lkij = rr_klij;
+      if (ij_ab != ji_ab)
+        rr_klji += F77_DDOT(&nbraket,klMfA_buf_r12,&unit_stride,jimA_buf_r12,&unit_stride);
+      else
+        rr_klji = rr_klij;
+      B_gbc1_ab.set_element(kl_ab,ji_ab,-(rr_klji+rr_lkij));
+      B_gbc1_ab.set_element(lk_ab,ij_ab,-(rr_klji+rr_lkij));
 
       if (ij_aa != -1 && kl_aa != -1)
-        B_gbc1_aa.set_element(kl_aa,ij_aa,-(rr_klij-rr_lkij-rr_klji+rr_lkji));
+        B_gbc1_aa.set_element(kl_aa,ij_aa,-(rr_klij+rr_lkji-rr_klji-rr_lkij));
         
       ijmA_acc->release_pair_block(i,j,R12IntsAcc::r12);
       ijmA_acc->release_pair_block(j,i,R12IntsAcc::r12);
@@ -206,7 +212,9 @@ R12IntEval::compute_B_gbc_1_()
     ijMfA_acc->release_pair_block(k,l,R12IntsAcc::r12);
     ijMfA_acc->release_pair_block(l,k,R12IntsAcc::r12);
   }
+#endif
 
+#if 1
   //
   // Do the AO->MO transform for (act_occ focc|r12|act_occ vir)
   //
@@ -279,20 +287,18 @@ R12IntEval::compute_B_gbc_1_()
           double rr_lkji = 0.0;
           
           rr_klij = klMfa_buf_r12[ma]*ijpq_buf_r12[ma_offset];
-          B_gbc1_ab.accumulate_element(kl_ab,ij_ab,-rr_klij);
-          
-          if (kl_ab != lk_ab) {
-            rr_lkij = lkMfa_buf_r12[ma]*ijpq_buf_r12[ma_offset];
-            B_gbc1_ab.accumulate_element(lk_ab,ij_ab,-rr_lkij);
-          }
-          if (ij_ab != ji_ab) {
-            rr_klji = klMfa_buf_r12[ma]*ijpq_buf_r12[am_offset];
-            B_gbc1_ab.accumulate_element(kl_ab,ji_ab,-rr_klji);
-          }
+          rr_lkji = lkMfa_buf_r12[ma]*ijpq_buf_r12[am_offset];
+          B_gbc1_ab.accumulate_element(kl_ab,ij_ab,-(rr_klij+rr_lkji));
           if (kl_ab != lk_ab && ij_ab != ji_ab) {
-            rr_lkji = lkMfa_buf_r12[ma]*ijpq_buf_r12[am_offset];
-            B_gbc1_ab.accumulate_element(lk_ab,ji_ab,-rr_lkji);
+            B_gbc1_ab.accumulate_element(lk_ab,ji_ab,-(rr_lkji+rr_klij));
           }
+          
+          rr_lkij = lkMfa_buf_r12[ma]*ijpq_buf_r12[ma_offset];
+          rr_klji = klMfa_buf_r12[ma]*ijpq_buf_r12[am_offset];
+          if (kl_ab != lk_ab)
+            B_gbc1_ab.accumulate_element(lk_ab,ij_ab,-(rr_lkij+rr_klji));
+          if (ij_ab != ji_ab)
+            B_gbc1_ab.accumulate_element(kl_ab,ji_ab,-(rr_klji+rr_lkij));
           
           if (ij_aa != -1 && kl_aa != -1)
             B_gbc1_aa.accumulate_element(kl_aa,ij_aa,-(rr_klij-rr_lkij-rr_klji+rr_lkji));
@@ -304,14 +310,15 @@ R12IntEval::compute_B_gbc_1_()
     ijMfa_acc->release_pair_block(k,l,R12IntsAcc::r12);
     ijMfa_acc->release_pair_block(l,k,R12IntsAcc::r12);
   }
+#endif
 
-  // Symmetrize the B contribution
-  B_gbc1_aa.scale(0.5);
-  B_gbc1_ab.scale(0.5);
   if (debug_ > 1) {
     B_gbc1_aa.print("Alpha-alpha B(GBC1) contribution");
     B_gbc1_ab.print("Alpha-beta B(GBC1) contribution");
   }
+  // Symmetrize the B contribution
+  B_gbc1_aa.scale(0.5);
+  B_gbc1_ab.scale(0.5);
   RefSCMatrix B_gbc1_aa_t = B_gbc1_aa.t();
   Baa_.accumulate(B_gbc1_aa); Baa_.accumulate(B_gbc1_aa_t);
   RefSCMatrix B_gbc1_ab_t = B_gbc1_ab.t();
@@ -371,9 +378,11 @@ R12IntEval::compute_B_gbc_2_()
 
   // compute r_{12}^2 operator in act.occ.pair/act.occ.-focc. basis
   RefSCMatrix R2 = compute_r2_(act_occ_space,factocc_space);
+#if 1
   // Compute contribution X += (r^2)_{ij}^{k l_f}
   if (me == 0)
     X_ijklF_ab.accumulate(R2);
+#endif
 
   //
   // Compute contribution X -= r_{ij}^{\alpha'm} r_{m\alpha'}^{k l_f}
@@ -620,13 +629,13 @@ R12IntEval::compute_B_gbc_2_()
     }
   }
 
-  // Symmetrize the B contribution
-  B_gbc2_aa.scale(0.5);
-  B_gbc2_ab.scale(0.5);
   if (debug_ > 1) {
     B_gbc2_aa.print("Alpha-alpha B(GBC2) contribution");
     B_gbc2_ab.print("Alpha-beta B(GBC2) contribution");
   }
+  // Symmetrize the B contribution
+  B_gbc2_aa.scale(0.5);
+  B_gbc2_ab.scale(0.5);
   RefSCMatrix B_gbc2_aa_t = B_gbc2_aa.t();
   Baa_.accumulate(B_gbc2_aa); Baa_.accumulate(B_gbc2_aa_t);
   RefSCMatrix B_gbc2_ab_t = B_gbc2_ab.t();

@@ -53,6 +53,7 @@ using namespace sc;
 #define PRINT_R12_INTERMED 0
 
 #define COMPUTE_AB_BLOCK_ONLY 0
+#define COMPUTE_MA_BLOCK_ONLY 0
 
 void
 R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
@@ -246,6 +247,15 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
                 pfac_xy = pfac_xy_1;
               else
                 pfac_xy = pfac_xy_2;
+            }
+#endif
+#if COMPUTE_MA_BLOCK_ONLY
+            if ((y < nocc && x < nocc) ||
+                (y >= nocc && x >= nocc)) {
+              pfac_xy = 0.0;
+            }
+            else {
+              pfac_xy = 0.5;
             }
 #endif
             

@@ -14,7 +14,7 @@
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._includes)
 #include <iostream>
 #include <sstream>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <ccaiter.h>
 
 using namespace std;

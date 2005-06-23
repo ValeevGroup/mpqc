@@ -30,7 +30,7 @@
 #endif
 
 #include <chemistry/qc/intcca/int1e.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
 
 using namespace std;

@@ -31,7 +31,7 @@
 
 #include <chemistry/qc/intcca/int2e.h>
 #include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 
 using namespace std;
 using namespace sc;

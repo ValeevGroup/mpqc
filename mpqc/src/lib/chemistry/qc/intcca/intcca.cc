@@ -26,7 +26,6 @@
 //
 
 #include <util/state/stateio.h>
-#include <util/misc/scexception.h>
 #include <util/misc/ccaenv.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/intcca/intcca.h>

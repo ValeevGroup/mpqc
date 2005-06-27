@@ -353,7 +353,7 @@ check1_run:
 check1_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK1OUTPUTS:$(INP)/%=$(RUN)/%)
 
-check2: (RUN) check2_run check2_chk
+check2: $(RUN) check2_run check2_chk
 
 check2_run:
 	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK2INPUTS:$(INP)/%=%)

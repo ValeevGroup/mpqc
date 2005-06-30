@@ -32,20 +32,17 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-CXXSRC = array.cc avl.cc bitarray.cc carray.cc
+CXXSRC = avl.cc bitarray.cc carray.cc
 
-TESTCXX = avltest.cc artest.cc
+TESTCXX = avltest.cc
 
-TESTPROGS = avltest artest
+TESTPROGS = avltest
 
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
-INC = array.h artem.h ar2tem.h ssarmac.h ssar2mac.h \
-      eavlmmap.h avlmap.h avlset.h compare.h bitarray.h
+INC = eavlmmap.h avlmap.h avlset.h compare.h bitarray.h
 
-GENINC = armac.h ar2mac.h ssarmac.h ssar2mac.h
-
-DEPENDINCLUDE = $(INC) $(GENINC)
+DEPENDINCLUDE = $(INC)
 
 DISTFILES = Makefile $(INC) LIBS.h $(REALCXXSRC) $(TESTCXX)
 
@@ -56,23 +53,8 @@ default:: $(DEPENDINCLUDE)
 
 interface:: $(DEPENDINCLUDE)
 
-armac.h: artem.h $(TMPL2MACDEP)
-	$(TMPL2MAC) $< > armac.h
-
-ar2mac.h: ar2tem.h $(TMPL2MACDEP)
-	$(TMPL2MAC) $< > ar2mac.h
-
-ssarmac.h: ssartem.h $(TMPL2MACDEP)
-	$(TMPL2MAC) $< > ssarmac.h
-
-ssar2mac.h: ssar2tem.h $(TMPL2MACDEP)
-	$(TMPL2MAC) $< > ssar2mac.h
-
 avltest: avltest.$(OBJSUF) libSCmisc.$(LIBSUF) libSCkeyval.$(LIBSUF) libSCstate.$(LIBSUF) libSCclass.$(LIBSUF) libSCref.$(LIBSUF) libSCcontainer.$(LIBSUF)
 	$(LTLINK) $(CXX) $(LDFLAGS) -o avltest $^ $(SYSLIBS) $(LTLINKBINOPTS)
-
-artest: artest.$(OBJSUF) libSCcontainer.$(LIBSUF) libSCmisc.$(LIBSUF) libSCkeyval.$(LIBSUF) libSCstate.$(LIBSUF) libSCclass.$(LIBSUF) libSCref.$(LIBSUF) libSCcontainer.$(LIBSUF)
-	$(LTLINK) $(CXX) $(LDFLAGS) -o artest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

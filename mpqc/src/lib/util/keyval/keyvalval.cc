@@ -301,7 +301,12 @@ KeyValValuepchar::stringvalue(std::string&val) const
 void
 KeyValValuepchar::print(ostream&o) const
 {
-  o << _val;
+  if (_val == 0) {
+      o << "(null)";
+    }
+  else {
+      o << _val;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////

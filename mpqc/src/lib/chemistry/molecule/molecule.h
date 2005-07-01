@@ -72,9 +72,37 @@ molecule<Molecule>: (
   )
 </pre>
 The default units are Bohr with can be overridden with
-#unit=angstrom#.  The #atom_labels# array can be
-omitted.  The #atoms# and #geometry# arrays
+<tt>unit=angstrom</tt>.  The <tt>atom_labels</tt> array can be
+omitted.  The <tt>atoms</tt> and <tt>geometry</tt> arrays
 are required.
+
+As a special case, an atom can be given with the symbol <tt>Q</tt> or the
+name <tt>charge</tt>.  Such centers are treated as point charges and not
+given basis functions.  The values of the charges must be specified with a
+<tt>charge</tt> vector in the Molecule input.  Since the charge vector
+assign charges to all centers, including atoms, it is easiest to place all
+point charge centers first in the geometry, and then give a charge vector
+with a number of elements equal to the number of point charges.  The
+following example shows a water molecule interacting with a point charge
+having value 0.1:
+<pre>
+molecule<Molecule>: (
+    unit=angstrom
+    charge = [ 0.1 ]
+    { atom_labels atoms           geometry            } = {
+          Q1         Q   [ 0.0         0 10.0         ]
+          O1         O   [ 0.000000000 0  0.369372944 ]
+          H1         H   [ 0.783975899 0 -0.184686472 ]
+          H2         H   [-0.783975899 0 -0.184686472 ]
+     }
+    )
+  )
+</pre>
+
+This feature is designed for doing QM/MM calculations, so, by default,
+methods will not include interactions between the <tt>Q</tt> centers when
+computing the energy or the gradient.  To include these interactions, set
+<tt>include_qq=1</tt>.
 
 The Molecule class has a PointGroup
 member object, which also has a KeyVal constructor

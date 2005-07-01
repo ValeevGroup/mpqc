@@ -187,7 +187,8 @@ clks_b88.in    hsosks_blyp.in        uks_b3lyp.in \
 clks_blyp.in   hsosks_lsdax.in       uks_b88.in \
 clks_lsdax.in  hsosks_xa.in          uks_blyp.in \
 clks_xa.in     uks_lsdax.in          uks_xa.in \
-hsoshf.in      osshf.in
+hsoshf.in      osshf.in              qmmm1.in \
+qmmm2.in
 
 ifeq ($(HAVE_MBPTR12),yes)
  METHODSINPUTS += \

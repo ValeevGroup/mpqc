@@ -347,6 +347,26 @@ class SCElementSumAbs: public SCElementOp {
     void init() { r = 0.0; }
 };
 
+/// Computed k-norm of matrix.
+class SCElementKNorm: public SCElementOp {
+  private:
+    int deferred_;
+    double r_;  // result
+    double k_;  // norm parameter
+  public:
+    /// by default compute 2-norm
+    SCElementKNorm(double k = 2.0);
+    SCElementKNorm(StateIn&);
+    ~SCElementKNorm();
+    void save_data_state(StateOut&);
+    void process(SCMatrixBlockIter&);
+    int has_collect();
+    void defer_collect(int);
+    void collect(const Ref<MessageGrp>&);
+    void collect(const Ref<SCElementOp>&);
+    double result();
+    void init() { r_ = 0.0; }
+};
 
 class SCElementDot: public SCElementOp {
   private:

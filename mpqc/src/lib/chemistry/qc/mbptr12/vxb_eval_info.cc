@@ -93,6 +93,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
 
   tfactory_ = new MOIntsTransformFactory(integral_,obs_space_);
   tfactory_->set_memory(memory_);
+  tfactory_->set_file_prefix(ints_file_);
 }
 
 R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
@@ -116,7 +117,7 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   si.get(nfzv_);
 
   int ints_method; si.get(ints_method); ints_method_ = (StoreMethod) ints_method;
-  si.getstring(ints_file_);
+  si.get(ints_file_);
 
   double memory; si.get(memory); memory_ = (size_t) memory;
   si.get(debug_);
@@ -148,7 +149,6 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
 
 R12IntEvalInfo::~R12IntEvalInfo()
 {
-  free(ints_file_);
 }
 
 void R12IntEvalInfo::save_data_state(StateOut& so)
@@ -166,7 +166,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put(nfzv_);
 
   so.put((int)ints_method_);
-  so.putstring(ints_file_);
+  so.put(ints_file_);
 
   so.put((double)memory_);
   so.put(debug_);
@@ -186,9 +186,9 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(tfactory_.pointer(),so);
 }
 
-char* R12IntEvalInfo::ints_file() const
+const std::string& R12IntEvalInfo::ints_file() const
 {
-  return strdup(ints_file_);
+  return ints_file_;
 }
 
 void

@@ -32,6 +32,7 @@
 #ifndef _chemistry_qc_mbptr12_vxbevalinfo_h
 #define _chemistry_qc_mbptr12_vxbevalinfo_h
 
+#include <string>
 #include <util/misc/string.h>
 #include <util/ref/ref.h>
 #include <math/scmat/abstract.h>
@@ -79,7 +80,7 @@ private:
   double print_percent_;
   int debug_;
   StoreMethod ints_method_;
-  char* ints_file_;
+  std::string ints_file_;
   LinearR12::ABSMethod abs_method_;
 
   int nlindep_aux_;
@@ -137,7 +138,7 @@ public:
   void set_ints_method(const StoreMethod method) { ints_method_ = method; };
   /** Sets name of the file used to store transformed integrals.
       Default depends on how the object was constructed. */
-  void set_ints_file(const char* filename) { ints_file_ = strdup(filename); };
+  void set_ints_file(const std::string& filename) { ints_file_ = filename; };
   /** Sets the amount of memory to use for the calculation. Default is
       determined by DEFAULT_SC_MEMORY. */
   void set_memory(const size_t nbytes);
@@ -163,7 +164,7 @@ public:
   double print_percent() const { return print_percent_; };
   int debug_level() const { return debug_; };
   const StoreMethod ints_method() const { return ints_method_; };
-  char* ints_file() const;
+  const std::string& ints_file() const;
   const size_t memory() const { return memory_; };
 
   const int nocc() const { return nocc_;};

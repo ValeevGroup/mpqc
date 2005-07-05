@@ -51,7 +51,7 @@ using namespace std;
 using namespace sc;
 
 #define TEST_T2 0
-#define TEST_A 1
+#define TEST_A 0
 // if set to 1 then use f+k rather than f to compute A
 #define A_DIRECT_EXCLUDE_K 0
 
@@ -364,6 +364,9 @@ R12IntEval::compute_A_simple_()
 #endif
   if (debug_ > 1)
     F_ri_v.print("Fock matrix (RI-BS/act.virt.)");
+  if (debug_ > 0)
+    compute_norms_(F_ri_v,"Fock matrix (RI-BS/act.virt.)");
+
   Ref<MOIndexSpace> act_fvir_space = new MOIndexSpace("Fock-weighted active unoccupied MOs sorted by energy",
                                                       act_vir_space, ribs_space->coefs()*F_ri_v, ribs_space->basis());
 
@@ -631,6 +634,10 @@ R12IntEval::AT2_contrib_to_V_()
     Vaa_.accumulate(Vaa);
     RefSCMatrix Vab = Aab_*T2ab_.t();
     Vab_.accumulate(Vab);  
+    if (debug_ > 0) {
+      compute_norms_(Vaa,"Alpha-alpha AT2 contribution to V");
+      compute_norms_(Vab,"Alpha-beta AT2 contribution to V");
+    }
   }
   globally_sum_intermeds_();
 }
@@ -664,6 +671,10 @@ R12IntEval::AR_contrib_to_B_()
     }
     Baa_.accumulate(Baa);
     Bab_.accumulate(Bab);
+    if (debug_ > 0) {
+      compute_norms_(Baa,"Alpha-alpha AR contribution to B");
+      compute_norms_(Bab,"Alpha-beta AR contribution to B");
+    }
   }
   globally_sum_intermeds_();
 }

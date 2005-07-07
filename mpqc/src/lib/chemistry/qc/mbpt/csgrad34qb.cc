@@ -157,7 +157,7 @@ CSGrad34Qbtr::run()
   
   DerivCenters der_centers;
 
-  sc::exp::DistShellPair shellpairs(msg,nthread,mythread,lock,basis,basis,dynamic_);
+  DistShellPair shellpairs(msg,nthread,mythread,lock,basis,basis,dynamic_);
   shellpairs.set_print_percent(print_percent_);
   shellpairs.set_debug(debug);
   if (debug) shellpairs.set_print_percent(1);

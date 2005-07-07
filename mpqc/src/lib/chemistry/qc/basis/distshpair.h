@@ -42,7 +42,6 @@
 using namespace sc;
 
 namespace sc {
-  namespace exp {
 
 /// Distributes shell pairs either statically or dynamically.
 class DistShellPair {
@@ -104,7 +103,6 @@ class DistShellPair {
     int get_task(int &P, int &Q);
 };
 
-}
 }
 
 #endif

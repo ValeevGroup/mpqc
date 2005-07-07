@@ -157,7 +157,7 @@ TwoBodyMOIntsTransform_12Inds::run()
   /*-----------------------------
     Initialize work distribution
    -----------------------------*/
-  sc::exp::DistShellPair shellpairs(msg,nthread_,mythread_,lock_,bs4,bs3,dynamic);
+  sc::DistShellPair shellpairs(msg,nthread_,mythread_,lock_,bs4,bs3,dynamic);
   shellpairs.set_debug(debug_);
   if (debug_) shellpairs.set_print_percent(print_percent/10.0);
   else shellpairs.set_print_percent(print_percent);

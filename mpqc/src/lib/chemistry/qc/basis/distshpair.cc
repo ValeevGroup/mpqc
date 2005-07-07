@@ -38,7 +38,6 @@
 
 using namespace std;
 using namespace sc;
-using namespace sc::exp;
 
 // Defining REVERSE_ORDERING does the small tasks first.  This would give
 // poorer load balancing and it included only for debugging (in particular,

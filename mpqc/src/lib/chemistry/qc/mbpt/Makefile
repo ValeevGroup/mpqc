@@ -39,7 +39,7 @@ TESTPROGS = mbpttest
 
 CXXSRCS = mbpt.cc csgrad.cc csgrade12.cc csgrads2pdm.cc csgmat.cc cscphf.cc \
           hsosv1.cc hsosv1e1.cc hsosv2.cc hsosv2lb.cc util.cc mp2extrap.cc \
-          distsh.cc csgrad34qb.cc
+          csgrad34qb.cc
 
 CSRCS = bzerofast.c
 

@@ -176,7 +176,7 @@ CSGradErep12Qtr::run()
   // Use petite list for symmetry utilization
   Ref<PetiteList> p4list = tbint->integral()->petite_list();
 
-  sc::exp::DistShellPair shellpairs(msg,nthread,mythread,lock,basis,basis,dynamic_);
+  DistShellPair shellpairs(msg,nthread,mythread,lock,basis,basis,dynamic_);
   shellpairs.set_print_percent(print_percent_);
   shellpairs.set_debug(debug);
   if (debug) shellpairs.set_print_percent(1);

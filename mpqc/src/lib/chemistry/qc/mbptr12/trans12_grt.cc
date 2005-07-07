@@ -165,7 +165,7 @@ R12A_GRT_12Qtr::run()
   /*-----------------------------
     Initialize work distribution
    -----------------------------*/
-  sc::exp::DistShellPair shellpairs(msg,nthread,mythread,lock,bs3_,bs4_,dynamic_);
+  DistShellPair shellpairs(msg,nthread,mythread,lock,bs3_,bs4_,dynamic_);
   shellpairs.set_debug(debug);
   if (debug) shellpairs.set_print_percent(print_percent_/10.0);
   else shellpairs.set_print_percent(print_percent_);

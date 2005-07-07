@@ -81,7 +81,7 @@ Int2eCCA::Int2eCCA(Integral *integral,
     if( use_opaque_ )
       buffer_ = static_cast<double*>( erep_ptr_->get_buffer() );
   }
-  else if( eval_type == "eri_deriv1") {
+  else if( eval_type == "eri_1der") {
     erep_1der_ = eval_factory_.get_integral_evaluator4( "eri2", 1,
                                                         cca_bs1_, cca_bs2_,
                                                         cca_bs3_, cca_bs4_ );
@@ -89,9 +89,11 @@ Int2eCCA::Int2eCCA(Integral *integral,
     if( use_opaque_ )
       buffer_ = static_cast<double*>( erep_1der_ptr_->get_buffer() );
   }
-  else
+  else {
+    std::cerr << "integral type: " << eval_type << std::endl;
     throw InputError("unrecognized integral type",
                      __FILE__,__LINE__);
+  }
   if (!buffer_)
     throw ProgrammingError("buffer not assigned",
                            __FILE__,__LINE__);
@@ -122,7 +124,7 @@ Int2eCCA::compute_erep_1der( int is, int js, int ks, int ls,
 {
 
   if( use_opaque_ )
-    erep_ptr_->compute( is, js, ks, ls, 1, dc );
+    erep_1der_ptr_->compute( is, js, ks, ls, 1, dc );
   else {
     sidl_buffer_ = erep_ptr_->compute_array( is, js, ks, ls, 1, dc );
     int nelem = bs1_->shell(is).nfunction() * bs2_->shell(js).nfunction() *

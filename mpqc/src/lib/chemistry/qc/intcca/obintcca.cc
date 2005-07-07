@@ -128,9 +128,21 @@ OneBodyDerivIntCCA::compute_shell(int i, int j, DerivCenters& c)
 }
 
 void 
-OneBodyDerivIntCCA::compute_shell(int i, int j, int center) {
-  throw FeatureNotImplemented("compute_shell with this prototype not implemented",
-                              __FILE__,__LINE__);
+OneBodyDerivIntCCA::compute_shell(int i, int j, int c) {
+
+  Chemistry_QC_GaussianBasis_DerivCenters cca_dc;
+  cca_dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
+  cca_dc.add_center(0,c);
+  cca_dc.add_omitted(1,basis2()->shell_to_center(j));
+  
+  if( eval_type_ == "overlap_1der" )
+    int1ecca_->overlap_1der(i,j,cca_dc);
+  else if( eval_type_ == "kinetic_1der" )
+    int1ecca_->kinetic_1der(i,j,cca_dc);
+  else if( eval_type_ == "nuclear_1der" )
+    int1ecca_->nuclear_1der(i,j,cca_dc);
+  else if( eval_type_ == "hcore_1der" )
+    int1ecca_->hcore_1der(i,j,cca_dc);
 }
 
 /////////////////////////////////////////////////////////////////////////////

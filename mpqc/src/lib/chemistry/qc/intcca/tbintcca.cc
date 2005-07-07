@@ -64,15 +64,12 @@ TwoBodyIntCCA::compute_shell(int is, int js, int ks, int ls)
 int
 TwoBodyIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
 {
-//  ???
-//  throw FeatureNotImplemented("log2_shell_bound not implemented",
-//                              __FILE__,__LINE__);
+  return 256;
 }
 
 void
 TwoBodyIntCCA::set_integral_storage(size_t storage)
 {
-//  this is currently ineffective needs interface support
 //  throw FeatureNotImplemented("set_integral_storage needs to be implemented",
 //                              __FILE__,__LINE__);
 }
@@ -103,29 +100,21 @@ TwoBodyDerivIntCCA::compute_shell(int is, int js, int ks, int ls,
 {
   Chemistry::QC::GaussianBasis::DerivCenters cca_dc;
   cca_dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
-
-  int2ecca_->compute_erep_1der(is,js,ks,ls,cca_dc);
-
   for( int id=0; id<cca_dc.n(); ++id ) {
     if( id == cca_dc.omitted_center() )
        dc.add_omitted(cca_dc.center(id),cca_dc.atom(id));
      else
        dc.add_center(cca_dc.center(id),cca_dc.atom(id));
   }
+
+  int2ecca_->compute_erep_1der(is,js,ks,ls,cca_dc);
+
 }
 
 int
 TwoBodyDerivIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
 {
-  throw FeatureNotImplemented("log2_shell_bound not implemented",
-                              __FILE__,__LINE__);
-}
-
-void
-TwoBodyDerivIntCCA::set_integral_storage(size_t storage)
-{
-  throw FeatureNotImplemented("get_integral_storage needs to be implemented",
-                              __FILE__,__LINE__);
+  return 256;
 }
 
 /////////////////////////////////////////////////////////////////////////////

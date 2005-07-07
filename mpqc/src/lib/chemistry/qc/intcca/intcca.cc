@@ -362,7 +362,7 @@ Ref<TwoBodyDerivInt>
 IntegralCCA::electron_repulsion_deriv()
 {
    return new TwoBodyDerivIntCCA(this, bs1_, bs2_, bs3_, bs4_, 
-                                 storage_, eval_factory_, use_opaque_, "eri_der1" );
+                                 storage_, eval_factory_, use_opaque_, "eri_1der" );
 }
 
 void

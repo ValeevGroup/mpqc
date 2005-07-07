@@ -216,7 +216,19 @@ throw ()
   if( int_type_ == one_body )
     eval_->compute_shell( shellnum1, shellnum2 );
   else if( int_type_ == one_body_deriv ) {
-    //deriv_eval_->compute_shell( shellnum1, shellnum2, ??? );
+    sc::DerivCenters dc;
+
+    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 0 )
+      dc.add_omitted(0,deriv_ctr.atom(0));
+    else
+      dc.add_center(0,deriv_ctr.atom(0));
+
+    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 1 )
+      dc.add_omitted(1,deriv_ctr.atom(1));
+    else
+      dc.add_center(1,deriv_ctr.atom(1));
+
+    deriv_eval_->compute_shell( shellnum1, shellnum2, dc );
   }
   else 
     throw ProgrammingError("bad evaluator type",

@@ -124,7 +124,9 @@ throw ()
     case 0:
       { eval_ = integral_->electron_repulsion(); break; }
     case 1:
-      { deriv_eval_ = integral_->electron_repulsion_deriv(); break; }
+      { deriv_eval_ = integral_->electron_repulsion_deriv(); 
+        break; 
+      }
     default:
       ++error;
     }
@@ -197,13 +199,37 @@ MPQC::IntegralEvaluator4_impl::compute (
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute)
-
-  if( int_type_ == two_body )
+  
+  if( int_type_ == two_body ) {
     eval_->compute_shell( shellnum1, shellnum2,
 			  shellnum3, shellnum4);
+  }
+
   else if( int_type_ == two_body_deriv ) {
-//    deriv_eval_->compute_shell( shellnum1, shellnum2, 
-//                                shellnum3, shellnum4, ??? );
+    sc::DerivCenters dc;
+
+    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 0 )
+      dc.add_omitted(0,deriv_ctr.atom(0));
+    else
+      dc.add_center(0,deriv_ctr.atom(0));
+
+    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 1 )
+      dc.add_omitted(1,deriv_ctr.atom(1));
+    else
+      dc.add_center(1,deriv_ctr.atom(1));
+
+    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 2 )
+      dc.add_omitted(2,deriv_ctr.atom(2));
+    else
+      dc.add_center(2,deriv_ctr.atom(2));
+
+    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 3 )
+      dc.add_omitted(3,deriv_ctr.atom(3));
+    else
+      dc.add_center(3,deriv_ctr.atom(3));
+
+    deriv_eval_->compute_shell( shellnum1, shellnum2, 
+                                shellnum3, shellnum4, dc );
   }
   else
     throw ProgrammingError("bad evaluator type",

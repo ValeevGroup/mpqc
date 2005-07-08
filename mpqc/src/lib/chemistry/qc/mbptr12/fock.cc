@@ -128,28 +128,6 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& b
   return F;
 }
 
-void
-R12IntEval::compute_norms_(const RefSCMatrix& A, const std::string& label, std::ostream& os)
-{
-  Ref<SCElementMaxAbs> maxabs_op(new SCElementMaxAbs);
-  A.element_op(maxabs_op);
-  const double maxabs = maxabs_op->result();
-
-  Ref<SCElementKNorm> onenorm_op(new SCElementKNorm(1.0));
-  A.element_op(onenorm_op);
-  const double onenorm = onenorm_op->result();
-
-  Ref<SCElementKNorm> twonorm_op(new SCElementKNorm(2.0));
-  A.element_op(twonorm_op);
-  const double twonorm = twonorm_op->result();
-
-  os << indent << "Norms of " << label << endl;
-  os << indent << "------------------------" << endl;
-  os << indent << "||A||_{\\infty} = " << scprintf("%10.5lf",maxabs) << endl;
-  os << indent << "||A||_1        = " << scprintf("%10.5lf",onenorm) << endl;
-  os << indent << "||A||_2        = " << scprintf("%10.5lf",twonorm) << endl << endl;
-}
-
 ///////////////////////////////////////////////////////////////
 
 // Local Variables:

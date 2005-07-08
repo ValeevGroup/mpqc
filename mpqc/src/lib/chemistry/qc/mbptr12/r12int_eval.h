@@ -110,8 +110,6 @@ class R12IntEval : virtual public SavableState {
   /// Compute the exchange matrix between 2 spaces
   RefSCMatrix exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
                         const Ref<MOIndexSpace>& ket_space);
-  /// Compute and print out neatly various matrix norms of A
-  void compute_norms_(const RefSCMatrix& A, const std::string& label, std::ostream& os = ExEnv::out0());
 
   /// Checkpoint the top-level molecular energy
   void checkpoint_() const;

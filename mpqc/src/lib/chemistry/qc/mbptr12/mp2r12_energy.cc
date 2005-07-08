@@ -43,6 +43,7 @@
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/svd.h>
+#include <chemistry/qc/mbptr12/print_scmat_norms.h>
 
 using namespace std;
 using namespace sc;
@@ -266,6 +267,12 @@ void MP2R12Energy::compute()
   // Alpha-alpha pairs
   //
   if (naa > 0) {
+    if (debug_ > 0) {
+      print_scmat_norms(Vaa,"Alpha-alpha V matrix");
+      print_scmat_norms(Baa,"Alpha-alpha MP2-R12/A B matrix");
+      if (ebc == false)
+        print_scmat_norms(Aaa,"Alpha-alpha A matrix");
+    }
     if (debug_ > 1) {
       Vaa.print("Alpha-alpha V matrix");
       Baa.print("Alpha-alpha MP2-R12/A B matrix");
@@ -281,6 +288,8 @@ void MP2R12Energy::compute()
 #if USE_INVERT
       Baa_ij->assign(Baa);
       Baa_ij->gen_invert_this();
+      if (debug_ > 0)
+        print_scmat_norms(Baa_ij,"Inverse alpha-alpha MP2-R12/A B matrix");
       if (debug_ > 1)
         Baa_ij.print("Inverse alpha-alpha MP2-R12/A B matrix");
 #else
@@ -346,14 +355,23 @@ void MP2R12Energy::compute()
                   
                 }
             }
+
+          std::ostringstream oss;
+          oss << "Alpha-alpha MP2-R12/A' B(ij=" << i << "," << j << ") matrix";
+          std::string label(oss.str());
+
+          if (debug_ > 0)
+            print_scmat_norms(Baa_ij,label);
           if (debug_ > 1)
-            Baa_ij.print("Alpha-alpha MP2-R12/A' B matrix");
+            Baa_ij.print(label.c_str());
           
 #if USE_INVERT
           Baa_ij->gen_invert_this();
-          
+          std::string invlabel("Inverse ");  invlabel += label;
+          if (debug_ > 0)
+            print_scmat_norms(Baa_ij,invlavel); 
           if (debug_ > 1)
-            Baa_ij.print("Inverse alpha-alpha MP2-R12/A' B matrix");
+            Baa_ij.print(invlabel.c_str());
 #endif
           
         }
@@ -392,11 +410,19 @@ void MP2R12Energy::compute()
     emp2r12_aa_->accumulate(er12_aa_);
     delete[] er12_aa_vec;
   }
+  if (debug_ > 0)
+    print_scmat_norms(Caa_,"Alpha-alpha R12 amplitudes");
 
   //
   // Alpha-beta pairs
   //
   if (nab > 0) {
+    if (debug_ > 0) {
+      print_scmat_norms(Vab,"Alpha-beta V matrix");
+      print_scmat_norms(Bab,"Alpha-beta MP2-R12/A B matrix");
+      if (ebc == false)
+        print_scmat_norms(Aab,"Alpha-beta A matrix");
+    }
     if (debug_ > 1) {
       Vab.print("Alpha-beta V matrix");
       Bab.print("Alpha-beta MP2-R12/A B matrix");
@@ -409,9 +435,11 @@ void MP2R12Energy::compute()
     if (stdapprox_ == LinearR12::StdApprox_A) {
 #if USE_INVERT
       Bab_ij.assign(Bab);
+      Bab_ij->gen_invert_this();
+      if (debug_ > 0)
+        print_scmat_norms(Bab_ij,"Inverse alpha-beta MP2-R12/A B matrix");
       if (debug_ > 1)
         Bab_ij.print("Inverse alpha-beta MP2-R12/A B matrix");
-      Bab_ij->gen_invert_this();
 #else
       // solve B * C = V
       RefSCMatrix Cab_kl_by_ij = Cab_.clone();
@@ -474,14 +502,23 @@ void MP2R12Energy::compute()
                   
                 }
             }
+
+          std::ostringstream oss;
+          oss << "Alpha-beta MP2-R12/A' B(ij=" << i << "," << j << ") matrix";
+          std::string label(oss.str());
+
+          if (debug_ > 0)
+            print_scmat_norms(Bab_ij,label);
           if (debug_ > 1)
-	    Bab_ij.print("Alpha-beta MP2-R12/A' B matrix");
+            Bab_ij.print(label.c_str());
           
 #if USE_INVERT
           Bab_ij->gen_invert_this();
-          
+          std::string invlabel("Inverse ");  invlabel += label;
+          if (debug_ > 0)
+            print_scmat_norms(Bab_ij,invlavel);
           if (debug_ > 1)
-            Bab_ij.print("Inverse alpha-beta MP2-R12/A' B matrix");
+            Bab_ij.print(invlabel.c_str());
 #endif
           
         }
@@ -520,6 +557,8 @@ void MP2R12Energy::compute()
     emp2r12_ab_->accumulate(er12_ab_);
     delete[] er12_ab_vec;
   }
+  if (debug_ > 0)
+    print_scmat_norms(Cab_,"Alpha-beta R12 amplitudes");
 
   evaluated_ = true;
   

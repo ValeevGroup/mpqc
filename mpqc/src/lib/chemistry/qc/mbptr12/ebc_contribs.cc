@@ -46,6 +46,7 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/print_scmat_norms.h>
 
 using namespace std;
 using namespace sc;
@@ -365,7 +366,7 @@ R12IntEval::compute_A_simple_()
   if (debug_ > 1)
     F_ri_v.print("Fock matrix (RI-BS/act.virt.)");
   if (debug_ > 0)
-    compute_norms_(F_ri_v,"Fock matrix (RI-BS/act.virt.)");
+    print_scmat_norms(F_ri_v,"Fock matrix (RI-BS/act.virt.)");
 
   Ref<MOIndexSpace> act_fvir_space = new MOIndexSpace("Fock-weighted active unoccupied MOs sorted by energy",
                                                       act_vir_space, ribs_space->coefs()*F_ri_v, ribs_space->basis());
@@ -635,8 +636,8 @@ R12IntEval::AT2_contrib_to_V_()
     RefSCMatrix Vab = Aab_*T2ab_.t();
     Vab_.accumulate(Vab);  
     if (debug_ > 0) {
-      compute_norms_(Vaa,"Alpha-alpha AT2 contribution to V");
-      compute_norms_(Vab,"Alpha-beta AT2 contribution to V");
+      print_scmat_norms(Vaa,"Alpha-alpha AT2 contribution to V");
+      print_scmat_norms(Vab,"Alpha-beta AT2 contribution to V");
     }
   }
   globally_sum_intermeds_();
@@ -672,8 +673,8 @@ R12IntEval::AR_contrib_to_B_()
     Baa_.accumulate(Baa);
     Bab_.accumulate(Bab);
     if (debug_ > 0) {
-      compute_norms_(Baa,"Alpha-alpha AR contribution to B");
-      compute_norms_(Bab,"Alpha-beta AR contribution to B");
+      print_scmat_norms(Baa,"Alpha-alpha AR contribution to B");
+      print_scmat_norms(Bab,"Alpha-beta AR contribution to B");
     }
   }
   globally_sum_intermeds_();

@@ -321,11 +321,11 @@ CSGradErep12Qtr::run()
         int ij_index = (i*nocc + j)/nproc;
 
         // Sum the iqjs_contrib to the appropriate place
-        int ij_offset = nbasis*(s_offset + nbasis*ij_index);
+        size_t ij_offset = size_t(nbasis)*(s_offset + size_t(nbasis)*ij_index);
         mem->sum_reduction_on_node(iqjs_contrib,
                                    ij_offset, ns*nbasis, ij_proc);
 
-        ij_offset = nbasis*(r_offset + nbasis*ij_index);
+        ij_offset = size_t(nbasis)*(r_offset + size_t(nbasis)*ij_index);
         mem->sum_reduction_on_node(iqjr_contrib,
                                    ij_offset, nr*nbasis, ij_proc);
 

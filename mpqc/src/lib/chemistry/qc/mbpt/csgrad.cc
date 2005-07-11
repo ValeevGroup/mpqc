@@ -566,7 +566,7 @@ MBPT2::compute_cs_grad()
       abort();
     }
 
-  mem->set_localsize(nijmax*nbasis*nbasis*sizeof(double));
+  mem->set_localsize(size_t(nijmax)*nbasis*nbasis*sizeof(double));
   ExEnv::out0() << indent
        << "Size of global distributed array:       "
        << mem->totalsize()

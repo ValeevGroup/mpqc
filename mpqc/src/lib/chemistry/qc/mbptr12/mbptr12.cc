@@ -33,6 +33,7 @@
 #include <sstream>
 #include <util/misc/string.h>
 
+#include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 #include <util/state/stateio.h>
@@ -356,6 +357,21 @@ MBPT2_R12::density()
 void
 MBPT2_R12::compute()
 {
+  if (std::string(reference_->integral()->class_name())
+      !=integral()->class_name()) {
+      FeatureNotImplemented ex(
+          "cannot use a reference with a different Integral specialization",
+          __FILE__, __LINE__, class_desc());
+      try {
+          ex.elaborate()
+              << "reference uses " << reference_->integral()->class_name()
+              << " but this object uses " << integral()->class_name()
+              << std::endl;
+        }
+      catch (...) {}
+      throw ex;
+    }
+
   init_variables_();
   reference_->set_desired_value_accuracy(desired_value_accuracy()
                                          / ref_to_mp2r12_acc_);

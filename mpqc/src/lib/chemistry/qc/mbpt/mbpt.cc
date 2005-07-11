@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 #include <util/state/stateio.h>
@@ -296,6 +297,21 @@ MBPT2::density()
 void
 MBPT2::compute()
 {
+  if (std::string(reference_->integral()->class_name())
+      !=integral()->class_name()) {
+      FeatureNotImplemented ex(
+          "cannot use a reference with a different Integral specialization",
+          __FILE__, __LINE__, class_desc());
+      try {
+          ex.elaborate()
+              << "reference uses " << reference_->integral()->class_name()
+              << " but this object uses " << integral()->class_name()
+              << std::endl;
+        }
+      catch (...) {}
+      throw ex;
+    }
+
   init_variables();
 
   reference_->set_desired_value_accuracy(desired_value_accuracy()

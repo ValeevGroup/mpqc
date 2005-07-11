@@ -47,49 +47,6 @@ extern BiggestContribs biggest_ints_1;
 
 #define PRINT1Q 0
 
-/////////////////////////////////////////////////////////////////
-// Function iquicksort performs a quick sort (larger -> smaller) 
-// of the integer data in item by the integer indices in index;
-// data in item remain unchanged
-/////////////////////////////////////////////////////////////////
-static void
-iqs(int *item,int *index,int left,int right)
-{
-  register int i,j;
-  int x,y;
- 
-  i=left; j=right;
-  x=item[index[(left+right)/2]];
- 
-  do {
-    while(item[index[i]]>x && i<right) i++;
-    while(x>item[index[j]] && j>left) j--;
- 
-    if (i<=j) {
-      if (item[index[i]] != item[index[j]]) {
-        y=index[i];
-        index[i]=index[j];
-        index[j]=y;
-        }
-      i++; j--;
-      }
-    } while(i<=j);
-       
-  if (left<j) iqs(item,index,left,j);
-  if (i<right) iqs(item,index,i,right);
-}
-
-static void
-iquicksort(int *item,int *index,int n)
-{
-  int i;
-  if (n<=0) return;
-  for (i=0; i<n; i++) {
-    index[i] = i;
-    }
-  iqs(item,index,0,n-1);
-  }
-
 CSGradErep12Qtr::CSGradErep12Qtr(int mythread_a, int nthread_a,
                                  int me_a, int nproc_a,
                                  const Ref<MemoryGrp> &mem_a,
@@ -101,7 +58,9 @@ CSGradErep12Qtr::CSGradErep12Qtr(int mythread_a, int nthread_a,
                                  double **scf_vector_a,
                                  double tol_a, int debug_a,
                                  int dynamic_a, double print_percent_a,
-                                 int usep4)
+                                 DistShellPair::SharedData *shellpair_shared_data,
+                                 int usep4):
+  shellpair_shared_data_(shellpair_shared_data)
 {
   msg = msg_a;
   mythread = mythread_a;
@@ -176,7 +135,8 @@ CSGradErep12Qtr::run()
   // Use petite list for symmetry utilization
   Ref<PetiteList> p4list = tbint->integral()->petite_list();
 
-  DistShellPair shellpairs(msg,nthread,mythread,lock,basis,basis,dynamic_);
+  DistShellPair shellpairs(msg,nthread,mythread,lock,basis,basis,dynamic_,
+                           shellpair_shared_data_);
   shellpairs.set_print_percent(print_percent_);
   shellpairs.set_debug(debug);
   if (debug) shellpairs.set_print_percent(1);

@@ -30,6 +30,7 @@ mpqc: (
     nfzv = 2
     method = mp
     algorithm = memgrp
+    dynamic = 1
     reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis

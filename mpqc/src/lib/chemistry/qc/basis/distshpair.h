@@ -45,6 +45,20 @@ namespace sc {
 
 /// Distributes shell pairs either statically or dynamically.
 class DistShellPair {
+  public:
+    /** This is used to store data that must be shared between all
+     * cooperating shell pairs.
+     */
+     class SharedData {
+       public:
+         volatile long int shellpair_;
+         /// Construct and initialize.
+         SharedData() { init(); }
+         /** If this will be used to iterate through the shells again,
+          * then init must be called.
+          */
+         void init() { shellpair_ = 0; }
+     };
   private:
     Ref<MessageGrp> msg_;
     int nthread_;
@@ -52,10 +66,12 @@ class DistShellPair {
     Ref<GaussianBasisSet> bs1_;
     Ref<GaussianBasisSet> bs2_;
     bool bs1_eq_bs2_;
-    bool dynamic_;
+    bool task_dynamic_;
+    bool thread_dynamic_;
     int debug_;
     // How often updates are printed (i.e. every 10% of total work)
     double print_percent_;
+    SharedData *shared_;
 
     // Number of tasks handled by thread 0 in task 0:
     // if dynamic == true : it will distribute all of them
@@ -78,6 +94,13 @@ class DistShellPair {
     int incS_, incR_;
     int mythread_;
 
+    // sorted work for dynamic load balancing
+    int *cost_;
+    int *Svec_;
+    int *Rvec_;
+    int *Ivec_;
+
+    void init_dynamic_work();
   public:
     /** The DistShellPair class is used to distribute shell pair indices among tasks.
 
@@ -85,7 +108,7 @@ class DistShellPair {
     DistShellPair(const Ref<MessageGrp> &, int nthread, int mythread,
                   const Ref<ThreadLock>& lock,
                   const Ref<GaussianBasisSet>& bs1, const Ref<GaussianBasisSet>& bs2,
-		  bool dynamic);
+		  bool dynamic, SharedData *shared = 0);
     ~DistShellPair();
     /// Resets to the first shell pair.
     void init();

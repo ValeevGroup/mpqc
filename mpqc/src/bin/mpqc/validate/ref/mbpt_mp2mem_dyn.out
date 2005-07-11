@@ -4,12 +4,12 @@
 
   Machine:    i686-pc-linux-gnu
   User:       cljanss@brio
-  Start Time: Thu Jul  7 20:52:02 2005
+  Start Time: Thu Jul  7 20:51:08 2005
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
-  Using PthreadThreadGrp for threading (number of threads = 4).
+  Using ProcThreadGrp for threading (number of threads = 1).
   Using ProcMemoryGrp for distributed shared memory.
-  Total number of processors = 4
+  Total number of processors = 1
 
   Using IntegralV3 by default for molecular integrals evaluation
 
@@ -31,8 +31,8 @@
 
   MPQC options:
     matrixkit     = <ReplSCMatrixKit>
-    filename      = mbpt_mp2mem
-    restart_file  = mbpt_mp2mem.ckpt
+    filename      = mbpt_mp2mem_dyn
+    restart_file  = mbpt_mp2mem_dyn.ckpt
     restart       = no
     checkpoint    = yes
     savestate     = no
@@ -47,10 +47,11 @@
   nproc = 1
   Memory available per node:      16000000 Bytes
   Static memory used per node:    15824 Bytes
-  Total memory used per node:     361456 Bytes
-  Memory required for one pass:   361456 Bytes
-  Minimum memory required:        77536 Bytes
+  Total memory used per node:     301552 Bytes
+  Memory required for one pass:   301552 Bytes
+  Minimum memory required:        67552 Bytes
   Batch size:                     6
+  Using dynamic load balancing.
    npass  rest  nbasis  nshell  nfuncmax
     1      0     26       14       4  
    nocc   nvir   nfzc   nfzv
@@ -60,8 +61,8 @@
 
   nuclear repulsion energy =   26.3555332531
 
-  integral intermediate storage = 159684 bytes
-  integral cache = 15834700 bytes
+  integral intermediate storage = 39921 bytes
+  integral cache = 15954463 bytes
                  21556 integrals
   iter     1 energy =  -76.8243749043 delta = 1.79716e-01
                  22939 integrals
@@ -88,35 +89,37 @@
 
   total scf energy =  -77.3535183581
 
-  Memory used for integral intermediates: 421420 Bytes
-  Memory used for integral storage:       3804281 Bytes
+  Memory used for integral intermediates: 105355 Bytes
+  Memory used for integral storage:       15593093 Bytes
   Size of global distributed array:       259584 Bytes
   Beginning pass 1
   Begin loop over shells (erep, 1.+2. q.t.)
-    working on shell pair (  0   0),  0.000% complete (0 of 26)
-    working on shell pair (  4   2), 11.538% complete (3 of 26)
-    working on shell pair (  6   3), 23.077% complete (6 of 26)
-    working on shell pair (  8   0), 34.615% complete (9 of 26)
-    working on shell pair (  9   3), 46.154% complete (12 of 26)
-    working on shell pair ( 10   5), 57.692% complete (15 of 26)
-    working on shell pair ( 11   6), 69.231% complete (18 of 26)
-    working on shell pair ( 12   6), 80.769% complete (21 of 26)
-    working on shell pair ( 13   5), 92.308% complete (24 of 26)
+    working on shell pair (  0   0),  0.000% complete (0 of 105)
+    working on shell pair (  4   1), 10.476% complete (11 of 105)
+    working on shell pair (  6   1), 20.952% complete (22 of 105)
+    working on shell pair (  7   5), 31.429% complete (33 of 105)
+    working on shell pair (  8   8), 41.905% complete (44 of 105)
+    working on shell pair ( 10   0), 52.381% complete (55 of 105)
+    working on shell pair ( 11   0), 62.857% complete (66 of 105)
+    working on shell pair ( 11  11), 73.333% complete (77 of 105)
+    working on shell pair ( 12  10), 83.810% complete (88 of 105)
+    working on shell pair ( 13   8), 94.286% complete (99 of 105)
   End of loop over shells
   Begin third q.t.
   End of third q.t.
   Begin fourth q.t.
   End of fourth q.t.
   Begin third and fourth q.b.t.
-    working on shell pair (  0   0),  0.000% complete (0 of 26)
-    working on shell pair (  4   2), 11.538% complete (3 of 26)
-    working on shell pair (  6   3), 23.077% complete (6 of 26)
-    working on shell pair (  8   0), 34.615% complete (9 of 26)
-    working on shell pair (  9   3), 46.154% complete (12 of 26)
-    working on shell pair ( 10   5), 57.692% complete (15 of 26)
-    working on shell pair ( 11   6), 69.231% complete (18 of 26)
-    working on shell pair ( 12   6), 80.769% complete (21 of 26)
-    working on shell pair ( 13   5), 92.308% complete (24 of 26)
+    working on shell pair (  0   0),  0.000% complete (0 of 105)
+    working on shell pair (  4   1), 10.476% complete (11 of 105)
+    working on shell pair (  6   1), 20.952% complete (22 of 105)
+    working on shell pair (  7   5), 31.429% complete (33 of 105)
+    working on shell pair (  8   8), 41.905% complete (44 of 105)
+    working on shell pair ( 10   0), 52.381% complete (55 of 105)
+    working on shell pair ( 11   0), 62.857% complete (66 of 105)
+    working on shell pair ( 11  11), 73.333% complete (77 of 105)
+    working on shell pair ( 12  10), 83.810% complete (88 of 105)
+    working on shell pair ( 13   8), 94.286% complete (99 of 105)
   End of third and fourth q.b.t.
   Done with pass 1
 
@@ -195,7 +198,7 @@
 
   MBPT2:
     Function Parameters:
-      value_accuracy    = 5.782630e-07 (1.000000e-06) (computed)
+      value_accuracy    = 5.782633e-07 (1.000000e-06) (computed)
       gradient_accuracy = 0.000000e+00 (1.000000e-06) (computed)
       hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
@@ -225,7 +228,7 @@
         name = "3-21G"
     Reference Wavefunction:
       Function Parameters:
-        value_accuracy    = 5.782630e-09 (1.000000e-08) (computed)
+        value_accuracy    = 5.782633e-09 (1.000000e-08) (computed)
         gradient_accuracy = 0.000000e+00 (1.000000e-06)
         hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
@@ -265,48 +268,48 @@
 
 
                                         CPU Wall
-mpqc:                                  1.07 1.08
-  calc:                                0.99 1.00
-    mp2-mem:                           0.99 1.00
+mpqc:                                  0.97 0.97
+  calc:                                0.90 0.90
+    mp2-mem:                           0.90 0.90
       Laj:                             0.03 0.03
         make_gmat for Laj:             0.02 0.02
           gmat:                        0.02 0.02
       Pab and Wab:                     0.00 0.00
-      Pkj and Wkj:                     0.02 0.02
+      Pkj and Wkj:                     0.01 0.01
         make_gmat for Wkj:             0.01 0.01
           gmat:                        0.01 0.01
-      cphf:                            0.07 0.07
-        gmat:                          0.06 0.06
+      cphf:                            0.06 0.06
+        gmat:                          0.05 0.06
       hcore contrib.:                  0.02 0.02
       mp2 passes:                      0.43 0.43
         1. q.b.t.:                     0.00 0.00
         2. q.b.t.:                     0.00 0.00
-        3. q.t.:                       0.00 0.01
+        3. q.t.:                       0.01 0.01
         3.qbt+4.qbt+non-sep contrib.:  0.25 0.25
-        4. q.t.:                       0.01 0.00
+        4. q.t.:                       0.01 0.01
         Pab and Wab:                   0.00 0.00
         Pkj and Wkj:                   0.00 0.00
         Waj and Laj:                   0.00 0.00
         compute ecorr:                 0.00 0.00
         divide (ia|jb)'s:              0.00 0.00
         erep+1.qt+2.qt:                0.15 0.15
-      overlap contrib.:                0.00 0.01
+      overlap contrib.:                0.01 0.00
       sep 2PDM contrib.:               0.17 0.17
-      vector:                          0.17 0.17
-        density:                       0.01 0.01
+      vector:                          0.14 0.14
+        density:                       0.00 0.00
         evals:                         0.01 0.01
         extrap:                        0.01 0.01
-        fock:                          0.12 0.12
+        fock:                          0.11 0.11
           accum:                       0.00 0.00
-          ao_gmat:                     0.06 0.06
-            start thread:              0.02 0.02
-            stop thread:               0.04 0.04
+          ao_gmat:                     0.05 0.06
+            start thread:              0.05 0.06
+            stop thread:               0.00 0.00
           init pmax:                   0.00 0.00
           local data:                  0.00 0.00
-          setup:                       0.02 0.03
+          setup:                       0.02 0.02
           sum:                         0.00 0.00
           symm:                        0.03 0.03
-  input:                               0.07 0.08
+  input:                               0.07 0.07
 
-  End Time: Thu Jul  7 20:52:03 2005
+  End Time: Thu Jul  7 20:51:09 2005
 

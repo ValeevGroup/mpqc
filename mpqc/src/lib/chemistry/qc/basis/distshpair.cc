@@ -94,20 +94,28 @@ DistShellPair::DistShellPair(const Ref<MessageGrp> & msg,
 			     int nthread, int mythread,
 			     const Ref<ThreadLock> & lock,
 			     const Ref<GaussianBasisSet> & bs1, const Ref<GaussianBasisSet> & bs2,
-			     bool dynamic):
+			     bool dynamic, SharedData *shared):
   msg_(msg),
   nthread_(nthread),
   mythread_(mythread),
   lock_(lock),
   bs1_(bs1), bs2_(bs2),
-  dynamic_(dynamic)
+  task_dynamic_(dynamic),
+  thread_dynamic_(false),
+  cost_(0),
+  Svec_(0),
+  Rvec_(0),
+  Ivec_(0),
+  shared_(shared)
 {
   ncpu_ = nthread_*msg->n();
   ncpu_less_0_ = nthread_*(msg->n()-1);
 
   // Cannot do dynamic load balancing if there's only 1 task
-  if (msg->n() == 1)
-    dynamic_ = false;
+  if (msg->n() == 1) {
+    task_dynamic_ = false;
+    if (dynamic && shared_ != 0) thread_dynamic_ = true;
+    }
   debug_ = 0;
   print_percent_ = 10;
   bs1_eq_bs2_ = (bs1_ == bs2_);
@@ -126,6 +134,10 @@ DistShellPair::DistShellPair(const Ref<MessageGrp> & msg,
 
 DistShellPair::~DistShellPair()
 {
+  delete[] cost_;
+  delete[] Svec_;
+  delete[] Rvec_;
+  delete[] Ivec_;
 }
 
 void
@@ -134,82 +146,92 @@ DistShellPair::init()
   long int nsh1 = bs1_->nshell();
   long int nsh2 = bs2_->nshell();
   long int nshpairs = (bs1_eq_bs2_ ? (nsh1*(nsh1+1))/2 : nsh1*nsh2);
-  // Number of tasks handled by thread 0 in task 0:
-  // if dynamic == true : it will distribute all of them
-  // if dynamic == false : it will handle its share
-  ntask_ = dynamic_ ? nshpairs : nshpairs/ncpu_;
 
-  // Compute starting S_ and R_ for this thread
-  if (bs1_eq_bs2_) {
-    // This is a slightly nonobvious computation of S_ and R_ from SR = msg_->me()*nthread_ + mythread_
-    // when bs1_eq_bs2 == true
-    S_ = 0;
-    R_ = msg_->me()*nthread_ + mythread_;
-    while (R_ > S_) {
-      S_++;
-      R_ = R_ - S_;
+  if (task_dynamic_ || thread_dynamic_) {
+    ntask_ = nshpairs;
+    init_dynamic_work();
     }
-  }
   else {
-    // Things are simple when basis sets are different
-    long int absthreadindex = msg_->me()*nthread_ + mythread_;
-    S_ = absthreadindex/nsh2;
-    R_ = absthreadindex%nsh2;
-  }
+    ntask_ = nshpairs/ncpu_;
+    // Compute starting S_ and R_ for this thread
+    if (bs1_eq_bs2_) {
+      // This is a slightly nonobvious computation of S_ and R_ from SR = msg_->me()*nthread_ + mythread_
+      // when bs1_eq_bs2 == true
+      S_ = 0;
+      R_ = msg_->me()*nthread_ + mythread_;
+      while (R_ > S_) {
+        S_++;
+        R_ = R_ - S_;
+        }
+      }
+    else {
+      // Things are simple when basis sets are different
+      long int absthreadindex = msg_->me()*nthread_ + mythread_;
+      S_ = absthreadindex/nsh2;
+      R_ = absthreadindex%nsh2;
+      }
+    }
 
   current_shellpair_ = 0;
   set_print_percent(print_percent_);
 }
 
 void
-DistShellPair::serve_tasks()
+DistShellPair::init_dynamic_work()
 {
   // initialize work arrays
   int S,R,index;
   int nsh1 = bs1_->nshell();
   int nsh2 = bs2_->nshell();
-  int *cost = new int[ntask_];
-  int *Svec = new int[ntask_];
-  int *Rvec = new int[ntask_];
-  int *Ivec = new int[ntask_];
+  delete[] cost_;
+  delete[] Svec_;
+  delete[] Rvec_;
+  delete[] Ivec_;
+  cost_ = new int[ntask_];
+  Svec_ = new int[ntask_];
+  Rvec_ = new int[ntask_];
+  Ivec_ = new int[ntask_];
   index = 0;
   for (S=0; S<nsh1; S++) {
     int Rmax = (bs1_eq_bs2_ ? S : nsh2-1);
     for (R=0; R<=Rmax; R++) {
-      cost[index] = bs1_->shell(S).nfunction() * bs2_->shell(R).nfunction() *
+      cost_[index] = bs1_->shell(S).nfunction() * bs2_->shell(R).nfunction() *
 	            bs1_->shell(S).nprimitive() * bs2_->shell(R).nprimitive();
 #ifdef REVERSE_ORDERING
-      cost[index] = - cost[index];
+      cost_[index] = - cost[index];
 #endif
-      Svec[index] = S;
-      Rvec[index] = R;
-      Ivec[index] = index;
+      Svec_[index] = S;
+      Rvec_[index] = R;
+      Ivec_[index] = index;
       index++;
     }
   }
 
   // sort work
-  iquicksort(cost, Ivec, ntask_);
+  iquicksort(cost_, Ivec_, ntask_);
   if (debug_ > 1) {
     ExEnv::outn() << "costs of shell pairs" << endl;
     for (index=0; index<ntask_; index++) {
-      ExEnv::outn() << scprintf(" (%d %d):%d",Svec[Ivec[index]],Rvec[Ivec[index]],
-			       cost[Ivec[index]])
+      ExEnv::outn() << scprintf(" (%d %d):%d",Svec_[Ivec_[index]],Rvec_[Ivec_[index]],
+			       cost_[Ivec_[index]])
 		   << endl;
     }
   }
+}
 
+void
+DistShellPair::serve_tasks()
+{
   // process requests
   long int nreq = ntask_ + ncpu_less_0_;
-  current_shellpair_ = 0;
   int nreq_left = nreq;
   while (nreq_left) {
     int node;
     msg_->recvt(req_type_,&node,1);
     int SR[2];
     if (current_shellpair_ < ntask_) {
-      SR[0] = Svec[Ivec[current_shellpair_]];
-      SR[1] = Rvec[Ivec[current_shellpair_]];
+      SR[0] = Svec_[Ivec_[current_shellpair_]];
+      SR[1] = Rvec_[Ivec_[current_shellpair_]];
       msg_->sendt(node,ans_type_,SR,2);
       if (current_shellpair_%print_interval_ == 0) {
         ExEnv::outn() << indent
@@ -238,17 +260,12 @@ DistShellPair::serve_tasks()
   if (debug_) {
     ExEnv::outn() << "all requests processed" << endl;
   }
-
-  delete[] cost;
-  delete[] Svec;
-  delete[] Rvec;
-  delete[] Ivec;
 }
 
 int
 DistShellPair::get_task(int &S, int &R)
 {
-  if (dynamic_) { // dynamic load balancing
+  if (task_dynamic_) { // dynamic load balancing
     int me = msg_->me();
     if (me == 0) {
       if (mythread_ == 0) serve_tasks();
@@ -267,6 +284,20 @@ DistShellPair::get_task(int &S, int &R)
       if (S == -1) return 0;
     }
   }
+  else if (thread_dynamic_) {
+    long my_shellpair;
+    lock_->lock();
+    my_shellpair = shared_->shellpair_++;
+    lock_->unlock();
+    if (my_shellpair < ntask_) {
+      S = Svec_[Ivec_[my_shellpair]];
+      R = Rvec_[Ivec_[my_shellpair]];
+      }
+    else {
+      S = R = -1;
+      return 0;
+      }
+  }
   else { // static load balancing
     int nsh1 = bs1_->nshell();
     int nsh2 = bs2_->nshell();
@@ -284,8 +315,7 @@ DistShellPair::get_task(int &S, int &R)
     else {
       S_ += incS_;
       R_ += incR_;
-      if (R_ >= nsh2) {
-	S_++;
+      if (R_ >= nsh2) {	S_++;
 	R_ -= nsh2;
       }
     }

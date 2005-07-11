@@ -195,6 +195,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
 
     // Do the two electron integrals and the first two quarter transformations
     tim_enter("ints+1qt+2qt");
+    shell_pair_data()->init();
     for (int i=0; i<thr_->nthread(); i++) {
       e13thread[i]->set_i_offset(i_offset);
       e13thread[i]->set_ni(ni);

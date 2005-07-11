@@ -35,6 +35,7 @@
 #include <string>
 #include <util/ref/ref.h>
 #include <util/class/scexception.h>
+#include <chemistry/qc/basis/distshpair.h>
 #include <chemistry/qc/mbptr12/r12ia.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
@@ -85,6 +86,7 @@ protected:
   size_t memory_;
   bool dynamic_;
   double print_percent_;
+  DistShellPair::SharedData spdata_;
   int debug_;
   MOIntsTransformFactory::StoreMethod ints_method_;
   std::string file_prefix_;
@@ -191,6 +193,10 @@ public:
   virtual void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) const throw (ProgrammingError) =0;
   /// Make the transform obsolete. Next call to compute() will recompute
   virtual void obsolete();
+
+  /** Returns a that data that must be shared between all DistShellPair
+   * objects. */
+  DistShellPair::SharedData *shell_pair_data() { return &spdata_; }
 
 };
 

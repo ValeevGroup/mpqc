@@ -165,12 +165,13 @@ MBPTINPUTS = \
  mbpt_mp2v1.in      mbpt_opt12v2.in    mbpt_opt22v2lb.in \
  mbpt_mp2v2.in      mbpt_opt12v2lb.in  mbpt_zapt2v1.in \
  mbpt_mp2v2lb.in    mbpt_opt22v1.in    mbpt_zapt2v2.in \
- mbpt_mp2mem_mp.in  mbpt_mp2v2_mp.in   mbpt_mp2mem_c1.in  mbpt_mp2mem_auto.in
+ mbpt_mp2mem_mp.in  mbpt_mp2v2_mp.in   mbpt_mp2mem_c1.in  mbpt_mp2mem_auto.in \
+ mbpt_mp2mem_dyn.in
 
 ifeq ($(HAVE_MBPTR12),yes)
  MBPTINPUTS += \
     mbpt_mp2r12_ne2.in            mbpt_mp2r12_ne2_posix.in \
-    mbpt_mp2r12_ne2_tz.in \
+    mbpt_mp2r12_ne2_tz.in         mbpt_mp2r12_ne2_dyn.in \
     mbpt_mp2r12_c6h6_multipass.in
  ifeq ($(MPQCRUN_NTHREADPERPROC),1)
   MBPTINPUTS += mbpt_mp2r12_ne2_multipass.in

@@ -52,18 +52,21 @@ class GrpReduce {
 template <class T>
 class GrpSumReduce: public GrpReduce<T> {
   public:
+    ~GrpSumReduce() {};
     void reduce(T*target, T*data, int nelement);
 };
 
 template <class T>
 class GrpMinReduce: public GrpReduce<T> {
   public:
+    ~GrpMinReduce() {};
     void reduce(T*target, T*data, int nelement);
 };
 
 template <class T>
 class GrpMaxReduce: public GrpReduce<T> {
   public:
+    ~GrpMaxReduce() {};
     void reduce(T*target, T*data, int nelement);
 };
 

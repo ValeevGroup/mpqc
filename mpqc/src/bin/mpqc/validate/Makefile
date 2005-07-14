@@ -229,6 +229,9 @@ ALLOUTPUTS = $(ALLINPUTS:%.$(INSUF)=%.out)
 
 CHECK0INPUTS := $(H2OINPUTS) $(H2OFRQINPUTS) $(H2OMP2INPUTS) \
                 $(METHODSINPUTS) $(INPUTINPUTS)
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+  CHECK0INPUTS += $(CCAINTINPUTS)
+endif 
 CHECK0BFILTER := %ccpvdz %ccpvtz %ccpvqz %ccpv5z
 CHECK0BFILTER += %ccpcvdz %ccpcvtz %ccpcvqz %ccpcv5z
 CHECK0BFILTER += %pc2 %pc3 %pc4

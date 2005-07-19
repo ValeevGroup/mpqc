@@ -107,3 +107,8 @@ LTLINKLIBOPTS += -L$(CCA_CHEM_LIB) -R$(CCA_CHEM_LIB) -lccachem_cxx_client -lccac
 libdir = $(tmp_libdir)/cca
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
+
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
+ifneq ($(DODEPEND),no)
+include $(LIBOBJ:.$(OBJSUF)=.d)
+endif

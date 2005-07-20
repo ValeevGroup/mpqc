@@ -47,17 +47,6 @@ mpqc: (
     total_charge = 0
     multiplicity = 1
     print_npa = yes
-    guess_wavefunction<CLHF>: (
-      molecule = $:molecule
-      total_charge = 0
-      multiplicity = 1
-      basis<GaussianBasisSet>: (
-        molecule = $:molecule
-        name = "STO-3G"
-      )
-      memory = 32000000
-      integrals = $:integrals
-    )
   )
   optimize = no
   % optimizer object for the molecular geometry

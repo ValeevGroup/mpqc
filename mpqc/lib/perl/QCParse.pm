@@ -1015,7 +1015,7 @@ sub input_string() {
     }
     elsif (! ($basis =~ /^STO/
               || $basis =~ /^MI/
-              || $basis =~ /^\d-\d1G$/)) {
+              || $basis =~ /^\d-\d1G$/) && ! $do_cca ) {
         my $guessmethod = "${openmethod}HF";
         $mole = "$mole\n    guess_wavefunction<$guessmethod>: (";
         $mole = "$mole\n      molecule = \$:molecule";

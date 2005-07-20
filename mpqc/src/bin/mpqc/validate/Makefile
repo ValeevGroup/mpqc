@@ -128,11 +128,16 @@ HSOSSCFMASTER=hsosscf.qci
 HSOSSCFINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(HSOSSCFMASTER))
 HSOSSCFOUTPUTS = $(HSOSSCFINPUTS:%.$(INSUF)=%.out)
 
-CCAINTMASTER=ccaint.qci
+CCAINTV3MASTER=ccaintv3.qci
+CCACINTSMASTER=ccacints.qci
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
- CCAINTINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(CCAINTMASTER))
+ CCAINTV3INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(CCAINTV3MASTER))
+ CCAINTV3OUTPUTS = $(CCAINTV3INPUTS:%.$(INSUF)=%.out)
+ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
+  CCACINTSINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(CCACINTSMASTER))
+  CCACINTSOUTPUTS = $(CCACINTSINPUTS:%.$(INSUF)=%.out)
+ endif
 endif
-CCAINTOUTPUTS = $(CCAINTINPUTS:%.$(INSUF)=%.out)
 
 CKPTINPUTS = \
  ckpt_0clscf.in     ckpt_0qnewtopt.in  ckpt_1zapt2.in     ckpt_mp2.in \
@@ -224,14 +229,12 @@ ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
             $(SYMM1INPUTS) $(SYMM2INPUTS) $(SYMM3INPUTS) \
             $(CKPTINPUTS) $(MBPTINPUTS) \
             $(CLSCFINPUTS) $(USCFINPUTS) $(HSOSSCFINPUTS) \
-            $(INPUTINPUTS) $(CCAINTINPUTS)
+            $(INPUTINPUTS) $(CCAINTV3INPUTS) $(CCACINTSINPUTS)
 ALLOUTPUTS = $(ALLINPUTS:%.$(INSUF)=%.out)
 
 CHECK0INPUTS := $(H2OINPUTS) $(H2OFRQINPUTS) $(H2OMP2INPUTS) \
-                $(METHODSINPUTS) $(INPUTINPUTS)
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
-  CHECK0INPUTS += $(CCAINTINPUTS)
-endif 
+                $(METHODSINPUTS) $(INPUTINPUTS) $(CCAINTV3INPUTS) $(CCACINTSINPUTS)
+
 CHECK0BFILTER := %ccpvdz %ccpvtz %ccpvqz %ccpv5z
 CHECK0BFILTER += %ccpcvdz %ccpcvtz %ccpcvqz %ccpcv5z
 CHECK0BFILTER += %pc2 %pc3 %pc4
@@ -418,8 +421,11 @@ opt: stamp-opt
 .PHONY: optts
 optts: stamp-optts
 
-.PHONY: ccaint
-ccaint: stamp-ccaint
+.PHONY: ccaintv3
+ccaintv3: stamp-ccaintv3
+
+.PHONY: ccacints
+ccacints: stamp-ccacints
 
 .PHONY: ckpt
 ckpt: $(CKPTINPUTS) $(CKPTINPUTS:%.in=%.qci)
@@ -497,9 +503,13 @@ stamp-hsosscf: $(INP) $(HSOSSCFMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(HSOSSCFMASTER)
 	touch stamp-hsosscf
 
-stamp-ccaint: $(INP) $(CCAINTMASTER) $(INPUTGENDEPS)
-	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(CCAINTMASTER)
-	touch stamp-ccaint
+stamp-ccaintv3: $(INP) $(CCAINTV3MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(CCAINTV3MASTER)
+	touch stamp-ccaintv3
+
+stamp-ccacints: $(INP) $(CCACINTSMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(CCACINTSMASTER)
+	touch stamp-ccacints
 
 ##############################################################################
 

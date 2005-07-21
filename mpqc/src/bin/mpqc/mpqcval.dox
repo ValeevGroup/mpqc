@@ -105,7 +105,9 @@ The input files in the verification suite are divided into several categories:
 
   <dt><tt>mp2r12</tt><dd>More tests of MP2-R12.
 
-  <dt><tt>ccaint</tt><dd>Tests of embedded CCA integrals components.
+  <dt><tt>ccaintv3</tt><dd>Tests of embedded CCA integrals components using <tt>intv3</tt>.
+
+  <dt><tt>ccacints</tt><dd>Tests of embedded CCA integrals components using <tt>cints</tt>.
 
 </dl>
 

@@ -143,6 +143,11 @@ sub process_file {
     my @molecule_gradient = $parse->value_as_array("test_molecule_gradient");
     my @molecule_followed = $parse->value_as_array("test_molecule_followed");
     my @molecule_fixed = $parse->value_as_array("test_molecule_fixed");
+    my $do_cca = "";
+    my $tmp_do_cca = $parse->value("do_cca");
+    if ($tmp_do_cca eq "yes") {
+         $do_cca = "yes";
+    }
 
     my @keys = keys(%{$test_vars});
     my $index = {};
@@ -331,8 +336,14 @@ sub process_file {
         $basis = tofilename($basis);
         $auxbasis = tofilename($auxbasis);
         $symmetry = tofilename($symmetry);
-        $intbuf = tofilename($integral_buffer);
-        $intpack = tofilename($integral_package);
+        if ($do_cca eq "yes"){
+             $intbuf = tofilename($integral_buffer);
+             $intpack = tofilename($integral_package);
+        }
+        else {
+             $intbuf = "";
+             $intpack = "";
+        }
         if ($grid eq "default") {$grid = "";}
         my $basename = "$dir$file\_$fmol$method$grid$fzc$fzv$basis$auxbasis$symmetry$fcalc$fextra$intbuf$intpack";
         my $writer;

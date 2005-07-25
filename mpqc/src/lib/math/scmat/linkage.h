@@ -28,8 +28,6 @@
 #ifndef _math_scmat_linkage_h
 #define _math_scmat_linkage_h
 
-#ifndef __PIC__
-
 #include <math/scmat/repl.h>
 #include <math/scmat/dist.h>
 
@@ -41,7 +39,5 @@ static ForceLink<ReplSCMatrixKit> math_scmat_force_link_a_;
 static ForceLink<DistSCMatrixKit> math_scmat_force_link_b_;
 
 }
-
-#endif /* __PIC__ */
 
 #endif

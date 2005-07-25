@@ -28,8 +28,6 @@
 #ifndef _chemistry_qc_scf_linkage_h
 #define _chemistry_qc_scf_linkage_h
 
-#ifndef __PIC__
-
 #include <chemistry/qc/scf/clhf.h>
 #include <chemistry/qc/scf/hsoshf.h>
 #include <chemistry/qc/scf/osshf.h>
@@ -48,7 +46,5 @@ static ForceLink<TCHF> scf_force_link_d_;
 static ForceLink<UHF> scf_force_link_e_;
 
 }
-
-#endif /* __PIC__ */
 
 #endif

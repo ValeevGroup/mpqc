@@ -28,8 +28,6 @@
 #ifndef _util_state_linkage_h
 #define _util_state_linkage_h
 
-#ifndef __PIC__
-
 #include <util/state/proxy.h>
 
 namespace sc {
@@ -37,7 +35,5 @@ namespace sc {
 static ForceLink<SavableStateProxy,const Ref<KeyVal> &> state_force_link_a_;
 
 }
-
-#endif /* __PIC__ */
 
 #endif

@@ -28,8 +28,6 @@
 #ifndef _chemistry_qc_psi_linkage_h
 #define _chemistry_qc_psi_linkage_h
 
-#ifndef __PIC__
-
 #include <chemistry/qc/psi/psiwfn.h>
 #include <math/optimize/qnewton.h>
 
@@ -42,7 +40,5 @@ static ForceLink<PsiCCSD> psi_force_link_d_;
 static ForceLink<PsiCCSD_T> psi_force_link_e_;
 
 }
-
-#endif /* __PIC__ */
 
 #endif

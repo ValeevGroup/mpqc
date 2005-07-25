@@ -28,8 +28,6 @@
 #ifndef _math_optimize_linkage_h
 #define _math_optimize_linkage_h
 
-#ifndef __PIC__
-
 #include <math/optimize/qnewton.h>
 #include <math/optimize/newton.h>
 #include <math/optimize/gdiis.h>
@@ -50,7 +48,5 @@ static ForceLink<SteepestDescentOpt> optimize_force_link_f_;
 static ForceLink<NewtonOpt> optimize_force_link_g_;
 
 }
-
-#endif /* __PIC__ */
 
 #endif

@@ -28,8 +28,6 @@
 #ifndef _chemistry_qc_intcca_linkage_h
 #define _chemistry_qc_intcca_linkage_h
 
-#ifndef __PIC__
-
 #include <util/class/class.h>
 #include <chemistry/qc/intcca/intcca.h>
 
@@ -38,7 +36,5 @@ namespace sc {
 static ForceLink<IntegralCCA> cca_force_link_a_;
 
 }
-
-#endif /* __PIC__ */
 
 #endif

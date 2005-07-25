@@ -28,8 +28,6 @@
 #ifndef _util_group_linkage_h
 #define _util_group_linkage_h
 
-#ifndef __PIC__
-
 #ifdef HAVE_CONFIG_H
 #include <scconfig.h>
 #endif
@@ -68,8 +66,5 @@ namespace sc {
     static ForceLink<ARMCIMemoryGrp> group_force_link_h_;
 }
 #endif
-
-#endif /* __PIC__ */
-
 
 #endif

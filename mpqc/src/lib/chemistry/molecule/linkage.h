@@ -28,8 +28,6 @@
 #ifndef _chemistry_molecule_linkage_h
 #define _chemistry_molecule_linkage_h
 
-#ifndef __PIC__
-
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/taylor.h>
 #include <chemistry/molecule/molfreq.h>
@@ -57,7 +55,5 @@ static ForceLink<ConnollyShape> molecule_force_link_k_;
 static ForceLink<FinDispMolecularHessian> molecule_force_link_l_;
 
 }
-
-#endif /* __PIC__ */
 
 #endif

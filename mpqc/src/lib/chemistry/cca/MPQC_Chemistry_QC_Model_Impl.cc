@@ -73,7 +73,7 @@ throw ()
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model.initialize_parsedkeyval)
 
   sc::Ref<sc::ParsedKeyVal> kv = new sc::ParsedKeyVal();
-  sc::ClassDesc::list_all_classes();
+  //sc::ClassDesc::list_all_classes();
   kv->parse_string(input.c_str());
   sc::Ref<sc::DescribedClass> dc;
   try {

@@ -1,0 +1,52 @@
+#!ccaffeine bootstrap file. 
+# ------- don't change anything ABOVE this line.-------------
+path set /home/jpkenny/install/cca-chem-generic-0.5.8/lib
+path append /home/jpkenny/src/mpqc-clean/mpqc.install/lib/cca
+
+repository get-global Chemistry.Chemistry_MoleculeFactory
+repository get-global MPQC.Chemistry_QC_ModelFactory
+repository get-global MPQC.SimpleDriver
+
+create Chemistry.Chemistry_MoleculeFactory molfactory
+create MPQC.Chemistry_QC_ModelFactory mpqcfactory
+create MPQC.SimpleDriver driver
+
+connect driver ModelFactory mpqcfactory ModelFactory
+connect mpqcfactory MoleculeFactory molfactory MoleculeFactory
+
+parameter mpqcfactory configure basis STO-3G
+parameter mpqcfactory configure theory HF
+parameter mpqcfactory configure molecule_filename /home/jpkenny/src/mpqc-clean/mpqc/src/bin/mpqc/validate/ref//ccafe_h2o.xyz
+parameter driver configure do_gradient false
+
+go driver go
+
+disconnect driver ModelFactory mpqcfactory ModelFactory
+disconnect mpqcfactory MoleculeFactory molfactory MoleculeFactory
+
+remove molfactory
+remove mpqcfactory
+remove driver
+
+create Chemistry.Chemistry_MoleculeFactory molfactory
+create MPQC.Chemistry_QC_ModelFactory mpqcfactory
+create MPQC.SimpleDriver driver
+
+connect driver ModelFactory mpqcfactory ModelFactory
+connect mpqcfactory MoleculeFactory molfactory MoleculeFactory
+
+parameter mpqcfactory configure basis STO-3G
+parameter mpqcfactory configure theory HF
+parameter mpqcfactory configure molecule_filename /home/jpkenny/src/mpqc-clean/mpqc/src/bin/mpqc/validate/ref//ccafe_h2o.xyz
+parameter driver configure do_gradient false
+
+go driver go
+
+disconnect driver ModelFactory mpqcfactory ModelFactory
+disconnect mpqcfactory MoleculeFactory molfactory MoleculeFactory
+
+remove molfactory
+remove mpqcfactory
+remove driver
+
+exit

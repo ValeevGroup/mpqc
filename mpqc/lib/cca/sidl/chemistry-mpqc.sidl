@@ -58,4 +58,6 @@ package MPQC version 0.2 {
     void initialize(in string className, in string classAlias);
   };
 
+  class SimpleDriver implements-all gov.cca.Component, gov.cca.ports.GoPort { };
+
 };

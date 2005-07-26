@@ -5,18 +5,46 @@
 $libsc = "@sclibdir@/cca";
 $libgeneric = "@CCA_CHEM_LIB@";
 
+use Getopt::Long;
+
+$scref="";
+$dir=".";
+$help=0;
+GetOptions("scref=s" => \$scref,
+           "dir=s" => \$dir,
+           "help!" => \$help );
+
+if( $scref eq "" ) {
+  print "error: value required for --scref\n";
+  exit(0);
+}
+$dir =~ s/\/^//;
+$scref =~ s/\/^//;
+
+if ($help) {
+    print  "Usage: $ARGV[0] [options] [file1] [file2] ...\n";
+    print  "Options:\n";
+    print  "  --scref dir        path to ref directory\n";
+    print  "  --dir dir          path to output dir\n";
+    print  "  --help             print this help\n";
+    exit 0;
+}
+
 foreach (@ARGV) {
 
   chomp;
-  open INPUT,"<$_";
-  $_ =~ s/\.in//;
-  open OUTPUT,">$_.out";
+  $full_input_file = $_;
+  $full_input_file =~ m/([^\/]*)\/?$/;
+  $input_file = $1;
+  open INPUT,"<$full_input_file";
+  open OUTPUT,">$dir/$input_file.in";
 
   while (<INPUT>) {
     $line = $_;
-    $line = s/%LIBSC%/$libsc/;
-    $line = s/%LIBGENERIC%/$libgeneric/;
-    print OUTPUT "$_";
+    $line =~ s/%LIBSC%/$libsc/;
+    $line =~ s/%LIBGENERIC%/$libgeneric/;
+    $line =~ s/%SCREF%/$scref/;
+    print OUTPUT "$line";
   }
 
   close INPUT;

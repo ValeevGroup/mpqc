@@ -19,6 +19,7 @@ INPUTGENDEPS=$(SRCTOPDIR)/lib/perl/QCParse.pm \
              $(SRCDIR)/makein.pl
 
 MAKEIN=$(PERL) -I$(SRCTOPDIR)/lib/perl $(SRCDIR)/makein.pl
+MAKEINCCA=$(PERL) makeccain.pl
 CHECKOUT=$(PERL) -I$(SRCTOPDIR)/lib/perl $(SRCDIR)/checkout.pl
 
 ########################################################################
@@ -130,9 +131,12 @@ HSOSSCFOUTPUTS = $(HSOSSCFINPUTS:%.$(INSUF)=%.out)
 
 CCAINTV3MASTER=ccaintv3.qci
 CCACINTSMASTER=ccacints.qci
+CCAFEIN = $(SRCDIR)/ref/ccafe_h2oscfsto3g $(SRCDIR)/ref/ccafe_h2oscfgradccpvtz
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
  CCAINTV3INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(CCAINTV3MASTER))
  CCAINTV3OUTPUTS = $(CCAINTV3INPUTS:%.$(INSUF)=%.out)
+ CCAFEINPUTS = ccafe_h2oscfsto3g.in ccafe_h2oscfgradccpvtz.in 
+ CCAFEOUTPUTS = $(CCAFEINPUTS:%.in=%.out)
  ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
   CCACINTSINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(CCACINTSMASTER))
   CCACINTSOUTPUTS = $(CCACINTSINPUTS:%.$(INSUF)=%.out)
@@ -349,9 +353,15 @@ MPQCRUN_EXTRA_ARGS = --autoout --simpout \
 
 check0_run:
 	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK0INPUTS:$(INP)/%=%)
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
+	$(MAKE) checkccafe_run
+endif
 
 check0_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK0OUTPUTS:$(INP)/%=$(RUN)/%)
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
+	$(MAKE) checkccafe_chk
+endif
 
 check1: $(RUN) check1_run check1_chk
 
@@ -368,6 +378,15 @@ check2_run:
 
 check2_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK2OUTPUTS:$(INP)/%=$(RUN)/%)
+
+CCARUN = ../ccarun
+CCARUN_EXTRA_ARGS = --inputprefix $(SRCDIR)/ref \
+                     --outputprefix $(RUN)
+checkccafe_run:
+	$(PERL) $(CCARUN) $(CCARUN_EXTRA_ARGS) $(CCAFEINPUTS) 
+
+checkccafe_chk:
+	$(CHECKOUT) -r $(SRCDIR)/ref $(CCAFEOUTPUTS:%=$(RUN)/%)
 
 .PHONY: inputs
 inputs:: h2o h2omp2 mp2r12 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
@@ -420,6 +439,9 @@ opt: stamp-opt
 
 .PHONY: optts
 optts: stamp-optts
+
+.PHONY: ccafe
+ccafe: stamp-ccafe
 
 .PHONY: ccaintv3
 ccaintv3: stamp-ccaintv3
@@ -502,6 +524,10 @@ stamp-uscf: $(INP) $(USCFMASTER) $(INPUTGENDEPS)
 stamp-hsosscf: $(INP) $(HSOSSCFMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(HSOSSCFMASTER)
 	touch stamp-hsosscf
+
+stamp-ccafe: $(INP) $(CCAFEIN)
+	$(MAKEINCCA) --dir $(INP) --scref $(SRCDIR)/ref $(CCAFEIN)
+	touch stamp-ccafe
 
 stamp-ccaintv3: $(INP) $(CCAINTV3MASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(CCAINTV3MASTER)

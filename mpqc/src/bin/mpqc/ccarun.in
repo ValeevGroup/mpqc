@@ -7,11 +7,11 @@ $exec_prefix = "@exec_prefix@";
 $bindir = "@bindir@";
 $scdatadir = "@scdatadir@";
 
-use POSIX;
+$pwd = `pwd`;
+chomp $pwd;
+$pwd =~ s/\/$//;
 
-$pwd=`pwd`;
-chomp($pwd);
-$pwd="$pwd/";
+use POSIX;
 
 # The path to the ccaffiene executable
 $ccafe = "@CCAFE_BIN@/ccafe-batch";
@@ -91,6 +91,9 @@ if ("$launch" eq "@" . "CCALAUNCH@") {
     $launch = "mpirun [-hf %NODEFILE%] -n %NPROC% %MPQCRUNPROC% %CCAFE% --ccafe-rc %INPUT% --ccafe-remap-stdio --ccafe-outputdir %OUTPUT%"; 
 }
 
+$outputprefix =~ s/\/$//;
+$inputprefix =~ s/\/$//;
+
 ######################################################################
 
 if ($help) {
@@ -113,6 +116,8 @@ if ($help) {
     printf "  --nodename fmt     converts node num to name (value: %s)\n", $nodename;
     print  "  --rerun            overwrite output file, even if up-to-date\n";
     print  "  --onlynew          do not overwrite output file, even if not up-to-date\n";
+    print  "  --inputprefix dir  path to prefix input files with\n";
+    print  "  --outputprefix dir path to prefix output files with\n";
     print  "  --debug            don't actually run mpqc\n";
     print  "  --help             print this help\n";
     print  "\n";
@@ -303,9 +308,8 @@ sub jobrunner {
 
     while ( ($file = get_next_file($jobslot)) ne "") {
         $file =~ s/\.in//;
-        my $out = $file;
-        $out = "$pwd/$outputprefix$out.out";
-        my $in = "$pwd/$inputprefix$file";
+        $tmp_out = "$pwd/$outputprefix/$file.tmp";
+        my $in = "$inputprefix/$file.in";
         my $cmd = "$launch";
         $cmd =~ s/%CCAFE%/$ccafe/;
         $cmd =~ s/%NPROC%/$nprocperjob/;
@@ -320,11 +324,11 @@ sub jobrunner {
         }
         $cmd =~ s|%MPQCRUNPROC%|$mpqcrunproc|;
 
-        $cmd = substitute_optional_parameter($cmd, "%OUTPUT%", "$out");
+        $cmd = substitute_optional_parameter($cmd, "%OUTPUT%", "$tmp_out");
         $cmd = substitute_optional_parameter($cmd, "%NODELIST%", $nodelist{$jobslot});
         $cmd = substitute_optional_parameter($cmd, "%NODEFILE%", $nodefile{$jobslot});
 
-        mkdir $out or warn "directory $out already exists\n";
+        mkdir $tmp_out;
         printf "starting in slot %d: %s\n", $jobslot, "$cmd";
         $cmd = "true" if ($debug);
         $pid = fork();
@@ -333,6 +337,10 @@ sub jobrunner {
             die "exec returned";
         }
         waitpid($pid,'');
+        
+        rename "$tmp_out/pOut0", "$pwd/$outputprefix/$file.out";       
+        unlink "$tmp_out/pErr0";
+        rmdir "$tmp_out";
     }
 }
 

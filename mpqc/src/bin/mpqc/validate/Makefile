@@ -21,6 +21,7 @@ INPUTGENDEPS=$(SRCTOPDIR)/lib/perl/QCParse.pm \
 MAKEIN=$(PERL) -I$(SRCTOPDIR)/lib/perl $(SRCDIR)/makein.pl
 MAKEINCCA=$(PERL) makeccain.pl
 CHECKOUT=$(PERL) -I$(SRCTOPDIR)/lib/perl $(SRCDIR)/checkout.pl
+CHECKCCAOUT=$(PERL) $(SRCDIR)/checkccaout.pl
 
 ########################################################################
 # need to determine nthreadperproc from MPQCRUN_ARGS, since this determines
@@ -137,6 +138,7 @@ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
  CCAINTV3OUTPUTS = $(CCAINTV3INPUTS:%.$(INSUF)=%.out)
  CCAFEINPUTS = ccafe_h2oscfsto3g.in ccafe_h2oscfgradccpvtz.in 
  CCAFEOUTPUTS = $(CCAFEINPUTS:%.in=%.out)
+ CCAFERESULTS = $(CCAFEINPUTS:%.in=%.results)
  ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
   CCACINTSINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(CCACINTSMASTER))
   CCACINTSOUTPUTS = $(CCACINTSINPUTS:%.$(INSUF)=%.out)
@@ -339,7 +341,7 @@ check_clean: check_clean_scratch
 	/bin/rm -f $(RUN)/*.out
 
 check_clean_scratch:
-	/bin/rm -rf $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results
+	/bin/rm -rf $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt
 
 check: check0
 
@@ -386,7 +388,7 @@ checkccafe_run:
 	$(PERL) $(CCARUN) $(CCARUN_EXTRA_ARGS) $(CCAFEINPUTS) 
 
 checkccafe_chk:
-	$(CHECKOUT) -r $(SRCDIR)/ref $(CCAFEOUTPUTS:%=$(RUN)/%)
+	$(CHECKCCAOUT) --refprefix $(SRCDIR)/ref --outputprefix $(RUN) $(CCAFERESULTS)
 
 .PHONY: inputs
 inputs:: h2o h2omp2 mp2r12 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt

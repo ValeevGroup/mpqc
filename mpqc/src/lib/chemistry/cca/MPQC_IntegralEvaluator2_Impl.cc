@@ -197,22 +197,6 @@ throw ()
 }
 
 /**
- * Allows a DerivCenters object to be passed to 
- * an evaluator, so that derivatives can be taken 
- * with respect to a specified atom (needed for
- * derivatives with non-Hellman-Feynman contributions). 
- */
-void
-MPQC::IntegralEvaluator2_impl::set_derivcenters (
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.set_derivcenters)
-  // Insert-Code-Here {MPQC.IntegralEvaluator2.set_derivcenters} (set_derivcenters method)
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.set_derivcenters)
-}
-
-/**
  * Compute a shell doublet of integrals.
  * @param shellnum1 Gaussian shell number 1.
  * @param shellnum2 Gaussian shell number 2.
@@ -383,3 +367,10 @@ MPQC::IntegralEvaluator2_impl::reorder_intv3(int64_t shellnum1,int64_t shellnum2
 
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._misc)
 
+/**
+ * ================= BEGIN UNREFERENCED METHOD(S) ================
+ * The following code segment(s) belong to unreferenced method(s).
+ * This can result from a method rename/removal in the sidl file.
+ * Move or remove the code in order to compile cleanly.
+ */
+// ================== END UNREFERENCED METHOD(S) =================

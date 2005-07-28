@@ -229,50 +229,6 @@ throw ()
 }
 
 /**
- * Get a nuclear repulsion specialized  2-center integral 
- * evaluator.  Returns derivative integrals taken with 
- * respect to DerivCenters.
- * @param max_deriv Maximum derivative that will be computed
- * @param bs1 Molecular basis set on center 1
- * @param bs2 Molecular basis set on center 2
- * @return nuclear repulsion integral evaluator 
- */
-::Chemistry::QC::GaussianBasis::IntegralEvaluator2
-MPQC::IntegralEvaluatorFactory_impl::get_nuclear_evaluator (
-  /* in */ int64_t max_deriv,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_nuclear_evaluator)
-  // Insert-Code-Here {MPQC.IntegralEvaluatorFactory.get_nuclear_evaluator} (get_nuclear_evaluator method)
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_nuclear_evaluator)
-}
-
-/**
- * Get a hcore specialized  2-center integral
- * evaluator.  Returns derivative integrals taken with
- * respect to DerivCenters.
- * @param max_deriv Maximum derivative that will be computed
- * @param bs1 Molecular basis set on center 1
- * @param bs2 Molecular basis set on center 2
- * @return hcore repulsion integral evaluator 
- */
-::Chemistry::QC::GaussianBasis::IntegralEvaluator2
-MPQC::IntegralEvaluatorFactory_impl::get_hcore_evaluator (
-  /* in */ int64_t max_deriv,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_hcore_evaluator)
-  // Insert-Code-Here {MPQC.IntegralEvaluatorFactory.get_hcore_evaluator} (get_hcore_evaluator method)
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_hcore_evaluator)
-}
-
-/**
  * Get a 3-center integral evaluator
  * @param label String specifying integral type
  * @param max_deriv Maximum derivative that will be computed
@@ -365,3 +321,10 @@ MPQC::IntegralEvaluatorFactory_impl::setup_parameters(
 
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._misc)
 
+/**
+ * ================= BEGIN UNREFERENCED METHOD(S) ================
+ * The following code segment(s) belong to unreferenced method(s).
+ * This can result from a method rename/removal in the sidl file.
+ * Move or remove the code in order to compile cleanly.
+ */
+// ================== END UNREFERENCED METHOD(S) =================

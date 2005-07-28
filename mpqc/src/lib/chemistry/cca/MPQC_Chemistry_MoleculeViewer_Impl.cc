@@ -52,6 +52,35 @@ void MPQC::Chemistry_MoleculeViewer_impl::_load() {
 
 // user-defined non-static methods:
 /**
+ * Starts up a component presence in the calling framework.
+ * @param Svc the component instance's handle on the framework world.
+ * Contracts concerning Svc and setServices:
+ * 
+ * The component interaction with the CCA framework
+ * and Ports begins on the call to setServices by the framework.
+ * 
+ * This function is called exactly once for each instance created
+ * by the framework.
+ * 
+ * The argument Svc will never be nil/null.
+ * 
+ * Those uses ports which are automatically connected by the framework
+ * (so-called service-ports) may be obtained via getPort during
+ * setServices.
+ */
+void
+MPQC::Chemistry_MoleculeViewer_impl::setServices (
+  /* in */ ::gov::cca::Services services ) 
+throw ( 
+  ::gov::cca::CCAException
+){
+  // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_MoleculeViewer.setServices)
+  services.addProvidesPort(self,"MoleculeViewer","Chemistry.MoleculeViewer",
+                           services.createTypeMap());
+  // DO-NOT-DELETE splicer.end(MPQC.Chemistry_MoleculeViewer.setServices)
+}
+
+/**
  * Method:  set_molecule[]
  */
 void
@@ -139,35 +168,6 @@ throw ()
     }
 #endif // USE_SOCKET
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_MoleculeViewer.draw)
-}
-
-/**
- * Starts up a component presence in the calling framework.
- * @param Svc the component instance's handle on the framework world.
- * Contracts concerning Svc and setServices:
- * 
- * The component interaction with the CCA framework
- * and Ports begins on the call to setServices by the framework.
- * 
- * This function is called exactly once for each instance created
- * by the framework.
- * 
- * The argument Svc will never be nil/null.
- * 
- * Those uses ports which are automatically connected by the framework
- * (so-called service-ports) may be obtained via getPort during
- * setServices.
- */
-void
-MPQC::Chemistry_MoleculeViewer_impl::setServices (
-  /* in */ ::gov::cca::Services services ) 
-throw ( 
-  ::gov::cca::CCAException
-){
-  // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_MoleculeViewer.setServices)
-  services.addProvidesPort(self,"MoleculeViewer","Chemistry.MoleculeViewer",
-                           services.createTypeMap());
-  // DO-NOT-DELETE splicer.end(MPQC.Chemistry_MoleculeViewer.setServices)
 }
 
 

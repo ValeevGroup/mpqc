@@ -92,9 +92,10 @@ install:: mpqc
 	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(bindir)
 	$(LTINST) $(INSTALL) $(INSTALLBINOPT) $< $(installroot)$(bindir)
 	$(INSTALL) $(INSTALLSCRIPTOPT) mpqcrun $(installroot)$(bindir)/mpqcrun
+	$(INSTALL) $(INSTALLSCRIPTOPT) ccarun $(installroot)$(bindir)/ccarun
 	$(INSTALL) $(INSTALLDIROPT) $(installroot)$(scdatadir)
 	$(INSTALL) $(INSTALLSCRIPTOPT) $(SRCDIR)/mpqcrunproc $(installroot)$(scdatadir)/mpqcrunproc
-
+	$(INSTALL) $(INSTALLSCRIPTOPT) $(SRCDIR)/ccarunproc $(installroot)$(scdatadir)/ccarunproc
 
 install::
 	/bin/rm -f $(installroot)$(bindir)/chkmpqcout

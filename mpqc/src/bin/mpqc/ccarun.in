@@ -88,7 +88,7 @@ if (!GetOptions("launch=s" => \$launch,
 }
 
 if ("$launch" eq "@" . "CCALAUNCH@") {
-    $launch = "mpirun [-hf %NODEFILE%] -n %NPROC% %MPQCRUNPROC% %CCAFE% --ccafe-rc %INPUT% --ccafe-remap-stdio --ccafe-outputdir %OUTPUT%"; 
+    $launch = "mpirun [-hf %NODEFILE%] -n %NPROC% %CCARUNPROC% %CCAFE% --ccafe-rc %INPUT% --ccafe-remap-stdio --ccafe-outputdir %OUTPUT%"; 
 }
 
 $outputprefix =~ s/\/$//;
@@ -309,20 +309,26 @@ sub jobrunner {
     while ( ($file = get_next_file($jobslot)) ne "") {
         $file =~ s/\.in//;
         $tmp_out = "$pwd/$outputprefix/$file.tmp";
+	$ENV{"CCACHEM_RESULTS_DIR"} = "$tmp_out";
         my $in = "$inputprefix/$file.in";
         my $cmd = "$launch";
         $cmd =~ s/%CCAFE%/$ccafe/;
         $cmd =~ s/%NPROC%/$nprocperjob/;
         $cmd =~ s/%INPUT%/$in/;
 
-	my $mpqcrunproc = "$scdatadir/mpqcrunproc $ccafe";
+	my $ccarunproc = "$scdatadir/ccarunproc $ccafe";
         if (exists($ENV{THREADGRP})) {
-           $mpqcrunproc = "$mpqcrunproc " . &isoencode("$ENV{THREADGRP}");
+           $ccarunproc = "$ccarunproc " . &isoencode("$ENV{THREADGRP}");
         }
         else {
-           $mpqcrunproc = "$mpqcrunproc none";
+           $ccarunproc = "$ccarunproc none";
         }
-        $cmd =~ s|%MPQCRUNPROC%|$mpqcrunproc|;
+        # no mem/message groups for now
+        $ccarunproc = "$ccarunproc none none";
+        #results dir
+        $ccarunproc = "$ccarunproc " . &isoencode("$ENV{CCACHEM_RESULTS_DIR}");
+
+        $cmd =~ s|%CCARUNPROC%|$ccarunproc|;
 
         $cmd = substitute_optional_parameter($cmd, "%OUTPUT%", "$tmp_out");
         $cmd = substitute_optional_parameter($cmd, "%NODELIST%", $nodelist{$jobslot});
@@ -340,6 +346,7 @@ sub jobrunner {
         
         rename "$tmp_out/pOut0", "$pwd/$outputprefix/$file.out";       
         unlink "$tmp_out/pErr0";
+        rename "$tmp_out/results.txt", "$pwd/$outputprefix/$file.results";
         rmdir "$tmp_out";
     }
 }

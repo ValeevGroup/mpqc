@@ -339,7 +339,7 @@ check_clean: check_clean_scratch
 	/bin/rm -f $(RUN)/*.out
 
 check_clean_scratch:
-	/bin/rm -f $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess
+	/bin/rm -rf $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results
 
 check: check0
 
@@ -767,4 +767,4 @@ $(INP)/input_%.qci:
 
 .PHONY: clean
 clean: check_clean
-	/bin/rm stamp-*
+	/bin/rm stamp-*;

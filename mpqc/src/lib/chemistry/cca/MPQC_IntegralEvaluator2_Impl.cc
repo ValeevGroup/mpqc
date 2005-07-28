@@ -197,6 +197,22 @@ throw ()
 }
 
 /**
+ * Allows a DerivCenters object to be passed to 
+ * an evaluator, so that derivatives can be taken 
+ * with respect to a specified atom (needed for
+ * derivatives with non-Hellman-Feynman contributions). 
+ */
+void
+MPQC::IntegralEvaluator2_impl::set_derivcenters (
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.set_derivcenters)
+  // Insert-Code-Here {MPQC.IntegralEvaluator2.set_derivcenters} (set_derivcenters method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.set_derivcenters)
+}
+
+/**
  * Compute a shell doublet of integrals.
  * @param shellnum1 Gaussian shell number 1.
  * @param shellnum2 Gaussian shell number 2.

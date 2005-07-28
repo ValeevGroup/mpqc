@@ -162,6 +162,20 @@ namespace MPQC {
     ;
 
     /**
+     * Allows a DerivCenters object to be passed to 
+     * an evaluator, so that derivatives can be taken 
+     * with respect to a specified atom (needed for
+     * derivatives with non-Hellman-Feynman contributions). 
+     */
+    void
+    set_derivcenters (
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc
+    )
+    throw () 
+    ;
+
+
+    /**
      * Compute a shell doublet of integrals.
      * @param shellnum1 Gaussian shell number 1.
      * @param shellnum2 Gaussian shell number 2.

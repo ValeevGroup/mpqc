@@ -274,8 +274,6 @@ nonredundant_erep(double *buffer, int e12, int e34, int e13e24,
 void
 Int2eCCA::remove_redundant(int is, int js, int ks, int ls) {
 
-  std::cout << "\nREMOVING REDUNDANT INTEGRALS";
-
   int bs1_shell_offset = 0;
   int bs2_shell_offset, bs3_shell_offset, bs4_shell_offset;
   
@@ -348,6 +346,7 @@ Int2eCCA::remove_redundant(int is, int js, int ks, int ls) {
   if ((osh1 == osh4)&&(osh2 == osh3)&&(osh1 != osh2)) {
     throw ProgrammingError("nonredundant integrals cannot be generated",
                            __FILE__,__LINE__);
+  }
 
   int e12 = (int_unit2?0:(osh1 == osh2));
   int e13e24 = ((osh1 == osh3)

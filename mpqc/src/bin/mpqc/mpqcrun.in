@@ -50,7 +50,7 @@ if ("$always_use_mpi" eq "yes") {
 $integral = "none";
 
 # The mpi launch command
-$launch = '@CCALAUNCH@';
+$launch = '@LAUNCH@';
 
 # The number of tasks
 $ntask = 1;

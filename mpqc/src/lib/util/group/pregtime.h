@@ -42,10 +42,8 @@ class ParallelRegionTimer: public RegionTimer {
   protected:
     Ref<MessageGrp> msg_;
 
-    void send_region(int node, const TimedRegion *r) const;
-    void recv_region(int node, TimedRegion *r, TimedRegion *up) const;
-    void send_regions(int node) const;
-    void recv_regions(int node) const;
+    void send_subregions(int node, const TimedRegion *r) const;
+    void recv_subregions(int node, TimedRegion *r) const;
     void all_reduce_regions() const;
 
   public:

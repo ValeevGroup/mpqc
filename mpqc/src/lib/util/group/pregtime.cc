@@ -84,63 +84,35 @@ recv_string(const Ref<MessageGrp>& msg, int node)
 }
 
 void
-ParallelRegionTimer::send_region(int node, const TimedRegion *r) const
+ParallelRegionTimer::send_subregions(int node, const TimedRegion *r) const
 {
-  int have_subregions = (r->subregions() != 0);
-  msg_->send(node, have_subregions);
-  if (have_subregions) {
-      send_string(msg_,node,r->name());
-      send_region(node, r->subregions());
-    }
+  TimedRegion *subr = r->subregions();
 
-  int have_next = (r->next() != 0);
-  msg_->send(node, have_next);
-  while (have_next) {
-      send_string(msg_,node,r->name());
-      send_region(node, r->next());
-      r = r->next();
-      have_next = (r->next() != 0);
-      msg_->send(node, have_next);
-    }
+  // rewind to the beginning
+  if (subr) { while (subr->prev()) subr = subr->prev(); }
+
+  while (subr) {
+      msg_->send(node, 1);
+      send_string(msg_, node, subr->name());
+      send_subregions(node, subr);
+      subr = subr->next();
+    };
+
+  msg_->send(node, 0);
 }
 
 void
-ParallelRegionTimer::recv_region(int node, TimedRegion *r, TimedRegion *up) const
+ParallelRegionTimer::recv_subregions(int node, TimedRegion *r) const
 {
-  int have_subregions;
-  msg_->recv(node, have_subregions);
-  if (have_subregions) {
-      char *name = recv_string(msg_,node);
-      TimedRegion *subregion = r->findinsubregion(name);
-      recv_region(node, subregion, r);
+  int has_subregions;
+  msg_->recv(node, has_subregions);
+  while (has_subregions) {
+      char *name = recv_string(msg_, node);
+      TimedRegion *region = r->findinsubregion(name);
       delete[] name;
+      recv_subregions(node, region);
+      msg_->recv(node, has_subregions);
     }
-  int have_next;
-  msg_->recv(node, have_next);
-  while (have_next) {
-      char *name = recv_string(msg_,node);
-      TimedRegion *region = up->findinsubregion(name);
-      delete[] name;
-      msg_->recv(node, have_next);
-    }
-}
-
-void
-ParallelRegionTimer::send_regions(int node) const
-{
-  int top_has_subregions = (top_->subregions() != 0);
-  msg_->send(node, top_has_subregions);
-  if (!top_has_subregions) return;
-  send_region(node, top_->subregions());
-}
-
-void
-ParallelRegionTimer::recv_regions(int node) const
-{
-  int top_has_subregions;
-  msg_->recv(node, top_has_subregions);
-  if (!top_has_subregions) return;
-  recv_region(node, top_->subregions(), top_);
 }
 
 void
@@ -152,10 +124,10 @@ ParallelRegionTimer::all_reduce_regions() const
   Ref<GlobalMsgIter> i_reduce(topology->global_msg_iter(msg_, 0));
   for (i_reduce->backwards(); !i_reduce->done(); i_reduce->next()) {
       if (i_reduce->send()) {
-          send_regions(i_reduce->sendto());
+          send_subregions(i_reduce->sendto(), top_);
         }
       if (i_reduce->recv()) {
-          recv_regions(i_reduce->recvfrom());
+          recv_subregions(i_reduce->recvfrom(), top_);
         }
     }
 
@@ -163,13 +135,12 @@ ParallelRegionTimer::all_reduce_regions() const
   Ref<GlobalMsgIter> i_bcast(topology->global_msg_iter(msg_, 0));
   for (i_bcast->forwards(); !i_bcast->done(); i_bcast->next()) {
       if (i_bcast->send()) {
-          send_regions(i_bcast->sendto());
+          send_subregions(i_bcast->sendto(), top_);
         }
       if (i_bcast->recv()) {
-          recv_regions(i_bcast->recvfrom());
+          recv_subregions(i_bcast->recvfrom(), top_);
         }
     }
-
 }
 
 void

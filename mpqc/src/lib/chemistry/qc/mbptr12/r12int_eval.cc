@@ -790,7 +790,9 @@ R12IntEval::form_canonvir_space_()
                                                                vir_space->basis());
     RefDiagSCMatrix F_vir_evals = F_vir_lt.eigvals();
     canonvir_space_ = new MOIndexSpace("Virt. MOs sorted by energy",
-                                       canonvir_space_symblk->coefs(), canonvir_space_symblk->basis(),
+                                       canonvir_space_symblk->coefs(),
+                                       canonvir_space_symblk->basis(),
+                                       canonvir_space_symblk->integral(),
                                        F_vir_evals, 0, 0,
                                        MOIndexSpace::energy);
   }

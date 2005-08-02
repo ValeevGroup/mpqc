@@ -240,16 +240,22 @@ void R12IntEvalInfo::eigen2_()
   RefSCMatrix so_ao = plist->sotoao();
   RefSCMatrix vecs = so_ao.t() * vecs_so_mo1;
 
-  mo_space_ = new MOIndexSpace("symmetry-blocked MOs", vecs, bs_, vals, 0, 0, MOIndexSpace::symmetry);
-  obs_space_ = new MOIndexSpace("MOs sorted by energy", vecs, bs_, vals, 0, 0);
-  occ_space_ = new MOIndexSpace("occupied MOs sorted by energy", vecs, bs_, vals, 0, mo_space_->rank() - nocc_);
-  occ_space_symblk_ = new MOIndexSpace("occupied MOs symmetry-blocked", vecs, bs_, vals,
-                                       0, mo_space_->rank() - nocc_, MOIndexSpace::symmetry);
+  mo_space_ = new MOIndexSpace("symmetry-blocked MOs", vecs, bs_, integral(),
+                               vals, 0, 0, MOIndexSpace::symmetry);
+  obs_space_ = new MOIndexSpace("MOs sorted by energy", vecs, bs_, integral(),
+                                vals, 0, 0);
+  occ_space_ = new MOIndexSpace("occupied MOs sorted by energy", vecs, bs_,
+                                integral(), vals, 0, mo_space_->rank() - nocc_);
+  occ_space_symblk_ = new MOIndexSpace("occupied MOs symmetry-blocked", vecs, bs_,
+                                       integral(), vals, 0, mo_space_->rank() - nocc_,
+                                       MOIndexSpace::symmetry);
 
   if (nfzc_ == 0)
     act_occ_space_ = occ_space_;
   else
-    act_occ_space_ = new MOIndexSpace("active occupied MOs sorted by energy", vecs, bs_, vals, nfzc_, mo_space_->rank() - nocc_);
+    act_occ_space_ = new MOIndexSpace("active occupied MOs sorted by energy", vecs,
+                                      bs_, integral(), vals, nfzc_,
+                                      mo_space_->rank() - nocc_);
 
   if (debug_) ExEnv::out0() << indent << "R12IntEvalInfo: eigen2_ done" << endl;
 }

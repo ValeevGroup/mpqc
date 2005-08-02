@@ -117,7 +117,7 @@ R12IntEvalInfo::construct_orthog_aux_()
   if (abs_space_.nonnull())
     return;
 
-  abs_space_ = orthogonalize("ABS", bs_aux_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_aux_);
+  abs_space_ = orthogonalize("ABS", bs_aux_, integral(), ref_->orthog_method(), ref_->lindep_tol(), nlindep_aux_);
 
   if (bs_aux_ == bs_ri_)
     ribs_space_ = abs_space_;
@@ -132,21 +132,24 @@ R12IntEvalInfo::construct_orthog_vir_()
   if (bs_ == bs_vir_) {
     // If virtuals are from the same space as occupieds, then everything is easy
     vir_space_ = new MOIndexSpace("unoccupied MOs sorted by energy", mo_space_->coefs(),
-                                  mo_space_->basis(), mo_space_->evals(), nocc_, 0);
+                                  mo_space_->basis(), mo_space_->integral(),
+                                  mo_space_->evals(), nocc_, 0);
     // If virtuals are from the same space as occupieds, then everything is easy
     vir_space_symblk_ = new MOIndexSpace("unoccupied MOs symmetry-blocked", mo_space_->coefs(),
-                                         mo_space_->basis(), mo_space_->evals(), nocc_, 0, MOIndexSpace::symmetry);
+                                         mo_space_->basis(), mo_space_->integral(),
+                                         mo_space_->evals(), nocc_, 0, MOIndexSpace::symmetry);
 
     if (nfzv_ == 0)
       act_vir_space_ = vir_space_;
     else
       act_vir_space_ = new MOIndexSpace("active unoccupied MOs sorted by energy", mo_space_->coefs(),
-                                  mo_space_->basis(), mo_space_->evals(), nocc_, nfzv_);
+                                  mo_space_->basis(), mo_space_->integral(),
+                                  mo_space_->evals(), nocc_, nfzv_);
     nlindep_vir_ = 0;
   }
   else {
     // This is a set of orthonormal functions that span VBS
-    Ref<MOIndexSpace> vir_space = orthogonalize("VBS", bs_vir_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_vir_);
+    Ref<MOIndexSpace> vir_space = orthogonalize("VBS", bs_vir_, integral(), ref_->orthog_method(), ref_->lindep_tol(), nlindep_vir_);
     // Now project out occupied MOs
     vir_space_symblk_ = orthog_comp(occ_space_symblk_, vir_space, "VBS", ref_->lindep_tol());
 
@@ -169,7 +172,7 @@ R12IntEvalInfo::construct_orthog_ri_()
   if (ribs_space_.nonnull())
     return;
 
-  ribs_space_ = orthogonalize("RI-BS", bs_ri_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_ri_);
+  ribs_space_ = orthogonalize("RI-BS", bs_ri_, integral(), ref_->orthog_method(), ref_->lindep_tol(), nlindep_ri_);
 }
 
 bool
@@ -186,7 +189,7 @@ R12IntEvalInfo::abs_spans_obs_()
     nlindep_ri = nlindep_ri_;
   }
   else {
-    Ref<MOIndexSpace> ribs_space = orthogonalize("OBS+ABS", ri_basis, ref_->orthog_method(), ref_->lindep_tol(), nlindep_ri);
+    Ref<MOIndexSpace> ribs_space = orthogonalize("OBS+ABS", ri_basis, integral(), ref_->orthog_method(), ref_->lindep_tol(), nlindep_ri);
   }
 
   if (nlindep_ri - nlindep_aux_ - mo_space_->rank() == 0)
@@ -219,11 +222,12 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
 
 Ref<MOIndexSpace>
 R12IntEvalInfo::orthogonalize(const std::string& name, const Ref<GaussianBasisSet>& bs,
+                              const Ref<Integral>& ints,
                               OverlapOrthog::OrthogMethod orthog_method, double lindep_tol,
                               int& nlindep)
 {
   // Make an Integral and initialize with bs_aux
-  Ref<Integral> integral = Integral::get_default_integral()->clone();
+  Ref<Integral> integral = ints->clone();
   integral->set_basis(bs);
   Ref<PetiteList> plist = integral->petite_list();
   Ref<OneBodyInt> ov_engine = integral->overlap();
@@ -268,7 +272,7 @@ R12IntEvalInfo::orthogonalize(const std::string& name, const Ref<GaussianBasisSe
   ExEnv::out0() << decindent;
 
   nlindep = orthog.nlindep();
-  Ref<MOIndexSpace> space = new MOIndexSpace(name,orthog_ao,bs);
+  Ref<MOIndexSpace> space = new MOIndexSpace(name,orthog_ao,bs,integral);
 
   return space;
 }
@@ -278,6 +282,8 @@ Ref<MOIndexSpace>
 R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                             const std::string& name, double lindep_tol)
 {
+  if (!space1->integral()->equiv(space2->integral()))
+    throw ProgrammingError("Two MOIndexSpaces use incompatible Integral factories");
   // Both spaces must be ordered in the same way
   if (space1->moorder() != space2->moorder())
     throw std::runtime_error("R12IntEvalInfo::orthog_comp() -- space1 and space2 are ordered differently ");
@@ -411,7 +417,7 @@ R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
   delete[] vecs;
   delete[] nvec_per_block;
 
-  Ref<MOIndexSpace> orthog_comp_space = new MOIndexSpace(name,orthog2,space2->basis());
+  Ref<MOIndexSpace> orthog_comp_space = new MOIndexSpace(name,orthog2,space2->basis(),space2->integral());
   
   return orthog_comp_space;
 }
@@ -427,9 +433,10 @@ R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
   // 2) SVDecompose C12 = U Sigma V^t, throw out (near)singular triplets
   // 3) Projected vectors (in AO basis) are X2 = C2 * V * Sigma^{-1} * U^t, where Sigma^{-1} is the generalized inverse
   //
-
-
   
+  // Check integral factories
+  if (!space1->integral()->equiv(space2->integral()))
+    throw ProgrammingError("Two MOIndexSpaces use incompatible Integral factories");
   // Both spaces must be ordered in the same way
   if (space1->moorder() != space2->moorder())
     throw std::runtime_error("R12IntEvalInfo::orthog_comp() -- space1 and space2 are ordered differently ");
@@ -567,7 +574,7 @@ R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
   delete[] vecs;
   delete[] nvec_per_block;
 
-  Ref<MOIndexSpace> proj_space = new MOIndexSpace(name,proj,space2->basis());
+  Ref<MOIndexSpace> proj_space = new MOIndexSpace(name,proj,space2->basis(),space2->integral());
 
   RefSCMatrix S12;  compute_overlap_ints(space1,proj_space,S12);
   S12.print("Check: overlap between space1 and projected space");

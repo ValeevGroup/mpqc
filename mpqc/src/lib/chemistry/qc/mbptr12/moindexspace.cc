@@ -48,10 +48,11 @@ static ClassDesc MOIndexSpace_cd(
   typeid(MOIndexSpace),"MOIndexSpace",1,"virtual public SavableState",
   0, 0, create<MOIndexSpace>);
 
-MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis,
+MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs,
+                           const Ref<GaussianBasisSet> basis, const Ref<Integral>& integral,
                            const vector<int>& offsets, const vector<int>& nmopi, IndexOrder moorder,
                            const RefDiagSCMatrix& evals) :
-  name_(name), basis_(basis), offsets_(offsets), nmo_(nmopi), full_rank_(full_coefs.coldim().n()),
+  name_(name), basis_(basis), integral_(integral), offsets_(offsets), nmo_(nmopi), full_rank_(full_coefs.coldim().n()),
   moorder_(moorder)
 {
   full_coefs_to_coefs(full_coefs, evals);
@@ -59,9 +60,10 @@ MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, cons
   init();
 }
 
-MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis,
+MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs,
+                           const Ref<GaussianBasisSet> basis, const Ref<Integral>& integral,
                            const RefDiagSCMatrix& evals, int nfzc, int nfzv, IndexOrder moorder) :
-  name_(name), basis_(basis), full_rank_(full_coefs.coldim().n()), moorder_(moorder)
+  name_(name), basis_(basis), integral_(integral), full_rank_(full_coefs.coldim().n()), moorder_(moorder)
 {
   if (evals.null())
     throw std::runtime_error("MOIndexSpace::MOIndexSpace() -- null eigenvalues matrix");
@@ -75,8 +77,10 @@ MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, cons
   init();
 }
 
-MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis) :
-  name_(name), basis_(basis), full_rank_(full_coefs.coldim().n()), moorder_(symmetry)
+MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs,
+  const Ref<GaussianBasisSet> basis, const Ref<Integral>& integral) :
+  name_(name), basis_(basis), integral_(integral),
+  full_rank_(full_coefs.coldim().n()), moorder_(symmetry)
 {
   Ref<SCBlockInfo> modim_blocks = full_coefs.coldim()->blocks();
   int nb = modim_blocks->nblock();
@@ -92,19 +96,9 @@ MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, cons
   init();
 }
 
-/*MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& coefs, const Ref<GaussianBasisSet> basis,
-                           IndexOrder moorder, const vector<int>& mosym, const RefDiagSCMatrix& evals) :
-  name_(name), coefs_(coefs), evals_(evals), basis_(basis), mosym_(mosym), full_rank_(coefs_.coldim().n()),
-  rank_(full_rank_), moorder_(moorder)
-{
-  check_mosym();
-  
-  init();
-}*/
-
 MOIndexSpace::MOIndexSpace(std::string name, const Ref<MOIndexSpace>& orig_space, const RefSCMatrix& new_coefs,
                            const Ref<GaussianBasisSet>& new_basis) :
-  name_(name), mosym_(orig_space->mosym_), evals_(orig_space->evals_),
+  name_(name), integral_(orig_space->integral()), mosym_(orig_space->mosym_), evals_(orig_space->evals_),
   rank_(orig_space->rank_), full_rank_(orig_space->full_rank_), nblocks_(orig_space->nblocks_),
   offsets_(orig_space->offsets_), nmo_(orig_space->nmo_), map_to_full_space_(orig_space->map_to_full_space_),
   moorder_(orig_space->moorder_)
@@ -123,6 +117,7 @@ MOIndexSpace::MOIndexSpace(StateIn& si) : SavableState(si)
   coefs_.restore(si);
   evals_.restore(si);
   basis_ << SavableState::restore_state(si);
+  integral_ << SavableState::restore_state(si);
   si.get(mosym_);
 
   si.get(rank_);
@@ -150,6 +145,7 @@ MOIndexSpace::save_data_state(StateOut& so)
   evals_.save(so);
   modim_ = evals_.dim();
   SavableState::save_state(basis_.pointer(),so);
+  SavableState::save_state(integral_.pointer(),so);
   so.put(mosym_);
 
   so.put(rank_);
@@ -165,13 +161,16 @@ MOIndexSpace::save_data_state(StateOut& so)
 const std::string
 MOIndexSpace::name() const { return name_; }
 
-Ref<GaussianBasisSet>
+const Ref<GaussianBasisSet>
 MOIndexSpace::basis() const { return basis_; }
 
-RefSCMatrix
+Ref<Integral>
+MOIndexSpace::integral() const { return integral_; }
+
+const RefSCMatrix
 MOIndexSpace::coefs() const { return coefs_; }
 
-RefDiagSCMatrix
+const RefDiagSCMatrix
 MOIndexSpace::evals() const { return evals_; }
 
 vector<int>

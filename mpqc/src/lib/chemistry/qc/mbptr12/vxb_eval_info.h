@@ -204,7 +204,7 @@ public:
                                 const std::string& name, double lindep_tol);
   /** Compute span of bs and create corresponding mospace referred to by name. Number
       linear dependencies is returned in nlindep */
-  static Ref<MOIndexSpace> orthogonalize(const std::string& name, const Ref<GaussianBasisSet>& bs,
+  static Ref<MOIndexSpace> orthogonalize(const std::string& name, const Ref<GaussianBasisSet>& bs, const Ref<Integral>& integral,
                                   OverlapOrthog::OrthogMethod orthog_method, double lindep_tol,
                                   int& nlindep);
 

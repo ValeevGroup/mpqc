@@ -2,9 +2,9 @@
                     MPQC: Massively Parallel Quantum Chemistry
                                 Version 2.3.0-alpha
 
-  Machine:    i686-pc-linux-gnu
-  User:       evaleev@tool.chemistry.gatech.edu
-  Start Time: Sat Jan 29 23:22:14 2005
+  Machine:    powerpc-apple-darwin6.8
+  User:       evaleev@v95-9.ornl-visitor.org
+  Start Time: Tue Aug  2 13:55:22 2005
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -13,9 +13,9 @@
 
   Using IntegralV3 by default for molecular integrals evaluation
 
-  Reading file /home/tool/evaleev/MPQC/SC.recent/x86-linux/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /Users/evaleev/Development/QuantumChemistry/MPQC/recent/SC/lib/atominfo.kv.
   Molecule: setting point group to d2h
-  Reading file /home/tool/evaleev/MPQC/SC.recent/x86-linux/share/mpqc/2.3.0-alpha/basis/aug-cc-pvdz.kv.
+  Reading file /Users/evaleev/Development/QuantumChemistry/MPQC/recent/SC/lib/basis/aug-cc-pvdz.kv.
 
   CLSCF::init: total charge = 0
 
@@ -38,8 +38,8 @@
 
   MPQC options:
     matrixkit     = <ReplSCMatrixKit>
-    filename      = mp2r12ap_+gbc
-    restart_file  = mp2r12ap_+gbc.ckpt
+    filename      = methods_mp2r12ap_+gbc
+    restart_file  = methods_mp2r12ap_+gbc.ckpt
     restart       = yes
     checkpoint    = no
     savestate     = no
@@ -50,12 +50,13 @@
     print_mole    = yes
     print_timings = yes
 
+  
   SCF::compute: energy accuracy = 1.0000000e-08
 
-  integral intermediate storage = 1974576 bytes
-  integral cache = 22021008 bytes
   nuclear repulsion energy =    0.0000000000
 
+  integral intermediate storage = 1712432 bytes
+  integral cache = 22283152 bytes
                  48918 integrals
   iter     1 energy = -122.5194031208 delta = 3.09458e-01
                  48918 integrals
@@ -73,11 +74,11 @@
                  48918 integrals
   iter     8 energy = -128.4963497305 delta = 8.16488e-06
                  48918 integrals
-  iter     9 energy = -128.4963497305 delta = 3.83300e-07
+  iter     9 energy = -128.4963497305 delta = 3.83301e-07
                  48918 integrals
   iter    10 energy = -128.4963497305 delta = 1.31280e-07
 
-  HOMO is     1 B2u =  -0.853040
+  HOMO is     1 B3u =  -0.853040
   LUMO is     3  Ag =   0.287355
 
   total scf energy = -128.4963497305
@@ -107,10 +108,10 @@
   Entered OBS A (GEBC) intermediates evaluator
     Entered (ip|jq) integrals evaluator (transform type ikjy)
       Memory available per node:      10000000 Bytes
-      Static memory used per node:    2122080 Bytes
-      Total memory used per node:     2440768 Bytes
-      Memory required for one pass:   2440768 Bytes
-      Minimum memory required:        2205616 Bytes
+      Static memory used per node:    1859936 Bytes
+      Total memory used per node:     2178624 Bytes
+      Memory required for one pass:   2178624 Bytes
+      Minimum memory required:        1943472 Bytes
       Number of passes:               1
       Batch size:                     4
       Beginning pass 1
@@ -128,6 +129,7 @@
       Begin fourth q.t.
       End of fourth q.t.
     Exited (ip|jq) integrals evaluator (transform type ikjy)
+    Detecting non-totally-symmetric integrals ... none
     Begin computation of intermediates
     Computing intermediates on 1 processors
     End of computation of intermediates
@@ -136,10 +138,10 @@
   Entered ABS A (GEBC) intermediates evaluator
     Entered (ik|jy) integrals evaluator (transform type ikjy)
       Memory available per node:      10000000 Bytes
-      Static memory used per node:    3745712 Bytes
-      Total memory used per node:     4708632 Bytes
-      Memory required for one pass:   4708632 Bytes
-      Minimum memory required:        3996312 Bytes
+      Static memory used per node:    3483568 Bytes
+      Total memory used per node:     4446488 Bytes
+      Memory required for one pass:   4446488 Bytes
+      Minimum memory required:        3734168 Bytes
       Number of passes:               1
       Batch size:                     4
       Beginning pass 1
@@ -158,6 +160,7 @@
       Begin fourth q.t.
       End of fourth q.t.
     Exited (ik|jy) integrals evaluator (transform type ikjy)
+    Detecting non-totally-symmetric integrals ... none
     Begin computation of intermediates
     Computing intermediates on 1 processors
     End of computation of intermediates
@@ -168,10 +171,10 @@
     Entered Coulomb matrix evaluator
       Entered (mn|xy) integrals evaluator (transform type ijxy)
         Memory available per node:      10000000 Bytes
-        Static memory used per node:    3748472 Bytes
-        Total memory used per node:     5218088 Bytes
-        Memory required for one pass:   5218088 Bytes
-        Minimum memory required:        4086408 Bytes
+        Static memory used per node:    3486328 Bytes
+        Total memory used per node:     4955944 Bytes
+        Memory required for one pass:   4955944 Bytes
+        Minimum memory required:        3824264 Bytes
         Number of passes:               1
         Batch size:                     5
         Beginning pass 1
@@ -192,6 +195,7 @@
         Begin fourth q.t.
         End of fourth q.t.
       Exited (mn|xy) integrals evaluator (transform type ijxy)
+      Detecting non-totally-symmetric integrals ... none
       Begin computation of Coulomb matrix
       Computing intermediates on 1 processors
       End of computation of Coulomb matrix
@@ -200,10 +204,10 @@
     Entered exchange matrix evaluator
       Entered (mx|ny) integrals evaluator (transform type ikjy)
         Memory available per node:      10000000 Bytes
-        Static memory used per node:    3748472 Bytes
-        Total memory used per node:     5811848 Bytes
-        Memory required for one pass:   5811848 Bytes
-        Minimum memory required:        4214728 Bytes
+        Static memory used per node:    3486328 Bytes
+        Total memory used per node:     5549704 Bytes
+        Memory required for one pass:   5549704 Bytes
+        Minimum memory required:        3952584 Bytes
         Number of passes:               1
         Batch size:                     5
         Beginning pass 1
@@ -221,16 +225,17 @@
         Begin fourth q.t.
         End of fourth q.t.
       Exited (mx|ny) integrals evaluator (transform type ikjy)
+      Detecting non-totally-symmetric integrals ... none
       Begin computation of exchange matrix
       Computing intermediates on 1 processors
       End of computation of exchange matrix
     Exited exchange matrix evaluator
     Entered (ia|jB_f) integrals evaluator (transform type ikjy)
       Memory available per node:      10000000 Bytes
-      Static memory used per node:    3024248 Bytes
-      Total memory used per node:     4647240 Bytes
-      Memory required for one pass:   4647240 Bytes
-      Minimum memory required:        3465528 Bytes
+      Static memory used per node:    2762104 Bytes
+      Total memory used per node:     4385096 Bytes
+      Memory required for one pass:   4385096 Bytes
+      Minimum memory required:        3203384 Bytes
       Number of passes:               1
       Batch size:                     4
       Beginning pass 1
@@ -249,6 +254,7 @@
       Begin fourth q.t.
       End of fourth q.t.
     Exited (ia|jB_f) integrals evaluator (transform type ikjy)
+    Detecting non-totally-symmetric integrals ... none
     Computing intermediates on 1 processors
   Exited A intermediate evaluator
 
@@ -263,80 +269,79 @@
   Singlet MBPT2-R12/A pair energies:
       i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
     -----   -----   ------------   ------------   ------------
-      1       1     -0.007607618   -0.003860928   -0.011468546
-      2       1     -0.008531603   -0.008432161   -0.016963764
-      2       2     -0.018168074   -0.007056603   -0.025224677
-      3       1     -0.008531603   -0.008432161   -0.016963764
-      3       2     -0.011353110   -0.004066309   -0.015419420
-      3       3     -0.018168074   -0.007056603   -0.025224677
-      4       1     -0.008531603   -0.008432161   -0.016963764
-      4       2     -0.011353110   -0.004066309   -0.015419420
-      4       3     -0.011353110   -0.004066309   -0.015419420
-      4       4     -0.018168074   -0.007056603   -0.025224677
+      1       1     -0.007607618   -0.003820068   -0.011427686
+      2       1     -0.008531603   -0.008391378   -0.016922981
+      2       2     -0.018168074   -0.006999743   -0.025167817
+      3       1     -0.008531603   -0.008391378   -0.016922981
+      3       2     -0.011353110   -0.004061381   -0.015414491
+      3       3     -0.018168074   -0.006999743   -0.025167817
+      4       1     -0.008531603   -0.008391378   -0.016922981
+      4       2     -0.011353110   -0.004061381   -0.015414491
+      4       3     -0.011353110   -0.004061381   -0.015414491
+      4       4     -0.018168074   -0.006999743   -0.025167817
 
   Triplet MBPT2-R12/A pair energies:
       i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
     -----   -----   ------------   ------------   ------------
-      2       1     -0.005219294   -0.001930345   -0.007149639
-      3       1     -0.005219294   -0.001930345   -0.007149639
-      3       2     -0.023149882   -0.004556880   -0.027706763
-      4       1     -0.005219294   -0.001930345   -0.007149639
-      4       2     -0.023149882   -0.004556880   -0.027706763
-      4       3     -0.023149882   -0.004556880   -0.027706763
+      2       1     -0.005219294   -0.001988239   -0.007207533
+      3       1     -0.005219294   -0.001988239   -0.007207533
+      3       2     -0.023149882   -0.004553281   -0.027703163
+      4       1     -0.005219294   -0.001988239   -0.007207533
+      4       2     -0.023149882   -0.004553281   -0.027703163
+      4       3     -0.023149882   -0.004553281   -0.027703163
 
   Singlet MP2 correlation energy [au]:            -0.121765980140
   Triplet MP2 correlation energy [au]:            -0.085107528406
-  Singlet (MP2)-R12/ A correlation energy [au]:   -0.062526148631
-  Triplet (MP2)-R12/ A correlation energy [au]:   -0.019461675841
-  Singlet MP2-R12/ A correlation energy [au]:     -0.184292128772
-  Triplet MP2-R12/ A correlation energy [au]:     -0.104569204246
+  Singlet (MP2)-R12/ A correlation energy [au]:   -0.062177575226
+  Triplet (MP2)-R12/ A correlation energy [au]:   -0.019624560781
+  Singlet MP2-R12/ A correlation energy [au]:     -0.183943555366
+  Triplet MP2-R12/ A correlation energy [au]:     -0.104732089187
 
   RHF energy [au]:                           -128.496349730541
   MP2 correlation energy [au]:                 -0.206873508546
-  (MBPT2)-R12/ A correlation energy [au]:      -0.081987824472
-  MBPT2-R12/ A correlation energy [au]:        -0.288861333018
-  MBPT2-R12/ A energy [au]:                  -128.785211063559
+  (MBPT2)-R12/ A correlation energy [au]:      -0.081802136008
+  MBPT2-R12/ A correlation energy [au]:        -0.288675644554
+  MBPT2-R12/ A energy [au]:                  -128.785025375094
 
 
   Singlet MBPT2-R12/A' pair energies:
       i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
     -----   -----   ------------   ------------   ------------
-      1       1     -0.007607618   -0.003732639   -0.011340257
-      2       1     -0.008531603   -0.008443800   -0.016975403
-      2       2     -0.018168074   -0.007291483   -0.025459557
-      3       1     -0.008531603   -0.008443800   -0.016975403
-      3       2     -0.011353110   -0.004077311   -0.015430421
-      3       3     -0.018168074   -0.007291483   -0.025459557
-      4       1     -0.008531603   -0.008443800   -0.016975403
-      4       2     -0.011353110   -0.004077311   -0.015430421
-      4       3     -0.011353110   -0.004077311   -0.015430421
-      4       4     -0.018168074   -0.007291483   -0.025459557
+      1       1     -0.007607618   -0.003693843   -0.011301461
+      2       1     -0.008531603   -0.008437902   -0.016969505
+      2       2     -0.018168074   -0.007255986   -0.025424061
+      3       1     -0.008531603   -0.008437902   -0.016969505
+      3       2     -0.011353110   -0.004105694   -0.015458804
+      3       3     -0.018168074   -0.007255986   -0.025424061
+      4       1     -0.008531603   -0.008437902   -0.016969505
+      4       2     -0.011353110   -0.004105694   -0.015458804
+      4       3     -0.011353110   -0.004105694   -0.015458804
+      4       4     -0.018168074   -0.007255986   -0.025424061
 
   Triplet MBPT2-R12/A' pair energies:
       i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
     -----   -----   ------------   ------------   ------------
-      2       1     -0.005219294   -0.001933662   -0.007152956
-      3       1     -0.005219294   -0.001933662   -0.007152956
-      3       2     -0.023149882   -0.004570088   -0.027719970
-      4       1     -0.005219294   -0.001933662   -0.007152956
-      4       2     -0.023149882   -0.004570088   -0.027719970
-      4       3     -0.023149882   -0.004570088   -0.027719970
+      2       1     -0.005219294   -0.002001975   -0.007221269
+      3       1     -0.005219294   -0.002001975   -0.007221269
+      3       2     -0.023149882   -0.004606531   -0.027756414
+      4       1     -0.005219294   -0.002001975   -0.007221269
+      4       2     -0.023149882   -0.004606531   -0.027756414
+      4       3     -0.023149882   -0.004606531   -0.027756414
 
   Singlet MP2 correlation energy [au]:            -0.121765980140
   Triplet MP2 correlation energy [au]:            -0.085107528406
-  Singlet (MP2)-R12/A' correlation energy [au]:   -0.063170419831
-  Triplet (MP2)-R12/A' correlation energy [au]:   -0.019511247999
-  Singlet MP2-R12/A' correlation energy [au]:     -0.184936399971
-  Triplet MP2-R12/A' correlation energy [au]:     -0.104618776404
+  Singlet (MP2)-R12/A' correlation energy [au]:   -0.063092589866
+  Triplet (MP2)-R12/A' correlation energy [au]:   -0.019825519369
+  Singlet MP2-R12/A' correlation energy [au]:     -0.184858570006
+  Triplet MP2-R12/A' correlation energy [au]:     -0.104933047774
 
   RHF energy [au]:                           -128.496349730541
   MP2 correlation energy [au]:                 -0.206873508546
-  (MBPT2)-R12/A' correlation energy [au]:      -0.082681667829
-  MBPT2-R12/A' correlation energy [au]:        -0.289555176375
-  MBPT2-R12/A' energy [au]:                  -128.785904906916
+  (MBPT2)-R12/A' correlation energy [au]:      -0.082918109235
+  MBPT2-R12/A' correlation energy [au]:        -0.289791617781
+  MBPT2-R12/A' energy [au]:                  -128.786141348322
 
-
-  Value of the MolecularEnergy: -128.7859049069
+Value of the MolecularEnergy: -128.7861413483
 
   MBPT2_R12:
     GBC assumed: true
@@ -346,7 +351,7 @@
     Spin-adapted algorithm: true
     How to Store Transformed Integrals: posix
 
-    Transformed Integrals file: mp2r12ap_+gbc.r12ints.dat
+    Transformed Integrals file suffix: ./methods_mp2r12ap_+gbc.r12ints
 
     Auxiliary Basis Set (ABS):
       GaussianBasisSet:
@@ -364,7 +369,7 @@
 
     MBPT2:
       Function Parameters:
-        value_accuracy    = 4.203562e-08 (1.000000e-06) (computed)
+        value_accuracy    = 4.203565e-08 (1.000000e-06) (computed)
         gradient_accuracy = 0.000000e+00 (1.000000e-06)
         hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
@@ -380,14 +385,15 @@
         Atomic Masses:
            19.99244
 
-      GaussianBasisSet:
-        nbasis = 23
-        nshell = 8
-        nprim  = 17
-        name = "aug-cc-pVDZ"
+      Electronic basis:
+        GaussianBasisSet:
+          nbasis = 23
+          nshell = 8
+          nprim  = 17
+          name = "aug-cc-pVDZ"
       Reference Wavefunction:
         Function Parameters:
-          value_accuracy    = 4.203562e-10 (1.000000e-08) (computed)
+          value_accuracy    = 4.203565e-10 (1.000000e-08) (computed)
           gradient_accuracy = 0.000000e+00 (1.000000e-06)
           hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
@@ -403,11 +409,12 @@
           Atomic Masses:
              19.99244
 
-        GaussianBasisSet:
-          nbasis = 23
-          nshell = 8
-          nprim  = 17
-          name = "aug-cc-pVDZ"
+        Electronic basis:
+          GaussianBasisSet:
+            nbasis = 23
+            nshell = 8
+            nprim  = 17
+            name = "aug-cc-pVDZ"
         SCF Parameters:
           maxiter = 40
           density_reset_frequency = 10
@@ -420,66 +427,66 @@
 
 
                                        CPU  Wall
-mpqc:                                24.07 24.07
-  calc:                              23.97 23.97
-    mp2-r12/a energy:                23.97 23.97
-      A intermediate:                13.86 13.86
+mpqc:                                73.48 80.45
+  calc:                              73.17 80.08
+    mp2-r12/a energy:                73.17 80.08
+      A intermediate:                42.15 45.41
         MO ints retrieve:             0.00  0.00
-        coulomb:                      4.44  4.44
+        coulomb:                     13.73 14.83
           MO ints retrieve:           0.00  0.00
-          tbint_tform_ijxy (mn|xy):   4.43  4.43
-            mp2-r12/a passes:         4.29  4.29
-              3. q.t.:                0.04  0.04
-              4. q.t.:                0.00  0.00
-              MO ints store:          0.00  0.00
-              ints+1qt+2qt:           4.23  4.23
-        exchange:                     4.86  4.86
-          MO ints retrieve:           0.00  0.00
-          tbint_tform_ikjy (mx|ny):   4.85  4.85
-            mp2-r12/a passes:         4.84  4.84
-              4. q.t.:                0.00  0.00
-              MO ints store:          0.00  0.00
-              ints+1qt+2qt+3qt:       4.83  4.83
-        tbint_tform_ikjy (ia|jB_f):   4.51  4.51
-          mp2-r12/a passes:           4.49  4.49
-            4. q.t.:                  0.00  0.00
+          tbint_tform_ijxy (mn|xy):  13.67 14.72
+            mp2-r12/a passes:        13.33 14.31
+              3. q.t.:                0.16  0.21
+              4. q.t.:                0.01  0.01
+              MO ints store:          0.01  0.01
+              ints+1qt+2qt:          13.13 14.06
+        exchange:                    14.37 15.55
+          MO ints retrieve:           0.01  0.00
+          tbint_tform_ikjy (mx|ny):  14.31 15.35
+            mp2-r12/a passes:        14.30 15.33
+              4. q.t.:                0.01  0.01
+              MO ints store:          0.01  0.01
+              ints+1qt+2qt+3qt:      14.25 15.29
+        tbint_tform_ikjy (ia|jB_f):  13.85 14.82
+          mp2-r12/a passes:          13.80 14.77
+            4. q.t.:                  0.01  0.01
             MO ints store:            0.00  0.00
-            ints+1qt+2qt+3qt:         4.49  4.49
-      R intermediate:                 0.00  0.00
+            ints+1qt+2qt+3qt:        13.78 14.75
+      R intermediate:                 0.01  0.00
         MO ints retrieve:             0.00  0.00
-      mp2 t2 amplitudes:              0.01  0.01
+      mp2 t2 amplitudes:              0.02  0.02
         MO ints retrieve:             0.00  0.00
-      mp2-r12/a pair energies:        0.00  0.00
-      mp2-r12/a' pair energies:       0.31  0.31
-      mp2-r12a intermeds:             5.19  5.18
-        intermediates:                0.03  0.03
-          MO ints contraction:        0.01  0.01
-          MO ints retrieve:           0.00  0.00
-        tbint_tform_ikjy (ik|jy):     4.82  4.82
-          mp2-r12/a passes:           4.69  4.68
-            4. q.t.:                  0.08  0.08
+      mp2-r12/a pair energies:        0.01  0.01
+      mp2-r12/a' pair energies:       0.82  0.87
+      mp2-r12a intermeds:            15.72 16.95
+        intermediates:                0.10  0.12
+          MO ints contraction:        0.06  0.05
+          MO ints retrieve:           0.01  0.01
+        tbint_tform_ikjy (ik|jy):    14.68 15.62
+          mp2-r12/a passes:          14.31 15.24
+            4. q.t.:                  0.15  0.16
+            MO ints store:            0.00  0.01
+            ints+1qt+2qt+3qt:        14.14 15.05
+        tbint_tform_ikjy (ip|jq):     0.93  1.03
+          mp2-r12/a passes:           0.92  1.02
+            4. q.t.:                  0.00  0.01
             MO ints store:            0.00  0.00
-            ints+1qt+2qt+3qt:         4.60  4.60
-        tbint_tform_ikjy (ip|jq):     0.33  0.33
-          mp2-r12/a passes:           0.33  0.33
-            4. q.t.:                  0.00  0.00
-            MO ints store:            0.00  0.00
-            ints+1qt+2qt+3qt:         0.33  0.33
-      vector:                         1.03  1.03
-        density:                      0.01  0.01
-        evals:                        0.01  0.01
-        extrap:                       0.02  0.02
-        fock:                         0.99  0.99
+            ints+1qt+2qt+3qt:         0.92  1.00
+      vector:                         2.80  3.64
+        density:                      0.02  0.01
+        evals:                        0.01  0.03
+        extrap:                       0.05  0.05
+        fock:                         2.66  3.51
           accum:                      0.00  0.00
-          ao_gmat:                    0.83  0.83
-            start thread:             0.83  0.83
+          ao_gmat:                    2.14  2.92
+            start thread:             2.13  2.91
             stop thread:              0.00  0.00
           init pmax:                  0.00  0.00
-          local data:                 0.00  0.00
-          setup:                      0.07  0.07
+          local data:                 0.01  0.01
+          setup:                      0.24  0.27
           sum:                        0.00  0.00
-          symm:                       0.07  0.08
-  input:                              0.09  0.09
+          symm:                       0.24  0.28
+  input:                              0.31  0.32
 
-  End Time: Sat Jan 29 23:22:38 2005
+  End Time: Tue Aug  2 13:56:43 2005
 

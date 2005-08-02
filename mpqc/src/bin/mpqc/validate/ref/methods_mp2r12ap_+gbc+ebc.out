@@ -2,9 +2,9 @@
                     MPQC: Massively Parallel Quantum Chemistry
                                 Version 2.3.0-alpha
 
-  Machine:    i686-pc-linux-gnu
-  User:       evaleev@tool.chemistry.gatech.edu
-  Start Time: Sat Jan 29 23:22:04 2005
+  Machine:    powerpc-apple-darwin6.8
+  User:       evaleev@v95-9.ornl-visitor.org
+  Start Time: Tue Aug  2 13:47:20 2005
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -13,9 +13,9 @@
 
   Using IntegralV3 by default for molecular integrals evaluation
 
-  Reading file /home/tool/evaleev/MPQC/SC.recent/x86-linux/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /Users/evaleev/Development/QuantumChemistry/MPQC/recent/SC/lib/atominfo.kv.
   Molecule: setting point group to d2h
-  Reading file /home/tool/evaleev/MPQC/SC.recent/x86-linux/share/mpqc/2.3.0-alpha/basis/aug-cc-pvdz.kv.
+  Reading file /Users/evaleev/Development/QuantumChemistry/MPQC/recent/SC/lib/basis/aug-cc-pvdz.kv.
 
   CLSCF::init: total charge = 0
 
@@ -38,8 +38,8 @@
 
   MPQC options:
     matrixkit     = <ReplSCMatrixKit>
-    filename      = mp2r12ap_+gbc+ebc
-    restart_file  = mp2r12ap_+gbc+ebc.ckpt
+    filename      = methods_mp2r12ap_+gbc+ebc
+    restart_file  = methods_mp2r12ap_+gbc+ebc.ckpt
     restart       = yes
     checkpoint    = no
     savestate     = no
@@ -50,12 +50,13 @@
     print_mole    = yes
     print_timings = yes
 
+  
   SCF::compute: energy accuracy = 1.0000000e-08
 
-  integral intermediate storage = 1974576 bytes
-  integral cache = 22021008 bytes
   nuclear repulsion energy =    0.0000000000
 
+  integral intermediate storage = 1712432 bytes
+  integral cache = 22283152 bytes
                  48918 integrals
   iter     1 energy = -122.5194031208 delta = 3.09458e-01
                  48918 integrals
@@ -73,11 +74,11 @@
                  48918 integrals
   iter     8 energy = -128.4963497305 delta = 8.16488e-06
                  48918 integrals
-  iter     9 energy = -128.4963497305 delta = 3.83300e-07
+  iter     9 energy = -128.4963497305 delta = 3.83301e-07
                  48918 integrals
   iter    10 energy = -128.4963497305 delta = 1.31280e-07
 
-  HOMO is     1 B2u =  -0.853040
+  HOMO is     1 B3u =  -0.853040
   LUMO is     3  Ag =   0.287355
 
   total scf energy = -128.4963497305
@@ -107,10 +108,10 @@
   Entered OBS A (GEBC) intermediates evaluator
     Entered (ip|jq) integrals evaluator (transform type ikjy)
       Memory available per node:      10000000 Bytes
-      Static memory used per node:    2122080 Bytes
-      Total memory used per node:     2440768 Bytes
-      Memory required for one pass:   2440768 Bytes
-      Minimum memory required:        2205616 Bytes
+      Static memory used per node:    1859936 Bytes
+      Total memory used per node:     2178624 Bytes
+      Memory required for one pass:   2178624 Bytes
+      Minimum memory required:        1943472 Bytes
       Number of passes:               1
       Batch size:                     4
       Beginning pass 1
@@ -128,6 +129,7 @@
       Begin fourth q.t.
       End of fourth q.t.
     Exited (ip|jq) integrals evaluator (transform type ikjy)
+    Detecting non-totally-symmetric integrals ... none
     Begin computation of intermediates
     Computing intermediates on 1 processors
     End of computation of intermediates
@@ -136,10 +138,10 @@
   Entered ABS A (GEBC) intermediates evaluator
     Entered (ik|jy) integrals evaluator (transform type ikjy)
       Memory available per node:      10000000 Bytes
-      Static memory used per node:    3745712 Bytes
-      Total memory used per node:     4708632 Bytes
-      Memory required for one pass:   4708632 Bytes
-      Minimum memory required:        3996312 Bytes
+      Static memory used per node:    3483568 Bytes
+      Total memory used per node:     4446488 Bytes
+      Memory required for one pass:   4446488 Bytes
+      Minimum memory required:        3734168 Bytes
       Number of passes:               1
       Batch size:                     4
       Beginning pass 1
@@ -158,6 +160,7 @@
       Begin fourth q.t.
       End of fourth q.t.
     Exited (ik|jy) integrals evaluator (transform type ikjy)
+    Detecting non-totally-symmetric integrals ... none
     Begin computation of intermediates
     Computing intermediates on 1 processors
     End of computation of intermediates
@@ -234,12 +237,11 @@
 
   RHF energy [au]:                           -128.496349730541
   MP2 correlation energy [au]:                 -0.206873508546
-  (MBPT2)-R12/A' correlation energy [au]:      -0.084913940451
+  (MBPT2)-R12/A' correlation energy [au]:      -0.084913940452
   MBPT2-R12/A' correlation energy [au]:        -0.291787448997
   MBPT2-R12/A' energy [au]:                  -128.788137179538
 
-
-  Value of the MolecularEnergy: -128.7881371795
+Value of the MolecularEnergy: -128.7881371795
 
   MBPT2_R12:
     GBC assumed: true
@@ -249,7 +251,7 @@
     Spin-adapted algorithm: true
     How to Store Transformed Integrals: posix
 
-    Transformed Integrals file: mp2r12ap_+gbc+ebc.r12ints.dat
+    Transformed Integrals file suffix: ./methods_mp2r12ap_+gbc+ebc.r12ints
 
     Auxiliary Basis Set (ABS):
       GaussianBasisSet:
@@ -267,7 +269,7 @@
 
     MBPT2:
       Function Parameters:
-        value_accuracy    = 4.203562e-08 (1.000000e-06) (computed)
+        value_accuracy    = 4.203565e-08 (1.000000e-06) (computed)
         gradient_accuracy = 0.000000e+00 (1.000000e-06)
         hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
@@ -283,14 +285,15 @@
         Atomic Masses:
            19.99244
 
-      GaussianBasisSet:
-        nbasis = 23
-        nshell = 8
-        nprim  = 17
-        name = "aug-cc-pVDZ"
+      Electronic basis:
+        GaussianBasisSet:
+          nbasis = 23
+          nshell = 8
+          nprim  = 17
+          name = "aug-cc-pVDZ"
       Reference Wavefunction:
         Function Parameters:
-          value_accuracy    = 4.203562e-10 (1.000000e-08) (computed)
+          value_accuracy    = 4.203565e-10 (1.000000e-08) (computed)
           gradient_accuracy = 0.000000e+00 (1.000000e-06)
           hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
@@ -306,11 +309,12 @@
           Atomic Masses:
              19.99244
 
-        GaussianBasisSet:
-          nbasis = 23
-          nshell = 8
-          nprim  = 17
-          name = "aug-cc-pVDZ"
+        Electronic basis:
+          GaussianBasisSet:
+            nbasis = 23
+            nshell = 8
+            nprim  = 17
+            name = "aug-cc-pVDZ"
         SCF Parameters:
           maxiter = 40
           density_reset_frequency = 10
@@ -322,41 +326,41 @@
           docc = [ 2 0 0 0 0 1 1 1 ]
 
 
-                                    CPU Wall
-mpqc:                              9.97 9.96
-  calc:                            9.87 9.87
-    mp2-r12/a energy:              9.87 9.87
-      mp2-r12/a pair energies:     0.00 0.00
-      mp2-r12/a' pair energies:    0.01 0.01
-      mp2-r12a intermeds:          5.26 5.25
-        intermediates:             0.03 0.03
-          MO ints contraction:     0.01 0.02
-          MO ints retrieve:        0.01 0.00
-        tbint_tform_ikjy (ik|jy):  4.89 4.89
-          mp2-r12/a passes:        4.76 4.75
-            4. q.t.:               0.07 0.07
-            MO ints store:         0.00 0.00
-            ints+1qt+2qt+3qt:      4.68 4.67
-        tbint_tform_ikjy (ip|jq):  0.33 0.33
-          mp2-r12/a passes:        0.33 0.33
-            4. q.t.:               0.00 0.00
-            MO ints store:         0.00 0.00
-            ints+1qt+2qt+3qt:      0.32 0.32
-      vector:                      1.03 1.03
-        density:                   0.01 0.01
-        evals:                     0.01 0.01
-        extrap:                    0.01 0.02
-        fock:                      0.98 0.98
-          accum:                   0.00 0.00
-          ao_gmat:                 0.83 0.83
-            start thread:          0.83 0.82
-            stop thread:           0.00 0.00
-          init pmax:               0.00 0.00
-          local data:              0.00 0.00
-          setup:                   0.07 0.07
-          sum:                     0.00 0.00
-          symm:                    0.07 0.08
-  input:                           0.09 0.09
+                                     CPU  Wall
+mpqc:                              31.03 51.23
+  calc:                            30.72 50.87
+    mp2-r12/a energy:              30.72 50.87
+      mp2-r12/a pair energies:      0.01  0.01
+      mp2-r12/a' pair energies:     0.03  0.03
+      mp2-r12a intermeds:          16.37 25.23
+        intermediates:              0.08  0.13
+          MO ints contraction:      0.06  0.07
+          MO ints retrieve:         0.00  0.02
+        tbint_tform_ikjy (ik|jy):  15.25 23.55
+          mp2-r12/a passes:        14.88 22.87
+            4. q.t.:                0.16  0.25
+            MO ints store:          0.01  0.01
+            ints+1qt+2qt+3qt:      14.69 22.59
+        tbint_tform_ikjy (ip|jq):   1.02  1.46
+          mp2-r12/a passes:         1.02  1.45
+            4. q.t.:                0.00  0.00
+            MO ints store:          0.01  0.00
+            ints+1qt+2qt+3qt:       1.01  1.43
+      vector:                       2.73  3.37
+        density:                    0.01  0.01
+        evals:                      0.04  0.03
+        extrap:                     0.03  0.05
+        fock:                       2.60  3.22
+          accum:                    0.00  0.00
+          ao_gmat:                  2.09  2.45
+            start thread:           2.08  2.45
+            stop thread:            0.00  0.00
+          init pmax:                0.00  0.00
+          local data:               0.00  0.01
+          setup:                    0.24  0.26
+          sum:                      0.00  0.00
+          symm:                     0.24  0.48
+  input:                            0.31  0.36
 
-  End Time: Sat Jan 29 23:22:14 2005
+  End Time: Tue Aug  2 13:48:11 2005
 

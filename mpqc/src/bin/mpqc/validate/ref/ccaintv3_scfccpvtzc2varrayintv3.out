@@ -3,8 +3,8 @@
                                 Version 2.3.0-alpha
 
   Machine:    i686-pc-linux-gnu
-  User:       jpkenny@kenny.ca.sandia.gov
-  Start Time: Wed Jul 20 15:45:21 2005
+  User:       jpkenny@kenny-laptop
+  Start Time: Wed Aug  3 10:26:27 2005
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -12,11 +12,11 @@
   Total number of processors = 1
 
   Initializing CCA framework with args: 
-  --path /home/jpkenny/mpqcverify-tmp/build/ins/lib/cca --load MPQC.IntegralEvaluatorFactory
+  --path /home/jpkenny/src/mpqc-clean/mpqc.install/lib/cca --load MPQC.IntegralEvaluatorFactory
 
   Using IntegralV3 by default for molecular integrals evaluation
 
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
 
   IntCoorGen: generated 3 coordinates.
   Forming optimization coordinates:
@@ -24,24 +24,24 @@
       expected 3 coordinates
       found 2 variable coordinates
       found 0 constant coordinates
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/basis/cc-pvtz.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/basis/cc-pvtz.kv.
 
   CLSCF::init: total charge = 0
 
   Starting from core Hamiltonian guess
 
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
   Using symmetric orthogonalization.
   n(basis):            23     7    17    11
   Maximum orthogonalization residual = 5.05277
   Minimum orthogonalization residual = 0.00246738
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
   docc = [ 3 0 1 1 ]
   nbasis = 58
@@ -50,8 +50,8 @@
 
   MPQC options:
     matrixkit     = <ReplSCMatrixKit>
-    filename      = ccaintv3_scfccpvtzc2varrayintv3
-    restart_file  = ccaintv3_scfccpvtzc2varrayintv3.ckpt
+    filename      = run/ccaintv3_scfccpvtzc2varrayintv3
+    restart_file  = run/ccaintv3_scfccpvtzc2varrayintv3.ckpt
     restart       = no
     checkpoint    = no
     savestate     = no
@@ -66,48 +66,48 @@
 
   nuclear repulsion energy =    9.1571164588
 
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
-  Reading file /home/jpkenny/mpqcverify-tmp/build/ins/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Reading file /home/jpkenny/src/mpqc-clean/mpqc.install/share/mpqc/2.3.0-alpha/atominfo.kv.
   Molecule: setting point group to c2v
   integral intermediate storage = 0 bytes
   integral cache = 31972624 bytes
                 897487 integrals
-  iter     1 energy =  -74.2242918825 delta = 4.29859e-02
+  iter     1 energy =  -74.2242940554 delta = 4.29859e-02
                 897487 integrals
-  iter     2 energy =  -75.9551073367 delta = 2.89724e-02
+  iter     2 energy =  -75.9551104986 delta = 2.89724e-02
                 897487 integrals
-  iter     3 energy =  -76.0278461179 delta = 1.05420e-02
+  iter     3 energy =  -76.0278492433 delta = 1.05420e-02
                 897487 integrals
-  iter     4 energy =  -76.0531040710 delta = 4.15355e-03
+  iter     4 energy =  -76.0531071114 delta = 4.15355e-03
                 897487 integrals
-  iter     5 energy =  -76.0563050712 delta = 1.34849e-03
+  iter     5 energy =  -76.0563081120 delta = 1.34849e-03
                 897487 integrals
-  iter     6 energy =  -76.0564998973 delta = 5.58013e-04
+  iter     6 energy =  -76.0565029380 delta = 5.58014e-04
                 897487 integrals
-  iter     7 energy =  -76.0565206698 delta = 2.11636e-04
+  iter     7 energy =  -76.0565237105 delta = 2.11636e-04
                 897487 integrals
-  iter     8 energy =  -76.0565209904 delta = 1.66517e-05
+  iter     8 energy =  -76.0565240311 delta = 1.66516e-05
                 897487 integrals
-  iter     9 energy =  -76.0565210106 delta = 5.41280e-06
+  iter     9 energy =  -76.0565240513 delta = 5.41280e-06
 
   HOMO is     1  B2 =  -0.502536
   LUMO is     4  A1 =   0.142729
 
-  total scf energy =  -76.0565210106
+  total scf energy =  -76.0565240513
 
-  Value of the MolecularEnergy:  -76.0565210106
+  Value of the MolecularEnergy:  -76.0565240513
 
   Function Parameters:
-    value_accuracy    = 8.015071e-07 (1.000000e-06) (computed)
+    value_accuracy    = 8.015097e-07 (1.000000e-06) (computed)
     gradient_accuracy = 0.000000e+00 (1.000000e-06)
     hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
@@ -172,28 +172,28 @@
     ndocc = 5
     docc = [ 3 0 1 1 ]
 
-  The following keywords in "ccaintv3_scfccpvtzc2varrayintv3.in" were ignored:
+  The following keywords in "/home/jpkenny/src/mpqc-clean/mpqc/src/bin/mpqc/validate/ref/ccaintv3_scfccpvtzc2varrayintv3.in" were ignored:
     mpqc:mole:multiplicity
 
-                          CPU Wall
-mpqc:                    4.31 4.30
-  NAO:                   0.05 0.05
-  calc:                  3.88 3.88
-    vector:              3.88 3.88
-      density:           0.00 0.00
-      evals:             0.01 0.01
-      extrap:            0.01 0.01
-      fock:              3.59 3.59
-        accum:           0.00 0.00
-        ao_gmat:         3.49 3.49
-          start thread:  3.49 3.48
-          stop thread:   0.00 0.00
-        init pmax:       0.00 0.00
-        local data:      0.01 0.01
-        setup:           0.04 0.04
-        sum:             0.00 0.00
-        symm:            0.04 0.05
-  input:                 0.37 0.37
+                           CPU  Wall
+mpqc:                    12.34 12.84
+  NAO:                    0.17  0.17
+  calc:                  11.31 11.40
+    vector:              11.31 11.40
+      density:            0.02  0.02
+      evals:              0.02  0.02
+      extrap:             0.04  0.04
+      fock:              10.51 10.52
+        accum:            0.00  0.00
+        ao_gmat:         10.20 10.20
+          start thread:  10.20 10.20
+          stop thread:    0.00  0.00
+        init pmax:        0.00  0.00
+        local data:       0.02  0.02
+        setup:            0.12  0.12
+        sum:              0.00  0.00
+        symm:             0.15  0.15
+  input:                  0.85  1.26
 
-  End Time: Wed Jul 20 15:45:25 2005
+  End Time: Wed Aug  3 10:26:40 2005
 

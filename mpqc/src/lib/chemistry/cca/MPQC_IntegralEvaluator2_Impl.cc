@@ -238,6 +238,14 @@ throw ()
   if( package_ == "intv3") reorder_intv3( shellnum1, shellnum2 );
 #endif
 
+  // debug
+  //sc::GaussianShell &s1 = bs1_->shell(shellnum1);
+  //sc::GaussianShell &s2 = bs2_->shell(shellnum2);
+  //int nfunc = s1.nfunction() * s2.nfunction();
+  //cout << "buffer " << shellnum1 << " " << shellnum2 << endl; 
+  //for( int i=0; i<nfunc; ++i)
+  //  cout << sc_buffer_[i] << endl;
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.compute)
 }
 

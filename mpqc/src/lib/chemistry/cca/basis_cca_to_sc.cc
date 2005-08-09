@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/molecule/atominfo.h>
 #include <Chemistry_QC_GaussianBasis_Molecular.hh>
@@ -30,8 +31,8 @@ Ref<GaussianBasisSet> basis_cca_to_sc( Molecular &cca_basis ) {
     << "  unit = bohr\n"
     << "  {n atoms geometry } = {\n";
   for( int i=0; i<cca_mol.get_n_atom(); ++i ) {
-    input
-      << "\t" << i << "\t" << cca_mol.get_atomic_number(i)
+    input << setprecision(16);
+    input << "\t" << i << "\t" << cca_mol.get_atomic_number(i)
       << "\t[  " << cca_mol.get_cart_coor(i,0)*conv
       << "  " << cca_mol.get_cart_coor(i,1)*conv
       << "  " << cca_mol.get_cart_coor(i,2)*conv << "  ]\n";

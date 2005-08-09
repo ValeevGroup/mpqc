@@ -15,6 +15,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 #include <MPQC_Chemistry_QC_Model.hh>
 #include <Chemistry_MoleculeFactory.hh>
 
@@ -280,8 +281,8 @@ throw (
     << "    unit = bohr" << std::endl
     << "    {n atoms geometry } = {" << std::endl;
   for(i=0;i<molecule_.get_n_atom();++i) {
-    input
-      << "\t" << i << "\t" << molecule_.get_atomic_number(i)
+    input << setprecision(16);
+    input << "\t" << i << "\t" << molecule_.get_atomic_number(i)
       << "\t[  " << molecule_.get_cart_coor(i,0)*conv
       << "  " << molecule_.get_cart_coor(i,1)*conv
       << "  " << molecule_.get_cart_coor(i,2)*conv << "  ]\n";

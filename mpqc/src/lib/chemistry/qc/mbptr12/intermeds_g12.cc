@@ -143,7 +143,7 @@ R12IntEval::init_intermeds_g12_()
         const int kk = k + nfzc;
         const int ll = l + nfzc;
         const int kkll = kk*nocc+ll;
-        const int llkk = kk*nocc+ll;
+        const int llkk = ll*nocc+kk;
         
         const double V_ijkl_ab = ijxy_buf_f12eri[kkll];
         const double V_ijlk_ab = ijxy_buf_f12eri[llkk];

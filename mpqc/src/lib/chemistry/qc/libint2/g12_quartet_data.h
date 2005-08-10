@@ -163,13 +163,13 @@ inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double 
   int_shell2_->coefficient_unnorm(quartet_info_.gc2,p2)*
   int_shell3_->coefficient_unnorm(quartet_info_.gc3,p3)*
   int_shell4_->coefficient_unnorm(quartet_info_.gc4,p4);
-  Data->__ss_r_12_up_0_times_G12_ss___up_0[0] = rorg * sqrt_rorg * pair12->ovlp * pair34->ovlp * exp(-gamma*rorg*PQ2) * pfac_norm;
-  Data->__ss_r_12_up_2_times_G12_ss___up_0[0] = (1.5 + T) * Data->__ss_r_12_up_0_times_G12_ss___up_0[0] * oorhog;
+  Data->LIBINT_T_SS_K0G12_SS_0[0] = rorg * sqrt_rorg * pair12->ovlp * pair34->ovlp * exp(-gamma*rorg*PQ2) * pfac_norm;
+  Data->LIBINT_T_SS_K2G12_SS_0[0] = (1.5 + T) * Data->LIBINT_T_SS_K0G12_SS_0[0] * oorhog;
 
   //
   // compute (00|-1|00)^m from Fj(x)
   //
-  double pfac = 2.0 * sqrt(rhog*M_1_PI) * Data->__ss_r_12_up_0_times_G12_ss___up_0[0] * scale;
+  double pfac = 2.0 * sqrt(rhog*M_1_PI) * Data->LIBINT_T_SS_K0G12_SS_0[0] * scale;
 
   const double *F;
   if(T < small_T){ 

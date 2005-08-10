@@ -429,9 +429,9 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                       }
                     }
                   else {
-                    prim_ints_[TwoBodyInt::r12_m1_g12][buffer_offset] += Libint_.__ss_r_12_up__minus_1_times_G12_ss___up_0[0];
-                    prim_ints_[TwoBodyInt::r12_0_g12][buffer_offset] += Libint_.__ss_r_12_up_0_times_G12_ss___up_0[0];
-                    prim_ints_[TwoBodyInt::g12t1g12][buffer_offset] += Libint_.__ss_r_12_up_2_times_G12_ss___up_0[0];
+                    prim_ints_[TwoBodyInt::r12_m1_g12][buffer_offset] += Libint_.LIBINT_T_SS_Km1G12_SS(0)[0];
+                    prim_ints_[TwoBodyInt::r12_0_g12][buffer_offset] += Libint_.LIBINT_T_SS_K0G12_SS_0[0];
+                    prim_ints_[TwoBodyInt::g12t1g12][buffer_offset] += Libint_.LIBINT_T_SS_K2G12_SS_0[0];
                     prim_ints_[TwoBodyInt::t1g12][buffer_offset] += Libint_.targets[0][0];
                     prim_ints_[TwoBodyInt::t2g12][buffer_offset] += Libint_.targets[1][0];
                     }
@@ -447,7 +447,7 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 	              prim_ints_[TwoBodyInt::eri][buffer_offset + ijkl] += (double) prim_ints[ijkl];
                   }
                   else {
-                    prim_ints_[TwoBodyInt::eri][buffer_offset] += Libint_.__ss_1_over_r_12_ss___up_0[0];
+                    prim_ints_[TwoBodyInt::eri][buffer_offset] += Libint_.LIBINT_T_SS_EREP_SS(0)[0];
                   }
 
                   }}}}

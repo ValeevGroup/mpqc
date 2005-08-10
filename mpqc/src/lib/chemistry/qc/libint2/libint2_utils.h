@@ -32,32 +32,48 @@ namespace {
   typedef Libint_t prim_data;
   inline void assign_FjT(prim_data* Data, const int& jmax, const double* FjT, const double& scale) {
     switch (jmax) {
+      case 20:
+      Data->LIBINT_T_SS_EREP_SS(20)[0] = FjT[20] * scale;
+      case 19:
+      Data->LIBINT_T_SS_EREP_SS(19)[0] = FjT[19] * scale;
+      case 18:
+      Data->LIBINT_T_SS_EREP_SS(18)[0] = FjT[18] * scale;
+      case 17:
+      Data->LIBINT_T_SS_EREP_SS(17)[0] = FjT[17] * scale;
+      case 16:
+      Data->LIBINT_T_SS_EREP_SS(16)[0] = FjT[16] * scale;
+      case 15:
+      Data->LIBINT_T_SS_EREP_SS(15)[0] = FjT[15] * scale;
+      case 14:
+      Data->LIBINT_T_SS_EREP_SS(14)[0] = FjT[14] * scale;
+      case 13:
+      Data->LIBINT_T_SS_EREP_SS(13)[0] = FjT[13] * scale;
       case 12:
-      Data->__ss_1_over_r_12_ss___up_12[0] = FjT[12] * scale;
+      Data->LIBINT_T_SS_EREP_SS(12)[0] = FjT[12] * scale;
       case 11:
-      Data->__ss_1_over_r_12_ss___up_11[0] = FjT[11] * scale;
+      Data->LIBINT_T_SS_EREP_SS(11)[0] = FjT[11] * scale;
       case 10:
-      Data->__ss_1_over_r_12_ss___up_10[0] = FjT[10] * scale;
+      Data->LIBINT_T_SS_EREP_SS(10)[0] = FjT[10] * scale;
       case 9:
-      Data->__ss_1_over_r_12_ss___up_9[0] = FjT[9] * scale;
+      Data->LIBINT_T_SS_EREP_SS(9)[0] = FjT[9] * scale;
       case 8:
-      Data->__ss_1_over_r_12_ss___up_8[0] = FjT[8] * scale;
+      Data->LIBINT_T_SS_EREP_SS(8)[0] = FjT[8] * scale;
       case 7:
-      Data->__ss_1_over_r_12_ss___up_7[0] = FjT[7] * scale;
+      Data->LIBINT_T_SS_EREP_SS(7)[0] = FjT[7] * scale;
       case 6:
-      Data->__ss_1_over_r_12_ss___up_6[0] = FjT[6] * scale;
+      Data->LIBINT_T_SS_EREP_SS(6)[0] = FjT[6] * scale;
       case 5:
-      Data->__ss_1_over_r_12_ss___up_5[0] = FjT[5] * scale;
+      Data->LIBINT_T_SS_EREP_SS(5)[0] = FjT[5] * scale;
       case 4:
-      Data->__ss_1_over_r_12_ss___up_4[0] = FjT[4] * scale;
+      Data->LIBINT_T_SS_EREP_SS(4)[0] = FjT[4] * scale;
       case 3:
-      Data->__ss_1_over_r_12_ss___up_3[0] = FjT[3] * scale;
+      Data->LIBINT_T_SS_EREP_SS(3)[0] = FjT[3] * scale;
       case 2:
-      Data->__ss_1_over_r_12_ss___up_2[0] = FjT[2] * scale;
+      Data->LIBINT_T_SS_EREP_SS(2)[0] = FjT[2] * scale;
       case 1:
-      Data->__ss_1_over_r_12_ss___up_1[0] = FjT[1] * scale;
+      Data->LIBINT_T_SS_EREP_SS(1)[0] = FjT[1] * scale;
       case 0:
-      Data->__ss_1_over_r_12_ss___up_0[0] = FjT[0] * scale;
+      Data->LIBINT_T_SS_EREP_SS(0)[0] = FjT[0] * scale;
       break;
       default:
       throw std::logic_error("assign_FjT() -- max_am exceeded");
@@ -66,32 +82,40 @@ namespace {
 
   inline void assign_ss_r12m1g12_ss(prim_data* Data, const int& jmax, const double* ss_r12m1g12_ss, const double& scale) {
     switch (jmax) {
-      /*case 12:
-      Data->__ss_r_12_up__minus_1_times_G12_ss___up_12[0] = ss_r12m1g12_ss[12] * scale;
+      case 16:
+      Data->LIBINT_T_SS_Km1G12_SS(16)[0] = ss_r12m1g12_ss[16] * scale;
+      case 15:
+      Data->LIBINT_T_SS_Km1G12_SS(15)[0] = ss_r12m1g12_ss[15] * scale;
+      case 14:
+      Data->LIBINT_T_SS_Km1G12_SS(14)[0] = ss_r12m1g12_ss[14] * scale;
+      case 13:
+      Data->LIBINT_T_SS_Km1G12_SS(13)[0] = ss_r12m1g12_ss[13] * scale;
+      case 12:
+      Data->LIBINT_T_SS_Km1G12_SS(12)[0] = ss_r12m1g12_ss[12] * scale;
       case 11:
-      Data->__ss_r_12_up__minus_1_times_G12_ss___up_11[0] = ss_r12m1g12_ss[11] * scale;
+      Data->LIBINT_T_SS_Km1G12_SS(11)[0] = ss_r12m1g12_ss[11] * scale;
       case 10:
-      Data->__ss_r_12_up__minus_1_times_G12_ss___up_10[0] = ss_r12m1g12_ss[10] * scale;
+      Data->LIBINT_T_SS_Km1G12_SS(10)[0] = ss_r12m1g12_ss[10] * scale;
       case 9:
-      Data->__ss_r_12_up__minus_1_times_G12_ss___up_9[0] = ss_r12m1g12_ss[9] * scale;*/
+      Data->LIBINT_T_SS_Km1G12_SS(9)[0] = ss_r12m1g12_ss[9] * scale;
       case 8:
-      Data->__ss_r_12_up__minus_1_times_G12_ss___up_8[0] = ss_r12m1g12_ss[8] * scale;
+      Data->LIBINT_T_SS_Km1G12_SS(8)[0] = ss_r12m1g12_ss[8] * scale;
       case 7:
-      Data->__ss_r_12_up__minus_1_times_G12_ss___up_7[0] = ss_r12m1g12_ss[7] * scale;
+      Data->LIBINT_T_SS_Km1G12_SS(7)[0] = ss_r12m1g12_ss[7] * scale;
       case 6:
-      Data->__ss_r_12_up__minus_1_times_G12_ss___up_6[0] = ss_r12m1g12_ss[6] * scale;
+      Data->LIBINT_T_SS_Km1G12_SS(6)[0] = ss_r12m1g12_ss[6] * scale;
       case 5:
-      Data->__ss_r_12_up__minus_1_times_G12_ss___up_5[0] = ss_r12m1g12_ss[5] * scale;
+      Data->LIBINT_T_SS_Km1G12_SS(5)[0] = ss_r12m1g12_ss[5] * scale;
       case 4:
-      Data->__ss_r_12_up__minus_1_times_G12_ss___up_4[0] = ss_r12m1g12_ss[4] * scale;
+      Data->LIBINT_T_SS_Km1G12_SS(4)[0] = ss_r12m1g12_ss[4] * scale;
       case 3:
-      Data->__ss_r_12_up__minus_1_times_G12_ss___up_3[0] = ss_r12m1g12_ss[3] * scale;
+      Data->LIBINT_T_SS_Km1G12_SS(3)[0] = ss_r12m1g12_ss[3] * scale;
       case 2:
-      Data->__ss_r_12_up__minus_1_times_G12_ss___up_2[0] = ss_r12m1g12_ss[2] * scale;
+      Data->LIBINT_T_SS_Km1G12_SS(2)[0] = ss_r12m1g12_ss[2] * scale;
       case 1:
-      Data->__ss_r_12_up__minus_1_times_G12_ss___up_1[0] = ss_r12m1g12_ss[1] * scale;
+      Data->LIBINT_T_SS_Km1G12_SS(1)[0] = ss_r12m1g12_ss[1] * scale;
       case 0:
-      Data->__ss_r_12_up__minus_1_times_G12_ss___up_0[0] = ss_r12m1g12_ss[0] * scale;
+      Data->LIBINT_T_SS_Km1G12_SS(0)[0] = ss_r12m1g12_ss[0] * scale;
       break;
       default:
       throw std::logic_error("assign_ss_r12m1g12_ss() -- max_am exceeded");

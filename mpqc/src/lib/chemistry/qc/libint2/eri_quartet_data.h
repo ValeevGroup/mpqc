@@ -97,7 +97,7 @@ inline void EriLibint2::eri_quartet_data_(prim_data *Data, double scale)
 
   if (!quartet_info_.am) {
     double *fjttable = Fm_Eval_->values(0,T);
-    Data->__ss_1_over_r_12_ss___up_0[0] = fjttable[0]*pfac;
+    Data->LIBINT_T_SS_EREP_SS(0)[0] = fjttable[0]*pfac;
   }
   else {
     Data->oo2ze[0] = 0.5*ooze;

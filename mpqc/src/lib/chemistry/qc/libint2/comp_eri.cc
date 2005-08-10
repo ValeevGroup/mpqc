@@ -405,7 +405,7 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 	              prim_ints_[buffer_offset + ijkl] += (double) prim_ints[ijkl];
                   }
                   else {
-                    prim_ints_[buffer_offset] += Libint_.__ss_1_over_r_12_ss___up_0[0];
+                    prim_ints_[buffer_offset] += Libint_.LIBINT_T_SS_EREP_SS(0)[0];
                   }
 		}}}}
 	  buffer_offset += size;

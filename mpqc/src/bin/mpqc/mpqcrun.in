@@ -325,8 +325,10 @@ foreach my $i (0..$maxjobs-1) {
     }
     $nodefile{$i} = ".tmp.nodefile.$$.$i";
     open(NODEFILE,">" . $nodefile{$i});
-    foreach my $j (@slice) {
-        printf NODEFILE "%s\n", $j;
+    foreach my $proc (1..$nprocpernode) {
+      foreach my $j (@slice) {
+          printf NODEFILE "%s\n", $j;
+      }
     }
     close(NODEFILE);
 }

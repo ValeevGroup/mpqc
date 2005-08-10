@@ -243,11 +243,18 @@ int main(int argc, char **argv)
 
   //  compare_2e_permute(integrallibint2);
 
+  bool puream = basis->has_pure();
+  cout << "spherical harmonics " << (puream ? "" : "not") << " present in the basis" << endl;
   cout << "Testing Libint2' ERIs against IntV3's" << endl;
-  compare_2e_libint2_vs_v3(ereplibint2,erepv3);
-  //compare_2e_puream_libint2_vs_v3(ereplibint2,erepv3);
+  if (puream)
+    compare_2e_puream_libint2_vs_v3(ereplibint2,erepv3);
+  else
+    compare_2e_libint2_vs_v3(ereplibint2,erepv3);
   cout << "Testing Libint2' ERIs (from G12Libint2) against IntV3's" << endl;
-  compare_2e_libint2_vs_v3(g12libint2,erepv3);
+  if (puream)
+    compare_2e_puream_libint2_vs_v3(g12libint2,erepv3);
+  else
+    compare_2e_libint2_vs_v3(g12libint2,erepv3);
 
 #ifdef LIBINT2
   cout << "Testing sums of Libint2' ERIs against IntV3's" << endl;

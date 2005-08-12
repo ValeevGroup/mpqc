@@ -121,10 +121,11 @@ class MBPT2_R12: public MBPT2 {
         hence it is not recommended to use this keyword.
       
         <dt><tt>corr_factor</tt><dd> This string specifies which correlation factor to use.
-        Allowed values are "r12" and "g12". The default is "r12". This option is experimental.
+        Allowed values are "r12" and "g12". The default is "r12".
       
         <dt><tt>corr_param</tt><dd> This floating-point value specifies an optional parameter
-        of the correlation factor. Default is zero.
+        of the correlation factor. Default is zero. For some correlation factors, e.g., r12,
+        this keyword is not used.
       
         <dt><tt>stdapprox</tt><dd> This gives a string that must take on one
         of the values below.  The default is A'.
@@ -148,12 +149,14 @@ class MBPT2_R12: public MBPT2 {
         
 
 	<dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted
-	or spin-orbital pair energies. Default is to compute spin-adapted energies.
+	or spin-orbital pair energies. Default is to compute spin-adapted energies for closed-shell
+        systems and spin-orbital energies for open-shell systems. For some references, e.g. UHF, this keyword
+        is not used.
 
-	<dt><tt>aux_basis</tt><dd> This specifies the auxiliary basis to be used for the resolution
+	<dt><tt>aux_basis</tt><dd> This specifies the auxiliary AO basis to be used for the resolution
 	of the identity. Default is to use the same basis as for the orbital expansion.
 
-	<dt><tt>vir_basis</tt><dd> This specifies the basis to be used for the virtual orbitals.
+	<dt><tt>vir_basis</tt><dd> This specifies the AO basis to be used for the virtual orbitals.
 	Default is to use the same basis as for the orbital expansion.
 
         <dt><tt>include_mp1</tt><dd> This specifies whether to compute MP1 correction to

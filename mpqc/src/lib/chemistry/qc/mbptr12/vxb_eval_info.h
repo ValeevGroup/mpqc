@@ -29,9 +29,6 @@
 #pragma interface
 #endif
 
-#ifndef _chemistry_qc_mbptr12_vxbevalinfo_h
-#define _chemistry_qc_mbptr12_vxbevalinfo_h
-
 #include <util/misc/string.h>
 #include <util/ref/ref.h>
 #include <math/scmat/abstract.h>
@@ -41,6 +38,9 @@
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
+
+#ifndef _chemistry_qc_mbptr12_vxbevalinfo_h
+#define _chemistry_qc_mbptr12_vxbevalinfo_h
 
 namespace sc {
 
@@ -58,7 +58,7 @@ public:
 
 private:
 
-  Wavefunction* wfn_;     // Wavefunction that owns this
+  Wavefunction* wfn_;     // Wave function that owns this
   Ref<SCF> ref_;
   Ref<Integral> integral_;
   Ref<GaussianBasisSet> bs_;
@@ -70,9 +70,9 @@ private:
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;
 
-  int nocc_;
+  int ndocc_;
+  int nsocc_;
   int nfzc_;
-  int nfzv_;
 
   size_t memory_;
   bool dynamic_;
@@ -86,16 +86,20 @@ private:
   int nlindep_vir_;
   int nlindep_ri_;
   
+  /// This space depends only on the orbital basis set
   Ref<MOIndexSpace> mo_space_;   // symblocked MO space
+  Ref<MOIndexSpace> abs_space_;  // ABS space
+  Ref<MOIndexSpace> ribs_space_; // RIBS basis  
+  /** The following spaces are valid choices for the closed-shell case */
   Ref<MOIndexSpace> obs_space_;  // energy-sorted MO space
-  Ref<MOIndexSpace> abs_space_;
-  Ref<MOIndexSpace> ribs_space_;
   Ref<MOIndexSpace> act_occ_space_;
   Ref<MOIndexSpace> occ_space_;
   Ref<MOIndexSpace> occ_space_symblk_;
   Ref<MOIndexSpace> act_vir_space_;
   Ref<MOIndexSpace> vir_space_;
   Ref<MOIndexSpace> vir_space_symblk_;
+
+  /// The transform factory
   Ref<MOIntsTransformFactory> tfactory_;
 
   // construct the RI basis based on abs_method
@@ -109,7 +113,7 @@ private:
   // Returns true if ABS spans OBS
   bool abs_spans_obs_();
   // Construct eigenvector and eigenvalues sorted by energy
-  void eigen2_();
+  void eigen_();
   // Construct orthog_aux_
   void construct_orthog_aux_();
   // Construct orthog_vir_
@@ -166,17 +170,21 @@ public:
   char* ints_file() const;
   const size_t memory() const { return memory_; };
 
-  const int nocc() const { return nocc_;};
-  const int nocc_act() const { return nocc_ - nfzc_;};
-  const int nfzc() const { return nfzc_;};
-  const int nvir() const { return vir_space_->rank();};
-  const int nvir_act() const { return act_vir_space_->rank();};
-  const int nfzv() const { return nfzv_;};
+  int ndocc() const { return ndocc_;};
+  int nsocc() const { return nsocc_;};
+  int nfzc() const { return nfzc_;};
+  int ndocc_act() const { return ndocc() - nfzc();};
+  int nalpha() const { return ndocc()+ nsocc(); }
+  int nbeta() const { return ndocc(); }
+  int nalpha_occ() const { return ndocc_act() + nsocc(); }
+  int nbeta_occ() const { return ndocc_act(); }
+  int nvir() const { return vir_space_->rank();};
+  int nvir_act() const { return act_vir_space_->rank();};
 
   LinearR12::ABSMethod abs_method() const { return abs_method_; };
 
   /// Returns the MOIndexSpace object for symmetry-blocked MOs in OBS
-  Ref<MOIndexSpace> mo_space() const { return mo_space_; };  
+  Ref<MOIndexSpace> mo_space() const { return mo_space_; };
   /// Returns the MOIndexSpace object for energy-sorted MOs in OBS
   Ref<MOIndexSpace> obs_space() const { return obs_space_; };
   /// Returns the MOIndexSpace object for the active occupied MOs
@@ -198,9 +206,6 @@ public:
   /// Returns the MOIntsTransformFactory object
   Ref<MOIntsTransformFactory> tfactory() const { return tfactory_; };
   
-  /// Compute subspace of space2 which is orthogonal complement to space1
-  static Ref<MOIndexSpace> orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                                const std::string& name, double lindep_tol);
   /** Compute span of bs and create corresponding mospace referred to by name. Number
       linear dependencies is returned in nlindep */
   static Ref<MOIndexSpace> orthogonalize(const std::string& name, const Ref<GaussianBasisSet>& bs,
@@ -208,9 +213,15 @@ public:
                                   int& nlindep);
 
   /** Project space1 on space2. This routine computes X2 such that C1.S12.X2 = I,
-      where I is identity matrix and X2 spans subspace of space2. X2 is returned. */
+      where I is identity matrix, C1 is space1, and X2 spans
+      subspace of space2. X2 is returned. */
   static Ref<MOIndexSpace> gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                        const std::string& name, double lindep_tol);
+  /** Compute subspace X2 of space2 which is orthogonal complement to space1, i.e.,
+      C1.S12.X2=0, where 0 is the null matrix.
+  */
+  static Ref<MOIndexSpace> orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+                                const std::string& name, double lindep_tol);
                                        
   /// Compute overlap matrices in the basis of space1 and space2
   static void compute_overlap_ints(const Ref<MOIndexSpace>& space1,

@@ -75,17 +75,18 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   integral_->set_basis(bs_);
   Ref<PetiteList> plist = integral_->petite_list();
   RefSCDimension oso_dim = plist->SO_basisdim();
-  nocc_ = 0;
+  ndocc_ = 0;
+  nsocc_ = 0;
   for (int i=0; i<oso_dim->n(); i++) {
-    if (ref_->occupation(i) == 2.0) nocc_++;
+    if (ref_->occupation(i) == 2.0) ndocc_++;
+    if (ref_->occupation(i) == 1.0) nsocc_++;
   }
   nfzc_ = mbptr12->nfzcore();
-  nfzv_ = mbptr12->nfzvirt();
 
   ints_method_ = mbptr12->r12ints_method();
   ints_file_ = mbptr12->r12ints_file();
 
-  eigen2_();
+  eigen_();
 
   abs_method_ = mbptr12->abs_method();
   construct_ri_basis_(false);
@@ -111,9 +112,9 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
-  si.get(nocc_);
+  si.get(ndocc_);
+  si.get(nsocc_);
   si.get(nfzc_);
-  si.get(nfzv_);
 
   int ints_method; si.get(ints_method); ints_method_ = (StoreMethod) ints_method;
   si.getstring(ints_file_);
@@ -143,7 +144,7 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     tfactory_ << SavableState::restore_state(si);
   }
 
-  eigen2_();
+  eigen_();
 }
 
 R12IntEvalInfo::~R12IntEvalInfo()
@@ -161,9 +162,9 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(bs_vir_.pointer(),so);
   SavableState::save_state(bs_ri_.pointer(),so);
 
-  so.put(nocc_);
+  so.put(ndocc_);
+  so.put(nsocc_);
   so.put(nfzc_);
-  so.put(nfzv_);
 
   so.put((int)ints_method_);
   so.putstring(ints_file_);
@@ -210,7 +211,7 @@ R12IntEvalInfo::set_absmethod(LinearR12::ABSMethod abs_method)
 }
 
 
-void R12IntEvalInfo::eigen2_()
+void R12IntEvalInfo::eigen_()
 {
   Ref<Molecule> molecule = bs_->molecule();
   Ref<SCMatrixKit> so_matrixkit = bs_->so_matrixkit();
@@ -242,16 +243,16 @@ void R12IntEvalInfo::eigen2_()
 
   mo_space_ = new MOIndexSpace("symmetry-blocked MOs", vecs, bs_, vals, 0, 0, MOIndexSpace::symmetry);
   obs_space_ = new MOIndexSpace("MOs sorted by energy", vecs, bs_, vals, 0, 0);
-  occ_space_ = new MOIndexSpace("occupied MOs sorted by energy", vecs, bs_, vals, 0, mo_space_->rank() - nocc_);
+  occ_space_ = new MOIndexSpace("occupied MOs sorted by energy", vecs, bs_, vals, 0, mo_space_->rank() - ndocc());
   occ_space_symblk_ = new MOIndexSpace("occupied MOs symmetry-blocked", vecs, bs_, vals,
-                                       0, mo_space_->rank() - nocc_, MOIndexSpace::symmetry);
+                                       0, mo_space_->rank() - ndocc(), MOIndexSpace::symmetry);
 
   if (nfzc_ == 0)
     act_occ_space_ = occ_space_;
   else
-    act_occ_space_ = new MOIndexSpace("active occupied MOs sorted by energy", vecs, bs_, vals, nfzc_, mo_space_->rank() - nocc_);
+    act_occ_space_ = new MOIndexSpace("active occupied MOs sorted by energy", vecs, bs_, vals, nfzc_, mo_space_->rank() - ndocc());
 
-  if (debug_) ExEnv::out0() << indent << "R12IntEvalInfo: eigen2_ done" << endl;
+  if (debug_) ExEnv::out0() << indent << "R12IntEvalInfo: eigen_ done" << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

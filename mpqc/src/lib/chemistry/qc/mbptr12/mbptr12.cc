@@ -39,6 +39,7 @@
 #include <math/scmat/blocked.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/scf/clhf.h>
+#include <chemistry/qc/scf/uhf.h>
 #include <chemistry/qc/cints/cints.h>
 #include <chemistry/qc/libint2/libint2.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
@@ -87,12 +88,14 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   // Make sure can use the integral factory for linear R12
   check_integral_factory_();
   
-  // Check is this is a closed-shell reference
+  // Verify that this is a closed-shell or high-spin open-shell system
   CLHF* clhfref = dynamic_cast<CLHF*>(reference_.pointer());
-  if (!clhfref) {
-    ExEnv::err0() << "MBPT2_R12::MBPT2_R12: reference wavefunction is of non-CLHF type" << endl;
-    abort();
+  UHF* uhfref = dynamic_cast<UHF*>(reference_.pointer());
+  if (clhfref == 0 && uhfref == 0) {
+    throw FeatureNotImplemented("MBPT2_R12::MBPT2_R12: reference wavefunction is neither CLHF nor UHF",
+    __FILE__,__LINE__);
   }
+  const bool closedshell = (clhfref != 0);
 
   aux_basis_ = require_dynamic_cast<GaussianBasisSet*>(
     keyval->describedclassvalue("aux_basis").pointer(),
@@ -178,9 +181,11 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     delete[] sa_string;
     throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- unrecognized value for stdapprox");
   }
-
-  // Default is to use spin-adapted algorithm
-  spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean((int)true));
+  
+  spinadapted_ = false;
+  if (closedshell)
+    // Default is to use spin-adapted algorithm
+    spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean((int)true));
 
   // Default is to not compute MP1 energy
   include_mp1_ = keyval->booleanvalue("include_mp1",KeyValValueboolean((int)false));

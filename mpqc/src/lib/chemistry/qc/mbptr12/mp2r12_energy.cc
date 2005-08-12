@@ -218,11 +218,19 @@ void MP2R12Energy::compute()
   //
 
   // Need eigenvalues
+#if !USE_SINGLEREFINFO
   int nocc = r12info->ndocc();
   int nfzc = r12info->nfzc();
   int nocc_act = r12info->ndocc_act();
   int nvir_act = r12info->nvir_act();
   RefDiagSCMatrix evalmat = r12eval_->evals();
+#else
+  int nocc = r12info->refinfo()->docc()->rank();
+  int nfzc = r12info->refinfo()->nfzc();
+  int nocc_act = r12info->refinfo()->docc_act()->rank();
+  int nvir_act = r12info->refinfo()->uocc_act()->rank();
+  RefDiagSCMatrix evalmat = r12info->refinfo()->energy_mo()->evals();
+#endif
   vector<double> evals_act_occ(nocc_act);
   vector<double> evals_act_vir(nvir_act);
   for(int i=nfzc; i<nocc; i++)
@@ -535,8 +543,13 @@ MP2R12Energy::compute_pair_function_aa(int ij, const SCVector3& r1, const SCVect
 
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   Ref<MOIndexSpace> act_vir_space = r12info->act_vir_space();
+#if !USE_SINGLEREFINFO
   Ref<MOIndexSpace> act_occ_space = r12info->act_occ_space();
   Ref<MOIndexSpace> occ_space = r12info->occ_space();
+#else
+  Ref<MOIndexSpace> act_occ_space = r12info->refinfo()->docc_act();
+  Ref<MOIndexSpace> occ_space = r12info->refinfo()->docc();
+#endif
   Ref<MOIndexSpace> ribs_space = r12info->ribs_space();
 
   RefSCVector phi_aa = compute_2body_values_(true,act_occ_space,act_occ_space,r1,r2);
@@ -583,8 +596,13 @@ MP2R12Energy::compute_pair_function_aa(int ij, const Ref<TwoBodyGrid>& tbgrid)
 
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   Ref<MOIndexSpace> act_vir_space = r12info->act_vir_space();
+#if !USE_SINGLEREFINFO
   Ref<MOIndexSpace> act_occ_space = r12info->act_occ_space();
   Ref<MOIndexSpace> occ_space = r12info->occ_space();
+#else
+  Ref<MOIndexSpace> act_occ_space = r12info->refinfo()->docc_act();
+  Ref<MOIndexSpace> occ_space = r12info->refinfo()->docc();
+#endif
   Ref<MOIndexSpace> ribs_space = r12info->ribs_space();
 
   const int nelem = tbgrid->nelem();
@@ -638,8 +656,13 @@ MP2R12Energy::compute_pair_function_ab(int ij, const SCVector3& r1, const SCVect
 
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   Ref<MOIndexSpace> act_vir_space = r12info->act_vir_space();
+#if !USE_SINGLEREFINFO
   Ref<MOIndexSpace> act_occ_space = r12info->act_occ_space();
   Ref<MOIndexSpace> occ_space = r12info->occ_space();
+#else
+  Ref<MOIndexSpace> act_occ_space = r12info->refinfo()->docc_act();
+  Ref<MOIndexSpace> occ_space = r12info->refinfo()->docc();
+#endif
   Ref<MOIndexSpace> ribs_space = r12info->ribs_space();
 
   RefSCVector phi_aa = compute_2body_values_(false,act_occ_space,act_occ_space,r1,r2);
@@ -685,8 +708,13 @@ MP2R12Energy::compute_pair_function_ab(int ij, const Ref<TwoBodyGrid>& tbgrid)
 
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   Ref<MOIndexSpace> act_vir_space = r12info->act_vir_space();
+#if !USE_SINGLEREFINFO
   Ref<MOIndexSpace> act_occ_space = r12info->act_occ_space();
   Ref<MOIndexSpace> occ_space = r12info->occ_space();
+#else
+  Ref<MOIndexSpace> act_occ_space = r12info->refinfo()->docc_act();
+  Ref<MOIndexSpace> occ_space = r12info->refinfo()->docc();
+#endif
   Ref<MOIndexSpace> ribs_space = r12info->ribs_space();
 
   const int nelem = tbgrid->nelem();
@@ -832,7 +860,11 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   }
 
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
+#if !USE_SINGLEREFINFO
   int nocc_act = r12info->ndocc_act();
+#else
+  int nocc_act = r12info->refinfo()->docc_act()->rank();
+#endif
   double escf = r12info->ref()->energy();
 
   double emp2tot_aa = 0.0;

@@ -37,7 +37,6 @@
 using namespace std;
 using namespace sc;
 
-
 void
 MBPT2_R12::compute_energy_a_()
 {

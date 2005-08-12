@@ -49,13 +49,17 @@ namespace sc {
     
     SingleRefInfo(StateIn&);
     /// Construct using SCF reference object
-    SingleRefInfo(const Ref<SCF>& ref);
+    SingleRefInfo(const Ref<SCF>& ref, unsigned int nfzc, unsigned int nfzv);
     ~SingleRefInfo();
     
     void save_data_state(StateOut&);
     
     /// Returns the reference
     const Ref<SCF>& ref() const;
+    /// Return number of frozen occupied orbitals
+    unsigned int nfzc() const;
+    /// Return number of frozen unoccupied orbitals
+    unsigned int nfzv() const;
     
     /// Returns the space of symmetry-blocked orthogonal SOs (spans the entire space of the basis)
     const Ref<MOIndexSpace>& oso_space() const;
@@ -69,10 +73,14 @@ namespace sc {
     const Ref<MOIndexSpace>& energy_mo() const;
     /// Return the space of doubly-occupied MOs
     const Ref<MOIndexSpace>& docc() const;
+    /// Return the space of active doubly-occupied MOs
+    const Ref<MOIndexSpace>& docc_act() const;
     /// Return the space of singly-occupied MOs
     const Ref<MOIndexSpace>& socc() const;
     /// Return the space of unoccupied (virtual) MOs
     const Ref<MOIndexSpace>& uocc() const;
+    /// Return the space of active unoccupied (virtual) MOs
+    const Ref<MOIndexSpace>& uocc_act() const;
     //@}
     
     /// Return the space of symmetry-blocked MOs of the given spin
@@ -81,23 +89,33 @@ namespace sc {
     const Ref<MOIndexSpace>& energy_mo(SpinCase spin) const;
     /// Return the space of occupied MOs of the given spin
     const Ref<MOIndexSpace>& occ(SpinCase spin) const;
+    /// Return the space of occupied MOs of the given spin
+    const Ref<MOIndexSpace>& occ_act(SpinCase spin) const;
     /// Return the space of unoccupied (virtual) MOs of the given spin
     const Ref<MOIndexSpace>& uocc(SpinCase spin) const;
+    /// Return the space of unoccupied (virtual) MOs of the given spin
+    const Ref<MOIndexSpace>& uocc_act(SpinCase spin) const;
     
     private:
     /// The reference function
     Ref<SCF> ref_;
+    /// Number of occupied orbitals not used in correlated method
+    unsigned int nfzc_;
+    /// Number of unoccupied orbitals not used in correlated method
+    unsigned int nfzv_;
     
     /// Following data structure is defined for each spin case
     typedef struct {
       Ref<MOIndexSpace> symblk_mo_;
       Ref<MOIndexSpace> energy_mo_;
       Ref<MOIndexSpace> occ_;
+      Ref<MOIndexSpace> occ_act_;
       Ref<MOIndexSpace> uocc_;
+      Ref<MOIndexSpace> uocc_act_;
       /// "constructor"
       void init(const std::string& prefix, const Ref<GaussianBasisSet>& bs,
                 const RefDiagSCMatrix& evals, const RefSCMatrix& evecs,
-                const std::vector<double>& occs);
+                const std::vector<double>& occs, unsigned int nfzc, unsigned int nfzv);
     } SpinSpaces;
     
     //@{
@@ -106,8 +124,10 @@ namespace sc {
     Ref<MOIndexSpace> symblk_mo_;
     Ref<MOIndexSpace> energy_mo_;
     Ref<MOIndexSpace> docc_;
+    Ref<MOIndexSpace> docc_act_;
     Ref<MOIndexSpace> socc_;
     Ref<MOIndexSpace> uocc_;
+    Ref<MOIndexSpace> uocc_act_;
     SpinSpaces spinspaces_[2];
     //}@
     

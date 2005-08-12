@@ -63,9 +63,11 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   print_percent_ = 10.0;
 
   wfn_ = mbptr12;
+#if !USE_SINGLEREFINFO
   ref_ = mbptr12->ref();
-  integral_ = mbptr12->integral();
   bs_ = mbptr12->basis();
+#endif
+  integral_ = mbptr12->integral();
   bs_aux_ = mbptr12->aux_basis();
   bs_vir_ = mbptr12->vir_basis();
 
@@ -74,9 +76,11 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
-  integral_->set_basis(bs_);
+  integral_->set_basis(basis());
   Ref<PetiteList> plist = integral_->petite_list();
   RefSCDimension oso_dim = plist->SO_basisdim();
+
+#if !USE_SINGLEREFINFO
   ndocc_ = 0;
   nsocc_ = 0;
   for (int i=0; i<oso_dim->n(); i++) {
@@ -85,17 +89,24 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   }
   nfzc_ = mbptr12->nfzcore();
   nfzv_ = mbptr12->nfzvirt();
+#endif
 
   ints_method_ = mbptr12->r12ints_method();
   ints_file_ = mbptr12->r12ints_file();
 
+#if !USE_SINGLEREFINFO
   eigen_();
+#endif
 
   abs_method_ = mbptr12->abs_method();
   construct_ri_basis_(false);
   construct_orthog_vir_();
 
+#if !USE_SINGLEREFINFO
   tfactory_ = new MOIntsTransformFactory(integral_,obs_space_);
+#else
+  tfactory_ = new MOIntsTransformFactory(integral_,refinfo()->energy_mo());
+#endif
   tfactory_->set_memory(memory_);
 }
 
@@ -103,9 +114,14 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
 {
   wfn_ = require_dynamic_cast<Wavefunction*>(SavableState::restore_state(si),
 					     "R12IntEvalInfo::R12IntEvalInfo");
+
+#if !USE_SINGLEREFINFO
   ref_ << SavableState::restore_state(si);
+#endif
   integral_ << SavableState::restore_state(si);
+#if !USE_SINGLEREFINFO
   bs_ << SavableState::restore_state(si);
+#endif
   bs_aux_ << SavableState::restore_state(si);
   bs_vir_ << SavableState::restore_state(si);
   bs_ri_ << SavableState::restore_state(si);
@@ -115,9 +131,11 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
+#if !USE_SINGLEREFINFO
   si.get(ndocc_);
   si.get(nsocc_);
   si.get(nfzc_);
+#endif
 
   int ints_method; si.get(ints_method); ints_method_ = (StoreMethod) ints_method;
   si.getstring(ints_file_);
@@ -135,23 +153,31 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   }
 
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 4) {
+#if !USE_SINGLEREFINFO
     obs_space_ << SavableState::restore_state(si);
+#endif
     abs_space_ << SavableState::restore_state(si);
     ribs_space_ << SavableState::restore_state(si);
+#if !USE_SINGLEREFINFO
     act_occ_space_ << SavableState::restore_state(si);
     occ_space_ << SavableState::restore_state(si);
     occ_space_symblk_ << SavableState::restore_state(si);
+#endif
     act_vir_space_ << SavableState::restore_state(si);
     vir_space_ << SavableState::restore_state(si);
     vir_space_symblk_ << SavableState::restore_state(si);
     tfactory_ << SavableState::restore_state(si);
   }
   
+#if USE_SINGLEREFINFO
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 5) {
     refinfo_ << SavableState::restore_state(si);
   }
+#endif
 
+#if !USE_SINGLEREFINFO
   eigen_();
+#endif
 }
 
 R12IntEvalInfo::~R12IntEvalInfo()
@@ -162,16 +188,22 @@ R12IntEvalInfo::~R12IntEvalInfo()
 void R12IntEvalInfo::save_data_state(StateOut& so)
 {
   SavableState::save_state(wfn_,so);
+#if !USE_SINGLEREFINFO
   SavableState::save_state(ref_.pointer(),so);
+#endif
   SavableState::save_state(integral_.pointer(),so);
+#if !USE_SINGLEREFINFO
   SavableState::save_state(bs_.pointer(),so);
+#endif
   SavableState::save_state(bs_aux_.pointer(),so);
   SavableState::save_state(bs_vir_.pointer(),so);
   SavableState::save_state(bs_ri_.pointer(),so);
 
+#if !USE_SINGLEREFINFO
   so.put(ndocc_);
   so.put(nsocc_);
   so.put(nfzc_);
+#endif
 
   so.put((int)ints_method_);
   so.putstring(ints_file_);
@@ -182,24 +214,32 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put(print_percent_);
   so.put((int)abs_method_);
   
+#if !USE_SINGLEREFINFO
   SavableState::save_state(obs_space_.pointer(),so);
+#endif
   SavableState::save_state(abs_space_.pointer(),so);
   SavableState::save_state(ribs_space_.pointer(),so);
+#if !USE_SINGLEREFINFO
   SavableState::save_state(act_occ_space_.pointer(),so);
   SavableState::save_state(occ_space_.pointer(),so);
   SavableState::save_state(occ_space_symblk_.pointer(),so);
+#endif
   SavableState::save_state(act_vir_space_.pointer(),so);
   SavableState::save_state(vir_space_.pointer(),so);
   SavableState::save_state(vir_space_symblk_.pointer(),so);
   SavableState::save_state(tfactory_.pointer(),so);
   
+#if USE_SINGLEREFINFO
   SavableState::save_state(refinfo_.pointer(),so);
+#endif
 }
 
+#if USE_SINGLEREFINFO
 const Ref<SingleRefInfo>&
 R12IntEvalInfo::refinfo() const {
   return refinfo_;
 }
+#endif
 
 char* R12IntEvalInfo::ints_file() const
 {
@@ -224,7 +264,7 @@ R12IntEvalInfo::set_absmethod(LinearR12::ABSMethod abs_method)
   }
 }
 
-
+#if !USE_SINGLEREFINFO
 void R12IntEvalInfo::eigen_()
 {
   Ref<Molecule> molecule = bs_->molecule();
@@ -268,6 +308,7 @@ void R12IntEvalInfo::eigen_()
 
   if (debug_) ExEnv::out0() << indent << "R12IntEvalInfo: eigen_ done" << endl;
 }
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 

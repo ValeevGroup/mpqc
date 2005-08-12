@@ -40,8 +40,8 @@ static ClassDesc R12IntEvalInfo_cd(
   typeid(SingleRefInfo),"SingleRefInfo",ClassVersion,"virtual public SavableState",
   0, 0, create<SingleRefInfo>);
 
-SingleRefInfo::SingleRefInfo(const Ref<SCF>& ref) :
-  ref_(ref)
+SingleRefInfo::SingleRefInfo(const Ref<SCF>& ref, unsigned int nfzc, unsigned int nfzv) :
+  ref_(ref), nfzc_(nfzc), nfzv_(nfzv)
 {
   if (!ref_->spin_polarized())
     init_spinindependent_spaces();
@@ -52,17 +52,23 @@ SingleRefInfo::SingleRefInfo(StateIn& si) :
   SavableState(si)
 {
   ref_ << SavableState::restore_state(si);
+  si.get(nfzc_);
+  si.get(nfzv_);
   
   symblk_mo_ << SavableState::restore_state(si);
   energy_mo_ << SavableState::restore_state(si);
   docc_ << SavableState::restore_state(si);
+  docc_act_ << SavableState::restore_state(si);
   socc_ << SavableState::restore_state(si);
   uocc_ << SavableState::restore_state(si);
+  uocc_act_ << SavableState::restore_state(si);
   for(int spin=0; spin<2; spin++) {
     spinspaces_[spin].symblk_mo_ << SavableState::restore_state(si);
     spinspaces_[spin].energy_mo_ << SavableState::restore_state(si);
     spinspaces_[spin].occ_ << SavableState::restore_state(si);
+    spinspaces_[spin].occ_act_ << SavableState::restore_state(si);
     spinspaces_[spin].uocc_ << SavableState::restore_state(si);
+    spinspaces_[spin].uocc_act_ << SavableState::restore_state(si);
   }
 }
 
@@ -74,18 +80,42 @@ void
 SingleRefInfo::save_data_state(StateOut& so)
 {
   SavableState::save_state(ref_.pointer(),so);
+  so.put(nfzc_);
+  so.put(nfzv_);
   
   SavableState::save_state(symblk_mo_.pointer(),so);
   SavableState::save_state(energy_mo_.pointer(),so);
   SavableState::save_state(docc_.pointer(),so);
+  SavableState::save_state(docc_act_.pointer(),so);
   SavableState::save_state(socc_.pointer(),so);
   SavableState::save_state(uocc_.pointer(),so);
+  SavableState::save_state(uocc_act_.pointer(),so);
   for(int spin=0; spin<2; spin++) {
     SavableState::save_state(spinspaces_ [spin].symblk_mo_.pointer(),so);
     SavableState::save_state(spinspaces_[spin].energy_mo_.pointer(),so);
     SavableState::save_state(spinspaces_[spin].occ_.pointer(),so);
+    SavableState::save_state(spinspaces_[spin].occ_act_.pointer(),so);
     SavableState::save_state(spinspaces_[spin].uocc_.pointer(),so);
+    SavableState::save_state(spinspaces_[spin].uocc_act_.pointer(),so);
   }
+}
+
+const Ref<SCF>&
+SingleRefInfo::ref() const
+{
+  return ref_;
+}
+
+unsigned int
+SingleRefInfo::nfzc() const
+{
+  return nfzc_;
+}
+
+unsigned int
+SingleRefInfo::nfzv() const
+{
+  return nfzv_;
 }
 
 void
@@ -99,8 +129,8 @@ SingleRefInfo::init_spinspecific_spaces()
     aocc.push_back(ref_->alpha_occupation(mo));
     bocc.push_back(ref_->beta_occupation(mo));
   }
-  spinspaces_[0].init("Alpha", bs,ref_->alpha_eigenvalues(),ref_->alpha_eigenvectors(),aocc);
-  spinspaces_[1].init("Beta", bs,ref_->beta_eigenvalues(),ref_->beta_eigenvectors(),bocc);
+  spinspaces_[0].init("Alpha", bs, ref_->alpha_eigenvalues(), ref_->alpha_eigenvectors(), aocc, nfzc(), nfzv());
+  spinspaces_[1].init("Beta", bs, ref_->beta_eigenvalues(), ref_->beta_eigenvectors(), bocc, nfzc(), nfzv());
 }
 
 void
@@ -128,9 +158,10 @@ SingleRefInfo::init_spinindependent_spaces()
   symblk_mo_ = new MOIndexSpace("symmetry-blocked MOs", evecs_ao, bs, evals, 0, 0, MOIndexSpace::symmetry);
   energy_mo_ = new MOIndexSpace("energy-ordered MOs", evecs_ao, bs, evals, 0, 0);
   docc_ = new MOIndexSpace("doubly-occupied energy-ordered MOs", evecs_ao, bs, evals, 0, nuocc+nsocc);
+  docc_ = new MOIndexSpace("active doubly-occupied energy-ordered MOs", evecs_ao, bs, evals, nfzc(), nuocc+nsocc);
   socc_ = new MOIndexSpace("singly-occupied energy-ordered MOs", evecs_ao, bs, evals, ndocc, nuocc);
   uocc_ = new MOIndexSpace("unoccupied energy-ordered MOs", evecs_ao, bs, evals, ndocc+nsocc, 0);
-  
+  uocc_act_ = new MOIndexSpace("unoccupied energy-ordered MOs", evecs_ao, bs, evals, ndocc+nsocc, nfzv());
 }
 
 
@@ -159,6 +190,13 @@ SingleRefInfo::docc() const
 }
 
 const Ref<MOIndexSpace>&
+SingleRefInfo::docc_act() const
+{
+  // can throw
+  throw_if_spin_polarized();
+  return docc_act_;
+}
+const Ref<MOIndexSpace>&
 SingleRefInfo::socc() const
 {
   // can throw
@@ -172,6 +210,14 @@ SingleRefInfo::uocc() const
   // can throw
   throw_if_spin_polarized();
   return uocc_;
+}
+
+const Ref<MOIndexSpace>&
+SingleRefInfo::uocc_act() const
+{
+  // can throw
+  throw_if_spin_polarized();
+  return uocc_act_;
 }
 
 const Ref<MOIndexSpace>&
@@ -193,9 +239,21 @@ SingleRefInfo::occ(SpinCase s) const
 }
 
 const Ref<MOIndexSpace>&
+SingleRefInfo::occ_act(SpinCase s) const
+{
+  return spinspaces_[s].occ_act_;
+}
+
+const Ref<MOIndexSpace>&
 SingleRefInfo::uocc(SpinCase s) const
 {
   return spinspaces_[s].uocc_;
+}
+
+const Ref<MOIndexSpace>&
+SingleRefInfo::uocc_act(SpinCase s) const
+{
+  return spinspaces_[s].uocc_act_;
 }
 
 void
@@ -214,7 +272,9 @@ SingleRefInfo::SpinSpaces::init(
         const Ref<GaussianBasisSet>& bs,
         const RefDiagSCMatrix& evals,
         const RefSCMatrix& evecs,
-        const std::vector<double>& occs)
+        const std::vector<double>& occs,
+        unsigned int nfzc,
+        unsigned int nfzv)
 {
   int nocc = 0, nuocc = 0, nmo = occs.size();
   for(int i=0; i<nmo; i++) {
@@ -241,8 +301,18 @@ SingleRefInfo::SpinSpaces::init(
   }
   {
     ostringstream oss;
+    oss << prefix << " active occupied MOs";
+    occ_act_ = new MOIndexSpace(oss.str(),evecs, bs, evals, nfzc, nuocc);
+  }
+  {
+    ostringstream oss;
     oss << prefix << " unoccupied MOs";
     uocc_ = new MOIndexSpace(oss.str(),evecs, bs, evals, nocc, 0);
+  }
+  {
+    ostringstream oss;
+    oss << prefix << " active unoccupied MOs";
+    uocc_act_ = new MOIndexSpace(oss.str(),evecs, bs, evals, nocc, nfzv);
   }
 }
 

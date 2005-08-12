@@ -84,7 +84,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
     if (ref_->occupation(i) == 1.0) nsocc_++;
   }
   nfzc_ = mbptr12->nfzcore();
-  nfzc_ = mbptr12->nfzvirt();
+  nfzv_ = mbptr12->nfzvirt();
 
   ints_method_ = mbptr12->r12ints_method();
   ints_file_ = mbptr12->r12ints_file();

@@ -66,6 +66,10 @@ SingleRefInfo::SingleRefInfo(StateIn& si) :
   }
 }
 
+SingleRefInfo::~SingleRefInfo()
+{
+}
+
 void
 SingleRefInfo::save_data_state(StateOut& so)
 {

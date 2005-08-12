@@ -40,11 +40,13 @@
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbptr12/r12ia.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/transform_factory.h>
 
 using namespace std;
 using namespace sc;
@@ -80,8 +82,8 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
     ipjq_tform->compute(corrparam_);
   }
 
-  int nocc = r12info_->nocc();
-  int nocc_act = r12info_->nocc_act();
+  int nocc = r12info_->ndocc();
+  int nocc_act = r12info_->ndocc_act();
   int nfzc = r12info_->nfzc();
   int nfzv = r12info_->nfzv();
   int noso = r12info_->mo_space()->rank();

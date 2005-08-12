@@ -36,9 +36,11 @@
 #include <util/misc/exenv.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/symmint.h>
+#include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
-#include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/svd.h>
+#include <chemistry/qc/mbptr12/transform_factory.h>
+#include <chemistry/qc/mbptr12/vxb_eval_info.h>
 
 using namespace sc;
 using namespace std;
@@ -132,16 +134,16 @@ R12IntEvalInfo::construct_orthog_vir_()
   if (bs_ == bs_vir_) {
     // If virtuals are from the same space as occupieds, then everything is easy
     vir_space_ = new MOIndexSpace("unoccupied MOs sorted by energy", mo_space_->coefs(),
-                                  mo_space_->basis(), mo_space_->evals(), nocc_, 0);
+                                  mo_space_->basis(), mo_space_->evals(), ndocc(), 0);
     // If virtuals are from the same space as occupieds, then everything is easy
     vir_space_symblk_ = new MOIndexSpace("unoccupied MOs symmetry-blocked", mo_space_->coefs(),
-                                         mo_space_->basis(), mo_space_->evals(), nocc_, 0, MOIndexSpace::symmetry);
+                                         mo_space_->basis(), mo_space_->evals(), ndocc(), 0, MOIndexSpace::symmetry);
 
-    if (nfzv_ == 0)
+    if (nfzv() == 0)
       act_vir_space_ = vir_space_;
     else
       act_vir_space_ = new MOIndexSpace("active unoccupied MOs sorted by energy", mo_space_->coefs(),
-                                  mo_space_->basis(), mo_space_->evals(), nocc_, nfzv_);
+                                  mo_space_->basis(), mo_space_->evals(), ndocc(), nfzv());
     nlindep_vir_ = 0;
   }
   else {

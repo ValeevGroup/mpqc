@@ -84,7 +84,7 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name)
                 << "\" A (GEBC) intermediates evaluator" << endl;
   ExEnv::out0() << incindent;
 
-  int nocc_act = r12info_->nocc_act();
+  int nocc_act = r12info_->ndocc_act();
   int noso = mospace->rank();
 
   /*--------------------------------

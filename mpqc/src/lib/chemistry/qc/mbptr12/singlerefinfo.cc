@@ -69,18 +69,18 @@ SingleRefInfo::SingleRefInfo(StateIn& si) :
 void
 SingleRefInfo::save_data_state(StateOut& so)
 {
-  SavableState::save_state(ref_,so);
+  SavableState::save_state(ref_.pointer(),so);
   
-  SavableState::save_state(symblk_mo_,so);
-  SavableState::save_state(energy_mo_,so);
-  SavableState::save_state(docc_,so);
-  SavableState::save_state(socc_,so);
-  SavableState::save_state(uocc_,so);
+  SavableState::save_state(symblk_mo_.pointer(),so);
+  SavableState::save_state(energy_mo_.pointer(),so);
+  SavableState::save_state(docc_.pointer(),so);
+  SavableState::save_state(socc_.pointer(),so);
+  SavableState::save_state(uocc_.pointer(),so);
   for(int spin=0; spin<2; spin++) {
-    SavableState::save_state(spinspaces_ [spin].symblk_mo_,so);
-    SavableState::save_state(spinspaces_[spin].energy_mo_,so);
-    SavableState::save_state(spinspaces_[spin].occ_,so);
-    SavableState::save_state(spinspaces_[spin].uocc_,so);
+    SavableState::save_state(spinspaces_ [spin].symblk_mo_.pointer(),so);
+    SavableState::save_state(spinspaces_[spin].energy_mo_.pointer(),so);
+    SavableState::save_state(spinspaces_[spin].occ_.pointer(),so);
+    SavableState::save_state(spinspaces_[spin].uocc_.pointer(),so);
   }
 }
 

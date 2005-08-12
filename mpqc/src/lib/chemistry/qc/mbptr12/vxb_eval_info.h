@@ -38,6 +38,7 @@
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
+#include <chemistry/qc/mbptr12/singlerefinfo.h>
 
 #ifndef _chemistry_qc_mbptr12_vxbevalinfo_h
 #define _chemistry_qc_mbptr12_vxbevalinfo_h
@@ -73,6 +74,7 @@ private:
   int ndocc_;
   int nsocc_;
   int nfzc_;
+  int nfzv_;
 
   size_t memory_;
   bool dynamic_;
@@ -98,7 +100,10 @@ private:
   Ref<MOIndexSpace> act_vir_space_;
   Ref<MOIndexSpace> vir_space_;
   Ref<MOIndexSpace> vir_space_symblk_;
-
+  
+  /// Initializes all spaces that relate to the reference determinant
+  Ref<SingleRefInfo> refinfo_;
+  
   /// The transform factory
   Ref<MOIntsTransformFactory> tfactory_;
 
@@ -173,6 +178,7 @@ public:
   int ndocc() const { return ndocc_;};
   int nsocc() const { return nsocc_;};
   int nfzc() const { return nfzc_;};
+  int nfzv() const { return nfzv_;};
   int ndocc_act() const { return ndocc() - nfzc();};
   int nalpha() const { return ndocc()+ nsocc(); }
   int nbeta() const { return ndocc(); }
@@ -205,6 +211,8 @@ public:
   Ref<MOIndexSpace> ribs_space() const { return ribs_space_; };
   /// Returns the MOIntsTransformFactory object
   Ref<MOIntsTransformFactory> tfactory() const { return tfactory_; };
+  /// Return the SingleRefInfo object
+  const Ref<SingleRefInfo>& refinfo() const;
   
   /** Compute span of bs and create corresponding mospace referred to by name. Number
       linear dependencies is returned in nlindep */

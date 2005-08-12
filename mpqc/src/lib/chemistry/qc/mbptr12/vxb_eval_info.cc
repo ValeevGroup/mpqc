@@ -39,6 +39,8 @@
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/transform_factory.h>
+#include <chemistry/qc/mbptr12/singlerefinfo.h>
 
 using namespace std;
 using namespace sc;
@@ -49,7 +51,7 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
   R12IntEvalInfo
  ---------------*/
 static ClassDesc R12IntEvalInfo_cd(
-  typeid(R12IntEvalInfo),"R12IntEvalInfo",4,"virtual public SavableState",
+  typeid(R12IntEvalInfo),"R12IntEvalInfo",5,"virtual public SavableState",
   0, 0, create<R12IntEvalInfo>);
 
 R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
@@ -82,6 +84,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
     if (ref_->occupation(i) == 1.0) nsocc_++;
   }
   nfzc_ = mbptr12->nfzcore();
+  nfzc_ = mbptr12->nfzvirt();
 
   ints_method_ = mbptr12->r12ints_method();
   ints_file_ = mbptr12->r12ints_file();
@@ -143,6 +146,10 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     vir_space_symblk_ << SavableState::restore_state(si);
     tfactory_ << SavableState::restore_state(si);
   }
+  
+  if (si.version(::class_desc<R12IntEvalInfo>()) >= 5) {
+    refinfo_ << SavableState::restore_state(si);
+  }
 
   eigen_();
 }
@@ -185,6 +192,13 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(vir_space_.pointer(),so);
   SavableState::save_state(vir_space_symblk_.pointer(),so);
   SavableState::save_state(tfactory_.pointer(),so);
+  
+  SavableState::save_state(refinfo_.pointer(),so);
+}
+
+const Ref<SingleRefInfo>&
+R12IntEvalInfo::refinfo() const {
+  return refinfo_;
 }
 
 char* R12IntEvalInfo::ints_file() const

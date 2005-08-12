@@ -38,10 +38,12 @@
 #include <util/misc/timer.h>
 #include <util/ref/ref.h>
 #include <math/scmat/local.h>
+#include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbpt/bzerofast.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
+#include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/svd.h>
 
 using namespace std;
@@ -216,9 +218,9 @@ void MP2R12Energy::compute()
   //
 
   // Need eigenvalues
-  int nocc = r12info->nocc();
+  int nocc = r12info->ndocc();
   int nfzc = r12info->nfzc();
-  int nocc_act = r12info->nocc_act();
+  int nocc_act = r12info->ndocc_act();
   int nvir_act = r12info->nvir_act();
   RefDiagSCMatrix evalmat = r12eval_->evals();
   vector<double> evals_act_occ(nocc_act);
@@ -830,7 +832,7 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   }
 
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  int nocc_act = r12info->nocc_act();
+  int nocc_act = r12info->ndocc_act();
   double escf = r12info->ref()->energy();
 
   double emp2tot_aa = 0.0;

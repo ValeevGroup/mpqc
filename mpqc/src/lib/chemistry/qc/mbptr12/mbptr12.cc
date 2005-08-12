@@ -32,6 +32,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <util/misc/string.h>
+#include <util/misc/scexception.h>
 
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
@@ -43,6 +44,7 @@
 #include <chemistry/qc/cints/cints.h>
 #include <chemistry/qc/libint2/libint2.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
+#include <chemistry/qc/mbptr12/transform_factory.h>
 
 using namespace std;
 using namespace sc;

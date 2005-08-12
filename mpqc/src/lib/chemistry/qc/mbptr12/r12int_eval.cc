@@ -34,9 +34,12 @@
 #include <util/ref/ref.h>
 #include <util/state/state_bin.h>
 #include <math/scmat/local.h>
+#include <chemistry/qc/wfn/wfn.h>
+#include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/transform_factory.h>
 
 using namespace std;
 using namespace sc;
@@ -60,7 +63,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info, const Ref<LinearR12::
   stdapprox_(stdapprox), spinadapted_(false), include_mp1_(false), evaluated_(false),
   debug_(0)
 {
-    int nocc_act = r12info_->nocc_act();
+    int nocc_act = r12info_->ndocc_act();
     int nvir_act = r12info_->nvir_act();
     dim_ij_aa_ = new SCDimension((nocc_act*(nocc_act-1))/2);
     dim_ij_ab_ = new SCDimension(nocc_act*nocc_act);

@@ -87,7 +87,7 @@ R12IntEval::compute_B_gbc_1_()
   Ref<MOIndexSpace> focc_space = focc_space_;
 
   const int noso = r12info_->mo_space()->rank();
-  const int nocc = r12info_->nocc();
+  const int nocc = r12info_->ndocc();
   const int nvir = noso - nocc;
   const int nribs = ribs_space->rank();
 
@@ -360,7 +360,7 @@ R12IntEval::compute_B_gbc_2_()
   form_factocc_space_();
   Ref<MOIndexSpace> factocc_space = factocc_space_;
 
-  const int nocc = r12info_->nocc();
+  const int nocc = r12info_->ndocc();
   const int nribs = ribs_space->rank();
 
   // compute r_{12}^2 operator in act.occ.pair/act.occ.-focc. basis

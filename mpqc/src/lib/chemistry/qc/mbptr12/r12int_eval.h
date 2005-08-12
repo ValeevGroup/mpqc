@@ -38,6 +38,9 @@
 #include <chemistry/qc/mbptr12/r12_amps.h>
 
 namespace sc {
+  
+  class TwoBodyMOIntsTransform;
+  class R12IntsAcc;
 
   /** R12IntEval is the top-level class which computes intermediates occuring in linear R12 theories.
       This class is used by all Wavefunction classes that implement linear R12 methods.

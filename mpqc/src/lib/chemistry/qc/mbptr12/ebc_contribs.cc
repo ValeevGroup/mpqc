@@ -77,7 +77,7 @@ R12IntEval::compute_T2_()
   int nproc = msg->n();
 
   const int noso = r12info_->mo_space()->rank();
-  const int nocc = r12info_->nocc();
+  const int nocc = r12info_->ndocc();
   const int nfzv = r12info_->nfzv();
   Ref<MOIndexSpace> mo_space = r12info_->obs_space();
   Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
@@ -227,7 +227,7 @@ differs from the basis set for occupieds");
   ExEnv::out0() << incindent;
 
   const int noso = r12info_->mo_space()->rank();
-  const int nocc = r12info_->nocc();
+  const int nocc = r12info_->ndocc();
   const int nfzv = r12info_->nfzv();
   Ref<MOIndexSpace> mo_space = r12info_->obs_space();
   Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
@@ -350,7 +350,7 @@ R12IntEval::compute_A_simple_()
   ExEnv::out0() << incindent;
 
   const int noso = r12info_->mo_space()->rank();
-  const int nocc = r12info_->nocc();
+  const int nocc = r12info_->ndocc();
   const int nfzv = r12info_->nfzv();
   const int nvir_act = noso - nocc - nfzv;
   Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();

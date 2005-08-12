@@ -75,7 +75,7 @@ R12IntEval::compute_dualEmp2_()
   ipjq_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
 
-  int nocc_act = r12info()->nocc_act();
+  int nocc_act = r12info()->ndocc_act();
   int ncanonvir = canonvir_space_->rank();
 
   ExEnv::out0() << indent << "Begin computation of energies" << endl;
@@ -187,7 +187,7 @@ R12IntEval::compute_dualEmp1_()
   Ref<MOIndexSpace> occ_space = r12info_->occ_space();
   RefSCMatrix F_aocc_canonvir = fock_(occ_space,occ_space,canonvir_space_);
 
-  int nocc = r12info()->nocc();
+  int nocc = r12info()->ndocc();
   int ncanonvir = canonvir_space_->rank();
   RefDiagSCMatrix occ_evals = r12info_->occ_space()->evals();
   RefDiagSCMatrix canonvir_evals = canonvir_space_->evals();

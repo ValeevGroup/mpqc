@@ -87,8 +87,8 @@ R12IntEval::init_intermeds_g12_()
   Ref<R12IntsAcc> ij2mn_acc = im2jn_tform->ints_acc();
 
   int nfzc = r12info()->nfzc();
-  int nocc_act = r12info()->nocc_act();
-  int nocc = r12info()->nocc();
+  int nocc_act = r12info()->ndocc_act();
+  int nocc = r12info()->ndocc();
 
   ExEnv::out0() << indent << "Begin computation of intermediates" << endl;
   SpatialMOPairIter_eq ij_iter(r12info_->act_occ_space());

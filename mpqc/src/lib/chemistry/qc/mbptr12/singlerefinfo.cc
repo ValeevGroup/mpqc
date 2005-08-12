@@ -32,12 +32,56 @@
 
 using namespace sc;
 
+namespace {
+  const unsigned int ClassVersion = 1;
+};
+
+static ClassDesc R12IntEvalInfo_cd(
+  typeid(SingleRefInfo),"SingleRefInfo",ClassVersion,"virtual public SavableState",
+  0, 0, create<SingleRefInfo>);
+
 SingleRefInfo::SingleRefInfo(const Ref<SCF>& ref) :
   ref_(ref)
 {
   if (!ref_->spin_polarized())
     init_spinindependent_spaces();
   init_spinspecific_spaces();
+}
+
+SingleRefInfo::SingleRefInfo(StateIn& si) :
+  SavableState(si)
+{
+  ref_ << SavableState::restore_state(si);
+  
+  symblk_mo_ << SavableState::restore_state(si);
+  energy_mo_ << SavableState::restore_state(si);
+  docc_ << SavableState::restore_state(si);
+  socc_ << SavableState::restore_state(si);
+  uocc_ << SavableState::restore_state(si);
+  for(int spin=0; spin<2; spin++) {
+    spinspaces_[spin].symblk_mo_ << SavableState::restore_state(si);
+    spinspaces_[spin].energy_mo_ << SavableState::restore_state(si);
+    spinspaces_[spin].occ_ << SavableState::restore_state(si);
+    spinspaces_[spin].uocc_ << SavableState::restore_state(si);
+  }
+}
+
+void
+SingleRefInfo::save_data_state(StateOut& so)
+{
+  SavableState::save_state(ref_,so);
+  
+  SavableState::save_state(symblk_mo_,so);
+  SavableState::save_state(energy_mo_,so);
+  SavableState::save_state(docc_,so);
+  SavableState::save_state(socc_,so);
+  SavableState::save_state(uocc_,so);
+  for(int spin=0; spin<2; spin++) {
+    SavableState::save_state(spinspaces_ [spin].symblk_mo_,so);
+    SavableState::save_state(spinspaces_[spin].energy_mo_,so);
+    SavableState::save_state(spinspaces_[spin].occ_,so);
+    SavableState::save_state(spinspaces_[spin].uocc_,so);
+  }
 }
 
 void

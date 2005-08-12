@@ -52,6 +52,8 @@ namespace sc {
     SingleRefInfo(const Ref<SCF>& ref);
     ~SingleRefInfo();
     
+    void save_data_state(StateOut&);
+    
     /// Returns the reference
     const Ref<SCF>& ref() const;
     

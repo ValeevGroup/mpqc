@@ -1135,7 +1135,7 @@ GaussianBasisSet::print(ostream& os) const
 }
 
 Ref<GaussianBasisSet>
-operator+(const Ref<GaussianBasisSet>& A, const Ref<GaussianBasisSet>& B)
+sc::operator+(const Ref<GaussianBasisSet>& A, const Ref<GaussianBasisSet>& B)
 {
   GaussianBasisSet& aref = *(A.pointer());
   return aref + B;

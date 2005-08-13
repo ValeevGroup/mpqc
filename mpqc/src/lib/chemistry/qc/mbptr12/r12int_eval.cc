@@ -780,13 +780,12 @@ R12IntEval::form_canonvir_space_()
 
 #if USE_SINGLEREFINFO
     const Ref<MOIndexSpace>& mo_space = r12info_->refinfo()->orbs();
-    const Ref<MOIndexSpace>& vir_space = r12info_->refinfo()->uocc_sb();
     const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
 #else
     const Ref<MOIndexSpace>& mo_space = r12info_->mo_space();
-    const Ref<MOIndexSpace>& vir_space = r12info_->vir_space_symblk();
     const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
 #endif
+    const Ref<MOIndexSpace>& vir_space = r12info_->vir_space_symblk();
     RefSCMatrix F_vir = fock_(occ_space,vir_space,vir_space);
 
     int nrow = vir_space->rank();

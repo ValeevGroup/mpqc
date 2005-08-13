@@ -81,13 +81,24 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
     //ipjq_tform->set_num_te_types(num_te_types);
     ipjq_tform->compute(corrparam_);
   }
-
-  int nocc = r12info_->ndocc();
-  int nocc_act = r12info_->ndocc_act();
-  int nfzc = r12info_->nfzc();
-  int nfzv = r12info_->nfzv();
-  int noso = r12info_->mo_space()->rank();
-  int nvir  = noso - nocc;
+  
+#if !USE_SINGLEREFINFO
+  const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
+  const Ref<MOIndexSpace>& obs_space = r12info_->obs_space();
+  const int nfzc = r12info_->nfzc();
+  const int nfzv = r12info_->nfzv();
+#else
+  const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
+  const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
+  const int nfzc = r12info_->refinfo()->nfzc();
+  const int nfzv = r12info_->refinfo()->nfzv();
+#endif
+  const int nocc = occ_space->rank();
+  const int nocc_act = act_occ_space->rank();
+  int noso = obs_space->rank();
+  const int nvir  = noso - nocc;
 
   /*--------------------------------
     Compute MP2-R12/A intermediates
@@ -95,8 +106,8 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
    --------------------------------*/
   ExEnv::out0() << indent << "Begin computation of intermediates" << endl;
   tim_enter("intermediates");
-  SpatialMOPairIter_eq ij_iter(r12info_->act_occ_space());
-  SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq ij_iter(act_occ_space);
+  SpatialMOPairIter_eq kl_iter(act_occ_space);
   int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
   int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
   if (debug_) {
@@ -175,8 +186,8 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
         ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
 
       // Compute MP2 energies
-      RefDiagSCMatrix act_occ_evals = r12info_->act_occ_space()->evals();
-      RefDiagSCMatrix all_evals = r12info_->obs_space()->evals();
+      RefDiagSCMatrix act_occ_evals = act_occ_space->evals();
+      RefDiagSCMatrix all_evals = obs_space->evals();
       double emp2_aa = 0.0;
       double emp2_ab = 0.0;
       for(int a=nocc; a<noso; a++) {

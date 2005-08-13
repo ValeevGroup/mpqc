@@ -144,7 +144,7 @@ TwoBodyMOIntsTransform::mem() const {return mem_; }
 Ref<MessageGrp>
 TwoBodyMOIntsTransform::msg() const {return  msg_; }
 
-Ref<R12IntsAcc>
+const Ref<R12IntsAcc>&
 TwoBodyMOIntsTransform::ints_acc() {
   if (ints_acc_)
     return ints_acc_;
@@ -154,16 +154,16 @@ TwoBodyMOIntsTransform::ints_acc() {
     }
 }
 
-Ref<MOIndexSpace>
+const Ref<MOIndexSpace>&
 TwoBodyMOIntsTransform::space1() const {return space1_;}
 
-Ref<MOIndexSpace>
+const Ref<MOIndexSpace>&
 TwoBodyMOIntsTransform::space2() const {return space2_;}
 
-Ref<MOIndexSpace>
+const Ref<MOIndexSpace>&
 TwoBodyMOIntsTransform::space3() const {return space3_;}
 
-Ref<MOIndexSpace>
+const Ref<MOIndexSpace>&
 TwoBodyMOIntsTransform::space4() const {return space4_;}
 
 double

@@ -67,27 +67,32 @@ R12IntEval::contrib_to_VXB_a_asymm_(const std::string& tform_name)
   int me = msg->me();
   int nproc = msg->n();
   
-  // Do the AO->MO transform
+  // Get the AO->MO transform
   Ref<TwoBodyMOIntsTransform> ikjy_tform = get_tform_(tform_name);
+  if (ikjy_tform->space1() != ikjy_tform->space3())
+    throw std::runtime_error("R12IntEval::contrib_to_VXB_a_asymm_() -- wrong type of transform is provided (space1 != space3)");
+  
+  // Carry out the AO->MO transform
   Ref<R12IntsAcc> ijky_acc = ikjy_tform->ints_acc();
   if (ijky_acc.null() || !ijky_acc->is_committed())
     ikjy_tform->compute(corrparam_);
   if (!ijky_acc->is_active())
     ijky_acc->activate();
 
-  Ref<MOIndexSpace> mospace1 = ikjy_tform->space2();
-  Ref<MOIndexSpace> mospace2 = ikjy_tform->space4();
+  const Ref<MOIndexSpace>& mospace1 = ikjy_tform->space1();
+  const Ref<MOIndexSpace>& mospace2 = ikjy_tform->space2();
+  const Ref<MOIndexSpace>& mospace4 = ikjy_tform->space4();
 
   ostringstream oss;
-  oss << "\"" << mospace1->name() << "\"/\"" << mospace2->name() << "\"";
+  oss << "\"" << mospace2->name() << "\"/\"" << mospace4->name() << "\"";
   std::string label = oss.str();
   ExEnv::out0() << endl << indent
                 << "Entered " << label
                 << " A (GEBC) intermediates evaluator" << endl;
   ExEnv::out0() << incindent;
 
-  const int rank2 = mospace1->rank();
-  const int rank4 = mospace2->rank();
+  const int rank2 = mospace2->rank();
+  const int rank4 = mospace4->rank();
 
   /*--------------------------------
     Compute MP2-R12/A intermediates
@@ -95,8 +100,8 @@ R12IntEval::contrib_to_VXB_a_asymm_(const std::string& tform_name)
    --------------------------------*/
   ExEnv::out0() << indent << "Begin computation of intermediates" << endl;
   tim_enter("intermediates");
-  SpatialMOPairIter_eq ij_iter(r12info_->act_occ_space());
-  SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq ij_iter(mospace1);
+  SpatialMOPairIter_eq kl_iter(mospace1);
   int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
   int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
   if (debug_) {

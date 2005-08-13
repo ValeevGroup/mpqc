@@ -64,11 +64,11 @@ public:
 private:
 
   Wavefunction* wfn_;     // Wave function that owns this
-#if USE_SINGLEREFINFO
+#if !USE_SINGLEREFINFO
   Ref<SCF> ref_;
-#endif
   Ref<Integral> integral_;
   Ref<GaussianBasisSet> bs_;
+#endif
   Ref<GaussianBasisSet> bs_aux_;
   Ref<GaussianBasisSet> bs_vir_;
   Ref<GaussianBasisSet> bs_ri_;
@@ -129,7 +129,7 @@ private:
   void construct_ortho_comp_svd_();
   // Returns true if ABS spans OBS
   bool abs_spans_obs_();
-#if USE_SINGLEREFINFO
+#if !USE_SINGLEREFINFO
   // Construct eigenvector and eigenvalues sorted by energy
   void eigen_();
 #endif
@@ -169,16 +169,16 @@ public:
   void set_absmethod(LinearR12::ABSMethod abs_method);
 
   Wavefunction* wfn() const { return wfn_; };
-#if USE_SINGLEREFINFO
+#if !USE_SINGLEREFINFO
   Ref<SCF> ref() const { return ref_; };
+  Ref<Integral> integral() const { return integral_; };
   /// Returns the orbital basis set (OBS) object
   Ref<GaussianBasisSet> basis() const { return bs_; };
 #else
-  const Ref<SCF>& ref() const;
+  Ref<Integral> integral() const { return refinfo()->ref()->integral(); };
   /// Returns the orbital basis set (OBS) object
-  Ref<GaussianBasisSet> basis() const { return ref()->basis(); };
+  Ref<GaussianBasisSet> basis() const { return refinfo()->ref()->basis(); };
 #endif
-  Ref<Integral> integral() const { return integral_; };
   /// Returns the virtuals basis set (VBS) obje19ct
   Ref<GaussianBasisSet> basis_vir() const { return bs_vir_; };
   /// Returns the resolution-of-the-identity basis set (RIBS) object
@@ -213,30 +213,32 @@ public:
 
 #if !USE_SINGLEREFINFO
   /// Returns the MOIndexSpace object for symmetry-blocked MOs in OBS
-  Ref<MOIndexSpace> mo_space() const { return mo_space_; };
+  const Ref<MOIndexSpace>& mo_space() const { return mo_space_; };
   /// Returns the MOIndexSpace object for energy-sorted MOs in OBS
-  Ref<MOIndexSpace> obs_space() const { return obs_space_; };
+  const Ref<MOIndexSpace>& obs_space() const { return obs_space_; };
   /// Returns the MOIndexSpace object for the active occupied MOs
-  Ref<MOIndexSpace> act_occ_space() const { return act_occ_space_; };
+  const Ref<MOIndexSpace>& act_occ_space() const { return act_occ_space_; };
   /// Returns the MOIndexSpace object for all occupied MOs sorted by energy
-  Ref<MOIndexSpace> occ_space() const { return occ_space_; };
+  const Ref<MOIndexSpace>& occ_space() const { return occ_space_; };
   /// Returns the MOIndexSpace object for all occupied MOs symmetry-blocked
-  Ref<MOIndexSpace> occ_space_symblk() const { return occ_space_symblk_; };
+  const Ref<MOIndexSpace>& occ_space_symblk() const { return occ_space_symblk_; };
 #endif
   /// Returns the MOIndexSpace object for all unoccupied MOs ordered by energy
-  Ref<MOIndexSpace> vir_space() const { return vir_space_; };
+  const Ref<MOIndexSpace>& vir_space() const { return vir_space_; };
   /// Returns the MOIndexSpace object for all unoccupied MOs ordered by symmetry
-  Ref<MOIndexSpace> vir_space_symblk() const { return vir_space_symblk_; };
+  const Ref<MOIndexSpace>& vir_space_symblk() const { return vir_space_symblk_; };
   /// Returns the MOIndexSpace object for the active unoccupied MOs
-  Ref<MOIndexSpace> act_vir_space() const { return act_vir_space_; };
+  const Ref<MOIndexSpace>& act_vir_space() const { return act_vir_space_; };
   /// Returns the MOIndexSpace object for ABS
-  Ref<MOIndexSpace> abs_space() const { return abs_space_; };
+  const Ref<MOIndexSpace>& abs_space() const { return abs_space_; };
   /// Returns the MOIndexSpace object for RI-BS
-  Ref<MOIndexSpace> ribs_space() const { return ribs_space_; };
+  const Ref<MOIndexSpace>& ribs_space() const { return ribs_space_; };
   /// Returns the MOIntsTransformFactory object
-  Ref<MOIntsTransformFactory> tfactory() const { return tfactory_; };
+  const Ref<MOIntsTransformFactory>& tfactory() const { return tfactory_; };
+#if USE_SINGLEREFINFO
   /// Return the SingleRefInfo object
   const Ref<SingleRefInfo>& refinfo() const;
+#endif
   
   /** Compute span of bs and create corresponding mospace referred to by name. Number
       linear dependencies is returned in nlindep */

@@ -159,15 +159,15 @@ public:
   /// Returns the MessageGrp object
   Ref<MessageGrp> msg() const;
   /** Returns the integrals accumulator object. */
-  Ref<R12IntsAcc> ints_acc();
+  const Ref<R12IntsAcc>& ints_acc();
   /// Returns MOIndexSpace object 1
-  Ref<MOIndexSpace> space1() const;
+  const Ref<MOIndexSpace>& space1() const;
   /// Returns MOIndexSpace object 2
-  Ref<MOIndexSpace> space2() const;
+  const Ref<MOIndexSpace>& space2() const;
   /// Returns MOIndexSpace object 3
-  Ref<MOIndexSpace> space3() const;
+  const Ref<MOIndexSpace>& space3() const;
   /// Returns MOIndexSpace object 4
-  Ref<MOIndexSpace> space4() const;
+  const Ref<MOIndexSpace>& space4() const;
 
   /// Returns the update print frequency
   double print_percent() const;

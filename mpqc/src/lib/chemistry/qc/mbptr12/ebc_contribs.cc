@@ -75,13 +75,22 @@ R12IntEval::compute_T2_()
   Ref<MessageGrp> msg = r12info_->msg();
   int me = msg->me();
   int nproc = msg->n();
-
-  const int noso = r12info_->mo_space()->rank();
-  const int nocc = r12info_->ndocc();
+  
+#if !USE_SINGLEREFINFO
+  const Ref<MOIndexSpace>& obs_space = r12info_->obs_space();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
+  const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
   const int nfzv = r12info_->nfzv();
-  Ref<MOIndexSpace> mo_space = r12info_->obs_space();
-  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
-  Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
+#else
+  const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
+  const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
+  const int nfzv = r12info_->refinfo()->nfzv();
+#endif
+  const int noso = obs_space->rank();
+  const int nocc = occ_space->rank();
   
   SpatialMOPairIter_eq ij_iter(act_occ_space);
   SpatialMOPairIter_eq ab_iter(act_vir_space);
@@ -137,8 +146,8 @@ R12IntEval::compute_T2_()
       ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
 
     // Compute MP2 energies
-    RefDiagSCMatrix act_occ_evals = r12info_->act_occ_space()->evals();
-    RefDiagSCMatrix all_evals = r12info_->obs_space()->evals();
+    RefDiagSCMatrix act_occ_evals = act_occ_space->evals();
+    RefDiagSCMatrix all_evals = obs_space->evals();
     double T2_aa_ijab = 0.0;
     double T2_ab_ijab = 0.0;
 
@@ -226,12 +235,21 @@ differs from the basis set for occupieds");
     << "Entered R amplitude evaluator" << endl;
   ExEnv::out0() << incindent;
 
-  const int noso = r12info_->mo_space()->rank();
-  const int nocc = r12info_->ndocc();
+#if !USE_SINGLEREFINFO
+  const Ref<MOIndexSpace>& obs_space = r12info_->obs_space();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
+  const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
   const int nfzv = r12info_->nfzv();
-  Ref<MOIndexSpace> mo_space = r12info_->obs_space();
-  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
-  Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
+#else
+  const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
+  const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
+  const int nfzv = r12info_->refinfo()->nfzv();
+#endif
+  const int noso = obs_space->rank();
+  const int nocc = occ_space->rank();
 
   SpatialMOPairIter_eq ij_iter(act_occ_space);
   SpatialMOPairIter_eq ab_iter(act_vir_space);
@@ -287,8 +305,8 @@ differs from the basis set for occupieds");
       ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
 
     // Compute MP2 energies
-    RefDiagSCMatrix act_occ_evals = r12info_->act_occ_space()->evals();
-    RefDiagSCMatrix all_evals = r12info_->obs_space()->evals();
+    RefDiagSCMatrix act_occ_evals = act_occ_space->evals();
+    RefDiagSCMatrix all_evals = obs_space->evals();
     double R_aa_ijab = 0.0;
     double R_ab_ijab = 0.0;
 
@@ -349,18 +367,27 @@ R12IntEval::compute_A_simple_()
     << "Entered A intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
 
-  const int noso = r12info_->mo_space()->rank();
-  const int nocc = r12info_->ndocc();
+#if !USE_SINGLEREFINFO
+  const Ref<MOIndexSpace>& obs_space = r12info_->obs_space();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
+  const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
   const int nfzv = r12info_->nfzv();
-  const int nvir_act = noso - nocc - nfzv;
-  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
-  Ref<MOIndexSpace> mo_space = r12info_->obs_space();
-  Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
+#else
+  const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
+  const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
+  const int nfzv = r12info_->refinfo()->nfzv();
+#endif
+  const int noso = obs_space->rank();
+  const int nocc = occ_space->rank();
+  const int nvir_act = act_vir_space->rank();
 
   // compute the Fock matrix between the complement and virtuals and
   // create the new Fock-weighted space
   Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
-  RefSCMatrix F_ri_v = fock_(r12info_->occ_space(),ribs_space,act_vir_space);
+  RefSCMatrix F_ri_v = fock_(occ_space,ribs_space,act_vir_space);
   if (debug_ > 1)
     F_ri_v.print("Fock matrix (RI-BS/act.virt.)");
   Ref<MOIndexSpace> act_fvir_space = new MOIndexSpace("Fock-weighted active unoccupied MOs sorted by energy",

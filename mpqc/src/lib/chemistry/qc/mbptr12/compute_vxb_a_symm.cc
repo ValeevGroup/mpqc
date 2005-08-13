@@ -69,23 +69,27 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name)
   
   // Do the AO->MO transform
   Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_(tform_name);
+  if (ipjq_tform->space1() != ipjq_tform->space3())
+    throw std::runtime_error("R12IntEval::contrib_to_VXB_a_symm_() -- wrong type of transform is provided (space1 != space3)");
+  if (ipjq_tform->space2() != ipjq_tform->space4())
+    throw std::runtime_error("R12IntEval::contrib_to_VXB_a_symm_() -- wrong type of transform is provided (space2 != space4)");
+  Ref<MOIndexSpace> mospace = ipjq_tform->space2();
+
+  // Carry out the AO->MO transform
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
   if (ijpq_acc.null() || !ijpq_acc->is_committed())
     ipjq_tform->compute(corrparam_);
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
-  if (ipjq_tform->space2() != ipjq_tform->space4())
-    throw std::runtime_error("R12IntEval::contrib_to_VXB_a_symm_() -- wrong type of transform is requested (space2 != space4)");
-  Ref<MOIndexSpace> mospace = ipjq_tform->space2();
-
   ExEnv::out0() << endl << indent
                 << "Entered \"" << mospace->name()
                 << "\" A (GEBC) intermediates evaluator" << endl;
   ExEnv::out0() << incindent;
 
-  int nocc_act = r12info_->ndocc_act();
-  int noso = mospace->rank();
+  const Ref<MOIndexSpace>& act_occ_space = ipjq_tform->space1();
+  const int nocc_act = act_occ_space->rank();
+  const int noso = mospace->rank();
 
   /*--------------------------------
     Compute MP2-R12/A intermediates
@@ -93,8 +97,8 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name)
    --------------------------------*/
   ExEnv::out0() << indent << "Begin computation of intermediates" << endl;
   tim_enter("intermediates");
-  SpatialMOPairIter_eq ij_iter(r12info_->act_occ_space());
-  SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq ij_iter(act_occ_space);
+  SpatialMOPairIter_eq kl_iter(act_occ_space);
   int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
   int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
   if (debug_) {
@@ -109,7 +113,7 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name)
   // Compute the number of tasks that have full access to the integrals
   // and split the work among them
   vector<int> proc_with_ints;
-  int nproc_with_ints = tasks_with_ints_(ijpq_acc,proc_with_ints);
+  const int nproc_with_ints = tasks_with_ints_(ijpq_acc,proc_with_ints);
 
   
   //////////////////////////////////////////////////////////////

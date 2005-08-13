@@ -85,7 +85,14 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
   ikjy_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijky_acc = ikjy_tform->ints_acc();*/
 
-  const int nocc = r12info_->ndocc();
+#if !USE_SINGLEREFINFO
+  const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
+#else
+  const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
+#endif
+  const int nocc = occ_space->rank();
   const int noso_ri = r12info_->ribs_space()->rank();
 
   /*--------------------------------
@@ -94,8 +101,8 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
    --------------------------------*/
   ExEnv::out0() << indent << "Begin computation of intermediates" << endl;
   tim_enter("intermediates");
-  SpatialMOPairIter_eq ij_iter(r12info_->act_occ_space());
-  SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq ij_iter(act_occ_space);
+  SpatialMOPairIter_eq kl_iter(act_occ_space);
   int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
   int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
   if (debug_) {

@@ -65,9 +65,9 @@ MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, cons
 {
   if (evals.null())
     throw std::runtime_error("MOIndexSpace::MOIndexSpace() -- null eigenvalues matrix");
-  if (nfzc < 0 || nfzc >= full_coefs.coldim().n())
+  if (nfzc < 0 || nfzc > full_coefs.coldim().n())
     throw std::runtime_error("MOIndexSpace::MOIndexSpace() -- invalid nfzc");
-  if (nfzc + nfzv >= full_coefs.coldim().n())
+  if (nfzc + nfzv > full_coefs.coldim().n())
     throw std::runtime_error("MOIndexSpace::MOIndexSpace() -- invalid nfzc+nfzv");
   frozen_to_blockinfo(nfzc,nfzv,evals);
   full_coefs_to_coefs(full_coefs, evals);
@@ -325,7 +325,8 @@ MOIndexSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs, const RefDiagSC
     int* nfunc_per_block = new int[1];
     nfunc_per_block[0] = rank_;
     modim_ = new SCDimension(rank_, 1, nfunc_per_block, ("MO(" + name_ + ")").c_str());
-    modim_->blocks()->set_subdim(0, new SCDimension(nfunc_per_block[0]));
+    if (rank_)
+      modim_->blocks()->set_subdim(0, new SCDimension(nfunc_per_block[0]));
     
     // Recompute offsets_ and nmo_ to conform the energy ordering
     offset = 0;
@@ -417,39 +418,7 @@ MOIndexSpace::print_summary(ostream& o) const
 // Function dquicksort performs a quick sort (smaller -> larger) 
 // of the double data in item by the integer indices in index;
 // data in item remain unchanged
-//
-// Both functions borrowed from lib/chemistry/qc/mbpt/mbpt.cc
-//
 /////////////////////////////////////////////////////////////////
-void
-MOIndexSpace::dqs(double *item,int *index,int left,int right)
-{
-  int i,j;
-  double x;
-  int y;
-  const double small_diff = 1.0e-12;
-  
-  i=left; j=right;
-  x=item[index[(left+right)/2]];
-  
-  do {
-    while(item[index[i]]<x && fabs(x-item[index[i]]) > small_diff && i<right) i++;
-    while(x<item[index[j]] && fabs(x-item[index[j]]) > small_diff && j>left) j--;
-    
-    if (i<=j) {
-      if (fabs(item[index[i]] - item[index[j]]) > small_diff) {
-        y=index[i];
-        index[i]=index[j];
-        index[j]=y;
-      }
-      i++; j--;
-    }
-  } while(i<=j);
-  
-  if (left<j) dqs(item,index,left,j);
-  if (i<right) dqs(item,index,i,right);
-}
-
 namespace {
   // use this to compute permutation corresponding to a sort
   class IndexedValue {

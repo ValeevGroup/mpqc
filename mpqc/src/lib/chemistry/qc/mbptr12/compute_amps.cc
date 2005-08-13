@@ -55,6 +55,16 @@ void
 R12IntEval::compute_T2_vbsneqobs_()
 {
   Ref<TwoBodyMOIntsTransform> iajb_tform = get_tform_("(ia|jb)");
+  if (iajb_tform->space1() != iajb_tform->space3())
+    throw std::runtime_error("R12IntEval::compute_T2_vbsneqobs_() -- wrong type of transform is provided (space1 != space3)");
+  if (iajb_tform->space2() != iajb_tform->space4())
+    throw std::runtime_error("R12IntEval::compute_T2_vbsneqobs_() -- wrong type of transform is provided (space2 != space4)");
+#if USE_SINGLEREFINFO
+  if (iajb_tform->space1() != r12info_->refinfo()->docc_act())
+    throw std::runtime_error("R12IntEval::compute_T2_vbsneqobs_() -- wrong type of transform is provided (space1 != act_occ)");
+  if (iajb_tform->space2() != r12info_->act_vir_space())
+    throw std::runtime_error("R12IntEval::compute_T2_vbsneqobs_() -- wrong type of transform is provided (space1 != act_vir)");
+#endif
   Ref<R12IntsAcc> ijab_acc = iajb_tform->ints_acc();
   if (!ijab_acc->is_committed())
     iajb_tform->compute(corrparam_);
@@ -70,8 +80,12 @@ R12IntEval::compute_T2_vbsneqobs_()
 	       << "Entered MP2 T2 amplitude evaluator" << endl;
   ExEnv::out0() << incindent;
 
-  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
-  Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
+#if !USE_SINGLEREFINFO
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
+#else
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
+#endif
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
   const int nactvir = act_vir_space->rank();
   RefDiagSCMatrix act_occ_evals = act_occ_space->evals();
   RefDiagSCMatrix act_vir_evals = act_vir_space->evals();
@@ -175,6 +189,16 @@ void
 R12IntEval::compute_R_vbsneqobs_(const Ref<TwoBodyMOIntsTransform>& ipjq_tform, RefSCMatrix& Raa, RefSCMatrix& Rab)
 {
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
+  if (ipjq_tform->space1() != ipjq_tform->space3())
+    throw std::runtime_error("R12IntEval::compute_R_vbsneqobs_() -- wrong type of transform is provided (space1 != space3)");
+  if (ipjq_tform->space2() != ipjq_tform->space4())
+    throw std::runtime_error("R12IntEval::compute_R_vbsneqobs_() -- wrong type of transform is provided (space2 != space4)");
+#if USE_SINGLEREFINFO
+  if (ipjq_tform->space1() != r12info_->refinfo()->docc_act())
+    throw std::runtime_error("R12IntEval::compute_R_vbsneqobs_() -- wrong type of transform is provided (space1 != act_occ)");
+  if (ipjq_tform->space2() != r12info_->refinfo()->orbs())
+    throw std::runtime_error("R12IntEval::compute_R_vbsneqobs_() -- wrong type of transform is provided (space1 != all)");
+#endif
   if (!ijpq_acc->is_committed())
     ipjq_tform->compute(corrparam_);
   if (!ijpq_acc->is_active())
@@ -189,7 +213,7 @@ R12IntEval::compute_R_vbsneqobs_(const Ref<TwoBodyMOIntsTransform>& ipjq_tform, 
     << "Entered R intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
 
-  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
+  Ref<MOIndexSpace> act_occ_space = ipjq_tform->space1();
   Ref<MOIndexSpace> space2 = ipjq_tform->space2();
   Ref<MOIndexSpace> space4 = ipjq_tform->space4();
   const int rank2 = space2->rank();
@@ -278,7 +302,11 @@ R12IntEval::compute_amps_()
     return;
 
   Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
+#if !USE_SINGLEREFINFO
   Ref<MOIndexSpace> occ_space = r12info_->occ_space();
+#else
+  Ref<MOIndexSpace> occ_space = r12info_->refinfo()->docc();
+#endif
   Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
 
   MOPairIterFactory PIFactory;

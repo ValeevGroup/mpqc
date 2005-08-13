@@ -48,8 +48,13 @@ using namespace std;
 void
 R12IntEvalInfo::construct_ri_basis_(bool safe)
 {
-  if (bs_aux_->equiv(bs_)) {
-    bs_ri_ = bs_;
+#if USE_SINGLEREFINFO
+  Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
+#else
+  Ref<GaussianBasisSet> obs = bs_;
+#endif
+  if (bs_aux_->equiv(obs)) {
+    bs_ri_ = obs;
     if (abs_method_ == LinearR12::ABS_CABS ||
 	abs_method_ == LinearR12::ABS_CABSPlus)
       throw std::runtime_error("R12IntEvalInfo::construct_ri_basis_ -- ABS methods CABS and CABS+ can only be used when ABS != OBS");
@@ -88,8 +93,12 @@ R12IntEvalInfo::construct_ri_basis_ks_(bool safe)
 void
 R12IntEvalInfo::construct_ri_basis_ksplus_(bool safe)
 {
-  GaussianBasisSet& abs = *(bs_aux_.pointer());
-  bs_ri_ = abs + bs_;
+#if USE_SINGLEREFINFO
+  Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
+#else
+  Ref<GaussianBasisSet> obs = basis();
+#endif
+  bs_ri_ = bs_aux_ + obs;
   construct_orthog_ri_();
 }
 
@@ -108,8 +117,12 @@ R12IntEvalInfo::construct_ri_basis_ev_(bool safe)
 void
 R12IntEvalInfo::construct_ri_basis_evplus_(bool safe)
 {
-  GaussianBasisSet& abs = *(bs_aux_.pointer());
-  bs_ri_ = abs + bs_;
+#if USE_SINGLEREFINFO
+  Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
+#else
+  Ref<GaussianBasisSet> obs = basis();
+#endif
+  bs_ri_ = bs_aux_ + obs;
   construct_ortho_comp_svd_();
 }
 
@@ -119,7 +132,11 @@ R12IntEvalInfo::construct_orthog_aux_()
   if (abs_space_.nonnull())
     return;
 
+#if !USE_SINGLEREFINFO
   abs_space_ = orthogonalize("ABS", bs_aux_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_aux_);
+#else
+  abs_space_ = orthogonalize("ABS", bs_aux_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_aux_);
+#endif
 
   if (bs_aux_ == bs_ri_)
     ribs_space_ = abs_space_;
@@ -131,11 +148,17 @@ R12IntEvalInfo::construct_orthog_vir_()
   if (vir_space_.nonnull())
     return;
 
-  if (bs_ == bs_vir_) {
+#if USE_SINGLEREFINFO
+  Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
+#else
+  Ref<GaussianBasisSet> obs = basis();
+#endif
+
+  if (obs == bs_vir_) {
+#if !USE_SINGLEREFINFO
     // If virtuals are from the same space as occupieds, then everything is easy
     vir_space_ = new MOIndexSpace("unoccupied MOs sorted by energy", mo_space_->coefs(),
                                   mo_space_->basis(), mo_space_->evals(), ndocc(), 0);
-    // If virtuals are from the same space as occupieds, then everything is easy
     vir_space_symblk_ = new MOIndexSpace("unoccupied MOs symmetry-blocked", mo_space_->coefs(),
                                          mo_space_->basis(), mo_space_->evals(), ndocc(), 0, MOIndexSpace::symmetry);
 
@@ -144,18 +167,38 @@ R12IntEvalInfo::construct_orthog_vir_()
     else
       act_vir_space_ = new MOIndexSpace("active unoccupied MOs sorted by energy", mo_space_->coefs(),
                                   mo_space_->basis(), mo_space_->evals(), ndocc(), nfzv());
+#else
+    vir_space_ = refinfo()->uocc();
+    vir_space_symblk_ = refinfo()->uocc_sb();
+    if (refinfo()->nfzv() == 0)
+      act_vir_space_ = vir_space_;
+    else
+      act_vir_space_ = refinfo()->uocc_act();
+#endif
     nlindep_vir_ = 0;
   }
   else {
+#if !USE_SINGLEREFINFO
     // This is a set of orthonormal functions that span VBS
     Ref<MOIndexSpace> vir_space = orthogonalize("VBS", bs_vir_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_vir_);
     // Now project out occupied MOs
     vir_space_symblk_ = orthog_comp(occ_space_symblk_, vir_space, "VBS", ref_->lindep_tol());
+#else
+    // This is a set of orthonormal functions that span VBS
+    Ref<MOIndexSpace> vir_space = orthogonalize("VBS", bs_vir_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_vir_);
+    // Now project out occupied MOs
+    vir_space_symblk_ = orthog_comp(refinfo()->docc_sb(), vir_space, "VBS", refinfo()->ref()->lindep_tol());
+#endif
 
     // Design flaw!!! Need to compute Fock matrix right here but can't since Fock is built into R12IntEval
     // Need to move all relevant code outside of MBPT2-R12 code
+#if !USE_SINGLEREFINFO
     if (nfzv_ != 0)
       throw std::runtime_error("R12IntEvalInfo::construct_orthog_vir_() -- nfzv_ != 0 is not allowed yet");
+#else
+    if (refinfo()->nfzv() != 0)
+      throw std::runtime_error("R12IntEvalInfo::construct_orthog_vir_() -- nfzv_ != 0 is not allowed yet");
+#endif
     vir_space_ = vir_space_symblk_;
     act_vir_space_ = vir_space_symblk_;
   }
@@ -171,7 +214,11 @@ R12IntEvalInfo::construct_orthog_ri_()
   if (ribs_space_.nonnull())
     return;
 
+#if !USE_SINGLEREFINFO
   ribs_space_ = orthogonalize("RI-BS", bs_ri_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_ri_);
+#else
+  ribs_space_ = orthogonalize("RI-BS", bs_ri_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri_);
+#endif
 }
 
 bool
@@ -181,17 +228,30 @@ R12IntEvalInfo::abs_spans_obs_()
 
   // Compute the bumber of linear dependencies in OBS+ABS
   GaussianBasisSet& abs = *(bs_aux_.pointer());
-  Ref<GaussianBasisSet> ri_basis = abs + bs_;
+#if !USE_SINGLEREFINFO
+  Ref<GaussianBasisSet> ri_basis = abs + basis();
+#else
+  Ref<GaussianBasisSet> ri_basis = abs + refinfo()->ref()->basis();
+#endif
   int nlindep_ri = 0;
   if (bs_ri_.nonnull() && ri_basis->equiv(bs_ri_)) {
     construct_orthog_ri_();
     nlindep_ri = nlindep_ri_;
   }
   else {
+#if !USE_SINGLEREFINFO
     Ref<MOIndexSpace> ribs_space = orthogonalize("OBS+ABS", ri_basis, ref_->orthog_method(), ref_->lindep_tol(), nlindep_ri);
+#else
+    Ref<MOIndexSpace> ribs_space = orthogonalize("OBS+ABS", ri_basis, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri);
+#endif
   }
-
-  if (nlindep_ri - nlindep_aux_ - mo_space_->rank() == 0)
+  
+#if !USE_SINGLEREFINFO
+  const int obs_rank = mo_space_->rank();
+#else
+  const int obs_rank = refinfo()->orbs()->rank();
+#endif
+  if (nlindep_ri - nlindep_aux_ - obs_rank == 0)
     return true;
   else
     return false;
@@ -207,16 +267,27 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
    construct_orthog_ri_();
 
    if (debug_ > 1) {
+#if !USE_SINGLEREFINFO
      occ_space_symblk_->coefs().print("Occupied MOs (symblocked)");
-     vir_space_symblk_->coefs().print("Virtual MOs (symblocked)");
-     obs_space_->coefs().print("All MOs");
      act_occ_space_->coefs().print("Active occupied MOs");
+     obs_space_->coefs().print("All MOs");
+#else
+     refinfo()->docc_sb()->coefs().print("Occupied MOs (symblocked)");
+     refinfo()->docc_act()->coefs().print("Active occupied MOs");
+     refinfo()->orbs()->coefs().print("All MOs");
+#endif
+     vir_space_symblk_->coefs().print("Virtual MOs (symblocked)");
      act_vir_space_->coefs().print("Active virtual MOs");
      ribs_space_->coefs().print("Orthogonal RI-BS");
    }
 
+#if !USE_SINGLEREFINFO
    ribs_space_ = orthog_comp(occ_space_symblk_, ribs_space_, "RI-BS", ref_->lindep_tol());
    ribs_space_ = orthog_comp(vir_space_symblk_, ribs_space_, "RI-BS", ref_->lindep_tol());
+#else
+   ribs_space_ = orthog_comp(refinfo()->docc_sb(), ribs_space_, "RI-BS", refinfo()->ref()->lindep_tol());
+   ribs_space_ = orthog_comp(vir_space_symblk_, ribs_space_, "RI-BS", refinfo()->ref()->lindep_tol());
+#endif
 }
 
 Ref<MOIndexSpace>

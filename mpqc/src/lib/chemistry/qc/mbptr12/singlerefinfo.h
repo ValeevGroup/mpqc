@@ -68,15 +68,19 @@ namespace sc {
     /**  Spin-independent variants can throw when used with spin-polarized reference.
     */
     /// Return the space of symmetry-blocked MOs
-    const Ref<MOIndexSpace>& symblk_mo() const;
+    const Ref<MOIndexSpace>& orbs_sb() const;
     /// Return the space of energy-sorted MOs
-    const Ref<MOIndexSpace>& energy_mo() const;
+    const Ref<MOIndexSpace>& orbs() const;
+    /// Return the space of symmetry-blocked doubly-occupied MOs
+    const Ref<MOIndexSpace>& docc_sb() const;
     /// Return the space of doubly-occupied MOs
     const Ref<MOIndexSpace>& docc() const;
     /// Return the space of active doubly-occupied MOs
     const Ref<MOIndexSpace>& docc_act() const;
     /// Return the space of singly-occupied MOs
     const Ref<MOIndexSpace>& socc() const;
+    /// Return the space of symmetry-blocked unoccupied (virtual) MOs
+    const Ref<MOIndexSpace>& uocc_sb() const;
     /// Return the space of unoccupied (virtual) MOs
     const Ref<MOIndexSpace>& uocc() const;
     /// Return the space of active unoccupied (virtual) MOs
@@ -84,13 +88,17 @@ namespace sc {
     //@}
     
     /// Return the space of symmetry-blocked MOs of the given spin
-    const Ref<MOIndexSpace>& symblk_mo(SpinCase spin) const;
+    const Ref<MOIndexSpace>& orbs_sb(SpinCase spin) const;
     /// Return the space of energy-sorted MOs of the given spin
-    const Ref<MOIndexSpace>& energy_mo(SpinCase spin) const;
+    const Ref<MOIndexSpace>& orbs(SpinCase spin) const;
+    /// Return the space of symmery-blocked occupied MOs of the given spin
+    const Ref<MOIndexSpace>& occ_sb(SpinCase spin) const;
     /// Return the space of occupied MOs of the given spin
     const Ref<MOIndexSpace>& occ(SpinCase spin) const;
     /// Return the space of occupied MOs of the given spin
     const Ref<MOIndexSpace>& occ_act(SpinCase spin) const;
+    /// Return the space of symmetry-blocked unoccupied (virtual) MOs of the given spin
+    const Ref<MOIndexSpace>& uocc_sb(SpinCase spin) const;
     /// Return the space of unoccupied (virtual) MOs of the given spin
     const Ref<MOIndexSpace>& uocc(SpinCase spin) const;
     /// Return the space of unoccupied (virtual) MOs of the given spin
@@ -106,10 +114,12 @@ namespace sc {
     
     /// Following data structure is defined for each spin case
     typedef struct {
-      Ref<MOIndexSpace> symblk_mo_;
-      Ref<MOIndexSpace> energy_mo_;
+      Ref<MOIndexSpace> orbs_sb_;
+      Ref<MOIndexSpace> orbs_;
+      Ref<MOIndexSpace> occ_sb_;
       Ref<MOIndexSpace> occ_;
       Ref<MOIndexSpace> occ_act_;
+      Ref<MOIndexSpace> uocc_sb_;
       Ref<MOIndexSpace> uocc_;
       Ref<MOIndexSpace> uocc_act_;
       /// "constructor"
@@ -121,11 +131,13 @@ namespace sc {
     //@{
     /** see corresponding public member function
     */
-    Ref<MOIndexSpace> symblk_mo_;
-    Ref<MOIndexSpace> energy_mo_;
+    Ref<MOIndexSpace> orbs_sb_;
+    Ref<MOIndexSpace> orbs_;
+    Ref<MOIndexSpace> docc_sb_;
     Ref<MOIndexSpace> docc_;
     Ref<MOIndexSpace> docc_act_;
     Ref<MOIndexSpace> socc_;
+    Ref<MOIndexSpace> uocc_sb_;
     Ref<MOIndexSpace> uocc_;
     Ref<MOIndexSpace> uocc_act_;
     SpinSpaces spinspaces_[2];

@@ -66,20 +66,26 @@ R12IntEval::compute_dualEmp2_()
   int me = msg->me();
   int nproc = msg->n();
   
+#if USE_SINGLEREFINFO
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
+#else
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
+#endif
+  
   // Do the AO->MO transform
   form_canonvir_space_();
   Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
-  tfactory->set_spaces(r12info_->act_occ_space(),canonvir_space_,
-                       r12info_->act_occ_space(),canonvir_space_);
+  tfactory->set_spaces(act_occ_space,canonvir_space_,
+                       act_occ_space,canonvir_space_);
   Ref<TwoBodyMOIntsTransform> ipjq_tform = tfactory->twobody_transform_13("(ix|jy)",corrfactor_->callback());
   ipjq_tform->compute(corrparam_);
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
 
-  int nocc_act = r12info()->ndocc_act();
+  int nocc_act = act_occ_space->rank();
   int ncanonvir = canonvir_space_->rank();
 
   ExEnv::out0() << indent << "Begin computation of energies" << endl;
-  SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq kl_iter(act_occ_space);
   int naa = kl_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
   int nab = kl_iter.nij_ab();          // Number of alpha-beta pairs
   if (debug_) {
@@ -92,7 +98,7 @@ R12IntEval::compute_dualEmp2_()
   vector<int> proc_with_ints;
   int nproc_with_ints = tasks_with_ints_(ijpq_acc,proc_with_ints);
 
-  RefDiagSCMatrix act_occ_evals = r12info_->act_occ_space()->evals();
+  RefDiagSCMatrix act_occ_evals = act_occ_space->evals();
   RefDiagSCMatrix canonvir_evals = canonvir_space_->evals();
 
   if (ijpq_acc->has_access(me)) {
@@ -184,12 +190,18 @@ R12IntEval::compute_dualEmp1_()
   
   // Compute act.occ./aux.virt. Fock matrix
   form_canonvir_space_();
+#if USE_SINGLEREFINFO
+  Ref<MOIndexSpace> occ_space = r12info_->refinfo()->docc();
+  const double eref = r12info_->refinfo()->ref()->energy();
+#else
   Ref<MOIndexSpace> occ_space = r12info_->occ_space();
+  const double eref = r12info_->ref()->energy();
+#endif
   RefSCMatrix F_aocc_canonvir = fock_(occ_space,occ_space,canonvir_space_);
 
-  int nocc = r12info()->ndocc();
+  int nocc = occ_space->rank();
   int ncanonvir = canonvir_space_->rank();
-  RefDiagSCMatrix occ_evals = r12info_->occ_space()->evals();
+  RefDiagSCMatrix occ_evals = occ_space->evals();
   RefDiagSCMatrix canonvir_evals = canonvir_space_->evals();
 
   double emp1 = 0.0;
@@ -202,7 +214,7 @@ R12IntEval::compute_dualEmp1_()
   ExEnv::out0() << indent << "MP1 energy correction to HF energy [au] :   "
                 << 2.0*emp1 << endl;
   ExEnv::out0() << indent << "HF energy estimated in new basis [au]   :   "
-                << r12info_->ref()->energy() - 2.0*emp1 << endl;
+                << eref - 2.0*emp1 << endl;
 
   ExEnv::out0() << decindent;
   ExEnv::out0() << endl << "Exited dual-basis MP1 energy evaluator" << endl;

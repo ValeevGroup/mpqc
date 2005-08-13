@@ -64,6 +64,13 @@ R12IntEval::init_intermeds_g12_()
   int me = msg->me();
   int nproc = msg->n();
 
+#if USE_SINGLEREFINFO
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
+  const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
+#else
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
+  const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
+#endif
   //
   // Do the AO->MO transform:
   // 1) get (im|jn) integrals of g12/r12 operator to compute diagonal parts of V
@@ -79,19 +86,23 @@ R12IntEval::init_intermeds_g12_()
   // 2) get (im|jn) integrals of [g12,[t1,g12]] and g12*g12 operator (use integrals with the exponent multiplied by 2, and additionally [g12,[t1,g12]] integral needs to be scaled by 0.25 to take into account that real exponent is half what the integral library thinks)
   //    these integrals used to compute X and B
   //    NOTE: use occ_space instead of act_occ_space so that one block of code will handle all 3 integrals
-  tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
-                       r12info_->act_occ_space(),r12info_->occ_space());
+  tfactory->set_spaces(act_occ_space,occ_space,
+                       act_occ_space,occ_space);
   Ref<TwoBodyMOIntsTransform> im2jn_tform = tfactory->twobody_transform_13("(im|2|jn)",corrfactor_->callback());
   im2jn_tform->set_num_te_types(corrfactor_->num_tbint_types());
   im2jn_tform->compute(2.0*corrparam_);
   Ref<R12IntsAcc> ij2mn_acc = im2jn_tform->ints_acc();
 
-  int nfzc = r12info()->nfzc();
-  int nocc_act = r12info()->ndocc_act();
-  int nocc = r12info()->ndocc();
+#if USE_SINGLEREFINFO
+  const int nfzc = r12info()->refinfo()->nfzc();
+#else
+  const int nfzc = r12info()->nfzc();
+#endif
+  const int nocc_act = act_occ_space->rank();
+  const int nocc = occ_space->rank();
 
   ExEnv::out0() << indent << "Begin computation of intermediates" << endl;
-  SpatialMOPairIter_eq ij_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq ij_iter(act_occ_space);
   int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
   int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
   if (debug_) {
@@ -132,7 +143,7 @@ R12IntEval::init_intermeds_g12_()
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
 
-      SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
+      SpatialMOPairIter_eq kl_iter(act_occ_space);
       for(kl_iter.start();int(kl_iter);kl_iter.next()) {
         const int k = kl_iter.i();
         const int l = kl_iter.j();

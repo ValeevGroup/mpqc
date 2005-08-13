@@ -63,8 +63,13 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info, const Ref<LinearR12::
   stdapprox_(stdapprox), spinadapted_(false), include_mp1_(false), evaluated_(false),
   debug_(0)
 {
-    int nocc_act = r12info_->ndocc_act();
-    int nvir_act = r12info_->nvir_act();
+#if !USE_SINGLEREFINFO
+    const int nocc_act = r12info_->ndocc_act();
+    const int nvir_act = r12info_->nvir_act();
+#else
+    const int nocc_act = r12info_->refinfo()->docc_act()->rank();
+    const int nvir_act = r12info_->act_vir_space()->rank();
+#endif    
     dim_ij_aa_ = new SCDimension((nocc_act*(nocc_act-1))/2);
     dim_ij_ab_ = new SCDimension(nocc_act*nocc_act);
     dim_ij_s_ = new SCDimension((nocc_act*(nocc_act+1))/2);
@@ -351,7 +356,13 @@ RefSCVector R12IntEval::emp2_ab()
   return emp2pair_ab_;
 }
 
-RefDiagSCMatrix R12IntEval::evals() const { return r12info_->obs_space()->evals(); };
+RefDiagSCMatrix R12IntEval::evals() const {
+#if !USE_SINGLEREFINFO
+  return r12info_->obs_space()->evals();
+#else
+  return r12info_->refinfo()->orbs()->evals();
+#endif
+};
 
 void
 R12IntEval::checkpoint_() const
@@ -372,11 +383,25 @@ R12IntEval::init_tforms_()
   Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
   tfactory->set_ints_method((MOIntsTransformFactory::StoreMethod)r12info_->ints_method());
 
+#if USE_SINGLEREFINFO
+  const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
+  const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
+  const Ref<MOIndexSpace>& ribs_space = r12info_->ribs_space();
+#else
+  Ref<MOIndexSpace> occ_space = r12info_->occ_space();
+  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
+  Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
+  Ref<MOIndexSpace> obs_space = r12info_->obs_space();
+  Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
+#endif
+  
   const std::string ipjq_name = "(ip|jq)";
   Ref<TwoBodyMOIntsTransform> ipjq_tform = tform_map_[ipjq_name];
   if (ipjq_tform.null()) {
-    tfactory->set_spaces(r12info_->act_occ_space(),r12info_->obs_space(),
-                         r12info_->act_occ_space(),r12info_->obs_space());
+    tfactory->set_spaces(act_occ_space,obs_space,
+                         act_occ_space,obs_space);
     ipjq_tform = tfactory->twobody_transform_13(ipjq_name,corrfactor_->callback());
     tform_map_[ipjq_name] = ipjq_tform;
     tform_map_[ipjq_name]->set_num_te_types(corrfactor_->num_tbint_types());
@@ -385,8 +410,8 @@ R12IntEval::init_tforms_()
   const std::string iajb_name = "(ia|jb)";
   Ref<TwoBodyMOIntsTransform> iajb_tform = tform_map_[iajb_name];
   if (iajb_tform.null()) {
-    tfactory->set_spaces(r12info_->act_occ_space(),r12info_->act_vir_space(),
-                         r12info_->act_occ_space(),r12info_->act_vir_space());
+    tfactory->set_spaces(act_occ_space,act_vir_space,
+                         act_occ_space,act_vir_space);
     iajb_tform = tfactory->twobody_transform_13(iajb_name,corrfactor_->callback());
     tform_map_[iajb_name] = iajb_tform;
     tform_map_[iajb_name]->set_num_te_types(corrfactor_->num_tbint_types());
@@ -395,8 +420,8 @@ R12IntEval::init_tforms_()
   const std::string imja_name = "(im|ja)";
   Ref<TwoBodyMOIntsTransform> imja_tform = tform_map_[imja_name];
   if (imja_tform.null()) {
-    tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
-                         r12info_->act_occ_space(),r12info_->act_vir_space());
+    tfactory->set_spaces(act_occ_space,occ_space,
+                         act_occ_space,act_vir_space);
     imja_tform = tfactory->twobody_transform_13(imja_name,corrfactor_->callback());
     tform_map_[imja_name] = imja_tform;
     tform_map_[imja_name]->set_num_te_types(corrfactor_->num_tbint_types());
@@ -405,8 +430,8 @@ R12IntEval::init_tforms_()
   const std::string imjn_name = "(im|jn)";
   Ref<TwoBodyMOIntsTransform> imjn_tform = tform_map_[imjn_name];
   if (imjn_tform.null()) {
-    tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
-                         r12info_->act_occ_space(),r12info_->occ_space());
+    tfactory->set_spaces(act_occ_space,occ_space,
+                         act_occ_space,occ_space);
     imjn_tform = tfactory->twobody_transform_13(imjn_name,corrfactor_->callback());
     tform_map_[imjn_name] = imjn_tform;
     tform_map_[imjn_name]->set_num_te_types(corrfactor_->num_tbint_types());
@@ -415,8 +440,8 @@ R12IntEval::init_tforms_()
   const std::string imjy_name = "(im|jy)";
   Ref<TwoBodyMOIntsTransform> imjy_tform = tform_map_[imjy_name];
   if (imjy_tform.null()) {
-    tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
-                         r12info_->act_occ_space(),r12info_->ribs_space());
+    tfactory->set_spaces(act_occ_space,occ_space,
+                         act_occ_space,ribs_space);
     imjy_tform = tfactory->twobody_transform_13(imjy_name,corrfactor_->callback());
     tform_map_[imjy_name] = imjy_tform;
     tform_map_[imjy_name]->set_num_te_types(corrfactor_->num_tbint_types());
@@ -434,7 +459,7 @@ R12IntEval::get_tform_(const std::string& tform_name)
   TwoBodyMOIntsTransform* tform = (*tform_iter).second.pointer();
   if (tform == NULL) {
     std::string errmsg = "R12IntEval::get_tform_() -- transform " + tform_name + " is not known";
-    throw std::runtime_error(errmsg.c_str());
+    throw ProgrammingError(errmsg.c_str(),__FILE__,__LINE__);
   }
   // Do not compute here since compute() call may take params now
   //tform->compute(tbint_params);
@@ -574,15 +599,20 @@ R12IntEval::r2_contrib_to_X_orig_()
     Compute dipole and quadrupole moment integrals in act MO basis
    ---------------------------------------------------------------*/
   RefSCMatrix MX, MY, MZ, MXX, MYY, MZZ;
-  r12info_->compute_multipole_ints(r12info_->act_occ_space(),r12info_->act_occ_space(),MX,MY,MZ,MXX,MYY,MZZ);
+#if !USE_SINGLEREFINFO
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
+#else
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
+#endif
+  r12info_->compute_multipole_ints(act_occ_space,act_occ_space,MX,MY,MZ,MXX,MYY,MZZ);
   if (debug_)
     ExEnv::out0() << indent << "Computed multipole moment integrals" << endl;
 
   const int nproc = r12info_->msg()->n();
   const int me = r12info_->msg()->me();
 
-  SpatialMOPairIter_eq ij_iter(r12info_->act_occ_space());
-  SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq ij_iter(act_occ_space);
+  SpatialMOPairIter_eq kl_iter(act_occ_space);
 
   for(kl_iter.start();int(kl_iter);kl_iter.next()) {
 
@@ -655,15 +685,20 @@ R12IntEval::r2_contrib_to_X_new_()
 {
   unsigned int me = r12info_->msg()->me();
 
+#if !USE_SINGLEREFINFO
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
+#else
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
+#endif
   // compute r_{12}^2 operator in act.occ.pair/act.occ.pair basis
-  RefSCMatrix R2 = compute_r2_(r12info_->act_occ_space(),r12info_->act_occ_space());
+  RefSCMatrix R2 = compute_r2_(act_occ_space,act_occ_space);
 
   if (me != 0)
     return;
   Xab_.accumulate(R2);
 
-  SpatialMOPairIter_eq ij_iter(r12info_->act_occ_space());
-  SpatialMOPairIter_eq kl_iter(r12info_->act_occ_space());
+  SpatialMOPairIter_eq ij_iter(act_occ_space);
+  SpatialMOPairIter_eq kl_iter(act_occ_space);
 
   for(kl_iter.start();int(kl_iter);kl_iter.next()) {
 
@@ -693,8 +728,12 @@ R12IntEval::form_focc_space_()
   // compute the Fock matrix between the complement and all occupieds and
   // create the new Fock-weighted space
   if (focc_space_.null()) {
-    Ref<MOIndexSpace> occ_space = r12info_->occ_space();
-    Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
+#if USE_SINGLEREFINFO
+    const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
+#else
+    const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
+#endif
+    const Ref<MOIndexSpace>& ribs_space = r12info_->ribs_space();
     
     RefSCMatrix F_ri_o = fock_(occ_space,ribs_space,occ_space);
     if (debug_ > 1)
@@ -710,9 +749,14 @@ R12IntEval::form_factocc_space_()
   // compute the Fock matrix between the complement and active occupieds and
   // create the new Fock-weighted space
   if (factocc_space_.null()) {
-    Ref<MOIndexSpace> occ_space = r12info_->occ_space();
-    Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
-    Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
+#if USE_SINGLEREFINFO
+    const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
+    const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
+#else
+    const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
+    const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
+#endif
+    const Ref<MOIndexSpace>& ribs_space = r12info_->ribs_space();
     
     RefSCMatrix F_ri_ao = fock_(occ_space,ribs_space,act_occ_space);
     if (debug_ > 1)
@@ -734,9 +778,16 @@ R12IntEval::form_canonvir_space_()
       return;
     }
 
-    const Ref<MOIndexSpace> mo_space = r12info_->mo_space();
-    Ref<MOIndexSpace> vir_space = r12info_->vir_space_symblk();
-    RefSCMatrix F_vir = fock_(r12info_->occ_space(),vir_space,vir_space);
+#if USE_SINGLEREFINFO
+    const Ref<MOIndexSpace>& mo_space = r12info_->refinfo()->orbs();
+    const Ref<MOIndexSpace>& vir_space = r12info_->refinfo()->uocc_sb();
+    const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
+#else
+    const Ref<MOIndexSpace>& mo_space = r12info_->mo_space();
+    const Ref<MOIndexSpace>& vir_space = r12info_->vir_space_symblk();
+    const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
+#endif
+    RefSCMatrix F_vir = fock_(occ_space,vir_space,vir_space);
 
     int nrow = vir_space->rank();
     double* F_full = new double[nrow*nrow];

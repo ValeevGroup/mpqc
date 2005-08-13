@@ -78,16 +78,22 @@ R12IntEval::compute_B_gbc_1_()
   RefSCMatrix B_gbc1_aa = Baa_.clone();  B_gbc1_aa.assign(0.0);
   RefSCMatrix B_gbc1_ab = Bab_.clone();  B_gbc1_ab.assign(0.0);
 
-  Ref<MOIndexSpace> mo_space = r12info_->obs_space();
-  Ref<MOIndexSpace> occ_space = r12info_->occ_space();
-  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
+#if !USE_SINGLEREFINFO
+  const Ref<MOIndexSpace>& obs_space = r12info_->obs_space();
+  const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
+#else
+  const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
+  const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
+#endif
   Ref<MOIndexSpace> vir_space = r12info_->vir_space();
   Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
   form_focc_space_();
   Ref<MOIndexSpace> focc_space = focc_space_;
 
-  const int noso = r12info_->mo_space()->rank();
-  const int nocc = r12info_->ndocc();
+  const int noso = obs_space->rank();
+  const int nocc = occ_space->rank();
   const int nvir = noso - nocc;
   const int nribs = ribs_space->rank();
 
@@ -352,15 +358,21 @@ R12IntEval::compute_B_gbc_2_()
   X_ijklF_ab.assign(0.0);
   B_gbc2_aa.assign(0.0);
   B_gbc2_ab.assign(0.0);
-
-  Ref<MOIndexSpace> obs_space = r12info_->obs_space();
-  Ref<MOIndexSpace> occ_space = r12info_->occ_space();
-  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
+  
+#if !USE_SINGLEREFINFO
+  const Ref<MOIndexSpace>& obs_space = r12info_->obs_space();
+  const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
+#else
+  const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
+  const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
+  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
+#endif
   Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
   form_factocc_space_();
   Ref<MOIndexSpace> factocc_space = factocc_space_;
 
-  const int nocc = r12info_->ndocc();
+  const int nocc = occ_space->rank();
   const int nribs = ribs_space->rank();
 
   // compute r_{12}^2 operator in act.occ.pair/act.occ.-focc. basis

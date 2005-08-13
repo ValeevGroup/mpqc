@@ -65,9 +65,11 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   wfn_ = mbptr12;
 #if !USE_SINGLEREFINFO
   ref_ = mbptr12->ref();
-  bs_ = mbptr12->basis();
-#endif
   integral_ = mbptr12->integral();
+  bs_ = mbptr12->basis();
+#else
+  refinfo_ = new SingleRefInfo(mbptr12->ref(),mbptr12->nfzcore(),mbptr12->nfzvirt());
+#endif
   bs_aux_ = mbptr12->aux_basis();
   bs_vir_ = mbptr12->vir_basis();
 
@@ -76,8 +78,8 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
-  integral_->set_basis(basis());
-  Ref<PetiteList> plist = integral_->petite_list();
+  integral()->set_basis(basis());
+  Ref<PetiteList> plist = integral()->petite_list();
   RefSCDimension oso_dim = plist->SO_basisdim();
 
 #if !USE_SINGLEREFINFO
@@ -105,7 +107,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
 #if !USE_SINGLEREFINFO
   tfactory_ = new MOIntsTransformFactory(integral_,obs_space_);
 #else
-  tfactory_ = new MOIntsTransformFactory(integral_,refinfo()->energy_mo());
+  tfactory_ = new MOIntsTransformFactory(integral(),refinfo()->orbs());
 #endif
   tfactory_->set_memory(memory_);
 }
@@ -117,9 +119,7 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
 
 #if !USE_SINGLEREFINFO
   ref_ << SavableState::restore_state(si);
-#endif
   integral_ << SavableState::restore_state(si);
-#if !USE_SINGLEREFINFO
   bs_ << SavableState::restore_state(si);
 #endif
   bs_aux_ << SavableState::restore_state(si);
@@ -190,9 +190,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(wfn_,so);
 #if !USE_SINGLEREFINFO
   SavableState::save_state(ref_.pointer(),so);
-#endif
   SavableState::save_state(integral_.pointer(),so);
-#if !USE_SINGLEREFINFO
   SavableState::save_state(bs_.pointer(),so);
 #endif
   SavableState::save_state(bs_aux_.pointer(),so);

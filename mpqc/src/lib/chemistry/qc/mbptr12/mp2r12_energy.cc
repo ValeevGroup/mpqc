@@ -228,8 +228,8 @@ void MP2R12Energy::compute()
   int nocc = r12info->refinfo()->docc()->rank();
   int nfzc = r12info->refinfo()->nfzc();
   int nocc_act = r12info->refinfo()->docc_act()->rank();
-  int nvir_act = r12info->refinfo()->uocc_act()->rank();
-  RefDiagSCMatrix evalmat = r12info->refinfo()->energy_mo()->evals();
+  int nvir_act = r12info->act_vir_space()->rank();
+  RefDiagSCMatrix evalmat = r12info->refinfo()->orbs()->evals();
 #endif
   vector<double> evals_act_occ(nocc_act);
   vector<double> evals_act_vir(nvir_act);
@@ -861,11 +861,12 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
 
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
 #if !USE_SINGLEREFINFO
-  int nocc_act = r12info->ndocc_act();
+  const int nocc_act = r12info->ndocc_act();
+  const double escf = r12info->ref()->energy();
 #else
-  int nocc_act = r12info->refinfo()->docc_act()->rank();
+  const int nocc_act = r12info->refinfo()->docc_act()->rank();
+  const double escf = r12info->refinfo()->ref()->energy();
 #endif
-  double escf = r12info->ref()->energy();
 
   double emp2tot_aa = 0.0;
   double emp2tot_ab = 0.0;

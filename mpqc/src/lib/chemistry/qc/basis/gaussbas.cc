@@ -1134,6 +1134,13 @@ GaussianBasisSet::print(ostream& os) const
   os << decindent;
 }
 
+Ref<GaussianBasisSet>
+operator+(const Ref<GaussianBasisSet>& A, const Ref<GaussianBasisSet>& B)
+{
+  GaussianBasisSet& aref = *(A.pointer());
+  return aref + B;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // GaussianBasisSet::ValueData
 

@@ -522,6 +522,10 @@ class GaussianBasisSet: public SavableState
     void print(std::ostream& =ExEnv::out0()) const;
 };
 
+/// Nonmember operator+ is more convenient to use than the member operator+
+Ref<GaussianBasisSet>
+operator+(const Ref<GaussianBasisSet>& A, const Ref<GaussianBasisSet>& B);
+
 }
 
 #endif

@@ -42,7 +42,7 @@ an MPQC build.  MPQC must be built before one of these targets is used:
 </dl>
 
 The check targets will run mpqc with the mpqcrun (see \ref mpqcrun)
-command.  You can give specify arguments to give mpqcrun by setting
+command.  You can give arguments to mpqcrun by setting
 the <tt>MPQCRUN_ARGS</tt> variable on the make command line.
 
 The verification suite is in <tt>src/bin/mpqc/validate</tt>.  After running

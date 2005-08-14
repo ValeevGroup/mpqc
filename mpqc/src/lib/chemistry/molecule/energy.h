@@ -56,7 +56,7 @@ class MolecularEnergy: public Function {
     RefSCVector cartesian_gradient_;
     RefSymmSCMatrix cartesian_hessian_;
 
-    /// Whether to do intermediate theckpointing of this object
+    /// Whether to do intermediate checkpointing of this object
     bool ckpt_;
     /// Name of the file into which to checkpoint this object
     char *ckpt_file_;

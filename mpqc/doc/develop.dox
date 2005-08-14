@@ -67,7 +67,7 @@ call or the nodes will print redundant information.  The
   SCFormIO::init_mp(myproc);
 </pre>
 
-This segment of code sets up an object object to provide multi-threading:
+This segment of code sets up an object to provide multi-threading:
 
 <pre>
   RefThreadGrp thread = ThreadGrp::initial_threadgrp(argc, argv);
@@ -273,7 +273,9 @@ XYZ::update()
 </pre>
 
 The first argument to the exception class is a brief description of the
-error.  How can be given will be shown below.  The next two arguments are
+error.  Additional information can be provided,
+see SCException::elaborate() description below.
+The next two arguments are
 the filename and line number.  The C preprocessor provides these for you
 with the __FILE__ and __LINE__ macros.  The next argument is specific to
 the MaxIterExceeded exception; it is the maximum number of iterations.
@@ -330,7 +332,7 @@ is thrown and most debugging information is lost.  To work around this
 problem, a breakpoint can be set in code that will be reached only in an
 exception, and will be run before the stack unwind begins.  A useful place
 to do this when GCC is used as the compiler is in the routine
-__cxx_allocate__exception().  So, in gdb, the following could be done:
+__cxa_allocate_exception().  So, in gdb, the following could be done:
 
 <pre>
 $ gdb ./scextest

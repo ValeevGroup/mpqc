@@ -71,7 +71,7 @@ molecule<Molecule>: (
     )
   )
 </pre>
-The default units are Bohr with can be overridden with
+The default units are Bohr which can be overridden with
 <tt>unit=angstrom</tt>.  The <tt>atom_labels</tt> array can be
 omitted.  The <tt>atoms</tt> and <tt>geometry</tt> arrays
 are required.

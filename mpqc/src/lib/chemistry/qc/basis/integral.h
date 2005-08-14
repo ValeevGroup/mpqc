@@ -77,7 +77,7 @@ class Integral : public SavableState {
   public:
     /// Restore the Integral object from the given StateIn object.
     Integral(StateIn&);
-    /// Integral the Integral object from the given KeyVal object.
+    /// Construct the Integral object from the given KeyVal object.
     Integral(const Ref<KeyVal>&);
 
     virtual ~Integral();

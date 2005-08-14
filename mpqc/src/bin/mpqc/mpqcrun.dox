@@ -14,7 +14,8 @@ mpqcrun [options] [file1.in] [file2.in] ...
 <h1>Description</h1>
 
 The mpqcrun program simplifies the task of running MPQC on multiple input
-files.  It is primarily design to run the validation suite, however, is
+files.  Although it was primarily designed to run the validation suite,
+mpqcrun, is
 general enough to be useful in other situations.  If multiple nodes or
 processors are present, it can be used to manage multiple invocations of
 MPQC.

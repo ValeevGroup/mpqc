@@ -162,19 +162,19 @@ MOIndexSpace::save_data_state(StateOut& so)
   so.put((int)moorder_);
 }
 
-const std::string
+const std::string&
 MOIndexSpace::name() const { return name_; }
 
-Ref<GaussianBasisSet>
+const Ref<GaussianBasisSet>&
 MOIndexSpace::basis() const { return basis_; }
 
-RefSCMatrix
+const RefSCMatrix&
 MOIndexSpace::coefs() const { return coefs_; }
 
-RefDiagSCMatrix
+const RefDiagSCMatrix&
 MOIndexSpace::evals() const { return evals_; }
 
-vector<int>
+const vector<int>&
 MOIndexSpace::mosym() const { return mosym_; }
 
 MOIndexSpace::IndexOrder
@@ -189,10 +189,10 @@ MOIndexSpace::full_rank() const { return full_rank_; }
 int
 MOIndexSpace::nblocks() const { return nblocks_; }
 
-vector<int>
+const vector<int>&
 MOIndexSpace::nmo() const { return nmo_; }
 
-vector<int>
+const vector<int>&
 MOIndexSpace::offsets() const { return offsets_; }
 
 int

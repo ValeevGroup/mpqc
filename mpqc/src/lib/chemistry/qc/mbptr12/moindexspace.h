@@ -142,15 +142,15 @@ public:
   void save_data_state(StateOut&);
 
   /// Returns the AO basis set
-  const std::string name() const;  
+  const std::string& name() const;  
   /// Returns the AO basis set
-  Ref<GaussianBasisSet> basis() const;  
+  const Ref<GaussianBasisSet>& basis() const;  
   /// Returns the coefficient matrix
-  RefSCMatrix coefs() const;
+  const RefSCMatrix& coefs() const;
   /// Returns the "eigenvalues" matrix
-  RefDiagSCMatrix evals() const;
+  const RefDiagSCMatrix& evals() const;
   /// Returns the orbital symmetry array
-  vector<int> mosym() const;
+  const vector<int>& mosym() const;
   /// Returns the order of the orbitals
   IndexOrder moorder() const;
   /// Returns the rank of the space
@@ -160,9 +160,9 @@ public:
   /// Returns the number of blocks
   int nblocks() const;
   /// Returns the number of orbitals in each block
-  vector<int> nmo() const;
+  const vector<int>& nmo() const;
   /// Returns the full-space index of the first orbital in each block
-  vector<int> offsets() const;
+  const vector<int>& offsets() const;
   /// Returns the full-space index
   int to_full_space(const int i) const;
 

@@ -40,6 +40,7 @@
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
+#include <chemistry/qc/mbptr12/utils.h>
 
 using namespace std;
 using namespace sc;
@@ -55,49 +56,117 @@ static ClassDesc R12IntEval_cd(
   typeid(R12IntEval),"R12IntEval",1,"virtual public SavableState",
   0, 0, 0);
 
-R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12info, const Ref<LinearR12::CorrelationFactor>& corrfactor,
+R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::CorrelationFactor>& corrfactor,
                        double corrparam, bool gbc, bool ebc,
                        LinearR12::ABSMethod abs_method,
                        LinearR12::StandardApproximation stdapprox) :
-  r12info_(r12info), corrfactor_(corrfactor), corrparam_(corrparam), gbc_(gbc), ebc_(ebc), abs_method_(abs_method),
+  r12info_(r12i), corrfactor_(corrfactor), corrparam_(corrparam), gbc_(gbc), ebc_(ebc), abs_method_(abs_method),
   stdapprox_(stdapprox), spinadapted_(false), include_mp1_(false), evaluated_(false),
   debug_(0)
 {
+  int naocc_a, naocc_b;
+  int navir_a, navir_b;
+  if (!spin_polarized()) {
 #if !USE_SINGLEREFINFO
     const int nocc_act = r12info_->ndocc_act();
     const int nvir_act = r12info_->nvir_act();
 #else
     const int nocc_act = r12info_->refinfo()->docc_act()->rank();
     const int nvir_act = r12info_->act_vir_space()->rank();
-#endif    
-    dim_ij_aa_ = new SCDimension((nocc_act*(nocc_act-1))/2);
-    dim_ij_ab_ = new SCDimension(nocc_act*nocc_act);
-    dim_ij_s_ = new SCDimension((nocc_act*(nocc_act+1))/2);
-    dim_ij_t_ = dim_ij_aa_;
-    dim_ab_aa_ = new SCDimension((nvir_act*(nvir_act-1))/2);
-    dim_ab_ab_ = new SCDimension(nvir_act*nvir_act);
+#endif
+    naocc_a = naocc_b = nocc_act;
+    navir_a = navir_b = nvir_act;
+  }
+  else {
+    naocc_a = r12info()->refinfo()->occ_act(SingleRefInfo::AlphaSpin)->rank();
+    naocc_b = r12info()->refinfo()->occ_act(SingleRefInfo::BetaSpin)->rank();
+    navir_a = r12info()->refinfo()->uocc_act(SingleRefInfo::AlphaSpin)->rank();
+    navir_b = r12info()->refinfo()->uocc_act(SingleRefInfo::BetaSpin)->rank();
+  }
 
-    Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
-    Vaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ij_aa_);
-    Vab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
-    Xaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ij_aa_);
-    Xab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
-    Baa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ij_aa_);
-    Bab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
-    if (ebc_ == false) {
-      Aaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
-      Aab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
-      T2aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
-      T2ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
-      Raa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
-      Rab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+  dim_oo_[AlphaAlpha] = new SCDimension((naocc_a*(naocc_a-1))/2);
+  dim_vv_[AlphaAlpha] = new SCDimension((navir_a*(navir_a-1))/2);
+  dim_oo_[AlphaBeta] = new SCDimension(naocc_a*naocc_b);
+  dim_vv_[AlphaBeta] = new SCDimension(navir_a*navir_b);
+  dim_oo_[BetaBeta] = new SCDimension((naocc_b*(naocc_b-1))/2);
+  dim_vv_[BetaBeta] = new SCDimension((navir_b*(navir_b-1))/2);
+  
+  dim_ij_aa_ = new SCDimension((naocc_a*(naocc_a-1))/2);
+  dim_ij_ab_ = new SCDimension(naocc_a*naocc_b);
+  dim_ab_aa_ = new SCDimension((navir_a*(navir_a-1))/2);
+  dim_ab_ab_ = new SCDimension(navir_a*navir_b);
+  if (spin_polarized()) {
+    dim_ij_bb_ = new SCDimension((naocc_b*(naocc_b-1))/2);
+    dim_ab_bb_ = new SCDimension((navir_b*(navir_b-1))/2);
+  }
+  else {
+    dim_ij_s_ = new SCDimension((naocc_a*(naocc_a+1))/2);
+    dim_ij_t_ = new SCDimension((naocc_a*(naocc_a-1))/2);
+    dim_ij_bb_ = dim_ij_aa_;
+    dim_ab_bb_ = dim_ab_aa_;
+  }
+
+  Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
+  Vaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ij_aa_);
+  Vab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
+  Xaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ij_aa_);
+  Xab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
+  Baa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ij_aa_);
+  Bab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
+  if (spin_polarized()) {
+    Vbb_ = local_matrix_kit->matrix(dim_ij_bb_,dim_ij_bb_);
+    Xbb_ = local_matrix_kit->matrix(dim_ij_bb_,dim_ij_bb_);
+    Bbb_ = local_matrix_kit->matrix(dim_ij_bb_,dim_ij_bb_);
+  }
+  else {
+    Vbb_ = Vaa_;  Xbb_ = Xaa_;  Bbb_ = Baa_;
+  }
+  if (ebc_ == false) {
+    Aaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
+    Aab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+    T2aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
+    T2ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+    Raa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
+    Rab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+    if (spin_polarized()) {
+      Abb_ = local_matrix_kit->matrix(dim_ij_bb_,dim_ab_bb_);
+      T2bb_ = local_matrix_kit->matrix(dim_ij_bb_,dim_ab_bb_);
     }
-    emp2pair_aa_ = local_matrix_kit->vector(dim_ij_aa_);
-    emp2pair_ab_ = local_matrix_kit->vector(dim_ij_ab_);
-    
-    init_tforms_();
-    // init_intermeds_ may require initialized transforms
-    init_intermeds_();
+    else {
+      Abb_ = Aaa_;  T2bb_ = T2aa_;
+    }
+  }
+  emp2pair_aa_ = local_matrix_kit->vector(dim_ij_aa_);
+  emp2pair_ab_ = local_matrix_kit->vector(dim_ij_ab_);
+  if (spin_polarized())
+    emp2pair_bb_ = local_matrix_kit->vector(dim_ij_bb_);
+  else
+    emp2pair_bb_ = emp2pair_aa_;
+  
+  for(int s=0; s<NSpinCases2; s++) {
+    if (!(spin_polarized() && s == BetaBeta)) {
+      V_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_oo_[s]);
+      X_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_oo_[s]);
+      B_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_oo_[s]);
+      if (ebc == false) {
+        A_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
+        T2_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
+      }
+      emp2pair_[s] = local_matrix_kit->vector(dim_vv_[s]);
+    }
+    else {
+      V_[BetaBeta] = V_[AlphaAlpha];
+      X_[BetaBeta] = X_[AlphaAlpha];
+      B_[BetaBeta] = B_[AlphaAlpha];
+      A_[BetaBeta] = A_[AlphaAlpha];
+      T2_[BetaBeta] = T2_[AlphaAlpha];
+      emp2pair_[BetaBeta] = emp2pair_[AlphaAlpha];
+    }
+  }
+  
+  init_tforms_();
+  // init_intermeds_ may require initialized transforms
+  init_intermeds_();
 }
 
 R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
@@ -110,46 +179,90 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   r12info_ << SavableState::restore_state(si);
   dim_ij_aa_ << SavableState::restore_state(si);
   dim_ij_ab_ << SavableState::restore_state(si);
+  dim_ij_bb_ << SavableState::restore_state(si);
   dim_ij_s_ << SavableState::restore_state(si);
   dim_ij_t_ << SavableState::restore_state(si);
   dim_ab_aa_ << SavableState::restore_state(si);
   dim_ab_ab_ << SavableState::restore_state(si);
+  dim_ab_bb_ << SavableState::restore_state(si);
 
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
   Vaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ij_aa_);
   Vab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
+  Vbb_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
   Xaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ij_aa_);
   Xab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
+  Xbb_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
   Baa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ij_aa_);
   Bab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
+  Bbb_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
   if (ebc_ == false) {
     Aaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
     Aab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+    Abb_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
     T2aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
     T2ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+    T2bb_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
     Raa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
     Rab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
   }
   emp2pair_aa_ = local_matrix_kit->vector(dim_ij_aa_);
   emp2pair_ab_ = local_matrix_kit->vector(dim_ij_ab_);
+  emp2pair_bb_ = local_matrix_kit->vector(dim_ij_aa_);
 
   Vaa_.restore(si);
   Vab_.restore(si);
+  Vbb_.restore(si);
   Xaa_.restore(si);
   Xab_.restore(si);
+  Xbb_.restore(si);
   Baa_.restore(si);
   Bab_.restore(si);
+  Bbb_.restore(si);
   if (ebc_ == false) {
     Aaa_.restore(si);
     Aab_.restore(si);
+    Abb_.restore(si);
     T2aa_.restore(si);
     T2ab_.restore(si);
+    T2bb_.restore(si);
     Raa_.restore(si);
     Rab_.restore(si);
   }
   emp2pair_aa_.restore(si);
   emp2pair_ab_.restore(si);
+  emp2pair_bb_.restore(si);
 
+  for(int s=0; s<NSpinCases2; s++) {
+    dim_oo_[s] << SavableState::restore_state(si);
+    dim_vv_[s] << SavableState::restore_state(si);
+    if (!(spin_polarized() && s == BetaBeta)) {
+      V_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_oo_[s]);
+      X_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_oo_[s]);
+      B_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_oo_[s]);
+      if (ebc == false) {
+        A_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
+        T2_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
+      }
+      emp2pair_[s] = local_matrix_kit->vector(dim_vv_[s]);
+      
+      V_[s].restore(si);
+      X_[s].restore(si);
+      B_[s].restore(si);
+      A_[s].restore(si);
+      T2_[s].restore(si);
+      emp2pair_[s].restore(si);
+    }
+    else {
+      V_[BetaBeta] = V_[AlphaAlpha];
+      X_[BetaBeta] = X_[AlphaAlpha];
+      B_[BetaBeta] = B_[AlphaAlpha];
+      A_[BetaBeta] = A_[AlphaAlpha];
+      T2_[BetaBeta] = T2_[AlphaAlpha];
+      emp2pair_[BetaBeta] = emp2pair_[AlphaAlpha];
+    }
+  }
+  
   int num_tforms;
   si.get(num_tforms);
   for(int t=0; t<num_tforms; t++) {
@@ -169,13 +282,6 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
 
 R12IntEval::~R12IntEval()
 {
-  r12info_ = 0;
-  dim_ij_aa_ = 0;
-  dim_ij_ab_ = 0;
-  dim_ij_s_ = 0;
-  dim_ij_t_ = 0;
-  dim_ab_aa_ = 0;
-  dim_ab_ab_ = 0;
 }
 
 void
@@ -189,27 +295,48 @@ R12IntEval::save_data_state(StateOut& so)
   SavableState::save_state(r12info_.pointer(),so);
   SavableState::save_state(dim_ij_aa_.pointer(),so);
   SavableState::save_state(dim_ij_ab_.pointer(),so);
+  SavableState::save_state(dim_ij_bb_.pointer(),so);
   SavableState::save_state(dim_ij_s_.pointer(),so);
   SavableState::save_state(dim_ij_t_.pointer(),so);
   SavableState::save_state(dim_ab_aa_.pointer(),so);
   SavableState::save_state(dim_ab_ab_.pointer(),so);
+  SavableState::save_state(dim_ab_bb_.pointer(),so);
 
   Vaa_.save(so);
   Vab_.save(so);
+  Vbb_.save(so);
   Xaa_.save(so);
   Xab_.save(so);
+  Xbb_.save(so);
   Baa_.save(so);
   Bab_.save(so);
+  Bbb_.save(so);
   if (ebc_ == false) {
     Aaa_.save(so);
     Aab_.save(so);
+    Abb_.save(so);
     T2aa_.save(so);
     T2ab_.save(so);
+    T2bb_.save(so);
     Raa_.save(so);
     Rab_.save(so);
   }
   emp2pair_aa_.save(so);
   emp2pair_ab_.save(so);
+  emp2pair_bb_.save(so);
+  
+  for(int s=0; s<NSpinCases2; s++) {
+    SavableState::save_state(dim_oo_[s].pointer(),so);
+    SavableState::save_state(dim_vv_[s].pointer(),so);
+    if (!(spin_polarized() && s == BetaBeta)) {
+      V_[s].save(so);
+      X_[s].save(so);
+      B_[s].save(so);
+      A_[s].save(so);
+      T2_[s].save(so);
+      emp2pair_[s].save(so);
+    }
+  }
 
   int num_tforms = tform_map_.size();
   so.put(num_tforms);
@@ -246,13 +373,17 @@ void R12IntEval::set_dynamic(bool dynamic) { r12info_->set_dynamic(dynamic); };
 void R12IntEval::set_print_percent(double pp) { r12info_->set_print_percent(pp); };
 void R12IntEval::set_memory(size_t nbytes) { r12info_->set_memory(nbytes); };
 
-Ref<R12IntEvalInfo> R12IntEval::r12info() const { return r12info_; };
+const Ref<R12IntEvalInfo>& R12IntEval::r12info() const { return r12info_; };
 RefSCDimension R12IntEval::dim_oo_aa() const { return dim_ij_aa_; };
 RefSCDimension R12IntEval::dim_oo_ab() const { return dim_ij_ab_; };
+RefSCDimension R12IntEval::dim_oo_bb() const { return dim_ij_bb_; };
 RefSCDimension R12IntEval::dim_oo_s() const { return dim_ij_s_; };
 RefSCDimension R12IntEval::dim_oo_t() const { return dim_ij_t_; };
 RefSCDimension R12IntEval::dim_vv_aa() const { return dim_ab_aa_; };
 RefSCDimension R12IntEval::dim_vv_ab() const { return dim_ab_ab_; };
+RefSCDimension R12IntEval::dim_vv_bb() const { return dim_ab_bb_; };
+RefSCDimension R12IntEval::dim_oo(SpinCase2 S) const { return dim_oo_[S]; }
+RefSCDimension R12IntEval::dim_vv(SpinCase2 S) const { return dim_vv_[S]; }
 
 RefSCMatrix R12IntEval::V_aa()
 {
@@ -344,6 +475,51 @@ RefSCMatrix R12IntEval::T2_ab()
   return T2ab_;
 }
 
+RefSCMatrix R12IntEval::V_bb()
+{
+  compute();
+  return Vbb_;
+}
+
+RefSCMatrix R12IntEval::X_bb()
+{
+  compute();
+  return Xbb_;
+}
+
+RefSymmSCMatrix R12IntEval::B_bb()
+{
+  compute();
+
+  // Extract lower triangle of the matrix
+  Ref<SCMatrixKit> kit = Bbb_.kit();
+  RefSymmSCMatrix Bbb = kit->symmmatrix(Bbb_.rowdim());
+  int nbb = Bbb_.nrow();
+  double* bbb = new double[nbb*nbb];
+  Bbb_.convert(bbb);
+  const double* bbb_ptr = bbb;
+  for(int i=0; i<nbb; i++, bbb_ptr += i)
+    for(int j=i; j<nbb; j++, bbb_ptr++)
+      Bbb.set_element(i,j,*bbb_ptr);
+  delete[] bbb;
+
+  return Bbb;
+}
+
+RefSCMatrix R12IntEval::A_bb()
+{
+  if (ebc_ == false)
+    compute();
+  return Abb_;
+}
+
+RefSCMatrix R12IntEval::T2_bb()
+{
+  if (ebc_ == false)
+    compute();
+  return T2bb_;
+}
+
 RefSCVector R12IntEval::emp2_aa()
 {
   compute();
@@ -356,13 +532,103 @@ RefSCVector R12IntEval::emp2_ab()
   return emp2pair_ab_;
 }
 
+RefSCVector R12IntEval::emp2_bb()
+{
+  compute();
+  return emp2pair_bb_;
+}
+
+const RefSCMatrix&
+R12IntEval::V(SpinCase2 S) {
+  compute();
+  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
+    antisymmetrize(V_[AlphaAlpha],V_[AlphaBeta],act_occ_space(Alpha),act_occ_space(Alpha));
+  return V_[S];
+}
+
+const RefSCMatrix&
+R12IntEval::X(SpinCase2 S) {
+  compute();
+  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
+    antisymmetrize(X_[AlphaAlpha],X_[AlphaBeta],act_occ_space(Alpha),act_occ_space(Alpha));
+  return X_[S];
+}
+
+RefSymmSCMatrix
+R12IntEval::B(SpinCase2 S) {
+  compute();
+  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
+    antisymmetrize(B_[AlphaAlpha],B_[AlphaBeta],act_occ_space(Alpha),act_occ_space(Alpha));
+  
+  // Extract lower triangle of the matrix
+  Ref<SCMatrixKit> kit = B_[S].kit();
+  RefSymmSCMatrix B = kit->symmmatrix(B_[S].rowdim());
+  int n = B_[S].nrow();
+  double* b = new double[n*n];
+  B_[S].convert(b);
+  const double* b_ptr = b;
+  for(int i=0; i<n; i++, b_ptr += i)
+    for(int j=i; j<n; j++, b_ptr++)
+      B.set_element(i,j,*b_ptr);
+  delete[] b;
+
+  return B;
+}
+
+const RefSCMatrix&
+R12IntEval::A(SpinCase2 S) {
+  compute();
+  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
+    antisymmetrize(A_[AlphaAlpha],A_[AlphaBeta],act_occ_space(Alpha),act_vir_space(Alpha));
+  return A_[S];
+}
+
+const RefSCMatrix&
+R12IntEval::T2(SpinCase2 S) {
+  compute();
+  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
+    antisymmetrize(T2_[AlphaAlpha],T2_[AlphaBeta],act_occ_space(Alpha),act_vir_space(Alpha));
+  return T2_[S];
+}
+
+const RefSCVector&
+R12IntEval::emp2(SpinCase2 S)
+{
+  compute();
+  return emp2pair_[S];
+}
+
+const RefDiagSCMatrix&
+R12IntEval::evals(SpinCase1 S) const {
+  if (spin_polarized()) {
+    if (S == Alpha)
+      return r12info()->refinfo()->orbs(SingleRefInfo::AlphaSpin)->evals();
+    else
+      return r12info()->refinfo()->orbs(SingleRefInfo::BetaSpin)->evals();
+  }
+  else
+    return r12info_->refinfo()->orbs()->evals();
+}
+
 RefDiagSCMatrix R12IntEval::evals() const {
+  if (spin_polarized())
+    throw ProgrammingError("R12IntEval::evals() called but reference determinant spin-polarized",
+                           __FILE__,__LINE__);
+
 #if !USE_SINGLEREFINFO
   return r12info_->obs_space()->evals();
 #else
   return r12info_->refinfo()->orbs()->evals();
 #endif
 };
+
+RefDiagSCMatrix R12IntEval::evals_a() const {
+  return r12info()->refinfo()->orbs(SingleRefInfo::AlphaSpin)->evals();
+}
+
+RefDiagSCMatrix R12IntEval::evals_b() const {
+  return r12info()->refinfo()->orbs(SingleRefInfo::BetaSpin)->evals();
+}
 
 void
 R12IntEval::checkpoint_() const
@@ -484,6 +750,17 @@ R12IntEval::init_intermeds_()
     Raa_.assign(0.0);
     Rab_.assign(0.0);
   }
+  
+  for(int s=0; s<NSpinCases2; s++) {
+    V_[s].assign(0.0);
+    X_[s].assign(0.0);
+    B_[s].assign(0.0);
+    emp2pair_[s].assign(0.0);
+    if (ebc_ == false) {
+      A_[s].assign(0.0);
+      T2_[s].assign(0.0);
+    }
+  }
 
   if (corrfactor_->id() == LinearR12::R12CorrFactor) {
     init_intermeds_r12_();
@@ -506,8 +783,12 @@ R12IntEval::init_intermeds_r12_()
     Vab_->unit();
     Baa_->unit();
     Bab_->unit();
+    
+    for(int s=0; s<nspincases2(); s++) {
+      V_[s]->unit();
+      B_[s]->unit();
+    }
   }
-  //r2_contrib_to_X_orig_();
   r2_contrib_to_X_new_();
 }
 
@@ -591,136 +872,29 @@ R12IntEval::compute_r2_(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>
   return R2;
 }
 
-
-void
-R12IntEval::r2_contrib_to_X_orig_()
-{
-  /*---------------------------------------------------------------
-    Compute dipole and quadrupole moment integrals in act MO basis
-   ---------------------------------------------------------------*/
-  RefSCMatrix MX, MY, MZ, MXX, MYY, MZZ;
-#if !USE_SINGLEREFINFO
-  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
-#else
-  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
-#endif
-  r12info_->compute_multipole_ints(act_occ_space,act_occ_space,MX,MY,MZ,MXX,MYY,MZZ);
-  if (debug_)
-    ExEnv::out0() << indent << "Computed multipole moment integrals" << endl;
-
-  const int nproc = r12info_->msg()->n();
-  const int me = r12info_->msg()->me();
-
-  SpatialMOPairIter_eq ij_iter(act_occ_space);
-  SpatialMOPairIter_eq kl_iter(act_occ_space);
-
-  for(kl_iter.start();int(kl_iter);kl_iter.next()) {
-
-    const int kl = kl_iter.ij();
-    int kl_proc = kl%nproc;
-    if (kl_proc != me)
-      continue;
-    const int k = kl_iter.i();
-    const int l = kl_iter.j();
-    const int kl_aa = kl_iter.ij_aa();
-    const int kl_ab = kl_iter.ij_ab();
-    const int lk_ab = kl_iter.ij_ba();
-
-    for(ij_iter.start();int(ij_iter);ij_iter.next()) {
-
-      const int i = ij_iter.i();
-      const int j = ij_iter.j();
-      const int ij_aa = ij_iter.ij_aa();
-      const int ij_ab = ij_iter.ij_ab();
-      const int ji_ab = ij_iter.ij_ba();
-
-      /*----------------------------------
-        Compute (r12)^2 contribution to X
-       ----------------------------------*/
-      double r1r1_ik = -1.0*(MXX->get_element(i,k) + MYY->get_element(i,k) + MZZ->get_element(i,k));
-      double r1r1_il = -1.0*(MXX->get_element(i,l) + MYY->get_element(i,l) + MZZ->get_element(i,l));
-      double r1r1_jk = -1.0*(MXX->get_element(j,k) + MYY->get_element(j,k) + MZZ->get_element(j,k));
-      double r1r1_jl = -1.0*(MXX->get_element(j,l) + MYY->get_element(j,l) + MZZ->get_element(j,l));
-      double r1r2_ijkl = MX->get_element(i,k)*MX->get_element(j,l) +
-        MY->get_element(i,k)*MY->get_element(j,l) +
-        MZ->get_element(i,k)*MZ->get_element(j,l);
-      double r1r2_ijlk = MX->get_element(i,l)*MX->get_element(j,k) +
-        MY->get_element(i,l)*MY->get_element(j,k) +
-        MZ->get_element(i,l)*MZ->get_element(j,k);
-      double delta_ik = (i==k ? 1.0 : 0.0);
-      double delta_il = (i==l ? 1.0 : 0.0);
-      double delta_jk = (j==k ? 1.0 : 0.0);
-      double delta_jl = (j==l ? 1.0 : 0.0);
-      
-      double Xab_ijkl = r1r1_ik * delta_jl + r1r1_jl * delta_ik - 2.0*r1r2_ijkl;
-      Xab_.accumulate_element(ij_ab,kl_ab,Xab_ijkl);
-
-      if (ij_ab != ji_ab) {
-        double Xab_jikl = r1r1_jk * delta_il + r1r1_il * delta_jk - 2.0*r1r2_ijlk;
-        Xab_.accumulate_element(ji_ab,kl_ab,Xab_jikl);
-      }
-
-      if (kl_ab != lk_ab) {
-        double Xab_ijlk = r1r1_il * delta_jk + r1r1_jk * delta_il - 2.0*r1r2_ijlk;
-        Xab_.accumulate_element(ij_ab,lk_ab,Xab_ijlk);
-      }
-
-      if (ij_ab != ji_ab && kl_ab != lk_ab) {
-        double Xab_jilk = r1r1_ik * delta_jl + r1r1_jl * delta_ik - 2.0*r1r2_ijkl;
-        Xab_.accumulate_element(ji_ab,lk_ab,Xab_jilk);
-      }
-
-      if (ij_aa != -1 && kl_aa != -1) {
-        double Xaa_ijkl = r1r1_ik * delta_jl + r1r1_jl * delta_ik - 2.0*r1r2_ijkl -
-          r1r1_jk * delta_il - r1r1_il * delta_jk + 2.0*r1r2_ijlk;
-        Xaa_.accumulate_element(ij_aa,kl_aa,Xaa_ijkl);
-      }
-
-    }
-  }          
-}
-
 void
 R12IntEval::r2_contrib_to_X_new_()
 {
   unsigned int me = r12info_->msg()->me();
 
-#if !USE_SINGLEREFINFO
-  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
-#else
-  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
-#endif
-  // compute r_{12}^2 operator in act.occ.pair/act.occ.pair basis
-  RefSCMatrix R2 = compute_r2_(act_occ_space,act_occ_space);
-
-  if (me != 0)
-    return;
-  Xab_.accumulate(R2);
-
-  SpatialMOPairIter_eq ij_iter(act_occ_space);
-  SpatialMOPairIter_eq kl_iter(act_occ_space);
-
-  for(kl_iter.start();int(kl_iter);kl_iter.next()) {
-
-    const int kl_aa = kl_iter.ij_aa();
-    if (kl_aa == -1)
-      continue;
-    const int kl_ab = kl_iter.ij_ab();
-
-    for(ij_iter.start();int(ij_iter);ij_iter.next()) {
-
-      const int ij_aa = ij_iter.ij_aa();
-      const int ij_ab = ij_iter.ij_ab();
-      const int ji_ab = ij_iter.ij_ba();
-
-      if (ij_aa != -1) {
-        double Xaa_ijkl = R2.get_element(ij_ab,kl_ab) - R2.get_element(ji_ab,kl_ab);
-        Xaa_.accumulate_element(ij_aa,kl_aa,Xaa_ijkl);
-      }
-
-    }
+  for(int s=0; s<nspincases2(); s++) {
+    
+    const Ref<MOIndexSpace>& space1 = r12info_->refinfo()->occ_act(static_cast<SingleRefInfo::SpinCase>(case1(static_cast<SpinCase2>(s))));
+    const Ref<MOIndexSpace>& space2 = r12info_->refinfo()->occ_act(static_cast<SingleRefInfo::SpinCase>(case2(static_cast<SpinCase2>(s))));
+    
+    // compute r_{12}^2 operator in act.occ.pair/act.occ.pair basis
+    RefSCMatrix R2 = compute_r2_(space1,space2);
+    if (me != 0)
+      return;
+    X_[s].accumulate(R2);
   }
+  
+  // compute r_{12}^2 operator in act.occ.pair/act.occ.pair basis
+  RefSCMatrix R2 = compute_r2_(r12info()->refinfo()->docc_act(),r12info()->refinfo()->docc_act());
+  Xab_.accumulate(R2);
+  antisymmetrize(Xaa_,Xab_,r12info()->refinfo()->docc_act(),r12info()->refinfo()->docc_act());
 }
+
 
 void
 R12IntEval::form_focc_space_()
@@ -850,6 +1024,7 @@ R12IntEval::compute()
   if (evaluated_)
     return;
   
+#if 0
   if (debug_ > 1) {
     Vaa_.print("Alpha-alpha V(diag) contribution");
     Vab_.print("Alpha-beta V(diag) contribution");
@@ -858,9 +1033,19 @@ R12IntEval::compute()
     Baa_.print("Alpha-alpha B(diag) contribution");
     Bab_.print("Alpha-beta B(diag) contribution");
   }
+#endif
+
+  if (debug_ > 1) {
+    for(int s=0; s<nspincases2(); s++) {
+      V_[s].print(prepend_spincase2(s,"V(diag) contribution"));
+      X_[s].print(prepend_spincase2(s,"X(diag) contribution"));
+      B_[s].print(prepend_spincase2(s,"B(diag) contribution"));
+    }
+  }
   
   if (r12info_->basis_vir()->equiv(r12info_->basis())) {
     obs_contrib_to_VXB_gebc_vbseqobs_();
+#if 0
     if (debug_ > 1) {
       Vaa_.print("Alpha-alpha V(diag+OBS) contribution");
       Vab_.print("Alpha-beta V(diag+OBS) contribution");
@@ -869,8 +1054,18 @@ R12IntEval::compute()
       Baa_.print("Alpha-alpha B(diag+OBS) contribution");
       Bab_.print("Alpha-beta B(diag+OBS) contribution");
     }
+#endif
+    if (debug_ > 1) {
+      for(int s=0; s<nspincases2(); s++) {
+        V_[s].print(prepend_spincase2(s,"V(diag+OBS) contribution"));
+        X_[s].print(prepend_spincase2(s,"X(diag+OBS) contribution"));
+        B_[s].print(prepend_spincase2(s,"B(diag+OBS) contribution"));
+      }
+    }
+    
     if (r12info_->basis() != r12info_->basis_ri())
       abs1_contrib_to_VXB_gebc_();
+#if 0
     if (debug_ > 1) {
       Vaa_.print("Alpha-alpha V(diag+OBS+ABS) contribution");
       Vab_.print("Alpha-beta V(diag+OBS+ABS) contribution");
@@ -879,6 +1074,16 @@ R12IntEval::compute()
       Baa_.print("Alpha-alpha B(diag+OBS+ABS) contribution");
       Bab_.print("Alpha-beta B(diag+OBS+ABS) contribution");
     }
+#endif
+
+    if (debug_ > 1) {
+      for(int s=0; s<nspincases2(); s++) {
+        V_[s].print(prepend_spincase2(s,"V(diag+OBS+ABS) contribution"));
+        X_[s].print(prepend_spincase2(s,"X(diag+OBS+ABS) contribution"));
+        B_[s].print(prepend_spincase2(s,"B(diag+OBS+ABS) contribution"));
+      }
+    }
+    
   }
   else {
     contrib_to_VXB_gebc_vbsneqobs_();
@@ -1024,6 +1229,16 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
 
   globally_sum_scvector_(emp2pair_aa_,to_all_tasks);
   globally_sum_scvector_(emp2pair_ab_,to_all_tasks);
+  
+  for(int s=0; s<nspincases2(); s++) {
+    globally_sum_scmatrix_(V_[s],to_all_tasks);
+    globally_sum_scmatrix_(X_[s],to_all_tasks);
+    globally_sum_scmatrix_(B_[s],to_all_tasks);
+    if (ebc_ == false) {
+      globally_sum_scmatrix_(A_[s],to_all_tasks);
+      globally_sum_scmatrix_(T2_[s],to_all_tasks);
+    }
+  }
 
   if (debug_) {
     ExEnv::out0() << indent << "Collected contributions to the intermediates from all tasks";
@@ -1032,6 +1247,46 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
     else
       ExEnv::out0() << " on task 0" << endl;
   }
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::act_occ_space(SpinCase1 S) const
+{
+  return r12info()->refinfo()->occ_act(static_cast<SingleRefInfo::SpinCase>(S));
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::act_vir_space(SpinCase1 S) const
+{
+  if (r12info()->basis_vir() != r12info()->refinfo()->ref()->basis())
+    throw ProgrammingError("R12IntEval::act_vir_space() -- not implemented yet for the case vir_basis != basis",__FILE__,__LINE__);
+  return r12info()->refinfo()->uocc_act(static_cast<SingleRefInfo::SpinCase>(S));
+}
+
+const char*
+R12IntEval::prepend_spincase2(int s, const std::string& R)
+{
+  SpinCase2 S = static_cast<SpinCase2>(s);
+  std::string prefix;
+  if (S == AlphaAlpha)
+    prefix = "Alpha-alpha ";
+  else if (S == AlphaBeta)
+    prefix = "Alpha-beta ";
+  else
+    prefix = "Beta-beta ";
+  return (prefix + R).c_str();
+}
+
+const char*
+R12IntEval::prepend_spincase1(int s, const std::string& R)
+{
+  SpinCase1 S = static_cast<SpinCase1>(s);
+  std::string prefix;
+  if (S == Alpha)
+    prefix = "Alpha ";
+  else
+    prefix = "Beta ";
+  return (prefix + R).c_str();
 }
 
 /////////////////////////////////////////////////////////////////////////////

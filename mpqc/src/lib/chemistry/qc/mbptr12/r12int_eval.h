@@ -29,13 +29,13 @@
 #pragma interface
 #endif
 
-#ifndef _chemistry_qc_mbptr12_r12inteval_h
-#define _chemistry_qc_mbptr12_r12inteval_h
-
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/r12_amps.h>
+
+#ifndef _chemistry_qc_mbptr12_r12inteval_h
+#define _chemistry_qc_mbptr12_r12inteval_h
 
 namespace sc {
   
@@ -47,20 +47,42 @@ namespace sc {
   */
 
 class R12IntEval : virtual public SavableState {
+  public:
+  /// 1-Spin combinations
+  enum SpinCase1 {Alpha = SingleRefInfo::AlphaSpin, Beta = SingleRefInfo::BetaSpin};
+  /// 2-Spin combinations
+  enum SpinCase2 {AlphaBeta = 0, AlphaAlpha = 1, BetaBeta = 2};
+  /// Number of spin combinations
+  enum {NSpinCases1 = 2, NSpinCases2 = 3};
 
+  private:
   bool evaluated_;
 
   // Calculation information (number of basis functions, R12 approximation, etc.)
   Ref<R12IntEvalInfo> r12info_;
 
+  RefSCMatrix V_[NSpinCases2];
+  RefSCMatrix X_[NSpinCases2];
+  RefSCMatrix B_[NSpinCases2];
+  RefSCMatrix A_[NSpinCases2];
+  RefSCMatrix T2_[NSpinCases2];
+  RefSCVector emp2pair_[NSpinCases2];
+  RefSCDimension dim_oo_[NSpinCases2];
+  RefSCDimension dim_vv_[NSpinCases2];
+  
   // Note that intermediate B is symmetric but is stored as a full matrix to simplify the code
   // that computes asymmetric form of B
-  RefSCMatrix Vaa_, Vab_, Xaa_, Xab_, Baa_, Bab_, Aaa_, Aab_, T2aa_, T2ab_;
+  RefSCMatrix Vaa_, Vab_, Vbb_;
+  RefSCMatrix Xaa_, Xab_, Xbb_;
+  RefSCMatrix Baa_, Bab_, Bbb_;
+  RefSCMatrix Aaa_, Aab_, Abb_;
+  RefSCMatrix T2aa_, T2ab_, T2bb_;
   RefSCMatrix Raa_, Rab_;    // Not sure if I'll compute and keep these explicitly later
   Ref<R12Amplitudes> Amps_;  // Amplitudes of various R12-contributed terms in pair functions
-  RefSCVector emp2pair_aa_, emp2pair_ab_;
-  RefSCDimension dim_ij_aa_, dim_ij_ab_, dim_ij_s_, dim_ij_t_;
-  RefSCDimension dim_ab_aa_, dim_ab_ab_;
+  RefSCVector emp2pair_aa_, emp2pair_ab_, emp2pair_bb_;
+  RefSCDimension dim_ij_aa_, dim_ij_ab_, dim_ij_bb_;
+  RefSCDimension dim_ij_s_, dim_ij_t_;
+  RefSCDimension dim_ab_aa_, dim_ab_ab_, dim_ab_bb_;
 
   bool gbc_;
   bool ebc_;
@@ -79,6 +101,21 @@ class R12IntEval : virtual public SavableState {
   // If the transform is not found then throw runtime_error
   Ref<TwoBodyMOIntsTransform> get_tform_(const std::string&);
 
+  /// Returns the number of unique combinations of 2 spin cases
+  int nspincases2() const { return spin_polarized() ? 3 : 1; }
+  /// returns the first spin case of the 2-spin S
+  SpinCase1 case1(SpinCase2 S) const { return S==BetaBeta ? Beta : Alpha; }
+  /// returns the second spin case of the 2-spin S
+  SpinCase1 case2(SpinCase2 S) const { return S==AlphaAlpha ? Alpha : Beta; }
+  /// Returns the act occ space for spin case S
+  const Ref<MOIndexSpace>& act_occ_space(SpinCase1 S) const;
+  /// Returns the act vir space for spin case S
+  const Ref<MOIndexSpace>& act_vir_space(SpinCase1 S) const;
+  /// Prepend string representation of S to R and return
+  static const char* prepend_spincase1(int S, const std::string& R);
+  /// Prepend string representation of S to R and return
+  static const char* prepend_spincase2(int S, const std::string& R);
+  
   /// Fock-weighted occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
   Ref<MOIndexSpace> focc_space_;
   /// Form Fock-weighted occupied space
@@ -100,8 +137,6 @@ class R12IntEval : virtual public SavableState {
   void init_intermeds_r12_();
   /// When F12 != R12 the following code is used
   void init_intermeds_g12_();
-  /// Compute r^2 contribution to X
-  void r2_contrib_to_X_orig_();
   /// Compute r^2 contribution to X using compute_r2_()
   void r2_contrib_to_X_new_();
   /// Compute <space1 space1|r_{12}^2|space1 space2> matrix
@@ -123,7 +158,7 @@ class R12IntEval : virtual public SavableState {
       number of tasks with access to the integrals of lower rank than that task
       (or -1 if the task doesn't have access to the integrals) */
   const int tasks_with_ints_(const Ref<R12IntsAcc> ints_acc, vector<int>& map_to_twi);
-  
+
   /** Compute contribution to V, X, and B of the following form:
       0.5 * \bar{g}_{ij}^{pq} * \bar{r}_{pq}^{kl}, where p and q span mospace.
       tform_name is the name of the transform to be used to get the integrals.
@@ -165,17 +200,17 @@ class R12IntEval : virtual public SavableState {
   /** Compute the first (r<sub>kl</sub>^<sup>AB</sup> f<sub>A</sub><sup>m</sup> r<sub>mB</sub>^<sup>ij</sup>)
       contribution to B that vanishes under GBC */
   void compute_B_gbc_1_();
-  
+
   /** Compute the second (r<sub>kl</sub>^<sup>AB</sup> r<sub>AB</sub>^<sup>Kj</sup> f<sub>K</sub><sup>i</sup>)
       contribution to B that vanishes under GBC */
   void compute_B_gbc_2_();
 
   /// Compute dual-basis MP2 energy (contribution from doubles to MP2 energy)
   void compute_dualEmp2_();
-  
+
   /// Compute dual-basis MP1 energy (contribution from singles to HF energy)
   void compute_dualEmp1_();
- 
+
   /// This function computes T2 amplitudes
   void compute_T2_vbsneqobs_();
 
@@ -224,18 +259,25 @@ public:
   void set_print_percent(double print_percent);
   void set_memory(size_t nbytes);
 
-  const Ref<LinearR12::CorrelationFactor> corrfactor() const { return corrfactor_; }
-  const bool gbc() const { return gbc_; }
-  const bool ebc() const { return ebc_; }
-  const LinearR12::StandardApproximation stdapprox() const { return stdapprox_; }
+  const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return corrfactor_; }
+  bool spin_polarized() const { return r12info_->refinfo()->ref()->spin_polarized(); }
+  bool gbc() const { return gbc_; }
+  bool ebc() const { return ebc_; }
+  LinearR12::StandardApproximation stdapprox() const { return stdapprox_; }
 
-  Ref<R12IntEvalInfo> r12info() const;
+  const Ref<R12IntEvalInfo>& r12info() const;
   RefSCDimension dim_oo_aa() const;
   RefSCDimension dim_oo_ab() const;
+  RefSCDimension dim_oo_bb() const;
   RefSCDimension dim_oo_s() const;
   RefSCDimension dim_oo_t() const;
   RefSCDimension dim_vv_aa() const;
   RefSCDimension dim_vv_ab() const;
+  RefSCDimension dim_vv_bb() const;
+  /// Dimension for active-occ/active-occ pairs of spin case S
+  RefSCDimension dim_oo(SpinCase2 S) const;
+  /// Dimension for active-vir/active-vir pairs of spin case S
+  RefSCDimension dim_vv(SpinCase2 S) const;
 
   /// This function causes the intermediate matrices to be computed.
   virtual void compute();
@@ -260,14 +302,47 @@ public:
   RefSCMatrix A_ab();
   /// Returns alpha-beta block of the MP2 T2 matrix. Returns 0 if EBC is assumed
   RefSCMatrix T2_ab();
+  /// Returns beta-beta block of the V intermediate matrix.
+  RefSCMatrix V_bb();
+  /// Returns beta-beta block of the X intermediate matrix.
+  RefSCMatrix X_bb();
+  /// Returns beta-beta block of the B intermediate matrix.
+  RefSymmSCMatrix B_bb();
+  /// Returns beta-beta block of the A intermediate matrix. Returns 0 if EBC is assumed.
+  RefSCMatrix A_bb();
+  /// Returns beta-beta block of the MP2 T2 matrix. Returns 0 if EBC is assumed.
+  RefSCMatrix T2_bb();
   /// Returns alpha-alpha MP2 pair energies.
   RefSCVector emp2_aa();
   /// Returns alpha-beta MP2 pair energies.
   RefSCVector emp2_ab();
+  /// Returns beta-beta MP2 pair energies.
+  RefSCVector emp2_bb();
   /// Returns amplitudes of pair correlation functions
   Ref<R12Amplitudes> amps();
+  
+  /// Returns S block of intermediate V
+  const RefSCMatrix& V(SpinCase2 S);
+  /// Returns S block of intermediate X
+  const RefSCMatrix& X(SpinCase2 S);
+  /// Returns S block of intermediate B
+  RefSymmSCMatrix B(SpinCase2 S);
+  /// Returns S block of intermediate A
+  const RefSCMatrix& A(SpinCase2 S);
+  /// Returns S block of intermediate T2
+  const RefSCMatrix& T2(SpinCase2 S);
+  /// Returns alpha-alpha MP2 pair energies
+  const RefSCVector& emp2(SpinCase2 S);
+  /// Returns the eigenvalues of spin case S
+  const RefDiagSCMatrix& evals(SpinCase1 S) const;
 
-  RefDiagSCMatrix evals() const;  
+  /// Returns the eigenvalues for the closed-shell case
+  RefDiagSCMatrix evals() const;
+  /// Returns the alpha eigenvalues
+  RefDiagSCMatrix evals_a() const;
+  /// Returns the beta eigenvalues
+  RefDiagSCMatrix evals_b() const;
+  
 };
 
 }

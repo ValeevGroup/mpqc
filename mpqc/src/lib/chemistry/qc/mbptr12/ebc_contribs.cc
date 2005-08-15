@@ -390,7 +390,7 @@ R12IntEval::compute_A_simple_()
   RefSCMatrix F_ri_v = fock_(occ_space,ribs_space,act_vir_space);
   if (debug_ > 1)
     F_ri_v.print("Fock matrix (RI-BS/act.virt.)");
-  Ref<MOIndexSpace> act_fvir_space = new MOIndexSpace("Fock-weighted active unoccupied MOs sorted by energy",
+  Ref<MOIndexSpace> act_fvir_space = new MOIndexSpace("a_F", "Fock-weighted active unoccupied MOs sorted by energy",
                                                       act_vir_space, ribs_space->coefs()*F_ri_v, ribs_space->basis());
 
   // Do the AO->MO transform

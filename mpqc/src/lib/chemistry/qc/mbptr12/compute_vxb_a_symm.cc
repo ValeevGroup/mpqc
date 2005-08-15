@@ -71,8 +71,6 @@ R12IntEval::contrib_to_VXB_a_symm_(const std::string& tform_name)
   Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_(tform_name);
   if (ipjq_tform->space1() != ipjq_tform->space3())
     throw std::runtime_error("R12IntEval::contrib_to_VXB_a_symm_() -- wrong type of transform is provided (space1 != space3)");
-  if (ipjq_tform->space2() != ipjq_tform->space4())
-    throw std::runtime_error("R12IntEval::contrib_to_VXB_a_symm_() -- wrong type of transform is provided (space2 != space4)");
   Ref<MOIndexSpace> mospace = ipjq_tform->space2();
 
   // Carry out the AO->MO transform

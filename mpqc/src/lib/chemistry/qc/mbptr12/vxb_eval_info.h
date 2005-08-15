@@ -242,7 +242,7 @@ public:
   
   /** Compute span of bs and create corresponding mospace referred to by name. Number
       linear dependencies is returned in nlindep */
-  static Ref<MOIndexSpace> orthogonalize(const std::string& name, const Ref<GaussianBasisSet>& bs,
+  static Ref<MOIndexSpace> orthogonalize(const std::string& id, const std::string& name, const Ref<GaussianBasisSet>& bs,
                                   OverlapOrthog::OrthogMethod orthog_method, double lindep_tol,
                                   int& nlindep);
 
@@ -250,12 +250,12 @@ public:
       where I is identity matrix, C1 is space1, and X2 spans
       subspace of space2. X2 is returned. */
   static Ref<MOIndexSpace> gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                                       const std::string& name, double lindep_tol);
+                                       const std::string& id, const std::string& name, double lindep_tol);
   /** Compute subspace X2 of space2 which is orthogonal complement to space1, i.e.,
       C1.S12.X2=0, where 0 is the null matrix.
   */
   static Ref<MOIndexSpace> orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                                const std::string& name, double lindep_tol);
+                                const std::string& id, const std::string& name, double lindep_tol);
                                        
   /// Compute overlap matrices in the basis of space1 and space2
   static void compute_overlap_ints(const Ref<MOIndexSpace>& space1,

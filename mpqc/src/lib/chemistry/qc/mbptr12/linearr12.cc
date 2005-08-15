@@ -37,45 +37,53 @@
 using namespace sc;
 using namespace LinearR12;
 
-Ref<CorrelationFactor>
-CorrelationFactor::Instance(CorrelationFactorID id)
+CorrelationFactor::CorrelationFactor(const CorrelationFactorID& id, const CorrelationParameters& params) :
+  id_(id), params_(params)
 {
-  Ref<CorrelationFactor> cf;
-  switch (id) {
-  case R12CorrFactor:
-    cf = new CorrelationFactor(id,"R12",&Integral::grt,4);
-    cf->tbint_type_eri(TwoBodyInt::eri);
-    cf->tbint_type_f12(TwoBodyInt::r12);
-    cf->tbint_type_t1f12(TwoBodyInt::r12t1);
-    cf->tbint_type_t2f12(TwoBodyInt::r12t2);
-    break;
-  case G12CorrFactor:
-    cf = new CorrelationFactor(id,"G12",&Integral::g12,6);
-    cf->tbint_type_eri(TwoBodyInt::eri);
-    cf->tbint_type_f12(TwoBodyInt::r12_0_g12);
-    cf->tbint_type_t1f12(TwoBodyInt::t1g12);
-    cf->tbint_type_t2f12(TwoBodyInt::t2g12);
-    cf->tbint_type_f12eri(TwoBodyInt::r12_m1_g12);
-    cf->tbint_type_f12f12(TwoBodyInt::r12_0_g12);
-    cf->tbint_type_f12t1f12(TwoBodyInt::g12t1g12);
-    break;
-  default:
-    throw FeatureNotImplemented("CorrelationFactor::Instance() -- correlation factor with this id not found",__FILE__,__LINE__);
-  }
-  return cf;
+  init();
 }
 
-CorrelationFactor::CorrelationFactor(CorrelationFactorID id, const std::string& label,
-                                     IntegralCallback callback, unsigned int num_tbint_types) :
-  id_(id), label_(label), callback_(callback), num_tbint_types_(num_tbint_types),
-  tbint_type_eri_(-1),
-  tbint_type_f12_(-1),
-  tbint_type_t1f12_(-1),
-  tbint_type_t2f12_(-1),
-  tbint_type_f12eri_(-1),
-  tbint_type_f12f12_(-1),
-  tbint_type_f12t1f12_(-1)
+void
+CorrelationFactor::init()
 {
+  switch (id_) {
+  case R12CorrFactor:
+    init2("R12",&Integral::grt,4);
+    tbint_type_eri(TwoBodyInt::eri);
+    tbint_type_f12(TwoBodyInt::r12);
+    tbint_type_t1f12(TwoBodyInt::r12t1);
+    tbint_type_t2f12(TwoBodyInt::r12t2);
+    break;
+  case G12CorrFactor:
+    init2("G12",&Integral::g12,6);
+    tbint_type_eri(TwoBodyInt::eri);
+    tbint_type_f12(TwoBodyInt::r12_0_g12);
+    tbint_type_t1f12(TwoBodyInt::t1g12);
+    tbint_type_t2f12(TwoBodyInt::t2g12);
+    tbint_type_f12eri(TwoBodyInt::r12_m1_g12);
+    tbint_type_f12f12(TwoBodyInt::r12_0_g12);
+    tbint_type_f12t1f12(TwoBodyInt::g12t1g12);
+    break;
+  default:
+    throw FeatureNotImplemented("CorrelationFactor::CorrelationFactor() -- correlation factor with this id not found",__FILE__,__LINE__);
+  }
+}
+
+void
+CorrelationFactor::init2(const std::string& label,
+                         IntegralCallback callback,
+                         unsigned int num_tbint_types)
+{
+  label_ = label;
+  callback_ = callback;
+  num_tbint_types_ = num_tbint_types;
+  tbint_type_eri_ = -1;
+  tbint_type_f12_ = -1;
+  tbint_type_t1f12_ = -1;
+  tbint_type_t2f12_ = -1;
+  tbint_type_f12eri_ = -1;
+  tbint_type_f12f12_ = -1;
+  tbint_type_f12t1f12_ = -1;
 }
 
 CorrelationFactor::~CorrelationFactor()
@@ -86,6 +94,24 @@ const LinearR12::CorrelationFactorID&
 CorrelationFactor::id() const
 {
   return id_;
+}
+
+unsigned int
+CorrelationFactor::nfunctions() const
+{
+  return params_.size();
+}
+
+unsigned int
+CorrelationFactor::nprimitives(unsigned int c) const
+{
+  return params_.at(c).size();
+}
+
+const std::pair<double,double>&
+CorrelationFactor::primitive(unsigned int c, unsigned int p) const
+{
+  return params_.at(c).at(p);
 }
 
 const std::string&

@@ -69,6 +69,7 @@ class R12IntEval : virtual public SavableState {
   RefSCVector emp2pair_[NSpinCases2];
   RefSCDimension dim_oo_[NSpinCases2];
   RefSCDimension dim_vv_[NSpinCases2];
+  RefSCDimension dim_f12_[NSpinCases2];
   
   // Note that intermediate B is symmetric but is stored as a full matrix to simplify the code
   // that computes asymmetric form of B
@@ -173,6 +174,13 @@ class R12IntEval : virtual public SavableState {
   */
   void contrib_to_VXB_a_asymm_(const std::string& tform_name);
 
+  /// New, all-encompassing version
+  void contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
+                             const Ref<MOIndexSpace>& xspace,
+                             const Ref<MOIndexSpace>& jspace,
+                             const Ref<MOIndexSpace>& yspace,
+                             SpinCase2 spincase);
+                                  
   /// Compute OBS contribution to V, X, and B (these contributions are independent of the method)
   void obs_contrib_to_VXB_gebc_vbseqobs_();
 
@@ -278,6 +286,8 @@ public:
   RefSCDimension dim_oo(SpinCase2 S) const;
   /// Dimension for active-vir/active-vir pairs of spin case S
   RefSCDimension dim_vv(SpinCase2 S) const;
+  /// Dimension for geminal functions of spin case S
+  RefSCDimension dim_f12(SpinCase2 S) const;
 
   /// This function causes the intermediate matrices to be computed.
   virtual void compute();

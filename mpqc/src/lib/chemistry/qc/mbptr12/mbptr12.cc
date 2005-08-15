@@ -116,12 +116,20 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   // Default is to use R12 factor
   std::string corrfactor = keyval->stringvalue("corr_factor", KeyValValuestring("r12"));
   corrparam_ = 0.0;
-  if (corrfactor == "r12")
-    corrfactor_ = LinearR12::CorrelationFactor::Instance(LinearR12::R12CorrFactor);
+  if (corrfactor == "r12") {
+    // fake parameter 0.0 for r12 function -- UGLY, should introduce classes
+    typedef LinearR12::CorrelationFactor::CorrelationParameters CorrParams;
+    std::vector< std::pair<double,double> > vtmp;  vtmp.push_back(std::make_pair(0.0,1.0));
+    CorrParams params;  params.push_back(vtmp);
+    corrfactor_ = new LinearR12::CorrelationFactor(LinearR12::R12CorrFactor, params);
+  }
   else if (corrfactor == "g12") {
-    corrfactor_ = LinearR12::CorrelationFactor::Instance(LinearR12::G12CorrFactor);
     corrparam_ = keyval->doublevalue("corr_param", KeyValValuedouble(0.0));
-    }
+    typedef LinearR12::CorrelationFactor::CorrelationParameters CorrParams;
+    std::vector< std::pair<double,double> > vtmp;  vtmp.push_back(std::make_pair(corrparam_,1.0));
+    CorrParams params;  params.push_back(vtmp);
+    corrfactor_ = new LinearR12::CorrelationFactor(LinearR12::G12CorrFactor, params);
+  }
   else
     throw FeatureNotImplemented("MBPT2_R12::MBPT2_R12 -- this correlation factor is not implemented",__FILE__,__LINE__);
   

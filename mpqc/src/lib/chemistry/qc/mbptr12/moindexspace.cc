@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <stdlib.h>
 #include <util/misc/formio.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
 
@@ -48,10 +49,11 @@ static ClassDesc MOIndexSpace_cd(
   typeid(MOIndexSpace),"MOIndexSpace",1,"virtual public SavableState",
   0, 0, create<MOIndexSpace>);
 
-MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis,
-                           const vector<int>& offsets, const vector<int>& nmopi, IndexOrder moorder,
+MOIndexSpace::MOIndexSpace(const std::string& id, const std::string& name,
+                           const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet>& basis,
+                           const vector<int>& offsets, const vector<int>& nmopi, const IndexOrder& moorder,
                            const RefDiagSCMatrix& evals) :
-  name_(name), basis_(basis), offsets_(offsets), nmo_(nmopi), full_rank_(full_coefs.coldim().n()),
+  id_(id), name_(name), basis_(basis), offsets_(offsets), nmo_(nmopi), full_rank_(full_coefs.coldim().n()),
   moorder_(moorder)
 {
   full_coefs_to_coefs(full_coefs, evals);
@@ -59,9 +61,10 @@ MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, cons
   init();
 }
 
-MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis,
-                           const RefDiagSCMatrix& evals, int nfzc, int nfzv, IndexOrder moorder) :
-  name_(name), basis_(basis), full_rank_(full_coefs.coldim().n()), moorder_(moorder)
+MOIndexSpace::MOIndexSpace(const std::string& id, const std::string& name,
+                           const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet>& basis,
+                           const RefDiagSCMatrix& evals, int nfzc, int nfzv, const IndexOrder& moorder) :
+  id_(id), name_(name), basis_(basis), full_rank_(full_coefs.coldim().n()), moorder_(moorder)
 {
   if (evals.null())
     throw std::runtime_error("MOIndexSpace::MOIndexSpace() -- null eigenvalues matrix");
@@ -75,8 +78,9 @@ MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, cons
   init();
 }
 
-MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis) :
-  name_(name), basis_(basis), full_rank_(full_coefs.coldim().n()), moorder_(symmetry)
+MOIndexSpace::MOIndexSpace(const std::string& id, const std::string& name,
+                           const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet>& basis) :
+  id_(id), name_(name), basis_(basis), full_rank_(full_coefs.coldim().n()), moorder_(symmetry)
 {
   Ref<SCBlockInfo> modim_blocks = full_coefs.coldim()->blocks();
   int nb = modim_blocks->nblock();
@@ -102,9 +106,10 @@ MOIndexSpace::MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, cons
   init();
 }*/
 
-MOIndexSpace::MOIndexSpace(std::string name, const Ref<MOIndexSpace>& orig_space, const RefSCMatrix& new_coefs,
+MOIndexSpace::MOIndexSpace(const std::string& id, const std::string& name,
+                           const Ref<MOIndexSpace>& orig_space, const RefSCMatrix& new_coefs,
                            const Ref<GaussianBasisSet>& new_basis) :
-  name_(name), mosym_(orig_space->mosym_), evals_(orig_space->evals_),
+  id_(id), name_(name), mosym_(orig_space->mosym_), evals_(orig_space->evals_),
   rank_(orig_space->rank_), full_rank_(orig_space->full_rank_), nblocks_(orig_space->nblocks_),
   offsets_(orig_space->offsets_), nmo_(orig_space->nmo_), map_to_full_space_(orig_space->map_to_full_space_),
   moorder_(orig_space->moorder_)
@@ -118,6 +123,7 @@ MOIndexSpace::MOIndexSpace(std::string name, const Ref<MOIndexSpace>& orig_space
 
 MOIndexSpace::MOIndexSpace(StateIn& si) : SavableState(si)
 {
+  si.get(id_);
   si.get(name_);
 
   coefs_.restore(si);
@@ -144,6 +150,7 @@ MOIndexSpace::~MOIndexSpace()
 void
 MOIndexSpace::save_data_state(StateOut& so)
 {
+  so.put(id_);
   so.put(name_);
 
   coefs_.save(so);
@@ -162,6 +169,8 @@ MOIndexSpace::save_data_state(StateOut& so)
   so.put((int)moorder_);
 }
 
+const std::string&
+MOIndexSpace::id() const { return id_; }
 const std::string&
 MOIndexSpace::name() const { return name_; }
 
@@ -378,6 +387,8 @@ MOIndexSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs, const RefDiagSC
 void
 MOIndexSpace::init()
 {
+  if (id_.size() > max_id_length)
+    throw ProgrammingError("MOIndexSpace constructed with id longer than allowed",__FILE__,__LINE__);
 }
 
 

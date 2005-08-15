@@ -133,9 +133,9 @@ R12IntEvalInfo::construct_orthog_aux_()
     return;
 
 #if !USE_SINGLEREFINFO
-  abs_space_ = orthogonalize("ABS", bs_aux_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_aux_);
+  abs_space_ = orthogonalize("p'","ABS", bs_aux_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_aux_);
 #else
-  abs_space_ = orthogonalize("ABS", bs_aux_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_aux_);
+  abs_space_ = orthogonalize("p'","ABS", bs_aux_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_aux_);
 #endif
 
   if (bs_aux_ == bs_ri_)
@@ -157,15 +157,15 @@ R12IntEvalInfo::construct_orthog_vir_()
   if (obs == bs_vir_) {
 #if !USE_SINGLEREFINFO
     // If virtuals are from the same space as occupieds, then everything is easy
-    vir_space_ = new MOIndexSpace("unoccupied MOs sorted by energy", mo_space_->coefs(),
+    vir_space_ = new MOIndexSpace("e","unoccupied MOs sorted by energy", mo_space_->coefs(),
                                   mo_space_->basis(), mo_space_->evals(), ndocc(), 0);
-    vir_space_symblk_ = new MOIndexSpace("unoccupied MOs symmetry-blocked", mo_space_->coefs(),
+    vir_space_symblk_ = new MOIndexSpace("e(sym)","unoccupied MOs symmetry-blocked", mo_space_->coefs(),
                                          mo_space_->basis(), mo_space_->evals(), ndocc(), 0, MOIndexSpace::symmetry);
 
     if (nfzv() == 0)
       act_vir_space_ = vir_space_;
     else
-      act_vir_space_ = new MOIndexSpace("active unoccupied MOs sorted by energy", mo_space_->coefs(),
+      act_vir_space_ = new MOIndexSpace("a","active unoccupied MOs sorted by energy", mo_space_->coefs(),
                                   mo_space_->basis(), mo_space_->evals(), ndocc(), nfzv());
 #else
     vir_space_ = refinfo()->uocc();
@@ -180,14 +180,14 @@ R12IntEvalInfo::construct_orthog_vir_()
   else {
 #if !USE_SINGLEREFINFO
     // This is a set of orthonormal functions that span VBS
-    Ref<MOIndexSpace> vir_space = orthogonalize("VBS", bs_vir_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_vir_);
+    Ref<MOIndexSpace> vir_space = orthogonalize("e","VBS", bs_vir_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_vir_);
     // Now project out occupied MOs
-    vir_space_symblk_ = orthog_comp(occ_space_symblk_, vir_space, "VBS", ref_->lindep_tol());
+    vir_space_symblk_ = orthog_comp(occ_space_symblk_, vir_space, "e(sym)", "VBS", ref_->lindep_tol());
 #else
     // This is a set of orthonormal functions that span VBS
-    Ref<MOIndexSpace> vir_space = orthogonalize("VBS", bs_vir_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_vir_);
+    Ref<MOIndexSpace> vir_space = orthogonalize("e","VBS", bs_vir_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_vir_);
     // Now project out occupied MOs
-    vir_space_symblk_ = orthog_comp(refinfo()->docc_sb(), vir_space, "VBS", refinfo()->ref()->lindep_tol());
+    vir_space_symblk_ = orthog_comp(refinfo()->docc_sb(), vir_space, "e(sym)", "VBS", refinfo()->ref()->lindep_tol());
 #endif
 
     // Design flaw!!! Need to compute Fock matrix right here but can't since Fock is built into R12IntEval
@@ -215,9 +215,9 @@ R12IntEvalInfo::construct_orthog_ri_()
     return;
 
 #if !USE_SINGLEREFINFO
-  ribs_space_ = orthogonalize("RI-BS", bs_ri_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_ri_);
+  ribs_space_ = orthogonalize("a'","RI-BS", bs_ri_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_ri_);
 #else
-  ribs_space_ = orthogonalize("RI-BS", bs_ri_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri_);
+  ribs_space_ = orthogonalize("a'","RI-BS", bs_ri_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri_);
 #endif
 }
 
@@ -240,9 +240,9 @@ R12IntEvalInfo::abs_spans_obs_()
   }
   else {
 #if !USE_SINGLEREFINFO
-    Ref<MOIndexSpace> ribs_space = orthogonalize("OBS+ABS", ri_basis, ref_->orthog_method(), ref_->lindep_tol(), nlindep_ri);
+    Ref<MOIndexSpace> ribs_space = orthogonalize("p+p'","OBS+ABS", ri_basis, ref_->orthog_method(), ref_->lindep_tol(), nlindep_ri);
 #else
-    Ref<MOIndexSpace> ribs_space = orthogonalize("OBS+ABS", ri_basis, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri);
+    Ref<MOIndexSpace> ribs_space = orthogonalize("p+p'","OBS+ABS", ri_basis, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri);
 #endif
   }
   
@@ -282,16 +282,16 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
    }
 
 #if !USE_SINGLEREFINFO
-   ribs_space_ = orthog_comp(occ_space_symblk_, ribs_space_, "RI-BS", ref_->lindep_tol());
-   ribs_space_ = orthog_comp(vir_space_symblk_, ribs_space_, "RI-BS", ref_->lindep_tol());
+   ribs_space_ = orthog_comp(occ_space_symblk_, ribs_space_, "a'", "RI-BS", ref_->lindep_tol());
+   ribs_space_ = orthog_comp(vir_space_symblk_, ribs_space_, "a'", "RI-BS", ref_->lindep_tol());
 #else
-   ribs_space_ = orthog_comp(refinfo()->docc_sb(), ribs_space_, "RI-BS", refinfo()->ref()->lindep_tol());
-   ribs_space_ = orthog_comp(vir_space_symblk_, ribs_space_, "RI-BS", refinfo()->ref()->lindep_tol());
+   ribs_space_ = orthog_comp(refinfo()->docc_sb(), ribs_space_, "a'", "RI-BS", refinfo()->ref()->lindep_tol());
+   ribs_space_ = orthog_comp(vir_space_symblk_, ribs_space_, "a'", "RI-BS", refinfo()->ref()->lindep_tol());
 #endif
 }
 
 Ref<MOIndexSpace>
-R12IntEvalInfo::orthogonalize(const std::string& name, const Ref<GaussianBasisSet>& bs,
+R12IntEvalInfo::orthogonalize(const std::string& id, const std::string& name, const Ref<GaussianBasisSet>& bs,
                               OverlapOrthog::OrthogMethod orthog_method, double lindep_tol,
                               int& nlindep)
 {
@@ -341,7 +341,7 @@ R12IntEvalInfo::orthogonalize(const std::string& name, const Ref<GaussianBasisSe
   ExEnv::out0() << decindent;
 
   nlindep = orthog.nlindep();
-  Ref<MOIndexSpace> space = new MOIndexSpace(name,orthog_ao,bs);
+  Ref<MOIndexSpace> space = new MOIndexSpace(id,name,orthog_ao,bs);
 
   return space;
 }
@@ -349,7 +349,7 @@ R12IntEvalInfo::orthogonalize(const std::string& name, const Ref<GaussianBasisSe
 
 Ref<MOIndexSpace>
 R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                            const std::string& name, double lindep_tol)
+                            const std::string& id, const std::string& name, double lindep_tol)
 {
   // Both spaces must be ordered in the same way
   if (space1->moorder() != space2->moorder())
@@ -484,7 +484,7 @@ R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
   delete[] vecs;
   delete[] nvec_per_block;
 
-  Ref<MOIndexSpace> orthog_comp_space = new MOIndexSpace(name,orthog2,space2->basis());
+  Ref<MOIndexSpace> orthog_comp_space = new MOIndexSpace(id,name,orthog2,space2->basis());
   
   return orthog_comp_space;
 }
@@ -492,7 +492,7 @@ R12IntEvalInfo::orthog_comp(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
 
 Ref<MOIndexSpace>
 R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
-                            const std::string& name, double lindep_tol)
+                            const std::string& id, const std::string& name, double lindep_tol)
 {
   //
   // Projection works as follows:
@@ -640,7 +640,7 @@ R12IntEvalInfo::gen_project(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSp
   delete[] vecs;
   delete[] nvec_per_block;
 
-  Ref<MOIndexSpace> proj_space = new MOIndexSpace(name,proj,space2->basis());
+  Ref<MOIndexSpace> proj_space = new MOIndexSpace(id,name,proj,space2->basis());
 
   RefSCMatrix S12;  compute_overlap_ints(space1,proj_space,S12);
   S12.print("Check: overlap between space1 and projected space");

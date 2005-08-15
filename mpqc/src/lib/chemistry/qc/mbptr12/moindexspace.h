@@ -61,6 +61,9 @@ public:
 
 private:
 
+  /// max length of string returned by id()
+  static const int max_id_length = 10;
+  std::string id_;                        // see documentation for id()
   std::string name_;                      // String identifier for the orbital space
   
   Ref<GaussianBasisSet> basis_;    // The AO basis
@@ -113,19 +116,19 @@ public:
       \param moorder -- specifies new ordering of vectors
       \param evals -- used to sort the vectors
       */
-  MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis,
-               const vector<int>& offsets, const vector<int>& nmopi, IndexOrder moorder = symmetry,
+  MOIndexSpace(const std::string& id, const std::string& name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet>& basis,
+               const vector<int>& offsets, const vector<int>& nmopi, const IndexOrder& moorder = symmetry,
                const RefDiagSCMatrix& evals = 0);
   /** This constructor should be used when the MOIndexSpace object is a subspace of a full orbital space.
       Similarly to the previous constructor, it constructs an MOIndexSpace object using a symmetry-blocked
       transformation coefficient matrix (AO by MO) for the full space,
       basis set, "eigenvalues" and the number of orbitals with lowest (nfzc) and highest (nfzv) eigenvalues
       to be dropped. The orbitals in the constructed space are ordered by energy. */
-  MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis,
-               const RefDiagSCMatrix& evals, int nfzc, int nfzv, IndexOrder moorder = energy);
+  MOIndexSpace(const std::string& id, const std::string& name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet>& basis,
+               const RefDiagSCMatrix& evals, int nfzc, int nfzv, const IndexOrder& moorder = energy);
   /** This constructor should be used when the MOIndexSpace object is the full orbital space.
       The orbitals will be symmetry-blocked. */
-  MOIndexSpace(std::string name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet> basis);
+  MOIndexSpace(const std::string& id, const std::string& name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet>& basis);
 
   /* This constructor should be used when the MOIndexSpace object is the full orbital space.
      Constructs an MOIndexSpace object using a non-blocked transformation coefficient matrix
@@ -135,14 +138,24 @@ public:
                const RefDiagSCMatrix& evals = 0);*/
   /** This constructor is a true hack introduced because I have no idea how to construct what I need.
       It will copy orig_space but replace it's coefs with new_coefs, and its basis with new_basis. */
-  MOIndexSpace(std::string name, const Ref<MOIndexSpace>& orig_space, const RefSCMatrix& new_coefs,
+  MOIndexSpace(const std::string& id, const std::string& name, const Ref<MOIndexSpace>& orig_space, const RefSCMatrix& new_coefs,
                const Ref<GaussianBasisSet>& new_basis);
   ~MOIndexSpace();
 
   void save_data_state(StateOut&);
 
-  /// Returns the AO basis set
+  /// Returns a self-contained expressive label
   const std::string& name() const;  
+  /// Returns a short (preferably, one, max 10 character) identifier for the space
+  /** Suggested convention:
+      i -- active occupied orbitals
+      a -- active unoccupied orbitals
+      m -- all occupied orbitals
+      e -- all virtual orbitals
+      p -- all Hartree-Fock orbitals
+      p' -- all RI functions
+  */
+  const std::string& id() const;
   /// Returns the AO basis set
   const Ref<GaussianBasisSet>& basis() const;  
   /// Returns the coefficient matrix

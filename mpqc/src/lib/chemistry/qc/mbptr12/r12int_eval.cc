@@ -90,6 +90,9 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
   dim_vv_[AlphaBeta] = new SCDimension(navir_a*navir_b);
   dim_oo_[BetaBeta] = new SCDimension((naocc_b*(naocc_b-1))/2);
   dim_vv_[BetaBeta] = new SCDimension((navir_b*(navir_b-1))/2);
+  for(int s=0; s<NSpinCases2; s++) {
+    dim_f12_[s] = new SCDimension(corrfactor_->nfunctions()*dim_oo_[s].n());
+  }
   
   dim_ij_aa_ = new SCDimension((naocc_a*(naocc_a-1))/2);
   dim_ij_ab_ = new SCDimension(naocc_a*naocc_b);
@@ -145,11 +148,11 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
   
   for(int s=0; s<NSpinCases2; s++) {
     if (!(spin_polarized() && s == BetaBeta)) {
-      V_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_oo_[s]);
-      X_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_oo_[s]);
-      B_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_oo_[s]);
+      V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_oo_[s]);
+      X_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
+      B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (ebc == false) {
-        A_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
+        A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
         T2_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
       }
       emp2pair_[s] = local_matrix_kit->vector(dim_vv_[s]);
@@ -236,12 +239,13 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   for(int s=0; s<NSpinCases2; s++) {
     dim_oo_[s] << SavableState::restore_state(si);
     dim_vv_[s] << SavableState::restore_state(si);
+    dim_f12_[s] << SavableState::restore_state(si);
     if (!(spin_polarized() && s == BetaBeta)) {
-      V_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_oo_[s]);
-      X_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_oo_[s]);
-      B_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_oo_[s]);
+      V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_oo_[s]);
+      X_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
+      B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (ebc == false) {
-        A_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
+        A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
         T2_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
       }
       emp2pair_[s] = local_matrix_kit->vector(dim_vv_[s]);
@@ -328,6 +332,7 @@ R12IntEval::save_data_state(StateOut& so)
   for(int s=0; s<NSpinCases2; s++) {
     SavableState::save_state(dim_oo_[s].pointer(),so);
     SavableState::save_state(dim_vv_[s].pointer(),so);
+    SavableState::save_state(dim_f12_[s].pointer(),so);
     if (!(spin_polarized() && s == BetaBeta)) {
       V_[s].save(so);
       X_[s].save(so);
@@ -384,6 +389,7 @@ RefSCDimension R12IntEval::dim_vv_ab() const { return dim_ab_ab_; };
 RefSCDimension R12IntEval::dim_vv_bb() const { return dim_ab_bb_; };
 RefSCDimension R12IntEval::dim_oo(SpinCase2 S) const { return dim_oo_[S]; }
 RefSCDimension R12IntEval::dim_vv(SpinCase2 S) const { return dim_vv_[S]; }
+RefSCDimension R12IntEval::dim_f12(SpinCase2 S) const { return dim_f12_[S]; }
 
 RefSCMatrix R12IntEval::V_aa()
 {
@@ -542,7 +548,9 @@ const RefSCMatrix&
 R12IntEval::V(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
-    antisymmetrize(V_[AlphaAlpha],V_[AlphaBeta],act_occ_space(Alpha),act_occ_space(Alpha));
+    antisymmetrize(V_[AlphaAlpha],V_[AlphaBeta],
+                   act_occ_space(Alpha),
+                   act_occ_space(Alpha));
   return V_[S];
 }
 
@@ -550,7 +558,9 @@ const RefSCMatrix&
 R12IntEval::X(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
-    antisymmetrize(X_[AlphaAlpha],X_[AlphaBeta],act_occ_space(Alpha),act_occ_space(Alpha));
+    antisymmetrize(X_[AlphaAlpha],X_[AlphaBeta],
+                   act_occ_space(Alpha),
+                   act_occ_space(Alpha));
   return X_[S];
 }
 
@@ -558,7 +568,9 @@ RefSymmSCMatrix
 R12IntEval::B(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
-    antisymmetrize(B_[AlphaAlpha],B_[AlphaBeta],act_occ_space(Alpha),act_occ_space(Alpha));
+    antisymmetrize(B_[AlphaAlpha],B_[AlphaBeta],
+                   act_occ_space(Alpha),
+                   act_occ_space(Alpha));
   
   // Extract lower triangle of the matrix
   Ref<SCMatrixKit> kit = B_[S].kit();
@@ -579,7 +591,9 @@ const RefSCMatrix&
 R12IntEval::A(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
-    antisymmetrize(A_[AlphaAlpha],A_[AlphaBeta],act_occ_space(Alpha),act_vir_space(Alpha));
+    antisymmetrize(A_[AlphaAlpha],A_[AlphaBeta],
+                   act_occ_space(Alpha),
+                   act_vir_space(Alpha));
   return A_[S];
 }
 
@@ -587,7 +601,9 @@ const RefSCMatrix&
 R12IntEval::T2(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
-    antisymmetrize(T2_[AlphaAlpha],T2_[AlphaBeta],act_occ_space(Alpha),act_vir_space(Alpha));
+    antisymmetrize(T2_[AlphaAlpha],T2_[AlphaBeta],
+                   act_occ_space(Alpha),
+                   act_vir_space(Alpha));
   return T2_[S];
 }
 
@@ -912,7 +928,7 @@ R12IntEval::form_focc_space_()
     RefSCMatrix F_ri_o = fock_(occ_space,ribs_space,occ_space);
     if (debug_ > 1)
       F_ri_o.print("Fock matrix (RI-BS/occ.)");
-    focc_space_ = new MOIndexSpace("Fock-weighted occupied MOs sorted by energy",
+    focc_space_ = new MOIndexSpace("m_F", "Fock-weighted occupied MOs sorted by energy",
                                    occ_space, ribs_space->coefs()*F_ri_o, ribs_space->basis());
   }
 }
@@ -935,7 +951,7 @@ R12IntEval::form_factocc_space_()
     RefSCMatrix F_ri_ao = fock_(occ_space,ribs_space,act_occ_space);
     if (debug_ > 1)
       F_ri_ao.print("Fock matrix (RI-BS/act.occ.)");
-    factocc_space_ = new MOIndexSpace("Fock-weighted active occupied MOs sorted by energy",
+    factocc_space_ = new MOIndexSpace("i_F", "Fock-weighted active occupied MOs sorted by energy",
                                       act_occ_space, ribs_space->coefs()*F_ri_ao, ribs_space->basis());
   }
 }
@@ -979,11 +995,11 @@ R12IntEval::form_canonvir_space_()
     delete[] F_full;
     delete[] F_lowtri;
 
-    Ref<MOIndexSpace> canonvir_space_symblk = new MOIndexSpace("Virt. MOs symmetry-blocked",
+    Ref<MOIndexSpace> canonvir_space_symblk = new MOIndexSpace("e(sym)", "Virt. MOs symmetry-blocked",
                                                                vir_space, vir_space->coefs()*F_vir_lt.eigvecs(),
                                                                vir_space->basis());
     RefDiagSCMatrix F_vir_evals = F_vir_lt.eigvals();
-    canonvir_space_ = new MOIndexSpace("Virt. MOs sorted by energy",
+    canonvir_space_ = new MOIndexSpace("e", "Virt. MOs sorted by energy",
                                        canonvir_space_symblk->coefs(), canonvir_space_symblk->basis(),
                                        F_vir_evals, 0, 0,
                                        MOIndexSpace::energy);
@@ -1024,7 +1040,7 @@ R12IntEval::compute()
   if (evaluated_)
     return;
   
-#if 0
+#if 1
   if (debug_ > 1) {
     Vaa_.print("Alpha-alpha V(diag) contribution");
     Vab_.print("Alpha-beta V(diag) contribution");
@@ -1045,7 +1061,7 @@ R12IntEval::compute()
   
   if (r12info_->basis_vir()->equiv(r12info_->basis())) {
     obs_contrib_to_VXB_gebc_vbseqobs_();
-#if 0
+#if 1
     if (debug_ > 1) {
       Vaa_.print("Alpha-alpha V(diag+OBS) contribution");
       Vab_.print("Alpha-beta V(diag+OBS) contribution");
@@ -1055,6 +1071,13 @@ R12IntEval::compute()
       Bab_.print("Alpha-beta B(diag+OBS) contribution");
     }
 #endif
+
+    // Compute VXB using new code
+    contrib_to_VXB_a_new_(r12info()->refinfo()->occ_act(SingleRefInfo::AlphaSpin),
+                          r12info()->refinfo()->occ(SingleRefInfo::AlphaSpin),
+                          r12info()->refinfo()->occ_act(SingleRefInfo::AlphaSpin),
+                          r12info()->refinfo()->occ(SingleRefInfo::AlphaSpin),
+                          AlphaBeta);
     if (debug_ > 1) {
       for(int s=0; s<nspincases2(); s++) {
         V_[s].print(prepend_spincase2(s,"V(diag+OBS) contribution"));
@@ -1063,9 +1086,17 @@ R12IntEval::compute()
       }
     }
     
-    if (r12info_->basis() != r12info_->basis_ri())
+    if (r12info_->basis() != r12info_->basis_ri()) {
       abs1_contrib_to_VXB_gebc_();
-#if 0
+      // Compute VXB using new code
+      contrib_to_VXB_a_new_(r12info()->refinfo()->occ_act(SingleRefInfo::AlphaSpin),
+                            r12info()->refinfo()->occ(SingleRefInfo::AlphaSpin),
+                            r12info()->refinfo()->occ_act(SingleRefInfo::AlphaSpin),
+                            r12info()->ribs_space(),
+                            AlphaBeta);
+    }
+    
+#if 1
     if (debug_ > 1) {
       Vaa_.print("Alpha-alpha V(diag+OBS+ABS) contribution");
       Vab_.print("Alpha-beta V(diag+OBS+ABS) contribution");

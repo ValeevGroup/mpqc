@@ -28,6 +28,9 @@
 #ifndef included_Chemistry_QC_GaussianBasis_ContractionTransform_hh
 #include "Chemistry_QC_GaussianBasis_ContractionTransform.hh"
 #endif
+#ifndef included_Chemistry_QC_GaussianBasis_DerivCenters_hh
+#include "Chemistry_QC_GaussianBasis_DerivCenters.hh"
+#endif
 #ifndef included_Chemistry_QC_GaussianBasis_IntegralEvaluator2_hh
 #include "Chemistry_QC_GaussianBasis_IntegralEvaluator2.hh"
 #endif
@@ -238,6 +241,46 @@ namespace MPQC {
       /* in */ int64_t max_deriv,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2
+    )
+    throw () 
+    ;
+
+
+    /**
+     * Get a nuclear repulsion specialized  2-center integral 
+     * evaluator.  Returns derivative integrals taken with 
+     * respect to DerivCenters.
+     * @param max_deriv Maximum derivative that will be computed
+     * @param bs1 Molecular basis set on center 1
+     * @param bs2 Molecular basis set on center 2
+     * @return nuclear repulsion integral evaluator 
+     */
+    ::Chemistry::QC::GaussianBasis::IntegralEvaluator2
+    get_nuclear_evaluator (
+      /* in */ int64_t max_deriv,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc
+    )
+    throw () 
+    ;
+
+
+    /**
+     * Get a hcore specialized  2-center integral
+     * evaluator.  Returns derivative integrals taken with
+     * respect to DerivCenters.
+     * @param max_deriv Maximum derivative that will be computed
+     * @param bs1 Molecular basis set on center 1
+     * @param bs2 Molecular basis set on center 2
+     * @return hcore repulsion integral evaluator 
+     */
+    ::Chemistry::QC::GaussianBasis::IntegralEvaluator2
+    get_hcore_evaluator (
+      /* in */ int64_t max_deriv,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc
     )
     throw () 
     ;

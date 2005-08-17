@@ -381,10 +381,18 @@ check2_run:
 check2_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK2OUTPUTS:$(INP)/%=$(RUN)/%)
 
+checkcca_run:
+	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CCAINTV3INPUTS:$(INP)/%=%) $(CCACINTSINPUTS:$(INP)/%=%)
+	$(MAKE) checkccafe_run
+
+checkcca_chk:
+	$(CHECKOUT) -r $(SRCDIR)/ref $(CCAINTV3OUTPUTS:$(INP)/%=$(RUN)/%) $(CCACINTSOUTPUTS:$(INP)/%=$(RUN)/%)
+	$(MAKE) checkccafe_chk
+
 CCARUN = ../ccarun
 CCARUN_EXTRA_ARGS = --inputprefix $(SRCDIR)/ref \
                      --outputprefix $(RUN)
-checkccafe_run:
+checkccafe_run: stamp-ccafe
 	$(PERL) $(CCARUN) $(CCARUN_EXTRA_ARGS) $(CCAFEINPUTS) 
 
 checkccafe_chk:
@@ -529,6 +537,10 @@ stamp-hsosscf: $(INP) $(HSOSSCFMASTER) $(INPUTGENDEPS)
 
 stamp-ccafe: $(INP) $(CCAFEIN)
 	$(MAKEINCCA) --dir $(INP) --scref $(SRCDIR)/ref $(CCAFEIN)
+	for file in $(CCAFEINPUTS); \
+	  do \
+	    ( $(INSTALL) $(INSTALLFILEOPT) $(INP)/$${file} $(SRCDIR)/ref/$${file} ); \
+	  done
 	touch stamp-ccafe
 
 stamp-ccaintv3: $(INP) $(CCAINTV3MASTER) $(INPUTGENDEPS)

@@ -88,14 +88,17 @@ namespace MPQC {
     sidl::array<double> sidl_buffer_;
     const double *sc_buffer_;
     double *temp_buffer_;
+    double *buf_;
     enum { one_body, one_body_deriv};
     int int_type_;
     int deriv_level_;
     std::string package_;
     int **reorder_;
+    Chemistry::QC::GaussianBasis::DerivCenters deriv_centers_;
 
     void reorder_intv3(int64_t, int64_t);
     void initialize_reorder_intv3();
+    void reorder_doublet( sc::GaussianShell*, sc::GaussianShell*, int, int, int );
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._implementation)
 
   private:
@@ -160,6 +163,20 @@ namespace MPQC {
     void*
     get_buffer() throw () 
     ;
+
+    /**
+     * Allows a DerivCenters object to be passed to 
+     * an evaluator, so that derivatives can be taken 
+     * with respect to a specified atom (needed for
+     * derivatives with non-Hellman-Feynman contributions). 
+     */
+    void
+    set_derivcenters (
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc
+    )
+    throw () 
+    ;
+
 
     /**
      * Compute a shell doublet of integrals.

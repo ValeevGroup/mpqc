@@ -132,7 +132,20 @@ OneBodyDerivIntCCA::compute_shell(int i, int j, int c) {
 
   Chemistry_QC_GaussianBasis_DerivCenters cca_dc;
   cca_dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
-  cca_dc.add_center(0,c);
+  if( basis1()->shell_to_center(i) == basis2()->shell_to_center(j) ) {
+    cca_dc.add_center(0,c);
+    cca_dc.add_omitted(1,c);
+  }
+  else if( basis1()->shell_to_center(i) == c ) {
+    cca_dc.add_center(0,c);
+    cca_dc.add_omitted( 1, basis2()->shell_to_center(j) );
+  }
+  else {
+    cca_dc.add_center(1,c);
+    cca_dc.add_omitted( 0, basis1()->shell_to_center(i) );
+  }
+ 
+  std::cerr << "setting omitted atom to " << basis2()->shell_to_center(j) << std::endl;
   cca_dc.add_omitted(1,basis2()->shell_to_center(j));
   
   if( eval_type_ == "overlap_1der" )

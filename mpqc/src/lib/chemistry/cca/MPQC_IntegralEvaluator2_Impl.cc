@@ -97,13 +97,12 @@ throw ()
     bs2_->max_ncartesian_in_shell();
   maxam_ = max( bs1_->max_angular_momentum(), bs2_->max_angular_momentum() );
   
+  std::string is_deriv("");
+  if(max_deriv > 0) is_deriv = " derivative";
   std::cout << "  initializing " << package_ << " " << evaluator_label_
-            << " integral evaluator\n";
+            << is_deriv << " integral evaluator\n";
   if ( package_ == "intv3" ) { 
     integral_ = new IntegralV3( bs1_, bs2_ );
-#ifndef INTV3_ORDER
-    initialize_reorder_intv3();
-#endif
   }
 #ifdef HAVE_CINTS
   else if ( package_ == "cints" )
@@ -178,6 +177,15 @@ throw ()
   if( !sc_buffer_ )
     throw ProgrammingError("buffer not assigned",
                            __FILE__,__LINE__);
+  // get a non-const pointer we can write to
+  buf_ = const_cast<double*>( sc_buffer_ );
+
+  if ( package_ == "intv3" ) {
+#ifndef INTV3_ORDER
+    initialize_reorder_intv3();
+#endif
+  }
+
 
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.initialize)
 }
@@ -194,6 +202,22 @@ throw ()
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.get_buffer)
   return const_cast<double*>( sc_buffer_ );
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.get_buffer)
+}
+
+/**
+ * Allows a DerivCenters object to be passed to 
+ * an evaluator, so that derivatives can be taken 
+ * with respect to a specified atom (needed for
+ * derivatives with non-Hellman-Feynman contributions). 
+ */
+void
+MPQC::IntegralEvaluator2_impl::set_derivcenters (
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.set_derivcenters)
+  deriv_centers_ = dc;
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.set_derivcenters)
 }
 
 /**
@@ -218,15 +242,23 @@ throw ()
   else if( int_type_ == one_body_deriv ) {
     sc::DerivCenters dc;
 
-    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 0 )
+    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 0 ) {
       dc.add_omitted(0,deriv_ctr.atom(0));
-    else
+      std::cerr << "omitting center 0, atom " << deriv_ctr.omitted_atom() << std::endl;
+    }
+    else {
       dc.add_center(0,deriv_ctr.atom(0));
+      std::cerr << "doing center 0, atom " << deriv_ctr.atom(0) << std::endl;
+    }
 
-    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 1 )
+    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 1 ) {
       dc.add_omitted(1,deriv_ctr.atom(1));
-    else
+      std::cerr << "omitting center 1, atom " << deriv_ctr.omitted_atom() << std::endl;
+    }
+    else {
       dc.add_center(1,deriv_ctr.atom(1));
+      std::cerr << "doing center 1, atom " << deriv_ctr.atom(1) << std::endl;
+    }
 
     deriv_eval_->compute_shell( shellnum1, shellnum2, dc );
   }
@@ -234,9 +266,49 @@ throw ()
     throw ProgrammingError("bad evaluator type",
                            __FILE__,__LINE__);
 
+  sc::GaussianShell* s1 = &( bs1_->shell(shellnum1) );
+  sc::GaussianShell* s2 = &( bs2_->shell(shellnum2) );
+  int nfunc = s1->nfunction() * s2->nfunction();
+
+  if( int_type_ == one_body_deriv ) {
+    std::cerr << "buffer for shell doublet:\n";
+    std::cerr << "shellnum1: " << shellnum1 << std::endl;
+    int nc1 = s1->ncontraction();
+    for (int i=0; i<nc1; ++i)
+      std::cerr << "am: " << s1->am(i) << std::endl;
+    std::cerr << "shellnum2: " << shellnum2 << std::endl;
+    int nc2 = s2->ncontraction();
+    for (int i=0; i<nc2; ++i)
+      std::cerr << "am: " << s2->am(i) << std::endl;
+    
+    std::cerr << "dx\n";
+    for( int i=0; i<nfunc; ++i)
+      std::cerr << sc_buffer_[i] << std::endl;
+    std::cerr << "dy\n";
+    for( int i=nfunc; i<nfunc*2; ++i)
+      std::cerr << sc_buffer_[i] << std::endl;
+    std::cerr << "dz\n";
+    for( int i=nfunc*2; i<nfunc*3; ++i)
+      std::cerr << sc_buffer_[i] << std::endl;
+  }
+
 #ifndef INTV3_ORDER
   if( package_ == "intv3") reorder_intv3( shellnum1, shellnum2 );
 #endif
+
+  // debug
+  //if( int_type_ == one_body_deriv ) {
+  //  std::cerr << "buffer for shell doublet (after reorder): " << shellnum1 << " " << shellnum2 << std::endl;
+  //  std::cerr << "dx\n";
+  //  for( int i=0; i<nfunc; ++i)
+  //    std::cerr << sc_buffer_[i] << std::endl;
+  //  std::cerr << "dy\n";
+  //  for( int i=nfunc; i<nfunc*2; ++i)
+  //    std::cerr << sc_buffer_[i] << std::endl;
+  //  std::cerr << "dz\n";
+  //  for( int i=nfunc*2; i<nfunc*3; ++i)
+  //    std::cerr << sc_buffer_[i] << std::endl;
+  //}
 
   // debug
   //sc::GaussianShell &s1 = bs1_->shell(shellnum1);
@@ -288,7 +360,10 @@ void
 MPQC::IntegralEvaluator2_impl::initialize_reorder_intv3() 
 {
 
-  temp_buffer_ = new double[max_nshell2_];
+  if( int_type_ == one_body )
+    temp_buffer_ = new double[max_nshell2_];
+  else if( int_type_ == one_body_deriv )
+    temp_buffer_ = new double[max_nshell2_*3];
 
   reorder_ = new int*[maxam_+1];
   reorder_[0] = new int[1];
@@ -321,52 +396,97 @@ MPQC::IntegralEvaluator2_impl::initialize_reorder_intv3()
 
 }
 
+
 void
-MPQC::IntegralEvaluator2_impl::reorder_intv3(int64_t shellnum1,int64_t shellnum2) 
+MPQC::IntegralEvaluator2_impl::reorder_intv3(int64_t shellnum1,int64_t shellnum2)
 {
 
-  double *buf = const_cast<double*>( sc_buffer_ );
+  sc::GaussianShell* s1 = &( bs1_->shell(shellnum1) );
+  sc::GaussianShell* s2 = &( bs2_->shell(shellnum2) );
+  int nc1 = s1->ncontraction();
+  int nc2 = s2->ncontraction();
 
-  sc::GaussianShell &s1 = bs1_->shell(shellnum1);
-  sc::GaussianShell &s2 = bs2_->shell(shellnum2);
-  int nc1 = s1.ncontraction();
-  int nc2 = s2.ncontraction();
+  int reorder_needed=0;
+  for (int i=0; i<nc1; ++i) {
+    if( s1->am(i) == 1) reorder_needed=1;
+    else if( s1->am(i) > 1 && s1->is_cartesian(i) ) reorder_needed=1;
+  }
+  if (!reorder_needed)
+    for (int i=0; i<nc2; ++i) {
+      if( s2->am(i) == 1) reorder_needed=1;
+      else if( s2->am(i) > 1 && s2->is_cartesian(i) ) reorder_needed=1;
+    }
+  if( !reorder_needed ) return;
 
   // copy buffer into temp space
-  int nfunc = s1.nfunction() * s2.nfunction();
-  for( int i=0; i<nfunc; ++i) 
-    temp_buffer_[i] = sc_buffer_[i]; 
-   
-  int index=0, con_offset=0, local_offset, c1_base, c2_base;
+  int nfunc = s1->nfunction() * s2->nfunction();
+  if( int_type_ == one_body_deriv ) 
+    for( int i=0; i<nfunc*3; ++i)
+      temp_buffer_[i] = sc_buffer_[i];
+  else
+    for( int i=0; i<nfunc; ++i)
+      temp_buffer_[i] = sc_buffer_[i];
 
+  // a derivative buffer is composed of 3 "doublets"
+  int deriv_offset;
+  if( int_type_ == one_body )
+    reorder_doublet( s1, s2, nc1, nc2, 0 );
+  else if( int_type_ == one_body_deriv )
+    for(int i=0; i<3; ++i) {
+      deriv_offset = i*nfunc;
+      std::cerr << "deriv offset is " << deriv_offset << std::endl;
+      reorder_doublet( s1, s2, nc1, nc2, deriv_offset );
+    }
+
+
+}
+
+
+
+void
+MPQC::IntegralEvaluator2_impl::reorder_doublet( sc::GaussianShell* s1, sc::GaussianShell* s2,
+                                                int nc1, int nc2, int deriv_offset )
+{
+
+  int index=deriv_offset, con2_offset=0, local2_offset, 
+      c1_base, c2_base;
+
+  int temp;
   for( int c2=0; c2<nc2; ++c2 )
-    con_offset += s2.nfunction(c2);
+    con2_offset += s2->nfunction(c2);
+
+  int s1_is_cart, s2_is_cart, s1_nfunc, s2_nfunc; 
 
   for( int c1=0; c1<nc1; ++c1 ) {
+
     c1_base = index;
+    s1_is_cart = s1->is_cartesian(c1);
+    s1_nfunc = s1->nfunction(c1);
 
-    for( int fc1=0; fc1<s1.nfunction(c1); ++fc1 ) {
+    for( int fc1=0; fc1<s1_nfunc; ++fc1 ) {
 
+      if( s1_is_cart )
+        c2_base = c1_base + reorder_[s1->am(c1)][fc1] * con2_offset;
+      else
+        c2_base = c1_base + fc1 * con2_offset;
+
+      local2_offset = 0;
       for( int c2=0; c2<nc2; ++c2 ) {
+        if( c2>0 ) local2_offset += s2->nfunction(c2-1);
+        s2_is_cart = s2->is_cartesian(c2);
+        s2_nfunc = s2->nfunction(c2);
 
-        if( c2==0 ) local_offset = 0;
-        else local_offset += s2.nfunction(c2-1);
-
-        if( s1.is_cartesian(c1) ) 
-          c2_base = c1_base + reorder_[s1.am(c1)][fc1] * con_offset;
+        if( s2_is_cart )
+          for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
+            buf_[ c2_base + local2_offset + reorder_[s2->am(c2)][fc2] ]
+              = temp_buffer_[index];
+              ++index;
+          }
         else
-          c2_base = c1_base + fc1 * con_offset;
-
-        for( int fc2=0; fc2<s2.nfunction(c2); ++fc2 ) {
-
-          if( s2.is_cartesian(c2) )
-            buf[c2_base + local_offset + reorder_[s2.am(c2)][fc2]] =
-              temp_buffer_[index];
-          else
-            buf[c2_base + local_offset + fc2] = temp_buffer_[index];
-          ++index;
-
-        }
+          for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
+            buf_[ c2_base + local2_offset + fc2 ] = temp_buffer_[index];
+            ++index;
+          }
       }
     }
   }
@@ -375,10 +495,3 @@ MPQC::IntegralEvaluator2_impl::reorder_intv3(int64_t shellnum1,int64_t shellnum2
 
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._misc)
 
-/**
- * ================= BEGIN UNREFERENCED METHOD(S) ================
- * The following code segment(s) belong to unreferenced method(s).
- * This can result from a method rename/removal in the sidl file.
- * Move or remove the code in order to compile cleanly.
- */
-// ================== END UNREFERENCED METHOD(S) =================

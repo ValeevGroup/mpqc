@@ -51,8 +51,6 @@
 using namespace std;
 using namespace sc;
 
-#define PRINT_R12_INTERMED 0
-
 void
 R12IntEval::abs1_contrib_to_VXB_gebc_()
 {
@@ -279,36 +277,6 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
         if (ij_aa != -1 && kl_aa != -1)
           Baa_.accumulate_element(ij_aa,kl_aa,Taa_ijkl);
         tim_exit("MO ints contraction");
-
-#if PRINT_R12_INTERMED
-        if (ij_ab != ji_ab && kl_ab != lk_ab)
-          printf("Vaa[%d][%d] = %lf\n",ij_aa,kl_aa,Vaa_ij[kl_aa]);
-        printf("Vab[%d][%d] = %lf\n",ij_ab,kl_ab,Vab_ij[kl_ab]);
-        if (ij_ab != ji_ab)
-          printf("Vab[%d][%d] = %lf\n",ji_ab,kl_ab,Vab_ji[kl_ab]);
-        if (kl_ab != lk_ab)
-          printf("Vab[%d][%d] = %lf\n",ij_ab,lk_ab,Vab_ij[lk_ab]);
-        if (ij_ab != ji_ab && kl_ab != lk_ab)
-          printf("Vab[%d][%d] = %lf\n",ji_ab,lk_ab,Vab_ji[lk_ab]);
-        if (ij_ab != ji_ab && kl_ab != lk_ab)
-          printf("Xaa[%d][%d] = %lf\n",ij_aa,kl_aa,Xaa_ij[kl_aa]);
-        printf("Xab[%d][%d] = %lf\n",ij_ab,kl_ab,Xab_ij[kl_ab]);
-        if (ij_ab != ji_ab)
-          printf("Xab[%d][%d] = %lf\n",ji_ab,kl_ab,Xab_ji[kl_ab]);
-        if (kl_ab != lk_ab)
-          printf("Xab[%d][%d] = %lf\n",ij_ab,lk_ab,Xab_ij[lk_ab]);
-        if (ij_ab != ji_ab && kl_ab != lk_ab)
-          printf("Xab[%d][%d] = %lf\n",ji_ab,lk_ab,Xab_ji[lk_ab]);
-        if (ij_ab != ji_ab && kl_ab != lk_ab)
-          printf("Taa[%d][%d] = %lf\n",ij_aa,kl_aa,Taa_ij[kl_aa]);
-        printf("Tab[%d][%d] = %lf\n",ij_ab,kl_ab,Tab_ij[kl_ab]);
-        if (ij_ab != ji_ab)
-          printf("Tab[%d][%d] = %lf\n",ji_ab,kl_ab,Tab_ji[kl_ab]);
-        if (kl_ab != lk_ab)
-          printf("Tab[%d][%d] = %lf\n",ij_ab,lk_ab,Tab_ij[lk_ab]);
-        if (ij_ab != ji_ab && kl_ab != lk_ab)
-          printf("Tab[%d][%d] = %lf\n",ji_ab,lk_ab,Tab_ji[lk_ab]);
-#endif
         ijky_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12());
         ijky_acc->release_pair_block(j,i,corrfactor_->tbint_type_f12());
       }

@@ -33,6 +33,8 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/r12_amps.h>
+#include <chemistry/qc/mbptr12/twoparticlecontraction.h>
+#include <chemistry/qc/mbptr12/spin.h>
 
 #ifndef _chemistry_qc_mbptr12_r12inteval_h
 #define _chemistry_qc_mbptr12_r12inteval_h
@@ -47,14 +49,6 @@ namespace sc {
   */
 
 class R12IntEval : virtual public SavableState {
-  public:
-  /// 1-Spin combinations
-  enum SpinCase1 {Alpha = SingleRefInfo::AlphaSpin, Beta = SingleRefInfo::BetaSpin};
-  /// 2-Spin combinations
-  enum SpinCase2 {AlphaBeta = 0, AlphaAlpha = 1, BetaBeta = 2};
-  /// Number of spin combinations
-  enum {NSpinCases1 = 2, NSpinCases2 = 3};
-
   private:
   bool evaluated_;
 
@@ -102,16 +96,6 @@ class R12IntEval : virtual public SavableState {
   // If the transform is not found then throw runtime_error
   Ref<TwoBodyMOIntsTransform> get_tform_(const std::string&);
 
-  /// Returns the number of unique combinations of 2 spin cases
-  int nspincases2() const { return spin_polarized() ? 3 : 1; }
-  /// returns the first spin case of the 2-spin S
-  SpinCase1 case1(SpinCase2 S) const { return S==BetaBeta ? Beta : Alpha; }
-  /// returns the second spin case of the 2-spin S
-  SpinCase1 case2(SpinCase2 S) const { return S==AlphaAlpha ? Alpha : Beta; }
-  /// Returns the act occ space for spin case S
-  const Ref<MOIndexSpace>& act_occ_space(SpinCase1 S) const;
-  /// Returns the act vir space for spin case S
-  const Ref<MOIndexSpace>& act_vir_space(SpinCase1 S) const;
   /// Prepend string representation of S to R and return
   static const char* prepend_spincase1(int S, const std::string& R);
   /// Prepend string representation of S to R and return
@@ -179,7 +163,8 @@ class R12IntEval : virtual public SavableState {
                              const Ref<MOIndexSpace>& xspace,
                              const Ref<MOIndexSpace>& jspace,
                              const Ref<MOIndexSpace>& yspace,
-                             SpinCase2 spincase);
+                             SpinCase2 spincase,
+                             const Ref<LinearR12::TwoParticleContraction>& tpcontract);
                                   
   /// Compute OBS contribution to V, X, and B (these contributions are independent of the method)
   void obs_contrib_to_VXB_gebc_vbseqobs_();
@@ -353,6 +338,12 @@ public:
   /// Returns the beta eigenvalues
   RefDiagSCMatrix evals_b() const;
   
+  // Returns the number of unique combinations of 2 spin cases
+  int nspincases2() const { return ::sc::nspincases2(spin_polarized()); }
+  /// Returns the act occ space for spin case S
+  const Ref<MOIndexSpace>& act_occ_space(SpinCase1 S) const;
+  /// Returns the act vir space for spin case S
+  const Ref<MOIndexSpace>& act_vir_space(SpinCase1 S) const;
 };
 
 }

@@ -89,6 +89,13 @@ TwoBodyMOIntsTransform_ijxy::compute(double tbint_param)
   enum te_types {eri=0, r12=1, r12t1=2};
   const size_t memgrp_blocksize = memgrp_blksize();
 
+  //find the type of integrals which is antisymmetric with respect to permuting functions of particle 2
+  int tbtype_anti2 = -1;
+  if (num_te_types_ == 6)
+    tbtype_anti2 = TwoBodyInt::t2g12;
+  if (num_te_types_ == 4)
+    tbtype_anti2 = TwoBodyInt::r12t2;
+
   // log2 of the erep tolerance
   // (erep < 2^tol => discard)
   const int tol = (int) (-10.0/log10(2.0));  // discard ints smaller than 10^-20
@@ -219,6 +226,7 @@ TwoBodyMOIntsTransform_ijxy::compute(double tbint_param)
     // Produce ijsr integrals too
     if (bs3_eq_bs4) {
       for(int te_type=0; te_type<num_te_types_; te_type++) {
+        const double ket_perm_pfac = (te_type == tbtype_anti2) ? -1.0 : 1.0;
         for (int i = 0; i<ni; i++) {
           for (int j = 0; j<rank2; j++) {
             int ij = i*rank2+j;
@@ -234,7 +242,7 @@ TwoBodyMOIntsTransform_ijxy::compute(double tbint_param)
 
                 for (int s = smin; s<nbasis4; s++) {
                   const double ijrs = *rs_ptr++;
-                  *sr_ptr = ijrs;
+                  *sr_ptr = ket_perm_pfac * ijrs;
                   sr_ptr += nbasis3;
                 }
               }

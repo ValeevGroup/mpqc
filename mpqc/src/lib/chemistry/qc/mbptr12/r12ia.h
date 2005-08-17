@@ -70,6 +70,8 @@ namespace sc {
 
 class R12IntsAcc: virtual public SavableState {
 
+    /// Set to nonzero to debug this and derived classes
+    static const int classdebug_ = 0;
     int num_te_types_;  // Number of types of integrals in a block (in R12 theories -- usually 3)
 
    protected:
@@ -89,6 +91,8 @@ class R12IntsAcc: virtual public SavableState {
     virtual int taskid() const =0;
     /// The index of the first orbital in the next integrals batch to be stored
     void inc_next_orbital(int ni);
+    /// return debug level for this class
+    int classdebug() const { return classdebug_; }
 
   public:
     R12IntsAcc(int num_te_types, int ni, int nj, int nx, int ny);

@@ -58,7 +58,7 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
   MP2R12Energy
  -------------*/
 static ClassDesc MP2R12Energy_cd(
-  typeid(MP2R12Energy),"MP2R12Energy",1,"virtual public SavableState",
+  typeid(MP2R12Energy),"MP2R12Energy",2,"virtual public SavableState",
   0, 0, create<MP2R12Energy>);
 
 MP2R12Energy::MP2R12Energy(Ref<R12IntEval>& r12eval, LinearR12::StandardApproximation stdapp, int debug)
@@ -77,10 +77,10 @@ MP2R12Energy::MP2R12Energy(Ref<R12IntEval>& r12eval, LinearR12::StandardApproxim
 void
 MP2R12Energy::init_()
 {
-
+  const Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   RefSCDimension dim_oo_aa = r12eval_->dim_oo_aa();
   RefSCDimension dim_oo_ab = r12eval_->dim_oo_ab();
-  Ref<SCMatrixKit> kit = r12eval_->r12info()->matrixkit();
+  Ref<SCMatrixKit> kit = r12info->matrixkit();
   er12_aa_ = kit->vector(dim_oo_aa);
   er12_ab_ = kit->vector(dim_oo_ab);
   emp2r12_aa_ = kit->vector(dim_oo_aa);
@@ -90,7 +90,21 @@ MP2R12Energy::init_()
   RefSCDimension dim_vv_ab = r12eval_->dim_vv_ab();
   Caa_ = kit->matrix(dim_oo_aa, dim_oo_aa);
   Cab_ = kit->matrix(dim_oo_ab, dim_oo_ab);
-
+  for(int s=0; s<NSpinCases2; s++) {
+    const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();
+    if (spin_polarized || s != BetaBeta) {
+      RefSCDimension dim_oo = r12eval()->dim_oo(static_cast<SpinCase2>(s));
+      RefSCDimension dim_f12 = r12eval()->dim_f12(static_cast<SpinCase2>(s));
+      C_[s] = kit->matrix(dim_f12,dim_oo);
+      ef12_[s] = kit->vector(dim_oo);
+      emp2f12_[s] = kit->vector(dim_oo);
+    }
+    else {
+      C_[BetaBeta] = C_[AlphaAlpha];
+      ef12_[BetaBeta] = ef12_[AlphaAlpha];
+      emp2f12_[BetaBeta] = emp2f12_[AlphaAlpha];
+    }
+  }
 } 
 
 MP2R12Energy::MP2R12Energy(StateIn& si) : SavableState(si)
@@ -106,6 +120,14 @@ MP2R12Energy::MP2R12Energy(StateIn& si) : SavableState(si)
 
   Caa_.restore(si);
   Cab_.restore(si);
+  
+  if (si.version(::class_desc<MP2R12Energy>()) >= 2) {
+    for(int s=0; s<NSpinCases2; s++) {
+      ef12_[s].restore(si);
+      emp2f12_[s].restore(si);
+      C_[s].restore(si);
+    }
+  }
   
   int stdapprox;
   si.get(stdapprox);
@@ -132,6 +154,12 @@ void MP2R12Energy::save_data_state(StateOut& so)
   
   Caa_.save(so);
   Cab_.save(so);
+  
+  for(int s=0; s<NSpinCases2; s++) {
+    ef12_[s].save(so);
+    emp2f12_[s].save(so);
+    C_[s].save(so);
+  }
   
   so.put((int)stdapprox_);
   so.put(debug_);
@@ -508,7 +536,9 @@ void MP2R12Energy::compute()
     emp2r12_ab_->accumulate(er12_ab_);
     delete[] er12_ab_vec;
   }
-
+  
+  compute_new_();
+  
   evaluated_ = true;
   
   return;

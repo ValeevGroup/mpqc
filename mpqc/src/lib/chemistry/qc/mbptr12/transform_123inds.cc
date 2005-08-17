@@ -135,6 +135,12 @@ TwoBodyMOIntsTransform_123Inds::run()
     tbtype_anti1 = TwoBodyInt::t1g12;
   if (tbint_->num_tbint_types() == 4)
     tbtype_anti1 = TwoBodyInt::r12t1;
+  //find the type of integrals which is antisymmetric with respect to permuting functions of particle 2
+  int tbtype_anti2 = -1;
+  if (tbint_->num_tbint_types() == 6)
+    tbtype_anti2 = TwoBodyInt::t2g12;
+  if (tbint_->num_tbint_types() == 4)
+    tbtype_anti2 = TwoBodyInt::r12t2;
 
   double** vector1 = new double*[nbasis1];
   double** vector2 = new double*[nbasis2];
@@ -469,6 +475,8 @@ TwoBodyMOIntsTransform_123Inds::run()
 
           if (bs3_eq_bs4) {
 
+            const double ket_perm_pfac = (te_type == tbtype_anti2) ? -1.0 : 1.0;
+
             for (int bf3 = 0; bf3 < nr; bf3++) {
               int r = r_offset + bf3;
               int smin = (bs3_eq_bs4 && R == S) ? bf3 : 0;
@@ -493,7 +501,7 @@ TwoBodyMOIntsTransform_123Inds::run()
 
                     double value = *i_ptr++;
                     *ijsx_ptr++ += c_rj * value;
-                    *ijrx_ptr++ += c_sj * value;
+                    *ijrx_ptr++ += c_sj * value * ket_perm_pfac;
 
                   }
                 }

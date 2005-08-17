@@ -1,5 +1,5 @@
 //
-// utils.h
+// spin.h
 //
 // Copyright (C) 2005 Edward Valeev
 //
@@ -25,39 +25,29 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
+#ifdef __GNUC__
 #pragma interface
 #endif
 
-#include <vector>
-#include <math/scmat/matrix.h>
+#include <stdexcept>
+#include <util/misc/scexception.h>
 
-#ifndef _chemistry_qc_mbptr12_utils_h
-#define _chemistry_qc_mbptr12_utils_h
+#ifndef _chemistry_qc_mbptr12_spin_h
+#define _chemistry_qc_mbptr12_spin_h
 
 namespace sc {
   
-  class MOIndexSpace;
+  typedef enum { NSpinCases1 = 2, NSpinCases2 = 3} NSpinCases;
+  typedef enum { Alpha = 0, Beta = 1} SpinCase1;
+  typedef enum { AlphaBeta = 0, AlphaAlpha = 1, BetaBeta = 2} SpinCase2;
+  /// Returns the number of unique combinations of 2 spin cases
+  int nspincases2(bool spin_polarized);
+  /// returns the first spin case of the 2-spin S
+  SpinCase1 case1(SpinCase2 S);
+  /// returns the second spin case of the 2-spin S
+  SpinCase1 case2(SpinCase2 S);
   
-  /** Antisymmetrizes 4-index quantity <ij|A|kl> -> <ij|A|kl> - <ij|A|lk>
-      and saves to Aanti. Row dimension has to be an integer multiple of
-      bra->rank()*bra->rank(). Same for ket.
-    */
-  void antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
-                      const Ref<MOIndexSpace>& bra,
-                      const Ref<MOIndexSpace>& ket);
-  
-  /** Converts RefDiagSCMatrix to std::vector<double>
-  */
-  std::vector<double> convert(const RefDiagSCMatrix& A);
-  
-  /// print out the Fortran-style matrix
-  void print_f77_mat(const std::string& comment,
-                     const double* A,
-                     unsigned int nrow,
-                     unsigned int ncol,
-                     bool transpose = false);
-}
+};
 
 #endif
 

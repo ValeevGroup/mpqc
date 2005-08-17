@@ -30,6 +30,7 @@
 #endif
 
 #include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/spin.h>
 
 #ifndef _chemistry_qc_mbptr12_singlerefinfo_h
 #define _chemistry_qc_mbptr12_singlerefinfo_h
@@ -44,9 +45,6 @@ namespace sc {
   */
   class SingleRefInfo : virtual public SavableState {
     public:
-    /// Spin cases
-    typedef enum {AlphaSpin=0, BetaSpin=1} SpinCase;
-    
     SingleRefInfo(StateIn&);
     /// Construct using SCF reference object
     SingleRefInfo(const Ref<SCF>& ref, unsigned int nfzc, unsigned int nfzv);
@@ -88,21 +86,21 @@ namespace sc {
     //@}
     
     /// Return the space of symmetry-blocked MOs of the given spin
-    const Ref<MOIndexSpace>& orbs_sb(SpinCase spin) const;
+    const Ref<MOIndexSpace>& orbs_sb(SpinCase1 spin) const;
     /// Return the space of energy-sorted MOs of the given spin
-    const Ref<MOIndexSpace>& orbs(SpinCase spin) const;
+    const Ref<MOIndexSpace>& orbs(SpinCase1 spin) const;
     /// Return the space of symmery-blocked occupied MOs of the given spin
-    const Ref<MOIndexSpace>& occ_sb(SpinCase spin) const;
+    const Ref<MOIndexSpace>& occ_sb(SpinCase1 spin) const;
     /// Return the space of occupied MOs of the given spin
-    const Ref<MOIndexSpace>& occ(SpinCase spin) const;
+    const Ref<MOIndexSpace>& occ(SpinCase1 spin) const;
     /// Return the space of occupied MOs of the given spin
-    const Ref<MOIndexSpace>& occ_act(SpinCase spin) const;
+    const Ref<MOIndexSpace>& occ_act(SpinCase1 spin) const;
     /// Return the space of symmetry-blocked unoccupied (virtual) MOs of the given spin
-    const Ref<MOIndexSpace>& uocc_sb(SpinCase spin) const;
+    const Ref<MOIndexSpace>& uocc_sb(SpinCase1 spin) const;
     /// Return the space of unoccupied (virtual) MOs of the given spin
-    const Ref<MOIndexSpace>& uocc(SpinCase spin) const;
+    const Ref<MOIndexSpace>& uocc(SpinCase1 spin) const;
     /// Return the space of unoccupied (virtual) MOs of the given spin
-    const Ref<MOIndexSpace>& uocc_act(SpinCase spin) const;
+    const Ref<MOIndexSpace>& uocc_act(SpinCase1 spin) const;
     
     private:
     /// The reference function

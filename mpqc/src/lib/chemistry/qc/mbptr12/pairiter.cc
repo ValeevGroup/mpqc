@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <util/misc/scexception.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 
 using namespace std;
@@ -70,8 +71,11 @@ SpatialMOPairIter_eq::~SpatialMOPairIter_eq()
 SpatialMOPairIter_neq::SpatialMOPairIter_neq(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2) :
 SpatialMOPairIter(space1,space2)
 {
-  if (space1 == space2)
-    throw std::runtime_error("SpatialMOPairIter_neq::SpatialMOPairIter_neq() -- space1 == space2");
+  /// If debugging, check if spaces are the same
+  if (classdebug() > 0) {
+    if (space1 == space2)
+      throw ProgrammingError("SpatialMOPairIter_neq::SpatialMOPairIter_neq() -- space1 == space2",__FILE__,__LINE__);
+  }
   nij_ = ni_*nj_;
   ij_ = 0;
   IJ_ = 0;
@@ -81,6 +85,81 @@ SpatialMOPairIter_neq::~SpatialMOPairIter_neq()
 {
 }
 
+///////
+
+SpinMOPairIter::SpinMOPairIter(const Ref<MOIndexSpace>& space1,
+                               const Ref<MOIndexSpace>& space2,
+                               const SpinCase2& S) :
+  MOPairIter(space1, space2), IJ_(0)
+{
+  i_eq_j_ = (!(S==AlphaBeta) || (space1 == space2));
+  if (i_eq_j_) {
+    if (ni_ <= 1)
+      throw ProgrammingError("SpinMOPairIter() initialized with rank-1 space",__FILE__,__LINE__);
+    nij_ = (ni_ * (ni_-1))/2;
+    ij_ = 0;
+    i_ = 1;
+    j_ = 0;
+  }
+  else {
+    nij_ = ni_ * nj_;
+    ij_ = 0;
+    i_ = 0;
+    j_ = 0;
+  }
+}
+
+SpinMOPairIter::~SpinMOPairIter() {}
+
+void
+SpinMOPairIter::start(const int first_ij)
+{
+  IJ_ = 0;
+  ij_ = first_ij%nij_;
+  if (i_eq_j_) {
+    i_ = (int)floor((sqrt(1.0+8.0*ij_) - 1.0)/2.0) + 1;
+    const int i_off = i_*(i_-1)/2;
+    j_ = ij_ - i_off;
+  }
+  else {
+    i_ = ij_/nj_;
+    j_ = ij_ - i_*nj_;
+  }
+}
+
+void
+SpinMOPairIter::next()
+{
+  IJ_++;
+  ij_++;
+  if (ij_ == nij_)
+    ij_ = 0;
+  if (i_eq_j_) {
+    ++j_;
+    if (j_ >= i_) {
+      i_++;
+      j_ = 0;
+      if (i_ >= ni_) {
+        i_ = 1;
+      }
+    }
+  }
+  else {
+    ++j_;
+    if (j_ == nj_) {
+      j_ = 0;
+      ++i_;
+      if (i_ >= ni_) {
+        i_ = 0;
+        j_ = 0;
+      }
+    }
+  }
+}
+
+SpinMOPairIter::operator int() const { return nij_ > IJ_; }
+
+///////
 
 Ref<SpatialMOPairIter>
 MOPairIterFactory::mopairiter(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2)

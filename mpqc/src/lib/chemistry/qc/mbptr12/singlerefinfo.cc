@@ -137,8 +137,9 @@ SingleRefInfo::init_spinspecific_spaces()
     aocc.push_back(ref_->alpha_occupation(mo));
     bocc.push_back(ref_->beta_occupation(mo));
   }
-  spinspaces_[0].init("Alpha", bs, ref_->alpha_eigenvalues(), ref_->alpha_eigenvectors(), aocc, nfzc(), nfzv());
-  spinspaces_[1].init("Beta", bs, ref_->beta_eigenvalues(), ref_->beta_eigenvectors(), bocc, nfzc(), nfzv());
+  Ref<PetiteList> plist = ref_->integral()->petite_list();
+  spinspaces_[0].init("Alpha", bs, ref_->alpha_eigenvalues(), plist->evecs_to_AO_basis(ref_->alpha_eigenvectors()), aocc, nfzc(), nfzv());
+  spinspaces_[1].init("Beta", bs, ref_->beta_eigenvalues(), plist->evecs_to_AO_basis(ref_->beta_eigenvectors()), bocc, nfzc(), nfzv());
 }
 
 void
@@ -247,49 +248,49 @@ SingleRefInfo::uocc_act() const
 }
 
 const Ref<MOIndexSpace>&
-SingleRefInfo::orbs_sb(SpinCase s) const
+SingleRefInfo::orbs_sb(SpinCase1 s) const
 {
   return spinspaces_[s].orbs_sb_;
 }
 
 const Ref<MOIndexSpace>&
-SingleRefInfo::orbs(SpinCase s) const
+SingleRefInfo::orbs(SpinCase1 s) const
 {
   return spinspaces_[s].orbs_;
 }
 
 const Ref<MOIndexSpace>&
-SingleRefInfo::occ_sb(SpinCase s) const
+SingleRefInfo::occ_sb(SpinCase1 s) const
 {
   return spinspaces_[s].occ_sb_;
 }
 
 const Ref<MOIndexSpace>&
-SingleRefInfo::occ(SpinCase s) const
+SingleRefInfo::occ(SpinCase1 s) const
 {
   return spinspaces_[s].occ_;
 }
 
 const Ref<MOIndexSpace>&
-SingleRefInfo::occ_act(SpinCase s) const
+SingleRefInfo::occ_act(SpinCase1 s) const
 {
   return spinspaces_[s].occ_act_;
 }
 
 const Ref<MOIndexSpace>&
-SingleRefInfo::uocc_sb(SpinCase s) const
+SingleRefInfo::uocc_sb(SpinCase1 s) const
 {
   return spinspaces_[s].uocc_sb_;
 }
 
 const Ref<MOIndexSpace>&
-SingleRefInfo::uocc(SpinCase s) const
+SingleRefInfo::uocc(SpinCase1 s) const
 {
   return spinspaces_[s].uocc_;
 }
 
 const Ref<MOIndexSpace>&
-SingleRefInfo::uocc_act(SpinCase s) const
+SingleRefInfo::uocc_act(SpinCase1 s) const
 {
   return spinspaces_[s].uocc_act_;
 }

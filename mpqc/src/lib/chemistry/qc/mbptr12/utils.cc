@@ -30,6 +30,7 @@
 #endif
 
 #include <util/misc/scexception.h>
+#include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 
@@ -78,5 +79,31 @@ sc::antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
       }
     }
   }
+}
+
+std::vector<double>
+sc::convert(const RefDiagSCMatrix& A)
+{
+  const int n = A.dim().n();
+  std::vector<double> result;
+  for(int i=0; i<n; i++)
+    result.push_back(A.get_element(i));
+  return result;
+}
+
+void
+sc::print_f77_mat(const std::string& comment,
+                  const double* A,
+                  unsigned int nrow,
+                  unsigned int ncol,
+                  bool transpose)
+{
+  RefSCDimension rowdim = new SCDimension(nrow);
+  RefSCDimension coldim = new SCDimension(ncol);
+  Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+  RefSCMatrix amat = localkit->matrix(rowdim,coldim);
+  amat.assign(A);
+  if (transpose) amat = amat.t();
+  amat.print(comment.c_str());
 }
 

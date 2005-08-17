@@ -1,5 +1,5 @@
 //
-// utils.h
+// spin.cc
 //
 // Copyright (C) 2005 Edward Valeev
 //
@@ -25,39 +25,15 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma interface
+#ifdef __GNUC__
+#pragma implementation
 #endif
 
-#include <vector>
-#include <math/scmat/matrix.h>
-
-#ifndef _chemistry_qc_mbptr12_utils_h
-#define _chemistry_qc_mbptr12_utils_h
+#include <chemistry/qc/mbptr12/spin.h>
 
 namespace sc {
-  
-  class MOIndexSpace;
-  
-  /** Antisymmetrizes 4-index quantity <ij|A|kl> -> <ij|A|kl> - <ij|A|lk>
-      and saves to Aanti. Row dimension has to be an integer multiple of
-      bra->rank()*bra->rank(). Same for ket.
-    */
-  void antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
-                      const Ref<MOIndexSpace>& bra,
-                      const Ref<MOIndexSpace>& ket);
-  
-  /** Converts RefDiagSCMatrix to std::vector<double>
-  */
-  std::vector<double> convert(const RefDiagSCMatrix& A);
-  
-  /// print out the Fortran-style matrix
-  void print_f77_mat(const std::string& comment,
-                     const double* A,
-                     unsigned int nrow,
-                     unsigned int ncol,
-                     bool transpose = false);
+  int nspincases2(bool spin_polarized) { return spin_polarized ? 3 : 1; }
+  SpinCase1 case1(SpinCase2 S) { return S==BetaBeta ? Beta : Alpha; }
+  SpinCase1 case2(SpinCase2 S) { return S==AlphaAlpha ? Alpha : Beta; }
 }
-
-#endif
 

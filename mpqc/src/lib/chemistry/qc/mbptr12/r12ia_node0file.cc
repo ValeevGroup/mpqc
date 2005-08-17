@@ -105,6 +105,9 @@ R12IntsAcc_Node0File::init(bool restart)
       for(int type=0; type<num_te_types(); type++) {
         pairblk_[ij].ints_[type] = NULL;
         pairblk_[ij].refcount_[type] = 0;
+        if (classdebug() > 0)
+          ExEnv::outn() << indent << mem_->me() << ":refcount=" << pairblk_[ij].refcount_[type]
+                        << ": i = " << i << " j = " << j << " tbint_type = " << type << endl;
         }
       pairblk_[ij].offset_ = (off_t)ij*blocksize_;
     }
@@ -252,6 +255,9 @@ R12IntsAcc_Node0File::retrieve_pair_block(int i, int j, tbint_type oper_type)
       read(datafile_,pb->ints_[oper_type],blksize_);
     }
     pb->refcount_[oper_type] += 1;
+    if (classdebug() > 0)
+      ExEnv::outn() << indent << mem_->me() << ":refcount=" << pb->refcount_[oper_type]
+                    << ": i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
     return pb->ints_[oper_type];
   }
   else
@@ -275,6 +281,9 @@ R12IntsAcc_Node0File::release_pair_block(int i, int j, tbint_type oper_type)
       pb->ints_[oper_type] = NULL;
     }
     pb->refcount_[oper_type] -= 1;
+    if (classdebug() > 0)
+      ExEnv::outn() << indent << mem_->me() << ":refcount=" << pb->refcount_[oper_type]
+                    << ": i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
   }
 }
 

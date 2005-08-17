@@ -25,21 +25,25 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_mbptr12_pairiter_h
-#define _chemistry_qc_mbptr12_pairiter_h
-
 #ifdef __GNUC__
 #pragma interface
 #endif
 
 #include <stdexcept>
 #include <chemistry/qc/mbptr12/moindexspace.h>
+#include <chemistry/qc/mbptr12/spin.h>
+
+#ifndef _chemistry_qc_mbptr12_pairiter_h
+#define _chemistry_qc_mbptr12_pairiter_h
 
 namespace sc {
 
 /** MOPairIter gives the ordering of orbital pairs */
 class MOPairIter : public RefCount {
-
+  private:
+  /// Change to nonzero to debug
+  static const int classdebug_ = 0;
+  
   protected:
     bool i_eq_j_;
     int ni_;
@@ -48,6 +52,10 @@ class MOPairIter : public RefCount {
     int j_;
     int nij_;
     int ij_;
+    
+    int classdebug() const {
+      return classdebug_;
+    }
 
   public:
     /// Initialize an iterator for the given MO spaces.
@@ -267,8 +275,29 @@ public:
 };
 
 
-  /** This class produces MOPairIter objects */
+/**
+   SpinMOPairIter iterates over spinorbitals
+  */
+class SpinMOPairIter : public MOPairIter
+{
+  public:
+  /// spincase S
+  SpinMOPairIter(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
+                 const SpinCase2& S);
+  ~SpinMOPairIter();
+  
+  /// Start the iteration.
+  void start(const int first_ij=0);
+  /// Move to the next pair.
+  void next();
+  /// Returns nonzero if the iterator currently hold valid data.
+  operator int() const;
+  
+  private:
+  int IJ_;
+};
 
+/** This class produces MOPairIter objects */
 class MOPairIterFactory {
 
 public:

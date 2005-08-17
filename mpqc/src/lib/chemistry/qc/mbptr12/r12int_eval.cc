@@ -78,10 +78,10 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
     navir_a = navir_b = nvir_act;
   }
   else {
-    naocc_a = r12info()->refinfo()->occ_act(SingleRefInfo::AlphaSpin)->rank();
-    naocc_b = r12info()->refinfo()->occ_act(SingleRefInfo::BetaSpin)->rank();
-    navir_a = r12info()->refinfo()->uocc_act(SingleRefInfo::AlphaSpin)->rank();
-    navir_b = r12info()->refinfo()->uocc_act(SingleRefInfo::BetaSpin)->rank();
+    naocc_a = r12info()->refinfo()->occ_act(Alpha)->rank();
+    naocc_b = r12info()->refinfo()->occ_act(Beta)->rank();
+    navir_a = r12info()->refinfo()->uocc_act(Alpha)->rank();
+    navir_b = r12info()->refinfo()->uocc_act(Beta)->rank();
   }
 
   dim_oo_[AlphaAlpha] = new SCDimension((naocc_a*(naocc_a-1))/2);
@@ -147,7 +147,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
     emp2pair_bb_ = emp2pair_aa_;
   
   for(int s=0; s<NSpinCases2; s++) {
-    if (!(spin_polarized() && s == BetaBeta)) {
+    if (spin_polarized() || s != BetaBeta) {
       V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_oo_[s]);
       X_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
@@ -155,7 +155,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
         T2_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
       }
-      emp2pair_[s] = local_matrix_kit->vector(dim_vv_[s]);
+      emp2pair_[s] = local_matrix_kit->vector(dim_oo_[s]);
     }
     else {
       V_[BetaBeta] = V_[AlphaAlpha];
@@ -618,9 +618,9 @@ const RefDiagSCMatrix&
 R12IntEval::evals(SpinCase1 S) const {
   if (spin_polarized()) {
     if (S == Alpha)
-      return r12info()->refinfo()->orbs(SingleRefInfo::AlphaSpin)->evals();
+      return r12info()->refinfo()->orbs(Alpha)->evals();
     else
-      return r12info()->refinfo()->orbs(SingleRefInfo::BetaSpin)->evals();
+      return r12info()->refinfo()->orbs(Beta)->evals();
   }
   else
     return r12info_->refinfo()->orbs()->evals();
@@ -639,11 +639,11 @@ RefDiagSCMatrix R12IntEval::evals() const {
 };
 
 RefDiagSCMatrix R12IntEval::evals_a() const {
-  return r12info()->refinfo()->orbs(SingleRefInfo::AlphaSpin)->evals();
+  return r12info()->refinfo()->orbs(Alpha)->evals();
 }
 
 RefDiagSCMatrix R12IntEval::evals_b() const {
-  return r12info()->refinfo()->orbs(SingleRefInfo::BetaSpin)->evals();
+  return r12info()->refinfo()->orbs(Beta)->evals();
 }
 
 void
@@ -895,8 +895,8 @@ R12IntEval::r2_contrib_to_X_new_()
 
   for(int s=0; s<nspincases2(); s++) {
     
-    const Ref<MOIndexSpace>& space1 = r12info_->refinfo()->occ_act(static_cast<SingleRefInfo::SpinCase>(case1(static_cast<SpinCase2>(s))));
-    const Ref<MOIndexSpace>& space2 = r12info_->refinfo()->occ_act(static_cast<SingleRefInfo::SpinCase>(case2(static_cast<SpinCase2>(s))));
+    const Ref<MOIndexSpace>& space1 = r12info_->refinfo()->occ_act(static_cast<SpinCase1>(case1(static_cast<SpinCase2>(s))));
+    const Ref<MOIndexSpace>& space2 = r12info_->refinfo()->occ_act(static_cast<SpinCase1>(case2(static_cast<SpinCase2>(s))));
     
     // compute r_{12}^2 operator in act.occ.pair/act.occ.pair basis
     RefSCMatrix R2 = compute_r2_(space1,space2);
@@ -1073,11 +1073,23 @@ R12IntEval::compute()
 #endif
 
     // Compute VXB using new code
-    contrib_to_VXB_a_new_(r12info()->refinfo()->occ_act(SingleRefInfo::AlphaSpin),
-                          r12info()->refinfo()->occ(SingleRefInfo::AlphaSpin),
-                          r12info()->refinfo()->occ_act(SingleRefInfo::AlphaSpin),
-                          r12info()->refinfo()->occ(SingleRefInfo::AlphaSpin),
-                          AlphaBeta);
+    using LinearR12::TwoParticleContraction;
+    using LinearR12::ABS_OBS_Contraction;
+    using LinearR12::CABS_OBS_Contraction;
+    const LinearR12::ABSMethod absmethod = r12info()->abs_method();
+    Ref<TwoParticleContraction> tpcontract;
+    if (absmethod == LinearR12::ABS_ABS ||
+        absmethod == LinearR12::ABS_ABSPlus)
+      tpcontract = new ABS_OBS_Contraction(r12info()->refinfo()->orbs(Alpha)->rank(),
+                                           r12info()->refinfo()->occ(Alpha)->rank(),
+                                           r12info()->refinfo()->occ(Alpha)->rank());
+    else
+      tpcontract = new CABS_OBS_Contraction(r12info()->refinfo()->orbs(Alpha)->rank());
+    contrib_to_VXB_a_new_(r12info()->refinfo()->occ_act(Alpha),
+                          r12info()->refinfo()->orbs(Alpha),
+                          r12info()->refinfo()->occ_act(Alpha),
+                          r12info()->refinfo()->orbs(Alpha),
+                          AlphaBeta,tpcontract);
     if (debug_ > 1) {
       for(int s=0; s<nspincases2(); s++) {
         V_[s].print(prepend_spincase2(s,"V(diag+OBS) contribution"));
@@ -1088,12 +1100,16 @@ R12IntEval::compute()
     
     if (r12info_->basis() != r12info_->basis_ri()) {
       abs1_contrib_to_VXB_gebc_();
+      
       // Compute VXB using new code
-      contrib_to_VXB_a_new_(r12info()->refinfo()->occ_act(SingleRefInfo::AlphaSpin),
-                            r12info()->refinfo()->occ(SingleRefInfo::AlphaSpin),
-                            r12info()->refinfo()->occ_act(SingleRefInfo::AlphaSpin),
+      using LinearR12::Direct_Contraction;
+      Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(r12info()->refinfo()->occ(Alpha)->rank(),
+                                                                      r12info()->ribs_space()->rank(),-1.0);
+      contrib_to_VXB_a_new_(r12info()->refinfo()->occ_act(Alpha),
+                            r12info()->refinfo()->occ(Alpha),
+                            r12info()->refinfo()->occ_act(Alpha),
                             r12info()->ribs_space(),
-                            AlphaBeta);
+                            AlphaBeta,tpcontract);
     }
     
 #if 1
@@ -1283,7 +1299,7 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
 const Ref<MOIndexSpace>&
 R12IntEval::act_occ_space(SpinCase1 S) const
 {
-  return r12info()->refinfo()->occ_act(static_cast<SingleRefInfo::SpinCase>(S));
+  return r12info()->refinfo()->occ_act(S);
 }
 
 const Ref<MOIndexSpace>&
@@ -1291,7 +1307,7 @@ R12IntEval::act_vir_space(SpinCase1 S) const
 {
   if (r12info()->basis_vir() != r12info()->refinfo()->ref()->basis())
     throw ProgrammingError("R12IntEval::act_vir_space() -- not implemented yet for the case vir_basis != basis",__FILE__,__LINE__);
-  return r12info()->refinfo()->uocc_act(static_cast<SingleRefInfo::SpinCase>(S));
+  return r12info()->refinfo()->uocc_act(S);
 }
 
 const char*
@@ -1305,7 +1321,7 @@ R12IntEval::prepend_spincase2(int s, const std::string& R)
     prefix = "Alpha-beta ";
   else
     prefix = "Beta-beta ";
-  return (prefix + R).c_str();
+  return strdup((prefix + R).c_str());
 }
 
 const char*

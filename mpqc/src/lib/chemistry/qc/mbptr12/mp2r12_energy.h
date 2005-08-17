@@ -36,6 +36,7 @@
 #include <chemistry/qc/mbptr12/linearr12.h>
 //#include <chemistry/qc/mbptr12/vxb_eval.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/twobodygrid.h>
 
 namespace sc {
@@ -43,7 +44,7 @@ namespace sc {
   /** Class MP2R12Energy is the object that computes and maintains MP2-R12 energies */
 
 class MP2R12Energy : virtual public SavableState {
-
+  private:
   Ref<R12IntEval> r12eval_;
   LinearR12::StandardApproximation stdapprox_;
   bool ebc_;
@@ -51,16 +52,22 @@ class MP2R12Energy : virtual public SavableState {
   bool evaluated_;
   
   RefSCVector er12_aa_, er12_ab_, emp2r12_aa_, emp2r12_ab_;
+  RefSCVector ef12_[NSpinCases2], emp2f12_[NSpinCases2];
   // The coefficients are stored ij by kl, where kl is the r12-multiplied pair
   RefSCMatrix Caa_, Cab_;
+  RefSCMatrix C_[NSpinCases2];
 
   double emp2tot_aa_() const;
   double emp2tot_ab_() const;
   double er12tot_aa_();
   double er12tot_ab_();
+  double emp2tot_(SpinCase2 S) const;
+  double ef12tot_(SpinCase2 S) const;
 
   // Initialize SCVectors and SCMatrices
   void init_();
+  // new compute function to replace old compute() in the future
+  void compute_new_();
 
   // Computes values of all 2-body products from
   // space1 and space2 if electron 1 is at r1 and
@@ -91,11 +98,6 @@ public:
   void set_debug(int debug);
   int get_debug() const;
   
-  RefSCDimension dim_aa() const;
-  RefSCDimension dim_ab() const;
-  RefSCDimension dim_s() const;
-  RefSCDimension dim_t() const;
-
   /// Computes the first-order R12 wave function and MP2-R12 energy
   void compute();
   /** Computes the value of the alpha-alpha pair function ij
@@ -121,7 +123,11 @@ public:
   RefSCVector emp2r12_aa() const;
   /// Returns the vector of MP2-R12 alpha-beta pair energies
   RefSCVector emp2r12_ab() const;
-  /// Returns total MP2-R12 correlation energy
+  /// Returns the vector of second-order pair energies of spin case S
+  RefSCVector emp2(SpinCase2 S) const;
+  /// Returns the vector of F12 corrections to second-order pair energies of spin case S
+  RefSCVector ef12(SpinCase2 S) const;
+  /// Returns total MP2-F12 correlation energy
   double energy();
 
   /** Returns the matrix of amplitudes of
@@ -144,6 +150,13 @@ public:
       pair function
   */
   RefSCMatrix T2_ab();
+
+  /** Returns the matrix of first-order amplitudes of r12-multiplied occupied orbital pairs.
+  */
+  RefSCMatrix C(SpinCase2 S);
+  /** Returns the matrix of first-order amplitudes of conventional orbital pairs.
+  */
+  RefSCMatrix T2(SpinCase2 S);
 
 };
 

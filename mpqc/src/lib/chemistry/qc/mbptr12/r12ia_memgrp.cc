@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/mbptr12/r12ia_memgrp.h>
 
 using namespace std;
@@ -171,6 +172,9 @@ R12IntsAcc_MemoryGrp::retrieve_pair_block(int i, int j, tbint_type oper_type)
     pb->ints_[oper_type] = (double *) mem_->obtain_readonly(pb->offset_ + (distsize_t)oper_type*blksize_memgrp_, blksize_);
   }
   pb->refcount_[oper_type] += 1;
+  if (classdebug() > 0)
+    ExEnv::outn() << indent << mem_->me() << ":refcount=" << pb->refcount_[oper_type]
+                  << ": i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
   return pb->ints_[oper_type];
 }
 
@@ -181,13 +185,16 @@ R12IntsAcc_MemoryGrp::release_pair_block(int i, int j, tbint_type oper_type)
   struct PairBlkInfo *pb = &pairblk_[ij];
   if (pb->refcount_[oper_type] <= 0) {
     ExEnv::outn() << indent << mem_->me() << ":refcount=0: i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
-    throw std::runtime_error("Logic error: R12IntsAcc_MemoryGrp::release_pair_block: refcount is already zero!");
+    throw ProgrammingError("Logic error: R12IntsAcc_MemoryGrp::release_pair_block: refcount is already zero!",__FILE__,__LINE__);
   }
   if (!is_local(i,j) && pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 1) {
     mem_->release_readonly(pb->ints_[oper_type],pb->offset_+ oper_type*blksize_memgrp_,blksize_);
     pb->ints_[oper_type] = NULL;
   }
   pb->refcount_[oper_type] -= 1;
+  if (classdebug() > 0)
+    ExEnv::outn() << indent << mem_->me() << ":refcount=" << pb->refcount_[oper_type]
+                  << ": i = " << i << " j = " << j << " tbint_type = " << oper_type << endl;
 }
 
 // Local Variables:

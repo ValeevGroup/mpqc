@@ -47,6 +47,7 @@
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
+#include <chemistry/qc/mbptr12/utils.h>
 
 using namespace std;
 using namespace sc;
@@ -180,8 +181,8 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
       double *klxy_buf_r12 = ipjq_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_f12());
       double *klxy_buf_r12t1 = ipjq_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_t1f12());
       double *lkxy_buf_r12t1 = ipjq_acc->retrieve_pair_block(l,k,corrfactor_->tbint_type_t1f12());
+      double *klxy_buf_r12t2 = ipjq_acc->retrieve_pair_block(k,l,corrfactor_->tbint_type_t2f12());
       tim_exit("MO ints retrieve");
-
       if (debug_)
         ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
 
@@ -357,6 +358,7 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
       ipjq_acc->release_pair_block(k,l,corrfactor_->tbint_type_f12());
       ipjq_acc->release_pair_block(k,l,corrfactor_->tbint_type_t1f12());
       ipjq_acc->release_pair_block(l,k,corrfactor_->tbint_type_t1f12());
+      ipjq_acc->release_pair_block(k,l,corrfactor_->tbint_type_t2f12());
     }
   }
   // Tasks that don't do any work here still need to create these timers

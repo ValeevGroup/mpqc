@@ -44,13 +44,15 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
-#include <chemistry/qc/mbptr12/blas.h>
+#include <chemistry/qc/mbptr12/twoparticlecontraction.h>
+#include <chemistry/qc/mbptr12/utils.h>
 
 using namespace std;
 using namespace sc;
 
 #define PRINT_R12_INTERMED 0
 
+using LinearR12::TwoParticleContraction;
 
 /**
    R12IntEval::contrib_to_VXB_a_new_() computes V, X, and B contributions
@@ -61,20 +63,21 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
                                   const Ref<MOIndexSpace>& xspace,
                                   const Ref<MOIndexSpace>& jspace,
                                   const Ref<MOIndexSpace>& yspace,
-                                  SpinCase2 spincase)
+                                  SpinCase2 spincase,
+                                  const Ref<TwoParticleContraction>& tpcontract)
 {
   if (evaluated_)
     return;
   LinearR12::ABSMethod abs_method = r12info_->abs_method();
 
-  tim_enter("mp2-r12a intermeds (new)");
+  tim_enter("mp2-f12a intermeds (new)");
 
   const unsigned int num_f12 = corrfactor()->nfunctions();
   Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
   tfactory->set_spaces(ispace,xspace,jspace,yspace);
   std::vector<std::string> ixjy_name;
   for(int f12=0; f12<num_f12; f12++) {
-    if (corrfactor()->nprimitives(f12))
+    if (corrfactor()->nprimitives(f12) > 1)
       throw FeatureNotImplemented("R12IntEval::contrib_to_VXB_a_new_() -- does not support contracted geminals yet",__FILE__,__LINE__);
     std::ostringstream oss;
     oss << "<" << ispace->id() << " " << jspace->id() << "| " << corrfactor()->label()
@@ -82,6 +85,7 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
     const std::string tform_name = oss.str();
     ixjy_name.push_back(tform_name);
     Ref<TwoBodyMOIntsTransform> ixjy_tform = tfactory->twobody_transform_13(tform_name,corrfactor_->callback());
+    ixjy_tform->set_num_te_types(corrfactor()->num_tbint_types());
     // NOTE assuming 1 primitive per geminal!
     ixjy_tform->compute(corrfactor()->primitive(f12,0).first);
     // Should make something like this possible:
@@ -98,6 +102,8 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
   if (nij != ni*nj)
     throw ProgrammingError("R12IntEval::contrib_to_VXB_a_new_() -- dimension of spaces 1 and 3 don't match requested spincase",
                            __FILE__,__LINE__);
+  const bool need_to_symmetrize = (ispace == jspace && xspace != yspace);
+  const double perm_pfac = (need_to_symmetrize ? 2.0 : 1.0);
 
   ExEnv::out0() << endl << indent
                 << "Computing contribution to MP2-F12/A (GEBC) intermediates from "
@@ -127,10 +133,6 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
   tim_enter("intermediates");
   SpatialMOPairIter_neq ij_iter(ispace,jspace);
   SpatialMOPairIter_neq kl_iter(ispace,jspace);
-  int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
-  if (debug_) {
-    ExEnv::out0() << indent << "nab = " << nab << endl;
-  }
 
   // Compute intermediates
   if (debug_)
@@ -173,7 +175,7 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
 
     // f loop
     for(int f=0; f<num_f12; f++) {
-      const int f_offset = f*nab;
+      const int f_offset = f*nij;
       // ij loop
       for(ij_iter.start();int(ij_iter);ij_iter.next()) {
         
@@ -190,7 +192,7 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
           ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
 
         tim_enter("MO ints retrieve");
-        double *ijxy_buf_f12 = ijxy_acc[f]->retrieve_pair_block(i,j,corrfactor()->tbint_type_f12());
+        const double *ijxy_buf_f12 = ijxy_acc[f]->retrieve_pair_block(i,j,corrfactor()->tbint_type_f12());
         tim_exit("MO ints retrieve");
         if (debug_)
           ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
@@ -215,31 +217,68 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
           
           // Get (|1/r12|) integrals
           tim_enter("MO ints retrieve");
-          double *klxy_buf_eri = ijxy_acc[0]->retrieve_pair_block(k,l,corrfactor()->tbint_type_eri());
+          const double *klxy_buf_eri = ijxy_acc[0]->retrieve_pair_block(k,l,corrfactor()->tbint_type_eri());
           tim_exit("MO ints retrieve");
           if (debug_)
             ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
           
           tim_enter("MO ints contraction");
-          double Vab_ijkl = 0.0;
           
-          // WARNING prefactor??
-          const double pfac_xy = (symm ? -0.5 : -1.0);
-          const int unit_stride = 1;
-          double V_ijkl = F77_DDOT(&nxy,ijxy_buf_f12,&unit_stride,klxy_buf_eri,&unit_stride);
-          V_ijkl *= pfac_xy;
-          V_[spincase].accumulate_element(f_offset+ij_ab,kl_ab,Vab_ijkl);
+          double V_ijkl = tpcontract->contract(ijxy_buf_f12,klxy_buf_eri);
+          V_ijkl *= perm_pfac;
+          V_[spincase].accumulate_element(f_offset+ij_ab,kl_ab,V_ijkl);
+          tim_exit("MO ints contraction");
           
-          ijxy_acc[0]->release_pair_block(k,l,corrfactor_->tbint_type_eri());
+          ijxy_acc[0]->release_pair_block(k,l,corrfactor()->tbint_type_eri());
         } // end of kl loop
         
         ////////////////////
         // Compute X and B
         ////////////////////
-        // kl loop
-        
-
-        ijxy_acc[f]->release_pair_block(i,j,corrfactor_->tbint_type_f12());
+        // g loop
+        for(int g=0; g<num_f12; g++) {
+          const int g_offset = g*nij;
+          // kl loop
+          for(kl_iter.start(ij+1);int(kl_iter);kl_iter.next()) {
+            
+            const int kl = kl_iter.ij();
+            // Figure out if this task will handle this kl
+            int kl_proc = kl%nproc_with_ints;
+            if (kl_proc != proc_with_ints[me])
+              continue;
+            const int k = kl_iter.i();
+            const int l = kl_iter.j();
+            const int kl_ab = kl_iter.ij_ab();
+            
+            if (debug_)
+              ExEnv::outn() << indent << "task " << me << ": working on (k,l) = " << k << "," << l << " " << endl;
+            
+            // Get (|f12|) and (|[T_i,f12]|) integrals
+            tim_enter("MO ints retrieve");
+            const double *klxy_buf_f12 = ijxy_acc[g]->retrieve_pair_block(k,l,corrfactor()->tbint_type_f12());
+            const double *klxy_buf_t1f12 = ijxy_acc[g]->retrieve_pair_block(k,l,corrfactor()->tbint_type_t1f12());
+            const double *klxy_buf_t2f12 = ijxy_acc[g]->retrieve_pair_block(k,l,corrfactor()->tbint_type_t2f12());
+            tim_exit("MO ints retrieve");
+            if (debug_)
+              ExEnv::outn() << indent << "task " << me << ": obtained kl blocks" << endl;
+            
+            tim_enter("MO ints contraction");
+            double X_ijkl = tpcontract->contract(ijxy_buf_f12,klxy_buf_f12);
+            X_ijkl *= perm_pfac;
+            X_[spincase].accumulate_element(f_offset+ij_ab,g_offset+kl_ab,X_ijkl);
+            double B_ijkl = tpcontract->contract(ijxy_buf_f12,klxy_buf_t1f12);
+            B_ijkl += tpcontract->contract(ijxy_buf_f12,klxy_buf_t2f12);
+            B_ijkl *= perm_pfac;
+            B_[spincase].accumulate_element(f_offset+ij_ab,g_offset+kl_ab,B_ijkl);
+            tim_exit("MO ints contraction");
+            
+            ijxy_acc[g]->release_pair_block(k,l,corrfactor()->tbint_type_f12());
+            ijxy_acc[g]->release_pair_block(k,l,corrfactor()->tbint_type_t1f12());
+            ijxy_acc[g]->release_pair_block(k,l,corrfactor()->tbint_type_t2f12());
+          }
+        }
+          
+        ijxy_acc[f]->release_pair_block(i,j,corrfactor()->tbint_type_f12());
       } // end of ij loop
     } // end of f loop
   } // end of (if I have access to integrals) block
@@ -256,7 +295,7 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
     ijxy_acc[f12]->deactivate();
   }
   
-  // Symmetrize B intermediate
+  // Symmetrize B intermediate with respect to bra-ket permutation
   const int f12dim = dim_f12(spincase).n();
   for(int ij=0;ij<f12dim;ij++)
     for(int kl=0;kl<=ij;kl++) {
@@ -265,6 +304,39 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
       B.set_element(ij,kl,belem);
       B.set_element(kl,ij,belem);
     }
+  
+  // symmetrize all intermediates with respect to permutation of particles, if needed
+  if (need_to_symmetrize) {
+    SpatialMOPairIter_eq ij_iter(ispace);
+    SpatialMOPairIter_eq kl_iter(ispace);
+    RefSCMatrix I[3];
+    I[0] = V_[spincase];
+    I[1] = X_[spincase];
+    I[2] = B_[spincase];
+    for(int m=0; m<3; m++) {
+      RefSCMatrix Inter = I[m];
+      // ij loop
+      for(ij_iter.start();int(ij_iter);ij_iter.next()) {
+        const int ij = ij_iter.ij_ab();
+        const int ji = ij_iter.ij_ba();
+        // kl loop
+        for(kl_iter.start();int(kl_iter);kl_iter.next()) {
+          const int kl = kl_iter.ij_ab();
+          const int lk = kl_iter.ij_ba();
+          const double V_ijkl = Inter.get_element(ij,kl);
+          const double V_jilk = Inter.get_element(ji,lk);
+          const double V1 = 0.5*(V_ijkl + V_jilk);
+          Inter.set_element(ij,kl,V1);
+          Inter.set_element(ji,lk,V1);
+          const double V_ijlk = Inter.get_element(ij,lk);
+          const double V_jikl = Inter.get_element(ji,kl);
+          const double V2 = 0.5*(V_ijlk + V_jikl);
+          Inter.set_element(ij,lk,V2);
+          Inter.set_element(ji,kl,V2);
+        }
+      }
+    }
+  }
 
   globally_sum_intermeds_();
   
@@ -273,7 +345,7 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
                 << "Finished computing contribution to MP2-F12/A (GEBC) intermediates from "
                 << ixjy_name[0] << " integrals" << endl;
 
-  tim_exit("mp2-r12a intermeds (new)");
+  tim_exit("mp2-f12a intermeds (new)");
   checkpoint_();
 }
 

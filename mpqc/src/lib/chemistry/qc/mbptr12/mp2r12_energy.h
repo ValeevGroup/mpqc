@@ -61,8 +61,8 @@ class MP2R12Energy : virtual public SavableState {
   double emp2tot_ab_() const;
   double er12tot_aa_();
   double er12tot_ab_();
-  double emp2tot_(SpinCase2 S) const;
-  double ef12tot_(SpinCase2 S) const;
+  double emp2f12tot(SpinCase2 S) const;
+  double ef12tot(SpinCase2 S) const;
 
   // Initialize SCVectors and SCMatrices
   void init_();
@@ -75,6 +75,9 @@ class MP2R12Energy : virtual public SavableState {
   // are equivalent (same spin) or not
   RefSCVector compute_2body_values_(bool equiv, const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                     const SCVector3& r1, const SCVector3& r2) const;
+
+  // Soon to replace print_pair_energies()
+  void print_pair_energies_new(bool spinadapted, std::ostream&so=ExEnv::out0());
 
 public:
 
@@ -124,7 +127,7 @@ public:
   /// Returns the vector of MP2-R12 alpha-beta pair energies
   RefSCVector emp2r12_ab() const;
   /// Returns the vector of second-order pair energies of spin case S
-  RefSCVector emp2(SpinCase2 S) const;
+  RefSCVector emp2f12(SpinCase2 S) const;
   /// Returns the vector of F12 corrections to second-order pair energies of spin case S
   RefSCVector ef12(SpinCase2 S) const;
   /// Returns total MP2-F12 correlation energy

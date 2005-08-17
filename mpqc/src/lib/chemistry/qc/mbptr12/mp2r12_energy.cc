@@ -228,6 +228,20 @@ double MP2R12Energy::er12tot_ab_()
   return value;
 }
 
+double MP2R12Energy::emp2f12tot(SpinCase2 s) const
+{
+  RefSCVector unit = emp2f12_[s].clone();
+  unit.assign(1.0);
+  return emp2f12_[s].dot(unit);
+}
+
+double MP2R12Energy::ef12tot(SpinCase2 s) const
+{
+  RefSCVector unit = ef12_[s].clone();
+  unit.assign(1.0);
+  return ef12_[s].dot(unit);
+}
+
 void MP2R12Energy::compute()
 {
   if (evaluated_)
@@ -1065,6 +1079,196 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   so.flush();
 
   free(SA_str);
+  
+  print_pair_energies_new(spinadapted,so);
+  
+  return;
+}
+
+//////////////////////////////////
+// print out "new" pair energies
+
+void MP2R12Energy::print_pair_energies_new(bool spinadapted, std::ostream& so)
+{
+  compute();
+  
+  std::string SA_str;
+  switch (stdapprox_) {
+    case LinearR12::StdApprox_A:
+      SA_str = "A";
+      break;
+
+    case LinearR12::StdApprox_Ap:
+      SA_str = "A'";
+      break;
+
+    case LinearR12::StdApprox_B:
+      SA_str = "B";
+      break;
+
+    default:
+      throw std::runtime_error("MP2R12Energy::print_pair_energies -- stdapprox_ is not valid");
+  }
+
+  const Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
+  const double escf = r12info->refinfo()->ref()->energy();
+  // WARNING assuming only RHF and ROHF
+  const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();
+  const int num_unique_spincases2 = (spin_polarized ? 3 : 2);
+
+  // only used if spinadapted == true
+  double ef12tot_0;
+  double ef12tot_1;
+  double emp2f12tot_0;
+  double emp2f12tot_1;
+  
+  /*---------------------------------------
+    Spin-adapt pair energies, if necessary
+   ---------------------------------------*/
+  if (!spinadapted) {
+    for(int s=0; s<num_unique_spincases2; s++) {
+      SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+      const RefSCVector ef12 = ef12_[s];
+      const RefSCVector emp2f12 = emp2f12_[s];
+      const Ref<MOIndexSpace> occ1_act = r12eval()->act_occ_space(case1(spincase2));
+      const Ref<MOIndexSpace> occ2_act = r12eval()->act_occ_space(case2(spincase2));
+      SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
+      
+      so << endl << indent << "MBPT2-F12/" << SA_str << " pair energies:" << endl;
+      so << indent << scprintf("    i       j        mp2(ij)        f12(ij)      mp2-f12(ij)") << endl;
+      so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
+      for(ij_iter.start(); ij_iter; ij_iter.next()) {
+        const int i = ij_iter.i();
+        const int j = ij_iter.j();
+        const int ij = ij_iter.ij();
+        const double ep_f12 = ef12->get_element(ij);
+        const double ep_mp2f12 = emp2f12->get_element(ij);
+        const double ep_mp2 = ep_mp2f12 - ep_f12;
+        so << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",i+1,j+1,ep_mp2,ep_f12,ep_mp2f12) << endl;
+      }
+      
+    }
+  }
+  else {
+    
+    Ref<SCMatrixKit> localkit = er12_aa_.kit();
+    RefSCVector emp2f12_0 = localkit->vector(r12eval_->dim_oo_s());
+    RefSCVector emp2f12_1 = localkit->vector(r12eval_->dim_oo_t());
+    RefSCVector ef12_0 = localkit->vector(r12eval_->dim_oo_s());
+    RefSCVector ef12_1 = localkit->vector(r12eval_->dim_oo_t());
+    
+    // Triplet pairs are easy
+    emp2f12_1->assign(emp2f12_[AlphaAlpha]);
+    emp2f12_1->scale(3.0);
+    ef12_1->assign(ef12_[AlphaAlpha]);
+    ef12_1->scale(3.0);
+      
+    // Singlet pairs are a bit trickier
+    const RefSCVector emp2f12_ab = emp2f12_[AlphaBeta];
+    const RefSCVector emp2f12_aa = emp2f12_[AlphaAlpha];
+    const RefSCVector ef12_ab = ef12_[AlphaBeta];
+    const RefSCVector ef12_aa = ef12_[AlphaAlpha];
+    const Ref<MOIndexSpace> occ_act = r12eval()->act_occ_space(Alpha);
+    SpatialMOPairIter_eq ij_iter(occ_act);
+    int ij_s = 0;
+    for(ij_iter.start(); ij_iter; ij_iter.next(), ++ij_s) {
+      const int ij_ab = ij_iter.ij_ab();
+      const int ij_aa = ij_iter.ij_aa();
+      const int i = ij_iter.i();
+      const int j = ij_iter.j();
+      {
+        double eab = emp2f12_ab->get_element(ij_ab);
+        double eaa = 0.0;
+        if (ij_aa != -1)
+          eaa = emp2f12_aa->get_element(ij_aa);
+        double e_s = (i != j ? 2.0 : 1.0) * eab - eaa;
+        emp2f12_0->set_element(ij_s,e_s);
+      }
+      {
+        double eab = ef12_ab->get_element(ij_ab);
+        double eaa = 0.0;
+        if (ij_aa != -1)
+          eaa = ef12_aa->get_element(ij_aa);
+        double e_s = (i != j ? 2.0 : 1.0) * eab - eaa;
+        ef12_0->set_element(ij_s,e_s);
+      }
+    }
+    // compute total singlet and triplet energies
+    RefSCVector unit_0 = ef12_0.clone();
+    RefSCVector unit_1 = ef12_1.clone();
+    unit_0->assign(1.0);
+    unit_1->assign(1.0);
+    ef12tot_0 = ef12_0.dot(unit_0);
+    ef12tot_1 = ef12_1.dot(unit_1);
+    emp2f12tot_0 = emp2f12_0.dot(unit_0);
+    emp2f12tot_1 = emp2f12_1.dot(unit_1);
+    
+    so << endl << indent << "Singlet MBPT2-R12/" << SA_str << " pair energies:" << endl;
+    so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
+    so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
+    const int nocc_act = occ_act->rank();
+    for(int i=0,ij=0;i<nocc_act;i++) {
+      for(int j=0;j<=i;j++,ij++) {
+        const double ep_f12_0 = ef12_0.get_element(ij);
+        const double ep_mp2f12_0 = emp2f12_0.get_element(ij);
+        so << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",
+                                 i+1,j+1,ep_mp2f12_0-ep_f12_0,ep_f12_0,ep_mp2f12_0) << endl;
+      }
+    }
+    
+    so << endl << indent << "Triplet MBPT2-R12/" << SA_str << " pair energies:" << endl;
+    so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
+    so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
+    for(int i=0,ij=0;i<nocc_act;i++) {
+      for(int j=0;j<i;j++,ij++) {
+        const double ep_f12_1 = ef12_1.get_element(ij);
+        const double ep_mp2f12_1 = emp2f12_1.get_element(ij);
+        so << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",
+                                 i+1,j+1,ep_mp2f12_1-ep_f12_1,ep_f12_1,ep_mp2f12_1) << endl;
+      }
+    }
+    
+  }
+  
+  const double ef12_corr_energy = 2.0 * ef12tot(AlphaAlpha) + ef12tot(AlphaBeta);
+  const double emp2f12_corr_energy = 2.0 * emp2f12tot(AlphaAlpha) + emp2f12tot(AlphaBeta);
+  
+  ///////////////////////////////////////////////////////////////
+  // The computation of the MP2 energy is now complete on each
+  // node;
+  ///////////////////////////////////////////////////////////////
+  
+  if (spinadapted) {
+    so <<endl<<indent
+    <<scprintf("Singlet MP2 correlation energy [au]:          %17.12lf\n", emp2f12tot_0 - ef12tot_0);
+    so <<indent
+    <<scprintf("Triplet MP2 correlation energy [au]:          %17.12lf\n", emp2f12tot_1 - ef12tot_1);
+    so <<indent
+    <<scprintf("Singlet (MP2)-F12/%2s correlation energy [au]: %17.12lf\n", SA_str.c_str(), ef12tot_0);
+    so <<indent
+    <<scprintf("Triplet (MP2)-F12/%2s correlation energy [au]: %17.12lf\n", SA_str.c_str(), ef12tot_1);
+    so <<indent
+    <<scprintf("Singlet MP2-F12/%2s correlation energy [au]:   %17.12lf\n", SA_str.c_str(),
+    emp2f12tot_0);
+    so <<indent
+    <<scprintf("Triplet MP2-F12/%2s correlation energy [au]:   %17.12lf\n", SA_str.c_str(),
+    emp2f12tot_1);
+  }
+  
+  double etotal = escf + emp2f12_corr_energy;
+  so <<endl<<indent
+  <<scprintf("RHF energy [au]:                           %17.12lf\n", escf);
+  so <<indent
+  <<scprintf("MP2 correlation energy [au]:               %17.12lf\n", emp2f12_corr_energy - ef12_corr_energy);
+  so <<indent
+  <<scprintf("(MBPT2)-R12/%2s correlation energy [au]:    %17.12lf\n", SA_str.c_str(), ef12_corr_energy);
+  so <<indent
+  <<scprintf("MBPT2-R12/%2s correlation energy [au]:      %17.12lf\n", SA_str.c_str(),
+  emp2f12_corr_energy);
+  so <<indent
+  <<scprintf("MBPT2-R12/%2s energy [au]:                  %17.12lf\n", SA_str.c_str(), etotal) << endl;
+  
+  so.flush();
   
   return;
 }

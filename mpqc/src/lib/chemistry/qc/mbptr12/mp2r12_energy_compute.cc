@@ -82,13 +82,16 @@ MP2R12Energy::compute_new_()
     RefSCVector emp2 = r12eval()->emp2(spincase2);
 
     // Prepare total and R12 pairs
-    Ref<SCMatrixKit> localkit = V.kit();
-    RefSCDimension dim_oo = V.coldim();
+    Ref<SCMatrixKit> defaultkit = V.kit();
+    const RefSCDimension dim_oo = V.coldim();
+    const RefSCDimension dim_f12 = V.coldim();
     const int noo = dim_oo.n();
     if (noo == 0)
       continue;
-    emp2f12_[spin] = localkit->vector(dim_oo);
-    ef12_[spin] = localkit->vector(dim_oo);
+    const int nf12 = dim_f12.n();
+    
+    emp2f12_[spin] = defaultkit->vector(dim_oo);
+    ef12_[spin] = defaultkit->vector(dim_oo);
     double* ef12_vec = new double[noo];
 
     if (debug_ > 1) {
@@ -188,7 +191,8 @@ MP2R12Energy::compute_new_()
 #if USE_INVERT
         // The r12 amplitudes B^-1 * V
         RefSCVector Cij = -1.0*(B_ij * V_ij);
-        C_[spin].assign_column(Cij,ij);
+        for(int kl=0; kl<nf12; kl++)
+          C_[spin].set_element(kl,ij,Cij.get_element(kl));
 #else
         RefSCVector Cij = V_ij.clone();
         if (stdapprox_ == LinearR12::StdApprox_A) {
@@ -202,10 +206,11 @@ MP2R12Energy::compute_new_()
           Cij = V_ij.clone();
           sc::exp::lapack_linsolv_symmnondef(B_ij, Cij, V_ij);
           Cij.scale(-1.0);
-          C_[spin].assign_column(Cij,ij);
+          for(int kl=0; kl<nf12; kl++)
+            C_[spin].set_element(kl,ij,Cij.get_element(kl));
         }
 #endif
-        double e_ij = 2.0*V_ij.dot(Cij);
+        double e_ij = V_ij.dot(Cij);
         ef12_vec[ij] = e_ij;
       }
     }

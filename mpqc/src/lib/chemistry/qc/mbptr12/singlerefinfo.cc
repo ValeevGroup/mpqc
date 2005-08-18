@@ -138,8 +138,22 @@ SingleRefInfo::init_spinspecific_spaces()
     bocc.push_back(ref_->beta_occupation(mo));
   }
   Ref<PetiteList> plist = ref_->integral()->petite_list();
-  spinspaces_[0].init("Alpha", bs, ref_->alpha_eigenvalues(), plist->evecs_to_AO_basis(ref_->alpha_eigenvectors()), aocc, nfzc(), nfzv());
-  spinspaces_[1].init("Beta", bs, ref_->beta_eigenvalues(), plist->evecs_to_AO_basis(ref_->beta_eigenvectors()), bocc, nfzc(), nfzv());
+  if (ref()->spin_polarized()) {
+    spinspaces_[0].init("Alpha", bs, ref_->alpha_eigenvalues(), plist->evecs_to_AO_basis(ref_->alpha_eigenvectors()), aocc, nfzc(), nfzv());
+    spinspaces_[1].init("Beta", bs, ref_->beta_eigenvalues(), plist->evecs_to_AO_basis(ref_->beta_eigenvectors()), bocc, nfzc(), nfzv());
+  }
+  else {
+    for(int s=0; s<NSpinCases1; s++) {
+      spinspaces_[s].orbs_sb_ = orbs_sb_;
+      spinspaces_[s].orbs_ = orbs_;
+      spinspaces_[s].occ_sb_ = docc_sb();
+      spinspaces_[s].occ_ = docc();
+      spinspaces_[s].occ_act_ = docc_act();
+      spinspaces_[s].uocc_sb_ = uocc_sb_;
+      spinspaces_[s].uocc_ = uocc_;
+      spinspaces_[s].uocc_act_ = uocc_act_;
+    }
+  }
 }
 
 void

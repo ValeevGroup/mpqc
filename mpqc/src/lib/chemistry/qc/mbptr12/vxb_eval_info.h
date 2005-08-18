@@ -30,6 +30,7 @@
 #endif
 
 #define USE_SINGLEREFINFO 1
+#define USE_RHFONLY_CODE 0
 
 #include <util/misc/string.h>
 #include <util/ref/ref.h>
@@ -60,6 +61,21 @@ public:
 
   /// Describes the method of storing transformed MO integrals. See MBPT2_R12.
   enum StoreMethod { mem_posix = 0, posix = 1, mem_mpi = 2, mpi = 3, mem_only = 4 };
+
+  /// Maintains virtual orbitals and RI space info if VBS != OBS
+  typedef struct {
+    //Ref<MOIndexSpace> vbs_sb_;
+    //Ref<MOIndexSpace> vbs_;
+    Ref<MOIndexSpace> vir_sb_;
+    Ref<MOIndexSpace> vir_;
+    Ref<MOIndexSpace> vir_act_;
+    // RI space
+    Ref<MOIndexSpace> ri_;
+    // "constructor" that uses SingleRefInfo object
+    void init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase);
+    // "constructor" that uses SingleRefInfo object
+    void init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase, const Ref<MOIndexSpace>& vbs);
+  } SpinSpaces;
 
 private:
 
@@ -107,18 +123,6 @@ private:
   Ref<MOIndexSpace> occ_space_;
   Ref<MOIndexSpace> occ_space_symblk_;
 #endif
-  /// Maintains virtual orbitals info if VBS != OBS
-  typedef struct {
-    //Ref<MOIndexSpace> vbs_sb_;
-    //Ref<MOIndexSpace> vbs_;
-    Ref<MOIndexSpace> vir_sb_;
-    Ref<MOIndexSpace> vir_;
-    Ref<MOIndexSpace> vir_act_;
-    // "constructor" that uses SingleRefInfo object
-    void init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase);
-    // "constructor" that uses SingleRefInfo object
-    void init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase, const Ref<MOIndexSpace>& vbs);
-  } SpinSpaces;
   SpinSpaces vir_spaces_[NSpinCases1];
   Ref<MOIndexSpace> vir_act_;
   Ref<MOIndexSpace> vir_;
@@ -255,6 +259,8 @@ public:
   const Ref<MOIndexSpace>& abs_space() const { return abs_space_; };
   /// Returns the MOIndexSpace object for RI-BS
   const Ref<MOIndexSpace>& ribs_space() const { return ribs_space_; };
+  /// Returns the MOIndexSpace object for RI-BS
+  const Ref<MOIndexSpace>& ribs_space(const SpinCase1& S) const { return vir_spaces_[S].ri_; };
   /// Returns the MOIntsTransformFactory object
   const Ref<MOIntsTransformFactory>& tfactory() const { return tfactory_; };
 #if USE_SINGLEREFINFO

@@ -37,7 +37,8 @@
 void
 sc::antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
                    const Ref<MOIndexSpace>& bra,
-                   const Ref<MOIndexSpace>& ket)
+                   const Ref<MOIndexSpace>& ket,
+                   bool accumulate)
 {
   SpatialMOPairIter_eq ij_iter(bra);
   SpatialMOPairIter_eq kl_iter(ket);
@@ -74,7 +75,10 @@ sc::antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
           const int lk_ab = kl_iter.ij_ba();
           
           double Aanti_ijkl = A.get_element(ij_ab+bra_offset_ab,kl_ab+ket_offset_ab) - A.get_element(ij_ab+bra_offset_ab,lk_ab+ket_offset_ab);
-          Aanti.set_element(ij_aa+bra_offset_aa,kl_aa+ket_offset_aa,Aanti_ijkl);
+          if (accumulate)
+            Aanti.accumulate_element(ij_aa+bra_offset_aa,kl_aa+ket_offset_aa,Aanti_ijkl);
+          else
+            Aanti.set_element(ij_aa+bra_offset_aa,kl_aa+ket_offset_aa,Aanti_ijkl);
         }
       }
     }

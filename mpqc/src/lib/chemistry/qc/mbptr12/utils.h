@@ -45,7 +45,8 @@ namespace sc {
     */
   void antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
                       const Ref<MOIndexSpace>& bra,
-                      const Ref<MOIndexSpace>& ket);
+                      const Ref<MOIndexSpace>& ket,
+                      bool accumulate = false);
   
   /** Converts RefDiagSCMatrix to std::vector<double>
   */

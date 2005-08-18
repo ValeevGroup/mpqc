@@ -92,19 +92,47 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
     //ixjy_tform->compute(correfactor()->function(f12));
     tform_map_[tform_name] = ixjy_tform;
   }
-  const bool symm = (xspace == yspace);
   const int ni = ispace->rank();
   const int nj = jspace->rank();
   const int nx = xspace->rank();
   const int ny = yspace->rank();
   const int nxy = nx*ny;
-  const unsigned int nij = V_[spincase].coldim().n();
-  if (nij != ni*nj)
-    throw ProgrammingError("R12IntEval::contrib_to_VXB_a_new_() -- dimension of spaces 1 and 3 don't match requested spincase",
-                           __FILE__,__LINE__);
+  const int nij = ni*nj;
+
+  // If same spin -- will compute different spin and antisymmetrize at the end
+  const bool need_to_antisymmetrize = (spincase != AlphaBeta && ispace == jspace);
+  // still, need to check dimensions
+  if (need_to_antisymmetrize) {
+    const int nij_target = V_[spincase].coldim().n();
+    if (nij_target != ni*(ni-1)/2)
+      throw ProgrammingError("R12IntEval::contrib_to_VXB_a_new_() -- dimension of spaces 1 and 3 don't match requested spincase",
+                             __FILE__,__LINE__);
+    const int nf12_target = V_[spincase].rowdim().n();
+    if (nf12_target != num_f12 * ni*(ni-1)/2)
+      throw ProgrammingError("R12IntEval::contrib_to_VXB_a_new_() -- dimension of spaces 1 and 3 don't match requested spincase",
+                             __FILE__,__LINE__);
+  }
   const bool need_to_symmetrize = (ispace == jspace && xspace != yspace);
   const double perm_pfac = (need_to_symmetrize ? 2.0 : 1.0);
 
+  RefSCMatrix V, X, B;
+  if (!need_to_antisymmetrize) {
+    V = V_[spincase];
+    X = X_[spincase];
+    B = B_[spincase];
+  }
+  else {
+    Ref<SCMatrixKit> kit = V_[spincase].kit();
+    RefSCDimension f12ab_dim = new SCDimension(num_f12 * nij);
+    RefSCDimension ooab_dim = new SCDimension(nij);
+    V = kit->matrix(f12ab_dim,ooab_dim);
+    X = kit->matrix(f12ab_dim,f12ab_dim);
+    B = kit->matrix(f12ab_dim,f12ab_dim);
+    V.assign(0.0);
+    X.assign(0.0);
+    B.assign(0.0);
+  }
+  
   ExEnv::out0() << endl << indent
                 << "Computing contribution to MP2-F12/A (GEBC) intermediates from "
                 << ixjy_name[0] << " integrals" << endl;
@@ -226,7 +254,7 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
           
           double V_ijkl = tpcontract->contract(ijxy_buf_f12,klxy_buf_eri);
           V_ijkl *= perm_pfac;
-          V_[spincase].accumulate_element(f_offset+ij_ab,kl_ab,V_ijkl);
+          V.accumulate_element(f_offset+ij_ab,kl_ab,V_ijkl);
           tim_exit("MO ints contraction");
           
           ijxy_acc[0]->release_pair_block(k,l,corrfactor()->tbint_type_eri());
@@ -265,11 +293,11 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
             tim_enter("MO ints contraction");
             double X_ijkl = tpcontract->contract(ijxy_buf_f12,klxy_buf_f12);
             X_ijkl *= perm_pfac;
-            X_[spincase].accumulate_element(f_offset+ij_ab,g_offset+kl_ab,X_ijkl);
+            X.accumulate_element(f_offset+ij_ab,g_offset+kl_ab,X_ijkl);
             double B_ijkl = tpcontract->contract(ijxy_buf_f12,klxy_buf_t1f12);
             B_ijkl += tpcontract->contract(ijxy_buf_f12,klxy_buf_t2f12);
             B_ijkl *= perm_pfac;
-            B_[spincase].accumulate_element(f_offset+ij_ab,g_offset+kl_ab,B_ijkl);
+            B.accumulate_element(f_offset+ij_ab,g_offset+kl_ab,B_ijkl);
             tim_exit("MO ints contraction");
             
             ijxy_acc[g]->release_pair_block(k,l,corrfactor()->tbint_type_f12());
@@ -296,10 +324,9 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
   }
   
   // Symmetrize B intermediate with respect to bra-ket permutation
-  const int f12dim = dim_f12(spincase).n();
+  const int f12dim = B.coldim().n();
   for(int ij=0;ij<f12dim;ij++)
     for(int kl=0;kl<=ij;kl++) {
-      RefSCMatrix B = B_[spincase];
       double belem = 0.5*(B.get_element(ij,kl) + B.get_element(kl,ij));
       B.set_element(ij,kl,belem);
       B.set_element(kl,ij,belem);
@@ -310,9 +337,9 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
     SpatialMOPairIter_eq ij_iter(ispace);
     SpatialMOPairIter_eq kl_iter(ispace);
     RefSCMatrix I[3];
-    I[0] = V_[spincase];
-    I[1] = X_[spincase];
-    I[2] = B_[spincase];
+    I[0] = V;
+    I[1] = X;
+    I[2] = B;
     for(int m=0; m<3; m++) {
       RefSCMatrix Inter = I[m];
       // ij loop
@@ -338,6 +365,13 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
     }
   }
 
+  if (need_to_antisymmetrize) {
+    // antisymmetrize I and add to I_[spincase]
+    antisymmetrize(V_[spincase],V,ispace,ispace,true);
+    antisymmetrize(X_[spincase],X,ispace,ispace,true);
+    antisymmetrize(B_[spincase],B,ispace,ispace,true);
+  }
+  
   globally_sum_intermeds_();
   
   ExEnv::out0() << decindent;

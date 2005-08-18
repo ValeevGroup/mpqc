@@ -105,11 +105,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   construct_ri_basis_(false);
   construct_orthog_vir_();
 
-#if !USE_SINGLEREFINFO
-  tfactory_ = new MOIntsTransformFactory(integral_,obs_space_);
-#else
-  tfactory_ = new MOIntsTransformFactory(integral(),refinfo()->orbs());
-#endif
+  tfactory_ = new MOIntsTransformFactory(integral(),refinfo()->orbs(Alpha));
   tfactory_->set_memory(memory_);
 }
 
@@ -317,7 +313,7 @@ R12IntEvalInfo::throw_if_spin_polarized() const
 }
 
 void
-sc::R12IntEvalInfo::SpinSpaces::init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase)
+R12IntEvalInfo::SpinSpaces::init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase)
 {
   vir_sb_ = refinfo->uocc_sb(spincase);
   vir_ = refinfo->uocc(spincase);
@@ -325,7 +321,7 @@ sc::R12IntEvalInfo::SpinSpaces::init(const Ref<SingleRefInfo>& refinfo, const Sp
 }
 
 void
-sc::R12IntEvalInfo::SpinSpaces::init(const Ref<SingleRefInfo>& refinfo,
+R12IntEvalInfo::SpinSpaces::init(const Ref<SingleRefInfo>& refinfo,
                                  const SpinCase1& spincase,
                                  const Ref<MOIndexSpace>& vbs)
 {
@@ -339,6 +335,49 @@ sc::R12IntEvalInfo::SpinSpaces::init(const Ref<SingleRefInfo>& refinfo,
   // Need to move all relevant code outside of MBPT2-F12 code
   vir_ = vir_sb_;
   vir_act_ = vir_;
+}
+
+void
+R12IntEvalInfo::construct_orthog_vir_()
+{
+  if (vir_.nonnull())
+    return;
+  
+  const bool spin_polarized = refinfo()->ref()->spin_polarized();
+
+  Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
+  if (obs == bs_vir_) {
+    if (!spin_polarized) {
+      vir_ = refinfo()->uocc();
+      vir_sb_ = refinfo()->uocc_sb();
+      if (refinfo()->nfzv() == 0)
+        vir_act_ = vir_;
+      else
+        vir_act_ = refinfo()->uocc_act();
+    }
+    vir_spaces_[Alpha].init(refinfo(),Alpha);
+    vir_spaces_[Beta].init(refinfo(),Beta);
+    nlindep_vir_ = 0;
+  }
+  else {
+    if (refinfo()->nfzv() != 0)
+      throw std::runtime_error("R12IntEvalInfo::construct_orthog_vir_() -- nfzv_ != 0 is not allowed yet");
+    
+    // This is a set of orthonormal functions that span VBS
+    Ref<MOIndexSpace> vir_space = orthogonalize("e","VBS", bs_vir_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_vir_);
+    if (!spin_polarized) {
+      // Now project out occupied MOs
+      vir_sb_ = orthog_comp(refinfo()->docc_sb(), vir_space, "e(sym)", "VBS", refinfo()->ref()->lindep_tol());
+      // Design flaw!!! Need to compute Fock matrix right here but can't since Fock is built into R12IntEval
+      // Need to move all relevant code outside of MBPT2-F12 code
+      if (refinfo()->nfzv() != 0)
+        throw std::runtime_error("R12IntEvalInfo::construct_orthog_vir_() -- nfzv_ != 0 is not allowed yet");
+      vir_ = vir_sb_;
+      vir_act_ = vir_sb_;
+    }
+    vir_spaces_[Alpha].init(refinfo(),Alpha,vir_space);
+    vir_spaces_[Beta].init(refinfo(),Beta,vir_space);
+  }
 }
 
 

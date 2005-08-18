@@ -665,73 +665,70 @@ R12IntEval::init_tforms_()
   Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
   tfactory->set_ints_method((MOIntsTransformFactory::StoreMethod)r12info_->ints_method());
 
-#if USE_SINGLEREFINFO
-  const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
-  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
-  const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
-  const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
-  const Ref<MOIndexSpace>& ribs_space = r12info_->ribs_space();
-#else
-  Ref<MOIndexSpace> occ_space = r12info_->occ();
-  Ref<MOIndexSpace> act_occ_space = r12info_->occ_act();
-  Ref<MOIndexSpace> act_vir_space = r12info_->vir_act();
-  Ref<MOIndexSpace> obs_space = r12info_->obs_space();
-  Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
-#endif
-  
-  const std::string ipjq_name = "(ip|jq)";
-  Ref<TwoBodyMOIntsTransform> ipjq_tform = tform_map_[ipjq_name];
-  if (ipjq_tform.null()) {
-    tfactory->set_spaces(act_occ_space,obs_space,
-                         act_occ_space,obs_space);
-    ipjq_tform = tfactory->twobody_transform_13(ipjq_name,corrfactor_->callback());
-    tform_map_[ipjq_name] = ipjq_tform;
-    tform_map_[ipjq_name]->set_num_te_types(corrfactor_->num_tbint_types());
-  }
+  if (!r12info()->refinfo()->ref()->spin_polarized()) {
+    Ref<MOIndexSpace> occ_space = r12info()->refinfo()->docc();
+    Ref<MOIndexSpace> act_occ_space = r12info()->refinfo()->docc_act();
+    Ref<MOIndexSpace> act_vir_space = r12info()->vir_act();
+    Ref<MOIndexSpace> obs_space = r12info()->refinfo()->orbs();
+    Ref<MOIndexSpace> ribs_space = r12info()->ribs_space();
+    
+    const std::string ipjq_name = "(ip|jq)";
+    Ref<TwoBodyMOIntsTransform> ipjq_tform = tform_map_[ipjq_name];
+    if (ipjq_tform.null()) {
+      tfactory->set_spaces(act_occ_space,obs_space,
+                           act_occ_space,obs_space);
+      ipjq_tform = tfactory->twobody_transform_13(ipjq_name,corrfactor_->callback());
+      tform_map_[ipjq_name] = ipjq_tform;
+      tform_map_[ipjq_name]->set_num_te_types(corrfactor_->num_tbint_types());
+      }
+    
+    const std::string iajb_name = "(ia|jb)";
+    Ref<TwoBodyMOIntsTransform> iajb_tform = tform_map_[iajb_name];
+    if (iajb_tform.null()) {
+      tfactory->set_spaces(act_occ_space,act_vir_space,
+                           act_occ_space,act_vir_space);
+      iajb_tform = tfactory->twobody_transform_13(iajb_name,corrfactor_->callback());
+      tform_map_[iajb_name] = iajb_tform;
+      tform_map_[iajb_name]->set_num_te_types(corrfactor_->num_tbint_types());
+      }
+    
+    const std::string imja_name = "(im|ja)";
+    Ref<TwoBodyMOIntsTransform> imja_tform = tform_map_[imja_name];
+    if (imja_tform.null()) {
+      tfactory->set_spaces(act_occ_space,occ_space,
+                           act_occ_space,act_vir_space);
+      imja_tform = tfactory->twobody_transform_13(imja_name,corrfactor_->callback());
+      tform_map_[imja_name] = imja_tform;
+      tform_map_[imja_name]->set_num_te_types(corrfactor_->num_tbint_types());
+      }
+    
+    const std::string imjn_name = "(im|jn)";
+    Ref<TwoBodyMOIntsTransform> imjn_tform = tform_map_[imjn_name];
+    if (imjn_tform.null()) {
+      tfactory->set_spaces(act_occ_space,occ_space,
+                           act_occ_space,occ_space);
+      imjn_tform = tfactory->twobody_transform_13(imjn_name,corrfactor_->callback());
+      tform_map_[imjn_name] = imjn_tform;
+      tform_map_[imjn_name]->set_num_te_types(corrfactor_->num_tbint_types());
+      }
+    
+    const std::string imjy_name = "(im|jy)";
+    Ref<TwoBodyMOIntsTransform> imjy_tform = tform_map_[imjy_name];
+    if (imjy_tform.null()) {
+      tfactory->set_spaces(act_occ_space,occ_space,
+                           act_occ_space,ribs_space);
+      imjy_tform = tfactory->twobody_transform_13(imjy_name,corrfactor_->callback());
+      tform_map_[imjy_name] = imjy_tform;
+      tform_map_[imjy_name]->set_num_te_types(corrfactor_->num_tbint_types());
+      }
 
-  const std::string iajb_name = "(ia|jb)";
-  Ref<TwoBodyMOIntsTransform> iajb_tform = tform_map_[iajb_name];
-  if (iajb_tform.null()) {
-    tfactory->set_spaces(act_occ_space,act_vir_space,
-                         act_occ_space,act_vir_space);
-    iajb_tform = tfactory->twobody_transform_13(iajb_name,corrfactor_->callback());
-    tform_map_[iajb_name] = iajb_tform;
-    tform_map_[iajb_name]->set_num_te_types(corrfactor_->num_tbint_types());
+    iajb_tform = tform_map_[iajb_name];
+    imjn_tform = tform_map_[imjn_name];
+    ipjq_tform = tform_map_[ipjq_name];
   }
-
-  const std::string imja_name = "(im|ja)";
-  Ref<TwoBodyMOIntsTransform> imja_tform = tform_map_[imja_name];
-  if (imja_tform.null()) {
-    tfactory->set_spaces(act_occ_space,occ_space,
-                         act_occ_space,act_vir_space);
-    imja_tform = tfactory->twobody_transform_13(imja_name,corrfactor_->callback());
-    tform_map_[imja_name] = imja_tform;
-    tform_map_[imja_name]->set_num_te_types(corrfactor_->num_tbint_types());
+  else {
+    // Don't add any transforms yet if UHF
   }
-
-  const std::string imjn_name = "(im|jn)";
-  Ref<TwoBodyMOIntsTransform> imjn_tform = tform_map_[imjn_name];
-  if (imjn_tform.null()) {
-    tfactory->set_spaces(act_occ_space,occ_space,
-                         act_occ_space,occ_space);
-    imjn_tform = tfactory->twobody_transform_13(imjn_name,corrfactor_->callback());
-    tform_map_[imjn_name] = imjn_tform;
-    tform_map_[imjn_name]->set_num_te_types(corrfactor_->num_tbint_types());
-  }
-
-  const std::string imjy_name = "(im|jy)";
-  Ref<TwoBodyMOIntsTransform> imjy_tform = tform_map_[imjy_name];
-  if (imjy_tform.null()) {
-    tfactory->set_spaces(act_occ_space,occ_space,
-                         act_occ_space,ribs_space);
-    imjy_tform = tfactory->twobody_transform_13(imjy_name,corrfactor_->callback());
-    tform_map_[imjy_name] = imjy_tform;
-    tform_map_[imjy_name]->set_num_te_types(corrfactor_->num_tbint_types());
-  }
-
-  iajb_tform = tform_map_[iajb_name];
-  imjn_tform = tform_map_[imjn_name];
-  ipjq_tform = tform_map_[ipjq_name];
 }
 
 Ref<TwoBodyMOIntsTransform>
@@ -888,27 +885,120 @@ R12IntEval::compute_r2_(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>
   return R2;
 }
 
+/// Compute <space1 space2|r_{12}^2|space3 space4>
+RefSCMatrix
+R12IntEval::compute_r2_(const Ref<MOIndexSpace>& space1,
+                        const Ref<MOIndexSpace>& space2,
+                        const Ref<MOIndexSpace>& space3,
+                        const Ref<MOIndexSpace>& space4)
+{
+  /*-----------------------------------------------------
+    Compute overlap, dipole, quadrupole moment integrals
+   -----------------------------------------------------*/
+  RefSCMatrix S_13, MX_13, MY_13, MZ_13, MXX_13, MYY_13, MZZ_13;
+  r12info_->compute_multipole_ints(space1, space3, MX_13, MY_13, MZ_13, MXX_13, MYY_13, MZZ_13);
+  r12info_->compute_overlap_ints(space1, space3, S_13);
+
+  RefSCMatrix S_24, MX_24, MY_24, MZ_24, MXX_24, MYY_24, MZZ_24;
+  if (space1 == space2 && space3 == space4) {
+    S_24 = S_13;
+    MX_24 = MX_13;
+    MY_24 = MY_13;
+    MZ_24 = MZ_13;
+    MXX_24 = MXX_13;
+    MYY_24 = MYY_13;
+    MZZ_24 = MZZ_13;
+  }
+  else {
+    r12info_->compute_multipole_ints(space2, space4, MX_24, MY_24, MZ_24, MXX_24, MYY_24, MZZ_24);
+    r12info_->compute_overlap_ints(space2, space4, S_24);
+  }
+  if (debug_)
+    ExEnv::out0() << indent << "Computed overlap and multipole moment integrals" << endl;
+
+  const int nproc = r12info_->msg()->n();
+  const int me = r12info_->msg()->me();
+
+  const int n1 = space1->rank();
+  const int n2 = space2->rank();
+  const int n3 = space3->rank();
+  const int n4 = space4->rank();
+  const int n12 = n1*n2;
+  const int n34 = n3*n4;
+  const int n1234 = n12*n34;
+  double* r2_array = new double[n1234];
+  memset(r2_array,0,n1234*sizeof(double));
+
+  int ij = 0;
+  double* ijkl_ptr = r2_array;
+  for(int i=0; i<n1; i++)
+    for(int j=0; j<n2; j++, ij++) {
+
+    int ij_proc = ij%nproc;
+    if (ij_proc != me) {
+      ijkl_ptr += n34;
+      continue;
+    }
+
+    int kl=0;
+    for(int k=0; k<n3; k++)
+      for(int l=0; l<n4; l++, kl++, ijkl_ptr++) {
+
+        double r2_ik = -1.0*(MXX_13->get_element(i,k) + MYY_13->get_element(i,k) + MZZ_13->get_element(i,k));
+        double r2_jl = -1.0*(MXX_24->get_element(j,l) + MYY_24->get_element(j,l) + MZZ_24->get_element(j,l));
+        double r11_ijkl = MX_13->get_element(i,k)*MX_24->get_element(j,l) +
+          MY_13->get_element(i,k)*MY_24->get_element(j,l) +
+          MZ_13->get_element(i,k)*MZ_24->get_element(j,l);
+        double S_ik = S_13.get_element(i,k);
+        double S_jl = S_24.get_element(j,l);
+        
+        double R2_ijkl = r2_ik * S_jl + r2_jl * S_ik - 2.0*r11_ijkl;
+        *ijkl_ptr = R2_ijkl;
+      }
+    }
+
+  r12info_->msg()->sum(r2_array,n1234);
+
+  RefSCDimension dim_ij = new SCDimension(n12);
+  RefSCDimension dim_kl = new SCDimension(n34);
+
+  Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
+  RefSCMatrix R2 = local_matrix_kit->matrix(dim_ij, dim_kl);
+  R2.assign(r2_array);
+  delete[] r2_array;
+
+  return R2;
+}
+
 void
 R12IntEval::r2_contrib_to_X_new_()
 {
   unsigned int me = r12info_->msg()->me();
 
   for(int s=0; s<nspincases2(); s++) {
-    
-    const Ref<MOIndexSpace>& space1 = r12info_->refinfo()->occ_act(static_cast<SpinCase1>(case1(static_cast<SpinCase2>(s))));
-    const Ref<MOIndexSpace>& space2 = r12info_->refinfo()->occ_act(static_cast<SpinCase1>(case2(static_cast<SpinCase2>(s))));
+
+    const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+    const Ref<MOIndexSpace>& space1 = r12info_->refinfo()->occ_act(case1(spincase2));
+    const Ref<MOIndexSpace>& space2 = r12info_->refinfo()->occ_act(case2(spincase2));
     
     // compute r_{12}^2 operator in act.occ.pair/act.occ.pair basis
-    RefSCMatrix R2 = compute_r2_(space1,space2);
+    RefSCMatrix R2 = compute_r2_(space1,space2,space1,space2);
     if (me != 0)
-      return;
-    X_[s].accumulate(R2);
+      continue;
+    if (spincase2 == AlphaBeta) {
+      X_[s].accumulate(R2);
+    }
+    else {
+      // space1 = space2 because it's AlphaAlpha or BetaBeta
+      antisymmetrize(X_[s],R2,space1,space1);
+    }
   }
-  
-  // compute r_{12}^2 operator in act.occ.pair/act.occ.pair basis
-  RefSCMatrix R2 = compute_r2_(r12info()->refinfo()->docc_act(),r12info()->refinfo()->docc_act());
+
+#if USE_RHFONLY_CODE
+  RefSCMatrix R2 = compute_r2_(r12info()->refinfo()->occ_act(Alpha),r12info()->refinfo()->occ_act(Beta));
   Xab_.accumulate(R2);
-  antisymmetrize(Xaa_,Xab_,r12info()->refinfo()->docc_act(),r12info()->refinfo()->docc_act());
+  antisymmetrize(Xaa_,Xab_,r12info()->refinfo()->occ_act(Alpha),r12info()->refinfo()->occ_act(Alpha));
+#endif
 }
 
 
@@ -1060,6 +1150,7 @@ R12IntEval::compute()
   }
   
   if (r12info_->basis_vir()->equiv(r12info_->basis())) {
+#if USE_RHFONLY_CODE
     obs_contrib_to_VXB_gebc_vbseqobs_();
 #if 1
     if (debug_ > 1) {
@@ -1071,27 +1162,31 @@ R12IntEval::compute()
       Bab_.print("Alpha-beta B(diag+OBS) contribution");
     }
 #endif
+#endif
 
     // Compute VXB using new code
     using LinearR12::TwoParticleContraction;
     using LinearR12::ABS_OBS_Contraction;
     using LinearR12::CABS_OBS_Contraction;
     const LinearR12::ABSMethod absmethod = r12info()->abs_method();
-    Ref<TwoParticleContraction> tpcontract;
-    if (absmethod == LinearR12::ABS_ABS ||
-        absmethod == LinearR12::ABS_ABSPlus)
-      tpcontract = new ABS_OBS_Contraction(r12info()->refinfo()->orbs(Alpha)->rank(),
-                                           r12info()->refinfo()->occ(Alpha)->rank(),
-                                           r12info()->refinfo()->occ(Alpha)->rank());
-    else
-      tpcontract = new CABS_OBS_Contraction(r12info()->refinfo()->orbs(Alpha)->rank());
-    contrib_to_VXB_a_new_(r12info()->refinfo()->occ_act(Alpha),
-                          r12info()->refinfo()->orbs(Alpha),
-                          r12info()->refinfo()->occ_act(Alpha),
-                          r12info()->refinfo()->orbs(Alpha),
-                          AlphaBeta,tpcontract);
-    if (debug_ > 1) {
-      for(int s=0; s<nspincases2(); s++) {
+    for(int s=0; s<nspincases2(); s++) {
+      const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+      const SpinCase1 spin1 = case1(spincase2);
+      const SpinCase1 spin2 = case2(spincase2);
+      Ref<TwoParticleContraction> tpcontract;
+      if (absmethod == LinearR12::ABS_ABS ||
+          absmethod == LinearR12::ABS_ABSPlus)
+        tpcontract = new ABS_OBS_Contraction(r12info()->refinfo()->orbs(spin1)->rank(),
+                                             r12info()->refinfo()->occ(spin1)->rank(),
+                                             r12info()->refinfo()->occ(spin2)->rank());
+      else
+        tpcontract = new CABS_OBS_Contraction(r12info()->refinfo()->orbs(spin1)->rank());
+      contrib_to_VXB_a_new_(r12info()->refinfo()->occ_act(spin1),
+                            r12info()->refinfo()->orbs(spin1),
+                            r12info()->refinfo()->occ_act(spin2),
+                            r12info()->refinfo()->orbs(spin2),
+                            spincase2,tpcontract);
+      if (debug_ > 1) {
         V_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"V(diag+OBS) contribution").c_str());
         X_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"X(diag+OBS) contribution").c_str());
         B_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"B(diag+OBS) contribution").c_str());
@@ -1099,38 +1194,53 @@ R12IntEval::compute()
     }
     
     if (r12info_->basis() != r12info_->basis_ri()) {
+#if USE_RHFONLY_CODE
       abs1_contrib_to_VXB_gebc_();
+#if 1
+      if (debug_ > 1) {
+        Vaa_.print("Alpha-alpha V(diag+OBS+ABS) contribution");
+        Vab_.print("Alpha-beta V(diag+OBS+ABS) contribution");
+        Xaa_.print("Alpha-alpha X(diag+OBS+ABS) contribution");
+        Xab_.print("Alpha-beta X(diag+OBS+ABS) contribution");
+        Baa_.print("Alpha-alpha B(diag+OBS+ABS) contribution");
+        Bab_.print("Alpha-beta B(diag+OBS+ABS) contribution");
+      }
+#endif
+#endif
       
       // Compute VXB using new code
       using LinearR12::Direct_Contraction;
-      Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(r12info()->refinfo()->occ(Alpha)->rank(),
-                                                                      r12info()->ribs_space()->rank(),-1.0);
-      contrib_to_VXB_a_new_(r12info()->refinfo()->occ_act(Alpha),
-                            r12info()->refinfo()->occ(Alpha),
-                            r12info()->refinfo()->occ_act(Alpha),
-                            r12info()->ribs_space(),
-                            AlphaBeta,tpcontract);
-    }
-    
-#if 1
-    if (debug_ > 1) {
-      Vaa_.print("Alpha-alpha V(diag+OBS+ABS) contribution");
-      Vab_.print("Alpha-beta V(diag+OBS+ABS) contribution");
-      Xaa_.print("Alpha-alpha X(diag+OBS+ABS) contribution");
-      Xab_.print("Alpha-beta X(diag+OBS+ABS) contribution");
-      Baa_.print("Alpha-alpha B(diag+OBS+ABS) contribution");
-      Bab_.print("Alpha-beta B(diag+OBS+ABS) contribution");
-    }
-#endif
-
-    if (debug_ > 1) {
       for(int s=0; s<nspincases2(); s++) {
-        V_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"V(diag+OBS+ABS) contribution").c_str());
-        X_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) contribution").c_str());
-        B_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"B(diag+OBS+ABS) contribution").c_str());
+        const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+        const SpinCase1 spin1 = case1(spincase2);
+        const SpinCase1 spin2 = case2(spincase2);
+        Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(r12info()->refinfo()->occ(spin1)->rank(),
+                                                                        r12info()->ribs_space(spin2)->rank(),-1.0);
+        contrib_to_VXB_a_new_(r12info()->refinfo()->occ_act(spin1),
+                              r12info()->refinfo()->occ(spin1),
+                              r12info()->refinfo()->occ_act(spin2),
+                              r12info()->ribs_space(spin2),
+                              spincase2,tpcontract);
+
+
+        if (spincase2 == AlphaBeta && r12info()->refinfo()->occ_act(spin1) != r12info()->refinfo()->occ_act(spin2)) {
+          tpcontract = new Direct_Contraction(r12info()->ribs_space(spin1)->rank(),
+                                              r12info()->refinfo()->occ(spin2)->rank(),-1.0);
+          contrib_to_VXB_a_new_(r12info()->refinfo()->occ_act(spin1),
+                                r12info()->ribs_space(spin1),
+                                r12info()->refinfo()->occ_act(spin2),
+                                r12info()->refinfo()->occ(spin2),
+                                spincase2,tpcontract);
+        }
+        
+        if (debug_ > 1) {
+          V_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"V(diag+OBS+ABS) contribution").c_str());
+          X_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) contribution").c_str());
+          B_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"B(diag+OBS+ABS) contribution").c_str());
+        }
       }
     }
-    
+
   }
   else {
     contrib_to_VXB_gebc_vbsneqobs_();

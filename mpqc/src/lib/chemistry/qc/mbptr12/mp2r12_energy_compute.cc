@@ -1,7 +1,7 @@
 //
-// mp2r12_energy.cc
+// mp2r12_energy_compute.cc
 //
-// Copyright (C) 2003 Edward Valeev
+// Copyright (C) 2005 Edward Valeev
 //
 // Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
 // Maintainer: EV

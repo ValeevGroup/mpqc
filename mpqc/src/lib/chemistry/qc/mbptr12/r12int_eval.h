@@ -121,6 +121,11 @@ class R12IntEval : virtual public SavableState {
   void r2_contrib_to_X_new_();
   /// Compute <space1 space1|r_{12}^2|space1 space2> matrix
   RefSCMatrix compute_r2_(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
+  /// Compute <space1 space2|r_{12}^2|space3 space4> matrix
+  RefSCMatrix compute_r2_(const Ref<MOIndexSpace>& space1,
+                          const Ref<MOIndexSpace>& space2,
+                          const Ref<MOIndexSpace>& space3,
+                          const Ref<MOIndexSpace>& space4);
   /// Compute the Fock matrix between 2 spaces
   RefSCMatrix fock_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
                     const Ref<MOIndexSpace>& ket_space);

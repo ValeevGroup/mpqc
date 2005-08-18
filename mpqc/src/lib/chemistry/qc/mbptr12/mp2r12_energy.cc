@@ -246,7 +246,8 @@ void MP2R12Energy::compute()
 {
   if (evaluated_)
     return;
-  
+
+#if USE_RHFONLY_CODE
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   Ref<MessageGrp> msg = r12info->msg();
   int me = msg->me();
@@ -550,6 +551,7 @@ void MP2R12Energy::compute()
     emp2r12_ab_->accumulate(er12_ab_);
     delete[] er12_ab_vec;
   }
+#endif
   
   compute_new_();
   
@@ -903,6 +905,7 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
       throw std::runtime_error("MP2R12Energy::print_pair_energies -- stdapprox_ is not valid");
   }
 
+#if USE_RHFONLY_CODE
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
 #if !USE_SINGLEREFINFO
   const int nocc_act = r12info->ndocc_act();
@@ -1079,11 +1082,24 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   so.flush();
 
   free(SA_str);
+#endif
   
   print_pair_energies_new(spinadapted,so);
   
   return;
 }
+
+
+namespace {
+  // Assigns src to dest safely, i.e. by converting to a double*
+  void assign(RefSCVector& dest, const RefSCVector& src) {
+    const int n = src.dim().n();
+    double* buf = new double[n];
+    src->convert(buf);
+    dest->assign(buf);
+    delete[] buf;
+  }
+};
 
 //////////////////////////////////
 // print out "new" pair energies
@@ -1158,9 +1174,9 @@ void MP2R12Energy::print_pair_energies_new(bool spinadapted, std::ostream& so)
     RefSCVector ef12_1 = localkit->vector(r12eval_->dim_oo_t());
     
     // Triplet pairs are easy
-    emp2f12_1->assign(emp2f12_[AlphaAlpha]);
+    assign(emp2f12_1,emp2f12_[AlphaAlpha]);
     emp2f12_1->scale(3.0);
-    ef12_1->assign(ef12_[AlphaAlpha]);
+    assign(ef12_1,ef12_[AlphaAlpha]);
     ef12_1->scale(3.0);
       
     // Singlet pairs are a bit trickier

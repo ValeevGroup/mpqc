@@ -92,7 +92,7 @@ SpinMOPairIter::SpinMOPairIter(const Ref<MOIndexSpace>& space1,
                                const SpinCase2& S) :
   MOPairIter(space1, space2), IJ_(0)
 {
-  i_eq_j_ = (!(S==AlphaBeta) || (space1 == space2));
+  i_eq_j_ = (S!=AlphaBeta && (space1 == space2));
   if (i_eq_j_) {
     if (ni_ <= 1)
       throw ProgrammingError("SpinMOPairIter() initialized with rank-1 space",__FILE__,__LINE__);

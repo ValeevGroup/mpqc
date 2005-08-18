@@ -133,6 +133,9 @@ SCF::compute_vector(double& eelec, double nucrep)
   int iter, iter_since_reset = 0;
   double accuracy = 1.0;
 
+  ExEnv::out0() << indent
+                << "Beginning iterations.  Basis is "
+                << basis()->label() << '.' << std::endl;
   for (iter=0; iter < maxiter_; iter++, iter_since_reset++) {
     // form the density from the current vector 
     tim_enter("density");

@@ -970,6 +970,9 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
   double delta = 1.0;
   int iter;
   
+  ExEnv::out0() << indent
+                << "Beginning iterations.  Basis is "
+                << basis()->label() << '.' << std::endl;
   for (iter=0; iter < maxiter_; iter++) {
     // form the density from the current vector 
     tim_enter("density");

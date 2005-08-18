@@ -25,9 +25,6 @@
 # or
 #DEFAULT (echo ""; id; echo %{sVv}; date; cat) >> $CVSROOT/CVSROOT/commitlog
 
-# This sends the diffs, which generates large messages
-#CVSROOT /cvsroot/sitedocs/CVSROOT/cvstools/syncmail %{sVv} cljanss@users.sourceforge.net
-#DEFAULT /cvsroot/sitedocs/CVSROOT/cvstools/syncmail %{sVv} mpqc-commits@lists.sourceforge.net
-
-CVSROOT /cvsroot/sitedocs/CVSROOT/cvstools/syncmail %%s cljanss@users.sourceforge.net
+CVSROOT /cvsroot/sitedocs/CVSROOT/cvstools/syncmail -u %{sVv} cljanss@users.sourceforge.net
+DEFAULT /cvsroot/sitedocs/CVSROOT/cvstools/syncmail -u %{sVv} mpqc-commits@lists.sourceforge.net
 

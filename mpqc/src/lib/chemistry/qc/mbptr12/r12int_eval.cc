@@ -1173,6 +1173,7 @@ R12IntEval::compute()
       const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       const SpinCase1 spin1 = case1(spincase2);
       const SpinCase1 spin2 = case2(spincase2);
+
       Ref<TwoParticleContraction> tpcontract;
       if (absmethod == LinearR12::ABS_ABS ||
           absmethod == LinearR12::ABS_ABSPlus)
@@ -1186,6 +1187,7 @@ R12IntEval::compute()
                             r12info()->refinfo()->occ_act(spin2),
                             r12info()->refinfo()->orbs(spin2),
                             spincase2,tpcontract);
+      compute_mp2_pair_energies_(spincase2);
       if (debug_ > 1) {
         V_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"V(diag+OBS) contribution").c_str());
         X_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"X(diag+OBS) contribution").c_str());
@@ -1222,10 +1224,9 @@ R12IntEval::compute()
                               r12info()->ribs_space(spin2),
                               spincase2,tpcontract);
 
-
         if (spincase2 == AlphaBeta && r12info()->refinfo()->occ_act(spin1) != r12info()->refinfo()->occ_act(spin2)) {
-          tpcontract = new Direct_Contraction(r12info()->ribs_space(spin1)->rank(),
-                                              r12info()->refinfo()->occ(spin2)->rank(),-1.0);
+          Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(r12info()->ribs_space(spin1)->rank(),
+                                                                          r12info()->refinfo()->occ(spin2)->rank(),-1.0);
           contrib_to_VXB_a_new_(r12info()->refinfo()->occ_act(spin1),
                                 r12info()->ribs_space(spin1),
                                 r12info()->refinfo()->occ_act(spin2),
@@ -1418,6 +1419,20 @@ R12IntEval::vir_act(SpinCase1 S) const
   if (r12info()->basis_vir() != r12info()->refinfo()->ref()->basis())
     throw ProgrammingError("R12IntEval::vir_act() -- not implemented yet for the case vir_basis != basis",__FILE__,__LINE__);
   return r12info()->refinfo()->uocc_act(S);
+}
+
+std::string
+R12IntEval::transform_label(const Ref<MOIndexSpace>& space1,
+                            const Ref<MOIndexSpace>& space2,
+                            const Ref<MOIndexSpace>& space3,
+                            const Ref<MOIndexSpace>& space4,
+                            unsigned int f12) const
+{
+  std::ostringstream oss;
+  // use physicists' notation
+  oss << "<" << space1->id() << " " << space3->id() << "| " << corrfactor()->label()
+      << "[" << f12 << "] |" << space2->id() << " " << space4->id() << ">";
+  return oss.str();
 }
 
 /////////////////////////////////////////////////////////////////////////////

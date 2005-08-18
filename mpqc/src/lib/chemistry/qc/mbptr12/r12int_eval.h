@@ -95,6 +95,12 @@ class R12IntEval : virtual public SavableState {
   // Returns pointer to the appropriate transform.
   // If the transform is not found then throw runtime_error
   Ref<TwoBodyMOIntsTransform> get_tform_(const std::string&);
+  /// Generates canonical id for transform. f12 is the index of the correlation function
+  std::string transform_label(const Ref<MOIndexSpace>& space1,
+                              const Ref<MOIndexSpace>& space2,
+                              const Ref<MOIndexSpace>& space3,
+                              const Ref<MOIndexSpace>& space4,
+                              unsigned int f12) const;
 
   /// Fock-weighted occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
   Ref<MOIndexSpace> focc_space_;
@@ -165,6 +171,9 @@ class R12IntEval : virtual public SavableState {
                              const Ref<MOIndexSpace>& yspace,
                              SpinCase2 spincase,
                              const Ref<LinearR12::TwoParticleContraction>& tpcontract);
+
+  /// Compute MP2 pair energies of spin case S
+  void compute_mp2_pair_energies_(SpinCase2 S);
                                   
   /// Compute OBS contribution to V, X, and B (these contributions are independent of the method)
   void obs_contrib_to_VXB_gebc_vbseqobs_();

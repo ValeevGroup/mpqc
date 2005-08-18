@@ -53,7 +53,7 @@ CXXSRCS = mbptr12.cc \
   twobodygrid.cc svd.cc linearr12.cc intermeds_g12.cc \
   singlerefinfo.cc utils.cc compute_vxb_a_new.cc \
   twoparticlecontraction.cc spin.cc \
-  mp2r12_energy_compute.cc
+  mp2r12_energy_compute.cc mp2_pair_energies.cc
 
 ifeq ($(HAVE_MPIIO),yes)
   CXXSRCS += r12ia_mpiiofile.cc

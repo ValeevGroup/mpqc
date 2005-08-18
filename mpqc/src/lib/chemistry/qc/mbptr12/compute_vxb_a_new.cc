@@ -79,18 +79,18 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
   for(int f12=0; f12<num_f12; f12++) {
     if (corrfactor()->nprimitives(f12) > 1)
       throw FeatureNotImplemented("R12IntEval::contrib_to_VXB_a_new_() -- does not support contracted geminals yet",__FILE__,__LINE__);
-    std::ostringstream oss;
-    oss << "<" << ispace->id() << " " << jspace->id() << "| " << corrfactor()->label()
-        << "[" << f12 << "] |" << xspace->id() << " " << yspace->id() << ">";
-    const std::string tform_name = oss.str();
+    const std::string tform_name = transform_label(ispace,xspace,jspace,yspace,f12);
     ixjy_name.push_back(tform_name);
-    Ref<TwoBodyMOIntsTransform> ixjy_tform = tfactory->twobody_transform_13(tform_name,corrfactor_->callback());
-    ixjy_tform->set_num_te_types(corrfactor()->num_tbint_types());
-    // NOTE assuming 1 primitive per geminal!
-    ixjy_tform->compute(corrfactor()->primitive(f12,0).first);
-    // Should make something like this possible:
-    //ixjy_tform->compute(correfactor()->function(f12));
-    tform_map_[tform_name] = ixjy_tform;
+    Ref<TwoBodyMOIntsTransform> ixjy_tform = tform_map_[tform_name];
+    if (ixjy_tform.null()) {
+      ixjy_tform = tfactory->twobody_transform_13(tform_name,corrfactor()->callback());
+      ixjy_tform->set_num_te_types(corrfactor()->num_tbint_types());
+      tform_map_[tform_name] = ixjy_tform;
+      // NOTE assuming 1 primitive per geminal!
+      ixjy_tform->compute(corrfactor()->primitive(f12,0).first);
+      // Should make something like this possible:
+      //ixjy_tform->compute(correfactor()->function(f12));
+    }
   }
   const int ni = ispace->rank();
   const int nj = jspace->rank();

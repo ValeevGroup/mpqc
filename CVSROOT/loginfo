@@ -30,3 +30,4 @@
 #DEFAULT /cvsroot/sitedocs/CVSROOT/cvstools/syncmail %{sVv} mpqc-commits@lists.sourceforge.net
 
 CVSROOT /cvsroot/sitedocs/CVSROOT/cvstools/syncmail %%s cljanss@users.sourceforge.net
+

@@ -62,7 +62,7 @@ R12IntEval::compute_T2_vbsneqobs_()
 #if USE_SINGLEREFINFO
   if (iajb_tform->space1() != r12info_->refinfo()->docc_act())
     throw std::runtime_error("R12IntEval::compute_T2_vbsneqobs_() -- wrong type of transform is provided (space1 != act_occ)");
-  if (iajb_tform->space2() != r12info_->act_vir_space())
+  if (iajb_tform->space2() != r12info_->vir_act())
     throw std::runtime_error("R12IntEval::compute_T2_vbsneqobs_() -- wrong type of transform is provided (space1 != act_vir)");
 #endif
   Ref<R12IntsAcc> ijab_acc = iajb_tform->ints_acc();
@@ -85,7 +85,7 @@ R12IntEval::compute_T2_vbsneqobs_()
 #else
   const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
 #endif
-  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
   const int nactvir = act_vir_space->rank();
   RefDiagSCMatrix act_occ_evals = act_occ_space->evals();
   RefDiagSCMatrix act_vir_evals = act_vir_space->evals();
@@ -301,7 +301,7 @@ R12IntEval::compute_amps_()
   if (Amps_.nonnull())
     return;
 
-  Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
+  Ref<MOIndexSpace> act_vir_space = r12info_->vir_act();
 #if !USE_SINGLEREFINFO
   Ref<MOIndexSpace> occ_space = r12info_->occ_space();
 #else

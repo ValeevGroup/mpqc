@@ -96,11 +96,6 @@ class R12IntEval : virtual public SavableState {
   // If the transform is not found then throw runtime_error
   Ref<TwoBodyMOIntsTransform> get_tform_(const std::string&);
 
-  /// Prepend string representation of S to R and return
-  static const char* prepend_spincase1(int S, const std::string& R);
-  /// Prepend string representation of S to R and return
-  static const char* prepend_spincase2(int S, const std::string& R);
-  
   /// Fock-weighted occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
   Ref<MOIndexSpace> focc_space_;
   /// Form Fock-weighted occupied space
@@ -341,9 +336,9 @@ public:
   // Returns the number of unique combinations of 2 spin cases
   int nspincases2() const { return ::sc::nspincases2(spin_polarized()); }
   /// Returns the act occ space for spin case S
-  const Ref<MOIndexSpace>& act_occ_space(SpinCase1 S) const;
+  const Ref<MOIndexSpace>& occ_act(SpinCase1 S) const;
   /// Returns the act vir space for spin case S
-  const Ref<MOIndexSpace>& act_vir_space(SpinCase1 S) const;
+  const Ref<MOIndexSpace>& vir_act(SpinCase1 S) const;
 };
 
 }

@@ -80,13 +80,13 @@ R12IntEval::compute_T2_()
   const Ref<MOIndexSpace>& obs_space = r12info_->obs_space();
   const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
   const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
-  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
   const int nfzv = r12info_->nfzv();
 #else
   const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
   const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
   const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
-  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
   const int nfzv = r12info_->refinfo()->nfzv();
 #endif
   const int noso = obs_space->rank();
@@ -239,13 +239,13 @@ differs from the basis set for occupieds");
   const Ref<MOIndexSpace>& obs_space = r12info_->obs_space();
   const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
   const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
-  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
   const int nfzv = r12info_->nfzv();
 #else
   const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
   const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
   const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
-  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
   const int nfzv = r12info_->refinfo()->nfzv();
 #endif
   const int noso = obs_space->rank();
@@ -371,13 +371,13 @@ R12IntEval::compute_A_simple_()
   const Ref<MOIndexSpace>& obs_space = r12info_->obs_space();
   const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
   const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
-  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
   const int nfzv = r12info_->nfzv();
 #else
   const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
   const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
   const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
-  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
   const int nfzv = r12info_->refinfo()->nfzv();
 #endif
   const int noso = obs_space->rank();

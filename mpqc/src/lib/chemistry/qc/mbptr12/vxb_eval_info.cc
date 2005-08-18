@@ -34,6 +34,7 @@
 #include <util/misc/formio.h>
 #include <util/ref/ref.h>
 #include <util/misc/string.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
@@ -163,9 +164,9 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
     occ_space_ << SavableState::restore_state(si);
     occ_space_symblk_ << SavableState::restore_state(si);
 #endif
-    act_vir_space_ << SavableState::restore_state(si);
-    vir_space_ << SavableState::restore_state(si);
-    vir_space_symblk_ << SavableState::restore_state(si);
+    vir_act_ << SavableState::restore_state(si);
+    vir_ << SavableState::restore_state(si);
+    vir_sb_ << SavableState::restore_state(si);
     tfactory_ << SavableState::restore_state(si);
   }
   
@@ -222,9 +223,9 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(occ_space_.pointer(),so);
   SavableState::save_state(occ_space_symblk_.pointer(),so);
 #endif
-  SavableState::save_state(act_vir_space_.pointer(),so);
-  SavableState::save_state(vir_space_.pointer(),so);
-  SavableState::save_state(vir_space_symblk_.pointer(),so);
+  SavableState::save_state(vir_act_.pointer(),so);
+  SavableState::save_state(vir_.pointer(),so);
+  SavableState::save_state(vir_sb_.pointer(),so);
   SavableState::save_state(tfactory_.pointer(),so);
   
 #if USE_SINGLEREFINFO
@@ -307,6 +308,39 @@ void R12IntEvalInfo::eigen_()
   if (debug_) ExEnv::out0() << indent << "R12IntEvalInfo: eigen_ done" << endl;
 }
 #endif
+
+void
+R12IntEvalInfo::throw_if_spin_polarized() const
+{
+  if (refinfo()->ref()->spin_polarized())
+    throw ProgrammingError("R12IntEvalInfo -- spin-independent space is requested but the reference function is spin-polarized",__FILE__,__LINE__);
+}
+
+void
+sc::R12IntEvalInfo::SpinSpaces::init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase)
+{
+  vir_sb_ = refinfo->uocc_sb(spincase);
+  vir_ = refinfo->uocc(spincase);
+  vir_act_ = refinfo->uocc_act(spincase);
+}
+
+void
+sc::R12IntEvalInfo::SpinSpaces::init(const Ref<SingleRefInfo>& refinfo,
+                                 const SpinCase1& spincase,
+                                 const Ref<MOIndexSpace>& vbs)
+{
+  std::string id, label;
+  if (spincase == Alpha)
+    id = "E(sym)";
+  else
+    id = "e(sym)";
+  vir_sb_ = R12IntEvalInfo::orthog_comp(refinfo->occ_sb(spincase), vbs, "e(sym)", "VBS", refinfo->ref()->lindep_tol());
+  // Design flaw!!! Need to compute Fock matrix right here but can't since Fock is built into R12IntEval
+  // Need to move all relevant code outside of MBPT2-F12 code
+  vir_ = vir_sb_;
+  vir_act_ = vir_;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 

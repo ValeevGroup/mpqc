@@ -107,9 +107,22 @@ private:
   Ref<MOIndexSpace> occ_space_;
   Ref<MOIndexSpace> occ_space_symblk_;
 #endif
-  Ref<MOIndexSpace> act_vir_space_;
-  Ref<MOIndexSpace> vir_space_;
-  Ref<MOIndexSpace> vir_space_symblk_;
+  /// Maintains virtual orbitals info if VBS != OBS
+  typedef struct {
+    //Ref<MOIndexSpace> vbs_sb_;
+    //Ref<MOIndexSpace> vbs_;
+    Ref<MOIndexSpace> vir_sb_;
+    Ref<MOIndexSpace> vir_;
+    Ref<MOIndexSpace> vir_act_;
+    // "constructor" that uses SingleRefInfo object
+    void init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase);
+    // "constructor" that uses SingleRefInfo object
+    void init(const Ref<SingleRefInfo>& refinfo, const SpinCase1& spincase, const Ref<MOIndexSpace>& vbs);
+  } SpinSpaces;
+  SpinSpaces vir_spaces_[NSpinCases1];
+  Ref<MOIndexSpace> vir_act_;
+  Ref<MOIndexSpace> vir_;
+  Ref<MOIndexSpace> vir_sb_;
   
 #if USE_SINGLEREFINFO
   /// Initializes all spaces that relate to the reference determinant
@@ -139,6 +152,8 @@ private:
   void construct_orthog_vir_();
   // Construct orthog_ri_
   void construct_orthog_ri_();
+  // Throw ProgrammingError if reference is spin_polarized()
+  void throw_if_spin_polarized() const;
 
 public:
   R12IntEvalInfo(StateIn&);
@@ -206,8 +221,8 @@ public:
   int nalpha_occ() const { return ndocc_act() + nsocc(); }
   int nbeta_occ() const { return ndocc_act(); }
 #endif
-  int nvir() const { return vir_space_->rank();};
-  int nvir_act() const { return act_vir_space_->rank();};
+  int nvir() const { return vir_->rank();};
+  int nvir_act() const { return vir_act_->rank();};
 
   LinearR12::ABSMethod abs_method() const { return abs_method_; };
 
@@ -224,11 +239,18 @@ public:
   const Ref<MOIndexSpace>& occ_space_symblk() const { return occ_space_symblk_; };
 #endif
   /// Returns the MOIndexSpace object for all unoccupied MOs ordered by energy
-  const Ref<MOIndexSpace>& vir_space() const { return vir_space_; };
+  const Ref<MOIndexSpace>& vir() const { throw_if_spin_polarized(); return vir_; };
   /// Returns the MOIndexSpace object for all unoccupied MOs ordered by symmetry
-  const Ref<MOIndexSpace>& vir_space_symblk() const { return vir_space_symblk_; };
+  const Ref<MOIndexSpace>& vir_sb() const { throw_if_spin_polarized(); return vir_sb_; };
   /// Returns the MOIndexSpace object for the active unoccupied MOs
-  const Ref<MOIndexSpace>& act_vir_space() const { return act_vir_space_; };
+  const Ref<MOIndexSpace>& vir_act() const { throw_if_spin_polarized(); return vir_act_; };
+  /// Returns the MOIndexSpace object for all unoccupied MOs ordered by energy
+  const Ref<MOIndexSpace>& vir(const SpinCase1& S) const { return vir_spaces_[S].vir_; };
+  /// Returns the MOIndexSpace object for all unoccupied MOs ordered by symmetry
+  const Ref<MOIndexSpace>& vir_sb(const SpinCase1& S) const { return vir_spaces_[S].vir_sb_; };
+  /// Returns the MOIndexSpace object for the active unoccupied MOs
+  const Ref<MOIndexSpace>& vir_act(const SpinCase1& S) const { return vir_spaces_[S].vir_act_; };
+  
   /// Returns the MOIndexSpace object for ABS
   const Ref<MOIndexSpace>& abs_space() const { return abs_space_; };
   /// Returns the MOIndexSpace object for RI-BS

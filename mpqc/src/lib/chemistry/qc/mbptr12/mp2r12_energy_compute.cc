@@ -59,10 +59,10 @@ MP2R12Energy::compute_new_()
   for(int spin=0; spin<num_unique_spincases2; spin++) {
     
     const SpinCase2 spincase2 = static_cast<SpinCase2>(spin);
-    const Ref<MOIndexSpace>& occ1_act = r12eval()->act_occ_space(case1(spincase2));
-    const Ref<MOIndexSpace>& vir1_act = r12eval()->act_vir_space(case1(spincase2));
-    const Ref<MOIndexSpace>& occ2_act = r12eval()->act_occ_space(case2(spincase2));
-    const Ref<MOIndexSpace>& vir2_act = r12eval()->act_vir_space(case2(spincase2));
+    const Ref<MOIndexSpace>& occ1_act = r12eval()->occ_act(case1(spincase2));
+    const Ref<MOIndexSpace>& vir1_act = r12eval()->vir_act(case1(spincase2));
+    const Ref<MOIndexSpace>& occ2_act = r12eval()->occ_act(case2(spincase2));
+    const Ref<MOIndexSpace>& vir2_act = r12eval()->vir_act(case2(spincase2));
     int nocc1_act = occ1_act->rank();
     int nvir1_act = vir1_act->rank();
     int nocc2_act = occ2_act->rank();

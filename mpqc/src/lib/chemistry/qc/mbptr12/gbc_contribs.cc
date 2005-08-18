@@ -87,7 +87,7 @@ R12IntEval::compute_B_gbc_1_()
   const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
   const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
 #endif
-  Ref<MOIndexSpace> vir_space = r12info_->vir_space();
+  Ref<MOIndexSpace> vir_space = r12info_->vir();
   Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
   form_focc_space_();
   Ref<MOIndexSpace> focc_space = focc_space_;

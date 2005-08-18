@@ -46,6 +46,12 @@ namespace sc {
   SpinCase1 case1(SpinCase2 S);
   /// returns the second spin case of the 2-spin S
   SpinCase1 case2(SpinCase2 S);
+
+  /// Prepend string representation of S to R and return
+  std::string prepend_spincase1(SpinCase1 S, const std::string& R);
+  /// Prepend string representation of S to R and return
+  std::string prepend_spincase2(SpinCase2 S, const std::string& R);
+  
   
 };
 

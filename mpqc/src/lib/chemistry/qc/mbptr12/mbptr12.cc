@@ -525,7 +525,6 @@ MBPT2_R12::r12_corr_energy()
 void
 MBPT2_R12::init_variables_()
 {
-  MBPT2::init_variables();
 }
 
 /////////////////////////////////////////////////////////////////////////////

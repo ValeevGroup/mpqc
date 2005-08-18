@@ -138,7 +138,7 @@ namespace sc {
     Ref<MOIndexSpace> uocc_sb_;
     Ref<MOIndexSpace> uocc_;
     Ref<MOIndexSpace> uocc_act_;
-    SpinSpaces spinspaces_[2];
+    SpinSpaces spinspaces_[NSpinCases1];
     //}@
     
     /// initialize spin-specific spaces

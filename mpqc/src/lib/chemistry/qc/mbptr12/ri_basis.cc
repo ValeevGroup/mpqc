@@ -145,62 +145,43 @@ R12IntEvalInfo::construct_orthog_aux_()
 void
 R12IntEvalInfo::construct_orthog_vir_()
 {
-  if (vir_space_.nonnull())
+  if (vir_.nonnull())
     return;
+  
+  const bool spin_polarized = refinfo()->ref()->spin_polarized();
 
-#if USE_SINGLEREFINFO
   Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
-#else
-  Ref<GaussianBasisSet> obs = basis();
-#endif
-
   if (obs == bs_vir_) {
-#if !USE_SINGLEREFINFO
-    // If virtuals are from the same space as occupieds, then everything is easy
-    vir_space_ = new MOIndexSpace("e","unoccupied MOs sorted by energy", mo_space_->coefs(),
-                                  mo_space_->basis(), mo_space_->evals(), ndocc(), 0);
-    vir_space_symblk_ = new MOIndexSpace("e(sym)","unoccupied MOs symmetry-blocked", mo_space_->coefs(),
-                                         mo_space_->basis(), mo_space_->evals(), ndocc(), 0, MOIndexSpace::symmetry);
-
-    if (nfzv() == 0)
-      act_vir_space_ = vir_space_;
-    else
-      act_vir_space_ = new MOIndexSpace("a","active unoccupied MOs sorted by energy", mo_space_->coefs(),
-                                  mo_space_->basis(), mo_space_->evals(), ndocc(), nfzv());
-#else
-    vir_space_ = refinfo()->uocc();
-    vir_space_symblk_ = refinfo()->uocc_sb();
-    if (refinfo()->nfzv() == 0)
-      act_vir_space_ = vir_space_;
-    else
-      act_vir_space_ = refinfo()->uocc_act();
-#endif
+    if (!spin_polarized) {
+      vir_ = refinfo()->uocc();
+      vir_sb_ = refinfo()->uocc_sb();
+      if (refinfo()->nfzv() == 0)
+        vir_act_ = vir_;
+      else
+        vir_act_ = refinfo()->uocc_act();
+    }
+    vir_spaces_[Alpha].init(refinfo(),Alpha);
+    vir_spaces_[Beta].init(refinfo(),Beta);
     nlindep_vir_ = 0;
   }
   else {
-#if !USE_SINGLEREFINFO
-    // This is a set of orthonormal functions that span VBS
-    Ref<MOIndexSpace> vir_space = orthogonalize("e","VBS", bs_vir_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_vir_);
-    // Now project out occupied MOs
-    vir_space_symblk_ = orthog_comp(occ_space_symblk_, vir_space, "e(sym)", "VBS", ref_->lindep_tol());
-#else
-    // This is a set of orthonormal functions that span VBS
-    Ref<MOIndexSpace> vir_space = orthogonalize("e","VBS", bs_vir_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_vir_);
-    // Now project out occupied MOs
-    vir_space_symblk_ = orthog_comp(refinfo()->docc_sb(), vir_space, "e(sym)", "VBS", refinfo()->ref()->lindep_tol());
-#endif
-
-    // Design flaw!!! Need to compute Fock matrix right here but can't since Fock is built into R12IntEval
-    // Need to move all relevant code outside of MBPT2-R12 code
-#if !USE_SINGLEREFINFO
-    if (nfzv_ != 0)
-      throw std::runtime_error("R12IntEvalInfo::construct_orthog_vir_() -- nfzv_ != 0 is not allowed yet");
-#else
     if (refinfo()->nfzv() != 0)
       throw std::runtime_error("R12IntEvalInfo::construct_orthog_vir_() -- nfzv_ != 0 is not allowed yet");
-#endif
-    vir_space_ = vir_space_symblk_;
-    act_vir_space_ = vir_space_symblk_;
+    
+    // This is a set of orthonormal functions that span VBS
+    Ref<MOIndexSpace> vir_space = orthogonalize("e","VBS", bs_vir_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_vir_);
+    if (!spin_polarized) {
+      // Now project out occupied MOs
+      vir_sb_ = orthog_comp(refinfo()->docc_sb(), vir_space, "e(sym)", "VBS", refinfo()->ref()->lindep_tol());
+      // Design flaw!!! Need to compute Fock matrix right here but can't since Fock is built into R12IntEval
+      // Need to move all relevant code outside of MBPT2-F12 code
+      if (refinfo()->nfzv() != 0)
+        throw std::runtime_error("R12IntEvalInfo::construct_orthog_vir_() -- nfzv_ != 0 is not allowed yet");
+      vir_ = vir_sb_;
+      vir_act_ = vir_sb_;
+    }
+    vir_spaces_[Alpha].init(refinfo(),Alpha,vir_space);
+    vir_spaces_[Beta].init(refinfo(),Beta,vir_space);
   }
 }
 
@@ -276,17 +257,17 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
      refinfo()->docc_act()->coefs().print("Active occupied MOs");
      refinfo()->orbs()->coefs().print("All MOs");
 #endif
-     vir_space_symblk_->coefs().print("Virtual MOs (symblocked)");
-     act_vir_space_->coefs().print("Active virtual MOs");
+     vir_sb_->coefs().print("Virtual MOs (symblocked)");
+     vir_act_->coefs().print("Active virtual MOs");
      ribs_space_->coefs().print("Orthogonal RI-BS");
    }
 
 #if !USE_SINGLEREFINFO
    ribs_space_ = orthog_comp(occ_space_symblk_, ribs_space_, "a'", "RI-BS", ref_->lindep_tol());
-   ribs_space_ = orthog_comp(vir_space_symblk_, ribs_space_, "a'", "RI-BS", ref_->lindep_tol());
+   ribs_space_ = orthog_comp(vir_sb_, ribs_space_, "a'", "RI-BS", ref_->lindep_tol());
 #else
    ribs_space_ = orthog_comp(refinfo()->docc_sb(), ribs_space_, "a'", "RI-BS", refinfo()->ref()->lindep_tol());
-   ribs_space_ = orthog_comp(vir_space_symblk_, ribs_space_, "a'", "RI-BS", refinfo()->ref()->lindep_tol());
+   ribs_space_ = orthog_comp(vir_sb_, ribs_space_, "a'", "RI-BS", refinfo()->ref()->lindep_tol());
 #endif
 }
 

@@ -72,7 +72,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
     const int nvir_act = r12info_->nvir_act();
 #else
     const int nocc_act = r12info_->refinfo()->docc_act()->rank();
-    const int nvir_act = r12info_->act_vir_space()->rank();
+    const int nvir_act = r12info_->vir_act()->rank();
 #endif
     naocc_a = naocc_b = nocc_act;
     navir_a = navir_b = nvir_act;
@@ -549,8 +549,8 @@ R12IntEval::V(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(V_[AlphaAlpha],V_[AlphaBeta],
-                   act_occ_space(Alpha),
-                   act_occ_space(Alpha));
+                   occ_act(Alpha),
+                   occ_act(Alpha));
   return V_[S];
 }
 
@@ -559,8 +559,8 @@ R12IntEval::X(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(X_[AlphaAlpha],X_[AlphaBeta],
-                   act_occ_space(Alpha),
-                   act_occ_space(Alpha));
+                   occ_act(Alpha),
+                   occ_act(Alpha));
   return X_[S];
 }
 
@@ -569,8 +569,8 @@ R12IntEval::B(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(B_[AlphaAlpha],B_[AlphaBeta],
-                   act_occ_space(Alpha),
-                   act_occ_space(Alpha));
+                   occ_act(Alpha),
+                   occ_act(Alpha));
   
   // Extract lower triangle of the matrix
   Ref<SCMatrixKit> kit = B_[S].kit();
@@ -592,8 +592,8 @@ R12IntEval::A(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(A_[AlphaAlpha],A_[AlphaBeta],
-                   act_occ_space(Alpha),
-                   act_vir_space(Alpha));
+                   occ_act(Alpha),
+                   vir_act(Alpha));
   return A_[S];
 }
 
@@ -602,8 +602,8 @@ R12IntEval::T2(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(T2_[AlphaAlpha],T2_[AlphaBeta],
-                   act_occ_space(Alpha),
-                   act_vir_space(Alpha));
+                   occ_act(Alpha),
+                   vir_act(Alpha));
   return T2_[S];
 }
 
@@ -668,13 +668,13 @@ R12IntEval::init_tforms_()
 #if USE_SINGLEREFINFO
   const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
   const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
-  const Ref<MOIndexSpace>& act_vir_space = r12info_->act_vir_space();
+  const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
   const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
   const Ref<MOIndexSpace>& ribs_space = r12info_->ribs_space();
 #else
-  Ref<MOIndexSpace> occ_space = r12info_->occ_space();
-  Ref<MOIndexSpace> act_occ_space = r12info_->act_occ_space();
-  Ref<MOIndexSpace> act_vir_space = r12info_->act_vir_space();
+  Ref<MOIndexSpace> occ_space = r12info_->occ();
+  Ref<MOIndexSpace> act_occ_space = r12info_->occ_act();
+  Ref<MOIndexSpace> act_vir_space = r12info_->vir_act();
   Ref<MOIndexSpace> obs_space = r12info_->obs_space();
   Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
 #endif
@@ -921,7 +921,7 @@ R12IntEval::form_focc_space_()
 #if USE_SINGLEREFINFO
     const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
 #else
-    const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
+    const Ref<MOIndexSpace>& occ_space = r12info_->occ();
 #endif
     const Ref<MOIndexSpace>& ribs_space = r12info_->ribs_space();
     
@@ -943,8 +943,8 @@ R12IntEval::form_factocc_space_()
     const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
     const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
 #else
-    const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
-    const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
+    const Ref<MOIndexSpace>& occ_space = r12info_->occ();
+    const Ref<MOIndexSpace>& act_occ_space = r12info_->occ_act();
 #endif
     const Ref<MOIndexSpace>& ribs_space = r12info_->ribs_space();
     
@@ -964,7 +964,7 @@ R12IntEval::form_canonvir_space_()
   if (canonvir_space_.null()) {
 
     if (r12info_->basis_vir()->equiv(r12info_->basis())) {
-      canonvir_space_ = r12info_->vir_space();
+      canonvir_space_ = r12info_->vir();
       return;
     }
 
@@ -973,9 +973,9 @@ R12IntEval::form_canonvir_space_()
     const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
 #else
     const Ref<MOIndexSpace>& mo_space = r12info_->mo_space();
-    const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
+    const Ref<MOIndexSpace>& occ_space = r12info_->occ();
 #endif
-    const Ref<MOIndexSpace>& vir_space = r12info_->vir_space_symblk();
+    const Ref<MOIndexSpace>& vir_space = r12info_->vir_sb();
     RefSCMatrix F_vir = fock_(occ_space,vir_space,vir_space);
 
     int nrow = vir_space->rank();
@@ -1053,9 +1053,9 @@ R12IntEval::compute()
 
   if (debug_ > 1) {
     for(int s=0; s<nspincases2(); s++) {
-      V_[s].print(prepend_spincase2(s,"V(diag) contribution"));
-      X_[s].print(prepend_spincase2(s,"X(diag) contribution"));
-      B_[s].print(prepend_spincase2(s,"B(diag) contribution"));
+      V_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"V(diag) contribution").c_str());
+      X_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"X(diag) contribution").c_str());
+      B_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"B(diag) contribution").c_str());
     }
   }
   
@@ -1092,9 +1092,9 @@ R12IntEval::compute()
                           AlphaBeta,tpcontract);
     if (debug_ > 1) {
       for(int s=0; s<nspincases2(); s++) {
-        V_[s].print(prepend_spincase2(s,"V(diag+OBS) contribution"));
-        X_[s].print(prepend_spincase2(s,"X(diag+OBS) contribution"));
-        B_[s].print(prepend_spincase2(s,"B(diag+OBS) contribution"));
+        V_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"V(diag+OBS) contribution").c_str());
+        X_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"X(diag+OBS) contribution").c_str());
+        B_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"B(diag+OBS) contribution").c_str());
       }
     }
     
@@ -1125,9 +1125,9 @@ R12IntEval::compute()
 
     if (debug_ > 1) {
       for(int s=0; s<nspincases2(); s++) {
-        V_[s].print(prepend_spincase2(s,"V(diag+OBS+ABS) contribution"));
-        X_[s].print(prepend_spincase2(s,"X(diag+OBS+ABS) contribution"));
-        B_[s].print(prepend_spincase2(s,"B(diag+OBS+ABS) contribution"));
+        V_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"V(diag+OBS+ABS) contribution").c_str());
+        X_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) contribution").c_str());
+        B_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"B(diag+OBS+ABS) contribution").c_str());
       }
     }
     
@@ -1142,7 +1142,7 @@ R12IntEval::compute()
   
 #if TEST_FOCK
   if (!evaluated_) {
-    RefSCMatrix F = fock_(r12info_->occ_space(),r12info_->obs_space(),r12info_->obs_space());
+    RefSCMatrix F = fock_(r12info_->occ(),r12info_->obs_space(),r12info_->obs_space());
     F.print("Fock matrix in OBS");
     r12info_->obs_space()->evals().print("OBS eigenvalues");
 
@@ -1150,7 +1150,7 @@ R12IntEval::compute()
     RefSCMatrix S_ri;
     r12info_->compute_overlap_ints(r12info_->ribs_space(),r12info_->ribs_space(),S_ri);
     S_ri.print("Overlap in RI-BS");
-    RefSCMatrix F_ri = fock_(r12info_->occ_space(),r12info_->ribs_space(),r12info_->ribs_space());
+    RefSCMatrix F_ri = fock_(r12info_->occ(),r12info_->ribs_space(),r12info_->ribs_space());
     F_ri.print("Fock matrix in RI-BS");
     RefSymmSCMatrix F_ri_symm = F_ri.kit()->symmmatrix(F_ri.rowdim());
     int nrow = F_ri.rowdim().n();
@@ -1159,7 +1159,7 @@ R12IntEval::compute()
         F_ri_symm.set_element(r,c,F_ri.get_element(r,c));
     F_ri_symm.eigvals().print("Eigenvalues of the Fock matrix (RI-BS)");
 
-    RefSCMatrix F_obs_ri = fock_(r12info_->occ_space(),r12info_->obs_space(),r12info_->ribs_space());
+    RefSCMatrix F_obs_ri = fock_(r12info_->occ(),r12info_->obs_space(),r12info_->ribs_space());
     F_obs_ri.print("Fock matrix in OBS/RI-BS");
   }
 #endif
@@ -1297,43 +1297,17 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
 }
 
 const Ref<MOIndexSpace>&
-R12IntEval::act_occ_space(SpinCase1 S) const
+R12IntEval::occ_act(SpinCase1 S) const
 {
   return r12info()->refinfo()->occ_act(S);
 }
 
 const Ref<MOIndexSpace>&
-R12IntEval::act_vir_space(SpinCase1 S) const
+R12IntEval::vir_act(SpinCase1 S) const
 {
   if (r12info()->basis_vir() != r12info()->refinfo()->ref()->basis())
-    throw ProgrammingError("R12IntEval::act_vir_space() -- not implemented yet for the case vir_basis != basis",__FILE__,__LINE__);
+    throw ProgrammingError("R12IntEval::vir_act() -- not implemented yet for the case vir_basis != basis",__FILE__,__LINE__);
   return r12info()->refinfo()->uocc_act(S);
-}
-
-const char*
-R12IntEval::prepend_spincase2(int s, const std::string& R)
-{
-  SpinCase2 S = static_cast<SpinCase2>(s);
-  std::string prefix;
-  if (S == AlphaAlpha)
-    prefix = "Alpha-alpha ";
-  else if (S == AlphaBeta)
-    prefix = "Alpha-beta ";
-  else
-    prefix = "Beta-beta ";
-  return strdup((prefix + R).c_str());
-}
-
-const char*
-R12IntEval::prepend_spincase1(int s, const std::string& R)
-{
-  SpinCase1 S = static_cast<SpinCase1>(s);
-  std::string prefix;
-  if (S == Alpha)
-    prefix = "Alpha ";
-  else
-    prefix = "Beta ";
-  return (prefix + R).c_str();
 }
 
 /////////////////////////////////////////////////////////////////////////////

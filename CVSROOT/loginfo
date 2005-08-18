@@ -25,7 +25,7 @@
 # or
 #DEFAULT (echo ""; id; echo %{sVv}; date; cat) >> $CVSROOT/CVSROOT/commitlog
 
-CVSROOT /cvsroot/sitedocs/CVSROOT/cvstools/syncmail -u %{sVv} cljanss@users.sourceforge.net
+CVSROOT /cvsroot/mpqc/CVSROOT/syncmail -u %{sVv} cljanss@users.sourceforge.net
 DEFAULT /cvsroot/sitedocs/CVSROOT/cvstools/syncmail -u %{sVv} mpqc-commits@lists.sourceforge.net
 
 

@@ -28,4 +28,3 @@
 CVSROOT /cvsroot/mpqc/CVSROOT/syncmail -u %{sVv} cljanss@users.sourceforge.net
 DEFAULT /cvsroot/sitedocs/CVSROOT/cvstools/syncmail -u %{sVv} mpqc-commits@lists.sourceforge.net
 
-

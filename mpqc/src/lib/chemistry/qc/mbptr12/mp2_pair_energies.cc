@@ -89,7 +89,7 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
     ijxy_acc->activate();
 
   SpinMOPairIter ij_iter(occ1_act,occ2_act,S);
-  SpatialMOPairIter_eq xy_iter(xspace);
+  SpinMOPairIter xy_iter(xspace,yspace,S);
 
   vector<int> proc_with_ints;
   const int nproc_with_ints = tasks_with_ints_(ijxy_acc,proc_with_ints);
@@ -136,16 +136,14 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
         
         if (compute_all_spincases) {
           const double ERI_aa = ERI_xy - ERI_yx;
-          emp2_aa += ERI_aa*ERI_aa*denom;
+          emp2_aa += 0.5*ERI_aa*ERI_aa*denom;
           emp2_ab += ERI_xy*ERI_xy*denom;
         }
         else {
-          double ERI;
           if (S == AlphaBeta)
-            ERI = ERI_xy;
+            emp2 += ERI_xy * ERI_xy * denom;
           else
-            ERI = ERI_xy - ERI_yx;
-          emp2 += ERI*ERI*denom;
+            emp2 += (ERI_xy-ERI_yx) * (ERI_xy-ERI_yx) * denom;
         }
       }
       ijxy_acc->release_pair_block(i,j,corrfactor()->tbint_type_eri());

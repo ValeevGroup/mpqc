@@ -101,6 +101,13 @@ class R12IntEval : virtual public SavableState {
                               const Ref<MOIndexSpace>& space3,
                               const Ref<MOIndexSpace>& space4,
                               unsigned int f12) const;
+  /// version of transform_label() applicable when left and right correlation factors differ
+  std::string transform_label(const Ref<MOIndexSpace>& space1,
+                              const Ref<MOIndexSpace>& space2,
+                              const Ref<MOIndexSpace>& space3,
+                              const Ref<MOIndexSpace>& space4,
+                              unsigned int f12_left,
+                              unsigned int f12_right) const;
 
   /// Fock-weighted occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
   Ref<MOIndexSpace> focc_space_;
@@ -122,7 +129,7 @@ class R12IntEval : virtual public SavableState {
   /// When F12=R12 number of simplifications occur so a specialized code is provided
   void init_intermeds_r12_();
   /// When F12 != R12 the following code is used
-  void init_intermeds_g12_();
+  void init_intermeds_g12_(SpinCase2 S);
   /// Compute r^2 contribution to X using compute_r2_()
   void r2_contrib_to_X_new_();
   /// Compute <space1 space1|r_{12}^2|space1 space2> matrix

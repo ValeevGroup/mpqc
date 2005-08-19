@@ -779,8 +779,9 @@ R12IntEval::init_intermeds_()
     init_intermeds_r12_();
     }
   else if (corrfactor_->id() == LinearR12::G12CorrFactor) {
-    init_intermeds_g12_();
-    }
+    for(int s=0; s<nspincases2(); s++)
+      init_intermeds_g12_(static_cast<SpinCase2>(s));
+  }
   else
     throw AlgorithmException("R12IntEval::init_intermeds_() -- unrecognized CorrelationFactor",__FILE__,__LINE__);
 
@@ -1432,6 +1433,22 @@ R12IntEval::transform_label(const Ref<MOIndexSpace>& space1,
   // use physicists' notation
   oss << "<" << space1->id() << " " << space3->id() << "| " << corrfactor()->label()
       << "[" << f12 << "] |" << space2->id() << " " << space4->id() << ">";
+  return oss.str();
+}
+
+std::string
+R12IntEval::transform_label(const Ref<MOIndexSpace>& space1,
+                            const Ref<MOIndexSpace>& space2,
+                            const Ref<MOIndexSpace>& space3,
+                            const Ref<MOIndexSpace>& space4,
+                            unsigned int f12_left,
+                            unsigned int f12_right) const
+{
+  std::ostringstream oss;
+  // use physicists' notation
+  oss << "<" << space1->id() << " " << space3->id() << "| " << corrfactor()->label()
+      << "[" << f12_left << "," << f12_right << "] |" << space2->id()
+      << " " << space4->id() << ">";
   return oss.str();
 }
 

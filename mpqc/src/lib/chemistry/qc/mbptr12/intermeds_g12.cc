@@ -45,165 +45,248 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/utils.h>
 
 using namespace std;
 using namespace sc;
 
 void
-R12IntEval::init_intermeds_g12_()
+R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
 {
   Ref<MessageGrp> msg = r12info()->msg();
-  Ref<MemoryGrp> mem = r12info()->mem();
-  Ref<ThreadGrp> thr = r12info()->thr();
+  const int me = msg->me();
 
   tim_enter("\"diagonal\" part of G12 intermediates");
   ExEnv::out0() << endl << indent
 	       << "Entered G12 diagonal intermediates evaluator" << endl;
   ExEnv::out0() << incindent;
 
-  int me = msg->me();
-  int nproc = msg->n();
+  const unsigned int num_f12 = corrfactor()->nfunctions();
+  const SpinCase1 spin1 = case1(spincase);
+  const SpinCase1 spin2 = case2(spincase);
+  /// compared to the needed (ik|jl), there's a chance (im|jn) has been done before (VBS != OBS?)
+  const Ref<MOIndexSpace>& ispace = r12info()->refinfo()->occ_act(spin1);
+  const Ref<MOIndexSpace>& mspace = r12info()->refinfo()->occ(spin1);
+  const Ref<MOIndexSpace>& jspace = r12info()->refinfo()->occ_act(spin2);
+  const Ref<MOIndexSpace>& nspace = r12info()->refinfo()->occ(spin2);
+  Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
+  tfactory->set_spaces(ispace,mspace,jspace,nspace);
+  std::vector<std::string> imjn_name;  imjn_name.resize(num_f12);
+  std::vector<std::vector<std::string> > im2jn_name;  im2jn_name.resize(num_f12);
+  // Compute transforms
+  for(int f=0; f<num_f12; f++) {
+    if (corrfactor()->nprimitives(f) > 1)
+      throw FeatureNotImplemented("R12IntEval::init_intermeds_g12_() -- does not support contracted geminals yet",__FILE__,__LINE__);
+    const std::string imjn_label = transform_label(ispace,mspace,jspace,nspace,f);
+    imjn_name[f] = imjn_label;
 
-#if USE_SINGLEREFINFO
-  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
-  const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
-#else
-  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
-  const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
-#endif
-  //
-  // Do the AO->MO transform:
-  // 1) get (im|jn) integrals of g12/r12 operator to compute diagonal parts of V
-  //
-  Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
-  Ref<TwoBodyMOIntsTransform> imjn_tform = tform_map_["(im|jn)"];
-  Ref<R12IntsAcc> ijmn_acc = imjn_tform->ints_acc();
-  if (!ijmn_acc->is_committed()) {
-    imjn_tform->compute(corrparam_);
-  }
-
-  //
-  // 2) get (im|jn) integrals of [g12,[t1,g12]] and g12*g12 operator (use integrals with the exponent multiplied by 2, and additionally [g12,[t1,g12]] integral needs to be scaled by 0.25 to take into account that real exponent is half what the integral library thinks)
-  //    these integrals used to compute X and B
-  //    NOTE: use occ_space instead of act_occ_space so that one block of code will handle all 3 integrals
-  tfactory->set_spaces(act_occ_space,occ_space,
-                       act_occ_space,occ_space);
-  Ref<TwoBodyMOIntsTransform> im2jn_tform = tfactory->twobody_transform_13("(im|2|jn)",corrfactor_->callback());
-  im2jn_tform->set_num_te_types(corrfactor_->num_tbint_types());
-  im2jn_tform->compute(2.0*corrparam_);
-  Ref<R12IntsAcc> ij2mn_acc = im2jn_tform->ints_acc();
-
-#if USE_SINGLEREFINFO
-  const int nfzc = r12info()->refinfo()->nfzc();
-#else
-  const int nfzc = r12info()->nfzc();
-#endif
-  const int nocc_act = act_occ_space->rank();
-  const int nocc = occ_space->rank();
-
-  ExEnv::out0() << indent << "Begin computation of intermediates" << endl;
-  SpatialMOPairIter_eq ij_iter(act_occ_space);
-  int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
-  int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
-  if (debug_) {
-    ExEnv::out0() << indent << "naa = " << naa << endl;
-    ExEnv::out0() << indent << "nab = " << nab << endl;
-  }
-
-  // Compute the number of tasks that have full access to the integrals
-  // and split the work among them
-  vector<int> proc_with_ints;
-  int nproc_with_ints = tasks_with_ints_(ijmn_acc,proc_with_ints);
-
-  if (ijmn_acc->has_access(me)) {
-
-    for(ij_iter.start();int(ij_iter);ij_iter.next()) {
-
-      const int ij = ij_iter.ij();
-      // Figure out if this task will handle this ij
-      int ij_proc = ij%nproc_with_ints;
-      if (ij_proc != proc_with_ints[me])
-        continue;
-      const int i = ij_iter.i();
-      const int j = ij_iter.j();
-      const int ij_aa = ij_iter.ij_aa();
-      const int ij_ab = ij_iter.ij_ab();
-      const int ji_ab = ij_iter.ij_ba();
-
-      if (debug_)
-        ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
-
-      // Get the integrals
-      tim_enter("MO ints retrieve");
-      double *ijxy_buf_f12eri   = ijmn_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12eri());
-      double *ijxy_buf_f12t1f12 = ij2mn_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12t1f12());
-      double *ijxy_buf_f12f12   = ij2mn_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12f12());
-      tim_exit("MO ints retrieve");
-
-      if (debug_)
-        ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
-
-      SpatialMOPairIter_eq kl_iter(act_occ_space);
-      for(kl_iter.start();int(kl_iter);kl_iter.next()) {
-        const int k = kl_iter.i();
-        const int l = kl_iter.j();
-        const int kl_aa = kl_iter.ij_aa();
-        const int kl_ab = kl_iter.ij_ab();
-        const int lk_ab = kl_iter.ij_ba();
-        
-        const int kk = k + nfzc;
-        const int ll = l + nfzc;
-        const int kkll = kk*nocc+ll;
-        const int llkk = ll*nocc+kk;
-        
-        const double V_ijkl_ab = ijxy_buf_f12eri[kkll];
-        const double V_ijlk_ab = ijxy_buf_f12eri[llkk];
-        const double V_jikl_ab = V_ijlk_ab;
-        const double V_jilk_ab = V_ijkl_ab;
-        Vab_.set_element(ij_ab,kl_ab,V_ijkl_ab);
-        Vab_.set_element(ji_ab,kl_ab,V_jikl_ab);
-        Vab_.set_element(ij_ab,lk_ab,V_ijlk_ab);
-        Vab_.set_element(ji_ab,lk_ab,V_jilk_ab);
-        if (ij_aa != -1 && kl_aa != -1)
-          Vaa_.set_element(ij_aa,kl_aa,V_ijkl_ab-V_ijlk_ab);
-      
-        const double X_ijkl_ab = ijxy_buf_f12f12[kkll];
-        const double X_ijlk_ab = ijxy_buf_f12f12[llkk];
-        const double X_jikl_ab = X_ijlk_ab;
-        const double X_jilk_ab = X_ijkl_ab;
-        Xab_.set_element(ij_ab,kl_ab,X_ijkl_ab);
-        Xab_.set_element(ji_ab,kl_ab,X_jikl_ab);
-        Xab_.set_element(ij_ab,lk_ab,X_ijlk_ab);
-        Xab_.set_element(ji_ab,lk_ab,X_jilk_ab);
-        if (ij_aa != -1 && kl_aa != -1)
-          Xaa_.set_element(ij_aa,kl_aa,X_ijkl_ab-X_ijlk_ab);
-
-        const double B_ijkl_ab = 0.25 * ijxy_buf_f12t1f12[kkll];
-        const double B_ijlk_ab = 0.25 * ijxy_buf_f12t1f12[llkk];
-        const double B_jikl_ab = B_ijlk_ab;
-        const double B_jilk_ab = B_ijkl_ab;
-        Bab_.set_element(ij_ab,kl_ab,B_ijkl_ab);
-        Bab_.set_element(ji_ab,kl_ab,B_jikl_ab);
-        Bab_.set_element(ij_ab,lk_ab,B_ijlk_ab);
-        Bab_.set_element(ji_ab,lk_ab,B_jilk_ab);
-        if (ij_aa != -1 && kl_aa != -1)
-          Baa_.set_element(ij_aa,kl_aa,B_ijkl_ab-B_ijlk_ab);
-        
+    Ref<TwoBodyMOIntsTransform> imjn_tform = tform_map_[imjn_label];
+    if (imjn_tform.null()) {
+      imjn_tform = tfactory->twobody_transform_13(imjn_label,corrfactor()->callback());
+      imjn_tform->set_num_te_types(corrfactor()->num_tbint_types());
+      tform_map_[imjn_label] = imjn_tform;
+      // NOTE assuming 1 primitive per geminal!
+      imjn_tform->compute(corrfactor()->primitive(f,0).first);
+      // Should make something like this possible:
+      //imjn_tform->compute(correfactor()->function(f));
       }
-      
-      ij2mn_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12f12());
-      ij2mn_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12t1f12());
-      ijmn_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12eri());
+
+    // second loop over correlation functions
+    //
+    // 2) get (im|jn) integrals of [g12,[t1,g12]] and g12*g12 operator (use integrals with the exponent multiplied by 2, and additionally [g12,[t1,g12]] integral needs to be scaled by 0.25 to take into account that real exponent is half what the integral library thinks)
+    //    these integrals used to compute X and B
+    for(int g=0; g<=f; g++) {
+      // (im|2|jn) name
+      const std::string im2jn_label = transform_label(ispace,mspace,jspace,nspace,f,g);;
+      im2jn_name[f].push_back(im2jn_label);
+      Ref<TwoBodyMOIntsTransform> im2jn_tform = tform_map_[im2jn_label];
+      if (im2jn_tform.null()) {
+        im2jn_tform = tfactory->twobody_transform_13(im2jn_label,corrfactor()->callback());
+        im2jn_tform->set_num_te_types(corrfactor()->num_tbint_types());
+        tform_map_[im2jn_label] = im2jn_tform;
+        // NOTE assuming 1 primitive per geminal!
+        // NOTE assuming 1 corr function
+        im2jn_tform->compute(2.0*corrfactor()->primitive(f,0).first);
+        // Should make something like this possible:
+        //im2jn_tform->compute(correfactor()->function(f),corrfactor()->function(g));
+      }
     }
   }
+
+  const int ni = ispace->rank();
+  const int nj = jspace->rank();
+  const int nm = mspace->rank();
+  const int nn = nspace->rank();
+  const int nij = ni*nj;
+  const int nfzc = r12info()->refinfo()->nfzc();
+
+    // If same spin -- will compute different spin and antisymmetrize at the end
+  const bool need_to_antisymmetrize = (spincase != AlphaBeta && ispace == jspace);
+  RefSCMatrix V, X, B;
+  if (!need_to_antisymmetrize) {
+    V = V_[spincase];
+    X = X_[spincase];
+    B = B_[spincase];
+  }
+  else {
+    Ref<SCMatrixKit> kit = V_[spincase].kit();
+    RefSCDimension f12ab_dim = new SCDimension(num_f12 * nij);
+    RefSCDimension ooab_dim = new SCDimension(nij);
+    V = kit->matrix(f12ab_dim,ooab_dim);
+    X = kit->matrix(f12ab_dim,f12ab_dim);
+    B = kit->matrix(f12ab_dim,f12ab_dim);
+    V.assign(0.0);
+    X.assign(0.0);
+    B.assign(0.0);
+  }
+
+  
+  ExEnv::out0() << indent << "Begin computation of intermediates" << endl;
+  tim_enter("intermediates");
+  SpatialMOPairIter_neq ij_iter(ispace,jspace);
+  SpatialMOPairIter_neq kl_iter(ispace,jspace);
+  const int k_offset = nm - ni;
+  const int l_offset = nn - nj;
+  if (nfzc != k_offset || nfzc != l_offset)
+    throw ProgrammingError("R12IntEval::init_intermeds_g12_() -- given orbital spaces do not match",__FILE__,__LINE__);
+  
+  // Compute the number of tasks that have full access to the integrals
+  // and split the work among them
+  // WARNING Assuming here that all accumulators have the same availability, otherwise
+  // things will get messy
+  vector<int> proc_with_ints;
+  Ref<R12IntsAcc> any_accum = get_tform_(imjn_name[0])->ints_acc();
+  int nproc_with_ints = tasks_with_ints_(any_accum,proc_with_ints);
+
+  //////////////////////////////////////////////////////////////
+  //
+  // Evaluation of the intermediates proceeds as follows:
+  //
+  // loop over contracted geminals f
+  //   loop over ij
+  //     load (ij|f12[f]/r12|kl) into memory
+  //     compute V[ij][kl]
+  //
+  //     loop over contracted geminals g
+  //       load (ij|f12[f]*f12[g]|kl), (ij| [f12[f],[T1,f12[g]]] |kl)
+  //       compute X[ij][kl] and B[ij][kl]
+  //     end g loop
+  //
+  //   end ij loop
+  // end f loop
+  //
+  /////////////////////////////////////////////////////////////////////////////////
+
+  if (any_accum->has_access(me)) {
+
+    // f loop
+    for(int f=0; f<num_f12; f++) {
+      const int f_offset = f*nij;
+      Ref<R12IntsAcc> ijmn_acc = get_tform_(imjn_name[f])->ints_acc();
+      
+      // ij loop
+      for(ij_iter.start();int(ij_iter);ij_iter.next()) {
+        
+        const int ij = ij_iter.ij();
+        // Figure out if this task will handle this ij
+        int ij_proc = ij%nproc_with_ints;
+        if (ij_proc != proc_with_ints[me])
+          continue;
+        const int i = ij_iter.i();
+        const int j = ij_iter.j();
+        const int ij_ab = ij_iter.ij_ab();
+        const int ij_abs = ij_ab + f_offset;
+        
+        if (debug_)
+          ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
+
+        //
+        // Compute V
+        //
+        tim_enter("MO ints retrieve");
+        const double *ijmn_buf_f12eri = ijmn_acc->retrieve_pair_block(i,j,corrfactor()->tbint_type_f12eri());
+        tim_exit("MO ints retrieve");
+        if (debug_)
+          ExEnv::outn() << indent << "task " << me << ": obtained ij blocks for V" << endl;
+        // kl loop
+        for(kl_iter.start();int(kl_iter);kl_iter.next()) {
+          const int k = kl_iter.i();
+          const int kk = k + k_offset;
+          const int l = kl_iter.j();
+          const int ll = l + l_offset;
+          const int kl_ab = kl_iter.ij_ab();
+          const int kkll = kk*nn + ll;
+
+          const double V_ijkl = ijmn_buf_f12eri[kkll];
+          V.accumulate_element(ij_abs,kl_ab,V_ijkl);
+        }
+        ijmn_acc->release_pair_block(i,j,corrfactor()->tbint_type_f12eri());
+
+        //
+        // Compute X and B
+        //
+        
+        // g loop
+        for(int g=0; g<=f; g++) {
+          const int g_offset = g*nij;
+          const bool f_eq_g = (f == g);
+          Ref<R12IntsAcc> ij2mn_acc = get_tform_(im2jn_name[f][g])->ints_acc();
+          
+          tim_enter("MO ints retrieve");
+          const double *ijmn_buf_f12f12 = ij2mn_acc->retrieve_pair_block(i,j,corrfactor()->tbint_type_f12f12());
+          const double *ijmn_buf_f12t1f12 = ij2mn_acc->retrieve_pair_block(i,j,corrfactor()->tbint_type_f12t1f12());
+          tim_exit("MO ints retrieve");
+          if (debug_)
+            ExEnv::outn() << indent << "task " << me << ": obtained ij blocks for X and B" << endl;
+
+          // kl loop
+          for(kl_iter.start();int(kl_iter);kl_iter.next()) {
+            const int k = kl_iter.i();
+            const int kk = k + k_offset;
+            const int l = kl_iter.j();
+            const int ll = l + l_offset;
+            const int kl_ab = kl_iter.ij_ab();
+            const int kkll = kk*nn + ll;
+            const int kl_abs = kl_ab + g_offset;
+
+            const double X_ijkl = ijmn_buf_f12f12[kkll];
+            const double B_ijkl = 0.25 * ijmn_buf_f12t1f12[kkll];
+            X.accumulate_element(ij_abs,kl_abs,X_ijkl);
+            B.accumulate_element(ij_abs,kl_abs,B_ijkl);
+            if (!f_eq_g) {
+              X.accumulate_element(kl_abs,ij_abs,X_ijkl);
+              B.accumulate_element(kl_abs,ij_abs,B_ijkl);
+            }
+          } // end of kl loop
+          ij2mn_acc->release_pair_block(i,j,corrfactor()->tbint_type_f12f12());
+          ij2mn_acc->release_pair_block(i,j,corrfactor()->tbint_type_f12t1f12());
+        } // end of g loop
+      } // end of ij loop
+    } // end of f loop
+  } // if (have_access) block
 
   // Tasks that don't do any work here still need to create these timers
   tim_enter("MO ints retrieve");
   tim_exit("MO ints retrieve");
 
+  tim_exit("intermediates");
   ExEnv::out0() << indent << "End of computation of intermediates" << endl;
-  ijmn_acc->deactivate();
-  ij2mn_acc->deactivate();
+  for(int f=0; f<num_f12; f++) {
+    Ref<R12IntsAcc> ijmn_acc = get_tform_(imjn_name[f])->ints_acc();
+    ijmn_acc->deactivate();
+    for(int g=0; g<=f; g++) {
+      Ref<R12IntsAcc> ij2mn_acc = get_tform_(im2jn_name[f][g])->ints_acc();
+      ij2mn_acc->deactivate();
+    }
+  }
+
+  if (need_to_antisymmetrize) {
+    // antisymmetrize I and add to I_[spincase]
+    antisymmetrize(V_[spincase],V,ispace,ispace,true);
+    antisymmetrize(X_[spincase],X,ispace,ispace,true);
+    antisymmetrize(B_[spincase],B,ispace,ispace,true);
+  }
+  V = 0; X = 0; B = 0;
   
   globally_sum_intermeds_();
 

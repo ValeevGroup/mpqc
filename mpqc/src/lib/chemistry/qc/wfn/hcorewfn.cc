@@ -302,7 +302,9 @@ HCoreWfn::fill_occ(const RefDiagSCMatrix &evals,int ndocc,int *docc,
     double lowest;
     int lowest_j = -1;
     for (int j=0; j<nblock; j++) {
-      double current = bval->block(j)->get_element(docc[j]+socc[j]);
+      RefDiagSCMatrix block = bval->block(j);
+      if (block.null()) continue;
+      double current = block->get_element(docc[j]+socc[j]);
       if (lowest_j < 0 || lowest > current) {
         lowest = current;
         lowest_j = j;

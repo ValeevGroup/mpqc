@@ -62,7 +62,7 @@ R12IntEval::compute_B_gbc_1_()
   Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
   if (!ijpq_acc->is_committed())
-    ipjq_tform->compute(corrparam_);
+    ipjq_tform->compute(intparams_);
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
@@ -105,13 +105,13 @@ R12IntEval::compute_B_gbc_1_()
   tfactory->set_spaces(act_occ_space,occ_space,
                        act_occ_space,ribs_space);
   Ref<TwoBodyMOIntsTransform> imjA_tform = tfactory->twobody_transform_13("(im|jA)",corrfactor_->callback());
-  imjA_tform->compute(corrparam_);
+  imjA_tform->compute(intparams_);
   Ref<R12IntsAcc> ijmA_acc = imjA_tform->ints_acc();
 
   tfactory->set_spaces(act_occ_space,focc_space,
                        act_occ_space,ribs_space);
   Ref<TwoBodyMOIntsTransform> iMfjA_tform = tfactory->twobody_transform_13("(iMf|jA)",corrfactor_->callback());
-  iMfjA_tform->compute(corrparam_);
+  iMfjA_tform->compute(intparams_);
   Ref<R12IntsAcc> ijMfA_acc = iMfjA_tform->ints_acc();
   
   SpatialMOPairIter_eq ij_iter(act_occ_space);
@@ -215,7 +215,7 @@ R12IntEval::compute_B_gbc_1_()
   tfactory->set_spaces(act_occ_space,focc_space,
                        act_occ_space,vir_space);
   Ref<TwoBodyMOIntsTransform> iMfja_tform = tfactory->twobody_transform_13("(iMf|ja)",corrfactor_->callback());
-  iMfja_tform->compute(corrparam_);
+  iMfja_tform->compute(intparams_);
   Ref<R12IntsAcc> ijMfa_acc = iMfja_tform->ints_acc();
 
   nproc_with_ints = tasks_with_ints_(ijMfa_acc,proc_with_ints);
@@ -339,7 +339,7 @@ R12IntEval::compute_B_gbc_2_()
   Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
   if (!ijpq_acc->is_committed())
-    ipjq_tform->compute(corrparam_);
+    ipjq_tform->compute(intparams_);
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
@@ -390,19 +390,19 @@ R12IntEval::compute_B_gbc_2_()
   tfactory->set_spaces(act_occ_space,occ_space,
                        act_occ_space,ribs_space);
   Ref<TwoBodyMOIntsTransform> imjA_tform = tfactory->twobody_transform_13("(im|jA)",corrfactor_->callback());
-  imjA_tform->compute(corrparam_);
+  imjA_tform->compute(intparams_);
   Ref<R12IntsAcc> ijmA_acc = imjA_tform->ints_acc();
 
   tfactory->set_spaces(act_occ_space,occ_space,
                        factocc_space,ribs_space);
   Ref<TwoBodyMOIntsTransform> kmlfA_tform = tfactory->twobody_transform_13("(km|lfA)",corrfactor_->callback());
-  kmlfA_tform->compute(corrparam_);
+  kmlfA_tform->compute(intparams_);
   Ref<R12IntsAcc> klfmA_acc = kmlfA_tform->ints_acc();
 
   tfactory->set_spaces(factocc_space,occ_space,
                        act_occ_space,ribs_space);
   Ref<TwoBodyMOIntsTransform> lfmkA_tform = tfactory->twobody_transform_13("(lfm|kA)",corrfactor_->callback());
-  lfmkA_tform->compute(corrparam_);
+  lfmkA_tform->compute(intparams_);
   Ref<R12IntsAcc> lfkmA_acc = lfmkA_tform->ints_acc();
 
   // Compute the number of tasks that have full access to the integrals
@@ -504,7 +504,7 @@ R12IntEval::compute_B_gbc_2_()
   tfactory->set_spaces(act_occ_space,obs_space,
                        factocc_space,obs_space);
   Ref<TwoBodyMOIntsTransform> kplfq_tform = tfactory->twobody_transform_13("(kp|lfq)",corrfactor_->callback());
-  kplfq_tform->compute(corrparam_);
+  kplfq_tform->compute(intparams_);
   Ref<R12IntsAcc> klfpq_acc = kplfq_tform->ints_acc();
 
   nbraket = obs_space->rank() * obs_space->rank();

@@ -70,7 +70,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   tfactory->set_spaces(occ_space,bra_space,
                        occ_space,ket_space);
   Ref<TwoBodyMOIntsTransform> mxny_tform = tfactory->twobody_transform_13("(mx|ny)",corrfactor_->callback());
-  mxny_tform->compute(corrparam_);
+  mxny_tform->compute(intparams_);
   Ref<R12IntsAcc> mnxy_acc = mxny_tform->ints_acc();
 
   const int nocc = occ_space->rank();

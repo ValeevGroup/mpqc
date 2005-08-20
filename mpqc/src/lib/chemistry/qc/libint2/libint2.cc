@@ -1,7 +1,7 @@
 //
 // libint2.cc
 //
-// Copyright (C) 2001 Edward Valeev
+// Copyright (C) 2005 Edward Valeev
 //
 // Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
 // Maintainer: EV
@@ -283,23 +283,28 @@ IntegralLibint2::electron_repulsion_deriv()
 }
 
 Ref<TwoBodyInt>
-IntegralLibint2::grt(double gamma)
+IntegralLibint2::grt(const Ref<IntParams>& p)
 {
   throw FeatureNotImplemented("IntegralLibint2::grt() is not implemented yet", __FILE__, __LINE__);
   //return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, grteval);
 }
 
 Ref<TwoBodyInt>
-IntegralLibint2::g12(double gamma)
+IntegralLibint2::g12(const Ref<IntParams>& params)
 {
-  return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, g12eval, gamma);
+  Ref<IntParamsG12> params_cast;
+  params_cast << params;
+  if (params_cast.null())
+    throw ProgrammingError("IntegralLibint2::g12() -- type of params does not match callback",__FILE__,__LINE__);
+  return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_,
+                               g12eval, params_cast->gamma1(), params_cast->gamma2());
 }
 
 void
 IntegralLibint2::set_basis(const Ref<GaussianBasisSet> &b1,
-			 const Ref<GaussianBasisSet> &b2,
-			 const Ref<GaussianBasisSet> &b3,
-			 const Ref<GaussianBasisSet> &b4)
+                           const Ref<GaussianBasisSet> &b2,
+                           const Ref<GaussianBasisSet> &b3,
+                           const Ref<GaussianBasisSet> &b4)
 {
   free_transforms();
   Integral::set_basis(b1,b2,b3,b4);

@@ -80,7 +80,7 @@ R12IntEval::obs_contrib_to_VXB_gebc_vbseqobs_()
   if (!ipjq_acc->is_committed()) {
     // Do not adjust the number of te_types since the needed buffers may not be in the beginning of the list
     //ipjq_tform->set_num_te_types(num_te_types);
-    ipjq_tform->compute(corrparam_);
+    ipjq_tform->compute(intparams_);
   }
   
 #if !USE_SINGLEREFINFO

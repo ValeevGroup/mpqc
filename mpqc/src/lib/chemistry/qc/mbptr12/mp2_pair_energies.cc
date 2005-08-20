@@ -80,9 +80,11 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
     
   Ref<TwoBodyMOIntsTransform> ixjy_tform = get_tform_(tform_name);
   Ref<R12IntsAcc> ijxy_acc = ixjy_tform->ints_acc();
-  if (ijxy_acc.null() || !ijxy_acc->is_committed())
+  if (ijxy_acc.null() || !ijxy_acc->is_committed()) {
     // NOTE assuming 1 primitive per geminal!
-    ixjy_tform->compute(corrfactor()->primitive(0,0).first);
+    Ref<IntParams> params = new IntParamsG12(corrfactor()->primitive(0,0).first,0.0);
+    ixjy_tform->compute(params);
+  }
     // Should make something like this possible:
     //ixjy_tform->compute(correfactor()->function(0));
   if (!ijxy_acc->is_active())

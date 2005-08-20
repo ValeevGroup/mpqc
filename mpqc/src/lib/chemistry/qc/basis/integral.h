@@ -39,6 +39,7 @@
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/tbint.h>
+#include <chemistry/qc/basis/intparams.h>
 
 namespace sc {
 
@@ -251,13 +252,14 @@ class Integral : public SavableState {
         integral of r12 operator, and "t" for the commutator
         integrals. Implementation for this kind of TwoBodyInt is
         optional. */
-    virtual Ref<TwoBodyInt> grt(double gamma=0) =0;
+    virtual Ref<TwoBodyInt> grt(const Ref<IntParams>&) =0;
     
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to explicitly correlated methods which use Gaussian geminals.
-        gamma specifies the exponent of the Geminal.
+        gamma1 and gamma2 specify the exponents of the geminal in bra and ket, respectively.
+        Integrals which only include one geminal assume that geminal's parameter to be gamma1+gamma2.
         Implementation for this kind of TwoBodyInt is optional. */
-    virtual Ref<TwoBodyInt> g12(double gamma) =0;
+    virtual Ref<TwoBodyInt> g12(const Ref<IntParams>&) =0;
     
     /// Return the MessageGrp used by the integrals objects.
     Ref<MessageGrp> messagegrp() { return grp_; }

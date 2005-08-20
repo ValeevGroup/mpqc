@@ -57,7 +57,7 @@ using namespace sc;
   Based on MBPT2::compute_mp2_energy()
  -------------------------------------*/
 void
-TwoBodyMOIntsTransform_ikjy::compute(double tbint_param)
+TwoBodyMOIntsTransform_ikjy::compute(const Ref<IntParams>& params)
 {
   init_acc();
   if (ints_acc_->is_committed())
@@ -132,7 +132,7 @@ TwoBodyMOIntsTransform_ikjy::compute(double tbint_param)
   integral->set_basis(space1_->basis(),space2_->basis(),space3_->basis(),space4_->basis());
   Ref<TwoBodyInt>* tbints = new Ref<TwoBodyInt>[thr_->nthread()];
   for (int i=0; i<thr_->nthread(); i++) {
-    tbints[i] = ((integral.pointer())->*callback_)(tbint_param);
+    tbints[i] = TwoBodyMOIntsTransform::create_tbint(integral,callback_,params);
   }
   check_tbint(tbints[0]);
   if (debug_ >= 1)

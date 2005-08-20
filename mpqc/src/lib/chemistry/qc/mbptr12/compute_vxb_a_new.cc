@@ -87,7 +87,8 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
       ixjy_tform->set_num_te_types(corrfactor()->num_tbint_types());
       tform_map_[tform_name] = ixjy_tform;
       // NOTE assuming 1 primitive per geminal!
-      ixjy_tform->compute(corrfactor()->primitive(f12,0).first);
+      Ref<IntParams> params = new IntParamsG12(corrfactor()->primitive(f12,0).first,0.0);
+      ixjy_tform->compute(params);
       // Should make something like this possible:
       //ixjy_tform->compute(correfactor()->function(f12));
     }
@@ -143,11 +144,13 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
   for(int f12=0; f12<num_f12; f12++) {
     Ref<TwoBodyMOIntsTransform> ixjy_tform = get_tform_(ixjy_name.at(f12));
     Ref<R12IntsAcc> acc = ixjy_tform->ints_acc();
-    if (acc.null() || !acc->is_committed())
+    if (acc.null() || !acc->is_committed()) {
       // NOTE assuming 1 primitive per geminal!
-      ixjy_tform->compute(corrfactor()->primitive(f12,0).first);
+      Ref<IntParams> params = new IntParamsG12(corrfactor()->primitive(f12,0).first,0.0);
+      ixjy_tform->compute(params);
       // Should make something like this possible:
       //ixjy_tform->compute(correfactor()->function(f12));
+    }
     if (!acc->is_active())
       acc->activate();
     ijxy_acc.push_back(acc);

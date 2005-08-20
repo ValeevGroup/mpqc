@@ -138,6 +138,11 @@ protected:
 
   /** Checks whether this TwoBodyInt is compatible with this TwoBodyMOIntsTransform */
   void check_tbint(const Ref<TwoBodyInt>& tbint) const;
+
+  /// create TwoBodyInt calling callback on integral. Type of params must match callback
+  static Ref<TwoBodyInt> create_tbint(const Ref<Integral>& integral,
+                                      const IntegralCallback& callback,
+                                      const Ref<IntParams>& params);
     
 public:
 
@@ -195,8 +200,8 @@ public:
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; }
   void set_print_percent(double print_percent) { print_percent_ = print_percent; }
 
-  /// Computes transformed integrals. g is passed as parameter to the Integral::IntegralCallback
-  virtual void compute(double g) = 0;
+  /// Computes transformed integrals. param's contents are passed as parameter to the Integral::IntegralCallback
+  virtual void compute(const Ref<IntParams>& param) = 0;
   /// Check symmetry of transformed integrals
   virtual void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError) =0;
   /// Make the transform obsolete. Next call to compute() will recompute

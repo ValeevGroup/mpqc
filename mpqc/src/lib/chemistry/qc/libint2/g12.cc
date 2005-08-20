@@ -1,7 +1,7 @@
 //
 // g12.cc
 //
-// Copyright (C) 2001 Edward Valeev
+// Copyright (C) 2005 Edward Valeev
 //
 // Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
 // Maintainer: EV
@@ -54,8 +54,8 @@ G12Libint2::G12Libint2(Integral *integral,
 		   const Ref<GaussianBasisSet>& b2,
 		   const Ref<GaussianBasisSet>& b3,
 		   const Ref<GaussianBasisSet>& b4,
-		   size_t storage, double gamma) :
-  Int2eLibint2(integral,b1,b2,b3,b4,storage), ExpMath_(), gamma_(gamma)
+		   size_t storage, double gamma_bra, double gamma_ket) :
+  Int2eLibint2(integral,b1,b2,b3,b4,storage), ExpMath_(), gamma_bra_(gamma_bra), gamma_ket_(gamma_ket)
 {
   // The static part of Libint's interface is automatically initialized in libint.cc
   int l1 = bs1_->max_angular_momentum();

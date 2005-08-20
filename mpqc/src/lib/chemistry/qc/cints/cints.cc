@@ -276,13 +276,13 @@ IntegralCints::electron_repulsion_deriv()
 }
 
 Ref<TwoBodyInt>
-IntegralCints::grt(double g)
+IntegralCints::grt(const Ref<IntParams>& p)
 {
   return new TwoBodyIntCints(this, bs1_, bs2_, bs3_, bs4_, storage_, grteval);
 }
 
 Ref<TwoBodyInt>
-IntegralCints::g12(double gamma)
+IntegralCints::g12(const Ref<IntParams>& p)
 {
   throw std::runtime_error("IntegralCints::g12(): not implemented in this particular integrals factory.");
 }

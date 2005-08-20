@@ -62,7 +62,7 @@ R12IntEval::compute_T2_()
   Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
   if (!ijpq_acc->is_committed())
-    ipjq_tform->compute(corrparam_);
+    ipjq_tform->compute(intparams_);
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
@@ -222,7 +222,7 @@ differs from the basis set for occupieds");
   Ref<TwoBodyMOIntsTransform> ipjq_tform = get_tform_("(ip|jq)");
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
   if (!ijpq_acc->is_committed())
-    ipjq_tform->compute(corrparam_);
+    ipjq_tform->compute(intparams_);
   if (!ijpq_acc->is_active())
     ijpq_acc->activate();
 
@@ -398,7 +398,7 @@ R12IntEval::compute_A_simple_()
   tfactory->set_spaces(act_occ_space,act_vir_space,
                        act_occ_space,act_fvir_space);
   Ref<TwoBodyMOIntsTransform> iajBf_tform = tfactory->twobody_transform_13("(ia|jB_f)",corrfactor_->callback());
-  iajBf_tform->compute(corrparam_);
+  iajBf_tform->compute(intparams_);
   Ref<R12IntsAcc> ijaBf_acc = iajBf_tform->ints_acc();
   
   SpatialMOPairIter_eq ij_iter(act_occ_space);

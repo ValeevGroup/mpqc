@@ -51,7 +51,8 @@ class TwoBodyIntLibint2 : public TwoBodyInt {
                  const Ref<GaussianBasisSet>&b3,
                  const Ref<GaussianBasisSet>&b4,
                  size_t storage, tbinteval int2etype,
-                 double gamma=0.0);
+                 double gamma_bra=0.0,
+                 double gamma_ket=0.0);
     ~TwoBodyIntLibint2();
 
     unsigned int num_tbint_types() const {

@@ -1,7 +1,7 @@
 //
 // comp_g12.cc
 //
-// Copyright (C) 2001 Edward Valeev
+// Copyright (C) 2005 Edward Valeev
 //
 // Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
 // Maintainer: EV
@@ -417,7 +417,7 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 		  quartet_info_.p4 = pl;
 		  
 		  // Compute primitive data for Libint
-		  g12_quartet_data_(&Libint_, 1.0, gamma_);
+		  g12_quartet_data_(&Libint_, 1.0, gamma_bra_+gamma_ket_);
                   // Compute the integrals
                   libint2_build_r12kg12[tam1][tam2][tam3][tam4](&Libint_);
                   if (quartet_info_.am) {
@@ -437,7 +437,7 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                     }
 
                   // Compute primitive data for Libint
-		  g12_quartet_data_(&Libint_, 1.0, gamma_, true);
+		  g12_quartet_data_(&Libint_, 1.0, gamma_bra_+gamma_ket_, true);
                   if (quartet_info_.am) {
 		    // Compute the integrals
                     libint2_build_eri[tam1][tam2][tam3][tam4](&Libint_);
@@ -483,12 +483,12 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
             prim_ints_[TwoBodyInt::t2g12][buffer_offset + ijkl] *= -1.0;
             }
 
-          // scale r12^2*g12 integrals by 4*gamma^2 to obtain [g12,[t1,g12]]
+          // scale r12^2*g12 integrals by 4 * gamma_bra * gamma_ket to obtain [g12,[t1,g12]]
 #if !COMPUTE_R12_2_G12
-          const double g2_4 = gamma_*gamma_*4.0;
+          const double g2_4 = gamma_bra_*gamma_ket_*4.0;
           for(int ijkl=0; ijkl<size; ijkl++) {
             prim_ints_[TwoBodyInt::g12t1g12][buffer_offset + ijkl] *= g2_4;
-            }
+          }
 #endif
           
 	  buffer_offset += size;

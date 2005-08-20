@@ -86,7 +86,8 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
       imjn_tform->set_num_te_types(corrfactor()->num_tbint_types());
       tform_map_[imjn_label] = imjn_tform;
       // NOTE assuming 1 primitive per geminal!
-      imjn_tform->compute(corrfactor()->primitive(f,0).first);
+      Ref<IntParams> params = new IntParamsG12(corrfactor()->primitive(f,0).first,0.0);
+      imjn_tform->compute(params);
       // Should make something like this possible:
       //imjn_tform->compute(correfactor()->function(f));
       }
@@ -106,7 +107,9 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
         tform_map_[im2jn_label] = im2jn_tform;
         // NOTE assuming 1 primitive per geminal!
         // NOTE assuming 1 corr function
-        im2jn_tform->compute(2.0*corrfactor()->primitive(f,0).first);
+        Ref<IntParams> params = new IntParamsG12(corrfactor()->primitive(f,0).first,
+                                                 corrfactor()->primitive(g,0).first);
+        im2jn_tform->compute(params);
         // Should make something like this possible:
         //im2jn_tform->compute(correfactor()->function(f),corrfactor()->function(g));
       }
@@ -250,7 +253,7 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
             const int kl_abs = kl_ab + g_offset;
 
             const double X_ijkl = ijmn_buf_f12f12[kkll];
-            const double B_ijkl = 0.25 * ijmn_buf_f12t1f12[kkll];
+            const double B_ijkl = ijmn_buf_f12t1f12[kkll];
             X.accumulate_element(ij_abs,kl_abs,X_ijkl);
             B.accumulate_element(ij_abs,kl_abs,B_ijkl);
             if (!f_eq_g) {

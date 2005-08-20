@@ -78,7 +78,7 @@ R12IntEval::compute_dualEmp2_()
   tfactory->set_spaces(act_occ_space,canonvir_space_,
                        act_occ_space,canonvir_space_);
   Ref<TwoBodyMOIntsTransform> ipjq_tform = tfactory->twobody_transform_13("(ix|jy)",corrfactor_->callback());
-  ipjq_tform->compute(corrparam_);
+  ipjq_tform->compute(intparams_);
   Ref<R12IntsAcc> ijpq_acc = ipjq_tform->ints_acc();
 
   int nocc_act = act_occ_space->rank();

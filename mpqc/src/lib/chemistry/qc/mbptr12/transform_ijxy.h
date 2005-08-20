@@ -69,7 +69,7 @@ public:
   const size_t memgrp_blksize() const;
 
   /// Computes transformed integrals
-  void compute(double tbint_param);
+  void compute(const Ref<IntParams>& params);
   /// Check symmetry of transformed integrals
   void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError);
 };

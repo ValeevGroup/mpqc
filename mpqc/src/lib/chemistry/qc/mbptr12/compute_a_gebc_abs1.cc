@@ -73,8 +73,9 @@ R12IntEval::abs1_contrib_to_VXB_gebc_()
   // Do the AO->MO transform
   Ref<TwoBodyMOIntsTransform> ikjy_tform = get_tform_("(im|jy)");
   Ref<R12IntsAcc> ijky_acc = ikjy_tform->ints_acc();
-  if (!ijky_acc->is_committed())
-    ikjy_tform->compute(corrparam_);
+  if (!ijky_acc->is_committed()) {
+    ikjy_tform->compute(intparams_);
+  }
   /*Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
   tfactory->set_spaces(r12info_->act_occ_space(),r12info_->occ_space(),
                        r12info_->act_occ_space(),r12info_->ribs_space());

@@ -50,7 +50,8 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 				 const Ref<GaussianBasisSet>& b3,
 				 const Ref<GaussianBasisSet>& b4,
 				 size_t storage, tbinteval int2etype,
-                                 double gamma):
+                                 double gamma_bra,
+                                 double gamma_ket):
   TwoBodyInt(integral,b1,b2,b3,b4)
 {
   // Which evaluator to use
@@ -60,7 +61,7 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
     num_tbint_types_ = 1;
     break;
   case g12eval:
-    int2elibint2_ = new G12Libint2(integral,b1,b2,b3,b4,storage,gamma);
+    int2elibint2_ = new G12Libint2(integral,b1,b2,b3,b4,storage,gamma_bra,gamma_ket);
     num_tbint_types_ = 6;
     break;
   default:

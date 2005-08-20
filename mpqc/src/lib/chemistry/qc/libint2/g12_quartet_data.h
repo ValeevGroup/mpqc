@@ -1,7 +1,7 @@
 //
 // g12_quartet_data.h
 //
-// Copyright (C) 2001 Edward Valeev
+// Copyright (C) 2005 Edward Valeev
 //
 // Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
 // Maintainer: EV
@@ -35,7 +35,7 @@
 /*--------------------------------------------------------------------------------
   This function computes constants used in OSRR for a given quartet of primitives
 
-  gamma is the exponent of the Gaussian geminal
+  gamma is the exponent of the Gaussian geminal in the integral
  --------------------------------------------------------------------------------*/
 inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double gamma, bool eri_only)
 {

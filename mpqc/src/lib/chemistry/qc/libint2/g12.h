@@ -54,8 +54,10 @@ class G12Libint2: public Int2eLibint2 {
   /** Number of integral types produced. Produces eri, r12_m1_g12, r12_0_g12, t1g12, t2g12, and g12t1g12 integrals */
     static const int num_te_types_ = 6;
 
-    // exponent of the geminal
-    double gamma_;
+    // exponent of the geminal in the bra
+    double gamma_bra_;
+    // exponent of the geminal in the ket
+    double gamma_ket_;
     
     // Storage for target integrals
     double *target_ints_buffer_[num_te_types_];
@@ -88,7 +90,8 @@ class G12Libint2: public Int2eLibint2 {
       int am;
     } quartet_info_;
     typedef Libint_t prim_data;
-    void g12_quartet_data_(prim_data *Data, double scale, double gamma, bool eri_only = false);
+    void g12_quartet_data_(prim_data *Data, double scale, double gamma,
+                           bool eri_only = false);
     /*--- Compute engines ---*/
     Libint_t Libint_;
     Ref<FJT> Fm_Eval_;
@@ -107,7 +110,7 @@ class G12Libint2: public Int2eLibint2 {
 	     const Ref<GaussianBasisSet>&,
 	     const Ref<GaussianBasisSet>&,
 	     const Ref<GaussianBasisSet>&,
-	     size_t storage, double gamma);
+	     size_t storage, double gamma_bra, double gamma_ket);
     ~G12Libint2();
 
     double *buffer(TwoBodyInt::tbint_type te_type) const {

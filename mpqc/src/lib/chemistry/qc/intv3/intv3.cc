@@ -249,13 +249,13 @@ IntegralV3::electron_repulsion_deriv()
 }
 
 Ref<TwoBodyInt>
-IntegralV3::grt(double g)
+IntegralV3::grt(const Ref<IntParams>& p)
 {
   throw std::runtime_error("IntegralV3::grt(): not implemented in this particular integrals factory.");
 }
 
 Ref<TwoBodyInt>
-IntegralV3::g12(double gamma)
+IntegralV3::g12(const Ref<IntParams>& p)
 {
   throw std::runtime_error("IntegralV3::g12(): not implemented in this particular integrals factory.");
 }

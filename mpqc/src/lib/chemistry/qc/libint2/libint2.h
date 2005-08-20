@@ -1,7 +1,7 @@
 //
 // libint2.h
 //
-// Copyright (C) 2001 Edward Valeev
+// Copyright (C) 2005 Edward Valeev
 //
 // Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
 // Maintainer: EV
@@ -111,9 +111,9 @@ class IntegralLibint2 : public Integral {
                                      
     Ref<TwoBodyInt> electron_repulsion();
 
-    Ref<TwoBodyInt> grt(double gamma);
+    Ref<TwoBodyInt> grt(const Ref<IntParams>& p);
 
-    Ref<TwoBodyInt> g12(double gamma);
+    Ref<TwoBodyInt> g12(const Ref<IntParams>& p);
 
     Ref<TwoBodyDerivInt> electron_repulsion_deriv();
 

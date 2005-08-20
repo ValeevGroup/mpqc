@@ -75,7 +75,7 @@ R12IntEval::contrib_to_VXB_a_asymm_(const std::string& tform_name)
   // Carry out the AO->MO transform
   Ref<R12IntsAcc> ijky_acc = ikjy_tform->ints_acc();
   if (ijky_acc.null() || !ijky_acc->is_committed())
-    ikjy_tform->compute(corrparam_);
+    ikjy_tform->compute(intparams_);
   if (!ijky_acc->is_active())
     ijky_acc->activate();
 

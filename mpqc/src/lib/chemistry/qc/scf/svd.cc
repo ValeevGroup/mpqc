@@ -43,7 +43,7 @@ SCF::svd_product_basis()
   int nao = bs->nbasis();
   Ref<PetiteList> pl = integral()->petite_list(bs);
   Ref<SCMatrixKit> ao_mkit = bs->matrixkit();
-  Ref<TwoBodyInt> grt_eval = integral()->grt();
+  Ref<TwoBodyInt> grt_eval = integral()->grt(Ref<IntParams>());
   const double* ints = grt_eval->buffer(TwoBodyInt::eri);
   int* blocksizes = new int[1];
   blocksizes[0] = nao*(nao+1)/2;

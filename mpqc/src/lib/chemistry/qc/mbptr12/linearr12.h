@@ -50,7 +50,7 @@ namespace sc {
     class CorrelationFactor : public RefCount {
       public:
         typedef Ref<TwoBodyInt> TwoBodyEval;
-        typedef TwoBodyEval (Integral::* IntegralCallback)(double);
+        typedef TwoBodyEval (Integral::* IntegralCallback)(const Ref<IntParams>&);
         /// Vector of contracted 2 particle functions
         typedef std::vector< std::vector<std::pair<double,double> > > CorrelationParameters;
 

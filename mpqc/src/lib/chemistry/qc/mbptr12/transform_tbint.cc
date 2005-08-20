@@ -410,6 +410,13 @@ TwoBodyMOIntsTransform::check_tbint(const Ref<TwoBodyInt>& tbint) const
 current TwoBodyInt is less than\nthe number of types expected by the accumulator",__FILE__,__LINE__);
 }
 
+Ref<TwoBodyInt>
+TwoBodyMOIntsTransform::create_tbint(const Ref<Integral>& integral,
+                                     const IntegralCallback& callback,
+                                     const Ref<IntParams>& params)
+{
+  return ((integral.pointer())->*callback)(params);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

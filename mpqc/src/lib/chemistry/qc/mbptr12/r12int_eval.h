@@ -83,6 +83,7 @@ class R12IntEval : virtual public SavableState {
   bool ebc_;
   Ref<LinearR12::CorrelationFactor> corrfactor_;
   double corrparam_;
+  Ref<IntParams> intparams_;
   LinearR12::ABSMethod abs_method_;
   LinearR12::StandardApproximation stdapprox_;
   bool spinadapted_;

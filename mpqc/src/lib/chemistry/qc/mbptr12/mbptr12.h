@@ -123,9 +123,17 @@ class MBPT2_R12: public MBPT2 {
         <dt><tt>corr_factor</tt><dd> This string specifies which correlation factor to use.
         Allowed values are "r12" and "g12". The default is "r12".
       
-        <dt><tt>corr_param</tt><dd> This floating-point value specifies an optional parameter
-        of the correlation factor. Default is zero. For some correlation factors, e.g., r12,
-        this keyword is not used.
+        <dt><tt>corr_param</tt><dd> This keyword specifies optional parameters
+        of the correlation factor. <tt>corr_param</tt> can be a single value
+        or an array of values. Single value specifies the parameter of the single
+        correlation function. The array form specifies a set of correlation functions
+        characterized by the corresponding parameters. For example,
+        <tt>corr_param = 3.0</tt> specifies a single correlation function
+        with parameter 3.0. <tt>corr_param = [ 1.0 3.0 10.0 ]</tt> specifies
+        3 correlation functions with parameters 1.0, 3.0 and 10.0.
+
+        This keyword has not meaning for some correlation factors, e.g., r12,
+        and is not used. There is no default.
       
         <dt><tt>stdapprox</tt><dd> This gives a string that must take on one
         of the values below.  The default is A'.

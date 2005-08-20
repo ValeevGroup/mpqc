@@ -124,11 +124,29 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     corrfactor_ = new LinearR12::CorrelationFactor(LinearR12::R12CorrFactor, params);
   }
   else if (corrfactor == "g12") {
-    corrparam_ = keyval->doublevalue("corr_param", KeyValValuedouble(0.0));
-    typedef LinearR12::CorrelationFactor::CorrelationParameters CorrParams;
-    std::vector< std::pair<double,double> > vtmp;  vtmp.push_back(std::make_pair(corrparam_,1.0));
-    CorrParams params;  params.push_back(vtmp);
-    corrfactor_ = new LinearR12::CorrelationFactor(LinearR12::G12CorrFactor, params);
+    if (keyval->exists("corr_param")) {
+      typedef LinearR12::CorrelationFactor::CorrelationParameters CorrParams;
+      CorrParams params;
+      int num_f12 = keyval->count("corr_param");
+      if (num_f12 != 0) {
+        for(int f=0; f<num_f12; f++) {
+          double exponent = keyval->doublevalue("corr_param", f);
+          // no support for contracted functions yet
+          std::vector< std::pair<double,double> > vtmp;
+          vtmp.push_back(std::make_pair(exponent,1.0));
+          params.push_back(vtmp);
+        }
+      }
+      else {
+        double exponent = keyval->doublevalue("corr_param");
+        std::vector< std::pair<double,double> > vtmp;  vtmp.push_back(std::make_pair(exponent,1.0));
+        corrparam_ = exponent;
+        params.push_back(vtmp);
+      }
+      corrfactor_ = new LinearR12::CorrelationFactor(LinearR12::G12CorrFactor, params);
+    }
+    else
+      throw ProgrammingError("MBPT2_R12::MBPT2_R12() -- corr_param keyword must be given when corr_factor=g12",__FILE__,__LINE__);
   }
   else
     throw FeatureNotImplemented("MBPT2_R12::MBPT2_R12 -- this correlation factor is not implemented",__FILE__,__LINE__);
@@ -550,5 +568,5 @@ MBPT2_R12::check_integral_factory_()
 
 // Local Variables:
 // mode: c++
-// c-file-style: "CLJ"
+// c-file-style: "ETS"
 // End:

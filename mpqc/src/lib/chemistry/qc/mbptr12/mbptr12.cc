@@ -127,14 +127,36 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     if (keyval->exists("corr_param")) {
       typedef LinearR12::CorrelationFactor::CorrelationParameters CorrParams;
       CorrParams params;
-      int num_f12 = keyval->count("corr_param");
+      const int num_f12 = keyval->count("corr_param");
       if (num_f12 != 0) {
-        for(int f=0; f<num_f12; f++) {
-          double exponent = keyval->doublevalue("corr_param", f);
-          // no support for contracted functions yet
-          std::vector< std::pair<double,double> > vtmp;
-          vtmp.push_back(std::make_pair(exponent,1.0));
-          params.push_back(vtmp);
+        // Do I have contracted functions?
+        bool contracted = (keyval->count("corr_param",0) != 0);
+        if (!contracted) {
+          // Primitive functions only
+          for(int f=0; f<num_f12; f++) {
+            double exponent = keyval->doublevalue("corr_param", f);
+            // no support for contracted functions yet
+            LinearR12::CorrelationFactor::ContractedGeminal vtmp;
+            vtmp.push_back(std::make_pair(exponent,1.0));
+            params.push_back(vtmp);
+          }
+        }
+        else {
+          // Contracted functions
+          for(int f=0; f<num_f12; f++) {
+            const int nprims = keyval->count("corr_param", f);
+            if (nprims == 0)
+              throw InputError("Contracted and primitive geminals cannot be mixed in the input", __FILE__, __LINE__);
+            LinearR12::CorrelationFactor::ContractedGeminal vtmp;
+            for(int p=0; p<nprims; p++) {
+              if (keyval->count("corr_param", f, p) != 2)
+                throw InputError("Invalid contracted geminal specification",__FILE__,__LINE__);
+              double exponent = keyval->Va_doublevalue("corr_param", 3, f, p, 0);
+              double coef = keyval->Va_doublevalue("corr_param", 3, f, p, 1);
+              vtmp.push_back(std::make_pair(exponent,coef));
+            }
+            params.push_back(vtmp);
+          }
         }
       }
       else {

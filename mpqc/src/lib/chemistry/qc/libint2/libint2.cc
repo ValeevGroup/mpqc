@@ -1,7 +1,7 @@
 //
 // libint2.cc
 //
-// Copyright (C) 2005 Edward Valeev
+// Copyright (C) 2001 Edward Valeev
 //
 // Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
 // Maintainer: EV
@@ -273,7 +273,8 @@ IntegralLibint2::hcore_deriv()
 Ref<TwoBodyInt>
 IntegralLibint2::electron_repulsion()
 {
-  return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, erieval);
+  TwoBodyIntLibint2::ContractedGeminal bra, ket;  // these are dummy params for this evaluator anyway
+  return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, erieval, bra, ket);
 }
 
 Ref<TwoBodyDerivInt>
@@ -297,7 +298,7 @@ IntegralLibint2::g12(const Ref<IntParams>& params)
   if (params_cast.null())
     throw ProgrammingError("IntegralLibint2::g12() -- type of params does not match callback",__FILE__,__LINE__);
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_,
-                               g12eval, params_cast->gamma1(), params_cast->gamma2());
+                               g12eval, params_cast->ket(), params_cast->ket());
 }
 
 void

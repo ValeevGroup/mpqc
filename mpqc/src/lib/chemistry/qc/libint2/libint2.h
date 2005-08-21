@@ -1,7 +1,7 @@
 //
 // libint2.h
 //
-// Copyright (C) 2005 Edward Valeev
+// Copyright (C) 2001 Edward Valeev
 //
 // Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
 // Maintainer: EV

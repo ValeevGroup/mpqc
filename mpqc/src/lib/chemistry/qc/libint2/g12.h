@@ -1,7 +1,7 @@
 //
 // g12.h
 //
-// Copyright (C) 2005 Edward Valeev
+// Copyright (C) 2001 Edward Valeev
 //
 // Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
 // Maintainer: EV
@@ -35,6 +35,7 @@
 #include <util/ref/ref.h>
 #include <util/misc/scexception.h>
 #include <chemistry/qc/basis/basis.h>
+#include <chemistry/qc/basis/intparams.h>
 #include <chemistry/qc/libint2/shellpairs.h>
 #include <chemistry/qc/intv3/fjt.h>
 #include <chemistry/qc/libint2/int2e.h>
@@ -54,10 +55,12 @@ class G12Libint2: public Int2eLibint2 {
   /** Number of integral types produced. Produces eri, r12_m1_g12, r12_0_g12, t1g12, t2g12, and g12t1g12 integrals */
     static const int num_te_types_ = 6;
 
+    typedef IntParamsG12::PrimitiveGeminal PrimitiveGeminal;
+    typedef IntParamsG12::ContractedGeminal ContractedGeminal;
     // exponent of the geminal in the bra
-    double gamma_bra_;
+    ContractedGeminal geminal_bra_;
     // exponent of the geminal in the ket
-    double gamma_ket_;
+    ContractedGeminal geminal_ket_;
     
     // Storage for target integrals
     double *target_ints_buffer_[num_te_types_];
@@ -110,7 +113,9 @@ class G12Libint2: public Int2eLibint2 {
 	     const Ref<GaussianBasisSet>&,
 	     const Ref<GaussianBasisSet>&,
 	     const Ref<GaussianBasisSet>&,
-	     size_t storage, double gamma_bra, double gamma_ket);
+	     size_t storage,
+             const ContractedGeminal& gbra,
+             const ContractedGeminal& gket);
     ~G12Libint2();
 
     double *buffer(TwoBodyInt::tbint_type te_type) const {

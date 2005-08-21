@@ -85,11 +85,8 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
       imjn_tform = tfactory->twobody_transform_13(imjn_label,corrfactor()->callback());
       imjn_tform->set_num_te_types(corrfactor()->num_tbint_types());
       tform_map_[imjn_label] = imjn_tform;
-      // NOTE assuming 1 primitive per geminal!
-      Ref<IntParams> params = new IntParamsG12(corrfactor()->primitive(f,0).first,0.0);
+      Ref<IntParams> params = new IntParamsG12(corrfactor()->function(f),LinearR12::CorrelationFactor::zero_exponent_geminal());
       imjn_tform->compute(params);
-      // Should make something like this possible:
-      //imjn_tform->compute(correfactor()->function(f));
       }
 
     // second loop over correlation functions
@@ -105,13 +102,9 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
         im2jn_tform = tfactory->twobody_transform_13(im2jn_label,corrfactor()->callback());
         im2jn_tform->set_num_te_types(corrfactor()->num_tbint_types());
         tform_map_[im2jn_label] = im2jn_tform;
-        // NOTE assuming 1 primitive per geminal!
-        // NOTE assuming 1 corr function
-        Ref<IntParams> params = new IntParamsG12(corrfactor()->primitive(f,0).first,
-                                                 corrfactor()->primitive(g,0).first);
+        Ref<IntParams> params = new IntParamsG12(corrfactor()->function(f),
+                                                 corrfactor()->function(g));
         im2jn_tform->compute(params);
-        // Should make something like this possible:
-        //im2jn_tform->compute(correfactor()->function(f),corrfactor()->function(g));
       }
     }
   }

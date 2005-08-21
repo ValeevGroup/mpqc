@@ -51,19 +51,36 @@ IntParams::nparams() const
 
 /////////////////////////////
 
-IntParamsG12::IntParamsG12(double g1, double g2) :
-  IntParams(2), gamma1_(g1), gamma2_(g2)
+IntParamsG12::IntParamsG12(const ContractedGeminal& bra,
+                           const ContractedGeminal& ket) :
+  IntParams(2), bra_(bra), ket_(ket)
 {
-  if (gamma1_ < 0.0 || gamma2_ < 0.0) {
-    throw ProgrammingError("IntParamsG12::IntParamsG12() -- geminal parameters must be nonnegative",__FILE__,__LINE__);
+  if (bra_.size() == 0 ||
+      ket_.size() == 0)
+    throw ProgrammingError("IntParamsG12::IntParamsG12() -- geminal contractions of zero length",__FILE__,__LINE__);
+  
+  typedef ContractedGeminal::const_iterator citer;
+  citer end = bra_.end();
+  for(citer i=bra_.begin(); i<end; i++) {
+    if ( (*i).first < 0.0)
+      throw ProgrammingError("IntParamsG12::IntParamsG12() -- geminal parameters must be nonnegative",__FILE__,__LINE__);
+  }
+  end = ket_.end();
+  for(citer i=ket_.begin(); i<end; i++) {
+    if ( (*i).first < 0.0)
+      throw ProgrammingError("IntParamsG12::IntParamsG12() -- geminal parameters must be nonnegative",__FILE__,__LINE__);
   }
 }
 
 IntParamsG12::~IntParamsG12()
 {}
 
-double
-IntParamsG12::gamma1() const { return gamma1_; }
+const IntParamsG12::ContractedGeminal&
+IntParamsG12::bra() const { return bra_; }
 
-double
-IntParamsG12::gamma2() const { return gamma2_; }
+const IntParamsG12::ContractedGeminal&
+IntParamsG12::ket() const { return ket_; }
+
+IntParamsG12::ContractedGeminal
+IntParamsG12::zero_exponent_geminal(1,std::make_pair(0.0,1.0));
+

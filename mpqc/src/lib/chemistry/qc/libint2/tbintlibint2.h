@@ -1,5 +1,5 @@
 //
-// tbint.h
+// tbintlibint2.h
 //
 // Copyright (C) 2001 Edward Valeev
 //
@@ -45,14 +45,15 @@ class TwoBodyIntLibint2 : public TwoBodyInt {
     Ref<Int2eLibint2> int2elibint2_;
   
   public:
+    typedef IntParamsG12::ContractedGeminal ContractedGeminal;
     TwoBodyIntLibint2(Integral*integral,
                  const Ref<GaussianBasisSet>&b1,
                  const Ref<GaussianBasisSet>&b2,
                  const Ref<GaussianBasisSet>&b3,
                  const Ref<GaussianBasisSet>&b4,
                  size_t storage, tbinteval int2etype,
-                 double gamma_bra=0.0,
-                 double gamma_ket=0.0);
+                 const ContractedGeminal& gamma_bra,
+                 const ContractedGeminal& gamma_ket);
     ~TwoBodyIntLibint2();
 
     unsigned int num_tbint_types() const {

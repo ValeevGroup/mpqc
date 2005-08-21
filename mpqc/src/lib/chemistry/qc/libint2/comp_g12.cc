@@ -381,6 +381,9 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
       }
     }
 
+  const int nbra_geminal_prims = geminal_bra_.size();
+  const int nket_geminal_prims = geminal_ket_.size();
+  
   /* Begin loops over generalized contractions. */
   int buffer_offset = 0;
   for (gci=0; gci<int_shell1_->ncontraction(); gci++) {
@@ -406,7 +409,7 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
           for(int te_type=0; te_type < num_te_types_; te_type++)
             memset(&(prim_ints_[te_type][buffer_offset]),0,size*sizeof(double));
           
-	  /* Begin loop over primitives. */
+	  // Begin loop over basis function primitives
 	  for (pi=0; pi<int_shell1_->nprimitive(); pi++) {
 	    quartet_info_.p1 = pi;
 	    for (pj=0; pj<int_shell2_->nprimitive(); pj++) {
@@ -416,41 +419,70 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 		for (pl=0; pl<int_shell4_->nprimitive(); pl++) {
 		  quartet_info_.p4 = pl;
 		  
-		  // Compute primitive data for Libint
-		  g12_quartet_data_(&Libint_, 1.0, gamma_bra_+gamma_ket_);
-                  // Compute the integrals
-                  libint2_build_r12kg12[tam1][tam2][tam3][tam4](&Libint_);
-                  if (quartet_info_.am) {
-                    for(int te_type = 0; te_type < 5; te_type++) {
-                      // Copy the integrals over to prim_ints_
-                      const REALTYPE* prim_ints = Libint_.targets[te_type];
-                      for(int ijkl=0; ijkl<size; ijkl++)
-                        prim_ints_[te_type+1][buffer_offset + ijkl] += (double) prim_ints[ijkl];
-                      }
-                    }
-                  else {
-                    prim_ints_[TwoBodyInt::r12_m1_g12][buffer_offset] += Libint_.LIBINT_T_SS_Km1G12_SS(0)[0];
-                    prim_ints_[TwoBodyInt::r12_0_g12][buffer_offset] += Libint_.LIBINT_T_SS_K0G12_SS_0[0];
-                    prim_ints_[TwoBodyInt::g12t1g12][buffer_offset] += Libint_.LIBINT_T_SS_K2G12_SS_0[0];
-                    prim_ints_[TwoBodyInt::t1g12][buffer_offset] += Libint_.targets[0][0];
-                    prim_ints_[TwoBodyInt::t2g12][buffer_offset] += Libint_.targets[1][0];
-                    }
+                  // Begin loop over Gaussian Geminal primitives
+                  for (int ggi=0; ggi<nbra_geminal_prims; ggi++) {
+                    const PrimitiveGeminal& gpbra = geminal_bra_[ggi];
+                    const double gamma_bra = gpbra.first;
+                    const double gpcoef_bra = gpbra.second;
+                    for (int ggj=0; ggj<nket_geminal_prims; ggj++) {
+                      const PrimitiveGeminal& gpket = geminal_ket_[ggj];
+                      const double gamma_ket = gpket.first;
+                      const double gpcoef_ket = gpket.second;
+                      
+                      // Compute primitive data for Libint
+                      g12_quartet_data_(&Libint_, gpcoef_bra*gpcoef_ket, gamma_bra+gamma_ket);
+                      // Compute the integrals
+                      libint2_build_r12kg12[tam1][tam2][tam3][tam4](&Libint_);
+                      
+#if !COMPUTE_R12_2_G12
+                      // scale r12^2*g12 integrals by 4 * gamma_bra * gamma_ket to obtain [g12,[t1,g12]]
+                      const double g2_4 = gamma_bra*gamma_ket*4.0;
+#else
+                      const double g2_4 = 1.0;
+#endif
 
+                      if (quartet_info_.am) {
+#if !COMPUTE_R12_2_G12
+                        REALTYPE* prim_ints = Libint_.targets[4];
+                        for(int ijkl=0; ijkl<size; ijkl++)
+                          prim_ints[ijkl] *= g2_4;
+#endif
+                        for(int te_type = 0; te_type < 5; te_type++) {
+                          // Copy the integrals over to prim_ints_
+                          const REALTYPE* prim_ints = Libint_.targets[te_type];
+                          for(int ijkl=0; ijkl<size; ijkl++)
+                            prim_ints_[te_type+1][buffer_offset + ijkl] += (double) prim_ints[ijkl];
+                        }
+                      }
+                      else {
+                        prim_ints_[TwoBodyInt::r12_m1_g12][buffer_offset] += Libint_.LIBINT_T_SS_Km1G12_SS(0)[0];
+                        prim_ints_[TwoBodyInt::r12_0_g12][buffer_offset] += Libint_.LIBINT_T_SS_K0G12_SS_0[0];
+                        prim_ints_[TwoBodyInt::g12t1g12][buffer_offset] += g2_4 * Libint_.LIBINT_T_SS_K2G12_SS_0[0];
+                        prim_ints_[TwoBodyInt::t1g12][buffer_offset] += Libint_.targets[0][0];
+                        prim_ints_[TwoBodyInt::t2g12][buffer_offset] += Libint_.targets[1][0];
+                      }
+                      
+                    } // end of ket geminal primitive loop
+                  } // end of bra geminal primitive loop
+                  
                   // Compute primitive data for Libint
-		  g12_quartet_data_(&Libint_, 1.0, gamma_bra_+gamma_ket_, true);
+                  g12_quartet_data_(&Libint_, 1.0, 0.0, true);
                   if (quartet_info_.am) {
-		    // Compute the integrals
+                    // Compute the integrals
                     libint2_build_eri[tam1][tam2][tam3][tam4](&Libint_);
                     // Copy the integrals over to prim_ints_
                     const REALTYPE* prim_ints = Libint_.targets[0];
-	            for(int ijkl=0; ijkl<size; ijkl++)
-	              prim_ints_[TwoBodyInt::eri][buffer_offset + ijkl] += (double) prim_ints[ijkl];
+                    for(int ijkl=0; ijkl<size; ijkl++)
+                      prim_ints_[TwoBodyInt::eri][buffer_offset + ijkl] += (double) prim_ints[ijkl];
                   }
                   else {
                     prim_ints_[TwoBodyInt::eri][buffer_offset] += Libint_.LIBINT_T_SS_EREP_SS(0)[0];
                   }
-
-                  }}}}
+                  
+                }
+              }
+            }
+          }
 
           // If permuted bra and ket then need to swap contents of [T1,G12] and [T2,G12] buffers
           // (usi usj|[T1,g12]|usk usl) = (usk usl|[T2,g12]|usi usj)
@@ -482,14 +514,6 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
           for(int ijkl=0; ijkl<size; ijkl++) {
             prim_ints_[TwoBodyInt::t2g12][buffer_offset + ijkl] *= -1.0;
             }
-
-          // scale r12^2*g12 integrals by 4 * gamma_bra * gamma_ket to obtain [g12,[t1,g12]]
-#if !COMPUTE_R12_2_G12
-          const double g2_4 = gamma_bra_*gamma_ket_*4.0;
-          for(int ijkl=0; ijkl<size; ijkl++) {
-            prim_ints_[TwoBodyInt::g12t1g12][buffer_offset + ijkl] *= g2_4;
-          }
-#endif
           
 	  buffer_offset += size;
           }}}}

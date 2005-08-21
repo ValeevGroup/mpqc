@@ -124,13 +124,19 @@ class MBPT2_R12: public MBPT2 {
         Allowed values are "r12" and "g12". The default is "r12".
       
         <dt><tt>corr_param</tt><dd> This keyword specifies optional parameters
-        of the correlation factor. <tt>corr_param</tt> can be a single value
-        or an array of values. Single value specifies the parameter of the single
-        correlation function. The array form specifies a set of correlation functions
-        characterized by the corresponding parameters. For example,
+        of the correlation factor. <tt>corr_param</tt> can be a single floating-point value
+        an array of floating-point values, or an array of arrays of 2-element arrays of
+        floating-point values. Single value specifies the parameter of the single
+        correlation function. The 1-d array form specifies a set of primitive correlation functions
+        characterized by the corresponding parameters. The 3-d array form specifies
+        a set of contracted correlation functions. For example,
         <tt>corr_param = 3.0</tt> specifies a single correlation function
         with parameter 3.0. <tt>corr_param = [ 1.0 3.0 10.0 ]</tt> specifies
         3 correlation functions with parameters 1.0, 3.0 and 10.0.
+        <tt>corr_param = [ [[1.0 0.35][3.0 0.65]]  [[10.0 1.0]] ]</tt>
+        specifies 2 correlation functions, first composed of 2 primitive functions
+        with parameters 1.0 and 3.0 combined linearly with coefficients
+        0.35 and 0.65, and second primitive function with parameter 10.0 .
 
         This keyword has not meaning for some correlation factors, e.g., r12,
         and is not used. There is no default.

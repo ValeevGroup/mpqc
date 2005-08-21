@@ -167,7 +167,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
     }
   }
 
-  intparams_ = new IntParamsG12(corrparam_,0.0);
+  intparams_ = new IntParamsG12(corrfactor_->function(0),LinearR12::CorrelationFactor::zero_exponent_geminal());
   
   init_tforms_();
   // init_intermeds_ may require initialized transforms
@@ -181,7 +181,8 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   int absmethod; si.get(absmethod); abs_method_ = (LinearR12::ABSMethod) absmethod;
   int stdapprox; si.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
   si.get(corrparam_);
-  intparams_ = new IntParamsG12(corrparam_,0.0);
+  // WARNING si.get(corrfactor_)
+  // intparams_ = new IntParamsG12(corrfactor_->function(0),LinearR12::CorrelationFactor::zero_exponent_geminal());
 
   r12info_ << SavableState::restore_state(si);
   dim_ij_aa_ << SavableState::restore_state(si);

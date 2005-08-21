@@ -102,6 +102,12 @@ CorrelationFactor::nfunctions() const
   return params_.size();
 }
 
+const LinearR12::CorrelationFactor::ContractedGeminal&
+CorrelationFactor::function(unsigned int c) const
+{
+  return params_.at(c);
+}
+
 unsigned int
 CorrelationFactor::nprimitives(unsigned int c) const
 {

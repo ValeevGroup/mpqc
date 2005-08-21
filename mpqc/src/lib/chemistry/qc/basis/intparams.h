@@ -55,15 +55,20 @@ namespace sc {
   /** Passes params to Integral::g12() */
   class IntParamsG12 : public IntParams {
     public:
-      IntParamsG12(double gamma1, double gamma2);
+      typedef std::pair<double,double> PrimitiveGeminal;
+      typedef std::vector<PrimitiveGeminal> ContractedGeminal;
+      static ContractedGeminal zero_exponent_geminal;
+      
+      IntParamsG12(const ContractedGeminal& bra,
+                   const ContractedGeminal& ket);
       ~IntParamsG12();
 
-      double gamma1() const;
-      double gamma2() const;
+      const ContractedGeminal& bra() const;
+      const ContractedGeminal& ket() const;
       
     private:
-      double gamma1_;
-      double gamma2_;
+      ContractedGeminal bra_;
+      ContractedGeminal ket_;
   };
   
 

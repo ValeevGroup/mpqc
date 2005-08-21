@@ -298,7 +298,7 @@ IntegralLibint2::g12(const Ref<IntParams>& params)
   if (params_cast.null())
     throw ProgrammingError("IntegralLibint2::g12() -- type of params does not match callback",__FILE__,__LINE__);
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_,
-                               g12eval, params_cast->ket(), params_cast->ket());
+                               g12eval, params_cast->bra(), params_cast->ket());
 }
 
 void

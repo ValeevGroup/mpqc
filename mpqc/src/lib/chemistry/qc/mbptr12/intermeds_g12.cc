@@ -75,8 +75,6 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
   std::vector<std::vector<std::string> > im2jn_name;  im2jn_name.resize(num_f12);
   // Compute transforms
   for(int f=0; f<num_f12; f++) {
-    if (corrfactor()->nprimitives(f) > 1)
-      throw FeatureNotImplemented("R12IntEval::init_intermeds_g12_() -- does not support contracted geminals yet",__FILE__,__LINE__);
     const std::string imjn_label = transform_label(ispace,mspace,jspace,nspace,f);
     imjn_name[f] = imjn_label;
 

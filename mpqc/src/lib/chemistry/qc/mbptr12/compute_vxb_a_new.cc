@@ -378,9 +378,9 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
   globally_sum_intermeds_();
   
   ExEnv::out0() << decindent;
-  ExEnv::out0() << endl << indent
+  ExEnv::out0() << indent
                 << "Finished computing contribution to MP2-F12/A (GEBC) intermediates from "
-                << ixjy_name[0] << " integrals" << endl;
+                << ixjy_name[0] << " integrals" << endl << endl;
 
   tim_exit("mp2-f12a intermeds (new)");
   checkpoint_();

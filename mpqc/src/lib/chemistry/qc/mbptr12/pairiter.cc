@@ -94,8 +94,8 @@ SpinMOPairIter::SpinMOPairIter(const Ref<MOIndexSpace>& space1,
 {
   i_eq_j_ = (S!=AlphaBeta && (space1 == space2));
   if (i_eq_j_) {
-    if (ni_ <= 1)
-      throw ProgrammingError("SpinMOPairIter() initialized with rank-1 space",__FILE__,__LINE__);
+    if (ni_ <= 0)
+      throw ProgrammingError("SpinMOPairIter() initialized with rank-0 space",__FILE__,__LINE__);
     nij_ = (ni_ * (ni_-1))/2;
     ij_ = 0;
     i_ = 1;
@@ -115,15 +115,17 @@ void
 SpinMOPairIter::start(const int first_ij)
 {
   IJ_ = 0;
-  ij_ = first_ij%nij_;
-  if (i_eq_j_) {
-    i_ = (int)floor((sqrt(1.0+8.0*ij_) - 1.0)/2.0) + 1;
-    const int i_off = i_*(i_-1)/2;
-    j_ = ij_ - i_off;
-  }
-  else {
-    i_ = ij_/nj_;
-    j_ = ij_ - i_*nj_;
+  if (nij_ > 0) {
+    ij_ = first_ij%nij_;
+    if (i_eq_j_) {
+      i_ = (int)floor((sqrt(1.0+8.0*ij_) - 1.0)/2.0) + 1;
+      const int i_off = i_*(i_-1)/2;
+      j_ = ij_ - i_off;
+    }
+    else {
+      i_ = ij_/nj_;
+      j_ = ij_ - i_*nj_;
+    }
   }
 }
 

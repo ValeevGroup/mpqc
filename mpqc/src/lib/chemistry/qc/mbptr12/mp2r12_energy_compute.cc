@@ -95,8 +95,8 @@ MP2R12Energy::compute_new_()
     double* ef12_vec = new double[noo];
 
     if (debug_ > 1) {
-      V.print("V matrix");
-      B.print("MP2-F12/A B matrix");
+      V.print(prepend_spincase(spincase2,"V matrix").c_str());
+      B.print(prepend_spincase(spincase2,"MP2-F12/A B matrix").c_str());
       //if (ebc == false)
       //  A.print("A matrix");
     }
@@ -110,7 +110,7 @@ MP2R12Energy::compute_new_()
       B_ij->assign(B);
       B_ij->gen_invert_this();
       if (debug_ > 1)
-        B_ij.print("Inverse MP2-R12/A B matrix");
+        B_ij.print("Inverse MP2-F12/A B matrix");
 #else
       // solve B * C = V
       RefSCMatrix C = C_[spin].clone();
@@ -175,7 +175,7 @@ MP2R12Energy::compute_new_()
           }
         }
         if (debug_ > 1)
-          B_ij.print("Alpha-alpha MP2-F12/A' B matrix");
+          B_ij.print(prepend_spincase(spincase2,"MP2-F12/A' B matrix").c_str());
         
 #if USE_INVERT
         B_ij->gen_invert_this();

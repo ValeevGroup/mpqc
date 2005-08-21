@@ -1150,7 +1150,7 @@ void MP2R12Energy::print_pair_energies_new(bool spinadapted, std::ostream& so)
       const Ref<MOIndexSpace> occ2_act = r12eval()->occ_act(case2(spincase2));
       SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
       
-      so << endl << indent << "MBPT2-F12/" << SA_str << " pair energies:" << endl;
+      so << endl << indent << prepend_spincase(spincase2,"MBPT2-F12/") << SA_str << " pair energies:" << endl;
       so << indent << scprintf("    i       j        mp2(ij)        f12(ij)      mp2-f12(ij)") << endl;
       so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
       for(ij_iter.start(); ij_iter; ij_iter.next()) {
@@ -1219,7 +1219,7 @@ void MP2R12Energy::print_pair_energies_new(bool spinadapted, std::ostream& so)
     emp2f12tot_0 = emp2f12_0.dot(unit_0);
     emp2f12tot_1 = emp2f12_1.dot(unit_1);
     
-    so << endl << indent << "Singlet MBPT2-R12/" << SA_str << " pair energies:" << endl;
+    so << endl << indent << "Singlet MBPT2-F12/" << SA_str << " pair energies:" << endl;
     so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
     so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
     const int nocc_act = occ_act->rank();
@@ -1232,7 +1232,7 @@ void MP2R12Energy::print_pair_energies_new(bool spinadapted, std::ostream& so)
       }
     }
     
-    so << endl << indent << "Triplet MBPT2-R12/" << SA_str << " pair energies:" << endl;
+    so << endl << indent << "Triplet MBPT2-F12/" << SA_str << " pair energies:" << endl;
     so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
     so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
     for(int i=0,ij=0;i<nocc_act;i++) {
@@ -1277,12 +1277,12 @@ void MP2R12Energy::print_pair_energies_new(bool spinadapted, std::ostream& so)
   so <<indent
   <<scprintf("MP2 correlation energy [au]:               %17.12lf\n", emp2f12_corr_energy - ef12_corr_energy);
   so <<indent
-  <<scprintf("(MBPT2)-R12/%2s correlation energy [au]:    %17.12lf\n", SA_str.c_str(), ef12_corr_energy);
+  <<scprintf("(MBPT2)-F12/%2s correlation energy [au]:    %17.12lf\n", SA_str.c_str(), ef12_corr_energy);
   so <<indent
-  <<scprintf("MBPT2-R12/%2s correlation energy [au]:      %17.12lf\n", SA_str.c_str(),
+  <<scprintf("MBPT2-F12/%2s correlation energy [au]:      %17.12lf\n", SA_str.c_str(),
   emp2f12_corr_energy);
   so <<indent
-  <<scprintf("MBPT2-R12/%2s energy [au]:                  %17.12lf\n", SA_str.c_str(), etotal) << endl;
+  <<scprintf("MBPT2-F12/%2s energy [au]:                  %17.12lf\n", SA_str.c_str(), etotal) << endl;
   
   so.flush();
   

@@ -36,7 +36,7 @@ namespace sc {
   SpinCase1 case1(SpinCase2 S) { return S==BetaBeta ? Beta : Alpha; }
   SpinCase1 case2(SpinCase2 S) { return S==AlphaAlpha ? Alpha : Beta; }
   
-  std::string prepend_spincase2(SpinCase2 S, const std::string& R)
+  std::string prepend_spincase(SpinCase2 S, const std::string& R)
   {
     std::string prefix;
     if (S == AlphaAlpha)
@@ -48,7 +48,7 @@ namespace sc {
     return prefix + R;
   }
   
-  std::string prepend_spincase1(SpinCase1 S, const std::string& R)
+  std::string prepend_spincase(SpinCase1 S, const std::string& R)
   {
     std::string prefix;
     if (S == Alpha)

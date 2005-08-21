@@ -1149,9 +1149,9 @@ R12IntEval::compute()
 
   if (debug_ > 1) {
     for(int s=0; s<nspincases2(); s++) {
-      V_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"V(diag) contribution").c_str());
-      X_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"X(diag) contribution").c_str());
-      B_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"B(diag) contribution").c_str());
+      V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag) contribution").c_str());
+      X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag) contribution").c_str());
+      B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag) contribution").c_str());
     }
   }
   
@@ -1195,9 +1195,9 @@ R12IntEval::compute()
                             spincase2,tpcontract);
       compute_mp2_pair_energies_(spincase2);
       if (debug_ > 1) {
-        V_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"V(diag+OBS) contribution").c_str());
-        X_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"X(diag+OBS) contribution").c_str());
-        B_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"B(diag+OBS) contribution").c_str());
+        V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS) contribution").c_str());
+        X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS) contribution").c_str());
+        B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS) contribution").c_str());
       }
     }
     
@@ -1241,9 +1241,9 @@ R12IntEval::compute()
         }
         
         if (debug_ > 1) {
-          V_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"V(diag+OBS+ABS) contribution").c_str());
-          X_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) contribution").c_str());
-          B_[s].print(prepend_spincase2(static_cast<SpinCase2>(s),"B(diag+OBS+ABS) contribution").c_str());
+          V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS+ABS) contribution").c_str());
+          X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) contribution").c_str());
+          B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS+ABS) contribution").c_str());
         }
       }
     }

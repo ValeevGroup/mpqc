@@ -54,6 +54,11 @@ using namespace sc;
 
 using LinearR12::TwoParticleContraction;
 
+namespace {
+void permsymm_block(const RefSCMatrix& A, const Ref<MOIndexSpace>& ispace,
+                    unsigned int row_offset, unsigned int col_offset);
+}
+
 /**
    R12IntEval::contrib_to_VXB_a_new_() computes V, X, and B contributions
    from <ij|xy> integrals
@@ -250,6 +255,8 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
           double V_ijkl = tpcontract->contract(ijxy_buf_f12,klxy_buf_eri);
           V_ijkl *= perm_pfac;
           V.accumulate_element(f_offset+ij_ab,kl_ab,V_ijkl);
+          if (debug_)
+            ExEnv::out0() << "f = " << f << " ij = " << ij_ab << " kl = " << kl_ab << " V = " << V_ijkl << endl;
           tim_exit("MO ints contraction");
           
           ijxy_acc[0]->release_pair_block(k,l,corrfactor()->tbint_type_eri());
@@ -329,33 +336,13 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
   
   // symmetrize all intermediates with respect to permutation of particles, if needed
   if (need_to_symmetrize) {
-    SpatialMOPairIter_eq ij_iter(ispace);
-    SpatialMOPairIter_eq kl_iter(ispace);
-    RefSCMatrix I[3];
-    I[0] = V;
-    I[1] = X;
-    I[2] = B;
-    for(int m=0; m<3; m++) {
-      RefSCMatrix Inter = I[m];
-      // ij loop
-      for(ij_iter.start();int(ij_iter);ij_iter.next()) {
-        const int ij = ij_iter.ij_ab();
-        const int ji = ij_iter.ij_ba();
-        // kl loop
-        for(kl_iter.start();int(kl_iter);kl_iter.next()) {
-          const int kl = kl_iter.ij_ab();
-          const int lk = kl_iter.ij_ba();
-          const double V_ijkl = Inter.get_element(ij,kl);
-          const double V_jilk = Inter.get_element(ji,lk);
-          const double V1 = 0.5*(V_ijkl + V_jilk);
-          Inter.set_element(ij,kl,V1);
-          Inter.set_element(ji,lk,V1);
-          const double V_ijlk = Inter.get_element(ij,lk);
-          const double V_jikl = Inter.get_element(ji,kl);
-          const double V2 = 0.5*(V_ijlk + V_jikl);
-          Inter.set_element(ij,lk,V2);
-          Inter.set_element(ji,kl,V2);
-        }
+    for(int f=0; f<num_f12; f++) {
+      const int f_off = f*nij;
+      permsymm_block(V,ispace,f_off,0);
+      for(int g=0; g<num_f12; g++) {
+        const int g_off = g*nij;
+        permsymm_block(X,ispace,f_off,g_off);
+        permsymm_block(B,ispace,f_off,g_off);
       }
     }
   }
@@ -376,6 +363,36 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
 
   tim_exit("mp2-f12a intermeds (new)");
   checkpoint_();
+}
+
+namespace {
+void permsymm_block(const RefSCMatrix& A, const Ref<MOIndexSpace>& ispace,
+                    unsigned int row_offset, unsigned int col_offset)
+{
+  SpatialMOPairIter_eq ij_iter(ispace);
+  SpatialMOPairIter_eq kl_iter(ispace);
+  // ij loop
+  for(ij_iter.start();int(ij_iter);ij_iter.next()) {
+    const int ij = ij_iter.ij_ab() + row_offset;
+    const int ji = ij_iter.ij_ba() + row_offset;
+    // kl loop
+    for(kl_iter.start();int(kl_iter);kl_iter.next()) {
+      const int kl = kl_iter.ij_ab() + col_offset;
+      const int lk = kl_iter.ij_ba() + col_offset;
+      const double A_ijkl = A.get_element(ij,kl);
+      const double A_jilk = A.get_element(ji,lk);
+      const double A1 = 0.5*(A_ijkl + A_jilk);
+      A.set_element(ij,kl,A1);
+      A.set_element(ji,lk,A1);
+      const double A_ijlk = A.get_element(ij,lk);
+      const double A_jikl = A.get_element(ji,kl);
+      const double A2 = 0.5*(A_ijlk + A_jikl);
+      A.set_element(ij,lk,A2);
+      A.set_element(ji,kl,A2);
+    }
+  }
+}
+
 }
 
 ////////////////////////////////////////////////////////////////////////////

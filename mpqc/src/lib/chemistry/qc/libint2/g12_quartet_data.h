@@ -134,13 +134,15 @@ inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double 
   PQ2 += PQ[1]*PQ[1];
   PQ2 += PQ[2]*PQ[2];
 
+  const double pfac_norm = int_shell1_->coefficient_unnorm(quartet_info_.gc1,p1)*
+                           int_shell2_->coefficient_unnorm(quartet_info_.gc2,p2)*
+                           int_shell3_->coefficient_unnorm(quartet_info_.gc3,p3)*
+                           int_shell4_->coefficient_unnorm(quartet_info_.gc4,p4);
+  const double pfac_normovlp = pfac_norm * pair12->ovlp * pair34->ovlp * scale;
+
   if (eri_only) {
       double T = rho*PQ2;
-      double pfac_norm = int_shell1_->coefficient_unnorm(quartet_info_.gc1,p1)*
-                         int_shell2_->coefficient_unnorm(quartet_info_.gc2,p2)*
-                         int_shell3_->coefficient_unnorm(quartet_info_.gc3,p3)*
-                         int_shell4_->coefficient_unnorm(quartet_info_.gc4,p4);
-      double pfac = 2.0*sqrt(rho*M_1_PI)*scale*pair12->ovlp*pair34->ovlp*pfac_norm;
+      double pfac = 2.0*sqrt(rho*M_1_PI)*pfac_normovlp;
       if(T < small_T){
           assign_FjT(Data,quartet_info_.am,oo2np1,pfac);
         }
@@ -159,17 +161,13 @@ inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double 
   //
   double rorg = rho * oorhog;
   double sqrt_rorg = sqrt(rorg);
-  double pfac_norm = int_shell1_->coefficient_unnorm(quartet_info_.gc1,p1)*
-  int_shell2_->coefficient_unnorm(quartet_info_.gc2,p2)*
-  int_shell3_->coefficient_unnorm(quartet_info_.gc3,p3)*
-  int_shell4_->coefficient_unnorm(quartet_info_.gc4,p4);
-  Data->LIBINT_T_SS_K0G12_SS_0[0] = rorg * sqrt_rorg * pair12->ovlp * pair34->ovlp * exp(-gamma*rorg*PQ2) * pfac_norm;
+  Data->LIBINT_T_SS_K0G12_SS_0[0] = rorg * sqrt_rorg * exp(-gamma*rorg*PQ2) * pfac_normovlp;
   Data->LIBINT_T_SS_K2G12_SS_0[0] = (1.5 + T) * Data->LIBINT_T_SS_K0G12_SS_0[0] * oorhog;
 
   //
   // compute (00|-1|00)^m from Fj(x)
   //
-  double pfac = 2.0 * sqrt(rhog*M_1_PI) * Data->LIBINT_T_SS_K0G12_SS_0[0] * scale;
+  double pfac = 2.0 * sqrt(rhog*M_1_PI) * Data->LIBINT_T_SS_K0G12_SS_0[0];
 
   const double *F;
   if(T < small_T){ 

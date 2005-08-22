@@ -106,6 +106,7 @@ private:
   int debug_;
   StoreMethod ints_method_;
   char* ints_file_;
+  Ref<LinearR12::CorrelationFactor> corrfactor_;
   LinearR12::ABSMethod abs_method_;
 
   int nlindep_aux_;
@@ -228,7 +229,8 @@ public:
   int nvir() const { return vir_->rank();};
   int nvir_act() const { return vir_act_->rank();};
 
-  LinearR12::ABSMethod abs_method() const { return abs_method_; };
+  const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return corrfactor_; }
+  LinearR12::ABSMethod abs_method() const { return abs_method_; }
 
 #if !USE_SINGLEREFINFO
   /// Returns the MOIndexSpace object for symmetry-blocked MOs in OBS

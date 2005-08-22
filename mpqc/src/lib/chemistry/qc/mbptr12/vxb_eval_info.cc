@@ -101,6 +101,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
   eigen_();
 #endif
 
+  corrfactor_ = mbptr12->corrfactor();
   abs_method_ = mbptr12->abs_method();
   construct_ri_basis_(false);
   construct_orthog_vir_();

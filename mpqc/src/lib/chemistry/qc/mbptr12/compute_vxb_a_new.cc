@@ -256,7 +256,7 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
           V_ijkl *= perm_pfac;
           V.accumulate_element(f_offset+ij_ab,kl_ab,V_ijkl);
           if (debug_)
-            ExEnv::out0() << "f = " << f << " ij = " << ij_ab << " kl = " << kl_ab << " V = " << V_ijkl << endl;
+            ExEnv::out0() << " f = " << f << " ij = " << ij_ab << " kl = " << kl_ab << " V = " << V_ijkl << endl;
           tim_exit("MO ints contraction");
           
           ijxy_acc[0]->release_pair_block(k,l,corrfactor()->tbint_type_eri());
@@ -296,6 +296,10 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
             double X_ijkl = tpcontract->contract(ijxy_buf_f12,klxy_buf_f12);
             X_ijkl *= perm_pfac;
             X.accumulate_element(f_offset+ij_ab,g_offset+kl_ab,X_ijkl);
+            if (debug_)
+              ExEnv::out0() << " f = " << f << " ij = " << ij_ab
+                            << " g = " << g << " kl = " << kl_ab
+                            << " X = " << X_ijkl << endl;
             double B_ijkl = tpcontract->contract(ijxy_buf_f12,klxy_buf_t1f12);
             B_ijkl += tpcontract->contract(ijxy_buf_f12,klxy_buf_t2f12);
             B_ijkl *= perm_pfac;
@@ -325,6 +329,28 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
     ijxy_acc[f12]->deactivate();
   }
   
+  // Symmetrize X and B intermediates with respect to geminal permutations
+  for(int f=1; f<num_f12; f++) {
+    const int f_off = f*nij;
+    for(int g=0; g<f; g++) {
+      const int g_off = g*nij;
+      for(int ij=0; ij<nij; ij++) {
+        const int IJf = f_off + ij;
+        const int IJg = g_off + ij;
+        for(int kl=0; kl<nij; kl++) {
+          const int KLf = f_off + kl;
+          const int KLg = g_off + kl;
+          const double x = 0.5 * (X.get_element(IJf,KLg) + X.get_element(IJg,KLf));
+          X.set_element(IJf,KLg,x);
+          X.set_element(IJg,KLf,x);
+          const double b = 0.5 * (B.get_element(IJf,KLg) + B.get_element(IJg,KLf));
+          B.set_element(IJf,KLg,b);
+          B.set_element(IJg,KLf,b);
+        }
+      }
+    }
+  }
+
   // Symmetrize B intermediate with respect to bra-ket permutation
   const int f12dim = B.coldim().n();
   for(int ij=0;ij<f12dim;ij++)

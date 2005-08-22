@@ -84,11 +84,12 @@ MP2R12Energy::compute_new_()
     // Prepare total and R12 pairs
     Ref<SCMatrixKit> defaultkit = V.kit();
     const RefSCDimension dim_oo = V.coldim();
-    const RefSCDimension dim_f12 = V.coldim();
+    const RefSCDimension dim_xc = V.rowdim();
     const int noo = dim_oo.n();
     if (noo == 0)
       continue;
-    const int nf12 = dim_f12.n();
+    const int nxc = dim_xc.n();
+    const int num_f12 = r12info->corrfactor()->nfunctions();
     
     emp2f12_[spin] = defaultkit->vector(dim_oo);
     ef12_[spin] = defaultkit->vector(dim_oo);
@@ -121,7 +122,6 @@ MP2R12Energy::compute_new_()
     }
     
     SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
-    
     for(ij_iter.start(); int(ij_iter); ij_iter.next()) {
       const int ij = ij_iter.ij();
       if (ij%ntasks != me)
@@ -135,43 +135,51 @@ MP2R12Energy::compute_new_()
       // Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
       if (stdapprox_ == LinearR12::StdApprox_Ap) {
         B_ij.assign(B);
-        SpinMOPairIter kl_iter(occ1_act, occ2_act, spincase2);
-        for(kl_iter.start(); kl_iter; kl_iter.next()) {
-          const int kl = kl_iter.ij();
-          const int k = kl_iter.i();
-          const int l = kl_iter.j();
+
+        for(int f=0; f<num_f12; f++) {
+          const int f_off = f*noo;
+
+          SpinMOPairIter kl_iter(occ1_act, occ2_act, spincase2);
+          for(kl_iter.start(); kl_iter; kl_iter.next()) {
+            const int kl = kl_iter.ij() + f_off;
+            const int k = kl_iter.i();
+            const int l = kl_iter.j();
             
-          SpinMOPairIter ow_iter(occ1_act, occ2_act, spincase2);
-          for(ow_iter.start(); ow_iter; ow_iter.next()) {
-            const int ow = ow_iter.ij();
-            const int o = ow_iter.i();
-            const int w = ow_iter.j();
+            for(int g=0; g<=f; g++) {
+              const int g_off = g*noo;
+
+              SpinMOPairIter ow_iter(occ1_act, occ2_act, spincase2);
+              for(ow_iter.start(); ow_iter; ow_iter.next()) {
+                const int ow = ow_iter.ij() + g_off;
+                const int o = ow_iter.i();
+                const int w = ow_iter.j();
           
-            if (ow > kl)
-              continue;
+                if (ow > kl)
+                  continue;
             
-            double fx = 0.5 * (evals_act_occ1[k] + evals_act_occ2[l] + evals_act_occ1[o] + evals_act_occ2[w]
-                               - 2.0*evals_act_occ1[i] - 2.0*evals_act_occ2[j])
-                            * X.get_element(kl,ow);
-            
-            B_ij.accumulate_element(kl,ow,fx);
-            
-            // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
-            if (ebc == false) {
-              double fy = 0.0;
-              SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
-              for(cd_iter.start(); cd_iter; cd_iter.next()) {
-                const int cd = cd_iter.ij();
-                const int c = cd_iter.i();
-                const int d = cd_iter.j();
+                double fx = 0.5 * (evals_act_occ1[k] + evals_act_occ2[l] + evals_act_occ1[o] + evals_act_occ2[w]
+                                   - 2.0*evals_act_occ1[i] - 2.0*evals_act_occ2[j])
+                                * X.get_element(kl,ow);
                 
-                fy -= A.get_element(kl,cd)*A.get_element(ow,cd)/(evals_act_vir1[c] + evals_act_vir2[d]
-                                                                 - evals_act_occ1[i] - evals_act_occ2[j]);
-              }
-              
-              B_ij.accumulate_element(kl,ow,fy);
-            }
+                B_ij.accumulate_element(kl,ow,fx);
             
+                // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
+                if (ebc == false) {
+                  double fy = 0.0;
+                  SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
+                  for(cd_iter.start(); cd_iter; cd_iter.next()) {
+                    const int cd = cd_iter.ij();
+                    const int c = cd_iter.i();
+                    const int d = cd_iter.j();
+                
+                    fy -= A.get_element(kl,cd)*A.get_element(ow,cd)/(evals_act_vir1[c] + evals_act_vir2[d]
+                                                                     - evals_act_occ1[i] - evals_act_occ2[j]);
+                  }
+              
+                  B_ij.accumulate_element(kl,ow,fy);
+                }
+              }
+            }
           }
         }
         if (debug_ > 1)
@@ -191,7 +199,7 @@ MP2R12Energy::compute_new_()
 #if USE_INVERT
         // The r12 amplitudes B^-1 * V
         RefSCVector Cij = -1.0*(B_ij * V_ij);
-        for(int kl=0; kl<nf12; kl++)
+        for(int kl=0; kl<nxc; kl++)
           C_[spin].set_element(kl,ij,Cij.get_element(kl));
 #else
         RefSCVector Cij = V_ij.clone();
@@ -206,7 +214,7 @@ MP2R12Energy::compute_new_()
           Cij = V_ij.clone();
           sc::exp::lapack_linsolv_symmnondef(B_ij, Cij, V_ij);
           Cij.scale(-1.0);
-          for(int kl=0; kl<nf12; kl++)
+          for(int kl=0; kl<nxc; kl++)
             C_[spin].set_element(kl,ij,Cij.get_element(kl));
         }
 #endif

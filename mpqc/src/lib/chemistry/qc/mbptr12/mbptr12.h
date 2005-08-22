@@ -245,6 +245,7 @@ class MBPT2_R12: public MBPT2 {
 
     void save_data_state(StateOut&);
 
+    const Ref<LinearR12::CorrelationFactor>& corrfactor() const;
     Ref<GaussianBasisSet> aux_basis() const;
     Ref<GaussianBasisSet> vir_basis() const;
     const bool gbc() const;

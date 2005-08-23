@@ -138,8 +138,11 @@ R12IntEvalInfo::construct_orthog_aux_()
   abs_space_ = orthogonalize("p'","ABS", bs_aux_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_aux_);
 #endif
 
-  if (bs_aux_ == bs_ri_)
+  if (bs_aux_ == bs_ri_) {
     ribs_space_ = abs_space_;
+    vir_spaces_[Alpha].ri_ = ribs_space_;
+    vir_spaces_[Beta].ri_ = ribs_space_;
+  }
 }
 
 /* WARNING R12IntEvalInfo::construct_orthog_vir_() moved to vxb_eval_info.o -- gcc 3.4.3 generates internal symbols

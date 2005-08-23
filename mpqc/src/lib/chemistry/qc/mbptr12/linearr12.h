@@ -92,8 +92,12 @@ namespace sc {
         int tbint_type_f12f12() const { return tbint_type_f12f12_; }
         /// Returns (int)TwoBodyInt::tbint_type corresponding to integrals over [f12,[T1,f12]]
         int tbint_type_f12t1f12() const { return tbint_type_f12t1f12_; }
-        
+
+        /// exp(-0.0*r^2) very handy
         static const ContractedGeminal& zero_exponent_geminal() { return IntParamsG12::zero_exponent_geminal; }
+
+        /// print the correlation factor
+        void print(std::ostream& os = ExEnv::out0()) const;
         
       private:
         void init();

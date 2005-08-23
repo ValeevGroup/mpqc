@@ -225,7 +225,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   else if ( !strcmp(sa_string,"B") ||
 	    !strcmp(sa_string,"b") ) {
     delete[] sa_string;
-    throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- MP2-R12/B energy is not implemented yet");
+    throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- MP2-F12/B energy is not implemented yet");
   }
   else {
     delete[] sa_string;
@@ -358,8 +358,8 @@ MBPT2_R12::print(ostream&o) const
 {
   o << indent << "MBPT2_R12:" << endl;
   o << incindent;
-  o << indent << "Correlation factor: " << corrfactor_->label() << endl;
-  o << indent << "Correlation parameter: " << corrparam_ << endl;
+
+  corrfactor()->print(o); o << endl;
   o << indent << "GBC assumed: " << (gbc_ ? "true" : "false") << endl;
   o << indent << "EBC assumed: " << (ebc_ ? "true" : "false") << endl;
   switch(abs_method_) {

@@ -114,7 +114,7 @@ CorrelationFactor::nprimitives(unsigned int c) const
   return params_.at(c).size();
 }
 
-const std::pair<double,double>&
+const LinearR12::CorrelationFactor::PrimitiveGeminal&
 CorrelationFactor::primitive(unsigned int c, unsigned int p) const
 {
   return params_.at(c).at(p);
@@ -136,5 +136,29 @@ unsigned int
 CorrelationFactor::num_tbint_types() const
 {
   return num_tbint_types_;
+}
+
+void
+CorrelationFactor::print(std::ostream& os) const
+{
+  using std::endl;
+  os << indent << "CorrelationFactor:" << endl;
+  os << incindent;
+  const int nfunc = nfunctions();
+  for(int f=0; f<nfunc; f++) {
+    os << indent << "Function " << f << ":" << endl << incindent;
+    os << indent << "Functional form: " << label() << endl;
+    if (id() == G12CorrFactor) {
+      os << indent << "[ Exponent Coefficient] = [ ";
+      const int nprim = nprimitives(f);
+      for(int p=0; p<nprim; p++) {
+        const PrimitiveGeminal& prim = primitive(f,p);
+        os << "[" << prim.first << " " << prim.second << "] ";
+      }
+      os << " ]" << endl;
+    }
+    os << decindent;
+  }
+  os << decindent;
 }
 

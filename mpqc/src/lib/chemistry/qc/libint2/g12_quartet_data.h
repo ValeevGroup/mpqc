@@ -174,7 +174,7 @@ inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double 
     F = oo2np1;
   }
   else {
-    F = Fm_Eval_->values(quartet_info_.am+1,T);
+    F = Fm_Eval_->values(quartet_info_.am,T);
   }
 
   double ss_m1_ss[4*LIBINT2_MAX_AM_R12kG12+1];

@@ -172,6 +172,11 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
   init_tforms_();
   // init_intermeds_ may require initialized transforms
   init_intermeds_();
+
+  // compute canonical space of virtuals if VBS != OBS
+  if (!r12info()->basis_vir()->equiv(r12info()->basis())) {
+    form_canonvir_space_();
+  }
 }
 
 R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
@@ -1058,23 +1063,22 @@ R12IntEval::form_canonvir_space_()
 {
   // Create a complement space to all occupieds
   // Fock operator is diagonal in this space
-  if (canonvir_space_.null()) {
+  if (r12info_->basis_vir()->equiv(r12info_->basis())) {
+    return;
+  }
 
-    if (r12info_->basis_vir()->equiv(r12info_->basis())) {
-      canonvir_space_ = r12info_->vir();
-      return;
-    }
+  int nspincases = 1;
+  if (r12info()->refinfo()->ref()->spin_polarized())
+    nspincases = 2;
 
-#if USE_SINGLEREFINFO
+  for(int s=0; s<nspincases; s++) {
+    const SpinCase1 spincase = static_cast<SpinCase1>(s);
+    
     const Ref<MOIndexSpace>& mo_space = r12info_->refinfo()->orbs();
-    const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
-#else
-    const Ref<MOIndexSpace>& mo_space = r12info_->mo_space();
-    const Ref<MOIndexSpace>& occ_space = r12info_->occ();
-#endif
-    const Ref<MOIndexSpace>& vir_space = r12info_->vir_sb();
+    const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->occ(spincase);
+    const Ref<MOIndexSpace>& vir_space = r12info_->vir_sb(spincase);
     RefSCMatrix F_vir = fock_(occ_space,vir_space,vir_space);
-
+    
     int nrow = vir_space->rank();
     double* F_full = new double[nrow*nrow];
     double* F_lowtri = new double [nrow*(nrow+1)/2];
@@ -1084,23 +1088,32 @@ R12IntEval::form_canonvir_space_()
       int rc = row*nrow;
       for(int col=0; col<=row; col++, rc++, ij++) {
         F_lowtri[ij] = F_full[rc];
+        }
       }
-    }
     RefSymmSCMatrix F_vir_lt(F_vir.rowdim(),F_vir->kit());
     F_vir_lt->assign(F_lowtri);
     F_vir = 0;
     delete[] F_full;
     delete[] F_lowtri;
-
-    Ref<MOIndexSpace> canonvir_space_symblk = new MOIndexSpace("e(sym)", "Virt. MOs symmetry-blocked",
+    
+    Ref<MOIndexSpace> canonvir_space_symblk = new MOIndexSpace("e(sym)", "VBS",
                                                                vir_space, vir_space->coefs()*F_vir_lt.eigvecs(),
                                                                vir_space->basis());
+    r12info()->vir_sb(spincase, canonvir_space_symblk);
+    
     RefDiagSCMatrix F_vir_evals = F_vir_lt.eigvals();
-    canonvir_space_ = new MOIndexSpace("e", "Virt. MOs sorted by energy",
-                                       canonvir_space_symblk->coefs(), canonvir_space_symblk->basis(),
-                                       F_vir_evals, 0, 0,
-                                       MOIndexSpace::energy);
-  }
+    Ref<MOIndexSpace> vir_act = new MOIndexSpace("e", "VBS",
+                                                 canonvir_space_symblk->coefs(), canonvir_space_symblk->basis(),
+                                                 F_vir_evals, 0, r12info()->refinfo()->nfzv(),
+                                                 MOIndexSpace::energy);
+    r12info()->vir_act(spincase, vir_act);
+    Ref<MOIndexSpace> vir = new MOIndexSpace("e", "VBS",
+                                             canonvir_space_symblk->coefs(), canonvir_space_symblk->basis(),
+                                             F_vir_evals, 0, 0,
+                                             MOIndexSpace::energy);
+    r12info()->vir(spincase, vir);
+      
+    }
 }
 
 const int
@@ -1252,9 +1265,6 @@ R12IntEval::compute()
   }
   else {
     contrib_to_VXB_gebc_vbsneqobs_();
-    compute_dualEmp2_();
-    if (include_mp1_)
-      compute_dualEmp1_();
   }
 
   
@@ -1424,8 +1434,9 @@ const Ref<MOIndexSpace>&
 R12IntEval::vir_act(SpinCase1 S) const
 {
   if (r12info()->basis_vir() != r12info()->refinfo()->ref()->basis())
-    throw ProgrammingError("R12IntEval::vir_act() -- not implemented yet for the case vir_basis != basis",__FILE__,__LINE__);
-  return r12info()->refinfo()->uocc_act(S);
+    return r12info()->vir_act(S);
+  else
+    return r12info()->refinfo()->uocc_act(S);
 }
 
 std::string

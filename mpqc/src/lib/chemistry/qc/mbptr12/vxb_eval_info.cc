@@ -381,6 +381,44 @@ R12IntEvalInfo::construct_orthog_vir_()
   }
 }
 
+void
+R12IntEvalInfo::vir(const SpinCase1& S, const Ref<MOIndexSpace>& sp)
+{
+  if (refinfo()->ref()->spin_polarized()) {
+    vir_spaces_[S].vir_ = sp;
+  }
+  else {
+    vir_spaces_[Alpha].vir_ = sp;
+    vir_spaces_[Beta].vir_ = sp;
+    vir_ = sp;
+  }
+}
+
+void
+R12IntEvalInfo::vir_sb(const SpinCase1& S, const Ref<MOIndexSpace>& sp)
+{
+  if (refinfo()->ref()->spin_polarized()) {
+    vir_spaces_[S].vir_sb_ = sp;
+  }
+  else {
+    vir_spaces_[Alpha].vir_sb_ = sp;
+    vir_spaces_[Beta].vir_sb_ = sp;
+    vir_sb_ = sp;
+  }
+}
+
+void
+R12IntEvalInfo::vir_act(const SpinCase1& S, const Ref<MOIndexSpace>& sp)
+{
+  if (refinfo()->ref()->spin_polarized()) {
+    vir_spaces_[S].vir_act_ = sp;
+  }
+  else {
+    vir_spaces_[Alpha].vir_act_ = sp;
+    vir_spaces_[Beta].vir_act_ = sp;
+    vir_act_ = sp;
+  }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

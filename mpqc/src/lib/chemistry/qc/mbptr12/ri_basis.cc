@@ -93,12 +93,11 @@ R12IntEvalInfo::construct_ri_basis_ks_(bool safe)
 void
 R12IntEvalInfo::construct_ri_basis_ksplus_(bool safe)
 {
-#if USE_SINGLEREFINFO
   Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
-#else
-  Ref<GaussianBasisSet> obs = basis();
-#endif
   bs_ri_ = bs_aux_ + obs;
+  Ref<GaussianBasisSet> vbs = basis_vir();
+  if (obs != vbs)
+    bs_ri_ = bs_ri_ + vbs;
   construct_orthog_ri_();
 }
 
@@ -117,12 +116,11 @@ R12IntEvalInfo::construct_ri_basis_ev_(bool safe)
 void
 R12IntEvalInfo::construct_ri_basis_evplus_(bool safe)
 {
-#if USE_SINGLEREFINFO
   Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
-#else
-  Ref<GaussianBasisSet> obs = basis();
-#endif
   bs_ri_ = bs_aux_ + obs;
+  Ref<GaussianBasisSet> vbs = basis_vir();
+  if (obs != vbs)
+    bs_ri_ = bs_ri_ + vbs;
   construct_ortho_comp_svd_();
 }
 

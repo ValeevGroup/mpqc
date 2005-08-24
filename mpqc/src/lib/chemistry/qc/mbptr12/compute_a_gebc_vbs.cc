@@ -62,12 +62,79 @@ R12IntEval::contrib_to_VXB_gebc_vbsneqobs_()
   if (r12info_->basis_vir() != r12info_->basis_ri())
     contrib_to_VXB_a_asymm_("(im|jy)",r12info_->occ_space(),r12info_->ribs_space());
   */
+#if USE_RHFONLY_CODE
   contrib_to_VXB_a_symm_("(im|jn)");
   contrib_to_VXB_a_symm_("(ia|jb)");
   contrib_to_VXB_a_asymm_("(im|ja)");
   if (r12info_->basis_vir() != r12info_->basis_ri())
     contrib_to_VXB_a_asymm_("(im|jy)");
+#endif
 
+  // Compute VXB using new code
+  using LinearR12::TwoParticleContraction;
+  using LinearR12::Direct_Contraction;
+  const LinearR12::ABSMethod absmethod = r12info()->abs_method();
+
+  if (absmethod == LinearR12::ABS_ABS ||
+      absmethod == LinearR12::ABS_ABSPlus)
+    throw ProgrammingError("VXB != OBS only allowed with CABS/CABS+ RI method",__FILE__,__LINE__);
+    
+  for(int s=0; s<nspincases2(); s++) {
+    const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+    const SpinCase1 spin1 = case1(spincase2);
+    const SpinCase1 spin2 = case2(spincase2);
+
+    const Ref<MOIndexSpace>& occ1_act = r12info()->refinfo()->occ_act(spin1);
+    const Ref<MOIndexSpace>& occ2_act = r12info()->refinfo()->occ_act(spin2);
+    const Ref<MOIndexSpace>& occ1 = r12info()->refinfo()->occ(spin1);
+    const Ref<MOIndexSpace>& occ2 = r12info()->refinfo()->occ(spin2);
+    const Ref<MOIndexSpace>& vir1_act = r12info()->vir_act(spin1);
+    const Ref<MOIndexSpace>& vir2_act = r12info()->vir_act(spin2);
+    const Ref<MOIndexSpace>& ribs1 = r12info()->ribs_space(spin1);
+    const Ref<MOIndexSpace>& ribs2 = r12info()->ribs_space(spin2);
+
+    // (im|jn) contribution
+    {
+      Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(occ1->rank(),occ2->rank(),-1.0);
+      contrib_to_VXB_a_new_(occ1_act,occ1,occ2_act,occ2,
+                            spincase2,tpcontract);
+    }
+    // (ia|jb) contribution
+    {
+      Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(vir1_act->rank(),vir2_act->rank(),-1.0);
+      contrib_to_VXB_a_new_(occ1_act,vir1_act,occ2_act,vir2_act,
+                            spincase2,tpcontract);
+    }
+    // (im|ja) contribution
+    {
+      Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(occ1->rank(),vir2_act->rank(),-1.0);
+      contrib_to_VXB_a_new_(occ1_act,occ1,occ2_act,vir2_act,
+                            spincase2,tpcontract);
+      if (spincase2 == AlphaBeta && occ1_act != occ2_act) {
+        Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(vir1_act->rank(),occ2->rank(),-1.0);
+        contrib_to_VXB_a_new_(occ1_act,vir1_act,occ2_act,occ2,
+                              spincase2,tpcontract);
+      }
+    }
+    // (im|ja) contribution
+    {
+      Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(occ1->rank(),ribs2->rank(),-1.0);
+      contrib_to_VXB_a_new_(occ1_act,occ1,occ2_act,ribs2,
+                            spincase2,tpcontract);
+      if (spincase2 == AlphaBeta && occ1_act != occ2_act) {
+        Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(ribs1->rank(),occ2->rank(),-1.0);
+        contrib_to_VXB_a_new_(occ1_act,ribs1,occ2_act,occ2,
+                              spincase2,tpcontract);
+      }
+    }
+    
+    compute_mp2_pair_energies_(spincase2);
+    if (debug_ > 1) {
+      V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS+VBS+ABS) contribution").c_str());
+      X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+VBS+ABS) contribution").c_str());
+      B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS+VBS+ABS) contribution").c_str());
+    }
+  }
   
   return;
 }

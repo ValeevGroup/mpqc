@@ -118,8 +118,6 @@ class R12IntEval : virtual public SavableState {
   Ref<MOIndexSpace> factocc_space_;
   /// Form Fock-weighted active occupied space
   void form_factocc_space_();
-  /// Space of canonical virtual MOs
-  Ref<MOIndexSpace> canonvir_space_;
   /// Form space of auxiliary virtuals
   void form_canonvir_space_();
 
@@ -214,9 +212,6 @@ class R12IntEval : virtual public SavableState {
   /** Compute the second (r<sub>kl</sub>^<sup>AB</sup> r<sub>AB</sub>^<sup>Kj</sup> f<sub>K</sub><sup>i</sup>)
       contribution to B that vanishes under GBC */
   void compute_B_gbc_2_();
-
-  /// Compute dual-basis MP2 energy (contribution from doubles to MP2 energy)
-  void compute_dualEmp2_();
 
   /// Compute dual-basis MP1 energy (contribution from singles to HF energy)
   void compute_dualEmp1_();

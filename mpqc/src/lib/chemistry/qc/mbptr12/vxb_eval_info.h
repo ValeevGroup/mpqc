@@ -256,6 +256,11 @@ public:
   const Ref<MOIndexSpace>& vir_sb(const SpinCase1& S) const { return vir_spaces_[S].vir_sb_; };
   /// Returns the MOIndexSpace object for the active unoccupied MOs
   const Ref<MOIndexSpace>& vir_act(const SpinCase1& S) const { return vir_spaces_[S].vir_act_; };
+
+  /// Cheating! fock() is not available yet standalone, thus these spaces must be modified after canonicalization
+  void vir(const SpinCase1& S, const Ref<MOIndexSpace>& space);
+  void vir_sb(const SpinCase1& S, const Ref<MOIndexSpace>& space);
+  void vir_act(const SpinCase1& S, const Ref<MOIndexSpace>& space);
   
   /// Returns the MOIndexSpace object for ABS
   const Ref<MOIndexSpace>& abs_space() const { return abs_space_; };

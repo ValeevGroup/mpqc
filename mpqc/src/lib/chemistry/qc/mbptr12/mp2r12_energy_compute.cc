@@ -94,6 +94,7 @@ MP2R12Energy::compute_new_()
     emp2f12_[spin] = defaultkit->vector(dim_oo);
     ef12_[spin] = defaultkit->vector(dim_oo);
     double* ef12_vec = new double[noo];
+    memset(ef12_vec,0,sizeof(double)*noo);
 
     if (debug_ > 1) {
       V.print(prepend_spincase(spincase2,"V matrix").c_str());

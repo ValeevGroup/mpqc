@@ -52,6 +52,21 @@ MP2R12Energy::compute_new_()
   // WARNING only RHF and UHF are considered
   const int num_unique_spincases2 = (r12info->refinfo()->ref()->spin_polarized() ? 3 : 2);
   
+  // if no explicit correlation -- just get MP2 energies
+  if (r12info->corrfactor()->id() == LinearR12::NullCorrFactor) {
+    for(int spin=0; spin<num_unique_spincases2; spin++) {
+      const SpinCase2 spincase2 = static_cast<SpinCase2>(spin);
+      ef12_[spin].assign(0.0);
+      RefSCVector emp2 = r12eval()->emp2(spincase2);
+      double* buf = new double[emp2.dim().n()];
+      emp2.convert(buf);
+      emp2f12_[spin].assign(buf);
+      delete[] buf;
+    }
+    evaluated_ = true;
+    return;
+  }
+  
   //
   // Evaluate pair energies:
   // distribute workload among nodes by pair index

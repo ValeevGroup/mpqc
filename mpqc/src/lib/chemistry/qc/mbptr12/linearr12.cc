@@ -47,6 +47,10 @@ void
 CorrelationFactor::init()
 {
   switch (id_) {
+  case NullCorrFactor:
+    init2("NONE",&Integral::grt,1);
+    tbint_type_eri(TwoBodyInt::eri);
+    break;
   case R12CorrFactor:
     init2("R12",&Integral::grt,4);
     tbint_type_eri(TwoBodyInt::eri);

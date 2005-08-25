@@ -749,7 +749,7 @@ R12IntEval::get_tform_(const std::string& tform_name)
   TwoBodyMOIntsTransform* tform = (*tform_iter).second.pointer();
   if (tform == NULL) {
     std::string errmsg = "R12IntEval::get_tform_() -- transform " + tform_name + " is not known";
-    throw ProgrammingError(errmsg.c_str(),__FILE__,__LINE__);
+    throw TransformNotFound(errmsg.c_str(),__FILE__,__LINE__);
   }
   // Do not compute here since compute() call may take params now
   //tform->compute(tbint_params);
@@ -786,15 +786,19 @@ R12IntEval::init_intermeds_()
     }
   }
 
-  if (corrfactor_->id() == LinearR12::R12CorrFactor) {
-    init_intermeds_r12_();
-    }
-  else if (corrfactor_->id() == LinearR12::G12CorrFactor) {
-    for(int s=0; s<nspincases2(); s++)
-      init_intermeds_g12_(static_cast<SpinCase2>(s));
+  switch (corrfactor_->id()) {
+    case LinearR12::R12CorrFactor:
+      init_intermeds_r12_();
+      break;
+    case LinearR12::G12CorrFactor:
+      for(int s=0; s<nspincases2(); s++)
+        init_intermeds_g12_(static_cast<SpinCase2>(s));
+      break;
+    case LinearR12::NullCorrFactor:
+      break;
+    default:
+      throw AlgorithmException("R12IntEval::init_intermeds_() -- unrecognized CorrelationFactor",__FILE__,__LINE__);
   }
-  else
-    throw AlgorithmException("R12IntEval::init_intermeds_() -- unrecognized CorrelationFactor",__FILE__,__LINE__);
 
   emp2pair_aa_.assign(0.0);
   emp2pair_ab_.assign(0.0);
@@ -1149,6 +1153,16 @@ R12IntEval::compute()
 {
   if (evaluated_)
     return;
+  
+  // if no explicit correlation -- only compute MP2 energies
+  if (corrfactor()->id() == LinearR12::NullCorrFactor) {
+    for(int s=0; s<nspincases2(); s++) {
+      const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+      compute_mp2_pair_energies_(spincase2);
+    }
+    evaluated_ = true;
+    return;
+  }
   
 #if 1
   if (debug_ > 1) {

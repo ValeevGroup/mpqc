@@ -358,6 +358,11 @@ public:
   const Ref<MOIndexSpace>& vir_act(SpinCase1 S) const;
 };
 
+class TransformNotFound: public ProgrammingError {
+  public:
+  TransformNotFound(const char *description=0, const char *file=0, int line=0) : ProgrammingError(description,file,line) {}
+};
+
 }
 
 #endif

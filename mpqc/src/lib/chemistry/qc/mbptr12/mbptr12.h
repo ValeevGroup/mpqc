@@ -121,7 +121,7 @@ class MBPT2_R12: public MBPT2 {
         hence it is not recommended to use this keyword.
       
         <dt><tt>corr_factor</tt><dd> This string specifies which correlation factor to use.
-        Allowed values are "r12" and "g12". The default is "r12".
+        Allowed values are "r12", "g12", and "none". The default is "r12".
       
         <dt><tt>corr_param</tt><dd> This keyword specifies optional parameters
         of the correlation factor. <tt>corr_param</tt> can be a single floating-point value
@@ -138,7 +138,7 @@ class MBPT2_R12: public MBPT2 {
         with parameters 1.0 and 3.0 combined linearly with coefficients
         0.35 and 0.65, and second primitive function with parameter 10.0 .
 
-        This keyword has not meaning for some correlation factors, e.g., r12,
+        This keyword has no meaning for some correlation factors, e.g., "r12" and "none",
         and is not used. There is no default.
       
         <dt><tt>stdapprox</tt><dd> This gives a string that must take on one

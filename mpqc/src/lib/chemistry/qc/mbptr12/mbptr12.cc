@@ -170,6 +170,13 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     else
       throw ProgrammingError("MBPT2_R12::MBPT2_R12() -- corr_param keyword must be given when corr_factor=g12",__FILE__,__LINE__);
   }
+  else if (corrfactor == "none") {
+    // fake parameter 0.0 -- UGLY, should introduce classes
+    typedef LinearR12::CorrelationFactor::CorrelationParameters CorrParams;
+    std::vector< std::pair<double,double> > vtmp;  vtmp.push_back(std::make_pair(0.0,1.0));
+    CorrParams params;  params.push_back(vtmp);
+    corrfactor_ = new LinearR12::CorrelationFactor(LinearR12::NullCorrFactor, params);
+  }
   else
     throw FeatureNotImplemented("MBPT2_R12::MBPT2_R12 -- this correlation factor is not implemented",__FILE__,__LINE__);
   
@@ -231,6 +238,9 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     delete[] sa_string;
     throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- unrecognized value for stdapprox");
   }
+  // if no explicit correlation then set to stdapprox to A
+  if (corrfactor_->id() == LinearR12::NullCorrFactor)
+    stdapprox_ = LinearR12::StdApprox_A;
   
   spinadapted_ = false;
   if (closedshell)

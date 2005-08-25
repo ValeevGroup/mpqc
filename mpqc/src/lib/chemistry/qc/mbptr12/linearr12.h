@@ -41,6 +41,8 @@ namespace sc {
 
     const int NumCorrFactors = 2;
     enum CorrelationFactorID {
+        // null correlation factor
+        NullCorrFactor = -1,
         // Linear R12 correlation factor
         R12CorrFactor = 0,
         // exp(-gamma r12^2) correlation factor -- Gaussian geminal

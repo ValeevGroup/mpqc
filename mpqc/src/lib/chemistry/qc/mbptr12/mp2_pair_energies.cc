@@ -77,8 +77,20 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
                                                  occ2_act,
                                                  yspace,
                                                  0);
-    
-  Ref<TwoBodyMOIntsTransform> ixjy_tform = get_tform_(tform_name);
+  
+  // get the transform object
+  // NOTE needs to become standalone function
+  Ref<TwoBodyMOIntsTransform> ixjy_tform;
+  try {
+    get_tform_(tform_name);
+  }
+  catch (TransformNotFound& ex) {
+    Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
+    tfactory->set_ints_method((MOIntsTransformFactory::StoreMethod)r12info()->ints_method());
+    tfactory->set_spaces(occ1_act,xspace,occ2_act,yspace);
+    ixjy_tform = tfactory->twobody_transform_13(tform_name,corrfactor_->callback());
+  }
+  
   Ref<R12IntsAcc> ijxy_acc = ixjy_tform->ints_acc();
   if (ijxy_acc.null() || !ijxy_acc->is_committed()) {
     Ref<IntParams> params = new IntParamsG12(LinearR12::CorrelationFactor::zero_exponent_geminal(),

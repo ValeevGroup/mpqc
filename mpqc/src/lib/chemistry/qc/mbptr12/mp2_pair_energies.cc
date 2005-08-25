@@ -82,7 +82,7 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
   // NOTE needs to become standalone function
   Ref<TwoBodyMOIntsTransform> ixjy_tform;
   try {
-    get_tform_(tform_name);
+    ixjy_tform = get_tform_(tform_name);
   }
   catch (TransformNotFound& ex) {
     Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
@@ -148,6 +148,11 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
         const double ERI_yx = ijxy_buf_eri[yx];
         const double denom = 1.0/(evals_occ1_act(i) + evals_occ2_act(j) - evals_vir1_act(a) - evals_vir2_act(b));
         
+        if (debug_ > 2)
+          ExEnv::out0() << "i = " << i << " j = " << j << " a = " << x << " b = " << y
+                        << " <ij|ab> = " << ERI_xy << " <ij|ba> = " << ERI_yx
+                        << " denom = " << denom << endl;
+ 
         if (compute_all_spincases) {
           const double ERI_aa = ERI_xy - ERI_yx;
           emp2_aa += 0.5*ERI_aa*ERI_aa*denom;

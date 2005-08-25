@@ -174,9 +174,9 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
   init_intermeds_();
 
   // compute canonical space of virtuals if VBS != OBS
-  if (!r12info()->basis_vir()->equiv(r12info()->basis())) {
+  //if (r12info()->basis_vir()->equiv(r12info()->basis())) {
     form_canonvir_space_();
-  }
+  //}
 }
 
 R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
@@ -1078,7 +1078,7 @@ R12IntEval::form_canonvir_space_()
   for(int s=0; s<nspincases; s++) {
     const SpinCase1 spincase = static_cast<SpinCase1>(s);
     
-    const Ref<MOIndexSpace>& mo_space = r12info_->refinfo()->orbs();
+    const Ref<MOIndexSpace>& mo_space = r12info_->refinfo()->orbs(spincase);
     const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->occ(spincase);
     const Ref<MOIndexSpace>& vir_space = r12info_->vir_sb(spincase);
     RefSCMatrix F_vir = fock_(occ_space,vir_space,vir_space);
@@ -1100,24 +1100,37 @@ R12IntEval::form_canonvir_space_()
     delete[] F_full;
     delete[] F_lowtri;
     
-    Ref<MOIndexSpace> canonvir_space_symblk = new MOIndexSpace("e(sym)", "VBS",
+    std::string id_sb, id;
+    if (r12info()->refinfo()->ref()->spin_polarized() && spincase == Alpha) {
+      id_sb = "E(sym)";
+      id = "E";
+    }
+    else {
+      id_sb = "e(sym)";
+      id = "e";
+    }
+    Ref<MOIndexSpace> canonvir_space_symblk = new MOIndexSpace(id_sb, "VBS",
                                                                vir_space, vir_space->coefs()*F_vir_lt.eigvecs(),
                                                                vir_space->basis());
     r12info()->vir_sb(spincase, canonvir_space_symblk);
     
     RefDiagSCMatrix F_vir_evals = F_vir_lt.eigvals();
-    Ref<MOIndexSpace> vir_act = new MOIndexSpace("e", "VBS",
+    Ref<MOIndexSpace> vir_act = new MOIndexSpace(id, "VBS",
                                                  canonvir_space_symblk->coefs(), canonvir_space_symblk->basis(),
                                                  F_vir_evals, 0, r12info()->refinfo()->nfzv(),
                                                  MOIndexSpace::energy);
     r12info()->vir_act(spincase, vir_act);
-    Ref<MOIndexSpace> vir = new MOIndexSpace("e", "VBS",
+    Ref<MOIndexSpace> vir = new MOIndexSpace(id, "VBS",
                                              canonvir_space_symblk->coefs(), canonvir_space_symblk->basis(),
                                              F_vir_evals, 0, 0,
                                              MOIndexSpace::energy);
     r12info()->vir(spincase, vir);
-      
+    
+    if (debug_ > 2) { 
+      RefSCMatrix F_test = fock_(occ_space,vir_act,vir_act);
+      F_test.print("Test of canonical virtuals"); 
     }
+  }
 }
 
 const int

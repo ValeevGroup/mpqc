@@ -1246,8 +1246,8 @@ void MP2R12Energy::print_pair_energies_new(bool spinadapted, std::ostream& so)
     
   }
   
-  const double ef12_corr_energy = 2.0 * ef12tot(AlphaAlpha) + ef12tot(AlphaBeta);
-  const double emp2f12_corr_energy = 2.0 * emp2f12tot(AlphaAlpha) + emp2f12tot(AlphaBeta);
+  const double ef12_corr_energy = ef12tot(AlphaAlpha) + ef12tot(BetaBeta) + ef12tot(AlphaBeta);
+  const double emp2f12_corr_energy = emp2f12tot(AlphaAlpha) + emp2f12tot(BetaBeta) + emp2f12tot(AlphaBeta);
   
   ///////////////////////////////////////////////////////////////
   // The computation of the MP2 energy is now complete on each

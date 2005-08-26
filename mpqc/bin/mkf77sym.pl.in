@@ -18,7 +18,7 @@ else {
     open(OUT,">$out");
 
     while(<IN>) {
-        if (/\# *define F77_([A-Z]+)/) {
+        if (/\# *define F77_([A-Z]+[A-Z0-9]+)/) {
             $f77name = $1;
             $cname = f77symbol($method, $f77name);
             printf OUT "#define F77_%s %s\n", $f77name, $cname;

@@ -1434,7 +1434,6 @@ AC_MSG_CHECKING(if fortran compiler works)
 if test -n "$F77" -a "$F77" != no ; then
   /bin/rm -f ffunc.f flink.c
   echo "      program main" > ffunc.f
-  echo "      return" >> ffunc.f
   echo "      end" >> ffunc.f
   if $F77 -o ffunc ffunc.f 1>&5 2>&5; then
     AC_MSG_RESULT(yes)

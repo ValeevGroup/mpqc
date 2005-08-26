@@ -146,7 +146,7 @@ CLSCF::CLSCF(const Ref<KeyVal>& keyval) :
 
   // check to see if this was done in SCF(keyval)
   if (!keyval->exists("maxiter"))
-    maxiter_ = 40;
+    maxiter_ = 100;
 
   // now take care of memory stuff
   init_mem(2);

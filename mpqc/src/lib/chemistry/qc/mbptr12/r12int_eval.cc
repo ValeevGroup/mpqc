@@ -746,14 +746,14 @@ Ref<TwoBodyMOIntsTransform>
 R12IntEval::get_tform_(const std::string& tform_name)
 {
   TformMap::const_iterator tform_iter = tform_map_.find(tform_name);
-  TwoBodyMOIntsTransform* tform = (*tform_iter).second.pointer();
-  if (tform == NULL) {
+  if (tform_iter == tform_map_.end()) {
     std::string errmsg = "R12IntEval::get_tform_() -- transform " + tform_name + " is not known";
     throw TransformNotFound(errmsg.c_str(),__FILE__,__LINE__);
   }
   // Do not compute here since compute() call may take params now
   //tform->compute(tbint_params);
 
+  TwoBodyMOIntsTransform* tform = (*tform_iter).second.pointer();
   return tform;
 }
 
@@ -1173,6 +1173,8 @@ R12IntEval::compute()
       const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       compute_mp2_pair_energies_(spincase2);
     }
+    // Distribute the final intermediates to every node
+    globally_sum_intermeds_(true);
     evaluated_ = true;
     return;
   }
@@ -1440,6 +1442,7 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
       globally_sum_scmatrix_(A_[s],to_all_tasks);
       globally_sum_scmatrix_(T2_[s],to_all_tasks);
     }
+    globally_sum_scvector_(emp2pair_[s],to_all_tasks);
   }
 
   if (debug_) {

@@ -231,11 +231,6 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
         // kl loop
         for(kl_iter.start(ij+1);int(kl_iter);kl_iter.next()) {
           
-          const int kl = kl_iter.ij();
-          // Figure out if this task will handle this kl
-          int kl_proc = kl%nproc_with_ints;
-          if (kl_proc != proc_with_ints[me])
-            continue;
           const int k = kl_iter.i();
           const int l = kl_iter.j();
           const int kl_ab = kl_iter.ij_ab();
@@ -271,11 +266,6 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
           // kl loop
           for(kl_iter.start(ij+1);int(kl_iter);kl_iter.next()) {
             
-            const int kl = kl_iter.ij();
-            // Figure out if this task will handle this kl
-            int kl_proc = kl%nproc_with_ints;
-            if (kl_proc != proc_with_ints[me])
-              continue;
             const int k = kl_iter.i();
             const int l = kl_iter.j();
             const int kl_ab = kl_iter.ij_ab();
@@ -379,7 +369,7 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
     antisymmetrize(X_[spincase],X,ispace,ispace,true);
     antisymmetrize(B_[spincase],B,ispace,ispace,true);
   }
-  
+
   globally_sum_intermeds_();
   
   ExEnv::out0() << decindent;

@@ -71,7 +71,6 @@ MP2R12Energy::compute_new_()
     }
     else {
       
-      
       const Ref<MOIndexSpace>& occ1_act = r12eval()->occ_act(case1(spincase2));
       const Ref<MOIndexSpace>& vir1_act = r12eval()->vir_act(case1(spincase2));
       const Ref<MOIndexSpace>& occ2_act = r12eval()->occ_act(case2(spincase2));
@@ -92,10 +91,8 @@ MP2R12Energy::compute_new_()
       RefSCMatrix A;
       if (ebc == false)
         A = r12eval()->A(spincase2);
-      RefSCVector emp2 = r12eval()->emp2(spincase2);
       
       // Prepare total and R12 pairs
-      Ref<SCMatrixKit> defaultkit = V.kit();
       const RefSCDimension dim_oo = V.coldim();
       const RefSCDimension dim_xc = V.rowdim();
       const int noo = dim_oo.n();
@@ -104,8 +101,6 @@ MP2R12Energy::compute_new_()
       const int nxc = dim_xc.n();
       const int num_f12 = r12info->corrfactor()->nfunctions();
       
-      emp2f12_[spin] = defaultkit->vector(dim_oo);
-      ef12_[spin] = defaultkit->vector(dim_oo);
       double* ef12_vec = new double[noo];
       memset(ef12_vec,0,sizeof(double)*noo);
       
@@ -239,8 +234,14 @@ MP2R12Energy::compute_new_()
       B_ij = 0;
       msg->sum(ef12_vec,noo,0,-1);
       ef12_[spin]->assign(ef12_vec);
-      emp2f12_[spin]->assign(emp2);
+
+      RefSCVector emp2 = r12eval()->emp2(spincase2);
+      double* buf = new double[emp2.dim().n()];
+      emp2.convert(buf);
+      emp2f12_[spin].assign(buf);
+      delete[] buf;
       emp2f12_[spin]->accumulate(ef12_[spin]);
+
       delete[] ef12_vec;
     }
     

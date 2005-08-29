@@ -696,6 +696,7 @@ SumDenFunctional::print(ostream& o) const
   o
     << indent << "Sum of Functionals:" << endl;
   o << incindent;
+  o << indent << scprintf("%+18.16f Hartree-Fock Exchange",a0_) << endl;
   for (int i=0; i<n_; i++) {
       o << indent << scprintf("%+18.16f",coefs_[i]) << endl;
       o << incindent;

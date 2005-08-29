@@ -162,6 +162,21 @@ clean_up(void)
 #  include <fenv.h>
 #endif
 
+static void
+print_unseen(const Ref<ParsedKeyVal> &parsedkv,
+             const char *input)
+{
+  if (parsedkv->have_unseen()) {
+    ExEnv::out0() << endl;
+    ExEnv::out0() << indent
+         << "The following keywords in \"" << input << "\" were ignored:"
+         << endl;
+    ExEnv::out0() << incindent;
+    parsedkv->print_unseen(ExEnv::out0());
+    ExEnv::out0() << decindent;
+  }
+}
+
 int
 try_main(int argc, char *argv[])
 {
@@ -675,6 +690,22 @@ try_main(int argc, char *argv[])
   
   int print_timings = keyval->booleanvalue("print_timings",truevalue);
 
+  // see if any pictures are desired
+  Ref<Render> renderer;
+  renderer << keyval->describedclassvalue("renderer");
+
+  // If we have a renderer, then we will read in some more info
+  // below.  Otherwise we can get rid of the keyval's, to eliminate
+  // superfluous references to objects that we might otherwise be
+  // able to delete.  We cannot read in the remaining rendering
+  // objects now, since some of their KeyVal CTOR's are heavyweight,
+  // requiring optimized geometries, etc.
+  if (renderer.null()) {
+    if (parsedkv.nonnull()) print_unseen(parsedkv, input);
+    keyval = 0;
+    parsedkv = 0;
+  }
+
   // sanity checks for the benefit of reasonable looking output
   if (opt.null()) do_opt=0;
   
@@ -839,57 +870,56 @@ try_main(int argc, char *argv[])
     }
   }
 
-  // see if any pictures are desired
-  Ref<Render> renderer;
-  renderer << keyval->describedclassvalue("renderer");
-  Ref<RenderedObject> rendered;
-  rendered << keyval->describedclassvalue("rendered");
-  Ref<AnimatedObject> animated;
-  animated << keyval->describedclassvalue("rendered");
-  if (renderer.nonnull() && rendered.nonnull()) {
-    if (tim.nonnull()) tim->enter("render");
-    if (grp->me() == 0) renderer->render(rendered);
-    if (tim.nonnull()) tim->exit("render");
-  }
-  else if (renderer.nonnull() && animated.nonnull()) {
-    if (tim.nonnull()) tim->enter("render");
-    if (grp->me() == 0) renderer->animate(animated);
-    if (tim.nonnull()) tim->exit("render");
-  }
-  else if (renderer.nonnull()) {
-    if (tim.nonnull()) tim->enter("render");
-    int n = keyval->count("rendered");
-    for (i=0; i<n; i++) {
-      rendered << keyval->describedclassvalue("rendered",i);
-      animated << keyval->describedclassvalue("rendered",i);
-      if (rendered.nonnull()) {
-        // make sure the object has a name so we don't overwrite its file
-        if (rendered->name() == 0) {
-          char ic[64];
-          sprintf(ic,"%02d",i);
-          rendered->set_name(ic);
-        }
-        if (grp->me() == 0) renderer->render(rendered);
-      }
-      else if (animated.nonnull()) {
-        // make sure the object has a name so we don't overwrite its file
-        if (animated->name() == 0) {
-          char ic[64];
-          sprintf(ic,"%02d",i);
-          animated->set_name(ic);
-        }
-        if (grp->me() == 0) renderer->animate(animated);
-      }
+  if (renderer.nonnull()) {
+    Ref<RenderedObject> rendered;
+    rendered << keyval->describedclassvalue("rendered");
+    Ref<AnimatedObject> animated;
+    animated << keyval->describedclassvalue("rendered");
+    if (rendered.nonnull()) {
+      if (tim.nonnull()) tim->enter("render");
+      if (grp->me() == 0) renderer->render(rendered);
+      if (tim.nonnull()) tim->exit("render");
     }
-    if (tim.nonnull()) tim->exit("render");
-  }
-  Ref<MolFreqAnimate> molfreqanim;
-  molfreqanim << keyval->describedclassvalue("animate_modes");
-  if (ready_for_freq && molfreq.nonnull()
-      && molfreqanim.nonnull() && renderer.nonnull()) {
-    if (tim.nonnull()) tim->enter("render");
-    molfreq->animate(renderer, molfreqanim);
-    if (tim.nonnull()) tim->exit("render");
+    else if (animated.nonnull()) {
+      if (tim.nonnull()) tim->enter("render");
+      if (grp->me() == 0) renderer->animate(animated);
+      if (tim.nonnull()) tim->exit("render");
+    }
+    else {
+      if (tim.nonnull()) tim->enter("render");
+      int n = keyval->count("rendered");
+      for (i=0; i<n; i++) {
+        rendered << keyval->describedclassvalue("rendered",i);
+        animated << keyval->describedclassvalue("rendered",i);
+        if (rendered.nonnull()) {
+          // make sure the object has a name so we don't overwrite its file
+          if (rendered->name() == 0) {
+            char ic[64];
+            sprintf(ic,"%02d",i);
+            rendered->set_name(ic);
+          }
+          if (grp->me() == 0) renderer->render(rendered);
+        }
+        else if (animated.nonnull()) {
+          // make sure the object has a name so we don't overwrite its file
+          if (animated->name() == 0) {
+            char ic[64];
+            sprintf(ic,"%02d",i);
+            animated->set_name(ic);
+          }
+          if (grp->me() == 0) renderer->animate(animated);
+        }
+      }
+      if (tim.nonnull()) tim->exit("render");
+    }
+    Ref<MolFreqAnimate> molfreqanim;
+    molfreqanim << keyval->describedclassvalue("animate_modes");
+    if (ready_for_freq && molfreq.nonnull()
+        && molfreqanim.nonnull()) {
+      if (tim.nonnull()) tim->enter("render");
+      molfreq->animate(renderer, molfreqanim);
+      if (tim.nonnull()) tim->exit("render");
+    }
   }
 
   if (mole.nonnull()) {
@@ -911,15 +941,7 @@ try_main(int argc, char *argv[])
          << endl;
   }
 
-  if (parsedkv->have_unseen()) {
-    ExEnv::out0() << indent
-         << "The following keywords in \"" << input << "\" were ignored:"
-         << endl;
-    ExEnv::out0() << incindent;
-    parsedkv->print_unseen(ExEnv::out0());
-    ExEnv::out0() << decindent;
-    ExEnv::out0() << endl;
-  }
+  if (parsedkv.nonnull()) print_unseen(parsedkv, input);
 
   if (print_timings)
     if (tim.nonnull()) tim->print(ExEnv::out0());
@@ -928,9 +950,6 @@ try_main(int argc, char *argv[])
   delete[] molname;
   SCFormIO::set_default_basename(0);
 
-  molfreqanim = 0;
-  animated = 0;
-  rendered = 0;
   renderer = 0;
   molfreq = 0;
   molhess = 0;

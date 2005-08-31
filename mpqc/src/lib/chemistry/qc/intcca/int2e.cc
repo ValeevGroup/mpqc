@@ -72,6 +72,8 @@ Int2eCCA::Int2eCCA(Integral *integral,
   cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
   cca_bs3_.initialize( bs3_.pointer(), bs3_->name() );
   cca_bs4_.initialize( bs4_.pointer(), bs4_->name() );
+
+  cca_dc_ = Chemistry_QC_GaussianBasis_DerivCenters::_create();
  
   if( eval_type == "eri" ) {
     erep_ = eval_factory_.get_integral_evaluator4( "eri2", 0,
@@ -102,12 +104,11 @@ Int2eCCA::Int2eCCA(Integral *integral,
 void
 Int2eCCA::compute_erep( int is, int js, int ks, int ls )
 {
-  Chemistry_QC_GaussianBasis_DerivCenters dc;
-  dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
+  cca_dc_.clear();
   if( use_opaque_ )
-    erep_ptr_->compute( is, js, ks, ls, 0, dc );
+    erep_ptr_->compute( is, js, ks, ls, 0, cca_dc_ );
   else {   
-    sidl_buffer_ = erep_ptr_->compute_array( is, js, ks, ls, 0, dc );
+    sidl_buffer_ = erep_ptr_->compute_array( is, js, ks, ls, 0, cca_dc_ );
     int nelem = bs1_->shell(is).nfunction() * bs2_->shell(js).nfunction() *
                 bs3_->shell(ks).nfunction() * bs4_->shell(ls).nfunction();
     copy_buffer(nelem);

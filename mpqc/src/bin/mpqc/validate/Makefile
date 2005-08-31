@@ -381,7 +381,7 @@ check2_run:
 check2_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK2OUTPUTS:$(INP)/%=$(RUN)/%)
 
-checkcca_run:
+checkcca_run: $(RUN)
 	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CCAINTV3INPUTS:$(INP)/%=%) $(CCACINTSINPUTS:$(INP)/%=%)
 	$(MAKE) checkccafe_run
 
@@ -392,7 +392,7 @@ checkcca_chk:
 CCARUN = ../ccarun
 CCARUN_EXTRA_ARGS = --inputprefix $(SRCDIR)/ref \
                      --outputprefix $(RUN)
-checkccafe_run: stamp-ccafe
+checkccafe_run: $(RUN) stamp-ccafe
 	$(PERL) $(CCARUN) $(CCARUN_EXTRA_ARGS) $(CCAFEINPUTS) 
 
 checkccafe_chk:

@@ -36,6 +36,7 @@
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactory.hh>
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluator4.hh>
 #include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
+#include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
 #include <MPQC_GaussianBasis_Molecular.hh>
 #include <chemistry/qc/basis/integral.h>
 
@@ -71,6 +72,7 @@ class Int2eCCA: public RefCount {
     IntegralEvaluator4 erep_1der_;
     IntegralEvaluator4 *erep_ptr_;
     IntegralEvaluator4 *erep_1der_ptr_;
+    Chemistry_QC_GaussianBasis_DerivCenters cca_dc_;
     int redundant_;
     void remove_redundant(int,int,int,int);
 

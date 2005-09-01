@@ -37,6 +37,7 @@
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluator2.hh>
 #include <Chemistry_QC_GaussianBasis_Molecular.hh>
 #include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
+#include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
 #include <MPQC_GaussianBasis_Molecular.hh>
 #include <chemistry/qc/basis/integral.h>
 
@@ -79,6 +80,7 @@ class Int1eCCA: public RefCount {
     IntegralEvaluator2 *nuclear_1der_ptr_;
     IntegralEvaluator2 *hcore_ptr_;
     IntegralEvaluator2 *hcore_1der_ptr_;
+    Chemistry_QC_GaussianBasis_DerivCenters cca_dc_;
 
   protected:
     Integral *integral_;

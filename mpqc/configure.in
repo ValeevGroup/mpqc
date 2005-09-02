@@ -1124,6 +1124,8 @@ if test X$HAVE_PTHREAD = Xyes; then
   AC_CHECK_FUNC(pthread_attr_getschedpolicy)
   AC_CHECK_FUNC(pthread_attr_setschedparam)
   AC_CHECK_FUNC(pthread_attr_getschedparam)
+  AC_CHECK_FUNC(sched_get_priority_max)
+  AC_CHECK_FUNC(sched_get_priority_min)
 fi
 
 AC_CHECK_LIB(dl,main)

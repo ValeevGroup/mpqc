@@ -156,8 +156,20 @@ void PthreadThreadGrp::add_thread(int ithread, Thread* t, int priority)
   
 }
 
+#if defined(HAVE_SCHED_GET_PRIORITY_MAX) \
+   && defined(HAVE_SCHED_GET_PRIORITY_MAX) \
+   && defined(HAVE_PTHREAD_ATTR_SETSCOPE) \
+   && defined(HAVE_PTHREAD_ATTR_SETSCHEDPARAM) \
+   && defined(HAVE_PTHREAD_ATTR_SETINHERITSCHED) \
+   && defined(HAVE_PTHREAD_ATTR_SETSCHEDPOLICY)
+#define THREAD_PRIORITY_CAN_BE_SET
+#else
+#undef THREAD_PRIORITY_CAN_BE_SET
+#endif
+
 void PthreadThreadGrp::init_priority(int ithread, int priority)
 {
+#ifdef THREAD_PRIORITY_CAN_BE_SET
   struct sched_param param, low_param, high_param;
   int rc, selected_sched, set_params;
 
@@ -165,35 +177,44 @@ void PthreadThreadGrp::init_priority(int ithread, int priority)
   
   // Check priority settings for various schedulers and select which to use
   selected_sched=-1;
+
+#ifdef SCHED_OTHER
   low_param.sched_priority = sched_get_priority_min(SCHED_OTHER);
   high_param.sched_priority = sched_get_priority_max(SCHED_OTHER);
   if (high_param.sched_priority > low_param.sched_priority) {
     selected_sched = SCHED_OTHER;
     set_params=1;
   }
-  else if (selected_sched==-1) {
+#endif // SCHED_OTHER
+#ifdef SCHED_RR
+  if (!set_params) {
     low_param.sched_priority = sched_get_priority_min(SCHED_RR);
     high_param.sched_priority = sched_get_priority_max(SCHED_RR);
     if (high_param.sched_priority > low_param.sched_priority) {
       selected_sched=SCHED_RR; set_params=1;
     }
   }
-  else if (selected_sched==-1) {
+#endif // SCHED_RR
+#ifdef SCHED_FIFO
+  if (!set_params) {
     low_param.sched_priority = sched_get_priority_min(SCHED_FIFO);
     high_param.sched_priority = sched_get_priority_max(SCHED_FIFO);
     if (high_param.sched_priority > low_param.sched_priority) {
       selected_sched=SCHED_FIFO; set_params=1;
     }
   }
+#endif // SCHED_FIFO
 
+#ifdef PTHREAD_SCOPE_SYSTEM
   pthread_attr_setscope(&attr_[ithread],PTHREAD_SCOPE_SYSTEM);
+#endif
   if (set_params) {  
     pthread_attr_setinheritsched(&attr_[ithread],PTHREAD_EXPLICIT_SCHED);
     pthread_attr_setschedpolicy(&attr_[ithread], selected_sched);
     param.sched_priority = ( sched_get_priority_min(selected_sched) + priority );
     pthread_attr_setschedparam(&attr_[ithread],&param);
   }
-  
+#endif // THREAD_PRIORITY_CAN_BE_SET
 }
 int
 PthreadThreadGrp::start_threads()

@@ -125,6 +125,9 @@ TwoBodyMOIntsTransform_13Inds::run()
   double dtol = pow(2.0,tol_);
   const size_t memgrp_blksize = tform_->memgrp_blksize()/sizeof(double);
 
+  const int tbtype_anti1 = TwoBodyInt::r12t1;
+  const int tbtype_anti2 = TwoBodyInt::r12t2;
+
   double** vector1 = new double*[nbasis1];
   double** vector3 = new double*[nbasis3];
   vector1[0] = new double[rank1*nbasis1];
@@ -293,8 +296,8 @@ TwoBodyMOIntsTransform_13Inds::run()
                     if (bs1_eq_bs2) {
 
                       double rsip_int_contrib = rsiq_int_contrib;
-                      if (te_type == TwoBodyInt::r12t1)
-                      rsip_int_contrib = -1.0*rsiq_int_contrib;
+                      if (te_type == tbtype_anti1)
+                        rsip_int_contrib = -1.0*rsiq_int_contrib;
 
                       if (p == q) {
                         for (int i=0; i<ni; i++) {
@@ -381,6 +384,8 @@ TwoBodyMOIntsTransform_13Inds::run()
 
           if (bs3_eq_bs4) {
 
+            const double ket_perm_pfac = (te_type == tbtype_anti2) ? -1.0 : 1.0;
+
             for (int bf3 = 0; bf3 < nr; bf3++) {
               int r = r_offset + bf3;
               int smin = (bs3_eq_bs4 && R == S) ? bf3 : 0;
@@ -405,7 +410,7 @@ TwoBodyMOIntsTransform_13Inds::run()
 
                     double value = *i_ptr++;
                     *ijsq_ptr++ += c_rj * value;
-                    *ijrq_ptr++ += c_sj * value;
+                    *ijrq_ptr++ += c_sj * value * ket_perm_pfac;
 
                   }
                 }

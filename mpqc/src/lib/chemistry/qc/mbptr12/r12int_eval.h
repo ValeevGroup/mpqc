@@ -131,8 +131,6 @@ class R12IntEval : virtual public SavableState {
   void init_intermeds_g12_(SpinCase2 S);
   /// Compute r^2 contribution to X using compute_r2_()
   void r2_contrib_to_X_new_();
-  /// Compute <space1 space1|r_{12}^2|space1 space2> matrix
-  RefSCMatrix compute_r2_(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
   /// Compute <space1 space2|r_{12}^2|space3 space4> matrix
   RefSCMatrix compute_r2_(const Ref<MOIndexSpace>& space1,
                           const Ref<MOIndexSpace>& space2,
@@ -156,20 +154,6 @@ class R12IntEval : virtual public SavableState {
       (or -1 if the task doesn't have access to the integrals) */
   const int tasks_with_ints_(const Ref<R12IntsAcc> ints_acc, vector<int>& map_to_twi);
 
-  /** Compute contribution to V, X, and B of the following form:
-      0.5 * \bar{g}_{ij}^{pq} * \bar{r}_{pq}^{kl}, where p and q span mospace.
-      tform_name is the name of the transform to be used to get the integrals.
-      mospace is either space2() or space4() of that transform
-  */
-  void contrib_to_VXB_a_symm_(const std::string& tform_name);
-
-  /** Compute contribution to V, X, and B of the following form:
-      \bar{g}_{ij}^{am} * \bar{r}_{am}^{kl}, where m and a span space1 and space2, respectively.
-      tform_name is the name of the transform to be used to get the integrals.
-      mospace1 and mospace2 are space2() and space4() of that transform, respectively
-  */
-  void contrib_to_VXB_a_asymm_(const std::string& tform_name);
-
   /// New, all-encompassing version
   void contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
                              const Ref<MOIndexSpace>& xspace,
@@ -180,14 +164,7 @@ class R12IntEval : virtual public SavableState {
 
   /// Compute MP2 pair energies of spin case S
   void compute_mp2_pair_energies_(SpinCase2 S);
-                                  
-  /// Compute OBS contribution to V, X, and B (these contributions are independent of the method)
-  void obs_contrib_to_VXB_gebc_vbseqobs_();
-
-  /// Compute 1-ABS contribution to V, X, and B (these contributions are independent of the method)
-  void abs1_contrib_to_VXB_gebc_();
-
-  /// Equiv to the sum of above, except for this doesn't assume that VBS is the same as OBS
+  /// Compute VXB intermeds when VBS is not the same as OBS
   void contrib_to_VXB_gebc_vbsneqobs_();
 
   /// Compute A using the "simple" formula obtained using direct substitution alpha'->a'

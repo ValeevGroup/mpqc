@@ -55,21 +55,6 @@ R12IntEval::contrib_to_VXB_gebc_vbsneqobs_()
   if (evaluated_)
     return;
 
-  /*form_canonvir_space_();
-  contrib_to_VXB_a_symm_("(im|jn)",r12info_->occ_space());
-  contrib_to_VXB_a_symm_("(ia|jb)",canonvir_space);
-  contrib_to_VXB_a_asymm_("(im|ja)",r12info_->occ_space(),canonvir_space_);
-  if (r12info_->basis_vir() != r12info_->basis_ri())
-    contrib_to_VXB_a_asymm_("(im|jy)",r12info_->occ_space(),r12info_->ribs_space());
-  */
-#if USE_RHFONLY_CODE
-  contrib_to_VXB_a_symm_("(im|jn)");
-  contrib_to_VXB_a_symm_("(ia|jb)");
-  contrib_to_VXB_a_asymm_("(im|ja)");
-  if (r12info_->basis_vir() != r12info_->basis_ri())
-    contrib_to_VXB_a_asymm_("(im|jy)");
-#endif
-
   // Compute VXB using new code
   using LinearR12::TwoParticleContraction;
   using LinearR12::Direct_Contraction;

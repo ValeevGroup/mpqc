@@ -76,19 +76,11 @@ R12IntEval::compute_T2_()
   int me = msg->me();
   int nproc = msg->n();
   
-#if !USE_SINGLEREFINFO
-  const Ref<MOIndexSpace>& obs_space = r12info_->obs_space();
-  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
-  const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
-  const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
-  const int nfzv = r12info_->nfzv();
-#else
   const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
   const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
   const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
   const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
   const int nfzv = r12info_->refinfo()->nfzv();
-#endif
   const int noso = obs_space->rank();
   const int nocc = occ_space->rank();
   
@@ -235,19 +227,11 @@ differs from the basis set for occupieds");
     << "Entered R amplitude evaluator" << endl;
   ExEnv::out0() << incindent;
 
-#if !USE_SINGLEREFINFO
-  const Ref<MOIndexSpace>& obs_space = r12info_->obs_space();
-  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
-  const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
-  const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
-  const int nfzv = r12info_->nfzv();
-#else
   const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
   const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
   const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
   const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
   const int nfzv = r12info_->refinfo()->nfzv();
-#endif
   const int noso = obs_space->rank();
   const int nocc = occ_space->rank();
 
@@ -367,19 +351,11 @@ R12IntEval::compute_A_simple_()
     << "Entered A intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
 
-#if !USE_SINGLEREFINFO
-  const Ref<MOIndexSpace>& obs_space = r12info_->obs_space();
-  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
-  const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
-  const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
-  const int nfzv = r12info_->nfzv();
-#else
   const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
   const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
   const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
   const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
   const int nfzv = r12info_->refinfo()->nfzv();
-#endif
   const int noso = obs_space->rank();
   const int nocc = occ_space->rank();
   const int nvir_act = act_vir_space->rank();
@@ -400,7 +376,7 @@ R12IntEval::compute_A_simple_()
   Ref<TwoBodyMOIntsTransform> iajBf_tform = tfactory->twobody_transform_13("(ia|jB_f)",corrfactor_->callback());
   iajBf_tform->compute(intparams_);
   Ref<R12IntsAcc> ijaBf_acc = iajBf_tform->ints_acc();
-  
+
   SpatialMOPairIter_eq ij_iter(act_occ_space);
   SpatialMOPairIter_eq ab_iter(act_vir_space);
   int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)

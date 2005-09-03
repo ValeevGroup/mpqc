@@ -81,15 +81,9 @@ MP2R12Energy::init_()
   RefSCDimension dim_oo_aa = r12eval_->dim_oo_aa();
   RefSCDimension dim_oo_ab = r12eval_->dim_oo_ab();
   Ref<SCMatrixKit> kit = r12info->matrixkit();
-  er12_aa_ = kit->vector(dim_oo_aa);
-  er12_ab_ = kit->vector(dim_oo_ab);
-  emp2r12_aa_ = kit->vector(dim_oo_aa);
-  emp2r12_ab_ = kit->vector(dim_oo_ab);
 
   RefSCDimension dim_vv_aa = r12eval_->dim_vv_aa();
   RefSCDimension dim_vv_ab = r12eval_->dim_vv_ab();
-  Caa_ = kit->matrix(dim_oo_aa, dim_oo_aa);
-  Cab_ = kit->matrix(dim_oo_ab, dim_oo_ab);
   for(int s=0; s<NSpinCases2; s++) {
     const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();
     if (spin_polarized || s != BetaBeta) {
@@ -113,14 +107,6 @@ MP2R12Energy::MP2R12Energy(StateIn& si) : SavableState(si)
 
   init_();
 
-  er12_aa_.restore(si);
-  er12_ab_.restore(si);
-  emp2r12_aa_.restore(si);
-  emp2r12_ab_.restore(si);
-
-  Caa_.restore(si);
-  Cab_.restore(si);
-  
   if (si.version(::class_desc<MP2R12Energy>()) >= 2) {
     for(int s=0; s<NSpinCases2; s++) {
       ef12_[s].restore(si);
@@ -147,14 +133,6 @@ void MP2R12Energy::save_data_state(StateOut& so)
 {
   SavableState::save_state(r12eval_.pointer(),so);
 
-  er12_aa_.save(so);
-  er12_ab_.save(so);
-  emp2r12_aa_.save(so);
-  emp2r12_ab_.save(so);
-  
-  Caa_.save(so);
-  Cab_.save(so);
-  
   for(int s=0; s<NSpinCases2; s++) {
     ef12_[s].save(so);
     emp2f12_[s].save(so);
@@ -180,51 +158,7 @@ int MP2R12Energy::get_debug() const { return debug_; };
 
 double MP2R12Energy::energy()
 {
-  double value = emp2tot_aa_() + emp2tot_ab_() + er12tot_aa_() + er12tot_ab_();
-  return value;
-}
-
-double MP2R12Energy::emp2tot_aa_() const
-{
-  RefSCVector emp2_aa = r12eval_->emp2_aa();
-  int nij = emp2_aa.dim().n();
-  double value = 0;
-  for(int ij=0; ij<nij; ij++)
-    value += emp2_aa.get_element(ij);
-
-  return value;
-}
-
-double MP2R12Energy::emp2tot_ab_() const
-{
-  RefSCVector emp2_ab = r12eval_->emp2_ab();
-  int nij = emp2_ab.dim().n();
-  double value = 0;
-  for(int ij=0; ij<nij; ij++)
-    value += emp2_ab.get_element(ij);
-
-  return value;
-}
-
-double MP2R12Energy::er12tot_aa_()
-{
-  compute();
-  int nij = er12_aa_.dim().n();
-  double value = 0;
-  for(int ij=0; ij<nij; ij++)
-    value += er12_aa_.get_element(ij);
-
-  return value;
-}
-
-double MP2R12Energy::er12tot_ab_()
-{
-  compute();
-  int nij = er12_ab_.dim().n();
-  double value = 0;
-  for(int ij=0; ij<nij; ij++)
-    value += er12_ab_.get_element(ij);
-
+  double value = emp2f12tot(AlphaAlpha) + emp2f12tot(BetaBeta) + emp2f12tot(AlphaBeta);
   return value;
 }
 
@@ -242,330 +176,13 @@ double MP2R12Energy::ef12tot(SpinCase2 s) const
   return ef12_[s].dot(unit);
 }
 
-void MP2R12Energy::compute()
-{
-  if (evaluated_)
-    return;
-
-#if USE_RHFONLY_CODE
-  Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  Ref<MessageGrp> msg = r12info->msg();
-  int me = msg->me();
-  int ntasks = msg->n();
-  
-  bool ebc = r12eval_->ebc();
-
-  //
-  // Evaluate pair energies:
-  // distribute workload among nodes by pair index
-  //
-
-  // Need eigenvalues
-#if !USE_SINGLEREFINFO
-  int nocc = r12info->ndocc();
-  int nfzc = r12info->nfzc();
-  int nocc_act = r12info->ndocc_act();
-  int nvir_act = r12info->nvir_act();
-  RefDiagSCMatrix evalmat = r12eval_->evals();
-#else
-  int nocc = r12info->refinfo()->docc()->rank();
-  int nfzc = r12info->refinfo()->nfzc();
-  int nocc_act = r12info->refinfo()->docc_act()->rank();
-  int nvir_act = r12info->vir_act()->rank();
-  RefDiagSCMatrix evalmat = r12info->refinfo()->orbs()->evals();
-#endif
-  vector<double> evals_act_occ(nocc_act);
-  vector<double> evals_act_vir(nvir_act);
-  for(int i=nfzc; i<nocc; i++)
-    evals_act_occ[i-nfzc] = evalmat(i);
-  for(int i=0; i<nvir_act; i++)
-    evals_act_vir[i] = evalmat(i+nocc);
-  evalmat = 0;
-
-  // Get the intermediates
-  RefSCMatrix Vaa = r12eval_->V_aa();
-  RefSCMatrix Xaa = r12eval_->X_aa();
-  RefSymmSCMatrix Baa = r12eval_->B_aa();
-  RefSCMatrix Aaa = r12eval_->A_aa();
-  RefSCMatrix Vab = r12eval_->V_ab();
-  RefSCMatrix Xab = r12eval_->X_ab();
-  RefSymmSCMatrix Bab = r12eval_->B_ab();
-  RefSCMatrix Aab = r12eval_->A_ab();
-  RefSCVector emp2_aa = r12eval_->emp2_aa();
-  RefSCVector emp2_ab = r12eval_->emp2_ab();
-
-  // Prepare total and R12 pairs
-  Ref<SCMatrixKit> localkit = Vaa.kit();
-  RefSCDimension dim_oo_aa = r12eval_->dim_oo_aa();
-  RefSCDimension dim_oo_ab = r12eval_->dim_oo_ab();
-  int naa = dim_oo_aa.n();
-  int nab = dim_oo_ab.n();
-  emp2r12_aa_ = localkit->vector(dim_oo_aa);
-  emp2r12_ab_ = localkit->vector(dim_oo_ab);
-  er12_aa_ = localkit->vector(dim_oo_aa);
-  er12_ab_ = localkit->vector(dim_oo_ab);
-  double* er12_aa_vec = new double[naa];
-  double* er12_ab_vec = new double[nab];
-  bzerofast(er12_aa_vec,naa);
-  bzerofast(er12_ab_vec,nab);
-
-  //
-  // Alpha-alpha pairs
-  //
-  if (naa > 0) {
-    if (debug_ > 1) {
-      Vaa.print("Alpha-alpha V matrix");
-      Baa.print("Alpha-alpha MP2-R12/A B matrix");
-      if (ebc == false)
-        Aaa.print("Alpha-alpha A matrix");
-    }
-
-    // Allocate the B matrix:
-    // 1) in MP2-R12/A the B matrix is the same for all pairs
-    // 2) int MP2-R12/A' the B matrix is pair-specific
-    RefSymmSCMatrix Baa_ij = Baa.clone();
-    if (stdapprox_ == LinearR12::StdApprox_A) {
-#if USE_INVERT
-      Baa_ij->assign(Baa);
-      Baa_ij->gen_invert_this();
-      if (debug_ > 1)
-        Baa_ij.print("Inverse alpha-alpha MP2-R12/A B matrix");
-#else
-      // solve B * C = V
-      RefSCMatrix Caa_kl_by_ij = Caa_.clone();
-      sc::exp::lapack_linsolv_symmnondef(Baa, Caa_kl_by_ij, Vaa);
-      Caa_kl_by_ij = Caa_kl_by_ij.t();
-      Caa_.assign(Caa_kl_by_ij);  Caa_kl_by_ij = 0;
-      Caa_.scale(-1.0);
-#endif
-    }
-    
-    int ij=0;
-    for(int i=0; i<nocc_act; i++)
-      for(int j=0; j<i; j++, ij++) {
-        
-        if (ij%ntasks != me)
-          continue;
-        
-        RefSCVector Vaa_ij = Vaa.get_column(ij);
-        
-        // In MP2-R12/A' matrices B are pair-specific:
-        // Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
-        if (stdapprox_ == LinearR12::StdApprox_Ap) {
-          Baa_ij.assign(Baa);
-          int kl=0;
-          for(int k=0; k<nocc_act; k++)
-            for(int l=0; l<k; l++, kl++) {
-              int ow=0;
-              for(int o=0; o<nocc_act; o++)
-                for(int w=0; w<o; w++, ow++) {
-                  
-                  if (ow > kl)
-                    continue;
-                  
-                  double fx = 0.5 * (evals_act_occ[k] + evals_act_occ[l] + evals_act_occ[o] + evals_act_occ[w]
-                                     - 2.0*evals_act_occ[i] - 2.0*evals_act_occ[j]) *
-                    Xaa.get_element(kl,ow);
-                  
-                  Baa_ij.accumulate_element(kl,ow,fx);
-                  
-                  // If EBC is not assumed add 2.0*Akl,cd*Acd,ow/(ec+ed-ei-ej)
-                  if (ebc == false) {
-                    double fy = 0.0;
-                    int cd=0;
-                    for(int c=0; c<nvir_act; c++)
-                      for(int d=0; d<c; d++, cd++) {
-                        
-                        fy -= Aaa.get_element(kl,cd)*Aaa.get_element(ow,cd)/(evals_act_vir[c] + evals_act_vir[d]
-                                                                             - evals_act_occ[i] - evals_act_occ[j]);
-                      }
-                    
-                    Baa_ij.accumulate_element(kl,ow,fy);
-                  }
-                  
-                }
-            }
-          if (debug_ > 1)
-            Baa_ij.print("Alpha-alpha MP2-R12/A' B matrix");
-          
-#if USE_INVERT
-          Baa_ij->gen_invert_this();
-          
-          if (debug_ > 1)
-            Baa_ij.print("Inverse alpha-alpha MP2-R12/A' B matrix");
-#endif
-          
-        }
-        
-#if USE_INVERT
-        // The r12 amplitudes B^-1 * V
-        RefSCVector Cij = -1.0*(Baa_ij * Vaa_ij);
-        const int nkl = Cij.dim().n();
-        for(int kl=0; kl<nkl; kl++)
-          Caa_.set_element(ij,kl,Cij.get_element(kl));
-#else
-        RefSCVector Cij = Vaa_ij.clone();
-        if (stdapprox_ == LinearR12::StdApprox_A) {
-          double* v = new double[Cij.n()];
-          Caa_.get_row(ij).convert(v);
-          Cij.assign(v);
-          delete[] v;
-        }
-        else {
-          // solve B * C = V
-          Cij = Vaa_ij.clone();
-          sc::exp::lapack_linsolv_symmnondef(Baa_ij, Cij, Vaa_ij);
-          Cij.scale(-1.0);
-          const int nkl = Cij.dim().n();
-          for(int kl=0; kl<nkl; kl++)
-            Caa_.set_element(ij,kl,Cij.get_element(kl));
-        }
-#endif
-        double eaa_ij = 2.0*Vaa_ij.dot(Cij);
-        er12_aa_vec[ij] = eaa_ij;
-      }
-    Baa_ij = 0;
-    msg->sum(er12_aa_vec,naa,0,-1);
-    er12_aa_->assign(er12_aa_vec);
-    emp2r12_aa_->assign(emp2_aa);
-    emp2r12_aa_->accumulate(er12_aa_);
-    delete[] er12_aa_vec;
-  }
-
-  //
-  // Alpha-beta pairs
-  //
-  if (nab > 0) {
-    if (debug_ > 1) {
-      Vab.print("Alpha-beta V matrix");
-      Bab.print("Alpha-beta MP2-R12/A B matrix");
-      if (ebc == false)
-        Aab.print("Alpha-beta A matrix");
-    }
-    
-    RefSymmSCMatrix Bab_ij = Bab.clone();
-    // In MP2-R12/A the B matrix is the same for all pairs
-    if (stdapprox_ == LinearR12::StdApprox_A) {
-#if USE_INVERT
-      Bab_ij.assign(Bab);
-      if (debug_ > 1)
-        Bab_ij.print("Inverse alpha-beta MP2-R12/A B matrix");
-      Bab_ij->gen_invert_this();
-#else
-      // solve B * C = V
-      RefSCMatrix Cab_kl_by_ij = Cab_.clone();
-      sc::exp::lapack_linsolv_symmnondef(Bab, Cab_kl_by_ij, Vab);
-      Cab_kl_by_ij = Cab_kl_by_ij.t();
-      Cab_.assign(Cab_kl_by_ij);  Cab_kl_by_ij = 0;
-      Cab_.scale(-1.0);
-#endif
-    }
-    
-    int ij=0;
-    for(int i=0; i<nocc_act; i++)
-      for(int j=0; j<nocc_act; j++, ij++) {
-        
-        if (ij%ntasks != me)
-          continue;
-        
-        RefSCVector Vab_ij = Vab.get_column(ij);
-        
-        // In MP2-R12/A' matrices B are pair-specific:
-        // Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
-        if (stdapprox_ == LinearR12::StdApprox_Ap) {
-          Bab_ij.assign(Bab);
-          int kl=0;
-          for(int k=0; k<nocc_act; k++)
-            for(int l=0; l<nocc_act; l++, kl++) {
-              int ow=0;
-              for(int o=0; o<nocc_act; o++)
-                for(int w=0; w<nocc_act; w++, ow++) {
-                  
-                  if (ow > kl)
-                    continue;
-                  
-                  double fx = 0.5 * (evals_act_occ[k] + evals_act_occ[l] + evals_act_occ[o] + evals_act_occ[w]
-                                     - 2.0*evals_act_occ[i] - 2.0*evals_act_occ[j]) *
-                    Xab.get_element(kl,ow);
-                  Bab_ij.accumulate_element(kl,ow,fx);
-                  
-                  // If EBC is not assumed add Akl,cd*Acd,ow/(ec+ed-ei-ej)
-                  if (ebc == false) {
-                    double fy = 0.0;
-                    int cd=0;
-                    for(int c=0; c<nvir_act; c++)
-                      for(int d=0; d<nvir_act; d++, cd++) {
-                        
-                        fy -= Aab.get_element(kl,cd)*Aab.get_element(ow,cd)/(evals_act_vir[c] + evals_act_vir[d]
-                                                                             - evals_act_occ[i] - evals_act_occ[j]);
-                      }
-                    
-                    Bab_ij.accumulate_element(kl,ow,fy);
-                  }
-                  
-                }
-            }
-          if (debug_ > 1)
-	    Bab_ij.print("Alpha-beta MP2-R12/A' B matrix");
-          
-#if USE_INVERT
-          Bab_ij->gen_invert_this();
-          
-          if (debug_ > 1)
-            Bab_ij.print("Inverse alpha-beta MP2-R12/A' B matrix");
-#endif
-          
-        }
-
-#if USE_INVERT
-        // the r12 amplitudes B^-1 * V
-        RefSCVector Cij = -1.0*(Bab_ij * Vab_ij);
-        const int nkl = Cij.dim().n();
-        for(int kl=0; kl<nkl; kl++)
-          Cab_.set_element(ij,kl,Cij.get_element(kl));
-#else
-        RefSCVector Cij = Vab_ij.clone();
-        if (stdapprox_ == LinearR12::StdApprox_A) {
-          double* v = new double[Cij.n()];
-          Cab_.get_row(ij).convert(v);
-          Cij.assign(v);
-          delete[] v;
-        }
-        else {
-          // solve B * C = V
-          Cij = Vab_ij.clone();
-          sc::exp::lapack_linsolv_symmnondef(Bab_ij, Cij, Vab_ij);
-          Cij.scale(-1.0);
-          const int nkl = Cij.dim().n();
-          for(int kl=0; kl<nkl; kl++)
-            Cab_.set_element(ij,kl,Cij.get_element(kl));
-        }
-#endif
-        double eab_ij = 1.0*Vab_ij.dot(Cij);
-        er12_ab_vec[ij] = eab_ij;
-      }
-    Bab_ij=0;
-    msg->sum(er12_ab_vec,nab,0,-1);
-    er12_ab_->assign(er12_ab_vec);
-    emp2r12_ab_->assign(emp2_ab);
-    emp2r12_ab_->accumulate(er12_ab_);
-    delete[] er12_ab_vec;
-  }
-#endif
-  
-  compute_new_();
-  
-  evaluated_ = true;
-  
-  return;
-}
-
 static void print_psi_values(std::ostream& fout, const SCVector3& r1, const SCVector3& r2, double phi_0, double phi_1_mp2, double phi_1_r12)
 {
   fout << scprintf("%9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %9.5lf %12.8lf %12.8lf %12.8lf",
                    r1.x(),r1.y(),r1.z(),r2.x(),r2.y(),r2.z(),phi_0,phi_1_mp2,phi_1_r12) << endl;
 }
 
+#if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
 double
 MP2R12Energy::compute_pair_function_aa(int ij, const SCVector3& r1, const SCVector3& r2)
 {
@@ -589,13 +206,8 @@ MP2R12Energy::compute_pair_function_aa(int ij, const SCVector3& r1, const SCVect
 
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   Ref<MOIndexSpace> act_vir_space = r12info->vir_act();
-#if !USE_SINGLEREFINFO
-  Ref<MOIndexSpace> act_occ_space = r12info->occ_act();
-  Ref<MOIndexSpace> occ_space = r12info->occ_space();
-#else
   Ref<MOIndexSpace> act_occ_space = r12info->refinfo()->docc_act();
   Ref<MOIndexSpace> occ_space = r12info->refinfo()->docc();
-#endif
   Ref<MOIndexSpace> ribs_space = r12info->ribs_space();
 
   RefSCVector phi_aa = compute_2body_values_(true,act_occ_space,act_occ_space,r1,r2);
@@ -642,13 +254,8 @@ MP2R12Energy::compute_pair_function_aa(int ij, const Ref<TwoBodyGrid>& tbgrid)
 
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   Ref<MOIndexSpace> act_vir_space = r12info->vir_act();
-#if !USE_SINGLEREFINFO
-  Ref<MOIndexSpace> act_occ_space = r12info->occ_act();
-  Ref<MOIndexSpace> occ_space = r12info->occ_space();
-#else
   Ref<MOIndexSpace> act_occ_space = r12info->refinfo()->docc_act();
   Ref<MOIndexSpace> occ_space = r12info->refinfo()->docc();
-#endif
   Ref<MOIndexSpace> ribs_space = r12info->ribs_space();
 
   const int nelem = tbgrid->nelem();
@@ -702,13 +309,8 @@ MP2R12Energy::compute_pair_function_ab(int ij, const SCVector3& r1, const SCVect
 
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   Ref<MOIndexSpace> act_vir_space = r12info->vir_act();
-#if !USE_SINGLEREFINFO
-  Ref<MOIndexSpace> act_occ_space = r12info->occ_act();
-  Ref<MOIndexSpace> occ_space = r12info->occ_space();
-#else
   Ref<MOIndexSpace> act_occ_space = r12info->refinfo()->docc_act();
   Ref<MOIndexSpace> occ_space = r12info->refinfo()->docc();
-#endif
   Ref<MOIndexSpace> ribs_space = r12info->ribs_space();
 
   RefSCVector phi_aa = compute_2body_values_(false,act_occ_space,act_occ_space,r1,r2);
@@ -754,13 +356,8 @@ MP2R12Energy::compute_pair_function_ab(int ij, const Ref<TwoBodyGrid>& tbgrid)
 
   Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
   Ref<MOIndexSpace> act_vir_space = r12info->vir_act();
-#if !USE_SINGLEREFINFO
-  Ref<MOIndexSpace> act_occ_space = r12info->occ_act();
-  Ref<MOIndexSpace> occ_space = r12info->occ_space();
-#else
   Ref<MOIndexSpace> act_occ_space = r12info->refinfo()->docc_act();
   Ref<MOIndexSpace> occ_space = r12info->refinfo()->docc();
-#endif
   Ref<MOIndexSpace> ribs_space = r12info->ribs_space();
 
   const int nelem = tbgrid->nelem();
@@ -878,216 +475,11 @@ MP2R12Energy::compute_2body_values_(bool equiv, const Ref<MOIndexSpace>& space1,
 
   return vals;
 }
+#endif
 
 void MP2R12Energy::print(std::ostream& so) const
 {
 } 
-
-void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
-{
-  compute();
-  
-  char* SA_str;
-  switch (stdapprox_) {
-    case LinearR12::StdApprox_A:
-      SA_str = strdup("A");
-      break;
-
-    case LinearR12::StdApprox_Ap:
-      SA_str = strdup("A'");
-      break;
-
-    case LinearR12::StdApprox_B:
-      SA_str = strdup("B");
-      break;
-
-    default:
-      throw std::runtime_error("MP2R12Energy::print_pair_energies -- stdapprox_ is not valid");
-  }
-
-#if USE_RHFONLY_CODE
-  Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-#if !USE_SINGLEREFINFO
-  const int nocc_act = r12info->ndocc_act();
-  const double escf = r12info->ref()->energy();
-#else
-  const int nocc_act = r12info->refinfo()->docc_act()->rank();
-  const double escf = r12info->refinfo()->ref()->energy();
-#endif
-
-  double emp2tot_aa = 0.0;
-  double emp2tot_ab = 0.0;
-  double er12tot_aa = 0.0;
-  double er12tot_ab = 0.0;
-  double emp2tot_0 = 0.0;
-  double emp2tot_1 = 0.0;
-  double er12tot_0 = 0.0;
-  double er12tot_1 = 0.0;
-
-  RefSCVector emp2_aa = r12eval_->emp2_aa();
-  RefSCVector emp2_ab = r12eval_->emp2_ab();
-
-  /*---------------------------------------
-    Spin-adapt pair energies, if necessary
-   ---------------------------------------*/
-  if (!spinadapted) {
-
-    so << endl << indent << "Alpha-alpha MBPT2-R12/" << SA_str << " pair energies:" << endl;
-    so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
-    so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
-    for(int i=0,ij=0;i<nocc_act;i++)
-      for(int j=0;j<i;j++,ij++) {
-        so << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",i+1,j+1,
-                                 emp2_aa->get_element(ij),
-                                 er12_aa_->get_element(ij),
-                                 emp2r12_aa_->get_element(ij)) << endl;
-      }
-      
-    so << endl << indent << "Alpha-beta MBPT2-R12/" << SA_str << " pair energies:" << endl;
-    so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
-    so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
-    for(int i=0,ij=0;i<nocc_act;i++)
-      for(int j=0;j<nocc_act;j++,ij++) {
-        so << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",i+1,j+1,
-                                 emp2_ab->get_element(ij),
-                                 er12_ab_->get_element(ij),
-                                 emp2r12_ab_->get_element(ij)) << endl;
-      }
-
-  }
-  else {
-
-    Ref<SCMatrixKit> localkit = er12_aa_.kit();
-    RefSCVector emp2r12_0 = localkit->vector(r12eval_->dim_oo_s());
-    RefSCVector emp2r12_1 = localkit->vector(r12eval_->dim_oo_t());
-    RefSCVector emp2_0 = localkit->vector(r12eval_->dim_oo_s());
-    RefSCVector emp2_1 = localkit->vector(r12eval_->dim_oo_t());
-    RefSCVector er12_0 = localkit->vector(r12eval_->dim_oo_s());
-    RefSCVector er12_1 = localkit->vector(r12eval_->dim_oo_t());
-
-    // Triplet pairs are easy
-    emp2r12_1->assign(emp2r12_aa_);
-    emp2r12_1->scale(1.5);
-    emp2_1->assign(emp2_aa);
-    emp2_1->scale(1.5);
-    er12_1->assign(er12_aa_);
-    er12_1->scale(1.5);
-
-    // Singlet pairs are a bit trickier
-    int ij_s = 0;
-    for(int i=0; i<nocc_act; i++)
-      for(int j=0; j<=i; j++, ij_s++) {
-        int ij_ab = i*nocc_act + j;
-        int ij_aa = i*(i-1)/2 + j;
-        double eab, eaa, e_s;
-
-        eab = emp2r12_ab_->get_element(ij_ab);
-        if (i != j)
-          eaa = emp2r12_aa_->get_element(ij_aa);
-        else
-          eaa = 0.0;
-        e_s = (i != j ? 2.0 : 1.0) * eab - 0.5 * eaa;
-        emp2r12_0->set_element(ij_s,e_s);
-
-        eab = emp2_ab->get_element(ij_ab);
-        if (i != j)
-          eaa = emp2_aa->get_element(ij_aa);
-        else
-          eaa = 0.0;
-        e_s = (i != j ? 2.0 : 1.0) * eab - 0.5 * eaa;
-        emp2_0->set_element(ij_s,e_s);
-
-        eab = er12_ab_->get_element(ij_ab);
-        if (i != j)
-          eaa = er12_aa_->get_element(ij_aa);
-        else
-          eaa = 0.0;
-        e_s = (i != j ? 2.0 : 1.0) * eab - 0.5 * eaa;
-        er12_0->set_element(ij_s,e_s);
-      }
-
-    // compute total singlet and triplet energies
-    RefSCVector unit_0 = localkit->vector(r12eval_->dim_oo_s());
-    RefSCVector unit_1 = localkit->vector(r12eval_->dim_oo_t());
-    unit_0->assign(1.0);
-    unit_1->assign(1.0);
-    emp2tot_0 = emp2_0.dot(unit_0);
-    emp2tot_1 = emp2_1.dot(unit_1);
-    er12tot_0 = er12_0.dot(unit_0);
-    er12tot_1 = er12_1.dot(unit_1);
-
-    so << endl << indent << "Singlet MBPT2-R12/" << SA_str << " pair energies:" << endl;
-    so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
-    so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
-    for(int i=0,ij=0;i<nocc_act;i++)
-      for(int j=0;j<=i;j++,ij++) {
-        so << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",i+1,j+1,
-                                 emp2_0->get_element(ij),
-                                 er12_0->get_element(ij),
-                                 emp2r12_0->get_element(ij)) << endl;
-      }
-      
-    so << endl << indent << "Triplet MBPT2-R12/" << SA_str << " pair energies:" << endl;
-    so << indent << scprintf("    i       j        mp2(ij)        r12(ij)      mp2-r12(ij)") << endl;
-    so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
-    for(int i=0,ij=0;i<nocc_act;i++)
-      for(int j=0;j<i;j++,ij++) {
-        so << indent << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf",i+1,j+1,
-                                 emp2_1->get_element(ij),
-                                 er12_1->get_element(ij),
-                                 emp2r12_1->get_element(ij)) << endl;
-      }
-
-  }
-
-
-  double mp2_corr_energy_ = emp2tot_aa_() + emp2tot_ab_();
-  double r12_corr_energy_ = er12tot_aa_() + er12tot_ab_();
-  
-  ///////////////////////////////////////////////////////////////
-  // The computation of the MP2 energy is now complete on each
-  // node;
-  ///////////////////////////////////////////////////////////////
-
-  if (spinadapted) {
-    so <<endl<<indent
-      <<scprintf("Singlet MP2 correlation energy [au]:          %17.12lf\n", emp2tot_0);
-    so <<indent
-      <<scprintf("Triplet MP2 correlation energy [au]:          %17.12lf\n", emp2tot_1);
-    so <<indent
-      <<scprintf("Singlet (MP2)-R12/%2s correlation energy [au]: %17.12lf\n", SA_str, er12tot_0);
-    so <<indent
-      <<scprintf("Triplet (MP2)-R12/%2s correlation energy [au]: %17.12lf\n", SA_str, er12tot_1);
-    so <<indent
-      <<scprintf("Singlet MP2-R12/%2s correlation energy [au]:   %17.12lf\n", SA_str,
-                 emp2tot_0 + er12tot_0);
-    so <<indent
-      <<scprintf("Triplet MP2-R12/%2s correlation energy [au]:   %17.12lf\n", SA_str,
-                 emp2tot_1 + er12tot_1);
-  }
-  
-  double etotal = escf + mp2_corr_energy_ + r12_corr_energy_;
-  so <<endl<<indent
-    <<scprintf("RHF energy [au]:                           %17.12lf\n", escf);
-  so <<indent
-    <<scprintf("MP2 correlation energy [au]:               %17.12lf\n", mp2_corr_energy_);
-  so <<indent
-    <<scprintf("(MBPT2)-R12/%2s correlation energy [au]:    %17.12lf\n", SA_str, r12_corr_energy_);
-  so <<indent
-    <<scprintf("MBPT2-R12/%2s correlation energy [au]:      %17.12lf\n", SA_str,
-               mp2_corr_energy_ + r12_corr_energy_);
-  so <<indent
-    <<scprintf("MBPT2-R12/%2s energy [au]:                  %17.12lf\n", SA_str, etotal) << endl;
-
-  so.flush();
-
-  free(SA_str);
-#endif
-  
-  print_pair_energies_new(spinadapted,so);
-  
-  return;
-}
 
 
 namespace {
@@ -1101,10 +493,7 @@ namespace {
   }
 };
 
-//////////////////////////////////
-// print out "new" pair energies
-
-void MP2R12Energy::print_pair_energies_new(bool spinadapted, std::ostream& so)
+void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
 {
   compute();
   
@@ -1167,7 +556,7 @@ void MP2R12Energy::print_pair_energies_new(bool spinadapted, std::ostream& so)
   }
   else {
     
-    Ref<SCMatrixKit> localkit = er12_aa_.kit();
+    Ref<SCMatrixKit> localkit = C_[AlphaAlpha].kit();
     RefSCVector emp2f12_0 = localkit->vector(r12eval_->dim_oo_s());
     RefSCVector emp2f12_1 = localkit->vector(r12eval_->dim_oo_t());
     RefSCVector ef12_0 = localkit->vector(r12eval_->dim_oo_s());

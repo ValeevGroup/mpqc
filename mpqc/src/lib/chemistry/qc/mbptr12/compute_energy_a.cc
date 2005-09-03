@@ -69,27 +69,12 @@ MBPT2_R12::compute_energy_a_()
       r12ap_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_Ap,debug_);
     r12ap_energy_->print_pair_energies(spinadapted_);
 
-    /*const double radius = 1.0;
-    SCVector3 r1(0.0,0.0,radius);
-    r12ap_energy_->compute_pair_function_ab(0,r1,r1);
-    ExEnv::out0() << endl<<endl;
-    const int nintervals = 100;
-    const double Phi_start = -3.1415928;
-    const double Phi_end = +3.1415928;
-    const double dPhi = (Phi_end - Phi_start) / nintervals;
-    const int npts = nintervals + 1;
-    for(int i=-nintervals/2; i<=nintervals/2; i++) {
-      const double Phi = i*dPhi;
-      const double z = radius * cos(Phi);
-      const double x = radius * sin(Phi);
-      SCVector3 r2(x,0.0,z);
-      ExEnv::out0() << indent << Phi;
-      r12ap_energy_->compute_pair_function_ab(0,r1,r2);
-      }*/
+#if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
     if (twopdm_grid_aa_.nonnull())
       r12ap_energy_->compute_pair_function_aa(0,twopdm_grid_aa_);
     if (twopdm_grid_ab_.nonnull())
       r12ap_energy_->compute_pair_function_ab(0,twopdm_grid_ab_);
+#endif
 
     etotal = r12ap_energy_->energy();
     tim_exit("mp2-r12/a' pair energies");

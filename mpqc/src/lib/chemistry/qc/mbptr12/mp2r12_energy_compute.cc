@@ -38,7 +38,7 @@ using namespace std;
 using namespace sc;
 
 void
-MP2R12Energy::compute_new_()
+MP2R12Energy::compute()
 {
   if (evaluated_)
     return;
@@ -116,18 +116,18 @@ MP2R12Energy::compute_new_()
       // 2) int MP2-F12/A' the B matrix is pair-specific
       RefSymmSCMatrix B_ij = B.clone();
       if (stdapprox_ == LinearR12::StdApprox_A) {
-        #if USE_INVERT
+#if USE_INVERT
         B_ij->assign(B);
         B_ij->gen_invert_this();
         if (debug_ > 1)
           B_ij.print("Inverse MP2-F12/A B matrix");
-        #else
+#else
         // solve B * C = V
         RefSCMatrix C = C_[spin].clone();
         sc::exp::lapack_linsolv_symmnondef(B, C, V);
         C_[spin].assign(C);  C = 0;
         C_[spin].scale(-1.0);
-        #endif
+#endif
       }
       
       SpinMOPairIter ij_iter(occ1_act, occ2_act, spincase2);
@@ -205,12 +205,12 @@ MP2R12Energy::compute_new_()
         
         /// Block in which I compute ef12
         {
-          #if USE_INVERT
+#if USE_INVERT
           // The r12 amplitudes B^-1 * V
           RefSCVector Cij = -1.0*(B_ij * V_ij);
           for(int kl=0; kl<nxc; kl++)
             C_[spin].set_element(kl,ij,Cij.get_element(kl));
-          #else
+#else
           RefSCVector Cij = V_ij.clone();
           if (stdapprox_ == LinearR12::StdApprox_A) {
             double* v = new double[Cij.n()];
@@ -226,7 +226,7 @@ MP2R12Energy::compute_new_()
             for(int kl=0; kl<nxc; kl++)
               C_[spin].set_element(kl,ij,Cij.get_element(kl));
           }
-          #endif
+#endif
           double e_ij = V_ij.dot(Cij);
           ef12_vec[ij] = e_ij;
         }

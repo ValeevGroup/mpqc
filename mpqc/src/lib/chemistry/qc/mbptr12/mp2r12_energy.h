@@ -29,15 +29,16 @@
 #pragma interface
 #endif
 
-#ifndef _chemistry_qc_mbptr12_mp2r12energy_h
-#define _chemistry_qc_mbptr12_mp2r12energy_h
-
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
-//#include <chemistry/qc/mbptr12/vxb_eval.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/spin.h>
 #include <chemistry/qc/mbptr12/twobodygrid.h>
+
+#ifndef _chemistry_qc_mbptr12_mp2r12energy_h
+#define _chemistry_qc_mbptr12_mp2r12energy_h
+
+#define MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION 0
 
 namespace sc {
 
@@ -51,33 +52,21 @@ class MP2R12Energy : virtual public SavableState {
   int debug_;
   bool evaluated_;
   
-  RefSCVector er12_aa_, er12_ab_, emp2r12_aa_, emp2r12_ab_;
   RefSCVector ef12_[NSpinCases2], emp2f12_[NSpinCases2];
-  // The coefficients are stored ij by kl, where kl is the r12-multiplied pair
-  RefSCMatrix Caa_, Cab_;
+  // The coefficients are stored kl by ij, where kl is the r12-multiplied pair
   RefSCMatrix C_[NSpinCases2];
 
-  double emp2tot_aa_() const;
-  double emp2tot_ab_() const;
-  double er12tot_aa_();
-  double er12tot_ab_();
   double emp2f12tot(SpinCase2 S) const;
   double ef12tot(SpinCase2 S) const;
 
   // Initialize SCVectors and SCMatrices
   void init_();
-  // new compute function to replace old compute() in the future
-  void compute_new_();
-
   // Computes values of all 2-body products from
   // space1 and space2 if electron 1 is at r1 and
   // electron 2 is at r2. equiv specifies whether electrons
   // are equivalent (same spin) or not
   RefSCVector compute_2body_values_(bool equiv, const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                     const SCVector3& r1, const SCVector3& r2) const;
-
-  // Soon to replace print_pair_energies()
-  void print_pair_energies_new(bool spinadapted, std::ostream&so=ExEnv::out0());
 
 public:
 
@@ -88,7 +77,6 @@ public:
   void save_data_state(StateOut&);
   void obsolete();
   void print(std::ostream&o=ExEnv::out0()) const;
-  void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0());
 
   Ref<R12IntEval> r12eval() const;
   LinearR12::StandardApproximation stdapp() const;
@@ -103,6 +91,10 @@ public:
   
   /// Computes the first-order R12 wave function and MP2-R12 energy
   void compute();
+  // Print pair energies nicely to so
+  void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0());
+
+#if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
   /** Computes the value of the alpha-alpha pair function ij
       when electrons 1 and 2 reside at r1 and r2 */
   double compute_pair_function_aa(int ij, const SCVector3& r1, const SCVector3& r2);
@@ -113,46 +105,14 @@ public:
   void compute_pair_function_aa(int ij, const Ref<TwoBodyGrid>& tbgrid);
   /** Computes values of the alpha-beta pair function ij on tbgrid */
   void compute_pair_function_ab(int ij, const Ref<TwoBodyGrid>& tbgrid);
+#endif
 
-  /// Returns the vector of MP2 alpha-alpha pair energies
-  RefSCVector emp2_aa() const;
-  /// Returns the vector of MP2 alpha-beta pair energies
-  RefSCVector emp2_ab() const;
-  /// Returns the vector of R12 corrections to MP2-R12 alpha-alpha pair energies
-  RefSCVector er12_aa() const;
-  /// Returns the vector of R12 correction to MP2-R12 alpha-beta pair energies
-  RefSCVector er12_ab() const;
-  /// Returns the vector of MP2-R12 alpha-alpha pair energies
-  RefSCVector emp2r12_aa() const;
-  /// Returns the vector of MP2-R12 alpha-beta pair energies
-  RefSCVector emp2r12_ab() const;
   /// Returns the vector of second-order pair energies of spin case S
   RefSCVector emp2f12(SpinCase2 S) const;
   /// Returns the vector of F12 corrections to second-order pair energies of spin case S
   RefSCVector ef12(SpinCase2 S) const;
   /// Returns total MP2-F12 correlation energy
   double energy();
-
-  /** Returns the matrix of amplitudes of
-      alpha-alpha r12-multiplied occupied orbital pairs in the first-order
-      pair function
-  */
-  RefSCMatrix C_aa();
-  /** Returns the matrix of amplitudes of
-      alpha-beta r12-multiplied occupied orbital pairs in the first-order
-      pair function
-  */
-  RefSCMatrix C_ab();
-  /** Returns the matrix of amplitudes of
-      alpha-alpha virtuals orbital pairs in the first-order
-      pair function
-  */
-  RefSCMatrix T2_aa();
-  /** Returns the matrix of amplitudes of
-      alpha-beta virtuals orbital pairs in the first-order
-      pair function
-  */
-  RefSCMatrix T2_ab();
 
   /** Returns the matrix of first-order amplitudes of r12-multiplied occupied orbital pairs.
   */

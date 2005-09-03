@@ -68,13 +68,8 @@ R12IntEval::compute_dualEmp1_()
   
   // Compute act.occ./aux.virt. Fock matrix
   form_canonvir_space_();
-#if USE_SINGLEREFINFO
   Ref<MOIndexSpace> occ_space = r12info_->refinfo()->docc();
   const double eref = r12info_->refinfo()->ref()->energy();
-#else
-  Ref<MOIndexSpace> occ_space = r12info_->occ_space();
-  const double eref = r12info_->ref()->energy();
-#endif
   RefSCMatrix F_aocc_canonvir = fock_(occ_space,occ_space,canonvir_space_);
 
   int nocc = occ_space->rank();

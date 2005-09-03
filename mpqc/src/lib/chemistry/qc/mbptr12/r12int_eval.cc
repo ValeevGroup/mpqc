@@ -67,13 +67,8 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
   int naocc_a, naocc_b;
   int navir_a, navir_b;
   if (!spin_polarized()) {
-#if !USE_SINGLEREFINFO
-    const int nocc_act = r12info_->ndocc_act();
-    const int nvir_act = r12info_->nvir_act();
-#else
     const int nocc_act = r12info_->refinfo()->docc_act()->rank();
     const int nvir_act = r12info_->vir_act()->rank();
-#endif
     naocc_a = naocc_b = nocc_act;
     navir_a = navir_b = nvir_act;
   }
@@ -642,11 +637,7 @@ RefDiagSCMatrix R12IntEval::evals() const {
     throw ProgrammingError("R12IntEval::evals() called but reference determinant spin-polarized",
                            __FILE__,__LINE__);
 
-#if !USE_SINGLEREFINFO
-  return r12info_->obs_space()->evals();
-#else
   return r12info_->refinfo()->orbs()->evals();
-#endif
 };
 
 RefDiagSCMatrix R12IntEval::evals_a() const {
@@ -821,86 +812,6 @@ R12IntEval::init_intermeds_r12_()
   r2_contrib_to_X_new_();
 }
 
-/// Compute <space1 space1|r_{12}^2|space1 space2>
-RefSCMatrix
-R12IntEval::compute_r2_(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2)
-{
-  /*-----------------------------------------------------
-    Compute overlap, dipole, quadrupole moment integrals
-   -----------------------------------------------------*/
-  RefSCMatrix S_11, MX_11, MY_11, MZ_11, MXX_11, MYY_11, MZZ_11;
-  r12info_->compute_multipole_ints(space1, space1, MX_11, MY_11, MZ_11, MXX_11, MYY_11, MZZ_11);
-  r12info_->compute_overlap_ints(space1, space1, S_11);
-
-  RefSCMatrix S_12, MX_12, MY_12, MZ_12, MXX_12, MYY_12, MZZ_12;
-  if (space1 == space2) {
-    S_12 = S_11;
-    MX_12 = MX_11;
-    MY_12 = MY_11;
-    MZ_12 = MZ_11;
-    MXX_12 = MXX_11;
-    MYY_12 = MYY_11;
-    MZZ_12 = MZZ_11;
-  }
-  else {
-    r12info_->compute_multipole_ints(space1, space2, MX_12, MY_12, MZ_12, MXX_12, MYY_12, MZZ_12);
-    r12info_->compute_overlap_ints(space1, space2, S_12);
-  }
-  if (debug_)
-    ExEnv::out0() << indent << "Computed overlap and multipole moment integrals" << endl;
-
-  const int nproc = r12info_->msg()->n();
-  const int me = r12info_->msg()->me();
-
-  const int n1 = space1->rank();
-  const int n2 = space2->rank();
-  const int n12 = n1*n2;
-  const int n1112 = n1*n1*n12;
-  double* r2_array = new double[n1112];
-  memset(r2_array,0,n1112*sizeof(double));
-
-  int ij = 0;
-  double* ijkl_ptr = r2_array;
-  for(int i=0; i<n1; i++)
-    for(int j=0; j<n1; j++, ij++) {
-
-    int ij_proc = ij%nproc;
-    if (ij_proc != me) {
-      ijkl_ptr += n12;
-      continue;
-    }
-
-    int kl=0;
-    for(int k=0; k<n1; k++)
-      for(int l=0; l<n2; l++, kl++, ijkl_ptr++) {
-
-        double r1r1_ik = -1.0*(MXX_11->get_element(i,k) + MYY_11->get_element(i,k) + MZZ_11->get_element(i,k));
-        double r1r1_jl = -1.0*(MXX_12->get_element(j,l) + MYY_12->get_element(j,l) + MZZ_12->get_element(j,l));
-        double r1r2_ijkl = MX_11->get_element(i,k)*MX_12->get_element(j,l) +
-          MY_11->get_element(i,k)*MY_12->get_element(j,l) +
-          MZ_11->get_element(i,k)*MZ_12->get_element(j,l);
-        double S_ik = S_11.get_element(i,k);
-        double S_jl = S_12.get_element(j,l);
-        
-        double R2_ijkl = r1r1_ik * S_jl + r1r1_jl * S_ik - 2.0*r1r2_ijkl;
-        *ijkl_ptr = R2_ijkl;
-      }
-    }
-
-  r12info_->msg()->sum(r2_array,n1112);
-
-  MOPairIterFactory pair_factory;
-  RefSCDimension dim_ij = pair_factory.scdim_ab(space1,space1);
-  RefSCDimension dim_kl = pair_factory.scdim_ab(space1,space2);
-
-  Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
-  RefSCMatrix R2 = local_matrix_kit->matrix(dim_ij, dim_kl);
-  R2.assign(r2_array);
-  delete[] r2_array;
-
-  return R2;
-}
-
 /// Compute <space1 space2|r_{12}^2|space3 space4>
 RefSCMatrix
 R12IntEval::compute_r2_(const Ref<MOIndexSpace>& space1,
@@ -1009,12 +920,6 @@ R12IntEval::r2_contrib_to_X_new_()
       antisymmetrize(X_[s],R2,space1,space1);
     }
   }
-
-#if USE_RHFONLY_CODE
-  RefSCMatrix R2 = compute_r2_(r12info()->refinfo()->occ_act(Alpha),r12info()->refinfo()->occ_act(Beta));
-  Xab_.accumulate(R2);
-  antisymmetrize(Xaa_,Xab_,r12info()->refinfo()->occ_act(Alpha),r12info()->refinfo()->occ_act(Alpha));
-#endif
 }
 
 
@@ -1024,11 +929,7 @@ R12IntEval::form_focc_space_()
   // compute the Fock matrix between the complement and all occupieds and
   // create the new Fock-weighted space
   if (focc_space_.null()) {
-#if USE_SINGLEREFINFO
     const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
-#else
-    const Ref<MOIndexSpace>& occ_space = r12info_->occ();
-#endif
     const Ref<MOIndexSpace>& ribs_space = r12info_->ribs_space();
     
     RefSCMatrix F_ri_o = fock_(occ_space,ribs_space,occ_space);
@@ -1045,13 +946,8 @@ R12IntEval::form_factocc_space_()
   // compute the Fock matrix between the complement and active occupieds and
   // create the new Fock-weighted space
   if (factocc_space_.null()) {
-#if USE_SINGLEREFINFO
     const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
     const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
-#else
-    const Ref<MOIndexSpace>& occ_space = r12info_->occ();
-    const Ref<MOIndexSpace>& act_occ_space = r12info_->occ_act();
-#endif
     const Ref<MOIndexSpace>& ribs_space = r12info_->ribs_space();
     
     RefSCMatrix F_ri_ao = fock_(occ_space,ribs_space,act_occ_space);
@@ -1179,17 +1075,6 @@ R12IntEval::compute()
     return;
   }
   
-#if 1
-  if (debug_ > 1) {
-    Vaa_.print("Alpha-alpha V(diag) contribution");
-    Vab_.print("Alpha-beta V(diag) contribution");
-    Xaa_.print("Alpha-alpha X(diag) contribution");
-    Xab_.print("Alpha-beta X(diag) contribution");
-    Baa_.print("Alpha-alpha B(diag) contribution");
-    Bab_.print("Alpha-beta B(diag) contribution");
-  }
-#endif
-
   if (debug_ > 1) {
     for(int s=0; s<nspincases2(); s++) {
       V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag) contribution").c_str());
@@ -1199,20 +1084,6 @@ R12IntEval::compute()
   }
   
   if (r12info_->basis_vir()->equiv(r12info_->basis())) {
-#if USE_RHFONLY_CODE
-    obs_contrib_to_VXB_gebc_vbseqobs_();
-#if 1
-    if (debug_ > 1) {
-      Vaa_.print("Alpha-alpha V(diag+OBS) contribution");
-      Vab_.print("Alpha-beta V(diag+OBS) contribution");
-      Xaa_.print("Alpha-alpha X(diag+OBS) contribution");
-      Xab_.print("Alpha-beta X(diag+OBS) contribution");
-      Baa_.print("Alpha-alpha B(diag+OBS) contribution");
-      Bab_.print("Alpha-beta B(diag+OBS) contribution");
-    }
-#endif
-#endif
-
     // Compute VXB using new code
     using LinearR12::TwoParticleContraction;
     using LinearR12::ABS_OBS_Contraction;
@@ -1236,7 +1107,7 @@ R12IntEval::compute()
                             r12info()->refinfo()->occ_act(spin2),
                             r12info()->refinfo()->orbs(spin2),
                             spincase2,tpcontract);
-      compute_mp2_pair_energies_(spincase2);
+      //compute_mp2_pair_energies_(spincase2);
       if (debug_ > 1) {
         V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS) contribution").c_str());
         X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS) contribution").c_str());
@@ -1245,20 +1116,6 @@ R12IntEval::compute()
     }
     
     if (r12info_->basis() != r12info_->basis_ri()) {
-#if USE_RHFONLY_CODE
-      abs1_contrib_to_VXB_gebc_();
-#if 1
-      if (debug_ > 1) {
-        Vaa_.print("Alpha-alpha V(diag+OBS+ABS) contribution");
-        Vab_.print("Alpha-beta V(diag+OBS+ABS) contribution");
-        Xaa_.print("Alpha-alpha X(diag+OBS+ABS) contribution");
-        Xab_.print("Alpha-beta X(diag+OBS+ABS) contribution");
-        Baa_.print("Alpha-alpha B(diag+OBS+ABS) contribution");
-        Bab_.print("Alpha-beta B(diag+OBS+ABS) contribution");
-      }
-#endif
-#endif
-      
       // Compute VXB using new code
       using LinearR12::Direct_Contraction;
       for(int s=0; s<nspincases2(); s++) {
@@ -1296,7 +1153,6 @@ R12IntEval::compute()
     contrib_to_VXB_gebc_vbsneqobs_();
   }
 
-  
 #if TEST_FOCK
   if (!evaluated_) {
     RefSCMatrix F = fock_(r12info_->occ(),r12info_->obs_space(),r12info_->obs_space());
@@ -1333,7 +1189,7 @@ R12IntEval::compute()
     compute_R_();
     AR_contrib_to_B_();
   }
-  
+
   if (!gbc_) {
     // These functions assume that virtuals are expanded in the same basis
     // as the occupied orbitals

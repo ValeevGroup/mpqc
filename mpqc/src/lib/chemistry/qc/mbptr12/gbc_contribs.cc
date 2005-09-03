@@ -78,15 +78,9 @@ R12IntEval::compute_B_gbc_1_()
   RefSCMatrix B_gbc1_aa = Baa_.clone();  B_gbc1_aa.assign(0.0);
   RefSCMatrix B_gbc1_ab = Bab_.clone();  B_gbc1_ab.assign(0.0);
 
-#if !USE_SINGLEREFINFO
-  const Ref<MOIndexSpace>& obs_space = r12info_->obs_space();
-  const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
-  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
-#else
   const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
   const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
   const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
-#endif
   Ref<MOIndexSpace> vir_space = r12info_->vir();
   Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
   form_focc_space_();
@@ -359,15 +353,9 @@ R12IntEval::compute_B_gbc_2_()
   B_gbc2_aa.assign(0.0);
   B_gbc2_ab.assign(0.0);
   
-#if !USE_SINGLEREFINFO
-  const Ref<MOIndexSpace>& obs_space = r12info_->obs_space();
-  const Ref<MOIndexSpace>& occ_space = r12info_->occ_space();
-  const Ref<MOIndexSpace>& act_occ_space = r12info_->act_occ_space();
-#else
   const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
   const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
   const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
-#endif
   Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
   form_factocc_space_();
   Ref<MOIndexSpace> factocc_space = factocc_space_;
@@ -376,7 +364,7 @@ R12IntEval::compute_B_gbc_2_()
   const int nribs = ribs_space->rank();
 
   // compute r_{12}^2 operator in act.occ.pair/act.occ.-focc. basis
-  RefSCMatrix R2 = compute_r2_(act_occ_space,factocc_space);
+  RefSCMatrix R2 = compute_r2_(act_occ_space,act_occ_space,act_occ_space,factocc_space);
   // Compute contribution X += (r^2)_{ij}^{k l_f}
   if (me == 0)
     X_ijklF_ab.accumulate(R2);

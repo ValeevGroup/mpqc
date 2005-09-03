@@ -48,11 +48,7 @@ using namespace std;
 void
 R12IntEvalInfo::construct_ri_basis_(bool safe)
 {
-#if USE_SINGLEREFINFO
   Ref<GaussianBasisSet> obs = refinfo()->ref()->basis();
-#else
-  Ref<GaussianBasisSet> obs = bs_;
-#endif
   if (bs_aux_->equiv(obs)) {
     bs_ri_ = obs;
     if (abs_method_ == LinearR12::ABS_CABS ||
@@ -130,12 +126,7 @@ R12IntEvalInfo::construct_orthog_aux_()
   if (abs_space_.nonnull())
     return;
 
-#if !USE_SINGLEREFINFO
-  abs_space_ = orthogonalize("p'","ABS", bs_aux_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_aux_);
-#else
   abs_space_ = orthogonalize("p'","ABS", bs_aux_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_aux_);
-#endif
-
   if (bs_aux_ == bs_ri_) {
     ribs_space_ = abs_space_;
     vir_spaces_[Alpha].ri_ = ribs_space_;
@@ -157,11 +148,7 @@ R12IntEvalInfo::construct_orthog_ri_()
   if (ribs_space_.nonnull())
     return;
 
-#if !USE_SINGLEREFINFO
-  ribs_space_ = orthogonalize("a'","RI-BS", bs_ri_, ref_->orthog_method(), ref_->lindep_tol(), nlindep_ri_);
-#else
   ribs_space_ = orthogonalize("a'","RI-BS", bs_ri_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri_);
-#endif
 }
 
 bool
@@ -171,29 +158,17 @@ R12IntEvalInfo::abs_spans_obs_()
 
   // Compute the bumber of linear dependencies in OBS+ABS
   GaussianBasisSet& abs = *(bs_aux_.pointer());
-#if !USE_SINGLEREFINFO
-  Ref<GaussianBasisSet> ri_basis = abs + basis();
-#else
   Ref<GaussianBasisSet> ri_basis = abs + refinfo()->ref()->basis();
-#endif
   int nlindep_ri = 0;
   if (bs_ri_.nonnull() && ri_basis->equiv(bs_ri_)) {
     construct_orthog_ri_();
     nlindep_ri = nlindep_ri_;
   }
   else {
-#if !USE_SINGLEREFINFO
-    Ref<MOIndexSpace> ribs_space = orthogonalize("p+p'","OBS+ABS", ri_basis, ref_->orthog_method(), ref_->lindep_tol(), nlindep_ri);
-#else
     Ref<MOIndexSpace> ribs_space = orthogonalize("p+p'","OBS+ABS", ri_basis, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_ri);
-#endif
   }
   
-#if !USE_SINGLEREFINFO
-  const int obs_rank = mo_space_->rank();
-#else
   const int obs_rank = refinfo()->orbs()->rank();
-#endif
   if (nlindep_ri - nlindep_aux_ - obs_rank == 0)
     return true;
   else
@@ -210,15 +185,9 @@ R12IntEvalInfo::construct_ortho_comp_svd_()
   construct_orthog_ri_();
   
   if (debug_ > 1) {
-#if !USE_SINGLEREFINFO
-    occ_space_symblk_->coefs().print("Occupied MOs (symblocked)");
-    act_occ_space_->coefs().print("Active occupied MOs");
-    obs_space_->coefs().print("All MOs");
-#else
     refinfo()->docc_sb()->coefs().print("Occupied MOs (symblocked)");
     refinfo()->docc_act()->coefs().print("Active occupied MOs");
     refinfo()->orbs()->coefs().print("All MOs");
-#endif
     vir_sb_->coefs().print("Virtual MOs (symblocked)");
     vir_act_->coefs().print("Active virtual MOs");
     ribs_space_->coefs().print("Orthogonal RI-BS");

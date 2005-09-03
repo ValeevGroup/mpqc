@@ -29,9 +29,6 @@
 #pragma interface
 #endif
 
-#define USE_SINGLEREFINFO 1
-#define USE_RHFONLY_CODE 0
-
 #include <util/misc/string.h>
 #include <util/ref/ref.h>
 #include <math/scmat/abstract.h>
@@ -41,9 +38,7 @@
 #include <chemistry/qc/mbptr12/linearr12.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
-#if USE_SINGLEREFINFO
-#  include <chemistry/qc/mbptr12/singlerefinfo.h>
-#endif
+#include <chemistry/qc/mbptr12/singlerefinfo.h>
 
 #ifndef _chemistry_qc_mbptr12_vxbevalinfo_h
 #define _chemistry_qc_mbptr12_vxbevalinfo_h
@@ -80,11 +75,6 @@ public:
 private:
 
   Wavefunction* wfn_;     // Wave function that owns this
-#if !USE_SINGLEREFINFO
-  Ref<SCF> ref_;
-  Ref<Integral> integral_;
-  Ref<GaussianBasisSet> bs_;
-#endif
   Ref<GaussianBasisSet> bs_aux_;
   Ref<GaussianBasisSet> bs_vir_;
   Ref<GaussianBasisSet> bs_ri_;
@@ -92,13 +82,6 @@ private:
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;
-
-#if !USE_SINGLEREFINFO
-  int ndocc_;
-  int nsocc_;
-  int nfzc_;
-  int nfzv_;
-#endif
 
   size_t memory_;
   bool dynamic_;
@@ -116,23 +99,12 @@ private:
   /// This space depends only on the orbital basis set
   Ref<MOIndexSpace> abs_space_;  // ABS space
   Ref<MOIndexSpace> ribs_space_; // RIBS basis  
-
-#if !USE_SINGLEREFINFO
-  Ref<MOIndexSpace> mo_space_;   // symblocked MO space
-  Ref<MOIndexSpace> obs_space_;  // energy-sorted MO space
-  Ref<MOIndexSpace> act_occ_space_;
-  Ref<MOIndexSpace> occ_space_;
-  Ref<MOIndexSpace> occ_space_symblk_;
-#endif
   SpinSpaces vir_spaces_[NSpinCases1];
   Ref<MOIndexSpace> vir_act_;
   Ref<MOIndexSpace> vir_;
   Ref<MOIndexSpace> vir_sb_;
-  
-#if USE_SINGLEREFINFO
   /// Initializes all spaces that relate to the reference determinant
   Ref<SingleRefInfo> refinfo_;
-#endif
   
   /// The transform factory
   Ref<MOIntsTransformFactory> tfactory_;
@@ -147,10 +119,6 @@ private:
   void construct_ortho_comp_svd_();
   // Returns true if ABS spans OBS
   bool abs_spans_obs_();
-#if !USE_SINGLEREFINFO
-  // Construct eigenvector and eigenvalues sorted by energy
-  void eigen_();
-#endif
   // Construct orthog_aux_
   void construct_orthog_aux_();
   // Construct orthog_vir_
@@ -189,16 +157,9 @@ public:
   void set_absmethod(LinearR12::ABSMethod abs_method);
 
   Wavefunction* wfn() const { return wfn_; };
-#if !USE_SINGLEREFINFO
-  Ref<SCF> ref() const { return ref_; };
-  Ref<Integral> integral() const { return integral_; };
-  /// Returns the orbital basis set (OBS) object
-  Ref<GaussianBasisSet> basis() const { return bs_; };
-#else
   Ref<Integral> integral() const { return refinfo()->ref()->integral(); };
   /// Returns the orbital basis set (OBS) object
   Ref<GaussianBasisSet> basis() const { return refinfo()->ref()->basis(); };
-#endif
   /// Returns the virtuals basis set (VBS) obje19ct
   Ref<GaussianBasisSet> basis_vir() const { return bs_vir_; };
   /// Returns the resolution-of-the-identity basis set (RIBS) object
@@ -215,35 +176,12 @@ public:
   char* ints_file() const;
   const size_t memory() const { return memory_; };
 
-#if !USE_SINGLEREFINFO
-  int ndocc() const { return ndocc_;};
-  int nsocc() const { return nsocc_;};
-  int nfzc() const { return nfzc_;};
-  int nfzv() const { return nfzv_;};
-  int ndocc_act() const { return ndocc() - nfzc();};
-  int nalpha() const { return ndocc()+ nsocc(); }
-  int nbeta() const { return ndocc(); }
-  int nalpha_occ() const { return ndocc_act() + nsocc(); }
-  int nbeta_occ() const { return ndocc_act(); }
-#endif
   int nvir() const { return vir_->rank();};
   int nvir_act() const { return vir_act_->rank();};
 
   const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return corrfactor_; }
   LinearR12::ABSMethod abs_method() const { return abs_method_; }
 
-#if !USE_SINGLEREFINFO
-  /// Returns the MOIndexSpace object for symmetry-blocked MOs in OBS
-  const Ref<MOIndexSpace>& mo_space() const { return mo_space_; };
-  /// Returns the MOIndexSpace object for energy-sorted MOs in OBS
-  const Ref<MOIndexSpace>& obs_space() const { return obs_space_; };
-  /// Returns the MOIndexSpace object for the active occupied MOs
-  const Ref<MOIndexSpace>& act_occ_space() const { return act_occ_space_; };
-  /// Returns the MOIndexSpace object for all occupied MOs sorted by energy
-  const Ref<MOIndexSpace>& occ_space() const { return occ_space_; };
-  /// Returns the MOIndexSpace object for all occupied MOs symmetry-blocked
-  const Ref<MOIndexSpace>& occ_space_symblk() const { return occ_space_symblk_; };
-#endif
   /// Returns the MOIndexSpace object for all unoccupied MOs ordered by energy
   const Ref<MOIndexSpace>& vir() const { throw_if_spin_polarized(); return vir_; };
   /// Returns the MOIndexSpace object for all unoccupied MOs ordered by symmetry
@@ -270,10 +208,8 @@ public:
   const Ref<MOIndexSpace>& ribs_space(const SpinCase1& S) const { return vir_spaces_[S].ri_; };
   /// Returns the MOIntsTransformFactory object
   const Ref<MOIntsTransformFactory>& tfactory() const { return tfactory_; };
-#if USE_SINGLEREFINFO
   /// Return the SingleRefInfo object
   const Ref<SingleRefInfo>& refinfo() const;
-#endif
   
   /** Compute span of bs and create corresponding mospace referred to by name. Number
       linear dependencies is returned in nlindep */

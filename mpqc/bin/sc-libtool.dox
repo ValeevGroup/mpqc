@@ -25,7 +25,7 @@ services.  sc-libtool accepts the following options:
 <dt><tt>--features</tt><dd>Display basic configuration information and exit.
 <dt><tt>--finish</tt><dd>Same as <tt>--mode=finish</tt>.
 <dt><tt>--help</tt><dd>Display help message and exit
-<dt><tt>--mode=<i>MODE</i><dd>Use operation mode <i>MODE</i> (default=inferred from <i>MODE-ARGS</i>).
+<dt><tt>--mode=<i>MODE</i></tt><dd>Use operation mode <i>MODE</i> (default=inferred from <i>MODE-ARGS</i>).
 <dt><tt>--quiet</tt><dd>Same as --silent.
 <dt><tt>--silent</tt><dd>Don't print informational messages.
 <dt><tt>--tag=<i>TAG</i></tt><dd>Use configuration variables from tag <i>TAG</i>.

@@ -71,35 +71,38 @@ class TwoBodyInt : public RefCount {
     /// Return the number of basis functions on center one.
     int nbasis() const;
     
-    /// Return the number of basis functions on the given center.
-    //@{
+    /// Return the number of basis functions on center one.
     int nbasis1() const;
+    /// Return the number of basis functions on center two.
     int nbasis2() const;
+    /// Return the number of basis functions on center three.
     int nbasis3() const;
+    /// Return the number of basis functions on center four.
     int nbasis4() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
     
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on center one.
     int nshell1() const;
+    /// Return the number of shells on center two.
     int nshell2() const;
+    /// Return the number of shells on center three.
     int nshell3() const;
+    /// Return the number of shells on center four.
     int nshell4() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
 
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
+    /// Return the basis set on center two.
     Ref<GaussianBasisSet> basis2();
+    /// Return the basis set on center three.
     Ref<GaussianBasisSet> basis3();
+    /// Return the basis set on center four.
     Ref<GaussianBasisSet> basis4();
-    //@}
 
   /** Types of two-body integrals that TwoBodyInt understands:
       eri stands for electron repulsion integral, r12 stands for integrals
@@ -127,10 +130,9 @@ class TwoBodyInt : public RefCount {
 
     /** If redundant is true, then keep redundant integrals in the buffer.
         The default is true. */
-    //@{
     virtual int redundant() const { return redundant_; }
+    /// See redundant().
     virtual void set_redundant(int i) { redundant_ = i; }
-    //@}
 
     /// This storage is used to cache computed integrals.
     virtual void set_integral_storage(size_t storage);
@@ -168,32 +170,32 @@ class TwoBodyThreeCenterInt : public RefCount {
     /// Return the number of basis functions on center one.
     int nbasis() const;
     
-    /// Return the number of basis functions on the given center.
-    //@{
+    /// Return the number of basis functions on center one.
     int nbasis1() const;
+    /// Return the number of basis functions on center two.
     int nbasis2() const;
+    /// Return the number of basis functions on center three.
     int nbasis3() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
     
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on center one.
     int nshell1() const;
+    /// Return the number of shells on center two.
     int nshell2() const;
+    /// Return the number of shells on center three.
     int nshell3() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
 
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
+    /// Return the basis set on center two.
     Ref<GaussianBasisSet> basis2();
+    /// Return the basis set on center three.
     Ref<GaussianBasisSet> basis3();
-    //@}
 
   /** Types of two-body integrals that TwoBodyInt understands:
       eri stands for electron repulsion integral, r12 stands for integrals
@@ -221,10 +223,9 @@ class TwoBodyThreeCenterInt : public RefCount {
 
     /** If redundant is true, then keep redundant integrals in the buffer.
         The default is true. */
-    //@{
     int redundant() const { return redundant_; }
+    /// See redundant().
     void set_redundant(int i) { redundant_ = i; }
-    //@}
 
     /// This storage is used to cache computed integrals.
     virtual void set_integral_storage(size_t storage);
@@ -261,29 +262,26 @@ class TwoBodyTwoCenterInt : public RefCount {
     /// Return the number of basis functions on center one.
     int nbasis() const;
     
-    /// Return the number of basis functions on the given center.
-    //@{
+    /// Return the number of basis functions on center one.
     int nbasis1() const;
+    /// Return the number of basis functions on center two.
     int nbasis2() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
     
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on center one.
     int nshell1() const;
+    /// Return the number of shells on center two.
     int nshell2() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
 
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
+    /// Return the basis set on center two.
     Ref<GaussianBasisSet> basis2();
-    //@}
 
   /** Types of two-body integrals that TwoBodyInt understands:
       eri stands for electron repulsion integral, r12 stands for integrals
@@ -311,10 +309,9 @@ class TwoBodyTwoCenterInt : public RefCount {
 
     /** If redundant is true, then keep redundant integrals in the buffer.
         The default is true. */
-    //@{
     int redundant() const { return redundant_; }
+    /// See redundant().
     void set_redundant(int i) { redundant_ = i; }
-    //@}
 
     /// This storage is used to cache computed integrals.
     virtual void set_integral_storage(size_t storage);
@@ -445,35 +442,38 @@ class TwoBodyDerivInt : public RefCount {
     /// Return the number of basis functions on center one.
     int nbasis() const;
 
-    /// Return the number of basis functions on the given center.
-    //@{
+    /// Return the number of basis functions on center one.
     int nbasis1() const;
+    /// Return the number of basis functions on center two.
     int nbasis2() const;
+    /// Return the number of basis functions on center three.
     int nbasis3() const;
+    /// Return the number of basis functions on center four.
     int nbasis4() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
 
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on center one.
     int nshell1() const;
+    /// Return the number of shells on center two.
     int nshell2() const;
+    /// Return the number of shells on center three.
     int nshell3() const;
+    /// Return the number of shells on center four.
     int nshell4() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
 
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
+    /// Return the basis set on center two.
     Ref<GaussianBasisSet> basis2();
+    /// Return the basis set on center three.
     Ref<GaussianBasisSet> basis3();
+    /// Return the basis set on center four.
     Ref<GaussianBasisSet> basis4();
-    //@}
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.
@@ -515,32 +515,32 @@ class TwoBodyThreeCenterDerivInt : public RefCount {
     /// Return the number of basis functions on center one.
     int nbasis() const;
 
-    /// Return the number of basis functions on the given center.
-    //@{
+    /// Return the number of basis functions on center one.
     int nbasis1() const;
+    /// Return the number of basis functions on center two.
     int nbasis2() const;
+    /// Return the number of basis functions on center three.
     int nbasis3() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
 
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on center one.
     int nshell1() const;
+    /// Return the number of shells on center two.
     int nshell2() const;
+    /// Return the number of shells on center three.
     int nshell3() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
 
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
+    /// Return the basis set on center two.
     Ref<GaussianBasisSet> basis2();
+    /// Return the basis set on center three.
     Ref<GaussianBasisSet> basis3();
-    //@}
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.
@@ -580,29 +580,26 @@ class TwoBodyTwoCenterDerivInt : public RefCount {
     /// Return the number of basis functions on center one.
     int nbasis() const;
 
-    /// Return the number of basis functions on the given center.
-    //@{
+    /// Return the number of basis functions on center one.
     int nbasis1() const;
+    /// Return the number of basis functions on center two.
     int nbasis2() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
 
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on center one.
     int nshell1() const;
+    /// Return the number of shells on center two.
     int nshell2() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
 
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
+    /// Return the basis set on center two.
     Ref<GaussianBasisSet> basis2();
-    //@}
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.

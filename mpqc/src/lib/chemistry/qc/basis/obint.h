@@ -117,29 +117,26 @@ class OneBodyInt : public RefCount {
     /// Returns the number of basis functions on center one.
     int nbasis() const;
 
-    /// Returns the number of basis functions on the given center.
-    //@{
+    /// Returns the number of basis functions on the center one.
     int nbasis1() const;
+    /// Returns the number of basis functions on the center two.
     int nbasis2() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
 
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on the center one.
     int nshell1() const;
+    /// Return the number of shells on the center two.
     int nshell2() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
 
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on the center one.
     Ref<GaussianBasisSet> basis1();
+    /// Return the basis set on the center two.
     Ref<GaussianBasisSet> basis2();
-    //@}
 
     /// Returns the buffer where the integrals are placed.
     const double * buffer() const;
@@ -185,26 +182,20 @@ class OneBodyOneCenterInt : public RefCount {
     /// Returns the number of basis functions on center one.
     int nbasis() const;
 
-    /// Returns the number of basis functions on the given center.
-    //@{
+    /// Returns the number of basis functions on the center one.
     int nbasis1() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
 
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on the center one.
     int nshell1() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
 
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on the center one.
     Ref<GaussianBasisSet> basis1();
-    //@}
 
     /// Returns the buffer where the integrals are placed.
     const double * buffer() const;
@@ -415,38 +406,35 @@ class OneBodyDerivInt : public RefCount {
   
     /// Return the number of basis functions on center one.
     int nbasis() const;
-    /// Return the number of basis functions on the given center.
-    //@{
+    /// Return the number of basis functions on the center one.
     int nbasis1() const;
+    /// Return the number of basis functions on the center two.
     int nbasis2() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on center one.
     int nshell1() const;
+    /// Return the number of shells on center two.
     int nshell2() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
+    /// Return the basis set on center two.
     Ref<GaussianBasisSet> basis2();
-    //@}
 
     /** The computed shell integrals will be put in the buffer returned by
         this member.  */
     const double * buffer() const;
     
-    /** Given for shell indices, these will cause the integral buffer
-        to be filled in. */
-    //@{
+    /** Compute the derivative integrals and place the result in the buffer
+        returned by buffer(). */
     virtual void compute_shell(int ish, int jsh, DerivCenters&) = 0;
+    /** Compute the derivative integrals with respect to the given center
+        and place the result in the buffer returned by buffer(). */
     virtual void compute_shell(int ish, int jsh, int center) = 0;
-    //@}
 };
 
 // //////////////////////////////////////////////////////////////////////////
@@ -468,35 +456,29 @@ class OneBodyOneCenterDerivInt : public RefCount {
   
     /// Return the number of basis functions on center one.
     int nbasis() const;
-    /// Return the number of basis functions on the given center.
-    //@{
+    /// Return the number of basis functions on center one.
     int nbasis1() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on center one.
     int nshell1() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
-    //@}
 
     /** The computed shell integrals will be put in the buffer returned by
         this member.  */
     const double * buffer() const;
     
-    /** Given for shell indices, these will cause the integral buffer
-        to be filled in. */
-    //@{
+    /** Compute the derivative integrals and place the result in the buffer
+        returned by buffer(). */
     virtual void compute_shell(int ish, DerivCenters&) = 0;
+    /** Compute the derivative integrals with respect to the given center
+        and place the result in the buffer returned by buffer(). */
     virtual void compute_shell(int ish, int center) = 0;
-    //@}
 };
 
 }

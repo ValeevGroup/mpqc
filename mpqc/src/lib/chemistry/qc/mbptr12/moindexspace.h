@@ -67,6 +67,7 @@ public:
       evals are provided, then all vectors will be put in one block and
       sorted according to ascending evals.
 
+      \param name -- the name of this MOIndexSpace
       \param full_coefs -- symmetry-blocked transformation coefficient matrix
       (AO by MO) for the full space
       \param basis -- basis set
@@ -103,7 +104,7 @@ public:
 
   void save_data_state(StateOut&);
 
-  /// Returns the AO basis set
+  /// Returns the name of this MOIndexSpace.
   const std::string name() const;
   /// Returns the AO basis set
   const Ref<GaussianBasisSet> basis() const;  

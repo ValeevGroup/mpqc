@@ -318,7 +318,7 @@ class GaussianBasisSet: public SavableState
 
         </dl>
 
-        <dd>An example might be easier to understand.  This is a basis set
+        <dt><dd>An example might be easier to understand.  This is a basis set
         specificition for STO-2G carbon:
 
         <pre>
@@ -357,7 +357,7 @@ class GaussianBasisSet: public SavableState
 
         </dl>
 
-        <dd>Note that the dimensions of each vector must be the same.
+        <dt><dd>Note that the dimensions of each vector must be the same.
 
         Here's an example of a basis set composed of 2 blocks of even-tempered s-functions
         and 1 block of even-tempered p-functions.

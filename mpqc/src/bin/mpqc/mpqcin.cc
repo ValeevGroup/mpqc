@@ -619,6 +619,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
       && strcmp(auxbasis_.val(),basis_.val()) != 0) write_basis_object(ostrs, auxbasis_key, auxbasis_.val());
   if (need_cints) ostrs << indent << "integrals<IntegralCints>: ()" << endl;
   ostrs << indent << "total_charge = " << charge_.val() << endl;
+  ostrs << indent << "multiplicity = " << mult_.val() << endl;
   ostrs << indent << "molecule = $:molecule" << endl;
   if (memory_.val()) ostrs << indent << "memory = " << memory_.val() << endl;
   if (!strcmp(keyword, "mole") && !reference_method) {

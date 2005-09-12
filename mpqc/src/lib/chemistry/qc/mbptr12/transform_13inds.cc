@@ -417,7 +417,7 @@ TwoBodyMOIntsTransform_13Inds::run()
 
                     double value = *i_ptr++;
                     *ijsq_ptr++ += c_rj * value;
-                    *ijrq_ptr++ += c_sj * value;
+                    *ijrq_ptr++ += c_sj * value * ket_perm_pfac;
 
                   }
                 }

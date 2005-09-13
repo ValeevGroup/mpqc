@@ -88,8 +88,7 @@ TwoBodyIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
 void
 TwoBodyIntCCA::set_integral_storage(size_t storage)
 {
-//  throw FeatureNotImplemented("set_integral_storage needs to be implemented",
-//                              __FILE__,__LINE__);
+  int2ecca_->set_storage(storage);
 }
 
 

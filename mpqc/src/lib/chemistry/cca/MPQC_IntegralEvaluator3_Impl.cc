@@ -75,7 +75,11 @@ throw ()
 }
 
 /**
- * Get the buffer pointer
+ * Set storage available to evaluator.
+ * @param storage Available storage in bytes.
+ * void set_storage( in double storage );
+ * 
+ * / ** Get the buffer pointe
  * @return Buffer pointer 
  */
 void*

@@ -111,9 +111,6 @@ throw ()
     throw InputError("bad integral package name",
                      __FILE__,__LINE__);
 
-  // a proper solution is required here
-  integral_->set_storage(200000000);
-
   int error = 0;
   if(evaluator_label_ == "eri2")
     switch( deriv_level ) {
@@ -169,6 +166,21 @@ throw ()
   }
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.initialize)
+}
+
+/**
+ * Set storage available to evaluator.
+ * @param storage Available storage in bytes. 
+ */
+void
+MPQC::IntegralEvaluator4_impl::set_storage (
+  /* in */ int64_t storage ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.set_storage)
+  if( int_type_ == two_body )
+    eval_->set_integral_storage( storage );
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.set_storage)
 }
 
 /**

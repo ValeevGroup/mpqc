@@ -49,7 +49,7 @@ Int2eCCA::Int2eCCA(Integral *integral,
                    bool use_opaque, string eval_type ):
   bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4),
   erep_ptr_(0), integral_(integral), eval_factory_(eval_factory),
-  use_opaque_(use_opaque), buffer_(0)
+  use_opaque_(use_opaque), buffer_(0), storage_(storage)
 {
 
   /* Allocate storage for the integral buffer. */
@@ -80,6 +80,7 @@ Int2eCCA::Int2eCCA(Integral *integral,
                                                    cca_bs1_, cca_bs2_, 
                                                    cca_bs3_, cca_bs4_ );
     erep_ptr_ = &erep_;
+    erep_ptr_->set_storage( static_cast<int>(storage_) );
     if( use_opaque_ )
       buffer_ = static_cast<double*>( erep_ptr_->get_buffer() );
   }
@@ -88,6 +89,7 @@ Int2eCCA::Int2eCCA(Integral *integral,
                                                         cca_bs1_, cca_bs2_,
                                                         cca_bs3_, cca_bs4_ );
     erep_1der_ptr_ = &erep_1der_;
+    erep_1der_ptr_->set_storage( static_cast<int>(storage_) );
     if( use_opaque_ )
       buffer_ = static_cast<double*>( erep_1der_ptr_->get_buffer() );
   }
@@ -150,6 +152,11 @@ Int2eCCA::compute_bounds_1der( int is, int js, int ks, int ls )
   return erep_1der_ptr_->compute_bounds( is, js, ks, ls );
 }
 
+void
+Int2eCCA::set_storage( size_t storage )
+{
+  erep_ptr_->set_storage( static_cast<int>(storage) );
+}
 
 void 
 Int2eCCA::copy_buffer( int n ) 

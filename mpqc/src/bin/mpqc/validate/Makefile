@@ -338,7 +338,7 @@ default::
 .PHONY: check_clean check_clean_scratch
 
 check_clean: check_clean_scratch
-	/bin/rm -f $(RUN)/*.out
+	/bin/rm -f $(RUN)/*.out $(RUN)/*.diff
 
 check_clean_scratch:
 	/bin/rm -rf $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt

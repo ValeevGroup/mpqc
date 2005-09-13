@@ -119,6 +119,12 @@ Int2eCCA::compute_erep( int is, int js, int ks, int ls )
   }
 }  
 
+double
+Int2eCCA::compute_bounds( int is, int js, int ks, int ls )
+{
+  return erep_ptr_->compute_bounds( is, js, ks, ls );
+}
+
 void
 Int2eCCA::compute_erep_1der( int is, int js, int ks, int ls, 
                              Chemistry::QC::GaussianBasis::DerivCenters &dc )
@@ -137,6 +143,13 @@ Int2eCCA::compute_erep_1der( int is, int js, int ks, int ls,
     remove_redundant(is,js,ks,ls);
   }
 }
+
+double
+Int2eCCA::compute_bounds_1der( int is, int js, int ks, int ls )
+{
+  return erep_1der_ptr_->compute_bounds( is, js, ks, ls );
+}
+
 
 void 
 Int2eCCA::copy_buffer( int n ) 

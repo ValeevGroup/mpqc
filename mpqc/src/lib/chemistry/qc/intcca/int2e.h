@@ -90,8 +90,10 @@ class Int2eCCA: public RefCount {
     ~Int2eCCA() {};
     double *buffer() { return buffer_; }
     void compute_erep( int is, int js, int ks, int ls );
+    double compute_bounds( int is, int js, int ks, int ls );
     void compute_erep_1der( int is, int js, int ks, int ls,
                             Chemistry::QC::GaussianBasis::DerivCenters &dc);
+    double compute_bounds_1der( int is, int js, int ks, int ls );
     int redundant() const { return redundant_; }
     void set_redundant(int i) { redundant_ = i; }
 

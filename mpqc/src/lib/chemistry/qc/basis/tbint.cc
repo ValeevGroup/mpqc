@@ -29,6 +29,8 @@
 #pragma implementation
 #endif
 
+#include <limits.h>
+
 #include <math/scmat/offset.h>
 
 #include <chemistry/qc/basis/tbint.h>
@@ -36,6 +38,8 @@
 #include <chemistry/qc/basis/basis.h>
 
 using namespace sc;
+
+double* init_log2_to_double();
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -49,12 +53,14 @@ TwoBodyInt::TwoBodyInt(Integral *integral,
 {
   integral_->reference();
   buffer_ = 0;
+  log2_to_double_ = init_log2_to_double();
 }
 
 TwoBodyInt::~TwoBodyInt()
 {
   integral_->dereference();
   if (integral_->nreference() == 0) delete integral_;
+  delete[] log2_to_double_;
 }
 
 int
@@ -159,6 +165,12 @@ TwoBodyInt::set_integral_storage(size_t storage)
 {
 }
 
+double 
+TwoBodyInt::shell_bound(int s1, int s2, int s3, int s4)
+{
+  return log2_to_double_[ log2_shell_bound(s1,s2,s3,s4) - SCHAR_MIN ];
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 TwoBodyThreeCenterInt::TwoBodyThreeCenterInt(Integral *integral,
@@ -170,12 +182,14 @@ TwoBodyThreeCenterInt::TwoBodyThreeCenterInt(Integral *integral,
 {
   integral_->reference();
   buffer_ = 0;
+  log2_to_double_ = init_log2_to_double();
 }
 
 TwoBodyThreeCenterInt::~TwoBodyThreeCenterInt()
 {
   integral_->dereference();
   if (integral_->nreference() == 0) delete integral_;
+  delete[] log2_to_double_;
 }
 
 int
@@ -262,6 +276,12 @@ TwoBodyThreeCenterInt::set_integral_storage(size_t storage)
 {
 }
 
+double 
+TwoBodyThreeCenterInt::shell_bound(int s1, int s2, int s3)
+{
+  return log2_to_double_[ log2_shell_bound(s1,s2,s3) - SCHAR_MIN ];
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 TwoBodyTwoCenterInt::TwoBodyTwoCenterInt(Integral *integral,
@@ -272,12 +292,14 @@ TwoBodyTwoCenterInt::TwoBodyTwoCenterInt(Integral *integral,
 {
   integral_->reference();
   buffer_ = 0;
+  log2_to_double_ = init_log2_to_double();
 }
 
 TwoBodyTwoCenterInt::~TwoBodyTwoCenterInt()
 {
   integral_->dereference();
   if (integral_->nreference() == 0) delete integral_;
+  delete[] log2_to_double_;
 }
 
 int
@@ -344,6 +366,12 @@ TwoBodyTwoCenterInt::buffer(tbint_type i) const
 void
 TwoBodyTwoCenterInt::set_integral_storage(size_t storage)
 {
+}
+
+double 
+TwoBodyTwoCenterInt::shell_bound(int s1, int s2)
+{
+  return log2_to_double_[ log2_shell_bound(s1,s2) - SCHAR_MIN ];
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -561,12 +589,14 @@ TwoBodyDerivInt::TwoBodyDerivInt(Integral *integral,
 {
   integral_->reference();
   buffer_ = 0;
+  log2_to_double_ = init_log2_to_double();
 }
 
 TwoBodyDerivInt::~TwoBodyDerivInt()
 {
   integral_->dereference();
   if (integral_->nreference() == 0) delete integral_;
+  delete[] log2_to_double_;
 }
 
 int
@@ -665,6 +695,12 @@ TwoBodyDerivInt::buffer() const
   return buffer_;
 }
 
+double 
+TwoBodyDerivInt::shell_bound(int s1, int s2, int s3, int s4)
+{
+  return log2_to_double_[ log2_shell_bound(s1,s2,s3,s4) - SCHAR_MIN ];
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 TwoBodyThreeCenterDerivInt::TwoBodyThreeCenterDerivInt(Integral *integral,
@@ -676,12 +712,14 @@ TwoBodyThreeCenterDerivInt::TwoBodyThreeCenterDerivInt(Integral *integral,
 {
   integral_->reference();
   buffer_ = 0;
+  log2_to_double_ = init_log2_to_double();
 }
 
 TwoBodyThreeCenterDerivInt::~TwoBodyThreeCenterDerivInt()
 {
   integral_->dereference();
   if (integral_->nreference() == 0) delete integral_;
+  delete[] log2_to_double_;
 }
 
 int
@@ -762,6 +800,12 @@ TwoBodyThreeCenterDerivInt::buffer() const
   return buffer_;
 }
 
+double 
+TwoBodyThreeCenterDerivInt::shell_bound(int s1, int s2, int s3)
+{
+  return log2_to_double_[ log2_shell_bound(s1,s2,s3) - SCHAR_MIN ];
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 TwoBodyTwoCenterDerivInt::TwoBodyTwoCenterDerivInt(Integral *integral,
@@ -772,12 +816,14 @@ TwoBodyTwoCenterDerivInt::TwoBodyTwoCenterDerivInt(Integral *integral,
 {
   integral_->reference();
   buffer_ = 0;
+  log2_to_double_ = init_log2_to_double();
 }
 
 TwoBodyTwoCenterDerivInt::~TwoBodyTwoCenterDerivInt()
 {
   integral_->dereference();
   if (integral_->nreference() == 0) delete integral_;
+  delete[] log2_to_double_;
 }
 
 int
@@ -838,6 +884,27 @@ const double *
 TwoBodyTwoCenterDerivInt::buffer() const
 {
   return buffer_;
+}
+
+double 
+TwoBodyTwoCenterDerivInt::shell_bound(int s1, int s2)
+{
+  return log2_to_double_[ log2_shell_bound(s1,s2) - SCHAR_MIN ];
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+double*
+init_log2_to_double() 
+{
+  int n = -1 * SCHAR_MIN + SCHAR_MAX + 1;
+  double* ptr = new double[n];
+  
+  int i=-1;
+  for(int log2=SCHAR_MIN; log2<=SCHAR_MAX; ++log2) 
+    ptr[++i] = pow(2.0,log2);
+
+  return ptr;
 }
 
 /////////////////////////////////////////////////////////////////////////////

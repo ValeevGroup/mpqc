@@ -32,6 +32,7 @@
 #include <chemistry/qc/intcca/tbintcca.h>
 #include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
 #include <util/class/scexception.h>
+#include <limits.h>
 
 using namespace Chemistry::QC::GaussianBasis;
 using namespace sc;
@@ -47,12 +48,15 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
 			     size_t storage,
 			     IntegralEvaluatorFactory eval_factory, 
                              bool use_opaque, string eval_type) :
-  TwoBodyInt(integral,bs1,bs2,bs3,bs4) 
+  TwoBodyInt(integral,bs1,bs2,bs3,bs4)
 {
   int2ecca_ = new Int2eCCA(integral,bs1,bs2,bs3,bs4,0,storage,
                            eval_factory,use_opaque,eval_type);
   buffer_ = int2ecca_->buffer();
   int2ecca_->set_redundant(redundant_);
+  int_bound_min_ = SCHAR_MIN;
+  tol_ = pow(2.0,double(int_bound_min_));
+  loginv_ = 1.0/log(2.0);
 }
 
 void
@@ -64,7 +68,21 @@ TwoBodyIntCCA::compute_shell(int is, int js, int ks, int ls)
 int
 TwoBodyIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
 {
-  return 256;
+  double value = int2ecca_->compute_bounds(is,js,ks,ls);
+  int upper;
+  if (value > tol_) {
+    double log_dbl = log(value)*loginv_;
+    upper = static_cast<int>( ceil(log_dbl) );
+    // nasty check for rounding effects
+    if( upper > SCHAR_MIN ) {
+      int lower = upper - 1;
+      double lower_dbl = static_cast<double>( lower ); 
+      if( abs(log_dbl - lower_dbl) < 0.01 )
+        upper = lower;
+    }
+  }
+  else upper = int_bound_min_;
+  return upper;
 }
 
 void
@@ -92,6 +110,9 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA(Integral* integral,
                            eval_factory,use_opaque,eval_type);
   buffer_ = int2ecca_->buffer();
   int2ecca_->set_redundant(0);
+  int_bound_min_ = SCHAR_MIN;
+  tol_ = pow(2.0,double(int_bound_min_));
+  loginv_ = 1.0/log(2.0);
 }
 
 void
@@ -114,7 +135,21 @@ TwoBodyDerivIntCCA::compute_shell(int is, int js, int ks, int ls,
 int
 TwoBodyDerivIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
 {
-  return 256;
+  double value = int2ecca_->compute_bounds(is,js,ks,ls);
+  int upper;
+  if (value > tol_) {
+    double log_dbl = log(value)*loginv_;
+    upper = static_cast<int>( ceil(log_dbl) );
+    // nasty check for rounding effects
+    if( upper > SCHAR_MIN ) {
+      int lower = upper - 1;
+      double lower_dbl = static_cast<double>( lower );
+      if( abs(log_dbl - lower_dbl) < 0.01 )
+        upper = lower;
+    }
+  }
+  else upper = int_bound_min_;
+  return upper;
 }
 
 /////////////////////////////////////////////////////////////////////////////

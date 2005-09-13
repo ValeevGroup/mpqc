@@ -45,6 +45,9 @@ namespace sc {
 class TwoBodyIntCCA : public TwoBodyInt {
   protected:
     Ref<Int2eCCA> int2ecca_;
+    int int_bound_min_;
+    double tol_;
+    double loginv_;
 
   public:
     TwoBodyIntCCA(Integral*,
@@ -54,7 +57,7 @@ class TwoBodyIntCCA : public TwoBodyInt {
 		  const Ref<GaussianBasisSet>&b4,
                   size_t storage, IntegralEvaluatorFactory, 
                   bool, string );
-    ~TwoBodyIntCCA() {};
+    ~TwoBodyIntCCA() { };
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int);
@@ -70,6 +73,9 @@ class TwoBodyIntCCA : public TwoBodyInt {
 class TwoBodyDerivIntCCA : public TwoBodyDerivInt {
   protected:
     Ref<Int2eCCA> int2ecca_;
+    int int_bound_min_;
+    double tol_;
+    double loginv_;
 
   public:
     TwoBodyDerivIntCCA(Integral*,
@@ -78,7 +84,7 @@ class TwoBodyDerivIntCCA : public TwoBodyDerivInt {
                   const Ref<GaussianBasisSet>&b3,
                   const Ref<GaussianBasisSet>&b4,
                   size_t storage, IntegralEvaluatorFactory, bool, string);
-    ~TwoBodyDerivIntCCA() {};
+    ~TwoBodyDerivIntCCA() { };
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int,DerivCenters&);

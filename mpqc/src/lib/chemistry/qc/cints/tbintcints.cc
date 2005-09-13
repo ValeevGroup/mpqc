@@ -29,6 +29,7 @@
 #pragma implementation "junk.h"
 #endif
 
+#include <limits.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/cints/tbintcints.h>
 #include <chemistry/qc/cints/eri.h>
@@ -83,7 +84,7 @@ TwoBodyIntCints::compute_shell(int is, int js, int ks, int ls)
 int
 TwoBodyIntCints::log2_shell_bound(int is, int js, int ks, int ls)
 {
-  return 10000000;//int2ecints_->erep_4bound(is,js,ks,ls);
+  return SCHAR_MAX;//int2ecints_->erep_4bound(is,js,ks,ls);
 }
 
 void
@@ -134,7 +135,7 @@ TwoBodyDerivIntCints::compute_shell(int is, int js, int ks, int ls,
 int
 TwoBodyDerivIntCints::log2_shell_bound(int is, int js, int ks, int ls)
 {
-  return 0;//int2ecints_->erep_4bound_1der(is,js,ks,ls);
+  return SCHAR_MAX;//int2ecints_->erep_4bound_1der(is,js,ks,ls);
 }
 
 /////////////////////////////////////////////////////////////////////////////

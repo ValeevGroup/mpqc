@@ -203,6 +203,20 @@ throw ()
 }
 
 /**
+ * Set available storage
+ * @param storage Available storage in bytes 
+ */
+void
+MPQC::IntegralEvaluatorFactory_impl::set_storage (
+  /* in */ int64_t storage ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.set_storage)
+  storage_ = storage;
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.set_storage)
+}
+
+/**
  * Get a 2-center integral evaluator
  * @param label String specifying integral type
  * @param max_deriv Maximum derivative that will be computed
@@ -223,7 +237,7 @@ throw ()
   if( package_.size() == 0 )
     package_ =  package_param_->getValueString();
   eval.set_integral_package( package_ );
-  eval.initialize( bs1, bs2, label, max_deriv );
+  eval.initialize( bs1, bs2, label, max_deriv, storage_ );
   return eval;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator2)
 }
@@ -295,7 +309,7 @@ throw ()
   if( package_.size() == 0 ) 
     package_ = package_param_->getValueString();
   eval.set_integral_package( package_ );
-  eval.initialize( bs1, bs2, bs3, label, max_deriv );
+  eval.initialize( bs1, bs2, bs3, label, max_deriv, storage_ );
   return eval;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator3)
 }
@@ -325,7 +339,7 @@ throw ()
   if( package_.size() == 0 )
     package_ = package_param_->getValueString();
   eval.set_integral_package( package_ );
-  eval.initialize( bs1, bs2, bs3, bs4, label, max_deriv );
+  eval.initialize( bs1, bs2, bs3, bs4, label, max_deriv, storage_ );
   return eval;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator4)
 }

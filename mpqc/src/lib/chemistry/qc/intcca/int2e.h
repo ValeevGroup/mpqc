@@ -75,7 +75,6 @@ class Int2eCCA: public RefCount {
     Chemistry_QC_GaussianBasis_DerivCenters cca_dc_;
     int redundant_;
     void remove_redundant(int,int,int,int);
-    size_t storage_;
 
   protected:
     Integral *integral_;
@@ -97,8 +96,6 @@ class Int2eCCA: public RefCount {
     double compute_bounds_1der( int is, int js, int ks, int ls );
     int redundant() const { return redundant_; }
     void set_redundant(int i) { redundant_ = i; }
-    void set_storage(size_t st);
-
 };
 
 }

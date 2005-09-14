@@ -68,7 +68,8 @@ throw ()
  * @param bs3 Molecular basis on center 3.
  * @param bs4 Molecular basis on center 4.
  * @param label String specifying integral type.
- * @param max_deriv Max derivative to compute. 
+ * @param max_deriv Max derivative to compute.
+ * @param storage Available storage in bytes. 
  */
 void
 MPQC::IntegralEvaluator4_impl::initialize (
@@ -77,7 +78,8 @@ MPQC::IntegralEvaluator4_impl::initialize (
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4,
   /* in */ const ::std::string& label,
-  /* in */ int64_t max_deriv ) 
+  /* in */ int64_t max_deriv,
+  /* in */ int64_t storage ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.initialize)
@@ -110,6 +112,8 @@ throw ()
   else
     throw InputError("bad integral package name",
                      __FILE__,__LINE__);
+  
+  integral_->set_storage(storage);
 
   int error = 0;
   if(evaluator_label_ == "eri2")
@@ -166,21 +170,6 @@ throw ()
   }
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.initialize)
-}
-
-/**
- * Set storage available to evaluator.
- * @param storage Available storage in bytes. 
- */
-void
-MPQC::IntegralEvaluator4_impl::set_storage (
-  /* in */ int64_t storage ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.set_storage)
-  if( int_type_ == two_body )
-    eval_->set_integral_storage( storage );
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.set_storage)
 }
 
 /**

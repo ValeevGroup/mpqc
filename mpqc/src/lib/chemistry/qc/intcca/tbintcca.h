@@ -63,7 +63,6 @@ class TwoBodyIntCCA : public TwoBodyInt {
     void compute_shell(int,int,int,int);
     
     size_t storage_used();
-    void set_integral_storage(size_t storage);
     int redundant() const { return int2ecca_->redundant(); }
     void set_redundant(int i) { int2ecca_->set_redundant(i); }
 };

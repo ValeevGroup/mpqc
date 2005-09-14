@@ -120,6 +120,7 @@ namespace MPQC {
     ConfigurableParameterPort* setup_parameters(
       ConfigurableParameterFactory *cpf);
     std::string package_;
+    int storage_;
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._implementation)
 
   private:
@@ -222,6 +223,18 @@ namespace MPQC {
     void
     set_integral_package (
       /* in */ const ::std::string& label
+    )
+    throw () 
+    ;
+
+
+    /**
+     * Set available storage
+     * @param storage Available storage in bytes 
+     */
+    void
+    set_storage (
+      /* in */ int64_t storage
     )
     throw () 
     ;

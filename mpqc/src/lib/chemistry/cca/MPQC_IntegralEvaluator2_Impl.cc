@@ -74,14 +74,16 @@ throw ()
  * @param bs1 Molecular basis on center 1.
  * @param bs2 Molecular basis on center 2.
  * @param label String specifying integral type.
- * @param max_deriv Max derivative to compute. 
+ * @param max_deriv Max derivative to compute.
+ * @param storage Available storage in bytes. 
  */
 void
 MPQC::IntegralEvaluator2_impl::initialize (
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
   /* in */ const ::std::string& label,
-  /* in */ int64_t max_deriv ) 
+  /* in */ int64_t max_deriv,
+  /* in */ int64_t storage ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.initialize)
@@ -112,6 +114,8 @@ throw ()
     throw InputError("bad integral package name",
                      __FILE__,__LINE__);
   }
+
+  integral_->set_storage(storage);
   
   int error = 0;
   if(evaluator_label_ == "overlap") 

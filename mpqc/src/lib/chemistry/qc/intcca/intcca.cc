@@ -139,6 +139,9 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   // set package
   eval_factory_.set_integral_package(package_);
 
+  // set storage
+  eval_factory_.set_storage(storage_);
+
 }
 
 IntegralCCA::IntegralCCA(StateIn& s) :

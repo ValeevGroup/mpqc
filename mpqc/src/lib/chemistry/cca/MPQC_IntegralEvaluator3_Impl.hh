@@ -117,7 +117,8 @@ namespace MPQC {
      * @param bs2 Molecular basis on center 2.
      * @param bs3 Molecular basis on center 3.
      * @param label String specifying integral type.
-     * @param max_deriv Max derivative to compute. 
+     * @param max_deriv Max derivative to compute.
+     * @param storage Available storage in bytes. 
      */
     void
     initialize (
@@ -125,18 +126,15 @@ namespace MPQC {
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
       /* in */ const ::std::string& label,
-      /* in */ int64_t max_deriv
+      /* in */ int64_t max_deriv,
+      /* in */ int64_t storage
     )
     throw () 
     ;
 
 
     /**
-     * Set storage available to evaluator.
-     * @param storage Available storage in bytes.
-     * void set_storage( in double storage );
-     * 
-     * / ** Get the buffer pointe
+     * Get the buffer pointer
      * @return Buffer pointer 
      */
     void*

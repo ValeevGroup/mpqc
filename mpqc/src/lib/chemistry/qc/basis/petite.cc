@@ -421,25 +421,12 @@ PetiteList::SO_basisdim()
   delete[] nao;
 
   for (i=ii=0; i < nirrep_; i++) {
-    Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
-    int np=grp->n();
-    int *subblksize = new int[np];
     int nbas=(c1_) ? gbs.nbasis() : nbf_in_ir_[i];
-    for (j=0; j < np; j++) {
-      if (j < nbas%np)
-        subblksize[j] = nbas/np + 1;
-      else
-        subblksize[j] = nbas/np;
-    }
-    
     int je = ct.gamma(i).complex() ? 1 : ct.gamma(i).degeneracy();
     for (j=0; j < je; j++,ii++) {
-      char lab[24];
-      sprintf(lab,"irrep %s comp %d", ct.gamma(i).symbol(), j);
-      ret->blocks()->set_subdim(ii, new SCDimension(nbas, np, subblksize));
+      ret->blocks()->set_subdim(ii, new SCDimension(nbas));
     }
 
-    delete[] subblksize;
   }
 
   return ret;

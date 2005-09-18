@@ -73,6 +73,9 @@ $nthreadperproc = 1;
 # The number of processes to run on each node.
 $nprocpernode = 1;
 
+# The number of processes that each job should use.
+$nprocperjob = "all";
+
 # Files machining the given regex will be run sequentially,
 # in alphabetical order.
 $seq = "";
@@ -139,6 +142,7 @@ if (!GetOptions("small!" => \$small,
                 "nnodeperjob=i" => \$nnodeperjob,
                 "nthreadperproc=i" => \$nthreadperproc,
                 "nprocpernode=i" => \$nprocpernode,
+                "nprocperjob=i" => \$nprocperjob,
                 "seq=s" => \$seq,
                 "mpqc=s" => \$mpqc,
                 "readdir=s" => \$readdir,
@@ -182,6 +186,7 @@ if ($help) {
     print  "  --small            skip big runs in verification suite (value: $small)\n";
     print  "  --nnodeperjob n    run with n nodes per job (value: $nnodeperjob)\n";
     print  "  --nprocpernode n   run with n procs per node (value: $nprocpernode)\n";
+    print  "  --nprocperjob n    run with n procs in each job (value: $nprocperjob)\n";
     print  "  --nthreadperproc n use n threads per process (value: $nthreadperproc)\n";
     print  "  --threadgrp grp    use the given threading layer (value: $threadgrp)\n";
     print  "                     none: uses MPQC's default\n";
@@ -285,7 +290,9 @@ if ($nnodeperjob eq "nnode") {
     $nnodeperjob = $nnode;
 }
 
-$nprocperjob = $nnodeperjob * $nprocpernode;
+if ($nprocperjob eq "all") {
+    $nprocperjob = $nnodeperjob * $nprocpernode;
+}
 
 if ($messagegrp eq "none" && $nprocperjob > 1) {
     $messagegrp = "mpi";

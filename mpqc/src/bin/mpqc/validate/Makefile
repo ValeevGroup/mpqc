@@ -400,7 +400,7 @@ checkccafe_chk:
 
 .PHONY: inputs
 inputs:: h2o h2omp2 mp2r12 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
-inputs:: methods clscf uscf hsosscf input dft orthog ccaint
+inputs:: methods clscf uscf hsosscf input dft orthog ccacints ccaintv3
 
 .PHONY: h2o
 h2o: stamp-h2o

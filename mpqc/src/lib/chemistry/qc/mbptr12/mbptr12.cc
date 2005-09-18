@@ -232,7 +232,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   // Get the prefix for the filename to store the integrals
   std::ostringstream oss;
-  oss << "./" << SCFormIO::default_basename() << ".r12ints";
+  oss << SCFormIO::default_basename() << ".r12ints";
   r12ints_file_ = keyval->stringvalue("r12ints_file",KeyValValuestring(oss.str()));
 
   r12eval_ = 0;

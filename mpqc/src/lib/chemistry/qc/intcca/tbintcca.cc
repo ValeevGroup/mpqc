@@ -74,7 +74,7 @@ TwoBodyIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
     double log_dbl = log(value)*loginv_;
     upper = static_cast<int>( ceil(log_dbl) );
     // nasty check for rounding effects
-    if( upper > SCHAR_MIN ) {
+    if( upper > int_bound_min_ ) {
       int lower = upper - 1;
       double lower_dbl = static_cast<double>( lower ); 
       if( abs(log_dbl - lower_dbl) < 0.01 )
@@ -113,21 +113,76 @@ TwoBodyDerivIntCCA::compute_shell(int is, int js, int ks, int ls,
 {
   Chemistry::QC::GaussianBasis::DerivCenters cca_dc;
   cca_dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
-  for( int id=0; id<cca_dc.n(); ++id ) {
-    if( id == cca_dc.omitted_center() )
-       dc.add_omitted(cca_dc.center(id),cca_dc.atom(id));
-     else
-       dc.add_center(cca_dc.center(id),cca_dc.atom(id));
-  }
 
   int2ecca_->compute_erep_1der(is,js,ks,ls,cca_dc);
+
+  if( cca_dc.has_omitted_center() )
+    dc.add_omitted(cca_dc.omitted_center(),cca_dc.omitted_atom());
+  for( int i=0; i<cca_dc.n(); ++i) 
+    dc.add_center(cca_dc.center(i),cca_dc.atom(i));
+
+/* 
+  for( int i=0; i<cca_dc.n(); ++i)
+     std::cerr << "intcca: cca_dc: n " << i << " center " << cca_dc.center(i) << " atom " << cca_dc.atom(i) << std
+::endl;
+  if( cca_dc.has_omitted_center() ) {
+    std::cerr << "intcca: cca_dc: omitted center is " << cca_dc.omitted_center() << std::endl;
+    std::cerr << "intcca: cca_dc: omitted atom is " << cca_dc.omitted_atom() << std::endl;
+  }
+
+  for( int i=0; i<dc.n(); ++i)
+     std::cerr << "intcca: dc: n " << i << " center " << dc.center(i) << " atom " << dc.atom(i) << std::endl;
+  if( dc.has_omitted_center() ) {
+    std::cerr << "intcca: dc: omitted center is " << dc.omitted_center() << std::endl;
+    std::cerr << "intcca: dc: omitted atom is " << dc.omitted_atom() << std::endl;
+  } 
+
+    if( dc.n() ) {
+      GaussianShell* s1 = &( bs1_->shell(is) );
+      GaussianShell* s2 = &( bs2_->shell(js) );
+      GaussianShell* s3 = &( bs3_->shell(ks) );
+      GaussianShell* s4 = &( bs4_->shell(ls) );
+      int nfunc = s1->nfunction() * s2->nfunction() * s3->nfunction() * s4->nfunction();
+      std::cerr << "\nintcca: computing shell " << is << " " <<  js << " " << ks << " " << ls << std::endl;
+      std::cerr << "intcca buffer for shell quartet:\n";
+      int nc1 = s1->ncontraction();
+      int nc2 = s2->ncontraction();
+      int nc3 = s3->ncontraction();
+      int nc4 = s4->ncontraction();
+      std::cerr << "shellnum1: " << is << std::endl;
+      for (int i=0; i<nc1; ++i)
+        std::cerr << "am: " << s1->am(i) << std::endl;
+      std::cerr << "shellnum2: " << js << std::endl;
+      for (int i=0; i<nc2; ++i)
+        std::cerr << "am: " << s2->am(i) << std::endl;
+      std::cerr << "shellnum3: " << ks << std::endl;
+      for (int i=0; i<nc3; ++i)
+        std::cerr << "am: " << s3->am(i) << std::endl;
+      std::cerr << "shellnum4: " << ls << std::endl;
+      for (int i=0; i<nc4; ++i)
+        std::cerr << "am: " << s4->am(i) << std::endl;
+
+      for( int i=0; i<dc.n(); ++i) {
+        std::cerr << "n " << i << " center " << dc.center(i) << " atom " << dc.atom(i) << std::endl;
+        std::cerr << "  dx\n";
+        for( int j=0; j<nfunc; ++j)
+          std::cerr << "  " << buffer_[i*nfunc*3+j] << std::endl;
+        std::cerr << "  dy\n";
+        for( int j=nfunc; j<nfunc*2; ++j)
+          std::cerr << "  " << buffer_[i*nfunc*3+j] << std::endl;
+        std::cerr << "  dz\n";
+        for( int j=nfunc*2; j<nfunc*3; ++j)
+          std::cerr << "  " << buffer_[i*nfunc*3+j] << std::endl;
+      }
+    }
+*/
 
 }
 
 int
 TwoBodyDerivIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
 {
-  double value = int2ecca_->compute_bounds(is,js,ks,ls);
+/*  double value = int2ecca_->compute_bounds(is,js,ks,ls);
   int upper;
   if (value > tol_) {
     double log_dbl = log(value)*loginv_;
@@ -142,6 +197,9 @@ TwoBodyDerivIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
   }
   else upper = int_bound_min_;
   return upper;
+*/
+
+return SCHAR_MAX;
 }
 
 /////////////////////////////////////////////////////////////////////////////

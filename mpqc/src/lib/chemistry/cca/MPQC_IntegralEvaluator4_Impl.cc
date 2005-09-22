@@ -209,34 +209,40 @@ throw ()
   
   if( int_type_ == two_body ) {
     eval_->compute_shell( shellnum1, shellnum2,
-			  shellnum3, shellnum4);
+			  shellnum3, shellnum4 );
   }
 
   else if( int_type_ == two_body_deriv ) {
-    sc::DerivCenters dc;
+    
+    deriv_eval_->compute_shell( shellnum1, shellnum2,
+                                shellnum3, shellnum4,
+                                sc_deriv_centers_ );
+    deriv_ctr.clear();
+    if(sc_deriv_centers_.has_omitted_center())
+      deriv_ctr.add_omitted( sc_deriv_centers_.omitted_center(),
+                             sc_deriv_centers_.omitted_atom() );
+    for( int i=0; i<sc_deriv_centers_.n() ; ++i) 
+      deriv_ctr.add_center( sc_deriv_centers_.center(i),
+                            sc_deriv_centers_.atom(i) );
 
-    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 0 )
-      dc.add_omitted(0,deriv_ctr.atom(0));
-    else
-      dc.add_center(0,deriv_ctr.atom(0));
+/*
+    std::cerr << "Eval4 dc.n=" << dc.n() << std::endl;
+    for( int i=0; i<dc.n(); ++i)
+       std::cerr << "dc " << i << " center " << dc.center(i) << " atom " << dc.atom(i) << std::endl;
+    if( dc.has_omitted_center() ) {
+      std::cerr << "omitted center is " << dc.omitted_center() << std::endl;
+      std::cerr << "omitted atom is " << dc.omitted_atom() << std::endl;
+    }
 
-    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 1 )
-      dc.add_omitted(1,deriv_ctr.atom(1));
-    else
-      dc.add_center(1,deriv_ctr.atom(1));
+    std::cerr << "Eval4 deriv_ctr.n=" << deriv_ctr.n() << std::endl;
+    for( int i=0; i<deriv_ctr.n(); ++i)
+       std::cerr << "deriv_ctr " << i << " center " << deriv_ctr.center(i) << " atom " << deriv_ctr.atom(i) << std::endl;
+    if( deriv_ctr.has_omitted_center() ) {
+      std::cerr << "omitted center is " << deriv_ctr.omitted_center() << std::endl;
+      std::cerr << "omitted atom is " << deriv_ctr.omitted_atom() << std::endl;
+    }
+*/
 
-    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 2 )
-      dc.add_omitted(2,deriv_ctr.atom(2));
-    else
-      dc.add_center(2,deriv_ctr.atom(2));
-
-    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 3 )
-      dc.add_omitted(3,deriv_ctr.atom(3));
-    else
-      dc.add_center(3,deriv_ctr.atom(3));
-
-    deriv_eval_->compute_shell( shellnum1, shellnum2, 
-                                shellnum3, shellnum4, dc );
   }
   else
     throw ProgrammingError("bad evaluator type",

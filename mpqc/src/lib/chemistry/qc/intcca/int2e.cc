@@ -139,9 +139,10 @@ Int2eCCA::compute_erep_1der( int is, int js, int ks, int ls,
     copy_buffer(nelem);
   }
 
-  if(!redundant_) {
+/*  if(!redundant_) {
     remove_redundant(is,js,ks,ls);
   }
+*/
 }
 
 double

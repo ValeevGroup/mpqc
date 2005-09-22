@@ -209,26 +209,11 @@ throw ()
 }
 
 /**
- * Allows a DerivCenters object to be passed to 
- * an evaluator, so that derivatives can be taken 
- * with respect to a specified atom (needed for
- * derivatives with non-Hellman-Feynman contributions). 
- */
-void
-MPQC::IntegralEvaluator2_impl::set_derivcenters (
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.set_derivcenters)
-  deriv_centers_ = dc;
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.set_derivcenters)
-}
-
-/**
  * Compute a shell doublet of integrals.
  * @param shellnum1 Gaussian shell number 1.
  * @param shellnum2 Gaussian shell number 2.
  * @param deriv_level Derivative level. 
+ * @param deriv_atom Atom number for derivative (-1 if using DerivCenter).
  * @param deriv_ctr Derivative center descriptor. 
  */
 void
@@ -236,6 +221,7 @@ MPQC::IntegralEvaluator2_impl::compute (
   /* in */ int64_t shellnum1,
   /* in */ int64_t shellnum2,
   /* in */ int64_t deriv_level,
+  /* in */ int64_t deriv_atom,
   /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
@@ -244,38 +230,34 @@ throw ()
   if( int_type_ == one_body )
     eval_->compute_shell( shellnum1, shellnum2 );
   else if( int_type_ == one_body_deriv ) {
-    sc::DerivCenters dc;
 
-    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 0 ) {
-      dc.add_omitted(0,deriv_ctr.atom(0));
-      std::cerr << "omitting center 0, atom " << deriv_ctr.omitted_atom() << std::endl;
-    }
-    else {
-      dc.add_center(0,deriv_ctr.atom(0));
-      std::cerr << "doing center 0, atom " << deriv_ctr.atom(0) << std::endl;
-    }
+    if( deriv_atom == -1) {
+      sc_deriv_centers_.clear();
+      deriv_eval_->compute_shell( shellnum1, shellnum2, sc_deriv_centers_ );
 
-    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 1 ) {
-      dc.add_omitted(1,deriv_ctr.atom(1));
-      std::cerr << "omitting center 1, atom " << deriv_ctr.omitted_atom() << std::endl;
+      deriv_ctr.clear();
+      if(sc_deriv_centers_.has_omitted_center())
+        deriv_ctr.add_omitted( sc_deriv_centers_.omitted_center(),
+                               sc_deriv_centers_.omitted_atom() );
+      for( int i=0; i<sc_deriv_centers_.n() ; ++i)
+        deriv_ctr.add_center( sc_deriv_centers_.center(i),
+                              sc_deriv_centers_.atom(i) );
     }
-    else {
-      dc.add_center(1,deriv_ctr.atom(1));
-      std::cerr << "doing center 1, atom " << deriv_ctr.atom(1) << std::endl;
-    }
+    else
+      deriv_eval_->compute_shell( shellnum1, shellnum2, deriv_atom );
 
-    deriv_eval_->compute_shell( shellnum1, shellnum2, dc );
   }
   else 
     throw ProgrammingError("bad evaluator type",
                            __FILE__,__LINE__);
 
+/*
   sc::GaussianShell* s1 = &( bs1_->shell(shellnum1) );
   sc::GaussianShell* s2 = &( bs2_->shell(shellnum2) );
   int nfunc = s1->nfunction() * s2->nfunction();
 
   if( int_type_ == one_body_deriv ) {
-    std::cerr << "buffer for shell doublet:\n";
+    std::cerr << "cca buffer for shell doublet(" << evaluator_label_ << "):\n";
     std::cerr << "shellnum1: " << shellnum1 << std::endl;
     int nc1 = s1->ncontraction();
     for (int i=0; i<nc1; ++i)
@@ -284,7 +266,26 @@ throw ()
     int nc2 = s2->ncontraction();
     for (int i=0; i<nc2; ++i)
       std::cerr << "am: " << s2->am(i) << std::endl;
-    
+  
+    std::cerr << "dx\n";
+    for( int i=0; i<nfunc; ++i)
+      std::cerr << sc_buffer_[i] << std::endl;
+    std::cerr << "dy\n";
+    for( int i=nfunc; i<nfunc*2; ++i)
+      std::cerr << sc_buffer_[i] << std::endl;
+    std::cerr << "dz\n";
+    for( int i=nfunc*2; i<nfunc*3; ++i)
+      std::cerr << sc_buffer_[i] << std::endl;
+  }
+*/
+
+#ifndef INTV3_ORDER
+  if( package_ == "intv3") reorder_intv3( shellnum1, shellnum2 );
+#endif
+
+/*
+  if( int_type_ == one_body_deriv ) {
+    std::cerr << "buffer for shell doublet (after reorder): " << shellnum1 << " " << shellnum2 << std::endl;
     std::cerr << "dx\n";
     for( int i=0; i<nfunc; ++i)
       std::cerr << sc_buffer_[i] << std::endl;
@@ -296,31 +297,13 @@ throw ()
       std::cerr << sc_buffer_[i] << std::endl;
   }
 
-#ifndef INTV3_ORDER
-  if( package_ == "intv3") reorder_intv3( shellnum1, shellnum2 );
-#endif
-
-  // debug
-  //if( int_type_ == one_body_deriv ) {
-  //  std::cerr << "buffer for shell doublet (after reorder): " << shellnum1 << " " << shellnum2 << std::endl;
-  //  std::cerr << "dx\n";
-  //  for( int i=0; i<nfunc; ++i)
-  //    std::cerr << sc_buffer_[i] << std::endl;
-  //  std::cerr << "dy\n";
-  //  for( int i=nfunc; i<nfunc*2; ++i)
-  //    std::cerr << sc_buffer_[i] << std::endl;
-  //  std::cerr << "dz\n";
-  //  for( int i=nfunc*2; i<nfunc*3; ++i)
-  //    std::cerr << sc_buffer_[i] << std::endl;
-  //}
-
-  // debug
-  //sc::GaussianShell &s1 = bs1_->shell(shellnum1);
-  //sc::GaussianShell &s2 = bs2_->shell(shellnum2);
-  //int nfunc = s1.nfunction() * s2.nfunction();
-  //cout << "buffer " << shellnum1 << " " << shellnum2 << endl; 
-  //for( int i=0; i<nfunc; ++i)
-  //  cout << sc_buffer_[i] << endl;
+  sc::GaussianShell &s1 = bs1_->shell(shellnum1);
+  sc::GaussianShell &s2 = bs2_->shell(shellnum2);
+  int nfunc = s1.nfunction() * s2.nfunction();
+  cout << "buffer " << shellnum1 << " " << shellnum2 << endl; 
+  for( int i=0; i<nfunc; ++i)
+    cout << sc_buffer_[i] << endl;
+*/
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.compute)
 }
@@ -331,6 +314,7 @@ throw ()
  * @param shellnum1 Gaussian shell number 1.
  * @param shellnum2 Gaussian shell number 2.
  * @param deriv_level Derivative level.
+ * @param deriv_atom Atom number for derivative (-1 if using DerivCenter).
  * @param deriv_ctr Derivative center descriptor.
  * @return Borrowed sidl array buffer. 
  */
@@ -339,12 +323,13 @@ MPQC::IntegralEvaluator2_impl::compute_array (
   /* in */ int64_t shellnum1,
   /* in */ int64_t shellnum2,
   /* in */ int64_t deriv_level,
+  /* in */ int64_t deriv_atom,
   /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute_array)
 
-  compute( shellnum1, shellnum2, deriv_level, deriv_ctr );
+  compute( shellnum1, shellnum2, deriv_level, deriv_atom, deriv_ctr );
 
   // create a proxy SIDL array
   int lower[1] = {0};
@@ -438,7 +423,6 @@ MPQC::IntegralEvaluator2_impl::reorder_intv3(int64_t shellnum1,int64_t shellnum2
   else if( int_type_ == one_body_deriv )
     for(int i=0; i<3; ++i) {
       deriv_offset = i*nfunc;
-      std::cerr << "deriv offset is " << deriv_offset << std::endl;
       reorder_doublet( s1, s2, nc1, nc2, deriv_offset );
     }
 

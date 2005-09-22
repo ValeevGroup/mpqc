@@ -156,9 +156,9 @@ Int1eCCA::overlap( int ish, int jsh )
 {
   cca_dc_.clear();
   if( use_opaque_ )
-    overlap_ptr_->compute( ish, jsh, 0, cca_dc_ );
+    overlap_ptr_->compute( ish, jsh, 0, -1, cca_dc_ );
   else {
-    sidl_buffer_ = overlap_ptr_->compute_array( ish, jsh, 0, cca_dc_ ); 
+    sidl_buffer_ = overlap_ptr_->compute_array( ish, jsh, 0, -1, cca_dc_ ); 
     copy_buffer();
   }
 }  
@@ -168,9 +168,21 @@ Int1eCCA::overlap_1der(int ish, int jsh,
                        Chemistry_QC_GaussianBasis_DerivCenters &dc)
 {
   if( use_opaque_ ) 
-    overlap_1der_ptr_->compute( ish, jsh, 1, dc );
+    overlap_1der_ptr_->compute( ish, jsh, 1, -1, dc );
   else {
-    sidl_buffer_ = overlap_1der_ptr_->compute_array( ish, jsh, 1, dc );
+    sidl_buffer_ = overlap_1der_ptr_->compute_array( ish, jsh, 1, -1, dc );
+    copy_buffer();
+  }
+}
+
+void
+Int1eCCA::overlap_1der(int ish, int jsh, int c)
+{
+  cca_dc_.clear();
+  if( use_opaque_ )
+    overlap_1der_ptr_->compute( ish, jsh, 1, c, cca_dc_ );
+  else {
+    sidl_buffer_ = overlap_1der_ptr_->compute_array( ish, jsh, 1, c, cca_dc_ );
     copy_buffer();
   }
 }
@@ -180,9 +192,9 @@ Int1eCCA::kinetic( int ish, int jsh )
 {
   cca_dc_.clear();
   if( use_opaque_ )
-    kinetic_ptr_->compute( ish, jsh, 0, cca_dc_ );
+    kinetic_ptr_->compute( ish, jsh, 0, -1, cca_dc_ );
   else {
-    sidl_buffer_ = kinetic_ptr_->compute_array( ish, jsh, 0, cca_dc_ ); 
+    sidl_buffer_ = kinetic_ptr_->compute_array( ish, jsh, 0, -1, cca_dc_ ); 
     copy_buffer();
   }
 }
@@ -192,22 +204,45 @@ Int1eCCA::kinetic_1der(int ish, int jsh,
                        Chemistry_QC_GaussianBasis_DerivCenters &dc)
 {
   if( use_opaque_ )
-    kinetic_1der_ptr_->compute( ish, jsh, 1, dc );
+    kinetic_1der_ptr_->compute( ish, jsh, 1, -1, dc );
   else {
-    sidl_buffer_ = kinetic_1der_ptr_->compute_array( ish, jsh, 1, dc );
+    sidl_buffer_ = kinetic_1der_ptr_->compute_array( ish, jsh, 1, -1, dc );
     copy_buffer();
   }
 }
 
+void
+Int1eCCA::kinetic_1der(int ish, int jsh, int c)
+{
+  cca_dc_.clear();
+  if( use_opaque_ )
+    kinetic_1der_ptr_->compute( ish, jsh, 1, c, cca_dc_ );
+  else {
+    sidl_buffer_ = kinetic_1der_ptr_->compute_array( ish, jsh, 1, c, cca_dc_ );
+    copy_buffer();
+  }
+}
 
 void
 Int1eCCA::nuclear( int ish, int jsh )
 {
   cca_dc_.clear();
   if( use_opaque_ )
-    nuclear_ptr_->compute( ish, jsh, 0, cca_dc_ );
+    nuclear_ptr_->compute( ish, jsh, 0, -1, cca_dc_ );
   else {
-    sidl_buffer_ = nuclear_ptr_->compute_array( ish, jsh, 0, cca_dc_ ); 
+    sidl_buffer_ = nuclear_ptr_->compute_array( ish, jsh, 0, -1, cca_dc_ ); 
+    copy_buffer();
+  }
+}
+
+void
+Int1eCCA::nuclear_1der(int ish, int jsh, int c)
+{
+  cca_dc_.clear();
+  if( use_opaque_ )
+    nuclear_1der_ptr_->compute( ish, jsh, 1, c, cca_dc_ );
+  else {
+    sidl_buffer_ = nuclear_1der_ptr_->compute_array( ish, jsh, 1, c, cca_dc_ );
     copy_buffer();
   }
 }
@@ -217,9 +252,9 @@ Int1eCCA::nuclear_1der(int ish, int jsh,
                        Chemistry_QC_GaussianBasis_DerivCenters &dc)
 {
   if( use_opaque_ )
-    nuclear_1der_ptr_->compute( ish, jsh, 1, dc );
+    nuclear_1der_ptr_->compute( ish, jsh, 1, -1, dc );
   else {
-    sidl_buffer_ = nuclear_1der_ptr_->compute_array( ish, jsh, 1, dc );
+    sidl_buffer_ = nuclear_1der_ptr_->compute_array( ish, jsh, 1, -1, dc );
     copy_buffer();
   }
 }
@@ -229,9 +264,21 @@ Int1eCCA::hcore( int ish, int jsh )
 {
   cca_dc_.clear();
   if( use_opaque_ )
-    hcore_ptr_->compute( ish, jsh, 0, cca_dc_ );
+    hcore_ptr_->compute( ish, jsh, 0, -1, cca_dc_ );
   else {
-    sidl_buffer_ = hcore_ptr_->compute_array( ish, jsh, 0, cca_dc_ ); 
+    sidl_buffer_ = hcore_ptr_->compute_array( ish, jsh, 0, -1, cca_dc_ ); 
+    copy_buffer();
+  }
+}
+
+void
+Int1eCCA::hcore_1der(int ish, int jsh, int c)
+{
+  cca_dc_.clear();
+  if( use_opaque_ )
+    hcore_1der_ptr_->compute( ish, jsh, 1, c, cca_dc_ );
+  else {
+    sidl_buffer_ = hcore_1der_ptr_->compute_array( ish, jsh, 1, c, cca_dc_ );
     copy_buffer();
   }
 }
@@ -241,9 +288,9 @@ Int1eCCA::hcore_1der(int ish, int jsh,
                      Chemistry_QC_GaussianBasis_DerivCenters &dc)
 {
   if( use_opaque_ )
-    hcore_1der_ptr_->compute( ish, jsh, 1, dc );
+    hcore_1der_ptr_->compute( ish, jsh, 1, -1, dc );
   else {
-    sidl_buffer_ = hcore_1der_ptr_->compute_array( ish, jsh, 1, dc );
+    sidl_buffer_ = hcore_1der_ptr_->compute_array( ish, jsh, 1, -1, dc );
     copy_buffer();
   }
 }

@@ -93,6 +93,7 @@ namespace MPQC {
     int int_type_;
     int deriv_level_;
     std::string package_;
+    sc::DerivCenters sc_deriv_centers_;
 
     // reorder stuff
     int bufn_;

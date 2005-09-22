@@ -96,15 +96,20 @@ class Int1eCCA: public RefCount {
     void overlap(int ish, int jsh);
     void overlap_1der(int ish, int jsh, 
                       Chemistry_QC_GaussianBasis_DerivCenters &dc);
+    void overlap_1der(int ish, int jsh, int c);
     void kinetic(int ish, int jsh);
     void kinetic_1der(int ish, int jsh, 
                       Chemistry_QC_GaussianBasis_DerivCenters &dc);
+    void kinetic_1der(int ish, int jsh, int c);
     void nuclear(int ish, int jsh);
     void nuclear_1der(int ish, int jsh,
                       Chemistry_QC_GaussianBasis_DerivCenters &dc);
+    void nuclear_1der(int ish, int jsh, int c);
     void hcore(int ish, int jsh);
     void hcore_1der(int ish, int jsh,
                     Chemistry_QC_GaussianBasis_DerivCenters &dc);
+    void hcore_1der(int ish, int jsh, int c);
+                    
 };
 
 }

@@ -19,9 +19,11 @@ Following is a brief summary of changes made in each release of MPQC.
      o MP2-R12/A' method with split virtual space (virtual orbitals
        constructed from a separate Gaussian basis).
      o Novel Brillouin condition-free versions of the MP2-R12/A' method.
-     o New exception infrastructure. 
+     o A new exception infrastructure has been added.
      o Numerous numerical improvements, compiler bug work-arounds,
        and bug fixes.
+     o Checkpoint files made with earlier versions of MPQC utilizing
+       more than one processor will not work 2.3.0 or later versions.
 
   * 2004-12-18: MPQC-2.2.3
      o Documention errors and omissions corrected.

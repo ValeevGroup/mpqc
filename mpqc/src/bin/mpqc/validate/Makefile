@@ -50,9 +50,9 @@ ifeq ($(MPQCRUN_INTEGRAL),)
 endif
 
 # Also need to see if --mpqc was specified.  If not, then add
-# --mpqc ../mpqc.
+# --mpqc ../../mpqc.
 ifeq ($(filter --mpqc%, $(ALL_MPQCRUN_ARGS)),)
-ALL_MPQCRUN_ARGS:=--mpqc ../mpqc $(ALL_MPQCRUN_ARGS)
+ALL_MPQCRUN_ARGS:=--mpqc ../../mpqc $(ALL_MPQCRUN_ARGS)
 endif
 
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
@@ -347,14 +347,13 @@ check: check0
 
 check0: $(RUN) check0_run check0_chk
 
-MPQCRUN = ../mpqcrun
+MPQCRUN = cd run && $(PERL) ../../mpqcrun
 MPQCRUN_EXTRA_ARGS = --autoout --simpout \
                      --inputprefix $(SRCDIR)/ref/ \
-                     --outputprefix $(RUN)/ \
                      --seq ^ckpt_
 
 check0_run:
-	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK0INPUTS:$(INP)/%=%)
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK0INPUTS:$(INP)/%=%)
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
 	$(MAKE) checkccafe_run
 endif
@@ -368,7 +367,7 @@ endif
 check1: $(RUN) check1_run check1_chk
 
 check1_run:
-	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK1INPUTS:$(INP)/%=%)
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK1INPUTS:$(INP)/%=%)
 
 check1_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK1OUTPUTS:$(INP)/%=$(RUN)/%)
@@ -376,13 +375,13 @@ check1_chk:
 check2: $(RUN) check2_run check2_chk
 
 check2_run:
-	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK2INPUTS:$(INP)/%=%)
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK2INPUTS:$(INP)/%=%)
 
 check2_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK2OUTPUTS:$(INP)/%=$(RUN)/%)
 
 checkcca_run: $(RUN)
-	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CCAINTV3INPUTS:$(INP)/%=%) $(CCACINTSINPUTS:$(INP)/%=%)
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CCAINTV3INPUTS:$(INP)/%=%) $(CCACINTSINPUTS:$(INP)/%=%)
 	$(MAKE) checkccafe_run
 
 checkcca_chk:

@@ -94,6 +94,7 @@ namespace MPQC {
     int deriv_level_;
     std::string package_;
     sc::DerivCenters sc_deriv_centers_;
+    int maxam_;
 
     // reorder stuff
     int bufn_;
@@ -111,7 +112,7 @@ namespace MPQC {
     void reorder_intv3(int64_t,int64_t,int64_t,int64_t);
     void reorder_quartet( sc::GaussianShell*, sc::GaussianShell*,
                           sc::GaussianShell*, sc::GaussianShell*,
-                          int, int, int, int, int );
+                          int, int, int, int, int, int );
     void reorder_intv3_inline(int64_t,int64_t,int64_t,int64_t);
     void initialize_reorder_intv3();
     void reorder_c4(int,int,int,int,int,int);

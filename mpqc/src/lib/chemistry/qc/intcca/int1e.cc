@@ -54,11 +54,12 @@ Int1eCCA::Int1eCCA(Integral *integral,
   /* The efield routines look like derivatives so bump up order if
    * it is zero to allow efield integrals to be computed.
    */
+  deriv_lvl_ = order;
   if (order == 0) order = 1;
 
   nshell2 = bs1_->max_ncartesian_in_shell()*bs2_->max_ncartesian_in_shell();
 
-  if (order == 0) 
+  if (order == 0)
     scratchsize = nshell2;
   else if (order == 1) 
     scratchsize = nshell2*3;
@@ -68,6 +69,8 @@ Int1eCCA::Int1eCCA(Integral *integral,
 
   if( !use_opaque_ )
     buff_ = new double[scratchsize];
+  if( deriv_lvl_ )
+    temp_buff_ = new double[scratchsize];
 
   // create cca basis sets
   cca_bs1_ = GaussianBasis_Molecular::_create();
@@ -173,6 +176,9 @@ Int1eCCA::overlap_1der(int ish, int jsh,
     sidl_buffer_ = overlap_1der_ptr_->compute_array( ish, jsh, 1, -1, dc );
     copy_buffer();
   }
+#ifndef INTV3_ORDER
+  reorder_deriv( &(bs1_->shell(ish)), &(bs2_->shell(jsh)) );
+#endif
 }
 
 void
@@ -185,6 +191,9 @@ Int1eCCA::overlap_1der(int ish, int jsh, int c)
     sidl_buffer_ = overlap_1der_ptr_->compute_array( ish, jsh, 1, c, cca_dc_ );
     copy_buffer();
   }
+#ifndef INTV3_ORDER
+  reorder_deriv( &(bs1_->shell(ish)), &(bs2_->shell(jsh)) );
+#endif
 }
 
 void
@@ -209,6 +218,9 @@ Int1eCCA::kinetic_1der(int ish, int jsh,
     sidl_buffer_ = kinetic_1der_ptr_->compute_array( ish, jsh, 1, -1, dc );
     copy_buffer();
   }
+#ifndef INTV3_ORDER
+  reorder_deriv( &(bs1_->shell(ish)), &(bs2_->shell(jsh)) );
+#endif
 }
 
 void
@@ -221,6 +233,9 @@ Int1eCCA::kinetic_1der(int ish, int jsh, int c)
     sidl_buffer_ = kinetic_1der_ptr_->compute_array( ish, jsh, 1, c, cca_dc_ );
     copy_buffer();
   }
+#ifndef INTV3_ORDER
+  reorder_deriv( &(bs1_->shell(ish)), &(bs2_->shell(jsh)) );
+#endif
 }
 
 void
@@ -245,6 +260,9 @@ Int1eCCA::nuclear_1der(int ish, int jsh, int c)
     sidl_buffer_ = nuclear_1der_ptr_->compute_array( ish, jsh, 1, c, cca_dc_ );
     copy_buffer();
   }
+#ifndef INTV3_ORDER
+  reorder_deriv( &(bs1_->shell(ish)), &(bs2_->shell(jsh)) );
+#endif
 }
 
 void
@@ -257,6 +275,9 @@ Int1eCCA::nuclear_1der(int ish, int jsh,
     sidl_buffer_ = nuclear_1der_ptr_->compute_array( ish, jsh, 1, -1, dc );
     copy_buffer();
   }
+#ifndef INTV3_ORDER
+  reorder_deriv( &(bs1_->shell(ish)), &(bs2_->shell(jsh)) );
+#endif
 }
 
 void
@@ -281,6 +302,9 @@ Int1eCCA::hcore_1der(int ish, int jsh, int c)
     sidl_buffer_ = hcore_1der_ptr_->compute_array( ish, jsh, 1, c, cca_dc_ );
     copy_buffer();
   }
+#ifndef INTV3_ORDER
+  reorder_deriv( &(bs1_->shell(ish)), &(bs2_->shell(jsh)) );
+#endif
 }
 
 void
@@ -293,6 +317,9 @@ Int1eCCA::hcore_1der(int ish, int jsh,
     sidl_buffer_ = hcore_1der_ptr_->compute_array( ish, jsh, 1, -1, dc );
     copy_buffer();
   }
+#ifndef INTV3_ORDER
+  reorder_deriv( &(bs1_->shell(ish)), &(bs2_->shell(jsh)) );
+#endif
 }
 
 void 
@@ -302,6 +329,34 @@ Int1eCCA::copy_buffer()
   for(int i=0; i<sidl_size; ++i) 
     buff_[i] = sidl_buffer_.get(i);
 }
+
+void
+Int1eCCA::reorder_deriv(sc::GaussianShell* s1, sc::GaussianShell* s2)
+{
+  int nfunc = s1->nfunction() * s2->nfunction();
+
+  for(int i=0; i<nfunc*3; ++i)
+    temp_buff_[i] = buff_[i];
+
+  for(int i=0; i<nfunc; ++i)
+    for( int di=0; di<3; ++di)
+      buff_[i*3+di] = temp_buff_[di*nfunc+i];
+
+/*
+  std::cerr << "Int1eCCA reordering" << std::endl;
+  for( int i=0; i<nfunc; ++i) {
+    std::cerr << "integral " << i << std::endl;
+    std::cerr << " dx: " << buff_[i*3] << std::endl;
+    std::cerr << " dy: " << buff_[i*3+1] << std::endl;
+    std::cerr << " dz: " << buff_[i*3+2] << std::endl;
+  }
+*/
+
+}
+    
+  
+  
+  
 
 
 /////////////////////////////////////////////////////////////////////////////

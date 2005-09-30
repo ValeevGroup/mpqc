@@ -96,6 +96,7 @@ namespace MPQC {
     int **reorder_;
     Chemistry::QC::GaussianBasis::DerivCenters deriv_centers_;
     sc::DerivCenters sc_deriv_centers_;
+    int deriv_atom_;
 
     void reorder_intv3(int64_t, int64_t);
     void initialize_reorder_intv3();

@@ -52,6 +52,8 @@ Int2eCCA::Int2eCCA(Integral *integral,
   use_opaque_(use_opaque), buffer_(0)
 {
 
+  deriv_lvl_ = order;  
+
   /* Allocate storage for the integral buffer. */
   int maxsize = bs1_->max_ncartesian_in_shell()
                 *bs2_->max_ncartesian_in_shell()
@@ -63,6 +65,7 @@ Int2eCCA::Int2eCCA(Integral *integral,
     throw FeatureNotImplemented("only first order derivatives are available",
                                 __FILE__,__LINE__);
   if( !use_opaque ) buffer_ = new double[maxsize];
+  if( deriv_lvl_ ) temp_buff_ = new double[maxsize];
 
   cca_bs1_ = GaussianBasis_Molecular::_create();
   cca_bs2_ = GaussianBasis_Molecular::_create();
@@ -92,7 +95,7 @@ Int2eCCA::Int2eCCA(Integral *integral,
       buffer_ = static_cast<double*>( erep_1der_ptr_->get_buffer() );
   }
   else {
-    std::cerr << "integral type: " << eval_type << std::endl;
+    std::cout << "integral type: " << eval_type << std::endl;
     throw InputError("unrecognized integral type",
                      __FILE__,__LINE__);
   }
@@ -138,11 +141,15 @@ Int2eCCA::compute_erep_1der( int is, int js, int ks, int ls,
                 bs3_->shell(ks).nfunction() * bs4_->shell(ls).nfunction();
     copy_buffer(nelem);
   }
-
-/*  if(!redundant_) {
-    remove_redundant(is,js,ks,ls);
+  int nfunc = bs1_->shell(is).nfunction() * bs2_->shell(js).nfunction() 
+              * bs3_->shell(ks).nfunction() * bs4_->shell(ls).nfunction();
+  int deriv_offset=0;
+  for( int i=0; i<=dc.n(); ++i) {
+    reorder_deriv( &(bs1_->shell(is)), &(bs2_->shell(js)),
+                   &(bs3_->shell(ks)), &(bs4_->shell(ls)), deriv_offset );
+    deriv_offset += nfunc*3;
   }
-*/
+
 }
 
 double
@@ -156,6 +163,31 @@ Int2eCCA::copy_buffer( int n )
 {
   for( int i=0; i<n; ++i)
      buffer_[i] = sidl_buffer_.get(i);
+}
+
+void
+Int2eCCA::reorder_deriv(sc::GaussianShell* s1, sc::GaussianShell* s2,
+                        sc::GaussianShell* s3, sc::GaussianShell* s4,
+                        int offset )
+{
+/*  int nfunc = s1->nfunction() * s2->nfunction() * s3->nfunction() * s4->nfunction();
+
+  for(int i=0; i<nfunc*3; ++i)
+    temp_buff_[ offset + i ] = buffer_[ offset + i ];
+
+  for(int i=0; i<nfunc; ++i)
+    for( int di=0; di<3; ++di)
+      buffer_[ offset + i*3 + di ] = temp_buff_[ offset + di*nfunc + i ];
+*/
+
+/*
+  for( int i=0; i<nfunc; ++i) {
+    std::cerr << "integral " << i << std::endl;
+    std::cerr << " dx: " << buff_[i*3] << std::endl;
+    std::cerr << " dy: " << buff_[i*3+1] << std::endl;
+    std::cerr << " dz: " << buff_[i*3+2] << std::endl;
+  }
+*/
 }
 
 #ifndef INTV3_ORDER

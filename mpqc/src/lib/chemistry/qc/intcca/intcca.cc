@@ -178,6 +178,7 @@ IntegralCCA::new_cartesian_iter(int l)
   return new CartesianIterV3(l);
 #else
   return new CartesianIterCCA(l);
+  //return new CartesianIterV3(l);
 #endif
 }
 
@@ -188,6 +189,7 @@ IntegralCCA::new_redundant_cartesian_iter(int l)
   return new RedundantCartesianIterV3(l);
 #else
   return new RedundantCartesianIterCCA(l);
+  //return new RedundantCartesianIterV3(l);
 #endif
 }
 
@@ -198,6 +200,7 @@ IntegralCCA::new_redundant_cartesian_sub_iter(int l)
   return new RedundantCartesianSubIterV3(l);
 #else
   return new RedundantCartesianSubIterCCA(l);
+  //return new RedundantCartesianSubIterV3(l);
 #endif
 }
 
@@ -218,7 +221,7 @@ IntegralCCA::new_spherical_transform_iter(int l, int inv, int subl)
   return new SphericalTransformIter(st_[l][(l-subl)/2]);
 
 #else
- 
+
   // CINTS version
   if (l>maxl_ || l<0)
       throw ProgrammingError("new_spherical_transform_iter: bad l",
@@ -450,7 +453,6 @@ IntegralCCA::free_transforms()
            ist_[i][j] = new ISphericalTransformV3(i,i-2*j);
          }
      }
-
 #else
 
   // CINTS version

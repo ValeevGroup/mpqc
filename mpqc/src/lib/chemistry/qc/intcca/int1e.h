@@ -62,8 +62,11 @@ class Int1eCCA: public RefCount {
     GaussianBasis_Molecular cca_bs2_;
     sidl::array<double> sidl_buffer_;
     double *buff_;
+    double *temp_buff_;
     bool use_opaque_;
     void copy_buffer();
+    void reorder_deriv(sc::GaussianShell*, sc::GaussianShell*);
+    int deriv_lvl_;
     IntegralEvaluator2 overlap_;
     IntegralEvaluator2 overlap_1der_;
     IntegralEvaluator2 kinetic_;

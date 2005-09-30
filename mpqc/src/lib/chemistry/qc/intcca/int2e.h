@@ -66,6 +66,7 @@ class Int2eCCA: public RefCount {
     GaussianBasis_Molecular cca_bs4_;
     sidl::array<double> sidl_buffer_;
     double *buffer_;
+    double *temp_buff_;
     bool use_opaque_;
     void copy_buffer(int);
     IntegralEvaluator4 erep_;
@@ -74,7 +75,10 @@ class Int2eCCA: public RefCount {
     IntegralEvaluator4 *erep_1der_ptr_;
     Chemistry_QC_GaussianBasis_DerivCenters cca_dc_;
     int redundant_;
+    int deriv_lvl_;
     void remove_redundant(int,int,int,int);
+    void reorder_deriv(sc::GaussianShell*, sc::GaussianShell*,
+                       sc::GaussianShell*, sc::GaussianShell*, int );
 
   protected:
     Integral *integral_;

@@ -393,10 +393,14 @@ CCARUN = ../ccarun
 CCARUN_EXTRA_ARGS = --inputprefix $(SRCDIR)/ref \
                      --outputprefix $(RUN)
 checkccafe_run: $(RUN) stamp-ccafe
+ifeq ($(ENABLESHARED),yes)
 	$(PERL) $(CCARUN) $(CCARUN_EXTRA_ARGS) $(CCAFEINPUTS) 
+endif
 
 checkccafe_chk:
+ifeq ($(ENABLESHARED),yes)
 	$(CHECKCCAOUT) --refprefix $(SRCDIR)/ref --outputprefix $(RUN) $(CCAFERESULTS)
+endif
 
 .PHONY: inputs
 inputs:: h2o h2omp2 mp2r12 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt

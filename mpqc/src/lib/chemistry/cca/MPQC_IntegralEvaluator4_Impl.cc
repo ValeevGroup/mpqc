@@ -128,7 +128,10 @@ throw ()
   if(evaluator_label_ == "eri2")
     switch( deriv_level ) {
     case 0:
-      { eval_ = integral_->electron_repulsion(); break; }
+      { eval_ = integral_->electron_repulsion();
+        eval_->set_integral_storage(storage);
+        break;
+      }
     case 1:
       { deriv_eval_ = integral_->electron_repulsion_deriv(); 
         break; 
@@ -140,7 +143,10 @@ throw ()
   else if(evaluator_label_ == "grt")
     switch( deriv_level ) {
     case 0:
-        { eval_ = integral_->grt(); break; }
+        { eval_ = integral_->grt(); 
+          eval_->set_integral_storage(storage);
+          break; 
+        }
     default:
       ++error;
     }

@@ -116,7 +116,7 @@ throw ()
   }
 
   integral_->set_storage(storage);
-  
+
   int error = 0;
   if(evaluator_label_ == "overlap") 
     switch( max_deriv ) {

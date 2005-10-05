@@ -77,6 +77,7 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   Integral(keyval)
 {
 
+  storage_used_ = 5000000;
   initialize_transforms();
 
   string buffer = keyval->stringvalue("integral_buffer");
@@ -360,8 +361,8 @@ IntegralCCA::hcore_deriv()
 Ref<TwoBodyInt>
 IntegralCCA::electron_repulsion()
 {
-  return new TwoBodyIntCCA(this, bs1_, bs2_, bs3_, bs4_, 
-                           storage_, eval_factory_, use_opaque_, "eri" );
+   return new TwoBodyIntCCA(this, bs1_, bs2_, bs3_, bs4_, 
+                            storage_, eval_factory_, use_opaque_, "eri" );
 }
 
 Ref<TwoBodyDerivInt>

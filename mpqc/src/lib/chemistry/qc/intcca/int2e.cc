@@ -78,6 +78,8 @@ Int2eCCA::Int2eCCA(Integral *integral,
 
   cca_dc_ = Chemistry_QC_GaussianBasis_DerivCenters::_create();
  
+  eval_factory_.set_storage(storage);
+
   if( eval_type == "eri" ) {
     erep_ = eval_factory_.get_integral_evaluator4( "eri2", 0,
                                                    cca_bs1_, cca_bs2_, 
@@ -102,6 +104,7 @@ Int2eCCA::Int2eCCA(Integral *integral,
   if (!buffer_)
     throw ProgrammingError("buffer not assigned",
                            __FILE__,__LINE__);
+
 }
 
 void

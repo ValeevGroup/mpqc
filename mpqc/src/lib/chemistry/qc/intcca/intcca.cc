@@ -77,7 +77,6 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   Integral(keyval)
 {
 
-  storage_used_ = 5000000;
   initialize_transforms();
 
   string buffer = keyval->stringvalue("integral_buffer");
@@ -139,9 +138,6 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
 
   // set package
   eval_factory_.set_integral_package(package_);
-
-  // set storage
-  eval_factory_.set_storage(storage_);
 
 }
 

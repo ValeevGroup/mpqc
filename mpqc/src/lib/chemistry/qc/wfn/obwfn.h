@@ -76,6 +76,10 @@ class OneBodyWavefunction: public Wavefunction {
 
     int nelectron();
 
+    /** Overload of Function::set_desired_value_accuracy(). Must update
+        accuracy of the eigenvectors and the eigenvalues */
+    void set_desired_value_accuracy(double eps);
+
     // Following is a proposed interface to make the meaning of
     // the various transformation matrices less confusing.
 //     /** These members give metrics and basis transformations

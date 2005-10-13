@@ -1291,6 +1291,15 @@ UnrestrictedSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
   }
 }
 
+void
+UnrestrictedSCF::set_desired_value_accuracy(double eps)
+{
+  OneBodyWavefunction::set_desired_value_accuracy(eps);
+  oso_eigenvectors_beta_.set_desired_accuracy(eps);
+  eigenvalues_beta_.set_desired_accuracy(eps);
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 }

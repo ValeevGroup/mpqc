@@ -619,6 +619,14 @@ OneBodyWavefunction::form_occupations(int *&newocc, const int *oldocc)
 
   return 1;
 }
+
+void
+OneBodyWavefunction::set_desired_value_accuracy(double eps)
+{
+  Function::set_desired_value_accuracy(eps);
+  oso_eigenvectors_.set_desired_accuracy(eps);
+  eigenvalues_.set_desired_accuracy(eps);
+}
   
 /////////////////////////////////////////////////////////////////////////////
 

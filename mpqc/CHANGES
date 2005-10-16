@@ -3,7 +3,7 @@
 
 Following is a brief summary of changes made in each release of MPQC.
 
-  * 2005-XX-XX: MPQC-2.3.0
+  * 2005-10-16: MPQC-2.3.0
      o Common Component Architecture interfaces for energies and
        integrals are now available.
      o Updated to a more recent version of the EMSL basis sets.  This

@@ -4,4 +4,5 @@
 #define F77_DDOT
 #define F77_DGESVD
 #define F77_DSPSVX
+#define F77_DSYEVD
 

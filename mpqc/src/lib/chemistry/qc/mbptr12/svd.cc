@@ -32,6 +32,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <util/misc/formio.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/mbptr12/lapack.h>
 #include <chemistry/qc/mbptr12/svd.h>
 
@@ -260,6 +261,57 @@ namespace sc {
       }
     }
 
+    
+    
+    /** Computed eigenvalues of A and returns how many are below threshold. Uses LAPACK's DSYEVD.
+    */
+    int lapack_evals_less_eps(const RefSymmSCMatrix& A, double threshold)
+    {
+      int n = A.n();
+      // convert A to square form
+      double* Asq = new double[n*n];
+      double** Arows = new double*[n];
+      int ioff = 0;
+      for(int i=0; i<n; i++, ioff+=n)
+        Arows[i] = Asq + ioff;
+      A.convert(Arows);
+      delete[] Arows;
+      double* evals = new double[n];
+
+      char need_evecs = 'N';
+      char uplo = 'U';
+      const int lwork = 2*n+1;
+      double* work = new double[lwork];
+      const int liwork = 1;
+      int* iwork = new int[liwork];
+      int info = 0;
+      
+      F77_DSYEVD(&need_evecs, &uplo, &n, Asq, &n, evals, work, &lwork, iwork, &liwork, &info);
+
+      if (info) {
+        
+        delete[] work;
+        delete[] iwork;
+        delete[] Asq;
+        delete[] evals;
+
+        throw sc::ProgrammingError("lapack_evals_less_eps() -- call to LAPACK's DSYEVD failed",__FILE__,__LINE__);
+      }
+      
+      int nevals_lessthan_threshold = 0;
+      for(int i=0; i<n; i++) {
+        if (evals[i] < threshold)
+          nevals_lessthan_threshold++;
+      }
+      
+      delete[] work;
+      delete[] iwork;
+      delete[] Asq;
+      delete[] evals;
+      
+      return nevals_lessthan_threshold;
+    }
+    
   };
   
 };

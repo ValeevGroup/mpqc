@@ -10,5 +10,9 @@ extern void F77_DSPSVX(const char* fact, const char* uplo, const int* n, const i
                        double* XX, const int* nx, double* rcond, double* ferr, double* berr,
                        double* work, int* iwork, int* info);
 
+extern void F77_DSYEVD(const char* need_evals, const char* uplo, const int* n,
+                       double* Asq, const int* lda, double* evals, double* work, const int* lwork,
+                       int* iwork, const int* liwork, int* info);
+
 }
 

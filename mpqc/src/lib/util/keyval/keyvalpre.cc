@@ -95,40 +95,6 @@ keyval(kv)
   setup(prefix_a,0,0,0,0,0);
 }
 
-
-PrefixKeyVal::PrefixKeyVal(const char *prefix_a,const Ref<KeyVal>&kv,
-                           int n1,int n2,int n3,int n4):
-keyval(kv)
-{
-  setup(prefix_a,4,n1,n2,n3,n4);
-}
-
-PrefixKeyVal::PrefixKeyVal(const char *prefix_a,const Ref<KeyVal>&kv,
-                           int n1,int n2,int n3):
-keyval(kv)
-{
-  setup(prefix_a,3,n1,n2,n3,0);
-}
-
-PrefixKeyVal::PrefixKeyVal(const char *prefix_a,const Ref<KeyVal>&kv,
-                           int n1,int n2):
-keyval(kv)
-{
-  setup(prefix_a,2,n1,n2,0,0);
-}
-
-PrefixKeyVal::PrefixKeyVal(const char *prefix_a,const Ref<KeyVal>&kv,int n1):
-keyval(kv)
-{
-  setup(prefix_a,1,n1,0,0,0);
-}
-
-PrefixKeyVal::PrefixKeyVal(const char *prefix_a,const Ref<KeyVal>&kv):
-keyval(kv)
-{
-  setup(prefix_a,0,0,0,0,0);
-}
-
 PrefixKeyVal::PrefixKeyVal(const Ref<KeyVal>&kv,int n1):
 keyval(kv)
 {

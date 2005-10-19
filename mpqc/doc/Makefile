@@ -41,12 +41,13 @@ mpqc.man.dox:
 	/bin/rm -f $@
 	$(MAN_SED_PAGE) < $(SRCDIR)/$(TOPDIR)/src/bin/mpqc/mpqc.dox > $@
 	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/bin/mpqc/mpqcover.dox >> $@
-	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/bin/mpqc/mpqcrun.dox >> $@
+	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/bin/mpqc/mpqcrunning.dox >> $@
 	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/bin/mpqc/mpqcinp.dox >> $@
 	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/bin/mpqc/mpqcsimp.dox >> $@
 	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/bin/mpqc/mpqcoo.dox >> $@
 	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/bin/mpqc/mpqcval.dox >> $@
 	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/lib/chemistry/qc/psi/mpqcpsi.dox >> $@
+	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/lib/chemistry/cca/mpqccomponents.dox >> $@
 	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/bin/mpqc/mpqclic.dox >> $@
 	$(MAN_SED_SEC) < $(SRCDIR)/$(TOPDIR)/src/bin/mpqc/mpqcwar.dox >> $@
 	echo "*/" >> $@

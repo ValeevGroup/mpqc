@@ -50,9 +50,9 @@ ifeq ($(MPQCRUN_INTEGRAL),)
 endif
 
 # Also need to see if --mpqc was specified.  If not, then add
-# --mpqc ../mpqc.
+# --mpqc ../../mpqc.
 ifeq ($(filter --mpqc%, $(ALL_MPQCRUN_ARGS)),)
-ALL_MPQCRUN_ARGS:=--mpqc ../mpqc $(ALL_MPQCRUN_ARGS)
+ALL_MPQCRUN_ARGS:=--mpqc ../../mpqc $(ALL_MPQCRUN_ARGS)
 endif
 
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
@@ -338,7 +338,7 @@ default::
 .PHONY: check_clean check_clean_scratch
 
 check_clean: check_clean_scratch
-	/bin/rm -f $(RUN)/*.out
+	/bin/rm -f $(RUN)/*.out $(RUN)/*.diff
 
 check_clean_scratch:
 	/bin/rm -rf $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt
@@ -347,14 +347,13 @@ check: check0
 
 check0: $(RUN) check0_run check0_chk
 
-MPQCRUN = ../mpqcrun
+MPQCRUN = cd run && $(PERL) ../../mpqcrun
 MPQCRUN_EXTRA_ARGS = --autoout --simpout \
                      --inputprefix $(SRCDIR)/ref/ \
-                     --outputprefix $(RUN)/ \
                      --seq ^ckpt_
 
 check0_run:
-	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK0INPUTS:$(INP)/%=%)
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK0INPUTS:$(INP)/%=%)
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
 	$(MAKE) checkccafe_run
 endif
@@ -368,7 +367,7 @@ endif
 check1: $(RUN) check1_run check1_chk
 
 check1_run:
-	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK1INPUTS:$(INP)/%=%)
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK1INPUTS:$(INP)/%=%)
 
 check1_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK1OUTPUTS:$(INP)/%=$(RUN)/%)
@@ -376,7 +375,7 @@ check1_chk:
 check2: $(RUN) check2_run check2_chk
 
 check2_run:
-	$(PERL) $(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK2INPUTS:$(INP)/%=%)
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK2INPUTS:$(INP)/%=%)
 
 check2_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CHECK2OUTPUTS:$(INP)/%=$(RUN)/%)
@@ -392,6 +391,7 @@ checkcca_chk:
 CCARUN = ../ccarun
 CCARUN_EXTRA_ARGS = --inputprefix $(SRCDIR)/ref \
                      --outputprefix $(RUN)
+
 checkccafe_run: $(RUN) stamp-ccafe
 ifeq ($(ENABLESHARED),yes)
 	$(PERL) $(CCARUN) $(CCARUN_EXTRA_ARGS) $(CCAFEINPUTS) 
@@ -404,7 +404,7 @@ endif
 
 .PHONY: inputs
 inputs:: h2o h2omp2 mp2r12 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
-inputs:: methods clscf uscf hsosscf input dft orthog ccaint
+inputs:: methods clscf uscf hsosscf input dft orthog ccacints ccaintv3
 
 .PHONY: h2o
 h2o: stamp-h2o

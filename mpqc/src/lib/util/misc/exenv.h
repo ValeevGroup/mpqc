@@ -32,6 +32,8 @@
 #ifndef _util_misc_exenv_h
 #define _util_misc_exenv_h
 
+#include <stdlib.h>
+
 #include <scconfig.h>
 
 #include <iostream>

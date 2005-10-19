@@ -224,6 +224,9 @@ class EulerMaclaurinRadialIntegrator: public RadialIntegrator {
   public:
     EulerMaclaurinRadialIntegrator();
     EulerMaclaurinRadialIntegrator(int i);
+    /** Constructs a EulerMaclaurinRadialIntegrator from KeyVal input.
+        The <tt>nr</tt> keyword gives the number of radial integration
+        points.  The default is 75. */
     EulerMaclaurinRadialIntegrator(const Ref<KeyVal> &);
     EulerMaclaurinRadialIntegrator(StateIn &);
     ~EulerMaclaurinRadialIntegrator();
@@ -284,6 +287,11 @@ class LebedevLaikovIntegrator: public AngularIntegrator {
     void init(int n);
   public:
     LebedevLaikovIntegrator();
+    /**
+       Construct a LebedevLaikovIntegrator using the given KeyVal input.
+       The <tt>n</tt> keyword gives the number of angular points.  The
+       default is 302.
+    */
     LebedevLaikovIntegrator(const Ref<KeyVal> &);
     LebedevLaikovIntegrator(StateIn &);
     LebedevLaikovIntegrator(int);
@@ -327,6 +335,12 @@ class GaussLegendreAngularIntegrator: public AngularIntegrator {
     void gauleg(double x1, double x2, int n);    
   public:
     GaussLegendreAngularIntegrator();
+    /**
+       Contract a GaussLegendreAngularIntegrator from KeyVal input.
+       This class is for testing, the LebedevLaikovIntegrator
+       is preferred for normal use.  The following parameters
+       are read: <tt>ntheta</tt>, <tt>nphi</tt>, and <tt>Ktheta</tt>.
+    */
     GaussLegendreAngularIntegrator(const Ref<KeyVal> &);
     GaussLegendreAngularIntegrator(StateIn &);
     ~GaussLegendreAngularIntegrator();
@@ -359,6 +373,46 @@ class RadialAngularIntegrator: public DenIntegrator {
     Ref<RadialIntegrator> **radial_grid_;
   public:
     RadialAngularIntegrator();
+    /** Construct a RadialAngularIntegrator from KeyVal input.
+
+        The accepted keyword are listed below.  The most important keyword
+        is <tt>grid</tt>.  The <tt>dynamic</tt> and <tt>prune_grid</tt>
+        options may be of occassional interest.
+        <dl>
+
+        <dt><tt>grid</tt><dd>Specifies the fineness of the grid.  Possible
+        values are <tt>xcoarse</tt>, <tt>coarse</tt>, <tt>medium</tt>,
+        <tt>fine</tt>, <tt>xfine</tt>, and <tt>ultrafine</tt>, in order of
+        increasing accuracy and cost.  The default is <tt>fine</tt>.
+
+        <dt><tt>dynamic</tt><dd>This gives a boolean value that, if true,
+        will cause the grids to start out coarse, and approach the
+        requested <tt>grid</tt> value as more accuracy is required, when
+        the calculation is close to convergence.  The default is true.
+
+        <dt><tt>prune_grid</tt><dd>This gives a boolean value that, if
+        true, will cause more course angular grids to be used near
+        nuclei.  The default is true.  When this is true, further control
+        over pruning can be obtained with the <tt>angular_points</tt>
+        and <tt>alpha_coeffs</tt> keywords.
+
+        <dt><tt>radial</tt><dd>Specifies the RadialIntegrator object.  If
+        this is given, then specifying the <tt>grid</tt> and
+        <tt>dynamic</tt> keywords will not affect the radial grid.  The
+        default is controlled by other options, but is always one of
+        several EulerMaclaurinRadialIntegrator objects.
+
+        <dt><tt>angular</tt><dd>Specifies the AngularIntegrator object.  If
+        this is given, then specifying the <tt>grid</tt>,
+        <tt>prune_grid</tt>, and <tt>dynamic</tt> keywords will not affect
+        the angular grid.  The default is controlled by other options,
+        but is always one of several LebedevLaikovIntegrator objects.
+
+        <dt><tt>weight</tt><dd>Specifies the IntegrationWeight object.
+        The default is BeckeIntegrationWeight.
+
+        </dl>
+     */
     RadialAngularIntegrator(const Ref<KeyVal> &);
     RadialAngularIntegrator(StateIn &);
     ~RadialAngularIntegrator();

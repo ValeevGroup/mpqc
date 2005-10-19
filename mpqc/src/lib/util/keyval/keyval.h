@@ -164,7 +164,8 @@ class KeyVal: public RefCount {
     Ref<DescribedClass> describedclassvalue(const char* key = 0,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
 
-    /** These members correspond to the above members, but take
+    /** @name Reading Vectors.
+        These members correspond to the above members, but take
         an additional integer argument, i, which is a vector index.
         This is equivalent to getting a value for a keyword named
         "<i>key</i>:<i>i</i>".  The routines that do not take
@@ -214,7 +215,8 @@ class KeyVal: public RefCount {
                      const KeyValValue& def=KeyValValueRefDescribedClass());
     //@}
 
-    /** These members correspond to the above members, but take additional
+    /** @name Reading 2D Arrays.
+        These members correspond to the above members, but take additional
         integer arguments, i and j, which is an array index.  This is
         equivalent to getting a value for a keyword named
         "<i>key</i>:<i>i</i>:<i>j</i>".  The routines that do not take key
@@ -263,7 +265,8 @@ class KeyVal: public RefCount {
                      const KeyValValue& def=KeyValValueRefDescribedClass());
     //@}
 
-    /** These members correspond to the above members, but can be used
+    /** @name Reading 3D Arrays.
+        These members correspond to the above members, but can be used
         to read in arrays with more than two dimensions.  The nindex
         argument is the number of indices in the array.  It is followed
         by an int giving the value of each index.  */
@@ -323,7 +326,8 @@ class AssignedKeyVal: public KeyVal {
     AssignedKeyVal();
     ~AssignedKeyVal();
 
-    /** Each of this routines assigns key to val.  */
+    /** @name Assignments.
+        Each of this routines assigns key to val.  */
     //@{
     void assign(const char* key, const Ref<KeyValValue>& val);
     void assign(const char* key, double val);
@@ -370,7 +374,9 @@ class StringKeyVal: public KeyVal {
         references to the same object work in input files). */
     virtual const char* truekeyword(const char*);
 
-    /// See the parent class documentation for descriptions of these functions.
+    /** @name Debugging.
+        See the parent class documentation for descriptions of these functions.
+    */
     //@{
     virtual void errortrace(std::ostream&fp=ExEnv::err0());
     virtual void dump(std::ostream&fp=ExEnv::err0());
@@ -394,7 +400,8 @@ class AggregateKeyVal : public KeyVal {
     Ref<KeyValValue> key_value(const char*,
                              const KeyValValue& def);
   public:
-    /** These contructors create an AggregateKeyVal that is formed from
+    /** @name Constructors.
+        These contructors create an AggregateKeyVal that is formed from
         several other KeyVal objects.  The search order is keyval1,
         keyval2, and so on.  All KeyVal objects including and after the
         first null KeyVal will be ignored.
@@ -467,7 +474,8 @@ class PrefixKeyVal : public KeyVal {
     Ref<KeyValValue> key_value(const char*,
                              const KeyValValue& def);
   public:
-    /** Construct a PrefixKeyVal, using the given prefix and indices. */
+    /** @name Constructors.
+        Construct a PrefixKeyVal, using the given prefix and indices. */
     //@{
     PrefixKeyVal(const Ref<KeyVal>&,int i);
     PrefixKeyVal(const Ref<KeyVal>&,int i,int j);
@@ -478,14 +486,6 @@ class PrefixKeyVal : public KeyVal {
     PrefixKeyVal(const Ref<KeyVal>&,const char*prefix,int i,int j);
     PrefixKeyVal(const Ref<KeyVal>&,const char*prefix,int i,int j,int k);
     PrefixKeyVal(const Ref<KeyVal>&,const char*prefix,int i,int j,int k,int l);
-    //@}
-    /// These routines are deprecated and will be removed in a future release.
-    //@{
-    PrefixKeyVal(const char*,const Ref<KeyVal>&);
-    PrefixKeyVal(const char*,const Ref<KeyVal>&,int);
-    PrefixKeyVal(const char*,const Ref<KeyVal>&,int,int);
-    PrefixKeyVal(const char*,const Ref<KeyVal>&,int,int,int);
-    PrefixKeyVal(const char*,const Ref<KeyVal>&,int,int,int,int);
     //@}
     ~PrefixKeyVal();
     void errortrace(std::ostream&fp=ExEnv::err0());
@@ -535,7 +535,8 @@ class ParsedKeyVal : public StringKeyVal {
     /// Read input data from the given string.
     void parse_string(const char *);
 
-    /// Overrides of parent members.
+    /** @name Overrides of parent members.
+        See parent class documentation. */
     //@{
     const char* stringrep(const char*);
     const char* classname(const char*);

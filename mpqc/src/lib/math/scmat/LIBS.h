@@ -1,5 +1,4 @@
 libSCscmat.LIBSUF
-#include <math/linpackd/LIBS.h>
 #include <util/group/LIBS.h>
 #include <util/state/LIBS.h>
 #include <util/keyval/LIBS.h>

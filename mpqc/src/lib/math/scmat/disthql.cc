@@ -6,7 +6,6 @@
 #include <util/group/message.h>
 
 #include <math/scmat/disthql.h>
-#include <math/linpackd/linpackd.h>
 
 #include <math/scmat/f77sym.h>
 
@@ -17,6 +16,11 @@ extern "C" {
   void F77_PDSTEQR(int *n, double *d, double *e,
                 double *z, int *ldz, int *nz, double *work,
                 int *info);
+  void F77_DCOPY(int *n, double *dx, int *incx, double *dy, int *incy);
+  double F77_DNRM2(int *n, double *dx, int *incx);
+  double F77_DDOT(int *n, double *dx, int *incx, double *dy, int *incy);
+  void F77_DSCAL(int *n, double *da, double *dx, int *incx);
+  void F77_DAXPY(int *n, double *da, double *dx, int *incx, double *dy, int *incy);
 }
 
 namespace sc {
@@ -24,17 +28,9 @@ namespace sc {
 static void dist_diagonalize_(int n, int m, double *a, double *d, double *e,
                               double *sigma, double *z, double *v, double *w,
                               int *ind, const Ref<MessageGrp>&);
-static void
-pimtql2_ (double *d,double *e,int *sn,double *z,int *sm,int *info);
-
-static double absol(double x);
 
 static void pflip(int id,int n,int m,int p,double *ar,double *ac,double *w,
                   const Ref<MessageGrp>&);
-
-static double epslon (double x);
-
-static void update(double *z,int m,double c,double s);
 
 static void
 ptred2_(double *a, int *lda, int *n, int *m, int *p, int *id,
@@ -108,152 +104,14 @@ dist_diagonalize_(int n, int m, double *a, double *d, double *e,
 
  /* diagonalize tridiagonal matrix using implicit QL method */
 
-#if 0
-  pimtql2_(d,e,&n,z,&m,&info);
-  if (info != 0) {
-      ExEnv::outn() << "dist_diagonalize: node "
-           << grp->me() << ": nonzero ierr from pimtql2" << endl;
-      abort();
-    }
-#else
    for (i=1; i<n; i++) e[i-1] = e[i];
    F77_PDSTEQR(&n, d, e, z, &m, &m, w, &info);
-#endif
 
  /* rearrange the eigenvectors by transposition */
 
   i = m * n;
-  dcopy_(&i,&z[0],&one,&a[0],&one);
+  F77_DCOPY(&i,&z[0],&one,&a[0],&one);
   pflip(id,n,m,nproc,&a[0],&v[0],&w[0],grp);
-}
-
-/* ******************************************************** */
-/* Function of this subroutine :                            */ 
-/*    diagonalize a real, symmetric tridiagonal matrix      */
-/*    using the QL method                                   */ 
-/* Parameters :                                             */
-/*  on entry :                                              */
-/*    d[n]    - the diagonal of the tridiagonal result      */
-/*    e[n]    - the offdiagonal of the result(e[1]-e[n-1])  */
-/*    sn      - size of the tridiagonal matrix              */
-/*    z[m][n] - m rows of transformation matrix from before */
-/*    m   - number of locally held columns                  */
-/*  on return :                                             */
-/*    d[n]    - the eigenvalues                             */
-/*    e[n]    - non-useful information                      */
-/*    z[m][n] - m rows of eigenvectors                      */
-/*    info    - if 0, results are accurate                  */
-/*              if nonzero, results may be inaccurate       */
-/* -------------------------------------------------------- */
-
-static void
-pimtql2_ (double *d,double *e,int *sn,double *z,int *sm,int *info)
-{
-   double  c,s,t,q,u,p,h,macheps;
-   int     n,m,i,j,k,im,its,maxit=30,one=1;
-
-   /* extract parameters */
-
-   *info = 0;
-   n = *sn;
-   m = *sm;
-   t = 1.0;
-   macheps = epslon(t);
-
-   for (i=1; i<n; i++) e[i-1] = e[i];
-   e[n-1] = 0.0;
-   k = n - 2;
-   for (j=0; j<n; j++) {
-      its = 0;
-      while (its < maxit) {
-         for (im=j; im<=k; im++) {
-            // this is the original threshold
-            double threshold = macheps*(absol(d[im])+absol(d[im+1]));
-            // new threshold will hopefully ensure convergence
-            //if (threshold < macheps) threshold = macheps;
-            if (absol(e[im]) <= threshold) break; 
-//from NR:
-//             double dsum = absol(d[im])+absol(d[im+1]);
-//             if (dsum + absol(e[im]) == dsum) break;
-         }
-         u = d[j];
-         if (im == j) break;
-         else {
-            its++;
-
-            /* form implicit Wilkinson shift */
-
-            q = (d[j+1] - u) / (2.0 * e[j]);
-            t = sqrt(1.0 + q * q);      
-            q = d[im] - u + e[j]/((q < 0.0) ? q - t : q + t);
-            u = 0.0;
-            s = c = 1.0;
-            for (i=im-1; i>=j; i--) {
-               p = s * e[i];
-               h = c * e[i];
-               if (absol(p) >= absol(q)) {
-                  c = q / p;
-                  t = sqrt(1.0 + c * c);
-                  e[i+1] = p * t;
-                  s = 1.0 / t;
-                  c *= s;
-               } else {
-                  s = p / q;
-                  t = sqrt(1.0 + s * s);
-                  e[i+1] = q * t;
-                  c = 1.0 / t;
-                  s *= c;
-               }
-               q = d[i+1] - u;
-               t = (d[i] - q) * s + 2.0 * c * h;
-               u = s * t;
-               d[i+1] = q + u;
-               q = c * t - h;
-
-               /* form eigenvectors */
-
-#if 0
-               for (int ia=0; ia<m; ia++) {
-                  p = z[(i+1)*m+ia];
-                  z[(i+1)*m+ia] = s * z[i*m+ia] + c * p; 
-                  z[i*m+ia] = c * z[i*m+ia] - s * p;
-               }
-#else
-               update(&z[i*m],m,c,s);
-#endif
-            }
-            d[j] -= u;
-            e[j] = q;
-            e[im] = 0.0;
-         }
-      }
-      if (its == maxit) {
-         *info = its;
-         break;
-      }
-   }
-
-   /* order eigenvalues and eigenvectors */
-
-   for (j=0; j<n-1; j++) {
-      k = j;
-      for (i=j+1; i<n; i++) if (d[i] < d[k]) k = i;
-      if (k != j) {
-         dswap_(&one,&d[j],&one,&d[k],&one);
-         dswap_(&m,&z[j*m],&one,&z[k*m],&one); 
-      }
-   }
-}
-
-/* ******************************************************** */
-
-static double 
-absol(double x)
-{
- if (x > 0.0)
-   return(x);
- else
-   return(-x);
 }
 
 /* ******************************************************** */
@@ -270,45 +128,11 @@ pflip(int id,int n,int m,int p,double *ar,double *ac,double *w,
   for (k=0; k<n; k++) {
     r = k % p;
     if (id == r) {
-      dcopy_(&n,&ar[i],&m,&w[0],&one);
+      F77_DCOPY(&n,&ar[i],&m,&w[0],&one);
       i++;
     }
     grp->raw_bcast(&w[0], n*dpsize, r);
-    dcopy_(&m,&w[id],&p,&ac[k],&n);
-  }
-}
-
-/* ******************************************************** */
-/* Function : calculate machine epslon                      */
-/* -------------------------------------------------------- */
-
-static double
-epslon (double x) 
-{
-  double a,b,c,eps; 
-
-  a = 4.0/3.0;
-  eps = 0.0;
-  while (eps == 0.0) {
-    b = a - 1.0; 
-    c = 3.0 * b; 
-    eps = c-1.0; 
-    if (eps < 0.0) eps = - eps;
-  }
-  if (x < 0.0) a = - x;
-  return(eps*a); 
-}
-
-static void
-update(double *z,int m,double c,double s)
-{
-  register int i;
-  register double p;
-
-  for (i=0; i < m; i++) {
-    p = z[i+m];
-    z[m+i] = s * z[i] + c * p;
-    z[i]   = c * z[i] - s * p;
+    F77_DCOPY(&m,&w[id],&p,&ac[k],&n);
   }
 }
 
@@ -365,7 +189,7 @@ ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
    i = sn * sm;
    alpha2 = 0.0;
    j = 0;
-   dcopy_(&i,&alpha2,&j,&z[0],&inc);
+   F77_DCOPY(&i,&alpha2,&j,&z[0],&inc);
    ld = sid;
    for (i=0; i<sm; i++) {
       z[ld*sm+i] = 1.0;
@@ -393,14 +217,14 @@ ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
 
       if (sid == r) {
          q = sn - k;      
-         alpha = dnrm2_(&q,&a[l*slda+k],&inc);
+         alpha = F77_DNRM2(&q,&a[l*slda+k],&inc);
          if (a[l*slda+k] < 0.0) alpha = -alpha;
          if (alpha != 0.0) {
             alpha2 = 1.0 / alpha;
-            dscal_(&q,&alpha2,&a[l*slda+k],&inc);
+            F77_DSCAL(&q,&alpha2,&a[l*slda+k],&inc);
             a[l*slda+k] += 1.0;
          }
-         dcopy_(&q,&a[l*slda+k],&inc,&d[k],&inc);
+         F77_DCOPY(&q,&a[l*slda+k],&inc,&d[k],&inc);
          l++;
          ld += sp;
       }
@@ -414,13 +238,13 @@ ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
          alpha2 = 0.0;
          j = 0;
          q = sn - k;
-         dcopy_(&q,&alpha2,&j,&e[k],&inc);
+         F77_DCOPY(&q,&alpha2,&j,&e[k],&inc);
          i = ld;
          for (j=l; j<sm; j++) {
             q = sn - i;
-            e[i] = e[i] + ddot_(&q,&a[j*slda+i],&inc,&d[i],&inc);
+            e[i] = e[i] + F77_DDOT(&q,&a[j*slda+i],&inc,&d[i],&inc);
             q = sn - i - 1;
-            daxpy_(&q,&d[i],&a[slda*j+i+1],&inc,&e[i+1],&inc);
+            F77_DAXPY(&q,&d[i],&a[slda*j+i+1],&inc,&e[i+1],&inc);
             i += sp;
          }
 
@@ -431,9 +255,9 @@ ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
          if (sid == r) {
             q = sn - k;
             alpha2 = 1.0 / beta;
-            dscal_(&q,&alpha2,&e[k],&inc);
-            gamma = 0.5*ddot_(&q,&d[k],&inc,&e[k],&inc)/beta;
-            daxpy_(&q,&gamma,&d[k],&inc,&e[k],&inc);
+            F77_DSCAL(&q,&alpha2,&e[k],&inc);
+            gamma = 0.5*F77_DDOT(&q,&d[k],&inc,&e[k],&inc)/beta;
+            F77_DAXPY(&q,&gamma,&d[k],&inc,&e[k],&inc);
          }
 
          /* Rank two update of A, compute only lower half. */
@@ -442,15 +266,15 @@ ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
          i = ld;
          for (j=l; j<sm; j++) {
             q = sn - i;
-            daxpy_(&q,&d[i],&e[i],&inc,&a[j*slda+i],&inc);
-            daxpy_(&q,&e[i],&d[i],&inc,&a[j*slda+i],&inc);
+            F77_DAXPY(&q,&d[i],&e[i],&inc,&a[j*slda+i],&inc);
+            F77_DAXPY(&q,&e[i],&d[i],&inc,&a[j*slda+i],&inc);
             i += sp;
          }
          q = sn - k;
          oobeta=1.0/beta;
          for (i=0; i<sm; i++) {
-            gamma = ddot_(&q,&d[k],&inc,&z[k*sm+i],&sm)*oobeta;
-            daxpy_(&q,&gamma,&d[k],&inc,&z[k*sm+i],&sm);
+            gamma = F77_DDOT(&q,&d[k],&inc,&z[k*sm+i],&sm)*oobeta;
+            F77_DAXPY(&q,&gamma,&d[k],&inc,&z[k*sm+i],&sm);
          }
       }
 
@@ -517,7 +341,7 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
   i = sn * sm;
   alpha2 = 0.0;
   j = 0;
-  dcopy_(&i, &alpha2, &j, &z[0], &inc);
+  F77_DCOPY(&i, &alpha2, &j, &z[0], &inc);
   ld = sid;
   for (i = 0; i < sm; i++) {
     z[ld * sm + i] = 1.0;
@@ -549,11 +373,11 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
       kp1l=l*slda+k;
       q = sn - k;
       atemp = a[l * slda + ld];
-      alpha = dnrm2_(&q, &a[kp1l], &inc);
+      alpha = F77_DNRM2(&q, &a[kp1l], &inc);
       if (a[kp1l] < 0.0) alpha = -alpha;
       if (alpha != 0.0) {
 	alpha2 = 1.0 / alpha;
-	dscal_(&q, &alpha2, &a[kp1l], &inc);
+	F77_DSCAL(&q, &alpha2, &a[kp1l], &inc);
 	a[kp1l] += 1.0;
         }
 
@@ -569,8 +393,8 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
 
 	if (beta != 0.0) {
 	  for (i = 0; i < sm; i++) {
-	    gamma = ddot_(&nmik, &d[ik], &inc, &z[ik * sm + i], &sm) / beta;
-	    daxpy_(&nmik, &gamma, &d[ik], &inc, &z[ik * sm + i], &sm);
+	    gamma = F77_DDOT(&nmik, &d[ik], &inc, &z[ik * sm + i], &sm) / beta;
+	    F77_DAXPY(&nmik, &gamma, &d[ik], &inc, &z[ik * sm + i], &sm);
 	    }
 	  }
 	e[ik] = 0.0;
@@ -578,7 +402,7 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
         }
 
    /* now resume normal service */
-      dcopy_(&q, &a[kp1l], &inc, &d[k], &inc);
+      F77_DCOPY(&q, &a[kp1l], &inc, &d[k], &inc);
       l++;
       ld += sp;
       }
@@ -595,14 +419,14 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
       alpha2 = 0.0;
       j = 0;
       q = sn - k;
-      dcopy_(&q, &alpha2, &j, &e[k], &inc);
+      F77_DCOPY(&q, &alpha2, &j, &e[k], &inc);
       i = ld;
       for (j = l; j < sm; j++) {
         int ij=j*slda+i;
 	q = sn - i;
-	e[i] += ddot_(&q, &a[ij], &inc, &d[i], &inc);
+	e[i] += F77_DDOT(&q, &a[ij], &inc, &d[i], &inc);
 	q--;
-	daxpy_(&q, &d[i], &a[ij+1], &inc, &e[i + 1], &inc);
+	F77_DAXPY(&q, &d[i], &a[ij+1], &inc, &e[i + 1], &inc);
 	i += sp;
         }
       grp->sum(&e[k], sn-k, work);
@@ -614,9 +438,9 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
 
       q = sn - k;
       alpha2 = 1.0 / beta;
-      dscal_(&q, &alpha2, &e[k], &inc);
-      gamma = 0.5 * ddot_(&q, &d[k], &inc, &e[k], &inc) / beta;
-      daxpy_(&q, &gamma, &d[k], &inc, &e[k], &inc);
+      F77_DSCAL(&q, &alpha2, &e[k], &inc);
+      gamma = 0.5 * F77_DDOT(&q, &d[k], &inc, &e[k], &inc) / beta;
+      F77_DAXPY(&q, &gamma, &d[k], &inc, &e[k], &inc);
 
       /* Rank two update of A, compute only lower half. */
       /* A  =  A + u'*v + v'*u  =  H*A*H                */
@@ -625,8 +449,8 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
       for (j = l; j < sm; j++) {
         double *atmp= &a[j*slda+i];
 	q = sn - i;
-	daxpy_(&q, &d[i], &e[i], &inc, atmp, &inc);
-	daxpy_(&q, &e[i], &d[i], &inc, atmp, &inc);
+	F77_DAXPY(&q, &d[i], &e[i], &inc, atmp, &inc);
+	F77_DAXPY(&q, &e[i], &d[i], &inc, atmp, &inc);
 	i += sp;
         }
 
@@ -640,8 +464,8 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
 	q = sn - k;
 	oobeta = 1.0 / beta;
 	for (i = 0; i < sm; i++) {
-	  gamma = ddot_(&q, &d[k], &inc, &z[k * sm + i], &sm) * oobeta;
-	  daxpy_(&q, &gamma, &d[k], &inc, &z[k * sm + i], &sm);
+	  gamma = F77_DDOT(&q, &d[k], &inc, &z[k * sm + i], &sm) * oobeta;
+	  F77_DAXPY(&q, &gamma, &d[k], &inc, &z[k * sm + i], &sm);
 	  }
         }
       }

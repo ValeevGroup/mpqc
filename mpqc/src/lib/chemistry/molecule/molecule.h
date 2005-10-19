@@ -326,29 +326,25 @@ class Molecule: public SavableState
 
     /** If include_q is true, then include the "Q" atoms in the charge and
         efield routines. */
-    //@{
     void set_include_q(bool iq) { include_q_ = iq; }
+    /// Returns include_q.  See set_include_q.
     bool include_q() const { return include_q_; }
-    //@}
 
     /** If include_qq is true, include the coupling between pairs of "Q"
         atoms when computing nuclear repulsion energy and gradients. */
-    //@{
     void set_include_qq(bool iqq) { include_qq_ = iqq; }
+    /// Returns include_qq.  See set_include_qq.
     bool include_qq() const { return include_qq_; }
-    //@}
 
-    /// Retrieve the "Q" atoms.
-    //@{
+    /// Retrieve the number of "Q" atoms.
     int n_q_atom() const { return q_atoms_.size(); }
+    /// Retrieve the "Q" atoms.
     int q_atom(int i) const { return q_atoms_[i]; }
-    //@}
 
-    /// Retrieve all atoms but the "Q" atoms.
-    //@{
+    /// Retrieve the number of non-"Q" atoms.
     int n_non_q_atom() const { return non_q_atoms_.size(); }
+    /// Retrieve the of non-"Q" atoms.
     int non_q_atom(int i) const { return non_q_atoms_[i]; }
-    //@}
 
     void save_data_state(StateOut&);
 };

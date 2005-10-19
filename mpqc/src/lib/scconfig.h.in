@@ -184,6 +184,36 @@
 /* Define if you can have the pthread_attr_getstacksize function.  */
 #undef HAVE_PTHREAD_ATTR_GETSTACKSIZE
 
+/* Define if you can have the pthread_attr_getscope function.  */
+#undef HAVE_PTHREAD_ATTR_GETSCOPE
+
+/* Define if you can have the pthread_attr_setscope function.  */
+#undef HAVE_PTHREAD_ATTR_SETSCOPE
+
+/* Define if you can have the pthread_attr_getinheritsched function.  */
+#undef HAVE_PTHREAD_ATTR_GETINHERITSCHED
+
+/* Define if you can have the pthread_attr_setinheritsched function.  */
+#undef HAVE_PTHREAD_ATTR_SETINHERITSCHED
+
+/* Define if you can have the pthread_attr_setschedpolicy function.  */
+#undef HAVE_PTHREAD_ATTR_SETSCHEDPOLICY
+
+/* Define if you can have the pthread_attr_getschedpolicy function.  */
+#undef HAVE_PTHREAD_ATTR_GETSCHEDPOLICY
+
+/* Define if you can have the pthread_attr_setschedparam function.  */
+#undef HAVE_PTHREAD_ATTR_SETSCHEDPARAM
+
+/* Define if you can have the pthread_attr_getschedparam function.  */
+#undef HAVE_PTHREAD_ATTR_GETSCHEDPARAM
+
+/* Define if you can have the sched_get_priority_max function.  */
+#undef HAVE_SCHED_GET_PRIORITY_MAX
+
+/* Define if you can have the sched_get_priority_min function.  */
+#undef HAVE_SCHED_GET_PRIORITY_MIN
+
 /* Define if you have the NIAMA library.  */
 #undef HAVE_NIAMA
 

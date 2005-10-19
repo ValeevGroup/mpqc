@@ -160,6 +160,7 @@ Int1eCCA::overlap( int ish, int jsh )
   cca_dc_.clear();
   if( use_opaque_ )
     overlap_ptr_->compute( ish, jsh, 0, -1, cca_dc_ );
+
   else {
     sidl_buffer_ = overlap_ptr_->compute_array( ish, jsh, 0, -1, cca_dc_ ); 
     copy_buffer();

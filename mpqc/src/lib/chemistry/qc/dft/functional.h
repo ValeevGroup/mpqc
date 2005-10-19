@@ -167,6 +167,33 @@ class SumDenFunctional: public DenFunctional {
     double *coefs_;
   public:
     SumDenFunctional();
+    /**
+       This KeyVal constructor reads the following keywords:
+       <dl>
+       <dt><tt>funcs</tt><dd>Specifies an array of DenIntegrator objects.
+       <dt><tt>coefs</tt><dd>Specifies the coefficient of each
+       DenIntegrator object.
+       <dt><tt>a0</tt><dd>Specifies the coefficient of the Hartree-Fock
+       exchange.  This is nonzero for hybrid functionals.  The default
+       is zero.
+
+       </dl>
+       
+      For example, the B3LYP functional can be specified
+      with the following input:
+      <pre>
+      functional\<SumDenFunctional\>: (
+        a0 = 0.2
+        coefs = [ 0.8 0.72 0.19 0.81 ]
+        funcs: [
+          \<SlaterXFunctional\>:()
+          \<Becke88XFunctional\>:()
+          \<VWN1LCFunctional\>:( rpa = 1 )
+          \<LYPCFunctional\>:()
+        ]
+      )
+      </pre>
+     */
     SumDenFunctional(const Ref<KeyVal> &);
     SumDenFunctional(StateIn &);
     ~SumDenFunctional();

@@ -111,7 +111,7 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
   OneBodyWavefunction(keyval),
   need_vec_(1),
   compute_guess_(0),
-  maxiter_(40),
+  maxiter_(100),
   dens_reset_freq_(10),
   reset_occ_(0),
   local_dens_(1),

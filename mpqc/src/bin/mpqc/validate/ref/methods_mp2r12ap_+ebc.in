@@ -30,7 +30,7 @@
      stdapprox = "a'"
      ebc = true
      gbc = false
-     memory = 10000000
+     memory = 100MB
      r12ints = posix
      nfzc = 1
      integrals<IntegralCints>: ()

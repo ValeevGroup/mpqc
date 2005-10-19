@@ -1,2 +1,7 @@
 
 #define F77_PDSTEQR
+#define F77_DCOPY
+#define F77_DNRM2
+#define F77_DDOT
+#define F77_DSCAL
+#define F77_DAXPY

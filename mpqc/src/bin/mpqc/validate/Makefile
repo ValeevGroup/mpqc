@@ -382,11 +382,15 @@ check2_chk:
 
 checkcca_run: $(RUN)
 	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CCAINTV3INPUTS:$(INP)/%=%) $(CCACINTSINPUTS:$(INP)/%=%)
+ifeq ($(ENABLESHARED),yes)
 	$(MAKE) checkccafe_run
+endif
 
 checkcca_chk:
 	$(CHECKOUT) -r $(SRCDIR)/ref $(CCAINTV3OUTPUTS:$(INP)/%=$(RUN)/%) $(CCACINTSOUTPUTS:$(INP)/%=$(RUN)/%)
+ifeq ($(ENABLESHARED),yes)
 	$(MAKE) checkccafe_chk
+endif
 
 CCARUN = ../ccarun
 CCARUN_EXTRA_ARGS = --inputprefix $(SRCDIR)/ref \

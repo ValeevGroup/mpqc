@@ -1616,21 +1616,27 @@ AC_LANG_RESTORE
 
 dnl ----------- make sure we have everything for cints ----------
 
+HAVE_INTEGRALCINTS=yes
 if test ! X$HAVE_LIBR12 = Xyes -o ! X$HAVE_LIBINT = Xyes; then
-  HAVE_CINTS=no
+  HAVE_INTEGRALCINTS=no
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_CINTS -x SRC_LIB_CHEMISTRY_QC_MBPTR12 $EXCLUDED_DIRS"
 fi
+AC_DEFINE(HAVE_INTEGRALCINTS)
+AC_SUBST(HAVE_INTEGRALCINTS)
 
 dnl ----------- make sure we have everything for libint2 interface ----------
 
+HAVE_INTEGRALLIBINT2=yes
 if test ! X$HAVE_LIBINT2 = Xyes; then
-  HAVE_LIBINT2_INT=no
+  HAVE_INTEGRALLIBINT2=no
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_LIBINT2 $EXCLUDED_DIRS"
 fi
+AC_DEFINE(HAVE_INTEGRALLIBINT2)
+AC_SUBST(HAVE_INTEGRALLIBINT2)
 
 dnl ----------- make sure we have everything for mbptr12 ----------
 
-if test X$HAVE_LIBINT2_INT = Xno -a X$HAVE_CINST = Xno; then
+if test X$HAVE_INTEGRALLIBINT2 = Xno -a X$HAVE_INTEGRALCINTS = Xno; then
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_MBPTR12 $EXCLUDED_DIRS"
 fi
 

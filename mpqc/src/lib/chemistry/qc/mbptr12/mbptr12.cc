@@ -41,8 +41,12 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/scf/clhf.h>
 #include <chemistry/qc/scf/uhf.h>
-#include <chemistry/qc/cints/cints.h>
-#include <chemistry/qc/libint2/libint2.h>
+#if HAVE_INTEGRALCINTS
+#  include <chemistry/qc/cints/cints.h>
+#endif
+#if HAVE_INTEGRALLIBINT2
+#  include <chemistry/qc/libint2/libint2.h>
+#endif
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 
@@ -592,14 +596,18 @@ MBPT2_R12::check_integral_factory_()
 {
   // Only IntegralCints or IntegralLibint2 can be used at the moment
   bool allowed_integral_factory = false;
+#if HAVE_INTEGRALCINTS
   IntegralCints* cintsintf = dynamic_cast<IntegralCints*>(integral().pointer());
   if (cintsintf) {
     allowed_integral_factory = true;
   }
+#endif
+#if HAVE_INTEGRALLIBINT2
   IntegralLibint2* libint2intf = dynamic_cast<IntegralLibint2*>(integral().pointer());
   if (libint2intf) {
     allowed_integral_factory = true;
   }
+#endif
   if (!allowed_integral_factory)
     throw InputError("MBPT2_R12::check_integral_factory_() -- invalid integral factory provided. Try using IntegralCints or IntegralLibint2.",__FILE__,__LINE__);
 }

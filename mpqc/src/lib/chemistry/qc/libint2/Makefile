@@ -51,14 +51,8 @@ LIBOBJ = $(LIBSRC:%.c=%.$(OBJSUF))
 LIBOBJ := $(LIBOBJ:%.cc=%.$(OBJSUF))
 
 LTLINKLIBOPTS += $(LDFLAGS)
-ifeq ($(HAVE_LIBINT),yes)
-  LTLINKLIBOPTS += -lint
-endif
-ifeq ($(HAVE_LIBR12),yes)
-  LTLINKLIBOPTS += -lr12
-endif
-ifeq ($(HAVE_LIBDERIV),yes)
-  LTLINKLIBOPTS += -lderiv
+ifeq ($(HAVE_LIBINT2),yes)
+  LTLINKLIBOPTS += -lint2
 endif
 
 DISTFILES = $(TESTCSRC) $(INC) Makefile

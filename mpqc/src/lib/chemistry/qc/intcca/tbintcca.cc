@@ -50,8 +50,9 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
                              bool use_opaque, string eval_type) :
   TwoBodyInt(integral,bs1,bs2,bs3,bs4)
 {
+  cca_dc_ = Chemistry_QC_GaussianBasis_DerivCenters::_create();
   int2ecca_ = new Int2eCCA(integral,bs1,bs2,bs3,bs4,0,storage,
-                           eval_factory,use_opaque,eval_type);
+                           eval_factory,use_opaque,eval_type,cca_dc_);
   buffer_ = int2ecca_->buffer();
   int2ecca_->set_redundant(redundant_);
   int_bound_min_ = SCHAR_MIN;
@@ -98,8 +99,9 @@ TwoBodyDerivIntCCA::TwoBodyDerivIntCCA(Integral* integral,
                              bool use_opaque, string eval_type) :
   TwoBodyDerivInt(integral,bs1,bs2,bs3,bs4)
 {
+  cca_dc_ = Chemistry_QC_GaussianBasis_DerivCenters::_create();
   int2ecca_ = new Int2eCCA(integral,bs1,bs2,bs3,bs4,1,storage,
-                           eval_factory,use_opaque,eval_type);
+                           eval_factory,use_opaque,eval_type,cca_dc_);
   buffer_ = int2ecca_->buffer();
   int2ecca_->set_redundant(0);
   int_bound_min_ = SCHAR_MIN;
@@ -111,15 +113,14 @@ void
 TwoBodyDerivIntCCA::compute_shell(int is, int js, int ks, int ls,
                                   DerivCenters &dc )
 {
-  Chemistry::QC::GaussianBasis::DerivCenters cca_dc;
-  cca_dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
 
-  int2ecca_->compute_erep_1der(is,js,ks,ls,cca_dc);
+  int2ecca_->compute_erep_1der(is,js,ks,ls);
 
-  if( cca_dc.has_omitted_center() )
-    dc.add_omitted(cca_dc.omitted_center(),cca_dc.omitted_atom());
-  for( int i=0; i<cca_dc.n(); ++i) 
-    dc.add_center(cca_dc.center(i),cca_dc.atom(i));
+  dc.clear();
+  if( cca_dc_.has_omitted_center() )
+    dc.add_omitted(cca_dc_.omitted_center(),cca_dc_.omitted_atom());
+  for( int i=0; i<cca_dc_.n(); ++i) 
+    dc.add_center(cca_dc_.center(i),cca_dc_.atom(i));
 
 /* 
   for( int i=0; i<cca_dc.n(); ++i)

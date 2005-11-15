@@ -90,13 +90,13 @@ class Int2eCCA: public RefCount {
              const Ref<GaussianBasisSet>&b3,
              const Ref<GaussianBasisSet>&b4,
              int order, size_t storage, IntegralEvaluatorFactory, 
-             bool, string );
+             bool, string,
+             Chemistry::QC::GaussianBasis::DerivCenters cca_dc );
     ~Int2eCCA() {};
     double *buffer() { return buffer_; }
     void compute_erep( int is, int js, int ks, int ls );
     double compute_bounds( int is, int js, int ks, int ls );
-    void compute_erep_1der( int is, int js, int ks, int ls,
-                            Chemistry::QC::GaussianBasis::DerivCenters &dc);
+    void compute_erep_1der( int is, int js, int ks, int ls );
     double compute_bounds_1der( int is, int js, int ks, int ls );
     int redundant() const { return redundant_; }
     void set_redundant(int i) { redundant_ = i; }

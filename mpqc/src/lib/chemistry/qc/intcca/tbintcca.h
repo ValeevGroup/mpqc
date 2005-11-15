@@ -48,6 +48,7 @@ class TwoBodyIntCCA : public TwoBodyInt {
     int int_bound_min_;
     double tol_;
     double loginv_;
+    Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
 
   public:
     TwoBodyIntCCA(Integral*,
@@ -75,6 +76,7 @@ class TwoBodyDerivIntCCA : public TwoBodyDerivInt {
     int int_bound_min_;
     double tol_;
     double loginv_;
+    Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
 
   public:
     TwoBodyDerivIntCCA(Integral*,

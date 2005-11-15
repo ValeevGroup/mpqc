@@ -46,10 +46,11 @@ Int2eCCA::Int2eCCA(Integral *integral,
 		   const Ref<GaussianBasisSet>&b4,
 		   int order, size_t storage,
 		   IntegralEvaluatorFactory eval_factory, 
-                   bool use_opaque, string eval_type ):
+                   bool use_opaque, string eval_type,
+                   Chemistry::QC::GaussianBasis::DerivCenters cca_dc ):
   bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4),
   erep_ptr_(0), integral_(integral), eval_factory_(eval_factory),
-  use_opaque_(use_opaque), buffer_(0)
+  use_opaque_(use_opaque), buffer_(0), cca_dc_(cca_dc)
 {
 
   deriv_lvl_ = order;  
@@ -83,7 +84,8 @@ Int2eCCA::Int2eCCA(Integral *integral,
   if( eval_type == "eri" ) {
     erep_ = eval_factory_.get_integral_evaluator4( "eri2", 0,
                                                    cca_bs1_, cca_bs2_, 
-                                                   cca_bs3_, cca_bs4_ );
+                                                   cca_bs3_, cca_bs4_,
+                                                   cca_dc_ );
     erep_ptr_ = &erep_;
     if( use_opaque_ )
       buffer_ = static_cast<double*>( erep_ptr_->get_buffer() );
@@ -91,7 +93,8 @@ Int2eCCA::Int2eCCA(Integral *integral,
   else if( eval_type == "eri_1der") {
     erep_1der_ = eval_factory_.get_integral_evaluator4( "eri2", 1,
                                                         cca_bs1_, cca_bs2_,
-                                                        cca_bs3_, cca_bs4_ );
+                                                        cca_bs3_, cca_bs4_,
+                                                        cca_dc_ );
     erep_1der_ptr_ = &erep_1der_;
     if( use_opaque_ )
       buffer_ = static_cast<double*>( erep_1der_ptr_->get_buffer() );
@@ -112,9 +115,9 @@ Int2eCCA::compute_erep( int is, int js, int ks, int ls )
 {
   cca_dc_.clear();
   if( use_opaque_ )
-    erep_ptr_->compute( is, js, ks, ls, 0, cca_dc_ );
+    erep_ptr_->compute( is, js, ks, ls, 0 );
   else {   
-    sidl_buffer_ = erep_ptr_->compute_array( is, js, ks, ls, 0, cca_dc_ );
+    sidl_buffer_ = erep_ptr_->compute_array( is, js, ks, ls, 0 );
     int nelem = bs1_->shell(is).nfunction() * bs2_->shell(js).nfunction() *
                 bs3_->shell(ks).nfunction() * bs4_->shell(ls).nfunction();
     copy_buffer(nelem);
@@ -132,14 +135,14 @@ Int2eCCA::compute_bounds( int is, int js, int ks, int ls )
 }
 
 void
-Int2eCCA::compute_erep_1der( int is, int js, int ks, int ls, 
-                             Chemistry::QC::GaussianBasis::DerivCenters &dc )
+Int2eCCA::compute_erep_1der( int is, int js, int ks, int ls )
 {
 
+  cca_dc_.clear();
   if( use_opaque_ )
-    erep_1der_ptr_->compute( is, js, ks, ls, 1, dc );
+    erep_1der_ptr_->compute( is, js, ks, ls, 1 );
   else {
-    sidl_buffer_ = erep_ptr_->compute_array( is, js, ks, ls, 1, dc );
+    sidl_buffer_ = erep_ptr_->compute_array( is, js, ks, ls, 1 );
     int nelem = bs1_->shell(is).nfunction() * bs2_->shell(js).nfunction() *
                 bs3_->shell(ks).nfunction() * bs4_->shell(ls).nfunction();
     copy_buffer(nelem);
@@ -147,7 +150,7 @@ Int2eCCA::compute_erep_1der( int is, int js, int ks, int ls,
   int nfunc = bs1_->shell(is).nfunction() * bs2_->shell(js).nfunction() 
               * bs3_->shell(ks).nfunction() * bs4_->shell(ls).nfunction();
   int deriv_offset=0;
-  for( int i=0; i<=dc.n(); ++i) {
+  for( int i=0; i<=cca_dc_.n(); ++i) {
     reorder_deriv( &(bs1_->shell(is)), &(bs2_->shell(js)),
                    &(bs3_->shell(ks)), &(bs4_->shell(ls)), deriv_offset );
     deriv_offset += nfunc*3;

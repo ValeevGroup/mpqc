@@ -75,7 +75,8 @@ throw ()
  * @param bs2 Molecular basis on center 2.
  * @param label String specifying integral type.
  * @param max_deriv Max derivative to compute.
- * @param storage Available storage in bytes. 
+ * @param storage Available storage in bytes.
+ * @param deriv_ctr Derivative center descriptor. 
  */
 void
 MPQC::IntegralEvaluator2_impl::initialize (
@@ -83,12 +84,15 @@ MPQC::IntegralEvaluator2_impl::initialize (
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
   /* in */ const ::std::string& label,
   /* in */ int64_t max_deriv,
-  /* in */ int64_t storage ) 
+  /* in */ int64_t storage,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.initialize)
 
   evaluator_label_ = label;
+ 
+  deriv_centers_ = deriv_ctr;
 
   bs1_ = basis_cca_to_sc( bs1 );
   if( bs1.isSame(bs2) ) 
@@ -101,7 +105,7 @@ throw ()
   
   std::string is_deriv("");
   if(max_deriv > 0) is_deriv = " derivative";
-  std::cout << "  initializing " << package_ << " " << evaluator_label_
+  std::cerr << "  initializing " << package_ << " " << evaluator_label_
             << is_deriv << " integral evaluator\n";
   if ( package_ == "intv3" ) { 
     integral_ = new IntegralV3( bs1_, bs2_ );
@@ -209,20 +213,21 @@ throw ()
 }
 
 /**
- * Compute a shell doublet of integrals.
+ * Compute a shell doublet of integrals.  deriv_atom must 
+ * be used for nuclear derivatives if the operator contains 
+ * nuclear coordinates, otherwise, set to -1
+ * and use deriv_ctr.
  * @param shellnum1 Gaussian shell number 1.
  * @param shellnum2 Gaussian shell number 2.
  * @param deriv_level Derivative level. 
- * @param deriv_atom Atom number for derivative (-1 if using DerivCenter).
- * @param deriv_ctr Derivative center descriptor. 
+ * @param deriv_atom Atom number for derivative (-1 if using DerivCenter). 
  */
 void
 MPQC::IntegralEvaluator2_impl::compute (
   /* in */ int64_t shellnum1,
   /* in */ int64_t shellnum2,
   /* in */ int64_t deriv_level,
-  /* in */ int64_t deriv_atom,
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
+  /* in */ int64_t deriv_atom ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute)
@@ -235,17 +240,17 @@ throw ()
   else if( int_type_ == one_body_deriv ) {
   
     sc_deriv_centers_.clear();
-    deriv_ctr.clear();
+    deriv_centers_.clear();
 
     if( deriv_atom_ == -1) {
       deriv_eval_->compute_shell( shellnum1, shellnum2, sc_deriv_centers_ );
 
       if(sc_deriv_centers_.has_omitted_center())
-        deriv_ctr.add_omitted( sc_deriv_centers_.omitted_center(),
-                               sc_deriv_centers_.omitted_atom() );
+        deriv_centers_.add_omitted( sc_deriv_centers_.omitted_center(),
+                                    sc_deriv_centers_.omitted_atom() );
       for( int i=0; i<sc_deriv_centers_.n() ; ++i)
-        deriv_ctr.add_center( sc_deriv_centers_.center(i),
-                              sc_deriv_centers_.atom(i) );
+        deriv_centers_.add_center( sc_deriv_centers_.center(i),
+                                   sc_deriv_centers_.atom(i) );
     }
     else
       deriv_eval_->compute_shell( shellnum1, shellnum2, deriv_atom_ );
@@ -307,12 +312,13 @@ throw ()
 
 /**
  * Compute a shell doublet of integrals and return as a borrowed
- * sidl array.
+ * sidl array.  deriv_atom must be used for nuclear derivatives if
+ * the operator contains nuclear coordinates, otherwise, set to -1 
+ * and use deriv_ctr.
  * @param shellnum1 Gaussian shell number 1.
  * @param shellnum2 Gaussian shell number 2.
  * @param deriv_level Derivative level.
  * @param deriv_atom Atom number for derivative (-1 if using DerivCenter).
- * @param deriv_ctr Derivative center descriptor.
  * @return Borrowed sidl array buffer. 
  */
 ::sidl::array<double>
@@ -320,13 +326,12 @@ MPQC::IntegralEvaluator2_impl::compute_array (
   /* in */ int64_t shellnum1,
   /* in */ int64_t shellnum2,
   /* in */ int64_t deriv_level,
-  /* in */ int64_t deriv_atom,
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
+  /* in */ int64_t deriv_atom ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.compute_array)
 
-  compute( shellnum1, shellnum2, deriv_level, deriv_atom, deriv_ctr );
+  compute( shellnum1, shellnum2, deriv_level, deriv_atom );
 
   // create a proxy SIDL array
   int lower[1] = {0};

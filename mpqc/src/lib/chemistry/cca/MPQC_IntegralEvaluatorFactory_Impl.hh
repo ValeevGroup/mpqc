@@ -25,9 +25,6 @@
 #ifndef included_Chemistry_Molecule_hh
 #include "Chemistry_Molecule.hh"
 #endif
-#ifndef included_Chemistry_QC_GaussianBasis_ContractionTransform_hh
-#include "Chemistry_QC_GaussianBasis_ContractionTransform.hh"
-#endif
 #ifndef included_Chemistry_QC_GaussianBasis_DerivCenters_hh
 #include "Chemistry_QC_GaussianBasis_DerivCenters.hh"
 #endif
@@ -253,7 +250,8 @@ namespace MPQC {
       /* in */ const ::std::string& label,
       /* in */ int64_t max_deriv,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;
@@ -314,7 +312,8 @@ namespace MPQC {
       /* in */ int64_t max_deriv,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;
@@ -337,19 +336,12 @@ namespace MPQC {
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
-      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;
 
-
-    /**
-     * Get the contraction transform
-     * @return The contraction transform 
-     */
-    ::Chemistry::QC::GaussianBasis::ContractionTransform
-    get_contraction_transform() throw () 
-    ;
   };  // end class IntegralEvaluatorFactory_impl
 
 } // end namespace MPQC

@@ -74,7 +74,8 @@ throw ()
  * @param bs4 Molecular basis on center 4.
  * @param label String specifying integral type.
  * @param max_deriv Max derivative to compute.
- * @param storage Available storage in bytes. 
+ * @param storage Available storage in bytes.
+ * @param deriv_ctr Derivative center descriptor. 
  */
 void
 MPQC::IntegralEvaluator4_impl::initialize (
@@ -84,12 +85,15 @@ MPQC::IntegralEvaluator4_impl::initialize (
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4,
   /* in */ const ::std::string& label,
   /* in */ int64_t max_deriv,
-  /* in */ int64_t storage ) 
+  /* in */ int64_t storage,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.initialize)
   
   bufn_ = 0;
+
+  deriv_centers_ = deriv_ctr;
 
   evaluator_label_ = label;
   int deriv_level = max_deriv;
@@ -188,6 +192,33 @@ throw ()
 }
 
 /**
+ * Initialize the evaluator, providing native
+ * basis set objects.
+ * @param bs1 opaque for molecular basis on center 1.
+ * @param bs2 opaque for molecular basis on center 2.
+ * @param bs3 opaque for molecular basis on center 3.
+ * @param bs4 opaque for molecular basis on center 4.
+ * @param label String specifying integral type.
+ * @param max_deriv Max derivative to compute.
+ * @param storage Available storage in bytes. 
+ */
+void
+MPQC::IntegralEvaluator4_impl::initialize_native (
+  /* in */ void* bs1,
+  /* in */ void* bs2,
+  /* in */ void* bs3,
+  /* in */ void* bs4,
+  /* in */ const ::std::string& label,
+  /* in */ int64_t max_deriv,
+  /* in */ int64_t storage ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.initialize_native)
+  // Insert-Code-Here {MPQC.IntegralEvaluator4.initialize_native} (initialize_native method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.initialize_native)
+}
+
+/**
  * Get the buffer pointer.
  * @return Buffer pointer. 
  */
@@ -207,8 +238,7 @@ throw ()
  * @param shellnum2 Gaussian shell number 2.
  * @param shellnum3 Gaussian shell number 3.
  * @param shellnum4 Gaussian shell number 4.
- * @param deriv_level Derivative level.
- * @param deriv_ctr Derivative center descriptor. 
+ * @param deriv_level Derivative level. 
  */
 void
 MPQC::IntegralEvaluator4_impl::compute (
@@ -216,8 +246,7 @@ MPQC::IntegralEvaluator4_impl::compute (
   /* in */ int64_t shellnum2,
   /* in */ int64_t shellnum3,
   /* in */ int64_t shellnum4,
-  /* in */ int64_t deriv_level,
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
+  /* in */ int64_t deriv_level ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute)
@@ -232,13 +261,13 @@ throw ()
     deriv_eval_->compute_shell( shellnum1, shellnum2,
                                 shellnum3, shellnum4,
                                 sc_deriv_centers_ );
-    deriv_ctr.clear();
+    deriv_centers_.clear();
     if(sc_deriv_centers_.has_omitted_center())
-      deriv_ctr.add_omitted( sc_deriv_centers_.omitted_center(),
-                             sc_deriv_centers_.omitted_atom() );
+      deriv_centers_.add_omitted( sc_deriv_centers_.omitted_center(),
+                                  sc_deriv_centers_.omitted_atom() );
     for( int i=0; i<sc_deriv_centers_.n() ; ++i) 
-      deriv_ctr.add_center( sc_deriv_centers_.center(i),
-                            sc_deriv_centers_.atom(i) );
+      deriv_centers_.add_center( sc_deriv_centers_.center(i),
+                                 sc_deriv_centers_.atom(i) );
 
 /*
     std::cerr << "Eval4 dc.n=" << dc.n() << std::endl;
@@ -355,7 +384,6 @@ throw ()
  * @param shellnum3 Guassian shell number 3.
  * @param shellnum4 Gaussian shell number 4.
  * @param deriv_level Derivative level.
- * @param deriv_ctr Derivative center descriptor.
  * @return Borrowed sidl array buffer. 
  */
 ::sidl::array<double>
@@ -364,13 +392,12 @@ MPQC::IntegralEvaluator4_impl::compute_array (
   /* in */ int64_t shellnum2,
   /* in */ int64_t shellnum3,
   /* in */ int64_t shellnum4,
-  /* in */ int64_t deriv_level,
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
+  /* in */ int64_t deriv_level ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute_array)
 
-  compute( shellnum1, shellnum2, shellnum3, shellnum4, deriv_level, deriv_ctr );
+  compute( shellnum1, shellnum2, shellnum3, shellnum4, deriv_level );
 
   // this creates a proxy SIDL array
   int lower[1] = {0};

@@ -86,6 +86,7 @@ namespace MPQC {
     Ref<sc::Integral> integral_;
     Ref<sc::TwoBodyInt> eval_;
     Ref<sc::TwoBodyDerivInt> deriv_eval_;
+    Chemistry::QC::GaussianBasis::DerivCenters deriv_centers_;
     int max_nshell4_;
     sidl::array<double> sidl_buffer_;
     const double* sc_buffer_;
@@ -163,7 +164,8 @@ namespace MPQC {
      * @param bs4 Molecular basis on center 4.
      * @param label String specifying integral type.
      * @param max_deriv Max derivative to compute.
-     * @param storage Available storage in bytes. 
+     * @param storage Available storage in bytes.
+     * @param deriv_ctr Derivative center descriptor. 
      */
     void
     initialize (
@@ -171,6 +173,32 @@ namespace MPQC {
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4,
+      /* in */ const ::std::string& label,
+      /* in */ int64_t max_deriv,
+      /* in */ int64_t storage,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
+    )
+    throw () 
+    ;
+
+
+    /**
+     * Initialize the evaluator, providing native
+     * basis set objects.
+     * @param bs1 opaque for molecular basis on center 1.
+     * @param bs2 opaque for molecular basis on center 2.
+     * @param bs3 opaque for molecular basis on center 3.
+     * @param bs4 opaque for molecular basis on center 4.
+     * @param label String specifying integral type.
+     * @param max_deriv Max derivative to compute.
+     * @param storage Available storage in bytes. 
+     */
+    void
+    initialize_native (
+      /* in */ void* bs1,
+      /* in */ void* bs2,
+      /* in */ void* bs3,
+      /* in */ void* bs4,
       /* in */ const ::std::string& label,
       /* in */ int64_t max_deriv,
       /* in */ int64_t storage
@@ -193,8 +221,7 @@ namespace MPQC {
      * @param shellnum2 Gaussian shell number 2.
      * @param shellnum3 Gaussian shell number 3.
      * @param shellnum4 Gaussian shell number 4.
-     * @param deriv_level Derivative level.
-     * @param deriv_ctr Derivative center descriptor. 
+     * @param deriv_level Derivative level. 
      */
     void
     compute (
@@ -202,8 +229,7 @@ namespace MPQC {
       /* in */ int64_t shellnum2,
       /* in */ int64_t shellnum3,
       /* in */ int64_t shellnum4,
-      /* in */ int64_t deriv_level,
-      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
+      /* in */ int64_t deriv_level
     )
     throw () 
     ;
@@ -217,7 +243,6 @@ namespace MPQC {
      * @param shellnum3 Guassian shell number 3.
      * @param shellnum4 Gaussian shell number 4.
      * @param deriv_level Derivative level.
-     * @param deriv_ctr Derivative center descriptor.
      * @return Borrowed sidl array buffer. 
      */
     ::sidl::array<double>
@@ -226,8 +251,7 @@ namespace MPQC {
       /* in */ int64_t shellnum2,
       /* in */ int64_t shellnum3,
       /* in */ int64_t shellnum4,
-      /* in */ int64_t deriv_level,
-      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
+      /* in */ int64_t deriv_level
     )
     throw () 
     ;

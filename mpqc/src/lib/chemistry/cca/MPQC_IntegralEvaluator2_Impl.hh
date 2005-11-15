@@ -146,7 +146,8 @@ namespace MPQC {
      * @param bs2 Molecular basis on center 2.
      * @param label String specifying integral type.
      * @param max_deriv Max derivative to compute.
-     * @param storage Available storage in bytes. 
+     * @param storage Available storage in bytes.
+     * @param deriv_ctr Derivative center descriptor. 
      */
     void
     initialize (
@@ -154,7 +155,8 @@ namespace MPQC {
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
       /* in */ const ::std::string& label,
       /* in */ int64_t max_deriv,
-      /* in */ int64_t storage
+      /* in */ int64_t storage,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;
@@ -169,20 +171,21 @@ namespace MPQC {
     ;
 
     /**
-     * Compute a shell doublet of integrals.
+     * Compute a shell doublet of integrals.  deriv_atom must 
+     * be used for nuclear derivatives if the operator contains 
+     * nuclear coordinates, otherwise, set to -1
+     * and use deriv_ctr.
      * @param shellnum1 Gaussian shell number 1.
      * @param shellnum2 Gaussian shell number 2.
      * @param deriv_level Derivative level. 
-     * @param deriv_atom Atom number for derivative (-1 if using DerivCenter).
-     * @param deriv_ctr Derivative center descriptor. 
+     * @param deriv_atom Atom number for derivative (-1 if using DerivCenter). 
      */
     void
     compute (
       /* in */ int64_t shellnum1,
       /* in */ int64_t shellnum2,
       /* in */ int64_t deriv_level,
-      /* in */ int64_t deriv_atom,
-      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
+      /* in */ int64_t deriv_atom
     )
     throw () 
     ;
@@ -190,12 +193,13 @@ namespace MPQC {
 
     /**
      * Compute a shell doublet of integrals and return as a borrowed
-     * sidl array.
+     * sidl array.  deriv_atom must be used for nuclear derivatives if
+     * the operator contains nuclear coordinates, otherwise, set to -1 
+     * and use deriv_ctr.
      * @param shellnum1 Gaussian shell number 1.
      * @param shellnum2 Gaussian shell number 2.
      * @param deriv_level Derivative level.
      * @param deriv_atom Atom number for derivative (-1 if using DerivCenter).
-     * @param deriv_ctr Derivative center descriptor.
      * @return Borrowed sidl array buffer. 
      */
     ::sidl::array<double>
@@ -203,8 +207,7 @@ namespace MPQC {
       /* in */ int64_t shellnum1,
       /* in */ int64_t shellnum2,
       /* in */ int64_t deriv_level,
-      /* in */ int64_t deriv_atom,
-      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
+      /* in */ int64_t deriv_atom
     )
     throw () 
     ;

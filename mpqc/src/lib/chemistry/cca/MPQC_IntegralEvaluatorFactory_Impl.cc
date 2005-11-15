@@ -229,7 +229,8 @@ MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator2 (
   /* in */ const ::std::string& label,
   /* in */ int64_t max_deriv,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2 ) 
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator2)
@@ -237,7 +238,7 @@ throw ()
   if( package_.size() == 0 )
     package_ =  package_param_->getValueString();
   eval.set_integral_package( package_ );
-  eval.initialize( bs1, bs2, label, max_deriv, storage_ );
+  eval.initialize( bs1, bs2, label, max_deriv, storage_, deriv_ctr );
   return eval;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator2)
 }
@@ -301,7 +302,8 @@ MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator3 (
   /* in */ int64_t max_deriv,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3 ) 
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator3)
@@ -309,7 +311,7 @@ throw ()
   if( package_.size() == 0 ) 
     package_ = package_param_->getValueString();
   eval.set_integral_package( package_ );
-  eval.initialize( bs1, bs2, bs3, label, max_deriv, storage_ );
+  eval.initialize( bs1, bs2, bs3, label, max_deriv, storage_, deriv_ctr );
   return eval;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator3)
 }
@@ -331,7 +333,8 @@ MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator4 (
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4 ) 
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator4)
@@ -339,23 +342,9 @@ throw ()
   if( package_.size() == 0 )
     package_ = package_param_->getValueString();
   eval.set_integral_package( package_ );
-  eval.initialize( bs1, bs2, bs3, bs4, label, max_deriv, storage_ );
+  eval.initialize( bs1, bs2, bs3, bs4, label, max_deriv, storage_, deriv_ctr );
   return eval;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator4)
-}
-
-/**
- * Get the contraction transform
- * @return The contraction transform 
- */
-::Chemistry::QC::GaussianBasis::ContractionTransform
-MPQC::IntegralEvaluatorFactory_impl::get_contraction_transform ()
-throw () 
-
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_contraction_transform)
-  // insert implementation here
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_contraction_transform)
 }
 
 
@@ -379,3 +368,10 @@ MPQC::IntegralEvaluatorFactory_impl::setup_parameters(
 
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._misc)
 
+/**
+ * ================= BEGIN UNREFERENCED METHOD(S) ================
+ * The following code segment(s) belong to unreferenced method(s).
+ * This can result from a method rename/removal in the sidl file.
+ * Move or remove the code in order to compile cleanly.
+ */
+// ================== END UNREFERENCED METHOD(S) =================

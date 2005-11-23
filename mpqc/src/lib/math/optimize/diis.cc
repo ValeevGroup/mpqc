@@ -360,6 +360,19 @@ DIIS::extrapolate(const Ref<SCExtrapData>& data,
   return 0;
 }
 
+void
+DIIS::print(std::ostream& o) const
+{
+  o << indent
+    << "DIIS: "
+    << "n=" << ndiis
+    << ", start=" << start
+    << ", ngroup=" << ngroup
+    << ", ngroupdiis=" << ngroupdiis
+    << ", damping_factor=" << damping_factor
+    << std::endl;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

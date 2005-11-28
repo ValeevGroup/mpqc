@@ -150,8 +150,8 @@ void MP2R12Energy::obsolete()
 }
 
 Ref<R12IntEval> MP2R12Energy::r12eval() const { return r12eval_; };
-const bool MP2R12Energy::ebc() const { return ebc_; };
-const bool MP2R12Energy::gbc() const { return r12eval_->gbc(); };
+bool MP2R12Energy::ebc() const { return ebc_; };
+bool MP2R12Energy::gbc() const { return r12eval_->gbc(); };
 LinearR12::StandardApproximation MP2R12Energy::stdapp() const { return stdapprox_; };
 void MP2R12Energy::set_debug(int debug) { debug_ = debug; };
 int MP2R12Energy::get_debug() const { return debug_; };

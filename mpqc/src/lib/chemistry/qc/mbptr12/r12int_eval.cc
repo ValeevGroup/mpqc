@@ -1062,6 +1062,11 @@ R12IntEval::compute()
 {
   if (evaluated_)
     return;
+
+  // different expressions hence codepaths depending on relationship between OBS, VBS, and RIBS
+  // compare these basis sets here
+  const bool obs_eq_vbs = r12info_->basis_vir()->equiv(r12info_->basis());
+  const bool obs_eq_ribs = r12info_->basis_ri()->equiv(r12info_->basis());
   
   // if no explicit correlation -- only compute MP2 energies
   if (corrfactor()->id() == LinearR12::NullCorrFactor) {
@@ -1083,7 +1088,7 @@ R12IntEval::compute()
     }
   }
   
-  if (r12info_->basis_vir()->equiv(r12info_->basis())) {
+  if (obs_eq_vbs) {
     // Compute VXB using new code
     using LinearR12::TwoParticleContraction;
     using LinearR12::ABS_OBS_Contraction;
@@ -1095,8 +1100,8 @@ R12IntEval::compute()
       const SpinCase1 spin2 = case2(spincase2);
 
       Ref<TwoParticleContraction> tpcontract;
-      if (absmethod == LinearR12::ABS_ABS ||
-          absmethod == LinearR12::ABS_ABSPlus)
+      if ((absmethod == LinearR12::ABS_ABS ||
+	   absmethod == LinearR12::ABS_ABSPlus) && !obs_eq_ribs)
         tpcontract = new ABS_OBS_Contraction(r12info()->refinfo()->orbs(spin1)->rank(),
                                              r12info()->refinfo()->occ(spin1)->rank(),
                                              r12info()->refinfo()->occ(spin2)->rank());
@@ -1107,7 +1112,7 @@ R12IntEval::compute()
                             r12info()->refinfo()->occ_act(spin2),
                             r12info()->refinfo()->orbs(spin2),
                             spincase2,tpcontract);
-      //compute_mp2_pair_energies_(spincase2);
+      compute_mp2_pair_energies_(spincase2);
       if (debug_ > 1) {
         V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS) contribution").c_str());
         X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS) contribution").c_str());
@@ -1115,7 +1120,7 @@ R12IntEval::compute()
       }
     }
     
-    if (r12info_->basis() != r12info_->basis_ri()) {
+    if (!obs_eq_ribs) {
       // Compute VXB using new code
       using LinearR12::Direct_Contraction;
       for(int s=0; s<nspincases2(); s++) {
@@ -1180,7 +1185,7 @@ R12IntEval::compute()
   if (!ebc_) {
     // These functions assume that virtuals are expanded in the same basis
     // as the occupied orbitals
-    if (!r12info_->basis_vir()->equiv(r12info_->basis()))
+    if (!obs_eq_vbs)
       throw std::runtime_error("R12IntEval::compute() -- ebc=false is only supported when basis_vir == basis");
 
     compute_A_simple_();
@@ -1193,7 +1198,7 @@ R12IntEval::compute()
   if (!gbc_) {
     // These functions assume that virtuals are expanded in the same basis
     // as the occupied orbitals
-    if (!r12info_->basis_vir()->equiv(r12info_->basis()))
+    if (!obs_eq_vbs)
       throw std::runtime_error("R12IntEval::compute() -- gbc=false is only supported when basis_vir == basis");
 
     compute_B_gbc_1_();

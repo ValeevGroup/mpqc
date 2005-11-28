@@ -510,7 +510,7 @@ MBPT2_R12::vir_basis() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-const bool
+bool
 MBPT2_R12::gbc() const
 {
   return gbc_;
@@ -518,7 +518,7 @@ MBPT2_R12::gbc() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-const bool
+bool
 MBPT2_R12::ebc() const
 {
   return ebc_;

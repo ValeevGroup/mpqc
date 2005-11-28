@@ -248,8 +248,8 @@ class MBPT2_R12: public MBPT2 {
     const Ref<LinearR12::CorrelationFactor>& corrfactor() const;
     Ref<GaussianBasisSet> aux_basis() const;
     Ref<GaussianBasisSet> vir_basis() const;
-    const bool gbc() const;
-    const bool ebc() const;
+    bool gbc() const;
+    bool ebc() const;
     LinearR12::ABSMethod abs_method() const;
     LinearR12::StandardApproximation stdapprox() const;
     bool spinadapted() const;

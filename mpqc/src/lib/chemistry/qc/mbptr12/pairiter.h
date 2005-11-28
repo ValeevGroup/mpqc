@@ -245,7 +245,7 @@ class SpatialMOPairIter_neq : public SpatialMOPairIter {
 
 public:
   /// Initialize an iterator for the given MO spaces.
-  SpatialMOPairIter_neq(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space1);
+  SpatialMOPairIter_neq(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2);
   ~SpatialMOPairIter_neq();
 
   /// Initialize the iterator assuming that iteration will start with pair ij_offset

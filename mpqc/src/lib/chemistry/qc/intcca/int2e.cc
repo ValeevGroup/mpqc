@@ -48,11 +48,10 @@ Int2eCCA::Int2eCCA(Integral *integral,
 		   IntegralEvaluatorFactory eval_factory, 
                    bool use_opaque, string eval_type,
                    Chemistry::QC::GaussianBasis::DerivCenters cca_dc ):
-  bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4),
-  erep_ptr_(0), integral_(integral), eval_factory_(eval_factory),
-  use_opaque_(use_opaque), buffer_(0), cca_dc_(cca_dc)
+  eval_factory_(eval_factory), bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4),
+  buffer_(0), use_opaque_(use_opaque), erep_ptr_(0), integral_(integral)
 {
-
+  cca_dc_ = cca_dc;
   deriv_lvl_ = order;  
 
   /* Allocate storage for the integral buffer. */
@@ -77,8 +76,6 @@ Int2eCCA::Int2eCCA(Integral *integral,
   cca_bs3_.initialize( bs3_.pointer(), bs3_->name() );
   cca_bs4_.initialize( bs4_.pointer(), bs4_->name() );
 
-  cca_dc_ = Chemistry_QC_GaussianBasis_DerivCenters::_create();
- 
   eval_factory_.set_storage(storage);
 
   if( eval_type == "eri" ) {
@@ -137,7 +134,6 @@ Int2eCCA::compute_bounds( int is, int js, int ks, int ls )
 void
 Int2eCCA::compute_erep_1der( int is, int js, int ks, int ls )
 {
-
   cca_dc_.clear();
   if( use_opaque_ )
     erep_1der_ptr_->compute( is, js, ks, ls, 1 );
@@ -147,15 +143,6 @@ Int2eCCA::compute_erep_1der( int is, int js, int ks, int ls )
                 bs3_->shell(ks).nfunction() * bs4_->shell(ls).nfunction();
     copy_buffer(nelem);
   }
-  int nfunc = bs1_->shell(is).nfunction() * bs2_->shell(js).nfunction() 
-              * bs3_->shell(ks).nfunction() * bs4_->shell(ls).nfunction();
-  int deriv_offset=0;
-  for( int i=0; i<=cca_dc_.n(); ++i) {
-    reorder_deriv( &(bs1_->shell(is)), &(bs2_->shell(js)),
-                   &(bs3_->shell(ks)), &(bs4_->shell(ls)), deriv_offset );
-    deriv_offset += nfunc*3;
-  }
-
 }
 
 double
@@ -169,31 +156,6 @@ Int2eCCA::copy_buffer( int n )
 {
   for( int i=0; i<n; ++i)
      buffer_[i] = sidl_buffer_.get(i);
-}
-
-void
-Int2eCCA::reorder_deriv(sc::GaussianShell* s1, sc::GaussianShell* s2,
-                        sc::GaussianShell* s3, sc::GaussianShell* s4,
-                        int offset )
-{
-/*  int nfunc = s1->nfunction() * s2->nfunction() * s3->nfunction() * s4->nfunction();
-
-  for(int i=0; i<nfunc*3; ++i)
-    temp_buff_[ offset + i ] = buffer_[ offset + i ];
-
-  for(int i=0; i<nfunc; ++i)
-    for( int di=0; di<3; ++di)
-      buffer_[ offset + i*3 + di ] = temp_buff_[ offset + di*nfunc + i ];
-*/
-
-/*
-  for( int i=0; i<nfunc; ++i) {
-    std::cerr << "integral " << i << std::endl;
-    std::cerr << " dx: " << buff_[i*3] << std::endl;
-    std::cerr << " dy: " << buff_[i*3+1] << std::endl;
-    std::cerr << " dz: " << buff_[i*3+2] << std::endl;
-  }
-*/
 }
 
 #ifndef INTV3_ORDER
@@ -330,7 +292,7 @@ Int2eCCA::remove_redundant(int is, int js, int ks, int ls) {
   int bs2_shell_offset, bs3_shell_offset, bs4_shell_offset;
   
   int shell_offset1 = shell_offset(bs1_,0);
-  int shell_offset2, shell_offset3, shell_offset4;
+  int shell_offset2, shell_offset3;
   if (bs2_ == bs1_) {
     shell_offset2 = shell_offset1;
     bs2_shell_offset = bs1_shell_offset;

@@ -77,8 +77,6 @@ class Int2eCCA: public RefCount {
     int redundant_;
     int deriv_lvl_;
     void remove_redundant(int,int,int,int);
-    void reorder_deriv(sc::GaussianShell*, sc::GaussianShell*,
-                       sc::GaussianShell*, sc::GaussianShell*, int );
 
   protected:
     Integral *integral_;

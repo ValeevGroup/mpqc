@@ -113,7 +113,6 @@ void
 TwoBodyDerivIntCCA::compute_shell(int is, int js, int ks, int ls,
                                   DerivCenters &dc )
 {
-
   int2ecca_->compute_erep_1der(is,js,ks,ls);
 
   dc.clear();
@@ -138,7 +137,8 @@ TwoBodyDerivIntCCA::compute_shell(int is, int js, int ks, int ls,
     std::cerr << "intcca: dc: omitted atom is " << dc.omitted_atom() << std::endl;
   } 
 
-    if( dc.n() ) {
+    if( is==8 && js==0 && ks==0 && ls==0 ) {
+      std::cerr << "cca_dc.n(): " << cca_dc_.n() << std::endl;
       GaussianShell* s1 = &( bs1_->shell(is) );
       GaussianShell* s2 = &( bs2_->shell(js) );
       GaussianShell* s3 = &( bs3_->shell(ks) );

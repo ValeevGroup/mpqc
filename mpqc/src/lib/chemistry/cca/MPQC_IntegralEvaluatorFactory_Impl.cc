@@ -368,10 +368,3 @@ MPQC::IntegralEvaluatorFactory_impl::setup_parameters(
 
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._misc)
 
-/**
- * ================= BEGIN UNREFERENCED METHOD(S) ================
- * The following code segment(s) belong to unreferenced method(s).
- * This can result from a method rename/removal in the sidl file.
- * Move or remove the code in order to compile cleanly.
- */
-// ================== END UNREFERENCED METHOD(S) =================

@@ -110,6 +110,8 @@ void
 OneBodyDerivIntCCA::compute_shell(int i, int j, DerivCenters& c)
 {
 
+  std::cerr << "THIS IS NEVER USED\n";
+
   cca_dc_.clear();
   
   if( eval_type_ == "overlap_1der" )

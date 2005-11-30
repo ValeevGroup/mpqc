@@ -270,20 +270,20 @@ throw ()
                                  sc_deriv_centers_.atom(i) );
 
 /*
-    std::cerr << "Eval4 dc.n=" << dc.n() << std::endl;
-    for( int i=0; i<dc.n(); ++i)
-       std::cerr << "dc " << i << " center " << dc.center(i) << " atom " << dc.atom(i) << std::endl;
-    if( dc.has_omitted_center() ) {
-      std::cerr << "omitted center is " << dc.omitted_center() << std::endl;
-      std::cerr << "omitted atom is " << dc.omitted_atom() << std::endl;
+    std::cerr << "Eval4 dc.n=" << deriv_centers_.n() << std::endl;
+    for( int i=0; i<deriv_centers_.n(); ++i)
+       std::cerr << "dc " << i << " center " << deriv_centers_.center(i) << " atom " << deriv_centers_.atom(i) << std::endl;
+    if( deriv_centers_.has_omitted_center() ) {
+      std::cerr << "omitted center is " << deriv_centers_.omitted_center() << std::endl;
+      std::cerr << "omitted atom is " << deriv_centers_.omitted_atom() << std::endl;
     }
 
-    std::cerr << "Eval4 deriv_ctr.n=" << deriv_ctr.n() << std::endl;
-    for( int i=0; i<deriv_ctr.n(); ++i)
-       std::cerr << "deriv_ctr " << i << " center " << deriv_ctr.center(i) << " atom " << deriv_ctr.atom(i) << std::endl;
-    if( deriv_ctr.has_omitted_center() ) {
-      std::cerr << "omitted center is " << deriv_ctr.omitted_center() << std::endl;
-      std::cerr << "omitted atom is " << deriv_ctr.omitted_atom() << std::endl;
+    std::cerr << "Eval4 deriv_ctr.n=" << deriv_centers_.n() << std::endl;
+    for( int i=0; i<deriv_centers_.n(); ++i)
+       std::cerr << "deriv_ctr " << i << " center " << deriv_centers_.center(i) << " atom " << deriv_centers_.atom(i) << std::endl;
+    if( deriv_centers_.has_omitted_center() ) {
+      std::cerr << "omitted center is " << deriv_centers_.omitted_center() << std::endl;
+      std::cerr << "omitted atom is " << deriv_centers_.omitted_atom() << std::endl;
     }
 */
 
@@ -293,8 +293,9 @@ throw ()
                            __FILE__,__LINE__);
 
 /*
-  if( int_type_ == two_body_deriv && shellnum1 == 3 && shellnum2 == 3 
-                                  && shellnum3 == 2 && shellnum4 == 1 ) {
+  if( int_type_ == two_body_deriv && shellnum1 == 8 && shellnum2 == 0 
+                                  && shellnum3 == 0 && shellnum4 == 0 ) {
+    std::cerr << "dc.n(): " << deriv_centers_.n() << std::endl;
     sc::GaussianShell* s1 = &(bs1_->shell(shellnum1));
     sc::GaussianShell* s2 = &(bs2_->shell(shellnum2));
     sc::GaussianShell* s3 = &(bs3_->shell(shellnum3));
@@ -336,8 +337,8 @@ throw ()
 #endif
 
 /*
-  if( int_type_ == two_body_deriv && shellnum1 == 3 && shellnum2 == 3 
-                                  && shellnum3 == 2 && shellnum4 == 1 ) {
+  if( int_type_ == two_body_deriv && shellnum1 == 8 && shellnum2 == 0 
+                                  && shellnum3 == 0 && shellnum4 == 0 ) {
     sc::GaussianShell* s1 = &(bs1_->shell(shellnum1));
     sc::GaussianShell* s2 = &(bs2_->shell(shellnum2));
     sc::GaussianShell* s3 = &(bs3_->shell(shellnum3));
@@ -554,7 +555,7 @@ MPQC::IntegralEvaluator4_impl::reorder_quartet( sc::GaussianShell* s1, sc::Gauss
                                                 int is_deriv, int deriv_offset )
 {
 
-  int index=0, nfunc, con2_offset=0, con3_offset=0, con4_offset=0, con_offset,
+  int index=0, nfunc, con2_offset=0, con3_offset=0, con4_offset=0,
       local2_offset, local3_offset, local4_offset, 
       c1_base, c2_base, c3_base, c4_base;
 

@@ -291,6 +291,10 @@ ExtendedHuckelWfn::density()
 double
 ExtendedHuckelWfn::occupation(int ir, int i)
 {
+  if (!eigenvalues_.computed()) {
+    oso_eigenvectors();
+  }
+  
   if (i < docc_[ir])
     return 2.0;
   else if (i < docc_[ir]+socc_[ir])

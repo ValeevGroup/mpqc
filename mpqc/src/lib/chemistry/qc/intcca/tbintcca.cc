@@ -69,12 +69,12 @@ TwoBodyIntCCA::compute_shell(int is, int js, int ks, int ls)
 int
 TwoBodyIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
 {
+/*
   double value = int2ecca_->compute_bounds(is,js,ks,ls);
   int upper;
   if (value > tol_) {
     double log_dbl = log(value)*loginv_;
     upper = static_cast<int>( ceil(log_dbl) );
-    // nasty check for rounding effects
     if( upper > int_bound_min_ ) {
       int lower = upper - 1;
       double lower_dbl = static_cast<double>( lower ); 
@@ -84,6 +84,9 @@ TwoBodyIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
   }
   else upper = int_bound_min_;
   return upper;
+*/
+
+  return static_cast<int>( logb( int2ecca_->compute_bounds(is,js,ks,ls) ) );
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -183,12 +186,12 @@ TwoBodyDerivIntCCA::compute_shell(int is, int js, int ks, int ls,
 int
 TwoBodyDerivIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
 {
-/*  double value = int2ecca_->compute_bounds(is,js,ks,ls);
+/*
+  double value = int2ecca_->compute_bounds_1der(is,js,ks,ls);
   int upper;
   if (value > tol_) {
     double log_dbl = log(value)*loginv_;
     upper = static_cast<int>( ceil(log_dbl) );
-    // nasty check for rounding effects
     if( upper > SCHAR_MIN ) {
       int lower = upper - 1;
       double lower_dbl = static_cast<double>( lower );
@@ -200,7 +203,7 @@ TwoBodyDerivIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
   return upper;
 */
 
-return SCHAR_MAX;
+  return static_cast<int>( logb( int2ecca_->compute_bounds_1der(is,js,ks,ls) ) );
 }
 
 /////////////////////////////////////////////////////////////////////////////

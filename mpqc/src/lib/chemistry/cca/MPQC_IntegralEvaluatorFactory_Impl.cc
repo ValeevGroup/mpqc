@@ -133,6 +133,20 @@ throw (
 }
 
 /**
+ * Set the EvaluatorConfig
+ * @param config EvaluatorConfig 
+ */
+void
+MPQC::IntegralEvaluatorFactory_impl::set_config (
+  /* in */ ::Chemistry::QC::GaussianBasis::EvaluatorConfig config ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.set_config)
+  eval_config_ = config;
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.set_config)
+}
+
+/**
  * Set the molecular basis 
  * @param molbasis The molecular basis 
  */
@@ -234,12 +248,34 @@ MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator2 (
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator2)
+
+  // create the evaluator
   MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
-  if( package_.size() == 0 )
+ 
+  // determine proper integrals package
+  bool pkg_set = false;
+  for( int i=0; i<eval_config_.get_n_pkg_config(); ++i)
+    if( eval_config_.get_pkg_config_type(i) == label ) {
+      eval.set_integral_package( eval_config_.get_pkg_config_pkg(i) );
+      pkg_set = true;
+    }
+  if( !pkg_set ) {
     package_ =  package_param_->getValueString();
-  eval.set_integral_package( package_ );
+    if( package_ == "intv3" || package_ == "cints" )
+      eval.set_integral_package( package_ );
+    else {
+      package_ = eval_config_.get_default_pkg();
+      if( package_ == "intv3" || package_ == "cints" )
+        eval.set_integral_package( package_ );
+      else
+        eval.set_integral_package( "intv3" );
+    }
+  }
+  
+  // initialize
   eval.initialize( bs1, bs2, label, max_deriv, storage_, deriv_ctr );
   return eval;
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator2)
 }
 
@@ -307,12 +343,34 @@ MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator3 (
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator3)
+
+  // create the evaluator
   MPQC::IntegralEvaluator3 eval = MPQC::IntegralEvaluator3::_create();
-  if( package_.size() == 0 ) 
-    package_ = package_param_->getValueString();
-  eval.set_integral_package( package_ );
+
+ // determine proper integrals package
+  bool pkg_set = false;
+  for( int i=0; i<eval_config_.get_n_pkg_config(); ++i)
+    if( eval_config_.get_pkg_config_type(i) == label ) {
+      eval.set_integral_package( eval_config_.get_pkg_config_pkg(i) );
+      pkg_set = true;
+    }
+  if( !pkg_set ) {
+    package_ =  package_param_->getValueString();
+    if( package_ == "intv3" || package_ == "cints" )
+      eval.set_integral_package( package_ );
+    else {
+      package_ = eval_config_.get_default_pkg();
+      if( package_ == "intv3" || package_ == "cints" )
+        eval.set_integral_package( package_ );
+      else
+        eval.set_integral_package( "intv3" );
+    }
+  }
+
+  // initialize
   eval.initialize( bs1, bs2, bs3, label, max_deriv, storage_, deriv_ctr );
   return eval;
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator3)
 }
 
@@ -338,12 +396,34 @@ MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator4 (
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator4)
+
+  // create the evaluator
   MPQC::IntegralEvaluator4 eval = MPQC::IntegralEvaluator4::_create();
-  if( package_.size() == 0 )
-    package_ = package_param_->getValueString();
-  eval.set_integral_package( package_ );
+
+ // determine proper integrals package
+  bool pkg_set = false;
+  for( int i=0; i<eval_config_.get_n_pkg_config(); ++i)
+    if( eval_config_.get_pkg_config_type(i) == label ) {
+      eval.set_integral_package( eval_config_.get_pkg_config_pkg(i) );
+      pkg_set = true;
+    }
+  if( !pkg_set ) {
+    package_ =  package_param_->getValueString();
+    if( package_ == "intv3" || package_ == "cints" )
+      eval.set_integral_package( package_ );
+    else {
+      package_ = eval_config_.get_default_pkg();
+      if( package_ == "intv3" || package_ == "cints" )
+        eval.set_integral_package( package_ );
+      else
+        eval.set_integral_package( "intv3" );
+    }
+  }
+
+  // initialize
   eval.initialize( bs1, bs2, bs3, bs4, label, max_deriv, storage_, deriv_ctr );
   return eval;
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator4)
 }
 
@@ -360,7 +440,7 @@ MPQC::IntegralEvaluatorFactory_impl::setup_parameters(
   pp->setGroupName("Model Factory Input");
 
   package_param_ = new StringParameter("package", "Integral package",
-                                      "package", "intv3");
+                                      "package", "default");
   pp->addRequest(package_param_);
 
   return pp;

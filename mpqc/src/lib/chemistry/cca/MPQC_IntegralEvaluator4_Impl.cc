@@ -431,10 +431,10 @@ throw ()
 
   if( int_type_ == two_body )
     return eval_->shell_bound( shellnum1, shellnum2,
-                                  shellnum3, shellnum4);
+                               shellnum3, shellnum4);
   else 
     return deriv_eval_->shell_bound( shellnum1, shellnum2, 
-                                        shellnum3, shellnum4);
+                                     shellnum3, shellnum4);
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.compute_bounds)
 }

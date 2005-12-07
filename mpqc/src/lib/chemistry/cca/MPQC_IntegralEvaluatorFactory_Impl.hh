@@ -28,6 +28,9 @@
 #ifndef included_Chemistry_QC_GaussianBasis_DerivCenters_hh
 #include "Chemistry_QC_GaussianBasis_DerivCenters.hh"
 #endif
+#ifndef included_Chemistry_QC_GaussianBasis_EvaluatorConfig_hh
+#include "Chemistry_QC_GaussianBasis_EvaluatorConfig.hh"
+#endif
 #ifndef included_Chemistry_QC_GaussianBasis_IntegralEvaluator2_hh
 #include "Chemistry_QC_GaussianBasis_IntegralEvaluator2.hh"
 #endif
@@ -118,6 +121,7 @@ namespace MPQC {
       ConfigurableParameterFactory *cpf);
     std::string package_;
     int storage_;
+    Chemistry::QC::GaussianBasis::EvaluatorConfig eval_config_;
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._implementation)
 
   private:
@@ -171,6 +175,18 @@ namespace MPQC {
     throw ( 
       ::gov::cca::CCAException
     );
+
+
+    /**
+     * Set the EvaluatorConfig
+     * @param config EvaluatorConfig 
+     */
+    void
+    set_config (
+      /* in */ ::Chemistry::QC::GaussianBasis::EvaluatorConfig config
+    )
+    throw () 
+    ;
 
 
     /**

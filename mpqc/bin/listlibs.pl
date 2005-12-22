@@ -84,7 +84,7 @@ sub process_file {
         }
     }
     if ($ifile eq "" || ! -f $ifile) {
-        print STDERR "listlibs.pl: couldn't find file $file\n";
+        print STDERR "listlibs.pl: couldn't find file $ifile\n";
         exit 1;
     }
 

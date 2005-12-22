@@ -442,7 +442,7 @@ template_instantiation=none
 AC_ARG_WITH(template,
 [  --with-template         Specifies template instantation model.],
 template_instantiation=$withval
-echo Using extra include directories: $withval
+echo Using template instatiation model: $withval
 )
 
 scincludedir=$includedir

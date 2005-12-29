@@ -39,16 +39,17 @@
 namespace sc {
 
 /////////////////////////////////////////////////////////////////////
-// R12IntsAcc_MemoryGrp handles transformed integrals held in memory
-// by MemoryGrp
-//
-// The ordering of integrals in MemoryGrp buffers is not specified
-// to avoid having to reorder integrals
-// Each pair block has size of num_te_types*nbasis1*nbasis2
+/** R12IntsAcc_MemoryGrp handles transformed integrals held in memory
+    by MemoryGrp
+
+    The ordering of integrals in MemoryGrp buffers is not specified
+    to avoid having to reorder integrals
+    Each pair block has size of num_te_types*nbasis1*nbasis2
+*/
 
 class R12IntsAcc_MemoryGrp: public R12IntsAcc {
 
-    Ref<MemoryGrp> mem_; // The MemoryGrp used by this accumulator to store integrals
+    Ref<MemoryGrp> mem_; /// The MemoryGrp used by this accumulator to store integrals
     int nproc_;
     size_t blksize_memgrp_;  // The size of the ij-block in held memory (may be larger than blksize_)
 
@@ -58,7 +59,7 @@ class R12IntsAcc_MemoryGrp: public R12IntsAcc {
       distsize_t offset_;    // global Memgrp offset in bytes
     } *pairblk_;
     
-    // Initialization tasks common to all constructors
+    /// Initialization tasks common to all constructors
     void init();
     /// total number of tasks
     int ntasks() const { return mem_->n(); }

@@ -1415,6 +1415,26 @@ R12IntEval::compute()
                                  tform);
   }
   
+    // To test T2, change to 1 and replace denominators in compute_T2 by their square roots
+#if 0
+  {
+    const Ref<SingleRefInfo> refinfo = r12info()->refinfo();
+    Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+    RefSCMatrix T2 = localkit->matrix(dim_oo(AlphaBeta),dim_vv(AlphaBeta));
+     // these transforms were used by VXB evaluators and should be available
+     const std::string tform_name = transform_label(refinfo->occ_act(Alpha),
+                                                    refinfo->orbs(Alpha),
+                                                    refinfo->occ_act(Beta),
+                                                    refinfo->orbs(Beta),0);
+    const Ref<TwoBodyMOIntsTransform> tform = tform_map_[tform_name];
+    // To test T2 replace denominators in compute_T2 by their square roots
+    compute_T2_(T2, refinfo->occ_act(Alpha), refinfo->uocc_act(Alpha),
+                    refinfo->occ_act(Beta), refinfo->uocc_act(Beta),tform);
+    RefSCMatrix mp2pe = T2*T2.t(); mp2pe.scale(-1.0);
+    mp2pe.print("Diagonal elements should be pair energies");
+  }
+#endif
+  
   // Distribute the final intermediates to every node
   globally_sum_intermeds_(true);
 

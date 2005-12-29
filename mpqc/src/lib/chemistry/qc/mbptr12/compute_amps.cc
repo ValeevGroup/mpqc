@@ -80,6 +80,7 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
   const unsigned int rank2 = space2->rank();
   const unsigned int rank3 = space3->rank();
   const unsigned int rank4 = space4->rank();
+  const unsigned int trank4 = tspace4->rank();
   const RefDiagSCMatrix evals1 = space1->evals();
   const RefDiagSCMatrix evals2 = space2->evals();
   const RefDiagSCMatrix evals3 = space3->evals();
@@ -96,11 +97,19 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
     Ref<TwoBodyIntDescr> tbintdescr = new TwoBodyIntDescrERI(r12info()->integral());
     tform->compute(tbintdescr);
   }
+  if (!accum->is_active())
+    accum->activate();
   
   tim_enter("T2 amplitudes");
+  std::ostringstream oss;
+  oss << "<" << space1->id() << " " << space3->id() << "|T2|"
+      << space2->id() << " " << space4->id() << ">";
+  const std::string label = oss.str();
   ExEnv::out0() << endl << indent
-	       << "Entered MP2 T2 amplitude evaluator" << endl;
+	       << "Entered MP2 T2 amplitude (" << label << ") evaluator" << endl;
   ExEnv::out0() << incindent;
+  if (debug_ > 0)
+    ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
   
   vector<int> proc_with_ints;
   const int nproc_with_ints = tasks_with_ints_(accum,proc_with_ints);
@@ -132,10 +141,16 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
         const unsigned int b = iter24.j();
         const unsigned int aa = map2[a];
         const unsigned int bb = map4[b];
-        const int ab = aa*rank4+bb;
+        const int AB = aa*trank4+bb;
+        const int ab = iter24.ij();
         
-        const double ERI_iajb = ij_buf_eri[ab];
+        const double ERI_iajb = ij_buf_eri[AB];
+#if 1
         const double denom = 1.0/(evals1(i) + evals3(j) - evals2(a) - evals4(b));
+#else
+        // use this to test T2
+        const double denom = 1.0/sqrt(fabs(evals1(i) + evals3(j) - evals2(a) - evals4(b)));
+#endif
         
         if (debug_ > 2) {
           ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
@@ -151,7 +166,7 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
   }
   
   ExEnv::out0() << decindent;
-  ExEnv::out0() << indent << "Exited MP2 T2 amplitude evaluator" << endl;
+  ExEnv::out0() << indent << "Exited MP2 T2 amplitude (" << label << ") evaluator" << endl;
   tim_exit("T2 amplitudes");
 }
 
@@ -174,8 +189,14 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
     }
   }
   
+  tim_enter("F12 amplitudes");
+  std::ostringstream oss;
+  oss << "<" << space1->id() << " " << space3->id() << "|F12|"
+      << space2->id() << " " << space4->id() << ">";
+  const std::string label = oss.str();
   ExEnv::out0() << endl << indent
-                << "Entered F12 amplitude evaluator" << endl << incindent;
+                << "Entered F12 amplitude (" << label << ") evaluator" << endl
+                << incindent;
 
   // Using spinorbital iterators means I don't take into account perm symmetry
   // More efficient algorithm will require generic code
@@ -192,6 +213,8 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
   unsigned int f12offset = 0;
   for(unsigned int f12=0; f12<nf12; f12++,f12offset+=n13) {
     Ref<TwoBodyMOIntsTransform> tform = transforms[f12];
+    if (debug_ > 0)
+      ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
 
     // maps spaceX to spaceX of the transform
     std::vector<unsigned int> map1, map2, map3, map4;
@@ -203,6 +226,7 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
     map2 = *tspace2<<*space2;
     map3 = *tspace3<<*space3;
     map4 = *tspace4<<*space4;
+    const unsigned int trank4 = tspace4->rank();
     
     Ref<R12IntsAcc> accum = tform->ints_acc();
     if (accum.null() || !accum->is_committed()) {
@@ -210,8 +234,8 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
       Ref<TwoBodyIntDescr> tbintdescr = corrfactor()->tbintdescr(r12info()->integral(),f12);
       tform->compute(tbintdescr);
     }
-    
-    tim_enter("F12 amplitudes");
+    if (!accum->is_active())
+      accum->activate();
     
     vector<int> proc_with_ints;
     const int nproc_with_ints = tasks_with_ints_(accum,proc_with_ints);
@@ -243,9 +267,10 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
           const unsigned int b = iter24.j();
           const unsigned int aa = map2[a];
           const unsigned int bb = map4[b];
-          const int ab = aa*rank4+bb;
+          const int AB = aa*trank4+bb;
+          const int ab = iter24.ij();
           
-          const double F12_iajb = ij_buf_f12[ab];
+          const double F12_iajb = ij_buf_f12[AB];
           
           if (debug_ > 2) {
             ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
@@ -259,9 +284,9 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
       }
     }
     
-    tim_exit("F12 amplitudes");
   }
-  ExEnv::out0() << decindent << indent << "Exited F12 amplitude evaluator" << endl;
+  ExEnv::out0() << decindent << indent << "Exited F12 amplitude (" << label << ") evaluator" << endl;
+  tim_exit("F12 amplitudes");
 }
 
 ////////////////////////////////////////////////////////////////////////////

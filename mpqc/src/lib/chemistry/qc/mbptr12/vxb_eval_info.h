@@ -56,7 +56,7 @@ class R12IntEvalInfo : virtual public SavableState {
 public:
 
   /// Describes the method of storing transformed MO integrals. See MBPT2_R12.
-  enum StoreMethod { mem_posix = 0, posix = 1, mem_mpi = 2, mpi = 3, mem_only = 4 };
+  typedef MOIntsTransformFactory::StoreMethod StoreMethod;
 
   /// Maintains virtual orbitals and RI space info if VBS != OBS
   typedef struct {
@@ -88,7 +88,7 @@ private:
   bool dynamic_;
   double print_percent_;
   int debug_;
-  StoreMethod ints_method_;
+  StoreMethod::type ints_method_;
   std::string ints_file_;
   Ref<LinearR12::CorrelationFactor> corrfactor_;
   LinearR12::ABSMethod abs_method_;
@@ -146,7 +146,7 @@ public:
   void set_debug_level(int debug) { debug_ = debug; };
   /** Sets the method of storing transformed MO integrals. Default depends on
       how the object was constructed. */
-  void set_ints_method(const StoreMethod method) { ints_method_ = method; };
+  void set_ints_method(const StoreMethod::type method) { ints_method_ = method; };
   /** Sets name of the file used to store transformed integrals.
       Default depends on how the object was constructed. */
   void set_ints_file(const std::string& filename) { ints_file_ = filename; };
@@ -173,7 +173,7 @@ public:
   bool dynamic() const { return dynamic_; };
   double print_percent() const { return print_percent_; };
   int debug_level() const { return debug_; };
-  const StoreMethod ints_method() const { return ints_method_; };
+  const StoreMethod::type ints_method() const { return ints_method_; };
   const std::string& ints_file() const;
   const size_t memory() const { return memory_; };
 

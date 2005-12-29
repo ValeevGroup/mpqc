@@ -87,6 +87,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
 
   tfactory_ = new MOIntsTransformFactory(integral(),refinfo()->orbs(Alpha));
   tfactory_->set_memory(memory_);
+  tfactory_->set_ints_method(ints_method_);
   tfactory_->set_file_prefix(ints_file_);
 }
 
@@ -104,7 +105,7 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
-  int ints_method; si.get(ints_method); ints_method_ = (StoreMethod) ints_method;
+  int ints_method; si.get(ints_method); ints_method_ = static_cast<StoreMethod::type>(ints_method);
   si.get(ints_file_);
 
   double memory; si.get(memory); memory_ = (size_t) memory;

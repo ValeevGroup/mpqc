@@ -91,7 +91,7 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
   si.get(debug_);
   int dynamic; si.get(dynamic); dynamic_ = (bool) dynamic;
   si.get(print_percent_);
-  int ints_method; si.get(ints_method); ints_method_ = (MOIntsTransformFactory::StoreMethod) ints_method;
+  int ints_method; si.get(ints_method); ints_method_ = static_cast<MOIntsTransformFactory::StoreMethod::type>(ints_method);
   si.get(file_prefix_);
 }
 

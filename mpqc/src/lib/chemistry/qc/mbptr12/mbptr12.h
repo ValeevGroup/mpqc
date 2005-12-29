@@ -83,7 +83,7 @@ class MBPT2_R12: public MBPT2 {
     Ref<LinearR12::CorrelationFactor> corrfactor_;
     LinearR12::StandardApproximation stdapprox_;
     LinearR12::ABSMethod abs_method_;
-    R12IntEvalInfo::StoreMethod r12ints_method_;
+    R12IntEvalInfo::StoreMethod::type r12ints_method_;
     std::string r12ints_file_;
     bool gbc_;
     bool ebc_;
@@ -253,7 +253,7 @@ class MBPT2_R12: public MBPT2 {
     LinearR12::ABSMethod abs_method() const;
     LinearR12::StandardApproximation stdapprox() const;
     bool spinadapted() const;
-    R12IntEvalInfo::StoreMethod r12ints_method() const;
+    R12IntEvalInfo::StoreMethod::type r12ints_method() const;
     const std::string& r12ints_file() const;
 
     double corr_energy();

@@ -73,7 +73,7 @@ MOIntsTransformFactory::MOIntsTransformFactory(const Ref<Integral>& integral,
   debug_ = 0;
   dynamic_ = false;
   print_percent_ = 10.0;
-  ints_method_ = mem_posix;
+  ints_method_ = StoreMethod::mem_posix;
   file_prefix_ = "/tmp/moints";
 }
 
@@ -93,7 +93,7 @@ MOIntsTransformFactory::MOIntsTransformFactory(StateIn& si) : SavableState(si)
   si.get(debug_);
   int dynamic; si.get(dynamic); dynamic_ = (bool) dynamic;
   si.get(print_percent_);
-  int ints_method; si.get(ints_method); ints_method_ = (StoreMethod) ints_method;
+  int ints_method; si.get(ints_method); ints_method_ = static_cast<StoreMethod::type>(ints_method);
   si.get(file_prefix_);
 }
 

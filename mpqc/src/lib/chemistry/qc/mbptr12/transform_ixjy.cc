@@ -144,33 +144,33 @@ TwoBodyMOIntsTransform_ixjy::init_acc()
 
   switch (ints_method_) {
 
-  case MOIntsTransformFactory::mem_only:
+  case MOIntsTransformFactory::StoreMethod::mem_only:
     if (npass_ > 1)
       throw std::runtime_error("TwoBodyMOIntsTransform_ixjy::init_acc() -- cannot use MemoryGrp-based accumulator in multi-pass transformations");
     ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank());  // Hack to avoid using nfzc and nocc
     break;
 
-  case MOIntsTransformFactory::mem_posix:
+  case MOIntsTransformFactory::StoreMethod::mem_posix:
     if (npass_ == 1) {
       ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank());
       break;
     }
     // else use the next case
       
-  case MOIntsTransformFactory::posix:
+  case MOIntsTransformFactory::StoreMethod::posix:
     ints_acc_ = new R12IntsAcc_Node0File(mem_, (file_prefix_+"."+name_).c_str(), num_te_types_,
                                          space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank());
     break;
 
 #if HAVE_MPIIO
-  case MOIntsTransformFactory::mem_mpi:
+  case MOIntsTransformFactory::StoreMethod::mem_mpi:
     if (npass_ == 1) {
       ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank());
       break;
     }
     // else use the next case
 
-  case MOIntsTransformFactory::mpi:
+  case MOIntsTransformFactory::StoreMethod::mpi:
     ints_acc_ = new R12IntsAcc_MPIIOFile_Ind(mem_, (file_prefix_+"."+name_).c_str(), num_te_types_,
                                              space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank());
     break;

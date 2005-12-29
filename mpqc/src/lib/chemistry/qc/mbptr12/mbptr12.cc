@@ -81,7 +81,8 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   if (s.version(::class_desc<MBPT2_R12>()) >= 4) {
     int include_mp1; s.get(include_mp1); include_mp1_ = static_cast<bool>(include_mp1);
   }
-  int r12ints_method; s.get(r12ints_method); r12ints_method_ = (R12IntEvalInfo::StoreMethod) r12ints_method;
+  int r12ints_method; s.get(r12ints_method);
+    r12ints_method_ = static_cast<R12IntEvalInfo::StoreMethod::type>(r12ints_method);
   s.get(r12ints_file_);
   s.get(mp2_corr_energy_);
   s.get(r12_corr_energy_);
@@ -260,7 +261,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   // Determine how to store MO integrals
   char *r12ints_str = keyval->pcharvalue("r12ints",KeyValValuepchar("mem-posix"));
   if (!strcmp(r12ints_str,"mem")) {
-    r12ints_method_ = R12IntEvalInfo::mem_only;
+    r12ints_method_ = R12IntEvalInfo::StoreMethod::mem_only;
   }
 #if HAVE_MPIIO
   else if (!strcmp(r12ints_str,"mem-mpi")) {
@@ -276,10 +277,10 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   }
 #endif
   else if (!strcmp(r12ints_str,"mem-posix")) {
-    r12ints_method_ = R12IntEvalInfo::mem_posix;
+    r12ints_method_ = R12IntEvalInfo::StoreMethod::mem_posix;
   }
   else if (!strcmp(r12ints_str,"posix")) {
-    r12ints_method_ = R12IntEvalInfo::posix;
+    r12ints_method_ = R12IntEvalInfo::StoreMethod::posix;
   }
   else {
     delete[] r12ints_str;
@@ -290,14 +291,14 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   // Make sure that integrals storage method is compatible with standard approximation
   // If it's a MP2-R12/B calculation or EBC or GBC are not assumed then must use disk
   const bool must_use_disk = (!gbc_ || !ebc_ || stdapprox_ == LinearR12::StdApprox_B);
-  if (must_use_disk && r12ints_method_ == R12IntEvalInfo::mem_only)
+  if (must_use_disk && r12ints_method_ == R12IntEvalInfo::StoreMethod::mem_only)
     throw std::runtime_error("MBPT2_R12::MBPT2_R12 -- r12ints=mem is only possible for MP2-R12/A and MP2-R12/A' (GBC+EBC) methods");
   if (must_use_disk) {
-    if (r12ints_method_ == R12IntEvalInfo::mem_posix)
-      r12ints_method_ = R12IntEvalInfo::posix;
+    if (r12ints_method_ == R12IntEvalInfo::StoreMethod::mem_posix)
+      r12ints_method_ = R12IntEvalInfo::StoreMethod::posix;
 #if HAVE_MPIIO
-    if (r12ints_method_ == R12IntEvalInfo::mem_mpi)
-      r12ints_method_ = R12IntEvalInfo::mpi;
+    if (r12ints_method_ == R12IntEvalInfo::StoreMethod::mem_mpi)
+      r12ints_method_ = R12IntEvalInfo::StoreMethod::mpi;
 #endif
   }
 
@@ -389,25 +390,24 @@ MBPT2_R12::print(ostream&o) const
   if (!vir_basis_->equiv(basis()))
     o << indent << "Compute MP1 energy: " << (include_mp1_ ? "true" : "false") << endl;
 
-  char* r12ints_str;
+  std::string r12ints_str;
   switch (r12ints_method_) {
-  case R12IntEvalInfo::mem_only:
-    r12ints_str = strdup("mem"); break;
-  case R12IntEvalInfo::mem_posix:
-    r12ints_str = strdup("mem_posix"); break;
-  case R12IntEvalInfo::posix:
-    r12ints_str = strdup("posix"); break;
+  case R12IntEvalInfo::StoreMethod::mem_only:
+    r12ints_str = "mem"; break;
+  case R12IntEvalInfo::StoreMethod::mem_posix:
+    r12ints_str = "mem_posix"; break;
+  case R12IntEvalInfo::StoreMethod::posix:
+    r12ints_str = "posix"; break;
 #if HAVE_MPIIO
-  case R12IntEvalInfo::mem_mpi:
-    r12ints_str = strdup("mem-mpi"); break;
-  case R12IntEvalInfo::mpi:
-    r12ints_str = strdup("mpi"); break;
+  case R12IntEvalInfo::StoreMethod::mem_mpi:
+    r12ints_str = "mem-mpi"; break;
+  case R12IntEvalInfo::StoreMethod::mpi:
+    r12ints_str = "mpi"; break;
 #endif
   default:
     throw std::runtime_error("MBPT2_R12::print -- invalid value of r12ints_method_");
   }
   o << indent << "How to Store Transformed Integrals: " << r12ints_str << endl << endl;
-  free(r12ints_str);
   o << indent << "Transformed Integrals file suffix: " << r12ints_file_ << endl << endl;
   o << indent << "Auxiliary Basis Set (ABS):" << endl;
   o << incindent; aux_basis_->print(o); o << decindent << endl;
@@ -548,7 +548,7 @@ MBPT2_R12::spinadapted() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-R12IntEvalInfo::StoreMethod
+R12IntEvalInfo::StoreMethod::type
 MBPT2_R12::r12ints_method() const
 {
   return r12ints_method_;

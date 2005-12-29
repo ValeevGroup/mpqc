@@ -93,7 +93,7 @@ protected:
   double print_percent_;
   DistShellPair::SharedData spdata_;
   int debug_;
-  MOIntsTransformFactory::StoreMethod ints_method_;
+  MOIntsTransformFactory::StoreMethod::type ints_method_;
   std::string file_prefix_;
 
   // These variables are never saved but computed every time in case environment

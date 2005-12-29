@@ -88,7 +88,6 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
   }
   catch (TransformNotFound& ex) {
     Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
-    tfactory->set_ints_method((MOIntsTransformFactory::StoreMethod)r12info()->ints_method());
     tfactory->set_spaces(occ1_act,xspace,occ2_act,yspace);
     ixjy_tform = tfactory->twobody_transform_13(tform_name);
   }

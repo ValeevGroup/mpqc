@@ -759,7 +759,6 @@ void
 R12IntEval::init_tforms_()
 {
   Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
-  tfactory->set_ints_method((MOIntsTransformFactory::StoreMethod)r12info_->ints_method());
 
   if (!r12info()->refinfo()->ref()->spin_polarized()) {
     Ref<MOIndexSpace> occ_space = r12info()->refinfo()->docc();

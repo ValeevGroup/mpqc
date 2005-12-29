@@ -208,11 +208,6 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
     // Only need 1/r12 integrals, hence doesn't matter which f12 to use
     tform = get_tform_(transform_label(space1,space2,space3,space4,0));
   }
-  else {
-    if (debug_ > 0)
-      ExEnv::out0() << "Using transform " << tform->name() << std::endl;
-  }
-  
   
   //
   // Initialize spaces and maps
@@ -263,7 +258,8 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
     Ref<TwoBodyIntDescr> tbintdescr = new TwoBodyIntDescrERI(r12info()->integral());
     tform->compute(tbintdescr);
   }
-  accum->activate();
+  if (!accum->is_active())
+    accum->activate();
   
   tim_enter("MP2 pair energies");
   std::ostringstream oss;
@@ -273,6 +269,8 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
   ExEnv::out0() << endl << indent
 	       << "Entered MP2 pair energies (" << label << ") evaluator" << std::endl;
   ExEnv::out0() << incindent;
+  if (debug_ > 0)
+    ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
   
   vector<int> proc_with_ints;
   const int nproc_with_ints = tasks_with_ints_(accum,proc_with_ints);

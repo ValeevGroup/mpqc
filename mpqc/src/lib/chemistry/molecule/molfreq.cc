@@ -30,7 +30,7 @@
 #endif
 
 #include <util/misc/math.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <util/group/message.h>
@@ -249,7 +249,7 @@ MolecularFrequencies::thermochemistry(int degeneracy, double T, double P)
   const double k  = 1.380658e-23;  // Boltzmann's constant (J/K)
   const double h  = 6.6260755e-34; // Planck's constant (J*s)
   const double R  = 8.314510;      // gas constant (J/(mol*K))  (R=k*NA)
-  const double pi = 3.14159265358979323846;
+  const double pi = M_PI;
   const double hartree_to_hertz = 6.5796838e15; // (hertz/hartree)
 
   const double hartree_to_joule = 4.3597482e-18; // (J/hartree)

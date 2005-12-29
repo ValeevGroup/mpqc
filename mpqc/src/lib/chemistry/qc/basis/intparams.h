@@ -29,6 +29,8 @@
 #pragma interface
 #endif
 
+#include <vector>
+#include <utility>
 #include <util/ref/ref.h>
 
 #ifndef _chemistry_qc_basis_intparams_h
@@ -43,9 +45,9 @@ namespace sc {
   */
   class IntParams : public RefCount {
     public:
-      IntParams(unsigned int nparams);
+      IntParams(unsigned int nparams=0);
       virtual ~IntParams();
-    
+      
       unsigned int nparams() const;
       
     private:

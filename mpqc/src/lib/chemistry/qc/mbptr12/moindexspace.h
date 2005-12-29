@@ -33,6 +33,7 @@
 #define _chemistry_qc_mbptr12_moindexspace_h
 
 #include <vector>
+#include <stdexcept>
 #include <util/ref/ref.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
@@ -62,41 +63,40 @@ public:
 private:
 
   /// max length of string returned by id()
-  static const int max_id_length = 10;
+  static const unsigned int max_id_length = 10;
   std::string id_;                        // see documentation for id()
   std::string name_;                      // String identifier for the orbital space
   
   Ref<GaussianBasisSet> basis_;    // The AO basis
+  Ref<Integral> integral_;
   RefSCMatrix coefs_;              // AO-> MO transformation coefficients (nao by nmo matrix)
   RefDiagSCMatrix evals_;          // "eigenvalues" associated with the MOs
   RefSCDimension modim_;           // The MO dimension
-  vector<int> mosym_;              // irrep of each orbital
+  std::vector<unsigned int> mosym_;              // irrep of each orbital
 
-  int rank_;          // The rank of this space
-  int full_rank_;     // Rank of the full space, i.e. number of MOs
-  int nblocks_;       // Number of blocks
-  vector<int> nmo_;        // Number of MOs in each block
-  vector<int> offsets_;    // Index of the first MO in each block relative to the first MO of that block in full space
-  vector<int> map_to_full_space_;  // Full-space index
+  unsigned int rank_;          // The rank of this space
+  unsigned int nblocks_;       // Number of blocks
+  vector<unsigned int> nmo_;        // Number of MOs in each block
 
   IndexOrder moorder_;
 
   // checks mosym_ for irrep indices outside of the allowed range
   void check_mosym() const;
 
-  // determines offsets_ and nmo_ from nfzc, nfzv, and evals
-  void frozen_to_blockinfo(const int nfzc, const int nfzv, const RefDiagSCMatrix& evals);
+  // determines nmo_ from nfzc, nfzv, and evals and returns offsets for each block
+  std::vector<unsigned int> frozen_to_blockinfo(unsigned int nfzc, unsigned int nfzv,
+                                                const RefDiagSCMatrix& evals);
 
   // computes coefficient matrix from the full coefficient matrix. If moorder_ == energy
   // then the MO vectors will be sorted by their eigenvalues
-  void full_coefs_to_coefs(const RefSCMatrix& full_coefs, const RefDiagSCMatrix& evals);
+  void full_coefs_to_coefs(const RefSCMatrix& full_coefs, const RefDiagSCMatrix& evals,
+                           const std::vector<unsigned int>& offsets);
 
   // initialize the object
   void init();
   
   // sorting functions borrowed from mbpt.cc
-  static void dquicksort(double *item,int *index,int n);
-  static void dqs(double *item,int *index,int left,int right);
+  static void dquicksort(double *item,unsigned int *index,unsigned int n);
   
 
 public:
@@ -111,34 +111,35 @@ public:
       \param full_coefs -- symmetry-blocked transformation coefficient matrix
       (AO by MO) for the full space
       \param basis -- basis set
+      \param integral -- integral factory
       \param offsets -- block offsets
       \param nmopi -- new block sizes
       \param moorder -- specifies new ordering of vectors
       \param evals -- used to sort the vectors
       */
-  MOIndexSpace(const std::string& id, const std::string& name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet>& basis,
-               const vector<int>& offsets, const vector<int>& nmopi, const IndexOrder& moorder = symmetry,
+  MOIndexSpace(const std::string& id, const std::string& name, const RefSCMatrix& full_coefs,
+               const Ref<GaussianBasisSet>& basis, const Ref<Integral>& integral,
+               const std::vector<unsigned int>& offsets, const std::vector<unsigned int>& nmopi,
+               const IndexOrder& moorder = symmetry,
                const RefDiagSCMatrix& evals = 0);
   /** This constructor should be used when the MOIndexSpace object is a subspace of a full orbital space.
       Similarly to the previous constructor, it constructs an MOIndexSpace object using a symmetry-blocked
       transformation coefficient matrix (AO by MO) for the full space,
       basis set, "eigenvalues" and the number of orbitals with lowest (nfzc) and highest (nfzv) eigenvalues
       to be dropped. The orbitals in the constructed space are ordered by energy. */
-  MOIndexSpace(const std::string& id, const std::string& name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet>& basis,
-               const RefDiagSCMatrix& evals, int nfzc, int nfzv, const IndexOrder& moorder = energy);
+  MOIndexSpace(const std::string& id, const std::string& name, const RefSCMatrix& full_coefs,
+               const Ref<GaussianBasisSet>& basis, const Ref<Integral>& integral,
+               const RefDiagSCMatrix& evals, unsigned int nfzc, unsigned int nfzv,
+               const IndexOrder& moorder = energy);
   /** This constructor should be used when the MOIndexSpace object is the full orbital space.
       The orbitals will be symmetry-blocked. */
-  MOIndexSpace(const std::string& id, const std::string& name, const RefSCMatrix& full_coefs, const Ref<GaussianBasisSet>& basis);
+  MOIndexSpace(const std::string& id, const std::string& name, const RefSCMatrix& full_coefs,
+               const Ref<GaussianBasisSet>& basis, const Ref<Integral>& integral);
 
-  /* This constructor should be used when the MOIndexSpace object is the full orbital space.
-     Constructs an MOIndexSpace object using a non-blocked transformation coefficient matrix
-     (AO by MO) for this space, basis set, and optional order info and MO irreps. */
-  /*MOIndexSpace(std::string name, const RefSCMatrix& coefs, const Ref<GaussianBasisSet> basis,
-               IndexOrder moorder = undefined, const vector<int>& mosym = 0,
-               const RefDiagSCMatrix& evals = 0);*/
   /** This constructor is a true hack introduced because I have no idea how to construct what I need.
-      It will copy orig_space but replace it's coefs with new_coefs, and its basis with new_basis. */
-  MOIndexSpace(const std::string& id, const std::string& name, const Ref<MOIndexSpace>& orig_space, const RefSCMatrix& new_coefs,
+      It will copy orig_space but replace its coefs with new_coefs, and its basis with new_basis. */
+  MOIndexSpace(const std::string& id, const std::string& name,
+               const Ref<MOIndexSpace>& orig_space, const RefSCMatrix& new_coefs,
                const Ref<GaussianBasisSet>& new_basis);
   ~MOIndexSpace();
 
@@ -158,26 +159,22 @@ public:
   const std::string& id() const;
   /// Returns the AO basis set
   const Ref<GaussianBasisSet>& basis() const;  
+  /// Returns the integral factory used to instantiate the coefficient matrix
+  const Ref<Integral>& integral() const;  
   /// Returns the coefficient matrix
   const RefSCMatrix& coefs() const;
   /// Returns the "eigenvalues" matrix
   const RefDiagSCMatrix& evals() const;
   /// Returns the orbital symmetry array
-  const vector<int>& mosym() const;
+  const vector<unsigned int>& mosym() const;
   /// Returns the order of the orbitals
   IndexOrder moorder() const;
   /// Returns the rank of the space
-  int rank() const;
-  /// Returns the rank of the full space
-  int full_rank() const;
+  unsigned int rank() const;
   /// Returns the number of blocks
-  int nblocks() const;
+  unsigned int nblocks() const;
   /// Returns the number of orbitals in each block
-  const vector<int>& nmo() const;
-  /// Returns the full-space index of the first orbital in each block
-  const vector<int>& offsets() const;
-  /// Returns the full-space index
-  int to_full_space(const int i) const;
+  const vector<unsigned int>& nmo() const;
 
   /// Returns how much "significant" (i.e. O^2) memory this object uses
   size_t memory_in_use() const;
@@ -189,13 +186,28 @@ public:
 
 };
 
+class CannotConstructMap: public std::logic_error {
+  public:
+  CannotConstructMap() : std::logic_error("Cannot map given MOIndexSpaces") {}
+};
+
+/** s2<<s1 returns map from s1 to s2. Throws CannotConstructMap if map cannot be constructed.
+    Map can be constructed if and only if:
+    1) s1.basis() == s2.basis()
+    2) s1.integral() == s2.integral()
+    2) s1.rank() <= s2.rank()
+    3) for every MO in s1 there is an identical (for now, including phase) MO in s2
+  */
+std::vector<unsigned int>
+operator<<(const MOIndexSpace& space2, const MOIndexSpace& space1);
+
 }
 
 #endif
 
 // Local Variables:
 // mode: c++
-// c-file-style: "CLJ"
+// c-file-style: "ETS"
 // End:
 
 

@@ -15,6 +15,7 @@ initialized in your <tt>main</tt> subroutine.
   <li> \ref scinit
   <li> \ref devsamp
   <li> \ref scexcept
+  <li> \ref devcheck
 </ul>
 
 \section scconfig The sc-config Program
@@ -66,7 +67,7 @@ call or the nodes will print redundant information.  The
   SCFormIO::init_mp(myproc);
 </pre>
 
-This segment of code sets up an object object to provide multi-threading:
+This segment of code sets up an object to provide multi-threading:
 
 <pre>
   RefThreadGrp thread = ThreadGrp::initial_threadgrp(argc, argv);
@@ -272,7 +273,9 @@ XYZ::update()
 </pre>
 
 The first argument to the exception class is a brief description of the
-error.  How can be given will be shown below.  The next two arguments are
+error.  Additional information can be provided,
+see SCException::elaborate() description below.
+The next two arguments are
 the filename and line number.  The C preprocessor provides these for you
 with the __FILE__ and __LINE__ macros.  The next argument is specific to
 the MaxIterExceeded exception; it is the maximum number of iterations.
@@ -329,7 +332,7 @@ is thrown and most debugging information is lost.  To work around this
 problem, a breakpoint can be set in code that will be reached only in an
 exception, and will be run before the stack unwind begins.  A useful place
 to do this when GCC is used as the compiler is in the routine
-__cxx_allocate__exception().  So, in gdb, the following could be done:
+__cxa_allocate_exception().  So, in gdb, the following could be done:
 
 <pre>
 $ gdb ./scextest
@@ -351,5 +354,45 @@ Breakpoint 2, 0x40582d46 in __cxa_allocate_exception ()
 
 Giving gdb "b main" followed by "run" was required before gdb could find the
 __cxa_allocate_exception symbol.
+
+\section devcheck Adding Test Cases to the Verification Suite
+
+There are two ways to test an MPQC build.  The <tt>testbuild</tt> and
+<tt>testrun</tt> make targets can be used to run test programs in
+various library directories, and the <tt>check</tt> and related make
+targets can be used to run MPQC on sets of input files.  See
+\ref mpqcval for more information about how to run the tests.
+
+Test programs can be added to the library directories by providing a source
+file with a main routine.  The set of test programs that is to be built and
+run by <tt>testbuild</tt> and <tt>testrun</tt>, respectively, is given by
+the <tt>TESTPROGS</tt> variable in the library's <tt>Makefile</tt>.  It may
+be necessary for an explicit rule to be given for building the test program
+to ensure that necessary libraries are linked in.  If a file named after
+the test program with a <tt>.out</tt> suffix is found in the source
+directory, then <tt>testrun</tt> fail if the command's output differs from
+that file.  Care must be taken to ensure that the output is architecture
+independent in this case.  Otherwise, <tt>testrun</tt> will fail only if
+running the command results in a nonzero return code.
+
+Additional MPQC test inputs can be added in the
+<tt>src/bin/mpqc/validate</tt> directory.  These inputs can be provided in
+one of two ways.  An input which is used to automatically generate multiple
+test cases can be written (with a <tt>.qci</tt> suffix), or a subdirectory
+with each input can be made.  See <tt>Makefile</tt>, <tt>basis1.qci</tt>,
+and <tt>input</tt> in the <tt>src/bin/mpqc/validate</tt> directory for
+examples.
+
+After you have added new inputs and modified the Makefile, change into the
+<tt>src/bin/mpqc/validate</tt> subdirectory of your object directory (where
+you compiled MPQC) and type <tt>make inputs</tt>.  This will create a
+<tt>input</tt> subdirectory containing MPQC input files with a
+<tt>.in</tt> suffix.  Files ending with a <tt>.qci</tt> suffix will also be
+placed in the <tt>input</tt> directory.  These contain a description of the
+calculation that is used by the utility program that checks the results of
+the validation suite.  Both the <tt>.in</tt> and <tt>.qci</tt> files for the
+new test cases must be copied into the <tt>ref</tt> directory in the source
+tree.  Note that inputs that are not useful in your build environment are
+not created by <tt>make inputs</tt>.
 
 */

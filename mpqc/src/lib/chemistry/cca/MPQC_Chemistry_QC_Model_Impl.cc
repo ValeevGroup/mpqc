@@ -16,6 +16,7 @@
 static int ex_counter = 0;
 
 #include "Chemistry_Chemistry_Molecule.hh"
+//#include <util/class/class.h>
 #include <iostream>
 using namespace std;
 
@@ -70,10 +71,19 @@ MPQC::Chemistry_QC_Model_impl::initialize_parsedkeyval (
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model.initialize_parsedkeyval)
+
   sc::Ref<sc::ParsedKeyVal> kv = new sc::ParsedKeyVal();
+  //sc::ClassDesc::list_all_classes();
   kv->parse_string(input.c_str());
-  sc::Ref<sc::DescribedClass> dc = kv->describedclassvalue(keyword.c_str());
+  sc::Ref<sc::DescribedClass> dc;
+  try {
+    dc = kv->describedclassvalue(keyword.c_str());
+  }
+  catch (std::exception &e) {
+    e.what();
+  }
   wfn_ = dynamic_cast<sc::Wavefunction*>(dc.pointer());
+
   // DO-NOT-DELETE splicer.end(MPQC.Chemistry_QC_Model.initialize_parsedkeyval)
 }
 
@@ -156,6 +166,7 @@ throw ()
   // DO-NOT-DELETE splicer.begin(MPQC.Chemistry_QC_Model.set_molecule)
   molecule_ = molecule;
   double conv = molecule_.get_units().convert_to("bohr");
+  wfn_->molecule()->print();
   sc::Molecule* scMol = wfn_->molecule().pointer();
   for( int i=0; i<molecule_.get_n_atom(); ++i)
      for( int j=0; j<3; ++j) 

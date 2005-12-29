@@ -71,10 +71,6 @@ class IntegralLibint2 : public Integral {
 				const Ref<GaussianBasisSet> &b2 = 0,
 				const Ref<GaussianBasisSet> &b3 = 0,
 				const Ref<GaussianBasisSet> &b4 = 0);
-    size_t storage_required_grt(const Ref<GaussianBasisSet> &b1,
-				const Ref<GaussianBasisSet> &b2 = 0,
-				const Ref<GaussianBasisSet> &b3 = 0,
-				const Ref<GaussianBasisSet> &b4 = 0);
     
     CartesianIter * new_cartesian_iter(int);
     RedundantCartesianIter * new_redundant_cartesian_iter(int);
@@ -111,11 +107,7 @@ class IntegralLibint2 : public Integral {
                                      
     Ref<TwoBodyInt> electron_repulsion();
 
-    Ref<TwoBodyInt> grt(const Ref<IntParams>& p);
-
-    Ref<TwoBodyInt> g12(const Ref<IntParams>& p);
-
-    Ref<TwoBodyDerivInt> electron_repulsion_deriv();
+    Ref<TwoBodyInt> g12(const Ref<IntParamsG12>& p);
 
     void set_basis(const Ref<GaussianBasisSet> &b1,
                    const Ref<GaussianBasisSet> &b2 = 0,

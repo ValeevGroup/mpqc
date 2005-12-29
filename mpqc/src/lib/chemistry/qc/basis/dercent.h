@@ -46,32 +46,59 @@ class DerivCenters {
     int omitted_center_;
     int omitted_atom_;
   public:
-    /** These are used by the Integral specializations to
-        initializes the DerivCenters structure. */
+    /// Construct a new, empty DerivCenters object.
     DerivCenters();
+
+    /// @name Routines to Modify DerivCenters
+    //@{
     /// Clear the list of centers.
     void clear();
-    /// Add a center for which derivatives will be computed.
-    void add_center(int center, const Ref<GaussianBasisSet> &, int shell);
-    /// Add a center for which derivatives will not be computed.
-    void add_omitted(int center, const Ref<GaussianBasisSet> &, int shell);
-    /// Add a center for which derivatives will be computed.
+    /** Add a center using a basis set and the shell number.
+     * @param center The center number (between 0 and 3 inclusive).
+     * @param bs     The basis set for this center.
+     * @param shell  The shell number for this center.
+     */
+    void add_center(int center, const Ref<GaussianBasisSet> &bs, int shell);
+    /** Add a center using the atom number.
+     * @param center The center number (between 0 and 3 inclusive).
+     * @param atom   The center within a GaussianBasisSet.
+     */
     void add_center(int center, int atom);
-    /// Add a center for which derivatives will not be computed.
+    /** Add the omitted center using a basis set and the shell number.
+     * @param center The center number (between 0 and 3 inclusive).
+     * @param bs     The basis set for this center.
+     * @param shell  The shell number for this center.
+     */
+    void add_omitted(int center, const Ref<GaussianBasisSet> &bs, int shell);
+    /** Add the omitted center using the atom number.
+     * @param center The center number (between 0 and 3 inclusive).
+     * @param atom   The center within a GaussianBasisSet.
+     */
     void add_omitted(int center, int atom);
+    //@}
 
-    /// The number of unique centers minus one.
+    /// @name Routines to Query DerivCenters
+    //@{
+    /// The number of centers for which derivatives have been computed.
     int n() const { return ncenter_; }
-    /// The center number.
+    /** @param i The computed center index (between 0 and n() - 1, inclusive).
+     *  @return The center number (between 0 and 3, inclusive).
+     */
     int center(int i) const { return center_[i]; }
-    /// The atom number.
+    /** @param i The computed center index (between 0 and n() - 1, inclusive).
+     *  @return The atom number.
+     */
     int atom(int i) const { return atom_[i]; }
-    /// The center that is omitted from the integral buffer.
-    int omitted_center() const { return omitted_center_; }
-    /// Returns 1 if there is an omitted center.
+    /** @return 1 if there is an omitted center, otherwise 0.
+     */
     int has_omitted_center() const { return omitted_center_ >= 0; }
-    /// The atom that is omitted from the integral buffer.
+    /** @return The center for which integrals where not computed.
+     */
+    int omitted_center() const { return omitted_center_; }
+    /** @return The atom that is omitted from the integral buffer.
+     */
     int omitted_atom() const { return omitted_atom_; }
+    //}@
 };
 
 }

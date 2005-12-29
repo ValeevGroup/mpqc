@@ -57,44 +57,45 @@ class R12IntEval : virtual public SavableState {
 
   RefSCMatrix V_[NSpinCases2];
   RefSCMatrix X_[NSpinCases2];
+  // Note that intermediate B is symmetric but is stored as a full matrix to simplify the code
+  // that computes asymmetric form of B
   RefSCMatrix B_[NSpinCases2];
   RefSCMatrix A_[NSpinCases2];
+  RefSCMatrix Ac_[NSpinCases2];
   RefSCMatrix T2_[NSpinCases2];
+  RefSCMatrix F12_[NSpinCases2];
   RefSCVector emp2pair_[NSpinCases2];
   RefSCDimension dim_oo_[NSpinCases2];
   RefSCDimension dim_vv_[NSpinCases2];
   RefSCDimension dim_f12_[NSpinCases2];
   
-  // Note that intermediate B is symmetric but is stored as a full matrix to simplify the code
-  // that computes asymmetric form of B
-  RefSCMatrix Vaa_, Vab_, Vbb_;
-  RefSCMatrix Xaa_, Xab_, Xbb_;
-  RefSCMatrix Baa_, Bab_, Bbb_;
-  RefSCMatrix Aaa_, Aab_, Abb_;
-  RefSCMatrix T2aa_, T2ab_, T2bb_;
+#if 0
   RefSCMatrix Raa_, Rab_;    // Not sure if I'll compute and keep these explicitly later
-  Ref<R12Amplitudes> Amps_;  // Amplitudes of various R12-contributed terms in pair functions
+#endif
+  //Ref<F12Amplitudes> Amps_;  // First-order amplitudes of various contributions to the pair functions
+#if 0
   RefSCVector emp2pair_aa_, emp2pair_ab_, emp2pair_bb_;
   RefSCDimension dim_ij_aa_, dim_ij_ab_, dim_ij_bb_;
-  RefSCDimension dim_ij_s_, dim_ij_t_;
   RefSCDimension dim_ab_aa_, dim_ab_ab_, dim_ab_bb_;
+#endif
+  RefSCDimension dim_ij_s_, dim_ij_t_;
 
   bool gbc_;
   bool ebc_;
   Ref<LinearR12::CorrelationFactor> corrfactor_;
-  double corrparam_;
-  Ref<IntParams> intparams_;
   LinearR12::ABSMethod abs_method_;
   LinearR12::StandardApproximation stdapprox_;
   bool spinadapted_;
   bool include_mp1_;
+  /// should I follow Klopper-Samson approach in the intermediates formulation for the EBC-free method?
+  bool follow_ks_ebcfree_;
   int debug_;
 
   // Map to TwoBodyMOIntsTransform objects that have been computed previously
   typedef std::map<std::string, Ref<TwoBodyMOIntsTransform> > TformMap;
   TformMap tform_map_;
-  // Returns pointer to the appropriate transform.
-  // If the transform is not found then throw runtime_error
+  /** Returns an already created transform.
+      If the transform is not found then throw TransformNotFound */
   Ref<TwoBodyMOIntsTransform> get_tform_(const std::string&);
   /// Generates canonical id for transform. f12 is the index of the correlation function
   std::string transform_label(const Ref<MOIndexSpace>& space1,
@@ -136,15 +137,17 @@ class R12IntEval : virtual public SavableState {
                           const Ref<MOIndexSpace>& space2,
                           const Ref<MOIndexSpace>& space3,
                           const Ref<MOIndexSpace>& space4);
-  /// Compute the Fock matrix between 2 spaces
+  /** Compute the Fock matrix between 2 spaces. scale_J and scale_K are used to scale Coulomb
+      and exchange contributions */
   RefSCMatrix fock_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
-                    const Ref<MOIndexSpace>& ket_space);
+                    const Ref<MOIndexSpace>& ket_space, double scale_J = 1.0, double scale_K = 1.0);
   /// Compute the coulomb matrix between 2 spaces
   RefSCMatrix coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
                        const Ref<MOIndexSpace>& ket_space);
   /// Compute the exchange matrix between 2 spaces
   RefSCMatrix exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
                         const Ref<MOIndexSpace>& ket_space);
+
   /// Checkpoint the top-level molecular energy
   void checkpoint_() const;
 
@@ -164,17 +167,49 @@ class R12IntEval : virtual public SavableState {
 
   /// Compute MP2 pair energies of spin case S
   void compute_mp2_pair_energies_(SpinCase2 S);
+  /// Compute MP2 pair energies of spin case S using < space1 space3|| space2 space4> integrals
+  void compute_mp2_pair_energies_(RefSCVector& emp2pair,
+                                  SpinCase2 S,
+                                  const Ref<MOIndexSpace>& space1,
+                                  const Ref<MOIndexSpace>& space2,
+                                  const Ref<MOIndexSpace>& space3,
+                                  const Ref<MOIndexSpace>& space4,
+                                  const Ref<TwoBodyMOIntsTransform>& transform);
   /// Compute VXB intermeds when VBS is not the same as OBS
   void contrib_to_VXB_gebc_vbsneqobs_();
 
   /// Compute A using the "simple" formula obtained using direct substitution alpha'->a'
   void compute_A_simple_();
 
-  /// Compute MP2 T2
-  void compute_T2_();
+  /// Compute A using the standard commutator approach
+  void compute_A_via_commutator_();
 
+  /** Compute T2 amplitude in basis <space1, space3 | space2, space4>.
+      AlphaBeta amplitudes are computed.
+      If tform is not given (it should be!), this function will construct a generic
+      transform. */
+  void compute_T2_(RefSCMatrix& T2,
+                   const Ref<MOIndexSpace>& space1,
+                   const Ref<MOIndexSpace>& space2,
+                   const Ref<MOIndexSpace>& space3,
+                   const Ref<MOIndexSpace>& space4,
+                   const Ref<TwoBodyMOIntsTransform>& tform = 0);
+  /** Compute F12 integrals in basis <space1, space3 | f12 | space2, space4>.
+      Bra (rows) are blocked by correlation function index.
+      AlphaBeta amplitudes are computed.
+      If tform is not given (it should be!), this function will construct a generic
+      transform. */
+  void compute_F12_(RefSCMatrix& F12,
+                   const Ref<MOIndexSpace>& space1,
+                   const Ref<MOIndexSpace>& space2,
+                   const Ref<MOIndexSpace>& space3,
+                   const Ref<MOIndexSpace>& space4,
+                   const std::vector< Ref<TwoBodyMOIntsTransform> >& transforms = std::vector< Ref<TwoBodyMOIntsTransform> >());
+
+#if 0
   /// Compute R "intermediate" (r12 integrals in occ-pair/vir-pair basis)
   void compute_R_();
+#endif
 
   /// Compute A*T2 contribution to V (needed if EBC is not assumed)
   void AT2_contrib_to_V_();
@@ -193,8 +228,10 @@ class R12IntEval : virtual public SavableState {
   /// Compute dual-basis MP1 energy (contribution from singles to HF energy)
   void compute_dualEmp1_();
 
+#if 0
   /// This function computes T2 amplitudes
   void compute_T2_vbsneqobs_();
+#endif
 
   /** New general function to compute <ij|r<sub>12</sub>|pq> integrals. ipjq_tform
       is the source of the integrals.*/
@@ -223,13 +260,20 @@ class R12IntEval : virtual public SavableState {
       collect all contributions to task 0 and zero out the matrix on other tasks,
       otherwise distribute the sum to every task. */
   void globally_sum_intermeds_(bool to_all_tasks = false);
-
+  
 public:
   R12IntEval(StateIn&);
-  R12IntEval(const Ref<R12IntEvalInfo>&, const Ref<LinearR12::CorrelationFactor>& corrfactor,
-             double corrparam, bool gbc = true, bool ebc = true,
+  /** Constructs R12IntEval. If follow_ks_ebcfree is true then follow formalism of Klopper and Samson
+      to compute EBC-free MP2-R12 energy. */
+  R12IntEval(const Ref<R12IntEvalInfo>& info, const Ref<LinearR12::CorrelationFactor>& corrfactor,
+             bool gbc = true, bool ebc = true,
              LinearR12::ABSMethod abs_method = LinearR12::ABS_CABSPlus,
-             LinearR12::StandardApproximation stdapprox = LinearR12::StdApprox_Ap);
+             LinearR12::StandardApproximation stdapprox = LinearR12::StdApprox_Ap,
+             bool follow_ks_ebcfree = false);
+  /*R12IntEval(const Ref<R12IntEvalInfo>& info, bool gbc = true, bool ebc = true,
+             LinearR12::ABSMethod abs_method = LinearR12::ABS_CABSPlus,
+             LinearR12::StandardApproximation stdapprox = LinearR12::StdApprox_Ap,
+             bool follow_ks_ebcfree = false);*/
   ~R12IntEval();
 
   void save_data_state(StateOut&);
@@ -246,16 +290,19 @@ public:
   bool gbc() const { return gbc_; }
   bool ebc() const { return ebc_; }
   LinearR12::StandardApproximation stdapprox() const { return stdapprox_; }
+  bool follow_ks_ebcfree() const { return follow_ks_ebcfree_; }
 
   const Ref<R12IntEvalInfo>& r12info() const;
+#if 0
   RefSCDimension dim_oo_aa() const;
   RefSCDimension dim_oo_ab() const;
   RefSCDimension dim_oo_bb() const;
-  RefSCDimension dim_oo_s() const;
-  RefSCDimension dim_oo_t() const;
   RefSCDimension dim_vv_aa() const;
   RefSCDimension dim_vv_ab() const;
   RefSCDimension dim_vv_bb() const;
+#endif
+  RefSCDimension dim_oo_s() const;
+  RefSCDimension dim_oo_t() const;
   /// Dimension for active-occ/active-occ pairs of spin case S
   RefSCDimension dim_oo(SpinCase2 S) const;
   /// Dimension for active-vir/active-vir pairs of spin case S
@@ -266,6 +313,7 @@ public:
   /// This function causes the intermediate matrices to be computed.
   virtual void compute();
 
+#if 0
   /// Returns alpha-alpha block of the V intermediate matrix.
   RefSCMatrix V_aa();
   /// Returns alpha-alpha block of the X intermediate matrix.
@@ -274,6 +322,8 @@ public:
   RefSymmSCMatrix B_aa();
   /// Returns alpha-alpha block of the A intermediate matrix. Returns 0 if EBC is assumed.
   RefSCMatrix A_aa();
+  /// Returns alpha-alpha block of the A intermediate matrix. Returns 0 if EBC is assumed.
+  RefSCMatrix Ac_aa();
   /// Returns alpha-alpha block of the MP2 T2 matrix. Returns 0 if EBC is assumed.
   RefSCMatrix T2_aa();
   /// Returns alpha-beta block of the V intermediate matrix.
@@ -284,6 +334,8 @@ public:
   RefSymmSCMatrix B_ab();
   /// Returns alpha-beta block of the A intermediate matrix. Returns 0 if EBC is assumed
   RefSCMatrix A_ab();
+  /// Returns alpha-beta block of the A intermediate matrix. Returns 0 if EBC is assumed
+  RefSCMatrix Ac_ab();
   /// Returns alpha-beta block of the MP2 T2 matrix. Returns 0 if EBC is assumed
   RefSCMatrix T2_ab();
   /// Returns beta-beta block of the V intermediate matrix.
@@ -302,8 +354,9 @@ public:
   RefSCVector emp2_ab();
   /// Returns beta-beta MP2 pair energies.
   RefSCVector emp2_bb();
+#endif
   /// Returns amplitudes of pair correlation functions
-  Ref<R12Amplitudes> amps();
+  //Ref<F12Amplitudes> amps();
   
   /// Returns S block of intermediate V
   const RefSCMatrix& V(SpinCase2 S);
@@ -313,8 +366,12 @@ public:
   RefSymmSCMatrix B(SpinCase2 S);
   /// Returns S block of intermediate A
   const RefSCMatrix& A(SpinCase2 S);
+  /// Returns S block of intermediate A computed using commutator method
+  const RefSCMatrix& Ac(SpinCase2 S);
   /// Returns S block of intermediate T2
   const RefSCMatrix& T2(SpinCase2 S);
+  /// Returns S block of intermediate F12
+  const RefSCMatrix& F12(SpinCase2 S);
   /// Returns alpha-alpha MP2 pair energies
   const RefSCVector& emp2(SpinCase2 S);
   /// Returns the eigenvalues of spin case S

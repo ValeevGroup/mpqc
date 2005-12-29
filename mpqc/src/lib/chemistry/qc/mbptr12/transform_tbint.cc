@@ -53,10 +53,9 @@ static ClassDesc TwoBodyMOIntsTransform_cd(
   0, 0, 0);
 
 TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
-                                               const MOIntsTransformFactory::IntegralCallback& callback,
                                                const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                                const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
-  name_(name), factory_(factory), callback_(callback), space1_(space1), space2_(space2), space3_(space3), space4_(space4)
+  name_(name), factory_(factory), space1_(space1), space2_(space2), space3_(space3), space4_(space4)
 {
   mem_ = MemoryGrp::get_default_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();
@@ -408,14 +407,6 @@ TwoBodyMOIntsTransform::check_tbint(const Ref<TwoBodyInt>& tbint) const
   if (num_te_types_ > tbint->num_tbint_types())
     throw AlgorithmException("TwoBodyMOIntsTransform::check_tbint() -- number of integral types supported by \
 current TwoBodyInt is less than\nthe number of types expected by the accumulator",__FILE__,__LINE__);
-}
-
-Ref<TwoBodyInt>
-TwoBodyMOIntsTransform::create_tbint(const Ref<Integral>& integral,
-                                     const IntegralCallback& callback,
-                                     const Ref<IntParams>& params)
-{
-  return ((integral.pointer())->*callback)(params);
 }
 
 /////////////////////////////////////////////////////////////////////////////

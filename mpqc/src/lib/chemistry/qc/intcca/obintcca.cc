@@ -25,8 +25,16 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <chemistry/qc/intcca/obintcca.h>
+#ifdef __GNUG__
+#pragma implementation
+#endif
 
+#include <chemistry/qc/intcca/obintcca.h>
+#include <util/class/scexception.h>
+#include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
+
+using namespace std;
+using namespace Chemistry;
 using namespace Chemistry::QC::GaussianBasis;
 using namespace sc;
 
@@ -75,132 +83,80 @@ OneBodyIntCCA::clone()
 }
 
 // ////////////////////////////////////////////////////////////////////////////
-// // PointChargeIntV3
+// // OneBodyDerivIntCCA
 
-// PointChargeIntV3::PointChargeIntV3(
-//     Integral *integral,
-//     const Ref<GaussianBasisSet>&bs1,
-//     const Ref<GaussianBasisSet>&bs2,
-//     const Ref<PointChargeData>&dat):
-//   OneBodyInt(integral,bs1,bs2),
-//   data_(dat)
-// {
-//   int1ev3_ = new Int1eV3(integral,bs1,bs2,0);
-//   buffer_ = int1ev3_->buffer();
-// }
+OneBodyDerivIntCCA::OneBodyDerivIntCCA(Integral *integral,
+                                       const Ref<GaussianBasisSet>&bs1,
+                                       const Ref<GaussianBasisSet>&bs2,
+                                       IntegralEvaluatorFactory eval_factory,
+                                       bool use_opaque,
+                                       string eval_type ):
+  OneBodyDerivInt(integral,bs1,bs2), eval_factory_(eval_factory),
+  use_opaque_(use_opaque), eval_type_(eval_type)
+{
+  int1ecca_ = new Int1eCCA(integral,bs1,bs2,1,eval_factory,eval_type,use_opaque);
+  buffer_ = int1ecca_->buffer();
+}
 
-// PointChargeIntV3::~PointChargeIntV3()
-// {
-// }
+OneBodyDerivIntCCA::~OneBodyDerivIntCCA()
+{
+}
 
-// void
-// PointChargeIntV3::compute_shell(int i,int j)
-// {
-//   int1ev3_->point_charge(i,j,
-//                          data_->ncharges(),
-//                          data_->charges(),
-//                          data_->positions());
-// }
+void
+OneBodyDerivIntCCA::compute_shell(int i, int j, DerivCenters& c)
+{
+  c.clear();
+  c.add_center(0,basis1(),i);
+  c.add_omitted(1,basis2(),j);
+  Chemistry_QC_GaussianBasis_DerivCenters cca_dc;
+  cca_dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
+  for( int id=0; id<c.n(); ++id ) {
+     if( id == c.omitted_center() )
+       cca_dc.add_omitted(c.center(id),c.atom(id));
+     else
+       cca_dc.add_center(c.center(id),c.atom(id));
+  }
+  
+  if( eval_type_ == "overlap_1der" )
+    int1ecca_->overlap_1der(i,j,cca_dc);
+  else if( eval_type_ == "kinetic_1der" )  
+    int1ecca_->kinetic_1der(i,j,cca_dc);
+  else if( eval_type_ == "nuclear_1der" )
+    int1ecca_->nuclear_1der(i,j,cca_dc);
+  else if( eval_type_ == "hcore_1der" )
+    int1ecca_->hcore_1der(i,j,cca_dc);
+}
 
-// ////////////////////////////////////////////////////////////////////////////
-// // EfieldDotVectorIntV3
+void 
+OneBodyDerivIntCCA::compute_shell(int i, int j, int c) {
 
-// EfieldDotVectorIntV3::EfieldDotVectorIntV3(
-//     Integral *integral,
-//     const Ref<GaussianBasisSet>&bs1,
-//     const Ref<GaussianBasisSet>&bs2,
-//     const Ref<EfieldDotVectorData>&dat) :
-//   OneBodyInt(integral,bs1,bs2),
-//   data_(dat)
-// {
-//   int1ev3_ = new Int1eV3(integral,bs1,bs2,0);
-//   buffer_ = int1ev3_->buffer();
-// }
-
-// EfieldDotVectorIntV3::~EfieldDotVectorIntV3()
-// {
-// }
-
-// void
-// EfieldDotVectorIntV3::compute_shell(int i,int j)
-// {
-//   int nbfi = basis1()->shell(i).nfunction();
-//   int nbfj = basis2()->shell(j).nfunction();
-//   int nint = nbfi*nbfj;
-//   double *tmp;
-//   int ii,jj;
-
-//   int1ev3_->efield(i,j,data_->position);
-
-//   tmp = int1ev3_->buffer();
-//   for (ii=0; ii<nint; ii++) {
-//       double tmpval = 0.0;
-//       for (jj=0; jj<3; jj++) {
-//           tmpval += *tmp++ * data_->vector[jj];
-//         }
-//       buffer_[ii] = tmpval;
-//     }
-// }
-
-// ////////////////////////////////////////////////////////////////////////////
-// // DipoleIntV3
-
-// DipoleIntV3::DipoleIntV3(Integral *integral,
-//                          const Ref<GaussianBasisSet>&bs1,
-//                          const Ref<GaussianBasisSet>&bs2,
-//                          const Ref<DipoleData>&dat) :
-//   OneBodyInt(integral,bs1,bs2),
-//   data_(dat)
-// {
-//   int1ev3_ = new Int1eV3(integral,bs1,bs2,0);
-//   buffer_ = int1ev3_->buffer();
-//   if (data_.null()) {
-//       data_ = new DipoleData;
-//     }
-// }
-
-// DipoleIntV3::~DipoleIntV3()
-// {
-// }
-
-// void
-// DipoleIntV3::compute_shell(int i,int j)
-// {
-//   int1ev3_->dipole(i,j,data_->origin);
-// }
-
-// ////////////////////////////////////////////////////////////////////////////
-// // OneBodyDerivIntV3
-
-// OneBodyDerivIntV3::OneBodyDerivIntV3(Integral *integral,
-//                                      const Ref<GaussianBasisSet>&bs1,
-//                                      const Ref<GaussianBasisSet>&bs2,
-//                                      IntegralFunction ifunc):
-//   OneBodyDerivInt(integral,bs1,bs2)
-// {
-//   int1ev3_ = new Int1eV3(integral,bs1,bs2,1);
-//   intfunc_ = ifunc;
-//   buffer_ = int1ev3_->buffer();
-// }
-
-// OneBodyDerivIntV3::~OneBodyDerivIntV3()
-// {
-// }
-
-// void
-// OneBodyDerivIntV3::compute_shell(int i, int j, DerivCenters& c)
-// {
-//   (int1ev3_.pointer()->*intfunc_)(i,j,0,basis1()->shell_to_center(i));
-//   c.clear();
-//   c.add_center(0,basis1(),i);
-//   c.add_omitted(1,basis2(),j);
-// }
-
-// void
-// OneBodyDerivIntV3::compute_shell(int i, int j, int c)
-// {
-//   (int1ev3_.pointer()->*intfunc_)(i,j,0,c);
-// }
+  Chemistry_QC_GaussianBasis_DerivCenters cca_dc;
+  cca_dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
+  if( basis1()->shell_to_center(i) == basis2()->shell_to_center(j) ) {
+    cca_dc.add_center(0,c);
+    cca_dc.add_omitted(1,c);
+  }
+  else if( basis1()->shell_to_center(i) == c ) {
+    cca_dc.add_center(0,c);
+    cca_dc.add_omitted( 1, basis2()->shell_to_center(j) );
+  }
+  else {
+    cca_dc.add_center(1,c);
+    cca_dc.add_omitted( 0, basis1()->shell_to_center(i) );
+  }
+ 
+  std::cerr << "setting omitted atom to " << basis2()->shell_to_center(j) << std::endl;
+  cca_dc.add_omitted(1,basis2()->shell_to_center(j));
+  
+  if( eval_type_ == "overlap_1der" )
+    int1ecca_->overlap_1der(i,j,cca_dc);
+  else if( eval_type_ == "kinetic_1der" )
+    int1ecca_->kinetic_1der(i,j,cca_dc);
+  else if( eval_type_ == "nuclear_1der" )
+    int1ecca_->nuclear_1der(i,j,cca_dc);
+  else if( eval_type_ == "hcore_1der" )
+    int1ecca_->hcore_1der(i,j,cca_dc);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

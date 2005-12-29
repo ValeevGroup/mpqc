@@ -58,9 +58,9 @@ interface:: $(DEPENDINCLUDE)
 statetest.$(OBJSUF): statetest.cc
 	$(LTCOMP) $(CXX) $(CXXFLAGS) $(DEFINES) $(INCLUDE) -DSRCDIR=\"$(SRCDIR)\" -c $<
 
-statetest: statetest.$(OBJSUF) libSCkeyval.$(LIBSUF) libSCmisc.$(LIBSUF) \
+statetest: statetest.$(OBJSUF) libSCkeyval.$(LIBSUF) \
            libSCgroup.$(LIBSUF) libSCstate.$(LIBSUF) libSCclass.$(LIBSUF) \
-           libSCcontainer.$(LIBSUF) libSCref.$(LIBSUF)
+           libSCcontainer.$(LIBSUF) libSCref.$(LIBSUF) libSCmisc.$(LIBSUF)
 	$(LTLINK) $(LD) $(LDFLAGS) -o statetest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules

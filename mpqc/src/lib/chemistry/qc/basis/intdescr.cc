@@ -1,10 +1,10 @@
 //
-// array.cc
+// intdescr.cc
 //
-// Copyright (C) 1998 Limit Point Systems, Inc.
+// Copyright (C) 2005 Edward Valeev
 //
-// Author: Curtis Janssen <cljanss@limitpt.com>
-// Maintainer: LPS
+// Author: Edward Valeev <edward.valeev@chemistry.gatech.edu>
+// Maintainer: EV
 //
 // This file is part of the SC Toolkit.
 //
@@ -25,19 +25,52 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUC__
+#ifdef __GNUG__
 #pragma implementation
 #endif
 
-#include <util/state/array.h>
+#include <chemistry/qc/basis/intdescr.h>
 
 using namespace sc;
 
-SSB_ARRAY_def(int);
+////
 
-/////////////////////////////////////////////////////////////////////////////
+TwoBodyIntDescrERI::TwoBodyIntDescrERI(const Ref<Integral>& IF) :
+  TwoBodyIntDescr(), factory_(IF)
+{
+}
 
-// Local Variables:
-// mode: c++
-// c-file-style: "CLJ"
-// End:
+Ref<TwoBodyInt>
+TwoBodyIntDescrERI::inteval() const
+{
+  return factory_->electron_repulsion();
+}
+
+////
+
+TwoBodyIntDescrR12::TwoBodyIntDescrR12(const Ref<Integral>& IF) :
+  TwoBodyIntDescr(), factory_(IF)
+{
+}
+
+Ref<TwoBodyInt>
+TwoBodyIntDescrR12::inteval() const
+{
+  return factory_->grt();
+}
+
+////
+
+TwoBodyIntDescrG12::TwoBodyIntDescrG12(const Ref<Integral>& IF,
+                                         const Ref<IntParamsG12>& params) :
+  TwoBodyIntDescr(), factory_(IF), params_(params)
+{
+}
+
+Ref<TwoBodyInt>
+TwoBodyIntDescrG12::inteval() const
+{
+  return factory_->g12(params_);
+}
+
+

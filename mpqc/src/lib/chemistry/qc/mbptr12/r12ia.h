@@ -97,7 +97,7 @@ class R12IntsAcc: virtual public SavableState {
   public:
     R12IntsAcc(int num_te_types, int ni, int nj, int nx, int ny);
     R12IntsAcc(StateIn&);
-    ~R12IntsAcc();
+    virtual ~R12IntsAcc();
     void save_data_state(StateOut&);
 
     /// Types of two-body operators that R12IntsAcc understands

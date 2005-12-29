@@ -33,6 +33,7 @@
      memory = 10000000
      r12ints = posix
      nfzc = 1
+     debug = 2
      integrals<IntegralCints>: ()
      reference<CLHF>: (
        molecule = $:molecule

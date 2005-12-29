@@ -33,7 +33,7 @@
 
 #include <util/misc/math.h>
 
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <math/scmat/matrix.h>
@@ -51,7 +51,7 @@ using namespace sc;
 // members of IntCoor
 
 double IntCoor::bohr_conv = 0.52917706;
-double IntCoor::radian_conv = 180.0/3.14159265358979323846;
+double IntCoor::radian_conv = 180.0/M_PI;
 
 static ClassDesc IntCoor_cd(
   typeid(IntCoor),"IntCoor",1,"public SavableState",

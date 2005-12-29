@@ -44,6 +44,8 @@ R12IntEvalInfo::compute_multipole_ints(const Ref<MOIndexSpace>& space1, const Re
                                        RefSCMatrix& MX, RefSCMatrix& MY, RefSCMatrix& MZ,
 				       RefSCMatrix& MXX, RefSCMatrix& MYY, RefSCMatrix& MZZ)
 {
+  if (!space1->integral()->equiv(space2->integral()))
+    throw ProgrammingError("two MOIndexSpaces use incompatible Integral factories");
   const Ref<GaussianBasisSet> bs1 = space1->basis();
   const Ref<GaussianBasisSet> bs2 = space2->basis();
   const bool bs1_eq_bs2 = (bs1 == bs2);
@@ -53,7 +55,7 @@ R12IntEvalInfo::compute_multipole_ints(const Ref<MOIndexSpace>& space1, const Re
   RefSCMatrix vec1t = space1->coefs().t();
   RefSCMatrix vec2 = space2->coefs();
 
-  Ref<Integral> localints = Integral::get_default_integral()->clone();
+  Ref<Integral> localints = space1->integral()->clone();
   localints->set_basis(bs1,bs2);
 
   Ref<OneBodyInt> m1_ints = localints->dipole(0);
@@ -176,6 +178,8 @@ void
 R12IntEvalInfo::compute_overlap_ints(const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                      RefSCMatrix& S)
 {
+  if (!space1->integral()->equiv(space2->integral()))
+    throw ProgrammingError("two MOIndexSpaces use incompatible Integral factories");
   const Ref<GaussianBasisSet> bs1 = space1->basis();
   const Ref<GaussianBasisSet> bs2 = space2->basis();
   const bool bs1_eq_bs2 = (bs1 == bs2);
@@ -185,7 +189,7 @@ R12IntEvalInfo::compute_overlap_ints(const Ref<MOIndexSpace>& space1, const Ref<
   RefSCMatrix vec1t = space1->coefs().t();
   RefSCMatrix vec2 = space2->coefs();
 
-  Ref<Integral> localints = Integral::get_default_integral()->clone();
+  Ref<Integral> localints = space1->integral()->clone();
   localints->set_basis(bs1,bs2);
 
   Ref<OneBodyInt> ov_ints = localints->overlap();

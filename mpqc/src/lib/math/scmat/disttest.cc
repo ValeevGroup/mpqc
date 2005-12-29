@@ -90,7 +90,7 @@ main(int argc, char** argv)
   RefSCDimension d2; d2 << keyval->describedclassvalue("d2");
   RefSCDimension d3; d3 << keyval->describedclassvalue("d3");
 
-  int nblocks = (int)sqrt(msg->n());
+  int nblocks = (int)sqrt(double(msg->n()));
 
   // replace dimensions with dimensions that have subblocks
   d1 = new SCDimension(d1.n(), nblocks);

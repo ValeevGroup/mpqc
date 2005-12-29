@@ -25,6 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <sstream>
+
 #include <util/misc/timer.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
@@ -88,17 +90,17 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
     Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
     tfactory->set_ints_method((MOIntsTransformFactory::StoreMethod)r12info()->ints_method());
     tfactory->set_spaces(occ1_act,xspace,occ2_act,yspace);
-    ixjy_tform = tfactory->twobody_transform_13(tform_name,corrfactor_->callback());
+    ixjy_tform = tfactory->twobody_transform_13(tform_name);
   }
   
   Ref<R12IntsAcc> ijxy_acc = ixjy_tform->ints_acc();
   if (ijxy_acc.null() || !ijxy_acc->is_committed()) {
-    Ref<IntParams> params = new IntParamsG12(LinearR12::CorrelationFactor::zero_exponent_geminal(),
-                                             LinearR12::CorrelationFactor::zero_exponent_geminal());
-    ixjy_tform->compute(params);
+    // only need ERIs
+    Ref<TwoBodyIntDescr> tbintdescr = new TwoBodyIntDescrERI(r12info()->integral());
+    ixjy_tform->compute(tbintdescr);
   }
-    // Should make something like this possible:
-    //ixjy_tform->compute(correfactor()->function(0));
+  // Should make something like this possible:
+  //ixjy_tform->compute(corrfactor()->function(0));
   if (!ijxy_acc->is_active())
     ijxy_acc->activate();
 
@@ -152,7 +154,7 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
           ExEnv::out0() << "i = " << i << " j = " << j << " a = " << x << " b = " << y
                         << " <ij|ab> = " << ERI_xy << " <ij|ba> = " << ERI_yx
                         << " denom = " << denom << endl;
- 
+
         if (compute_all_spincases) {
           const double ERI_aa = ERI_xy - ERI_yx;
           emp2_aa += 0.5*ERI_aa*ERI_aa*denom;
@@ -180,3 +182,167 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
     }
   }
 }
+
+
+void
+R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
+                                       SpinCase2 S,
+                                       const Ref<MOIndexSpace>& space1,
+                                       const Ref<MOIndexSpace>& space2,
+                                       const Ref<MOIndexSpace>& space3,
+                                       const Ref<MOIndexSpace>& space4,
+                                       const Ref<TwoBodyMOIntsTransform>& transform)
+{
+  // Check correct semantics of this call : if S != AlphaBeta then space1==space3 and space2==space4
+  const bool correct_semantics = (S != AlphaBeta && space1==space3 && space2==space4) ||
+                                 S==AlphaBeta;
+  if (!correct_semantics)
+    throw ProgrammingError("R12IntEval::compute_mp2_pair_energies_() -- incorrect call semantics",
+                           __FILE__,__LINE__);
+  emp2pair.assign(0.0);
+
+  //
+  // If transform not given, construct appropriately, otherwise notify user which transform is used
+  //
+  Ref<TwoBodyMOIntsTransform> tform = transform;
+  if (tform.null()) {
+    // Only need 1/r12 integrals, hence doesn't matter which f12 to use
+    tform = get_tform_(transform_label(space1,space2,space3,space4,0));
+  }
+  else {
+    if (debug_ > 0)
+      ExEnv::out0() << "Using transform " << tform->name() << std::endl;
+  }
+  
+  
+  //
+  // Initialize spaces and maps
+  //
+  // maps spaceX to spaceX of the transform
+  std::vector<unsigned int> map1, map2, map3, map4;
+  // maps space4 to space2 of transform
+  std::vector<unsigned int> map24;
+  // maps space2 to space4 of transform
+  std::vector<unsigned int> map42;
+  Ref<MOIndexSpace> tspace1 = tform->space1();
+  Ref<MOIndexSpace> tspace2 = tform->space2();
+  Ref<MOIndexSpace> tspace3 = tform->space3();
+  Ref<MOIndexSpace> tspace4 = tform->space4();
+  map1 = *tspace1<<*space1;
+  map2 = *tspace2<<*space2;
+  map3 = *tspace3<<*space3;
+  map4 = *tspace4<<*space4;
+  if (S != AlphaBeta) {
+    if (tspace2 == tspace4) {
+      map24 = map2;
+      map42 = map4;
+    }
+    else {
+      map24 = *tspace2<<*space4;
+      map42 = *tspace4<<*space2;
+    }
+  }
+  
+  const unsigned int rank1 = space1->rank();
+  const unsigned int rank2 = space2->rank();
+  const unsigned int rank3 = space3->rank();
+  const unsigned int rank4 = space4->rank();
+  const unsigned int trank4 = tspace4->rank();
+  const RefDiagSCMatrix evals1 = space1->evals();
+  const RefDiagSCMatrix evals2 = space2->evals();
+  const RefDiagSCMatrix evals3 = space3->evals();
+  const RefDiagSCMatrix evals4 = space4->evals();
+  
+  // Using spinorbital iterators means I don't take into account perm symmetry
+  // More efficient algorithm will require generic code
+  SpinMOPairIter iter13(space1,space3,S);
+  SpinMOPairIter iter24(space2,space4,S);
+  
+  Ref<R12IntsAcc> accum = tform->ints_acc();
+  if (accum.null() || !accum->is_committed()) {
+    // only need ERIs
+    Ref<TwoBodyIntDescr> tbintdescr = new TwoBodyIntDescrERI(r12info()->integral());
+    tform->compute(tbintdescr);
+  }
+  accum->activate();
+  
+  tim_enter("MP2 pair energies");
+  std::ostringstream oss;
+  oss << "<" << space1->id() << " " << space3->id() << "|"
+      << space2->id() << " " << space4->id() << ">";
+  const std::string label = oss.str();
+  ExEnv::out0() << endl << indent
+	       << "Entered MP2 pair energies (" << label << ") evaluator" << std::endl;
+  ExEnv::out0() << incindent;
+  
+  vector<int> proc_with_ints;
+  const int nproc_with_ints = tasks_with_ints_(accum,proc_with_ints);
+  const int me = r12info()->msg()->me();
+  
+  if (accum->has_access(me)) {
+    for(iter13.start(); iter13; iter13.next()) {
+      const int ij = iter13.ij();
+      
+      const int ij_proc = ij%nproc_with_ints;
+      if (ij_proc != proc_with_ints[me])
+        continue;
+      
+      const unsigned int i = iter13.i();
+      const unsigned int j = iter13.j();
+      const unsigned int ii = map1[i];
+      const unsigned int jj = map3[j];
+      
+      if (debug_)
+        ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
+      tim_enter("MO ints retrieve");
+      const double *ij_buf_eri = accum->retrieve_pair_block(ii,jj,corrfactor()->tbint_type_eri());
+      tim_exit("MO ints retrieve");
+      if (debug_)
+        ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
+      
+      double emp2 = 0.0;
+      for(iter24.start(); iter24; iter24.next()) {
+        const unsigned int a = iter24.i();
+        const unsigned int b = iter24.j();
+        const unsigned int aa = map2[a];
+        const unsigned int bb = map4[b];
+        const int ab = aa*trank4+bb;
+        
+        const double ERI_iajb = ij_buf_eri[ab];
+        const double denom = 1.0/(evals1(i) + evals3(j) - evals2(a) - evals4(b));
+        
+        if (S == AlphaBeta) {
+          emp2 += ERI_iajb*ERI_iajb*denom;
+          if (debug_ > 2) {
+            ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
+            << " <ij|ab> = " << ERI_iajb
+            << " denom = " << denom << endl;
+          }
+        }
+        else {
+          const int aa = map42[a];
+          const int bb = map24[b];
+          const int ba = bb*trank4+aa;
+          const double ERI_ibja = ij_buf_eri[ba];
+          const double ERI_anti = ERI_iajb - ERI_ibja;
+          emp2 += ERI_anti*ERI_anti*denom;
+          if (debug_ > 2) {
+            ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
+            << " <ij|ab> = " << ERI_iajb
+            << " <ij|ba> = " << ERI_ibja
+            << " denom = " << denom << endl;
+          }
+        }
+        
+      }
+      accum->release_pair_block(ii,jj,corrfactor()->tbint_type_eri());
+      emp2pair.set_element(ij,emp2);
+    }
+  }
+  
+  accum->deactivate();
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Exited MP2 pair energies (" << label << ") evaluator" << endl;
+  tim_exit("MP2 pair energies");
+}
+

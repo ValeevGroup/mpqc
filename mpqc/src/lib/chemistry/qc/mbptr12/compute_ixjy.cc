@@ -58,8 +58,10 @@ using namespace sc;
   Based on MBPT2::compute_mp2_energy()
  -------------------------------------*/
 void
-TwoBodyMOIntsTransform_ixjy::compute(const Ref<IntParams>& params)
+TwoBodyMOIntsTransform_ixjy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
 {
+  set_num_te_types(tbintdescr->num_sets());
+  
   init_acc();
   if (ints_acc_->is_committed())
     return;
@@ -108,10 +110,10 @@ TwoBodyMOIntsTransform_ixjy::compute(const Ref<IntParams>& params)
   const int restart_orb = restart_orbital();
   int nijmax = compute_nij(batchsize_,rank3,nproc,me);
   
-  vector<int> mosym1 = space1_->mosym();
-  vector<int> mosym2 = space2_->mosym();
-  vector<int> mosym3 = space3_->mosym();
-  vector<int> mosym4 = space4_->mosym();
+  vector<unsigned int> mosym1 = space1_->mosym();
+  vector<unsigned int> mosym2 = space2_->mosym();
+  vector<unsigned int> mosym3 = space3_->mosym();
+  vector<unsigned int> mosym4 = space4_->mosym();
   double** vector2 = new double*[nbasis2];
   double** vector4 = new double*[nbasis4];
   vector2[0] = new double[rank2*nbasis2];
@@ -137,7 +139,7 @@ TwoBodyMOIntsTransform_ixjy::compute(const Ref<IntParams>& params)
   integral->set_basis(space1_->basis(),space2_->basis(),space3_->basis(),space4_->basis());
   Ref<TwoBodyInt>* tbints = new Ref<TwoBodyInt>[thr_->nthread()];
   for (int i=0; i<thr_->nthread(); i++) {
-    tbints[i] = TwoBodyMOIntsTransform::create_tbint(integral,callback_,params);
+    tbints[i] = tbintdescr->inteval();
   }
   check_tbint(tbints[0]);
   if (debug_ >= 1)
@@ -196,6 +198,7 @@ TwoBodyMOIntsTransform_ixjy::compute(const Ref<IntParams>& params)
 
     // Do the two electron integrals and the first two quarter transformations
     tim_enter("ints+1qt+2qt");
+    shell_pair_data()->init();
     for (int i=0; i<thr_->nthread(); i++) {
       e13thread[i]->set_i_offset(i_offset);
       e13thread[i]->set_ni(ni);

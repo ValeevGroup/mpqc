@@ -411,6 +411,15 @@ LAUNCH=$withval
 )
 AC_SUBST(LAUNCH)
 
+changequote(<<, >>)dnl
+CCALAUNCH="%CCAFE% --ccafe-rc %INPUT% --ccafe-remap-stdio --ccafe-outputdir %OUTPUT%";
+changequote([, ])dnl
+AC_ARG_WITH(cca-launch,
+[  --with-cca-launch        The ccarun script launch string.],
+CCALAUNCH=$withval
+)
+AC_SUBST(CCALAUNCH)
+
 if test $prefix = $ac_default_prefix -o $prefix = NONE; then
   scdatadir=$datadir
 else
@@ -1853,6 +1862,8 @@ dnl --------- Create the stub Makefiles. ---------
 
 $PERL $srcdir/bin/objectdir.pl $EXCLUDED_DIRS $srcdir
 
-AC_OUTPUT(lib/LocalMakefile lib/cca/components.cca bin/sc-config bin/mkf77sym.pl src/bin/mpqc/mpqcrun doc/doxygen.cfg doc/doxygen.man1.cfg doc/doxygen.man3.cfg)
+AC_OUTPUT(lib/LocalMakefile lib/cca/components.cca bin/sc-config bin/mkf77sym.pl src/bin/mpqc/mpqcrun src/bin/mpqc/ccarun src/bin/mpqc/validate/makeccain.pl doc/doxygen.cfg doc/doxygen.man1.cfg doc/doxygen.man3.cfg)
 chmod +x bin/sc-config
 chmod +x src/bin/mpqc/mpqcrun
+chmod +x src/bin/mpqc/ccarun
+chmod +x src/bin/mpqc/validate/makeccain.pl

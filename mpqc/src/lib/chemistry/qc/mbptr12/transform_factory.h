@@ -54,6 +54,9 @@ public:
 
   /// Describes the method of storing transformed MO integrals.
   enum StoreMethod { mem_posix = 0, posix = 1, mem_mpi = 2, mpi = 3, mem_only = 4 };
+  /// How integrals are stored. Type_13 means (ix|jy) integrals are stored as (ij|xy)
+  enum StorageType {StorageType_First=0, StorageType_Last=1,
+                    StorageType_12=0, StorageType_13=1};
 
 private:
 
@@ -121,17 +124,20 @@ public:
   /// Returns MOIndexSpace object 4
   Ref<MOIndexSpace> space4() const;
 
-    typedef LinearR12::CorrelationFactor::IntegralCallback IntegralCallback;
   /** Creates an TwoBodyMOIntsTransform object that will compute (pq|rs) integrals
       stored in qs blocks for each pr */
   Ref<TwoBodyMOIntsTransform>
-  twobody_transform_13(const std::string& id, const IntegralCallback& callback);
+  twobody_transform_13(const std::string& id);
 
   /** Creates an TwoBodyMOIntsTransform object that will compute (pq|rs) integrals
     stored in rs blocks for each pq */
   Ref<TwoBodyMOIntsTransform>
-  twobody_transform_12(const std::string& id, const IntegralCallback& callback);
+  twobody_transform_12(const std::string& id);
   
+  /** Creates an TwoBodyMOIntsTransform object that will compute (pq|rs) integrals
+    stored according to storage */
+  Ref<TwoBodyMOIntsTransform>
+  twobody_transform(StorageType storage, const std::string& id);
 };
 
 }

@@ -248,18 +248,6 @@ IntegralV3::electron_repulsion_deriv()
   return new TwoBodyDerivIntV3(this, bs1_, bs2_, bs3_, bs4_, storage_);
 }
 
-Ref<TwoBodyInt>
-IntegralV3::grt(const Ref<IntParams>& p)
-{
-  throw std::runtime_error("IntegralV3::grt(): not implemented in this particular integrals factory.");
-}
-
-Ref<TwoBodyInt>
-IntegralV3::g12(const Ref<IntParams>& p)
-{
-  throw std::runtime_error("IntegralV3::g12(): not implemented in this particular integrals factory.");
-}
-
 void
 IntegralV3::set_basis(const Ref<GaussianBasisSet> &b1,
                       const Ref<GaussianBasisSet> &b2,

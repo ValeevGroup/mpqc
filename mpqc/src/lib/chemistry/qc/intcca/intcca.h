@@ -25,8 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-// these provide integrals using the libintv2 routines
-
 #ifndef _chemistry_qc_intcca_intcca_h
 #define _chemistry_qc_intcca_intcca_h
 
@@ -35,8 +33,8 @@
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactory.hh>
 #include <Chemistry_Chemistry_Molecule.hh>
 #include <chemistry/molecule/molecule.h>
-#include <chemistry/qc/intcca/cartit.h>
-#include <chemistry/qc/intcca/tform.h>
+#include <chemistry/qc/basis/transform.h>
+#include <chemistry/qc/basis/cartiter.h>
 
 using namespace Chemistry::QC::GaussianBasis;
 
@@ -54,13 +52,8 @@ class IntegralCCA : public Integral {
     std::string factory_type_;
     std::string package_;
 
-    // INTV3 verion
-//    SphericalTransformV3 ***st_;
-//    ISphericalTransformV3 ***ist_;
-
-    // CINTS version
-    SphericalTransformCCA ***st_;
-    ISphericalTransformCCA ***ist_;
+    SphericalTransform ***st_;
+    ISphericalTransform ***ist_;
 
     void free_transforms();
     void initialize_transforms();

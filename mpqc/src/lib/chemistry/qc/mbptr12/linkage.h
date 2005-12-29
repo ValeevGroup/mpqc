@@ -28,8 +28,6 @@
 #ifndef _chemistry_qc_mbptr12_linkage_h
 #define _chemistry_qc_mbptr12_linkage_h
 
-#ifndef __PIC__
-
 #include <util/class/class.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
 
@@ -38,7 +36,5 @@ namespace sc {
 static ForceLink<MBPT2_R12> mbptr12_force_link_a_;
 
 }
-
-#endif /* __PIC__ */
 
 #endif

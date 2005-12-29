@@ -32,7 +32,7 @@
 #include <stdexcept>
 
 #include <stdlib.h>
-#include <math.h>
+#include <cmath>
 
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
@@ -686,6 +686,64 @@ SCElementMaxAbs::collect(const Ref<SCElementOp>&op)
 {
   throw std::runtime_error(
       "SCElementMaxAbs::collect(const Ref<SCElementOp> &): not implemented");
+}
+
+/////////////////////////////////////////////////////////////////////////
+// SCElementKNorm members
+
+static ClassDesc SCElementKNorm_cd(
+  typeid(SCElementKNorm),"SCElementKNorm",1,"public SCElementOp",
+  0, 0, create<SCElementKNorm>);
+
+SCElementKNorm::SCElementKNorm(double k):deferred_(0), r_(0.0), k_(k) {}
+SCElementKNorm::SCElementKNorm(StateIn&s):
+  SCElementOp(s)
+{
+  s.get(k_);
+  s.get(r_);
+  s.get(deferred_);
+}
+void
+SCElementKNorm::save_data_state(StateOut&s)
+{
+  s.put(r_);
+  s.put(deferred_);
+}
+SCElementKNorm::~SCElementKNorm() {}
+void
+SCElementKNorm::process(SCMatrixBlockIter&i)
+{
+  for (i.reset(); i; ++i) {
+    r_ += std::pow(std::abs(i.get()),k_);
+  }
+}
+double
+SCElementKNorm::result()
+{
+  return r_;
+}
+int
+SCElementKNorm::has_collect()
+{
+  return 1;
+}
+void
+SCElementKNorm::defer_collect(int h)
+{
+  deferred_=h;
+}
+void
+SCElementKNorm::collect(const Ref<MessageGrp>&msg)
+{
+  if (!deferred_)
+    msg->sum(r_);
+  r_ = std::pow(r_,1.0/k_);
+}
+void
+SCElementKNorm::collect(const Ref<SCElementOp>&op)
+{
+  throw std::runtime_error(
+      "SCElementKNorm::collect(const Ref<SCElementOp> &): not implemented");
 }
 
 /////////////////////////////////////////////////////////////////////////

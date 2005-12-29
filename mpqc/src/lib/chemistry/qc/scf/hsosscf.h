@@ -60,7 +60,8 @@ class HSOSSCF: public SCF {
     /** The KeyVal constructor.
         <dl>
 
-        <dt><tt>total_charge</tt><dd> This integer gives the total charge,
+        <dt><tt>total_charge</tt><dd> This floating point number
+        gives the total charge,
         \f$c\f$, of the molecule.  The default is 0.
 
         <dt><tt>nsocc</tt><dd> This integer gives the total number of

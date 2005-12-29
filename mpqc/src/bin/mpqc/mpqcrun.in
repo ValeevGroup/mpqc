@@ -33,9 +33,6 @@ else {
     $mpqcobj = '@compiledir@/src/bin/mpqc/mpqc';
 }
 
-# This is the number of jobs that will be run concurrently.
-$maxjobs = "1";
-
 # The threadgrp specialization
 $threadgrp = "none";
 
@@ -67,8 +64,8 @@ $nodes = "";
 # A format string to convert a node number to a node name
 $nodename = "%d";
 
-# The number of processes each job will use.
-$nprocperjob = "max";
+# The number of nodes each job will use.
+$nnodeperjob = "nnode";
 
 # The number of threads each process will use.
 $nthreadperproc = 1;
@@ -85,6 +82,12 @@ $exclude = "";
 
 # If true, then mpqc with all inputs in the current directory.
 $readdir = "";
+
+# The directory where the input file is to be found.
+$inputprefix = "";
+
+# The directory where the output file is to be placed.
+$outputprefix = "";
 
 # If this is set to one, then a set of extra exclusions will be
 # included.  This is only useful for the running test suite.
@@ -117,6 +120,9 @@ $uniqout = 0;
 # If true, then generate output file names.
 $autoout = 0;
 
+# If true, then do not append nproc, nthread, nnode info to filename.
+$simpout = 0;
+
 # If true, run mpqc from the object directory
 $objdir = 0;
 
@@ -130,13 +136,14 @@ if (!GetOptions("small!" => \$small,
                 "memorygrp=s" => \$memorygrp,
                 "messagegrp=s" => \$messagegrp,
                 "integral=s" => \$integral,
-                "nprocperjob=i" => \$nprocperjob,
+                "nnodeperjob=i" => \$nnodeperjob,
                 "nthreadperproc=i" => \$nthreadperproc,
                 "nprocpernode=i" => \$nprocpernode,
                 "seq=s" => \$seq,
-                "maxjobs=i" => \$maxjobs,
                 "mpqc=s" => \$mpqc,
                 "readdir=s" => \$readdir,
+                "outputprefix=s" => \$outputprefix,
+                "inputprefix=s" => \$inputprefix,
                 "nodefile=s" => \$nodefile,
                 "nodes=s" => \$nodes,
                 "nodename=s" => \$nodename,
@@ -147,6 +154,7 @@ if (!GetOptions("small!" => \$small,
                 "onlynew!" => \$onlynew,
                 "uniqout!" => \$uniqout,
                 "autoout!" => \$autoout,
+                "simpout!" => \$simpout,
                 "objdir!" => \$objdir,
                 "count!" => \$count,
                 "debug!" => \$debug,
@@ -172,8 +180,7 @@ if ($help) {
     print  "  --mpqc path        the mpqc executable to use (value: $mpqc)\n";
     print  "  --objdir           run the mpqc exec in the object dir (value: $objdir)\n";
     print  "  --small            skip big runs in verification suite (value: $small)\n";
-    print  "  --maxjobs n        run n jobs at a time (value: $maxjobs)\n";
-    print  "  --nprocperjob n    run with n procs per job (value: $nprocperjob)\n";
+    print  "  --nnodeperjob n    run with n nodes per job (value: $nnodeperjob)\n";
     print  "  --nprocpernode n   run with n procs per node (value: $nprocpernode)\n";
     print  "  --nthreadperproc n use n threads per process (value: $nthreadperproc)\n";
     print  "  --threadgrp grp    use the given threading layer (value: $threadgrp)\n";
@@ -229,8 +236,8 @@ if ($help) {
     print  "  and a substitution is not available, then everything within the\n";
     print  "  the brackets is removed.\n";
     print  "Examples of the launch argument:\n";
-    print  "  mpirun [-hf %NODEFILE%] -n %NPROC% %MPQC% -o %OUTPUT% %INPUT%\n";
-    print  "  mpirun [-H %NODELIST%] -n %NPROC% %MPQC% -o %OUTPUT% %INPUT%\n";
+    print  "  mpirun [-hf %NODEFILE%] -n %NPROC% %MPQC% [-o %OUTPUT%] %INPUT%\n";
+    print  "  mpirun [-H %NODELIST%] -n %NPROC% %MPQC% [-o %OUTPUT%] %INPUT%\n";
     exit 0;
 }
 
@@ -253,19 +260,32 @@ elsif ("$nodefile" eq "" && exists($ENV{"PBS_NODEFILE"})) {
     $nodefile=$ENV{"PBS_NODEFILE"};
 }
 if ("$nodefile" ne "" && -f "$nodefile") {
+    my %nodesfound = {};
     open(NODEFILE,"<$nodefile");
     while(<NODEFILE>) {
         if (/(\S+)/) {
-            $nodelist[$#nodelist + 1] = $1;
+            my $nodename = $1;
+            if (!exists($nodesfound{$nodename})) {
+                $nodelist[$#nodelist + 1] = $nodename;
+                $nodesfound{$nodename} = 1;
+            }
         }
     }
     close(NODEFILE);
 }
 
-if ($nprocperjob eq "max") {
-    if ($#nodelist == -1) { $nprocperjob = 1; }
-    else { $nprocperjob = $#nodelist + 1; }
+if ($#nodelist == -1) {
+    $nnode = 1;
 }
+else {
+    $nnode = $#nodelist + 1;
+}
+
+if ($nnodeperjob eq "nnode") {
+    $nnodeperjob = $nnode;
+}
+
+$nprocperjob = $nnodeperjob * $nprocpernode;
 
 if ($messagegrp eq "none" && $nprocperjob > 1) {
     $messagegrp = "mpi";
@@ -278,21 +298,23 @@ elsif ($messagegrp eq "mpi") {
   $ENV{"MESSAGEGRP"} = "<MPIMessageGrp>:()";
 }
 
+$nnodeperjob = POSIX::ceil($nprocperjob / $nprocpernode);
+
 @jobnodes = ();
 %jobnnodes = {};
 %nodelist = {};
 %nodefile = {};
-$ijob = 0;
-foreach my $i (0..$#nodelist) {
-    $jobnnodes[$ijob++]++;
-    if ($ijob >= $maxjobs) { $ijob = 0; }
+$maxjobs = 0;
+while (($maxjobs + 1) * $nnodeperjob <= $nnode) {
+    $jobnnodes[$maxjobs++] = $nnodeperjob;
+}
+
+if ($maxjobs == 0) {
+    die "requested $nnodeperjob nodes but have $nnode nodes";
 }
 
 $nodesbegin = 0;
 foreach my $i (0..$maxjobs-1) {
-    if ($jobnnodes[$i] > POSIX::ceil($nprocperjob / $nprocpernode)) {
-        $jobnnodes[$i] = POSIX::ceil($nprocperjob / $nprocpernode);
-    }
     my $nodesend = $nodesbegin + $jobnnodes[$i];
     my @slice = (@nodelist)[$nodesbegin..($nodesend-1)];
     $jobnodes{$i} = \@slice;
@@ -303,8 +325,10 @@ foreach my $i (0..$maxjobs-1) {
     }
     $nodefile{$i} = ".tmp.nodefile.$$.$i";
     open(NODEFILE,">" . $nodefile{$i});
-    foreach my $j (@slice) {
-        printf NODEFILE "%s\n", $j;
+    foreach my $proc (1..$nprocpernode) {
+      foreach my $j (@slice) {
+          printf NODEFILE "%s\n", $j;
+      }
     }
     close(NODEFILE);
 }
@@ -341,6 +365,15 @@ if ($integral eq "cints") {
 }
 elsif ($integral eq "intv3") {
   $ENV{"INTEGRAL"} = "<IntegralV3>:()";
+}
+
+######################################################################
+
+$usingthreads = 0;
+if ($maxjobs > 1) {
+    require threads;
+    require threads::shared;
+    $usingthreads = 1;
 }
 
 ######################################################################
@@ -393,13 +426,7 @@ printenvvar("INTEGRAL");
 $thecount = 0;
 $n = 0;
 
-$usingthreads = 0;
-if ($maxjobs > 1) {
-    require threads;
-    require threads::shared;
-
-    $usingthreads = 1;
-
+if ($usingthreads) {
     @threads = ();
 
     foreach my $jobnum (0..$maxjobs-1) {
@@ -443,10 +470,12 @@ sub jobrunner {
 
     while ( ($file = get_next_file($jobslot)) ne "") {
         my $out = outfile("$file");
+        $out = "$outputprefix$out";
+        my $in = "$inputprefix$file";
         my $cmd = "$launch";
         $cmd =~ s/%MPQC%/$mpqc/;
         $cmd =~ s/%NPROC%/$nprocperjob/;
-        $cmd =~ s/%INPUT%/$file/;
+        $cmd =~ s/%INPUT%/$in/;
 
 	my $mpqcrunproc = "$scdatadir/mpqcrunproc $mpqc";
         if (exists($ENV{MESSAGEGRP})) {
@@ -511,8 +540,10 @@ sub get_file_list {
 
     my @files;
 
-    foreach my $in (@allfiles) {
-        my $out = outfile("$in");
+    foreach my $infile (@allfiles) {
+        my $out = outfile("$infile");
+        $out = "$outputprefix$out";
+        $in = "$inputprefix$infile";
         $issmall = (!($in =~ /ccpc?v[dtq5]z/));
         if ($in =~ /^(cl|hsos|u)scf_.*6311gss/) {
             $issmall = 0;
@@ -560,7 +591,7 @@ sub get_file_list {
             if ($verbose) {
                 print "$in: will be run\n";
             }
-            $files[$#files+1] = "$in";
+            $files[$#files+1] = "$infile";
         }
     }
 
@@ -570,24 +601,27 @@ sub get_file_list {
 sub outfile {
     my $in = shift;
 
+    my $outbase = "$in";
+    $outbase =~ s/\.[^.]*$//;
+    if ($simpout) {
+        $outbase = sprintf "%s.out", "$outbase";
+    }
+    else {
+        $outbase = sprintf "%s.out.%03d.%02d.%02d", "$outbase",
+                           $nnodeperjob, $nprocpernode, $nthreadperproc;
+    }
+
     my $out;
     if ($uniqout) {
-        my $outbase = "$in";
-        $outbase =~ s/\.[^.]*$//;
-        $out = sprintf "%s.out.%03d.%02d", "$outbase", $nprocperjob, $nthreadperproc;
+        $out = "$outbase";
         my $outversion = 1;
         while (-f "$out") {
             $outversion++;
-            $out = sprintf "%s.out.%03d.%02d.%02d", "$outbase", $nprocperjob, $nthreadperproc,
-                   $outversion;
+            $out = sprintf "%s.%02d", "$outbase", $outversion;
         }
     }
     elsif ($autoout) {
-        $out = "$in";
-        $out =~ s/\.[^.]*$/.out/;
-        if ("$out" eq "$in") {
-            $out = "$in".out;
-        }
+        $out = "$outbase";
     }
     else {
         $out = "";

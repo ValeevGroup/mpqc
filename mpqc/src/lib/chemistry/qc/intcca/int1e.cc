@@ -30,9 +30,12 @@
 #endif
 
 #include <chemistry/qc/intcca/int1e.h>
+#include <util/class/scexception.h>
+#include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
 
 using namespace std;
 using namespace sc;
+using namespace Chemistry;
 using namespace Chemistry::QC::GaussianBasis;
 
 Int1eCCA::Int1eCCA(Integral *integral,
@@ -59,16 +62,14 @@ Int1eCCA::Int1eCCA(Integral *integral,
     scratchsize = nshell2;
   else if (order == 1) 
     scratchsize = nshell2*3;
-  else {
-    ExEnv::errn() << 
-      scprintf("Int1eCCA constructor: invalid order: %d\n",order);
-    exit(1);
-  }
+  else
+    throw InputError("invalid derivative level",
+                     __FILE__,__LINE__);
 
-  if( !use_opaque_ ) {
+  if( !use_opaque_ )
     buff_ = new double[scratchsize];
-  }
 
+  // create cca basis sets
   cca_bs1_ = GaussianBasis_Molecular::_create();
   cca_bs1_.initialize( bs1_.pointer(), bs1_->name() );
   if( bs1_.pointer() != bs2_.pointer() ) {
@@ -82,81 +83,144 @@ Int1eCCA::Int1eCCA(Integral *integral,
     overlap_ = eval_factory_.get_integral_evaluator2( "overlap", 0, 
                                                       cca_bs1_, cca_bs2_ );
     overlap_ptr_ = &overlap_;
-    if( use_opaque_ ) {
-      try{ buff_ = static_cast<double*>( overlap_ptr_->get_buffer() ); }
-      catch(exception &e) { e.what(); abort(); }
-    }
+    if( use_opaque_ )
+      buff_ = static_cast<double*>( overlap_ptr_->get_buffer() );
+  }
+
+  else if( int_type == "overlap_1der" ) {
+    overlap_1der_ = eval_factory_.get_integral_evaluator2( "overlap", 1,
+                                                           cca_bs1_, cca_bs2_ );
+    overlap_1der_ptr_ = &overlap_1der_;
+    if( use_opaque_ )
+      buff_ = static_cast<double*>( overlap_1der_ptr_->get_buffer() );
   }
 
   else if( int_type == "kinetic" ) {
     kinetic_ = eval_factory_.get_integral_evaluator2( "kinetic", 0,
                                                       cca_bs1_, cca_bs2_ );
     kinetic_ptr_ = &kinetic_;
-    if( use_opaque_ ) {
-      try{ buff_ = static_cast<double*>( kinetic_ptr_->get_buffer() ); }
-      catch(exception &e) { e.what(); abort(); }
-    }
+    if( use_opaque_ )
+      buff_ = static_cast<double*>( kinetic_ptr_->get_buffer() );
   }
 
-  if( int_type == "nuclear" ) {
+  else if( int_type == "kinetic_1der" ) {
+    kinetic_1der_ = eval_factory_.get_integral_evaluator2( "kinetic", 1,
+                                                           cca_bs1_, cca_bs2_ );
+    kinetic_1der_ptr_ = &kinetic_1der_;
+    if( use_opaque_ )
+      buff_ = static_cast<double*>( kinetic_1der_ptr_->get_buffer() );
+  }
+
+  else if( int_type == "nuclear" ) {
     nuclear_ = eval_factory_.get_integral_evaluator2( "potential", 0,
                                                       cca_bs1_, cca_bs2_ );
     nuclear_ptr_ = &nuclear_;
-    if( use_opaque_ ) {
-      try{ buff_ = static_cast<double*>( nuclear_ptr_->get_buffer() ); }
-      catch(exception &e) { e.what(); abort(); }
-    }
+    if( use_opaque_ )
+      buff_ = static_cast<double*>( nuclear_ptr_->get_buffer() );
   }
 
-  if( int_type == "hcore" ) {
+  else if( int_type == "nuclear_1der" ) {
+    nuclear_1der_ = eval_factory_.get_integral_evaluator2( "potential", 1,
+                                                           cca_bs1_, cca_bs2_ );
+    nuclear_1der_ptr_ = &nuclear_1der_;
+    if( use_opaque_ )
+      buff_ = static_cast<double*>( nuclear_1der_ptr_->get_buffer() );
+  }
+
+  else if( int_type == "hcore" ) {
     hcore_ = eval_factory_.get_integral_evaluator2( "1eham", 0,
                                                     cca_bs1_, cca_bs2_ );
     hcore_ptr_ = &hcore_;
-    if( use_opaque_ ) {
-      try{ buff_ = static_cast<double*>( hcore_ptr_->get_buffer() ); }
-      catch(exception &e) { e.what(); abort(); }
-    }
+    if( use_opaque_ )
+      buff_ = static_cast<double*>( hcore_ptr_->get_buffer() );
+  }
+
+  else if( int_type == "hcore_1der" ) {
+    hcore_1der_ = eval_factory_.get_integral_evaluator2( "1eham", 1,
+                                                         cca_bs1_, cca_bs2_ );
+    hcore_1der_ptr_ = &hcore_1der_;
+    if( use_opaque_ )
+      buff_ = static_cast<double*>( hcore_1der_ptr_->get_buffer() );
   }
 
 }
 
 Int1eCCA::~Int1eCCA()
 {
-  // transform_done();
-  // int_done_1e();
-  // int_done_offsets1();
 }
 
 void
 Int1eCCA::overlap( int ish, int jsh )
 {
-  if( use_opaque_ ) {
-    overlap_ptr_->compute( ish, jsh, 0 );
-  }
+  Chemistry_QC_GaussianBasis_DerivCenters dc;
+  dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
+  if( use_opaque_ )
+    overlap_ptr_->compute( ish, jsh, 0, dc );
   else {
-    sidl_buffer_ = overlap_ptr_->compute_array( ish, jsh, 0 ); 
+    sidl_buffer_ = overlap_ptr_->compute_array( ish, jsh, 0, dc ); 
     copy_buffer();
   }
 }  
 
 void
-Int1eCCA::kinetic( int ish, int jsh )
+Int1eCCA::overlap_1der(int ish, int jsh,
+                       Chemistry_QC_GaussianBasis_DerivCenters &dc)
 {
-  if( use_opaque_ )
-    kinetic_ptr_->compute( ish, jsh, 0 );
+  if( use_opaque_ ) 
+    overlap_1der_ptr_->compute( ish, jsh, 1, dc );
   else {
-    sidl_buffer_ = kinetic_ptr_->compute_array( ish, jsh, 0 ); 
+    sidl_buffer_ = overlap_1der_ptr_->compute_array( ish, jsh, 1, dc );
     copy_buffer();
   }
 }
 
 void
-Int1eCCA::nuclear( int ish, int jsh )
+Int1eCCA::kinetic( int ish, int jsh )
+{
+  Chemistry_QC_GaussianBasis_DerivCenters dc;
+  dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
+  if( use_opaque_ )
+    kinetic_ptr_->compute( ish, jsh, 0, dc );
+  else {
+    sidl_buffer_ = kinetic_ptr_->compute_array( ish, jsh, 0, dc ); 
+    copy_buffer();
+  }
+}
+
+void
+Int1eCCA::kinetic_1der(int ish, int jsh,
+                       Chemistry_QC_GaussianBasis_DerivCenters &dc)
 {
   if( use_opaque_ )
-    nuclear_ptr_->compute( ish, jsh, 0 );
+    kinetic_1der_ptr_->compute( ish, jsh, 1, dc );
   else {
-    sidl_buffer_ = nuclear_ptr_->compute_array( ish, jsh, 0 ); 
+    sidl_buffer_ = kinetic_1der_ptr_->compute_array( ish, jsh, 1, dc );
+    copy_buffer();
+  }
+}
+
+
+void
+Int1eCCA::nuclear( int ish, int jsh )
+{
+  Chemistry_QC_GaussianBasis_DerivCenters dc;
+  dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
+  if( use_opaque_ )
+    nuclear_ptr_->compute( ish, jsh, 0, dc );
+  else {
+    sidl_buffer_ = nuclear_ptr_->compute_array( ish, jsh, 0, dc ); 
+    copy_buffer();
+  }
+}
+
+void
+Int1eCCA::nuclear_1der(int ish, int jsh,
+                       Chemistry_QC_GaussianBasis_DerivCenters &dc)
+{
+  if( use_opaque_ )
+    nuclear_1der_ptr_->compute( ish, jsh, 1, dc );
+  else {
+    sidl_buffer_ = nuclear_1der_ptr_->compute_array( ish, jsh, 1, dc );
     copy_buffer();
   }
 }
@@ -164,10 +228,24 @@ Int1eCCA::nuclear( int ish, int jsh )
 void
 Int1eCCA::hcore( int ish, int jsh )
 {
+  Chemistry_QC_GaussianBasis_DerivCenters dc;
+  dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
   if( use_opaque_ )
-    hcore_ptr_->compute( ish, jsh, 0 );
+    hcore_ptr_->compute( ish, jsh, 0, dc );
   else {
-    sidl_buffer_ = hcore_ptr_->compute_array( ish, jsh, 0 ); 
+    sidl_buffer_ = hcore_ptr_->compute_array( ish, jsh, 0, dc ); 
+    copy_buffer();
+  }
+}
+
+void
+Int1eCCA::hcore_1der(int ish, int jsh,
+                     Chemistry_QC_GaussianBasis_DerivCenters &dc)
+{
+  if( use_opaque_ )
+    hcore_1der_ptr_->compute( ish, jsh, 1, dc );
+  else {
+    sidl_buffer_ = hcore_1der_ptr_->compute_array( ish, jsh, 1, dc );
     copy_buffer();
   }
 }

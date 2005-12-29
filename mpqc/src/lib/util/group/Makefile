@@ -62,7 +62,7 @@ LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libSCgroup
 
-TESTCXXSRC = pooltest.cc messtest.cc rnglocktest.cc thrtest.cc
+TESTCXXSRC = pooltest.cc messtest.cc rnglocktest.cc thrtest.cc prttest.cc
 DISTFILES = $(REQUIREDCXXSRC) $(OPTIONALCXXSRC) $(INC) \
             Makefile LIBS.h $(TESTCXXSRC)
 
@@ -74,6 +74,16 @@ default:: $(DEPENDINCLUDE)
 
 memtest.$(OBJSUF): memtest.cc
 	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
+
+prttest: prttest.$(OBJSUF) \
+	libSCgroup.$(LIBSUF) \
+	libSCkeyval.$(LIBSUF) \
+	libSCmisc.$(LIBSUF) \
+	libSCstate.$(LIBSUF) \
+	libSCclass.$(LIBSUF) \
+	libSCcontainer.$(LIBSUF) \
+	libSCref.$(LIBSUF)
+	$(LTLINK) $(LD) $(LDFLAGS) -o prttest $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 memtest: memtest.$(OBJSUF) \
 	libSCgroup.$(LIBSUF) \

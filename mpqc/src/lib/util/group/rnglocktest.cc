@@ -46,7 +46,7 @@ main()
 
   for (i=0; i<size; i++) bin[i] = 0;
 
-  for (i=0; i<1000000; i++) {
+  for (i=0; i<10000; i++) {
       int start = random()%size;
       int length = random()%30;
       if (length == 0) length++;

@@ -32,8 +32,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <util/misc/string.h>
-#include <util/misc/scexception.h>
-
+#include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 #include <util/state/stateio.h>
@@ -83,7 +82,7 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
     int include_mp1; s.get(include_mp1); include_mp1_ = static_cast<bool>(include_mp1);
   }
   int r12ints_method; s.get(r12ints_method); r12ints_method_ = (R12IntEvalInfo::StoreMethod) r12ints_method;
-  s.getstring(r12ints_file_);
+  s.get(r12ints_file_);
   s.get(mp2_corr_energy_);
   s.get(r12_corr_energy_);
 }
@@ -119,13 +118,8 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   // Default is to use R12 factor
   std::string corrfactor = keyval->stringvalue("corr_factor", KeyValValuestring("r12"));
-  corrparam_ = 0.0;
   if (corrfactor == "r12") {
-    // fake parameter 0.0 for r12 function -- UGLY, should introduce classes
-    typedef LinearR12::CorrelationFactor::CorrelationParameters CorrParams;
-    std::vector< std::pair<double,double> > vtmp;  vtmp.push_back(std::make_pair(0.0,1.0));
-    CorrParams params;  params.push_back(vtmp);
-    corrfactor_ = new LinearR12::CorrelationFactor(LinearR12::R12CorrFactor, params);
+    corrfactor_ = new LinearR12::R12CorrelationFactor();
   }
   else if (corrfactor == "g12") {
     if (keyval->exists("corr_param")) {
@@ -139,7 +133,6 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
           // Primitive functions only
           for(int f=0; f<num_f12; f++) {
             double exponent = keyval->doublevalue("corr_param", f);
-            // no support for contracted functions yet
             LinearR12::CorrelationFactor::ContractedGeminal vtmp;
             vtmp.push_back(std::make_pair(exponent,1.0));
             params.push_back(vtmp);
@@ -166,20 +159,15 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
       else {
         double exponent = keyval->doublevalue("corr_param");
         std::vector< std::pair<double,double> > vtmp;  vtmp.push_back(std::make_pair(exponent,1.0));
-        corrparam_ = exponent;
         params.push_back(vtmp);
       }
-      corrfactor_ = new LinearR12::CorrelationFactor(LinearR12::G12CorrFactor, params);
+      corrfactor_ = new LinearR12::G12CorrelationFactor(params);
     }
     else
       throw ProgrammingError("MBPT2_R12::MBPT2_R12() -- corr_param keyword must be given when corr_factor=g12",__FILE__,__LINE__);
   }
   else if (corrfactor == "none") {
-    // fake parameter 0.0 -- UGLY, should introduce classes
-    typedef LinearR12::CorrelationFactor::CorrelationParameters CorrParams;
-    std::vector< std::pair<double,double> > vtmp;  vtmp.push_back(std::make_pair(0.0,1.0));
-    CorrParams params;  params.push_back(vtmp);
-    corrfactor_ = new LinearR12::CorrelationFactor(LinearR12::NullCorrFactor, params);
+    corrfactor_ = new LinearR12::NullCorrelationFactor();
   }
   else
     throw FeatureNotImplemented("MBPT2_R12::MBPT2_R12 -- this correlation factor is not implemented",__FILE__,__LINE__);
@@ -242,9 +230,11 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     delete[] sa_string;
     throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- unrecognized value for stdapprox");
   }
+#if 0
   // if no explicit correlation then set to stdapprox to A
   if (corrfactor_->id() == LinearR12::NullCorrFactor)
     stdapprox_ = LinearR12::StdApprox_A;
+#endif
   
   spinadapted_ = false;
   if (closedshell)
@@ -311,16 +301,10 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 #endif
   }
 
-  // Get the filename to store the integrals
-  r12ints_file_ = 0;
-  r12ints_file_ = keyval->pcharvalue("r12ints_file");
-  if (!r12ints_file_) {
-    // Since SCFormIO::fileext_to_filename uses new char[] and KeyVal::pcharvalue uses malloc
-    // need to copy the obtained string using strdup first
-    char* filename = SCFormIO::fileext_to_filename(".r12ints.dat");
-    r12ints_file_ = strdup(filename);
-    delete[] filename;
-  }
+  // Get the prefix for the filename to store the integrals
+  std::ostringstream oss;
+  oss << "./" << SCFormIO::default_basename() << ".r12ints";
+  r12ints_file_ = keyval->stringvalue("r12ints_file",KeyValValuestring(oss.str()));
 
   r12eval_ = 0;
   r12a_energy_ = 0;
@@ -341,7 +325,6 @@ MBPT2_R12::~MBPT2_R12()
   r12a_energy_ = 0;
   r12ap_energy_ = 0;
   r12b_energy_ = 0;
-  free(r12ints_file_);
 }
 
 void
@@ -361,7 +344,7 @@ MBPT2_R12::save_data_state(StateOut& s)
   s.put((int)spinadapted_);
   s.put((int)include_mp1_);
   s.put((int)r12ints_method_);
-  s.putstring(r12ints_file_);
+  s.put(r12ints_file_);
 
   s.put(mp2_corr_energy_);
   s.put(r12_corr_energy_);
@@ -425,7 +408,7 @@ MBPT2_R12::print(ostream&o) const
   }
   o << indent << "How to Store Transformed Integrals: " << r12ints_str << endl << endl;
   free(r12ints_str);
-  o << indent << "Transformed Integrals file: " << r12ints_file_ << endl << endl;
+  o << indent << "Transformed Integrals file suffix: " << r12ints_file_ << endl << endl;
   o << indent << "Auxiliary Basis Set (ABS):" << endl;
   o << incindent; aux_basis_->print(o); o << decindent << endl;
   o << indent << " Virtuals Basis Set (VBS):" << endl;
@@ -447,6 +430,21 @@ MBPT2_R12::density()
 void
 MBPT2_R12::compute()
 {
+  if (std::string(reference_->integral()->class_name())
+      !=integral()->class_name()) {
+      FeatureNotImplemented ex(
+          "cannot use a reference with a different Integral specialization",
+          __FILE__, __LINE__, class_desc());
+      try {
+          ex.elaborate()
+              << "reference uses " << reference_->integral()->class_name()
+              << " but this object uses " << integral()->class_name()
+              << std::endl;
+        }
+      catch (...) {}
+      throw ex;
+    }
+
   init_variables_();
   reference_->set_desired_value_accuracy(desired_value_accuracy()
                                          / ref_to_mp2r12_acc_);
@@ -558,10 +556,10 @@ MBPT2_R12::r12ints_method() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-char*
+const std::string&
 MBPT2_R12::r12ints_file() const
 {
-  return strdup(r12ints_file_);
+  return r12ints_file_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

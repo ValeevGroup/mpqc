@@ -53,7 +53,9 @@ CSGrad34Qbtr::CSGrad34Qbtr(int mythread_a, int nthread_a,
                            double **scf_vector_a,
                            double tol_a, int debug_a,
                            int dynamic_a, double print_percent_a,
-                           int dograd_a, int natom_a)
+                           DistShellPair::SharedData *shellpair_shared_data,
+                           int dograd_a, int natom_a):
+  shellpair_shared_data_(shellpair_shared_data)
 {
   msg = msg_a;
   mythread = mythread_a;
@@ -157,7 +159,8 @@ CSGrad34Qbtr::run()
   
   DerivCenters der_centers;
 
-  sc::exp::DistShellPair shellpairs(msg,nthread,mythread,lock,basis,basis,dynamic_);
+  DistShellPair shellpairs(msg,nthread,mythread,lock,basis,basis,dynamic_,
+                           shellpair_shared_data_);
   shellpairs.set_print_percent(print_percent_);
   shellpairs.set_debug(debug);
   if (debug) shellpairs.set_print_percent(1);

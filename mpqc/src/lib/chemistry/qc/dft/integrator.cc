@@ -71,6 +71,31 @@ norm(double v[3])
   return sqrt((x=v[0])*x + (y=v[1])*y + (z=v[2])*z);
 }
 
+static double
+get_radius(const Ref<Molecule> &mol, int iatom)
+{
+  double r = mol->atominfo()->maxprob_radius(mol->Z(iatom));
+  if (r == 0) {
+      static bool warned = false;
+      if (!warned) {
+          ExEnv::out0()
+              << indent << "WARNING: BeckeIntegrationWeight usually uses the atomic maximum" << std::endl
+              << indent << "         probability radius, however this is not available for" << std::endl
+              << indent << "         one of the atoms in your system. The Bragg radius will" << std::endl
+              << indent << "         be used instead." << std::endl;
+          warned = true;
+        }
+      r = mol->atominfo()->bragg_radius(mol->Z(iatom));
+    }
+  if (r == 0) {
+      ExEnv::out0()
+          << indent << "ERROR: BeckeIntegrationWeight could not find a maximum probability" << std::endl
+          << indent << "       or a Bragg radius for an atom" << std::endl;
+      abort();
+    }
+  return r;
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // DenIntegratorThread
 
@@ -696,8 +721,7 @@ BeckeIntegrationWeight::init(const Ref<Molecule> &mol, double tolerance)
   for (int icenter=0; icenter<n_integration_centers; icenter++) {
       int iatom = mol->non_q_atom(icenter);
 
-      // atomic_radius[icenter] = mol->atominfo()->bragg_radius(mol->Z(iatom));
-      atomic_radius[icenter] = mol->atominfo()->maxprob_radius(mol->Z(iatom));
+      atomic_radius[icenter] = get_radius(mol, iatom);
 
       centers[icenter].x() = mol->r(iatom,0);
       centers[icenter].y() = mol->r(iatom,1);
@@ -1453,8 +1477,7 @@ RadialAngularIntegratorThread
   atomic_radius_ = new double[n_integration_center_];
   for (icenter=0; icenter<n_integration_center_; icenter++) {
       int iatom = mol_->non_q_atom(icenter);
-      atomic_radius_[icenter]
-          = mol_->atominfo()->maxprob_radius(mol_->Z(iatom));
+      atomic_radius_[icenter] = get_radius(mol_, iatom);
     }
 
   point_count_total_ = 0;

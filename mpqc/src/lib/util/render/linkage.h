@@ -28,8 +28,6 @@
 #ifndef _util_render_linkage_h
 #define _util_render_linkage_h
 
-#ifndef __PIC__
-
 #include <util/render/oogl.h>
 #include <util/render/sphere.h>
 #include <util/render/polylines.h>
@@ -46,7 +44,5 @@ static ForceLink<Material> render_force_link_e_;
 static ForceLink<Transform> render_force_link_f_;
 
 }
-
-#endif /* __PIC__ */
 
 #endif

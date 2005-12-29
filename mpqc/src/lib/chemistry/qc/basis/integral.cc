@@ -302,6 +302,30 @@ Integral::electron_repulsion2_deriv()
   throw std::runtime_error("Integral::electron_repulsion2_deriv(): not implemented in this particular integrals factory.");
 }
 
+Ref<TwoBodyInt>
+Integral::electron_repulsion()
+{
+  throw std::runtime_error("Integral::electron_repulsion(): not implemented in this particular integrals factory.");
+}
+
+Ref<TwoBodyDerivInt>
+Integral::electron_repulsion_deriv()
+{
+  throw std::runtime_error("Integral::electron_repulsion_deriv(): not implemented in this particular integrals factory.");
+}
+
+Ref<TwoBodyInt>
+Integral::grt()
+{
+  throw std::runtime_error("Integral::grt(): not implemented in this particular integrals factory.");
+}
+
+Ref<TwoBodyInt>
+Integral::g12(const Ref<IntParamsG12>& p)
+{
+  throw std::runtime_error("Integral::g12(): not implemented in this particular integrals factory.");
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

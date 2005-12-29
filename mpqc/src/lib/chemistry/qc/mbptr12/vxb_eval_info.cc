@@ -34,7 +34,7 @@
 #include <util/misc/formio.h>
 #include <util/ref/ref.h>
 #include <util/misc/string.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
@@ -87,6 +87,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
 
   tfactory_ = new MOIntsTransformFactory(integral(),refinfo()->orbs(Alpha));
   tfactory_->set_memory(memory_);
+  tfactory_->set_file_prefix(ints_file_);
 }
 
 R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
@@ -104,7 +105,7 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   thr_ = ThreadGrp::get_default_threadgrp();
 
   int ints_method; si.get(ints_method); ints_method_ = (StoreMethod) ints_method;
-  si.getstring(ints_file_);
+  si.get(ints_file_);
 
   double memory; si.get(memory); memory_ = (size_t) memory;
   si.get(debug_);
@@ -134,7 +135,6 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
 
 R12IntEvalInfo::~R12IntEvalInfo()
 {
-  free(ints_file_);
 }
 
 void R12IntEvalInfo::save_data_state(StateOut& so)
@@ -145,7 +145,7 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(bs_ri_.pointer(),so);
 
   so.put((int)ints_method_);
-  so.putstring(ints_file_);
+  so.put(ints_file_);
 
   so.put((double)memory_);
   so.put(debug_);
@@ -167,9 +167,9 @@ R12IntEvalInfo::refinfo() const {
   return refinfo_;
 }
 
-char* R12IntEvalInfo::ints_file() const
+const std::string& R12IntEvalInfo::ints_file() const
 {
-  return strdup(ints_file_);
+  return ints_file_;
 }
 
 void
@@ -249,7 +249,7 @@ R12IntEvalInfo::construct_orthog_vir_()
       throw std::runtime_error("R12IntEvalInfo::construct_orthog_vir_() -- nfzv_ != 0 is not allowed yet");
     
     // This is a set of orthonormal functions that span VBS
-    Ref<MOIndexSpace> vir_space = orthogonalize("e","VBS", bs_vir_, refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_vir_);
+    Ref<MOIndexSpace> vir_space = orthogonalize("e","VBS", bs_vir_, integral(), refinfo()->ref()->orthog_method(), refinfo()->ref()->lindep_tol(), nlindep_vir_);
     if (!spin_polarized) {
       // Now project out occupied MOs
       vir_sb_ = orthog_comp(refinfo()->docc_sb(), vir_space, "e(sym)", "VBS", refinfo()->ref()->lindep_tol());

@@ -1,7 +1,7 @@
 
 /** \page scls
 
-The scpr program is used to list objects in checkpoint files.
+The scls program is used to list objects in checkpoint files.
 \if html
 See \ref state for more information.
 \endif

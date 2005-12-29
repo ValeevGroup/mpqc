@@ -220,7 +220,7 @@ typedef StreSimpleCo Stre;
 
 // ///////////////////////////////////////////////////////////////////////
 
-static const double rtd = 180.0/3.14159265358979323846;
+static const double rtd = 180.0/M_PI;
 
 /** The BendSimpleCo class describes an bend internal coordinate of a
 molecule.  The input is described in the documentation of its parent class

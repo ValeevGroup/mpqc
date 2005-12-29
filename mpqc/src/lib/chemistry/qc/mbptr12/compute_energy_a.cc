@@ -27,6 +27,7 @@
 
 #include <stdexcept>
 #include <scconfig.h>
+#include <util/misc/math.h>
 #include <util/misc/formio.h>
 #include <util/misc/timer.h>
 #include <math/scmat/abstract.h>
@@ -47,7 +48,7 @@ MBPT2_R12::compute_energy_a_()
     r12info->set_dynamic(dynamic_);
     r12info->set_print_percent(print_percent_);
     r12info->set_memory(mem_alloc);
-    r12eval_ = new R12IntEval(r12info,corrfactor_,corrparam_,gbc_,ebc_,abs_method_,stdapprox_);
+    r12eval_ = new R12IntEval(r12info,corrfactor_,gbc_,ebc_,abs_method_,stdapprox_);
     r12eval_->include_mp1(include_mp1_);
     r12eval_->set_debug(debug_);
   }

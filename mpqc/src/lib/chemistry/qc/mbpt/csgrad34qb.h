@@ -37,6 +37,7 @@
 #include <util/group/memory.h>
 #include <util/group/thread.h>
 #include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/distshpair.h>
 
 namespace sc {
 
@@ -67,6 +68,7 @@ class CSGrad34Qbtr: public Thread {
     int natom;
     double *Lpi;
     double **ginter;
+    DistShellPair::SharedData *shellpair_shared_data_;
   public:
     CSGrad34Qbtr(int mythread_a, int nthread_a,
                  int me_a, int nproc_a,
@@ -80,6 +82,7 @@ class CSGrad34Qbtr: public Thread {
                  double **scf_vector_a,
                  double tol_a, int debug_a,
                  int dynamic_a, double print_percent_a,
+                 DistShellPair::SharedData *shellpair_shared_data,
                  int dograd_a, int natom_a);
     ~CSGrad34Qbtr();
 

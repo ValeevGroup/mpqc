@@ -37,7 +37,6 @@
 #include <util/misc/formio.h>
 #include <util/group/message.h>
 #include <chemistry/qc/mbpt/csgrads2pdm.h>
-#include <chemistry/qc/mbpt/distsh.h>
 
 using namespace sc;
 

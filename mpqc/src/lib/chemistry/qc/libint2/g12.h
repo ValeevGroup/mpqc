@@ -33,7 +33,7 @@
 #include <stdexcept>
 
 #include <util/ref/ref.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/intparams.h>
 #include <chemistry/qc/libint2/shellpairs.h>

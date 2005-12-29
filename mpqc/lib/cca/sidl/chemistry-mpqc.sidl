@@ -46,7 +46,7 @@ package MPQC version 0.2 {
     Chemistry.QC.GaussianBasis.IntegralEvaluator4{
       void set_integral_package(in string label);
     };
-
+ 
   class ChemistryOpt_CoordinateModel implements-all ChemistryOpt.CoordinateModel,
     gov.cca.Component, gov.cca.Port{};
 
@@ -57,5 +57,7 @@ package MPQC version 0.2 {
   class ComponentClassDescription implements-all gov.cca.ComponentClassDescription {
     void initialize(in string className, in string classAlias);
   };
+
+  class SimpleDriver implements-all gov.cca.Component, gov.cca.ports.GoPort { };
 
 };

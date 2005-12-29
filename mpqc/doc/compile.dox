@@ -1,9 +1,16 @@
 
 /** \page compile Compiling
 
-These instructions are for a machine running Unix or a Unix-like
-system. The codes work under recent versions of Linux, AIX, and IRIX at
-least.  The vendor's compiler for each of these systems should work.
+<ul>
+  <li> \ref compilepre   
+  <li> \ref compilepreopt
+  <li> \ref compileconf  
+  <ul>
+    <li> \ref compilecca
+  </ul>
+  <li> \ref compilecomp
+  <li> \ref compilecheck
+</ul>
 
 \section compilepre Prerequisites
 
@@ -282,5 +289,9 @@ older versions of GNU make use <tt>make JOBS=-j4</tt>.
  You can install the libraries and header files with <tt>make
 install_devel</tt>, however, <tt>make install</tt> must be also be run to
 install the files needed for run-time support.
+
+\section compilecheck Checking the Compilation
+
+See \ref mpqcval for instructions for checking your compilation.
 
 */

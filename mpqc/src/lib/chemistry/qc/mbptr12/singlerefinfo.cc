@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/scf/uhf.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/singlerefinfo.h>
@@ -130,6 +130,7 @@ void
 SingleRefInfo::init_spinspecific_spaces()
 {
   const Ref<GaussianBasisSet> bs = ref_->basis();
+  const Ref<Integral>& integral = ref_->integral();
   using std::vector;
   vector<double> aocc, bocc;
   const int nmo = ref_->alpha_eigenvectors().coldim().n();
@@ -139,8 +140,8 @@ SingleRefInfo::init_spinspecific_spaces()
   }
   Ref<PetiteList> plist = ref_->integral()->petite_list();
   if (ref()->spin_polarized()) {
-    spinspaces_[0].init("Alpha", bs, ref_->alpha_eigenvalues(), plist->evecs_to_AO_basis(ref_->alpha_eigenvectors()), aocc, nfzc(), nfzv());
-    spinspaces_[1].init("Beta", bs, ref_->beta_eigenvalues(), plist->evecs_to_AO_basis(ref_->beta_eigenvectors()), bocc, nfzc(), nfzv());
+    spinspaces_[0].init("Alpha", bs, integral, ref_->alpha_eigenvalues(), plist->evecs_to_AO_basis(ref_->alpha_eigenvectors()), aocc, nfzc(), nfzv());
+    spinspaces_[1].init("Beta", bs, integral, ref_->beta_eigenvalues(), plist->evecs_to_AO_basis(ref_->beta_eigenvectors()), bocc, nfzc(), nfzv());
   }
   else {
     for(int s=0; s<NSpinCases1; s++) {
@@ -162,7 +163,8 @@ SingleRefInfo::init_spinindependent_spaces()
   const Ref<GaussianBasisSet> bs = ref_->basis();
   const RefSCMatrix evecs_so = ref_->eigenvectors();
   const RefDiagSCMatrix evals = ref_->eigenvalues();
-  Ref<PetiteList> plist = ref_->integral()->petite_list();
+  const Ref<Integral>& integral =  ref_->integral();
+  Ref<PetiteList> plist = integral->petite_list();
   RefSCMatrix evecs_ao = plist->evecs_to_AO_basis(evecs_so);
   
   int ndocc = 0;
@@ -178,15 +180,15 @@ SingleRefInfo::init_spinindependent_spaces()
       nuocc++;
   }
   
-  orbs_sb_ = new MOIndexSpace("p(sym)","symmetry-blocked MOs", evecs_ao, bs, evals, 0, 0, MOIndexSpace::symmetry);
-  orbs_ = new MOIndexSpace("p","energy-ordered MOs", evecs_ao, bs, evals, 0, 0);
-  docc_sb_ = new MOIndexSpace("m(sym)","doubly-occupied symmetry-blocked MOs", evecs_ao, bs, evals, 0, nuocc+nsocc, MOIndexSpace::symmetry);
-  docc_ = new MOIndexSpace("m","doubly-occupied energy-ordered MOs", evecs_ao, bs, evals, 0, nuocc+nsocc);
-  docc_act_ = new MOIndexSpace("i","active doubly-occupied energy-ordered MOs", evecs_ao, bs, evals, nfzc(), nuocc+nsocc);
-  socc_ = new MOIndexSpace("x","singly-occupied energy-ordered MOs", evecs_ao, bs, evals, ndocc, nuocc);
-  uocc_sb_ = new MOIndexSpace("e(sym)","unoccupied symmetry-blocked MOs", evecs_ao, bs, evals, ndocc+nsocc, 0, MOIndexSpace::symmetry);
-  uocc_ = new MOIndexSpace("e","unoccupied energy-ordered MOs", evecs_ao, bs, evals, ndocc+nsocc, 0);
-  uocc_act_ = new MOIndexSpace("a","active unoccupied energy-ordered MOs", evecs_ao, bs, evals, ndocc+nsocc, nfzv());
+  orbs_sb_ = new MOIndexSpace("p(sym)","symmetry-blocked MOs", evecs_ao, bs, integral, evals, 0, 0, MOIndexSpace::symmetry);
+  orbs_ = new MOIndexSpace("p","energy-ordered MOs", evecs_ao, bs, integral, evals, 0, 0);
+  docc_sb_ = new MOIndexSpace("m(sym)","doubly-occupied symmetry-blocked MOs", evecs_ao, bs, integral, evals, 0, nuocc+nsocc, MOIndexSpace::symmetry);
+  docc_ = new MOIndexSpace("m","doubly-occupied energy-ordered MOs", evecs_ao, bs, integral, evals, 0, nuocc+nsocc);
+  docc_act_ = new MOIndexSpace("i","active doubly-occupied energy-ordered MOs", evecs_ao, bs, integral, evals, nfzc(), nuocc+nsocc);
+  socc_ = new MOIndexSpace("x","singly-occupied energy-ordered MOs", evecs_ao, bs, integral, evals, ndocc, nuocc);
+  uocc_sb_ = new MOIndexSpace("e(sym)","unoccupied symmetry-blocked MOs", evecs_ao, bs, integral, evals, ndocc+nsocc, 0, MOIndexSpace::symmetry);
+  uocc_ = new MOIndexSpace("e","unoccupied energy-ordered MOs", evecs_ao, bs, integral, evals, ndocc+nsocc, 0);
+  uocc_act_ = new MOIndexSpace("a","active unoccupied energy-ordered MOs", evecs_ao, bs, integral, evals, ndocc+nsocc, nfzv());
 }
 
 
@@ -323,6 +325,7 @@ void
 SingleRefInfo::SpinSpaces::init(
         const std::string& prefix,
         const Ref<GaussianBasisSet>& bs,
+        const Ref<Integral>& integral,
         const RefDiagSCMatrix& evals,
         const RefSCMatrix& evecs,
         const std::vector<double>& occs,
@@ -341,49 +344,49 @@ SingleRefInfo::SpinSpaces::init(
     ostringstream oss;
     oss << prefix << " symmetry-blocked MOs";
     std::string id = (prefix[0]=='A'?"P(sym)":"p(sym)");
-    orbs_sb_ = new MOIndexSpace(id,oss.str(),evecs, bs, evals, 0, 0, MOIndexSpace::symmetry);
+    orbs_sb_ = new MOIndexSpace(id,oss.str(),evecs, bs, integral, evals, 0, 0, MOIndexSpace::symmetry);
   }
   {
     ostringstream oss;
     oss << prefix << " energy-ordered MOs";
     std::string id = (prefix[0]=='A'?"P":"p");
-    orbs_ = new MOIndexSpace(id,oss.str(),evecs, bs, evals, 0, 0);
+    orbs_ = new MOIndexSpace(id,oss.str(),evecs, bs, integral, evals, 0, 0);
   }
   {
     ostringstream oss;
     oss << prefix << " occupied symmetry-blocked MOs";
     std::string id = (prefix[0]=='A'?"M(sym)":"m(sym)");
-    occ_sb_ = new MOIndexSpace(id,oss.str(),evecs, bs, evals, 0, nuocc, MOIndexSpace::symmetry);
+    occ_sb_ = new MOIndexSpace(id,oss.str(),evecs, bs, integral, evals, 0, nuocc, MOIndexSpace::symmetry);
   }
   {
     ostringstream oss;
     oss << prefix << " occupied MOs";
     std::string id = (prefix[0]=='A'?"M":"m");
-    occ_ = new MOIndexSpace(id,oss.str(),evecs, bs, evals, 0, nuocc);
+    occ_ = new MOIndexSpace(id,oss.str(),evecs, bs, integral, evals, 0, nuocc);
   }
   {
     ostringstream oss;
     oss << prefix << " active occupied MOs";
     std::string id = (prefix[0]=='A'?"I":"i");
-    occ_act_ = new MOIndexSpace(id,oss.str(),evecs, bs, evals, nfzc, nuocc);
+    occ_act_ = new MOIndexSpace(id,oss.str(),evecs, bs, integral, evals, nfzc, nuocc);
   }
   {
     ostringstream oss;
     oss << prefix << " unoccupied symmetry-blocked MOs";
     std::string id = (prefix[0]=='A'?"E(sym)":"e(sym)");
-    uocc_sb_ = new MOIndexSpace(id,oss.str(),evecs, bs, evals, nocc, 0, MOIndexSpace::symmetry);
+    uocc_sb_ = new MOIndexSpace(id,oss.str(),evecs, bs, integral, evals, nocc, 0, MOIndexSpace::symmetry);
   }
   {
     ostringstream oss;
     oss << prefix << " unoccupied MOs";
     std::string id = (prefix[0]=='A'?"E":"e");
-    uocc_ = new MOIndexSpace(id,oss.str(),evecs, bs, evals, nocc, 0);
+    uocc_ = new MOIndexSpace(id,oss.str(),evecs, bs, integral, evals, nocc, 0);
   }
   {
     ostringstream oss;
     oss << prefix << " active unoccupied MOs";
     std::string id = (prefix[0]=='A'?"A":"a");
-    uocc_act_ = new MOIndexSpace(id,oss.str(),evecs, bs, evals, nocc, nfzv);
+    uocc_act_ = new MOIndexSpace(id,oss.str(),evecs, bs, integral, evals, nocc, nfzv);
   }
 }
 

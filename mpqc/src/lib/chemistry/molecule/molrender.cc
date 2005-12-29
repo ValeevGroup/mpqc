@@ -31,7 +31,7 @@
 
 #include <math.h>
 
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <util/render/sphere.h>
 #include <util/render/polygons.h>

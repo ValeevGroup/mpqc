@@ -41,7 +41,7 @@ namespace sc {
 
 class Integral;
 
-/** Int2eV3 is a class wrapper for the one body part of the C language
+/** Int1eV3 is a class wrapper for the one body part of the C language
     IntV3 library.  It is used by OneBodyIntV3 and OneBodyDerivIntV3 to
     implement IntegralV3. */
 class Int1eV3: public RefCount {

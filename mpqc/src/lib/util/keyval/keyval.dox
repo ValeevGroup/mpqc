@@ -257,7 +257,7 @@ wrong answers (unless the desired value happens to be zero).
 
 \section keyvalobj Objects
 
-An instance of an object can be can be specified by surrounding it's
+An instance of an object can be specified by surrounding it's
 classname with the ``<tt><</tt>'' and ``<tt>></tt>'' operators immediately
 after the keyword naming the data.
 
@@ -278,7 +278,7 @@ a1\<A\>: (
             )
         )
     )
-a2 = $:a
+a2 = $:a1
 </pre>
 
 The <tt>a1</tt> list would contain two <tt>A</tt> objects followed by a

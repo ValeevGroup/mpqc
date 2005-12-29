@@ -48,7 +48,8 @@ MP2R12Energy::compute()
   int me = msg->me();
   int ntasks = msg->n();
   
-  const bool ebc = r12eval_->ebc();
+  const bool ebc = r12eval()->ebc();
+  const bool follow_ks_ebcfree = r12eval()->follow_ks_ebcfree();
   // WARNING only RHF and UHF are considered
   const int num_unique_spincases2 = (r12info->refinfo()->ref()->spin_polarized() ? 3 : 2);
   
@@ -60,8 +61,9 @@ MP2R12Energy::compute()
     
     const SpinCase2 spincase2 = static_cast<SpinCase2>(spin);
     
+    Ref<LinearR12::NullCorrelationFactor> nullcorrptr; nullcorrptr << r12info->corrfactor();
     // if no explicit correlation -- just get MP2 energies
-    if (r12info->corrfactor()->id() == LinearR12::NullCorrFactor) {
+    if (nullcorrptr.nonnull()) {
       ef12_[spin].assign(0.0);
       RefSCVector emp2 = r12eval()->emp2(spincase2);
       double* buf = new double[emp2.dim().n()];
@@ -88,9 +90,14 @@ MP2R12Energy::compute()
       RefSCMatrix V = r12eval()->V(spincase2);
       RefSCMatrix X = r12eval()->X(spincase2);
       RefSymmSCMatrix B = r12eval()->B(spincase2);
-      RefSCMatrix A;
-      if (ebc == false)
+      // In Klopper-Samson method, two kinds of A are used: app B (I replace with mine A) and app XX (mine Ac)
+      RefSCMatrix A, Ac;
+      if (ebc == false) {
         A = r12eval()->A(spincase2);
+        if (follow_ks_ebcfree) {
+          Ac = r12eval()->Ac(spincase2);
+        }
+      }
       
       // Prepare total and R12 pairs
       const RefSCDimension dim_oo = V.coldim();
@@ -176,13 +183,26 @@ MP2R12Energy::compute()
                   if (ebc == false) {
                     double fy = 0.0;
                     SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
-                    for(cd_iter.start(); cd_iter; cd_iter.next()) {
-                      const int cd = cd_iter.ij();
-                      const int c = cd_iter.i();
-                      const int d = cd_iter.j();
-                      
-                      fy -= A.get_element(kl,cd)*A.get_element(ow,cd)/(evals_act_vir1[c] + evals_act_vir2[d]
-                      - evals_act_occ1[i] - evals_act_occ2[j]);
+                    if (follow_ks_ebcfree) {
+                      for(cd_iter.start(); cd_iter; cd_iter.next()) {
+                        const int cd = cd_iter.ij();
+                        const int c = cd_iter.i();
+                        const int d = cd_iter.j();
+                        
+                        fy -= 0.5*( A.get_element(kl,cd)*Ac.get_element(ow,cd) + Ac.get_element(kl,cd)*A.get_element(ow,cd) )/
+                        (evals_act_vir1[c] + evals_act_vir2[d]
+                        - evals_act_occ1[i] - evals_act_occ2[j]);
+                      }
+                    }
+                    else {
+                      for(cd_iter.start(); cd_iter; cd_iter.next()) {
+                        const int cd = cd_iter.ij();
+                        const int c = cd_iter.i();
+                        const int d = cd_iter.j();
+                        
+                        fy -= A.get_element(kl,cd)*A.get_element(ow,cd)/(evals_act_vir1[c] + evals_act_vir2[d]
+                        - evals_act_occ1[i] - evals_act_occ2[j]);
+                      }
                     }
                     
                     B_ij.accumulate_element(kl,ow,fy);

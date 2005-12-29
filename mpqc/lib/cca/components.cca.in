@@ -11,6 +11,7 @@
     <class name="MPQC.Chemistry_QC_Model" desc="ior/impl" />
     <class name="MPQC.ChemistryOpt_CoordinateModel" desc="ior/impl" />
     <class name="MPQC.IntegralEvaluatorFactory" desc="ior/impl" />
+    <class name="MPQC.SimpleDriver" desc="ior/impl" />
   </library>
 </scl>
 <componentDeployment name="MPQC.Chemistry_MoleculeViewer"
@@ -35,6 +36,13 @@
 <componentDeployment
  name="MPQC.IntegralEvaluatorFactory"
  paletteClassAlias="MPQC.IntegralEvaluatorFactory" >
+   <environment>
+     <ccaSpec binding="babel" /> <library loading="dynamic" />
+   </environment>
+</componentDeployment>
+<componentDeployment
+ name="MPQC.SimpleDriver"
+ paletteClassAlias="MPQC.SimpleDriver" >
    <environment>
      <ccaSpec binding="babel" /> <library loading="dynamic" />
    </environment>

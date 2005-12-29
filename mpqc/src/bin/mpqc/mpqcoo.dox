@@ -150,7 +150,7 @@ There are also some utility keywords that tell mpqc some technical
 details about how to do the calculation:
 <dl>
 <dt><tt>debug</tt><dd> This optional keyword gives a Debugger
-        object which can used to help find the problem
+        object which can be used to help find the problem
         if MPQC encounters a catastrophic error.
 <dt><tt>matrixkit</tt><dd>
         This optional keyword gives a SCMatrixKit specialization
@@ -908,7 +908,7 @@ molecule<Molecule>: (
 )
 \% basis set specification
 basis<GaussianBasisSet>: (
-  name = "4-31G*"
+  name = "3-21G*"
   molecule = $:molecule
 )
 mpqc: (
@@ -972,7 +972,7 @@ molecule<Molecule>: (
 )
 \% basis set specification
 basis<GaussianBasisSet>: (
-  name = "4-31G*"
+  name = "3-21G*"
   molecule = $:molecule
 )
 mpqc: (
@@ -1034,7 +1034,7 @@ molecule<Molecule>: (
 )
 \% basis set specification
 basis<GaussianBasisSet>: (
-  name = "4-31G*"
+  name = "3-21G*"
   molecule = $:molecule
 )
 mpqc: (

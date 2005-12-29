@@ -36,9 +36,12 @@
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactory.hh>
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluator2.hh>
 #include <Chemistry_QC_GaussianBasis_Molecular.hh>
+#include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
 #include <MPQC_GaussianBasis_Molecular.hh>
 #include <chemistry/qc/basis/integral.h>
 
+using namespace std;
+using namespace Chemistry;
 using namespace Chemistry::QC::GaussianBasis;
 using namespace MPQC;
 namespace sc {
@@ -61,13 +64,21 @@ class Int1eCCA: public RefCount {
     bool use_opaque_;
     void copy_buffer();
     IntegralEvaluator2 overlap_;
+    IntegralEvaluator2 overlap_1der_;
     IntegralEvaluator2 kinetic_;
+    IntegralEvaluator2 kinetic_1der_;
     IntegralEvaluator2 nuclear_;
+    IntegralEvaluator2 nuclear_1der_;
     IntegralEvaluator2 hcore_;
+    IntegralEvaluator2 hcore_1der_;
     IntegralEvaluator2 *overlap_ptr_;
+    IntegralEvaluator2 *overlap_1der_ptr_;
     IntegralEvaluator2 *kinetic_ptr_;
+    IntegralEvaluator2 *kinetic_1der_ptr_;
     IntegralEvaluator2 *nuclear_ptr_;
+    IntegralEvaluator2 *nuclear_1der_ptr_;
     IntegralEvaluator2 *hcore_ptr_;
+    IntegralEvaluator2 *hcore_1der_ptr_;
 
   protected:
     Integral *integral_;
@@ -80,26 +91,18 @@ class Int1eCCA: public RefCount {
     ~Int1eCCA();
 
     double *buffer() { return buff_; }
-
-    void kinetic(int ish, int jsh);
-    void nuclear(int ish, int jsh);
     void overlap(int ish, int jsh);
-    void hcore(int ish, int jsh);
-    void efield(int ish, int jsh, double position[3]);
-    void point_charge(int ish, int jsh,
-                      int ncharge, const double* charge,
-                      const double*const* position);
-    void dipole(int ish, int jsh,
-                double *com);
-
-    void hcore_1der(int ish, int jsh,
-                    int dercs, int centernum);
-    void kinetic_1der(int ish, int jsh,
-                      int dercs, int centernum);
+    void overlap_1der(int ish, int jsh, 
+                      Chemistry_QC_GaussianBasis_DerivCenters &dc);
+    void kinetic(int ish, int jsh);
+    void kinetic_1der(int ish, int jsh, 
+                      Chemistry_QC_GaussianBasis_DerivCenters &dc);
+    void nuclear(int ish, int jsh);
     void nuclear_1der(int ish, int jsh,
-                      int dercs, int centernum);
-    void overlap_1der(int ish, int jsh,
-                      int dercs, int centernum);
+                      Chemistry_QC_GaussianBasis_DerivCenters &dc);
+    void hcore(int ish, int jsh);
+    void hcore_1der(int ish, int jsh,
+                    Chemistry_QC_GaussianBasis_DerivCenters &dc);
 };
 
 }

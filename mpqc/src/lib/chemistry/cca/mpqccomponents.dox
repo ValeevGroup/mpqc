@@ -132,6 +132,7 @@ This is an implementation of the
 Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory interface.
 This factory produces molecular integral evaluator objects 
 based on the MPQC package. 
+This code is experimental and does not currently support derivative integrals.
 
 \subsection evalfacpp Provides Ports
 <ul>
@@ -143,6 +144,10 @@ based on the MPQC package.
 <ul>
   <li><b>package</b> Integral package, either <tt>intv3</tt> or <tt>cints</tt>. 
       Defaults to <tt>intv3</tt>.
+  <li><b>integral_buffer</b> Integral buffer type, either <tt>opaque</tt> or <tt>array</tt>.
+      The <tt>opaque</tt> option uses pointers and is therefore higher performance. 
+      The <tt>array</tt> option may be used by components implemented in languages which are 
+      not pointer-aware.
 </ul>
 
 */

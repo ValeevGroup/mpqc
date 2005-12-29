@@ -38,7 +38,7 @@ namespace sc {
 
 class Integral;
 /** Compute the transformation matrices that maps a set of Cartesian
-    functions into to another set of Cartesian functions in a rotated
+    functions to another set of Cartesian functions in a rotated
     coordinate system. */
 class ShellRotation {
   private:

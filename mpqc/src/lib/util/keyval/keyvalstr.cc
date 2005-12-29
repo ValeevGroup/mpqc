@@ -139,7 +139,9 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
 
   if (verbose_) {
       ExEnv::out0() << indent << key << " = ";
-      if (result.null()) ExEnv::out0() << def << " (default)";
+      if (result.null()) {
+          ExEnv::out0() << def << " (default)";
+        }
       else ExEnv::out0() << *result.pointer();
       ExEnv::out0() << endl;
     }

@@ -49,6 +49,8 @@ DEPENDINCLUDE =
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libSCoptimize
 
+kvopt.testrun: DO_TESTRUN=no
+
 TESTPROGS = kvopt opttest scextest
 
 DISTFILES = opttest.cc $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h

@@ -9,11 +9,7 @@
 #include <chemistry/molecule/molrender.h>
 #include <chemistry/molecule/molshape.h>
 
-// This forces the exception classes to be linked in.  Otherwise they won't
-// for single pass linkage of static libraries.  This is because of library
-// ordering and interdependency issues.
-#include <util/misc/scexception.h>
-static sc::SCException scexception_linkage;
+#include <util/state/linkage.h>
 
 using namespace sc;
 

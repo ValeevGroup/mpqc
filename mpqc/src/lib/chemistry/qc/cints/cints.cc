@@ -266,25 +266,10 @@ IntegralCints::electron_repulsion()
   return new TwoBodyIntCints(this, bs1_, bs2_, bs3_, bs4_, storage_, erieval);
 }
 
-Ref<TwoBodyDerivInt>
-IntegralCints::electron_repulsion_deriv()
-{
-  ExEnv::errn() << scprintf("IntegralCints::electron_repulsion_deriv() is not yet implemented.\n");
-  ExEnv::errn() << scprintf("Try using the IntegralV3 factory instead.\n");
-  fail();
-  return 0;
-}
-
 Ref<TwoBodyInt>
-IntegralCints::grt(const Ref<IntParams>& p)
+IntegralCints::grt()
 {
   return new TwoBodyIntCints(this, bs1_, bs2_, bs3_, bs4_, storage_, grteval);
-}
-
-Ref<TwoBodyInt>
-IntegralCints::g12(const Ref<IntParams>& p)
-{
-  throw std::runtime_error("IntegralCints::g12(): not implemented in this particular integrals factory.");
 }
 
 void

@@ -1,0 +1,451 @@
+#!/usr/bin/env perl
+#eval 'exec perl $0 $*'
+#    if 0;
+
+$prefix = '@prefix@';
+$exec_prefix = "@exec_prefix@";
+$bindir = "@bindir@";
+$scdatadir = "@scdatadir@";
+
+$pwd = `pwd`;
+chomp $pwd;
+$pwd =~ s/\/$//;
+
+use POSIX;
+
+# The path to the ccaffiene executable
+$ccafe = "@CCAFE_BIN@/ccafe-batch";
+
+# The threadgrp specialization
+$threadgrp = "none";
+
+# The mpi launch command
+$launch = "@CCALAUNCH@";
+
+# The number of tasks
+$ntask = 1;
+
+# A filename with a list of nodes.
+$nodefile = "";
+
+# A command line argument with a list of nodes.
+$nodes = "";
+
+# A format string to convert a node number to a node name
+$nodename = "%d";
+
+# The number of nodes each job will use.
+$nnodeperjob = "nnode";
+
+# The number of threads each process will use.
+$nthreadperproc = 1;
+
+# The number of processes to run on each node.
+$nprocpernode = 1;
+
+# The directory where the input file is to be found.
+$inputprefix = "";
+
+# The directory where the output file is to be placed.
+$outputprefix = "";
+
+# If true, then print out help info and exit
+$help = 0;
+
+# If true, then don't actually run anything
+$debug = 0;
+
+# If true, then print out extra info.
+$verbose = 0;
+
+# If true, then overwrite output files that seem up-to-date
+$rerun = 0;
+
+# If true, then do not overwrite any output file.
+$onlynew = 0;
+
+######################################################################
+
+use Getopt::Long;
+
+if (!GetOptions("launch=s" => \$launch,
+                "threadgrp=s" => \$threadgrp,
+                "nnodeperjob=i" => \$nnodeperjob,
+                "nthreadperproc=i" => \$nthreadperproc,
+                "nprocpernode=i" => \$nprocpernode,
+                "outputprefix=s" => \$outputprefix,
+                "inputprefix=s" => \$inputprefix,
+                "nodefile=s" => \$nodefile,
+                "nodes=s" => \$nodes,
+                "nodename=s" => \$nodename,
+                "help!" => \$help,
+                "rerun!" => \$rerun,
+                "onlynew!" => \$onlynew,
+                "debug!" => \$debug,
+                "verbose!" => \$verbose,
+      )) {
+    $help=1;
+}
+
+if ("$launch" eq "@" . "CCALAUNCH@") {
+    $launch = "mpirun [-hf %NODEFILE%] -n %NPROC% %CCARUNPROC% %CCAFE% --ccafe-rc %INPUT% --ccafe-remap-stdio --ccafe-outputdir %OUTPUT%"; 
+}
+
+$outputprefix =~ s/\/$//;
+$inputprefix =~ s/\/$//;
+
+######################################################################
+
+if ($help) {
+    print  "Usage: $ARGV[0] [options] [rcfile1.in] [rcfile2.in] ...\n";
+    print  "Options:\n";
+    print  "  --nnodeperjob n    run with n nodes per job (value: $nnodeperjob)\n";
+    print  "  --nprocpernode n   run with n procs per node (value: $nprocpernode)\n";
+    print  "  --nthreadperproc n use n threads per process (value: $nthreadperproc)\n";
+    print  "  --threadgrp grp    use the given threading layer (value: $threadgrp)\n";
+    print  "                     none: uses MPQC's default\n";
+    print  "                     proc: does a single threaded run\n";
+    print  "                     posix: use POSIX threads\n";
+    printf "  --launch cmd       use the given cmd to launch jobs--see below (value: %s)\n",
+          (($launch eq "")?"<not set>":$launch);
+    printf "  --nodefile file    a file listing nodes to use (value: %s)\n",
+          (($nodefile eq "")?"<not set>":$nodefile);
+    printf "  --nodes nodes      a command line list of machines to use (value: %s)\n",
+          (($nodes eq "")?"<not set>":$nodes);
+    printf "                     groups can be given as 8-10,12,15-17 for example\n";
+    printf "  --nodename fmt     converts node num to name (value: %s)\n", $nodename;
+    print  "  --rerun            overwrite output file, even if up-to-date\n";
+    print  "  --onlynew          do not overwrite output file, even if not up-to-date\n";
+    print  "  --inputprefix dir  path to prefix input files with\n";
+    print  "  --outputprefix dir path to prefix output files with\n";
+    print  "  --debug            don't actually run mpqc\n";
+    print  "  --help             print this help\n";
+    print  "\n";
+    print  "The launch command can contain special strings that will be substituted.\n";
+    print  "These are:\n";
+    print  "  %NPROC%    The number of processes to start.\n";
+    print  "  %NODEFILE% The name of a file containing the node names.\n";
+    print  "  %NODELIST% A comma separated list of node names.\n";
+    print  "  For these last two, if they are contained within square brackets\n";
+    print  "  and a substitution is not available, then everything within the\n";
+    print  "  the brackets is removed.\n";
+    print  "Examples of the launch argument:\n";
+    print  "  mpirun [-hf %NODEFILE%] -n %NPROC% %CCAFE% --ccafe-rc %INPUT% --ccafe-remap-stdio --ccafe-outp
+utdir %OUTPUT%\n";
+    print  "  mpirun [-H %NODELIST%] -n %NPROC% %CCAFE% --ccafe-rc %INPUT% --ccafe-remap-stdio --ccafe-outp
+utdir %OUTPUT%\n";
+    exit 0;
+}
+
+######################################################################
+
+@nodelist = ();
+if ($nodes ne "") {
+    $nodes =~ s/-/../g;
+    foreach my $i (eval $nodes) {
+        $nodelist[$#nodelist + 1] = sprintf "$nodename", $i;
+    }
+}
+elsif ("$nodefile" eq "" && exists($ENV{"PBS_NODEFILE"})) {
+    $nodefile=$ENV{"PBS_NODEFILE"};
+}
+if ("$nodefile" ne "" && -f "$nodefile") {
+    my %nodesfound = {};
+    open(NODEFILE,"<$nodefile");
+    while(<NODEFILE>) {
+        if (/(\S+)/) {
+            my $nodename = $1;
+            if (!exists($nodesfound{$nodename})) {
+                $nodelist[$#nodelist + 1] = $nodename;
+                $nodesfound{$nodename} = 1;
+            }
+        }
+    }
+    close(NODEFILE);
+}
+
+if ($#nodelist == -1) {
+    $nnode = 1;
+}
+else {
+    $nnode = $#nodelist + 1;
+}
+
+if ($nnodeperjob eq "nnode") {
+    $nnodeperjob = $nnode;
+}
+
+$nprocperjob = $nnodeperjob * $nprocpernode;
+
+$nnodeperjob = POSIX::ceil($nprocperjob / $nprocpernode);
+
+@jobnodes = ();
+%jobnnodes = {};
+%nodelist = {};
+%nodefile = {};
+$maxjobs = 0;
+while (($maxjobs + 1) * $nnodeperjob <= $nnode) {
+    $jobnnodes[$maxjobs++] = $nnodeperjob;
+}
+
+if ($maxjobs == 0) {
+    die "requested $nnodeperjob nodes but have $nnode nodes";
+}
+
+$nodesbegin = 0;
+foreach my $i (0..$maxjobs-1) {
+    my $nodesend = $nodesbegin + $jobnnodes[$i];
+    my @slice = (@nodelist)[$nodesbegin..($nodesend-1)];
+    $jobnodes{$i} = \@slice;
+    $nodesbegin = $nodesend;
+    foreach my $j (@slice) {
+        if ($nodelist{$i} eq "") { $nodelist{$i} = $j; }
+        else { $nodelist{$i} = sprintf "%s,%s", $nodelist{$i}, $j; }
+    }
+    $nodefile{$i} = ".tmp.nodefile.$$.$i";
+    open(NODEFILE,">" . $nodefile{$i});
+    foreach my $j (@slice) {
+        printf NODEFILE "%s\n", $j;
+    }
+    close(NODEFILE);
+}
+
+######################################################################
+
+if ($threadgrp eq "none" && $nthreadperproc > 1) {
+    $threadgrp = "posix";
+}
+
+if ($threadgrp eq "proc") {
+  $ENV{"THREADGRP"} = "<ProcThreadGrp>:()";
+}
+elsif ($threadgrp eq "posix") {
+  $ENV{"THREADGRP"} = "<PthreadThreadGrp>:(num_threads=$nthreadperproc)";
+}
+
+######################################################################
+
+$usingthreads = 0;
+if ($maxjobs > 1) {
+    require threads;
+    require threads::shared;
+    $usingthreads = 1;
+}
+
+######################################################################
+
+# autoflush output
+$| = 1;
+
+@allfiles = reverse(get_file_list());
+
+my @seqfiles : shared = ();
+my @files : shared = ();
+foreach my $file (@allfiles) {
+    $files[$#files+1] = $file;
+}
+
+printf "Running a maximum of %d jobs at a time.\n", $maxjobs;
+printf "Running %d processes per job.\n", $nprocperjob;
+printf "Running %d threads per process.\n", $nthreadperproc;
+foreach my $i (0..$maxjobs-1) {
+    print "Nodes in slot $i:";
+    foreach my $j (@{$jobnodes{$i}}) {
+        printf " \"%s\"", $j;
+    }
+    print "\n";
+}
+printenvvar("MESSAGEGRP");
+printenvvar("THREADGRP");
+printenvvar("MEMORYGRP");
+printenvvar("SCLIBDIR");
+printenvvar("INTEGRAL");
+
+$thecount = 0;
+$n = 0;
+
+if ($usingthreads) {
+    @threads = ();
+
+    foreach my $jobnum (0..$maxjobs-1) {
+        my $thr = threads->new(\&jobrunner, $jobnum);
+        $threads[$#threads+1] = $thr;
+    }
+
+    foreach my $thr (@threads) {
+        $thr->join();
+    }
+
+    @threads = ();
+}
+else {
+    foreach my $jobnum (0..$maxjobs-1) {
+        jobrunner($jobnum);
+    }
+}
+
+foreach $i (values(%nodefile)) {
+    unlink "$i";
+}
+
+sub get_next_file {
+    my $jobnum = shift;
+    lock(@seqfiles) if ($usingthreads);
+    if ($#seqfiles >= 0 && $jobnum == 0) {
+        return pop(@seqfiles);
+    }
+    lock(@files) if ($usingthreads);
+    if ($#files >= 0) {
+        return pop(@files);
+    }
+    return "";
+}
+
+sub jobrunner {
+    my $jobslot = shift;
+
+    my $file;
+
+    while ( ($file = get_next_file($jobslot)) ne "") {
+        $file =~ s/\.in//;
+        $tmp_out = "$pwd/$outputprefix/$file.tmp";
+	$ENV{"CCACHEM_RESULTS_DIR"} = "$tmp_out";
+        my $in = "$inputprefix/$file.in";
+        my $cmd = "$launch";
+        $cmd =~ s/%CCAFE%/$ccafe/;
+        $cmd =~ s/%NPROC%/$nprocperjob/;
+        $cmd =~ s/%INPUT%/$in/;
+
+	my $ccarunproc = "$scdatadir/ccarunproc $ccafe";
+        if (exists($ENV{THREADGRP})) {
+           $ccarunproc = "$ccarunproc " . &isoencode("$ENV{THREADGRP}");
+        }
+        else {
+           $ccarunproc = "$ccarunproc none";
+        }
+        # no mem/message groups for now
+        $ccarunproc = "$ccarunproc none none";
+        #results dir
+        $ccarunproc = "$ccarunproc " . &isoencode("$ENV{CCACHEM_RESULTS_DIR}");
+
+        $cmd =~ s|%CCARUNPROC%|$ccarunproc|;
+
+        $cmd = substitute_optional_parameter($cmd, "%OUTPUT%", "$tmp_out");
+        $cmd = substitute_optional_parameter($cmd, "%NODELIST%", $nodelist{$jobslot});
+        $cmd = substitute_optional_parameter($cmd, "%NODEFILE%", $nodefile{$jobslot});
+
+        mkdir $tmp_out;
+        printf "starting in slot %d: %s\n", $jobslot, "$cmd";
+        $cmd = "true" if ($debug);
+        $pid = fork();
+        if ($pid == 0) {
+            exec("$cmd");
+            die "exec returned";
+        }
+        waitpid($pid,'');
+        
+        rename "$tmp_out/pOut0", "$pwd/$outputprefix/$file.out";       
+        unlink "$tmp_out/pErr0";
+        rename "$tmp_out/results.txt", "$pwd/$outputprefix/$file.results";
+        rmdir "$tmp_out";
+    }
+}
+
+sub get_file_list {
+    my @dirfiles;
+    my @argfiles;
+
+    if ($readdir ne "") {
+        opendir(DIR,"$readdir");
+        @tdirfiles = sort(readdir(DIR));
+        foreach my $j (@tdirfiles) {
+            if ($j =~ /\.in$/) {
+                $dirfiles[$#dirfiles+1] = $j;
+            }
+        }
+        closedir(DIR);
+    }
+
+    @argfiles = sort(@ARGV);
+
+    my @allfiles = (@dirfiles, @argfiles);
+
+    my @files;
+
+    foreach my $infile (@allfiles) {
+        my $out = outfile("$infile");
+        $out = "$outputprefix$out";
+        $in = "$inputprefix$infile";
+        if (!$rerun
+            && (-f "$out")
+            && ($onlynew
+                || (-M "$out" < -M "$in" && (! -f "$ccafe" || -M "$out" < -M "$mpqc")))) {
+            if ($verbose) {
+                print "$in: skipping: $out up-to-date\n";
+            }
+        }
+        else {
+            if ($verbose) {
+                print "$in: will be run\n";
+            }
+            $files[$#files+1] = "$infile";
+        }
+    }
+
+    return @files;
+}
+
+sub outfile {
+    my $in = shift;
+
+    my $outbase = "$in";
+    $outbase =~ s/\.[^.]*$//;
+    $outbase = sprintf "%s.out", "$outbase";
+    my $out;
+
+    if ($uniqout) {
+        $out = "$outbase";
+        my $outversion = 1;
+        while (-f "$out") {
+            $outversion++;
+            $out = sprintf "%s.%02d", "$outbase", $outversion;
+        }
+    }
+
+    return "$out";
+}
+
+sub printenvvar {
+    my $envvar = shift;
+    if (exists($ENV{$envvar})) {
+        printf "Using %s = \"%s\"\n", $envvar, $ENV{$envvar};
+    }
+}
+
+sub substitute_optional_parameter {
+    my $str = shift;
+    my $name = shift;
+    my $value = shift;
+    if ($value ne "") {
+        $str =~ s/\[([^[]*$name[^[]*)\]/$1/;
+        $str =~ s/$name/$value/;
+    }
+    else {
+        $str =~ s/\[([^[]*$name[^[]*)\]//;
+    }
+    return $str;
+}
+
+sub isoencode {
+    my $str = shift;
+    $str =~ s/ /%20/g;
+    $str =~ s/\</%3c/g;
+    $str =~ s/\>/%3e/g;
+    $str =~ s/\[/%5b/g;
+    $str =~ s/\]/%5d/g;
+    $str =~ s/\$/%24/g;
+    $str =~ s/:/%38/g;
+    $str =~ s/\(/%28/g;
+    $str =~ s/\)/%29/g;
+    return $str;
+}

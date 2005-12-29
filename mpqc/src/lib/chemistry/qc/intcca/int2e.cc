@@ -30,9 +30,13 @@
 #endif
 
 #include <chemistry/qc/intcca/int2e.h>
+#include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
+#include <util/class/scexception.h>
 
+using namespace std;
 using namespace sc;
 using namespace MPQC;
+using namespace Chemistry;
 using namespace Chemistry::QC::GaussianBasis;
 
 Int2eCCA::Int2eCCA(Integral *integral,
@@ -42,7 +46,7 @@ Int2eCCA::Int2eCCA(Integral *integral,
 		   const Ref<GaussianBasisSet>&b4,
 		   int order, size_t storage,
 		   IntegralEvaluatorFactory eval_factory, 
-                   bool use_opaque):
+                   bool use_opaque, string eval_type ):
   bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4),
   erep_ptr_(0), integral_(integral), eval_factory_(eval_factory),
   use_opaque_(use_opaque), buffer_(0)
@@ -53,13 +57,12 @@ Int2eCCA::Int2eCCA(Integral *integral,
                 *bs2_->max_ncartesian_in_shell()
                 *bs3_->max_ncartesian_in_shell()
                 *bs4_->max_ncartesian_in_shell();
-  if (order==0) { 
-    if( !use_opaque ) buffer_ = new double[maxsize];
-  }
-  else if (order==1) {
-    ExEnv::errn() << scprintf("deriv ints not implemented yet\n");
-    abort();
-  }
+  if( order == 1 )
+    maxsize *= 9;
+  else if( order != 0 )
+    throw FeatureNotImplemented("only first order derivatives are available",
+                                __FILE__,__LINE__);
+  if( !use_opaque ) buffer_ = new double[maxsize];
 
   cca_bs1_ = GaussianBasis_Molecular::_create();
   cca_bs2_ = GaussianBasis_Molecular::_create();
@@ -69,35 +72,42 @@ Int2eCCA::Int2eCCA(Integral *integral,
   cca_bs2_.initialize( bs2_.pointer(), bs2_->name() );
   cca_bs3_.initialize( bs3_.pointer(), bs3_->name() );
   cca_bs4_.initialize( bs4_.pointer(), bs4_->name() );
-  erep_ = eval_factory_.get_integral_evaluator4( "eri2", 0,
-                                     cca_bs1_, cca_bs2_, cca_bs3_, cca_bs4_ );
-  erep_ptr_ = &erep_;
-  if( use_opaque_ ) {
-    try{ buffer_ = static_cast<double*>( erep_ptr_->get_buffer() ); }
-    catch(std::exception &e) { e.what(); abort(); }
+ 
+  if( eval_type == "eri" ) {
+    erep_ = eval_factory_.get_integral_evaluator4( "eri2", 0,
+                                                   cca_bs1_, cca_bs2_, 
+                                                   cca_bs3_, cca_bs4_ );
+    erep_ptr_ = &erep_;
+    if( use_opaque_ )
+      buffer_ = static_cast<double*>( erep_ptr_->get_buffer() );
   }
-
-  if (!buffer_) {
-    ExEnv::errn() << scprintf("buffer not initialized\n");
-    abort();
+  else if( eval_type == "eri_1der") {
+    erep_1der_ = eval_factory_.get_integral_evaluator4( "eri2", 1,
+                                                        cca_bs1_, cca_bs2_,
+                                                        cca_bs3_, cca_bs4_ );
+    erep_1der_ptr_ = &erep_1der_;
+    if( use_opaque_ )
+      buffer_ = static_cast<double*>( erep_1der_ptr_->get_buffer() );
   }
-  
-}
-
-Int2eCCA::~Int2eCCA()
-{
-  // transform_done();
-  // int_done_1e();
-  // int_done_offsets1();
+  else {
+    std::cerr << "integral type: " << eval_type << std::endl;
+    throw InputError("unrecognized integral type",
+                     __FILE__,__LINE__);
+  }
+  if (!buffer_)
+    throw ProgrammingError("buffer not assigned",
+                           __FILE__,__LINE__);
 }
 
 void
 Int2eCCA::compute_erep( int is, int js, int ks, int ls )
 {
+  Chemistry_QC_GaussianBasis_DerivCenters dc;
+  dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
   if( use_opaque_ )
-    erep_ptr_->compute( is, js, ks, ls, 0 );
+    erep_ptr_->compute( is, js, ks, ls, 0, dc );
   else {   
-    sidl_buffer_ = erep_ptr_->compute_array( is, js, ks, ls, 0 );
+    sidl_buffer_ = erep_ptr_->compute_array( is, js, ks, ls, 0, dc );
     int nelem = bs1_->shell(is).nfunction() * bs2_->shell(js).nfunction() *
                 bs3_->shell(ks).nfunction() * bs4_->shell(ls).nfunction();
     copy_buffer(nelem);
@@ -108,14 +118,33 @@ Int2eCCA::compute_erep( int is, int js, int ks, int ls )
   }
 }  
 
+void
+Int2eCCA::compute_erep_1der( int is, int js, int ks, int ls, 
+                             Chemistry::QC::GaussianBasis::DerivCenters &dc )
+{
+
+  if( use_opaque_ )
+    erep_1der_ptr_->compute( is, js, ks, ls, 1, dc );
+  else {
+    sidl_buffer_ = erep_ptr_->compute_array( is, js, ks, ls, 1, dc );
+    int nelem = bs1_->shell(is).nfunction() * bs2_->shell(js).nfunction() *
+                bs3_->shell(ks).nfunction() * bs4_->shell(ls).nfunction();
+    copy_buffer(nelem);
+  }
+
+  if(!redundant_) {
+    remove_redundant(is,js,ks,ls);
+  }
+}
+
 void 
 Int2eCCA::copy_buffer( int n ) 
 {
-
   for( int i=0; i<n; ++i)
      buffer_[i] = sidl_buffer_.get(i);
-
 }
+
+#ifndef INTV3_ORDER
 
 /////////////////////////////////////////////////////////////////////////////
 // Code for removing redundant integrals
@@ -189,11 +218,12 @@ Int2eCCA::remove_redundant(int sh1, int sh2, int sh3, int sh4) {
   }
 }
 
+#else
+
 /////////////////////////////////////////////////////////////////////////////
 // Code for removing redundant integrals
 // copied liberally from intV3 
 
-/*
 static int
 shell_offset(Ref<GaussianBasisSet> cs, int off)
 {
@@ -243,8 +273,6 @@ nonredundant_erep(double *buffer, int e12, int e34, int e13e24,
 
 void
 Int2eCCA::remove_redundant(int is, int js, int ks, int ls) {
-
-  std::cout << "\nREMOVING REDUNDANT INTEGRALS";
 
   int bs1_shell_offset = 0;
   int bs2_shell_offset, bs3_shell_offset, bs4_shell_offset;
@@ -314,10 +342,12 @@ Int2eCCA::remove_redundant(int is, int js, int ks, int ls) {
   
   int redundant_offset = 0;
   int nonredundant_offset = 0;
+
   if ((osh1 == osh4)&&(osh2 == osh3)&&(osh1 != osh2)) {
-    ExEnv::errn() << scprintf("nonredundant integrals cannot be generated\n");
-    abort();
+    throw ProgrammingError("nonredundant integrals cannot be generated",
+                           __FILE__,__LINE__);
   }
+
   int e12 = (int_unit2?0:(osh1 == osh2));
   int e13e24 = ((osh1 == osh3)
 		&& ((int_unit2 && int_unit4)
@@ -333,7 +363,8 @@ Int2eCCA::remove_redundant(int is, int js, int ks, int ls) {
 		      &nonredundant_offset);
   }
 }
-*/
+
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 

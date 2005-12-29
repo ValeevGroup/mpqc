@@ -566,7 +566,7 @@ MBPT2::compute_cs_grad()
       abort();
     }
 
-  mem->set_localsize(nijmax*nbasis*nbasis*sizeof(double));
+  mem->set_localsize(size_t(nijmax)*nbasis*nbasis*sizeof(double));
   ExEnv::out0() << indent
        << "Size of global distributed array:       "
        << mem->totalsize()
@@ -579,11 +579,13 @@ MBPT2::compute_cs_grad()
 
   Ref<ThreadLock> lock = thr_->new_lock();
   CSGradErep12Qtr** e12thread = new CSGradErep12Qtr*[thr_->nthread()];
+  DistShellPair::SharedData sp_e_data, sp_g_data;
   for (i=0; i<thr_->nthread(); i++) {
     e12thread[i] = new CSGradErep12Qtr(i, thr_->nthread(), me, nproc,
                                        mem, msg_, lock, basis(), tbints_[i],
                                        nocc, scf_vector, tol, debug_,
-                                       dynamic_, print_percent_, usep4);
+                                       dynamic_, print_percent_,
+                                       &sp_e_data, usep4);
     }
 
     CSGrad34Qbtr** qbt34thread;
@@ -594,7 +596,7 @@ MBPT2::compute_cs_grad()
                                           mem, msg_, lock, basis(), tbints_[i],
                                           tbintder_[i], nocc, nfzc, scf_vector,
                                           tol, debug_, dynamic_, print_percent_,
-                                          dograd, natom);
+                                          &sp_g_data, dograd, natom);
         }
       }
 
@@ -651,6 +653,7 @@ MBPT2::compute_cs_grad()
 
     // Do the two eletron integrals and the first two quarter transformations
     tim_enter("erep+1.qt+2.qt");
+    sp_e_data.init();
     for (i=0; i<thr_->nthread(); i++) {
       e12thread[i]->set_i_offset(i_offset);
       e12thread[i]->set_ni(ni);
@@ -1432,6 +1435,7 @@ MBPT2::compute_cs_grad()
     //////////////////////////////////////////////////////////
 
     tim_enter("3.qbt+4.qbt+non-sep contrib.");
+    sp_g_data.init();
     for (i=0; i<thr_->nthread(); i++) {
       qbt34thread[i]->set_i_offset(i_offset);
       qbt34thread[i]->set_ni(ni);

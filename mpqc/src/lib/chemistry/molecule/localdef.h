@@ -34,8 +34,8 @@
 
 namespace sc {
 
-static const double pi=3.14159265358979323846;
-static const double pih=1.57079632679489661923;
+static const double pi=M_PI;
+static const double pih=M_PI_2;
 static const double tpi=2.0*pi;
 
 static const double bohr = 0.52917706;

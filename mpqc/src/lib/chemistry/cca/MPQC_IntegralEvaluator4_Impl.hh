@@ -22,6 +22,9 @@
 // 
 // Includes for all method dependencies.
 // 
+#ifndef included_Chemistry_QC_GaussianBasis_DerivCenters_hh
+#include "Chemistry_QC_GaussianBasis_DerivCenters.hh"
+#endif
 #ifndef included_Chemistry_QC_GaussianBasis_Molecular_hh
 #include "Chemistry_QC_GaussianBasis_Molecular.hh"
 #endif
@@ -105,6 +108,9 @@ namespace MPQC {
     sc::GaussianShell *s1_, *s2_, *s3_, *s4_;
 
     void reorder_intv3(int64_t,int64_t,int64_t,int64_t);
+    void reorder_quartet( sc::GaussianShell*, sc::GaussianShell*,
+                          sc::GaussianShell*, sc::GaussianShell*,
+                          int, int, int, int, int );
     void reorder_intv3_inline(int64_t,int64_t,int64_t,int64_t);
     void initialize_reorder_intv3();
     void reorder_c4(int,int,int,int,int,int);
@@ -183,7 +189,8 @@ namespace MPQC {
      * @param shellnum2 Gaussian shell number 2.
      * @param shellnum3 Gaussian shell number 3.
      * @param shellnum4 Gaussian shell number 4.
-     * @param deriv_level Derivative level. 
+     * @param deriv_level Derivative level.
+     * @param deriv_ctr Derivative center descriptor. 
      */
     void
     compute (
@@ -191,7 +198,8 @@ namespace MPQC {
       /* in */ int64_t shellnum2,
       /* in */ int64_t shellnum3,
       /* in */ int64_t shellnum4,
-      /* in */ int64_t deriv_level
+      /* in */ int64_t deriv_level,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;
@@ -205,6 +213,7 @@ namespace MPQC {
      * @param shellnum3 Guassian shell number 3.
      * @param shellnum4 Gaussian shell number 4.
      * @param deriv_level Derivative level.
+     * @param deriv_ctr Derivative center descriptor.
      * @return Borrowed sidl array buffer. 
      */
     ::sidl::array<double>
@@ -213,7 +222,8 @@ namespace MPQC {
       /* in */ int64_t shellnum2,
       /* in */ int64_t shellnum3,
       /* in */ int64_t shellnum4,
-      /* in */ int64_t deriv_level
+      /* in */ int64_t deriv_level,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;

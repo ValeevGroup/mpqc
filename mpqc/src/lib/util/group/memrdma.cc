@@ -33,7 +33,7 @@
 #pragma implementation
 #endif
 
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <util/group/pool.h>
 #include <util/group/memrdma.h>

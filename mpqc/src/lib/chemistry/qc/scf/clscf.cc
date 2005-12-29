@@ -102,7 +102,7 @@ CLSCF::CLSCF(const Ref<KeyVal>& keyval) :
   double Znuc=molecule()->nuclear_charge();
 
   // check to see if this is to be a charged molecule
-  double charge = keyval->intvalue("total_charge");
+  double charge = keyval->doublevalue("total_charge");
 
   int nelectron = (int)((Znuc-charge+1.0e-4));
   

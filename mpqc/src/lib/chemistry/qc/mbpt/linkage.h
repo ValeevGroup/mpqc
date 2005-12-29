@@ -28,8 +28,6 @@
 #ifndef _chemistry_qc_mbpt_linkage_h
 #define _chemistry_qc_mbpt_linkage_h
 
-#ifndef __PIC__
-
 #include <chemistry/qc/mbpt/mbpt.h>
 #include <chemistry/qc/mbpt/mp2extrap.h>
 
@@ -41,7 +39,5 @@ static ForceLink<MBPT2> mbpt_force_link_a_;
 static ForceLink<MP2BasisExtrap> mbpt_force_link_b_;
 
 }
-
-#endif /* __PIC__ */
 
 #endif

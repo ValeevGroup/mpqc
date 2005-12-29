@@ -94,13 +94,15 @@ throw ()
  * @param shellnum2 Gaussian shell number 2.
  * @param shellnum3 Gaussian shell number 3.
  * @param deriv_level Derivative level. 
+ * @param deriv_ctr Derivative center descriptor. 
  */
 void
 MPQC::IntegralEvaluator3_impl::compute (
   /* in */ int64_t shellnum1,
   /* in */ int64_t shellnum2,
   /* in */ int64_t shellnum3,
-  /* in */ int64_t deriv_level ) 
+  /* in */ int64_t deriv_level,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.compute)
@@ -115,6 +117,7 @@ throw ()
  * @param shellnum2 Gaussian shell number 2.
  * @param shellnum3 Gaussian shell number 3.
  * @param deriv_level Derivative level.
+ * @param deriv_ctr Derivative center desctiptor.
  * @return Borrowed sidl array buffer. 
  */
 ::sidl::array<double>
@@ -122,7 +125,8 @@ MPQC::IntegralEvaluator3_impl::compute_array (
   /* in */ int64_t shellnum1,
   /* in */ int64_t shellnum2,
   /* in */ int64_t shellnum3,
-  /* in */ int64_t deriv_level ) 
+  /* in */ int64_t deriv_level,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.compute_array)

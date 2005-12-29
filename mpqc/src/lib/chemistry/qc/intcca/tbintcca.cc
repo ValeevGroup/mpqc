@@ -24,7 +24,14 @@
 //
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
+
+#ifdef __GNUG__
+#pragma implementation
+#endif
+
 #include <chemistry/qc/intcca/tbintcca.h>
+#include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
+#include <util/class/scexception.h>
 
 using namespace Chemistry::QC::GaussianBasis;
 using namespace sc;
@@ -39,17 +46,13 @@ TwoBodyIntCCA::TwoBodyIntCCA(Integral* integral,
 			     const Ref<GaussianBasisSet> &bs4,
 			     size_t storage,
 			     IntegralEvaluatorFactory eval_factory, 
-                             bool use_opaque) :
+                             bool use_opaque, string eval_type) :
   TwoBodyInt(integral,bs1,bs2,bs3,bs4) 
 {
   int2ecca_ = new Int2eCCA(integral,bs1,bs2,bs3,bs4,0,storage,
-                           eval_factory,use_opaque);
+                           eval_factory,use_opaque,eval_type);
   buffer_ = int2ecca_->buffer();
   int2ecca_->set_redundant(redundant_);
-}
-
-TwoBodyIntCCA::~TwoBodyIntCCA()
-{
 }
 
 void
@@ -61,11 +64,57 @@ TwoBodyIntCCA::compute_shell(int is, int js, int ks, int ls)
 int
 TwoBodyIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
 {
+  return 256;
 }
 
 void
 TwoBodyIntCCA::set_integral_storage(size_t storage)
 {
+//  throw FeatureNotImplemented("set_integral_storage needs to be implemented",
+//                              __FILE__,__LINE__);
+}
+
+
+////////////////////////////////////////////////////////////////////////////
+// TwoBodyDerivIntCCA
+
+TwoBodyDerivIntCCA::TwoBodyDerivIntCCA(Integral* integral,
+                             const Ref<GaussianBasisSet> &bs1,
+                             const Ref<GaussianBasisSet> &bs2,
+                             const Ref<GaussianBasisSet> &bs3,
+                             const Ref<GaussianBasisSet> &bs4,
+                             size_t storage,
+                             IntegralEvaluatorFactory eval_factory,
+                             bool use_opaque, string eval_type) :
+  TwoBodyDerivInt(integral,bs1,bs2,bs3,bs4)
+{
+  int2ecca_ = new Int2eCCA(integral,bs1,bs2,bs3,bs4,1,storage,
+                           eval_factory,use_opaque,eval_type);
+  buffer_ = int2ecca_->buffer();
+  int2ecca_->set_redundant(0);
+}
+
+void
+TwoBodyDerivIntCCA::compute_shell(int is, int js, int ks, int ls,
+                                  DerivCenters &dc )
+{
+  Chemistry::QC::GaussianBasis::DerivCenters cca_dc;
+  cca_dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
+  for( int id=0; id<cca_dc.n(); ++id ) {
+    if( id == cca_dc.omitted_center() )
+       dc.add_omitted(cca_dc.center(id),cca_dc.atom(id));
+     else
+       dc.add_center(cca_dc.center(id),cca_dc.atom(id));
+  }
+
+  int2ecca_->compute_erep_1der(is,js,ks,ls,cca_dc);
+
+}
+
+int
+TwoBodyDerivIntCCA::log2_shell_bound(int is, int js, int ks, int ls)
+{
+  return 256;
 }
 
 /////////////////////////////////////////////////////////////////////////////

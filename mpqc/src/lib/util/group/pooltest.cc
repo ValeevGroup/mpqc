@@ -220,8 +220,8 @@ test2(Pool*pool)
 {
   int i, ii;
 
-  const int npass = 200;
-  const int nd = 4096;
+  const int npass = 10;
+  const int nd = 512;
   Double* d[nd];
 
   for (i=0; i<nd; i++) d[i] = 0;

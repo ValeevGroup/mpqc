@@ -45,13 +45,25 @@ install_devel::
 
 testbuild: $(TESTPROGS)
 
-testrun: $(TESTPROGS)
-ifneq ($(TESTPROGS),)
-	for prog in $(TESTPROGS); \
-	  do \
-	    ./$${prog} || exit 1; \
-	  done
-endif
+testrun: $(TESTPROGS:%=%.testrun)
+
+# The target specific variable can be set to control testrun:
+# To skip testrun:
+#   %.testrun: DO_TESTRUN=no
+# To give arguments to the command
+#   %.testrun: TESTRUN_ARGS=arglist
+%.testrun: %
+	if test "$(DO_TESTRUN)" != no; then \
+	  echo ----------- Running $< $(TESTRUN_ARGS) -----------; \
+	  if test -f $(SRCDIR)/$<.out; then \
+	    ./$< $(TESTRUN_ARGS) > $<.out.testrun 2>&1 || exit 1; \
+	    diff -u $<.out.testrun $(SRCDIR)/$<.out || exit 1; \
+	  else \
+	    ./$< $(TESTRUN_ARGS) || exit 1; \
+	  fi \
+	else \
+	  echo ----------- Skipping run of $< -----------; \
+	fi
 
 ifeq ($(BIN_OR_LIB),LIB)
 
@@ -204,7 +216,10 @@ ifdef TARGET_TO_MAKE
 endif
 
 targetclean::
-	-rm -f $(TESTPROGS)
+	-rm -f $(TESTPROGS) $(TESTPROGS:%=%.out.testrun)
+
+testclean::
+	/bin/rm -f $(TESTPROGS) $(TESTPROGS:%=%.out.testrun)
 
 #
 # dependencies

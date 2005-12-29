@@ -32,6 +32,7 @@
 #pragma interface
 #endif
 
+#include <string>
 #include <util/misc/compute.h>
 #include <util/group/memory.h>
 #include <util/group/message.h>
@@ -80,11 +81,10 @@ class MBPT2_R12: public MBPT2 {
     double mp2_corr_energy_;
     double r12_corr_energy_;
     Ref<LinearR12::CorrelationFactor> corrfactor_;
-    double corrparam_;
     LinearR12::StandardApproximation stdapprox_;
     LinearR12::ABSMethod abs_method_;
     R12IntEvalInfo::StoreMethod r12ints_method_;
-    char* r12ints_file_;
+    std::string r12ints_file_;
     bool gbc_;
     bool ebc_;
     bool spinadapted_;
@@ -226,10 +226,10 @@ class MBPT2_R12: public MBPT2 {
 	If user wishes to use MPI-I/O, pending its availability, for higher parallel efficiency,
 	<tt>r12ints</tt> should be explicitly set to <tt>mem-mpi</tt>.
 
-        <dt><tt>r12ints_file</tt><dd> This specifies which file to use to store transformed
-	MO integrals if <tt>r12ints</tt> is set to <tt>posix</tt>, <tt>mpi</tt>, <tt>mem-posix</tt>
+        <dt><tt>r12ints_file</tt><dd> This specifies the prefix for the transformed
+	MO integrals file if <tt>r12ints</tt> is set to <tt>posix</tt>, <tt>mpi</tt>, <tt>mem-posix</tt>
         or <tt>mem-mpi</tt> is used.
-	Default is "./<inputbasename>.r12ints.dat", where <inputbasename> is the name of the input
+	Default is "./<inputbasename>.r12ints", where <inputbasename> is the name of the input
 	file without ".in". If MPI-I/O is used then it is user's responsibility to ensure
 	that the file resides on a file system that supports MPI-I/O.
 
@@ -254,7 +254,7 @@ class MBPT2_R12: public MBPT2 {
     LinearR12::StandardApproximation stdapprox() const;
     bool spinadapted() const;
     R12IntEvalInfo::StoreMethod r12ints_method() const;
-    char* r12ints_file() const;
+    const std::string& r12ints_file() const;
 
     double corr_energy();
     double r12_corr_energy();

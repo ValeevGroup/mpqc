@@ -29,7 +29,7 @@
 #pragma implementation
 #endif
 
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/pairiter.h>

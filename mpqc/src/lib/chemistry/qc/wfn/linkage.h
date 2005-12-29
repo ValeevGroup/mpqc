@@ -28,8 +28,6 @@
 #ifndef _chemistry_qc_wfn_linkage_h
 #define _chemistry_qc_wfn_linkage_h
 
-#ifndef __PIC__
-
 #include <chemistry/qc/wfn/density.h>
 #include <chemistry/qc/wfn/orbital.h>
 #include <chemistry/qc/wfn/solvent.h>
@@ -43,7 +41,5 @@ static ForceLink<BEMSolventH> wfn_force_link_c_;
 static ForceLink<ExtendedHuckelWfn> wfn_force_link_d_;
 
 }
-
-#endif /* __PIC__ */
 
 #endif

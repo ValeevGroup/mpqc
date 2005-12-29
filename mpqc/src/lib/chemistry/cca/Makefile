@@ -50,7 +50,8 @@ BABEL_CLASSES = \
   MPQC.IntegralEvaluator4 \
   MPQC.ChemistryOpt_CoordinateModel \
   MPQC.ComponentClassDescription \
-  MPQC.ComponentFactory
+  MPQC.ComponentFactory \
+  MPQC.SimpleDriver
 
 EXTRA_CXX_SRCS = socket.cc except.cc basis_cca_to_sc.cc
 EXTRA_INCLUDES = socket.h except.h ccaiter.h
@@ -97,6 +98,9 @@ CPPFLAGS += -I./ -I$(SRCDIR) -I$(CCA_SPEC_CLASSIC_INCLUDE)
 ifeq ($(HAVE_LIBINT),yes)
   DEFINES += -DHAVE_CINTS
 endif
+ifeq ($(INTV3_ORDER),yes)
+  DEFINES += -DINTV3_ORDER
+endif
 tmp_libdir := $(libdir)
 SCLIBS = $(shell echo `ls ../../../../lib/*.$(LIBSUF)`)
 SCLINK = $(SCLIBS:lib%.$(LIBSUF)=-l%)
@@ -104,3 +108,8 @@ LTLINKLIBOPTS += -L$(CCA_CHEM_LIB) -R$(CCA_CHEM_LIB) -lccachem_cxx_client -lccac
 libdir = $(tmp_libdir)/cca
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
+
+$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
+ifneq ($(DODEPEND),no)
+include $(LIBOBJ:.$(OBJSUF)=.d)
+endif

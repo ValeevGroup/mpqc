@@ -34,7 +34,9 @@
 
 #include <string>
 #include <util/ref/ref.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
+#include <chemistry/qc/basis/intdescr.h>
+#include <chemistry/qc/basis/distshpair.h>
 #include <chemistry/qc/mbptr12/r12ia.h>
 #include <chemistry/qc/mbptr12/moindexspace.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
@@ -50,7 +52,7 @@ class MOIntsTransformFactory;
 
 class TwoBodyMOIntsTransform : virtual public SavableState {
 public:
-  typedef MOIntsTransformFactory::IntegralCallback IntegralCallback;
+  typedef MOIntsTransformFactory::StorageType StorageType;
 
 private:
 
@@ -73,8 +75,6 @@ protected:
   std::string name_;
   Ref<MOIntsTransformFactory> factory_;
 
-  IntegralCallback callback_;
-
   Ref<MolecularEnergy> top_mole_;   // Top-level molecular energy to enable checkpointing
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
@@ -91,6 +91,7 @@ protected:
   size_t memory_;
   bool dynamic_;
   double print_percent_;
+  DistShellPair::SharedData spdata_;
   int debug_;
   MOIntsTransformFactory::StoreMethod ints_method_;
   std::string file_prefix_;
@@ -128,30 +129,24 @@ protected:
       Assumes formatting info from ExEnv::out0().
    */
   void mospace_report(std::ostream& os = ExEnv::out0()) const;
-
+  
   /** Prints out standard header. Call at the beginning of compute().
    */
   void print_header(std::ostream& os = ExEnv::out0()) const;
   /** Prints out standard footer. Call at the end of compute().
    */
   void print_footer(std::ostream& os = ExEnv::out0()) const;
-
+  
   /** Checks whether this TwoBodyInt is compatible with this TwoBodyMOIntsTransform */
   void check_tbint(const Ref<TwoBodyInt>& tbint) const;
-
-  /// create TwoBodyInt calling callback on integral. Type of params must match callback
-  static Ref<TwoBodyInt> create_tbint(const Ref<Integral>& integral,
-                                      const IntegralCallback& callback,
-                                      const Ref<IntParams>& params);
-    
+  
 public:
 
   TwoBodyMOIntsTransform(StateIn&);
   TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
-                         const IntegralCallback& callback,
                          const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                          const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4);
-  ~TwoBodyMOIntsTransform();
+  virtual ~TwoBodyMOIntsTransform();
 
   void save_data_state(StateOut&);
 
@@ -192,20 +187,26 @@ public:
   /// Specifies the top-level MolecularEnergy object to use for checkpointing
   void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }
 
-  /** Specifies how many integral types computed by TwoBodyInt to be transformed
-      Default is 1. */
+  /** Specifies how many integral types computed by TwoBodyInt will be transformed
+      Default is 1. This function does not have to be called since call to compute() will
+      set it proprely. However, it is HIGHLY recommended to call this function after
+      this was created so that memory can be checked as early as possible. */
   void set_num_te_types(const int num_te_types);
   void set_memory(const size_t memory);
   void set_debug(int debug) { debug_ = debug; }
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; }
   void set_print_percent(double print_percent) { print_percent_ = print_percent; }
 
-  /// Computes transformed integrals. param's contents are passed as parameter to the Integral::IntegralCallback
-  virtual void compute(const Ref<IntParams>& param) = 0;
+  /// Computes transformed integrals using TwoBodyInt produced by tbintdescr
+  virtual void compute(const Ref<TwoBodyIntDescr>& tbintdescr) = 0;
   /// Check symmetry of transformed integrals
   virtual void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError) =0;
   /// Make the transform obsolete. Next call to compute() will recompute
   virtual void obsolete();
+
+  /** Returns a that data that must be shared between all DistShellPair
+   * objects. */
+  DistShellPair::SharedData *shell_pair_data() { return &spdata_; }
 
 };
 

@@ -12,4 +12,4 @@ shmmessage<ShmMessageGrp>: (
 mpimessage<MPIMessageGrp>: (
   )
 
-message = $:shmmessage
+message = $:procmessage

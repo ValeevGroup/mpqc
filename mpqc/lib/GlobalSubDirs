@@ -59,6 +59,12 @@ clean::
 	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) clean) || exit 1; \
 	  done
 
+testclean::
+	for dir in $(SUBDIRS); \
+	  do \
+	    (cd $${dir} && $(MAKE) $(DODEPENDOPT) testclean) || exit 1; \
+	  done
+
 oclean::
 	for dir in $(SUBDIRS); \
 	  do \

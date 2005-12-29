@@ -34,6 +34,8 @@
 #include <util/misc/units.h>
 #include <util/state/stateio.h>
 
+#include <util/state/linkage.h>
+
 using namespace std;
 using namespace sc;
 

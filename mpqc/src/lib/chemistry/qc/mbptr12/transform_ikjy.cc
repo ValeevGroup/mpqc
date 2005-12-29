@@ -31,7 +31,7 @@
 
 #include <stdexcept>
 
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <util/misc/formio.h>
 #include <util/state/state_bin.h>
 #include <util/ref/ref.h>
@@ -57,10 +57,9 @@ static ClassDesc TwoBodyMOIntsTransform_ikjy_cd(
   0, 0, create<TwoBodyMOIntsTransform_ikjy>);
 
 TwoBodyMOIntsTransform_ikjy::TwoBodyMOIntsTransform_ikjy(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
-                                                         const IntegralCallback& callback,
                                                          const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                                          const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
-  TwoBodyMOIntsTransform(name,factory,callback,space1,space2,space3,space4)
+  TwoBodyMOIntsTransform(name,factory,space1,space2,space3,space4)
 {
   init_vars();
 }
@@ -188,10 +187,10 @@ TwoBodyMOIntsTransform_ikjy::check_int_symm(double threshold) throw (Programming
   int nj = iacc->nj();
   int nk = iacc->nx();
   int ny = iacc->ny();
-  vector<int> isyms = space1_->mosym();
-  vector<int> jsyms = space3_->mosym();
-  vector<int> ksyms = space2_->mosym();
-  vector<int> ysyms = space4_->mosym();
+  vector<unsigned int> isyms = space1_->mosym();
+  vector<unsigned int> jsyms = space3_->mosym();
+  vector<unsigned int> ksyms = space2_->mosym();
+  vector<unsigned int> ysyms = space4_->mosym();
   
   int me = msg_->me();
   vector<int> twi_map;

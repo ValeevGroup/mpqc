@@ -31,6 +31,8 @@
 #include <math/optimize/opt.h>
 #include <util/keyval/keyval.h>
 
+#include <math/optimize/linkage.h>
+
 using namespace sc;
 
 int

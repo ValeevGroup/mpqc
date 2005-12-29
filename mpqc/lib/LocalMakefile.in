@@ -94,8 +94,6 @@ WISH = @WISH@
 RANLIB = @RANLIB@
 PERL = @PERL@
 NIAMACFG = @NIAMACFG@
-TMPL2MACDEP = $(SRCTOPDIR)/bin/tmpl2mac.pl
-TMPL2MAC = $(PERL) $(TMPL2MACDEP)
 COMPRESS = gzip
 UNCOMPRESS = gzip -d
 LISTLIBS= $(PERL) $(SRCTOPDIR)/bin/listlibs.pl -DLIBSUF=$(LIBSUF)
@@ -161,5 +159,8 @@ CCA_CHEM_LIB=@CCA_CHEM_LIB@
 ifeq ($(ENABLECCA),yes)
   LTLINKLIBOPTS += -rpath $(libdir)/cca
 endif
+
+# intv3 or cca/cints ordering?
+INTV3_ORDER=no
 
 

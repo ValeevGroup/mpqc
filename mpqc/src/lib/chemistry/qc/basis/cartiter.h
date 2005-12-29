@@ -75,7 +75,7 @@ class CartesianIter {
 
 /** RedundantCartesianIter objects loop through all possible combinations
     of a given number of axes.  This is used to compute the transformation
-    matrices that maps a set of Cartesian functions into to another set of
+    matrices that maps a set of Cartesian functions to another set of
     Cartesian functions in a rotated coordinate system. */
 class RedundantCartesianIter {
   private:

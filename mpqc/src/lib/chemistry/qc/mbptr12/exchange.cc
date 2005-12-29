@@ -69,8 +69,11 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
   // Gaussians are real, hence occ_space and bra_space can be swapped
   tfactory->set_spaces(occ_space,bra_space,
                        occ_space,ket_space);
-  Ref<TwoBodyMOIntsTransform> mxny_tform = tfactory->twobody_transform_13("(mx|ny)",corrfactor_->callback());
-  mxny_tform->compute(intparams_);
+  // Only need 1/r12 integrals
+  Ref<TwoBodyMOIntsTransform> mxny_tform = tfactory->twobody_transform_13("(mx|ny)");
+  // Only need 1/r12 integrals
+  Ref<TwoBodyIntDescr> eridescr = new TwoBodyIntDescrERI(r12info()->integral());
+  mxny_tform->compute(eridescr);
   Ref<R12IntsAcc> mnxy_acc = mxny_tform->ints_acc();
 
   const int nocc = occ_space->rank();

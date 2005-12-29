@@ -132,6 +132,8 @@ sub process_file {
     init_var($test_vars, $parse, "molecule", "molecule");
     init_var($test_vars, $parse, "orthog_method", "default");
     init_var($test_vars, $parse, "lindep_tol", "default");
+    init_var($test_vars, $parse, "integral_buffer", "opaque");
+    init_var($test_vars, $parse, "integral_package", "intv3");
     my @molecule_symmetry = $parse->value_as_array("test_molecule_symmetry");
     my @molecule_fzc = $parse->value_as_array("test_molecule_fzc");
     my @molecule_fzv = $parse->value_as_array("test_molecule_fzv");
@@ -141,6 +143,11 @@ sub process_file {
     my @molecule_gradient = $parse->value_as_array("test_molecule_gradient");
     my @molecule_followed = $parse->value_as_array("test_molecule_followed");
     my @molecule_fixed = $parse->value_as_array("test_molecule_fixed");
+    my $do_cca = "";
+    my $tmp_do_cca = $parse->value("do_cca");
+    if ($tmp_do_cca eq "yes") {
+         $do_cca = "yes";
+    }
 
     my @keys = keys(%{$test_vars});
     my $index = {};
@@ -171,6 +178,8 @@ sub process_file {
         my $followed = $molecule_fixed[$index->{"followed"}];
         my $orthog_method = $test_vars->{"orthog_method"}->[$index->{"orthog_method"}];
         my $lindep_tol = $test_vars->{"lindep_tol"}->[$index->{"lindep_tol"}];
+        my $integral_buffer = $test_vars->{"integral_buffer"}->[$index->{"integral_buffer"}];
+        my $integral_package = $test_vars->{"integral_package"}->[$index->{"integral_package"}];
         # if i got an array of molecule names then i expect
         # an array of point groups, one for each molecule
         if ($molecule ne "molecule") {
@@ -256,6 +265,8 @@ sub process_file {
         $parse->set_value("grid", $grid);
         $parse->set_value("method", $method);
         $parse->set_value("symmetry", $symmetry);
+        $parse->set_value("integral_buffer", $integral_buffer);
+        $parse->set_value("integral_package", $integral_package);
         $parse->set_value("fzc", $fzc);
         $parse->set_value("fzv", $fzv);
         $parse->set_value("docc", $docc);
@@ -325,8 +336,16 @@ sub process_file {
         $basis = tofilename($basis);
         $auxbasis = tofilename($auxbasis);
         $symmetry = tofilename($symmetry);
+        if ($do_cca eq "yes"){
+             $intbuf = tofilename($integral_buffer);
+             $intpack = tofilename($integral_package);
+        }
+        else {
+             $intbuf = "";
+             $intpack = "";
+        }
         if ($grid eq "default") {$grid = "";}
-        my $basename = "$dir$file\_$fmol$method$grid$fzc$fzv$basis$auxbasis$symmetry$fcalc$fextra";
+        my $basename = "$dir$file\_$fmol$method$grid$fzc$fzv$basis$auxbasis$symmetry$fcalc$fextra$intbuf$intpack";
         my $writer;
 
         if ($package eq "g94") {

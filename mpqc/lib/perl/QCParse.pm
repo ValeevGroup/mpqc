@@ -837,8 +837,12 @@ sub input_string() {
       if( $buffer_type ne "opaque" && $buffer_type ne "array" ) {
         $buffer_type = "opaque";
       }     
+      my $int_package = $qcparse->value("integral_package");
+      if( $int_package ne "intv3" && $int_package ne "cints" ) {
+        $int_package = "intv3";
+      }
       $integrals = "$integrals\n  integral_buffer = $buffer_type";
-      $integrals = "$integrals\n  integral_package = intv3";
+      $integrals = "$integrals\n  integral_package = $int_package";
       $integrals = "$integrals\n  evaluator_factory = MPQC.IntegralEvaluatorFactory";
       $integrals = "$integrals\n  molecule = \$:molecule";
       $integrals = "$integrals\n)\n";
@@ -1011,7 +1015,7 @@ sub input_string() {
     }
     elsif (! ($basis =~ /^STO/
               || $basis =~ /^MI/
-              || $basis =~ /^\d-\d1G$/)) {
+              || $basis =~ /^\d-\d1G$/) && ! $do_cca ) {
         my $guessmethod = "${openmethod}HF";
         $mole = "$mole\n    guess_wavefunction<$guessmethod>: (";
         $mole = "$mole\n      molecule = \$:molecule";

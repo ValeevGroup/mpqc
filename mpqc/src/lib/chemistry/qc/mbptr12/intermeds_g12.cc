@@ -55,6 +55,7 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
 {
   Ref<MessageGrp> msg = r12info()->msg();
   const int me = msg->me();
+  const Ref<Integral> integral = r12info()->integral();
 
   tim_enter("\"diagonal\" part of G12 intermediates");
   ExEnv::out0() << endl << indent
@@ -80,11 +81,9 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
 
     Ref<TwoBodyMOIntsTransform> imjn_tform = tform_map_[imjn_label];
     if (imjn_tform.null()) {
-      imjn_tform = tfactory->twobody_transform_13(imjn_label,corrfactor()->callback());
-      imjn_tform->set_num_te_types(corrfactor()->num_tbint_types());
+      imjn_tform = tfactory->twobody_transform_13(imjn_label);
       tform_map_[imjn_label] = imjn_tform;
-      Ref<IntParams> params = new IntParamsG12(corrfactor()->function(f),LinearR12::CorrelationFactor::zero_exponent_geminal());
-      imjn_tform->compute(params);
+      imjn_tform->compute(corrfactor()->tbintdescr(integral,f));
       }
 
     // second loop over correlation functions
@@ -97,12 +96,9 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
       im2jn_name[f].push_back(im2jn_label);
       Ref<TwoBodyMOIntsTransform> im2jn_tform = tform_map_[im2jn_label];
       if (im2jn_tform.null()) {
-        im2jn_tform = tfactory->twobody_transform_13(im2jn_label,corrfactor()->callback());
-        im2jn_tform->set_num_te_types(corrfactor()->num_tbint_types());
+        im2jn_tform = tfactory->twobody_transform_13(im2jn_label);
         tform_map_[im2jn_label] = im2jn_tform;
-        Ref<IntParams> params = new IntParamsG12(corrfactor()->function(f),
-                                                 corrfactor()->function(g));
-        im2jn_tform->compute(params);
+        im2jn_tform->compute(corrfactor()->tbintdescr(integral,f,g));
       }
     }
   }

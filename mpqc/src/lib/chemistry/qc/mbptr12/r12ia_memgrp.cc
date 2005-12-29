@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/mbptr12/r12ia_memgrp.h>
 
 using namespace std;

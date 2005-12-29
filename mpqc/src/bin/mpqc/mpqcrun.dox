@@ -14,7 +14,8 @@ mpqcrun [options] [file1.in] [file2.in] ...
 <h1>Description</h1>
 
 The mpqcrun program simplifies the task of running MPQC on multiple input
-files.  It is primarily design to run the validation suite, however, is
+files.  Although it was primarily designed to run the validation suite,
+mpqcrun, is
 general enough to be useful in other situations.  If multiple nodes or
 processors are present, it can be used to manage multiple invocations of
 MPQC.
@@ -29,8 +30,7 @@ mpqcrun takes the following command line options:
   <dt><tt>--objdir</tt><dd>Run the mpqc executable in the compile directory,
                            rather than the install directory.
   <dt><tt>--small</tt><dd>Skip big runs in verification suite.
-  <dt><tt>--maxjobs</tt> n<dd>Run n jobs at a time.
-  <dt><tt>--nprocperjob</tt> n<dd>Run with n processes per job.  If this is <tt>max</tt>, use all available nodes.
+  <dt><tt>--nnodeperjob</tt> n<dd>Run with n nodes per job.  If this is <tt>nnode</tt>, use all available nodes.
   <dt><tt>--nprocpernode</tt> n<dd>Run with n processes per node.
   <dt><tt>--nthreadperproc</tt> n<dd>Use n threads per process.
   <dt><tt>--threadgrp</tt> grp<dd>Use the given threading layer.
@@ -54,6 +54,7 @@ mpqcrun takes the following command line options:
   </dl>
   <dt><tt>--launch</tt> cmd<dd>Use the given command to launch jobs. See below.
   <dt><tt>--nodefile</tt> file<dd>Specifies a file listing nodes to use.
+                                 Duplicated nodes are removed.
   <dt><tt>--nodes</tt> nodes<dd>Specifies list of machines to use.
                                 A range of nodes can be given with two
                                 integers separated by a dash.  Groups of
@@ -62,14 +63,17 @@ mpqcrun takes the following command line options:
                                  node number to its name.
   <dt><tt>--seq</tt> regex<dd>Run inputs matching reqex sequentially.
                               This is useful when one input requires that
-                              another be run first, and maxjobs is more than
-                              one.
+                              another be run first, and more than
+                              one job is run at a time.
   <dt><tt>--exclude</tt> regex<dd>Exclude files matching regex.
   <dt><tt>--readdir</tt> dir<dd>Run mpqc on all files matching dir/*.in.
+  <dt><tt>--inputprefix</tt> prefix<dd>Prepend prefix to all input file names.
+  <dt><tt>--outputprefix</tt> prefix<dd>Prepend prefix to all output file names.
   <dt><tt>--count</tt><dd>Print the number of input files that would be run.
   <dt><tt>--printfiles</tt><dd>Print the list of input files that would be run.
   <dt><tt>--rerun</tt><dd>Overwrite output file, even if up-to-date.
   <dt><tt>--onlynew</tt><dd>Do not overwrite output file, even if not up-to-date.
+  <dt><tt>--simpout</tt><dd>Do not append extra info like nnode to filename.
   <dt><tt>--uniqout</tt><dd>Generate unique output filenames.
   <dt><tt>--autoout</tt><dd>Generate output filenames by replacing
                             the suffix with "out".

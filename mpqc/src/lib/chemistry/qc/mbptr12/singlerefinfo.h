@@ -122,6 +122,7 @@ namespace sc {
       Ref<MOIndexSpace> uocc_act_;
       /// "constructor"
       void init(const std::string& prefix, const Ref<GaussianBasisSet>& bs,
+                const Ref<Integral>& integral,
                 const RefDiagSCMatrix& evals, const RefSCMatrix& evecs,
                 const std::vector<double>& occs, unsigned int nfzc, unsigned int nfzv);
     } SpinSpaces;

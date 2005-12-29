@@ -33,6 +33,7 @@
 #include <math.h>
 
 #include <util/misc/formio.h>
+#include <util/misc/math.h>
 #include <util/keyval/keyval.h>
 #include <util/state/stateio.h>
 
@@ -318,7 +319,7 @@ void GaussianShell::convert_coef()
   for (gc=0; gc<ncon; gc++) {
       for (i=0; i<nprim; i++) {
 	  c = 0.25/exp[i];
-	  ss = pow(3.141592653589793/(exp[i]+exp[i]),1.5);
+	  ss = pow(M_PI/(exp[i]+exp[i]),1.5);
 	  coef[gc][i]
 	    *= 1.0/sqrt(::norm(l[gc],l[gc],c,ss));
 	}
@@ -328,7 +329,7 @@ void GaussianShell::convert_coef()
 double GaussianShell::coefficient_norm(int con,int prim) const
 {
   double c = 0.25/exp[prim];
-  double ss = pow(3.141592653589793/(exp[prim]+exp[prim]),1.5);
+  double ss = pow(M_PI/(exp[prim]+exp[prim]),1.5);
   return coef[con][prim] * sqrt(::norm(l[con],l[con],c,ss));
 }
 
@@ -348,7 +349,7 @@ GaussianShell::shell_normalization(int gc)
   for (i=0; i<nprim; i++) {
     for (j=0; j<nprim; j++) {
       c = 0.50/(exp[i] + exp[j]);
-      ss = pow(3.141592653589793/(exp[i]+exp[j]),1.5);
+      ss = pow(M_PI/(exp[i]+exp[j]),1.5);
       result += coef[gc][i] * coef[gc][j] *
                ::norm(l[gc],l[gc],c,ss);
       }

@@ -1,14 +1,14 @@
 
-test_basis: STO-3G
+test_basis: cc-pVDZ
 test_method: scf
 test_symmetry: c2v
 test_calc: energy
+test_integral_buffer: opaque array
+test_integral_package: cints
 
 restart: no
 checkpoint: no
-optimize: no
 do_cca: yes
-integral_buffer: opaque array
 
 label: cca integrals test
 

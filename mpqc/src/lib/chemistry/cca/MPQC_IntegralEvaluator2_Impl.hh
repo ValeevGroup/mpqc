@@ -22,6 +22,9 @@
 // 
 // Includes for all method dependencies.
 // 
+#ifndef included_Chemistry_QC_GaussianBasis_DerivCenters_hh
+#include "Chemistry_QC_GaussianBasis_DerivCenters.hh"
+#endif
 #ifndef included_Chemistry_QC_GaussianBasis_Molecular_hh
 #include "Chemistry_QC_GaussianBasis_Molecular.hh"
 #endif
@@ -81,16 +84,21 @@ namespace MPQC {
     Ref<OneBodyInt> eval_;
     Ref<OneBodyDerivInt> deriv_eval_;
     int max_nshell2_;
+    int maxam_;
     sidl::array<double> sidl_buffer_;
     const double *sc_buffer_;
+    double *temp_buffer_;
+    double *buf_;
     enum { one_body, one_body_deriv};
     int int_type_;
     int deriv_level_;
     std::string package_;
     int **reorder_;
+    Chemistry::QC::GaussianBasis::DerivCenters deriv_centers_;
 
     void reorder_intv3(int64_t, int64_t);
     void initialize_reorder_intv3();
+    void reorder_doublet( sc::GaussianShell*, sc::GaussianShell*, int, int, int );
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2._implementation)
 
   private:
@@ -157,16 +165,32 @@ namespace MPQC {
     ;
 
     /**
+     * Allows a DerivCenters object to be passed to 
+     * an evaluator, so that derivatives can be taken 
+     * with respect to a specified atom (needed for
+     * derivatives with non-Hellman-Feynman contributions). 
+     */
+    void
+    set_derivcenters (
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc
+    )
+    throw () 
+    ;
+
+
+    /**
      * Compute a shell doublet of integrals.
      * @param shellnum1 Gaussian shell number 1.
      * @param shellnum2 Gaussian shell number 2.
      * @param deriv_level Derivative level. 
+     * @param deriv_ctr Derivative center descriptor. 
      */
     void
     compute (
       /* in */ int64_t shellnum1,
       /* in */ int64_t shellnum2,
-      /* in */ int64_t deriv_level
+      /* in */ int64_t deriv_level,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;
@@ -178,13 +202,15 @@ namespace MPQC {
      * @param shellnum1 Gaussian shell number 1.
      * @param shellnum2 Gaussian shell number 2.
      * @param deriv_level Derivative level.
+     * @param deriv_ctr Derivative center descriptor.
      * @return Borrowed sidl array buffer. 
      */
     ::sidl::array<double>
     compute_array (
       /* in */ int64_t shellnum1,
       /* in */ int64_t shellnum2,
-      /* in */ int64_t deriv_level
+      /* in */ int64_t deriv_level,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;

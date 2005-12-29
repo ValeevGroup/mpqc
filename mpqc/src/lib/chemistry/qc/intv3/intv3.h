@@ -102,10 +102,6 @@ class IntegralV3 : public Integral {
 
     Ref<TwoBodyDerivInt> electron_repulsion_deriv();
 
-    Ref<TwoBodyInt> grt(const Ref<IntParams>&);
-
-    Ref<TwoBodyInt> g12(const Ref<IntParams>&);
-
     void set_basis(const Ref<GaussianBasisSet> &b1,
                    const Ref<GaussianBasisSet> &b2 = 0,
                    const Ref<GaussianBasisSet> &b3 = 0,

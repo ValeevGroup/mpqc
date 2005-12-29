@@ -34,19 +34,35 @@
 using namespace std;
 using namespace sc;
 
-const RefSCMatrix R12Amplitudes::T2_aa() const  {return T2_aa_;};
-const RefSCMatrix R12Amplitudes::T2_ab() const  {return T2_ab_;};
-const RefSCMatrix R12Amplitudes::Rvv_aa() const {return Rvv_aa_;};
-const RefSCMatrix R12Amplitudes::Rvv_ab() const {return Rvv_ab_;};
-const RefSCMatrix R12Amplitudes::Roo_aa() const {return Roo_aa_;};
-const RefSCMatrix R12Amplitudes::Roo_ab() const {return Roo_ab_;};
-const RefSCMatrix R12Amplitudes::Rvo_aa() const {return Rvo_aa_;};
-const RefSCMatrix R12Amplitudes::Rvo_ab() const {return Rvo_ab_;};
-const RefSCMatrix R12Amplitudes::Rxo_aa() const {return Rxo_aa_;};
-const RefSCMatrix R12Amplitudes::Rxo_ab() const {return Rxo_ab_;};
+RefSCMatrix
+F12Amplitudes::T2(SpinCase2 S) const
+{
+  return T2_[S];
+}
 
+RefSCMatrix
+F12Amplitudes::Fvv(SpinCase2 S) const
+{
+  return Fvv_[S];
+}
 
+RefSCMatrix
+F12Amplitudes::Foo(SpinCase2 S) const
+{
+  return Foo_[S];
+}
 
+RefSCMatrix
+F12Amplitudes::Fvo(SpinCase2 S) const
+{
+  return Fvo_[S];
+}
+
+RefSCMatrix
+F12Amplitudes::Fxo(SpinCase2 S) const
+{
+  return Fxo_[S];
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

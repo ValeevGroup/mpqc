@@ -20,7 +20,7 @@ mpqc: (
   savestate = no
   restart = no
   do_energy = yes
-  do_gradient = no
+  do_gradient = yes
   % method for computing the molecule's energy
   mole<MBPT2>: (
     molecule = $:molecule

@@ -6,11 +6,19 @@ require QCResult;
 
 my $log10 = log(10.0);
 
+$error = 0;
+$refmissing = 0;
+$testmissing = 0;
+$reffailed = 0;
+$testfailed = 0;
+$ntest = 0;
+
 if ($ARGV[0] eq "-r") {
     shift;
+    $refdir = shift;
     foreach $file1 (@ARGV) {
         $file2 = $file1;
-        $file1 =~ s/run\//ref\//;
+        $file1 =~ s+run+$refdir+;
         check($file1, $file2);
     }
 }
@@ -42,6 +50,25 @@ else {
 
     check($file1, $file2);
 }
+
+print  "*************************************************\n";
+printf "* %6d test cases total\n", $ntest;
+printf "* %6d numerical discrepancies\n", $error;
+printf "* %6d failed reference cases\n", $reffailed;
+printf "* %6d missing reference cases\n", $refmissing;
+printf "* %6d failed test cases\n", $testfailed;
+printf "* %6d missing test cases\n", $testmissing;
+print  "*************************************************\n";
+
+if ($error + $testfailed + $testmissing + $reffailed + $refmissing > 0) {
+    print "CHECK FAILED\n";
+    exit 1;
+}
+else {
+    print "CHECK OK\n";
+    exit 0;
+}
+
 
 # Takes the name of the output file as the first argument.  It must end in
 # a .out. The QCInput file must be in the same directory and must end in a
@@ -96,7 +123,9 @@ sub check {
         if (-f "$comparefile.out") {
             my $comparefileout = "$comparefile.out";
             my $comparefilein = "$comparefile.qci";
-            my $cresult = new QCResult($comparefilein,$comparefileout);
+            # use the input file for the reference calculation
+            # so it doesn't need to exist in both directories
+            my $cresult = new QCResult($filein,$comparefileout);
             my $compareok = "failed";
             $compareok = "ok" if ($cresult->ok());
             printf " %s", $compareok;
@@ -104,64 +133,64 @@ sub check {
                 #printf " %14.8f %14.8f", $result->energy(),$cresult->energy();
                 my $ldiff = compare_numbers($result->energy(),$cresult->energy());
                 printf " E:%2d", $ldiff;
-                print "*" if ($ldiff <= 6);
+                flagerror() if ($ldiff <= 6);
                 if ($result->input()->gradient()
                     && ! $result->input()->optimize()) {
                     my $maxerror = compare_vecs($result->gradient(),
                                                 $cresult->gradient());
                     printf " Grad:%2d", $maxerror;
-                    print "*" if ($maxerror <= 6);
+                    flagerror() if ($maxerror <= 6);
                 }
                 if ($result->input()->optimize()) {
                     my $maxerror = compare_vecs(
                                     $result->optmolecule()->geometry(),
                                     $cresult->optmolecule()->geometry());
                     printf " Geom:%2d", $maxerror;
-                    print "*" if ($maxerror <= 4);
+                    flagerror() if ($maxerror <= 4);
                 }
                 if ($result->input()->frequencies()) {
                     my $maxerror = compare_vecs($result->frequencies(),
                                                 $cresult->frequencies());
                     printf " Freq:% 2d", $maxerror;
-                    print "*" if ($maxerror <= -2);
+                    flagerror() if ($maxerror <= -2);
                 }
                 if ($result->s2norm() && $cresult->s2norm()) {
                     my $maxerror = compare_numbers($result->s2norm(),
                                                    $cresult->s2norm());
                     printf " S2N:%d", $maxerror;
-                    print "*" if ($maxerror <= 8);
+                    flagerror() if ($maxerror <= 8);
                 }
                 if (!$cresult->degenerate() &&
                     $result->s2matrix1norm() && $cresult->s2matrix1norm()) {
                     my $maxerror = compare_numbers($result->s2matrix1norm(),
                                                    $cresult->s2matrix1norm());
                     printf " |S2|1:%d", $maxerror;
-                    print "*" if ($maxerror <= 8);
+                    flagerror() if ($maxerror <= 8);
                 }
                 if ($result->d1mp2() && $cresult->d1mp2()) {
                     my $maxerror = compare_numbers($result->d1mp2(),
                                                    $cresult->d1mp2());
                     printf " D1:%d", $maxerror;
-                    print "*" if ($maxerror <= 8);
+                    flagerror() if ($maxerror <= 8);
                 }
                 if ($result->d2mp1() && $cresult->d2mp1()) {
                     my $maxerror = compare_numbers($result->d2mp1(),
                                                    $cresult->d2mp1());
                     printf " D2:%d", $maxerror;
-                    print "*" if ($maxerror <= 8);
+                    flagerror() if ($maxerror <= 8);
                 }
                 if (!$cresult->degenerate() &&
                     $result->s2matrixinfnorm() && $cresult->s2matrixinfnorm()){
                     my $maxerror = compare_numbers($result->s2matrixinfnorm(),
                                                  $cresult->s2matrixinfnorm());
                     printf " |S2|i:%d", $maxerror;
-                    print "*" if ($maxerror <= 8);
+                    flagerror() if ($maxerror <= 8);
                 }
                 if ($result->npacharge() && $cresult->npacharge()) {
                     my $maxerror = compare_vecs($result->npacharge(),
                                                 $cresult->npacharge());
                     printf " NPAq:%d", $maxerror;
-                    print "*" if ($maxerror <= 5);
+                    flagerror() if ($maxerror <= 5);
                     #printf "npacharge\n";
                     #print_vec($result->npacharge());
                 }
@@ -169,7 +198,7 @@ sub check {
                     my $maxerror = compare_vecvecs($result->npashellpop(),
                                                    $cresult->npashellpop());
                     printf " NPAp:%d", $maxerror;
-                    print "*" if ($maxerror <= 5);
+                    flagerror() if ($maxerror <= 5);
                     #printf "npashellpop\n";
                     #print_vecvec($result->npashellpop());
                 }
@@ -179,7 +208,7 @@ sub check {
                         = compare_vecs_magnitude($result->s2large_coef(),
                                                  $cresult->s2large_coef());
                     printf " S2L:%d", $maxerror;
-                    print "*" if ($maxerror <= 8);
+                    flagerror() if ($maxerror <= 8);
                     my $n = n_nonzero_in_vec($result->s2large_coef());
                     my $xok = compare_string_vecs($result->s2large_i(),
                                                   $cresult->s2large_i(),$n)
@@ -192,7 +221,7 @@ sub check {
                     #printf "a\n";
                     #print_string_vec($result->s2large_a());
                     if ($xok) { print " X:OK" }
-                    else { print " X:*" }
+                    else { print " X:*"; $error++; }
                 }
                 if (!$cresult->degenerate() &&
                     $result->d1large_coef() && $cresult->d1large_coef()) {
@@ -200,7 +229,7 @@ sub check {
                         = compare_vecs_magnitude($result->d1large_coef(),
                                                  $cresult->d1large_coef());
                     printf " D1L:%d", $maxerror;
-                    print "*" if ($maxerror <= 7);
+                    flagerror() if ($maxerror <= 7);
                     my $n = n_nonzero_in_vec($result->d1large_coef());
                     my $xok = compare_string_vecs($result->d1large_i(),
                                                   $cresult->d1large_i(),$n)
@@ -213,7 +242,7 @@ sub check {
                         && compare_string_vecs($result->d1large_spin(),
                                                $cresult->d1large_spin(),$n);
                     if ($xok) { print " X:OK" }
-                    else { print " X:*" }
+                    else { print " X:*"; $error++; }
                     #printf "coef\n";
                     #print_vec($result->d1large_coef());
                     #printf "i\n";
@@ -234,13 +263,32 @@ sub check {
                     ||($cresult->exists() && !$cresult->ok())) {
                     printf " cannot compare since one calc failed";
                 }
+                if (!$result->exists()) {
+                    $refmissing++;
+                }
+                elsif (!$result->ok()) {
+                    $reffailed++;
+                }
+                if (!$cresult->exists()) {
+                    $testmissing++;
+                }
+                elsif (!$cresult->ok()) {
+                    $testfailed++;
+                }
             }
         }
         else {
             printf " missing";
+            $testmissing++;
         }
     }
+    $ntest++;
     printf "\n";
+}
+
+sub flagerror {
+    print "*";
+    $error++;
 }
 
 sub tofilename {

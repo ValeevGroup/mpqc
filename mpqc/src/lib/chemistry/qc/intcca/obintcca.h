@@ -25,12 +25,17 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef __GNUG__
+#pragma interface
+#endif
+
 #ifndef _chemistry_qc_intcca_obintcca_h
 #define _chemistry_qc_intcca_obintcca_h
 
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/intcca/int1e.h>
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactory.hh>
+#include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
 
 using namespace Chemistry::QC::GaussianBasis;
 
@@ -57,70 +62,31 @@ class OneBodyIntCCA : public OneBodyInt {
     void compute_shell(int,int);
     bool cloneable();
     Ref<OneBodyInt> clone();
-    void set_buffer( double* );
 };
 
-// class PointChargeIntV3 : public OneBodyInt
-// {
-//   protected:
-//     Ref<Int1eV3> int1ev3_;
-//     Ref<PointChargeData> data_;
-//   public:
-//     PointChargeIntV3(Integral*,
-//                      const Ref<GaussianBasisSet>&,
-//                      const Ref<GaussianBasisSet>&,
-//                      const Ref<PointChargeData>&);
-//     ~PointChargeIntV3();
-//     void compute_shell(int,int);
-// };
+///////////////////////////////////////////////////////////////////////////////
 
-// class EfieldDotVectorIntV3: public OneBodyInt
-// {
-//   protected:
-//     Ref<Int1eV3> int1ev3_;
-//     Ref<EfieldDotVectorData> data_;
-//   public:
-//     EfieldDotVectorIntV3(Integral*,
-//                          const Ref<GaussianBasisSet>&,
-//                          const Ref<GaussianBasisSet>&,
-//                          const Ref<EfieldDotVectorData>&);
-//     ~EfieldDotVectorIntV3();
-//     void compute_shell(int,int);
-// };
-
-// class DipoleIntV3: public OneBodyInt
-// {
-//   protected:
-//     Ref<Int1eV3> int1ev3_;
-//     Ref<DipoleData> data_;
-//   public:
-//     DipoleIntV3(Integral*,
-//                 const Ref<GaussianBasisSet>&,
-//                 const Ref<GaussianBasisSet>&,
-//                 const Ref<DipoleData>&);
-//     ~DipoleIntV3();
-//     void compute_shell(int,int);
-// };
-
-// // /////////////////////////////////////////////////////////////////////////
-
-// /** This implements one body derivative integrals in the IntV3 library. It
-//     is given a function pointer to the Int1eV3 member that computes the
-//     particular integral of interest. */
-// class OneBodyDerivIntV3 : public OneBodyDerivInt {
-//   protected:
-//     Ref<Int1eV3> int1ev3_;
-//     typedef void (Int1eV3::*IntegralFunction)(int,int,int,int);
-//     IntegralFunction intfunc_;
-//   public:
-//     OneBodyDerivIntV3(Integral*,
-//                       const Ref<GaussianBasisSet>&,
-//                       const Ref<GaussianBasisSet>&,
-//                       IntegralFunction);
-//     ~OneBodyDerivIntV3();
-//     void compute_shell(int,int,DerivCenters&);
-//     void compute_shell(int,int,int);
-// };
+ /** This implements one body derivative integrals. It
+     is given a function pointer to the Int1eCCA member that computes the
+     particular integral of interest. */
+class OneBodyDerivIntCCA : public OneBodyDerivInt {
+  private:
+    IntegralEvaluatorFactory eval_factory_;
+    bool use_opaque_;
+    string eval_type_;
+  protected:
+    Ref<Int1eCCA> int1ecca_;
+    typedef void (Int1eCCA::*IntegralFunction)(int, int, DerivCenters&);
+  public:
+    OneBodyDerivIntCCA(Integral*,
+                      const Ref<GaussianBasisSet>&,
+                      const Ref<GaussianBasisSet>&,
+                      IntegralEvaluatorFactory,
+                      bool, string);
+    ~OneBodyDerivIntCCA();
+    void compute_shell(int, int, DerivCenters&);
+    void compute_shell(int, int, int);
+};
 
 }
 

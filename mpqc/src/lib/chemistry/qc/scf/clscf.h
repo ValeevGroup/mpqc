@@ -56,7 +56,8 @@ class CLSCF: public SCF {
     /** The KeyVal constructor:
         <dl>
 
-        <dt><tt>total_charge</tt><dd> This integer gives the total charge
+        <dt><tt>total_charge</tt><dd> This floating point number
+        gives the total charge
         of the molecule.  The default is 0.
 
         <dt><tt>docc</tt><dd> This vector of integers gives the total

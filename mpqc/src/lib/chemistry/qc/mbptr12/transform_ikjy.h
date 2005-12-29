@@ -34,7 +34,7 @@
 
 #include <string>
 #include <util/ref/ref.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/mbptr12/transform_tbint.h>
 
 using namespace std;
@@ -55,7 +55,6 @@ public:
 
   TwoBodyMOIntsTransform_ikjy(StateIn&);
   TwoBodyMOIntsTransform_ikjy(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
-                              const IntegralCallback& callback,
                               const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                               const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4);
   ~TwoBodyMOIntsTransform_ikjy();
@@ -69,7 +68,7 @@ public:
   const size_t memgrp_blksize() const;
 
   /// Computes transformed integrals
-  void compute(const Ref<IntParams>& params);
+  void compute(const Ref<TwoBodyIntDescr>& tbintdescr);
   /// Check symmetry of transformed integrals
   void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError);
 };

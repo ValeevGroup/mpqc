@@ -29,7 +29,7 @@
 
 #include <util/state/stateio.h>
 #include <util/misc/formio.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/libint2/libint2.h>
 #include <chemistry/qc/libint2/cartit.h>
 #include <chemistry/qc/libint2/tform.h>
@@ -105,15 +105,6 @@ IntegralLibint2::storage_required_g12(const Ref<GaussianBasisSet> &b1,
 				     const Ref<GaussianBasisSet> &b4)
 {
   return G12Libint2::storage_required(b1,b2,b3,b4);
-}
-
-size_t
-IntegralLibint2::storage_required_grt(const Ref<GaussianBasisSet> &b1,
-				    const Ref<GaussianBasisSet> &b2,
-				    const Ref<GaussianBasisSet> &b3,
-				    const Ref<GaussianBasisSet> &b4)
-{
-  throw FeatureNotImplemented("IntegralLibint2::storage_required_grt() -- IntegralLibint2 does not implement GRT integrals yet.", __FILE__, __LINE__);
 }
 
 CartesianIter *
@@ -277,28 +268,11 @@ IntegralLibint2::electron_repulsion()
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, erieval, bra, ket);
 }
 
-Ref<TwoBodyDerivInt>
-IntegralLibint2::electron_repulsion_deriv()
-{
-  throw FeatureNotImplemented("IntegralLibint2::electron_repulsion_deriv() is not implemented yet", __FILE__, __LINE__);
-}
-
 Ref<TwoBodyInt>
-IntegralLibint2::grt(const Ref<IntParams>& p)
+IntegralLibint2::g12(const Ref<IntParamsG12>& params)
 {
-  throw FeatureNotImplemented("IntegralLibint2::grt() is not implemented yet", __FILE__, __LINE__);
-  //return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, grteval);
-}
-
-Ref<TwoBodyInt>
-IntegralLibint2::g12(const Ref<IntParams>& params)
-{
-  Ref<IntParamsG12> params_cast;
-  params_cast << params;
-  if (params_cast.null())
-    throw ProgrammingError("IntegralLibint2::g12() -- type of params does not match callback",__FILE__,__LINE__);
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_,
-                               g12eval, params_cast->bra(), params_cast->ket());
+                               g12eval, params->bra(), params->ket());
 }
 
 void

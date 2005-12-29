@@ -30,74 +30,20 @@
 #endif
 
 #include <util/misc/formio.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
 
 using namespace sc;
 using namespace LinearR12;
 
-CorrelationFactor::CorrelationFactor(const CorrelationFactorID& id, const CorrelationParameters& params) :
-  id_(id), params_(params)
+CorrelationFactor::CorrelationFactor(const std::string& label, const CorrelationParameters& params) :
+  label_(label), params_(params)
 {
-  init();
-}
-
-void
-CorrelationFactor::init()
-{
-  switch (id_) {
-  case NullCorrFactor:
-    init2("NONE",&Integral::grt,1);
-    tbint_type_eri(TwoBodyInt::eri);
-    break;
-  case R12CorrFactor:
-    init2("R12",&Integral::grt,4);
-    tbint_type_eri(TwoBodyInt::eri);
-    tbint_type_f12(TwoBodyInt::r12);
-    tbint_type_t1f12(TwoBodyInt::r12t1);
-    tbint_type_t2f12(TwoBodyInt::r12t2);
-    break;
-  case G12CorrFactor:
-    init2("G12",&Integral::g12,6);
-    tbint_type_eri(TwoBodyInt::eri);
-    tbint_type_f12(TwoBodyInt::r12_0_g12);
-    tbint_type_t1f12(TwoBodyInt::t1g12);
-    tbint_type_t2f12(TwoBodyInt::t2g12);
-    tbint_type_f12eri(TwoBodyInt::r12_m1_g12);
-    tbint_type_f12f12(TwoBodyInt::r12_0_g12);
-    tbint_type_f12t1f12(TwoBodyInt::g12t1g12);
-    break;
-  default:
-    throw FeatureNotImplemented("CorrelationFactor::CorrelationFactor() -- correlation factor with this id not found",__FILE__,__LINE__);
-  }
-}
-
-void
-CorrelationFactor::init2(const std::string& label,
-                         IntegralCallback callback,
-                         unsigned int num_tbint_types)
-{
-  label_ = label;
-  callback_ = callback;
-  num_tbint_types_ = num_tbint_types;
-  tbint_type_eri_ = -1;
-  tbint_type_f12_ = -1;
-  tbint_type_t1f12_ = -1;
-  tbint_type_t2f12_ = -1;
-  tbint_type_f12eri_ = -1;
-  tbint_type_f12f12_ = -1;
-  tbint_type_f12t1f12_ = -1;
 }
 
 CorrelationFactor::~CorrelationFactor()
 {
-}
-
-const LinearR12::CorrelationFactorID&
-CorrelationFactor::id() const
-{
-  return id_;
 }
 
 unsigned int
@@ -130,18 +76,6 @@ CorrelationFactor::label() const
   return label_;
 }
 
-const CorrelationFactor::IntegralCallback&
-CorrelationFactor::callback() const
-{
-  return callback_;
-}
-
-unsigned int
-CorrelationFactor::num_tbint_types() const
-{
-  return num_tbint_types_;
-}
-
 void
 CorrelationFactor::print(std::ostream& os) const
 {
@@ -152,7 +86,10 @@ CorrelationFactor::print(std::ostream& os) const
   for(int f=0; f<nfunc; f++) {
     os << indent << "Function " << f << ":" << endl << incindent;
     os << indent << "Functional form: " << label() << endl;
-    if (id() == G12CorrFactor) {
+    
+    // It doesn't make sense to print out parameters for some correlation factors
+    Ref<G12CorrelationFactor> g12ptr;  g12ptr << const_cast<CorrelationFactor*>(this);
+    if (g12ptr.nonnull()) {
       os << indent << "[ Exponent Coefficient] = [ ";
       const int nprim = nprimitives(f);
       for(int p=0; p<nprim; p++) {
@@ -164,5 +101,174 @@ CorrelationFactor::print(std::ostream& os) const
     os << decindent;
   }
   os << decindent;
+}
+
+int
+LinearR12::CorrelationFactor::tbint_type_eri() const
+{
+  throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_eri() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+}
+
+int
+LinearR12::CorrelationFactor::tbint_type_f12() const
+{
+  throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+}
+
+int
+LinearR12::CorrelationFactor::tbint_type_t1f12() const
+{
+  throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_t1f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+}
+
+int
+LinearR12::CorrelationFactor::tbint_type_t2f12() const
+{
+  throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_t2f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+}
+
+int
+LinearR12::CorrelationFactor::tbint_type_f12eri() const
+{
+  throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_f12eri() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+}
+
+int
+LinearR12::CorrelationFactor::tbint_type_f12f12() const
+{
+  throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_f12f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+}
+
+int
+LinearR12::CorrelationFactor::tbint_type_f12t1f12() const
+{
+  throw ProgrammingError("LinearR12::CorrelationFactor::tbint_type_f12t1f12() -- invalid type of integrals for the given CorrelationFactor",__FILE__,__LINE__);
+}
+
+Ref<TwoBodyIntDescr>
+CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f) const
+{
+  throw ProgrammingError("LinearR12::CorrelationFactor::tbintdescr(f) -- should not be called for this CorrelationFactor",__FILE__,__LINE__);
+}
+
+Ref<TwoBodyIntDescr>
+CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int fbra, unsigned int fket) const
+{
+  throw ProgrammingError("LinearR12::CorrelationFactor::tbintdescr(f,g) -- should not be called for this CorrelationFactor",__FILE__,__LINE__);
+}
+
+////
+
+LinearR12::NullCorrelationFactor::NullCorrelationFactor() :
+  CorrelationFactor("NONE")
+{
+}
+
+int
+LinearR12::NullCorrelationFactor::tbint_type_eri() const
+{
+  return static_cast<int>(TwoBodyInt::eri);
+}
+
+////
+
+LinearR12::R12CorrelationFactor::R12CorrelationFactor() :
+  CorrelationFactor("R12", CorrelationParameters(1,ContractedGeminal(1,std::make_pair(0.0,1.0))))
+{
+}
+
+int
+LinearR12::R12CorrelationFactor::tbint_type_eri() const
+{
+  return static_cast<int>(TwoBodyInt::eri);
+}
+
+int
+LinearR12::R12CorrelationFactor::tbint_type_f12() const
+{
+  return static_cast<int>(TwoBodyInt::r12);
+}
+
+int
+LinearR12::R12CorrelationFactor::tbint_type_t1f12() const
+{
+  return static_cast<int>(TwoBodyInt::r12t1);
+}
+
+int
+LinearR12::R12CorrelationFactor::tbint_type_t2f12() const
+{
+  return static_cast<int>(TwoBodyInt::r12t2);
+}
+
+Ref<TwoBodyIntDescr>
+LinearR12::R12CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f) const
+{
+  return new TwoBodyIntDescrR12(IF);
+}
+
+////
+
+LinearR12::G12CorrelationFactor::G12CorrelationFactor(const CorrelationParameters& params) :
+  CorrelationFactor("G12",params)
+{
+}
+
+int
+LinearR12::G12CorrelationFactor::tbint_type_eri() const
+{
+  return static_cast<int>(TwoBodyInt::eri);
+}
+
+int
+LinearR12::G12CorrelationFactor::tbint_type_f12() const
+{
+  return static_cast<int>(TwoBodyInt::r12_0_g12);
+}
+
+int
+LinearR12::G12CorrelationFactor::tbint_type_t1f12() const
+{
+  return static_cast<int>(TwoBodyInt::t1g12);
+}
+
+int
+LinearR12::G12CorrelationFactor::tbint_type_t2f12() const
+{
+  return static_cast<int>(TwoBodyInt::t2g12);
+}
+
+int
+LinearR12::G12CorrelationFactor::tbint_type_f12eri() const
+{
+  return static_cast<int>(TwoBodyInt::r12_m1_g12);
+}
+
+int
+LinearR12::G12CorrelationFactor::tbint_type_f12f12() const
+{
+  return static_cast<int>(TwoBodyInt::r12_0_g12);
+}
+
+int
+LinearR12::G12CorrelationFactor::tbint_type_f12t1f12() const
+{
+  return static_cast<int>(TwoBodyInt::g12t1g12);
+}
+
+Ref<TwoBodyIntDescr>
+LinearR12::G12CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f) const
+{
+  Ref<IntParamsG12> params = new IntParamsG12(function(f), IntParamsG12::zero_exponent_geminal);
+  return new TwoBodyIntDescrG12(IF,params);
+}
+
+Ref<TwoBodyIntDescr>
+LinearR12::G12CorrelationFactor::tbintdescr(const Ref<Integral>& IF,
+                                            unsigned int fbra,
+                                            unsigned int fket) const
+{
+  Ref<IntParamsG12> params = new IntParamsG12(function(fbra),function(fket));
+  return new TwoBodyIntDescrG12(IF,params);
 }
 

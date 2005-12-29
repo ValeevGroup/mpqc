@@ -80,17 +80,17 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
   const unsigned int num_f12 = corrfactor()->nfunctions();
   Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
   tfactory->set_spaces(ispace,xspace,jspace,yspace);
+  const Ref<Integral> integral = r12info()->integral();
+  
   std::vector<std::string> ixjy_name;
   for(int f12=0; f12<num_f12; f12++) {
     const std::string tform_name = transform_label(ispace,xspace,jspace,yspace,f12);
     ixjy_name.push_back(tform_name);
     Ref<TwoBodyMOIntsTransform> ixjy_tform = tform_map_[tform_name];
     if (ixjy_tform.null()) {
-      ixjy_tform = tfactory->twobody_transform_13(tform_name,corrfactor()->callback());
-      ixjy_tform->set_num_te_types(corrfactor()->num_tbint_types());
+      ixjy_tform = tfactory->twobody_transform_13(tform_name);
       tform_map_[tform_name] = ixjy_tform;
-      Ref<IntParams> params = new IntParamsG12(corrfactor()->function(f12),LinearR12::CorrelationFactor::zero_exponent_geminal());
-      ixjy_tform->compute(params);
+      ixjy_tform->compute(corrfactor()->tbintdescr(integral,f12));
     }
   }
   const int ni = ispace->rank();
@@ -145,8 +145,7 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
     Ref<TwoBodyMOIntsTransform> ixjy_tform = get_tform_(ixjy_name.at(f12));
     Ref<R12IntsAcc> acc = ixjy_tform->ints_acc();
     if (acc.null() || !acc->is_committed()) {
-      Ref<IntParams> params = new IntParamsG12(corrfactor()->function(f12),LinearR12::CorrelationFactor::zero_exponent_geminal());
-      ixjy_tform->compute(params);
+      ixjy_tform->compute(corrfactor()->tbintdescr(integral,f12));
     }
     if (!acc->is_active())
       acc->activate();

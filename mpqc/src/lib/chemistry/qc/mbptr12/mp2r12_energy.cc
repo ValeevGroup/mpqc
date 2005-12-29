@@ -45,6 +45,7 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/svd.h>
+#include <chemistry/qc/mbptr12/print_scmat_norms.h>
 
 using namespace std;
 using namespace sc;
@@ -78,12 +79,7 @@ void
 MP2R12Energy::init_()
 {
   const Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  RefSCDimension dim_oo_aa = r12eval_->dim_oo_aa();
-  RefSCDimension dim_oo_ab = r12eval_->dim_oo_ab();
   Ref<SCMatrixKit> kit = r12info->matrixkit();
-
-  RefSCDimension dim_vv_aa = r12eval_->dim_vv_aa();
-  RefSCDimension dim_vv_ab = r12eval_->dim_vv_ab();
   for(int s=0; s<NSpinCases2; s++) {
     const bool spin_polarized = r12info->refinfo()->ref()->spin_polarized();
     if (spin_polarized || s != BetaBeta) {
@@ -229,6 +225,7 @@ MP2R12Energy::compute_pair_function_aa(int ij, const SCVector3& r1, const SCVect
 
   print_psi_values(ExEnv::out0(),r1,r2,phi_aa.get_element(ij),phi_t2,phi_r12);
 
+  return phi_t2 + phi_r12;
 }
 
 void
@@ -331,6 +328,8 @@ MP2R12Energy::compute_pair_function_ab(int ij, const SCVector3& r1, const SCVect
   phi_r12 -= 1.0 * Cox.get_row(ij).dot(phi_ox);
 
   print_psi_values(ExEnv::out0(),r1,r2,phi_aa.get_element(ij),phi_t2,phi_r12);
+
+  return phi_t2 + phi_r12;
 }
 
 void

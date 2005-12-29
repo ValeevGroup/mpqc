@@ -29,7 +29,7 @@
 #pragma implementation
 #endif
 
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/basis/intparams.h>
 
 using namespace sc;

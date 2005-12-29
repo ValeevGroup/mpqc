@@ -37,6 +37,7 @@
 #include <util/group/memory.h>
 #include <util/group/thread.h>
 #include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/distshpair.h>
 
 namespace sc {
 
@@ -64,6 +65,7 @@ class CSGradErep12Qtr: public Thread {
     int dynamic_;
     double print_percent_;
     int usep4_;
+    DistShellPair::SharedData *shellpair_shared_data_;
   public:
     CSGradErep12Qtr(int mythread_a, int nthread_a,
                     int me_a, int nproc_a,
@@ -75,7 +77,9 @@ class CSGradErep12Qtr: public Thread {
                     int nocc_a,
                     double **scf_vector_a,
                     double tol_a, int debug_a,
-                    int dynamic_a, double print_percent_a, int usep4);
+                    int dynamic_a, double print_percent_a,
+                    DistShellPair::SharedData *shellpair_shared_data,
+                    int usep4);
     ~CSGradErep12Qtr();
 
     void set_i_offset(int ioff) { i_offset = ioff; }

@@ -1,12 +1,71 @@
 /** \page mpqcval Validating MPQC
 
- After you compile MPQC, you should run it through the validation suite.
+ After you compile MPQC, you should run the validation suite.
 You should also run the validation suite if you upgrade your operating
 system software, since this could change shared libraries that are linking
 with MPQC and could affect the results.
+Note that the reference validation suite has not been verified
+relative to an independent code, except for a few spot checks.  If you find
+that MPQC doesn't produce the same answer as another quantum chemistry
+program that you trust, then please promptly notify us and send all the
+details.
 
- The validation suite is in <tt>src/bin/mpqc/validate</tt>.  The
-input files are divided into several categories:
+ The top-level Makefile has several targets that can be used to check
+an MPQC build.  MPQC must be built before one of these targets is used:
+<dl>
+  <dt><tt>check</tt><dd>The same as <tt>check0</tt> below.  This
+                        is only available from the top-level directory
+                        and <tt>src/bin/mpqc/validate</tt>.
+  <dt><tt>check0</tt><dd>Run the smallest MPQC verification suite.
+                        It tests basic functionality.  This
+                        is only available from the top-level directory
+                        and <tt>src/bin/mpqc/validate</tt>.
+  <dt><tt>check1</tt><dd>Run the intermediate MPQC verification suite.
+                        It runs most of the tests, only leaving out
+                        very expensive runs.  This
+                        is only available from the top-level directory
+                        and <tt>src/bin/mpqc/validate</tt>.
+  <dt><tt>check2</tt><dd>Run the complete MPQC verification suite.
+                        Depending on the compilation and runtime
+                        environment, tests that are not expected
+                        to work will be omitted.  This
+                        is only available from the top-level directory
+                        and <tt>src/bin/mpqc/validate</tt>.
+  <dt><tt>check_clean</tt><dd>Remove MPQC verification suite output files.
+                        This is only available from the top-level directory
+                        and <tt>src/bin/mpqc/validate</tt>.
+  <dt><tt>testbuild</tt><dd>Verify that a variety of small test programs
+                        compile.  If static libraries are used, this
+                        will require a substantial amount of disk space.
+  <dt><tt>testrun</tt><dd>Run a variety of small test programs.  This
+                        will build them if necessary.
+</dl>
+
+The check targets will run mpqc with the mpqcrun (see \ref mpqcrun)
+command.  You can give arguments to mpqcrun by setting
+the <tt>MPQCRUN_ARGS</tt> variable on the make command line.
+
+The verification suite is in <tt>src/bin/mpqc/validate</tt>.  After running
+it, the output files can be found in <tt>src/bin/mpqc/validate/run</tt>.
+The check targets will compare outputs that your build produced to
+the reference files in <tt>src/bin/mpqc/validate/ref</tt>.  The input files
+can be found with the reference files.
+For each comparison, first the status (<tt>ok</tt>,
+<tt>missing</tt>, or <tt>failed</tt>) for each file is printed.  If both
+statuses are <tt>ok</tt> then an <tt>E:</tt> is printed followed by the
+number of digits to which the energies agree.  If they agree to all digits
+<tt>99</tt> is printed.  If a gradient was computed, then <tt>Grad:</tt> is
+printed followed by the number of digits to which the gradients in least
+agreement agree.  Other properties checked in this way include frequencies,
+diagnostics, and populations.
+
+  If two numbers do not agree to the expected accuracy, then an asterisk,
+<tt>*</tt>, is printed after the number of digits in agreement.
+
+  Finally, you can do a detailed comparison of the contents of the
+<tt>ref</tt> and <tt>run</tt> subdirectories by typing <tt>make diff</tt>.
+
+The input files in the verification suite are divided into several categories:
 <dl>
   <dt><tt>h2o</tt><dd>These are simple tests that exercise many of MPQC's
         features.
@@ -34,8 +93,7 @@ input files are divided into several categories:
 
   <dt><tt>basis2</tt><dd>Basis sets test for second row atoms.
 
-  <dt><tt>methods</tt><dd>Tests the self-consistent-field methods and the
-                  density functional theory functionals.
+  <dt><tt>methods</tt><dd>Basic tests of several of MPQC's methods.
 
   <dt><tt>clscf</tt><dd>More tests of methods based on CLSCF.
 
@@ -45,62 +103,12 @@ input files are divided into several categories:
 
   <dt><tt>dft</tt><dd>More tests of the CLKS method.
 
-  <dt><tt>ccaint</tt><dd>Tests of embedded CCA integrals components.
+  <dt><tt>mp2r12</tt><dd>More tests of MP2-R12.
+
+  <dt><tt>ccaintv3</tt><dd>Tests of embedded CCA integrals components using <tt>intv3</tt>.
+
+  <dt><tt>ccacints</tt><dd>Tests of embedded CCA integrals components using <tt>cints</tt>.
 
 </dl>
-
-  To generate the input files change into the
-<tt>src/bin/mpqc/validate</tt> subdirectory of your object directory (where
-you compiled MPQC) and type <tt>make inputs</tt>.  This will create a
-<tt>run</tt> subdirectory containing MPQC input files ending with the
-<tt>.in</tt> suffix.  Files ending with a <tt>.qci</tt> suffix will also be
-placed in the <tt>run</tt> directory.  These contain a description of the
-calculation that is used by the utility program that checks the results of
-the validation suite.
-
-  Next you need to run the calculations.  You might want to start with the
-<tt>h2o</tt> input files first since they shouldn't take too long to run.
-For the <tt>ckpt</tt> calculations you should run the calculations
-alphabetically by input file name.  This ensures that the checkpoint files
-will be created before they are needed.
-
-  While the test calculations are running you can begin monitoring the
-results by typing <tt>make checkrun</tt> in the
-<tt>src/bin/mpqc/validate</tt> directory.  This will first do some
-consistency checks between pairs of files selected from the <tt>ckpt</tt>,
-<tt>dft</tt>, <tt>mbpt</tt>, <tt>symm1</tt>, and <tt>symm2</tt> groups of
-calculations (see below for a discussion of the output for comparison of
-two files).  Then each file is individually checked.  An <tt>ok</tt> is
-printed next the test name, if it looks like the calculation made it to the
-end.  A <tt>missing</tt> means the output file could not be found.  A
-<tt>failed</tt> means that the output file has problems (or the calculation
-may still be running).
-
-  Next you will want to see if your compiled MPQC produces the same answer
-as ours.  Note that our reference validation suite has not been verified
-relative to an independent code, except for a few spot checks.  If you find
-that MPQC doesn't produce the same answer as another quantum chemistry
-program that you trust, then please promptly notify us and send all the
-details.  The reference validation suite is distributed separately from
-MPQC.  Obtain it (hopefully it is available where you got the source code)
-and untar it in the <tt>src/bin/mpqc/validate</tt> subdirectory of your
-MPQC object code directory.  This will create the <tt>ref</tt>
-subdirectory.  Now you can type <tt>make check</tt> and outputs in the
-<tt>ref</tt> and <tt>run</tt> directories will be pairwise compared.
-
-  When files are pairwise compared first the status (<tt>ok</tt>,
-<tt>missing</tt>, or <tt>failed</tt>) for each file is printed.  If both
-statuses are <tt>ok</tt> then an <tt>E:</tt> is printed followed by the
-number of digits to which the energies agree.  If they agree to all digits
-<tt>99</tt> is printed.  If a gradient was computed, then <tt>Grad:</tt> is
-printed followed by the number of digits to which the gradients in least
-agreement agree.  Other properties checked in this way include frequencies,
-diagnostics, and populations.
-
-  If two numbers do not agree to the expected accuracy, then an asterisk,
-<tt>*</tt>, is printed after the number of digits in agreement.
-
-  Finally, you can do a detailed comparison of the contents of the
-<tt>ref</tt> and <tt>run</tt> subdirectories by typing <tt>make diff</tt>.
 
 */

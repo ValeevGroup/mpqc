@@ -14,7 +14,7 @@ molecule<Molecule>: (
 )
 % basis set specification
 basis<GaussianBasisSet>: (
-  name = "4-31G*"
+  name = "3-21G*"
   molecule = $:molecule
 )
 mpqc: (

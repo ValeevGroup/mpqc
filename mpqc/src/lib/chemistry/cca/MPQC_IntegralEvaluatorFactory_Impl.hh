@@ -28,6 +28,9 @@
 #ifndef included_Chemistry_QC_GaussianBasis_ContractionTransform_hh
 #include "Chemistry_QC_GaussianBasis_ContractionTransform.hh"
 #endif
+#ifndef included_Chemistry_QC_GaussianBasis_DerivCenters_hh
+#include "Chemistry_QC_GaussianBasis_DerivCenters.hh"
+#endif
 #ifndef included_Chemistry_QC_GaussianBasis_IntegralEvaluator2_hh
 #include "Chemistry_QC_GaussianBasis_IntegralEvaluator2.hh"
 #endif
@@ -147,6 +150,32 @@ namespace MPQC {
 
 
     /**
+     * Starts up a component presence in the calling framework.
+     * @param Svc the component instance's handle on the framework world.
+     * Contracts concerning Svc and setServices:
+     * 
+     * The component interaction with the CCA framework
+     * and Ports begins on the call to setServices by the framework.
+     * 
+     * This function is called exactly once for each instance created
+     * by the framework.
+     * 
+     * The argument Svc will never be nil/null.
+     * 
+     * Those uses ports which are automatically connected by the framework
+     * (so-called service-ports) may be obtained via getPort during
+     * setServices.
+     */
+    void
+    setServices (
+      /* in */ ::gov::cca::Services services
+    )
+    throw ( 
+      ::gov::cca::CCAException
+    );
+
+
+    /**
      * Set the molecular basis 
      * @param molbasis The molecular basis 
      */
@@ -218,6 +247,46 @@ namespace MPQC {
 
 
     /**
+     * Get a nuclear repulsion specialized  2-center integral 
+     * evaluator.  Returns derivative integrals taken with 
+     * respect to DerivCenters.
+     * @param max_deriv Maximum derivative that will be computed
+     * @param bs1 Molecular basis set on center 1
+     * @param bs2 Molecular basis set on center 2
+     * @return nuclear repulsion integral evaluator 
+     */
+    ::Chemistry::QC::GaussianBasis::IntegralEvaluator2
+    get_nuclear_evaluator (
+      /* in */ int64_t max_deriv,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc
+    )
+    throw () 
+    ;
+
+
+    /**
+     * Get a hcore specialized  2-center integral
+     * evaluator.  Returns derivative integrals taken with
+     * respect to DerivCenters.
+     * @param max_deriv Maximum derivative that will be computed
+     * @param bs1 Molecular basis set on center 1
+     * @param bs2 Molecular basis set on center 2
+     * @return hcore repulsion integral evaluator 
+     */
+    ::Chemistry::QC::GaussianBasis::IntegralEvaluator2
+    get_hcore_evaluator (
+      /* in */ int64_t max_deriv,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc
+    )
+    throw () 
+    ;
+
+
+    /**
      * Get a 3-center integral evaluator
      * @param label String specifying integral type
      * @param max_deriv Maximum derivative that will be computed
@@ -268,32 +337,6 @@ namespace MPQC {
     ::Chemistry::QC::GaussianBasis::ContractionTransform
     get_contraction_transform() throw () 
     ;
-
-    /**
-     * Starts up a component presence in the calling framework.
-     * @param Svc the component instance's handle on the framework world.
-     * Contracts concerning Svc and setServices:
-     * 
-     * The component interaction with the CCA framework
-     * and Ports begins on the call to setServices by the framework.
-     * 
-     * This function is called exactly once for each instance created
-     * by the framework.
-     * 
-     * The argument Svc will never be nil/null.
-     * 
-     * Those uses ports which are automatically connected by the framework
-     * (so-called service-ports) may be obtained via getPort during
-     * setServices.
-     */
-    void
-    setServices (
-      /* in */ ::gov::cca::Services services
-    )
-    throw ( 
-      ::gov::cca::CCAException
-    );
-
   };  // end class IntegralEvaluatorFactory_impl
 
 } // end namespace MPQC

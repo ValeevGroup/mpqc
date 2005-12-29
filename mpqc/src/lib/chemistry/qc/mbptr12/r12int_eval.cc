@@ -30,7 +30,7 @@
 #endif
 
 #include <util/misc/formio.h>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <util/ref/ref.h>
 #include <util/state/state_bin.h>
 #include <math/scmat/local.h>
@@ -46,6 +46,9 @@ using namespace std;
 using namespace sc;
 
 #define TEST_FOCK 0
+#define NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS 0
+#define INCLUDE_EBC_CODE 0
+#define INCLUDE_GBC_CODE 0
 
 inline int max(int a,int b) { return (a > b) ? a : b;}
 
@@ -57,12 +60,12 @@ static ClassDesc R12IntEval_cd(
   0, 0, 0);
 
 R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::CorrelationFactor>& corrfactor,
-                       double corrparam, bool gbc, bool ebc,
+                       bool gbc, bool ebc,
                        LinearR12::ABSMethod abs_method,
-                       LinearR12::StandardApproximation stdapprox) :
-  r12info_(r12i), corrfactor_(corrfactor), corrparam_(corrparam), gbc_(gbc), ebc_(ebc), abs_method_(abs_method),
+                       LinearR12::StandardApproximation stdapprox, bool follow_ks_ebcfree) :
+  r12info_(r12i), corrfactor_(corrfactor), gbc_(gbc), ebc_(ebc), abs_method_(abs_method),
   stdapprox_(stdapprox), spinadapted_(false), include_mp1_(false), evaluated_(false),
-  debug_(0)
+  follow_ks_ebcfree_(follow_ks_ebcfree), debug_(0)
 {
   int naocc_a, naocc_b;
   int navir_a, navir_b;
@@ -89,6 +92,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
     dim_f12_[s] = new SCDimension(corrfactor_->nfunctions()*dim_oo_[s].n());
   }
   
+#if 0
   dim_ij_aa_ = new SCDimension((naocc_a*(naocc_a-1))/2);
   dim_ij_ab_ = new SCDimension(naocc_a*naocc_b);
   dim_ab_aa_ = new SCDimension((navir_a*(navir_a-1))/2);
@@ -103,8 +107,16 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
     dim_ij_bb_ = dim_ij_aa_;
     dim_ab_bb_ = dim_ab_aa_;
   }
+#else
+  if (!spin_polarized()) {
+    dim_ij_s_ = new SCDimension((naocc_a*(naocc_a+1))/2);
+    dim_ij_t_ = new SCDimension((naocc_a*(naocc_a-1))/2);
+  }
+#endif
 
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
+  // Remove when done merging branches
+#if 0
   Vaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ij_aa_);
   Vab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
   Xaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ij_aa_);
@@ -140,6 +152,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
     emp2pair_bb_ = local_matrix_kit->vector(dim_ij_bb_);
   else
     emp2pair_bb_ = emp2pair_aa_;
+#endif
   
   for(int s=0; s<NSpinCases2; s++) {
     if (spin_polarized() || s != BetaBeta) {
@@ -148,7 +161,11 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (ebc == false) {
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
+        if (follow_ks_ebcfree_) {
+          Ac_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
+        }
         T2_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
+        F12_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
       }
       emp2pair_[s] = local_matrix_kit->vector(dim_oo_[s]);
     }
@@ -157,12 +174,12 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
       X_[BetaBeta] = X_[AlphaAlpha];
       B_[BetaBeta] = B_[AlphaAlpha];
       A_[BetaBeta] = A_[AlphaAlpha];
+      Ac_[BetaBeta] = Ac_[AlphaAlpha];
       T2_[BetaBeta] = T2_[AlphaAlpha];
+      F12_[BetaBeta] = F12_[AlphaAlpha];
       emp2pair_[BetaBeta] = emp2pair_[AlphaAlpha];
     }
   }
-
-  intparams_ = new IntParamsG12(corrfactor_->function(0),LinearR12::CorrelationFactor::zero_exponent_geminal());
   
   init_tforms_();
   // init_intermeds_ may require initialized transforms
@@ -180,11 +197,11 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   int ebc; si.get(ebc); ebc_ = (bool) ebc;
   int absmethod; si.get(absmethod); abs_method_ = (LinearR12::ABSMethod) absmethod;
   int stdapprox; si.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
-  si.get(corrparam_);
   // WARNING si.get(corrfactor_)
-  // intparams_ = new IntParamsG12(corrfactor_->function(0),LinearR12::CorrelationFactor::zero_exponent_geminal());
+  int follow_ks_ebcfree; si.get(follow_ks_ebcfree); follow_ks_ebcfree_ = static_cast<bool>(follow_ks_ebcfree);
 
   r12info_ << SavableState::restore_state(si);
+#if 0
   dim_ij_aa_ << SavableState::restore_state(si);
   dim_ij_ab_ << SavableState::restore_state(si);
   dim_ij_bb_ << SavableState::restore_state(si);
@@ -193,8 +210,11 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   dim_ab_aa_ << SavableState::restore_state(si);
   dim_ab_ab_ << SavableState::restore_state(si);
   dim_ab_bb_ << SavableState::restore_state(si);
+#endif
 
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
+  // Remove when done with the merge
+#if 0
   Vaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ij_aa_);
   Vab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
   Vbb_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ij_ab_);
@@ -208,6 +228,10 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
     Aaa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
     Aab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
     Abb_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+    if (follow_ks_ebcfree_) {
+      Ac_aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
+      Ac_ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
+    }
     T2aa_ = local_matrix_kit->matrix(dim_ij_aa_,dim_ab_aa_);
     T2ab_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
     T2bb_ = local_matrix_kit->matrix(dim_ij_ab_,dim_ab_ab_);
@@ -231,6 +255,8 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
     Aaa_.restore(si);
     Aab_.restore(si);
     Abb_.restore(si);
+    Ac_aa_.restore(si);
+    Ac_ab_.restore(si);
     T2aa_.restore(si);
     T2ab_.restore(si);
     T2bb_.restore(si);
@@ -240,6 +266,7 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
   emp2pair_aa_.restore(si);
   emp2pair_ab_.restore(si);
   emp2pair_bb_.restore(si);
+#endif
 
   for(int s=0; s<NSpinCases2; s++) {
     dim_oo_[s] << SavableState::restore_state(si);
@@ -251,7 +278,11 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       if (ebc == false) {
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
+        if (follow_ks_ebcfree_) {
+          Ac_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
+        }
         T2_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
+        F12_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
       }
       emp2pair_[s] = local_matrix_kit->vector(dim_vv_[s]);
       
@@ -259,7 +290,9 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       X_[s].restore(si);
       B_[s].restore(si);
       A_[s].restore(si);
+      Ac_[s].restore(si);
       T2_[s].restore(si);
+      F12_[s].restore(si);
       emp2pair_[s].restore(si);
     }
     else {
@@ -267,7 +300,9 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       X_[BetaBeta] = X_[AlphaAlpha];
       B_[BetaBeta] = B_[AlphaAlpha];
       A_[BetaBeta] = A_[AlphaAlpha];
+      Ac_[BetaBeta] = Ac_[AlphaAlpha];
       T2_[BetaBeta] = T2_[AlphaAlpha];
+      F12_[BetaBeta] = F12_[AlphaAlpha];
       emp2pair_[BetaBeta] = emp2pair_[AlphaAlpha];
     }
   }
@@ -300,9 +335,10 @@ R12IntEval::save_data_state(StateOut& so)
   so.put((int)ebc_);
   so.put((int)abs_method_);
   so.put((int)stdapprox_);
-  so.put(corrparam_);
-  
+  so.put((int)follow_ks_ebcfree_);
+
   SavableState::save_state(r12info_.pointer(),so);
+#if 0
   SavableState::save_state(dim_ij_aa_.pointer(),so);
   SavableState::save_state(dim_ij_ab_.pointer(),so);
   SavableState::save_state(dim_ij_bb_.pointer(),so);
@@ -311,7 +347,10 @@ R12IntEval::save_data_state(StateOut& so)
   SavableState::save_state(dim_ab_aa_.pointer(),so);
   SavableState::save_state(dim_ab_ab_.pointer(),so);
   SavableState::save_state(dim_ab_bb_.pointer(),so);
+#endif
 
+  // Remove when done with the merge
+#if 0
   Vaa_.save(so);
   Vab_.save(so);
   Vbb_.save(so);
@@ -325,6 +364,8 @@ R12IntEval::save_data_state(StateOut& so)
     Aaa_.save(so);
     Aab_.save(so);
     Abb_.save(so);
+    Ac_aa_.save(so);
+    Ac_ab_.save(so);
     T2aa_.save(so);
     T2ab_.save(so);
     T2bb_.save(so);
@@ -334,6 +375,7 @@ R12IntEval::save_data_state(StateOut& so)
   emp2pair_aa_.save(so);
   emp2pair_ab_.save(so);
   emp2pair_bb_.save(so);
+#endif
   
   for(int s=0; s<NSpinCases2; s++) {
     SavableState::save_state(dim_oo_[s].pointer(),so);
@@ -344,7 +386,9 @@ R12IntEval::save_data_state(StateOut& so)
       X_[s].save(so);
       B_[s].save(so);
       A_[s].save(so);
+      Ac_[s].save(so);
       T2_[s].save(so);
+      F12_[s].save(so);
       emp2pair_[s].save(so);
     }
   }
@@ -385,18 +429,24 @@ void R12IntEval::set_print_percent(double pp) { r12info_->set_print_percent(pp);
 void R12IntEval::set_memory(size_t nbytes) { r12info_->set_memory(nbytes); };
 
 const Ref<R12IntEvalInfo>& R12IntEval::r12info() const { return r12info_; };
+#if 0
 RefSCDimension R12IntEval::dim_oo_aa() const { return dim_ij_aa_; };
 RefSCDimension R12IntEval::dim_oo_ab() const { return dim_ij_ab_; };
 RefSCDimension R12IntEval::dim_oo_bb() const { return dim_ij_bb_; };
+#endif
 RefSCDimension R12IntEval::dim_oo_s() const { return dim_ij_s_; };
 RefSCDimension R12IntEval::dim_oo_t() const { return dim_ij_t_; };
+#if 0
 RefSCDimension R12IntEval::dim_vv_aa() const { return dim_ab_aa_; };
 RefSCDimension R12IntEval::dim_vv_ab() const { return dim_ab_ab_; };
 RefSCDimension R12IntEval::dim_vv_bb() const { return dim_ab_bb_; };
+#endif
 RefSCDimension R12IntEval::dim_oo(SpinCase2 S) const { return dim_oo_[S]; }
 RefSCDimension R12IntEval::dim_vv(SpinCase2 S) const { return dim_vv_[S]; }
 RefSCDimension R12IntEval::dim_f12(SpinCase2 S) const { return dim_f12_[S]; }
 
+// Remove when done with the merge
+#if 0
 RefSCMatrix R12IntEval::V_aa()
 {
   compute();
@@ -433,6 +483,16 @@ RefSCMatrix R12IntEval::A_aa()
   if (ebc_ == false)
     compute();
   return Aaa_;
+}
+
+RefSCMatrix R12IntEval::Ac_aa()
+{
+  if (ebc_ == false && follow_ks_ebcfree_) {
+    compute();
+    return Ac_aa_;
+  }
+  else
+    throw ProgrammingError("R12IntEval::Ac_aa() called although the object initialized with follow_ks_ebcfree set to false",__FILE__,__LINE__);
 }
 
 RefSCMatrix R12IntEval::T2_aa()
@@ -478,6 +538,16 @@ RefSCMatrix R12IntEval::A_ab()
   if (ebc_ == false)
     compute();
   return Aab_;
+}
+
+RefSCMatrix R12IntEval::Ac_ab()
+{
+  if (ebc_ == false && follow_ks_ebcfree_) {
+    compute();
+    return Ac_ab_;
+  }
+  else
+    throw ProgrammingError("R12IntEval::Ac_ab() called although the object initialized with follow_ks_ebcfree set to false",__FILE__,__LINE__);
 }
 
 RefSCMatrix R12IntEval::T2_ab()
@@ -549,6 +619,7 @@ RefSCVector R12IntEval::emp2_bb()
   compute();
   return emp2pair_bb_;
 }
+#endif
 
 const RefSCMatrix&
 R12IntEval::V(SpinCase2 S) {
@@ -604,6 +675,16 @@ R12IntEval::A(SpinCase2 S) {
 }
 
 const RefSCMatrix&
+R12IntEval::Ac(SpinCase2 S) {
+  compute();
+  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
+    antisymmetrize(Ac_[AlphaAlpha],Ac_[AlphaBeta],
+                   occ_act(Alpha),
+                   vir_act(Alpha));
+  return Ac_[S];
+}
+
+const RefSCMatrix&
 R12IntEval::T2(SpinCase2 S) {
   compute();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
@@ -613,11 +694,24 @@ R12IntEval::T2(SpinCase2 S) {
   return T2_[S];
 }
 
+const RefSCMatrix&
+R12IntEval::F12(SpinCase2 S) {
+  compute();
+  if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
+    antisymmetrize(F12_[AlphaAlpha],F12_[AlphaBeta],
+                   occ_act(Alpha),
+                   vir_act(Alpha));
+  return F12_[S];
+}
+
 const RefSCVector&
 R12IntEval::emp2(SpinCase2 S)
 {
   compute();
-  return emp2pair_[S];
+  if (!spin_polarized() && S == BetaBeta)
+    return emp2pair_[AlphaAlpha];
+  else
+    return emp2pair_[S];
 }
 
 const RefDiagSCMatrix&
@@ -679,9 +773,8 @@ R12IntEval::init_tforms_()
     if (ipjq_tform.null()) {
       tfactory->set_spaces(act_occ_space,obs_space,
                            act_occ_space,obs_space);
-      ipjq_tform = tfactory->twobody_transform_13(ipjq_name,corrfactor_->callback());
+      ipjq_tform = tfactory->twobody_transform_13(ipjq_name);
       tform_map_[ipjq_name] = ipjq_tform;
-      tform_map_[ipjq_name]->set_num_te_types(corrfactor_->num_tbint_types());
       }
     
     const std::string iajb_name = "(ia|jb)";
@@ -689,9 +782,8 @@ R12IntEval::init_tforms_()
     if (iajb_tform.null()) {
       tfactory->set_spaces(act_occ_space,act_vir_space,
                            act_occ_space,act_vir_space);
-      iajb_tform = tfactory->twobody_transform_13(iajb_name,corrfactor_->callback());
+      iajb_tform = tfactory->twobody_transform_13(iajb_name);
       tform_map_[iajb_name] = iajb_tform;
-      tform_map_[iajb_name]->set_num_te_types(corrfactor_->num_tbint_types());
       }
     
     const std::string imja_name = "(im|ja)";
@@ -699,9 +791,8 @@ R12IntEval::init_tforms_()
     if (imja_tform.null()) {
       tfactory->set_spaces(act_occ_space,occ_space,
                            act_occ_space,act_vir_space);
-      imja_tform = tfactory->twobody_transform_13(imja_name,corrfactor_->callback());
+      imja_tform = tfactory->twobody_transform_13(imja_name);
       tform_map_[imja_name] = imja_tform;
-      tform_map_[imja_name]->set_num_te_types(corrfactor_->num_tbint_types());
       }
     
     const std::string imjn_name = "(im|jn)";
@@ -709,9 +800,8 @@ R12IntEval::init_tforms_()
     if (imjn_tform.null()) {
       tfactory->set_spaces(act_occ_space,occ_space,
                            act_occ_space,occ_space);
-      imjn_tform = tfactory->twobody_transform_13(imjn_name,corrfactor_->callback());
+      imjn_tform = tfactory->twobody_transform_13(imjn_name);
       tform_map_[imjn_name] = imjn_tform;
-      tform_map_[imjn_name]->set_num_te_types(corrfactor_->num_tbint_types());
       }
     
     const std::string imjy_name = "(im|jy)";
@@ -719,9 +809,8 @@ R12IntEval::init_tforms_()
     if (imjy_tform.null()) {
       tfactory->set_spaces(act_occ_space,occ_space,
                            act_occ_space,ribs_space);
-      imjy_tform = tfactory->twobody_transform_13(imjy_name,corrfactor_->callback());
+      imjy_tform = tfactory->twobody_transform_13(imjy_name);
       tform_map_[imjy_name] = imjy_tform;
-      tform_map_[imjy_name]->set_num_te_types(corrfactor_->num_tbint_types());
       }
 
     iajb_tform = tform_map_[iajb_name];
@@ -751,20 +840,46 @@ R12IntEval::get_tform_(const std::string& tform_name)
 void
 R12IntEval::init_intermeds_()
 {
+  // Remove when done with the merge
+#if 0
   Vaa_.assign(0.0);
   Vab_.assign(0.0);
   Baa_.assign(0.0);
   Bab_.assign(0.0);
   Xaa_.assign(0.0);
   Xab_.assign(0.0);
+  if (r12info_->msg()->me() == 0) {
+#if NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS
+    Vaa_->assign(0.0);
+    Vab_->assign(0.0);
+    Baa_->assign(0.0);
+    Bab_->assign(0.0);
+#else
+    Vaa_->unit();
+    Vab_->unit();
+    Baa_->unit();
+    Bab_->unit();
+#endif
+  }
+  else {
+    Vaa_.assign(0.0);
+    Vab_.assign(0.0);
+    Baa_.assign(0.0);
+    Bab_.assign(0.0);
+  }
   if (ebc_ == false) {
     Aaa_.assign(0.0);
     Aab_.assign(0.0);
+    if (follow_ks_ebcfree_) {
+      Ac_aa_.assign(0.0);
+      Ac_ab_.assign(0.0);
+    }
     T2aa_.assign(0.0);
     T2ab_.assign(0.0);
     Raa_.assign(0.0);
     Rab_.assign(0.0);
   }
+#endif
   
   for(int s=0; s<NSpinCases2; s++) {
     V_[s].assign(0.0);
@@ -773,43 +888,68 @@ R12IntEval::init_intermeds_()
     emp2pair_[s].assign(0.0);
     if (ebc_ == false) {
       A_[s].assign(0.0);
+      if (follow_ks_ebcfree_) {
+        Ac_[s].assign(0.0);
+      }
       T2_[s].assign(0.0);
+      F12_[s].assign(0.0);
     }
   }
-
-  switch (corrfactor_->id()) {
-    case LinearR12::R12CorrFactor:
-      init_intermeds_r12_();
-      break;
-    case LinearR12::G12CorrFactor:
-      for(int s=0; s<nspincases2(); s++)
-        init_intermeds_g12_(static_cast<SpinCase2>(s));
-      break;
-    case LinearR12::NullCorrFactor:
-      break;
-    default:
-      throw AlgorithmException("R12IntEval::init_intermeds_() -- unrecognized CorrelationFactor",__FILE__,__LINE__);
+  
+  // nothing to do if no explicit correlation
+  Ref<LinearR12::NullCorrelationFactor> no12ptr; no12ptr << corrfactor_;
+  if (no12ptr.nonnull())
+    return;
+  
+  Ref<LinearR12::G12CorrelationFactor> g12ptr; g12ptr << corrfactor_;
+  Ref<LinearR12::R12CorrelationFactor> r12ptr; r12ptr << corrfactor_;
+  if (r12ptr.nonnull()) {
+    init_intermeds_r12_();
   }
+  else if (g12ptr.nonnull()) {
+    for(int s=0; s<nspincases2(); s++)
+      init_intermeds_g12_(static_cast<SpinCase2>(s));
+  }
+  
+  // Remove when done with the merge
+#if 0
+  Xaa_.assign(0.0);
+  Xab_.assign(0.0);
+  //r2_contrib_to_X_orig_();
+#endif
 
+  // Remove when done with the merge
+#if 0
   emp2pair_aa_.assign(0.0);
   emp2pair_ab_.assign(0.0);
+#endif
 }
 
 void
 R12IntEval::init_intermeds_r12_()
 {
   if (r12info_->msg()->me() == 0) {
+    // Remove when done with the merge
+#if 0
     Vaa_->unit();
     Vab_->unit();
     Baa_->unit();
     Bab_->unit();
+#endif
     
     for(int s=0; s<nspincases2(); s++) {
+#if NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS
+      V_[s]->assign(0.0);
+      B_[s]->assign(0.0);
+#else
       V_[s]->unit();
       B_[s]->unit();
+#endif
     }
   }
+#if !NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS
   r2_contrib_to_X_new_();
+#endif
 }
 
 /// Compute <space1 space2|r_{12}^2|space3 space4>
@@ -916,7 +1056,7 @@ R12IntEval::r2_contrib_to_X_new_()
       X_[s].accumulate(R2);
     }
     else {
-      // space1 = space2 because it's AlphaAlpha or BetaBeta
+      // space1 == space2 because it's AlphaAlpha or BetaBeta
       antisymmetrize(X_[s],R2,space1,space1);
     }
   }
@@ -1013,19 +1153,16 @@ R12IntEval::form_canonvir_space_()
     RefDiagSCMatrix F_vir_evals = F_vir_lt.eigvals();
     Ref<MOIndexSpace> vir_act = new MOIndexSpace(id, "VBS",
                                                  canonvir_space_symblk->coefs(), canonvir_space_symblk->basis(),
+                                                 r12info()->integral(),
                                                  F_vir_evals, 0, r12info()->refinfo()->nfzv(),
                                                  MOIndexSpace::energy);
     r12info()->vir_act(spincase, vir_act);
     Ref<MOIndexSpace> vir = new MOIndexSpace(id, "VBS",
                                              canonvir_space_symblk->coefs(), canonvir_space_symblk->basis(),
+                                             r12info()->integral(),
                                              F_vir_evals, 0, 0,
                                              MOIndexSpace::energy);
     r12info()->vir(spincase, vir);
-    
-    if (debug_ > 2) { 
-      RefSCMatrix F_test = fock_(occ_space,vir_act,vir_act);
-      F_test.print("Test of canonical virtuals"); 
-    }
   }
 }
 
@@ -1068,8 +1205,9 @@ R12IntEval::compute()
   const bool obs_eq_vbs = r12info_->basis_vir()->equiv(r12info_->basis());
   const bool obs_eq_ribs = r12info_->basis_ri()->equiv(r12info_->basis());
   
+  Ref<LinearR12::NullCorrelationFactor> nocorrptr; nocorrptr << corrfactor_;
   // if no explicit correlation -- only compute MP2 energies
-  if (corrfactor()->id() == LinearR12::NullCorrFactor) {
+  if (nocorrptr.nonnull()) {
     for(int s=0; s<nspincases2(); s++) {
       const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       compute_mp2_pair_energies_(spincase2);
@@ -1182,6 +1320,7 @@ R12IntEval::compute()
   }
 #endif
 
+#if INCLUDE_EBC_CODE
   if (!ebc_) {
     // These functions assume that virtuals are expanded in the same basis
     // as the occupied orbitals
@@ -1189,12 +1328,47 @@ R12IntEval::compute()
       throw std::runtime_error("R12IntEval::compute() -- ebc=false is only supported when basis_vir == basis");
 
     compute_A_simple_();
-    compute_T2_();
+    for(int s=0; s<nspincases2(); s++)
+      A_[s].scale(2.0);
+    
+    // Remove when done with the merge
+#if 0
+    Aaa_.scale(2.0);
+    Aab_.scale(2.0);
+#endif
+    if (follow_ks_ebcfree_) {
+      // Does this even apply on libint2-branch?
+      compute_A_via_commutator_();
+      //for(int s=0; s<nspincases2(); s++)
+      //  Ac_[s].scale(2.0);
+      // Remove when done with the merge
+#if 0
+      Ac_aa_.scale(2.0);
+      Ac_ab_.scale(2.0);
+#endif
+    }
+    
+    for(int s=0; s<nspincases2(); s++) {
+      const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+      const SpinCase1 spin1 = case1(spincase2);
+      const SpinCase1 spin2 = case2(spincase2);
+      Ref<MOIndexSpace> occ1_act = r12info()->refinfo()->occ_act(spin1);
+      Ref<MOIndexSpace> occ2_act = r12info()->refinfo()->occ_act(spin2);
+      Ref<MOIndexSpace> uocc1_act = r12info()->refinfo()->uocc_act(spin1);
+      Ref<MOIndexSpace> uocc2_act = r12info()->refinfo()->uocc_act(spin2);
+      compute_T2_(T2_[AlphaBeta],occ1_act, uocc1_act, occ2_act, uocc2_act);
+      compute_F12_(F12_[AlphaBeta],occ1_act, uocc1_act, occ2_act, uocc2_act);
+    }
     AT2_contrib_to_V_();
+#if 0
+    // Became compute_F12_ -- see above
     compute_R_();
+#endif
     AR_contrib_to_B_();
   }
+#endif
 
+#if INCLUDE_GBC_CODE
   if (!gbc_) {
     // These functions assume that virtuals are expanded in the same basis
     // as the occupied orbitals
@@ -1202,17 +1376,46 @@ R12IntEval::compute()
       throw std::runtime_error("R12IntEval::compute() -- gbc=false is only supported when basis_vir == basis");
 
     compute_B_gbc_1_();
+    // Remove when done with the merge
+#if 0
     if (debug_ > 1) {
       Baa_.print("Alpha-alpha B(OBS+ABS+GBC1) contribution");
       Bab_.print("Alpha-beta B(OBS+ABS+GBC1) contribution");
     }
+#endif
     compute_B_gbc_2_();
+    // Remove when done with the merge
+#if 0
     if (debug_ > 1) {
       Baa_.print("Alpha-alpha B(OBS+ABS+GBC1+GBC2) contribution");
       Bab_.print("Alpha-beta B(OBS+ABS+GBC1+GBC2) contribution");
     }
+#endif
   }
-
+#endif
+  
+  // Finally, compute MP2 energies
+  const int nspincases_for_emp2pairs = (spin_polarized() ? 3: 2);
+  for(int s=0; s<nspincases_for_emp2pairs; s++) {
+      const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+      const SpinCase1 spin1 = case1(spincase2);
+      const SpinCase1 spin2 = case2(spincase2);
+      Ref<MOIndexSpace> occ1_act = r12info()->refinfo()->occ_act(spin1);
+      Ref<MOIndexSpace> occ2_act = r12info()->refinfo()->occ_act(spin2);
+      Ref<MOIndexSpace> uocc1_act = r12info()->refinfo()->uocc_act(spin1);
+      Ref<MOIndexSpace> uocc2_act = r12info()->refinfo()->uocc_act(spin2);
+      // these transforms were used by VXB evaluators and should be available
+      const std::string tform_name = transform_label(occ1_act,
+                                                     r12info()->refinfo()->orbs(spin1),
+                                                     occ2_act,
+                                                     r12info()->refinfo()->orbs(spin2),0);
+      const Ref<TwoBodyMOIntsTransform> tform = tform_map_[tform_name];
+      compute_mp2_pair_energies_(emp2pair_[s],spincase2,
+                                 occ1_act,uocc1_act,
+                                 occ2_act,uocc2_act,
+                                 tform);
+  }
+  
   // Distribute the final intermediates to every node
   globally_sum_intermeds_(true);
 
@@ -1272,6 +1475,8 @@ R12IntEval::globally_sum_scvector_(RefSCVector& A, bool to_all_tasks, bool to_av
 void
 R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
 {
+  // Remove when done with the merge
+#if 0
   globally_sum_scmatrix_(Vaa_,to_all_tasks);
   globally_sum_scmatrix_(Vab_,to_all_tasks);
 
@@ -1284,6 +1489,11 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
   if (ebc_ == false) {
     globally_sum_scmatrix_(Aaa_,to_all_tasks);
     globally_sum_scmatrix_(Aab_,to_all_tasks);
+
+    if (follow_ks_ebcfree_) {
+      globally_sum_scmatrix_(Ac_aa_,to_all_tasks);
+      globally_sum_scmatrix_(Ac_ab_,to_all_tasks);
+    }
     
     globally_sum_scmatrix_(T2aa_,to_all_tasks);
     globally_sum_scmatrix_(T2ab_,to_all_tasks);
@@ -1294,6 +1504,7 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
 
   globally_sum_scvector_(emp2pair_aa_,to_all_tasks);
   globally_sum_scvector_(emp2pair_ab_,to_all_tasks);
+#endif
   
   for(int s=0; s<nspincases2(); s++) {
     globally_sum_scmatrix_(V_[s],to_all_tasks);
@@ -1301,7 +1512,11 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
     globally_sum_scmatrix_(B_[s],to_all_tasks);
     if (ebc_ == false) {
       globally_sum_scmatrix_(A_[s],to_all_tasks);
+      if (follow_ks_ebcfree_) {
+        globally_sum_scmatrix_(Ac_[s],to_all_tasks);
+      }
       globally_sum_scmatrix_(T2_[s],to_all_tasks);
+      globally_sum_scmatrix_(F12_[s],to_all_tasks);
     }
     globally_sum_scvector_(emp2pair_[s],to_all_tasks);
   }

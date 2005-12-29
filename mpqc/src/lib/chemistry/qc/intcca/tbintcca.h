@@ -25,6 +25,10 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef __GNUG__
+#pragma interface
+#endif
+
 #ifndef _chemistry_qc_intcca_tbintcca_h
 #define _chemistry_qc_intcca_tbintcca_h
 
@@ -32,6 +36,7 @@
 #include <chemistry/qc/intcca/int2e.h>
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactory.hh>
 
+using namespace std;
 using namespace Chemistry::QC::GaussianBasis;
 
 namespace sc {
@@ -47,13 +52,38 @@ class TwoBodyIntCCA : public TwoBodyInt {
 		  const Ref<GaussianBasisSet>&b2,
 		  const Ref<GaussianBasisSet>&b3, 
 		  const Ref<GaussianBasisSet>&b4,
-                  size_t storage, IntegralEvaluatorFactory, bool);
-    ~TwoBodyIntCCA();
+                  size_t storage, IntegralEvaluatorFactory, 
+                  bool, string );
+    ~TwoBodyIntCCA() {};
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int);
     
-    size_t storage_used() { /* return int2ecca_->storage_used(); */ }
+    size_t storage_used();
+    void set_integral_storage(size_t storage);
+    int redundant() const { return int2ecca_->redundant(); }
+    void set_redundant(int i) { int2ecca_->set_redundant(i); }
+};
+
+/** This implements two body derivative integrals 
+    through the CCA interface. */
+class TwoBodyDerivIntCCA : public TwoBodyDerivInt {
+  protected:
+    Ref<Int2eCCA> int2ecca_;
+
+  public:
+    TwoBodyDerivIntCCA(Integral*,
+                  const Ref<GaussianBasisSet>&b1,
+                  const Ref<GaussianBasisSet>&b2,
+                  const Ref<GaussianBasisSet>&b3,
+                  const Ref<GaussianBasisSet>&b4,
+                  size_t storage, IntegralEvaluatorFactory, bool, string);
+    ~TwoBodyDerivIntCCA() {};
+
+    int log2_shell_bound(int,int,int,int);
+    void compute_shell(int,int,int,int,DerivCenters&);
+
+    size_t storage_used();
     void set_integral_storage(size_t storage);
     int redundant() const { return int2ecca_->redundant(); }
     void set_redundant(int i) { int2ecca_->set_redundant(i); }

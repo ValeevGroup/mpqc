@@ -28,8 +28,6 @@
 #ifndef _chemistry_qc_dft_linkage_h
 #define _chemistry_qc_dft_linkage_h
 
-#ifndef __PIC__
-
 #include <chemistry/qc/dft/clks.h>
 #include <chemistry/qc/dft/uks.h>
 #include <chemistry/qc/dft/hsosks.h>
@@ -65,7 +63,5 @@ static ForceLink<VWNLCFunctional> dft_force_link_y_;
 static ForceLink<NewP86CFunctional> dft_force_link_z_;
 
 }
-
-#endif /* __PIC__ */
 
 #endif

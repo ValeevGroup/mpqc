@@ -30,7 +30,7 @@
 #endif
 
 #include <stdexcept>
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 
 #ifndef _chemistry_qc_mbptr12_spin_h
 #define _chemistry_qc_mbptr12_spin_h

@@ -29,7 +29,7 @@
 #pragma implementation "junk.h"
 #endif
 
-#include <util/misc/scexception.h>
+#include <util/class/scexception.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/libint2/tbintlibint2.h>
 #include <chemistry/qc/libint2/eri.h>

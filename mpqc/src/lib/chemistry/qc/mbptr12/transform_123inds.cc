@@ -183,7 +183,8 @@ TwoBodyMOIntsTransform_123Inds::run()
   /*-----------------------------
     Initialize work distribution
    -----------------------------*/
-  sc::exp::DistShellPair shellpairs(msg,nthread_,mythread_,lock_,bs4,bs3,dynamic);
+  DistShellPair shellpairs(msg,nthread_,mythread_,lock_,bs4,bs3,dynamic,
+                           tform_->shell_pair_data());
   shellpairs.set_debug(debug_);
   if (debug_) shellpairs.set_print_percent(print_percent/10.0);
   else shellpairs.set_print_percent(print_percent);
@@ -220,7 +221,7 @@ TwoBodyMOIntsTransform_123Inds::run()
   int S = 0;
   int RS_count = 0;
   while (shellpairs.get_task(S,R)) {
-    // if bs3_eq_bs4 then S >= R always (see sc::exp::DistShellPair)
+    // if bs3_eq_bs4 then S >= R always (see sc::DistShellPair)
     int nr = bs3->shell(R).nfunction();
     int r_offset = bs3->shell_to_function(R);
     

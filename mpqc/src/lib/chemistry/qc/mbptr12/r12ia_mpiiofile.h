@@ -108,12 +108,13 @@ class R12IntsAcc_MPIIOFile: public R12IntsAcc {
 };
 
 //////////////////////////////////////////////////////////////////////////////
-// R12IntsAcc_MPIIOFile_Ind handles transformed integrals stored in a binary
-// file accessed through MPI-IO individual I/O routines.
-//
-// The ordering of integrals in blocks is not specified
-// to avoid having to reorder integrals
-// Each pair block has size of num_te_types*nbasis*nbasis
+/** R12IntsAcc_MPIIOFile_Ind handles transformed integrals stored in a binary
+    file accessed through MPI-IO individual I/O routines.
+    
+    The ordering of integrals in blocks is not specified
+    to avoid having to reorder integrals
+    Each pair block has size of num_te_types*nbasis*nbasis
+*/
 
 class R12IntsAcc_MPIIOFile_Ind: public R12IntsAcc_MPIIOFile {
 

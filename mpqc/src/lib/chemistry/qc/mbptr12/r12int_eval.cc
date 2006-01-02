@@ -41,6 +41,9 @@
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/utils.h>
+#include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
+#include <chemistry/qc/mbptr12/container.h>
+#include <chemistry/qc/mbptr12/creator.h>
 
 using namespace std;
 using namespace sc;
@@ -51,6 +54,52 @@ using namespace sc;
 #define INCLUDE_GBC_CODE 0
 
 inline int max(int a,int b) { return (a > b) ? a : b;}
+
+// Remove when gcc has gotten rid of the bug which causes missing ERI_to_T2::I2T body when
+// including definition from compute_tbint_tensor.h
+#if 0
+    /// Tensor elements are <pq||rs>
+    class I_to_T {
+    public:
+      static double I2T(double I, int i1, int i3, int i2, int i4,
+      const RefDiagSCMatrix& evals1,
+      const RefDiagSCMatrix& evals2,
+      const RefDiagSCMatrix& evals3,
+      const RefDiagSCMatrix& evals4)
+      {
+        return I;
+      }
+    };
+    
+    /// MP2 T2 tensor elements are <ij||ab> /(e_i + e_j - e_a - e_b)
+    class ERI_to_T2 {
+    public:
+      static double I2T(double I, int i1, int i3, int i2, int i4,
+      const RefDiagSCMatrix& evals1,
+      const RefDiagSCMatrix& evals2,
+      const RefDiagSCMatrix& evals3,
+      const RefDiagSCMatrix& evals4)
+      {
+        const double denom = 1.0/(evals1(i1) + evals3(i3) - evals2(i2) - evals4(i4));
+        return I*denom;
+      }
+    };
+    
+    /// MP2 pseudo-T2 (S2) tensor elements are <ij||ab> /sqrt(|e_i + e_j - e_a - e_b|) such
+    /// that MP2 pair energies are the diagonal elements of S2 * S2.t()
+    class ERI_to_S2 {
+    public:
+      static double I2T(double I, int i1, int i3, int i2, int i4,
+                 const RefDiagSCMatrix& evals1,
+                 const RefDiagSCMatrix& evals2,
+                 const RefDiagSCMatrix& evals3,
+                 const RefDiagSCMatrix& evals4)
+      {
+        const double denom = 1.0/sqrt(fabs(evals2(i2) + evals4(i4) - evals1(i1) - evals3(i3)));
+        return I*denom;
+      }
+    };
+#endif
 
 /*-----------------
   R12IntEval
@@ -1347,16 +1396,19 @@ R12IntEval::compute()
 #endif
     }
     
+    // compute A, T2, and F12
     for(int s=0; s<nspincases2(); s++) {
       const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       const SpinCase1 spin1 = case1(spincase2);
       const SpinCase1 spin2 = case2(spincase2);
+
       Ref<MOIndexSpace> occ1_act = r12info()->refinfo()->occ_act(spin1);
       Ref<MOIndexSpace> occ2_act = r12info()->refinfo()->occ_act(spin2);
       Ref<MOIndexSpace> uocc1_act = r12info()->refinfo()->uocc_act(spin1);
       Ref<MOIndexSpace> uocc2_act = r12info()->refinfo()->uocc_act(spin2);
-      compute_T2_(T2_[AlphaBeta],occ1_act, uocc1_act, occ2_act, uocc2_act);
-      compute_F12_(F12_[AlphaBeta],occ1_act, uocc1_act, occ2_act, uocc2_act);
+
+      compute_T2_(T2_[s],occ1_act, uocc1_act, occ2_act, uocc2_act);
+      compute_F12_(F12_[s],occ1_act, uocc1_act, occ2_act, uocc2_act);
     }
     AT2_contrib_to_V_();
 #if 0
@@ -1415,29 +1467,83 @@ R12IntEval::compute()
                                  tform);
   }
   
-    // To test T2, change to 1 and replace denominators in compute_T2 by their square roots
-#if 0
+  // Test new tensor compute function
+#if 1
+  for(int s=0; s<2; s++) {
+    const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+    const SpinCase1 spin1 = case1(spincase2);
+    const SpinCase1 spin2 = case2(spincase2);
+    const Ref<SingleRefInfo> refinfo = r12info()->refinfo();
+    Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+    RefSCMatrix S2 = localkit->matrix(dim_oo(spincase2),dim_vv(spincase2));
+    S2.assign(0.0);
+
+    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
+    Ref<R12IntEval> thisref(this);
+    NamedTransformCreator tform_creator(thisref,
+                                        refinfo->occ_act(spin1),
+                                        refinfo->orbs(spin1),
+                                        refinfo->occ_act(spin2),
+                                        refinfo->orbs(spin2));
+    fill_container(tform_creator,tforms);
+    
+    // compute S2 = <ij||ab>/sqrt(e_a+e_b-e_i-e_j) and "square" it
+    compute_tbint_tensor<ManyBodyTensors::ERI_to_S2,false,false>(
+      S2, corrfactor()->tbint_type_eri(),
+      refinfo->occ_act(spin1), refinfo->uocc_act(spin1),
+      refinfo->occ_act(spin2), refinfo->uocc_act(spin2),
+      spincase2!=AlphaBeta, tforms
+    );
+    RefSCMatrix mp2pe = S2*S2.t(); mp2pe.scale(-1.0);
+    mp2pe.print("S2 * S2.t : Diagonal elements should be pair energies");
+    
+    // another way to compute pair energies is G*T2.t()
+    RefSCMatrix T2 = localkit->matrix(dim_oo(spincase2),dim_vv(spincase2));
+    RefSCMatrix G = localkit->matrix(dim_oo(spincase2),dim_vv(spincase2));
+    T2.assign(0.0); G.assign(0.0);
+    // compute T2 and G
+    compute_tbint_tensor<ManyBodyTensors::ERI_to_T2,false,false>(
+      T2, corrfactor()->tbint_type_eri(),
+      refinfo->occ_act(spin1), refinfo->uocc_act(spin1),
+      refinfo->occ_act(spin2), refinfo->uocc_act(spin2),
+      spincase2!=AlphaBeta, tforms
+    );
+    compute_tbint_tensor<ManyBodyTensors::I_to_T,false,false>(
+      G, corrfactor()->tbint_type_eri(),
+      refinfo->occ_act(spin1), refinfo->uocc_act(spin1),
+      refinfo->occ_act(spin2), refinfo->uocc_act(spin2),
+      spincase2!=AlphaBeta, tforms
+    );
+    mp2pe = G*T2.t();
+    mp2pe.print("G * T2.t : Diagonal elements should be pair energies");
+  }
+  
+  
+  // test F12 evaluator
   {
     const Ref<SingleRefInfo> refinfo = r12info()->refinfo();
     Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-    RefSCMatrix T2 = localkit->matrix(dim_oo(AlphaBeta),dim_vv(AlphaBeta));
-     // these transforms were used by VXB evaluators and should be available
-     const std::string tform_name = transform_label(refinfo->occ_act(Alpha),
-                                                    refinfo->orbs(Alpha),
-                                                    refinfo->occ_act(Beta),
-                                                    refinfo->orbs(Beta),0);
-    const Ref<TwoBodyMOIntsTransform> tform = tform_map_[tform_name];
-    // To test T2 replace denominators in compute_T2 by their square roots
-    compute_T2_(T2, refinfo->occ_act(Alpha), refinfo->uocc_act(Alpha),
-                    refinfo->occ_act(Beta), refinfo->uocc_act(Beta),tform);
-    RefSCMatrix mp2pe = T2*T2.t(); mp2pe.scale(-1.0);
-    mp2pe.print("Diagonal elements should be pair energies");
+    RefSCMatrix F12 = localkit->matrix(dim_oo(AlphaBeta),dim_vv(AlphaBeta));
+    F12.assign(0.0);
+    
+    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
+    Ref<R12IntEval> thisref(this);
+    NamedTransformCreator tform_creator(thisref,
+                                        refinfo->occ_act(Alpha),
+                                        refinfo->orbs(Alpha),
+                                        refinfo->occ_act(Beta),
+                                        refinfo->orbs(Beta),true);
+    fill_container(tform_creator,tforms);
+    
+    compute_F12_(F12,refinfo->occ_act(Alpha), refinfo->uocc_act(Alpha),
+                 refinfo->occ_act(Beta), refinfo->uocc_act(Beta),tforms);
   }
+
 #endif
   
   // Distribute the final intermediates to every node
   globally_sum_intermeds_(true);
-
+  
   evaluated_ = true;
 }
 

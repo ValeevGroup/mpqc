@@ -64,6 +64,56 @@ using namespace sc;
 #define ACOMM_INCLUDE_TR_ONLY 0
 #define ACOMM_INCLUDE_R_ONLY 0
 
+
+void
+R12IntEval::compute_A_direct_(RefSCMatrix& A,
+                              const Ref<MOIndexSpace>& space1,
+                              const Ref<MOIndexSpace>& space2,
+                              const Ref<MOIndexSpace>& space3,
+                              const Ref<MOIndexSpace>& space4,
+                              const Ref<MOIndexSpace>& fspace2,
+                              const Ref<MOIndexSpace>& fspace4)
+{
+  // are particles 1 and 2 equivalent?
+  const bool part1_equiv_part2 = (space1==space3 && space2 == space4);
+  
+  const unsigned int nf12 = corrfactor()->nfunctions();
+  // create transforms, if needed
+  std::vector< Ref<TwoBodyMOIntsTransform> > tforms4f; // get 1 3 |F12| 2 4_f
+  Ref<R12IntEval> thisref(this);
+  NamedTransformCreator tform4f_creator(thisref,space1,space2,space3,fspace4,true);
+  fill_container(tform4f_creator,tforms4f);
+  
+  tim_enter("A intermediate (direct)");
+  std::ostringstream oss;
+  oss << "<" << space1->id() << " " << space3->id() << "|A|"
+      << space2->id() << " " << space4->id() << ">";
+  const std::string label = oss.str();
+  ExEnv::out0() << endl << indent
+                << "Entered \"direct\" A intermediate (" << label << ") evaluator" << endl
+                << incindent;
+  //
+  // ij|A|kl = ij|f12|kl_f, symmetrized if part_equiv_part2
+  //
+  compute_F12_(A,space1,space2,space3,fspace4,tforms4f);
+  if (part1_eq_part2) {
+    symmetrize(A);
+  }
+  else {
+    std::vector< Ref<TwoBodyMOIntsTransform> > tforms2f; // get 1 3 |F12| 2_f 4
+    NamedTransformCreator tform2f_creator(thisref,space1,fspace2,space3,space4,true);
+    fill_container(tform2f_creator,tforms2f);
+    
+    compute_F12_(A,space1,fspace2,space3,space4,tforms2f);
+    A.scale(0.5);
+  }
+
+  ExEnv::out0() << decindent << indent << "Exited \"direct\" A intermediate (" << label << ") evaluator" << endl;
+  tim_exit("A intermediate (direct)");
+}
+
+
+#if 0
 void
 R12IntEval::compute_A_simple_()
 {
@@ -414,6 +464,7 @@ R12IntEval::AR_contrib_to_B_()
   }
   globally_sum_intermeds_();
 }
+#endif // Commented-out old code
 
 ////////////////////////////////////////////////////////////////////////////
 

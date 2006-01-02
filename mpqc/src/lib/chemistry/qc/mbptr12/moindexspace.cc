@@ -467,8 +467,10 @@ sc::operator<<(const MOIndexSpace& s2, const MOIndexSpace& s1)
   
   const RefSCMatrix& c1 = s1.coefs().t();
   const RefSCMatrix& c2 = s2.coefs().t();
+#if 0
   c1.print("operator<<(MOIndexSpace,MOIndexSpace): c1");
   c2.print("operator<<(MOIndexSpace,MOIndexSpace): c2");
+#endif
   const unsigned int nao = c1.rowdim().n();
   
   typedef std::vector<unsigned int> maptype;
@@ -494,17 +496,21 @@ sc::operator<<(const MOIndexSpace& s2, const MOIndexSpace& s1)
       for(unsigned int ao=0; ao<nao; ao++) {
         if ( fabs(c1.get_element(mo1,ao)-c2.get_element(mo2,ao)) > 1.0e-12 ) {
           vectors_do_not_match = true;
+#if 0
           ExEnv::out0() << "operator<<(MOIndexSpace,MOIndexSpace): (mo1,mo2,ao) = "
                         << mo1 << "," << mo2 << "," << ao << "  delta = "
                         << fabs(c1.get_element(mo1,ao)-c2.get_element(mo2,ao)) << std::endl;
+#endif
           break;
         }
       }
       // go to next mo1 if found match
       if (!vectors_do_not_match) {
         found_match = true;
+#if 0
         ExEnv::out0() << "operator<<(MOIndexSpace,MOIndexSpace): found match (mo1,mo2) = "
                       << mo1 << "," << mo2 << std::endl;
+#endif
         map[mo1] = mo2;
         has_been_mapped[mo2] = 1;
         mo2 = rank2;

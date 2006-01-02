@@ -94,22 +94,6 @@ class R12IntEval : virtual public SavableState {
   // Map to TwoBodyMOIntsTransform objects that have been computed previously
   typedef std::map<std::string, Ref<TwoBodyMOIntsTransform> > TformMap;
   TformMap tform_map_;
-  /** Returns an already created transform.
-      If the transform is not found then throw TransformNotFound */
-  Ref<TwoBodyMOIntsTransform> get_tform_(const std::string&);
-  /// Generates canonical id for transform. f12 is the index of the correlation function
-  std::string transform_label(const Ref<MOIndexSpace>& space1,
-                              const Ref<MOIndexSpace>& space2,
-                              const Ref<MOIndexSpace>& space3,
-                              const Ref<MOIndexSpace>& space4,
-                              unsigned int f12) const;
-  /// version of transform_label() applicable when left and right correlation factors differ
-  std::string transform_label(const Ref<MOIndexSpace>& space1,
-                              const Ref<MOIndexSpace>& space2,
-                              const Ref<MOIndexSpace>& space3,
-                              const Ref<MOIndexSpace>& space4,
-                              unsigned int f12_left,
-                              unsigned int f12_right) const;
 
   /// Fock-weighted occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
   Ref<MOIndexSpace> focc_space_;
@@ -193,6 +177,7 @@ class R12IntEval : virtual public SavableState {
                    const Ref<MOIndexSpace>& space2,
                    const Ref<MOIndexSpace>& space3,
                    const Ref<MOIndexSpace>& space4,
+                   bool antisymmetrize,
                    const Ref<TwoBodyMOIntsTransform>& tform = 0);
   /** Compute F12 integrals in basis <space1, space3 | f12 | space2, space4>.
       Bra (rows) are blocked by correlation function index.
@@ -206,6 +191,39 @@ class R12IntEval : virtual public SavableState {
                    const Ref<MOIndexSpace>& space4,
                    const std::vector< Ref<TwoBodyMOIntsTransform> >& transforms = std::vector< Ref<TwoBodyMOIntsTransform> >());
 
+  /** Compute A intermediate using "direct" formula in basis <space1, space3 | f12 | space2, space4>.
+      Bra (rows) are blocked by correlation function index.
+      AlphaBeta amplitudes are computed.
+      If tform is not given (it should be!), this function will construct a generic
+      transform. */
+  void compute_A_direct_(RefSCMatrix& A,
+                         const Ref<MOIndexSpace>& space1,
+                         const Ref<MOIndexSpace>& space2,
+                         const Ref<MOIndexSpace>& space3,
+                         const Ref<MOIndexSpace>& space4,
+                         const Ref<MOIndexSpace>& rispace2,
+                         const Ref<MOIndexSpace>& rispace4,
+                         const std::vector< Ref<TwoBodyMOIntsTransform> >& transforms =
+                               std::vector< Ref<TwoBodyMOIntsTransform> >() );
+
+  /** compute_tbint_tensor computes a 2-body tensor T using integrals of type tbint_type.
+      Computed tensor T is added to its previous contents.
+      Class DataProcess defines a static function 'double I2T()' which processes the integrals.
+      Set CorrFactorInBra to true if bra of target tensor depends on correlation function index.
+   */
+  template <typename DataProcess, bool CorrFactorInBra, bool CorrFactorInKet>
+    void compute_tbint_tensor(RefSCMatrix& T,
+                              int tbint_type,
+                              const Ref<MOIndexSpace>& space1,
+                              const Ref<MOIndexSpace>& space2,
+                              const Ref<MOIndexSpace>& space3,
+                              const Ref<MOIndexSpace>& space4,
+                              bool antisymmetrize,
+                              const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms = 
+                                std::vector< Ref<TwoBodyMOIntsTransform> >(),
+                              const std::vector< Ref<TwoBodyIntDescr> >& tbintdescrs =
+                                std::vector< Ref<TwoBodyIntDescr> >());
+  
 #if 0
   /// Compute R "intermediate" (r12 integrals in occ-pair/vir-pair basis)
   void compute_R_();
@@ -376,7 +394,7 @@ public:
   const RefSCVector& emp2(SpinCase2 S);
   /// Returns the eigenvalues of spin case S
   const RefDiagSCMatrix& evals(SpinCase1 S) const;
-
+  
   /// Returns the eigenvalues for the closed-shell case
   RefDiagSCMatrix evals() const;
   /// Returns the alpha eigenvalues
@@ -390,6 +408,24 @@ public:
   const Ref<MOIndexSpace>& occ_act(SpinCase1 S) const;
   /// Returns the act vir space for spin case S
   const Ref<MOIndexSpace>& vir_act(SpinCase1 S) const;
+  
+  /** Returns an already created transform.
+      If the transform is not found then throw TransformNotFound */
+  Ref<TwoBodyMOIntsTransform> get_tform_(const std::string&);
+  /// Generates canonical id for transform. f12 is the index of the correlation function
+  std::string transform_label(const Ref<MOIndexSpace>& space1,
+                              const Ref<MOIndexSpace>& space2,
+                              const Ref<MOIndexSpace>& space3,
+                              const Ref<MOIndexSpace>& space4,
+                              unsigned int f12) const;
+  /// version of transform_label() applicable when left and right correlation factors differ
+  std::string transform_label(const Ref<MOIndexSpace>& space1,
+                              const Ref<MOIndexSpace>& space2,
+                              const Ref<MOIndexSpace>& space3,
+                              const Ref<MOIndexSpace>& space4,
+                              unsigned int f12_left,
+                              unsigned int f12_right) const;
+  
 };
 
 class TransformNotFound: public ProgrammingError {

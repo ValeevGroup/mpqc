@@ -47,9 +47,15 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
+#include <chemistry/qc/mbptr12/creator.h>
+#include <chemistry/qc/mbptr12/container.h>
 
 using namespace std;
 using namespace sc;
+
+// #define to 1 if want to use compute_tbint_tensor
+#define USE_COMPUTE_TBINT_TENSOR 1
 
 void
 R12IntEval::compute_T2_(RefSCMatrix& T2,
@@ -57,11 +63,36 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
                         const Ref<MOIndexSpace>& space2,
                         const Ref<MOIndexSpace>& space3,
                         const Ref<MOIndexSpace>& space4,
+                        bool antisymmetrize,
                         const Ref<TwoBodyMOIntsTransform>& transform)
 {
+#if USE_COMPUTE_TBINT_TENSOR
+  {
+    typedef std::vector< Ref<TwoBodyMOIntsTransform> > tformvec;
+    tformvec tform;
+    if (transform.nonnull())
+      tform.push_back(transform);
+    compute_tbint_tensor<ManyBodyTensors::ERI_to_T2,false,false>(T2, corrfactor()->tbint_type_eri(),
+                                                     space1, space2,
+                                                     space3, space4,
+                                                     antisymmetrize,
+                                                     tform,
+                                                     std::vector< Ref<TwoBodyIntDescr> >(1,new TwoBodyIntDescrERI(r12info()->integral())) );
+    return;
+  }
+#endif
+  
+  // are particles 1 and 2 equivalent?
+  const bool part1_equiv_part2 = (space1==space3 && space2==space4);
+  // Check correct semantics of this call : if antisymmetrize then particles must be equivalent
+  const bool correct_semantics = (antisymmetrize && part1_equiv_part2) ||
+                                 !antisymmetrize;
+  if (!correct_semantics)
+    throw ProgrammingError("R12IntEval::compute_T2_() -- incorrect call semantics",
+                           __FILE__,__LINE__);
+  
   T2.assign(0.0);
-  // maps spaceX to spaceX of the transform
-  std::vector<unsigned int> map1, map2, map3, map4;
+
   Ref<TwoBodyMOIntsTransform> tform = transform;
   if (tform.null()) {
     // Only need 1/r12 integrals, hence doesn't matter which f12 to use
@@ -71,10 +102,27 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
   Ref<MOIndexSpace> tspace2 = tform->space2();
   Ref<MOIndexSpace> tspace3 = tform->space3();
   Ref<MOIndexSpace> tspace4 = tform->space4();
+
+  // maps spaceX to spaceX of the transform
+  std::vector<unsigned int> map1, map2, map3, map4;
+  // maps space4 to space2 of transform
+  std::vector<unsigned int> map24;
+  // maps space2 to space4 of transform
+  std::vector<unsigned int> map42;
   map1 = *tspace1<<*space1;
   map2 = *tspace2<<*space2;
   map3 = *tspace3<<*space3;
   map4 = *tspace4<<*space4;
+  if (antisymmetrize) {
+    if (tspace2 == tspace4) {
+      map24 = map2;
+      map42 = map4;
+    }
+    else {
+      map24 = *tspace2<<*space4;
+      map42 = *tspace4<<*space2;
+    }
+  }
   
   const unsigned int rank1 = space1->rank();
   const unsigned int rank2 = space2->rank();
@@ -88,8 +136,9 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
   
   // Using spinorbital iterators means I don't take into account perm symmetry
   // More efficient algorithm will require generic code
-  SpinMOPairIter iter13(space1,space3,AlphaBeta);
-  SpinMOPairIter iter24(space2,space4,AlphaBeta);
+  const SpinCase2 S = (antisymmetrize ? AlphaAlpha : AlphaBeta);
+  SpinMOPairIter iter13(space1,space3,S);
+  SpinMOPairIter iter24(space2,space4,S);
   
   Ref<R12IntsAcc> accum = tform->ints_acc();
   if (accum.null() || !accum->is_committed()) {
@@ -145,20 +194,37 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
         const int ab = iter24.ij();
         
         const double ERI_iajb = ij_buf_eri[AB];
-#if 1
+#if 0
         const double denom = 1.0/(evals1(i) + evals3(j) - evals2(a) - evals4(b));
 #else
         // use this to test T2
         const double denom = 1.0/sqrt(fabs(evals1(i) + evals3(j) - evals2(a) - evals4(b)));
 #endif
         
-        if (debug_ > 2) {
-          ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
-          << " <ij|ab> = " << ERI_iajb
-          << " denom = " << denom << endl;
+        if (!antisymmetrize) {
+          if (debug_ > 2) {
+            ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
+            << " <ij|ab> = " << ERI_iajb
+            << " denom = " << denom << endl;
+          }
+          
+          T2.set_element(ij,ab,ERI_iajb*denom);
         }
-        
-        T2.set_element(ij,ab,ERI_iajb*denom);
+        else {
+          const int aa = map42[a];
+          const int bb = map24[b];
+          const int BA = bb*trank4+aa;
+          const double ERI_ibja = ij_buf_eri[BA];
+          const double ERI_anti = ERI_iajb - ERI_ibja;
+          if (debug_ > 2) {
+            ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
+            << " <ij|ab> = " << ERI_iajb
+            << " <ij|ba> = " << ERI_ibja
+            << " denom = " << denom << endl;
+          }
+          T2.set_element(ij,ab,ERI_anti*denom);
+        }
+
       }
       accum->release_pair_block(ii,jj,corrfactor()->tbint_type_eri());
       
@@ -179,6 +245,22 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
                         const Ref<MOIndexSpace>& space4,
                         const std::vector< Ref<TwoBodyMOIntsTransform> >& transvec)
 {
+#if USE_COMPUTE_TBINT_TENSOR
+  {
+    std::vector< Ref<TwoBodyIntDescr> > intdescrs;
+    TwoBodyIntDescrCreator descr_creator(corrfactor(),
+                                         r12info()->integral(),
+                                         true,false);
+    fill_container(descr_creator,intdescrs);
+    compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(F12, corrfactor()->tbint_type_f12(),
+                                                     space1, space2,
+                                                     space3, space4,
+                                                     false,
+                                                     transvec, intdescrs);
+    return;
+  }
+#endif
+
   F12.assign(0.0);
   const unsigned int nf12 = corrfactor()->nfunctions();
   // create transforms, if needed
@@ -287,6 +369,7 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
   }
   ExEnv::out0() << decindent << indent << "Exited F12 amplitude (" << label << ") evaluator" << endl;
   tim_exit("F12 amplitudes");
+  F12.print("F12 test from specialized evaluator");
 }
 
 ////////////////////////////////////////////////////////////////////////////

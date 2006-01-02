@@ -52,6 +52,9 @@ static ClassDesc TwoBodyMOIntsTransform_cd(
   typeid(TwoBodyMOIntsTransform),"TwoBodyMOIntsTransform",1,"virtual public SavableState",
   0, 0, 0);
 
+double
+TwoBodyMOIntsTransform::zero_integral = 1.0e-12;
+
 TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
                                                const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                                const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :

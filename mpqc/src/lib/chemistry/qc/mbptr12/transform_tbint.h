@@ -66,7 +66,7 @@ private:
 protected:
   /** By default, integrals smaller than zero_integral are considered zero.
       This constant is only used in checking integrals, not computing them. */
-  static const double zero_integral = 1.0e-12;
+  static double zero_integral;
   /// Predefined enumerated type for the MO spaces
   typedef struct {
     enum {Space1, Space2, Space3, Space4};
@@ -141,15 +141,15 @@ protected:
   void check_tbint(const Ref<TwoBodyInt>& tbint) const;
   
 public:
-
+  
   TwoBodyMOIntsTransform(StateIn&);
   TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
                          const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                          const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4);
   virtual ~TwoBodyMOIntsTransform();
-
+  
   void save_data_state(StateOut&);
-
+  
   /// Returns the name of the transform
   std::string name() const {return name_;}
   /// Returns a short label which uniquely identifies the type of transform
@@ -186,7 +186,7 @@ public:
   
   /// Specifies the top-level MolecularEnergy object to use for checkpointing
   void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }
-
+  
   /** Specifies how many integral types computed by TwoBodyInt will be transformed
       Default is 1. This function does not have to be called since call to compute() will
       set it proprely. However, it is HIGHLY recommended to call this function after
@@ -196,18 +196,18 @@ public:
   void set_debug(int debug) { debug_ = debug; }
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; }
   void set_print_percent(double print_percent) { print_percent_ = print_percent; }
-
+  
   /// Computes transformed integrals using TwoBodyInt produced by tbintdescr
   virtual void compute(const Ref<TwoBodyIntDescr>& tbintdescr) = 0;
   /// Check symmetry of transformed integrals
   virtual void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError) =0;
   /// Make the transform obsolete. Next call to compute() will recompute
   virtual void obsolete();
-
+  
   /** Returns a that data that must be shared between all DistShellPair
    * objects. */
   DistShellPair::SharedData *shell_pair_data() { return &spdata_; }
-
+  
 };
 
 }

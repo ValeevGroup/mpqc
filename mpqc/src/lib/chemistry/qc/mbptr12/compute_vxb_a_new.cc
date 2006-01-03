@@ -88,9 +88,10 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
     ixjy_name.push_back(tform_name);
     Ref<TwoBodyMOIntsTransform> ixjy_tform = tform_map_[tform_name];
     if (ixjy_tform.null()) {
-      ixjy_tform = tfactory->twobody_transform_13(tform_name);
+      ixjy_tform = tfactory->twobody_transform_13(tform_name,
+                                                  corrfactor()->tbintdescr(integral,f12));
       tform_map_[tform_name] = ixjy_tform;
-      ixjy_tform->compute(corrfactor()->tbintdescr(integral,f12));
+      ixjy_tform->compute();
     }
   }
   const int ni = ispace->rank();
@@ -145,7 +146,7 @@ R12IntEval::contrib_to_VXB_a_new_(const Ref<MOIndexSpace>& ispace,
     Ref<TwoBodyMOIntsTransform> ixjy_tform = get_tform_(ixjy_name.at(f12));
     Ref<R12IntsAcc> acc = ixjy_tform->ints_acc();
     if (acc.null() || !acc->is_committed()) {
-      ixjy_tform->compute(corrfactor()->tbintdescr(integral,f12));
+      ixjy_tform->compute();
     }
     if (!acc->is_active())
       acc->activate();

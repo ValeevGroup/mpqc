@@ -85,6 +85,7 @@ sc::antisymmetrize(RefSCMatrix& Aanti, const RefSCMatrix& A,
   }
 }
 
+
 std::vector<double>
 sc::convert(const RefDiagSCMatrix& A)
 {

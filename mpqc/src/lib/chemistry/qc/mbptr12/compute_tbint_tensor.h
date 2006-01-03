@@ -72,15 +72,43 @@ namespace sc {
       tformvec transforms = transvec;
       if (transforms.empty()) {
         if (CorrFactorInBraKet) {
-          for(unsigned int f13=0; f13<num13sets; f13++) {
-            for(unsigned int f24=0; f24<num24sets; f24++) {
-              transforms.push_back(get_tform_(transform_label(space1,space2,space3,space4,f13,f24)));
+          unsigned int f13f24 = 0;
+          for(unsigned int f13=0; f13<num13sets; ++f13) {
+            for(unsigned int f24=0; f24<num24sets; ++f24, ++f13f24) {
+              std::string tlabel(transform_label(space1,space2,space3,space4,f13,f24));
+              try {
+                transforms.push_back(get_tform_(tlabel));
+              }
+              catch (TransformNotFound& a){
+                Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
+                tfactory->set_spaces(space1,space2,space3,space4);
+                Ref<TwoBodyMOIntsTransform> tform = tfactory->twobody_transform(
+                                                      MOIntsTransformFactory::StorageType_13,
+                                                      tlabel,
+                                                      intdescrs[f13f24]
+                                                    );
+                transforms.push_back(tform);
+              }
             }
           }
         }
         else {
-          for(int f=0; f<nsets; f++)
-            transforms.push_back(get_tform_(transform_label(space1,space2,space3,space4,f)));
+          for(int f=0; f<nsets; f++) {
+            std::string tlabel(transform_label(space1,space2,space3,space4,f));
+            try {
+              transforms.push_back(get_tform_(tlabel));
+            }
+            catch (TransformNotFound& a){
+              Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
+              tfactory->set_spaces(space1,space2,space3,space4);
+              Ref<TwoBodyMOIntsTransform> tform = tfactory->twobody_transform(
+                                                    MOIntsTransformFactory::StorageType_13,
+                                                    tlabel,
+                                                    intdescrs[f]
+                                                  );
+              transforms.push_back(tform);
+            }
+          }
         }
       }
       
@@ -153,7 +181,7 @@ namespace sc {
           Ref<R12IntsAcc> accum = tform->ints_acc();
           // if transforms have not been computed yet, compute
           if (accum.null() || !accum->is_committed()) {
-            tform->compute(intdescrs[f13f24]);
+            tform->compute();
           }
           if (!accum->is_active())
             accum->activate();

@@ -47,6 +47,10 @@
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/print_scmat_norms.h>
+#include <chemistry/qc/mbptr12/creator.h>
+#include <chemistry/qc/mbptr12/container.h>
+#include <chemistry/qc/mbptr12/utils.h>
+#include <chemistry/qc/mbptr12/utils.impl.h>
 
 using namespace std;
 using namespace sc;
@@ -79,10 +83,11 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   
   const unsigned int nf12 = corrfactor()->nfunctions();
   // create transforms, if needed
-  std::vector< Ref<TwoBodyMOIntsTransform> > tforms4f; // get 1 3 |F12| 2 4_f
-  Ref<R12IntEval> thisref(this);
-  NamedTransformCreator tform4f_creator(thisref,space1,space2,space3,fspace4,true);
-  fill_container(tform4f_creator,tforms4f);
+  std::vector< Ref<TwoBodyIntDescr> > descrs; // get 1 3 |F12| 2 4_f
+  TwoBodyIntDescrCreator descr_creator(corrfactor(),
+                                       r12info()->integral(),
+                                       true,false);
+  fill_container(descr_creator,descrs);
   
   tim_enter("A intermediate (direct)");
   std::ostringstream oss;
@@ -95,16 +100,14 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   //
   // ij|A|kl = ij|f12|kl_f, symmetrized if part_equiv_part2
   //
-  compute_F12_(A,space1,space2,space3,fspace4,tforms4f);
-  if (part1_eq_part2) {
-    symmetrize(A);
+  std::vector< Ref<TwoBodyMOIntsTransform> > tforms4f; // get 1 3 |F12| 2 4_f
+  compute_F12_(A,space1,space2,space3,fspace4,tforms4f,descrs);
+  if (part1_equiv_part2) {
+    symmetrize<true,false,false>(A,A,space1,space2);
   }
   else {
-    std::vector< Ref<TwoBodyMOIntsTransform> > tforms2f; // get 1 3 |F12| 2_f 4
-    NamedTransformCreator tform2f_creator(thisref,space1,fspace2,space3,space4,true);
-    fill_container(tform2f_creator,tforms2f);
-    
-    compute_F12_(A,space1,fspace2,space3,space4,tforms2f);
+    std::vector< Ref<TwoBodyMOIntsTransform> > tforms2f;
+    compute_F12_(A,space1,fspace2,space3,space4,tforms2f,descrs);
     A.scale(0.5);
   }
 
@@ -114,159 +117,6 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
 
 
 #if 0
-void
-R12IntEval::compute_A_simple_()
-{
-  if (abs_method_ == LinearR12::ABS_ABS || abs_method_ == LinearR12::ABS_ABSPlus)
-    throw std::runtime_error("R12IntEval::compute_A_simple_() -- A intermediate can only be computed using a CABS (or CABS+) approach");
-
-  if (evaluated_)
-    return;
-
-  tim_enter("A intermediate");
-
-  Ref<MessageGrp> msg = r12info_->msg();
-  int me = msg->me();
-  int nproc = msg->n();
-  ExEnv::out0() << endl << indent
-    << "Entered A intermediate evaluator" << endl;
-  ExEnv::out0() << incindent;
-
-  const Ref<MOIndexSpace>& obs_space = r12info_->refinfo()->orbs();
-  const Ref<MOIndexSpace>& act_occ_space = r12info_->refinfo()->docc_act();
-  const Ref<MOIndexSpace>& occ_space = r12info_->refinfo()->docc();
-  const Ref<MOIndexSpace>& act_vir_space = r12info_->vir_act();
-  const int nfzv = r12info_->refinfo()->nfzv();
-  const int noso = obs_space->rank();
-  const int nocc = occ_space->rank();
-  const int nvir_act = act_vir_space->rank();
-
-  // compute the Fock matrix between the complement and virtuals and
-  // create the new Fock-weighted space
-  Ref<MOIndexSpace> ribs_space = r12info_->ribs_space();
-#if A_DIRECT_EXCLUDE_K
-  RefSCMatrix F_ri_v = fock_(occ_space,ribs_space,act_vir_space,1.0,0.0);
-#else
-  RefSCMatrix F_ri_v = fock_(occ_space,ribs_space,act_vir_space);
-#endif
-  if (debug_ > 1)
-    F_ri_v.print("Fock matrix (RI-BS/act.virt.)");
-  if (debug_ > 0)
-    print_scmat_norms(F_ri_v,"Fock matrix (RI-BS/act.virt.)");
-
-  Ref<MOIndexSpace> act_fvir_space = new MOIndexSpace("a_F", "Fock-weighted active unoccupied MOs sorted by energy",
-                                                      act_vir_space, ribs_space->coefs()*F_ri_v, ribs_space->basis());
-
-  // Do the AO->MO transform
-  Ref<MOIntsTransformFactory> tfactory = r12info_->tfactory();
-  tfactory->set_spaces(act_occ_space,act_vir_space,
-                       act_occ_space,act_fvir_space);
-  Ref<TwoBodyMOIntsTransform> iajBf_tform = tfactory->twobody_transform_13("(ia|jB_f)",corrfactor_->callback());
-  iajBf_tform->compute(intparams_);
-  Ref<R12IntsAcc> ijaBf_acc = iajBf_tform->ints_acc();
-
-  SpatialMOPairIter_eq ij_iter(act_occ_space);
-  SpatialMOPairIter_eq ab_iter(act_vir_space);
-  int naa = ij_iter.nij_aa();          // Number of alpha-alpha pairs (i > j)
-  int nab = ij_iter.nij_ab();          // Number of alpha-beta pairs
-  if (debug_) {
-    ExEnv::out0() << indent << "naa = " << naa << endl;
-    ExEnv::out0() << indent << "nab = " << nab << endl;
-  }
-
-  // Compute the number of tasks that have full access to the integrals
-  // and split the work among them
-  vector<int> proc_with_ints;
-  int nproc_with_ints = tasks_with_ints_(ijaBf_acc,proc_with_ints);
-
-  //////////////////////////////////////////////////////////////
-  //
-  // Evaluation of A intermedates proceeds as follows:
-  //
-  //    loop over batches of ij,
-  //      load (ijxy)=(ix|jy) into memory
-  //
-  //      loop over xy, 0<=x<nvir_act, 0<=y<nvir_act
-  //        compute T2_aa[ij][xy] = [ (ijxy) - (ijyx) ] / denom
-  //        compute T2_ab[ij][xy] = [ (ijxy) ] / denom
-  //      end xy loop
-  //    end ij loop
-  //
-  /////////////////////////////////////////////////////////////////////////////////
-
-  for(ij_iter.start();int(ij_iter);ij_iter.next()) {
-
-    const int ij = ij_iter.ij();
-    // Figure out if this task will handle this ij
-    int ij_proc = ij%nproc_with_ints;
-    if (ij_proc != proc_with_ints[me])
-      continue;
-    const int i = ij_iter.i();
-    const int j = ij_iter.j();
-    const int ij_aa = ij_iter.ij_aa();
-    const int ij_ab = ij_iter.ij_ab();
-    const int ji_ab = ij_iter.ij_ba();
-
-    if (debug_)
-      ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
-
-    // Get (|r12|) integrals
-    tim_enter("MO ints retrieve");
-    double *ijaBf_buf_r12 = ijaBf_acc->retrieve_pair_block(i,j,corrfactor_->tbint_type_f12());
-    double *jiaBf_buf_r12 = ijaBf_acc->retrieve_pair_block(j,i,corrfactor_->tbint_type_f12());
-    tim_exit("MO ints retrieve");
-
-    if (debug_)
-      ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
-
-    // Compute contributions to A
-    for(ab_iter.start();int(ab_iter);ab_iter.next()) {
-
-      const int a = ab_iter.i();
-      const int b = ab_iter.j();
-      const int ab_aa = ab_iter.ij_aa();
-      const int ab_ab = ab_iter.ij_ab();
-      const int ba_ab = ab_iter.ij_ba();
-
-      const int ab_offset = a*nvir_act+b;
-      const int ba_offset = b*nvir_act+a;
-
-      const double r12_iajBf = ijaBf_buf_r12[ab_offset];
-      const double r12_jaiBf = jiaBf_buf_r12[ab_offset];
-      const double r12_ibjAf = ijaBf_buf_r12[ba_offset];
-      const double r12_jbiAf = jiaBf_buf_r12[ba_offset];
-
-      const double A_ab_ijab = 0.5*(r12_jbiAf + r12_iajBf);
-      const double A_ab_ijba = 0.5*(r12_ibjAf + r12_jaiBf);
-      Aab_.set_element(ij_ab,ab_ab,A_ab_ijab);
-      Aab_.set_element(ji_ab,ba_ab,A_ab_ijab);
-      Aab_.set_element(ji_ab,ab_ab,A_ab_ijba);
-      Aab_.set_element(ij_ab,ba_ab,A_ab_ijba);
-
-      if (ij_aa != -1 && ab_aa != -1) {
-        const double A_aa_ijab = 0.5*(r12_jbiAf - r12_ibjAf + r12_iajBf - r12_jaiBf);
-        Aaa_.set_element(ij_aa,ab_aa,A_aa_ijab);
-      }
-
-    }
-
-    ijaBf_acc->release_pair_block(i,j,corrfactor_->tbint_type_f12());
-    ijaBf_acc->release_pair_block(j,i,corrfactor_->tbint_type_f12());
-  }
-
-  globally_sum_intermeds_();
-
-#if TEST_A
-  Aaa_.print("Alpha-alpha A intermediate");
-  Aab_.print("Alpha-beta A intermediate");
-#endif
-
-  ExEnv::out0() << decindent;
-  ExEnv::out0() << indent << "Exited A intermediate evaluator" << endl;
-
-  tim_exit("A intermediate");
-}
-
 void
 R12IntEval::compute_A_via_commutator_()
 {
@@ -408,7 +258,7 @@ differs from the basis set for occupieds");
 
   tim_exit("A intermediate via [T,r]");
 }
-
+#endif // Commented-out old code
 
 void
 R12IntEval::AT2_contrib_to_V_()
@@ -416,55 +266,56 @@ R12IntEval::AT2_contrib_to_V_()
   if (evaluated_)
     return;
   if (r12info_->msg()->me() == 0) {
-    RefSCMatrix Vaa = Aaa_*T2aa_.t();
-    Vaa_.accumulate(Vaa);
-    RefSCMatrix Vab = Aab_*T2ab_.t();
-    Vab_.accumulate(Vab);  
-    if (debug_ > 0) {
-      print_scmat_norms(Vaa,"Alpha-alpha AT2 contribution to V");
-      print_scmat_norms(Vab,"Alpha-beta AT2 contribution to V");
+    for(unsigned int s=0; s<nspincases2(); s++) {
+      SpinCase2 spin = static_cast<SpinCase2>(s);
+      RefSCMatrix V = A_[s]*T2_[s].t();
+      if (debug_ > 0) {
+        std::string label = prepend_spincase(spin,"AT2 contribution to V");
+        print_scmat_norms(V,label.c_str());
+      }
     }
   }
   globally_sum_intermeds_();
 }
 
 void
-R12IntEval::AR_contrib_to_B_()
+R12IntEval::AF12_contrib_to_B_()
 {
   if (evaluated_)
     return;
   if (r12info_->msg()->me() == 0) {
+    for(unsigned int s=0; s<nspincases2(); s++) {
+      SpinCase2 spin = static_cast<SpinCase2>(s);
+      RefSCMatrix AR = A_[s]*F12_[s].t();
+      const double scale = -0.5;
+#if 0
 #if USE_A_COMM_IN_B_EBC
-    RefSCMatrix AR_aa = Ac_aa_*Raa_.t();
-    RefSCMatrix AR_ab = Ac_ab_*Rab_.t();
-    double scale = -0.5;
+      RefSCMatrix AR_aa = Ac_aa_*Raa_.t();
+      RefSCMatrix AR_ab = Ac_ab_*Rab_.t();
+      double scale = -0.5;
 #else
-    RefSCMatrix AR_aa = Aaa_*Raa_.t();
-    RefSCMatrix AR_ab = Aab_*Rab_.t();
-    double scale = -0.5;
+      RefSCMatrix AR_aa = Aaa_*Raa_.t();
+      RefSCMatrix AR_ab = Aab_*Rab_.t();
+      double scale = -0.5;
 #endif
-    RefSCMatrix Baa = Baa_.clone();  Baa.assign(0.0);
-    RefSCMatrix Bab = Bab_.clone();  Bab.assign(0.0);
-    AR_aa.scale(scale); Baa.accumulate(AR_aa);
-    RefSCMatrix AR_aa_t = AR_aa.t();
-    Baa.accumulate(AR_aa_t);
-    AR_ab.scale(scale); Bab.accumulate(AR_ab);
-    RefSCMatrix AR_ab_t = AR_ab.t();
-    Bab.accumulate(AR_ab_t);
-    if (debug_ > 1) {
-      Baa.print("Alpha-alpha B^{EBC} contribution");
-      Bab.print("Alpha-beta B^{EBC} contribution");
-    }
-    Baa_.accumulate(Baa);
-    Bab_.accumulate(Bab);
-    if (debug_ > 0) {
-      print_scmat_norms(Baa,"Alpha-alpha AR contribution to B");
-      print_scmat_norms(Bab,"Alpha-beta AR contribution to B");
+#endif
+      RefSCMatrix B = B_[s].clone();  B.assign(0.0);
+      AR.scale(scale); B.accumulate(AR);
+      RefSCMatrix ARt = AR.t();
+      B.accumulate(ARt);
+
+      const std::string label = prepend_spincase(spin,"B^{EBC} contribution");
+      if (debug_ > 1) {
+        B.print(label.c_str());
+      }
+      B_[s].accumulate(B);
+      if (debug_ > 0) {
+        print_scmat_norms(B,label.c_str());
+      }
     }
   }
   globally_sum_intermeds_();
 }
-#endif // Commented-out old code
 
 ////////////////////////////////////////////////////////////////////////////
 

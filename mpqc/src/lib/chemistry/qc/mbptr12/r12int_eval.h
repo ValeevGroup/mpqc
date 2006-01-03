@@ -69,15 +69,7 @@ class R12IntEval : virtual public SavableState {
   RefSCDimension dim_vv_[NSpinCases2];
   RefSCDimension dim_f12_[NSpinCases2];
   
-#if 0
-  RefSCMatrix Raa_, Rab_;    // Not sure if I'll compute and keep these explicitly later
-#endif
   //Ref<F12Amplitudes> Amps_;  // First-order amplitudes of various contributions to the pair functions
-#if 0
-  RefSCVector emp2pair_aa_, emp2pair_ab_, emp2pair_bb_;
-  RefSCDimension dim_ij_aa_, dim_ij_ab_, dim_ij_bb_;
-  RefSCDimension dim_ab_aa_, dim_ab_ab_, dim_ab_bb_;
-#endif
   RefSCDimension dim_ij_s_, dim_ij_t_;
 
   bool gbc_;
@@ -95,14 +87,19 @@ class R12IntEval : virtual public SavableState {
   typedef std::map<std::string, Ref<TwoBodyMOIntsTransform> > TformMap;
   TformMap tform_map_;
 
+  /// Returns the number of unique spin cases
+  int nspincases1() const { return ::sc::nspincases1(spin_polarized()); }
+  /// Returns the number of unique combinations of 2 spin cases
+  int nspincases2() const { return ::sc::nspincases2(spin_polarized()); }
+  /// "Spin-adapt" MO space id and name
+  void spinadapt_mospace_labels(SpinCase1 spin, std::string& id, std::string& name) const;
+  
   /// Fock-weighted occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
-  Ref<MOIndexSpace> focc_space_;
-  /// Form Fock-weighted occupied space
-  void form_focc_space_();
+  Ref<MOIndexSpace> focc_space_[NSpinCases1];
   /// Fock-weighted active occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
-  Ref<MOIndexSpace> factocc_space_;
-  /// Form Fock-weighted active occupied space
-  void form_factocc_space_();
+  Ref<MOIndexSpace> factocc_space_[NSpinCases1];
+  /// Fock-weighted active occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
+  Ref<MOIndexSpace> factvir_space_[NSpinCases1];
   /// Form space of auxiliary virtuals
   void form_canonvir_space_();
 
@@ -149,8 +146,10 @@ class R12IntEval : virtual public SavableState {
                              SpinCase2 spincase,
                              const Ref<LinearR12::TwoParticleContraction>& tpcontract);
 
+#if 0
   /// Compute MP2 pair energies of spin case S
   void compute_mp2_pair_energies_(SpinCase2 S);
+#endif
   /// Compute MP2 pair energies of spin case S using < space1 space3|| space2 space4> integrals
   void compute_mp2_pair_energies_(RefSCVector& emp2pair,
                                   SpinCase2 S,
@@ -189,7 +188,10 @@ class R12IntEval : virtual public SavableState {
                    const Ref<MOIndexSpace>& space2,
                    const Ref<MOIndexSpace>& space3,
                    const Ref<MOIndexSpace>& space4,
-                   const std::vector< Ref<TwoBodyMOIntsTransform> >& transforms = std::vector< Ref<TwoBodyMOIntsTransform> >());
+                   const std::vector< Ref<TwoBodyMOIntsTransform> >& transforms
+                     = std::vector< Ref<TwoBodyMOIntsTransform> >(),
+                   const std::vector< Ref<TwoBodyIntDescr> >& descrvec
+                     = std::vector< Ref<TwoBodyIntDescr> >() );
 
   /** Compute A intermediate using "direct" formula in basis <space1, space3 | f12 | space2, space4>.
       Bra (rows) are blocked by correlation function index.
@@ -202,9 +204,7 @@ class R12IntEval : virtual public SavableState {
                          const Ref<MOIndexSpace>& space3,
                          const Ref<MOIndexSpace>& space4,
                          const Ref<MOIndexSpace>& rispace2,
-                         const Ref<MOIndexSpace>& rispace4,
-                         const std::vector< Ref<TwoBodyMOIntsTransform> >& transforms =
-                               std::vector< Ref<TwoBodyMOIntsTransform> >() );
+                         const Ref<MOIndexSpace>& rispace4);
 
   /** compute_tbint_tensor computes a 2-body tensor T using integrals of type tbint_type.
       Computed tensor T is added to its previous contents.
@@ -233,7 +233,7 @@ class R12IntEval : virtual public SavableState {
   void AT2_contrib_to_V_();
 
   /// Compute -2*A*R contribution to B (needed if EBC is not assumed)
-  void AR_contrib_to_B_();
+  void AF12_contrib_to_B_();
 
   /** Compute the first (r<sub>kl</sub>^<sup>AB</sup> f<sub>A</sub><sup>m</sup> r<sub>mB</sub>^<sup>ij</sup>)
       contribution to B that vanishes under GBC */
@@ -245,11 +245,6 @@ class R12IntEval : virtual public SavableState {
 
   /// Compute dual-basis MP1 energy (contribution from singles to HF energy)
   void compute_dualEmp1_();
-
-#if 0
-  /// This function computes T2 amplitudes
-  void compute_T2_vbsneqobs_();
-#endif
 
   /** New general function to compute <ij|r<sub>12</sub>|pq> integrals. ipjq_tform
       is the source of the integrals.*/
@@ -311,14 +306,7 @@ public:
   bool follow_ks_ebcfree() const { return follow_ks_ebcfree_; }
 
   const Ref<R12IntEvalInfo>& r12info() const;
-#if 0
-  RefSCDimension dim_oo_aa() const;
-  RefSCDimension dim_oo_ab() const;
-  RefSCDimension dim_oo_bb() const;
-  RefSCDimension dim_vv_aa() const;
-  RefSCDimension dim_vv_ab() const;
-  RefSCDimension dim_vv_bb() const;
-#endif
+
   RefSCDimension dim_oo_s() const;
   RefSCDimension dim_oo_t() const;
   /// Dimension for active-occ/active-occ pairs of spin case S
@@ -331,48 +319,6 @@ public:
   /// This function causes the intermediate matrices to be computed.
   virtual void compute();
 
-#if 0
-  /// Returns alpha-alpha block of the V intermediate matrix.
-  RefSCMatrix V_aa();
-  /// Returns alpha-alpha block of the X intermediate matrix.
-  RefSCMatrix X_aa();
-  /// Returns alpha-alpha block of the B intermediate matrix.
-  RefSymmSCMatrix B_aa();
-  /// Returns alpha-alpha block of the A intermediate matrix. Returns 0 if EBC is assumed.
-  RefSCMatrix A_aa();
-  /// Returns alpha-alpha block of the A intermediate matrix. Returns 0 if EBC is assumed.
-  RefSCMatrix Ac_aa();
-  /// Returns alpha-alpha block of the MP2 T2 matrix. Returns 0 if EBC is assumed.
-  RefSCMatrix T2_aa();
-  /// Returns alpha-beta block of the V intermediate matrix.
-  RefSCMatrix V_ab();
-  /// Returns alpha-beta block of the X intermediate matrix.
-  RefSCMatrix X_ab();
-  /// Returns alpha-beta block of the B intermediate matrix.
-  RefSymmSCMatrix B_ab();
-  /// Returns alpha-beta block of the A intermediate matrix. Returns 0 if EBC is assumed
-  RefSCMatrix A_ab();
-  /// Returns alpha-beta block of the A intermediate matrix. Returns 0 if EBC is assumed
-  RefSCMatrix Ac_ab();
-  /// Returns alpha-beta block of the MP2 T2 matrix. Returns 0 if EBC is assumed
-  RefSCMatrix T2_ab();
-  /// Returns beta-beta block of the V intermediate matrix.
-  RefSCMatrix V_bb();
-  /// Returns beta-beta block of the X intermediate matrix.
-  RefSCMatrix X_bb();
-  /// Returns beta-beta block of the B intermediate matrix.
-  RefSymmSCMatrix B_bb();
-  /// Returns beta-beta block of the A intermediate matrix. Returns 0 if EBC is assumed.
-  RefSCMatrix A_bb();
-  /// Returns beta-beta block of the MP2 T2 matrix. Returns 0 if EBC is assumed.
-  RefSCMatrix T2_bb();
-  /// Returns alpha-alpha MP2 pair energies.
-  RefSCVector emp2_aa();
-  /// Returns alpha-beta MP2 pair energies.
-  RefSCVector emp2_ab();
-  /// Returns beta-beta MP2 pair energies.
-  RefSCVector emp2_bb();
-#endif
   /// Returns amplitudes of pair correlation functions
   //Ref<F12Amplitudes> amps();
   
@@ -402,12 +348,16 @@ public:
   /// Returns the beta eigenvalues
   RefDiagSCMatrix evals_b() const;
   
-  // Returns the number of unique combinations of 2 spin cases
-  int nspincases2() const { return ::sc::nspincases2(spin_polarized()); }
   /// Returns the act occ space for spin case S
   const Ref<MOIndexSpace>& occ_act(SpinCase1 S) const;
   /// Returns the act vir space for spin case S
   const Ref<MOIndexSpace>& vir_act(SpinCase1 S) const;
+  /// Form Fock-weighted occupied space for spin case S
+  const Ref<MOIndexSpace>& focc(SpinCase1 S);
+  /// Form Fock-weighted active occupied space for spin case S
+  const Ref<MOIndexSpace>& focc_act(SpinCase1 S);
+  /// Form Fock-weighted active virtual space for spin case S
+  const Ref<MOIndexSpace>& fvir_act(SpinCase1 S);
   
   /** Returns an already created transform.
       If the transform is not found then throw TransformNotFound */

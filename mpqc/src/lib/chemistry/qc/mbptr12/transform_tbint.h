@@ -79,6 +79,7 @@ protected:
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;
+  Ref<TwoBodyIntDescr> tbintdescr_;
   // Integrals accumulator
   Ref<R12IntsAcc> ints_acc_;
 
@@ -87,7 +88,6 @@ protected:
   Ref<MOIndexSpace> space3_;
   Ref<MOIndexSpace> space4_;
 
-  int num_te_types_;
   size_t memory_;
   bool dynamic_;
   double print_percent_;
@@ -137,13 +137,16 @@ protected:
    */
   void print_footer(std::ostream& os = ExEnv::out0()) const;
   
+#if 0
   /** Checks whether this TwoBodyInt is compatible with this TwoBodyMOIntsTransform */
   void check_tbint(const Ref<TwoBodyInt>& tbint) const;
+#endif
   
 public:
   
   TwoBodyMOIntsTransform(StateIn&);
   TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
+                         const Ref<TwoBodyIntDescr>& tbintdescr,
                          const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                          const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4);
   virtual ~TwoBodyMOIntsTransform();
@@ -178,7 +181,7 @@ public:
   /// Returns whether to use dynamic load balancing
   bool dynamic() const;
   /// Returns the number of types of two body integrals computed
-  int num_te_types() const;
+  unsigned int num_te_types() const;
   /** Returns the number of bytes allocated for each ij-block of integrals of one type
       in MemoryGrp. It's guaranteed to be divisible by sizeof(double).
     */
@@ -187,18 +190,13 @@ public:
   /// Specifies the top-level MolecularEnergy object to use for checkpointing
   void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }
   
-  /** Specifies how many integral types computed by TwoBodyInt will be transformed
-      Default is 1. This function does not have to be called since call to compute() will
-      set it proprely. However, it is HIGHLY recommended to call this function after
-      this was created so that memory can be checked as early as possible. */
-  void set_num_te_types(const int num_te_types);
   void set_memory(const size_t memory);
   void set_debug(int debug) { debug_ = debug; }
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; }
   void set_print_percent(double print_percent) { print_percent_ = print_percent; }
   
-  /// Computes transformed integrals using TwoBodyInt produced by tbintdescr
-  virtual void compute(const Ref<TwoBodyIntDescr>& tbintdescr) = 0;
+  /// Computes transformed integrals
+  virtual void compute() = 0;
   /// Check symmetry of transformed integrals
   virtual void check_int_symm(double threshold = TwoBodyMOIntsTransform::zero_integral) throw (ProgrammingError) =0;
   /// Make the transform obsolete. Next call to compute() will recompute

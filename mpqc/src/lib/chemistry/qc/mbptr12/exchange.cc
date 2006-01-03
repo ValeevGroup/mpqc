@@ -71,9 +71,7 @@ R12IntEval::exchange_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace
                        occ_space,ket_space);
   // Only need 1/r12 integrals
   Ref<TwoBodyMOIntsTransform> mxny_tform = tfactory->twobody_transform_13("(mx|ny)");
-  // Only need 1/r12 integrals
-  Ref<TwoBodyIntDescr> eridescr = new TwoBodyIntDescrERI(r12info()->integral());
-  mxny_tform->compute(eridescr);
+  mxny_tform->compute();
   Ref<R12IntsAcc> mnxy_acc = mxny_tform->ints_acc();
 
   const int nocc = occ_space->rank();

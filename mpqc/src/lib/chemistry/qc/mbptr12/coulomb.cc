@@ -69,10 +69,9 @@ R12IntEval::coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>
   // Gaussians are real, hence occ_space and bra_space can be swapped
   tfactory->set_spaces(occ_space,occ_space,
                        bra_space,ket_space);
-  Ref<TwoBodyMOIntsTransform> mnxy_tform = tfactory->twobody_transform_12("(mn|xy)");
   // Only need 1/r12 integrals
-  Ref<TwoBodyIntDescr> eridescr = new TwoBodyIntDescrERI(r12info()->integral());
-  mnxy_tform->compute(eridescr);
+  Ref<TwoBodyMOIntsTransform> mnxy_tform = tfactory->twobody_transform_12("(mn|xy)");
+  mnxy_tform->compute();
   Ref<R12IntsAcc> mnxy_acc = mnxy_tform->ints_acc();
 
   const int nocc = occ_space->rank();

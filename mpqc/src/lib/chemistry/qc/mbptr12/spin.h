@@ -40,8 +40,10 @@ namespace sc {
   typedef enum { NSpinCases1 = 2, NSpinCases2 = 3} NSpinCases;
   typedef enum { Alpha = 0, Beta = 1} SpinCase1;
   typedef enum { AlphaBeta = 0, AlphaAlpha = 1, BetaBeta = 2} SpinCase2;
-  /// Returns the number of unique combinations of 2 spin cases
-  int nspincases2(bool spin_polarized);
+  /// Returns the number of unique spin cases (1 or 2)
+  unsigned int nspincases1(bool spin_polarized);
+  /// Returns the number of unique combinations of 2 spin cases (1 or 3)
+  unsigned int nspincases2(bool spin_polarized);
   /// returns the first spin case of the 2-spin S
   SpinCase1 case1(SpinCase2 S);
   /// returns the second spin case of the 2-spin S

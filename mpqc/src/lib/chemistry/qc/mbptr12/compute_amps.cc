@@ -54,9 +54,6 @@
 using namespace std;
 using namespace sc;
 
-// #define to 1 if want to use compute_tbint_tensor
-#define USE_COMPUTE_TBINT_TENSOR 1
-
 void
 R12IntEval::compute_T2_(RefSCMatrix& T2,
                         const Ref<MOIndexSpace>& space1,
@@ -66,89 +63,6 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
                         bool antisymmetrize,
                         const Ref<TwoBodyMOIntsTransform>& transform)
 {
-#if USE_COMPUTE_TBINT_TENSOR
-  {
-    typedef std::vector< Ref<TwoBodyMOIntsTransform> > tformvec;
-    tformvec tform;
-    if (transform.nonnull())
-      tform.push_back(transform);
-    compute_tbint_tensor<ManyBodyTensors::ERI_to_T2,false,false>(T2, corrfactor()->tbint_type_eri(),
-                                                     space1, space2,
-                                                     space3, space4,
-                                                     antisymmetrize,
-                                                     tform,
-                                                     std::vector< Ref<TwoBodyIntDescr> >(1,new TwoBodyIntDescrERI(r12info()->integral())) );
-    return;
-  }
-#endif
-  
-  // are particles 1 and 2 equivalent?
-  const bool part1_equiv_part2 = (space1==space3 && space2==space4);
-  // Check correct semantics of this call : if antisymmetrize then particles must be equivalent
-  const bool correct_semantics = (antisymmetrize && part1_equiv_part2) ||
-                                 !antisymmetrize;
-  if (!correct_semantics)
-    throw ProgrammingError("R12IntEval::compute_T2_() -- incorrect call semantics",
-                           __FILE__,__LINE__);
-  
-  T2.assign(0.0);
-
-  Ref<TwoBodyMOIntsTransform> tform = transform;
-  if (tform.null()) {
-    // Only need 1/r12 integrals, hence doesn't matter which f12 to use
-    tform = get_tform_(transform_label(space1,space2,space3,space4,0));
-  }
-  Ref<MOIndexSpace> tspace1 = tform->space1();
-  Ref<MOIndexSpace> tspace2 = tform->space2();
-  Ref<MOIndexSpace> tspace3 = tform->space3();
-  Ref<MOIndexSpace> tspace4 = tform->space4();
-
-  // maps spaceX to spaceX of the transform
-  std::vector<unsigned int> map1, map2, map3, map4;
-  // maps space4 to space2 of transform
-  std::vector<unsigned int> map24;
-  // maps space2 to space4 of transform
-  std::vector<unsigned int> map42;
-  map1 = *tspace1<<*space1;
-  map2 = *tspace2<<*space2;
-  map3 = *tspace3<<*space3;
-  map4 = *tspace4<<*space4;
-  if (antisymmetrize) {
-    if (tspace2 == tspace4) {
-      map24 = map2;
-      map42 = map4;
-    }
-    else {
-      map24 = *tspace2<<*space4;
-      map42 = *tspace4<<*space2;
-    }
-  }
-  
-  const unsigned int rank1 = space1->rank();
-  const unsigned int rank2 = space2->rank();
-  const unsigned int rank3 = space3->rank();
-  const unsigned int rank4 = space4->rank();
-  const unsigned int trank4 = tspace4->rank();
-  const RefDiagSCMatrix evals1 = space1->evals();
-  const RefDiagSCMatrix evals2 = space2->evals();
-  const RefDiagSCMatrix evals3 = space3->evals();
-  const RefDiagSCMatrix evals4 = space4->evals();
-  
-  // Using spinorbital iterators means I don't take into account perm symmetry
-  // More efficient algorithm will require generic code
-  const SpinCase2 S = (antisymmetrize ? AlphaAlpha : AlphaBeta);
-  SpinMOPairIter iter13(space1,space3,S);
-  SpinMOPairIter iter24(space2,space4,S);
-  
-  Ref<R12IntsAcc> accum = tform->ints_acc();
-  if (accum.null() || !accum->is_committed()) {
-    // only need ERIs
-    Ref<TwoBodyIntDescr> tbintdescr = new TwoBodyIntDescrERI(r12info()->integral());
-    tform->compute(tbintdescr);
-  }
-  if (!accum->is_active())
-    accum->activate();
-  
   tim_enter("T2 amplitudes");
   std::ostringstream oss;
   oss << "<" << space1->id() << " " << space3->id() << "|T2|"
@@ -157,82 +71,21 @@ R12IntEval::compute_T2_(RefSCMatrix& T2,
   ExEnv::out0() << endl << indent
 	       << "Entered MP2 T2 amplitude (" << label << ") evaluator" << endl;
   ExEnv::out0() << incindent;
-  if (debug_ > 0)
-    ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
   
-  vector<int> proc_with_ints;
-  const int nproc_with_ints = tasks_with_ints_(accum,proc_with_ints);
-  const int me = r12info()->msg()->me();
+  typedef std::vector< Ref<TwoBodyMOIntsTransform> > tformvec;
+  tformvec tform;
+  if (transform.nonnull())
+    tform.push_back(transform);
+  compute_tbint_tensor<ManyBodyTensors::ERI_to_T2,false,false>(
+    T2, corrfactor()->tbint_type_eri(),
+    space1, space2,
+    space3, space4,
+    antisymmetrize,
+    tform,
+    std::vector< Ref<TwoBodyIntDescr> >(1,new TwoBodyIntDescrERI(r12info()->integral()))
+  );
   
-  if (accum->has_access(me)) {
-    for(iter13.start(); iter13; iter13.next()) {
-      const int ij = iter13.ij();
-      
-      const int ij_proc = ij%nproc_with_ints;
-      if (ij_proc != proc_with_ints[me])
-        continue;
-      
-      const unsigned int i = iter13.i();
-      const unsigned int j = iter13.j();
-      const unsigned int ii = map1[i];
-      const unsigned int jj = map3[j];
-      
-      if (debug_)
-        ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
-      tim_enter("MO ints retrieve");
-      const double *ij_buf_eri = accum->retrieve_pair_block(ii,jj,corrfactor()->tbint_type_eri());
-      tim_exit("MO ints retrieve");
-      if (debug_)
-        ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
-      
-      for(iter24.start(); iter24; iter24.next()) {
-        const unsigned int a = iter24.i();
-        const unsigned int b = iter24.j();
-        const unsigned int aa = map2[a];
-        const unsigned int bb = map4[b];
-        const int AB = aa*trank4+bb;
-        const int ab = iter24.ij();
-        
-        const double ERI_iajb = ij_buf_eri[AB];
-#if 0
-        const double denom = 1.0/(evals1(i) + evals3(j) - evals2(a) - evals4(b));
-#else
-        // use this to test T2
-        const double denom = 1.0/sqrt(fabs(evals1(i) + evals3(j) - evals2(a) - evals4(b)));
-#endif
-        
-        if (!antisymmetrize) {
-          if (debug_ > 2) {
-            ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
-            << " <ij|ab> = " << ERI_iajb
-            << " denom = " << denom << endl;
-          }
-          
-          T2.set_element(ij,ab,ERI_iajb*denom);
-        }
-        else {
-          const int aa = map42[a];
-          const int bb = map24[b];
-          const int BA = bb*trank4+aa;
-          const double ERI_ibja = ij_buf_eri[BA];
-          const double ERI_anti = ERI_iajb - ERI_ibja;
-          if (debug_ > 2) {
-            ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
-            << " <ij|ab> = " << ERI_iajb
-            << " <ij|ba> = " << ERI_ibja
-            << " denom = " << denom << endl;
-          }
-          T2.set_element(ij,ab,ERI_anti*denom);
-        }
-
-      }
-      accum->release_pair_block(ii,jj,corrfactor()->tbint_type_eri());
-      
-    }
-  }
-  
-  ExEnv::out0() << decindent;
-  ExEnv::out0() << indent << "Exited MP2 T2 amplitude (" << label << ") evaluator" << endl;
+  ExEnv::out0() << decindent << indent << "Exited MP2 T2 amplitude (" << label << ") evaluator" << endl;
   tim_exit("T2 amplitudes");
 }
 
@@ -243,34 +96,9 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
                         const Ref<MOIndexSpace>& space2,
                         const Ref<MOIndexSpace>& space3,
                         const Ref<MOIndexSpace>& space4,
-                        const std::vector< Ref<TwoBodyMOIntsTransform> >& transvec)
+                        const std::vector< Ref<TwoBodyMOIntsTransform> >& transvec,
+                        const std::vector< Ref<TwoBodyIntDescr> >& descrvec)
 {
-#if USE_COMPUTE_TBINT_TENSOR
-  {
-    std::vector< Ref<TwoBodyIntDescr> > intdescrs;
-    TwoBodyIntDescrCreator descr_creator(corrfactor(),
-                                         r12info()->integral(),
-                                         true,false);
-    fill_container(descr_creator,intdescrs);
-    compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(F12, corrfactor()->tbint_type_f12(),
-                                                     space1, space2,
-                                                     space3, space4,
-                                                     false,
-                                                     transvec, intdescrs);
-    return;
-  }
-#endif
-
-  F12.assign(0.0);
-  const unsigned int nf12 = corrfactor()->nfunctions();
-  // create transforms, if needed
-  std::vector< Ref<TwoBodyMOIntsTransform> > transforms = transvec;
-  if (transforms.empty()) {
-    for(unsigned int f12=0; f12<nf12; f12++) {
-      transforms.push_back(get_tform_(transform_label(space1,space2,space3,space4,f12)));
-    }
-  }
-  
   tim_enter("F12 amplitudes");
   std::ostringstream oss;
   oss << "<" << space1->id() << " " << space3->id() << "|F12|"
@@ -279,97 +107,17 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
   ExEnv::out0() << endl << indent
                 << "Entered F12 amplitude (" << label << ") evaluator" << endl
                 << incindent;
-
-  // Using spinorbital iterators means I don't take into account perm symmetry
-  // More efficient algorithm will require generic code
-  SpinMOPairIter iter13(space1,space3,AlphaBeta);
-  SpinMOPairIter iter24(space2,space4,AlphaBeta);
-  const unsigned int rank1 = space1->rank();
-  const unsigned int rank2 = space2->rank();
-  const unsigned int rank3 = space3->rank();
-  const unsigned int rank4 = space4->rank();
-  // size of one block of <space1 space3|
-  const unsigned int n13 = rank1*rank3;
   
-  // counts how many rows of F12 have written
-  unsigned int f12offset = 0;
-  for(unsigned int f12=0; f12<nf12; f12++,f12offset+=n13) {
-    Ref<TwoBodyMOIntsTransform> tform = transforms[f12];
-    if (debug_ > 0)
-      ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
+  compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
+    F12, corrfactor()->tbint_type_f12(),
+    space1, space2,
+    space3, space4,
+    false,
+    transvec, descrvec
+  );
 
-    // maps spaceX to spaceX of the transform
-    std::vector<unsigned int> map1, map2, map3, map4;
-    Ref<MOIndexSpace> tspace1 = tform->space1();
-    Ref<MOIndexSpace> tspace2 = tform->space2();
-    Ref<MOIndexSpace> tspace3 = tform->space3();
-    Ref<MOIndexSpace> tspace4 = tform->space4();
-    map1 = *tspace1<<*space1;
-    map2 = *tspace2<<*space2;
-    map3 = *tspace3<<*space3;
-    map4 = *tspace4<<*space4;
-    const unsigned int trank4 = tspace4->rank();
-    
-    Ref<R12IntsAcc> accum = tform->ints_acc();
-    if (accum.null() || !accum->is_committed()) {
-      // need F12 integral
-      Ref<TwoBodyIntDescr> tbintdescr = corrfactor()->tbintdescr(r12info()->integral(),f12);
-      tform->compute(tbintdescr);
-    }
-    if (!accum->is_active())
-      accum->activate();
-    
-    vector<int> proc_with_ints;
-    const int nproc_with_ints = tasks_with_ints_(accum,proc_with_ints);
-    const int me = r12info()->msg()->me();
-    
-    if (accum->has_access(me)) {
-      for(iter13.start(); iter13; iter13.next()) {
-        const int ij = iter13.ij();
-        
-        const int ij_proc = ij%nproc_with_ints;
-        if (ij_proc != proc_with_ints[me])
-          continue;
-        
-        const unsigned int i = iter13.i();
-        const unsigned int j = iter13.j();
-        const unsigned int ii = map1[i];
-        const unsigned int jj = map3[j];
-        
-        if (debug_)
-          ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
-        tim_enter("MO ints retrieve");
-        const double *ij_buf_f12 = accum->retrieve_pair_block(ii,jj,corrfactor()->tbint_type_f12());
-        tim_exit("MO ints retrieve");
-        if (debug_)
-          ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
-        
-        for(iter24.start(); iter24; iter24.next()) {
-          const unsigned int a = iter24.i();
-          const unsigned int b = iter24.j();
-          const unsigned int aa = map2[a];
-          const unsigned int bb = map4[b];
-          const int AB = aa*trank4+bb;
-          const int ab = iter24.ij();
-          
-          const double F12_iajb = ij_buf_f12[AB];
-          
-          if (debug_ > 2) {
-            ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
-            << " <ij| f12[" << f12 << "]| ab> = " << F12_iajb << endl;
-          }
-          
-          F12.set_element(ij+f12offset,ab,F12_iajb);
-        }
-        accum->release_pair_block(ii,jj,corrfactor()->tbint_type_f12());
-        
-      }
-    }
-    
-  }
   ExEnv::out0() << decindent << indent << "Exited F12 amplitude (" << label << ") evaluator" << endl;
   tim_exit("F12 amplitudes");
-  F12.print("F12 test from specialized evaluator");
 }
 
 ////////////////////////////////////////////////////////////////////////////

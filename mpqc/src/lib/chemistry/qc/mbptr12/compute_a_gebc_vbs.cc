@@ -113,7 +113,6 @@ R12IntEval::contrib_to_VXB_gebc_vbsneqobs_()
       }
     }
     
-    compute_mp2_pair_energies_(spincase2);
     if (debug_ > 1) {
       V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS+VBS+ABS) contribution").c_str());
       X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+VBS+ABS) contribution").c_str());

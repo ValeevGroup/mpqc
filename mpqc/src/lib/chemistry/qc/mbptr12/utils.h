@@ -47,6 +47,14 @@ namespace sc {
                       const Ref<MOIndexSpace>& bra,
                       const Ref<MOIndexSpace>& ket,
                       bool accumulate = false);
+  /** Symmetrizes 4-index quantity <ij|A|kl> -> 1/2 * (<ij|A|kl> + <ij|A|lk>)
+      and saves to Asymm. Row dimension has to be an integer multiple of
+      bra->rank()*bra->rank(). Same for ket. Asymm and A can be the same matrix.
+    */
+  template <bool SymmBra, bool SymmKet, bool Accumulate>
+    void symmetrize(RefSCMatrix& Asymm, const RefSCMatrix& A,
+                    const Ref<MOIndexSpace>& bra,
+                    const Ref<MOIndexSpace>& ket);
   
   /** Converts RefDiagSCMatrix to std::vector<double>
   */

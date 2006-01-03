@@ -34,6 +34,7 @@
 using namespace std;
 using namespace sc;
 
+#if 0
 void
 R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
 {
@@ -89,17 +90,14 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
   catch (TransformNotFound& ex) {
     Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
     tfactory->set_spaces(occ1_act,xspace,occ2_act,yspace);
+    // Only need ERI, so default tbintdescr is OK
     ixjy_tform = tfactory->twobody_transform_13(tform_name);
   }
   
   Ref<R12IntsAcc> ijxy_acc = ixjy_tform->ints_acc();
   if (ijxy_acc.null() || !ijxy_acc->is_committed()) {
-    // only need ERIs
-    Ref<TwoBodyIntDescr> tbintdescr = new TwoBodyIntDescrERI(r12info()->integral());
-    ixjy_tform->compute(tbintdescr);
+    ixjy_tform->compute();
   }
-  // Should make something like this possible:
-  //ixjy_tform->compute(corrfactor()->function(0));
   if (!ijxy_acc->is_active())
     ijxy_acc->activate();
 
@@ -181,7 +179,7 @@ R12IntEval::compute_mp2_pair_energies_(SpinCase2 S)
     }
   }
 }
-
+#endif
 
 void
 R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
@@ -254,9 +252,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
   
   Ref<R12IntsAcc> accum = tform->ints_acc();
   if (accum.null() || !accum->is_committed()) {
-    // only need ERIs
-    Ref<TwoBodyIntDescr> tbintdescr = new TwoBodyIntDescrERI(r12info()->integral());
-    tform->compute(tbintdescr);
+    tform->compute();
   }
   if (!accum->is_active())
     accum->activate();

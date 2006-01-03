@@ -45,6 +45,7 @@ using namespace std;
 namespace sc {
 
 class TwoBodyMOIntsTransform;
+//class TwoBodyIntDescr;
 
   /** MOIntsTransformFactory is a factory that produces MOIntsTransform objects. */
 
@@ -61,14 +62,19 @@ public:
                     StorageType_12=0, StorageType_13=1};
 
 private:
-
+  
+  /// The default integral descriptor will compute ERIs
+  typedef TwoBodyIntDescrERI DefaultTwoBodyIntDescr;
+  
   Ref<MolecularEnergy> top_mole_;   // Top-level molecular energy to enable checkpointing
 
   Ref<Integral> integral_;
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;
-
+  
+  Ref<TwoBodyIntDescr> tbintdescr_;
+  
   Ref<MOIndexSpace> space1_;
   Ref<MOIndexSpace> space2_;
   Ref<MOIndexSpace> space3_;
@@ -97,6 +103,8 @@ public:
 
   /// Specifies the top-level MolecularEnergy object to use for checkpointing
   void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }
+  /// Changes the default TwoBodyIntDescr used to produce integrals
+  void tbintdescr(const Ref<TwoBodyIntDescr>& descr) { tbintdescr_ = descr; }
   /// Sets the method of storing transformed MO integrals. Default method is mem_posix.
   void set_ints_method(const StoreMethod::type method) { ints_method_ = method; }
   /// Sets the name of the file to hold the integrals.
@@ -108,6 +116,8 @@ public:
 
   /// Returns the Integral factory
   Ref<Integral> integral() const { return integral_; };
+  /// Returns the default TwoBodyIntDescr used to produce integrals
+  Ref<TwoBodyIntDescr> tbintdescr() const { return tbintdescr_; }
   /// Returns the method of storing transformed MO integrals.
   const StoreMethod::type ints_method() const { return ints_method_; }
   /// Sets the name of the file to hold the integrals.
@@ -129,17 +139,18 @@ public:
   /** Creates an TwoBodyMOIntsTransform object that will compute (pq|rs) integrals
       stored in qs blocks for each pr */
   Ref<TwoBodyMOIntsTransform>
-  twobody_transform_13(const std::string& id);
+  twobody_transform_13(const std::string& id, const Ref<TwoBodyIntDescr>& descr = 0);
 
   /** Creates an TwoBodyMOIntsTransform object that will compute (pq|rs) integrals
     stored in rs blocks for each pq */
   Ref<TwoBodyMOIntsTransform>
-  twobody_transform_12(const std::string& id);
+  twobody_transform_12(const std::string& id, const Ref<TwoBodyIntDescr>& descr = 0);
   
   /** Creates an TwoBodyMOIntsTransform object that will compute (pq|rs) integrals
     stored according to storage */
   Ref<TwoBodyMOIntsTransform>
-  twobody_transform(StorageType storage, const std::string& id);
+  twobody_transform(StorageType storage, const std::string& id,
+                    const Ref<TwoBodyIntDescr>& descr = 0);
 };
 
 }

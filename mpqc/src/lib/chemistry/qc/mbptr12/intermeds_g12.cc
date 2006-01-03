@@ -81,9 +81,10 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
 
     Ref<TwoBodyMOIntsTransform> imjn_tform = tform_map_[imjn_label];
     if (imjn_tform.null()) {
-      imjn_tform = tfactory->twobody_transform_13(imjn_label);
+      imjn_tform = tfactory->twobody_transform_13(imjn_label,
+                                                  corrfactor()->tbintdescr(integral,f));
       tform_map_[imjn_label] = imjn_tform;
-      imjn_tform->compute(corrfactor()->tbintdescr(integral,f));
+      imjn_tform->compute();
       }
 
     // second loop over correlation functions
@@ -96,9 +97,10 @@ R12IntEval::init_intermeds_g12_(SpinCase2 spincase)
       im2jn_name[f].push_back(im2jn_label);
       Ref<TwoBodyMOIntsTransform> im2jn_tform = tform_map_[im2jn_label];
       if (im2jn_tform.null()) {
-        im2jn_tform = tfactory->twobody_transform_13(im2jn_label);
+        im2jn_tform = tfactory->twobody_transform_13(im2jn_label,
+                                                     corrfactor()->tbintdescr(integral,f,g));
         tform_map_[im2jn_label] = im2jn_tform;
-        im2jn_tform->compute(corrfactor()->tbintdescr(integral,f,g));
+        im2jn_tform->compute();
       }
     }
   }

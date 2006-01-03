@@ -57,10 +57,8 @@ using namespace sc;
   Based on MBPT2::compute_mp2_energy()
  -------------------------------------*/
 void
-TwoBodyMOIntsTransform_ikjy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
+TwoBodyMOIntsTransform_ikjy::compute()
 {
-  set_num_te_types(tbintdescr->num_sets());
-  
   init_acc();
   if (ints_acc_->is_committed())
     return;
@@ -134,9 +132,8 @@ TwoBodyMOIntsTransform_ikjy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
   integral->set_basis(space1_->basis(),space2_->basis(),space3_->basis(),space4_->basis());
   Ref<TwoBodyInt>* tbints = new Ref<TwoBodyInt>[thr_->nthread()];
   for (int i=0; i<thr_->nthread(); i++) {
-    tbints[i] = tbintdescr->inteval();
+    tbints[i] = tbintdescr_->inteval();
   }
-  check_tbint(tbints[0]);
   if (debug_ >= 1)
     ExEnv::out0() << indent << scprintf("Memory used for integral storage:       %i Bytes",
       integral->storage_used()) << endl;
@@ -184,8 +181,8 @@ TwoBodyMOIntsTransform_ikjy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
     // Allocate (and initialize) some arrays
 
     double* integral_ijsx = (double*) mem_->localdata();
-    //bzerofast(integral_ijsx, (num_te_types_*nij*memgrp_blocksize));
-    memset(integral_ijsx, 0, num_te_types_*nij*memgrp_blocksize);
+    //bzerofast(integral_ijsx, (num_te_types()*nij*memgrp_blocksize));
+    memset(integral_ijsx, 0, num_te_types()*nij*memgrp_blocksize);
     integral_ijsx = 0;
     mem_->sync();
     ExEnv::out0() << indent
@@ -227,7 +224,7 @@ TwoBodyMOIntsTransform_ikjy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
             if (ij%nproc != me)
               continue;
             for (int x = 0; x<rank2; x++) {
-              const double* ijsx_ints = (const double*)((size_t)integral_ijsx + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+              const double* ijsx_ints = (const double*)((size_t)integral_ijsx + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
               for (int s = 0; s<nbasis4; s++) {
                 double value = ijsx_ints[s*rank2+x];
                 ints_file << scprintf("3Q: type = %d (%d %d|%d %d) = %12.8f\n",
@@ -255,8 +252,8 @@ TwoBodyMOIntsTransform_ikjy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
         int ij_local = ij/nproc;
         if (ij%nproc == me) {
 
-          for(int te_type=0; te_type<num_te_types_; te_type++) {
-            const double *sx_ptr = (const double*) ((size_t)integral_ijsx + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+          for(int te_type=0; te_type<num_te_types(); te_type++) {
+            const double *sx_ptr = (const double*) ((size_t)integral_ijsx + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
 
             // fourth quarter transform
             // yx = ys * sx
@@ -288,8 +285,8 @@ TwoBodyMOIntsTransform_ikjy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
           int ij_local = ij/nproc;
           if (ij%nproc == me) {
             const int ij_sym = mosym1[i+i_offset] ^ mosym3[j];
-            for(int te_type=0; te_type<num_te_types_; te_type++) {
-              double* ijxy_ptr = (double *)((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+            for(int te_type=0; te_type<num_te_types(); te_type++) {
+              double* ijxy_ptr = (double *)((size_t)integral_ijxy + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
               for (int x = 0; x<rank2; x++) {
                 const int ijx_sym = ij_sym ^ mosym2[x];
                 for (int y = 0; y<rank4; y++, ijxy_ptr++) {
@@ -321,7 +318,7 @@ TwoBodyMOIntsTransform_ikjy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
             if (ij%nproc != me)
               continue;
             for (int x = 0; x<rank2; x++) {
-              const double* ijxy_ints = (const double*)((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+              const double* ijxy_ints = (const double*)((size_t)integral_ijxy + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
               for (int y = 0; y<rank4; y++) {
                 double value = ijxy_ints[x*rank4+y];
                 ints_file << scprintf("4Q: type = %d (%d %d|%d %d) = %12.8f\n",

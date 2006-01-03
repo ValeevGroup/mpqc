@@ -56,16 +56,17 @@ double
 TwoBodyMOIntsTransform::zero_integral = 1.0e-12;
 
 TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
+                                               const Ref<TwoBodyIntDescr>& tbintdescr,
                                                const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                                const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
-  name_(name), factory_(factory), space1_(space1), space2_(space2), space3_(space3), space4_(space4)
+  name_(name), factory_(factory), tbintdescr_(tbintdescr),
+  space1_(space1), space2_(space2), space3_(space3), space4_(space4)
 {
   mem_ = MemoryGrp::get_default_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
   // Default values
-  num_te_types_ = 1;
   memory_ = factory_->memory();
   debug_ = factory_->debug();
   dynamic_ = factory_->dynamic();
@@ -78,6 +79,7 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
 {
   si.get(name_);
   factory_ << SavableState::restore_state(si);
+  // tbintdescr_ << SavableState::restore_state(si);
   ints_acc_ << SavableState::restore_state(si);
   
   space1_ << SavableState::restore_state(si);
@@ -89,7 +91,6 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
-  si.get(num_te_types_);
   double memory; si.get(memory); memory_ = (size_t) memory;
   si.get(debug_);
   int dynamic; si.get(dynamic); dynamic_ = (bool) dynamic;
@@ -107,6 +108,7 @@ TwoBodyMOIntsTransform::save_data_state(StateOut& so)
 {
   so.put(name_);
   SavableState::save_state(factory_.pointer(),so);
+  //SavableState::save_state(tbintdescr_.pointer(),so);
   SavableState::save_state(ints_acc_.pointer(),so);
   
   SavableState::save_state(space1_.pointer(),so);
@@ -114,23 +116,12 @@ TwoBodyMOIntsTransform::save_data_state(StateOut& so)
   SavableState::save_state(space3_.pointer(),so);
   SavableState::save_state(space4_.pointer(),so);
 
-  so.put(num_te_types_);
   so.put((double)memory_);
   so.put(debug_);
   so.put((int)dynamic_);
   so.put(print_percent_);
   so.put((int)ints_method_);
   so.put(file_prefix_);
-}
-
-void
-TwoBodyMOIntsTransform::set_num_te_types(const int num_te_types)
-{
-  // need to figure out how to determine the number of te types supported by this TwoBodyInt
-  if (num_te_types < 1 || num_te_types > TwoBodyInt::max_num_tbint_types)
-    throw std::runtime_error("TwoBodyMOIntsTransform::set_num_te_types() -- number of tbint types exceeds allowed maximum");
-  num_te_types_ = num_te_types;
-  init_vars();
 }
 
 void
@@ -148,12 +139,12 @@ TwoBodyMOIntsTransform::msg() const {return  msg_; }
 
 const Ref<R12IntsAcc>&
 TwoBodyMOIntsTransform::ints_acc() {
-  if (ints_acc_)
+  if (ints_acc_.nonnull())
     return ints_acc_;
   else {
     init_acc();
     return ints_acc_;
-    }
+  }
 }
 
 const Ref<MOIndexSpace>&
@@ -180,8 +171,8 @@ TwoBodyMOIntsTransform::debug() const {return debug_; }
 bool
 TwoBodyMOIntsTransform::dynamic() const {return dynamic_; }
 
-int
-TwoBodyMOIntsTransform::num_te_types() const { return num_te_types_; }
+unsigned int
+TwoBodyMOIntsTransform::num_te_types() const { return tbintdescr_->num_sets(); }
 
 unsigned int
 TwoBodyMOIntsTransform::restart_orbital() const {
@@ -404,6 +395,7 @@ TwoBodyMOIntsTransform::print_footer(std::ostream& os) const
     os << indent << "Exited " << name_ << " integrals evaluator (transform type " << type() <<")" << endl;
 }
 
+#if 0
 void
 TwoBodyMOIntsTransform::check_tbint(const Ref<TwoBodyInt>& tbint) const
 {
@@ -411,6 +403,7 @@ TwoBodyMOIntsTransform::check_tbint(const Ref<TwoBodyInt>& tbint) const
     throw AlgorithmException("TwoBodyMOIntsTransform::check_tbint() -- number of integral types supported by \
 current TwoBodyInt is less than\nthe number of types expected by the accumulator",__FILE__,__LINE__);
 }
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 

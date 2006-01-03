@@ -58,10 +58,8 @@ using namespace sc;
   Based on MBPT2::compute_mp2_energy()
  -------------------------------------*/
 void
-TwoBodyMOIntsTransform_ijxy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
+TwoBodyMOIntsTransform_ijxy::compute()
 {
-  set_num_te_types(tbintdescr->num_sets());
-  
   init_acc();
   if (ints_acc_->is_committed())
     return;
@@ -93,9 +91,9 @@ TwoBodyMOIntsTransform_ijxy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
 
   //find the type of integrals which is antisymmetric with respect to permuting functions of particle 2
   int tbtype_anti2 = -1;
-  if (num_te_types_ == 6)
+  if (num_te_types() == 6)
     tbtype_anti2 = TwoBodyInt::t2g12;
-  if (num_te_types_ == 4)
+  if (num_te_types() == 4)
     tbtype_anti2 = TwoBodyInt::r12t2;
 
   // log2 of the erep tolerance
@@ -147,9 +145,8 @@ TwoBodyMOIntsTransform_ijxy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
   integral->set_basis(space1_->basis(),space2_->basis(),space3_->basis(),space4_->basis());
   Ref<TwoBodyInt>* tbints = new Ref<TwoBodyInt>[thr_->nthread()];
   for (int i=0; i<thr_->nthread(); i++) {
-    tbints[i] = tbintdescr->inteval();
+    tbints[i] = tbintdescr_->inteval();
   }
-  check_tbint(tbints[0]);
   if (debug_ >= 1)
     ExEnv::out0() << indent << scprintf("Memory used for integral storage:       %i Bytes",
       integral->storage_used()) << endl;
@@ -197,8 +194,8 @@ TwoBodyMOIntsTransform_ijxy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
     // Allocate (and initialize) some arrays
 
     double* integral_ijrs = (double*) mem_->localdata();
-    //bzerofast(integral_ijsx, (num_te_types_*nij*memgrp_blocksize/sizeof(double)));
-    memset(integral_ijrs, 0, num_te_types_*nij*memgrp_blocksize);
+    //bzerofast(integral_ijsx, (num_te_types()*nij*memgrp_blocksize/sizeof(double)));
+    memset(integral_ijrs, 0, num_te_types()*nij*memgrp_blocksize);
     integral_ijrs = 0;
     mem_->sync();
     ExEnv::out0() << indent
@@ -228,14 +225,14 @@ TwoBodyMOIntsTransform_ijxy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
     // If bs3_eq_bs4 -- only s>r integrals are produced
     // Produce ijsr integrals too
     if (bs3_eq_bs4) {
-      for(int te_type=0; te_type<num_te_types_; te_type++) {
+      for(int te_type=0; te_type<num_te_types(); te_type++) {
         const double ket_perm_pfac = (te_type == tbtype_anti2) ? -1.0 : 1.0;
         for (int i = 0; i<ni; i++) {
           for (int j = 0; j<rank2; j++) {
             int ij = i*rank2+j;
             int ij_local = ij/nproc;
             if (ij%nproc == me) {
-              double* ijrs_ints = (double*) ((size_t)integral_ijrs + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+              double* ijrs_ints = (double*) ((size_t)integral_ijrs + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
 
               for (int r = 0; r<nbasis3; r++) {
 
@@ -264,7 +261,7 @@ TwoBodyMOIntsTransform_ijxy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
             int ij = i*rank2+j;
             int ij_local = ij/nproc;
             if (ij%nproc == me) {
-              const double* ijrs_ints = (const double*) ((size_t)integral_ijrs + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+              const double* ijrs_ints = (const double*) ((size_t)integral_ijrs + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
               for (int r = 0; r<nbasis3; r++) {
                 for (int s = 0; s<nbasis4; s++) {
                   double value = ijrs_ints[r*nbasis4+s];
@@ -294,9 +291,9 @@ TwoBodyMOIntsTransform_ijxy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
         int ij_local = ij/nproc;
         if (ij%nproc == me) {
 
-          for(int te_type=0; te_type<num_te_types_; te_type++) {
+          for(int te_type=0; te_type<num_te_types(); te_type++) {
 
-            const double *rs_ptr = (const double*) ((size_t)integral_ijrs + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+            const double *rs_ptr = (const double*) ((size_t)integral_ijrs + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
 
             // third quarter transform
             // xs = xr * rs
@@ -327,7 +324,7 @@ TwoBodyMOIntsTransform_ijxy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
               int ij = i*rank2+j;
               int ij_local = ij/nproc;
               if (ij%nproc == me) {
-                const double* ijxs_ints = (const double*) ((size_t)integral_ijxs + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+                const double* ijxs_ints = (const double*) ((size_t)integral_ijxs + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
                 for (int x = 0; x<rank3; x++) {
                   for (int s = 0; s<nbasis4; s++) {
                   double value = ijxs_ints[x*nbasis4+s];
@@ -350,7 +347,7 @@ TwoBodyMOIntsTransform_ijxy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
 
     double* ijxy_ints = new double[rank3*rank4];
     const size_t xy_size = rank3*rank4*sizeof(double);
-    for(int te_type=0; te_type<num_te_types_; te_type++) {
+    for(int te_type=0; te_type<num_te_types(); te_type++) {
 
       for (int i = 0; i<ni; i++) {
         for (int j = 0; j<rank2; j++) {
@@ -358,7 +355,7 @@ TwoBodyMOIntsTransform_ijxy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
           int ij_local = ij/nproc;
           if (ij%nproc == me) {
 
-            const double *xs_ptr = (const double*) ((size_t)integral_ijxs + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+            const double *xs_ptr = (const double*) ((size_t)integral_ijxs + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
 
             // fourth quarter transform
             // xy = xs * sy
@@ -389,8 +386,8 @@ TwoBodyMOIntsTransform_ijxy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
           int ij_local = ij/nproc;
           if (ij%nproc == me) {
             const int ij_sym = mosym1[i+i_offset] ^ mosym2[j];
-            for(int te_type=0; te_type<num_te_types_; te_type++) {
-              double* ijxy_ptr = (double*) ((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+            for(int te_type=0; te_type<num_te_types(); te_type++) {
+              double* ijxy_ptr = (double*) ((size_t)integral_ijxy + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
               for (int x = 0; x<rank3; x++) {
                 const int ijx_sym = ij_sym ^ mosym3[x];
                 for (int y = 0; y<rank4; y++, ijxy_ptr++) {
@@ -415,7 +412,7 @@ TwoBodyMOIntsTransform_ijxy::compute(const Ref<TwoBodyIntDescr>& tbintdescr)
             int ij = i*rank2+j;
             int ij_local = ij/nproc;
             if (ij%nproc == me) {
-              const double* ijxy_ints = (const double*)((size_t)integral_ijxy + (ij_local*num_te_types_+te_type)*memgrp_blocksize);
+              const double* ijxy_ints = (const double*)((size_t)integral_ijxy + (ij_local*num_te_types()+te_type)*memgrp_blocksize);
               for (int x = 0; x<rank3; x++) {
                 for (int y = 0; y<rank4; y++) {
                   double value = ijxy_ints[x*rank4+y];

@@ -55,9 +55,10 @@ static ClassDesc TwoBodyMOIntsTransform_ijxy_cd(
   0, 0, create<TwoBodyMOIntsTransform_ijxy>);
 
 TwoBodyMOIntsTransform_ijxy::TwoBodyMOIntsTransform_ijxy(const std::string& name, const Ref<MOIntsTransformFactory>& factory,
+                                                         const Ref<TwoBodyIntDescr>& tbintdescr,
                                                          const Ref<MOIndexSpace>& space1, const Ref<MOIndexSpace>& space2,
                                                          const Ref<MOIndexSpace>& space3, const Ref<MOIndexSpace>& space4) :
-  TwoBodyMOIntsTransform(name,factory,space1,space2,space3,space4)
+  TwoBodyMOIntsTransform(name,factory,tbintdescr,space1,space2,space3,space4)
 {
   init_vars();
 }
@@ -101,7 +102,7 @@ TwoBodyMOIntsTransform_ijxy::compute_transform_dynamic_memory_(int ni) const
   // compute nij as nij on node 0, since nij on node 0 is >= nij on other nodes
   int nij = compute_nij(ni, rank2, nproc, 0);
 
-  distsize_t memsize = sizeof(double)*(num_te_types_*((distsize_t)nthread * ni * nbasis2 * nfuncmax3 * nfuncmax4 // iqrs
+  distsize_t memsize = sizeof(double)*(num_te_types()*((distsize_t)nthread * ni * nbasis2 * nfuncmax3 * nfuncmax4 // iqrs
 						     + (distsize_t)ni * rank2 * nfuncmax3 * nfuncmax4  // ijrs
 						     + (distsize_t)nij * rank3 * nbasis4 // ijxs - buffer of 3 q.t. and higher
 						     // transformed integrals
@@ -132,38 +133,38 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
 
   int nij = compute_nij(batchsize_, space2_->rank(), msg_->n(), msg_->me());
 
-  alloc_mem((size_t)num_te_types_*nij*memgrp_blksize());
+  alloc_mem((size_t)num_te_types()*nij*memgrp_blksize());
 
   switch (ints_method_) {
 
   case MOIntsTransformFactory::StoreMethod::mem_only:
     if (npass_ > 1)
       throw std::runtime_error("TwoBodyMOIntsTransform_ijxy::init_acc() -- cannot use MemoryGrp-based accumulator in multi-pass transformations");
-    ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());  // Hack to avoid using nfzc and nocc
+    ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types(), space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());  // Hack to avoid using nfzc and nocc
     break;
 
   case MOIntsTransformFactory::StoreMethod::mem_posix:
     if (npass_ == 1) {
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
+      ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types(), space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
       break;
     }
     // else use the next case
       
   case MOIntsTransformFactory::StoreMethod::posix:
-    ints_acc_ = new R12IntsAcc_Node0File(mem_, (file_prefix_+"."+name_).c_str(), num_te_types_,
+    ints_acc_ = new R12IntsAcc_Node0File(mem_, (file_prefix_+"."+name_).c_str(), num_te_types(),
                                          space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
     break;
 
 #if HAVE_MPIIO
   case MOIntsTransformFactory::StoreMethod::mem_mpi:
     if (npass_ == 1) {
-      ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types_, space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
+      ints_acc_ = new R12IntsAcc_MemoryGrp(mem_, num_te_types(), space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
       break;
     }
     // else use the next case
 
   case MOIntsTransformFactory::StoreMethod::mpi:
-    ints_acc_ = new R12IntsAcc_MPIIOFile_Ind(mem_, (file_prefix_+"."+name_).c_str(), num_te_types_,
+    ints_acc_ = new R12IntsAcc_MPIIOFile_Ind(mem_, (file_prefix_+"."+name_).c_str(), num_te_types(),
                                              space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
     break;
 #endif

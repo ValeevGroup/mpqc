@@ -103,7 +103,7 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   std::vector< Ref<TwoBodyMOIntsTransform> > tforms4f; // get 1 3 |F12| 2 4_f
   compute_F12_(A,space1,space2,space3,fspace4,tforms4f,descrs);
   if (part1_equiv_part2) {
-    symmetrize<true,false,false>(A,A,space1,space2);
+    symmetrize<false>(A,A,space1,space2);
   }
   else {
     std::vector< Ref<TwoBodyMOIntsTransform> > tforms2f;
@@ -273,6 +273,7 @@ R12IntEval::AT2_contrib_to_V_()
         std::string label = prepend_spincase(spin,"AT2 contribution to V");
         print_scmat_norms(V,label.c_str());
       }
+      V_[s].accumulate(V);
     }
   }
   globally_sum_intermeds_();

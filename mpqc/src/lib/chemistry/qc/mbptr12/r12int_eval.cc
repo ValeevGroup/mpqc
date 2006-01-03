@@ -717,7 +717,7 @@ R12IntEval::fvir_act(SpinCase1 spin)
     
     RefSCMatrix F_ri_av = fock_(occ_space,ribs_space,act_vir_space);
     if (debug_ > 1)
-      F_ri_av.print("Fock matrix (RI-BS/act.occ.)");
+      F_ri_av.print("Fock matrix (RI-BS/act.vir.)");
     
     std::string id = "a_F";
     std::string name = "Fock-weighted active virtual MOs sorted by energy";
@@ -980,20 +980,21 @@ R12IntEval::compute()
         
         const Ref<SingleRefInfo> refinfo = r12info()->refinfo();
         const Ref<TwoBodyMOIntsTransform> tform0 = get_tform_(
-        transform_label(
-        occ_act(spin1),
-        refinfo->orbs(spin1),
-        occ_act(spin2),
-        refinfo->orbs(spin2),0
-        )
+          transform_label(
+            occ_act(spin1),
+            refinfo->orbs(spin1),
+            occ_act(spin2),
+            refinfo->orbs(spin2),0
+          )
         );
+        
         std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
         Ref<R12IntEval> thisref(this);
         NamedTransformCreator tform_creator(thisref,
-        occ1_act,
-        refinfo->orbs(spin1),
-        occ2_act,
-        refinfo->orbs(spin2),true);
+                                            occ1_act,
+                                            refinfo->orbs(spin1),
+                                            occ2_act,
+                                            refinfo->orbs(spin2),true);
         fill_container(tform_creator,tforms);
         
         compute_T2_(T2_[s],occ1_act, vir1_act, occ2_act, vir2_act, false, tform0);

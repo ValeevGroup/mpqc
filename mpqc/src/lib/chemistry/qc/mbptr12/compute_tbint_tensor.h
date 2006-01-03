@@ -29,6 +29,7 @@
 #pragma interface
 #endif
 
+#include <cmath>
 #include <util/misc/timer.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
@@ -262,8 +263,14 @@ namespace sc {
   /// Contains classes used to compute many-body tensors
   namespace ManyBodyTensors {
     
+    enum Sign {
+      Minus = -1,
+      Plus = +1
+    };
+    
     /// Tensor elements are <pq||rs>
-    class I_to_T {
+    template <Sign sign = Plus>
+    class Apply_Identity {
     public:
       static double I2T(double I, int i1, int i3, int i2, int i4,
       const RefDiagSCMatrix& evals1,
@@ -271,12 +278,16 @@ namespace sc {
       const RefDiagSCMatrix& evals3,
       const RefDiagSCMatrix& evals4)
       {
-        return I;
+        if (sign == Plus)
+          return I;
+        else
+          return -I;
       }
     };
     
-    /// MP2 T2 tensor elements are <ij||ab> /(e_i + e_j - e_a - e_b)
-    class ERI_to_T2 {
+    /// Applies (H0 - E0)
+    template <Sign sign = Plus>
+    class Apply_H0minusE0 {
     public:
       static double I2T(double I, int i1, int i3, int i2, int i4,
       const RefDiagSCMatrix& evals1,
@@ -284,14 +295,37 @@ namespace sc {
       const RefDiagSCMatrix& evals3,
       const RefDiagSCMatrix& evals4)
       {
-        const double denom = 1.0/(evals1(i1) + evals3(i3) - evals2(i2) - evals4(i4));
-        return I*denom;
+        const double ediff = (- evals1(i1) - evals3(i3) + evals2(i2) + evals4(i4));
+        if (sign == Plus)
+          return I*ediff;
+        else
+          return -I*ediff;
       }
     };
     
+    /// Applies (H0 - E0)^{-1}, e.g. MP2 T2 tensor elements are <ij||ab> /(e_i + e_j - e_a - e_b)
+    template <Sign sign = Plus>
+    class Apply_Inverse_H0minusE0 {
+    public:
+      static double I2T(double I, int i1, int i3, int i2, int i4,
+      const RefDiagSCMatrix& evals1,
+      const RefDiagSCMatrix& evals2,
+      const RefDiagSCMatrix& evals3,
+      const RefDiagSCMatrix& evals4)
+      {
+        const double ediff = (- evals1(i1) - evals3(i3) + evals2(i2) + evals4(i4));
+        if (sign == Plus)
+          return I/ediff;
+        else
+          return -I/ediff;
+      }
+    };
+    
+    /// Applies 1.0/sqrt(H0-E0)
     /// MP2 pseudo-T2 (S2) tensor elements are <ij||ab> /sqrt(|e_i + e_j - e_a - e_b|) such
     /// that MP2 pair energies are the diagonal elements of S2 * S2.t()
-    class ERI_to_S2 {
+    template <Sign sign = Plus>
+    class Apply_Inverse_Sqrt_H0minusE0 {
     public:
       static double I2T(double I, int i1, int i3, int i2, int i4,
                  const RefDiagSCMatrix& evals1,
@@ -299,11 +333,17 @@ namespace sc {
                  const RefDiagSCMatrix& evals3,
                  const RefDiagSCMatrix& evals4)
       {
-        const double denom = 1.0/sqrt(fabs(evals2(i2) + evals4(i4) - evals1(i1) - evals3(i3)));
-        return I*denom;
+        const double ediff = (- evals1(i1) - evals3(i3) + evals2(i2) + evals4(i4));
+        if (sign == Plus)
+          return I/std::sqrt(std::fabs(ediff));
+        else
+          return -I/std::sqrt(std::fabs(ediff));
       }
     };
     
+    typedef Apply_Identity<Plus> I_to_T;
+    typedef Apply_Inverse_Sqrt_H0minusE0<Plus> ERI_to_S2;
+    typedef Apply_Inverse_H0minusE0<Minus> ERI_to_T2;
   }
 #endif
 

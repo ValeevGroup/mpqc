@@ -205,7 +205,19 @@ class R12IntEval : virtual public SavableState {
                          const Ref<MOIndexSpace>& space4,
                          const Ref<MOIndexSpace>& rispace2,
                          const Ref<MOIndexSpace>& rispace4);
-
+  
+  /** Compute A intermediate using "commutator" formula in basis <space1, space3 | f12 | space2, space4>.
+      Bra (rows) are blocked by correlation function index.
+      AlphaBeta amplitudes are computed.
+      If tform is not given (it should be!), this function will construct a generic
+      transform. */
+  void compute_A_viacomm_(RefSCMatrix& A,
+                          const Ref<MOIndexSpace>& space1,
+                          const Ref<MOIndexSpace>& space2,
+                          const Ref<MOIndexSpace>& space3,
+                          const Ref<MOIndexSpace>& space4,
+                          const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms);
+  
   /** compute_tbint_tensor computes a 2-body tensor T using integrals of type tbint_type.
       Computed tensor T is added to its previous contents.
       Class DataProcess defines a static function 'double I2T()' which processes the integrals.

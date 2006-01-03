@@ -1003,16 +1003,26 @@ R12IntEval::compute()
                           occ1_act, vir1_act,
                           occ2_act, vir2_act,
                           fvir2_act, fvir4_act);
+        if (follow_ks_ebcfree_) {
+          compute_A_viacomm_(Ac_[s],
+                             occ1_act, vir1_act,
+                             occ2_act, vir2_act,
+                             tforms);
+        }
       }
-      for(int s=0; s<nspincases2(); s++) {
-        A_[s].scale(2.0);
-
-        if (debug_ > 1) {
+      
+      if (debug_ > 1) {
+        for(int s=0; s<nspincases2(); s++) {
           const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
           std::string label = prepend_spincase(spincase2,"A matrix");
           A_[s].print(label.c_str());
+          if (follow_ks_ebcfree_) {
+            std::string label = prepend_spincase(spincase2,"A(comm) matrix");
+            Ac_[s].print(label.c_str());
+          }
         }
       }
+      
       AT2_contrib_to_V_();
       #if 0
       // Became compute_F12_ -- see above
@@ -1061,19 +1071,21 @@ R12IntEval::compute()
       
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
       Ref<R12IntEval> thisref(this);
-      NamedTransformCreator tform_creator(thisref,
-      occ_act(spin1),
-      refinfo->orbs(spin1),
-      occ_act(spin2),
-      refinfo->orbs(spin2));
+      NamedTransformCreator tform_creator(
+        thisref,
+        occ_act(spin1),
+        refinfo->orbs(spin1),
+        occ_act(spin2),
+        refinfo->orbs(spin2)
+      );
       fill_container(tform_creator,tforms);
       
       // compute S2 = <ij||ab>/sqrt(e_a+e_b-e_i-e_j) and "square" it
       compute_tbint_tensor<ManyBodyTensors::ERI_to_S2,false,false>(
-      S2, corrfactor()->tbint_type_eri(),
-      occ_act(spin1), vir_act(spin1),
-      occ_act(spin2), vir_act(spin2),
-      spincase2!=AlphaBeta, tforms
+        S2, corrfactor()->tbint_type_eri(),
+        occ_act(spin1), vir_act(spin1),
+        occ_act(spin2), vir_act(spin2),
+        spincase2!=AlphaBeta, tforms
       );
       RefSCMatrix mp2pe = S2*S2.t(); mp2pe.scale(-1.0);
       mp2pe.print("S2 * S2.t : Diagonal elements should be pair energies");
@@ -1084,16 +1096,16 @@ R12IntEval::compute()
       T2.assign(0.0); G.assign(0.0);
       // compute T2 and G
       compute_tbint_tensor<ManyBodyTensors::ERI_to_T2,false,false>(
-      T2, corrfactor()->tbint_type_eri(),
-      occ_act(spin1), vir_act(spin1),
-      occ_act(spin2), vir_act(spin2),
-      spincase2!=AlphaBeta, tforms
+        T2, corrfactor()->tbint_type_eri(),
+        occ_act(spin1), vir_act(spin1),
+        occ_act(spin2), vir_act(spin2),
+        spincase2!=AlphaBeta, tforms
       );
       compute_tbint_tensor<ManyBodyTensors::I_to_T,false,false>(
-      G, corrfactor()->tbint_type_eri(),
-      occ_act(spin1), vir_act(spin1),
-      occ_act(spin2), vir_act(spin2),
-      spincase2!=AlphaBeta, tforms
+        G, corrfactor()->tbint_type_eri(),
+        occ_act(spin1), vir_act(spin1),
+        occ_act(spin2), vir_act(spin2),
+        spincase2!=AlphaBeta, tforms
       );
       mp2pe = G*T2.t();
       mp2pe.print("G * T2.t : Diagonal elements should be pair energies");
@@ -1108,11 +1120,13 @@ R12IntEval::compute()
       
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
       Ref<R12IntEval> thisref(this);
-      NamedTransformCreator tform_creator(thisref,
-      occ_act(Alpha),
-      refinfo->orbs(Alpha),
-      occ_act(Beta),
-      refinfo->orbs(Beta),true);
+      NamedTransformCreator tform_creator(
+        thisref,
+        occ_act(Alpha),
+        refinfo->orbs(Alpha),
+        occ_act(Beta),
+        refinfo->orbs(Beta),true
+      );
       fill_container(tform_creator,tforms);
       
       compute_F12_(F12,occ_act(Alpha), vir_act(Alpha),

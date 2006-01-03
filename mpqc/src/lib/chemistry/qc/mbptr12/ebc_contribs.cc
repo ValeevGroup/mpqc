@@ -46,6 +46,7 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/print_scmat_norms.h>
 #include <chemistry/qc/mbptr12/creator.h>
 #include <chemistry/qc/mbptr12/container.h>
@@ -104,17 +105,71 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   compute_F12_(A,space1,space2,space3,fspace4,tforms4f,descrs);
   if (part1_equiv_part2) {
     symmetrize<false>(A,A,space1,space2);
+    A.scale(2.0);
   }
   else {
     std::vector< Ref<TwoBodyMOIntsTransform> > tforms2f;
     compute_F12_(A,space1,fspace2,space3,space4,tforms2f,descrs);
-    A.scale(0.5);
   }
 
   ExEnv::out0() << decindent << indent << "Exited \"direct\" A intermediate (" << label << ") evaluator" << endl;
   tim_exit("A intermediate (direct)");
 }
 
+void
+R12IntEval::compute_A_viacomm_(RefSCMatrix& A,
+                               const Ref<MOIndexSpace>& space1,
+                               const Ref<MOIndexSpace>& space2,
+                               const Ref<MOIndexSpace>& space3,
+                               const Ref<MOIndexSpace>& space4,
+                               const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms)
+{
+  tim_enter("A intermediate (via commutator)");
+  std::ostringstream oss;
+  oss << "<" << space1->id() << " " << space3->id() << "|A|"
+      << space2->id() << " " << space4->id() << ">";
+  const std::string label = oss.str();
+  ExEnv::out0() << endl << indent
+                << "Entered \"commutator\" A intermediate (" << label << ") evaluator" << endl
+                << incindent;
+  
+  // create descriptors, if needed
+  std::vector< Ref<TwoBodyIntDescr> > descrs; // get 1 3 |F12| 2 4
+  if (tforms.empty()) {
+    TwoBodyIntDescrCreator descr_creator(corrfactor(),
+                                         r12info()->integral(),
+                                         true,false);
+    fill_container(descr_creator,descrs);
+  }
+  
+  //
+  // ij|A|kl = - ij|[t1+t2,f12]|kl - (e_k+e_l-e_i-e_j) * ij|f12|kl
+  //
+  using ManyBodyTensors::Plus;
+  using ManyBodyTensors::Minus;
+#if !ACOMM_INCLUDE_TR_ONLY
+  compute_tbint_tensor<ManyBodyTensors::Apply_H0minusE0<Minus>,true,false>(
+    A, corrfactor()->tbint_type_f12(),
+    space1, space2, space3, space4,
+    false, tforms, descrs
+  );
+#endif
+#if !ACOMM_INCLUDE_R_ONLY
+  compute_tbint_tensor<ManyBodyTensors::Apply_Identity<Plus>,true,false>(
+    A, corrfactor()->tbint_type_t1f12(),
+    space1, space2, space3, space4,
+    false, tforms, descrs
+  );
+  compute_tbint_tensor<ManyBodyTensors::Apply_Identity<Plus>,true,false>(
+    A, corrfactor()->tbint_type_t2f12(),
+    space1, space2, space3, space4,
+    false, tforms, descrs
+  );
+#endif
+
+  ExEnv::out0() << decindent << indent << "Exited \"commutator\" A intermediate (" << label << ") evaluator" << endl;
+  tim_exit("A intermediate (via commutator)");
+}
 
 #if 0
 void

@@ -860,16 +860,16 @@ R12IntEval::compute()
         Ref<TwoParticleContraction> tpcontract;
         if ((absmethod == LinearR12::ABS_ABS ||
           absmethod == LinearR12::ABS_ABSPlus) && !obs_eq_ribs)
-        tpcontract = new ABS_OBS_Contraction(r12info()->refinfo()->orbs(spin1)->rank(),
-                                             r12info()->refinfo()->occ(spin1)->rank(),
-                                             r12info()->refinfo()->occ(spin2)->rank());
+          tpcontract = new ABS_OBS_Contraction(r12info()->refinfo()->orbs(spin1)->rank(),
+                                               r12info()->refinfo()->occ(spin1)->rank(),
+                                               r12info()->refinfo()->occ(spin2)->rank());
         else
           tpcontract = new CABS_OBS_Contraction(r12info()->refinfo()->orbs(spin1)->rank());
         contrib_to_VXB_a_new_(occ_act(spin1),
                               r12info()->refinfo()->orbs(spin1),
                               occ_act(spin2),
                               r12info()->refinfo()->orbs(spin2),
-        spincase2,tpcontract);
+                              spincase2,tpcontract);
         if (debug_ > 1) {
           V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS) contribution").c_str());
           X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS) contribution").c_str());
@@ -1112,7 +1112,7 @@ R12IntEval::compute()
       mp2pe.print("G * T2.t : Diagonal elements should be pair energies");
 
       // here instead of computing G and T2 explicitly, use contract function
-      if (spincase2 == AlphaBeta) {
+      {
         using namespace sc::LinearR12;
         mp2pe.assign(0.0);
         Ref<TwoParticleContraction> dircontract =
@@ -1129,9 +1129,77 @@ R12IntEval::compute()
             vir_act(spin1), vir_act(spin2),
             occ_act(spin1), occ_act(spin2),
             dircontract,
-            false, tforms, tforms
+            spincase2!=AlphaBeta, tforms, tforms
           );
-        mp2pe.print("G * T2.t : Diagonal elements should be pair energies");
+        mp2pe.print("contract(G,T2) : Diagonal elements should be pair energies");
+      }
+      
+      // Try computing B and V (diag+OBS) using contract function
+      {
+        using namespace sc::LinearR12;
+        RefSCMatrix V = V_[s].clone(); V->unit();
+        RefSCMatrix B = B_[s].clone(); B->unit();
+        const Ref<SingleRefInfo> refinfo = r12info()->refinfo();
+        Ref<TwoParticleContraction> tpcontract;
+        const ABSMethod absmethod = r12info()->abs_method();
+        if ((absmethod == LinearR12::ABS_ABS ||
+          absmethod == LinearR12::ABS_ABSPlus) && !obs_eq_ribs)
+          tpcontract = new ABS_OBS_Contraction(refinfo->orbs(spin1)->rank(),
+                                               refinfo->occ(spin1)->rank(),
+                                               refinfo->occ(spin2)->rank());
+        else
+          tpcontract = new CABS_OBS_Contraction(refinfo->orbs(spin1)->rank());
+        
+        std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_f12;
+        Ref<R12IntEval> thisref(this);
+        NamedTransformCreator tform_creator(
+          thisref,
+          occ_act(spin1),
+          refinfo->orbs(spin1),
+          occ_act(spin2),
+          refinfo->orbs(spin2),true
+        );
+        fill_container(tform_creator,tforms_f12);
+        
+        contract_tbint_tensor<ManyBodyTensors::I_to_T,
+                              ManyBodyTensors::I_to_T,
+                              ManyBodyTensors::I_to_T,
+                              true,false,false>
+          (
+            V, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
+            occ_act(spin1), occ_act(spin2),
+            refinfo->orbs(spin1), refinfo->orbs(spin2),
+            occ_act(spin1), occ_act(spin2),
+            tpcontract,
+            spincase2!=AlphaBeta, tforms_f12, tforms
+          );
+        V.print("contract(F12,G) + I = V(diag+OBS)");
+        contract_tbint_tensor<ManyBodyTensors::I_to_T,
+                              ManyBodyTensors::I_to_T,
+                              ManyBodyTensors::I_to_T,
+                              true,true,false>
+          (
+            B, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
+            occ_act(spin1), occ_act(spin2),
+            refinfo->orbs(spin1), refinfo->orbs(spin2),
+            occ_act(spin1), occ_act(spin2),
+            tpcontract,
+            spincase2!=AlphaBeta, tforms_f12, tforms_f12
+          );
+        contract_tbint_tensor<ManyBodyTensors::I_to_T,
+                              ManyBodyTensors::I_to_T,
+                              ManyBodyTensors::I_to_T,
+                              true,true,false>
+          (
+            B, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
+            occ_act(spin1), occ_act(spin2),
+            refinfo->orbs(spin1), refinfo->orbs(spin2),
+            occ_act(spin1), occ_act(spin2),
+            tpcontract,
+            spincase2!=AlphaBeta, tforms_f12, tforms_f12
+          );
+        B.scale(0.5); RefSCMatrix Bt = B.t(); B.accumulate(Bt);
+        B.print("contract(F12,[T1+T2,F12]) + I = B(diag+OBS)");
       }
       
     }
@@ -1140,7 +1208,7 @@ R12IntEval::compute()
     {
       const Ref<SingleRefInfo> refinfo = r12info()->refinfo();
       Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-      RefSCMatrix F12 = localkit->matrix(dim_oo(AlphaBeta),dim_vv(AlphaBeta));
+      RefSCMatrix F12 = localkit->matrix(dim_f12(AlphaBeta),dim_vv(AlphaBeta));
       F12.assign(0.0);
       
       std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;

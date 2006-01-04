@@ -64,11 +64,6 @@ namespace sc {
       const std::vector< Ref<TwoBodyIntDescr> >& intdescrs_ket
     )
     {
-      // if antisymmetrize==yes not sure about correct semantics of the function call -- disable for now
-      if (antisymmetrize)
-        throw FeatureNotImplemented("R12IntEval::contract_tbint_tensor_() -- antisymmetrization not supported yet",
-                                    __FILE__,__LINE__);
-      
       // are particles 1 and 2 equivalent?
       const bool part1_equiv_part2 = (space1_bra==space2_bra &&
                                       space1_ket==space2_ket &&

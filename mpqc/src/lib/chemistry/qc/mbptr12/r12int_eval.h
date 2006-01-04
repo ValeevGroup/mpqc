@@ -161,12 +161,6 @@ class R12IntEval : virtual public SavableState {
   /// Compute VXB intermeds when VBS is not the same as OBS
   void contrib_to_VXB_gebc_vbsneqobs_();
 
-  /// Compute A using the "simple" formula obtained using direct substitution alpha'->a'
-  void compute_A_simple_();
-
-  /// Compute A using the standard commutator approach
-  void compute_A_via_commutator_();
-
   /** Compute T2 amplitude in basis <space1, space3 | space2, space4>.
       AlphaBeta amplitudes are computed.
       If tform is not given (it should be!), this function will construct a generic
@@ -222,6 +216,8 @@ class R12IntEval : virtual public SavableState {
       Computed tensor T is added to its previous contents.
       Class DataProcess defines a static function 'double I2T()' which processes the integrals.
       Set CorrFactorInBra to true if bra of target tensor depends on correlation function index.
+      
+      Of course, this ugliness should become constructor/member function of ManyBodyOperator
    */
   template <typename DataProcess, bool CorrFactorInBra, bool CorrFactorInKet>
     void compute_tbint_tensor(RefSCMatrix& T,
@@ -235,6 +231,40 @@ class R12IntEval : virtual public SavableState {
                                 std::vector< Ref<TwoBodyMOIntsTransform> >(),
                               const std::vector< Ref<TwoBodyIntDescr> >& tbintdescrs =
                                 std::vector< Ref<TwoBodyIntDescr> >());
+  
+  /** contract computes a 2-body tensor T as a sum over mn : <ij|I1|mn> * <kl|Iket|mn>^t
+      Computed tensor T is added to its previous contents.
+      Class DataProcess defines a static function 'double I2T()' which processes the integrals.
+      Set CorrFactorInBra to true if bra of target tensor depends on correlation function index.
+      
+      Of course, this ugliness should become function/operator on 2 ManyBodyOperators
+   */
+  template <typename DataProcessBra,
+            typename DataProcessKet,
+            typename DataProcessBraKet,
+            bool CorrFactorInBra,
+            bool CorrFactorInKet,
+            bool CorrFactorInInt>
+    void contract_tbint_tensor(
+           RefSCMatrix& T,
+           unsigned int tbint_type_bra,
+           unsigned int tbint_type_ket,
+           const Ref<MOIndexSpace>& space1_bra,
+           const Ref<MOIndexSpace>& space2_bra,
+           const Ref<MOIndexSpace>& space1_int,
+           const Ref<MOIndexSpace>& space2_int,
+           const Ref<MOIndexSpace>& space1_ket,
+           const Ref<MOIndexSpace>& space2_ket,
+           const Ref<LinearR12::TwoParticleContraction>& tpcontract,
+           bool antisymmetrize,
+           const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms_bra = 
+             std::vector< Ref<TwoBodyMOIntsTransform> >(),
+           const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms_ket = 
+             std::vector< Ref<TwoBodyMOIntsTransform> >(),
+           const std::vector< Ref<TwoBodyIntDescr> >& tbintdescrs_bra =
+             std::vector< Ref<TwoBodyIntDescr> >(),
+           const std::vector< Ref<TwoBodyIntDescr> >& tbintdescrs_ket =
+             std::vector< Ref<TwoBodyIntDescr> >());
   
 #if 0
   /// Compute R "intermediate" (r12 integrals in occ-pair/vir-pair basis)

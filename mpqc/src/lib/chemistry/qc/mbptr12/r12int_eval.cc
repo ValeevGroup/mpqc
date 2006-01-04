@@ -42,6 +42,7 @@
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/utils.h>
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
+#include <chemistry/qc/mbptr12/contract_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/container.h>
 #include <chemistry/qc/mbptr12/creator.h>
 
@@ -1109,6 +1110,30 @@ R12IntEval::compute()
       );
       mp2pe = G*T2.t();
       mp2pe.print("G * T2.t : Diagonal elements should be pair energies");
+
+      // here instead of computing G and T2 explicitly, use contract function
+      if (spincase2 == AlphaBeta) {
+        using namespace sc::LinearR12;
+        mp2pe.assign(0.0);
+        Ref<TwoParticleContraction> dircontract =
+          new Direct_Contraction(vir_act(spin1)->rank(),
+                                 vir_act(spin2)->rank(),
+                                 1.0);
+        contract_tbint_tensor<ManyBodyTensors::I_to_T,
+                              ManyBodyTensors::ERI_to_T2,
+                              ManyBodyTensors::I_to_T,
+                              false,false,false>
+          (
+            mp2pe, corrfactor()->tbint_type_eri(), corrfactor()->tbint_type_eri(),
+            occ_act(spin1), occ_act(spin2),
+            vir_act(spin1), vir_act(spin2),
+            occ_act(spin1), occ_act(spin2),
+            dircontract,
+            false, tforms, tforms
+          );
+        mp2pe.print("G * T2.t : Diagonal elements should be pair energies");
+      }
+      
     }
     
     // test F12 evaluator

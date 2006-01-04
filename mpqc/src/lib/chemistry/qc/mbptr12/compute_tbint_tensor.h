@@ -45,16 +45,16 @@ namespace sc {
     void
     R12IntEval::compute_tbint_tensor(RefSCMatrix& T,
                                      int tbint_type,
-                                     const Ref<MOIndexSpace>& space1,
-                                     const Ref<MOIndexSpace>& space2,
-                                     const Ref<MOIndexSpace>& space3,
-                                     const Ref<MOIndexSpace>& space4,
+                                     const Ref<MOIndexSpace>& space1_bra,
+                                     const Ref<MOIndexSpace>& space1_ket,
+                                     const Ref<MOIndexSpace>& space2_bra,
+                                     const Ref<MOIndexSpace>& space2_ket,
                                      bool antisymmetrize,
                                      const std::vector< Ref<TwoBodyMOIntsTransform> >& transvec,
                                      const std::vector< Ref<TwoBodyIntDescr> >& intdescrs)
     {
       // are particles 1 and 2 equivalent?
-      const bool part1_equiv_part2 = (space1==space3 && space2==space4);
+      const bool part1_equiv_part2 = (space1_bra==space2_bra && space1_ket==space2_ket);
       // Check correct semantics of this call : if antisymmetrize then particles must be equivalent
       const bool correct_semantics = (antisymmetrize && part1_equiv_part2) ||
                                      !antisymmetrize;
@@ -64,29 +64,29 @@ namespace sc {
       
       const bool CorrFactorInBraKet = CorrFactorInBra && CorrFactorInKet;
       
-      const unsigned int num13sets = (CorrFactorInBra ? corrfactor()->nfunctions() : 1);
-      const unsigned int num24sets = (CorrFactorInKet ? corrfactor()->nfunctions() : 1);
-      const unsigned int nsets = (CorrFactorInBraKet ? -1 : num13sets*num24sets);
+      const unsigned int nbrasets = (CorrFactorInBra ? corrfactor()->nfunctions() : 1);
+      const unsigned int nketsets = (CorrFactorInKet ? corrfactor()->nfunctions() : 1);
+      const unsigned int nsets = (CorrFactorInBraKet ? -1 : nbrasets*nketsets);
       
       // create transforms, if needed
       typedef std::vector< Ref<TwoBodyMOIntsTransform> > tformvec;
       tformvec transforms = transvec;
       if (transforms.empty()) {
         if (CorrFactorInBraKet) {
-          unsigned int f13f24 = 0;
-          for(unsigned int f13=0; f13<num13sets; ++f13) {
-            for(unsigned int f24=0; f24<num24sets; ++f24, ++f13f24) {
-              std::string tlabel(transform_label(space1,space2,space3,space4,f13,f24));
+          unsigned int fbraket = 0;
+          for(unsigned int fbra=0; fbra<nbrasets; ++fbra) {
+            for(unsigned int fket=0; fket<nketsets; ++fket, ++fbraket) {
+              std::string tlabel(transform_label(space1_bra,space1_ket,space2_bra,space2_ket,fbra,fket));
               try {
                 transforms.push_back(get_tform_(tlabel));
               }
               catch (TransformNotFound& a){
                 Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
-                tfactory->set_spaces(space1,space2,space3,space4);
+                tfactory->set_spaces(space1_bra,space1_ket,space2_bra,space2_ket);
                 Ref<TwoBodyMOIntsTransform> tform = tfactory->twobody_transform(
                                                       MOIntsTransformFactory::StorageType_13,
                                                       tlabel,
-                                                      intdescrs[f13f24]
+                                                      intdescrs[fbraket]
                                                     );
                 transforms.push_back(tform);
               }
@@ -95,13 +95,13 @@ namespace sc {
         }
         else {
           for(int f=0; f<nsets; f++) {
-            std::string tlabel(transform_label(space1,space2,space3,space4,f));
+            std::string tlabel(transform_label(space1_bra,space1_ket,space2_bra,space2_ket,f));
             try {
               transforms.push_back(get_tform_(tlabel));
             }
             catch (TransformNotFound& a){
               Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
-              tfactory->set_spaces(space1,space2,space3,space4);
+              tfactory->set_spaces(space1_bra,space1_ket,space2_bra,space2_ket);
               Ref<TwoBodyMOIntsTransform> tform = tfactory->twobody_transform(
                                                     MOIntsTransformFactory::StorageType_13,
                                                     tlabel,
@@ -115,8 +115,8 @@ namespace sc {
       
       tim_enter("Generic tensor");
       std::ostringstream oss;
-      oss << "<" << space1->id() << " " << space3->id() << (antisymmetrize ? "||" : "|")
-      << space2->id() << " " << space4->id() << ">";
+      oss << "<" << space1_bra->id() << " " << space2_bra->id() << (antisymmetrize ? "||" : "|")
+      << space1_ket->id() << " " << space2_ket->id() << ">";
       const std::string label = oss.str();
       ExEnv::out0() << endl << indent
       << "Entered generic tensor (" << label << ") evaluator" << endl;
@@ -125,56 +125,56 @@ namespace sc {
       //
       // WARNING: Assuming all transforms are over same spaces!!!
       //
-      Ref<MOIndexSpace> tspace1 = transforms[0]->space1();
-      Ref<MOIndexSpace> tspace2 = transforms[0]->space2();
-      Ref<MOIndexSpace> tspace3 = transforms[0]->space3();
-      Ref<MOIndexSpace> tspace4 = transforms[0]->space4();
+      Ref<MOIndexSpace> tspace1_bra = transforms[0]->space1();
+      Ref<MOIndexSpace> tspace1_ket = transforms[0]->space2();
+      Ref<MOIndexSpace> tspace2_bra = transforms[0]->space3();
+      Ref<MOIndexSpace> tspace2_ket = transforms[0]->space4();
       
       // maps spaceX to spaceX of the transform
-      std::vector<unsigned int> map1, map2, map3, map4;
-      // maps space4 to space2 of transform
-      std::vector<unsigned int> map24;
-      // maps space2 to space4 of transform
-      std::vector<unsigned int> map42;
-      map1 = *tspace1<<*space1;
-      map2 = *tspace2<<*space2;
-      map3 = *tspace3<<*space3;
-      map4 = *tspace4<<*space4;
+      std::vector<unsigned int> map1_bra, map1_ket, map2_bra, map2_ket;
+      // maps space2_ket to space1_ket of transform
+      std::vector<unsigned int> map12_ket;
+      // maps space1_ket to space2_ket of transform
+      std::vector<unsigned int> map21_ket;
+      map1_bra = *tspace1_bra<<*space1_bra;
+      map1_ket = *tspace1_ket<<*space1_ket;
+      map2_bra = *tspace2_bra<<*space2_bra;
+      map2_ket = *tspace2_ket<<*space2_ket;
       if (antisymmetrize) {
-        if (tspace2 == tspace4) {
-          map24 = map2;
-          map42 = map4;
+        if (tspace1_ket == tspace2_ket) {
+          map12_ket = map1_ket;
+          map21_ket = map2_ket;
         }
         else {
-          map24 = *tspace2<<*space4;
-          map42 = *tspace4<<*space2;
+          map12_ket = *tspace1_ket<<*space2_ket;
+          map21_ket = *tspace2_ket<<*space1_ket;
         }
       }
       
-      const unsigned int trank4 = tspace4->rank();
-      const RefDiagSCMatrix evals1 = space1->evals();
-      const RefDiagSCMatrix evals2 = space2->evals();
-      const RefDiagSCMatrix evals3 = space3->evals();
-      const RefDiagSCMatrix evals4 = space4->evals();
+      const unsigned int tblock_ncols = tspace2_ket->rank();
+      const RefDiagSCMatrix evals1_bra = space1_bra->evals();
+      const RefDiagSCMatrix evals1_ket = space1_ket->evals();
+      const RefDiagSCMatrix evals2_bra = space2_bra->evals();
+      const RefDiagSCMatrix evals2_ket = space2_ket->evals();
       
       // Using spinorbital iterators means I don't take into account perm symmetry
       // More efficient algorithm will require generic code
       const SpinCase2 S = (antisymmetrize ? AlphaAlpha : AlphaBeta);
-      SpinMOPairIter iter13(space1,space3,S);
-      SpinMOPairIter iter24(space2,space4,S);
-      // size of one block of <space1 space3|
-      const unsigned int n13 = iter13.nij();
-      // size of one block of |space3 space4>
-      const unsigned int n24 = iter24.nij();
+      SpinMOPairIter iterbra(space1_bra,space2_bra,S);
+      SpinMOPairIter iterket(space1_ket,space2_ket,S);
+      // size of one block of <space1_bra space2_bra|
+      const unsigned int nbra = iterbra.nij();
+      // size of one block of |space1_ket space2_ket>
+      const unsigned int nket = iterket.nij();
       
-      unsigned int f13f24 = 0;
-      unsigned int f13offset = 0;
-      for(unsigned int f13=0; f13<num13sets; ++f13,f13offset+=n13) {
+      unsigned int fbraket = 0;
+      unsigned int fbraoffset = 0;
+      for(unsigned int fbra=0; fbra<nbrasets; ++fbra,fbraoffset+=nbra) {
         
-        unsigned int f24offset = 0;
-        for(unsigned int f24=0; f24<num24sets; ++f24,f24offset+=n24,++f13f24) {
+        unsigned int fketoffset = 0;
+        for(unsigned int fket=0; fket<nketsets; ++fket,fketoffset+=nket,++fbraket) {
           
-          Ref<TwoBodyMOIntsTransform> tform = transforms[f13f24];
+          Ref<TwoBodyMOIntsTransform> tform = transforms[fbraket];
           
           if (debug_ > 0)
             ExEnv::out0() << indent << "Using transform " << tform->name() << std::endl;
@@ -193,17 +193,17 @@ namespace sc {
           const int me = r12info()->msg()->me();
           
           if (accum->has_access(me)) {
-            for(iter13.start(); iter13; iter13.next()) {
-              const int ij = iter13.ij();
+            for(iterbra.start(); iterbra; iterbra.next()) {
+              const int ij = iterbra.ij();
               
               const int ij_proc = ij%nproc_with_ints;
               if (ij_proc != proc_with_ints[me])
                 continue;
               
-              const unsigned int i = iter13.i();
-              const unsigned int j = iter13.j();
-              const unsigned int ii = map1[i];
-              const unsigned int jj = map3[j];
+              const unsigned int i = iterbra.i();
+              const unsigned int j = iterbra.j();
+              const unsigned int ii = map1_bra[i];
+              const unsigned int jj = map2_bra[j];
               
               if (debug_)
                 ExEnv::outn() << indent << "task " << me << ": working on (i,j) = " << i << "," << j << " " << endl;
@@ -213,13 +213,13 @@ namespace sc {
               if (debug_)
                 ExEnv::outn() << indent << "task " << me << ": obtained ij blocks" << endl;
               
-              for(iter24.start(); iter24; iter24.next()) {
-                const unsigned int a = iter24.i();
-                const unsigned int b = iter24.j();
-                const unsigned int aa = map2[a];
-                const unsigned int bb = map4[b];
-                const int AB = aa*trank4+bb;
-                const int ab = iter24.ij();
+              for(iterket.start(); iterket; iterket.next()) {
+                const unsigned int a = iterket.i();
+                const unsigned int b = iterket.j();
+                const unsigned int aa = map1_ket[a];
+                const unsigned int bb = map2_ket[b];
+                const int AB = aa*tblock_ncols+bb;
+                const int ab = iterket.ij();
                 
                 const double I_ijab = ij_buf[AB];
                 
@@ -228,27 +228,27 @@ namespace sc {
                     ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
                     << " <ij|ab> = " << I_ijab << endl;
                   }
-                  const double T_ijab = DataProcess::I2T(I_ijab,i,j,a,b,evals1,evals2,evals3,evals4);
-                  T.accumulate_element(ij+f13offset,ab+f24offset,T_ijab);
+                  const double T_ijab = DataProcess::I2T(I_ijab,i,j,a,b,evals1_bra,evals1_ket,evals2_bra,evals2_ket);
+                  T.accumulate_element(ij+fbraoffset,ab+fketoffset,T_ijab);
                 }
                 else {
-                  const int aa = map42[a];
-                  const int bb = map24[b];
-                  const int BA = bb*trank4+aa;
+                  const int aa = map21_ket[a];
+                  const int bb = map12_ket[b];
+                  const int BA = bb*tblock_ncols+aa;
                   const double I_ijba = ij_buf[BA];
                   if (debug_ > 2) {
                     ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
                     << " <ij|ab> = " << I_ijab << " <ij|ba> = " << I_ijba << endl;
                   }
                   const double I_anti = I_ijab - I_ijba;
-                  const double T_ijab = DataProcess::I2T(I_anti,i,j,a,b,evals1,evals2,evals3,evals4);
-                  T.accumulate_element(ij+f13offset,ab+f24offset,T_ijab);
+                  const double T_ijab = DataProcess::I2T(I_anti,i,j,a,b,evals1_bra,evals1_ket,evals2_bra,evals2_ket);
+                  T.accumulate_element(ij+fbraoffset,ab+fketoffset,T_ijab);
                 }
                 
-              } // 24 loop
+              } // ket loop
               accum->release_pair_block(ii,jj,tbint_type);
               
-            } // 13 loop
+            } // bra loop
           } // loop over tasks with access
           
         }

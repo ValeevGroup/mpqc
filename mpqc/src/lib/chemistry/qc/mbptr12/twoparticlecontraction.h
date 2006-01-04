@@ -50,13 +50,14 @@ namespace sc {
       
       void save_data_state(StateOut& so);
       
+      unsigned int nrow() const;
+      unsigned int ncol() const;
+      
       /// Computes contraction of blocks A and B
       virtual double contract(const double* A, const double* B) const =0;
       
       protected:
       double dot_prod(const double* A, const double* B) const;
-      unsigned int nrow() const;
-      unsigned int ncol() const;
       
       private:
       unsigned int nrow_;

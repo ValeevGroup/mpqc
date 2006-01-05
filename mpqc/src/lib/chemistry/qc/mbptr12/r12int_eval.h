@@ -232,9 +232,10 @@ class R12IntEval : virtual public SavableState {
                               const std::vector< Ref<TwoBodyIntDescr> >& tbintdescrs =
                                 std::vector< Ref<TwoBodyIntDescr> >());
   
-  /** contract computes a 2-body tensor T as a sum over mn : <ij|I1|mn> * <kl|Iket|mn>^t
+  /** contract_tbint_tensor computes a 2-body tensor T as a sum over mn : <ij|Tbra|mn> * <kl|Tket|mn>^t
+      bra and ket integrals come from tforms_bra and tforms_ket.
       Computed tensor T is added to its previous contents.
-      Class DataProcess defines a static function 'double I2T()' which processes the integrals.
+      Class DataProcess_XXX defines a static function 'double I2T()' which processes the integrals.
       Set CorrFactorInBra to true if bra of target tensor depends on correlation function index.
       
       Of course, this ugliness should become function/operator on 2 ManyBodyOperators
@@ -251,10 +252,12 @@ class R12IntEval : virtual public SavableState {
            unsigned int tbint_type_ket,
            const Ref<MOIndexSpace>& space1_bra,
            const Ref<MOIndexSpace>& space2_bra,
-           const Ref<MOIndexSpace>& space1_int,
-           const Ref<MOIndexSpace>& space2_int,
+           const Ref<MOIndexSpace>& space1_intb,
+           const Ref<MOIndexSpace>& space2_intb,
            const Ref<MOIndexSpace>& space1_ket,
            const Ref<MOIndexSpace>& space2_ket,
+           const Ref<MOIndexSpace>& space1_intk,
+           const Ref<MOIndexSpace>& space2_intk,
            const Ref<LinearR12::TwoParticleContraction>& tpcontract,
            bool antisymmetrize,
            const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms_bra = 
@@ -277,13 +280,8 @@ class R12IntEval : virtual public SavableState {
   /// Compute -2*A*R contribution to B (needed if EBC is not assumed)
   void AF12_contrib_to_B_();
 
-  /** Compute the first (r<sub>kl</sub>^<sup>AB</sup> f<sub>A</sub><sup>m</sup> r<sub>mB</sub>^<sup>ij</sup>)
-      contribution to B that vanishes under GBC */
-  void compute_B_gbc_1_();
-
-  /** Compute the second (r<sub>kl</sub>^<sup>AB</sup> r<sub>AB</sub>^<sup>Kj</sup> f<sub>K</sub><sup>i</sup>)
-      contribution to B that vanishes under GBC */
-  void compute_B_gbc_2_();
+  /** Compute contributions to B that vanishe under GBC */
+  void compute_B_gbc_();
 
   /// Compute dual-basis MP1 energy (contribution from singles to HF energy)
   void compute_dualEmp1_();
@@ -392,8 +390,12 @@ public:
   
   /// Returns the act occ space for spin case S
   const Ref<MOIndexSpace>& occ_act(SpinCase1 S) const;
+  /// Returns the occ space for spin case S
+  const Ref<MOIndexSpace>& occ(SpinCase1 S) const;
   /// Returns the act vir space for spin case S
   const Ref<MOIndexSpace>& vir_act(SpinCase1 S) const;
+  /// Returns the vir space for spin case S
+  const Ref<MOIndexSpace>& vir(SpinCase1 S) const;
   /// Form Fock-weighted occupied space for spin case S
   const Ref<MOIndexSpace>& focc(SpinCase1 S);
   /// Form Fock-weighted active occupied space for spin case S
@@ -404,6 +406,11 @@ public:
   /** Returns an already created transform.
       If the transform is not found then throw TransformNotFound */
   Ref<TwoBodyMOIntsTransform> get_tform_(const std::string&);
+  /// Generates canonical id for transform. no correlation function included
+  std::string transform_label(const Ref<MOIndexSpace>& space1,
+                              const Ref<MOIndexSpace>& space2,
+                              const Ref<MOIndexSpace>& space3,
+                              const Ref<MOIndexSpace>& space4) const;
   /// Generates canonical id for transform. f12 is the index of the correlation function
   std::string transform_label(const Ref<MOIndexSpace>& space1,
                               const Ref<MOIndexSpace>& space2,

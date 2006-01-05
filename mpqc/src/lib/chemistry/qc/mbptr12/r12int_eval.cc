@@ -52,7 +52,7 @@ using namespace sc;
 #define TEST_FOCK 0
 #define NOT_INCLUDE_DIAGONAL_VXB_CONTIBUTIONS 0
 #define INCLUDE_EBC_CODE 1
-#define INCLUDE_GBC_CODE 0
+#define INCLUDE_GBC_CODE 1
 
 inline int max(int a,int b) { return (a > b) ? a : b;}
 
@@ -1040,22 +1040,7 @@ R12IntEval::compute()
       if (!obs_eq_vbs)
         throw std::runtime_error("R12IntEval::compute() -- gbc=false is only supported when basis_vir == basis");
       
-      compute_B_gbc_1_();
-      // Remove when done with the merge
-      #if 0
-      if (debug_ > 1) {
-        Baa_.print("Alpha-alpha B(OBS+ABS+GBC1) contribution");
-        Bab_.print("Alpha-beta B(OBS+ABS+GBC1) contribution");
-      }
-      #endif
-      compute_B_gbc_2_();
-      // Remove when done with the merge
-      #if 0
-      if (debug_ > 1) {
-        Baa_.print("Alpha-alpha B(OBS+ABS+GBC1+GBC2) contribution");
-        Bab_.print("Alpha-beta B(OBS+ABS+GBC1+GBC2) contribution");
-      }
-      #endif
+      compute_B_gbc_();
     }
 #endif
 
@@ -1128,6 +1113,7 @@ R12IntEval::compute()
             occ_act(spin1), occ_act(spin2),
             vir_act(spin1), vir_act(spin2),
             occ_act(spin1), occ_act(spin2),
+            vir_act(spin1), vir_act(spin2),
             dircontract,
             spincase2!=AlphaBeta, tforms, tforms
           );
@@ -1170,6 +1156,7 @@ R12IntEval::compute()
             occ_act(spin1), occ_act(spin2),
             refinfo->orbs(spin1), refinfo->orbs(spin2),
             occ_act(spin1), occ_act(spin2),
+            refinfo->orbs(spin1), refinfo->orbs(spin2),
             tpcontract,
             spincase2!=AlphaBeta, tforms_f12, tforms
           );
@@ -1183,6 +1170,7 @@ R12IntEval::compute()
             occ_act(spin1), occ_act(spin2),
             refinfo->orbs(spin1), refinfo->orbs(spin2),
             occ_act(spin1), occ_act(spin2),
+            refinfo->orbs(spin1), refinfo->orbs(spin2),
             tpcontract,
             spincase2!=AlphaBeta, tforms_f12, tforms_f12
           );
@@ -1195,6 +1183,7 @@ R12IntEval::compute()
             occ_act(spin1), occ_act(spin2),
             refinfo->orbs(spin1), refinfo->orbs(spin2),
             occ_act(spin1), occ_act(spin2),
+            refinfo->orbs(spin1), refinfo->orbs(spin2),
             tpcontract,
             spincase2!=AlphaBeta, tforms_f12, tforms_f12
           );
@@ -1223,7 +1212,7 @@ R12IntEval::compute()
       fill_container(tform_creator,tforms);
       
       compute_F12_(F12,occ_act(Alpha), vir_act(Alpha),
-      occ_act(Beta), vir_act(Beta),tforms);
+                   occ_act(Beta), vir_act(Beta),tforms);
     }
     
 #endif
@@ -1342,12 +1331,39 @@ R12IntEval::occ_act(SpinCase1 S) const
 }
 
 const Ref<MOIndexSpace>&
+R12IntEval::occ(SpinCase1 S) const
+{
+  return r12info()->refinfo()->occ(S);
+}
+
+const Ref<MOIndexSpace>&
 R12IntEval::vir_act(SpinCase1 S) const
 {
   if (r12info()->basis_vir() != r12info()->refinfo()->ref()->basis())
     return r12info()->vir_act(S);
   else
     return r12info()->refinfo()->uocc_act(S);
+}
+
+const Ref<MOIndexSpace>&
+R12IntEval::vir(SpinCase1 S) const
+{
+  if (r12info()->basis_vir() != r12info()->refinfo()->ref()->basis())
+    return r12info()->vir(S);
+  else
+    return r12info()->refinfo()->uocc(S);
+}
+
+std::string
+R12IntEval::transform_label(const Ref<MOIndexSpace>& space1,
+                            const Ref<MOIndexSpace>& space2,
+                            const Ref<MOIndexSpace>& space3,
+                            const Ref<MOIndexSpace>& space4) const
+{
+  std::ostringstream oss;
+  // use physicists' notation
+  oss << "<" << space1->id() << " " << space3->id() << "|" << space2->id() << " " << space4->id() << ">";
+  return oss.str();
 }
 
 std::string

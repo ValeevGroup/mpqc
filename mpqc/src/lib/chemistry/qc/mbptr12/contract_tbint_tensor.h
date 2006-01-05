@@ -52,10 +52,12 @@ namespace sc {
       unsigned int tbint_type_ket,
       const Ref<MOIndexSpace>& space1_bra,
       const Ref<MOIndexSpace>& space2_bra,
-      const Ref<MOIndexSpace>& space1_int,
-      const Ref<MOIndexSpace>& space2_int,
+      const Ref<MOIndexSpace>& space1_intb,
+      const Ref<MOIndexSpace>& space2_intb,
       const Ref<MOIndexSpace>& space1_ket,
       const Ref<MOIndexSpace>& space2_ket,
+      const Ref<MOIndexSpace>& space1_intk,
+      const Ref<MOIndexSpace>& space2_intk,
       const Ref<LinearR12::TwoParticleContraction>& tpcontract,
       bool antisymmetrize,
       const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms_bra,
@@ -67,14 +69,19 @@ namespace sc {
       // are particles 1 and 2 equivalent?
       const bool part1_equiv_part2 = (space1_bra==space2_bra &&
                                       space1_ket==space2_ket &&
-                                      space1_int==space2_int);
+                                      space1_intb==space2_intb &&
+                                      space1_intk==space2_intk);
       // Check correct semantics of this call : if antisymmetrize then particles must be equivalent
       bool correct_semantics = (antisymmetrize && part1_equiv_part2) ||
                                !antisymmetrize;
+      // also
+      correct_semantics = ( correct_semantics &&
+                            (space1_intb->rank() == space1_intk->rank()) &&
+                            (space2_intb->rank() == space2_intk->rank()) );
       // also dimensions of tpcontract must match those of space1_int and space2_int
       correct_semantics = ( correct_semantics &&
-                            (tpcontract->nrow() == space1_int->rank()) &&
-                            (tpcontract->ncol() == space2_int->rank()) );
+                            (tpcontract->nrow() == space1_intb->rank()) &&
+                            (tpcontract->ncol() == space2_intb->rank()) );
       if (!correct_semantics)
         throw ProgrammingError("R12IntEval::contract_tbint_tensor_() -- incorrect call semantics",
                                __FILE__,__LINE__);
@@ -101,13 +108,13 @@ namespace sc {
           unsigned int fbraint = 0;
           for(unsigned int fbra=0; fbra<nbrasets; ++fbra) {
             for(unsigned int fint=0; fint<nintsets; ++fint, ++fbraint) {
-              std::string tlabel(transform_label(space1_bra,space1_int,space2_bra,space2_int,fbra,fint));
+              std::string tlabel(transform_label(space1_bra,space1_intb,space2_bra,space2_intb,fbra,fint));
               try {
                 transforms_bra.push_back(get_tform_(tlabel));
               }
               catch (TransformNotFound& a){
                 Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
-                tfactory->set_spaces(space1_bra,space1_int,space2_bra,space2_int);
+                tfactory->set_spaces(space1_bra,space1_intb,space2_bra,space2_intb);
                 Ref<TwoBodyMOIntsTransform> tform = tfactory->twobody_transform(
                                                       MOIntsTransformFactory::StorageType_13,
                                                       tlabel,
@@ -120,13 +127,13 @@ namespace sc {
         }
         else {
           for(int f=0; f<nbraintsets; f++) {
-            std::string tlabel(transform_label(space1_bra,space1_int,space2_bra,space2_int,f));
+            std::string tlabel(transform_label(space1_bra,space1_intb,space2_bra,space2_intb,f));
             try {
               transforms_bra.push_back(get_tform_(tlabel));
             }
             catch (TransformNotFound& a){
               Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
-              tfactory->set_spaces(space1_bra,space1_int,space2_bra,space2_int);
+              tfactory->set_spaces(space1_bra,space1_intb,space2_bra,space2_intb);
               Ref<TwoBodyMOIntsTransform> tform = tfactory->twobody_transform(
                                                     MOIntsTransformFactory::StorageType_13,
                                                     tlabel,
@@ -145,13 +152,13 @@ namespace sc {
           unsigned int fketint = 0;
           for(unsigned int fket=0; fket<nketsets; ++fket) {
             for(unsigned int fint=0; fint<nintsets; ++fint, ++fketint) {
-              std::string tlabel(transform_label(space1_ket,space1_int,space2_ket,space2_int,fket,fint));
+              std::string tlabel(transform_label(space1_ket,space1_intk,space2_ket,space2_intk,fket,fint));
               try {
                 transforms_ket.push_back(get_tform_(tlabel));
               }
               catch (TransformNotFound& a){
                 Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
-                tfactory->set_spaces(space1_ket,space1_int,space2_ket,space2_int);
+                tfactory->set_spaces(space1_ket,space1_intk,space2_ket,space2_intk);
                 Ref<TwoBodyMOIntsTransform> tform = tfactory->twobody_transform(
                                                       MOIntsTransformFactory::StorageType_13,
                                                       tlabel,
@@ -164,13 +171,13 @@ namespace sc {
         }
         else {
           for(int f=0; f<nketintsets; f++) {
-            std::string tlabel(transform_label(space1_ket,space1_int,space2_ket,space2_int,f));
+            std::string tlabel(transform_label(space1_ket,space1_intk,space2_ket,space2_intk,f));
             try {
               transforms_ket.push_back(get_tform_(tlabel));
             }
             catch (TransformNotFound& a){
               Ref<MOIntsTransformFactory> tfactory = r12info()->tfactory();
-              tfactory->set_spaces(space1_ket,space1_int,space2_ket,space2_int);
+              tfactory->set_spaces(space1_ket,space1_intk,space2_ket,space2_intk);
               Ref<TwoBodyMOIntsTransform> tform = tfactory->twobody_transform(
                                                     MOIntsTransformFactory::StorageType_13,
                                                     tlabel,
@@ -191,15 +198,15 @@ namespace sc {
       {
         std::ostringstream oss_bra;
         oss_bra << "<" << space1_bra->id() << " " << space2_bra->id() << (antisymmetrize ? "||" : "|")
-                << space1_int->id() << " " << space2_int->id() << ">";
+                << space1_intb->id() << " " << space2_intb->id() << ">";
         const std::string label_bra = oss_bra.str();
         std::ostringstream oss_ket;
         oss_ket << "<" << space1_ket->id() << " " << space2_ket->id() << (antisymmetrize ? "||" : "|")
-                << space1_int->id() << " " << space2_int->id() << ">";
+                << space1_intk->id() << " " << space2_intk->id() << ">";
         const std::string label_ket = oss_ket.str();
         std::ostringstream oss;
-        oss << "<" << space1_ket->id() << " " << space2_ket->id() << (antisymmetrize ? "||" : "|")
-                << space1_int->id() << " " << space2_int->id() << "> = "
+        oss << "<" << space1_bra->id() << " " << space2_bra->id() << (antisymmetrize ? "||" : "|")
+                << space1_ket->id() << " " << space2_ket->id() << "> = "
                 << label_bra << " . " << label_ket << "^T";
         label = oss.str();
       }
@@ -223,44 +230,44 @@ namespace sc {
       // maps spaceX to spaceX of the transform
       std::vector<unsigned int> map1_bra, map2_bra, map1_ket, map2_ket,
                                 map1_intb, map2_intb, map1_intk, map2_intk;
-      // maps space2_int to space1_intb of transform
+      // maps space2_intb to space1_intb of transform
       std::vector<unsigned int> map12_intb;
-      // maps space1_int to space2_intb of transform
+      // maps space1_intb to space2_intb of transform
       std::vector<unsigned int> map21_intb;
-      // maps space2_int to space1_intk of transform
+      // maps space2_intk to space1_intk of transform
       std::vector<unsigned int> map12_intk;
-      // maps space1_int to space2_intk of transform
+      // maps space1_intk to space2_intk of transform
       std::vector<unsigned int> map21_intk;
       
       { // bra maps
         map1_bra = *tspace1_bra<<*space1_bra;
         map2_bra = *tspace2_bra<<*space2_bra;
-        map1_intb = *tspace1_intb<<*space1_int;
-        map2_intb = *tspace2_intb<<*space2_int;
+        map1_intb = *tspace1_intb<<*space1_intb;
+        map2_intb = *tspace2_intb<<*space2_intb;
         if (antisymmetrize) {
           if (tspace1_intb == tspace2_intb) {
             map12_intb = map1_intb;
             map21_intb = map2_intb;
           }
           else {
-            map12_intb = *tspace1_intb<<*space2_int;
-            map21_intb = *tspace2_intb<<*space1_int;
+            map12_intb = *tspace1_intb<<*space2_intb;
+            map21_intb = *tspace2_intb<<*space1_intb;
           }
         }
       }
       { // ket maps
         map1_ket = *tspace1_ket<<*space1_ket;
         map2_ket = *tspace2_ket<<*space2_ket;
-        map1_intk = *tspace1_intk<<*space1_int;
-        map2_intk = *tspace2_intk<<*space2_int;
+        map1_intk = *tspace1_intk<<*space1_intk;
+        map2_intk = *tspace2_intk<<*space2_intk;
         if (antisymmetrize) {
           if (tspace1_intk == tspace2_intk) {
             map12_intk = map1_intk;
             map21_intk = map2_intk;
           }
           else {
-            map12_intk = *tspace1_intk<<*space2_int;
-            map21_intk = *tspace2_intk<<*space1_int;
+            map12_intk = *tspace1_intk<<*space2_intk;
+            map21_intk = *tspace2_intk<<*space1_intk;
           }
         }
       }
@@ -271,15 +278,17 @@ namespace sc {
       const RefDiagSCMatrix evals2_bra = space2_bra->evals();
       const RefDiagSCMatrix evals1_ket = space1_ket->evals();
       const RefDiagSCMatrix evals2_ket = space2_ket->evals();
-      const RefDiagSCMatrix evals1_int = space1_int->evals();
-      const RefDiagSCMatrix evals2_int = space2_int->evals();
+      const RefDiagSCMatrix evals1_intb = space1_intb->evals();
+      const RefDiagSCMatrix evals2_intb = space2_intb->evals();
+      const RefDiagSCMatrix evals1_intk = space1_intk->evals();
+      const RefDiagSCMatrix evals2_intk = space2_intk->evals();
       
       // Using spinorbital iterators means I don't take into account perm symmetry
       // More efficient algorithm will require generic code
       const SpinCase2 S = (antisymmetrize ? AlphaAlpha : AlphaBeta);
       SpinMOPairIter iterbra(space1_bra,space2_bra,S);
       SpinMOPairIter iterket(space1_ket,space2_ket,S);
-      SpinMOPairIter iterint(space1_int,space2_int,S);
+      SpinMOPairIter iterint(space1_intb,space2_intb,S);
       // size of one block of <space1_bra space2_bra|
       const unsigned int nbra = iterbra.nij();
       // size of one block of <space1_ket space2_ket|
@@ -288,7 +297,7 @@ namespace sc {
       const unsigned int nint = iterint.nij();
 
       // size of integral blocks to contract
-      const unsigned int blksize_int = space1_int->rank() * space2_int->rank();
+      const unsigned int blksize_int = space1_intb->rank() * space2_intb->rank();
       double* T_ij = new double[blksize_int];
       double* T_kl = new double[blksize_int];
       
@@ -425,9 +434,9 @@ namespace sc {
                                       << indent << " <kl|mn> = " << I_klmn << endl;
                       }
                       const double T_ijmn = DataProcess_Bra::I2T(I_ijmn,i,j,m,n,
-                                                                 evals1_bra,evals1_int,evals2_bra,evals2_int);
+                                                                 evals1_bra,evals1_intb,evals2_bra,evals2_intb);
                       const double T_klmn = DataProcess_Ket::I2T(I_klmn,k,l,m,n,
-                                                                 evals1_ket,evals1_int,evals2_ket,evals2_int);
+                                                                 evals1_ket,evals1_intk,evals2_ket,evals2_intk);
                       if (debug_ > 3) {
                         ExEnv::out0() << indent << " <ij|T|mn> = " << T_ijmn << endl
                                       << indent << " <kl|T|mn> = " << T_klmn << endl;
@@ -461,9 +470,13 @@ namespace sc {
                       }
                       
                       const double T_ijmn = DataProcess_Bra::I2T(I_ijmn-I_ijnm,i,j,m,n,
-                                                                 evals1_bra,evals1_int,evals2_bra,evals2_int);
+                                                                 evals1_bra,evals1_intb,evals2_bra,evals2_intb);
                       const double T_klmn = DataProcess_Ket::I2T(I_klmn-I_klnm,k,l,m,n,
-                                                                 evals1_ket,evals1_int,evals2_ket,evals2_int);
+                                                                 evals1_ket,evals1_intk,evals2_ket,evals2_intk);
+                      if (debug_ > 3) {
+                        ExEnv::out0() << indent << " <ij|T|mn> = " << T_ijmn << endl
+                                      << indent << " <kl|T|mn> = " << T_klmn << endl;
+                      }
                       T_ij[mn] = T_ijmn;
                       T_kl[mn] = T_klmn;
                     }

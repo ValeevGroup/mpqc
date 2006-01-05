@@ -342,6 +342,7 @@ namespace sc {
     };
     
     typedef Apply_Identity<Plus> I_to_T;
+    typedef Apply_Identity<Minus> I_to_mT;
     typedef Apply_Inverse_Sqrt_H0minusE0<Plus> ERI_to_S2;
     typedef Apply_Inverse_H0minusE0<Minus> ERI_to_T2;
   }

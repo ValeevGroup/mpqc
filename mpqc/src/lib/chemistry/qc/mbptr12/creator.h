@@ -89,6 +89,42 @@ namespace sc {
     void increment_indices();
   };
   
+  /** Creates new TwoBodyMOIntsTransforms and adds them to the transform map (R12IntEval, at the moment) */
+  class NewTransformCreator : public RangeCreator< Ref<TwoBodyMOIntsTransform> >
+  {
+    public:
+    typedef Ref<TwoBodyMOIntsTransform> ObjT;
+    
+    NewTransformCreator(Ref<R12IntEval>& r12eval,
+                        const Ref<MOIndexSpace>& space1,
+                        const Ref<MOIndexSpace>& space2,
+                        const Ref<MOIndexSpace>& space3,
+                        const Ref<MOIndexSpace>& space4,
+                        bool CorrFunctionInBra = false,
+                        bool CorrFunctionInKet = false,
+                        MOIntsTransformFactory::StorageType storage =
+                          MOIntsTransformFactory::StorageType_13);
+    /// Implementation of RangeCreator::operator()
+    ObjT operator()();
+    
+    private:
+    Ref<R12IntEval> r12eval_;
+    Ref<MOIntsTransformFactory> tfactory_;
+    Ref<MOIndexSpace> space1_;
+    Ref<MOIndexSpace> space2_;
+    Ref<MOIndexSpace> space3_;
+    Ref<MOIndexSpace> space4_;
+    MOIntsTransformFactory::StorageType storage_;
+    bool CorrFunctionInBraKet_;
+    bool CorrFunction_;
+    unsigned int nf12bra_;
+    unsigned int nf12ket_;
+    unsigned int braindex_;
+    unsigned int ketindex_;
+    
+    void increment_indices();
+  };
+  
   using sc::LinearR12::CorrelationFactor;
   /** Creates TwoBodyIntDescr for correlation factpr C */
   class TwoBodyIntDescrCreator : public RangeCreator< Ref<TwoBodyIntDescr> >

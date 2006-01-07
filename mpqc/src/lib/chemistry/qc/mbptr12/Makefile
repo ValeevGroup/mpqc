@@ -54,7 +54,7 @@ CXXSRCS = mbptr12.cc \
   singlerefinfo.cc utils.cc compute_vxb_a_new.cc \
   twoparticlecontraction.cc spin.cc \
   mp2r12_energy_compute.cc mp2_pair_energies.cc \
-  ebc_contribs.cc gbc_contribs.cc \
+  ebc_contribs.cc gbc_contribs.cc approxB.cc Xgen.cc \
   creator.cc
 
 ifeq ($(HAVE_MPIIO),yes)

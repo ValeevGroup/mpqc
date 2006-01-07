@@ -60,6 +60,7 @@ class R12IntEval : virtual public SavableState {
   // Note that intermediate B is symmetric but is stored as a full matrix to simplify the code
   // that computes asymmetric form of B
   RefSCMatrix B_[NSpinCases2];
+  RefSCMatrix BB_[NSpinCases2];  // The difference between B intermediate of approximation B and A'
   RefSCMatrix A_[NSpinCases2];
   RefSCMatrix Ac_[NSpinCases2];
   RefSCMatrix T2_[NSpinCases2];
@@ -98,8 +99,24 @@ class R12IntEval : virtual public SavableState {
   Ref<MOIndexSpace> focc_space_[NSpinCases1];
   /// Fock-weighted active occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
   Ref<MOIndexSpace> factocc_space_[NSpinCases1];
-  /// Fock-weighted active occupied space |i_f> = f_i^R |R>, where R is a function in RI-BS
+  /// Exchange-weighted active occupied space |i_K> = K_i^R |R>, where R is a function in RI-BS
+  Ref<MOIndexSpace> kactocc_space_[NSpinCases1];
+  /// Fock-weighted active occupied space |a_f> = f_a^R |R>, where R is a function in RI-BS
   Ref<MOIndexSpace> factvir_space_[NSpinCases1];
+  /// Exchange-weighted active virtual space |a_K> = K_a^R |R>, where R is a function in RI-BS
+  Ref<MOIndexSpace> kactvir_space_[NSpinCases1];
+  /// Exchange-weighted RI space |a'_K> = K_a'^A |A>, where A is a function in ABS
+  Ref<MOIndexSpace> kribs_space_[NSpinCases1];
+  /// Exchange-weighted (through OBS) active occupied space |i_K> = K_i^P |P>, where P is a function in OBS
+  Ref<MOIndexSpace> kactocc_obs_space_[NSpinCases1];
+  /// Compute factocc and kactocc spaces, if needed
+  void form_focc_act(SpinCase1 spin);
+  /// Compute factvir and kactvir spaces, if needed
+  void form_fvir_act(SpinCase1 spin);
+  /// Compute kribs space, if needed
+  void form_fribs(SpinCase1 spin);
+  /// Compute kactocc_obs space, if needed
+  void form_focc_act_obs(SpinCase1 spin);
   /// Form space of auxiliary virtuals
   void form_canonvir_space_();
 
@@ -118,10 +135,14 @@ class R12IntEval : virtual public SavableState {
                           const Ref<MOIndexSpace>& space2,
                           const Ref<MOIndexSpace>& space3,
                           const Ref<MOIndexSpace>& space4);
-  /** Compute the Fock matrix between 2 spaces. scale_J and scale_K are used to scale Coulomb
-      and exchange contributions */
-  RefSCMatrix fock_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
-                    const Ref<MOIndexSpace>& ket_space, double scale_J = 1.0, double scale_K = 1.0);
+  /** Compute the Fock matrix between bra_ and ket_ spaces of spin S.
+      scale_J and scale_K are used to scale Coulomb
+      and exchange contributions, T12IntEval::occ() is used for the occupied spaces.
+      */
+  RefSCMatrix fock_(const Ref<MOIndexSpace>& bra_space,
+                    const Ref<MOIndexSpace>& ket_space,
+                    SpinCase1 S = Alpha,
+                    double scale_J = 1.0, double scale_K = 1.0);
   /// Compute the coulomb matrix between 2 spaces
   RefSCMatrix coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
                        const Ref<MOIndexSpace>& ket_space);
@@ -269,11 +290,13 @@ class R12IntEval : virtual public SavableState {
            const std::vector< Ref<TwoBodyIntDescr> >& tbintdescrs_ket =
              std::vector< Ref<TwoBodyIntDescr> >());
   
-#if 0
-  /// Compute R "intermediate" (r12 integrals in occ-pair/vir-pair basis)
-  void compute_R_();
-#endif
-
+  /// Compute X intermediate in basis <bra1 bra2 | ket1 ket2>
+  RefSCMatrix compute_X_(SpinCase2 sc2,
+                         const Ref<MOIndexSpace>& bra1,
+                         const Ref<MOIndexSpace>& bra2,
+                         const Ref<MOIndexSpace>& ket1,
+                         const Ref<MOIndexSpace>& ket2);
+  
   /// Compute A*T2 contribution to V (needed if EBC is not assumed)
   void AT2_contrib_to_V_();
 
@@ -282,6 +305,9 @@ class R12IntEval : virtual public SavableState {
 
   /** Compute contributions to B that vanishe under GBC */
   void compute_B_gbc_();
+
+  /** Compute contributions to B which vanish in standard approximation A' */
+  void compute_BB_();
 
   /// Compute dual-basis MP1 energy (contribution from singles to HF energy)
   void compute_dualEmp1_();
@@ -368,6 +394,8 @@ public:
   const RefSCMatrix& X(SpinCase2 S);
   /// Returns S block of intermediate B
   RefSymmSCMatrix B(SpinCase2 S);
+  /// Returns S block of intermediate BB
+  RefSymmSCMatrix BB(SpinCase2 S);
   /// Returns S block of intermediate A
   const RefSCMatrix& A(SpinCase2 S);
   /// Returns S block of intermediate A computed using commutator method
@@ -400,12 +428,23 @@ public:
   const Ref<MOIndexSpace>& focc(SpinCase1 S);
   /// Form Fock-weighted active occupied space for spin case S
   const Ref<MOIndexSpace>& focc_act(SpinCase1 S);
+  /// Form exchange-weighted active occupied space for spin case S
+  const Ref<MOIndexSpace>& kocc_act(SpinCase1 S);
+  /// Form exchange-weighted (through OBS) active occupied space for spin case S
+  const Ref<MOIndexSpace>& kocc_act_obs(SpinCase1 S);
   /// Form Fock-weighted active virtual space for spin case S
   const Ref<MOIndexSpace>& fvir_act(SpinCase1 S);
+  /// Form exchange-weighted active virtual space for spin case S
+  const Ref<MOIndexSpace>& kvir_act(SpinCase1 S);
+  /// Form exchange-weighted RI space for spin case S
+  const Ref<MOIndexSpace>& kribs(SpinCase1 S);
   
   /** Returns an already created transform.
       If the transform is not found then throw TransformNotFound */
-  Ref<TwoBodyMOIntsTransform> get_tform_(const std::string&);
+  Ref<TwoBodyMOIntsTransform> get_tform_(const std::string&) const;
+  /** Map transform T to label */
+  void add_tform(const std::string& label,
+                 const Ref<TwoBodyMOIntsTransform>& T);
   /// Generates canonical id for transform. no correlation function included
   std::string transform_label(const Ref<MOIndexSpace>& space1,
                               const Ref<MOIndexSpace>& space2,

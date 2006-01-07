@@ -41,7 +41,7 @@ using namespace sc;
 void
 MBPT2_R12::compute_energy_a_()
 {
-  tim_enter("mp2-r12/a energy");
+  tim_enter("mp2-f12 energy");
 
   if (r12eval_.null()) {
     Ref<R12IntEvalInfo> r12info = new R12IntEvalInfo(this);
@@ -58,14 +58,15 @@ MBPT2_R12::compute_energy_a_()
   double etotal = 0.0;
   
   // Now we can compute and print pair energies
-  tim_enter("mp2-r12/a pair energies");
+  tim_enter("mp2-f12/a pair energies");
   if (r12a_energy_.null())
     r12a_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_A,debug_);
   r12a_energy_->print_pair_energies(spinadapted_);
   etotal = r12a_energy_->energy();
-  tim_exit("mp2-r12/a pair energies");
-  if (stdapprox_ == LinearR12::StdApprox_Ap) {
-    tim_enter("mp2-r12/a' pair energies");
+  tim_exit("mp2-f12/a pair energies");
+  if (stdapprox_ == LinearR12::StdApprox_Ap ||
+      stdapprox_ == LinearR12::StdApprox_B) {
+    tim_enter("mp2-f12/a' pair energies");
     if (r12ap_energy_.null())
       r12ap_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_Ap,debug_);
     r12ap_energy_->print_pair_energies(spinadapted_);
@@ -78,10 +79,18 @@ MBPT2_R12::compute_energy_a_()
 #endif
 
     etotal = r12ap_energy_->energy();
-    tim_exit("mp2-r12/a' pair energies");
+    tim_exit("mp2-f12/a' pair energies");
   }
-
-  tim_exit("mp2-r12/a energy");
+  if (stdapprox_ == LinearR12::StdApprox_B) {
+    tim_enter("mp2-f12/b pair energies");
+    if (r12b_energy_.null())
+      r12b_energy_ = new MP2R12Energy(r12eval_,LinearR12::StdApprox_B,debug_);
+    r12b_energy_->print_pair_energies(spinadapted_);
+    etotal = r12b_energy_->energy();
+    tim_exit("mp2-f12/b pair energies");
+  }
+  
+  tim_exit("mp2-f12 energy");
 
   etotal += ref_energy();
   set_energy(etotal);

@@ -36,9 +36,12 @@ using namespace std;
 using namespace sc;
 
 RefSCMatrix
-R12IntEval::fock_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& bra_space,
-                  const Ref<MOIndexSpace>& ket_space, double scale_J, double scale_K)
+R12IntEval::fock_(const Ref<MOIndexSpace>& bra_space,
+                  const Ref<MOIndexSpace>& ket_space,
+                  SpinCase1 spin,
+                  double scale_J, double scale_K)
 {
+  Ref<SingleRefInfo> refinfo = r12info()->refinfo();
   const Ref<GaussianBasisSet> bs1 = bra_space->basis();
   const Ref<GaussianBasisSet> bs2 = ket_space->basis();
   const bool bs1_eq_bs2 = (bs1 == bs2);
@@ -106,21 +109,27 @@ R12IntEval::fock_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>& b
 
   // finally, transform
   RefSCMatrix F = vec1t * h * vec2;
-
-  // add coulomb and exchange parts
-  if (scale_J != 0.0) {
-    RefSCMatrix J = coulomb_(occ_space,bra_space,ket_space);
-    J.scale(2.0*scale_J); F.accumulate(J); J = 0;
-  }
-  if (scale_K != 0.0) {
-    RefSCMatrix K = exchange_(occ_space,bra_space,ket_space);
-    K.scale(-1.0*scale_K); F.accumulate(K); K = 0;
-  }
-  
   // and clean up a bit
   h_ints = 0;
   h = 0;
-
+  
+  //
+  // add coulomb and exchange parts
+  //
+  const bool spin_unrestricted = spin_polarized();
+  const double J_prefactor = (spin_unrestricted ? 1.0 : 2.0);
+  for(int s=0; s<nspincases1(); s++) {
+    const SpinCase1 sc = static_cast<SpinCase1>(s);
+    if (scale_J != 0.0) {
+      RefSCMatrix J = coulomb_(occ(sc),bra_space,ket_space);
+      J.scale(J_prefactor*scale_J); F.accumulate(J); J = 0;
+    }
+  }
+  if (scale_K != 0.0) {
+    RefSCMatrix K = exchange_(occ(spin),bra_space,ket_space);
+    K.scale(-1.0*scale_K); F.accumulate(K); K = 0;
+  }
+  
   if (debug_ > 1) {
     F.print("Fock matrix");
   }

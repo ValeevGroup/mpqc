@@ -37,6 +37,8 @@
 using namespace std;
 using namespace sc;
 
+#define USE_INVERT 0
+
 void
 MP2R12Energy::compute()
 {
@@ -90,6 +92,12 @@ MP2R12Energy::compute()
       RefSCMatrix V = r12eval()->V(spincase2);
       RefSCMatrix X = r12eval()->X(spincase2);
       RefSymmSCMatrix B = r12eval()->B(spincase2);
+      // in standard approximation B, add up [K1+K2,F12] term
+      if (stdapprox_ == LinearR12::StdApprox_B) {
+        RefSymmSCMatrix BB = r12eval()->BB(spincase2);
+        B.accumulate(BB);
+      }
+      
       // In Klopper-Samson method, two kinds of A are used: app B (I replace with mine A) and app XX (mine Ac)
       RefSCMatrix A, Ac;
       if (ebc == false) {
@@ -147,9 +155,9 @@ MP2R12Energy::compute()
         
         RefSCVector V_ij = V.get_column(ij);
         
-        // In MP2-R12/A' matrices B are pair-specific:
+        // In MP2-R12/B or A' matrices B are pair-specific:
         // Form B(ij)kl,ow = Bkl,ow + 1/2(ek + el + eo + ew - 2ei - 2ej)Xkl,ow
-        if (stdapprox_ == LinearR12::StdApprox_Ap) {
+        if (stdapprox_ != LinearR12::StdApprox_A) {
           B_ij.assign(B);
           
           for(int f=0; f<num_f12; f++) {
@@ -172,7 +180,7 @@ MP2R12Energy::compute()
                   
                   if (ow > kl)
                     continue;
-                  
+
                   double fx = 0.5 * (evals_act_occ1[k] + evals_act_occ2[l] + evals_act_occ1[o] + evals_act_occ2[w]
                   - 2.0*evals_act_occ1[i] - 2.0*evals_act_occ2[j])
                   * X.get_element(kl,ow);

@@ -145,6 +145,7 @@ NewTransformCreator::operator()()
   catch (TransformNotFound& e) {
     tfactory_->set_spaces(space1_,space2_,space3_,space4_);
     result = tfactory_->twobody_transform(storage_,label,tbintdescr);
+    r12eval_->add_tform(label,result);
   }
   
   increment_indices();

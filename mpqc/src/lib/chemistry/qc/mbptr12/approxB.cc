@@ -144,6 +144,7 @@ R12IntEval::compute_BB_()
                    kvir1_cabs,kvir2_cabs);
       BB_[s].accumulate(P);
 #else
+      ExEnv::out0() << indent << "WARNING: P intermediate not yet implemented" << endl;
       //throw ProgramingError("R12IntEval::compute_BB_() -- P intermediate not yet implemented",__FILE__,__LINE__);
 #endif
     }

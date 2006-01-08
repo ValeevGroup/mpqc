@@ -126,7 +126,26 @@ R12IntEval::compute_BB_()
     BB_[s].accumulate(Q); Q = 0;
     
     // compute P
+    // WARNING implemented only using CABS/CABS+ approach
     if (!abs_eq_obs) {
+      Ref<MOIndexSpace> ribs1 = r12info()->ribs_space(spin1);
+      Ref<MOIndexSpace> ribs2 = r12info()->ribs_space(spin2);
+      Ref<MOIndexSpace> kvir1_obs = kvir_obs(spin1);
+      Ref<MOIndexSpace> kvir2_obs = kvir_obs(spin2);
+      
+      RefSCMatrix P;
+      if (r12info()->maxnabs() < 2) {
+        // R_klpB K_pa R_aBij
+        compute_FxF_(P,spincase2,
+                     occ1_act,occ2_act,
+                     occ1_act,occ2_act,
+                     ribs1,ribs2,
+                     vir1,vir2,
+                     kvir1_obs,kvir2_obs);
+      }
+      else {
+        throw ProgrammingError("R12IntEval::compute_BB_() -- P intermediate not yet implemented when maxnabs < 2",__FILE__,__LINE__);
+      }
 #if 0
       RefSCMatrix P;
       // R_klPB K_PA R_ABij
@@ -152,7 +171,6 @@ R12IntEval::compute_BB_()
                    kvir1_cabs,kvir2_cabs);
       BB_[s].accumulate(P);
 #else
-      ExEnv::out0() << indent << "WARNING: P intermediate not yet implemented" << endl;
       //throw ProgramingError("R12IntEval::compute_BB_() -- P intermediate not yet implemented",__FILE__,__LINE__);
 #endif
     }

@@ -918,6 +918,45 @@ R12IntEval::form_focc_act_obs(SpinCase1 spin)
   }
 }
 
+const Ref<MOIndexSpace>&
+R12IntEval::kvir_obs(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return kvir_obs(Alpha);
+  
+  const unsigned int s = static_cast<unsigned int>(spin);
+  form_fvir_obs(spin);
+  return kvir_obs_space_[s];
+}
+
+void
+R12IntEval::form_fvir_obs(SpinCase1 spin)
+{
+  const unsigned int s = static_cast<unsigned int>(spin);
+  // compute the Fock matrix between OBS and active occupieds and
+  // create the new Fock-weighted space
+  if (kvir_obs_space_[s].null()) {
+    const Ref<MOIndexSpace>& occ_space = occ(spin);
+    const Ref<MOIndexSpace>& vir_space = vir(spin);
+    const Ref<MOIndexSpace>& obs_space = r12info()->refinfo()->orbs(spin);
+    
+    RefSCMatrix K_obs_vir = exchange_(occ_space,vir_space,obs_space).t();
+    if (debug_ > 1) {
+      K_obs_vir.print("Exchange matrix (OBS/vir)");
+    }
+    
+    // Exchange
+    {
+      std::string id = "a_K(p)";
+      std::string name = "Exchange-weighted (through OBS) virtual MOs sorted by energy";
+      spinadapt_mospace_labels(spin,id,name);
+      
+      kactocc_obs_space_[s] = new MOIndexSpace(id, name, vir_space, obs_space->coefs()*K_obs_vir,
+                                           obs_space->basis());
+    }
+  }
+}
+
 void
 R12IntEval::form_canonvir_space_()
 {

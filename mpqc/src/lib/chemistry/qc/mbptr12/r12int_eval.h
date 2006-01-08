@@ -290,12 +290,38 @@ class R12IntEval : virtual public SavableState {
            const std::vector< Ref<TwoBodyIntDescr> >& tbintdescrs_ket =
              std::vector< Ref<TwoBodyIntDescr> >());
   
-  /// Compute X intermediate in basis <bra1 bra2 | ket1 ket2>
-  RefSCMatrix compute_X_(SpinCase2 sc2,
-                         const Ref<MOIndexSpace>& bra1,
-                         const Ref<MOIndexSpace>& bra2,
-                         const Ref<MOIndexSpace>& ket1,
-                         const Ref<MOIndexSpace>& ket2);
+  /** Compute X intermediate (F12 F12) in basis <bra1 bra2 | ket1 ket2>. sc2 specifies the spin case
+      of particles 1 and 2. Resulting X is symmetric w.r.t bra-ket permutation, but will not be
+      symmetric w.r.t. permutation of particles 1 and 2 if bra1 != bra2 || ket1 != ket2.
+      If X is null, then allocate, otherwise check dimensions and accumulate result into X.
+  */
+  void compute_X_(RefSCMatrix& X,
+                  SpinCase2 sc2,
+                  const Ref<MOIndexSpace>& bra1,
+                  const Ref<MOIndexSpace>& bra2,
+                  const Ref<MOIndexSpace>& ket1,
+                  const Ref<MOIndexSpace>& ket2);
+  /** Compute contraction <bra1 bra2|F12|intb1 int2> <intb1|x|intk1> <intk1 int2|F12|ket1 ket2> +
+      <bra1 bra2|F12|int1 intb2> <intb2|x|intk2> <int1 intk2|F12|ket1 ket2>
+      sc2 specifies the spin case of particles 1 and 2.
+      Resulting X is symmetric w.r.t bra-ket permutation, but may not be
+      symmetric w.r.t. permutation of particles 1 and 2.
+      If FxF is null, then allocate, otherwise check dimensions and accumulate result into FxF.
+      intkx1 is the "combined" space |intb1> <intb1|x|intk1>, etc.
+  */
+  void compute_FxF_(RefSCMatrix& FxF,
+                    SpinCase2 sc2,
+                    const Ref<MOIndexSpace>& bra1,
+                    const Ref<MOIndexSpace>& bra2,
+                    const Ref<MOIndexSpace>& ket1,
+                    const Ref<MOIndexSpace>& ket2,
+                    const Ref<MOIndexSpace>& int1,
+                    const Ref<MOIndexSpace>& int2,
+                    const Ref<MOIndexSpace>& intk1,
+                    const Ref<MOIndexSpace>& intk2,
+                    const Ref<MOIndexSpace>& intkx1,
+                    const Ref<MOIndexSpace>& intkx2
+                   );
   
   /// Compute A*T2 contribution to V (needed if EBC is not assumed)
   void AT2_contrib_to_V_();

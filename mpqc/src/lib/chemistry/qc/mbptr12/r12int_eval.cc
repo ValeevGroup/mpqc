@@ -1393,15 +1393,16 @@ R12IntEval::compute()
     
 #endif
 
-#if 1
+#if 0
     // test generic X evaluator
     {
       for(int s=0; s<nspincases2(); s++) {
         const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
         const SpinCase1 spin1 = case1(spincase2);
         const SpinCase1 spin2 = case2(spincase2);
-        RefSCMatrix X = compute_X_(AlphaBeta,occ_act(spin1),occ_act(spin2),
-                                             occ_act(spin1),occ_act(spin2));
+        RefSCMatrix X;
+        compute_X_(X,spincase2,occ_act(spin1),occ_act(spin2),
+                               occ_act(spin1),occ_act(spin2));
         X.print("X <ii|ii>  test");
       }
     }
@@ -1411,18 +1412,37 @@ R12IntEval::compute()
         const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
         const SpinCase1 spin1 = case1(spincase2);
         const SpinCase1 spin2 = case2(spincase2);
-        RefSCMatrix Q = compute_X_(spincase2,occ_act(spin1),occ_act(spin2),
-                                             occ_act(spin1),kocc_act_obs(spin2));
+        RefSCMatrix Q;
+        compute_X_(Q,spincase2,occ_act(spin1),occ_act(spin2),
+                               occ_act(spin1),kocc_act_obs(spin2));
         if (occ_act(spin1) == occ_act(spin2))  {
           Q.scale(2.0);
           symmetrize<false>(Q,Q,occ_act(spin1),occ_act(spin2));
         }
         else {
-          RefSCMatrix Q21 = compute_X_(spincase2,occ_act(spin1),occ_act(spin2),
-                                                 kocc_act_obs(spin1),occ_act(spin2));
-          Q.accumulate(Q21);
+          compute_X_(Q,spincase2,occ_act(spin1),occ_act(spin2),
+                                 kocc_act_obs(spin1),occ_act(spin2));
         }
         Q.print("Q test");
+      }
+    }
+#endif
+
+#if 1
+    // test generic FxF evaluator
+    {
+      for(int s=0; s<nspincases2(); s++) {
+        const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+        const SpinCase1 spin1 = case1(spincase2);
+        const SpinCase1 spin2 = case2(spincase2);
+        RefSCMatrix Bebc;
+        compute_FxF_(Bebc,spincase2,
+                     occ_act(spin1),occ_act(spin2),
+                     occ_act(spin1),occ_act(spin2),
+                     vir(spin1),vir(spin2),
+                     vir(spin1),vir(spin2),
+                     fvir_act(spin1),fvir_act(spin2));
+                     Bebc.print("B_{EBC} from generix FxF evaluator");
       }
     }
 #endif

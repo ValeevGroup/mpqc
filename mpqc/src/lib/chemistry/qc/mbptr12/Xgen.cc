@@ -59,8 +59,9 @@ using namespace sc;
 
 #define SYMMETRIZE 1
 
-RefSCMatrix
-R12IntEval::compute_X_(SpinCase2 spincase2,
+void
+R12IntEval::compute_X_(RefSCMatrix& X,
+                       SpinCase2 spincase2,
                        const Ref<MOIndexSpace>& bra1,
                        const Ref<MOIndexSpace>& bra2,
                        const Ref<MOIndexSpace>& ket1,
@@ -69,10 +70,34 @@ R12IntEval::compute_X_(SpinCase2 spincase2,
   const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
   const bool part1_equiv_part2 = (bra1 == bra2 && ket1 == ket2);
   
+  // Check semantics
+  bool correct_semantics = (spincase2 != AlphaBeta && part1_equiv_part2) ||
+                           (spincase2 == AlphaBeta);
+  if (!correct_semantics)
+    throw ProgrammingError("R12IntEval::compute_X_() -- incorrect call semantics",__FILE__,__LINE__);
+  
   tim_enter("generic X intermediate");
   ExEnv::out0() << indent << "Entered generic X intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
   
+  SpinMOPairIter braiter(bra1,bra2,spincase2);
+  SpinMOPairIter ketiter(ket1,ket2,spincase2);
+  const unsigned int nbra = braiter.nij();
+  const unsigned int nket = ketiter.nij();
+
+  if (X.null()) {
+    // use the same matrix kit as the intermediates
+    X = B_[AlphaBeta].kit()->matrix(new SCDimension(nbra),
+                                    new SCDimension(nket));
+    X.assign(0.0);
+  }
+  else {
+    if (X.rowdim().n() != nbra)
+      throw ProgrammingError("R12IntEval::compute_X_() -- row dimension of the given X doesn't match given bra dimensions",__FILE__,__LINE__);
+    if (X.coldim().n() != nket)
+      throw ProgrammingError("R12IntEval::compute_X_() -- column dimension of the given X doesn't match given ket dimensions",__FILE__,__LINE__);
+  }
+    
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
     
@@ -87,9 +112,6 @@ R12IntEval::compute_X_(SpinCase2 spincase2,
     if (orbs1->rank() != orbs2->rank())
       throw ProgrammingError("R12IntEval::compute_X_() -- orbs1 and orbs2 have different ranks",__FILE__,__LINE__);
     const unsigned int nobs = orbs1->rank();
-    
-    // size of X is of the same size as B
-    RefSCMatrix X = B_[spincase2].clone(); X.assign(0.0);
     
     Ref<R12IntEval> thisref(this);
     // (i p |j p) tforms
@@ -109,7 +131,13 @@ R12IntEval::compute_X_(SpinCase2 spincase2,
     // F12^2 contribution
     //
     RefSCMatrix R2_ijkl = compute_r2_(bra1,bra2,ket1,ket2);
-    X.accumulate(R2_ijkl); R2_ijkl = 0;
+    if (spincase2 == AlphaBeta) {
+      X.accumulate(R2_ijkl);
+    }
+    else {
+      antisymmetrize(X,R2_ijkl,bra1,ket1,true);
+    }
+    R2_ijkl = 0;
     
     // ABS and CABS method differ by the TwoParticleContraction
     using LinearR12::TwoParticleContraction;
@@ -137,7 +165,7 @@ R12IntEval::compute_X_(SpinCase2 spincase2,
         bra1, bra2,
         orbs1, orbs2,
         ket1, ket2,
-        orbs2, orbs2,
+        orbs1, orbs2,
         contract_pp,
         spincase2!=AlphaBeta, tforms_ipjp, tforms_kplp
       );
@@ -236,8 +264,6 @@ R12IntEval::compute_X_(SpinCase2 spincase2,
   ExEnv::out0() << indent << "Exited generic X intermediate evaluator" << endl;
 
   tim_exit("generic X intermediate");
-  
-  return X;
 }
 
 ////////////////////////////////////////////////////////////////////////////

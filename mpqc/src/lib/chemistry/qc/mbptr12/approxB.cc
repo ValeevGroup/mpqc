@@ -89,18 +89,26 @@ R12IntEval::compute_BB_()
     Ref<MOIndexSpace> kocc1_act_obs = kocc_act_obs(spin1);
     Ref<MOIndexSpace> kocc2_act_obs = kocc_act_obs(spin2);
     
+    const LinearR12::ABSMethod absmethod = r12info()->abs_method();
+    const bool include_Kp = (absmethod == LinearR12::ABS_CABS ||
+                             absmethod == LinearR12::ABS_CABSPlus) || abs_eq_obs;
+    
     // compute Q
     RefSCMatrix Q;
-    compute_X_(Q,spincase2,occ1_act,occ2_act,
-                           occ1_act,kocc2_act_obs);
+    if (include_Kp) {
+      compute_X_(Q,spincase2,occ1_act,occ2_act,
+                             occ1_act,kocc2_act_obs);
+    }
     if (!abs_eq_obs) {
       Ref<MOIndexSpace> kocc2_act = kocc_act(spin2);
       compute_X_(Q,spincase2,occ1_act,occ2_act,
                              occ1_act,kocc2_act);
     }
     if (occ1_act != occ2_act) {
-      compute_X_(Q,spincase2,occ1_act,occ2_act,
-                             kocc1_act_obs,occ2_act);
+      if (include_Kp) {
+        compute_X_(Q,spincase2,occ1_act,occ2_act,
+                               kocc1_act_obs,occ2_act);
+      }
       if (!abs_eq_obs) {
         Ref<MOIndexSpace> kocc1_act = kocc_act(spin1);
         compute_X_(Q,spincase2,occ1_act,occ2_act,

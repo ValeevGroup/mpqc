@@ -83,6 +83,7 @@ class MBPT2_R12: public MBPT2 {
     Ref<LinearR12::CorrelationFactor> corrfactor_;
     LinearR12::StandardApproximation stdapprox_;
     LinearR12::ABSMethod abs_method_;
+    unsigned int maxnabs_;
     R12IntEvalInfo::StoreMethod::type r12ints_method_;
     std::string r12ints_file_;
     bool gbc_;
@@ -156,12 +157,15 @@ class MBPT2_R12: public MBPT2 {
           Only energies can be computed with the MP2-R12/A' method.
 
           <dt><tt>B</tt><dd> Use second order M&oslash;ller-Plesset perturbation theory
-	  with linear R12 terms in standard approximation B. 
-	  This method is not implemented yet.
+	  with linear R12 terms in standard approximation B.
 
         </dl>
         
-
+       <dt><tt>maxnabs</tt><dd> This integer specifies the maximum number of ABS indices per integral.
+       Valid values are between 1 and 2. The default is to include all terms necessary for a given method.
+       For example, MP2-F12/B energy involves integrals with 2 ABS indices. Setting maxnabs to 1
+       will leave out such terms.
+       
 	<dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted
 	or spin-orbital pair energies. Default is to compute spin-adapted energies for closed-shell
         systems and spin-orbital energies for open-shell systems. For some references, e.g. UHF, this keyword
@@ -248,6 +252,7 @@ class MBPT2_R12: public MBPT2 {
     const Ref<LinearR12::CorrelationFactor>& corrfactor() const;
     Ref<GaussianBasisSet> aux_basis() const;
     Ref<GaussianBasisSet> vir_basis() const;
+    unsigned int maxnabs() const;
     bool gbc() const;
     bool ebc() const;
     LinearR12::ABSMethod abs_method() const;

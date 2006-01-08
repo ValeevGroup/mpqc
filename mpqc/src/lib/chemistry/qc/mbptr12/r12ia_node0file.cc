@@ -206,15 +206,15 @@ R12IntsAcc_Node0File::store_memorygrp(Ref<MemoryGrp>& mem, int ni, const size_t 
 	if (proc != me) {
 	  distsize_t moffset = (distsize_t)local_ij_index*blksize_memgrp*num_te_types() + mem->offset(proc);
           for(int te_type=0; te_type < num_te_types(); te_type++) {
-	    data = (double *) mem->obtain_readonly(moffset, blksize_);
-	    ssize_t wrote_this_much = write(datafile_, data, blksize_);
+            data = (double *) mem->obtain_readonly(moffset, blksize_);
+            ssize_t wrote_this_much = write(datafile_, data, blksize_);
             if (wrote_this_much != blksize_)
               throw FileOperationFailed("R12IntsAcc_Node0File::store_memorygrp() failed",
                                         __FILE__,
                                         __LINE__,
                                         filename_,
                                         FileOperationFailed::Write);
-	    mem->release_readonly(data, moffset, blksize_);
+            mem->release_readonly(data, moffset, blksize_);
             moffset += blksize_memgrp;
           }
 	}

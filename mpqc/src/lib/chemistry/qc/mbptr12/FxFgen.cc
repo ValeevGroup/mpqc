@@ -194,11 +194,9 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
         dircontract_k2,
         spincase2!=AlphaBeta, tforms_Fbra_k2, tforms_Fket_k2
       );
-    
   }
-  
-  // make particles equivalent, if necessary
-  if (part1_equiv_part2) {
+  // particles equivalent -- just symmetrize
+  else {
     FxF.scale(2.0);
     symmetrize<false>(FxF,FxF,bra1,ket1);
   }

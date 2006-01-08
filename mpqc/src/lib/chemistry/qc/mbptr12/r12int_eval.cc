@@ -1406,7 +1406,7 @@ R12IntEval::compute()
         X.print("X <ii|ii>  test");
       }
     }
-    // test generic Q evaluator
+    // use generic X evaluator to compute Q
     {
       for(int s=0; s<nspincases2(); s++) {
         const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
@@ -1428,7 +1428,7 @@ R12IntEval::compute()
     }
 #endif
 
-#if 1
+#if 0
     // test generic FxF evaluator
     {
       for(int s=0; s<nspincases2(); s++) {

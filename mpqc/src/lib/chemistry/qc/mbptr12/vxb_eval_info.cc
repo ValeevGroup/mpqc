@@ -52,7 +52,7 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
   R12IntEvalInfo
  ---------------*/
 static ClassDesc R12IntEvalInfo_cd(
-  typeid(R12IntEvalInfo),"R12IntEvalInfo",5,"virtual public SavableState",
+  typeid(R12IntEvalInfo),"R12IntEvalInfo",6,"virtual public SavableState",
   0, 0, create<R12IntEvalInfo>);
 
 R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
@@ -82,6 +82,7 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
 
   corrfactor_ = mbptr12->corrfactor();
   abs_method_ = mbptr12->abs_method();
+  maxnabs_ = mbptr12->maxnabs();
   construct_ri_basis_(false);
   construct_orthog_vir_();
 
@@ -132,6 +133,11 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 5) {
     refinfo_ << SavableState::restore_state(si);
   }
+  
+  maxnabs_ = 2;
+  if (si.version(::class_desc<R12IntEvalInfo>()) >= 6) {
+    si.get(maxnabs_);
+  }
 }
 
 R12IntEvalInfo::~R12IntEvalInfo()
@@ -161,6 +167,8 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(vir_sb_.pointer(),so);
   SavableState::save_state(tfactory_.pointer(),so);
   SavableState::save_state(refinfo_.pointer(),so);
+  
+  so.put(maxnabs_);
 }
 
 const Ref<SingleRefInfo>&

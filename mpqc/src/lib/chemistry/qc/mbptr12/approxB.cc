@@ -89,240 +89,65 @@ R12IntEval::compute_BB_()
     Ref<MOIndexSpace> kocc1_act_obs = kocc_act_obs(spin1);
     Ref<MOIndexSpace> kocc2_act_obs = kocc_act_obs(spin2);
     
-    // Q = F12 K12
-    RefSCMatrix Q = BB_[s].clone(); Q.assign(0.0);
-    
-    Ref<R12IntEval> thisref(this);
-    
-    // (i p |i p) tforms are ready
-    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_ipip;
-    {
-      NamedTransformCreator tform_creator(thisref,occ1_act,orbs1,occ2_act,orbs2,true);
-      fill_container(tform_creator,tforms_ipip);
-    }
-    
-    // (i p |i_Kp p) tforms are new
-    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_ipIp_Kp;
-    {
-      NewTransformCreator tform_creator(thisref,occ1_act,orbs1,kocc2_act_obs,orbs2,true);
-      fill_container(tform_creator,tforms_ipIp_Kp);
-    }
-#if !SYMMETRIZE
-    // (i_Kp p |i p) tforms are new
-    std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_Ipip_Kp;
-    {
-      NewTransformCreator tform_creator(thisref,kocc1_act_obs,orbs1,occ2_act,orbs2,true);
-      fill_container(tform_creator,tforms_Ipip_Kp);
-    }
-#endif
-    
-    //
-    // Q contribution: F12 K12
-    //
-    RefSCMatrix R2_ijkL_Kp = compute_r2_(occ1_act,occ2_act,occ1_act,kocc2_act_obs);
-    Q.accumulate(R2_ijkL_Kp); R2_ijkL_Kp = 0;
-#if !SYMMETRIZE
-    RefSCMatrix R2_ijKl_Kp = compute_r2_(occ1_act,occ2_act,kocc1_act_obs,occ2_act);
-    Q.accumulate(R2_ijKl_Kp); R2_ijKl_Kp = 0;
-#endif
-    
-    using namespace sc::LinearR12;
-    Ref<TwoParticleContraction> dircontract_ma =
-      new Direct_Contraction(occ1->rank(),vir2->rank(),1.0);
-    Ref<TwoParticleContraction> dircontract_pp =
-      new Direct_Contraction(orbs1->rank(),orbs2->rank(),1.0);
-    
-    // compute contraction -1 * <ii|F12|pp> . <iI|F12|pp>
-    contract_tbint_tensor<
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_mT,
-      true,true,false>
-      (
-        Q, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-        occ1_act, occ2_act,
-        orbs1, orbs2,
-        occ1_act, kocc2_act_obs,
-        orbs2, orbs2,
-        dircontract_pp,
-        spincase2!=AlphaBeta, tforms_ipip, tforms_ipIp_Kp
-      );
-#if !SYMMETRIZE
-    // compute contraction -1 * <ii|F12|pp> . <Ii|F12|pp>
-    contract_tbint_tensor<
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_mT,
-      true,true,false>
-      (
-        Q, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-        occ1_act, occ2_act,
-        orbs1, orbs2,
-        kocc1_act_obs, occ2_act,
-        orbs2, orbs2,
-        dircontract_pp,
-        spincase2!=AlphaBeta, tforms_ipip, tforms_Ipip_Kp
-      );
-#endif
-    
-    
+    // compute Q
+    RefSCMatrix Q;
+    compute_X_(Q,spincase2,occ1_act,occ2_act,
+                           occ1_act,kocc2_act_obs);
     if (!abs_eq_obs) {
-      
-      Ref<MOIndexSpace> ribs1 = r12info()->ribs_space(spin1);
-      Ref<MOIndexSpace> ribs2 = r12info()->ribs_space(spin2);
-      Ref<MOIndexSpace> kribs1 = kribs(spin1);
-      Ref<MOIndexSpace> kribs2 = kribs(spin2);
-      Ref<MOIndexSpace> kocc1_act = kocc_act(spin1);
       Ref<MOIndexSpace> kocc2_act = kocc_act(spin2);
-      
-      // (i p |i_K p) tforms are new
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_ipIp_K;
-      {
-        NewTransformCreator tform_creator(thisref,occ1_act,orbs1,kocc2_act,orbs2,true);
-        fill_container(tform_creator,tforms_ipIp_K);
-      }
-      
-      // (i m |i a') tforms are ready
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_imiA;
-      {
-        NamedTransformCreator tform_creator(thisref,occ1_act,occ1,occ2_act,ribs2,true);
-        fill_container(tform_creator,tforms_imiA);
-      }
-      
-      // (i m |i_Kp a') tforms are new
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_imIA_Kp;
-      {
-        NewTransformCreator tform_creator(thisref,occ1_act,occ1,kocc2_act_obs,ribs2,true);
-        fill_container(tform_creator,tforms_imIA_Kp);
-      }
-      
-      // (i m |i_K a') tforms are new
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_imIA_K;
-      {
-        NewTransformCreator tform_creator(thisref,occ1_act,occ1,kocc2_act,ribs2,true);
-        fill_container(tform_creator,tforms_imIA_K);
-      }
-      
-      // (i_Kp m |i a') tforms are new
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_ImiA_Kp;
-      {
-        NewTransformCreator tform_creator(thisref,kocc1_act_obs,occ1,occ2_act,ribs2,true);
-        fill_container(tform_creator,tforms_ImiA_Kp);
-      }
-      
-      // (i_K m |i a') tforms are new
-      std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_ImiA_K;
-      {
-        NewTransformCreator tform_creator(thisref,kocc1_act,occ1,occ2_act,ribs2,true);
-        fill_container(tform_creator,tforms_ImiA_K);
-      }
-      
-      Ref<TwoParticleContraction> dircontract_mA =
-        new Direct_Contraction(occ1->rank(),ribs2->rank(),1.0);
-      
-      RefSCMatrix R2_ijkL_K = compute_r2_(occ1_act,occ2_act,occ1_act,kocc2_act);
-      Q.accumulate(R2_ijkL_K); R2_ijkL_K = 0;
-      
-    // compute contraction -1 * <ii|F12|m a'> . <iI|F12|m a'>
-    contract_tbint_tensor<
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_mT,
-      true,true,false>
-      (
-        Q, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-        occ1_act, occ2_act,
-        occ1, ribs2,
-        occ1_act, kocc2_act_obs,
-        occ1, ribs2,
-        dircontract_mA,
-        spincase2!=AlphaBeta, tforms_imiA, tforms_imIA_Kp
-      );
-    contract_tbint_tensor<
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_mT,
-      true,true,false>
-      (
-        Q, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-        occ1_act, occ2_act,
-        occ1, ribs2,
-        occ1_act, kocc2_act,
-        occ1, ribs2,
-        dircontract_mA,
-        spincase2!=AlphaBeta, tforms_imiA, tforms_imIA_K
-      );
-          
-    // compute contraction -1 * <ii|F12|m a'> . <Ii|F12|m a'>
-    contract_tbint_tensor<
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_mT,
-      true,true,false>
-      (
-        Q, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-        occ1_act, occ2_act,
-        occ1, ribs2,
-        kocc1_act_obs, occ2_act,
-        occ1, ribs2,
-        dircontract_mA,
-        spincase2!=AlphaBeta, tforms_imiA, tforms_ImiA_Kp
-      );
-    contract_tbint_tensor<
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_mT,
-      true,true,false>
-      (
-        Q, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-        occ1_act, occ2_act,
-        occ1, ribs2,
-        kocc1_act, occ2_act,
-        occ1, ribs2,
-        dircontract_mA,
-        spincase2!=AlphaBeta, tforms_imiA, tforms_ImiA_K
-      );
-    
-    // compute contraction -1 * <ii|F12|pp> . <iI|F12|pp>
-    contract_tbint_tensor<
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_T,
-      ManyBodyTensors::I_to_mT,
-      true,true,false>
-      (
-        Q, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-        occ1_act, occ2_act,
-        orbs1, orbs2,
-        occ1_act, kocc2_act,
-        orbs2, orbs2,
-        dircontract_pp,
-        spincase2!=AlphaBeta, tforms_ipip, tforms_ipIp_K
-      );
+      compute_X_(Q,spincase2,occ1_act,occ2_act,
+                             occ1_act,kocc2_act);
     }
-    
-    //
-    // P contribution only needed if OBS != ABS
-    //
-    if (!abs_eq_obs) {
-      RefSCMatrix P = B_[s].clone(); P.assign(0.0);
-      
-      throw FeatureNotImplemented("Approximation B not implemented yet when OBS != ABS",__FILE__,__LINE__);
+    if (occ1_act != occ2_act) {
+      compute_X_(Q,spincase2,occ1_act,occ2_act,
+                             kocc1_act_obs,occ2_act);
+      if (!abs_eq_obs) {
+        Ref<MOIndexSpace> kocc1_act = kocc_act(spin1);
+        compute_X_(Q,spincase2,occ1_act,occ2_act,
+                               kocc1_act,occ2_act);
+      }
     }
-    
-    // make particles equivalent, if necessary
-#if SYMMETRIZE
-    Q.scale(2.0);
-    if (!spin_polarized()) {
-      symmetrize<false>(Q,Q,occ1_act,occ1_act);
+    else {
+      Q.scale(2.0);
+      symmetrize<false>(Q,Q,occ1_act,occ2_act);
     }
-#endif
-    
     if (debug_ > 1) {
       std::string label = prepend_spincase(spincase2,"B(Q) contribution");
       Q.print(label.c_str());
     }
-    BB_[s].assign(Q); Q = 0;
-
+    BB_[s].accumulate(Q); Q = 0;
+    
+    // compute P
+    if (!abs_eq_obs) {
+#if 0
+      RefSCMatrix P;
+      // R_klPB K_PA R_ABij
+      compute_FxF_(P,spincase2,
+                   occ1_act,occ2_act,
+                   occ1_act,occ2_act,
+                   cabs1,cabs2,
+                   cabs1,cabs2,
+                   kcabs1,kcabs2);
+      // R_klPb K_PA R_Abij
+      compute_FxF_(P,spincase2,
+                   occ1_act,occ2_act,
+                   occ1_act,occ2_act,
+                   vir1,vir2,
+                   cabs1,cabs2,
+                   kcabs1,kcabs2);
+      // R_klPB K_Pa R_aBij
+      compute_FxF_(P,spincase2,
+                   occ1_act,occ2_act,
+                   occ1_act,occ2_act,
+                   cabs1,cabs2,
+                   vir1,vir2,
+                   kvir1_cabs,kvir2_cabs);
+      BB_[s].accumulate(P);
+#else
+      //throw ProgramingError("R12IntEval::compute_BB_() -- P intermediate not yet implemented",__FILE__,__LINE__);
+#endif
+    }
+    
     // Bra-Ket symmetrize the B(B) contribution
     BB_[s].scale(0.5);
     RefSCMatrix BB_t = BB_[s].t();

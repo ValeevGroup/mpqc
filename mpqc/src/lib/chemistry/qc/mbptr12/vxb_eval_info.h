@@ -92,6 +92,7 @@ private:
   std::string ints_file_;
   Ref<LinearR12::CorrelationFactor> corrfactor_;
   LinearR12::ABSMethod abs_method_;
+  unsigned int maxnabs_;
 
   int nlindep_aux_;
   int nlindep_vir_;
@@ -182,6 +183,7 @@ public:
 
   const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return corrfactor_; }
   LinearR12::ABSMethod abs_method() const { return abs_method_; }
+  unsigned int maxnabs() const { return maxnabs_; }
 
   /// Returns the MOIndexSpace object for all unoccupied MOs ordered by energy
   const Ref<MOIndexSpace>& vir() const { throw_if_spin_polarized(); return vir_; };

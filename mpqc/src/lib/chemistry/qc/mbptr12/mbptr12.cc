@@ -57,7 +57,7 @@ using namespace sc;
  --------------------------------*/
 
 static ClassDesc MBPT2_R12_cd(
-  typeid(MBPT2_R12),"MBPT2_R12",4,"public MBPT2",
+  typeid(MBPT2_R12),"MBPT2_R12",5,"public MBPT2",
   0, create<MBPT2_R12>, create<MBPT2_R12>);
 
 MBPT2_R12::MBPT2_R12(StateIn& s):
@@ -69,18 +69,31 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   r12b_energy_ << SavableState::restore_state(s);
   aux_basis_ << SavableState::restore_state(s);
   vir_basis_ << SavableState::restore_state(s);
+
+  gbc_ = true;  ebc_ = true;
   if (s.version(::class_desc<MBPT2_R12>()) >= 3) {
     int gbc; s.get(gbc); gbc_ = (bool)gbc;
     int ebc; s.get(ebc); ebc_ = (bool)ebc;
   }
+  
+  abs_method_ = LinearR12::ABS_ABS;
   if (s.version(::class_desc<MBPT2_R12>()) >= 2) {
     int absmethod; s.get(absmethod); abs_method_ = (LinearR12::ABSMethod)absmethod;
   }
   int stdapprox; s.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
+
+  maxnabs_ = 2;
+  if (s.version(::class_desc<MBPT2_R12>()) >= 5) {
+    s.get(maxnabs_);
+  }
+
   int spinadapted; s.get(spinadapted); spinadapted_ = (bool)spinadapted;
+
+  include_mp1_ = false;
   if (s.version(::class_desc<MBPT2_R12>()) >= 4) {
     int include_mp1; s.get(include_mp1); include_mp1_ = static_cast<bool>(include_mp1);
   }
+
   int r12ints_method; s.get(r12ints_method);
     r12ints_method_ = static_cast<R12IntEvalInfo::StoreMethod::type>(r12ints_method);
   s.get(r12ints_file_);
@@ -230,11 +243,16 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     delete[] sa_string;
     throw std::runtime_error("MBPT2_R12::MBPT2_R12() -- unrecognized value for stdapprox");
   }
-#if 0
+
   // if no explicit correlation then set to stdapprox to Acom
-  if (corrfactor_->id() == LinearR12::NullCorrFactor)
-    stdapprox_ = LinearR12::StdApprox_A;
-#endif
+  {
+    Ref<LinearR12::NullCorrelationFactor> nullptr; nullptr << corrfactor_;
+    if (nullptr.nonnull())
+      stdapprox_ = LinearR12::StdApprox_A;
+  }
+  
+  // Default is to include all integrals
+  maxnabs_ = static_cast<unsigned int>(keyval->intvalue("maxnabs",KeyValValueint(2)));
   
   spinadapted_ = false;
   if (closedshell)
@@ -389,6 +407,8 @@ MBPT2_R12::print(ostream&o) const
       o << indent << "Standard Approximation: B" << endl;
     break;
   }
+  
+  o << indent << "Max # ABS indices: " << maxnabs_ << endl;
 
   o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << endl;
   if (!vir_basis_->equiv(basis()))
@@ -508,6 +528,14 @@ Ref<GaussianBasisSet>
 MBPT2_R12::vir_basis() const
 {
   return vir_basis_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+unsigned int
+MBPT2_R12::maxnabs() const
+{
+  return maxnabs_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

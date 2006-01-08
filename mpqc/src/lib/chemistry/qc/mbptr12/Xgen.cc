@@ -76,6 +76,23 @@ R12IntEval::compute_X_(RefSCMatrix& X,
   if (!correct_semantics)
     throw ProgrammingError("R12IntEval::compute_X_() -- incorrect call semantics",__FILE__,__LINE__);
   
+  // check number of ABS indices
+  const Ref<GaussianBasisSet> abs = r12info()->basis_ri();
+  const unsigned int nabs_in_bra1 = (bra1->basis() == abs);
+  const unsigned int nabs_in_bra2 = (bra2->basis() == abs);
+  const unsigned int nabs_in_ket1 = (ket1->basis() == abs);
+  const unsigned int nabs_in_ket2 = (ket2->basis() == abs);
+  const unsigned int nabs_in_bra = nabs_in_bra1 + nabs_in_bra2;
+  const unsigned int nabs_in_ket = nabs_in_ket1 + nabs_in_ket2;
+  const unsigned int maxnabs = r12info()->maxnabs();
+  if (nabs_in_bra > maxnabs ||
+      nabs_in_ket > maxnabs) {
+    throw ProgrammingError("R12IntEval::compute_X_() -- maxnabs is exceeded",__FILE__,__LINE__);
+  }
+  const unsigned int nabs = max(nabs_in_bra,nabs_in_ket);
+  // check if RI needs to be done in ABS
+  const bool do_ri_in_abs = !abs_eq_obs && (maxnabs - nabs > 0);
+  
   tim_enter("generic X intermediate");
   ExEnv::out0() << indent << "Entered generic X intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
@@ -84,7 +101,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
   SpinMOPairIter ketiter(ket1,ket2,spincase2);
   const unsigned int nbra = braiter.nij();
   const unsigned int nket = ketiter.nij();
-
+  
   if (X.null()) {
     // use the same matrix kit as the intermediates
     X = B_[AlphaBeta].kit()->matrix(new SCDimension(nbra),
@@ -147,7 +164,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     const LinearR12::ABSMethod absmethod = r12info()->abs_method();
     Ref<TwoParticleContraction> contract_pp;
     if ((absmethod == LinearR12::ABS_ABS ||
-         absmethod == LinearR12::ABS_ABSPlus) && !abs_eq_obs)
+         absmethod == LinearR12::ABS_ABSPlus) && do_ri_in_abs)
       contract_pp = new ABS_OBS_Contraction(nobs,
                                             occ1->rank(),
                                             occ2->rank());
@@ -170,7 +187,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
         spincase2!=AlphaBeta, tforms_ipjp, tforms_kplp
       );
     
-    if (!abs_eq_obs) {
+    if (do_ri_in_abs) {
       Ref<MOIndexSpace> ribs1 = r12info()->ribs_space(spin1);      Ref<MOIndexSpace> ribs2 = r12info()->ribs_space(spin2);
       
       // (i m |j a') tforms

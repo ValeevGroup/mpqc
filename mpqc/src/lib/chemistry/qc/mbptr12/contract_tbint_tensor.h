@@ -324,13 +324,14 @@ namespace sc {
             }
             
             Ref<R12IntsAcc> accumb = tformb->ints_acc();
-            Ref<R12IntsAcc> accumk = tformk->ints_acc();
             // if transforms have not been computed yet, compute
             if (accumb.null() || !accumb->is_committed()) {
               tformb->compute();
             }
             if (!accumb->is_active())
               accumb->activate();
+
+            Ref<R12IntsAcc> accumk = tformk->ints_acc();
             if (accumk.null() || !accumk->is_committed()) {
               tformk->compute();
             }

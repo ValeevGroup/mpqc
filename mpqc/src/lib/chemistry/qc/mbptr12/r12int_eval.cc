@@ -951,7 +951,7 @@ R12IntEval::form_fvir_obs(SpinCase1 spin)
       std::string name = "Exchange-weighted (through OBS) virtual MOs sorted by energy";
       spinadapt_mospace_labels(spin,id,name);
       
-      kactocc_obs_space_[s] = new MOIndexSpace(id, name, vir_space, obs_space->coefs()*K_obs_vir,
+      kvir_obs_space_[s] = new MOIndexSpace(id, name, vir_space, obs_space->coefs()*K_obs_vir,
                                            obs_space->basis());
     }
   }

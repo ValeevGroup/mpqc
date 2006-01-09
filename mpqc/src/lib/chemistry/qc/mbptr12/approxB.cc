@@ -173,6 +173,7 @@ R12IntEval::compute_BB_()
 #else
       //throw ProgramingError("R12IntEval::compute_BB_() -- P intermediate not yet implemented",__FILE__,__LINE__);
 #endif
+      BB_[s].accumulate(P);
     }
     
     // Bra-Ket symmetrize the B(B) contribution

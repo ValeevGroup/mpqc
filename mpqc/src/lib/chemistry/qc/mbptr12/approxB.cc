@@ -93,6 +93,12 @@ R12IntEval::compute_BB_()
     const bool include_Kp = (absmethod == LinearR12::ABS_CABS ||
                              absmethod == LinearR12::ABS_CABSPlus) || abs_eq_obs;
     
+    std::string Qlabel = prepend_spincase(spincase2,"Q intermediate");
+    tim_enter(Qlabel.c_str());
+    ExEnv::out0() << endl << indent
+                  << "Entered " << Qlabel << " evaluator" << endl;
+    ExEnv::out0() << incindent;
+    
     // compute Q
     RefSCMatrix Q;
     if (include_Kp) {
@@ -119,6 +125,11 @@ R12IntEval::compute_BB_()
       Q.scale(2.0);
       symmetrize<false>(Q,Q,occ1_act,occ2_act);
     }
+
+    ExEnv::out0() << decindent;
+    ExEnv::out0() << indent << "Exited " << Qlabel << " evaluator" << endl;
+    tim_exit(Qlabel.c_str());
+
     if (debug_ > 1) {
       std::string label = prepend_spincase(spincase2,"B(Q) contribution");
       Q.print(label.c_str());
@@ -130,10 +141,16 @@ R12IntEval::compute_BB_()
     if (!abs_eq_obs) {
       
       const LinearR12::ABSMethod absmethod = r12info()->abs_method();
-      if (absmethod != LinearR12::ABS_CABS ||
+      if (absmethod != LinearR12::ABS_CABS &&
           absmethod != LinearR12::ABS_CABSPlus) {
             throw FeatureNotImplemented("R12IntEval::compute_BB_() -- approximation B must be used with absmethod=cabs/cabs+ if OBS!=ABS",__FILE__,__LINE__);
       }
+      
+      std::string Plabel = prepend_spincase(spincase2,"Q intermediate");
+      tim_enter(Plabel.c_str());
+      ExEnv::out0() << endl << indent
+                    << "Entered " << Plabel << " evaluator" << endl;
+      ExEnv::out0() << incindent;
       
       Ref<MOIndexSpace> cabs1 = r12info()->ribs_space(spin1);
       Ref<MOIndexSpace> cabs2 = r12info()->ribs_space(spin2);
@@ -183,6 +200,11 @@ R12IntEval::compute_BB_()
       }
       
       P.scale(-1.0);
+      
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent << "Exited " << Plabel << " evaluator" << endl;
+      tim_exit(Plabel.c_str());
+
       BB_[s].accumulate(P); P = 0;
     }
     

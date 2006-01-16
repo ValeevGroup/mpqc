@@ -145,16 +145,47 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     }
     
     //
-    // F12^2 contribution
+    // F12^2 contribution depends on the type of correlation factor
     //
-    RefSCMatrix R2_ijkl = compute_r2_(bra1,bra2,ket1,ket2);
-    if (spincase2 == AlphaBeta) {
-      X.accumulate(R2_ijkl);
+    enum {r12corrfactor, g12corrfactor} corrfac;
+    Ref<LinearR12::R12CorrelationFactor> r12corrptr; r12corrptr << r12info()->corrfactor();
+    Ref<LinearR12::G12CorrelationFactor> g12corrptr; g12corrptr << r12info()->corrfactor();
+    if (r12corrptr.nonnull()) corrfac = r12corrfactor;
+    if (g12corrptr.nonnull()) corrfac = g12corrfactor;
+    
+    switch (corrfac) {
+      case r12corrfactor:  // R12^2 reduces to one-electron integrals
+      {
+        RefSCMatrix R2_ijkl = compute_r2_(bra1,bra2,ket1,ket2);
+        if (spincase2 == AlphaBeta) {
+          X.accumulate(R2_ijkl);
+        }
+        else {
+          antisymmetrize(X,R2_ijkl,bra1,ket1,true);
+        }
+        R2_ijkl = 0;
+      }
+      break;
+      
+      case g12corrfactor: // G12^2 involves two-electron integrals
+      {
+        // (i k |j l) tforms
+        std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_ikjl;
+        {
+          NewTransformCreator tform_creator(thisref,bra1,ket1,bra2,ket2,true,true);
+          fill_container(tform_creator,tforms_ikjl);
+        }
+        compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
+          X, corrfactor()->tbint_type_f12f12(),
+          bra1, ket1, bra2, ket2, spincase2!=AlphaBeta,
+          tforms_ikjl
+        );
+      }
+      break;
+      
+      default:
+      throw ProgrammingError("R12IntEval::compute_X_() -- unrecognized type of correlation factor",__FILE__,__LINE__);
     }
-    else {
-      antisymmetrize(X,R2_ijkl,bra1,ket1,true);
-    }
-    R2_ijkl = 0;
     
     // ABS and CABS method differ by the TwoParticleContraction
     using LinearR12::TwoParticleContraction;

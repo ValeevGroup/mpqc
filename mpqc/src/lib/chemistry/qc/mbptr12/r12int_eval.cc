@@ -867,8 +867,8 @@ R12IntEval::form_fribs(SpinCase1 spin)
       std::string name = "Exchange-weighted RI-BS";
       spinadapt_mospace_labels(spin,id,name);
       
-      kactvir_space_[s] = new MOIndexSpace(id, name, ribs_space, abs_space->coefs()*K_abs_ri,
-                                          abs_space->basis());
+      kribs_space_[s] = new MOIndexSpace(id, name, ribs_space, abs_space->coefs()*K_abs_ri,
+                                       abs_space->basis());
     }
   }
 }

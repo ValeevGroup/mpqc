@@ -146,7 +146,7 @@ R12IntEval::compute_BB_()
             throw FeatureNotImplemented("R12IntEval::compute_BB_() -- approximation B must be used with absmethod=cabs/cabs+ if OBS!=ABS",__FILE__,__LINE__);
       }
       
-      std::string Plabel = prepend_spincase(spincase2,"Q intermediate");
+      std::string Plabel = prepend_spincase(spincase2,"P intermediate");
       tim_enter(Plabel.c_str());
       ExEnv::out0() << endl << indent
                     << "Entered " << Plabel << " evaluator" << endl;

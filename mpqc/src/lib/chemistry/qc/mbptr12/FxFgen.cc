@@ -132,8 +132,10 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   
   using LinearR12::TwoParticleContraction;
   using LinearR12::Direct_Contraction;
+  // If particles are not equivalent, will add the 21 contribution too
+  const double perm_pfac = (part1_equiv_part2 ? 2.0 : 1.0);
   Ref<TwoParticleContraction> dircontract_k1 =
-    new Direct_Contraction(intk1->rank(),int2->rank(),1.0);
+    new Direct_Contraction(intk1->rank(),int2->rank(),perm_pfac);
   // (bra1 intkx1 |bra2 int2) tforms
   std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_Fbra_k1;
   {
@@ -197,7 +199,6 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   }
   // particles equivalent -- just symmetrize
   else {
-    FxF.scale(2.0);
     symmetrize<false>(FxF,FxF,bra1,ket1);
   }
   

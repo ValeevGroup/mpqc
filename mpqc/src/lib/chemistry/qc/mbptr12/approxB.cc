@@ -128,52 +128,62 @@ R12IntEval::compute_BB_()
     // compute P
     // WARNING implemented only using CABS/CABS+ approach
     if (!abs_eq_obs) {
-      Ref<MOIndexSpace> ribs1 = r12info()->ribs_space(spin1);
-      Ref<MOIndexSpace> ribs2 = r12info()->ribs_space(spin2);
-      Ref<MOIndexSpace> kvir1_obs = kvir_obs(spin1);
-      Ref<MOIndexSpace> kvir2_obs = kvir_obs(spin2);
+      
+      const LinearR12::ABSMethod absmethod = r12info()->abs_method();
+      if (absmethod != LinearR12::ABS_CABS ||
+          absmethod != LinearR12::ABS_CABSPlus) {
+            throw FeatureNotImplemented("R12IntEval::compute_BB_() -- approximation B must be used with absmethod=cabs/cabs+ if OBS!=ABS",__FILE__,__LINE__);
+      }
+      
+      Ref<MOIndexSpace> cabs1 = r12info()->ribs_space(spin1);
+      Ref<MOIndexSpace> cabs2 = r12info()->ribs_space(spin2);
       
       RefSCMatrix P;
       if (r12info()->maxnabs() < 2) {
+
+        Ref<MOIndexSpace> kvir1_obs = kvir_obs(spin1);
+        Ref<MOIndexSpace> kvir2_obs = kvir_obs(spin2);
+
         // R_klpB K_pa R_aBij
         compute_FxF_(P,spincase2,
                      occ1_act,occ2_act,
                      occ1_act,occ2_act,
-                     ribs1,ribs2,
+                     cabs1,cabs2,
                      vir1,vir2,
                      kvir1_obs,kvir2_obs);
       }
       else {
-        throw ProgrammingError("R12IntEval::compute_BB_() -- P intermediate not yet implemented when maxnabs < 2",__FILE__,__LINE__);
+        
+        Ref<MOIndexSpace> kcabs1 = kribs(spin1);
+        Ref<MOIndexSpace> kcabs2 = kribs(spin2);
+        Ref<MOIndexSpace> kvir1_ribs = kvir_ribs(spin1);
+        Ref<MOIndexSpace> kvir2_ribs = kvir_ribs(spin2);
+        
+        // R_klPB K_PA R_ABij
+        compute_FxF_(P,spincase2,
+                     occ1_act,occ2_act,
+                     occ1_act,occ2_act,
+                     cabs1,cabs2,
+                     cabs1,cabs2,
+                     kcabs1,kcabs2);
+        // R_klPb K_PA R_Abij
+        compute_FxF_(P,spincase2,
+                     occ1_act,occ2_act,
+                     occ1_act,occ2_act,
+                     vir1,vir2,
+                     cabs1,cabs2,
+                     kcabs1,kcabs2);
+        // R_klPB K_Pa R_aBij
+        compute_FxF_(P,spincase2,
+                     occ1_act,occ2_act,
+                     occ1_act,occ2_act,
+                     cabs1,cabs2,
+                     vir1,vir2,
+                     kvir1_ribs,kvir2_ribs);
       }
-#if 0
-      RefSCMatrix P;
-      // R_klPB K_PA R_ABij
-      compute_FxF_(P,spincase2,
-                   occ1_act,occ2_act,
-                   occ1_act,occ2_act,
-                   cabs1,cabs2,
-                   cabs1,cabs2,
-                   kcabs1,kcabs2);
-      // R_klPb K_PA R_Abij
-      compute_FxF_(P,spincase2,
-                   occ1_act,occ2_act,
-                   occ1_act,occ2_act,
-                   vir1,vir2,
-                   cabs1,cabs2,
-                   kcabs1,kcabs2);
-      // R_klPB K_Pa R_aBij
-      compute_FxF_(P,spincase2,
-                   occ1_act,occ2_act,
-                   occ1_act,occ2_act,
-                   cabs1,cabs2,
-                   vir1,vir2,
-                   kvir1_cabs,kvir2_cabs);
-      BB_[s].accumulate(P);
-#else
-      //throw ProgramingError("R12IntEval::compute_BB_() -- P intermediate not yet implemented",__FILE__,__LINE__);
-#endif
-      BB_[s].accumulate(P);
+      
+      P.scale(-1.0);
+      BB_[s].accumulate(P); P = 0;
     }
     
     // Bra-Ket symmetrize the B(B) contribution

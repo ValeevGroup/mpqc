@@ -109,8 +109,10 @@ class R12IntEval : virtual public SavableState {
   Ref<MOIndexSpace> kribs_space_[NSpinCases1];
   /// Exchange-weighted (through OBS) active occupied space |i_K> = K_i^P |P>, where P is a function in OBS
   Ref<MOIndexSpace> kactocc_obs_space_[NSpinCases1];
-  /// Exchange-weighted (through OBS) virtual space |a_K> = K_a^P |P>, where P is a function in OBS
+  /// Exchange-weighted (through OBS) virtual space |a_K> = K_a^p |p>, where p is a function in OBS
   Ref<MOIndexSpace> kvir_obs_space_[NSpinCases1];
+  /// Exchange-weighted (through RIBS) virtual space |a_K> = K_a^P |P>, where P is a function in RIBS
+  Ref<MOIndexSpace> kvir_ribs_space_[NSpinCases1];
   /// Compute factocc and kactocc spaces, if needed
   void form_focc_act(SpinCase1 spin);
   /// Compute factvir and kactvir spaces, if needed
@@ -121,6 +123,8 @@ class R12IntEval : virtual public SavableState {
   void form_focc_act_obs(SpinCase1 spin);
   /// Compute kvir_obs space, if needed
   void form_fvir_obs(SpinCase1 spin);
+  /// Compute kvir_ribs space, if needed
+  void form_fvir_ribs(SpinCase1 spin);
   /// Form space of auxiliary virtuals
   void form_canonvir_space_();
 
@@ -470,6 +474,8 @@ public:
   const Ref<MOIndexSpace>& kribs(SpinCase1 S);
   /// Form exchange-weighted (through OBS) virtual space for spin case S
   const Ref<MOIndexSpace>& kvir_obs(SpinCase1 S);
+  /// Form exchange-weighted (through RIBS) virtual space for spin case S
+  const Ref<MOIndexSpace>& kvir_ribs(SpinCase1 S);
   
   /** Returns an already created transform.
       If the transform is not found then throw TransformNotFound */

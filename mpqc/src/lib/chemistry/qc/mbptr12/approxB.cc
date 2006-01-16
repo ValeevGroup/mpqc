@@ -59,9 +59,9 @@ using namespace sc;
 
 #define INCLUDE_Q 1
 #define INCLUDE_P 1
-#define INCLUDE_P_AKB 0
+#define INCLUDE_P_AKB 1
 #define INCLUDE_P_AKb 1
-#define INCLUDE_P_aKB 0
+#define INCLUDE_P_aKB 1
 
 void
 R12IntEval::compute_BB_()

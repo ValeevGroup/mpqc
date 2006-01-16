@@ -57,7 +57,11 @@
 using namespace std;
 using namespace sc;
 
-#define SYMMETRIZE 1
+#define INCLUDE_Q 1
+#define INCLUDE_P 1
+#define INCLUDE_P_AKB 0
+#define INCLUDE_P_AKb 1
+#define INCLUDE_P_aKB 0
 
 void
 R12IntEval::compute_BB_()
@@ -86,6 +90,8 @@ R12IntEval::compute_BB_()
     Ref<MOIndexSpace> occ2_act = occ_act(spin2);
     Ref<MOIndexSpace> vir1 = vir(spin1);
     Ref<MOIndexSpace> vir2 = vir(spin2);
+
+#if INCLUDE_Q
     Ref<MOIndexSpace> kocc1_act_obs = kocc_act_obs(spin1);
     Ref<MOIndexSpace> kocc2_act_obs = kocc_act_obs(spin2);
     
@@ -135,7 +141,9 @@ R12IntEval::compute_BB_()
       Q.print(label.c_str());
     }
     BB_[s].accumulate(Q); Q = 0;
-    
+#endif // INCLUDE_Q
+
+#if INCLUDE_P
     // compute P
     // WARNING implemented only using CABS/CABS+ approach
     if (!abs_eq_obs) {
@@ -170,12 +178,13 @@ R12IntEval::compute_BB_()
                      kvir1_obs,kvir2_obs);
       }
       else {
-        
+
+#if INCLUDE_P_AKB || INCLUDE_P_AKb
         Ref<MOIndexSpace> kcabs1 = kribs(spin1);
         Ref<MOIndexSpace> kcabs2 = kribs(spin2);
-        Ref<MOIndexSpace> kvir1_ribs = kvir_ribs(spin1);
-        Ref<MOIndexSpace> kvir2_ribs = kvir_ribs(spin2);
-        
+#endif
+
+#if INCLUDE_P_AKB
         // R_klPB K_PA R_ABij
         compute_FxF_(P,spincase2,
                      occ1_act,occ2_act,
@@ -183,6 +192,8 @@ R12IntEval::compute_BB_()
                      cabs1,cabs2,
                      cabs1,cabs2,
                      kcabs1,kcabs2);
+#endif // INCLUDE_P_AKB
+#if INCLUDE_P_AKb
         // R_klPb K_PA R_Abij
         compute_FxF_(P,spincase2,
                      occ1_act,occ2_act,
@@ -190,6 +201,10 @@ R12IntEval::compute_BB_()
                      vir1,vir2,
                      cabs1,cabs2,
                      kcabs1,kcabs2);
+#endif // INCLUDE_P_AKb
+#if INCLUDE_P_aKB
+        Ref<MOIndexSpace> kvir1_ribs = kvir_ribs(spin1);
+        Ref<MOIndexSpace> kvir2_ribs = kvir_ribs(spin2);
         // R_klPB K_Pa R_aBij
         compute_FxF_(P,spincase2,
                      occ1_act,occ2_act,
@@ -197,6 +212,7 @@ R12IntEval::compute_BB_()
                      cabs1,cabs2,
                      vir1,vir2,
                      kvir1_ribs,kvir2_ribs);
+#endif // INCLUDE_P_aKB
       }
       
       P.scale(-1.0);
@@ -207,7 +223,8 @@ R12IntEval::compute_BB_()
 
       BB_[s].accumulate(P); P = 0;
     }
-    
+#endif // INCLUDE_P
+
     // Bra-Ket symmetrize the B(B) contribution
     BB_[s].scale(0.5);
     RefSCMatrix BB_t = BB_[s].t();

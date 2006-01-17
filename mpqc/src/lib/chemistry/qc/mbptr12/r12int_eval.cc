@@ -1394,9 +1394,50 @@ R12IntEval::compute()
             tpcontract,
             spincase2!=AlphaBeta, tforms_f12, tforms
           );
-        V.print("contract(F12,G) + I = V(diag+OBS)");
-        RefSCMatrix F12_sq_ijkl = compute_r2_(occ_act(spin1), occ_act(spin2),
-                                              occ_act(spin1), occ_act(spin2));
+        V.print("contract(F12,G) + I = V(diag+OBS) if F12=R12");
+        
+        
+        //
+        // F12^2 contribution depends on the type of correlation factor
+        //
+        RefSCMatrix F12_sq_ijkl;
+        enum {r12corrfactor, g12corrfactor} corrfac;
+        Ref<LinearR12::R12CorrelationFactor> r12corrptr; r12corrptr << r12info()->corrfactor();
+        Ref<LinearR12::G12CorrelationFactor> g12corrptr; g12corrptr << r12info()->corrfactor();
+        if (r12corrptr.nonnull()) corrfac = r12corrfactor;
+        if (g12corrptr.nonnull()) corrfac = g12corrfactor;
+    
+        switch (corrfac) {
+          case r12corrfactor:  // R12^2 reduces to one-electron integrals
+          F12_sq_ijkl = compute_r2_(occ_act(spin1), occ_act(spin2),
+                                    occ_act(spin1), occ_act(spin2));
+          break;
+          
+          case g12corrfactor: // G12^2 involves two-electron integrals
+          {
+            // (i k |j l) tforms
+            std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_ikjl;
+            {
+              NewTransformCreator tform_creator(thisref,
+                                                occ_act(spin1), occ_act(spin2),
+                                                occ_act(spin1), occ_act(spin2),
+                                                true,true);
+              fill_container(tform_creator,tforms_ikjl);
+            }
+            compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
+              F12_sq_ijkl, corrfactor()->tbint_type_f12f12(),
+              occ_act(spin1), occ_act(spin2),
+              occ_act(spin1), occ_act(spin2),
+              false,
+              tforms_ikjl
+            );
+          }
+          break;
+          
+          default:
+          throw ProgrammingError("R12IntEval::compute_X_() -- unrecognized type of correlation factor",__FILE__,__LINE__);
+        }
+        
         if (spincase2 == AlphaAlpha || spincase2 == BetaBeta)
           antisymmetrize(X,F12_sq_ijkl,
                          occ_act(spin1),

@@ -234,8 +234,9 @@ R12IntEval::compute_X_(RefSCMatrix& X,
         fill_container(tform_creator,tforms_kmlA);
       }
       
+      const double perm_pfac = (part1_equiv_part2 ? 2.0 : 1.0);
       Ref<TwoParticleContraction> dircontract_mA =
-        new Direct_Contraction(occ1->rank(),ribs2->rank(),1.0);
+        new Direct_Contraction(occ1->rank(),ribs2->rank(),perm_pfac);
       
       // compute contraction -1 * <ij|F12|m a'> . <kl|F12|m a'>
       contract_tbint_tensor<

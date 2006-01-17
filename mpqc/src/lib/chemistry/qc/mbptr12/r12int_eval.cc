@@ -652,6 +652,10 @@ R12IntEval::compute_r2_(const Ref<MOIndexSpace>& space1,
   RefSCMatrix R2 = local_matrix_kit->matrix(dim_ij, dim_kl);
   R2.assign(r2_array);
   delete[] r2_array;
+  
+  // Only task 0 needs R2
+  if (me != 0)
+    R2.assign(0.0);
 
   return R2;
 }
@@ -669,8 +673,6 @@ R12IntEval::r2_contrib_to_X_new_()
     
     // compute r_{12}^2 operator in act.occ.pair/act.occ.pair basis
     RefSCMatrix R2 = compute_r2_(space1,space2,space1,space2);
-    if (me != 0)
-      continue;
     if (spincase2 == AlphaBeta) {
       X_[s].accumulate(R2);
     }
@@ -1613,6 +1615,8 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
     globally_sum_scmatrix_(V_[s],to_all_tasks);
     globally_sum_scmatrix_(X_[s],to_all_tasks);
     globally_sum_scmatrix_(B_[s],to_all_tasks);
+    if (stdapprox_ == LinearR12::StdApprox_B)
+      globally_sum_scmatrix_(BB_[s],to_all_tasks);
     if (ebc_ == false) {
       globally_sum_scmatrix_(A_[s],to_all_tasks);
       if (follow_ks_ebcfree_) {

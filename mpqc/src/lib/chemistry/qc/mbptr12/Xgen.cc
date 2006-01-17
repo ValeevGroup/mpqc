@@ -297,15 +297,15 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     }
 
     if (debug_ > 1) {
-      std::string label = prepend_spincase(spincase2,"Generic X");
+      std::string label = prepend_spincase(spincase2,"generic X");
       X.print(label.c_str());
     }
     
     // Bra-Ket symmetrize
     X.scale(0.5);
     RefSCMatrix X_t = X.t();
-    X.accumulate(X_t);
-  
+    X.accumulate(X_t);  X_t = 0;
+
   globally_sum_scmatrix_(X);
   
   ExEnv::out0() << decindent;

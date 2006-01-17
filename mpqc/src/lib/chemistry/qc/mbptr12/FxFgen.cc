@@ -203,7 +203,7 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   }
   
   if (debug_ > 1) {
-    std::string label = prepend_spincase(spincase2,"Generic FxF");
+    std::string label = prepend_spincase(spincase2,"generic FxF");
     FxF.print(label.c_str());
   }
   

@@ -66,11 +66,12 @@ namespace sc {
       const std::vector< Ref<TwoBodyIntDescr> >& intdescrs_ket
     )
     {
-      // are particles 1 and 2 equivalent?
+      // are internal spaces of particles 1 and 2 equivalent?
+      const bool part1_intequiv_part2 = (space1_intb==space2_intb &&
+                                         space1_intk==space2_intk);
+      // are external spaces of particles 1 and 2 equivalent?
       const bool part1_equiv_part2 = (space1_bra==space2_bra &&
-                                      space1_ket==space2_ket &&
-                                      space1_intb==space2_intb &&
-                                      space1_intk==space2_intk);
+                                      space1_ket==space2_ket);
       // Check correct semantics of this call : if antisymmetrize then particles must be equivalent
       bool correct_semantics = (antisymmetrize && part1_equiv_part2) ||
                                !antisymmetrize;
@@ -244,7 +245,7 @@ namespace sc {
         map2_bra = *tspace2_bra<<*space2_bra;
         map1_intb = *tspace1_intb<<*space1_intb;
         map2_intb = *tspace2_intb<<*space2_intb;
-        if (antisymmetrize) {
+        if (part1_intequiv_part2) {
           if (tspace1_intb == tspace2_intb) {
             map12_intb = map1_intb;
             map21_intb = map2_intb;
@@ -260,7 +261,7 @@ namespace sc {
         map2_ket = *tspace2_ket<<*space2_ket;
         map1_intk = *tspace1_intk<<*space1_intk;
         map2_intk = *tspace2_intk<<*space2_intk;
-        if (antisymmetrize) {
+        if (part1_intequiv_part2) {
           if (tspace1_intk == tspace2_intk) {
             map12_intk = map1_intk;
             map21_intk = map2_intk;
@@ -429,7 +430,7 @@ namespace sc {
                       ExEnv::out0() << indent << " m = " << m << " n = " << n << endl;
                     }
                     
-                    if (!antisymmetrize) {
+                    if (!antisymmetrize || !part1_intequiv_part2) {
                       if (debug_ > 3) {
                         ExEnv::out0() << indent << " <ij|mn> = " << I_ijmn << endl
                                       << indent << " <kl|mn> = " << I_klmn << endl;

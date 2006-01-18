@@ -93,15 +93,16 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   ExEnv::out0() << indent << "Entered generic FxF intermediate evaluator" << endl;
   ExEnv::out0() << incindent;
   
+  const unsigned int nf12 = corrfactor()->nfunctions();
   SpinMOPairIter braiter(bra1,bra2,spincase2);
   SpinMOPairIter ketiter(ket1,ket2,spincase2);
-  const unsigned int nbra = braiter.nij();
-  const unsigned int nket = ketiter.nij();
+  const unsigned int nbra = nf12 * braiter.nij();
+  const unsigned int nket = nf12 * ketiter.nij();
 
   if (FxF.null()) {
     // use the same matrix kit as the intermediates
     FxF = B_[AlphaBeta].kit()->matrix(new SCDimension(nbra),
-                                    new SCDimension(nket));
+                                      new SCDimension(nket));
     FxF.assign(0.0);
   }
   else {

@@ -304,16 +304,16 @@ namespace sc {
       //
       // Contraction loops
       //
-      unsigned int fbraint = 0;
       unsigned int fbraoffset = 0;
       for(unsigned int fbra=0; fbra<nbrasets; ++fbra,fbraoffset+=nbra) {
         
-        unsigned int fketint = 0;
         unsigned int fketoffset = 0;
         for(unsigned int fket=0; fket<nketsets; ++fket,fketoffset+=nket) {
           
-          for(unsigned int fint=0; fint<nintsets; ++fint, ++fbraint, ++fketint) {
+          for(unsigned int fint=0; fint<nintsets; ++fint) {
             
+            const unsigned int fbraint = fbra*nintsets+fint;
+            const unsigned int fketint = fket*nintsets+fint;
             Ref<TwoBodyMOIntsTransform> tformb = transforms_bra[fbraint];
             Ref<TwoBodyMOIntsTransform> tformk = transforms_ket[fketint];
             

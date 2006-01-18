@@ -131,13 +131,15 @@ NewTransformCreator::operator()()
     label = r12eval_->transform_label(space1_,space2_,space3_,space4_,braindex_,ketindex_);
     tbintdescr = r12info->corrfactor()->tbintdescr(integral,braindex_,ketindex_);
   }
-  if (CorrFunction_) {
-    label = r12eval_->transform_label(space1_,space2_,space3_,space4_,braindex_);
-    tbintdescr = r12info->corrfactor()->tbintdescr(integral,braindex_);
+  else {
+    if (CorrFunction_) {
+      label = r12eval_->transform_label(space1_,space2_,space3_,space4_,braindex_);
+      tbintdescr = r12info->corrfactor()->tbintdescr(integral,braindex_);
+    }
+    else
+      label = r12eval_->transform_label(space1_,space2_,space3_,space4_);
   }
-  else
-    label = r12eval_->transform_label(space1_,space2_,space3_,space4_);
-  
+
   // See if tform manager has it, otherwise create anew
   try {
     result = r12eval_->get_tform_(label);

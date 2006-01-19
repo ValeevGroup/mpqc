@@ -165,6 +165,8 @@ R12IntEval::compute_X_(RefSCMatrix& X,
           X.accumulate(R2_ijkl);
         }
         else {
+          if (!part1_equiv_part2 /* && spincase2 != AlphaBeta */ )
+            symmetrize<false>(X,X,bra1,ket1);
           antisymmetrize(X,R2_ijkl,bra1,ket1,true);
         }
         R2_ijkl = 0;

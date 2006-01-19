@@ -267,6 +267,11 @@ class R12IntEval : virtual public SavableState {
       Class DataProcess_XXX defines a static function 'double I2T()' which processes the integrals.
       Set CorrFactorInBra to true if bra of target tensor depends on correlation function index.
       
+      Semantics: 1) ranks of internal spaces must match, although the spaces don't have to be the same;
+      2) if antisymmetrize is true, external (bra and ket) particle spaces
+      should be strongly (identity) or weakly(rank) equivalent. If internal spaces do not match
+      but antisymmetrization is requested
+      
       Of course, this ugliness should become function/operator on 2 ManyBodyOperators
    */
   template <typename DataProcessBra,
@@ -302,6 +307,11 @@ class R12IntEval : virtual public SavableState {
       of particles 1 and 2. Resulting X is symmetric w.r.t bra-ket permutation, but will not be
       symmetric w.r.t. permutation of particles 1 and 2 if bra1 != bra2 || ket1 != ket2.
       If X is null, then allocate, otherwise check dimensions and accumulate result into X.
+      
+      Semantics: 1) sc2 == AlphaAlpha or BetaBeta means that X will be antisymmetric w.r.t
+      permutations bra1<->bra2 or ket1<->ket2, maybe artificially so. So sc2 == AlphaBeta
+      means "particles are not equivalent or different spin", whereas AlphaAlpha means "act like
+      particles are equivalent".
   */
   void compute_X_(RefSCMatrix& X,
                   SpinCase2 sc2,

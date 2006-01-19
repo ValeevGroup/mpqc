@@ -1277,7 +1277,7 @@ R12IntEval::compute()
     }
 #endif
 
-#if 0
+#if 1
     // Test new tensor compute function
     for(int s=0; s<2; s++) {
       const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
@@ -1424,6 +1424,8 @@ R12IntEval::compute()
                                                 true,true);
               fill_container(tform_creator,tforms_ikjl);
             }
+            F12_sq_ijkl = X.clone();
+            F12_sq_ijkl.assign(0.0);
             compute_tbint_tensor<ManyBodyTensors::I_to_T,true,true>(
               F12_sq_ijkl, corrfactor()->tbint_type_f12f12(),
               occ_act(spin1), occ_act(spin2),
@@ -1514,7 +1516,7 @@ R12IntEval::compute()
     
 #endif
 
-#if 0
+#if 1
     // test generic X evaluator
     {
       for(int s=0; s<nspincases2(); s++) {
@@ -1527,29 +1529,9 @@ R12IntEval::compute()
         X.print("X <ii|ii>  test");
       }
     }
-    // use generic X evaluator to compute Q
-    {
-      for(int s=0; s<nspincases2(); s++) {
-        const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
-        const SpinCase1 spin1 = case1(spincase2);
-        const SpinCase1 spin2 = case2(spincase2);
-        RefSCMatrix Q;
-        compute_X_(Q,spincase2,occ_act(spin1),occ_act(spin2),
-                               occ_act(spin1),kocc_act_obs(spin2));
-        if (occ_act(spin1) == occ_act(spin2))  {
-          Q.scale(2.0);
-          symmetrize<false>(Q,Q,occ_act(spin1),occ_act(spin2));
-        }
-        else {
-          compute_X_(Q,spincase2,occ_act(spin1),occ_act(spin2),
-                                 kocc_act_obs(spin1),occ_act(spin2));
-        }
-        Q.print("Q test");
-      }
-    }
 #endif
 
-#if 0
+#if 1
     // test generic FxF evaluator
     {
       for(int s=0; s<nspincases2(); s++) {
@@ -1708,6 +1690,34 @@ R12IntEval::vir(SpinCase1 S) const
     return r12info()->refinfo()->uocc(S);
 }
 
+
+namespace {
+  /// Convert 2 spaces to SpinCase2
+    SpinCase2
+    spincase2(const Ref<MOIndexSpace>& space1,
+              const Ref<MOIndexSpace>& space2)
+    {
+      char id1 = space1->id()[0];
+      char id2 = space2->id()[0];
+      if (id1 < 'a' && id2 < 'a')
+        return AlphaAlpha;
+      if (id1 < 'a' && id2 >= 'a')
+        return AlphaBeta;
+      if (id1 >= 'a' && id2 >= 'a')
+        return BetaBeta;
+      throw ProgrammingError("spincase2(space1,space2) -- BetaAlpha spaces are not allowed",
+                             __FILE__,__LINE__);
+    }
+    std::string
+    id(SpinCase2 S) {
+      switch(S) {
+        case AlphaBeta:  return "ab";
+        case AlphaAlpha:  return "aa";
+        case BetaBeta:  return "bb";
+      }
+    }
+};
+
 std::string
 R12IntEval::transform_label(const Ref<MOIndexSpace>& space1,
                             const Ref<MOIndexSpace>& space2,
@@ -1717,6 +1727,8 @@ R12IntEval::transform_label(const Ref<MOIndexSpace>& space1,
   std::ostringstream oss;
   // use physicists' notation
   oss << "<" << space1->id() << " " << space3->id() << "|" << space2->id() << " " << space4->id() << ">";
+  // for case-insensitive file systems append spincase
+  oss << "_" << id(spincase2(space1,space3));
   return oss.str();
 }
 
@@ -1731,6 +1743,8 @@ R12IntEval::transform_label(const Ref<MOIndexSpace>& space1,
   // use physicists' notation
   oss << "<" << space1->id() << " " << space3->id() << "| " << corrfactor()->label()
       << "[" << f12 << "] |" << space2->id() << " " << space4->id() << ">";
+  // for case-insensitive file systems append spincase
+  oss << "_" << id(spincase2(space1,space3));
   return oss.str();
 }
 
@@ -1747,6 +1761,8 @@ R12IntEval::transform_label(const Ref<MOIndexSpace>& space1,
   oss << "<" << space1->id() << " " << space3->id() << "| " << corrfactor()->label()
       << "[" << f12_left << "," << f12_right << "] |" << space2->id()
       << " " << space4->id() << ">";
+  // for case-insensitive file systems append spincase
+  oss << "_" << id(spincase2(space1,space3));
   return oss.str();
 }
 

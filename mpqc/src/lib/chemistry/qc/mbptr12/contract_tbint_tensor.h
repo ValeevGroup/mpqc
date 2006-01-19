@@ -35,6 +35,8 @@
 #include <cmath>
 #include <util/misc/timer.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
+#include <chemistry/qc/mbptr12/utils.h>
+#include <chemistry/qc/mbptr12/utils.impl.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 
 namespace sc {
@@ -66,14 +68,15 @@ namespace sc {
       const std::vector< Ref<TwoBodyIntDescr> >& intdescrs_ket
     )
     {
-      // are internal spaces of particles 1 and 2 equivalent?
-      const bool part1_intequiv_part2 = (space1_intb==space2_intb &&
-                                         space1_intk==space2_intk);
       // are external spaces of particles 1 and 2 equivalent?
-      const bool part1_equiv_part2 = (space1_bra==space2_bra &&
-                                      space1_ket==space2_ket);
+      const bool part1_strong_equiv_part2 = (space1_bra==space2_bra &&
+                                             space1_ket==space2_ket);
+      // can external spaces of particles 1 and 2 be equivalent?
+      const bool part1_weak_equiv_part2 = (space1_bra->rank()==space2_bra->rank() &&
+                                           space1_ket->rank()==space2_ket->rank());
       // Check correct semantics of this call : if antisymmetrize then particles must be equivalent
-      bool correct_semantics = (antisymmetrize && part1_equiv_part2) ||
+      bool correct_semantics = (antisymmetrize && (part1_weak_equiv_part2 ||
+                                                   part1_strong_equiv_part2) ) ||
                                !antisymmetrize;
       // also
       correct_semantics = ( correct_semantics &&
@@ -86,6 +89,30 @@ namespace sc {
       if (!correct_semantics)
         throw ProgrammingError("R12IntEval::contract_tbint_tensor_() -- incorrect call semantics",
                                __FILE__,__LINE__);
+      
+      //
+      // How is permutational symmetry implemented?
+      //
+      // 1) if need to antisymmetrize && internal spaces for p1 and p2 are same, then
+      // can antisymmetrize each integral explicitly and compute antisymmetric tensor
+      // 2) inf need to antisymmetrize but internal spaces for p1 and p2 do not match,
+      // then compute as AlphaBeta and antisymmetrize at the end. I have to allocate temporary
+      // result.
+      //
+      
+      // are internal spaces of particles 1 and 2 equivalent?
+      const bool part1_intequiv_part2 = (space1_intb==space2_intb &&
+                                         space1_intk==space2_intk);
+#if 0
+      // antisymmetrization for weakly equivalent particles and nonmatching internal spaces
+      // is probably incorrect semantics
+      if (!part1_intequiv_part2 && ! part1_strong_equiv_part2 && antisymmetrize)
+        throw ProgrammingError("R12IntEval::contract_tbint_tensor_() -- dubious call semantics",
+                               __FILE__,__LINE__);
+#endif
+      // Will antisymmetrize each integral? If no, then result will be computed
+      // as AlphaBeta and antisymmetrized at the end
+      const bool alphabeta = !(antisymmetrize && part1_intequiv_part2);
       
       const bool CorrFactorInBraInt = CorrFactorInBra && CorrFactorInInt;
       const bool CorrFactorInKetInt = CorrFactorInKet && CorrFactorInInt;
@@ -245,7 +272,8 @@ namespace sc {
         map2_bra = *tspace2_bra<<*space2_bra;
         map1_intb = *tspace1_intb<<*space1_intb;
         map2_intb = *tspace2_intb<<*space2_intb;
-        if (part1_intequiv_part2) {
+        // Will antisymmetrize the integrals? Then need ijkl AND ijlk
+        if (!alphabeta) {
           if (tspace1_intb == tspace2_intb) {
             map12_intb = map1_intb;
             map21_intb = map2_intb;
@@ -261,7 +289,8 @@ namespace sc {
         map2_ket = *tspace2_ket<<*space2_ket;
         map1_intk = *tspace1_intk<<*space1_intk;
         map2_intk = *tspace2_intk<<*space2_intk;
-        if (part1_intequiv_part2) {
+        // Will antisymmetrize the integrals? Then need ijkl AND ijlk
+        if (!alphabeta) {
           if (tspace1_intk == tspace2_intk) {
             map12_intk = map1_intk;
             map21_intk = map2_intk;
@@ -286,17 +315,27 @@ namespace sc {
       
       // Using spinorbital iterators means I don't take into account perm symmetry
       // More efficient algorithm will require generic code
-      const SpinCase2 S = (antisymmetrize ? AlphaAlpha : AlphaBeta);
-      SpinMOPairIter iterbra(space1_bra,space2_bra,S);
-      SpinMOPairIter iterket(space1_ket,space2_ket,S);
-      SpinMOPairIter iterint(space1_intb,space2_intb,S);
+      const SpinCase2 S = (alphabeta ? AlphaBeta : AlphaAlpha);
+      SpinMOPairIter iterbra(space1_bra,(alphabeta ? space2_bra : space1_bra),S);
+      SpinMOPairIter iterket(space1_ket,(alphabeta ? space2_ket : space1_ket),S);
+      SpinMOPairIter iterint(space1_intb,(alphabeta ? space2_intb : space1_intb),S);
       // size of one block of <space1_bra space2_bra|
       const unsigned int nbra = iterbra.nij();
       // size of one block of <space1_ket space2_ket|
       const unsigned int nket = iterket.nij();
       // size of one block of |space1_int space2_int>
       const unsigned int nint = iterint.nij();
-
+      
+      RefSCMatrix Tcontr;
+      // Allocate storage for the result, if need to antisymmetrize at the end; else accumulate directly to T
+      if (antisymmetrize && alphabeta) {
+        Tcontr = T.kit()->matrix(new SCDimension(nbra*nbrasets),
+                                 new SCDimension(nket*nketsets));
+        Tcontr.assign(0.0);
+      }
+      else
+        Tcontr = T;
+      
       // size of integral blocks to contract
       const unsigned int blksize_int = space1_intb->rank() * space2_intb->rank();
       double* T_ij = new double[blksize_int];
@@ -430,7 +469,7 @@ namespace sc {
                       ExEnv::out0() << indent << " m = " << m << " n = " << n << endl;
                     }
                     
-                    if (!antisymmetrize || !part1_intequiv_part2) {
+                    if (alphabeta) {
                       if (debug_ > 3) {
                         ExEnv::out0() << indent << " <ij|mn> = " << I_ijmn << endl
                                       << indent << " <kl|mn> = " << I_klmn << endl;
@@ -496,7 +535,7 @@ namespace sc {
                   if (debug_ > 3) {
                     ExEnv::out0() << indent << " <ij|T|kl> = " << T_ijkl << endl;
                   }
-                  T.accumulate_element(ij+fbraoffset,kl+fketoffset,T_ijkl);
+                  Tcontr.accumulate_element(ij+fbraoffset,kl+fketoffset,T_ijkl);
                   
                   accumk->release_pair_block(kk,ll,tbint_type_ket);
                   
@@ -510,6 +549,13 @@ namespace sc {
           } // int blocks
         } // ket blocks
       } // bra blocks
+      
+      if (antisymmetrize && alphabeta) {
+        // antisymmetrization implies equivalent particles -- hence symmetrize before antisymmetrize
+        symmetrize<false>(Tcontr,Tcontr,space1_bra,space1_ket);
+        sc::antisymmetrize(T,Tcontr,space1_bra,space1_ket,true);
+        Tcontr = 0;
+      }
       
       delete[] T_ij;
       delete[] T_kl;

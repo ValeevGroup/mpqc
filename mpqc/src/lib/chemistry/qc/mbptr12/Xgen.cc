@@ -70,11 +70,14 @@ R12IntEval::compute_X_(RefSCMatrix& X,
   const bool abs_eq_obs = r12info()->basis()->equiv(r12info()->basis_ri());
   const bool part1_equiv_part2 = (bra1 == bra2 && ket1 == ket2);
   
+  // I think spincase2 != AlphaBeta && !part1_equiv_part2 is OK
+#if 0
   // Check semantics
   bool correct_semantics = (spincase2 != AlphaBeta && part1_equiv_part2) ||
                            (spincase2 == AlphaBeta);
   if (!correct_semantics)
     throw ProgrammingError("R12IntEval::compute_X_() -- incorrect call semantics",__FILE__,__LINE__);
+#endif
   
   // check number of ABS indices
   const Ref<GaussianBasisSet> abs = r12info()->basis_ri();
@@ -98,8 +101,8 @@ R12IntEval::compute_X_(RefSCMatrix& X,
   ExEnv::out0() << incindent;
   
   const unsigned int nf12 = corrfactor()->nfunctions();
-  SpinMOPairIter braiter(bra1,bra2,spincase2);
-  SpinMOPairIter ketiter(ket1,ket2,spincase2);
+  SpinMOPairIter braiter(bra1, (spincase2==AlphaBeta ? bra2 : bra1), spincase2);
+  SpinMOPairIter ketiter(ket1, (spincase2==AlphaBeta ? ket2 : ket1), spincase2);
   const unsigned int nbra = nf12 * braiter.nij();
   const unsigned int nket = nf12 * ketiter.nij();
   
@@ -293,10 +296,13 @@ R12IntEval::compute_X_(RefSCMatrix& X,
       }
     }
     
+    // Moved to contract_tbint_tensor -- seems it's the correct place semantically to symmetrize
+#if 0
     // make particles equivalent, if necessary
-    if (part1_equiv_part2) {
+    if (part1_equiv_part2 && spincase2 == AlphaBeta) {
       symmetrize<false>(X,X,bra1,ket1);
     }
+#endif
 
     if (debug_ > 1) {
       std::string label = prepend_spincase(spincase2,"generic X");

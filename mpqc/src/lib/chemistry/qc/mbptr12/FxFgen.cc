@@ -200,7 +200,8 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   }
   // particles equivalent -- just symmetrize
   else {
-    symmetrize<false>(FxF,FxF,bra1,ket1);
+    if (spincase2 == AlphaBeta)
+      symmetrize<false>(FxF,FxF,bra1,ket1);
   }
   
   if (debug_ > 1) {

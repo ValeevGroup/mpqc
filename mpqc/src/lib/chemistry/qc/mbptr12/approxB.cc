@@ -129,7 +129,9 @@ R12IntEval::compute_BB_()
     }
     else {
       Q.scale(2.0);
-      symmetrize<false>(Q,Q,occ1_act,occ2_act);
+      if (spincase2 == AlphaBeta) {
+        symmetrize<false>(Q,Q,occ1_act,occ2_act);
+      }
     }
 
     ExEnv::out0() << decindent;

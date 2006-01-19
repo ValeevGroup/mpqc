@@ -112,8 +112,15 @@ namespace sc {
 #endif
       // Will antisymmetrize each integral? If no, then result will be computed
       // as AlphaBeta and antisymmetrized at the end
-      const bool alphabeta = !(antisymmetrize && part1_intequiv_part2);
-      
+      const bool alphabeta = !(antisymmetrize &&
+                               part1_strong_equiv_part2 &&
+                               part1_intequiv_part2);
+
+      //
+      // NOTE! Even if computing in AlphaBeta, internal sums can be over AlphaAlpha!!!
+      // Logic should not become much more complicated. Only need time to implement.
+      //
+     
       const bool CorrFactorInBraInt = CorrFactorInBra && CorrFactorInInt;
       const bool CorrFactorInKetInt = CorrFactorInKet && CorrFactorInInt;
       

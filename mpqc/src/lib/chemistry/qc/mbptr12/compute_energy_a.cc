@@ -43,6 +43,9 @@ MBPT2_R12::compute_energy_a_()
 {
   tim_enter("mp2-f12 energy");
 
+  //int DebugWait = 1;
+  //while (DebugWait) {}
+
   if (r12eval_.null()) {
     Ref<R12IntEvalInfo> r12info = new R12IntEvalInfo(this);
     r12info->set_dynamic(dynamic_);

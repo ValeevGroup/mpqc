@@ -1277,9 +1277,9 @@ R12IntEval::compute()
     }
 #endif
 
-#if 1
+#if 0
     // Test new tensor compute function
-    for(int s=0; s<2; s++) {
+    for(int s=0; s<nspincases2(); s++) {
       const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       const SpinCase1 spin1 = case1(spincase2);
       const SpinCase1 spin2 = case2(spincase2);
@@ -1419,8 +1419,8 @@ R12IntEval::compute()
             std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_ikjl;
             {
               NewTransformCreator tform_creator(thisref,
-                                                occ_act(spin1), occ_act(spin2),
-                                                occ_act(spin1), occ_act(spin2),
+                                                occ_act(spin1), occ_act(spin1),
+                                                occ_act(spin2), occ_act(spin2),
                                                 true,true);
               fill_container(tform_creator,tforms_ikjl);
             }
@@ -1430,7 +1430,7 @@ R12IntEval::compute()
               F12_sq_ijkl, corrfactor()->tbint_type_f12f12(),
               occ_act(spin1), occ_act(spin2),
               occ_act(spin1), occ_act(spin2),
-              false,
+              spincase2!=AlphaBeta,
               tforms_ikjl
             );
           }
@@ -1446,6 +1446,9 @@ R12IntEval::compute()
                          occ_act(spin2));
         else
           X.accumulate(F12_sq_ijkl);
+
+        X.print("F12^2 = X(diag)");
+
         contract_tbint_tensor<ManyBodyTensors::I_to_T,
                               ManyBodyTensors::I_to_T,
                               ManyBodyTensors::I_to_T,

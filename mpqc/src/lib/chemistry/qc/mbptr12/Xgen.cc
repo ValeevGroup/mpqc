@@ -26,6 +26,7 @@
 //
 
 #include <stdexcept>
+#include <sstream>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -58,6 +59,17 @@ using namespace std;
 using namespace sc;
 
 #define SYMMETRIZE 1
+#define PRINT_COMPONENTS 0
+
+namespace {
+  void print_component(const RefSCMatrix& X, const std::string& label) {
+    std::ostringstream oss;
+    oss << "Component of X: " << label << std::endl;
+    X.print(oss.str().c_str());
+    X.assign(0.0);
+  }
+};
+
 
 void
 R12IntEval::compute_X_(RefSCMatrix& X,
@@ -166,7 +178,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
         }
         else {
           if (!part1_equiv_part2 /* && spincase2 != AlphaBeta */ )
-            symmetrize<false>(X,X,bra1,ket1);
+            symmetrize<false>(R2_ijkl,R2_ijkl,bra1,ket1);
           antisymmetrize(X,R2_ijkl,bra1,ket1,true);
         }
         R2_ijkl = 0;
@@ -192,6 +204,10 @@ R12IntEval::compute_X_(RefSCMatrix& X,
       default:
       throw ProgrammingError("R12IntEval::compute_X_() -- unrecognized type of correlation factor",__FILE__,__LINE__);
     }
+
+#if PRINT_COMPONENTS
+    print_component(X,"F12^2");
+#endif
     
     // ABS and CABS method differ by the TwoParticleContraction
     using LinearR12::TwoParticleContraction;
@@ -223,6 +239,9 @@ R12IntEval::compute_X_(RefSCMatrix& X,
         contract_pp,
         spincase2!=AlphaBeta, tforms_ipjp, tforms_kplp
       );
+#if PRINT_COMPONENTS
+      print_component(X,"<ij|pp>");
+#endif
     
     if (do_ri_in_abs) {
       Ref<MOIndexSpace> ribs1 = r12info()->ribs_space(spin1);      Ref<MOIndexSpace> ribs2 = r12info()->ribs_space(spin2);
@@ -259,6 +278,9 @@ R12IntEval::compute_X_(RefSCMatrix& X,
           dircontract_mA,
           spincase2!=AlphaBeta, tforms_imjA, tforms_kmlA
         );
+#if PRINT_COMPONENTS
+      print_component(X,"<ij|ma'>");
+#endif
       
       if (!part1_equiv_part2) {
 
@@ -295,6 +317,9 @@ R12IntEval::compute_X_(RefSCMatrix& X,
             dircontract_Am,
             spincase2!=AlphaBeta, tforms_iAjm, tforms_kAlm
           );
+#if PRINT_COMPONENTS
+        print_component(X,"<ij|a'm>");
+#endif
       }
     }
     

@@ -32,6 +32,8 @@
 #include <cmath>
 #include <util/misc/timer.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
+#include <chemistry/qc/mbptr12/utils.h>
+#include <chemistry/qc/mbptr12/utils.impl.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 
 #ifndef _chemistry_qc_mbptr12_computetbinttensor_h
@@ -54,14 +56,18 @@ namespace sc {
                                      const std::vector< Ref<TwoBodyIntDescr> >& intdescrs)
     {
       // are particles 1 and 2 equivalent?
-      const bool part1_equiv_part2 = (space1_bra==space2_bra && space1_ket==space2_ket);
+      const bool part1_strong_equiv_part2 = (space1_bra==space2_bra && space1_ket==space2_ket);
+      const bool part1_weak_equiv_part2 = (space1_bra->rank()==space2_bra->rank() && space1_ket->rank()==space2_ket->rank());
       // Check correct semantics of this call : if antisymmetrize then particles must be equivalent
-      const bool correct_semantics = (antisymmetrize && part1_equiv_part2) ||
+      const bool correct_semantics = (antisymmetrize && part1_weak_equiv_part2) ||
                                      !antisymmetrize;
       if (!correct_semantics)
         throw ProgrammingError("R12IntEval::compute_tbint_tensor_() -- incorrect call semantics",
                                __FILE__,__LINE__);
-      
+
+      // If need to antisymmetrize but particles are not truly equivalent, compute as AlphaBeta and antisymmetrize
+      const bool alphabeta = !(antisymmetrize && part1_strong_equiv_part2);
+
       const bool CorrFactorInBraKet = CorrFactorInBra && CorrFactorInKet;
       
       const unsigned int nbrasets = (CorrFactorInBra ? corrfactor()->nfunctions() : 1);
@@ -140,7 +146,7 @@ namespace sc {
       map1_ket = *tspace1_ket<<*space1_ket;
       map2_bra = *tspace2_bra<<*space2_bra;
       map2_ket = *tspace2_ket<<*space2_ket;
-      if (antisymmetrize) {
+      if (!alphabeta) {
         if (tspace1_ket == tspace2_ket) {
           map12_ket = map1_ket;
           map21_ket = map2_ket;
@@ -159,13 +165,23 @@ namespace sc {
       
       // Using spinorbital iterators means I don't take into account perm symmetry
       // More efficient algorithm will require generic code
-      const SpinCase2 S = (antisymmetrize ? AlphaAlpha : AlphaBeta);
+      const SpinCase2 S = (alphabeta ? AlphaBeta : AlphaAlpha);
       SpinMOPairIter iterbra(space1_bra,space2_bra,S);
       SpinMOPairIter iterket(space1_ket,space2_ket,S);
       // size of one block of <space1_bra space2_bra|
       const unsigned int nbra = iterbra.nij();
       // size of one block of |space1_ket space2_ket>
       const unsigned int nket = iterket.nij();
+
+      RefSCMatrix Tresult;
+      // Allocate storage for the result, if need to antisymmetrize at the end; else accumulate directly to T
+      if (antisymmetrize && alphabeta) {
+        Tresult = T.kit()->matrix(new SCDimension(nbra*nbrasets),
+                                  new SCDimension(nket*nketsets));
+        Tresult.assign(0.0);
+      }
+      else
+        Tresult = T;
       
       unsigned int fbraket = 0;
       unsigned int fbraoffset = 0;
@@ -223,13 +239,13 @@ namespace sc {
                 
                 const double I_ijab = ij_buf[AB];
                 
-                if (!antisymmetrize) {
+                if (alphabeta) {
                   if (debug_ > 2) {
                     ExEnv::out0() << "i = " << i << " j = " << j << " a = " << a << " b = " << b
                     << " <ij|ab> = " << I_ijab << endl;
                   }
                   const double T_ijab = DataProcess::I2T(I_ijab,i,j,a,b,evals1_bra,evals1_ket,evals2_bra,evals2_ket);
-                  T.accumulate_element(ij+fbraoffset,ab+fketoffset,T_ijab);
+                  Tresult.accumulate_element(ij+fbraoffset,ab+fketoffset,T_ijab);
                 }
                 else {
                   const int aa = map21_ket[a];
@@ -242,7 +258,7 @@ namespace sc {
                   }
                   const double I_anti = I_ijab - I_ijba;
                   const double T_ijab = DataProcess::I2T(I_anti,i,j,a,b,evals1_bra,evals1_ket,evals2_bra,evals2_ket);
-                  T.accumulate_element(ij+fbraoffset,ab+fketoffset,T_ijab);
+                  Tresult.accumulate_element(ij+fbraoffset,ab+fketoffset,T_ijab);
                 }
                 
               } // ket loop
@@ -252,6 +268,13 @@ namespace sc {
           } // loop over tasks with access
           
         }
+      }
+
+      if (antisymmetrize && alphabeta) {
+        // antisymmetrization implies equivalent particles -- hence symmetrize before antisymmetrize
+        symmetrize<false>(Tresult,Tresult,space1_bra,space1_ket);
+        sc::antisymmetrize(T,Tresult,space1_bra,space1_ket,true);
+        Tresult = 0;
       }
       
       ExEnv::out0() << decindent;

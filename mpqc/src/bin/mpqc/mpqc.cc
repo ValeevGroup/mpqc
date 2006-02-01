@@ -75,6 +75,7 @@
 #include <util/misc/bug.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
+#include <util/misc/runnable.h>
 #ifdef HAVE_CHEMISTRY_CCA
   #include <util/misc/ccaenv.h>
 #endif
@@ -690,6 +691,27 @@ try_main(int argc, char *argv[])
   
   int print_timings = keyval->booleanvalue("print_timings",truevalue);
 
+  // Read in all of the runnable objects now, so we can get rid of
+  // the reference to the input file.
+  int nrun = keyval->count("run");
+  std::vector<Ref<Runnable> > run(nrun);
+  for (int i=0; i<nrun; i++) {
+    run[i] << keyval->describedclassvalue("run",i);
+    if (run[i].nonnull()) {
+      ExEnv::out0() << indent
+                    << "Read run:" << i
+                    << " of type " << run[i]->class_name()
+                    << "."
+                    << std::endl;
+    }
+    else {
+      ExEnv::out0() << indent
+                    << "Problem reading run:" << i
+                    << ", it will be ignored."
+                    << std::endl;
+    }
+  }
+
   // see if any pictures are desired
   Ref<Render> renderer;
   renderer << keyval->describedclassvalue("renderer");
@@ -920,6 +942,19 @@ try_main(int argc, char *argv[])
       molfreq->animate(renderer, molfreqanim);
       if (tim.nonnull()) tim->exit("render");
     }
+  }
+
+  for (int i=0; i<nrun; i++) {
+    if (run[i].nonnull()) {
+      ExEnv::out0() << indent << "Running object run:" << i << std::endl;
+      ExEnv::out0() << incindent;
+      run[i]->run();
+      ExEnv::out0() << decindent;
+    }
+  }
+  if (nrun) {
+    ExEnv::out0() << std::endl;
+    run.resize(0);
   }
 
   if (mole.nonnull()) {

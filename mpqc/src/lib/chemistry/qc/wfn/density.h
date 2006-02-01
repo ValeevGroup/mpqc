@@ -36,6 +36,7 @@
 #include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/qc/basis/extent.h>
 #include <chemistry/molecule/molrender.h>
+#include <util/misc/runnable.h>
 
 namespace sc {
 
@@ -193,6 +194,19 @@ class BatchElectronDensity: public Volume {
     void set_need_basis_gradient(bool b) { need_basis_gradient_ = b; }
     void set_need_basis_hessian(bool b) { need_basis_hessian_ = b; }
     //@}
+};
+
+class WriteElectronDensity: public Runnable {
+    Ref<Wavefunction> wfn_;
+    double accuracy_;
+    double spacing_;
+    bool bbox_given_;
+    SCVector3 bbox1_;
+    SCVector3 bbox2_;
+    Ref<Units> unit_;
+  public:
+    WriteElectronDensity(const Ref<KeyVal> &);
+    void run();
 };
 
 class DensityColorizer: public MoleculeColorizer {

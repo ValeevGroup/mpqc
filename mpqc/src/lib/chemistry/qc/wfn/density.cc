@@ -37,6 +37,7 @@
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/wfn/density.h>
+#include <util/class/scexception.h>
 
 using namespace std;
 using namespace sc;
@@ -624,6 +625,128 @@ BatchElectronDensity::boundingbox(double valuemin,
       p2[i] = p2[i] + 3.0;
     }
 #endif
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// WriteElectronDensity
+
+static ClassDesc WriteElectronDensity_cd(
+    typeid(WriteElectronDensity),"WriteElectronDensity",1,
+    "public Runnable", 0, create<WriteElectronDensity>, 0);
+
+WriteElectronDensity::WriteElectronDensity(const Ref<KeyVal> &keyval):
+  bbox_given_(false),
+  bbox1_(0.,0.,0.),
+  bbox2_(0.,0.,0.)
+{
+  wfn_ << keyval->describedclassvalue("wfn");
+  if (wfn_.null()) {
+      InputError ex("valid \"wfn\" missing",
+                    __FILE__, __LINE__, "wfn", "(null)", class_desc());
+      try {
+          ex.elaborate()
+              << "WriteElectronDensity KeyVal ctor requires"
+              << " that \"wfn\" specifies a object"
+              << " of type Wavefunction" << std::endl;
+        }
+      catch (...) {}
+      throw ex;
+    }
+
+  KeyValValuedouble default_accuracy(DBL_EPSILON);
+  accuracy_ = keyval->doublevalue("accuracy", default_accuracy);
+  KeyValValuedouble default_spacing(0.1);
+  spacing_ = keyval->doublevalue("spacing", default_spacing);
+
+  if (keyval->exists("bbox")) {
+      bbox_given_ = true;
+      for (int i=0; i<3; i++) {
+          bbox1_ = keyval->intvalue("bbox",0,i);
+          bbox2_ = keyval->intvalue("bbox",1,i);
+        }
+    }
+
+
+  if (keyval->exists("unit")) {
+        unit_ = new Units(keyval->pcharvalue("unit"),
+                    Units::Steal);
+    }
+  else {
+      unit_ = new Units("bohr");
+    }
+}
+
+void
+WriteElectronDensity::run()
+{
+  Ref<BatchElectronDensity> bed
+      = new BatchElectronDensity(wfn_, accuracy_);
+
+  double conv = unit_->to_atomic_units();
+
+  double au_spacing = conv * spacing_;
+
+  SCVector3 au_bbox1, au_bbox2;
+  if (bbox_given_) {
+      for (int i=0; i<3; i++) {
+          au_bbox1[i] = conv * bbox1_[i];
+          au_bbox2[i] = conv * bbox2_[i];
+        }
+    }
+  else {
+      bed->boundingbox(DBL_EPSILON,DBL_MAX,au_bbox1,au_bbox2);
+    }
+
+  ExEnv::out0() << indent << "WriteElectronDensity:" << std::endl;
+  ExEnv::out0() << incindent;
+  ExEnv::out0() << indent << "unit = " << unit_->string_rep() << std::endl;
+  ExEnv::out0() << indent << "spacing = " << spacing_ << std::endl;
+  if (bbox_given_) {
+      ExEnv::out0() << indent << "bbox = [ [";
+      for (int i=0; i<3; i++) ExEnv::out0() << " " << bbox1_[i];
+      ExEnv::out0() << "]" << std::endl;
+      ExEnv::out0() << indent << "         [";
+      for (int i=0; i<3; i++) ExEnv::out0() << " " << bbox2_[i];
+      ExEnv::out0() << "] ]" << std::endl;
+    }
+  else {
+      double au_conv = unit_->from_atomic_units();
+      ExEnv::out0() << indent << "bbox = [ [";
+      for (int i=0; i<3; i++) ExEnv::out0() << " " << au_bbox1[i]*au_conv;
+      ExEnv::out0() << "]" << std::endl;
+      ExEnv::out0() << indent << "         [";
+      for (int i=0; i<3; i++) ExEnv::out0() << " " << au_bbox2[i]*au_conv;
+      ExEnv::out0() << "] ]" << std::endl;
+    }
+
+  int n[3];
+  for (int i=0; i<3; i++) {
+      n[i] = int((au_bbox2[i] - au_bbox1[i])/spacing_);
+      if (au_bbox1[i] + n[i] * spacing_ < au_bbox2[i]) n[i]++;
+    }
+  ExEnv::out0() << indent
+                << "Writing a " << n[0] << "x" << n[1] << "x" << n[2]
+                << " grid" << std::endl;
+
+  for (int i=0; i<n[0]; i++) {
+      SCVector3 point;
+      point[0] = au_bbox1[0] + i * spacing_;
+      for (int j=0; j<n[1]; j++) {
+          point[1] = au_bbox1[1] + j * spacing_;
+          for (int k=0; k<n[0]; k++) {
+              point[2] = au_bbox1[2] + k * spacing_;
+              double alpha_density, beta_density;
+              bed->compute_density(point,
+                                   &alpha_density, 0, 0,
+                                   &beta_density, 0, 0);
+              double density = alpha_density + beta_density;
+              ExEnv::out0() << indent << scprintf("%16.12f", density)
+                            << std::endl;
+            }
+        }
+    }
+
+  ExEnv::out0() << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -41,7 +41,8 @@ BIN_OR_LIB = LIB
 
 CSRC =
 
-CXXSRC = compute.cc formio.cc bug.cc regtime.cc exenv.cc units.cc ieee.cc
+CXXSRC = compute.cc formio.cc bug.cc regtime.cc exenv.cc units.cc ieee.cc \
+         runnable.cc
 
 TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc unittest.cc \
           autovectest.cc

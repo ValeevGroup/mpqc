@@ -47,15 +47,6 @@
 
 namespace sc {
 
-template <class T, class C>
-class DescribedMemberDatum {
-  private:
-    T C::*member_;
-  public:
-    DescribedMemberDatum(T C::*member): member_(member) {}
-    //T &member(C *c) { return c->*member_; }
-};
-
 class DescribedClass;
 class ClassDesc;
 typedef ClassDesc* ClassDescP;

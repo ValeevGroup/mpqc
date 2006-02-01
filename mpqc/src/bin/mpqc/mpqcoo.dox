@@ -144,6 +144,11 @@ class.
 <dt><tt>print_timings</tt><dd> If this is true, timing information is
         printed at the end of the run.  The default is true.
 
+<dt><tt>run</tt><dd> This gives a vector of objects of type
+        Runnable.  The run method for each of these objects
+        will be called after the calculation completes.  This
+        can be used for computing properties, for example.
+
 </dl>
 
 There are also some utility keywords that tell mpqc some technical

@@ -32,7 +32,6 @@
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/linearr12.h>
-#include <chemistry/qc/mbptr12/r12_amps.h>
 #include <chemistry/qc/mbptr12/twoparticlecontraction.h>
 #include <chemistry/qc/mbptr12/spin.h>
 
@@ -43,6 +42,7 @@ namespace sc {
   
   class TwoBodyMOIntsTransform;
   class R12IntsAcc;
+  class F12Amplitudes;
 
   /** R12IntEval is the top-level class which computes intermediates occuring in linear R12 theories.
       This class is used by all Wavefunction classes that implement linear R12 methods.
@@ -70,7 +70,7 @@ class R12IntEval : virtual public SavableState {
   RefSCDimension dim_vv_[NSpinCases2];
   RefSCDimension dim_f12_[NSpinCases2];
   
-  //Ref<F12Amplitudes> Amps_;  // First-order amplitudes of various contributions to the pair functions
+  Ref<F12Amplitudes> Amps_;  // First-order amplitudes of various contributions to the pair functions
   RefSCDimension dim_ij_s_, dim_ij_t_;
 
   bool gbc_;
@@ -189,32 +189,6 @@ class R12IntEval : virtual public SavableState {
                                   const Ref<TwoBodyMOIntsTransform>& transform);
   /// Compute VXB intermeds when VBS is not the same as OBS
   void contrib_to_VXB_gebc_vbsneqobs_();
-
-  /** Compute T2 amplitude in basis <space1, space3 | space2, space4>.
-      AlphaBeta amplitudes are computed.
-      If tform is not given (it should be!), this function will construct a generic
-      transform. */
-  void compute_T2_(RefSCMatrix& T2,
-                   const Ref<MOIndexSpace>& space1,
-                   const Ref<MOIndexSpace>& space2,
-                   const Ref<MOIndexSpace>& space3,
-                   const Ref<MOIndexSpace>& space4,
-                   bool antisymmetrize,
-                   const Ref<TwoBodyMOIntsTransform>& tform = 0);
-  /** Compute F12 integrals in basis <space1, space3 | f12 | space2, space4>.
-      Bra (rows) are blocked by correlation function index.
-      AlphaBeta amplitudes are computed.
-      If tform is not given (it should be!), this function will construct a generic
-      transform. */
-  void compute_F12_(RefSCMatrix& F12,
-                   const Ref<MOIndexSpace>& space1,
-                   const Ref<MOIndexSpace>& space2,
-                   const Ref<MOIndexSpace>& space3,
-                   const Ref<MOIndexSpace>& space4,
-                   const std::vector< Ref<TwoBodyMOIntsTransform> >& transforms
-                     = std::vector< Ref<TwoBodyMOIntsTransform> >(),
-                   const std::vector< Ref<TwoBodyIntDescr> >& descrvec
-                     = std::vector< Ref<TwoBodyIntDescr> >() );
 
   /** Compute A intermediate using "direct" formula in basis <space1, space3 | f12 | space2, space4>.
       Bra (rows) are blocked by correlation function index.
@@ -430,7 +404,7 @@ public:
   virtual void compute();
 
   /// Returns amplitudes of pair correlation functions
-  //Ref<F12Amplitudes> amps();
+  Ref<F12Amplitudes> amps();
   
   /// Returns S block of intermediate V
   const RefSCMatrix& V(SpinCase2 S);
@@ -512,6 +486,32 @@ public:
                               unsigned int f12_left,
                               unsigned int f12_right) const;
   
+  /** Compute T2 amplitude in basis <space1, space3 | space2, space4>.
+      AlphaBeta amplitudes are computed.
+      If tform is not given (it should be!), this function will construct a generic
+      transform. */
+  void compute_T2_(RefSCMatrix& T2,
+                   const Ref<MOIndexSpace>& space1,
+                   const Ref<MOIndexSpace>& space2,
+                   const Ref<MOIndexSpace>& space3,
+                   const Ref<MOIndexSpace>& space4,
+                   bool antisymmetrize,
+                   const Ref<TwoBodyMOIntsTransform>& tform = 0);
+  /** Compute F12 integrals in basis <space1, space3 | f12 | space2, space4>.
+      Bra (rows) are blocked by correlation function index.
+      AlphaBeta amplitudes are computed.
+      If tform is not given (it should be!), this function will construct a generic
+      transform. */
+  void compute_F12_(RefSCMatrix& F12,
+                   const Ref<MOIndexSpace>& space1,
+                   const Ref<MOIndexSpace>& space2,
+                   const Ref<MOIndexSpace>& space3,
+                   const Ref<MOIndexSpace>& space4,
+                   const std::vector< Ref<TwoBodyMOIntsTransform> >& transforms
+                     = std::vector< Ref<TwoBodyMOIntsTransform> >(),
+                   const std::vector< Ref<TwoBodyIntDescr> >& descrvec
+                     = std::vector< Ref<TwoBodyIntDescr> >() );
+
 };
 
 class TransformNotFound: public ProgrammingError {

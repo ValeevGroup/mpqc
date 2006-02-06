@@ -41,6 +41,7 @@
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/utils.h>
+#include <chemistry/qc/mbptr12/r12_amps.h>
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/contract_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/container.h>
@@ -186,6 +187,8 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
   //if (r12info()->basis_vir()->equiv(r12info()->basis())) {
     form_canonvir_space_();
   //}
+  
+  Amps_ = new F12Amplitudes(this);
 }
 
 R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
@@ -438,6 +441,12 @@ R12IntEval::F12(SpinCase2 S) {
                    occ_act(Alpha),
                    vir_act(Alpha));
   return F12_[S];
+}
+
+Ref<F12Amplitudes>
+R12IntEval::amps()
+{
+  return Amps_;
 }
 
 const RefSCVector&
@@ -1248,7 +1257,11 @@ R12IntEval::compute()
       if (debug_ > 1) {
         for(int s=0; s<nspincases2(); s++) {
           const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
-          std::string label = prepend_spincase(spincase2,"A matrix");
+          std::string label = prepend_spincase(spincase2,"T2 matrix");
+          T2_[s].print(label.c_str());
+          label = prepend_spincase(spincase2,"F12(vv) matrix");
+          F12_[s].print(label.c_str());
+          label = prepend_spincase(spincase2,"A matrix");
           A_[s].print(label.c_str());
           if (follow_ks_ebcfree_) {
             std::string label = prepend_spincase(spincase2,"A(comm) matrix");
@@ -1326,6 +1339,8 @@ R12IntEval::compute()
         occ_act(spin2), vir_act(spin2),
         spincase2!=AlphaBeta, tforms
       );
+      if (debug_ > 1)
+        T2.print("T2 amplitudes");
       mp2pe = G*T2.t();
       mp2pe.print("G * T2.t : Diagonal elements should be pair energies");
 
@@ -1519,7 +1534,7 @@ R12IntEval::compute()
     
 #endif
 
-#if 1
+#if 0
     // test generic X evaluator
     {
       for(int s=0; s<nspincases2(); s++) {
@@ -1534,7 +1549,7 @@ R12IntEval::compute()
     }
 #endif
 
-#if 1
+#if 0
     // test generic FxF evaluator
     {
       for(int s=0; s<nspincases2(); s++) {
@@ -1563,17 +1578,29 @@ R12IntEval::compute()
       const SpinCase1 spin2 = case2(spincase2);
       Ref<MOIndexSpace> occ1_act = occ_act(spin1);
       Ref<MOIndexSpace> occ2_act = occ_act(spin2);
-      Ref<MOIndexSpace> uocc1_act = vir_act(spin1);
-      Ref<MOIndexSpace> uocc2_act = vir_act(spin2);
-      // these transforms were used by VXB evaluators and should be available
-      const std::string tform_name = transform_label(occ1_act,
-                                                     r12info()->refinfo()->orbs(spin1),
-                                                     occ2_act,
-                                                     r12info()->refinfo()->orbs(spin2),0);
-      const Ref<TwoBodyMOIntsTransform> tform = tform_map_[tform_name];
+      Ref<MOIndexSpace> vir1_act = vir_act(spin1);
+      Ref<MOIndexSpace> vir2_act = vir_act(spin2);
+      
+      Ref<TwoBodyMOIntsTransform> tform;
+      if (obs_eq_vbs) {
+        // these transforms were used by VXB evaluators and should be available
+        const std::string tform_name = transform_label(occ1_act,
+                                                       r12info()->refinfo()->orbs(spin1),
+                                                       occ2_act,
+                                                       r12info()->refinfo()->orbs(spin2),0);
+        tform = tform_map_[tform_name];
+      }
+      else {
+        // these transforms were used by VXB evaluators and should be available
+        const std::string tform_name = transform_label(occ1_act,
+                                                       vir1_act,
+                                                       occ2_act,
+                                                       vir2_act,0);
+        tform = tform_map_[tform_name];
+      }        
       compute_mp2_pair_energies_(emp2pair_[s],spincase2,
-                                 occ1_act,uocc1_act,
-                                 occ2_act,uocc2_act,
+                                 occ1_act,vir1_act,
+                                 occ2_act,vir2_act,
                                  tform);
   }
   

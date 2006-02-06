@@ -278,8 +278,10 @@ MOIndexSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs, const RefDiagSC
     for(unsigned int i=0; i<nb; i++)
       nfunc_per_block[i] = nmo_[i];
     modim_ = new SCDimension(rank_, nb, nfunc_per_block, ("MO(" + name_ + ")").c_str());
-    for(unsigned int i=0; i<nb; i++)
-      modim_->blocks()->set_subdim(i, new SCDimension(nfunc_per_block[i]));
+    if (rank_) {
+      for(unsigned int i=0; i<nb; i++)
+        modim_->blocks()->set_subdim(i, new SCDimension(nfunc_per_block[i]));
+    }
     delete[] nfunc_per_block;
   
     // The sorted->blocked reordering array is trivial when no resorting is done

@@ -101,7 +101,7 @@ R12IntEval::contrib_to_VXB_gebc_vbsneqobs_()
                               spincase2,tpcontract);
       }
     }
-    // (im|ja) contribution
+    // (im|jx) contribution
     {
       Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(occ1->rank(),ribs2->rank(),-1.0);
       contrib_to_VXB_a_new_(occ1_act,occ1,occ2_act,ribs2,

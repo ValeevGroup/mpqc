@@ -335,11 +335,17 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   r12b_energy_ = 0;
   mp2_corr_energy_ = 0.0;
   r12_corr_energy_ = 0.0;
-
-  twopdm_grid_aa_ = require_dynamic_cast<TwoBodyGrid*>(keyval->describedclassvalue("twopdm_grid_aa").pointer(),
-                                               "MBPT2_R12::MBPT2_R12\n");
-  twopdm_grid_ab_ = require_dynamic_cast<TwoBodyGrid*>(keyval->describedclassvalue("twopdm_grid_ab").pointer(),
-                                               "MBPT2_R12::MBPT2_R12\n");
+  
+  twopdm_grid_ = require_dynamic_cast<TwoBodyGrid*>(
+                   keyval->describedclassvalue("twopdm_grid").pointer(),
+                   "MBPT2_R12::MBPT2_R12\n"
+                 );
+  if (twopdm_grid_.nonnull()) {
+    plot_pair_function_ = static_cast<unsigned int>(keyval->intvalue("plot_pair_function",
+                                                                     KeyValValueint(0)
+                                                                    ));
+  }
+  
 }
 
 MBPT2_R12::~MBPT2_R12()

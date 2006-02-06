@@ -38,7 +38,7 @@
 #ifndef _chemistry_qc_mbptr12_mp2r12energy_h
 #define _chemistry_qc_mbptr12_mp2r12energy_h
 
-#define MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION 0
+#define MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION 1
 
 namespace sc {
 
@@ -95,16 +95,9 @@ public:
   void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0());
 
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
-  /** Computes the value of the alpha-alpha pair function ij
-      when electrons 1 and 2 reside at r1 and r2 */
-  double compute_pair_function_aa(int ij, const SCVector3& r1, const SCVector3& r2);
-  /** Computes the value of the alpha-beta pair function ij
-      when electrons 1 and 2 reside at r1 and r2 */
-  double compute_pair_function_ab(int ij, const SCVector3& r1, const SCVector3& r2);
-  /** Computes values of the alpha-alpha pair function ij on tbgrid */
-  void compute_pair_function_aa(int ij, const Ref<TwoBodyGrid>& tbgrid);
-  /** Computes values of the alpha-beta pair function ij on tbgrid */
-  void compute_pair_function_ab(int ij, const Ref<TwoBodyGrid>& tbgrid);
+  /** Computes values of pair function ij on tbgrid */
+  void compute_pair_function(int ij, SpinCase2 spincase2,
+                             const Ref<TwoBodyGrid>& tbgrid);
 #endif
 
   /// Returns the vector of second-order pair energies of spin case S

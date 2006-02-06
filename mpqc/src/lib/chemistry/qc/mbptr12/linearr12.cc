@@ -170,6 +170,12 @@ LinearR12::NullCorrelationFactor::tbint_type_eri() const
   return static_cast<int>(TwoBodyInt::eri);
 }
 
+double
+LinearR12::NullCorrelationFactor::value(unsigned int c, double r12) const
+{
+  return 0;
+}
+
 ////
 
 LinearR12::R12CorrelationFactor::R12CorrelationFactor() :
@@ -205,6 +211,12 @@ Ref<TwoBodyIntDescr>
 LinearR12::R12CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f) const
 {
   return new TwoBodyIntDescrR12(IF);
+}
+
+double
+LinearR12::R12CorrelationFactor::value(unsigned int c, double r12) const
+{
+  return r12;
 }
 
 ////
@@ -270,5 +282,19 @@ LinearR12::G12CorrelationFactor::tbintdescr(const Ref<Integral>& IF,
 {
   Ref<IntParamsG12> params = new IntParamsG12(function(fbra),function(fket));
   return new TwoBodyIntDescrG12(IF,params);
+}
+
+double
+LinearR12::G12CorrelationFactor::value(unsigned int c, double r12) const
+{
+  double val = 0.0;
+  const unsigned int nprims = nprimitives(c);
+  for(unsigned int p=0; p<nprims; p++) {
+    const PrimitiveGeminal& prim = primitive(c,p);
+    const double coef = prim.first;
+    const double expon = prim.second;
+    val += coef*exp(-expon*r12*r12);
+  }
+  return val;
 }
 

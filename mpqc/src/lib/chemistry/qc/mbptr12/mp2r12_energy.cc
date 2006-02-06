@@ -46,6 +46,7 @@
 #include <chemistry/qc/mbptr12/transform_factory.h>
 #include <chemistry/qc/mbptr12/svd.h>
 #include <chemistry/qc/mbptr12/print_scmat_norms.h>
+#include <chemistry/qc/mbptr12/r12_amps.h>
 
 using namespace std;
 using namespace sc;
@@ -179,211 +180,129 @@ static void print_psi_values(std::ostream& fout, const SCVector3& r1, const SCVe
 }
 
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
-double
-MP2R12Energy::compute_pair_function_aa(int ij, const SCVector3& r1, const SCVector3& r2)
-{
-  Ref<R12Amplitudes> Amps = r12eval_->amps();
-  RefSCMatrix T2aa = Amps->T2_aa();
-  RefSCMatrix Rvv_aa = Amps->Rvv_aa();
-  RefSCMatrix Roo_aa = Amps->Roo_aa();
-  RefSCMatrix Rvo_aa = Amps->Rvo_aa();
-  RefSCMatrix Rxo_aa = Amps->Rxo_aa();
-
-  Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-  RefSCMatrix Caa = localkit->matrix(Caa_.rowdim(),Caa_.coldim());
-  double* caa = new double[Caa_.rowdim().n()*Caa_.coldim().n()];
-  Caa_.convert(caa);
-  Caa.assign(caa);
-  delete[] caa;
-  RefSCMatrix Cvv = Caa * Rvv_aa;
-  RefSCMatrix Coo = Caa * Roo_aa;
-  RefSCMatrix Cov = Caa * Rvo_aa;
-  RefSCMatrix Cox = Caa * Rxo_aa;
-
-  Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  Ref<MOIndexSpace> act_vir_space = r12info->vir_act();
-  Ref<MOIndexSpace> act_occ_space = r12info->refinfo()->docc_act();
-  Ref<MOIndexSpace> occ_space = r12info->refinfo()->docc();
-  Ref<MOIndexSpace> ribs_space = r12info->ribs_space();
-
-  RefSCVector phi_aa = compute_2body_values_(true,act_occ_space,act_occ_space,r1,r2);
-  RefSCVector phi_vv = compute_2body_values_(true,act_vir_space,act_vir_space,r1,r2);
-  RefSCVector phi_oo = compute_2body_values_(true,occ_space,occ_space,r1,r2);
-  RefSCVector phi_ov = compute_2body_values_(true,occ_space,act_vir_space,r1,r2);
-  RefSCVector phi_ox = compute_2body_values_(true,occ_space,ribs_space,r1,r2);
-
-  double phi_t2 = T2aa.get_row(ij).dot(phi_vv);
-
-  SCVector3 r12 = r1 - r2;
-  const double dist12 = r12.norm();
-  double phi_r12;
-  phi_r12 = 0.5 * Caa.get_row(ij).dot(phi_aa) * dist12;
-  phi_r12 -= 0.5 * Cvv.get_row(ij).dot(phi_vv);
-  phi_r12 -= 0.5 * Coo.get_row(ij).dot(phi_oo);
-  phi_r12 -= 1.0 * Cov.get_row(ij).dot(phi_ov);
-  phi_r12 -= 1.0 * Cox.get_row(ij).dot(phi_ox);
-
-  print_psi_values(ExEnv::out0(),r1,r2,phi_aa.get_element(ij),phi_t2,phi_r12);
-
-  return phi_t2 + phi_r12;
-}
-
 void
-MP2R12Energy::compute_pair_function_aa(int ij, const Ref<TwoBodyGrid>& tbgrid)
+MP2R12Energy::compute_pair_function(int ij, SpinCase2 spincase2,
+                                    const Ref<TwoBodyGrid>& tbgrid)
 {
-  Ref<R12Amplitudes> Amps = r12eval_->amps();
-  RefSCMatrix T2aa = Amps->T2_aa();
-  RefSCMatrix Rvv_aa = Amps->Rvv_aa();
-  RefSCMatrix Roo_aa = Amps->Roo_aa();
-  RefSCMatrix Rvo_aa = Amps->Rvo_aa();
-  RefSCMatrix Rxo_aa = Amps->Rxo_aa();
-
+  const bool spin_polarized = r12eval()->r12info()->refinfo()->ref()->spin_polarized();
+  const SpinCase2 sc2 = (!spin_polarized && spincase2 == BetaBeta ? AlphaAlpha : spincase2);
+  const SpinCase1 spin1 = case1(sc2);
+  const SpinCase1 spin2 = case2(sc2);
+  const bool p1_neq_p2 = spin_polarized && (spincase2 == AlphaBeta);
+  const bool antisymm = (spincase2 != AlphaBeta);
+  
+  // convert replicated matrix to local matrix
+  RefSCMatrix C;
   Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-  RefSCMatrix Caa = localkit->matrix(Caa_.rowdim(),Caa_.coldim());
-  double* caa = new double[Caa_.rowdim().n()*Caa_.coldim().n()];
-  Caa_.convert(caa);
-  Caa.assign(caa);
-  delete[] caa;
-  RefSCMatrix Cvv = Caa * Rvv_aa;
-  RefSCMatrix Coo = Caa * Roo_aa;
-  RefSCMatrix Cov = Caa * Rvo_aa;
-  RefSCMatrix Cox = Caa * Rxo_aa;
-
-  Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  Ref<MOIndexSpace> act_vir_space = r12info->vir_act();
-  Ref<MOIndexSpace> act_occ_space = r12info->refinfo()->docc_act();
-  Ref<MOIndexSpace> occ_space = r12info->refinfo()->docc();
-  Ref<MOIndexSpace> ribs_space = r12info->ribs_space();
-
-  const int nelem = tbgrid->nelem();
-  std::stringstream output_file_name;
-  output_file_name << tbgrid->name() << ".ab.pair"
-                   << ij << ".txt";
-  ofstream ofile(output_file_name.str().c_str());
-
-  for(int i=0; i<nelem; i++) {
-    RefSCVector phi_aa = compute_2body_values_(true,act_occ_space,act_occ_space,tbgrid->xyz1(i),tbgrid->xyz2(i));
-    RefSCVector phi_vv = compute_2body_values_(true,act_vir_space,act_vir_space,tbgrid->xyz1(i),tbgrid->xyz2(i));
-    RefSCVector phi_oo = compute_2body_values_(true,occ_space,occ_space,tbgrid->xyz1(i),tbgrid->xyz2(i));
-    RefSCVector phi_ov = compute_2body_values_(true,occ_space,act_vir_space,tbgrid->xyz1(i),tbgrid->xyz2(i));
-    RefSCVector phi_ox = compute_2body_values_(true,occ_space,ribs_space,tbgrid->xyz1(i),tbgrid->xyz2(i));
-
-    double phi_t2 = T2aa.get_row(ij).dot(phi_vv);
-
-    SCVector3 r12 = tbgrid->xyz1(i) - tbgrid->xyz2(i);
-    const double dist12 = r12.norm();
-    double phi_r12;
-    phi_r12 = 0.5 * Caa.get_row(ij).dot(phi_aa) * dist12;
-    phi_r12 -= 0.5 * Cvv.get_row(ij).dot(phi_vv);
-    phi_r12 -= 0.5 * Coo.get_row(ij).dot(phi_oo);
-    phi_r12 -= 1.0 * Cov.get_row(ij).dot(phi_ov);
-    phi_r12 -= 1.0 * Cox.get_row(ij).dot(phi_ox);
-
-    print_psi_values(ofile,tbgrid->xyz1(i),tbgrid->xyz2(i),phi_aa.get_element(ij),phi_t2,phi_r12);
+  {
+    RefSCMatrix Crepl = C_[sc2];
+    C = localkit->matrix(Crepl.rowdim(),Crepl.coldim());
+    double* c = new double[Crepl.rowdim().n()*Crepl.coldim().n()];
+    Crepl.convert(c);
+    C.assign(c);
+    delete[] c;
   }
-}
+  // and transpose so that row dimension is for |ij> pairs
+  C = C.t();
+  
+  Ref<R12IntEvalInfo> r12info = r12eval()->r12info();
+  Ref<MOIndexSpace> vir1_act = r12info->vir_act(spin1);
+  Ref<MOIndexSpace> vir2_act = r12info->vir_act(spin2);
+  Ref<MOIndexSpace> occ1_act = r12info->refinfo()->occ_act(spin1);
+  Ref<MOIndexSpace> occ2_act = r12info->refinfo()->occ_act(spin2);
+  Ref<MOIndexSpace> occ1 = r12info->refinfo()->occ(spin1);
+  Ref<MOIndexSpace> occ2 = r12info->refinfo()->occ(spin2);
+  Ref<MOIndexSpace> ribs1 = r12info->ribs_space(spin1);
+  Ref<MOIndexSpace> ribs2 = r12info->ribs_space(spin2);
 
-double
-MP2R12Energy::compute_pair_function_ab(int ij, const SCVector3& r1, const SCVector3& r2)
-{
-  Ref<R12Amplitudes> Amps = r12eval_->amps();
-  RefSCMatrix T2ab = Amps->T2_ab();
-  RefSCMatrix Rvv_ab = Amps->Rvv_ab();
-  RefSCMatrix Roo_ab = Amps->Roo_ab();
-  RefSCMatrix Rvo_ab = Amps->Rvo_ab();
-  RefSCMatrix Rxo_ab = Amps->Rxo_ab();
-
-  Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-  RefSCMatrix Cab = localkit->matrix(Cab_.rowdim(),Cab_.coldim());
-  double* cab = new double[Cab_.rowdim().n()*Cab_.coldim().n()];
-  Cab_.convert(cab);
-  Cab.assign(cab);
-  delete[] cab;
-  RefSCMatrix Cvv = Cab * Rvv_ab;
-  RefSCMatrix Coo = Cab * Roo_ab;
-  RefSCMatrix Cov = Cab * Rvo_ab;
-  RefSCMatrix Cox = Cab * Rxo_ab;
-
-  Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  Ref<MOIndexSpace> act_vir_space = r12info->vir_act();
-  Ref<MOIndexSpace> act_occ_space = r12info->refinfo()->docc_act();
-  Ref<MOIndexSpace> occ_space = r12info->refinfo()->docc();
-  Ref<MOIndexSpace> ribs_space = r12info->ribs_space();
-
-  RefSCVector phi_aa = compute_2body_values_(false,act_occ_space,act_occ_space,r1,r2);
-  RefSCVector phi_vv = compute_2body_values_(false,act_vir_space,act_vir_space,r1,r2);
-  RefSCVector phi_oo = compute_2body_values_(false,occ_space,occ_space,r1,r2);
-  RefSCVector phi_ov = compute_2body_values_(false,occ_space,act_vir_space,r1,r2);
-  RefSCVector phi_ox = compute_2body_values_(false,occ_space,ribs_space,r1,r2);
-
-  double phi_t2 = T2ab.get_row(ij).dot(phi_vv);
-
-  SCVector3 r12 = r1 - r2;
-  const double dist12 = r12.norm();
-  double phi_r12;
-  phi_r12 = 0.5*Cab.get_row(ij).dot(phi_aa) * dist12;
-  phi_r12 -= 0.5 * Cvv.get_row(ij).dot(phi_vv);
-  phi_r12 -= 0.5 * Coo.get_row(ij).dot(phi_oo);
-  phi_r12 -= 1.0 * Cov.get_row(ij).dot(phi_ov);
-  phi_r12 -= 1.0 * Cox.get_row(ij).dot(phi_ox);
-
-  print_psi_values(ExEnv::out0(),r1,r2,phi_aa.get_element(ij),phi_t2,phi_r12);
-
-  return phi_t2 + phi_r12;
-}
-
-void
-MP2R12Energy::compute_pair_function_ab(int ij, const Ref<TwoBodyGrid>& tbgrid)
-{
-  Ref<R12Amplitudes> Amps = r12eval_->amps();
-  RefSCMatrix T2ab = Amps->T2_ab();
-  RefSCMatrix Rvv_ab = Amps->Rvv_ab();
-  RefSCMatrix Roo_ab = Amps->Roo_ab();
-  RefSCMatrix Rvo_ab = Amps->Rvo_ab();
-  RefSCMatrix Rxo_ab = Amps->Rxo_ab();
-
-  Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-  RefSCMatrix Cab = localkit->matrix(Cab_.rowdim(),Cab_.coldim());
-  double* cab = new double[Cab_.rowdim().n()*Cab_.coldim().n()];
-  Cab_.convert(cab);
-  Cab.assign(cab);
-  delete[] cab;
-  RefSCMatrix Cvv = Cab * Rvv_ab;
-  RefSCMatrix Coo = Cab * Roo_ab;
-  RefSCMatrix Cov = Cab * Rvo_ab;
-  RefSCMatrix Cox = Cab * Rxo_ab;
-
-  Ref<R12IntEvalInfo> r12info = r12eval_->r12info();
-  Ref<MOIndexSpace> act_vir_space = r12info->vir_act();
-  Ref<MOIndexSpace> act_occ_space = r12info->refinfo()->docc_act();
-  Ref<MOIndexSpace> occ_space = r12info->refinfo()->docc();
-  Ref<MOIndexSpace> ribs_space = r12info->ribs_space();
-
+  using LinearR12::CorrelationFactor;
+  const Ref<CorrelationFactor> corrfactor = r12info->corrfactor();
+  const unsigned int nf12 = corrfactor->nfunctions();
+  // No same-spin pairs if number of orbitals == 1
+  if (spincase2 != AlphaBeta && occ1_act->rank() == 1)
+    return;
+  
+  Ref<F12Amplitudes> Amps = r12eval_->amps();
+  RefSCMatrix T2 = Amps->T2(sc2);  T2.print("T2 amplitudes");
+  const unsigned int nij = T2.rowdim().n();
+  if (ij >= nij)
+    return;
+  RefSCMatrix Fvv = Amps->Fvv(sc2);  Fvv.print("F12(vv) matrix");
+  RefSCMatrix Foo = Amps->Foo(sc2);  Foo.print("F12(oo) matrix");
+  RefSCMatrix Fov = Amps->Fov(sc2);  Fov.print("F12(ov) matrix");
+  RefSCMatrix Fox = Amps->Fox(sc2);  Fox.print("F12(ox) matrix");
+  RefSCMatrix Fvo, Fxo;
+  if (p1_neq_p2) {
+    Fvo = Amps->Fvo(sc2);  Fvv.print("F12(vo) matrix");
+    Fxo = Amps->Fxo(sc2);  Fvv.print("F12(xo) matrix");
+  }
+  
+  RefSCMatrix Cvv = C * Fvv;  Cvv.print("C(vv) matrix");
+  RefSCMatrix Coo = C * Foo;  Coo.print("C(oo) matrix");
+  RefSCMatrix Cov = C * Fov;  Cov.print("C(ov) matrix");
+  RefSCMatrix Cox = C * Fox;  Cox.print("C(ox) matrix");
+  RefSCMatrix Cvo, Cxo;
+  if (p1_neq_p2) {
+    Cvo = C * Fvo;  Cvv.print("C(vo) matrix");
+    Cxo = C * Fxo;  Cvv.print("C(xo) matrix");
+  }
+  
   const int nelem = tbgrid->nelem();
   std::stringstream output_file_name;
-  output_file_name << tbgrid->name() << ".ab.pair"
+  output_file_name << tbgrid->name() << ".pair"
                    << ij << ".txt";
   ofstream ofile(output_file_name.str().c_str());
-
-  for(int i=0; i<nelem; i++) {
-    RefSCVector phi_aa = compute_2body_values_(false,act_occ_space,act_occ_space,tbgrid->xyz1(i),tbgrid->xyz2(i));
-    RefSCVector phi_vv = compute_2body_values_(false,act_vir_space,act_vir_space,tbgrid->xyz1(i),tbgrid->xyz2(i));
-    RefSCVector phi_oo = compute_2body_values_(false,occ_space,occ_space,tbgrid->xyz1(i),tbgrid->xyz2(i));
-    RefSCVector phi_ov = compute_2body_values_(false,occ_space,act_vir_space,tbgrid->xyz1(i),tbgrid->xyz2(i));
-    RefSCVector phi_ox = compute_2body_values_(false,occ_space,ribs_space,tbgrid->xyz1(i),tbgrid->xyz2(i));
+  
+  // get coefficients for ij-th pair
+  double* c_ij = new double[nf12*nij];
+  {
+    RefSCVector Cij = C.get_row(ij);
+    Cij.convert(c_ij);
+  }
+  RefSCVector C_ij_f = localkit->vector(C.rowdim());
+  
+  for(int p=0; p<nelem; p++) {
+    const SCVector3 r1 = tbgrid->xyz1(p);
+    const SCVector3 r2 = tbgrid->xyz2(p);
     
-    double phi_t2 = T2ab.get_row(ij).dot(phi_vv);
+    RefSCVector phi_aa = compute_2body_values_(antisymm,occ1_act,occ2_act,r1,r2);
+    RefSCVector phi_vv = compute_2body_values_(antisymm,vir1_act,vir2_act,r1,r2);
+    RefSCVector phi_oo = compute_2body_values_(antisymm,occ1,occ2,r1,r2);
+    RefSCVector phi_ov = compute_2body_values_(antisymm,occ1,vir2_act,r1,r2);
+    RefSCVector phi_ox = compute_2body_values_(antisymm,occ1,ribs2,r1,r2);
+    RefSCVector phi_vo, phi_xo;
+    if (p1_neq_p2) {
+      phi_vo = compute_2body_values_(antisymm,vir1_act,occ2,r1,r2);
+      phi_xo = compute_2body_values_(antisymm,ribs1,occ2,r1,r2);
+    }
+    else {
+      phi_vo = compute_2body_values_(antisymm,occ1,vir2_act,r2,r1);
+      phi_xo = compute_2body_values_(antisymm,occ1,ribs2,r2,r1);
+    }
     
-    SCVector3 r12 = tbgrid->xyz1(i) - tbgrid->xyz2(i);
-    const double dist12 = r12.norm();
-    double phi_r12;
-    phi_r12 = 0.5*Cab.get_row(ij).dot(phi_aa) * dist12;
+    double phi_t2 = T2.get_row(ij).dot(phi_vv);
+    
+    const double r12 = (r1-r2).norm();
+    double phi_r12 = 0.0;
+    
+    for(int f=0; f<nf12; ++f) {
+      C_ij_f.convert(c_ij + f*nij);
+      phi_r12 += 0.5 * C_ij_f.dot(phi_aa) * corrfactor->value(f,r12);
+    }
     phi_r12 -= 0.5 * Cvv.get_row(ij).dot(phi_vv);
     phi_r12 -= 0.5 * Coo.get_row(ij).dot(phi_oo);
-    phi_r12 -= 1.0 * Cov.get_row(ij).dot(phi_ov);
-    phi_r12 -= 1.0 * Cox.get_row(ij).dot(phi_ox);
-
-    print_psi_values(ofile,tbgrid->xyz1(i),tbgrid->xyz2(i),phi_aa.get_element(ij),phi_t2,phi_r12);
+    phi_r12 -= 0.5 * Cov.get_row(ij).dot(phi_ov);
+    phi_r12 -= 0.5 * Cox.get_row(ij).dot(phi_ox);
+    if (p1_neq_p2) {
+      phi_r12 -= 0.5 * Cvo.get_row(ij).dot(phi_vo);
+      phi_r12 -= 0.5 * Cxo.get_row(ij).dot(phi_xo);
+    }
+    else {
+      phi_r12 -= 0.5 * Cov.get_row(ij).dot(phi_vo);
+      phi_r12 -= 0.5 * Cox.get_row(ij).dot(phi_xo);
+    }
+    
+    print_psi_values(ofile,r1,r2,phi_aa.get_element(ij),phi_t2,phi_r12);
   }
 }
 

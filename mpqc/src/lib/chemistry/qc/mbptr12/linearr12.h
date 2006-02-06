@@ -78,7 +78,10 @@ namespace sc {
         unsigned int nprimitives(unsigned int c) const;
         /// Returns std::pair<primitive_parameter,coefficient> in primitive p of contraction c
         const PrimitiveGeminal& primitive(unsigned int c, unsigned int p) const;
-
+        
+        /// Computes value of function c at r12
+        virtual double value(unsigned int c, double r12) const =0;
+        
         /** Returns TwoBodyIntDescr needed to compute matrix elements where correlation
             function f appears in either bra or ket only.
         */
@@ -126,6 +129,8 @@ namespace sc {
       unsigned int max_num_tbint_types() const { return 1; }
       /// Implementation of CorrelationFactor::tbint_type_eri()
       int tbint_type_eri() const;
+      /// Implementation of CorrelationFactor::value()
+      double value(unsigned int c, double r12) const;
     };
     
     /** R12CorrelationFactor stands for no correlation factor */
@@ -145,6 +150,8 @@ namespace sc {
       int tbint_type_t2f12() const;
       /// Overload of CorrelationFactor::tbintdescr(f)
       Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f) const;
+      /// Implementation of CorrelationFactor::value()
+      double value(unsigned int c, double r12) const;
     };
     
     /** G12CorrelationFactor stands for no correlation factor */
@@ -172,6 +179,8 @@ namespace sc {
       Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f) const;
       /// Overload of CorrelationFactor::tbintdescr(fbra,fket)
       Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int fbra, unsigned int fket) const;
+      /// Implementation of CorrelationFactor::value()
+      double value(unsigned int c, double r12) const;
     };
     
     enum StandardApproximation {StdApprox_A = 0,

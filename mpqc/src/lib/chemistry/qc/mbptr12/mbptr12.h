@@ -73,8 +73,8 @@ class MBPT2_R12: public MBPT2 {
     Ref<SCVector> epair_0_, epair_1_;   // Singlet/triplet pair energies if spin-adapted
                                         // Alpha-beta/alpha-alpha pair energies if spin-orbital
 
-    Ref<TwoBodyGrid> twopdm_grid_aa_;     // The set of 2 particle positions on which to compute values of alpha-alpha 2-PDM
-    Ref<TwoBodyGrid> twopdm_grid_ab_;     // The set of 2 particle positions on which to compute values of alpha-beta 2-PDM
+    Ref<TwoBodyGrid> twopdm_grid_;      // The set of 2 particle positions on which to compute values of pair function
+    unsigned int plot_pair_function_;   // The index of the pair function to plot
 
 #define ref_to_mp2r12_acc_ 100.0
 
@@ -237,11 +237,11 @@ class MBPT2_R12: public MBPT2 {
 	file without ".in". If MPI-I/O is used then it is user's responsibility to ensure
 	that the file resides on a file system that supports MPI-I/O.
 
-        <dt><tt>twopdm_grid_aa</tt><dd> This optional keyword specifies a TwoBodyGrid object which to
-        use for coordinates at which to compute alpha-alpha part of 2-PDM.
+        <dt><tt>twopdm_grid</tt><dd> This optional keyword specifies a TwoBodyGrid object on which to
+        plot pair function given by <tt>plot_pair_function</tt>.
 
-        <dt><tt>twopdm_grid_ab</tt><dd> This optional keyword specifies a TwoBodyGrid object which to
-        use for coordinates at which to compute alpha-beta part of 2-PDM.
+        <dt><tt>twopdm_grid</tt><dd> This optional keyword specifies which pair function to
+        plot on <tt>twobody_grid</tt>.
 
         </dl> */
     MBPT2_R12(const Ref<KeyVal>&);

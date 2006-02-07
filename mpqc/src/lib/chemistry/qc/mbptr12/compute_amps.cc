@@ -96,6 +96,7 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
                         const Ref<MOIndexSpace>& space2,
                         const Ref<MOIndexSpace>& space3,
                         const Ref<MOIndexSpace>& space4,
+                        bool antisymmetrize,
                         const std::vector< Ref<TwoBodyMOIntsTransform> >& transvec,
                         const std::vector< Ref<TwoBodyIntDescr> >& descrvec)
 {
@@ -112,7 +113,7 @@ R12IntEval::compute_F12_(RefSCMatrix& F12,
     F12, corrfactor()->tbint_type_f12(),
     space1, space2,
     space3, space4,
-    false,
+    antisymmetrize,
     transvec, descrvec
   );
 

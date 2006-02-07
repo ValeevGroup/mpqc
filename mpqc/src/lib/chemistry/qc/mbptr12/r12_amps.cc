@@ -106,7 +106,7 @@ F12Amplitudes::compute_()
   Ref<SingleRefInfo> refinfo = r12info->refinfo();
   const bool obs_eq_vbs = r12info->basis_vir()->equiv(r12info->basis());
   const bool spin_polarized = refinfo->ref()->spin_polarized();
-  unsigned int nspincases2 = (spin_polarized ? 3 : 2);
+  unsigned int nspincases2 = (spin_polarized ? 3 : 1);
   
   for(unsigned int s=0; s<nspincases2; s++) {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
@@ -189,17 +189,18 @@ F12Amplitudes::compute_()
       }
     }
     // else the needed transforms already exist
-    
-    r12eval_->compute_T2_(T2_[s],occ1_act,vir1_act,occ2_act,vir2_act,false,tform0_pp);
-    r12eval_->compute_F12_(Fvv_[s],occ1_act,vir1_act,occ2_act,vir2_act,tforms_pp);
-    r12eval_->compute_F12_(Foo_[s],occ1_act,occ1,occ2_act,occ2,tforms_pp);
-    r12eval_->compute_F12_(Fov_[s],occ1_act,occ1,occ2_act,vir2_act,tforms_pp);
-    r12eval_->compute_F12_(Fox_[s],occ1_act,occ1,occ2_act,ribs2,tforms_mx);
+
+    const bool antisymm = spincase2!=AlphaBeta;
+    r12eval_->compute_T2_(T2_[s],occ1_act,vir1_act,occ2_act,vir2_act,antisymm,tform0_pp);
+    r12eval_->compute_F12_(Fvv_[s],occ1_act,vir1_act,occ2_act,vir2_act,antisymm,tforms_pp);
+    r12eval_->compute_F12_(Foo_[s],occ1_act,occ1,occ2_act,occ2,antisymm,tforms_pp);
+    r12eval_->compute_F12_(Fov_[s],occ1_act,occ1,occ2_act,vir2_act,antisymm,tforms_pp);
+    r12eval_->compute_F12_(Fox_[s],occ1_act,occ1,occ2_act,ribs2,antisymm,tforms_mx);
     if (p1_neq_p2) {
       Fvo_[s] = kit->matrix(dim_f12,dim_vo);
       Fxo_[s] = kit->matrix(dim_f12,dim_xo);
-      r12eval_->compute_F12_(Fvo_[s],occ1_act,vir1_act,occ2_act,occ2,tforms_pp);
-      r12eval_->compute_F12_(Fxo_[s],occ1_act,ribs1,occ2_act,occ2,tforms_xm);
+      r12eval_->compute_F12_(Fvo_[s],occ1_act,vir1_act,occ2_act,occ2,antisymm,tforms_pp);
+      r12eval_->compute_F12_(Fxo_[s],occ1_act,ribs1,occ2_act,occ2,antisymm,tforms_xm);
     }
   }
   

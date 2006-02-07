@@ -507,6 +507,7 @@ public:
                    const Ref<MOIndexSpace>& space2,
                    const Ref<MOIndexSpace>& space3,
                    const Ref<MOIndexSpace>& space4,
+                   bool antisymmetrize,
                    const std::vector< Ref<TwoBodyMOIntsTransform> >& transforms
                      = std::vector< Ref<TwoBodyMOIntsTransform> >(),
                    const std::vector< Ref<TwoBodyIntDescr> >& descrvec

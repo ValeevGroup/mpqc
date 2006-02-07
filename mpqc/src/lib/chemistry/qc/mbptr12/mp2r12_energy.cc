@@ -190,6 +190,10 @@ MP2R12Energy::compute_pair_function(int ij, SpinCase2 spincase2,
   const SpinCase1 spin2 = case2(sc2);
   const bool p1_neq_p2 = spin_polarized && (spincase2 == AlphaBeta);
   const bool antisymm = (spincase2 != AlphaBeta);
+
+  // Cannot plot same-spin pairs yet
+  if (spincase2 != AlphaBeta)
+    return;
   
   // convert replicated matrix to local matrix
   RefSCMatrix C;
@@ -204,6 +208,7 @@ MP2R12Energy::compute_pair_function(int ij, SpinCase2 spincase2,
   }
   // and transpose so that row dimension is for |ij> pairs
   C = C.t();
+  if (debug_ > 2) C.print("C amplitudes");
   
   Ref<R12IntEvalInfo> r12info = r12eval()->r12info();
   Ref<MOIndexSpace> vir1_act = r12info->vir_act(spin1);
@@ -223,33 +228,39 @@ MP2R12Energy::compute_pair_function(int ij, SpinCase2 spincase2,
     return;
   
   Ref<F12Amplitudes> Amps = r12eval_->amps();
-  RefSCMatrix T2 = Amps->T2(sc2);  T2.print("T2 amplitudes");
+  RefSCMatrix T2 = Amps->T2(sc2);  if (debug_ > 2) T2.print("T2 amplitudes");
   const unsigned int nij = T2.rowdim().n();
   if (ij >= nij)
     return;
-  RefSCMatrix Fvv = Amps->Fvv(sc2);  Fvv.print("F12(vv) matrix");
-  RefSCMatrix Foo = Amps->Foo(sc2);  Foo.print("F12(oo) matrix");
-  RefSCMatrix Fov = Amps->Fov(sc2);  Fov.print("F12(ov) matrix");
-  RefSCMatrix Fox = Amps->Fox(sc2);  Fox.print("F12(ox) matrix");
+  RefSCMatrix Fvv = Amps->Fvv(sc2);  if (debug_>2)Fvv.print("F12(vv) matrix");
+  RefSCMatrix Foo = Amps->Foo(sc2);  if (debug_>2)Foo.print("F12(oo) matrix");
+  RefSCMatrix Fov = Amps->Fov(sc2);  if (debug_>2)Fov.print("F12(ov) matrix");
+  RefSCMatrix Fox = Amps->Fox(sc2);  if (debug_>2)Fox.print("F12(ox) matrix");
   RefSCMatrix Fvo, Fxo;
   if (p1_neq_p2) {
-    Fvo = Amps->Fvo(sc2);  Fvv.print("F12(vo) matrix");
-    Fxo = Amps->Fxo(sc2);  Fvv.print("F12(xo) matrix");
+    Fvo = Amps->Fvo(sc2);  if (debug_>2)Fvv.print("F12(vo) matrix");
+    Fxo = Amps->Fxo(sc2);  if (debug_>2)Fvv.print("F12(xo) matrix");
   }
   
-  RefSCMatrix Cvv = C * Fvv;  Cvv.print("C(vv) matrix");
-  RefSCMatrix Coo = C * Foo;  Coo.print("C(oo) matrix");
-  RefSCMatrix Cov = C * Fov;  Cov.print("C(ov) matrix");
-  RefSCMatrix Cox = C * Fox;  Cox.print("C(ox) matrix");
+  RefSCMatrix Cvv = C * Fvv;  if (debug_>2)Cvv.print("C(vv) matrix");
+  RefSCMatrix Coo = C * Foo;  if (debug_>2)Coo.print("C(oo) matrix");
+  RefSCMatrix Cov = C * Fov;  if (debug_>2)Cov.print("C(ov) matrix");
+  RefSCMatrix Cox = C * Fox;  if (debug_>2)Cox.print("C(ox) matrix");
   RefSCMatrix Cvo, Cxo;
   if (p1_neq_p2) {
-    Cvo = C * Fvo;  Cvv.print("C(vo) matrix");
-    Cxo = C * Fxo;  Cvv.print("C(xo) matrix");
+    Cvo = C * Fvo;  if (debug_>2) Cvv.print("C(vo) matrix");
+    Cxo = C * Fxo;  if (debug_>2) Cvv.print("C(xo) matrix");
   }
   
   const int nelem = tbgrid->nelem();
+  std::string spinlabel;
+  switch(spincase2) {
+  case AlphaBeta: spinlabel = "ab"; break;
+  case AlphaAlpha: spinlabel = "aa"; break;
+  case BetaBeta: spinlabel = "bb"; break;
+  }
   std::stringstream output_file_name;
-  output_file_name << tbgrid->name() << ".pair"
+  output_file_name << "pair_function." << tbgrid->name() << "." << spinlabel << "."
                    << ij << ".txt";
   ofstream ofile(output_file_name.str().c_str());
   
@@ -279,20 +290,36 @@ MP2R12Energy::compute_pair_function(int ij, SpinCase2 spincase2,
       phi_vo = compute_2body_values_(antisymm,occ1,vir2_act,r2,r1);
       phi_xo = compute_2body_values_(antisymm,occ1,ribs2,r2,r1);
     }
-    
+
     double phi_t2 = T2.get_row(ij).dot(phi_vv);
     
     const double r12 = (r1-r2).norm();
     double phi_r12 = 0.0;
     
     for(int f=0; f<nf12; ++f) {
-      C_ij_f.convert(c_ij + f*nij);
+      C_ij_f.assign(c_ij + f*nij);
       phi_r12 += 0.5 * C_ij_f.dot(phi_aa) * corrfactor->value(f,r12);
+      if (debug_ > 2) {
+        ExEnv::out0() << "phi_r12(r12) = " << phi_r12 << std::endl;
+      }
     }
     phi_r12 -= 0.5 * Cvv.get_row(ij).dot(phi_vv);
+      if (debug_ > 2) {
+        ExEnv::out0() << "phi_r12(+vv) = " << phi_r12 << std::endl;
+      }
     phi_r12 -= 0.5 * Coo.get_row(ij).dot(phi_oo);
-    phi_r12 -= 0.5 * Cov.get_row(ij).dot(phi_ov);
-    phi_r12 -= 0.5 * Cox.get_row(ij).dot(phi_ox);
+      if (debug_ > 2) {
+        ExEnv::out0() << "phi_r12(+oo) = " << phi_r12 << std::endl;
+      }
+    phi_r12 -= 2*0.5 * Cov.get_row(ij).dot(phi_ov);
+      if (debug_ > 2) {
+        ExEnv::out0() << "phi_r12(+ov) = " << phi_r12 << std::endl;
+      }
+    phi_r12 -= 2*0.5 * Cox.get_row(ij).dot(phi_ox);
+      if (debug_ > 2) {
+        ExEnv::out0() << "phi_r12(+ox) = " << phi_r12 << std::endl;
+      }
+    /*
     if (p1_neq_p2) {
       phi_r12 -= 0.5 * Cvo.get_row(ij).dot(phi_vo);
       phi_r12 -= 0.5 * Cxo.get_row(ij).dot(phi_xo);
@@ -301,9 +328,12 @@ MP2R12Energy::compute_pair_function(int ij, SpinCase2 spincase2,
       phi_r12 -= 0.5 * Cov.get_row(ij).dot(phi_vo);
       phi_r12 -= 0.5 * Cox.get_row(ij).dot(phi_xo);
     }
+    */
     
     print_psi_values(ofile,r1,r2,phi_aa.get_element(ij),phi_t2,phi_r12);
   }
+
+  ofile.close();
 }
 
 RefSCVector

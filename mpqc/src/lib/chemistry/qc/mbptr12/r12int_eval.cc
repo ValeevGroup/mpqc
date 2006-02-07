@@ -1240,8 +1240,8 @@ R12IntEval::compute()
                                             refinfo->orbs(spin2),true);
         fill_container(tform_creator,tforms);
         
-        compute_T2_(T2_[s],occ1_act, vir1_act, occ2_act, vir2_act, false, tform0);
-        compute_F12_(F12_[s],occ1_act, vir1_act, occ2_act, vir2_act, tforms);
+        compute_T2_(T2_[s],occ1_act, vir1_act, occ2_act, vir2_act, spincase2!=AlphaBeta, tform0);
+        compute_F12_(F12_[s],occ1_act, vir1_act, occ2_act, vir2_act, spincase2!=AlphaBeta, tforms);
         compute_A_direct_(A_[s],
                           occ1_act, vir1_act,
                           occ2_act, vir2_act,
@@ -1529,7 +1529,7 @@ R12IntEval::compute()
       fill_container(tform_creator,tforms);
       
       compute_F12_(F12,occ_act(Alpha), vir_act(Alpha),
-                   occ_act(Beta), vir_act(Beta),tforms);
+                   occ_act(Beta), vir_act(Beta), false, tforms);
     }
     
 #endif

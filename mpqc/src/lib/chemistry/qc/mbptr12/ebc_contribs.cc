@@ -102,14 +102,14 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   // ij|A|kl = ij|f12|kl_f, symmetrized if part_equiv_part2
   //
   std::vector< Ref<TwoBodyMOIntsTransform> > tforms4f; // get 1 3 |F12| 2 4_f
-  compute_F12_(A,space1,space2,space3,fspace4,tforms4f,descrs);
+  compute_F12_(A,space1,space2,space3,fspace4,false,tforms4f,descrs);
   if (part1_equiv_part2) {
     symmetrize<false>(A,A,space1,space2);
     A.scale(2.0);
   }
   else {
     std::vector< Ref<TwoBodyMOIntsTransform> > tforms2f;
-    compute_F12_(A,space1,fspace2,space3,space4,tforms2f,descrs);
+    compute_F12_(A,space1,fspace2,space3,space4,false,tforms2f,descrs);
   }
 
   ExEnv::out0() << decindent << indent << "Exited \"direct\" A intermediate (" << label << ") evaluator" << endl;

@@ -166,6 +166,8 @@ BlockedSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b)
   BlockedSCMatrix* la = require_dynamic_cast<BlockedSCMatrix*>(a,name);
   BlockedSCVector* lb = require_dynamic_cast<BlockedSCVector*>(b,name);
 
+  const unsigned int nbrow = la->rowdim()->blocks()->nblock();
+  const unsigned int nbcol = la->coldim()->blocks()->nblock();
   // make sure that the dimensions match
   if (!dim()->equiv(la->rowdim()) || !la->coldim()->equiv(lb->dim())) {
     ExEnv::errn() << indent
@@ -174,9 +176,23 @@ BlockedSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b)
     abort();
   }
 
-  for (int i=0; i < d->blocks()->nblock(); i++)
-    if (vecs_[i].nonnull())
-      vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[i]);
+  if (nbrow==nbcol) {
+    for (int i=0; i < nbrow; i++)
+      if (vecs_[i].nonnull())
+        vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[i]);
+  }
+  else {
+    if (nbcol == 1) {
+      for (int i=0; i < nbrow; i++)
+        if (vecs_[i].nonnull())
+          vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[0]);
+    }
+    else { // nbrow == 1
+      for (int i=0; i < nbcol; i++)
+        if (vecs_[i].nonnull())
+          vecs_[0]->accumulate_product(la->mats_[i], lb->vecs_[i]);
+    }
+  }
 }
 
 void

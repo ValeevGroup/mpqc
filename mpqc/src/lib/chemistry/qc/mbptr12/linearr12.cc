@@ -291,8 +291,8 @@ LinearR12::G12CorrelationFactor::value(unsigned int c, double r12) const
   const unsigned int nprims = nprimitives(c);
   for(unsigned int p=0; p<nprims; p++) {
     const PrimitiveGeminal& prim = primitive(c,p);
-    const double coef = prim.first;
-    const double expon = prim.second;
+    const double expon = prim.first;
+    const double coef = prim.second;
     val += coef*exp(-expon*r12*r12);
   }
   return val;

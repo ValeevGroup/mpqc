@@ -94,88 +94,55 @@ TwoBodyGrid::TwoBodyGrid(const Ref<KeyVal>& keyval)
     throw std::runtime_error("TwoBodyGrid::TwoBodyGrid() -- keyword r1 must be an array of 3-dimensional vectors");
   if (nelem2 == 0)
     throw std::runtime_error("TwoBodyGrid::TwoBodyGrid() -- keyword r2 must be an array of 3-dimensional vectors");
-  if (nelem1 != nelem2 && nelem1 != 1 && nelem2 != 1)
-    throw std::runtime_error("TwoBodyGrid::TwoBodyGrid() -- keyword arrays r1 and r2 must have the same number of elements, \
-otherwise one of the arrays must contain one element only");
 
-  const int nelem = (nelem1 > nelem2) ? nelem1 : nelem2;
+  const int nelem = nelem1 * nelem2;
   
   r1_.resize(nelem);
   r2_.resize(nelem);
 
-  if (nelem1 == 1) {
+  std::vector<SCVector3> r1(nelem1);
+  std::vector<SCVector3> r2(nelem2);
+  for(int i=0; i<nelem1; i++) {
     SCVector3 R1;
-    const int dim = keyval->count("r1",0);
-    if (dim != 3)
-      throw std::runtime_error("TwoBodyGrid::TwoBodyGrid() -- keyword r1:0 must be an array of 3 elements");
-    for(int xyz=0; xyz<3; xyz++)
-      R1.elem(xyz) = keyval->doublevalue("r1",0,xyz);
-    
-    if (polar)
-      for(int i=0; i<nelem; i++) {
-        r1_[i].spherical_to_cartesian(R1);
-        r1_[i] += O_;
-      }
-    else
-      for(int i=0; i<nelem; i++)
-        r1_[i] = R1 + O_;
-  }
-  else {
-    for(int i=0; i<nelem; i++) {
-      SCVector3 R1;
-      const int dim = keyval->count("r1",i);
-      if (dim != 3) {
-        std::string errmsg("TwoBodyGrid::TwoBodyGrid() -- keyword r1:");
-        errmsg += i + "must be an array of 3 elements";
-        throw std::runtime_error(errmsg.c_str());
-      }
-      for(int xyz=0; xyz<3; xyz++)
-        R1.elem(xyz) = keyval->doublevalue("r1",i,xyz);
-      if (polar) {
-        r1_[i].spherical_to_cartesian(R1);
-        r1_[i] += O_;
-      }
-      else
-        r1_[i] = R1 + O_;
+    const int dim = keyval->count("r1",i);
+    if (dim != 3) {
+      std::string errmsg("TwoBodyGrid::TwoBodyGrid() -- keyword r1:");
+      errmsg += i + "must be an array of 3 elements";
+      throw std::runtime_error(errmsg.c_str());
     }
+    for(int xyz=0; xyz<3; xyz++)
+      R1.elem(xyz) = keyval->doublevalue("r1",i,xyz);
+    if (polar) {
+      R1.spherical_to_cartesian(r1[i]);
+      r1[i] += O_;
+    }
+    else
+      r1[i] = R1 + O_;
   }
-
-  if (nelem2 == 1) {
+  for(int i=0; i<nelem2; i++) {
     SCVector3 R2;
-    const int dim = keyval->count("r2",0);
-    if (dim != 3)
-      throw std::runtime_error("TwoBodyGrid::TwoBodyGrid() -- keyword r2:0 must be an array of 3 elements");
-    for(int xyz=0; xyz<3; xyz++)
-      R2.elem(xyz) = keyval->doublevalue("r2",0,xyz);
-
-    if (polar)
-      for(int i=0; i<nelem; i++) {
-        r2_[i].spherical_to_cartesian(R2);
-        r2_[i] += O_;
-      }
-    else
-      for(int i=0; i<nelem; i++)
-        r2_[i] = R2 + O_;
-  }
-  else {
-    for(int i=0; i<nelem; i++) {
-      SCVector3 R2;
-      const int dim = keyval->count("r2",i);
-      if (dim != 3) {
-        std::string errmsg("TwoBodyGrid::TwoBodyGrid() -- keyword r2:");
-        errmsg += i + "must be an array of 3 elements";
-        throw std::runtime_error(errmsg.c_str());
-      }
-      for(int xyz=0; xyz<3; xyz++)
-        R2.elem(xyz) = keyval->doublevalue("r2",i,xyz);
-      if (polar) {
-        r2_[i].spherical_to_cartesian(R2);
-        r2_[i] += O_;
-      }
-      else
-        r2_[i] = R2 + O_;
+    const int dim = keyval->count("r2",i);
+    if (dim != 3) {
+      std::string errmsg("TwoBodyGrid::TwoBodyGrid() -- keyword r2:");
+      errmsg += i + "must be an array of 3 elements";
+      throw std::runtime_error(errmsg.c_str());
     }
-  }  
+    for(int xyz=0; xyz<3; xyz++)
+      R2.elem(xyz) = keyval->doublevalue("r2",i,xyz);
+    if (polar) {
+      R2.spherical_to_cartesian(r2[i]);
+      r2[i] += O_;
+    }
+    else
+      r2[i] = R2 + O_;
+  }
+
+  int ij = 0;
+  for(int i=0; i<nelem1; i++)
+    for(int j=0; j<nelem2; j++, ++ij) {
+      r1_[ij] = r1[i];
+      r2_[ij] = r2[j];
+    }
 }
 
 TwoBodyGrid::~TwoBodyGrid()

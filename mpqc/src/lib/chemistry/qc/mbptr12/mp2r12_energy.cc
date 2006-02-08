@@ -299,27 +299,11 @@ MP2R12Energy::compute_pair_function(int ij, SpinCase2 spincase2,
     for(int f=0; f<nf12; ++f) {
       C_ij_f.assign(c_ij + f*nij);
       phi_r12 += 0.5 * C_ij_f.dot(phi_aa) * corrfactor->value(f,r12);
-      if (debug_ > 2) {
-        ExEnv::out0() << "phi_r12(r12) = " << phi_r12 << std::endl;
-      }
     }
     phi_r12 -= 0.5 * Cvv.get_row(ij).dot(phi_vv);
-      if (debug_ > 2) {
-        ExEnv::out0() << "phi_r12(+vv) = " << phi_r12 << std::endl;
-      }
     phi_r12 -= 0.5 * Coo.get_row(ij).dot(phi_oo);
-      if (debug_ > 2) {
-        ExEnv::out0() << "phi_r12(+oo) = " << phi_r12 << std::endl;
-      }
-    phi_r12 -= 2*0.5 * Cov.get_row(ij).dot(phi_ov);
-      if (debug_ > 2) {
-        ExEnv::out0() << "phi_r12(+ov) = " << phi_r12 << std::endl;
-      }
-    phi_r12 -= 2*0.5 * Cox.get_row(ij).dot(phi_ox);
-      if (debug_ > 2) {
-        ExEnv::out0() << "phi_r12(+ox) = " << phi_r12 << std::endl;
-      }
-    /*
+    phi_r12 -= 0.5 * Cov.get_row(ij).dot(phi_ov);
+    phi_r12 -= 0.5 * Cox.get_row(ij).dot(phi_ox);
     if (p1_neq_p2) {
       phi_r12 -= 0.5 * Cvo.get_row(ij).dot(phi_vo);
       phi_r12 -= 0.5 * Cxo.get_row(ij).dot(phi_xo);
@@ -328,7 +312,6 @@ MP2R12Energy::compute_pair_function(int ij, SpinCase2 spincase2,
       phi_r12 -= 0.5 * Cov.get_row(ij).dot(phi_vo);
       phi_r12 -= 0.5 * Cox.get_row(ij).dot(phi_xo);
     }
-    */
     
     print_psi_values(ofile,r1,r2,phi_aa.get_element(ij),phi_t2,phi_r12);
   }

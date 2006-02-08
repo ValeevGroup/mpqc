@@ -661,8 +661,8 @@ WriteElectronDensity::WriteElectronDensity(const Ref<KeyVal> &keyval):
   if (keyval->exists("bbox")) {
       bbox_given_ = true;
       for (int i=0; i<3; i++) {
-          bbox1_ = keyval->intvalue("bbox",0,i);
-          bbox2_ = keyval->intvalue("bbox",1,i);
+          bbox1_[i] = keyval->intvalue("bbox",0,i);
+          bbox2_[i] = keyval->intvalue("bbox",1,i);
         }
     }
 

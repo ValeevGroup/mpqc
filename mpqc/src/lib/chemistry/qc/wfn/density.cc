@@ -721,8 +721,8 @@ WriteElectronDensity::run()
 
   int n[3];
   for (int i=0; i<3; i++) {
-      n[i] = int((au_bbox2[i] - au_bbox1[i])/spacing_);
-      if (au_bbox1[i] + n[i] * spacing_ < au_bbox2[i]) n[i]++;
+      n[i] = int((au_bbox2[i] - au_bbox1[i])/au_spacing);
+      if (au_bbox1[i] + n[i] * au_spacing < au_bbox2[i]) n[i]++;
     }
   ExEnv::out0() << indent
                 << "Writing a " << n[0] << "x" << n[1] << "x" << n[2]

@@ -778,7 +778,9 @@ R12IntEval::form_focc_act(SpinCase1 spin)
     
     RefSCMatrix FmK_ri_ao = fock_(ribs_space,act_occ_space,spin,1.0,0.0);
     RefSCMatrix K_ri_ao = exchange_(occ_space,ribs_space,act_occ_space);
+    K_ri_ao.scale(-1.0);
     RefSCMatrix F_ri_ao = FmK_ri_ao; F_ri_ao.accumulate(K_ri_ao);
+    K_ri_ao.scale(-1.0);
     if (debug_ > 1) {
       F_ri_ao.print("Fock matrix (RI-BS/act.occ.)");
       K_ri_ao.print("Exchange matrix (RI-BS/act.occ.)");
@@ -840,7 +842,9 @@ R12IntEval::form_fvir_act(SpinCase1 spin)
     
     RefSCMatrix FmK_ri_av = fock_(ribs_space,act_vir_space,spin,1.0,0.0);
     RefSCMatrix K_ri_av = exchange_(occ_space,ribs_space,act_vir_space);
+    K_ri_av.scale(-1.0);
     RefSCMatrix F_ri_av = FmK_ri_av; F_ri_av.accumulate(K_ri_av);
+    K_ri_av.scale(-1.0);
     if (debug_ > 1) {
       F_ri_av.print("Fock matrix (RI-BS/act.vir.)");
       K_ri_av.print("Exchange matrix (RI-BS/act.vir.)");

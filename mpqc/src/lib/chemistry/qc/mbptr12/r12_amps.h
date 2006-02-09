@@ -52,16 +52,15 @@ class F12Amplitudes : public RefCount {
   F12Amplitudes(const Ref<R12IntEval>& r12eval);
   ~F12Amplitudes();
   
-  RefSCMatrix T2(SpinCase2 S);
-  RefSCMatrix Fvv(SpinCase2 S);
-  RefSCMatrix Foo(SpinCase2 S);
-  RefSCMatrix Fov(SpinCase2 S);
-  RefSCMatrix Fox(SpinCase2 S);
-  RefSCMatrix Fvo(SpinCase2 S);
-  RefSCMatrix Fxo(SpinCase2 S);
+  const RefSCMatrix& T2(SpinCase2 S);
+  const RefSCMatrix& Fvv(SpinCase2 S);
+  const RefSCMatrix& Foo(SpinCase2 S);
+  const RefSCMatrix& Fov(SpinCase2 S);
+  const RefSCMatrix& Fox(SpinCase2 S);
+  const RefSCMatrix& Fvo(SpinCase2 S);
+  const RefSCMatrix& Fxo(SpinCase2 S);
 
   private:
-  bool evaluated_;
   Ref<R12IntEval> r12eval_;
   RefSCMatrix T2_[NSpinCases2];
   RefSCMatrix Fvv_[NSpinCases2];
@@ -71,7 +70,7 @@ class F12Amplitudes : public RefCount {
   RefSCMatrix Fvo_[NSpinCases2];
   RefSCMatrix Fxo_[NSpinCases2];
   
-  void compute_();
+  void compute_(SpinCase2 sc2);
 
 };
 

@@ -46,6 +46,7 @@
 #include <chemistry/qc/mbptr12/vxb_eval_info.h>
 #include <chemistry/qc/mbptr12/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <chemistry/qc/mbptr12/r12_amps.h>
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/print_scmat_norms.h>
 #include <chemistry/qc/mbptr12/creator.h>
@@ -179,7 +180,7 @@ R12IntEval::AT2_contrib_to_V_()
   if (r12info_->msg()->me() == 0) {
     for(unsigned int s=0; s<nspincases2(); s++) {
       SpinCase2 spin = static_cast<SpinCase2>(s);
-      RefSCMatrix V = A_[s]*T2(spin).t();
+      RefSCMatrix V = A_[s]*amps()->T2(spin).t();
       if (debug_ > 0) {
         std::string label = prepend_spincase(spin,"AT2 contribution to V");
         print_scmat_norms(V,label.c_str());
@@ -198,7 +199,7 @@ R12IntEval::AF12_contrib_to_B_()
   if (r12info_->msg()->me() == 0) {
     for(unsigned int s=0; s<nspincases2(); s++) {
       SpinCase2 spin = static_cast<SpinCase2>(s);
-      RefSCMatrix AR = A_[s]*F12(spin).t();
+      RefSCMatrix AR = A_[s]*amps()->Fvv(spin).t();
       // minus sign + Symmetrize
       const double scale = -0.5;
       RefSCMatrix B = B_[s].clone();  B.assign(0.0);

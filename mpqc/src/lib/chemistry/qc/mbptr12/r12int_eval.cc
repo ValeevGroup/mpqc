@@ -1294,9 +1294,9 @@ R12IntEval::compute()
         for(int s=0; s<nspincases2(); s++) {
           const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
           std::string label = prepend_spincase(spincase2,"T2 matrix");
-          T2(spincase2).print(label.c_str());
+          amps()->T2(spincase2).print(label.c_str());
           label = prepend_spincase(spincase2,"F12(vv) matrix");
-          F12(spincase2).print(label.c_str());
+          amps()->Fvv(spincase2).print(label.c_str());
           label = prepend_spincase(spincase2,"A matrix");
           A_[s].print(label.c_str());
           if (follow_ks_ebcfree_) {

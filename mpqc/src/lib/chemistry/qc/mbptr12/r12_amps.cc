@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <math/scmat/local.h>
 #include <chemistry/qc/mbptr12/r12_amps.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/creator.h>
@@ -138,7 +139,7 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   RefSCDimension dim_ox = new SCDimension(occ1->rank() * ribs2->rank());
   RefSCDimension dim_vo = new SCDimension(occ2->rank() * vir1_act->rank());
   RefSCDimension dim_xo = new SCDimension(occ2->rank() * ribs1->rank());
-  Ref<SCMatrixKit> kit = r12eval_->V(AlphaAlpha).kit();
+  Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
   T2_[s] = kit->matrix(dim_aa,dim_vv);  T2_[s].assign(0.0);
   Fvv_[s] = kit->matrix(dim_f12,dim_vv);  Fvv_[s].assign(0.0);
   Foo_[s] = kit->matrix(dim_f12,dim_oo);  Foo_[s].assign(0.0);

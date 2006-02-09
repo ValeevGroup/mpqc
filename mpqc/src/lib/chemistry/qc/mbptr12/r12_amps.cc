@@ -130,11 +130,9 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   RefSCDimension dim_aa = r12eval_->dim_oo(spincase2);
   if (dim_f12.n() == 0) return;
   RefSCDimension dim_oo = new SCDimension(spincase2 != AlphaBeta ?
-                                          occ1->rank()*(occ1->rank()+1)/2 :
+                                          occ1->rank()*(occ1->rank()-1)/2 :
                                           occ1->rank() * occ2->rank());
-  RefSCDimension dim_vv = new SCDimension(spincase2 != AlphaBeta ?
-                                          vir1_act->rank()*(vir1_act->rank()+1)/2 :
-                                          vir1_act->rank() * vir2_act->rank());
+  RefSCDimension dim_vv = r12eval_->dim_vv(spincase2);
   RefSCDimension dim_ov = new SCDimension(occ1->rank() * vir2_act->rank());
   RefSCDimension dim_ox = new SCDimension(occ1->rank() * ribs2->rank());
   RefSCDimension dim_vo = new SCDimension(occ2->rank() * vir1_act->rank());

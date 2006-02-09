@@ -730,11 +730,11 @@ WriteElectronDensity::run()
 
   for (int i=0; i<n[0]; i++) {
       SCVector3 point;
-      point[0] = au_bbox1[0] + i * spacing_;
+      point[0] = au_bbox1[0] + i * au_spacing;
       for (int j=0; j<n[1]; j++) {
-          point[1] = au_bbox1[1] + j * spacing_;
+          point[1] = au_bbox1[1] + j * au_spacing;
           for (int k=0; k<n[0]; k++) {
-              point[2] = au_bbox1[2] + k * spacing_;
+              point[2] = au_bbox1[2] + k * au_spacing;
               double alpha_density, beta_density;
               bed->compute_density(point,
                                    &alpha_density, 0, 0,

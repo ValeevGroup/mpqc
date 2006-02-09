@@ -161,8 +161,10 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
         if (follow_ks_ebcfree_) {
           Ac_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
         }
+#if 0
         T2_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
         F12_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
+#endif
       }
       emp2pair_[s] = local_matrix_kit->vector(dim_oo_[s]);
     }
@@ -173,8 +175,10 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
       BB_[BetaBeta] = BB_[AlphaAlpha];
       A_[BetaBeta] = A_[AlphaAlpha];
       Ac_[BetaBeta] = Ac_[AlphaAlpha];
+#if 0
       T2_[BetaBeta] = T2_[AlphaAlpha];
       F12_[BetaBeta] = F12_[AlphaAlpha];
+#endif
       emp2pair_[BetaBeta] = emp2pair_[AlphaAlpha];
     }
   }
@@ -218,8 +222,10 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
         if (follow_ks_ebcfree_) {
           Ac_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
         }
+#if 0
         T2_[s] = local_matrix_kit->matrix(dim_oo_[s],dim_vv_[s]);
         F12_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
+#endif
       }
       emp2pair_[s] = local_matrix_kit->vector(dim_vv_[s]);
       
@@ -229,8 +235,10 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       BB_[s].restore(si);
       A_[s].restore(si);
       Ac_[s].restore(si);
+#if 0
       T2_[s].restore(si);
       F12_[s].restore(si);
+#endif
       emp2pair_[s].restore(si);
     }
     else {
@@ -240,8 +248,10 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       BB_[BetaBeta] = BB_[AlphaAlpha];
       A_[BetaBeta] = A_[AlphaAlpha];
       Ac_[BetaBeta] = Ac_[AlphaAlpha];
+#if 0
       T2_[BetaBeta] = T2_[AlphaAlpha];
       F12_[BetaBeta] = F12_[AlphaAlpha];
+#endif
       emp2pair_[BetaBeta] = emp2pair_[AlphaAlpha];
     }
   }
@@ -289,8 +299,10 @@ R12IntEval::save_data_state(StateOut& so)
       BB_[s].save(so);
       A_[s].save(so);
       Ac_[s].save(so);
+#if 0
       T2_[s].save(so);
       F12_[s].save(so);
+#endif
       emp2pair_[s].save(so);
     }
   }
@@ -426,21 +438,29 @@ R12IntEval::Ac(SpinCase2 S) {
 const RefSCMatrix&
 R12IntEval::T2(SpinCase2 S) {
   compute();
+#if 0
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(T2_[AlphaAlpha],T2_[AlphaBeta],
                    occ_act(Alpha),
                    vir_act(Alpha));
   return T2_[S];
+#else
+  return amps()->T2(S);
+#endif
 }
 
 const RefSCMatrix&
 R12IntEval::F12(SpinCase2 S) {
   compute();
+#if 0
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta))
     antisymmetrize(F12_[AlphaAlpha],F12_[AlphaBeta],
                    occ_act(Alpha),
                    vir_act(Alpha));
   return F12_[S];
+#else
+  return amps()->Fvv(S);
+#endif
 }
 
 Ref<F12Amplitudes>
@@ -540,8 +560,10 @@ R12IntEval::init_intermeds_()
       if (follow_ks_ebcfree_) {
         Ac_[s].assign(0.0);
       }
+#if 0
       T2_[s].assign(0.0);
       F12_[s].assign(0.0);
+#endif
     }
   }
   
@@ -1203,10 +1225,6 @@ R12IntEval::compute()
     
 #if INCLUDE_EBC_CODE
     if (!ebc_) {
-      // These functions assume that virtuals are expanded in the same basis
-      // as the occupied orbitals
-      if (!obs_eq_vbs)
-        throw std::runtime_error("R12IntEval::compute() -- ebc=false is only supported when basis_vir == basis");
       
       // compute A, T2, and F12
       for(int s=0; s<nspincases2(); s++) {
@@ -1222,6 +1240,7 @@ R12IntEval::compute()
         Ref<MOIndexSpace> fvir4_act = fvir_act(spin2);
         
         const Ref<SingleRefInfo> refinfo = r12info()->refinfo();
+#if 0
         const Ref<TwoBodyMOIntsTransform> tform0 = get_tform_(
           transform_label(
             occ_act(spin1),
@@ -1230,18 +1249,31 @@ R12IntEval::compute()
             refinfo->orbs(spin2),0
           )
         );
+#endif
         
         std::vector<  Ref<TwoBodyMOIntsTransform> > tforms;
         Ref<R12IntEval> thisref(this);
-        NamedTransformCreator tform_creator(thisref,
-                                            occ1_act,
-                                            refinfo->orbs(spin1),
-                                            occ2_act,
-                                            refinfo->orbs(spin2),true);
-        fill_container(tform_creator,tforms);
+        if (obs_eq_vbs) {
+          NamedTransformCreator tform_creator(thisref,
+                                              occ1_act,
+                                              refinfo->orbs(spin1),
+                                              occ2_act,
+                                              refinfo->orbs(spin2),true);
+          fill_container(tform_creator,tforms);
+        }
+        else {
+          NamedTransformCreator tform_creator(thisref,
+                                              occ1_act,
+                                              vir1_act,
+                                              occ2_act,
+                                              vir2_act,true);
+          fill_container(tform_creator,tforms);
+        }
         
+#if 0
         compute_T2_(T2_[s],occ1_act, vir1_act, occ2_act, vir2_act, spincase2!=AlphaBeta, tform0);
         compute_F12_(F12_[s],occ1_act, vir1_act, occ2_act, vir2_act, spincase2!=AlphaBeta, tforms);
+#endif
         compute_A_direct_(A_[s],
                           occ1_act, vir1_act,
                           occ2_act, vir2_act,
@@ -1258,9 +1290,9 @@ R12IntEval::compute()
         for(int s=0; s<nspincases2(); s++) {
           const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
           std::string label = prepend_spincase(spincase2,"T2 matrix");
-          T2_[s].print(label.c_str());
+          T2(spincase2).print(label.c_str());
           label = prepend_spincase(spincase2,"F12(vv) matrix");
-          F12_[s].print(label.c_str());
+          F12(spincase2).print(label.c_str());
           label = prepend_spincase(spincase2,"A matrix");
           A_[s].print(label.c_str());
           if (follow_ks_ebcfree_) {
@@ -1271,10 +1303,6 @@ R12IntEval::compute()
       }
       
       AT2_contrib_to_V_();
-      #if 0
-      // Became compute_F12_ -- see above
-      compute_R_();
-      #endif
       AF12_contrib_to_B_();
     }
 #endif
@@ -1675,8 +1703,10 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
       if (follow_ks_ebcfree_) {
         globally_sum_scmatrix_(Ac_[s],to_all_tasks);
       }
+#if 0
       globally_sum_scmatrix_(T2_[s],to_all_tasks);
       globally_sum_scmatrix_(F12_[s],to_all_tasks);
+#endif
     }
     globally_sum_scvector_(emp2pair_[s],to_all_tasks);
   }

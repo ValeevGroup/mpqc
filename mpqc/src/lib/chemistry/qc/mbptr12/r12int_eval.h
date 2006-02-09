@@ -63,8 +63,10 @@ class R12IntEval : virtual public SavableState {
   RefSCMatrix BB_[NSpinCases2];  // The difference between B intermediate of approximation B and A'
   RefSCMatrix A_[NSpinCases2];
   RefSCMatrix Ac_[NSpinCases2];
+#if 0
   RefSCMatrix T2_[NSpinCases2];
   RefSCMatrix F12_[NSpinCases2];
+#endif
   RefSCVector emp2pair_[NSpinCases2];
   RefSCDimension dim_oo_[NSpinCases2];
   RefSCDimension dim_vv_[NSpinCases2];
@@ -422,6 +424,7 @@ public:
   const RefSCMatrix& T2(SpinCase2 S);
   /// Returns S block of intermediate F12
   const RefSCMatrix& F12(SpinCase2 S);
+  
   /// Returns alpha-alpha MP2 pair energies
   const RefSCVector& emp2(SpinCase2 S);
   /// Returns the eigenvalues of spin case S

@@ -203,7 +203,8 @@ class R12IntEval : virtual public SavableState {
                          const Ref<MOIndexSpace>& space3,
                          const Ref<MOIndexSpace>& space4,
                          const Ref<MOIndexSpace>& rispace2,
-                         const Ref<MOIndexSpace>& rispace4);
+                         const Ref<MOIndexSpace>& rispace4,
+                         bool antisymmetrize);
   
   /** Compute A intermediate using "commutator" formula in basis <space1, space3 | f12 | space2, space4>.
       Bra (rows) are blocked by correlation function index.
@@ -215,6 +216,7 @@ class R12IntEval : virtual public SavableState {
                           const Ref<MOIndexSpace>& space2,
                           const Ref<MOIndexSpace>& space3,
                           const Ref<MOIndexSpace>& space4,
+                          bool antisymmetrize,
                           const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms);
   
   /** compute_tbint_tensor computes a 2-body tensor T using integrals of type tbint_type.

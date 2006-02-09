@@ -78,7 +78,8 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
                               const Ref<MOIndexSpace>& space3,
                               const Ref<MOIndexSpace>& space4,
                               const Ref<MOIndexSpace>& fspace2,
-                              const Ref<MOIndexSpace>& fspace4)
+                              const Ref<MOIndexSpace>& fspace4,
+                              bool antisymmetrize)
 {
   // are particles 1 and 2 equivalent?
   const bool part1_equiv_part2 = (space1==space3 && space2 == space4);
@@ -103,14 +104,14 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   // ij|A|kl = ij|f12|kl_f, symmetrized if part_equiv_part2
   //
   std::vector< Ref<TwoBodyMOIntsTransform> > tforms4f; // get 1 3 |F12| 2 4_f
-  compute_F12_(A,space1,space2,space3,fspace4,false,tforms4f,descrs);
+  compute_F12_(A,space1,space2,space3,fspace4,antisymmetrize,tforms4f,descrs);
   if (part1_equiv_part2) {
     symmetrize<false>(A,A,space1,space2);
     A.scale(2.0);
   }
   else {
     std::vector< Ref<TwoBodyMOIntsTransform> > tforms2f;
-    compute_F12_(A,space1,fspace2,space3,space4,false,tforms2f,descrs);
+    compute_F12_(A,space1,fspace2,space3,space4,antisymmetrize,tforms2f,descrs);
   }
 
   ExEnv::out0() << decindent << indent << "Exited \"direct\" A intermediate (" << label << ") evaluator" << endl;
@@ -123,6 +124,7 @@ R12IntEval::compute_A_viacomm_(RefSCMatrix& A,
                                const Ref<MOIndexSpace>& space2,
                                const Ref<MOIndexSpace>& space3,
                                const Ref<MOIndexSpace>& space4,
+                               bool antisymmetrize,
                                const std::vector< Ref<TwoBodyMOIntsTransform> >& tforms)
 {
   tim_enter("A intermediate (via commutator)");
@@ -152,19 +154,19 @@ R12IntEval::compute_A_viacomm_(RefSCMatrix& A,
   compute_tbint_tensor<ManyBodyTensors::Apply_H0minusE0<Minus>,true,false>(
     A, corrfactor()->tbint_type_f12(),
     space1, space2, space3, space4,
-    false, tforms, descrs
+    antisymmetrize, tforms, descrs
   );
 #endif
 #if !ACOMM_INCLUDE_R_ONLY
   compute_tbint_tensor<ManyBodyTensors::Apply_Identity<Plus>,true,false>(
     A, corrfactor()->tbint_type_t1f12(),
     space1, space2, space3, space4,
-    false, tforms, descrs
+    antisymmetrize, tforms, descrs
   );
   compute_tbint_tensor<ManyBodyTensors::Apply_Identity<Plus>,true,false>(
     A, corrfactor()->tbint_type_t2f12(),
     space1, space2, space3, space4,
-    false, tforms, descrs
+    antisymmetrize, tforms, descrs
   );
 #endif
 

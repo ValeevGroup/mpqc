@@ -1281,12 +1281,13 @@ R12IntEval::compute()
         compute_A_direct_(A_[s],
                           occ1_act, vir1_act,
                           occ2_act, vir2_act,
-                          fvir2_act, fvir4_act);
+                          fvir2_act, fvir4_act,
+                          spincase2!=AlphaBeta);
         if (follow_ks_ebcfree_) {
           compute_A_viacomm_(Ac_[s],
                              occ1_act, vir1_act,
                              occ2_act, vir2_act,
-                             tforms);
+                             spincase2!=AlphaBeta, tforms);
         }
       }
       

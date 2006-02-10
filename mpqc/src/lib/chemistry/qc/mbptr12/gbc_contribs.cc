@@ -58,8 +58,8 @@ using namespace std;
 using namespace sc;
 
 #define INCLUDE_GBC1 1
-#define INCLUDE_GBC2 0
-#define COMPUTE_GBC1_AS_FXF 0
+#define INCLUDE_GBC2 1
+#define COMPUTE_GBC1_AS_FXF 1
 #define COMPUTE_GBC2_AS_X 1
 
 void

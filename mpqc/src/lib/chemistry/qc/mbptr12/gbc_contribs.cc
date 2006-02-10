@@ -57,10 +57,10 @@
 using namespace std;
 using namespace sc;
 
-#define INCLUDE_GBC1 0
-#define INCLUDE_GBC2 1
+#define INCLUDE_GBC1 1
+#define INCLUDE_GBC2 0
 #define COMPUTE_GBC1_AS_FXF 0
-#define COMPUTE_GBC2_AS_X 0
+#define COMPUTE_GBC2_AS_X 1
 
 void
 R12IntEval::compute_B_gbc_()
@@ -200,6 +200,27 @@ R12IntEval::compute_B_gbc_()
         spincase2!=AlphaBeta, tforms_ipip, tforms_iMia
       );
 #else // use compute_FxF_
+    
+    // R_klAb F_Am R_mbij
+    compute_FxF_(B_gbc1,spincase2,
+                 occ1_act,occ2_act,
+                 occ1_act,occ2_act,
+                 vir1,vir2,
+                 occ1,occ2,
+                 focc1,focc2);
+    
+    if (r12info()->maxnabs() >= 2) {
+      // R_klAB F_Am R_mBij
+      compute_FxF_(B_gbc1,spincase2,
+                   occ1_act,occ2_act,
+                   occ1_act,occ2_act,
+                   ribs1,ribs2,
+                   occ1,occ2,
+                   focc1,focc2);
+    }
+    
+    B_gbc1.scale(-1.0);
+    
 #endif // if use compute FxF
     
 #endif // include GBC1

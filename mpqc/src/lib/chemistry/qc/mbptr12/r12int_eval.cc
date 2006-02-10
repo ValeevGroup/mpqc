@@ -1849,7 +1849,7 @@ R12IntEval::spinadapt_mospace_labels(SpinCase1 spin, std::string& id, std::strin
       if (*c > 'A' && *c < 'Z')
         throw ProgrammingError("R12IntEval::spinadapt() -- id should be all lower-case characters before '_'",__FILE__,__LINE__);
       if (*c > 'a' && *c < 'z') {
-        *c += 'a' - 'A';
+        *c -= 'a' - 'A';
       }
     }
   }

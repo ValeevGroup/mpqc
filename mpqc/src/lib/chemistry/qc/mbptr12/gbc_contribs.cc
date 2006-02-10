@@ -57,6 +57,11 @@
 using namespace std;
 using namespace sc;
 
+#define INCLUDE_GBC1 0
+#define INCLUDE_GBC2 1
+#define COMPUTE_GBC1_AS_FXF 0
+#define COMPUTE_GBC2_AS_X 0
+
 void
 R12IntEval::compute_B_gbc_()
 {
@@ -95,6 +100,15 @@ R12IntEval::compute_B_gbc_()
     RefSCMatrix B_gbc1 = B_[s].clone(); B_gbc1.assign(0.0);
     RefSCMatrix B_gbc2 = B_[s].clone(); B_gbc2.assign(0.0);
     
+#if !COMPUTE_GBC1_AS_FXF || !COMPUTE_GBC2_AS_X
+    using namespace sc::LinearR12;
+    Ref<TwoParticleContraction> dircontract_mA =
+      new Direct_Contraction(occ1->rank(),ribs2->rank(),1.0);
+    Ref<TwoParticleContraction> dircontract_ma =
+      new Direct_Contraction(occ1->rank(),vir2->rank(),1.0);
+    Ref<TwoParticleContraction> dircontract_pp =
+      new Direct_Contraction(orbs1->rank(),orbs2->rank(),1.0);
+    
     // (i p |i p) tforms are ready
     std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_ipip;
     Ref<R12IntEval> thisref(this);
@@ -106,7 +120,7 @@ R12IntEval::compute_B_gbc_()
     // (i m |i a') tforms are ready
     std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_imiA;
     {
-      NamedTransformCreator tform_creator(thisref,occ1_act,occ1,occ2_act,ribs2,true);
+      NewTransformCreator tform_creator(thisref,occ1_act,occ1,occ2_act,ribs2,true);
       fill_container(tform_creator,tforms_imiA);
     }
     
@@ -144,19 +158,15 @@ R12IntEval::compute_B_gbc_()
       NewTransformCreator tform_creator(thisref,occ1_act,orbs1,focc2_act,orbs2,true);
       fill_container(tform_creator,tforms_ipIp);
     }
+#endif
     
+#if INCLUDE_GBC1
+
+#if !COMPUTE_GBC1_AS_FXF
     
     //
     // GBC1 contribution
     //
-    
-    using namespace sc::LinearR12;
-    Ref<TwoParticleContraction> dircontract_mA =
-      new Direct_Contraction(occ1->rank(),ribs2->rank(),1.0);
-    Ref<TwoParticleContraction> dircontract_ma =
-      new Direct_Contraction(occ1->rank(),vir2->rank(),1.0);
-    Ref<TwoParticleContraction> dircontract_pp =
-      new Direct_Contraction(orbs1->rank(),orbs2->rank(),1.0);
     
     // compute contraction <ii|F12|m a'> . <ii|F12|m_F a'>
     contract_tbint_tensor<
@@ -189,11 +199,18 @@ R12IntEval::compute_B_gbc_()
         dircontract_ma,
         spincase2!=AlphaBeta, tforms_ipip, tforms_iMia
       );
+#else // use compute_FxF_
+#endif // if use compute FxF
     
+#endif // include GBC1
+    
+#if INCLUDE_GBC2
     
     //
     // GBC2 contribution
     //
+    
+#if !COMPUTE_GBC2_AS_X
     
     RefSCMatrix R2_ijkL = compute_r2_(occ1_act,occ2_act,occ1_act,focc2_act);
     B_gbc2.accumulate(R2_ijkL);
@@ -261,6 +278,24 @@ R12IntEval::compute_B_gbc_()
       symmetrize<false>(B_gbc1,B_gbc1,occ1_act,occ1_act);
       symmetrize<false>(B_gbc2,B_gbc2,occ1_act,occ1_act);
     }
+#else  // use compute_X_
+    
+    compute_X_(B_gbc2,spincase2,occ1_act,occ2_act,
+               occ1_act,focc2_act);
+    if (occ1_act != occ2_act) {
+      compute_X_(B_gbc2,spincase2,occ1_act,occ2_act,
+                 focc1_act,focc2_act);
+    }
+    else {
+      B_gbc2.scale(2.0);
+      if (spincase2 == AlphaBeta) {
+        symmetrize<false>(B_gbc2,B_gbc2,occ1_act,occ2_act);
+      }
+    }
+    
+#endif // use compute_X_ ?
+    
+#endif // include GBC2 ?
     
     if (debug_ > 1) {
       std::string label = prepend_spincase(spincase2,"B(GBC1) contribution");

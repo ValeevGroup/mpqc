@@ -106,7 +106,9 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
   std::vector< Ref<TwoBodyMOIntsTransform> > tforms4f; // get 1 3 |F12| 2 4_f
   compute_F12_(A,space1,space2,space3,fspace4,antisymmetrize,tforms4f,descrs);
   if (part1_equiv_part2) {
-    symmetrize<false>(A,A,space1,space2);
+    // no need to symmetrize if computing antisymmetric matrix -- compute_tbint_tensor takes care of that
+    if (!antisymmetrize)
+      symmetrize<false>(A,A,space1,space2);
     A.scale(2.0);
   }
   else {

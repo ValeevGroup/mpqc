@@ -305,7 +305,7 @@ R12IntEval::compute_B_gbc_()
                occ1_act,focc2_act);
     if (occ1_act != occ2_act) {
       compute_X_(B_gbc2,spincase2,occ1_act,occ2_act,
-                 focc1_act,focc2_act);
+                 focc1_act,occ2_act);
     }
     else {
       B_gbc2.scale(2.0);

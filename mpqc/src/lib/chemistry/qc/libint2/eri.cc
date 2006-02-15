@@ -80,7 +80,7 @@ EriLibint2::EriLibint2(Integral *integral,
     bs3_->max_ncartesian_in_shell()*bs4_->max_ncartesian_in_shell();
   int max_target_size = bs1_->max_nfunction_in_shell()*bs2_->max_nfunction_in_shell()*
     bs3_->max_nfunction_in_shell()*bs4_->max_nfunction_in_shell();
-  size_t storage_needed = LIBINT2_MAX_STACK_SIZE*LIBINT2_MAX_VECLEN*sizeof(REALTYPE);
+  size_t storage_needed = LIBINT2_MAX_STACK_SIZE*LIBINT2_MAX_VECLEN*sizeof(LIBINT2_REALTYPE);
   libint2_init(&Libint_,lmax);
   target_ints_buffer_ = new double[max_target_size];
   cart_ints_ = new double[max_cart_target_size];
@@ -176,7 +176,7 @@ EriLibint2::storage_required(const Ref<GaussianBasisSet>& b1,
   int max_target_size = bs1->max_nfunction_in_shell()*bs2->max_nfunction_in_shell()*
     bs3->max_nfunction_in_shell()*bs4->max_nfunction_in_shell();
 
-  storage_required += LIBINT2_MAX_STACK_SIZE*LIBINT2_MAX_VECLEN*sizeof(REALTYPE);
+  storage_required += LIBINT2_MAX_STACK_SIZE*LIBINT2_MAX_VECLEN*sizeof(LIBINT2_REALTYPE);
 
   if (bs1->has_pure() || bs2->has_pure() || bs3->has_pure() || bs4->has_pure() ||
       bs1->max_ncontraction() != 1 || bs2->max_ncontraction() != 1 ||

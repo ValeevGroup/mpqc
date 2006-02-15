@@ -400,7 +400,7 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 		    // Compute the integrals
                     libint2_build_eri[tam1][tam2][tam3][tam4](&Libint_);
                     // Copy the integrals over to prim_ints_
-                    const REALTYPE* prim_ints = Libint_.targets[0];
+                    const LIBINT2_REALTYPE* prim_ints = Libint_.targets[0];
 	            for(int ijkl=0; ijkl<size; ijkl++)
 	              prim_ints_[buffer_offset + ijkl] += (double) prim_ints[ijkl];
                   }

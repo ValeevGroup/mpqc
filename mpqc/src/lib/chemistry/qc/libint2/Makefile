@@ -39,10 +39,15 @@ BIN_OR_LIB = LIB
 
 TESTCSRC = libint2test.cc
 
-CXXSRC = libint2.cc obintlibint2.cc tbintlibint2.cc tform.cc int2e.cc eri.cc comp_eri.cc \
-        storage.cc g12.cc comp_g12.cc\
+CXXSRC = libint2.cc obintlibint2.cc tbintlibint2.cc tform.cc int2e.cc storage.cc \
 	primpairs.cc shellpairs.cc permute2e.cc int1e.cc overlap.cc kinetic.cc nuclear.cc \
 	hcore.cc obosrr.cc edipole.cc equadrupole.cc
+ifeq ($(HAVE_LIBINT2_ERI),yes)
+  CXXSRC += eri.cc comp_eri.cc
+endif
+ifeq ($(HAVE_LIBINT2_G12),yes)
+  CXXSRC += g12.cc comp_g12.cc
+endif
 
 INC = libint2.h obintlibint2.h tbintlibint2.h tform.h cartit.h macros.h primpairs.h shellpairs.h
 

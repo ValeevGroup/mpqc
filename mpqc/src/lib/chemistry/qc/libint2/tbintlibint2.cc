@@ -32,8 +32,12 @@
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/libint2/tbintlibint2.h>
-#include <chemistry/qc/libint2/eri.h>
-#include <chemistry/qc/libint2/g12.h>
+#if LIBINT2_SUPPORT_ERI
+#  include <chemistry/qc/libint2/eri.h>
+#endif
+#if LIBINT2_SUPPORT_ERI
+#  include <chemistry/qc/libint2/g12.h>
+#endif
 
 using namespace std;
 using namespace sc;
@@ -56,14 +60,18 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 {
   // Which evaluator to use
   switch (int2etype) {
+#if LIBINT2_SUPPORT_ERI
   case erieval:
     int2elibint2_ = new EriLibint2(integral,b1,b2,b3,b4,storage);
     num_tbint_types_ = 1;
     break;
+#endif
+#if LIBINT2_SUPPORT_ERI
   case g12eval:
     int2elibint2_ = new G12Libint2(integral,b1,b2,b3,b4,storage,gbra,gket);
     num_tbint_types_ = 6;
     break;
+#endif
   default:
     throw FeatureNotImplemented("Tried to construct a two-electron integral \
 evaluator of unimplemented or unknown type",__FILE__,__LINE__);

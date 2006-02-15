@@ -35,8 +35,14 @@
 #include <chemistry/qc/libint2/tform.h>
 #include <chemistry/qc/libint2/obintlibint2.h>
 #include <chemistry/qc/libint2/tbintlibint2.h>
-#include <chemistry/qc/libint2/eri.h>
-#include <chemistry/qc/libint2/g12.h>
+
+#include <libint2/libint2.h>
+#if LIBINT2_SUPPORT_ERI
+#  include <chemistry/qc/libint2/eri.h>
+#endif
+#if LIBINT2_SUPPORT_G12
+#  include <chemistry/qc/libint2/g12.h>
+#endif
 
 using namespace std;
 using namespace sc;
@@ -264,15 +270,23 @@ IntegralLibint2::hcore_deriv()
 Ref<TwoBodyInt>
 IntegralLibint2::electron_repulsion()
 {
+#if LIBINT2_SUPPORT_ERI
   TwoBodyIntLibint2::ContractedGeminal bra, ket;  // these are dummy params for this evaluator anyway
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, erieval, bra, ket);
+#else
+  throw InputError("IntegralLibint2::electron_repulsion() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
+#endif
 }
 
 Ref<TwoBodyInt>
 IntegralLibint2::g12(const Ref<IntParamsG12>& params)
 {
+#if LIBINT2_SUPPORT_G12
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_,
                                g12eval, params->bra(), params->ket());
+#else
+  throw InputError("IntegralLibint2::g12() -- libint2 library included in this executable does not support computation of G12 integrals",__FILE__,__LINE__);
+#endif
 }
 
 void

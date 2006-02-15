@@ -443,13 +443,13 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 
                       if (quartet_info_.am) {
 #if !COMPUTE_R12_2_G12
-                        REALTYPE* prim_ints = Libint_.targets[4];
+                        LIBINT2_REALTYPE* prim_ints = Libint_.targets[4];
                         for(int ijkl=0; ijkl<size; ijkl++)
                           prim_ints[ijkl] *= g2_4;
 #endif
                         for(int te_type = 0; te_type < 5; te_type++) {
                           // Copy the integrals over to prim_ints_
-                          const REALTYPE* prim_ints = Libint_.targets[te_type];
+                          const LIBINT2_REALTYPE* prim_ints = Libint_.targets[te_type];
                           for(int ijkl=0; ijkl<size; ijkl++)
                             prim_ints_[te_type+1][buffer_offset + ijkl] += (double) prim_ints[ijkl];
                         }
@@ -471,7 +471,7 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                     // Compute the integrals
                     libint2_build_eri[tam1][tam2][tam3][tam4](&Libint_);
                     // Copy the integrals over to prim_ints_
-                    const REALTYPE* prim_ints = Libint_.targets[0];
+                    const LIBINT2_REALTYPE* prim_ints = Libint_.targets[0];
                     for(int ijkl=0; ijkl<size; ijkl++)
                       prim_ints_[TwoBodyInt::eri][buffer_offset + ijkl] += (double) prim_ints[ijkl];
                   }

@@ -101,7 +101,11 @@ IntegralLibint2::storage_required_eri(const Ref<GaussianBasisSet> &b1,
 				    const Ref<GaussianBasisSet> &b3,
 				    const Ref<GaussianBasisSet> &b4)
 {
+#if LIBINT2_SUPPORT_ERI
   return EriLibint2::storage_required(b1,b2,b3,b4);
+#else
+  throw InputError("IntegralLibint2::storage_required_eri() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
+#endif
 }
 
 size_t
@@ -110,7 +114,11 @@ IntegralLibint2::storage_required_g12(const Ref<GaussianBasisSet> &b1,
 				     const Ref<GaussianBasisSet> &b3,
 				     const Ref<GaussianBasisSet> &b4)
 {
+#if LIBINT2_SUPPORT_G12
   return G12Libint2::storage_required(b1,b2,b3,b4);
+#else
+  throw InputError("IntegralLibint2::storage_required_g12() -- libint2 library included in this executable does not support computation of G12",__FILE__,__LINE__);
+#endif
 }
 
 CartesianIter *

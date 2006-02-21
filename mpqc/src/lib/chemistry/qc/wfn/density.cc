@@ -632,12 +632,10 @@ BatchElectronDensity::boundingbox(double valuemin,
 
 static ClassDesc WriteElectronDensity_cd(
     typeid(WriteElectronDensity),"WriteElectronDensity",1,
-    "public Runnable", 0, create<WriteElectronDensity>, 0);
+    "public WriteGrid", 0, create<WriteElectronDensity>, 0);
 
 WriteElectronDensity::WriteElectronDensity(const Ref<KeyVal> &keyval):
-  bbox_given_(false),
-  bbox1_(0.,0.,0.),
-  bbox2_(0.,0.,0.)
+  WriteGrid(keyval)
 {
   wfn_ << keyval->describedclassvalue("wfn");
   if (wfn_.null()) {
@@ -646,108 +644,98 @@ WriteElectronDensity::WriteElectronDensity(const Ref<KeyVal> &keyval):
       try {
           ex.elaborate()
               << "WriteElectronDensity KeyVal ctor requires"
-              << " that \"wfn\" specifies a object"
+              << " that \"wfn\" specifies an object"
               << " of type Wavefunction" << std::endl;
         }
       catch (...) {}
       throw ex;
     }
+  
+  if (keyval->exists("type")) {
+      type_ = keyval->pcharvalue("type");
+      if (strcmp(type_,"alpha")==0) {
+          density_function_ = &WriteElectronDensity::df_alpha;
+        }
+      else if (strcmp(type_,"beta")==0) {
+          density_function_ = &WriteElectronDensity::df_beta;
+        }
+      else if (strcmp(type_,"sum")==0) {
+          density_function_ = &WriteElectronDensity::df_sum;
+        }
+      else if (strcmp(type_,"spin")==0) {
+          density_function_ = &WriteElectronDensity::df_spin;
+        }
+      else {
+          InputError ex("valid \"type\" missing",
+                        __FILE__, __LINE__, "type", "(null)", class_desc());
+          try {
+              ex.elaborate()
+                  << "WriteElectronDensity KeyVal ctor requires"
+                  << " that \"type\" is one of \"alpha\", \"beta\","
+                  << " \"sum\" or \"spin\". It has been set to \""
+                  << type_ << "\"." << std::endl;
+            }
+          catch (...) {}
+          throw ex;
+        }
+    }
+  else {
+      type_ = "sum";
+      density_function_ = &WriteElectronDensity::df_sum;
+    }
 
   KeyValValuedouble default_accuracy(DBL_EPSILON);
   accuracy_ = keyval->doublevalue("accuracy", default_accuracy);
-  KeyValValuedouble default_spacing(0.1);
-  spacing_ = keyval->doublevalue("spacing", default_spacing);
-
-  if (keyval->exists("bbox")) {
-      bbox_given_ = true;
-      for (int i=0; i<3; i++) {
-          bbox1_[i] = keyval->intvalue("bbox",0,i);
-          bbox2_[i] = keyval->intvalue("bbox",1,i);
-        }
-    }
-
-
-  if (keyval->exists("unit")) {
-        unit_ = new Units(keyval->pcharvalue("unit"),
-                    Units::Steal);
-    }
-  else {
-      unit_ = new Units("bohr");
-    }
 }
 
 void
-WriteElectronDensity::run()
+WriteElectronDensity::initialize()
 {
-  Ref<BatchElectronDensity> bed
-      = new BatchElectronDensity(wfn_, accuracy_);
-
-  double conv = unit_->to_atomic_units();
-
-  double au_spacing = conv * spacing_;
-
-  SCVector3 au_bbox1, au_bbox2;
-  if (bbox_given_) {
-      for (int i=0; i<3; i++) {
-          au_bbox1[i] = conv * bbox1_[i];
-          au_bbox2[i] = conv * bbox2_[i];
-        }
-    }
-  else {
-      bed->boundingbox(DBL_EPSILON,DBL_MAX,au_bbox1,au_bbox2);
-    }
-
-  ExEnv::out0() << indent << "WriteElectronDensity:" << std::endl;
-  ExEnv::out0() << incindent;
-  ExEnv::out0() << indent << "unit = " << unit_->string_rep() << std::endl;
-  ExEnv::out0() << indent << "spacing = " << spacing_ << std::endl;
-  if (bbox_given_) {
-      ExEnv::out0() << indent << "bbox = [ [";
-      for (int i=0; i<3; i++) ExEnv::out0() << " " << bbox1_[i];
-      ExEnv::out0() << "]" << std::endl;
-      ExEnv::out0() << indent << "         [";
-      for (int i=0; i<3; i++) ExEnv::out0() << " " << bbox2_[i];
-      ExEnv::out0() << "] ]" << std::endl;
-    }
-  else {
-      double au_conv = unit_->from_atomic_units();
-      ExEnv::out0() << indent << "bbox = [ [";
-      for (int i=0; i<3; i++) ExEnv::out0() << " " << au_bbox1[i]*au_conv;
-      ExEnv::out0() << "]" << std::endl;
-      ExEnv::out0() << indent << "         [";
-      for (int i=0; i<3; i++) ExEnv::out0() << " " << au_bbox2[i]*au_conv;
-      ExEnv::out0() << "] ]" << std::endl;
-    }
-
-  int n[3];
-  for (int i=0; i<3; i++) {
-      n[i] = int((au_bbox2[i] - au_bbox1[i])/au_spacing);
-      if (au_bbox1[i] + n[i] * au_spacing < au_bbox2[i]) n[i]++;
-    }
-  ExEnv::out0() << indent
-                << "Writing a " << n[0] << "x" << n[1] << "x" << n[2]
-                << " grid" << std::endl;
-
-  for (int i=0; i<n[0]; i++) {
-      SCVector3 point;
-      point[0] = au_bbox1[0] + i * au_spacing;
-      for (int j=0; j<n[1]; j++) {
-          point[1] = au_bbox1[1] + j * au_spacing;
-          for (int k=0; k<n[0]; k++) {
-              point[2] = au_bbox1[2] + k * au_spacing;
-              double alpha_density, beta_density;
-              bed->compute_density(point,
-                                   &alpha_density, 0, 0,
-                                   &beta_density, 0, 0);
-              double density = alpha_density + beta_density;
-              ExEnv::out0() << indent << scprintf("%16.12f", density)
-                            << std::endl;
-            }
-        }
-    }
-
-  ExEnv::out0() << decindent;
+  bed_ = new BatchElectronDensity(wfn_, accuracy_);
 }
+
+void
+WriteElectronDensity::label(char* buffer)
+{
+  sprintf(buffer, "WriteElectronDensity_%s", type_);
+}
+
+Ref<Molecule>
+WriteElectronDensity::get_molecule()
+{
+  return wfn_->molecule();
+}
+
+double
+WriteElectronDensity::calculate_value(SCVector3 point)
+{
+  double alpha_density, beta_density;
+  bed_->compute_density(point,
+                        &alpha_density, 0, 0,
+                        &beta_density, 0, 0);
+  return (*this.*density_function_)(alpha_density, beta_density);
+}
+
+double
+WriteElectronDensity::df_alpha(double alpha, double beta) {
+  return alpha;
+}
+
+double
+WriteElectronDensity::df_beta(double alpha, double beta) {
+  return beta;
+}
+
+double
+WriteElectronDensity::df_sum(double alpha, double beta) {
+  return alpha + beta;
+}
+
+double
+WriteElectronDensity::df_spin(double alpha, double beta) {
+  return alpha - beta;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // DensityColorizer

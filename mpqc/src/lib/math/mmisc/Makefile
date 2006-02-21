@@ -25,37 +25,40 @@
 # The U.S. Government is granted a limited license as per AL 91-7.
 #
 
-TOPDIR=../../../../..
+TOPDIR=../../../..
 ifndef SRCDIR
   SRCDIR=$(shell pwd)
 endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
+include $(TOPDIR)/lib/Makedirlist
 
-TARGET_TO_MAKE = libSCwfn
+# needed for corba
+CXXFLAGS := $(CXXFLAGS:-fno-implicit-templates=)
+
+TARGET_TO_MAKE = libSCmmisc
 BIN_OR_LIB = LIB
 
-TESTPROGS = wfntest
+CSRC =
 
-SRCS = wfn.cc densval.cc natorbval.cc obwfn.cc density.cc hcorewfn.cc \
-       accum.cc nao.cc orbital.cc solvent.cc eht.cc esp.cc
+CXXSRC = grid.cc
 
-LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
+TESTSRC = 
 
-default:: $(DEPENDINCLUDE)
+TESTPROGS = 
+
+LIBOBJ= $(CSRC:%.c=%.$(OBJSUF)) \
+        $(CXXSRC:%.cc=%.$(OBJSUF))
+
+TESTOBJ= $(TESTSRC:%.cc=%.$(OBJSUF))
+
+LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
+
+#####################################################################
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-LIBS = $(shell $(LISTLIBS) $(INCLUDE) $(SRCDIR)/../dft/LIBS.h)
-
-wfntest:: wfntest.$(OBJSUF) $(LIBS)
-	$(LTLINK) $(CXX) $(LDFLAGS) -o wfntest $^ $(SYSLIBS) $(LTLINKBINOPTS)
-
-wfntest.$(OBJSUF): wfntest.cc
-	$(LTCOMP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -DSRCDIR=\"$(SRCDIR)\" -c $<
-
-$(LIBOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTPROGS:%=%.d)
+include $(LIBOBJ:.$(OBJSUF)=.d) $(TESTOBJ:.$(OBJSUF)=.d)
 endif
 

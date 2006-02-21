@@ -36,11 +36,12 @@
 #include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/qc/basis/extent.h>
 #include <chemistry/molecule/molrender.h>
-#include <util/misc/runnable.h>
+#include <chemistry/molecule/molecule.h>
+#include <math/mmisc/grid.h>
 
 namespace sc {
 
-/** This is a Volume that computer the electron density.  It
+/** This is a Volume that computes the electron density.  It
     can be used to generate isodensity surfaces. */
 class ElectronDensity: public Volume {
   protected:
@@ -196,17 +197,41 @@ class BatchElectronDensity: public Volume {
     //@}
 };
 
-class WriteElectronDensity: public Runnable {
+/** The WriteElectronDensity class writes the electron density at user defined
+    grid points to the standard output or to a separate file. */
+class WriteElectronDensity: public WriteGrid {
+  private:
+    double df_alpha(double alpha, double beta);
+    double df_beta(double alpha, double beta);
+    double df_sum(double alpha, double beta);
+    double df_spin(double alpha, double beta);
+  protected:
     Ref<Wavefunction> wfn_;
+    Ref<BatchElectronDensity> bed_;
     double accuracy_;
-    double spacing_;
-    bool bbox_given_;
-    SCVector3 bbox1_;
-    SCVector3 bbox2_;
-    Ref<Units> unit_;
+    char *type_;
+    double (WriteElectronDensity::*density_function_)(double, double);
+    
+    void initialize();
+    void label(char* buffer);
+    Ref<Molecule> get_molecule();
+    double calculate_value(SCVector3 point);
   public:
+    /** The KeyVal constructor
+        
+        <dl>
+
+        <dt><tt>wfn</tt></dt><dd> The Wavefunction of which the density is
+        calculated. There is no default for this option.</dd>
+
+        <dt><tt>type</tt></dt><dd> Four types of densities can be written to
+        the output: 'sum', 'alpha', 'beta' or 'spin'. The default is 'sum'.</dd>
+
+        <dt><tt>accuracy</tt></dt><dd>The accuracy to which the density is
+        calculated. The default is maximum accuracy.</dd>
+
+        </dl> */
     WriteElectronDensity(const Ref<KeyVal> &);
-    void run();
 };
 
 class DensityColorizer: public MoleculeColorizer {

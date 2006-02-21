@@ -3,11 +3,12 @@ PUBLIC LICENSE
 ==============
 
   The Massively Parallel Quantum Chemistry program is distributed under the
-GNU General Public License (see the file COPYING).  However, the vast
-majority of code can be distributed under the GNU Library General Public
-License (see the file COPYING.LIB).  The General Public License only
-applies to some files with a "main" subroutine and "lib/elisp/compile.el".
-The applicable license is given in each source file.
+GNU General Public License (see the file COPYING).  However, the majority
+of code can be distributed under the GNU Library General Public License
+(see the file COPYING.LIB).  The General Public License applies to some
+files with a "main" subroutine, "lib/elisp/compile.el", and a few
+contributed files in the src/lib directory.  The applicable license is
+given in each source file.
 
 GOVERNMENT LICENSE
 ==================

@@ -128,7 +128,6 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
   // Allocate the matrices
   RefSCDimension dim_f12 = r12eval_->dim_f12(spincase2);
   RefSCDimension dim_aa = r12eval_->dim_oo(spincase2);
-  if (dim_f12.n() == 0) return;
   RefSCDimension dim_oo = new SCDimension(spincase2 != AlphaBeta ?
                                           occ1->rank()*(occ1->rank()-1)/2 :
                                           occ1->rank() * occ2->rank());
@@ -147,6 +146,8 @@ F12Amplitudes::compute_(SpinCase2 spincase2)
     Fvo_[s] = kit->matrix(dim_f12,dim_vo);  Fvo_[s].assign(0.0);
     Fxo_[s] = kit->matrix(dim_f12,dim_xo);  Fxo_[s].assign(0.0);
   }
+  // If no active orbital pairs for this spin case -- leave
+  if (dim_f12.n() == 0) return;
   
   Ref<TwoBodyMOIntsTransform> tform0_pp;
   std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_pp;

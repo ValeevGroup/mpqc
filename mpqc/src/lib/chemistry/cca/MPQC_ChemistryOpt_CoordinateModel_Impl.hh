@@ -179,6 +179,32 @@ namespace MPQC {
 
 
     /**
+     * Starts up a component presence in the calling framework.
+     * @param Svc the component instance's handle on the framework world.
+     * Contracts concerning Svc and setServices:
+     * 
+     * The component interaction with the CCA framework
+     * and Ports begins on the call to setServices by the framework.
+     * 
+     * This function is called exactly once for each instance created
+     * by the framework.
+     * 
+     * The argument Svc will never be nil/null.
+     * 
+     * Those uses ports which are automatically connected by the framework
+     * (so-called service-ports) may be obtained via getPort during
+     * setServices.
+     */
+    void
+    setServices (
+      /* in */ ::gov::cca::Services services
+    )
+    throw ( 
+      ::gov::cca::CCAException
+    );
+
+
+    /**
      * Registers and gets ports, and requests Model object(s) from the 
      * ModelFactory component(s). This must be the first method called 
      * following instantiation.
@@ -356,32 +382,6 @@ namespace MPQC {
     void
     monitor() throw () 
     ;
-
-    /**
-     * Starts up a component presence in the calling framework.
-     * @param Svc the component instance's handle on the framework world.
-     * Contracts concerning Svc and setServices:
-     * 
-     * The component interaction with the CCA framework
-     * and Ports begins on the call to setServices by the framework.
-     * 
-     * This function is called exactly once for each instance created
-     * by the framework.
-     * 
-     * The argument Svc will never be nil/null.
-     * 
-     * Those uses ports which are automatically connected by the framework
-     * (so-called service-ports) may be obtained via getPort during
-     * setServices.
-     */
-    void
-    setServices (
-      /* in */ ::gov::cca::Services services
-    )
-    throw ( 
-      ::gov::cca::CCAException
-    );
-
   };  // end class ChemistryOpt_CoordinateModel_impl
 
 } // end namespace MPQC

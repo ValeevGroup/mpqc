@@ -95,6 +95,8 @@ namespace MPQC {
     std::string package_;
     int **reorder_;
     Chemistry::QC::GaussianBasis::DerivCenters deriv_centers_;
+    sc::DerivCenters sc_deriv_centers_;
+    int deriv_atom_;
 
     void reorder_intv3(int64_t, int64_t);
     void initialize_reorder_intv3();
@@ -143,14 +145,18 @@ namespace MPQC {
      * @param bs1 Molecular basis on center 1.
      * @param bs2 Molecular basis on center 2.
      * @param label String specifying integral type.
-     * @param max_deriv Max derivative to compute. 
+     * @param max_deriv Max derivative to compute.
+     * @param storage Available storage in bytes.
+     * @param deriv_ctr Derivative center descriptor. 
      */
     void
     initialize (
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
       /* in */ const ::std::string& label,
-      /* in */ int64_t max_deriv
+      /* in */ int32_t max_deriv,
+      /* in */ int64_t storage,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;
@@ -165,32 +171,20 @@ namespace MPQC {
     ;
 
     /**
-     * Allows a DerivCenters object to be passed to 
-     * an evaluator, so that derivatives can be taken 
-     * with respect to a specified atom (needed for
-     * derivatives with non-Hellman-Feynman contributions). 
-     */
-    void
-    set_derivcenters (
-      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc
-    )
-    throw () 
-    ;
-
-
-    /**
-     * Compute a shell doublet of integrals.
+     * Compute a shell doublet of integrals.  deriv_atom must 
+     * be used for nuclear derivatives if the operator contains 
+     * nuclear coordinates, otherwise, set to -1 and use deriv_ctr.
      * @param shellnum1 Gaussian shell number 1.
      * @param shellnum2 Gaussian shell number 2.
      * @param deriv_level Derivative level. 
-     * @param deriv_ctr Derivative center descriptor. 
+     * @param deriv_atom Atom number for derivative (-1 if using DerivCenter). 
      */
     void
     compute (
       /* in */ int64_t shellnum1,
       /* in */ int64_t shellnum2,
-      /* in */ int64_t deriv_level,
-      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
+      /* in */ int32_t deriv_level,
+      /* in */ int64_t deriv_atom
     )
     throw () 
     ;
@@ -198,19 +192,21 @@ namespace MPQC {
 
     /**
      * Compute a shell doublet of integrals and return as a borrowed
-     * sidl array.
+     * sidl array.  deriv_atom must be used for nuclear derivatives if
+     * the operator contains nuclear coordinates, otherwise, set to -1 
+     * and use deriv_ctr.
      * @param shellnum1 Gaussian shell number 1.
      * @param shellnum2 Gaussian shell number 2.
      * @param deriv_level Derivative level.
-     * @param deriv_ctr Derivative center descriptor.
+     * @param deriv_atom Atom number for derivative (-1 if using DerivCenter).
      * @return Borrowed sidl array buffer. 
      */
     ::sidl::array<double>
     compute_array (
       /* in */ int64_t shellnum1,
       /* in */ int64_t shellnum2,
-      /* in */ int64_t deriv_level,
-      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
+      /* in */ int32_t deriv_level,
+      /* in */ int64_t deriv_atom
     )
     throw () 
     ;

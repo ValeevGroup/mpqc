@@ -54,6 +54,7 @@ class OneBodyIntCCA : public OneBodyInt {
     Ref<sc::Int1eCCA> int1ecca_;
     typedef void (sc::Int1eCCA::*IntegralFunction)(int,int);
     IntegralFunction intfunc_;
+    Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
   public:
     OneBodyIntCCA(Integral*,
                  const Ref<GaussianBasisSet>&, const Ref<GaussianBasisSet>&,
@@ -77,6 +78,7 @@ class OneBodyDerivIntCCA : public OneBodyDerivInt {
   protected:
     Ref<Int1eCCA> int1ecca_;
     typedef void (Int1eCCA::*IntegralFunction)(int, int, DerivCenters&);
+    Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
   public:
     OneBodyDerivIntCCA(Integral*,
                       const Ref<GaussianBasisSet>&,

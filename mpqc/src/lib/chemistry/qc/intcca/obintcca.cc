@@ -55,7 +55,9 @@ OneBodyIntCCA::OneBodyIntCCA(Integral* integral,
   else if (ifunc == &Int1eCCA::kinetic ) int_type = "kinetic";
   else if (ifunc == &Int1eCCA::nuclear ) int_type = "nuclear";
   else if (ifunc == &Int1eCCA::hcore ) int_type = "1eham";
-  int1ecca_ = new Int1eCCA(integral,bs1,bs2,0,eval_factory,int_type,use_opaque);
+  cca_dc_ = Chemistry_QC_GaussianBasis_DerivCenters::_create();
+  int1ecca_ = new Int1eCCA(integral,bs1,bs2,0,eval_factory,
+                           int_type,use_opaque,cca_dc_);
   buffer_ = int1ecca_->buffer();
 }
 
@@ -94,7 +96,9 @@ OneBodyDerivIntCCA::OneBodyDerivIntCCA(Integral *integral,
   OneBodyDerivInt(integral,bs1,bs2), eval_factory_(eval_factory),
   use_opaque_(use_opaque), eval_type_(eval_type)
 {
-  int1ecca_ = new Int1eCCA(integral,bs1,bs2,1,eval_factory,eval_type,use_opaque);
+  cca_dc_ = Chemistry_QC_GaussianBasis_DerivCenters::_create();
+  int1ecca_ = new Int1eCCA(integral,bs1,bs2,1,eval_factory,
+                           eval_type,use_opaque,cca_dc_);
   buffer_ = int1ecca_->buffer();
 }
 
@@ -105,57 +109,41 @@ OneBodyDerivIntCCA::~OneBodyDerivIntCCA()
 void
 OneBodyDerivIntCCA::compute_shell(int i, int j, DerivCenters& c)
 {
-  c.clear();
-  c.add_center(0,basis1(),i);
-  c.add_omitted(1,basis2(),j);
-  Chemistry_QC_GaussianBasis_DerivCenters cca_dc;
-  cca_dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
-  for( int id=0; id<c.n(); ++id ) {
-     if( id == c.omitted_center() )
-       cca_dc.add_omitted(c.center(id),c.atom(id));
-     else
-       cca_dc.add_center(c.center(id),c.atom(id));
-  }
+
+  std::cerr << "THIS IS NEVER USED\n";
+
+  cca_dc_.clear();
   
   if( eval_type_ == "overlap_1der" )
-    int1ecca_->overlap_1der(i,j,cca_dc);
+    int1ecca_->overlap_1der(i,j);
   else if( eval_type_ == "kinetic_1der" )  
-    int1ecca_->kinetic_1der(i,j,cca_dc);
+    int1ecca_->kinetic_1der(i,j);
   else if( eval_type_ == "nuclear_1der" )
-    int1ecca_->nuclear_1der(i,j,cca_dc);
+    int1ecca_->nuclear_1der(i,j);
   else if( eval_type_ == "hcore_1der" )
-    int1ecca_->hcore_1der(i,j,cca_dc);
+    int1ecca_->hcore_1der(i,j);
+
+  c.clear();
+  for( int id=0; id<cca_dc_.n(); ++id ) {
+    if( id == cca_dc_.omitted_center() )
+      c.add_omitted(cca_dc_.center(id),cca_dc_.atom(id));
+     else
+       c.add_center(cca_dc_.center(id),cca_dc_.atom(id));
+  }
+
 }
 
 void 
 OneBodyDerivIntCCA::compute_shell(int i, int j, int c) {
 
-  Chemistry_QC_GaussianBasis_DerivCenters cca_dc;
-  cca_dc = Chemistry_QC_GaussianBasis_DerivCenters::_create();
-  if( basis1()->shell_to_center(i) == basis2()->shell_to_center(j) ) {
-    cca_dc.add_center(0,c);
-    cca_dc.add_omitted(1,c);
-  }
-  else if( basis1()->shell_to_center(i) == c ) {
-    cca_dc.add_center(0,c);
-    cca_dc.add_omitted( 1, basis2()->shell_to_center(j) );
-  }
-  else {
-    cca_dc.add_center(1,c);
-    cca_dc.add_omitted( 0, basis1()->shell_to_center(i) );
-  }
- 
-  std::cerr << "setting omitted atom to " << basis2()->shell_to_center(j) << std::endl;
-  cca_dc.add_omitted(1,basis2()->shell_to_center(j));
-  
   if( eval_type_ == "overlap_1der" )
-    int1ecca_->overlap_1der(i,j,cca_dc);
+    int1ecca_->overlap_1der(i,j,c);
   else if( eval_type_ == "kinetic_1der" )
-    int1ecca_->kinetic_1der(i,j,cca_dc);
+    int1ecca_->kinetic_1der(i,j,c);
   else if( eval_type_ == "nuclear_1der" )
-    int1ecca_->nuclear_1der(i,j,cca_dc);
+    int1ecca_->nuclear_1der(i,j,c);
   else if( eval_type_ == "hcore_1der" )
-    int1ecca_->hcore_1der(i,j,cca_dc);
+    int1ecca_->hcore_1der(i,j,c);
 }
 
 /////////////////////////////////////////////////////////////////////////////

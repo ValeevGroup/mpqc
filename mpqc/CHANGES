@@ -3,6 +3,28 @@
 
 Following is a brief summary of changes made in each release of MPQC.
 
+  * 2005-10-16: MPQC-2.3.0
+     o Common Component Architecture interfaces for energies and
+       integrals are now available.
+     o Updated to a more recent version of the EMSL basis sets.  This
+       will change results in many cases.
+     o Polarization consistent basis sets added.
+     o Test suite inputs and results have been moved from a separate
+       file into the main release.
+     o "make" targets are now available to automatically check results.
+     o "mpqcrun" can be used to simply starting MPQC runs, particulary
+       parallel runs.
+     o Complementary Auxiliary Basis Set (CABS) version of the MP2-R12
+       method [see Chem. Phys. Lett. 395, 190 (2004)].
+     o MP2-R12/A' method with split virtual space (virtual orbitals
+       constructed from a separate Gaussian basis).
+     o Novel Brillouin condition-free versions of the MP2-R12/A' method.
+     o A new exception infrastructure has been added.
+     o Numerous numerical improvements, compiler bug work-arounds,
+       and bug fixes.
+     o Checkpoint files made with earlier versions of MPQC utilizing
+       more than one processor will not work 2.3.0 or later versions.
+
   * 2004-12-18: MPQC-2.2.3
      o Documention errors and omissions corrected.
      o Command man pages generated automatically.

@@ -1,6 +1,6 @@
-define([sc_mmm_version],[2.3.0])
+define([sc_mmm_version],[2.4.0])
 define([sc_buildid],[alpha])
-define([sc_so_version],[7:0:0])
+define([sc_so_version],[8:0:0])
 
 dnl Process this file with autoconf to produce a configure script.
 define([AC_CACHE_LOAD], )dnl for debugging configure.in
@@ -1124,6 +1124,8 @@ if test X$HAVE_PTHREAD = Xyes; then
   AC_CHECK_FUNC(pthread_attr_getschedpolicy)
   AC_CHECK_FUNC(pthread_attr_setschedparam)
   AC_CHECK_FUNC(pthread_attr_getschedparam)
+  AC_CHECK_FUNC(sched_get_priority_max)
+  AC_CHECK_FUNC(sched_get_priority_min)
 fi
 
 AC_CHECK_LIB(dl,main)
@@ -1214,6 +1216,7 @@ fi
 
 AC_SUBST(HAVE_PERF)
 AC_SUBST(HAVE_MPI)
+AC_SUBST(ALWAYS_USE_MPI)
 AC_SUBST(HAVE_ARMCI)
 AC_SUBST(HAVE_MPIIO)
 AC_SUBST(HAVE_PTHREAD)
@@ -1434,7 +1437,6 @@ AC_MSG_CHECKING(if fortran compiler works)
 if test -n "$F77" -a "$F77" != no ; then
   /bin/rm -f ffunc.f flink.c
   echo "      program main" > ffunc.f
-  echo "      return" >> ffunc.f
   echo "      end" >> ffunc.f
   if $F77 -o ffunc ffunc.f 1>&5 2>&5; then
     AC_MSG_RESULT(yes)

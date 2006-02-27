@@ -492,15 +492,18 @@ KeyValValueString::sizevalue(size_t&val) const
       else if (_val[i] == ' ') {
           if (gotdigit) gotdigitspace = 1;
         }
-      else if (strcmp(&_val[i],"KIB") == 0) {
+      else if (strcmp(&_val[i],"KIB") == 0
+               || strcmp(&_val[i],"KiB") == 0) {
           dval *= 1024;
           i+=2;
         }
-      else if (strcmp(&_val[i],"MIB") == 0) {
+      else if (strcmp(&_val[i],"MIB") == 0
+               || strcmp(&_val[i],"MiB") == 0) {
           dval *= 1048576;
           i+=2;
         }
-      else if (strcmp(&_val[i],"GIB") == 0) {
+      else if (strcmp(&_val[i],"GIB") == 0
+               ||strcmp(&_val[i],"GiB") == 0) {
           dval *= 1073741824;
           i+=2;
         }

@@ -105,7 +105,7 @@ throw ()
 
 /**
  * Get the canonical basis set name. 
- * @return Canonical basis set name. 
+ * @return canonical name 
  */
 ::std::string
 MPQC::GaussianBasis_Atomic_impl::get_name ()
@@ -119,9 +119,9 @@ throw ()
 
 /**
  * Get the number of basis functions.
- * @return Number of basis functions. 
+ * @return number of functions 
  */
-int64_t
+int32_t
 MPQC::GaussianBasis_Atomic_impl::get_n_basis ()
 throw () 
 
@@ -133,9 +133,9 @@ throw ()
 
 /**
  * Get the number of shells.
- * @return Number of shells. 
+ * @return number of shells 
  */
-int64_t
+int32_t
 MPQC::GaussianBasis_Atomic_impl::get_n_shell ()
 throw () 
 
@@ -147,9 +147,9 @@ throw ()
 
 /**
  * Get the max angular momentum for any shell on the atom.
- * @return Max angular momentum value. 
+ * @return max angular momentum 
  */
-int64_t
+int32_t
 MPQC::GaussianBasis_Atomic_impl::get_max_angular_momentum ()
 throw () 
 
@@ -161,7 +161,7 @@ throw ()
 
 /**
  * Get the angular type for the atom.
- * @return enum AngularType {CARTESIAN,SPHERICAL,MIXED} 
+ * @return enum AngularType 
  */
 ::Chemistry::QC::GaussianBasis::AngularType
 MPQC::GaussianBasis_Atomic_impl::get_angular_type ()
@@ -175,12 +175,12 @@ throw ()
 
 /**
  * Get a gaussian shell. 
- * @param shellnum Shell number to return.
- * @return Shell. 
+ * @param shellnum shell number
+ * @return Shell 
  */
 ::Chemistry::QC::GaussianBasis::Shell
 MPQC::GaussianBasis_Atomic_impl::get_shell (
-  /* in */ int64_t shellnum ) 
+  /* in */ int32_t shellnum ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.GaussianBasis_Atomic.get_shell)

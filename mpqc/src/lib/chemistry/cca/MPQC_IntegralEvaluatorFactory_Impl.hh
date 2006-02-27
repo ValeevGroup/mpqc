@@ -25,11 +25,11 @@
 #ifndef included_Chemistry_Molecule_hh
 #include "Chemistry_Molecule.hh"
 #endif
-#ifndef included_Chemistry_QC_GaussianBasis_ContractionTransform_hh
-#include "Chemistry_QC_GaussianBasis_ContractionTransform.hh"
-#endif
 #ifndef included_Chemistry_QC_GaussianBasis_DerivCenters_hh
 #include "Chemistry_QC_GaussianBasis_DerivCenters.hh"
+#endif
+#ifndef included_Chemistry_QC_GaussianBasis_EvaluatorConfig_hh
+#include "Chemistry_QC_GaussianBasis_EvaluatorConfig.hh"
 #endif
 #ifndef included_Chemistry_QC_GaussianBasis_IntegralEvaluator2_hh
 #include "Chemistry_QC_GaussianBasis_IntegralEvaluator2.hh"
@@ -120,6 +120,8 @@ namespace MPQC {
     ConfigurableParameterPort* setup_parameters(
       ConfigurableParameterFactory *cpf);
     std::string package_;
+    int storage_;
+    Chemistry::QC::GaussianBasis::EvaluatorConfig eval_config_;
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._implementation)
 
   private:
@@ -176,6 +178,18 @@ namespace MPQC {
 
 
     /**
+     * Set the EvaluatorConfig
+     * @param config EvaluatorConfig 
+     */
+    void
+    set_config (
+      /* in */ ::Chemistry::QC::GaussianBasis::EvaluatorConfig config
+    )
+    throw () 
+    ;
+
+
+    /**
      * Set the molecular basis 
      * @param molbasis The molecular basis 
      */
@@ -228,6 +242,18 @@ namespace MPQC {
 
 
     /**
+     * Set available storage
+     * @param storage Available storage in bytes 
+     */
+    void
+    set_storage (
+      /* in */ int64_t storage
+    )
+    throw () 
+    ;
+
+
+    /**
      * Get a 2-center integral evaluator
      * @param label String specifying integral type
      * @param max_deriv Maximum derivative that will be computed
@@ -238,49 +264,10 @@ namespace MPQC {
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator2
     get_integral_evaluator2 (
       /* in */ const ::std::string& label,
-      /* in */ int64_t max_deriv,
-      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2
-    )
-    throw () 
-    ;
-
-
-    /**
-     * Get a nuclear repulsion specialized  2-center integral 
-     * evaluator.  Returns derivative integrals taken with 
-     * respect to DerivCenters.
-     * @param max_deriv Maximum derivative that will be computed
-     * @param bs1 Molecular basis set on center 1
-     * @param bs2 Molecular basis set on center 2
-     * @return nuclear repulsion integral evaluator 
-     */
-    ::Chemistry::QC::GaussianBasis::IntegralEvaluator2
-    get_nuclear_evaluator (
-      /* in */ int64_t max_deriv,
+      /* in */ int32_t max_deriv,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc
-    )
-    throw () 
-    ;
-
-
-    /**
-     * Get a hcore specialized  2-center integral
-     * evaluator.  Returns derivative integrals taken with
-     * respect to DerivCenters.
-     * @param max_deriv Maximum derivative that will be computed
-     * @param bs1 Molecular basis set on center 1
-     * @param bs2 Molecular basis set on center 2
-     * @return hcore repulsion integral evaluator 
-     */
-    ::Chemistry::QC::GaussianBasis::IntegralEvaluator2
-    get_hcore_evaluator (
-      /* in */ int64_t max_deriv,
-      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;
@@ -298,10 +285,11 @@ namespace MPQC {
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator3
     get_integral_evaluator3 (
       /* in */ const ::std::string& label,
-      /* in */ int64_t max_deriv,
+      /* in */ int32_t max_deriv,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;
@@ -320,23 +308,16 @@ namespace MPQC {
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator4
     get_integral_evaluator4 (
       /* in */ const ::std::string& label,
-      /* in */ int64_t max_deriv,
+      /* in */ int32_t max_deriv,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
-      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;
 
-
-    /**
-     * Get the contraction transform
-     * @return The contraction transform 
-     */
-    ::Chemistry::QC::GaussianBasis::ContractionTransform
-    get_contraction_transform() throw () 
-    ;
   };  // end class IntegralEvaluatorFactory_impl
 
 } // end namespace MPQC

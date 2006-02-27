@@ -45,6 +45,11 @@ namespace sc {
 class TwoBodyIntCCA : public TwoBodyInt {
   protected:
     Ref<Int2eCCA> int2ecca_;
+    int int_bound_min_;
+    int n_types_;
+    double tol_;
+    double loginv_;
+    Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
 
   public:
     TwoBodyIntCCA(Integral*,
@@ -54,13 +59,13 @@ class TwoBodyIntCCA : public TwoBodyInt {
 		  const Ref<GaussianBasisSet>&b4,
                   size_t storage, IntegralEvaluatorFactory, 
                   bool, string );
-    ~TwoBodyIntCCA() {};
+    ~TwoBodyIntCCA() { };
 
-    int log2_shell_bound(int,int,int,int);
+    unsigned int num_tbint_types() const { return n_types_; }
     void compute_shell(int,int,int,int);
+    int log2_shell_bound(int,int,int,int);
     
     size_t storage_used();
-    void set_integral_storage(size_t storage);
     int redundant() const { return int2ecca_->redundant(); }
     void set_redundant(int i) { int2ecca_->set_redundant(i); }
 };
@@ -70,6 +75,10 @@ class TwoBodyIntCCA : public TwoBodyInt {
 class TwoBodyDerivIntCCA : public TwoBodyDerivInt {
   protected:
     Ref<Int2eCCA> int2ecca_;
+    int int_bound_min_;
+    double tol_;
+    double loginv_;
+    Chemistry::QC::GaussianBasis::DerivCenters cca_dc_;
 
   public:
     TwoBodyDerivIntCCA(Integral*,
@@ -78,7 +87,7 @@ class TwoBodyDerivIntCCA : public TwoBodyDerivInt {
                   const Ref<GaussianBasisSet>&b3,
                   const Ref<GaussianBasisSet>&b4,
                   size_t storage, IntegralEvaluatorFactory, bool, string);
-    ~TwoBodyDerivIntCCA() {};
+    ~TwoBodyDerivIntCCA() { };
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int,DerivCenters&);

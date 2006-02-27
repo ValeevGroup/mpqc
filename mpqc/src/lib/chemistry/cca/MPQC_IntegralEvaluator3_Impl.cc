@@ -58,7 +58,9 @@ throw ()
  * @param bs2 Molecular basis on center 2.
  * @param bs3 Molecular basis on center 3.
  * @param label String specifying integral type.
- * @param max_deriv Max derivative to compute. 
+ * @param max_deriv Max derivative to compute.
+ * @param storage Available storage in bytes.
+ * @param deriv_ctr Derivative center descriptor. 
  */
 void
 MPQC::IntegralEvaluator3_impl::initialize (
@@ -66,7 +68,9 @@ MPQC::IntegralEvaluator3_impl::initialize (
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
   /* in */ const ::std::string& label,
-  /* in */ int64_t max_deriv ) 
+  /* in */ int32_t max_deriv,
+  /* in */ int64_t storage,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.initialize)
@@ -94,15 +98,13 @@ throw ()
  * @param shellnum2 Gaussian shell number 2.
  * @param shellnum3 Gaussian shell number 3.
  * @param deriv_level Derivative level. 
- * @param deriv_ctr Derivative center descriptor. 
  */
 void
 MPQC::IntegralEvaluator3_impl::compute (
   /* in */ int64_t shellnum1,
   /* in */ int64_t shellnum2,
   /* in */ int64_t shellnum3,
-  /* in */ int64_t deriv_level,
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
+  /* in */ int32_t deriv_level ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.compute)
@@ -117,7 +119,6 @@ throw ()
  * @param shellnum2 Gaussian shell number 2.
  * @param shellnum3 Gaussian shell number 3.
  * @param deriv_level Derivative level.
- * @param deriv_ctr Derivative center desctiptor.
  * @return Borrowed sidl array buffer. 
  */
 ::sidl::array<double>
@@ -125,13 +126,30 @@ MPQC::IntegralEvaluator3_impl::compute_array (
   /* in */ int64_t shellnum1,
   /* in */ int64_t shellnum2,
   /* in */ int64_t shellnum3,
-  /* in */ int64_t deriv_level,
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
+  /* in */ int32_t deriv_level ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.compute_array)
   // insert implementation here
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.compute_array)
+}
+
+/**
+ * Compute integral bounds.
+ * @param shellnum1 Gaussian shell number 1.
+ * @param shellnum2 Gaussian shell number 2.
+ * @param shellnum3 Gaussian shell number 3. 
+ */
+double
+MPQC::IntegralEvaluator3_impl::compute_bounds (
+  /* in */ int64_t shellnum1,
+  /* in */ int64_t shellnum2,
+  /* in */ int64_t shellnum3 ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.compute_bounds)
+  // Insert-Code-Here {MPQC.IntegralEvaluator3.compute_bounds} (compute_bounds method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.compute_bounds)
 }
 
 

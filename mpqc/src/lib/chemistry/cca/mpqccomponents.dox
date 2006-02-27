@@ -132,7 +132,7 @@ This is an implementation of the
 Chemistry.QC.GaussianBasis.IntegralEvaluatorFactory interface.
 This factory produces molecular integral evaluator objects 
 based on the MPQC package. 
-This code is experimental and does not currently support derivative integrals.
+This code is experimental, currently supported integrals include first nuclear derivatives.
 
 \subsection evalfacpp Provides Ports
 <ul>

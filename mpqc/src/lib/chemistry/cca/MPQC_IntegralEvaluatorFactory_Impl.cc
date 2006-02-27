@@ -133,6 +133,20 @@ throw (
 }
 
 /**
+ * Set the EvaluatorConfig
+ * @param config EvaluatorConfig 
+ */
+void
+MPQC::IntegralEvaluatorFactory_impl::set_config (
+  /* in */ ::Chemistry::QC::GaussianBasis::EvaluatorConfig config ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.set_config)
+  eval_config_ = config;
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.set_config)
+}
+
+/**
  * Set the molecular basis 
  * @param molbasis The molecular basis 
  */
@@ -203,6 +217,20 @@ throw ()
 }
 
 /**
+ * Set available storage
+ * @param storage Available storage in bytes 
+ */
+void
+MPQC::IntegralEvaluatorFactory_impl::set_storage (
+  /* in */ int64_t storage ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.set_storage)
+  storage_ = storage;
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.set_storage)
+}
+
+/**
  * Get a 2-center integral evaluator
  * @param label String specifying integral type
  * @param max_deriv Maximum derivative that will be computed
@@ -213,63 +241,42 @@ throw ()
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator2
 MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator2 (
   /* in */ const ::std::string& label,
-  /* in */ int64_t max_deriv,
+  /* in */ int32_t max_deriv,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2 ) 
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator2)
+
+  // create the evaluator
   MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
-  if( package_.size() == 0 )
+ 
+  // determine proper integrals package
+  bool pkg_set = false;
+  for( int i=0; i<eval_config_.get_n_pkg_config(); ++i)
+    if( eval_config_.get_pkg_config_type(i) == label ) {
+      eval.set_integral_package( eval_config_.get_pkg_config_pkg(i) );
+      pkg_set = true;
+    }
+  if( !pkg_set ) {
     package_ =  package_param_->getValueString();
-  eval.set_integral_package( package_ );
-  eval.initialize( bs1, bs2, label, max_deriv );
+    if( package_ == "intv3" || package_ == "cints" )
+      eval.set_integral_package( package_ );
+    else {
+      package_ = eval_config_.get_default_pkg();
+      if( package_ == "intv3" || package_ == "cints" )
+        eval.set_integral_package( package_ );
+      else
+        eval.set_integral_package( "intv3" );
+    }
+  }
+  
+  // initialize
+  eval.initialize( bs1, bs2, label, max_deriv, storage_, deriv_ctr );
   return eval;
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator2)
-}
-
-/**
- * Get a nuclear repulsion specialized  2-center integral 
- * evaluator.  Returns derivative integrals taken with 
- * respect to DerivCenters.
- * @param max_deriv Maximum derivative that will be computed
- * @param bs1 Molecular basis set on center 1
- * @param bs2 Molecular basis set on center 2
- * @return nuclear repulsion integral evaluator 
- */
-::Chemistry::QC::GaussianBasis::IntegralEvaluator2
-MPQC::IntegralEvaluatorFactory_impl::get_nuclear_evaluator (
-  /* in */ int64_t max_deriv,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_nuclear_evaluator)
-  // Insert-Code-Here {MPQC.IntegralEvaluatorFactory.get_nuclear_evaluator} (get_nuclear_evaluator method)
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_nuclear_evaluator)
-}
-
-/**
- * Get a hcore specialized  2-center integral
- * evaluator.  Returns derivative integrals taken with
- * respect to DerivCenters.
- * @param max_deriv Maximum derivative that will be computed
- * @param bs1 Molecular basis set on center 1
- * @param bs2 Molecular basis set on center 2
- * @return hcore repulsion integral evaluator 
- */
-::Chemistry::QC::GaussianBasis::IntegralEvaluator2
-MPQC::IntegralEvaluatorFactory_impl::get_hcore_evaluator (
-  /* in */ int64_t max_deriv,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters dc ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_hcore_evaluator)
-  // Insert-Code-Here {MPQC.IntegralEvaluatorFactory.get_hcore_evaluator} (get_hcore_evaluator method)
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_hcore_evaluator)
 }
 
 /**
@@ -284,19 +291,42 @@ throw ()
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator3
 MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator3 (
   /* in */ const ::std::string& label,
-  /* in */ int64_t max_deriv,
+  /* in */ int32_t max_deriv,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3 ) 
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator3)
+
+  // create the evaluator
   MPQC::IntegralEvaluator3 eval = MPQC::IntegralEvaluator3::_create();
-  if( package_.size() == 0 ) 
-    package_ = package_param_->getValueString();
-  eval.set_integral_package( package_ );
-  eval.initialize( bs1, bs2, bs3, label, max_deriv );
+
+ // determine proper integrals package
+  bool pkg_set = false;
+  for( int i=0; i<eval_config_.get_n_pkg_config(); ++i)
+    if( eval_config_.get_pkg_config_type(i) == label ) {
+      eval.set_integral_package( eval_config_.get_pkg_config_pkg(i) );
+      pkg_set = true;
+    }
+  if( !pkg_set ) {
+    package_ =  package_param_->getValueString();
+    if( package_ == "intv3" || package_ == "cints" )
+      eval.set_integral_package( package_ );
+    else {
+      package_ = eval_config_.get_default_pkg();
+      if( package_ == "intv3" || package_ == "cints" )
+        eval.set_integral_package( package_ );
+      else
+        eval.set_integral_package( "intv3" );
+    }
+  }
+
+  // initialize
+  eval.initialize( bs1, bs2, bs3, label, max_deriv, storage_, deriv_ctr );
   return eval;
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator3)
 }
 
@@ -313,35 +343,44 @@ throw ()
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator4
 MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator4 (
   /* in */ const ::std::string& label,
-  /* in */ int64_t max_deriv,
+  /* in */ int32_t max_deriv,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
-  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4 ) 
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator4)
+
+  // create the evaluator
   MPQC::IntegralEvaluator4 eval = MPQC::IntegralEvaluator4::_create();
-  if( package_.size() == 0 )
-    package_ = package_param_->getValueString();
-  eval.set_integral_package( package_ );
-  eval.initialize( bs1, bs2, bs3, bs4, label, max_deriv );
+
+ // determine proper integrals package
+  bool pkg_set = false;
+  for( int i=0; i<eval_config_.get_n_pkg_config(); ++i)
+    if( eval_config_.get_pkg_config_type(i) == label ) {
+      eval.set_integral_package( eval_config_.get_pkg_config_pkg(i) );
+      pkg_set = true;
+    }
+  if( !pkg_set ) {
+    package_ =  package_param_->getValueString();
+    if( package_ == "intv3" || package_ == "cints" )
+      eval.set_integral_package( package_ );
+    else {
+      package_ = eval_config_.get_default_pkg();
+      if( package_ == "intv3" || package_ == "cints" )
+        eval.set_integral_package( package_ );
+      else
+        eval.set_integral_package( "intv3" );
+    }
+  }
+
+  // initialize
+  eval.initialize( bs1, bs2, bs3, bs4, label, max_deriv, storage_, deriv_ctr );
   return eval;
+
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator4)
-}
-
-/**
- * Get the contraction transform
- * @return The contraction transform 
- */
-::Chemistry::QC::GaussianBasis::ContractionTransform
-MPQC::IntegralEvaluatorFactory_impl::get_contraction_transform ()
-throw () 
-
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_contraction_transform)
-  // insert implementation here
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_contraction_transform)
 }
 
 

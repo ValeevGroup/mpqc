@@ -36,6 +36,7 @@
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactory.hh>
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluator4.hh>
 #include <Chemistry_QC_GaussianBasis_DerivCenters.hh>
+#include <Chemistry_Chemistry_QC_GaussianBasis_DerivCenters.hh>
 #include <MPQC_GaussianBasis_Molecular.hh>
 #include <chemistry/qc/basis/integral.h>
 
@@ -65,13 +66,16 @@ class Int2eCCA: public RefCount {
     GaussianBasis_Molecular cca_bs4_;
     sidl::array<double> sidl_buffer_;
     double *buffer_;
+    double *temp_buff_;
     bool use_opaque_;
     void copy_buffer(int);
     IntegralEvaluator4 erep_;
     IntegralEvaluator4 erep_1der_;
     IntegralEvaluator4 *erep_ptr_;
     IntegralEvaluator4 *erep_1der_ptr_;
+    Chemistry_QC_GaussianBasis_DerivCenters cca_dc_;
     int redundant_;
+    int deriv_lvl_;
     void remove_redundant(int,int,int,int);
 
   protected:
@@ -84,15 +88,16 @@ class Int2eCCA: public RefCount {
              const Ref<GaussianBasisSet>&b3,
              const Ref<GaussianBasisSet>&b4,
              int order, size_t storage, IntegralEvaluatorFactory, 
-             bool, string );
+             bool, string,
+             Chemistry::QC::GaussianBasis::DerivCenters cca_dc );
     ~Int2eCCA() {};
     double *buffer() { return buffer_; }
     void compute_erep( int is, int js, int ks, int ls );
-    void compute_erep_1der( int is, int js, int ks, int ls,
-                            Chemistry::QC::GaussianBasis::DerivCenters &dc);
+    double compute_bounds( int is, int js, int ks, int ls );
+    void compute_erep_1der( int is, int js, int ks, int ls );
+    double compute_bounds_1der( int is, int js, int ks, int ls );
     int redundant() const { return redundant_; }
     void set_redundant(int i) { redundant_ = i; }
-
 };
 
 }

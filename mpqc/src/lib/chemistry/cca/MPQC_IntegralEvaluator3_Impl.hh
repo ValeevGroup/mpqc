@@ -117,7 +117,9 @@ namespace MPQC {
      * @param bs2 Molecular basis on center 2.
      * @param bs3 Molecular basis on center 3.
      * @param label String specifying integral type.
-     * @param max_deriv Max derivative to compute. 
+     * @param max_deriv Max derivative to compute.
+     * @param storage Available storage in bytes.
+     * @param deriv_ctr Derivative center descriptor. 
      */
     void
     initialize (
@@ -125,7 +127,9 @@ namespace MPQC {
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
       /* in */ const ::std::string& label,
-      /* in */ int64_t max_deriv
+      /* in */ int32_t max_deriv,
+      /* in */ int64_t storage,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
     )
     throw () 
     ;
@@ -145,15 +149,13 @@ namespace MPQC {
      * @param shellnum2 Gaussian shell number 2.
      * @param shellnum3 Gaussian shell number 3.
      * @param deriv_level Derivative level. 
-     * @param deriv_ctr Derivative center descriptor. 
      */
     void
     compute (
       /* in */ int64_t shellnum1,
       /* in */ int64_t shellnum2,
       /* in */ int64_t shellnum3,
-      /* in */ int64_t deriv_level,
-      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
+      /* in */ int32_t deriv_level
     )
     throw () 
     ;
@@ -166,7 +168,6 @@ namespace MPQC {
      * @param shellnum2 Gaussian shell number 2.
      * @param shellnum3 Gaussian shell number 3.
      * @param deriv_level Derivative level.
-     * @param deriv_ctr Derivative center desctiptor.
      * @return Borrowed sidl array buffer. 
      */
     ::sidl::array<double>
@@ -174,8 +175,23 @@ namespace MPQC {
       /* in */ int64_t shellnum1,
       /* in */ int64_t shellnum2,
       /* in */ int64_t shellnum3,
-      /* in */ int64_t deriv_level,
-      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
+      /* in */ int32_t deriv_level
+    )
+    throw () 
+    ;
+
+
+    /**
+     * Compute integral bounds.
+     * @param shellnum1 Gaussian shell number 1.
+     * @param shellnum2 Gaussian shell number 2.
+     * @param shellnum3 Gaussian shell number 3. 
+     */
+    double
+    compute_bounds (
+      /* in */ int64_t shellnum1,
+      /* in */ int64_t shellnum2,
+      /* in */ int64_t shellnum3
     )
     throw () 
     ;

@@ -93,11 +93,8 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   if ( keyval->error() != KeyVal::OK ) {
     factory_type_ = string("MPQC.IntegralEvaluatorFactory");
   }
-  package_ = keyval->stringvalue("integral_package");
-  if ( keyval->error() != KeyVal::OK ) {
-    package_ = string("intv3");
-  }
 #ifdef INTV3_ORDER
+/* this has gotten more complicated
   if(package_ == "cints") {
     InputError ex("using intv3 ordering, can't use cints",__FILE__, __LINE__);
     try { ex.elaborate() << "INTV3_ORDER=yes in LocalMakefile,"
@@ -106,6 +103,7 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
     catch (...) {}
     throw ex;
   }
+*/
 #endif
 
   sc_molecule_ << keyval->describedclassvalue("molecule");
@@ -125,6 +123,25 @@ IntegralCCA::IntegralCCA(const Ref<KeyVal> &keyval):
   fac_con_ = bs.connect(my_id,"IntegralEvaluatorFactory",
                         fac_id_,"IntegralEvaluatorFactory");
   eval_factory_ = services.getPort("IntegralEvaluatorFactory");
+
+  // configure eval factory
+  eval_config_ = Chemistry::Chemistry_QC_GaussianBasis_EvaluatorConfig::_create();
+  package_ = keyval->stringvalue("default_package");
+  if ( keyval->error() == KeyVal::OK ) {
+    eval_config_.set_default_pkg(package_);
+    ExEnv::out0() << indent << "Default integral package: " << package_ << std::endl;
+  }
+  int ntype = keyval->count("type");
+  int npkg = keyval->count("package");
+  string tp, pkg;
+  if( ntype != npkg ) throw InputError("ntype != npackage",__FILE__,__LINE__);
+  for( int i=0; i<ntype; ++i) {
+    tp = keyval->stringvalue("type",i);
+    pkg = keyval->stringvalue("package",i);
+    ExEnv::out0() << indent << "Integral type " << tp << ": " << pkg << std::endl;
+    eval_config_.set_pkg_config(tp,pkg);
+  }
+  eval_factory_.set_config( eval_config_ );
 
   // set molecule on factory
   molecule_ = Chemistry::Chemistry_Molecule::_create();
@@ -175,6 +192,7 @@ IntegralCCA::new_cartesian_iter(int l)
   return new CartesianIterV3(l);
 #else
   return new CartesianIterCCA(l);
+  //return new CartesianIterV3(l);
 #endif
 }
 
@@ -185,6 +203,7 @@ IntegralCCA::new_redundant_cartesian_iter(int l)
   return new RedundantCartesianIterV3(l);
 #else
   return new RedundantCartesianIterCCA(l);
+  //return new RedundantCartesianIterV3(l);
 #endif
 }
 
@@ -195,6 +214,7 @@ IntegralCCA::new_redundant_cartesian_sub_iter(int l)
   return new RedundantCartesianSubIterV3(l);
 #else
   return new RedundantCartesianSubIterCCA(l);
+  //return new RedundantCartesianSubIterV3(l);
 #endif
 }
 
@@ -215,7 +235,7 @@ IntegralCCA::new_spherical_transform_iter(int l, int inv, int subl)
   return new SphericalTransformIter(st_[l][(l-subl)/2]);
 
 #else
- 
+
   // CINTS version
   if (l>maxl_ || l<0)
       throw ProgrammingError("new_spherical_transform_iter: bad l",
@@ -354,8 +374,8 @@ IntegralCCA::hcore_deriv()
 Ref<TwoBodyInt>
 IntegralCCA::electron_repulsion()
 {
-  return new TwoBodyIntCCA(this, bs1_, bs2_, bs3_, bs4_, 
-                           storage_, eval_factory_, use_opaque_, "eri" );
+   return new TwoBodyIntCCA(this, bs1_, bs2_, bs3_, bs4_, 
+                            storage_, eval_factory_, use_opaque_, "eri" );
 }
 
 Ref<TwoBodyDerivInt>
@@ -447,7 +467,6 @@ IntegralCCA::free_transforms()
            ist_[i][j] = new ISphericalTransformV3(i,i-2*j);
          }
      }
-
 #else
 
   // CINTS version

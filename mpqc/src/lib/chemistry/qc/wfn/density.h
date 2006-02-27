@@ -171,7 +171,8 @@ class BatchElectronDensity: public Volume {
     /** Turn use of density matrix bounds on/off. */
     void set_use_dmat_bound(bool b) { use_dmat_bound_ = b; }
 
-    /** These return some of the internal data, some of which is
+    /** @name DFT Support Members.
+        These return some of the internal data, some of which is
         only value after a density has been computed.  This data
         is needed by the density functional theory code. */
     //@{

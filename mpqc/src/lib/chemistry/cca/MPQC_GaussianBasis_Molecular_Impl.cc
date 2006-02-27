@@ -117,7 +117,7 @@ throw ()
 
 /**
  * Get the user specified name.
- * @return User specified name. 
+ * @return name 
  */
 ::std::string
 MPQC::GaussianBasis_Molecular_impl::get_label ()
@@ -131,7 +131,7 @@ throw ()
 
 /**
  * Get the number of basis functions.
- * @return Number of basis functions. 
+ * @return number of functions 
  */
 int64_t
 MPQC::GaussianBasis_Molecular_impl::get_n_basis ()
@@ -145,7 +145,7 @@ throw ()
 
 /**
  * Get the number of shells.
- * @return Number of shells. 
+ * @return number of shells 
  */
 int64_t
 MPQC::GaussianBasis_Molecular_impl::get_n_shell ()
@@ -159,9 +159,9 @@ throw ()
 
 /**
  * Get the max angular momentum for any contraction in the basis set.
- * @return Max angular momentum value. 
+ * @return max angular momentum 
  */
-int64_t
+int32_t
 MPQC::GaussianBasis_Molecular_impl::get_max_angular_momentum ()
 throw () 
 
@@ -173,7 +173,7 @@ throw ()
 
 /**
  * Get the angular type.
- * @return enum AngularType {CARTESIAN,SPHERICAL,MIXED} 
+ * @return enum AngularType 
  */
 ::Chemistry::QC::GaussianBasis::AngularType
 MPQC::GaussianBasis_Molecular_impl::get_angular_type ()
@@ -187,8 +187,8 @@ throw ()
 
 /**
  * Get an atomic basis set.
- * @param atomnum Atom number. 
- * @return Atomic basis set. 
+ * @param atomnum atom number 
+ * @return Atomic 
  */
 ::Chemistry::QC::GaussianBasis::Atomic
 MPQC::GaussianBasis_Molecular_impl::get_atomic (
@@ -202,7 +202,7 @@ throw ()
 
 /**
  * Get the molecule.
- * @return The molecule. 
+ * @return Molecule 
  */
 ::Chemistry::Molecule
 MPQC::GaussianBasis_Molecular_impl::get_molecule ()

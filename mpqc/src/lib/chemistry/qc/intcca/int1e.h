@@ -61,8 +61,11 @@ class Int1eCCA: public RefCount {
     GaussianBasis_Molecular cca_bs2_;
     sidl::array<double> sidl_buffer_;
     double *buff_;
+    double *temp_buff_;
     bool use_opaque_;
     void copy_buffer();
+    void reorder_deriv(sc::GaussianShell*, sc::GaussianShell*);
+    int deriv_lvl_;
     IntegralEvaluator2 overlap_;
     IntegralEvaluator2 overlap_1der_;
     IntegralEvaluator2 kinetic_;
@@ -79,6 +82,7 @@ class Int1eCCA: public RefCount {
     IntegralEvaluator2 *nuclear_1der_ptr_;
     IntegralEvaluator2 *hcore_ptr_;
     IntegralEvaluator2 *hcore_1der_ptr_;
+    Chemistry_QC_GaussianBasis_DerivCenters cca_dc_;
 
   protected:
     Integral *integral_;
@@ -87,22 +91,24 @@ class Int1eCCA: public RefCount {
     Int1eCCA(Integral *integral,
              const Ref<GaussianBasisSet>&b1,
 	     const Ref<GaussianBasisSet>&b2,
-	     int order, IntegralEvaluatorFactory, std::string, bool);
+	     int order, IntegralEvaluatorFactory, std::string, bool,
+             Chemistry::QC::GaussianBasis::DerivCenters cca_dc );
     ~Int1eCCA();
 
     double *buffer() { return buff_; }
     void overlap(int ish, int jsh);
-    void overlap_1der(int ish, int jsh, 
-                      Chemistry_QC_GaussianBasis_DerivCenters &dc);
+    void overlap_1der(int ish, int jsh);
+    void overlap_1der(int ish, int jsh, int c);
     void kinetic(int ish, int jsh);
-    void kinetic_1der(int ish, int jsh, 
-                      Chemistry_QC_GaussianBasis_DerivCenters &dc);
+    void kinetic_1der(int ish, int jsh);
+    void kinetic_1der(int ish, int jsh, int c);
     void nuclear(int ish, int jsh);
-    void nuclear_1der(int ish, int jsh,
-                      Chemistry_QC_GaussianBasis_DerivCenters &dc);
+    void nuclear_1der(int ish, int jsh);
+    void nuclear_1der(int ish, int jsh, int c);
     void hcore(int ish, int jsh);
-    void hcore_1der(int ish, int jsh,
-                    Chemistry_QC_GaussianBasis_DerivCenters &dc);
+    void hcore_1der(int ish, int jsh);
+    void hcore_1der(int ish, int jsh, int c);
+                    
 };
 
 }

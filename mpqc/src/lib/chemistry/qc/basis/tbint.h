@@ -47,6 +47,10 @@ class Integral;
     compute integrals involving two electrons.
  */
 class TwoBodyInt : public RefCount {
+
+  private:
+    double *log2_to_double_;
+ 
   protected:
     // this is who created me
     Integral *integral_;
@@ -71,35 +75,38 @@ class TwoBodyInt : public RefCount {
     /// Return the number of basis functions on center one.
     int nbasis() const;
     
-    /// Return the number of basis functions on the given center.
-    //@{
+    /// Return the number of basis functions on center one.
     int nbasis1() const;
+    /// Return the number of basis functions on center two.
     int nbasis2() const;
+    /// Return the number of basis functions on center three.
     int nbasis3() const;
+    /// Return the number of basis functions on center four.
     int nbasis4() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
     
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on center one.
     int nshell1() const;
+    /// Return the number of shells on center two.
     int nshell2() const;
+    /// Return the number of shells on center three.
     int nshell3() const;
+    /// Return the number of shells on center four.
     int nshell4() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
 
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
+    /// Return the basis set on center two.
     Ref<GaussianBasisSet> basis2();
+    /// Return the basis set on center three.
     Ref<GaussianBasisSet> basis3();
+    /// Return the basis set on center four.
     Ref<GaussianBasisSet> basis4();
-    //@}
 
   /** Types of two-body integrals that TwoBodyInt understands:
       eri stands for electron repulsion integral, r12 stands for integrals
@@ -127,12 +134,16 @@ class TwoBodyInt : public RefCount {
         argument indicates any shell.  */
     virtual int log2_shell_bound(int= -1,int= -1,int= -1,int= -1) = 0;
 
+    /** Return the maximum magnitude of any integral in a
+        shell block obtained from compute_shell.  An index of -1 for any
+        argument indicates any shell.  */
+    double shell_bound(int= -1,int= -1,int= -1,int= -1);
+
     /** If redundant is true, then keep redundant integrals in the buffer.
         The default is true. */
-    //@{
     virtual int redundant() const { return redundant_; }
+    /// See redundant().
     virtual void set_redundant(int i) { redundant_ = i; }
-    //@}
 
     /// This storage is used to cache computed integrals.
     virtual void set_integral_storage(size_t storage);
@@ -148,6 +159,10 @@ class TwoBodyInt : public RefCount {
     involving two electrons in three Gaussian functions.
  */
 class TwoBodyThreeCenterInt : public RefCount {
+
+  private:
+    double *log2_to_double_;
+
   protected:
     // this is who created me
     Integral *integral_;
@@ -170,32 +185,32 @@ class TwoBodyThreeCenterInt : public RefCount {
     /// Return the number of basis functions on center one.
     int nbasis() const;
     
-    /// Return the number of basis functions on the given center.
-    //@{
+    /// Return the number of basis functions on center one.
     int nbasis1() const;
+    /// Return the number of basis functions on center two.
     int nbasis2() const;
+    /// Return the number of basis functions on center three.
     int nbasis3() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
     
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on center one.
     int nshell1() const;
+    /// Return the number of shells on center two.
     int nshell2() const;
+    /// Return the number of shells on center three.
     int nshell3() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
 
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
+    /// Return the basis set on center two.
     Ref<GaussianBasisSet> basis2();
+    /// Return the basis set on center three.
     Ref<GaussianBasisSet> basis3();
-    //@}
 
   /** Types of two-body integrals that TwoBodyInt understands:
       eri stands for electron repulsion integral, r12 stands for integrals
@@ -221,12 +236,16 @@ class TwoBodyThreeCenterInt : public RefCount {
         argument indicates any shell.  */
     virtual int log2_shell_bound(int= -1,int= -1,int= -1) = 0;
 
+    /** Return the maximum magnitude of any integral in a
+        shell block obtained from compute_shell.  An index of -1 for any
+        argument indicates any shell.  */
+    double shell_bound(int= -1,int= -1,int= -1);
+
     /** If redundant is true, then keep redundant integrals in the buffer.
         The default is true. */
-    //@{
     int redundant() const { return redundant_; }
+    /// See redundant().
     void set_redundant(int i) { redundant_ = i; }
-    //@}
 
     /// This storage is used to cache computed integrals.
     virtual void set_integral_storage(size_t storage);
@@ -243,6 +262,10 @@ class TwoBodyThreeCenterInt : public RefCount {
     Gaussian functions.
  */
 class TwoBodyTwoCenterInt : public RefCount {
+
+  private:
+    double *log2_to_double_;
+
   protected:
     // this is who created me
     Integral *integral_;
@@ -263,29 +286,26 @@ class TwoBodyTwoCenterInt : public RefCount {
     /// Return the number of basis functions on center one.
     int nbasis() const;
     
-    /// Return the number of basis functions on the given center.
-    //@{
+    /// Return the number of basis functions on center one.
     int nbasis1() const;
+    /// Return the number of basis functions on center two.
     int nbasis2() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
     
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on center one.
     int nshell1() const;
+    /// Return the number of shells on center two.
     int nshell2() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
 
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
+    /// Return the basis set on center two.
     Ref<GaussianBasisSet> basis2();
-    //@}
 
   /** Types of two-body integrals that TwoBodyInt understands:
       eri stands for electron repulsion integral, r12 stands for integrals
@@ -311,12 +331,16 @@ class TwoBodyTwoCenterInt : public RefCount {
         argument indicates any shell.  */
     virtual int log2_shell_bound(int= -1,int= -1) = 0;
 
+    /** Return the maximum magnitude (as a double) of any integral in a
+        shell block obtained from compute_shell.  An index of -1 for any
+        argument indicates any shell.  */
+    double shell_bound(int= -1,int= -1);
+
     /** If redundant is true, then keep redundant integrals in the buffer.
         The default is true. */
-    //@{
     int redundant() const { return redundant_; }
+    /// See redundant().
     void set_redundant(int i) { redundant_ = i; }
-    //@}
 
     /// This storage is used to cache computed integrals.
     virtual void set_integral_storage(size_t storage);
@@ -425,6 +449,10 @@ class TwoBodyIntIter {
     compute integrals involving two electrons.
  */
 class TwoBodyDerivInt : public RefCount {
+
+  private:
+    double *log2_to_double_;
+
   protected:
     // this is who created me
     Integral *integral_;
@@ -447,35 +475,38 @@ class TwoBodyDerivInt : public RefCount {
     /// Return the number of basis functions on center one.
     int nbasis() const;
 
-    /// Return the number of basis functions on the given center.
-    //@{
+    /// Return the number of basis functions on center one.
     int nbasis1() const;
+    /// Return the number of basis functions on center two.
     int nbasis2() const;
+    /// Return the number of basis functions on center three.
     int nbasis3() const;
+    /// Return the number of basis functions on center four.
     int nbasis4() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
 
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on center one.
     int nshell1() const;
+    /// Return the number of shells on center two.
     int nshell2() const;
+    /// Return the number of shells on center three.
     int nshell3() const;
+    /// Return the number of shells on center four.
     int nshell4() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
 
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
+    /// Return the basis set on center two.
     Ref<GaussianBasisSet> basis2();
+    /// Return the basis set on center three.
     Ref<GaussianBasisSet> basis3();
+    /// Return the basis set on center four.
     Ref<GaussianBasisSet> basis4();
-    //@}
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.
@@ -489,6 +520,10 @@ class TwoBodyDerivInt : public RefCount {
     /** Return log base 2 of the maximum magnitude of any integral in a
         shell block.  An index of -1 for any argument indicates any shell.  */
     virtual int log2_shell_bound(int= -1,int= -1,int= -1,int= -1) = 0;
+
+    /** Return the maximum magnitude of any integral in a
+        shell block.  An index of -1 for any argument indicates any shell.  */
+    double shell_bound(int= -1,int= -1,int= -1,int= -1);
 };
 
 // //////////////////////////////////////////////////////////////////////////
@@ -497,6 +532,10 @@ class TwoBodyDerivInt : public RefCount {
     compute three centers integrals involving two electrons.
  */
 class TwoBodyThreeCenterDerivInt : public RefCount {
+
+  private:
+    double *log2_to_double_;
+
   protected:
     // this is who created me
     Integral *integral_;
@@ -517,32 +556,32 @@ class TwoBodyThreeCenterDerivInt : public RefCount {
     /// Return the number of basis functions on center one.
     int nbasis() const;
 
-    /// Return the number of basis functions on the given center.
-    //@{
+    /// Return the number of basis functions on center one.
     int nbasis1() const;
+    /// Return the number of basis functions on center two.
     int nbasis2() const;
+    /// Return the number of basis functions on center three.
     int nbasis3() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
 
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on center one.
     int nshell1() const;
+    /// Return the number of shells on center two.
     int nshell2() const;
+    /// Return the number of shells on center three.
     int nshell3() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
 
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
+    /// Return the basis set on center two.
     Ref<GaussianBasisSet> basis2();
+    /// Return the basis set on center three.
     Ref<GaussianBasisSet> basis3();
-    //@}
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.
@@ -556,6 +595,11 @@ class TwoBodyThreeCenterDerivInt : public RefCount {
     /** Return log base 2 of the maximum magnitude of any integral in a
         shell block.  An index of -1 for any argument indicates any shell.  */
     virtual int log2_shell_bound(int= -1,int= -1,int= -1) = 0;
+
+    /** Return the maximum magnitude of any integral in a
+        shell block.  An index of -1 for any argument indicates any shell.  */
+    double shell_bound(int= -1,int= -1,int= -1);
+
 };
 
 // //////////////////////////////////////////////////////////////////////////
@@ -564,6 +608,10 @@ class TwoBodyThreeCenterDerivInt : public RefCount {
     compute two centers integrals involving two electrons.
  */
 class TwoBodyTwoCenterDerivInt : public RefCount {
+
+  private:
+    double *log2_to_double_;
+
   protected:
     // this is who created me
     Integral *integral_;
@@ -582,29 +630,26 @@ class TwoBodyTwoCenterDerivInt : public RefCount {
     /// Return the number of basis functions on center one.
     int nbasis() const;
 
-    /// Return the number of basis functions on the given center.
-    //@{
+    /// Return the number of basis functions on center one.
     int nbasis1() const;
+    /// Return the number of basis functions on center two.
     int nbasis2() const;
-    //@}
 
     /// Return the number of shells on center one.
     int nshell() const;
 
-    /// Return the number of shells on the given center.
-    //@{
+    /// Return the number of shells on center one.
     int nshell1() const;
+    /// Return the number of shells on center two.
     int nshell2() const;
-    //@}
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis();
 
-    /// Return the basis set on the given center.
-    //@{
+    /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
+    /// Return the basis set on center two.
     Ref<GaussianBasisSet> basis2();
-    //@}
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.
@@ -618,6 +663,11 @@ class TwoBodyTwoCenterDerivInt : public RefCount {
     /** Return log base 2 of the maximum magnitude of any integral in a
         shell block.  An index of -1 for any argument indicates any shell.  */
     virtual int log2_shell_bound(int= -1,int= -1) = 0;
+
+    /** Return the maximum magnitude of any integral in a
+        shell block.  An index of -1 for any argument indicates any shell.  */
+    double shell_bound(int= -1,int= -1);
+
 };
 
 }

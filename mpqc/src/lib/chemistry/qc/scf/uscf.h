@@ -104,6 +104,11 @@ class UnrestrictedSCF: public SCF {
 	thus this function should never be called. */
     RefSymmSCMatrix effective_fock();
     
+    /** Overload of Function::set_desired_value_accuracy(). Must update
+        accuracy of the eigenvalues and eigenvectors.
+    */
+    void set_desired_value_accuracy(double eps);
+    
   protected:
     // these are temporary data, so they should not be checkpointed
     Ref<TwoBodyInt> tbi_;

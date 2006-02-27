@@ -33,7 +33,12 @@ void MPQC::IntegralEvaluator4_impl::_ctor() {
 void MPQC::IntegralEvaluator4_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._dtor)
 #ifndef INTV3_ORDER
-  if( package_ == "intv3") delete [] temp_buffer_;
+  if( package_ == "intv3") {
+    delete [] temp_buffer_;
+    for( int i=0; i<=maxam_; ++i)
+      delete [] reorder_[i];
+    delete [] reorder_;
+  }
 #endif
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._dtor)
 }
@@ -68,7 +73,9 @@ throw ()
  * @param bs3 Molecular basis on center 3.
  * @param bs4 Molecular basis on center 4.
  * @param label String specifying integral type.
- * @param max_deriv Max derivative to compute. 
+ * @param max_deriv Max derivative to compute.
+ * @param storage Available storage in bytes.
+ * @param deriv_ctr Derivative center descriptor. 
  */
 void
 MPQC::IntegralEvaluator4_impl::initialize (
@@ -77,12 +84,16 @@ MPQC::IntegralEvaluator4_impl::initialize (
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4,
   /* in */ const ::std::string& label,
-  /* in */ int64_t max_deriv ) 
+  /* in */ int32_t max_deriv,
+  /* in */ int64_t storage,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.initialize)
   
   bufn_ = 0;
+
+  deriv_centers_ = deriv_ctr;
 
   evaluator_label_ = label;
   int deriv_level = max_deriv;
@@ -97,6 +108,10 @@ throw ()
   max_nshell4_ *= bs3_->max_ncartesian_in_shell();
   max_nshell4_ *= bs4_->max_ncartesian_in_shell();
 
+  maxam_ = max( bs1_->max_angular_momentum(), bs2_->max_angular_momentum() );
+  maxam_ = max( bs3_->max_angular_momentum(), maxam_ );
+  maxam_ = max( bs4_->max_angular_momentum(), maxam_ );
+
   std::string is_deriv("");
   if(max_deriv > 0) is_deriv = " derivative";
   std::cout << "  initializing " << package_ << " " << evaluator_label_
@@ -110,15 +125,17 @@ throw ()
   else
     throw InputError("bad integral package name",
                      __FILE__,__LINE__);
-
-  // a proper solution is required here
-  integral_->set_storage(200000000);
+  
+  integral_->set_storage(storage);
 
   int error = 0;
   if(evaluator_label_ == "eri2")
     switch( deriv_level ) {
     case 0:
-      { eval_ = integral_->electron_repulsion(); break; }
+      { eval_ = integral_->electron_repulsion();
+        eval_->set_integral_storage(storage);
+        break;
+      }
     case 1:
       { deriv_eval_ = integral_->electron_repulsion_deriv(); 
         break; 
@@ -130,7 +147,10 @@ throw ()
   else if(evaluator_label_ == "grt")
     switch( deriv_level ) {
     case 0:
-        { eval_ = integral_->grt(); break; }
+        { eval_ = integral_->grt(); 
+          eval_->set_integral_storage(storage);
+          break; 
+        }
     default:
       ++error;
     }
@@ -191,8 +211,7 @@ throw ()
  * @param shellnum2 Gaussian shell number 2.
  * @param shellnum3 Gaussian shell number 3.
  * @param shellnum4 Gaussian shell number 4.
- * @param deriv_level Derivative level.
- * @param deriv_ctr Derivative center descriptor. 
+ * @param deriv_level Derivative level. 
  */
 void
 MPQC::IntegralEvaluator4_impl::compute (
@@ -200,51 +219,133 @@ MPQC::IntegralEvaluator4_impl::compute (
   /* in */ int64_t shellnum2,
   /* in */ int64_t shellnum3,
   /* in */ int64_t shellnum4,
-  /* in */ int64_t deriv_level,
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
+  /* in */ int32_t deriv_level ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute)
   
   if( int_type_ == two_body ) {
     eval_->compute_shell( shellnum1, shellnum2,
-			  shellnum3, shellnum4);
+			  shellnum3, shellnum4 );
   }
 
   else if( int_type_ == two_body_deriv ) {
-    sc::DerivCenters dc;
+    
+    deriv_eval_->compute_shell( shellnum1, shellnum2,
+                                shellnum3, shellnum4,
+                                sc_deriv_centers_ );
+    deriv_centers_.clear();
+    if(sc_deriv_centers_.has_omitted_center())
+      deriv_centers_.add_omitted( sc_deriv_centers_.omitted_center(),
+                                  sc_deriv_centers_.omitted_atom() );
+    for( int i=0; i<sc_deriv_centers_.n() ; ++i) 
+      deriv_centers_.add_center( sc_deriv_centers_.center(i),
+                                 sc_deriv_centers_.atom(i) );
 
-    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 0 )
-      dc.add_omitted(0,deriv_ctr.atom(0));
-    else
-      dc.add_center(0,deriv_ctr.atom(0));
+/*
+    std::cerr << "Eval4 dc.n=" << deriv_centers_.n() << std::endl;
+    for( int i=0; i<deriv_centers_.n(); ++i)
+       std::cerr << "dc " << i << " center " << deriv_centers_.center(i) << " atom " << deriv_centers_.atom(i) << std::endl;
+    if( deriv_centers_.has_omitted_center() ) {
+      std::cerr << "omitted center is " << deriv_centers_.omitted_center() << std::endl;
+      std::cerr << "omitted atom is " << deriv_centers_.omitted_atom() << std::endl;
+    }
 
-    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 1 )
-      dc.add_omitted(1,deriv_ctr.atom(1));
-    else
-      dc.add_center(1,deriv_ctr.atom(1));
+    std::cerr << "Eval4 deriv_ctr.n=" << deriv_centers_.n() << std::endl;
+    for( int i=0; i<deriv_centers_.n(); ++i)
+       std::cerr << "deriv_ctr " << i << " center " << deriv_centers_.center(i) << " atom " << deriv_centers_.atom(i) << std::endl;
+    if( deriv_centers_.has_omitted_center() ) {
+      std::cerr << "omitted center is " << deriv_centers_.omitted_center() << std::endl;
+      std::cerr << "omitted atom is " << deriv_centers_.omitted_atom() << std::endl;
+    }
+*/
 
-    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 2 )
-      dc.add_omitted(2,deriv_ctr.atom(2));
-    else
-      dc.add_center(2,deriv_ctr.atom(2));
-
-    if(deriv_ctr.has_omitted_center() && deriv_ctr.omitted_center() == 3 )
-      dc.add_omitted(3,deriv_ctr.atom(3));
-    else
-      dc.add_center(3,deriv_ctr.atom(3));
-
-    deriv_eval_->compute_shell( shellnum1, shellnum2, 
-                                shellnum3, shellnum4, dc );
   }
   else
     throw ProgrammingError("bad evaluator type",
                            __FILE__,__LINE__);
 
+/*
+  if( int_type_ == two_body_deriv && shellnum1 == 8 && shellnum2 == 0 
+                                  && shellnum3 == 0 && shellnum4 == 0 ) {
+    std::cerr << "dc.n(): " << deriv_centers_.n() << std::endl;
+    sc::GaussianShell* s1 = &(bs1_->shell(shellnum1));
+    sc::GaussianShell* s2 = &(bs2_->shell(shellnum2));
+    sc::GaussianShell* s3 = &(bs3_->shell(shellnum3));
+    sc::GaussianShell* s4 = &(bs4_->shell(shellnum4));
+    int nfunc = s1->nfunction() * s2->nfunction() * s3->nfunction() * s4->nfunction();
+    std::cerr << "cca buffer for shell quartet(" << evaluator_label_ << "):\n";
+    std::cerr << "shellnum1: " << shellnum1 << std::endl;
+    int nc1 = s1->ncontraction();
+    for (int i=0; i<nc1; ++i)
+      std::cerr << "am: " << s1->am(i) << std::endl;
+    std::cerr << "shellnum2: " << shellnum2 << std::endl;
+    int nc2 = s2->ncontraction();
+    for (int i=0; i<nc2; ++i)
+      std::cerr << "am: " << s2->am(i) << std::endl;
+    std::cerr << "shellnum3: " << shellnum3 << std::endl;
+    int nc3 = s3->ncontraction();
+    for (int i=0; i<nc3; ++i)
+      std::cerr << "am: " << s3->am(i) << std::endl;
+    std::cerr << "shellnum4: " << shellnum4 << std::endl;
+    int nc4 = s4->ncontraction();
+    for (int i=0; i<nc4; ++i)
+      std::cerr << "am: " << s4->am(i) << std::endl;
+
+    for( int dci=0; dci<sc_deriv_centers_.n(); ++dci ) {
+      for( int di=0; di<3; ++di) {
+        if(di==0) std::cerr << " dx:\n";
+        else if(di==1) std::cerr << " dy:\n";
+        else if(di==2) std::cerr << " dz:\n";
+        for( int i=0; i<nfunc; ++i)
+          std::cerr << "  " << sc_buffer_[ di*nfunc + i + dci*3*nfunc ] << std::endl;
+      }
+    }
+  }
+*/
+
 #ifndef INTV3_ORDER
   if( package_ == "intv3" )
     reorder_intv3( shellnum1, shellnum2, shellnum3, shellnum4 );
 #endif
+
+/*
+  if( int_type_ == two_body_deriv && shellnum1 == 8 && shellnum2 == 0 
+                                  && shellnum3 == 0 && shellnum4 == 0 ) {
+    sc::GaussianShell* s1 = &(bs1_->shell(shellnum1));
+    sc::GaussianShell* s2 = &(bs2_->shell(shellnum2));
+    sc::GaussianShell* s3 = &(bs3_->shell(shellnum3));
+    sc::GaussianShell* s4 = &(bs4_->shell(shellnum4));
+    int nfunc = s1->nfunction() * s2->nfunction() * s3->nfunction() * s4->nfunction();
+    std::cerr << "cca buffer for shell quartet(" << evaluator_label_ << "):\n";
+    std::cerr << "shellnum1: " << shellnum1 << std::endl;
+    int nc1 = s1->ncontraction();
+    for (int i=0; i<nc1; ++i)
+      std::cerr << "am: " << s1->am(i) << std::endl;
+    std::cerr << "shellnum2: " << shellnum2 << std::endl;
+    int nc2 = s2->ncontraction();
+    for (int i=0; i<nc2; ++i)
+      std::cerr << "am: " << s2->am(i) << std::endl;
+    std::cerr << "shellnum3: " << shellnum3 << std::endl;
+    int nc3 = s3->ncontraction();
+    for (int i=0; i<nc3; ++i)
+      std::cerr << "am: " << s3->am(i) << std::endl;
+    std::cerr << "shellnum4: " << shellnum4 << std::endl;
+    int nc4 = s4->ncontraction();
+    for (int i=0; i<nc4; ++i)
+      std::cerr << "am: " << s4->am(i) << std::endl;
+
+    for( int dci=0; dci<sc_deriv_centers_.n(); ++dci ) {
+      for( int di=0; di<3; ++di) {
+        if(di==0) std::cerr << " dx:\n";
+        else if(di==1) std::cerr << " dy:\n";
+        else if(di==2) std::cerr << " dz:\n";
+        for( int i=0; i<nfunc; ++i)
+          std::cerr << "  " << sc_buffer_[ di*nfunc + i + 3*dci*nfunc ] << std::endl;
+      }
+    }
+  }
+*/
 
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.compute)
 }
@@ -257,7 +358,6 @@ throw ()
  * @param shellnum3 Guassian shell number 3.
  * @param shellnum4 Gaussian shell number 4.
  * @param deriv_level Derivative level.
- * @param deriv_ctr Derivative center descriptor.
  * @return Borrowed sidl array buffer. 
  */
 ::sidl::array<double>
@@ -266,13 +366,12 @@ MPQC::IntegralEvaluator4_impl::compute_array (
   /* in */ int64_t shellnum2,
   /* in */ int64_t shellnum3,
   /* in */ int64_t shellnum4,
-  /* in */ int64_t deriv_level,
-  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
+  /* in */ int32_t deriv_level ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute_array)
 
-  compute( shellnum1, shellnum2, shellnum3, shellnum4, deriv_level, deriv_ctr );
+  compute( shellnum1, shellnum2, shellnum3, shellnum4, deriv_level );
 
   // this creates a proxy SIDL array
   int lower[1] = {0};
@@ -286,6 +385,33 @@ throw ()
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.compute_array)
 }
 
+/**
+ * Compute integral bounds.
+ * @param shellnum1 Gaussian shell number 1.
+ * @param shellnum2 Gaussian shell number 2.
+ * @param shellnum3 Gaussian shell number 3.
+ * @param shellnum4 Gaussian shell number 4. 
+ */
+double
+MPQC::IntegralEvaluator4_impl::compute_bounds (
+  /* in */ int64_t shellnum1,
+  /* in */ int64_t shellnum2,
+  /* in */ int64_t shellnum3,
+  /* in */ int64_t shellnum4 ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.compute_bounds)
+
+  if( int_type_ == two_body )
+    return eval_->shell_bound( shellnum1, shellnum2,
+                               shellnum3, shellnum4);
+  else 
+    return deriv_eval_->shell_bound( shellnum1, shellnum2, 
+                                     shellnum3, shellnum4);
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.compute_bounds)
+}
+
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._misc)
 
@@ -295,7 +421,7 @@ MPQC::IntegralEvaluator4_impl::initialize_reorder_intv3()
   if( int_type_ == two_body )
     temp_buffer_ = new double[max_nshell4_];
   else if( int_type_ == two_body_deriv )
-    temp_buffer_ = new double[max_nshell4_*3];
+    temp_buffer_ = new double[max_nshell4_*9];
 
   int max12 = max( bs1_->max_angular_momentum(), bs2_->max_angular_momentum() );
   int max34 = max( bs3_->max_angular_momentum(), bs4_->max_angular_momentum() );
@@ -369,27 +495,28 @@ MPQC::IntegralEvaluator4_impl::reorder_intv3(int64_t shellnum1,
       if( s4->am(i) == 1) reorder_needed=1;
       else if( s4->am(i) > 1 && s4->is_cartesian(i) ) reorder_needed=1;
     }
-  if( !reorder_needed ) return;
+  if( !reorder_needed && int_type_ == two_body ) return;
 
   // copy buffer into temp space
   int nfunc = s1->nfunction() * s2->nfunction() * 
                 s3->nfunction() * s4->nfunction();
   if( int_type_ == two_body_deriv )
-    for( int i=0; i<nfunc*3; ++i)
+    for( int i=0; i<nfunc*9; ++i)
       temp_buffer_[i] = sc_buffer_[i];
   else
     for( int i=0; i<nfunc; ++i)
       temp_buffer_[i] = sc_buffer_[i];
 
-  // a derivative buffer is composed of 3 "quartets"
-  int deriv_offset;
-  if( int_type_ == two_body )
-    reorder_quartet( s1, s2, s3, s4, nc1, nc2, nc3, nc4, 0 );
-  else if( int_type_ == two_body_deriv )
-    for( int i=0; i<3; ++i) {
-      deriv_offset = i*nfunc;
-      reorder_quartet( s1, s2, s3, s4, nc1, nc2, nc3, nc4, deriv_offset );
+  // a derivative buffer is composed of 1-3 "sets" of 3 (dx,dy,dz) "quartets"
+  if( int_type_ == two_body  )
+    reorder_quartet( s1, s2, s3, s4, nc1, nc2, nc3, nc4, 0, 0 );
+  else { 
+    int deriv_offset=0;
+    for( int i=0; i<9; ++i ) {
+      reorder_quartet( s1, s2, s3, s4, nc1, nc2, nc3, nc4, 1, deriv_offset );
+      deriv_offset += nfunc;
     }
+  }
 
 }
 
@@ -398,35 +525,37 @@ void
 MPQC::IntegralEvaluator4_impl::reorder_quartet( sc::GaussianShell* s1, sc::GaussianShell* s2,
                                                 sc::GaussianShell* s3, sc::GaussianShell* s4,
                                                 int nc1, int nc2, int nc3, int nc4,
-                                                int deriv_offset )
+                                                int is_deriv, int deriv_offset )
 {
 
-  int index=deriv_offset, con2_offset=0, con3_offset=0, con4_offset=0, con_offset,
+  int index=0, nfunc, con2_offset=0, con3_offset=0, con4_offset=0,
       local2_offset, local3_offset, local4_offset, 
       c1_base, c2_base, c3_base, c4_base;
 
   int temp;
-  for( int c4=0; c4<nc4; ++c4 )
-    con4_offset += s4->nfunction(c4);
+  con4_offset += s4->nfunction();
 
   temp = 0;
   con3_offset = con4_offset;
-  for( int c3=0; c3<nc3; ++c3 )
-    temp += s3->nfunction(c3);
+  temp += s3->nfunction();
   con3_offset *= temp;
 
   temp = 0;
   con2_offset = con3_offset;
-  for( int c2=0; c2<nc2; ++c2 )
-    temp += s2->nfunction(c2);
+  temp += s2->nfunction();
   con2_offset *= temp;
+
+  nfunc = s1->nfunction() * s2->nfunction() * s3->nfunction() * s4->nfunction();
 
   int s1_is_cart, s2_is_cart, s3_is_cart, s4_is_cart,
       s1_nfunc, s2_nfunc, s3_nfunc, s4_nfunc;
 
+  c1_base = deriv_offset;
   for( int c1=0; c1<nc1; ++c1 ) {
 
-    c1_base = index;
+    if(c1>0) c1_base += s1->nfunction(c1-1) 
+                        * s2->nfunction() * s3->nfunction() * s4->nfunction();
+
     s1_is_cart = s1->is_cartesian(c1);
     s1_nfunc = s1->nfunction(c1);
 
@@ -473,18 +602,35 @@ MPQC::IntegralEvaluator4_impl::reorder_quartet( sc::GaussianShell* s1, sc::Gauss
                 if( c4>0 ) local4_offset += s4->nfunction(c4-1);
                 s4_is_cart = s4->is_cartesian(c4);
                 s4_nfunc = s4->nfunction(c4);
-          
-                if( s4_is_cart ) 
-                  for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
-                    buf_[ c4_base + local4_offset + reorder_[s4->am(c4)][fc4] ]
-		      = temp_buffer_[index];
-                    ++index;
+
+                if(!is_deriv) {
+                  if( s4_is_cart ) 
+                    for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
+                      buf_[ c4_base + local4_offset + reorder_[s4->am(c4)][fc4] ]
+       		        = temp_buffer_[index];
+                      ++index;
                   }
-                else 
-                  for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
-                    buf_[ c4_base + local4_offset + fc4 ] = temp_buffer_[index];
-                    ++index;
-                  }
+                  else 
+                    for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
+                      buf_[ c4_base + local4_offset + fc4 ] = temp_buffer_[index];
+                      ++index;
+                    }
+                }
+                else {
+                  if( s4_is_cart )
+                    for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
+                      buf_[ c4_base + local4_offset + reorder_[s4->am(c4)][fc4] ]
+                        = temp_buffer_[ index + deriv_offset ];
+                      ++index;
+                    }
+                  else
+                    for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
+                      buf_[ c4_base + local4_offset + fc4 ]
+                        = temp_buffer_[ index + deriv_offset ];
+                      ++index;
+                    }
+                }               
+
               }
             }
           }

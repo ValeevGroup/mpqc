@@ -31,6 +31,7 @@
 #include <gov_cca.hh>
 #include <chemistry/qc/basis/integral.h>
 #include <Chemistry_QC_GaussianBasis_IntegralEvaluatorFactory.hh>
+#include <Chemistry_Chemistry_QC_GaussianBasis_EvaluatorConfig.hh>
 #include <Chemistry_Chemistry_Molecule.hh>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/transform.h>
@@ -49,6 +50,7 @@ class IntegralCCA : public Integral {
     gov::cca::ConnectionID fac_con_;
     Ref<Molecule> sc_molecule_;
     Chemistry::Chemistry_Molecule molecule_;
+    Chemistry::Chemistry_QC_GaussianBasis_EvaluatorConfig eval_config_;
     std::string factory_type_;
     std::string package_;
 

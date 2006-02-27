@@ -118,30 +118,30 @@ namespace MPQC {
 
     /**
      * Get the number of contractions in the shell. 
-     * @return Number of contractions. 
+     * @return number of contractions 
      */
-    int64_t
+    int32_t
     get_n_contraction() throw () 
     ;
 
     /**
      * Get the number of primitives in the shell.
-     * @return Number of primitives. 
+     * @return number of primitives 
      */
-    int64_t
+    int32_t
     get_n_primitive() throw () 
     ;
 
     /**
      * Get the coefficient for an unnormalized primitive in a contraction.
-     * @param connum Contraction number.
-     * @param expnum Primitive number.
-     * @return The contraction coefficient. 
+     * @param connum contraction number
+     * @param expnum primitive number
+     * @return contraction coefficient 
      */
     double
     get_contraction_coef (
-      /* in */ int64_t connum,
-      /* in */ int64_t expnum
+      /* in */ int32_t connum,
+      /* in */ int32_t expnum
     )
     throw () 
     ;
@@ -149,12 +149,12 @@ namespace MPQC {
 
     /**
      * Get the exponent for a primitive.
-     * @param expnum The primitive number.
-     * @return The exponent. 
+     * @param expnum primitive id number
+     * @return exponent 
      */
     double
     get_exponent (
-      /* in */ int64_t expnum
+      /* in */ int32_t expnum
     )
     throw () 
     ;
@@ -162,41 +162,41 @@ namespace MPQC {
 
     /**
      * Get the angular momentum for a single contraction.
-     * @param connum Contraction number.
-     * @return Angular momentum value. 
+     * @param connum contraction id number
+     * @return angular momentum value 
      */
-    int64_t
+    int32_t
     get_angular_momentum (
-      /* in */ int64_t connum
+      /* in */ int32_t connum
     )
     throw () 
     ;
 
 
     /**
-     * Get the max angular momentum of any contraction in the shell.
-     * @return Maximum angular momentum value. 
+     * Get the max angular momentum, considering all contractions in the shell.
+     * @return maximum angular momentum value 
      */
-    int64_t
+    int32_t
     get_max_angular_momentum() throw () 
     ;
 
     /**
      * Get the angular type for a single contraction.
-     * @param connum Contraction number.
-     * @return enum AngularType {CARTESIAN,SPHERICAL,MIXED} 
+     * @param connum contraction number
+     * @return enum AngularType 
      */
     ::Chemistry::QC::GaussianBasis::AngularType
     get_contraction_angular_type (
-      /* in */ int64_t connum
+      /* in */ int32_t connum
     )
     throw () 
     ;
 
 
     /**
-     * Get the angular type for the shell.
-     * @return enum AngularType {CARTESIAN,SPHERICAL,MIXED} 
+     * Get the angular type.
+     * @return enum AngularType 
      */
     ::Chemistry::QC::GaussianBasis::AngularType
     get_angular_type() throw () 

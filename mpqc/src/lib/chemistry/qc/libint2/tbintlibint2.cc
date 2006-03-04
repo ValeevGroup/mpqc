@@ -29,13 +29,15 @@
 #pragma implementation "junk.h"
 #endif
 
+#include <libint2/libint2.h>
+
 #include <util/class/scexception.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/libint2/tbintlibint2.h>
 #if LIBINT2_SUPPORT_ERI
 #  include <chemistry/qc/libint2/eri.h>
 #endif
-#if LIBINT2_SUPPORT_ERI
+#if LIBINT2_SUPPORT_G12
 #  include <chemistry/qc/libint2/g12.h>
 #endif
 
@@ -66,7 +68,7 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
     num_tbint_types_ = 1;
     break;
 #endif
-#if LIBINT2_SUPPORT_ERI
+#if LIBINT2_SUPPORT_G12
   case g12eval:
     int2elibint2_ = new G12Libint2(integral,b1,b2,b3,b4,storage,gbra,gket);
     num_tbint_types_ = 6;

@@ -1,0 +1,12 @@
+
+multiplicity: 3
+molecule:
+   C  0.000   0.000  -0.100
+   H  0.000   0.857   0.596
+   H  0.000  -0.857   0.596
+
+checkpoint: no
+
+method: ZAPT2
+
+basis: cc-pVDZ

@@ -1,0 +1,154 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 2.3.0-alpha
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@n65
+  Start Time: Sun Jan  9 18:48:56 2005
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /home/cljanss/src/SC/lib/atominfo.kv.
+  Reading file /home/cljanss/src/SC/lib/basis/sto-3g.kv.
+
+  CLSCF::init: total charge = 0
+
+  Starting from core Hamiltonian guess
+
+  Using symmetric orthogonalization.
+  n(basis):             4     0     2     1
+  Maximum orthogonalization residual = 1.9104
+  Minimum orthogonalization residual = 0.344888
+  docc = [ 3 0 1 1 ]
+  nbasis = 7
+
+  Molecular formula H2O
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = ckpt_0clksxalpha
+    restart_file  = ckpt_0clksxalpha.ckpt
+    restart       = no
+    checkpoint    = yes
+    savestate     = yes
+    do_energy     = yes
+    do_gradient   = no
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  
+  SCF::compute: energy accuracy = 1.0000000e-06
+
+  integral intermediate storage = 15938 bytes
+  integral cache = 15983614 bytes
+  nuclear repulsion energy =    9.1571164826
+
+                   565 integrals
+  Total integration points = 4049
+  Integrated electron density error = 0.000227722444
+  iter     1 energy =  -74.1961638006 delta = 7.47315e-01
+                   565 integrals
+  Total integration points = 4049
+  Integrated electron density error = 0.000097329966
+  iter     2 energy =  -74.3516253665 delta = 4.52070e-01
+                   565 integrals
+  Total integration points = 4049
+  Integrated electron density error = 0.000142334169
+  iter     3 energy =  -74.4615852232 delta = 1.94223e-01
+                   565 integrals
+  Total integration points = 11317
+  Integrated electron density error = 0.000020382168
+  iter     4 energy =  -74.4675621214 delta = 3.44031e-02
+                   565 integrals
+  Total integration points = 24639
+  Integrated electron density error = -0.000000634714
+  iter     5 energy =  -74.4675730582 delta = 1.84471e-03
+                   565 integrals
+  Total integration points = 46071
+  Integrated electron density error = 0.000001553384
+  iter     6 energy =  -74.4675681875 delta = 6.01970e-05
+                   565 integrals
+  Total integration points = 46071
+  Integrated electron density error = 0.000001553376
+  iter     7 energy =  -74.4675681875 delta = 1.74955e-06
+
+  HOMO is     1  B2 =  -0.019420
+  LUMO is     4  A1 =   0.341158
+
+  total scf energy =  -74.4675681875
+Value of the MolecularEnergy:  -74.4675681875
+
+  Closed Shell Kohn-Sham (CLKS) Parameters:
+    Function Parameters:
+      value_accuracy    = 2.627590e-07 (1.000000e-06) (computed)
+      gradient_accuracy = 0.000000e+00 (1.000000e-06)
+      hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+    Molecule:
+      Molecular formula: H2O
+      molecule<Molecule>: (
+        symmetry = c2v
+        unit = "angstrom"
+        {  n atoms                        geometry                     }={
+           1     O [    0.0000000000     0.0000000000     0.3693729400]
+           2     H [    0.7839759000     0.0000000000    -0.1846864700]
+           3     H [   -0.7839759000    -0.0000000000    -0.1846864700]
+        }
+      )
+      Atomic Masses:
+         15.99491    1.00783    1.00783
+
+    GaussianBasisSet:
+      nbasis = 7
+      nshell = 4
+      nprim  = 12
+      name = "STO-3G"
+    SCF Parameters:
+      maxiter = 40
+      density_reset_frequency = 10
+      level_shift = 0.000000
+
+    CLSCF Parameters:
+      charge = 0
+      ndocc = 5
+      docc = [ 3 0 1 1 ]
+
+    Functional:
+      Standard Density Functional: XALPHA
+      Sum of Functionals:
+        +1.0000000000000000
+          XalphaFunctional: alpha =   0.70000000
+    Integrator:
+      RadialAngularIntegrator:
+        Pruned fine grid employed
+  The following keywords in "ckpt_0clksxalpha.in" were ignored:
+    mpqc:mole:reference
+
+                        CPU Wall
+mpqc:                  0.58 0.80
+  calc:                0.54 0.72
+    vector:            0.54 0.72
+      density:         0.00 0.00
+      evals:           0.00 0.00
+      extrap:          0.01 0.01
+      fock:            0.45 0.45
+        accum:         0.00 0.00
+        init pmax:     0.00 0.00
+        integrate:     0.44 0.44
+        local data:    0.00 0.00
+        setup:         0.00 0.00
+        start thread:  0.00 0.00
+        stop thread:   0.00 0.00
+        sum:           0.00 0.00
+        symm:          0.00 0.00
+  input:               0.04 0.05
+
+  End Time: Sun Jan  9 18:48:57 2005
+

@@ -1,0 +1,52 @@
+test_basis:
+STO-3G 6-311G**
+method:
+hfk
+followed:
+
+fzv:
+
+fixed:
+
+test_method:
+hf xalpha hfk hfs hfb hfg96 blyp b3lyp pbe pw91 b3pw91 bpw91 b3p86 bp86 spz81
+frequencies:
+no
+test_molecule_symmetry:
+c1 c2v
+label:
+closed shell self consistent field tests (HF and DFT)
+gradient:
+yes
+socc:
+auto
+state:
+1
+optimize:
+no
+docc:
+auto
+h2o:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472
+
+fzc:
+
+molecule:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472
+
+test_molecule:
+h2o h2o
+grid:
+default
+basis:
+6-311G**
+checkpoint:
+no
+restart:
+no
+symmetry:
+c2v

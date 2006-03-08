@@ -1,0 +1,203 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 2.3.0-alpha
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@n104
+  Start Time: Sun Jan  9 18:48:00 2005
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /home/cljanss/src/SC/lib/atominfo.kv.
+  Reading file /home/cljanss/src/SC/lib/basis/cc-pvdz.kv.
+      Reading file /home/cljanss/src/SC/lib/basis/sto-3g.kv.
+
+      CLSCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(basis):             3     0     0     0     0     2     2     2
+      Maximum orthogonalization residual = 1.42798
+      Minimum orthogonalization residual = 0.585393
+      docc = [ 3 0 0 0 0 2 2 2 ]
+      nbasis = 9
+
+  CLSCF::init: total charge = 0
+
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      integral intermediate storage = 12398 bytes
+      integral cache = 31986882 bytes
+      nuclear repulsion energy =    0.0000000000
+
+                      2025 integrals
+      iter     1 energy = -521.2228808490 delta = 9.96897e-01
+                      2025 integrals
+      iter     2 energy = -521.2228808490 delta = 3.54601e-16
+
+      HOMO is     2 B2u =  -0.495941
+
+      total scf energy = -521.2228808490
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 18
+        Using symmetric orthogonalization.
+        n(basis):             6     1     1     1     0     3     3     3
+        Maximum orthogonalization residual = 1.62017
+        Minimum orthogonalization residual = 0.110161
+        The number of electrons in the projected density = 17.9371
+
+  docc = [ 3 0 0 0 0 2 2 2 ]
+  nbasis = 18
+
+  Molecular formula Ar
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = basis2_arscfccpvdzd2h
+    restart_file  = basis2_arscfccpvdzd2h.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = yes
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  integral intermediate storage = 210159 bytes
+  integral cache = 31787105 bytes
+  nuclear repulsion energy =    0.0000000000
+
+                 18473 integrals
+  iter     1 energy = -526.6155439419 delta = 3.93145e-01
+                 18473 integrals
+  iter     2 energy = -526.7934799860 delta = 6.81264e-02
+                 18473 integrals
+  iter     3 energy = -526.7995687185 delta = 1.71406e-02
+                 18473 integrals
+  iter     4 energy = -526.7998568458 delta = 3.09967e-03
+                 18473 integrals
+  iter     5 energy = -526.7998653089 delta = 6.15466e-04
+                 18473 integrals
+  iter     6 energy = -526.7998653097 delta = 4.47719e-06
+                 18473 integrals
+  iter     7 energy = -526.7998653097 delta = 5.84753e-08
+
+  HOMO is     2 B1u =  -0.588036
+  LUMO is     3 B3u =   0.797192
+
+  total scf energy = -526.7998653097
+
+  SCF::compute: gradient accuracy = 1.0000000e-06
+
+  Total Gradient:
+       1  Ar   0.0000000000   0.0000000000   0.0000000000
+Value of the MolecularEnergy: -526.7998653097
+
+
+  Gradient of the MolecularEnergy:
+      1    0.0000000000
+      2    0.0000000000
+      3    0.0000000000
+
+  Function Parameters:
+    value_accuracy    = 1.209681e-09 (1.000000e-08) (computed)
+    gradient_accuracy = 1.209681e-07 (1.000000e-06) (computed)
+    hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+  Molecule:
+    Molecular formula: Ar
+    molecule<Molecule>: (
+      symmetry = d2h
+      unit = "angstrom"
+      {  n atoms                        geometry                     }={
+         1    Ar [    0.0000000000     0.0000000000     0.0000000000]
+      }
+    )
+    Atomic Masses:
+       39.96238
+
+  GaussianBasisSet:
+    nbasis = 18
+    nshell = 5
+    nprim  = 21
+    name = "cc-pVDZ"
+  Natural Population Analysis:
+     n   atom    charge     ne(S)     ne(P)     ne(D) 
+      1   Ar   -0.000000  6.000000  12.000000  0.000000
+
+  SCF Parameters:
+    maxiter = 40
+    density_reset_frequency = 10
+    level_shift = 0.000000
+
+  CLSCF Parameters:
+    charge = 0.0000000000
+    ndocc = 9
+    docc = [ 3 0 0 0 0 2 2 2 ]
+
+  The following keywords in "basis2_arscfccpvdzd2h.in" were ignored:
+    mpqc:mole:guess_wavefunction:multiplicity
+    mpqc:mole:multiplicity
+    mpqc:mole:coor
+    mpqc:coor
+
+                               CPU Wall
+mpqc:                         1.43 1.43
+  NAO:                        0.01 0.01
+  calc:                       1.31 1.31
+    compute gradient:         0.45 0.45
+      nuc rep:                0.00 0.00
+      one electron gradient:  0.01 0.00
+      overlap gradient:       0.00 0.00
+      two electron gradient:  0.44 0.44
+        contribution:         0.00 0.00
+          start thread:       0.00 0.00
+          stop thread:        0.00 0.00
+        setup:                0.44 0.44
+    vector:                   0.86 0.86
+      density:                0.00 0.00
+      evals:                  0.01 0.00
+      extrap:                 0.00 0.01
+      fock:                   0.79 0.78
+        accum:                0.00 0.00
+        ao_gmat:              0.73 0.73
+          start thread:       0.73 0.73
+          stop thread:        0.00 0.00
+        init pmax:            0.00 0.00
+        local data:           0.01 0.00
+        setup:                0.03 0.02
+        sum:                  0.00 0.00
+        symm:                 0.02 0.02
+  input:                      0.11 0.11
+    vector:                   0.01 0.01
+      density:                0.00 0.00
+      evals:                  0.00 0.00
+      extrap:                 0.00 0.00
+      fock:                   0.01 0.01
+        accum:                0.00 0.00
+        ao_gmat:              0.00 0.00
+          start thread:       0.00 0.00
+          stop thread:        0.00 0.00
+        init pmax:            0.00 0.00
+        local data:           0.00 0.00
+        setup:                0.00 0.00
+        sum:                  0.00 0.00
+        symm:                 0.01 0.00
+
+  End Time: Sun Jan  9 18:48:01 2005
+

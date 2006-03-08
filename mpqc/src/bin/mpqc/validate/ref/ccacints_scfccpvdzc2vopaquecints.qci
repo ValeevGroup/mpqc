@@ -1,0 +1,57 @@
+fixed:
+
+test_symmetry:
+c2v
+followed:
+
+state:
+1
+do_cca:
+yes
+fzc:
+
+basis:
+cc-pVDZ
+integral_buffer:
+opaque
+method:
+scf
+auxbasis:
+
+test_integral_package:
+cints
+test_calc:
+energy
+restart:
+no
+grid:
+default
+test_integral_buffer:
+opaque array
+frequencies:
+no
+docc:
+auto
+test_basis:
+cc-pVDZ
+checkpoint:
+no
+symmetry:
+c2v
+socc:
+auto
+fzv:
+
+test_method:
+scf
+integral_package:
+cints
+label:
+cca integrals test
+optimize:
+no
+molecule:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472
+

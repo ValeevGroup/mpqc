@@ -1,0 +1,546 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 2.3.0-alpha
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@n68
+  Start Time: Sun Jan  9 18:53:07 2005
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /home/cljanss/src/SC/lib/atominfo.kv.
+
+  IntCoorGen: generated 1 coordinates.
+  Forming optimization coordinates:
+    SymmMolecularCoor::form_variable_coordinates()
+      expected 0 coordinates
+      found 1 variable coordinates
+      found 0 constant coordinates
+  Reading file /home/cljanss/src/SC/lib/basis/6-31gS.kv.
+      Reading file /home/cljanss/src/SC/lib/basis/sto-3g.kv.
+
+      CLSCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(basis):             4     0     1     1
+      Maximum orthogonalization residual = 1.5583
+      Minimum orthogonalization residual = 0.46927
+      docc = [ 3 0 1 1 ]
+      nbasis = 6
+
+  CLSCF::init: total charge = 0
+
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      integral intermediate storage = 12398 bytes
+      integral cache = 31987266 bytes
+      nuclear repulsion energy =    4.7625952410
+
+                       510 integrals
+      iter     1 energy =  -98.3085820448 delta = 9.40176e-01
+                       510 integrals
+      iter     2 energy =  -98.5527588605 delta = 2.16372e-01
+                       510 integrals
+      iter     3 energy =  -98.5702034832 delta = 6.76557e-02
+                       510 integrals
+      iter     4 energy =  -98.5704880239 delta = 7.76117e-03
+                       510 integrals
+      iter     5 energy =  -98.5704897454 delta = 4.86598e-04
+                       510 integrals
+      iter     6 energy =  -98.5704897463 delta = 1.64698e-05
+
+      HOMO is     1  B1 =  -0.462377
+      LUMO is     4  A1 =   0.546982
+
+      total scf energy =  -98.5704897463
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 10
+        Using symmetric orthogonalization.
+        n(basis):            10     1     3     3
+        Maximum orthogonalization residual = 3.83802
+        Minimum orthogonalization residual = 0.0132853
+        The number of electrons in the projected density = 9.9382
+
+  docc = [ 3 0 1 1 ]
+  nbasis = 17
+
+  Molecular formula HF
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = opt_hfscf631gsc2vopt
+    restart_file  = opt_hfscf631gsc2vopt.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = no
+    optimize      = yes
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  SCF::compute: energy accuracy = 1.0000000e-06
+
+  integral intermediate storage = 110517 bytes
+  integral cache = 31887035 bytes
+  nuclear repulsion energy =    4.7625952410
+
+                 17913 integrals
+  iter     1 energy =  -99.7951157026 delta = 2.51002e-01
+                 17913 integrals
+  iter     2 energy =  -99.9614795116 delta = 8.09973e-02
+                 17913 integrals
+  iter     3 energy =  -99.9880533036 delta = 2.08726e-02
+                 17913 integrals
+  iter     4 energy =  -99.9945770793 delta = 9.46445e-03
+                 17913 integrals
+  iter     5 energy =  -99.9949151144 delta = 2.19066e-03
+                 17913 integrals
+  iter     6 energy =  -99.9949429014 delta = 8.20223e-04
+                 17913 integrals
+  iter     7 energy =  -99.9949429592 delta = 3.52850e-05
+                 17913 integrals
+  iter     8 energy =  -99.9949429606 delta = 5.29558e-06
+
+  HOMO is     1  B1 =  -0.620645
+  LUMO is     4  A1 =   0.192104
+
+  total scf energy =  -99.9949429606
+
+  SCF::compute: gradient accuracy = 1.0000000e-04
+
+  Total Gradient:
+       1   H   0.0000000000   0.0000000000   0.0855138021
+       2   F   0.0000000000   0.0000000000  -0.0855138021
+
+  Max Gradient     :   0.0855138021   0.0001000000  no
+  Max Displacement :   0.1480162046   0.0001000000  no
+  Gradient*Displace:   0.0253148569   0.0001000000  no
+
+  taking step of size 0.296032
+
+  CLHF: changing atomic coordinates:
+  Molecular formula: HF
+  molecule<Molecule>: (
+    symmetry = c2v
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     H [   -0.0000000000     0.0000000000     0.4216731921]
+       2     F [    0.0000000000     0.0000000000    -0.4216731921]
+    }
+  )
+  Atomic Masses:
+      1.00783   18.99840
+
+  SCF::compute: energy accuracy = 4.2756901e-06
+
+  integral intermediate storage = 110517 bytes
+  integral cache = 31887035 bytes
+  nuclear repulsion energy =    5.6472587429
+
+  Using symmetric orthogonalization.
+  n(basis):            10     1     3     3
+  Maximum orthogonalization residual = 4.04228
+  Minimum orthogonalization residual = 0.0111862
+                 17913 integrals
+  iter     1 energy =  -99.9620365072 delta = 2.47770e-01
+                 17913 integrals
+  iter     2 energy =  -99.9945436253 delta = 2.58972e-02
+                 17913 integrals
+  iter     3 energy =  -99.9960420951 delta = 5.10590e-03
+                 17913 integrals
+  iter     4 energy =  -99.9962574317 delta = 1.67775e-03
+                 17913 integrals
+  iter     5 energy =  -99.9962865634 delta = 6.11629e-04
+                 17913 integrals
+  iter     6 energy =  -99.9962889952 delta = 2.41821e-04
+                 17913 integrals
+  iter     7 energy =  -99.9962890023 delta = 1.06372e-05
+
+  HOMO is     1  B2 =  -0.636693
+  LUMO is     4  A1 =   0.236106
+
+  total scf energy =  -99.9962890023
+
+  SCF::compute: gradient accuracy = 4.2756901e-04
+
+  Total Gradient:
+       1   H  -0.0000000000   0.0000000000  -0.1124355244
+       2   F   0.0000000000  -0.0000000000   0.1124355244
+  NOTICE: maxabs_gradient increased from 8.5514e-02 to 1.1244e-01
+
+  Max Gradient     :   0.1124355244   0.0001000000  no
+  Max Displacement :   0.0840734337   0.0001000000  no
+  Gradient*Displace:   0.0189056812   0.0001000000  no
+
+  taking step of size 0.168147
+
+  CLHF: changing atomic coordinates:
+  Molecular formula: HF
+  molecule<Molecule>: (
+    symmetry = c2v
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     H [   -0.0000000000     0.0000000000     0.4661629404]
+       2     F [    0.0000000000     0.0000000000    -0.4661629404]
+    }
+  )
+  Atomic Masses:
+      1.00783   18.99840
+
+  SCF::compute: energy accuracy = 5.6217762e-06
+
+  integral intermediate storage = 110517 bytes
+  integral cache = 31887035 bytes
+  nuclear repulsion energy =    5.1082945769
+
+  Using symmetric orthogonalization.
+  n(basis):            10     1     3     3
+  Maximum orthogonalization residual = 3.92454
+  Minimum orthogonalization residual = 0.0124068
+                 17913 integrals
+  iter     1 energy =  -99.9905785603 delta = 2.43586e-01
+                 17913 integrals
+  iter     2 energy = -100.0018045546 delta = 1.33002e-02
+                 17913 integrals
+  iter     3 energy = -100.0022960191 delta = 2.74379e-03
+                 17913 integrals
+  iter     4 energy = -100.0023612131 delta = 9.13221e-04
+                 17913 integrals
+  iter     5 energy = -100.0023719344 delta = 3.60510e-04
+                 17913 integrals
+  iter     6 energy = -100.0023730561 delta = 1.63784e-04
+                 17913 integrals
+  iter     7 energy = -100.0023730596 delta = 7.79740e-06
+
+  HOMO is     1  B1 =  -0.626975
+  LUMO is     4  A1 =   0.212744
+
+  total scf energy = -100.0023730596
+
+  SCF::compute: gradient accuracy = 5.6217762e-04
+
+  Total Gradient:
+       1   H  -0.0000000000   0.0000000000   0.0257819270
+       2   F   0.0000000000  -0.0000000000  -0.0257819270
+
+  Max Gradient     :   0.0257819270   0.0001000000  no
+  Max Displacement :   0.0156823549   0.0001000000  no
+  Gradient*Displace:   0.0008086427   0.0001000000  no
+
+  taking step of size 0.031365
+
+  CLHF: changing atomic coordinates:
+  Molecular formula: HF
+  molecule<Molecule>: (
+    symmetry = c2v
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     H [    0.0000000000    -0.0000000000     0.4578641950]
+       2     F [    0.0000000000     0.0000000000    -0.4578641950]
+    }
+  )
+  Atomic Masses:
+      1.00783   18.99840
+
+  SCF::compute: energy accuracy = 1.2890964e-06
+
+  integral intermediate storage = 110517 bytes
+  integral cache = 31887035 bytes
+  nuclear repulsion energy =    5.2008819354
+
+  Using symmetric orthogonalization.
+  n(basis):            10     1     3     3
+  Maximum orthogonalization residual = 3.94625
+  Minimum orthogonalization residual = 0.0121843
+                 17913 integrals
+  iter     1 energy = -100.0025186146 delta = 2.44055e-01
+                 17913 integrals
+  iter     2 energy = -100.0028608027 delta = 2.41001e-03
+                 17913 integrals
+  iter     3 energy = -100.0028767153 delta = 4.99815e-04
+                 17913 integrals
+  iter     4 energy = -100.0028788730 delta = 1.65569e-04
+                 17913 integrals
+  iter     5 energy = -100.0028792121 delta = 6.52310e-05
+                 17913 integrals
+  iter     6 energy = -100.0028792446 delta = 2.79224e-05
+                 17913 integrals
+  iter     7 energy = -100.0028792447 delta = 1.34899e-06
+
+  HOMO is     1  B1 =  -0.628666
+  LUMO is     4  A1 =   0.217455
+
+  total scf energy = -100.0028792447
+
+  SCF::compute: gradient accuracy = 1.2890964e-04
+
+  Total Gradient:
+       1   H   0.0000000000  -0.0000000000   0.0061083628
+       2   F  -0.0000000000   0.0000000000  -0.0061083628
+
+  Max Gradient     :   0.0061083628   0.0001000000  no
+  Max Displacement :   0.0048691489   0.0001000000  no
+  Gradient*Displace:   0.0000594851   0.0001000000  yes
+
+  taking step of size 0.009738
+
+  CLHF: changing atomic coordinates:
+  Molecular formula: HF
+  molecule<Molecule>: (
+    symmetry = c2v
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     H [   -0.0000000000     0.0000000000     0.4552875521]
+       2     F [    0.0000000000     0.0000000000    -0.4552875521]
+    }
+  )
+  Atomic Masses:
+      1.00783   18.99840
+
+  SCF::compute: energy accuracy = 3.0541814e-07
+
+  integral intermediate storage = 110517 bytes
+  integral cache = 31887035 bytes
+  nuclear repulsion energy =    5.2303156749
+
+  Using symmetric orthogonalization.
+  n(basis):            10     1     3     3
+  Maximum orthogonalization residual = 3.95301
+  Minimum orthogonalization residual = 0.0121147
+                 17913 integrals
+  iter     1 energy = -100.0028704593 delta = 2.43950e-01
+                 17913 integrals
+  iter     2 energy = -100.0029049825 delta = 7.64225e-04
+                 17913 integrals
+  iter     3 energy = -100.0029065613 delta = 1.57933e-04
+                 17913 integrals
+  iter     4 energy = -100.0029067756 delta = 5.23021e-05
+                 17913 integrals
+  iter     5 energy = -100.0029068091 delta = 2.04197e-05
+                 17913 integrals
+  iter     6 energy = -100.0029068123 delta = 8.79082e-06
+                 17913 integrals
+  iter     7 energy = -100.0029068123 delta = 4.17914e-07
+
+  HOMO is     1  B2 =  -0.629202
+  LUMO is     4  A1 =   0.218887
+
+  total scf energy = -100.0029068123
+
+  SCF::compute: gradient accuracy = 3.0541814e-05
+
+  Total Gradient:
+       1   H  -0.0000000000   0.0000000000  -0.0004867119
+       2   F   0.0000000000  -0.0000000000   0.0004867119
+
+  Max Gradient     :   0.0004867119   0.0001000000  no
+  Max Displacement :   0.0003593398   0.0001000000  no
+  Gradient*Displace:   0.0000003498   0.0001000000  yes
+
+  taking step of size 0.000719
+
+  CLHF: changing atomic coordinates:
+  Molecular formula: HF
+  molecule<Molecule>: (
+    symmetry = c2v
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     H [   -0.0000000000     0.0000000000     0.4554777066]
+       2     F [    0.0000000000     0.0000000000    -0.4554777066]
+    }
+  )
+  Atomic Masses:
+      1.00783   18.99840
+
+  SCF::compute: energy accuracy = 2.4335596e-08
+
+  integral intermediate storage = 110517 bytes
+  integral cache = 31887035 bytes
+  nuclear repulsion energy =    5.2281321042
+
+  Using symmetric orthogonalization.
+  n(basis):            10     1     3     3
+  Maximum orthogonalization residual = 3.95251
+  Minimum orthogonalization residual = 0.0121198
+                 17913 integrals
+  iter     1 energy = -100.0029067844 delta = 2.43895e-01
+                 17913 integrals
+  iter     2 energy = -100.0029069742 delta = 5.65426e-05
+                 17913 integrals
+  iter     3 energy = -100.0029069828 delta = 1.16825e-05
+                 17913 integrals
+  iter     4 energy = -100.0029069840 delta = 3.86959e-06
+                 17913 integrals
+  iter     5 energy = -100.0029069842 delta = 1.50976e-06
+                 17913 integrals
+  iter     6 energy = -100.0029069842 delta = 6.51932e-07
+                 17913 integrals
+  iter     7 energy = -100.0029069842 delta = 3.09423e-08
+
+  HOMO is     1  B1 =  -0.629163
+  LUMO is     4  A1 =   0.218782
+
+  total scf energy = -100.0029069842
+
+  SCF::compute: gradient accuracy = 2.4335596e-06
+
+  Total Gradient:
+       1   H  -0.0000000000   0.0000000000   0.0000082485
+       2   F   0.0000000000  -0.0000000000  -0.0000082485
+  NOTICE: function()->actual_gradient_accuracy() > accuracy_:
+          function()->actual_gradient_accuracy() =  4.85706101e-07
+                                       accuracy_ =  4.12423416e-07
+
+  SCF::compute: energy accuracy = 4.1242342e-09
+
+  integral intermediate storage = 110517 bytes
+  integral cache = 31887035 bytes
+  nuclear repulsion energy =    5.2281321042
+
+                 17913 integrals
+  iter     1 energy = -100.0029069842 delta = 2.43899e-01
+                 17913 integrals
+  iter     2 energy = -100.0029069842 delta = 2.29822e-10
+
+  HOMO is     1  B2 =  -0.629163
+  LUMO is     4  A1 =   0.218782
+
+  total scf energy = -100.0029069842
+
+  SCF::compute: gradient accuracy = 4.1242342e-07
+
+  Total Gradient:
+       1   H  -0.0000000000   0.0000000000   0.0000082492
+       2   F   0.0000000000  -0.0000000000  -0.0000082492
+
+  Max Gradient     :   0.0000082492   0.0001000000  yes
+  Max Displacement :   0.0000059889   0.0001000000  yes
+  Gradient*Displace:   0.0000000001   0.0001000000  yes
+
+  All convergence criteria have been met.
+  The optimization has converged.
+
+  Value of the MolecularEnergy: -100.0029069842
+
+  Function Parameters:
+    value_accuracy    = 1.078670e-10 (4.124234e-09) (computed)
+    gradient_accuracy = 1.078670e-08 (4.124234e-07) (computed)
+    hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+  Molecular Coordinates:
+    IntMolecularCoor Parameters:
+      update_bmat = no
+      scale_bonds = 1
+      scale_bends = 1
+      scale_tors = 1
+      scale_outs = 1
+      symmetry_tolerance = 1.000000e-05
+      simple_tolerance = 1.000000e-03
+      coordinate_tolerance = 1.000000e-07
+      have_fixed_values = 0
+      max_update_steps = 100
+      max_update_disp = 0.500000
+      have_fixed_values = 0
+
+    Molecular formula: HF
+    molecule<Molecule>: (
+      symmetry = c2v
+      unit = "angstrom"
+      {  n atoms                        geometry                     }={
+         1     H [   -0.0000000000     0.0000000000     0.4554777066]
+         2     F [    0.0000000000     0.0000000000    -0.4554777066]
+      }
+    )
+    Atomic Masses:
+        1.00783   18.99840
+
+    Bonds:
+      STRE       s1     0.91096    1    2         H-F
+
+    SymmMolecularCoor Parameters:
+      change_coordinates = no
+      transform_hessian = yes
+      max_kappa2 = 10.000000
+
+  GaussianBasisSet:
+    nbasis = 17
+    nshell = 6
+    nprim  = 15
+    name = "6-31G*"
+  Natural Population Analysis:
+     n   atom    charge     ne(S)     ne(P)     ne(D) 
+      1    H    0.555518  0.444482
+      2    F   -0.555518  3.908708  5.639281  0.007529
+
+  SCF Parameters:
+    maxiter = 40
+    density_reset_frequency = 10
+    level_shift = 0.000000
+
+  CLSCF Parameters:
+    charge = 0
+    ndocc = 5
+    docc = [ 3 0 1 1 ]
+
+  The following keywords in "opt_hfscf631gsc2vopt.in" were ignored:
+    mpqc:mole:guess_wavefunction:multiplicity
+    mpqc:mole:multiplicity
+
+                               CPU Wall
+mpqc:                         0.58 0.58
+  NAO:                        0.01 0.01
+  calc:                       0.49 0.49
+    compute gradient:         0.17 0.17
+      nuc rep:                0.00 0.00
+      one electron gradient:  0.03 0.02
+      overlap gradient:       0.00 0.02
+      two electron gradient:  0.14 0.13
+        contribution:         0.07 0.05
+          start thread:       0.07 0.05
+          stop thread:        0.00 0.00
+        setup:                0.07 0.08
+    vector:                   0.32 0.31
+      density:                0.00 0.01
+      evals:                  0.00 0.02
+      extrap:                 0.03 0.04
+      fock:                   0.22 0.19
+        accum:                0.00 0.00
+        ao_gmat:              0.08 0.08
+          start thread:       0.08 0.08
+          stop thread:        0.00 0.00
+        init pmax:            0.00 0.00
+        local data:           0.00 0.00
+        setup:                0.02 0.04
+        sum:                  0.00 0.00
+        symm:                 0.12 0.05
+  input:                      0.08 0.08
+    vector:                   0.02 0.02
+      density:                0.01 0.00
+      evals:                  0.00 0.00
+      extrap:                 0.00 0.00
+      fock:                   0.01 0.01
+        accum:                0.00 0.00
+        ao_gmat:              0.00 0.00
+          start thread:       0.00 0.00
+          stop thread:        0.00 0.00
+        init pmax:            0.00 0.00
+        local data:           0.01 0.00
+        setup:                0.00 0.00
+        sum:                  0.00 0.00
+        symm:                 0.00 0.00
+
+  End Time: Sun Jan  9 18:53:07 2005
+

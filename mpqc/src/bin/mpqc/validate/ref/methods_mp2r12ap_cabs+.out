@@ -1,0 +1,365 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 2.3.0-alpha
+
+  Machine:    i686-pc-linux-gnu
+  User:       evaleev@tool.chemistry.gatech.edu
+  Start Time: Sat Jan 29 23:31:14 2005
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /home/tool/evaleev/MPQC/SC.recent/x86-linux/share/mpqc/2.3.0-alpha/atominfo.kv.
+  Molecule: setting point group to d2h
+  Reading file /home/tool/evaleev/MPQC/SC.recent/x86-linux/share/mpqc/2.3.0-alpha/basis/aug-cc-pvdz.kv.
+
+  CLSCF::init: total charge = 0
+
+  Using symmetric orthogonalization.
+  n(basis):             8     2     2     2     0     3     3     3
+  Maximum orthogonalization residual = 2.19641
+  Minimum orthogonalization residual = 0.0986169
+  Using symmetric orthogonalization.
+  n(basis):             8     2     2     2     0     3     3     3
+  Maximum orthogonalization residual = 2.19641
+  Minimum orthogonalization residual = 0.0986169
+  Using guess wavefunction as starting vector
+      docc = [ 2 0 0 0 0 1 1 1]
+      socc = [ 0 0 0 0 0 0 0 0]
+
+  docc = [ 2 0 0 0 0 1 1 1 ]
+  nbasis = 23
+
+  Molecular formula Ne
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = mp2r12ap_cabs+
+    restart_file  = mp2r12ap_cabs+.ckpt
+    restart       = yes
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = no
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  integral intermediate storage = 1974576 bytes
+  integral cache = 22021008 bytes
+  nuclear repulsion energy =    0.0000000000
+
+                 48918 integrals
+  iter     1 energy = -122.5194031208 delta = 3.09458e-01
+                 48918 integrals
+  iter     2 energy = -119.8618719548 delta = 3.11960e-01
+                 48918 integrals
+  iter     3 energy = -127.3802007595 delta = 2.25369e-01
+                 48918 integrals
+  iter     4 energy = -128.2971001730 delta = 4.77179e-02
+                 48918 integrals
+  iter     5 energy = -128.4954076587 delta = 3.31321e-02
+                 48918 integrals
+  iter     6 energy = -128.4963436508 delta = 2.00885e-03
+                 48918 integrals
+  iter     7 energy = -128.4963497157 delta = 1.88865e-04
+                 48918 integrals
+  iter     8 energy = -128.4963497305 delta = 8.16488e-06
+                 48918 integrals
+  iter     9 energy = -128.4963497305 delta = 3.83300e-07
+                 48918 integrals
+  iter    10 energy = -128.4963497305 delta = 1.31280e-07
+
+  HOMO is     1 B2u =  -0.853040
+  LUMO is     3  Ag =   0.287355
+
+  total scf energy = -128.4963497305
+
+  Orthogonalizing basis for space ABS:
+    Using symmetric orthogonalization.
+    n(basis):            68    18    18    18    15    54    54    54
+    Maximum orthogonalization residual = 8.22521
+    Minimum orthogonalization residual = 3.28936e-06
+  Orthogonalizing basis for space RI-BS:
+    WARNING: 6 basis functions ignored in symmetric orthogonalization.
+    Using symmetric orthogonalization.
+    n(basis):            76    20    20    20    15    57    57    57
+    Maximum orthogonalization residual = 9.64519
+    Minimum orthogonalization residual = 3.03235e-07
+  SVD-projecting out occupied MOs symmetry-blocked out of RI-BS to obtain space RI-BS
+    5 basis functions projected out of RI-BS.
+    n(basis):            74    20    20    20    15    56    56    56
+    Maximum singular value = 1
+    Minimum singular value = 1
+  SVD-projecting out unoccupied MOs symmetry-blocked out of RI-BS to obtain space RI-BS
+    18 basis functions projected out of RI-BS.
+    n(basis):            68    18    18    18    15    54    54    54
+    Maximum singular value = 1
+    Minimum singular value = 1
+
+  Entered OBS A (GEBC) intermediates evaluator
+    Entered (ip|jq) integrals evaluator (transform type ikjy)
+      Memory available per node:      10000000 Bytes
+      Static memory used per node:    2122080 Bytes
+      Total memory used per node:     2440768 Bytes
+      Memory required for one pass:   2440768 Bytes
+      Minimum memory required:        2205616 Bytes
+      Number of passes:               1
+      Batch size:                     4
+      Beginning pass 1
+      Begin loop over shells (ints, 1+2+3 q.t.)
+        working on shell pair (  0   0),  0.000% complete (0 of 36)
+        working on shell pair (  2   1), 11.111% complete (4 of 36)
+        working on shell pair (  3   2), 22.222% complete (8 of 36)
+        working on shell pair (  4   2), 33.333% complete (12 of 36)
+        working on shell pair (  5   1), 44.444% complete (16 of 36)
+        working on shell pair (  5   5), 55.556% complete (20 of 36)
+        working on shell pair (  6   3), 66.667% complete (24 of 36)
+        working on shell pair (  7   0), 77.778% complete (28 of 36)
+        working on shell pair (  7   4), 88.889% complete (32 of 36)
+      End of loop over shells
+      Begin fourth q.t.
+      End of fourth q.t.
+    Exited (ip|jq) integrals evaluator (transform type ikjy)
+    Begin computation of intermediates
+    Computing intermediates on 1 processors
+    End of computation of intermediates
+  Exited OBS A (GEBC) intermediates evaluator
+
+  Entered ABS A (GEBC) intermediates evaluator
+    Entered (ik|jy) integrals evaluator (transform type ikjy)
+      Memory available per node:      10000000 Bytes
+      Static memory used per node:    3745712 Bytes
+      Total memory used per node:     4708632 Bytes
+      Memory required for one pass:   4708632 Bytes
+      Minimum memory required:        3996312 Bytes
+      Number of passes:               1
+      Batch size:                     4
+      Beginning pass 1
+      Begin loop over shells (ints, 1+2+3 q.t.)
+        working on shell pair (  0   0),  0.000% complete (0 of 776)
+        working on shell pair (  9   6), 10.052% complete (78 of 776)
+        working on shell pair ( 19   4), 20.103% complete (156 of 776)
+        working on shell pair ( 29   2), 30.155% complete (234 of 776)
+        working on shell pair ( 39   0), 40.206% complete (312 of 776)
+        working on shell pair ( 48   6), 50.258% complete (390 of 776)
+        working on shell pair ( 58   4), 60.309% complete (468 of 776)
+        working on shell pair ( 68   2), 70.361% complete (546 of 776)
+        working on shell pair ( 78   0), 80.412% complete (624 of 776)
+        working on shell pair ( 87   6), 90.464% complete (702 of 776)
+      End of loop over shells
+      Begin fourth q.t.
+      End of fourth q.t.
+    Exited (ik|jy) integrals evaluator (transform type ikjy)
+    Begin computation of intermediates
+    Computing intermediates on 1 processors
+    End of computation of intermediates
+  Exited ABS A (GEBC) intermediates evaluator
+
+  Singlet MBPT2-R12/A pair energies:
+      i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
+    -----   -----   ------------   ------------   ------------
+      1       1     -0.007607618   -0.003900026   -0.011507644
+      2       1     -0.008531603   -0.008153616   -0.016685219
+      2       2     -0.018168074   -0.007469589   -0.025637663
+      3       1     -0.008531603   -0.008153616   -0.016685219
+      3       2     -0.011353110   -0.004424330   -0.015777440
+      3       3     -0.018168074   -0.007469589   -0.025637663
+      4       1     -0.008531603   -0.008153616   -0.016685219
+      4       2     -0.011353110   -0.004424330   -0.015777440
+      4       3     -0.011353110   -0.004424330   -0.015777440
+      4       4     -0.018168074   -0.007469589   -0.025637663
+
+  Triplet MBPT2-R12/A pair energies:
+      i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
+    -----   -----   ------------   ------------   ------------
+      2       1     -0.005219294   -0.001815403   -0.007034697
+      3       1     -0.005219294   -0.001815403   -0.007034697
+      3       2     -0.023149882   -0.004974503   -0.028124385
+      4       1     -0.005219294   -0.001815403   -0.007034697
+      4       2     -0.023149882   -0.004974503   -0.028124385
+      4       3     -0.023149882   -0.004974503   -0.028124385
+
+  Singlet MP2 correlation energy [au]:            -0.121765980140
+  Triplet MP2 correlation energy [au]:            -0.085107528406
+  Singlet (MP2)-R12/ A correlation energy [au]:   -0.064042628231
+  Triplet (MP2)-R12/ A correlation energy [au]:   -0.020369717651
+  Singlet MP2-R12/ A correlation energy [au]:     -0.185808608371
+  Triplet MP2-R12/ A correlation energy [au]:     -0.105477246057
+
+  RHF energy [au]:                           -128.496349730541
+  MP2 correlation energy [au]:                 -0.206873508546
+  (MBPT2)-R12/ A correlation energy [au]:      -0.084412345882
+  MBPT2-R12/ A correlation energy [au]:        -0.291285854428
+  MBPT2-R12/ A energy [au]:                  -128.787635584969
+
+
+  Singlet MBPT2-R12/A' pair energies:
+      i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
+    -----   -----   ------------   ------------   ------------
+      1       1     -0.007607618   -0.003752960   -0.011360578
+      2       1     -0.008531603   -0.008153616   -0.016685219
+      2       2     -0.018168074   -0.007685809   -0.025853883
+      3       1     -0.008531603   -0.008153616   -0.016685219
+      3       2     -0.011353110   -0.004424330   -0.015777440
+      3       3     -0.018168074   -0.007685809   -0.025853883
+      4       1     -0.008531603   -0.008153616   -0.016685219
+      4       2     -0.011353110   -0.004424330   -0.015777440
+      4       3     -0.011353110   -0.004424330   -0.015777440
+      4       4     -0.018168074   -0.007685809   -0.025853883
+
+  Triplet MBPT2-R12/A' pair energies:
+      i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
+    -----   -----   ------------   ------------   ------------
+      2       1     -0.005219294   -0.001815403   -0.007034697
+      3       1     -0.005219294   -0.001815403   -0.007034697
+      3       2     -0.023149882   -0.004974503   -0.028124385
+      4       1     -0.005219294   -0.001815403   -0.007034697
+      4       2     -0.023149882   -0.004974503   -0.028124385
+      4       3     -0.023149882   -0.004974503   -0.028124385
+
+  Singlet MP2 correlation energy [au]:            -0.121765980140
+  Triplet MP2 correlation energy [au]:            -0.085107528406
+  Singlet (MP2)-R12/A' correlation energy [au]:   -0.064544222801
+  Triplet (MP2)-R12/A' correlation energy [au]:   -0.020369717651
+  Singlet MP2-R12/A' correlation energy [au]:     -0.186310202941
+  Triplet MP2-R12/A' correlation energy [au]:     -0.105477246057
+
+  RHF energy [au]:                           -128.496349730541
+  MP2 correlation energy [au]:                 -0.206873508546
+  (MBPT2)-R12/A' correlation energy [au]:      -0.084913940451
+  MBPT2-R12/A' correlation energy [au]:        -0.291787448997
+  MBPT2-R12/A' energy [au]:                  -128.788137179538
+
+
+  Value of the MolecularEnergy: -128.7881371795
+
+  MBPT2_R12:
+    GBC assumed: true
+    EBC assumed: true
+    ABS method variant: CABS+ (Valeev using the union of OBS and ABS for RI)
+    Standard Approximation: A'
+    Spin-adapted algorithm: true
+    How to Store Transformed Integrals: posix
+
+    Transformed Integrals file: mp2r12ap_cabs+.r12ints.dat
+
+    Auxiliary Basis Set (ABS):
+      GaussianBasisSet:
+        nbasis = 299
+        nshell = 89
+        nprim  = 89
+        name = "K32s15f"
+
+     Virtuals Basis Set (VBS):
+      GaussianBasisSet:
+        nbasis = 23
+        nshell = 8
+        nprim  = 17
+        name = "aug-cc-pVDZ"
+
+    MBPT2:
+      Function Parameters:
+        value_accuracy    = 4.203562e-08 (1.000000e-06) (computed)
+        gradient_accuracy = 0.000000e+00 (1.000000e-06)
+        hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+      Molecule:
+        Molecular formula: Ne
+        molecule<Molecule>: (
+          symmetry = d2h
+          unit = "angstrom"
+          {  n atoms                        geometry                     }={
+             1    Ne [    0.0000000000     0.0000000000     0.0000000000]
+          }
+        )
+        Atomic Masses:
+           19.99244
+
+      GaussianBasisSet:
+        nbasis = 23
+        nshell = 8
+        nprim  = 17
+        name = "aug-cc-pVDZ"
+      Reference Wavefunction:
+        Function Parameters:
+          value_accuracy    = 4.203562e-10 (1.000000e-08) (computed)
+          gradient_accuracy = 0.000000e+00 (1.000000e-06)
+          hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+        Molecule:
+          Molecular formula: Ne
+          molecule<Molecule>: (
+            symmetry = d2h
+            unit = "angstrom"
+            {  n atoms                        geometry                     }={
+               1    Ne [    0.0000000000     0.0000000000     0.0000000000]
+            }
+          )
+          Atomic Masses:
+             19.99244
+
+        GaussianBasisSet:
+          nbasis = 23
+          nshell = 8
+          nprim  = 17
+          name = "aug-cc-pVDZ"
+        SCF Parameters:
+          maxiter = 40
+          density_reset_frequency = 10
+          level_shift = 0.000000
+
+        CLSCF Parameters:
+          charge = 0
+          ndocc = 5
+          docc = [ 2 0 0 0 0 1 1 1 ]
+
+
+  The following keywords in "mp2r12ap_cabs+.in" were ignored:
+    mpqc:mole:gebc
+
+                                    CPU Wall
+mpqc:                              9.92 9.92
+  calc:                            9.83 9.83
+    mp2-r12/a energy:              9.83 9.83
+      mp2-r12/a pair energies:     0.00 0.00
+      mp2-r12/a' pair energies:    0.01 0.01
+      mp2-r12a intermeds:          5.20 5.20
+        intermediates:             0.03 0.03
+          MO ints contraction:     0.02 0.02
+          MO ints retrieve:        0.00 0.00
+        tbint_tform_ikjy (ik|jy):  4.84 4.84
+          mp2-r12/a passes:        4.70 4.70
+            4. q.t.:               0.08 0.08
+            MO ints store:         0.00 0.00
+            ints+1qt+2qt+3qt:      4.62 4.62
+        tbint_tform_ikjy (ip|jq):  0.33 0.33
+          mp2-r12/a passes:        0.33 0.33
+            4. q.t.:               0.00 0.00
+            MO ints store:         0.00 0.00
+            ints+1qt+2qt+3qt:      0.32 0.32
+      vector:                      1.05 1.05
+        density:                   0.00 0.01
+        evals:                     0.01 0.01
+        extrap:                    0.02 0.02
+        fock:                      1.00 1.00
+          accum:                   0.00 0.00
+          ao_gmat:                 0.84 0.84
+            start thread:          0.84 0.84
+            stop thread:           0.00 0.00
+          init pmax:               0.00 0.00
+          local data:              0.00 0.00
+          setup:                   0.07 0.07
+          sum:                     0.00 0.00
+          symm:                    0.08 0.08
+  input:                           0.09 0.09
+
+  End Time: Sat Jan 29 23:31:24 2005
+

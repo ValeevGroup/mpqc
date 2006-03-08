@@ -1,0 +1,43 @@
+% -*- KeyVal -*-
+
+molecule<Molecule>: (
+  symmetry = C1
+  angstroms = no
+  charge = [ 0.1 0.1 0.1 0.1 ]
+  include_q  = 0 % set to 0 for QM/MM
+  include_qq = 1 % set to 0 for QM/MM
+  { atoms geometry } = {
+    Q     [     0.0            0.0            2.0        ]
+    Q     [     0.0            0.0           -2.0        ]
+    Q     [     4.0            0.0            0.0        ]
+    Q     [    -4.0            0.0            0.0        ]
+    O     [     0.0000     0.0000     0.7450 ]
+    H     [     1.4000     0.0000    -0.4000 ]
+    H     [    -1.4000     0.0000    -0.4000 ]
+  }
+)
+
+basis<GaussianBasisSet>: (
+  name = "3-21G*"
+  molecule = $:molecule
+)
+
+mpqc: (
+  checkpoint = no
+  savestate = no
+  do_energy = yes
+  do_gradient = yes
+  mole<CLHF>: (
+    molecule = $:molecule
+    basis = $:basis
+    memory = 16000000
+    guess_wavefunction<CLHF>: (
+      molecule = $:molecule
+      basis<GaussianBasisSet>: (
+        molecule = $:molecule
+        name = "STO-3G"
+      )
+      memory = 16000000
+    )
+  )
+)

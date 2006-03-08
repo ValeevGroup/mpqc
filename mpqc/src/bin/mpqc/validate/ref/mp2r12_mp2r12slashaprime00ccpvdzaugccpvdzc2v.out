@@ -1,0 +1,472 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 2.2.0-alpha
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@aros.ca.sandia.gov
+  Start Time: Tue Aug  5 15:49:21 2003
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /home/cljanss/src/SC/lib/atominfo.kv.
+
+  IntCoorGen: generated 3 coordinates.
+  Forming optimization coordinates:
+    SymmMolecularCoor::form_variable_coordinates()
+      expected 3 coordinates
+      found 2 variable coordinates
+      found 0 constant coordinates
+  Reading file /home/cljanss/src/SC/lib/basis/cc-pvdz.kv.
+      Reading file /home/cljanss/src/SC/lib/basis/dz_LdunningR.kv.
+
+      CLSCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(basis):      8     0     4     2
+      Maximum orthogonalization residual = 3.50763
+      Minimum orthogonalization residual = 0.0574104
+      docc = [ 3 0 1 1 ]
+      nbasis = 14
+
+  CLSCF::init: total charge = 0
+
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      integral intermediate storage = 519368 bytes
+      integral cache = 31478952 bytes
+      nuclear repulsion energy =    9.1571164588
+
+                      4284 integrals
+      iter     1 energy =  -75.6929826973 delta = 2.35942e-01
+                      4284 integrals
+      iter     2 energy =  -75.9969199201 delta = 5.90609e-02
+                      4284 integrals
+      iter     3 energy =  -76.0095041153 delta = 1.43489e-02
+                      4284 integrals
+      iter     4 energy =  -76.0104942081 delta = 5.95029e-03
+                      4284 integrals
+      iter     5 energy =  -76.0106554883 delta = 1.61684e-03
+                      4284 integrals
+      iter     6 energy =  -76.0106673002 delta = 6.25926e-04
+                      4284 integrals
+      iter     7 energy =  -76.0106682882 delta = 2.13656e-04
+                      4284 integrals
+      iter     8 energy =  -76.0106683083 delta = 3.37517e-05
+                      4284 integrals
+      iter     9 energy =  -76.0106683092 delta = 6.20338e-06
+                      4284 integrals
+      iter    10 energy =  -76.0106683092 delta = 1.59873e-06
+
+      HOMO is     1  B2 =  -0.504005
+      LUMO is     4  A1 =   0.218660
+
+      total scf energy =  -76.0106683092
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 10
+        Using symmetric orthogonalization.
+        n(basis):     11     2     7     4
+        Maximum orthogonalization residual = 3.66509
+        Minimum orthogonalization residual = 0.0352018
+        The number of electrons in the projected density = 9.99253
+
+  docc = [ 3 0 1 1 ]
+  nbasis = 24
+  Reading file /home/cljanss/src/SC/lib/basis/aug-cc-pvdz.kv.
+
+  Molecular formula H2O
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = mp2r12_mp2r12slashaprime00ccpvdzaugccpvdzc2v
+    restart_file  = mp2r12_mp2r12slashaprime00ccpvdzaugccpvdzc2v.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = no
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  integral intermediate storage = 1604320 bytes
+  integral cache = 30390880 bytes
+  nuclear repulsion energy =    9.1571164588
+
+                 31972 integrals
+  iter     1 energy =  -75.9894459794 delta = 1.63329e-01
+                 31972 integrals
+  iter     2 energy =  -76.0251605458 delta = 1.17686e-02
+                 31972 integrals
+  iter     3 energy =  -76.0258587095 delta = 1.94237e-03
+                 31972 integrals
+  iter     4 energy =  -76.0258857767 delta = 4.37784e-04
+                 31972 integrals
+  iter     5 energy =  -76.0258879700 delta = 1.05751e-04
+                 31972 integrals
+  iter     6 energy =  -76.0258882354 delta = 4.25530e-05
+                 31972 integrals
+  iter     7 energy =  -76.0258882399 delta = 5.95052e-06
+                 31972 integrals
+  iter     8 energy =  -76.0258882402 delta = 2.04017e-06
+                 31972 integrals
+  iter     9 energy =  -76.0258882403 delta = 3.87937e-07
+                 31972 integrals
+  iter    10 energy =  -76.0258882403 delta = 5.58911e-08
+                 31972 integrals
+  iter    11 energy =  -76.0258882403 delta = 1.32442e-08
+
+  HOMO is     1  B2 =  -0.491067
+  LUMO is     4  A1 =   0.185922
+
+  total scf energy =  -76.0258882403
+
+  Entered SBS A intermediates evaluator
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Static memory used per node:    1746496 Bytes
+  Total memory used per node:     2308096 Bytes
+  Memory required for one pass:   2308096 Bytes
+  Minimum memory required:        1858816 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax
+    1      0     24       11       5  
+   nocc   nvir   nfzc   nfzv
+    5      19     0      0   
+  Memory used for integral storage:       1731520 Bytes
+  Size of global distributed array:       345600 Bytes
+  Will hold transformed integrals in memory
+  Beginning pass 1
+  Begin loop over shells (grt, 1.+2. q.t.)
+    working on shell pair (  0   0),  1.5% complete
+    working on shell pair (  3   0), 10.6% complete
+    working on shell pair (  4   2), 19.7% complete
+    working on shell pair (  5   3), 28.8% complete
+    working on shell pair (  6   3), 37.9% complete
+    working on shell pair (  7   2), 47.0% complete
+    working on shell pair (  8   0), 56.1% complete
+    working on shell pair (  8   6), 65.2% complete
+    working on shell pair (  9   3), 74.2% complete
+    working on shell pair (  9   9), 83.3% complete
+    working on shell pair ( 10   5), 92.4% complete
+  End of loop over shells
+  Begin third q.t.
+  End of third q.t.
+  Begin fourth q.t.
+  End of fourth q.t.
+
+  Entered ABS A intermediates evaluator
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Static memory used per node:    1766664 Bytes
+  Total memory used per node:     2048504 Bytes
+  Memory required for one pass:   2048504 Bytes
+  Minimum memory required:        1824504 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  nbasis(ABS) nshell(ABS) nfuncmax(ABS)
+    1      0     24       11       5     41           18           5  
+   nocc   nvir   nfzc   nfzv
+    5      19     0      0   
+  Using canonical orthogonalization.
+  n(basis):     18     4    12     7
+  Maximum orthogonalization residual = 5.65442
+  Minimum orthogonalization residual = 0.00288355
+  Memory used for integral storage:       1738240 Bytes
+  Size of global distributed array:       164000 Bytes
+  Will hold transformed integrals in memory
+  Beginning pass 1
+  Begin loop over shells (grt, 1.+2. q.t.)
+    working on shell pair (  0   0),  0.5% complete
+    working on shell pair (  1   1), 10.1% complete
+    working on shell pair (  2   2), 19.7% complete
+    working on shell pair (  3   3), 29.3% complete
+    working on shell pair (  4   4), 38.9% complete
+    working on shell pair (  5   5), 48.5% complete
+    working on shell pair (  6   6), 58.1% complete
+    working on shell pair (  7   7), 67.7% complete
+    working on shell pair (  8   8), 77.3% complete
+    working on shell pair (  9   9), 86.9% complete
+    working on shell pair ( 10  10), 96.5% complete
+  End of loop over shells
+  Begin fourth q.t.
+  End of fourth q.t.
+
+  Basis Set completeness diagnostics:
+    -Tr(V)/Tr(B) for alpha-alpha pairs:    0.069982
+    -Tr(V)/Tr(B) for alpha-beta pairs:    0.146712
+
+  Alpha-alpha MBPT2-R12/A pair energies:
+      i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
+    -----   -----   ------------   ------------   ------------
+      2       1     -0.000022444   -0.004789482   -0.004811925
+      3       1     -0.000234727   -0.002097794   -0.002332521
+      3       2     -0.003960461   -0.002408720   -0.006369181
+      4       1     -0.000264442   -0.003295913   -0.003560354
+      4       2     -0.003747485   -0.002769336   -0.006516821
+      4       3     -0.012542918   -0.002085151   -0.014628069
+      5       1     -0.000289040   -0.003545596   -0.003834636
+      5       2     -0.003902777   -0.003157390   -0.007060167
+      5       3     -0.013243015   -0.002184662   -0.015427676
+      5       4     -0.013233124   -0.002632043   -0.015865167
+
+  Alpha-beta MBPT2-R12/A pair energies:
+      i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
+    -----   -----   ------------   ------------   ------------
+      1       1     -0.000427901   -0.217279931   -0.217707833
+      1       2     -0.000129905   -0.014259062   -0.014388967
+      1       3     -0.000116259   -0.001988177   -0.002104436
+      1       4     -0.000149795   -0.004624395   -0.004774190
+      1       5     -0.000151731   -0.003661184   -0.003812915
+      2       1     -0.000129905   -0.014259062   -0.014388967
+      2       2     -0.008947046   -0.012530345   -0.021477390
+      2       3     -0.007126329   -0.006180880   -0.013307209
+      2       4     -0.005670300   -0.006398620   -0.012068920
+      2       5     -0.005513297   -0.007379313   -0.012892611
+      3       1     -0.000116259   -0.001988177   -0.002104436
+      3       2     -0.007126329   -0.006180880   -0.013307209
+      3       3     -0.019751020   -0.006854538   -0.026605558
+      3       4     -0.009497153   -0.002357346   -0.011854499
+      3       5     -0.007762950   -0.003392967   -0.011155917
+      4       1     -0.000149795   -0.004624395   -0.004774190
+      4       2     -0.005670300   -0.006398620   -0.012068920
+      4       3     -0.009497153   -0.002357346   -0.011854499
+      4       4     -0.017329041   -0.010470319   -0.027799360
+      4       5     -0.008329162   -0.004582633   -0.012911794
+      5       1     -0.000151731   -0.003661184   -0.003812915
+      5       2     -0.005513297   -0.007379313   -0.012892611
+      5       3     -0.007762950   -0.003392967   -0.011155917
+      5       4     -0.008329162   -0.004582633   -0.012911794
+      5       5     -0.016925640   -0.010487241   -0.027412881
+
+  RHF energy [au]:                            -76.025888240260
+  MP2 correlation energy [au]:                 -0.203714841798
+  (MBPT2)-R12/ A correlation energy [au]:      -0.396237616291
+  MBPT2-R12/ A correlation energy [au]:        -0.599952458089
+  MBPT2-R12/ A energy [au]:                   -76.625840698349
+
+
+  Alpha-alpha MBPT2-R12/A' pair energies:
+      i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
+    -----   -----   ------------   ------------   ------------
+      2       1     -0.000022444   -0.004790215   -0.004812658
+      3       1     -0.000234727   -0.002182271   -0.002416998
+      3       2     -0.003960461   -0.001462394   -0.005422855
+      4       1     -0.000264442   -0.003330088   -0.003594530
+      4       2     -0.003747485   -0.001246146   -0.004993631
+      4       3     -0.012542918   -0.002003630   -0.014546548
+      5       1     -0.000289040   -0.003540823   -0.003829864
+      5       2     -0.003902777   -0.002125789   -0.006028566
+      5       3     -0.013243015   -0.002184662   -0.015427676
+      5       4     -0.013233124   -0.002588991   -0.015822115
+
+  Alpha-beta MBPT2-R12/A' pair energies:
+      i       j        mp2(ij)        r12(ij)      mp2-r12(ij)
+    -----   -----   ------------   ------------   ------------
+      1       1     -0.000427901   -0.106592972   -0.107020873
+      1       2     -0.000129905   -0.010361466   -0.010491371
+      1       3     -0.000116259   -0.001848395   -0.001964654
+      1       4     -0.000149795   -0.003716307   -0.003866102
+      1       5     -0.000151731   -0.003282943   -0.003434674
+      2       1     -0.000129905   -0.010361466   -0.010491371
+      2       2     -0.008947046   -0.003873929   -0.012820975
+      2       3     -0.007126329   -0.005234571   -0.012360900
+      2       4     -0.005670300   -0.004894077   -0.010564377
+      2       5     -0.005513297   -0.002593984   -0.008107281
+      3       1     -0.000116259   -0.001848395   -0.001964654
+      3       2     -0.007126329   -0.005234571   -0.012360900
+      3       3     -0.019751020   -0.005034620   -0.024785640
+      3       4     -0.009497153   -0.002317181   -0.011814334
+      3       5     -0.007762950   -0.003392967   -0.011155917
+      4       1     -0.000149795   -0.003716307   -0.003866102
+      4       2     -0.005670300   -0.004894077   -0.010564377
+      4       3     -0.009497153   -0.002317181   -0.011814334
+      4       4     -0.017329041   -0.006276002   -0.023605042
+      4       5     -0.008329162   -0.004258780   -0.012587941
+      5       1     -0.000151731   -0.003282943   -0.003434674
+      5       2     -0.005513297   -0.002593984   -0.008107281
+      5       3     -0.007762950   -0.003392967   -0.011155917
+      5       4     -0.008329162   -0.004258780   -0.012587941
+      5       5     -0.016925640   -0.007875560   -0.024801200
+
+  RHF energy [au]:                            -76.025888240260
+  MP2 correlation energy [au]:                 -0.203714841798
+  (MBPT2)-R12/A' correlation energy [au]:      -0.238909435390
+  MBPT2-R12/A' correlation energy [au]:        -0.442624277188
+  MBPT2-R12/A' energy [au]:                   -76.468512517449
+
+Value of the MolecularEnergy:  -76.4685125174
+
+  MBPT2_R12:
+    Standard Approximation: A'
+    Spin-adapted algorithm: false
+    Transformed Integrals file: /tmp/r12ints.dat
+
+    Auxiliary Basis:
+      GaussianBasisSet:
+        nbasis = 41
+        nshell = 18
+        nprim  = 31
+        name = "aug-cc-pVDZ"
+
+    MBPT2:
+      Function Parameters:
+        value_accuracy    = 1.718623e-07 (1.000000e-06) (computed)
+        gradient_accuracy = 0.000000e+00 (1.000000e-06)
+        hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+      Molecular Coordinates:
+        IntMolecularCoor Parameters:
+          update_bmat = no
+          scale_bonds = 1
+          scale_bends = 1
+          scale_tors = 1
+          scale_outs = 1
+          symmetry_tolerance = 1.000000e-05
+          simple_tolerance = 1.000000e-03
+          coordinate_tolerance = 1.000000e-07
+          have_fixed_values = 0
+          max_update_steps = 100
+          max_update_disp = 0.500000
+          have_fixed_values = 0
+
+        Molecular formula: H2O
+        molecule<Molecule>: (
+          symmetry = c2v
+          unit = "angstrom"
+          {  n atoms                        geometry                     }={
+             1     O [    0.0000000000     0.0000000000     0.3693729440]
+             2     H [    0.7839758990     0.0000000000    -0.1846864720]
+             3     H [   -0.7839758990    -0.0000000000    -0.1846864720]
+          }
+        )
+        Atomic Masses:
+           15.99491    1.00783    1.00783
+
+        Bonds:
+          STRE       s1     0.96000    1    2         O-H
+          STRE       s2     0.96000    1    3         O-H
+        Bends:
+          BEND       b1   109.50000    2    1    3      H-O-H
+
+        SymmMolecularCoor Parameters:
+          change_coordinates = no
+          transform_hessian = yes
+          max_kappa2 = 10.000000
+
+      GaussianBasisSet:
+        nbasis = 24
+        nshell = 11
+        nprim  = 24
+        name = "cc-pVDZ"
+      Reference Wavefunction:
+        Function Parameters:
+          value_accuracy    = 1.718623e-09 (1.000000e-08) (computed)
+          gradient_accuracy = 0.000000e+00 (1.000000e-06)
+          hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+        Molecule:
+          Molecular formula: H2O
+          molecule<Molecule>: (
+            symmetry = c2v
+            unit = "angstrom"
+            {  n atoms                        geometry                     }={
+               1     O [    0.0000000000     0.0000000000     0.3693729440]
+               2     H [    0.7839758990     0.0000000000    -0.1846864720]
+               3     H [   -0.7839758990    -0.0000000000    -0.1846864720]
+            }
+          )
+          Atomic Masses:
+             15.99491    1.00783    1.00783
+
+        GaussianBasisSet:
+          nbasis = 24
+          nshell = 11
+          nprim  = 24
+          name = "cc-pVDZ"
+        SCF Parameters:
+          maxiter = 40
+          density_reset_frequency = 10
+          savestate_iter = 0
+          savestate_frequency = 1
+          level_shift = 0.000000
+
+        CLSCF Parameters:
+          charge = 0
+          ndocc = 5
+          docc = [ 3 0 1 1 ]
+
+
+  The following keywords in "mp2r12_mp2r12slashaprime00ccpvdzaugccpvdzc2v.in" were ignored:
+    mpqc:mole:reference:guess_wavefunction:multiplicity
+    mpqc:mole:reference:multiplicity
+
+                                  CPU Wall
+mpqc:                            2.58 2.63
+  calc:                          2.32 2.37
+    mp2-r12/a energy:            2.32 2.37
+      mp2-r12/a pair energies:   0.00 0.00
+      mp2-r12/a' pair energies:  0.04 0.03
+      r12a-abs-mem:              0.81 0.83
+        mp2-r12/a passes:        0.79 0.81
+          4. q.t.:               0.00 0.00
+          MO ints store:         0.00 0.00
+          grt+1.qt+2.qt:         0.79 0.81
+        mp2-r12a intermeds:      0.00 0.00
+          MO ints contraction:   0.00 0.00
+          MO ints retrieve:      0.00 0.00
+      r12a-sbs-mem:              0.39 0.40
+        mp2-r12/a passes:        0.38 0.39
+          3. q.t.:               0.00 0.00
+          4. q.t.:               0.00 0.00
+          MO ints store:         0.00 0.00
+          compute emp2:          0.00 0.00
+          grt+1.qt+2.qt:         0.37 0.38
+        mp2-r12a intermeds:      0.01 0.01
+          MO ints contraction:   0.01 0.01
+          MO ints retrieve:      0.00 0.00
+      vector:                    1.08 1.10
+        density:                 0.00 0.00
+        evals:                   0.01 0.00
+        extrap:                  0.01 0.01
+        fock:                    1.06 1.08
+          accum:                 0.00 0.00
+          ao_gmat:               1.02 1.04
+            start thread:        1.02 1.04
+            stop thread:         0.00 0.00
+          init pmax:             0.00 0.00
+          local data:            0.00 0.00
+          setup:                 0.02 0.02
+          sum:                   0.00 0.00
+          symm:                  0.02 0.02
+  input:                         0.26 0.26
+    vector:                      0.16 0.16
+      density:                   0.00 0.00
+      evals:                     0.00 0.00
+      extrap:                    0.01 0.00
+      fock:                      0.15 0.15
+        accum:                   0.00 0.00
+        ao_gmat:                 0.13 0.13
+          start thread:          0.13 0.13
+          stop thread:           0.00 0.00
+        init pmax:               0.00 0.00
+        local data:              0.00 0.00
+        setup:                   0.01 0.01
+        sum:                     0.00 0.00
+        symm:                    0.01 0.01
+
+  End Time: Tue Aug  5 15:49:24 2003
+

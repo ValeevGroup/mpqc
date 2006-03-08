@@ -1,0 +1,64 @@
+% Emacs should use -*- KeyVal -*- mode
+% this file was automatically generated
+% label: closed shell self consistent field tests (HF and DFT)
+% molecule specification
+molecule<Molecule>: (
+  symmetry = C1
+  unit = angstrom
+  { atoms geometry } = {
+     O     [     0.000000000000     0.000000000000     0.369372944000 ]
+     H     [     0.783975899000     0.000000000000    -0.184686472000 ]
+     H     [    -0.783975899000     0.000000000000    -0.184686472000 ]
+  }
+)
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "STO-3G"
+  molecule = $:molecule
+)
+mpqc: (
+  checkpoint = no
+  savestate = no
+  restart = no
+  % molecular coordinates for optimization
+  coor<SymmMolecularCoor>: (
+    molecule = $:molecule
+    generator<IntCoorGen>: (
+      molecule = $:molecule
+    )
+  )
+  do_energy = yes
+  do_gradient = yes
+  % method for computing the molecule's energy
+  mole<CLKS>: (
+    molecule = $:molecule
+    basis = $:basis
+    coor = $..:coor
+    memory = 32000000
+    total_charge = 0
+    multiplicity = 1
+    print_npa = yes
+    functional<StdDenFunctional>: name = "BP86"
+    guess_wavefunction<CLHF>: (
+      molecule = $:molecule
+      total_charge = 0
+      multiplicity = 1
+      basis<GaussianBasisSet>: (
+        molecule = $:molecule
+        name = "STO-3G"
+      )
+      memory = 32000000
+    )
+  )
+  optimize = no
+  % optimizer object for the molecular geometry
+  opt<QNewtonOpt>: (
+    max_iterations = 20
+    function = $..:mole
+    update<BFGSUpdate>: ()
+    convergence<MolEnergyConvergence>: (
+      cartesian = yes
+      energy = $..:..:mole
+    )
+  )
+)

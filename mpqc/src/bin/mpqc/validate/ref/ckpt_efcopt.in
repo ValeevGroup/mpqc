@@ -1,0 +1,59 @@
+% molecule specification
+molecule<Molecule>: (
+  symmetry = C1
+  angstroms = yes
+  { atoms geometry } = {
+    N     [     0.51607603     0.04519735    -0.95614194 ]
+    H     [    -0.19547589     0.17839942    -1.65845361 ]
+    C     [     0.03095251    -0.69526932     0.25445565 ]
+    C     [    -0.06456519     0.77121302     0.60822996 ]
+    H     [     0.85374037     1.04857415    -0.32020191 ]
+    H     [    -0.88816493    -1.22489056     0.08294898 ]
+    H     [     0.79530751    -1.28353418     0.71918150 ]
+    H     [    -1.04787041     1.16031014     0.35868556 ]
+  }
+)
+% basis set specification
+basis<GaussianBasisSet>: (
+  name = "STO-3G"
+  molecule = $:molecule
+)
+mpqc: (
+  restart = no
+  checkpoint = no
+  savestate = no
+  % molecular coordinates for optimization
+  coor<SymmMolecularCoor>: (
+    molecule = $:molecule
+    generator<IntCoorGen>: (
+      molecule = $:molecule
+    )
+    followed<SumIntCoor>:(
+      coor: [
+        <StreSimpleCo>:(atoms = [1 5])
+        <StreSimpleCo>:(atoms = [4 5])
+      ]
+      coef = [     1.0 -1.0]
+    )
+  )
+  % method for computing the molecule's energy
+  mole<CLHF>: (
+    molecule = $:molecule
+    basis = $:basis
+    coor = $..:coor
+    memory = 16000000
+  )
+  % optimizer object for the molecular geometry
+  opt<EFCOpt>: (
+    max_iterations = 3
+    function = $..:mole
+    transition_state = yes
+    hessian = [ [ -0.1 ] ]
+    mode_following = yes
+    update<PowellUpdate>: ()
+    convergence<MolEnergyConvergence>: (
+      cartesian = yes
+      energy = $..:..:mole
+    )
+  )
+)

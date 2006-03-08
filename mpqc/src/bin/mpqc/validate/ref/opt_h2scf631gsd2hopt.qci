@@ -1,0 +1,86 @@
+test_basis:
+6-31G*
+beh2:
+  Be 0.00 0.00  0.00
+  H  0.00 0.00  1.30
+  H  0.00 0.00 -1.30
+
+method:
+scf
+followed:
+
+fzv:
+
+h2:
+  H 0 0  0.37
+  H 0 0 -0.37
+
+fixed:
+
+test_method:
+scf
+frequencies:
+no
+test_molecule_symmetry:
+d2h d2h  d2h  cs  d2h  c2v c2v
+label:
+optimization test series
+c2h2:
+  H  0.00 0.00  1.65
+  C  0.00 0.00  0.58
+  C  0.00 0.00 -0.58
+  H  0.00 0.00 -1.65
+
+b2h6:
+  H  1.00  0.00  1.46
+  H -1.00  0.00  1.46
+  B  0.00  0.00  0.90
+  H  0.00  0.94  0.00
+  H  0.00 -0.94  0.00
+  B  0.00  0.00 -0.90
+  H  1.00  0.00 -1.46
+  H -1.00  0.00 -1.46
+
+socc:
+auto
+state:
+1
+optimize:
+yes
+docc:
+auto
+fzc:
+
+h2o:
+  O  0.00 0.00  0.37
+  H  0.78 0.00 -0.18
+  H -0.78 0.00 -0.18
+
+molecule:
+  H 0 0  0.37
+  H 0 0 -0.37
+
+grid:
+default
+test_molecule:
+h2  beh2 b2h6 nh3 c2h2 h2o hf 
+nh3:
+  N  0.000000000  0.252365857  0.000000000
+  H -0.486150513 -0.084121957  0.824716866
+  H -0.486150513 -0.084121957 -0.824716866
+  H  0.952301025 -0.084121957  0.000000000
+
+test_calc:
+opt
+basis:
+6-31G*
+hf:
+  H  0 0  0.50
+  F  0 0 -0.50
+
+checkpoint:
+no
+restart:
+no
+symmetry:
+d2h

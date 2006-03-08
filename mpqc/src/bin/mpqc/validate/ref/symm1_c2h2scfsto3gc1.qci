@@ -1,0 +1,80 @@
+test_basis:
+STO-3G
+method:
+scf
+followed:
+
+fzv:
+
+fixed:
+
+test_method:
+scf mp2
+frequencies:
+no
+test_molecule_symmetry:
+d2h  c2v  cs   c2   ci   c1                          d2h  c2v  cs   c2   ci   c1  
+
+label:
+symmetry test series 1
+c2h2:
+  H  0.00 0.00  1.65
+  C  0.00 0.00  0.58
+  C  0.00 0.00 -0.58
+  H  0.00 0.00 -1.65
+
+gradient:
+yes
+socc:
+auto
+test_molecule_fzv:
+2    2    2    2    2    2                        4    4    4    4    4    4
+
+state:
+1
+optimize:
+no
+docc:
+auto
+fzc:
+
+molecule:
+  H  0.00 0.00  1.65
+  C  0.00 0.00  0.58
+  C  0.00 0.00 -0.58
+  H  0.00 0.00 -1.65
+
+test_molecule:
+c2h2 c2h2 c2h2 c2h2 c2h2 c2h2                        cub  cub  cub  cub  cub  cub
+
+grid:
+default
+test_molecule_fzc:
+2    2    2    2    2    2                        8    8    8    8    8    8
+
+basis:
+STO-3G
+checkpoint:
+no
+restart:
+no
+cub:
+  H   1.404   1.404   1.404
+  H  -1.404  -1.404   1.404
+  H   1.404  -1.404  -1.404
+  H  -1.404   1.404  -1.404
+  H  -1.404  -1.404  -1.404
+  H   1.404   1.404  -1.404
+  H  -1.404   1.404   1.404
+  H   1.404  -1.404   1.404
+  C   0.776   0.776   0.776
+  C  -0.776  -0.776   0.776
+  C   0.776  -0.776  -0.776
+  C  -0.776   0.776  -0.776
+  C  -0.776  -0.776  -0.776
+  C   0.776   0.776  -0.776
+  C  -0.776   0.776   0.776
+  C   0.776  -0.776   0.776
+
+symmetry:
+c1

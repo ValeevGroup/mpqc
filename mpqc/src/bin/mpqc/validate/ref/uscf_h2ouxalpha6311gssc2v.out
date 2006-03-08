@@ -1,0 +1,285 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                             Version 2.1.0-alpha-gcc3
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@aros.ca.sandia.gov
+  Start Time: Sun Apr  7 06:39:34 2002
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 2).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 2
+  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/atominfo.kv.
+
+  IntCoorGen: generated 3 coordinates.
+  Forming optimization coordinates:
+    SymmMolecularCoor::form_variable_coordinates()
+      expected 3 coordinates
+      found 2 variable coordinates
+      found 0 constant coordinates
+  Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/basis/6-311gSS.kv.
+      Reading file /usr/local/mpqc/2.1.0-alpha-gcc3/share/basis/sto-3g.kv.
+
+      USCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(SO):             4     0     2     1
+      Maximum orthogonalization residual = 1.9104
+      Minimum orthogonalization residual = 0.344888
+      alpha = [ 3 0 1 1 ]
+      beta  = [ 3 0 1 1 ]
+
+  USCF::init: total charge = 0
+
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      nuclear repulsion energy =    9.1571164588
+
+      iter     1 energy =  -74.6468200575 delta = 7.47315e-01
+      iter     2 energy =  -74.9176265779 delta = 1.87087e-01
+      iter     3 energy =  -74.9557846376 delta = 8.27062e-02
+      iter     4 energy =  -74.9602947172 delta = 3.46353e-02
+      iter     5 energy =  -74.9606660586 delta = 1.05354e-02
+      iter     6 energy =  -74.9607011362 delta = 3.50014e-03
+      iter     7 energy =  -74.9607024386 delta = 6.78915e-04
+      iter     8 energy =  -74.9607024810 delta = 1.19965e-04
+      iter     9 energy =  -74.9607024826 delta = 2.31818e-05
+      iter    10 energy =  -74.9607024827 delta = 4.51906e-06
+
+      <S^2>exact = 0.000000
+      <S^2>      = 0.000000
+
+      total scf energy =  -74.9607024827
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 5
+        Using symmetric orthogonalization.
+        n(SO):            14     2     9     5
+        Maximum orthogonalization residual = 4.46641
+        Minimum orthogonalization residual = 0.0188915
+        The number of electrons in the projected density = 4.99569
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 5
+        The number of electrons in the projected density = 4.99569
+
+  alpha = [ 3 0 1 1 ]
+  beta  = [ 3 0 1 1 ]
+
+  Molecular formula H2O
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = uscf_h2ouxalpha6311gssc2v
+    restart_file  = uscf_h2ouxalpha6311gssc2v.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = yes
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  Initializing ShellExtent
+    nshell = 13
+    ncell = 54760
+    ave nsh/cell = 1.57922
+    max nsh/cell = 13
+  nuclear repulsion energy =    9.1571164588
+
+  Total integration points = 4049
+  Integrated electron density error = -0.000218405554
+  iter     1 energy =  -75.2440042546 delta = 9.87876e-02
+  Total integration points = 4049
+  Integrated electron density error = -0.000206569420
+  iter     2 energy =  -75.6170642413 delta = 4.35351e-02
+  Total integration points = 11317
+  Integrated electron density error = -0.000008269715
+  iter     3 energy =  -75.6223446641 delta = 7.58651e-03
+  Total integration points = 11317
+  Integrated electron density error = -0.000006579454
+  iter     4 energy =  -75.6244303330 delta = 2.99434e-03
+  Total integration points = 24639
+  Integrated electron density error = -0.000004347788
+  iter     5 energy =  -75.6247681486 delta = 7.46804e-04
+  Total integration points = 24639
+  Integrated electron density error = -0.000004350747
+  iter     6 energy =  -75.6248130428 delta = 3.26649e-04
+  Total integration points = 46071
+  Integrated electron density error = 0.000000539272
+  iter     7 energy =  -75.6248113958 delta = 8.86068e-05
+  Total integration points = 46071
+  Integrated electron density error = 0.000000539184
+  iter     8 energy =  -75.6248115051 delta = 2.81994e-05
+  Total integration points = 46071
+  Integrated electron density error = 0.000000539103
+  iter     9 energy =  -75.6248115238 delta = 1.17158e-05
+  Total integration points = 46071
+  Integrated electron density error = 0.000000539073
+  iter    10 energy =  -75.6248115272 delta = 4.95715e-06
+  Total integration points = 46071
+  Integrated electron density error = 0.000000539085
+  iter    11 energy =  -75.6248115373 delta = 2.19274e-06
+  Total integration points = 46071
+  Integrated electron density error = 0.000000539086
+  iter    12 energy =  -75.6248115374 delta = 9.49389e-07
+  Total integration points = 46071
+  Integrated electron density error = 0.000000539091
+  iter    13 energy =  -75.6248115374 delta = 4.00376e-07
+  Total integration points = 46071
+  Integrated electron density error = 0.000000539090
+  iter    14 energy =  -75.6248115374 delta = 1.73612e-07
+  Total integration points = 46071
+  Integrated electron density error = 0.000000539089
+  iter    15 energy =  -75.6248115374 delta = 7.59355e-08
+  Total integration points = 46071
+  Integrated electron density error = 0.000000539089
+  iter    16 energy =  -75.6248115375 delta = 3.44683e-08
+  Total integration points = 46071
+  Integrated electron density error = 0.000000539089
+  iter    17 energy =  -75.6248115375 delta = 1.45243e-08
+
+  <S^2>exact = 0.000000
+  <S^2>      = -0.000000
+
+  total scf energy =  -75.6248115375
+
+  SCF::compute: gradient accuracy = 1.0000000e-06
+
+  Initializing ShellExtent
+    nshell = 13
+    ncell = 54760
+    ave nsh/cell = 1.57922
+    max nsh/cell = 13
+  Total integration points = 46071
+  Integrated electron density error = 0.000000539447
+  Total Gradient:
+       1   O  -0.0000000000   0.0000000000  -0.0213849509
+       2   H  -0.0026984939   0.0000000000   0.0106924754
+       3   H   0.0026984939  -0.0000000000   0.0106924754
+
+  Value of the MolecularEnergy:  -75.6248115375
+
+
+  Gradient of the MolecularEnergy:
+      1    0.0174476813
+      2    0.0022928526
+
+  Unrestricted Kohn-Sham (UKS) Parameters:
+    Function Parameters:
+      value_accuracy    = 7.483877e-09 (1.000000e-08) (computed)
+      gradient_accuracy = 7.483877e-07 (1.000000e-06) (computed)
+      hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+    Molecular Coordinates:
+      IntMolecularCoor Parameters:
+        update_bmat = no
+        scale_bonds = 1.0000000000
+        scale_bends = 1.0000000000
+        scale_tors = 1.0000000000
+        scale_outs = 1.0000000000
+        symmetry_tolerance = 1.000000e-05
+        simple_tolerance = 1.000000e-03
+        coordinate_tolerance = 1.000000e-07
+        have_fixed_values = 0
+        max_update_steps = 100
+        max_update_disp = 0.500000
+        have_fixed_values = 0
+
+      Molecular formula: H2O
+      molecule<Molecule>: (
+        symmetry = c2v
+        unit = "angstrom"
+        {  n atoms                        geometry                     }={
+           1     O [    0.0000000000     0.0000000000     0.3693729440]
+           2     H [    0.7839758990     0.0000000000    -0.1846864720]
+           3     H [   -0.7839758990    -0.0000000000    -0.1846864720]
+        }
+      )
+      Atomic Masses:
+         15.99491    1.00783    1.00783
+
+      Bonds:
+        STRE       s1     0.96000    1    2         O-H
+        STRE       s2     0.96000    1    3         O-H
+      Bends:
+        BEND       b1   109.50000    2    1    3      H-O-H
+
+      SymmMolecularCoor Parameters:
+        change_coordinates = no
+        transform_hessian = yes
+        max_kappa2 = 10.000000
+
+    GaussianBasisSet:
+      nbasis = 30
+      nshell = 13
+      nprim  = 24
+      name = "6-311G**"
+    Natural Population Analysis:
+       n   atom    charge     ne(S)     ne(P)     ne(D) 
+        1    O   -0.913444  3.738204  5.168532  0.006708
+        2    H    0.456722  0.540219  0.003059
+        3    H    0.456722  0.540219  0.003059
+
+    SCF Parameters:
+      maxiter = 100
+      density_reset_frequency = 10
+      level_shift = 0.250000
+
+    UnrestrictedSCF Parameters:
+      charge = 0.0000000000
+      nalpha = 5
+      nbeta = 5
+      alpha = [ 3 0 1 1 ]
+      beta  = [ 3 0 1 1 ]
+
+    Functional:
+      Standard Density Functional: XALPHA
+      Sum of Functionals:
+        +1.0000000000000000
+          XalphaFunctional: alpha =   0.70000000
+    Integrator:
+      RadialAngularIntegrator:
+        Pruned fine grid employed
+                                CPU  Wall
+mpqc:                         12.67 14.76
+  NAO:                         0.03  0.03
+  calc:                       12.36 14.44
+    compute gradient:          2.40  2.84
+      nuc rep:                 0.00  0.00
+      one electron gradient:   0.03  0.03
+      overlap gradient:        0.01  0.01
+      two electron gradient:   2.36  2.80
+        grad:                  2.36  2.80
+          integrate:           1.93  2.33
+          two-body:            0.18  0.22
+    vector:                    9.96 11.59
+      density:                 0.00  0.01
+      evals:                   0.05  0.03
+      extrap:                  0.03  0.05
+      fock:                    9.59 11.21
+        integrate:             8.83 10.39
+        start thread:          0.21  0.21
+        stop thread:           0.00  0.02
+  input:                       0.27  0.28
+    vector:                    0.08  0.10
+      density:                 0.00  0.01
+      evals:                   0.02  0.01
+      extrap:                  0.00  0.02
+      fock:                    0.05  0.06
+        start thread:          0.00  0.00
+        stop thread:           0.00  0.00
+
+  End Time: Sun Apr  7 06:39:49 2002
+

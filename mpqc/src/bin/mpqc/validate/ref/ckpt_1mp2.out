@@ -1,0 +1,234 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 2.3.0-alpha
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@n65
+  Start Time: Sun Jan  9 18:50:30 2005
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /home/cljanss/src/SC/lib/atominfo.kv.
+
+  Restored <MBPT2> from ckpt_0mp2.wfn
+
+  Molecular formula H2O
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = ckpt_1mp2
+    restart_file  = ckpt_0mp2.wfn
+    restart       = yes
+    checkpoint    = yes
+    savestate     = yes
+    do_energy     = yes
+    do_gradient   = yes
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  Value of the MolecularEnergy:  -74.9957459265
+
+
+  Entered memgrp based MP2 routine
+  nproc = 1
+  Memory available per node:      16000000 Bytes
+  Static memory used per node:    1736 Bytes
+  Total memory used per node:     20616 Bytes
+  Memory required for one pass:   20616 Bytes
+  Minimum memory required:        8968 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax
+    1      0     7        4        4  
+   nocc   nvir   nfzc   nfzv
+    5      2      0      0   
+
+  Memory used for integral intermediates: 57422 Bytes
+  Memory used for integral storage:       15921962 Bytes
+  Size of global distributed array:       9800 Bytes
+  Beginning pass 1
+  Begin loop over shells (erep, 1.+2. q.t.)
+    working on shell pair (  0   0),  0.000% complete (0 of 10)
+    working on shell pair (  1   0), 10.000% complete (1 of 10)
+    working on shell pair (  1   1), 20.000% complete (2 of 10)
+    working on shell pair (  2   0), 30.000% complete (3 of 10)
+    working on shell pair (  2   1), 40.000% complete (4 of 10)
+    working on shell pair (  2   2), 50.000% complete (5 of 10)
+    working on shell pair (  3   0), 60.000% complete (6 of 10)
+    working on shell pair (  3   1), 70.000% complete (7 of 10)
+    working on shell pair (  3   2), 80.000% complete (8 of 10)
+    working on shell pair (  3   3), 90.000% complete (9 of 10)
+  End of loop over shells
+  Begin third q.t.
+  End of third q.t.
+  Begin fourth q.t.
+  End of fourth q.t.
+  Begin third and fourth q.b.t.
+    working on shell pair (  0   0),  0.000% complete (0 of 10)
+    working on shell pair (  1   0), 10.000% complete (1 of 10)
+    working on shell pair (  1   1), 20.000% complete (2 of 10)
+    working on shell pair (  2   0), 30.000% complete (3 of 10)
+    working on shell pair (  2   1), 40.000% complete (4 of 10)
+    working on shell pair (  2   2), 50.000% complete (5 of 10)
+    working on shell pair (  3   0), 60.000% complete (6 of 10)
+    working on shell pair (  3   1), 70.000% complete (7 of 10)
+    working on shell pair (  3   2), 80.000% complete (8 of 10)
+    working on shell pair (  3   3), 90.000% complete (9 of 10)
+  End of third and fourth q.b.t.
+  Done with pass 1
+
+  Largest first order coefficients (unique):
+     1  -0.05481866  1  B1  1  B1 ->  2  B1  2  B1 (+-+-)
+     2  -0.03186323  3  A1  3  A1 ->  4  A1  4  A1 (+-+-)
+     3  -0.03140095  3  A1  1  B1 ->  4  A1  2  B1 (+-+-)
+     4  -0.03056878  1  B1  1  B1 ->  4  A1  4  A1 (+-+-)
+     5  -0.02802046  3  A1  3  A1 ->  2  B1  2  B1 (+-+-)
+     6  -0.02720709  2  A1  2  A1 ->  4  A1  4  A1 (+-+-)
+     7   0.02397865  1  B1  2  A1 ->  2  B1  4  A1 (+-+-)
+     8   0.02153057  3  A1  2  A1 ->  4  A1  4  A1 (+-+-)
+     9  -0.01973867  1  B2  1  B2 ->  4  A1  4  A1 (+-+-)
+    10  -0.01868584  3  A1  1  B1 ->  2  B1  4  A1 (+-+-)
+
+  RHF energy [au]:                    -74.960702481928
+  MP2 correlation energy [au]:         -0.035043444533
+  MP2 energy [au]:                    -74.995745926461
+
+  D1(MP2)                =   0.00619445
+  S2 matrix 1-norm       =   0.00705024
+  S2 matrix inf-norm     =   0.00612560
+  S2 diagnostic          =   0.00213415
+
+  Largest S2 values (unique determinants):
+     1  -0.00612560    3  A1 ->    4  A1
+     2  -0.00267857    1  B1 ->    2  B1
+     3   0.00092097    2  A1 ->    4  A1
+     4  -0.00000367    1  A1 ->    4  A1
+     5   0.00000000    3  A1 ->    2  B1
+     6   0.00000000    2  A1 ->    2  B1
+     7  -0.00000000    1  B1 ->    4  A1
+     8   0.00000000    1  A1 ->    2  B1
+     9   0.00000000    1  B2 ->    4  A1
+    10   0.00000000    1  B2 ->    2  B1
+
+  D2(MP1) =   0.07895280
+
+  CPHF: iter =  1 rms(P) = 0.0008615939 eps = 0.0000000100
+  CPHF: iter =  2 rms(P) = 0.0000462272 eps = 0.0000000100
+  CPHF: iter =  3 rms(P) = 0.0000001907 eps = 0.0000000100
+  CPHF: iter =  4 rms(P) = 0.0000000000 eps = 0.0000000100
+
+  Total MP2 gradient [au]:
+       1   O   0.0000000000  -0.0000000000  -0.1043510778
+       2   H  -0.0273216655  -0.0000000000   0.0521755389
+       3   H   0.0273216655   0.0000000000   0.0521755389
+
+  Gradient of the MolecularEnergy:
+      1    0.0000000000
+      2   -0.0000000000
+      3   -0.1043510778
+      4   -0.0273216655
+      5   -0.0000000000
+      6    0.0521755389
+      7    0.0273216655
+      8    0.0000000000
+      9    0.0521755389
+
+  MBPT2:
+    Function Parameters:
+      value_accuracy    = 1.868197e-07 (1.000000e-06) (computed)
+      gradient_accuracy = 0.000000e+00 (1.000000e-06) (computed)
+      hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+    Molecule:
+      Molecular formula: H2O
+      molecule<Molecule>: (
+        symmetry = c2v
+        unit = "angstrom"
+        {  n atoms                        geometry                     }={
+           1     O [    0.0000000000     0.0000000000     0.3693729400]
+           2     H [    0.7839759000     0.0000000000    -0.1846864700]
+           3     H [   -0.7839759000    -0.0000000000    -0.1846864700]
+        }
+      )
+      Atomic Masses:
+         15.99491    1.00783    1.00783
+
+    GaussianBasisSet:
+      nbasis = 7
+      nshell = 4
+      nprim  = 12
+      name = "STO-3G"
+    Reference Wavefunction:
+      Function Parameters:
+        value_accuracy    = 1.868197e-09 (1.000000e-08) (computed)
+        gradient_accuracy = 0.000000e+00 (1.000000e-06)
+        hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+      Molecule:
+        Molecular formula: H2O
+        molecule<Molecule>: (
+          symmetry = c2v
+          unit = "angstrom"
+          {  n atoms                        geometry                     }={
+             1     O [    0.0000000000     0.0000000000     0.3693729400]
+             2     H [    0.7839759000     0.0000000000    -0.1846864700]
+             3     H [   -0.7839759000    -0.0000000000    -0.1846864700]
+          }
+        )
+        Atomic Masses:
+           15.99491    1.00783    1.00783
+
+      GaussianBasisSet:
+        nbasis = 7
+        nshell = 4
+        nprim  = 12
+        name = "STO-3G"
+      SCF Parameters:
+        maxiter = 40
+        density_reset_frequency = 10
+        level_shift = 0.000000
+
+      CLSCF Parameters:
+        charge = 0.0000000000
+        ndocc = 5
+        docc = [ 3 0 1 1 ]
+
+
+                                        CPU Wall
+mpqc:                                  0.07 0.07
+  calc:                                0.04 0.04
+    mp2-mem:                           0.04 0.04
+      Laj:                             0.00 0.00
+        make_gmat for Laj:             0.00 0.00
+          gmat:                        0.00 0.00
+      Pab and Wab:                     0.00 0.00
+      Pkj and Wkj:                     0.00 0.00
+        make_gmat for Wkj:             0.00 0.00
+          gmat:                        0.00 0.00
+      cphf:                            0.01 0.01
+        gmat:                          0.01 0.00
+      hcore contrib.:                  0.00 0.00
+      mp2 passes:                      0.01 0.01
+        1. q.b.t.:                     0.00 0.00
+        2. q.b.t.:                     0.00 0.00
+        3. q.t.:                       0.00 0.00
+        3.qbt+4.qbt+non-sep contrib.:  0.00 0.00
+        4. q.t.:                       0.00 0.00
+        Pab and Wab:                   0.00 0.00
+        Pkj and Wkj:                   0.00 0.00
+        Waj and Laj:                   0.00 0.00
+        compute ecorr:                 0.00 0.00
+        divide (ia|jb)'s:              0.00 0.00
+        erep+1.qt+2.qt:                0.01 0.00
+      overlap contrib.:                0.00 0.00
+      sep 2PDM contrib.:               0.01 0.00
+  input:                               0.03 0.03
+
+  End Time: Sun Jan  9 18:50:30 2005
+

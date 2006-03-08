@@ -1,0 +1,45 @@
+test_symmetry:
+c1 c2v
+test_basis:
+STO-3G 6-311G**
+method:
+scf
+followed:
+
+fzv:
+
+fixed:
+
+test_method:
+scf mp2
+frequencies:
+yes
+label:
+water test series
+socc:
+auto
+state:
+1
+optimize:
+yes
+docc:
+auto
+fzc:
+
+molecule:
+  O  0.000000000 0  0.369372944
+  H  0.783975899 0 -0.184686472
+  H -0.783975899 0 -0.184686472
+
+grid:
+default
+test_calc:
+freq optfreq
+basis:
+6-311G**
+checkpoint:
+no
+restart:
+no
+symmetry:
+c1

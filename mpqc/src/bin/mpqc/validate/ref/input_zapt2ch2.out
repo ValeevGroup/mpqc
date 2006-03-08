@@ -1,0 +1,257 @@
+  Reading file /home/cljanss/mpqc-verify-tmp/mpqc.install.1/share/mpqc/2.2.3-snapshot/atominfo.kv.
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                              Version 2.2.3-snapshot
+
+  Machine:    x86_64-unknown-linux-gnu
+  User:       cljanss@quad
+  Start Time: Thu Dec 16 12:11:04 2004
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 4).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 4
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /home/cljanss/mpqc-verify-tmp/mpqc.install.1/share/mpqc/2.2.3-snapshot/atominfo.kv.
+  Molecule: setting point group to c2v
+  Reading file /home/cljanss/mpqc-verify-tmp/mpqc.install.1/share/mpqc/2.2.3-snapshot/basis/cc-pvdz.kv.
+      Reading file /home/cljanss/mpqc-verify-tmp/mpqc.install.1/share/mpqc/2.2.3-snapshot/basis/sto-3g.kv.
+
+      HSOSSCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(basis):      4     0     1     2
+      Maximum orthogonalization residual = 1.94235
+      Minimum orthogonalization residual = 0.275215
+      docc = [ 2 0 0 1 ]
+      socc = [ 1 0 1 0 ]
+
+  HSOSSCF::init: total charge = 0
+
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      nuclear repulsion energy =    6.0605491858
+
+                       565 integrals
+      iter     1 energy =  -38.1820699187 delta = 5.64824e-01
+                       565 integrals
+      iter     2 energy =  -38.4083575544 delta = 1.45984e-01
+                       565 integrals
+      iter     3 energy =  -38.4168336215 delta = 3.56591e-02
+                       565 integrals
+      iter     4 energy =  -38.4175716540 delta = 1.01929e-02
+                       565 integrals
+      iter     5 energy =  -38.4176486511 delta = 4.37691e-03
+                       565 integrals
+      iter     6 energy =  -38.4176552372 delta = 6.66000e-04
+                       565 integrals
+      iter     7 energy =  -38.4176560606 delta = 2.30956e-04
+                       565 integrals
+      iter     8 energy =  -38.4176560751 delta = 4.38489e-05
+                       565 integrals
+      iter     9 energy =  -38.4176560764 delta = 1.13693e-05
+                       565 integrals
+      iter    10 energy =  -38.4176560765 delta = 3.21030e-06
+
+      HOMO is     1  B1 =   0.003112
+      LUMO is     2  B2 =   0.704260
+
+      total scf energy =  -38.4176560765
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 8
+        Using symmetric orthogonalization.
+        n(basis):     11     2     4     7
+        Maximum orthogonalization residual = 3.72707
+        Minimum orthogonalization residual = 0.0282842
+        The number of electrons in the projected density = 7.98992
+
+  docc = [ 2 0 0 1 ]
+  socc = [ 1 0 1 0 ]
+  MBPT2: auto-freezing 1 core orbitals
+
+  Molecular formula CH2
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = input_zapt2ch2
+    restart_file  = input_zapt2ch2.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = no
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     92204 Bytes
+  Memory required for one pass:   92204 Bytes
+  Minimum memory required:        39212 Bytes
+  Batch size:                     4
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     24      11       5       2       2     21     1     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0605491858
+
+                 31972 integrals
+  iter     1 energy =  -38.8370139427 delta = 1.43418e-01
+                 31972 integrals
+  iter     2 energy =  -38.8997308562 delta = 2.31411e-02
+                 31972 integrals
+  iter     3 energy =  -38.9050016920 delta = 5.74975e-03
+                 31972 integrals
+  iter     4 energy =  -38.9057500413 delta = 2.14583e-03
+                 31972 integrals
+  iter     5 energy =  -38.9058788953 delta = 1.03690e-03
+                 31972 integrals
+  iter     6 energy =  -38.9058864144 delta = 3.00174e-04
+                 31972 integrals
+  iter     7 energy =  -38.9058868448 delta = 8.03892e-05
+                 31972 integrals
+  iter     8 energy =  -38.9058868822 delta = 2.39453e-05
+                 31972 integrals
+  iter     9 energy =  -38.9058868879 delta = 1.05527e-05
+                 31972 integrals
+  iter    10 energy =  -38.9058868884 delta = 3.14084e-06
+                 31972 integrals
+  iter    11 energy =  -38.9058868885 delta = 1.24688e-06
+                 31972 integrals
+  iter    12 energy =  -38.9058868885 delta = 5.68582e-07
+                 31972 integrals
+  iter    13 energy =  -38.9058868885 delta = 1.94855e-07
+                 31972 integrals
+  iter    14 energy =  -38.9058868885 delta = 8.28916e-08
+                 31972 integrals
+  iter    15 energy =  -38.9058868885 delta = 3.22617e-08
+                 31972 integrals
+  iter    16 energy =  -38.9058868885 delta = 1.29954e-08
+
+  HOMO is     1  B1 =  -0.106383
+  LUMO is     4  A1 =   0.208404
+
+  total scf energy =  -38.9058868885
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 4356
+  Number of shell quartets for which AO integrals
+  were computed: 4356
+  ROHF energy [au]:                   -38.905886888507
+  OPT1 energy [au]:                   -39.009350129899
+  OPT2 second order correction [au]:   -0.096728135904
+  OPT2 energy [au]:                   -39.002615024411
+  ZAPT2 correlation energy [au]:       -0.095256254911
+  ZAPT2 energy [au]:                  -39.001143143418
+
+  Value of the MolecularEnergy:  -39.0011431434
+
+  MBPT2:
+    Function Parameters:
+      value_accuracy    = 4.984634e-07 (1.000000e-06) (computed)
+      gradient_accuracy = 0.000000e+00 (1.000000e-06)
+      hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+    Molecule:
+      Molecular formula: CH2
+      molecule<Molecule>: (
+        symmetry = c2v
+        unit = "angstrom"
+        {  n atoms                        geometry                     }={
+           1     C [    0.0000000000     0.0000000000    -0.1000947116]
+           2     H [   -0.0000000000     0.8570000000     0.5959052884]
+           3     H [   -0.0000000000    -0.8570000000     0.5959052884]
+        }
+      )
+      Atomic Masses:
+         12.00000    1.00783    1.00783
+
+    GaussianBasisSet:
+      nbasis = 24
+      nshell = 11
+      nprim  = 24
+      name = "cc-pVDZ"
+    Reference Wavefunction:
+      Function Parameters:
+        value_accuracy    = 4.984634e-09 (1.000000e-08) (computed)
+        gradient_accuracy = 0.000000e+00 (1.000000e-06)
+        hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+      Molecule:
+        Molecular formula: CH2
+        molecule<Molecule>: (
+          symmetry = c2v
+          unit = "angstrom"
+          {  n atoms                        geometry                     }={
+             1     C [    0.0000000000     0.0000000000    -0.1000947116]
+             2     H [   -0.0000000000     0.8570000000     0.5959052884]
+             3     H [   -0.0000000000    -0.8570000000     0.5959052884]
+          }
+        )
+        Atomic Masses:
+           12.00000    1.00783    1.00783
+
+      GaussianBasisSet:
+        nbasis = 24
+        nshell = 11
+        nprim  = 24
+        name = "cc-pVDZ"
+      SCF Parameters:
+        maxiter = 100
+        density_reset_frequency = 10
+        level_shift = 0.250000
+
+      HSOSSCF Parameters:
+        charge = 0
+        ndocc = 3
+        nsocc = 2
+        docc = [ 2 0 0 1 ]
+        socc = [ 1 0 1 0 ]
+
+
+  The following keywords in "input_zapt2ch2.in" were ignored:
+    mpqc:mole:total_charge
+
+                              CPU Wall
+mpqc:                        0.31 0.43
+  calc:                      0.21 0.32
+    4. quart. tr.:           0.00 0.00
+      bcast0 socc_sum:       0.00 0.00
+    RS loop:                 0.04 0.08
+      2. quart. tr.:         0.00 0.00
+      3. quart. tr.:         0.00 0.00
+      PQ loop:               0.03 0.08
+      bzerofast trans_int1:  0.00 0.00
+      bzerofast trans_int2:  0.00 0.00
+      sum int:               0.00 0.00
+    collect:                 0.00 0.00
+    compute ecorr:           0.00 0.00
+      sum mo_int_do_so_vir:  0.00 0.00
+    vector:                  0.14 0.21
+      density:               0.01 0.00
+      evals:                 0.01 0.01
+      extrap:                0.01 0.01
+      fock:                  0.08 0.15
+        start thread:        0.01 0.06
+        stop thread:         0.00 0.02
+  input:                     0.10 0.11
+    vector:                  0.03 0.03
+      density:               0.00 0.00
+      evals:                 0.00 0.00
+      extrap:                0.01 0.01
+      fock:                  0.02 0.02
+        start thread:        0.00 0.00
+        stop thread:         0.00 0.00
+
+  End Time: Thu Dec 16 12:11:04 2004
+

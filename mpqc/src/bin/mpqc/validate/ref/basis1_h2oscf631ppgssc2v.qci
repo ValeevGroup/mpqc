@@ -1,0 +1,117 @@
+h2:
+  H 0 0  0.37
+  H 0 0 -0.37
+
+ne:
+  Ne 0 0 0
+
+frequencies:
+no
+test_molecule_symmetry:
+d2h d2h c2v d2h  c2v cs  c2v c2v c2v d2h
+gradient:
+yes
+socc:
+auto
+test_molecule_docc:
+-   -   -   -  3,0,0,0 - 3,0,0,1 - -  -
+optimize:
+no
+docc:
+-
+ch2:
+  C  0.00  0.00 -0.10
+  H  0.00  0.86  0.60
+  H  0.00 -0.86  0.60
+
+fzc:
+
+h2o:
+  O  0.00 0.00  0.37
+  H  0.78 0.00 -0.18
+  H -0.78 0.00 -0.18
+
+grid:
+default
+test_molecule:
+h2  he  lih beh2 bh  nh3 ch2 h2o hf  ne 
+nh3:
+  N  0.000000000  0.252365857  0.000000000
+  H -0.486150513 -0.084121957  0.824716866
+  H -0.486150513 -0.084121957 -0.824716866
+  H  0.952301025 -0.084121957  0.000000000
+
+basis:
+6-31++G**
+restart:
+no
+test_basis:
+     STO-2G STO-3G STO-3G* STO-6G
+     3-21G 3-21G* 3-21++G 3-21++G*
+     4-31G 4-31G* 4-31G**
+     6-31G 6-31G* 6-31G** 6-31++G 6-31++G* 6-31++G**
+     6-311G 6-311G* 6-311G** 6-311++G**
+     cc-pVDZ cc-pVTZ cc-pVQZ cc-pV5Z
+     aug-cc-pVDZ aug-cc-pVTZ aug-cc-pVQZ aug-cc-pV5Z
+     cc-pCVDZ cc-pCVTZ cc-pCVQZ cc-pCV5Z
+     aug-cc-pCVDZ aug-cc-pCVTZ aug-cc-pCVQZ aug-cc-pCV5Z
+
+beh2:
+  Be 0.00 0.00  0.00
+  H  0.00 0.00  1.30
+  H  0.00 0.00 -1.30
+
+method:
+scf
+followed:
+
+fzv:
+
+lih:
+  Li 0 0  0.70
+  H  0 0 -0.70
+
+fixed:
+
+test_method:
+scf
+label:
+basis set test series 1
+b2h6:
+  H  1.00  0.00  1.46
+  H -1.00  0.00  1.46
+  B  0.00  0.00  0.90
+  H  0.00  0.94  0.00
+  H  0.00 -0.94  0.00
+  B  0.00  0.00 -0.90
+  H  1.00  0.00 -1.46
+  H -1.00  0.00 -1.46
+
+c2h2:
+  H  0.00 0.00  1.65
+  C  0.00 0.00  0.58
+  C  0.00 0.00 -0.58
+  H  0.00 0.00 -1.65
+
+state:
+1
+bh:
+  B  0.00 0.00 0.00
+  H  0.00 0.00 1.23
+
+molecule:
+  O  0.00 0.00  0.37
+  H  0.78 0.00 -0.18
+  H -0.78 0.00 -0.18
+
+he:
+  He 0 0 0
+
+hf:
+  H  0 0  0.50
+  F  0 0 -0.50
+
+checkpoint:
+no
+symmetry:
+c2v

@@ -1,0 +1,187 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 2.3.0-alpha
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@n97
+  Start Time: Sun Jan  9 18:47:12 2005
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /home/cljanss/src/SC/lib/atominfo.kv.
+  Reading file /home/cljanss/src/SC/lib/basis/sto-3g.kv.
+      Reading file /home/cljanss/src/SC/lib/basis/sto-3g.kv.
+
+      CLSCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(basis):             2     0     0     0     0     1     1     1
+      Maximum orthogonalization residual = 1.24278
+      Minimum orthogonalization residual = 0.757218
+      docc = [ 2 0 0 0 0 1 1 1 ]
+      nbasis = 5
+
+  CLSCF::init: total charge = 0
+
+  Using symmetric orthogonalization.
+  n(basis):             2     0     0     0     0     1     1     1
+  Maximum orthogonalization residual = 1.24278
+  Minimum orthogonalization residual = 0.757218
+  Using guess wavefunction as starting vector
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      integral intermediate storage = 9867 bytes
+      integral cache = 31989893 bytes
+      nuclear repulsion energy =    0.0000000000
+
+                       357 integrals
+      iter     1 energy = -126.6045249968 delta = 1.19163e+00
+                       357 integrals
+      iter     2 energy = -126.6045249968 delta = 1.62158e-16
+
+      HOMO is     1 B1u =  -0.543053
+
+      total scf energy = -126.6045249968
+
+  docc = [ 2 0 0 0 0 1 1 1 ]
+  nbasis = 5
+
+  Molecular formula Ne
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = basis1_nescfsto3gd2h
+    restart_file  = basis1_nescfsto3gd2h.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = yes
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  integral intermediate storage = 9867 bytes
+  integral cache = 31989893 bytes
+  nuclear repulsion energy =    0.0000000000
+
+                   357 integrals
+  iter     1 energy = -126.6045249968 delta = 1.19163e+00
+                   357 integrals
+  iter     2 energy = -126.6045249968 delta = 0.00000e+00
+
+  HOMO is     1 B1u =  -0.543053
+
+  total scf energy = -126.6045249968
+
+  SCF::compute: gradient accuracy = 1.0000000e-06
+
+  Total Gradient:
+       1  Ne   0.0000000000   0.0000000000   0.0000000000
+Value of the MolecularEnergy: -126.6045249968
+
+
+  Gradient of the MolecularEnergy:
+      1    0.0000000000
+      2    0.0000000000
+      3    0.0000000000
+
+  Function Parameters:
+    value_accuracy    = 0.000000e+00 (1.000000e-08) (computed)
+    gradient_accuracy = 0.000000e+00 (1.000000e-06) (computed)
+    hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+  Molecule:
+    Molecular formula: Ne
+    molecule<Molecule>: (
+      symmetry = d2h
+      unit = "angstrom"
+      {  n atoms                        geometry                     }={
+         1    Ne [    0.0000000000     0.0000000000     0.0000000000]
+      }
+    )
+    Atomic Masses:
+       19.99244
+
+  GaussianBasisSet:
+    nbasis = 5
+    nshell = 2
+    nprim  = 6
+    name = "STO-3G"
+  Natural Population Analysis:
+     n   atom    charge     ne(S)     ne(P) 
+      1   Ne   -0.000000  4.000000  6.000000
+
+  SCF Parameters:
+    maxiter = 40
+    density_reset_frequency = 10
+    level_shift = 0.000000
+
+  CLSCF Parameters:
+    charge = 0.0000000000
+    ndocc = 5
+    docc = [ 2 0 0 0 0 1 1 1 ]
+
+  The following keywords in "basis1_nescfsto3gd2h.in" were ignored:
+    mpqc:mole:guess_wavefunction:multiplicity
+    mpqc:mole:multiplicity
+    mpqc:mole:coor
+    mpqc:coor
+
+                               CPU Wall
+mpqc:                         0.08 0.10
+  NAO:                        0.01 0.00
+  calc:                       0.02 0.02
+    compute gradient:         0.00 0.01
+      nuc rep:                0.00 0.00
+      one electron gradient:  0.00 0.00
+      overlap gradient:       0.00 0.00
+      two electron gradient:  0.00 0.00
+        contribution:         0.00 0.00
+          start thread:       0.00 0.00
+          stop thread:        0.00 0.00
+        setup:                0.00 0.00
+    vector:                   0.01 0.01
+      density:                0.00 0.00
+      evals:                  0.01 0.00
+      extrap:                 0.00 0.00
+      fock:                   0.00 0.00
+        accum:                0.00 0.00
+        ao_gmat:              0.00 0.00
+          start thread:       0.00 0.00
+          stop thread:        0.00 0.00
+        init pmax:            0.00 0.00
+        local data:           0.00 0.00
+        setup:                0.00 0.00
+        sum:                  0.00 0.00
+        symm:                 0.00 0.00
+  input:                      0.05 0.07
+    vector:                   0.00 0.01
+      density:                0.00 0.00
+      evals:                  0.00 0.00
+      extrap:                 0.00 0.00
+      fock:                   0.00 0.00
+        accum:                0.00 0.00
+        ao_gmat:              0.00 0.00
+          start thread:       0.00 0.00
+          stop thread:        0.00 0.00
+        init pmax:            0.00 0.00
+        local data:           0.00 0.00
+        setup:                0.00 0.00
+        sum:                  0.00 0.00
+        symm:                 0.00 0.00
+
+  End Time: Sun Jan  9 18:47:12 2005
+

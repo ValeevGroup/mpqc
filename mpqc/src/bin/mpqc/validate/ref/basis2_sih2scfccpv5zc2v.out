@@ -1,0 +1,257 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 2.3.0-alpha
+
+  Machine:    i686-pc-linux-gnu
+  User:       cljanss@n99
+  Start Time: Sun Jan  9 18:49:20 2005
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /home/cljanss/src/SC/lib/atominfo.kv.
+
+  IntCoorGen: generated 3 coordinates.
+  Forming optimization coordinates:
+    SymmMolecularCoor::form_variable_coordinates()
+      expected 3 coordinates
+      found 2 variable coordinates
+      found 0 constant coordinates
+  Reading file /home/cljanss/src/SC/lib/basis/cc-pv5z.kv.
+      Reading file /home/cljanss/src/SC/lib/basis/sto-3g.kv.
+
+      CLSCF::init: total charge = 0
+
+      docc = [ 5 0 1 2 ]
+      nbasis = 11
+
+  CLSCF::init: total charge = 0
+
+  docc = [ 5 0 1 2 ]
+  nbasis = 205
+
+  Molecular formula H2Si
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = basis2_sih2scfccpv5zc2v
+    restart_file  = basis2_sih2scfccpv5zc2v.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = yes
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  integral intermediate storage = 14771227 bytes
+  integral cache = 16890933 bytes
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      integral intermediate storage = 20487 bytes
+      integral cache = 31978457 bytes
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(basis):             6     0     2     3
+      Maximum orthogonalization residual = 1.80389
+      Minimum orthogonalization residual = 0.330238
+      nuclear repulsion energy =   10.0729498809
+
+                      2796 integrals
+      iter     1 energy = -286.3674397399 delta = 6.84097e-01
+                      2787 integrals
+      iter     2 energy = -286.6597972932 delta = 1.78080e-01
+                      2797 integrals
+      iter     3 energy = -286.6643664327 delta = 2.27757e-02
+                      2795 integrals
+      iter     4 energy = -286.6644994187 delta = 4.95268e-03
+                      2797 integrals
+      iter     5 energy = -286.6645049747 delta = 9.45339e-04
+                      2771 integrals
+      iter     6 energy = -286.6645050715 delta = 1.07830e-04
+                      2797 integrals
+      iter     7 energy = -286.6645050354 delta = 6.79645e-06
+
+      HOMO is     5  A1 =  -0.228843
+      LUMO is     2  B1 =   0.220710
+
+      total scf energy = -286.6645050354
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 16
+        Using symmetric orthogonalization.
+        n(basis):            71    33    43    58
+        Maximum orthogonalization residual = 6.61052
+        Minimum orthogonalization residual = 8.70759e-05
+        The number of electrons in the projected density = 15.9887
+
+  nuclear repulsion energy =   10.0729498809
+
+             111461662 integrals
+  iter     1 energy = -289.6565928648 delta = 1.71120e-01
+             111673323 integrals
+  iter     2 energy = -290.0280353623 delta = 1.65276e-01
+             115758526 integrals
+  iter     3 energy = -290.0346565982 delta = 3.66433e-03
+             112830057 integrals
+  iter     4 energy = -290.0351889529 delta = 7.33154e-04
+             118842403 integrals
+  iter     5 energy = -290.0352166071 delta = 1.08322e-04
+             114866658 integrals
+  iter     6 energy = -290.0352302263 delta = 9.62316e-05
+             120583586 integrals
+  iter     7 energy = -290.0352303099 delta = 8.64218e-06
+             114758176 integrals
+  iter     8 energy = -290.0352303362 delta = 5.25727e-06
+             121877880 integrals
+  iter     9 energy = -290.0352303366 delta = 5.90208e-07
+             114358116 integrals
+  iter    10 energy = -290.0352303367 delta = 1.95777e-07
+             122665021 integrals
+  iter    11 energy = -290.0352303367 delta = 4.03579e-08
+
+  HOMO is     5  A1 =  -0.336152
+  LUMO is     2  B1 =   0.002020
+
+  total scf energy = -290.0352303367
+
+  SCF::compute: gradient accuracy = 1.0000000e-06
+
+  Total Gradient:
+       1  Si  -0.0000000000   0.0000000000  -0.0006982334
+       2   H   0.0000000000   0.0002894087   0.0003491167
+       3   H   0.0000000000  -0.0002894087   0.0003491167
+Value of the MolecularEnergy: -290.0352303367
+
+
+  Gradient of the MolecularEnergy:
+      1   -0.0006556639
+      2   -0.0000354045
+
+  Function Parameters:
+    value_accuracy    = 7.676165e-09 (1.000000e-08) (computed)
+    gradient_accuracy = 7.676165e-07 (1.000000e-06) (computed)
+    hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+  Molecular Coordinates:
+    IntMolecularCoor Parameters:
+      update_bmat = no
+      scale_bonds = 1.0000000000
+      scale_bends = 1.0000000000
+      scale_tors = 1.0000000000
+      scale_outs = 1.0000000000
+      symmetry_tolerance = 1.000000e-05
+      simple_tolerance = 1.000000e-03
+      coordinate_tolerance = 1.000000e-07
+      have_fixed_values = 0
+      max_update_steps = 100
+      max_update_disp = 0.500000
+      have_fixed_values = 0
+
+    Molecular formula: H2Si
+    molecule<Molecule>: (
+      symmetry = c2v
+      unit = "angstrom"
+      {  n atoms                        geometry                     }={
+         1    Si [    0.0000000000     0.0000000000     0.0200000000]
+         2     H [    0.0000000000    -1.1000000000    -1.0100000000]
+         3     H [    0.0000000000     1.1000000000    -1.0100000000]
+      }
+    )
+    Atomic Masses:
+       27.97693    1.00783    1.00783
+
+    Bonds:
+      STRE       s1     1.50695    1    2         Si-H
+      STRE       s2     1.50695    1    3         Si-H
+    Bends:
+      BEND       b1    93.76456    2    1    3      H-Si-H
+
+    SymmMolecularCoor Parameters:
+      change_coordinates = no
+      transform_hessian = yes
+      max_kappa2 = 10.000000
+
+  GaussianBasisSet:
+    nbasis = 205
+    nshell = 50
+    nprim  = 78
+    name = "cc-pV5Z"
+  Natural Population Analysis:
+     n   atom    charge     ne(S)     ne(P)     ne(D)     ne(F)     ne(G)     ne(H) 
+      1   Si    0.689362  5.670767  7.619342  0.018975  0.001168  0.000099  0.000287
+      2    H   -0.344681  1.332923  0.010457  0.000933  0.000361  0.000007
+      3    H   -0.344681  1.332923  0.010457  0.000933  0.000361  0.000007
+
+  SCF Parameters:
+    maxiter = 40
+    density_reset_frequency = 10
+    level_shift = 0.000000
+
+  CLSCF Parameters:
+    charge = 0.0000000000
+    ndocc = 8
+    docc = [ 5 0 1 2 ]
+
+  The following keywords in "basis2_sih2scfccpv5zc2v.in" were ignored:
+    mpqc:mole:guess_wavefunction:multiplicity
+    mpqc:mole:multiplicity
+
+                                 CPU   Wall
+mpqc:                         646.52 646.53
+  NAO:                          0.73   0.73
+  calc:                       645.68 645.70
+    compute gradient:         174.16 174.17
+      nuc rep:                  0.00   0.00
+      one electron gradient:    1.74   1.73
+      overlap gradient:         0.44   0.44
+      two electron gradient:  171.98 171.99
+        contribution:         164.86 164.86
+          start thread:       164.84 164.85
+          stop thread:          0.00   0.00
+        setup:                  7.12   7.13
+    vector:                   471.52 471.53
+      density:                  0.04   0.03
+      evals:                    0.13   0.13
+      extrap:                   0.09   0.10
+      fock:                   469.71 469.74
+        accum:                  0.00   0.00
+        ao_gmat:              467.27 467.28
+          start thread:       467.27 467.28
+          stop thread:          0.00   0.00
+        init pmax:              0.00   0.00
+        local data:             0.15   0.14
+        setup:                  0.97   0.98
+        sum:                    0.00   0.00
+        symm:                   1.11   1.12
+      vector:                   0.03   0.03
+        density:                0.00   0.00
+        evals:                  0.01   0.00
+        extrap:                 0.01   0.00
+        fock:                   0.00   0.02
+          accum:                0.00   0.00
+          ao_gmat:              0.00   0.01
+            start thread:       0.00   0.01
+            stop thread:        0.00   0.00
+          init pmax:            0.00   0.00
+          local data:           0.00   0.00
+          setup:                0.00   0.00
+          sum:                  0.00   0.00
+          symm:                 0.00   0.01
+  input:                        0.11   0.11
+
+  End Time: Sun Jan  9 19:00:07 2005
+

@@ -1,0 +1,6 @@
+mpqc: (
+  checkpoint = yes
+  savestate = no
+  restart = yes
+  restart_file = "ckpt_0qnewtopt.ckpt"
+)

@@ -396,7 +396,7 @@ MPQC::IntegralEvaluatorFactory_impl::setup_parameters(
   pp->setGroupName("Model Factory Input");
 
   package_param_ = new StringParameter("package", "Integral package",
-                                      "package", "intv3");
+                                      "package", "novalue");
   pp->addRequest(package_param_);
 
   return pp;

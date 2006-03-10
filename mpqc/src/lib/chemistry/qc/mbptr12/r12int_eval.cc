@@ -183,6 +183,10 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
     }
   }
   
+  // WARNING Cannot use R12IntsAcc_MemoryGrp with the current design
+  if (r12info()->ints_method() != R12IntEvalInfo::StoreMethod::posix)
+    throw InputError("R12IntEval::R12IntEval() -- the only supported storage method is posix");
+  
   init_tforms_();
   // init_intermeds_ may require initialized transforms
   init_intermeds_();

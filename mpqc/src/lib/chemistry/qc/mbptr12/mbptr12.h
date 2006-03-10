@@ -88,6 +88,7 @@ class MBPT2_R12: public MBPT2 {
     std::string r12ints_file_;
     bool gbc_;
     bool ebc_;
+    bool ks_ebcfree_;
     bool spinadapted_;
     bool include_mp1_;
 
@@ -109,18 +110,6 @@ class MBPT2_R12: public MBPT2 {
     /** The KeyVal constructor.
         <dl>
 
-        <dt><tt>gbc</tt><dd> This boolean specifies whether Generalized Brillouin
-        Condition (GBC) is assumed to hold. The default is "true". This keyword is
-        only valid if stdapprox=A'.
-        The effect of setting this keyword to true is rather small --
-        hence it is not recommended to use this keyword.
-
-        <dt><tt>ebc</tt><dd> This boolean specifies whether Extended Brillouin
-        Condition (EBC) is assumed to hold. The default is "true". This keyword
-        is only valid if stdapprox=A'.
-        The effect of setting this keyword to true is rather small --
-        hence it is not recommended to use this keyword.
-      
         <dt><tt>corr_factor</tt><dd> This string specifies which correlation factor to use.
         Allowed values are "r12", "g12", and "none". The default is "r12".
       
@@ -161,16 +150,34 @@ class MBPT2_R12: public MBPT2 {
 
         </dl>
         
-       <dt><tt>maxnabs</tt><dd> This integer specifies the maximum number of ABS indices per integral.
-       Valid values are between 1 and 2. The default is to include all terms necessary for a given method.
-       For example, MP2-F12/B energy involves integrals with 2 ABS indices. Setting maxnabs to 1
-       will leave out such terms.
-       
 	<dt><tt>spinadapted</tt><dd> This boolean specifies whether to compute spin-adapted
 	or spin-orbital pair energies. Default is to compute spin-adapted energies for closed-shell
         systems and spin-orbital energies for open-shell systems. For some references, e.g. UHF, this keyword
         is not used.
 
+        <dt><tt>gbc</tt><dd> This boolean specifies whether Generalized Brillouin
+        Condition (GBC) is assumed to hold. The default is "true". This keyword is
+        only valid if stdapprox=A'.
+        The effect of setting this keyword to true is very small --
+        hence it is not recommended to use this keyword.
+
+        <dt><tt>ebc</tt><dd> This boolean specifies whether Extended Brillouin
+        Condition (EBC) is assumed to hold. The default is "true". This keyword
+        is only valid if stdapprox=A'.
+        The effect of setting this keyword to true is small --
+        hence it is not recommended to use this keyword.
+       
+        <dt><tt>ks_ebcfree</tt><dd> This boolean specifies whether EBC-free method of
+        KLopper and Samson is used. The default is "false". This keyword
+        is only valid if ebc=false.
+        The effect of setting this keyword to true is very small --
+        hence it is not recommended to use this keyword.
+        
+        <dt><tt>maxnabs</tt><dd> This integer specifies the maximum number of ABS indices per integral.
+        Valid values are between 1 and 2. The default is to include all terms necessary for a given method.
+        For example, MP2-F12/B energy involves integrals with 2 ABS indices. Setting maxnabs to 1
+        will leave out such terms.
+       
 	<dt><tt>aux_basis</tt><dd> This specifies the auxiliary AO basis to be used for the resolution
 	of the identity. Default is to use the same basis as for the orbital expansion.
 

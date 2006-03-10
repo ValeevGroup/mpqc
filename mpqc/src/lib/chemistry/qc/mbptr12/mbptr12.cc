@@ -57,7 +57,7 @@ using namespace sc;
  --------------------------------*/
 
 static ClassDesc MBPT2_R12_cd(
-  typeid(MBPT2_R12),"MBPT2_R12",5,"public MBPT2",
+  typeid(MBPT2_R12),"MBPT2_R12",6,"public MBPT2",
   0, create<MBPT2_R12>, create<MBPT2_R12>);
 
 MBPT2_R12::MBPT2_R12(StateIn& s):
@@ -74,6 +74,9 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   if (s.version(::class_desc<MBPT2_R12>()) >= 3) {
     int gbc; s.get(gbc); gbc_ = (bool)gbc;
     int ebc; s.get(ebc); ebc_ = (bool)ebc;
+  }
+  if (s.version(::class_desc<MBPT2_R12>()) >= 6) {
+    int ks_ebcfree; s.get(ks_ebcfree); ks_ebcfree_ = (bool)ks_ebcfree;
   }
   
   abs_method_ = LinearR12::ABS_ABS;
@@ -190,6 +193,13 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   gbc_ = keyval->booleanvalue("gbc",KeyValValueboolean((int)true));
   // Default is to assume EBC
   ebc_ = keyval->booleanvalue("ebc",KeyValValueboolean((int)true));
+  
+  // Default is not to use Klopper-Samson approach to EBC
+  const bool ks_ebcfree_default = false;
+  if (!ebc_)
+    ks_ebcfree_ = keyval->booleanvalue("ks_ebcfree",KeyValValueboolean((int)ks_ebcfree_default));
+  else
+    ks_ebcfree_ = ks_ebcfree_default;
   
   // For now the default is to use the old ABS method, of Klopper and Samson
   char* abs_method_str = keyval->pcharvalue("abs_method",KeyValValuepchar("ABS"));
@@ -368,6 +378,7 @@ MBPT2_R12::save_data_state(StateOut& s)
   SavableState::save_state(vir_basis_.pointer(),s);
   s.put((int)gbc_);
   s.put((int)ebc_);
+  s.put((int)ks_ebcfree_);
   s.put((int)abs_method_);
   s.put((int)stdapprox_);
   s.put((int)spinadapted_);
@@ -388,6 +399,7 @@ MBPT2_R12::print(ostream&o) const
   corrfactor()->print(o); o << endl;
   o << indent << "GBC assumed: " << (gbc_ ? "true" : "false") << endl;
   o << indent << "EBC assumed: " << (ebc_ ? "true" : "false") << endl;
+  o << indent << "EBC-free method: " << (!ks_ebcfree_ ? "Valeev" : "Klopper and Samson") << endl;
   switch(abs_method_) {
   case LinearR12::ABS_ABS :
     o << indent << "ABS method variant: ABS  (Klopper and Samson)" << endl;

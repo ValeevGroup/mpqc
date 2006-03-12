@@ -1244,8 +1244,8 @@ R12IntEval::compute()
         Ref<MOIndexSpace> occ2_act = occ_act(spin2);
         Ref<MOIndexSpace> vir1_act = vir_act(spin1);
         Ref<MOIndexSpace> vir2_act = vir_act(spin2);
-        Ref<MOIndexSpace> fvir2_act = fvir_act(spin1);
-        Ref<MOIndexSpace> fvir4_act = fvir_act(spin2);
+        Ref<MOIndexSpace> fvir1_act = fvir_act(spin1);
+        Ref<MOIndexSpace> fvir2_act = fvir_act(spin2);
         
         const Ref<SingleRefInfo> refinfo = r12info()->refinfo();
 #if 0
@@ -1285,7 +1285,7 @@ R12IntEval::compute()
         compute_A_direct_(A_[s],
                           occ1_act, vir1_act,
                           occ2_act, vir2_act,
-                          fvir2_act, fvir4_act,
+                          fvir1_act, fvir2_act,
                           spincase2!=AlphaBeta);
         if (follow_ks_ebcfree_) {
           compute_A_viacomm_(Ac_[s],
@@ -1600,7 +1600,8 @@ R12IntEval::compute()
                      vir(spin1),vir(spin2),
                      vir(spin1),vir(spin2),
                      fvir_act(spin1),fvir_act(spin2));
-                     Bebc.print("B_{EBC} from generix FxF evaluator");
+        Bebc.scale(-1.0);
+        Bebc.print("B_{EBC} from generix FxF evaluator");
       }
     }
 #endif

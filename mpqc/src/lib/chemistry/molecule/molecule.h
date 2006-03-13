@@ -163,6 +163,10 @@ class Molecule: public SavableState
     std::vector<int> non_q_atoms_;
 
     void clear();
+
+    // Throw an exception if an atom is duplicated.  The
+    // atoms in the range [begin, natom_) are checked.
+    void throw_if_atom_duplicated(int begin=0, double tol = 1e-3);
   public:
     Molecule();
     Molecule(const Molecule&);

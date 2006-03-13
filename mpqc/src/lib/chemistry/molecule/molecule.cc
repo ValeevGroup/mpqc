@@ -107,6 +107,21 @@ Molecule::clear()
   clear_symmetry_info();
 }
 
+void
+Molecule::throw_if_atom_duplicated(int begin, double tol)
+{
+  for (int i=begin; i<natoms_; i++) {
+      SCVector3 ri(r_[i]);
+      for (int j=0; j<i; j++) {
+          SCVector3 rj(r_[j]);
+          if (ri.dist(rj) < tol) {
+              throw InputError("duplicated atom coordinate",
+                               __FILE__, __LINE__, 0, 0, class_desc());
+            }
+        }
+    }
+}
+
 Molecule::Molecule(const Ref<KeyVal>&input):
  natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0)
 {
@@ -362,6 +377,8 @@ Molecule::add_atom(int Z,double x,double y,double z,
     }
 
   natoms_++;
+
+  throw_if_atom_duplicated(natoms_-1);
 }
 
 void

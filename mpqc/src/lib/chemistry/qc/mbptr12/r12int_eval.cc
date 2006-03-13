@@ -1586,7 +1586,7 @@ R12IntEval::compute()
     }
 #endif
 
-#if 0
+#if 1
     // test generic FxF evaluator
     {
       for(int s=0; s<nspincases2(); s++) {
@@ -1600,7 +1600,8 @@ R12IntEval::compute()
                      vir(spin1),vir(spin2),
                      vir(spin1),vir(spin2),
                      fvir_act(spin1),fvir_act(spin2));
-        Bebc.scale(-1.0);
+        // -r f1 r, not r f1+f2 r computed by FxF
+        Bebc.scale(-0.5);
         Bebc.print("B_{EBC} from generix FxF evaluator");
       }
     }

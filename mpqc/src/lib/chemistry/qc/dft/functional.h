@@ -137,7 +137,8 @@ class DenFunctional: virtual public SavableState {
                   const double *bs_values, const double *bsg_values,
                   const double *bsh_values);
 
-    double a0() const { return a0_; }
+    /// Returns the fraction of Hartee-Fock exchange to be included.
+    virtual double a0() const;
 
     void fd_point(const PointInputData&, PointOutputData&);
     int test(const PointInputData &);
@@ -206,6 +207,10 @@ class SumDenFunctional: public DenFunctional {
     void point(const PointInputData&, PointOutputData&);
 
     void print(std::ostream& =ExEnv::out0()) const;
+
+    /** Override the DenFunctional::a0() member, so that a0's in
+        contributing functionals can be added in as well. */
+    double a0() const;
 };
 
 /** The StdDenFunctional class is used to construct the standard density

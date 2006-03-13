@@ -146,6 +146,12 @@ DenFunctional::save_data_state(StateOut& s)
   s.put(compute_potential_);
 }
 
+double
+DenFunctional::a0() const
+{
+  return a0_;
+}
+
 int
 DenFunctional::need_density_gradient()
 {
@@ -642,6 +648,16 @@ SumDenFunctional::save_data_state(StateOut& s)
       for (int i=0; i < n_; i++) 
           SavableState::save_state(funcs_[i].pointer(),s);
     }
+}
+
+double
+SumDenFunctional::a0() const
+{
+  double eff_a0 = a0_;
+  for (int i=0; i < n_; i++) {
+      eff_a0 += coefs_[i] * funcs_[i]->a0();
+    }
+  return eff_a0;
 }
 
 int

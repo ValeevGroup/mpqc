@@ -218,8 +218,8 @@ R12IntEval::AF12_contrib_to_B_()
         A = A_[s];
       RefSCMatrix AF = A * amps()->Fvv(spin).t();
       
-      // minus 1/2 for Symmetrize AND -1/2 factor in B^{EBC} expression: B^{EBC} = -0.5 A . F12^t
-      const double scale = -0.25;
+      // minus 1/2 for Symmetrize AND -1/2 factor in B^{EBC} expression: B^{EBC} = -0.5 A . F12^t BUT extra factor of 2 is due to spin
+      const double scale = -0.5;
       RefSCMatrix B = B_[s].clone();  B.assign(0.0);
       AF.scale(scale); B.accumulate(AF);
       RefSCMatrix AFt = AF.t();

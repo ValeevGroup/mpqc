@@ -1601,7 +1601,7 @@ R12IntEval::compute()
                      vir(spin1),vir(spin2),
                      fvir_act(spin1),fvir_act(spin2));
         // -r f1 r, not r f1+f2 r computed by FxF
-        Bebc.scale(-0.5);
+        Bebc.scale(-1.0);
         Bebc.print("B_{EBC} from generix FxF evaluator");
       }
     }

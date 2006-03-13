@@ -65,8 +65,6 @@ using namespace sc;
 //
 // these are for testing purposes only
 //
-// use the commutator form A
-#define USE_A_COMM_IN_B_EBC 0
 #define ACOMM_INCLUDE_TR_ONLY 0
 #define ACOMM_INCLUDE_R_ONLY 0
 
@@ -101,7 +99,7 @@ R12IntEval::compute_A_direct_(RefSCMatrix& A,
                 << "Entered \"direct\" A intermediate (" << label << ") evaluator" << endl
                 << incindent;
   //
-  // ij|A|kl = ij|f12|kl_f, symmetrized if part_equiv_part2
+  // ij|A|kl = ij|f12|kl_f, symmetrized if part1_equiv_part2
   //
   std::vector< Ref<TwoBodyMOIntsTransform> > tforms4f; // get 1 3 |F12| 2 4_f
   compute_F12_(A,space1,space2,space3,fspace4,antisymmetrize,tforms4f,descrs);
@@ -184,7 +182,15 @@ R12IntEval::AT2_contrib_to_V_()
   if (r12info_->msg()->me() == 0) {
     for(unsigned int s=0; s<nspincases2(); s++) {
       SpinCase2 spin = static_cast<SpinCase2>(s);
-      RefSCMatrix V = A_[s]*amps()->T2(spin).t();
+      
+      // Use normal or commutator form of A, depending on the approach
+      RefSCMatrix A;
+      if (follow_ks_ebcfree_)
+        A = Ac_[s];
+      else
+        A = A_[s];
+      RefSCMatrix V = A * amps()->T2(spin).t();
+      
       if (debug_ > 0) {
         std::string label = prepend_spincase(spin,"AT2 contribution to V");
         print_scmat_norms(V,label.c_str());
@@ -203,14 +209,22 @@ R12IntEval::AF12_contrib_to_B_()
   if (r12info_->msg()->me() == 0) {
     for(unsigned int s=0; s<nspincases2(); s++) {
       SpinCase2 spin = static_cast<SpinCase2>(s);
-      RefSCMatrix AR = A_[s]*amps()->Fvv(spin).t();
-      // minus sign + Symmetrize
-      const double scale = -0.5;
+      
+      // Use normal or commutator form of A, depending on the approach
+      RefSCMatrix A;
+      if (follow_ks_ebcfree_)
+        A = Ac_[s];
+      else
+        A = A_[s];
+      RefSCMatrix AF = A * amps()->Fvv(spin).t();
+      
+      // minus 1/2 for Symmetrize AND -1/2 factor in B^{EBC} expression: B^{EBC} = -0.5 A . F12^t
+      const double scale = -0.25;
       RefSCMatrix B = B_[s].clone();  B.assign(0.0);
-      AR.scale(scale); B.accumulate(AR);
-      RefSCMatrix ARt = AR.t();
-      B.accumulate(ARt);
-
+      AF.scale(scale); B.accumulate(AF);
+      RefSCMatrix AFt = AF.t();
+      B.accumulate(AFt);
+      
       const std::string label = prepend_spincase(spin,"B^{EBC} contribution");
       if (debug_ > 1) {
         B.print(label.c_str());

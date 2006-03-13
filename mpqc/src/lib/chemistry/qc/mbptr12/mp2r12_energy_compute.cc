@@ -51,7 +51,9 @@ MP2R12Energy::compute()
   int ntasks = msg->n();
   
   const bool ebc = r12eval()->ebc();
-  const bool follow_ks_ebcfree = r12eval()->follow_ks_ebcfree();
+  /// KS approach to EBC-free method differs from mine if std approx != B
+  const bool follow_ks_ebcfree = r12eval()->follow_ks_ebcfree() &&
+                                 (stdapprox_ != LinearR12::StdApprox_B);
   // WARNING only RHF and UHF are considered
   const int num_unique_spincases2 = (r12info->refinfo()->ref()->spin_polarized() ? 3 : 2);
   

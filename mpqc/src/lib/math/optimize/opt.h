@@ -144,12 +144,12 @@ class LineOpt: public Optimize {
     /** Initializes the line search object. Argument is a search direction.
       * Use of this method assumes the Optimize base class already has a 
       * function object (got it from a keyval or elsewhere). */
-    void init(RefSCVector& direction);
+    virtual void init(RefSCVector& direction);
     /** Initializes the line search object. First argument is a search 
       * direction, second argument is a function object to optimize.
       * Use this method when a function must be passed to the Optimize 
       * base class. */
-    void init(RefSCVector& direction, Ref<Function> function);
+    virtual void init(RefSCVector& direction, Ref<Function> function);
     /// Applies a nonlinear transform.
     void apply_transform(const Ref<NonlinearTransform>&);
   

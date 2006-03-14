@@ -34,6 +34,7 @@
 #include <math/optimize/efc.h>
 #include <math/optimize/steep.h>
 #include <math/optimize/update.h>
+#include <math/optimize/mcsearch.h>
 
 #include <math/scmat/linkage.h>
 
@@ -46,6 +47,7 @@ static ForceLink<BFGSUpdate> optimize_force_link_d_;
 static ForceLink<PowellUpdate> optimize_force_link_e_;
 static ForceLink<SteepestDescentOpt> optimize_force_link_f_;
 static ForceLink<NewtonOpt> optimize_force_link_g_;
+static ForceLink<MCSearch> optimize_force_link_h_;
 
 }
 

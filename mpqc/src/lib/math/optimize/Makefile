@@ -36,13 +36,14 @@ LD=$(CXX)
 
 CXXSRC = function.cc opt.cc update.cc qnewton.cc newton.cc \
          gdiis.cc efc.cc steep.cc dfp.cc powell.cc \
-         scextrap.cc scextrapmat.cc diis.cc transform.cc conv.cc
+         scextrap.cc scextrapmat.cc diis.cc transform.cc conv.cc \
+         mcsearch.cc
 CSRC = 
 
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(CSRC:%.c=%.$(OBJSUF))
 
 INC = function.h opt.h gdiis.h efc.h update.h qnewton.h newton.h \
-      scextrap.h scextrapmat.h diis.h transform.h conv.h
+      scextrap.h scextrapmat.h diis.h transform.h conv.h mcsearch.h
 
 DEPENDINCLUDE =
 

@@ -1,4 +1,0 @@
-
-This is another test of CVS.
-
-

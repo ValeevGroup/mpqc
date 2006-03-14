@@ -1,4 +1,4 @@
 
-This is a test of CVS.
+This is another test of CVS.
 
 

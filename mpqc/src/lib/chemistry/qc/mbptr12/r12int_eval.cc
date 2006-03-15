@@ -110,13 +110,8 @@ static ClassDesc R12IntEval_cd(
   typeid(R12IntEval),"R12IntEval",1,"virtual public SavableState",
   0, 0, 0);
 
-R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::CorrelationFactor>& corrfactor,
-                       bool gbc, bool ebc,
-                       LinearR12::ABSMethod abs_method,
-                       LinearR12::StandardApproximation stdapprox, bool follow_ks_ebcfree) :
-  r12info_(r12i), corrfactor_(corrfactor), gbc_(gbc), ebc_(ebc), abs_method_(abs_method),
-  stdapprox_(stdapprox), spinadapted_(false), include_mp1_(false), evaluated_(false),
-  follow_ks_ebcfree_(follow_ks_ebcfree), debug_(0)
+R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i) :
+  r12info_(r12i), evaluated_(false), debug_(0)
 {
   int naocc_a, naocc_b;
   int navir_a, navir_b;
@@ -140,7 +135,7 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
   dim_oo_[BetaBeta] = new SCDimension((naocc_b*(naocc_b-1))/2);
   dim_vv_[BetaBeta] = new SCDimension((navir_b*(navir_b-1))/2);
   for(int s=0; s<NSpinCases2; s++) {
-    dim_f12_[s] = new SCDimension(corrfactor_->nfunctions()*dim_oo_[s].n());
+    dim_f12_[s] = new SCDimension(corrfactor()->nfunctions()*dim_oo_[s].n());
   }
   
   if (!spin_polarized()) {
@@ -154,11 +149,11 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
       V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_oo_[s]);
       X_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
-      if (stdapprox_ == LinearR12::StdApprox_B)
+      if (stdapprox() == LinearR12::StdApprox_B)
         BB_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
-      if (ebc == false) {
+      if (ebc() == false) {
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
-        if (follow_ks_ebcfree_) {
+        if (ks_ebcfree()) {
           Ac_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
         }
 #if 0
@@ -201,13 +196,6 @@ R12IntEval::R12IntEval(const Ref<R12IntEvalInfo>& r12i, const Ref<LinearR12::Cor
 
 R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
 {
-  int gbc; si.get(gbc); gbc_ = (bool) gbc;
-  int ebc; si.get(ebc); ebc_ = (bool) ebc;
-  int absmethod; si.get(absmethod); abs_method_ = (LinearR12::ABSMethod) absmethod;
-  int stdapprox; si.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
-  // WARNING si.get(corrfactor_)
-  int follow_ks_ebcfree; si.get(follow_ks_ebcfree); follow_ks_ebcfree_ = static_cast<bool>(follow_ks_ebcfree);
-
   r12info_ << SavableState::restore_state(si);
 
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
@@ -219,11 +207,11 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       V_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_oo_[s]);
       X_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
       B_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
-      if (stdapprox_ == LinearR12::StdApprox_B)
+      if (stdapprox() == LinearR12::StdApprox_B)
         BB_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_f12_[s]);
-      if (ebc == false) {
+      if (ebc() == false) {
         A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
-        if (follow_ks_ebcfree_) {
+        if (ks_ebcfree()) {
           Ac_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
         }
 #if 0
@@ -270,7 +258,6 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
     tform_map_[tform_name] = tform;
   }
 
-  int spinadapted; si.get(spinadapted); spinadapted_ = (bool) spinadapted;
   int evaluated; si.get(evaluated); evaluated_ = (bool) evaluated;
   si.get(debug_);
 
@@ -284,12 +271,6 @@ R12IntEval::~R12IntEval()
 void
 R12IntEval::save_data_state(StateOut& so)
 {
-  so.put((int)gbc_);
-  so.put((int)ebc_);
-  so.put((int)abs_method_);
-  so.put((int)stdapprox_);
-  so.put((int)follow_ks_ebcfree_);
-
   SavableState::save_state(r12info_.pointer(),so);
 
   for(int s=0; s<NSpinCases2; s++) {
@@ -320,7 +301,6 @@ R12IntEval::save_data_state(StateOut& so)
     SavableState::save_state((*t).second.pointer(),so);
   }
 
-  so.put((int)spinadapted_);
   so.put((int)evaluated_);
   so.put(debug_);
 }
@@ -340,7 +320,6 @@ R12IntEval::obsolete()
   init_intermeds_();
 }
 
-void R12IntEval::include_mp1(bool include_mp1) { include_mp1_ = include_mp1; };
 void R12IntEval::set_debug(int debug) { if (debug >= 0) { debug_ = debug; r12info_->set_debug_level(debug_); }};
 void R12IntEval::set_dynamic(bool dynamic) { r12info_->set_dynamic(dynamic); };
 void R12IntEval::set_print_percent(double pp) { r12info_->set_print_percent(pp); };
@@ -556,12 +535,12 @@ R12IntEval::init_intermeds_()
     V_[s].assign(0.0);
     X_[s].assign(0.0);
     B_[s].assign(0.0);
-    if (stdapprox_ == LinearR12::StdApprox_B)
+    if (stdapprox() == LinearR12::StdApprox_B)
       BB_[s].assign(0.0);
     emp2pair_[s].assign(0.0);
-    if (ebc_ == false) {
+    if (ebc() == false) {
       A_[s].assign(0.0);
-      if (follow_ks_ebcfree_) {
+      if (ks_ebcfree()) {
         Ac_[s].assign(0.0);
       }
 #if 0
@@ -572,12 +551,12 @@ R12IntEval::init_intermeds_()
   }
   
   // nothing to do if no explicit correlation
-  Ref<LinearR12::NullCorrelationFactor> no12ptr; no12ptr << corrfactor_;
+  Ref<LinearR12::NullCorrelationFactor> no12ptr; no12ptr << corrfactor();
   if (no12ptr.nonnull())
     return;
   
-  Ref<LinearR12::G12CorrelationFactor> g12ptr; g12ptr << corrfactor_;
-  Ref<LinearR12::R12CorrelationFactor> r12ptr; r12ptr << corrfactor_;
+  Ref<LinearR12::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
+  Ref<LinearR12::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
   if (r12ptr.nonnull()) {
     init_intermeds_r12_();
   }
@@ -914,6 +893,47 @@ R12IntEval::form_fribs(SpinCase1 spin)
   }
 }
 
+#if 1
+const Ref<MOIndexSpace>&
+R12IntEval::kribs_T(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return kribs_T(Alpha);
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  form_fribs_T(spin);
+  return kribs_T_space_[s];
+}
+
+void
+R12IntEval::form_fribs_T(SpinCase1 spin)
+{
+  const unsigned int s = static_cast<unsigned int>(spin);
+  // compute the Fock matrix between the complement and active occupieds and
+  // create the new Fock-weighted space
+  if (kribs_T_space_[s].null()) {
+    const Ref<MOIndexSpace>& occ_space = occ(spin);
+    const Ref<MOIndexSpace>& abs_space = r12info()->abs_space();
+    const Ref<MOIndexSpace>& ribs_space = r12info()->ribs_space(spin);
+
+    RefSCMatrix K_ri_abs = exchange_(occ_space,abs_space,ribs_space).t();
+    if (debug_ > 1) {
+      K_ri_abs.print("Exchange matrix (RI-BS/ABS)");
+      }
+
+    // Exchange
+      {
+      std::string id = "p'_K";
+      std::string name = "Exchange-weighted ABS";
+      spinadapt_mospace_labels(spin,id,name);
+
+      kribs_T_space_[s] = new MOIndexSpace(id, name, abs_space, ribs_space->coefs()*K_ri_abs,
+                                         ribs_space->basis());
+      }
+    }
+}
+#endif
+
 const Ref<MOIndexSpace>&
 R12IntEval::kocc_act_obs(SpinCase1 spin)
 {
@@ -1037,6 +1057,48 @@ R12IntEval::form_fvir_ribs(SpinCase1 spin)
   }
 }
 
+#if 1
+const Ref<MOIndexSpace>&
+R12IntEval::kvir_ribs_T(SpinCase1 spin)
+{
+  if (!spin_polarized() && spin == Beta)
+    return kvir_ribs_T(Alpha);
+
+  const unsigned int s = static_cast<unsigned int>(spin);
+  form_fvir_ribs_T(spin);
+  return kvir_ribs_T_space_[s];
+}
+
+void
+R12IntEval::form_fvir_ribs_T(SpinCase1 spin)
+{
+  const unsigned int s = static_cast<unsigned int>(spin);
+  // compute the Fock matrix between OBS and active occupieds and
+  // create the new Fock-weighted space
+  if (kvir_ribs_T_space_[s].null()) {
+    const Ref<MOIndexSpace>& occ_space = occ(spin);
+    const Ref<MOIndexSpace>& vir_space = vir(spin);
+    const Ref<MOIndexSpace>& ribs_space = r12info()->abs_space();
+
+    RefSCMatrix K_vir_ribs = exchange_(occ_space,vir_space,ribs_space);
+    if (debug_ > 1) {
+      K_vir_ribs.print("Exchange matrix (vir/RIBS)");
+    }
+
+      // Exchange
+      {
+      std::string id = "p'_K(a)";
+      std::string name = "Exchange-weighted (through virtuals) ABS";
+      spinadapt_mospace_labels(spin,id,name);
+
+      kvir_ribs_T_space_[s] = new MOIndexSpace(id, name, ribs_space, vir_space->coefs()*K_vir_ribs,
+                                               vir_space->basis());
+      }
+    }
+}
+
+#endif
+
 void
 R12IntEval::form_canonvir_space_()
 {
@@ -1139,7 +1201,7 @@ R12IntEval::compute()
   const bool obs_eq_vbs = r12info_->basis_vir()->equiv(r12info_->basis());
   const bool obs_eq_ribs = r12info_->basis_ri()->equiv(r12info_->basis());
   
-  Ref<LinearR12::NullCorrelationFactor> nocorrptr; nocorrptr << corrfactor_;
+  Ref<LinearR12::NullCorrelationFactor> nocorrptr; nocorrptr << corrfactor();
   // if explicit correlation -- compute linear F12 theory intermediates
   if (nocorrptr.null()) {
     
@@ -1224,7 +1286,7 @@ R12IntEval::compute()
       contrib_to_VXB_gebc_vbsneqobs_();
     }
     
-    if (stdapprox_ == LinearR12::StdApprox_B) {
+    if (stdapprox() == LinearR12::StdApprox_B) {
       compute_BB_();
       if (debug_ > 1)
         for(int s=0; s<nspincases2(); s++)
@@ -1232,7 +1294,7 @@ R12IntEval::compute()
     }
     
 #if INCLUDE_EBC_CODE
-    if (!ebc_) {
+    if (!ebc()) {
       
       // compute A, T2, and F12
       for(int s=0; s<nspincases2(); s++) {
@@ -1287,7 +1349,7 @@ R12IntEval::compute()
                           occ2_act, vir2_act,
                           fvir1_act, fvir2_act,
                           spincase2!=AlphaBeta);
-        if (follow_ks_ebcfree_) {
+        if (ks_ebcfree()) {
           compute_A_viacomm_(Ac_[s],
                              occ1_act, vir1_act,
                              occ2_act, vir2_act,
@@ -1304,7 +1366,7 @@ R12IntEval::compute()
           amps()->Fvv(spincase2).print(label.c_str());
           label = prepend_spincase(spincase2,"A matrix");
           A_[s].print(label.c_str());
-          if (follow_ks_ebcfree_) {
+          if (ks_ebcfree()) {
             std::string label = prepend_spincase(spincase2,"A(comm) matrix");
             Ac_[s].print(label.c_str());
           }
@@ -1317,7 +1379,7 @@ R12IntEval::compute()
 #endif
     
 #if INCLUDE_GBC_CODE
-    if (!gbc_) {
+    if (!gbc()) {
       // These functions assume that virtuals are expanded in the same basis
       // as the occupied orbitals
       if (!obs_eq_vbs)
@@ -1454,8 +1516,8 @@ R12IntEval::compute()
         //
         RefSCMatrix F12_sq_ijkl;
         enum {r12corrfactor, g12corrfactor} corrfac;
-        Ref<LinearR12::R12CorrelationFactor> r12corrptr; r12corrptr << r12info()->corrfactor();
-        Ref<LinearR12::G12CorrelationFactor> g12corrptr; g12corrptr << r12info()->corrfactor();
+        Ref<LinearR12::R12CorrelationFactor> r12corrptr; r12corrptr << corrfactor();
+        Ref<LinearR12::G12CorrelationFactor> g12corrptr; g12corrptr << corrfactor();
         if (r12corrptr.nonnull()) corrfac = r12corrfactor;
         if (g12corrptr.nonnull()) corrfac = g12corrfactor;
     
@@ -1586,7 +1648,7 @@ R12IntEval::compute()
     }
 #endif
 
-#if 1
+#if 0
     // test generic FxF evaluator
     {
       for(int s=0; s<nspincases2(); s++) {
@@ -1707,11 +1769,11 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
     globally_sum_scmatrix_(V_[s],to_all_tasks);
     globally_sum_scmatrix_(X_[s],to_all_tasks);
     globally_sum_scmatrix_(B_[s],to_all_tasks);
-    if (stdapprox_ == LinearR12::StdApprox_B)
+    if (stdapprox() == LinearR12::StdApprox_B)
       globally_sum_scmatrix_(BB_[s],to_all_tasks);
-    if (ebc_ == false) {
+    if (ebc() == false) {
       globally_sum_scmatrix_(A_[s],to_all_tasks);
-      if (follow_ks_ebcfree_) {
+      if (ks_ebcfree()) {
         globally_sum_scmatrix_(Ac_[s],to_all_tasks);
       }
 #if 0

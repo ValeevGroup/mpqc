@@ -88,11 +88,21 @@ private:
   bool dynamic_;
   double print_percent_;
   int debug_;
+
+  Ref<LinearR12::CorrelationFactor> corrfactor_;
+  LinearR12::StandardApproximation stdapprox_;
+  LinearR12::ABSMethod abs_method_;
+  bool gbc_;
+  bool ebc_;
+  bool spinadapted_;
+  bool include_mp1_;
   StoreMethod::type ints_method_;
   std::string ints_file_;
-  Ref<LinearR12::CorrelationFactor> corrfactor_;
-  LinearR12::ABSMethod abs_method_;
   unsigned int maxnabs_;
+  /// should I follow Klopper-Samson approach in the intermediates formulation for the EBC-free method?
+  bool ks_ebcfree_;
+  /// omit P from intermediate B under standard approximation B? (matters only if OBS != ABS)
+  bool omit_P_;
 
   int nlindep_aux_;
   int nlindep_vir_;
@@ -182,8 +192,15 @@ public:
   int nvir_act() const { return vir_act_->rank();};
 
   const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return corrfactor_; }
+  LinearR12::StandardApproximation stdapprox() const { return stdapprox_; }
   LinearR12::ABSMethod abs_method() const { return abs_method_; }
+  bool gbc() const { return gbc_; }
+  bool ebc() const { return ebc_; }
+  bool spinadapted() const { return spinadapted_; }
+  bool include_mp1() const { return include_mp1_; }
   unsigned int maxnabs() const { return maxnabs_; }
+  bool ks_ebcfree() const { return ks_ebcfree_; }
+  bool omit_P() const { return omit_P_; }
 
   /// Returns the MOIndexSpace object for all unoccupied MOs ordered by energy
   const Ref<MOIndexSpace>& vir() const { throw_if_spin_polarized(); return vir_; };

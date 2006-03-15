@@ -52,10 +52,10 @@ MP2R12Energy::compute()
   
   const bool ebc = r12eval()->ebc();
   /// KS approach to EBC-free method differs from mine if std approx != B
-  const bool follow_ks_ebcfree = r12eval()->follow_ks_ebcfree() &&
-                                 (stdapprox_ != LinearR12::StdApprox_B);
+  const bool ks_ebcfree = r12eval()->ks_ebcfree() &&
+                          (stdapprox_ != LinearR12::StdApprox_B);;
   // WARNING only RHF and UHF are considered
-  const int num_unique_spincases2 = (r12info->refinfo()->ref()->spin_polarized() ? 3 : 2);
+  const int num_unique_spincases2 = (r12eval()->spin_polarized() ? 3 : 2);
   
   //
   // Evaluate pair energies:
@@ -104,7 +104,7 @@ MP2R12Energy::compute()
       RefSCMatrix A, Ac;
       if (ebc == false) {
         A = r12eval()->A(spincase2);
-        if (follow_ks_ebcfree) {
+        if (ks_ebcfree) {
           Ac = r12eval()->Ac(spincase2);
         }
       }
@@ -193,7 +193,7 @@ MP2R12Energy::compute()
                   if (ebc == false) {
                     double fy = 0.0;
                     SpinMOPairIter cd_iter(vir1_act, vir2_act, spincase2);
-                    if (follow_ks_ebcfree) {
+                    if (ks_ebcfree) {
                       for(cd_iter.start(); cd_iter; cd_iter.next()) {
                         const int cd = cd_iter.ij();
                         const int c = cd_iter.i();

@@ -75,15 +75,6 @@ class R12IntEval : virtual public SavableState {
   Ref<F12Amplitudes> Amps_;  // First-order amplitudes of various contributions to the pair functions
   RefSCDimension dim_ij_s_, dim_ij_t_;
 
-  bool gbc_;
-  bool ebc_;
-  Ref<LinearR12::CorrelationFactor> corrfactor_;
-  LinearR12::ABSMethod abs_method_;
-  LinearR12::StandardApproximation stdapprox_;
-  bool spinadapted_;
-  bool include_mp1_;
-  /// should I follow Klopper-Samson approach in the intermediates formulation for the EBC-free method?
-  bool follow_ks_ebcfree_;
   int debug_;
 
   // Map to TwoBodyMOIntsTransform objects that have been computed previously
@@ -109,24 +100,40 @@ class R12IntEval : virtual public SavableState {
   Ref<MOIndexSpace> kactvir_space_[NSpinCases1];
   /// Exchange-weighted RI space |a'_K> = K_a'^A |A>, where A is a function in ABS
   Ref<MOIndexSpace> kribs_space_[NSpinCases1];
+#if 1
+  /// Exchange-weighted ABS space |P_K> = K_P^a' |a'>, where a' is a function in RIBS
+  Ref<MOIndexSpace> kribs_T_space_[NSpinCases1];
+#endif
   /// Exchange-weighted (through OBS) active occupied space |i_K> = K_i^P |P>, where P is a function in OBS
   Ref<MOIndexSpace> kactocc_obs_space_[NSpinCases1];
   /// Exchange-weighted (through OBS) virtual space |a_K> = K_a^p |p>, where p is a function in OBS
   Ref<MOIndexSpace> kvir_obs_space_[NSpinCases1];
   /// Exchange-weighted (through RIBS) virtual space |a_K> = K_a^P |P>, where P is a function in RIBS
   Ref<MOIndexSpace> kvir_ribs_space_[NSpinCases1];
+#if 1
+  /// Exchange-weighted (through virtuals) ABS |P_K> = K_P^a |a>, where P is a function in ABS
+  Ref<MOIndexSpace> kvir_ribs_T_space_[NSpinCases1];
+#endif
   /// Compute factocc and kactocc spaces, if needed
   void form_focc_act(SpinCase1 spin);
   /// Compute factvir and kactvir spaces, if needed
   void form_fvir_act(SpinCase1 spin);
   /// Compute kribs space, if needed
   void form_fribs(SpinCase1 spin);
+#if 1
+  /// Compute kribsT space, if needed
+  void form_fribs_T(SpinCase1 spin);
+#endif
   /// Compute kactocc_obs space, if needed
   void form_focc_act_obs(SpinCase1 spin);
   /// Compute kvir_obs space, if needed
   void form_fvir_obs(SpinCase1 spin);
   /// Compute kvir_ribs space, if needed
   void form_fvir_ribs(SpinCase1 spin);
+#if 1
+  /// Compute kvir_ribs space, if needed
+  void form_fvir_ribs_T(SpinCase1 spin);
+#endif
   /// Form space of auxiliary virtuals
   void form_canonvir_space_();
 
@@ -366,11 +373,7 @@ public:
   R12IntEval(StateIn&);
   /** Constructs R12IntEval. If follow_ks_ebcfree is true then follow formalism of Klopper and Samson
       to compute EBC-free MP2-R12 energy. */
-  R12IntEval(const Ref<R12IntEvalInfo>& info, const Ref<LinearR12::CorrelationFactor>& corrfactor,
-             bool gbc = true, bool ebc = true,
-             LinearR12::ABSMethod abs_method = LinearR12::ABS_CABSPlus,
-             LinearR12::StandardApproximation stdapprox = LinearR12::StdApprox_Ap,
-             bool follow_ks_ebcfree = false);
+  R12IntEval(const Ref<R12IntEvalInfo>& info);
   /*R12IntEval(const Ref<R12IntEvalInfo>& info, bool gbc = true, bool ebc = true,
              LinearR12::ABSMethod abs_method = LinearR12::ABS_CABSPlus,
              LinearR12::StandardApproximation stdapprox = LinearR12::StdApprox_Ap,
@@ -380,18 +383,20 @@ public:
   void save_data_state(StateOut&);
   virtual void obsolete();
 
-  void include_mp1(bool include_mp1);
   void set_debug(int debug);
   void set_dynamic(bool dynamic);
   void set_print_percent(double print_percent);
   void set_memory(size_t nbytes);
 
-  const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return corrfactor_; }
-  bool spin_polarized() const { return r12info_->refinfo()->ref()->spin_polarized(); }
-  bool gbc() const { return gbc_; }
-  bool ebc() const { return ebc_; }
-  LinearR12::StandardApproximation stdapprox() const { return stdapprox_; }
-  bool follow_ks_ebcfree() const { return follow_ks_ebcfree_; }
+  const Ref<LinearR12::CorrelationFactor>& corrfactor() const { return r12info()->corrfactor(); }
+  LinearR12::ABSMethod abs_method() const { return r12info()->abs_method(); }
+  bool spin_polarized() const { return r12info()->refinfo()->ref()->spin_polarized(); }
+  bool gbc() const { return r12info()->gbc(); }
+  bool ebc() const { return r12info()->ebc(); }
+  LinearR12::StandardApproximation stdapprox() const { return r12info()->stdapprox(); }
+  bool include_mp1() const { return r12info()->include_mp1(); }
+  bool ks_ebcfree() const { return r12info()->ks_ebcfree(); }
+  bool omit_P() const { return r12info()->omit_P(); }
 
   const Ref<R12IntEvalInfo>& r12info() const;
 
@@ -461,10 +466,18 @@ public:
   const Ref<MOIndexSpace>& kvir_act(SpinCase1 S);
   /// Form exchange-weighted RI space for spin case S
   const Ref<MOIndexSpace>& kribs(SpinCase1 S);
+#if 1
+  /// Form exchange-weighted RI space for spin case S
+  const Ref<MOIndexSpace>& kribs_T(SpinCase1 S);
+#endif
   /// Form exchange-weighted (through OBS) virtual space for spin case S
   const Ref<MOIndexSpace>& kvir_obs(SpinCase1 S);
   /// Form exchange-weighted (through RIBS) virtual space for spin case S
   const Ref<MOIndexSpace>& kvir_ribs(SpinCase1 S);
+#if 1
+  /// Form exchange-weighted (through virtuals) ABS space for spin case S
+  const Ref<MOIndexSpace>& kvir_ribs_T(SpinCase1 S);
+#endif
   
   /** Returns an already created transform.
       If the transform is not found then throw TransformNotFound */

@@ -146,11 +146,12 @@ R12IntEval::compute_A_viacomm_(RefSCMatrix& A,
   }
   
   //
-  // ij|A|kl = - ij|[t1+t2,f12]|kl - (e_k+e_l-e_i-e_j) * ij|f12|kl
+  // ij|A|ab = ij|[t1+t2,f12]|ab - (e_a+e_b-e_i-e_j) * ij|f12|ab
   //
   using ManyBodyTensors::Plus;
   using ManyBodyTensors::Minus;
 #if !ACOMM_INCLUDE_TR_ONLY
+  // Minus!
   compute_tbint_tensor<ManyBodyTensors::Apply_H0minusE0<Minus>,true,false>(
     A, corrfactor()->tbint_type_f12(),
     space1, space2, space3, space4,
@@ -185,7 +186,7 @@ R12IntEval::AT2_contrib_to_V_()
       
       // Use normal or commutator form of A, depending on the approach
       RefSCMatrix A;
-      if (follow_ks_ebcfree_)
+      if (ks_ebcfree())
         A = Ac_[s];
       else
         A = A_[s];
@@ -212,7 +213,7 @@ R12IntEval::AF12_contrib_to_B_()
       
       // Use normal or commutator form of A, depending on the approach
       RefSCMatrix A;
-      if (follow_ks_ebcfree_)
+      if (ks_ebcfree())
         A = Ac_[s];
       else
         A = A_[s];

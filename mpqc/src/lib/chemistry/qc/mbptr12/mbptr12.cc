@@ -77,6 +77,7 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   }
   if (s.version(::class_desc<MBPT2_R12>()) >= 6) {
     int ks_ebcfree; s.get(ks_ebcfree); ks_ebcfree_ = (bool)ks_ebcfree;
+    int omit_P; s.get(omit_P); omit_P_ = (bool)omit_P;
   }
   
   abs_method_ = LinearR12::ABS_ABS;
@@ -200,6 +201,9 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
     ks_ebcfree_ = keyval->booleanvalue("ks_ebcfree",KeyValValueboolean((int)ks_ebcfree_default));
   else
     ks_ebcfree_ = ks_ebcfree_default;
+  
+  // Default is to include P in intermediate B
+  omit_P_ = keyval->booleanvalue("omit_P",KeyValValueboolean((int)false));
   
   // For now the default is to use the old ABS method, of Klopper and Samson
   char* abs_method_str = keyval->pcharvalue("abs_method",KeyValValuepchar("ABS"));
@@ -379,6 +383,7 @@ MBPT2_R12::save_data_state(StateOut& s)
   s.put((int)gbc_);
   s.put((int)ebc_);
   s.put((int)ks_ebcfree_);
+  s.put((int)omit_P_);
   s.put((int)abs_method_);
   s.put((int)stdapprox_);
   s.put((int)spinadapted_);
@@ -400,6 +405,9 @@ MBPT2_R12::print(ostream&o) const
   o << indent << "GBC assumed: " << (gbc_ ? "true" : "false") << endl;
   o << indent << "EBC assumed: " << (ebc_ ? "true" : "false") << endl;
   o << indent << "EBC-free method: " << (!ks_ebcfree_ ? "Valeev" : "Klopper and Samson") << endl;
+  if (stdapprox_ == LinearR12::StdApprox_B && omit_P_) {
+    o << indent << "Intermediate P is omitted" << endl;
+  }
   switch(abs_method_) {
   case LinearR12::ABS_ABS :
     o << indent << "ABS method variant: ABS  (Klopper and Samson)" << endl;
@@ -550,10 +558,34 @@ MBPT2_R12::vir_basis() const
 
 /////////////////////////////////////////////////////////////////////////////
 
+bool
+MBPT2_R12::ks_ebcfree() const
+{
+  return ks_ebcfree_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+bool
+MBPT2_R12::omit_P() const
+{
+  return omit_P_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 unsigned int
 MBPT2_R12::maxnabs() const
 {
   return maxnabs_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+bool
+MBPT2_R12::include_mp1() const
+{
+  return include_mp1_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

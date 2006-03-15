@@ -121,7 +121,7 @@ R12IntEval::coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>
 
       // Get (|1/r12|) integrals
       tim_enter("MO ints retrieve");
-      const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,corrfactor_->tbint_type_eri());
+      const double *mmxy_buf_eri = mnxy_acc->retrieve_pair_block(m,m,corrfactor()->tbint_type_eri());
       tim_exit("MO ints retrieve");
 
       if (debug_)
@@ -131,7 +131,7 @@ R12IntEval::coulomb_(const Ref<MOIndexSpace>& occ_space, const Ref<MOIndexSpace>
       const int unit_stride = 1;
       F77_DAXPY(&nbraket,&one,mmxy_buf_eri,&unit_stride,J_xy,&unit_stride);
 
-      mnxy_acc->release_pair_block(m,m,corrfactor_->tbint_type_eri());
+      mnxy_acc->release_pair_block(m,m,corrfactor()->tbint_type_eri());
     }
   }
   // Tasks that don't do any work here still need to create these timers

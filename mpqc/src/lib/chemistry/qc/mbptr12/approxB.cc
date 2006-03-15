@@ -62,6 +62,10 @@ using namespace sc;
 #define INCLUDE_P_AKB 1
 #define INCLUDE_P_AKb 1
 #define INCLUDE_P_aKB 1
+#define TEST_P_AKB 0
+#define TEST_P_AKb 0
+#define TEST_P_aKB 0
+#define TEST_P_aKb 0
 
 void
 R12IntEval::compute_BB_()
@@ -148,7 +152,7 @@ R12IntEval::compute_BB_()
 #if INCLUDE_P
     // compute P
     // WARNING implemented only using CABS/CABS+ approach
-    if (!abs_eq_obs) {
+    if (!abs_eq_obs && !omit_P()) {
       
       const LinearR12::ABSMethod absmethod = r12info()->abs_method();
       if (absmethod != LinearR12::ABS_CABS &&
@@ -194,7 +198,26 @@ R12IntEval::compute_BB_()
                      cabs1,cabs2,
                      cabs1,cabs2,
                      kcabs1,kcabs2);
+
+#if TEST_P_AKB
+        P.print("R_klPB K_PA R_ABij");
+
+        RefSCMatrix P_AKB = P.clone(); P_AKB.assign(0.0);
+        Ref<MOIndexSpace> kabs1 = kribs_T(spin1);
+        Ref<MOIndexSpace> kabs2 = kribs_T(spin2);
+        Ref<MOIndexSpace> abs1 = r12info()->abs_space();
+        Ref<MOIndexSpace> abs2 = r12info()->abs_space();
+        // R_klAB K_AP R_PBij
+        compute_FxF_(P_AKB,spincase2,
+                     occ1_act,occ2_act,
+                     occ1_act,occ2_act,
+                     cabs1,cabs2,
+                     abs1,abs2,
+                     kabs1,kabs2);
+        P_AKB.print("R_klAB K_AP R_PBij");
+#endif
 #endif // INCLUDE_P_AKB
+
 #if INCLUDE_P_AKb
         // R_klPb K_PA R_Abij
         compute_FxF_(P,spincase2,
@@ -203,7 +226,27 @@ R12IntEval::compute_BB_()
                      vir1,vir2,
                      cabs1,cabs2,
                      kcabs1,kcabs2);
+
+#if TEST_P_AKb
+        P.print("R_klPb K_PA R_Abij");
+
+	RefSCMatrix P_AKb = P.clone(); P_AKb.assign(0.0);
+	Ref<MOIndexSpace> kabs1 = kribs_T(spin1);
+        Ref<MOIndexSpace> kabs2 = kribs_T(spin2);
+        Ref<MOIndexSpace> abs1 = r12info()->abs_space();
+        Ref<MOIndexSpace> abs2 = r12info()->abs_space();
+        // R_klAb K_AP R_Pbij
+        compute_FxF_(P_AKb,spincase2,
+                     occ1_act,occ2_act,
+                     occ1_act,occ2_act,
+                     vir1,vir2,
+                     abs1,abs2,
+                     kabs1,kabs2);
+        P_AKb.print("R_klAb K_AP R_Pbij");
+#endif
+
 #endif // INCLUDE_P_AKb
+
 #if INCLUDE_P_aKB
         Ref<MOIndexSpace> kvir1_ribs = kvir_ribs(spin1);
         Ref<MOIndexSpace> kvir2_ribs = kvir_ribs(spin2);
@@ -214,9 +257,41 @@ R12IntEval::compute_BB_()
                      cabs1,cabs2,
                      vir1,vir2,
                      kvir1_ribs,kvir2_ribs);
+#if TEST_P_aKB
+        P.print("R_klPB K_Pa R_aBij");
+
+        RefSCMatrix P_aKB = P.clone(); P_aKB.assign(0.0);
+        Ref<MOIndexSpace> kabs1 = kvir_ribs_T(spin1);
+        Ref<MOIndexSpace> kabs2 = kvir_ribs_T(spin2);
+        Ref<MOIndexSpace> abs1 = r12info()->abs_space();
+        Ref<MOIndexSpace> abs2 = r12info()->abs_space();
+        // R_klaB K_aP R_PBij
+        compute_FxF_(P_aKB,spincase2,
+                     occ1_act,occ2_act,
+                     occ1_act,occ2_act,
+                     cabs1,cabs2,
+                     abs1,abs2,
+                     kabs1,kabs2);
+        P_aKB.print("R_klaB K_aP R_PBij");
+#endif
+
 #endif // INCLUDE_P_aKB
       }
-      
+
+#if TEST_P_aKb
+      RefSCMatrix P_aKb = BB_[s].clone(); P_aKb.assign(0.0);
+      Ref<MOIndexSpace> kvir1_ribs = kvir_ribs(spin1);
+      Ref<MOIndexSpace> kvir2_ribs = kvir_ribs(spin2);
+      // R_klPb K_Pa R_abij
+      compute_FxF_(P_aKb,spincase2,
+                   occ1_act,occ2_act,
+                   occ1_act,occ2_act,
+                   vir1,vir2,
+                   vir1,vir2,
+                   kvir1_ribs,kvir2_ribs);
+      P_aKb.print("P_aKb test");
+#endif
+
       P.scale(-1.0);
       
       ExEnv::out0() << decindent;

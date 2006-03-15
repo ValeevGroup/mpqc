@@ -89,6 +89,7 @@ class MBPT2_R12: public MBPT2 {
     bool gbc_;
     bool ebc_;
     bool ks_ebcfree_;
+    bool omit_P_;
     bool spinadapted_;
     bool include_mp1_;
 
@@ -167,12 +168,6 @@ class MBPT2_R12: public MBPT2 {
         The effect of setting this keyword to true is small --
         hence it is not recommended to use this keyword.
        
-        <dt><tt>ks_ebcfree</tt><dd> This boolean specifies whether EBC-free method of
-        KLopper and Samson is used. The default is "false". This keyword
-        is only valid if ebc=false.
-        The effect of setting this keyword to true is very small --
-        hence it is not recommended to use this keyword.
-        
         <dt><tt>maxnabs</tt><dd> This integer specifies the maximum number of ABS indices per integral.
         Valid values are between 1 and 2. The default is to include all terms necessary for a given method.
         For example, MP2-F12/B energy involves integrals with 2 ABS indices. Setting maxnabs to 1
@@ -183,12 +178,6 @@ class MBPT2_R12: public MBPT2 {
 
 	<dt><tt>vir_basis</tt><dd> This specifies the AO basis to be used for the virtual orbitals.
 	Default is to use the same basis as for the orbital expansion.
-
-        <dt><tt>include_mp1</tt><dd> This specifies whether to compute MP1 correction to
-        the MP2 and MP2-R12 energies. This option only has effect if vir_basis is not the same as basis.
-        MP1 correction is a perturbative estimate of the difference between the HF energy computed
-        in vir_basis and basis. Usually, it is a very poor estimate -- therefore this keyword should
-        be avoided by non-experts. Default is false.
 
         <dt><tt>abs_method</tt><dd> This string specifies whether the old ABS method, introduced
         by Klopper and Samson, or the new ABS variant, CABS, introduced by Valeev, should be used.
@@ -265,6 +254,9 @@ class MBPT2_R12: public MBPT2 {
     LinearR12::ABSMethod abs_method() const;
     LinearR12::StandardApproximation stdapprox() const;
     bool spinadapted() const;
+    bool ks_ebcfree() const;
+    bool omit_P() const;
+    bool include_mp1() const;
     R12IntEvalInfo::StoreMethod::type r12ints_method() const;
     const std::string& r12ints_file() const;
 

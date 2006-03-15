@@ -52,7 +52,7 @@ inline int max(int a,int b) { return (a > b) ? a : b;}
   R12IntEvalInfo
  ---------------*/
 static ClassDesc R12IntEvalInfo_cd(
-  typeid(R12IntEvalInfo),"R12IntEvalInfo",6,"virtual public SavableState",
+  typeid(R12IntEvalInfo),"R12IntEvalInfo",7,"virtual public SavableState",
   0, 0, create<R12IntEvalInfo>);
 
 R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
@@ -82,7 +82,13 @@ R12IntEvalInfo::R12IntEvalInfo(MBPT2_R12* mbptr12)
 
   corrfactor_ = mbptr12->corrfactor();
   abs_method_ = mbptr12->abs_method();
+  stdapprox_ = mbptr12->stdapprox();
+  ebc_ = mbptr12->ebc();
+  gbc_ = mbptr12->gbc();
+  ks_ebcfree_ = mbptr12->ks_ebcfree();
+  omit_P_ = mbptr12->omit_P();
   maxnabs_ = mbptr12->maxnabs();
+  include_mp1_ = mbptr12->include_mp1();
   construct_ri_basis_(false);
   construct_orthog_vir_();
 
@@ -120,6 +126,15 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 3) {
     int absmethod; si.get(absmethod); abs_method_ = (LinearR12::ABSMethod) absmethod;
   }
+  
+  if (si.version(::class_desc<R12IntEvalInfo>()) >= 7) {
+    int gbc; si.get(gbc); gbc_ = (bool) gbc;
+    int ebc; si.get(ebc); ebc_ = (bool) ebc;
+    int stdapprox; si.get(stdapprox); stdapprox_ = (LinearR12::StandardApproximation) stdapprox;
+    int spinadapted; si.get(spinadapted); spinadapted_ = (bool) spinadapted;
+    int includemp1; si.get(includemp1); include_mp1_ = (bool) includemp1;
+    int ks_ebcfree; si.get(ks_ebcfree); ks_ebcfree_ = static_cast<bool>(ks_ebcfree);
+  }
 
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 4) {
     abs_space_ << SavableState::restore_state(si);
@@ -137,6 +152,11 @@ R12IntEvalInfo::R12IntEvalInfo(StateIn& si) : SavableState(si)
   maxnabs_ = 2;
   if (si.version(::class_desc<R12IntEvalInfo>()) >= 6) {
     si.get(maxnabs_);
+  }
+  
+  if (si.version(::class_desc<R12IntEvalInfo>()) >= 7) {
+    int ks_ebcfree; si.get(ks_ebcfree); ks_ebcfree_ = static_cast<bool>(ks_ebcfree);
+    int omitP; si.get(omitP); omit_P_ = static_cast<bool>(omitP);
   }
 }
 
@@ -159,6 +179,11 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   so.put((int)dynamic_);
   so.put(print_percent_);
   so.put((int)abs_method_);
+  so.put((int)gbc_);
+  so.put((int)ebc_);
+  so.put((int)stdapprox_);
+  so.put((int)spinadapted_);
+  so.put((int)include_mp1_);
   
   SavableState::save_state(abs_space_.pointer(),so);
   SavableState::save_state(ribs_space_.pointer(),so);
@@ -169,6 +194,8 @@ void R12IntEvalInfo::save_data_state(StateOut& so)
   SavableState::save_state(refinfo_.pointer(),so);
   
   so.put(maxnabs_);
+  so.put((int)ks_ebcfree_);
+  so.put((int)omit_P_);
 }
 
 const Ref<SingleRefInfo>&

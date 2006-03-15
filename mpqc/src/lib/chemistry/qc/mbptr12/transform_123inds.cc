@@ -46,6 +46,7 @@
 using namespace std;
 using namespace sc;
 
+#define PRINT0Q 0
 #define PRINT1Q 0
 #define PRINT2Q 0
 #define PRINT_NUM_TE_TYPES 1
@@ -274,6 +275,39 @@ TwoBodyMOIntsTransform_123Inds::run()
         tbint_->compute_shell(P,Q,R,S);
         timer_->exit("AO integrals");
 
+#if PRINT0Q
+    {
+      if ( me == 0 ) {
+        lock_->lock();
+        string filename = tform_->type() + "." + tform_->name() + ".0q.dat";
+        ios_base::openmode mode = ios_base::app;
+        if (RS_count == 0)
+          mode = ios_base::trunc;
+        ofstream ints_file(filename.c_str(),mode);
+
+        for(int te_type=0; te_type<PRINT_NUM_TE_TYPES; te_type++) {
+          for (int p = 0; p<np; p++) {
+            int pp = p + p_offset;
+            for (int q = 0; q<nq; q++) {
+              int qq = q + q_offset;
+              for (int r = 0; r<nr; r++) {
+                int rr = r+r_offset;
+                for (int s = 0; s<ns; s++) {
+                  int ss = s+s_offset;
+                  double value = intbuf[te_type][s+ns*(r+nr*(q+nq*p))];
+                  ints_file << scprintf("0Q: type = %d (%d %d|%d %d) = %12.8f\n",
+                                        te_type,pp,qq,rr,ss,value);
+                }
+              }
+            }
+          }
+        }
+        ints_file.close();
+        lock_->unlock();
+      }
+    }
+#endif
+    
         timer_->enter("1. q.t.");
 
         // Begin first quarter transformation;

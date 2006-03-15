@@ -1,6 +1,6 @@
 
 test_basis: STO-3G 6-311G**
-test_method: hsoshf hsosxalpha hsoshfk hsoshfs hsoshfb hsoshfg96 hsosblyp hsosb3lyp hsospbe hsospw91 hsosb3pw91 hsosbpw91 hsosb3p86 hsosbp86 hsosspz81
+test_method: hsoshf hsosxalpha hsoshfk hsoshfs hsoshfb hsoshfg96 hsosblyp hsosb3lyp hsospbe hsospw91 hsosb3pw91 hsosbpw91 hsosb3p86 hsosbp86 hsosspz81 hsoskmlyp
 gradient: yes
 test_molecule:              h2o  ch2
 test_molecule_symmetry:     c2v  c2v

@@ -38,6 +38,7 @@
 #include <util/state/state.h>
 #include <util/state/state_text.h>
 #include <util/state/state_bin.h>
+#include <math/scmat/local.h>
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/integral.h>
@@ -66,6 +67,7 @@ using namespace sc;
 #define TEST_P_AKb 0
 #define TEST_P_aKB 0
 #define TEST_P_aKb 0
+#define TEST_P_AKb_EXPL 0
 
 void
 R12IntEval::compute_BB_()
@@ -245,6 +247,102 @@ R12IntEval::compute_BB_()
         P_AKb.print("R_klAb K_AP R_Pbij");
 #endif
 
+#if TEST_P_AKb_EXPL
+        Ref<R12IntEval> thisref(this);
+        // (i a |i a') tforms
+        std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iaiA;
+        {
+          NewTransformCreator tform_creator(thisref,occ1_act,vir1,occ2_act,cabs2,true);
+          fill_container(tform_creator,tforms_iaiA);
+        }
+        // (i a |i p') tforms
+        std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iaiP;
+        {
+          NewTransformCreator tform_creator(thisref,occ1_act,vir1,occ2_act,abs2,true);
+          fill_container(tform_creator,tforms_iaiP);
+        }
+
+        Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+        RefSCDimension dim_aA = new SCDimension(vir1->rank() * cabs2->rank());
+        RefSCDimension dim_aP = new SCDimension(vir1->rank() * abs2->rank());
+        RefSCMatrix F12_ij_aA = localkit->matrix(dim_oo(spincase2),dim_aA);  F12_ij_aA.assign(0.0);
+        RefSCMatrix F12_ij_aP = localkit->matrix(dim_oo(spincase2),dim_aP);  F12_ij_aP.assign(0.0);
+        compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
+          F12_ij_aA, corrfactor()->tbint_type_f12(),
+          occ1_act, vir1,
+          occ2_act, cabs2,
+          spincase2!=AlphaBeta, tforms_iaiA
+        );
+        F12_ij_aA.print("F12 (aA)");
+        compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
+          F12_ij_aP, corrfactor()->tbint_type_f12(),
+          occ1_act, vir1,
+          occ2_act, abs2,
+          spincase2!=AlphaBeta, tforms_iaiP
+        );
+        F12_ij_aP.print("F12 (aP)");
+
+        // Test these too
+        // (i a'|i a) tforms
+        std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iAia;
+        {
+          NewTransformCreator tform_creator(thisref,occ1_act,cabs1,occ2_act,vir2,true);
+          fill_container(tform_creator,tforms_iAia);
+        }
+        // (i p'|i a) tforms
+        std::vector<  Ref<TwoBodyMOIntsTransform> > tforms_iPia;
+        {
+          NewTransformCreator tform_creator(thisref,occ1_act,abs1,occ2_act,vir2,true);
+          fill_container(tform_creator,tforms_iPia);
+        }
+        RefSCMatrix F12_ij_Aa = localkit->matrix(dim_oo(spincase2),dim_aA);  F12_ij_Aa.assign(0.0);
+        RefSCMatrix F12_ij_Pa = localkit->matrix(dim_oo(spincase2),dim_aP);  F12_ij_Pa.assign(0.0);
+        compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
+          F12_ij_Aa, corrfactor()->tbint_type_f12(),
+          occ1_act, cabs1,
+          occ2_act, vir2,
+          spincase2!=AlphaBeta, tforms_iAia
+        );
+        F12_ij_Aa.print("F12 (Aa)");
+        compute_tbint_tensor<ManyBodyTensors::I_to_T,true,false>(
+          F12_ij_Pa, corrfactor()->tbint_type_f12(),
+          occ1_act, abs1,
+          occ2_act, vir2,
+          spincase2!=AlphaBeta, tforms_iPia
+        );
+        F12_ij_Pa.print("F12 (Pa)");
+
+        RefSCMatrix K_PA = exchange_(occ2,abs2,cabs2);
+        K_PA.print("Exchange (ABS/RI-BS)");
+
+        RefSCMatrix K_PA_local = localkit->matrix(K_PA.rowdim(),K_PA.coldim());
+        double* tmparr = new double[K_PA.rowdim().n() * K_PA.coldim().n()];
+        K_PA.convert(tmparr);
+        K_PA_local.assign(tmparr);
+        delete[] tmparr;
+
+        const unsigned int nij = dim_oo(spincase2).n();
+        RefSCMatrix F12_ij_aAK = F12_ij_aA.clone();  F12_ij_aAK.assign(0.0);
+        double* aP_block = new double[dim_aP.n()];
+        double* aA_block = new double[dim_aA.n()];
+        RefSCMatrix tmp_aP = localkit->matrix(new SCDimension(vir1->rank()), K_PA.rowdim());
+        for(unsigned int ij=0; ij<nij; ij++) {
+          RefSCVector rij_aP = F12_ij_aP.get_row(ij);
+          rij_aP.convert(aP_block);
+          tmp_aP.assign(aP_block);
+          RefSCMatrix tmp_aA = tmp_aP * K_PA_local;
+          tmp_aA.convert(aA_block);
+          RefSCVector rij_aA = F12_ij_aAK.get_row(ij);
+          rij_aA.assign(aA_block);
+          F12_ij_aAK.assign_row(rij_aA,ij);
+        }
+        F12_ij_aAK.print("F12 (aAK)");
+        RefSCMatrix P_AKb_expl = F12_ij_aA * F12_ij_aAK.t();
+        P_AKb_expl.scale(2.0);
+        symmetrize<false>(P_AKb_expl,P_AKb_expl,occ1_act,occ2_act);
+        P_AKb_expl.print("R_klPb K_PA R_Abij (expl)");
+#endif
+        
 #endif // INCLUDE_P_AKb
 
 #if INCLUDE_P_aKB

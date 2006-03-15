@@ -1,0 +1,218 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 2.3.1-beta
+
+  Machine:    x86_64-unknown-linux-gnu
+  User:       mlleinin@pulsar
+  Start Time: Tue Feb 21 01:17:59 2006
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+
+  Reading file /home/mlleinin/src/SC/mpqc-r2.3-branch/mpqc/lib/atominfo.kv.
+  WARNING: two unbound groups of atoms
+           consider using extra_bonds input
+
+           adding bond between 1 and 2
+
+  IntCoorGen: generated 1 coordinates.
+  Forming optimization coordinates:
+    SymmMolecularCoor::form_variable_coordinates()
+      expected 0 coordinates
+      found 1 variable coordinates
+      found 0 constant coordinates
+  Reading file /home/mlleinin/src/SC/mpqc-r2.3-branch/mpqc/lib/basis/sto-3g.kv.
+      Reading file /home/mlleinin/src/SC/mpqc-r2.3-branch/mpqc/lib/basis/sto-3g.kv.
+
+      USCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(basis):             1     0     0     0     0     1     0     0
+      Maximum orthogonalization residual = 1
+      Minimum orthogonalization residual = 1
+      alpha = [ 1 0 0 0 0 1 0 0 ]
+      beta  = [ 0 0 0 0 0 0 0 0 ]
+
+  USCF::init: total charge = 0
+
+  Using guess wavefunction as starting vector
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      nuclear repulsion energy =    0.0264588624
+
+      Beginning iterations.  Basis is STO-3G.
+                         2 integrals
+      iter     1 energy =   -0.9331636991 delta = 8.16497e-01
+
+      <S^2>exact = 2.000000
+      <S^2>      = 2.000000
+
+      total scf energy =   -0.9331636991
+
+  Using symmetric orthogonalization.
+  n(basis):             1     0     0     0     0     1     0     0
+  Maximum orthogonalization residual = 1
+  Minimum orthogonalization residual = 1
+  alpha = [ 1 0 0 0 0 1 0 0 ]
+  beta  = [ 0 0 0 0 0 0 0 0 ]
+
+  Molecular formula H2
+
+  MPQC options:
+    matrixkit     = <ReplSCMatrixKit>
+    filename      = ./uscf_dh2ukmlypsto3gd2h
+    restart_file  = ./uscf_dh2ukmlypsto3gd2h.ckpt
+    restart       = no
+    checkpoint    = no
+    savestate     = no
+    do_energy     = yes
+    do_gradient   = yes
+    optimize      = no
+    write_pdb     = no
+    print_mole    = yes
+    print_timings = yes
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    0.0264588624
+
+  Beginning iterations.  Basis is STO-3G.
+                     2 integrals
+  Total integration points = 2646
+  Integrated electron density error = -0.000001622061
+  iter     1 energy =   -0.9315062013 delta = 8.16497e-01
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.000000
+
+  total scf energy =   -0.9315062013
+
+  SCF::compute: gradient accuracy = 1.0000000e-06
+
+  Total integration points = 30362
+  Integrated electron density error = -0.000000074600
+  Total Gradient:
+       1   H  -0.0000000000  -0.0000000000  -0.0000000041
+       2   H   0.0000000000   0.0000000000   0.0000000041
+
+  Value of the MolecularEnergy:   -0.9315062013
+
+
+  Gradient of the MolecularEnergy:
+      1   -0.0000000041
+
+  Unrestricted Kohn-Sham (UKS) Parameters:
+    Function Parameters:
+      value_accuracy    = 0.000000e+00 (1.000000e-08) (computed)
+      gradient_accuracy = 0.000000e+00 (1.000000e-06) (computed)
+      hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+    Molecular Coordinates:
+      IntMolecularCoor Parameters:
+        update_bmat = no
+        scale_bonds = 1.0000000000
+        scale_bends = 1.0000000000
+        scale_tors = 1.0000000000
+        scale_outs = 1.0000000000
+        symmetry_tolerance = 1.000000e-05
+        simple_tolerance = 1.000000e-03
+        coordinate_tolerance = 1.000000e-07
+        have_fixed_values = 0
+        max_update_steps = 100
+        max_update_disp = 0.500000
+        have_fixed_values = 0
+
+      Molecular formula: H2
+      molecule<Molecule>: (
+        symmetry = d2h
+        unit = "angstrom"
+        {  n atoms                        geometry                     }={
+           1     H [    0.0000000000     0.0000000000    10.0000000000]
+           2     H [    0.0000000000     0.0000000000   -10.0000000000]
+        }
+      )
+      Atomic Masses:
+          1.00783    1.00783
+
+      Bonds:
+        STRE       s1    19.99999    1    2         H-H
+
+      SymmMolecularCoor Parameters:
+        change_coordinates = no
+        transform_hessian = yes
+        max_kappa2 = 10.000000
+
+    Electronic basis:
+      GaussianBasisSet:
+        nbasis = 2
+        nshell = 2
+        nprim  = 6
+        name = "STO-3G"
+    Natural Population Analysis:
+       n   atom    charge     ne(S) 
+        1    H    0.000000  1.000000
+        2    H    0.000000  1.000000
+
+    SCF Parameters:
+      maxiter = 100
+      density_reset_frequency = 10
+      level_shift = 0.250000
+
+    UnrestrictedSCF Parameters:
+      charge = 0.0000000000
+      nalpha = 2
+      nbeta = 0
+      alpha = [ 1 0 0 0 0 1 0 0 ]
+      beta  = [ 0 0 0 0 0 0 0 0 ]
+
+    Functional:
+      Standard Density Functional: KMLYP
+      Sum of Functionals:
+        +0.5570000000000001 Hartree-Fock Exchange
+        +0.4430000000000000
+          Object of type SlaterXFunctional
+        +0.5520000000000000
+          Object of type VWN1LCFunctional
+        +0.4480000000000000
+          Object of type LYPCFunctional
+    Integrator:
+      RadialAngularIntegrator:
+        Pruned fine grid employed
+                               CPU Wall
+mpqc:                         0.27 0.27
+  NAO:                        0.00 0.00
+  calc:                       0.22 0.23
+    compute gradient:         0.18 0.18
+      nuc rep:                0.00 0.00
+      one electron gradient:  0.00 0.00
+      overlap gradient:       0.00 0.00
+      two electron gradient:  0.18 0.18
+        grad:                 0.18 0.18
+          integrate:          0.15 0.15
+          two-body:           0.00 0.00
+    vector:                   0.04 0.04
+      density:                0.00 0.00
+      evals:                  0.00 0.00
+      extrap:                 0.00 0.00
+      fock:                   0.01 0.01
+        integrate:            0.01 0.01
+        start thread:         0.00 0.00
+        stop thread:          0.00 0.00
+  input:                      0.04 0.04
+    vector:                   0.00 0.00
+      density:                0.00 0.00
+      evals:                  0.00 0.00
+      extrap:                 0.00 0.00
+      fock:                   0.00 0.00
+        start thread:         0.00 0.00
+        stop thread:          0.00 0.00
+
+  End Time: Tue Feb 21 01:18:00 2006
+

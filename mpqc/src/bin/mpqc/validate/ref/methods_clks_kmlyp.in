@@ -1,0 +1,33 @@
+% emacs should use -*- KeyVal -*- mode
+% molecule specification
+molecule<Molecule>: (
+  symmetry = C2V
+  unit = angstrom
+  { atoms geometry } = {
+    O     [     0.00000000     0.00000000     0.37000000 ]
+    H     [     0.78000000     0.00000000    -0.18000000 ]
+    H     [    -0.78000000     0.00000000    -0.18000000 ]
+  }
+)
+mpqc: (
+  checkpoint = no
+  savestate = no
+  do_gradient = yes
+  mole<CLKS>: (
+    molecule = $:molecule
+    basis<GaussianBasisSet>: (
+      name = "6-311G**"
+      molecule = $:molecule
+    )
+    functional<StdDenFunctional>: name = "KMLYP"
+    memory = 16000000
+    guess_wavefunction<CLHF>: (
+      molecule = $:molecule
+      memory = 8000000
+      basis<GaussianBasisSet>: (
+        name = "STO-3G"
+        molecule = $:molecule
+      )
+    )
+  )
+)

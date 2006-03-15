@@ -64,6 +64,19 @@ canonical_aabc::canonical_aabc(const Ref<GaussianBasisSet> bi,
 ////////////////////////////////////////////////////////////////////////////
 
 
+canonical_abcc::canonical_abcc(const Ref<GaussianBasisSet> bi,
+                               const Ref<GaussianBasisSet> bj,
+                               const Ref<GaussianBasisSet> bk,
+                               const Ref<GaussianBasisSet> bl)
+{
+  nj_ = bj->nshell();
+  int nk = bk->nshell();
+  nkl_ = (nk*long(nk+1))>>1;
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+
 canonical_aabb::canonical_aabb(const Ref<GaussianBasisSet> bi,
                                const Ref<GaussianBasisSet> bj,
                                const Ref<GaussianBasisSet> bk,
@@ -71,6 +84,17 @@ canonical_aabb::canonical_aabb(const Ref<GaussianBasisSet> bi,
 {
   int ni = bi->nshell();
   nij_ = (ni*long(ni+1))>>1;
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+
+canonical_abab::canonical_abab(const Ref<GaussianBasisSet> bi,
+                               const Ref<GaussianBasisSet> bj,
+                               const Ref<GaussianBasisSet> bk,
+                               const Ref<GaussianBasisSet> bl)
+{
+  nj_ = bj->nshell();
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -160,6 +184,10 @@ sc::construct_gpetite(const Ref<GaussianBasisSet> &b1,
   else if (b1 == b2 && b3 != b4) {
     canonical_aabc c4(b1,b2,b3,b4);
     return new GPetite4<canonical_aabc>(b1,b2,b3,b4,c4);
+  }
+  else if (b1 != b2 && b3 == b4) {
+    canonical_abcc c4(b1,b2,b3,b4);
+    return new GPetite4<canonical_abcc>(b1,b2,b3,b4,c4);
   }
   else if (b1 == b2 && b3 == b4) {
     canonical_aabb c4(b1,b2,b3,b4);

@@ -98,8 +98,11 @@ SCF::savestate_iter(int iter)
           int unlink_errno = errno;
           ExEnv::out0() << indent
                         << "WARNING: SCF::compute_vector(): "
-                        << "unlink of temporary "
-                        << "checkpoint file failed with error: "
+                        << "unlink of temporary checkpoint file"
+                        << endl
+                        << indent
+                        << "         \"" << oldckptfile << "\" "
+                        << "failed with error: "
                         << strerror(unlink_errno)
                         << endl;
         }

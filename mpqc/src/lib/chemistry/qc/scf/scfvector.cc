@@ -27,6 +27,7 @@
 
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <util/misc/timer.h>
 #include <util/misc/formio.h>
@@ -93,9 +94,15 @@ SCF::savestate_iter(int iter)
     save_state(this,so);
     if (scf_grp_->me() == 0) {
       if (oldckptfile != NULL && (iter+1-savestate_freq)>=savestate_freq) {
-        if (unlink(oldckptfile)) 
-          ExEnv::out0() << " SCF::compute_vector() Temporary "
-                        << "checkpoint file failed to delete. " << endl;
+        if (unlink(oldckptfile)) {
+          int unlink_errno = errno;
+          ExEnv::out0() << indent
+                        << "WARNING: SCF::compute_vector(): "
+                        << "unlink of temporary "
+                        << "checkpoint file failed with error: "
+                        << strerror(unlink_errno)
+                        << endl;
+        }
       }
       delete [] oldckptfile;
     }

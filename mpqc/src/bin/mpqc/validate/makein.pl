@@ -133,7 +133,7 @@ sub process_file {
     init_var($test_vars, $parse, "orthog_method", "default");
     init_var($test_vars, $parse, "lindep_tol", "default");
     init_var($test_vars, $parse, "integral_buffer", "opaque");
-    init_var($test_vars, $parse, "integral_package", "intv3");
+    init_var($test_vars, $parse, "default_package", "intv3");
     my @molecule_symmetry = $parse->value_as_array("test_molecule_symmetry");
     my @molecule_fzc = $parse->value_as_array("test_molecule_fzc");
     my @molecule_fzv = $parse->value_as_array("test_molecule_fzv");
@@ -266,7 +266,7 @@ sub process_file {
         $parse->set_value("method", $method);
         $parse->set_value("symmetry", $symmetry);
         $parse->set_value("integral_buffer", $integral_buffer);
-        $parse->set_value("integral_package", $integral_package);
+        $parse->set_value("default_package", $integral_package);
         $parse->set_value("fzc", $fzc);
         $parse->set_value("fzv", $fzv);
         $parse->set_value("docc", $docc);

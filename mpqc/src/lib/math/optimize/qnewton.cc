@@ -278,10 +278,6 @@ QNewtonOpt::update()
 
         if( force_search_ ) lineopt_->set_decrease_factor( factor );
       }
-
-      xnext = function()->get_x();
-      xdisp = xnext - xcurrent;
-      tot = sqrt(xdisp.scalar_product(xdisp));
     }
     else {
       // All line searches other than Backtrack use this
@@ -317,6 +313,9 @@ QNewtonOpt::update()
         }
       }
     }
+    xnext = function()->get_x();
+    xdisp = xnext - xcurrent;
+    tot = sqrt(xdisp.scalar_product(xdisp));
   }
   else {
 

@@ -40,6 +40,9 @@
 #include <chemistry/qc/mbptr12/transform_ixjy.h>
 #include <chemistry/qc/mbptr12/transform_ikjy.h>
 
+// Set to 1 if want to use ixjy transforms only
+#define USE_IXJY_ALWAYS 0
+
 using namespace std;
 using namespace sc;
 
@@ -148,7 +151,11 @@ MOIntsTransformFactory::twobody_transform_13(const std::string& name,
   const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? tbintdescr() : descrarg);
   
   if (space2_->rank() <= space2_->basis()->nbasis()) {
+#if USE_IXJY_ALWAYS
+    result = new TwoBodyMOIntsTransform_ixjy(name,this,descr,space1_,space2_,space3_,space4_);
+#else
     result = new TwoBodyMOIntsTransform_ikjy(name,this,descr,space1_,space2_,space3_,space4_);
+#endif
   }
   else {
     result = new TwoBodyMOIntsTransform_ixjy(name,this,descr,space1_,space2_,space3_,space4_);
@@ -156,6 +163,8 @@ MOIntsTransformFactory::twobody_transform_13(const std::string& name,
 
   if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
+
+  result->set_debug(debug());
   
   return result;
 }
@@ -172,6 +181,8 @@ MOIntsTransformFactory::twobody_transform_12(const std::string& name,
   if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
 
+  result->set_debug(debug());
+  
   return result;
 }
 

@@ -17,6 +17,7 @@
 #include <util/class/scexception.h>
 #pragma implementation "ccaiter.h"
 #include <ccaiter.h>
+#include <Chemistry_QC_GaussianBasis_Package.hh>
 
 using namespace std;
 using namespace Chemistry::QC::GaussianBasis;
@@ -36,7 +37,7 @@ void MPQC::IntegralEvaluator2_impl::_ctor() {
 void MPQC::IntegralEvaluator2_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2._dtor)
 #ifndef INTV3_ORDER
-  if( package_ == "intv3") {
+  if( package_ == Package_INTV3) {
     delete [] temp_buffer_;
     for( int i=0; i<=maxam_; ++i)
       delete [] reorder_[i];
@@ -61,36 +62,36 @@ void MPQC::IntegralEvaluator2_impl::_load() {
  */
 void
 MPQC::IntegralEvaluator2_impl::set_integral_package (
-  /* in */ const ::std::string& label ) 
+  /* in */ ::Chemistry::QC::GaussianBasis::Package type ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.set_integral_package)
-  package_ = label;
+  package_ = type;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.set_integral_package)
 }
 
 /**
- * Initialize the evaluator.
+ * Initialize as 1-body evaluator.
  * @param bs1 Molecular basis on center 1.
  * @param bs2 Molecular basis on center 2.
- * @param label String specifying integral type.
+ * @param type ObIntEvalType specifying eval type.
  * @param max_deriv Max derivative to compute.
  * @param storage Available storage in bytes.
  * @param deriv_ctr Derivative center descriptor. 
  */
 void
-MPQC::IntegralEvaluator2_impl::initialize (
+MPQC::IntegralEvaluator2_impl::obint_initialize (
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
-  /* in */ const ::std::string& label,
+  /* in */ ::Chemistry::QC::GaussianBasis::ObIntEvalType type,
   /* in */ int32_t max_deriv,
   /* in */ int64_t storage,
   /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.initialize)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.obint_initialize)
 
-  evaluator_label_ = label;
+  ob_eval_type_ = type;
  
   deriv_centers_ = deriv_ctr;
 
@@ -105,13 +106,13 @@ throw ()
   
   std::string is_deriv("");
   if(max_deriv > 0) is_deriv = " derivative";
-  std::cerr << "  initializing " << package_ << " " << evaluator_label_
-            << is_deriv << " integral evaluator\n";
-  if ( package_ == "intv3" ) { 
+  std::cerr << "  initializing package:" << package_ << " type:" 
+	    << ob_eval_type_ << " " << is_deriv << " integral evaluator\n";
+  if ( package_ == Package_INTV3 ) { 
     integral_ = new IntegralV3( bs1_, bs2_ );
   }
 #ifdef HAVE_CINTS
-  else if ( package_ == "cints" )
+  else if ( package_ == Package_CINTS )
     integral_ = new IntegralCints( bs1_, bs2_ );
 #endif
   else {
@@ -122,7 +123,7 @@ throw ()
   integral_->set_storage(storage);
 
   int error = 0;
-  if(evaluator_label_ == "overlap") 
+  if( ob_eval_type_ == ObIntEvalType_OVERLAP ) 
     switch( max_deriv ) {
     case 0:
       { eval_ = integral_->overlap(); break; }
@@ -132,7 +133,7 @@ throw ()
       ++error;
     }
 
-  else if(evaluator_label_ == "kinetic")
+  else if( ob_eval_type_ == ObIntEvalType_KINETIC )
     switch( max_deriv ) {
     case 0:
       { eval_ = integral_->kinetic(); break; }
@@ -142,7 +143,7 @@ throw ()
       ++error;
     }
   
-  else if(evaluator_label_ == "potential")
+  else if( ob_eval_type_ == ObIntEvalType_NUCLEAR )
     switch( max_deriv ) {
     case 0:
       { eval_ = integral_->nuclear(); break; }
@@ -152,7 +153,7 @@ throw ()
       ++error;
     }
   
-  else if(evaluator_label_ == "1eham")
+  else if( ob_eval_type_ == ObIntEvalType_OEHAM )
     switch( max_deriv ) {
     case 0:
       { eval_ = integral_->hcore(); break; }
@@ -163,7 +164,7 @@ throw ()
     }
 
   else 
-    throw InputError("unrecognized integral type",
+    throw InputError("unsupported integral type",
                      __FILE__,__LINE__);
   
   if( error ) {
@@ -188,28 +189,157 @@ throw ()
   // get a non-const pointer we can write to
   buf_ = const_cast<double*>( sc_buffer_ );
 
-  if ( package_ == "intv3" ) {
+  if ( package_ == Package_INTV3 ) {
 #ifndef INTV3_ORDER
     initialize_reorder_intv3();
 #endif
   }
 
-
-    // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.initialize)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.obint_initialize)
 }
 
 /**
- * Get the buffer pointer
- * @return Buffer pointer 
+ * Initialize as 2-body evaluator.
+ * @param bs1 Molecular basis on center 1.
+ * @param bs2 Molecular basis on center 2.
+ * @param type TbIntEvalType specifying eval type.
+ * @param max_deriv Max derivative to compute.
+ * @param storage Available storage in bytes.
+ * @param deriv_ctr Derivative center descriptor. 
+ */
+void
+MPQC::IntegralEvaluator2_impl::tbint_initialize (
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+  /* in */ ::Chemistry::QC::GaussianBasis::TbIntEvalType type,
+  /* in */ int32_t max_deriv,
+  /* in */ int64_t storage,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.tbint_initialize)
+
+  tb_eval_type_ = type;
+ 
+  deriv_centers_ = deriv_ctr;
+
+  bs1_ = basis_cca_to_sc( bs1 );
+  if( bs1.isSame(bs2) ) 
+    bs2_.assign_pointer( bs1_.pointer() );
+  else 
+    bs2_ = basis_cca_to_sc( bs2 );
+  max_nshell2_ = bs1_->max_ncartesian_in_shell() *
+    bs2_->max_ncartesian_in_shell();
+  maxam_ = max( bs1_->max_angular_momentum(), bs2_->max_angular_momentum() );
+  
+  std::string is_deriv("");
+  if(max_deriv > 0) is_deriv = " derivative";
+  std::cerr << "  initializing package:" << package_ << " type:" 
+	    << tb_eval_type_ << " " << is_deriv << " integral evaluator\n";
+  if ( package_ == Package_INTV3 ) { 
+    integral_ = new IntegralV3( bs1_, bs2_ );
+  }
+#ifdef HAVE_CINTS
+  else if ( package_ == Package_CINTS )
+    integral_ = new IntegralCints( bs1_, bs2_ );
+#endif
+  else {
+    throw InputError("bad integral package name",
+                     __FILE__,__LINE__);
+  }
+
+  integral_->set_storage(storage);
+
+  int error = 0;
+  // if( tb_eval_type_ == ??? ) 
+  // switch( max_deriv ) {
+  //case 0:
+  //   { eval_ = integral_->???(); break; }
+  //case 1:
+  //  { deriv_eval_ = integral_->overlap_???(); break; }
+  //default:
+  //  ++error;
+  //}
+  //else 
+  throw InputError("unsupported integral type",
+		   __FILE__,__LINE__);
+  
+  //if( error ) {
+  //throw InputError("derivative level not supported",
+  //                  __FILE__,__LINE__);
+  //}
+  
+  if( eval_.nonnull() ) { 
+    int_type_ = two_body;
+    sc_buffer_ = eval_->buffer();
+  }
+  else if( deriv_eval_.nonnull() ) { 
+    int_type_ = one_body_deriv;
+    sc_buffer_ = deriv_eval_->buffer();
+  }
+  else 
+    throw ProgrammingError("bad pointer to sc integal evaluator",
+                           __FILE__,__LINE__);
+  if( !sc_buffer_ )
+    throw ProgrammingError("buffer not assigned",
+                           __FILE__,__LINE__);
+  // get a non-const pointer we can write to
+  buf_ = const_cast<double*>( sc_buffer_ );
+
+  if ( package_ == Package_INTV3 ) {
+#ifndef INTV3_ORDER
+    initialize_reorder_intv3();
+#endif
+  }
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.tbint_initialize)
+}
+
+/**
+ * Get one body int buffer pointer.
+ * @return Buffer pointer. 
  */
 void*
-MPQC::IntegralEvaluator2_impl::get_buffer ()
+MPQC::IntegralEvaluator2_impl::get_obint_buffer ()
 throw () 
 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.get_buffer)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.get_obint_buffer)
+
   return const_cast<double*>( sc_buffer_ );
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.get_buffer)
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.get_obint_buffer)
+}
+
+/**
+ * Return number of supported two body int types.
+ * @return Number of types. 
+ */
+int32_t
+MPQC::IntegralEvaluator2_impl::get_tbint_n_types ()
+throw () 
+
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.get_tbint_n_types)
+  // Insert-Code-Here {MPQC.IntegralEvaluator2.get_tbint_n_types} (get_tbint_n_types method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.get_tbint_n_types)
+}
+
+/**
+ * Get two body int buffer pointers.
+ * @param type TbIntType specifying buffer type.
+ * @return Buffer pointer. 
+ */
+void*
+MPQC::IntegralEvaluator2_impl::get_tbint_buffer (
+  /* in */ ::Chemistry::QC::GaussianBasis::TbIntType type ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator2.get_tbint_buffer)
+
+  return const_cast<double*>( sc_buffer_ );
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator2.get_tbint_buffer)
 }
 
 /**
@@ -219,7 +349,8 @@ throw ()
  * @param shellnum1 Gaussian shell number 1.
  * @param shellnum2 Gaussian shell number 2.
  * @param deriv_level Derivative level. 
- * @param deriv_atom Atom number for derivative (-1 if using DerivCenter). 
+ * @param deriv_atom Atom number for derivative 
+ * (-1 if using DerivCenter). 
  */
 void
 MPQC::IntegralEvaluator2_impl::compute (
@@ -287,7 +418,7 @@ throw ()
 */
 
 #ifndef INTV3_ORDER
-  if( package_ == "intv3") reorder_intv3( shellnum1, shellnum2 );
+  if( package_ == Package_INTV3) reorder_intv3( shellnum1, shellnum2 );
 #endif
 
 
@@ -317,7 +448,8 @@ throw ()
  * @param shellnum1 Gaussian shell number 1.
  * @param shellnum2 Gaussian shell number 2.
  * @param deriv_level Derivative level.
- * @param deriv_atom Atom number for derivative (-1 if using DerivCenter).
+ * @param deriv_atom Atom number for derivative 
+ * (-1 if using DerivCenter).
  * @return Borrowed sidl array buffer. 
  */
 ::sidl::array<double>
@@ -482,7 +614,8 @@ MPQC::IntegralEvaluator2_impl::reorder_doublet( sc::GaussianShell* s1, sc::Gauss
           if( s2_is_cart )
             for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
               for(int di=0; di<3; ++di) {
-                buf_[ c2_base + local2_offset + reorder_[s2->am(c2)][fc2] + di*nfunc ]
+                buf_[ c2_base + local2_offset + reorder_[s2->am(c2)][fc2] + 
+		      di*nfunc ]
                   = temp_buffer_[index];
                 ++index;
               }
@@ -490,7 +623,8 @@ MPQC::IntegralEvaluator2_impl::reorder_doublet( sc::GaussianShell* s1, sc::Gauss
           else
             for( int fc2=0; fc2<s2_nfunc; ++fc2 ) {
               for(int di=0; di<3; ++di) {
-                buf_[ c2_base + local2_offset + fc2 + di*nfunc ] = temp_buffer_[index];
+                buf_[ c2_base + local2_offset + fc2 + di*nfunc ] = 
+		  temp_buffer_[index];
                 ++index;
               }
             }

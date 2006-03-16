@@ -158,7 +158,8 @@ namespace MPQC {
     ;
 
     /**
-     * Get the max angular momentum for any contraction in the basis set.
+     * Get the max angular momentum for any contraction in the 
+     * basis set.
      * @return max angular momentum 
      */
     int32_t

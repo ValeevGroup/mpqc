@@ -44,7 +44,7 @@ void MPQC::IntegralEvaluator3_impl::_load() {
  */
 void
 MPQC::IntegralEvaluator3_impl::set_integral_package (
-  /* in */ const ::std::string& label ) 
+  /* in */ ::Chemistry::QC::GaussianBasis::Package type ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.set_integral_package)
@@ -53,43 +53,58 @@ throw ()
 }
 
 /**
- * Initialize the evaluator.
+ * Initialize as a 2-body evaluator.
  * @param bs1 Molecular basis on center 1.
  * @param bs2 Molecular basis on center 2.
  * @param bs3 Molecular basis on center 3.
- * @param label String specifying integral type.
+ * @param type TbIntEvalType specifying eval type.
  * @param max_deriv Max derivative to compute.
  * @param storage Available storage in bytes.
  * @param deriv_ctr Derivative center descriptor. 
  */
 void
-MPQC::IntegralEvaluator3_impl::initialize (
+MPQC::IntegralEvaluator3_impl::tbint_initialize (
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
-  /* in */ const ::std::string& label,
+  /* in */ ::Chemistry::QC::GaussianBasis::TbIntEvalType type,
   /* in */ int32_t max_deriv,
   /* in */ int64_t storage,
   /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.initialize)
-  // insert implementation here
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.initialize)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.tbint_initialize)
+  // Insert-Code-Here {MPQC.IntegralEvaluator3.tbint_initialize} (tbint_initialize method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.tbint_initialize)
 }
 
 /**
- * Get the buffer pointer
- * @return Buffer pointer 
+ * Return number of supported two body int types.
+ * @return Number of types. 
  */
-void*
-MPQC::IntegralEvaluator3_impl::get_buffer ()
+int32_t
+MPQC::IntegralEvaluator3_impl::get_tbint_n_types ()
 throw () 
 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.get_buffer)
-  // insert implementation here
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.get_buffer)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.get_tbint_n_types)
+  // Insert-Code-Here {MPQC.IntegralEvaluator3.get_tbint_n_types} (get_tbint_n_types method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.get_tbint_n_types)
+}
+
+/**
+ * Get two body int buffer pointers.
+ * @param type TbIntType specifying buffer type.
+ * @return Buffer pointer. 
+ */
+void*
+MPQC::IntegralEvaluator3_impl::get_tbint_buffer (
+  /* in */ ::Chemistry::QC::GaussianBasis::TbIntType type ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator3.get_tbint_buffer)
+  // Insert-Code-Here {MPQC.IntegralEvaluator3.get_tbint_buffer} (get_tbint_buffer method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator3.get_tbint_buffer)
 }
 
 /**

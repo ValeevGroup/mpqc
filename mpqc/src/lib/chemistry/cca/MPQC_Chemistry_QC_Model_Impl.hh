@@ -186,7 +186,8 @@ namespace MPQC {
 
     /**
      * Returns the accuracy to which the energy is already computed.
-     * The result is undefined if the energy has not already been computed.
+     * The result is undefined if the energy has not already 
+     * been computed.
      * @return The energy accuracy. 
      */
     double
@@ -194,10 +195,12 @@ namespace MPQC {
     ;
 
     /**
-     * This allows a programmer to request that if any result is computed,
+     * This allows a programmer to request that if any result 
+     * is computed,
      * then the energy is computed too.  This allows, say, for a request
      * for a gradient to cause the energy to be computed.  This computed
-     * energy is cached and returned when the get_energy() member is called.
+     * energy is cached and returned when the get_energy() member 
+     * is called.
      * @param doit Whether or not to compute the energy.
      */
     void
@@ -230,7 +233,8 @@ namespace MPQC {
 
     /**
      * Returns the accuracy to which the gradient is already computed.
-     * The result is undefined if the gradient has not already been computed.
+     * The result is undefined if the gradient has not already 
+     * been computed.
      * @return The current gradient accuracy. 
      */
     double
@@ -259,7 +263,8 @@ namespace MPQC {
 
     /**
      * Returns the accuracy to which the Hessian is already computed.
-     * The result is undefined if the Hessian has not already been computed. 
+     * The result is undefined if the Hessian has not already 
+     * been computed. 
      */
     double
     get_hessian_accuracy() throw () 
@@ -286,8 +291,9 @@ namespace MPQC {
 
 
     /**
-     * Returns the accuracy to which the guess Hessian is already computed.
-     * The result is undefined if the guess Hessian has not already been computed.
+     * Returns the accuracy to which the guess Hessian is 
+     * already computed.  The result is undefined if the guess Hessian 
+     * has not already been computed.
      * @return The guess hessian accuracy.  
      */
     double
@@ -295,8 +301,8 @@ namespace MPQC {
     ;
 
     /**
-     * This can be called when this Model object is no longer needed.  No other
-     * members may be called after finalize. 
+     * This can be called when this Model object is no longer needed.  
+     * No other members may be called after finalize. 
      */
     int32_t
     finalize() throw () 

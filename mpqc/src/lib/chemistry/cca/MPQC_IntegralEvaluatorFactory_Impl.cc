@@ -12,19 +12,21 @@
 #include "MPQC_IntegralEvaluatorFactory_Impl.hh"
 
 // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory._includes)
-using namespace std;
-using namespace sc;
-using namespace Chemistry::QC;
-string get_Integral_keyval(string);
 #include <iostream>
 #include <chemistry/qc/intv3/intv3.h>
 #ifdef HAVE_CINTS
   #include <chemistry/qc/cints/cints.h>
 #endif
-#include "MPQC_IntegralEvaluator2.hh"
-#include "MPQC_IntegralEvaluator3.hh"
-#include "MPQC_IntegralEvaluator4.hh"
+#include <MPQC_IntegralEvaluator2.hh>
+#include <MPQC_IntegralEvaluator3.hh>
+#include <MPQC_IntegralEvaluator4.hh>
+#include <Chemistry_QC_GaussianBasis_Package.hh>
+using namespace std;
+using namespace sc;
+using namespace Chemistry::QC;
+using namespace Chemistry::QC::GaussianBasis;
 sc::Ref<sc::GaussianBasisSet> basis_cca_to_sc(GaussianBasis::Molecular&);
+string get_Integral_keyval(string);
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._includes)
 
 // user-defined constructor.
@@ -133,17 +135,31 @@ throw (
 }
 
 /**
- * Set the EvaluatorConfig
- * @param config EvaluatorConfig 
+ * Set the ObInt evaluator config
+ * @param config ObInt evaluator config 
  */
 void
-MPQC::IntegralEvaluatorFactory_impl::set_config (
-  /* in */ ::Chemistry::QC::GaussianBasis::EvaluatorConfig config ) 
+MPQC::IntegralEvaluatorFactory_impl::set_obint_config (
+  /* in */ ::Chemistry::QC::GaussianBasis::ObIntEvalConfig config ) 
 throw () 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.set_config)
-  eval_config_ = config;
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.set_config)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.set_obint_config)
+  ob_config_ = config;
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.set_obint_config)
+}
+
+/**
+ * Set the TbInt evaluator config
+ * @param config TbInt evaluator config 
+ */
+void
+MPQC::IntegralEvaluatorFactory_impl::set_tbint_config (
+  /* in */ ::Chemistry::QC::GaussianBasis::TbIntEvalConfig config ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.set_tbint_config)
+  tb_config_ = config;
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.set_tbint_config)
 }
 
 /**
@@ -203,20 +219,6 @@ throw ()
 }
 
 /**
- * Set the integral package
- * @param The integral package 
- */
-void
-MPQC::IntegralEvaluatorFactory_impl::set_integral_package (
-  /* in */ const ::std::string& label ) 
-throw () 
-{
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.set_integral_package)
-  package_ = label;
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.set_integral_package)
-}
-
-/**
  * Set available storage
  * @param storage Available storage in bytes 
  */
@@ -231,57 +233,104 @@ throw ()
 }
 
 /**
- * Get a 2-center integral evaluator
- * @param label String specifying integral type
+ * Get a 1-body 1-center integral evaluator
+ * @param type ObIntEvalType specifying eval type
+ * @param max_deriv Maximum derivative that will be computed
+ * @param bs1 Molecular basis set on center 1
+ * @return 1-center integral evaluator 
+ */
+::Chemistry::QC::GaussianBasis::IntegralEvaluator1
+MPQC::IntegralEvaluatorFactory_impl::get_obint_evaluator1 (
+  /* in */ ::Chemistry::QC::GaussianBasis::ObIntEvalType type,
+  /* in */ int32_t max_deriv,
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_obint_evaluator1)
+  // Insert-Code-Here {MPQC.IntegralEvaluatorFactory.get_obint_evaluator1} (get_obint_evaluator1 method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_obint_evaluator1)
+}
+
+/**
+ * Get a 1-body 2-center integral evaluator
+ * @param type ObIntEvalType specifying eval type
  * @param max_deriv Maximum derivative that will be computed
  * @param bs1 Molecular basis set on center 1
  * @param bs2 Molecular basis set on center 2
  * @return 2-center integral evaluator 
  */
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator2
-MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator2 (
-  /* in */ const ::std::string& label,
+MPQC::IntegralEvaluatorFactory_impl::get_obint_evaluator2 (
+  /* in */ ::Chemistry::QC::GaussianBasis::ObIntEvalType type,
   /* in */ int32_t max_deriv,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
   /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator2)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_obint_evaluator2)
 
   // create the evaluator
   MPQC::IntegralEvaluator2 eval = MPQC::IntegralEvaluator2::_create();
- 
+
   // determine proper integrals package
   bool pkg_set = false;
-  for( int i=0; i<eval_config_.get_n_pkg_config(); ++i)
-    if( eval_config_.get_pkg_config_type(i) == label ) {
-      eval.set_integral_package( eval_config_.get_pkg_config_pkg(i) );
+  for( int i=0; i<ob_config_.get_n_pkg_config(); ++i)
+    if( ob_config_.get_pkg_config_type(i) == type ) {
+      eval.set_integral_package( ob_config_.get_pkg_config_pkg(i) );
       pkg_set = true;
     }
   if( !pkg_set ) {
     package_ =  package_param_->getValueString();
-    if( package_ == "intv3" || package_ == "cints" )
-      eval.set_integral_package( package_ );
+    if( package_ == "intv3" )
+      eval.set_integral_package( Package_INTV3 );
+    else if( package_ == "cints" )
+      eval.set_integral_package( Package_CINTS );
     else {
-      package_ = eval_config_.get_default_pkg();
-      if( package_ == "intv3" || package_ == "cints" )
-        eval.set_integral_package( package_ );
-      else
-        eval.set_integral_package( "intv3" );
+      Package pkg = ob_config_.get_default_pkg();
+      if( pkg == Package_INTV3  || pkg == Package_CINTS )
+        eval.set_integral_package( pkg );
+      else {
+	std::cout << "Using Intv3 as last resort\n";
+        eval.set_integral_package( Package_INTV3 );
+      }
     }
   }
-  
+
   // initialize
-  eval.initialize( bs1, bs2, label, max_deriv, storage_, deriv_ctr );
+  eval.obint_initialize( bs1, bs2, type, 
+                         max_deriv, storage_, deriv_ctr );
   return eval;
 
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator2)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_obint_evaluator2)
 }
 
 /**
- * Get a 3-center integral evaluator
- * @param label String specifying integral type
+ * Get a 2-body 2-center integral evaluator
+ * @param type TbIntEvalType specifying eval type
+ * @param max_deriv Maximum derivative that will be computed
+ * @param bs1 Molecular basis set on center 1
+ * @param bs2 Molecular basis set on center 2
+ * @return 2-center integral evaluator 
+ */
+::Chemistry::QC::GaussianBasis::IntegralEvaluator2
+MPQC::IntegralEvaluatorFactory_impl::get_tbint_evaluator2 (
+  /* in */ ::Chemistry::QC::GaussianBasis::TbIntEvalType type,
+  /* in */ int32_t max_deriv,
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+  /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+  /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_tbint_evaluator2)
+  // Insert-Code-Here {MPQC.IntegralEvaluatorFactory.get_tbint_evaluator2} (get_tbint_evaluator2 method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_tbint_evaluator2)
+}
+
+/**
+ * Get a 2-body 3-center integral evaluator
+ * @param type TbIntEvalType specifying eval type
  * @param max_deriv Maximum derivative that will be computed
  * @param bs1 Molecular basis set on center 1
  * @param bs2 Molecular basis set on center 2
@@ -289,8 +338,8 @@ throw ()
  * @return 3-center integral evaluator 
  */
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator3
-MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator3 (
-  /* in */ const ::std::string& label,
+MPQC::IntegralEvaluatorFactory_impl::get_tbint_evaluator3 (
+  /* in */ ::Chemistry::QC::GaussianBasis::TbIntEvalType type,
   /* in */ int32_t max_deriv,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
@@ -298,41 +347,46 @@ MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator3 (
   /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator3)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_tbint_evaluator3)
 
   // create the evaluator
   MPQC::IntegralEvaluator3 eval = MPQC::IntegralEvaluator3::_create();
 
- // determine proper integrals package
+  // determine proper integrals package
   bool pkg_set = false;
-  for( int i=0; i<eval_config_.get_n_pkg_config(); ++i)
-    if( eval_config_.get_pkg_config_type(i) == label ) {
-      eval.set_integral_package( eval_config_.get_pkg_config_pkg(i) );
+  for( int i=0; i<tb_config_.get_n_pkg_config(); ++i)
+    if( tb_config_.get_pkg_config_type(i) == type ) {
+      eval.set_integral_package( tb_config_.get_pkg_config_pkg(i) );
       pkg_set = true;
     }
   if( !pkg_set ) {
     package_ =  package_param_->getValueString();
-    if( package_ == "intv3" || package_ == "cints" )
-      eval.set_integral_package( package_ );
+    if( package_ == "intv3" )
+      eval.set_integral_package( Package_INTV3 );
+    else if( package_ == "cints" )
+      eval.set_integral_package( Package_CINTS );
     else {
-      package_ = eval_config_.get_default_pkg();
-      if( package_ == "intv3" || package_ == "cints" )
-        eval.set_integral_package( package_ );
-      else
-        eval.set_integral_package( "intv3" );
+      Package pkg = tb_config_.get_default_pkg();
+      if( pkg == Package_INTV3  || pkg == Package_CINTS )
+        eval.set_integral_package( pkg );
+      else {
+	std::cout << "Using Intv3 as last resort\n";
+        eval.set_integral_package( Package_INTV3 );
+      }
     }
   }
 
   // initialize
-  eval.initialize( bs1, bs2, bs3, label, max_deriv, storage_, deriv_ctr );
+  eval.tbint_initialize( bs1, bs2, bs3, type, 
+                         max_deriv, storage_, deriv_ctr );
   return eval;
 
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator3)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_tbint_evaluator3)
 }
 
 /**
- * Get a 4-center integral evaluator
- * @param label String defining integral type
+ * Get a 2-body 4-center integral evaluator
+ * @param type TbIntEvalType specifiying eval type
  * @param max_deriv Maximum derivative that will be computed
  * @param bs1 Molecular basis set on center 1
  * @param bs2 Molecular basis set on center 2
@@ -341,8 +395,8 @@ throw ()
  * @return 4-center integral evaluator 
  */
 ::Chemistry::QC::GaussianBasis::IntegralEvaluator4
-MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator4 (
-  /* in */ const ::std::string& label,
+MPQC::IntegralEvaluatorFactory_impl::get_tbint_evaluator4 (
+  /* in */ ::Chemistry::QC::GaussianBasis::TbIntEvalType type,
   /* in */ int32_t max_deriv,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
@@ -351,36 +405,41 @@ MPQC::IntegralEvaluatorFactory_impl::get_integral_evaluator4 (
   /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_integral_evaluator4)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluatorFactory.get_tbint_evaluator4)
 
   // create the evaluator
   MPQC::IntegralEvaluator4 eval = MPQC::IntegralEvaluator4::_create();
 
- // determine proper integrals package
+  // determine proper integrals package
   bool pkg_set = false;
-  for( int i=0; i<eval_config_.get_n_pkg_config(); ++i)
-    if( eval_config_.get_pkg_config_type(i) == label ) {
-      eval.set_integral_package( eval_config_.get_pkg_config_pkg(i) );
+  for( int i=0; i<tb_config_.get_n_pkg_config(); ++i)
+    if( tb_config_.get_pkg_config_type(i) == type ) {
+      eval.set_integral_package( tb_config_.get_pkg_config_pkg(i) );
       pkg_set = true;
     }
   if( !pkg_set ) {
     package_ =  package_param_->getValueString();
-    if( package_ == "intv3" || package_ == "cints" )
-      eval.set_integral_package( package_ );
+    if( package_ == "intv3" )
+      eval.set_integral_package( Package_INTV3 );
+    else if( package_ == "cints" )
+      eval.set_integral_package( Package_CINTS );
     else {
-      package_ = eval_config_.get_default_pkg();
-      if( package_ == "intv3" || package_ == "cints" )
-        eval.set_integral_package( package_ );
-      else
-        eval.set_integral_package( "intv3" );
+      Package pkg = tb_config_.get_default_pkg();
+      if( pkg == Package_INTV3  || pkg == Package_CINTS )
+        eval.set_integral_package( pkg );
+      else {
+	std::cout << "Using Intv3 as last resort\n";
+        eval.set_integral_package( Package_INTV3 );
+      }
     }
   }
 
   // initialize
-  eval.initialize( bs1, bs2, bs3, bs4, label, max_deriv, storage_, deriv_ctr );
+  eval.tbint_initialize( bs1, bs2, bs3, bs4, type, 
+                         max_deriv, storage_, deriv_ctr );
   return eval;
 
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_integral_evaluator4)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory.get_tbint_evaluator4)
 }
 
 

@@ -112,6 +112,16 @@ namespace MPQC {
 
 
     /**
+     * Execute some encapsulated functionality on the component. 
+     * Return 0 if ok, -1 if internal error but component may be 
+     * used further, and -2 if error so severe that component cannot
+     * be further used safely.
+     */
+    int32_t
+    go() throw () 
+    ;
+
+    /**
      * Starts up a component presence in the calling framework.
      * @param Svc the component instance's handle on the framework world.
      * Contracts concerning Svc and setServices:
@@ -136,16 +146,6 @@ namespace MPQC {
       ::gov::cca::CCAException
     );
 
-
-    /**
-     * Execute some encapsulated functionality on the component. 
-     * Return 0 if ok, -1 if internal error but component may be 
-     * used further, and -2 if error so severe that component cannot
-     * be further used safely.
-     */
-    int32_t
-    go() throw () 
-    ;
   };  // end class SimpleDriver_impl
 
 } // end namespace MPQC

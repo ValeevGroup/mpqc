@@ -183,7 +183,8 @@ throw (
 
 /**
  * Set the theory name for Model's created with get_model.
- * @param theory A string giving the name of the theory, for example, B3LYP.
+ * @param theory A string giving the name of the theory, 
+ * for example, B3LYP.
  */
 void
 MPQC::Chemistry_QC_ModelFactory_impl::set_theory (
@@ -224,9 +225,10 @@ throw ()
 }
 
 /**
- * Set the object to use to compute integrals for Model's created with get_model.
- * 
- * @param intfact An object of type GaussianBasis.IntegralEvaluatorFactory.
+ * Set the object to use to compute integrals for Model's 
+ * created with get_model.
+ * @param intfact An object of type 
+ * GaussianBasis.IntegralEvaluatorFactory.
  */
 void
 MPQC::Chemistry_QC_ModelFactory_impl::set_integral_factory (
@@ -239,8 +241,8 @@ throw ()
 }
 
 /**
- * Returns a newly created Model.  Before get_model can be called, set_theory,
- * set_basis, and set_molecule must be called.
+ * Returns a newly created Model.  Before get_model can be called, 
+ * set_theory, set_basis, and set_molecule must be called.
  * @return The new Model instance.
  */
 ::Chemistry::QC::Model
@@ -343,13 +345,21 @@ throw (
   catch (...) {}
   if( eval_factory_._not_nil() ) {
     bool use_opaque;
-    std::string buffer_str = std::string(integral_buffer_param_->getValueString());
+    std::string buffer_str = 
+      std::string(integral_buffer_param_->getValueString());
     if( buffer_str == "opaque") use_opaque=true;
     else if(buffer_str == "array") use_opaque=false;
     else { std::cerr << "\bunrecognized integral buffer option"; abort(); }
     intcca_ = new IntegralCCA(eval_factory_,use_opaque);
     eval_factory_.set_molecule(molecule_);
-    eval_factory_.set_integral_package("intv3");
+    ObIntEvalConfig ob_config_ = 
+      Chemistry::Chemistry_QC_GaussianBasis_ObIntEvalConfig::_create();
+    TbIntEvalConfig tb_config_ = 
+      Chemistry::Chemistry_QC_GaussianBasis_TbIntEvalConfig::_create();
+    ob_config_.set_default_pkg(Package_INTV3);
+    tb_config_.set_default_pkg(Package_INTV3);
+    eval_factory_.set_obint_config( ob_config_ );
+    eval_factory_.set_tbint_config( tb_config_ );
     Integral::set_default_integral( Ref<Integral>(intcca_.pointer()) );
   }
   
@@ -363,8 +373,8 @@ throw (
 }
 
 /**
- * This can be called when this Model object is no longer needed.  No other
- * members may be called after finalize. 
+ * This can be called when this Model object is no longer needed.  
+ * No other members may be called after finalize. 
  */
 int32_t
 MPQC::Chemistry_QC_ModelFactory_impl::finalize ()

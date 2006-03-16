@@ -205,7 +205,8 @@ namespace MPQC {
 
     /**
      * Set the theory name for Model's created with get_model.
-     * @param theory A string giving the name of the theory, for example, B3LYP.
+     * @param theory A string giving the name of the theory, 
+     * for example, B3LYP.
      */
     void
     set_theory (
@@ -240,9 +241,10 @@ namespace MPQC {
 
 
     /**
-     * Set the object to use to compute integrals for Model's created with get_model.
-     * 
-     * @param intfact An object of type GaussianBasis.IntegralEvaluatorFactory.
+     * Set the object to use to compute integrals for Model's 
+     * created with get_model.
+     * @param intfact An object of type 
+     * GaussianBasis.IntegralEvaluatorFactory.
      */
     void
     set_integral_factory (
@@ -253,8 +255,8 @@ namespace MPQC {
 
 
     /**
-     * Returns a newly created Model.  Before get_model can be called, set_theory,
-     * set_basis, and set_molecule must be called.
+     * Returns a newly created Model.  Before get_model can be called, 
+     * set_theory, set_basis, and set_molecule must be called.
      * @return The new Model instance.
      */
     ::Chemistry::QC::Model
@@ -263,8 +265,8 @@ namespace MPQC {
     );
 
     /**
-     * This can be called when this Model object is no longer needed.  No other
-     * members may be called after finalize. 
+     * This can be called when this Model object is no longer needed.  
+     * No other members may be called after finalize. 
      */
     int32_t
     finalize() throw () 

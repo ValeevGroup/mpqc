@@ -28,8 +28,8 @@
 #ifndef included_Chemistry_QC_GaussianBasis_DerivCenters_hh
 #include "Chemistry_QC_GaussianBasis_DerivCenters.hh"
 #endif
-#ifndef included_Chemistry_QC_GaussianBasis_EvaluatorConfig_hh
-#include "Chemistry_QC_GaussianBasis_EvaluatorConfig.hh"
+#ifndef included_Chemistry_QC_GaussianBasis_IntegralEvaluator1_hh
+#include "Chemistry_QC_GaussianBasis_IntegralEvaluator1.hh"
 #endif
 #ifndef included_Chemistry_QC_GaussianBasis_IntegralEvaluator2_hh
 #include "Chemistry_QC_GaussianBasis_IntegralEvaluator2.hh"
@@ -42,6 +42,18 @@
 #endif
 #ifndef included_Chemistry_QC_GaussianBasis_Molecular_hh
 #include "Chemistry_QC_GaussianBasis_Molecular.hh"
+#endif
+#ifndef included_Chemistry_QC_GaussianBasis_ObIntEvalConfig_hh
+#include "Chemistry_QC_GaussianBasis_ObIntEvalConfig.hh"
+#endif
+#ifndef included_Chemistry_QC_GaussianBasis_ObIntEvalType_hh
+#include "Chemistry_QC_GaussianBasis_ObIntEvalType.hh"
+#endif
+#ifndef included_Chemistry_QC_GaussianBasis_TbIntEvalConfig_hh
+#include "Chemistry_QC_GaussianBasis_TbIntEvalConfig.hh"
+#endif
+#ifndef included_Chemistry_QC_GaussianBasis_TbIntEvalType_hh
+#include "Chemistry_QC_GaussianBasis_TbIntEvalType.hh"
 #endif
 #ifndef included_MPQC_IntegralEvaluatorFactory_hh
 #include "MPQC_IntegralEvaluatorFactory.hh"
@@ -121,7 +133,8 @@ namespace MPQC {
       ConfigurableParameterFactory *cpf);
     std::string package_;
     int storage_;
-    Chemistry::QC::GaussianBasis::EvaluatorConfig eval_config_;
+    Chemistry::QC::GaussianBasis::ObIntEvalConfig ob_config_;
+    Chemistry::QC::GaussianBasis::TbIntEvalConfig tb_config_;
     // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluatorFactory._implementation)
 
   private:
@@ -178,12 +191,24 @@ namespace MPQC {
 
 
     /**
-     * Set the EvaluatorConfig
-     * @param config EvaluatorConfig 
+     * Set the ObInt evaluator config
+     * @param config ObInt evaluator config 
      */
     void
-    set_config (
-      /* in */ ::Chemistry::QC::GaussianBasis::EvaluatorConfig config
+    set_obint_config (
+      /* in */ ::Chemistry::QC::GaussianBasis::ObIntEvalConfig config
+    )
+    throw () 
+    ;
+
+
+    /**
+     * Set the TbInt evaluator config
+     * @param config TbInt evaluator config 
+     */
+    void
+    set_tbint_config (
+      /* in */ ::Chemistry::QC::GaussianBasis::TbIntEvalConfig config
     )
     throw () 
     ;
@@ -230,18 +255,6 @@ namespace MPQC {
     ;
 
     /**
-     * Set the integral package
-     * @param The integral package 
-     */
-    void
-    set_integral_package (
-      /* in */ const ::std::string& label
-    )
-    throw () 
-    ;
-
-
-    /**
      * Set available storage
      * @param storage Available storage in bytes 
      */
@@ -254,16 +267,34 @@ namespace MPQC {
 
 
     /**
-     * Get a 2-center integral evaluator
-     * @param label String specifying integral type
+     * Get a 1-body 1-center integral evaluator
+     * @param type ObIntEvalType specifying eval type
+     * @param max_deriv Maximum derivative that will be computed
+     * @param bs1 Molecular basis set on center 1
+     * @return 1-center integral evaluator 
+     */
+    ::Chemistry::QC::GaussianBasis::IntegralEvaluator1
+    get_obint_evaluator1 (
+      /* in */ ::Chemistry::QC::GaussianBasis::ObIntEvalType type,
+      /* in */ int32_t max_deriv,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
+    )
+    throw () 
+    ;
+
+
+    /**
+     * Get a 1-body 2-center integral evaluator
+     * @param type ObIntEvalType specifying eval type
      * @param max_deriv Maximum derivative that will be computed
      * @param bs1 Molecular basis set on center 1
      * @param bs2 Molecular basis set on center 2
      * @return 2-center integral evaluator 
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator2
-    get_integral_evaluator2 (
-      /* in */ const ::std::string& label,
+    get_obint_evaluator2 (
+      /* in */ ::Chemistry::QC::GaussianBasis::ObIntEvalType type,
       /* in */ int32_t max_deriv,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
@@ -274,8 +305,28 @@ namespace MPQC {
 
 
     /**
-     * Get a 3-center integral evaluator
-     * @param label String specifying integral type
+     * Get a 2-body 2-center integral evaluator
+     * @param type TbIntEvalType specifying eval type
+     * @param max_deriv Maximum derivative that will be computed
+     * @param bs1 Molecular basis set on center 1
+     * @param bs2 Molecular basis set on center 2
+     * @return 2-center integral evaluator 
+     */
+    ::Chemistry::QC::GaussianBasis::IntegralEvaluator2
+    get_tbint_evaluator2 (
+      /* in */ ::Chemistry::QC::GaussianBasis::TbIntEvalType type,
+      /* in */ int32_t max_deriv,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
+      /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
+      /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
+    )
+    throw () 
+    ;
+
+
+    /**
+     * Get a 2-body 3-center integral evaluator
+     * @param type TbIntEvalType specifying eval type
      * @param max_deriv Maximum derivative that will be computed
      * @param bs1 Molecular basis set on center 1
      * @param bs2 Molecular basis set on center 2
@@ -283,8 +334,8 @@ namespace MPQC {
      * @return 3-center integral evaluator 
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator3
-    get_integral_evaluator3 (
-      /* in */ const ::std::string& label,
+    get_tbint_evaluator3 (
+      /* in */ ::Chemistry::QC::GaussianBasis::TbIntEvalType type,
       /* in */ int32_t max_deriv,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
@@ -296,8 +347,8 @@ namespace MPQC {
 
 
     /**
-     * Get a 4-center integral evaluator
-     * @param label String defining integral type
+     * Get a 2-body 4-center integral evaluator
+     * @param type TbIntEvalType specifiying eval type
      * @param max_deriv Maximum derivative that will be computed
      * @param bs1 Molecular basis set on center 1
      * @param bs2 Molecular basis set on center 2
@@ -306,8 +357,8 @@ namespace MPQC {
      * @return 4-center integral evaluator 
      */
     ::Chemistry::QC::GaussianBasis::IntegralEvaluator4
-    get_integral_evaluator4 (
-      /* in */ const ::std::string& label,
+    get_tbint_evaluator4 (
+      /* in */ ::Chemistry::QC::GaussianBasis::TbIntEvalType type,
       /* in */ int32_t max_deriv,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,

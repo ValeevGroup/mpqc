@@ -28,6 +28,15 @@
 #ifndef included_Chemistry_QC_GaussianBasis_Molecular_hh
 #include "Chemistry_QC_GaussianBasis_Molecular.hh"
 #endif
+#ifndef included_Chemistry_QC_GaussianBasis_Package_hh
+#include "Chemistry_QC_GaussianBasis_Package.hh"
+#endif
+#ifndef included_Chemistry_QC_GaussianBasis_TbIntEvalType_hh
+#include "Chemistry_QC_GaussianBasis_TbIntEvalType.hh"
+#endif
+#ifndef included_Chemistry_QC_GaussianBasis_TbIntType_hh
+#include "Chemistry_QC_GaussianBasis_TbIntType.hh"
+#endif
 #ifndef included_MPQC_IntegralEvaluator4_hh
 #include "MPQC_IntegralEvaluator4.hh"
 #endif
@@ -47,6 +56,7 @@
   #include <chemistry/qc/cints/cints.h>
 #endif
 using namespace sc;
+using namespace Chemistry::QC::GaussianBasis;
 // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4._includes)
 
 namespace MPQC { 
@@ -78,7 +88,7 @@ namespace MPQC {
 
     // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._implementation)
     Chemistry::Molecule molecule_;
-    std::string evaluator_label_;
+    TbIntEvalType eval_type_;
     Ref<sc::GaussianBasisSet> bs1_;
     Ref<sc::GaussianBasisSet> bs2_;
     Ref<sc::GaussianBasisSet> bs3_;
@@ -93,7 +103,7 @@ namespace MPQC {
     enum { two_body, two_body_deriv};
     int int_type_;
     int deriv_level_;
-    std::string package_;
+    Package package_;
     sc::DerivCenters sc_deriv_centers_;
     int maxam_;
 
@@ -150,30 +160,30 @@ namespace MPQC {
      */
     void
     set_integral_package (
-      /* in */ const ::std::string& label
+      /* in */ ::Chemistry::QC::GaussianBasis::Package type
     )
     throw () 
     ;
 
 
     /**
-     * Initialize the evaluator.
+     * Initialize as a 2-body evaluator.
      * @param bs1 Molecular basis on center 1.
      * @param bs2 Molecular basis on center 2.
      * @param bs3 Molecular basis on center 3.
      * @param bs4 Molecular basis on center 4.
-     * @param label String specifying integral type.
+     * @param type TbIntEvalType specifying integral type.
      * @param max_deriv Max derivative to compute.
      * @param storage Available storage in bytes.
      * @param deriv_ctr Derivative center descriptor. 
      */
     void
-    initialize (
+    tbint_initialize (
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
       /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4,
-      /* in */ const ::std::string& label,
+      /* in */ ::Chemistry::QC::GaussianBasis::TbIntEvalType type,
       /* in */ int32_t max_deriv,
       /* in */ int64_t storage,
       /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr
@@ -183,12 +193,25 @@ namespace MPQC {
 
 
     /**
-     * Get the buffer pointer.
+     * Return number of supported two body int types.
+     * @return Number of types. 
+     */
+    int32_t
+    get_tbint_n_types() throw () 
+    ;
+
+    /**
+     * Get two body int buffer pointers.
+     * @param type TbIntType specifying buffer type.
      * @return Buffer pointer. 
      */
     void*
-    get_buffer() throw () 
+    get_tbint_buffer (
+      /* in */ ::Chemistry::QC::GaussianBasis::TbIntType type
+    )
+    throw () 
     ;
+
 
     /**
      * Compute a shell quartet of integrals.

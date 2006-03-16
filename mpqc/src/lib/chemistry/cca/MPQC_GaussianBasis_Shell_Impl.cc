@@ -104,7 +104,8 @@ throw ()
 }
 
 /**
- * Get the coefficient for an unnormalized primitive in a contraction.
+ * Get the coefficient for an unnormalized primitive 
+ * in a contraction.
  * @param connum contraction number
  * @param expnum primitive number
  * @return contraction coefficient 
@@ -152,7 +153,8 @@ throw ()
 }
 
 /**
- * Get the max angular momentum, considering all contractions in the shell.
+ * Get the max angular momentum, considering all contractions 
+ * in the shell.
  * @return maximum angular momentum value 
  */
 int32_t

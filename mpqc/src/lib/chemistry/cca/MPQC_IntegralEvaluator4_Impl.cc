@@ -33,7 +33,7 @@ void MPQC::IntegralEvaluator4_impl::_ctor() {
 void MPQC::IntegralEvaluator4_impl::_dtor() {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4._dtor)
 #ifndef INTV3_ORDER
-  if( package_ == "intv3") {
+  if( package_ == Package_INTV3 ) {
     delete [] temp_buffer_;
     for( int i=0; i<=maxam_; ++i)
       delete [] reorder_[i];
@@ -58,44 +58,44 @@ void MPQC::IntegralEvaluator4_impl::_load() {
  */
 void
 MPQC::IntegralEvaluator4_impl::set_integral_package (
-  /* in */ const ::std::string& label ) 
+  /* in */ ::Chemistry::QC::GaussianBasis::Package type ) 
 throw () 
 {
   // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.set_integral_package)
-  package_ = label;
+  package_ = type;
   // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.set_integral_package)
 }
 
 /**
- * Initialize the evaluator.
+ * Initialize as a 2-body evaluator.
  * @param bs1 Molecular basis on center 1.
  * @param bs2 Molecular basis on center 2.
  * @param bs3 Molecular basis on center 3.
  * @param bs4 Molecular basis on center 4.
- * @param label String specifying integral type.
+ * @param type TbIntEvalType specifying integral type.
  * @param max_deriv Max derivative to compute.
  * @param storage Available storage in bytes.
  * @param deriv_ctr Derivative center descriptor. 
  */
 void
-MPQC::IntegralEvaluator4_impl::initialize (
+MPQC::IntegralEvaluator4_impl::tbint_initialize (
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs1,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs2,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs3,
   /* in */ ::Chemistry::QC::GaussianBasis::Molecular bs4,
-  /* in */ const ::std::string& label,
+  /* in */ ::Chemistry::QC::GaussianBasis::TbIntEvalType type,
   /* in */ int32_t max_deriv,
   /* in */ int64_t storage,
   /* in */ ::Chemistry::QC::GaussianBasis::DerivCenters deriv_ctr ) 
 throw () 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.initialize)
-  
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.tbint_initialize)
+
   bufn_ = 0;
 
   deriv_centers_ = deriv_ctr;
 
-  evaluator_label_ = label;
+  eval_type_ = type;
   int deriv_level = max_deriv;
 
   bs1_ = basis_cca_to_sc( bs1 );
@@ -114,12 +114,12 @@ throw ()
 
   std::string is_deriv("");
   if(max_deriv > 0) is_deriv = " derivative";
-  std::cout << "  initializing " << package_ << " " << evaluator_label_
-            << is_deriv << " integral evaluator\n";
-  if ( package_ == "intv3" )
+  std::cout << "  initializing package:" << package_ << " type: " 
+	    << eval_type_ << " " << is_deriv << " integral evaluator\n";
+  if ( package_ == Package_INTV3 )
     integral_ = new IntegralV3( bs1_ );
 #ifdef HAVE_CINTS
-  else if ( package_ == "cints" )
+  else if ( package_ == Package_CINTS )
     integral_ = new IntegralCints( bs1_ );
 #endif
   else
@@ -129,7 +129,7 @@ throw ()
   integral_->set_storage(storage);
 
   int error = 0;
-  if(evaluator_label_ == "eri2")
+  if( eval_type_ == TbIntEvalType_ERI4 )
     switch( deriv_level ) {
     case 0:
       { eval_ = integral_->electron_repulsion();
@@ -144,7 +144,7 @@ throw ()
       ++error;
     }
 
-  else if(evaluator_label_ == "grt")
+  else if( eval_type_ == TbIntEvalType_GRT )
     switch( deriv_level ) {
     case 0:
         { eval_ = integral_->grt(); 
@@ -158,7 +158,6 @@ throw ()
   else
     throw InputError("unsupported integral type",
                      __FILE__,__LINE__);
-
   if( error )
     throw InputError("derivative level not supported",
                      __FILE__,__LINE__);
@@ -180,7 +179,7 @@ throw ()
   // get a non-const pointer we can write to
   buf_ = const_cast<double*>( sc_buffer_ );
 
-  if ( package_ == "intv3" ) {
+  if ( package_ == Package_INTV3 ) {
 #ifdef INTV3_ORDER
     std::cout << "  using intv3 ordering" << std::endl;
 #else
@@ -188,21 +187,39 @@ throw ()
 #endif
   }
 
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.initialize)
+  // Insert-Code-Here {MPQC.IntegralEvaluator4.tbint_initialize} (tbint_initialize method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.tbint_initialize)
 }
 
 /**
- * Get the buffer pointer.
- * @return Buffer pointer. 
+ * Return number of supported two body int types.
+ * @return Number of types. 
  */
-void*
-MPQC::IntegralEvaluator4_impl::get_buffer ()
+int32_t
+MPQC::IntegralEvaluator4_impl::get_tbint_n_types ()
 throw () 
 
 {
-  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.get_buffer)
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.get_tbint_n_types)
+  // Insert-Code-Here {MPQC.IntegralEvaluator4.get_tbint_n_types} (get_tbint_n_types method)
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.get_tbint_n_types)
+}
+
+/**
+ * Get two body int buffer pointers.
+ * @param type TbIntType specifying buffer type.
+ * @return Buffer pointer. 
+ */
+void*
+MPQC::IntegralEvaluator4_impl::get_tbint_buffer (
+  /* in */ ::Chemistry::QC::GaussianBasis::TbIntType type ) 
+throw () 
+{
+  // DO-NOT-DELETE splicer.begin(MPQC.IntegralEvaluator4.get_tbint_buffer)
+
   return const_cast<double*>( sc_buffer_ );
-  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.get_buffer)
+
+  // DO-NOT-DELETE splicer.end(MPQC.IntegralEvaluator4.get_tbint_buffer)
 }
 
 /**
@@ -305,7 +322,7 @@ throw ()
 */
 
 #ifndef INTV3_ORDER
-  if( package_ == "intv3" )
+  if( package_ == Package_INTV3 )
     reorder_intv3( shellnum1, shellnum2, shellnum3, shellnum4 );
 #endif
 
@@ -606,20 +623,23 @@ MPQC::IntegralEvaluator4_impl::reorder_quartet( sc::GaussianShell* s1, sc::Gauss
                 if(!is_deriv) {
                   if( s4_is_cart ) 
                     for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
-                      buf_[ c4_base + local4_offset + reorder_[s4->am(c4)][fc4] ]
+                      buf_[ c4_base + local4_offset + 
+			    reorder_[s4->am(c4)][fc4] ]
        		        = temp_buffer_[index];
                       ++index;
                   }
                   else 
                     for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
-                      buf_[ c4_base + local4_offset + fc4 ] = temp_buffer_[index];
+                      buf_[ c4_base + local4_offset + fc4 ] = 
+			temp_buffer_[index];
                       ++index;
                     }
                 }
                 else {
                   if( s4_is_cart )
                     for( int fc4=0; fc4<s4_nfunc; ++fc4 ) {
-                      buf_[ c4_base + local4_offset + reorder_[s4->am(c4)][fc4] ]
+                      buf_[ c4_base + local4_offset + 
+			    reorder_[s4->am(c4)][fc4] ]
                         = temp_buffer_[ index + deriv_offset ];
                       ++index;
                     }

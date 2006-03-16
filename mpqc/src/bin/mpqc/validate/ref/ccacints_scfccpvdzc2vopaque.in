@@ -19,7 +19,7 @@ basis<GaussianBasisSet>: (
 % using cca integrals
 integrals<IntegralCCA>: (
   integral_buffer = opaque
-  integral_package = intv3
+  default_package = cints
   evaluator_factory = MPQC.IntegralEvaluatorFactory
   molecule = $:molecule
 )

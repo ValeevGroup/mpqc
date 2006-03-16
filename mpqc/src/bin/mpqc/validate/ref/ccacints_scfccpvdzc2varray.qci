@@ -1,5 +1,7 @@
 fixed:
 
+test_default_package:
+cints
 test_symmetry:
 c2v
 followed:
@@ -18,8 +20,6 @@ method:
 scf
 auxbasis:
 
-test_integral_package:
-cints
 test_calc:
 energy
 restart:
@@ -34,6 +34,8 @@ docc:
 auto
 test_basis:
 cc-pVDZ
+default_package:
+cints
 checkpoint:
 no
 symmetry:
@@ -44,8 +46,6 @@ fzv:
 
 test_method:
 scf
-integral_package:
-cints
 label:
 cca integrals test
 optimize:

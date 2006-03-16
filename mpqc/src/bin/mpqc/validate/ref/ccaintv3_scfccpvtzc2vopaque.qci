@@ -1,5 +1,7 @@
 fixed:
 
+test_default_package:
+intv3
 test_symmetry:
 c2v
 followed:
@@ -18,8 +20,6 @@ method:
 scf
 auxbasis:
 
-test_integral_package:
-intv3
 test_calc:
 energy
 restart:
@@ -34,6 +34,8 @@ docc:
 auto
 test_basis:
 STO-3G cc-pVTZ
+default_package:
+intv3
 checkpoint:
 no
 symmetry:
@@ -44,8 +46,6 @@ fzv:
 
 test_method:
 scf
-integral_package:
-intv3
 label:
 cca integrals test
 optimize:

@@ -179,7 +179,7 @@ sub process_file {
         my $orthog_method = $test_vars->{"orthog_method"}->[$index->{"orthog_method"}];
         my $lindep_tol = $test_vars->{"lindep_tol"}->[$index->{"lindep_tol"}];
         my $integral_buffer = $test_vars->{"integral_buffer"}->[$index->{"integral_buffer"}];
-        my $integral_package = $test_vars->{"integral_package"}->[$index->{"integral_package"}];
+        my $default_package = $test_vars->{"default_package"}->[$index->{"default_package"}];
         # if i got an array of molecule names then i expect
         # an array of point groups, one for each molecule
         if ($molecule ne "molecule") {
@@ -266,7 +266,7 @@ sub process_file {
         $parse->set_value("method", $method);
         $parse->set_value("symmetry", $symmetry);
         $parse->set_value("integral_buffer", $integral_buffer);
-        $parse->set_value("default_package", $integral_package);
+        $parse->set_value("default_package", $default_package);
         $parse->set_value("fzc", $fzc);
         $parse->set_value("fzv", $fzv);
         $parse->set_value("docc", $docc);
@@ -338,14 +338,14 @@ sub process_file {
         $symmetry = tofilename($symmetry);
         if ($do_cca eq "yes"){
              $intbuf = tofilename($integral_buffer);
-             $intpack = tofilename($integral_package);
+             $intpack = tofilename($default_package);
         }
         else {
              $intbuf = "";
              $intpack = "";
         }
         if ($grid eq "default") {$grid = "";}
-        my $basename = "$dir$file\_$fmol$method$grid$fzc$fzv$basis$auxbasis$symmetry$fcalc$fextra$intbuf$intpack";
+        my $basename = "$dir$file\_$fmol$method$grid$fzc$fzv$basis$auxbasis$symmetry$fcalc$fextra$intbuf";
         my $writer;
 
         if ($package eq "g94") {
